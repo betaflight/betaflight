@@ -66,11 +66,13 @@ uint32_t getDshotHz(motorProtocolTypes_e pwmProtocolType);
 #define DSHOT_DMA_BUFFER_ATTRIBUTE DMA_RAM_W
 #elif defined(STM32F7)
 #define DSHOT_DMA_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT
+#elif defined(UM324xF)
+#define DSHOT_DMA_BUFFER_ATTRIBUTE DMA_RAM_RW
 #else
 #define DSHOT_DMA_BUFFER_ATTRIBUTE /* Empty */
 #endif
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4) || defined(STM32N6) || defined(AT32F435) || defined(APM32F4) || defined(X32M7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4) || defined(STM32N6) || defined(AT32F435) || defined(APM32F4) || defined(X32M7) || defined(UM324xF)
 #define DSHOT_DMA_BUFFER_UNIT uint32_t
 #else
 #define DSHOT_DMA_BUFFER_UNIT uint8_t
@@ -115,7 +117,7 @@ typedef struct motorDmaOutput_s {
     uint16_t timerDmaSource;
     uint8_t timerDmaIndex;
     bool configured;
-#if defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4)
+#if defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4) || defined(UM324xF)
     TIM_HandleTypeDef TimHandle;
     DMA_HandleTypeDef hdma_tim;
     IO_t io;

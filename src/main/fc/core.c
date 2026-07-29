@@ -1346,6 +1346,30 @@ static FAST_CODE_NOINLINE void subTaskPidSubprocesses(timeUs_t currentTimeUs)
     UNUSED(currentTimeUs);
 #endif
 
+#if (defined(UM324xF) && defined(SA_UART_RX_PIN) && (defined(USE_VTX_TRAMP) || defined(USE_VTX_SMARTAUDIO)))
+    extern uint8_t  afSA;
+    extern IO_t txSA, rxSA;
+#ifdef USE_VTX_SMARTAUDIO
+    extern timeMs_t saTxstart;
+#endif
+#ifdef USE_VTX_TRAMP
+    extern timeMs_t trTxstart;
+#endif
+
+#ifdef USE_VTX_SMARTAUDIO
+    if(((millis() - saTxstart) == 25) && (saTxstart > 0)){
+        IOConfigGPIO(txSA, IOCFG_IN_FLOATING);
+        IOConfigGPIOAF(rxSA, IOCFG_AF_PP, afSA);
+    }
+#endif
+#ifdef USE_VTX_TRAMP
+    if(((millis() - trTxstart) == 20) && (trTxstart > 0)){
+        IOConfigGPIO(txSA, IOCFG_IN_FLOATING);
+        IOConfigGPIOAF(rxSA, IOCFG_AF_PP, afSA);
+    }
+#endif
+#endif
+
     DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);
 }
 

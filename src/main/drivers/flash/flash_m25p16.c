@@ -78,6 +78,8 @@ struct {
     // Macronix MX25L6406E
     // Datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/7370/MX25L6406E,%203V,%2064Mb,%20v1.9.pdf
     { 0xC22017, 86, 33, 128, 256 },
+    // Macronix MX25L12806E
+    { 0xC22018, 120, 50, 256, 256 },
     // Macronix MX25L25635E
     // Datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/7331/MX25L25635E,%203V,%20256Mb,%20v1.3.pdf
     { 0xC22019, 80, 50, 512, 256 },
@@ -181,7 +183,10 @@ struct {
     //Giantec GT25Q32A
     //Datasheet:https://www.giantec-semi.com/uploads/pdf/260327/gg/GT25Q32A%20U%20DS_V2.4.pdf
     {0xC46016, 90, 90, 64, 256},
-    // End of list
+    // Fudan Micro FM25Q128
+    { 0xA14018, 104, 50, 256, 256 },
+     // Fudan Micro FM25LQ128I3
+    { 0xA16018, 104, 50, 256, 256 },
     { 0x000000, 0, 0, 0, 0 }
 };
 

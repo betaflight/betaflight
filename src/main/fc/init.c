@@ -194,6 +194,12 @@
 void targetPreInit(void);
 #endif
 
+#ifdef UM324xF
+QSPI_HandleTypeDef hqspi;
+void exFlashInit(void);
+void QSPI_QuadEn(QSPI_HandleTypeDef *hqspi);
+#endif
+
 uint8_t systemState = SYSTEM_STATE_INITIALISING;
 
 static enum {
@@ -216,6 +222,107 @@ void busSwitchInit(void)
     IOLo(busSwitchResetPin);
 }
 #endif
+
+#ifdef UM324xF
+void exFlashInit(void)
+{
+    IO_t exPin = IO_NONE;
+
+    // free pin
+    exPin = IOGetByTag(IO_TAG(PC8));
+    IOInit(exPin,  OWNER_SYSTEM,  0);
+    IOConfigGPIO(exPin, IOCFG_IN_FLOATING);
+
+    exPin = IOGetByTag(IO_TAG(PC9));
+    IOInit(exPin,  OWNER_SYSTEM,  0);
+    IOConfigGPIO(exPin, IOCFG_IN_FLOATING);
+
+    exPin = IOGetByTag(IO_TAG(PA9));
+    IOInit(exPin,  OWNER_SYSTEM,  0);
+    IOConfigGPIO(exPin, IOCFG_IN_FLOATING);
+
+    //QSPI pin
+    exPin = IOGetByTag(IO_TAG(PE10));
+    IOInit(exPin,  OWNER_QUADSPI_CLK,  0);
+    IOConfigGPIOAF(exPin, IO_CONFIG(GPIO_MODE_AF, GPIO_SPEED_FREQ_HIGH, GPIO_PULLUP), GPIO_AF10_QSPI);
+
+    exPin = IOGetByTag(IO_TAG(PD3));
+    IOInit(exPin,  OWNER_QUADSPI_BK1CS,  0);
+    IOConfigGPIOAF(exPin, IO_CONFIG(GPIO_MODE_AF, GPIO_SPEED_FREQ_HIGH, GPIO_PULLUP), GPIO_AF10_QSPI);
+
+    exPin = IOGetByTag(IO_TAG(PD4));
+    IOInit(exPin,  OWNER_QUADSPI_BK1IO0,  0);
+    IOConfigGPIOAF(exPin, IO_CONFIG(GPIO_MODE_AF, GPIO_SPEED_FREQ_HIGH, GPIO_PULLUP), GPIO_AF10_QSPI);
+
+    exPin = IOGetByTag(IO_TAG(PD5));
+    IOInit(exPin,  OWNER_QUADSPI_BK1IO1,  0);
+    IOConfigGPIOAF(exPin, IO_CONFIG(GPIO_MODE_AF, GPIO_SPEED_FREQ_HIGH, GPIO_PULLUP), GPIO_AF10_QSPI);
+
+    exPin = IOGetByTag(IO_TAG(PD6));
+    IOInit(exPin,  OWNER_QUADSPI_BK1IO2,  0);
+    IOConfigGPIOAF(exPin, IO_CONFIG(GPIO_MODE_AF, GPIO_SPEED_FREQ_HIGH, GPIO_PULLUP), GPIO_AF10_QSPI);
+
+    exPin = IOGetByTag(IO_TAG(PE15));
+    IOInit(exPin,  OWNER_QUADSPI_BK1IO3,  0);
+    IOConfigGPIOAF(exPin, IO_CONFIG(GPIO_MODE_AF, GPIO_SPEED_FREQ_HIGH, GPIO_PULLUP), GPIO_AF10_QSPI);
+
+    __HAL_RCM_QSPI_CLK_ENABLE();
+    __HAL_RCM_QSPI_RELEASE_RESET();
+
+	hqspi.Instance = QSPI;
+	hqspi.DataSize                 = QSPI_DATASIZE_8BIT; 
+    hqspi.Init.CSInvalidDelay      = 0x5; 
+    hqspi.Init.CSStartDelay        = 0x0; 
+    hqspi.Init.CSStopDelay         = 0x5; 
+    
+    hqspi.Init.AddrSizes           = QSPI_ADDRBYTES_3; 
+    hqspi.Init.PageSizes           = 256;
+    hqspi.Init.BlockSizes          = 16; // 2^16B = 64KB earch Block
+    
+    hqspi.Init.WorkMode            = QSPI_WORKMODE_DAC; 
+    hqspi.Init.ClockPrescaler      = QSPI_BRDIV_6; 
+
+    hqspi.Init.ClockMode           = QSPI_CLOCK_MODE_0; 
+
+    /* Setting the QSPI_RDCR register  */
+    hqspi.Init.ReadDelay           = QSPI_DLYR_4; 
+    hqspi.Init.TransDelay          = QSPI_DLYT_0; 
+    hqspi.Init.Sampling_Edge       = QSPI_SMES_TRAILING; 
+    
+    /* Congratulate the read data in the dac mode */
+    hqspi.DacMode.ReadCommand      = 0xEB; 
+    hqspi.DacMode.ReadAddr_Type    = QSPI_ADMODE_DQ0DQ1DQ2DQ3; 
+    hqspi.DacMode.ReadData_Type    = QSPI_DMODE_QUAD;	
+    hqspi.DacMode.ReadData_Dummy   = QSPI_DUMMY_CLKS_6;
+
+    /* Congratulate the write data in the dac mode */
+    hqspi.DacMode.WriteCommand     = 0x32; 
+    hqspi.DacMode.WriteAddr_Type   = QSPI_ADMODE_DQ0; 
+    hqspi.DacMode.WriteData_Type   = QSPI_DMODE_QUAD; 
+    hqspi.DacMode.WriteData_Dummy  = QSPI_DUMMY_CLKS_0;
+
+    if (HAL_QSPI_Init(&hqspi) != HAL_OK)
+    {
+        /* Initialization Error */
+        Error_Handler();
+    }
+
+    /* Enable the QE mode */
+    QSPI_QuadEn(&hqspi);
+
+    /* Enable qspi cache  */
+    (*(volatile uint32_t *)(0x3cfffc00)) |= 0x03; 
+
+#ifdef USE_ITCM_RAM
+    /* Load fast-functions into RAM1 */
+    extern uint8_t tcm_code_start;
+    extern uint8_t tcm_code_end;
+    extern uint8_t tcm_code;
+    memcpy(&tcm_code_start, &tcm_code, (size_t) (&tcm_code_end - &tcm_code_start));
+#endif  
+}
+#endif
+
 
 static void configureSPIBusses(void)
 {
@@ -301,6 +408,10 @@ void initPhase1(void)
 
     // initialize IO (needed for all IO operations)
     IOInitGlobal();
+
+#if defined(UM324xF)
+    exFlashInit();
+#endif
 
 #if defined(USE_TARGET_CONFIG)
     // Call once before the config is loaded for any target specific configuration required to support loading the config
@@ -526,6 +637,14 @@ void initPhase2(void)
 #endif
 #if ENABLE_OVERCLOCK_240_MHZ
             240,
+#endif
+#if defined(UM324xF)
+#if ENABLE_OVERCLOCK_288_MHZ
+            288,
+#endif
+#if ENABLE_OVERCLOCK_336_MHZ
+            336,
+#endif
 #endif
         };
         const uint8_t idx = systemConfig()->cpu_overclock;
