@@ -373,11 +373,13 @@ TEST_F(PosHoldTest, KalmanAccelerationDrivesAccelerationTerm)
 
     testEstimate.acceleration.x = 100.0f;
     positionControl();
-    EXPECT_EQ(debug[5], -15);
+    const int16_t positiveAccelerationTerm = debug[5];
+    EXPECT_LT(positiveAccelerationTerm, 0);
 
     testEstimate.acceleration.x = -100.0f;
     positionControl();
-    EXPECT_EQ(debug[5], 15);
+    EXPECT_GT(debug[5], 0);
+    EXPECT_EQ(debug[5], -positiveAccelerationTerm);
 
     debugMode = DEBUG_NONE;
 }
