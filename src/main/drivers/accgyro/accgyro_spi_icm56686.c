@@ -353,7 +353,7 @@ void icm56686AccInit(accDev_t *acc)
     // Accel sensitivity 16-bit 16G in icm56686GyroInit (which runs first)
     // 16-bit mode uses +/-16g -> 2048 LSB/g.
     acc->acc_1G = 2048;
-    acc->gyro->accSampleRateHz = 1600;    // accel ODR set to 1.6 kHz below
+    acc->gyro->accSampleRateHz = 1600; // accel ODR set to 1.6 kHz below
 
     // Enable accel SRC + pre-filter.
     icm56686_modify_ireg(dev, ICM56686_ACCEL_SRC_CTRL_IREG_ADDR,
