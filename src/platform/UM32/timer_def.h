@@ -168,10 +168,8 @@
 #endif
 
 #define DEF_TIM_DMA__BTCH_TIM12_CH2   D(1, 8,  1)  //MOTOR PB15
-#define DEF_TIM_DMA__BTCH_TIM13_CH2   D(1, 9,  2)  //MOTOR PD8, shared PC9
-#define DEF_TIM_DMA__BTCH_TIM14_CH2   D(1, 10, 3)  //MOTOR PE7, shared PC8
 #define DEF_TIM_DMA__BTCH_TIM1_CH1    D(2, 1,  1)  //MOTOR PA8
-#define DEF_TIM_DMA__BTCH_TIM9_CH1    D(2, 10, 2)  //MOTOR PE5, shared PA9
+#define DEF_TIM_DMA__BTCH_TIM1_CH2    D(2, 3,  2)  //MOTOR PA9
 
 //Alternative D-shot pin 
 #define DEF_TIM_DMA__BTCH_TIM2_CH2    D(1, 6,  0)  //PB3
@@ -186,6 +184,7 @@
 
 #define DEF_TIM_DMA__BTCH_TIM8_CH1    D(2, 2,  3)  //PC6
 #define DEF_TIM_DMA__BTCH_TIM8_CH2    D(2, 2,  3)  //PC7
+#define DEF_TIM_DMA__BTCH_TIM8_CH3    D(2, 2,  3)  //PC8
 
 #define DEF_TIM_DMA__BTCH_TIM10_CH1    D(2, 11, 7)  //PC4,  QFN76 MOTOR 
 #define DEF_TIM_DMA__BTCH_TIM10_CH2    D(2, 12, 3)  //PC5
@@ -337,7 +336,7 @@
 #define DEF_TIM_AF__PE12__TCH_TIM14_CH1     D(9, 14)
 
 
-#define FULL_TIMER_CHANNEL_COUNT    (21)
+#define FULL_TIMER_CHANNEL_COUNT    (22)
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(9) | TIM_N(10) | TIM_N(11) | TIM_N(12) | TIM_N(13) | TIM_N(14))
 #define HARDWARE_TIMER_DEFINITION_COUNT 14
 

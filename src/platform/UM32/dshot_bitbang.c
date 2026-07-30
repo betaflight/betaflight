@@ -31,6 +31,7 @@
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "platform/io_impl.h"
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
 #include "drivers/dshot.h"
@@ -43,6 +44,7 @@
 #include "drivers/dshot_bitbang_decode.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 
 #include "pg/motor.h"
 #include "pg/pinio.h"
@@ -76,10 +78,10 @@ uint8_t bbPuPdMode;
 FAST_DATA_ZERO_INIT timeUs_t dshotFrameUs;
 
 const timerHardware_t bbTimerHardware[] = {
-    DEF_TIM(TIM0,  CH1, PA8,   0, 1),
-    DEF_TIM(TIM2,  CH3, PC8,   0, 0),
-    DEF_TIM(TIM7,  CH4, PC9,   0, 0),
-    DEF_TIM(TIM11, CH2, PB15,  0, 0),
+    DEF_TIM(TIM1,  CH2, PA9,   0, 0),
+    DEF_TIM(TIM1,  CH1, PA8,   0, 0),
+    DEF_TIM(TIM8,  CH3, PC8,   0, 0),
+    DEF_TIM(TIM8,  CH2, PC7,   0, 0),
 };
 
 static FAST_DATA_ZERO_INIT timeUs_t lastSendUs;
@@ -88,55 +90,57 @@ static motorProtocolTypes_e motorProtocol;
 
 // DMA GPIO output buffer formatting
 
+// UM324 uses GPIO->ODATA register for output (direct pin state control).
+// Unlike STM32's BSRR (SET/RESET in one word), ODATA writes the desired
+// pin level directly: bit=1 → HIGH, bit=0 → LOW.
+//
+// Output buffer format (3 states per DShot symbol):
+//   State 0: All motors HIGH (ODATA = portMask)
+//   State 1: Bit-dependent (ODATA = pins where DShot bit=1 are HIGH)
+//   State 2: All motors LOW  (ODATA = 0)
+
 static void bbOutputDataInit(uint32_t *buffer, uint16_t portMask, bool inverted)
 {
-    uint32_t resetMask;
-    uint32_t setMask;
+    uint32_t highMask;
+    uint32_t lowMask;
 
     if (inverted) {
-        resetMask = portMask;
-        setMask = (portMask << 16);
+        highMask = 0;          // Inverted: HIGH = pin LOW
+        lowMask = portMask;    // Inverted: LOW = pin HIGH
     } else {
-        resetMask = (portMask << 16);
-        setMask = portMask;
+        highMask = portMask;   // Non-inverted: HIGH = pin HIGH
+        lowMask = 0;           // Non-inverted: LOW = pin LOW
     }
 
-    int symbol_index;
-
-    for (symbol_index = 0; symbol_index < MOTOR_DSHOT_FRAME_BITS; symbol_index++) {
-        buffer[symbol_index * MOTOR_DSHOT_STATE_PER_SYMBOL + 0] |= setMask ; // Always set all ports
-        buffer[symbol_index * MOTOR_DSHOT_STATE_PER_SYMBOL + 1] = 0;          // Reset bits are port dependent
-        buffer[symbol_index * MOTOR_DSHOT_STATE_PER_SYMBOL + 2] |= resetMask; // Always reset all ports
+    for (int symbol_index = 0; symbol_index < MOTOR_DSHOT_FRAME_BITS; symbol_index++) {
+        buffer[symbol_index * MOTOR_DSHOT_STATE_PER_SYMBOL + 0] |= highMask;
+        buffer[symbol_index * MOTOR_DSHOT_STATE_PER_SYMBOL + 1] = 0;  // Cleared, then filled by bbOutputDataSet
+        buffer[symbol_index * MOTOR_DSHOT_STATE_PER_SYMBOL + 2] |= lowMask;
     }
 
-    //
-    // output one more 'bit' that keeps the line level at idle to allow the ESC to sample the last bit
-    //
-    // Avoid CRC errors in the case of bi-directional d-shot.  CRC errors can occur if the output is
-    // transitioned to an input before the signal has been sampled by the ESC as the sampled voltage
-    // may be somewhere between logic-high and logic-low depending on how the motor output line is
-    // driven or floating.  On some MCUs it's observed that the voltage momentarily drops low on transition
-    // to input.
-
+    // Hold bits: keep at idle level after frame
     int hold_bit_index = MOTOR_DSHOT_FRAME_BITS * MOTOR_DSHOT_STATE_PER_SYMBOL;
-    buffer[hold_bit_index + 0] |= resetMask; // Always reset all ports
-    buffer[hold_bit_index + 1] = 0;          // Never any change
-    buffer[hold_bit_index + 2] = 0;          // Never any change
+    buffer[hold_bit_index + 0] |= lowMask;
+    buffer[hold_bit_index + 1] |= lowMask;
+    buffer[hold_bit_index + 2] |= lowMask;
 }
 
 static void bbOutputDataSet(uint32_t *buffer, int pinNumber, uint16_t value, bool inverted)
 {
-    uint32_t middleBit;
-
-    if (inverted) {
-        middleBit = (1 << (pinNumber + 0));
-    } else {
-        middleBit = (1 << (pinNumber + 16));
-    }
+    uint32_t pinBit = (1 << pinNumber);
 
     for (int pos = 0; pos < 16; pos++) {
-        if (!(value & 0x8000)) {
-            buffer[pos * 3 + 1] |= middleBit;
+        bool bitIsOne = (value & 0x8000) != 0;
+        if (inverted) {
+            // Inverted: bit=1 → pin LOW (0), bit=0 → pin HIGH (1)
+            if (!bitIsOne) {
+                buffer[pos * 3 + 1] |= pinBit;
+            }
+        } else {
+            // Non-inverted: bit=1 → pin HIGH (1), bit=0 → pin LOW (0)
+            if (bitIsOne) {
+                buffer[pos * 3 + 1] |= pinBit;
+            }
         }
         value <<= 1;
     }
@@ -144,7 +148,6 @@ static void bbOutputDataSet(uint32_t *buffer, int pinNumber, uint16_t value, boo
 
 static void bbOutputDataClear(uint32_t *buffer)
 {
-    // Middle position to no change
     for (int bitpos = 0; bitpos < 16; bitpos++) {
         buffer[bitpos * 3 + 1] = 0;
     }
@@ -152,7 +155,7 @@ static void bbOutputDataClear(uint32_t *buffer)
 
 // bbPacer management
 
-static bbPacer_t *bbFindMotorPacer(TIM_TypeDef *tim)
+static bbPacer_t *bbFindMotorPacer(timerResource_t *tim)
 {
     for (int i = 0; i < MAX_MOTOR_PACERS; i++) {
 
@@ -212,7 +215,7 @@ const timerHardware_t *dshotBitbangTimerGetAllocatedByNumberAndChannel(int8_t ti
 {
     for (int index = 0; index < usedMotorPorts; index++) {
         const timerHardware_t *bitbangTimer = bbPorts[index].timhw;
-        if (bitbangTimer && timerGetTIMNumber(bitbangTimer->tim) == timerNumber && bitbangTimer->channel == timerChannel && bbPorts[index].resourceOwner.owner) {
+        if (bitbangTimer && timerGetTIMNumber(bitbangTimer) == timerNumber && bitbangTimer->channel == timerChannel && bbPorts[index].resourceOwner.owner) {
             return bitbangTimer;
         }
     }
@@ -271,12 +274,12 @@ FAST_IRQ_HANDLER void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
 
     bbTIM_DMACmd(bbPort->timhw->tim, bbPort->dmaSource, DISABLE);
 
-    // if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
+    // DMA transfer complete — proceed with telemetry or next frame
     {
-        while (1) {};
+        if (0) { while (1) {}; } // debug trap (disabled)
     }
 
-    DMA_CLEAR_FLAG(descriptor, DMA_CLEARBLOCK_CLEARBLOCK_0);
+    DMA_CLEAR_FLAG(descriptor, CLEARBLOCK);
 
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
@@ -312,7 +315,7 @@ static void bbFindPacerTimer(void)
     for (int bbPortIndex = 0; bbPortIndex < MAX_SUPPORTED_MOTOR_PORTS; bbPortIndex++) {
         for (unsigned timerIndex = 0; timerIndex < ARRAYLEN(bbTimerHardware); timerIndex++) {
             const timerHardware_t *timer = &bbTimerHardware[timerIndex];
-            int timNumber = timerGetTIMNumber(timer->tim);
+            int timNumber = timerGetTIMNumber(timer);
             if ((motorConfig()->dev.useDshotBitbangedTimer == DSHOT_BITBANGED_TIMER_TIM1 && timNumber != 1)
                 || (motorConfig()->dev.useDshotBitbangedTimer == DSHOT_BITBANGED_TIMER_TIM8 && timNumber != 8)) {
                 continue;
@@ -329,7 +332,7 @@ static void bbFindPacerTimer(void)
 
             for (int index = 0; index < bbPortIndex; index++) {
                 const timerHardware_t* t = bbPorts[index].timhw;
-                if (timerGetTIMNumber(t->tim) == timNumber && timer->channel == t->channel) {
+                if (timerGetTIMNumber(t) == timNumber && timer->channel == t->channel) {
                     timerConflict = true;
                     break;
                 }
@@ -358,7 +361,7 @@ static void bbFindPacerTimer(void)
 
 static void bbTimebaseSetup(bbPort_t *bbPort, motorProtocolTypes_e dshotProtocolType)
 {
-    uint32_t timerclock = timerClock(bbPort->timhw->tim);
+    uint32_t timerclock = timerClockFromInstance(bbPort->timhw->tim);
 
     uint32_t outputFreq = getDshotBaseFrequency(dshotProtocolType);
     dshotFrameUs = 1000000 * 17 * 3 / outputFreq;
@@ -737,6 +740,8 @@ bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorCon
         bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, bbPuPdMode);
 #elif defined(STM32F7) || defined(STM32G4) || defined(STM32H7)
         bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_LOW, bbPuPdMode);
+#else
+        bbMotors[motorIndex].iocfg = IOCFG_OUT_PP;
 #endif
 
         IOInit(io, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));

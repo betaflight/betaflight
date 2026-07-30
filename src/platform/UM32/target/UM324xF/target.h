@@ -81,7 +81,7 @@
 #undef USE_SDCARD
 #undef USE_TRANSPONDER
 
-#undef USE_DSHOT_BITBANG
+
 #undef USE_DSHOT_DMAR
 
 

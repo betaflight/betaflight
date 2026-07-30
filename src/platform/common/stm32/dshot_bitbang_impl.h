@@ -128,7 +128,12 @@ typedef struct dmaRegCache_s {
     // TODO: N6 HPDMA/GPDMA register cache - placeholder for future implementation
     uint32_t placeholder;
 #elif defined(UM324xF)
-
+    uint32_t SAR;
+    uint32_t DAR;
+    uint32_t CTLL;
+    uint32_t CTLH;
+    uint32_t CFGL;
+    uint32_t CFGH;
 #else
 #error No MCU dependent code here
 #endif

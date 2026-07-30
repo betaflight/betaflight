@@ -182,7 +182,10 @@ MSC_SRC = \
             msc/usbd_storage_sd_spi.c
 
 SIZE_OPTIMISED_SRC += \
+            UM32/serial_usb_vcp.c \
+            drivers/inverter.c \
             drivers/bus_spi_config.c \
+            drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             common/stm32/bus_i2c_pinconfig.c \
             common/stm32/config_flash.c \

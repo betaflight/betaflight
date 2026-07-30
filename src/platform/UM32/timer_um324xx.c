@@ -54,10 +54,8 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
 const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     // Auto-generated from 'timer_def.h'
 	  DEF_TIM(TIM12, CH2, PB15, 0, 0),  //MOTOR PB15
-	  DEF_TIM(TIM13, CH2, PD8, 0, 0),   //MOTOR PD8, shared PC9
-	  DEF_TIM(TIM14, CH2, PE7, 0, 0),   //MOTOR PE7, shared PC8
 	  DEF_TIM(TIM1, CH1, PA8, 0, 0),    //MOTOR PA8
-	  DEF_TIM(TIM9, CH1, PE5, 0, 0),    //MOTOR PE5, shared PA9
+      DEF_TIM(TIM1, CH2, PA9, 0, 0),    //MOTOR PA9
         
       DEF_TIM(TIM2, CH2, PB3,  0, 0),
       DEF_TIM(TIM2, CH3, PB10, 0, 0),   //QFN76 MOTOR PB10
@@ -71,6 +69,7 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 
       DEF_TIM(TIM8, CH1, PC6, 0, 0),
       DEF_TIM(TIM8, CH2, PC7, 0, 0),
+      DEF_TIM(TIM8, CH3, PC8, 0, 0),
 
       DEF_TIM(TIM10, CH1, PC4, 0, 0),
       DEF_TIM(TIM10, CH2, PC5, 0, 0),
