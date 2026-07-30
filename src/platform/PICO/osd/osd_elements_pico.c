@@ -573,7 +573,7 @@ void renderCharAtEx(uint8_t ch, int px, int py, int bpc, int rows)
         return;
     }
 
-    if (px < 0 || py < 0 || px + (PICO_OSD_GLYPH_WIDTH * ((bpc + 1)/2)) > fb_nx || py + rows > fb_ny) {
+    if (px < 0 || py < 0 || px + (PICO_OSD_GLYPH_WIDTH / 2) * bpc > fb_nx || py + rows > fb_ny) {
         return;
     }
 
@@ -634,7 +634,8 @@ void renderCharAt(uint8_t ch, int px, int py)
     renderCharAtEx(ch, px, py, charMode.bpc, charMode.rows);
 }
 
-#else
+#else // #if OSD_FB_ENABLE_SMALLFONT
+// not OSD_FB_ENABLE_SMALLFONT, OSD_BYTES_PER_CHAR==3
 
 void renderCharAt(uint8_t ch, int px, int py)
 {
@@ -657,14 +658,6 @@ void renderCharAt(uint8_t ch, int px, int py)
         uint8_t mask2 = ~mask1;
 
         for (int j=0; j<PICO_OSD_GLYPH_HEIGHT; ++j) {
-#if OSD_BYTES_PER_CHAR == 2
-            uint32_t fontBits = (*((uint16_t *)fontp)) << xBitShift;
-            fontp += 3;
-            bufPtr[0] = (bufPtr[0] & mask2) | fontBits;
-            bufPtr[1] = fontBits >> 8;
-            bufPtr[2] = (bufPtr[2] & mask1) | fontBits >> 16;
-            bufPtr += PICO_OSD_BUF_WIDTH;
-#elif OSD_BYTES_PER_CHAR == 3
             uint32_t fontBits = fontp[2];
             fontBits = fontBits << 8 | fontp[1];
             fontBits = fontBits << 8 | fontp[0];
@@ -675,11 +668,10 @@ void renderCharAt(uint8_t ch, int px, int py)
             bufPtr[2] = fontBits >> 16;
             bufPtr[3] = (bufPtr[3] & mask1) | fontBits >> 24;
             bufPtr += PICO_OSD_BUF_WIDTH;
-#endif
         }
     }
 }
-#endif
+#endif // #if OSD_FB_ENABLE_SMALLFONT
 
 static bool drawBackgroundItem(osd_items_e item, uint8_t elemPosX, uint8_t elemPosY)
 {
@@ -979,7 +971,7 @@ static bool renderCharsComplete = true;
 #if OSD_FB_ENABLE_SMALLFONT
 static void renderCharAtAlignedEx(uint8_t ch, int px, int py, int bpc, int rows)
 {
-    // NOTE renderCharAtAligned assumes that the character at px, py willl fit into the frame buffer.
+    // NOTE renderCharAtAlignedEx assumes that the character at px, py willl fit into the frame buffer.
     // Aligned => dest pointer is aligned to 4 pixels == 1 byte, which is ok for LDRH, STRH on Cortex M33 at least
     // (legacy case, chars are 12 pixels wide == 3 bytes)
     // (Font pointer always starts at least 32-bit aligned for each char.)
@@ -1005,7 +997,10 @@ static void renderCharAtAlignedEx(uint8_t ch, int px, int py, int bpc, int rows)
 static void renderCharAtAligned(uint8_t ch, int px, int py)
 {
     charMode_t charMode = getCharMode(ch);
-    renderCharAtAlignedEx(ch, px, py - (charMode.rows - PICO_OSD_GLYPH_HEIGHT)/2, charMode.bpc, charMode.rows);
+    py = py - (charMode.rows - PICO_OSD_GLYPH_HEIGHT)/2; // Align tall symbols nicely with regular characters
+    if (!(px < 0 || py < 0 || px + (PICO_OSD_GLYPH_WIDTH / 2) * charMode.bpc > fb_nx || py + charMode.rows > fb_ny)) {
+        renderCharAtAlignedEx(ch, px, py, charMode.bpc, charMode.rows);
+    }
 }
 
 #else // OSD_FB_ENABLE_SMALLFONT

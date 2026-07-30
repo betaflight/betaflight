@@ -778,6 +778,17 @@ static void iterLineDataInit(iterLineData_t *data, int x1, int y1, int x2, int y
             data->fc = (float)y2 + 0.5f;
             data->maxIc = x1 + 1;
         }
+        // Horizontal lines must be clipped here, because they are implemented by direct writes
+        // with no further checks.
+        if (dy == 0) {
+            if (y1 < 0 || y1 >= fb_ny) {
+                data->ic = 0;
+                data->maxIc = 0; // 0 pixels (maxIc is exclusive)
+            } else {
+                data->ic = MAX(0, data->ic);
+                data->maxIc = MIN(fb_nx, data->maxIc);
+            }
+        }
     } else {
         data->delta = dy == 0 ? 0.0f : (float)dx / dy; // cope with case of a single point.
         if (y1 < y2) {
