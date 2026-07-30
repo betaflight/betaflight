@@ -600,6 +600,14 @@ static void bbUpdateComplete(void)
         SCB_CleanDCache_by_Addr(bbPort->portOutputBuffer, MOTOR_DSHOT_BUF_CACHE_ALIGN_BYTES);
 #endif
 
+        // Preserve non-motor pins: ODATA is a full-port write. Read current
+        // state and merge into every buffer word so other pins are undisturbed.
+        uint32_t otherPins = bbPort->gpio->ODATA & ~bbPort->gpioModeMask;
+        uint32_t *buf = bbPort->portOutputBuffer;
+        for (uint32_t j = 0; j < bbPort->portOutputCount; j++) {
+            buf[j] = (buf[j] & bbPort->gpioModeMask) | otherPins;
+        }
+
 #ifdef USE_DSHOT_TELEMETRY
         if (useDshotTelemetry) {
             if (bbPort->direction == DSHOT_BITBANG_DIRECTION_INPUT) {
@@ -610,7 +618,6 @@ static void bbUpdateComplete(void)
 #endif
         {
 #if defined(STM32G4)
-            // Using circular mode resets the counter one short, so explicitly reload
             bbSwitchToOutput(bbPort);
 #endif
         }

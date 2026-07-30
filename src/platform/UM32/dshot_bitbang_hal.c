@@ -133,7 +133,9 @@ void bbSwitchToOutput(bbPort_t * bbPort)
             }
         }
     }
-    bbPort->gpio->ODATA = idleODATA;
+    // Set idle output level via SET register (affects only motor pins,
+    // leaving other pins on the same port undisturbed).
+    bbPort->gpio->SET = idleODATA;
 
     // Switch pins to GPIO OUTPUT mode
     GPIO_InitTypeDef initOut = {
