@@ -167,7 +167,6 @@
 // D(DMAx, Stream, Channel)
 #endif
 
-#define DEF_TIM_DMA__BTCH_TIM12_CH2   D(1, 8,  1)  //MOTOR PB15
 #define DEF_TIM_DMA__BTCH_TIM1_CH1    D(2, 1,  1)  //MOTOR PA8
 #define DEF_TIM_DMA__BTCH_TIM1_CH2    D(2, 3,  2)  //MOTOR PA9
 
@@ -191,6 +190,7 @@
 #define DEF_TIM_DMA__BTCH_TIM10_CH3    D(2, 13, 3)  //PB2
 
 #define DEF_TIM_DMA__BTCH_TIM11_CH1   D(2, 12, 6)  //PB9
+#define DEF_TIM_DMA__BTCH_TIM12_CH2   D(1, 8,  1)  //MOTOR PB15
 #define DEF_TIM_DMA__BTCH_TIM12_CH3   D(1, 9,  2)  //PB12, QFN76 MOTOR 
 
 #define DEF_TIM_DMA__BTCH_TIM13_CH1   D(1, 8,  1)  //PD7
@@ -212,6 +212,17 @@
 #define DEF_TIM_DMA__BTCH_TIM12_UP    NONE
 #define DEF_TIM_DMA__BTCH_TIM13_UP    NONE
 #define DEF_TIM_DMA__BTCH_TIM14_UP    NONE
+
+// Dummy AF entries for NONE pin (pacer-only timers for DShot bitbang)
+// NONE
+#define DEF_TIM_AF__NONE__TCH_TIM1_CH1     D(1, 1)
+#define DEF_TIM_AF__NONE__TCH_TIM1_CH2     D(1, 1)
+#define DEF_TIM_AF__NONE__TCH_TIM1_CH3     D(1, 1)
+#define DEF_TIM_AF__NONE__TCH_TIM1_CH4     D(1, 1)
+#define DEF_TIM_AF__NONE__TCH_TIM8_CH1     D(3, 8)
+#define DEF_TIM_AF__NONE__TCH_TIM8_CH2     D(3, 8)
+#define DEF_TIM_AF__NONE__TCH_TIM8_CH3     D(3, 8)
+#define DEF_TIM_AF__NONE__TCH_TIM8_CH4     D(3, 8)
 
 // AF table
 //PORTA-8-8-5-3-24

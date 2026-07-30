@@ -78,10 +78,10 @@ uint8_t bbPuPdMode;
 FAST_DATA_ZERO_INIT timeUs_t dshotFrameUs;
 
 const timerHardware_t bbTimerHardware[] = {
-    DEF_TIM(TIM1,  CH2, PA9,   0, 0),
-    DEF_TIM(TIM1,  CH1, PA8,   0, 0),
-    DEF_TIM(TIM8,  CH3, PC8,   0, 0),
-    DEF_TIM(TIM8,  CH2, PC7,   0, 0),
+    DEF_TIM(TIM1, CH1, NONE,  0, 0),
+    DEF_TIM(TIM1, CH2, NONE,  0, 0),
+    DEF_TIM(TIM8, CH2, NONE,  0, 0),
+    DEF_TIM(TIM8, CH3, NONE,  0, 0),
 };
 
 static FAST_DATA_ZERO_INIT timeUs_t lastSendUs;

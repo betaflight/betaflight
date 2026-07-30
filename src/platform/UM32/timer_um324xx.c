@@ -53,7 +53,6 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
 #if defined(USE_TIMER_MGMT)
 const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     // Auto-generated from 'timer_def.h'
-	  DEF_TIM(TIM12, CH2, PB15, 0, 0),  //MOTOR PB15
 	  DEF_TIM(TIM1, CH1, PA8, 0, 0),    //MOTOR PA8
       DEF_TIM(TIM1, CH2, PA9, 0, 0),    //MOTOR PA9
         
@@ -76,6 +75,7 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
       DEF_TIM(TIM10, CH3, PB2, 0, 0),
 
       DEF_TIM(TIM11, CH1, PB9, 0, 0),
+	  DEF_TIM(TIM12, CH2, PB15, 0, 0),  //MOTOR PB15
       DEF_TIM(TIM12, CH3, PB12, 0, 0),
 
       DEF_TIM(TIM13, CH1, PD7, 0, 0),
