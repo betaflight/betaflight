@@ -1052,6 +1052,11 @@ bool usbCableIsInserted(void)
     return false;
 }
 
+bool usbCableIsActive(void)
+{
+    return false;
+}
+
 void EXTIInit(void)
 {
     // NOOP
