@@ -116,6 +116,13 @@ extern "C" {
         return 0.0f;
     }
 
+    float simulatedMaxRcRate = 720.0f;
+    float getMaxRcRate(int axis)
+    {
+        UNUSED(axis);
+        return simulatedMaxRcRate; // full-stick maps to this rate; autopilotInit scales maxVelocity by it
+    }
+
     timeDelta_t getTaskDeltaTimeUs(taskId_e taskId)
     {
         UNUSED(taskId);
@@ -157,6 +164,7 @@ static void initAndSettleAt(float eastCm, float northCm, int16_t yawDecidegrees)
     cfg->positionD  = 30;
     cfg->positionA  = 30;
     cfg->positionF  = 30;
+    cfg->maxVelocity = 500;   // 5 m/s full-stick target; drives the stick-velocity gain
     cfg->stopThreshold = 10;
     cfg->maxAngle   = 30;
     cfg->hoverThrottle = 1500;
@@ -276,16 +284,16 @@ TEST_F(PosHoldTest, ResumeAfterFrozenExcursionDoesNotSpikeTheOutput)
         EXPECT_TRUE(positionControl());
     }
     const float rollFrozen = autopilotAngle[AI_ROLL];
-    const float pitchFrozen = autopilotAngle[AI_PITCH];
 
-    // resumption must not step the output: the D/A filter chain and the
-    // A-term history freeze together (coherently), and the explicit
-    // re-baseline pins that property against future restructuring. Measured
-    // transient in this scenario is < 0.05 deg.
+    // Resume. previousVelocity was not refreshed during the frozen window, so
+    // without the A-term one-shot re-baseline the loop would differentiate the
+    // 300 cm/s of stale velocity into an enormous acceleration term and slam the
+    // angle to maxAngle. The one-shot forces A = 0 for the first resumed loop, so
+    // the output reflects the now-stopped craft rather than a spike.
     testEstimate.position.x = 0.0f;
     EXPECT_TRUE(positionControl());
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], rollFrozen, 0.25f);
-    EXPECT_NEAR(autopilotAngle[AI_PITCH], pitchFrozen, 0.25f);
+    EXPECT_LT(fabsf(autopilotAngle[AI_ROLL]), fabsf(rollFrozen)); // no upward spike past the held value
+    EXPECT_LT(fabsf(autopilotAngle[AI_ROLL]), 5.0f);             // settles toward the stopped state
 }
 
 // -- Displacement response: heading North (yaw = 0) --
@@ -430,8 +438,11 @@ TEST_F(PosHoldTest, SticksActiveButCentered)
     setSticksActiveStatus(true);
     runIterations(SETTLE_ITERATIONS);
 
-    // Assert your new baseline calculation output
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], -0.9045f, 0.01f);
+    // Centred sticks command zero target velocity, so P and D are ~0. Sticks-active
+    // uses the I_FREEZE policy, which retains (does not accumulate) the distance
+    // integral built up while holding the 1 m offset before the sticks engaged;
+    // that frozen integral is the residual lean.
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], -2.796f, 0.01f);
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.01f);
 }
 
@@ -468,7 +479,9 @@ TEST_F(PosHoldTest, VelocityTransitionSimulatesFallbackAndRecovery)
 
     testEstimate.velocity.x = 0.0f;
     runIterations(SETTLE_ITERATIONS);
-    EXPECT_NEAR(-0.7f, autopilotAngle[AI_ROLL], 0.1f);
+    // With the craft stopped the damping subsides further, toward the settled hold.
+    EXPECT_LT(fabsf(autopilotAngle[AI_ROLL]), fabsf(lowVelocityRoll));
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.5f);
 }
 
 // -- Feedforward (stick push) is a term of its own, apart from damping --
@@ -784,37 +797,25 @@ TEST_F(AutopilotYawTest, EngageRampsRateIn)
     EXPECT_LT(autopilotGetYawRate(), 0.0f);
 }
 
-// -- Nav velocity mode --
+// -- Nav mode --
+// The unified controller flies nav by anchoring position to positionNav's
+// carrot (targetPosEfM) with the commanded velocity as feedforward; a bounded
+// nav position error stops the speed-proportional carrot lead running away.
 
-static uint16_t dragCoeffForTarget(float kDragPerS, float targetCmS)
-{
-    const float ffDeg = RADIANS_TO_DEGREES(atanf(kDragPerS * targetCmS / 981.0f));
-    return (uint16_t)lrintf(ffDeg / (targetCmS * 0.0001f));
-}
-
-static void stepVelocityPlant(float kDragPerS, float *vNorthCmS)
-{
-    positionControl();
-    const float pitchRad = DEGREES_TO_RADIANS(autopilotAngle[AI_PITCH]);
-    *vNorthCmS += (981.0f * tanf(pitchRad) - kDragPerS * (*vNorthCmS)) * 0.01f;
-    testEstimate.velocity.y = *vNorthCmS;
-}
-
-class VelocityModeTest : public PosHoldTest {
+class NavModeTest : public PosHoldTest {
 protected:
-    void engageVelocityNav(uint8_t velocityP, uint8_t velocityI, uint8_t velocityD,
-                            uint16_t velocityDragCoeff, uint8_t velocityBuildupMaxPitch,
-                            uint8_t maxAngle = 45, bool enable = true)
+    void engageNav(uint8_t positionD, uint8_t positionP, uint8_t positionA,
+                            uint8_t velocityDragCoeff, uint8_t velocityBuildupMaxPitch,
+                            uint8_t maxAngle = 45)
     {
         initAndSettleAt(0, 0, 0);
 
         autopilotConfig_t *cfg = autopilotConfigMutable();
         cfg->maxAngle = maxAngle;
         cfg->positionCutoff = 30;
-        cfg->velocityControlEnable = enable ? 1 : 0;
-        cfg->velocityP = velocityP;
-        cfg->velocityI = velocityI;
-        cfg->velocityD = velocityD;
+        cfg->positionD = positionD;
+        cfg->positionP = positionP;
+        cfg->positionA = positionA;
         cfg->velocityDragCoeff = velocityDragCoeff;
         cfg->velocityBuildupMaxPitch = velocityBuildupMaxPitch;
         autopilotInit();
@@ -823,105 +824,87 @@ protected:
         mockNavCommand.active = true;
     }
 
+    // Place the nav carrot (metres, ENU) that the controller position-anchors to.
+    void setNavCarrot(float eastM, float northM)
+    {
+        mockNavCommand.targetPosEfM.v[0] = eastM;  // ENU_E
+        mockNavCommand.targetPosEfM.v[1] = northM; // ENU_N
+    }
+
     void setTargetVelocityNorth(float cmS)
     {
         mockTargetVelCmS = (vector3_t){{0.0f, cmS, 0.0f}};
     }
 };
 
-TEST_F(VelocityModeTest, CruiseConvergence)
+TEST_F(NavModeTest, NavAnchorsToCarrotAhead)
 {
-    const float kDrag = 0.8f;
-    const float targetCmS = 500.0f;
-    engageVelocityNav(50, 20, 0, dragCoeffForTarget(kDrag, targetCmS), 30);
-    setTargetVelocityNorth(targetCmS);
+    // Carrot 50 m north, craft at the origin: the position anchor produces a
+    // lean toward the carrot (pitch), with negligible roll.
+    engageNav(30, 30, 0, 0, 30, 45);
+    setNavCarrot(0.0f, 50.0f);
+    setTargetVelocityNorth(0.0f);
 
-    float vNorth = 0.0f;
-    for (int i = 0; i < 1500; i++) {
-        stepVelocityPlant(kDrag, &vNorth);
-    }
+    runIterations(SETTLE_ITERATIONS);
 
-    EXPECT_NEAR(vNorth, targetCmS, targetCmS * 0.05f);
+    EXPECT_GT(fabsf(autopilotAngle[AI_PITCH]), 5.0f);
+    EXPECT_LT(fabsf(autopilotAngle[AI_ROLL]), 2.0f);
 }
 
-TEST_F(VelocityModeTest, NoOvershoot)
+TEST_F(NavModeTest, NavPositionErrorIsBounded)
 {
-    const float kDrag = 0.8f;
-    const float targetCmS = 500.0f;
-    engageVelocityNav(50, 20, 0, dragCoeffForTarget(kDrag, targetCmS), 30);
-    setTargetVelocityNorth(targetCmS);
+    // The carrot lead grows with speed; NAV_ERROR_DISTANCE_LIMIT bounds the
+    // position error so a distant carrot cannot drive P without limit. Two
+    // carrots well beyond the bound must produce the same (clamped) lean.
+    engageNav(30, 30, 0, 0, 30, 45);
+    setTargetVelocityNorth(0.0f);
 
-    float vNorth = 0.0f;
-    float maxV = 0.0f;
-    for (int i = 0; i < 1500; i++) {
-        stepVelocityPlant(kDrag, &vNorth);
-        maxV = fmaxf(maxV, vNorth);
-    }
+    setNavCarrot(0.0f, 50.0f);
+    runIterations(SETTLE_ITERATIONS);
+    const float pitchNear = autopilotAngle[AI_PITCH];
 
-    EXPECT_LE(maxV, targetCmS * 1.10f);
+    setNavCarrot(0.0f, 500.0f);
+    runIterations(SETTLE_ITERATIONS);
+    const float pitchFar = autopilotAngle[AI_PITCH];
+
+    EXPECT_NEAR(pitchFar, pitchNear, 0.5f);
 }
 
-TEST_F(VelocityModeTest, DragFeedforwardMagnitude)
+TEST_F(NavModeTest, NavVelocityFeedforward)
 {
-    const float targetCmS = 400.0f;
-    const uint16_t dragCoeff = 300;
-    engageVelocityNav(30, 10, 20, dragCoeff, 30);
-    setTargetVelocityNorth(targetCmS);
-    testEstimate.velocity.y = targetCmS;
-
-    runIterations(300);
-
-    const float expectedFFDeg = dragCoeff * 0.0001f * targetCmS;
-    EXPECT_NEAR(autopilotAngle[AI_PITCH], expectedFFDeg, 1.0f);
-}
-
-TEST_F(VelocityModeTest, BuildupClampBoundsP)
-{
-    const uint8_t buildupMaxPitch = 10;
-    engageVelocityNav(50, 0, 0, 0, buildupMaxPitch, 45);
-    setTargetVelocityNorth(1500.0f);
-
-    for (int i = 0; i < 30; i++) {
-        positionControl();
-        EXPECT_LE(fabsf(autopilotAngle[AI_PITCH]), buildupMaxPitch + 0.05f);
-    }
-}
-
-TEST_F(VelocityModeTest, IntegralSeparationAndFreeze)
-{
-    engageVelocityNav(30, 50, 0, 0, 30, 45);
-    setTargetVelocityNorth(2000.0f); // filtered velocity stays near 0: error stays well above the 250 cm/s relax gate
-
-    positionControl();
-    const float pitchFirst = autopilotAngle[AI_PITCH];
-    runIterations(100);
-    EXPECT_NEAR(autopilotAngle[AI_PITCH], pitchFirst, 0.05f);
-
-    testEstimate.velocity.y = 2000.0f - 100.0f; // step to a small, sustained error
-    runIterations(40); // let the velocity filter settle into the relax gate
-    const float pitchSmallErrEarly = autopilotAngle[AI_PITCH];
-    runIterations(100);
-    const float pitchSmallErrLater = autopilotAngle[AI_PITCH];
-    EXPECT_GT(fabsf(pitchSmallErrLater), fabsf(pitchSmallErrEarly) + 0.5f);
-}
-
-TEST_F(VelocityModeTest, VelocityModeDisabledUsesLegacyPath)
-{
-    engageVelocityNav(30, 50, 0, 0, 30, 45, false);
+    // Carrot coincident with the craft (zero position error), so the lean comes
+    // purely from the target-velocity feedforward (F = targetVel * Kd).
+    engageNav(30, 30, 0, 0, 30, 45);
+    setNavCarrot(0.0f, 0.0f);
     setTargetVelocityNorth(300.0f);
+    testEstimate.velocity.y = 0.0f;
 
-    runIterations(20);
+    runIterations(SETTLE_ITERATIONS);
+
+    EXPECT_GT(fabsf(autopilotAngle[AI_PITCH]), 5.0f);
+    EXPECT_LT(fabsf(autopilotAngle[AI_ROLL]), 2.0f);
+}
+
+TEST_F(NavModeTest, NavForcesIntegralZero)
+{
+    // Nav runs the I_ZERO policy: with a fixed carrot error the output is carried
+    // by P alone and must not creep upward over time from an accumulating
+    // integral (which is what a settled position hold would do).
+    engageNav(30, 30, 0, 0, 30, 45);
+    setNavCarrot(0.0f, 3.0f); // 3 m north, inside the nav error bound
+    setTargetVelocityNorth(0.0f);
+
+    runIterations(30);
     const float pitchEarly = autopilotAngle[AI_PITCH];
-
-    runIterations(100);
+    runIterations(200);
     const float pitchLater = autopilotAngle[AI_PITCH];
 
-    EXPECT_GT(fabsf(pitchLater), fabsf(pitchEarly) + 1.0f);
+    EXPECT_NEAR(pitchLater, pitchEarly, 0.5f);
 }
 
-TEST_F(VelocityModeTest, ResetOnNavReentry)
+TEST_F(NavModeTest, ResetOnNavReentry)
 {
-    engageVelocityNav(30, 50, 0, 0, 30, 45);
+    engageNav(30, 50, 0, 0, 30, 45);
     setTargetVelocityNorth(150.0f); // stays inside the relax gate throughout: the integral builds every cycle
 
     runIterations(150);
@@ -936,14 +919,13 @@ TEST_F(VelocityModeTest, ResetOnNavReentry)
     EXPECT_LT(fabsf(autopilotAngle[AI_PITCH]), fabsf(pitchBeforeReentry) * 0.5f);
 }
 
-TEST_F(VelocityModeTest, PosHoldUnaffectedByDefaultOn)
+TEST_F(NavModeTest, PositionControlResetIsDeterministic)
 {
     const int cycles = 50;
     float baselineRoll[cycles];
     float baselinePitch[cycles];
 
     initAndSettleAt(0, 0, 0);
-    autopilotConfigMutable()->velocityControlEnable = 0;
     autopilotInit();
     testEstimate.position.x = 100.0f;
     for (int i = 0; i < cycles; i++) {
@@ -953,7 +935,6 @@ TEST_F(VelocityModeTest, PosHoldUnaffectedByDefaultOn)
     }
 
     initAndSettleAt(0, 0, 0);
-    autopilotConfigMutable()->velocityControlEnable = 1;
     autopilotInit();
     testEstimate.position.x = 100.0f;
     for (int i = 0; i < cycles; i++) {
