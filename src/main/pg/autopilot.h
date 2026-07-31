@@ -68,19 +68,24 @@ typedef struct autopilotConfig_s {
     uint8_t stopThreshold;       // cm/s, speed below which braking captures a position hold target
     uint8_t maxAngle;
 
-    // Velocity-based position control with drag compensation (nav path only; pos-hold is unaffected)
-    uint8_t velocityControlEnable;    // 0=legacy pseudo-distance→angle, 1=velocity-PID→angle (default 1)
-    uint8_t velocityP;                // velocity loop P gain, scaled by 10 (default 50 = 5.0)
-    uint8_t velocityI;                // velocity loop I gain, scaled by 10 (default 10 = 1.0)
-    uint8_t velocityD;                // velocity loop D gain, scaled by 10 (default 5 = 0.5)
-    uint16_t velocityDragCoeff;       // linear drag feedforward: degrees = coeff * target cm/s, scaled by 10000 (default 50 = 0.0050, 2.5 deg at 5 m/s)
-    uint16_t maxVelocity;             // cm/s, maximum velocity setpoint (default 1000 = 10 m/s)
+    // Drag feedforward and velocity setpoint cap (maxVelocity also sets the full-stick velocity target in position hold)
+    uint8_t velocityDragCoeff;        // linear drag feedforward, 0-100: degrees = coeff * 0.0002 * velocity cm/s (default 50 = 5 deg at 5 m/s)
+    uint16_t maxVelocity;             // cm/s, maximum velocity setpoint (default 500 = 5 m/s)
 
     // Waypoint navigation parameters
     uint16_t waypointArrivalRadius;   // cm, arrival detection radius (default 500)
     uint16_t waypointHoldRadius;      // cm, hold pattern radius (default 200)
     uint16_t stickDeadband;           // RC units (0-500), deadband for pilot override (default 50)
     uint16_t throttleDeadband;        // RC units (0-500), throttle override deadband (default 50)
+
+    // Leg-line carrot path tracking and turn-angle cornering (en-route FLYOVER/FLYBY legs)
+    uint16_t navCornerSpeed;          // cm/s, minimum speed carried across a waypoint gate (default 220)
+    uint16_t navCornerDeltaV;         // cm/s, constant velocity-change budget per corner (default 440)
+    uint16_t navDecel;                // cm/s^2, approach deceleration for the corner speed profile (default 100)
+    uint16_t navAccel;                // cm/s^2, carrot speed slew rate (default 250)
+    uint8_t  navCarrotLeadTime;       // deciseconds of travel the carrot leads the craft by (default 12 = 1.2s)
+    uint16_t navCarrotLeadMax;        // cm, maximum carrot lead ahead of the craft (default 2500)
+    uint16_t navPreturnDist;          // cm, approach zone over which the nose blends onto the next leg (default 1500)
 
     // Yaw control parameters
     uint8_t yawMode;                  // autopilotYawMode_e (default YAW_MODE_VELOCITY)

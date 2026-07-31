@@ -98,6 +98,10 @@
 #define MMFLASH_DATA_ZERO_INIT     FAST_DATA_ZERO_INIT
 #endif
 
+#ifndef RAM_CODE
+#define RAM_CODE
+#endif
+
 #ifndef MMFLASH_CODE
 #define MMFLASH_CODE
 #endif
@@ -872,14 +876,28 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_FLIGHT_PLAN 0
 #endif
 
-// Failsafe GPS rescue flown as a synthesised flight-plan mission instead of
-// the legacy gps_rescue controller. Opt-in; the BOXGPSRESCUE switch keeps
-// flying legacy rescue either way.
+// GPS rescue (both the BOXGPSRESCUE switch and the failsafe procedure) flown as
+// a synthesised flight-plan mission through the unified autopilot, instead of
+// the legacy gps_rescue controller. Default-on wherever the flight-plan engine
+// is available; targets without it (or wing, or flash-constrained) fall back to
+// the legacy rescue controller.
 #if !defined(ENABLE_RESCUE_PLAN)
+#if ENABLE_FLIGHT_PLAN && defined(USE_GPS_RESCUE) && !defined(USE_WING)
+#define ENABLE_RESCUE_PLAN 1
+#else
 #define ENABLE_RESCUE_PLAN 0
+#endif
 #endif
 #if ENABLE_RESCUE_PLAN && !(ENABLE_FLIGHT_PLAN && defined(USE_GPS_RESCUE) && !defined(USE_WING))
 #error "ENABLE_RESCUE_PLAN requires ENABLE_FLIGHT_PLAN, USE_GPS_RESCUE and !USE_WING"
+#endif
+
+// Flight-plan OSD minimap: draws the stored mission, home and the flown trail
+// as a character-cell map. Follows the flight-plan executor's multirotor-only
+// gate and additionally needs an OSD and GPS. Derived here so every consumer
+// (pg, osd, cli, core) shares one gate.
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING) && defined(USE_OSD) && defined(USE_GPS)
+#define USE_OSD_NAV_MAP
 #endif
 
 #if defined(USE_POSITION_HOLD) && !(defined(USE_GPS) || defined(USE_OPTICALFLOW))

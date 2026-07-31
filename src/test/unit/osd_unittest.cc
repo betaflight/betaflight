@@ -1488,6 +1488,22 @@ TEST_F(OsdTest, TestBatteryUsageCapacityZero)
         SYM_PB_EMPTY,
         SYM_PB_EMPTY,
         SYM_PB_EMPTY);
+
+    // ATTR
+    simulationMahDrawn = 999999;
+    simulationBatteryState = BATTERY_OK;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+    displayPortTestBufferAttrNoBits(2, 1, DISPLAYPORT_SEVERITY_WARNING | DISPLAYPORT_SEVERITY_CRITICAL);
+    simulationBatteryState = BATTERY_WARNING;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+    displayPortTestBufferAttrBits(2, 1, DISPLAYPORT_SEVERITY_WARNING);
+    simulationBatteryState = BATTERY_CRITICAL;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+    displayPortTestBufferAttrBits(2, 1, DISPLAYPORT_SEVERITY_CRITICAL);
+    
 }
 
 // STUBS

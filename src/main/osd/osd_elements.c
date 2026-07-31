@@ -160,6 +160,7 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/pos_hold.h"
 
 #include "io/gps.h"
 #include "io/vtx.h"
@@ -169,6 +170,9 @@
 #include "osd/osd_custom_text.h"
 #endif
 #include "osd/osd_elements.h"
+#ifdef USE_OSD_NAV_MAP
+#include "osd/osd_nav_map.h"
+#endif
 #include "osd/osd_warnings.h"
 
 #include "pg/flight_plan.h"
@@ -610,7 +614,7 @@ static uint8_t osdGetHeadingIntoDiscreteDirections(int heading, unsigned directi
     return direction; // return segment number
 }
 
-static uint8_t osdGetDirectionSymbolFromHeading(int heading)
+uint8_t osdGetDirectionSymbolFromHeading(int heading)
 {
     heading = osdGetHeadingIntoDiscreteDirections(heading, 16);
 
@@ -1138,6 +1142,13 @@ static void osdElementEscRpmFreq(osdElementParms_t *element)
 static void osdElementFlymode(osdElementParms_t *element)
 {
     // Note that flight mode display has precedence in what to display, FS first, ACRO last
+#if ENABLE_RESCUE_PLAN
+    // GPS rescue flown as an autopilot mission annunciates ahead of the
+    // generic failsafe indication, so the pilot sees a rescue.
+    if (flightPlanNavIsRescuePlanActive()) {
+        strcpy(element->buff, "N-RESC");
+    } else
+#endif
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
         strcpy(element->buff, "!FS!");
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
@@ -1174,6 +1185,15 @@ static void osdElementReadyMode(osdElementParms_t *element)
         strcpy(element->buff, "READY");
     }
 }
+
+#ifdef USE_POSITION_HOLD
+static void osdElementPosHoldReady(osdElementParms_t *element)
+{
+    if (posHoldReady()) {
+        strcpy(element->buff, "POSH RDY");
+    }
+}
+#endif
 
 #ifdef USE_ACC
 static void osdElementGForce(osdElementParms_t *element)
@@ -1564,8 +1584,16 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
     const int usedCapacity = getMAhDrawn();
     int displayBasis = usedCapacity;
 
-    if (mAhDrawn >= osdConfig()->cap_alarm) {
-        element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
+    if (currentBatteryProfile->batteryCapacity) {
+        if (mAhDrawn >= osdConfig()->cap_alarm) {
+            element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
+        }
+    } else {
+        if (getBatteryState() == BATTERY_CRITICAL) {
+            element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
+        } else if (getBatteryState() == BATTERY_WARNING) {
+            element->attr = DISPLAYPORT_SEVERITY_WARNING;
+        }
     }
 
     switch (element->type) {
@@ -2044,6 +2072,9 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_DISARMED,
     OSD_NUMERICAL_HEADING,
     OSD_READY_MODE,
+#ifdef USE_POSITION_HOLD
+    OSD_POS_HOLD_READY,
+#endif
 #ifdef USE_VARIO
     OSD_NUMERICAL_VARIO,
 #endif
@@ -2157,6 +2188,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_WARNINGS]                = osdElementWarnings,
     [OSD_AVG_CELL_VOLTAGE]        = osdElementAverageCellVoltage,
     [OSD_READY_MODE]              = osdElementReadyMode,
+#ifdef USE_POSITION_HOLD
+    [OSD_POS_HOLD_READY]          = osdElementPosHoldReady,
+#endif
 #ifdef USE_GPS
     [OSD_GPS_LON]                 = osdElementGpsCoordinate,
     [OSD_GPS_LAT]                 = osdElementGpsCoordinate,
@@ -2169,6 +2203,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_WP_DIRECTION]            = osdElementWpDirection,
     [OSD_WP_NEXT_NUMBER]          = osdElementWpNextNumber,
     [OSD_WP_ETA]                  = osdElementWpEta,
+#endif
+#ifdef USE_OSD_NAV_MAP
+    [OSD_NAV_MAP]                 = osdElementNavMap,
 #endif
 #endif
     [OSD_DEBUG]                   = osdElementDebug,
@@ -2337,6 +2374,9 @@ void osdAddActiveElements(void)
         osdAddActiveElement(OSD_WP_DIRECTION);
         osdAddActiveElement(OSD_WP_NEXT_NUMBER);
         osdAddActiveElement(OSD_WP_ETA);
+#endif
+#ifdef USE_OSD_NAV_MAP
+        osdAddActiveElement(OSD_NAV_MAP);
 #endif
     }
 #endif // GPS
@@ -2720,14 +2760,19 @@ void osdUpdateAlarms(void)
 
     if (getMAhDrawn() >= osdConfig()->cap_alarm) {
         SET_BLINK(OSD_MAH_DRAWN);
-        SET_BLINK(OSD_MAIN_BATT_USAGE);
         SET_BLINK(OSD_REMAINING_TIME_ESTIMATE);
     } else {
         CLR_BLINK(OSD_MAH_DRAWN);
-        CLR_BLINK(OSD_MAIN_BATT_USAGE);
         CLR_BLINK(OSD_REMAINING_TIME_ESTIMATE);
     }
 
+    if ((currentBatteryProfile->batteryCapacity && getMAhDrawn() >= osdConfig()->cap_alarm) ||
+        (!currentBatteryProfile->batteryCapacity && getBatteryState() != BATTERY_OK)) {
+        SET_BLINK(OSD_MAIN_BATT_USAGE);
+    } else {
+        CLR_BLINK(OSD_MAIN_BATT_USAGE);
+    }
+   
     if ((alt >= osdConfig()->alt_alarm) && ARMING_FLAG(ARMED)) {
         SET_BLINK(OSD_ALTITUDE);
     } else {

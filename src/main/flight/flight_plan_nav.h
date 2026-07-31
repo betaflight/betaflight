@@ -43,6 +43,7 @@ typedef enum {
     FP_ABORT_STALLED,       // no progress toward the target within the stall window
     FP_ABORT_FLYAWAY,       // distance to target grew past the flyaway margin
     FP_ABORT_HEADING,       // rescue heading recovery did not converge in time
+    FP_ABORT_MAG_FAULT,     // course-over-ground disagreed with heading at speed: parked wings-level
 } flightPlanAbortReason_e;
 
 void flightPlanNavInit(void);
@@ -101,6 +102,24 @@ bool flightPlanNavIsInjectedPlanActive(void);
 // the failsafe caller then degrades to auto-landing.
 bool flightPlanNavStageRescuePlan(void);
 bool flightPlanNavIsRescuePlanActive(void);
+
+// Altitude-only emergency descent for a switch-invoked rescue that cannot stage
+// (no home/fix) or whose plan aborts (flyaway/stall/GPS loss/heading). alt-hold
+// drives a baro-only descent - valid with the XY position estimate invalid -
+// while this detects touchdown and disarms (DISARM_REASON_LANDING), matching the
+// legacy emergency-descent behaviour. Call every cycle with the current request;
+// the query drives the alt-hold descent branch and the OSD annunciation.
+void flightPlanNavRescueDescent(bool request, timeUs_t currentTimeUs);
+bool flightPlanNavIsRescueDescentActive(void);
+
+// Vertical-velocity cap (cm/s) the alt-hold coupling applies while a rescue is
+// active: ascendRate climbing, descendRate on the LAND leg and fallback descent.
+// Returns 0 when no rescue is flying, leaving the alt-hold climbRate in force.
+float flightPlanNavGetRescueVerticalRateCmS(void);
+#else
+static inline bool flightPlanNavIsRescuePlanActive(void) { return false; }
+static inline bool flightPlanNavIsRescueDescentActive(void) { return false; }
+static inline float flightPlanNavGetRescueVerticalRateCmS(void) { return 0.0f; }
 #endif
 
 // Single observer slot for "waypoint reached" — invoked with the index of the

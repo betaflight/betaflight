@@ -170,8 +170,12 @@ void spiPinConfigure(const struct spiPinConfig_s *pConfig)
 static void spiSetClockFromSpeed(spi_inst_t *spi, uint16_t speed)
 {
     uint32_t freq = spiCalculateClock(speed);
-    bprintf("spiSetClockFromSpeed %p %d -> %d",spi, speed, freq);
-    spi_set_baudrate(spi, freq);
+    uint32_t baudrate = spi_set_baudrate(spi, freq);
+#ifdef PICO_TRACE
+    bprintf("spiSetClockFromSpeed %p %d -> %d, achieved %d",spi, speed, freq, baudrate);
+#else
+    UNUSED(baudrate);
+#endif
 }
 
 /*
@@ -318,6 +322,7 @@ void spiInitBusDMA(void)
         dmaSetHandler(DMA_CHANNEL_TO_IDENTIFIER(bus->dmaRx->channel), spiRxIrqHandler, NVIC_PRIO_SPI_DMA, 0);
 
         // We got the required resources, so we can use DMA on this bus
+        bprintf("PICO SPI init bus DMA true for device %d", device);
         bus->useDMA = true;
     }
 }
