@@ -185,6 +185,8 @@
 #define DEF_TIM_DMA__BTCH_TIM8_CH2    D(2, 2,  3)  //PC7
 #define DEF_TIM_DMA__BTCH_TIM8_CH3    D(2, 2,  3)  //PC8
 
+#define DEF_TIM_DMA__BTCH_TIM9_CH1    D(2, 10, 2)  //MOTOR PE5, shared PA9
+
 #define DEF_TIM_DMA__BTCH_TIM10_CH1    D(2, 11, 7)  //PC4,  QFN76 MOTOR 
 #define DEF_TIM_DMA__BTCH_TIM10_CH2    D(2, 12, 3)  //PC5
 #define DEF_TIM_DMA__BTCH_TIM10_CH3    D(2, 13, 3)  //PB2
@@ -194,7 +196,10 @@
 #define DEF_TIM_DMA__BTCH_TIM12_CH3   D(1, 9,  2)  //PB12, QFN76 MOTOR 
 
 #define DEF_TIM_DMA__BTCH_TIM13_CH1   D(1, 8,  1)  //PD7
+#define DEF_TIM_DMA__BTCH_TIM13_CH2   D(1, 9,  2)  //MOTOR PD8, shared PC9
 #define DEF_TIM_DMA__BTCH_TIM13_CH4   D(1, 11, 0)  //PD10
+
+#define DEF_TIM_DMA__BTCH_TIM14_CH2   D(1, 10, 3)  //MOTOR PE7, shared PC8
 
 
 // TIM_UP table
@@ -347,7 +352,7 @@
 #define DEF_TIM_AF__PE12__TCH_TIM14_CH1     D(9, 14)
 
 
-#define FULL_TIMER_CHANNEL_COUNT    (22)
+#define FULL_TIMER_CHANNEL_COUNT    (25)
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(9) | TIM_N(10) | TIM_N(11) | TIM_N(12) | TIM_N(13) | TIM_N(14))
 #define HARDWARE_TIMER_DEFINITION_COUNT 14
 

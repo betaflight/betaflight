@@ -70,6 +70,8 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
       DEF_TIM(TIM8, CH2, PC7, 0, 0),
       DEF_TIM(TIM8, CH3, PC8, 0, 0),
 
+	  DEF_TIM(TIM9, CH1, PE5, 0, 0),    //MOTOR PE5, shared PA9
+
       DEF_TIM(TIM10, CH1, PC4, 0, 0),
       DEF_TIM(TIM10, CH2, PC5, 0, 0),
       DEF_TIM(TIM10, CH3, PB2, 0, 0),
@@ -79,7 +81,10 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
       DEF_TIM(TIM12, CH3, PB12, 0, 0),
 
       DEF_TIM(TIM13, CH1, PD7, 0, 0),
+	  DEF_TIM(TIM13, CH2, PD8, 0, 0),   //MOTOR PD8, shared PC9
       DEF_TIM(TIM13, CH4, PD10, 0, 0),
+
+	  DEF_TIM(TIM14, CH2, PE7, 0, 0),   //MOTOR PE7, shared PC8
 };
 #endif
 
