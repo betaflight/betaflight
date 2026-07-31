@@ -326,6 +326,58 @@ static void SDMMC_Config(void)
 }
 
 
+/* Number of polls to wait for the CMD line to go idle after a command. The identification
+ * sequence runs at 400kHz, where a 48-bit response takes ~120us, so this is generous.
+ */
+#define SD_CMD_IDLE_TIMEOUT 100000
+
+/**
+ * Issue a command, working around a race in SDMMC_WaitCommandDone().
+ *
+ * That function returns as soon as it sees any bit of SDHOST_CommandFlag, clears it, and
+ * then reads the response registers unconditionally. A command interrupt left over from the
+ * previous command therefore makes it report success for a command that is still in flight
+ * and hand back an empty response - which is what CMD8 hits, arriving immediately after
+ * CMD0. The caller then rejects a perfectly good card because the check pattern reads zero.
+ *
+ * Clearing the command flags before issuing removes the stale flag, and waiting for
+ * SDHOST_PRESTS_CMDINHC afterwards guarantees the response has actually landed.
+ */
+static Status_card sdSendCommand(sd_card_t *card, uint32_t index, uint32_t argument, SDMMC_CardRspType responseType)
+{
+    SDMMC_ClrFlag(card->SDHOSTx, (uint32_t)SDHOST_CommandFlag);
+
+    const Status_card status = SD_NormalCMD_Send(card, index, argument, responseType);
+
+    if (status != Status_Success) {
+        return status;
+    }
+
+    bool cmdLineIdle = false;
+
+    for (uint32_t spins = 0; spins < SD_CMD_IDLE_TIMEOUT; spins++) {
+        if ((card->SDHOSTx->PRESTS & SDHOST_PRESTS_CMDINHC) == 0) {
+            cmdLineIdle = true;
+            break;
+        }
+    }
+
+    if (!cmdLineIdle) {
+        // The command never released the CMD line, so nothing can be trusted about it -
+        // including the success SDMMC_WaitCommandDone() reported.
+        return Status_Fail;
+    }
+
+    // Pick up a response that landed after SDMMC_WaitCommandDone() had already sampled the
+    // registers. Only R2 needs the multi-word unpacking, which it has already done.
+    if ((responseType != CARD_ResponseTypeNone) && (responseType != CARD_ResponseTypeR2)
+            && (card->command.response[0] == 0)) {
+        card->command.response[0] = card->SDHOSTx->CMDRSP0;
+    }
+
+    return status;
+}
+
 /**
  *\*\name   SD_DefaultSpeedModeInit.
  *\*\fun    Configure to communicate in Default Speed mode.
@@ -443,14 +495,14 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
     /** A series of commands begins to begin the card identification process. **/
     
     /* CMD0 */
-    if(SD_NormalCMD_Send(card,SDMMC_GoIdleState,0x00,CARD_ResponseTypeNone) != Status_Success)
+    if(sdSendCommand(card,SDMMC_GoIdleState,0x00,CARD_ResponseTypeNone) != Status_Success)
     {
         return Status_Fail;
     }
     
     /* CMD8 */
     //arg[19:16] = 0001b 2.7V~3.6V,arg[15:8] = 0xAA check pattern
-    if(SD_NormalCMD_Send(card,SD_SendInterfaceCondition,0x1AAU,CARD_ResponseTypeR7) != Status_Success)
+    if(sdSendCommand(card,SD_SendInterfaceCondition,0x1AAU,CARD_ResponseTypeR7) != Status_Success)
     {
         return Status_Fail;
     }
@@ -532,7 +584,7 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
     
     
     /* CMD2 */
-    if(SD_NormalCMD_Send(card,SDMMC_AllSendCid,0x00,CARD_ResponseTypeR2) != Status_Success)
+    if(sdSendCommand(card,SDMMC_AllSendCid,0x00,CARD_ResponseTypeR2) != Status_Success)
     {
         return Status_Fail;
     }
@@ -545,7 +597,7 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
     
     
     /* CMD3 */
-    if(SD_NormalCMD_Send(card,SD_SendRelativeAddress,0x00,CARD_ResponseTypeR6) != Status_Success)
+    if(sdSendCommand(card,SD_SendRelativeAddress,0x00,CARD_ResponseTypeR6) != Status_Success)
     {
         return Status_Fail;
     }
@@ -553,7 +605,7 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
     
     
     /* CMD9 */
-    if(SD_NormalCMD_Send(card,SDMMC_SendCsd,card->sd_card_information.rca << 16,CARD_ResponseTypeR2) != Status_Success)
+    if(sdSendCommand(card,SDMMC_SendCsd,card->sd_card_information.rca << 16,CARD_ResponseTypeR2) != Status_Success)
     {
         return Status_Fail;
     }
@@ -565,7 +617,7 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
     SD_Handle.CSD[3] = card->command.response[0U];
     
     /* CMD7 */
-    if(SD_NormalCMD_Send(card,SDMMC_SelectCard,card->sd_card_information.rca << 16,CARD_ResponseTypeR1b) != Status_Success)
+    if(sdSendCommand(card,SDMMC_SelectCard,card->sd_card_information.rca << 16,CARD_ResponseTypeR1b) != Status_Success)
     {
         return Status_Fail;
     }
@@ -583,7 +635,7 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
     }
     
     /* CMD16 */
-    if(SD_NormalCMD_Send(card,SDMMC_SetBlockLength,FSL_SDMMC_DEFAULT_BLOCK_SIZE,CARD_ResponseTypeR1) != Status_Success)
+    if(sdSendCommand(card,SDMMC_SetBlockLength,FSL_SDMMC_DEFAULT_BLOCK_SIZE,CARD_ResponseTypeR1) != Status_Success)
     {
         return Status_Fail;
     }
