@@ -322,6 +322,12 @@ bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t data)
     return i2cWriteBuffer(device, addr_, reg_, 1, &data);
 }
 
+bool i2cWriteBufferBlocking(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t *buf)
+{
+    // i2cWriteBuffer is already blocking on ESP32
+    return i2cWriteBuffer(device, addr_, reg_, len, buf);
+}
+
 bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t *buf)
 {
     if (device == I2CINVALID || device >= I2CDEV_COUNT || len == 0 || !buf) {

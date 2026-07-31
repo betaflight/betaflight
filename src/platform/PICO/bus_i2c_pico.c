@@ -149,6 +149,19 @@ bool i2cWrite(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t data)
     return true;
 }
 
+bool i2cWriteBufferBlocking(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf)
+{
+    if (!i2cWriteBuffer(device, addr, reg, len, buf)) {
+        return false;
+    }
+
+    while (i2cBusy(device, NULL)) {
+        // Wait until transfer is complete
+    }
+
+    return true;
+}
+
 bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data)
 {
     // We don't ever write more bytes than will fit in the FIFO, but, just in case, validate args

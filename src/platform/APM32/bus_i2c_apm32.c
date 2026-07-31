@@ -117,6 +117,34 @@ bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t data)
     return true;
 }
 
+// Blocking write
+bool i2cWriteBufferBlocking(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t *buf)
+{
+    if (device == I2CINVALID || device >= I2CDEV_COUNT) {
+        return false;
+    }
+
+    I2C_HandleTypeDef *pHandle = &i2cDevice[device].halHandle->hal;
+
+    if (!pHandle->Instance) {
+        return false;
+    }
+
+    HAL_StatusTypeDef status;
+
+    if (reg_ == 0xFF) {
+        status = DAL_I2C_Master_Transmit(pHandle, addr_ << 1, buf, len, I2C_TIMEOUT_SYS_TICKS);
+    } else {
+        status = DAL_I2C_Mem_Write(pHandle, addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT, buf, len, I2C_TIMEOUT_SYS_TICKS);
+    }
+
+    if (status != DAL_OK) {
+        return i2cHandleHardwareFailure(device);
+    }
+
+    return true;
+}
+
 // Non-blocking write
 bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 {

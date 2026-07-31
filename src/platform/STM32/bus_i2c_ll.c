@@ -411,6 +411,20 @@ bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len
     return true;
 }
 
+bool i2cWriteBufferBlocking(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t *buf)
+{
+    if (!i2cWriteBuffer(device, addr_, reg_, len, buf)) {
+        return false;
+    }
+
+    bool error = false;
+    while (i2cBusy(device, &error)) {
+        // i2cBusy recovers on timeout
+    }
+
+    return !error;
+}
+
 // Blocking read
 bool i2cRead(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
