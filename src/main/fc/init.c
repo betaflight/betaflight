@@ -229,27 +229,18 @@ void exFlashInit(void)
     IO_t exPin = IO_NONE;
 
     // free pin
-#if (DEFAULT_DSHOT_BITBANG == DSHOT_BITBANG_OFF)
-    exPin = IOGetByTag(IO_TAG(PC8));
-#else
+    // exPin = IOGetByTag(IO_TAG(PC8));
     exPin = IOGetByTag(IO_TAG(PE7));
-#endif
     IOInit(exPin,  OWNER_SYSTEM,  0);
     IOConfigGPIO(exPin, IOCFG_IN_FLOATING);
 
-#if (DEFAULT_DSHOT_BITBANG == DSHOT_BITBANG_OFF)
-    exPin = IOGetByTag(IO_TAG(PC9));
-#else
+    // exPin = IOGetByTag(IO_TAG(PC9));
     exPin = IOGetByTag(IO_TAG(PD8));
-#endif
     IOInit(exPin,  OWNER_SYSTEM,  0);
     IOConfigGPIO(exPin, IOCFG_IN_FLOATING);
 
-#if (DEFAULT_DSHOT_BITBANG == DSHOT_BITBANG_OFF)
-    exPin = IOGetByTag(IO_TAG(PA9));
-#else
+    // exPin = IOGetByTag(IO_TAG(PA9));
     exPin = IOGetByTag(IO_TAG(PE5));
-#endif
     IOInit(exPin,  OWNER_SYSTEM,  0);
     IOConfigGPIO(exPin, IOCFG_IN_FLOATING);
 
