@@ -405,6 +405,13 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
     
     /* Enable SD card power and clock */
     SDMMC_EnablePower(card->SDHOSTx,ENABLE);
+
+    /* The SD physical layer spec requires at least 1ms after VDD is stable before the host
+     * may start the identification sequence. Without this the card is still powering up when
+     * CMD0 goes out and it never answers CMD8.
+     */
+    SDMMC_Delay(2);
+
     if(((SD_XIN_CLK % 400000U) != 0)  || ((SD_XIN_CLK/400000U)%2 != 0))
     {
         if(SD_XIN_CLK <= card->card_workmode.busClock_Hz)
@@ -421,8 +428,18 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
         persacle_value = SD_XIN_CLK/400000U/2;
     }
     
-    SDMMC_SetSdClock(card->SDHOSTx,DISABLE,persacle_value);  //100MHz/250 = 400KHz
-     
+    /* SDMMC_SetSdClock() reports whether the clock actually went stable; ignoring it means a
+     * dead clock only shows up later as an unexplained command timeout.
+     */
+    if (SDMMC_SetSdClock(card->SDHOSTx,DISABLE,persacle_value) != SDMMC_SUCCESS) {  //100MHz/250 = 400KHz
+        return Status_Fail;
+    }
+
+    /* The card needs at least 74 clock cycles with CMD high before it will respond, which is
+     * ~185us at 400kHz.
+     */
+    SDMMC_Delay(1);
+
     /** A series of commands begins to begin the card identification process. **/
     
     /* CMD0 */
@@ -616,8 +633,13 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
     {
         persacle_value = SD_XIN_CLK/card->card_workmode.busClock_Hz/2;
     }
-    SDMMC_SetSdClock(card->SDHOSTx,DISABLE,persacle_value);
-     
+    /* Switching to the working clock can fail the same way as the 400kHz setup above;
+     * continuing would leave the card configured for a clock that is not running.
+     */
+    if (SDMMC_SetSdClock(card->SDHOSTx,DISABLE,persacle_value) != SDMMC_SUCCESS) {
+        return Status_Fail;
+    }
+
     /* This function is not necessary. Depending on the hardware and card, 
        you can decide whether to enable TX CLK delay and how much delay to use */
     SDMMC_EnableManualTuningOut(card->SDMMCx,8,ENABLE);
