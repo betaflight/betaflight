@@ -1128,11 +1128,8 @@ bool crsfTelemetryUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTi
 {
     UNUSED(currentDeltaTimeUs);
 
-    if (!telemetryResponsePending) {
-        return false;
-    }
-
-    // Ad-hoc responses must be serviced as soon as possible, not rate-limited.
+    // Ad-hoc replies span several CRSF payloads and need one task run per chunk, so they are
+    // exempt from both the rate limit and telemetryResponsePending.
 #if defined(USE_MSP_OVER_TELEMETRY)
     if (mspReplyPending) {
         return true;
@@ -1140,6 +1137,10 @@ bool crsfTelemetryUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTi
 #endif
     if (deviceInfoReplyPending) {
         return true;
+    }
+
+    if (!telemetryResponsePending) {
+        return false;
     }
 
     static timeUs_t lastTelemetryCheckTimeUs = 0;
@@ -1332,15 +1333,9 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
     // in between the RX frames.
     crsfRxSendTelemetryData();
 
-#if defined(USE_CRSF_V3)
-    // only send responses on recipt of full frames, this ensures the telemetry rate is never faster
-    // than the frame rate
-    if (!telemetryResponsePending) {
-        return;
-    }
-#endif
-
-    // Send ad-hoc response frames as soon as possible
+    // Send ad-hoc response frames as soon as possible, ahead of the gate below: a chunked reply
+    // needs one pass per chunk, and inbound frames can be too sparse to clock them out. ELRS
+    // WiFi passthrough has no RC link, so its only inbound frames are the MSP requests themselves.
 #if defined(USE_MSP_OVER_TELEMETRY)
     if (mspReplyPending) {
         mspReplyPending = handleCrsfMspFrameBuffer(&crsfSendMspResponse);
@@ -1365,6 +1360,15 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
         crsfLastCycleTime = currentTimeUs; // reset telemetry timing due to ad-hoc request
         return;
     }
+
+#if defined(USE_CRSF_V3)
+    // Only send periodic telemetry on receipt of a full frame, so the telemetry rate is never
+    // faster than the frame rate. Skipped on fixed-rate links, where it would instead throttle
+    // telemetry down to the inbound frame rate.
+    if (crsfRxIsEventDrivenTelemetry() && !telemetryResponsePending) {
+        return;
+    }
+#endif
 
 #if defined(USE_CRSF_CMS_TELEMETRY)
     if (crsfDisplayPortScreen()->reset) {
@@ -1429,7 +1433,7 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
     if (processCrsf(currentTimeUs, crsfLastCycleTime)) {
         crsfLastCycleTime = currentTimeUs;
 #ifdef USE_CRSF_ACCGYRO_TELEMETRY
-    } else if (crsfAccGyroEnabled() && isCrsfV3Running) {  // let the inbound request rate dictate the outbound rate
+    } else if (crsfAccGyroEnabled() && crsfRxIsEventDrivenTelemetry()) {  // let the inbound request rate dictate the outbound rate
         sbuf_t crsfPayloadBuf;
         sbuf_t *dst = &crsfPayloadBuf;
         crsfInitializeFrame(dst);
