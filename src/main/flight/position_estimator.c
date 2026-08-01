@@ -73,14 +73,25 @@
 #define R_ACCEL_XY          2000.0f
 #define R_ACCEL_Z           20000.0f
 
-// How fast the accelerometer bias state may be re-learned, as a random walk. The bias is
-// physically slow (attitude error, calibration, thermal drift), so this only has to be
-// large enough to follow it, and there is a real penalty for going higher: the bias state
-// competes with the acceleration state to explain the same reading, so an over-permissive
-// value lets it absorb genuine manoeuvres. Above roughly 10 the velocity estimate visibly
-// loses both amplitude and phase lead. At this value a standing bias is tracked to within
-// a few cm/s^2 while velocity behaviour is indistinguishable from having no bias state.
-#define Q_ACCEL_BIAS        1.0f        // (cm/s^2)^2 per second
+// How fast the accelerometer bias state may be re-learned, as a random walk.
+//
+// Note that this does not control how much a sustained manoeuvre leaks into the bias.
+// Acceleration held in one direction is genuinely indistinguishable from a bias, so some
+// of it is always absorbed: 400 cm/s^2 held for 2 s reaches about 77 cm/s^2 even with this
+// set to zero, and 4 s pins the bias at ACCEL_BIAS_LIMIT whatever the value. Only a
+// manoeuvre-magnitude gate would prevent that, which is not implemented.
+//
+// What this value does control is how contaminated the bias is left when aiding stops,
+// which is the case that matters, because the whole point of the state is to bound velocity
+// during a dropout. For a learned 30 cm/s^2 bias followed by a hard 2 s manoeuvre and then
+// 10 s without GPS, velocity error is 0.3 m/s here against 14 m/s at 1.0 — and with no bias
+// state at all it is 9.7 m/s, so too permissive a value is worse than not having the state.
+//
+// The cost of being this slow is only the time to re-learn a bias that genuinely changes
+// mid-flight, tens of seconds. Initial acquisition after arming is unaffected at roughly
+// 1 s because that is driven by INITIAL_ACCEL_BIAS_VAR, and the dominant physical cause is
+// horizon tilt error that drifts over minutes.
+#define Q_ACCEL_BIAS        0.03f       // (cm/s^2)^2 per second
 
 // Initial covariance values
 #define INITIAL_POS_VAR     10000.0f    // cm^2  (1m uncertainty)

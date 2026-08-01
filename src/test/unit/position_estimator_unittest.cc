@@ -42,11 +42,14 @@ PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
 
 #include "gtest/gtest.h"
 
+// Mirrors Q_ACCEL_BIAS in position_estimator.c so these tests exercise the shipped tuning.
+static const float TEST_Q_ACCEL_BIAS = 0.03f;
+
 TEST(PositionFilterTest, AccelerationMeasurementDrivesAllStates)
 {
     positionKalman_t kf;
     kalmanInit(&kf, 0.0f, 0.0f, 0.0f,
-        10000.0f, 10000.0f, 1000000.0f, 1000.0f, 1.0f);
+        10000.0f, 10000.0f, 1000000.0f, 1000.0f, TEST_Q_ACCEL_BIAS);
 
     for (int i = 0; i < 100; i++) {
         kalmanPredict(&kf, 0.01f);
@@ -68,8 +71,8 @@ TEST(PositionFilterTest, AccelerometerAuthorityOverVelocityIsIndependentOfGpsTru
     const float dt = 0.01f;
     positionKalman_t tight;
     positionKalman_t loose;
-    kalmanInit(&tight, 0.0f, 0.0f, 0.0f, 10000.0f, 10000.0f, 1000000.0f, 3000.0f, 1.0f);
-    kalmanInit(&loose, 0.0f, 0.0f, 0.0f, 10000.0f, 10000.0f, 1000000.0f, 3000.0f, 1.0f);
+    kalmanInit(&tight, 0.0f, 0.0f, 0.0f, 10000.0f, 10000.0f, 1000000.0f, 3000.0f, TEST_Q_ACCEL_BIAS);
+    kalmanInit(&loose, 0.0f, 0.0f, 0.0f, 10000.0f, 10000.0f, 1000000.0f, 3000.0f, TEST_Q_ACCEL_BIAS);
 
     // Settle both at rest, differing only in how tightly GPS velocity is fused.
     for (int i = 0; i < 500; i++) {
@@ -103,7 +106,7 @@ TEST(PositionFilterTest, AccelerometerBiasIsEstimatedAndKeptOutOfVelocity)
     const float dt = 0.01f;
     const float injectedBias = 40.0f;
     positionKalman_t kf;
-    kalmanInit(&kf, 0.0f, 0.0f, 0.0f, 10000.0f, 10000.0f, 1000000.0f, 3000.0f, 1.0f);
+    kalmanInit(&kf, 0.0f, 0.0f, 0.0f, 10000.0f, 10000.0f, 1000000.0f, 3000.0f, TEST_Q_ACCEL_BIAS);
 
     // Stationary craft: aiding says the position and velocity are zero, but the
     // accelerometer reads a constant offset.
@@ -126,7 +129,7 @@ TEST(PositionFilterTest, LearnedBiasBoundsVelocityDriftWhenAidingStops)
     const float dt = 0.01f;
     const float injectedBias = 40.0f;
     positionKalman_t kf;
-    kalmanInit(&kf, 0.0f, 0.0f, 0.0f, 10000.0f, 10000.0f, 1000000.0f, 3000.0f, 1.0f);
+    kalmanInit(&kf, 0.0f, 0.0f, 0.0f, 10000.0f, 10000.0f, 1000000.0f, 3000.0f, TEST_Q_ACCEL_BIAS);
 
     for (int i = 0; i < 6000; i++) {
         kalmanPredict(&kf, dt);
@@ -143,6 +146,89 @@ TEST(PositionFilterTest, LearnedBiasBoundsVelocityDriftWhenAidingStops)
 
     // Integrating the raw 40 cm/s^2 offset unchecked for 15 s would reach 600 cm/s.
     EXPECT_LT(fabsf(kalmanGetVelocity(&kf)), 100.0f);
+}
+
+// Runs a hard manoeuvre with aiding that confirms it, and returns how much of it the bias
+// state absorbed and where the acceleration state ended up.
+static void runConfirmedManoeuvre(positionKalman_t *kf, float accel, int cycles,
+                                  float dt, float *worstBias, float *trueVelOut)
+{
+    float trueVel = 0.0f;
+    float truePos = 0.0f;
+    *worstBias = 0.0f;
+    for (int i = 0; i < cycles; i++) {
+        trueVel += accel * dt;
+        truePos += trueVel * dt;
+        kalmanPredict(kf, dt);
+        kalmanUpdateAcceleration(kf, accel, 2000.0f, dt);
+        kalmanUpdatePosition(kf, truePos, 500.0f);
+        kalmanUpdateVelocity(kf, trueVel, 2000.0f);
+        const float bias = fabsf(kalmanGetAccelBias(kf));
+        if (bias > *worstBias) {
+            *worstBias = bias;
+        }
+    }
+    *trueVelOut = trueVel;
+}
+
+// Acceleration held in one direction is genuinely ambiguous with a bias, so some of it is
+// always absorbed regardless of Q_ACCEL_BIAS. What must hold is that the acceleration state
+// still carries the bulk of a manoeuvre the aiding has confirmed, and that a manoeuvre of
+// realistic length does not drive the bias all the way to its clamp.
+TEST(PositionFilterTest, ConfirmedManoeuvreIsAttributedMostlyToAcceleration)
+{
+    const float dt = 0.01f;
+    const float manoeuvreAccel = 400.0f;
+    positionKalman_t kf;
+    kalmanInit(&kf, 0.0f, 0.0f, 0.0f, 10000.0f, 10000.0f, 1000000.0f, 3000.0f, TEST_Q_ACCEL_BIAS);
+
+    for (int i = 0; i < 500; i++) {
+        kalmanPredict(&kf, dt);
+        kalmanUpdateAcceleration(&kf, 0.0f, 2000.0f, dt);
+        kalmanUpdatePosition(&kf, 0.0f, 500.0f);
+        kalmanUpdateVelocity(&kf, 0.0f, 2000.0f);
+    }
+
+    float worstBias = 0.0f;
+    float trueVel = 0.0f;
+    runConfirmedManoeuvre(&kf, manoeuvreAccel, 200, dt, &worstBias, &trueVel);
+
+    // Around 77 cm/s^2 leaks into the bias over 2 s, against 306 of 400 held by the
+    // acceleration state. Sustaining the manoeuvre for 4 s does reach the clamp.
+    EXPECT_LT(worstBias, 120.0f);
+    EXPECT_GT(kalmanGetAcceleration(&kf), 2.0f * worstBias);
+}
+
+// The case Q_ACCEL_BIAS is chosen for. A bias learned in the hover, then contaminated by a
+// hard manoeuvre, must still leave velocity bounded once aiding disappears. Too permissive a
+// value fails this badly: 1.0 gives around 1400 cm/s here, worse than the 970 cm/s that
+// having no bias state at all produces.
+TEST(PositionFilterTest, DropoutAfterManoeuvreKeepsVelocityBounded)
+{
+    const float dt = 0.01f;
+    const float injectedBias = 30.0f;
+    positionKalman_t kf;
+    kalmanInit(&kf, 0.0f, 0.0f, 0.0f, 10000.0f, 10000.0f, 1000000.0f, 3000.0f, TEST_Q_ACCEL_BIAS);
+
+    // Hover long enough to learn the bias.
+    for (int i = 0; i < 6000; i++) {
+        kalmanPredict(&kf, dt);
+        kalmanUpdateAcceleration(&kf, injectedBias, 2000.0f, dt);
+        kalmanUpdatePosition(&kf, 0.0f, 500.0f);
+        kalmanUpdateVelocity(&kf, 0.0f, 2000.0f);
+    }
+
+    float worstBias = 0.0f;
+    float trueVel = 0.0f;
+    runConfirmedManoeuvre(&kf, injectedBias + 400.0f, 200, dt, &worstBias, &trueVel);
+
+    // Aiding disappears. The craft coasts, so true velocity holds at trueVel.
+    for (int i = 0; i < 1000; i++) {
+        kalmanPredict(&kf, dt);
+        kalmanUpdateAcceleration(&kf, injectedBias, 2000.0f, dt);
+    }
+
+    EXPECT_LT(fabsf(kalmanGetVelocity(&kf) - trueVel), 200.0f);
 }
 
 extern "C" {
