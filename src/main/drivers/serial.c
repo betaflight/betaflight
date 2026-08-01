@@ -24,6 +24,7 @@
 #include "platform.h"
 
 #include "io/serial.h"
+#include "scheduler/scheduler.h"
 #include "serial.h"
 
 void serialPrint(serialPort_t *instance, const char *str)
@@ -131,7 +132,10 @@ void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count)
 
 void serialWriteBufBlocking(serialPort_t *instance, const uint8_t *data, int count)
 {
-    while (serialTxBytesFree(instance) < (uint32_t)count) /* NOP */;
+    while (serialTxBytesFree(instance) < (uint32_t)count) {
+        // Waiting on TX backpressure is not task execution time.
+        schedulerIgnoreTaskExecTime();
+    }
     serialWriteBuf(instance, data, count);
 }
 
