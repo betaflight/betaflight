@@ -33,6 +33,7 @@ typedef struct positionEstimate3d_s {
     vector3_t position;        // cm, ENU
     vector3_t velocity;        // cm/s, ENU
     vector3_t acceleration;    // cm/s^2, ENU
+    vector3_t accelBias;       // cm/s^2, ENU; estimated accelerometer bias, mostly attitude error
     float trustXY;             // 0-1, derived from KF XY covariance
     float trustZ;              // 0-1, derived from KF Z covariance
     bool isValidXY;            // true if at least one XY measurement source active

@@ -67,11 +67,20 @@
 #endif
 
 // Constant-acceleration model tuning. Jerk process noise allows acceleration
-// to change; accelerometer R accounts for vibration, bias, and attitude error.
-#define Q_JERK_XY           50000.0f
+// to change; accelerometer R accounts for vibration and residual attitude error.
+#define Q_JERK_XY           3000.0f
 #define Q_JERK_Z            20000.0f
-#define R_ACCEL_XY          50000.0f
+#define R_ACCEL_XY          2000.0f
 #define R_ACCEL_Z           20000.0f
+
+// How fast the accelerometer bias state may be re-learned, as a random walk. The bias is
+// physically slow (attitude error, calibration, thermal drift), so this only has to be
+// large enough to follow it, and there is a real penalty for going higher: the bias state
+// competes with the acceleration state to explain the same reading, so an over-permissive
+// value lets it absorb genuine manoeuvres. Above roughly 10 the velocity estimate visibly
+// loses both amplitude and phase lead. At this value a standing bias is tracked to within
+// a few cm/s^2 while velocity behaviour is indistinguishable from having no bias state.
+#define Q_ACCEL_BIAS        1.0f        // (cm/s^2)^2 per second
 
 // Initial covariance values
 #define INITIAL_POS_VAR     10000.0f    // cm^2  (1m uncertainty)
@@ -80,7 +89,12 @@
 
 // Measurement noise base values (R)
 #define R_GPS_POS_BASE       500.0f      // cm^2 at pDOP=1.0
-#define R_GPS_VEL_BASE       100.0f      // (cm/s)^2 at pDOP=1.0 //  low value to tightly track GPS but allow some acc influence
+// GPS velocity is internally lagged and arrives as steps. Trusting it tightly pins the
+// estimate to that lagged value and cancels the accelerometer's contribution, which is
+// the faster and, over short intervals, more reliable source of velocity change. This is
+// deliberately loose so the accelerometer sets the short-term shape of the velocity
+// estimate while GPS anchors it against drift.
+#define R_GPS_VEL_BASE      2000.0f      // (cm/s)^2 at pDOP=1.0
 #define R_GPS_ALT_BASE     60000.0f      // cm^2 at pDOP=1.0, higher favours other sensors over GPS
 #define R_BARO_ALT          1500.0f     // cm^2 lower value favours rapid baro changes
 #define R_RANGEFINDER_ALT    100.0f     // cm^2
@@ -249,12 +263,13 @@ void positionEstimatorInit(void)
     qJerkXY = Q_JERK_XY * ((autopilotConfig()->positionA > 1) ?  (30.0f / autopilotConfig()->positionA ) : 15.0f);
     // when user reduces positionA, , they want more accelerometer influence (up to 15x more), and vice versa
 #endif
-    kalmanInit(&kfEast, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, qJerkXY);
-    kalmanInit(&kfNorth, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, qJerkXY);
-    kalmanInit(&kfUp, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, Q_JERK_Z);
+    kalmanInit(&kfEast, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, qJerkXY, Q_ACCEL_BIAS);
+    kalmanInit(&kfNorth, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, qJerkXY, Q_ACCEL_BIAS);
+    kalmanInit(&kfUp, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, Q_JERK_Z, Q_ACCEL_BIAS);
     estimate.position = (vector3_t){{0, 0, 0}};
     estimate.velocity = (vector3_t){{0, 0, 0}};
     estimate.acceleration = (vector3_t){{0, 0, 0}};
+    estimate.accelBias = (vector3_t){{0, 0, 0}};
     estimate.trustXY = 0.0f;
     estimate.trustZ = 0.0f;
     estimate.isValidXY = false;
@@ -304,8 +319,8 @@ void positionEstimatorInit(void)
 void positionEstimatorEnableXY(bool enable)
 {
     if (enable && !xyEnabled) {
-        kalmanInit(&kfEast, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, qJerkXY);
-        kalmanInit(&kfNorth, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, qJerkXY);
+        kalmanInit(&kfEast, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, qJerkXY, Q_ACCEL_BIAS);
+        kalmanInit(&kfNorth, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, qJerkXY, Q_ACCEL_BIAS);
         estimate.position.v[ENU_E] = 0.0f;
         estimate.position.v[ENU_N] = 0.0f;
         estimate.velocity.v[ENU_E] = 0.0f;
@@ -801,14 +816,14 @@ void positionEstimatorUpdate(void)
     // measure zero acceleration so covariance continues to evolve without
     // integrating small gravity-removal errors.
     kalmanPredict(&kfUp, dt);
-    kalmanUpdateAcceleration(&kfUp, ARMING_FLAG(ARMED) ? accelUp : 0.0f, R_ACCEL_Z);
+    kalmanUpdateAcceleration(&kfUp, ARMING_FLAG(ARMED) ? accelUp : 0.0f, R_ACCEL_Z, dt);
 
     // XY axes: only when a consumer is active
     if (xyEnabled && ARMING_FLAG(ARMED)) {
         kalmanPredict(&kfEast, dt);
         kalmanPredict(&kfNorth, dt);
-        kalmanUpdateAcceleration(&kfEast, accelEast, R_ACCEL_XY);
-        kalmanUpdateAcceleration(&kfNorth, accelNorth, R_ACCEL_XY);
+        kalmanUpdateAcceleration(&kfEast, accelEast, R_ACCEL_XY, dt);
+        kalmanUpdateAcceleration(&kfNorth, accelNorth, R_ACCEL_XY, dt);
     }
 
     // Feed sensor measurements (order does not matter)
@@ -831,6 +846,11 @@ void positionEstimatorUpdate(void)
     estimate.acceleration.v[ENU_E] = kalmanGetAcceleration(&kfEast);
     estimate.acceleration.v[ENU_N] = kalmanGetAcceleration(&kfNorth);
     estimate.acceleration.v[ENU_U] = kalmanGetAcceleration(&kfUp);
+    // Exported for diagnostics rather than for control. A bias that fails to settle, or
+    // that sits at the clamp, points to an accelerometer or attitude problem upstream.
+    estimate.accelBias.v[ENU_E] = kalmanGetAccelBias(&kfEast);
+    estimate.accelBias.v[ENU_N] = kalmanGetAccelBias(&kfNorth);
+    estimate.accelBias.v[ENU_U] = kalmanGetAccelBias(&kfUp);
 
     // Validity: based on recent measurement updates
     if (xyEnabled) {
@@ -903,10 +923,11 @@ bool positionEstimatorIsHeadingRequired(void)
 
 void positionEstimatorResetZ(void)
 {
-    kalmanInit(&kfUp, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, Q_JERK_Z);
+    kalmanInit(&kfUp, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, Q_JERK_Z, Q_ACCEL_BIAS);
     estimate.position.v[ENU_U] = 0.0f;
     estimate.velocity.v[ENU_U] = 0.0f;
     estimate.acceleration.v[ENU_U] = 0.0f;
+    estimate.accelBias.v[ENU_U] = 0.0f;
     estimate.isValidZ = false;
     lastZMeasurementUs = 0;
 #ifdef USE_GPS
@@ -928,14 +949,16 @@ void positionEstimatorResetZ(void)
 
 void positionEstimatorResetXY(void)
 {
-    kalmanInit(&kfEast, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, qJerkXY);
-    kalmanInit(&kfNorth, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, qJerkXY);
+    kalmanInit(&kfEast, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, qJerkXY, Q_ACCEL_BIAS);
+    kalmanInit(&kfNorth, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, qJerkXY, Q_ACCEL_BIAS);
     estimate.position.v[ENU_E] = 0.0f;
     estimate.position.v[ENU_N] = 0.0f;
     estimate.velocity.v[ENU_E] = 0.0f;
     estimate.velocity.v[ENU_N] = 0.0f;
     estimate.acceleration.v[ENU_E] = 0.0f;
     estimate.acceleration.v[ENU_N] = 0.0f;
+    estimate.accelBias.v[ENU_E] = 0.0f;
+    estimate.accelBias.v[ENU_N] = 0.0f;
     estimate.isValidXY = false;
     lastXYMeasurementUs = 0;
 #ifdef USE_GPS

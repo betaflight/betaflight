@@ -42,20 +42,107 @@ PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
 
 #include "gtest/gtest.h"
 
-TEST(PositionFilterTest, AccelerationMeasurementDrivesAllThreeStates)
+TEST(PositionFilterTest, AccelerationMeasurementDrivesAllStates)
 {
     positionKalman_t kf;
     kalmanInit(&kf, 0.0f, 0.0f, 0.0f,
-        10000.0f, 10000.0f, 1000000.0f, 1000.0f);
+        10000.0f, 10000.0f, 1000000.0f, 1000.0f, 1.0f);
 
     for (int i = 0; i < 100; i++) {
         kalmanPredict(&kf, 0.01f);
-        kalmanUpdateAcceleration(&kf, 100.0f, 100.0f);
+        kalmanUpdateAcceleration(&kf, 100.0f, 100.0f, 0.01f);
     }
 
-    EXPECT_NEAR(kalmanGetAcceleration(&kf), 100.0f, 1.0f);
-    EXPECT_NEAR(kalmanGetVelocity(&kf), 99.0f, 2.0f);
-    EXPECT_NEAR(kalmanGetPosition(&kf), 49.0f, 2.0f);
+    // With no position or velocity aiding the split between acceleration and bias is
+    // unobservable, so only their sum is pinned to the accelerometer.
+    EXPECT_NEAR(kalmanGetAcceleration(&kf) + kalmanGetAccelBias(&kf), 100.0f, 1.0f);
+    EXPECT_GT(kalmanGetVelocity(&kf), 0.0f);
+    EXPECT_GT(kalmanGetPosition(&kf), 0.0f);
+}
+
+// Velocity is driven by integrating the measured acceleration, so one update must move
+// velocity by measuredAccel * dt whatever the covariance happens to be. Previously this
+// share was covariance-weighted and collapsed as GPS velocity was trusted more tightly.
+TEST(PositionFilterTest, AccelerometerAuthorityOverVelocityIsIndependentOfGpsTrust)
+{
+    const float dt = 0.01f;
+    positionKalman_t tight;
+    positionKalman_t loose;
+    kalmanInit(&tight, 0.0f, 0.0f, 0.0f, 10000.0f, 10000.0f, 1000000.0f, 3000.0f, 1.0f);
+    kalmanInit(&loose, 0.0f, 0.0f, 0.0f, 10000.0f, 10000.0f, 1000000.0f, 3000.0f, 1.0f);
+
+    // Settle both at rest, differing only in how tightly GPS velocity is fused.
+    for (int i = 0; i < 500; i++) {
+        kalmanPredict(&tight, dt);
+        kalmanPredict(&loose, dt);
+        kalmanUpdateAcceleration(&tight, 0.0f, 2000.0f, dt);
+        kalmanUpdateAcceleration(&loose, 0.0f, 2000.0f, dt);
+        kalmanUpdateVelocity(&tight, 0.0f, 20.0f);
+        kalmanUpdateVelocity(&loose, 0.0f, 20000.0f);
+    }
+
+    kalmanPredict(&tight, dt);
+    kalmanPredict(&loose, dt);
+    const float tightBefore = kalmanGetVelocity(&tight);
+    const float looseBefore = kalmanGetVelocity(&loose);
+    kalmanUpdateAcceleration(&tight, 200.0f, 2000.0f, dt);
+    kalmanUpdateAcceleration(&loose, 200.0f, 2000.0f, dt);
+
+    const float tightStep = kalmanGetVelocity(&tight) - tightBefore;
+    const float looseStep = kalmanGetVelocity(&loose) - looseBefore;
+
+    EXPECT_NEAR(tightStep, 200.0f * dt, 0.05f);
+    EXPECT_NEAR(looseStep, 200.0f * dt, 0.05f);
+    EXPECT_NEAR(tightStep, looseStep, 0.01f);
+}
+
+// A standing accelerometer bias (attitude error, calibration, thermal drift) must be
+// estimated rather than integrated into velocity.
+TEST(PositionFilterTest, AccelerometerBiasIsEstimatedAndKeptOutOfVelocity)
+{
+    const float dt = 0.01f;
+    const float injectedBias = 40.0f;
+    positionKalman_t kf;
+    kalmanInit(&kf, 0.0f, 0.0f, 0.0f, 10000.0f, 10000.0f, 1000000.0f, 3000.0f, 1.0f);
+
+    // Stationary craft: aiding says the position and velocity are zero, but the
+    // accelerometer reads a constant offset.
+    for (int i = 0; i < 6000; i++) {
+        kalmanPredict(&kf, dt);
+        kalmanUpdateAcceleration(&kf, injectedBias, 2000.0f, dt);
+        kalmanUpdatePosition(&kf, 0.0f, 500.0f);
+        kalmanUpdateVelocity(&kf, 0.0f, 2000.0f);
+    }
+
+    EXPECT_NEAR(kalmanGetAccelBias(&kf), injectedBias, 10.0f);
+    EXPECT_NEAR(kalmanGetAcceleration(&kf), 0.0f, 15.0f);
+    EXPECT_NEAR(kalmanGetVelocity(&kf), 0.0f, 15.0f);
+}
+
+// Once the bias is learned, velocity must stay bounded when aiding is lost, instead of
+// integrating the bias without limit.
+TEST(PositionFilterTest, LearnedBiasBoundsVelocityDriftWhenAidingStops)
+{
+    const float dt = 0.01f;
+    const float injectedBias = 40.0f;
+    positionKalman_t kf;
+    kalmanInit(&kf, 0.0f, 0.0f, 0.0f, 10000.0f, 10000.0f, 1000000.0f, 3000.0f, 1.0f);
+
+    for (int i = 0; i < 6000; i++) {
+        kalmanPredict(&kf, dt);
+        kalmanUpdateAcceleration(&kf, injectedBias, 2000.0f, dt);
+        kalmanUpdatePosition(&kf, 0.0f, 500.0f);
+        kalmanUpdateVelocity(&kf, 0.0f, 2000.0f);
+    }
+
+    // Aiding stops; only the accelerometer remains.
+    for (int i = 0; i < 1500; i++) {
+        kalmanPredict(&kf, dt);
+        kalmanUpdateAcceleration(&kf, injectedBias, 2000.0f, dt);
+    }
+
+    // Integrating the raw 40 cm/s^2 offset unchecked for 15 s would reach 600 cm/s.
+    EXPECT_LT(fabsf(kalmanGetVelocity(&kf)), 100.0f);
 }
 
 extern "C" {
