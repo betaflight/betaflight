@@ -315,7 +315,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PA15), GPIO_AF10_UART7 },
             { DEFIO_TAG_E(PB4),  GPIO_AF10_UART7 },
             { DEFIO_TAG_E(PE8),  GPIO_AF8_UART7 },
-            { DEFIO_TAG_E(PG12), GPIO_AF10_UART7 },
+            { DEFIO_TAG_E(PG12), GPIO_AF8_UART7 },
             { DEFIO_TAG_E(PH3),  GPIO_AF8_UART7 },
             { DEFIO_TAG_E(PH4),  GPIO_AF8_UART7 },
         },

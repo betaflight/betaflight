@@ -699,6 +699,15 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 }
 
 #if defined(USE_CRSF_V3)
+static bool eventDrivenTelemetry = false;
+
+// Only set once a baud negotiation has succeeded, so receivers that never negotiate (ELRS)
+// keep the fixed-rate telemetry task and must not be gated on inbound frames.
+bool crsfRxIsEventDrivenTelemetry(void)
+{
+    return eventDrivenTelemetry;
+}
+
 void crsfRxUpdateBaudrate(uint32_t baudrate)
 {
     serialSetBaudRate(serialPort, baudrate);
@@ -711,11 +720,10 @@ void crsfRxUpdateBaudrate(uint32_t baudrate)
     }
 #if defined(USE_TELEMETRY_CRSF)
     task_t* tlmTask = getTask(TASK_TELEMETRY);
-    if (tlmTask && baudrate > CRSF_BAUDRATE) {
-        // switch telemetry task to event driven
-        tlmTask->attribute->checkFunc = crsfTelemetryUpdateCheck;
-    } else if (tlmTask) {
-        tlmTask->attribute->checkFunc = NULL;
+    if (tlmTask) {
+        // above the default baudrate let the inbound frame rate dictate the outbound rate
+        eventDrivenTelemetry = baudrate > CRSF_BAUDRATE;
+        tlmTask->attribute->checkFunc = eventDrivenTelemetry ? crsfTelemetryUpdateCheck : NULL;
     }
 #endif
 }
