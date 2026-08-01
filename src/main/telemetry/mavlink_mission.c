@@ -40,6 +40,7 @@
 
 #include "io/gps.h"
 
+#include "pg/autopilot.h"
 #include "pg/flight_plan.h"
 
 #include "telemetry/mavlink.h"
@@ -128,14 +129,23 @@ static void sendMissionItem(uint8_t partnerSys, uint8_t partnerComp, uint16_t se
     uint16_t command;
     float param1 = 0.0f;
     float param2 = 0.0f;
+    float param3 = 0.0f;
     int32_t lat = wp->latitude;
     int32_t lon = wp->longitude;
     float zM = wp->altitude * 0.01f;
 
     switch (wp->type) {
     case WAYPOINT_TYPE_HOLD:
-        command = MAV_CMD_NAV_LOITER_TIME;
-        param1 = wp->duration * 0.1f;
+        if (wp->pattern == WAYPOINT_PATTERN_ORBIT) {
+            command = MAV_CMD_NAV_LOITER_TURNS;
+            param1 = (float)wp->duration / (float)flightPlanNavOrbitPeriodDs(wp->speed);
+            param3 = autopilotConfig()->waypointHoldRadius * 0.01f;
+        } else {
+            // FIGURE8 has no MAVLink vocabulary; it downloads as a plain
+            // timed loiter (the pattern survives only in the stored mission).
+            command = MAV_CMD_NAV_LOITER_TIME;
+            param1 = wp->duration * 0.1f;
+        }
         break;
     case WAYPOINT_TYPE_LAND:
         command = MAV_CMD_NAV_LAND;
@@ -165,11 +175,14 @@ static void sendMissionItem(uint8_t partnerSys, uint8_t partnerComp, uint16_t se
         break;
     }
 
-    const uint8_t current = (flightPlanNavIsActive() && seq == flightPlanNavGetCurrentIndex()) ? 1 : 0;
+    // While an injected runtime plan flies, the executor index does not refer
+    // to the stored mission this download describes.
+    const uint8_t current = (flightPlanNavIsActive() && !flightPlanNavIsInjectedPlanActive()
+        && seq == flightPlanNavGetCurrentIndex()) ? 1 : 0;
 
     mavlink_msg_mission_item_int_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &txMsg,
         partnerSys, partnerComp, seq, MAV_FRAME_GLOBAL_INT, command, current, 1,
-        param1, param2, 0.0f, 0.0f,
+        param1, param2, param3, 0.0f,
         lat, lon, zM,
         MAV_MISSION_TYPE_MISSION);
     mavlinkSendMessage(&txMsg);
@@ -248,7 +261,7 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
     wp->altitude = altCm;
     wp->speed = 0;
     wp->duration = 0;
-    wp->pattern = WAYPOINT_PATTERN_ORBIT;
+    wp->pattern = WAYPOINT_PATTERN_NONE;
 
     switch (it->command) {
     case MAV_CMD_NAV_WAYPOINT:
@@ -269,9 +282,18 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
             wp->duration = (ds >= UINT16_MAX) ? UINT16_MAX : (uint16_t)ds;
         }
         break;
-    case MAV_CMD_NAV_LOITER_TURNS:
+    case MAV_CMD_NAV_LOITER_TURNS: {
+        // param1 = turns, converted to a hold duration at the executor's
+        // orbit rate. param3's radius is ignored: the orbit flies at the
+        // configured ap_waypoint_hold_radius.
         wp->type = WAYPOINT_TYPE_HOLD;
+        wp->pattern = WAYPOINT_PATTERN_ORBIT;
+        if (it->param1 > 0.0f) {
+            const float ds = it->param1 * (float)flightPlanNavOrbitPeriodDs(wp->speed);
+            wp->duration = (ds >= UINT16_MAX) ? UINT16_MAX : (uint16_t)ds;
+        }
         break;
+    }
     case MAV_CMD_NAV_LOITER_UNLIM:
         wp->type = WAYPOINT_TYPE_HOLD;
         wp->duration = UINT16_MAX;
@@ -568,6 +590,30 @@ void mavMissionInit(void)
     flightPlanNavSetReachedListener(onWaypointReached);
 }
 
+// Pack and send MISSION_CURRENT from live executor state. Driven at 1 Hz by
+// mavMissionUpdate() and once immediately in response to MISSION_SET_CURRENT.
+static void sendMissionCurrent(void)
+{
+    const uint16_t total = flightPlanConfig()->waypointCount;
+    const bool active = flightPlanNavIsActive();
+    const uint16_t seq = (total && active && !flightPlanNavIsInjectedPlanActive())
+        ? flightPlanNavGetCurrentIndex() : 0;
+    const uint8_t missionMode = active ? 1 : 2;
+    uint8_t missionState;
+    if (total == 0) {
+        missionState = MISSION_STATE_NO_MISSION;
+    } else if (!active) {
+        missionState = MISSION_STATE_NOT_STARTED;
+    } else if (flightPlanNavGetState() == FP_NAV_COMPLETE) {
+        missionState = MISSION_STATE_COMPLETE;
+    } else {
+        missionState = MISSION_STATE_ACTIVE;
+    }
+    mavlink_msg_mission_current_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &txMsg,
+        seq, total, missionState, missionMode, 0, 0, 0);
+    mavlinkSendMessage(&txMsg);
+}
+
 bool mavMissionHandleMessage(const mavlink_message_t *msg)
 {
     // Each handler decodes the typed payload and applies its own target filter
@@ -599,6 +645,21 @@ bool mavMissionHandleMessage(const mavlink_message_t *msg)
     case MAVLINK_MSG_ID_MISSION_CLEAR_ALL:
         handleClearAll(msg);
         return true;
+    case MAVLINK_MSG_ID_MISSION_SET_CURRENT: {
+        mavlink_mission_set_current_t sc;
+        mavlink_msg_mission_set_current_decode(msg, &sc);
+        if (!targetIsUs(sc.target_system, sc.target_component)) {
+            return true;
+        }
+        // Out-of-range seq is a no-op on the cursor; the executor guards the
+        // range too. Guard the narrowing cast so a seq > 255 can't wrap into a
+        // valid index. Either way the partner gets the current cursor back.
+        if (sc.seq <= UINT8_MAX) {
+            flightPlanNavSetCurrentIndex((uint8_t)sc.seq);
+        }
+        sendMissionCurrent();
+        return true;
+    }
     case MAVLINK_MSG_ID_MISSION_ACK:
         handleMissionAck(msg);
         return true;
@@ -636,23 +697,7 @@ void mavMissionUpdate(timeMs_t nowMs)
     // MISSION_CURRENT @ 1 Hz — lets QGC display the live cursor whether or not
     // the mission is being executed.
     if ((nowMs - m.lastCurrentTxMs) >= MISSION_CURRENT_PERIOD_MS) {
-        const uint16_t total = flightPlanConfig()->waypointCount;
-        const bool active = flightPlanNavIsActive();
-        const uint16_t seq = (total && active) ? flightPlanNavGetCurrentIndex() : 0;
-        const uint8_t missionMode = active ? 1 : 2;
-        uint8_t missionState;
-        if (total == 0) {
-            missionState = MISSION_STATE_NO_MISSION;
-        } else if (!active) {
-            missionState = MISSION_STATE_NOT_STARTED;
-        } else if (flightPlanNavGetState() == FP_NAV_COMPLETE) {
-            missionState = MISSION_STATE_COMPLETE;
-        } else {
-            missionState = MISSION_STATE_ACTIVE;
-        }
-        mavlink_msg_mission_current_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &txMsg,
-            seq, total, missionState, missionMode, 0, 0, 0);
-        mavlinkSendMessage(&txMsg);
+        sendMissionCurrent();
         m.lastCurrentTxMs = nowMs;
     }
 }

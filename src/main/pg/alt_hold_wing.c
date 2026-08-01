@@ -22,7 +22,6 @@
 #include "platform.h"
 
 #ifdef USE_WING
-
 #ifdef USE_ALTITUDE_HOLD
 
 #include "flight/alt_hold.h"
@@ -36,6 +35,6 @@ PG_REGISTER_WITH_RESET_TEMPLATE(altHoldConfig_t, altHoldConfig, PG_ALTHOLD_CONFI
 
 PG_RESET_TEMPLATE(altHoldConfig_t, altHoldConfig,
 );
-#endif
 
+#endif // USE_ALTITUDE_HOLD
 #endif // USE_WING

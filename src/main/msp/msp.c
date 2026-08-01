@@ -224,7 +224,7 @@ static bool fontHasBeenUpdated = false;
 
 static int mspDescriptor = 0;
 
-mspDescriptor_t mspDescriptorAlloc(void)
+RAM_CODE mspDescriptor_t mspDescriptorAlloc(void)
 {
     return (mspDescriptor_t)mspDescriptor++;
 }
@@ -232,18 +232,18 @@ mspDescriptor_t mspDescriptorAlloc(void)
 static uint32_t mspArmingDisableFlags = 0;
 
 #if !ENABLE_SIMULATOR
-static void mspArmingDisableByDescriptor(mspDescriptor_t desc)
+RAM_CODE static void mspArmingDisableByDescriptor(mspDescriptor_t desc)
 {
     mspArmingDisableFlags |= (1 << desc);
 }
 #endif
 
-static void mspArmingEnableByDescriptor(mspDescriptor_t desc)
+RAM_CODE static void mspArmingEnableByDescriptor(mspDescriptor_t desc)
 {
     mspArmingDisableFlags &= ~(1 << desc);
 }
 
-static bool mspIsMspArmingEnabled(void)
+RAM_CODE static bool mspIsMspArmingEnabled(void)
 {
     return mspArmingDisableFlags == 0;
 }
@@ -254,14 +254,14 @@ static uint8_t mspPassthroughMode;
 static uint8_t mspPassthroughArgument;
 
 #if defined(USE_ESCSERIAL) && defined(USE_SERIAL_4WAY_BLHELI_INTERFACE)
-static void mspEscPassthroughFn(serialPort_t *serialPort)
+RAM_CODE static void mspEscPassthroughFn(serialPort_t *serialPort)
 {
     escEnablePassthrough(serialPort, &motorConfig()->dev, mspPassthroughArgument, mspPassthroughMode);
 }
 #endif
 
 #ifdef USE_SERIAL_PASSTHROUGH
-static serialPort_t *mspFindPassthroughSerialPort(void)
+RAM_CODE static serialPort_t *mspFindPassthroughSerialPort(void)
 {
     serialPortUsage_t *portUsage = NULL;
 
@@ -283,7 +283,7 @@ static serialPort_t *mspFindPassthroughSerialPort(void)
     return portUsage ? portUsage->serialPort : NULL;
 }
 
-static void mspSerialPassthroughFn(serialPort_t *serialPort)
+RAM_CODE static void mspSerialPassthroughFn(serialPort_t *serialPort)
 {
     serialPort_t *passthroughPort = mspFindPassthroughSerialPort();
     if (passthroughPort && serialPort) {
@@ -292,7 +292,7 @@ static void mspSerialPassthroughFn(serialPort_t *serialPort)
 }
 #endif
 
-static void mspFcSetPassthroughCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
+RAM_CODE static void mspFcSetPassthroughCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
 {
 #ifndef USE_SERIAL_PASSTHROUGH
     UNUSED(mspPostProcessFn);
@@ -355,7 +355,7 @@ static void mspFcSetPassthroughCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessF
     }
 }
 
-MAYBE_UNUSED static void configRebootUpdateCheckU8(uint8_t *parm, uint8_t value)
+RAM_CODE MAYBE_UNUSED static void configRebootUpdateCheckU8(uint8_t *parm, uint8_t value)
 {
     if (*parm != value) {
         setRebootRequired();
@@ -364,7 +364,7 @@ MAYBE_UNUSED static void configRebootUpdateCheckU8(uint8_t *parm, uint8_t value)
 }
 
 #ifdef USE_OSD
-static void fontUpdateCompletion(void)
+RAM_CODE static void fontUpdateCompletion(void)
 {
     displayPort_t *osdDisplayPort = osdGetDisplayPort(NULL);
     if (osdDisplayPort) {
@@ -373,7 +373,7 @@ static void fontUpdateCompletion(void)
 }
 #endif
 
-static void mspRebootFn(serialPort_t *serialPort)
+RAM_CODE static void mspRebootFn(serialPort_t *serialPort)
 {
     UNUSED(serialPort);
 
@@ -424,7 +424,7 @@ static void mspRebootFn(serialPort_t *serialPort)
 
 #define MSP_DISPATCH_DELAY_US 1000000
 
-static void mspReboot(dispatchEntry_t* self)
+RAM_CODE static void mspReboot(dispatchEntry_t* self)
 {
     UNUSED(self);
 
@@ -439,7 +439,7 @@ dispatchEntry_t mspRebootEntry = {
     mspReboot, 0, NULL, false
 };
 
-static void writeReadEeprom(dispatchEntry_t* self)
+RAM_CODE static void writeReadEeprom(dispatchEntry_t* self)
 {
     UNUSED(self);
 
@@ -462,7 +462,7 @@ dispatchEntry_t writeReadEepromEntry = {
     writeReadEeprom, 0, NULL, false
 };
 
-static void serializeSDCardSummaryReply(sbuf_t *dst)
+RAM_CODE static void serializeSDCardSummaryReply(sbuf_t *dst)
 {
     uint8_t flags = 0;
     uint8_t state = 0;
@@ -517,7 +517,7 @@ static void serializeSDCardSummaryReply(sbuf_t *dst)
     sbufWriteU32(dst, totalSpace);
 }
 
-static void serializeDataflashSummaryReply(sbuf_t *dst)
+RAM_CODE static void serializeDataflashSummaryReply(sbuf_t *dst)
 {
 #ifdef USE_FLASHFS
     if (flashfsIsSupported()) {
@@ -548,7 +548,7 @@ enum compressionType_e {
     HUFFMAN
 };
 
-static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uint16_t size, bool useLegacyFormat, bool allowCompression)
+RAM_CODE static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uint16_t size, bool useLegacyFormat, bool allowCompression)
 {
     STATIC_ASSERT(MSP_PORT_DATAFLASH_INFO_SIZE >= 16, MSP_PORT_DATAFLASH_INFO_SIZE_invalid);
 
@@ -646,7 +646,7 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
  * Returns true if the command was processd, false otherwise.
  * May set mspPostProcessFunc to a function to be called once the command has been processed
  */
-static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
+RAM_CODE static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
 {
     UNUSED(mspPostProcessFn);
 
@@ -1119,7 +1119,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
     return true;
 }
 
-static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *dst)
+RAM_CODE static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *dst)
 {
     bool unsupportedCommand = false;
 
@@ -1597,7 +1597,7 @@ case MSP_NAME:
 #ifdef USE_GPS_RESCUE
 #ifndef USE_WING
     case MSP_GPS_RESCUE:
-        sbufWriteU16(dst, gpsRescueConfig()->maxRescueAngle);
+        sbufWriteU16(dst, autopilotConfig()->maxAngle);
         sbufWriteU16(dst, gpsRescueConfig()->returnAltitudeM);
         sbufWriteU16(dst, gpsRescueConfig()->descentDistanceM);
         sbufWriteU16(dst, gpsRescueConfig()->groundSpeedCmS);
@@ -1623,9 +1623,9 @@ case MSP_NAME:
         sbufWriteU16(dst, autopilotConfig()->altitudeI);
         sbufWriteU16(dst, autopilotConfig()->altitudeD);
         // altitude_F not implemented yet
-        sbufWriteU16(dst, gpsRescueConfig()->velP);
-        sbufWriteU16(dst, gpsRescueConfig()->velI);
-        sbufWriteU16(dst, gpsRescueConfig()->velD);
+        sbufWriteU16(dst, autopilotConfig()->positionP);
+        sbufWriteU16(dst, autopilotConfig()->positionI);
+        sbufWriteU16(dst, autopilotConfig()->positionD);
         sbufWriteU16(dst, gpsRescueConfig()->yawP);
         break;
 #endif // !USE_WING
@@ -2268,7 +2268,7 @@ case MSP_NAME:
 
 #ifdef USE_SIMPLIFIED_TUNING
 // Reads simplified PID tuning values from MSP buffer
-static void readSimplifiedPids(pidProfile_t* pidProfile, sbuf_t *src)
+RAM_CODE static void readSimplifiedPids(pidProfile_t* pidProfile, sbuf_t *src)
 {
     pidProfile->simplified_pids_mode = sbufReadU8(src);
     pidProfile->simplified_master_multiplier = sbufReadU8(src);
@@ -2288,7 +2288,7 @@ static void readSimplifiedPids(pidProfile_t* pidProfile, sbuf_t *src)
 }
 
 // Writes simplified PID tuning values to MSP buffer
-static void writeSimplifiedPids(const pidProfile_t *pidProfile, sbuf_t *dst)
+RAM_CODE static void writeSimplifiedPids(const pidProfile_t *pidProfile, sbuf_t *dst)
 {
     sbufWriteU8(dst, pidProfile->simplified_pids_mode);
     sbufWriteU8(dst, pidProfile->simplified_master_multiplier);
@@ -2308,7 +2308,7 @@ static void writeSimplifiedPids(const pidProfile_t *pidProfile, sbuf_t *dst)
 }
 
 // Reads simplified Dterm Filter values from MSP buffer
-static void readSimplifiedDtermFilters(pidProfile_t* pidProfile, sbuf_t *src)
+RAM_CODE static void readSimplifiedDtermFilters(pidProfile_t* pidProfile, sbuf_t *src)
 {
     pidProfile->simplified_dterm_filter = sbufReadU8(src);
     pidProfile->simplified_dterm_filter_multiplier = sbufReadU8(src);
@@ -2326,7 +2326,7 @@ static void readSimplifiedDtermFilters(pidProfile_t* pidProfile, sbuf_t *src)
 }
 
 // Writes simplified Dterm Filter values into MSP buffer
-static void writeSimplifiedDtermFilters(const pidProfile_t* pidProfile, sbuf_t *dst)
+RAM_CODE static void writeSimplifiedDtermFilters(const pidProfile_t* pidProfile, sbuf_t *dst)
 {
     sbufWriteU8(dst, pidProfile->simplified_dterm_filter);
     sbufWriteU8(dst, pidProfile->simplified_dterm_filter_multiplier);
@@ -2344,7 +2344,7 @@ static void writeSimplifiedDtermFilters(const pidProfile_t* pidProfile, sbuf_t *
 }
 
 // Writes simplified Gyro Filter values from MSP buffer
-static void readSimplifiedGyroFilters(gyroConfig_t *gyroConfig, sbuf_t *src)
+RAM_CODE static void readSimplifiedGyroFilters(gyroConfig_t *gyroConfig, sbuf_t *src)
 {
     gyroConfig->simplified_gyro_filter = sbufReadU8(src);
     gyroConfig->simplified_gyro_filter_multiplier = sbufReadU8(src);
@@ -2362,7 +2362,7 @@ static void readSimplifiedGyroFilters(gyroConfig_t *gyroConfig, sbuf_t *src)
 }
 
 // Writes simplified Gyro Filter values into MSP buffer
-static void writeSimplifiedGyroFilters(const gyroConfig_t *gyroConfig, sbuf_t *dst)
+RAM_CODE static void writeSimplifiedGyroFilters(const gyroConfig_t *gyroConfig, sbuf_t *dst)
 {
     sbufWriteU8(dst, gyroConfig->simplified_gyro_filter);
     sbufWriteU8(dst, gyroConfig->simplified_gyro_filter_multiplier);
@@ -2380,7 +2380,7 @@ static void writeSimplifiedGyroFilters(const gyroConfig_t *gyroConfig, sbuf_t *d
 }
 
 // writes results of simplified PID tuning values to MSP buffer
-static void writePidfs(pidProfile_t* pidProfile, sbuf_t *dst)
+RAM_CODE static void writePidfs(pidProfile_t* pidProfile, sbuf_t *dst)
 {
     for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
         sbufWriteU8(dst, pidProfile->pid[i].P);
@@ -2394,7 +2394,7 @@ static void writePidfs(pidProfile_t* pidProfile, sbuf_t *dst)
 
 static mspResult_e mspFcProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn);
 
-static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *src, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
+RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *src, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
 {
 
     switch (cmdMSP) {
@@ -2813,7 +2813,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
 }
 
 #ifdef USE_FLASHFS
-static void mspFcDataFlashReadCommand(sbuf_t *dst, sbuf_t *src)
+RAM_CODE static void mspFcDataFlashReadCommand(sbuf_t *dst, sbuf_t *src)
 {
     const unsigned int dataSize = sbufBytesRemaining(src);
     const uint32_t readAddress = sbufReadU32(src);
@@ -2835,7 +2835,7 @@ static void mspFcDataFlashReadCommand(sbuf_t *dst, sbuf_t *src)
 }
 #endif
 
-static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *src)
+RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *src)
 {
     uint32_t i;
     uint8_t value;
@@ -3089,7 +3089,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #ifdef USE_GPS_RESCUE
 #ifndef USE_WING
     case MSP_SET_GPS_RESCUE:
-        gpsRescueConfigMutable()->maxRescueAngle = sbufReadU16(src);
+        autopilotConfigMutable()->maxAngle = sbufReadU16(src);
         gpsRescueConfigMutable()->returnAltitudeM = sbufReadU16(src);
         gpsRescueConfigMutable()->descentDistanceM = sbufReadU16(src);
         gpsRescueConfigMutable()->groundSpeedCmS = sbufReadU16(src);
@@ -3120,9 +3120,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         autopilotConfigMutable()->altitudeI = sbufReadU16(src);
         autopilotConfigMutable()->altitudeD = sbufReadU16(src);
         // altitude_F not included in msp yet
-        gpsRescueConfigMutable()->velP = sbufReadU16(src);
-        gpsRescueConfigMutable()->velI = sbufReadU16(src);
-        gpsRescueConfigMutable()->velD = sbufReadU16(src);
+        autopilotConfigMutable()->positionP = sbufReadU16(src);
+        autopilotConfigMutable()->positionI = sbufReadU16(src);
+        autopilotConfigMutable()->positionD = sbufReadU16(src);
         gpsRescueConfigMutable()->yawP = sbufReadU16(src);
         break;
 #endif // !USE_WING
@@ -3130,6 +3130,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
 
     case MSP_SET_MOTOR:
+        if (dataSize < getMotorCount() * sizeof(uint16_t)) {
+            return MSP_RESULT_ERROR;
+        }
         for (int i = 0; i < getMotorCount(); i++) {
             motor_disarmed[i] = motorConvertFromExternal(sbufReadU16(src));
         }
@@ -3728,17 +3731,27 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             char bandName[VTX_TABLE_BAND_NAME_LENGTH + 1];
             memset(bandName, 0, VTX_TABLE_BAND_NAME_LENGTH + 1);
             uint16_t frequencies[VTX_TABLE_MAX_CHANNELS];
+            memset(frequencies, 0, sizeof(frequencies));
             const uint8_t band = sbufReadU8(src);
             const uint8_t bandNameLength = sbufReadU8(src);
+            if (sbufBytesRemaining(src) < bandNameLength) {
+                return MSP_RESULT_ERROR;
+            }
             for (int i = 0; i < bandNameLength; i++) {
                 const char nameChar = sbufReadU8(src);
                 if (i < VTX_TABLE_BAND_NAME_LENGTH) {
                     bandName[i] = toupper(nameChar);
                 }
             }
+            if (sbufBytesRemaining(src) < 3) {
+                return MSP_RESULT_ERROR;
+            }
             const char bandLetter = toupper(sbufReadU8(src));
             const bool isFactoryBand = (bool)sbufReadU8(src);
             const uint8_t channelCount = sbufReadU8(src);
+            if (sbufBytesRemaining(src) < channelCount * (int)sizeof(uint16_t)) {
+                return MSP_RESULT_ERROR;
+            }
             for (int i = 0; i < channelCount; i++) {
                 const uint16_t frequency = sbufReadU16(src);
                 if (i < vtxTableConfig()->channels) {
@@ -3778,6 +3791,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             const uint8_t powerLevel = sbufReadU8(src);
             const uint16_t powerValue = sbufReadU16(src);
             const uint8_t powerLevelLabelLength = sbufReadU8(src);
+            if (sbufBytesRemaining(src) < powerLevelLabelLength) {
+                return MSP_RESULT_ERROR;
+            }
             for (int i = 0; i < powerLevelLabelLength; i++) {
                 const char labelChar = sbufReadU8(src);
                 if (i < VTX_TABLE_POWER_LABEL_LENGTH) {
@@ -3801,7 +3817,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
     case MSP2_SET_MOTOR_OUTPUT_REORDERING:
         {
+            if (dataSize < 1) {
+                return MSP_RESULT_ERROR;
+            }
             const uint8_t arraySize = sbufReadU8(src);
+            if (sbufBytesRemaining(src) < MIN(arraySize, MAX_SUPPORTED_MOTORS)) {
+                return MSP_RESULT_ERROR;
+            }
 
             for (unsigned i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
                 uint8_t value = i;
@@ -3821,9 +3843,15 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             const bool armed = ARMING_FLAG(ARMED);
 
             if (!armed) {
+                if (sbufBytesRemaining(src) < 3) {
+                    return MSP_RESULT_ERROR;
+                }
                 const uint8_t commandType = sbufReadU8(src);
                 const uint8_t motorIndex = sbufReadU8(src);
                 const uint8_t commandCount = sbufReadU8(src);
+                if (sbufBytesRemaining(src) < commandCount) {
+                    return MSP_RESULT_ERROR;
+                }
 
                 if (DSHOT_CMD_TYPE_BLOCKING == commandType) {
                     motorDisable();
@@ -4143,6 +4171,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             return MSP_RESULT_ERROR;
         }
         unsigned count = sbufReadU8(src);
+        if (count == 0 || (dataSize - 1) % count != 0) {
+            return MSP_RESULT_ERROR;
+        }
         unsigned portConfigSize = (dataSize - 1) / count;
         unsigned expectedPortSize = sizeof(uint8_t) + sizeof(uint32_t) + (sizeof(uint8_t) * 4);
         if (portConfigSize < expectedPortSize) {
@@ -4248,7 +4279,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #if defined(USE_BOARD_INFO)
     case MSP_SET_BOARD_INFO:
         if (!boardInformationIsSet()) {
+            if (sbufBytesRemaining(src) < 1) {
+                return MSP_RESULT_ERROR;
+            }
             uint8_t length = sbufReadU8(src);
+            if (sbufBytesRemaining(src) < length) {
+                return MSP_RESULT_ERROR;
+            }
             char boardName[MAX_BOARD_NAME_LENGTH + 1];
             sbufReadData(src, boardName, MIN(length, MAX_BOARD_NAME_LENGTH));
             if (length > MAX_BOARD_NAME_LENGTH) {
@@ -4256,7 +4293,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 length = MAX_BOARD_NAME_LENGTH;
             }
             boardName[length] = '\0';
+            if (sbufBytesRemaining(src) < 1) {
+                return MSP_RESULT_ERROR;
+            }
             length = sbufReadU8(src);
+            if (sbufBytesRemaining(src) < length) {
+                return MSP_RESULT_ERROR;
+            }
             char manufacturerId[MAX_MANUFACTURER_ID_LENGTH + 1];
             sbufReadData(src, manufacturerId, MIN(length, MAX_MANUFACTURER_ID_LENGTH));
             if (length > MAX_MANUFACTURER_ID_LENGTH) {
@@ -4410,7 +4453,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     return MSP_RESULT_ACK;
 }
 
-static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
+RAM_CODE static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
 {
     UNUSED(mspPostProcessFn);
     const unsigned int dataSize = sbufBytesRemaining(src);
@@ -4421,6 +4464,9 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
     case MSP_SET_TRANSPONDER_CONFIG: {
         // Backward compatibility to BFC 3.1.1 is lost for this message type
 
+        if (dataSize < 1) {
+            return MSP_RESULT_ERROR;
+        }
         uint8_t provider = sbufReadU8(src);
         uint8_t bytesRemaining = dataSize - 1;
 
@@ -4721,7 +4767,7 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
 /*
  * Returns MSP_RESULT_ACK, MSP_RESULT_ERROR or MSP_RESULT_NO_REPLY
  */
-mspResult_e mspFcProcessCommand(mspDescriptor_t srcDesc, mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn)
+RAM_CODE mspResult_e mspFcProcessCommand(mspDescriptor_t srcDesc, mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn)
 {
     int ret = MSP_RESULT_ACK;
     sbuf_t *dst = &reply->buf;
@@ -4751,7 +4797,7 @@ mspResult_e mspFcProcessCommand(mspDescriptor_t srcDesc, mspPacket_t *cmd, mspPa
     return ret;
 }
 
-static mspResult_e mspFcProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn)
+RAM_CODE static mspResult_e mspFcProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn)
 {
     int ret = MSP_RESULT_CMD_UNKNOWN;
     sbuf_t *dst = &reply->buf;
@@ -4767,7 +4813,7 @@ static mspResult_e mspFcProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMS
     return ret;
 }
 
-void mspFcProcessReply(mspPacket_t *reply)
+RAM_CODE void mspFcProcessReply(mspPacket_t *reply)
 {
     sbuf_t *src = &reply->buf;
     UNUSED(src); // potentially unused depending on compile options.
@@ -4793,7 +4839,7 @@ void mspFcProcessReply(mspPacket_t *reply)
     }
 }
 
-void mspInit(void)
+RAM_CODE void mspInit(void)
 {
     initActiveBoxIds();
 }

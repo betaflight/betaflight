@@ -30,6 +30,5 @@ void altHoldInit(void);
 void updateAltHold(timeUs_t currentTimeUs);
 bool isAltHoldActive(void);
 
-#endif
-
+#endif // USE_ALTITUDE_HOLD
 #endif // USE_WING

@@ -487,7 +487,7 @@ DEVICE_FLAGS    += \
 # Set the sizes of flash and contents in LD_SCRIPT, other linker files loaded via EXTRA_LD_FLAGS.
 
 # Optional board-specific linker script for setting the size of the primary flash, and the allocation for fonts.
-CONFIG_FLASH_MEM_SCRIPT = $(CONFIG_DIR)/configs/$(CONFIG)/pico_flash_mem.ld
+CONFIG_FLASH_MEM_SCRIPT = $(CONFIG_PATH)/pico_flash_mem.ld
 
 # If pico_flash_mem.ld exists in the config folder, use that, otherwise load defaults from pico_flash_mem_defaults.ld
 ifneq ($(wildcard $(CONFIG_FLASH_MEM_SCRIPT)),)

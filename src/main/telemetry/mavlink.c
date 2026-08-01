@@ -51,6 +51,7 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/flight_plan_nav.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -346,7 +347,7 @@ static uint32_t mavlinkComputeCustomMode(void)
     if (FLIGHT_MODE(FAILSAFE_MODE) || failsafeIsActive()) {
         return BF_MAV_MODE_FAILSAFE;
     }
-    if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+    if (FLIGHT_MODE(GPS_RESCUE_MODE) || flightPlanNavIsRescuePlanActive()) {
         return BF_MAV_MODE_RTL;
     }
     if (FLIGHT_MODE(AUTOPILOT_MODE)) {
@@ -572,6 +573,16 @@ static void mavlinkProcessIncoming(void)
         }
     }
 }
+
+#ifdef USE_SERIALRX_MAVLINK
+static void mavlinkProcessQueueMessages(void)
+{
+    uint8_t rxBudget = MAVLINK_RX_QUEUE_SIZE;
+    while (rxBudget-- && mavlinkGetNextQueueMessage(&mavRxMsg)) {
+        mavlinkDispatch(&mavRxMsg);
+    }
+}
+#endif
 
 void freeMAVLinkTelemetryPort(void)
 {
@@ -1301,7 +1312,15 @@ void handleMAVLinkTelemetry(void)
         return;
     }
 
+#ifndef USE_SERIALRX_MAVLINK
     mavlinkProcessIncoming();
+#else
+    if (telemetrySharedPort != NULL && rxRuntimeState.serialrxProvider == SERIALRX_MAVLINK) {
+        mavlinkProcessQueueMessages();
+    } else {
+        mavlinkProcessIncoming();
+    }
+#endif
 #if ENABLE_TELEMETRY_MAVLINK_MISSION
     mavMissionUpdate(millis());
 #endif

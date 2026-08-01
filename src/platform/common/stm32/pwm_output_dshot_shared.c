@@ -197,20 +197,34 @@ static uint32_t decodeTelemetryPacket(const uint32_t buffer[], uint32_t count)
     uint32_t oldValue = buffer[0];
     int bits = 0;
     int len;
+    // Level after the first (always falling) edge is 0; toggled on each edge.
+    int level = 0;
     for (uint32_t i = 1; i <= count; i++) {
         if (i < count) {
             int diff = buffer[i] - oldValue;
             if (bits >= 21) {
-                break;
+                break; // all bits consumed
             }
             len = (diff + 8) / 16;
+            if (len <= 0) {
+                break; // guard UB: 1 << (len-1) undefined when len <= 0
+            }
+            level ^= 1;
         } else {
+            // Only pad trailing 1s when the final run is high (level==1).
+            // level==0 means the pullup return-to-idle may have been captured
+            // as a spurious extra edge; skip padding so the bits != 21 check
+            // below rejects the packet (returns 0xffff / DSHOT_TELEMETRY_INVALID).
             len = 21 - bits;
+            if (len <= 0 || level == 0) {
+                break; // done or spurious pullup edge
+            }
         }
-
         value <<= len;
         value |= 1 << (len - 1);
-        oldValue = buffer[i];
+        if (i < count) {
+            oldValue = buffer[i];
+        }
         bits += len;
     }
     if (bits != 21) {

@@ -350,6 +350,7 @@ void getTaskInfo(taskId_e, taskInfo_t *) {}
 void getCheckFuncInfo(cfCheckFuncInfo_t *) {}
 void schedulerResetTaskMaxExecutionTime(taskId_e) {}
 void schedulerResetCheckFunctionMaxExecutionTime(void) {}
+void schedulerIgnoreTaskExecTime(void) {}
 
 const char * const targetName = "UNITTEST";
 const char * const buildDate = "Jan 01 2017";

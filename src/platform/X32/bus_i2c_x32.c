@@ -406,7 +406,6 @@ bool i2cBusy(i2cDevice_e device, bool *error)
         }
         return false;
     }
-
     i2cState_t *state = &i2cDevice[device].state;
 
     if (error) {

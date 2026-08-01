@@ -32,6 +32,7 @@
 
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
+#include "flight/flight_plan_nav.h"
 #include "flight/position.h"
 #include "flight/position_nav.h"
 
@@ -52,6 +53,14 @@ typedef struct {
 } altHoldState_t;
 
 altHoldState_t altHold;
+
+// A rescue in progress substitutes gpsRescueConfig()'s ascend/descend rate for
+// the alt-hold climbRate cap; failsafe auto-landing and pilot alt-hold keep it.
+static float altHoldMaxClimbRate(void)
+{
+    const float rescueRate = flightPlanNavGetRescueVerticalRateCmS();
+    return (rescueRate > 0.0f) ? rescueRate : altHold.maxClimbRate;
+}
 
 static void altHoldReset(void)
 {
@@ -89,7 +98,7 @@ static void altHoldProcessTransitions(void) {
 static void altHoldUpdateTargetAltitude(void)
 {
     // User can adjust the target altitude with throttle, but only when
-    // - throttle is outside the deadband region, and
+    // - throttle is outside deadband, and
     // - throttle is not low (zero), and
     // - deadband is not configured to zero
 
@@ -115,8 +124,9 @@ static void altHoldUpdateTargetAltitude(void)
     // a similar downgoing glitch occurs when exiting upwards from zero throttle
     // these glitches are minimised  when these transitions are quick
             
-    // if failsafe is active, and we get here, we are in failsafe landing mode, it controls throttle
-    if (failsafeIsActive()) {
+    // if failsafe is active, and we get here, we are in failsafe landing mode, it controls throttle.
+    // a switch-invoked rescue that cannot stage or has aborted drives the same descent.
+    if (failsafeIsActive() || flightPlanNavIsRescueDescentActive()) {
         // descend at up to 10 times faster when high
         // default landing timeout is now 60s; must to get the quad down within this limit
         // need a rapid descent when initiated high, and must slow down closer to ground
@@ -125,13 +135,14 @@ static void altHoldUpdateTargetAltitude(void)
         // constant (set) deceleration target in the last 2m
         stickFactor = -(0.9f + constrainf(getAltitudeCmControl() / 2000.0f, 0.1f, 9.0f));
     }
-    altHold.targetVelocity = stickFactor * altHold.maxClimbRate;
 
+    const float maxClimbRate = altHoldMaxClimbRate();
+    altHold.targetVelocity = stickFactor * maxClimbRate;
     // prevent pilot altitude adjustments from moving the target altitude so far away from current altitude
     // that it might be difficult to get back to a similar target altitude in a reasonable time.
     // the altitude target cannot be moved to a location that cannot be reached in 1s at maxClimbRate
     // this constrains the P and I response to user target changes, but not D of F responses
-    if (fabsf(getAltitudeCmControl() - altHold.targetAltitudeCm) < altHold.maxClimbRate * 1.0f /* s */) {
+    if (fabsf(getAltitudeCmControl() - altHold.targetAltitudeCm) < maxClimbRate * 1.0f /* s */) {
         altHold.targetAltitudeCm += altHold.targetVelocity * taskIntervalSeconds;
     }
 }
@@ -159,7 +170,7 @@ static void altHoldUpdate(void)
         }
     }
 
-    altitudeControl(targetAltitudeCm, taskIntervalSeconds, targetAltitudeVelocity, altHold.maxClimbRate);
+    altitudeControl(targetAltitudeCm, taskIntervalSeconds, targetAltitudeVelocity, altHoldMaxClimbRate());
 }
 
 void updateAltHold(timeUs_t currentTimeUs) {
@@ -176,6 +187,6 @@ void updateAltHold(timeUs_t currentTimeUs) {
 bool isAltHoldActive(void) {
     return altHold.isActive;
 }
-#endif
 
+#endif // USE_ALTITUDE_HOLD
 #endif // !USE_WING
