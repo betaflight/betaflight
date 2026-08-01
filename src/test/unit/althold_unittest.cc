@@ -245,6 +245,12 @@ extern "C" {
         return 0.0f;
     }
 
+    float getMaxRcRate(int axis)
+    {
+        UNUSED(axis);
+        return 720.0f; // nonzero: autopilotInit divides maxVelocity by this
+    }
+
     void GPS_distance2d(const gpsLocation_t* /*from*/, const gpsLocation_t* /*to*/, vector2_t* /*dest*/) { }
 
     static positionEstimate3d_t stubEstimate = {};

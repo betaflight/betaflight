@@ -52,6 +52,11 @@ bool posHoldFailure(void) {
     return true;
 }
 
+bool posHoldReady(void) {
+    // fixed-wing pos hold has no entry-condition check yet
+    return false;
+}
+
 #endif // USE_POSITION_HOLD
 
 #endif // USE_WING
