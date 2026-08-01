@@ -218,6 +218,10 @@ typedef enum {
     OSD_NAV_MAP,                // minimap of home, flight plan and flown trail
 #endif
 
+#ifdef USE_POSITION_HOLD
+    OSD_POS_HOLD_READY,         // pre-engagement Position Hold readiness indicator
+#endif
+
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 

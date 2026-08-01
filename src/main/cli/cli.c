@@ -5975,6 +5975,17 @@ bool cliSetSettingByName(const char *cmdline)
     return true;
 }
 
+static int getTaskAverageRateHz(taskId_e taskId, int *averageDeltaTimeUs)
+{
+    taskInfo_t taskInfo;
+    getTaskInfo(taskId, &taskInfo);
+
+    if (averageDeltaTimeUs) {
+        *averageDeltaTimeUs = (taskInfo.averageDeltaTime10thUs + 5) / 10;
+    }
+    return taskInfo.averageDeltaTime10thUs == 0 ? 0 : lrintf(1e7f / taskInfo.averageDeltaTime10thUs);
+}
+
 RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -6241,13 +6252,14 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
 
     // Run status
 
-    const int gyroRate = getTaskDeltaTimeUs(TASK_GYRO) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_GYRO)));
+    int gyroDeltaTimeUs;
+    const int gyroRate = getTaskAverageRateHz(TASK_GYRO, &gyroDeltaTimeUs);
 
-    int rxRate = getRxRateValid() ? lrintf(getCurrentRxRateHz()) : 0;
+    const int rxRate = getRxRateValid() ? lrintf(getCurrentRxRateHz()) : 0;
 
-    const int systemRate = getTaskDeltaTimeUs(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_SYSTEM)));
+    const int systemRate = getTaskAverageRateHz(TASK_SYSTEM, NULL);
     cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
-            constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE), getTaskDeltaTimeUs(TASK_GYRO), gyroRate, rxRate, systemRate);
+            constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE), gyroDeltaTimeUs, gyroRate, rxRate, systemRate);
 
     // Battery meter
     const uint16_t v01 = getBatteryVoltage();
@@ -6291,9 +6303,7 @@ RAM_CODE static void cliTasks(const char *cmdName, char *cmdline)
             cliPrintf("%02d - (%15s) ", taskId, taskInfo.taskName);
             const int maxLoad = taskInfo.maxLoad10thPct;
             const int averageLoad = taskInfo.movingAverageLoad10thPct;
-            if (taskId != TASK_SERIAL) {
-                averageLoadSum += averageLoad;
-            }
+            averageLoadSum += averageLoad;
             if (systemConfig()->task_statistics) {
 #if defined(USE_LATE_TASK_STATISTICS)
                 cliPrintLinef("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d %6d %6d %7d",
@@ -6323,7 +6333,7 @@ RAM_CODE static void cliTasks(const char *cmdName, char *cmdline)
         uint32_t checkFuncAvgLoad10 = timeSinceTasksUs ? (uint32_t)((checkFuncTotalSinceUs * 1000.0f) / timeSinceTasksUs) : 0;
         cliPrintLinef("Check Functions (RX, ...) %11d %7d %12d.%1d%% %9d", checkFuncInfo.maxExecutionTimeUs, checkFuncInfo.averageExecutionTimeUs,
                       checkFuncAvgLoad10 / 10, checkFuncAvgLoad10 %10, checkFuncInfo.totalExecutionTimeUs / 1000);
-        cliPrintLinef("Total (excluding SERIAL) %33d.%1d%%", averageLoadSum/10, averageLoadSum%10);
+        cliPrintLinef("Total %52d.%1d%%", averageLoadSum/10, averageLoadSum%10);
         if (debugMode == DEBUG_SCHEDULER_DETERMINISM) {
             extern int32_t schedLoopStartCycles, taskGuardCycles;
 
@@ -6609,11 +6619,12 @@ RAM_CODE static void cliEnv(const char *cmdName, char *cmdline)
     }
 #endif
 
-    const int gyroRate = getTaskDeltaTimeUs(TASK_GYRO) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_GYRO)));
+    int gyroDeltaTimeUs;
+    const int gyroRate = getTaskAverageRateHz(TASK_GYRO, &gyroDeltaTimeUs);
     const int rxRate = getRxRateValid() ? lrintf(getCurrentRxRateHz()) : 0;
-    const int systemRate = getTaskDeltaTimeUs(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_SYSTEM)));
+    const int systemRate = getTaskAverageRateHz(TASK_SYSTEM, NULL);
     cliPrintNameValuef("CPU_LOAD_PCT", "%d", constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE));
-    cliPrintNameValuef("CYCLE_TIME_US", "%d", getTaskDeltaTimeUs(TASK_GYRO));
+    cliPrintNameValuef("CYCLE_TIME_US", "%d", gyroDeltaTimeUs);
     cliPrintNameValuef("GYRO_RATE_HZ", "%d", gyroRate);
     cliPrintNameValuef("RX_RATE_HZ", "%d", rxRate);
     cliPrintNameValuef("SYSTEM_RATE_HZ", "%d", systemRate);
