@@ -62,7 +62,10 @@ static const void *cmsHoverCalSave(displayPort_t *pDisp, const void *ptr)
 {
     UNUSED(ptr);
 
-    autopilotConfigMutable()->hoverThrottle = constrain(hoverCalibrationGetNewThrottle(), 0, 1700);
+    const uint16_t capturedThrottle = hoverCalibrationGetNewThrottle();
+    if (capturedThrottle != 0) {
+        autopilotConfigMutable()->hoverThrottle = constrain(capturedThrottle, 0, 1700);
+    }
 
     return cmsMenuExit(pDisp, (void *)CMS_POPUP_SAVEREBOOT);
 }
