@@ -244,11 +244,6 @@ OPTIMISE_SPEED        := -Ofast
 OPTIMISE_SIZE         := -Os
 
 LTO_FLAGS             := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
-
-# X32M7B relocates the complete runtime image into the limited ITCM region.
-ifeq ($(TARGET_MCU),X32M7B)
-LTO_FLAGS             := $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
-endif
 endif
 
 VPATH 			:= $(VPATH):$(MAKE_SCRIPT_DIR)
