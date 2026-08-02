@@ -51,6 +51,7 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/flight_plan_nav.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -346,7 +347,7 @@ static uint32_t mavlinkComputeCustomMode(void)
     if (FLIGHT_MODE(FAILSAFE_MODE) || failsafeIsActive()) {
         return BF_MAV_MODE_FAILSAFE;
     }
-    if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+    if (FLIGHT_MODE(GPS_RESCUE_MODE) || flightPlanNavIsRescuePlanActive()) {
         return BF_MAV_MODE_RTL;
     }
     if (FLIGHT_MODE(AUTOPILOT_MODE)) {
