@@ -37,7 +37,7 @@ void hoverCalibrationUpdate(void)
 {
     const bool switchNow = IS_RC_MODE_ACTIVE(BOXHOVERCAL);
 
-    if (ARMING_FLAG(ARMED) && switchNow && !switchPrev) {
+    if (ARMING_FLAG(ARMED) && rxAreFlightChannelsValid() && switchNow && !switchPrev) {
         newThrottle = (uint16_t)lrintf(rcData[THROTTLE]); // rising edge only
     }
     switchPrev = switchNow;
