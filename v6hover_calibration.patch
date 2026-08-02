@@ -1,0 +1,321 @@
+diff --git a/mk/source.mk b/mk/source.mk
+index 6fd2fd2..ca9d67c 100644
+--- a/mk/source.mk
++++ b/mk/source.mk
+@@ -174,6 +174,7 @@ COMMON_SRC = \
+             flight/flight_plan_nav.c \
+             flight/gps_rescue_multirotor.c \
+             flight/gps_rescue_wing.c \
++            flight/hover_calibration.c \
+             flight/imu.c \
+             flight/mixer.c \
+             flight/mixer_init.c \
+@@ -235,6 +236,7 @@ COMMON_SRC = \
+             cms/cms_menu_gps_rescue_multirotor.c \
+             cms/cms_menu_gps_rescue_wing.c \
+             cms/cms_menu_gps_lap_timer.c \
++            cms/cms_menu_hover_cal.c \
+             cms/cms_menu_imu.c \
+             cms/cms_menu_ledstrip.c \
+             cms/cms_menu_main.c \
+@@ -527,6 +529,7 @@ SIZE_OPTIMISED_SRC += \
+             cms/cms_menu_gps_rescue_multirotor.c \
+             cms/cms_menu_gps_rescue_wing.c \
+             cms/cms_menu_gps_lap_timer.c \
++            cms/cms_menu_hover_cal.c \
+             cms/cms_menu_imu.c \
+             cms/cms_menu_ledstrip.c \
+             cms/cms_menu_main.c \
+diff --git a/src/main/cms/cms_menu_hover_cal.c b/src/main/cms/cms_menu_hover_cal.c
+new file mode 100644
+index 0000000..d32ab0e
+--- /dev/null
++++ b/src/main/cms/cms_menu_hover_cal.c
+@@ -0,0 +1,91 @@
++/*
++ * This file is part of Cleanflight and Betaflight.
++ *
++ * Cleanflight and Betaflight are free software. You can redistribute
++ * this software and/or modify this software under the terms of the
++ * GNU General Public License as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option)
++ * any later version.
++ *
++ * Cleanflight and Betaflight are distributed in the hope that they
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
++ * See the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this software.
++ *
++ * If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <stdbool.h>
++
++#include "platform.h"
++
++#ifdef USE_CMS
++
++#include "cms/cms.h"
++#include "cms/cms_types.h"
++#include "cms/cms_menu_hover_cal.h"
++
++#include "common/maths.h"
++#include "common/printf.h"
++#include "common/utils.h"
++
++#include "flight/hover_calibration.h"
++#ifndef USE_WING
++#include "flight/autopilot_multirotor.h"
++#endif
++
++#include "pg/autopilot.h"
++
++// CURRENT (effective hover throttle in use right now) and NEW (last captured), refreshed each CMS poll
++static char hoverCalCurrentBuf[6];
++static char hoverCalNewBuf[6];
++
++static const void *cmsHoverCalOnDisplayUpdate(displayPort_t *pDisp, const OSD_Entry *selected)
++{
++    UNUSED(pDisp);
++    UNUSED(selected);
++
++#ifndef USE_WING
++    tfp_sprintf(hoverCalCurrentBuf, "%4u", autopilotGetEffectiveHoverThrottlePwm());
++#else
++    tfp_sprintf(hoverCalCurrentBuf, "%4u", autopilotConfig()->hoverThrottle);
++#endif
++    tfp_sprintf(hoverCalNewBuf, "%4u", hoverCalibrationGetNewThrottle());
++
++    return NULL;
++}
++
++static const void *cmsHoverCalSave(displayPort_t *pDisp, const void *ptr)
++{
++    UNUSED(ptr);
++
++    autopilotConfigMutable()->hoverThrottle = constrain(hoverCalibrationGetNewThrottle(), 0, 1700);
++
++    return cmsMenuExit(pDisp, (void *)CMS_POPUP_SAVEREBOOT);
++}
++
++static const OSD_Entry cmsx_menuHoverCalEntries[] =
++{
++    { "HOVER CALIBRATION", OME_Label,           NULL,            NULL },
++    { "CURRENT",           OME_Label | DYNAMIC, NULL,            hoverCalCurrentBuf },
++    { "NEW",               OME_Label | DYNAMIC, NULL,            hoverCalNewBuf },
++    { "SAVE AND REBOOT",   OME_Funcall,         cmsHoverCalSave, NULL },
++    { "EXIT",              OME_Back,            NULL,            NULL },
++    { NULL, OME_END, NULL, NULL }
++};
++
++CMS_Menu cmsx_menuHoverCal = {
++#ifdef CMS_MENU_DEBUG
++    .GUARD_text = "MENUHOVERCAL",
++    .GUARD_type = OME_MENU,
++#endif
++    .onEnter = NULL,
++    .onExit = NULL,
++    .onDisplayUpdate = cmsHoverCalOnDisplayUpdate,
++    .entries = cmsx_menuHoverCalEntries,
++};
++
++#endif // USE_CMS
+diff --git a/src/main/cms/cms_menu_hover_cal.h b/src/main/cms/cms_menu_hover_cal.h
+new file mode 100644
+index 0000000..473369e
+--- /dev/null
++++ b/src/main/cms/cms_menu_hover_cal.h
+@@ -0,0 +1,25 @@
++/*
++ * This file is part of Cleanflight and Betaflight.
++ *
++ * Cleanflight and Betaflight are free software. You can redistribute
++ * this software and/or modify this software under the terms of the
++ * GNU General Public License as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option)
++ * any later version.
++ *
++ * Cleanflight and Betaflight are distributed in the hope that they
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
++ * See the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this software.
++ *
++ * If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#pragma once
++
++#include "cms/cms_types.h"
++
++extern CMS_Menu cmsx_menuHoverCal;
+diff --git a/src/main/cms/cms_menu_main.c b/src/main/cms/cms_menu_main.c
+index 7543aa0..037d9e9 100644
+--- a/src/main/cms/cms_menu_main.c
++++ b/src/main/cms/cms_menu_main.c
+@@ -42,6 +42,7 @@
+ #include "cms/cms_menu_osd.h"
+ #include "cms/cms_menu_power.h"
+ #include "cms/cms_menu_saveexit.h"
++#include "cms/cms_menu_hover_cal.h"
+ 
+ #ifdef USE_PERSISTENT_STATS
+ #include "cms/cms_menu_persistent_stats.h"
+@@ -98,6 +99,7 @@ static const OSD_Entry menuFeaturesEntries[] =
+ #ifdef USE_LED_STRIP
+     {"LED STRIP", OME_Submenu, cmsMenuChange, &cmsx_menuLedstrip},
+ #endif // LED_STRIP
++    {"HOVER CAL", OME_Submenu, cmsMenuChange, &cmsx_menuHoverCal},
+     {"POWER", OME_Submenu, cmsMenuChange, &cmsx_menuPower},
+ #ifdef USE_CMS_FAILSAFE_MENU
+     {"FAILSAFE", OME_Submenu, cmsMenuChange, &cmsx_menuFailsafe},
+diff --git a/src/main/fc/core.c b/src/main/fc/core.c
+index 390006d..efec431 100644
+--- a/src/main/fc/core.c
++++ b/src/main/fc/core.c
+@@ -63,6 +63,7 @@
+ #include "flight/gps_rescue.h"
+ #include "flight/alt_hold.h"
+ #include "flight/pos_hold.h"
++#include "flight/hover_calibration.h"
+ 
+ #if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+ #include "flight/flight_plan_capture.h"
+@@ -1028,6 +1029,7 @@ void processRxModes(timeUs_t currentTimeUs)
+     }
+ 
+     updateActivatedModes();
++    hoverCalibrationUpdate();
+ 
+ #ifdef USE_DSHOT
+     if (crashFlipModeActive) {
+diff --git a/src/main/fc/rc_modes.h b/src/main/fc/rc_modes.h
+index 5f0569a..1b7547b 100644
+--- a/src/main/fc/rc_modes.h
++++ b/src/main/fc/rc_modes.h
+@@ -84,6 +84,7 @@ typedef enum {
+     BOXREADY,
+     BOXLAPTIMERRESET,
+     BOXWPCAPTURE,
++    BOXHOVERCAL,
+     CHECKBOX_ITEM_COUNT
+ } boxId_e;
+ 
+diff --git a/src/main/flight/hover_calibration.c b/src/main/flight/hover_calibration.c
+new file mode 100644
+index 0000000..888cdc9
+--- /dev/null
++++ b/src/main/flight/hover_calibration.c
+@@ -0,0 +1,49 @@
++/*
++ * This file is part of Cleanflight and Betaflight.
++ *
++ * Cleanflight and Betaflight are free software. You can redistribute
++ * this software and/or modify this software under the terms of the
++ * GNU General Public License as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option)
++ * any later version.
++ *
++ * Cleanflight and Betaflight are distributed in the hope that they
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
++ * See the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this software.
++ *
++ * If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include "platform.h"
++
++#include <math.h>
++
++#include "flight/hover_calibration.h"
++
++#include "fc/rc_modes.h"
++#include "fc/rc_controls.h"
++#include "fc/runtime_config.h"
++
++#include "rx/rx.h"
++
++static uint16_t newThrottle;
++static bool switchPrev;
++
++void hoverCalibrationUpdate(void)
++{
++    const bool switchNow = IS_RC_MODE_ACTIVE(BOXHOVERCAL);
++
++    if (ARMING_FLAG(ARMED) && switchNow && !switchPrev) {
++        newThrottle = (uint16_t)lrintf(rcData[THROTTLE]); // rising edge only
++    }
++    switchPrev = switchNow;
++}
++
++uint16_t hoverCalibrationGetNewThrottle(void)
++{
++    return newThrottle;
++}
+diff --git a/src/main/flight/hover_calibration.h b/src/main/flight/hover_calibration.h
+new file mode 100644
+index 0000000..b24f0f2
+--- /dev/null
++++ b/src/main/flight/hover_calibration.h
+@@ -0,0 +1,30 @@
++/*
++ * This file is part of Cleanflight and Betaflight.
++ *
++ * Cleanflight and Betaflight are free software. You can redistribute
++ * this software and/or modify this software under the terms of the
++ * GNU General Public License as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option)
++ * any later version.
++ *
++ * Cleanflight and Betaflight are distributed in the hope that they
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
++ * See the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this software.
++ *
++ * If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#pragma once
++
++#include <stdint.h>
++
++// Call once per RC update pass. Captures the current throttle value on each
++// rising edge of the BOXHOVERCAL switch while armed.
++void hoverCalibrationUpdate(void);
++
++// Most recently captured throttle value (not yet saved to EEPROM).
++uint16_t hoverCalibrationGetNewThrottle(void);
+diff --git a/src/main/msp/msp_box.c b/src/main/msp/msp_box.c
+index cfe2f90..8e59f7f 100644
+--- a/src/main/msp/msp_box.c
++++ b/src/main/msp/msp_box.c
+@@ -103,7 +103,8 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
+     { .boxId = BOXLAPTIMERRESET, .boxName = "LAP TIMER RESET", .permanentId = 54},
+     { .boxId = BOXCHIRP, .boxName = "CHIRP", .permanentId = 55},
+     { .boxId = BOXAUTOPILOT, .boxName = "AUTOPILOT", .permanentId = 56},
+-    { .boxId = BOXWPCAPTURE, .boxName = "WP CAPTURE", .permanentId = 57}
++    { .boxId = BOXWPCAPTURE, .boxName = "WP CAPTURE", .permanentId = 57},
++    { .boxId = BOXHOVERCAL, .boxName = "HOVER CAL", .permanentId = 58}
+ };
+ 
+ // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
+@@ -207,6 +208,7 @@ void initActiveBoxIds(void)
+ #define BME(boxId) do { bitArraySet(&ena, boxId); } while (0)
+     BME(BOXARM);
+     BME(BOXPREARM);
++    BME(BOXHOVERCAL);
+     if (!featureIsEnabled(FEATURE_AIRMODE)) {
+         BME(BOXAIRMODE);
+     }
