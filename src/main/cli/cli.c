@@ -6087,7 +6087,7 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
 #if defined(USE_SENSOR_NAMES)
     const uint32_t detectedSensorsMask = sensorsMask();
     for (unsigned i = SENSOR_INDEX_ACC; i < SENSOR_INDEX_COUNT; i++) {
-        const uint32_t mask = (1U << i);
+        const uint32_t mask = sensorMaskForIndex(i);
         if ((detectedSensorsMask & mask)) {
 
             const uint8_t sensorHardwareIndex = detectedSensors[i];
@@ -6558,7 +6558,7 @@ RAM_CODE static void cliEnv(const char *cmdName, char *cmdline)
 #if defined(USE_SENSOR_NAMES)
     const uint32_t detectedSensorsMask = sensorsMask();
     for (unsigned i = SENSOR_INDEX_ACC; i < SENSOR_INDEX_COUNT; i++) {
-        const uint32_t mask = (1U << i);
+        const uint32_t mask = sensorMaskForIndex(i);
         if ((detectedSensorsMask & mask) == 0) {
             continue;
         }

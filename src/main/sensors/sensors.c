@@ -198,6 +198,24 @@ static const struct {
 };
 STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorHardwareTables), sensorHardwareTables_length_mismatch);
 
+// sensorIndex_e and the sensors_e mask bits are not 1:1 (the mask interleaves
+// GPS/GPSMAG), so DEVICES-DETECTED style loops must map index to bit rather
+// than assume (1 << index).
+static const uint32_t sensorIndexToMask[SENSOR_INDEX_COUNT] = {
+    [SENSOR_INDEX_GYRO]         = SENSOR_GYRO,
+    [SENSOR_INDEX_ACC]          = SENSOR_ACC,
+    [SENSOR_INDEX_BARO]         = SENSOR_BARO,
+    [SENSOR_INDEX_MAG]          = SENSOR_MAG,
+    [SENSOR_INDEX_RANGEFINDER]  = SENSOR_RANGEFINDER,
+    [SENSOR_INDEX_OPTICALFLOW]  = SENSOR_OPTICALFLOW,
+    [SENSOR_INDEX_PITOT]        = SENSOR_PITOT,
+};
+
+uint32_t sensorMaskForIndex(sensorIndex_e sensor)
+{
+    return (sensor < SENSOR_INDEX_COUNT) ? sensorIndexToMask[sensor] : 0;
+}
+
 const char * const *sensorHardwareNames(sensorIndex_e sensor, int *count)
 {
     if (sensor >= SENSOR_INDEX_COUNT) {

@@ -70,5 +70,6 @@ extern const char * const lookupTableOpticalflowHardware[];
 extern const char * const lookupTablePitotHardware[];
 
 const char * const *sensorHardwareNames(sensorIndex_e sensor, int *count);
+uint32_t sensorMaskForIndex(sensorIndex_e sensor);
 sensorIndex_e sensorIndexFromName(const char *name);
 const char *sensorTypeName(sensorIndex_e sensor);
