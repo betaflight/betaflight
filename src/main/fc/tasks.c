@@ -282,7 +282,9 @@ static void taskUpdateBaro(timeUs_t currentTimeUs)
 #ifdef USE_PITOT
 static void taskUpdatePitot(timeUs_t currentTimeUs)
 {
-    if (sensors(SENSOR_PITOT)) {
+    // Runs while configured, not just once SENSOR_PITOT is set: a DroneCAN
+    // source only announces itself on its first frame, which pitotUpdate detects.
+    if (pitotIsConfigured()) {
         const uint32_t newDeadline = pitotUpdate(currentTimeUs);
         if (newDeadline != 0) {
             rescheduleTask(TASK_SELF, newDeadline);
@@ -622,7 +624,7 @@ void tasksInit(void)
     setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));
 #endif
 #ifdef USE_PITOT
-    setTaskEnabled(TASK_PITOT, sensors(SENSOR_PITOT));
+    setTaskEnabled(TASK_PITOT, pitotIsConfigured());
 #endif
 
 #if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)

@@ -52,7 +52,7 @@
 #define PITOT_I2C_INSTANCE I2C_DEVICE
 #endif
 
-#define PITOT_CALIBRATION_SAMPLES 100
+#define PITOT_CALIBRATION_SAMPLES TASK_PITOT_RATE_HZ  // ~1 s of at-rest samples
 #define AIR_DENSITY_SEA_LEVEL     1.225f   // kg/m^3
 #define PITOT_LPF_HZ              5.0f     // differential-pressure smoothing
 #define PITOT_DRONECAN_STALE_US   500000   // drop the DroneCAN source if no frame for 0.5 s
@@ -61,9 +61,11 @@ pitot_t pitot;
 
 static uint16_t calibrationCount = 0;
 static float calibrationAccum = 0.0f;
+static bool calibrated = false;
 static pt1Filter_t diffPressureLpf;
 static bool lpfInitialised = false;
 static bool i2cReady = false;
+static pitotSensor_e activeSource = PITOT_NONE;
 
 PG_REGISTER_WITH_RESET_FN(pitotConfig_t, pitotConfig, PG_PITOT_CONFIG, 0);
 
@@ -75,13 +77,9 @@ void pgResetFn_pitotConfig(pitotConfig_t *config)
     config->pitot_i2c_address = 0;  // 0 = driver default (MS4525: 0x28)
 }
 
-static bool dronecanReady(void)
+bool pitotIsConfigured(void)
 {
-#if ENABLE_DRONECAN
-    return true;    // subscriber is installed; per-read freshness is checked separately
-#else
-    return false;
-#endif
+    return pitotConfig()->pitot_hardware != PITOT_NONE;
 }
 
 static bool detectI2C(void)
@@ -99,36 +97,19 @@ static bool detectI2C(void)
 #endif
 }
 
-// Probe both backends the configured source might use, then latch which are
-// present. DroneCAN is "present" whenever the transport is compiled in; its
-// per-frame freshness gates the read.
-static bool pitotDetect(pitotSensor_e hardwareToUse)
-{
-    i2cReady = false;
-
-    if (hardwareToUse == PITOT_MS4525 || hardwareToUse == PITOT_DEFAULT) {
-        i2cReady = detectI2C();
-    }
-    const bool dronecanPresent =
-        (hardwareToUse == PITOT_DRONECAN || hardwareToUse == PITOT_DEFAULT) && dronecanReady();
-
-    if (!i2cReady && !dronecanPresent) {
-        return false;
-    }
-
-    detectedSensors[SENSOR_INDEX_PITOT] = i2cReady ? PITOT_MS4525 : PITOT_DRONECAN;
-    sensorsSet(SENSOR_PITOT);
-    return true;
-}
-
 void pitotInit(void)
 {
-    if (pitotConfig()->pitot_hardware == PITOT_NONE) {
+    if (!pitotIsConfigured()) {
         return;
     }
-    if (pitotDetect(pitotConfig()->pitot_hardware)) {
-        pitotStartCalibration();    // zero the at-rest offset over the first samples
+    // The I2C part is probed synchronously here (registers the bus device); the
+    // DroneCAN source is confirmed at runtime on its first frame. SENSOR_PITOT
+    // is only set once a source actually delivers a sample (see pitotUpdate).
+    const pitotSensor_e hardware = pitotConfig()->pitot_hardware;
+    if (hardware == PITOT_MS4525 || hardware == PITOT_DEFAULT) {
+        i2cReady = detectI2C();
     }
+    pitotStartCalibration();
 }
 
 static bool readI2C(float *diffPressurePa, float *temperatureK)
@@ -143,7 +124,10 @@ static bool readDronecan(float *diffPressurePa, float *temperatureK)
     if (!dronecanAirspeedGetLatest(diffPressurePa, &staticPa, temperatureK)) {
         return false;
     }
-    return cmpTimeUs(micros(), dronecanAirspeedLastUpdateUs()) < PITOT_DRONECAN_STALE_US;
+    // cmpTimeUs is signed: reject negative (overflowed) and stale ages so a very
+    // old frame is not mistaken for fresh.
+    const timeDelta_t ageUs = cmpTimeUs(micros(), dronecanAirspeedLastUpdateUs());
+    return ageUs >= 0 && ageUs < PITOT_DRONECAN_STALE_US;
 #else
     UNUSED(diffPressurePa);
     UNUSED(temperatureK);
@@ -151,15 +135,26 @@ static bool readDronecan(float *diffPressurePa, float *temperatureK)
 #endif
 }
 
-static bool readSource(pitotSensor_e source, float *diffPressurePa, float *temperatureK)
+// Reads the configured source. AUTO tries I2C first and falls back to DroneCAN;
+// an explicit selection reads only that backend, so a source pitotInit never
+// validated can never supply data. Returns the source that produced the sample.
+static pitotSensor_e readActiveSample(float *diffPressurePa, float *temperatureK)
 {
-    switch (source) {
+    switch (pitotConfig()->pitot_hardware) {
     case PITOT_MS4525:
-        return readI2C(diffPressurePa, temperatureK);
+        return readI2C(diffPressurePa, temperatureK) ? PITOT_MS4525 : PITOT_NONE;
     case PITOT_DRONECAN:
-        return readDronecan(diffPressurePa, temperatureK);
+        return readDronecan(diffPressurePa, temperatureK) ? PITOT_DRONECAN : PITOT_NONE;
+    case PITOT_DEFAULT:
+        if (readI2C(diffPressurePa, temperatureK)) {
+            return PITOT_MS4525;
+        }
+        if (readDronecan(diffPressurePa, temperatureK)) {
+            return PITOT_DRONECAN;
+        }
+        FALLTHROUGH;
     default:
-        return false;
+        return PITOT_NONE;
     }
 }
 
@@ -167,11 +162,12 @@ void pitotStartCalibration(void)
 {
     calibrationCount = PITOT_CALIBRATION_SAMPLES;
     calibrationAccum = 0.0f;
+    calibrated = false;
 }
 
 bool pitotIsCalibrated(void)
 {
-    return calibrationCount == 0;
+    return calibrated;
 }
 
 static float airspeedFromPressure(float diffPressurePa)
@@ -186,18 +182,22 @@ uint32_t pitotUpdate(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
-    // Configured source is primary; the other backend is the staleness fallback.
-    pitotSensor_e primary = pitotConfig()->pitot_hardware;
-    if (primary == PITOT_DEFAULT) {
-        primary = i2cReady ? PITOT_MS4525 : PITOT_DRONECAN;
-    }
-    const pitotSensor_e secondary = (primary == PITOT_DRONECAN) ? PITOT_MS4525 : PITOT_DRONECAN;
-
     float diffPressurePa;
     float temperatureK;
-    if (!readSource(primary, &diffPressurePa, &temperatureK)
-            && !readSource(secondary, &diffPressurePa, &temperatureK)) {
-        return TASK_PERIOD_HZ(TASK_PITOT_RATE_HZ);
+    const pitotSensor_e source = readActiveSample(&diffPressurePa, &temperatureK);
+    if (source == PITOT_NONE) {
+        return TASK_PERIOD_HZ(TASK_PITOT_RATE_HZ);  // no fresh sample this cycle
+    }
+
+    if (source != activeSource) {
+        // A backend delivered its first sample, or an AUTO fallback took over.
+        // Each source has its own offset, scaling and filter state, so register
+        // the new one and re-zero rather than mixing them.
+        activeSource = source;
+        detectedSensors[SENSOR_INDEX_PITOT] = source;
+        sensorsSet(SENSOR_PITOT);
+        lpfInitialised = false;
+        pitotStartCalibration();
     }
 
     if (!lpfInitialised) {
@@ -210,6 +210,7 @@ uint32_t pitotUpdate(timeUs_t currentTimeUs)
         calibrationAccum += diffPressurePa;
         if (--calibrationCount == 0) {
             pitot.pressureZero = calibrationAccum / PITOT_CALIBRATION_SAMPLES;
+            calibrated = true;
         }
     }
 
@@ -225,7 +226,7 @@ uint32_t pitotUpdate(timeUs_t currentTimeUs)
     return TASK_PERIOD_HZ(TASK_PITOT_RATE_HZ);
 }
 
-float getAirspeed(void)
+float pitotGetAirspeed(void)
 {
     return pitot.airspeed;
 }

@@ -39,7 +39,7 @@ typedef struct pitotConfig_s {
 PG_DECLARE(pitotConfig_t, pitotConfig);
 
 #ifndef TASK_PITOT_RATE_HZ
-#define TASK_PITOT_RATE_HZ 100
+#define TASK_PITOT_RATE_HZ 20   // oversamples the differential-pressure LPF; avoids a 100 Hz blocking I2C read
 #endif
 
 typedef struct pitot_s {
@@ -54,6 +54,7 @@ extern pitot_t pitot;
 
 void pitotInit(void);
 uint32_t pitotUpdate(timeUs_t currentTimeUs);
+bool pitotIsConfigured(void);
 bool pitotIsCalibrated(void);
 void pitotStartCalibration(void);
-float getAirspeed(void);
+float pitotGetAirspeed(void);

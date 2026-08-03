@@ -170,7 +170,9 @@ const char * const lookupTablePitotHardware[PITOT_HARDWARE_COUNT] = {
     [PITOT_DEFAULT] = "AUTO",
     [PITOT_NONE] = "NONE",
     [PITOT_MS4525] = "MS4525",
+#if ENABLE_DRONECAN
     [PITOT_DRONECAN] = "DRONECAN",
+#endif
 };
 
 static const char * const sensorTypeNames[] = {

@@ -273,7 +273,7 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
 };
 
 #if defined(USE_SENSOR_NAMES)
-// sync this with sensors_e
+// sync this with sensorIndex_e
 static const char *const sensorTypeDisplayNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "RANGEFINDER", "OPTICAL-FLOW", "PITOT"
 };
