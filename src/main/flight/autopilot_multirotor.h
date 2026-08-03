@@ -41,6 +41,7 @@ void pitchForwardOverride(bool request);
 void autopilotForceLevelPark(bool request); // heading/mag fault: force angle-mode self-level, never position hold
 void autopilotSetNavHeadingOverride(bool valid, float headingDeg); // mission pre-turn: command nose heading directly
 void initPositionHold(void);
+void positionControlReanchor(void);
 uint16_t autopilotGetEffectiveHoverThrottlePwm(void);
 void autopilotCaptureHoverThrottleForAltHold(void);
 void autopilotClearAltHoldHoverThrottle(void);
