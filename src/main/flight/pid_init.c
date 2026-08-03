@@ -375,6 +375,24 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         pidRuntime.pidCoefficient[axis].Kd = DTERM_SCALE * pidProfile->pid[axis].D;
         pidRuntime.pidCoefficient[axis].Kf = FEEDFORWARD_SCALE * (pidProfile->pid[axis].F * 0.01f);
     }
+
+#ifdef USE_ADRC
+    adrcInitConfig(&pidProfile->adrc, &pidRuntime.adrc, pidRuntime.dT);
+
+    // Stock PID-profile selection paths reject changes while armed. Treat a pid_type change here
+    // as a disarmed control-law configuration transition, not as an in-flight handover promise:
+    // clear both classic I and ADRC observer/output memory so neither controller inherits the
+    // other's state on the next arm. Same-type pidInitConfig() calls still preserve ADRC state;
+    // adjustment ranges legitimately use that path while armed.
+    if (pidProfile->pid_type != pidRuntime.activePidType) {
+        pidResetIterm();
+        if (!ARMING_FLAG(ARMED)) {
+            adrcResetGate(&pidRuntime.adrc);
+        }
+        pidRuntime.activePidType = pidProfile->pid_type;
+    }
+#endif
+
 #ifdef USE_INTEGRATED_YAW_CONTROL
     if (!pidProfile->use_integrated_yaw)
 #endif

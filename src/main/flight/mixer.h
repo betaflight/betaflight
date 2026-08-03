@@ -142,6 +142,9 @@ bool mixerIsTricopter(void);
 
 void mixerSetThrottleAngleCorrection(int correctionValue);
 float mixerGetThrottle(void);
+#ifdef USE_ADRC
+float mixerGetAdrcThrottle(void);
+#endif
 float mixerGetRcThrottle(void);
 mixerMode_e getMixerMode(void);
 bool mixerModeIsFixedWing(mixerMode_e mixerMode);

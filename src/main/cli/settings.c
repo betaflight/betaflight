@@ -466,6 +466,12 @@ static const char * const lookupTableSpaMode[] = {
     "OFF", "I_FREEZE", "I", "PID", "PD_I_FREEZE"
 };
 
+#ifdef USE_ADRC
+static const char * const lookupTablePidType[] = {
+    "CLASSIC", "ADRC"
+};
+#endif
+
 #ifdef USE_LED_STRIP
 #ifdef USE_LED_STRIP_STATUS_MODE
 static const char * const lookupTableLEDProfile[] = {
@@ -689,6 +695,9 @@ const lookupTableEntry_t lookupTables[] = {
 #endif
     LOOKUP_TABLE_ENTRY(lookupTableTpaMode),
     LOOKUP_TABLE_ENTRY(lookupTableSpaMode),
+#ifdef USE_ADRC
+    LOOKUP_TABLE_ENTRY(lookupTablePidType),
+#endif
 #ifdef USE_LED_STRIP
     LOOKUP_TABLE_ENTRY(lookupTableLEDProfile),
     LOOKUP_TABLE_ENTRY(lookupTableLedstripColors),
@@ -1403,6 +1412,28 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_SPA_YAW_MODE,       VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SPA_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, spa_mode[FD_YAW]) },
     { PARAM_NAME_YAW_TYPE,           VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_YAW_TYPE }, PG_PID_PROFILE, offsetof(pidProfile_t, yaw_type) },
     { PARAM_NAME_ANGLE_PITCH_OFFSET, VAR_INT16 | PROFILE_VALUE, .config.minmaxUnsigned = { -ANGLE_PITCH_OFFSET_MAX, ANGLE_PITCH_OFFSET_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, angle_pitch_offset) },
+#endif
+
+#ifdef USE_ADRC
+    { PARAM_NAME_PID_TYPE,      VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_PID_TYPE }, PG_PID_PROFILE, offsetof(pidProfile_t, pid_type) },
+    { PARAM_NAME_ADRC_WC_ROLL,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 300 }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.wc[FD_ROLL]) },
+    { PARAM_NAME_ADRC_WC_PITCH, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 300 }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.wc[FD_PITCH]) },
+    { PARAM_NAME_ADRC_WC_YAW,   VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 300 }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.wc[FD_YAW]) },
+    { PARAM_NAME_ADRC_WO_ROLL,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 10, 600 }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.wo[FD_ROLL]) },
+    { PARAM_NAME_ADRC_WO_PITCH, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 10, 600 }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.wo[FD_PITCH]) },
+    { PARAM_NAME_ADRC_WO_YAW,   VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 10, 600 }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.wo[FD_YAW]) },
+    { PARAM_NAME_ADRC_B0_ROLL,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 100, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.b0[FD_ROLL]) },
+    { PARAM_NAME_ADRC_B0_PITCH, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 100, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.b0[FD_PITCH]) },
+    { PARAM_NAME_ADRC_B0_YAW,   VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 100, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.b0[FD_YAW]) },
+    { PARAM_NAME_ADRC_GYRO_LPF_HZ, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, LPF_MAX_HZ }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.gyroFilterHz) },
+    { PARAM_NAME_ADRC_HOVER_THROTTLE, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.hoverThrottlePercent) },
+    { PARAM_NAME_ADRC_SIGMA_DECAY,    VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 100 },  PG_PID_PROFILE, offsetof(pidProfile_t, adrc.sigmaDecay) },
+    { PARAM_NAME_ADRC_TD_HZ,          VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, LPF_MAX_HZ }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.tdHz) },
+    { PARAM_NAME_ADRC_LIFTOFF_THROTTLE,      VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 100 },   PG_PID_PROFILE, offsetof(pidProfile_t, adrc.liftoffThrottlePercent) },
+    { PARAM_NAME_ADRC_LIFTOFF_GYRO_DPS,      VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 255 },   PG_PID_PROFILE, offsetof(pidProfile_t, adrc.liftoffGyroDps) },
+    { PARAM_NAME_ADRC_LIFTOFF_HOLD_MS,       VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 5000 },  PG_PID_PROFILE, offsetof(pidProfile_t, adrc.liftoffHoldMs) },
+    { PARAM_NAME_ADRC_GATED_Z3_DECAY,        VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 2000 },  PG_PID_PROFILE, offsetof(pidProfile_t, adrc.gatedZ3DecayRate) },
+    { PARAM_NAME_ADRC_B0_SCALE_MAX,          VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 50 },    PG_PID_PROFILE, offsetof(pidProfile_t, adrc.b0ThrottleScaleMax) },
 #endif
 
 // PG_TELEMETRY_CONFIG

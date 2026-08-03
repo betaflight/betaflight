@@ -164,6 +164,7 @@ COMMON_SRC = \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
             fc/rc_modes.c \
+            flight/adrc.c \
             flight/alt_hold_multirotor.c \
             flight/alt_hold_wing.c \
             flight/autopilot_multirotor.c \

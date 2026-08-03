@@ -131,6 +131,9 @@ typedef enum {
 #endif
     TABLE_TPA_MODE,
     TABLE_SPA_MODE,
+#ifdef USE_ADRC
+    TABLE_PID_TYPE,
+#endif
 #ifdef USE_LED_STRIP
     TABLE_LED_PROFILE,
     TABLE_LEDSTRIP_COLOR,
