@@ -53,19 +53,22 @@
 #endif
 
 #define PITOT_CALIBRATION_SAMPLES TASK_PITOT_RATE_HZ  // ~1 s of at-rest samples
-#define AIR_DENSITY_SEA_LEVEL     1.225f   // kg/m^3
-#define PITOT_LPF_HZ              5.0f     // differential-pressure smoothing
-#define PITOT_DRONECAN_STALE_US   500000   // drop the DroneCAN source if no frame for 0.5 s
+#define AIR_DENSITY_SEA_LEVEL     1.225f    // kg/m^3
+#define PITOT_LPF_HZ              5.0f      // differential-pressure smoothing
+#define PITOT_DRONECAN_STALE_US   500000    // drop the DroneCAN source if no frame for 0.5 s
+#define PITOT_SIGNAL_TIMEOUT_US   1000000   // no valid sample from any source -> sensor lost
 
 pitot_t pitot;
 
 static uint16_t calibrationCount = 0;
 static float calibrationAccum = 0.0f;
-static bool calibrated = false;
+static float sourceZero[PITOT_HARDWARE_COUNT];     // at-rest offset captured per source
+static bool sourceCalibrated[PITOT_HARDWARE_COUNT];
 static pt1Filter_t diffPressureLpf;
 static bool lpfInitialised = false;
 static bool i2cReady = false;
 static pitotSensor_e activeSource = PITOT_NONE;
+static timeUs_t lastValidSampleUs = 0;
 
 PG_REGISTER_WITH_RESET_FN(pitotConfig_t, pitotConfig, PG_PITOT_CONFIG, 0);
 
@@ -109,7 +112,7 @@ void pitotInit(void)
     if (hardware == PITOT_MS4525 || hardware == PITOT_DEFAULT) {
         i2cReady = detectI2C();
     }
-    pitotStartCalibration();
+    // Each source is zeroed on its first at-rest sample (see pitotUpdate).
 }
 
 static bool readI2C(float *diffPressurePa, float *temperatureK)
@@ -162,12 +165,14 @@ void pitotStartCalibration(void)
 {
     calibrationCount = PITOT_CALIBRATION_SAMPLES;
     calibrationAccum = 0.0f;
-    calibrated = false;
+    if (activeSource != PITOT_NONE) {
+        sourceCalibrated[activeSource] = false;
+    }
 }
 
 bool pitotIsCalibrated(void)
 {
-    return calibrated;
+    return activeSource != PITOT_NONE && sourceCalibrated[activeSource];
 }
 
 static float airspeedFromPressure(float diffPressurePa)
@@ -186,18 +191,31 @@ uint32_t pitotUpdate(timeUs_t currentTimeUs)
     float temperatureK;
     const pitotSensor_e source = readActiveSample(&diffPressurePa, &temperatureK);
     if (source == PITOT_NONE) {
-        return TASK_PERIOD_HZ(TASK_PITOT_RATE_HZ);  // no fresh sample this cycle
+        // No source has data. After a bounded gap, declare the sensor lost so a
+        // caller does not keep reading a frozen airspeed.
+        if (activeSource != PITOT_NONE
+                && cmpTimeUs(currentTimeUs, lastValidSampleUs) > PITOT_SIGNAL_TIMEOUT_US) {
+            activeSource = PITOT_NONE;
+            sensorsClear(SENSOR_PITOT);
+            pitot.diffPressure = 0.0f;
+            pitot.airspeed = 0.0f;
+        }
+        return TASK_PERIOD_HZ(TASK_PITOT_RATE_HZ);
     }
+    lastValidSampleUs = currentTimeUs;
 
     if (source != activeSource) {
         // A backend delivered its first sample, or an AUTO fallback took over.
-        // Each source has its own offset, scaling and filter state, so register
-        // the new one and re-zero rather than mixing them.
+        // Each source keeps its own zero and filter state; a source is only
+        // zeroed once, and only while disarmed, so a mid-flight switch reuses the
+        // stored offset instead of capturing dynamic pressure as the zero.
         activeSource = source;
         detectedSensors[SENSOR_INDEX_PITOT] = source;
         sensorsSet(SENSOR_PITOT);
         lpfInitialised = false;
-        pitotStartCalibration();
+        if (!sourceCalibrated[source] && !ARMING_FLAG(ARMED)) {
+            pitotStartCalibration();
+        }
     }
 
     if (!lpfInitialised) {
@@ -206,16 +224,22 @@ uint32_t pitotUpdate(timeUs_t currentTimeUs)
     }
     diffPressurePa = pt1FilterApply(&diffPressureLpf, diffPressurePa);
 
+    // Zeroing only runs while disarmed (at rest); arming abandons a partial pass.
     if (calibrationCount > 0) {
-        calibrationAccum += diffPressurePa;
-        if (--calibrationCount == 0) {
-            pitot.pressureZero = calibrationAccum / PITOT_CALIBRATION_SAMPLES;
-            calibrated = true;
+        if (ARMING_FLAG(ARMED)) {
+            calibrationCount = 0;
+        } else {
+            calibrationAccum += diffPressurePa;
+            if (--calibrationCount == 0) {
+                sourceZero[source] = calibrationAccum / PITOT_CALIBRATION_SAMPLES;
+                sourceCalibrated[source] = true;
+            }
         }
     }
 
+    pitot.pressureZero = sourceZero[source];
     pitot.temperature = temperatureK;
-    pitot.diffPressure = diffPressurePa - pitot.pressureZero;
+    pitot.diffPressure = diffPressurePa - sourceZero[source];
     pitot.airspeed = airspeedFromPressure(pitot.diffPressure);
 
     DEBUG_SET(DEBUG_PITOT, 0, lrintf(pitot.airspeed));
