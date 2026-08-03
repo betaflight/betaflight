@@ -56,9 +56,6 @@
 // 2 - Count of reception not complete in time
 // 3 - Number of high bits before telemetry start
 
-// Maximum time to wait for telemetry reception to complete
-#define DSHOT_TELEMETRY_TIMEOUT 2000
-
 // For MCUs that use MPU to control DMA coherency, there might be a performance hit
 // on manipulating input buffer content especially if it is read multiple times,
 // as the buffer region is attributed as not cachable.
@@ -508,23 +505,25 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorProtocolTypes_e pwmP
 
 static bool bbTelemetryWait(void)
 {
-    // Wait for telemetry reception to complete
-    bool telemetryPending;
+    // If telemetry input DMA is still running, abort it rather than busy-waiting.
+    // Skipping one telemetry frame is harmless; busy-waiting can block TASK_RX for
+    // tens of milliseconds on high-loop-rate targets (e.g. F7 at 8K with bidirDSHOT).
+    // bbUpdateComplete() handles the port still being in INPUT direction.
     bool telemetryWait = false;
-    const timeUs_t startTimeUs = micros();
 
-    do {
-        telemetryPending = false;
-        for (int i = 0; i < usedMotorPorts; i++) {
-            telemetryPending |= bbPorts[i].telemetryPending;
+    for (int i = 0; i < usedMotorPorts; i++) {
+        if (bbPorts[i].telemetryPending) {
+            bbTIM_DMACmd(bbPorts[i].timhw->tim, bbPorts[i].dmaSource, DISABLE);
+            bbDMA_Cmd(&bbPorts[i], DISABLE);
+            bbPorts[i].telemetryPending = false;
+            // The input capture was aborted mid-transfer, so the buffer holds a
+            // partial frame. Mark the port so decodeTelemetry() skips it rather
+            // than decoding a torn buffer (which could yield a bad-but-valid GCR
+            // frame). Skipping one telemetry frame is harmless.
+            bbPorts[i].telemetryAborted = true;
+            telemetryWait = true;
         }
-
-        telemetryWait |= telemetryPending;
-
-        if (cmpTimeUs(micros(), startTimeUs) > DSHOT_TELEMETRY_TIMEOUT) {
-            break;
-        }
-    } while (telemetryPending);
+    }
 
     if (telemetryWait) {
         DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);
@@ -555,6 +554,11 @@ static bool bbDecodeTelemetry(void)
         }
 #endif
         for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < dshotMotorCount; motorIndex++) {
+            if (bbMotors[motorIndex].bbPort->telemetryAborted) {
+                // Aborted reception; already counted in debug[2] by bbTelemetryWait().
+                // Don't bump debug[1] (missing-edge) - an abort is not a missing edge.
+                continue;
+            }
 #ifdef STM32F4
             uint32_t rawValue = decode_bb_bitband(
                 bbMotors[motorIndex].bbPort->portInputBuffer,
@@ -589,6 +593,10 @@ static bool bbDecodeTelemetry(void)
         }
 
         dshotTelemetryState.rawValueState = DSHOT_RAW_VALUE_STATE_NOT_PROCESSED;
+
+        for (int i = 0; i < usedMotorPorts; i++) {
+            bbPorts[i].telemetryAborted = false;
+        }
     }
 #endif
 
@@ -762,6 +770,14 @@ bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorCon
         const timerHardware_t *timerHardware = timerGetConfiguredByTag(motorConfig->ioTags[reorderedMotorIndex]);
         const IO_t io = IOGetByTag(motorConfig->ioTags[reorderedMotorIndex]);
 
+        if (timerHardware == NULL) {
+            /* not enough motors initialised for the mixer or a break in the motors */
+            device->vTable = NULL;
+            dshotMotorCount = 0;
+            bbStatus = DSHOT_BITBANG_STATUS_MOTOR_PIN_CONFLICT;
+            return false;
+        }
+
         uint8_t output = motorConfig->motorInversion ?  timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output;
         bbPuPdMode = (output & TIMER_OUTPUT_INVERTED) ? BB_GPIO_PULLDOWN : BB_GPIO_PULLUP;
 
@@ -786,7 +802,7 @@ bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorCon
         bbMotors[motorIndex].output = output;
 #if defined(STM32F4)
         bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, bbPuPdMode);
-#elif defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(STM32H5) || defined(STM32N6)
+#elif defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
         bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_LOW, bbPuPdMode);
 #endif
 

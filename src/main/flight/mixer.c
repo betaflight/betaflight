@@ -551,6 +551,8 @@ static void updateDynLpfCutoffs(timeUs_t currentTimeUs, float throttle)
 }
 #endif
 
+DEFINE_SCALE_FN(scaleAirmodeTransition, 0.0f, 0.5f, 0.5f, 1.0f)
+
 static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnabled)
 {
     float airmodeTransitionPercent = 1.0f;
@@ -559,7 +561,7 @@ static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnable
     if (!airmodeEnabled && throttle < 0.5f) {
         // this scales the motor mix authority to be 0.5 at 0 throttle, and 1.0 at 0.5 throttle as airmode off intended for things to work.
         // also lays the groundwork for how an airmode percent would work.
-        airmodeTransitionPercent = scaleRangef(throttle, 0.0f, 0.5f, 0.5f, 1.0f); // 0.5 throttle is full transition, and 0.0 throttle is 50% airmodeTransitionPercent
+        airmodeTransitionPercent = scaleAirmodeTransition(throttle);
         motorDeltaScale *= airmodeTransitionPercent; // this should be half of the motor authority allowed
     }
 
@@ -657,7 +659,7 @@ static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const
     if (!airmodeEnabled && throttle < 0.5f) {
         // this scales the motor mix authority to be 0.5 at 0 throttle, and 1.0 at 0.5 throttle as airmode off intended for things to work.
         // also lays the groundwork for how an airmode percent would work.
-        airmodeTransitionPercent = scaleRangef(throttle, 0.0f, 0.5f, 0.5f, 1.0f); // 0.5 throttle is full transition, and 0.0 throttle is 50% airmodeTransitionPercent
+        airmodeTransitionPercent = scaleAirmodeTransition(throttle); // 0.5 throttle is full transition, and 0.0 throttle is 50% airmodeTransitionPercent
     }
 
     const float motorMixNormalizationFactor = motorMixRange > 1.0f ? airmodeTransitionPercent / motorMixRange : airmodeTransitionPercent;

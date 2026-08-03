@@ -1,21 +1,34 @@
 /*
- * Minimal linker script for ESP32-S3
+ * Linker script for ESP32-S3, booted by the ESP-IDF second-stage bootloader.
  *
- * This is a placeholder for initial compilation.
- * The real linker script will be derived from ESP-IDF once
- * the SDK submodule is integrated.
+ * The image is produced with `esptool elf2image` and flashed at the factory
+ * app offset. The bootloader maps the flash-resident segments through the MMU
+ * and copies the RAM segments before jumping to the entry point:
  *
- * ESP32-S3 memory map:
- *   IRAM:  0x40370000 - 0x403BFFFF (320 KB instruction RAM)
- *   DRAM:  0x3FC88000 - 0x3FCEFFFF (416 KB data RAM)
- *   Flash: 0x42000000 - mapped via MMU (up to 16 MB)
+ *   .flash.text   -> IROM window 0x42000000  (execute-in-place code/literals)
+ *   .flash.rodata -> DROM window 0x3C000000  (read-only data, byte accessible)
+ *   .data/.bss    -> DRAM 0x3FC88000          (.data loaded by the bootloader,
+ *                                              .bss zeroed by the startup stub)
+ *
+ * Read-only data MUST live in the DROM window: the IROM/IBUS window only allows
+ * 32-bit aligned word accesses, so byte/halfword reads of rodata (strings, etc.)
+ * from there fault. The 0x20 offset on the flash windows leaves room for the
+ * image + first segment headers so the MMU page mapping lines up (matches IDF).
  */
 
 MEMORY
 {
-    iram_seg (RWX) :   org = 0x40370000, len = 320K
-    dram_seg (RW)  :   org = 0x3FC88000, len = 416K
-    flash_seg (RX) :   org = 0x42000000, len = 8M
+    iram_seg (RWX) :   org = 0x40374000, len = 0x4000
+    /* End at 0x3FCEF000, NOT 0x3FCF0000 (SOC_DIRAM_DRAM_HIGH): the ROM keeps live
+     * data structures in the top of DRAM - the SPI-flash chip descriptor
+     * (g_rom_flashchip, via rom_spiflash_legacy_data @0x3FCEFFE4) and friends sit at
+     * 0x3FCEF81C..0x3FCEFFFC. _estack is the top of this region and the main stack
+     * grows down from it, so reaching 0x3FCF0000 would let the stack overwrite those
+     * ROM globals - after which esp_rom_spiflash_* read a garbage chip descriptor and
+     * hang in wait_idle (and esp_rom_spiflash_attach faults). Reserve the top 4 KB. */
+    dram_seg (RW)  :   org = 0x3FC88000, len = 0x67000
+    irom_seg (RX)  :   org = 0x42000020, len = 0x800000 - 0x20
+    drom_seg (R)   :   org = 0x3C000020, len = 0x800000 - 0x20
 
     /* Peripheral register regions (memory-mapped I/O) */
     periph_uart0_seg (RW) :   org = 0x60000000, len = 0x1000
@@ -36,8 +49,8 @@ MEMORY
     periph_system_seg (RW) :  org = 0x600C0000, len = 0x1000
 }
 
-/* Default entry point */
-ENTRY(main)
+/* Entry stub (see start_esp32s3.S); the bootloader jumps here. */
+ENTRY(_start)
 
 /* Stack at end of DRAM */
 _estack = ORIGIN(dram_seg) + LENGTH(dram_seg);
@@ -45,58 +58,82 @@ _Min_Stack_Size = 0x800;
 
 SECTIONS
 {
+    /* IRAM-resident code (none at present, but keep the symbols/section). */
     .iram.text :
     {
         _iram_text_start = ABSOLUTE(.);
+        /* Entry stub first: the image entry point must be in IRAM. */
+        KEEP (*(.iram1.start))
         *(.iram1.literal .iram1.*)
         *(.iram.text.literal .iram.text .iram.text.*)
         _iram_text_end = ABSOLUTE(.);
     } > iram_seg
 
+    /* Execute-in-place code in the IROM window. Defined before the DROM dummy
+     * below because that dummy uses SIZEOF(.flash.text). */
     .flash.text :
     {
         _stext = .;
         *(.literal .literal.* .text .text.*)
         _etext = .;
-    } > flash_seg
+    } > irom_seg
 
-    .pg_registry :
+    /* The ESP32-S3 flash MMU is shared between the IROM (0x42000000) and DROM
+     * (0x3C000000) windows: the MMU entry index is (vaddr & 0x1FFFFFF) >> 16,
+     * so both windows alias the same 64KB entries. IROM occupies entries
+     * starting at 0; this NOLOAD dummy advances the DROM location counter past
+     * the IROM image size so .flash.rodata lands on later, non-colliding
+     * entries (mirrors ESP-IDF's .flash_rodata_dummy). */
+    .flash_rodata_dummy (NOLOAD) :
     {
+        . = ALIGN(4) + SIZEOF(.flash.text);
+        . = ALIGN(0x10000) + 0x20;
+    } > drom_seg
+
+    /* Read-only data in the byte-accessible DROM window. */
+    .flash.rodata :
+    {
+        _srodata = .;
+        /* App descriptor must be the first bytes of the DROM segment so the
+         * bootloader finds it at the expected offset. */
+        KEEP (*(.rodata_desc))
+        *(.rodata .rodata.*)
+        *(.srodata .srodata.*)
+
+        . = ALIGN(4);
         PROVIDE_HIDDEN (__pg_registry_start = .);
         KEEP (*(.pg_registry))
         KEEP (*(SORT(.pg_registry.*)))
         PROVIDE_HIDDEN (__pg_registry_end = .);
-    } > flash_seg
 
-    .pg_resetdata :
-    {
+        . = ALIGN(4);
         PROVIDE_HIDDEN (__pg_resetdata_start = .);
         KEEP (*(.pg_resetdata))
         PROVIDE_HIDDEN (__pg_resetdata_end = .);
-    } > flash_seg
 
-    .flash.rodata :
-    {
-        _srodata = .;
-        *(.rodata .rodata.*)
-        *(.srodata .srodata.*)
+        . = ALIGN(4);
         _erodata = .;
-    } > flash_seg
+    } > drom_seg
 
+    /* Initialised data: loaded into DRAM by the bootloader. */
     .data :
     {
+        . = ALIGN(4);
         _sdata = .;
         *(.data .data.*)
         *(.sdata .sdata.*)
+        . = ALIGN(4);
         _edata = .;
-    } > dram_seg AT > flash_seg
+    } > dram_seg
 
     .bss (NOLOAD) :
     {
+        . = ALIGN(4);
         _sbss = .;
         *(.bss .bss.*)
         *(.sbss .sbss.*)
         *(COMMON)
+        . = ALIGN(4);
         _ebss = .;
     } > dram_seg
 
@@ -112,9 +149,14 @@ SECTIONS
     _heap_start = .;
     _heap_end = ORIGIN(dram_seg) + LENGTH(dram_seg);
 
-    /* Config flash storage - last 64KB of flash */
-    __config_start = ORIGIN(flash_seg) + LENGTH(flash_seg) - 64K;
-    __config_end = ORIGIN(flash_seg) + LENGTH(flash_seg);
+    /* Persistent config storage: 64 KB at flash offset 0x210000, immediately after
+     * the 2 MB factory app partition (same offset on the 4/8/16 MB boards). At
+     * runtime configFlashInit() (ESP32/config_flash.c) maps it into the byte-
+     * accessible DROM window through the flash MMU, so the memory-mapped reads in
+     * config_eeprom.c resolve here. It MUST be the DROM window (0x3C000000): byte
+     * reads from the IROM window (0x42000000) fault. */
+    __config_start = 0x3C000000 + 0x210000;
+    __config_end   = __config_start + 64K;
 
     /* Peripheral register mappings at fixed hardware addresses */
     .peripheral_uart0 (NOLOAD) :    { *(.peripheral_uart0) }   > periph_uart0_seg

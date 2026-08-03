@@ -46,8 +46,19 @@
 
 #define CDC_COM_INTERFACE 0x1
 
-#define USBD_VID             0x0483
-#define USBD_PID             0x3256
+// HID composite descriptor uses its own VID/PID pair (the host's CDC driver
+// would otherwise refuse to enumerate a re-vendored CDC+HID compound device).
+// Allow per-board override; default to the original generic IDs.
+#ifndef USBD_HID_VID
+#define USBD_HID_VID         0x0483
+#endif
+#ifndef USBD_HID_PID
+#define USBD_HID_PID         0x3256
+#endif
+#undef USBD_VID
+#undef USBD_PID
+#define USBD_VID             USBD_HID_VID
+#define USBD_PID             USBD_HID_PID
 
 __ALIGN_BEGIN uint8_t USBD_HID_CDC_DeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END =
 {

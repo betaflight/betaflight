@@ -64,6 +64,10 @@
 #include "flight/alt_hold.h"
 #include "flight/pos_hold.h"
 
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#include "flight/flight_plan_nav.h"
+#endif
+
 #if defined(USE_DYN_NOTCH_FILTER)
 #include "flight/dyn_notch_filter.h"
 #endif
@@ -1040,6 +1044,16 @@ void processRxModes(timeUs_t currentTimeUs)
         DISABLE_FLIGHT_MODE(ANGLE_MODE); // failsafe support
     }
 
+#ifdef USE_GPS_RESCUE
+    if (ARMING_FLAG(ARMED) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE) || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE))) {
+        if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
+            ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+        }
+    } else {
+        DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+    }
+#endif
+
 #ifdef USE_ALTITUDE_HOLD
     // only if armed; can coexist with position hold
     if (ARMING_FLAG(ARMED)
@@ -1080,6 +1094,24 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 #endif
 
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+    if (ARMING_FLAG(ARMED)
+        && !FLIGHT_MODE(GPS_RESCUE_MODE)
+        && IS_RC_MODE_ACTIVE(BOXAUTOPILOT)
+        && sensors(SENSOR_ACC)
+        && sensors(SENSOR_GPS) && STATE(GPS_FIX)
+        && wasThrottleRaised()) {
+        if (!FLIGHT_MODE(AUTOPILOT_MODE)) {
+            ENABLE_FLIGHT_MODE(AUTOPILOT_MODE);
+            flightPlanNavEngage();
+        }
+        flightPlanNavUpdate(currentTimeUs);
+    } else if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+        DISABLE_FLIGHT_MODE(AUTOPILOT_MODE);
+        flightPlanNavDisengage();
+    }
+#endif
+
     if (IS_RC_MODE_ACTIVE(BOXHORIZON) && canUseHorizonMode && sensors(SENSOR_ACC)) {
         DISABLE_FLIGHT_MODE(ANGLE_MODE);
         if (!FLIGHT_MODE(HORIZON_MODE)) {
@@ -1088,16 +1120,6 @@ void processRxModes(timeUs_t currentTimeUs)
     } else {
         DISABLE_FLIGHT_MODE(HORIZON_MODE);
     }
-
-#ifdef USE_GPS_RESCUE
-    if (ARMING_FLAG(ARMED) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE) || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE))) {
-        if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
-            ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
-        }
-    } else {
-        DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
-    }
-#endif
 
 #ifdef USE_CHIRP
     if (IS_RC_MODE_ACTIVE(BOXCHIRP) && !FLIGHT_MODE(FAILSAFE_MODE) && !FLIGHT_MODE(GPS_RESCUE_MODE)) {

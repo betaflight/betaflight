@@ -93,6 +93,10 @@ static uint8_t crsfFrame[CRSF_FRAME_SIZE_MAX];
 #ifdef USE_GPS
 static uint32_t lastGpsSolnTime;
 #endif
+#if defined(USE_CRSF_V3) && defined(USE_GPS)
+static timeUs_t lastGpsTimeFrameTime = (timeUs_t)(-30000000);  // Send GPS Time immediately, then every 30s thereafter while disarmed
+static uint32_t lastGpsTimeSolnTime;  // Keep separate GPS soln time to not delay normal GPS frames
+#endif
 #ifdef USE_BARO
 static uint32_t lastBaroTime;
 #endif
@@ -985,11 +989,12 @@ static bool processCrsf(uint32_t currentTimeUs, uint32_t crsfLastCycleTime)
 
 #ifdef USE_GPS
 #if defined(USE_CRSF_V3)
-    if (isCrsfV3Running && crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX) && gpsSol.time != lastGpsSolnTime && gpsSol.dateTime.valid) {
+    if (crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX) && !ARMING_FLAG(ARMED) && gpsSol.dateTime.valid && gpsSol.time != lastGpsTimeSolnTime && cmpTimeUs(currentTimeUs, lastGpsTimeFrameTime) > 30000000) { // Removed isCrsfV3Running check from GPS Time 0x03 message as it requires baudrate negotiation which ELRS does not perform
         crsfInitializeFrame(dst);
         crsfFrameGpsTime(dst);
         crsfFinalize(dst);
-        crsfTimedSchedule &= ~BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX);
+        lastGpsTimeSolnTime = gpsSol.time;
+        lastGpsTimeFrameTime = currentTimeUs;
         return true;
     }
     if (isCrsfV3Running && crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_EXTENDED_INDEX) && gpsSol.time != lastGpsSolnTime) {

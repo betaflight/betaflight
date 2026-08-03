@@ -1,0 +1,13 @@
+{
+  "name": "betaflight gazebo SITL",
+  "build": {
+    "dockerfile": "containerfile.gazebo",
+    "context": "."
+  },
+  "runArgs": [
+    "--network=host"
+  ],
+  "remoteUser": "devpod",
+  "features": {},
+  "forwardPorts": [5761, 6761, 9002, 9003, 9004]
+}

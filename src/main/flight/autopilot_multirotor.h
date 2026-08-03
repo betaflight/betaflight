@@ -21,6 +21,8 @@
 #include <stdint.h>
 
 #include "common/axis.h"
+#include "common/vector.h"
+
 
 #ifndef USE_WING
 
@@ -32,18 +34,15 @@ void autopilotInit(void);
 void resetAltitudeControl(void);
 void setSticksActiveStatus(bool areSticksActive);
 void resetPositionControl(unsigned taskRateHz);
-void posControlOutput(void);
 bool positionControl(void);
-// targetAltitudeVelCmS: climb-rate feedforward (cm/s) — stick in alt hold, rescue ascent/descent rates.
-// velLimitCmS: |vertical velocity command| cap (cm/s); use 0 for default (1500 cm/s).
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeVelCmS, float velLimitCmS);
-
+void moveTargetLocation(const vector2_t *stepEF, unsigned taskRateHz, bool forceAbortNav);// for nav modes to update the target position
+void pitchForwardOverride(bool request);
+void initPositionHold(void);
 uint16_t autopilotGetEffectiveHoverThrottlePwm(void);
 void autopilotCaptureHoverThrottleForAltHold(void);
 void autopilotClearAltHoldHoverThrottle(void);
-
 bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);
-bool isAutopilotInControl(void);
 
 #endif // !USE_WING

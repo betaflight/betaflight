@@ -67,7 +67,7 @@ PG_RESET_TEMPLATE(sdioConfig_t, sdioConfig,
     .device = SDIO_DEV_TO_CFG(SDIO_DEVICE),
 );
 
-#if defined(STM32H7) || defined(STM32H5) || defined(STM32N6)
+#if ENABLE_SDIO_PIN_CONFIG
 PG_REGISTER_WITH_RESET_TEMPLATE(sdioPinConfig_t, sdioPinConfig, PG_SDIO_PIN_CONFIG, 0);
 
 PG_RESET_TEMPLATE(sdioPinConfig_t, sdioPinConfig,

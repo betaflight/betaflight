@@ -88,6 +88,21 @@ typedef enum {
 #ifdef USE_UART10
     UARTDEV_10,
 #endif
+#ifdef USE_UART11
+    UARTDEV_11,
+#endif
+#ifdef USE_UART12
+    UARTDEV_12,
+#endif
+#ifdef USE_UART13
+    UARTDEV_13,
+#endif
+#ifdef USE_UART14
+    UARTDEV_14,
+#endif
+#ifdef USE_UART15
+    UARTDEV_15,
+#endif
 #ifdef USE_LPUART1
     UARTDEV_LP1,
 #endif
@@ -163,7 +178,7 @@ typedef struct uartDevice_s {
 #if UART_TRAIT_PINSWAP
     bool pinSwap;
 #endif
-    txPinState_t txPinState;
+    volatile txPinState_t txPinState;
 } uartDevice_t;
 
 extern uartDevice_t uartDevice[UARTDEV_COUNT];  // indexed by uartDeviceIdx_e;
@@ -243,6 +258,26 @@ UART_BUFFERS_EXTERN(9);
 
 #ifdef USE_UART10
 UART_BUFFERS_EXTERN(10);
+#endif
+
+#ifdef USE_UART11
+UART_BUFFERS_EXTERN(11);
+#endif
+
+#ifdef USE_UART12
+UART_BUFFERS_EXTERN(12);
+#endif
+
+#ifdef USE_UART13
+UART_BUFFERS_EXTERN(13);
+#endif
+
+#ifdef USE_UART14
+UART_BUFFERS_EXTERN(14);
+#endif
+
+#ifdef USE_UART15
+UART_BUFFERS_EXTERN(15);
 #endif
 
 #ifdef USE_LPUART1

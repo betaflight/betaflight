@@ -11,10 +11,10 @@ CFLAGS          += -DDEBUG_HARDFAULTS
 endif
 
 #CMSIS
-CMSIS_DIR      := $(LIB_MAIN_DIR)/STM32H5/Drivers/CMSIS
+CMSIS_DIR      := $(LIB_MODULES_DIR)/STM32H5/Drivers/CMSIS
 
 #STDPERIPH
-STDPERIPH_DIR   = $(LIB_MAIN_DIR)/STM32H5/Drivers/STM32H5xx_HAL_Driver
+STDPERIPH_DIR   = $(LIB_MODULES_DIR)/STM32H5/Drivers/STM32H5xx_HAL_Driver
 STDPERIPH_SRC   = \
             stm32h5xx_hal_adc.c \
             stm32h5xx_hal_adc_ex.c \
@@ -105,7 +105,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(LIB_MAIN_DIR)/$(USBHID_DIR)/Inc \
                    $(LIB_MAIN_DIR)/$(USBMSC_DIR)/Inc \
                    $(CMSIS_DIR)/Core/Include \
-                   $(LIB_MAIN_DIR)/STM32H5/Drivers/CMSIS/Device/ST/STM32H5xx/Include \
+                   $(LIB_MODULES_DIR)/STM32H5/Drivers/CMSIS/Device/ST/STM32H5xx/Include \
                    $(TARGET_PLATFORM_DIR)/vcp_hal
 
 #Flags
@@ -219,7 +219,7 @@ SIZE_OPTIMISED_SRC += \
             STM32/bus_i2c_ll_init.c \
             drivers/serial_escserial.c
 
-DSP_LIB := $(LIB_MAIN_DIR)/STM32H5/Drivers/CMSIS/DSP
+DSP_LIB := $(LIB_MODULES_DIR)/STM32H5/Drivers/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM33
 
 include $(TARGET_PLATFORM_DIR)/mk/STM32_COMMON.mk

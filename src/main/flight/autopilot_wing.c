@@ -62,11 +62,6 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     UNUSED(velLimitCmS);
 }
 
-void setSticksActiveStatus(bool areSticksActive)
-{
-    UNUSED(areSticksActive);
-}
-
 bool positionControl(void)
 {
     return false;

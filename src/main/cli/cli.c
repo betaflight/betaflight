@@ -77,6 +77,7 @@ bool cliMode = false;
 #include "drivers/inverter.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "drivers/lcd_console.h"
 #include "drivers/light_led.h"
 #include "drivers/motor.h"
 #include "drivers/rangefinder/rangefinder_hcsr04.h"
@@ -135,6 +136,7 @@ bool cliMode = false;
 #include "pg/board.h"
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
+#include "pg/can.h"
 #include "pg/flight_plan.h"
 #include "pg/gyrodev.h"
 #include "pg/max7456.h"
@@ -233,6 +235,7 @@ static const char * const mixerNames[] = {
 #define _R(_flag, _name) [LOG2(_flag)] = _name
 static const char * const featureNames[] = {
     _R(FEATURE_RX_PPM, "RX_PPM"),
+    _R(FEATURE_RX_UDP, "RX_UDP"),
     _R(FEATURE_INFLIGHT_ACC_CAL, "INFLIGHT_ACC_CAL"),
     _R(FEATURE_RX_SERIAL, "RX_SERIAL"),
     _R(FEATURE_MOTOR_STOP, "MOTOR_STOP"),
@@ -428,6 +431,35 @@ CLI_DEBUG_EXPORT void cliPrintf(const char *format, ...)
 
 CLI_DEBUG_EXPORT void cliPrintLinef(const char *format, ...)
 {
+    va_list va;
+    va_start(va, format);
+    cliPrintfva(format, va);
+    va_end(va);
+    cliPrintLinefeed();
+}
+
+static const char *cliEnvFilter;
+
+static bool cliEnvKeyMatches(const char *name)
+{
+    return !cliEnvFilter || strncmp(name, cliEnvFilter, strlen(cliEnvFilter)) == 0;
+}
+
+static void cliPrintNameValue(const char *name, const char *value)
+{
+    if (!cliEnvKeyMatches(name)) {
+        return;
+    }
+    cliPrintf("%s=%s", name, value);
+    cliPrintLinefeed();
+}
+
+static void cliPrintNameValuef(const char *name, const char *format, ...)
+{
+    if (!cliEnvKeyMatches(name)) {
+        return;
+    }
+    cliPrintf("%s=", name);
     va_list va;
     va_start(va, format);
     cliPrintfva(format, va);
@@ -1074,6 +1106,9 @@ static void cliShowArgumentRangeError(const char *cmdName, char *name, int min, 
 
 static const char *nextArg(const char *currentArg)
 {
+    if (!currentArg) {
+        return NULL;
+    }
     const char *ptr = strchr(currentArg, ' ');
     while (ptr && *ptr == ' ') {
         ptr++;
@@ -2107,7 +2142,9 @@ static void cliLed(const char *cmdName, char *cmdline)
         i = atoi(ptr);
         if (i >= 0 && i < LED_STRIP_MAX_LENGTH) {
             ptr = nextArg(cmdline);
-            if (parseLedStripConfig(i, ptr)) {
+            if (!ptr) {
+                cliShowInvalidArgumentCountError(cmdName);
+            } else if (parseLedStripConfig(i, ptr)) {
                 generateLedConfig((ledConfig_t *)&ledStripStatusModeConfig()->ledConfigs[i], ledConfigBuffer, sizeof(ledConfigBuffer));
                 cliDumpPrintLinef(0, false, format, i, ledConfigBuffer);
             } else {
@@ -2144,9 +2181,11 @@ static void cliColor(const char *cmdName, char *cmdline)
     } else {
         const char *ptr = cmdline;
         const int i = atoi(ptr);
-        if (i < LED_CONFIGURABLE_COLOR_COUNT) {
+        if (i >= 0 && i < LED_CONFIGURABLE_COLOR_COUNT) {
             ptr = nextArg(cmdline);
-            if (parseColor(i, ptr)) {
+            if (!ptr) {
+                cliShowInvalidArgumentCountError(cmdName);
+            } else if (parseColor(i, ptr)) {
                 const hsvColor_t *color = &ledStripStatusModeConfig()->colors[i];
                 cliDumpPrintLinef(0, false, format, i, color->h, color->s, color->v);
             } else {
@@ -2531,8 +2570,10 @@ static void cliServoMix(const char *cmdName, char *cmdline)
 #if ENABLE_FLIGHT_PLAN
 
 static const char * const waypointTypeNames[] = {
-    "FLYOVER", "FLYBY", "HOLD", "LAND"
+    "FLYOVER", "FLYBY", "HOLD", "LAND", "TAKEOFF",
+    "ALT_CHANGE", "DELAY", "YAW_RATE"
 };
+STATIC_ASSERT(WAYPOINT_TYPE_COUNT == ARRAYLEN(waypointTypeNames), waypointTypeNames_array_length_mismatch);
 
 static const char * const waypointPatternNames[] = {
     "ORBIT", "FIGURE8"
@@ -2955,7 +2996,7 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
         }
     }
     if (!typeFound) {
-        cliPrintErrorLinef(cmdName, "INVALID TYPE. USE: FLYOVER, FLYBY, HOLD, LAND");
+        cliPrintErrorLinef(cmdName, "INVALID TYPE. USE: FLYOVER, FLYBY, HOLD, LAND, TAKEOFF, ALT_CHANGE, DELAY, YAW_RATE");
         return;
     }
 
@@ -3156,7 +3197,8 @@ static void cliFlashErase(const char *cmdName, char *cmdline)
     cliWriterFlush();
     flashfsEraseCompletely();
 
-    while (!flashfsIsReady() && !flashfsIsEraseInProgress()) {
+    while (!flashfsIsReady()) {
+        flashfsEraseAsync();
 #ifndef MINIMAL_CLI
         cliPrintf(".");
         if (i++ > 120) {
@@ -3891,6 +3933,46 @@ static void cliMcuId(const char *cmdName, char *cmdline)
 
     cliPrintLinef("mcu_id %08x%08x%08x", U_ID_0, U_ID_1, U_ID_2);
 }
+
+#if ENABLE_LCD_CONSOLE
+static void cliLcd(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+    UNUSED(cmdline);
+
+    cliPrintLinef("LCD console grid (%u cols x %u rows):",
+                  (unsigned)LCD_CONSOLE_COLS, (unsigned)LCD_CONSOLE_ROWS);
+
+    // Top border, then each row framed by '|', then bottom border.
+    cliWrite('+');
+    for (uint16_t c = 0; c < LCD_CONSOLE_COLS; c++) {
+        cliWrite('-');
+    }
+    cliPrintLine("+");
+
+    for (uint16_t r = 0; r < LCD_CONSOLE_ROWS; r++) {
+        const uint8_t *row = lcdConsoleRow(r);
+        cliWrite('|');
+        if (row) {
+            for (uint16_t c = 0; c < LCD_CONSOLE_COLS; c++) {
+                const uint8_t ch = row[c];
+                cliWrite((ch >= 0x20 && ch <= 0x7E) ? ch : ' ');
+            }
+        } else {
+            for (uint16_t c = 0; c < LCD_CONSOLE_COLS; c++) {
+                cliWrite(' ');
+            }
+        }
+        cliPrintLine("|");
+    }
+
+    cliWrite('+');
+    for (uint16_t c = 0; c < LCD_CONSOLE_COLS; c++) {
+        cliWrite('-');
+    }
+    cliPrintLine("+");
+}
+#endif // ENABLE_LCD_CONSOLE
 
 static void printFeature(dumpFlags_t dumpMask, const uint32_t mask, const uint32_t defaultMask, const char *headingStr)
 {
@@ -6096,6 +6178,8 @@ static void cliTasks(const char *cmdName, char *cmdline)
     UNUSED(cmdName);
     UNUSED(cmdline);
     int averageLoadSum = 0;
+    static timeUs_t lastTasksTimeUs;
+    timeDelta_t timeSinceTasksUs = cmpTimeUs(micros(), lastTasksTimeUs);
 
 #ifndef MINIMAL_CLI
     if (systemConfig()->task_statistics) {
@@ -6114,8 +6198,8 @@ static void cliTasks(const char *cmdName, char *cmdline)
         if (taskInfo.isEnabled) {
             int taskFrequency = taskInfo.averageDeltaTime10thUs == 0 ? 0 : lrintf(1e7f / taskInfo.averageDeltaTime10thUs);
             cliPrintf("%02d - (%15s) ", taskId, taskInfo.taskName);
-            const int maxLoad = taskInfo.maxExecutionTimeUs == 0 ? 0 : (taskInfo.maxExecutionTimeUs * taskFrequency) / 1000;
-            const int averageLoad = taskInfo.averageExecutionTime10thUs == 0 ? 0 : (taskInfo.averageExecutionTime10thUs * taskFrequency) / 10000;
+            const int maxLoad = taskInfo.maxLoad10thPct;
+            const int averageLoad = taskInfo.movingAverageLoad10thPct;
             if (taskId != TASK_SERIAL) {
                 averageLoadSum += averageLoad;
             }
@@ -6140,9 +6224,14 @@ static void cliTasks(const char *cmdName, char *cmdline)
         }
     }
     if (systemConfig()->task_statistics) {
+        static timeUs_t lastCheckFuncTotalUs;
         cfCheckFuncInfo_t checkFuncInfo;
         getCheckFuncInfo(&checkFuncInfo);
-        cliPrintLinef("RX Check Function %19d %7d %25d", checkFuncInfo.maxExecutionTimeUs, checkFuncInfo.averageExecutionTimeUs, checkFuncInfo.totalExecutionTimeUs / 1000);
+        timeDelta_t checkFuncTotalSinceUs = checkFuncInfo.totalExecutionTimeUs - lastCheckFuncTotalUs;
+        lastCheckFuncTotalUs = checkFuncInfo.totalExecutionTimeUs;
+        uint32_t checkFuncAvgLoad10 = timeSinceTasksUs ? (uint32_t)((checkFuncTotalSinceUs * 1000.0f) / timeSinceTasksUs) : 0;
+        cliPrintLinef("Check Functions (RX, ...) %11d %7d %12d.%1d%% %9d", checkFuncInfo.maxExecutionTimeUs, checkFuncInfo.averageExecutionTimeUs,
+                      checkFuncAvgLoad10 / 10, checkFuncAvgLoad10 %10, checkFuncInfo.totalExecutionTimeUs / 1000);
         cliPrintLinef("Total (excluding SERIAL) %33d.%1d%%", averageLoadSum/10, averageLoadSum%10);
         if (debugMode == DEBUG_SCHEDULER_DETERMINISM) {
             extern int32_t schedLoopStartCycles, taskGuardCycles;
@@ -6151,6 +6240,8 @@ static void cliTasks(const char *cmdName, char *cmdline)
         }
         schedulerResetCheckFunctionMaxExecutionTime();
     }
+
+    lastTasksTimeUs = micros();
 }
 
 static void printVersion(bool printBoardInfo)
@@ -6199,6 +6290,267 @@ static void cliVersion(const char *cmdName, char *cmdline)
     UNUSED(cmdline);
 
     printVersion(true);
+}
+
+#if ENABLE_DEBUG_CLI_COMMANDS
+// `dxr <hex-addr> [count]` — read `count` 32-bit words from `<hex-addr>`.
+// Defaults to 1 word, capped at 64. Address is forced to 4-byte alignment.
+// No fault protection: hand it valid peripheral or SRAM addresses only.
+static void cliMemRead(const char *cmdName, char *cmdline)
+{
+    char *p = skipSpace(cmdline);
+    if (!*p) {
+        cliPrintErrorLinef(cmdName, "addr required");
+        return;
+    }
+    char *end = p;
+    uint32_t addr = (uint32_t)strtoul(p, &end, 16);
+    if (end == p) {
+        cliPrintErrorLinef(cmdName, "invalid addr");
+        return;
+    }
+    p = skipSpace(end);
+    uint32_t count = 1U;
+    if (*p) {
+        end = p;
+        count = (uint32_t)strtoul(p, &end, 0);
+        if (end == p) {
+            cliPrintErrorLinef(cmdName, "invalid count");
+            return;
+        }
+    }
+    if (count == 0U) count = 1U;
+    if (count > 64U) count = 64U;
+    addr &= ~3U;
+
+    for (uint32_t i = 0; i < count; i++) {
+        const uint32_t a = addr + i * 4U;
+        const uint32_t v = *(volatile uint32_t *)a;
+        cliPrintLinef("%08x: %08x", a, v);
+        cliWriterFlush();
+    }
+}
+
+// `dxw <hex-addr> <hex-value>` — write a single 32-bit word and read it
+// back. Reports both the written and observed values so the caller can
+// see writes that were silently dropped (e.g. RIFSC after the boot ROM
+// finishes its handoff).
+static void cliMemWrite(const char *cmdName, char *cmdline)
+{
+    char *p = skipSpace(cmdline);
+    if (!*p) {
+        cliPrintErrorLinef(cmdName, "addr value required");
+        return;
+    }
+    char *end = p;
+    uint32_t addr = (uint32_t)strtoul(p, &end, 16);
+    if (end == p) {
+        cliPrintErrorLinef(cmdName, "invalid addr");
+        return;
+    }
+    p = skipSpace(end);
+    if (!*p) {
+        cliPrintErrorLinef(cmdName, "value required");
+        return;
+    }
+    end = p;
+    uint32_t value = (uint32_t)strtoul(p, &end, 16);
+    if (end == p) {
+        cliPrintErrorLinef(cmdName, "invalid value");
+        return;
+    }
+    addr &= ~3U;
+
+    *(volatile uint32_t *)addr = value;
+    const uint32_t readback = *(volatile uint32_t *)addr;
+    cliPrintLinef("%08x: %08x (was written %08x)", addr, readback, value);
+}
+#endif // ENABLE_DEBUG_CLI_COMMANDS
+
+static void cliEnv(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+
+    const char *filter = skipSpace(cmdline);
+    cliEnvFilter = (filter && *filter) ? filter : NULL;
+
+    // Version-related
+    cliPrintNameValue("FIRMWARE_NAME", FC_FIRMWARE_NAME);
+    cliPrintNameValue("FIRMWARE_VERSION", FC_VERSION_STRING);
+    cliPrintNameValue("TARGET", targetName);
+    cliPrintNameValue("BOARD_IDENTIFIER", systemConfig()->boardIdentifier);
+    cliPrintNameValue("BUILD_DATE", buildDate);
+    cliPrintNameValue("BUILD_TIME", buildTime);
+    cliPrintNameValue("GIT_REVISION", shortGitRevision);
+    cliPrintNameValue("MSP_API_VERSION", MSP_API_VERSION_STRING);
+#if defined(__CONFIG_REVISION__)
+    cliPrintNameValue("CONFIG_REVISION", shortConfigGitRevision);
+#endif
+#if defined(USE_BOARD_INFO)
+    if (strlen(getManufacturerId())) {
+        cliPrintNameValue("MANUFACTURER_ID", getManufacturerId());
+    }
+    if (strlen(getBoardName())) {
+        cliPrintNameValue("BOARD_NAME", getBoardName());
+    }
+#endif
+    if (buildKey) {
+        cliPrintNameValue("BUILD_KEY", buildKey);
+    }
+    if (releaseName) {
+        cliPrintNameValue("RELEASE_NAME", releaseName);
+    }
+
+    // MCU and clock
+    cliPrintNameValue("MCU", getMcuTypeName());
+    cliPrintNameValuef("CLK_MHZ", "%u", (unsigned)(SystemCoreClock / 1000000));
+
+#if PLATFORM_TRAIT_CONFIG_HSE
+    const char * const sysclkSourceNames[] = { "HSI", "HSE", "PLLP", "PLLR" };
+    const char * const pllSourceNames[] = { "HSI", "HSE" };
+    int sysclkSource = SystemSYSCLKSource();
+    if (sysclkSource >= 2) {
+        cliPrintNameValuef("SYSCLK_SOURCE", "%s-%s", sysclkSourceNames[sysclkSource], pllSourceNames[SystemPLLSource()]);
+    } else {
+        cliPrintNameValue("SYSCLK_SOURCE", sysclkSourceNames[sysclkSource]);
+    }
+#endif
+
+#ifdef USE_ADC_INTERNAL
+    cliPrintNameValuef("VREF_MV", "%u", getVrefMv());
+    cliPrintNameValuef("CORE_TEMP_C", "%d", getCoreTemperatureCelsius());
+#endif
+
+    // Stack / config
+    cliPrintNameValuef("STACK_SIZE", "%d", stackTotalSize());
+    cliPrintNameValuef("STACK_HIGH", "0x%x", stackHighMem());
+#ifdef USE_STACK_CHECK
+    cliPrintNameValuef("STACK_USED", "%d", stackUsedSize());
+#endif
+    cliPrintNameValue("CONFIG_STATE", configurationStates[systemConfigMutable()->configurationState]);
+    cliPrintNameValuef("CONFIG_SIZE", "%d", getEEPROMConfigSize());
+    cliPrintNameValuef("CONFIG_MAX_SIZE", "%d", getEEPROMStorageSize());
+
+    // Bus devices
+#if defined(USE_SPI)
+    cliPrintNameValuef("SPI_COUNT", "%d", spiGetRegisteredDeviceCount());
+#endif
+#if defined(USE_I2C)
+    cliPrintNameValuef("I2C_COUNT", "%d", i2cGetRegisteredDeviceCount());
+    cliPrintNameValuef("I2C_ERRORS", "%d", i2cGetErrorCounter());
+#endif
+
+    // Gyros
+    unsigned gyroCount = 0;
+    for (unsigned pos = 0; pos < GYRO_COUNT; pos++) {
+        if (gyroConfig()->gyrosDetected & BIT(pos)) {
+            gyroCount++;
+#if defined(USE_SENSOR_NAMES)
+            char gyroKey[16];
+            tfp_sprintf(gyroKey, "GYRO_%u_HW", pos + 1);
+            cliPrintNameValue(gyroKey, lookupTableGyroHardware[detectedGyros[pos]]);
+#endif
+        }
+    }
+    cliPrintNameValuef("GYRO_COUNT", "%u", gyroCount);
+
+#if defined(USE_SENSOR_NAMES)
+    const uint32_t detectedSensorsMask = sensorsMask();
+    for (unsigned i = SENSOR_INDEX_ACC; i < SENSOR_INDEX_COUNT; i++) {
+        const uint32_t mask = (1U << i);
+        if ((detectedSensorsMask & mask) == 0) {
+            continue;
+        }
+        const uint8_t sensorHardwareIndex = detectedSensors[i];
+        int count;
+        const char * const *names = sensorHardwareNames(i, &count);
+        if (!names || sensorHardwareIndex >= count) {
+            continue;
+        }
+        char sensorKey[24];
+        tfp_sprintf(sensorKey, "%s_HW", sensorTypeDisplayNames[i]);
+        for (char *p = sensorKey; *p; p++) {
+            if (*p == '-') {
+                *p = '_';
+            }
+        }
+        cliPrintNameValue(sensorKey, names[sensorHardwareIndex]);
+    }
+#endif
+
+#ifdef USE_GPS
+    cliPrintNameValue("GPS_ENABLED", featureIsEnabled(FEATURE_GPS) ? "ON" : "OFF");
+    if (featureIsEnabled(FEATURE_GPS)) {
+        cliPrintNameValue("GPS_CONNECTED", gpsData.state >= GPS_STATE_CONFIGURE ? "ON" : "OFF");
+        cliPrintNameValue("GPS_CONFIGURED", gpsData.state > GPS_STATE_CONFIGURE ? "ON" : "OFF");
+#ifdef USE_GPS_UBLOX
+        cliPrintNameValue("GPS_VERSION", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
+#endif
+    }
+#endif
+
+#if defined(USE_OSD)
+    osdDisplayPortDevice_e displayPortDeviceType;
+    displayPort_t *osdDisplayPort = osdGetDisplayPort(&displayPortDeviceType);
+    cliPrintNameValue("OSD_DEVICE", lookupTableOsdDisplayPortDevice[displayPortDeviceType]);
+    if (osdDisplayPort) {
+        cliPrintNameValuef("OSD_COLS", "%u", osdDisplayPort->cols);
+        cliPrintNameValuef("OSD_ROWS", "%u", osdDisplayPort->rows);
+    }
+#endif
+
+#ifdef USE_FLASH_CHIP
+    const flashGeometry_t *layout = flashGetGeometry();
+    if (layout->jedecId != 0) {
+        cliPrintNameValuef("FLASH_JEDEC_ID", "0x%08x", layout->jedecId);
+        cliPrintNameValuef("FLASH_SIZE_MB", "%u", (unsigned)(layout->totalSize >> 20));
+    }
+#endif
+
+    // Runtime
+    cliPrintNameValuef("UPTIME_S", "%u", (unsigned)(millis() / 1000));
+#ifdef USE_RTC_TIME
+    char buf[FORMATTED_DATE_TIME_BUFSIZE];
+    dateTime_t dt;
+    if (rtcGetDateTime(&dt)) {
+        dateTimeFormatLocal(buf, &dt);
+        cliPrintNameValue("CURRENT_TIME", buf);
+    }
+#endif
+
+    const int gyroRate = getTaskDeltaTimeUs(TASK_GYRO) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_GYRO)));
+    const int rxRate = getRxRateValid() ? lrintf(getCurrentRxRateHz()) : 0;
+    const int systemRate = getTaskDeltaTimeUs(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_SYSTEM)));
+    cliPrintNameValuef("CPU_LOAD_PCT", "%d", constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE));
+    cliPrintNameValuef("CYCLE_TIME_US", "%d", getTaskDeltaTimeUs(TASK_GYRO));
+    cliPrintNameValuef("GYRO_RATE_HZ", "%d", gyroRate);
+    cliPrintNameValuef("RX_RATE_HZ", "%d", rxRate);
+    cliPrintNameValuef("SYSTEM_RATE_HZ", "%d", systemRate);
+
+    // Battery
+    const uint16_t v01 = getBatteryVoltage();
+    cliPrintNameValuef("VOLTAGE_V", "%d.%02d", v01 / 100, v01 % 100);
+    cliPrintNameValuef("BATTERY_CELLS", "%d", getBatteryCellCount());
+    cliPrintNameValue("BATTERY_STATE", getBatteryStateString());
+
+    // Arming disable flags (space-separated, empty if none)
+    if (cliEnvKeyMatches("ARMING_DISABLE_FLAGS")) {
+        cliPrint("ARMING_DISABLE_FLAGS=");
+        armingDisableFlags_e flags = getArmingDisableFlags();
+        bool first = true;
+        while (flags) {
+            const armingDisableFlags_e flag = 1 << (ffs(flags) - 1);
+            flags &= ~flag;
+            if (!first) {
+                cliPrint(" ");
+            }
+            cliPrintf("%s", getArmingDisableFlagName(flag));
+            first = false;
+        }
+        cliPrintLinefeed();
+    }
+
+    cliEnvFilter = NULL;
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -6311,6 +6663,10 @@ const cliResourceValue_t resourceTable[] = {
     DEFW( OWNER_SPI_SDI,       PG_SPI_PIN_CONFIG, spiPinConfig_t, ioTagMiso, SPIDEV_COUNT ),
     DEFW( OWNER_SPI_SDO,       PG_SPI_PIN_CONFIG, spiPinConfig_t, ioTagMosi, SPIDEV_COUNT ),
 #endif
+#if ENABLE_CAN
+    DEFW( OWNER_CAN_TX,        PG_CAN_PIN_CONFIG, canPinConfig_t, ioTagTx, CANDEV_COUNT ),
+    DEFW( OWNER_CAN_RX,        PG_CAN_PIN_CONFIG, canPinConfig_t, ioTagRx, CANDEV_COUNT ),
+#endif
 #ifdef USE_ESCSERIAL
     DEFS( OWNER_ESCSERIAL,     PG_ESCSERIAL_CONFIG, escSerialConfig_t, ioTag ),
 #endif
@@ -6340,7 +6696,7 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_SDCARD
     DEFS( OWNER_SDCARD_DETECT, PG_SDCARD_CONFIG, sdcardConfig_t, cardDetectTag ),
 #endif
-#if defined(STM32H7) && defined(USE_SDCARD_SDIO)
+#if ENABLE_SDIO_PIN_CONFIG
     DEFS( OWNER_SDIO_CK,       PG_SDIO_PIN_CONFIG, sdioPinConfig_t, CKPin ),
     DEFS( OWNER_SDIO_CMD,      PG_SDIO_PIN_CONFIG, sdioPinConfig_t, CMDPin ),
     DEFS( OWNER_SDIO_D0,       PG_SDIO_PIN_CONFIG, sdioPinConfig_t, D0Pin ),
@@ -6433,16 +6789,17 @@ static void printResource(dumpFlags_t dumpMask, const char *headingStr)
             const bool equalsDefault = ioTag == ioTagDefault;
             const char *format = "resource %s %d %c%02d";
             const char *formatUnassigned = "resource %s %d NONE";
+            const int resourceOrdinal = resourceIndexToInput(resourceTable[i].owner, index);
             headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
             if (ioTagDefault) {
-                cliDefaultPrintLinef(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdxByTag(ioTagDefault) + 'A', IO_GPIOPinIdxByTag(ioTagDefault));
+                cliDefaultPrintLinef(dumpMask, equalsDefault, format, owner, resourceOrdinal, IO_GPIOPortIdxByTag(ioTagDefault) + 'A', IO_GPIOPinIdxByTag(ioTagDefault));
             } else if (defaultConfig) {
-                cliDefaultPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
+                cliDefaultPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, resourceOrdinal);
             }
             if (ioTag) {
-                cliDumpPrintLinef(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag));
+                cliDumpPrintLinef(dumpMask, equalsDefault, format, owner, resourceOrdinal, IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag));
             } else if (!(dumpMask & HIDE_UNUSED)) {
-                cliDumpPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
+                cliDumpPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, resourceOrdinal);
             }
         }
     }
@@ -6453,7 +6810,7 @@ static void printResourceOwner(uint8_t owner, uint8_t index)
     cliPrintf("%s", getOwnerName(resourceTable[owner].owner));
 
     if (resourceTable[owner].maxIndex > 0) {
-        cliPrintf(" %d", RESOURCE_INDEX(index));
+        cliPrintf(" %d", resourceIndexToInput(resourceTable[owner].owner, index));
     }
 }
 
@@ -6534,7 +6891,7 @@ static void showDma(void)
 
         cliPrintf(dmaGetDisplayString(), dmaGetDeviceNumber(i), dmaGetDeviceIndex(i));
         if (owner->index > 0) {
-            cliPrintLinef(" %s %d", getOwnerName(owner->owner), owner->index);
+            cliPrintLinef(" %s %d", getOwnerName(owner->owner), resourceIndexToInput(owner->owner, owner->index - 1));
         } else {
             cliPrintLinef(" %s", getOwnerName(owner->owner));
         }
@@ -6590,7 +6947,7 @@ dmaoptEntry_t dmaoptEntryTable[] = {
     DEFW_OFS("LPUART_TX",  DMA_PERIPH_UART_TX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
     DEFW_OFS("LPUART_RX",  DMA_PERIPH_UART_RX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
 #endif
-#if defined(STM32H7) || defined(STM32G4)
+#if defined(USE_TIMER_UP_CONFIG)
     DEFW("TIMUP",    DMA_PERIPH_TIMUP,    PG_TIMER_UP_CONFIG,    timerUpConfig_t,    dmaopt,   HARDWARE_TIMER_DEFINITION_COUNT, TIMUP_TIMERS),
 #endif
 };
@@ -6599,7 +6956,6 @@ dmaoptEntry_t dmaoptEntryTable[] = {
 #undef DEFA
 #undef DEFW
 
-#define DMA_OPT_UI_INDEX(i) ((i) + 1)
 #define DMA_OPT_STRING_BUFSIZE 5
 
 #if !defined(DMA_CHANREQ_STRING)
@@ -6621,6 +6977,23 @@ static void optToString(int optval, char *buf)
     }
 }
 
+// A dmaopt instance number follows the same per-platform base as the matching pin
+// resource, so `dma SPI_SDO N` agrees with `resource SPI_SCK N`. TIMUP is special:
+// its timers are numbered non-contiguously, taken straight from the platform.
+static resourceOwner_e dmaoptResourceOwner(dmaPeripheral_e peripheral)
+{
+    switch (peripheral) {
+    case DMA_PERIPH_SPI_SDO:
+    case DMA_PERIPH_SPI_SDI:
+        return OWNER_SPI_SCK;
+    case DMA_PERIPH_UART_TX:
+    case DMA_PERIPH_UART_RX:
+        return OWNER_SERIAL_TX;
+    default:
+        return OWNER_FREE;   // ADC/SDIO/...: no per-platform base, 1-based naming
+    }
+}
+
 static int getDmaOptDisplayNumber(dmaoptEntry_t *entry, int index)
 {
     if (entry->peripheral == DMA_PERIPH_TIMUP) {
@@ -6630,7 +7003,7 @@ static int getDmaOptDisplayNumber(dmaoptEntry_t *entry, int index)
         }
         return dispNum;
     }
-    return DMA_OPT_UI_INDEX(index);
+    return resourceIndexToInput(dmaoptResourceOwner(entry->peripheral), index);
 }
 
 static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
@@ -6646,8 +7019,8 @@ static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
         return timerGetIndexByNumber(dispNum);
     }
 
-    const int index = dispNum - 1;
-    return (index < 0 ||  index >= entry->maxIndex) ? -1 : index;
+    const int index = resourceInputToIndex(dmaoptResourceOwner(entry->peripheral), dispNum);
+    return (index < 0 || index >= entry->maxIndex) ? -1 : index;
 }
 
 static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const dmaoptValue_t dmaopt, const bool equalsDefault, const dumpFlags_t dumpMask, printFn *printValue)
@@ -7148,7 +7521,7 @@ static void showTimers(void)
                 }
 
                 if (timerOwner->index > 0) {
-                    cliPrintLinef("    CH%d%s: %s %d", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", getOwnerName(timerOwner->owner), timerOwner->index);
+                    cliPrintLinef("    CH%d%s: %s %d", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", getOwnerName(timerOwner->owner), resourceIndexToInput(timerOwner->owner, timerOwner->index - 1));
                 } else {
                     cliPrintLinef("    CH%d%s: %s", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", getOwnerName(timerOwner->owner));
                 }
@@ -7312,7 +7685,7 @@ static void cliResource(const char *cmdName, char *cmdline)
 
             cliPrintf("%c%02d: %s", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
             if (ioRecs[i].index > 0) {
-                cliPrintf(" %d", ioRecs[i].index);
+                cliPrintf(" %d", resourceIndexToInput(ioRecs[i].owner, ioRecs[i].index - 1));
             }
             cliPrintLinefeed();
         }
@@ -7344,14 +7717,22 @@ static void cliResource(const char *cmdName, char *cmdline)
     }
 
     pch = strtok_r(NULL, " ", &saveptr);
-    int index = pch ? atoi(pch) : 0;
+    int index = 0;
 
-    if (resourceTable[resourceIndex].maxIndex > 0 || index > 0) {
-        if (index <= 0 || index > RESOURCE_VALUE_MAX_INDEX(resourceTable[resourceIndex].maxIndex)) {
-            cliShowArgumentRangeError(cmdName, "INDEX", 1, RESOURCE_VALUE_MAX_INDEX(resourceTable[resourceIndex].maxIndex));
+    // A leading numeric token is the resource ordinal (the dump always emits one,
+    // even for single-instance resources). Pins begin with a letter (or "NONE"),
+    // so a non-numeric token here is the pin of a single-instance resource given
+    // without an ordinal. The ordinal base (0 or 1) is per-owner, see resource.c.
+    const bool haveIndex = pch && pch[0] >= '0' && pch[0] <= '9';
+    if (resourceTable[resourceIndex].maxIndex > 0 || haveIndex) {
+        const resourceOwner_e owner = resourceTable[resourceIndex].owner;
+        const int maxCount = RESOURCE_VALUE_MAX_INDEX(resourceTable[resourceIndex].maxIndex);
+        const int candidate = haveIndex ? resourceInputToIndex(owner, atoi(pch)) : -1;
+        if (!haveIndex || candidate < 0 || candidate >= maxCount) {
+            cliShowArgumentRangeError(cmdName, "INDEX", resourceIndexToInput(owner, 0), resourceIndexToInput(owner, maxCount - 1));
             return;
         }
-        index -= 1;
+        index = candidate;
 
         pch = strtok_r(NULL, " ", &saveptr);
     }
@@ -7392,7 +7773,7 @@ static void cliResource(const char *cmdName, char *cmdline)
         if (tag) {
             tfp_sprintf(ioName, "%c%02d", IO_GPIOPortIdxByTag(tag) + 'A', IO_GPIOPinIdxByTag(tag));
         }
-        cliPrintLinef("# resource %s %d %s", getOwnerName(resourceTable[resourceIndex].owner), RESOURCE_INDEX(index), tag ? ioName : "NONE");
+        cliPrintLinef("# resource %s %d %s", getOwnerName(resourceTable[resourceIndex].owner), resourceIndexToInput(resourceTable[resourceIndex].owner, index), tag ? ioName : "NONE");
     }
 }
 #endif
@@ -7821,6 +8202,13 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("dump", "dump configuration",
         "[master|profile|rates|hardware|all] {defaults|bare}", cliDump),
+#if ENABLE_DEBUG_CLI_COMMANDS
+    CLI_COMMAND_DEF("dxr", "read 32-bit words from memory",
+        "<hex-addr> [count]", cliMemRead),
+    CLI_COMMAND_DEF("dxw", "write a 32-bit word to memory",
+        "<hex-addr> <hex-value>", cliMemWrite),
+#endif
+    CLI_COMMAND_DEF("env", "show environment (version + status as NAME=VALUE)", "[prefix]", cliEnv),
 #ifdef USE_ESCSERIAL
     CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki/cc]> <index>", cliEscPassthrough),
 #endif
@@ -7847,6 +8235,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("gyroregisters", "dump gyro config registers contents", NULL, cliDumpGyroRegisters),
 #endif
     CLI_COMMAND_DEF("help", "display command help", "[search string]", cliHelp),
+#if ENABLE_LCD_CONSOLE
+    CLI_COMMAND_DEF("lcd", "show LCD console grid contents (debug aid)", NULL, cliLcd),
+#endif
 #ifdef USE_LED_STRIP_STATUS_MODE
         CLI_COMMAND_DEF("led", "configure leds", NULL, cliLed),
 #endif

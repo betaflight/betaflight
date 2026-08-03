@@ -117,7 +117,6 @@
 #define PARAM_NAME_THROTTLE_BOOST "throttle_boost"
 #define PARAM_NAME_THROTTLE_BOOST_CUTOFF "throttle_boost_cutoff"
 #define PARAM_NAME_THRUST_LINEARIZATION "thrust_linear"
-#define PARAM_NAME_ABS_CONTROL_GAIN "abs_control_gain"
 #define PARAM_NAME_USE_INTEGRATED_YAW "use_integrated_yaw"
 #define PARAM_NAME_D_MAX_GAIN "d_max_gain"
 #define PARAM_NAME_D_MAX_ADVANCE "d_max_advance"
@@ -171,10 +170,10 @@
 #define PARAM_NAME_AP_ALTITUDE_F "ap_altitude_f"
 #define PARAM_NAME_AP_POSITION_P "ap_position_p"
 #define PARAM_NAME_AP_POSITION_I "ap_position_i"
-#define PARAM_NAME_AP_POSITION_II "ap_position_ii"
 #define PARAM_NAME_AP_POSITION_D "ap_position_d"
 #define PARAM_NAME_AP_POSITION_A "ap_position_a"
 #define PARAM_NAME_AP_POSITION_CUTOFF "ap_position_cutoff"
+#define PARAM_NAME_AP_STOP_THRESHOLD "ap_stop_threshold"
 #define PARAM_NAME_AP_MAX_ANGLE "ap_max_angle"
 
 // Velocity-based position control with drag compensation
@@ -274,10 +273,6 @@
 
 #define PARAM_NAME_GPS_RESCUE_RETURN_ALT "gps_rescue_return_alt"
 #define PARAM_NAME_GPS_RESCUE_GROUND_SPEED "gps_rescue_ground_speed"
-#define PARAM_NAME_GPS_RESCUE_MAX_RESCUE_ANGLE "gps_rescue_max_angle"
-#define PARAM_NAME_GPS_RESCUE_ROLL_MIX "gps_rescue_roll_mix"
-#define PARAM_NAME_GPS_RESCUE_PITCH_CUTOFF "gps_rescue_pitch_cutoff"
-#define PARAM_NAME_GPS_RESCUE_IMU_YAW_GAIN "gps_rescue_imu_yaw_gain"
 
 #define PARAM_NAME_GPS_RESCUE_DESCENT_DIST "gps_rescue_descent_dist"
 #define PARAM_NAME_GPS_RESCUE_DESCEND_RATE "gps_rescue_descend_rate"
@@ -287,15 +282,7 @@
 #define PARAM_NAME_GPS_RESCUE_MIN_SATS "gps_rescue_min_sats"
 #define PARAM_NAME_GPS_RESCUE_ALLOW_ARMING_WITHOUT_FIX "gps_rescue_allow_arming_without_fix"
 
-#define PARAM_NAME_GPS_RESCUE_VELOCITY_P "gps_rescue_velocity_p"
-#define PARAM_NAME_GPS_RESCUE_VELOCITY_I "gps_rescue_velocity_i"
-#define PARAM_NAME_GPS_RESCUE_VELOCITY_D "gps_rescue_velocity_d"
 #define PARAM_NAME_GPS_RESCUE_YAW_P "gps_rescue_yaw_p"
-
-#ifdef USE_MAG
-#define PARAM_NAME_GPS_RESCUE_USE_MAG "gps_rescue_use_mag"
-#endif // USE_MAG
-
 #endif // USE_GPS_RESCUE
 
 #ifdef USE_GPS_LAP_TIMER
@@ -313,7 +300,6 @@
 #endif
 
 #ifdef USE_POSITION_HOLD
-#define PARAM_NAME_POS_HOLD_WITHOUT_MAG "pos_hold_without_mag"
 #define PARAM_NAME_POS_HOLD_DEADBAND "pos_hold_deadband"
 #endif
 
@@ -324,4 +310,10 @@
 
 #ifdef USE_MAG
 #define PARAM_NAME_IMU_MAG_DECLINATION "mag_declination"
+#define PARAM_NAME_TRUST_MAG "trust_mag"
+#endif
+
+#ifdef USE_TRANSPONDER
+#define PARAM_NAME_TRANSPONDER_PROVIDER "transponder_provider"
+#define PARAM_NAME_TRANSPONDER_DATA "transponder_data"
 #endif

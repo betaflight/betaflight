@@ -25,7 +25,7 @@
 #endif
 
 #ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight STM32H725"
+#define USBD_PRODUCT_STRING     "Betaflight - STM32H725"
 #endif
 
 #if !defined(USE_I2C)
@@ -78,6 +78,9 @@
 #define USE_SDCARD_SDIO
 #if !defined(ENABLE_SDIO_INIT)
 #define ENABLE_SDIO_INIT 1
+#endif
+#if !defined(ENABLE_SDIO_PIN_CONFIG)
+#define ENABLE_SDIO_PIN_CONFIG 1
 #endif
 #endif
 

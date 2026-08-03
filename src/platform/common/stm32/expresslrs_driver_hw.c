@@ -41,7 +41,7 @@ void expressLrsTimerEnableIRQs(const timerHardware_t *timer)
 #elif defined(APM32F4)
     DAL_NVIC_SetPriority(irq, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER));
     DAL_NVIC_EnableIRQ(irq);
-#elif defined(STM32F4)
+#elif defined(STM32F4) || defined(X32M7)
     NVIC_InitTypeDef NVIC_InitStructure;
     NVIC_InitStructure.NVIC_IRQChannel = irq;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER);

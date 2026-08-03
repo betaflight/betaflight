@@ -142,6 +142,9 @@ struct {
     // BergMicro W25Q32
     // Datasheet: https://www.winbond.com/resource-files/w25q32jv%20dtr%20revf%2002242017.pdf?__locale=zh_TW
     { 0xE04016, 133, 50, 1024, 16 },
+    // BOYAMICRO BY25Q64
+    { 0x684017, 108, 54, 128, 256 },// BY25Q64
+    // Datasheet: https://www.boyamicro.com/storage/upload/pdf/BY25Q64ES.pdf
     // XMC XM25QH256B
     // Datasheet: https://www.xmcwh.com/uploads/499/XM25QU256B.pdf
     { 0x206019, 166, 80, 8192, 16 },
@@ -154,6 +157,30 @@ struct {
     // GD25Q128
     // Datasheet: https://download.gigadevice.com/Datasheet/DS-00480-GD25Q128E-Rev1.4.pdf
     { 0xC84018, 104, 80, 4096, 16 },
+    // Boyamicro BY25Q128ES
+    // Datasheet: https://www.lcsc.com/datasheet/C49023667.pdf
+    { 0x684018, 104, 50, 256, 256 },
+    // FMSH FM25Q64A
+    // Datasheet: https://www.fmsh.com/nvm/FM25Q64AI3_ds_eng.pdf
+    { 0xA14017, 80, 66, 128, 256 },
+    // FMSH FM25Q128A
+    // Datasheet: https://www.fmsh.com/nvm/FM25Q128AI3_ds_eng.pdf
+    { 0xA14018, 80, 50, 256, 256 },
+    // FMSH FM25Q256
+    // Datasheet: https://www.fmsh.com/65eecc76-e5cc-265f-bb24-3bed4f4bd25f/
+    { 0xA14019, 80, 50, 512, 256 },
+    // XTX XT25F128F
+    // Datasheet: https://www.xtxtech.com/Products/info_productModel_XT25F128FSSIGT.html
+    { 0x0B4018, 96, 80, 256, 256 },
+    //Giantec GT25Q80A
+    //Datasheet: https://www.giantec-semi.com/uploads/pdf/250709/GT25Q80A%20DS_V2.1.pdf
+    {0xC46014, 104, 104, 16, 256},
+    //Giantec GT25Q16A
+    //Datasheet: https://www.giantec-semi.com/uploads/pdf/250709/GT25Q16A%20U%20DS_V2.2.pdf
+    {0xC46015, 104, 104, 32, 256},
+    //Giantec GT25Q32A
+    //Datasheet:https://www.giantec-semi.com/uploads/pdf/260327/gg/GT25Q32A%20U%20DS_V2.4.pdf
+    {0xC46016, 90, 90, 64, 256},
     // End of list
     { 0x000000, 0, 0, 0, 0 }
 };

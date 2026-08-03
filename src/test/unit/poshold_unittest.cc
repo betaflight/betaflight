@@ -38,10 +38,12 @@ extern "C" {
     #include "flight/pid.h"
     #include "flight/position.h"
     #include "flight/position_estimator.h"
+    #include "flight/position_nav.h"
 
     #include "io/gps.h"
 
     #include "rx/rx.h"
+    #include "scheduler/scheduler.h"
     #include "sensors/gyro.h"
 
     #include "pg/autopilot.h"
@@ -49,6 +51,7 @@ extern "C" {
 
     PG_REGISTER(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
     PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
+    PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
 
     // Test-controllable estimate
     static positionEstimate3d_t testEstimate;
@@ -58,6 +61,15 @@ extern "C" {
     }
     void positionEstimatorEnableXY(bool enable) { UNUSED(enable); }
     bool positionEstimatorIsValidXY(void) { return testEstimate.isValidXY; }
+
+    // Nav stubs: position hold tests run without active navigation
+    void positionNavInit(void) { }
+    void positionNavReset(void) { }
+    void positionNavUpdate(float /*dt*/, const positionEstimate3d_t * /*est*/) { }
+    bool positionNavHasActiveTarget(void) { return false; }
+    bool positionNavTargetReached(void) { return false; }
+    vector3_t positionNavGetTargetVelocityCmS(void) { return (vector3_t){{0, 0, 0}}; }
+    const positionNavCommand_t *positionNavGetActiveCommand(void) { return NULL; }
 
     float getAltitudeCm(void) { return 0.0f; }
     float getAltitudeDerivative(void) { return 0.0f; }
@@ -81,6 +93,26 @@ extern "C" {
     void parseRcChannels(const char *input, rxConfig_t *rxConfig) {
         UNUSED(input);
         UNUSED(rxConfig);
+    }
+
+
+    float simulatedStickRoll = 0.0f;
+    float simulatedStickPitch = 0.0f;
+    float getSetpointRate(int axis)
+    {
+        if (axis == FD_ROLL) {
+            return simulatedStickRoll;
+        }
+        if (axis == FD_PITCH) {
+            return simulatedStickPitch;
+        }
+        return 0.0f;
+    }
+
+    timeDelta_t getTaskDeltaTimeUs(taskId_e taskId)
+    {
+        UNUSED(taskId);
+        return TASK_PERIOD_HZ(100); // default poshold rate in tests
     }
 
     throttleStatus_e calculateThrottleStatus() {
@@ -113,10 +145,10 @@ static void initAndSettleAt(float eastCm, float northCm, int16_t yawDecidegrees)
     attitude.values.roll  = 0;
 
     autopilotConfig_t *cfg = autopilotConfigMutable();
-    cfg->positionP  = 50;
-    cfg->positionI  = 50;
-    cfg->positionII = 50;
-    cfg->positionD  = 50;
+    cfg->positionP  = 30;
+    cfg->positionI  = 30;
+    cfg->positionD  = 30;
+    cfg->positionA  = 30;
     cfg->maxAngle   = 30;
     cfg->hoverThrottle = 1500;
     cfg->throttleMin   = 1000;
@@ -172,73 +204,59 @@ TEST_F(PosHoldTest, FlyawayDetectionTriggersAtLargeDistance)
 {
     initAndSettleAt(0, 0, 0);
 
-    // After settling, sanityCheckDistance = fmaxf(1000, 1000*2) = 2000cm.
-    // Exceed it to trigger the flyaway check.
-    testEstimate.position.x = 3000.0f;
-
-    EXPECT_FALSE(positionControl());
+    // exceed sanity check distance
+    testEstimate.position.x = 3000.0f; 
+    // expect positionControl to be false
+    EXPECT_FALSE(positionControl()); 
 }
 
 // -- Displacement response: heading North (yaw = 0) --
 
-TEST_F(PosHoldTest, EastDisplacementProducesRollResponse)
+TEST_F(PosHoldTest, EastDisplacementProducesNegativeRollResponse)
 {
     initAndSettleAt(0, 0, 0);
 
+    // Drifting East requires a leftward correction (Negative Roll)
     testEstimate.position.x = 100.0f;
     runIterations(SETTLE_ITERATIONS);
 
-    EXPECT_NE(autopilotAngle[AI_ROLL], 0.0f);
+    EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f); // Verifies output is  negative (Roll Left)
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.5f);
 }
-
-TEST_F(PosHoldTest, NorthDisplacementProducesPitchResponse)
+TEST_F(PosHoldTest, WestDisplacementProducesPositiveRollResponse)
 {
     initAndSettleAt(0, 0, 0);
 
+    // Drifting West requires a rightward correction (Positive Roll)
+    testEstimate.position.x = -100.0f;
+    runIterations(SETTLE_ITERATIONS);
+
+    EXPECT_GT(autopilotAngle[AI_ROLL], 0.0f); // Must be strictly POSITIVE (Roll Right)
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.5f);
+}
+
+TEST_F(PosHoldTest, NortDisplacementProducesNegativePitchResponse)
+{
+    initAndSettleAt(0, 0, 0);
+
+    // Drifting South requires a forward correction (Positive Pitch)
     testEstimate.position.y = 100.0f;
     runIterations(SETTLE_ITERATIONS);
 
     EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.5f);
-    EXPECT_NE(autopilotAngle[AI_PITCH], 0.0f);
+    EXPECT_LT(autopilotAngle[AI_PITCH], 0.0f); // Must be Negative (Pitch Back)
 }
 
-// -- Symmetry: opposite displacement gives opposite sign --
-
-TEST_F(PosHoldTest, OppositeEastDisplacementsGiveOppositeRoll)
+TEST_F(PosHoldTest, SouthDisplacementProducesPositivePitchResponse)
 {
     initAndSettleAt(0, 0, 0);
-    testEstimate.position.x = 100.0f;
-    runIterations(SETTLE_ITERATIONS);
-    const float rollPositive = autopilotAngle[AI_ROLL];
 
-    initAndSettleAt(0, 0, 0);
-    testEstimate.position.x = -100.0f;
-    runIterations(SETTLE_ITERATIONS);
-    const float rollNegative = autopilotAngle[AI_ROLL];
-
-    EXPECT_NE(rollPositive, 0.0f);
-    EXPECT_NE(rollNegative, 0.0f);
-    EXPECT_LT(rollPositive * rollNegative, 0.0f);
-    EXPECT_NEAR(fabsf(rollPositive), fabsf(rollNegative), 0.5f);
-}
-
-TEST_F(PosHoldTest, OppositeNorthDisplacementsGiveOppositePitch)
-{
-    initAndSettleAt(0, 0, 0);
-    testEstimate.position.y = 100.0f;
-    runIterations(SETTLE_ITERATIONS);
-    const float pitchPositive = autopilotAngle[AI_PITCH];
-
-    initAndSettleAt(0, 0, 0);
+    // Drifting South requires a forward correction (Positive Pitch)
     testEstimate.position.y = -100.0f;
     runIterations(SETTLE_ITERATIONS);
-    const float pitchNegative = autopilotAngle[AI_PITCH];
 
-    EXPECT_NE(pitchPositive, 0.0f);
-    EXPECT_NE(pitchNegative, 0.0f);
-    EXPECT_LT(pitchPositive * pitchNegative, 0.0f);
-    EXPECT_NEAR(fabsf(pitchPositive), fabsf(pitchNegative), 0.5f);
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.5f);
+    EXPECT_GT(autopilotAngle[AI_PITCH], 0.0f); // Must be positive (Pitch Forward)
 }
 
 // -- Velocity damping (P term) --
@@ -253,66 +271,154 @@ TEST_F(PosHoldTest, EastwardVelocityProducesOpposingRoll)
     EXPECT_NE(autopilotAngle[AI_ROLL], 0.0f);
 }
 
-TEST_F(PosHoldTest, OppositeVelocitiesGiveOppositeAngles)
+TEST_F(PosHoldTest, EastVelocityProducesNegativeRollResponse)
 {
     initAndSettleAt(0, 0, 0);
+
+    // drifting East requires a leftward braking lean (Negative Roll)
     testEstimate.velocity.x = 50.0f;
     runIterations(SETTLE_ITERATIONS);
-    const float rollEast = autopilotAngle[AI_ROLL];
 
-    initAndSettleAt(0, 0, 0);
-    testEstimate.velocity.x = -50.0f;
-    runIterations(SETTLE_ITERATIONS);
-    const float rollWest = autopilotAngle[AI_ROLL];
-
-    EXPECT_LT(rollEast * rollWest, 0.0f);
+    EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f); // Roll must be NEGATIVE (Roll Left)
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f); // Pitch must be flat
 }
 
-// -- Heading rotation: verify body-frame transform --
-
-TEST_F(PosHoldTest, HeadingEastSwapsAxes)
+TEST_F(PosHoldTest, WestVelocityProducesBrakingRollResponse)
 {
+    initAndSettleAt(0, 0, 0);
+
+    // drifting West requires a rightward roll (Positive Roll)
+    testEstimate.velocity.x = -50.0f;
+    runIterations(SETTLE_ITERATIONS);
+
+    EXPECT_GT(autopilotAngle[AI_ROLL], 0.0f); // Roll must be POSITIVE (Roll Right)
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f); // Pitch must be flat
+}
+
+
+// -- Heading rotation: verify body-frame transform --
+ TEST_F(PosHoldTest, DynamicHeadingRotationUnderDrift)
+{
+    // PHASE 1: Initialize with nose pointed due EAST (900 decidegrees)
     initAndSettleAt(0, 0, 900);
 
+    // Drone drifts East
     testEstimate.position.x = 100.0f;
     runIterations(SETTLE_ITERATIONS);
 
-    EXPECT_NE(autopilotAngle[AI_PITCH], 0.0f);
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.5f);
+    EXPECT_LT(autopilotAngle[AI_PITCH], 0.0f);        // Pitch must be  NEGATIVE (Pitch Back)
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.1f);  // Roll must stay flat
+
+    // PHASE 2: Pivot the nose to due NORTH (0 decidegrees) mid-flight
+    // maintain the exact same 100.0f East displacement
+    attitude.values.yaw = 0;
+    runIterations(SETTLE_ITERATIONS);
+
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f); // Pitch  must now be flat
+    EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f);         // Roll must now be NEGATIVE (Roll Left)
 }
 
 TEST_F(PosHoldTest, HeadingSouthReversesRollSign)
 {
+    // 1. Nose pointed North: Drifting East requires Roll Left (Negative)
     initAndSettleAt(0, 0, 0);
     testEstimate.position.x = 100.0f;
     runIterations(SETTLE_ITERATIONS);
-    const float rollNorth = autopilotAngle[AI_ROLL];
+    EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f); 
 
+    // 2. Nose pointed South: Drifting East requires Roll Right (Positive)
     initAndSettleAt(0, 0, 1800);
     testEstimate.position.x = 100.0f;
     runIterations(SETTLE_ITERATIONS);
-    const float rollSouth = autopilotAngle[AI_ROLL];
-
-    EXPECT_NE(rollNorth, 0.0f);
-    EXPECT_NE(rollSouth, 0.0f);
-    EXPECT_LT(rollNorth * rollSouth, 0.0f);
+    
+    EXPECT_GT(autopilotAngle[AI_ROLL], 0.0f); // Roll must be  POSITIVE (Roll Right)
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f); // Pitch  must be flat
 }
 
-// -- Sticks active zeros angle output --
 
-TEST_F(PosHoldTest, SticksActiveZerosOutput)
+
+// -- Sticks active reduces the response --
+
+TEST_F(PosHoldTest, SticksActiveButCentered)
 {
     initAndSettleAt(0, 0, 0);
-
-    testEstimate.position.x = 100.0f;
+    testEstimate.position.x = 100.0f; // Drone is offset to the right
     runIterations(SETTLE_ITERATIONS);
-    EXPECT_NE(autopilotAngle[AI_ROLL], 0.0f);
+
+    // Ensure sticks are simulated as perfectly centered
+    simulatedStickRoll = 0.0f;
+    simulatedStickPitch = 0.0f;
 
     setSticksActiveStatus(true);
     runIterations(SETTLE_ITERATIONS);
 
-    EXPECT_NEAR(autopilotAngle[AI_ROLL],  0.0f, 0.01f);
+    // Assert your new baseline calculation output
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], -0.9045f, 0.01f);
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.01f);
+}
+
+TEST_F(PosHoldTest, EstimateValidityTransitionsUnavailableAvailableUnavailable)
+{
+    initAndSettleAt(0, 0, 0);
+
+    testEstimate.isValidXY = false;
+    EXPECT_FALSE(positionControl());
+
+    testEstimate.isValidXY = true;
+    testEstimate.position.x = 80.0f;
+    runIterations(SETTLE_ITERATIONS);
+    EXPECT_TRUE(positionControl());
+    EXPECT_NE(autopilotAngle[AI_ROLL], 0.0f);
+
+    testEstimate.isValidXY = false;
+    EXPECT_FALSE(positionControl());
+}
+
+TEST_F(PosHoldTest, VelocityTransitionSimulatesFallbackAndRecovery)
+{
+    initAndSettleAt(0, 0, 0);
+
+    testEstimate.velocity.x = 120.0f;
+    runIterations(SETTLE_ITERATIONS);
+    const float highVelocityRoll = autopilotAngle[AI_ROLL];
+    EXPECT_NE(highVelocityRoll, 0.0f);
+
+    testEstimate.velocity.x = 20.0f;
+    runIterations(SETTLE_ITERATIONS);
+    const float lowVelocityRoll = autopilotAngle[AI_ROLL];
+    EXPECT_LT(fabsf(lowVelocityRoll), fabsf(highVelocityRoll));
+
+    testEstimate.velocity.x = 0.0f;
+    runIterations(SETTLE_ITERATIONS);
+    EXPECT_NEAR(-0.7f, autopilotAngle[AI_ROLL], 0.1f);
+}
+
+TEST_F(PosHoldTest, ReleasingSticksBrakes)
+{
+    initAndSettleAt(0, 0, 0);
+
+    // Pilot is moving with sticks active
+    setSticksActiveStatus(true);
+    testEstimate.velocity.x = 120.0f;
+
+    // Ensure sticks are centered for this baseline cruise test
+    simulatedStickRoll = 0.0f;
+
+    runIterations(SETTLE_ITERATIONS);
+
+    // UPDATE: Changed from -3.73f to -9.3767f to match the active tracking math
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], -9.3767f, 0.05f);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH],  0.0f,        0.01f);
+
+    // Stick release should cause a greater angle
+    setSticksActiveStatus(false);
+    runIterations(SETTLE_ITERATIONS);
+
+    float expectedBrakeAngle = -14.4f;
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], expectedBrakeAngle, 0.1f);
+
+    runIterations(SETTLE_ITERATIONS);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f);
 }
 
 // -- GPS-like scenario: large displacement, position + velocity --

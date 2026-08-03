@@ -132,6 +132,7 @@ static const pllConfig_t overclockLevels[] = {
   */
 
 static void SystemInitPLLParameters(void);
+static uint32_t SystemClockGetFlashLatency(void);
 void DAL_SysClkConfig(void);
 void Error_Handler(void);
 
@@ -303,11 +304,12 @@ void DAL_SysClkConfig(void)
     RCM_ClkInitStruct.AHBCLKDivider     = RCM_SYSCLK_DIV1;
     RCM_ClkInitStruct.APB1CLKDivider    = RCM_HCLK_DIV4;
     RCM_ClkInitStruct.APB2CLKDivider    = RCM_HCLK_DIV2;
-    if(DAL_RCM_ClockConfig(&RCM_ClkInitStruct, FLASH_LATENCY_5) != DAL_OK)
+    if(DAL_RCM_ClockConfig(&RCM_ClkInitStruct, SystemClockGetFlashLatency()) != DAL_OK)
     {
         Error_Handler();
     }
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx)
     /* I2S clock */
     // Configure PLLI2S for 27MHz operation
     // Use pll_input (1 or 2) to derive multiplier N for
@@ -320,10 +322,8 @@ void DAL_SysClkConfig(void)
     PeriphClk_InitStruct.PeriphClockSelection   = RCM_PERIPHCLK_I2S;
     PeriphClk_InitStruct.PLLI2S.PLL2A           = plli2s_n;
     PeriphClk_InitStruct.PLLI2S.PLL2C           = PLLI2S_R;
-    if (DAL_RCMEx_PeriphCLKConfig(&PeriphClk_InitStruct) != DAL_OK)
-    {
-        Error_Handler();
-    }
+    DAL_RCMEx_PeriphCLKConfig(&PeriphClk_InitStruct);
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx */
 }
 
 /**
@@ -453,6 +453,24 @@ static void SystemInitPLLParameters(void)
     pll_n = pll->n / pll_input;
     pll_p = pll->p;
     pll_q = pll->q;
+}
+
+static uint32_t SystemClockGetFlashLatency(void)
+{
+  uint32_t currentOverclockLevel = persistentObjectRead(PERSISTENT_OBJECT_OVERCLOCK_LEVEL);
+  uint32_t targetMhz = overclockLevels[0].mhz;
+
+  if (currentOverclockLevel < ARRAYLEN(overclockLevels)) {
+    targetMhz = overclockLevels[currentOverclockLevel].mhz;
+  }
+
+  if (targetMhz > 216U) {
+    return FLASH_LATENCY_7;
+  }
+  if (targetMhz > 168U) {
+    return FLASH_LATENCY_6;
+  }
+  return FLASH_LATENCY_5;
 }
 
 /**

@@ -210,8 +210,11 @@ void rangefinderUPT1Update(rangefinderDev_t *dev)
                 DEBUG_SET(DEBUG_LIDAR_TF, 4, validStatus);
                 DEBUG_SET(DEBUG_LIDAR_TF, 5, integration_time);
 
-                // Process rangefinder data
-                if (distanceMm >= UPT1_RANGE_MIN && distanceMm <= UPT1_RANGE_MAX) {
+                const bool laserValid = (validStatus == 0xF5);
+                const bool distanceInRange = (distanceMm >= UPT1_RANGE_MIN && distanceMm <= UPT1_RANGE_MAX);
+
+                // Process rangefinder data — require both a real laser sample and in-range distance
+                if (laserValid && distanceInRange) {
                     upt1Value = distanceMm / 10;                // Convert mm to cm
                     DEBUG_SET(DEBUG_LIDAR_TF, 6, upt1Value);    // Converted to cm
                 } else {
@@ -220,7 +223,7 @@ void rangefinderUPT1Update(rangefinderDev_t *dev)
                 }
                 hasUPT1RFNewData = true;
 #ifdef USE_OPTICALFLOW
-                upt1RFDistanceMm = distanceMm;
+                upt1RFDistanceMm = (laserValid && distanceInRange) ? distanceMm : RANGEFINDER_OUT_OF_RANGE;
                 upt1RFTimestampUs = micros();
 #endif
 
@@ -228,9 +231,10 @@ void rangefinderUPT1Update(rangefinderDev_t *dev)
                 // Process optical flow data with explicit validity tracking
                 static uint8_t upt1OpticalDataInvalidCount = 0;
 
-                const bool sensorFlowValid = (validStatus == 0xF5);
-                const bool sensorRangeValid = (distanceMm >= UPT1_OPTICALFLOW_MIN_RANGE
-                                               && distanceMm <= UPT1_RANGE_MAX);
+                const bool sensorFlowValid = laserValid;
+                const bool sensorRangeValid = laserValid
+                                              && distanceMm >= UPT1_OPTICALFLOW_MIN_RANGE
+                                              && distanceMm <= UPT1_RANGE_MAX;
                 const float dt_s = (float)integration_time / 1e6f;
                 const bool sensorDtValid = (dt_s > 0.0f && dt_s < 1.0f);
 

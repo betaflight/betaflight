@@ -159,7 +159,19 @@ bool bmp280Detect(baroDev_t *baro)
         defaultAddressApplied = true;
     }
 
-    busReadRegisterBuffer(dev, BMP280_CHIP_ID_REG, &bmp280_chip_id, 1);  /* read Chip Id */
+    bmp280_chip_id = 0;
+    busReadRegisterBuffer(dev, BMP280_CHIP_ID_REG, &bmp280_chip_id, 1);
+
+    if ((bmp280_chip_id != BMP280_DEFAULT_CHIP_ID) && (bmp280_chip_id != BME280_DEFAULT_CHIP_ID)) {
+        // Some BMP280 modules wire SDO to VDD, putting the chip at 0x77.
+        // Retry on the alternate address before giving up so boards with
+        // either strap value are auto-detected from a single config.
+        if (defaultAddressApplied && dev->bus->busType == BUS_TYPE_I2C) {
+            dev->busType_u.i2c.address = 0x77;
+            bmp280_chip_id = 0;
+            busReadRegisterBuffer(dev, BMP280_CHIP_ID_REG, &bmp280_chip_id, 1);
+        }
+    }
 
     if ((bmp280_chip_id != BMP280_DEFAULT_CHIP_ID) && (bmp280_chip_id != BME280_DEFAULT_CHIP_ID)) {
         bmp280BusDeinit(dev);

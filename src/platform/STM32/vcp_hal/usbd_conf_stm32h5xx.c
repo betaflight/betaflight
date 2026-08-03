@@ -17,7 +17,11 @@
 #include "platform.h"
 
 PCD_HandleTypeDef hpcd_USB_DRD_FS;
-void Error_Handler(void);
+void Error_Handler(void)
+{
+    while (1) {
+    }
+}
 
 static USBD_StatusTypeDef USBD_Get_USB_Status(HAL_StatusTypeDef hal_status);
 
@@ -34,6 +38,16 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef *pcdHandle)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     if (pcdHandle->Instance == USB_DRD_FS) {
+        /* H5 isolates VDDUSB at reset. Enable the detector and remove the
+         * isolation before clocking the peripheral, otherwise the FS
+         * transceiver stays unpowered and the host sees DPPU but fails
+         * descriptor exchange ("Unknown USB Device, Device Descriptor Request
+         * Failed"). PWR has no RCC enable bit on H5 (it is always-clocked),
+         * so PWREx access here needs no __HAL_RCC_PWR_CLK_ENABLE().
+         */
+        HAL_PWREx_EnableUSBVoltageDetector();
+        HAL_PWREx_EnableVddUSB();
+
         __HAL_RCC_GPIOA_CLK_ENABLE();
 
         /* USB DM/DP on PA11/PA12 */

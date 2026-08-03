@@ -129,8 +129,14 @@ void EXTIInit(void)
     memset(extiChannelRecs, 0, sizeof(extiChannelRecs));
     memset(extiTriggerMask, 0, sizeof(extiTriggerMask));
 
-    // Route GPIO peripheral interrupt to CPU interrupt line and register handler
+    // Route GPIO peripheral interrupt to CPU interrupt line and register handler.
+    // ESP32-P4 fans GPIO interrupts across 4 sources (one per HP core port);
+    // skeleton routes only INTR0.
+#if defined(ESP32P4)
+    esp32IntrRoute(ESP32_CPU_INTR_GPIO, ETS_GPIO_INTR0_SOURCE);
+#else
     esp32IntrRoute(ESP32_CPU_INTR_GPIO, ETS_GPIO_INTR_SOURCE);
+#endif
     esp32IntrRegister(ESP32_CPU_INTR_GPIO, EXTI_IRQHandler, NULL);
     esp32IntrEnable(ESP32_CPU_INTR_GPIO);
 }

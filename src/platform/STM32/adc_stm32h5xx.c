@@ -401,9 +401,17 @@ void adcInit(const adcConfig_t *config)
 
 #ifdef USE_DMA_SPEC
         const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, dev, config->dmaopt[dev]);
+
+        // dmaSpec is NULL when this ADC device has no DMA option configured
+        // (e.g. ADC2 for internal VBAT when only ADC1_DMA_OPT is set). Bail out
+        // before dereferencing it — otherwise dmaSpec->ref faults at address 4.
+        if (!dmaSpec) {
+            return;
+        }
+
         dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
 
-        if (!dmaSpec || !dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
+        if (!dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
             return;
         }
 

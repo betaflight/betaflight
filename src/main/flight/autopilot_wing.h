@@ -26,7 +26,6 @@ extern float autopilotAngle[RP_AXIS_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGREES
 
 void autopilotInit(void);
 void resetAltitudeControl(void);
-void setSticksActiveStatus(bool areSticksActive);
 void resetPositionControl(unsigned taskRateHz);
 bool positionControl(void);
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeVelCmS, float velLimitCmS);

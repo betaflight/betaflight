@@ -36,6 +36,8 @@ bool serialUART_pio(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOptio
                     const pioUartHardware_t *hardware, serialPortIdentifier_e identifier, IO_t txIO, IO_t rxIO);
 void uartReconfigure_pio(uartPort_t *s);
 void uartEnableTxInterrupt_pio(uartPort_t *uartPort);
+void uartSelectFunction_pio(uartPort_t *s, uint32_t gpio);
+bool isTxComplete_pio(uartPort_t *s);
 
 // uart_hw.c
 void uartPinConfigure_hw(const serialPinConfig_t *pSerialPinConfig);
@@ -43,6 +45,8 @@ bool serialUART_hw(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOption
                    const uartHardware_t *hardware, serialPortIdentifier_e identifier, IO_t txIO, IO_t rxIO);
 void uartReconfigure_hw(uartPort_t *s);
 void uartEnableTxInterrupt_hw(uartPort_t *uartPort);
+void uartSelectFunction_hw(uartPort_t *s, uint32_t gpio);
+bool isTxComplete_hw(uartPort_t *s);
 
 // uart_rx_program.c
 extern struct pio_program uart_rx_program;
@@ -50,5 +54,6 @@ void uart_rx_program_init(PIO pio, uint sm, uint offset, uint pin, uint baud);
 
 // uart_tx_program.c
 extern struct pio_program uart_tx_program;
+extern uint32_t tx_await_offset;
 void uart_tx_program_init(PIO pio, uint sm, uint offset, uint pin, uint baud);
 

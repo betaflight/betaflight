@@ -96,20 +96,30 @@ static uint8_t usbVcpRead(serialPort_t *instance)
     return ch;
 }
 
+// Give up writing if the TX FIFO has not drained for this long: the host is
+// disconnected or not reading. Without a bound, write_txfifo() returning 0 on a
+// full FIFO spins forever and hangs the firmware (e.g. any CLI output while no
+// host is draining the port).
+#define USB_VCP_TX_TIMEOUT_MS 20
+
 static void usbVcpWriteBuf(serialPort_t *instance, const void *data, int count)
 {
     UNUSED(instance);
     const uint8_t *p = (const uint8_t *)data;
     int remaining = count;
+    timeMs_t lastProgressMs = millis();
     while (remaining > 0) {
-        int written = usb_serial_jtag_ll_write_txfifo(p, remaining);
-        p += written;
-        remaining -= written;
-        if (remaining > 0) {
-            usb_serial_jtag_ll_txfifo_flush();
+        const int written = usb_serial_jtag_ll_write_txfifo(p, remaining);
+        usb_serial_jtag_ll_txfifo_flush();
+        if (written > 0) {
+            p += written;
+            remaining -= written;
+            lastProgressMs = millis();
+        } else if (millis() - lastProgressMs >= USB_VCP_TX_TIMEOUT_MS) {
+            // FIFO not draining; drop the rest rather than hang the firmware.
+            break;
         }
     }
-    usb_serial_jtag_ll_txfifo_flush();
 }
 
 static void usbVcpWrite(serialPort_t *instance, uint8_t c)
