@@ -152,8 +152,13 @@ void rcModeUpdate(const boxBitmask_t *newState);
 // active on top of the RC-derived mask each loop, so a MAVLink DO_SET_MODE / RTL
 // survives the per-loop recompute in updateActivatedModes(). Overrides are
 // cleared on disarm. No effect when ENABLE_TELEMETRY_MAVLINK_COMMANDS is off.
+#if ENABLE_TELEMETRY_MAVLINK_COMMANDS
 void rcModeSetExternalOverride(boxId_e boxId, bool enabled);
 void rcModeClearExternalOverrides(void);
+#else
+static inline void rcModeSetExternalOverride(boxId_e boxId, bool enabled) { (void)boxId; (void)enabled; }
+static inline void rcModeClearExternalOverrides(void) { }
+#endif
 
 bool isAirmodeEnabled(void);
 

@@ -43,9 +43,14 @@
 #include "pg/autopilot.h"
 #include "pg/flight_plan.h"
 
-// Pull in the full MAVLink headers before telemetry/mavlink.h so the latter's
-// forward-typedef of mavlink_message_t yields to the real (identical) one.
+// mavlink library uses unnamed unions that causes GCC to complain if -Wpedantic
+// is used - ignore -Wpedantic for mavlink code. Pull in the full MAVLink headers
+// before telemetry/mavlink.h so the latter's forward-typedef of
+// mavlink_message_t yields to the real (identical) one.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 #include "common/mavlink.h"
+#pragma GCC diagnostic pop
 
 #include "telemetry/mavlink.h"
 #include "telemetry/mavlink_mission.h"
@@ -512,7 +517,12 @@ static void handleCount(const mavlink_message_t *msg)
             sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_FENCE, MAV_MISSION_NO_SPACE);
             return;
         }
-        fenceStore.count = 0;   // a new upload replaces the existing fence
+        // MAVLink semantics: MISSION_COUNT begins a full replacement, so drop
+        // the old fence up front (as the waypoint path does) rather than leave a
+        // half-overwritten store visible mid-transfer. A partner that aborts must
+        // re-upload; the fence is RAM-only and not yet enforced, so no armed
+        // behaviour depends on it surviving a failed transfer.
+        fenceStore.count = 0;
         if (mc.count == 0) {
             sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_FENCE, MAV_MISSION_ACCEPTED);
             m.state = MISSION_IDLE;

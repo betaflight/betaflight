@@ -1614,6 +1614,11 @@ bool flightPlanNavSetCurrentIndex(uint8_t index)
         fp.currentIndex = index;
         fp.patternPending = false;
         fp.patternActive = false;
+        fp.abortReason = FP_ABORT_NONE;
+        fp.carrotPrevValid = false;   // a cursor jump re-anchors on the craft
+        fp.carrotSpeedMps = 0.0f;
+        fp.measFiltValid = false;
+        fp.overspeedHold = false;
         clearModifierState();
         fp.state = FP_NAV_TARGETING;
         dispatchWaypoint();

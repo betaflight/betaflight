@@ -516,33 +516,39 @@ static bool mavlinkRebootToBootloader = false;
 // one box active. Returns false for non-selectable / unknown modes.
 static bool applyMavCustomMode(uint32_t customMode)
 {
-    rcModeClearExternalOverrides();
-
+    // Resolve the target box first: a rejected mode must leave any active
+    // override (e.g. an in-progress GPS Rescue) untouched.
+    boxId_e box;
     switch ((bfMavMode_e)customMode) {
     case BF_MAV_MODE_ACRO:
+        rcModeClearExternalOverrides();
         return true;
     case BF_MAV_MODE_ANGLE:
-        rcModeSetExternalOverride(BOXANGLE, true);
-        return true;
+        box = BOXANGLE;
+        break;
     case BF_MAV_MODE_HORIZON:
-        rcModeSetExternalOverride(BOXHORIZON, true);
-        return true;
+        box = BOXHORIZON;
+        break;
     case BF_MAV_MODE_ALT_HOLD:
-        rcModeSetExternalOverride(BOXALTHOLD, true);
-        return true;
+        box = BOXALTHOLD;
+        break;
     case BF_MAV_MODE_POS_HOLD:
-        rcModeSetExternalOverride(BOXPOSHOLD, true);
-        return true;
+        box = BOXPOSHOLD;
+        break;
     case BF_MAV_MODE_AUTOPILOT:
-        rcModeSetExternalOverride(BOXAUTOPILOT, true);
-        return true;
+        box = BOXAUTOPILOT;
+        break;
     case BF_MAV_MODE_RTL:
-        rcModeSetExternalOverride(BOXGPSRESCUE, true);
-        return true;
+        box = BOXGPSRESCUE;
+        break;
     case BF_MAV_MODE_FAILSAFE:
     default:
         return false;
     }
+
+    rcModeClearExternalOverrides();
+    rcModeSetExternalOverride(box, true);
+    return true;
 }
 
 static uint8_t handleArmDisarm(float param1)
@@ -801,6 +807,7 @@ static void mavlinkProcessIncoming(void)
     // Execute a pending reboot only after the COMMAND_ACK has been flushed, so the
     // GCS sees the acknowledgement before the link drops.
     if (mavlinkRebootPending) {
+        mavlinkRebootPending = false;
         waitForSerialPortToFinishTransmitting(mavlinkPort);
         motorShutdown();
         if (mavlinkRebootToBootloader) {
