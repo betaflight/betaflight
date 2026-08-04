@@ -374,7 +374,7 @@
 #define DEF_TIM_AF__PA8__TCH_TIM1_CH1     D(1, 1)
 #define DEF_TIM_AF__PA9__TCH_TIM1_CH2     D(1, 1)
 #define DEF_TIM_AF__PA10__TCH_TIM1_CH3    D(1, 1)
-#define DEF_TIM_AF__PA11__TCH_TIM1_CH1N   D(1, 1)
+#define DEF_TIM_AF__PA11__TCH_TIM1_CH4    D(1, 1)
 #define DEF_TIM_AF__PA15__TCH_TIM2_CH1    D(1, 2)
 
 #define DEF_TIM_AF__PA0__TCH_TIM5_CH1     D(2, 5)
