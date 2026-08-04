@@ -790,8 +790,8 @@
 #define DEF_TIM_AF__PF8__TCH_TIM16_CH1N   D(1, 16)
 #define DEF_TIM_AF__PF9__TCH_TIM17_CH1N   D(1, 17)
 
-#define DEF_TIM_AF__PF8__TCH_TIM13_CH1N   D(9, 13)
-#define DEF_TIM_AF__PF9__TCH_TIM14_CH1N   D(9, 14)
+#define DEF_TIM_AF__PF8__TCH_TIM13_CH1    D(9, 13)
+#define DEF_TIM_AF__PF9__TCH_TIM14_CH1    D(9, 14)
 
 #if defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx)
 #define DEF_TIM_AF__PF0__TCH_TIM23_CH1    D(13, 23)
@@ -1109,8 +1109,6 @@
 #define DEF_TIM_AF__PF8__TCH_TIM16_CH1N   D(1, 16)
 #define DEF_TIM_AF__PF9__TCH_TIM17_CH1N   D(1, 17)
 
-#define DEF_TIM_AF__PF8__TCH_TIM13_CH1N   D(9, 13)
-#define DEF_TIM_AF__PF9__TCH_TIM14_CH1N   D(9, 14)
 #define DEF_TIM_AF__PF8__TCH_TIM13_CH1    D(9, 13)
 #define DEF_TIM_AF__PF9__TCH_TIM14_CH1    D(9, 14)
 
