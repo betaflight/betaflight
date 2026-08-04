@@ -287,12 +287,12 @@ bool lidarTFDetect(rangefinderDev_t *dev, rangefinderType_e rfType)
         return false; // supplied rfType is not TF
     }
 
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_LIDAR_TF);
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_LIDAR);
     if (!portConfig) {
         return false;
     }
 
-    tfSerialPort = openSerialPort(portConfig->identifier, FUNCTION_LIDAR_TF, NULL, NULL, 115200, MODE_RXTX, 0);
+    tfSerialPort = openSerialPort(portConfig->identifier, FUNCTION_LIDAR, NULL, NULL, 115200, MODE_RXTX, 0);
     if (tfSerialPort == NULL) {
         return false;
     }
