@@ -510,6 +510,29 @@ TEST(CLIUnittest, TestCliExecuteCommandGuards)
     EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("version", buf, sizeof(buf)));
     cliMode = false;
 }
+
+// An inline comment must not be read as the 'nosave' argument: processCharacter() strips the
+// comment before dispatch, so 'defaults' would run in its saving form and reboot.
+TEST(CLIUnittest, TestCliExecuteCommandRefusesDefaultsWithCommentedNosave)
+{
+    char buf[64];
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults # nosave", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults #nosave", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults // nosave", buf, sizeof(buf)));
+    EXPECT_FALSE(cliMode);
+}
+
+// Persisting or wiping the config while armed must be refused: writeEEPROM() blocks the
+// flight loop, and this path is reachable from a telemetry link in flight.
+TEST(CLIUnittest, TestCliExecuteCommandRefusesWhenArmed)
+{
+    char buf[64];
+    armingFlags |= ARMED;
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("save", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults nosave", buf, sizeof(buf)));
+    armingFlags &= ~ARMED;
+    EXPECT_FALSE(cliMode);
+}
 #endif
 
 // Verifies cliSetSettingByName sets an array value and round-trips via get.

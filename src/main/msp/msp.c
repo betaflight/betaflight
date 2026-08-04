@@ -2814,12 +2814,19 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             static char cliCmdBuffer[MSP_CLI_COMMAND_BUFFER_SIZE];
             static char cliCmdName[128];
             static int cliCmdTotalLen = 0;
+            static bool cliCmdTruncated = false;
 
+            // A line the CLI input buffer cannot hold would be silently truncated by
+            // processCharacter() and then executed as a different command.
+            _Static_assert(sizeof(cliCmdName) < CLI_IN_BUFFER_SIZE,
+                           "MSP CLI command line must fit the CLI input buffer");
+
+            // <cmdline> + NUL + optional u16 offset
+            char req[sizeof(cliCmdName) + 3];
             const int len = sbufBytesRemaining(src);
-            if (len == 0) {
+            if (len == 0 || len >= (int)sizeof(req)) {
                 return MSP_RESULT_ERROR;
             }
-            char req[len + 1];
             sbufReadData(src, req, len);
             req[len] = '\0';
 
@@ -2840,20 +2847,19 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
 
             uint8_t flags = 0;
             if (offset == 0) {
+                // 'dump', 'diff' and 'save' can run long; don't bill it to the MSP task
+                schedulerIgnoreTaskStateTime();
                 const int produced = cliExecuteCommand(req, cliCmdBuffer, sizeof(cliCmdBuffer));
                 if (produced == CLI_COMMAND_REFUSED) {
                     cliCmdName[0] = '\0';
                     cliCmdTotalLen = 0;
+                    cliCmdTruncated = false;
                     sbufWriteU16(dst, 0);
                     sbufWriteU8(dst, MSP2_CLI_COMMAND_FLAG_REFUSED);
                     break;
                 }
-                if (produced > (int)sizeof(cliCmdBuffer)) {
-                    cliCmdTotalLen = sizeof(cliCmdBuffer);
-                    flags |= MSP2_CLI_COMMAND_FLAG_TRUNCATED;
-                } else {
-                    cliCmdTotalLen = produced;
-                }
+                cliCmdTruncated = produced > (int)sizeof(cliCmdBuffer);
+                cliCmdTotalLen = cliCmdTruncated ? (int)sizeof(cliCmdBuffer) : produced;
                 strcpy(cliCmdName, req);
             } else {
                 // continuation: the client resends the same command line to page further
@@ -2862,9 +2868,9 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
                     sbufWriteU8(dst, MSP2_CLI_COMMAND_FLAG_REFUSED);
                     break;
                 }
-                if (cliCmdTotalLen == (int)sizeof(cliCmdBuffer)) {
-                    flags |= MSP2_CLI_COMMAND_FLAG_TRUNCATED;
-                }
+            }
+            if (cliCmdTruncated) {
+                flags |= MSP2_CLI_COMMAND_FLAG_TRUNCATED;
             }
 
             sbufWriteU16(dst, (uint16_t)cliCmdTotalLen);

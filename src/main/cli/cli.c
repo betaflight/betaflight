@@ -8679,6 +8679,35 @@ static bool lineIsCommand(const char *line, const char *command)
 #endif
 
 #ifdef USE_MSP_CLI_COMMAND
+// Check whether a line carries 'arg' as a discrete argument. Inline comments are stripped
+// first because processCharacter() drops them before dispatch, so a plain substring search
+// would read "defaults # nosave" as carrying the nosave flag when the CLI will not.
+static bool lineHasArg(const char *line, const char *arg)
+{
+    char stripped[CLI_IN_BUFFER_SIZE];
+    strncpy(stripped, line, sizeof(stripped) - 1);
+    stripped[sizeof(stripped) - 1] = '\0';
+
+    char *cp = strchr(stripped, '#');
+    if (cp) {
+        *cp = '\0';
+    }
+    cp = strstr(stripped, "//");
+    if (cp) {
+        *cp = '\0';
+    }
+
+    char *saveptr;
+    for (char *tok = strtok_r(stripped, " \t\r\n", &saveptr); tok;
+         tok = strtok_r(NULL, " \t\r\n", &saveptr)) {
+        if (strcasecmp(tok, arg) == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 typedef struct cliCaptureSink_s {
     char *buf;
     int cap;
@@ -8713,7 +8742,14 @@ int cliExecuteCommand(const char *cmdline, char *outBuf, int outBufLen)
         lineIsCommand(cmdline, "serialpassthrough")) {
         return CLI_COMMAND_REFUSED;
     }
-    if (lineIsCommand(cmdline, "defaults") && !strcasestr(cmdline, "nosave")) {
+    // This is reachable from any MSP link, including telemetry links in flight. writeEEPROM()
+    // blocks the flight loop (MSP_EEPROM_WRITE refuses while armed for the same reason) and
+    // wiping the config mid-flight is never safe.
+    if (ARMING_FLAG(ARMED) &&
+        (lineIsCommand(cmdline, "save") || lineIsCommand(cmdline, "defaults"))) {
+        return CLI_COMMAND_REFUSED;
+    }
+    if (lineIsCommand(cmdline, "defaults") && !lineHasArg(cmdline, "nosave")) {
         return CLI_COMMAND_REFUSED;
     }
 

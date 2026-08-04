@@ -41,6 +41,8 @@ int cliGetSettingInfoByName(const char *name, int offset, char *buf, int bufLen,
 bool cliSetSettingByName(const char *cmdline);
 #ifdef USE_MSP_CLI_COMMAND
 #define CLI_COMMAND_REFUSED (-1)
+// Returns CLI_COMMAND_REFUSED, or the total logical output length. That length exceeds
+// outBufLen when the output was truncated; only outBufLen bytes are written to outBuf.
 int cliExecuteCommand(const char *cmdline, char *outBuf, int outBufLen);
 #endif
 #endif
