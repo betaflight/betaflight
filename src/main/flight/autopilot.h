@@ -16,8 +16,6 @@
  */
 
 #pragma once
-
-#include "io/gps.h"
-
+#include "flight/pos_hold_multirotor.h"
 #include "flight/autopilot_multirotor.h"
 #include "flight/autopilot_wing.h"

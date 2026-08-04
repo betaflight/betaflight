@@ -61,15 +61,9 @@
 
 static int8_t STORAGE_Init (uint8_t lun);
 
-#ifdef USE_HAL_DRIVER
 static int8_t STORAGE_GetCapacity (uint8_t lun,
                            uint32_t *block_num,
-                           uint16_t *block_size);
-#else
-static int8_t STORAGE_GetCapacity (uint8_t lun,
-                           uint32_t *block_num,
-                           uint32_t *block_size);
-#endif
+                           usbd_msc_block_size_t *block_size);
 
 static int8_t  STORAGE_IsReady (uint8_t lun);
 
@@ -95,11 +89,7 @@ static uint8_t  STORAGE_Inquirydata[] = {//36
   0x80,
   0x02,
   0x02,
-#ifdef USE_HAL_DRIVER
-  (STANDARD_INQUIRY_DATA_LEN - 5),
-#else
-  (USBD_STD_INQUIRY_LENGTH - 5),
-#endif
+  (USBD_MSC_INQUIRY_DATA_LEN - 5),
   0x00,
   0x00,
   0x00,
@@ -109,8 +99,7 @@ static uint8_t  STORAGE_Inquirydata[] = {//36
   '0', '.', '0' ,'1',                     /* Version      : 4 Bytes */
 };
 
-#ifdef USE_HAL_DRIVER
-USBD_StorageTypeDef USBD_MSC_MICRO_SD_SPI_fops =
+USBD_MSC_StorageType USBD_MSC_MICRO_SD_SPI_fops =
 {
   STORAGE_Init,
   STORAGE_GetCapacity,
@@ -121,19 +110,6 @@ USBD_StorageTypeDef USBD_MSC_MICRO_SD_SPI_fops =
   STORAGE_GetMaxLun,
   (int8_t*)STORAGE_Inquirydata,
 };
-#else
-USBD_STORAGE_cb_TypeDef USBD_MSC_MICRO_SD_SPI_fops =
-{
-  STORAGE_Init,
-  STORAGE_GetCapacity,
-  STORAGE_IsReady,
-  STORAGE_IsWriteProtected,
-  STORAGE_Read,
-  STORAGE_Write,
-  STORAGE_GetMaxLun,
-  (int8_t*)STORAGE_Inquirydata,
-};
-#endif
 
 /*******************************************************************************
 * Function Name  : Read_Memory
@@ -159,11 +135,7 @@ static int8_t STORAGE_Init (uint8_t lun)
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-#ifdef USE_HAL_DRIVER
-static int8_t STORAGE_GetCapacity (uint8_t lun, uint32_t *block_num, uint16_t *block_size)
-#else
-static int8_t STORAGE_GetCapacity (uint8_t lun, uint32_t *block_num, uint32_t *block_size)
-#endif
+static int8_t STORAGE_GetCapacity (uint8_t lun, uint32_t *block_num, usbd_msc_block_size_t *block_size)
 {
     UNUSED(lun);
     *block_num = sdcard_getMetadata()->numBlocks;

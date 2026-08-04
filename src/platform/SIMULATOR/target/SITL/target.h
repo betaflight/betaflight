@@ -27,10 +27,18 @@
 #include <stdint.h>
 
 #include "common/utils.h"
+#include "drivers/serial_uart_types.h"
 
 #define TARGET_BOARD_IDENTIFIER "SITL"
 
-#define SIMULATOR_MULTITHREAD
+// SITL bridge selector. Configs that target legacy bridges (X-Plane,
+// RealFlight) define ENABLE_GAZEBO_BRIDGE=0 in config.h; otherwise default
+// to Gazebo so the bare TARGET=SITL build behaves like the SITL_GAZEBO config.
+#ifndef ENABLE_GAZEBO_BRIDGE
+#define ENABLE_GAZEBO_BRIDGE  1
+#endif
+
+#define ENABLE_SIMULATOR_MULTITHREAD 1
 
 #define SYSTEM_HSE_MHZ 0
 #define DEFAULT_CPU_OVERCLOCK 1
@@ -44,14 +52,17 @@
 #define DMA_DATA
 #define STATIC_DMA_DATA_AUTO
 
-// use simulatior's attitude directly
-// disable this if wants to test AHRS algorithm
+// SITL runs the real attitude estimator (Mahony + mag/COG fusion) against the
+// virtual gyro/acc/mag feeds. Build with -DSITL_ATTITUDE_DIRECT to bypass it
+// and set attitude straight from the FDM quaternion (legacy behaviour).
+#if defined(SITL_ATTITUDE_DIRECT)
 #undef USE_IMU_CALC
+#endif
 
-//#define SIMULATOR_ACC_SYNC
-//#define SIMULATOR_GYRO_SYNC
-//#define SIMULATOR_IMU_SYNC
-//#define SIMULATOR_GYROPID_SYNC
+//#define ENABLE_SIMULATOR_ACC_SYNC 1
+//#define ENABLE_SIMULATOR_GYRO_SYNC 1
+//#define ENABLE_SIMULATOR_IMU_SYNC 1
+//#define ENABLE_SIMULATOR_GYROPID_SYNC 1
 
 // file name to save config
 #define EEPROM_FILENAME "eeprom.bin"
@@ -67,6 +78,10 @@
 
 #undef SCHEDULER_DELAY_LIMIT
 #define SCHEDULER_DELAY_LIMIT           1
+
+// OS preemption spikes must not peak-hold task duration estimates
+// (see scheduler.h) or non-realtime tasks starve to a few hertz
+#define TASK_EXEC_TIME_CLAMP_US         100
 
 #define USE_VIRTUAL_LED
 
@@ -93,12 +108,18 @@
 #define USE_UART7
 #define USE_UART8
 
-#define DEFAULT_RX_FEATURE      FEATURE_RX_MSP
+#define ENABLE_RX_UDP           1
+
+// DEFAULT_RX_FEATURE is picked by config/feature.h: FEATURE_RX_UDP when
+// ENABLE_RX_UDP=1 (bare SITL / Gazebo), else FEATURE_RX_MSP. Configs that want
+// MSP RX as the default (e.g. SITL_X_PLANE) override DEFAULT_RX_FEATURE.
 #define DEFAULT_FEATURES        (FEATURE_GPS | FEATURE_TELEMETRY)
 
-#ifdef USE_GPS
+#define USE_GPS
 #define USE_VIRTUAL_GPS
-#endif
+#define USE_ALTITUDE_HOLD
+#define USE_POSITION_HOLD
+#define USE_FLIGHT_PLAN
 
 #define USE_PARAMETER_GROUPS
 
@@ -130,7 +151,6 @@
 #undef USE_TELEMETRY_FRSKY_HUB
 #undef USE_TELEMETRY_HOTT
 #undef USE_TELEMETRY_SMARTPORT
-#undef USE_TELEMETRY_MAVLINK
 #undef USE_RESOURCE_MGMT
 #undef USE_CMS
 #undef USE_TELEMETRY_CRSF
@@ -187,37 +207,28 @@ uint8_t DMA_GetFlagStatus(void *);
 void DMA_Cmd(DMA_Channel_TypeDef*, FunctionalState );
 void DMA_ClearFlag(uint32_t);
 
-typedef struct
-{
-    void* test;
-} SPI_TypeDef;
+struct spiResource_s;
+struct quadSpiResource_s;
+struct octoSpiResource_s;
 
-typedef struct
-{
-    void* test;
-} USART_TypeDef;
+#define USART1 ((usartResource_t *)0x0001)
+#define USART2 ((usartResource_t *)0x0002)
+#define USART3 ((usartResource_t *)0x0003)
+#define USART4 ((usartResource_t *)0x0004)
+#define USART5 ((usartResource_t *)0x0005)
+#define USART6 ((usartResource_t *)0x0006)
+#define USART7 ((usartResource_t *)0x0007)
+#define USART8 ((usartResource_t *)0x0008)
 
-#define USART1 ((USART_TypeDef *)0x0001)
-#define USART2 ((USART_TypeDef *)0x0002)
-#define USART3 ((USART_TypeDef *)0x0003)
-#define USART4 ((USART_TypeDef *)0x0004)
-#define USART5 ((USART_TypeDef *)0x0005)
-#define USART6 ((USART_TypeDef *)0x0006)
-#define USART7 ((USART_TypeDef *)0x0007)
-#define USART8 ((USART_TypeDef *)0x0008)
-
-#define UART4 ((USART_TypeDef *)0x0004)
-#define UART5 ((USART_TypeDef *)0x0005)
-#define UART7 ((USART_TypeDef *)0x0007)
-#define UART8 ((USART_TypeDef *)0x0008)
+#define UART4 ((usartResource_t *)0x0004)
+#define UART5 ((usartResource_t *)0x0005)
+#define UART7 ((usartResource_t *)0x0007)
+#define UART8 ((usartResource_t *)0x0008)
 
 #define SIMULATOR_MAX_RC_CHANNELS   16
 #define SIMULATOR_MAX_PWM_CHANNELS  16
 
-typedef struct
-{
-    void* test;
-} I2C_TypeDef;
+struct i2cResource_s;
 
 typedef struct {
     double timestamp;                   // in seconds

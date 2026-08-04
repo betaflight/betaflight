@@ -40,7 +40,7 @@
 
 static bool useContinuousUpdate = true;
 
-static void pwmOCConfig(void *tim, uint8_t channel, uint16_t value, uint8_t output)
+static void pwmOCConfig(timerResource_t *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
 #if defined(USE_HAL_DRIVER)
     TIM_HandleTypeDef* Handle = timerFindTimerHandle(tim);

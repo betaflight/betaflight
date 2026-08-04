@@ -36,9 +36,17 @@
 #include "drivers/bus_octospi.h"
 #include "drivers/bus_octospi_impl.h"
 
-#if !(defined(STM32H730xx) || defined(STM32H723xx) || defined(STM32H735xx))
+// Provide platform-specific hardware table for STM32H7
+const octoSpiHardware_t octoSpiHardware[OCTOSPIDEV_COUNT] = {
+#if defined(STM32H730xx) || defined(STM32H723xx) || defined(STM32H735xx)
+    {
+        .device = OCTOSPIDEV_1,
+        .reg = (octoSpiResource_t *)OCTOSPI1,
+    }
+#else
 #error MCU not supported.
 #endif
+};
 
 #define OCTOSPI_INTERFACE_COUNT         1
 
@@ -417,7 +425,7 @@ octoSpiMemoryMappedModeConfigurationRegisterBackup_t ospiMMMCRBackups[OCTOSPI_IN
 
 static void octoSpiBackupMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance)
 {
-    octoSpiDevice_e device = octoSpiDeviceByInstance(instance);
+    octoSpiDevice_e device = octoSpiDeviceByInstance((octoSpiResource_t *)instance);
     if (device == OCTOSPIINVALID) {
         return;
     }
@@ -437,7 +445,7 @@ static void octoSpiBackupMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance
 
 static MMFLASH_CODE_NOINLINE void octoSpiRestoreMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance)
 {
-    octoSpiDevice_e device = octoSpiDeviceByInstance(instance);
+    octoSpiDevice_e device = octoSpiDeviceByInstance((octoSpiResource_t *)instance);
     if (device == OCTOSPIINVALID) {
         return;
     }
@@ -474,9 +482,10 @@ static MMFLASH_CODE_NOINLINE void octoSpiRestoreMemoryMappedModeConfiguration(OC
  * This applies to ISR code that runs from the memory mapped region, so likely the caller should
  * also disable IRQs before calling this.
  */
-MMFLASH_CODE_NOINLINE void octoSpiDisableMemoryMappedMode(OCTOSPI_TypeDef *instance)
+MMFLASH_CODE_NOINLINE void octoSpiDisableMemoryMappedMode(octoSpiResource_t *instance_)
 {
-    if (READ_BIT(OCTOSPI1->CR, OCTOSPI_CR_FMODE) != OCTOSPI_CR_FMODE) {
+    OCTOSPI_TypeDef *instance = (OCTOSPI_TypeDef *)instance_;
+    if (READ_BIT(instance->CR, OCTOSPI_CR_FMODE) != OCTOSPI_CR_FMODE) {
         failureMode(FAILURE_DEVELOPER); // likely not booted with memory mapped mode enabled, or mismatched calls to enable/disable memory map mode.
     }
 
@@ -508,8 +517,9 @@ MMFLASH_CODE_NOINLINE void octoSpiDisableMemoryMappedMode(OCTOSPI_TypeDef *insta
  * @See MMFLASH_CODE_NOINLINE
  */
 
-MMFLASH_CODE_NOINLINE void octoSpiEnableMemoryMappedMode(OCTOSPI_TypeDef *instance)
+MMFLASH_CODE_NOINLINE void octoSpiEnableMemoryMappedMode(octoSpiResource_t *instance_)
 {
+    OCTOSPI_TypeDef *instance = (OCTOSPI_TypeDef *)instance_;
     octoSpiAbort(instance);
     octoSpiWaitStatusFlags(instance, OCTOSPI_SR_BUSY, RESET);
 
@@ -518,7 +528,7 @@ MMFLASH_CODE_NOINLINE void octoSpiEnableMemoryMappedMode(OCTOSPI_TypeDef *instan
 
 static MMFLASH_CODE_NOINLINE void octoSpiTestEnableDisableMemoryMappedMode(octoSpiDevice_t *octoSpi)
 {
-    OCTOSPI_TypeDef *instance = octoSpi->dev;
+    octoSpiResource_t *instance = octoSpi->dev;
 
     __disable_irq();
     octoSpiDisableMemoryMappedMode(instance);
@@ -538,8 +548,9 @@ MMFLASH_CODE static uint32_t octoSpi_addressSizeFromValue(uint8_t addressSize)
     return octoSpi_addressSizeMap[((addressSize + 1) / 8) - 1]; // rounds to nearest OSPI_ADDRESS_* value that will hold the address.
 }
 
-MMFLASH_CODE_NOINLINE bool octoSpiTransmit1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
+MMFLASH_CODE_NOINLINE bool octoSpiTransmit1LINE(octoSpiResource_t *instance_, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
 {
+    OCTOSPI_TypeDef *instance = (OCTOSPI_TypeDef *)instance_;
     OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
 
     cmd.OperationType      = OSPI_OPTYPE_COMMON_CFG;
@@ -576,8 +587,9 @@ MMFLASH_CODE_NOINLINE bool octoSpiTransmit1LINE(OCTOSPI_TypeDef *instance, uint8
     return status == SUCCESS;
 }
 
-MMFLASH_CODE_NOINLINE bool octoSpiReceive1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
+MMFLASH_CODE_NOINLINE bool octoSpiReceive1LINE(octoSpiResource_t *instance_, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
 {
+    OCTOSPI_TypeDef *instance = (OCTOSPI_TypeDef *)instance_;
     OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
 
     cmd.OperationType      = OSPI_OPTYPE_COMMON_CFG;
@@ -611,8 +623,9 @@ MMFLASH_CODE_NOINLINE bool octoSpiReceive1LINE(OCTOSPI_TypeDef *instance, uint8_
     return status == SUCCESS;
 }
 
-MMFLASH_CODE_NOINLINE bool octoSpiReceive4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
+MMFLASH_CODE_NOINLINE bool octoSpiReceive4LINES(octoSpiResource_t *instance_, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
 {
+    OCTOSPI_TypeDef *instance = (OCTOSPI_TypeDef *)instance_;
     OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
 
     cmd.OperationType      = OSPI_OPTYPE_COMMON_CFG;
@@ -646,8 +659,9 @@ MMFLASH_CODE_NOINLINE bool octoSpiReceive4LINES(OCTOSPI_TypeDef *instance, uint8
     return status == SUCCESS;
 }
 
-MMFLASH_CODE_NOINLINE bool octoSpiReceiveWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
+MMFLASH_CODE_NOINLINE bool octoSpiReceiveWithAddress1LINE(octoSpiResource_t *instance_, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
+    OCTOSPI_TypeDef *instance = (OCTOSPI_TypeDef *)instance_;
     OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
 
     cmd.OperationType      = OSPI_OPTYPE_COMMON_CFG;
@@ -682,8 +696,9 @@ MMFLASH_CODE_NOINLINE bool octoSpiReceiveWithAddress1LINE(OCTOSPI_TypeDef *insta
     return status == SUCCESS;
 }
 
-MMFLASH_CODE_NOINLINE bool octoSpiReceiveWithAddress4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
+MMFLASH_CODE_NOINLINE bool octoSpiReceiveWithAddress4LINES(octoSpiResource_t *instance_, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
+    OCTOSPI_TypeDef *instance = (OCTOSPI_TypeDef *)instance_;
     OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
 
     cmd.OperationType      = OSPI_OPTYPE_COMMON_CFG;
@@ -718,8 +733,9 @@ MMFLASH_CODE_NOINLINE bool octoSpiReceiveWithAddress4LINES(OCTOSPI_TypeDef *inst
     return status == SUCCESS;
 }
 
-MMFLASH_CODE_NOINLINE bool octoSpiTransmitWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
+MMFLASH_CODE_NOINLINE bool octoSpiTransmitWithAddress1LINE(octoSpiResource_t *instance_, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
+    OCTOSPI_TypeDef *instance = (OCTOSPI_TypeDef *)instance_;
     OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
 
     cmd.OperationType      = OSPI_OPTYPE_COMMON_CFG;
@@ -754,8 +770,9 @@ MMFLASH_CODE_NOINLINE bool octoSpiTransmitWithAddress1LINE(OCTOSPI_TypeDef *inst
     return status == SUCCESS;
 }
 
-MMFLASH_CODE_NOINLINE bool octoSpiTransmitWithAddress4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
+MMFLASH_CODE_NOINLINE bool octoSpiTransmitWithAddress4LINES(octoSpiResource_t *instance_, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
+    OCTOSPI_TypeDef *instance = (OCTOSPI_TypeDef *)instance_;
     OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
 
     cmd.OperationType      = OSPI_OPTYPE_COMMON_CFG;
@@ -790,8 +807,9 @@ MMFLASH_CODE_NOINLINE bool octoSpiTransmitWithAddress4LINES(OCTOSPI_TypeDef *ins
     return status == SUCCESS;
 }
 
-MMFLASH_CODE_NOINLINE bool octoSpiInstructionWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize)
+MMFLASH_CODE_NOINLINE bool octoSpiInstructionWithAddress1LINE(octoSpiResource_t *instance_, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize)
 {
+    OCTOSPI_TypeDef *instance = (OCTOSPI_TypeDef *)instance_;
     OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
 
     cmd.OperationType      = OSPI_OPTYPE_COMMON_CFG;
@@ -829,7 +847,7 @@ void octoSpiInitDevice(octoSpiDevice_e device)
 #if defined(STM32H730xx) || defined(STM32H723xx) || defined(STM32H735xx)
     if (isMemoryMappedModeEnabledOnBoot()) {
         // Bootloader has already configured the IO, clocks and peripherals.
-        octoSpiBackupMemoryMappedModeConfiguration(octoSpi->dev);
+        octoSpiBackupMemoryMappedModeConfiguration((OCTOSPI_TypeDef *)octoSpi->dev);
 
         octoSpiTestEnableDisableMemoryMappedMode(octoSpi);
     } else {

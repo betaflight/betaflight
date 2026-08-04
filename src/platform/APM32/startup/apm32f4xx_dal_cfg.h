@@ -5,11 +5,11 @@
  *
  * @version     V1.0.0
  *
- * @date        2023-07-31
+ * @date        2025-05-08
  *
  * @attention
  *
- *  Copyright (C) 2023 Geehy Semiconductor
+ *  Copyright (C) 2025 Geehy Semiconductor
  *
  *  You may not use this file except in compliance with the
  *  GEEHY COPYRIGHT NOTICE (GEEHY SOFTWARE PACKAGE LICENSE).
@@ -23,6 +23,7 @@
  *  and limitations under the License.
  */
 
+
 /* Define to prevent recursive inclusion */
 #ifndef APM32F4xx_DAL_CFG_H
 #define APM32F4xx_DAL_CFG_H
@@ -30,14 +31,6 @@
 #ifdef __cplusplus
  extern "C" {
 #endif
-
-/* Configuration settings for log component */
-#define USE_LOG_COMPONENT   0U
-/* Include log header file */
-#include "apm32f4xx_dal_log.h"
-
-/* Configuration settings for assert enable */
-/* #define USE_FULL_ASSERT     1U */
 
 /* DAL module configuration */
 #define DAL_MODULE_ENABLED
@@ -63,6 +56,7 @@
 // #define DAL_I2S_MODULE_ENABLED
 // #define DAL_IWDT_MODULE_ENABLED
 #define DAL_PMU_MODULE_ENABLED
+// #define DAL_QSPI_MODULE_ENABLED
 #define DAL_RCM_MODULE_ENABLED
 // #define DAL_RNG_MODULE_ENABLED
 #define DAL_RTC_MODULE_ENABLED
@@ -139,6 +133,7 @@
 #define  USE_DAL_NOR_REGISTER_CALLBACKS         0U /* NOR register callback disabled       */
 #define  USE_DAL_PCCARD_REGISTER_CALLBACKS      0U /* PCCARD register callback disabled    */
 #define  USE_DAL_PCD_REGISTER_CALLBACKS         0U /* PCD register callback disabled       */
+#define  USE_DAL_QSPI_REGISTER_CALLBACKS        0U /* QSPI register callback disabled      */
 #define  USE_DAL_RNG_REGISTER_CALLBACKS         0U /* RNG register callback disabled       */
 #define  USE_DAL_RTC_REGISTER_CALLBACKS         0U /* RTC register callback disabled       */
 #define  USE_DAL_SD_REGISTER_CALLBACKS          0U /* SD register callback disabled        */
@@ -281,6 +276,10 @@
  #include "apm32f4xx_dal_pmu.h"
 #endif /* DAL_PMU_MODULE_ENABLED */
 
+#ifdef DAL_QSPI_MODULE_ENABLED
+  #include "apm32f4xx_dal_qspi.h"
+#endif /* DAL_QSPI_MODULE_ENABLED */
+
 #ifdef DAL_RNG_MODULE_ENABLED
  #include "apm32f4xx_dal_rng.h"
 #endif /* DAL_RNG_MODULE_ENABLED */
@@ -334,15 +333,15 @@
 #endif /* DAL_WWDT_MODULE_ENABLED */
 
 /* Assert Component */
-#if (USE_FULL_ASSERT == 1U)
-    #define ASSERT_PARAM(_PARAM_)                         ((_PARAM_) ? (void)(_PARAM_) : AssertFailedHandler((uint8_t *)__FILE__, __LINE__))
+#ifdef USE_FULL_ASSERT
+    #define ASSERT_PARAM(_PARAM_)                         ((_PARAM_) ? (void)0U : AssertFailedHandler((uint8_t *)__FILE__, __LINE__))
     /* Declaration */
     void AssertFailedHandler(uint8_t *file, uint32_t line);
 #else
-    #define ASSERT_PARAM(_PARAM_)                         ((void)(_PARAM_))
+    #define ASSERT_PARAM(_PARAM_)                         ((void)0U)
 #endif /* USE_FULL_ASSERT */
 
-void DAL_ErrorHandler(void);
+void Error_Handler(void);
 
 #ifdef __cplusplus
 }

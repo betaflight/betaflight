@@ -477,19 +477,23 @@ static void SystemInitPLLParameters(void)
     pll_q = pll->q;
 }
 
-void OverclockRebootIfNecessary(uint32_t overclockLevel)
+void OverclockRebootIfNecessary(uint32_t targetMhz)
 {
-  if (overclockLevel >= ARRAYLEN(overclockLevels)) {
-    return;
+  // targetMhz == 0 means "OFF" / use default (first entry)
+  if (targetMhz == 0) {
+    targetMhz = overclockLevels[0].mhz;
   }
 
-  const pllConfig_t * const pll = overclockLevels + overclockLevel;
-
-  // Reboot to adjust overclock frequency
-  if (SystemCoreClock != pll->mhz * 1000000U) {
-    persistentObjectWrite(PERSISTENT_OBJECT_OVERCLOCK_LEVEL, overclockLevel);
-    __disable_irq();
-    NVIC_SystemReset();
+  for (unsigned i = 0; i < ARRAYLEN(overclockLevels); i++) {
+    if (overclockLevels[i].mhz == targetMhz) {
+      // Reboot to adjust overclock frequency
+      if (SystemCoreClock != targetMhz * 1000000U) {
+        persistentObjectWrite(PERSISTENT_OBJECT_OVERCLOCK_LEVEL, i);
+        __disable_irq();
+        NVIC_SystemReset();
+      }
+      return;
+    }
   }
 }
 

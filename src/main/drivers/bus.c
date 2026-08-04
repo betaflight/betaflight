@@ -169,6 +169,9 @@ bool busBusy(const extDevice_t *dev, bool *error)
 #if !defined(USE_I2C)
     UNUSED(error);
 #endif
+    if (!dev->bus) {
+        return false;
+    }
     switch (dev->bus->busType) {
 #ifdef USE_SPI
     case BUS_TYPE_SPI:

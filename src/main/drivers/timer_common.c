@@ -81,7 +81,7 @@ const timerHardware_t *timerGetAllocatedByNumberAndChannel(int8_t timerNumber, u
 {
     for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
         const timerHardware_t *timer = timerGetByTagAndIndex(timerIOConfig(i)->ioTag, timerIOConfig(i)->index);
-        if (timer && timerGetTIMNumber(timer->tim) == timerNumber && timer->channel == timerChannel && timerOwners[i].owner) {
+        if (timer && timerGetTIMNumber(timer) == timerNumber && timer->channel == timerChannel && timerOwners[i].owner) {
             return timer;
         }
     }
@@ -156,5 +156,27 @@ const timerHardware_t *timerAllocate(ioTag_t ioTag, resourceOwner_e owner, uint8
     return timerGetConfiguredByTag(ioTag);
 }
 #endif
+
+#else // !USE_TIMER
+
+// Stubs for platforms without timer support (e.g. ESP32 initial bring-up).
+// Some common code (cli.c, config.c) references these unconditionally.
+#include "drivers/io_types.h"
+#include "drivers/resource.h"
+#include "drivers/timer.h"
+
+const timerHardware_t *timerGetConfiguredByTag(ioTag_t ioTag)
+{
+    UNUSED(ioTag);
+    return NULL;
+}
+
+const timerHardware_t *timerAllocate(ioTag_t ioTag, resourceOwner_e owner, uint8_t resourceIndex)
+{
+    UNUSED(ioTag);
+    UNUSED(owner);
+    UNUSED(resourceIndex);
+    return NULL;
+}
 
 #endif

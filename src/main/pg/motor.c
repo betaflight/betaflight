@@ -55,25 +55,40 @@ PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 3);
 
 void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 {
-#if defined(USE_BRUSHED_MOTORS)
-    motorConfig->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-    motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_BRUSHED;
-    motorConfig->dev.useContinuousUpdate = true;
-    motorConfig->motorIdle = 700; // historical default minThrottle for brushed was 1070
-#else
-    motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
-    motorConfig->motorIdle = 550;
-#if !defined(USE_DSHOT) && defined(USE_PWM_OUTPUT)
+    // Default motor protocol: a target/config may force one via DEFAULT_MOTOR_PROTOCOL
+    // (e.g. BRUSHED, or PWM on a DShot-capable build); otherwise pick by capability.
+#if defined(DEFAULT_MOTOR_PROTOCOL)
+    motorConfig->dev.motorProtocol = DEFAULT_MOTOR_PROTOCOL;
+#elif !defined(USE_DSHOT) && defined(USE_PWM_OUTPUT)
     motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_PWM;
-    motorConfig->dev.useContinuousUpdate = true;
 #elif defined(USE_DSHOT) && defined(DEFAULT_MOTOR_DSHOT_SPEED)
     motorConfig->dev.motorProtocol = DEFAULT_MOTOR_DSHOT_SPEED;
 #elif defined(USE_DSHOT)
     motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_DSHOT600;
 #else
     motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_DISABLED;
-#endif // protocol selection
-#endif // brushed motors
+#endif
+
+    // PWM rate and idle defaults follow from whether the chosen protocol is brushed,
+    // rather than a separate build macro. Continuous (every-cycle) output only applies
+    // to the analog PWM family (standard PWM and brushed); digital protocols (DShot)
+    // are updated on demand, so it must not be forced on for a DShot DEFAULT_MOTOR_PROTOCOL.
+    if (motorConfig->dev.motorProtocol == MOTOR_PROTOCOL_BRUSHED) {
+        motorConfig->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
+        motorConfig->dev.useContinuousUpdate = true;
+        motorConfig->motorIdle = 700; // historical default minThrottle for brushed was 1070
+    } else {
+        motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
+        motorConfig->dev.useContinuousUpdate = (motorConfig->dev.motorProtocol == MOTOR_PROTOCOL_PWM);
+        motorConfig->motorIdle = 550;
+    }
+
+#if defined(DEFAULT_MOTOR_PWM_RATE)
+    // Board override for the motor PWM output frequency (Hz), applied on top of
+    // the protocol default above - e.g. an external ESC that reads a duty-cycle
+    // PWM throttle at a specific rate.
+    motorConfig->dev.motorPwmRate = DEFAULT_MOTOR_PWM_RATE;
+#endif
 
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;

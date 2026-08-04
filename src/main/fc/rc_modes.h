@@ -40,7 +40,8 @@ typedef enum {
     BOXFAILSAFE,
     BOXPOSHOLD,
     BOXGPSRESCUE,
-    BOXID_FLIGHTMODE_LAST = BOXGPSRESCUE,
+    BOXAUTOPILOT,  // GPS waypoint following
+    BOXID_FLIGHTMODE_LAST = BOXAUTOPILOT,
 
 // When new flight modes are added, the parameter group version for 'modeActivationConditions' in src/main/fc/rc_modes.c has to be incremented to ensure that the RC modes configuration is reset.
 
@@ -82,6 +83,7 @@ typedef enum {
     BOXBEEPERMUTE,
     BOXREADY,
     BOXLAPTIMERRESET,
+    BOXWPCAPTURE,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
@@ -94,6 +96,8 @@ typedef enum {
 typedef struct boxBitmask_s { uint32_t bits[(CHECKBOX_ITEM_COUNT + 31) / 32]; } boxBitmask_t;
 
 #define MAX_MODE_ACTIVATION_CONDITION_COUNT 20
+
+#define STICKY_MODE_BOOT_DELAY_US (5 * 1000 * 1000)
 
 #define CHANNEL_RANGE_MIN 900
 #define CHANNEL_RANGE_MAX 2100

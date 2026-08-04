@@ -75,6 +75,12 @@
 #define SPI6_SDO_PIN    NONE
 #endif
 
+#ifndef SPI7_SCK_PIN
+#define SPI7_SCK_PIN    NONE
+#define SPI7_SDI_PIN    NONE
+#define SPI7_SDO_PIN    NONE
+#endif
+
 typedef struct spiDefaultConfig_s {
     spiDevice_e device;
     ioTag_t sck;
@@ -105,6 +111,9 @@ const spiDefaultConfig_t spiDefaultConfig[] = {
 #endif
 #ifdef USE_SPI_DEVICE_6
     { SPIDEV_6, IO_TAG(SPI6_SCK_PIN), IO_TAG(SPI6_SDI_PIN), IO_TAG(SPI6_SDO_PIN), SPI6_TX_DMA_OPT, SPI6_RX_DMA_OPT },
+#endif
+#ifdef USE_SPI_DEVICE_7
+    { SPIDEV_7, IO_TAG(SPI7_SCK_PIN), IO_TAG(SPI7_SDI_PIN), IO_TAG(SPI7_SDO_PIN), SPI7_TX_DMA_OPT, SPI7_RX_DMA_OPT },
 #endif
 };
 

@@ -32,6 +32,10 @@
 #define MSP2_SENSOR_OPTICALFLOW             0x300B
 #define MSP2_MCU_INFO                       0x300C
 #define MSP2_GYRO_SENSOR_ACTIVE             0x300D
+#define MSP2_BATTERY_PROFILE                0x300E
+#define MSP2_SET_BATTERY_PROFILE            0x300F
+#define MSP2_CLI_SETTING                    0x3010
+#define MSP2_CLI_SETTING_INFO               0x3011
 
 // MSP2_SET_TEXT and MSP2_GET_TEXT variable types
 #define MSP2TEXT_PILOT_NAME                      1
@@ -42,4 +46,5 @@
 #define MSP2TEXT_RELEASENAME                     6
 #define MSP2TEXT_CUSTOM_MSG_0                    7  // CUSTOM_MSG_MAX_NUM  entries are allocated
 #define CUSTOM_MSG_MAX_NUM                       4
-// next new variable type must be >= MSP2TEXT_CUSTOM_MSG_0 + CUSTOM_MSG_MAX_NUM (11)
+#define MSP2TEXT_BATTERY_PROFILE_NAME        11
+// next new variable type must be >= MSP2TEXT_BATTERY_PROFILE_NAME + 1 (12)

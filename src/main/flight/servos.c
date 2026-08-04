@@ -221,6 +221,7 @@ static int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
     const uint8_t channelToForwardFrom = servoParams(servoIndex)->forwardFromChannel;
 
     if (channelToForwardFrom != CHANNEL_FORWARDING_DISABLED && channelToForwardFrom < rxRuntimeState.channelCount) {
+        // TODO make a struct and function version of scaleRangef to handle this at lower cpu
         return scaleRangef(constrainf(rcData[channelToForwardFrom], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, servoParams(servoIndex)->min, servoParams(servoIndex)->max);
     }
 
@@ -274,12 +275,30 @@ static void servoConfigureOutput(void)
     }
 }
 
+// check if any servo has individual channel forwarding configured
+static bool hasIndividualServoForwarding(void)
+{
+    for (int index = 0; index < MAX_SUPPORTED_SERVOS; index++) {
+        const uint8_t channelToForwardFrom = servoParams(index)->forwardFromChannel;
+        if (channelToForwardFrom != CHANNEL_FORWARDING_DISABLED) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void servosInit(void)
 {
     // enable servos for mixes that require them. note, this shifts motor counts.
     useServo = mixers[getMixerMode()].useServo;
     // if we want camstab/trig, that also enables servos, even if mixer doesn't
     if (featureIsEnabled(FEATURE_SERVO_TILT) || featureIsEnabled(FEATURE_CHANNEL_FORWARDING)) {
+        useServo = 1;
+    }
+
+    // enable servos if any individual channel forwarding is configured
+    if (hasIndividualServoForwarding()) {
         useServo = 1;
     }
 
@@ -521,6 +540,8 @@ static void servoTable(void)
     */
 
     default:
+        // run servo mixer for all other frame types (e.g. quads with individual servo forwarding)
+        servoMixer();
         break;
     }
 
@@ -552,17 +573,18 @@ bool isMixerUsingServos(void)
     return useServo;
 }
 
-static biquadFilter_t servoFilter[MAX_SUPPORTED_SERVOS];
+static svfLowpassFilter_t servoFilter[MAX_SUPPORTED_SERVOS];
 
 void servosFilterInit(void)
 {
     if (servoConfig()->servo_lowpass_freq) {
         for (int servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            biquadFilterInitLPF(&servoFilter[servoIdx], servoConfig()->servo_lowpass_freq, targetPidLooptime);
+            svfLowpassFilterInit(&servoFilter[servoIdx], servoConfig()->servo_lowpass_freq, targetPidLooptime * 1e-6f);
         }
     }
 
 }
+
 static void filterServos(void)
 {
 #if defined(MIXER_DEBUG)
@@ -570,7 +592,7 @@ static void filterServos(void)
 #endif
     if (servoConfig()->servo_lowpass_freq) {
         for (int servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            servo[servoIdx] = lrintf(biquadFilterApply(&servoFilter[servoIdx], (float)servo[servoIdx]));
+            servo[servoIdx] = lrintf(svfLowpassFilterApply(&servoFilter[servoIdx], (float)servo[servoIdx]));
             // Sanity check
             servo[servoIdx] = constrain(servo[servoIdx], servoParams(servoIdx)->min, servoParams(servoIdx)->max);
         }

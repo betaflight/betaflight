@@ -21,6 +21,7 @@
 #pragma once
 
 #include "common/time.h"
+#include "common/maths.h"
 
 #include "pg/pg.h"
 #include "pg/rx.h"
@@ -147,6 +148,7 @@ typedef struct rxRuntimeState_s {
     uint16_t            *channelData;
     void                *frameData;
     timeUs_t            lastRcFrameTimeUs;
+    scaleRangef_t       scaleRange[NON_AUX_CHANNEL_COUNT];
 } rxRuntimeState_t;
 
 typedef enum {
@@ -174,6 +176,9 @@ extern linkQualitySource_e linkQualitySource;
 extern rxRuntimeState_t rxRuntimeState; //!!TODO remove this extern, only needed once for channelCount
 
 void rxInit(void);
+#if ENABLE_RX_UDP
+void rxUpdateUdpChannels(const uint16_t *channels, uint8_t channelCount);
+#endif
 void rxProcessPending(bool state);
 bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
 void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);

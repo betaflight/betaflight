@@ -39,7 +39,7 @@
 
 #include "pg/motor.h"
 
-static void pwmOCConfig(void *tim, uint8_t channel, uint16_t value, uint8_t output)
+static void pwmOCConfig(timerResource_t *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
     TMR_HandleTypeDef* Handle = timerFindTimerHandle(tim);
     if (Handle == NULL) {

@@ -68,11 +68,6 @@ float gpsRescueGetYawRate(void)
     return 0.0f; // the control yaw value for rc.c to be used while flightMode gps_rescue is active.
 }
 
-float gpsRescueGetImuYawCogGain(void)
-{
-    return 1.0f;
-}
-
 bool gpsRescueIsConfigured(void)
 {
     return false;
@@ -80,20 +75,19 @@ bool gpsRescueIsConfigured(void)
 
 bool gpsRescueIsAvailable(void)
 {
-    return false;
+    return true;
 }
 
-bool gpsRescueIsDisabled(void)
+bool gpsRescueIsHeadingOK(void)
 {
     return true;
 }
 
-#ifdef USE_MAG
-bool gpsRescueDisableMag(void)
+bool gpsRescueIsOK(void)
 {
     return true;
 }
-#endif
+
 
 #endif // USE_GPS_RESCUE
 

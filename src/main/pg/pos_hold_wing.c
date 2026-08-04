@@ -32,7 +32,7 @@
 
 #include "pos_hold.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig, PG_POSHOLD_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig, PG_POSHOLD_CONFIG, 1);
 
 PG_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig,
 );

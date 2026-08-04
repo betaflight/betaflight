@@ -21,7 +21,7 @@
 
 #pragma once
 
-#if defined(USE_BLACKBOX_VIRTUAL) && !defined(SIMULATOR_BUILD)
+#if defined(USE_BLACKBOX_VIRTUAL) && !ENABLE_SIMULATOR
 #error "USE_BLACKBOX_VIRTUAL valid for SITL build only"
 #endif
 

@@ -357,7 +357,8 @@ void initHoTTTelemetry(void)
 
 static void flushHottRxBuffer(void)
 {
-    while (serialRxBytesWaiting(hottPort) > 0) {
+    uint32_t rxBytesWaiting = serialRxBytesWaiting(hottPort);
+    while (rxBytesWaiting-- > 0) {
         serialRead(hottPort);
     }
 }

@@ -55,6 +55,8 @@ extern "C" {
     #include "fc/core.h"
 
     #include "scheduler/scheduler.h"
+
+    extern boxBitmask_t stickyModesEverDisabled;
 }
 
 #include "unittest_macros.h"
@@ -68,6 +70,7 @@ void unsetArmingDisabled(armingDisableFlags_e flag)
 class RcControlsModesTest : public ::testing::Test {
 protected:
     virtual void SetUp() {
+        memset(&stickyModesEverDisabled, 0, sizeof(stickyModesEverDisabled));
     }
 };
 
@@ -242,6 +245,111 @@ uint32_t micros(void)
 void resetMillis(void)
 {
     fixedMillis = 0;
+}
+
+TEST_F(RcControlsModesTest, updateActivatedModesBoxParalyzeLatchesForeverOnceActivated)
+{
+    // given
+    modeActivationConditionsMutable(7)->modeId = BOXPARALYZE;
+    modeActivationConditionsMutable(7)->auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT;
+    modeActivationConditionsMutable(7)->range.startStep = CHANNEL_VALUE_TO_STEP(1700);
+    modeActivationConditionsMutable(7)->range.endStep = CHANNEL_VALUE_TO_STEP(2100);
+
+    boxBitmask_t mask;
+    memset(&mask, 0, sizeof(mask));
+    rcModeUpdate(&mask);
+
+    memset(&rxRuntimeState, 0, sizeof(rxRuntimeState_t));
+    rxRuntimeState.channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT;
+
+    for (int index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
+        rcData[index] = PWM_RANGE_MIDDLE;
+    }
+
+    analyzeModeActivationConditions();
+
+    // when: switch is in-range before the boot guard has ever seen it off
+    resetMillis();
+    rcData[AUX1] = PWM_RANGE_MAX;
+    updateActivatedModes();
+
+    // then: activation is withheld until the switch has been observed off
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXPARALYZE));
+
+    // when: switch goes off and the boot delay elapses
+    rcData[AUX1] = PWM_RANGE_MIDDLE;
+    fixedMillis = STICKY_MODE_BOOT_DELAY_US / 1000 + 1;
+    updateActivatedModes();
+
+    // then: still inactive, but the guard is now armed
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXPARALYZE));
+
+    // when: switch is moved into range
+    rcData[AUX1] = PWM_RANGE_MAX;
+    updateActivatedModes();
+
+    // then: mode activates normally
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXPARALYZE));
+
+    // when: switch is moved back out of range
+    rcData[AUX1] = PWM_RANGE_MIDDLE;
+    updateActivatedModes();
+
+    // then: BOXPARALYZE is a kill switch and must stay active until reboot
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXPARALYZE));
+}
+
+TEST_F(RcControlsModesTest, updateActivatedModesBoxBlackboxEraseDoesNotLatchForever)
+{
+    // given
+    modeActivationConditionsMutable(8)->modeId = BOXBLACKBOXERASE;
+    modeActivationConditionsMutable(8)->auxChannelIndex = AUX2 - NON_AUX_CHANNEL_COUNT;
+    modeActivationConditionsMutable(8)->range.startStep = CHANNEL_VALUE_TO_STEP(1700);
+    modeActivationConditionsMutable(8)->range.endStep = CHANNEL_VALUE_TO_STEP(2100);
+
+    boxBitmask_t mask;
+    memset(&mask, 0, sizeof(mask));
+    rcModeUpdate(&mask);
+
+    memset(&rxRuntimeState, 0, sizeof(rxRuntimeState_t));
+    rxRuntimeState.channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT;
+
+    for (int index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
+        rcData[index] = PWM_RANGE_MIDDLE;
+    }
+
+    analyzeModeActivationConditions();
+
+    // when: switch is in-range before RX has ever been seen off (rcData defaults, e.g. before RX link)
+    resetMillis();
+    rcData[AUX2] = PWM_RANGE_MAX;
+    updateActivatedModes();
+
+    // then: erase is withheld (this is the #15173 boot-time spurious-erase bug)
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE));
+
+    // when: switch goes off and the boot delay elapses
+    rcData[AUX2] = PWM_RANGE_MIDDLE;
+    fixedMillis = STICKY_MODE_BOOT_DELAY_US / 1000 + 1;
+    updateActivatedModes();
+
+    // then: still inactive, but the guard is now armed
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE));
+
+    // when: switch is moved into range
+    rcData[AUX2] = PWM_RANGE_MAX;
+    updateActivatedModes();
+
+    // then: mode activates normally
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE));
+
+    // when: switch is moved back out of range
+    rcData[AUX2] = PWM_RANGE_MIDDLE;
+    updateActivatedModes();
+
+    // then: unlike BOXPARALYZE, this must turn off again so blackboxUpdate() can
+    // leave BLACKBOX_STATE_ERASED and resume normal logging
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE));
 }
 
 #define DEFAULT_MIN_CHECK 1100
@@ -621,6 +729,8 @@ void setConfigDirty(void) {}
 void saveConfigAndNotify(void) {}
 void initRcProcessing(void) {}
 void changePidProfile(uint8_t) {}
+void changeBatteryProfile(uint8_t) {}
+uint8_t getCurrentBatteryProfileIndex(void) { return 0; }
 void pidInitConfig(const pidProfile_t *) {}
 void applySimplifiedTuningPids(pidProfile_t *) {}
 void accStartCalibration(void) {}

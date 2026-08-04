@@ -2,30 +2,62 @@
 CONFIGS_REPO_URL ?= https://github.com/betaflight/config
 # handle only this directory as config submodule
 CONFIGS_SUBMODULE_DIR := src/config
-BASE_CONFIGS           = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(CONFIG_DIR)/configs/*/config.h)))))
+# Configs live either flat (configs/<BOARD>/config.h) or grouped by manufacturer
+# (configs/<MANUFACTURER_ID>/<BOARD>/config.h). Both are accepted; the leaf
+# directory name is always the board name. The two globs never overlap because a
+# manufacturer directory holds board directories, not a config.h of its own.
+BASE_CONFIGS           = $(sort $(notdir $(patsubst %/,%,$(dir \
+                             $(wildcard $(CONFIG_DIR)/configs/*/config.h) \
+                             $(wildcard $(CONFIG_DIR)/configs/*/*/config.h)))))
 
 ifneq ($(words $(CONFIG_DIR)),1)
 $(error CONFIG_DIR/BETAFLIGHT_CONFIG path contains whitespace; unsupported by GNU make wildcard.)
 endif
 
-ifneq ($(filter-out %_sdk %_install test% %_clean clean% %-print %.hex %.h hex checks help configs $(BASE_TARGETS) $(BASE_CONFIGS),$(MAKECMDGOALS)),)
+# Config handling — only active when CONFIG= is set explicitly
+ifneq ($(CONFIG),)
+
 ifeq ($(wildcard $(CONFIG_DIR)/configs/),)
 $(error `$(CONFIG_DIR)` not found. Have you hydrated configuration using: 'make configs'?)
 endif
-endif
-
-ifneq ($(CONFIG),)
 
 ifneq ($(TARGET),)
 $(error TARGET or CONFIG should be specified. Not both.)
 endif
 
-CONFIG_HEADER_FILE  = $(CONFIG_DIR)/configs/$(CONFIG)/config.h
-CONFIG_SOURCE_FILE  = $(CONFIG_DIR)/configs/$(CONFIG)/config.c
-INCLUDE_DIRS       += $(CONFIG_DIR)/configs/$(CONFIG)
+# Locate the board's config directory, accepting a flat (configs/<BOARD>) or a
+# manufacturer-grouped (configs/<MANUFACTURER_ID>/<BOARD>) layout. A flat match
+# wins; otherwise search one manufacturer level down and reject only a grouped
+# name that resolves to more than one manufacturer.
+CONFIG_FLAT_MATCH  := $(wildcard $(CONFIG_DIR)/configs/$(CONFIG)/config.h)
+ifneq ($(CONFIG_FLAT_MATCH),)
+CONFIG_PATH        := $(patsubst %/,%,$(dir $(CONFIG_FLAT_MATCH)))
+else
+CONFIG_MATCHES     := $(wildcard $(CONFIG_DIR)/configs/*/$(CONFIG)/config.h)
+ifneq ($(word 2,$(CONFIG_MATCHES)),)
+$(error Ambiguous CONFIG '$(CONFIG)' matches multiple configs: $(CONFIG_MATCHES))
+endif
+CONFIG_PATH        := $(patsubst %/,%,$(dir $(firstword $(CONFIG_MATCHES))))
+endif
+ifeq ($(CONFIG_PATH),)
+$(error CONFIG '$(CONFIG)' not found under $(CONFIG_DIR)/configs (flat or <manufacturer>/<board>).)
+endif
 
-# include $(CONFIG)/config.mk if it exists
--include $(CONFIG_DIR)/configs/$(CONFIG)/config.mk
+CONFIG_HEADER_FILE  = $(CONFIG_PATH)/config.h
+CONFIG_SOURCE_FILE  = $(CONFIG_PATH)/config.c
+INCLUDE_DIRS       += $(CONFIG_PATH)
+
+# include the config's config.mk if it exists
+-include $(CONFIG_PATH)/config.mk
+
+# OCTOSPI_FLASH_CHIP selects the flash chip wired to the OCTOSPI/XSPI peripheral.
+# Set in per-config config.mk (e.g. OCTOSPI_FLASH_CHIP := MX66UW1G45G). Emits both
+# USE_FLASH_<chip> (chip driver gating) and OCTOSPI_FLASH_CHIP_<chip> (build-time
+# selection marker for chips that cannot be probed via JEDEC RDID, such as those
+# operating in 8-line OPI mode).
+ifneq ($(OCTOSPI_FLASH_CHIP),)
+TARGET_FLAGS += -DUSE_FLASH_$(OCTOSPI_FLASH_CHIP) -DOCTOSPI_FLASH_CHIP_$(OCTOSPI_FLASH_CHIP)
+endif
 
 ifneq ($(wildcard $(CONFIG_HEADER_FILE)),)
 
@@ -90,3 +122,15 @@ $(BASE_CONFIGS):
 ## <CONFIG>_rev    : build configured target and add revision to filename
 $(addsuffix _rev,$(BASE_CONFIGS)):
 	$(V0) $(MAKE) fwo CONFIG=$(subst _rev,,$@) REV=yes
+
+# When configs are not hydrated, BASE_CONFIGS is empty so config targets
+# have no recipe. Override Make's default "No rule" error with a helpful message
+# but only for targets explicitly requested on the command line.
+ifeq ($(wildcard $(CONFIG_DIR)/configs/),)
+.DEFAULT:
+	@if echo " $(MAKECMDGOALS) " | grep -q " $@ "; then \
+		echo "*** No rule to make target '$@'. If this is a configuration target, run 'make configs' first." >&2; \
+		exit 1; \
+	fi
+endif
+

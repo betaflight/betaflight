@@ -6,10 +6,12 @@ use strict;
 
 # io_def_generated.h
 
-my @ports = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I');
+my @ports = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O');
 my @pins  = 0 .. 15;
 my @timers = (1,2,3,4,6,7,8,15,16,17);
 my $drivers_dir = "src/main/drivers";
+# io_def_generated.h lives in the STM32 common platform tree (moved in #14120)
+my $io_def_dir  = "src/platform/common/stm32";
 
 # change list separator to newline - we use @{} interpolation to merge multiline strings
 $" = "\n";
@@ -41,7 +43,7 @@ chomp(my $disclaimer_generated = <<"END");
 // do not modify this file directly, your changes will be lost
 END
 
-my $io_def_file="$drivers_dir/io_def_generated.h";
+my $io_def_file="$io_def_dir/io_def_generated.h";
 my $fh;
 open $fh, '>', $io_def_file or die "Cannot open $io_def_file: $!";
 print { $fh} <<"END" or die  "Cannot write into $io_def_file: $!"; close $fh;

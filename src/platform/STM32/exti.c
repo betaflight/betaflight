@@ -26,6 +26,10 @@
 
 #ifdef USE_EXTI
 
+#if defined(STM32C5)
+#include "stm32c5xx_ll_exti.h"
+#endif
+
 #include "drivers/nvic.h"
 #include "drivers/io_impl.h"
 #include "platform/io_impl.h"
@@ -38,8 +42,8 @@ typedef struct {
 extiChannelRec_t extiChannelRecs[16];
 
 // IRQ grouping
-#if defined(STM32N6)
-// N6 has individual EXTI IRQs for each line (no grouping)
+#if defined(STM32H5) || defined(STM32N6) || defined(STM32C5)
+// H5, N6 and C5 have individual EXTI IRQs for each line (no grouping)
 #define EXTI_IRQ_GROUPS 16
 //                                      0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
 static const uint8_t extiGroups[16] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
@@ -70,7 +74,7 @@ static const uint8_t extiGroupIRQn[EXTI_IRQ_GROUPS] = {
 static const uint8_t extiGroups[16] = { 0, 1, 2, 3, 4, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6 };
 static uint8_t extiGroupPriority[EXTI_IRQ_GROUPS];
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7)
 static const uint8_t extiGroupIRQn[EXTI_IRQ_GROUPS] = {
     EXTI0_IRQn,
     EXTI1_IRQn,
@@ -85,8 +89,11 @@ static const uint8_t extiGroupIRQn[EXTI_IRQ_GROUPS] = {
 #endif
 #endif
 
+// STM32C5 doesn't use this table -- HAL_GPIO_Init is stubbed out and the
+// trigger configuration goes through LL EXTI APIs directly in EXTIConfig.
+#if !defined(STM32C5)
 static uint32_t triggerLookupTable[] = {
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6)
+#if defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
     [BETAFLIGHT_EXTI_TRIGGER_RISING]    = GPIO_MODE_IT_RISING,
     [BETAFLIGHT_EXTI_TRIGGER_FALLING]   = GPIO_MODE_IT_FALLING,
     [BETAFLIGHT_EXTI_TRIGGER_BOTH]      = GPIO_MODE_IT_RISING_FALLING
@@ -98,6 +105,7 @@ static uint32_t triggerLookupTable[] = {
 # warning "Unknown CPU"
 #endif
 };
+#endif
 
 // Absorb the difference in IMR and PR assignments to registers
 
@@ -105,9 +113,9 @@ static uint32_t triggerLookupTable[] = {
 #define EXTI_REG_IMR (EXTI_D1->IMR1)
 #define EXTI_REG_PR  (EXTI_D1->PR1)
 #define EXTI_REG_PR_CLEAR(mask) do { EXTI_REG_PR = (mask); } while(0)
-#elif defined(STM32N6)
+#elif defined(STM32H5) || defined(STM32N6) || defined(STM32C5)
 #define EXTI_REG_IMR (EXTI->IMR1)
-// N6 uses separate rising/falling pending registers; must clear both
+// H5, N6 and C5 use separate rising/falling pending registers; must clear both
 #define EXTI_REG_PR  (EXTI->RPR1 | EXTI->FPR1)
 #define EXTI_REG_PR_CLEAR(mask) do { EXTI->RPR1 = (mask); EXTI->FPR1 = (mask); } while(0)
 #elif defined(STM32G4)
@@ -150,7 +158,33 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
 
     EXTIDisable(io);
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6)
+#if defined(STM32C5)
+    // HAL2: HAL_GPIO_Init is a no-op stub on the C5 platform (see
+    // stm32c5xx_hal2_compat.h), so the rising/falling-edge bits encoded
+    // in GPIO_MODE_IT_* never reach EXTI. Configure the GPIO pin via the
+    // ordinary IOConfigGPIO path and program EXTICR / RTSR / FTSR / IMR
+    // directly through the LL EXTI driver instead.
+    IOConfigGPIO(io, config);
+    LL_EXTI_SetEXTISource((uint32_t)IO_GPIOPortIdx(io), (uint32_t)chIdx);
+    const uint32_t extiLineMask = 1U << chIdx;
+    if (trigger == BETAFLIGHT_EXTI_TRIGGER_RISING || trigger == BETAFLIGHT_EXTI_TRIGGER_BOTH) {
+        LL_EXTI_EnableRisingTrig_0_31(extiLineMask);
+    } else {
+        LL_EXTI_DisableRisingTrig_0_31(extiLineMask);
+    }
+    if (trigger == BETAFLIGHT_EXTI_TRIGGER_FALLING || trigger == BETAFLIGHT_EXTI_TRIGGER_BOTH) {
+        LL_EXTI_EnableFallingTrig_0_31(extiLineMask);
+    } else {
+        LL_EXTI_DisableFallingTrig_0_31(extiLineMask);
+    }
+    LL_EXTI_EnableIT_0_31(extiLineMask);
+
+    if (extiGroupPriority[group] > irqPriority) {
+        extiGroupPriority[group] = irqPriority;
+        HAL_NVIC_SetPriority(extiGroupIRQn[group], NVIC_PRIORITY_BASE(irqPriority), NVIC_PRIORITY_SUB(irqPriority));
+        HAL_NVIC_EnableIRQ(extiGroupIRQn[group]);
+    }
+#elif defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
     GPIO_InitTypeDef init = {
         .Pin = IO_Pin(io),
         .Mode = GPIO_MODE_INPUT | IO_CONFIG_GET_MODE(config) | triggerLookupTable[trigger],
@@ -211,7 +245,7 @@ void EXTIRelease(IO_t io)
 
 void EXTIEnable(IO_t io)
 {
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(STM32N6)
     uint32_t extiLine = IO_EXTI_Line(io);
 
     if (!extiLine) {
@@ -226,7 +260,7 @@ void EXTIEnable(IO_t io)
 
 void EXTIDisable(IO_t io)
 {
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(STM32N6)
     uint32_t extiLine = IO_EXTI_Line(io);
 
     if (!extiLine) {
@@ -265,15 +299,15 @@ static void EXTI_IRQHandler(uint32_t mask)
 
 _EXTI_IRQ_HANDLER(EXTI0_IRQHandler, 0x0001);
 _EXTI_IRQ_HANDLER(EXTI1_IRQHandler, 0x0002);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(STM32N6)
 _EXTI_IRQ_HANDLER(EXTI2_IRQHandler, 0x0004);
 #else
 # warning "Unknown CPU"
 #endif
 _EXTI_IRQ_HANDLER(EXTI3_IRQHandler, 0x0008);
 _EXTI_IRQ_HANDLER(EXTI4_IRQHandler, 0x0010);
-#if defined(STM32N6)
-// N6 has individual EXTI IRQs for each line
+#if defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
+// H5, C5 and N6 have individual EXTI IRQs for each line
 _EXTI_IRQ_HANDLER(EXTI5_IRQHandler, 0x0020);
 _EXTI_IRQ_HANDLER(EXTI6_IRQHandler, 0x0040);
 _EXTI_IRQ_HANDLER(EXTI7_IRQHandler, 0x0080);

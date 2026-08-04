@@ -1517,10 +1517,10 @@ static SD_Error_t SD_IsCardProgramming(uint8_t *pStatus)
 /**
   * @brief  Initialize the SDMMC1 module, DMA, and IO
   */
-bool SD_Initialize_LL(DMA_Stream_TypeDef *dma)
+bool SD_InitialiseHardware(dmaResource_t *dma)
 {
-    const dmaIdentifier_e dmaIdentifier = dmaGetIdentifier((dmaResource_t *)dmaStream);
-    if (!(dma == DMA2_Stream3 || dma == DMA2_Stream6) || !dmaAllocate(dmaIdentifier, OWNER_SDCARD, 0)) {
+    const dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dma);
+    if (!((DMA_Stream_TypeDef *)dma == DMA2_Stream3 || (DMA_Stream_TypeDef *)dma == DMA2_Stream6) || !dmaAllocate(dmaIdentifier, OWNER_SDCARD, 0)) {
         return false;
     }
 
@@ -1576,7 +1576,7 @@ bool SD_Initialize_LL(DMA_Stream_TypeDef *dma)
     NVIC_SetPriority(SDMMC1_IRQn, NVIC_EncodePriority(PriorityGroup, 1, 0));
     NVIC_EnableIRQ(SDMMC1_IRQn);
 
-    dmaStream = dma;
+    dmaStream = (DMA_Stream_TypeDef *)dma;
     RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
 
     // Initialize DMA

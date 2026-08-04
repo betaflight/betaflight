@@ -60,7 +60,9 @@
     #define ONLY_EXPOSE_FOR_TESTING static
 #endif
 
+#ifndef AFATFS_NUM_CACHE_SECTORS
 #define AFATFS_NUM_CACHE_SECTORS 11
+#endif
 
 // FAT filesystems are allowed to differ from these parameters, but we choose not to support those weird filesystems:
 #define AFATFS_SECTOR_SIZE  512
@@ -105,6 +107,11 @@
 #define AFATFS_CACHE_DISCARDABLE  8
 // Increase the retain counter of the cache sector to prevent it from being discarded when in the in-sync state
 #define AFATFS_CACHE_RETAIN       16
+
+// Allocate the cache in DMA-safe memory outside the struct
+#if !defined(ENABLE_AFATFS_DMA_CACHE)
+#define ENABLE_AFATFS_DMA_CACHE 0
+#endif
 
 // Turn the largest free block on the disk into one contiguous file for efficient fragment-free allocation
 #define AFATFS_USE_FREEFILE
@@ -459,7 +466,7 @@ typedef struct afatfs_t {
     } initState;
 #endif
 
-#ifdef STM32H7
+#if ENABLE_AFATFS_DMA_CACHE
     uint8_t *cache;
 #else
     uint8_t cache[AFATFS_SECTOR_SIZE * AFATFS_NUM_CACHE_SECTORS];
@@ -513,7 +520,7 @@ typedef struct afatfs_t {
     uint32_t rootDirectorySectors; // Zero on FAT32, for FAT16 the number of sectors that the root directory occupies
 } afatfs_t;
 
-#ifdef STM32H7
+#if ENABLE_AFATFS_DMA_CACHE
 static DMA_DATA_ZERO_INIT uint8_t afatfs_cache[AFATFS_SECTOR_SIZE * AFATFS_NUM_CACHE_SECTORS] __attribute__((aligned(32)));
 #endif
 
@@ -3636,7 +3643,7 @@ afatfsError_e afatfs_getLastError(void)
 
 void afatfs_init(void)
 {
-#ifdef STM32H7
+#if ENABLE_AFATFS_DMA_CACHE
     afatfs.cache = afatfs_cache;
 #endif
     afatfs.filesystemState = AFATFS_FILESYSTEM_STATE_INITIALIZATION;

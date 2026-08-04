@@ -31,7 +31,7 @@
 
 bool isMPUSoftReset(void)
 {
-    if (cachedRccCsrValue & RCC_CSR_SFTRSTF)
+    if (cachedResetFlags & RCC_CSR_SFTRSTF)
         return true;
     else
         return false;
@@ -45,8 +45,8 @@ void systemInit(void)
     // Configure NVIC preempt/priority groups
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
 
-    // cache RCC->RSR value to use it in isMPUSoftReset() and others
-    cachedRccCsrValue = RCC->CSR;
+    // cache RCC->CSR value to use it in isMPUSoftReset() and others
+    cachedResetFlags = RCC->CSR;
 
     /* Accounts for OP Bootloader, set the Vector Table base address as specified in .ld file */
     //extern void *isr_vector_table_base;

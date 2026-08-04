@@ -23,8 +23,8 @@
 #include "platform.h"
 
 #include "drivers/bus.h"
+#include "drivers/bus_spi_types.h"
 #include "drivers/io_types.h"
-#include "drivers/bus.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -57,7 +57,8 @@ typedef enum {
     SPIDEV_3,
     SPIDEV_4,
     SPIDEV_5,
-    SPIDEV_6
+    SPIDEV_6,
+    SPIDEV_7
 } spiDevice_e;
 
 // Macros to convert between CLI bus number and spiDevice_e.
@@ -70,8 +71,8 @@ bool spiInit(spiDevice_e device);
 // Called after all devices are initialised to enable SPI DMA where streams are available.
 void spiInitBusDMA(void);
 
-spiDevice_e spiDeviceByInstance(const SPI_TypeDef *instance);
-SPI_TypeDef *spiInstanceByDevice(spiDevice_e device);
+spiDevice_e spiDeviceByInstance(const spiResource_t *instance);
+spiResource_t *spiInstanceByDevice(spiDevice_e device);
 
 // BusDevice API
 

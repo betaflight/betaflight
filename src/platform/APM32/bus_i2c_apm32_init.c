@@ -36,6 +36,9 @@
 #include "drivers/bus_i2c_impl.h"
 #include "drivers/bus_i2c_timing.h"
 #include "drivers/bus_i2c_utils.h"
+#include "platform/bus_i2c_hal.h"
+
+static struct i2cHalHandle_s i2cHalHandles[I2CDEV_COUNT];
 
 #define IOCFG_I2C_PU IO_CONFIG(GPIO_MODE_AF_OD, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
 #define IOCFG_I2C    IO_CONFIG(GPIO_MODE_AF_OD, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
@@ -44,7 +47,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_1
     {
         .device = I2CDEV_1,
-        .reg = I2C1,
+        .reg = (i2cResource_t *)I2C1,
         .sclPins = { I2CPINDEF(PB6, GPIO_AF4_I2C1), I2CPINDEF(PB8, GPIO_AF4_I2C1) },
         .sdaPins = { I2CPINDEF(PB7, GPIO_AF4_I2C1), I2CPINDEF(PB9, GPIO_AF4_I2C1) },
         .rcc = RCC_APB1(I2C1),
@@ -55,7 +58,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_2
     {
         .device = I2CDEV_2,
-        .reg = I2C2,
+        .reg = (i2cResource_t *)I2C2,
         .sclPins = { I2CPINDEF(PB10, GPIO_AF4_I2C2), I2CPINDEF(PF1, GPIO_AF4_I2C2) },
         .sdaPins = { I2CPINDEF(PB11, GPIO_AF4_I2C2), I2CPINDEF(PF0, GPIO_AF4_I2C2) },
         .rcc = RCC_APB1(I2C2),
@@ -66,7 +69,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_3
     {
         .device = I2CDEV_3,
-        .reg = I2C3,
+        .reg = (i2cResource_t *)I2C3,
         .sclPins = { I2CPINDEF(PA8, GPIO_AF4_I2C3) },
         .sdaPins = { I2CPINDEF(PC9, GPIO_AF4_I2C3) },
         .rcc = RCC_APB1(I2C3),
@@ -108,11 +111,13 @@ void i2cInit(i2cDevice_e device)
 
     // Init I2C peripheral
 
-    I2C_HandleTypeDef *pHandle = &pDev->handle;
+    pDev->halHandle = &i2cHalHandles[device];
+
+    I2C_HandleTypeDef *pHandle = &pDev->halHandle->hal;
 
     memset(pHandle, 0, sizeof(*pHandle));
 
-    pHandle->Instance = pDev->hardware->reg;
+    pHandle->Instance = (I2C_TypeDef *)pDev->hardware->reg;
 
     // Compute TIMINGR value based on peripheral clock for this device instance
 

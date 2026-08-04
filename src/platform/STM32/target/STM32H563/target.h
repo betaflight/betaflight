@@ -25,88 +25,33 @@
 #endif
 
 #ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight STM32H563"
+#define USBD_PRODUCT_STRING     "Betaflight - STM32H563"
 #endif
 
-#undef USE_PWM
-#undef USE_PWM_OUTPUT
-#undef USE_DSHOT
-#undef USE_ADC
-#undef USE_TIMER
-#undef USE_DMA
-#undef USE_FLASH
-#undef USE_FLASH_CHIP
-#undef USE_FLASHFS
-#undef USE_FLASH_TOOLS
-#undef USE_FLASH_M25P16
-#undef USE_FLASH_W25N01G
-#undef USE_FLASH_W25M
-#undef USE_FLASH_W25M512
-#undef USE_FLASH_W25M02G
-#undef USE_FLASH_W25Q128FV
-#undef USE_FLASH_PY25Q128HA
+#define USE_I2C_DEVICE_1
+#define USE_I2C_DEVICE_2
+#define USE_I2C_DEVICE_3
+#define USE_I2C_DEVICE_4
 
-#undef USE_TRANSPONDER
-#undef USE_SDCARD
-#undef USE_LED_STRIP
-#undef USE_SOFTSERIAL
-#undef USE_VCP
-#undef USE_ESCSERIAL
-#undef USE_SPI
-#undef USE_I2C
-#undef USE_UART
-#undef USE_USB_DETECT
-#undef USE_BEEPER
-#undef USE_EXTI
-#undef USE_TIMER_UP_CONFIG
-#undef USE_RX_SPI
-#undef USE_RX_CC2500
-#undef USE_BARO
-#undef USE_I2C_GYRO
-#undef USE_SPI_GYRO
-#undef USE_GYRO
-#undef USE_ACC
-#undef USE_MAG
-#undef USE_MAX7456
-#undef USE_VTX_RTC6705
-#undef USE_VTX_RTC6705_SOFTSPI
-#undef USE_CLI
-#undef USE_CAMERA_CONTROL
-#undef USE_RX_PWM
-#undef USE_LED_STRIP
-#undef USE_TRANSPONDER
-#undef USE_SERIAL_4WAY_BLHELI_INTERFACE
-#undef USE_SERIAL_4WAY_SK_BOOTLOADER
-#undef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
-#undef USE_MOTOR
-#undef USE_SERVO
-
-#define USE_VIRTUAL_GYRO
-
-//#define USE_I2C_DEVICE_1
-//#define USE_I2C_DEVICE_2
-//#define USE_I2C_DEVICE_3
-//#define USE_I2C_DEVICE_4
-
-//#define USE_VCP
+#define USE_VCP
 
 //#define USE_SOFTSERIAL
 
-#define UNIFIED_SERIAL_PORT_COUNT       0
+#define UNIFIED_SERIAL_PORT_COUNT       1
 
 #define USE_UART1
-//#define USE_UART2
-//#define USE_UART3
-//#define USE_UART4
-//#define USE_UART5
-//#define USE_UART6
-//#define USE_UART7
-//#define USE_UART8
+#define USE_UART2
+#define USE_UART3
+#define USE_UART4
+#define USE_UART5
+#define USE_UART6
+#define USE_UART7
+#define USE_UART8
 
-//#define USE_SPI_DEVICE_1
-//#define USE_SPI_DEVICE_2
-//#define USE_SPI_DEVICE_3
-//#define USE_SPI_DEVICE_4
+#define USE_SPI_DEVICE_1
+#define USE_SPI_DEVICE_2
+#define USE_SPI_DEVICE_3
+#define USE_SPI_DEVICE_4
 //#define USE_SPI_DEVICE_5
 //#define USE_SPI_DEVICE_6
 
@@ -116,32 +61,49 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 #define TARGET_IO_PORTF 0xffff
-//#define TARGET_IO_PORTG 0xffff
+#define TARGET_IO_PORTG 0xffff
 
-//#define USE_I2C
-//#define I2C_FULL_RECONFIGURABILITY
+#define USE_I2C
+#define I2C_FULL_RECONFIGURABILITY
 
-//#define USE_BEEPER
+#define USE_BEEPER
 
 #ifdef USE_SDCARD
 #define USE_SDCARD_SPI
 #define USE_SDCARD_SDIO
 #endif
 
-//#define USE_SPI
-//#define SPI_FULL_RECONFIGURABILITY
-//#define USE_SPI_DMA_ENABLE_LATE
+// Tie SDIO init/pin config to actually using SDIO. Otherwise the CLI
+// resourceTable[] keeps PG_SDIO_PIN_CONFIG entries, but pg/sdio.c is
+// gated on USE_SDCARD_SDIO so the PG never registers, and `dump`
+// faults inside printResource on a NULL pgFind() result.
+#ifdef USE_SDCARD_SDIO
+#if !defined(ENABLE_SDIO_INIT)
+#define ENABLE_SDIO_INIT 1
+#endif
+#if !defined(ENABLE_SDIO_PIN_CONFIG)
+#define ENABLE_SDIO_PIN_CONFIG 1
+#endif
+#endif
 
-//#define USE_USB_DETECT
+#define USE_SPI
+#define SPI_FULL_RECONFIGURABILITY
+#define USE_SPI_DMA_ENABLE_LATE
 
-//#define USE_ESCSERIAL
+#define USE_USB_DETECT
 
-//#define USE_ADC
-//#define USE_EXTI
-//#define USE_TIMER_UP_CONFIG
+#define USE_ESCSERIAL
 
-#define FLASH_PAGE_SIZE ((uint32_t)0x20000) // 128K sectors
+#define USE_ADC
+#define USE_EXTI
+#define USE_TIMER_UP_CONFIG
 
-#if defined(USE_LED_STRIP) && !defined(USE_LED_STRIP_CACHE_MGMT)
-#define USE_LED_STRIP_CACHE_MGMT
+#define FLASH_PAGE_SIZE ((uint32_t)0x2000) // 8K sectors
+
+// CONFIG_IN_RAM bring-up needs more than the default 4 KiB to hold every PG that
+// gets compiled in for a 2 MiB flash target (VTX table alone is ~290 B). Bump to
+// 8 KiB so writeSettingsToEEPROM doesn't overrun eepromData[] and tear the
+// next-PG size field, which makes isEEPROMStructureValid() walk off the end.
+#ifndef EEPROM_SIZE
+#define EEPROM_SIZE 8192
 #endif

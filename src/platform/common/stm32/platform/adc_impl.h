@@ -43,17 +43,29 @@
 #else
 #define ADC_TAG_MAP_COUNT 28
 #endif
+#elif defined(X32M7)
+#ifdef USE_ADC_INTERNAL
+#define ADC_TAG_MAP_COUNT 34
+#else
+#define ADC_TAG_MAP_COUNT 31
+#endif
 #elif defined(STM32G4)
 #ifdef USE_ADC_INTERNAL
 #define ADC_TAG_MAP_COUNT 49
 #else
 #define ADC_TAG_MAP_COUNT 47
 #endif
-#elif defined(STM32N6)
+#elif defined(STM32H5) || defined(STM32C5)
 #ifdef USE_ADC_INTERNAL
 #define ADC_TAG_MAP_COUNT 19
 #else
 #define ADC_TAG_MAP_COUNT 16
+#endif
+#elif defined(STM32N6)
+#ifdef USE_ADC_INTERNAL
+#define ADC_TAG_MAP_COUNT 24
+#else
+#define ADC_TAG_MAP_COUNT 21
 #endif
 #elif defined(APM32F4)
 #define ADC_TAG_MAP_COUNT 16
@@ -65,7 +77,7 @@ typedef struct adcTagMap_s {
     ioTag_t tag;
     uint8_t devices;
     uint32_t channel;
-#if defined(STM32H7) || defined(STM32G4) || defined(AT32F435) || defined(STM32N6)
+#if defined(STM32H7) || defined(STM32G4) || defined(AT32F435) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
     uint8_t channelOrdinal;
 #endif
 } adcTagMap_t;
@@ -89,15 +101,15 @@ typedef struct adcDevice_s {
 #endif
 #if !defined(USE_DMA_SPEC)
     dmaResource_t* dmaResource;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4) || defined(STM32N6)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(APM32F4) || defined(STM32N6)
     uint32_t channel;
 #endif
 #endif // !defined(USE_DMA_SPEC)
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4) || defined(STM32N6)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(APM32F4) || defined(STM32N6)
     ADC_HandleTypeDef ADCHandle;
     DMA_HandleTypeDef DmaHandle;
 #endif
-#if defined(STM32H7) || defined(STM32G4) || defined(STM32N6)
+#if defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
     uint8_t irq;
     uint32_t channelBits;
 #endif
@@ -190,4 +202,13 @@ void adcGetChannelValues(void);
 #define TEMPSENSOR_CAL1_TEMP               (25U)
 #define TEMPSENSOR_CAL1_V                  (1.27f)
 #define TEMPSENSOR_SLOPE                   (-4.13f /* mV/C */)
+#endif
+
+#ifdef X32M7
+#define VREFINT_EXPECTED                   (1489U)  // The raw ADC reading at 12bit resolution expected for the 1V2 internal ref
+#define VREFINT_CAL_VREF                   (3300U)  // The nominal external Vref+ for the above reading
+#define TEMPSENSOR_CAL_VREFANALOG          (3300U)
+#define TEMPSENSOR_CAL1_TEMP               (30U)
+#define TEMPSENSOR_CAL1_V                  (1.342f)
+#define TEMPSENSOR_SLOPE                   (3.4f /* mV/C */)
 #endif

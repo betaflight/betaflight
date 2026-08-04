@@ -25,27 +25,9 @@
 #include "pico/stdio_uart.h"
 #include "pico/platform/compiler.h"
 
-static int depth;
-
-static const char* prefix[]= {
-    "-- ",
-    "--- ",
-    "---- ",
-    "----- ",
-    "------ ",
-    "------- "
-};
-
-static const int plen = sizeof(prefix)/sizeof(prefix[0]);
-
 #if !defined(PICO_TRACE_UART_INSTANCE) || !defined(PICO_TRACE_TX_GPIO) || !defined(PICO_TRACE_RX_GPIO)
 #error PICO_TRACE build requires defines for PICO_TRACE_UART_INSTANCE, PICO_TRACE_TX_GPIO, PICO_TRACE_RX_GPIO
 #endif
-
-void picotrace_prefix(void)
-{
-    stdio_printf(prefix[depth%plen]);
-}
 
 // Wrap main to insert the initialisation code.
 extern int main(int argc, char * argv[]);
@@ -55,9 +37,7 @@ int WRAPPER_FUNC(main)(int argc, char * argv[])
     //stdio_init_all();
     stdio_uart_init_full(UART_INSTANCE(PICO_TRACE_UART_INSTANCE), 115200, PICO_TRACE_TX_GPIO, PICO_TRACE_RX_GPIO);
     tprintf("\n=== Betaflight main ===");
-    depth++;
     int mr = REAL_FUNC(main)(argc, argv);
-    depth--;
     tprintf("\n=== Betaflight main end ===");
     return mr;
 }
@@ -68,7 +48,7 @@ int WRAPPER_FUNC(main)(int argc, char * argv[])
     void WRAPPER_FUNC(x)(void)                  \
     {                                           \
         tprintf("Enter " #x "");                \
-        depth++;REAL_FUNC(x)();depth--;         \
+        REAL_FUNC(x)();                         \
         tprintf("Exit  " #x "");                \
     }
 
@@ -78,9 +58,7 @@ int WRAPPER_FUNC(main)(int argc, char * argv[])
     bool WRAPPER_FUNC(x)(void)                  \
     {                                           \
         tprintf("Enter " #x "");                \
-        depth++;                                \
         bool ret__ = REAL_FUNC(x)();            \
-        depth--;                                \
         tprintf("Exit  " #x "");                \
         return ret__;                           \
     }
@@ -91,7 +69,7 @@ int WRAPPER_FUNC(main)(int argc, char * argv[])
     void WRAPPER_FUNC(x)(bool xyz__)                  \
     {                                                 \
         tprintf("Enter " #x " [%d]", xyz__);          \
-        depth++; REAL_FUNC(x)(xyz__); depth--;        \
+        REAL_FUNC(x)(xyz__);                          \
         tprintf("Exit  " #x "");                      \
     }
 

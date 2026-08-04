@@ -255,14 +255,15 @@
   }
 
 typedef struct pllConfig_s {
+  uint16_t mhz;
   uint16_t n;
   uint16_t p;
   uint16_t q;
 } pllConfig_t;
 
 static const pllConfig_t overclockLevels[] = {
-  { PLL_N, PLL_P, PLL_Q },    // default
-  { 480, RCC_PLLP_DIV2, 10 }, // 240 MHz
+  { 216, PLL_N, PLL_P, PLL_Q },    // default 216 MHz
+  { 240, 480, RCC_PLLP_DIV2, 10 }, // 240 MHz
 };
 
 void SystemInitOC(void)
@@ -281,19 +282,23 @@ void SystemInitOC(void)
     pll_q = pll->q;
 }
 
-void OverclockRebootIfNecessary(uint32_t overclockLevel)
+void OverclockRebootIfNecessary(uint32_t targetMhz)
 {
-    if (overclockLevel >= ARRAYLEN(overclockLevels)) {
-        return;
+    // targetMhz == 0 means "OFF" / use default (first entry)
+    if (targetMhz == 0) {
+        targetMhz = overclockLevels[0].mhz;
     }
 
-    const pllConfig_t * const pll = overclockLevels + overclockLevel;
-
-    // Reboot to adjust overclock frequency
-    if (SystemCoreClock != (pll->n / pll->p) * 1000000U) {
-        persistentObjectWrite(PERSISTENT_OBJECT_OVERCLOCK_LEVEL, overclockLevel);
-        __disable_irq();
-        NVIC_SystemReset();
+    for (unsigned i = 0; i < ARRAYLEN(overclockLevels); i++) {
+        if (overclockLevels[i].mhz == targetMhz) {
+            // Reboot to adjust overclock frequency
+            if (SystemCoreClock != targetMhz * 1000000U) {
+                persistentObjectWrite(PERSISTENT_OBJECT_OVERCLOCK_LEVEL, i);
+                __disable_irq();
+                NVIC_SystemReset();
+            }
+            return;
+        }
     }
 }
 

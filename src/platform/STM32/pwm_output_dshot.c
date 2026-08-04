@@ -30,6 +30,7 @@
 
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
+#include "platform/dma.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
 #include "platform/rcc.h"
@@ -116,14 +117,23 @@ static void pwmDshotSetDirectionInput(
     motorDmaOutput_t * const motor
 )
 {
+#if !defined(STM32F4)
     DMA_InitTypeDef* pDmaInit = &motor->dmaInitStruct;
+#endif
 
     const timerHardware_t * const timerHardware = motor->timerHardware;
     TIM_TypeDef *timer = (TIM_TypeDef *)timerHardware->tim;
 
     dmaResource_t *dmaRef = motor->dmaRef;
 
+#if defined(STM32F4)
+    // Output and input share the channel, addresses, widths and increment modes.
+    // The stream is disabled and its flags are cleared by the IRQ handler before
+    // changing direction, as required before enabling a new DMA transfer.
+    CLEAR_BIT(((DMA_Stream_TypeDef *)dmaRef)->CR, DMA_SxCR_DIR | DMA_SxCR_TCIE);
+#else
     xDMA_DeInit(dmaRef);
+#endif
 
     motor->isInput = true;
     if (!inputStampUs) {
@@ -134,11 +144,9 @@ static void pwmDshotSetDirectionInput(
 
     TIM_ICInit(timer, &motor->icInitStruct);
 
-#if defined(STM32F4)
-    motor->dmaInitStruct.DMA_DIR = DMA_DIR_PeripheralToMemory;
-#endif
-
+#if !defined(STM32F4)
     xDMA_Init(dmaRef, pDmaInit);
+#endif
 }
 #endif
 
@@ -189,6 +197,14 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
             TIM_DMACmd((TIM_TypeDef *)motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
         }
 
+#if defined(STM32F4)
+        DMA_Stream_TypeDef *stream = (DMA_Stream_TypeDef *)motor->dmaRef;
+        while (stream->CR & DMA_SxCR_EN) {
+            // Configuration registers are write-protected until EN reads zero.
+        }
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_FEIF | DMA_IT_DMEIF | DMA_IT_TEIF | DMA_IT_HTIF | DMA_IT_TCIF);
+#endif
+
 #ifdef USE_DSHOT_TELEMETRY
         if (useDshotTelemetry) {
             pwmDshotSetDirectionInput(motor);
@@ -198,7 +214,9 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
             dshotDMAHandlerCycleCounters.changeDirectionCompletedAt = getCycleCounter();
         }
 #endif
+#if !defined(STM32F4)
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
+#endif
     }
 }
 
@@ -297,7 +315,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
         TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
 
-        RCC_ClockCmd(timerRCC(timer), ENABLE);
+        RCC_ClockCmd(timerRCC(timerHardware->tim), ENABLE);
         TIM_Cmd(timer, DISABLE);
 
         TIM_TimeBaseStructure.TIM_Prescaler = (uint16_t)(lrintf((float) timerClock(timerHardware) / getDshotHz(pwmProtocolType) + 0.01f) - 1);

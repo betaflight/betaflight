@@ -9,8 +9,12 @@ reviews:
   poem: false
   review_status: true
   collapse_walkthrough: false
+  path_filters:
+    - "!lib/**"
   auto_review:
     enabled: true
     drafts: false
+    base_branches:
+      - ".*"
 chat:
   auto_reply: true

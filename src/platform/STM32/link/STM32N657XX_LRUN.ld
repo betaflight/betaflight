@@ -4,6 +4,8 @@
 **  File        : STM32N657XX_LRUN.ld
 **
 **  Abstract    : Linker script for STM32N657xx Device
+**                Load from external XSPI flash, Run from internal SRAM.
+**
 **                AXISRAM1   1024K  @ 0x24000000
 **                AXISRAM2   1024K  @ 0x24100000
 **                AXISRAM3    448K  @ 0x24200000
@@ -14,7 +16,8 @@
 **                AHBSRAM2     16K  @ 0x28004000
 **                BKPSRAM       8K  @ 0x2C000000
 **
-**  Boot from external XSPI flash at 0x70000000
+**  Boot from external XSPI flash at 0x70000000.
+**  All firmware code is copied to RAM at startup for performance.
 **
 *****************************************************************************
 */
@@ -23,7 +26,7 @@
 ENTRY(Reset_Handler)
 
 /*
-0x24000000 to 0x240FFFFF  1024K AXI SRAM1, main RAM
+0x24000000 to 0x240FFFFF  1024K AXI SRAM1, firmware code + data + bss + stack
 0x24100000 to 0x241FFFFF  1024K AXI SRAM2
 0x24200000 to 0x2426FFFF   448K AXI SRAM3
 0x24270000 to 0x242DFFFF   448K AXI SRAM4
@@ -33,22 +36,29 @@ ENTRY(Reset_Handler)
 0x28004000 to 0x28007FFF    16K AHB SRAM2
 0x2C000000 to 0x2C001FFF     8K Backup SRAM
 
-0x70000000 to 0x701FFFFF  2048K External XSPI flash
-0x70000000 to 0x7001FFFF   128K isr vector, startup code
-0x70020000 to 0x7003FFFF   128K config
-0x70040000 to 0x701FFFFF  1792K firmware
+0x70000000 to 0x700FFFFF  1024K FSBL stub slot (signed; boot ROM verifies + loads to AXISRAM2)
+0x70100000 to 0x701FFFFF  1024K betaflight XIP (unsigned; FSBL stub jumps here)
+0x70200000 to 0x7021FFFF   128K config storage
+0x70220000 to 0x7037FFFF  1408K firmware overflow (reserved)
 */
 
-/* Specify the memory areas */
+/* Specify the memory areas.
+ *
+ * FLASH starts at 0x70100000: the chip boots through a small signed FSBL
+ * stub installed once at OctoSPI 0x70000000, which configures XSPI in
+ * memory-mapped mode then jumps here. Betaflight is unsigned (no FSBL
+ * header), so the linker base is the bare flash address.
+ */
 MEMORY
 {
-    FLASH (rx)        : ORIGIN = 0x70000000, LENGTH = 128K
-    FLASH_CONFIG (r)  : ORIGIN = 0x70020000, LENGTH = 128K
-    FLASH1 (rx)       : ORIGIN = 0x70040000, LENGTH = 1792K
+    FLASH (rx)        : ORIGIN = 0x70100000, LENGTH = 1024K
+    FLASH_CONFIG (r)  : ORIGIN = 0x70200000, LENGTH = 128K
+    FLASH1 (rx)       : ORIGIN = 0x70220000, LENGTH = 1408K
 
     RAM (rwx)         : ORIGIN = 0x24000000, LENGTH = 1024K
 
     D2_RAM (rwx)      : ORIGIN = 0x24100000, LENGTH = 1024K /* AXISRAM2 */
+    AXISRAM3 (rwx)    : ORIGIN = 0x24200000, LENGTH = 448K  /* LCD framebuffer landing zone */
 
     MEMORY_B1 (rx)    : ORIGIN = 0x60000000, LENGTH = 0K
 }
@@ -76,19 +86,30 @@ _sstack = _estack - _Min_Stack_Size;
 /* Define output sections */
 SECTIONS
 {
-  /* The startup code goes first into FLASH */
+  /*
+   * ISR vector table and startup bootstrap in XSPI flash.
+   * Reset_Handler executes from here (XIP) before copying firmware to RAM.
+   */
   .isr_vector :
   {
     . = ALIGN(512);
     PROVIDE (isr_vector_table_base = .);
     KEEP(*(.isr_vector)) /* Startup code */
+    *(.text.Reset_Handler)
+    *(.text.Default_Handler)
     . = ALIGN(4);
   } >FLASH
 
-  /* The program code and other data goes into FLASH */
+  /*
+   * Firmware code and read-only data.
+   * Stored in FLASH1 (LMA), copied to and executed from RAM (VMA).
+   */
+  _sitext = LOADADDR(.text);
+
   .text :
   {
     . = ALIGN(4);
+    _stext = .;        /* start of text in RAM */
     *(.text)           /* .text sections (code) */
     *(.text*)          /* .text* sections (code) */
     *(.rodata)         /* .rodata sections (constants, strings, etc.) */
@@ -101,19 +122,20 @@ SECTIONS
     KEEP (*(.fini))
 
     . = ALIGN(4);
-    _etext = .;        /* define a global symbols at end of code */
-  } >FLASH1
+  } >RAM AT >FLASH
 
   .ARM.extab   :
   {
     *(.ARM.extab* .gnu.linkonce.armextab.*)
-  } >FLASH1
+    . = ALIGN(4);
+  } >RAM AT >FLASH
 
   .ARM :
   {
     __exidx_start = .;
     *(.ARM.exidx*) __exidx_end = .;
-  } >FLASH1
+    . = ALIGN(4);
+  } >RAM AT >FLASH
 
   .pg_registry :
   {
@@ -121,29 +143,50 @@ SECTIONS
     KEEP (*(.pg_registry))
     KEEP (*(SORT(.pg_registry.*)))
     PROVIDE_HIDDEN (__pg_registry_end = .);
-  } >FLASH1
+    . = ALIGN(4);
+  } >RAM AT >FLASH
 
+  /* Pad to 4-byte boundary so the LMA of the next section stays aligned
+   * with its VMA. Without this, an odd-size .pg_resetdata payload (the
+   * KEEP'd registry blobs aren't necessarily multiples of 4) makes the
+   * linker pad the VMA via .data's leading ALIGN(4) but NOT the LMA —
+   * every .data initializer ends up shifted by 1..3 bytes when copied
+   * from flash to RAM, and global structs (e.g. USBD_CDC) read garbage.
+   * Symptom: function-pointer fields look random, dereferencing them
+   * HardFaults inside USBD_RegisterClass / USBD_LL_Init / similar. */
   .pg_resetdata :
   {
     PROVIDE_HIDDEN (__pg_resetdata_start = .);
     KEEP (*(.pg_resetdata))
     PROVIDE_HIDDEN (__pg_resetdata_end = .);
-  } >FLASH1
-
-  /* used by the startup to initialize data */
-  _sidata = LOADADDR(.data);
+    . = ALIGN(4);
+  } >RAM AT >FLASH
 
   /* Initialized data sections goes into RAM, load LMA copy after code */
   .data :
   {
     . = ALIGN(4);
-    _sdata = .;        /* create a global symbol at data start */
     *(.data)           /* .data sections */
     *(.data*)          /* .data* sections */
 
     . = ALIGN(4);
-    _edata = .;        /* define a global symbol at data end */
-  } >RAM AT >FLASH1
+  } >RAM AT >FLASH
+
+  /*
+   * All code already runs from RAM, so .ram_code merges into the same
+   * region.  Keep the section so MMFLASH_CODE attributed functions still link.
+   */
+  ram_code = LOADADDR(.ram_code);  /* LMA in FLASH1 for initialiseMemorySections() */
+  .ram_code :
+  {
+    . = ALIGN(4);
+    ram_code_start = .;
+    *(.ram_code)
+    *(.ram_code*)
+    . = ALIGN(4);
+    ram_code_end = .;
+    _etext = .;        /* end of all FLASH1-backed sections — startup copies _stext.._etext */
+  } >RAM AT >FLASH
 
   /* Uninitialized data section */
   . = ALIGN(4);
@@ -188,7 +231,7 @@ SECTIONS
 
     . = ALIGN(4);
     _efastram_data = .;        /* define a global symbol at data end */
-  } >FASTRAM AT >FLASH1
+  } >FASTRAM AT >FLASH
 
   . = ALIGN(4);
   .fastram_bss (NOLOAD) :
@@ -217,7 +260,7 @@ SECTIONS
     *(.dmaram_data*)          /* .data* sections */
     . = ALIGN(32);
     _edmaram_data = .;        /* define a global symbol at data end */
-  } >RAM AT >FLASH1
+  } >RAM AT >FLASH
 
   . = ALIGN(32);
   .dmaram_bss (NOLOAD) :
@@ -263,6 +306,19 @@ SECTIONS
     _edmarwaxi = .;
     _dmarwaxi_end__ = _edmarwaxi;
   } >RAM
+
+  /* LCD framebuffer landing zone — sized for 800x480 L8 (~376KB), with
+   * room to spare in the 448KB AXISRAM3 region. Backends opt in via
+   * __attribute__((section(".lcdbuffer"))). */
+  .lcdbuffer (NOLOAD) :
+  {
+    . = ALIGN(32);
+    _slcdbuffer = .;
+    KEEP(*(.lcdbuffer))
+    KEEP(*(.lcdbuffer*))
+    . = ALIGN(32);
+    _elcdbuffer = .;
+  } >AXISRAM3
 
   .persistent_data (NOLOAD) :
   {

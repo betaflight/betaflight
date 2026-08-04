@@ -511,7 +511,7 @@ static uint8_t USBD_DevQualifierDesc[USBD_DEVICE_QUALIFIER_DESCRIPTOR_SIZE] =
     0x00,
     0x00,
     0x00,
-    USBD_CDC_FS_MP_SIZE, /* In FS device*/
+    0x40,
     0x01,
     0x00,
 };

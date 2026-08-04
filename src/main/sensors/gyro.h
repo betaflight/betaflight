@@ -55,7 +55,7 @@
 
 typedef union gyroLowpassFilter_u {
     pt1Filter_t pt1FilterState;
-    biquadFilter_t biquadFilterState;
+    svfLowpassFilter_t svfLowpassFilterState;
     pt2Filter_t pt2FilterState;
     pt3Filter_t pt3FilterState;
 } gyroLowpassFilter_t;
@@ -96,17 +96,17 @@ typedef struct gyro_s {
 
     // notch filters
     filterApplyFnPtr notchFilter1ApplyFn;
-    biquadFilter_t notchFilter1[XYZ_AXIS_COUNT];
+    svfNotchFilter_t notchFilter1[XYZ_AXIS_COUNT];
 
     filterApplyFnPtr notchFilter2ApplyFn;
-    biquadFilter_t notchFilter2[XYZ_AXIS_COUNT];
+    svfNotchFilter_t notchFilter2[XYZ_AXIS_COUNT];
 
     uint16_t accSampleRateHz;
     uint8_t gyroEnabledBitmask;
     uint8_t gyroDebugMode;
     bool gyroHasOverflowProtection;
     bool useMultiGyroDebugging;
-    flight_dynamics_index_t gyroDebugAxis;
+    int gyroDebugAxis;
 
 #ifdef USE_DYN_LPF
     uint8_t dynLpfFilter;
@@ -133,7 +133,7 @@ enum {
 enum {
     DYN_LPF_NONE = 0,
     DYN_LPF_PT1,
-    DYN_LPF_BIQUAD,
+    DYN_LPF_SVF,
     DYN_LPF_PT2,
     DYN_LPF_PT3,
 };
@@ -151,7 +151,6 @@ enum {
 
 typedef struct gyroConfig_s {
     uint8_t gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
-    uint8_t gyro_hardware;                    // gyro hardware type (read-only, set during detection)
     uint8_t gyro_hardware_lpf;                // gyro DLPF setting
     uint8_t gyro_high_fsr;
 

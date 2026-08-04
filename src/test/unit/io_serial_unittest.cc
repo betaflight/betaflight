@@ -55,6 +55,11 @@ TEST(IoSerialTest, TestFindPortConfig)
 }
 
 
+struct ResetCalled {};
+static const serialPort_t *hostPort = NULL;
+static uint32_t fakeMillis = 0;
+static int plusToSend = 0;
+
 // STUBS
 extern "C" {
     void delay(uint32_t) {}
@@ -65,9 +70,12 @@ extern "C" {
 
     bool telemetryCheckRxPortShared(const serialPortConfig_t *) { return false; }
 
-    uint32_t serialRxBytesWaiting(const serialPort_t *) { return 0; }
-    uint8_t serialRead(serialPort_t *) { return 0; }
+    uint32_t serialRxBytesWaiting(const serialPort_t *p) { return p == hostPort ? plusToSend : 0; }
+    uint8_t serialRead(serialPort_t *) { plusToSend--; return '+'; }
     void serialWrite(serialPort_t *, uint8_t) {}
+
+    uint32_t millis(void) { return fakeMillis += 1000; }  // advance so the "+++" idle guard always passes
+    void systemReset(void) { throw ResetCalled(); }
 
     serialPort_t *usbVcpOpen(void) { return NULL; }
 
@@ -86,4 +94,16 @@ extern "C" {
     void serialSetBaudRateCb(serialPort_t *, void (*)(serialPort_t *context, uint32_t baud), serialPort_t *) {}
 
     void pinioSet(int, bool) {}
+}
+
+TEST(IoSerialTest, TestPassthroughEscape)
+{
+    // given
+    serialPort_t left = {}, right = {};
+    right.identifier = SERIAL_PORT_UART1;   // non-USB host -> "+++" escape enabled
+    hostPort = &right;
+    fakeMillis = 0;
+    plusToSend = 3;
+    // when "+++" arrives after an idle gap, then it must reboot out of passthrough
+    EXPECT_THROW(serialPassthrough(&left, &right, NULL, NULL), ResetCalled);
 }

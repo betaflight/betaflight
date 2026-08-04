@@ -88,11 +88,10 @@ typedef struct serialPort_s {
     uint32_t txBufferSize;
     volatile uint8_t *rxBuffer;
     volatile uint8_t *txBuffer;
-    uint32_t rxBufferHead;
-    uint32_t rxBufferTail;
-    uint32_t txBufferHead;
-    uint32_t txBufferTail;
-
+    volatile uint32_t rxBufferHead;
+    volatile uint32_t rxBufferTail;
+    volatile uint32_t txBufferHead;
+    volatile uint32_t txBufferTail;
     serialReceiveCallbackPtr rxCallback;
     void *rxCallbackData;
 
@@ -135,6 +134,7 @@ struct serialPortVTable {
 };
 
 void serialWrite(serialPort_t *instance, uint8_t ch);
+// prefer snapshotting the returned value to calling this function in while loops
 uint32_t serialRxBytesWaiting(const serialPort_t *instance);
 uint32_t serialTxBytesFree(const serialPort_t *instance);
 void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count);

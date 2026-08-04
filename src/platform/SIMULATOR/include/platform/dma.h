@@ -19,10 +19,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
- #pragma once
+#pragma once
 
- typedef enum {
-    DMA_NONE = 0,
-    DMA_FIRST_HANDLER = DMA_NONE,
-    DMA_LAST_HANDLER = DMA_NONE
-} dmaIdentifier_e;
+#include "drivers/dma.h"
+
+#define DMA_LAST_HANDLER DMA_NONE
