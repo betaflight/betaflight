@@ -24,6 +24,7 @@
 
 #include "platform.h"
 
+#include "common/maths.h"
 #include "common/time.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
@@ -114,7 +115,7 @@ void systemInit(void)
     // load the unique id into a local array
     pico_unique_board_id_t id;
     pico_get_unique_board_id(&id);
-    memcpy(&systemUniqueId, &id.id, MIN(sizeof(systemUniqueId), PICO_UNIQUE_BOARD_ID_SIZE_BYTES));
+    memcpy(&systemUniqueId, &id.id, MIN(sizeof(systemUniqueId), (uint32_t)PICO_UNIQUE_BOARD_ID_SIZE_BYTES));
 
 
 #ifdef USE_MULTICORE

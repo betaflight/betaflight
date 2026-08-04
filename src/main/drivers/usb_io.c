@@ -70,6 +70,24 @@ bool usbCableIsInserted(void)
     return result;
 }
 
+bool usbCableIsActive(void)
+{
+    bool result = false;
+
+#ifdef USE_USB_DETECT
+    // a detect pin tracks the cable directly, so it needs no separate live check
+    if (usbDetectPin) {
+        result = IORead(usbDetectPin) != 0;
+    }
+#endif
+
+#if defined(USE_VCP)
+    result = result || usbVcpIsActive() != 0;
+#endif
+
+    return result;
+}
+
 void usbGenerateDisconnectPulse(void)
 {
 #ifdef USB_DP_PIN

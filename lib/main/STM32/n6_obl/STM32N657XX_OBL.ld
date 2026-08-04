@@ -20,8 +20,10 @@ _Min_Stack_Size = 0x2000;   /* 8 KiB — DFU upload buffer + USB ISR + libc */
 MEMORY
 {
     /* Loaded region: signed FSBL slot in AXISRAM2 secure. Boot ROM lands
-     * the .stm32 payload here. */
-    RAM (rwx) : ORIGIN = 0x34180400, LENGTH = 480K
+     * the .stm32 payload here. 64 KiB caps OBL well below the boot-ROM
+     * @FSBL DFU staging limit and leaves the rest of AXISRAM2-secure
+     * free for any future secure code. */
+    RAM (rwx) : ORIGIN = 0x34180400, LENGTH = 64K
 }
 
 _estack = ORIGIN(RAM) + LENGTH(RAM);

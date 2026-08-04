@@ -39,15 +39,8 @@
 #define USBD_SELF_POWERED                      1U
 #define USBD_DEBUG_LEVEL                       0U
 
-/* Two DFU alts:
- *   alt 0: @Betaflight (BF flash slot — read/erase/write)
- *   alt 1: @DBGRAM     (read-only mirror of the AXISRAM2 debug buffer
- *                       at DBG_RAM_BASE, so the host can
- *                       `dfu-util -a 1 -U dbgram.bin` to retrieve BF's
- *                       last fault snapshot + magic state after a wedge)
- * The patched usbd_dfu.c::USBD_DFU_GetUsrStringDesc routes alt 0 to
- * DfuInterface->pStrDesc and alt 1 to a fixed @DBGRAM descriptor string. */
-#define USBD_DFU_MAX_ITF_NUM                   2U
+/* Single DFU alt — @Betaflight (BF flash slot, read/erase/write). */
+#define USBD_DFU_MAX_ITF_NUM                   1U
 #define USBD_DFU_XFER_SIZE                     1024U
 #define USBD_DFU_APP_DEFAULT_ADD               0x70100000U
 #define USBD_DFU_MAX_NB_OF_SECTORS             256U

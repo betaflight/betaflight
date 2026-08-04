@@ -164,9 +164,11 @@
 #define PG_CAN_PIN_CONFIG           563
 #define PG_CAN_CONFIG               564
 #define PG_DRONECAN_CONFIG          565
+#define PG_DRONECAN_DNA_CONFIG      567
+#define PG_OSD_NAV_MAP_CONFIG       568
 
 // TODO TBC
-#define PG_DISPLAY_PORT_FBOSD_CONFIG 561
+#define PG_DISPLAY_PORT_FBOSD_CONFIG 566
 
 // OSD configuration (subject to change)
 #define PG_OSD_FONT_CONFIG 2047

@@ -39,9 +39,15 @@
 
 #include "fc/init.h"
 
+// USE_MULTICORE turns on the multicore API and its features (core 1 + dispatch).
+// ENABLE_MULTICORE_INIT is the optional core-allocation policy (RP2350) of
+// running the FC init phases on the second core; it requires USE_MULTICORE.
+#if defined(ENABLE_MULTICORE_INIT) && !defined(USE_MULTICORE)
+#error "ENABLE_MULTICORE_INIT requires USE_MULTICORE"
+#endif
+
 #ifdef USE_MULTICORE
 #include "platform/multicore.h"
-#include "usb/usb_cdc.h"
 #endif
 
 #ifdef USE_USB_MSC
@@ -72,7 +78,7 @@ int main(int argc, char * argv[])
     // Do basic system initialisation including multicore support if applicable
     systemInit();
 
-#ifdef USE_MULTICORE
+#ifdef ENABLE_MULTICORE_INIT
     // Perform early initialisation prior to USB
     multicoreExecuteBlocking(initPhase1);
 
@@ -99,7 +105,7 @@ int main(int argc, char * argv[])
     usbVcpInit();
 #endif
 
-#ifdef USE_MULTICORE
+#ifdef ENABLE_MULTICORE_INIT
     // Now perform the final initialisation
     multicoreExecuteBlocking(initPhase3);
 #else

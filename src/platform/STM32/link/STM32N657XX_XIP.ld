@@ -13,7 +13,10 @@
 **                memcpy + jump phase for boot.
 **
 **                Layout:
-**                  AXISRAM1   1024K  @ 0x24000000  data/bss/heap/stack/DMA/ram_code
+**                  AXISRAM2 high 444K @ 0x24191000  data/bss/heap/stack/DMA/ram_code
+**                                                   (NS alias; above the
+**                                                   64 KiB OBL block at
+**                                                   0x24180400..0x24190400)
 **                  AXISRAM3..6 1792K @ 0x24200000  contiguous (LCD framebuffer)
 **                  XSPI flash 0x70100000+         vectors + text + rodata
 **                                                  + LMA for copied data
@@ -44,12 +47,10 @@ MEMORY
     FLASH_CONFIG (r)  : ORIGIN = 0x70200000, LENGTH = 128K
     FLASH1 (rx)       : ORIGIN = 0x70220000, LENGTH = 1408K
 
-    RAM (rwx)         : ORIGIN = 0x24000000, LENGTH = 1024K   /* AXISRAM1 */
-    /* AXISRAM2 NS — first 512 bytes carved out as a debug exchange
-     * buffer for the BF↔OBL bring-up contract. OBL's @DBGRAM DFU alt
-     * exposes this address so the host can pull markers BF wrote on
-     * its way through init / fault. NOLOAD so startup doesn't zero it. */
-    DBG_RAM (rw)      : ORIGIN = 0x24100000, LENGTH = 512
+    /* BF lives in AXISRAM2 NS, above the 64 KiB OBL block. OBL occupies
+     * 0x34180400..0x34190400 (S alias) = 0x24180400..0x24190400 (NS alias);
+     * BF takes the 444 KiB above that, 4 KiB-aligned for RISAF3 granularity. */
+    RAM (rwx)         : ORIGIN = 0x24191000, LENGTH = 444K    /* AXISRAM2 high */
     /* AXISRAM3..6 contiguous (0x24200000 - 0x243BFFFF), used as a single
      * region for the LCD framebuffer (DMA_RW_D2 NOLOAD) when LCD enabled. */
     D2_RAM (rwx)      : ORIGIN = 0x24200000, LENGTH = 1792K
@@ -94,10 +95,10 @@ SECTIONS
   .text :
   {
     . = ALIGN(4);
-    *(.text)
-    *(EXCLUDE_FILE(*system_stm32n6xx.o *stm32n6xx_hal_rcc.o *stm32n6xx_hal_rcc_ex.o) .text*)
-    *(EXCLUDE_FILE(*system_stm32n6xx.o *stm32n6xx_hal_rcc.o *stm32n6xx_hal_rcc_ex.o) .rodata)
-    *(EXCLUDE_FILE(*system_stm32n6xx.o *stm32n6xx_hal_rcc.o *stm32n6xx_hal_rcc_ex.o) .rodata*)
+    *(EXCLUDE_FILE(*system_stm32n6xx.o *stm32n6xx_hal_rcc.o *stm32n6xx_hal_rcc_ex.o *stm32n6xx_hal_xspi.o *stm32n6xx_hal.o) .text)
+    *(EXCLUDE_FILE(*system_stm32n6xx.o *stm32n6xx_hal_rcc.o *stm32n6xx_hal_rcc_ex.o *stm32n6xx_hal_xspi.o *stm32n6xx_hal.o) .text*)
+    *(EXCLUDE_FILE(*system_stm32n6xx.o *stm32n6xx_hal_rcc.o *stm32n6xx_hal_rcc_ex.o *stm32n6xx_hal_xspi.o *stm32n6xx_hal.o) .rodata)
+    *(EXCLUDE_FILE(*system_stm32n6xx.o *stm32n6xx_hal_rcc.o *stm32n6xx_hal_rcc_ex.o *stm32n6xx_hal_xspi.o *stm32n6xx_hal.o) .rodata*)
     *(.glue_7)
     *(.glue_7t)
     *(.eh_frame)
@@ -115,6 +116,33 @@ SECTIONS
     __exidx_start = .;
     *(.ARM.exidx*)
     __exidx_end = .;
+  } >FLASH
+
+  /* C runtime init/fini arrays. Without these sections, the linker
+   * default placement of __preinit_array_start/end and __init_array_start/end
+   * symbols can leave start != end with garbage data in between, which
+   * __libc_init_array dereferences as function pointers and BL-jumps to
+   * garbage → SecureFault → IWDG. Defining empty sections forces start ==
+   * end so __libc_init_array is a clean no-op. */
+  .preinit_array :
+  {
+    PROVIDE_HIDDEN (__preinit_array_start = .);
+    KEEP (*(.preinit_array*))
+    PROVIDE_HIDDEN (__preinit_array_end = .);
+  } >FLASH
+  .init_array :
+  {
+    PROVIDE_HIDDEN (__init_array_start = .);
+    KEEP (*(SORT(.init_array.*)))
+    KEEP (*(.init_array*))
+    PROVIDE_HIDDEN (__init_array_end = .);
+  } >FLASH
+  .fini_array :
+  {
+    PROVIDE_HIDDEN (__fini_array_start = .);
+    KEEP (*(.fini_array*))
+    KEEP (*(SORT(.fini_array.*)))
+    PROVIDE_HIDDEN (__fini_array_end = .);
   } >FLASH
 
   .pg_registry :
@@ -148,11 +176,20 @@ SECTIONS
     _stext = .;
     ram_code_start = .;
     /* Clock-switch code path. Whole-file matched (file-prefixed
-     * pattern claims every .text* input section from these .o
-     * files) — paired with the EXCLUDE_FILE in .text above. */
-    *system_stm32n6xx.o(.text* .rodata*)
-    *stm32n6xx_hal_rcc.o(.text* .rodata*)
-    *stm32n6xx_hal_rcc_ex.o(.text* .rodata*)
+     * pattern claims every .text/.rodata input section from these
+     * .o files, including the bare `.text` that GCC still emits
+     * even with -ffunction-sections) — paired with the EXCLUDE_FILE
+     * in .text above. */
+    *system_stm32n6xx.o(.text .text* .rodata*)
+    *stm32n6xx_hal_rcc.o(.text .text* .rodata*)
+    *stm32n6xx_hal_rcc_ex.o(.text .text* .rodata*)
+    /* HAL XSPI primitives + HAL_GetTick. flash_mx66uw1g45g.c calls
+     * HAL_XSPI_Command / _Receive / _Transmit while memory-mapped
+     * mode is disabled — must live in AXISRAM, not XIP. EXCLUDE_FILE
+     * above strips them from the .text/.rodata regions so the linker
+     * lets us re-bind them here. */
+    *stm32n6xx_hal_xspi.o(.text .text* .rodata*)
+    *stm32n6xx_hal.o(.text .text* .rodata*)
     *(.ram_code)
     *(.ram_code*)
     . = ALIGN(32);
@@ -280,14 +317,6 @@ SECTIONS
     _edmarwaxi = .;
     _dmarwaxi_end__ = _edmarwaxi;
   } >RAM
-
-  /* BF↔OBL debug exchange buffer (AXISRAM2 NS, 512 B). NOLOAD so
-   * startup doesn't zero it; the OBL maps the same address through
-   * its @DBGRAM DFU alt. See platform/bf_obl_contract.h. */
-  .bf_obl_dbg (NOLOAD) :
-  {
-    KEEP(*(.bf_obl_dbg))
-  } >DBG_RAM
 
   .persistent_data (NOLOAD) :
   {

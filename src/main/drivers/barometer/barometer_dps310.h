@@ -27,3 +27,4 @@
 #pragma once
 
 bool baroDPS310Detect(baroDev_t *baro);
+bool baroDPS310IsSPL07_003(void);

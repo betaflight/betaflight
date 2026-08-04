@@ -32,8 +32,8 @@ typedef struct positionNavCommand_s {
     bool completed;
     bool completionSignalled;
 
-    vector3_t targetPosEfM;         // target position, metres, ENU (x=east, y=north, z=up)
-    bool includeAltitude;           // when false, z is ignored for nav, arrival, and alt coupling
+    vector3_t targetPosEfM;         // target position, metres, ENU (index by ENU_E/ENU_N/ENU_U)
+    bool includeAltitude;           // when false, ENU_U is ignored for nav, arrival, and alt coupling
 
     float cruiseSpeedMps;           // maximum cruise speed (m/s)
     float acceptanceRadiusM;        // arrival zone radius (metres)
@@ -43,6 +43,7 @@ typedef struct positionNavCommand_s {
     float maxDecelMps2;             // deceleration/braking limit (m/s^2), 0 = unlimited
 
     bool autoClearOnReach;
+    bool altitudeArrivalRequired;   // when false, arrival gates on the horizontal radius only
 
     positionNavReachedCallbackFn callback;
     void *callbackUserData;
@@ -63,6 +64,11 @@ void positionNavSetTargetEf(
     void *userData
 );
 
+// Moves the active command's target position without disturbing the velocity
+// ramp, completion state, or callback — for continuously moving targets (hold
+// pattern carrots). No-op when there is no active command.
+void positionNavMoveTargetEf(const vector3_t *targetPosEfM);
+
 void positionNavClearTarget(void);
 
 bool positionNavHasActiveTarget(void);
@@ -72,6 +78,11 @@ const positionNavCommand_t *positionNavGetActiveCommand(void);
 
 void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2);
 void positionNavSetAutoClearOnReach(bool autoClear);
+
+// En-route waypoints advance on horizontal arrival even when the vehicle has
+// not reached the commanded altitude; station-keeping targets (hold, land)
+// keep the altitude gate. Defaults to true on each new target.
+void positionNavSetAltitudeArrivalRequired(bool required);
 
 // Called each control cycle; reads current estimate, computes target velocity,
 // and checks arrival conditions.

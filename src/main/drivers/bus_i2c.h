@@ -42,6 +42,12 @@ typedef enum {
     I2CDEV_2,
     I2CDEV_3,
     I2CDEV_4,
+    I2CDEV_5,
+    I2CDEV_6,
+    I2CDEV_7,
+    I2CDEV_8,
+    I2CDEV_9,
+    I2CDEV_10,
 } i2cDevice_e;
 
 // Macros to convert between CLI bus number and i2cDevice_e.

@@ -35,7 +35,7 @@ uint16_t rxMspOverrideReadRawRc(const rxRuntimeState_t *rxRuntimeState, const rx
 
     bool override = (1 << chan) & rxConfig->msp_override_channels_mask;
 
-    if (IS_RC_MODE_ACTIVE(BOXMSPOVERRIDE) && override) {
+    if (IS_RC_MODE_ACTIVE(BOXMSPOVERRIDE) && override && rxMspIsRcChannelFresh(chan)) {
         return overrideSample;
     } else {
         return rxSample;

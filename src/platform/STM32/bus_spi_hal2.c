@@ -120,13 +120,14 @@ void spiInitDevice(spiDevice_e device)
     RCC_ResetCmd(spi->rcc, ENABLE);
 
 #ifdef STM32C5
-    if (dev == SPI1) {
-        LL_RCC_SetSPIClockSource(LL_RCC_SPI1_CLKSOURCE_HSIK);
-    } else if (dev == SPI2) {
-        LL_RCC_SetSPIClockSource(LL_RCC_SPI2_CLKSOURCE_HSIK);
-    } else if (dev == SPI3) {
-        LL_RCC_SetSPIClockSource(LL_RCC_SPI3_CLKSOURCE_HSIK);
-    }
+    // STM32C5: leave SPI kernel clock at PCLK (default after reset). HSIK
+    // selection on SPI3 leaves CTSIZE pinned at TSIZE -- the peripheral
+    // never decrements the transfer counter, EOT never asserts, and the
+    // controller appears to "transmit" via FIFO drain but no SCK reaches
+    // the pad. Reproduced under SWD on ARCROBO_C562V1: with SPI3SEL=10
+    // (HSIK) a manual WHO_AM_I transaction sticks at SR=0x00020012,
+    // CTSIZE=2; flipping SPI3SEL=00 (PCLK1) on the same configuration
+    // immediately advances to SR.EOT=1.
 #endif
 
     IOInit(IOGetByTag(spi->sck),  OWNER_SPI_SCK, RESOURCE_INDEX(device));
@@ -140,8 +141,19 @@ void spiInitDevice(spiDevice_e device)
     LL_SPI_Disable(dev);
     LL_SPI_DeInit(dev);
 
+#ifndef STM32C5
     // Prevent glitching when SPI is disabled
     LL_SPI_EnableGPIOControl(dev);
+#else
+    // STM32C5: AFCNTR=1 (set by EnableGPIOControl) forces the SPI
+    // peripheral to drive its 4 dedicated pins including hardware NSS
+    // (PA4 for SPI1). Boards that use PA4 as a software-managed CS for
+    // an off-bus chip get the GPIO output config silently overridden,
+    // CS never toggles, and WHO_AM_I reads come back as 0x00. Leave
+    // AFCNTR cleared; BF always drives SCK/MOSI/MISO from init through
+    // shutdown so the anti-glitch protection isn't needed.
+    LL_SPI_DisableGPIOControl(dev);
+#endif
 
     LL_SPI_SetFIFOThreshold(dev, LL_SPI_FIFO_THRESHOLD_1_DATA);
     LL_SPI_Init(dev, &defaultInit);

@@ -29,13 +29,6 @@
 #define USBD_PRODUCT_STRING     "Betaflight - RP2350A"
 #endif
 
-#ifdef PICO_TRACE
-#include "pico_trace.h"
-#define bprintf tprintf
-#else
-#define bprintf(fmt,...)
-#endif
-
 #ifndef RP2350A
 #define RP2350A
 #endif

@@ -66,6 +66,7 @@ const char * const lookupTableGyroHardware[GYRO_HARDWARE_COUNT] = {
     [GYRO_LSM6DSK320X] = "LSM6DSK320X",
     [GYRO_ICM42622P] = "ICM42622P",
     [GYRO_ICM42686P] = "ICM42686P",
+    [GYRO_ICM56686] = "ICM56686",
     [GYRO_VIRTUAL] = "VIRTUAL"
 };
 
@@ -96,6 +97,7 @@ const char * const lookupTableAccHardware[ACC_HARDWARE_COUNT] = {
     [ACC_LSM6DSK320X] = "LSM6DSK320X",
     [ACC_ICM42622P] = "ICM42622P",
     [ACC_ICM42686P] = "ICM42686P",
+    [ACC_ICM56686] = "ICM56686",
     [ACC_VIRTUAL] = "VIRTUAL"
 };
 
@@ -114,7 +116,8 @@ const char * const lookupTableBaroHardware[BARO_HARDWARE_COUNT] = {
     [BARO_LPS22DF] = "LPS22DF",
     [BARO_BMP580] = "BMP580",
     [BARO_BMP581] = "BMP581",
-    [BARO_VIRTUAL] = "VIRTUAL"
+    [BARO_VIRTUAL] = "VIRTUAL",
+    [BARO_SPA06_003] = "SPA06_003"
 };
 
 // sync with magSensor_e
@@ -130,7 +133,10 @@ const char * const lookupTableMagHardware[MAG_HARDWARE_COUNT] = {
     [MAG_MPU925X_AK8963] = "MPU925X_AK8963",
     [MAG_IST8310] = "IST8310",
     [MAG_MMC560X] = "MMC560X",
-    [MAG_QMC5883P] = "QMC5883P"
+    [MAG_QMC5883P] = "QMC5883P",
+#if ENABLE_DRONECAN
+    [MAG_DRONECAN] = "DRONECAN",
+#endif
 };
 
 // sync with rangefinderType_e

@@ -21,7 +21,7 @@
 
 #include "platform.h"
 
-#if ENABLE_DRONECAN
+#if ENABLE_DRONECAN && defined(USE_GPS)
 
 #include <math.h>
 #include <stdbool.h>
@@ -40,21 +40,14 @@
 #include "io/dronecan/dronecan_gnss.h"
 #include "io/dronecan/dronecan_msg.h"
 
-// Bit offsets into the Fix2 payload (from the DSDL definition). The header
-// fields up to sub_mode are fixed — everything past that (covariance, pdop,
-// ecef) is variable-length with TAO rules, so we stop at sub_mode until we
-// need those fields. bit_length values that cross byte boundaries are why
-// we lean on canardDecodeScalar() rather than a packed struct cast.
-#define FIX2_OFFSET_LONGITUDE_1E8   136U   // 37 bits signed
-#define FIX2_OFFSET_LATITUDE_1E8    173U   // 37 bits signed
-#define FIX2_OFFSET_HEIGHT_MSL_MM   237U   // 27 bits signed
-#define FIX2_OFFSET_VEL_N_F16       264U   // 16 bits float16
-#define FIX2_OFFSET_VEL_E_F16       280U   // 16 bits float16
-#define FIX2_OFFSET_VEL_D_F16       296U   // 16 bits float16
-#define FIX2_OFFSET_SATS_USED       312U   //  6 bits unsigned
-#define FIX2_OFFSET_STATUS          318U   //  2 bits unsigned
-
 #define CM_PER_METRE                100
+
+static float dronecanDecodeFloat16(const CanardRxTransfer *t, uint32_t bitOffset)
+{
+    uint16_t raw = 0;
+    canardDecodeScalar(t, bitOffset, 16, false, &raw);
+    return canardConvertFloat16ToNativeFloat(raw);
+}
 
 // Scale 1e8 degrees down to the betaflight 1e7 convention. Divide before
 // the int32 cast so we don't overflow on high-latitude values.
@@ -75,31 +68,135 @@ static volatile uint32_t latestSeq = 0;
 static volatile bool received = false;
 static volatile timeUs_t lastUpdateUs = 0;
 
+// Auxiliary hdop/vdop are only carried across Fix2 refreshes while fresh, so
+// a module that stops broadcasting Auxiliary can't pin stale quality figures
+// to live positions. Both handlers run in the dronecan task, so no seqlock.
+#define DRONECAN_GNSS_AUX_FRESH_US 2000000
+static timeUs_t auxUpdateUs = 0;
+static bool auxReceived = false;
+
 static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
 {
     UNUSED(ins);
 
+    uint64_t gnssTimeUsec = 0;
+    uint8_t timeStandard = 0;
     int64_t lon_1e8 = 0;
     int64_t lat_1e8 = 0;
-    int32_t height_msl_mm = 0;
-    uint16_t velN_f16 = 0;
-    uint16_t velE_f16 = 0;
-    uint16_t velD_f16 = 0;
+    int32_t heightMslMm = 0;
+    float velN = 0.0f;
+    float velE = 0.0f;
+    float velD = 0.0f;
     uint8_t satsUsed = 0;
     uint8_t status = 0;
 
-    canardDecodeScalar(t, FIX2_OFFSET_LONGITUDE_1E8,  37, true,  &lon_1e8);
-    canardDecodeScalar(t, FIX2_OFFSET_LATITUDE_1E8,   37, true,  &lat_1e8);
-    canardDecodeScalar(t, FIX2_OFFSET_HEIGHT_MSL_MM,  27, true,  &height_msl_mm);
-    canardDecodeScalar(t, FIX2_OFFSET_VEL_N_F16,      16, false, &velN_f16);
-    canardDecodeScalar(t, FIX2_OFFSET_VEL_E_F16,      16, false, &velE_f16);
-    canardDecodeScalar(t, FIX2_OFFSET_VEL_D_F16,      16, false, &velD_f16);
-    canardDecodeScalar(t, FIX2_OFFSET_SATS_USED,       6, false, &satsUsed);
-    canardDecodeScalar(t, FIX2_OFFSET_STATUS,          2, false, &status);
+    // Walk the payload as a running bit offset: the covariance/pdop tail is
+    // variable-length, so it can't be reached with absolute offsets. Note
+    // ned_velocity is float32[3] (96 bits) — a narrower read would misalign
+    // every field that follows it.
+    uint32_t bit = 0;
+    bit += 56;                                                       // timestamp
+    canardDecodeScalar(t, bit, 56, false, &gnssTimeUsec); bit += 56; // gnss_timestamp
+    canardDecodeScalar(t, bit,  3, false, &timeStandard); bit += 3;
+    bit += 13;                                                       // void13
+    bit += 8;                                                        // num_leap_seconds
+    canardDecodeScalar(t, bit, 37, true,  &lon_1e8);      bit += 37;
+    canardDecodeScalar(t, bit, 37, true,  &lat_1e8);      bit += 37;
+    bit += 27;                                                       // height_ellipsoid_mm
+    canardDecodeScalar(t, bit, 27, true,  &heightMslMm);  bit += 27;
+    canardDecodeScalar(t, bit, 32, false, &velN);         bit += 32;
+    canardDecodeScalar(t, bit, 32, false, &velE);         bit += 32;
+    canardDecodeScalar(t, bit, 32, false, &velD);         bit += 32;
+    canardDecodeScalar(t, bit,  6, false, &satsUsed);     bit += 6;
+    canardDecodeScalar(t, bit,  2, false, &status);       bit += 2;
+    bit += 4;                                                        // mode
+    bit += 6;                                                        // sub_mode
 
-    const float velN = canardConvertFloat16ToNativeFloat(velN_f16);
-    const float velE = canardConvertFloat16ToNativeFloat(velE_f16);
-    const float velD = canardConvertFloat16ToNativeFloat(velD_f16);
+    uint32_t hAccMm = 0;
+    uint32_t vAccMm = 0;
+    uint32_t sAccMmS = 0;
+    uint16_t pdop100 = 0;
+
+    const uint32_t payloadBits = (uint32_t)t->payload_len * 8U;
+    if (bit + 6U <= payloadBits) {
+        uint8_t covLength = 0;
+        canardDecodeScalar(t, bit, 6, false, &covLength); bit += 6;
+
+        // Covariance is a 6x6 position/velocity matrix; modules send a scalar
+        // (1), the diagonal (6), the upper triangle row-major (21) or the full
+        // row-major matrix (36). Guard the claimed length against the payload
+        // so a truncated or malformed transfer can't be read past its end.
+        float diag[6];
+        bool haveDiag = false;
+        if (bit + (uint32_t)covLength * 16U <= payloadBits) {
+            // Diagonal element positions within the upper-triangular encoding.
+            static const uint8_t triDiag[6] = { 0, 6, 11, 15, 18, 20 };
+            switch (covLength) {
+            case 1: {
+                const float var = dronecanDecodeFloat16(t, bit);
+                for (unsigned i = 0; i < 6; i++) {
+                    diag[i] = var;
+                }
+                haveDiag = true;
+                break;
+            }
+            case 6:
+                for (unsigned i = 0; i < 6; i++) {
+                    diag[i] = dronecanDecodeFloat16(t, bit + i * 16U);
+                }
+                haveDiag = true;
+                break;
+            case 21:
+                for (unsigned i = 0; i < 6; i++) {
+                    diag[i] = dronecanDecodeFloat16(t, bit + triDiag[i] * 16U);
+                }
+                haveDiag = true;
+                break;
+            case 36:
+                for (unsigned i = 0; i < 6; i++) {
+                    diag[i] = dronecanDecodeFloat16(t, bit + (i * 6U + i) * 16U);
+                }
+                haveDiag = true;
+                break;
+            default:
+                break;
+            }
+        }
+
+        if (haveDiag) {
+            const float hVar = 0.5f * (diag[0] + diag[1]);
+            const float vVar = diag[2];
+            const float sVar = (diag[3] + diag[4] + diag[5]) / 3.0f;
+            if (hVar > 0.0f) {
+                hAccMm = (uint32_t)(sqrtf(hVar) * 1000.0f);
+            }
+            if (vVar > 0.0f) {
+                vAccMm = (uint32_t)(sqrtf(vVar) * 1000.0f);
+            }
+            if (sVar > 0.0f) {
+                sAccMmS = (uint32_t)(sqrtf(sVar) * 1000.0f);
+            }
+        }
+
+        bit += (uint32_t)covLength * 16U;
+        if (bit + 16U <= payloadBits) {
+            const float pdop = dronecanDecodeFloat16(t, bit);
+            if (!isnan(pdop) && pdop > 0.0f) {
+                pdop100 = (uint16_t)constrainf(pdop * 100.0f, 0, UINT16_MAX);
+            }
+        }
+    }
+
+    gpsDateTime_t dateTime;
+    memset(&dateTime, 0, sizeof(dateTime));
+    // GPS/TAI stamps need leap-second bookkeeping to become a wall clock, so
+    // only UTC is converted; other standards leave the calendar untouched.
+    if (timeStandard == UAVCAN_GNSS_TIME_STANDARD_UTC && gnssTimeUsec != 0) {
+        gpsUnixSecondsToDateTime(&dateTime,
+                                 (int64_t)(gnssTimeUsec / 1000000ULL),
+                                 (uint16_t)((gnssTimeUsec / 1000ULL) % 1000ULL));
+        dateTime.valid = true;
+    }
 
     const float speed2d = sqrtf(velN * velN + velE * velE);
     const float speed3d = sqrtf(velN * velN + velE * velE + velD * velD);
@@ -114,10 +211,17 @@ static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
     latestSeq++;
     __asm volatile ("" ::: "memory");
 
+    // hdop/vdop arrive on the Auxiliary message; carry them across the reset
+    // only while Auxiliary is still broadcasting.
+    const bool auxFresh = auxReceived
+            && cmpTimeUs(micros(), auxUpdateUs) < DRONECAN_GNSS_AUX_FRESH_US;
+    const uint16_t hdop = auxFresh ? latest.dop.hdop : 0;
+    const uint16_t vdop = auxFresh ? latest.dop.vdop : 0;
+
     memset(&latest, 0, sizeof(latest));
     latest.llh.lat   = scaleLonLat_1e8to1e7(lat_1e8);
     latest.llh.lon   = scaleLonLat_1e8to1e7(lon_1e8);
-    latest.llh.altCm = height_msl_mm / 10; // mm -> cm
+    latest.llh.altCm = heightMslMm / 10; // mm -> cm
     // Fix2 reports NED and gpsVelned_t is NED, so forward N/E/D unchanged
     // (velD is Down, positive downward).
     latest.velned.velN = (int16_t)constrainf(velN * CM_PER_METRE, INT16_MIN, INT16_MAX);
@@ -127,6 +231,13 @@ static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
     latest.speed3d     = (uint16_t)constrainf(speed3d * CM_PER_METRE, 0, UINT16_MAX);
     latest.groundCourse = (uint16_t)constrainf(courseDeg * 10.0f, 0, UINT16_MAX);
     latest.numSat      = satsUsed;
+    latest.acc.hAcc    = hAccMm;
+    latest.acc.vAcc    = vAccMm;
+    latest.acc.sAcc    = sAccMmS;
+    latest.dop.pdop    = pdop100;
+    latest.dop.hdop    = hdop;
+    latest.dop.vdop    = vdop;
+    latest.dateTime    = dateTime;
 
     // Signal a loss of fix explicitly so the downstream state can react
     // rather than stay armed on the last position.
@@ -142,6 +253,33 @@ static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
     latestSeq++;
 }
 
+static void handleAuxiliary(CanardInstance *ins, CanardRxTransfer *t)
+{
+    UNUSED(ins);
+
+    // Field order is gdop, pdop, hdop, vdop, ...; only hdop/vdop are taken —
+    // pdop stays sourced from Fix2 so both providers scale it identically.
+    // Unknown DOP values are transmitted as NaN.
+    const float hdop = dronecanDecodeFloat16(t, 32);
+    const float vdop = dronecanDecodeFloat16(t, 48);
+
+    auxUpdateUs = micros();
+    auxReceived = true;
+
+    latestSeq++;
+    __asm volatile ("" ::: "memory");
+
+    if (!isnan(hdop) && hdop > 0.0f) {
+        latest.dop.hdop = (uint16_t)constrainf(hdop * 100.0f, 0, UINT16_MAX);
+    }
+    if (!isnan(vdop) && vdop > 0.0f) {
+        latest.dop.vdop = (uint16_t)constrainf(vdop * 100.0f, 0, UINT16_MAX);
+    }
+
+    __asm volatile ("" ::: "memory");
+    latestSeq++;
+}
+
 void dronecanGnssInit(void)
 {
     // Clear the cache before registering so a frame that lands between
@@ -149,14 +287,24 @@ void dronecanGnssInit(void)
     memset(&latest, 0, sizeof(latest));
     received = false;
     lastUpdateUs = 0;
+    auxUpdateUs = 0;
+    auxReceived = false;
 
-    const dronecanSubscriber_t sub = {
+    const dronecanSubscriber_t fix2Sub = {
         .signature    = UAVCAN_GNSS_FIX2_SIGNATURE,
         .dataTypeId   = UAVCAN_GNSS_FIX2_ID,
         .transferType = CanardTransferTypeBroadcast,
         .handler      = handleFix2,
     };
-    (void)dronecanRegisterSubscriber(&sub);
+    (void)dronecanRegisterSubscriber(&fix2Sub);
+
+    const dronecanSubscriber_t auxSub = {
+        .signature    = UAVCAN_GNSS_AUXILIARY_SIGNATURE,
+        .dataTypeId   = UAVCAN_GNSS_AUXILIARY_ID,
+        .transferType = CanardTransferTypeBroadcast,
+        .handler      = handleAuxiliary,
+    };
+    (void)dronecanRegisterSubscriber(&auxSub);
 }
 
 bool dronecanGnssGetLatest(gpsSolutionData_t *out)
@@ -206,4 +354,4 @@ timeUs_t dronecanGnssLastUpdateUs(void)
     return t;
 }
 
-#endif // ENABLE_DRONECAN
+#endif // ENABLE_DRONECAN && USE_GPS

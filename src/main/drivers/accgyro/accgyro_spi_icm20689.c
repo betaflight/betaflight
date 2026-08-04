@@ -38,7 +38,7 @@
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
-// 10 MHz max SPI frequency
+// 8 MHz max SPI frequency
 #define ICM20689_MAX_SPI_CLK_HZ 8000000
 
 // Register 0x37 - INT_PIN_CFG / Pin Bypass Enable Configuration

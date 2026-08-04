@@ -104,7 +104,8 @@ void handleIbusTelemetry(void)
         return;
     }
 
-    while (serialRxBytesWaiting(ibusSerialPort) > 0) {
+    uint32_t rxBytesWaiting = serialRxBytesWaiting(ibusSerialPort);
+    while (rxBytesWaiting-- > 0) {
         uint8_t c = serialRead(ibusSerialPort);
 
         if (outboundBytesToIgnoreOnRxCount) {

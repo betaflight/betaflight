@@ -42,7 +42,7 @@ void positionEstimatorInit(void);
 void positionEstimatorUpdate(void);
 
 // Request XY fusion (normally automatic from armed state / sensors / modes).
-// May re-initialize kfX/kfY when transitioning to enabled; disabling stops prediction only.
+// May re-initialize kfEast/kfNorth when transitioning to enabled; disabling stops prediction only.
 void positionEstimatorEnableXY(bool enable);
 
 // Read the unified estimate
@@ -53,6 +53,9 @@ float positionEstimatorGetAltitudeDerivative(void);
 bool positionEstimatorIsValidXY(void);
 bool positionEstimatorIsValidZ(void);
 float positionEstimatorGetTrustXY(void);
+// True when GPS has a fix and is not excluded by positionSource config.
+// Use to decide whether heading validity is required before engaging position hold.
+bool positionEstimatorIsHeadingRequired(void);
 
 // Reset (e.g. on arm/disarm)
 void positionEstimatorResetZ(void);

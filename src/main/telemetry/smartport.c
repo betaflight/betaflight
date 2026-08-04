@@ -914,12 +914,13 @@ void handleSmartPortTelemetry(void)
     if (telemetryState == TELEMETRY_STATE_INITIALIZED_SERIAL && smartPortSerialPort) {
         smartPortPayload_t *payload = NULL;
         bool clearToSend = false;
-        while (serialRxBytesWaiting(smartPortSerialPort) > 0 && !payload) {
+        uint32_t rxBytesWaiting = serialRxBytesWaiting(smartPortSerialPort);
+        while (rxBytesWaiting-- > 0 && !payload) {
             uint8_t c = serialRead(smartPortSerialPort);
             payload = smartPortDataReceive(c, &clearToSend, serialReadyToSend, true);
         }
 
-            processSmartPortTelemetry(payload, &clearToSend, &requestTimeout);
+        processSmartPortTelemetry(payload, &clearToSend, &requestTimeout);
     }
 }
 #endif

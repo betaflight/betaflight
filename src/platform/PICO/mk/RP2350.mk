@@ -46,7 +46,7 @@ ifeq ($(DEBUG_HARDFAULTS),PICO)
 CFLAGS          += -DDEBUG_HARDFAULTS
 endif
 
-SDK_DIR         = $(LIB_MAIN_DIR)/pico-sdk/src
+SDK_DIR         = $(LIB_MODULES_DIR)/pico-sdk/src
 
 #CMSIS
 CMSIS_DIR      := $(SDK_DIR)/rp2_common/cmsis/stub/CMSIS
@@ -106,7 +106,7 @@ PICO_LIB_SRC = \
             rp2_common/pico_stdlib/stdlib.c \
             rp2_common/pico_bit_ops/bit_ops_aeabi.S
 
-TINY_USB_SRC_DIR = $(LIB_MAIN_DIR)/pico-sdk/lib/tinyusb/src
+TINY_USB_SRC_DIR = $(LIB_MODULES_DIR)/pico-sdk/lib/tinyusb/src
 TINYUSB_SRC := \
             $(TINY_USB_SRC_DIR)/tusb.c \
             $(TINY_USB_SRC_DIR)/class/cdc/cdc_device.c \
@@ -370,7 +370,7 @@ SYS_INCLUDE_DIRS = \
             $(SDK_DIR)/$(TARGET_MCU_LIB_LOWER)/pico_platform/include \
             $(SDK_DIR)/$(TARGET_MCU_LIB_LOWER)/hardware_regs/include \
             $(SDK_DIR)/$(TARGET_MCU_LIB_LOWER)/hardware_structs/include \
-            $(LIB_MAIN_DIR)/pico-sdk/lib/tinyusb/src
+            $(LIB_MODULES_DIR)/pico-sdk/lib/tinyusb/src
 
 SYS_INCLUDE_DIRS += \
             $(SDK_DIR)/rp2350/boot_stage2/include
@@ -487,7 +487,7 @@ DEVICE_FLAGS    += \
 # Set the sizes of flash and contents in LD_SCRIPT, other linker files loaded via EXTRA_LD_FLAGS.
 
 # Optional board-specific linker script for setting the size of the primary flash, and the allocation for fonts.
-CONFIG_FLASH_MEM_SCRIPT = $(CONFIG_DIR)/configs/$(CONFIG)/pico_flash_mem.ld
+CONFIG_FLASH_MEM_SCRIPT = $(CONFIG_PATH)/pico_flash_mem.ld
 
 # If pico_flash_mem.ld exists in the config folder, use that, otherwise load defaults from pico_flash_mem_defaults.ld
 ifneq ($(wildcard $(CONFIG_FLASH_MEM_SCRIPT)),)
@@ -627,5 +627,5 @@ $(PICO_LIB_TARGETS): CC_DEFAULT_OPTIMISATION := $(PICO_LIB_OPTIMISATION)
 # that can't work if build uses lto (link time optimisation has the effect of
 # breaking files up into temporary files)
 ifeq ($(RUN_FROM_RAM),1)
-OPTIMISATION_BASE     := $(filter-out -flto=auto, $(OPTIMISATION_BASE))
+LTO                   := no
 endif

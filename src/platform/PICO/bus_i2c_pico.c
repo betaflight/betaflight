@@ -29,6 +29,8 @@
 
 #include "pg/bus_i2c.h"
 
+#include "common/maths.h"
+
 #include "hardware/i2c.h"
 #include "hardware/dma.h"
 #include "hardware/irq.h"

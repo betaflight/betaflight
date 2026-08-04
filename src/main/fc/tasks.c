@@ -139,13 +139,13 @@ static void taskMain(timeUs_t currentTimeUs)
 static void taskHandleSerial(timeUs_t currentTimeUs)
 {
 #if ENABLE_BF_OBL
-    // OBL arms IWDG before jumping to BF. Refresh it from TASK_SERIAL —
-    // the scheduler exempts TASK_SERIAL from the time-budget check, so
-    // it's the one task we can rely on to be picked at its nominal rate.
-    // If the scheduler itself wedges, IWDG fires and OBL routes the next
-    // boot to DFU.
+    // OBL armed IWDG before BXNS; refresh from TASK_SERIAL — the
+    // scheduler exempts TASK_SERIAL from the time-budget check so it
+    // always runs at its nominal rate. If scheduler itself wedges,
+    // refresh stops, IWDG fires and OBL routes the next boot to DFU.
     BF_OBL_IWDG_REFRESH();
 #endif
+
     UNUSED(currentTimeUs);
 
 #if defined(USE_VCP)
@@ -216,7 +216,7 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
         break;
 
     case RX_STATE_UPDATE:
-        // updateRcCommands sets rcCommand, which is needed by updateAltHold and updateSonarAltHoldState
+        // updateRcCommands sets rcCommand, which is needed by updateAltHold
         updateRcCommands();
         updateArmingStatus();
 
@@ -480,7 +480,7 @@ task_attribute_t task_attributes[TASK_COUNT] = {
     [TASK_OPTICALFLOW] = DEFINE_TASK("OPTICALFLOW", NULL, NULL, taskUpdateOpticalflow, TASK_PERIOD_HZ(10), TASK_PRIORITY_LOWEST),
 #endif
 #ifdef USE_CRSF_V3
-    [TASK_SPEED_NEGOTIATION] = DEFINE_TASK("SPEED_NEGOTIATION", NULL, NULL, speedNegotiationProcess, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
+    [TASK_SPEED_NEGOTIATION] = DEFINE_TASK("SPEED_NEGOT'N", NULL, NULL, speedNegotiationProcess, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
 #endif
 
 #ifdef USE_RC_STATS

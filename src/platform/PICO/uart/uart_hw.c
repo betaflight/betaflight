@@ -299,20 +299,19 @@ void uartReconfigure_hw(uartPort_t *s)
     // so we only consider option changes to baud rate and mode here.
 
     uart_inst_t *uartInstance = UART_INST(s->USARTx);
-    bprintf("uartReconfigure for port %p with USARTX %p", s, uartInstance);
     int achievedBaudrate = uart_init(uartInstance, s->port.baudRate);
-#ifdef PICO_TRACE
+#if defined(PICO_TRACE_UART_EXTRA) && defined(PICO_TRACE)
+    bprintf("uartReconfigure for port %p with USARTX %p", s, uartInstance);
     bprintf("uartReconfigure h/w %p, requested baudRate %d, achieving %d", uartInstance, s->port.baudRate, achievedBaudrate);
+    bprintf("uartReconfigure note options 0x%0x, port.mode = 0x%x", s->port.options, s->port.mode);
 #else
     UNUSED(achievedBaudrate);
 #endif
 
-    bprintf("uartReconfigure note options 0x%0x, port.mode = 0x%x", s->port.options, s->port.mode);
 
 // TODO would like to verify rx pin has been setup?
 //    if ((s->mode & MODE_RX) && rxIO) {
     if (s->port.mode & MODE_RX) {
-        bprintf("serialUART setting RX irq");
         uart_set_irqs_enabled(uartInstance, true, false);
     }
 }

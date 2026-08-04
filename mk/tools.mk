@@ -332,7 +332,7 @@ breakpad_clean:
 
 # Platform-specific tools
 # Each platform tools.mk appends to PLATFORM_SDKS and defines per-SDK properties:
-#   PLATFORM_SDK_<name>_SUBMODULE  - submodule path (e.g. lib/main/pico-sdk)
+#   PLATFORM_SDK_<name>_SUBMODULE  - submodule path (e.g. lib/modules/pico-sdk)
 #   PLATFORM_SDK_<name>_HYDRATE   - make target to hydrate the SDK
 #   PLATFORM_SDK_<name>_TOOLS     - make targets to install required toolchains and tools
 #
@@ -363,10 +363,13 @@ else
 endif
 
 ## platform-sdk-cache-key-print : print cache key for SDK specified by SDK= variable
+# The path component is included so relocating a submodule (e.g. lib/main → lib/modules)
+# busts the cache; otherwise the gitlink SHA is unchanged across a path move and a stale
+# cache from the old path would be restored over the new one.
 .PHONY: platform-sdk-cache-key-print
 platform-sdk-cache-key-print:
 ifneq ($(PLATFORM_SDK_$(SDK)_SUBMODULE),)
-	@echo $(shell git rev-parse HEAD:$(PLATFORM_SDK_$(SDK)_SUBMODULE) 2>/dev/null)
+	@echo $(subst /,-,$(PLATFORM_SDK_$(SDK)_SUBMODULE))-$(shell git rev-parse HEAD:$(PLATFORM_SDK_$(SDK)_SUBMODULE) 2>/dev/null)
 else
 	@echo "base"
 endif

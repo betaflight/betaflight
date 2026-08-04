@@ -670,13 +670,6 @@ void saSetPitFreq(uint16_t freq)
     saSetFreq(freq | SA_FREQ_SETPIT);
 }
 
-#if 0
-static void saGetPitFreq(void)
-{
-    saDoDevSetFreq(SA_FREQ_GETPIT);
-}
-#endif
-
 void saSetMode(int mode)
 {
     static uint8_t buf[6] = { 0xAA, 0x55, SACMD(SA_CMD_SET_MODE), 1 };
