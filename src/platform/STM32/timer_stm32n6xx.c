@@ -67,9 +67,6 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM2,  CH3,  PA2,  0, 0, 0),
     DEF_TIM(TIM5,  CH3,  PA2,  0, 0, 0),
     DEF_TIM(TIM15, CH1,  PA2,  0, 0, 0),
-    DEF_TIM(TIM2,  CH4,  PA3,  0, 0, 0),
-    DEF_TIM(TIM5,  CH4,  PA3,  0, 0, 0),
-    DEF_TIM(TIM15, CH2,  PA3,  0, 0, 0),
     DEF_TIM(TIM16, CH1,  PA3,  0, 0, 0),
     DEF_TIM(TIM2,  CH1,  PA5,  0, 0, 0),
     DEF_TIM(TIM9,  CH2,  PA5,  0, 0, 0),
@@ -88,7 +85,6 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 
 // Port B
     DEF_TIM(TIM1,  CH4,  PB0,  0, 0, 0),
-    DEF_TIM(TIM3,  CH3,  PB0,  0, 0, 0),
     DEF_TIM(TIM15, CH1N, PB0,  0, 0, 0),
     DEF_TIM(TIM1,  CH3N, PB1,  0, 0, 0),
     DEF_TIM(TIM3,  CH4,  PB1,  0, 0, 0),
@@ -132,12 +128,9 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 
 // Port E
     DEF_TIM(TIM1,  CH2N, PE2,  0, 0, 0),
-    DEF_TIM(TIM15, CH1N, PE4,  0, 0, 0),
     DEF_TIM(TIM4,  CH1,  PE5,  0, 0, 0),
-    DEF_TIM(TIM15, CH1,  PE5,  0, 0, 0),
     DEF_TIM(TIM16, CH1N, PE5,  0, 0, 0),
     DEF_TIM(TIM4,  CH2,  PE6,  0, 0, 0),
-    DEF_TIM(TIM15, CH2,  PE6,  0, 0, 0),
     DEF_TIM(TIM17, CH1N, PE6,  0, 0, 0),
     DEF_TIM(TIM1,  CH1N, PE8,  0, 0, 0),
     DEF_TIM(TIM1,  CH1,  PE9,  0, 0, 0),

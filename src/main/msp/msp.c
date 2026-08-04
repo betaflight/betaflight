@@ -94,6 +94,7 @@
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
+#include "io/displayport_msp.h"
 #include "io/flashfs.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
@@ -643,10 +644,32 @@ RAM_CODE static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, 
 #endif // USE_FLASHFS
 
 /*
+ * Returns true when the request arrived on the UART shared between FUNCTION_MSP and
+ * FUNCTION_VTX_MSP, i.e. from an HD VTX rather than from Configurator.
+ *
+ * Replies to that port have to stay within the wire format the oldest MSP-query type OSD
+ * consumers can still parse. The DJI V1 air unit / Caddx Vista renders the OSD itself from
+ * MSP_OSD_CONFIG and silently drops the whole reply - and with it every OSD element - once it
+ * outgrows the Betaflight 4.5 layout. Configurator, on VCP, keeps receiving the full reply.
+ */
+RAM_CODE static bool mspSrcIsVtxPort(mspDescriptor_t srcDesc)
+{
+#ifdef USE_MSP_DISPLAYPORT
+    const serialPortIdentifier_e vtxPort = displayPortMspGetSerial();
+
+    return vtxPort != SERIAL_PORT_NONE && srcDesc == getMspSerialPortDescriptor(vtxPort);
+#else
+    UNUSED(srcDesc);
+
+    return false;
+#endif
+}
+
+/*
  * Returns true if the command was processd, false otherwise.
  * May set mspPostProcessFunc to a function to be called once the command has been processed
  */
-RAM_CODE static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
+RAM_CODE static bool mspCommonProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
 {
     UNUSED(mspPostProcessFn);
 
@@ -665,7 +688,10 @@ RAM_CODE static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, msp
         sbufWriteU8(dst, (uint8_t)(FC_VERSION_YEAR - FC_CALVER_BASE_YEAR)); // year since 2000
         sbufWriteU8(dst, FC_VERSION_MONTH);
         sbufWriteU8(dst, FC_VERSION_PATCH_LEVEL);
-        sbufWritePString(dst, FC_VERSION_STRING);
+        if (!mspSrcIsVtxPort(srcDesc)) {
+            // this reply was 3 bytes up to and including API 1.46; keep that shape for HD VTXs
+            sbufWritePString(dst, FC_VERSION_STRING);
+        }
         break;
 
     case MSP2_MCU_INFO: {
@@ -978,6 +1004,10 @@ RAM_CODE static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, msp
 #define OSD_FLAGS_OSD_HARDWARE_FB_OSD   (1 << 4)
 #endif
 
+        // HD VTXs are served the MSP API 1.46 layout, see mspSrcIsVtxPort()
+        const bool legacyLayout = mspSrcIsVtxPort(srcDesc);
+        const uint8_t itemCount = legacyLayout ? OSD_ITEM_COUNT_API_1_46 : OSD_ITEM_COUNT;
+
         uint8_t osdFlags = 0;
 
         osdFlags |= OSD_FLAGS_OSD_FEATURE;
@@ -1044,12 +1074,12 @@ RAM_CODE static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, msp
 
         // Reuse old timer alarm (U16) as OSD_ITEM_COUNT
         sbufWriteU8(dst, 0);
-        sbufWriteU8(dst, OSD_ITEM_COUNT);
+        sbufWriteU8(dst, itemCount);
 
         sbufWriteU16(dst, osdConfig()->alt_alarm);
 
         // Element position and visibility
-        for (int i = 0; i < OSD_ITEM_COUNT; i++) {
+        for (int i = 0; i < itemCount; i++) {
             sbufWriteU16(dst, osdElementConfig()->item_pos[i]);
         }
 
@@ -1098,8 +1128,10 @@ RAM_CODE static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, msp
         // API >= 1.46
         sbufWriteU16(dst, osdConfig()->link_quality_alarm);
 
-        // API >= 1.47
-        sbufWriteU16(dst, osdConfig()->rssi_dbm_alarm);
+        if (!legacyLayout) {
+            // API >= 1.47
+            sbufWriteU16(dst, osdConfig()->rssi_dbm_alarm);
+        }
 
         break;
     }
@@ -4776,7 +4808,7 @@ RAM_CODE mspResult_e mspFcProcessCommand(mspDescriptor_t srcDesc, mspPacket_t *c
     // initialize reply by default
     reply->cmd = cmd->cmd;
 
-    if (mspCommonProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
+    if (mspCommonProcessOutCommand(srcDesc, cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
     } else if (mspProcessOutCommand(srcDesc, cmdMSP, dst)) {
         ret = MSP_RESULT_ACK;
@@ -4804,7 +4836,7 @@ RAM_CODE static mspResult_e mspFcProcessOutCommand(mspDescriptor_t srcDesc, int1
     // initialize reply by default
     reply->cmd = cmdMSP;
 
-    if (mspCommonProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
+    if (mspCommonProcessOutCommand(srcDesc, cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
     } else if (mspProcessOutCommand(srcDesc, cmdMSP, dst)) {
         ret = MSP_RESULT_ACK;
