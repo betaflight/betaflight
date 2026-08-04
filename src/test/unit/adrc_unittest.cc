@@ -29,6 +29,9 @@
 #include <math.h>
 
 static float simulatedThrottle = 0.0f;
+// Commanded collective, tracked separately from the applied one above: airmode raises the applied
+// value on the ground while the commanded one stays at zero, and the gate keys on it (ADRC-026).
+static float simulatedCommandedThrottle = 0.0f;
 
 extern "C" {
     #include "common/axis.h"
@@ -44,6 +47,7 @@ extern "C" {
     gyro_t gyro;
 
     float mixerGetAdrcThrottle(void) { return simulatedThrottle; }
+    float mixerGetAdrcCommandedThrottle(void) { return simulatedCommandedThrottle; }
 }
 
 #include "unittest_macros.h"
@@ -71,6 +75,7 @@ protected:
     void SetUp() override
     {
         simulatedThrottle = 0.0f;
+        simulatedCommandedThrottle = 0.0f;
         resetGyro();
         adrcResetProfile(&profile);
         adrcInitConfig(&profile, &runtime, TEST_DT);
@@ -88,6 +93,20 @@ protected:
             adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
         }
     }
+
+    // Feed the ADRC-026 excitation - a ~31 Hz square-wave rotation the observer cannot follow, the
+    // measured ground oscillation's signature - and report the largest |z3| reached. The gate state
+    // and throttleAtIdle are left as the caller set them.
+    float drivePeakZ3UnderGroundOscillation(int loops = 200, float amplitudeDps = 120.0f)
+    {
+        float peakZ3 = 0.0f;
+        for (int i = 0; i < loops; i++) {
+            const float gyroRate = ((i % 4) < 2) ? amplitudeDps : -amplitudeDps;
+            adrcApplyControl(&runtime, FD_ROLL, gyroRate, 0.0f, TEST_DT, 500.0f);
+            peakZ3 = fmaxf(peakZ3, std::fabs(runtime.z3[FD_ROLL]));
+        }
+        return peakZ3;
+    }
 };
 
 } // namespace
@@ -104,7 +123,9 @@ TEST_F(AdrcUnittest, GateStaysClosedAtIdle)
 
 TEST_F(AdrcUnittest, GateOpensImmediatelyOnThrottle)
 {
+    // Real pilot throttle: with no axis demand the mixer adds no headroom, so applied == commanded.
     simulatedThrottle = 0.5f; // above the default liftoffThrottlePercent (40%)
+    simulatedCommandedThrottle = 0.5f;
     adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
     EXPECT_TRUE(runtime.liftoff);
 }
@@ -122,6 +143,7 @@ TEST_F(AdrcUnittest, GateOpenDropsGroundEpochOutputBeforeFirstControlStep)
     runtime.lastOutput[FD_ROLL] = 500.0f;
 
     simulatedThrottle = 0.5f;
+    simulatedCommandedThrottle = 0.5f;
     adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
 
     ASSERT_TRUE(runtime.liftoff);
@@ -145,18 +167,22 @@ TEST_F(AdrcUnittest, LiftoffThrottleThresholdIsConfigurable)
 {
     profile.liftoffThrottlePercent = 70;
 
-    simulatedThrottle = 0.5f; // above the default (40%) but below this profile's 70%
+    simulatedThrottle = simulatedCommandedThrottle = 0.5f; // above the default (40%), below this profile's 70%
     adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
     EXPECT_FALSE(runtime.liftoff);
 
-    simulatedThrottle = 0.75f;
+    simulatedThrottle = simulatedCommandedThrottle = 0.75f;
     adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
     EXPECT_TRUE(runtime.liftoff);
 }
 
-TEST_F(AdrcUnittest, GateOpensOnSustainedRotationWithoutThrottle)
+TEST_F(AdrcUnittest, GateOpensOnSustainedRotationBelowLiftoffThrottle)
 {
     simulatedThrottle = 0.0f;
+    // The toss-launch path still opens the gate well below liftoffThrottlePercent (40%), but it now
+    // also requires the stick to be above half of it (ADRC-026); 25% satisfies that and would never
+    // open the direct throttle branch on its own.
+    simulatedCommandedThrottle = 0.25f;
     gyro.gyroADCf[FD_ROLL] = 25.0f; // above the default liftoffGyroDps (20)
 
     // A single loop is shorter than the default liftoffHoldMs (25ms) sustain requirement.
@@ -176,6 +202,7 @@ TEST_F(AdrcUnittest, LiftoffGyroAndHoldThresholdsAreConfigurable)
     profile.liftoffHoldMs = 100; // needs a longer sustain than the default 25ms
 
     simulatedThrottle = 0.0f;
+    simulatedCommandedThrottle = 0.25f; // clears the gyro path's throttle floor (half of 40%)
     gyro.gyroADCf[FD_ROLL] = 25.0f; // above the default (20dps) but below this profile's 50dps
     for (int i = 0; i < 20; i++) {
         adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
@@ -198,7 +225,7 @@ TEST_F(AdrcUnittest, LiftoffGyroAndHoldThresholdsAreConfigurable)
 TEST_F(AdrcUnittest, GateStaysOpenThroughSustainedFloat)
 {
     // Simulate already airborne.
-    simulatedThrottle = 0.6f;
+    simulatedThrottle = simulatedCommandedThrottle = 0.6f;
     adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
     ASSERT_TRUE(runtime.liftoff);
 
@@ -213,6 +240,115 @@ TEST_F(AdrcUnittest, GateStaysOpenThroughSustainedFloat)
         adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
     }
     EXPECT_TRUE(runtime.liftoff);
+}
+
+// --- ADRC-026: ground excitation must not open the gate or charge z3 at idle stick ---
+
+TEST_F(AdrcUnittest, AirmodeHeadroomAloneDoesNotOpenGate)
+{
+    // The logged failure, reduced to its mechanism: on the ground under airmode the mixer raises the
+    // APPLIED collective past liftoffThrottlePercent while nothing was commanded. Re-decoding the
+    // wo = 150 arms put the applied proxy at 30.3-32.2% against their adrc_liftoff_throttle = 30 at
+    // a throttle stick that never moved, so this - not the gyro path - is what opened the gate.
+    profile.liftoffThrottlePercent = 30;    // as flown in those logs
+    simulatedThrottle = 0.32f;              // applied: airmode headroom, past the 30% threshold
+    simulatedCommandedThrottle = 0.0f;      // commanded: nothing asked for it
+
+    for (int i = 0; i < 200; i++) { // 1.6 s, two orders past the 25 ms hold
+        gyro.gyroADCf[FD_ROLL] = (i & 1) ? 120.0f : -120.0f;
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+        EXPECT_FALSE(runtime.liftoff);
+    }
+    EXPECT_FLOAT_EQ(0.0f, runtime.gyroActiveS);
+}
+
+TEST_F(AdrcUnittest, GyroHoldTimerCannotBeBankedBelowTheThrottleFloor)
+{
+    // Rotation sustained at idle must not accumulate hold time that a later throttle blip completes:
+    // the timer resets whenever commanded throttle sits below the floor, so the hold restarts.
+    simulatedCommandedThrottle = 0.0f;
+    gyro.gyroADCf[FD_ROLL] = 25.0f;
+    for (int i = 0; i < 50; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    ASSERT_FALSE(runtime.liftoff);
+
+    // One loop (8 ms) above the floor is still short of the 25 ms hold.
+    simulatedCommandedThrottle = 0.25f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    EXPECT_FALSE(runtime.liftoff);
+}
+
+TEST_F(AdrcUnittest, AutomaticModeThrottleStillOpensGateWithStickAtIdle)
+{
+    // ALT_HOLD/GPS_RESCUE command real throttle with the stick at zero. Those overrides are applied
+    // upstream of where the mixer samples the commanded collective, so it carries them and the gate
+    // still opens - otherwise an autonomous climb would fly with b0*u feedback held at zero.
+    simulatedThrottle = 0.5f;
+    simulatedCommandedThrottle = 0.5f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    EXPECT_TRUE(runtime.liftoff);
+}
+
+TEST_F(AdrcUnittest, Z3GrowthIsInhibitedWhileUngatedAtIdleThrottle)
+{
+    // Drive the observer with the excitation that caused the failure rather than a steady rate: a
+    // constant rate is tracked exactly (errorEso -> 0, z3 -> 0 with or without any inhibit), so it
+    // would pass this test vacuously. An oscillation the observer cannot follow is what charges z3.
+    simulatedCommandedThrottle = 0.0f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    ASSERT_FALSE(runtime.liftoff);
+    ASSERT_TRUE(runtime.throttleAtIdle);
+
+    const float peakZ3 = drivePeakZ3UnderGroundOscillation();
+    // Reference: the same excitation with the gate open charges z3 four orders higher (asserted in
+    // Z3StaysLiveThroughAirborneZeroThrottleFloat below).
+    EXPECT_LT(peakZ3, 1000.0f);
+}
+
+TEST_F(AdrcUnittest, Z3GrowsWhileUngatedOnceThrottleLeavesIdle)
+{
+    // The inhibit is scoped to idle: a spool-up below liftoffThrottlePercent is still a real command
+    // the observer must be free to estimate against.
+    simulatedCommandedThrottle = 0.30f; // above the floor (20%), below liftoffThrottlePercent (40%)
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    ASSERT_FALSE(runtime.liftoff);
+    ASSERT_FALSE(runtime.throttleAtIdle);
+
+    EXPECT_GT(drivePeakZ3UnderGroundOscillation(), 100000.0f);
+}
+
+TEST_F(AdrcUnittest, Z3StaysLiveThroughAirborneZeroThrottleFloat)
+{
+    // ADRC-020 guard: idle alone must never inhibit z3. Airborne at zero throttle is flying, and its
+    // disturbance estimate has to keep tracking - this is the case that broke when the gate itself
+    // was allowed to close mid-air.
+    simulatedThrottle = simulatedCommandedThrottle = 0.6f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    ASSERT_TRUE(runtime.liftoff);
+
+    simulatedThrottle = 0.0f;
+    simulatedCommandedThrottle = 0.0f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    ASSERT_TRUE(runtime.throttleAtIdle); // idle, but airborne - the inhibit must not engage
+
+    EXPECT_GT(drivePeakZ3UnderGroundOscillation(), 100000.0f);
+}
+
+TEST_F(AdrcUnittest, InhibitedZ3StillDecaysFromAWoundUpValue)
+{
+    // The inhibit blocks growth, not the leak: a z3 charged before the craft settled must still
+    // relax toward zero while it sits ungated at idle.
+    simulatedCommandedThrottle = 0.0f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    ASSERT_FALSE(runtime.liftoff);
+
+    runtime.z3[FD_ROLL] = 50000.0f;
+    const float initialZ3 = runtime.z3[FD_ROLL];
+    for (int i = 0; i < 50; i++) {
+        adrcApplyControl(&runtime, FD_ROLL, 0.0f, 0.0f, TEST_DT, 500.0f);
+    }
+    EXPECT_LT(std::fabs(runtime.z3[FD_ROLL]), std::fabs(initialZ3) * 0.5f);
 }
 
 TEST_F(AdrcUnittest, B0ThrottleScaleTracksSquareOfThrottleRatioAboveHover)

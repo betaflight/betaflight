@@ -72,6 +72,50 @@
 // cannot distinguish a landing from a calm mid-air float, and adrcUpdateArmTransition() below
 // already covers the ground-rep use case it existed for via a fresh epoch on every disarm->arm).
 
+// ADRC-026: on the ground under airmode, the gate opened on a craft whose throttle stick had never
+// moved, and the ESO then integrated ground-contact dynamics it cannot model until the motors ran
+// up to saturation. Which branch let it through is settled by the logs rather than assumed - all
+// five wo = 150 arms (`pr15400-b5-wcwo2x2/`) were re-decoded for this fix:
+//
+//   * The GYRO branch did not fire in any of them. Its hold runs on PID iterations: at these logs'
+//     312 us looptime, adrc_liftoff_hold_ms = 25 needs 81 consecutive iterations above
+//     adrc_liftoff_gyro_dps. Blackbox saved every second iteration (626 us between samples) and
+//     logs the detector's own signal (gyroADC[] = the filtered gyro.gyroADCf); the longest run of
+//     saved samples above the threshold before any gate open was 6 (3.8 ms) - at most 13
+//     consecutive iterations even crediting every unsaved neighbour, against the 81 required.
+//     Consistent with the excitation: a ~28.5 Hz oscillation crosses zero every ~17.5 ms, well
+//     inside a 25 ms hold. That is a reading of these logs, not a general theorem - the test takes
+//     the max over three axes, so a biased, multi-axis or lower-frequency excitation could still
+//     hold it.
+//   * The THROTTLE branch explains every open. The collective proxy (mean motor over the logged
+//     output range) reached 32.1 / 30.3 / 32.2 % on the opening sample of the three arms that
+//     opened, against these logs' adrc_liftoff_throttle = 30, with rcCommand[THROTTLE] at its
+//     minimum throughout.
+//
+// The collective the gate used to read is the mixer's *applied* value, which includes the headroom
+// airmode adds so the axis mix fits - thrust nobody commanded. So the gate now reads
+// mixerGetAdrcCommandedThrottle(): the same collective sampled before that headroom is added, and
+// after the automatic-mode overrides, so ALT_HOLD/GPS_RESCUE still open it with the stick at zero.
+// That value is the commanded collective, NOT the stick - throttle angle correction, throttle
+// limit/boost, the dyn-idle floor and RPM limiting are all still in it (see mixer.c). The gate's
+// question is "was thrust commanded", and those are commands; the distinction that matters here is
+// commanded vs. mixer-added, not pilot vs. firmware. Both branches read it, since the toss-launch
+// floor below asks the same question. The b0 schedule keeps reading the applied value - it needs
+// the thrust that exists, not the thrust that was asked for.
+//
+// The gyro branch additionally requires a minimum throttle. On this evidence that is defence in
+// depth rather than the fix - it closes the toss-launch path against a slower ground excitation
+// (below ~20 Hz, or one-sided) that could hold the test, which no log here shows. Its floor is
+// derived from liftoffThrottlePercent rather than being its own setting because PG_PID_PROFILE's
+// version nibble is 4 bits and already sits at its 15 ceiling, so a new profile field cannot be
+// added without wrapping the version to 0 (a real historical value). The fraction must stay
+// meaningfully below 1: the gyro branch is an `else if` after the direct throttle check, so a floor
+// equal to liftoffThrottlePercent would make the gyro path dead code.
+//
+// Known trade-off: a toss launch thrown at literally zero throttle no longer opens the gate on
+// rotation alone; it opens as soon as the throttle comes up, through either branch.
+#define ADRC_LIFTOFF_GYRO_THROTTLE_FRACTION 0.5f
+
 // The liftoff gate above only zeroes the b0*u term in z2's update - it does nothing to stop z3
 // itself from winding up while grounded. z3 is a leaky integrator of errorEso regardless of gate
 // state, and its steady-state gain (beta3/decayRate) is enormous (beta3 = wo^3, decayRate is a
@@ -81,6 +125,16 @@
 // much faster decay (adrcProfile->gatedZ3DecayRate) so z3 relaxes toward zero instead of
 // accumulating; it still updates smoothly (no reset discontinuity), just can't hold a wound-up
 // value while the craft isn't flying.
+//
+// The faster decay bounds where z3 settles, but not how fast it gets there: under the sustained
+// observer error of a ground oscillation, beta3 = wo^3 outruns it (at wo = 150 the decay time
+// constant is ~50 ms against a per-loop beta3 term three orders larger). While ungated AND at idle
+// throttle, therefore, additionally refuse any update that would grow |z3| - the decay half of the
+// update still applies, so z3 relaxes but cannot accumulate. This is the damage-bounding half of
+// the ADRC-026 pair: keeping the gate shut removes the runaway's trigger, this bounds the charge
+// z3 can carry into any open that still happens. The condition is ungated AND idle, never idle
+// alone: suppressing z3 growth at low throttle while airborne is the ADRC-020 failure - a genuine
+// zero-throttle float is flying, and its disturbance estimate must stay live.
 
 // Throttle-scaled b0 (fix #10a): motor authority scales with RPM, and thrust ~ RPM^2 ~ throttle^2,
 // so a b0 tuned at hover is wrong away from hover. Scaled only UP from hover, clamped to
@@ -301,6 +355,9 @@ void adrcResetGate(adrcRuntime_t *adrcRuntime)
 {
     adrcRuntime->liftoff = false;
     adrcRuntime->gyroActiveS = 0.0f;
+    // adrcUpdatePerLoopState() recomputes this before any control step reads it; seed it to the
+    // grounded-and-idle assumption anyway so a closed gate never pairs with a stale "stick raised".
+    adrcRuntime->throttleAtIdle = true;
 }
 
 void adrcResetAll(adrcRuntime_t *adrcRuntime)
@@ -355,29 +412,39 @@ void adrcUpdatePerLoopState(adrcRuntime_t *adrcRuntime, const adrcProfile_t *adr
     const bool wasLiftoff = adrcRuntime->liftoff;
     const float gyroPeak = fmaxf(fabsf(gyro.gyroADCf[FD_ROLL]),
         fmaxf(fabsf(gyro.gyroADCf[FD_PITCH]), fabsf(gyro.gyroADCf[FD_YAW])));
-    // mixTable() runs after the PID task and publishes the final collective value for the next
-    // PID iteration. This includes ALT_HOLD/GPS_RESCUE overrides and mixer constraints, unlike
-    // mixerGetThrottle(), which intentionally remains the pre-override blackbox/TPA value.
+    // mixTable() runs after the PID task and publishes both collective values for the next PID
+    // iteration. The applied one carries the mixer's airmode headroom and feeds the b0 schedule;
+    // the commanded one is sampled before that headroom and feeds the gate (ADRC-026). Both already
+    // include the ALT_HOLD/GPS_RESCUE overrides, unlike mixerGetThrottle(), which intentionally
+    // remains the pre-override blackbox/TPA value.
     const float rawThrottle = mixerGetAdrcThrottle();
     const float throttle = adrcIsFinite(rawThrottle) ? constrainf(rawThrottle, 0.0f, 1.0f) : 0.0f;
+    const float rawCommandedThrottle = mixerGetAdrcCommandedThrottle();
+    const float commandedThrottle = adrcIsFinite(rawCommandedThrottle)
+        ? constrainf(rawCommandedThrottle, 0.0f, 1.0f) : 0.0f;
     const float finiteDt = (adrcIsFinite(dT) && dT > 0.0f) ? dT : 0.0f;
 
     const float liftoffThrottle = adrcProfile->liftoffThrottlePercent * 0.01f;
     const float liftoffGyroDps = adrcProfile->liftoffGyroDps;
     const float liftoffHoldS = adrcProfile->liftoffHoldMs * 0.001f;
+    const float gyroPathThrottleFloor = liftoffThrottle * ADRC_LIFTOFF_GYRO_THROTTLE_FRACTION;
+    const bool throttleAtIdle = commandedThrottle < gyroPathThrottleFloor;
+    adrcRuntime->throttleAtIdle = throttleAtIdle;
 
     // No mid-air re-arm (ADRC-020): once open, the gate stays open for the rest of the arm cycle.
     // Disarm (adrcUpdateArmTransition() -> adrcResetAll()) is the only ground signal that cannot
     // false-trigger on a smooth zero-throttle float mid-flight.
     if (!adrcRuntime->liftoff) {
-        if (throttle >= liftoffThrottle) {
+        if (commandedThrottle >= liftoffThrottle) {
             adrcRuntime->liftoff = true;
-        } else if (gyroPeak > liftoffGyroDps) {
+        } else if (gyroPeak > liftoffGyroDps && !throttleAtIdle) {
             adrcRuntime->gyroActiveS += finiteDt;
             if (adrcRuntime->gyroActiveS >= liftoffHoldS) {
                 adrcRuntime->liftoff = true;
             }
         } else {
+            // Also clears the hold timer whenever throttle drops back below the floor, so time
+            // spent rotating at idle cannot be banked and then completed by a later throttle blip.
             adrcRuntime->gyroActiveS = 0.0f;
         }
     }
@@ -456,7 +523,18 @@ adrcOutput_t adrcApplyControl(adrcRuntime_t *adrcRuntime, int axis, float gyroRa
     const float z3DecayRate = adrcRuntime->liftoff ? c->decayRate : c->gatedDecayRate;
     adrcRuntime->z1[axis] += finiteDt * (adrcRuntime->z2[axis] - c->beta1 * errorEso);
     adrcRuntime->z2[axis] += finiteDt * (adrcRuntime->z3[axis] + b0u - c->beta2 * errorEso);
-    adrcRuntime->z3[axis] += finiteDt * (-c->beta3 * errorEso - z3DecayRate * adrcRuntime->z3[axis]);
+
+    // Split the z3 step into its decay and observer-error halves so the inhibit below can keep the
+    // former while dropping the latter; with the inhibit inactive the two recombine exactly into
+    // the original single update.
+    const float z3Decayed = adrcRuntime->z3[axis] - finiteDt * z3DecayRate * adrcRuntime->z3[axis];
+    const float z3Updated = z3Decayed - finiteDt * c->beta3 * errorEso;
+    // ADRC-026: while ungated AND at idle stick, admit the observer-error term only when it moves
+    // z3 toward zero. Ground excitation then decays away instead of charging the integrator that
+    // drives the runaway if the gate does open. Both conditions are required - see the comment on
+    // ADRC_LIFTOFF_GYRO_THROTTLE_FRACTION for why idle alone would reintroduce ADRC-020.
+    const bool inhibitZ3Growth = !adrcRuntime->liftoff && adrcRuntime->throttleAtIdle;
+    adrcRuntime->z3[axis] = (inhibitZ3Growth && fabsf(z3Updated) > fabsf(z3Decayed)) ? z3Decayed : z3Updated;
 
     if (!adrcIsFinite(adrcRuntime->z1[axis]) || !adrcIsFinite(adrcRuntime->z2[axis])
         || !adrcIsFinite(adrcRuntime->z3[axis])) {

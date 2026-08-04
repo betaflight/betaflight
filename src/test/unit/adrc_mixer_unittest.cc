@@ -204,6 +204,9 @@ TEST_F(AdrcMixerUnittest, ThrustLinearizationPublishesPhysicalCollectiveDomain)
     EXPECT_NEAR(components.collective, expectedPhysicalCollective, TEST_EPSILON);
     EXPECT_NEAR(mixerGetAdrcThrottle(), components.collective, TEST_EPSILON);
     EXPECT_GT(mixerGetAdrcThrottle(), compensatedThrottle + 0.04f);
+    // The commanded collective is converted to the same physical domain, so a configured
+    // adrc_liftoff_throttle means the same fraction of thrust with and without linearization.
+    EXPECT_NEAR(mixerGetAdrcCommandedThrottle(), mixerGetAdrcThrottle(), TEST_EPSILON);
 }
 
 TEST_F(AdrcMixerUnittest, LinearMixerPublishesNormalizationAppliedToMotorMix)
@@ -307,6 +310,10 @@ TEST_F(AdrcMixerUnittest, MotorStopPublishesZeroAppliedOutput)
 
     expectAdrcFeedback(0.0f, testPidProfile.pidSumLimitYaw);
     EXPECT_FLOAT_EQ(mixerGetAdrcThrottle(), 0.0f);
+    // Both collectives are zeroed here, not just the applied one: a gate left reading a live
+    // commanded value while the motors are stopped would latch liftoff on a craft that is not
+    // even spinning.
+    EXPECT_FLOAT_EQ(mixerGetAdrcCommandedThrottle(), 0.0f);
     for (int i = 0; i < QUAD_MOTOR_COUNT; ++i) {
         EXPECT_FLOAT_EQ(motor[i], mixerRuntime.disarmMotorOutput);
     }
@@ -348,6 +355,80 @@ TEST_F(AdrcMixerUnittest, GpsRescuePublishesPostOverrideThrottle)
 
     expectAdrcFeedback(1.0f, testPidProfile.pidSumLimitYaw);
     EXPECT_NEAR(mixerGetAdrcThrottle(), testAutopilotThrottle, TEST_EPSILON);
+}
+
+// --- ADRC-026: the two collectives, through the real mixer ---
+
+TEST_F(AdrcMixerUnittest, AirmodeHeadroomRaisesAppliedButNotCommandedCollective)
+{
+    // The ground runaway's mechanism, reproduced by the mixer itself: throttle stick at zero, airmode
+    // on, and an axis demand large enough that the mix needs headroom. The applied collective the b0
+    // schedule reads must rise past the liftoff threshold these logs flew (adrc_liftoff_throttle =
+    // 30) - that rise is real thrust, and it is what opened the gate. The commanded collective the
+    // gate now reads must stay at zero, because nothing commanded any of it.
+    testAirmodeEnabled = true;
+    setRcThrottle(0.0f);
+    pidData[FD_ROLL].Sum = PIDSUM_LIMIT_MAX;
+
+    mixTable(10000);
+
+    EXPECT_GT(mixerGetAdrcThrottle(), 0.30f);
+    EXPECT_FLOAT_EQ(mixerGetAdrcCommandedThrottle(), 0.0f);
+}
+
+TEST_F(AdrcMixerUnittest, CommandedCollectiveTracksStickWithoutAirmodeHeadroom)
+{
+    // Without an axis demand there is no headroom to add, so the two agree - the commanded value is
+    // not simply "zero whenever the mixer is busy", it is the stick.
+    testAirmodeEnabled = true;
+    setRcThrottle(0.45f);
+
+    mixTable(11000);
+
+    EXPECT_NEAR(mixerGetAdrcThrottle(), 0.45f, TEST_EPSILON);
+    EXPECT_NEAR(mixerGetAdrcCommandedThrottle(), 0.45f, TEST_EPSILON);
+}
+
+TEST_F(AdrcMixerUnittest, AutomaticModeThrottleReachesCommandedCollective)
+{
+    // The overrides run upstream of the commanded sample, so an autonomous climb with the stick at
+    // zero still publishes real commanded throttle and the gate still opens.
+    setRcThrottle(0.0f);
+    testAutopilotThrottle = 0.55f;
+    flightModeFlags = GPS_RESCUE_MODE;
+    pidData[FD_ROLL].Sum = PIDSUM_LIMIT_MAX;
+
+    mixTable(12000);
+
+    EXPECT_NEAR(mixerGetAdrcCommandedThrottle(), testAutopilotThrottle, TEST_EPSILON);
+}
+
+TEST_F(AdrcMixerUnittest, CommandedCollectiveCarriesUpstreamAutomaticContributions)
+{
+    // Documenting the chosen semantics, because "commanded" is not "stick": everything upstream of
+    // the sample stays in - here the throttle-angle correction. The gate's guarantee is therefore
+    // against mixer-added headroom, not against firmware-added throttle in general. The same holds
+    // for throttle_limit/boost and, where built in, the USE_DYN_IDLE floor and RPM limiting - which
+    // is why an adrc_liftoff_throttle configured down near the CLI's minimum of 1% is not protected
+    // by this fix.
+    setRcThrottle(0.20f);
+    mixerSetThrottleAngleCorrection(100); // +100 of PWM_RANGE == +10% collective
+
+    mixTable(14000);
+
+    EXPECT_NEAR(mixerGetAdrcCommandedThrottle(), 0.30f, 1.0e-3f);
+    EXPECT_NEAR(mixerGetAdrcThrottle(), mixerGetAdrcCommandedThrottle(), TEST_EPSILON);
+}
+
+TEST_F(AdrcMixerUnittest, CrashFlipZeroesBothCollectives)
+{
+    testCrashFlipModeActive = true;
+    setRcThrottle(0.6f);
+
+    mixTable(13000);
+
+    EXPECT_FLOAT_EQ(mixerGetAdrcThrottle(), 0.0f);
+    EXPECT_FLOAT_EQ(mixerGetAdrcCommandedThrottle(), 0.0f);
 }
 
 } // namespace

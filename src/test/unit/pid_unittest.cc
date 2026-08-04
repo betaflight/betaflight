@@ -30,7 +30,11 @@ float simulatedPrevSetpointRate[3] = { 0,0,0 };
 float simulatedRcDeflection[3] = { 0,0,0 };
 float simulatedMaxRcDeflectionAbs = 0;
 float simulatedMixerGetRcThrottle = 0;
-float simulatedThrottle = 0; // used by adrc.c's adrcUpdatePerLoopState()
+float simulatedThrottle = 0; // applied collective; used by adrc.c's b0 schedule
+// Commanded collective - the same value sampled before the mixer adds airmode headroom. On the
+// ground under airmode the two diverge (applied rises, commanded stays at zero), and adrc.c's
+// liftoff gate keys on this one (ADRC-026).
+float simulatedCommandedThrottle = 0;
 float simulatedRcCommandDelta[3] = { 1,1,1 };
 float simulatedRawSetpoint[3] = { 0,0,0 };
 float simulatedMaxRate[3] = { 670,670,670 };
@@ -104,6 +108,7 @@ extern "C" {
     float mixerGetRcThrottle() { return fabsf(simulatedMixerGetRcThrottle); }
     float mixerGetThrottle(void) { return simulatedThrottle; }
     float mixerGetAdrcThrottle(void) { return simulatedThrottle; }
+    float mixerGetAdrcCommandedThrottle(void) { return simulatedCommandedThrottle; }
 
 
     bool isBelowLandingAltitude(void) { return false; }
@@ -198,6 +203,7 @@ void resetTest(void)
     pidRuntime.tpaFactor = 1.0f;
     simulatedMotorMixRange = 0.0f;
     simulatedYawSpinDetected = false;
+    simulatedCommandedThrottle = 0.0f;
 
     pidStabilisationState(PID_STABILISATION_OFF);
     DISABLE_ARMING_FLAG(ARMED);
@@ -913,7 +919,7 @@ TEST(pidControllerTest, testAdrcArmTransitionStartsFreshEpoch)
 
     // Arm cycle 1: open the gate via the throttle condition, then land carrying a stale
     // disturbance estimate (the post-landing ground-contact windup measured in flight).
-    simulatedThrottle = 0.6f;
+    simulatedThrottle = simulatedCommandedThrottle = 0.6f;
     pidController(pidProfile, currentTestTime());
     EXPECT_TRUE(pidRuntime.adrc.liftoff);
     pidRuntime.adrc.z3[FD_ROLL] = 100000.0f;
@@ -921,7 +927,7 @@ TEST(pidControllerTest, testAdrcArmTransitionStartsFreshEpoch)
     // Disarm. With the stock default pid_at_min_throttle = ON, pidStabilisationEnabled stays true
     // while disarmed, so the stabilisation-disabled reset branch must not be relied on here.
     DISABLE_ARMING_FLAG(ARMED);
-    simulatedThrottle = 0.0f;
+    simulatedThrottle = simulatedCommandedThrottle = 0.0f;
     pidController(pidProfile, currentTestTime());
 
     // Re-arm: a fresh epoch must begin - gate closed, no inherited disturbance trim. Fails on the

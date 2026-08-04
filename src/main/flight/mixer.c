@@ -111,8 +111,24 @@ static FAST_DATA_ZERO_INIT float mixerThrottle = 0;
 #ifdef USE_ADRC
 // Final collective throttle from the previous mixer iteration. Unlike mixerThrottle (the
 // blackbox/TPA value), this includes automatic-mode overrides and mixer constraints, so the ADRC
-// gate and plant-gain schedule follow the command that was actually sent to the motor mix.
+// plant-gain schedule follows the command that was actually sent to the motor mix.
 static FAST_DATA_ZERO_INIT float mixerAdrcThrottle = 0;
+// The same collective sampled one step earlier: after the automatic-mode overrides, before the
+// mixer's own airmode headroom is added. The two differ by exactly the amount the mixer raised
+// collective to fit the axis mix, which is thrust nobody commanded - on the ground under airmode
+// that alone reached ~32% of range at a zero throttle stick and satisfied the ADRC liftoff gate's
+// throttle test (ADRC-026). The gate therefore reads this value and the b0 schedule reads the
+// applied one above: "was thrust asked for" and "how much thrust is there" are different questions.
+//
+// This is the COMMANDED COLLECTIVE, not the stick. Everything upstream of the sample is still in
+// it: throttleAngleCorrection, throttle_limit, throttle_boost, the ALT_HOLD/GPS_RESCUE overrides
+// (deliberately - an autonomous climb must open the gate), the USE_DYN_IDLE 1% floor and any
+// USE_RPM_LIMIT scaling. Only the mixer adjustment below is excluded. Several of those appear at a
+// zero stick - the dyn-idle floor, throttleAngleCorrection in ANGLE/HORIZON with thr_corr_value
+// set, the autonomous overrides - so a liftoff threshold configured at or below a few percent
+// could be met without any pilot input; the CLI permits adrc_liftoff_throttle down to 1, and
+// nothing here rejects such a setting.
+static FAST_DATA_ZERO_INIT float mixerAdrcCommandedThrottle = 0;
 #endif
 static FAST_DATA_ZERO_INIT float motorOutputMin;
 static FAST_DATA_ZERO_INIT float motorRangeMin;
@@ -696,6 +712,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     if (applyCrashFlipModeToMotors()) {
 #ifdef USE_ADRC
         mixerAdrcThrottle = 0.0f;
+        mixerAdrcCommandedThrottle = 0.0f;
         pidUpdateAdrcAppliedOutput(currentPidProfile, 0.0f, currentPidProfile->pidSumLimitYaw);
 #endif
         return;
@@ -830,6 +847,13 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 
     motorMixRange = motorMixMax - motorMixMin;
 
+#ifdef USE_ADRC
+    // Sample the collective here, between the automatic-mode overrides above and the mixer
+    // adjustment below: this is every source of *commanded* thrust (stick, ALT_HOLD, GPS_RESCUE)
+    // and none of the headroom the adjustment is about to add. See mixerAdrcCommandedThrottle.
+    const float commandedCollectiveThrottle = throttle;
+#endif
+
     // note that here airmodeEnabled is true also when Launch Control is active
     float appliedAxisScale;
     switch (mixerConfig()->mixer_type) {
@@ -862,13 +886,18 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     // pidUpdateAdrcAppliedOutput()). MIXER_DYNAMIC's deliberate per-motor redistribution remains
     // part of the plant/disturbance seen by the observer.
     float appliedCollectiveThrottle = throttle;
+    float commandedCollective = commandedCollectiveThrottle;
 #ifdef USE_THRUST_LINEARIZATION
     // throttle is in the inverse-compensated motor-command domain here, while the plant receives
     // the forward-linearized value below. Publish the same physical-domain base collective; any
     // nonlinear mixed-axis residual remains part of the disturbance observed by ADRC.
     appliedCollectiveThrottle = constrainf(pidApplyThrustLinearization(throttle), 0.0f, 1.0f);
+    // Same domain conversion for the commanded value, so the gate's threshold means the same thing
+    // whether or not thrust linearization is configured.
+    commandedCollective = constrainf(pidApplyThrustLinearization(commandedCollectiveThrottle), 0.0f, 1.0f);
 #endif
     mixerAdrcThrottle = motorStopped ? 0.0f : appliedCollectiveThrottle;
+    mixerAdrcCommandedThrottle = motorStopped ? 0.0f : commandedCollective;
     pidUpdateAdrcAppliedOutput(currentPidProfile, motorStopped ? 0.0f : appliedAxisScale, yawPidSumLimit);
 #else
     UNUSED(appliedAxisScale);
@@ -896,6 +925,11 @@ float mixerGetThrottle(void)
 float mixerGetAdrcThrottle(void)
 {
     return mixerAdrcThrottle;
+}
+
+float mixerGetAdrcCommandedThrottle(void)
+{
+    return mixerAdrcCommandedThrottle;
 }
 #endif
 

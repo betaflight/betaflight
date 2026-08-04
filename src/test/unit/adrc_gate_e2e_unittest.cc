@@ -33,6 +33,7 @@ extern "C" {
 
 // The focused target links pid_unittest.cc to reuse its established Betaflight platform stubs.
 extern float simulatedThrottle;
+extern float simulatedCommandedThrottle;
 extern float simulatedSetpointRate[XYZ_AXIS_COUNT];
 extern pidProfile_t *pidProfile;
 
@@ -55,6 +56,7 @@ void prepareAdrcFeedbackLoop(void)
     pidStabilisationState(PID_STABILISATION_ON);
 
     simulatedThrottle = 0.0f;
+    simulatedCommandedThrottle = 0.0f;
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
         simulatedSetpointRate[axis] = 0.0f;
         gyro.gyroADCf[axis] = 0.0f;
@@ -87,7 +89,7 @@ void isolateGroundEpochFeedback(const float staleOutput)
 
 void expectNeutralOpenAndNextObserverLoop(void)
 {
-    simulatedThrottle = 0.6f;
+    simulatedThrottle = simulatedCommandedThrottle = 0.6f;
     pidController(pidProfile, currentTestTime());
 
     ASSERT_TRUE(pidRuntime.adrc.liftoff);
@@ -117,6 +119,40 @@ TEST(AdrcGateE2eTest, FirstOpenDropsGroundMixerFeedbackBeforeObserverUsesIt)
     const float staleOutput = publishGroundConstrainedCommand();
     isolateGroundEpochFeedback(staleOutput);
     expectNeutralOpenAndNextObserverLoop();
+}
+
+// ADRC-026 through the controller path. The mixer itself is stubbed in this target (pid_unittest.cc
+// supplies mixerGetAdrc*Throttle()); that the mixer really does drive the two collectives apart on
+// the ground under airmode is asserted against the real mixTable() in adrc_mixer_unittest.cc.
+TEST(AdrcGateE2eTest, GroundOscillationUnderAirmodeCollectiveKeepsGateClosedAndZ3Bounded)
+{
+    prepareAdrcFeedbackLoop();
+
+    // The measured arm, at the numbers those logs actually flew: adrc_liftoff_throttle = 30 with the
+    // applied collective riding airmode headroom past it (30.3-32.2% on the opening samples) while
+    // nothing was commanded, and the craft self-oscillating well above adrc_liftoff_gyro_dps. The
+    // direct branch is deliberately NOT moved out of the way here - it is the branch that opened the
+    // gate in flight, so it is the one under test. Both mitigations are exercised: the gate must stay
+    // shut, and the disturbance estimate must not charge behind it.
+    pidProfile->adrc.liftoffThrottlePercent = 30;
+    pidInitConfig(pidProfile);
+
+    simulatedThrottle = 0.32f;         // applied: airmode headroom, past the 30% threshold
+    simulatedCommandedThrottle = 0.0f; // commanded: nothing asked for it
+
+    float peakZ3 = 0.0f;
+    for (int i = 0; i < 400; ++i) { // 400 loops at the harness looptime, far past liftoffHoldMs
+        const float groundRate = ((i % 4) < 2) ? 120.0f : -120.0f;
+        for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+            gyro.gyroADCf[axis] = (axis == FD_ROLL) ? groundRate : 0.0f;
+        }
+        pidController(pidProfile, currentTestTime());
+        pidUpdateAdrcAppliedOutput(pidProfile, TEST_AUTHORITY_SCALE, pidProfile->pidSumLimitYaw);
+        peakZ3 = std::fmax(peakZ3, std::fabs(pidRuntime.adrc.z3[FD_ROLL]));
+    }
+
+    EXPECT_FALSE(pidRuntime.adrc.liftoff);
+    EXPECT_LT(peakZ3, 1000.0f);
 }
 
 } // namespace
