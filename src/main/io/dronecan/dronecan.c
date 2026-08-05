@@ -57,6 +57,9 @@ void dronecanGnssInit(void);
 #ifdef USE_MAG
 void dronecanMagInit(void);
 #endif
+#ifdef USE_PITOT
+void dronecanAirspeedInit(void);
+#endif
 
 //-----------------------------------------------------------------------------
 // Memory pool
@@ -279,6 +282,10 @@ void dronecanInit(void)
     // Install the field-strength subscribers so a DroneCAN compass module's
     // broadcasts land in our cache as soon as the transport is live.
     dronecanMagInit();
+#endif
+#ifdef USE_PITOT
+    // Install the RawAirData subscriber for a DroneCAN airspeed node.
+    dronecanAirspeedInit();
 #endif
 
 #if ENABLE_DRONECAN_ESC
