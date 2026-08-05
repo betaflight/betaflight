@@ -122,6 +122,15 @@ const char * const osdTimerSourceNames[] = {
 #define OSD_LOGO_ROWS 4
 #define OSD_LOGO_COLS 24
 
+// Make it obvious on the configurator that the FC doesn't support HD
+#ifndef DEFAULT_OSD_DISPLAYPORT_DEVICE
+#ifdef USE_OSD_HD
+#define DEFAULT_OSD_DISPLAYPORT_DEVICE OSD_DISPLAYPORT_DEVICE_MSP
+#else
+#define DEFAULT_OSD_DISPLAYPORT_DEVICE OSD_DISPLAYPORT_DEVICE_AUTO
+#endif
+#endif
+
 // Things in both OSD and CMS
 
 #define IS_HI(X)  (rcData[X] > 1750)
@@ -425,13 +434,11 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->aux_scale = 200;
     osdConfig->aux_symbol = 'A';
 
-    // Make it obvious on the configurator that the FC doesn't support HD
+    osdConfig->displayPortDevice = DEFAULT_OSD_DISPLAYPORT_DEVICE;
 #ifdef USE_OSD_HD
-    osdConfig->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
     osdConfig->canvas_cols = OSD_HD_COLS;
     osdConfig->canvas_rows = OSD_HD_ROWS;
 #else
-    osdConfig->displayPortDevice = OSD_DISPLAYPORT_DEVICE_AUTO;
     osdConfig->canvas_cols = OSD_SD_COLS;
     osdConfig->canvas_rows = OSD_SD_ROWS;
 #endif
