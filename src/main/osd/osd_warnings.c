@@ -181,8 +181,8 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
 #ifdef USE_GPS_RESCUE
     if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_UNAVAILABLE)
-        && FLIGHT_MODE(GPS_RESCUE_MODE)
-        && !gpsRescueIsOK()) {
+        && ((FLIGHT_MODE(GPS_RESCUE_MODE) && !gpsRescueIsOK())
+            || flightPlanNavIsRescueDescentActive())) {
 
         tfp_sprintf(warningText, "RESCUE FAIL");
         // when a rescue sanity check is active (rescue has failed)

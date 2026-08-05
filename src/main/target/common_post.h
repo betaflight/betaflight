@@ -98,6 +98,10 @@
 #define MMFLASH_DATA_ZERO_INIT     FAST_DATA_ZERO_INIT
 #endif
 
+#ifndef RAM_CODE
+#define RAM_CODE
+#endif
+
 #ifndef MMFLASH_CODE
 #define MMFLASH_CODE
 #endif
@@ -138,6 +142,7 @@
     && !defined(USE_ACCGYRO_ICM42622P) \
     && !defined(USE_ACCGYRO_ICM42686P) \
     && !defined(USE_ACC_SPI_ICM42688P) \
+    && !defined(USE_ACCGYRO_ICM56686) \
     && !defined(USE_ACCGYRO_ICM45686) \
     && !defined(USE_ACCGYRO_ICM45605) \
     && !defined(USE_ACCGYRO_LSM6DSO) \
@@ -165,6 +170,7 @@
     && !defined(USE_ACCGYRO_ICM42686P) \
     && !defined(USE_GYRO_SPI_ICM42688P) \
     && !defined(USE_ACCGYRO_ICM45686) \
+    && !defined(USE_ACCGYRO_ICM56686) \
     && !defined(USE_ACCGYRO_ICM45605) \
     && !defined(USE_ACCGYRO_ICM40609D) \
     && !defined(USE_ACCGYRO_LSM6DSO) \
@@ -566,6 +572,7 @@
 #if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) \
     || defined(USE_GYRO_L3GD20) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) \
     || defined(USE_GYRO_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_ACCGYRO_ICM42686P) || defined(USE_GYRO_SPI_ICM42688P) \
+    || defined(USE_ACCGYRO_ICM56686) \
     || defined(USE_ACCGYRO_ICM40609D) || defined(USE_ACCGYRO_ICM45605) || defined(USE_ACCGYRO_ICM45686) \
     || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653) \
     || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_LSM6DSK320X)
@@ -872,11 +879,17 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_FLIGHT_PLAN 0
 #endif
 
-// Failsafe GPS rescue flown as a synthesised flight-plan mission instead of
-// the legacy gps_rescue controller. Opt-in; the BOXGPSRESCUE switch keeps
-// flying legacy rescue either way.
+// GPS rescue (both the BOXGPSRESCUE switch and the failsafe procedure) flown as
+// a synthesised flight-plan mission through the unified autopilot, instead of
+// the legacy gps_rescue controller. Default-on wherever the flight-plan engine
+// is available; targets without it (or wing, or flash-constrained) fall back to
+// the legacy rescue controller.
 #if !defined(ENABLE_RESCUE_PLAN)
+#if ENABLE_FLIGHT_PLAN && defined(USE_GPS_RESCUE) && !defined(USE_WING)
+#define ENABLE_RESCUE_PLAN 1
+#else
 #define ENABLE_RESCUE_PLAN 0
+#endif
 #endif
 #if ENABLE_RESCUE_PLAN && !(ENABLE_FLIGHT_PLAN && defined(USE_GPS_RESCUE) && !defined(USE_WING))
 #error "ENABLE_RESCUE_PLAN requires ENABLE_FLIGHT_PLAN, USE_GPS_RESCUE and !USE_WING"
