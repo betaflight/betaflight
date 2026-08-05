@@ -94,6 +94,11 @@ void systemInit(void)
     const uint32_t cpuTicksPerUs = esp_rom_get_cpu_ticks_per_us();
     if (cpuTicksPerUs != 0) {
         SystemCoreClock = cpuTicksPerUs * 1000000U;
+    } else {
+        // Unreachable in practice: the ROM sets ticks-per-microsecond during
+        // first-stage boot. Fall back to the conservative bootloader boot
+        // frequency purely so cycleCounterInit() below cannot divide by zero.
+        SystemCoreClock = 80000000U;
     }
 
     cycleCounterInit();
