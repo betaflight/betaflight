@@ -94,6 +94,7 @@
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
+#include "io/displayport_msp.h"
 #include "io/flashfs.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
@@ -224,7 +225,7 @@ static bool fontHasBeenUpdated = false;
 
 static int mspDescriptor = 0;
 
-mspDescriptor_t mspDescriptorAlloc(void)
+RAM_CODE mspDescriptor_t mspDescriptorAlloc(void)
 {
     return (mspDescriptor_t)mspDescriptor++;
 }
@@ -232,18 +233,18 @@ mspDescriptor_t mspDescriptorAlloc(void)
 static uint32_t mspArmingDisableFlags = 0;
 
 #if !ENABLE_SIMULATOR
-static void mspArmingDisableByDescriptor(mspDescriptor_t desc)
+RAM_CODE static void mspArmingDisableByDescriptor(mspDescriptor_t desc)
 {
     mspArmingDisableFlags |= (1 << desc);
 }
 #endif
 
-static void mspArmingEnableByDescriptor(mspDescriptor_t desc)
+RAM_CODE static void mspArmingEnableByDescriptor(mspDescriptor_t desc)
 {
     mspArmingDisableFlags &= ~(1 << desc);
 }
 
-static bool mspIsMspArmingEnabled(void)
+RAM_CODE static bool mspIsMspArmingEnabled(void)
 {
     return mspArmingDisableFlags == 0;
 }
@@ -254,14 +255,14 @@ static uint8_t mspPassthroughMode;
 static uint8_t mspPassthroughArgument;
 
 #if defined(USE_ESCSERIAL) && defined(USE_SERIAL_4WAY_BLHELI_INTERFACE)
-static void mspEscPassthroughFn(serialPort_t *serialPort)
+RAM_CODE static void mspEscPassthroughFn(serialPort_t *serialPort)
 {
     escEnablePassthrough(serialPort, &motorConfig()->dev, mspPassthroughArgument, mspPassthroughMode);
 }
 #endif
 
 #ifdef USE_SERIAL_PASSTHROUGH
-static serialPort_t *mspFindPassthroughSerialPort(void)
+RAM_CODE static serialPort_t *mspFindPassthroughSerialPort(void)
 {
     serialPortUsage_t *portUsage = NULL;
 
@@ -283,7 +284,7 @@ static serialPort_t *mspFindPassthroughSerialPort(void)
     return portUsage ? portUsage->serialPort : NULL;
 }
 
-static void mspSerialPassthroughFn(serialPort_t *serialPort)
+RAM_CODE static void mspSerialPassthroughFn(serialPort_t *serialPort)
 {
     serialPort_t *passthroughPort = mspFindPassthroughSerialPort();
     if (passthroughPort && serialPort) {
@@ -292,7 +293,7 @@ static void mspSerialPassthroughFn(serialPort_t *serialPort)
 }
 #endif
 
-static void mspFcSetPassthroughCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
+RAM_CODE static void mspFcSetPassthroughCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
 {
 #ifndef USE_SERIAL_PASSTHROUGH
     UNUSED(mspPostProcessFn);
@@ -355,7 +356,7 @@ static void mspFcSetPassthroughCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessF
     }
 }
 
-MAYBE_UNUSED static void configRebootUpdateCheckU8(uint8_t *parm, uint8_t value)
+RAM_CODE MAYBE_UNUSED static void configRebootUpdateCheckU8(uint8_t *parm, uint8_t value)
 {
     if (*parm != value) {
         setRebootRequired();
@@ -364,7 +365,7 @@ MAYBE_UNUSED static void configRebootUpdateCheckU8(uint8_t *parm, uint8_t value)
 }
 
 #ifdef USE_OSD
-static void fontUpdateCompletion(void)
+RAM_CODE static void fontUpdateCompletion(void)
 {
     displayPort_t *osdDisplayPort = osdGetDisplayPort(NULL);
     if (osdDisplayPort) {
@@ -373,7 +374,7 @@ static void fontUpdateCompletion(void)
 }
 #endif
 
-static void mspRebootFn(serialPort_t *serialPort)
+RAM_CODE static void mspRebootFn(serialPort_t *serialPort)
 {
     UNUSED(serialPort);
 
@@ -424,7 +425,7 @@ static void mspRebootFn(serialPort_t *serialPort)
 
 #define MSP_DISPATCH_DELAY_US 1000000
 
-static void mspReboot(dispatchEntry_t* self)
+RAM_CODE static void mspReboot(dispatchEntry_t* self)
 {
     UNUSED(self);
 
@@ -439,7 +440,7 @@ dispatchEntry_t mspRebootEntry = {
     mspReboot, 0, NULL, false
 };
 
-static void writeReadEeprom(dispatchEntry_t* self)
+RAM_CODE static void writeReadEeprom(dispatchEntry_t* self)
 {
     UNUSED(self);
 
@@ -462,7 +463,7 @@ dispatchEntry_t writeReadEepromEntry = {
     writeReadEeprom, 0, NULL, false
 };
 
-static void serializeSDCardSummaryReply(sbuf_t *dst)
+RAM_CODE static void serializeSDCardSummaryReply(sbuf_t *dst)
 {
     uint8_t flags = 0;
     uint8_t state = 0;
@@ -517,7 +518,7 @@ static void serializeSDCardSummaryReply(sbuf_t *dst)
     sbufWriteU32(dst, totalSpace);
 }
 
-static void serializeDataflashSummaryReply(sbuf_t *dst)
+RAM_CODE static void serializeDataflashSummaryReply(sbuf_t *dst)
 {
 #ifdef USE_FLASHFS
     if (flashfsIsSupported()) {
@@ -548,7 +549,7 @@ enum compressionType_e {
     HUFFMAN
 };
 
-static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uint16_t size, bool useLegacyFormat, bool allowCompression)
+RAM_CODE static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uint16_t size, bool useLegacyFormat, bool allowCompression)
 {
     STATIC_ASSERT(MSP_PORT_DATAFLASH_INFO_SIZE >= 16, MSP_PORT_DATAFLASH_INFO_SIZE_invalid);
 
@@ -643,10 +644,32 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
 #endif // USE_FLASHFS
 
 /*
+ * Returns true when the request arrived on the UART shared between FUNCTION_MSP and
+ * FUNCTION_VTX_MSP, i.e. from an HD VTX rather than from Configurator.
+ *
+ * Replies to that port have to stay within the wire format the oldest MSP-query type OSD
+ * consumers can still parse. The DJI V1 air unit / Caddx Vista renders the OSD itself from
+ * MSP_OSD_CONFIG and silently drops the whole reply - and with it every OSD element - once it
+ * outgrows the Betaflight 4.5 layout. Configurator, on VCP, keeps receiving the full reply.
+ */
+RAM_CODE static bool mspSrcIsVtxPort(mspDescriptor_t srcDesc)
+{
+#ifdef USE_MSP_DISPLAYPORT
+    const serialPortIdentifier_e vtxPort = displayPortMspGetSerial();
+
+    return vtxPort != SERIAL_PORT_NONE && srcDesc == getMspSerialPortDescriptor(vtxPort);
+#else
+    UNUSED(srcDesc);
+
+    return false;
+#endif
+}
+
+/*
  * Returns true if the command was processd, false otherwise.
  * May set mspPostProcessFunc to a function to be called once the command has been processed
  */
-static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
+RAM_CODE static bool mspCommonProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
 {
     UNUSED(mspPostProcessFn);
 
@@ -665,7 +688,10 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, (uint8_t)(FC_VERSION_YEAR - FC_CALVER_BASE_YEAR)); // year since 2000
         sbufWriteU8(dst, FC_VERSION_MONTH);
         sbufWriteU8(dst, FC_VERSION_PATCH_LEVEL);
-        sbufWritePString(dst, FC_VERSION_STRING);
+        if (!mspSrcIsVtxPort(srcDesc)) {
+            // this reply was 3 bytes up to and including API 1.46; keep that shape for HD VTXs
+            sbufWritePString(dst, FC_VERSION_STRING);
+        }
         break;
 
     case MSP2_MCU_INFO: {
@@ -978,6 +1004,10 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 #define OSD_FLAGS_OSD_HARDWARE_FB_OSD   (1 << 4)
 #endif
 
+        // HD VTXs are served the MSP API 1.46 layout, see mspSrcIsVtxPort()
+        const bool legacyLayout = mspSrcIsVtxPort(srcDesc);
+        const uint8_t itemCount = legacyLayout ? OSD_ITEM_COUNT_API_1_46 : OSD_ITEM_COUNT;
+
         uint8_t osdFlags = 0;
 
         osdFlags |= OSD_FLAGS_OSD_FEATURE;
@@ -1044,12 +1074,12 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 
         // Reuse old timer alarm (U16) as OSD_ITEM_COUNT
         sbufWriteU8(dst, 0);
-        sbufWriteU8(dst, OSD_ITEM_COUNT);
+        sbufWriteU8(dst, itemCount);
 
         sbufWriteU16(dst, osdConfig()->alt_alarm);
 
         // Element position and visibility
-        for (int i = 0; i < OSD_ITEM_COUNT; i++) {
+        for (int i = 0; i < itemCount; i++) {
             sbufWriteU16(dst, osdElementConfig()->item_pos[i]);
         }
 
@@ -1098,8 +1128,10 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         // API >= 1.46
         sbufWriteU16(dst, osdConfig()->link_quality_alarm);
 
-        // API >= 1.47
-        sbufWriteU16(dst, osdConfig()->rssi_dbm_alarm);
+        if (!legacyLayout) {
+            // API >= 1.47
+            sbufWriteU16(dst, osdConfig()->rssi_dbm_alarm);
+        }
 
         break;
     }
@@ -1119,7 +1151,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
     return true;
 }
 
-static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *dst)
+RAM_CODE static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *dst)
 {
     bool unsupportedCommand = false;
 
@@ -2268,7 +2300,7 @@ case MSP_NAME:
 
 #ifdef USE_SIMPLIFIED_TUNING
 // Reads simplified PID tuning values from MSP buffer
-static void readSimplifiedPids(pidProfile_t* pidProfile, sbuf_t *src)
+RAM_CODE static void readSimplifiedPids(pidProfile_t* pidProfile, sbuf_t *src)
 {
     pidProfile->simplified_pids_mode = sbufReadU8(src);
     pidProfile->simplified_master_multiplier = sbufReadU8(src);
@@ -2288,7 +2320,7 @@ static void readSimplifiedPids(pidProfile_t* pidProfile, sbuf_t *src)
 }
 
 // Writes simplified PID tuning values to MSP buffer
-static void writeSimplifiedPids(const pidProfile_t *pidProfile, sbuf_t *dst)
+RAM_CODE static void writeSimplifiedPids(const pidProfile_t *pidProfile, sbuf_t *dst)
 {
     sbufWriteU8(dst, pidProfile->simplified_pids_mode);
     sbufWriteU8(dst, pidProfile->simplified_master_multiplier);
@@ -2308,7 +2340,7 @@ static void writeSimplifiedPids(const pidProfile_t *pidProfile, sbuf_t *dst)
 }
 
 // Reads simplified Dterm Filter values from MSP buffer
-static void readSimplifiedDtermFilters(pidProfile_t* pidProfile, sbuf_t *src)
+RAM_CODE static void readSimplifiedDtermFilters(pidProfile_t* pidProfile, sbuf_t *src)
 {
     pidProfile->simplified_dterm_filter = sbufReadU8(src);
     pidProfile->simplified_dterm_filter_multiplier = sbufReadU8(src);
@@ -2326,7 +2358,7 @@ static void readSimplifiedDtermFilters(pidProfile_t* pidProfile, sbuf_t *src)
 }
 
 // Writes simplified Dterm Filter values into MSP buffer
-static void writeSimplifiedDtermFilters(const pidProfile_t* pidProfile, sbuf_t *dst)
+RAM_CODE static void writeSimplifiedDtermFilters(const pidProfile_t* pidProfile, sbuf_t *dst)
 {
     sbufWriteU8(dst, pidProfile->simplified_dterm_filter);
     sbufWriteU8(dst, pidProfile->simplified_dterm_filter_multiplier);
@@ -2344,7 +2376,7 @@ static void writeSimplifiedDtermFilters(const pidProfile_t* pidProfile, sbuf_t *
 }
 
 // Writes simplified Gyro Filter values from MSP buffer
-static void readSimplifiedGyroFilters(gyroConfig_t *gyroConfig, sbuf_t *src)
+RAM_CODE static void readSimplifiedGyroFilters(gyroConfig_t *gyroConfig, sbuf_t *src)
 {
     gyroConfig->simplified_gyro_filter = sbufReadU8(src);
     gyroConfig->simplified_gyro_filter_multiplier = sbufReadU8(src);
@@ -2362,7 +2394,7 @@ static void readSimplifiedGyroFilters(gyroConfig_t *gyroConfig, sbuf_t *src)
 }
 
 // Writes simplified Gyro Filter values into MSP buffer
-static void writeSimplifiedGyroFilters(const gyroConfig_t *gyroConfig, sbuf_t *dst)
+RAM_CODE static void writeSimplifiedGyroFilters(const gyroConfig_t *gyroConfig, sbuf_t *dst)
 {
     sbufWriteU8(dst, gyroConfig->simplified_gyro_filter);
     sbufWriteU8(dst, gyroConfig->simplified_gyro_filter_multiplier);
@@ -2380,7 +2412,7 @@ static void writeSimplifiedGyroFilters(const gyroConfig_t *gyroConfig, sbuf_t *d
 }
 
 // writes results of simplified PID tuning values to MSP buffer
-static void writePidfs(pidProfile_t* pidProfile, sbuf_t *dst)
+RAM_CODE static void writePidfs(pidProfile_t* pidProfile, sbuf_t *dst)
 {
     for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
         sbufWriteU8(dst, pidProfile->pid[i].P);
@@ -2394,7 +2426,7 @@ static void writePidfs(pidProfile_t* pidProfile, sbuf_t *dst)
 
 static mspResult_e mspFcProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn);
 
-static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *src, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
+RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *src, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
 {
 
     switch (cmdMSP) {
@@ -2813,7 +2845,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
 }
 
 #ifdef USE_FLASHFS
-static void mspFcDataFlashReadCommand(sbuf_t *dst, sbuf_t *src)
+RAM_CODE static void mspFcDataFlashReadCommand(sbuf_t *dst, sbuf_t *src)
 {
     const unsigned int dataSize = sbufBytesRemaining(src);
     const uint32_t readAddress = sbufReadU32(src);
@@ -2835,7 +2867,7 @@ static void mspFcDataFlashReadCommand(sbuf_t *dst, sbuf_t *src)
 }
 #endif
 
-static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *src)
+RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *src)
 {
     uint32_t i;
     uint8_t value;
@@ -4453,7 +4485,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     return MSP_RESULT_ACK;
 }
 
-static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
+RAM_CODE static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
 {
     UNUSED(mspPostProcessFn);
     const unsigned int dataSize = sbufBytesRemaining(src);
@@ -4767,7 +4799,7 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
 /*
  * Returns MSP_RESULT_ACK, MSP_RESULT_ERROR or MSP_RESULT_NO_REPLY
  */
-mspResult_e mspFcProcessCommand(mspDescriptor_t srcDesc, mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn)
+RAM_CODE mspResult_e mspFcProcessCommand(mspDescriptor_t srcDesc, mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn)
 {
     int ret = MSP_RESULT_ACK;
     sbuf_t *dst = &reply->buf;
@@ -4776,7 +4808,7 @@ mspResult_e mspFcProcessCommand(mspDescriptor_t srcDesc, mspPacket_t *cmd, mspPa
     // initialize reply by default
     reply->cmd = cmd->cmd;
 
-    if (mspCommonProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
+    if (mspCommonProcessOutCommand(srcDesc, cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
     } else if (mspProcessOutCommand(srcDesc, cmdMSP, dst)) {
         ret = MSP_RESULT_ACK;
@@ -4797,14 +4829,14 @@ mspResult_e mspFcProcessCommand(mspDescriptor_t srcDesc, mspPacket_t *cmd, mspPa
     return ret;
 }
 
-static mspResult_e mspFcProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn)
+RAM_CODE static mspResult_e mspFcProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn)
 {
     int ret = MSP_RESULT_CMD_UNKNOWN;
     sbuf_t *dst = &reply->buf;
     // initialize reply by default
     reply->cmd = cmdMSP;
 
-    if (mspCommonProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
+    if (mspCommonProcessOutCommand(srcDesc, cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
     } else if (mspProcessOutCommand(srcDesc, cmdMSP, dst)) {
         ret = MSP_RESULT_ACK;
@@ -4813,7 +4845,7 @@ static mspResult_e mspFcProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMS
     return ret;
 }
 
-void mspFcProcessReply(mspPacket_t *reply)
+RAM_CODE void mspFcProcessReply(mspPacket_t *reply)
 {
     sbuf_t *src = &reply->buf;
     UNUSED(src); // potentially unused depending on compile options.
@@ -4839,7 +4871,7 @@ void mspFcProcessReply(mspPacket_t *reply)
     }
 }
 
-void mspInit(void)
+RAM_CODE void mspInit(void)
 {
     initActiveBoxIds();
 }
