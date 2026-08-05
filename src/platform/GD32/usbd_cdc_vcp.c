@@ -26,7 +26,6 @@
 #include "build/atomic.h"
 
 #include "usbd_cdc_vcp.h"
-#include "gd32f4xx.h"
 #include "drivers/nvic.h"
 #include "drivers/time.h"
 
@@ -59,6 +58,8 @@ extern volatile uint32_t APP_Rx_ptr_in;
 static uint8_t APP_Tx_Buffer[APP_TX_DATA_SIZE];
 static uint32_t APP_Tx_ptr_out = 0;
 static uint32_t APP_Tx_ptr_in = 0;
+
+#define CDC_SEND_TIMEOUT_MS 2
 
 static uint16_t VCP_Init(void);
 static uint16_t VCP_DeInit(void);
@@ -206,20 +207,32 @@ static uint16_t VCP_DataTx(const uint8_t* Buf, uint32_t Len)
         make sure that any paragraph end frame is not in play
         could just check for: USB_CDC_ZLP, but better to be safe
         and wait for any existing transmission to complete.
-    */
-    while (USB_Tx_State != 0);
 
-    for (uint32_t i = 0; i < Len; i++) {
-        // Stall if the ring buffer is full
+        Bounded to 2ms: host may not be polling the IN endpoint yet (e.g. at connect).
+        Subtraction form avoids millis() wraparound false-triggering the deadline.
+    */
+    uint32_t start = millis();
+    while (USB_Tx_State != 0) {
+        if (millis() - start > CDC_SEND_TIMEOUT_MS) {
+            return 0;
+        }
+    }
+
+    uint32_t i;
+    for (i = 0; i < Len; i++) {
+        // Bounded to 2ms per byte; return partial count on timeout.
+        start = millis();
         while (((APP_Rx_ptr_in + 1) % APP_RX_DATA_SIZE) == APP_Rx_ptr_out) {
-            delay(1);
+            if (millis() - start > CDC_SEND_TIMEOUT_MS) {
+                return i;
+            }
         }
 
         APP_Rx_Buffer[APP_Rx_ptr_in] = Buf[i];
         APP_Rx_ptr_in = (APP_Rx_ptr_in + 1) % APP_RX_DATA_SIZE;
     }
 
-    return USBD_OK;
+    return i;
 }
 
 /*!
