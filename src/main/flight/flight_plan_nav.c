@@ -1601,24 +1601,30 @@ uint16_t flightPlanNavGetEtaSeconds(void)
     return (etaS >= (float)UINT16_MAX) ? UINT16_MAX : (uint16_t)lrintf(etaS);
 }
 
-void flightPlanNavSetCurrentIndex(uint8_t index)
+bool flightPlanNavSetCurrentIndex(uint8_t index)
 {
     // SET_CURRENT addresses the uploaded PG mission; an injected runtime plan
     // (geofence RTH / failsafe rescue) owns its own sequencing.
     if (fp.injectedCount > 0 || index >= flightPlanConfig()->waypointCount) {
-        return;
+        return false;
     }
 
     if (fp.active) {
         fp.currentIndex = index;
         fp.patternPending = false;
         fp.patternActive = false;
+        fp.abortReason = FP_ABORT_NONE;
+        fp.carrotPrevValid = false;   // a cursor jump re-anchors on the craft
+        fp.carrotSpeedMps = 0.0f;
+        fp.measFiltValid = false;
+        fp.overspeedHold = false;
         clearModifierState();
         fp.state = FP_NAV_TARGETING;
         dispatchWaypoint();
     } else {
         fp.pendingStartIndex = index;
     }
+    return true;
 }
 
 void flightPlanNavSetReachedListener(flightPlanWaypointReachedFn fn)
