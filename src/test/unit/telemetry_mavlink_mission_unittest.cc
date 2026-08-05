@@ -52,7 +52,7 @@ extern "C" {
     bool flightPlanNavIsInjectedPlanActive(void) { return s_navInjected; }
     flightPlanNavState_e flightPlanNavGetState(void) { return s_navState; }
     uint8_t flightPlanNavGetCurrentIndex(void) { return s_navIndex; }
-    void flightPlanNavSetCurrentIndex(uint8_t index) { s_setCurrentArg = index; }
+    bool flightPlanNavSetCurrentIndex(uint8_t index) { s_setCurrentArg = index; return true; }
     void flightPlanNavSetReachedListener(flightPlanWaypointReachedFn fn) { s_reachedListener = fn; }
 
     // Fixed orbit period so LOITER_TURNS <-> ORBIT conversion is deterministic.
