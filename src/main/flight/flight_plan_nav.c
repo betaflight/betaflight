@@ -27,8 +27,7 @@
 
 #include "platform.h"
 
-// positionNav is multirotor-only; flight plan execution follows suit.
-#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#if ENABLE_FLIGHT_PLAN
 
 #include "common/maths.h"
 #include "common/time.h"
@@ -884,7 +883,7 @@ static void startLandingAtNavTarget(timeUs_t currentTimeUs)
 // behaviour). Falls back to landing in place if the plan can't be injected.
 static void injectReturnHomePlan(timeUs_t currentTimeUs)
 {
-#ifdef USE_GPS_RESCUE
+#if defined(USE_GPS_RESCUE) && !defined(USE_WING)
     const int32_t returnAltCm = MAX(GPS_home_llh.altCm + (int32_t)gpsRescueConfig()->returnAltitudeM * 100, gpsSol.llh.altCm);
     const uint16_t speedCmS = gpsRescueConfig()->groundSpeedCmS;
 #else
@@ -1627,4 +1626,4 @@ void flightPlanNavSetReachedListener(flightPlanWaypointReachedFn fn)
     reachedListener = fn;
 }
 
-#endif // ENABLE_FLIGHT_PLAN && !USE_WING
+#endif // ENABLE_FLIGHT_PLAN
