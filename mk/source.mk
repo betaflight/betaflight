@@ -281,6 +281,8 @@ COMMON_SRC = \
             osd/osd_nav_map.c \
             osd/osd_warnings.c \
             sensors/barometer.c \
+            sensors/pitot.c \
+            drivers/pitot/pitot_ms4525.c \
             sensors/rangefinder.c \
             sensors/opticalflow.c \
             telemetry/telemetry.c \
@@ -318,9 +320,10 @@ COMMON_SRC += \
             drivers/accgyro/accgyro_spi_bmi270.c \
             drivers/accgyro/accgyro_spi_icm20649.c \
             drivers/accgyro/accgyro_spi_icm20689.c \
+            drivers/accgyro/accgyro_spi_icm40609.c \
             drivers/accgyro/accgyro_spi_icm426xx.c \
             drivers/accgyro/accgyro_spi_icm456xx.c \
-            drivers/accgyro/accgyro_spi_icm40609.c \
+            drivers/accgyro/accgyro_spi_icm56686.c \
             drivers/accgyro/accgyro_spi_l3gd20.c \
             drivers/accgyro/accgyro_spi_lsm6dso.c \
             drivers/accgyro/accgyro_spi_lsm6dso_init.c \
