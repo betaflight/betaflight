@@ -74,14 +74,16 @@ __attribute__((always_inline)) static inline uint32_t __get_BASEPRI(void)
 
 __attribute__((always_inline)) static inline void __set_BASEPRI_MAX(uint32_t basePri)
 {
-    if (basePri != 0 && esp32GetInterruptLevel() < 1U) {
-        uint32_t oldPs __attribute__((unused));
-        __asm__ volatile ("rsil %0, 1" : "=a"(oldPs) :: "memory");
+    // Normalise like __set_BASEPRI (raw Xtensa level, or 1 for an ARM-encoded
+    // priority) and only ever raise the level, never lower it.
+    const uint32_t requestedLevel = basePri <= 0x0FU ? basePri : 1U;
+    if (esp32GetInterruptLevel() < requestedLevel) {
+        esp32SetInterruptLevel(requestedLevel);
     }
 }
 
 static inline void __enable_irq(void) { esp32SetInterruptLevel(0); }
-static inline void __disable_irq(void) { esp32SetInterruptLevel(5); }
+static inline void __disable_irq(void) { esp32SetInterruptLevel(15); }
 #else
 // Bring-up stubs retained for the other ESP variants until their native
 // interrupt-controller critical sections are implemented.
