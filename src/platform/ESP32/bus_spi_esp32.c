@@ -390,8 +390,9 @@ FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t *descriptor)
 
     spiInternalStopDMA(dev);
 
-    // ESP32-S3 GDMA requires an aligned RX start address.  Copy from the
-    // per-bus bounce buffer before the segment callback consumes the data.
+    // GDMA requires a word-aligned RX start address (all ESP GDMA SoCs, not
+    // just S3).  Copy from the per-bus bounce buffer before the segment
+    // callback consumes the data.
     int deviceNum = SPI_INST((SPI_TypeDef *)bus->busType_u.spi.instance);
     spiDmaDescriptorCache_t *cache = &dmaDescriptorCache[deviceNum];
     if (cache->rxCopyTarget) {
@@ -657,7 +658,7 @@ FAST_CODE void spiSequenceStart(const extDevice_t *dev)
     shortPolledTransfer = ESP32S3_SPI_SHORT_POLLED_MAX_SIZE > 0 &&
         segmentCount == 1 &&
         xferLen <= ESP32S3_SPI_SHORT_POLLED_MAX_SIZE &&
-        bus->curSegment->negateCS &&
+        bus->curSegment[segmentCount].negateCS &&
         bus->curSegment->u.buffers.txData &&
         bus->curSegment->u.buffers.rxData;
 #endif
