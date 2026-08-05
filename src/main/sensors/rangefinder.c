@@ -115,27 +115,28 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
     UNUSED(dev);
 #endif
 
+    // Only bus-attached rangefinders need an extDevice; serial/GPIO drivers must not be gated here.
+    bool busConfigured = false;
     switch (rangefinderConfig()->rangefinder_busType) {
 #ifdef USE_I2C
         case BUS_TYPE_I2C:
-            i2cBusSetInstance(extdev, rangefinderConfig()->rangefinder_i2c_device);
-            extdev->busType_u.i2c.address = rangefinderConfig()->rangefinder_i2c_address;
+            busConfigured = i2cBusSetInstance(extdev, rangefinderConfig()->rangefinder_i2c_device);
+            if (busConfigured) {
+                extdev->busType_u.i2c.address = rangefinderConfig()->rangefinder_i2c_address;
+            }
             break;
 #endif
 
 #ifdef USE_SPI
         case BUS_TYPE_SPI:
-            {
-                if (!spiSetBusInstance(extdev, rangefinderConfig()->rangefinder_spi_device)) {
-                    return false;
-                }
-
+            busConfigured = spiSetBusInstance(extdev, rangefinderConfig()->rangefinder_spi_device);
+            if (busConfigured) {
                 extdev->busType_u.spi.csnPin = IOGetByTag(rangefinderConfig()->rangefinder_spi_csn);
             }
             break;
 #endif
         default:
-            return false;
+            break;
     }
 
     switch (rangefinderHardwareToUse) {
