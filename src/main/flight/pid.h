@@ -188,9 +188,10 @@ typedef enum {
 } yawType_e;
 
 typedef enum psasSpeedCurveMode_e {
-    SPEED_CURVE_MODE_TPA,      // Use just Acro mode TPA hyperbolic curves
-    SPEED_CURVE_MODE_AIRSPEED, // Use PSAS hyperbolic curves with TPA airspeed estimation
-    SPEED_CURVE_MODE_GPS,      // Use PSAS hyperbolic curves with GPS speed
+    SPEED_CURVE_MODE_TPA,                   // Use just Acro mode TPA hyperbolic curves
+    SPEED_CURVE_MODE_AIRSPEED_TPA,          // Use PSAS hyperbolic curves with TPA airspeed estimation
+    SPEED_CURVE_MODE_SPEED_GPS,             // Use PSAS hyperbolic curves with GPS speed
+    SPEED_CURVE_MODE_AIRSPEED_PITOT,        // Use PSAS hyperbolic curves with PITOT sensors airspeed
 } psasSpeedCurveMode_t;
 
 #define MAX_PROFILE_NAME_LENGTH 8u

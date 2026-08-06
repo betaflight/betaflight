@@ -34,6 +34,7 @@
 
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
+#include "sensors/pitot.h"
 
 #include "io/gps.h"
 
@@ -272,8 +273,10 @@ static void FAST_CODE_NOINLINE psasComputeAirspeedGains(const pidProfile_t *pidP
         return;
     }
 
+    float speed;
+    switch (pidProfile->psas_speed_curve_mode) {
     // Use Acro mode TPA hyperbolic curves for PSAS
-    if (pidProfile->psas_speed_curve_mode == SPEED_CURVE_MODE_TPA) {
+    case SPEED_CURVE_MODE_TPA:
         for (uint8_t axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             float tpaCurve = getTpaFactor(pidProfile, axis, TERM_D);
             if (pidProfile->psas_speed_main_curve_enable[axis]) {
@@ -284,24 +287,43 @@ static void FAST_CODE_NOINLINE psasComputeAirspeedGains(const pidProfile_t *pidP
             }
         }
         return;
-    }
 
-    // Compute PSAS hyperbolic curves
-    float speed;
-    if (pidProfile->psas_speed_curve_mode == SPEED_CURVE_MODE_GPS) { // Use GPS speed for PSAS curves
+    // Use GPS speed for PSAS curves
+    case SPEED_CURVE_MODE_SPEED_GPS:
         if (STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
             speed = 0.01f * gpsSol.speed3d;
         } else {
             speed = pidProfile->psas_speed_optimum_vref;
         }
-    } else { // SPEED_CURVE_MODE_AIRSPEED - Use TPA airspeed estimation for PSAS curves
+        break;
+
+    // Use TPA airspeed estimation for PSAS curves
+    case SPEED_CURVE_MODE_AIRSPEED_TPA:
 #ifdef USE_WING
         speed = pidRuntime.tpaSpeed.speed;
 #else
         speed = pidProfile->psas_speed_optimum_vref;
 #endif
+        break;
+
+    // Use PITOT sensor airspeed  for PSAS curves
+    case SPEED_CURVE_MODE_AIRSPEED_PITOT:
+#ifdef USE_PITOT
+        if (sensors(SENSOR_PITOT)) {
+            speed = pitot.airspeed * 0.01f;
+        } else {
+            speed = pidProfile->psas_speed_optimum_vref;
+        }
+#else
+        speed = pidProfile->psas_speed_optimum_vref;
+#endif
+        break;
+
+    default:
+        speed = pidProfile->psas_speed_optimum_vref;
     }
 
+    // Compute PSAS hyperbolic curves
     float speedRelation = pidProfile->psas_speed_optimum_vref / MAX(speed, 0.1f);
     float curve = computePower(speedRelation, pidProfile->psas_speed_main_curve_power);
     float mainCurve = constrainf(curve, pidProfile->psas_speed_main_curve_min * 0.01, pidProfile->psas_speed_main_curve_max * 0.01);

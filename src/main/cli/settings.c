@@ -583,7 +583,7 @@ static const char * const lookupTableTransponderProvider[] = {
 
 #ifdef USE_AIRPLANE_SAS
 static const char * const lookupTablePsasSpeedCurveMode[] = {
-    "TPA", "AIRSPEED", "GPS"
+    "TPA", "AIRSPEED_TPA", "SPEED_GPS", "AIRSPEED_PITOT"
 };
 #endif
 
