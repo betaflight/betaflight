@@ -133,8 +133,18 @@ static void bbSaveDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache
 }
 #endif
 
-void bbSwitchToOutput(bbPort_t * bbPort)
+bool bbSwitchToOutput(bbPort_t * bbPort)
 {
+    dmaResource_t *dmaResource = bbPort->dmaResource;
+
+    // Stop the stream before touching anything: if it will not stop we must not
+    // rewrite its registers, and leaving the pin an input keeps us off a wire
+    // that something is evidently still driving.
+    bbDMA_Cmd(bbPort, DISABLE);
+    if (!bbDMAWaitStopped(dmaResource)) {
+        return false;
+    }
+
     dbgPinHi(1);
     // Output idle level before switching to output
     // Use BSRR register for this
@@ -149,11 +159,6 @@ void bbSwitchToOutput(bbPort_t * bbPort)
     }
 
     // Reinitialize port group DMA for output
-
-    dmaResource_t *dmaResource = bbPort->dmaResource;
-
-    bbDMA_Cmd(bbPort, DISABLE);
-    bbDMAWaitStopped(dmaResource);
 
 #ifdef USE_DMA_REGISTER_CACHE
     bbLoadDMARegs(dmaResource, &bbPort->dmaRegOutput);
@@ -171,6 +176,8 @@ void bbSwitchToOutput(bbPort_t * bbPort)
     bbPort->direction = DSHOT_BITBANG_DIRECTION_OUTPUT;
 
     dbgPinLo(1);
+
+    return true;
 }
 
 #ifdef USE_DSHOT_TELEMETRY
@@ -187,10 +194,6 @@ void bbSwitchToInput(bbPort_t *bbPort)
     // Reinitialize port group DMA for input
 
     dmaResource_t *dmaResource = bbPort->dmaResource;
-
-    bbDMA_Cmd(bbPort, DISABLE);
-    bbDMAWaitStopped(dmaResource);
-
 #ifdef USE_DMA_REGISTER_CACHE
     bbLoadDMARegs(dmaResource, &bbPort->dmaRegInput);
 #else
