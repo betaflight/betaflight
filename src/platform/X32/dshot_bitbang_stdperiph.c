@@ -151,6 +151,10 @@ void bbSwitchToOutput(bbPort_t * bbPort)
     // Reinitialize port group DMA for output
 
     dmaResource_t *dmaResource = bbPort->dmaResource;
+
+    bbDMA_Cmd(bbPort, DISABLE);
+    bbDMAWaitStopped(dmaResource);
+
 #ifdef USE_DMA_REGISTER_CACHE
     bbLoadDMARegs(dmaResource, &bbPort->dmaRegOutput);
 #else
@@ -183,6 +187,10 @@ void bbSwitchToInput(bbPort_t *bbPort)
     // Reinitialize port group DMA for input
 
     dmaResource_t *dmaResource = bbPort->dmaResource;
+
+    bbDMA_Cmd(bbPort, DISABLE);
+    bbDMAWaitStopped(dmaResource);
+
 #ifdef USE_DMA_REGISTER_CACHE
     bbLoadDMARegs(dmaResource, &bbPort->dmaRegInput);
 #else

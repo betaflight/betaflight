@@ -296,6 +296,25 @@ void bbDMA_Cmd(bbPort_t *bbPort, FunctionalState NewState);
 #endif
 int  bbDMA_Count(bbPort_t *bbPort);
 
+// Disabling a stream is a request, not an act: the controller clears the enable
+// bit only once the in-flight transfer and any FIFO contents have drained, and
+// rewriting the configuration registers before then is forbidden and leaves the
+// stream in an undefined state (RM0090, DMA_SxCR: "It is forbidden to write
+// these registers when the EN bit is read as 1"). The drain is a single
+// non-burst transfer, so a handful of AHB cycles. Bounded so that a controller
+// which reports the bit differently degrades to the previous behaviour instead
+// of stalling a motor update.
+#define BB_DMA_STOP_SPIN_LIMIT 100
+
+static inline void bbDMAWaitStopped(dmaResource_t *dmaResource)
+{
+    for (unsigned spin = 0; spin < BB_DMA_STOP_SPIN_LIMIT; spin++) {
+        if (!(IS_DMA_ENABLED(dmaResource))) {
+            break;
+        }
+    }
+}
+
 void bbDshotRequestTelemetry(unsigned motorIndex);
 bool bbDshotIsMotorIdle(unsigned motorIndex);
 IO_t bbGetMotorIO(unsigned index);
