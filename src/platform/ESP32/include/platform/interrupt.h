@@ -23,10 +23,22 @@
 
 #include <stdint.h>
 
-// CPU interrupt number assignments for ESP32-S3.
-// The ESP32-S3 Xtensa core has 32 CPU interrupt lines (0-31).
-// Peripheral interrupt sources are routed to these via the interrupt matrix.
-// Numbers chosen from the level-1 interrupt pool to avoid conflicts.
+// CPU interrupt number assignments.  ESP32-S3 C handlers must use external,
+// level-triggered lines at a maskable C-compatible level.  Keep this mapping
+// S3-specific: the other ESP variants have different interrupt controllers and
+// retain their existing bring-up assignments below.
+#if defined(ESP32S3)
+#define ESP32_CPU_INTR_GPIO      0
+#define ESP32_CPU_INTR_UART0     1
+#define ESP32_CPU_INTR_UART1     2
+#define ESP32_CPU_INTR_UART2     3
+#define ESP32_CPU_INTR_DMA_CH0   4
+#define ESP32_CPU_INTR_DMA_CH1   5
+#define ESP32_CPU_INTR_DMA_CH2   8
+#define ESP32_CPU_INTR_DMA_CH3   9
+#define ESP32_CPU_INTR_DMA_CH4  12
+#define ESP32_CPU_INTR_USB      13
+#else
 #define ESP32_CPU_INTR_GPIO     19
 #define ESP32_CPU_INTR_UART0    20
 #define ESP32_CPU_INTR_UART1    21
@@ -37,6 +49,7 @@
 #define ESP32_CPU_INTR_DMA_CH3  27
 #define ESP32_CPU_INTR_DMA_CH4  28
 #define ESP32_CPU_INTR_USB      29
+#endif
 
 typedef void (*esp32IsrHandler_t)(void *arg);
 
