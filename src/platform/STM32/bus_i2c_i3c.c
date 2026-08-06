@@ -221,6 +221,12 @@ bool i2cWrite(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t data)
     return i2cWriteBuffer(device, addr, reg, 1, &data);
 }
 
+bool i2cWriteBufferBlocking(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf)
+{
+    // i2cWriteBuffer is already blocking on I3C-as-I2C
+    return i2cWriteBuffer(device, addr, reg, len, buf);
+}
+
 // Mirror the bring-up probe's transaction pattern exactly. The probe code
 // reads SPA06 CHIP_ID cleanly with this sequence; only difference vs the
 // earlier driver version was that the driver called i3cClearAllEventFlags()

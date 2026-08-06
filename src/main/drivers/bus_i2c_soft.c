@@ -193,8 +193,10 @@ bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, 
         I2C_Stop();
         return false;
     }
-    I2C_SendByte(reg);
-    I2C_WaitAck();
+    if (reg != 0xFF) {
+        I2C_SendByte(reg);
+        I2C_WaitAck();
+    }
     for (i = 0; i < len; i++) {
         I2C_SendByte(data[i]);
         if (!I2C_WaitAck()) {
@@ -205,6 +207,12 @@ bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, 
     }
     I2C_Stop();
     return true;
+}
+
+bool i2cWriteBufferBlocking(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf)
+{
+    // Soft I2C i2cWriteBuffer is already blocking
+    return i2cWriteBuffer(device, addr, reg, len, buf);
 }
 
 bool i2cWrite(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t data)
@@ -220,8 +228,10 @@ bool i2cWrite(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t data)
         i2cErrorCount++;
         return false;
     }
-    I2C_SendByte(reg);
-    I2C_WaitAck();
+    if (reg != 0xFF) {
+        I2C_SendByte(reg);
+        I2C_WaitAck();
+    }
     I2C_SendByte(data);
     I2C_WaitAck();
     I2C_Stop();
@@ -235,15 +245,17 @@ bool i2cRead(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t
     if (!I2C_Start()) {
         return false;
     }
-    I2C_SendByte(addr << 1 | I2C_Direction_Transmitter);
-    if (!I2C_WaitAck()) {
-        I2C_Stop();
-        i2cErrorCount++;
-        return false;
+    if (reg != 0xFF) {
+        I2C_SendByte(addr << 1 | I2C_Direction_Transmitter);
+        if (!I2C_WaitAck()) {
+            I2C_Stop();
+            i2cErrorCount++;
+            return false;
+        }
+        I2C_SendByte(reg);
+        I2C_WaitAck();
+        I2C_Start();
     }
-    I2C_SendByte(reg);
-    I2C_WaitAck();
-    I2C_Start();
     I2C_SendByte(addr << 1 | I2C_Direction_Receiver);
     I2C_WaitAck();
     while (len) {
