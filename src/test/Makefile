@@ -58,6 +58,7 @@ arming_prevention_unittest_SRC := \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/flight/autopilot_multirotor.c \
 		$(USER_DIR)/flight/gps_rescue_multirotor.c
+		$(USER_DIR)/flight/hover_calibration.c \
 
 arming_prevention_unittest_DEFINES := \
             USE_GPS_RESCUE=
