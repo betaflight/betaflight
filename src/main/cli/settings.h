@@ -93,6 +93,9 @@ typedef enum {
 #ifdef USE_OPTICALFLOW
     TABLE_OPTICALFLOW_HARDWARE,
 #endif
+#ifdef USE_PITOT
+    TABLE_PITOT_HARDWARE,
+#endif
 #ifdef USE_POSITION_HOLD
     TABLE_POSHOLD_SOURCE,
 #endif
