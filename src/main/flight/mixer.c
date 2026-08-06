@@ -673,7 +673,7 @@ static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const
     throttle = constrainf(throttle, -normalizedMotorMixMin, 1.0f - normalizedMotorMixMax);
 }
 
-FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
+FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
 {
     const bool launchControlActive = isLaunchControlActive();
     const bool airmodeEnabled = isAirmodeEnabled() || launchControlActive;

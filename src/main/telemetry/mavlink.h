@@ -32,8 +32,13 @@ void freeMAVLinkTelemetryPort(void);
 void configureMAVLinkTelemetryPort(void);
 
 // Forward-typedef so consumers can hold pointers without dragging in
-// common/mavlink.h (which carries -Wpedantic-noisy unnamed unions).
+// common/mavlink.h (which carries -Wpedantic-noisy unnamed unions). When the
+// full MAVLink headers are already in the translation unit they provide the real
+// (identical) typedef, so skip ours to avoid a -Wtypedef-redefinition clash
+// under stricter compilers. MAVLINK_MAX_PAYLOAD_LEN is defined by mavlink_types.h.
+#ifndef MAVLINK_MAX_PAYLOAD_LEN
 typedef struct __mavlink_message mavlink_message_t;
+#endif
 
 // Pack a fully-formed mavlink_message_t into the shared TX buffer and write it
 // to the open MAVLink serial port. Implemented in telemetry/mavlink.c; shared
