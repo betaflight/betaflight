@@ -127,12 +127,12 @@ static void FAST_CODE_NOINLINE computeLiftCoefficient(const pidProfile_t *pidPro
 #ifdef USE_PITOT
         if (sensors(SENSOR_PITOT)) {
             airSpeedPressure = pitot.diffPressure;
-        }
-#else
+        } else
+#endif
         if (STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
             airSpeedPressure = psasRuntime.air_density * sq(0.01f * gpsSol.speed3d) / 2.0f;
         }
-#endif
+
         if (airSpeedPressure > pressureThreshold) {
             *liftCoef = accelZ * psasRuntime.wing_load * G_ACCELERATION / airSpeedPressure;
             if (pidProfile->psas_lift_coef_filter_freq != 0) {
