@@ -103,7 +103,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { .boxId = BOXLAPTIMERRESET, .boxName = "LAP TIMER RESET", .permanentId = 54},
     { .boxId = BOXCHIRP, .boxName = "CHIRP", .permanentId = 55},
     { .boxId = BOXAUTOPILOT, .boxName = "AUTOPILOT", .permanentId = 56},
-    { .boxId = BOXWPCAPTURE, .boxName = "WP CAPTURE", .permanentId = 57}, 
+    { .boxId = BOXWPCAPTURE, .boxName = "WP CAPTURE", .permanentId = 57},
     { .boxId = BOXAIRPLANESAS, .boxName = "AIRPLANE SAS", .permanentId = 58},
     { .boxId = BOXAOALIMITER, .boxName = "AOA LIM", .permanentId = 59}
 };
