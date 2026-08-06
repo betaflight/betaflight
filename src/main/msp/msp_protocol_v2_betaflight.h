@@ -36,6 +36,8 @@
 #define MSP2_SET_BATTERY_PROFILE            0x300F
 #define MSP2_CLI_SETTING                    0x3010
 #define MSP2_CLI_SETTING_INFO               0x3011
+#define MSP2_MOTOR_SERVO_RESOURCE           0x3012  // Get motor and servo pin assignments
+#define MSP2_SET_MOTOR_SERVO_RESOURCE       0x3013  // Set motor or servo pin assignment
 
 // MSP2_SET_TEXT and MSP2_GET_TEXT variable types
 #define MSP2TEXT_PILOT_NAME                      1
