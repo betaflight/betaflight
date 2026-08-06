@@ -40,15 +40,69 @@
 
 typedef enum { ESP32_IRQ_0 = 0 } IRQn_Type;
 
-// BASEPRI stubs - ESP32 (Xtensa) has no BASEPRI register.
-// These are no-ops to satisfy the shared atomic.h code.
+// Xtensa has no ARM BASEPRI register.  On ESP32-S3 all Betaflight peripheral
+// handlers are routed to level-1 CPU interrupts, so raising PS.INTLEVEL to one
+// provides the critical-section semantics required by ATOMIC_BLOCK.  Preserve
+// the old level so nested blocks and ISR callers restore it correctly.
+#if defined(ESP32S3)
+__attribute__((always_inline)) static inline uint32_t esp32GetInterruptLevel(void)
+{
+    uint32_t ps;
+    __asm__ volatile ("rsr.ps %0" : "=a"(ps));
+    return ps & 0x0FU;
+}
+
+__attribute__((always_inline)) static inline void esp32SetInterruptLevel(uint32_t level)
+{
+    uint32_t ps;
+    __asm__ volatile ("rsr.ps %0" : "=a"(ps));
+    ps = (ps & ~0x0FU) | (level & 0x0FU);
+    __asm__ volatile ("wsr.ps %0; rsync" :: "a"(ps) : "memory");
+}
+
+__attribute__((always_inline)) static inline void __set_BASEPRI(uint32_t basePri)
+{
+    // Values saved by __get_BASEPRI are raw Xtensa levels.  Other callers pass
+    // ARM-style encoded priorities; any non-zero value masks our level-1 IRQs.
+    esp32SetInterruptLevel(basePri <= 0x0FU ? basePri : 1U);
+}
+
+__attribute__((always_inline)) static inline uint32_t __get_BASEPRI(void)
+{
+    return esp32GetInterruptLevel();
+}
+
+__attribute__((always_inline)) static inline void __set_BASEPRI_MAX(uint32_t basePri)
+{
+    // Normalise like __set_BASEPRI (raw Xtensa level, or 1 for an ARM-encoded
+    // priority) and only ever raise the level, never lower it.
+    const uint32_t requestedLevel = basePri <= 0x0FU ? basePri : 1U;
+    if (esp32GetInterruptLevel() < requestedLevel) {
+        esp32SetInterruptLevel(requestedLevel);
+    }
+}
+
+static inline void __enable_irq(void) { esp32SetInterruptLevel(0); }
+static inline void __disable_irq(void) { esp32SetInterruptLevel(15); }
+#else
+// Bring-up stubs retained for the other ESP variants until their native
+// interrupt-controller critical sections are implemented.
 __attribute__((always_inline)) static inline void __set_BASEPRI(uint32_t basePri) { (void)basePri; }
 __attribute__((always_inline)) static inline uint32_t __get_BASEPRI(void) { return 0; }
 __attribute__((always_inline)) static inline void __set_BASEPRI_MAX(uint32_t basePri) { (void)basePri; }
-
-// NVIC stubs
 static inline void __enable_irq(void) { }
 static inline void __disable_irq(void) { }
+#endif
+
+// atomic.h's default non-barrier helpers contain ARM MSR instructions.  Keep
+// them native on every ESP target as well; on S3 these inherit the real Xtensa
+// critical-section implementation above, while the bring-up targets retain
+// their existing stub semantics.
+#define PLATFORM_CUSTOM_BASEPRI_NB
+__attribute__((always_inline)) static inline void __set_BASEPRI_nb(uint32_t basePri) { __set_BASEPRI(basePri); }
+__attribute__((always_inline)) static inline void __set_BASEPRI_MAX_nb(uint32_t basePri) { __set_BASEPRI_MAX(basePri); }
+
+// NVIC compatibility stub
 static inline void NVIC_SystemReset(void) { while(1); }
 
 #define NVIC_PriorityGroup_2         0x500
