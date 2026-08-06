@@ -169,10 +169,30 @@ extern esp32_peripheral_t esp32UartDev2;
 #define ESP32_RMT_SIG_OUT0_IDX     RMT_SIG_OUT0_IDX
 #endif
 
+#if defined(ESP32S3)
+// ESP32-S3 executes normal .text from flash through a small instruction cache.
+// Keep Betaflight's existing hot-path annotations meaningful by placing
+// FAST_CODE and interrupt entry points in the IRAM window reserved by the S3
+// linker script.  FAST_CODE_NOINLINE intentionally remains outside that
+// window, matching the STM32 meaning used to keep large/cold helpers out of
+// scarce instruction RAM.
+#define FAST_CODE                       __attribute__((section(".iram.hot")))
+#define FAST_CODE_NOINLINE              __attribute__((noinline))
+#define FAST_CODE_NOINLINE_CRITICAL     __attribute__((section(".iram.hot"), noinline))
+#define FAST_IRQ_HANDLER                __attribute__((section(".iram.isr"), noinline))
+
+// All statically allocated DMA buffers live in internal DRAM on this bare-metal
+// port.  Word alignment satisfies GDMA descriptor/data access requirements
+// without changing the layout of non-S3 ESP targets.
+#define DMA_DATA_ZERO_INIT              __attribute__((aligned(4)))
+#define DMA_DATA                        __attribute__((aligned(4)))
+#define STATIC_DMA_DATA_AUTO            static __attribute__((aligned(4)))
+#else
 #define DMA_DATA_ZERO_INIT
 #define DMA_DATA
 #define STATIC_DMA_DATA_AUTO            static
 #define FAST_IRQ_HANDLER
+#endif
 
 #define DEFAULT_CPU_OVERCLOCK           0
 
