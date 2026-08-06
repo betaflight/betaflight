@@ -118,16 +118,22 @@ static void FAST_CODE_NOINLINE computeLiftCoefficient(const pidProfile_t *pidPro
 {
     static float liftCoefLast = 0.0f; // liftCoefLast is full defined after timeForValid time, its first value does not matter after any re-init
     const float timeForValid = 3.0f;
+    const float pressureThreshold = 1.4f;    // air speed pressure threshold (Pa), the speed is about 1.5 m/s for pressure 1.4Pa
+    float airSpeedPressure = 0.0f;
     *liftCoef = 0.0f;
     *liftCoefVelocity = 0.0f;
 
-    if (ARMING_FLAG(ARMED) &&
-        STATE(GPS_FIX) &&
-        gpsSol.numSat > GPS_MIN_SAT_COUNT) {
-        const float speedThreshold = 1.5f;    // GPS speed threshold (m/s)
-        float speed = 0.01f * gpsSol.speed3d;
-        if (speed > speedThreshold) {
-            const float airSpeedPressure = psasRuntime.air_density * sq(speed) / 2.0f;
+    if (ARMING_FLAG(ARMED)) {
+#ifdef USE_PITOT
+        if (sensors(SENSOR_PITOT)) {
+            airSpeedPressure = pitot.diffPressure;
+        }
+#else
+        if (STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
+            airSpeedPressure = psasRuntime.air_density * sq(0.01f * gpsSol.speed3d) / 2.0f;
+        }
+#endif
+        if (airSpeedPressure > pressureThreshold) {
             *liftCoef = accelZ * psasRuntime.wing_load * G_ACCELERATION / airSpeedPressure;
             if (pidProfile->psas_lift_coef_filter_freq != 0) {
                 *liftCoef = pt1FilterApply(&psasLiftCoefLowpass, *liftCoef);
