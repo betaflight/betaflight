@@ -367,8 +367,6 @@ static void bbFindPacerTimer(void)
     }
 }
 
-// Maximum time to wait for telemetry reception to complete, derived from the
-// capture window length in bbTimebaseSetup()
 static timeDelta_t bbTelemetryTimeoutUs;
 
 static void bbTimebaseSetup(bbPort_t *bbPort, motorProtocolTypes_e dshotProtocolType)
@@ -383,9 +381,8 @@ static void bbTimebaseSetup(bbPort_t *bbPort, motorProtocolTypes_e dshotProtocol
     uint32_t inputFreq = outputFreq * 5 * 2 * DSHOT_BITBANG_TELEMETRY_OVER_SAMPLE / 24;
     bbPort->inputARR = timerclock / inputFreq - 1;
 
-    // Backstop for bbTelemetryWait(): the length of the timer paced input
-    // capture window, plus 25% margin. DShot600: ~62 us -> ~78 us,
-    // DShot300: ~124 us -> ~155 us.
+    // Backstop for bbTelemetryWait(): capture window plus 25% margin.
+    // DShot600: ~62 us -> ~78 us, DShot300: ~124 us -> ~155 us.
     bbTelemetryTimeoutUs = (timeDelta_t)(DSHOT_BB_PORT_IP_BUF_LENGTH * 1000000 / inputFreq) * 5 / 4;
 }
 
@@ -478,19 +475,14 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorProtocolTypes_e pwmP
 
 static bool bbTelemetryWait(void)
 {
-    // Wait for telemetry reception to complete.
-    //
-    // The capture must not be cut short. The window is only a few microseconds
+    // The capture must not be cut short: the window is only a few microseconds
     // longer than the ESC reply (~62 us against ~58 us at DShot600), so aborting
-    // it means bbSwitchToOutput() re-enables the push-pull output driver while
-    // the ESC is still driving the line. The resulting contention injects supply
-    // noise that has been observed to corrupt I2C sensors on AIO boards (#15533).
+    // it leaves bbSwitchToOutput() driving the line push-pull against a still
+    // transmitting ESC. That contention couples into the 3.3 V rail and has been
+    // seen to corrupt I2C barometers on AIO boards (#15533).
     //
-    // The window is timer paced and always runs to completion, so this loop
-    // normally exits as soon as the DMA completion IRQ clears telemetryPending.
-    // bbTelemetryTimeoutUs bounds a stalled DMA only, and is derived from the
-    // window rather than the fixed 2000 us it replaces - that was long enough to
-    // starve TASK_RX for tens of milliseconds on 8 kHz targets with bidirDSHOT.
+    // The window is timer paced and always completes, so bbTelemetryTimeoutUs is
+    // a backstop for a stalled DMA only.
     bool telemetryPending;
     bool telemetryWait = false;
     const timeUs_t startTimeUs = micros();
@@ -504,15 +496,11 @@ static bool bbTelemetryWait(void)
         telemetryWait |= telemetryPending;
 
         if (cmpTimeUs(micros(), startTimeUs) > bbTelemetryTimeoutUs) {
-            // Stalled. Leave the DMA running: tearing it down from thread context
-            // races bbDMAIrqHandler() on both the stream (which must not be
-            // reprogrammed before it has actually stopped, which bbSwitchToOutput()
-            // would then do immediately) and on the pacer TMRx DMA request enables
-            // shared with the other port group. bbUpdateComplete() recovers the
-            // direction on this cycle and the next completed capture clears
-            // telemetryPending. Flag the ports that are still pending so
-            // bbDecodeTelemetry() skips a torn buffer rather than decoding a
-            // bad-but-valid GCR frame.
+            // Leave the stream for bbUpdateComplete() to reinitialise, as it does
+            // on every cycle; stopping it here would additionally race
+            // bbDMAIrqHandler() on the pacer TMRx DMA request enables, which are
+            // shared with the other port group. The buffers may hold a partial
+            // frame, so skip them rather than decode a bad-but-valid GCR frame.
             for (int i = 0; i < usedMotorPorts; i++) {
                 if (bbPorts[i].telemetryPending) {
                     bbPorts[i].telemetryAborted = true;
