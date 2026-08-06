@@ -240,7 +240,6 @@ STATIC_UNIT_TESTED bool isPulseValid(uint16_t pulseDuration)
 #ifdef USE_SERIALRX
 static bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
-    UNUSED(rxConfig);
     bool enabled = false;
     switch (rxRuntimeState->serialrxProvider) {
 #ifdef USE_SERIALRX_SRXL2
@@ -312,7 +311,7 @@ static bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntime
         break;
 #endif
     default:
-        enabled = false;
+        UNUSED(rxConfig);
         break;
     }
     return enabled;
