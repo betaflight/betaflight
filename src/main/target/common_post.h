@@ -61,6 +61,13 @@
 #define FAST_CODE_NOINLINE
 #endif
 
+// Large functions normally stay out of scarce fast RAM via
+// FAST_CODE_NOINLINE.  Platforms with a larger measured budget may opt the
+// small set of genuinely loop-critical functions back in.
+#ifndef FAST_CODE_NOINLINE_CRITICAL
+#define FAST_CODE_NOINLINE_CRITICAL FAST_CODE_NOINLINE
+#endif
+
 #ifndef CCM_CODE
 #define CCM_CODE
 #endif

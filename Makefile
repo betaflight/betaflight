@@ -498,7 +498,7 @@ $(TARGET_LST): $(TARGET_ELF)
 	$(V0) $(OBJDUMP) -S --disassemble $< > $@
 
 ifeq ($(EXST),no)
-$(TARGET_BIN): $(TARGET_ELF)
+$(TARGET_BIN): $(TARGET_ELF) $(BIN_FROM_ELF_DEPS)
 	@echo "Creating BIN $(TARGET_BIN)" "$(STDOUT)"
 # A platform may set BIN_FROM_ELF_CMD to generate the binary from the ELF its
 # own way (e.g. ESP32 wraps it into a bootable image with esptool elf2image);
