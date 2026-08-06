@@ -4524,6 +4524,11 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
 #ifdef USE_AIRPLANE_SAS
     case MSP_SET_PSAS_CONFIG:
+        const uint32_t expectedSize = 56;
+        const uint32_t dataSize = sbufBytesRemaining(src);
+        if (dataSize < expectedSize) {
+            return MSP_RESULT_ERROR;
+        }
         currentPidProfile->psas_stick_gain[0] = sbufReadU8(src);
         currentPidProfile->psas_stick_gain[1] = sbufReadU8(src);
         currentPidProfile->psas_stick_gain[2] = sbufReadU8(src);
