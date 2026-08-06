@@ -65,7 +65,7 @@ IO_t bbGetMotorIO(unsigned index)
 #ifdef USE_DSHOT_BITBANG
 bool isDshotBitbangActive(const motorDevConfig_t *motorDevConfig)
 {
-#if defined(STM32F4) || defined(APM32F4)
+#if defined(STM32F4) || defined(APM32F4) || defined(GD32F4)
     return motorDevConfig->useDshotBitbang == DSHOT_BITBANG_ON ||
         (motorDevConfig->useDshotBitbang == DSHOT_BITBANG_AUTO && motorDevConfig->useDshotTelemetry && motorDevConfig->motorProtocol != MOTOR_PROTOCOL_PROSHOT1000);
 #else
