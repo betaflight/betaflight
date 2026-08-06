@@ -55,8 +55,11 @@
 #endif
 #include "soc/soc.h"
 
-// Both ESP32 and ESP32-S3 run at 240 MHz by default
-uint32_t SystemCoreClock = 240000000;
+// Derived at runtime in systemInit() from the ROM ticks-per-microsecond value,
+// which reflects whatever frequency the bootloader actually left the CPU at.
+// Avoids baking in a per-target clock, so future SoCs (e.g. P4, which runs
+// faster than the S3's 240 MHz) report the correct frequency without a change.
+uint32_t SystemCoreClock = 0;
 
 // Peripheral instance storage (port numbers for ESP-IDF)
 esp32_peripheral_t esp32SpiDev0 = 0;
@@ -84,6 +87,20 @@ void cycleCounterInit(void)
 
 void systemInit(void)
 {
+    // Read the frequency the bootloader left us at rather than assuming one. The
+    // RTC clock-switch routine updates the ROM ticks-per-microsecond on every ESP
+    // target, so this stays correct as new SoCs are brought up. Must run before
+    // cycleCounterInit(), which derives usTicks from SystemCoreClock.
+    const uint32_t cpuTicksPerUs = esp_rom_get_cpu_ticks_per_us();
+    if (cpuTicksPerUs != 0) {
+        SystemCoreClock = cpuTicksPerUs * 1000000U;
+    } else {
+        // Unreachable in practice: the ROM sets ticks-per-microsecond during
+        // first-stage boot. Fall back to the conservative bootloader boot
+        // frequency purely so cycleCounterInit() below cannot divide by zero.
+        SystemCoreClock = 80000000U;
+    }
+
     cycleCounterInit();
 
 #ifdef USE_MULTICORE
