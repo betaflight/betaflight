@@ -354,6 +354,10 @@ static void bbFindPacerTimer(void)
     }
 }
 
+// Maximum time to wait for telemetry reception to complete, derived from the
+// capture window length in bbTimebaseSetup()
+static timeDelta_t bbTelemetryTimeoutUs;
+
 static void bbTimebaseSetup(bbPort_t *bbPort, motorProtocolTypes_e dshotProtocolType)
 {
     uint32_t timerclock = timerClock(bbPort->timhw);
@@ -365,6 +369,11 @@ static void bbTimebaseSetup(bbPort_t *bbPort, motorProtocolTypes_e dshotProtocol
     // XXX Explain this formula
     uint32_t inputFreq = outputFreq * 5 * 2 * DSHOT_BITBANG_TELEMETRY_OVER_SAMPLE / 24;
     bbPort->inputARR = timerclock / inputFreq - 1;
+
+    // Backstop for bbTelemetryWait(): the length of the timer paced input
+    // capture window, plus 25% margin. DShot600: ~62 us -> ~78 us,
+    // DShot300: ~124 us -> ~155 us.
+    bbTelemetryTimeoutUs = (timeDelta_t)(DSHOT_BB_PORT_IP_BUF_LENGTH * 1000000 / inputFreq) * 5 / 4;
 }
 
 //
@@ -450,21 +459,49 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorProtocolTypes_e pwmP
 
 static bool bbTelemetryWait(void)
 {
-    // If telemetry input DMA is still running, abort it rather than busy-waiting.
-    // Skipping one telemetry frame is harmless; busy-waiting can block TASK_RX for
-    // tens of milliseconds on high-loop-rate targets (e.g. F7 at 8K with bidirDSHOT).
-    // bbUpdateComplete() handles the port still being in INPUT direction.
+    // Wait for telemetry reception to complete.
+    //
+    // The capture must not be cut short. The window is only a few microseconds
+    // longer than the ESC reply (~62 us against ~58 us at DShot600), so aborting
+    // it means bbSwitchToOutput() re-enables the push-pull output driver while
+    // the ESC is still driving the line. The resulting contention injects supply
+    // noise that has been observed to corrupt I2C sensors on AIO boards (#15533).
+    //
+    // The window is timer paced and always runs to completion, so this loop
+    // normally exits as soon as the DMA completion IRQ clears telemetryPending.
+    // bbTelemetryTimeoutUs bounds a stalled DMA only, and is derived from the
+    // window rather than the fixed 2000 us it replaces - that was long enough to
+    // starve TASK_RX for tens of milliseconds on 8 kHz targets with bidirDSHOT.
+    bool telemetryPending;
     bool telemetryWait = false;
+    const timeUs_t startTimeUs = micros();
 
-    for (int i = 0; i < usedMotorPorts; i++) {
-        if (bbPorts[i].telemetryPending) {
-            bbTIM_DMACmd(bbPorts[i].timhw->tim, bbPorts[i].dmaSource, FALSE);
-            bbDMA_Cmd(&bbPorts[i], FALSE);
-            bbPorts[i].telemetryPending = false;
-            bbPorts[i].telemetryAborted = true;
-            telemetryWait = true;
+    do {
+        telemetryPending = false;
+        for (int i = 0; i < usedMotorPorts; i++) {
+            telemetryPending |= bbPorts[i].telemetryPending;
         }
-    }
+
+        telemetryWait |= telemetryPending;
+
+        if (cmpTimeUs(micros(), startTimeUs) > bbTelemetryTimeoutUs) {
+            // Stalled. Leave the DMA running: tearing it down from thread context
+            // races bbDMAIrqHandler() on both the stream (which must not be
+            // reprogrammed before it has actually stopped, which bbSwitchToOutput()
+            // would then do immediately) and on the pacer TMRx DMA request enables
+            // shared with the other port group. bbUpdateComplete() recovers the
+            // direction on this cycle and the next completed capture clears
+            // telemetryPending. Flag the ports that are still pending so
+            // bbDecodeTelemetry() skips a torn buffer rather than decoding a
+            // bad-but-valid GCR frame.
+            for (int i = 0; i < usedMotorPorts; i++) {
+                if (bbPorts[i].telemetryPending) {
+                    bbPorts[i].telemetryAborted = true;
+                }
+            }
+            break;
+        }
+    } while (telemetryPending);
 
     if (telemetryWait) {
         DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);
