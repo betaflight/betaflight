@@ -8762,15 +8762,20 @@ void cliProcessConfigFile(const char *filename)
             if (cp) {
                 *cp = '\0';
             }
-            // Tokenize the comment-stripped line and look for 'nosave' as a discrete token
+            // Tokenize the comment-stripped line and look for 'nosave' as a discrete token.
+            // strtok writes NULs over the delimiters, so run it on a scratch copy: 'stripped'
+            // is reused below to rebuild the line and must keep its arguments intact.
+            char scratch[CLI_IN_BUFFER_SIZE];
+            strcpy(scratch, stripped);
             bool hasNosave = false;
-            char *tok = strtok(stripped, " \t\r\n");
+            char *saveptr;
+            char *tok = strtok_r(scratch, " \t\r\n", &saveptr);
             while (tok) {
                 if (strcasecmp(tok, "nosave") == 0) {
                     hasNosave = true;
                     break;
                 }
-                tok = strtok(NULL, " \t\r\n");
+                tok = strtok_r(NULL, " \t\r\n", &saveptr);
             }
             if (!hasNosave) {
                 // Append 'nosave' to the original line (minus any trailing comment/whitespace)
