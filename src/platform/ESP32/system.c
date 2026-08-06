@@ -55,8 +55,11 @@
 #endif
 #include "soc/soc.h"
 
-// Both ESP32 and ESP32-S3 run at 240 MHz by default
-uint32_t SystemCoreClock = 240000000;
+// Derived at runtime in systemInit() from the ROM ticks-per-microsecond value,
+// which reflects whatever frequency the bootloader actually left the CPU at.
+// Avoids baking in a per-target clock, so future SoCs (e.g. P4, which runs
+// faster than the S3's 240 MHz) report the correct frequency without a change.
+uint32_t SystemCoreClock = 0;
 
 // Peripheral instance storage (port numbers for ESP-IDF)
 esp32_peripheral_t esp32SpiDev0 = 0;
@@ -84,6 +87,20 @@ void cycleCounterInit(void)
 
 void systemInit(void)
 {
+    // Read the frequency the bootloader left us at rather than assuming one. The
+    // RTC clock-switch routine updates the ROM ticks-per-microsecond on every ESP
+    // target, so this stays correct as new SoCs are brought up. Must run before
+    // cycleCounterInit(), which derives usTicks from SystemCoreClock.
+    const uint32_t cpuTicksPerUs = esp_rom_get_cpu_ticks_per_us();
+    if (cpuTicksPerUs != 0) {
+        SystemCoreClock = cpuTicksPerUs * 1000000U;
+    } else {
+        // Unreachable in practice: the ROM sets ticks-per-microsecond during
+        // first-stage boot. Fall back to the conservative bootloader boot
+        // frequency purely so cycleCounterInit() below cannot divide by zero.
+        SystemCoreClock = 80000000U;
+    }
+
     cycleCounterInit();
 
 #ifdef USE_MULTICORE
@@ -157,7 +174,7 @@ STATIC_ASSERT(sizeof(timeUs_t) == sizeof(uint32_t), timeUs_t_is_32_bit_failed);
 // driver port lands.
 #define SYSTIMER_TICKS_PER_US  16
 
-timeUs_t micros(void)
+FAST_CODE timeUs_t micros(void)
 {
     // Take a snapshot of counter unit 0
     systimer_ll_counter_snapshot(&SYSTIMER, 0);
@@ -181,7 +198,7 @@ static uint32_t lastCcount = 0;
 static uint32_t cycleRemainder = 0;
 static uint32_t usAccumulator = 0;
 
-timeUs_t micros(void)
+FAST_CODE timeUs_t micros(void)
 {
     uint32_t ccount;
     __asm__ __volatile__("rsr %0, ccount" : "=a"(ccount));
@@ -204,7 +221,7 @@ timeMs_t millis(void)
     return micros() / 1000;
 }
 
-timeUs_t microsISR(void)
+FAST_CODE timeUs_t microsISR(void)
 {
     return micros();
 }
@@ -219,7 +236,7 @@ void delay(uint32_t ms)
     esp_rom_delay_us(ms * 1000);
 }
 
-uint32_t getCycleCounter(void)
+FAST_CODE uint32_t getCycleCounter(void)
 {
     uint32_t val;
 #if defined(ESP32C5) || defined(ESP32P4)
@@ -232,27 +249,27 @@ uint32_t getCycleCounter(void)
     return val;
 }
 
-int32_t clockCyclesToMicros(int32_t clockCycles)
+FAST_CODE int32_t clockCyclesToMicros(int32_t clockCycles)
 {
     return clockCycles / usTicks;
 }
 
-float clockCyclesToMicrosf(int32_t clockCycles)
+FAST_CODE float clockCyclesToMicrosf(int32_t clockCycles)
 {
     return clockCycles * usTicksInv;
 }
 
-int32_t clockCyclesTo10thMicros(int32_t clockCycles)
+FAST_CODE int32_t clockCyclesTo10thMicros(int32_t clockCycles)
 {
     return 10 * clockCycles / (int32_t)usTicks;
 }
 
-int32_t clockCyclesTo100thMicros(int32_t clockCycles)
+FAST_CODE int32_t clockCyclesTo100thMicros(int32_t clockCycles)
 {
     return 100 * clockCycles / (int32_t)usTicks;
 }
 
-uint32_t clockMicrosToCycles(uint32_t micros)
+FAST_CODE uint32_t clockMicrosToCycles(uint32_t micros)
 {
     return micros * usTicks;
 }

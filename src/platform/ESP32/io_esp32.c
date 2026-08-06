@@ -69,7 +69,7 @@ void IOWrite(IO_t io, bool hi)
     gpio_ll_set_level(&GPIO, IO_Pin(io), hi);
 }
 
-void IOHi(IO_t io)
+FAST_CODE void IOHi(IO_t io)
 {
     if (!io) {
         return;
@@ -77,7 +77,7 @@ void IOHi(IO_t io)
     gpio_ll_set_level(&GPIO, IO_Pin(io), 1);
 }
 
-void IOLo(IO_t io)
+FAST_CODE void IOLo(IO_t io)
 {
     if (!io) {
         return;
