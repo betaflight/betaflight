@@ -253,8 +253,10 @@ static uint8_t cmsx_simplified_dterm_filter;
 static uint8_t cmsx_simplified_dterm_filter_multiplier;
 static uint8_t cmsx_simplified_gyro_filter;
 static uint8_t cmsx_simplified_gyro_filter_multiplier;
-static uint8_t cmsx_tpa_rate;
-static uint16_t cmsx_tpa_breakpoint;
+static uint8_t cmsx_tpa_d_rate;
+static uint16_t cmsx_tpa_d_breakpoint;
+static uint8_t cmsx_tpa_p_rate;
+static uint16_t cmsx_tpa_p_breakpoint;
 static int8_t cmsx_tpa_low_rate;
 static uint16_t cmsx_tpa_low_breakpoint;
 static uint8_t cmsx_tpa_low_always;
@@ -544,8 +546,10 @@ static uint8_t cmsx_feedforward_smooth_factor;
 static uint8_t cmsx_feedforward_jitter_factor;
 #endif
 
-static uint8_t cmsx_tpa_rate;
-static uint16_t cmsx_tpa_breakpoint;
+static uint8_t cmsx_tpa_d_rate;
+static uint16_t cmsx_tpa_d_breakpoint;
+static uint8_t cmsx_tpa_p_rate;
+static uint16_t cmsx_tpa_p_breakpoint;
 static int8_t cmsx_tpa_low_rate;
 static uint16_t cmsx_tpa_low_breakpoint;
 static uint8_t cmsx_tpa_low_always;
@@ -599,8 +603,10 @@ static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
 #ifdef USE_BATTERY_VOLTAGE_SAG_COMPENSATION
     cmsx_vbat_sag_compensation = pidProfile->vbat_sag_compensation;
 #endif
-    cmsx_tpa_rate = pidProfile->tpa_rate;
-    cmsx_tpa_breakpoint = pidProfile->tpa_breakpoint;
+    cmsx_tpa_d_rate = pidProfile->tpa_d_rate;
+    cmsx_tpa_d_breakpoint = pidProfile->tpa_d_breakpoint;
+    cmsx_tpa_p_rate = pidProfile->tpa_p_rate;
+    cmsx_tpa_p_breakpoint = pidProfile->tpa_p_breakpoint;
     cmsx_tpa_low_rate = pidProfile->tpa_low_rate;
     cmsx_tpa_low_breakpoint = pidProfile->tpa_low_breakpoint;
     cmsx_tpa_low_always = pidProfile->tpa_low_always;
@@ -657,8 +663,10 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
 #ifdef USE_BATTERY_VOLTAGE_SAG_COMPENSATION
     pidProfile->vbat_sag_compensation = cmsx_vbat_sag_compensation;
 #endif
-    pidProfile->tpa_rate = cmsx_tpa_rate;
-    pidProfile->tpa_breakpoint = cmsx_tpa_breakpoint;
+    pidProfile->tpa_d_rate = cmsx_tpa_d_rate;
+    pidProfile->tpa_d_breakpoint = cmsx_tpa_d_breakpoint;
+    pidProfile->tpa_p_rate = cmsx_tpa_p_rate;
+    pidProfile->tpa_p_breakpoint = cmsx_tpa_p_breakpoint;
     pidProfile->tpa_low_rate = cmsx_tpa_low_rate;
     pidProfile->tpa_low_breakpoint = cmsx_tpa_low_breakpoint;
     pidProfile->tpa_low_always = cmsx_tpa_low_always;
@@ -718,8 +726,10 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "VBAT_SAG_COMP", OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_vbat_sag_compensation, 0, 150, 1 } },
 #endif
 
-    { "TPA RATE",      OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &cmsx_tpa_rate, 0, 100, 1, 10} },
-    { "TPA BRKPT",     OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_tpa_breakpoint, 1000, 2000, 10} },
+    { "TPA D RATE",      OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &cmsx_tpa_d_rate, 0, 100, 1, 10} },
+    { "TPA D BRKPT",     OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_tpa_d_breakpoint, 1000, 2000, 10} },
+    { "TPA P RATE",      OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &cmsx_tpa_p_rate, 0, 100, 1, 10} },
+    { "TPA P BRKPT",     OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_tpa_p_breakpoint, 1000, 2000, 10} },
     { "TPA LOW RATE",  OME_INT8,   NULL, &(OSD_INT8_t) { &cmsx_tpa_low_rate, TPA_LOW_RATE_MIN, TPA_MAX , 1} },
     { "TPA LOW BRKPT", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_tpa_low_breakpoint, 1000, 2000, 10} },
     { "TPA LOW ALWYS", OME_Bool,   NULL, &cmsx_tpa_low_always },
