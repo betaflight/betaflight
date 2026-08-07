@@ -487,13 +487,14 @@ static bool bbTelemetryWait(void)
                     bbPorts[i].telemetryAborted = true;
                 }
             }
+            // Count timeouts only. Spinning here is normal - the capture window
+            // legitimately overlaps the next update on high loop rates - so
+            // counting every wait would leave debug[2] permanently nonzero
+            // instead of flagging a stalled capture.
+            DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);
             break;
         }
     } while (telemetryPending);
-
-    if (telemetryWait) {
-        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);
-    }
 
     return telemetryWait;
 }
