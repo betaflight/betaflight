@@ -1547,4 +1547,27 @@ void cmsAddMenuEntry(OSD_Entry *menuEntry, char *text, uint16_t flags, CMSEntryF
         menuEntry->data = data;
 }
 
+void setProfileIndexString(char *profileString, int profileIndex, const char *profileName)
+{
+    int charIndex = 0;
+    profileString[charIndex++] = '1' + profileIndex;
+
+#ifdef USE_PROFILE_NAMES
+    const int profileNameLen = strlen(profileName);
+
+    if (profileNameLen > 0) {
+        profileString[charIndex++] = ' ';
+        profileString[charIndex++] = '(';
+        for (int i = 0; i < profileNameLen; i++) {
+            profileString[charIndex++] = toupper(profileName[i]);
+        }
+        profileString[charIndex++] = ')';
+    }
+#else
+    UNUSED(profileName);
+#endif
+
+    profileString[charIndex] = '\0';
+}
+
 #endif // CMS
