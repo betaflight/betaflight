@@ -91,14 +91,14 @@
 
 #define HOTT_TEXTMODE_TASK_PERIOD 1000
 #define HOTT_TEXTMODE_RX_SCHEDULE 5000
-#define HOTT_TEXTMODE_TX_DELAY_US 1000
+#define HOTT_TEXTMODE_TX_DELAY_US 600
 #endif
 
 //#define HOTT_DEBUG
 
-#define HOTT_MESSAGE_PREPARATION_FREQUENCY_5_HZ ((1000 * 1000) / 5)
+#define HOTT_MESSAGE_PREPARATION_FREQUENCY_10_HZ ((1000 * 1000) / 5)
 #define HOTT_RX_SCHEDULE 4000
-#define HOTT_TX_DELAY_US 3000
+#define HOTT_TX_DELAY_US 1000
 #define MILLISECONDS_IN_A_SECOND 1000
 
 static uint32_t rxSchedule = HOTT_RX_SCHEDULE;
@@ -212,6 +212,13 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
 {
     hottGPSMessage->gps_satelites = gpsSol.numSat;
 
+    // Report climb rate regardless of GPS fix
+    const int32_t climbrate = getEstimatedVario();
+    hottGPSMessage->climbrate_L = (30000 + climbrate) & 0xFF;
+    hottGPSMessage->climbrate_H = (30000 + climbrate) >> 8;
+
+    const int32_t climbrate3s = ((climbrate / 100) + HOTT_EAM_OFFSET_M3S);
+    hottGPSMessage->climbrate3s = climbrate3s & 0xFF;
     if (!STATE(GPS_FIX)) {
         hottGPSMessage->gps_fix_char = GPS_FIX_CHAR_NONE;
         return;
@@ -240,7 +247,8 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
     hottGPSMessage->altitude_L = hottGpsAltitude & 0x00FF;
     hottGPSMessage->altitude_H = hottGpsAltitude >> 8;
 
-    hottGPSMessage->home_direction = GPS_directionToHome / 10;
+    hottGPSMessage->home_direction = GPS_directionToHome / 20;
+	hottGPSMessage->flight_direction = gpsSol.groundCourse / 20;	//GPS_direction;	gpsSol.groundCourse	//gps_Msg.ground_course
 }
 #endif
 
@@ -307,7 +315,7 @@ static inline void hottEAMUpdateClimbrate(HOTT_EAM_MSG_t *hottEAMMessage)
     const int32_t vario = getEstimatedVario();
     hottEAMMessage->climbrate_L = (30000 + vario) & 0x00FF;
     hottEAMMessage->climbrate_H = (30000 + vario) >> 8;
-    hottEAMMessage->climbrate3s = 120 + (vario / 100);
+    hottEAMMessage->climbrate3s = HOTT_EAM_OFFSET_M3S + (vario / 100);
 }
 #endif
 
