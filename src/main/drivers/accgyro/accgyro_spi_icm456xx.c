@@ -220,19 +220,18 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_GYRO_ODR_3_125_LP              0x0E
 #define ICM456XX_GYRO_ODR_1_5625_LP             0x0F
 
-// Accel IPREG_SYS2_REG_123 - 0x7B
-#define ICM456XX_SRC_CTRL_AAF_ENABLE_BIT        (1 << 0) // Anti-Alias Filter - AAF
-#define ICM456XX_SRC_CTRL_INTERP_ENABLE_BIT     (1 << 1) // Interpolator
-
 // IPREG_SYS2_REG_123 - 0x7B
 #define ICM456XX_ACCEL_SRC_CTRL_IREG_ADDR       0xA57B // To access register in IPREG_SYS2, add base address 0xA500 + offset
+#define ICM456XX_ACCEL_SRC_CTRL_MASK            0x03
+#define ICM456XX_ACCEL_SRC_CTRL_INTERP_FIR      0x02
 
 // IPREG_SYS1_REG_166 - 0xA6
 #define ICM456XX_GYRO_SRC_CTRL_IREG_ADDR        0xA4A6 // To access register in IPREG_SYS1, add base address 0xA400 + offset
+#define ICM456XX_GYRO_SRC_CTRL_MASK             (0x03 << 5)
+#define ICM456XX_GYRO_SRC_CTRL_INTERP_FIR       (0x02 << 5)
 
 // HOST INDIRECT ACCESS REGISTER (IREG)
 #define ICM456XX_REG_IREG_ADDR_15_8             0x7C
-#define ICM456XX_REG_IREG_ADDR_7_0              0x7D
 #define ICM456XX_REG_IREG_DATA                  0x7E
 
 
@@ -270,13 +269,12 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 
 #define HZ_TO_US(hz)                            ((int32_t)((1000 * 1000) / (hz)))
 
-#define ICM456XX_BIT_IREG_DONE                  (1 << 0)
-
 // Startup timing constants (DS-000577 Table 9-6)
 #define ICM456XX_ACCEL_STARTUP_TIME_MS          10  // Min accel startup from OFF/STANDBY/LP
 #define ICM456XX_GYRO_STARTUP_TIME_MS           35  // Min gyro startup from OFF/STANDBY/LP
 #define ICM456XX_SENSOR_ENABLE_DELAY_MS         1   // Allow sensors to power on and stabilize
-#define ICM456XX_IREG_TIMEOUT_US                5000 // IREG operation timeout (5ms max)
+#define ICM456XX_IREG_ACCESS_DELAY_US           4
+#define ICM456XX_IREG_UPDATE_RETRIES            3
 
 #define ICM456XX_DATA_LENGTH                    6  // 3 axes * 2 bytes per axis
 #define ICM456XX_SPI_BUFFER_SIZE                (1 + ICM456XX_DATA_LENGTH) // 1 byte register + 6 bytes data
@@ -285,11 +283,11 @@ static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
 {
     switch (hardwareLpf) {
     case GYRO_HARDWARE_LPF_NORMAL:
-        // ODR/16 = 400 Hz, comparable to ~258 Hz AAF on ICM426xx
-        return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_16;
-    case GYRO_HARDWARE_LPF_OPTION_1:
-        // ODR/32 = 200 Hz for cleaner filtering
+        // ODR/32 = 200 Hz, the closest available low-noise setting to the ICM42688 258 Hz AAF default
         return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_32;
+    case GYRO_HARDWARE_LPF_OPTION_1:
+        // ODR/16 = 400 Hz
+        return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_16;
     case GYRO_HARDWARE_LPF_OPTION_2:
         // ODR/8 = 800 Hz for lowest latency
         return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_8;
@@ -303,48 +301,79 @@ static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
     }
 }
 
-/**
- * @brief This function follows the IREG WRITE procedure (Section 14.1-14.4 of the datasheet)
- * using indirect addressing via IREG_ADDR_15_8, IREG_ADDR_7_0, and IREG_DATA registers.
- * After writing, an internal operation transfers the data to the target IREG address.
- * Ensures compliance with the required minimum time gap and checks the IREG_DONE bit.
- *
- * @param dev   Pointer to the SPI device structure.
- * @param reg   16-bit internal IREG register address.
- * @param value Value to be written to the register.
- * @return true if the write was successful
- */
-static bool icm456xx_write_ireg(const extDevice_t *dev, uint16_t reg, uint8_t value)
+// IREG accesses must be separated by at least 4 us. Address bytes and the first
+// data byte must share one SPI transaction to avoid the device prefetching from
+// an unintended address (DS-000577, Host Indirect Access Register interface).
+static bool icm456xx_read_ireg(const extDevice_t *dev, uint16_t reg, uint8_t *value)
 {
-    // IREG writes should not be performed while armed to avoid disrupting flight
     if (ARMING_FLAG(ARMED)) {
         return false;
     }
 
-    const uint8_t msb = (reg >> 8) & 0xFF;
-    const uint8_t lsb = reg & 0xFF;
+    uint8_t address[2] = {
+        (uint8_t)(reg >> 8),
+        (uint8_t)reg,
+    };
 
-    spiWriteReg(dev, ICM456XX_REG_IREG_ADDR_15_8, msb);
-    spiWriteReg(dev, ICM456XX_REG_IREG_ADDR_7_0, lsb);
-    spiWriteReg(dev, ICM456XX_REG_IREG_DATA, value);
+    delayMicroseconds(ICM456XX_IREG_ACCESS_DELAY_US);
+    spiWriteRegBuf(dev, ICM456XX_REG_IREG_ADDR_15_8, address, sizeof(address));
+    delayMicroseconds(ICM456XX_IREG_ACCESS_DELAY_US);
+    *value = spiReadRegMsk(dev, ICM456XX_REG_IREG_DATA);
 
-    // Check IREG_DONE (bit 0 of REG_MISC2 = 0x7F) with elapsed-time tracking
-    for (uint32_t waited_us = 0; waited_us < ICM456XX_IREG_TIMEOUT_US; waited_us += 10) {
-        const uint8_t misc2 = spiReadRegMsk(dev, ICM456XX_REG_MISC2);
-        if (misc2 & ICM456XX_BIT_IREG_DONE) {
-            return true;
-        }
-        delayMicroseconds(10);
-    }
-
-    return false; // timeout
+    return true;
 }
 
-static bool icm456xx_enableAAFandInterpolator(const extDevice_t *dev, uint16_t reg, bool enableAAF, bool enableInterp)
+static bool icm456xx_write_ireg(const extDevice_t *dev, uint16_t reg, uint8_t value)
 {
-    const uint8_t value = (enableAAF ? ICM456XX_SRC_CTRL_AAF_ENABLE_BIT : 0)
-                        | (enableInterp ? ICM456XX_SRC_CTRL_INTERP_ENABLE_BIT : 0);
-    return icm456xx_write_ireg(dev, reg, value);
+    if (ARMING_FLAG(ARMED)) {
+        return false;
+    }
+
+    uint8_t addressAndData[3] = {
+        (uint8_t)(reg >> 8),
+        (uint8_t)reg,
+        value,
+    };
+
+    delayMicroseconds(ICM456XX_IREG_ACCESS_DELAY_US);
+    spiWriteRegBuf(dev, ICM456XX_REG_IREG_ADDR_15_8, addressAndData, sizeof(addressAndData));
+    delayMicroseconds(ICM456XX_IREG_ACCESS_DELAY_US);
+
+    return true;
+}
+
+static bool icm456xx_update_ireg(const extDevice_t *dev, uint16_t reg, uint8_t mask, uint8_t value)
+{
+    for (unsigned attempt = 0; attempt < ICM456XX_IREG_UPDATE_RETRIES; attempt++) {
+        uint8_t current;
+        if (!icm456xx_read_ireg(dev, reg, &current)) {
+            return false;
+        }
+
+        const uint8_t expected = (current & ~mask) | (value & mask);
+        if (expected != current && !icm456xx_write_ireg(dev, reg, expected)) {
+            return false;
+        }
+
+        uint8_t readback;
+        if (icm456xx_read_ireg(dev, reg, &readback) && (readback & mask) == (value & mask)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static bool icm456xx_enableAccelAAFandInterpolator(const extDevice_t *dev)
+{
+    return icm456xx_update_ireg(dev, ICM456XX_ACCEL_SRC_CTRL_IREG_ADDR,
+        ICM456XX_ACCEL_SRC_CTRL_MASK, ICM456XX_ACCEL_SRC_CTRL_INTERP_FIR);
+}
+
+static bool icm456xx_enableGyroAAFandInterpolator(const extDevice_t *dev)
+{
+    return icm456xx_update_ireg(dev, ICM456XX_GYRO_SRC_CTRL_IREG_ADDR,
+        ICM456XX_GYRO_SRC_CTRL_MASK, ICM456XX_GYRO_SRC_CTRL_INTERP_FIR);
 }
 
 static bool icm456xx_configureLPF(const extDevice_t *dev, uint16_t reg, uint8_t lpfDiv)
@@ -353,7 +382,7 @@ static bool icm456xx_configureLPF(const extDevice_t *dev, uint16_t reg, uint8_t 
         return false;
     }
 
-    return icm456xx_write_ireg(dev, reg, lpfDiv & 0x07);
+    return icm456xx_update_ireg(dev, reg, 0x07, lpfDiv);
 }
 
 static void icm456xx_enableSensors(const extDevice_t *dev, bool enable)
@@ -384,16 +413,14 @@ void icm456xxAccInit(accDev_t *acc)
         break;
     }
 
-    // Enable Anti-Alias Filter and Interpolator for Accel (Section 7.2 of datasheet)
-    if (!icm456xx_enableAAFandInterpolator(dev, ICM456XX_ACCEL_SRC_CTRL_IREG_ADDR, true, true)) {
-        // AAF/Interpolator initialization failed, fallback to disabled state
-        icm456xx_enableAAFandInterpolator(dev, ICM456XX_ACCEL_SRC_CTRL_IREG_ADDR, false, false);
+    // ACCEL_SRC_CTRL is a two-bit enum; value 2 enables both the interpolator and FIR AAF.
+    if (!icm456xx_enableAccelAAFandInterpolator(dev)) {
+        failureMode(FAILURE_ACC_INIT);
     }
 
     // Set the Accel UI LPF bandwidth cut-off to ODR/8 (Section 7.3 of datasheet)
     if (!icm456xx_configureLPF(dev, ICM456XX_ACCEL_UI_LPF_CFG_IREG_ADDR, ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_8)) {
-        // If LPF configuration fails, fallback to BYPASS
-        icm456xx_configureLPF(dev, ICM456XX_ACCEL_UI_LPF_CFG_IREG_ADDR, ICM456XX_ACCEL_UI_LPFBW_BYPASS);
+        failureMode(FAILURE_ACC_INIT);
     }
 
     // Set up register addresses for combined DMA reads
@@ -426,16 +453,14 @@ void icm456xxGyroInit(gyroDev_t *gyro)
         break;
     }
 
-    // Enable Anti-Alias (AAF) Filter and Interpolator for Gyro (Section 7.2 of datasheet)
-    if (!icm456xx_enableAAFandInterpolator(dev, ICM456XX_GYRO_SRC_CTRL_IREG_ADDR, true, true)) {
-        // AAF/Interpolator initialization failed, fallback to disabled state
-        icm456xx_enableAAFandInterpolator(dev, ICM456XX_GYRO_SRC_CTRL_IREG_ADDR, false, false);
+    // GYRO_SRC_CTRL is bits 6:5; enum value 2 enables both the interpolator and FIR AAF.
+    if (!icm456xx_enableGyroAAFandInterpolator(dev)) {
+        failureMode(FAILURE_GYRO_INIT_FAILED);
     }
 
     // Set the Gyro UI LPF bandwidth cut-off (Section 7.3 of datasheet)
     if (!icm456xx_configureLPF(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, getGyroLpfConfig(gyroConfig()->gyro_hardware_lpf))) {
-        // If LPF configuration fails, fallback to BYPASS
-        icm456xx_configureLPF(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, ICM456XX_GYRO_UI_LPFBW_BYPASS);
+        failureMode(FAILURE_GYRO_INIT_FAILED);
     }
 
     switch (gyro->mpuDetectionResult.sensor) {
