@@ -1292,7 +1292,12 @@ static void gpsConfigureHardware(void)
 static void updateGpsIndicator(timeUs_t currentTimeUs)
 {
     static uint32_t GPSLEDTime;
-    if (cmp32(currentTimeUs, GPSLEDTime) >= 0 && STATE(GPS_FIX) && (gpsSol.numSat >= gpsRescueConfig()->minSats)) {
+#ifdef USE_GPS_RESCUE
+    uint8_t minSats = gpsRescueConfig()->minSats;
+#else
+    uint8_t minSats = GPS_MIN_SAT_COUNT;
+#endif
+    if (cmp32(currentTimeUs, GPSLEDTime) >= 0 && STATE(GPS_FIX) && (gpsSol.numSat >= minSats)) {
         GPSLEDTime = currentTimeUs + 150000;
         LED1_TOGGLE;
     }
@@ -1597,9 +1602,14 @@ void gpsUpdate(timeUs_t currentTimeUs)
         // clear the home fix icon between arms if the user configuration is to reset home point between arms
             DISABLE_STATE(GPS_FIX_HOME);
         }
+#ifdef USE_GPS_RESCUE
+        uint8_t minSats = gpsRescueConfig()->minSats;
+#else
+        uint8_t minSats = GPS_MIN_SAT_COUNT;
+#endif
         // while disarmed, beep when requirements for a home fix are met
         // ?? should we also beep if home fix requirements first appear after arming?
-        if (!hasBeeped && STATE(GPS_FIX) && gpsSol.numSat >= gpsRescueConfig()->minSats) {
+        if (!hasBeeped && STATE(GPS_FIX) && gpsSol.numSat >= minSats) {
             beeper(BEEPER_READY_BEEP);
             hasBeeped = true;
         }
@@ -2932,7 +2942,12 @@ void GPS_reset_home_position(void)
 // runs, if GPS is defined, on arming via tryArm() in core.c, and on gyro cal via processRcStickPositions() in rc_controls.c
 {
     if (!STATE(GPS_FIX_HOME) || !gpsConfig()->gps_set_home_point_once) {
-        if (STATE(GPS_FIX) && gpsSol.numSat >= gpsRescueConfig()->minSats) {
+#ifdef USE_GPS_RESCUE
+        uint8_t minSats = gpsRescueConfig()->minSats;
+#else
+        uint8_t minSats = GPS_MIN_SAT_COUNT;
+#endif
+        if (STATE(GPS_FIX) && gpsSol.numSat >= minSats) {
             // those checks are always true for tryArm, but may not be true for gyro cal
             GPS_home_llh = gpsSol.llh;
             GPS_calc_longitude_scaling(gpsSol.llh.lat);
