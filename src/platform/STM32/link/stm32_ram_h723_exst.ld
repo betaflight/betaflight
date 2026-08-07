@@ -136,6 +136,18 @@ SECTIONS
     _edmarwaxi = .;
     _dmarwaxi_end__ = _edmarwaxi;
   } >RAM
+
+  .BDMA_RAM (NOLOAD) :
+  {
+    . = ALIGN(4);
+    PROVIDE(bdmaram_start = .);
+    _sbdmaram = .;
+    _bdmaram_start__ = _sbdmaram;
+    KEEP(*(.BDMA_RAM))
+    PROVIDE(bdmaram_end = .);
+    _ebdmaram = .;
+    _bdmaram_end__ = _ebdmaram;
+  } >D3_RAM
 }
 
 INCLUDE "stm32_h723_common_post.ld"
