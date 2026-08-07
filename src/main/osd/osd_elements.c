@@ -1549,8 +1549,9 @@ static void osdElementLogStatus(osdElementParms_t *element)
 static void osdElementMahDrawn(osdElementParms_t *element)
 {
     const int mAhDrawn = getMAhDrawn();
+    const uint16_t capacityAlarm = osdGetCapacityAlarm();
 
-    if (mAhDrawn >= osdConfig()->cap_alarm) {
+    if (capacityAlarm > 0 && mAhDrawn >= capacityAlarm) {
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
@@ -1561,8 +1562,9 @@ static void osdElementWattHoursDrawn(osdElementParms_t *element)
 {
     const int mAhDrawn = getMAhDrawn();
     const float wattHoursDrawn = getWhDrawn();
+    const uint16_t capacityAlarm = osdGetCapacityAlarm();
 
-    if (mAhDrawn >= osdConfig()->cap_alarm) {
+    if (capacityAlarm > 0 && mAhDrawn >= capacityAlarm) {
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
@@ -1582,10 +1584,11 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
     #define MAIN_BATT_USAGE_STEPS 11 // Use an odd number so the bar can be centered.
     const int mAhDrawn = getMAhDrawn();
     const int usedCapacity = getMAhDrawn();
+    const uint16_t capacityAlarm = osdGetCapacityAlarm();
     int displayBasis = usedCapacity;
 
-    if (currentBatteryProfile->batteryCapacity) {
-        if (mAhDrawn >= osdConfig()->cap_alarm) {
+    if (capacityAlarm > 0) {
+        if (mAhDrawn >= capacityAlarm) {
             element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
         }
     } else {
@@ -1775,17 +1778,18 @@ static void osdElementRcChannels(osdElementParms_t *element)
 static void osdElementRemainingTimeEstimate(osdElementParms_t *element)
 {
     const int mAhDrawn = getMAhDrawn();
+    const uint16_t capacityAlarm = osdGetCapacityAlarm();
 
-    if (mAhDrawn >= osdConfig()->cap_alarm) {
+    if (capacityAlarm > 0 && mAhDrawn >= capacityAlarm) {
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
-    if (mAhDrawn <= 0.1f * osdConfig()->cap_alarm) {  // also handles the mAhDrawn == 0 condition
+    if (capacityAlarm == 0 || mAhDrawn <= 0.1f * capacityAlarm) {  // also handles the mAhDrawn == 0 condition
         tfp_sprintf(element->buff, "--:--");
-    } else if (mAhDrawn > osdConfig()->cap_alarm) {
+    } else if (mAhDrawn > capacityAlarm) {
         tfp_sprintf(element->buff, "00:00");
     } else {
-        const int remaining_time = (int)((osdConfig()->cap_alarm - mAhDrawn) * ((float)osdFlyTime) / mAhDrawn);
+        const int remaining_time = (int)((capacityAlarm - mAhDrawn) * ((float)osdFlyTime) / mAhDrawn);
         osdFormatTime(element->buff, OSD_TIMER_PREC_SECOND, remaining_time);
     }
 }
@@ -2758,7 +2762,8 @@ void osdUpdateAlarms(void)
         }
     }
 
-    if (getMAhDrawn() >= osdConfig()->cap_alarm) {
+    const uint16_t capacityAlarm = osdGetCapacityAlarm();
+    if (capacityAlarm > 0 && getMAhDrawn() >= capacityAlarm) {
         SET_BLINK(OSD_MAH_DRAWN);
         SET_BLINK(OSD_REMAINING_TIME_ESTIMATE);
     } else {
@@ -2766,13 +2771,13 @@ void osdUpdateAlarms(void)
         CLR_BLINK(OSD_REMAINING_TIME_ESTIMATE);
     }
 
-    if ((currentBatteryProfile->batteryCapacity && getMAhDrawn() >= osdConfig()->cap_alarm) ||
-        (!currentBatteryProfile->batteryCapacity && getBatteryState() != BATTERY_OK)) {
+    if ((capacityAlarm > 0 && getMAhDrawn() >= capacityAlarm) ||
+        (capacityAlarm == 0 && getBatteryState() != BATTERY_OK)) {
         SET_BLINK(OSD_MAIN_BATT_USAGE);
     } else {
         CLR_BLINK(OSD_MAIN_BATT_USAGE);
     }
-   
+
     if ((alt >= osdConfig()->alt_alarm) && ARMING_FLAG(ARMED)) {
         SET_BLINK(OSD_ALTITUDE);
     } else {
