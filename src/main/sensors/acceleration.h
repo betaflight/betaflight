@@ -32,6 +32,7 @@
 
 // Type of accelerometer used/detected
 // Acc hardware types were updated in PR #14087 (removed ACC_ADXL345, ACC_MMA8452, ACC_BMA280, ACC_LSM303DLHC)
+//                                           and again when the high-g IMU driver was consolidated to LSM6DSK320X only
 typedef enum {
     ACC_DEFAULT,
     ACC_NONE,
@@ -49,7 +50,6 @@ typedef enum {
     ACC_BMI160,
     ACC_BMI270,
     ACC_LSM6DSO,
-    ACC_LSM6DSV16X,
     ACC_IIM42653,
     ACC_ICM45605,
     ACC_ICM45686,
