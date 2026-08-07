@@ -39,7 +39,9 @@
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/nvic.h"
+#include "drivers/sdcard.h"
 #include "drivers/sdio.h"
+#include "drivers/time.h"
 #include "x32m7xx_rcc.h"
 
 typedef struct SD_Handle_s
@@ -53,12 +55,44 @@ typedef struct SD_Handle_s
     uint32_t TXErrors;
 } SD_Handle_t;
 
+typedef enum {
+    SDIO_TRANSFER_IDLE = 0,
+    SDIO_TRANSFER_WAIT_READY,
+    SDIO_TRANSFER_ACTIVE,
+    SDIO_TRANSFER_RESETTING,
+} sdioTransferState_e;
+
+typedef enum {
+    SDIO_OPERATION_NONE = 0,
+    SDIO_OPERATION_READ,
+    SDIO_OPERATION_WRITE,
+} sdioOperation_e;
+
+typedef struct {
+    sdioTransferState_e state;
+    sdioOperation_e operation;
+    uint32_t *buffer;
+    uint32_t blockAddress;
+    uint32_t blockSize;
+    uint32_t blockCount;
+    timeMs_t stateStartTime;
+    uint8_t retryCount;
+    bool reinitAttempted;
+} sdioTransferContext_t;
+
 sd_card_t card;
 
 SD_CardInfo_t                      SD_CardInfo;
 SD_CardType_t                      SD_CardType;
 
 SD_Handle_t                        SD_Handle;
+static sdioTransferContext_t       sdioTransfer;
+static bool                        sdioForceReadyAfterAbort;
+static bool                        sdioInitialized;
+static bool                        sdioRecoveryRequired;
+static bool                        sdioMscRecoveryAttempted;
+
+extern bool x32UsbMscIsActive(void);
 
 typedef struct sdioPin_s {
     ioTag_t pin;
@@ -199,6 +233,11 @@ void SDMMC_port_config(void)
     // Enable SDMMC interrupt in NVIC
     NVIC_InitType nvicInit;
     nvicInit.NVIC_IRQChannel = sdioHardware->irqn;
+    /*
+     * USB MSC waits for SDIO from USB interrupt context, therefore SDMMC must
+     * retain its configured priority so that it can preempt the USB handler.
+     * The handler is bounded and only services latched completion/error flags.
+     */
     nvicInit.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SDIO_DMA);
     nvicInit.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SDIO_DMA);
     nvicInit.NVIC_IRQChannelCmd = ENABLE;
@@ -265,16 +304,24 @@ bool SD_IsDetected(void)
 
 bool SD_GetState(void)
 {
-
-
-    // Phase 1: Hardware DAT0 check (microseconds)
-    if (SDMMC_GetPresentFlagStatus(card.SDHOSTx, SDHOST_Data0LineLevelFlag) != SET) {
-        return false;  // DAT0 low = card definitely busy, no need to send CMD13
+    if (sdioTransfer.state != SDIO_TRANSFER_IDLE) {
+        return false;
     }
 
-    Status_card cardState = SD_PollingCardStatusBusy(&card, 1);
+    if (sdioForceReadyAfterAbort) {
+        sdioForceReadyAfterAbort = false;
+        return true;
+    }
 
-    return (cardState == Status_CardStatusIdle);
+    if (!sdioInitialized || sdioRecoveryRequired) {
+        return false;
+    }
+
+    /*
+     * Do not issue CMD13 here. This function is called from the 1 kHz main
+     * task, so it must remain a constant-time register snapshot.
+     */
+    return SD_CardReadyFast(&card) != 0U;
 }
 
 #define SD_XIN_CLK  100000000U  //SDMMC clock source
@@ -324,7 +371,6 @@ static void SDMMC_Config(void)
         SDMMC_WrapperConfig(SDMMC2,&SDMMC_WrapperParamstruct);
     }
 }
-
 
 /* Number of polls to wait for the CMD line to go idle after a command. The identification
  * sequence runs at 400kHz, where a 48-bit response takes ~120us, so this is generous.
@@ -457,13 +503,11 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
     
     /* Enable SD card power and clock */
     SDMMC_EnablePower(card->SDHOSTx,ENABLE);
-
     /* The SD physical layer spec requires at least 1ms after VDD is stable before the host
      * may start the identification sequence. Without this the card is still powering up when
      * CMD0 goes out and it never answers CMD8.
      */
     SDMMC_Delay(2);
-
     if(((SD_XIN_CLK % 400000U) != 0)  || ((SD_XIN_CLK/400000U)%2 != 0))
     {
         if(SD_XIN_CLK <= card->card_workmode.busClock_Hz)
@@ -491,7 +535,6 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
      * ~185us at 400kHz.
      */
     SDMMC_Delay(1);
-
     /** A series of commands begins to begin the card identification process. **/
     
     /* CMD0 */
@@ -703,7 +746,12 @@ static SD_Error_t SD_DoInit(void)
 {
     Status_card status;
 
+    memset(&sdioTransfer, 0, sizeof(sdioTransfer));
     memset(&card, 0, sizeof(card));
+    memset(SD_Handle.CSD, 0, sizeof(SD_Handle.CSD));
+    memset(SD_Handle.CID, 0, sizeof(SD_Handle.CID));
+    SD_Handle.RXCplt = 0U;
+    SD_Handle.TXCplt = 0U;
 
     /* SDMMC Module Power Enable */
     RCC_EnableAHB5PeriphClk2(RCC_AHB5_PERIPHEN_PWR,ENABLE);
@@ -762,6 +810,7 @@ SD_Error_t SD_GetCardInfo(void)
     SD_Error_t ErrorState = SD_OK;
 
     // fill in SD_CardInfo
+    memset(&SD_CardInfo, 0, sizeof(SD_CardInfo));
 
     uint32_t Temp = 0;
 
@@ -851,6 +900,18 @@ SD_Error_t SD_GetCardInfo(void)
     } else {
         // Not supported card type
         ErrorState = SD_ERROR;
+    }
+
+    /*
+     * The vendor decoder already normalizes SDSC/SDHC/SDXC capacity to
+     * 512-byte blocks. Use that value as the single source of truth so MSC
+     * capacity and the flight filesystem cannot disagree after a reinit.
+     */
+    if (card.sd_card_information.blockCount == 0U) {
+        ErrorState = SD_ERROR;
+    } else if (ErrorState == SD_OK) {
+        SD_CardInfo.CardCapacity = card.sd_card_information.blockCount;
+        SD_CardInfo.CardBlockSize = 512;
     }
 
     SD_CardInfo.SD_csd.EraseGrSize = (Temp & 0x40) >> 6;
@@ -958,38 +1019,356 @@ SD_Error_t SD_GetCardInfo(void)
     return ErrorState;
 }
 
+#define SDIO_FLIGHT_READ_TIMEOUT_MS      500U
+#define SDIO_FLIGHT_WRITE_TIMEOUT_MS     2000U
+#define SDIO_MSC_TRANSFER_TIMEOUT_MS     500U
+#define SDIO_FLIGHT_READ_READY_TIMEOUT_MS 500U
+#define SDIO_FLIGHT_WRITE_READY_TIMEOUT_MS 2000U
+#define SDIO_MSC_READY_TIMEOUT_MS        500U
+#define SDIO_RESET_TIMEOUT_MS              5U
+#define SDIO_INIT_READY_TIMEOUT_MS 500U
+#define SDIO_FLIGHT_READ_MAX_RECOVERY_RETRIES 2U
+#define SDIO_TRANSFER_MAX_RECOVERY_RETRIES 3U
+
 SD_Error_t SD_Init(void)
 {
     static bool sdInitAttempted = false;
     static SD_Error_t result = SD_ERROR;
 
+    if (sdioRecoveryRequired) {
+        /*
+         * Report one cheap failure to the flight SD state machine so it can
+         * leave the active operation and re-evaluate the card. MSC has no
+         * scheduler, so allow one full card/host reinitialization instead.
+         */
+        if (!x32UsbMscIsActive()) {
+            sdioRecoveryRequired = false;
+            return SD_ERROR;
+        }
+
+        if (sdioMscRecoveryAttempted) {
+            return SD_ERROR;
+        }
+
+        sdioMscRecoveryAttempted = true;
+        sdInitAttempted = false;
+    }
+
     if (sdInitAttempted) {
         if (result == SD_OK) {
-            return SD_GetState() ? SD_OK : SD_ERROR;
+            if (SD_GetState()) {
+                return SD_OK;
+            }
+
+            if (!x32UsbMscIsActive()) {
+                return SD_ERROR;
+            }
+
+            const timeMs_t timeoutAtMs = millis() + SDIO_INIT_READY_TIMEOUT_MS;
+
+            do {
+                if (SD_GetState()) {
+                    return SD_OK;
+                }
+            } while (cmpTimeMs(millis(), timeoutAtMs) < 0);
+
+            return SD_ERROR;
         }
-        return result;
     }
 
     sdInitAttempted = true;
+    sdioForceReadyAfterAbort = false;
 
     result = SD_DoInit();
     if (result != SD_OK) {
         sdInitAttempted = false;
+        sdioInitialized = false;
+    } else {
+        sdioInitialized = true;
+        sdioRecoveryRequired = false;
+        sdioMscRecoveryAttempted = false;
     }
 
     return result;
 }
 
+#define SDIO_TRANSFER_INTERRUPTS (SDHOST_CommandFlag | SDHOST_DataDMAFlag \
+    | SDHOST_DmaCompleteFlag | SDHOST_ErrorFlag)
+#define SDIO_RESET_LINES (SDHOST_SOFTWARE_CMDLINE | SDHOST_SOFTWARE_DATALINE)
+
+static bool sdioElapsed(timeMs_t now, timeMs_t start, timeMs_t timeout)
+{
+    return (timeMs_t)(now - start) >= timeout;
+}
+
+static timeMs_t sdioTransferTimeout(void)
+{
+    if (x32UsbMscIsActive()) {
+        return SDIO_MSC_TRANSFER_TIMEOUT_MS;
+    }
+
+    return sdioTransfer.operation == SDIO_OPERATION_WRITE
+        ? SDIO_FLIGHT_WRITE_TIMEOUT_MS
+        : SDIO_FLIGHT_READ_TIMEOUT_MS;
+}
+
+static timeMs_t sdioReadyTimeout(void)
+{
+    if (x32UsbMscIsActive()) {
+        return SDIO_MSC_READY_TIMEOUT_MS;
+    }
+
+    return sdioTransfer.operation == SDIO_OPERATION_WRITE
+        ? SDIO_FLIGHT_WRITE_READY_TIMEOUT_MS
+        : SDIO_FLIGHT_READ_READY_TIMEOUT_MS;
+}
+
+static uint8_t sdioMaxRecoveryRetries(void)
+{
+    if (!x32UsbMscIsActive() && sdioTransfer.operation == SDIO_OPERATION_READ) {
+        return SDIO_FLIGHT_READ_MAX_RECOVERY_RETRIES;
+    }
+
+    return SDIO_TRANSFER_MAX_RECOVERY_RETRIES;
+}
+
+static bool sdioTryStartTransfer(timeMs_t now)
+{
+    Status_card status;
+    const uint32_t transferBytes = sdioTransfer.blockCount * sdioTransfer.blockSize;
+
+    if (SD_CardReadyFast(&card) == 0U) {
+        return false;
+    }
+
+    if (sdioTransfer.operation == SDIO_OPERATION_WRITE) {
+        X32_CLEAN_DCACHE_BY_ADDR(sdioTransfer.buffer, transferBytes);
+        status = SD_WriteBlocks_IT(&card, sdioTransfer.buffer, sdioTransfer.blockAddress, sdioTransfer.blockCount);
+    } else {
+        /*
+         * Prevent a dirty CPU cache line from being written over data received
+         * by SDMA. The completed range is invalidated once more before use.
+         */
+        X32_CLEAN_INVALIDATE_DCACHE_BY_ADDR(sdioTransfer.buffer, transferBytes);
+        status = SD_ReadBlocks_IT(&card, sdioTransfer.buffer, sdioTransfer.blockAddress, sdioTransfer.blockCount);
+    }
+
+    if (status != Status_Success) {
+        return false;
+    }
+
+    sdioTransfer.state = SDIO_TRANSFER_ACTIVE;
+    sdioTransfer.stateStartTime = now;
+    return true;
+}
+
+static void sdioBeginRecovery(timeMs_t now)
+{
+    SDMMC_ConfigInt(card.SDHOSTx, SDIO_TRANSFER_INTERRUPTS, DISABLE);
+    SDMMC_ClrFlag(card.SDHOSTx, SDIO_TRANSFER_INTERRUPTS);
+
+    if (sdioTransfer.operation == SDIO_OPERATION_READ) {
+        SD_Handle.RXErrors++;
+    } else {
+        SD_Handle.TXErrors++;
+    }
+
+    if (sdioTransfer.retryCount != UINT8_MAX) {
+        sdioTransfer.retryCount++;
+    }
+
+    card.transferState = 0U;
+    card.transferCommandDone = 0U;
+    card.SDHOSTx->CTRL2 |= SDIO_RESET_LINES;
+    sdioTransfer.state = SDIO_TRANSFER_RESETTING;
+    sdioTransfer.stateStartTime = now;
+}
+
+static void sdioCompleteTransfer(void)
+{
+    if (sdioTransfer.operation == SDIO_OPERATION_READ) {
+        X32_INVALIDATE_DCACHE_BY_ADDR(
+            sdioTransfer.buffer,
+            sdioTransfer.blockCount * sdioTransfer.blockSize);
+        SD_Handle.RXCplt = 0U;
+    } else {
+        SD_Handle.TXCplt = 0U;
+    }
+
+    card.transferState = 0U;
+    card.transferCommandDone = 0U;
+    sdioTransfer.operation = SDIO_OPERATION_NONE;
+    sdioTransfer.state = SDIO_TRANSFER_IDLE;
+}
+
+static bool sdioRecoverTransferForMsc(timeMs_t now)
+{
+    if (!x32UsbMscIsActive() || sdioTransfer.reinitAttempted) {
+        return false;
+    }
+
+    const sdioTransferContext_t request = sdioTransfer;
+
+    SDMMC_ConfigInt(card.SDHOSTx, SDIO_TRANSFER_INTERRUPTS, DISABLE);
+    SDMMC_ClrFlag(card.SDHOSTx, SDIO_TRANSFER_INTERRUPTS);
+    card.transferState = 0U;
+    card.transferCommandDone = 0U;
+
+    sdioRecoveryRequired = true;
+    sdioForceReadyAfterAbort = false;
+
+    if (SD_Init() != SD_OK) {
+        sdioTransfer = request;
+        sdioTransfer.reinitAttempted = true;
+        return false;
+    }
+
+    sdioTransfer = request;
+    sdioTransfer.state = SDIO_TRANSFER_WAIT_READY;
+    sdioTransfer.stateStartTime = now;
+    sdioTransfer.retryCount = 0U;
+    sdioTransfer.reinitAttempted = true;
+
+    if (sdioTransfer.operation == SDIO_OPERATION_READ) {
+        SD_Handle.RXCplt = 1U;
+    } else {
+        SD_Handle.TXCplt = 1U;
+    }
+
+    (void)sdioTryStartTransfer(now);
+    return true;
+}
+
+static void sdioAbortTransfer(void)
+{
+    const uint32_t transferBytes = sdioTransfer.blockCount * sdioTransfer.blockSize;
+
+    SDMMC_ConfigInt(card.SDHOSTx, SDIO_TRANSFER_INTERRUPTS, DISABLE);
+    SDMMC_ClrFlag(card.SDHOSTx, SDIO_TRANSFER_INTERRUPTS);
+
+    if (sdioTransfer.operation == SDIO_OPERATION_READ) {
+        if (sdioTransfer.buffer && transferBytes > 0U) {
+            memset(sdioTransfer.buffer, 0, transferBytes);
+            X32_CLEAN_DCACHE_BY_ADDR(sdioTransfer.buffer, transferBytes);
+        }
+        SD_Handle.RXCplt = 0U;
+    } else {
+        SD_Handle.TXCplt = 0U;
+    }
+
+    card.transferState = 0U;
+    card.transferCommandDone = 0U;
+    sdioTransfer.operation = SDIO_OPERATION_NONE;
+    sdioTransfer.state = SDIO_TRANSFER_IDLE;
+    sdioForceReadyAfterAbort = true;
+    sdioRecoveryRequired = true;
+}
+
+static SD_Error_t sdioCheckTransfer(sdioOperation_e operation)
+{
+    const timeMs_t now = millis();
+
+    if (sdioTransfer.operation == SDIO_OPERATION_NONE) {
+        return SD_OK;
+    }
+
+    if (sdioTransfer.operation != operation) {
+        return SD_BUSY;
+    }
+
+    if (!sdcard_isInserted()) {
+        sdioAbortTransfer();
+        return SD_OK;
+    }
+
+    /*
+     * USB MSC calls SD_CheckRead/Write from a blocking USB callback. Service
+     * one snapshot here as a polling fallback in case the SDMMC IRQ cannot
+     * preempt that callback. There is no loop, so flight-task execution stays
+     * bounded; the normal IRQ path remains the primary completion path.
+     */
+    if ((sdioTransfer.state == SDIO_TRANSFER_ACTIVE) && (card.transferState == 1U)) {
+        if ((card.SDHOSTx->INTSTS & SDIO_TRANSFER_INTERRUPTS) != 0U) {
+            SD_IRQHandler(&card);
+        }
+    }
+
+    switch (sdioTransfer.state) {
+    case SDIO_TRANSFER_WAIT_READY:
+        if (sdioTransfer.retryCount >= sdioMaxRecoveryRetries()) {
+            if (sdioRecoverTransferForMsc(now)) {
+                return SD_BUSY;
+            }
+            sdioAbortTransfer();
+            return SD_OK;
+        }
+
+        if (sdioTryStartTransfer(now)) {
+            return SD_BUSY;
+        }
+
+        if (sdioElapsed(now, sdioTransfer.stateStartTime, sdioReadyTimeout())) {
+            sdioBeginRecovery(now);
+        }
+        return SD_BUSY;
+
+    case SDIO_TRANSFER_ACTIVE:
+        if (card.transferState == 2U) {
+            sdioCompleteTransfer();
+            return SD_OK;
+        }
+
+        if (sdioTransfer.retryCount >= sdioMaxRecoveryRetries()) {
+            if (sdioRecoverTransferForMsc(now)) {
+                return SD_BUSY;
+            }
+            sdioAbortTransfer();
+            return SD_OK;
+        }
+
+        if ((card.transferState == 3U)
+            || sdioElapsed(now, sdioTransfer.stateStartTime, sdioTransferTimeout())) {
+            sdioBeginRecovery(now);
+        }
+        return SD_BUSY;
+
+    case SDIO_TRANSFER_RESETTING:
+        if (sdioTransfer.retryCount >= sdioMaxRecoveryRetries()) {
+            if (sdioRecoverTransferForMsc(now)) {
+                return SD_BUSY;
+            }
+            sdioAbortTransfer();
+            return SD_OK;
+        }
+
+        if ((card.SDHOSTx->CTRL2 & SDIO_RESET_LINES) == 0U) {
+            SDMMC_ClrFlag(card.SDHOSTx, SDIO_TRANSFER_INTERRUPTS);
+            sdioTransfer.state = SDIO_TRANSFER_WAIT_READY;
+            sdioTransfer.stateStartTime = now;
+            (void)sdioTryStartTransfer(now);
+        } else if (sdioElapsed(now, sdioTransfer.stateStartTime, SDIO_RESET_TIMEOUT_MS)) {
+            if (sdioRecoverTransferForMsc(now)) {
+                return SD_BUSY;
+            }
+            sdioAbortTransfer();
+            return SD_OK;
+        }
+        return SD_BUSY;
+
+    case SDIO_TRANSFER_IDLE:
+    default:
+        return SD_OK;
+    }
+}
+
 SD_Error_t SD_CheckWrite(void)
 {
-    if (SD_Handle.TXCplt != 0) return SD_BUSY;
-    return SD_OK;
+    return sdioCheckTransfer(SDIO_OPERATION_WRITE);
 }
 
 SD_Error_t SD_CheckRead(void)
 {
-    if (SD_Handle.RXCplt != 0) return SD_BUSY;
-    return SD_OK;
+    return sdioCheckTransfer(SDIO_OPERATION_READ);
 }
 
 SD_Error_t SD_Erase(uint64_t StartAddress, uint64_t EndAddress)
@@ -1018,100 +1397,65 @@ SD_Error_t SD_GetCardStatus(SD_CardStatus_t *pCardStatus)
 
 SD_Error_t SD_WriteBlocks_DMA(uint64_t WriteAddress, uint32_t *buffer, uint32_t BlockSize, uint32_t NumberOfBlocks)
 {
-    SD_Error_t ErrorState = SD_OK;
-
-    if (BlockSize != 512) {
+    if ((BlockSize != 512U) || (buffer == NULL) || (NumberOfBlocks == 0U)
+        || (WriteAddress > UINT32_MAX) || (sdioTransfer.state != SDIO_TRANSFER_IDLE)) {
         return SD_ERROR; // unsupported.
     }
 
-#ifdef __DCACHE_PRESENT
-    // Ensure the data is flushed to main memory before SDMA reads it
-    X32_CLEAN_DCACHE_BY_ADDR(buffer, NumberOfBlocks * BlockSize);
-#endif
-
-    SD_Handle.TXCplt = 1;
-
-    card.card_workmode.dma = SDMMC_SDMA;
-
-    if (SD_WriteBlocks_IT(&card, buffer, (uint32_t)WriteAddress, NumberOfBlocks) != Status_Success) {
-        SD_Handle.TXCplt = 0;
-        return SD_ERROR;
+    if (sdioRecoveryRequired) {
+        if (!x32UsbMscIsActive() || SD_Init() != SD_OK) {
+            return SD_ERROR;
+        }
     }
 
-    return ErrorState;
+    card.card_workmode.dma = SDMMC_SDMA;
+    SD_Handle.TXCplt = 1U;
+    sdioTransfer.operation = SDIO_OPERATION_WRITE;
+    sdioTransfer.buffer = buffer;
+    sdioTransfer.blockAddress = (uint32_t)WriteAddress;
+    sdioTransfer.blockSize = BlockSize;
+    sdioTransfer.blockCount = NumberOfBlocks;
+    sdioTransfer.retryCount = 0U;
+    sdioTransfer.reinitAttempted = false;
+    sdioTransfer.state = SDIO_TRANSFER_WAIT_READY;
+    sdioTransfer.stateStartTime = millis();
+    (void)sdioTryStartTransfer(sdioTransfer.stateStartTime);
+
+    return SD_OK;
 }
-
-typedef struct {
-    uint32_t *buffer;
-    uint32_t BlockSize;
-    uint32_t NumberOfBlocks;
-} sdReadParameters_t;
-
-sdReadParameters_t sdReadParameters;
 
 SD_Error_t SD_ReadBlocks_DMA(uint64_t ReadAddress, uint32_t *buffer, uint32_t BlockSize, uint32_t NumberOfBlocks)
 {
-    SD_Error_t ErrorState = SD_OK;
-
-    if (BlockSize != 512) {
+    if ((BlockSize != 512U) || (buffer == NULL) || (NumberOfBlocks == 0U)
+        || (ReadAddress > UINT32_MAX) || (sdioTransfer.state != SDIO_TRANSFER_IDLE)) {
         return SD_ERROR; // unsupported.
     }
 
-    SD_Handle.RXCplt = 1;
-
-    sdReadParameters.buffer = buffer;
-    sdReadParameters.BlockSize = BlockSize;
-    sdReadParameters.NumberOfBlocks = NumberOfBlocks;
-
-    card.card_workmode.dma = SDMMC_SDMA;
-
-    if (SD_ReadBlocks_IT(&card, buffer, (uint32_t)ReadAddress, NumberOfBlocks) != Status_Success) {
-        SD_Handle.RXCplt = 0;
-        return SD_ERROR;
+    if (sdioRecoveryRequired) {
+        if (!x32UsbMscIsActive() || SD_Init() != SD_OK) {
+            return SD_ERROR;
+        }
     }
 
-    return ErrorState;
+    card.card_workmode.dma = SDMMC_SDMA;
+    SD_Handle.RXCplt = 1U;
+    sdioTransfer.operation = SDIO_OPERATION_READ;
+    sdioTransfer.buffer = buffer;
+    sdioTransfer.blockAddress = (uint32_t)ReadAddress;
+    sdioTransfer.blockSize = BlockSize;
+    sdioTransfer.blockCount = NumberOfBlocks;
+    sdioTransfer.retryCount = 0U;
+    sdioTransfer.reinitAttempted = false;
+    sdioTransfer.state = SDIO_TRANSFER_WAIT_READY;
+    sdioTransfer.stateStartTime = millis();
+    (void)sdioTryStartTransfer(sdioTransfer.stateStartTime);
+
+    return SD_OK;
 }
 
 void SDMMC1_IRQHandler(void)
 {
     SD_IRQHandler(&card);
-
-    /* Handle transfer completion */
-    if (card.transferState == 2) {
-        if (SD_Handle.RXCplt) {
-            /* Read complete - invalidate D-cache to ensure CPU reads correct data */
-#ifdef __DCACHE_PRESENT
-            uint32_t alignedAddr = (uint32_t)sdReadParameters.buffer & ~0x1F;
-            X32_INVALIDATE_DCACHE_BY_ADDR(
-                (uint32_t*)alignedAddr,
-                sdReadParameters.NumberOfBlocks * sdReadParameters.BlockSize
-                    + ((uint32_t)sdReadParameters.buffer - alignedAddr));
-#endif
-            SD_Handle.RXCplt = 0;
-        }
-
-        if (SD_Handle.TXCplt) {
-            SD_Handle.TXCplt = 0;
-        }
-
-        /* transferState is consumed by blocking SD_ReadBlocks/SD_WriteBlocks
-           in sdmmc_host.c which reset it to 0 after detecting completion.
-           For IT (non-blocking) path, upper layer uses RXCplt/TXCplt flags. */
-    }
-
-    /* Handle transfer error */
-    if (card.transferState == 3) {
-        if (SD_Handle.RXCplt) {
-            SD_Handle.RXErrors++;
-            SD_Handle.RXCplt = 0;
-        }
-
-        if (SD_Handle.TXCplt) {
-            SD_Handle.TXErrors++;
-            SD_Handle.TXCplt = 0;
-        }
-    }
 }
 
 void SDMMC2_IRQHandler(void)

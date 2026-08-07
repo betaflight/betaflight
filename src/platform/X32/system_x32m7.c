@@ -24,16 +24,20 @@
 #include "platform.h"
 
 #include "common/utils.h"
-
+#include "blackbox/blackbox.h"
+#include "drivers/time.h"
 #include "drivers/nvic.h"
 #include "drivers/persistent.h"
 #include "drivers/system.h"
+
+#include "io/asyncfatfs/asyncfatfs.h"
 
 #include "x32m7xx_otpc.h"
 
 #define X32_OTPC_UCID_BASE      0x00000300U
 #define X32_OTPC_UID_WORDS      3U
 #define X32_OTPC_READ_TIMEOUT   1000000U
+#define X32_MSC_RESET_SHUTDOWN_TIMEOUT_MS 10000
 
 uint32_t systemUniqueId[3] = {
     0,
@@ -48,12 +52,51 @@ void SystemCoreClockUpdate(void)
     SystemCoreClock = clocks.M7ClkFreq;
 }
 
+static void systemPrepareForMscReset(void)
+{
+#if defined(USE_USB_MSC) && defined(USE_BLACKBOX) && defined(USE_SDCARD)
+    if (persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON) != RESET_MSC_REQUEST) {
+        return;
+    }
+
+    if (blackboxConfig()->device != BLACKBOX_DEVICE_SDCARD) {
+        return;
+    }
+
+    const timeMs_t timeoutAtMs = millis() + X32_MSC_RESET_SHUTDOWN_TIMEOUT_MS;
+    bool blackboxStopped = blackboxMayEditConfig();
+
+    __enable_irq();
+
+    blackboxFinish();
+
+    do {
+        if (!blackboxStopped) {
+            blackboxUpdate(micros());
+            blackboxStopped = blackboxMayEditConfig();
+        }
+
+        afatfs_poll();
+
+        if (blackboxStopped && afatfs_destroy(false)) {
+            return;
+        }
+    } while (cmpTimeMs(millis(), timeoutAtMs) < 0);
+#endif
+}
+
 void systemReset(void)
 {
-    SCB_DisableDCache();
+    systemPrepareForMscReset();
+
     SCB_DisableICache();
 
     __disable_irq();
+    PWR_MoudlePowerEnable(HSC1_USB1_PWRCTRL, DISABLE);
+    // PWR_MoudlePowerEnable(HSC1_SDMMC1_PWRCTRL, DISABLE);
+    PWR_MoudlePowerEnable(HSC2_USB2_PWRCTRL, DISABLE);
+    // PWR_MoudlePowerEnable(HSC2_SDMMC2_PWRCTRL, DISABLE);
+    delayMicroseconds(500);
     NVIC_SystemReset();
 }
 
@@ -415,7 +458,7 @@ void systemInit(void)
 
     SystemCoreClockUpdate();
     //USE for SD Card
-    RCC_ConfigPll2(RCC_PLL_SRC_HSI,64000000,500000000,ENABLE);
+    RCC_ConfigPll2(RCC_PLL_SRC_HSE,HSE_VALUE,600000000,ENABLE);
     /* configure PLL1A is PLL1 */
     RCC_ConfigPLL2ADivider(RCC_PLLA_DIV5);
 

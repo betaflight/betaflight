@@ -69,6 +69,7 @@
 #include "drivers/usb_io.h"
 #include "drivers/usb_msc.h"
 
+#include "io/asyncfatfs/asyncfatfs.h"
 #include "io/usb_msc.h"
 
 #include "msc/usbd_storage.h"
@@ -83,6 +84,15 @@
 #include "usbd_msc_desc.h"
 #include "usbd_user.h"
 #include "usbd_msc_core.h"
+
+#define X32_MSC_FATFS_SHUTDOWN_TIMEOUT_MS 10000
+
+static bool x32UsbMscActive;
+
+bool x32UsbMscIsActive(void)
+{
+    return x32UsbMscActive;
+}
 
 /*
  * USB core ID selection.
@@ -132,6 +142,29 @@
 # error "No USB HS controller selected for MSC mode."
 #endif
 
+static bool x32MscPrepareSdStorage(void)
+{
+#ifdef USE_SDCARD
+    if (blackboxConfig()->device != BLACKBOX_DEVICE_SDCARD) {
+        return true;
+    }
+
+    const timeMs_t timeoutAtMs = millis() + X32_MSC_FATFS_SHUTDOWN_TIMEOUT_MS;
+
+    do {
+        if (afatfs_destroy(false)) {
+            return true;
+        }
+
+        afatfs_poll();
+    } while (cmpTimeMs(millis(), timeoutAtMs) < 0);
+
+    return false;
+#endif
+
+    return true;
+}
+
 /**
  * @brief  Start USB MSC device mode.
  *
@@ -159,6 +192,18 @@
  */
 uint8_t mscStart(void)
 {
+    x32UsbMscActive = true;
+
+    if (!x32MscPrepareSdStorage()) {
+        x32UsbMscActive = false;
+        return 1;
+    }
+
+    if (!mscCheckFilesystemReady()) {
+        x32UsbMscActive = false;
+        return 1;
+    }
+
     /* Enable X32 USB HS clock and power */
     RCC_ConfigUSBRefClk(RCC_USBREFCLK_HSE_DIV1);
     RCC_EnableAHB5PeriphClk2(RCC_AHB5_PERIPHEN_PWR, ENABLE);
@@ -197,6 +242,7 @@ uint8_t mscStart(void)
             break;
 #endif
         default:
+            x32UsbMscActive = false;
             return 1;
         }
         break;
@@ -209,6 +255,7 @@ uint8_t mscStart(void)
 #endif
 
     default:
+        x32UsbMscActive = false;
         return 1;
     }
 

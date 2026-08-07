@@ -51,8 +51,10 @@
 #include "usbd_cdc_vcp.h"
 #include "drivers/nvic.h"
 #include "drivers/time.h"
+#include "usbhs_dcd.h"
 
 #define USB_CDC_RX_BUFFER_SIZE  2048U
+#define USB_CDC_TX_TIMEOUT_MS   50U
 
 /*
  * USB device core instance.
@@ -83,6 +85,7 @@ __ALIGN_BEGIN USB_CORE_MODULE USB_dev __ALIGN_END;
 extern uint8_t  APP_Rx_Buffer[APP_RX_DATA_SIZE];
 extern volatile uint32_t APP_Rx_ptr_in;   /* Write pointer: application increments after writing */
 extern volatile uint32_t APP_Rx_ptr_out;  /* Read pointer: CDC library increments after sending */
+extern uint32_t APP_Rx_length;
 
 /*
  * CDC transmit state (defined in usbd_cdc_core.c).
@@ -107,6 +110,12 @@ extern volatile uint8_t USB_Tx_State;
 static volatile uint8_t usbRxBuffer[USB_CDC_RX_BUFFER_SIZE];
 static volatile uint32_t usbRxHead = 0;  /* Write pointer: USB OUT interrupt increments */
 static volatile uint32_t usbRxTail = 0;  /* Read pointer: application increments after reading */
+
+volatile uint16_t usbDiagInCompleteCount;
+static volatile uint16_t usbDiagOutPacketCount;
+static volatile uint16_t usbDiagReadCount;
+static volatile uint16_t usbDiagWriteCount;
+volatile uint16_t usbDiagTxRecoveryCount;
 
 __IO uint32_t bDeviceConnectState = 0U; /* USB device status */
 
@@ -217,6 +226,10 @@ static uint32_t usbRxRead(uint8_t *recvBuf, uint32_t len)
         }
 
         count++;
+    }
+
+    if (count != 0U) {
+        usbDiagReadCount++;
     }
 
     return count;
@@ -431,6 +444,7 @@ static uint16_t VCP_DataTx(void)
 static uint16_t VCP_DataRx(uint8_t *buf, uint32_t len)
 {
     if (buf && len) {
+        usbDiagOutPacketCount++;
         usbRxWrite(buf, len);
     }
 
@@ -496,6 +510,28 @@ uint32_t CDC_Send_FreeBytes(void)
     return freeBytes;
 }
 
+static void usbRecoverStalledTx(void)
+{
+    /*
+     * A cable removal can discard the completion interrupt for an active IN
+     * transfer while the self-powered MCU keeps running.  Rebuild only the
+     * CDC IN endpoint and discard the abandoned queue; EP0 and OUT remain
+     * untouched, so the current configured USB session stays valid.
+     */
+    ATOMIC_BLOCK(NVIC_BUILD_PRIORITY(6, 0)) {
+        USBDEV_EP_Close(&USB_dev, CDC_IN_EP);
+        USBDEV_EP_Flush(&USB_dev, CDC_IN_EP);
+
+        APP_Rx_ptr_in = 0U;
+        APP_Rx_ptr_out = 0U;
+        APP_Rx_length = 0U;
+        USB_Tx_State = 0U;
+
+        USBDEV_EP_Open(&USB_dev, CDC_IN_EP, CDC_DATA_IN_PACKET_SIZE, USB_EP_BULK);
+        usbDiagTxRecoveryCount++;
+    }
+}
+
 /**
  * @brief  Send data from MCU to PC via USB CDC IN endpoint.
  *
@@ -519,6 +555,8 @@ uint32_t CDC_Send_FreeBytes(void)
  */
 uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 {
+    uint32_t waitStartedAt = millis();
+
     /*
      * Wait for any paragraph-end frame (ZLP) or in-flight IN transfer
      * to complete before queuing the next batch.
@@ -533,13 +571,25 @@ uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
         if (!usbIsConnected() || !usbIsConfigured()) {
             return 0;
         }
+        if ((millis() - waitStartedAt) >= USB_CDC_TX_TIMEOUT_MS) {
+            usbRecoverStalledTx();
+            break;
+        }
         delay(1);
     }
 
     for (uint32_t i = 0; i < sendLength; i++) {
+        waitStartedAt = millis();
         while (CDC_Send_FreeBytes() == 0U) {
             if (!usbIsConnected() || !usbIsConfigured()) {
                 return i;
+            }
+            if ((millis() - waitStartedAt) >= USB_CDC_TX_TIMEOUT_MS) {
+                usbRecoverStalledTx();
+                if (i != 0U) {
+                    return 0U;
+                }
+                break;
             }
             delay(1);
         }
@@ -550,7 +600,29 @@ uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
         }
     }
 
+    if (sendLength != 0U) {
+        usbDiagWriteCount++;
+    }
+
     return sendLength;
+}
+
+uint16_t usbVcpDiagnosticCounter(uint8_t index)
+{
+    switch (index) {
+    case 0:
+        return usbDiagOutPacketCount;
+    case 1:
+        return usbDiagReadCount;
+    case 2:
+        return usbDiagWriteCount;
+    case 3:
+        return usbDiagInCompleteCount;
+    case 4:
+        return usbDiagTxRecoveryCount;
+    default:
+        return 0;
+    }
 }
 
 /**
