@@ -441,9 +441,11 @@ void pidUpdateTpaFactor(float throttle)
     case TPA_CURVE_HYPERBOLIC:
         tpaFactor = pwlInterpolate(&pidRuntime.tpaCurvePwl, tpaArgument);
         break;
+#ifdef USE_WING
     case TPA_CURVE_VREF:
         tpaFactor = pwlInterpolate(&pidRuntime.tpaCurvePwl, pidRuntime.tpaSpeed.refSpeed / MIN(pidRuntime.tpaSpeed.speed, 1.0f));
         break;
+#endif
     case TPA_CURVE_CLASSIC:
     default:
         tpaFactor = getTpaFactorClassic(tpaArgument);
