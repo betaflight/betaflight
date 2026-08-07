@@ -78,9 +78,9 @@ uint16_t flightPlanNavGetEtaSeconds(void);
 
 // Set the active waypoint (MAVLink MISSION_SET_CURRENT). While the executor is
 // running the PG mission it re-dispatches to that leg; while idle it becomes
-// the index the next engage starts from. Ignored for out-of-range indices and
-// while an injected plan is active.
-void flightPlanNavSetCurrentIndex(uint8_t index);
+// the index the next engage starts from. Returns false (and does nothing) for
+// out-of-range indices and while an injected plan is active.
+bool flightPlanNavSetCurrentIndex(uint8_t index);
 
 // Orbit period (deciseconds) at the configured pattern radius for a leg flown
 // at speedCmS (0 = autopilot max velocity). Converts MAVLink LOITER_TURNS turn

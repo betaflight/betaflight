@@ -35,6 +35,7 @@
 #include "sensors/compass.h"
 #include "sensors/rangefinder.h"
 #include "sensors/opticalflow.h"
+#include "sensors/pitot.h"
 #include "sensors/sensors.h"
 
 // Sensor names (used in lookup tables for *_hardware settings and in status command output)
@@ -166,6 +167,16 @@ const char * const lookupTableOpticalflowHardware[OPTICALFLOW_HARDWARE_COUNT] = 
     [OPTICALFLOW_UPT1] = "UPT1"
 };
 
+// sync with pitotSensor_e
+const char * const lookupTablePitotHardware[PITOT_HARDWARE_COUNT] = {
+    [PITOT_DEFAULT] = "AUTO",
+    [PITOT_NONE] = "NONE",
+    [PITOT_MS4525] = "MS4525",
+#if ENABLE_DRONECAN
+    [PITOT_DRONECAN] = "DRONECAN",
+#endif
+};
+
 static const char * const sensorTypeNames[] = {
     [SENSOR_INDEX_GYRO] = "gyro",
     [SENSOR_INDEX_ACC] = "acc",
@@ -173,6 +184,7 @@ static const char * const sensorTypeNames[] = {
     [SENSOR_INDEX_MAG] = "mag",
     [SENSOR_INDEX_RANGEFINDER] = "rangefinder",
     [SENSOR_INDEX_OPTICALFLOW] = "opticalflow",
+    [SENSOR_INDEX_PITOT] = "pitot",
 };
 STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorTypeNames), sensorTypeNames_length_mismatch);
 
@@ -186,8 +198,27 @@ static const struct {
     [SENSOR_INDEX_MAG]          = { lookupTableMagHardware,          MAG_HARDWARE_COUNT },
     [SENSOR_INDEX_RANGEFINDER]  = { lookupTableRangefinderHardware,  RANGEFINDER_HARDWARE_COUNT },
     [SENSOR_INDEX_OPTICALFLOW]  = { lookupTableOpticalflowHardware,  OPTICALFLOW_HARDWARE_COUNT },
+    [SENSOR_INDEX_PITOT]        = { lookupTablePitotHardware,        PITOT_HARDWARE_COUNT },
 };
 STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorHardwareTables), sensorHardwareTables_length_mismatch);
+
+// sensorIndex_e and the sensors_e mask bits are not 1:1 (the mask interleaves
+// GPS/GPSMAG), so DEVICES-DETECTED style loops must map index to bit rather
+// than assume (1 << index).
+static const uint32_t sensorIndexToMask[SENSOR_INDEX_COUNT] = {
+    [SENSOR_INDEX_GYRO]         = SENSOR_GYRO,
+    [SENSOR_INDEX_ACC]          = SENSOR_ACC,
+    [SENSOR_INDEX_BARO]         = SENSOR_BARO,
+    [SENSOR_INDEX_MAG]          = SENSOR_MAG,
+    [SENSOR_INDEX_RANGEFINDER]  = SENSOR_RANGEFINDER,
+    [SENSOR_INDEX_OPTICALFLOW]  = SENSOR_OPTICALFLOW,
+    [SENSOR_INDEX_PITOT]        = SENSOR_PITOT,
+};
+
+uint32_t sensorMaskForIndex(sensorIndex_e sensor)
+{
+    return (sensor < SENSOR_INDEX_COUNT) ? sensorIndexToMask[sensor] : 0;
+}
 
 const char * const *sensorHardwareNames(sensorIndex_e sensor, int *count)
 {
