@@ -42,7 +42,7 @@ const struct ioPortDef_s ioPortDefs[] = {
     { RCC_AHB1(PF) },
 };
 
-// mask on stm32f103, bit index on stm32f303
+// bit index (not a bitmask) on stm32f303
 uint32_t IO_EXTI_Line(IO_t io)
 {
     if (!io) {

@@ -81,9 +81,9 @@ void Set_System(void)
 
     /*!< At this stage the microcontroller clock setting is already configured,
      this is done through SystemInit() function which is called from startup
-     file (startup_stm32f10x_xx.s) before to branch to application main.
+     file (the vendor startup assembly for this MCU) before to branch to application main.
      To reconfigure the default setting of SystemInit() function, refer to
-     system_stm32f10x.c file
+     the vendor system_<mcu>.c file for this target
      */
 #if defined(STM32L1XX_MD) || defined(STM32L1XX_HD)|| defined(STM32L1XX_MD_PLUS) || defined(STM32F37X) || defined(STM32F303xC)
     /* Enable the SYSCFG module clock */
