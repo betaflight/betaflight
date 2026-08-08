@@ -126,7 +126,7 @@ const struct ioPortDef_s ioPortDefs[] = {
 # error "IO PortDefs not defined for MCU"
 #endif
 
-// bit index (not a bitmask) on stm32f303
+// returns an EXTI line bitmask (1 << pin index)
 uint32_t IO_EXTI_Line(IO_t io)
 {
     if (!io) {
