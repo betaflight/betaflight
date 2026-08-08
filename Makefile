@@ -760,7 +760,9 @@ $(AUTOHYDRATE_STAMPS):
 validate-deps:
 	$(V1) mkdir -p "$(TARGET_OBJ_DIR)"; \
 	printf '%s\n' $(SRC) | sort > "$(SRC_MANIFEST).new"; \
-	if [ -f "$(SRC_MANIFEST)" ] && ! cmp -s "$(SRC_MANIFEST)" "$(SRC_MANIFEST).new"; then \
+	if [ ! -f "$(SRC_MANIFEST)" ]; then \
+	    find "$(TARGET_OBJ_DIR)" -name '*.d' -delete 2>/dev/null; \
+	elif ! cmp -s "$(SRC_MANIFEST)" "$(SRC_MANIFEST).new"; then \
 	    if comm -23 "$(SRC_MANIFEST)" "$(SRC_MANIFEST).new" | grep -q .; then \
 	        echo "Sources removed — clearing stale dependency files"; \
 	        find "$(TARGET_OBJ_DIR)" -name '*.d' -delete 2>/dev/null; \
