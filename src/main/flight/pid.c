@@ -442,11 +442,12 @@ void pidUpdateTpaFactor(float throttle)
         tpaFactor = pwlInterpolate(&pidRuntime.tpaCurvePwl, tpaArgument);
         break;
 #ifdef USE_WING
-    case TPA_CURVE_VREF:
+    case TPA_CURVE_VREF: {
         float arg = constrainf(pidRuntime.tpaSpeed.refSpeed / MAX(pidRuntime.tpaSpeed.speed, 1.0f),
                                pidRuntime.refSpeedCurveArgMin, pidRuntime.refSpeedCurveArgMax);
         tpaFactor = pwlInterpolate(&pidRuntime.tpaCurvePwl, arg);
         break;
+    }
 #endif
     case TPA_CURVE_CLASSIC:
     default:
