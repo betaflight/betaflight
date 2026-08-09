@@ -113,6 +113,8 @@
 #define VL53L1X_DETECTION_CONE_DECIDEGREES                  (270)
 #define VL53L1X_TIMING_BUDGET                               (33)
 
+#define VL53L1X_BOOT_TIMEOUT_MS     (500)
+
 #define VL53L1X_IMPLEMENTATION_VER_MAJOR       3
 #define VL53L1X_IMPLEMENTATION_VER_MINOR       4
 #define VL53L1X_IMPLEMENTATION_VER_SUB         0
@@ -724,8 +726,6 @@ static uint8_t _I2CBuffer[256];
 static int32_t lastMeasurementCm = RANGEFINDER_OUT_OF_RANGE;
 static bool lastMeasurementIsNew = false;
 static bool isInitialized = false;
-static bool isResponding = true;
-    //((i2cWriteBuffer(dev->bus->busType_u.i2c.device, dev->busType_u.i2c.address, 0xFF, size, data)) ? 0 : -1)
 
 #define _I2CWrite(dev, data, size) \
     (busWriteRegisterBuffer(dev, 0xFF, data, size) ? 0 : -1)
@@ -921,11 +921,24 @@ VL53L1X_ERROR VL53L1X_SensorInit(const extDevice_t *dev)
 
     for (Addr = 0x2D; Addr <= 0x87; Addr++){
         status = VL53L1_WrByte(dev, Addr, VL51L1X_DEFAULT_CONFIGURATION[Addr - 0x2D]);
+        if (status != VL53L1_ERROR_NONE) {
+            return status;
+        }
     }
     status = VL53L1X_StartRanging(dev);
+    if (status != VL53L1_ERROR_NONE) {
+        return status;
+    }
     tmp  = 0;
-    while(tmp==0){
-            status = VL53L1X_CheckForDataReady(dev, &tmp);
+    const timeMs_t deadlineMs = millis() + VL53L1X_BOOT_TIMEOUT_MS;
+    while (tmp == 0) {
+        status = VL53L1X_CheckForDataReady(dev, &tmp);
+        if (status != VL53L1_ERROR_NONE) {
+            return status;
+        }
+        if (cmpTimeMs(millis(), deadlineMs) > 0) {
+            return VL53L1_ERROR_TIME_OUT;
+        }
     }
     status = VL53L1X_ClearInterrupt(dev);
     status = VL53L1X_StopRanging(dev);
@@ -1623,7 +1636,7 @@ static void vl53l1x_Init(rangefinderDev_t * rangefinder)
 void vl53l1x_Update(rangefinderDev_t * rangefinder)
 {
     uint16_t Distance;
-    uint8_t dataReady;
+    uint8_t dataReady = 0;
 
     if (!isInitialized) {
         return;
@@ -1631,9 +1644,10 @@ void vl53l1x_Update(rangefinderDev_t * rangefinder)
 
     VL53L1X_CheckForDataReady(&rangefinder->dev, &dataReady);
     if (dataReady != 0) {
-        VL53L1X_GetDistance(&rangefinder->dev, &Distance);
-        lastMeasurementCm = Distance / 10;
-        lastMeasurementIsNew = true;
+        if (VL53L1X_GetDistance(&rangefinder->dev, &Distance) == VL53L1_ERROR_NONE) {
+            lastMeasurementCm = Distance / 10;
+            lastMeasurementIsNew = true;
+        }
     }
 
     VL53L1X_ClearInterrupt(&rangefinder->dev);
@@ -1643,7 +1657,7 @@ int32_t vl53l1x_GetDistance(rangefinderDev_t *dev)
 {
     UNUSED(dev);
 
-    if (isResponding && isInitialized) {
+    if (isInitialized) {
         if (lastMeasurementIsNew) {
             lastMeasurementIsNew = false;
             return (lastMeasurementCm < VL53L1X_MAX_RANGE_CM) ? lastMeasurementCm : RANGEFINDER_OUT_OF_RANGE;
