@@ -334,4 +334,6 @@ extern "C" {
     bool IS_RC_MODE_ACTIVE(boxId_e) { return false; }
 
     bool gpsRescueIsConfigured(void) { return false; }
+
+    void schedulerIgnoreTaskExecTime(void) {}
 }

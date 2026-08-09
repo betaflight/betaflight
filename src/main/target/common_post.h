@@ -61,6 +61,13 @@
 #define FAST_CODE_NOINLINE
 #endif
 
+// Large functions normally stay out of scarce fast RAM via
+// FAST_CODE_NOINLINE.  Platforms with a larger measured budget may opt the
+// small set of genuinely loop-critical functions back in.
+#ifndef FAST_CODE_NOINLINE_CRITICAL
+#define FAST_CODE_NOINLINE_CRITICAL FAST_CODE_NOINLINE
+#endif
+
 #ifndef CCM_CODE
 #define CCM_CODE
 #endif
@@ -96,6 +103,10 @@
 #define MMFLASH_CODE_NOINLINE      RAM_CODE NOINLINE
 #define MMFLASH_DATA               FAST_DATA
 #define MMFLASH_DATA_ZERO_INIT     FAST_DATA_ZERO_INIT
+#endif
+
+#ifndef RAM_CODE
+#define RAM_CODE
 #endif
 
 #ifndef MMFLASH_CODE
@@ -138,6 +149,7 @@
     && !defined(USE_ACCGYRO_ICM42622P) \
     && !defined(USE_ACCGYRO_ICM42686P) \
     && !defined(USE_ACC_SPI_ICM42688P) \
+    && !defined(USE_ACCGYRO_ICM56686) \
     && !defined(USE_ACCGYRO_ICM45686) \
     && !defined(USE_ACCGYRO_ICM45605) \
     && !defined(USE_ACCGYRO_LSM6DSO) \
@@ -165,6 +177,7 @@
     && !defined(USE_ACCGYRO_ICM42686P) \
     && !defined(USE_GYRO_SPI_ICM42688P) \
     && !defined(USE_ACCGYRO_ICM45686) \
+    && !defined(USE_ACCGYRO_ICM56686) \
     && !defined(USE_ACCGYRO_ICM45605) \
     && !defined(USE_ACCGYRO_ICM40609D) \
     && !defined(USE_ACCGYRO_LSM6DSO) \
@@ -566,6 +579,7 @@
 #if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) \
     || defined(USE_GYRO_L3GD20) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) \
     || defined(USE_GYRO_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_ACCGYRO_ICM42686P) || defined(USE_GYRO_SPI_ICM42688P) \
+    || defined(USE_ACCGYRO_ICM56686) \
     || defined(USE_ACCGYRO_ICM40609D) || defined(USE_ACCGYRO_ICM45605) || defined(USE_ACCGYRO_ICM45686) \
     || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653) \
     || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_LSM6DSK320X)
@@ -872,11 +886,17 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_FLIGHT_PLAN 0
 #endif
 
-// Failsafe GPS rescue flown as a synthesised flight-plan mission instead of
-// the legacy gps_rescue controller. Opt-in; the BOXGPSRESCUE switch keeps
-// flying legacy rescue either way.
+// GPS rescue (both the BOXGPSRESCUE switch and the failsafe procedure) flown as
+// a synthesised flight-plan mission through the unified autopilot, instead of
+// the legacy gps_rescue controller. Default-on wherever the flight-plan engine
+// is available; targets without it (or wing, or flash-constrained) fall back to
+// the legacy rescue controller.
 #if !defined(ENABLE_RESCUE_PLAN)
+#if ENABLE_FLIGHT_PLAN && defined(USE_GPS_RESCUE) && !defined(USE_WING)
+#define ENABLE_RESCUE_PLAN 1
+#else
 #define ENABLE_RESCUE_PLAN 0
+#endif
 #endif
 #if ENABLE_RESCUE_PLAN && !(ENABLE_FLIGHT_PLAN && defined(USE_GPS_RESCUE) && !defined(USE_WING))
 #error "ENABLE_RESCUE_PLAN requires ENABLE_FLIGHT_PLAN, USE_GPS_RESCUE and !USE_WING"
@@ -903,6 +923,24 @@ extern struct linker_symbol __fontdata_end;
 #else
 #define ENABLE_TELEMETRY_MAVLINK_MISSION 0
 #endif
+#endif
+
+// MAVLink inbound COMMAND_LONG / COMMAND_INT actuation (arm/disarm, mode set,
+// RTL, set-home, reboot). Defaults on wherever MAVLink telemetry is built in.
+#if !defined(ENABLE_TELEMETRY_MAVLINK_COMMANDS)
+#if defined(USE_TELEMETRY_MAVLINK)
+#define ENABLE_TELEMETRY_MAVLINK_COMMANDS 1
+#else
+#define ENABLE_TELEMETRY_MAVLINK_COMMANDS 0
+#endif
+#endif
+
+// Remote arming over MAVLink is opt-in at compile time for safety. The disarm
+// path is always compiled in when commands are enabled; only the arm path is
+// gated. When enabled, arming still routes through tryArm() and honours every
+// arming-disable flag — there is no bypass.
+#if !defined(ENABLE_REMOTE_ARM)
+#define ENABLE_REMOTE_ARM 0
 #endif
 
 #if !defined(ENABLE_RX_UDP)

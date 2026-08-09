@@ -677,8 +677,10 @@ def base_config(extra):
         "aux 2 1 2 1700 2100 0 0",   # ANGLE on AUX3 (heading-validation flight)
         # the estimator needs the truth-fed virtual mag as a heading source
         "set trust_mag = ON",
-        # matches the MotionModel plant: atan(K_DRAG * v / g) over cruise speeds
-        "set ap_velocity_drag_coeff = 440",
+        # Unified velocity-primitive controller: cruise tilt is carried by the
+        # virtual-distance integral, so drag compensation is a small term kept
+        # well below the D (velocity) gain rather than the cruise feedforward.
+        "set ap_velocity_drag_coeff = 50",
         # 10 m above home, 5 m/s — low and quick keeps landing scenarios short
         f"waypoint insert 0 {WP_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 none",
     ] + extra
@@ -1143,11 +1145,11 @@ def scenario_geofence_rth_rxloss(sitl, rc, fdm):
     log(f"landed {dist:.1f} m from home under failsafe")
 
 
-# --- A/B rescue scenarios -------------------------------------------------
-# Legacy GPS rescue (binary A) vs the ENABLE_RESCUE_PLAN mission rescue
-# (binary B, built with -DENABLE_RESCUE_PLAN=1) must produce the same
-# qualitative outcome: return, land near home, disarm, no flyaway. The two
-# controllers differ by design, so parity is metric bands, never trajectories.
+# --- GPS rescue scenarios -------------------------------------------------
+# GPS rescue is flown as an autopilot mission (ENABLE_RESCUE_PLAN, now the
+# default on flight-plan targets): on RC loss the failsafe procedure stages a
+# rescue plan and flies it under FAILSAFE + AUTOPILOT. Each scenario asserts the
+# safety outcome directly: engage, return, land near home, disarm, no flyaway.
 
 RESCUE_CFG = [
     "set failsafe_procedure = GPS-RESCUE",
@@ -1155,7 +1157,14 @@ RESCUE_CFG = [
     # own outbound peak, which varies run to run and would dominate the A/B
     # altitude comparison; MAX synthesis is unit-tested instead
     "set gps_rescue_alt_mode = FIXED_ALT",
-    "set gps_rescue_return_alt = 15",     # short climb keeps runs quick
+    "set gps_rescue_return_alt = 30",     # long climb widens the ascendRate-clamp margin
+    # ascendRate 1 m/s clamps the climb feedforward well under the ~2.2 m/s the
+    # model reaches on this climb under the alt-hold climbRate (5 m/s), so the
+    # climb rate proves ascendRate. descendRate 0.8 m/s governs the fallback
+    # descent (baro-only, velocity-tracked) held under the ~1.26 m/s throttle-
+    # floor descent the alt-hold climbRate would otherwise drive it to.
+    "set gps_rescue_ascend_rate = 100",
+    "set gps_rescue_descend_rate = 80",
     "set ap_yaw_mode = FIXED",
     "set ap_waypoint_hold_radius = 400",
     "set ap_landing_descent_rate = 200",
@@ -1186,19 +1195,15 @@ def fly_out_and_park(sitl, rc, fdm, dist_m):
     time.sleep(2.0)
 
 
-def rescue_engagement_asserts(sitl, variant):
-    # Legacy rescue enables GPS_RESCUE_MODE without the FAILSAFE box; the
-    # mission rescue runs under FAILSAFE + AUTOPILOT.
-    if variant == "A":
-        wait_for("legacy GPS rescue engaged", lambda: BOX_GPSRESCUE in sitl.modes(), timeout=20)
-        assert BOX_AUTOPILOT not in sitl.modes(), "mission engaged on the legacy binary"
-    else:
-        wait_for(
-            "rescue mission engaged (FAILSAFE + AUTOPILOT)",
-            lambda: (lambda m: BOX_FAILSAFE in m and BOX_AUTOPILOT in m)(sitl.modes()),
-            timeout=20,
-        )
-        assert BOX_GPSRESCUE not in sitl.modes(), "legacy rescue engaged on the rescue-plan binary"
+def rescue_engagement_asserts(sitl, variant="B"):
+    # Converged rescue: GPS rescue is flown as an autopilot mission, so it runs
+    # under FAILSAFE + AUTOPILOT and never enables the legacy GPS_RESCUE box.
+    wait_for(
+        "rescue mission engaged (FAILSAFE + AUTOPILOT)",
+        lambda: (lambda m: BOX_FAILSAFE in m and BOX_AUTOPILOT in m)(sitl.modes()),
+        timeout=20,
+    )
+    assert BOX_GPSRESCUE not in sitl.modes(), "legacy GPS_RESCUE engaged instead of the rescue mission"
 
 
 def rescue_metrics(fdm, t0, kill_dist):
@@ -1211,7 +1216,25 @@ def rescue_metrics(fdm, t0, kill_dist):
     }
 
 
-def scenario_rescue_ab(sitl, rc, fdm, variant):
+def band_descent_rate(fdm, t0, lo_alt, hi_alt):
+    """Median descent rate (m/s, positive down) over an altitude band, ignoring
+    the ramp-in at the top and the near-ground slowdown."""
+    s = sorted(-r[6] for r in fdm.snapshot_history()
+               if r[0] >= t0 and lo_alt <= r[3] <= hi_alt and r[6] < -0.1)
+    return s[len(s) // 2] if s else 0.0
+
+
+def assert_rescue_climb_rate(fdm, t0, variant):
+    # The rescue climb feedforward is clamped to gps_rescue_ascend_rate (1 m/s).
+    # The altitude P-term still drives a transient above the cap, but at a much
+    # lower peak (~1.8 m/s) than the ~2.6 m/s this climb reaches under the
+    # alt-hold climbRate (5 m/s): the peak shows ascendRate shaping the climb.
+    peak_climb = max((s[6] for s in fdm.snapshot_history() if s[0] >= t0), default=0.0)
+    log(f"[{variant}] climb rate: peak {peak_climb:.2f} m/s (ascendRate 1.0)")
+    assert 0.6 <= peak_climb <= 2.25, f"climb not held to ascendRate: {peak_climb:.2f} m/s"
+
+
+def scenario_rescue_ab(sitl, rc, fdm, variant="B"):
     fly_out_and_park(sitl, rc, fdm, 120.0)
     kill_dist = fdm.distance_from_home()
     t0 = fdm.now_t()
@@ -1238,10 +1261,12 @@ def scenario_rescue_ab(sitl, rc, fdm, variant):
     assert td_dist < 15.0, f"landed {td_dist:.1f} m from home"
     log(f"[{variant}] landed {td_dist:.1f} m from home, peak alt {m['max_alt']:.1f} m")
     m["td_dist"] = td_dist
+
+    assert_rescue_climb_rate(fdm, t0, variant)
     return m
 
 
-def scenario_rescue_heading(sitl, rc, fdm, variant):
+def scenario_rescue_heading(sitl, rc, fdm, variant="B"):
     """No mag, true heading east while the FC believes north: the rescue must
     recover heading via GPS course-over-ground (pitch-forward phase) before
     flying home."""
@@ -1284,16 +1309,17 @@ def scenario_rescue_heading(sitl, rc, fdm, variant):
         interval=1.0,
     )
     m = rescue_metrics(fdm, t0, kill_dist)
+    assert m["max_dist"] <= 150.0, f"heading-recovery excursion ran away: {m['max_dist']:.0f} m"
     td = m["touchdown"]
     assert td is not None, "no touchdown recorded"
     td_dist = math.hypot(td[1], td[2])
     assert td_dist < 30.0, f"landed {td_dist:.1f} m from home"
-    log(f"[{variant}] recovered heading and landed {td_dist:.1f} m from home")
+    log(f"recovered heading and landed {td_dist:.1f} m from home")
     m["td_dist"] = td_dist
     return m
 
 
-def scenario_rescue_gps_loss(sitl, rc, fdm, variant):
+def scenario_rescue_gps_loss(sitl, rc, fdm, variant="B"):
     fly_out_and_park(sitl, rc, fdm, 120.0)
     kill_dist = fdm.distance_from_home()
     t0 = fdm.now_t()
@@ -1326,39 +1352,59 @@ def scenario_rescue_gps_loss(sitl, rc, fdm, variant):
     return m
 
 
-def compare_rescue_ab(mA, mB):
-    alt_delta = abs(mA["max_alt"] - mB["max_alt"])
-    assert alt_delta <= 7.0, f"peak altitude diverged: A {mA['max_alt']:.1f} B {mB['max_alt']:.1f}"
-    for m, tag in ((mA, "A"), (mB, "B")):
-        assert m["max_dist"] <= m["kill_dist"] + 25.0, f"{tag} flyaway: {m['max_dist']:.0f} m"
-    if "td_dist" in mA and "td_dist" in mB:
-        assert abs(mA["td_dist"] - mB["td_dist"]) <= 10.0, \
-            f"touchdown diverged: A {mA['td_dist']:.1f} B {mB['td_dist']:.1f}"
-    if mA.get("time_to_home") and mB.get("time_to_home"):
-        slow = max(mA["time_to_home"], mB["time_to_home"])
-        assert abs(mA["time_to_home"] - mB["time_to_home"]) <= 0.5 * slow, \
-            f"time-to-home diverged: A {mA['time_to_home']:.0f}s B {mB['time_to_home']:.0f}s"
-    log(f"A/B parity: alt Δ{alt_delta:.1f} m")
+def scenario_rescue_switch_descent(sitl, rc, fdm, variant="B"):
+    """Switch-invoked rescue (no RC loss): the pilot flips BOXGPSRESCUE. The plan
+    flies as an autopilot mission, then GPS goes dark mid-return. Because the
+    SWITCH (not failsafe) invoked it, the aborted plan degrades to a controlled
+    altitude-only descent and disarms - never entering FAILSAFE."""
+    fly_out_and_park(sitl, rc, fdm, 120.0)   # out, then pilot hold; RC stays live
+    kill_dist = fdm.distance_from_home()
+    t0 = fdm.now_t()
+    log(f"[{variant}] flipping GPS-RESCUE switch {kill_dist:.0f} m out")
+    rc.set(7, RC_LOW)    # hand over: drop pilot ALTHOLD+POSHOLD
+    rc.set(8, RC_HIGH)   # AUX5: BOXGPSRESCUE
 
+    # The switch flies the rescue as an autopilot mission: AUTOPILOT engages, never
+    # the failsafe path or the legacy GPS_RESCUE box.
+    wait_for(
+        "rescue plan engaged via switch (AUTOPILOT, no FAILSAFE)",
+        lambda: (lambda m: BOX_AUTOPILOT in m and BOX_FAILSAFE not in m)(sitl.modes()),
+        timeout=20,
+    )
+    assert BOX_GPSRESCUE not in sitl.modes(), "legacy GPS_RESCUE engaged instead of the plan"
 
-def compare_rescue_heading(mA, mB):
-    # the pitch-forward heading-recovery excursion is legitimate travel from a
-    # hover start; bound it rather than compare to the kill distance. Altitude
-    # during the 35 deg dash differs with dash length and phase ordering, so
-    # the band is wide; the load-bearing asserts are recovery + touchdown.
-    for m, tag in ((mA, "A"), (mB, "B")):
-        assert m["max_dist"] <= 150.0, f"{tag} heading-recovery excursion ran away: {m['max_dist']:.0f} m"
-    alt_delta = abs(mA["max_alt"] - mB["max_alt"])
-    assert alt_delta <= 15.0, f"peak altitude diverged: A {mA['max_alt']:.1f} B {mB['max_alt']:.1f}"
-    log(f"A/B parity: both recovered heading, alt Δ{alt_delta:.1f} m")
+    wait_for(
+        "return underway (30 m closer)",
+        lambda: fdm.distance_from_home() < kill_dist - 30.0,
+        timeout=90,
+        interval=1.0,
+    )
+    loss_dist = fdm.distance_from_home()
+    log(f"[{variant}] GPS dark {loss_dist:.0f} m out (switch still held)")
+    fdm.gps_valid = False
 
+    # Plan aborts on estimator loss; the switch invoker degrades to the baro-only
+    # descent (not failsafe) and disarms without flying away.
+    wait_for(
+        "descends and disarms without GPS",
+        lambda: fdm.model.on_ground() and BOX_ARM not in sitl.modes(),
+        timeout=180,
+        interval=1.0,
+    )
+    assert BOX_FAILSAFE not in sitl.modes(), "entered FAILSAFE on a switch-invoked rescue"
+    m = rescue_metrics(fdm, t0, kill_dist)
+    assert m["max_dist"] < kill_dist + 40.0, f"flew away after GPS loss: {m['max_dist']:.0f} m"
+    log(f"[{variant}] down and disarmed via switch-fallback descent")
 
-def compare_rescue_loss(mA, mB):
-    # after GPS loss both descend wherever they are; only the safety
-    # properties compare
-    for m, tag in ((mA, "A"), (mB, "B")):
-        assert m["max_dist"] <= m["kill_dist"] + 40.0, f"{tag} flyaway: {m['max_dist']:.0f} m"
-    log("A/B parity: both descended and disarmed after GPS loss")
+    # The climb ran under ascendRate; the baro-only fallback descent runs at
+    # gps_rescue_descend_rate (0.8 m/s) - the alt-hold climbRate (5 m/s) would
+    # drive it to the ~1.26 m/s throttle floor. Sample the descent near ground,
+    # where the failsafe-landing profile's altitude scaling has decayed to ~1x.
+    assert_rescue_climb_rate(fdm, t0, variant)
+    descent = band_descent_rate(fdm, t0, 2.0, 7.0)
+    log(f"[{variant}] fallback descent: {descent:.2f} m/s (descendRate 0.8)")
+    assert 0.5 <= descent <= 1.1, f"fallback descent not held to descendRate: {descent:.2f} m/s"
+    return m
 
 
 SCENARIOS = {
@@ -1473,20 +1519,22 @@ SCENARIOS = {
             "set landing_disarm_threshold = 10",
         ],
     ),
-    "rescue_ab": (
+    "rescue": (
         scenario_rescue_ab,
         RESCUE_CFG,
-        {"ab": True, "compare": compare_rescue_ab},
     ),
     "rescue_heading_recovery": (
         scenario_rescue_heading,
-        RESCUE_CFG + ["set mag_hardware = NONE"],
-        {"ab": True, "compare": compare_rescue_heading, "initial_yaw_deg": 90.0},
+        [*RESCUE_CFG, "set mag_hardware = NONE"],
+        {"initial_yaw_deg": 90.0},
     ),
     "rescue_gps_loss": (
         scenario_rescue_gps_loss,
         RESCUE_CFG,
-        {"ab": True, "compare": compare_rescue_loss},
+    ),
+    "rescue_switch_descent": (
+        scenario_rescue_switch_descent,
+        [*RESCUE_CFG, "aux 5 46 4 1700 2100 0 0"],   # BOXGPSRESCUE on AUX5
     ),
 }
 

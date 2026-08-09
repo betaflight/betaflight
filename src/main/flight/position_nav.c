@@ -25,8 +25,6 @@
 
 #include "platform.h"
 
-#ifndef USE_WING
-
 #include "common/maths.h"
 #include "common/vector.h"
 
@@ -243,5 +241,3 @@ vector3_t positionNavGetTargetVelocityCmS(void)
 {
     return currentTargetVelCmS;
 }
-
-#endif // !USE_WING
