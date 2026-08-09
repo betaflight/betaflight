@@ -344,6 +344,7 @@ static void tpaCurveHyperbolicInit(const pidProfile_t *pidProfile)
     pwlFill(&pidRuntime.tpaCurvePwl, tpaCurveHyperbolicFunction, (void*)pidProfile);
 }
 
+#ifdef USE_WING
 static float tpaCurveHyperbolicVrefFunction(float x, void *args)
 {
     const pidProfile_t *pidProfile = (const pidProfile_t*)args;
@@ -358,9 +359,12 @@ static void tpaCurveHyperbolicVrefInit(const pidProfile_t *pidProfile)
     const float yMax = pidProfile->speed_curve_max * 0.01f;
     const float xMin = expf(logf(yMin) / power);
     const float xMax = expf(logf(yMax) / power);
+    pidRuntime.refSpeedCurveArgMin = xMin;
+    pidRuntime.refSpeedCurveArgMax = xMax;
     pwlInitialize(&pidRuntime.tpaCurvePwl, pidRuntime.tpaCurvePwl_yValues, TPA_CURVE_PWL_SIZE, xMin, xMax);
     pwlFill(&pidRuntime.tpaCurvePwl, tpaCurveHyperbolicVrefFunction, (void*)pidProfile);
 }
+#endif
 
 static void tpaCurveInit(const pidProfile_t *pidProfile)
 {
@@ -369,9 +373,11 @@ static void tpaCurveInit(const pidProfile_t *pidProfile)
         case TPA_CURVE_HYPERBOLIC:
             tpaCurveHyperbolicInit(pidProfile);
             return;
+#ifdef USE_WING
         case TPA_CURVE_VREF:
             tpaCurveHyperbolicVrefInit(pidProfile);
             return;
+#endif
         case TPA_CURVE_CLASSIC:
         default:
             return;

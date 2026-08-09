@@ -521,6 +521,10 @@ typedef struct pidRuntime_s {
     pwl_t tpaCurvePwl;
     float tpaCurvePwl_yValues[TPA_CURVE_PWL_SIZE];
     tpaCurveType_t tpaCurveType;
+#ifdef USE_WING
+    float refSpeedCurveArgMin;
+    float refSpeedCurveArgMax;
+#endif
 #endif // USE_ADVANCED_TPA
 
 #ifdef USE_CHIRP
