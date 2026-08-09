@@ -1401,8 +1401,8 @@ const clivalue_t valueTable[] = {
 #if defined(USE_WING) && defined(USE_ADVANCED_TPA)
     { PARAM_NAME_SPEED_CURVE_VREF, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, UINT8_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, speed_curve_vref) },
     { PARAM_NAME_SPEED_CURVE_POWER, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 30 }, PG_PID_PROFILE, offsetof(pidProfile_t, speed_curve_power) },
-    { PARAM_NAME_SPEED_CURVE_MIN, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, speed_curve_min) },
-    { PARAM_NAME_SPEED_CURVE_MAX, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 100, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, speed_curve_max) },
+    { PARAM_NAME_SPEED_CURVE_MIN, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 99 }, PG_PID_PROFILE, offsetof(pidProfile_t, speed_curve_min) },
+    { PARAM_NAME_SPEED_CURVE_MAX, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 100, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, speed_curve_max) },
 #endif
 
     { PARAM_NAME_EZ_LANDING_THRESHOLD,      VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, ez_landing_threshold) },
