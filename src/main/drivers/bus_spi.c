@@ -321,6 +321,19 @@ void spiWriteRegBuf(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint32_t
     spiWait(dev);
 }
 
+// Write a block of data to a register, returning false if the bus is busy
+bool spiWriteRegBufRB(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t length)
+{
+    // Ensure any prior DMA has completed before continuing
+    if (spiIsBusy(dev)) {
+        return false;
+    }
+
+    spiWriteRegBuf(dev, reg, data, length);
+
+    return true;
+}
+
 // Wait for bus to become free, then read a byte from a register
 uint8_t spiReadReg(const extDevice_t *dev, uint8_t reg)
 {
