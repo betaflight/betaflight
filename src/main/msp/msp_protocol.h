@@ -219,6 +219,7 @@
 #define MSP_GPSSVINFO                   164  // out message: Get Signal Strength (only U-Blox)
 #define MSP_GPSSTATISTICS               166  // out message: Get GPS debugging data
 #define MSP_ATTITUDE_QUATERNION         167  // out message: Orientation quaternion components (w, x, y, z)
+#define MSP_WING                        169  // out message: WING settings
 
 // OSD specific commands (180-189)
 #define MSP_OSD_VIDEO_CONFIG            180  // out message: Get OSD video settings
@@ -258,6 +259,7 @@
 #define MSP_SET_GPS_RESCUE_PIDS         226  // in message:  Set GPS Rescue PID values
 #define MSP_SET_VTXTABLE_BAND           227  // in message:  Set vtxTable band/channel data
 #define MSP_SET_VTXTABLE_POWERLEVEL     228  // in message:  Set vtxTable powerLevel data
+#define MSP_SET_WING                    230  // in message:  Set WING settings
 
 // Multiple MSP and special commands (230-255)
 #define MSP_MULTIPLE_MSP                230  // out message: Request multiple MSPs in one request

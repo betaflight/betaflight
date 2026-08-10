@@ -1406,7 +1406,7 @@ case MSP_NAME:
         int16_t w = lrintf(imuAttitudeQuaternion.w * q_scale);
         int16_t x = lrintf(imuAttitudeQuaternion.x * q_scale);
         int16_t y = lrintf(imuAttitudeQuaternion.y * q_scale);
-        int16_t z = lrintf(imuAttitudeQuaternion.z * q_scale); 
+        int16_t z = lrintf(imuAttitudeQuaternion.z * q_scale);
         // Write their bit representation as uint16_t
         sbufWriteU16(dst, *(uint16_t*)&w);
         sbufWriteU16(dst, *(uint16_t*)&x);
@@ -2284,6 +2284,40 @@ case MSP_NAME:
             sbufWriteU8(dst, dt.seconds);
             sbufWriteU16(dst, dt.millis);
         }
+        break;
+    }
+#endif
+
+#ifdef USE_WING
+    case MSP_WING: {
+        for (int i = 0; i < PID_ITEM_COUNT; i++) {
+            sbufWriteU8(dst, currentPidProfile->pid[i].S);
+        }
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            sbufWriteU16(dst, currentPidProfile->spa_center[i]);
+        }
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            sbufWriteU16(dst, currentPidProfile->spa_width[i]);
+        }
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            sbufWriteU8(dst, currentPidProfile->spa_mode[i]);
+        }
+        sbufWriteU8(dst, currentPidProfile->tpa_curve_type);
+        sbufWriteU8(dst, currentPidProfile->tpa_curve_stall_throttle);
+        sbufWriteU16(dst, currentPidProfile->tpa_curve_pid_thr0);
+        sbufWriteU16(dst, currentPidProfile->tpa_curve_pid_thr100);
+        sbufWriteU8(dst, currentPidProfile->tpa_curve_expo);
+        sbufWriteU8(dst, currentPidProfile->tpa_speed_type);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_basic_delay);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_basic_gravity);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_adv_prop_pitch);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_adv_mass);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_adv_drag_k);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_adv_thrust);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_max_voltage);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_pitch_offset);
+        sbufWriteU8(dst, currentPidProfile->yaw_type);
+        sbufWriteU16(dst, currentPidProfile->angle_pitch_offset);
         break;
     }
 #endif
@@ -4556,6 +4590,48 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         profile->consumptionWarningPercentage = consumptionWarnPct;
         break;
     }
+
+#ifdef USE_WING
+    case MSP_SET_WING: {
+        const unsigned expectedSize =
+            (sizeof(uint8_t) * (PID_ITEM_COUNT + XYZ_AXIS_COUNT + 5)) +
+            (sizeof(uint16_t) * (2 * XYZ_AXIS_COUNT + 11));
+        if (sbufBytesRemaining(src) < (int)expectedSize) {
+            return MSP_RESULT_ERROR;
+        }
+
+        for (int i = 0; i < PID_ITEM_COUNT; i++) {
+            currentPidProfile->pid[i].S = sbufReadU8(src);
+        }
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            currentPidProfile->spa_center[i] = sbufReadU16(src);
+        }
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            currentPidProfile->spa_width[i] = sbufReadU16(src);
+        }
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            currentPidProfile->spa_mode[i] = sbufReadU8(src);
+        }
+        currentPidProfile->tpa_curve_type = sbufReadU8(src);
+        currentPidProfile->tpa_curve_stall_throttle = sbufReadU8(src);
+        currentPidProfile->tpa_curve_pid_thr0 = sbufReadU16(src);
+        currentPidProfile->tpa_curve_pid_thr100 = sbufReadU16(src);
+        currentPidProfile->tpa_curve_expo = sbufReadU8(src);
+        currentPidProfile->tpa_speed_type = sbufReadU8(src);
+        currentPidProfile->tpa_speed_basic_delay = sbufReadU16(src);
+        currentPidProfile->tpa_speed_basic_gravity = sbufReadU16(src);
+        currentPidProfile->tpa_speed_adv_prop_pitch = sbufReadU16(src);
+        currentPidProfile->tpa_speed_adv_mass = sbufReadU16(src);
+        currentPidProfile->tpa_speed_adv_drag_k = sbufReadU16(src);
+        currentPidProfile->tpa_speed_adv_thrust = sbufReadU16(src);
+        currentPidProfile->tpa_speed_max_voltage = sbufReadU16(src);
+        currentPidProfile->tpa_speed_pitch_offset = sbufReadU16(src);
+        currentPidProfile->yaw_type = sbufReadU8(src);
+        currentPidProfile->angle_pitch_offset = sbufReadU16(src);
+        pidInitConfig(currentPidProfile);
+        break;
+    }
+#endif
 
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
