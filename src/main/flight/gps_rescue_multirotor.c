@@ -409,7 +409,7 @@ static void performSanityChecks(void)
         rescueState.failure = RESCUE_GPSLOST;
     }
 
-    secondsLowSats += (!STATE(GPS_FIX) || (gpsSol.numSat < gpsRescueConfig()->minSats)) ? 1 : -1;
+    secondsLowSats += (!STATE(GPS_FIX) || (gpsSol.numSat < GPS_MIN_SAT_COUNT)) ? 1 : -1;
     secondsLowSats = MAX(0, secondsLowSats);
     if (secondsLowSats >= 15) {
         rescueState.failure = RESCUE_LOWSATS;
