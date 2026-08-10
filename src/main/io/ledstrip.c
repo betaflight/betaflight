@@ -667,15 +667,10 @@ static void applyLedFixedLayers(void)
 #ifdef USE_GPS
         case LED_FUNCTION_GPS_BAR:
             {
-#ifdef USE_GPS_RESCUE
-                uint8_t minSats = gpsRescueConfig()->minSats;
-#else
-                uint8_t minSats = GPS_MIN_SAT_COUNT;
-#endif
                 if (gpsSol.numSat == 0 || !sensors(SENSOR_GPS)) {
                     color = HSV(RED);
                 } else {
-                    if (gpsSol.numSat >= minSats) {
+                    if (gpsSol.numSat >= getMinSats()) {
                         color = HSV(GREEN);
                     } else {
                         color = HSV(RED);
