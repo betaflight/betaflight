@@ -383,6 +383,8 @@ static void bbTimebaseSetup(bbPort_t *bbPort, motorProtocolTypes_e dshotProtocol
 
     // Backstop for bbTelemetryWait(): capture window plus 25% margin.
     // DShot600: ~62 us -> ~78 us, DShot300: ~124 us -> ~155 us.
+    // Called per port group, so the last group wins; harmless only because all
+    // groups share one protocol. Make this and dshotFrameUs per port if that ends.
     bbTelemetryTimeoutUs = (timeDelta_t)(DSHOT_BB_PORT_IP_BUF_LENGTH * 1000000 / inputFreq) * 5 / 4;
 }
 
