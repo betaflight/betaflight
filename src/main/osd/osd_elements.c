@@ -1887,12 +1887,15 @@ static void osdBackgroundOverlayReticle(osdElementParms_t *element)
 
 // Shared tail for every small square overlay's foreground marker: write the
 // glyph and place it at the given cell. `cellY` is in whole character rows
-// (0..OSD_STICK_OVERLAY_HEIGHT-1).
+// (0..OSD_STICK_OVERLAY_HEIGHT-1). Both cellX and cellY are clamped here so
+// that any caller - present or future - can never push the cursor outside
+// the shared overlay footprint, regardless of how its own coordinate math
+// is derived.
 static void osdOverlayPlaceMarker(osdElementParms_t *element, uint8_t cellX, uint8_t cellY, char glyph)
 {
     tfp_sprintf(element->buff, "%c", glyph);
-    element->elemOffsetX = cellX;
-    element->elemOffsetY = cellY;
+    element->elemOffsetX = constrain(cellX, 0, OSD_STICK_OVERLAY_WIDTH - 1);
+    element->elemOffsetY = constrain(cellY, 0, OSD_STICK_OVERLAY_HEIGHT - 1);
 }
 #endif // USE_OSD_STICK_OVERLAY || USE_OSD_HOME_RELATIVE_OVERLAY
 
@@ -2361,9 +2364,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #endif
 #ifdef USE_GPS
     [OSD_FLIGHT_DIST]             = osdElementGpsFlightDistance,
+#endif
 #ifdef USE_OSD_HOME_RELATIVE_OVERLAY
     [OSD_HOME_RELATIVE_OVERLAY]   = osdElementHomeRelativeOverlay,
-#endif
 #endif
 #ifdef USE_OSD_STICK_OVERLAY
     [OSD_STICK_OVERLAY_LEFT]      = osdElementStickOverlay,
@@ -2432,7 +2435,7 @@ const osdElementDrawFn osdElementBackgroundFunction[OSD_ITEM_COUNT] = {
     [OSD_STICK_OVERLAY_LEFT]      = osdBackgroundOverlayReticle,
     [OSD_STICK_OVERLAY_RIGHT]     = osdBackgroundOverlayReticle,
 #endif
-#if defined(USE_GPS) && defined(USE_OSD_HOME_RELATIVE_OVERLAY)
+#ifdef USE_OSD_HOME_RELATIVE_OVERLAY
     [OSD_HOME_RELATIVE_OVERLAY]   = osdBackgroundOverlayReticle,
 #endif
     [OSD_PILOT_NAME]              = osdBackgroundPilotName,

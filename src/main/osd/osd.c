@@ -374,7 +374,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
 #ifdef USE_OSD_HOME_RELATIVE_OVERLAY
     osdConfig->home_relative_scale = 10; // metres from centre to edge
-    osdConfig->home_relative_rotation = 1; // 1 = 90 degrees clockwise; corrects the yaw/GPS reference mismatch by default
+    osdConfig->home_relative_rotation = 3; // 3 = 270 degrees clockwise; corrects the yaw/GPS reference mismatch by default
 #endif
 
     osdConfig->rssi_alarm = 20;
