@@ -239,6 +239,12 @@ bool serialUART_hw(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOption
     const resourceOwner_e ownerTxRx = serialOwnerTxRx(identifier); // rx is always +1
     uart_inst_t *uartInstance = UART_INST(hardware->reg);
 
+    if (options & SERIAL_BIDIR) {
+        // The PL011 (hardware uart) has no half duplex mode. Warn rather than fail, so that a
+        // protocol which still has some use without responses (e.g. SmartAudio) keeps working.
+        bprintf("*** option SERIAL_BIDIR not supported for hardware UART, tx only: use a PIOUART ***");
+    }
+
     if (txIO) {
         IOInit(txIO, ownerTxRx, ownerIndex);
         uint32_t txPin = IO_Pin(txIO);
