@@ -2290,7 +2290,7 @@ case MSP_NAME:
 
 #ifdef USE_WING
     case MSP_WING: {
-        for (int i = 0; i < PID_ITEM_COUNT; i++) {
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
             sbufWriteU8(dst, currentPidProfile->pid[i].S);
         }
         for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
@@ -4594,13 +4594,13 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 #ifdef USE_WING
     case MSP_SET_WING: {
         const unsigned expectedSize =
-            (sizeof(uint8_t) * (PID_ITEM_COUNT + XYZ_AXIS_COUNT + 5)) +
+            (sizeof(uint8_t) * (2 * XYZ_AXIS_COUNT + 5)) +
             (sizeof(uint16_t) * (2 * XYZ_AXIS_COUNT + 11));
         if (sbufBytesRemaining(src) < (int)expectedSize) {
             return MSP_RESULT_ERROR;
         }
 
-        for (int i = 0; i < PID_ITEM_COUNT; i++) {
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
             currentPidProfile->pid[i].S = sbufReadU8(src);
         }
         for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
