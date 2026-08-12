@@ -117,6 +117,29 @@ bool busWriteRegisterStart(const extDevice_t *dev, uint8_t reg, uint8_t data)
     }
 }
 
+//Blocking Write
+bool busWriteRegisterBuffer(const extDevice_t *dev, uint8_t reg, const uint8_t *data, uint8_t length)
+{
+#if !defined(USE_SPI) && !defined(USE_I2C)
+    UNUSED(reg);
+    UNUSED(data);
+    UNUSED(length);
+#endif
+
+    switch (dev->bus->busType) {
+#ifdef USE_SPI
+    case BUS_TYPE_SPI:
+        return spiWriteRegBufRB(dev, reg & 0x7f, (uint8_t *)data, length);
+#endif
+#ifdef USE_I2C
+    case BUS_TYPE_I2C:
+        return i2cBusWriteRegisterBuffer(dev, reg, (uint8_t *)data, length);
+#endif
+    default:
+        return false;
+    }
+}
+
 // Read routines where the register is ORed with 0x80
 bool busReadRegisterBuffer(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t length)
 {

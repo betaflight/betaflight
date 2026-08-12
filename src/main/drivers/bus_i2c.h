@@ -63,6 +63,7 @@ void i2cPinConfigure(const struct i2cConfig_s *i2cConfig);
 void i2cInit(i2cDevice_e device);
 bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data);
 bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg, uint8_t data);
+bool i2cWriteBufferBlocking(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf);
 bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf);
 bool i2cRead(i2cDevice_e device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf);
 bool i2cBusy(i2cDevice_e device, bool *error);

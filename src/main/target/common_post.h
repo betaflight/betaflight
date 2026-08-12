@@ -747,7 +747,7 @@
 #endif // USE_OPTICALFLOW_UPT1
 
 // Bottom-up: individual rangefinder drivers → USE_RANGEFINDER
-#if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT) || defined(USE_RANGEFINDER_NOOPLOOP) || defined(USE_RANGEFINDER_UPT1)
+#if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT) || defined(USE_RANGEFINDER_NOOPLOOP) || defined(USE_RANGEFINDER_UPT1) || defined(USE_RANGEFINDER_VL53L1X)
 #ifndef USE_RANGEFINDER
 #define USE_RANGEFINDER
 #endif
