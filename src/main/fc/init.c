@@ -119,6 +119,7 @@
 #include "io/displayport_msp.h"
 #include "io/dronecan/dronecan.h"
 #include "io/flashfs.h"
+#include "io/flashfs_log.h"
 #include "io/gimbal.h"
 #include "io/gimbal_control.h"
 #include "io/gps.h"
@@ -846,6 +847,7 @@ void initPhase3(void)
 #endif
 #ifdef USE_FLASHFS
     flashfsInit();
+    flashfsLogInit();
 #endif
 
 #ifdef USE_SDCARD

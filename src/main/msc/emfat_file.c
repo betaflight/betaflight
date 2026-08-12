@@ -26,10 +26,13 @@
 #include "emfat.h"
 #include "emfat_file.h"
 
+#include "common/maths.h"
 #include "common/printf.h"
 #include "common/strtol.h"
 #include "common/time.h"
 #include "common/utils.h"
+
+#include "blackbox/blackbox.h"
 
 #include "drivers/flash/flash.h"
 #include "drivers/light_led.h"
@@ -37,6 +40,7 @@
 #include "drivers/usb_msc.h"
 
 #include "io/flashfs.h"
+#include "io/flashfs_log.h"
 
 #include "pg/flash.h"
 
@@ -253,6 +257,62 @@ static void bblog_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_entr
     flashfsReadAbs(offset, dest, size);
 }
 
+#if defined(USE_FLASHFS) && defined(USE_BLACKBOX_RING_LOG)
+// Ring-mode read callback. Each log appears as one virtual file whose contents are
+// header || data. user_data carries the log index passed to flashfsLogRead().
+//
+// Gated on USE_BLACKBOX_RING_LOG (not just USE_FLASHFS) because the only call sites
+// — emfat_set_entry below — are themselves gated on USE_BLACKBOX_RING_LOG. Compiling
+// these on linear-only builds would trip -Werror=unused-function.
+static void bblog_ring_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_entry_t *entry)
+{
+    uint32_t logIndex = (uint32_t)(uintptr_t)entry->user_data;
+    int got = flashfsLogRead(logIndex, offset, dest, size);
+    if (got < 0) got = 0;
+    if (got < size) {
+        // Short read (truncated log or hardware hiccup). Zero-fill the tail so
+        // MSC hands the host predictable bytes instead of stale buffer content.
+        memset(dest + got, 0, size - got);
+    }
+}
+
+// Ring-mode read callback for the combined "all logs" virtual file. Walks each log's
+// virtual span in order, mapping `offset` into the right log + intra-log offset.
+//
+// This rescans the log table from index 0 on every MSC read call (no cached cursor),
+// giving O(N) per call and O(N²) over a sequential read of the full virtual file.
+// Acceptable here because N is bounded by FLASHFS_LOG_MAX_LOGS=64, MSC reads happen
+// only when the host enumerates the virtual filesystem, and flashfsLogGetInfo() /
+// flashfsLogGetLogCount() are simple in-RAM lookups (no flash I/O). Worth revisiting
+// only if the log cap grows substantially.
+static void bblog_ring_read_all_proc(uint8_t *dest, int size, uint32_t offset, emfat_entry_t *entry)
+{
+    UNUSED(entry);
+    uint32_t pos = 0;
+    uint32_t logCount = flashfsLogGetLogCount();
+    for (uint32_t i = 0; i < logCount && size > 0; i++) {
+        const flashfsLogInfo_t *info = flashfsLogGetInfo(i);
+        if (!info) break;
+        uint32_t logEnd = pos + info->totalSize;
+        if (offset < logEnd) {
+            uint32_t inLog = offset - pos;
+            uint32_t take = MIN((uint32_t)size, info->totalSize - inLog);
+            int got = flashfsLogRead(i, inLog, dest, take);
+            if (got < 0) got = 0;
+            if ((uint32_t)got < take) {
+                // Zero-fill the short remainder so the spliced "all logs" stream
+                // doesn't surface stale dest bytes to the host on a read failure.
+                memset(dest + got, 0, take - got);
+            }
+            dest += take;
+            offset += take;
+            size -= take;
+        }
+        pos = logEnd;
+    }
+}
+#endif
+
 static const emfat_entry_t entriesPredefined[] =
 {
     // name           dir    attr         lvl offset  size             max_size        user                time  read               write
@@ -435,23 +495,80 @@ void emfat_init_files(void)
     flashfsInit();
     LED0_OFF;
 
-    flashfsUsedSpace = flashfsIdentifyStartOfFreeSpace();
+    // MSC is a read path: branch on what's actually on flash, not on the configured
+    // mode. The user might have switched `blackbox_flash_mode` back to LINEAR before
+    // erasing — we should still expose the ring-format logs that exist on the chip.
+    // (The writer path enforces mode/format match separately.)
+    //
+    // The ring branch is gated on USE_BLACKBOX_RING_LOG: linear-only firmware does
+    // not ship the ring read-side machinery (log table, scan, splice helpers) so
+    // attempting to enumerate ring logs would yield zero files. Downgrading from a
+    // ring-capable firmware to a linear-only one is unsupported — to recover those
+    // logs the user must reflash the ring-capable firmware, download via MSC, then
+    // erase the chip before downgrading. The always-compiled detector still earns
+    // its keep on the writer side: it lets the linear writer refuse to overwrite
+    // ring-formatted media, so the user gets a clear error rather than silent
+    // corruption.
+#ifdef USE_BLACKBOX_RING_LOG
+    if (flashfsLogGetCachedFormat() == FLASHFS_FLASH_FORMAT_RING) {
+        // Initialize the ring-log subsystem (scans the data ring for trailers, builds
+        // the in-RAM log table) only when we know the chip is ring-formatted. Linear
+        // mounts skip the cost (a sector-scan over the whole partition).
+        flashfsLogInit();
+        // Ring-mode path: each log is a virtual file synthesized from the metadata table.
+        const uint32_t ringLogCount = flashfsLogGetLogCount();
+        uint32_t totalSize = 0;
+        for (uint32_t i = 0; i < ringLogCount && i < EMFAT_MAX_LOG_ENTRY; i++) {
+            const flashfsLogInfo_t *info = flashfsLogGetInfo(i);
+            if (!info) break;
+            // Seed CMA times before emfat_add_log(): emfat_add_log() only propagates
+            // cma_time[0] into the modified/access slots; it does not initialise it.
+            // Without this, ring-mode per-log files surface zero/default timestamps.
+            // (The linear scanner does the equivalent via its own cma_time[0] seed.)
+            emfat_set_entry_cma(&entries[entryIndex]);
+            emfat_add_log(&entries[entryIndex], i, 0 /* offset unused */, info->totalSize);
+            entries[entryIndex].readcb = bblog_ring_read_proc;
+            entries[entryIndex].user_data = (long)(uintptr_t)i;
+            totalSize += info->totalSize;
+            entryIndex++;
+        }
 
-    // Detect and create entries for each individual log
-    const int logCount = emfat_find_log(&entries[PREDEFINED_ENTRY_COUNT], EMFAT_MAX_LOG_ENTRY, flashfsUsedSpace);
+        if (ringLogCount > 0) {
+            // Combined "all logs" virtual file.
+            entries[entryIndex] = entriesPredefined[PREDEFINED_ENTRY_COUNT];
+            entry = &entries[entryIndex];
+            entry->curr_size = totalSize;
+            entry->max_size = totalSize;
+            entry->readcb = bblog_ring_read_all_proc;
+            emfat_set_entry_cma(entry);
+            ++entryIndex;
+        }
 
-    entryIndex += logCount;
+        // Approximate used space for the padding-file calculation below. With ring mode
+        // we don't have a concept of "used flash" the way linear does; use total log size.
+        flashfsUsedSpace = totalSize;
+    } else
+#endif // USE_BLACKBOX_RING_LOG
+    {
+        // Linear path — unchanged from before this feature.
+        flashfsUsedSpace = flashfsIdentifyStartOfFreeSpace();
 
-    if (logCount > 0) {
-        // Create the all logs entry that represents all used flash space to
-        // allow downloading the entire log in one file
-        entries[entryIndex] = entriesPredefined[PREDEFINED_ENTRY_COUNT];
-        entry = &entries[entryIndex];
-        entry->curr_size = flashfsUsedSpace;
-        entry->max_size = entry->curr_size;
-        // This entry has timestamps corresponding to when the filesystem is mounted
-        emfat_set_entry_cma(entry);
-        ++entryIndex;
+        // Detect and create entries for each individual log
+        const int logCount = emfat_find_log(&entries[PREDEFINED_ENTRY_COUNT], EMFAT_MAX_LOG_ENTRY, flashfsUsedSpace);
+
+        entryIndex += logCount;
+
+        if (logCount > 0) {
+            // Create the all logs entry that represents all used flash space to
+            // allow downloading the entire log in one file
+            entries[entryIndex] = entriesPredefined[PREDEFINED_ENTRY_COUNT];
+            entry = &entries[entryIndex];
+            entry->curr_size = flashfsUsedSpace;
+            entry->max_size = entry->curr_size;
+            // This entry has timestamps corresponding to when the filesystem is mounted
+            emfat_set_entry_cma(entry);
+            ++entryIndex;
+        }
     }
 #endif // USE_FLASHFS
 
