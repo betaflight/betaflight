@@ -93,6 +93,10 @@ TEST(baroBmp5xxTest, DetectDeinitializesSpiBusOnUnknownChip)
     baroDev_t baro = makeSpiBaro();
 
     EXPECT_FALSE(bmp5xxDetect(&config, &baro, NULL));
+    EXPECT_EQ(1, ioHiCalls);
+    EXPECT_EQ(1, ioInitCalls);
+    EXPECT_EQ(1, ioConfigCalls);
+    EXPECT_EQ(1, spiSetClkDivisorCalls);
     EXPECT_EQ(1, ioPreinitCalls);
 }
 
