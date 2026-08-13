@@ -130,6 +130,14 @@
 static pidCoefficient_t xyPid;
 static float xyKDrag;
 
+// previous iteration's output saturation, for iTerm anti-windup
+static bool altitudeOutputSaturatedLow = false;
+static bool altitudeOutputSaturatedHigh = false;
+
+// landing thrust bleed. 1.0 = no ceiling, 0.0 = throttle held at throttleMin
+static float landingSettleScale = 1.0f;
+static bool landingSettleRequested = false;
+
 static float altitudeKp;
 static float altitudeKi;
 static float altitudeKd;
@@ -263,6 +271,12 @@ void resetAltitudeControl(void)
 {
     altitudeI = 0.0f;
     throttleOut = 0.0f;
+    altitudeOutputSaturatedLow = false;
+    altitudeOutputSaturatedHigh = false;
+    // The ceiling is altitude-loop state and must not outlive a reset: alt hold and rescue reset
+    // the loop independently of flight_plan_nav, so a re-engage could inherit a stale ceiling.
+    landingSettleScale = 1.0f;
+    landingSettleRequested = false;
 }
 
 uint16_t autopilotGetEffectiveHoverThrottlePwm(void)
@@ -291,18 +305,35 @@ void autopilotClearAltHoldHoverThrottle(void)
     altHoldCapturedHoverPwm = 0;
 }
 
+void autopilotSetLandingSettle(bool active)
+{
+    if (!active) {
+        landingSettleScale = 1.0f;
+    }
+    landingSettleRequested = active;
+}
+
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeVelCmS, float velLimitCmS)
 {
     // PID controller on altitude error
     const float currentAltitudeCm = getAltitudeCmControl(); // un-filtered altitude from Kalman filter
-    const float altitudeErrorCm = targetAltitudeCm - currentAltitudeCm;
-    const float itermRelax = (fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f; // don't accumulate too much iTerm with transient but large overshoots (>2m error )
+    const float velMax = (velLimitCmS > 1.0f) ? velLimitCmS : ALTITUDE_VEL_CMD_MAX_DEFAULT_CM_S;
+    // Bound the position error to one second of travel at the rate limit, as alt hold already
+    // does for pilot targets: unbounded, P alone saturates throttle and the descent rate is
+    // ignored when a caller sets a target beyond what the rate limit allows.
+    const float rawAltitudeErrorCm = targetAltitudeCm - currentAltitudeCm;
+    const float altitudeErrorCm = constrainf(rawAltitudeErrorCm, -velMax, velMax);
+    // Anti-windup on output saturation, not on the clamp above: the clamp is active for the whole
+    // of any rate-limited move, so it cannot indicate windup.
+    const bool blockIntegration = (altitudeOutputSaturatedLow && altitudeErrorCm < 0.0f)
+                               || (altitudeOutputSaturatedHigh && altitudeErrorCm > 0.0f);
+    const float itermRelax = blockIntegration ? 0.0f
+                           : ((fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f); // don't accumulate too much iTerm with transient but large overshoots (>2m error )
     const float altitudeP = altitudeErrorCm * altitudeKp;
     altitudeI += altitudeErrorCm * altitudeKi * itermRelax * taskIntervalS;
     altitudeI = constrainf(altitudeI, -ALTITUDE_I_LIMIT, ALTITUDE_I_LIMIT);
     // Altitude Derivative
     const float verticalVelocity = getAltitudeDerivativeControl(); // un-filtered vertical velocity from Kalman filter
-    const float velMax = (velLimitCmS > 1.0f) ? velLimitCmS : ALTITUDE_VEL_CMD_MAX_DEFAULT_CM_S;
     const float targetVerticalVelocity = constrainf(targetAltitudeVelCmS, -velMax, velMax);
     float velocityError = targetVerticalVelocity - verticalVelocity;
 
@@ -330,7 +361,28 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     throttleOffset *= tiltMultiplier;
 
     float newThrottle = PWM_RANGE_MIN + throttleOffset;
-    newThrottle = constrainf(newThrottle, autopilotConfig()->throttleMin, autopilotConfig()->throttleMax);
+    const float throttleMinPwm = (float)autopilotConfig()->throttleMin;
+    float ceilingPwm = (float)autopilotConfig()->throttleMax;
+
+    // On ground contact the altitude loop still commands a descent it cannot achieve and holds
+    // thrust just under hover, close enough for ground effect to lift the craft off again. Bleed
+    // the ceiling from hover to throttleMin so contact ends the descent.
+    if (landingSettleRequested) {
+        const float rampS = MAX((float)autopilotConfig()->landingDetectionTime * 0.1f, 0.1f);
+        landingSettleScale = MAX(landingSettleScale - taskIntervalS / rampS, 0.0f);
+        const float hoverPwm = (float)autopilotGetEffectiveHoverThrottlePwm();
+        const float settlePwm = throttleMinPwm + (hoverPwm - throttleMinPwm) * landingSettleScale;
+        // never below throttleMin, and never above the ceiling already in force
+        ceilingPwm = constrainf(settlePwm, throttleMinPwm, ceilingPwm);
+    }
+
+    newThrottle = constrainf(newThrottle, throttleMinPwm, ceilingPwm);
+    // Saturation is measured against the range actually in force, not throttleMin/throttleMax:
+    // while the settle ceiling is bleeding, it is the stop the output rests on. Once it reaches
+    // throttleMin the output is pinned both ways and iTerm must stop entirely, or clearing the
+    // settle releases the accumulated negative iTerm as a thrust dip at the ground.
+    altitudeOutputSaturatedLow = newThrottle <= throttleMinPwm;
+    altitudeOutputSaturatedHigh = newThrottle >= ceilingPwm;
 
     throttleOut = scaleRangef(newThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
     throttleOut = constrainf(throttleOut, 0.0f, 1.0f);

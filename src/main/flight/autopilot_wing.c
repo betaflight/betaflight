@@ -97,6 +97,11 @@ void autopilotSetYawRateLimit(float rateLimitDps)
     UNUSED(rateLimitDps);
 }
 
+void autopilotSetLandingSettle(bool active)
+{
+    UNUSED(active);
+}
+
 void autopilotSetNavHeadingOverride(bool valid, float headingDeg)
 {
     UNUSED(valid);
