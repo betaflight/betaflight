@@ -2306,7 +2306,7 @@ case MSP_NAME:
         sbufWriteU8(dst, currentPidProfile->tpa_curve_stall_throttle);
         sbufWriteU16(dst, currentPidProfile->tpa_curve_pid_thr0);
         sbufWriteU16(dst, currentPidProfile->tpa_curve_pid_thr100);
-        sbufWriteU8(dst, currentPidProfile->tpa_curve_expo);
+        sbufWriteU8(dst, (uint8_t)currentPidProfile->tpa_curve_expo);
         sbufWriteU8(dst, currentPidProfile->tpa_speed_type);
         sbufWriteU16(dst, currentPidProfile->tpa_speed_basic_delay);
         sbufWriteU16(dst, currentPidProfile->tpa_speed_basic_gravity);
@@ -4616,7 +4616,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         currentPidProfile->tpa_curve_stall_throttle = sbufReadU8(src);
         currentPidProfile->tpa_curve_pid_thr0 = sbufReadU16(src);
         currentPidProfile->tpa_curve_pid_thr100 = sbufReadU16(src);
-        currentPidProfile->tpa_curve_expo = sbufReadU8(src);
+        currentPidProfile->tpa_curve_expo = (int8_t)sbufReadU8(src);
         currentPidProfile->tpa_speed_type = sbufReadU8(src);
         currentPidProfile->tpa_speed_basic_delay = sbufReadU16(src);
         currentPidProfile->tpa_speed_basic_gravity = sbufReadU16(src);
