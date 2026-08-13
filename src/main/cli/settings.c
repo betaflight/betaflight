@@ -100,6 +100,7 @@
 #include "pg/mco.h"
 #include "pg/motor.h"
 #include "pg/msp.h"
+#include "pg/osd_nav_map.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/pilot.h"
@@ -131,6 +132,7 @@
 
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
+#include "sensors/pitot.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/compass.h"
@@ -314,7 +316,8 @@ static const char * const lookupTableCameraControlMode[] = {
 static const char * const lookupTablePwmProtocol[] = {
     "PWM", "ONESHOT125", "ONESHOT42", "MULTISHOT", "BRUSHED",
     "DSHOT150", "DSHOT300", "DSHOT600", "PROSHOT1000",
-    "DISABLED"
+    "DISABLED",
+    "DRONECAN"
 };
 
 static const char * const lookupTableLowpassType[] = {
@@ -649,6 +652,9 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_OPTICALFLOW
     { lookupTableOpticalflowHardware, OPTICALFLOW_HARDWARE_COUNT },
 #endif
+#ifdef USE_PITOT
+    { lookupTablePitotHardware, PITOT_HARDWARE_COUNT },
+#endif
 #ifdef USE_POSITION_HOLD
     LOOKUP_TABLE_ENTRY(lookupTablePosHoldSource),
 #endif
@@ -830,6 +836,14 @@ const clivalue_t valueTable[] = {
     { "baro_i2c_device",            VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 5 }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_i2c_device) },
     { "baro_i2c_address",           VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, I2C_ADDR7_MAX }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_i2c_address) },
     { PARAM_NAME_BARO_HARDWARE,     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BARO_HARDWARE }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_hardware) },
+#endif
+
+// PG_PITOT_CONFIG
+#ifdef USE_PITOT
+    { "pitot_bustype",              VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BUS_TYPE }, PG_PITOT_CONFIG, offsetof(pitotConfig_t, pitot_busType) },
+    { "pitot_i2c_device",           VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 5 }, PG_PITOT_CONFIG, offsetof(pitotConfig_t, pitot_i2c_device) },
+    { "pitot_i2c_address",          VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, I2C_ADDR7_MAX }, PG_PITOT_CONFIG, offsetof(pitotConfig_t, pitot_i2c_address) },
+    { PARAM_NAME_PITOT_HARDWARE,    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_PITOT_HARDWARE }, PG_PITOT_CONFIG, offsetof(pitotConfig_t, pitot_hardware) },
 #endif
 
 // PG_RX_CONFIG
@@ -1608,6 +1622,9 @@ const clivalue_t valueTable[] = {
     { "osd_nheading_pos",           VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_NUMERICAL_HEADING]) },
     { "osd_up_down_reference_pos",  VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_UP_DOWN_REFERENCE]) },
     { "osd_ready_mode_pos",         VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_READY_MODE]) },
+#ifdef USE_POSITION_HOLD
+    { "osd_pos_hold_ready_pos",     VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_POS_HOLD_READY]) },
+#endif
 #ifdef USE_VARIO
     { "osd_nvario_pos",             VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_NUMERICAL_VARIO]) },
 #endif
@@ -1706,6 +1723,13 @@ const clivalue_t valueTable[] = {
     { "osd_wp_next_number_pos",     VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_WP_NEXT_NUMBER]) },
     { "osd_wp_eta_pos",             VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_WP_ETA]) },
 #endif // USE_GPS && ENABLE_FLIGHT_PLAN
+
+#ifdef USE_OSD_NAV_MAP
+    { "osd_nav_map_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_NAV_MAP]) },
+    { PARAM_NAME_OSD_NAV_MAP_MODE,        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_NAV_MAP_MODE_COUNT - 1 },   PG_OSD_NAV_MAP_CONFIG, offsetof(osdNavMapConfig_t, mode) },
+    { PARAM_NAME_OSD_NAV_MAP_CENTRE,      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_NAV_MAP_CENTRE_COUNT - 1 }, PG_OSD_NAV_MAP_CONFIG, offsetof(osdNavMapConfig_t, centre) },
+    { PARAM_NAME_OSD_NAV_MAP_MIN_SCALE_M, VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 20, 5000 },                        PG_OSD_NAV_MAP_CONFIG, offsetof(osdNavMapConfig_t, minScaleM) },
+#endif // USE_OSD_NAV_MAP
 #endif // end of #ifdef USE_OSD
 
 // PG_SYSTEM_CONFIG
@@ -1914,6 +1938,8 @@ const clivalue_t valueTable[] = {
     { "dronecan_enabled", VAR_UINT8 | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_DRONECAN_CONFIG, offsetof(dronecanConfig_t, enabled) },
     { "dronecan_node_id", VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 127 }, PG_DRONECAN_CONFIG, offsetof(dronecanConfig_t, node_id) },
     { "dronecan_device", VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 1, CANDEV_COUNT }, PG_DRONECAN_CONFIG, offsetof(dronecanConfig_t, device) },
+    { "dronecan_esc_rate_hz", VAR_UINT16 | HARDWARE_VALUE, .config.minmaxUnsigned = { 50, 500 }, PG_DRONECAN_CONFIG, offsetof(dronecanConfig_t, esc_rate_hz) },
+    { "dronecan_dna_enabled", VAR_UINT8 | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_DRONECAN_CONFIG, offsetof(dronecanConfig_t, dna_enabled) },
 #endif
 #ifdef USE_MCO
 #if defined(USE_MCO_DEVICE1)
@@ -2005,16 +2031,13 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_AP_POSITION_I,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, positionI) },
     { PARAM_NAME_AP_POSITION_D,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, positionD) },
     { PARAM_NAME_AP_POSITION_A,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, positionA) },
-    { PARAM_NAME_AP_POSITION_CUTOFF,     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 250 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, positionCutoff) },
+    { PARAM_NAME_AP_POSITION_F,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, positionF) },
+    { PARAM_NAME_AP_POSITION_CUTOFF,     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 50 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, positionCutoff) },
     { PARAM_NAME_AP_STOP_THRESHOLD,      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, stopThreshold) },
     { PARAM_NAME_AP_MAX_ANGLE,           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 70 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, maxAngle) },
 
-    // Velocity-based position control with drag compensation
-    { PARAM_NAME_AP_VELOCITY_CONTROL_ENABLE, VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_AUTOPILOT, offsetof(autopilotConfig_t, velocityControlEnable) },
-    { PARAM_NAME_AP_VELOCITY_P,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, velocityP) },
-    { PARAM_NAME_AP_VELOCITY_I,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, velocityI) },
-    { PARAM_NAME_AP_VELOCITY_D,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, velocityD) },
-    { PARAM_NAME_AP_VELOCITY_DRAG_COEFF, VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 1000 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, velocityDragCoeff) },
+    // Drag feedforward and velocity setpoint cap
+    { PARAM_NAME_AP_VELOCITY_DRAG_COEFF, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, velocityDragCoeff) },
     { PARAM_NAME_AP_MAX_VELOCITY,        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 100, 5000 },  PG_AUTOPILOT, offsetof(autopilotConfig_t, maxVelocity) },
 
 // Phase 3: Waypoint navigation & yaw control
@@ -2028,6 +2051,15 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_AP_YAW_D,                   VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, yawD) },
     { PARAM_NAME_AP_MAX_YAW_RATE,            VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 10, 360 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, maxYawRate) },
     { PARAM_NAME_AP_MIN_FORWARD_VELOCITY,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 10, 500 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, minForwardVelocity) },
+
+    // Leg-line carrot path tracking and turn-angle cornering
+    { PARAM_NAME_AP_NAV_CORNER_SPEED,        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50, 2000 },   PG_AUTOPILOT, offsetof(autopilotConfig_t, navCornerSpeed) },
+    { PARAM_NAME_AP_NAV_CORNER_DELTA_V,      VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 100, 4000 },  PG_AUTOPILOT, offsetof(autopilotConfig_t, navCornerDeltaV) },
+    { PARAM_NAME_AP_NAV_DECEL,               VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 20, 1000 },   PG_AUTOPILOT, offsetof(autopilotConfig_t, navDecel) },
+    { PARAM_NAME_AP_NAV_ACCEL,               VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 20, 1000 },   PG_AUTOPILOT, offsetof(autopilotConfig_t, navAccel) },
+    { PARAM_NAME_AP_NAV_CARROT_LEAD_TIME,    VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 2, 40 },      PG_AUTOPILOT, offsetof(autopilotConfig_t, navCarrotLeadTime) },
+    { PARAM_NAME_AP_NAV_CARROT_LEAD_MAX,     VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 600, 6000 },  PG_AUTOPILOT, offsetof(autopilotConfig_t, navCarrotLeadMax) },
+    { PARAM_NAME_AP_NAV_PRETURN_DIST,        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 500, 5000 },  PG_AUTOPILOT, offsetof(autopilotConfig_t, navPreturnDist) },
 
     // Phase 5: Velocity buildup
     { PARAM_NAME_AP_VELOCITY_BUILDUP_MAX_PITCH, VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 20 },   PG_AUTOPILOT, offsetof(autopilotConfig_t, velocityBuildupMaxPitch) },

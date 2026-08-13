@@ -36,4 +36,10 @@ void usbVcpInit(void);
 serialPort_t *usbVcpOpen(void);
 struct serialPort_s;
 uint32_t usbVcpGetBaudRate(struct serialPort_s *instance);
+
+// Has the device been enumerated since boot. Latches: without VBUS sensing there is no
+// disconnect event, so this does not clear when the cable is pulled.
 uint8_t usbVcpIsConnected(void);
+
+// Is the host driving the link right now. Clears on unplug or host suspend.
+uint8_t usbVcpIsActive(void);

@@ -46,8 +46,9 @@
 #include "sensors/rangefinder.h"
 #include "sensors/sensors.h"
 #include "sensors/opticalflow.h"
+#include "sensors/pitot.h"
 
-uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE, OPTICALFLOW_NONE};
+uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE, OPTICALFLOW_NONE, PITOT_NONE};
 uint8_t detectedGyros[GYRO_COUNT];
 
 void sensorsPreInit(void)
@@ -97,6 +98,10 @@ bool sensorsAutodetect(void)
 
 #ifdef USE_OPTICALFLOW
     opticalflowInit();
+#endif
+
+#ifdef USE_PITOT
+    pitotInit();
 #endif
 
 #ifdef USE_ADC_INTERNAL

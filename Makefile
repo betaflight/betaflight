@@ -168,6 +168,10 @@ READELF      = $(ARM_SDK_PREFIX)readelf
 SIZE         = $(ARM_SDK_PREFIX)size
 DFUSE-PACK  := src/utils/dfuse-pack.py
 
+# Command used to link the final ELF. Platform makefiles can override this
+# when linking requires a dedicated linker instead of the C compiler driver.
+ELF_LINK_CMD = $(CROSS_CC) -o $@ $(filter-out %.ld,$^) $(LD_FLAGS)
+
 # Preprocessor helpers (generic .h parsing)
 include $(MAKE_SCRIPT_DIR)/preprocess.mk
 
@@ -198,7 +202,7 @@ include $(TARGET_DIR)/target.mk
 endif
 
 REVISION := norevision
-ifneq ($(wildcard .git/),)
+ifneq ($(wildcard .git),)
 ifeq ($(shell git diff --shortstat),)
 REVISION := $(shell git rev-parse --short=9 HEAD)
 endif
@@ -498,7 +502,7 @@ $(TARGET_LST): $(TARGET_ELF)
 	$(V0) $(OBJDUMP) -S --disassemble $< > $@
 
 ifeq ($(EXST),no)
-$(TARGET_BIN): $(TARGET_ELF)
+$(TARGET_BIN): $(TARGET_ELF) $(BIN_FROM_ELF_DEPS)
 	@echo "Creating BIN $(TARGET_BIN)" "$(STDOUT)"
 # A platform may set BIN_FROM_ELF_CMD to generate the binary from the ELF its
 # own way (e.g. ESP32 wraps it into a bootable image with esptool elf2image);
@@ -564,7 +568,7 @@ endif
 
 $(TARGET_ELF): $(TARGET_OBJS) $(LD_SCRIPT) $(LD_SCRIPTS)
 	@echo "Linking $(TARGET_NAME)" "$(STDOUT)"
-	$(V1) $(CROSS_CC) -o $@ $(filter-out %.ld,$^) $(LD_FLAGS)
+	$(V1) $(ELF_LINK_CMD)
 	$(V1) $(SIZE) $(TARGET_ELF)
 
 $(TARGET_UF2): $(TARGET_ELF)
@@ -780,11 +784,17 @@ uf2: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) validate-deps
 exe: $(AUTOHYDRATE_STAMPS) validate-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_EXE)
 
+.PHONY: elf
+elf: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) validate-deps
+	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_ELF)
+
 # FWO (Firmware Output) is the default output for building the firmware
 .PHONY: fwo
 fwo:
 ifeq ($(DEFAULT_OUTPUT),exe)
 	$(V1) $(MAKE) exe
+else ifeq ($(DEFAULT_OUTPUT),elf)
+	$(V1) $(MAKE) elf
 else ifeq ($(DEFAULT_OUTPUT),uf2)
 	$(V1) $(MAKE) uf2
 else ifeq ($(DEFAULT_OUTPUT),bin)
@@ -874,7 +884,15 @@ targets-ci-grouped-print:
 		done; \
 		for t in $(CI_TARGETS); do \
 			config_h="$(CONFIG_DIR)/configs/$$t/config.h"; \
-			if [ -f "$$config_h" ]; then \
+			if [ ! -f "$$config_h" ]; then \
+				config_h=""; \
+				for c in $(CONFIG_DIR)/configs/*/$$t/config.h; do \
+					[ -f "$$c" ] || continue; \
+					if [ -n "$$config_h" ]; then echo "Ambiguous CI target $$t matches multiple configs" >&2; config_h=""; break; fi; \
+					config_h="$$c"; \
+				done; \
+			fi; \
+			if [ -n "$$config_h" ]; then \
 				mcu=$$(grep -m1 'FC_TARGET_MCU' "$$config_h" | awk '{print $$NF}'); \
 				echo "CONFIG $$t $$mcu"; \
 			fi; \

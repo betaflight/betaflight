@@ -208,6 +208,12 @@ static void adcInitCalibrationValues(void)
 
 static volatile DMA_DATA_ZERO_INIT uint16_t adcConversionBuffer[ADC_BUF_CACHE_ALIGN_LENGTH] __attribute__((aligned(32)));
 
+// GPDMA circular linked-list objects, one per ADC device. These are walked by
+// the DMA engine for the whole lifetime of the transfer, so they must have
+// static storage duration (stack-allocating them is the classic pitfall).
+static DMA_NodeTypeDef  adcDmaNode[ADCDEV_COUNT];
+static DMA_QListTypeDef adcDmaQueue[ADCDEV_COUNT];
+
 void adcInit(const adcConfig_t *config)
 {
     memset(adcOperatingConfig, 0, sizeof(adcOperatingConfig));
@@ -427,31 +433,66 @@ void adcInit(const adcConfig_t *config)
         adc->DmaHandle.Instance                 = (DMA_ARCH_TYPE *)adc->dmaResource;
         adc->DmaHandle.Init.Request             = adc->channel;
 #endif
-        // H5 uses GPDMA with different init structure members
-        adc->DmaHandle.Init.BlkHWRequest        = DMA_BREQ_SINGLE_BURST;
-        adc->DmaHandle.Init.Direction           = DMA_PERIPH_TO_MEMORY;
-        adc->DmaHandle.Init.SrcInc              = DMA_SINC_FIXED;
-        adc->DmaHandle.Init.DestInc             = DMA_DINC_INCREMENTED;
-        adc->DmaHandle.Init.SrcDataWidth        = DMA_SRC_DATAWIDTH_HALFWORD;
-        adc->DmaHandle.Init.DestDataWidth       = DMA_DEST_DATAWIDTH_HALFWORD;
-        adc->DmaHandle.Init.Priority            = DMA_LOW_PRIORITY_LOW_WEIGHT;
-        adc->DmaHandle.Init.SrcBurstLength      = 1;
-        adc->DmaHandle.Init.DestBurstLength     = 1;
-        adc->DmaHandle.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
-        adc->DmaHandle.Init.TransferEventMode   = DMA_TCEM_BLOCK_TRANSFER;
-        adc->DmaHandle.Init.Mode                = DMA_NORMAL;
+        // STM32H5 GPDMA has no plain "circular" channel mode; a continuously
+        // refreshed ADC scan requires a *circular linked-list* queue. With a
+        // plain DMA_NORMAL channel, HAL_ADC_Start_DMA() takes its one-shot
+        // branch and transfers a single scan, so the conversion buffer is
+        // filled once at boot and then frozen forever — VBAT/current/RSSI
+        // never track the real inputs. Build one node that copies ADCx->DR
+        // into the buffer and link it into a self-referencing (circular)
+        // queue. HAL_ADC_Start_DMA() overwrites the head node's source
+        // (&ADCx->DR), destination (buffer) and byte count, so those are left
+        // for the HAL to fill in here.
+        DMA_NodeConfTypeDef nodeConfig;
+        memset(&nodeConfig, 0, sizeof(nodeConfig));
+        nodeConfig.NodeType                          = DMA_GPDMA_LINEAR_NODE;
+        nodeConfig.Init.Request                      = adc->DmaHandle.Init.Request;
+        nodeConfig.Init.BlkHWRequest                 = DMA_BREQ_SINGLE_BURST;
+        nodeConfig.Init.Direction                    = DMA_PERIPH_TO_MEMORY;
+        nodeConfig.Init.SrcInc                       = DMA_SINC_FIXED;
+        nodeConfig.Init.DestInc                       = DMA_DINC_INCREMENTED;
+        nodeConfig.Init.SrcDataWidth                  = DMA_SRC_DATAWIDTH_HALFWORD;
+        nodeConfig.Init.DestDataWidth                 = DMA_DEST_DATAWIDTH_HALFWORD;
+        nodeConfig.Init.SrcBurstLength                = 1;
+        nodeConfig.Init.DestBurstLength               = 1;
+        // On H5 both GPDMA master ports reach all memories and peripherals
+        // (RM0481 fig. 1); the split gives the conversion buffer in SRAM
+        // (destination) PORT1's zero-latency fast path while the ADC data
+        // register reads stay on PORT0, matching the DShot/WS2811 GPDMA
+        // port allocation.
+        nodeConfig.Init.TransferAllocatedPort        = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT1;
+        nodeConfig.Init.TransferEventMode            = DMA_TCEM_BLOCK_TRANSFER;
+        nodeConfig.Init.Mode                         = DMA_NORMAL;
+        nodeConfig.DataHandlingConfig.DataExchange   = DMA_EXCHANGE_NONE;
+        nodeConfig.DataHandlingConfig.DataAlignment  = DMA_DATA_RIGHTALIGN_ZEROPADDED;
+        nodeConfig.TriggerConfig.TriggerPolarity     = DMA_TRIG_POLARITY_MASKED;
 
-        // Deinitialize  & Initialize the DMA for new transfer
+        memset(&adcDmaQueue[dev], 0, sizeof(adcDmaQueue[dev]));
+        if ((HAL_DMAEx_List_BuildNode(&nodeConfig, &adcDmaNode[dev]) != HAL_OK)
+            || (HAL_DMAEx_List_InsertNode_Tail(&adcDmaQueue[dev], &adcDmaNode[dev]) != HAL_OK)
+            || (HAL_DMAEx_List_SetCircularMode(&adcDmaQueue[dev]) != HAL_OK)) {
+            errorHandler();
+        }
 
-        // dmaEnable must be called before calling HAL_DMA_Init,
-        // to enable clock for associated DMA if not already done so.
+        adc->DmaHandle.InitLinkedList.Priority          = DMA_LOW_PRIORITY_LOW_WEIGHT;
+        adc->DmaHandle.InitLinkedList.LinkStepMode      = DMA_LSM_FULL_EXECUTION;
+        adc->DmaHandle.InitLinkedList.LinkAllocatedPort = DMA_LINK_ALLOCATED_PORT0;
+        adc->DmaHandle.InitLinkedList.TransferEventMode = DMA_TCEM_LAST_LL_ITEM_TRANSFER;
+        adc->DmaHandle.InitLinkedList.LinkedListMode    = DMA_LINKEDLIST_CIRCULAR;
+
+        // dmaEnable must be called before init, to enable the DMA clock for
+        // the associated DMA if not already done so.
         dmaEnable(dmaIdentifier);
 
-        HAL_DMA_DeInit(&adc->DmaHandle);
-        HAL_DMA_Init(&adc->DmaHandle);
+        HAL_DMAEx_List_DeInit(&adc->DmaHandle);
+        if (HAL_DMAEx_List_Init(&adc->DmaHandle) != HAL_OK) {
+            errorHandler();
+        }
+        if (HAL_DMAEx_List_LinkQ(&adc->DmaHandle, &adcDmaQueue[dev]) != HAL_OK) {
+            errorHandler();
+        }
 
         // Associate the DMA handle
-
         __HAL_LINKDMA(&adc->ADCHandle, DMA_Handle, adc->DmaHandle);
     }
 

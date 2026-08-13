@@ -28,7 +28,7 @@
 
 #include "autopilot.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 7);
+PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 10);
 
 PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .landingAltitudeM = 4,
@@ -43,23 +43,33 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .positionI = 30,
     .positionD = 30,
     .positionA = 30,
+    .positionF = 30,
     .positionCutoff = 30,
     .stopThreshold = 10,
     .maxAngle = 50,
 
     // Velocity-based position control with drag compensation
-    .velocityControlEnable = 1,       // Enabled by default
-    .velocityP = 50,                  // 5.0 P gain
-    .velocityI = 10,                  // 1.0 I gain
-    .velocityD = 5,                   // 0.5 D gain
-    .velocityDragCoeff = 50,          // 0.0050 drag coefficient
-    .maxVelocity = 1000,              // 10 m/s max velocity
+    .velocityDragCoeff = 50,          // 5 deg at 5 m/s, half the nominal maximum
+    .maxVelocity = 500,               // 5 m/s max velocity setpoint at full stick
 
     // Waypoint navigation parameters
     .waypointArrivalRadius = 500,     // 5m for FLYOVER/FLYBY
     .waypointHoldRadius = 200,        // 2m for HOLD/LAND
     .stickDeadband = 50,              // RC units
     .throttleDeadband = 50,           // RC units
+
+    // Leg-line carrot path tracking and turn-angle cornering
+    .navCornerSpeed = 220,            // 2.2 m/s corner-speed floor
+    .navCornerDeltaV = 440,           // 4.4 m/s per-corner delta-v budget
+    .navDecel = 250,                  // 2.5 m/s^2 approach deceleration; with the chase-lag
+                                      // compensated profile this stays trackable through the
+                                      // pursuit dynamics (brake authority grows with the gap
+                                      // and with drag, both rising with speed), and long legs
+                                      // no longer begin braking hundreds of metres out
+    .navAccel = 250,                  // 2.5 m/s^2 carrot slew
+    .navCarrotLeadTime = 12,          // 1.2 s carrot lead
+    .navCarrotLeadMax = 2500,         // 25 m maximum carrot lead
+    .navPreturnDist = 1500,           // 15 m pre-turn blend zone
 
     // Yaw control parameters
     .yawMode = YAW_MODE_VELOCITY,     // Default: follow velocity

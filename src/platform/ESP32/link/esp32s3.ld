@@ -7,7 +7,7 @@
  *
  *   .flash.text   -> IROM window 0x42000000  (execute-in-place code/literals)
  *   .flash.rodata -> DROM window 0x3C000000  (read-only data, byte accessible)
- *   .data/.bss    -> DRAM 0x3FC88000          (.data loaded by the bootloader,
+ *   .data/.bss    -> DRAM 0x3FC90000          (.data loaded by the bootloader,
  *                                              .bss zeroed by the startup stub)
  *
  * Read-only data MUST live in the DROM window: the IROM/IBUS window only allows
@@ -18,7 +18,11 @@
 
 MEMORY
 {
-    iram_seg (RWX) :   org = 0x40374000, len = 0x4000
+    /* 0x40374000..0x40378000 is the instruction-only startup bank.  Reserve
+     * another measured 32 KB from the following dual-port SRAM for the PID,
+     * filtering and mixer hot paths.  It aliases DRAM
+     * 0x3FC88000..0x3FC90000, so .data/.bss must start after that range. */
+    iram_seg (RWX) :   org = 0x40374000, len = 0xC000
     /* End at 0x3FCEF000, NOT 0x3FCF0000 (SOC_DIRAM_DRAM_HIGH): the ROM keeps live
      * data structures in the top of DRAM - the SPI-flash chip descriptor
      * (g_rom_flashchip, via rom_spiflash_legacy_data @0x3FCEFFE4) and friends sit at
@@ -26,7 +30,7 @@ MEMORY
      * grows down from it, so reaching 0x3FCF0000 would let the stack overwrite those
      * ROM globals - after which esp_rom_spiflash_* read a garbage chip descriptor and
      * hang in wait_idle (and esp_rom_spiflash_attach faults). Reserve the top 4 KB. */
-    dram_seg (RW)  :   org = 0x3FC88000, len = 0x67000
+    dram_seg (RW)  :   org = 0x3FC90000, len = 0x5F000
     irom_seg (RX)  :   org = 0x42000020, len = 0x800000 - 0x20
     drom_seg (R)   :   org = 0x3C000020, len = 0x800000 - 0x20
 
@@ -58,16 +62,35 @@ _Min_Stack_Size = 0x800;
 
 SECTIONS
 {
-    /* IRAM-resident code (none at present, but keep the symbols/section). */
+    /* Startup must fit below 0x40378000.  ISR entry code is placed before the
+     * wider hot path so future FAST_CODE growth can never displace it. */
     .iram.text :
     {
         _iram_text_start = ABSOLUTE(.);
         /* Entry stub first: the image entry point must be in IRAM. */
         KEEP (*(.iram1.start))
+        KEEP (*(.iram1.core1))
         *(.iram1.literal .iram1.*)
+
+        . = ALIGN(4);
+        _iram_runtime_start = ABSOLUTE(.);
+        _iram_isr_start = ABSOLUTE(.);
+        *(.iram.isr.literal .iram.isr .iram.isr.*)
+        _iram_isr_end = ABSOLUTE(.);
+
+        . = ALIGN(4);
+        _iram_hot_start = ABSOLUTE(.);
+        *(.iram.hot.literal .iram.hot .iram.hot.*)
+        /* Preserve compatibility with explicit ESP-IDF-style IRAM sections. */
         *(.iram.text.literal .iram.text .iram.text.*)
+        _iram_hot_end = ABSOLUTE(.);
         _iram_text_end = ABSOLUTE(.);
     } > iram_seg
+
+    ASSERT(_iram_runtime_start <= 0x40378000,
+        "ESP32-S3 startup IRAM exceeds the dedicated 16 KB bank")
+    ASSERT(_iram_text_end <= ORIGIN(iram_seg) + LENGTH(iram_seg) - 0x1000,
+        "ESP32-S3 IRAM code exceeds the 44 KB budget (4 KB reserve)")
 
     /* Execute-in-place code in the IROM window. Defined before the DROM dummy
      * below because that dummy uses SIZEOF(.flash.text). */
@@ -147,7 +170,9 @@ SECTIONS
 
     /* Provide heap and stack regions */
     _heap_start = .;
-    _heap_end = ORIGIN(dram_seg) + LENGTH(dram_seg);
+    _heap_end = _estack - _Min_Stack_Size;
+    ASSERT(_heap_start <= _heap_end,
+        "ESP32-S3 static DRAM leaves no room for the minimum stack")
 
     /* Persistent config storage: 64 KB at flash offset 0x210000, immediately after
      * the 2 MB factory app partition (same offset on the 4/8/16 MB boards). At

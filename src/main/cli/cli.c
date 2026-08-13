@@ -105,6 +105,7 @@ bool cliMode = false;
 #include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
+#include "flight/flight_plan_nav.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -113,6 +114,7 @@ bool cliMode = false;
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
+#include "io/dronecan/dronecan.h"
 #include "io/flashfs.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
@@ -137,6 +139,7 @@ bool cliMode = false;
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
 #include "pg/can.h"
+#include "pg/dronecan.h"
 #include "pg/flight_plan.h"
 #include "pg/gyrodev.h"
 #include "pg/max7456.h"
@@ -270,9 +273,9 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
 };
 
 #if defined(USE_SENSOR_NAMES)
-// sync this with sensors_e
+// sync this with sensorIndex_e
 static const char *const sensorTypeDisplayNames[] = {
-    "GYRO", "ACC", "BARO", "MAG", "RANGEFINDER", "OPTICAL-FLOW"
+    "GYRO", "ACC", "BARO", "MAG", "RANGEFINDER", "OPTICAL-FLOW", "PITOT"
 };
 STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorTypeDisplayNames), sensorTypeDisplayNames_array_length_mismatch);
 #endif // USE_SENSOR_NAMES
@@ -326,7 +329,7 @@ static void cliWriterFlushInternal(bufWriter_t *writer)
 
 static void cliPrintInternal(bufWriter_t *writer, const char *str)
 {
-    if (writer) {
+    if (writer && str) {
         while (*str) {
             bufWriterAppend(writer, *str++);
         }
@@ -1180,7 +1183,7 @@ static void printRxFailsafe(dumpFlags_t dumpMask, const rxFailsafeChannelConfig_
     }
 }
 
-static void cliRxFailsafe(const char *cmdName, char *cmdline)
+RAM_CODE static void cliRxFailsafe(const char *cmdName, char *cmdline)
 {
     uint8_t channel;
     char buf[3];
@@ -1304,7 +1307,7 @@ static void printAux(dumpFlags_t dumpMask, const modeActivationCondition_t *mode
     }
 }
 
-static void cliAux(const char *cmdName, char *cmdline)
+RAM_CODE static void cliAux(const char *cmdName, char *cmdline)
 {
     int i, val = 0;
     const char *ptr;
@@ -1408,7 +1411,7 @@ static void printSerial(dumpFlags_t dumpMask, const serialConfig_t *serialConfig
     }
 }
 
-static void cliSerial(const char *cmdName, char *cmdline)
+RAM_CODE static void cliSerial(const char *cmdName, char *cmdline)
 {
     const char *format = "serial %s %d %ld %ld %ld %ld";
     if (isEmpty(cmdline)) {
@@ -1568,7 +1571,7 @@ static portOptions_e cliParseSerialOptions(const char *tok)
     return options;
 }
 
-static void cliSerialPassthrough(const char *cmdName, char *cmdline)
+RAM_CODE static void cliSerialPassthrough(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
         cliShowInvalidArgumentCountError(cmdName);
@@ -1833,7 +1836,7 @@ static void printAdjustmentRange(dumpFlags_t dumpMask, const adjustmentRange_t *
     }
 }
 
-static void cliAdjustmentRange(const char *cmdName, char *cmdline)
+RAM_CODE static void cliAdjustmentRange(const char *cmdName, char *cmdline)
 {
     const char *format = "adjrange %u 0 %u %u %u %u %u %u %u";
     const char *ptr;
@@ -1964,7 +1967,7 @@ static void printMotorMix(dumpFlags_t dumpMask, const motorMixer_t *customMotorM
 }
 #endif // USE_QUAD_MIXER_ONLY
 
-static void cliMotorMix(const char *cmdName, char *cmdline)
+RAM_CODE static void cliMotorMix(const char *cmdName, char *cmdline)
 {
 #ifdef USE_QUAD_MIXER_ONLY
     UNUSED(cmdName);
@@ -2057,7 +2060,7 @@ static void printRxRange(dumpFlags_t dumpMask, const rxChannelRangeConfig_t *cha
     }
 }
 
-static void cliRxRange(const char *cmdName, char *cmdline)
+RAM_CODE static void cliRxRange(const char *cmdName, char *cmdline)
 {
     const char *format = "rxrange %u %u %u";
     int i, validArgumentCount = 0;
@@ -2128,7 +2131,7 @@ static void printLed(dumpFlags_t dumpMask, const ledConfig_t *ledConfigs, const 
     }
 }
 
-static void cliLed(const char *cmdName, char *cmdline)
+RAM_CODE static void cliLed(const char *cmdName, char *cmdline)
 {
     const char *format = "led %u %s";
     char ledConfigBuffer[20];
@@ -2173,7 +2176,7 @@ static void printColor(dumpFlags_t dumpMask, const hsvColor_t *colors, const hsv
     }
 }
 
-static void cliColor(const char *cmdName, char *cmdline)
+RAM_CODE static void cliColor(const char *cmdName, char *cmdline)
 {
     const char *format = "color %u %d,%u,%u";
     if (isEmpty(cmdline)) {
@@ -2238,7 +2241,7 @@ static void printModeColor(dumpFlags_t dumpMask, const ledStripStatusModeConfig_
     cliDumpPrintLinef(dumpMask, equalsDefault, format, LED_AUX_CHANNEL, 0, ledStripAuxChannel);
 }
 
-static void cliModeColor(const char *cmdName, char *cmdline)
+RAM_CODE static void cliModeColor(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
         printModeColor(DUMP_MASTER, ledStripStatusModeConfig(), NULL, NULL);
@@ -2328,7 +2331,7 @@ static void printServo(dumpFlags_t dumpMask, const servoParam_t *servoParams, co
     }
 }
 
-static void cliServo(const char *cmdName, char *cmdline)
+RAM_CODE static void cliServo(const char *cmdName, char *cmdline)
 {
     const char *format = "servo %u %d %d %d %d %d";
     enum { SERVO_ARGUMENT_COUNT = 6 };
@@ -2453,7 +2456,7 @@ static void printServoMix(dumpFlags_t dumpMask, const servoMixer_t *customServoM
     }
 }
 
-static void cliServoMix(const char *cmdName, char *cmdline)
+RAM_CODE static void cliServoMix(const char *cmdName, char *cmdline)
 {
     int args[8], check = 0;
     int len = strlen(cmdline);
@@ -2772,7 +2775,7 @@ static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flight
     }
 }
 
-static void cliWaypoint(const char *cmdName, char *cmdline)
+RAM_CODE static void cliWaypoint(const char *cmdName, char *cmdline)
 {
     flightPlanConfig_t *config = flightPlanConfigMutable();
 
@@ -2859,9 +2862,35 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
             }
         }
 
-        // TODO: Add runtime status when Phase 3 (waypoint tracker) is complete
-        // This will show: current waypoint, state, distance, bearing, etc.
-        cliPrintLine("\nRuntime status: Not yet implemented (requires Phase 3)");
+        cliPrintLine("\nRuntime status:");
+        if (!flightPlanNavIsActive()) {
+            cliPrintLine("  inactive");
+            return;
+        }
+
+        static const char * const stateNames[] = {
+            "IDLE", "TARGETING", "HOLDING", "COMPLETE", "LANDING", "ABORTED",
+        };
+        const flightPlanNavState_e state = flightPlanNavGetState();
+        cliPrintLinef("  state: %s", (state < ARRAYLEN(stateNames)) ? stateNames[state] : "UNKNOWN");
+        const uint8_t currentDisplay = (config->waypointCount == 0) ? 0 : flightPlanNavGetCurrentIndex() + 1;
+        cliPrintLinef("  current waypoint: %u/%u", currentDisplay, config->waypointCount);
+
+        const float distanceM = flightPlanNavGetDistanceToWaypointM();
+        if (distanceM >= 0.0f) {
+            const uint32_t distanceCm = lrintf(distanceM * 100.0f);
+            const int32_t bearingDeg = flightPlanNavGetBearingToWaypointDeciDeg() / 10;
+            cliPrintLinef("  distance: %u.%02um  bearing: %ld deg  eta: %us",
+                distanceCm / 100, distanceCm % 100, (long)bearingDeg, flightPlanNavGetEtaSeconds());
+        }
+
+        if (state == FP_NAV_ABORTED) {
+            static const char * const abortNames[] = {
+                "NONE", "GPS LOST", "STALLED", "FLYAWAY", "HEADING", "MAG FAULT",
+            };
+            const flightPlanAbortReason_e reason = flightPlanNavGetAbortReason();
+            cliPrintLinef("  abort reason: %s", (reason < ARRAYLEN(abortNames)) ? abortNames[reason] : "UNKNOWN");
+        }
         return;
     }
 
@@ -3077,7 +3106,7 @@ static void cliWriteBytes(const uint8_t *buffer, int count)
     }
 }
 
-static void cliSdInfo(const char *cmdName, char *cmdline)
+RAM_CODE static void cliSdInfo(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -3146,7 +3175,7 @@ static void cliSdInfo(const char *cmdName, char *cmdline)
 #endif
 
 #ifdef USE_FLASH_CHIP
-static void cliFlashInfo(const char *cmdName, char *cmdline)
+RAM_CODE static void cliFlashInfo(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -3179,7 +3208,7 @@ static void cliFlashInfo(const char *cmdName, char *cmdline)
 #endif // USE_FLASH_CHIP
 
 #if defined(USE_FLASHFS) && defined(USE_FLASH_CHIP)
-static void cliFlashErase(const char *cmdName, char *cmdline)
+RAM_CODE static void cliFlashErase(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -3217,7 +3246,7 @@ static void cliFlashErase(const char *cmdName, char *cmdline)
 }
 
 #ifdef USE_FLASH_TOOLS
-static void cliFlashVerify(const char *cmdName, char *cmdline)
+RAM_CODE static void cliFlashVerify(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdline);
 
@@ -3229,7 +3258,7 @@ static void cliFlashVerify(const char *cmdName, char *cmdline)
     }
 }
 
-static void cliFlashWrite(const char *cmdName, char *cmdline)
+RAM_CODE static void cliFlashWrite(const char *cmdName, char *cmdline)
 {
     const uint32_t address = atoi(cmdline);
     char *text = strchr(cmdline, ' ');
@@ -3246,7 +3275,7 @@ static void cliFlashWrite(const char *cmdName, char *cmdline)
     }
 }
 
-static void cliFlashRead(const char *cmdName, char *cmdline)
+RAM_CODE static void cliFlashRead(const char *cmdName, char *cmdline)
 {
     uint32_t address = atoi(cmdline);
 
@@ -3316,7 +3345,7 @@ static void printVtx(dumpFlags_t dumpMask, const vtxConfig_t *vtxConfig, const v
     }
 }
 
-static void cliVtx(const char *cmdName, char *cmdline)
+RAM_CODE static void cliVtx(const char *cmdName, char *cmdline)
 {
     const char *format = "vtx %u %u %u %u %u %u %u";
     const char *ptr;
@@ -3561,7 +3590,7 @@ static void printVtxTable(dumpFlags_t dumpMask, const vtxTableConfig_t *currentC
     headingStr = printVtxTablePowerLabels(dumpMask, currentConfig, defaultConfig, headingStr);
 }
 
-static void cliVtxTable(const char *cmdName, char *cmdline)
+RAM_CODE static void cliVtxTable(const char *cmdName, char *cmdline)
 {
     char *tok;
     char *saveptr;
@@ -3761,7 +3790,7 @@ static void cliVtxTable(const char *cmdName, char *cmdline)
     }
 }
 
-static void cliVtxInfo(const char *cmdName, char *cmdline)
+RAM_CODE static void cliVtxInfo(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdline);
 
@@ -3793,7 +3822,7 @@ static void applySimplifiedTuningAllProfiles(void)
     }
 }
 
-static void cliSimplifiedTuning(const char *cmdName, char *cmdline)
+RAM_CODE static void cliSimplifiedTuning(const char *cmdName, char *cmdline)
 {
     if (strcasecmp(cmdline, "apply") == 0) {
         applySimplifiedTuningAllProfiles();
@@ -3826,7 +3855,7 @@ static void printBoardName(dumpFlags_t dumpMask)
     }
 }
 
-static void cliBoardName(const char *cmdName, char *cmdline)
+RAM_CODE static void cliBoardName(const char *cmdName, char *cmdline)
 {
     const unsigned int len = strlen(cmdline);
     const char *boardName = getBoardName();
@@ -3849,7 +3878,7 @@ static void printManufacturerId(dumpFlags_t dumpMask)
     }
 }
 
-static void cliManufacturerId(const char *cmdName, char *cmdline)
+RAM_CODE static void cliManufacturerId(const char *cmdName, char *cmdline)
 {
     const unsigned int len = strlen(cmdline);
     const char *manufacturerId = getManufacturerId();
@@ -3873,7 +3902,7 @@ static void writeSignature(char *signatureStr, const uint8_t *signature)
     }
 }
 
-static void cliSignature(const char *cmdName, char *cmdline)
+RAM_CODE static void cliSignature(const char *cmdName, char *cmdline)
 {
     const int len = strlen(cmdline);
 
@@ -3927,7 +3956,7 @@ static void cliSignature(const char *cmdName, char *cmdline)
 
 #endif // USE_BOARD_INFO
 
-static void cliMcuId(const char *cmdName, char *cmdline)
+RAM_CODE static void cliMcuId(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -3936,7 +3965,7 @@ static void cliMcuId(const char *cmdName, char *cmdline)
 }
 
 #if ENABLE_LCD_CONSOLE
-static void cliLcd(const char *cmdName, char *cmdline)
+RAM_CODE static void cliLcd(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -4017,7 +4046,7 @@ static void printFeatureList(const char* header, uint32_t mask, const char* deli
     }
 }
 
-static void cliFeature(const char *cmdName, char *cmdline)
+RAM_CODE static void cliFeature(const char *cmdName, char *cmdline)
 {
     uint32_t len = strlen(cmdline);
     const uint32_t mask = featureConfig()->enabledFeatures;
@@ -4146,20 +4175,20 @@ static void processBeeperCommand(const char *cmdName, char *cmdline, uint32_t *o
 }
 
 #if defined(USE_DSHOT)
-static void cliBeacon(const char *cmdName, char *cmdline)
+RAM_CODE static void cliBeacon(const char *cmdName, char *cmdline)
 {
     processBeeperCommand(cmdName, cmdline, &(beeperConfigMutable()->dshotBeaconOffFlags), DSHOT_BEACON_ALLOWED_MODES);
 }
 #endif
 
-static void cliBeeper(const char *cmdName, char *cmdline)
+RAM_CODE static void cliBeeper(const char *cmdName, char *cmdline)
 {
     processBeeperCommand(cmdName, cmdline, &(beeperConfigMutable()->beeper_off_flags), BEEPER_ALLOWED_MODES);
 }
 #endif
 
 #if defined(USE_RX_BIND)
-static void cliRxBind(const char *cmdName, char *cmdline)
+RAM_CODE static void cliRxBind(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdline);
     if (!startRxBind()) {
@@ -4196,7 +4225,7 @@ static void printMap(dumpFlags_t dumpMask, const rxConfig_t *rxConfig, const rxC
     cliDumpPrintLinef(dumpMask, equalsDefault, formatMap, buf);
 }
 
-static void cliMap(const char *cmdName, char *cmdline)
+RAM_CODE static void cliMap(const char *cmdName, char *cmdline)
 {
     uint32_t i;
     char buf[RX_MAPPABLE_CHANNEL_COUNT + 1];
@@ -4273,7 +4302,7 @@ static void cliReboot(void)
     cliRebootEx(REBOOT_TARGET_FIRMWARE);
 }
 
-static void cliBootloader(const char *cmdName, char *cmdline)
+RAM_CODE static void cliBootloader(const char *cmdName, char *cmdline)
 {
     rebootTarget_e rebootTarget;
     if (
@@ -4299,7 +4328,7 @@ static void cliBootloader(const char *cmdName, char *cmdline)
     cliRebootEx(rebootTarget);
 }
 
-static void cliExitCmd(const char *cmdName, char *cmdline)
+RAM_CODE static void cliExitCmd(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
 
@@ -4313,7 +4342,7 @@ static void cliExitCmd(const char *cmdName, char *cmdline)
 }
 
 #ifdef USE_GPS
-static void cliGpsPassthrough(const char *cmdName, char *cmdline)
+RAM_CODE static void cliGpsPassthrough(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -4349,7 +4378,7 @@ static void cliPrintGyroRegisters(uint8_t whichSensor)
     }
 }
 
-static void cliDumpGyroRegisters(const char *cmdName, char *cmdline)
+RAM_CODE static void cliDumpGyroRegisters(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -4568,7 +4597,7 @@ static void executeEscInfoCommand(const char *cmdName, uint8_t escIndex)
 }
 #endif // USE_ESC_SENSOR && USE_ESC_SENSOR_INFO
 
-static void cliDshotProg(const char *cmdName, char *cmdline)
+RAM_CODE static void cliDshotProg(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline) || !isMotorProtocolDshot()) {
         cliShowParseError(cmdName);
@@ -4639,7 +4668,7 @@ static void cliDshotProg(const char *cmdName, char *cmdline)
 #endif // USE_DSHOT
 
 #ifdef USE_ESCSERIAL
-static void cliEscPassthrough(const char *cmdName, char *cmdline)
+RAM_CODE static void cliEscPassthrough(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
         cliShowInvalidArgumentCountError(cmdName);
@@ -4695,7 +4724,7 @@ static void cliEscPassthrough(const char *cmdName, char *cmdline)
 #endif
 
 #ifndef USE_QUAD_MIXER_ONLY
-static void cliMixer(const char *cmdName, char *cmdline)
+RAM_CODE static void cliMixer(const char *cmdName, char *cmdline)
 {
     int len;
 
@@ -4730,7 +4759,7 @@ static void cliMixer(const char *cmdName, char *cmdline)
 }
 #endif
 
-static void cliMotor(const char *cmdName, char *cmdline)
+RAM_CODE static void cliMotor(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
         cliShowInvalidArgumentCountError(cmdName);
@@ -4786,7 +4815,7 @@ static void cliMotor(const char *cmdName, char *cmdline)
 }
 
 #ifndef MINIMAL_CLI
-static void cliPlaySound(const char *cmdName, char *cmdline)
+RAM_CODE static void cliPlaySound(const char *cmdName, char *cmdline)
 {
     int i;
     const char *name;
@@ -4820,7 +4849,7 @@ static void cliPlaySound(const char *cmdName, char *cmdline)
 }
 #endif
 
-static void cliProfile(const char *cmdName, char *cmdline)
+RAM_CODE static void cliProfile(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
         cliPrintLinef("profile %d", getPidProfileIndexToUse());
@@ -4836,7 +4865,7 @@ static void cliProfile(const char *cmdName, char *cmdline)
     }
 }
 
-static void cliRateProfile(const char *cmdName, char *cmdline)
+RAM_CODE static void cliRateProfile(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
         cliPrintLinef("rateprofile %d", getRateProfileIndexToUse());
@@ -4891,7 +4920,7 @@ static void cliDumpRateProfile(const char *cmdName, uint8_t rateProfileIndex, du
 }
 
 // Prints or switches the active battery profile.
-static void cliBatteryProfile(const char *cmdName, char *cmdline)
+RAM_CODE static void cliBatteryProfile(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
         cliPrintLinef("battery_profile %d", getBatteryProfileIndexToUse());
@@ -4941,7 +4970,7 @@ static void resetCommandBatch(void)
     commandBatchError = false;
 }
 
-static void cliBatch(const char *cmdName, char *cmdline)
+RAM_CODE static void cliBatch(const char *cmdName, char *cmdline)
 {
     if (strncasecmp(cmdline, "start", 5) == 0) {
         if (!commandBatchActive) {
@@ -5003,7 +5032,7 @@ static bool tryPrepareSave(const char *cmdName)
     return true;
 }
 
-static void cliSave(const char *cmdName, char *cmdline)
+RAM_CODE static void cliSave(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdline);
 
@@ -5018,7 +5047,7 @@ static void cliSave(const char *cmdName, char *cmdline)
     }
 }
 
-static void cliDefaults(const char *cmdName, char *cmdline)
+RAM_CODE static void cliDefaults(const char *cmdName, char *cmdline)
 {
     bool saveConfigs = true;
     uint16_t parameterGroupId = 0;
@@ -5101,7 +5130,7 @@ static void cliPrintVarDefault(const char *cmdName, const clivalue_t *value)
     }
 }
 
-STATIC_UNIT_TESTED void cliGet(const char *cmdName, char *cmdline)
+RAM_CODE STATIC_UNIT_TESTED void cliGet(const char *cmdName, char *cmdline)
 {
     const clivalue_t *val;
     int matchedCommands = 0;
@@ -5317,7 +5346,7 @@ static bool cliParseArrayValue(const char *valStr, const clivalue_t *val, void *
     return true;
 }
 
-STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
+RAM_CODE STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
 {
     const uint32_t len = strlen(cmdline);
     char *eqptr;
@@ -5452,7 +5481,7 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
 }
 
 #if defined(USE_SENSOR_NAMES)
-static void cliSensorHardware(const char *cmdName, char *cmdline)
+RAM_CODE static void cliSensorHardware(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
         // List all sensor types and their supported hardware
@@ -5462,11 +5491,18 @@ static void cliSensorHardware(const char *cmdName, char *cmdline)
             const char *typeName = sensorTypeName(i);
             if (names && typeName) {
                 cliPrintf("%s: ", typeName);
+                bool first = true;
                 for (int j = 0; j < count; j++) {
-                    if (j > 0) {
+                    // Name tables can have NULL holes for hardware enum values not
+                    // compiled into this build (e.g. MAG_DRONECAN without ENABLE_DRONECAN).
+                    if (!names[j]) {
+                        continue;
+                    }
+                    if (!first) {
                         cliPrint(",");
                     }
                     cliPrint(names[j]);
+                    first = false;
                 }
                 cliPrintLinefeed();
             }
@@ -5939,7 +5975,18 @@ bool cliSetSettingByName(const char *cmdline)
     return true;
 }
 
-static void cliStatus(const char *cmdName, char *cmdline)
+static int getTaskAverageRateHz(taskId_e taskId, int *averageDeltaTimeUs)
+{
+    taskInfo_t taskInfo;
+    getTaskInfo(taskId, &taskInfo);
+
+    if (averageDeltaTimeUs) {
+        *averageDeltaTimeUs = (taskInfo.averageDeltaTime10thUs + 5) / 10;
+    }
+    return taskInfo.averageDeltaTime10thUs == 0 ? 0 : lrintf(1e7f / taskInfo.averageDeltaTime10thUs);
+}
+
+RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -6040,7 +6087,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #if defined(USE_SENSOR_NAMES)
     const uint32_t detectedSensorsMask = sensorsMask();
     for (unsigned i = SENSOR_INDEX_ACC; i < SENSOR_INDEX_COUNT; i++) {
-        const uint32_t mask = (1U << i);
+        const uint32_t mask = sensorMaskForIndex(i);
         if ((detectedSensorsMask & mask)) {
 
             const uint8_t sensorHardwareIndex = detectedSensors[i];
@@ -6070,8 +6117,8 @@ static void cliStatus(const char *cmdName, char *cmdline)
         } else {
             cliPrint("NOT CONNECTED, ");
         }
-        if (gpsConfig()->provider == GPS_MSP) {
-            cliPrint("MSP, ");
+        if (GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(gpsConfig()->provider)) {
+            cliPrint(lookupTables[TABLE_GPS_PROVIDER].values[gpsConfig()->provider]);
         } else {
             const serialPortConfig_t *gpsPortConfig = findSerialPortConfig(FUNCTION_GPS);
             if (!gpsPortConfig) {
@@ -6085,24 +6132,78 @@ static void cliStatus(const char *cmdName, char *cmdline)
                 }
                 cliPrint("), ");
             }
-        }
-        if (gpsData.state <= GPS_STATE_CONFIGURE) {
-            cliPrint("NOT CONFIGURED");
-        } else {
-            if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF) {
-                cliPrint("auto config OFF");
+            if (gpsData.state <= GPS_STATE_CONFIGURE) {
+                cliPrint("NOT CONFIGURED");
             } else {
-                cliPrint("configured");
+                if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF) {
+                    cliPrint("auto config OFF");
+                } else {
+                    cliPrint("configured");
+                }
+            }
+#ifdef USE_GPS_UBLOX
+            if (gpsConfig()->provider == GPS_UBLOX) {
+                cliPrintf(", version =  %s", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
+            }
+#endif
+        }
+        if (gpsIsHealthy()) {
+            cliPrintLinefeed();
+            cliPrintf("  sats: %d", gpsSol.numSat);
+
+            uint16_t cnoSum = 0;
+            uint8_t cnoCount = 0;
+            for (unsigned i = 0; i < GPS_numCh; i++) {
+                if (GPS_svinfo[i].cno > 0) {
+                    cnoSum += GPS_svinfo[i].cno;
+                    cnoCount++;
+                }
+            }
+            if (cnoCount > 0) {
+                cliPrintf(", signal: %d dBHz", cnoSum / cnoCount);
+            }
+
+            if (gpsSol.dop.hdop > 0) {
+                cliPrintf(", hdop: %d.%02d", gpsSol.dop.hdop / 100, gpsSol.dop.hdop % 100);
+            }
+
+            if (gpsSol.dop.vdop > 0) {
+                cliPrintf(", vdop: %d.%02d", gpsSol.dop.vdop / 100, gpsSol.dop.vdop % 100);
+            }
+
+            if (STATE(GPS_FIX)) {
+                const int32_t lat = gpsSol.llh.lat;
+                const int32_t lon = gpsSol.llh.lon;
+                const int32_t altCm = gpsSol.llh.altCm;
+                cliPrintf(", pos: %s%d.%07d %s%d.%07d, alt: %s%d.%02dm",
+                    lat < 0 ? "-" : "", ABS(lat) / 10000000, ABS(lat) % 10000000,
+                    lon < 0 ? "-" : "", ABS(lon) / 10000000, ABS(lon) % 10000000,
+                    altCm < 0 ? "-" : "", ABS(altCm) / 100, ABS(altCm) % 100);
+            } else {
+                cliPrint(", pos: no fix");
+            }
+
+            if (gpsSol.dateTime.valid) {
+                cliPrintf(", %04d-%02d-%02dT%02d:%02d:%02dZ",
+                    gpsSol.dateTime.year, gpsSol.dateTime.month, gpsSol.dateTime.day,
+                    gpsSol.dateTime.hour, gpsSol.dateTime.min, gpsSol.dateTime.sec);
             }
         }
-#ifdef USE_GPS_UBLOX
-        cliPrintf(", version =  %s", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
-#endif
     } else {
         cliPrint("NOT ENABLED");
     }
     cliPrintLinefeed();
 #endif // USE_GPS
+
+#if ENABLE_DRONECAN
+    if (dronecanConfig()->enabled) {
+        if (dronecanIsInitialised()) {
+            cliPrintLinef("DroneCAN: node %d, device %d", dronecanConfig()->node_id, dronecanConfig()->device);
+        } else {
+            cliPrintLine("DroneCAN: NOT RUNNING (check dronecan_node_id and dronecan_device)");
+        }
+    }
+#endif
 
 #if defined(USE_OSD)
     osdDisplayPortDevice_e displayPortDeviceType;
@@ -6151,13 +6252,14 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
     // Run status
 
-    const int gyroRate = getTaskDeltaTimeUs(TASK_GYRO) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_GYRO)));
+    int gyroDeltaTimeUs;
+    const int gyroRate = getTaskAverageRateHz(TASK_GYRO, &gyroDeltaTimeUs);
 
-    int rxRate = getRxRateValid() ? lrintf(getCurrentRxRateHz()) : 0;
+    const int rxRate = getRxRateValid() ? lrintf(getCurrentRxRateHz()) : 0;
 
-    const int systemRate = getTaskDeltaTimeUs(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_SYSTEM)));
+    const int systemRate = getTaskAverageRateHz(TASK_SYSTEM, NULL);
     cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
-            constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE), getTaskDeltaTimeUs(TASK_GYRO), gyroRate, rxRate, systemRate);
+            constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE), gyroDeltaTimeUs, gyroRate, rxRate, systemRate);
 
     // Battery meter
     const uint16_t v01 = getBatteryVoltage();
@@ -6174,7 +6276,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
     cliPrintLinefeed();
 }
 
-static void cliTasks(const char *cmdName, char *cmdline)
+RAM_CODE static void cliTasks(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -6201,9 +6303,7 @@ static void cliTasks(const char *cmdName, char *cmdline)
             cliPrintf("%02d - (%15s) ", taskId, taskInfo.taskName);
             const int maxLoad = taskInfo.maxLoad10thPct;
             const int averageLoad = taskInfo.movingAverageLoad10thPct;
-            if (taskId != TASK_SERIAL) {
-                averageLoadSum += averageLoad;
-            }
+            averageLoadSum += averageLoad;
             if (systemConfig()->task_statistics) {
 #if defined(USE_LATE_TASK_STATISTICS)
                 cliPrintLinef("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d %6d %6d %7d",
@@ -6233,7 +6333,7 @@ static void cliTasks(const char *cmdName, char *cmdline)
         uint32_t checkFuncAvgLoad10 = timeSinceTasksUs ? (uint32_t)((checkFuncTotalSinceUs * 1000.0f) / timeSinceTasksUs) : 0;
         cliPrintLinef("Check Functions (RX, ...) %11d %7d %12d.%1d%% %9d", checkFuncInfo.maxExecutionTimeUs, checkFuncInfo.averageExecutionTimeUs,
                       checkFuncAvgLoad10 / 10, checkFuncAvgLoad10 %10, checkFuncInfo.totalExecutionTimeUs / 1000);
-        cliPrintLinef("Total (excluding SERIAL) %33d.%1d%%", averageLoadSum/10, averageLoadSum%10);
+        cliPrintLinef("Total %52d.%1d%%", averageLoadSum/10, averageLoadSum%10);
         if (debugMode == DEBUG_SCHEDULER_DETERMINISM) {
             extern int32_t schedLoopStartCycles, taskGuardCycles;
 
@@ -6273,7 +6373,7 @@ static void printVersion(bool printBoardInfo)
 #endif
 }
 
-static void cliOptions(const char *cmdName, char *cmdline)
+RAM_CODE static void cliOptions(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -6285,7 +6385,7 @@ static void cliOptions(const char *cmdName, char *cmdline)
     }
 }
 
-static void cliVersion(const char *cmdName, char *cmdline)
+RAM_CODE static void cliVersion(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -6297,7 +6397,7 @@ static void cliVersion(const char *cmdName, char *cmdline)
 // `dxr <hex-addr> [count]` — read `count` 32-bit words from `<hex-addr>`.
 // Defaults to 1 word, capped at 64. Address is forced to 4-byte alignment.
 // No fault protection: hand it valid peripheral or SRAM addresses only.
-static void cliMemRead(const char *cmdName, char *cmdline)
+RAM_CODE static void cliMemRead(const char *cmdName, char *cmdline)
 {
     char *p = skipSpace(cmdline);
     if (!*p) {
@@ -6336,7 +6436,7 @@ static void cliMemRead(const char *cmdName, char *cmdline)
 // back. Reports both the written and observed values so the caller can
 // see writes that were silently dropped (e.g. RIFSC after the boot ROM
 // finishes its handoff).
-static void cliMemWrite(const char *cmdName, char *cmdline)
+RAM_CODE static void cliMemWrite(const char *cmdName, char *cmdline)
 {
     char *p = skipSpace(cmdline);
     if (!*p) {
@@ -6368,7 +6468,7 @@ static void cliMemWrite(const char *cmdName, char *cmdline)
 }
 #endif // ENABLE_DEBUG_CLI_COMMANDS
 
-static void cliEnv(const char *cmdName, char *cmdline)
+RAM_CODE static void cliEnv(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
 
@@ -6458,7 +6558,7 @@ static void cliEnv(const char *cmdName, char *cmdline)
 #if defined(USE_SENSOR_NAMES)
     const uint32_t detectedSensorsMask = sensorsMask();
     for (unsigned i = SENSOR_INDEX_ACC; i < SENSOR_INDEX_COUNT; i++) {
-        const uint32_t mask = (1U << i);
+        const uint32_t mask = sensorMaskForIndex(i);
         if ((detectedSensorsMask & mask) == 0) {
             continue;
         }
@@ -6519,11 +6619,12 @@ static void cliEnv(const char *cmdName, char *cmdline)
     }
 #endif
 
-    const int gyroRate = getTaskDeltaTimeUs(TASK_GYRO) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_GYRO)));
+    int gyroDeltaTimeUs;
+    const int gyroRate = getTaskAverageRateHz(TASK_GYRO, &gyroDeltaTimeUs);
     const int rxRate = getRxRateValid() ? lrintf(getCurrentRxRateHz()) : 0;
-    const int systemRate = getTaskDeltaTimeUs(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_SYSTEM)));
+    const int systemRate = getTaskAverageRateHz(TASK_SYSTEM, NULL);
     cliPrintNameValuef("CPU_LOAD_PCT", "%d", constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE));
-    cliPrintNameValuef("CYCLE_TIME_US", "%d", getTaskDeltaTimeUs(TASK_GYRO));
+    cliPrintNameValuef("CYCLE_TIME_US", "%d", gyroDeltaTimeUs);
     cliPrintNameValuef("GYRO_RATE_HZ", "%d", gyroRate);
     cliPrintNameValuef("RX_RATE_HZ", "%d", rxRate);
     cliPrintNameValuef("SYSTEM_RATE_HZ", "%d", systemRate);
@@ -6555,7 +6656,7 @@ static void cliEnv(const char *cmdName, char *cmdline)
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
-static void cliRcSmoothing(const char *cmdName, char *cmdline)
+RAM_CODE static void cliRcSmoothing(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -6667,6 +6768,7 @@ const cliResourceValue_t resourceTable[] = {
 #if ENABLE_CAN
     DEFW( OWNER_CAN_TX,        PG_CAN_PIN_CONFIG, canPinConfig_t, ioTagTx, CANDEV_COUNT ),
     DEFW( OWNER_CAN_RX,        PG_CAN_PIN_CONFIG, canPinConfig_t, ioTagRx, CANDEV_COUNT ),
+    DEFW( OWNER_CAN_SILENT,    PG_CAN_PIN_CONFIG, canPinConfig_t, ioTagSilent, CANDEV_COUNT ),
 #endif
 #ifdef USE_ESCSERIAL
     DEFS( OWNER_ESCSERIAL,     PG_ESCSERIAL_CONFIG, escSerialConfig_t, ioTag ),
@@ -7201,7 +7303,7 @@ static void printDmaopt(dumpFlags_t dumpMask, const char *headingStr)
 #endif
 }
 
-static void cliDmaopt(const char *cmdName, char *cmdline)
+RAM_CODE static void cliDmaopt(const char *cmdName, char *cmdline)
 {
     char *pch = NULL;
     char *saveptr;
@@ -7352,7 +7454,7 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
 #endif // USE_DMA_SPEC
 
 #ifdef USE_DMA
-static void cliDma(const char *cmdName, char* cmdline)
+RAM_CODE static void cliDma(const char *cmdName, char* cmdline)
 {
     int len = strlen(cmdline);
     if (len && strncasecmp(cmdline, "show", len) == 0) {
@@ -7535,7 +7637,7 @@ static void showTimers(void)
     }
 }
 
-static void cliTimer(const char *cmdName, char *cmdline)
+RAM_CODE static void cliTimer(const char *cmdName, char *cmdline)
 {
     int len = strlen(cmdline);
 
@@ -7663,7 +7765,7 @@ static void cliTimer(const char *cmdName, char *cmdline)
 #endif
 
 #if defined(USE_RESOURCE_MGMT)
-static void cliResource(const char *cmdName, char *cmdline)
+RAM_CODE static void cliResource(const char *cmdName, char *cmdline)
 {
     char *pch = NULL;
     char *saveptr;
@@ -7781,7 +7883,7 @@ static void cliResource(const char *cmdName, char *cmdline)
 
 #ifdef USE_DSHOT_TELEMETRY
 
-static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
+RAM_CODE static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -8081,18 +8183,18 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
     restoreConfigs(0);
 }
 
-static void cliDump(const char *cmdName, char *cmdline)
+RAM_CODE static void cliDump(const char *cmdName, char *cmdline)
 {
     printConfig(cmdName, cmdline, false);
 }
 
-static void cliDiff(const char *cmdName, char *cmdline)
+RAM_CODE static void cliDiff(const char *cmdName, char *cmdline)
 {
     printConfig(cmdName, cmdline, true);
 }
 
 #if defined(USE_USB_MSC)
-static void cliMsc(const char *cmdName, char *cmdline)
+RAM_CODE static void cliMsc(const char *cmdName, char *cmdline)
 {
     if (mscCheckFilesystemReady()) {
 #ifdef USE_RTC_TIME
@@ -8151,7 +8253,7 @@ typedef struct {
 // Prints CLI commands that match the optional search string in cmdline.
 // Searches both command names and descriptions; descriptions may be NULL for
 // some commands and are skipped safely. Prints all commands when cmdline is empty.
-STATIC_UNIT_TESTED void cliHelp(const char *cmdName, char *cmdline);
+RAM_CODE STATIC_UNIT_TESTED void cliHelp(const char *cmdName, char *cmdline);
 
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
@@ -8282,7 +8384,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("sd_info", "sdcard info", NULL, cliSdInfo),
 #endif
 #if defined(USE_SENSOR_NAMES)
-    CLI_COMMAND_DEF("sensor_hardware", "list supported sensor hardware", "[gyro|acc|baro|mag|rangefinder|opticalflow]", cliSensorHardware),
+    CLI_COMMAND_DEF("sensor_hardware", "list supported sensor hardware", "[gyro|acc|baro|mag|rangefinder|opticalflow|pitot]", cliSensorHardware),
 #endif
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
 #if defined(USE_SERIAL_PASSTHROUGH)
@@ -8333,7 +8435,7 @@ const clicmd_t cmdTable[] = {
 // Prints CLI commands that match the optional search string in cmdline.
 // Searches both command names and descriptions; descriptions may be NULL for
 // some commands and are skipped safely. Prints all commands when cmdline is empty.
-STATIC_UNIT_TESTED void cliHelp(const char *cmdName, char *cmdline)
+RAM_CODE STATIC_UNIT_TESTED void cliHelp(const char *cmdName, char *cmdline)
 {
     bool anyMatches = false;
 
@@ -8424,7 +8526,7 @@ static void processCharacter(const char c)
             cliPrompt();
         }
 
-    } else if (bufferIndex < sizeof(cliBuffer) && c >= 32 && c <= 126) {
+    } else if (bufferIndex < sizeof(cliBuffer) - 1 && c >= 32 && c <= 126) {
         if (!bufferIndex && c == ' ') {
             return; // Ignore leading spaces
         }
@@ -8567,15 +8669,7 @@ void cliEnter(serialPort_t *serialPort, bool interactive)
     }
 }
 
-#ifdef CONFIG_IN_FILE
-#include <stdio.h>
-
-static void stdoutBufWrite(void *arg, const uint8_t *data, int count)
-{
-    UNUSED(arg);
-    fwrite(data, 1, count, stdout);
-}
-
+#if defined(CONFIG_IN_FILE) || defined(USE_MSP_CLI_COMMAND)
 // Check if a line (after stripping comments/whitespace) matches a command name
 static bool lineIsCommand(const char *line, const char *command)
 {
@@ -8592,6 +8686,128 @@ static bool lineIsCommand(const char *line, const char *command)
     char next = line[cmdLen];
     return (next == '\0' || next == ' ' || next == '\t' ||
             next == '\n' || next == '\r' || next == '#');
+}
+#endif
+
+#ifdef USE_MSP_CLI_COMMAND
+// Check whether a line carries 'arg' as a discrete argument. Inline comments are stripped
+// first because processCharacter() drops them before dispatch, so a plain substring search
+// would read "defaults # nosave" as carrying the nosave flag when the CLI will not.
+static bool lineHasArg(const char *line, const char *arg)
+{
+    char stripped[CLI_IN_BUFFER_SIZE];
+    strncpy(stripped, line, sizeof(stripped) - 1);
+    stripped[sizeof(stripped) - 1] = '\0';
+
+    char *cp = strchr(stripped, '#');
+    if (cp) {
+        *cp = '\0';
+    }
+    cp = strstr(stripped, "//");
+    if (cp) {
+        *cp = '\0';
+    }
+
+    char *saveptr;
+    for (char *tok = strtok_r(stripped, " \t\r\n", &saveptr); tok;
+         tok = strtok_r(NULL, " \t\r\n", &saveptr)) {
+        if (strcasecmp(tok, arg) == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+typedef struct cliCaptureSink_s {
+    char *buf;
+    int cap;
+    int total;
+} cliCaptureSink_t;
+
+static void cliCaptureBufWrite(void *arg, const uint8_t *data, int count)
+{
+    cliCaptureSink_t *sink = (cliCaptureSink_t *)arg;
+    for (int i = 0; i < count; i++) {
+        if (sink->total < sink->cap) {
+            sink->buf[sink->total] = (char)data[i];
+        }
+        sink->total++;
+    }
+}
+
+int cliExecuteCommand(const char *cmdline, char *outBuf, int outBufLen)
+{
+    if (cliMode || !cmdline || !outBuf || outBufLen <= 0) {
+        return CLI_COMMAND_REFUSED;
+    }
+
+    // The fabricated port below has a NULL vTable, so any command that reaches
+    // waitForSerialPortToFinishTransmitting() (reboot/mode-switch/passthrough) would
+    // fault. Handle those here instead of dispatching them: 'save' persists without
+    // the reboot, 'exit' is a no-op, bare 'defaults' (which reboots) is refused.
+    if (lineIsCommand(cmdline, "exit")) {
+        return 0;
+    }
+    if (lineIsCommand(cmdline, "bl") || lineIsCommand(cmdline, "msc") ||
+        lineIsCommand(cmdline, "serialpassthrough")) {
+        return CLI_COMMAND_REFUSED;
+    }
+    // This is reachable from any MSP link, including telemetry links in flight. writeEEPROM()
+    // blocks the flight loop (MSP_EEPROM_WRITE refuses while armed for the same reason) and
+    // wiping the config mid-flight is never safe.
+    if (ARMING_FLAG(ARMED) &&
+        (lineIsCommand(cmdline, "save") || lineIsCommand(cmdline, "defaults"))) {
+        return CLI_COMMAND_REFUSED;
+    }
+    if (lineIsCommand(cmdline, "defaults") && !lineHasArg(cmdline, "nosave")) {
+        return CLI_COMMAND_REFUSED;
+    }
+
+    cliCaptureSink_t sink = { .buf = outBuf, .cap = outBufLen, .total = 0 };
+
+    cliMode = true;
+    cliInteractive = false;
+
+    static serialPort_t dummyPort;
+    memset(&dummyPort, 0, sizeof(dummyPort));
+    cliPort = &dummyPort;
+
+    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer),
+                  (bufWrite_t)cliCaptureBufWrite, &sink);
+    cliErrorWriter = cliWriter = &cliWriterDesc;
+    cliClearInputBuffer();
+
+    if (lineIsCommand(cmdline, "save")) {
+        if (tryPrepareSave("save")) {
+            writeEEPROM();
+            cliPrintHashLine("saving");
+        }
+    } else {
+        for (const char *p = cmdline; *p; p++) {
+            processCharacter(*p);
+        }
+        processCharacter('\n');
+    }
+
+    cliWriterFlush();
+
+    cliMode = false;
+    cliInteractive = false;
+    cliWriter = cliErrorWriter = NULL;
+    cliPort = NULL;
+
+    return sink.total;
+}
+#endif
+
+#ifdef CONFIG_IN_FILE
+#include <stdio.h>
+
+static void stdoutBufWrite(void *arg, const uint8_t *data, int count)
+{
+    UNUSED(arg);
+    fwrite(data, 1, count, stdout);
 }
 
 void cliProcessConfigFile(const char *filename)
@@ -8660,15 +8876,21 @@ void cliProcessConfigFile(const char *filename)
             if (cp) {
                 *cp = '\0';
             }
-            // Tokenize the comment-stripped line and look for 'nosave' as a discrete token
+            // Tokenize the comment-stripped line and look for 'nosave' as a discrete token.
+            // strtok writes NULs over the delimiters, so run it on a scratch copy: 'stripped'
+            // is reused below to rebuild the line and must keep its arguments intact.
+            char scratch[CLI_IN_BUFFER_SIZE];
+            strncpy(scratch, stripped, sizeof(scratch) - 1);
+            scratch[sizeof(scratch) - 1] = '\0';
             bool hasNosave = false;
-            char *tok = strtok(stripped, " \t\r\n");
+            char *saveptr;
+            char *tok = strtok_r(scratch, " \t\r\n", &saveptr);
             while (tok) {
                 if (strcasecmp(tok, "nosave") == 0) {
                     hasNosave = true;
                     break;
                 }
-                tok = strtok(NULL, " \t\r\n");
+                tok = strtok_r(NULL, " \t\r\n", &saveptr);
             }
             if (!hasNosave) {
                 // Append 'nosave' to the original line (minus any trailing comment/whitespace)
@@ -8684,6 +8906,13 @@ void cliProcessConfigFile(const char *filename)
                     nosaveLine[--len] = '\0';
                 }
                 strcat(nosaveLine, " nosave\n");
+                // processCharacter() stops buffering at CLI_IN_BUFFER_SIZE characters but still
+                // null terminates at bufferIndex when the newline arrives, so a rewritten line
+                // that no longer fits would both run truncated and write one past cliBuffer.
+                if (strlen(nosaveLine) > CLI_IN_BUFFER_SIZE) {
+                    printf("[CONFIG] Line too long to rewrite, skipped: %s\n", stripped);
+                    continue;
+                }
                 for (size_t i = 0; nosaveLine[i]; i++) {
                     processCharacter(nosaveLine[i]);
                 }
