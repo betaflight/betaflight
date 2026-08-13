@@ -116,10 +116,17 @@ bool flightPlanNavIsRescueDescentActive(void);
 // active: ascendRate climbing, descendRate on the LAND leg and fallback descent.
 // Returns 0 when no rescue is flying, leaving the alt-hold climbRate in force.
 float flightPlanNavGetRescueVerticalRateCmS(void);
+
+// Downward cap (cm/s) for an automatic descent, which is not the same number. The cap
+// above reports ascendRate outside the LAND leg, and a leg descending toward its return
+// altitude is not a LAND leg, so on defaults it would authorise 7.5 m/s of descent against
+// a 1.5 m/s descendRate. Returns 0 when no rescue is flying.
+float flightPlanNavGetRescueDescentRateCmS(void);
 #else
 static inline bool flightPlanNavIsRescuePlanActive(void) { return false; }
 static inline bool flightPlanNavIsRescueDescentActive(void) { return false; }
 static inline float flightPlanNavGetRescueVerticalRateCmS(void) { return 0.0f; }
+static inline float flightPlanNavGetRescueDescentRateCmS(void) { return 0.0f; }
 #endif
 
 // Single observer slot for "waypoint reached" — invoked with the index of the

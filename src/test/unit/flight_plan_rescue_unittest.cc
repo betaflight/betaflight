@@ -47,6 +47,8 @@ extern "C" {
     #include "pg/gps_rescue.h"
     #include "pg/pg.h"
 
+    #include "sensors/acceleration.h"
+
     int16_t debug[DEBUG16_VALUE_COUNT];
     uint8_t debugMode;
 
@@ -55,6 +57,7 @@ extern "C" {
     gpsSolutionData_t gpsSol;
     gpsLocation_t GPS_home_llh;
     attitudeEulerAngles_t attitude;
+    acc_t acc;
 }
 
 #include "unittest_macros.h"
@@ -81,6 +84,9 @@ struct CapturedTarget {
 };
 
 CapturedTarget g_lastTarget;
+float g_lastMaxAccelMps2;
+float g_lastMaxDecelMps2;
+float g_lastVertSpeedLimitMps;
 int g_setTargetCalls;
 int g_clearTargetCalls;
 
@@ -108,6 +114,13 @@ bool g_lastPitchForward;
 
 extern "C" {
 
+// No accelerometer in this fixture, so the landing impact path stays inert and the rescue tests
+// exercise the descent logic on its own.
+bool sensors(uint32_t mask)
+{
+    return (mask & SENSOR_ACC) ? false : true;
+}
+
 void positionNavSetTargetEf(
     const vector3_t *targetPosEfM,
     float cruiseSpeedMps,
@@ -125,6 +138,10 @@ void positionNavSetTargetEf(
     g_lastTarget.callback = callback;
     g_lastTarget.userData = userData;
     g_lastTarget.valid = true;
+    // Mirror the production reset: per-command limits never survive a new command.
+    g_lastMaxAccelMps2 = 0.0f;
+    g_lastMaxDecelMps2 = 0.0f;
+    g_lastVertSpeedLimitMps = 0.0f;
     g_setTargetCalls++;
 }
 
@@ -149,8 +166,13 @@ void positionNavSetAutoClearOnReach(bool autoClear)
 
 void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
 {
-    (void)maxAccelMps2;
-    (void)maxDecelMps2;
+    g_lastMaxAccelMps2 = maxAccelMps2;
+    g_lastMaxDecelMps2 = maxDecelMps2;
+}
+
+void positionNavSetVerticalSpeedLimit(float vertSpeedLimitMps)
+{
+    g_lastVertSpeedLimitMps = vertSpeedLimitMps;
 }
 
 void positionNavSetAltitudeArrivalRequired(bool required)
@@ -213,6 +235,8 @@ void autopilotSetYawRateLimit(float rateLimitDps)
 {
     g_yawRateLimitDps = rateLimitDps;
 }
+
+void autopilotSetLandingSettle(bool) { }
 
 void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *distance)
 {
@@ -374,6 +398,27 @@ TEST_F(FlightPlanRescueTest, StageThenEngageDispatchesRescuePlan)
     EXPECT_NEAR(g_lastTarget.targetEfM.x, 30.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.targetEfM.z, kDefaultReturnAltM, 0.1f);
+}
+
+// gps_rescue_ascend_rate must never authorise a descent. The vertical cap keys off the LAND
+// leg alone, so every other leg reports the ascent rate - 7.5 m/s on defaults, against a
+// 1.5 m/s descend rate. A close-range rescue that overshoots its return altitude then
+// corrects downwards under the climb rate: logged at 3.08 m/s against a commanded 1.2, with
+// the craft following at 4.7 m/s. The downward cap must stay at the descend rate throughout.
+TEST_F(FlightPlanRescueTest, DescentRateCapIsNeverTheAscentRate)
+{
+    gpsRescueConfigMutable()->ascendRate = 750;    // 7.5 m/s, as shipped
+    gpsRescueConfigMutable()->descendRate = 120;   // 1.2 m/s, as flown
+
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+
+    // Pre-landing leg: the symmetric cap reports the ascent rate, which is the defect.
+    EXPECT_FLOAT_EQ(flightPlanNavGetRescueVerticalRateCmS(), 750.0f);
+    // The downward cap must not follow it.
+    EXPECT_FLOAT_EQ(flightPlanNavGetRescueDescentRateCmS(), 120.0f)
+        << "a descending rescue leg was handed the ascent rate as its downward limit";
 }
 
 TEST_F(FlightPlanRescueTest, StageFailsWithoutHomeFix)
@@ -588,6 +633,28 @@ TEST_F(FlightPlanRescueTest, FullRescueRunToLanding)
     EXPECT_EQ(g_disarmCalls, 1);
     EXPECT_EQ(g_lastDisarmReason, DISARM_REASON_LANDING);
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_COMPLETE);
+}
+
+// On a rescue the descent rate is gps_rescue_descend_rate. It must bound the vertical axis only:
+// horizontal and vertical hold independent speed budgets, so sharing one limit would let the
+// descend rate govern how fast the craft translates over the landing point.
+TEST_F(FlightPlanRescueTest, RescueLandingDescentRateDoesNotCapHorizontalSpeed)
+{
+    gpsRescueConfigMutable()->descendRate = 120;   // 1.2 m/s
+
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    triggerReached();                              // wp0 climb -> wp1
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);             // wp1 -> wp2
+    triggerReached();                              // LAND: starts the descent
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    EXPECT_NEAR(g_lastVertSpeedLimitMps, 1.2f, 0.01f);
+    EXPECT_GT(g_lastTarget.cruiseSpeedMps, 1.2f + 0.01f)
+        << "descend rate must not cap the horizontal approach speed";
+    EXPECT_GT(g_lastMaxDecelMps2, 0.0f)
+        << "landing must state its own horizontal braking limit";
 }
 
 // --- Fallback emergency descent (switch rescue: no fix, or plan aborted) ---
