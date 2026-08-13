@@ -1631,9 +1631,6 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANTI_GRAVITY_CUTOFF_HZ, "%d",    currentPidProfile->anti_gravity_cutoff_hz);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANTI_GRAVITY_P_GAIN, "%d",    currentPidProfile->anti_gravity_p_gain);
 
-#ifdef USE_INTEGRATED_YAW_CONTROL
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_USE_INTEGRATED_YAW, "%d",     currentPidProfile->use_integrated_yaw);
-#endif
         BLACKBOX_PRINT_HEADER_LINE("ff_weight", "%d,%d,%d",                 currentPidProfile->pid[PID_ROLL].F,
                                                                             currentPidProfile->pid[PID_PITCH].F,
                                                                             currentPidProfile->pid[PID_YAW].F);
