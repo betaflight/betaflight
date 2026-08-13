@@ -168,6 +168,10 @@ READELF      = $(ARM_SDK_PREFIX)readelf
 SIZE         = $(ARM_SDK_PREFIX)size
 DFUSE-PACK  := src/utils/dfuse-pack.py
 
+# Command used to link the final ELF. Platform makefiles can override this
+# when linking requires a dedicated linker instead of the C compiler driver.
+ELF_LINK_CMD = $(CROSS_CC) -o $@ $(filter-out %.ld,$^) $(LD_FLAGS)
+
 # Preprocessor helpers (generic .h parsing)
 include $(MAKE_SCRIPT_DIR)/preprocess.mk
 
@@ -564,7 +568,7 @@ endif
 
 $(TARGET_ELF): $(TARGET_OBJS) $(LD_SCRIPT) $(LD_SCRIPTS)
 	@echo "Linking $(TARGET_NAME)" "$(STDOUT)"
-	$(V1) $(CROSS_CC) -o $@ $(filter-out %.ld,$^) $(LD_FLAGS)
+	$(V1) $(ELF_LINK_CMD)
 	$(V1) $(SIZE) $(TARGET_ELF)
 
 $(TARGET_UF2): $(TARGET_ELF)
@@ -780,11 +784,17 @@ uf2: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) validate-deps
 exe: $(AUTOHYDRATE_STAMPS) validate-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_EXE)
 
+.PHONY: elf
+elf: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) validate-deps
+	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_ELF)
+
 # FWO (Firmware Output) is the default output for building the firmware
 .PHONY: fwo
 fwo:
 ifeq ($(DEFAULT_OUTPUT),exe)
 	$(V1) $(MAKE) exe
+else ifeq ($(DEFAULT_OUTPUT),elf)
+	$(V1) $(MAKE) elf
 else ifeq ($(DEFAULT_OUTPUT),uf2)
 	$(V1) $(MAKE) uf2
 else ifeq ($(DEFAULT_OUTPUT),bin)

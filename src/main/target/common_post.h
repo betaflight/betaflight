@@ -455,6 +455,13 @@
 #undef USE_MSP_OVER_TELEMETRY
 #endif
 
+#if defined(USE_MSP_CLI_COMMAND) && !defined(USE_CLI)
+#undef USE_MSP_CLI_COMMAND
+#endif
+#if defined(USE_MSP_CLI_COMMAND) && !defined(MSP_CLI_COMMAND_BUFFER_SIZE)
+#define MSP_CLI_COMMAND_BUFFER_SIZE 2048
+#endif
+
 #if !defined(USE_RX_MSP) && defined(USE_RX_MSP_OVERRIDE)
 #undef USE_RX_MSP_OVERRIDE
 #endif

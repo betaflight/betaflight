@@ -2838,6 +2838,88 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
         break;
 #endif
 
+#ifdef USE_MSP_CLI_COMMAND
+    case MSP2_CLI_COMMAND:
+        {
+            // request: <cmdline>[\0<offset_u16>]  (offset optional, defaults to 0)
+            // response: <total_len_u16><flags_u8><output window from [offset, ...]>
+            static char cliCmdBuffer[MSP_CLI_COMMAND_BUFFER_SIZE];
+            static char cliCmdName[128];
+            static int cliCmdTotalLen = 0;
+            static bool cliCmdTruncated = false;
+
+            // A line the CLI input buffer cannot hold would be silently truncated by
+            // processCharacter() and then executed as a different command.
+            _Static_assert(sizeof(cliCmdName) < CLI_IN_BUFFER_SIZE,
+                           "MSP CLI command line must fit the CLI input buffer");
+
+            // <cmdline> + NUL + optional u16 offset
+            char req[sizeof(cliCmdName) + 3];
+            const int len = sbufBytesRemaining(src);
+            if (len == 0 || len >= (int)sizeof(req)) {
+                return MSP_RESULT_ERROR;
+            }
+            sbufReadData(src, req, len);
+            req[len] = '\0';
+
+            uint16_t offset = 0;
+            int nameLen = len;
+            const void *nul = memchr(req, '\0', len);
+            if (nul) {
+                nameLen = (const char *)nul - req;
+                if (len - nameLen - 1 >= 2) {
+                    offset = (uint8_t)req[nameLen + 1] | ((uint8_t)req[nameLen + 2] << 8);
+                }
+            }
+            req[nameLen] = '\0';
+
+            if (nameLen >= (int)sizeof(cliCmdName) || sbufBytesRemaining(dst) < 3) {
+                return MSP_RESULT_ERROR;
+            }
+
+            uint8_t flags = 0;
+            if (offset == 0) {
+                // 'dump', 'diff' and 'save' can run long; don't bill it to the MSP task
+                schedulerIgnoreTaskStateTime();
+                const int produced = cliExecuteCommand(req, cliCmdBuffer, sizeof(cliCmdBuffer));
+                if (produced == CLI_COMMAND_REFUSED) {
+                    cliCmdName[0] = '\0';
+                    cliCmdTotalLen = 0;
+                    cliCmdTruncated = false;
+                    sbufWriteU16(dst, 0);
+                    sbufWriteU8(dst, MSP2_CLI_COMMAND_FLAG_REFUSED);
+                    break;
+                }
+                cliCmdTruncated = produced > (int)sizeof(cliCmdBuffer);
+                cliCmdTotalLen = cliCmdTruncated ? (int)sizeof(cliCmdBuffer) : produced;
+                strcpy(cliCmdName, req);
+            } else {
+                // continuation: the client resends the same command line to page further
+                if (cliCmdName[0] == '\0' || strcmp(cliCmdName, req) != 0) {
+                    sbufWriteU16(dst, 0);
+                    sbufWriteU8(dst, MSP2_CLI_COMMAND_FLAG_REFUSED);
+                    break;
+                }
+            }
+            if (cliCmdTruncated) {
+                flags |= MSP2_CLI_COMMAND_FLAG_TRUNCATED;
+            }
+
+            sbufWriteU16(dst, (uint16_t)cliCmdTotalLen);
+            sbufWriteU8(dst, flags);
+
+            if (offset < cliCmdTotalLen) {
+                int window = cliCmdTotalLen - offset;
+                const int room = sbufBytesRemaining(dst);
+                if (window > room) {
+                    window = room;
+                }
+                sbufWriteData(dst, cliCmdBuffer + offset, window);
+            }
+        }
+        break;
+#endif
+
     default:
         return MSP_RESULT_CMD_UNKNOWN;
     }
