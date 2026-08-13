@@ -170,6 +170,7 @@ cli_unittest_SRC := \
 cli_unittest_DEFINES := \
 		USE_OSD= \
 		USE_CLI= \
+		USE_MSP_CLI_COMMAND= \
 		SystemCoreClock=1000000
 
 cms_unittest_SRC := \
@@ -338,6 +339,14 @@ pg_unittest_SRC := \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/pg/pg.c
 
+
+rc_unittest_SRC := \
+		$(USER_DIR)/fc/rc.c \
+		$(USER_DIR)/fc/controlrate_profile.c \
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/maths.c
 
 rc_controls_unittest_SRC := \
 		$(USER_DIR)/fc/rc_controls.c \
