@@ -186,19 +186,21 @@ TEST(SerialFeatureMap, VtxCollapseByType)
     EXPECT_EQ(0u, serialSynthesizeFunctionMask(SERIAL_PORT_UART4));
 }
 
-TEST(SerialFeatureMap, RangefinderCollapseByHardware)
+TEST(SerialFeatureMap, RangefinderIndependentOfHardwareSelection)
 {
     resetAllConfigs();
     rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_UART5;
 
     rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TFMINI;
-    EXPECT_EQ(FUNCTION_LIDAR_TF, serialSynthesizeFunctionMask(SERIAL_PORT_UART5));
+    EXPECT_EQ(FUNCTION_LIDAR, serialSynthesizeFunctionMask(SERIAL_PORT_UART5));
 
     rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NOOPLOOP_F2;
-    EXPECT_EQ(FUNCTION_LIDAR_NL, serialSynthesizeFunctionMask(SERIAL_PORT_UART5));
+    EXPECT_EQ(FUNCTION_LIDAR, serialSynthesizeFunctionMask(SERIAL_PORT_UART5));
 
-    // Non-serial rangefinder (e.g. I2C) emits nothing even if uart is assigned.
-    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_HCSR04;
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NONE;
+    EXPECT_EQ(FUNCTION_LIDAR, serialSynthesizeFunctionMask(SERIAL_PORT_UART5));
+
+    rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_NONE;
     EXPECT_EQ(0u, serialSynthesizeFunctionMask(SERIAL_PORT_UART5));
 }
 
@@ -311,32 +313,22 @@ TEST(SerialFeatureMap, DecomposeAcceptsAllTelemetryProtocols)
     EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART6, FUNCTION_TELEMETRY_IBUS));
 }
 
-TEST(SerialFeatureMap, RangefinderPreservesCompatibleHardwareSelection)
+TEST(SerialFeatureMap, RangefinderPreservesHardwareSelection)
 {
     resetAllConfigs();
-    // User picked a specific TF model; FUNCTION_LIDAR_TF on the same
-    // category must NOT downgrade that choice to the default.
+    // The port assignment and the driver choice are orthogonal: applying the
+    // mask must never disturb the user's model selection.
     rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TFNOVA;
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR_TF));
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR));
+    EXPECT_EQ(SERIAL_PORT_UART5, rangefinderConfig()->rangefinder_uart);
     EXPECT_EQ(RANGEFINDER_TFNOVA, rangefinderConfig()->rangefinder_hardware);
 
-    // Specific Nooploop model preserved across FUNCTION_LIDAR_NL writes.
     rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NOOPLOOP_F2MINI;
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR_NL));
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR));
     EXPECT_EQ(RANGEFINDER_NOOPLOOP_F2MINI, rangefinderConfig()->rangefinder_hardware);
-}
 
-TEST(SerialFeatureMap, RangefinderOverwritesWrongCategoryOnly)
-{
-    resetAllConfigs();
-    // NL model with a TF bit incoming → snap to TFMINI default.
-    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NOOPLOOP_F2;
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR_TF));
-    EXPECT_EQ(RANGEFINDER_TFMINI, rangefinderConfig()->rangefinder_hardware);
-
-    // Unset (NONE) is left alone — user can pick a specific model later.
     rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NONE;
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR_TF));
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR));
     EXPECT_EQ(RANGEFINDER_NONE, rangefinderConfig()->rangefinder_hardware);
 }
 

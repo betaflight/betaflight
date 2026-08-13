@@ -134,24 +134,7 @@ uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
 #endif
 #ifdef USE_RANGEFINDER
     if (rangefinderConfig()->rangefinder_uart == identifier) {
-        switch (rangefinderConfig()->rangefinder_hardware) {
-        case RANGEFINDER_TFMINI:
-        case RANGEFINDER_TF02:
-        case RANGEFINDER_TFNOVA:
-        case RANGEFINDER_UPT1:
-            mask |= FUNCTION_LIDAR_TF;
-            break;
-        case RANGEFINDER_NOOPLOOP_F2:
-        case RANGEFINDER_NOOPLOOP_F2P:
-        case RANGEFINDER_NOOPLOOP_F2PH:
-        case RANGEFINDER_NOOPLOOP_F:
-        case RANGEFINDER_NOOPLOOP_FP:
-        case RANGEFINDER_NOOPLOOP_F2MINI:
-            mask |= FUNCTION_LIDAR_NL;
-            break;
-        default:
-            break;
-        }
+        mask |= FUNCTION_LIDAR;
     }
 #endif
 #ifdef USE_OSD
@@ -344,15 +327,6 @@ static bool canApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mas
     }
 #endif
 
-#ifdef USE_RANGEFINDER
-    unsigned lidarBits = 0;
-    if (mask & FUNCTION_LIDAR_TF) lidarBits++;
-    if (mask & FUNCTION_LIDAR_NL) lidarBits++;
-    if (lidarBits > 1) {
-        return false;
-    }
-#endif
-
     if (mask & FUNCTION_MSP) {
         unsigned availableMsp = 0;
         for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
@@ -460,38 +434,8 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
 #endif
 #endif
 #ifdef USE_RANGEFINDER
-    // Lidar bit count pre-validated ≤ 1; at most one branch fires.  Only
-    // overwrite rangefinder_hardware when the current value is clearly in
-    // the *other* lidar category; a compatible or unselected
-    // (RANGEFINDER_NONE) value is left alone so the user's specific model
-    // choice is preserved across CLI/MSP writes.
-    if (mask & FUNCTION_LIDAR_TF) {
+    if (mask & FUNCTION_LIDAR) {
         rangefinderConfigMutable()->rangefinder_uart = identifier;
-        switch (rangefinderConfig()->rangefinder_hardware) {
-        case RANGEFINDER_NOOPLOOP_F2:
-        case RANGEFINDER_NOOPLOOP_F2P:
-        case RANGEFINDER_NOOPLOOP_F2PH:
-        case RANGEFINDER_NOOPLOOP_F:
-        case RANGEFINDER_NOOPLOOP_FP:
-        case RANGEFINDER_NOOPLOOP_F2MINI:
-            rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TFMINI;
-            break;
-        default:
-            break;  // compatible or unset — leave alone
-        }
-    }
-    if (mask & FUNCTION_LIDAR_NL) {
-        rangefinderConfigMutable()->rangefinder_uart = identifier;
-        switch (rangefinderConfig()->rangefinder_hardware) {
-        case RANGEFINDER_TFMINI:
-        case RANGEFINDER_TF02:
-        case RANGEFINDER_TFNOVA:
-        case RANGEFINDER_UPT1:
-            rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NOOPLOOP_F2;
-            break;
-        default:
-            break;
-        }
     }
 #endif
 #ifdef USE_OSD
