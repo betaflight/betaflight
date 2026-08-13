@@ -2315,9 +2315,9 @@ case MSP_NAME:
         sbufWriteU16(dst, currentPidProfile->tpa_speed_adv_drag_k);
         sbufWriteU16(dst, currentPidProfile->tpa_speed_adv_thrust);
         sbufWriteU16(dst, currentPidProfile->tpa_speed_max_voltage);
-        sbufWriteU16(dst, currentPidProfile->tpa_speed_pitch_offset);
+        sbufWriteU16(dst, (uint16_t)currentPidProfile->tpa_speed_pitch_offset);
         sbufWriteU8(dst, currentPidProfile->yaw_type);
-        sbufWriteU16(dst, currentPidProfile->angle_pitch_offset);
+        sbufWriteU16(dst, (uint16_t)currentPidProfile->angle_pitch_offset);
         break;
     }
 #endif
@@ -4625,9 +4625,9 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         currentPidProfile->tpa_speed_adv_drag_k = sbufReadU16(src);
         currentPidProfile->tpa_speed_adv_thrust = sbufReadU16(src);
         currentPidProfile->tpa_speed_max_voltage = sbufReadU16(src);
-        currentPidProfile->tpa_speed_pitch_offset = sbufReadU16(src);
+        currentPidProfile->tpa_speed_pitch_offset = (int16_t)sbufReadU16(src);
         currentPidProfile->yaw_type = sbufReadU8(src);
-        currentPidProfile->angle_pitch_offset = sbufReadU16(src);
+        currentPidProfile->angle_pitch_offset = (int16_t)sbufReadU16(src);
         pidInitConfig(currentPidProfile);
         break;
     }
