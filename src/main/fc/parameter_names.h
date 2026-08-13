@@ -34,6 +34,7 @@
 #define PARAM_NAME_ACC_LPF_HZ "acc_lpf_hz"
 #define PARAM_NAME_MAG_HARDWARE "mag_hardware"
 #define PARAM_NAME_BARO_HARDWARE "baro_hardware"
+#define PARAM_NAME_PITOT_HARDWARE "pitot_hardware"
 #define PARAM_NAME_RC_SMOOTHING "rc_smoothing"
 #define PARAM_NAME_RC_SMOOTHING_AUTO_FACTOR "rc_smoothing_auto_factor"
 #define PARAM_NAME_RC_SMOOTHING_AUTO_FACTOR_THROTTLE "rc_smoothing_auto_factor_throttle"
@@ -117,7 +118,6 @@
 #define PARAM_NAME_THROTTLE_BOOST "throttle_boost"
 #define PARAM_NAME_THROTTLE_BOOST_CUTOFF "throttle_boost_cutoff"
 #define PARAM_NAME_THRUST_LINEARIZATION "thrust_linear"
-#define PARAM_NAME_USE_INTEGRATED_YAW "use_integrated_yaw"
 #define PARAM_NAME_D_MAX_GAIN "d_max_gain"
 #define PARAM_NAME_D_MAX_ADVANCE "d_max_advance"
 #define PARAM_NAME_MOTOR_OUTPUT_LIMIT "motor_output_limit"
@@ -178,10 +178,6 @@
 #define PARAM_NAME_AP_MAX_ANGLE "ap_max_angle"
 
 // Velocity-based position control with drag compensation
-#define PARAM_NAME_AP_VELOCITY_CONTROL_ENABLE "ap_velocity_control_enable"
-#define PARAM_NAME_AP_VELOCITY_P "ap_velocity_p"
-#define PARAM_NAME_AP_VELOCITY_I "ap_velocity_i"
-#define PARAM_NAME_AP_VELOCITY_D "ap_velocity_d"
 #define PARAM_NAME_AP_VELOCITY_DRAG_COEFF "ap_velocity_drag_coeff"
 #define PARAM_NAME_AP_MAX_VELOCITY "ap_max_velocity"
 

@@ -170,6 +170,7 @@ cli_unittest_SRC := \
 cli_unittest_DEFINES := \
 		USE_OSD= \
 		USE_CLI= \
+		USE_MSP_CLI_COMMAND= \
 		SystemCoreClock=1000000
 
 cms_unittest_SRC := \
@@ -338,6 +339,14 @@ pg_unittest_SRC := \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/pg/pg.c
 
+
+rc_unittest_SRC := \
+		$(USER_DIR)/fc/rc.c \
+		$(USER_DIR)/fc/controlrate_profile.c \
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/maths.c
 
 rc_controls_unittest_SRC := \
 		$(USER_DIR)/fc/rc_controls.c \
@@ -637,6 +646,18 @@ osd_nav_map_unittest_DEFINES := \
 		ENABLE_FLIGHT_PLAN=1 \
 		USE_OSD= \
 		USE_OSD_NAV_MAP=
+
+mavlink_mission_unittest_SRC := \
+		$(USER_DIR)/telemetry/mavlink_mission.c \
+		$(USER_DIR)/pg/autopilot.c \
+		$(USER_DIR)/pg/flight_plan.c
+
+mavlink_mission_unittest_DEFINES := \
+		USE_GPS= \
+		USE_FLIGHT_PLAN= \
+		ENABLE_FLIGHT_PLAN=1 \
+		USE_TELEMETRY_MAVLINK= \
+		ENABLE_TELEMETRY_MAVLINK_MISSION=1
 
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE=

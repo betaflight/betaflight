@@ -39,6 +39,27 @@
 
 #include "sensors/gyro.h"
 
+// When ENABLE_BMI270_ALIGN_AS_ICM is set, rotate the BMI270 raw data by CW90 so it
+// presents identical axes to an ICM42688 and one board alignment serves either populated
+// chip. Opt-in per config (#define ENABLE_BMI270_ALIGN_AS_ICM 1); off by default so no
+// existing board changes frame unless its config explicitly asks for it.
+#if !defined(ENABLE_BMI270_ALIGN_AS_ICM)
+#define ENABLE_BMI270_ALIGN_AS_ICM 0
+#endif
+
+static inline void bmi270StoreAxes(int16_t *dst, int16_t x, int16_t y, int16_t z)
+{
+#if ENABLE_BMI270_ALIGN_AS_ICM
+    dst[X] = y;
+    dst[Y] = (x == INT16_MIN) ? INT16_MAX : -x;
+    dst[Z] = z;
+#else
+    dst[X] = x;
+    dst[Y] = y;
+    dst[Z] = z;
+#endif
+}
+
 // 10 MHz max SPI frequency
 #define BMI270_MAX_SPI_CLK_HZ 10000000
 
@@ -359,9 +380,7 @@ static bool bmi270AccRead(accDev_t *acc)
 
         // This data was read from the gyro, which is the same SPI device as the acc
         int16_t *accData = (int16_t *)dev->rxBuf;
-        acc->ADCRaw[X] = accData[1];
-        acc->ADCRaw[Y] = accData[2];
-        acc->ADCRaw[Z] = accData[3];
+        bmi270StoreAxes(acc->ADCRaw, accData[1], accData[2], accData[3]);
         break;
     }
 
@@ -429,9 +448,7 @@ static bool bmi270GyroReadRegister(gyroDev_t *gyro)
         // Wait for completion
         spiWait(dev);
 
-        gyro->gyroADCRaw[X] = gyroData[1];
-        gyro->gyroADCRaw[Y] = gyroData[2];
-        gyro->gyroADCRaw[Z] = gyroData[3];
+        bmi270StoreAxes(gyro->gyroADCRaw, gyroData[1], gyroData[2], gyroData[3]);
 
         break;
     }
@@ -440,9 +457,7 @@ static bool bmi270GyroReadRegister(gyroDev_t *gyro)
     {
         // If read was triggered in interrupt don't bother waiting. The worst that could happen is that we pick
         // up an old value.
-        gyro->gyroADCRaw[X] = gyroData[4];
-        gyro->gyroADCRaw[Y] = gyroData[5];
-        gyro->gyroADCRaw[Z] = gyroData[6];
+        bmi270StoreAxes(gyro->gyroADCRaw, gyroData[4], gyroData[5], gyroData[6]);
         break;
     }
 
@@ -492,9 +507,7 @@ static bool bmi270GyroReadFifo(gyroDev_t *gyro)
         // that data is available, but this safeguard is needed to prevent bad things in
         // case it does happen.
         if ((gyroX != INT16_MIN) || (gyroY != INT16_MIN) || (gyroZ != INT16_MIN)) {
-            gyro->gyroADCRaw[X] = gyroX;
-            gyro->gyroADCRaw[Y] = gyroY;
-            gyro->gyroADCRaw[Z] = gyroZ;
+            bmi270StoreAxes(gyro->gyroADCRaw, gyroX, gyroY, gyroZ);
             dataRead = true;
         }
         fifoLength -= BMI270_FIFO_FRAME_SIZE;

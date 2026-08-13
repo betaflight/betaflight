@@ -590,6 +590,41 @@ TEST_F(FlightPlanRescueTest, FullRescueRunToLanding)
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_COMPLETE);
 }
 
+// --- Fallback emergency descent (switch rescue: no fix, or plan aborted) ---
+
+TEST_F(FlightPlanRescueTest, RescueDescentDrivesLandingAndDisarms)
+{
+    g_stubMicros = 1'000'000;
+    EXPECT_FALSE(flightPlanNavIsRescueDescentActive());
+
+    // Runs independently of the executor: alt-hold owns the throttle, this only
+    // detects touchdown. Descent established.
+    g_stubEstimate.velocity.v[ENU_U] = -40.0f; // cm/s
+    flightPlanNavRescueDescent(true, g_stubMicros);
+    EXPECT_TRUE(flightPlanNavIsRescueDescentActive());
+    EXPECT_FALSE(flightPlanNavIsActive());
+    EXPECT_EQ(g_disarmCalls, 0);
+
+    // Touchdown: descent stops and the vehicle is quiet, then the timer expires.
+    g_stubEstimate.velocity.v[ENU_U] = 0.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavRescueDescent(true, g_stubMicros);
+    EXPECT_EQ(g_disarmCalls, 0);
+
+    g_stubMicros += 1'100'000; // past landingDetectionTime (1 s)
+    flightPlanNavRescueDescent(true, g_stubMicros);
+    EXPECT_EQ(g_disarmCalls, 1);
+    EXPECT_EQ(g_lastDisarmReason, DISARM_REASON_LANDING);
+}
+
+TEST_F(FlightPlanRescueTest, RescueDescentReleaseClears)
+{
+    flightPlanNavRescueDescent(true, g_stubMicros);
+    EXPECT_TRUE(flightPlanNavIsRescueDescentActive());
+    flightPlanNavRescueDescent(false, g_stubMicros);
+    EXPECT_FALSE(flightPlanNavIsRescueDescentActive());
+}
+
 // --- No staging ---
 
 TEST_F(FlightPlanRescueTest, EngageWithoutStagedRunsPgMission)

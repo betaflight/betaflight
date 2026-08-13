@@ -44,6 +44,8 @@
 #include "drivers/serial.h"
 #include "drivers/serial_usb_vcp.h"
 
+#include "scheduler/scheduler.h"
+
 static void USB_DevUserHandler(USBD_INFO_T* usbInfo, uint8_t userStatus);
 
 extern USBD_CDC_INTERFACE_T USBD_CDC_INTERFACE;
@@ -123,6 +125,11 @@ static void usbVcpWriteBuf(serialPort_t *instance, const void *data, int count)
         count -= txed;
         p += txed;
 
+        if (count > 0) {
+            // USB backpressure wait is not task execution time.
+            schedulerIgnoreTaskExecTime();
+        }
+
         if (millis() - start > USB_TIMEOUT) {
             break;
         }
@@ -148,6 +155,11 @@ static bool usbVcpFlush(vcpPort_t *port)
         uint32_t txed = CDC_Send_DATA(p, count);
         count -= txed;
         p += txed;
+
+        if (count > 0) {
+            // USB backpressure wait is not task execution time.
+            schedulerIgnoreTaskExecTime();
+        }
 
         if (millis() - start > USB_TIMEOUT) {
             break;
