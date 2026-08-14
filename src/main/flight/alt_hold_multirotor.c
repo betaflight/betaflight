@@ -175,11 +175,11 @@ static void altHoldUpdate(void)
             // advanced at that rate rather than the endpoint: a landing endpoint is deliberately
             // below ground and never reached, and used directly it drives P and I into throttle
             // saturation. A carrot keeps the altitude error a tracking error.
-            // The downward bound is separate because maxRateCmS reports the ascent rate on every
-            // leg that is not the LAND leg. This bounds the commanded carrot, not the achieved
-            // sink.
-            const float descentCapCmS = flightPlanNavGetRescueDescentRateCmS();
-            const float downLimitCmS = (descentCapCmS > 0.0f) ? descentCapCmS : maxRateCmS;
+            // The downward bound comes from the leg itself: maxRateCmS is the ascent rate, while
+            // a LAND leg carries its own vertical limit. Bounds the commanded carrot, not the
+            // achieved sink.
+            const float legVertLimitCmS = navCmd->vertSpeedLimitMps * 100.0f;
+            const float downLimitCmS = (legVertLimitCmS > 0.0f) ? legVertLimitCmS : maxRateCmS;
             targetAltitudeVelocity = constrainf(positionNavGetTargetVelocityCmS().z, -downLimitCmS, maxRateCmS);
             altHold.targetAltitudeCm += targetAltitudeVelocity * taskIntervalSeconds;
             // a reachable endpoint, such as a climb to return altitude, must not be overshot

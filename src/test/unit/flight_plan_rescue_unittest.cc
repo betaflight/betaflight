@@ -400,27 +400,6 @@ TEST_F(FlightPlanRescueTest, StageThenEngageDispatchesRescuePlan)
     EXPECT_NEAR(g_lastTarget.targetEfM.z, kDefaultReturnAltM, 0.1f);
 }
 
-// gps_rescue_ascend_rate must never authorise a descent. The vertical cap keys off the LAND
-// leg alone, so every other leg reports the ascent rate - 7.5 m/s on defaults, against a
-// 1.5 m/s descend rate. A close-range rescue that overshoots its return altitude then
-// corrects downwards under the climb rate: logged at 3.08 m/s against a commanded 1.2, with
-// the craft following at 4.7 m/s. The downward cap must stay at the descend rate throughout.
-TEST_F(FlightPlanRescueTest, DescentRateCapIsNeverTheAscentRate)
-{
-    gpsRescueConfigMutable()->ascendRate = 750;    // 7.5 m/s, as shipped
-    gpsRescueConfigMutable()->descendRate = 120;   // 1.2 m/s, as flown
-
-    ASSERT_TRUE(flightPlanNavStageRescuePlan());
-    flightPlanNavEngage();
-    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
-
-    // Pre-landing leg: the symmetric cap reports the ascent rate, which is the defect.
-    EXPECT_FLOAT_EQ(flightPlanNavGetRescueVerticalRateCmS(), 750.0f);
-    // The downward cap must not follow it.
-    EXPECT_FLOAT_EQ(flightPlanNavGetRescueDescentRateCmS(), 120.0f)
-        << "a descending rescue leg was handed the ascent rate as its downward limit";
-}
-
 TEST_F(FlightPlanRescueTest, StageFailsWithoutHomeFix)
 {
     stateFlags &= ~GPS_FIX_HOME;

@@ -1211,20 +1211,6 @@ float flightPlanNavGetRescueVerticalRateCmS(void)
     return 0.0f;
 }
 
-// The ascent rate must never authorise a descent. gps_rescue_ascend_rate defaults to
-// 7.5 m/s against a 1.5 m/s descend rate, and the cap above keys off the LAND leg alone,
-// so any other leg that happens to be descending is handed the climb rate as its downward
-// bound. Defensive: the injected plans build return altitudes with
-// MAX(..., currentAltCm) so they do not command an en-route descent, and no logged flight
-// has exercised this path. It can only ever lower the bound, never raise it.
-float flightPlanNavGetRescueDescentRateCmS(void)
-{
-    if (fp.rescueDescentActive || (fp.active && fp.isRescuePlan)) {
-        return (float)gpsRescueConfig()->descendRate;
-    }
-    return 0.0f;
-}
-
 // Altitude-only fallback descent. Runs independently of the executor (fp.active):
 // the switch-rescue staging-failure case has no GPS fix at all, so the position
 // controller cannot run. alt-hold owns the throttle (its landing branch, gated on
