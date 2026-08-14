@@ -370,6 +370,93 @@ TEST(SerialFeatureMap, SensorPortTransportFollowsHardwareSelection)
     EXPECT_FALSE(serialSensorPortUsesMsp());
 }
 
+TEST(SerialFeatureMap, NativeSerialSensorWinsOverAnMspOneInBothOrders)
+{
+    // One declared port carries one module, so a pair of selections that
+    // disagree is not a real wiring.  The native driver takes the port during
+    // sensorsAutodetect() whichever way round it is configured, so no MSP slot
+    // may be reserved for it.
+    resetAllConfigs();
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF01;
+    opticalflowConfigMutable()->opticalflow_hardware = OPTICALFLOW_UPT1;
+    EXPECT_FALSE(serialSensorPortUsesMsp());
+
+    resetAllConfigs();
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_UPT1;
+    opticalflowConfigMutable()->opticalflow_hardware = OPTICALFLOW_MT;
+    EXPECT_FALSE(serialSensorPortUsesMsp());
+
+    // HCSR04 is pin-driven and claims no UART, so it does not veto anything.
+    resetAllConfigs();
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_HCSR04;
+    opticalflowConfigMutable()->opticalflow_hardware = OPTICALFLOW_MT;
+    EXPECT_TRUE(serialSensorPortUsesMsp());
+}
+
+TEST(SerialFeatureMap, SensorPortAssignedFirstStillHoldsItsMspSlot)
+{
+    // The order that used to defeat the budget check: the sensor claims no
+    // msp_uart[] slot, so counting only the mask being applied let every
+    // remaining slot be handed out afterwards and left the sensor silent.
+    resetAllConfigs();
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF01;
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR));
+
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USB_VCP, FUNCTION_MSP));
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_MSP));
+    // The third would take the entry the sensor needs at boot.
+    EXPECT_FALSE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_MSP));
+
+    // The sensor keeps its port, and the refused write changed nothing.
+    EXPECT_EQ(SERIAL_PORT_UART5, rangefinderConfig()->rangefinder_uart);
+    EXPECT_EQ(0u, serialSynthesizeFunctionMask(SERIAL_PORT_USART3));
+
+    // A native serial sensor reserves nothing, so the same board fits three.
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TFMINI;
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_MSP));
+}
+
+TEST(SerialFeatureMap, ClearingTheSensorPortReleasesItsReservation)
+{
+    // Removing FUNCTION_LIDAR from the port that holds it must not go on
+    // reserving a slot for a sensor that no longer has a port.
+    resetAllConfigs();
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF02;
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR));
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USB_VCP, FUNCTION_MSP));
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_MSP));
+
+    // Hand the sensor's own port back, then the freed budget is spendable.
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_NONE));
+    EXPECT_EQ(SERIAL_PORT_NONE, rangefinderConfig()->rangefinder_uart);
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_MSP));
+}
+
+TEST(SerialFeatureMap, BackfillDoesNotReserveForTheSensor)
+{
+    // An over-budget stored config is well-formed and boots today with a deaf
+    // sensor.  Migration must carry it across intact rather than reject a port
+    // and drop its feature claims.
+    resetAllConfigs();
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF01;
+
+    serialConfigMutable()->portConfigs[0].identifier = SERIAL_PORT_USB_VCP;
+    serialConfigMutable()->portConfigs[0].functionMask = FUNCTION_MSP;
+    serialConfigMutable()->portConfigs[1].identifier = SERIAL_PORT_USART1;
+    serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_MSP;
+    serialConfigMutable()->portConfigs[2].identifier = SERIAL_PORT_USART3;
+    serialConfigMutable()->portConfigs[2].functionMask = FUNCTION_MSP;
+    serialConfigMutable()->portConfigs[3].identifier = SERIAL_PORT_UART5;
+    serialConfigMutable()->portConfigs[3].functionMask = FUNCTION_LIDAR;
+
+    serialBackfillFeatureFields();
+
+    EXPECT_EQ(SERIAL_PORT_USB_VCP, mspConfig()->msp_uart[0]);
+    EXPECT_EQ(SERIAL_PORT_USART1, mspConfig()->msp_uart[1]);
+    EXPECT_EQ(SERIAL_PORT_USART3, mspConfig()->msp_uart[2]);
+    EXPECT_EQ(SERIAL_PORT_UART5, rangefinderConfig()->rangefinder_uart);
+}
+
 TEST(SerialFeatureMap, SensorPortOnMspTransportNeedsAnMspSlotFree)
 {
     resetAllConfigs();

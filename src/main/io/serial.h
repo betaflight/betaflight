@@ -51,8 +51,9 @@ typedef enum {
     FUNCTION_LIDAR               = (1 << 15), // 32768 - the serial sensor port: the UART the rangefinder / optical flow module is
                                               // wired to (was FUNCTION_LIDAR_TF).  Names the port, not the transport - TF, Nooploop
                                               // and UPT1 open it directly, the MT family reports over MSP and has one opened for it
-                                              // by mspSerialAllocatePorts().  The driver is selected via rangefinder_hardware /
-                                              // opticalflow_hardware, never from this bit.
+                                              // by mspSerialAllocatePorts() - at that port's msp_baudrateIndex and under the global
+                                              // mspConfig()->halfDuplex, neither of which a LIDAR-only port surfaces.  The driver is
+                                              // selected via rangefinder_hardware / opticalflow_hardware, never from this bit.
     FUNCTION_FRSKY_OSD           = (1 << 16), // 65536
     FUNCTION_VTX_MSP             = (1 << 17), // 131072
     FUNCTION_GIMBAL              = (1 << 18), // 262144

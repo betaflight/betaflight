@@ -654,14 +654,13 @@ bool mspSerialIsConfiguratorActive(void)
             continue;
         }
 
-        const serialPortConfig_t *cfg =
-            serialFindPortConfiguration(mspPort->port->identifier);
-        if (!cfg) {
-            continue;
-        }
-
-        // Skip ports carrying a peripheral rather than a configurator
-        if (cfg->functionMask & (FUNCTION_VTX_MSP | FUNCTION_LIDAR)) {
+        // Skip ports carrying a peripheral rather than a configurator.  Read
+        // through the synthesized view, as every other port lookup in this
+        // file does - the stored mask agrees with it today, but only because
+        // nothing writes a feature's UART field without going through
+        // serialApplyFunctionMask().
+        if (serialSynthesizeFunctionMask(mspPort->port->identifier)
+            & (FUNCTION_VTX_MSP | FUNCTION_LIDAR)) {
             continue;
         }
 
