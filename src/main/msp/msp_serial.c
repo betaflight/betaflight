@@ -35,6 +35,7 @@
 #include "drivers/system.h"
 
 #include "io/displayport_msp.h"
+#include "io/serial_feature_map.h"
 
 #include "msp/msp.h"
 
@@ -77,7 +78,8 @@ void mspSerialAllocatePorts(void)
 #endif
         }
 
-        serialPort_t *serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, NULL, baudRates[portConfig->msp_baudrateIndex], MODE_RXTX, options);
+        const uint8_t baudRateIndex = serialSynthesizePortBaud(portConfig->identifier, SERIAL_BAUD_MSP);
+        serialPort_t *serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, NULL, baudRates[baudRateIndex], MODE_RXTX, options);
         if (serialPort) {
             bool sharedWithTelemetry = isSerialPortShared(portConfig, FUNCTION_MSP, TELEMETRY_PORT_FUNCTIONS_MASK);
             resetMspPort(mspPort, serialPort, sharedWithTelemetry);

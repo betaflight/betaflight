@@ -44,6 +44,7 @@ extern "C" {
     #include "io/beeper.h"
     #include "io/ledstrip.h"
     #include "io/serial.h"
+    #include "io/serial_feature_map.h"
     #include "io/vtx.h"
     #include "msp/msp.h"
     #include "msp/msp_box.h"
@@ -230,13 +231,33 @@ int32_t taskGuardCycles;
 
 uint32_t micros(void) {return 0;}
 
-// serial_feature_map decomposer is referenced by cliSerial(); the CLI unit
-// tests do not exercise it, so a stub is sufficient.
+// serial_feature_map is referenced by cliSerial() and printSerial(); the CLI
+// unit tests do not exercise them, so stubs are sufficient.
 bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
 {
     (void)identifier;
     (void)mask;
     return true;
+}
+
+uint8_t serialDefaultPortBaud(serialBaudClass_e baudClass)
+{
+    (void)baudClass;
+    return BAUD_115200;
+}
+
+uint8_t serialSynthesizePortBaud(serialPortIdentifier_e identifier, serialBaudClass_e baudClass)
+{
+    (void)identifier;
+    (void)baudClass;
+    return BAUD_115200;
+}
+
+void serialApplyPortBaud(serialPortIdentifier_e identifier, serialBaudClass_e baudClass, uint8_t baudRateIndex)
+{
+    (void)identifier;
+    (void)baudClass;
+    (void)baudRateIndex;
 }
 
 int32_t getAmperage(void)

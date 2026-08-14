@@ -74,10 +74,6 @@ static serialPort_t serialTestInstance;
 static serialPortConfig_t serialTestInstanceConfig = {
     .functionMask = 0,
     .identifier = SERIAL_PORT_DUMMY_IDENTIFIER,
-    .msp_baudrateIndex = 0,
-    .gps_baudrateIndex = 0,
-    .blackbox_baudrateIndex = 0,
-    .telemetry_baudrateIndex = 0,
 };
 
 static serialReceiveCallbackPtr stub_serialRxCallback;

@@ -90,7 +90,24 @@ void pgResetFn_telemetryConfig(telemetryConfig_t *telemetryConfig)
     for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
         telemetryConfig->providers[i].protocol = TELEMETRY_PROTOCOL_NONE;
         telemetryConfig->providers[i].uart = SERIAL_PORT_NONE;
+        telemetryConfig->providers[i].baud = BAUD_AUTO;
     }
+}
+
+uint8_t telemetryProviderBaud(uint8_t protocol, serialPortIdentifier_e identifier)
+{
+    if (identifier == SERIAL_PORT_NONE) {
+        return BAUD_AUTO;
+    }
+
+    for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
+        const telemetryProvider_t *provider = &telemetryConfig()->providers[i];
+        if (provider->protocol == protocol && provider->uart == identifier) {
+            return provider->baud;
+        }
+    }
+
+    return BAUD_AUTO;
 }
 
 void telemetryInit(void)

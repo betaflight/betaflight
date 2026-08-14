@@ -55,6 +55,7 @@ typedef enum {
 typedef struct telemetryProvider_s {
     uint8_t protocol;  // telemetryProtocol_e
     int8_t uart;       // serialPortIdentifier_e; SERIAL_PORT_NONE = unused slot
+    uint8_t baud;      // baudRate_e index; BAUD_AUTO lets the protocol pick its own default
 } telemetryProvider_t;
 
 // One slot per protocol bit in serialPortFunction_e (FrSky Hub, HoTT, LTM,
@@ -119,6 +120,11 @@ typedef struct telemetryConfig_s {
 PG_DECLARE(telemetryConfig_t, telemetryConfig);
 
 extern serialPort_t *telemetrySharedPort;
+
+// Baud configured for a given protocol on a given port, or BAUD_AUTO when no
+// slot matches.  Lets a consumer that shares a port with a telemetry provider
+// (serial MAVLink RX) pick up that provider's rate without reading the mask.
+uint8_t telemetryProviderBaud(uint8_t protocol, serialPortIdentifier_e identifier);
 
 void telemetryInit(void);
 bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig, const SerialRXType serialrxProvider);

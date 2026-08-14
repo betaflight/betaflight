@@ -472,6 +472,132 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
     return true;
 }
 
+// Defaults a port reports when no feature claims it for the class.  These
+// match the legacy pgResetFn_serialConfig values so an untouched config
+// synthesizes back to exactly what it stored.
+uint8_t serialDefaultPortBaud(serialBaudClass_e baudClass)
+{
+    switch (baudClass) {
+    case SERIAL_BAUD_MSP:
+        return BAUD_115200;
+    case SERIAL_BAUD_GPS:
+        return BAUD_57600;
+    case SERIAL_BAUD_BLACKBOX:
+        return BAUD_115200;
+    case SERIAL_BAUD_TELEMETRY:
+    default:
+        return BAUD_AUTO;
+    }
+}
+
+uint8_t serialSynthesizePortBaud(serialPortIdentifier_e identifier, serialBaudClass_e baudClass)
+{
+    if (identifier == SERIAL_PORT_NONE) {
+        return serialDefaultPortBaud(baudClass);
+    }
+
+    switch (baudClass) {
+    case SERIAL_BAUD_MSP:
+        for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+            if (mspConfig()->msp_uart[i] == identifier) {
+                return mspConfig()->msp_baud[i];
+            }
+        }
+        break;
+
+#ifdef USE_GPS
+    case SERIAL_BAUD_GPS:
+        if (gpsConfig()->gps_uart == identifier) {
+            return gpsConfig()->gps_baud;
+        }
+        break;
+#endif
+
+#ifdef USE_BLACKBOX
+    case SERIAL_BAUD_BLACKBOX:
+        if (blackboxConfig()->blackbox_uart == identifier) {
+            return blackboxConfig()->blackbox_baud;
+        }
+        break;
+#endif
+
+    case SERIAL_BAUD_TELEMETRY:
+#ifdef USE_TELEMETRY
+        for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
+            if (telemetryConfig()->providers[i].uart == identifier) {
+                return telemetryConfig()->providers[i].baud;
+            }
+        }
+#endif
+#ifdef USE_OSD
+        // OSD custom text historically rode the port's telemetry baud, so it
+        // still reports through this class to keep the legacy view intact.
+        if (osdConfig()->osd_custom_text_uart == identifier) {
+            return osdConfig()->osd_custom_text_baud;
+        }
+#endif
+        break;
+
+    default:
+        break;
+    }
+
+    return serialDefaultPortBaud(baudClass);
+}
+
+void serialApplyPortBaud(serialPortIdentifier_e identifier, serialBaudClass_e baudClass, uint8_t baudRateIndex)
+{
+    if (identifier == SERIAL_PORT_NONE) {
+        return;
+    }
+
+    switch (baudClass) {
+    case SERIAL_BAUD_MSP:
+        for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+            if (mspConfig()->msp_uart[i] == identifier) {
+                mspConfigMutable()->msp_baud[i] = baudRateIndex;
+            }
+        }
+        break;
+
+#ifdef USE_GPS
+    case SERIAL_BAUD_GPS:
+        if (gpsConfig()->gps_uart == identifier) {
+            gpsConfigMutable()->gps_baud = baudRateIndex;
+        }
+        break;
+#endif
+
+#ifdef USE_BLACKBOX
+    case SERIAL_BAUD_BLACKBOX:
+        if (blackboxConfig()->blackbox_uart == identifier) {
+            blackboxConfigMutable()->blackbox_baud = baudRateIndex;
+        }
+        break;
+#endif
+
+    case SERIAL_BAUD_TELEMETRY:
+#ifdef USE_TELEMETRY
+        // Every provider on the port takes the value: the legacy layout held
+        // one telemetry baud per port, so a write cannot mean anything else.
+        for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
+            if (telemetryConfig()->providers[i].uart == identifier) {
+                telemetryConfigMutable()->providers[i].baud = baudRateIndex;
+            }
+        }
+#endif
+#ifdef USE_OSD
+        if (osdConfig()->osd_custom_text_uart == identifier) {
+            osdConfigMutable()->osd_custom_text_baud = baudRateIndex;
+        }
+#endif
+        break;
+
+    default:
+        break;
+    }
+}
+
 void serialBackfillFeatureFields(void)
 {
     // Apply every port's mask unconditionally: apply-with-mask=0 runs the

@@ -188,8 +188,13 @@ bool mavlinkRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         return false;
     }
 
-    baudRate_e baudRateIndex = portConfig->telemetry_baudrateIndex;
-    if (baudRateIndex == BAUD_AUTO || (portConfig->functionMask & FUNCTION_TELEMETRY_MAVLINK) == 0) {
+    // Share the rate of a MAVLink telemetry provider on this same port, if one
+    // is configured; otherwise the port is RX-only and takes the ELRS default.
+    baudRate_e baudRateIndex = BAUD_AUTO;
+#ifdef USE_TELEMETRY_MAVLINK
+    baudRateIndex = telemetryProviderBaud(TELEMETRY_PROTOCOL_MAVLINK, portConfig->identifier);
+#endif
+    if (baudRateIndex == BAUD_AUTO) {
         // default rate for ELRS TX module
         baudRateIndex = MAVLINK_BAUD_RATE_INDEX;
     }

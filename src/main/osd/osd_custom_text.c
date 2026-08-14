@@ -30,6 +30,7 @@
 #include "common/time.h"
 #include "drivers/serial.h"
 #include "io/serial.h"
+#include "osd/osd.h"
 #include "osd/osd_custom_text.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -56,9 +57,8 @@ bool osdCustomTextInit(void)
         return false;
     }
 
-    // Use telemetry baud rate index for OSD custom text
     // Validate baud rate index and use safe default if out of range
-    uint8_t baudrateIndex = portConfig->telemetry_baudrateIndex;
+    uint8_t baudrateIndex = osdConfig()->osd_custom_text_baud;
     if (baudrateIndex >= BAUD_COUNT) {
         baudrateIndex = BAUD_115200; // Safe default
     }

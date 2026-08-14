@@ -63,6 +63,7 @@
 #include "flight/position.h"
 
 #include "io/serial.h"
+#include "io/serial_feature_map.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
@@ -849,7 +850,7 @@ void configureMAVLinkTelemetryPort(void)
         return;
     }
 
-    baudRate_e baudRateIndex = portConfig->telemetry_baudrateIndex;
+    baudRate_e baudRateIndex = serialSynthesizePortBaud(portConfig->identifier, SERIAL_BAUD_TELEMETRY);
     if (baudRateIndex == BAUD_AUTO) {
         // default rate for minimOSD
         baudRateIndex = BAUD_57600;

@@ -171,10 +171,6 @@ serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e s
 typedef struct serialPortConfig_s {
     uint32_t functionMask;
     int8_t identifier;
-    uint8_t msp_baudrateIndex;
-    uint8_t gps_baudrateIndex;
-    uint8_t blackbox_baudrateIndex;
-    uint8_t telemetry_baudrateIndex; // not used for all telemetry systems, e.g. HoTT only works at 19200.
 } serialPortConfig_t;
 
 typedef struct serialConfig_s {

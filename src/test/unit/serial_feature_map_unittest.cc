@@ -75,16 +75,19 @@ void resetAllConfigs(void)
     memset(mspConfigMutable(), 0, sizeof(*mspConfigMutable()));
     for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
         mspConfigMutable()->msp_uart[i] = SERIAL_PORT_NONE;
+        mspConfigMutable()->msp_baud[i] = BAUD_115200;
     }
 
     memset(gpsConfigMutable(), 0, sizeof(*gpsConfigMutable()));
     gpsConfigMutable()->gps_uart = SERIAL_PORT_NONE;
+    gpsConfigMutable()->gps_baud = BAUD_57600;
 
     memset(rxConfigMutable(), 0, sizeof(*rxConfigMutable()));
     rxConfigMutable()->rx_uart = SERIAL_PORT_NONE;
 
     memset(blackboxConfigMutable(), 0, sizeof(*blackboxConfigMutable()));
     blackboxConfigMutable()->blackbox_uart = SERIAL_PORT_NONE;
+    blackboxConfigMutable()->blackbox_baud = BAUD_115200;
 
     memset(escSensorConfigMutable(), 0, sizeof(*escSensorConfigMutable()));
     escSensorConfigMutable()->esc_sensor_uart = SERIAL_PORT_NONE;
@@ -105,11 +108,13 @@ void resetAllConfigs(void)
     memset(osdConfigMutable(), 0, sizeof(*osdConfigMutable()));
     osdConfigMutable()->osd_uart = SERIAL_PORT_NONE;
     osdConfigMutable()->osd_custom_text_uart = SERIAL_PORT_NONE;
+    osdConfigMutable()->osd_custom_text_baud = BAUD_AUTO;
 
     memset(telemetryConfigMutable(), 0, sizeof(*telemetryConfigMutable()));
     for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
         telemetryConfigMutable()->providers[i].protocol = TELEMETRY_PROTOCOL_NONE;
         telemetryConfigMutable()->providers[i].uart = SERIAL_PORT_NONE;
+        telemetryConfigMutable()->providers[i].baud = BAUD_AUTO;
     }
 
     memset(serialConfigMutable(), 0, sizeof(*serialConfigMutable()));
@@ -366,4 +371,140 @@ TEST(SerialFeatureMap, BackfillClearsStaleFeatureFieldsForZeroMaskPort)
 
     EXPECT_EQ(SERIAL_PORT_NONE, gpsConfig()->gps_uart);
     EXPECT_EQ(0u, serialSynthesizeFunctionMask(SERIAL_PORT_USART3));
+}
+
+TEST(SerialFeatureMap, UnclaimedPortReportsClassDefaults)
+{
+    resetAllConfigs();
+
+    // Matches the legacy pgResetFn_serialConfig values, so an untouched config
+    // still round-trips through `dump` and MSP unchanged.
+    EXPECT_EQ(BAUD_115200, serialDefaultPortBaud(SERIAL_BAUD_MSP));
+    EXPECT_EQ(BAUD_57600,  serialDefaultPortBaud(SERIAL_BAUD_GPS));
+    EXPECT_EQ(BAUD_AUTO,   serialDefaultPortBaud(SERIAL_BAUD_TELEMETRY));
+    EXPECT_EQ(BAUD_115200, serialDefaultPortBaud(SERIAL_BAUD_BLACKBOX));
+
+    for (unsigned c = 0; c < SERIAL_BAUD_CLASS_COUNT; c++) {
+        EXPECT_EQ(serialDefaultPortBaud((serialBaudClass_e)c),
+                  serialSynthesizePortBaud(SERIAL_PORT_UART4, (serialBaudClass_e)c));
+    }
+}
+
+TEST(SerialFeatureMap, BaudReadsFromOwningFeature)
+{
+    resetAllConfigs();
+
+    gpsConfigMutable()->gps_uart = SERIAL_PORT_UART4;
+    gpsConfigMutable()->gps_baud = BAUD_115200;
+    EXPECT_EQ(BAUD_115200, serialSynthesizePortBaud(SERIAL_PORT_UART4, SERIAL_BAUD_GPS));
+
+    // A port the feature does not own keeps reporting the class default.
+    EXPECT_EQ(BAUD_57600, serialSynthesizePortBaud(SERIAL_PORT_UART5, SERIAL_BAUD_GPS));
+
+    blackboxConfigMutable()->blackbox_uart = SERIAL_PORT_UART5;
+    blackboxConfigMutable()->blackbox_baud = BAUD_230400;
+    EXPECT_EQ(BAUD_230400, serialSynthesizePortBaud(SERIAL_PORT_UART5, SERIAL_BAUD_BLACKBOX));
+}
+
+TEST(SerialFeatureMap, MspBaudIsPerSlot)
+{
+    resetAllConfigs();
+
+    mspConfigMutable()->msp_uart[0] = SERIAL_PORT_UART4;
+    mspConfigMutable()->msp_baud[0] = BAUD_115200;
+    mspConfigMutable()->msp_uart[1] = SERIAL_PORT_UART5;
+    mspConfigMutable()->msp_baud[1] = BAUD_500000;
+
+    EXPECT_EQ(BAUD_115200, serialSynthesizePortBaud(SERIAL_PORT_UART4, SERIAL_BAUD_MSP));
+    EXPECT_EQ(BAUD_500000, serialSynthesizePortBaud(SERIAL_PORT_UART5, SERIAL_BAUD_MSP));
+
+    // A write targets only the slot holding that port.
+    serialApplyPortBaud(SERIAL_PORT_UART5, SERIAL_BAUD_MSP, BAUD_57600);
+    EXPECT_EQ(BAUD_115200, mspConfig()->msp_baud[0]);
+    EXPECT_EQ(BAUD_57600,  mspConfig()->msp_baud[1]);
+}
+
+TEST(SerialFeatureMap, TelemetryBaudIsPerProviderSlot)
+{
+    resetAllConfigs();
+
+    telemetryConfigMutable()->providers[0].protocol = TELEMETRY_PROTOCOL_LTM;
+    telemetryConfigMutable()->providers[0].uart = SERIAL_PORT_UART4;
+    telemetryConfigMutable()->providers[0].baud = BAUD_19200;
+    telemetryConfigMutable()->providers[1].protocol = TELEMETRY_PROTOCOL_MAVLINK;
+    telemetryConfigMutable()->providers[1].uart = SERIAL_PORT_UART5;
+    telemetryConfigMutable()->providers[1].baud = BAUD_57600;
+
+    EXPECT_EQ(BAUD_19200, serialSynthesizePortBaud(SERIAL_PORT_UART4, SERIAL_BAUD_TELEMETRY));
+    EXPECT_EQ(BAUD_57600, serialSynthesizePortBaud(SERIAL_PORT_UART5, SERIAL_BAUD_TELEMETRY));
+}
+
+TEST(SerialFeatureMap, TelemetryBaudWriteHitsEveryProviderOnThePort)
+{
+    resetAllConfigs();
+
+    // The legacy layout held one telemetry baud per port, so a write through
+    // that view must reach every provider sharing the port.
+    telemetryConfigMutable()->providers[0].protocol = TELEMETRY_PROTOCOL_LTM;
+    telemetryConfigMutable()->providers[0].uart = SERIAL_PORT_UART4;
+    telemetryConfigMutable()->providers[1].protocol = TELEMETRY_PROTOCOL_MAVLINK;
+    telemetryConfigMutable()->providers[1].uart = SERIAL_PORT_UART4;
+    telemetryConfigMutable()->providers[2].protocol = TELEMETRY_PROTOCOL_LTM;
+    telemetryConfigMutable()->providers[2].uart = SERIAL_PORT_UART5;
+
+    serialApplyPortBaud(SERIAL_PORT_UART4, SERIAL_BAUD_TELEMETRY, BAUD_38400);
+
+    EXPECT_EQ(BAUD_38400, telemetryConfig()->providers[0].baud);
+    EXPECT_EQ(BAUD_38400, telemetryConfig()->providers[1].baud);
+    EXPECT_EQ(BAUD_AUTO,  telemetryConfig()->providers[2].baud);
+}
+
+TEST(SerialFeatureMap, OsdCustomTextBaudRidesTheTelemetryClass)
+{
+    resetAllConfigs();
+
+    // It is not telemetry, but it shared the port's telemetry baud in the
+    // legacy layout and must keep round-tripping through that class.
+    osdConfigMutable()->osd_custom_text_uart = SERIAL_PORT_UART6;
+    serialApplyPortBaud(SERIAL_PORT_UART6, SERIAL_BAUD_TELEMETRY, BAUD_115200);
+
+    EXPECT_EQ(BAUD_115200, osdConfig()->osd_custom_text_baud);
+    EXPECT_EQ(BAUD_115200, serialSynthesizePortBaud(SERIAL_PORT_UART6, SERIAL_BAUD_TELEMETRY));
+}
+
+TEST(SerialFeatureMap, BaudRoundTripsThroughApplyAndSynthesize)
+{
+    resetAllConfigs();
+
+    gpsConfigMutable()->gps_uart = SERIAL_PORT_UART4;
+    mspConfigMutable()->msp_uart[0] = SERIAL_PORT_UART4;
+    blackboxConfigMutable()->blackbox_uart = SERIAL_PORT_UART4;
+    telemetryConfigMutable()->providers[0].protocol = TELEMETRY_PROTOCOL_LTM;
+    telemetryConfigMutable()->providers[0].uart = SERIAL_PORT_UART4;
+
+    const uint8_t written[SERIAL_BAUD_CLASS_COUNT] = {
+        BAUD_500000,  // msp
+        BAUD_9600,    // gps
+        BAUD_38400,   // telemetry
+        BAUD_230400,  // blackbox
+    };
+
+    for (unsigned c = 0; c < SERIAL_BAUD_CLASS_COUNT; c++) {
+        serialApplyPortBaud(SERIAL_PORT_UART4, (serialBaudClass_e)c, written[c]);
+    }
+    for (unsigned c = 0; c < SERIAL_BAUD_CLASS_COUNT; c++) {
+        EXPECT_EQ(written[c], serialSynthesizePortBaud(SERIAL_PORT_UART4, (serialBaudClass_e)c));
+    }
+}
+
+TEST(SerialFeatureMap, BaudWriteToUnclaimedPortIsDropped)
+{
+    resetAllConfigs();
+
+    // Nothing owns the port, so there is nowhere to store the value and the
+    // synthesized view stays at the class default.
+    serialApplyPortBaud(SERIAL_PORT_UART7, SERIAL_BAUD_GPS, BAUD_9600);
+
+    EXPECT_EQ(BAUD_57600, serialSynthesizePortBaud(SERIAL_PORT_UART7, SERIAL_BAUD_GPS));
+    EXPECT_EQ(BAUD_57600, gpsConfig()->gps_baud);
 }

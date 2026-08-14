@@ -44,6 +44,7 @@ extern "C" {
     #include "drivers/serial.h"
     #include "drivers/system.h"
     #include "io/serial.h"
+    #include "io/serial_feature_map.h"
     #include "cli/cli.h"
     #include "msp/msp.h"
     #include "msp/msp_serial.h"
@@ -89,6 +90,7 @@ extern "C" {
     bool isSerialPortShared(const serialPortConfig_t *, uint16_t, serialPortFunction_e) { return false; }
     serialType_e serialType(serialPortIdentifier_e) { return SERIALTYPE_UART; }
     const serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e) { return NULL; }
+    uint8_t serialSynthesizePortBaud(serialPortIdentifier_e, serialBaudClass_e) { return BAUD_115200; }
 
     // --- inert serial/system/msp stubs (off the tested path) ---
     uint32_t serialTxBytesFree(const serialPort_t *) { return FAKE_RX_CAP; }

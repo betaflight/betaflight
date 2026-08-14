@@ -43,3 +43,28 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask);
 // into the new per-feature view while the legacy mask is still the
 // runtime source of truth.
 void serialBackfillFeatureFields(void);
+
+// The four baud rates every port carries in the legacy serialPortConfig_t.
+// Each is owned by one feature class rather than by the port, so the pair
+// below translates between the legacy per-port layout and the feature PGs.
+typedef enum {
+    SERIAL_BAUD_MSP = 0,
+    SERIAL_BAUD_GPS,
+    SERIAL_BAUD_TELEMETRY,
+    SERIAL_BAUD_BLACKBOX,
+    SERIAL_BAUD_CLASS_COUNT,
+} serialBaudClass_e;
+
+// Baud a port reports for a class when no feature claims it.  `diff` compares
+// against this to decide whether a port's baud is still at its default.
+uint8_t serialDefaultPortBaud(serialBaudClass_e baudClass);
+
+// Read the baud a port would carry for the given class in the legacy view.
+// Ports no feature claims report the class default, so an untouched config
+// still round-trips through `dump` and MSP unchanged.
+uint8_t serialSynthesizePortBaud(serialPortIdentifier_e identifier, serialBaudClass_e baudClass);
+
+// Write a legacy per-port baud back onto whichever feature PGs claim the
+// port for that class.  Telemetry writes every provider slot on the port,
+// preserving the legacy one-baud-per-port semantics.
+void serialApplyPortBaud(serialPortIdentifier_e identifier, serialBaudClass_e baudClass, uint8_t baudRateIndex);

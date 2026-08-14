@@ -1388,26 +1388,38 @@ static void printSerial(dumpFlags_t dumpMask, const serialConfig_t *serialConfig
         if (!serialIsPortAvailable(serialConfig->portConfigs[i].identifier)) {
             continue;
         };
+        // Baud lives on the feature PGs now, so the legacy per-port view is
+        // rebuilt here and compared against the class defaults rather than
+        // against a default serialConfig that no longer carries it.
+        const serialPortIdentifier_e identifier = serialConfig->portConfigs[i].identifier;
+        uint8_t baudRateIndexes[SERIAL_BAUD_CLASS_COUNT];
+        bool baudEqualsDefault = true;
+        for (unsigned c = 0; c < SERIAL_BAUD_CLASS_COUNT; c++) {
+            baudRateIndexes[c] = serialSynthesizePortBaud(identifier, c);
+            baudEqualsDefault = baudEqualsDefault && (baudRateIndexes[c] == serialDefaultPortBaud(c));
+        }
+
         bool equalsDefault = false;
         if (serialConfigDefault) {
-            equalsDefault = !memcmp(&serialConfig->portConfigs[i], &serialConfigDefault->portConfigs[i], sizeof(serialConfig->portConfigs[i]));
+            equalsDefault = !memcmp(&serialConfig->portConfigs[i], &serialConfigDefault->portConfigs[i], sizeof(serialConfig->portConfigs[i]))
+                            && baudEqualsDefault;
             headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 serialName(serialConfigDefault->portConfigs[i].identifier, invalidName),
                 serialConfigDefault->portConfigs[i].functionMask,
-                baudRates[serialConfigDefault->portConfigs[i].msp_baudrateIndex],
-                baudRates[serialConfigDefault->portConfigs[i].gps_baudrateIndex],
-                baudRates[serialConfigDefault->portConfigs[i].telemetry_baudrateIndex],
-                baudRates[serialConfigDefault->portConfigs[i].blackbox_baudrateIndex]
+                baudRates[serialDefaultPortBaud(SERIAL_BAUD_MSP)],
+                baudRates[serialDefaultPortBaud(SERIAL_BAUD_GPS)],
+                baudRates[serialDefaultPortBaud(SERIAL_BAUD_TELEMETRY)],
+                baudRates[serialDefaultPortBaud(SERIAL_BAUD_BLACKBOX)]
             );
         }
         cliDumpPrintLinef(dumpMask, equalsDefault, format,
-            serialName(serialConfig->portConfigs[i].identifier, invalidName),
+            serialName(identifier, invalidName),
             serialConfig->portConfigs[i].functionMask,
-            baudRates[serialConfig->portConfigs[i].msp_baudrateIndex],
-            baudRates[serialConfig->portConfigs[i].gps_baudrateIndex],
-            baudRates[serialConfig->portConfigs[i].telemetry_baudrateIndex],
-            baudRates[serialConfig->portConfigs[i].blackbox_baudrateIndex]
+            baudRates[baudRateIndexes[SERIAL_BAUD_MSP]],
+            baudRates[baudRateIndexes[SERIAL_BAUD_GPS]],
+            baudRates[baudRateIndexes[SERIAL_BAUD_TELEMETRY]],
+            baudRates[baudRateIndexes[SERIAL_BAUD_BLACKBOX]]
             );
     }
 }
@@ -1459,6 +1471,12 @@ RAM_CODE static void cliSerial(const char *cmdName, char *cmdline)
         validArgumentCount++;
     }
 
+    // Positional, in serialBaudClass_e order: msp, gps, telemetry, blackbox.
+    uint8_t baudRateIndexes[SERIAL_BAUD_CLASS_COUNT];
+    for (unsigned i = 0; i < SERIAL_BAUD_CLASS_COUNT; i++) {
+        baudRateIndexes[i] = serialSynthesizePortBaud(identifier, i);
+    }
+
     for (int i = 0; i < 4; i ++) {
         tok = strsep(&ptr, " ");
         if (!tok) {
@@ -1477,25 +1495,25 @@ RAM_CODE static void cliSerial(const char *cmdName, char *cmdline)
             if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_1000000) {
                 continue;
             }
-            portConfig.msp_baudrateIndex = baudRateIndex;
+            baudRateIndexes[SERIAL_BAUD_MSP] = baudRateIndex;
             break;
         case 1:
             if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_230400) {
                 continue;
             }
-            portConfig.gps_baudrateIndex = baudRateIndex;
+            baudRateIndexes[SERIAL_BAUD_GPS] = baudRateIndex;
             break;
         case 2:
             if (baudRateIndex != BAUD_AUTO && baudRateIndex > BAUD_460800) {
                 continue;
             }
-            portConfig.telemetry_baudrateIndex = baudRateIndex;
+            baudRateIndexes[SERIAL_BAUD_TELEMETRY] = baudRateIndex;
             break;
         case 3:
             if (baudRateIndex < BAUD_19200 || baudRateIndex > BAUD_2470000) {
                 continue;
             }
-            portConfig.blackbox_baudrateIndex = baudRateIndex;
+            baudRateIndexes[SERIAL_BAUD_BLACKBOX] = baudRateIndex;
             break;
         }
 
@@ -1518,13 +1536,18 @@ RAM_CODE static void cliSerial(const char *cmdName, char *cmdline)
 
     memcpy(currentConfig, &portConfig, sizeof(portConfig));
 
+    // Baud follows the mask so it lands on whichever feature now owns the port.
+    for (unsigned i = 0; i < SERIAL_BAUD_CLASS_COUNT; i++) {
+        serialApplyPortBaud(portConfig.identifier, i, baudRateIndexes[i]);
+    }
+
     cliDumpPrintLinef(0, false, format,
         serialName(portConfig.identifier, invalidName),
         portConfig.functionMask,
-        baudRates[portConfig.msp_baudrateIndex],
-        baudRates[portConfig.gps_baudrateIndex],
-        baudRates[portConfig.telemetry_baudrateIndex],
-        baudRates[portConfig.blackbox_baudrateIndex]
+        baudRates[baudRateIndexes[SERIAL_BAUD_MSP]],
+        baudRates[baudRateIndexes[SERIAL_BAUD_GPS]],
+        baudRates[baudRateIndexes[SERIAL_BAUD_TELEMETRY]],
+        baudRates[baudRateIndexes[SERIAL_BAUD_BLACKBOX]]
         );
 }
 
@@ -6138,7 +6161,7 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
                 if (gpsConfig()->autoBaud == GPS_AUTOBAUD_ON) {
                     cliPrint("AUTO");
                 } else {
-                    cliPrintf("%ld", baudRates[gpsPortConfig->gps_baudrateIndex]);
+                    cliPrintf("%ld", baudRates[gpsConfig()->gps_baud]);
                 }
                 cliPrint("), ");
             }

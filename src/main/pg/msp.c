@@ -34,5 +34,6 @@ void pgResetFn_mspConfig(mspConfig_t *mspConfig)
     mspConfig->halfDuplex = 0;
     for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
         mspConfig->msp_uart[i] = SERIAL_PORT_NONE;
+        mspConfig->msp_baud[i] = BAUD_115200;
     }
 }

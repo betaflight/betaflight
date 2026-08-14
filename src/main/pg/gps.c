@@ -52,6 +52,7 @@ PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .gps_ublox_enable_ana = false,
     .nmeaCustomCommands = "",
     .gps_uart = SERIAL_PORT_NONE,
+    .gps_baud = BAUD_57600,
 );
 
 #endif // USE_GPS

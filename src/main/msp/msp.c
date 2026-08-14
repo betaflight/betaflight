@@ -653,6 +653,16 @@ RAM_CODE static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, 
  * MSP_OSD_CONFIG and silently drops the whole reply - and with it every OSD element - once it
  * outgrows the Betaflight 4.5 layout. Configurator, on VCP, keeps receiving the full reply.
  */
+// The serial-config commands still present four baud rates per port on the
+// wire.  They are rebuilt from the feature PGs that own them so existing
+// Configurator builds keep working unchanged.
+RAM_CODE static void mspWritePortBaudRates(sbuf_t *dst, serialPortIdentifier_e identifier)
+{
+    for (unsigned i = 0; i < SERIAL_BAUD_CLASS_COUNT; i++) {
+        sbufWriteU8(dst, serialSynthesizePortBaud(identifier, i));
+    }
+}
+
 RAM_CODE static bool mspSrcIsVtxPort(mspDescriptor_t srcDesc)
 {
 #ifdef USE_MSP_DISPLAYPORT
@@ -1776,10 +1786,7 @@ case MSP_NAME:
             };
             sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier);
             sbufWriteU16(dst, serialConfig()->portConfigs[i].functionMask);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].msp_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].gps_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].telemetry_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].blackbox_baudrateIndex);
+            mspWritePortBaudRates(dst, serialConfig()->portConfigs[i].identifier);
         }
         break;
 
@@ -1797,10 +1804,7 @@ case MSP_NAME:
             };
             sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier);
             sbufWriteU32(dst, serialConfig()->portConfigs[i].functionMask);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].msp_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].gps_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].telemetry_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].blackbox_baudrateIndex);
+            mspWritePortBaudRates(dst, serialConfig()->portConfigs[i].identifier);
         }
         break;
     }
@@ -4264,12 +4268,16 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
                 }
 
                 portConfig->functionMask = sbufReadU16(src);
-                portConfig->msp_baudrateIndex = sbufReadU8(src);
-                portConfig->gps_baudrateIndex = sbufReadU8(src);
-                portConfig->telemetry_baudrateIndex = sbufReadU8(src);
-                portConfig->blackbox_baudrateIndex = sbufReadU8(src);
+                uint8_t baudRateIndexes[SERIAL_BAUD_CLASS_COUNT];
+                for (unsigned i = 0; i < SERIAL_BAUD_CLASS_COUNT; i++) {
+                    baudRateIndexes[i] = sbufReadU8(src);
+                }
                 if (!serialApplyFunctionMask(identifier, portConfig->functionMask)) {
                     return MSP_RESULT_ERROR;
+                }
+                // Baud follows the mask so it reaches the port's new owners.
+                for (unsigned i = 0; i < SERIAL_BAUD_CLASS_COUNT; i++) {
+                    serialApplyPortBaud(identifier, i, baudRateIndexes[i]);
                 }
             }
         }
@@ -4297,12 +4305,16 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             }
 
             portConfig->functionMask = sbufReadU32(src);
-            portConfig->msp_baudrateIndex = sbufReadU8(src);
-            portConfig->gps_baudrateIndex = sbufReadU8(src);
-            portConfig->telemetry_baudrateIndex = sbufReadU8(src);
-            portConfig->blackbox_baudrateIndex = sbufReadU8(src);
+            uint8_t baudRateIndexes[SERIAL_BAUD_CLASS_COUNT];
+            for (unsigned i = 0; i < SERIAL_BAUD_CLASS_COUNT; i++) {
+                baudRateIndexes[i] = sbufReadU8(src);
+            }
             if (!serialApplyFunctionMask(identifier, portConfig->functionMask)) {
                 return MSP_RESULT_ERROR;
+            }
+            // Baud follows the mask so it reaches the port's new owners.
+            for (unsigned i = 0; i < SERIAL_BAUD_CLASS_COUNT; i++) {
+                serialApplyPortBaud(identifier, i, baudRateIndexes[i]);
             }
             // Skip unknown bytes
             while (start - sbufBytesRemaining(src) < portConfigSize && sbufBytesRemaining(src)) {

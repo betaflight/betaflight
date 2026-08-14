@@ -284,7 +284,7 @@ const serialPortConfig_t* serialFindPortConfiguration(serialPortIdentifier_e ide
     return findInPortConfigs_identifier(serialConfig()->portConfigs, ARRAYLEN(serialConfig()->portConfigs), identifier);
 }
 
-PG_REGISTER_WITH_RESET_FN(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 1);
+PG_REGISTER_WITH_RESET_FN(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 2);
 
 void pgResetFn_serialConfig(serialConfig_t *serialConfig)
 {
@@ -293,10 +293,6 @@ void pgResetFn_serialConfig(serialConfig_t *serialConfig)
     for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
         serialPortConfig_t* pCfg = &serialConfig->portConfigs[i];
         pCfg->identifier = serialPortIdentifiers[i];
-        pCfg->msp_baudrateIndex = BAUD_115200;
-        pCfg->gps_baudrateIndex = BAUD_57600;
-        pCfg->telemetry_baudrateIndex = BAUD_AUTO;
-        pCfg->blackbox_baudrateIndex = BAUD_115200;
     }
 
     serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
@@ -527,12 +523,10 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
         if (serialType(portConfig->identifier) == SERIALTYPE_SOFTSERIAL) {
             // Ensure MSP or serial RX is not enabled on soft serial ports
             serialConfigToCheck->portConfigs[index].functionMask &= ~(FUNCTION_MSP | FUNCTION_RX_SERIAL);
-            // Ensure that the baud rate on soft serial ports is limited to 19200
-#ifndef USE_OVERRIDE_SOFTSERIAL_BAUDRATE
-            serialConfigToCheck->portConfigs[index].gps_baudrateIndex = constrain(portConfig->gps_baudrateIndex, BAUD_AUTO, BAUD_19200);
-            serialConfigToCheck->portConfigs[index].blackbox_baudrateIndex = constrain(portConfig->blackbox_baudrateIndex, BAUD_AUTO, BAUD_19200);
-            serialConfigToCheck->portConfigs[index].telemetry_baudrateIndex = constrain(portConfig->telemetry_baudrateIndex, BAUD_AUTO, BAUD_19200);
-#endif
+            // Baud is no longer clamped here: it lives on the feature PGs, and
+            // openSerialPort() already refuses a softserial port above 19200,
+            // so an over-spec baud now fails to open rather than being
+            // silently reduced behind the user's back.
         }
 #endif // USE_SOFTSERIAL
 

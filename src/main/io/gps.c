@@ -433,7 +433,7 @@ void gpsInit(void)
     initBaudRateCycleCount = 0;
     gpsData.userBaudRateIndex = DEFAULT_BAUD_RATE_INDEX;
     for (unsigned i = 0; i < ARRAYLEN(gpsInitData); i++) {
-        if (gpsInitData[i].baudrateIndex == gpsPortConfig->gps_baudrateIndex) {
+        if (gpsInitData[i].baudrateIndex == gpsConfig()->gps_baud) {
             gpsData.userBaudRateIndex = i;
             break;
         }

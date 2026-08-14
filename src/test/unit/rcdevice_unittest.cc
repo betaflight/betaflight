@@ -799,10 +799,6 @@ extern "C" {
             static serialPortConfig_t portConfig;
 
             portConfig.identifier = SERIAL_PORT_USART3;
-            portConfig.msp_baudrateIndex = BAUD_115200;
-            portConfig.gps_baudrateIndex = BAUD_57600;
-            portConfig.telemetry_baudrateIndex = BAUD_AUTO;
-            portConfig.blackbox_baudrateIndex = BAUD_115200;
             portConfig.functionMask = FUNCTION_MSP;
 
             return &portConfig;
