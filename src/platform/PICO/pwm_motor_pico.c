@@ -31,15 +31,14 @@
 #include "build/debug.h"
 #include "build/debug_pin.h"
 
+#include "common/maths.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_output_impl.h"
 #include "drivers/motor_types.h"
-
 #include "drivers/time.h"
 #include "drivers/timer.h"
-
 #include "pg/motor.h"
 
 #include "hardware/gpio.h"
@@ -48,12 +47,16 @@
 
 #include "platform/pwm.h"
 
+#define TOPMAX (0xfffe) // maximum practical TOP value to allow for 0% to 100% duty cycle
+#define LEVELMAX (TOPMAX + 1) // maximum comparison value
+
 static picoPwmOutput_t picoPwmMotors[MAX_SUPPORTED_MOTORS];
 static bool useContinuousUpdate = false;
 
 void pwmShutdownPulsesForAllMotors(void)
 {
     for (int index = 0; index < pwmMotorCount; index++) {
+        picoPwmMotors[index].level = 0;
         pwm_set_chan_level(picoPwmMotors[index].slice, picoPwmMotors[index].channel, 0);
     }
 }
@@ -65,8 +68,15 @@ void pwmDisableMotors(void)
 
 static void pwmWriteStandard(uint8_t index, float value)
 {
-    /* TODO: move value to be a number between 0-1 (i.e. percent throttle from mixer) */
-    pwm_set_chan_level(picoPwmMotors[index].slice, picoPwmMotors[index].channel, lrintf((value * pwmMotors[index].pulseScale) + pwmMotors[index].pulseOffset));
+    uint32_t level = constrain(lrintf((value * pwmMotors[index].pulseScale) + pwmMotors[index].pulseOffset), 0, LEVELMAX);
+    if (useContinuousUpdate) {
+        // Writes on a running slice latch at the next wrap (no glitches).
+        pwm_set_chan_level(picoPwmMotors[index].slice, picoPwmMotors[index].channel, level);
+    } else {
+        // One-shot modes: The active compare level is typically 0 (between pulses) at this point.
+        // Store the level to write it directly (unbuffered) while pwm stopped in pwmCompleteMotorUpdate.
+        picoPwmMotors[index].level = level;
+    }
 }
 
 static void pwmCompleteMotorUpdate(void)
@@ -75,8 +85,31 @@ static void pwmCompleteMotorUpdate(void)
         return;
     }
 
+    // One-shot modes: emit exactly one pulse per motor per update. Writes on a
+    // running slice only latch at counter wrap, but are immediate when the counter is stopped.
+    // So, write the levels with the slice stopped, zero the counter, then queue level 0 to latch
+    // at the wrap (after the pulse ends).
+    // Slices (which share counters across channels) are handled once each.
     for (int index = 0; index < pwmMotorCount; index++) {
-        pwm_set_chan_level(picoPwmMotors[index].slice, picoPwmMotors[index].channel, 0);
+        if (!picoPwmMotors[index].sliceHead) {
+            continue;
+        }
+        const uint16_t slice = picoPwmMotors[index].slice;
+
+        pwm_set_enabled(slice, false);
+        for (int i = index; i < pwmMotorCount; i++) {
+            if (picoPwmMotors[i].slice == slice) {
+                pwm_set_chan_level(slice, picoPwmMotors[i].channel, picoPwmMotors[i].level);
+            }
+        }
+        pwm_set_counter(slice, 0);
+        pwm_set_enabled(slice, true);
+
+        for (int i = index; i < pwmMotorCount; i++) {
+            if (picoPwmMotors[i].slice == slice) {
+                pwm_set_chan_level(slice, picoPwmMotors[i].channel, 0);
+            }
+        }
     }
 }
 
@@ -103,23 +136,19 @@ static motorVTable_t motorPwmVTable = {
     .updateComplete = pwmCompleteMotorUpdate,
     .requestTelemetry = NULL,
     .isMotorIdle = NULL,
+    .getMotorIO = pwmGetMotorIO,
 };
 
 bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig, uint16_t idlePulse)
 {
     UNUSED(idlePulse);
 
-    if (!device) {
-        return false;
-    }
-
-    pwmMotorCount = device->count;
-
-    memset(pwmMotors, 0, sizeof(pwmMotors));
-
     if (!device || !motorConfig) {
         return false;
     }
+
+    memset(pwmMotors, 0, sizeof(pwmMotors));
+    memset(picoPwmMotors, 0, sizeof(picoPwmMotors));
 
     pwmMotorCount = device->count;
     device->vTable = &motorPwmVTable;
@@ -159,6 +188,14 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
         const ioTag_t tag = motorConfig->ioTags[reorderedMotorIndex];
 
         pwmMotors[motorIndex].io = IOGetByTag(tag);
+        if (!tag || !pwmMotors[motorIndex].io) {
+            /* not enough motors initialised for the mixer or a break in the motors */
+            device->vTable = NULL;
+            pwmMotorCount = 0;
+            /* TODO: block arming and add reason system cannot arm */
+            return false;
+        }
+
         uint8_t pin = IO_PINBYTAG(tag);
 
         const uint16_t slice = pwm_gpio_to_slice_num(pin);
@@ -169,41 +206,56 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
         picoPwmMotors[motorIndex].slice = slice;
         picoPwmMotors[motorIndex].channel = channel;
 
+        bool sliceAlreadyUsed = false;
+        for (unsigned i = 0; i < motorIndex; i++) {
+            if (picoPwmMotors[i].slice == slice) {
+                sliceAlreadyUsed = true;
+                break;
+            }
+        }
+        picoPwmMotors[motorIndex].sliceHead = !sliceAlreadyUsed;
+
         /* standard PWM outputs */
         // margin of safety is 4 periods when not continuous
         const unsigned pwmRateHz = useContinuousUpdate ? motorConfig->motorPwmRate : ceilf(1 / ((sMin + sLen) * 4));
 
         /*
-            PWM Frequency = clock / (interval * (wrap + 1))
+            PWM Frequency = clock / (clkdiv * (wrap + 1))
 
-            Wrap is when the counter resets to zero.
-            Interval (divider) will determine the resolution.
+            wrap is the 16-bit counter top (duty-cycle resolution); clkdiv is the
+            pre-divider. To maximise resolution, use the smallest clkdiv that still
+            lets a full period fit inside the 16-bit wrap register, then let wrap
+            take up whatever's left.
         */
-        const uint32_t clock = clock_get_hz(clk_sys); // PICO timer clock is the CPU clock.
+        const uint32_t clock = SystemCoreClock; // PICO timer clock is the CPU clock.
 
-        /* used to find the desired timer frequency for max resolution */
-        const unsigned prescaler = ceilf(clock / pwmRateHz); /* rounding up */
-        const uint32_t hz = clock / prescaler;
-        const unsigned period = useContinuousUpdate ? hz / pwmRateHz : 0xffff;
+        // Clock ticks needed for one period
+        const float ticksPerPeriod = (float)clock / (float)pwmRateHz;
+
+        uint32_t clkdiv = (uint32_t)ceilf(ticksPerPeriod / 0xffff);
+        clkdiv = constrain(clkdiv, 1, 255); // (Extra safety, but clkdiv isn't exceeding 256, even if sys clock was high as 800MHz, pwm rate as low as 50Hz)
+
+        const uint32_t hz = clock / clkdiv; // counter tick rate after the divider
+
+        int32_t wrap;
+        if (useContinuousUpdate) {
+            int32_t period = lrintf(ticksPerPeriod / (float)clkdiv);
+            wrap = constrain(period - 1, 0, TOPMAX);
+        } else {
+            wrap = TOPMAX;
+        }
 
         pwm_config config = pwm_get_default_config();
 
-        const uint8_t interval = (uint8_t)(clock / period);
-        const uint8_t fraction = (uint8_t)(((clock / period) - interval) * (0x01 << 4));
-        pwm_config_set_clkdiv_int_frac(&config, interval, fraction);
-        pwm_config_set_wrap(&config, period);
-
+        pwm_config_set_clkdiv_int(&config, clkdiv);
+        pwm_config_set_wrap(&config, wrap);
         gpio_set_function(pin, GPIO_FUNC_PWM);
 
         pwm_set_chan_level(slice, channel, 0);
         pwm_init(slice, &config, true);
 
-        /*
-            if brushed then it is the entire length of the period.
-            TODO: this can be moved back to periodMin and periodLen
-            once mixer outputs a 0..1 float value.
-        */
-        pwmMotors[motorIndex].pulseScale = ((motorConfig->motorProtocol == MOTOR_PROTOCOL_BRUSHED) ? period : (sLen * hz)) / 1000.0f;
+        // Brushed spans the full period; wrap + 1 gives true 100% duty at full throttle.
+        pwmMotors[motorIndex].pulseScale = ((motorConfig->motorProtocol == MOTOR_PROTOCOL_BRUSHED) ? (wrap + 1) : (sLen * hz)) / 1000.0f;
         pwmMotors[motorIndex].pulseOffset = (sMin * hz) - (pwmMotors[motorIndex].pulseScale * 1000);
         pwmMotors[motorIndex].enabled = true;
         picoPwmMotors[motorIndex].initialised = true;

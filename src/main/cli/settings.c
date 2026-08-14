@@ -132,6 +132,7 @@
 
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
+#include "sensors/pitot.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/compass.h"
@@ -651,6 +652,9 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_OPTICALFLOW
     { lookupTableOpticalflowHardware, OPTICALFLOW_HARDWARE_COUNT },
 #endif
+#ifdef USE_PITOT
+    { lookupTablePitotHardware, PITOT_HARDWARE_COUNT },
+#endif
 #ifdef USE_POSITION_HOLD
     LOOKUP_TABLE_ENTRY(lookupTablePosHoldSource),
 #endif
@@ -832,6 +836,14 @@ const clivalue_t valueTable[] = {
     { "baro_i2c_device",            VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 5 }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_i2c_device) },
     { "baro_i2c_address",           VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, I2C_ADDR7_MAX }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_i2c_address) },
     { PARAM_NAME_BARO_HARDWARE,     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BARO_HARDWARE }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_hardware) },
+#endif
+
+// PG_PITOT_CONFIG
+#ifdef USE_PITOT
+    { "pitot_bustype",              VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BUS_TYPE }, PG_PITOT_CONFIG, offsetof(pitotConfig_t, pitot_busType) },
+    { "pitot_i2c_device",           VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 5 }, PG_PITOT_CONFIG, offsetof(pitotConfig_t, pitot_i2c_device) },
+    { "pitot_i2c_address",          VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, I2C_ADDR7_MAX }, PG_PITOT_CONFIG, offsetof(pitotConfig_t, pitot_i2c_address) },
+    { PARAM_NAME_PITOT_HARDWARE,    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_PITOT_HARDWARE }, PG_PITOT_CONFIG, offsetof(pitotConfig_t, pitot_hardware) },
 #endif
 
 // PG_RX_CONFIG
@@ -1292,11 +1304,6 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_CHIRP_FREQUENCY_START_DECI_HZ, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, chirp_frequency_start_deci_hz) },
     { PARAM_NAME_CHIRP_FREQUENCY_END_DECI_HZ,   VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 10000 }, PG_PID_PROFILE, offsetof(pidProfile_t, chirp_frequency_end_deci_hz) },
     { PARAM_NAME_CHIRP_TIME_SECONDS,            VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 255 }, PG_PID_PROFILE, offsetof(pidProfile_t, chirp_time_seconds) },
-#endif
-
-#ifdef USE_INTEGRATED_YAW_CONTROL
-    { PARAM_NAME_USE_INTEGRATED_YAW, VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, use_integrated_yaw) },
-    { "integrated_yaw_relax",        VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 255 }, PG_PID_PROFILE, offsetof(pidProfile_t, integrated_yaw_relax) },
 #endif
 
 #ifdef USE_D_MAX

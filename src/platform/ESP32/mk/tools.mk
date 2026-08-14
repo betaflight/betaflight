@@ -61,12 +61,17 @@ ESP_ELF2IMAGE_TMP   = $(ESP_PYTHON) $(ESP_ESPTOOL) --chip $(ESP_CHIP) elf2image 
 # in-tree IDF project (src/platform/ESP32/bootloader) using `idf.py bootloader`;
 # set ESP_BOOTLOADER_FROM_SOURCE=no to use the committed prebuilt blob instead
 # (handy where CMake/Ninja or the full IDF aren't available). The from-source
-# build is guarded on the output existing, so it runs once per clean tree and
-# then incremental app builds skip it; `make clean` (or removing the build dir)
-# forces a rebuild.
+# build is guarded on the output being newer than the in-tree bootloader
+# project, so incremental app builds skip it while clock hook/config changes
+# still force a rebuild.
 ESP_BOOTLOADER_FROM_SOURCE ?= yes
 ESP_BOOTLOADER_PROJ  = $(TARGET_PLATFORM_DIR)/bootloader
 ESP_PYTHON_ENV_DIR   = $(patsubst %/bin/python,%,$(ESP_PYTHON))
+# Inputs exposed to the generic BIN rule. Without this dependency a changed clock
+# hook leaves an already-created merged firmware image looking up to date, so the
+# freshness check below never gets a chance to run.
+ESP_BOOTLOADER_INPUTS = $(if $(filter yes,$(ESP_BOOTLOADER_FROM_SOURCE)),\
+    $(shell find $(ESP_BOOTLOADER_PROJ) -type f),$(ESP_BOOTLOADER_BIN))
 
 ifeq ($(ESP_BOOTLOADER_FROM_SOURCE),yes)
 # Absolute paths: idf.py resolves -B against the CWD but -DSDKCONFIG against the
@@ -80,7 +85,8 @@ ESP_BOOTLOADER_BIN       = $(ESP_BOOTLOADER_BUILD_DIR)/bootloader/bootloader.bin
 # on top of the project's sdkconfig.defaults, so the bootloader header matches
 # the target's module. Generated into the (size-keyed) build dir, not the source
 # tree. esptool still patches the size into the merged image at merge_bin time.
-ESP_BUILD_BOOTLOADER = [ -f $(ESP_BOOTLOADER_BIN) ] || \
+ESP_BUILD_BOOTLOADER = ( [ -f $(ESP_BOOTLOADER_BIN) ] && \
+    [ -z "$$(find $(ESP_BOOTLOADER_PROJ) -type f -newer $(ESP_BOOTLOADER_BIN) -print -quit)" ] ) || \
     ( mkdir -p $(ESP_BOOTLOADER_BUILD_DIR) && \
       echo 'CONFIG_ESPTOOLPY_FLASHSIZE_$(ESP_FLASH_SIZE)=y' > $(ESP_BOOTLOADER_BUILD_DIR)/sdkconfig.flashsize && \
       env IDF_PATH=$(ESP_IDF_PATH) IDF_TOOLS_PATH=$(IDF_TOOLS_PATH) \
