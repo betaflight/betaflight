@@ -412,6 +412,38 @@ static bool sensorPortHoldsMspSlot(serialPortIdentifier_e sensorPort,
 }
 #endif
 
+// What the MSP count below would come to if this apply changed nothing, i.e.
+// the pressure the configuration is already under.
+static unsigned currentMspPressure(void)
+{
+    unsigned used = 0;
+#if defined(USE_RANGEFINDER)
+    const serialPortIdentifier_e sensorPort =
+        (serialPortIdentifier_e)rangefinderConfig()->rangefinder_uart;
+    bool sensorHoldsSlot = false;
+#endif
+
+    for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+        if (mspConfig()->msp_uart[i] == SERIAL_PORT_NONE) {
+            continue;
+        }
+        used++;
+#if defined(USE_RANGEFINDER)
+        if (mspConfig()->msp_uart[i] == sensorPort) {
+            sensorHoldsSlot = true;
+        }
+#endif
+    }
+
+#if defined(USE_RANGEFINDER)
+    if (serialSensorPortUsesMsp() && sensorPort != SERIAL_PORT_NONE && !sensorHoldsSlot) {
+        used++;
+    }
+#endif
+
+    return used;
+}
+
 // Check whether a mask can be applied to `identifier` without leaving the
 // feature PGs in an inconsistent state.  Counts bits per category and checks
 // MSP/telemetry slot availability as if clearClaimsOnPort(identifier) had
@@ -486,7 +518,16 @@ static bool canApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mas
     (void)reserveImpliedSensorPort;
 #endif
 
-    if (mspUsed > MAX_MSP_PORT_COUNT) {
+    // Refuse what makes the pressure worse, not merely what is over budget.
+    // A configuration can go over budget behind this check's back, because
+    // rangefinder_hardware is not written through here: assign the sensor port
+    // while the sensor is still NONE, then pick an MT module on the Sensors
+    // tab.  Refusing every write from there would freeze the Ports tab - its
+    // first record is the USB VCP, which isSerialConfigValid() requires to
+    // carry MSP, so the later record that would free a slot is never reached
+    // and firmware rejects the whole save.  Allowing writes that hold or
+    // lower the count leaves the user a way out.
+    if (mspUsed > MAX_MSP_PORT_COUNT && mspUsed > currentMspPressure()) {
         return false;
     }
 

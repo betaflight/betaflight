@@ -416,6 +416,44 @@ TEST(SerialFeatureMap, SensorPortAssignedFirstStillHoldsItsMspSlot)
     EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_MSP));
 }
 
+TEST(SerialFeatureMap, AnOverBudgetConfigStaysEditable)
+{
+    // rangefinder_hardware is not written through canApplyFunctionMask, so a
+    // config can go over budget behind its back: assign the sensor port while
+    // the sensor is still NONE, then pick an MT module in the Sensors tab.
+    resetAllConfigs();
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USB_VCP, FUNCTION_MSP));
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_MSP));
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_MSP));
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR));
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF02;
+
+    // Every Ports-tab save starts with the USB VCP, which must carry MSP.
+    // Refusing it because the total is already over budget would freeze the
+    // tab: the later record that frees a slot is never reached, and firmware
+    // rejects the whole write.
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USB_VCP, FUNCTION_MSP));
+
+    // The move that digs the user out is allowed...
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_NONE));
+    // ...and once back inside the budget the limit bites again as before.
+    EXPECT_FALSE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_MSP));
+}
+
+TEST(SerialFeatureMap, AnOverBudgetConfigStillRefusesToGetWorse)
+{
+    resetAllConfigs();
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USB_VCP, FUNCTION_MSP));
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_MSP));
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_MSP));
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR));
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF02;
+
+    // Holding the count is allowed; adding to it is not.
+    EXPECT_FALSE(serialApplyFunctionMask(SERIAL_PORT_USART6, FUNCTION_MSP));
+    EXPECT_EQ(0u, serialSynthesizeFunctionMask(SERIAL_PORT_USART6));
+}
+
 TEST(SerialFeatureMap, ClearingTheSensorPortReleasesItsReservation)
 {
     // Removing FUNCTION_LIDAR from the port that holds it must not go on
