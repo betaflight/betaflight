@@ -1,19 +1,20 @@
 /*
- * This file is part of Cleanflight and Betaflight.
+ * This file is part of Betaflight.
  *
- * Cleanflight and Betaflight are free software. You can redistribute
- * this software and/or modify this software under the terms of the
- * GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version.
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
  *
- * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
  * See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
  *
  * If not, see <http://www.gnu.org/licenses/>.
  */
@@ -28,9 +29,9 @@
 #define SEPTENTRIO_CMD_BUF_SIZE      128 // Size of the command buffer for sending configurations to the Septentrio receiver  
 
 // Septentrio Binary Format (SBF) parser constants
-#define	SBF_SYNC1                    '$' // 0x24
-#define	SBF_SYNC2                    '@' // 0x40
-#define	SBF_HEADER_SIZE              14
+#define SBF_SYNC1                    '$' // 0x24
+#define SBF_SYNC2                    '@' // 0x40
+#define SBF_HEADER_SIZE              14
 
 // The largest SBF block we parse is ChannelStatus (4013).
 // It consists of a 20-byte base overhead (14-byte global frame header + 6-byte block header),
@@ -76,71 +77,71 @@
 
 // SBF frame header structure
 typedef struct __attribute__((packed)) {
-	uint8_t sync1;
-	uint8_t sync2;
-	uint16_t crc;
-	uint16_t id;  // 13 bits of block ID, 3 bits of version
-	uint16_t length;
-	// Receiver time stamp
-	uint32_t tow; // Time of Week (ms)
-	uint16_t wnc; // Week Number Count (mod 1024)
+    uint8_t sync1;
+    uint8_t sync2;
+    uint16_t crc;
+    uint16_t id;  // 13 bits of block ID, 3 bits of version
+    uint16_t length;
+    // Receiver time stamp
+    uint32_t tow; // Time of Week (ms)
+    uint16_t wnc; // Week Number Count (mod 1024)
 } sbfHeader_t;
 
 // SBF block for DOP (Dilution of Precision) values
 typedef struct __attribute__((packed)) {
-	uint8_t nrSv;
-	uint8_t reserved;
-	uint16_t pDop;
-	uint16_t tDop;
-	uint16_t hDop;
-	uint16_t vDop;
-	float hpl;
-	float vpl;
+    uint8_t nrSv;
+    uint8_t reserved;
+    uint16_t pDop;
+    uint16_t tDop;
+    uint16_t hDop;
+    uint16_t vDop;
+    float hpl;
+    float vpl;
 } sbfDop_t;
 
 // SBF block for PVT (Position, Velocity, Time) in geodetic coordinates
 typedef struct __attribute__((packed)) {
-	uint8_t mode; 
-	uint8_t error;
-	double latitude; 
-	double longitude;
-	double height;
-	float undulation;
-	float vn;
-	float ve;
-	float vu;
-	float cog;
-	double rxClkBias;
-	float rxClkDrift;
-	uint8_t timeSystem;
-	uint8_t datum;
-	uint8_t nrSv;
-	uint8_t waCorrInfo;
-	uint16_t referenceID;
-	uint16_t meanCorrAge;
-	uint32_t signalInfo;
-	uint8_t alertFlag;
-	uint8_t nrBases;
-	uint16_t pppInfo;
-	uint16_t latency;
-	uint16_t hAccuracy;
-	uint16_t vAccuracy;
+    uint8_t mode;
+    uint8_t error;
+    double latitude;
+    double longitude;
+    double height;
+    float undulation;
+    float vn;
+    float ve;
+    float vu;
+    float cog;
+    double rxClkBias;
+    float rxClkDrift;
+    uint8_t timeSystem;
+    uint8_t datum;
+    uint8_t nrSv;
+    uint8_t waCorrInfo;
+    uint16_t referenceID;
+    uint16_t meanCorrAge;
+    uint32_t signalInfo;
+    uint8_t alertFlag;
+    uint8_t nrBases;
+    uint16_t pppInfo;
+    uint16_t latency;
+    uint16_t hAccuracy;
+    uint16_t vAccuracy;
 } sbfPvtGeodetic_t;
 
 // SBF block for velocity covariance in geodetic coordinates
 typedef struct __attribute__((packed)) {
-	uint8_t mode;
-	uint8_t error;
-	float covVnVn;
-	float covVeVe;
-	float covVuVu;
-	float covDtDt;
-	float covVnVe;
-	float covVnVu;
-	float covVnDt;
-	float covVeVu;
-	float covVeDt;
-	float covVuDt;
+    uint8_t mode;
+    uint8_t error;
+    float covVnVn;
+    float covVeVe;
+    float covVuVu;
+    float covDtDt;
+    float covVnVe;
+    float covVnVu;
+    float covVnDt;
+    float covVeVu;
+    float covVeDt;
+    float covVuDt;
 } sbfVelCovGeodetic_t;
 
 // Space Vehicle (satellite) information
@@ -176,26 +177,26 @@ typedef struct __attribute__((packed)) {
 
 // SBF parser state structure
 typedef struct {
-	uint8_t frame[SBF_MAX_FRAME_SIZE];
-	uint16_t index;          // current index into frame buffer
-	uint16_t expectedLength;
-	uint16_t calculatedCrc;  // accumulated CRC of the received frame  
-	// Navigation epoch data
-	uint32_t currentNavTow;
-	uint16_t currentNavWnc;
-	uint64_t lastNavEpochMs; // timestamp of the last committed navigation epoch in milliseconds since GPS epoch
-	// Flags and block data
-	bool synced; 			 // true when the sync sequence has been detected and we are accumulating bytes into the frame buffer
-	bool havePvt;
-	bool haveDop;
-	bool haveVelCov;
-	bool haveChannelStatus;
-	sbfHeader_t header;
-	sbfPvtGeodetic_t pvt;
-	sbfDop_t dop;
-	sbfVelCovGeodetic_t velCov;
-	uint8_t channelStatusPayload[SBF_MAX_FRAME_SIZE - SBF_HEADER_SIZE];
-	uint16_t channelStatusPayloadLength; 
+    uint8_t frame[SBF_MAX_FRAME_SIZE];
+    uint16_t index;          // current index into frame buffer
+    uint16_t expectedLength;
+    uint16_t calculatedCrc;  // accumulated CRC of the received frame  
+    // Navigation epoch data
+    uint32_t currentNavTow;
+    uint16_t currentNavWnc;
+    uint64_t lastNavEpochMs; // timestamp of the last committed navigation epoch in milliseconds since GPS epoch
+    // Flags and block data
+    bool synced;             // true when the sync sequence has been detected and we are accumulating bytes into the frame buffer
+    bool havePvt;
+    bool haveDop;
+    bool haveVelCov;
+    bool haveChannelStatus;
+    sbfHeader_t header;
+    sbfPvtGeodetic_t pvt;
+    sbfDop_t dop;
+    sbfVelCovGeodetic_t velCov;
+    uint8_t channelStatusPayload[SBF_MAX_FRAME_SIZE - SBF_HEADER_SIZE];
+    uint16_t channelStatusPayloadLength;
 } sbfParserState_t;
 
 // Port detection state structure
@@ -211,11 +212,11 @@ extern septentrioPortDetector_t portDetector;
 // Configuration steps for the Septentrio receiver
 typedef enum {
     SEPTENTRIO_CFG_FORCE_INPUT = 0,
-	SEPTENTRIO_CFG_DETECT_PORT,
+    SEPTENTRIO_CFG_DETECT_PORT,
     SEPTENTRIO_CFG_SET_DATAIO,
     SEPTENTRIO_CFG_SET_SBF_OUTPUT_PVT,
-	SEPTENTRIO_CFG_SET_SBF_OUTPUT_COV,
-	SEPTENTRIO_CFG_SET_SBF_OUTPUT_CHANNELSTATUS,
+    SEPTENTRIO_CFG_SET_SBF_OUTPUT_COV,
+    SEPTENTRIO_CFG_SET_SBF_OUTPUT_CHANNELSTATUS,
     SEPTENTRIO_CFG_SET_DYNAMICS,
     SEPTENTRIO_CFG_COMPLETE,
 } septentrioConfigStep_e;

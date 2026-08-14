@@ -1,19 +1,20 @@
 /*
- * This file is part of Cleanflight and Betaflight.
+ * This file is part of Betaflight.
  *
- * Cleanflight and Betaflight are free software. You can redistribute
- * this software and/or modify this software under the terms of the
- * GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version.
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
  *
- * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
  * See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
  *
  * If not, see <http://www.gnu.org/licenses/>.
  */
@@ -88,7 +89,7 @@ gpsSolutionData_t gpsSol;
 uint8_t GPS_update = 0;             // toogle to distinct a GPS position update (directly or via MSP)
 
 uint8_t GPS_numCh;                              // Details on numCh/svinfo in gps.h
-GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS]; 
+GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS];
 
 // GPS LOST_COMMUNICATION timeout in ms (max time between received nav solutions)
 #define GPS_TIMEOUT_MS 2500
@@ -1042,8 +1043,8 @@ static void gpsConfigureSeptentrio(void)
     switch (gpsData.state) {
     case GPS_STATE_DETECT_BAUD:
         // Use the user-configured baud rate for Septentrio receivers
-        serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]); 
-        gpsSetState(GPS_STATE_CHANGE_BAUD); 
+        serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]);
+        gpsSetState(GPS_STATE_CHANGE_BAUD);
         break;
 
     case GPS_STATE_CHANGE_BAUD:
@@ -1094,14 +1095,15 @@ static void gpsConfigureSeptentrio(void)
                 // No ACK expected directly, but waiting for the receiver's ping response to detect the port (dedicated timeout handling)
                 gpsSeptentrioPortDetectorReset();
                 // gecm: getEchoMessage (ping command)
-                septentrioSendCommand("gecm\n"); 
+                septentrioSendCommand("gecm\n");
                 break;
-            case SEPTENTRIO_CFG_SET_DATAIO:
+            case SEPTENTRIO_CFG_SET_DATAIO: {
                 char cmd[SEPTENTRIO_CMD_BUF_SIZE];
                 // sdio: setDataInOut
-                tfp_sprintf(cmd,"sdio,%s,Auto,SBF\n", portDetector.portName); 
+                tfp_sprintf(cmd,"sdio,%s,Auto,SBF\n", portDetector.portName);
                 septentrioSendCommand(cmd);
                 break;
+            }
             case SEPTENTRIO_CFG_SET_SBF_OUTPUT_PVT:
                 // Main navigation blocks at the user-configured update rate
                 septentrioSendOutputCommand("Stream1", "PVTGeodetic+DOP+EndOfPVT", septentrioUserRate);
@@ -1132,7 +1134,7 @@ static void gpsConfigureSeptentrio(void)
         case GPS_ACK_IDLE:
             // No active command waiting for a response, nothing to do
             break;
-        case GPS_ACK_WAITING:
+        case GPS_ACK_WAITING: {
             // Use a longer timeout for port detection, standard short ACK timeout otherwise
             int32_t timeout = (gpsData.state_position == SEPTENTRIO_CFG_DETECT_PORT) 
                 ? SEPTENTRIO_PORT_DETECTION_TIMEOUT_MS 
@@ -1140,18 +1142,19 @@ static void gpsConfigureSeptentrio(void)
 
             if (cmp32(gpsData.now, gpsData.lastMessageSent) > timeout) {
                 if (!portDetector.isDetected) { // restart the configuration process after no port has been detected
-                    gpsData.state_position = SEPTENTRIO_CFG_FORCE_INPUT; 
+                    gpsData.state_position = SEPTENTRIO_CFG_FORCE_INPUT;
                     gpsData.state_ts = gpsData.now;
                     gpsData.ackState = GPS_ACK_IDLE;
                 } else { // standard command timeout treated as NACK 
-                    gpsData.ackState = GPS_ACK_GOT_NACK; 
+                    gpsData.ackState = GPS_ACK_GOT_NACK;
                 }
             }
             break; // wait for ACK, NACK, or timeout
+        }
         case GPS_ACK_GOT_ACK:
             gpsData.state_position++; // move to next configuration step
-            gpsData.state_ts = gpsData.now; 
-            gpsData.ackState = GPS_ACK_IDLE; 
+            gpsData.state_ts = gpsData.now;
+            gpsData.ackState = GPS_ACK_IDLE;
             break;
         case GPS_ACK_GOT_NACK:
             // Port detection and position output commands are essential,
@@ -1162,7 +1165,7 @@ static void gpsConfigureSeptentrio(void)
                     || ((septentrioConfigStep_e)gpsData.state_position == SEPTENTRIO_CFG_SET_SBF_OUTPUT_PVT)) {
                 gpsData.state_position = SEPTENTRIO_CFG_DETECT_PORT;
             } else { // for other commands, ignore the NACK and proceed to the next configuration step
-                gpsData.state_position++; 
+                gpsData.state_position++;
             }
             gpsData.state_ts = gpsData.now;
             gpsData.ackState = GPS_ACK_IDLE;
