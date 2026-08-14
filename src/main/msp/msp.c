@@ -1552,6 +1552,9 @@ case MSP_NAME:
 #else
         sbufWriteU8(dst, 0);
 #endif
+
+        // API 1.49
+        sbufWriteU16(dst, motorConfig()->kv);
         break;
 
 #ifdef USE_MAG
@@ -3206,6 +3209,11 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 #else
             sbufReadU8(src);
 #endif
+        }
+
+        // version 1.49
+        if (sbufBytesRemaining(src) >= 2) {
+            motorConfigMutable()->kv = sbufReadU16(src);
         }
         break;
 
