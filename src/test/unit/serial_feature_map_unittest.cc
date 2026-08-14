@@ -39,6 +39,7 @@ extern "C" {
     #include "blackbox/blackbox.h"
 
     #include "sensors/esc_sensor.h"
+    #include "sensors/opticalflow.h"
     #include "sensors/rangefinder.h"
 
     #include "osd/osd.h"
@@ -59,6 +60,7 @@ extern "C" {
     PG_REGISTER(gimbalTrackConfig_t, gimbalTrackConfig, PG_GIMBAL_TRACK_CONFIG, 0);
     PG_REGISTER(vtxSettingsConfig_t, vtxSettingsConfig, PG_VTX_SETTINGS_CONFIG, 0);
     PG_REGISTER(rangefinderConfig_t, rangefinderConfig, PG_RANGEFINDER_CONFIG, 0);
+    PG_REGISTER(opticalflowConfig_t, opticalflowConfig, PG_OPTICALFLOW_CONFIG, 0);
     PG_REGISTER(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
@@ -101,6 +103,10 @@ void resetAllConfigs(void)
 
     memset(rangefinderConfigMutable(), 0, sizeof(*rangefinderConfigMutable()));
     rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_NONE;
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NONE;
+
+    memset(opticalflowConfigMutable(), 0, sizeof(*opticalflowConfigMutable()));
+    opticalflowConfigMutable()->opticalflow_hardware = OPTICALFLOW_NONE;
 
     memset(osdConfigMutable(), 0, sizeof(*osdConfigMutable()));
     osdConfigMutable()->osd_uart = SERIAL_PORT_NONE;
@@ -330,6 +336,88 @@ TEST(SerialFeatureMap, RangefinderPreservesHardwareSelection)
     rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NONE;
     EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR));
     EXPECT_EQ(RANGEFINDER_NONE, rangefinderConfig()->rangefinder_hardware);
+}
+
+TEST(SerialFeatureMap, SensorPortTransportFollowsHardwareSelection)
+{
+    resetAllConfigs();
+    EXPECT_FALSE(serialSensorPortUsesMsp());
+
+    // Native serial rangefinders open the port themselves.
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TFMINI;
+    EXPECT_FALSE(serialSensorPortUsesMsp());
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NOOPLOOP_F2;
+    EXPECT_FALSE(serialSensorPortUsesMsp());
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_UPT1;
+    EXPECT_FALSE(serialSensorPortUsesMsp());
+    // Pin-driven, no UART at all.
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_HCSR04;
+    EXPECT_FALSE(serialSensorPortUsesMsp());
+
+    // Every MT variant reports over MSP.
+    for (const uint8_t hardware : {RANGEFINDER_MTF01, RANGEFINDER_MTF02,
+                                   RANGEFINDER_MTF01P, RANGEFINDER_MTF02P}) {
+        rangefinderConfigMutable()->rangefinder_hardware = hardware;
+        EXPECT_TRUE(serialSensorPortUsesMsp());
+    }
+
+    // An MT optical flow sensor with no rangefinder configured still needs one.
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NONE;
+    opticalflowConfigMutable()->opticalflow_hardware = OPTICALFLOW_MT;
+    EXPECT_TRUE(serialSensorPortUsesMsp());
+
+    opticalflowConfigMutable()->opticalflow_hardware = OPTICALFLOW_UPT1;
+    EXPECT_FALSE(serialSensorPortUsesMsp());
+}
+
+TEST(SerialFeatureMap, SensorPortOnMspTransportNeedsAnMspSlotFree)
+{
+    resetAllConfigs();
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF02;
+    for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+        EXPECT_TRUE(serialApplyFunctionMask((serialPortIdentifier_e)(SERIAL_PORT_USART1 + i), FUNCTION_MSP));
+    }
+
+    // The sensor port claims no msp_uart[] slot, but one is opened for it at
+    // boot out of the same MAX_MSP_PORT_COUNT budget - with none left the
+    // module would be silent, so the assignment is refused rather than taken.
+    EXPECT_FALSE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR));
+    EXPECT_EQ(SERIAL_PORT_NONE, rangefinderConfig()->rangefinder_uart);
+
+    // A native serial sensor on the same board needs nothing from that budget.
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TFMINI;
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR));
+    EXPECT_EQ(SERIAL_PORT_UART5, rangefinderConfig()->rangefinder_uart);
+}
+
+TEST(SerialFeatureMap, SensorPortSharedWithMspCountsOnce)
+{
+    resetAllConfigs();
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF01;
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USB_VCP, FUNCTION_MSP));
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_MSP));
+
+    // One slot left, and a port naming both wants exactly one: the explicit
+    // MSP claim is the port the sensor would have been given anyway.
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR | FUNCTION_MSP));
+    EXPECT_EQ(SERIAL_PORT_UART5, rangefinderConfig()->rangefinder_uart);
+    EXPECT_EQ((uint32_t)(FUNCTION_LIDAR | FUNCTION_MSP),
+              serialSynthesizeFunctionMask(SERIAL_PORT_UART5));
+}
+
+TEST(SerialFeatureMap, SensorPortDoesNotClaimAnMspSlot)
+{
+    resetAllConfigs();
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF02P;
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR));
+
+    // The implied MSP port is resolved at allocation time from the sensor's
+    // own function, never recorded here - a stored slot could not follow a
+    // later rangefinder_hardware change.
+    EXPECT_EQ(FUNCTION_LIDAR, serialSynthesizeFunctionMask(SERIAL_PORT_UART5));
+    for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+        EXPECT_EQ(SERIAL_PORT_NONE, mspConfig()->msp_uart[i]);
+    }
 }
 
 TEST(SerialFeatureMap, BackfillRehydratesFromLegacyMask)
