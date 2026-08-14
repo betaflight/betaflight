@@ -756,11 +756,15 @@ bool positionControl(void)
             ap.anchor = ANCHOR_OFF;  // fly the commanded velocity via the virtual distance error
             ap.iPolicy = I_FREEZE;   // retain the integral, do not wind it up while manoeuvring
         } else {
-            // No stick input: commanded velocity and its feedforward are zero.
+            // No stick input
+            if (!FLIGHT_MODE(GPS_RESCUE_MODE)){
+            // If in GPS Recue, we have both velocity and acceleration
+            // otherwise hold position at zero velocity and acceleration
             targetVelocity.v[EF_EAST]  = 0.0f;
             targetVelocity.v[EF_NORTH] = 0.0f;
             targetAcceleration.v[EF_EAST]  = 0.0f;
             targetAcceleration.v[EF_NORTH] = 0.0f;
+            }
             if (ap.wasSticksActive) {
                 // Sticks just released: capture the current point and decide
                 // whether to brake, based on the speed being carried.
