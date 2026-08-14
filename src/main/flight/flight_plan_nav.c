@@ -270,7 +270,6 @@ static struct {
     uint8_t   landingImpactSamples;      // over-threshold samples in the current burst
     bool landingImpactBurstOpen;         // a burst is in progress (timestamp is valid)
     bool landingLowSeen;                 // landingLowStartUs is valid
-    bool landingImpactConfirmed;         // touchdown established by an impact close to the ground
 } fp;
 
 static flightPlanWaypointReachedFn reachedListener = NULL;
@@ -886,7 +885,6 @@ static void resetLandingMonitor(timeUs_t currentTimeUs)
     fp.landingImpactSamples = 0;
     fp.landingImpactBurstOpen = false;
     fp.landingLowSeen = false;
-    fp.landingImpactConfirmed = false;
 }
 
 static void startLanding(timeUs_t currentTimeUs, float targetEastM, float targetNorthM)
@@ -956,11 +954,16 @@ static void updateLanding(timeUs_t currentTimeUs)
         }
     }
 
-    // Impact jerk is sampled every call: contact is a transient that a window boundary would miss.
+    // An impact near the ground is the only touchdown signal that survives contact: the altitude
+    // estimate degrades badly in ground effect, defeating both of the tests further below. Jerk is
+    // sampled every call because contact is a transient that a window boundary would miss.
     // Two things make it safe to end a flight on. The craft must be below the landing altitude, so
     // a prop strike or a hard gust at height is ignored; being a conjunction, the noisy near-ground
     // altitude can only ever delay detection, never trigger it early. And the spikes must arrive
     // as a burst, which contact produces and an isolated vibration outlier does not.
+    // Only the burst counters are state: contact is acted on in this same call, so there is
+    // nothing to carry into the next one.
+    bool impactContact = false;
     if (landingImpactJerkExceeded() && belowLandingAltitude) {
         if (fp.landingImpactBurstOpen
             && cmpTimeUs(currentTimeUs, fp.landingImpactBurstUs) <= (timeDelta_t)FP_LANDING_IMPACT_BURST_US) {
@@ -972,9 +975,7 @@ static void updateLanding(timeUs_t currentTimeUs)
             fp.landingImpactSamples = 1;
             fp.landingImpactBurstOpen = true;
         }
-        if (fp.landingImpactSamples >= FP_LANDING_IMPACT_SAMPLES) {
-            fp.landingImpactConfirmed = true;
-        }
+        impactContact = fp.landingImpactSamples >= FP_LANDING_IMPACT_SAMPLES;
     }
 
     // Time spent at landing altitude, for the backstop below. Climbing back out restarts it, so
@@ -1009,10 +1010,6 @@ static void updateLanding(timeUs_t currentTimeUs)
         fp.landingProgressRefAltCm = currentAltitudeCm;
     }
 
-    // An impact near the ground is the only touchdown signal that survives contact: the altitude
-    // estimate degrades badly in ground effect, defeating both tests below.
-    const bool impactContact = fp.landingImpactConfirmed;
-
     // Backstop: the craft has had several times the time the commanded rate needs to cover the
     // landing altitude, and is still not down. Either it is already on the ground and no sensor
     // said so, or it cannot descend; both end the same way.
@@ -1022,16 +1019,19 @@ static void updateLanding(timeUs_t currentTimeUs)
     const bool commitExpired = fp.landingLowSeen
         && cmpTimeUs(currentTimeUs, fp.landingLowStartUs) >= commitTimeoutUs;
 
-    // A stalled descent only implies contact near the ground; at altitude it is just a stalled
-    // descent, and bleeding thrust toward idle is the opposite of what it needs. Impact and the
-    // commit timeout carry their own altitude evidence, so only the stall inference is gated.
+    // The thrust ceiling serves the stalled descent alone: the craft is down, nothing detected the
+    // contact, and the altitude loop is still holding thrust just under hover. Impact and the
+    // commit timeout disarm on the spot immediately below, so arming the ceiling for those would
+    // apply it for zero iterations. A stall only implies contact when the craft is near the
+    // ground; at altitude it is just a stalled descent, and bleeding thrust toward idle is the
+    // opposite of what that needs.
     const bool stalledOnGround = belowLandingAltitude
         && fp.landingStallWindows >= FP_LANDING_STALL_WINDOWS;
-    autopilotSetLandingSettle(impactContact || commitExpired || stalledOnGround);
+    autopilotSetLandingSettle(stalledOnGround);
 
-    // The impact already is the touchdown, so it completes the landing on the spot. Holding it
-    // for the confirmation window would only keep the motors spinning on the ground: contact is
-    // latched, so nothing that arrives during the wait could revoke it.
+    // The impact already is the touchdown, so it completes the landing on the spot. Holding it for
+    // the confirmation window would only keep the motors spinning on the ground, and nothing
+    // arriving during that wait could revoke a contact that has already happened.
     if (impactContact || commitExpired) {
         completeLanding();
         return;
@@ -1471,7 +1471,6 @@ void flightPlanNavInit(void)
     fp.hdgFaultTimeS = 0.0f;
     fp.lastUpdateUs = 0;
     fp.legIsPassGate = false;
-    autopilotSetLandingSettle(false);   // never leave a throttle ceiling applied outside a landing
     fp.legValid = false;
     fp.carrotSpeedMps = 0.0f;
     fp.carrotPrevValid = false;
@@ -1500,7 +1499,6 @@ void flightPlanNavEngage(void)
     fp.hdgFaultTimeS = 0.0f;
     fp.lastUpdateUs = 0;
     fp.legIsPassGate = false;
-    autopilotSetLandingSettle(false);   // never leave a throttle ceiling applied outside a landing
     fp.legValid = false;
     fp.carrotSpeedMps = 0.0f;
     fp.carrotPrevValid = false;
@@ -1570,7 +1568,10 @@ void flightPlanNavDisengage(void)
     fp.hdgFaultTimeS = 0.0f;
     fp.lastUpdateUs = 0;
     fp.legIsPassGate = false;
-    autopilotSetLandingSettle(false);   // never leave a throttle ceiling applied outside a landing
+    // A landing abandoned mid-descent is the one exit that leaves the ceiling applied: the
+    // completion paths clear it themselves, and resetAltitudeControl() clears it on every
+    // alt-hold and rescue entry.
+    autopilotSetLandingSettle(false);
     fp.legValid = false;
     fp.carrotSpeedMps = 0.0f;
     fp.carrotPrevValid = false;
