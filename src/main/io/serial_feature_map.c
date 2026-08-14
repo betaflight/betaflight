@@ -57,12 +57,58 @@
 #ifdef USE_RANGEFINDER
 #include "sensors/rangefinder.h"
 #endif
+#ifdef USE_OPTICALFLOW
+#include "sensors/opticalflow.h"
+#endif
 #ifdef USE_OSD
 #include "osd/osd.h"
 #endif
 #ifdef USE_TELEMETRY
 #include "telemetry/telemetry.h"
 #endif
+
+/*
+ * FUNCTION_LIDAR names the UART the rangefinder / optical flow module is wired
+ * to.  It does not say how the module talks, and the two transports differ in
+ * who opens the port:
+ *
+ *   TF / Nooploop / UPT1  - the driver calls openSerialPort() itself during
+ *                           sensorsAutodetect().
+ *   MT family             - rangefinder_lidarmt.c is a bridge over MSP.  The
+ *                           module pushes MSP2_SENSOR_RANGEFINDER_LIDARMT /
+ *                           MSP2_SENSOR_OPTICALFLOW_MT frames, which are
+ *                           handled by the ordinary MSP command dispatcher, so
+ *                           the declared port is only heard once an MSP port
+ *                           has been opened on it.
+ *
+ * True for the second case, i.e. when the sensor port needs an MSP port.
+ *
+ * A build where the two sensors disagree - an MT rangefinder alongside a UPT1
+ * optical flow, say - is not a real wiring: there is one declared port and one
+ * module on it.  It resolves in favour of the native driver, which claims the
+ * port during autodetect, long before mspSerialAllocatePorts() runs.
+ */
+bool serialSensorPortUsesMsp(void)
+{
+#ifdef USE_RANGEFINDER_MT
+    switch (rangefinderConfig()->rangefinder_hardware) {
+    case RANGEFINDER_MTF01:
+    case RANGEFINDER_MTF02:
+    case RANGEFINDER_MTF01P:
+    case RANGEFINDER_MTF02P:
+        return true;
+    default:
+        break;
+    }
+#endif
+#ifdef USE_OPTICALFLOW_MT
+    if (opticalflowConfig()->opticalflow_hardware == OPTICALFLOW_MT) {
+        return true;
+    }
+#endif
+
+    return false;
+}
 
 uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
 {
@@ -327,7 +373,19 @@ static bool canApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mas
     }
 #endif
 
-    if (mask & FUNCTION_MSP) {
+    unsigned mspNeeded = (mask & FUNCTION_MSP) ? 1 : 0;
+
+    // A sensor port on MSP-transport hardware has an MSP port opened on it at
+    // boot even though the mask names no MSP function, and mspPorts[] is sized
+    // to MAX_MSP_PORT_COUNT like msp_uart[] is.  The implied port claims no
+    // msp_uart[] slot - nothing would keep such a slot in step with a later
+    // rangefinder_hardware change - so require headroom instead: one free slot
+    // here means one free mspPorts[] entry for it at boot.
+    if ((mask & FUNCTION_LIDAR) && !(mask & FUNCTION_MSP) && serialSensorPortUsesMsp()) {
+        mspNeeded++;
+    }
+
+    if (mspNeeded > 0) {
         unsigned availableMsp = 0;
         for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
             if (mspConfig()->msp_uart[i] == SERIAL_PORT_NONE
@@ -335,7 +393,7 @@ static bool canApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mas
                 availableMsp++;
             }
         }
-        if (availableMsp < 1) {
+        if (availableMsp < mspNeeded) {
             return false;
         }
     }

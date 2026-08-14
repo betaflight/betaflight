@@ -87,6 +87,7 @@ extern "C" {
                                  serialReceiveCallbackPtr, void *, uint32_t,
                                  portMode_e, portOptions_e) { return &fakeSerialPort; }
     bool isSerialPortShared(const serialPortConfig_t *, uint16_t, serialPortFunction_e) { return false; }
+    bool serialSensorPortUsesMsp(void) { return false; }
     serialType_e serialType(serialPortIdentifier_e) { return SERIALTYPE_UART; }
     const serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e) { return NULL; }
 
