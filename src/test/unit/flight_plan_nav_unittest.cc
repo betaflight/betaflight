@@ -1596,6 +1596,117 @@ TEST_F(FlightPlanNavSafetyTest, StalledDescentAtAltitudeDoesNotBleedThrust)
     EXPECT_TRUE(g_landingSettle) << "a stall below the landing altitude must still bleed thrust";
 }
 
+// Stall evidence gathered at altitude must not survive the crossing into the landing regime.
+// The counter only clears on a completed 400 ms window that shows progress, so a craft that
+// stalls high, resumes descending, and crosses the landing altitude inside one window would
+// arrive carrying stale evidence and have thrust bled from under it several metres up - the
+// same class of defect this series exists to remove. landingLowSeen is already reset on the
+// way past; this is the counter beside it that was not.
+TEST_F(FlightPlanNavSafetyTest, StallAtAltitudeDoesNotBleedThrustOnCrossingIntoLanding)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    // Descending normally, high up, so touchdown monitoring is armed.
+    g_stubBelowLandingAltitude = false;
+    g_stubEstimate.position.v[ENU_U] = 2000.0f;   // 20 m
+    for (int i = 0; i < 10; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = -100.0f;
+        g_stubEstimate.position.v[ENU_U] -= 10.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    ASSERT_FALSE(g_landingSettle);
+
+    // Stalls at altitude: many windows of no progress, still well above the ground.
+    for (int i = 0; i < 20; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = 0.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    ASSERT_FALSE(g_landingSettle) << "the altitude gate holds while high";
+
+    // Descent resumes at the commanded rate and the craft crosses the landing altitude inside
+    // one progress window, so no fresh window has had a chance to clear the stale count.
+    // Nothing here is a touchdown; the ceiling must stay off.
+    g_stubBelowLandingAltitude = true;
+    for (int i = 0; i < 3; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = -100.0f;
+        g_stubEstimate.position.v[ENU_U] -= 10.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+        EXPECT_FALSE(g_landingSettle)
+            << "stale stall evidence from altitude bled thrust during a healthy descent (i="
+            << i << ")";
+    }
+}
+
+// FP_LANDING_STALL_WINDOWS exists to demand sustained evidence before thrust is bled, so both
+// windows must actually measure the near-ground regime. Clearing the count on the way down is
+// not sufficient on its own: a window opened above the landing altitude and closed below it
+// spans both regimes, and if it still counts, the ceiling engages after roughly one full
+// below-threshold window instead of two. The crossing here lands deliberately mid-window.
+TEST_F(FlightPlanNavSafetyTest, StallWindowsMustLieWhollyBelowTheLandingAltitude)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    // Arm touchdown monitoring with a normal descent, high up.
+    g_stubBelowLandingAltitude = false;
+    g_stubEstimate.position.v[ENU_U] = 2000.0f;   // 20 m
+    for (int i = 0; i < 10; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = -100.0f;
+        g_stubEstimate.position.v[ENU_U] -= 10.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+
+    // Stall high for 2.2 s, chosen so the crossing lands mid-window. Measured engagement after
+    // the crossing, sweeping this length over a whole window: two whole windows below the
+    // threshold gives 8 iterations at every phase, while counting the straddling window gives
+    // 4, 5, 6 or 7 depending purely on where the crossing happens to fall. 4 is one window.
+    for (int i = 0; i < 22; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = 0.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    ASSERT_FALSE(g_landingSettle);
+
+    // Now near the ground and stalled for real: skittering, so the quiet-velocity path cannot
+    // disarm first. Two whole windows below the threshold is 800 ms, so nothing may fire before
+    // then; a straddling window would bring it forward to about 500 ms.
+    g_stubBelowLandingAltitude = true;
+    const float groundAltCm = g_stubEstimate.position.v[ENU_U];
+    for (int i = 0; i < 7; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = (i % 2) ? 90.0f : -90.0f;
+        g_stubEstimate.position.v[ENU_U] = groundAltCm + ((i % 2) ? 5.0f : 0.0f);
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+        EXPECT_FALSE(g_landingSettle)
+            << "a window opened above the landing altitude counted toward the ceiling (i="
+            << i << ", " << (i + 1) * 100 << " ms below)";
+    }
+
+    // ...and it must still engage once two genuine windows have elapsed.
+    for (int i = 7; i < 12; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = (i % 2) ? 90.0f : -90.0f;
+        g_stubEstimate.position.v[ENU_U] = groundAltCm + ((i % 2) ? 5.0f : 0.0f);
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    EXPECT_TRUE(g_landingSettle) << "a genuine ground stall must still bleed thrust";
+}
+
 // Ground contact drives prop downwash into the barometer, which dumps the altitude estimate.
 // One logged touchdown showed 4.07 m of apparent descent in a single 400 ms window, 8x the
 // commanded rate, immediately after the craft had actually stopped descending. Counted as

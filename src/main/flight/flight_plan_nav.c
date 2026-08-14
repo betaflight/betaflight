@@ -989,7 +989,16 @@ static void updateLanding(timeUs_t currentTimeUs)
         fp.landingLowSeen = false;
     }
 
-    if (fp.landingProgressRefUs == 0) {
+    // A stalled descent only implies contact near the ground, so the whole measurement is scoped
+    // to that regime: the count is dropped and the window restarted while the craft is still
+    // high. Clearing the count alone would not be enough - a window opened above the landing
+    // altitude and closed below it measures partly the wrong regime, yet would still count
+    // toward the two windows that engage the ceiling. Discarding both keeps every window that
+    // can contribute wholly below the landing altitude.
+    if (!belowLandingAltitude) {
+        fp.landingStallWindows = 0;
+        fp.landingProgressRefUs = 0;
+    } else if (fp.landingProgressRefUs == 0) {
         fp.landingProgressRefUs = currentTimeUs;
         fp.landingProgressRefAltCm = currentAltitudeCm;
     } else if (cmpTimeUs(currentTimeUs, fp.landingProgressRefUs) >= (timeDelta_t)FP_LANDING_PROGRESS_WINDOW_US) {
