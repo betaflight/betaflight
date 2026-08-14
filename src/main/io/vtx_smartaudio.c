@@ -66,6 +66,10 @@ static serialPort_t *smartAudioSerialPort = NULL;
 
 smartAudioDevice_t saDevice;
 
+#if defined(UM324xF) && defined(SA_UART_RX_PIN)
+timeMs_t saTxstart = 0;
+#endif
+
 #ifdef USE_VTX_COMMON
 static const vtxVTable_t saVTable;    // Forward
 static vtxDevice_t vtxSmartAudio = {
@@ -830,6 +834,14 @@ static void vtxSAProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 
     timeMs_t nowMs = millis();             // Don't substitute with "currentTimeUs / 1000"; sa_lastTransmissionMs is based on millis().
     static timeMs_t lastCommandSentMs = 0; // Last non-GET_SETTINGS sent
+
+#if defined(UM324xF) && defined(SA_UART_RX_PIN)
+    extern uint8_t  afSA;
+    extern IO_t txSA, rxSA;
+    IOConfigGPIOAF(txSA, IOCFG_AF_PP, afSA);
+    IOConfigGPIO(rxSA, IOCFG_IN_FLOATING);
+    saTxstart = nowMs;
+#endif
 
     if ((sa_outstanding != SA_CMD_NONE) && (nowMs - sa_lastTransmissionMs > SMARTAUDIO_CMD_TIMEOUT)) {
         // Last command timed out

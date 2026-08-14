@@ -46,6 +46,11 @@
 
 #include "pg/serial_uart.h"
 
+#if defined(UM324xF) && defined(SA_UART_RX_PIN)
+uint8_t  afSA;
+IO_t txSA, rxSA;
+#endif
+
 #ifdef USE_HAL_DRIVER
 extern struct uartHalHandle_s uartHalHandles[UARTDEV_COUNT];
 extern struct dmaHalHandle_s uartRxDmaHalHandles[UARTDEV_COUNT];
@@ -57,6 +62,9 @@ static void enableRxIrq(const uartHardware_t *hardware)
 {
 #if defined(USE_HAL_DRIVER)
         HAL_NVIC_SetPriority(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
+#if defined(UM324xF)
+        HAL_NVIC_SetPriority(hardware->irqn, 3, 2);
+#endif
         HAL_NVIC_EnableIRQ(hardware->irqn);
 #elif defined(STM32F4)
         NVIC_InitTypeDef NVIC_InitStructure;
@@ -159,9 +167,27 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
             pushPull ? GPIO_OType_PP : GPIO_OType_OD,
             ((const unsigned[]){GPIO_PuPd_NOPULL, GPIO_PuPd_DOWN, GPIO_PuPd_UP})[pull]
         );
+#elif defined(UM324xF)
+        UNUSED(pull);
+        UNUSED(pushPull);
+#if defined(SA_UART_RX_PIN)
+        txSA = txIO; 
+        rxSA = IOGetByTag(DEFIO_TAG_E(SA_UART_RX_PIN));
+        afSA = hardware->af;
+#endif
+        const ioConfig_t ioCfg = IO_CONFIG(
+            GPIO_MODE_AF,
+            GPIO_SPEED_FREQ_HIGH,  // TODO: should use stronger drive
+            ((const unsigned[]){GPIO_NOPULL, GPIO_PULLDOWN, GPIO_PULLUP})[pull]
+        );
 #endif
         IOInit(txIO, ownerTxRx, ownerIndex);
         IOConfigGPIOAF(txIO, ioCfg, txAf);
+#if defined(UM324xF) && defined(SA_UART_RX_PIN)
+        IOConfigGPIO(txIO, IOCFG_IN_FLOATING);
+        IOConfigGPIO(rxIO, IOCFG_IN_FLOATING);
+        IOConfigGPIO(rxSA, IOCFG_IN_FLOATING);
+#endif
     } else {
         if ((mode & MODE_TX) && txIO) {
             IOInit(txIO, ownerTxRx, ownerIndex);
@@ -311,7 +337,13 @@ void uartConfigureDma(uartDevice_t *uartdev)
 void uartEnableTxInterrupt(uartPort_t *uartPort)
 {
 #if defined(USE_HAL_DRIVER)
+#if defined(UM324xF)
+    UART_HandleTypeDef huart = {0};
+    huart.Instance = (UART_TypeDef *)uartPort->USARTx;
+    __HAL_UART_ENABLE_IT(&huart, UART_EX_IT_ETBEI);
+#else
     LL_USART_EnableIT_TXE((USART_TypeDef *)uartPort->USARTx);
+#endif
 #elif defined(USE_ATBSP_DRIVER)
     usart_interrupt_enable((usart_type *)uartPort->USARTx, USART_TDBE_INT, TRUE);
 #elif defined(X32M7)

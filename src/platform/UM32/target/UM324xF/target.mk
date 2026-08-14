@@ -1,0 +1,3 @@
+TARGET_MCU        := UM324xF
+TARGET_MCU_FAMILY := UM324xx
+

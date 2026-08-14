@@ -956,6 +956,81 @@ const spiHardware_t spiHardware[] = {
         },
     #endif
 #endif
+#if defined(UM324xF)
+    {
+        .device = SPIDEV_1,
+        .reg = (spiResource_t *)SPI1,
+        .sckPins = {
+            { DEFIO_TAG_E(PA5) },
+            { DEFIO_TAG_E(PB3) },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PA6) },
+            { DEFIO_TAG_E(PB4) },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PA7) },
+            { DEFIO_TAG_E(PB5) },
+        },
+        .af = GPIO_AF5_SPI1,
+        .rcc = RCC_APB1(SPI1),
+        .dmaIrqHandler = DMA2_ST7_HANDLER,
+    },
+    {
+        .device = SPIDEV_2,
+        .reg = (spiResource_t *)SPI2,
+        .sckPins = {
+            { DEFIO_TAG_E(PB10) },
+            { DEFIO_TAG_E(PB13) },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PB14) },
+            { DEFIO_TAG_E(PC2) },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PB15) },
+            { DEFIO_TAG_E(PC3) },
+        },
+        .af = GPIO_AF5_SPI2,
+        .rcc = RCC_APB2(SPI2),
+        .dmaIrqHandler = DMA2_ST7_HANDLER,
+    },
+    {
+        .device = SPIDEV_3,
+        .reg = (spiResource_t *)SPI3,
+        .sckPins = {
+            { DEFIO_TAG_E(PB3) },
+            { DEFIO_TAG_E(PC10) },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PB4) },
+            { DEFIO_TAG_E(PC11) },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PB5) },
+            { DEFIO_TAG_E(PC12) },
+        },
+        .af = GPIO_AF6_SPI3,
+        .rcc = RCC_APB2(SPI3),
+        .dmaIrqHandler = DMA2_ST7_HANDLER,
+    },
+    {
+        .device = SPIDEV_4,
+        .reg = (spiResource_t *)SPI4,
+        .sckPins = {
+            { DEFIO_TAG_E(PE3) },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PE5) },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PE6) },
+        },
+        .af = GPIO_AF6_SPI4,
+        .rcc = RCC_APB2(SPI4),
+        .dmaIrqHandler = DMA2_ST7_HANDLER,
+    },
+#endif
 
 };
 
