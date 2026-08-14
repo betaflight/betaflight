@@ -403,10 +403,17 @@ serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e s
     return NULL;
 }
 
+/*
+ * FUNCTION_LIDAR is in here because an MT rangefinder / optical flow module is
+ * heard over MSP on the very port it declares, so the two genuinely coexist -
+ * and because rejecting the pair costs far more than the pair does: an invalid
+ * config is answered by serialResetFeatureAssignments(), losing every port
+ * assignment on the board rather than the offending one.
+ */
 #ifdef USE_TELEMETRY
-#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | TELEMETRY_PORT_FUNCTIONS_MASK | FUNCTION_VTX_MSP)
+#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | TELEMETRY_PORT_FUNCTIONS_MASK | FUNCTION_VTX_MSP | FUNCTION_LIDAR)
 #else
-#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | FUNCTION_VTX_MSP)
+#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | FUNCTION_VTX_MSP | FUNCTION_LIDAR)
 #endif
 
 bool isSerialConfigValid(void)
