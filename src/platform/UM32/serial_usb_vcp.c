@@ -63,6 +63,11 @@ extern bool bf_get_tx_flag(void);
 extern uint8_t usbIsConnected(void);
 extern uint8_t usbIsConfigured(void);
 
+uint8_t usbVcpIsActive(void)
+{
+    return usbIsConnected() && usbIsConfigured();
+}
+
 static vcpPort_t vcpPort = {0};
 static uint32_t g_baudRate = 0;
 

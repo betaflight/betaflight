@@ -270,13 +270,22 @@ void Error_Handler(void)
 
 
 // SystemSYSCLKSource
+// Normalised for the CLI's STM32 convention:
 // 0: HSI
-// 1; HSE
-// 2: PLL0
+// 1: HSE
+// 2: PLL
 
 int SystemSYSCLKSource(void)
 {
-    return __HAL_RCM_GET_SYSCLK_SOURCE();
+    switch (__HAL_RCM_GET_SYSCLK_SOURCE()) {
+    case RCM_CFGR0_SYS_SWS_XTH:
+        return 1;   // HSE
+    case RCM_CFGR0_SYS_SWS_PLL0:
+        return 2;   // PLL
+    case RCM_CFGR0_SYS_SWS_RCH:
+    default:
+        return 0;   // HSI
+    }
 }
 
 // SystemPLLSource
@@ -285,7 +294,13 @@ int SystemSYSCLKSource(void)
 
 int SystemPLLSource(void)
 {
-    return __HAL_RCM_GET_PLL_OSCSOURCE();
+    switch (__HAL_RCM_GET_PLL_OSCSOURCE()) {
+    case RCM_CR0_PLLSRC_XTH:
+        return 1;   // HSE
+    case RCM_CR0_PLLSRC_RCH:
+    default:
+        return 0;   // HSI
+    }
 }
 
 typedef struct pllConfig_s {
