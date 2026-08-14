@@ -170,6 +170,7 @@ cli_unittest_SRC := \
 cli_unittest_DEFINES := \
 		USE_OSD= \
 		USE_CLI= \
+		USE_MSP_CLI_COMMAND= \
 		SystemCoreClock=1000000
 
 cms_unittest_SRC := \
@@ -339,6 +340,14 @@ pg_unittest_SRC := \
 		$(USER_DIR)/pg/pg.c
 
 
+rc_unittest_SRC := \
+		$(USER_DIR)/fc/rc.c \
+		$(USER_DIR)/fc/controlrate_profile.c \
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/maths.c
+
 rc_controls_unittest_SRC := \
 		$(USER_DIR)/fc/rc_controls.c \
 		$(USER_DIR)/pg/pg.c \
@@ -404,6 +413,30 @@ scheduler_unittest_SRC := \
 
 scheduler_unittest_DEFINES := \
 		USE_OSD=
+
+serial_feature_map_unittest_SRC := \
+		$(USER_DIR)/io/serial_feature_map.c
+
+serial_feature_map_unittest_DEFINES := \
+		USE_GPS= \
+		USE_SERIALRX= \
+		USE_BLACKBOX= \
+		USE_ESC_SENSOR= \
+		USE_RCDEVICE= \
+		USE_GIMBAL= \
+		USE_VTX_COMMON= \
+		USE_VTX_SMARTAUDIO= \
+		USE_VTX_TRAMP= \
+		USE_VTX_MSP= \
+		USE_RANGEFINDER= \
+		USE_OSD= \
+		USE_TELEMETRY= \
+		USE_TELEMETRY_FRSKY_HUB= \
+		USE_TELEMETRY_HOTT= \
+		USE_TELEMETRY_LTM= \
+		USE_TELEMETRY_SMARTPORT= \
+		USE_TELEMETRY_MAVLINK= \
+		USE_TELEMETRY_IBUS=
 
 sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/sensors/gyro.c \

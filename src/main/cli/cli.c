@@ -120,6 +120,7 @@ bool cliMode = false;
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
+#include "io/serial_feature_map.h"
 #include "io/transponder_ir.h"
 #include "io/usb_msc.h"
 #include "io/vtx_control.h"
@@ -1503,6 +1504,15 @@ RAM_CODE static void cliSerial(const char *cmdName, char *cmdline)
 
     if (validArgumentCount < 6) {
         cliShowInvalidArgumentCountError(cmdName);
+        return;
+    }
+
+    // Mirror the legacy bitmask into the per-feature PG fields.  If the
+    // requested combination cannot be represented we reject the whole
+    // command so the synthesized view and the stored functionMask stay
+    // in sync.
+    if (!serialApplyFunctionMask(portConfig.identifier, portConfig.functionMask)) {
+        cliShowParseError(cmdName);
         return;
     }
 
@@ -8526,7 +8536,7 @@ static void processCharacter(const char c)
             cliPrompt();
         }
 
-    } else if (bufferIndex < sizeof(cliBuffer) && c >= 32 && c <= 126) {
+    } else if (bufferIndex < sizeof(cliBuffer) - 1 && c >= 32 && c <= 126) {
         if (!bufferIndex && c == ' ') {
             return; // Ignore leading spaces
         }
@@ -8669,15 +8679,7 @@ void cliEnter(serialPort_t *serialPort, bool interactive)
     }
 }
 
-#ifdef CONFIG_IN_FILE
-#include <stdio.h>
-
-static void stdoutBufWrite(void *arg, const uint8_t *data, int count)
-{
-    UNUSED(arg);
-    fwrite(data, 1, count, stdout);
-}
-
+#if defined(CONFIG_IN_FILE) || defined(USE_MSP_CLI_COMMAND)
 // Check if a line (after stripping comments/whitespace) matches a command name
 static bool lineIsCommand(const char *line, const char *command)
 {
@@ -8694,6 +8696,128 @@ static bool lineIsCommand(const char *line, const char *command)
     char next = line[cmdLen];
     return (next == '\0' || next == ' ' || next == '\t' ||
             next == '\n' || next == '\r' || next == '#');
+}
+#endif
+
+#ifdef USE_MSP_CLI_COMMAND
+// Check whether a line carries 'arg' as a discrete argument. Inline comments are stripped
+// first because processCharacter() drops them before dispatch, so a plain substring search
+// would read "defaults # nosave" as carrying the nosave flag when the CLI will not.
+static bool lineHasArg(const char *line, const char *arg)
+{
+    char stripped[CLI_IN_BUFFER_SIZE];
+    strncpy(stripped, line, sizeof(stripped) - 1);
+    stripped[sizeof(stripped) - 1] = '\0';
+
+    char *cp = strchr(stripped, '#');
+    if (cp) {
+        *cp = '\0';
+    }
+    cp = strstr(stripped, "//");
+    if (cp) {
+        *cp = '\0';
+    }
+
+    char *saveptr;
+    for (char *tok = strtok_r(stripped, " \t\r\n", &saveptr); tok;
+         tok = strtok_r(NULL, " \t\r\n", &saveptr)) {
+        if (strcasecmp(tok, arg) == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+typedef struct cliCaptureSink_s {
+    char *buf;
+    int cap;
+    int total;
+} cliCaptureSink_t;
+
+static void cliCaptureBufWrite(void *arg, const uint8_t *data, int count)
+{
+    cliCaptureSink_t *sink = (cliCaptureSink_t *)arg;
+    for (int i = 0; i < count; i++) {
+        if (sink->total < sink->cap) {
+            sink->buf[sink->total] = (char)data[i];
+        }
+        sink->total++;
+    }
+}
+
+int cliExecuteCommand(const char *cmdline, char *outBuf, int outBufLen)
+{
+    if (cliMode || !cmdline || !outBuf || outBufLen <= 0) {
+        return CLI_COMMAND_REFUSED;
+    }
+
+    // The fabricated port below has a NULL vTable, so any command that reaches
+    // waitForSerialPortToFinishTransmitting() (reboot/mode-switch/passthrough) would
+    // fault. Handle those here instead of dispatching them: 'save' persists without
+    // the reboot, 'exit' is a no-op, bare 'defaults' (which reboots) is refused.
+    if (lineIsCommand(cmdline, "exit")) {
+        return 0;
+    }
+    if (lineIsCommand(cmdline, "bl") || lineIsCommand(cmdline, "msc") ||
+        lineIsCommand(cmdline, "serialpassthrough")) {
+        return CLI_COMMAND_REFUSED;
+    }
+    // This is reachable from any MSP link, including telemetry links in flight. writeEEPROM()
+    // blocks the flight loop (MSP_EEPROM_WRITE refuses while armed for the same reason) and
+    // wiping the config mid-flight is never safe.
+    if (ARMING_FLAG(ARMED) &&
+        (lineIsCommand(cmdline, "save") || lineIsCommand(cmdline, "defaults"))) {
+        return CLI_COMMAND_REFUSED;
+    }
+    if (lineIsCommand(cmdline, "defaults") && !lineHasArg(cmdline, "nosave")) {
+        return CLI_COMMAND_REFUSED;
+    }
+
+    cliCaptureSink_t sink = { .buf = outBuf, .cap = outBufLen, .total = 0 };
+
+    cliMode = true;
+    cliInteractive = false;
+
+    static serialPort_t dummyPort;
+    memset(&dummyPort, 0, sizeof(dummyPort));
+    cliPort = &dummyPort;
+
+    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer),
+                  (bufWrite_t)cliCaptureBufWrite, &sink);
+    cliErrorWriter = cliWriter = &cliWriterDesc;
+    cliClearInputBuffer();
+
+    if (lineIsCommand(cmdline, "save")) {
+        if (tryPrepareSave("save")) {
+            writeEEPROM();
+            cliPrintHashLine("saving");
+        }
+    } else {
+        for (const char *p = cmdline; *p; p++) {
+            processCharacter(*p);
+        }
+        processCharacter('\n');
+    }
+
+    cliWriterFlush();
+
+    cliMode = false;
+    cliInteractive = false;
+    cliWriter = cliErrorWriter = NULL;
+    cliPort = NULL;
+
+    return sink.total;
+}
+#endif
+
+#ifdef CONFIG_IN_FILE
+#include <stdio.h>
+
+static void stdoutBufWrite(void *arg, const uint8_t *data, int count)
+{
+    UNUSED(arg);
+    fwrite(data, 1, count, stdout);
 }
 
 void cliProcessConfigFile(const char *filename)
@@ -8762,15 +8886,21 @@ void cliProcessConfigFile(const char *filename)
             if (cp) {
                 *cp = '\0';
             }
-            // Tokenize the comment-stripped line and look for 'nosave' as a discrete token
+            // Tokenize the comment-stripped line and look for 'nosave' as a discrete token.
+            // strtok writes NULs over the delimiters, so run it on a scratch copy: 'stripped'
+            // is reused below to rebuild the line and must keep its arguments intact.
+            char scratch[CLI_IN_BUFFER_SIZE];
+            strncpy(scratch, stripped, sizeof(scratch) - 1);
+            scratch[sizeof(scratch) - 1] = '\0';
             bool hasNosave = false;
-            char *tok = strtok(stripped, " \t\r\n");
+            char *saveptr;
+            char *tok = strtok_r(scratch, " \t\r\n", &saveptr);
             while (tok) {
                 if (strcasecmp(tok, "nosave") == 0) {
                     hasNosave = true;
                     break;
                 }
-                tok = strtok(NULL, " \t\r\n");
+                tok = strtok_r(NULL, " \t\r\n", &saveptr);
             }
             if (!hasNosave) {
                 // Append 'nosave' to the original line (minus any trailing comment/whitespace)
@@ -8786,6 +8916,13 @@ void cliProcessConfigFile(const char *filename)
                     nosaveLine[--len] = '\0';
                 }
                 strcat(nosaveLine, " nosave\n");
+                // processCharacter() stops buffering at CLI_IN_BUFFER_SIZE characters but still
+                // null terminates at bufferIndex when the newline arrives, so a rewritten line
+                // that no longer fits would both run truncated and write one past cliBuffer.
+                if (strlen(nosaveLine) > CLI_IN_BUFFER_SIZE) {
+                    printf("[CONFIG] Line too long to rewrite, skipped: %s\n", stripped);
+                    continue;
+                }
                 for (size_t i = 0; nosaveLine[i]; i++) {
                     processCharacter(nosaveLine[i]);
                 }
