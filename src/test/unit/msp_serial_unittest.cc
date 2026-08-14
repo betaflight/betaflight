@@ -56,11 +56,11 @@ extern "C" {
 
     // --- faked serial RX queue ---
     #define FAKE_RX_CAP 256
+    #define SERIAL_PORT_DUMMY_IDENTIFIER  (serialPortIdentifier_e)0x12
     static uint8_t  fakeRxBuf[FAKE_RX_CAP];
     static unsigned fakeRxHead;
     static unsigned fakeRxTail;
     static serialPort_t fakeSerialPort;
-    static serialPortConfig_t fakePortConfig;
 
     uint32_t serialRxBytesWaiting(const serialPort_t *) { return fakeRxTail - fakeRxHead; }
     uint8_t  serialRead(serialPort_t *) { return fakeRxBuf[fakeRxHead++ % FAKE_RX_CAP]; }
@@ -82,15 +82,12 @@ extern "C" {
     bool cliProcess(void) { return false; }
 
     // --- port allocation mocks (drive mspSerialAllocatePorts -> one MSP port) ---
-    const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) { return &fakePortConfig; }
-    const serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e) { return NULL; }
     serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e,
                                  serialReceiveCallbackPtr, void *, uint32_t,
                                  portMode_e, portOptions_e) { return &fakeSerialPort; }
-    bool isSerialPortShared(const serialPortConfig_t *, uint16_t, serialPortFunction_e) { return false; }
+    bool isSerialPortShared(serialPortIdentifier_e, uint16_t, serialPortFunction_e) { return false; }
     serialType_e serialType(serialPortIdentifier_e) { return SERIALTYPE_UART; }
-    const serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e) { return NULL; }
-    uint8_t serialSynthesizePortBaud(serialPortIdentifier_e, serialBaudClass_e) { return BAUD_115200; }
+    uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e) { return FUNCTION_MSP; }
 
     // --- inert serial/system/msp stubs (off the tested path) ---
     uint32_t serialTxBytesFree(const serialPort_t *) { return FAKE_RX_CAP; }
@@ -134,9 +131,12 @@ protected:
         fakeMillis = 1000;
 
         memset(&fakeSerialPort, 0, sizeof(fakeSerialPort));
-        memset(&fakePortConfig, 0, sizeof(fakePortConfig));
         memset(&serialConfig_System, 0, sizeof(serialConfig_System));
         memset(&mspConfig_System, 0, sizeof(mspConfig_System));
+        for (unsigned slot = 0; slot < MAX_MSP_PORT_COUNT; slot++) {
+            mspConfig_System.msp_uart[slot] = SERIAL_PORT_NONE;
+        }
+        mspConfig_System.msp_uart[0] = SERIAL_PORT_DUMMY_IDENTIFIER;
         serialConfig_System.reboot_character = 'R';
 
         // memset all ports + re-allocate one from the mocked config above.

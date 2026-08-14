@@ -36,4 +36,24 @@ void pgResetFn_mspConfig(mspConfig_t *mspConfig)
         mspConfig->msp_uart[i] = SERIAL_PORT_NONE;
         mspConfig->msp_baud[i] = BAUD_115200;
     }
+
+    // The first port is always MSP so a freshly flashed board stays reachable.
+    unsigned slot = 0;
+    mspConfig->msp_uart[slot++] = serialPortIdentifiers[0];
+#ifdef MSP_UART
+    if (slot < MAX_MSP_PORT_COUNT) {
+        mspConfig->msp_uart[slot++] = MSP_UART;
+    }
+#endif
+#ifdef USE_MSP_UART
+    if (slot < MAX_MSP_PORT_COUNT) {
+        mspConfig->msp_uart[slot++] = USE_MSP_UART;
+    }
+#endif
+#ifdef MSP_DISPLAYPORT_UART
+    if (slot < MAX_MSP_PORT_COUNT) {
+        mspConfig->msp_uart[slot++] = MSP_DISPLAYPORT_UART;
+    }
+#endif
+    UNUSED(slot);
 }

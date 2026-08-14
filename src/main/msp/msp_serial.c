@@ -57,37 +57,40 @@ static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, bo
 void mspSerialAllocatePorts(void)
 {
     uint8_t portIndex = 0;
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
-    while (portConfig && portIndex < ARRAYLEN(mspPorts)) {
-        mspPort_t *mspPort = &mspPorts[portIndex];
 
-        if (mspPort->port) {
-            portIndex++;
+    for (unsigned slot = 0; slot < MAX_MSP_PORT_COUNT; slot++) {
+        const serialPortIdentifier_e identifier = mspConfig()->msp_uart[slot];
+        if (identifier == SERIAL_PORT_NONE) {
             continue;
+        }
+
+        while (portIndex < ARRAYLEN(mspPorts) && mspPorts[portIndex].port) {
+            portIndex++;
+        }
+        if (portIndex >= ARRAYLEN(mspPorts)) {
+            break;
         }
 
         portOptions_e options = SERIAL_NOT_INVERTED;
 
         if (mspConfig()->halfDuplex) {
             options |= SERIAL_BIDIR;
-        } else if (serialType(portConfig->identifier) == SERIALTYPE_UART
-                   || serialType(portConfig->identifier) == SERIALTYPE_LPUART
-                   || serialType(portConfig->identifier) == SERIALTYPE_PIOUART) {
+        } else if (serialType(identifier) == SERIALTYPE_UART
+                   || serialType(identifier) == SERIALTYPE_LPUART
+                   || serialType(identifier) == SERIALTYPE_PIOUART) {
 #if !ENABLE_SERIAL_SKIP_CHECK_TX
             options |= SERIAL_CHECK_TX;
 #endif
         }
 
-        const uint8_t baudRateIndex = serialSynthesizePortBaud(portConfig->identifier, SERIAL_BAUD_MSP);
-        serialPort_t *serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, NULL, baudRates[baudRateIndex], MODE_RXTX, options);
+        serialPort_t *serialPort = openSerialPort(identifier, FUNCTION_MSP, NULL, NULL,
+                                                  baudRates[mspConfig()->msp_baud[slot]], MODE_RXTX, options);
         if (serialPort) {
-            bool sharedWithTelemetry = isSerialPortShared(portConfig, FUNCTION_MSP, TELEMETRY_PORT_FUNCTIONS_MASK);
-            resetMspPort(mspPort, serialPort, sharedWithTelemetry);
+            const bool sharedWithTelemetry = isSerialPortShared(identifier, FUNCTION_MSP, TELEMETRY_PORT_FUNCTIONS_MASK);
+            resetMspPort(&mspPorts[portIndex], serialPort, sharedWithTelemetry);
 
             portIndex++;
         }
-
-        portConfig = findNextSerialPortConfig(FUNCTION_MSP);
     }
 }
 
@@ -621,14 +624,8 @@ bool mspSerialIsConfiguratorActive(void)
             continue;
         }
 
-        const serialPortConfig_t *cfg =
-            serialFindPortConfiguration(mspPort->port->identifier);
-        if (!cfg) {
-            continue;
-        }
-
         // Skip ports shared with a VTX — those are peripherals, not configurators
-        if (cfg->functionMask & FUNCTION_VTX_MSP) {
+        if (serialSynthesizeFunctionMask(mspPort->port->identifier) & FUNCTION_VTX_MSP) {
             continue;
         }
 

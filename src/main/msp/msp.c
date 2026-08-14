@@ -201,7 +201,6 @@ typedef enum {
     MSP_PASSTHROUGH_ESC_CASTLE = PROTOCOL_CASTLE,
 
     MSP_PASSTHROUGH_SERIAL_ID = 0xFD,
-    MSP_PASSTHROUGH_SERIAL_FUNCTION_ID = 0xFE,
 
     MSP_PASSTHROUGH_ESC_4WAY = 0xFF,
 } mspPassthroughType_e;
@@ -273,14 +272,6 @@ RAM_CODE static serialPort_t *mspFindPassthroughSerialPort(void)
         portUsage = findSerialPortUsageByIdentifier(mspPassthroughArgument);
         break;
     }
-    case MSP_PASSTHROUGH_SERIAL_FUNCTION_ID:
-    {
-        const serialPortConfig_t *portConfig = findSerialPortConfig(1 << mspPassthroughArgument);
-        if (portConfig) {
-            portUsage = findSerialPortUsageByIdentifier(portConfig->identifier);
-        }
-        break;
-    }
     }
     return portUsage ? portUsage->serialPort : NULL;
 }
@@ -311,7 +302,6 @@ RAM_CODE static void mspFcSetPassthroughCommand(sbuf_t *dst, sbuf_t *src, mspPos
     switch (mspPassthroughMode) {
 #ifdef USE_SERIAL_PASSTHROUGH
     case MSP_PASSTHROUGH_SERIAL_ID:
-    case MSP_PASSTHROUGH_SERIAL_FUNCTION_ID:
         if (mspFindPassthroughSerialPort()) {
             if (mspPostProcessFn) {
                 *mspPostProcessFn = mspSerialPassthroughFn;
@@ -1781,30 +1771,32 @@ case MSP_NAME:
 
     case MSP_CF_SERIAL_CONFIG:
         for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
-            if (!serialIsPortAvailable(serialConfig()->portConfigs[i].identifier)) {
+            const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
+            if (!serialIsPortAvailable(identifier)) {
                 continue;
             };
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier);
-            sbufWriteU16(dst, serialConfig()->portConfigs[i].functionMask);
-            mspWritePortBaudRates(dst, serialConfig()->portConfigs[i].identifier);
+            sbufWriteU8(dst, identifier);
+            sbufWriteU16(dst, serialSynthesizeFunctionMask(identifier));
+            mspWritePortBaudRates(dst, identifier);
         }
         break;
 
     case MSP2_COMMON_SERIAL_CONFIG: {
         uint8_t count = 0;
         for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
-            if (serialIsPortAvailable(serialConfig()->portConfigs[i].identifier)) {
+            if (serialIsPortAvailable(serialPortIdentifiers[i])) {
                 count++;
             }
         }
         sbufWriteU8(dst, count);
         for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
-            if (!serialIsPortAvailable(serialConfig()->portConfigs[i].identifier)) {
+            const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
+            if (!serialIsPortAvailable(identifier)) {
                 continue;
             };
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier);
-            sbufWriteU32(dst, serialConfig()->portConfigs[i].functionMask);
-            mspWritePortBaudRates(dst, serialConfig()->portConfigs[i].identifier);
+            sbufWriteU8(dst, identifier);
+            sbufWriteU32(dst, serialSynthesizeFunctionMask(identifier));
+            mspWritePortBaudRates(dst, identifier);
         }
         break;
     }
@@ -4247,82 +4239,6 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             rxConfigMutable()->rcmap[i] = sbufReadU8(src);
         }
         break;
-
-    case MSP_SET_CF_SERIAL_CONFIG:
-        {
-            uint8_t portConfigSize = sizeof(uint8_t) + sizeof(uint16_t) + (sizeof(uint8_t) * 4);
-
-            if (dataSize % portConfigSize != 0) {
-                return MSP_RESULT_ERROR;
-            }
-
-            uint8_t remainingPortsInPacket = dataSize / portConfigSize;
-
-            while (remainingPortsInPacket--) {
-                uint8_t identifier = sbufReadU8(src);
-
-                serialPortConfig_t *portConfig = serialFindPortConfigurationMutable(identifier);
-
-                if (!portConfig) {
-                    return MSP_RESULT_ERROR;
-                }
-
-                portConfig->functionMask = sbufReadU16(src);
-                uint8_t baudRateIndexes[SERIAL_BAUD_CLASS_COUNT];
-                for (unsigned i = 0; i < SERIAL_BAUD_CLASS_COUNT; i++) {
-                    baudRateIndexes[i] = sbufReadU8(src);
-                }
-                if (!serialApplyFunctionMask(identifier, portConfig->functionMask)) {
-                    return MSP_RESULT_ERROR;
-                }
-                // Baud follows the mask so it reaches the port's new owners.
-                for (unsigned i = 0; i < SERIAL_BAUD_CLASS_COUNT; i++) {
-                    serialApplyPortBaud(identifier, i, baudRateIndexes[i]);
-                }
-            }
-        }
-        break;
-    case MSP2_COMMON_SET_SERIAL_CONFIG: {
-        if (dataSize < 1) {
-            return MSP_RESULT_ERROR;
-        }
-        unsigned count = sbufReadU8(src);
-        if (count == 0 || (dataSize - 1) % count != 0) {
-            return MSP_RESULT_ERROR;
-        }
-        unsigned portConfigSize = (dataSize - 1) / count;
-        unsigned expectedPortSize = sizeof(uint8_t) + sizeof(uint32_t) + (sizeof(uint8_t) * 4);
-        if (portConfigSize < expectedPortSize) {
-            return MSP_RESULT_ERROR;
-        }
-        for (unsigned ii = 0; ii < count; ii++) {
-            unsigned start = sbufBytesRemaining(src);
-            uint8_t identifier = sbufReadU8(src);
-            serialPortConfig_t *portConfig = serialFindPortConfigurationMutable(identifier);
-
-            if (!portConfig) {
-                return MSP_RESULT_ERROR;
-            }
-
-            portConfig->functionMask = sbufReadU32(src);
-            uint8_t baudRateIndexes[SERIAL_BAUD_CLASS_COUNT];
-            for (unsigned i = 0; i < SERIAL_BAUD_CLASS_COUNT; i++) {
-                baudRateIndexes[i] = sbufReadU8(src);
-            }
-            if (!serialApplyFunctionMask(identifier, portConfig->functionMask)) {
-                return MSP_RESULT_ERROR;
-            }
-            // Baud follows the mask so it reaches the port's new owners.
-            for (unsigned i = 0; i < SERIAL_BAUD_CLASS_COUNT; i++) {
-                serialApplyPortBaud(identifier, i, baudRateIndexes[i]);
-            }
-            // Skip unknown bytes
-            while (start - sbufBytesRemaining(src) < portConfigSize && sbufBytesRemaining(src)) {
-                sbufReadU8(src);
-            }
-        }
-        break;
-    }
 
 #ifdef USE_LED_STRIP_STATUS_MODE
     case MSP_SET_LED_COLORS:

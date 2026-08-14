@@ -183,8 +183,8 @@ bool mavlinkRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->rcReadRawFn = mavlinkReadRawRC;
     rxRuntimeState->rcFrameStatusFn = mavlinkFrameStatus;
 
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-    if (!portConfig) {
+    const serialPortIdentifier_e port = rxConfig->rx_uart;
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
@@ -192,14 +192,14 @@ bool mavlinkRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     // is configured; otherwise the port is RX-only and takes the ELRS default.
     baudRate_e baudRateIndex = BAUD_AUTO;
 #ifdef USE_TELEMETRY_MAVLINK
-    baudRateIndex = telemetryProviderBaud(TELEMETRY_PROTOCOL_MAVLINK, portConfig->identifier);
+    baudRateIndex = telemetryProviderBaud(TELEMETRY_PROTOCOL_MAVLINK, port);
 #endif
     if (baudRateIndex == BAUD_AUTO) {
         // default rate for ELRS TX module
         baudRateIndex = MAVLINK_BAUD_RATE_INDEX;
     }
 
-    serialPort = openSerialPort(portConfig->identifier,
+    serialPort = openSerialPort(port,
         FUNCTION_RX_SERIAL,
         mavlinkDataReceive,
         rxRuntimeState,

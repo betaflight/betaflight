@@ -31,18 +31,9 @@
 // (MSP_CF_SERIAL_CONFIG) and the CLI `serial` command's output.
 uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier);
 
-// Apply a legacy bitmask to the feature PGs.  Used by MSP_SET_CF_SERIAL_CONFIG
-// and the CLI `serial` command's write path, and by the one-shot EEPROM
-// migration on config load.  Returns false when the requested combination
-// cannot be represented (e.g. more MSP ports requested than slots available).
-bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask);
-
-// Walk serialConfig.portConfigs[] and populate the per-feature PG fields
-// from each port's legacy functionMask.  Idempotent.  Called once after
-// EEPROM load so pre-existing configs carry their function assignments
-// into the new per-feature view while the legacy mask is still the
-// runtime source of truth.
-void serialBackfillFeatureFields(void);
+// Clear every feature's port claim and restore MSP on the first port.  Recovery
+// path for a stored assignment that isSerialConfigValid() rejects.
+void serialResetFeatureAssignments(void);
 
 // The four baud rates every port carries in the legacy serialPortConfig_t.
 // Each is owned by one feature class rather than by the port, so the pair
@@ -64,7 +55,3 @@ uint8_t serialDefaultPortBaud(serialBaudClass_e baudClass);
 // still round-trips through `dump` and MSP unchanged.
 uint8_t serialSynthesizePortBaud(serialPortIdentifier_e identifier, serialBaudClass_e baudClass);
 
-// Write a legacy per-port baud back onto whichever feature PGs claim the
-// port for that class.  Telemetry writes every provider slot on the port,
-// preserving the legacy one-baud-per-port semantics.
-void serialApplyPortBaud(serialPortIdentifier_e identifier, serialBaudClass_e baudClass, uint8_t baudRateIndex);

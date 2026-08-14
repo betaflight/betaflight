@@ -52,8 +52,8 @@ static char displayBuffer[DISPLAY_BUFFER_SIZE];
 
 bool osdCustomTextInit(void)
 {
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_OSD_CUSTOM_TEXT);
-    if (!portConfig) {
+    const serialPortIdentifier_e port = osdConfig()->osd_custom_text_uart;
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
@@ -65,7 +65,7 @@ bool osdCustomTextInit(void)
     const uint32_t baudrate = baudRates[baudrateIndex];
 
     osdCustomTextSerialPort = openSerialPort(
-        portConfig->identifier,
+        port,
         FUNCTION_OSD_CUSTOM_TEXT,
         NULL,  // No RX callback, we'll poll in update function
         NULL,

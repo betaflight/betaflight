@@ -26,6 +26,8 @@
 extern "C" {
     #include "platform.h"
 
+    #include "common/utils.h"
+
     #include "drivers/vtx_common.h"
 
     #include "pg/pg.h"
@@ -49,7 +51,7 @@ extern "C" {
 
     #include "telemetry/telemetry.h"
 
-    // PG instances for feature configs read by the synthesizer/decomposer.
+    // PG instances for feature configs read by the synthesizer.
     PG_REGISTER(mspConfig_t, mspConfig, PG_MSP_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
     PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
@@ -62,6 +64,17 @@ extern "C" {
     PG_REGISTER(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
+
+    const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
+        SERIAL_PORT_USB_VCP,
+        SERIAL_PORT_USART1,
+        SERIAL_PORT_USART2,
+        SERIAL_PORT_USART3,
+        SERIAL_PORT_UART4,
+        SERIAL_PORT_UART5,
+        SERIAL_PORT_SOFTSERIAL1,
+        SERIAL_PORT_SOFTSERIAL2,
+    };
 }
 
 #include "unittest_macros.h"
@@ -118,9 +131,6 @@ void resetAllConfigs(void)
     }
 
     memset(serialConfigMutable(), 0, sizeof(*serialConfigMutable()));
-    for (unsigned i = 0; i < SERIAL_PORT_COUNT; i++) {
-        serialConfigMutable()->portConfigs[i].identifier = SERIAL_PORT_NONE;
-    }
 }
 
 } // namespace
@@ -227,150 +237,121 @@ TEST(SerialFeatureMap, SharedPortCombinesBits)
     resetAllConfigs();
     mspConfigMutable()->msp_uart[0] = SERIAL_PORT_USART3;
     blackboxConfigMutable()->blackbox_uart = SERIAL_PORT_USART3;
-
-    EXPECT_EQ((uint32_t)(FUNCTION_MSP | FUNCTION_BLACKBOX),
-              serialSynthesizeFunctionMask(SERIAL_PORT_USART3));
-}
-
-TEST(SerialFeatureMap, DecomposeAndSynthesizeRoundTrip)
-{
-    resetAllConfigs();
-
-    const serialPortIdentifier_e gpsPort = SERIAL_PORT_USART1;
-    const serialPortIdentifier_e rxPort = SERIAL_PORT_USART3;
-    const serialPortIdentifier_e mspPort = SERIAL_PORT_USB_VCP;
-    const serialPortIdentifier_e tlmPort = SERIAL_PORT_USART6;
-
-    EXPECT_TRUE(serialApplyFunctionMask(gpsPort, FUNCTION_GPS));
-    EXPECT_TRUE(serialApplyFunctionMask(rxPort, FUNCTION_RX_SERIAL));
-    EXPECT_TRUE(serialApplyFunctionMask(mspPort, FUNCTION_MSP));
-    EXPECT_TRUE(serialApplyFunctionMask(tlmPort, FUNCTION_TELEMETRY_SMARTPORT));
-
-    EXPECT_EQ(FUNCTION_GPS, serialSynthesizeFunctionMask(gpsPort));
-    EXPECT_EQ(FUNCTION_RX_SERIAL, serialSynthesizeFunctionMask(rxPort));
-    EXPECT_EQ(FUNCTION_MSP, serialSynthesizeFunctionMask(mspPort));
-    EXPECT_EQ(FUNCTION_TELEMETRY_SMARTPORT, serialSynthesizeFunctionMask(tlmPort));
-}
-
-TEST(SerialFeatureMap, DecomposeReassignClearsOldPort)
-{
-    resetAllConfigs();
-    // First put GPS on UART1.
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_GPS));
-    EXPECT_EQ(FUNCTION_GPS, serialSynthesizeFunctionMask(SERIAL_PORT_USART1));
-
-    // Rewrite UART1 with only FUNCTION_RX_SERIAL — GPS must leave the port.
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_RX_SERIAL));
-    EXPECT_EQ(FUNCTION_RX_SERIAL, serialSynthesizeFunctionMask(SERIAL_PORT_USART1));
-    EXPECT_EQ(SERIAL_PORT_NONE, gpsConfig()->gps_uart);
-}
-
-TEST(SerialFeatureMap, DecomposeMspFillsAcrossSlots)
-{
-    resetAllConfigs();
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USB_VCP, FUNCTION_MSP));
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_MSP));
-
-    // Both ports should now produce FUNCTION_MSP.
-    EXPECT_EQ(FUNCTION_MSP, serialSynthesizeFunctionMask(SERIAL_PORT_USB_VCP));
-    EXPECT_EQ(FUNCTION_MSP, serialSynthesizeFunctionMask(SERIAL_PORT_USART3));
-}
-
-TEST(SerialFeatureMap, DecomposeRejectsMspOverflow)
-{
-    resetAllConfigs();
-    // Fill every MSP slot.
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USB_VCP, FUNCTION_MSP));
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_MSP));
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_MSP));
-    // One more should fail because MAX_MSP_PORT_COUNT is exhausted.
-    EXPECT_FALSE(serialApplyFunctionMask(SERIAL_PORT_USART6, FUNCTION_MSP));
-}
-
-TEST(SerialFeatureMap, FailedApplyLeavesPriorStateIntact)
-{
-    resetAllConfigs();
-    // Set up a valid claim, then attempt an invalid apply on the same port.
-    gpsConfigMutable()->gps_uart = SERIAL_PORT_USART1;
-    blackboxConfigMutable()->blackbox_uart = SERIAL_PORT_USART1;
-
-    // Two VTX bits on one port is structurally invalid and must fail.
-    EXPECT_FALSE(serialApplyFunctionMask(
-        SERIAL_PORT_USART1, FUNCTION_VTX_SMARTAUDIO | FUNCTION_VTX_TRAMP));
-
-    // Prior feature claims for the port survive — validation happens before
-    // any PG mutation, so a rejected mask is atomic from the caller's view.
-    EXPECT_EQ(SERIAL_PORT_USART1, gpsConfig()->gps_uart);
-    EXPECT_EQ(SERIAL_PORT_USART1, blackboxConfig()->blackbox_uart);
-    EXPECT_EQ(SERIAL_PORT_NONE, vtxSettingsConfig()->vtx_uart);
-    EXPECT_EQ(VTXDEV_UNSUPPORTED, vtxSettingsConfig()->vtx_type);
-}
-
-TEST(SerialFeatureMap, DecomposeAcceptsAllTelemetryProtocols)
-{
-    resetAllConfigs();
-    // Six protocol bits across six distinct ports must all fit.
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_TELEMETRY_FRSKY_HUB));
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART2, FUNCTION_TELEMETRY_HOTT));
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_TELEMETRY_LTM));
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART4,  FUNCTION_TELEMETRY_SMARTPORT));
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5,  FUNCTION_TELEMETRY_MAVLINK));
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART6, FUNCTION_TELEMETRY_IBUS));
-}
-
-TEST(SerialFeatureMap, RangefinderPreservesHardwareSelection)
-{
-    resetAllConfigs();
-    // The port assignment and the driver choice are orthogonal: applying the
-    // mask must never disturb the user's model selection.
-    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TFNOVA;
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR));
-    EXPECT_EQ(SERIAL_PORT_UART5, rangefinderConfig()->rangefinder_uart);
-    EXPECT_EQ(RANGEFINDER_TFNOVA, rangefinderConfig()->rangefinder_hardware);
-
-    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NOOPLOOP_F2MINI;
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR));
-    EXPECT_EQ(RANGEFINDER_NOOPLOOP_F2MINI, rangefinderConfig()->rangefinder_hardware);
-
-    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NONE;
-    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR));
-    EXPECT_EQ(RANGEFINDER_NONE, rangefinderConfig()->rangefinder_hardware);
-}
-
-TEST(SerialFeatureMap, BackfillRehydratesFromLegacyMask)
-{
-    resetAllConfigs();
-    // Simulate an EEPROM load: populate the legacy functionMask and
-    // identifier on a couple of port configs.
-    serialConfigMutable()->portConfigs[0].identifier = SERIAL_PORT_USART1;
-    serialConfigMutable()->portConfigs[0].functionMask = FUNCTION_GPS;
-    serialConfigMutable()->portConfigs[1].identifier = SERIAL_PORT_USART3;
-    serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_MSP | FUNCTION_BLACKBOX;
-
-    serialBackfillFeatureFields();
-
-    EXPECT_EQ(SERIAL_PORT_USART1, gpsConfig()->gps_uart);
-    EXPECT_EQ(SERIAL_PORT_USART3, mspConfig()->msp_uart[0]);
-    EXPECT_EQ(SERIAL_PORT_USART3, blackboxConfig()->blackbox_uart);
-    // Synthesizer now reproduces the legacy view.
-    EXPECT_EQ(FUNCTION_GPS, serialSynthesizeFunctionMask(SERIAL_PORT_USART1));
-    EXPECT_EQ((uint32_t)(FUNCTION_MSP | FUNCTION_BLACKBOX),
-              serialSynthesizeFunctionMask(SERIAL_PORT_USART3));
-}
-
-TEST(SerialFeatureMap, BackfillClearsStaleFeatureFieldsForZeroMaskPort)
-{
-    resetAllConfigs();
-    // Pretend the new PG fields carry a stale claim to UART3 from a
-    // previous save, but the legacy mask on UART3 now claims nothing.
     gpsConfigMutable()->gps_uart = SERIAL_PORT_USART3;
-    serialConfigMutable()->portConfigs[0].identifier = SERIAL_PORT_USART3;
-    serialConfigMutable()->portConfigs[0].functionMask = 0;
+    telemetryConfigMutable()->providers[0].protocol = TELEMETRY_PROTOCOL_SMARTPORT;
+    telemetryConfigMutable()->providers[0].uart = SERIAL_PORT_USART3;
 
-    serialBackfillFeatureFields();
+    EXPECT_EQ((uint32_t)(FUNCTION_MSP | FUNCTION_BLACKBOX | FUNCTION_GPS | FUNCTION_TELEMETRY_SMARTPORT),
+              serialSynthesizeFunctionMask(SERIAL_PORT_USART3));
+}
 
+TEST(SerialFeatureMap, RcdeviceGimbalAndOsdCustomText)
+{
+    resetAllConfigs();
+    rcdeviceConfigMutable()->rcdevice_uart = SERIAL_PORT_USART1;
+    gimbalTrackConfigMutable()->gimbal_uart = SERIAL_PORT_USART2;
+    osdConfigMutable()->osd_custom_text_uart = SERIAL_PORT_UART4;
+
+    EXPECT_EQ(FUNCTION_RCDEVICE, serialSynthesizeFunctionMask(SERIAL_PORT_USART1));
+    EXPECT_EQ(FUNCTION_GIMBAL, serialSynthesizeFunctionMask(SERIAL_PORT_USART2));
+    EXPECT_EQ(FUNCTION_OSD_CUSTOM_TEXT, serialSynthesizeFunctionMask(SERIAL_PORT_UART4));
+}
+
+TEST(SerialFeatureMap, MspOnEverySlot)
+{
+    resetAllConfigs();
+    mspConfigMutable()->msp_uart[0] = SERIAL_PORT_USB_VCP;
+    mspConfigMutable()->msp_uart[1] = SERIAL_PORT_USART1;
+    mspConfigMutable()->msp_uart[2] = SERIAL_PORT_USART3;
+
+    EXPECT_EQ(FUNCTION_MSP, serialSynthesizeFunctionMask(SERIAL_PORT_USB_VCP));
+    EXPECT_EQ(FUNCTION_MSP, serialSynthesizeFunctionMask(SERIAL_PORT_USART1));
+    EXPECT_EQ(FUNCTION_MSP, serialSynthesizeFunctionMask(SERIAL_PORT_USART3));
+    EXPECT_EQ(0u, serialSynthesizeFunctionMask(SERIAL_PORT_USART6));
+}
+
+TEST(SerialFeatureMap, AllTelemetryProtocols)
+{
+    resetAllConfigs();
+
+    const struct {
+        uint8_t protocol;
+        serialPortIdentifier_e port;
+        uint32_t function;
+    } cases[] = {
+        { TELEMETRY_PROTOCOL_FRSKY_HUB, SERIAL_PORT_USART1, FUNCTION_TELEMETRY_FRSKY_HUB },
+        { TELEMETRY_PROTOCOL_HOTT,      SERIAL_PORT_USART2, FUNCTION_TELEMETRY_HOTT },
+        { TELEMETRY_PROTOCOL_LTM,       SERIAL_PORT_USART3, FUNCTION_TELEMETRY_LTM },
+        { TELEMETRY_PROTOCOL_SMARTPORT, SERIAL_PORT_UART4,  FUNCTION_TELEMETRY_SMARTPORT },
+        { TELEMETRY_PROTOCOL_MAVLINK,   SERIAL_PORT_UART5,  FUNCTION_TELEMETRY_MAVLINK },
+        { TELEMETRY_PROTOCOL_IBUS,      SERIAL_PORT_USART6, FUNCTION_TELEMETRY_IBUS },
+    };
+
+    // More protocols than slots, so exercise each one on its own.
+    for (unsigned i = 0; i < ARRAYLEN(cases); i++) {
+        resetAllConfigs();
+        telemetryConfigMutable()->providers[0].protocol = cases[i].protocol;
+        telemetryConfigMutable()->providers[0].uart = cases[i].port;
+
+        EXPECT_EQ(cases[i].function, serialSynthesizeFunctionMask(cases[i].port));
+    }
+}
+
+TEST(SerialFeatureMap, ResetClearsEveryClaimAndRestoresMsp)
+{
+    resetAllConfigs();
+
+    mspConfigMutable()->msp_uart[0] = SERIAL_PORT_USART1;
+    mspConfigMutable()->msp_uart[1] = SERIAL_PORT_USART2;
+    mspConfigMutable()->msp_uart[2] = SERIAL_PORT_USART3;
+    gpsConfigMutable()->gps_uart = SERIAL_PORT_UART4;
+    rxConfigMutable()->rx_uart = SERIAL_PORT_UART5;
+    blackboxConfigMutable()->blackbox_uart = SERIAL_PORT_SOFTSERIAL1;
+    escSensorConfigMutable()->esc_sensor_uart = SERIAL_PORT_SOFTSERIAL2;
+    rcdeviceConfigMutable()->rcdevice_uart = SERIAL_PORT_USART1;
+    gimbalTrackConfigMutable()->gimbal_uart = SERIAL_PORT_USART2;
+    vtxSettingsConfigMutable()->vtx_uart = SERIAL_PORT_USART3;
+    vtxSettingsConfigMutable()->vtx_type = VTXDEV_TRAMP;
+    rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_UART4;
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TFNOVA;
+    osdConfigMutable()->osd_uart = SERIAL_PORT_UART5;
+    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_FRSKYOSD;
+    osdConfigMutable()->osd_custom_text_uart = SERIAL_PORT_SOFTSERIAL1;
+    telemetryConfigMutable()->providers[0].protocol = TELEMETRY_PROTOCOL_SMARTPORT;
+    telemetryConfigMutable()->providers[0].uart = SERIAL_PORT_SOFTSERIAL2;
+    telemetryConfigMutable()->providers[1].protocol = TELEMETRY_PROTOCOL_MAVLINK;
+    telemetryConfigMutable()->providers[1].uart = SERIAL_PORT_USB_VCP;
+
+    serialResetFeatureAssignments();
+
+    EXPECT_EQ(serialPortIdentifiers[0], mspConfig()->msp_uart[0]);
+    for (unsigned i = 1; i < MAX_MSP_PORT_COUNT; i++) {
+        EXPECT_EQ(SERIAL_PORT_NONE, mspConfig()->msp_uart[i]);
+    }
     EXPECT_EQ(SERIAL_PORT_NONE, gpsConfig()->gps_uart);
-    EXPECT_EQ(0u, serialSynthesizeFunctionMask(SERIAL_PORT_USART3));
+    EXPECT_EQ(SERIAL_PORT_NONE, rxConfig()->rx_uart);
+    EXPECT_EQ(SERIAL_PORT_NONE, blackboxConfig()->blackbox_uart);
+    EXPECT_EQ(SERIAL_PORT_NONE, escSensorConfig()->esc_sensor_uart);
+    EXPECT_EQ(SERIAL_PORT_NONE, rcdeviceConfig()->rcdevice_uart);
+    EXPECT_EQ(SERIAL_PORT_NONE, gimbalTrackConfig()->gimbal_uart);
+    EXPECT_EQ(SERIAL_PORT_NONE, vtxSettingsConfig()->vtx_uart);
+    EXPECT_EQ(SERIAL_PORT_NONE, rangefinderConfig()->rangefinder_uart);
+    EXPECT_EQ(SERIAL_PORT_NONE, osdConfig()->osd_uart);
+    EXPECT_EQ(SERIAL_PORT_NONE, osdConfig()->osd_custom_text_uart);
+    for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
+        EXPECT_EQ(SERIAL_PORT_NONE, telemetryConfig()->providers[i].uart);
+        EXPECT_EQ(TELEMETRY_PROTOCOL_NONE, telemetryConfig()->providers[i].protocol);
+    }
+
+    // Hardware/protocol selectors are not port claims and must survive.
+    EXPECT_EQ(VTXDEV_TRAMP, vtxSettingsConfig()->vtx_type);
+    EXPECT_EQ(RANGEFINDER_TFNOVA, rangefinderConfig()->rangefinder_hardware);
+    EXPECT_EQ(OSD_DISPLAYPORT_DEVICE_FRSKYOSD, osdConfig()->displayPortDevice);
+
+    EXPECT_EQ(FUNCTION_MSP, serialSynthesizeFunctionMask(serialPortIdentifiers[0]));
+    for (unsigned i = 1; i < SERIAL_PORT_COUNT; i++) {
+        EXPECT_EQ(0u, serialSynthesizeFunctionMask(serialPortIdentifiers[i]));
+    }
 }
 
 TEST(SerialFeatureMap, UnclaimedPortReportsClassDefaults)
@@ -418,10 +399,8 @@ TEST(SerialFeatureMap, MspBaudIsPerSlot)
     EXPECT_EQ(BAUD_115200, serialSynthesizePortBaud(SERIAL_PORT_UART4, SERIAL_BAUD_MSP));
     EXPECT_EQ(BAUD_500000, serialSynthesizePortBaud(SERIAL_PORT_UART5, SERIAL_BAUD_MSP));
 
-    // A write targets only the slot holding that port.
-    serialApplyPortBaud(SERIAL_PORT_UART5, SERIAL_BAUD_MSP, BAUD_57600);
-    EXPECT_EQ(BAUD_115200, mspConfig()->msp_baud[0]);
-    EXPECT_EQ(BAUD_57600,  mspConfig()->msp_baud[1]);
+    // A port held by no slot falls back to the class default.
+    EXPECT_EQ(BAUD_115200, serialSynthesizePortBaud(SERIAL_PORT_USART1, SERIAL_BAUD_MSP));
 }
 
 TEST(SerialFeatureMap, TelemetryBaudIsPerProviderSlot)
@@ -439,50 +418,34 @@ TEST(SerialFeatureMap, TelemetryBaudIsPerProviderSlot)
     EXPECT_EQ(BAUD_57600, serialSynthesizePortBaud(SERIAL_PORT_UART5, SERIAL_BAUD_TELEMETRY));
 }
 
-TEST(SerialFeatureMap, TelemetryBaudWriteHitsEveryProviderOnThePort)
-{
-    resetAllConfigs();
-
-    // The legacy layout held one telemetry baud per port, so a write through
-    // that view must reach every provider sharing the port.
-    telemetryConfigMutable()->providers[0].protocol = TELEMETRY_PROTOCOL_LTM;
-    telemetryConfigMutable()->providers[0].uart = SERIAL_PORT_UART4;
-    telemetryConfigMutable()->providers[1].protocol = TELEMETRY_PROTOCOL_MAVLINK;
-    telemetryConfigMutable()->providers[1].uart = SERIAL_PORT_UART4;
-    telemetryConfigMutable()->providers[2].protocol = TELEMETRY_PROTOCOL_LTM;
-    telemetryConfigMutable()->providers[2].uart = SERIAL_PORT_UART5;
-
-    serialApplyPortBaud(SERIAL_PORT_UART4, SERIAL_BAUD_TELEMETRY, BAUD_38400);
-
-    EXPECT_EQ(BAUD_38400, telemetryConfig()->providers[0].baud);
-    EXPECT_EQ(BAUD_38400, telemetryConfig()->providers[1].baud);
-    EXPECT_EQ(BAUD_AUTO,  telemetryConfig()->providers[2].baud);
-}
-
 TEST(SerialFeatureMap, OsdCustomTextBaudRidesTheTelemetryClass)
 {
     resetAllConfigs();
 
     // It is not telemetry, but it shared the port's telemetry baud in the
-    // legacy layout and must keep round-tripping through that class.
+    // legacy layout and must keep reporting through that class.
     osdConfigMutable()->osd_custom_text_uart = SERIAL_PORT_UART6;
-    serialApplyPortBaud(SERIAL_PORT_UART6, SERIAL_BAUD_TELEMETRY, BAUD_115200);
+    osdConfigMutable()->osd_custom_text_baud = BAUD_115200;
 
-    EXPECT_EQ(BAUD_115200, osdConfig()->osd_custom_text_baud);
     EXPECT_EQ(BAUD_115200, serialSynthesizePortBaud(SERIAL_PORT_UART6, SERIAL_BAUD_TELEMETRY));
+    EXPECT_EQ(BAUD_AUTO, serialSynthesizePortBaud(SERIAL_PORT_UART7, SERIAL_BAUD_TELEMETRY));
 }
 
-TEST(SerialFeatureMap, BaudRoundTripsThroughApplyAndSynthesize)
+TEST(SerialFeatureMap, BaudClassesAreIndependentOnASharedPort)
 {
     resetAllConfigs();
 
-    gpsConfigMutable()->gps_uart = SERIAL_PORT_UART4;
     mspConfigMutable()->msp_uart[0] = SERIAL_PORT_UART4;
-    blackboxConfigMutable()->blackbox_uart = SERIAL_PORT_UART4;
+    mspConfigMutable()->msp_baud[0] = BAUD_500000;
+    gpsConfigMutable()->gps_uart = SERIAL_PORT_UART4;
+    gpsConfigMutable()->gps_baud = BAUD_9600;
     telemetryConfigMutable()->providers[0].protocol = TELEMETRY_PROTOCOL_LTM;
     telemetryConfigMutable()->providers[0].uart = SERIAL_PORT_UART4;
+    telemetryConfigMutable()->providers[0].baud = BAUD_38400;
+    blackboxConfigMutable()->blackbox_uart = SERIAL_PORT_UART4;
+    blackboxConfigMutable()->blackbox_baud = BAUD_230400;
 
-    const uint8_t written[SERIAL_BAUD_CLASS_COUNT] = {
+    const uint8_t expected[SERIAL_BAUD_CLASS_COUNT] = {
         BAUD_500000,  // msp
         BAUD_9600,    // gps
         BAUD_38400,   // telemetry
@@ -490,21 +453,6 @@ TEST(SerialFeatureMap, BaudRoundTripsThroughApplyAndSynthesize)
     };
 
     for (unsigned c = 0; c < SERIAL_BAUD_CLASS_COUNT; c++) {
-        serialApplyPortBaud(SERIAL_PORT_UART4, (serialBaudClass_e)c, written[c]);
+        EXPECT_EQ(expected[c], serialSynthesizePortBaud(SERIAL_PORT_UART4, (serialBaudClass_e)c));
     }
-    for (unsigned c = 0; c < SERIAL_BAUD_CLASS_COUNT; c++) {
-        EXPECT_EQ(written[c], serialSynthesizePortBaud(SERIAL_PORT_UART4, (serialBaudClass_e)c));
-    }
-}
-
-TEST(SerialFeatureMap, BaudWriteToUnclaimedPortIsDropped)
-{
-    resetAllConfigs();
-
-    // Nothing owns the port, so there is nowhere to store the value and the
-    // synthesized view stays at the class default.
-    serialApplyPortBaud(SERIAL_PORT_UART7, SERIAL_BAUD_GPS, BAUD_9600);
-
-    EXPECT_EQ(BAUD_57600, serialSynthesizePortBaud(SERIAL_PORT_UART7, SERIAL_BAUD_GPS));
-    EXPECT_EQ(BAUD_57600, gpsConfig()->gps_baud);
 }

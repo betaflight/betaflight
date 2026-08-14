@@ -207,19 +207,19 @@ bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->rcReadRawFn = ibusReadRawRC;
     rxRuntimeState->rcFrameStatusFn = ibusFrameStatus;
 
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-    if (!portConfig) {
+    const serialPortIdentifier_e port = rxConfig->rx_uart;
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
 #ifdef USE_TELEMETRY
-    bool portShared = isSerialPortShared(portConfig, FUNCTION_RX_SERIAL, FUNCTION_TELEMETRY_IBUS);
+    bool portShared = isSerialPortShared(port, FUNCTION_RX_SERIAL, FUNCTION_TELEMETRY_IBUS);
 #else
     bool portShared = false;
 #endif
 
     rxBytesToIgnore = 0;
-    serialPort_t *ibusPort = openSerialPort(portConfig->identifier,
+    serialPort_t *ibusPort = openSerialPort(port,
         FUNCTION_RX_SERIAL,
         ibusDataReceive,
         NULL,

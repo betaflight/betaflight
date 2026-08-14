@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include <limits.h>
 
@@ -28,6 +29,8 @@ extern "C" {
     #include "drivers/serial_uart.h"
 
     #include "io/serial.h"
+
+    #include "rx/rx.h"
 
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
@@ -42,16 +45,43 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-TEST(IoSerialTest, TestFindPortConfig)
+static uint32_t stubbedFunctionMask[SERIAL_PORT_COUNT];
+
+static void setStubbedFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
+{
+    stubbedFunctionMask[findSerialPortIndexByIdentifier(identifier)] = mask;
+}
+
+TEST(IoSerialTest, TestPortSharing)
 {
     // given
+    memset(stubbedFunctionMask, 0, sizeof(stubbedFunctionMask));
     serialInit(false);
 
-    // when
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
+    // then nothing claims a port, so no function is in use
+    EXPECT_EQ(PORTSHARING_UNUSED, determinePortSharing(SERIAL_PORT_UART1, FUNCTION_MSP));
+    EXPECT_FALSE(isSerialPortShared(SERIAL_PORT_UART1, FUNCTION_MSP, FUNCTION_BLACKBOX));
+
+    // when a single function claims the port
+    setStubbedFunctionMask(SERIAL_PORT_UART1, FUNCTION_MSP);
 
     // then
-    EXPECT_EQ(NULL, portConfig);
+    EXPECT_EQ(PORTSHARING_NOT_SHARED, determinePortSharing(SERIAL_PORT_UART1, FUNCTION_MSP));
+    EXPECT_EQ(PORTSHARING_UNUSED, determinePortSharing(SERIAL_PORT_UART1, FUNCTION_BLACKBOX));
+    EXPECT_EQ(PORTSHARING_UNUSED, determinePortSharing(SERIAL_PORT_UART2, FUNCTION_MSP));
+    EXPECT_FALSE(isSerialPortShared(SERIAL_PORT_UART1, FUNCTION_MSP, FUNCTION_BLACKBOX));
+
+    // when a second function joins it
+    setStubbedFunctionMask(SERIAL_PORT_UART1, FUNCTION_MSP | FUNCTION_BLACKBOX);
+
+    // then
+    EXPECT_EQ(PORTSHARING_SHARED, determinePortSharing(SERIAL_PORT_UART1, FUNCTION_MSP));
+    EXPECT_EQ(PORTSHARING_SHARED, determinePortSharing(SERIAL_PORT_UART1, FUNCTION_BLACKBOX));
+    EXPECT_TRUE(isSerialPortShared(SERIAL_PORT_UART1, FUNCTION_MSP, FUNCTION_BLACKBOX));
+
+    // and SERIAL_PORT_NONE is never in use
+    EXPECT_EQ(PORTSHARING_UNUSED, determinePortSharing(SERIAL_PORT_NONE, FUNCTION_MSP));
+    EXPECT_FALSE(isSerialPortShared(SERIAL_PORT_NONE, FUNCTION_MSP, FUNCTION_BLACKBOX));
 }
 
 
@@ -68,7 +98,7 @@ extern "C" {
 
     void systemResetToBootloader(void) {}
 
-    bool telemetryCheckRxPortShared(const serialPortConfig_t *) { return false; }
+    bool telemetryCheckRxPortShared(serialPortIdentifier_e, SerialRXType) { return false; }
 
     uint32_t serialRxBytesWaiting(const serialPort_t *p) { return p == hostPort ? plusToSend : 0; }
     uint8_t serialRead(serialPort_t *) { plusToSend--; return '+'; }
@@ -96,15 +126,10 @@ extern "C" {
     void pinioSet(int, bool) {}
 
     // serial_feature_map is exercised by its own unit test; stub here so
-    // findSerialPortConfig/determinePortSharing/isSerialPortShared can link
-    // against the legacy functionMask view the io_serial tests rely on.
+    // determinePortSharing/isSerialPortShared can be driven directly.
     uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier) {
-        for (unsigned i = 0; i < SERIAL_PORT_COUNT; i++) {
-            if (serialConfig()->portConfigs[i].identifier == identifier) {
-                return serialConfig()->portConfigs[i].functionMask;
-            }
-        }
-        return 0;
+        const int index = findSerialPortIndexByIdentifier(identifier);
+        return index < 0 ? 0 : stubbedFunctionMask[index];
     }
 }
 
