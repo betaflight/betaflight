@@ -43,7 +43,6 @@ typedef struct posHoldState_s {
     bool isEnabled;
     bool isControlOk;
     bool areSensorsOk;
-    bool gpsRescueWasActive;
     float deadband;
 } posHoldState_t;
 
@@ -86,10 +85,14 @@ static bool sensorsOk(void)
 }
 
 
-void updatePosHold(timeUs_t currentTimeUs) {
+void updatePosHold(timeUs_t currentTimeUs)
+{
     UNUSED(currentTimeUs);
+
+    static bool gpsRescueWasActive = false;
+
     const bool gpsRescueActive = FLIGHT_MODE(GPS_RESCUE_MODE);
-    const bool gpsRescueStarting = gpsRescueActive && !posHold.gpsRescueWasActive;
+    const bool gpsRescueStarting = gpsRescueActive && !gpsRescueWasActive;
 
     if (gpsRescueStarting && posHold.isEnabled) {
         initPositionHold();
@@ -104,10 +107,10 @@ void updatePosHold(timeUs_t currentTimeUs) {
     } else {
         if (posHold.isEnabled) {
             setSticksActiveStatus(false);
-            posHold.gpsRescueWasActive = gpsRescueActive;
         }
         posHold.isEnabled = false;
     }
+    gpsRescueWasActive = gpsRescueActive;
 
     if (posHold.isEnabled) {
         posHoldCheckSticks();
