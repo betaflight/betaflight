@@ -81,9 +81,6 @@
 #define R_GPS_VEL_BASE       100.0f      // (cm/s)^2 at pDOP=1.0 //  low value to tightly track GPS but allow some acc influence
 #define R_GPS_ALT_BASE     60000.0f      // cm^2 at pDOP=1.0, higher favours other sensors over GPS
 #define R_BARO_ALT          1500.0f     // cm^2 lower value favours rapid baro changes
-// Slack on the movement the filter can account for: baro noise, and accel noise.
-#define BARO_CLIP_FLOOR_CM        5.0f
-#define BARO_CLIP_ACCEL_MARGIN    (0.5f * 981.0f)
 #define R_RANGEFINDER_ALT    100.0f     // cm^2
 #define R_OPTICALFLOW_VEL    400.0f     // (cm/s)^2 at max quality
 
@@ -185,8 +182,6 @@ static positionEstimate3d_t estimate;
 
 static bool xyEnabled = false;
 static float qaccelXY = Q_ACCEL_XY; // value to use for QAccel
-
-static float verticalAccelCmS2 = 0.0f;   // earth-frame, gravity removed, cm/s^2
 
 static timeUs_t lastXYMeasurementUs = 0;
 static timeUs_t lastZMeasurementUs = 0;
@@ -450,27 +445,7 @@ static void feedBaroMeasurements(timeUs_t nowUs)
     const float baroPreference = constrainf(positionConfig()->altitude_prefer_baro * 0.01f, 0.01f, 1.0f);
     const float baroR = R_BARO_ALT / baroPreference;
 
-    // Ground effect raises the pressure under the craft, so the baro can report a large sudden
-    // drop the airframe never made. Limit how far one update may pull the filter, to the movement
-    // its own velocity and the measured acceleration can account for. A real climb or fall is
-    // backed by both and goes in untouched; anything else is followed slowly rather than believed,
-    // which still converges on a genuine offset instead of blocking it forever.
-    // Nominal period on purpose: this must be the same dt kalmanPredict() propagated the state
-    // with, or the bound and the state it bounds disagree. If the estimator ever moves to a
-    // measured interval, this has to move with it.
-    const float dt = HZ_TO_INTERVAL(TASK_ALTITUDE_RATE_HZ);
-    const float reachableCm = fabsf(kalmanGetVelocity(&kfUp)) * dt
-                            + 0.5f * (fabsf(verticalAccelCmS2) + BARO_CLIP_ACCEL_MARGIN) * dt * dt
-                            + BARO_CLIP_FLOOR_CM;
-    const float baroRelCm = baroAltCm - baroAltOffsetCm;
-    const float innovationCm = baroRelCm - kalmanGetPosition(&kfUp);
-    // Only the downward direction is limited. Ground effect can only ever push the reported
-    // altitude down - the pressure under the craft rises, never falls - so a baro that suddenly
-    // reads far lower than the filter can account for is the one case worth disbelieving. An
-    // upward correction is left alone, so the filter still converges normally on a real offset.
-    const float acceptedCm = kalmanGetPosition(&kfUp) + fmaxf(innovationCm, -reachableCm);
-
-    kalmanUpdatePosition(&kfUp, acceptedCm, baroR);
+    kalmanUpdatePosition(&kfUp, baroAltCm - baroAltOffsetCm, baroR);
     lastZMeasurementUs = nowUs;
 
     zCal[CAL_Z_BARO].rawReading = baroAltCm;
@@ -624,7 +599,6 @@ void positionEstimatorUpdate(void)
     // Compute earth-frame linear acceleration from IMU
     float accelEast, accelNorth, accelUp;
     getLinearAccelENU(&accelEast, &accelNorth, &accelUp);
-    verticalAccelCmS2 = accelUp;
 
     // Z-axis: always runs (for altitude hold, OSD, vario).
     // While disarmed, predict with zero acceleration so covariance continues to evolve
@@ -680,11 +654,6 @@ const positionEstimate3d_t *positionEstimatorGetEstimate(void)
 float positionEstimatorGetAltitudeCm(void)
 {
     return estimate.position.v[ENU_U];
-}
-
-float positionEstimatorGetVerticalAccelCmS2(void)
-{
-    return verticalAccelCmS2;
 }
 
 float positionEstimatorGetAltitudeDerivative(void)

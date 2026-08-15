@@ -38,9 +38,6 @@ typedef struct positionEstimate3d_s {
     bool isValidZ;             // true if at least one Z measurement source active
 } positionEstimate3d_t;
 
-// Earth-frame vertical acceleration, gravity removed, cm/s^2 (ENU: up is positive)
-float positionEstimatorGetVerticalAccelCmS2(void);
-
 void positionEstimatorInit(void);
 void positionEstimatorUpdate(void);
 
