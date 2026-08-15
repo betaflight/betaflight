@@ -2291,7 +2291,6 @@ case MSP_NAME:
     }
 #endif
 
-#ifdef USE_WING
     case MSP_WING: {
         for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
             sbufWriteU8(dst, currentPidProfile->pid[i].S);
@@ -2323,7 +2322,6 @@ case MSP_NAME:
         sbufWriteU16(dst, (uint16_t)currentPidProfile->angle_pitch_offset);
         break;
     }
-#endif
 
     default:
         unsupportedCommand = true;
@@ -4599,7 +4597,6 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
     }
 
-#ifdef USE_WING
     case MSP_SET_WING: {
         const unsigned expectedSize =
             (sizeof(uint8_t) * (2 * XYZ_AXIS_COUNT + 5)) +
@@ -4639,7 +4636,6 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         pidInitConfig(currentPidProfile);
         break;
     }
-#endif
 
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
