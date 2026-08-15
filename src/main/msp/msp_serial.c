@@ -43,7 +43,7 @@
 
 #include "pg/msp.h"
 
-static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
+static mspPort_t mspPorts[MSP_PORT_COUNT];
 
 static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, bool sharedWithTelemetry)
 {
@@ -54,9 +54,60 @@ static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, bo
     mspPortToReset->descriptor = mspDescriptorAlloc();
 }
 
+static portOptions_e mspSerialPortOptions(serialPortIdentifier_e identifier)
+{
+    portOptions_e options = SERIAL_NOT_INVERTED;
+
+    if (mspConfig()->halfDuplex) {
+        options |= SERIAL_BIDIR;
+    } else if (serialType(identifier) == SERIALTYPE_UART
+               || serialType(identifier) == SERIALTYPE_LPUART
+               || serialType(identifier) == SERIALTYPE_PIOUART) {
+#if !ENABLE_SERIAL_SKIP_CHECK_TX
+        options |= SERIAL_CHECK_TX;
+#endif
+    }
+
+    return options;
+}
+
+static void mspSerialOpenPort(unsigned *portIndex, serialPortIdentifier_e identifier, uint8_t baud)
+{
+    while (*portIndex < ARRAYLEN(mspPorts) && mspPorts[*portIndex].port) {
+        (*portIndex)++;
+    }
+    if (*portIndex >= ARRAYLEN(mspPorts)) {
+        return;
+    }
+
+    serialPort_t *serialPort = openSerialPort(identifier, FUNCTION_MSP, NULL, NULL,
+                                              baudRates[baud], MODE_RXTX, mspSerialPortOptions(identifier));
+    if (!serialPort) {
+        return;
+    }
+
+    const bool sharedWithTelemetry = isSerialPortShared(identifier, FUNCTION_MSP, TELEMETRY_PORT_FUNCTIONS_MASK);
+    resetMspPort(&mspPorts[*portIndex], serialPort, sharedWithTelemetry);
+
+    (*portIndex)++;
+}
+
+#if IMPLIED_MSP_SENSOR_PORT_COUNT > 0
+static bool mspSerialPortIsOpen(serialPortIdentifier_e identifier)
+{
+    for (const mspPort_t *mspPort = mspPorts; mspPort < ARRAYEND(mspPorts); mspPort++) {
+        if (mspPort->port && mspPort->port->identifier == identifier) {
+            return true;
+        }
+    }
+
+    return false;
+}
+#endif
+
 void mspSerialAllocatePorts(void)
 {
-    uint8_t portIndex = 0;
+    unsigned portIndex = 0;
 
     for (unsigned slot = 0; slot < MAX_MSP_PORT_COUNT; slot++) {
         const serialPortIdentifier_e identifier = mspConfig()->msp_uart[slot];
@@ -64,34 +115,24 @@ void mspSerialAllocatePorts(void)
             continue;
         }
 
-        while (portIndex < ARRAYLEN(mspPorts) && mspPorts[portIndex].port) {
-            portIndex++;
-        }
-        if (portIndex >= ARRAYLEN(mspPorts)) {
-            break;
-        }
-
-        portOptions_e options = SERIAL_NOT_INVERTED;
-
-        if (mspConfig()->halfDuplex) {
-            options |= SERIAL_BIDIR;
-        } else if (serialType(identifier) == SERIALTYPE_UART
-                   || serialType(identifier) == SERIALTYPE_LPUART
-                   || serialType(identifier) == SERIALTYPE_PIOUART) {
-#if !ENABLE_SERIAL_SKIP_CHECK_TX
-            options |= SERIAL_CHECK_TX;
-#endif
-        }
-
-        serialPort_t *serialPort = openSerialPort(identifier, FUNCTION_MSP, NULL, NULL,
-                                                  baudRates[mspConfig()->msp_baud[slot]], MODE_RXTX, options);
-        if (serialPort) {
-            const bool sharedWithTelemetry = isSerialPortShared(identifier, FUNCTION_MSP, TELEMETRY_PORT_FUNCTIONS_MASK);
-            resetMspPort(&mspPorts[portIndex], serialPort, sharedWithTelemetry);
-
-            portIndex++;
-        }
+        mspSerialOpenPort(&portIndex, identifier, mspConfig()->msp_baud[slot]);
     }
+
+#if IMPLIED_MSP_SENSOR_PORT_COUNT > 0
+    serialPortIdentifier_e sensorPorts[IMPLIED_MSP_SENSOR_PORT_COUNT];
+    const unsigned sensorPortCount = serialImpliedMspPorts(sensorPorts, ARRAYLEN(sensorPorts));
+
+    for (unsigned i = 0; i < sensorPortCount; i++) {
+        // The user is free to put MSP on the sensor port as well, in which case
+        // it is already open and the module is already heard.  A native serial
+        // sensor claims its UART in sensorsAutodetect() and never reaches here.
+        if (mspSerialPortIsOpen(sensorPorts[i])) {
+            continue;
+        }
+
+        mspSerialOpenPort(&portIndex, sensorPorts[i], serialDefaultPortBaud(SERIAL_BAUD_MSP));
+    }
+#endif
 }
 
 void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
@@ -624,8 +665,10 @@ bool mspSerialIsConfiguratorActive(void)
             continue;
         }
 
-        // Skip ports shared with a VTX — those are peripherals, not configurators
-        if (serialSynthesizeFunctionMask(mspPort->port->identifier) & FUNCTION_VTX_MSP) {
+        // Skip ports shared with a VTX or an MSP-transport sensor — those are
+        // peripherals, not configurators, and a sensor streaming for the whole
+        // flight would otherwise report a configurator permanently attached.
+        if (serialSynthesizeFunctionMask(mspPort->port->identifier) & (FUNCTION_VTX_MSP | FUNCTION_LIDAR)) {
             continue;
         }
 

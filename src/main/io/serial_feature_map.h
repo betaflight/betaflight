@@ -35,6 +35,12 @@ uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier);
 // path for a stored assignment that isSerialConfigValid() rejects.
 void serialResetFeatureAssignments(void);
 
+// A rangefinder or optical flow module on an MSP transport is heard by pushing
+// MSP frames, so its declared UART needs an MSP port even though the user never
+// assigned MSP there.  Fills `ports` with the distinct UARTs that need one, one
+// module answering as both sensors counting once, and returns how many.
+unsigned serialImpliedMspPorts(serialPortIdentifier_e *ports, unsigned maxPorts);
+
 // The four baud rates every port carries in the legacy serialPortConfig_t.
 // Each is owned by one feature class rather than by the port, so the pair
 // below translates between the legacy per-port layout and the feature PGs.

@@ -57,6 +57,9 @@
 #ifdef USE_RANGEFINDER
 #include "sensors/rangefinder.h"
 #endif
+#ifdef USE_OPTICALFLOW
+#include "sensors/opticalflow.h"
+#endif
 #ifdef USE_OSD
 #include "osd/osd.h"
 #endif
@@ -134,6 +137,13 @@ uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
 #endif
 #ifdef USE_RANGEFINDER
     if (rangefinderConfig()->rangefinder_uart == identifier) {
+        mask |= FUNCTION_LIDAR;
+    }
+#endif
+#ifdef USE_OPTICALFLOW
+    // One module can answer as both sensors, so the bit is shared rather than
+    // held per feature; ORing it twice for one port is the same as once.
+    if (opticalflowConfig()->opticalflow_uart == identifier) {
         mask |= FUNCTION_LIDAR;
     }
 #endif
@@ -241,6 +251,11 @@ static void clearClaimsOnPort(serialPortIdentifier_e identifier)
         rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_NONE;
     }
 #endif
+#ifdef USE_OPTICALFLOW
+    if (opticalflowConfig()->opticalflow_uart == identifier) {
+        opticalflowConfigMutable()->opticalflow_uart = SERIAL_PORT_NONE;
+    }
+#endif
 #ifdef USE_OSD
     if (osdConfig()->osd_uart == identifier) {
         osdConfigMutable()->osd_uart = SERIAL_PORT_NONE;
@@ -257,6 +272,44 @@ static void clearClaimsOnPort(serialPortIdentifier_e identifier)
         }
     }
 #endif
+}
+
+unsigned serialImpliedMspPorts(serialPortIdentifier_e *ports, unsigned maxPorts)
+{
+    unsigned count = 0;
+
+#ifdef USE_RANGEFINDER_MT
+    if (rangefinderTypeUsesMsp(rangefinderConfig()->rangefinder_hardware)
+        && rangefinderConfig()->rangefinder_uart != SERIAL_PORT_NONE
+        && count < maxPorts) {
+        ports[count++] = rangefinderConfig()->rangefinder_uart;
+    }
+#endif
+#ifdef USE_OPTICALFLOW_MT
+    if (opticalflowTypeUsesMsp(opticalflowConfig()->opticalflow_hardware)
+        && opticalflowConfig()->opticalflow_uart != SERIAL_PORT_NONE
+        && count < maxPorts) {
+        const serialPortIdentifier_e identifier = opticalflowConfig()->opticalflow_uart;
+
+        bool alreadyClaimed = false;
+        for (unsigned i = 0; i < count; i++) {
+            if (ports[i] == identifier) {
+                alreadyClaimed = true;
+                break;
+            }
+        }
+
+        if (!alreadyClaimed) {
+            ports[count++] = identifier;
+        }
+    }
+#endif
+#if !defined(USE_RANGEFINDER_MT) && !defined(USE_OPTICALFLOW_MT)
+    UNUSED(ports);
+    UNUSED(maxPorts);
+#endif
+
+    return count;
 }
 
 uint8_t serialDefaultPortBaud(serialBaudClass_e baudClass)

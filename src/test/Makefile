@@ -286,7 +286,9 @@ msp_serial_unittest_SRC := \
 
 msp_serial_unittest_DEFINES := \
 		USE_CLI= \
-		USE_MSP_DISPLAYPORT=
+		USE_MSP_DISPLAYPORT= \
+		USE_RANGEFINDER_MT= \
+		USE_OPTICALFLOW_MT=
 
 osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
@@ -429,6 +431,9 @@ serial_feature_map_unittest_DEFINES := \
 		USE_VTX_TRAMP= \
 		USE_VTX_MSP= \
 		USE_RANGEFINDER= \
+		USE_RANGEFINDER_MT= \
+		USE_OPTICALFLOW= \
+		USE_OPTICALFLOW_MT= \
 		USE_OSD= \
 		USE_TELEMETRY= \
 		USE_TELEMETRY_FRSKY_HUB= \

@@ -41,6 +41,7 @@ extern "C" {
     #include "blackbox/blackbox.h"
 
     #include "sensors/esc_sensor.h"
+    #include "sensors/opticalflow.h"
     #include "sensors/rangefinder.h"
 
     #include "osd/osd.h"
@@ -61,6 +62,7 @@ extern "C" {
     PG_REGISTER(gimbalTrackConfig_t, gimbalTrackConfig, PG_GIMBAL_TRACK_CONFIG, 0);
     PG_REGISTER(vtxSettingsConfig_t, vtxSettingsConfig, PG_VTX_SETTINGS_CONFIG, 0);
     PG_REGISTER(rangefinderConfig_t, rangefinderConfig, PG_RANGEFINDER_CONFIG, 0);
+    PG_REGISTER(opticalflowConfig_t, opticalflowConfig, PG_OPTICALFLOW_CONFIG, 0);
     PG_REGISTER(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
@@ -117,6 +119,11 @@ void resetAllConfigs(void)
 
     memset(rangefinderConfigMutable(), 0, sizeof(*rangefinderConfigMutable()));
     rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_NONE;
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NONE;
+
+    memset(opticalflowConfigMutable(), 0, sizeof(*opticalflowConfigMutable()));
+    opticalflowConfigMutable()->opticalflow_uart = SERIAL_PORT_NONE;
+    opticalflowConfigMutable()->opticalflow_hardware = OPTICALFLOW_NONE;
 
     memset(osdConfigMutable(), 0, sizeof(*osdConfigMutable()));
     osdConfigMutable()->osd_uart = SERIAL_PORT_NONE;
@@ -219,6 +226,112 @@ TEST(SerialFeatureMap, RangefinderIndependentOfHardwareSelection)
     EXPECT_EQ(0u, serialSynthesizeFunctionMask(SERIAL_PORT_UART5));
 }
 
+TEST(SerialFeatureMap, OpticalflowClaimsTheLidarBit)
+{
+    resetAllConfigs();
+    opticalflowConfigMutable()->opticalflow_uart = SERIAL_PORT_UART4;
+    EXPECT_EQ(FUNCTION_LIDAR, serialSynthesizeFunctionMask(SERIAL_PORT_UART4));
+
+    // One module answering as both sensors declares the port twice, and the
+    // shared bit has to read the same as either sensor alone.
+    rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_UART4;
+    EXPECT_EQ(FUNCTION_LIDAR, serialSynthesizeFunctionMask(SERIAL_PORT_UART4));
+
+    // Separate modules light the bit on both ports independently.
+    opticalflowConfigMutable()->opticalflow_uart = SERIAL_PORT_UART5;
+    EXPECT_EQ(FUNCTION_LIDAR, serialSynthesizeFunctionMask(SERIAL_PORT_UART4));
+    EXPECT_EQ(FUNCTION_LIDAR, serialSynthesizeFunctionMask(SERIAL_PORT_UART5));
+}
+
+TEST(SerialFeatureMap, TransportFollowsHardwareSelection)
+{
+    // Native serial devices open the port from their own driver.
+    EXPECT_FALSE(rangefinderTypeUsesMsp(RANGEFINDER_NONE));
+    EXPECT_FALSE(rangefinderTypeUsesMsp(RANGEFINDER_TFMINI));
+    EXPECT_FALSE(rangefinderTypeUsesMsp(RANGEFINDER_TF02));
+    EXPECT_FALSE(rangefinderTypeUsesMsp(RANGEFINDER_TFNOVA));
+    EXPECT_FALSE(rangefinderTypeUsesMsp(RANGEFINDER_NOOPLOOP_F2));
+    EXPECT_FALSE(rangefinderTypeUsesMsp(RANGEFINDER_NOOPLOOP_F2MINI));
+    EXPECT_FALSE(rangefinderTypeUsesMsp(RANGEFINDER_UPT1));
+    // Pin-driven, no UART at all.
+    EXPECT_FALSE(rangefinderTypeUsesMsp(RANGEFINDER_HCSR04));
+
+    // Every MT variant reports over MSP.
+    EXPECT_TRUE(rangefinderTypeUsesMsp(RANGEFINDER_MTF01));
+    EXPECT_TRUE(rangefinderTypeUsesMsp(RANGEFINDER_MTF02));
+    EXPECT_TRUE(rangefinderTypeUsesMsp(RANGEFINDER_MTF01P));
+    EXPECT_TRUE(rangefinderTypeUsesMsp(RANGEFINDER_MTF02P));
+
+    EXPECT_FALSE(opticalflowTypeUsesMsp(OPTICALFLOW_NONE));
+    EXPECT_FALSE(opticalflowTypeUsesMsp(OPTICALFLOW_UPT1));
+    EXPECT_TRUE(opticalflowTypeUsesMsp(OPTICALFLOW_MT));
+}
+
+TEST(SerialFeatureMap, ImpliedMspPortNeedsBothHardwareAndPort)
+{
+    serialPortIdentifier_e ports[IMPLIED_MSP_SENSOR_PORT_COUNT];
+
+    resetAllConfigs();
+    EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+
+    // A declared port on its own says nothing about the transport.
+    rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_UART4;
+    EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+
+    // Nor does the hardware on its own, with no port to open.
+    rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_NONE;
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF02;
+    EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+
+    rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_UART4;
+    ASSERT_EQ(1u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+    EXPECT_EQ(SERIAL_PORT_UART4, ports[0]);
+
+    // A native serial sensor claims its UART in sensorsAutodetect() instead.
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TFMINI;
+    EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+}
+
+TEST(SerialFeatureMap, ImpliedMspPortCountsOneModuleOnce)
+{
+    serialPortIdentifier_e ports[IMPLIED_MSP_SENSOR_PORT_COUNT];
+
+    // Both sensors of one MT module land on a single declared port.
+    resetAllConfigs();
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF02;
+    rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_UART4;
+    opticalflowConfigMutable()->opticalflow_hardware = OPTICALFLOW_MT;
+    opticalflowConfigMutable()->opticalflow_uart = SERIAL_PORT_UART4;
+
+    ASSERT_EQ(1u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+    EXPECT_EQ(SERIAL_PORT_UART4, ports[0]);
+
+    // Two modules on separate UARTs need one port each.
+    opticalflowConfigMutable()->opticalflow_uart = SERIAL_PORT_UART5;
+    ASSERT_EQ(2u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+    EXPECT_EQ(SERIAL_PORT_UART4, ports[0]);
+    EXPECT_EQ(SERIAL_PORT_UART5, ports[1]);
+
+    // A native rangefinder alongside an MSP flow module leaves only the flow.
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TF02;
+    ASSERT_EQ(1u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+    EXPECT_EQ(SERIAL_PORT_UART5, ports[0]);
+}
+
+TEST(SerialFeatureMap, ImpliedMspPortsRespectsCallerCapacity)
+{
+    serialPortIdentifier_e ports[IMPLIED_MSP_SENSOR_PORT_COUNT];
+
+    resetAllConfigs();
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF01;
+    rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_UART4;
+    opticalflowConfigMutable()->opticalflow_hardware = OPTICALFLOW_MT;
+    opticalflowConfigMutable()->opticalflow_uart = SERIAL_PORT_UART5;
+
+    EXPECT_EQ(0u, serialImpliedMspPorts(ports, 0));
+    EXPECT_EQ(1u, serialImpliedMspPorts(ports, 1));
+}
+
 TEST(SerialFeatureMap, OsdCollapseByDisplayPortDevice)
 {
     resetAllConfigs();
@@ -314,6 +427,8 @@ TEST(SerialFeatureMap, ResetClearsEveryClaimAndRestoresMsp)
     vtxSettingsConfigMutable()->vtx_type = VTXDEV_TRAMP;
     rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_UART4;
     rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TFNOVA;
+    opticalflowConfigMutable()->opticalflow_uart = SERIAL_PORT_SOFTSERIAL1;
+    opticalflowConfigMutable()->opticalflow_hardware = OPTICALFLOW_MT;
     osdConfigMutable()->osd_uart = SERIAL_PORT_UART5;
     osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_FRSKYOSD;
     osdConfigMutable()->osd_custom_text_uart = SERIAL_PORT_SOFTSERIAL1;
@@ -336,6 +451,7 @@ TEST(SerialFeatureMap, ResetClearsEveryClaimAndRestoresMsp)
     EXPECT_EQ(SERIAL_PORT_NONE, gimbalTrackConfig()->gimbal_uart);
     EXPECT_EQ(SERIAL_PORT_NONE, vtxSettingsConfig()->vtx_uart);
     EXPECT_EQ(SERIAL_PORT_NONE, rangefinderConfig()->rangefinder_uart);
+    EXPECT_EQ(SERIAL_PORT_NONE, opticalflowConfig()->opticalflow_uart);
     EXPECT_EQ(SERIAL_PORT_NONE, osdConfig()->osd_uart);
     EXPECT_EQ(SERIAL_PORT_NONE, osdConfig()->osd_custom_text_uart);
     for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
@@ -346,6 +462,7 @@ TEST(SerialFeatureMap, ResetClearsEveryClaimAndRestoresMsp)
     // Hardware/protocol selectors are not port claims and must survive.
     EXPECT_EQ(VTXDEV_TRAMP, vtxSettingsConfig()->vtx_type);
     EXPECT_EQ(RANGEFINDER_TFNOVA, rangefinderConfig()->rangefinder_hardware);
+    EXPECT_EQ(OPTICALFLOW_MT, opticalflowConfig()->opticalflow_hardware);
     EXPECT_EQ(OSD_DISPLAYPORT_DEVICE_FRSKYOSD, osdConfig()->displayPortDevice);
 
     EXPECT_EQ(FUNCTION_MSP, serialSynthesizeFunctionMask(serialPortIdentifiers[0]));
