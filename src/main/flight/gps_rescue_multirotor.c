@@ -556,7 +556,6 @@ void initRescueValues(void)
     resetAltitudeControl(); // Initialise altitude in autopilot multirotor
     if (isAutopilotInControl()) { // do we need to check if a nav process is active here?
         initPositionHold(); // Initialise position hold at current location and set braking mode 
-        }
     }
 }
 #endif // !ENABLE_RESCUE_PLAN
