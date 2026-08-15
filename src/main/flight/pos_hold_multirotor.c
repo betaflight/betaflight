@@ -32,9 +32,7 @@
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
-#include "flight/pos_hold_multirotor.h"
 #include "flight/position.h"
-
 #include "flight/position_estimator.h"
 #include "rx/rx.h"
 
