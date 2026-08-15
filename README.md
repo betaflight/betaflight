@@ -33,6 +33,21 @@ Betaflight has the following features:
 - VTX support for Unify Pro and IRC Tramp
 - and MUCH, MUCH more.
 
+## Tiny whoop builds
+
+The stock defaults target a 5" freestyle quad. `make CONFIG=<board> TINYWHOOP=yes`
+builds a firmware adapted to a 65-85mm ducted whoop instead: it drops the
+subsystems such a craft has no hardware for (GPS, compass, rangefinder, fixed
+wing, legacy telemetry - 18KB of flash and 4KB of RAM on an F411), ships
+defaults tuned for a small fast prop rather than a 5" one, and adds a
+`WHOOP TUNE` menu in the goggles for the settings that get changed between
+packs.
+
+It is entirely opt-in - a build without the option is unchanged - and it
+produces an ordinary Betaflight configuration that the app and the CLI handle
+as usual. See [docs/TinyWhoop.md](docs/TinyWhoop.md) for what it changes and
+why.
+
 ## Installation & Documentation
 
 See: https://betaflight.com/docs/wiki

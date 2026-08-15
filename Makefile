@@ -31,6 +31,11 @@ RAM_BASED ?= no
 # reserve space for custom defaults
 CUSTOM_DEFAULTS_EXTENDED ?= no
 
+# build a tiny whoop optimised firmware: drops the subsystems a whoop has no
+# hardware for (GPS, compass, rangefinder, ...) and ships whoop tuned defaults.
+# Equivalent to adding USE_TINYWHOOP to OPTIONS; see docs/TinyWhoop.md.
+TINYWHOOP ?= no
+
 # Debugger optons:
 #   empty - ordinary build with all optimizations enabled
 #   INFO - ordinary build with debug symbols and all optimizations enabled. Only builds touched files.
@@ -372,6 +377,10 @@ FC_VER           := $(call pp_def_value_str,src/main/build/version.h,FC_VERSION_
 # Added after GCC version update, remove once the warnings have been fixed
 #
 TEMPORARY_FLAGS :=
+
+ifeq ($(TINYWHOOP),yes)
+OPTIONS    += USE_TINYWHOOP
+endif
 
 EXTRA_WARNING_FLAGS := -Wold-style-definition
 
@@ -859,6 +868,9 @@ help: Makefile mk/tools.mk
 	@echo "        make configs"
 	@echo ""
 	@echo "Valid TARGET values are: $(BASE_TARGETS)"
+	@echo ""
+	@echo "To build a tiny whoop optimised firmware:"
+	@echo "        make <config-target> TINYWHOOP=yes"
 	@echo ""
 	@sed -n 's/^## //p' $?
 

@@ -59,6 +59,7 @@ bool cliMode = false;
 #include "config/config_eeprom.h"
 #include "config/feature.h"
 #include "config/simplified_tuning.h"
+#include "config/tinywhoop_profile.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/adc.h"
@@ -3844,6 +3845,19 @@ RAM_CODE static void cliSimplifiedTuning(const char *cmdName, char *cmdline)
         }
 
         cliPrintLine("Disabled simplified tuning.");
+    } else {
+        cliShowParseError(cmdName);
+    }
+}
+#endif
+
+#if defined(USE_TINYWHOOP)
+RAM_CODE static void cliTinyWhoop(const char *cmdName, char *cmdline)
+{
+    if (strcasecmp(cmdline, "apply") == 0) {
+        tinywhoopProfileApply();
+
+        cliPrintLine("Applied tiny whoop profile to all profiles. Use 'save' to keep it.");
     } else {
         cliShowParseError(cmdName);
     }
@@ -8439,6 +8453,9 @@ const clicmd_t cmdTable[] = {
 #endif
 #if ENABLE_FLIGHT_PLAN
     CLI_COMMAND_DEF("waypoint", "configure waypoints", "list | status | insert <idx> <lat.ddddddd> <lon.ddddddd> <alt> <spd> <type> <dur> <pat> | update <idx> <lat.ddddddd> <lon.ddddddd> <alt> <spd> <type> <dur> <pat> | remove <idx> | clear", cliWaypoint),
+#endif
+#if defined(USE_TINYWHOOP)
+    CLI_COMMAND_DEF("whoop", "apply the tiny whoop profile to the current configuration", "apply", cliTinyWhoop),
 #endif
 };
 

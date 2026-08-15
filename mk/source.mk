@@ -88,6 +88,7 @@ COMMON_SRC = \
             config/config_streamer.c \
             config/feature.c \
             config/simplified_tuning.c \
+            config/tinywhoop_profile.c \
             cli/cli.c \
             cli/settings.c \
             drivers/dshot.c \
@@ -250,6 +251,7 @@ COMMON_SRC = \
             cms/cms_menu_persistent_stats.c \
             cms/cms_menu_rpm_limit.c \
             cms/cms_menu_quick.c \
+            cms/cms_menu_tinywhoop.c \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/rangefinder/rangefinder_hcsr04.c \
@@ -516,6 +518,7 @@ SIZE_OPTIMISED_SRC += \
             config/feature.c \
             config/config_streamer.c \
             config/simplified_tuning.c \
+            config/tinywhoop_profile.c \
             io/dashboard.c \
             io/serial.c \
             io/serial_feature_map.c \
@@ -546,6 +549,7 @@ SIZE_OPTIMISED_SRC += \
             cms/cms_menu_persistent_stats.c \
             cms/cms_menu_rpm_limit.c \
             cms/cms_menu_quick.c \
+            cms/cms_menu_tinywhoop.c \
             io/vtx.c \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \

@@ -35,6 +35,7 @@
 
 #include "config/config_eeprom.h"
 #include "config/feature.h"
+#include "config/tinywhoop_profile.h"
 
 #include "drivers/dshot.h"
 #include "drivers/dshot_command.h"
@@ -155,6 +156,12 @@ uint8_t getCurrentBatteryProfileIndex(void)
 void resetConfig(void)
 {
     pgResetAll();
+
+#if defined(USE_TINYWHOOP)
+    // Applied before targetConfiguration() so that a board config still has the
+    // final say on anything hardware specific that it chooses to set.
+    tinywhoopProfileApply();
+#endif
 
 #if defined(USE_TARGET_CONFIG)
     targetConfiguration();

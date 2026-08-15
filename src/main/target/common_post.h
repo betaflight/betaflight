@@ -126,6 +126,63 @@
 #endif
 
 /*
+    TINY WHOOP FEATURE CUT
+
+    USE_TINYWHOOP builds a firmware for a 65-85mm ducted micro. Those craft carry
+    a bare AIO board - gyro, ESCs, an RX and usually a camera - and nothing else,
+    so the navigation and long-range subsystems below are dead weight: they cost
+    flash on the F4/F411 boards these craft ship with, and the ones with a
+    scheduler task (GPS, compass, rangefinder) cost loop time that the whoop
+    would rather spend on the PID loop.
+
+    This runs before the hardware inclusion blocks below so that dropping a
+    parent feature also drops its whole driver suite, and before the feature
+    derivation further down so nothing is derived from a feature that is gone.
+    Everything here is only about *this* build; a board config that wants any of
+    it back builds without USE_TINYWHOOP. See docs/TinyWhoop.md.
+*/
+#ifdef USE_TINYWHOOP
+
+// Navigation: no whoop carries a GPS or a compass.
+#undef USE_GPS
+#undef USE_GPS_RESCUE
+#undef USE_GPS_PLUS_CODES
+#undef USE_GPS_LAP_TIMER
+#undef USE_MAG
+#undef USE_POSITION_HOLD
+#undef USE_OPTICALFLOW
+#undef USE_RANGEFINDER
+#undef USE_FLIGHT_PLAN
+
+// Fixed wing, and the race-start feature that goes with a launch stand.
+#undef USE_WING
+#undef USE_LAUNCH_CONTROL
+
+// Legacy telemetry protocols. A whoop flies CRSF/GHST (ELRS) or the SPI RX
+// protocols, and talks to an HD VTX over MSP, so those are kept.
+#undef USE_TELEMETRY_FRSKY_HUB
+#undef USE_TELEMETRY_HOTT
+#undef USE_TELEMETRY_IBUS
+#undef USE_TELEMETRY_IBUS_EXTENDED
+#undef USE_TELEMETRY_JETIEXBUS
+#undef USE_TELEMETRY_LTM
+#undef USE_TELEMETRY_MAVLINK
+#undef USE_TELEMETRY_SRXL
+
+// Peripherals a whoop has no connector for.
+#undef USE_DASHBOARD
+#undef USE_TRANSPONDER
+#undef USE_CAMERA_CONTROL
+#undef USE_SERVOS
+
+// Four motors, no servos: halves the mixer tables and the motor/servo arrays.
+#ifndef USE_QUAD_MIXER_ONLY
+#define USE_QUAD_MIXER_ONLY
+#endif
+
+#endif // USE_TINYWHOOP
+
+/*
     BEGIN HARDWARE INCLUSIONS
 
     Simplified options for the moment, i.e. adding USE_MAG or USE_BARO and the entire driver suite is added.

@@ -47,6 +47,10 @@
 #include "cms/cms_menu_persistent_stats.h"
 #endif
 
+#ifdef USE_TINYWHOOP
+#include "cms/cms_menu_tinywhoop.h"
+#endif
+
 // VTX supplied menus
 
 #include "cms/cms_menu_vtx_common.h"
@@ -221,6 +225,9 @@ static const OSD_Entry menuMainEntries[] =
     {"-- MAIN --",  OME_Label, NULL, NULL},
 
     {"PROFILE",     OME_Submenu,  cmsMenuChange, &cmsx_menuImu},
+#ifdef USE_TINYWHOOP
+    {"WHOOP TUNE",  OME_Submenu,  cmsMenuChange, &cmsx_menuTinyWhoop},
+#endif
     {"FEATURES",    OME_Submenu,  cmsMenuChange, &cmsx_menuFeatures},
 #ifdef USE_OSD
     {"OSD",         OME_Submenu,  cmsMenuChange, &cmsx_menuOsd},
