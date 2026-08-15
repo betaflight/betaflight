@@ -123,6 +123,7 @@ typedef struct {
     rescueSensorData_s sensor;
     rescueIntent_s intent;
     bool isAvailable;
+    bool positionHoldWasActive;
     bool isOK;
 } rescueState_s;
 rescueState_s rescueState;
@@ -152,7 +153,7 @@ void gpsRescueInit(void)
     rescueState.isAvailable = true;
     rescueState.sensor.isHeadingOK = true;
     rescueState.isOK = true;
-
+    rescueState.positionHoldWasActive = false; // tracks whether positionHold is active before starting GPS Rescue
 }
 
 #if !ENABLE_RESCUE_PLAN
@@ -306,6 +307,13 @@ bool oneSecondPassed(timeUs_t currentTimeUs, timeUs_t *lastTimeUs) {
     }
     return false;
 }
+
+#ifdef USE_POSITION_HOLD
+void gpsRescueCapturePositionHoldState(void)
+{
+    rescueState.positionHoldWasActive = isAutopilotInControl();
+}
+#endif // USE_POSITION_HOLD
 
 static void rescueDisarmNow(void)
 {
@@ -556,8 +564,8 @@ void initRescueValues(void)
 
     resetAltitudeControl(); // Initialise altitude in autopilot multirotor
 #ifdef USE_POSITION_HOLD
-    if (isAutopilotInControl()) {
-        initPositionHold();
+    if (rescueState.positionHoldWasActive) {
+        initPositionHold(); // if already active, init positionHold to ensure that the braking is performed when GPS Rescue starts and positionHold is already active.
     }
 #endif // USE_POSITION_HOLD
 }
@@ -588,6 +596,10 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
     switch (rescueState.phase) {
     case RESCUE_IDLE:
         updateMaxAltitude();
+#ifdef USE_POSITION_HOLD
+        gpsRescueCapturePositionHoldState();
+#endif // USE_POSITION_HOLD
+         
         break;
 
     case RESCUE_INITIALIZE:
