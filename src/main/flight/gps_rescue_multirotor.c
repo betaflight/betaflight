@@ -43,7 +43,6 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/pid.h"
-#include "flight/pos_hold_multirotor.h"
 #include "flight/position.h"
 #include "flight/position_estimator.h"
 
@@ -123,7 +122,6 @@ typedef struct {
     rescueSensorData_s sensor;
     rescueIntent_s intent;
     bool isAvailable;
-    bool positionHoldWasActive;
     bool isOK;
 } rescueState_s;
 rescueState_s rescueState;
