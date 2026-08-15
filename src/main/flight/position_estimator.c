@@ -455,6 +455,9 @@ static void feedBaroMeasurements(timeUs_t nowUs)
     // its own velocity and the measured acceleration can account for. A real climb or fall is
     // backed by both and goes in untouched; anything else is followed slowly rather than believed,
     // which still converges on a genuine offset instead of blocking it forever.
+    // Nominal period on purpose: this must be the same dt kalmanPredict() propagated the state
+    // with, or the bound and the state it bounds disagree. If the estimator ever moves to a
+    // measured interval, this has to move with it.
     const float dt = HZ_TO_INTERVAL(TASK_ALTITUDE_RATE_HZ);
     const float reachableCm = fabsf(kalmanGetVelocity(&kfUp)) * dt
                             + 0.5f * (fabsf(verticalAccelCmS2) + BARO_CLIP_ACCEL_MARGIN) * dt * dt

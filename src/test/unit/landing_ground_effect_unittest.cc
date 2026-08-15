@@ -24,18 +24,17 @@
 // amplifies it, throttle saturates and the craft launches off the deck without ever touching it.
 //
 // Real code in the loop: flight/position_estimator.c (the actual Kalman filter, fed a corrupted
-// barometer and a truthful accelerometer), flight/position.c (the derivative path under test) and
+// barometer and a truthful accelerometer), flight/position.c (the altitude plumbing) and
 // flight/autopilot_multirotor.c (the real altitudeControl(), including dBoost).
 //
 // Modelled: rigid-body vertical physics, ground effect as extra lift, inelastic ground contact,
 // and the barometric ground-effect error itself (shape and magnitude fitted to the blackbox log
 // of the reported flight - see BaroGroundEffect below).
 //
-// Note that the reproduction itself is DISABLED: it fails on HEAD, because the derivative slew
-// limit in position.c reduces the phantom sink and the peak throttle but does not stop the
-// launch. The numbers are in the comment on that test. The two enabled tests are the honest-baro
-// control and a characterisation of what the estimator does with the artefact; both of those pass
-// with the limiter active and with it neutralised, so neither is a discriminator for it.
+// All three tests are enabled. The reproduction is the acceptance test for the baro clip: it
+// passes with the clip in place and fails without it, and the numbers are in the comment on that
+// test. The other two are an honest-baro control and a characterisation of what the estimator
+// does with the artefact.
 
 #include <algorithm>
 #include <cmath>
@@ -413,33 +412,22 @@ TEST_F(LandingGroundEffectTest, LoggedGroundEffectBaroCollapseDoesNotFoolTheEsti
         << worstBaroErrorCm << " cm while the accelerometer sat at 1 g";
 }
 
-// REPRODUCTION OF THE REPORTED BOUNCE. DISABLED BECAUSE IT FAILS ON HEAD.
+// REPRODUCTION OF THE REPORTED BOUNCE, AND THE ACCEPTANCE TEST FOR THE FIX.
 //
 // This is the reporter's event end to end: gentle descent, the logged barometer collapse winds in
 // over the last 35 cm, the estimator turns it into a phantom sink, altitudeControl feeds that into
 // D and the craft launches off the deck without ever touching it.
 //
-// It is disabled, not deleted, because the fix in position.c does NOT prevent it. Measured on this
-// rig at biasCm 2200 / onsetCm 35 / power 3 / 60 cm/s commanded descent:
+// Pre-fix reference, measured on this rig at biasCm 2200 / onsetCm 35 / power 3 and 60 cm/s
+// commanded descent, with the baro clip in feedBaroMeasurements removed:
 //
-//                                     HEAD (limiter on)   limiter neutralised
-//   peak sink handed to the loop           -449 cm/s            -917 cm/s
-//   dBoost engaged (>500 cm/s)                no                   yes
-//   peak commanded throttle                1397 PWM             1713 PWM
-//   climb above ground-effect entry         +269 cm              +208 cm
-//   true altitude at end of run              165 cm                10 cm
+//   peak sink handed to the loop           -917 cm/s   (true sink -166 cm/s)
+//   dBoost engaged (>500 cm/s)                yes
+//   peak commanded throttle                1713 PWM
+//   climb above ground-effect entry         +208 cm
 //
-// The limiter does what it says - it keeps the derivative out of the dBoost region and roughly
-// halves the peak throttle - but it does not stop the launch, and on peak climb it is slightly
-// worse, because capping the slew rate spreads the same error over a longer window instead of
-// removing it. Holding the derivative even tighter does not help: with the accelerometer margin
-// cut from 0.5 g to 0.05 g the peak sink handed to the loop drops to -159 cm/s and peak throttle
-// to 1321 PWM, and the craft still climbs 233 cm, because the wrong value then persists for over
-// two seconds. Ablating the simulated ground effect (gain 0.25 -> 0) changes the climb by under
-// 8 cm, so the launch is driven by the corrupted estimate, not by the extra lift.
-//
-// Enable this once there is a fix that is expected to hold the craft down, and it becomes the
-// acceptance test for it.
+// Ablating the simulated ground effect (gain 0.25 -> 0) changes the climb by under 8 cm, so the
+// launch is driven by the corrupted estimate and not by the extra lift.
 TEST_F(LandingGroundEffectTest, LoggedGroundEffectBaroCollapseMustNotLaunchTheCraft)
 {
     const float descendRateCmS = 60.0f;
