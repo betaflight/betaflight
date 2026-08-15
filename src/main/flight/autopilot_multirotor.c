@@ -757,16 +757,15 @@ bool positionControl(void)
             ap.iPolicy = I_FREEZE;   // retain the integral, do not wind it up while manoeuvring
         } else {
             // No stick input
-
 #ifdef USE_GPS_RESCUE
             if (!FLIGHT_MODE(GPS_RESCUE_MODE)){
 #endif
-            // If in GPS Rescue, we have both velocity and acceleration
-            // otherwise hold position at zero velocity and acceleration
-            targetVelocity.v[EF_EAST]  = 0.0f;
-            targetVelocity.v[EF_NORTH] = 0.0f;
-            targetAcceleration.v[EF_EAST]  = 0.0f;
-            targetAcceleration.v[EF_NORTH] = 0.0f;
+                // If in GPS Rescue, we have both velocity and acceleration
+                // otherwise hold position at zero velocity and acceleration
+                targetVelocity.v[EF_EAST]  = 0.0f;
+                targetVelocity.v[EF_NORTH] = 0.0f;
+                targetAcceleration.v[EF_EAST]  = 0.0f;
+                targetAcceleration.v[EF_NORTH] = 0.0f;
 #ifdef USE_GPS_RESCUE
             }
 #endif
