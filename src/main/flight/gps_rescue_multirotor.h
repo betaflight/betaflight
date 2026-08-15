@@ -49,5 +49,6 @@ bool gpsRescueIsConfigured(void);
 bool gpsRescueIsAvailable(void);
 bool gpsRescueIsHeadingOK(void);
 bool gpsRescueIsOK(void);
+void gpsRescueCapturePositionHoldState(void);
 
 #endif // !USE_WING
