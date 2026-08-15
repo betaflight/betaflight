@@ -55,7 +55,7 @@ void posHoldInit(void)
 
 static void posHoldCheckSticks(void)
 {
-    if (failsafeIsActive()) {
+    if (failsafeIsActive()|| FLIGHT_MODE(GPS_RESCUE_MODE)) {
         setSticksActiveStatus(false);
         return;
     }
