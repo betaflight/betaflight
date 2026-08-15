@@ -554,7 +554,10 @@ void initRescueValues(void)
     rescueState.intent.xyAttenuator = 0.0f;        // For a slower start to gaining velocity
 
     resetAltitudeControl(); // Initialise altitude in autopilot multirotor
-initPositionHold(); // Initialise position hold at current location 
+    if (isAutopilotInControl()) { // do we need to check if a nav process is active here?
+        initPositionHold(); // Initialise position hold at current location and set braking mode 
+        }
+    }
 }
 #endif // !ENABLE_RESCUE_PLAN
 
