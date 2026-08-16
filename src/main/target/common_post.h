@@ -954,12 +954,21 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_CAN 0
 #endif
 
-// DroneCAN piggy-backs on the same hardware gate as the raw CAN driver: the
-// stack is meaningless without a CAN peripheral to drive. Platforms that
-// compile CAN in also compile DroneCAN in by default, with the runtime PG
-// flag (dronecan_enabled) deciding whether the task is actually started.
-#if !defined(ENABLE_DRONECAN)
-#define ENABLE_DRONECAN ENABLE_CAN
+// DroneCAN is picked as a build option, the same way the flight plan is. The
+// stack is meaningless without a CAN peripheral to drive, so the option is
+// dropped rather than honoured on a platform that has none. Dropping it, rather
+// than just ignoring it, keeps the build info honest: it reports on
+// `#ifdef USE_DRONECAN`, and leaving it set would advertise a stack that was
+// never compiled. The runtime PG flag (dronecan_enabled) still decides whether
+// the task is started.
+#if defined(USE_DRONECAN) && !ENABLE_CAN
+#undef USE_DRONECAN
+#endif
+
+#if defined(USE_DRONECAN) && !defined(ENABLE_DRONECAN)
+#define ENABLE_DRONECAN 1
+#elif !defined(ENABLE_DRONECAN)
+#define ENABLE_DRONECAN 0
 #endif
 
 // DroneCAN ESC: command ESCs over CAN (uavcan.equipment.esc.RawCommand) and
