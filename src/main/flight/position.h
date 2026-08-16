@@ -47,6 +47,7 @@ float getAltitudeDerivative(void);
 // Raw Kalman Z state for low-latency altitude control (no display PT2).
 float getAltitudeCmControl(void);
 float getAltitudeDerivativeControl(void);
+float getAltitudeAccelerationControl(void);
 void calculateEstimatedAltitude(void);
 void positionInit(void);
 int32_t getEstimatedAltitudeCm(void);

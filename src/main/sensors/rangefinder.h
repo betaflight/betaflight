@@ -22,6 +22,8 @@
 
 #include <stdint.h>
 
+#include "common/time.h"
+
 #include "drivers/rangefinder/rangefinder.h"
 
 #include "pg/pg.h"
@@ -59,6 +61,8 @@ typedef struct rangefinder_s {
     int32_t rawAltitude;
     int32_t calculatedAltitude;
     timeMs_t lastValidResponseTimeMs;
+    timeUs_t lastDataTimeUs;
+    timeDelta_t dataIntervalUs;
 
     bool snrThresholdReached;
     int32_t dynamicDistanceThreshold;
@@ -70,6 +74,9 @@ bool rangefinderInit(void);
 
 int32_t rangefinderGetLatestAltitude(void);
 int32_t rangefinderGetLatestRawAltitude(void);
+
+timeUs_t rangefinderGetLatestSampleTimeUs(void);
+timeDelta_t rangefinderGetSampleIntervalUs(void);
 
 void rangefinderUpdate(void);
 bool rangefinderProcess(float cosTiltAngle);

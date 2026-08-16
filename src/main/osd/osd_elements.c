@@ -2814,7 +2814,7 @@ void osdUpdateAlarms(void)
     } else {
         CLR_BLINK(OSD_MAIN_BATT_USAGE);
     }
-   
+
     if ((alt >= osdConfig()->alt_alarm) && ARMING_FLAG(ARMED)) {
         SET_BLINK(OSD_ALTITUDE);
     } else {

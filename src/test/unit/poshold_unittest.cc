@@ -81,6 +81,7 @@ extern "C" {
     float getAltitudeDerivative(void) { return 0.0f; }
     float getAltitudeCmControl(void) { return 0.0f; }
     float getAltitudeDerivativeControl(void) { return 0.0f; }
+    float getAltitudeAccelerationControl(void) { return 0.0f; }
     float getCosTiltAngle(void) { return 1.0f; }
 
     uint8_t armingFlags = 0;
@@ -173,6 +174,7 @@ static void initAndSettleAt(float eastCm, float northCm, int16_t yawDecidegrees)
     cfg->altitudeP = 50;
     cfg->altitudeI = 50;
     cfg->altitudeD = 50;
+    cfg->altitudeA = 50;
     cfg->altitudeF = 0;
     cfg->landingAltitudeM = 5;
 
@@ -410,13 +412,13 @@ TEST_F(PosHoldTest, HeadingSouthReversesRollSign)
     initAndSettleAt(0, 0, 0);
     testEstimate.position.x = 100.0f;
     runIterations(SETTLE_ITERATIONS);
-    EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f); 
+    EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f);
 
     // 2. Nose pointed South: Drifting East requires Roll Right (Positive)
     initAndSettleAt(0, 0, 1800);
     testEstimate.position.x = 100.0f;
     runIterations(SETTLE_ITERATIONS);
-    
+
     EXPECT_GT(autopilotAngle[AI_ROLL], 0.0f); // Roll must be  POSITIVE (Roll Right)
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f); // Pitch  must be flat
 }
@@ -438,11 +440,13 @@ TEST_F(PosHoldTest, SticksActiveButCentered)
     setSticksActiveStatus(true);
     runIterations(SETTLE_ITERATIONS);
 
-    // Centred sticks command zero target velocity, so P and D are ~0. Sticks-active
-    // uses the I_FREEZE policy, which retains (does not accumulate) the distance
-    // integral built up while holding the 1 m offset before the sticks engaged;
-    // that frozen integral is the residual lean.
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], -2.796f, 0.01f);
+    // Centred sticks command zero target velocity, and the anchor-off virtual
+    // distance error is reset on stick engagement, so P, D, A and F are all 0.
+    // Sticks-active uses the I_FREEZE policy, which retains (does not accumulate)
+    // the distance integral built up while holding the 1 m offset before the
+    // sticks engaged; that frozen integral is the whole residual lean:
+    //   Ki * integral = (30 * 0.00015) * (-100 cm * 200 * 10 ms) = -0.9 deg
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], -1.02f, 0.01f);
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.01f);
 }
 

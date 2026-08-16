@@ -64,7 +64,7 @@ static uint16_t autopilotConfig_hoverThrottle;
 static uint8_t gpsRescueConfig_minSats;
 static uint8_t gpsRescueConfig_allowArmingWithoutFix;
 
-static uint8_t autopilotConfig_altitudeP, autopilotConfig_altitudeI, autopilotConfig_altitudeD, autopilotConfig_altitudeF;
+static uint8_t autopilotConfig_altitudeP, autopilotConfig_altitudeI, autopilotConfig_altitudeD, autopilotConfig_altitudeA, autopilotConfig_altitudeF;
 static uint8_t gpsRescueConfig_yawP;
 static uint8_t autopilotConfig_positionP, autopilotConfig_positionI, autopilotConfig_positionD;
 static uint8_t autopilotConfig_positionCutoff;
@@ -76,6 +76,7 @@ static const void *cms_menuGpsRescuePidOnEnter(displayPort_t *pDisp)
     autopilotConfig_altitudeP = autopilotConfig()->altitudeP;
     autopilotConfig_altitudeI = autopilotConfig()->altitudeI;
     autopilotConfig_altitudeD = autopilotConfig()->altitudeD;
+    autopilotConfig_altitudeA = autopilotConfig()->altitudeA;
     autopilotConfig_altitudeF = autopilotConfig()->altitudeF;
 
     gpsRescueConfig_yawP = gpsRescueConfig()->yawP;
@@ -97,6 +98,7 @@ static const void *cms_menuGpsRescuePidOnExit(displayPort_t *pDisp, const OSD_En
     autopilotConfigMutable()->altitudeP = autopilotConfig_altitudeP;
     autopilotConfigMutable()->altitudeI = autopilotConfig_altitudeI;
     autopilotConfigMutable()->altitudeD = autopilotConfig_altitudeD;
+    autopilotConfigMutable()->altitudeA = autopilotConfig_altitudeA;
     autopilotConfigMutable()->altitudeF = autopilotConfig_altitudeF;
 
     gpsRescueConfigMutable()->yawP = gpsRescueConfig_yawP;
