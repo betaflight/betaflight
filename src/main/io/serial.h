@@ -184,6 +184,9 @@ void serialInit(bool softserialEnabled);
 void serialRemovePort(serialPortIdentifier_e identifier);
 bool serialIsPortAvailable(serialPortIdentifier_e identifier);
 bool isSerialConfigValid(void);
+// True when the functions claiming this one port cannot coexist on it, which is
+// what serialDropConflictingAssignments() acts on.
+bool serialPortFunctionsConflict(serialPortIdentifier_e identifier);
 bool doesConfigurationUsePort(serialPortIdentifier_e portIdentifier);
 
 portSharing_e determinePortSharing(serialPortIdentifier_e identifier, serialPortFunction_e function);

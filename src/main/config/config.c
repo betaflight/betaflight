@@ -236,7 +236,14 @@ static void validateAndFixConfig(void)
 #endif
 
     if (!isSerialConfigValid()) {
-        serialResetFeatureAssignments();
+        // Give up only the claims that actually clash before falling back to the
+        // board-wide reset, which would cost the user every other port they had
+        // assigned to settle a single bad one.
+        serialDropConflictingAssignments();
+
+        if (!isSerialConfigValid()) {
+            serialResetFeatureAssignments();
+        }
     }
 
 #if defined(USE_GPS)

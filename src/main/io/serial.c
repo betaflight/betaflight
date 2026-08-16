@@ -405,10 +405,7 @@ serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e s
 
 /*
  * FUNCTION_LIDAR is in here because an MT rangefinder / optical flow module is
- * heard over MSP on the very port it declares, so the two genuinely coexist -
- * and because rejecting the pair costs far more than the pair does: an invalid
- * config is answered by serialResetFeatureAssignments(), losing every port
- * assignment on the board rather than the offending one.
+ * heard over MSP on the very port it declares, so the two genuinely coexist.
  */
 #ifdef USE_TELEMETRY
 #define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | TELEMETRY_PORT_FUNCTIONS_MASK | FUNCTION_VTX_MSP | FUNCTION_LIDAR)
@@ -416,17 +413,63 @@ serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e s
 #define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | FUNCTION_VTX_MSP | FUNCTION_LIDAR)
 #endif
 
+/*
+ * rules:
+ * - MSP is allowed to be shared with EITHER any telemetry OR blackbox.
+ *   (using either / or, switching based on armed / disarmed or the AUX channel configured for BOXTELEMETRY)
+ * - serial RX and FrSky / LTM / MAVLink telemetry can be shared
+ *   (serial RX using RX line, telemetry using TX line)
+ * - No other sharing combinations are valid.
+ *
+ * Only the functions claiming this one port decide the answer, so a rejection
+ * names the port whose claims have to give way.  The MSP port count and the VCP
+ * requirement are properties of the configuration as a whole and are checked by
+ * isSerialConfigValid() instead.
+ */
+bool serialPortFunctionsConflict(serialPortIdentifier_e identifier)
+{
+    const uint32_t functionMask = serialSynthesizeFunctionMask(identifier);
+
+#ifdef USE_SOFTSERIAL
+    if (serialType(identifier) == SERIALTYPE_SOFTSERIAL
+        && (functionMask & (FUNCTION_MSP | FUNCTION_RX_SERIAL))) {
+        // MSP and serial RX cannot run on a soft serial port
+        return true;
+    }
+#endif
+
+    const uint8_t bitCount = popcount32(functionMask);
+
+#ifdef USE_VTX_MSP
+    if ((functionMask & FUNCTION_VTX_MSP) && bitCount == 1) { // VTX MSP has to be shared with RX or MSP serial
+        return true;
+    }
+#endif
+
+    if (bitCount > 1) {
+        // shared
+        if (bitCount > (BITCOUNT(FUNCTION_MSP | ALL_FUNCTIONS_SHARABLE_WITH_MSP))) {
+            return true;
+        }
+
+        if ((functionMask & FUNCTION_MSP) && (functionMask & ALL_FUNCTIONS_SHARABLE_WITH_MSP)) {
+            // MSP & telemetry
+#ifdef USE_TELEMETRY
+        } else if (telemetryCheckRxPortShared(identifier, rxConfig()->serialrx_provider)) {
+            // serial RX & telemetry
+#endif
+        } else {
+            // some other combination
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool isSerialConfigValid(void)
 {
-    /*
-     * rules:
-     * - 1 MSP port minimum, max MSP ports is defined and must be adhered to.
-     * - MSP is allowed to be shared with EITHER any telemetry OR blackbox.
-     *   (using either / or, switching based on armed / disarmed or the AUX channel configured for BOXTELEMETRY)
-     * - serial RX and FrSky / LTM / MAVLink telemetry can be shared
-     *   (serial RX using RX line, telemetry using TX line)
-     * - No other sharing combinations are valid.
-     */
+    // 1 MSP port minimum, max MSP ports is defined and must be adhered to.
     uint8_t mspPortCount = 0;
 
     for (unsigned index = 0; index < ARRAYLEN(serialPortIdentifiers); index++) {
@@ -441,38 +484,8 @@ bool isSerialConfigValid(void)
             return false;
         }
 
-#ifdef USE_SOFTSERIAL
-        if (serialType(identifier) == SERIALTYPE_SOFTSERIAL
-            && (functionMask & (FUNCTION_MSP | FUNCTION_RX_SERIAL))) {
-            // MSP and serial RX cannot run on a soft serial port
+        if (serialPortFunctionsConflict(identifier)) {
             return false;
-        }
-#endif
-
-        const uint8_t bitCount = popcount32(functionMask);
-
-#ifdef USE_VTX_MSP
-        if ((functionMask & FUNCTION_VTX_MSP) && bitCount == 1) { // VTX MSP has to be shared with RX or MSP serial
-            return false;
-        }
-#endif
-
-        if (bitCount > 1) {
-            // shared
-            if (bitCount > (BITCOUNT(FUNCTION_MSP | ALL_FUNCTIONS_SHARABLE_WITH_MSP))) {
-                return false;
-            }
-
-            if ((functionMask & FUNCTION_MSP) && (functionMask & ALL_FUNCTIONS_SHARABLE_WITH_MSP)) {
-                // MSP & telemetry
-#ifdef USE_TELEMETRY
-            } else if (telemetryCheckRxPortShared(identifier, rxConfig()->serialrx_provider)) {
-                // serial RX & telemetry
-#endif
-            } else {
-                // some other combination
-                return false;
-            }
         }
     }
 

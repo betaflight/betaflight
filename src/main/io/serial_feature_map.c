@@ -204,11 +204,15 @@ uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
 // apply phase can reassign cleanly.  Collapsed-enum selectors
 // (rangefinder_hardware, displayPortDevice, vtx_type) are left alone —
 // removing a UART doesn't imply changing the chosen hardware/protocol.
-static void clearClaimsOnPort(serialPortIdentifier_e identifier)
+// `keepMsp` spares an MSP claim on the port, so resolving a conflict cannot
+// take away the link the board is being configured over.
+static void clearClaimsOnPort(serialPortIdentifier_e identifier, bool keepMsp)
 {
-    for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
-        if (mspConfig()->msp_uart[i] == identifier) {
-            mspConfigMutable()->msp_uart[i] = SERIAL_PORT_NONE;
+    if (!keepMsp) {
+        for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+            if (mspConfig()->msp_uart[i] == identifier) {
+                mspConfigMutable()->msp_uart[i] = SERIAL_PORT_NONE;
+            }
         }
     }
 #ifdef USE_GPS
@@ -382,10 +386,21 @@ uint8_t serialSynthesizePortBaud(serialPortIdentifier_e identifier, serialBaudCl
     return serialDefaultPortBaud(baudClass);
 }
 
+void serialDropConflictingAssignments(void)
+{
+    for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
+        const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
+
+        if (serialPortFunctionsConflict(identifier)) {
+            clearClaimsOnPort(identifier, true);
+        }
+    }
+}
+
 void serialResetFeatureAssignments(void)
 {
     for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
-        clearClaimsOnPort(serialPortIdentifiers[i]);
+        clearClaimsOnPort(serialPortIdentifiers[i], false);
     }
 
     // The first port stays MSP so the board remains reachable after a reset.

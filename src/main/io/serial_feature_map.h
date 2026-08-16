@@ -31,8 +31,15 @@
 // (MSP_CF_SERIAL_CONFIG) and the CLI `serial` command's output.
 uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier);
 
-// Clear every feature's port claim and restore MSP on the first port.  Recovery
-// path for a stored assignment that isSerialConfigValid() rejects.
+// Clear the claims on just those ports whose functions cannot coexist, sparing
+// MSP so the board stays reachable.  First recovery step for a stored assignment
+// that isSerialConfigValid() rejects, so one bad assignment costs the user that
+// port rather than every port on the board.
+void serialDropConflictingAssignments(void);
+
+// Clear every feature's port claim and restore MSP on the first port.  Last
+// resort for a configuration still invalid once the conflicting claims are gone,
+// such as one that has lost MSP on the VCP port.
 void serialResetFeatureAssignments(void);
 
 // A rangefinder or optical flow module on an MSP transport is heard by pushing

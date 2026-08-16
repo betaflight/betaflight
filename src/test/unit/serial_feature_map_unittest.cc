@@ -77,6 +77,15 @@ extern "C" {
         SERIAL_PORT_SOFTSERIAL1,
         SERIAL_PORT_SOFTSERIAL2,
     };
+
+    // Which ports clash is serial.c's judgement and is not linked here; naming
+    // them directly keeps these tests on what the drop itself does.
+    serialPortIdentifier_e conflictingPort = SERIAL_PORT_NONE;
+
+    bool serialPortFunctionsConflict(serialPortIdentifier_e identifier)
+    {
+        return identifier == conflictingPort;
+    }
 }
 
 #include "unittest_macros.h"
@@ -469,6 +478,58 @@ TEST(SerialFeatureMap, ResetClearsEveryClaimAndRestoresMsp)
     for (unsigned i = 1; i < SERIAL_PORT_COUNT; i++) {
         EXPECT_EQ(0u, serialSynthesizeFunctionMask(serialPortIdentifiers[i]));
     }
+}
+
+TEST(SerialFeatureMap, DropConflictingLeavesInnocentPortsAlone)
+{
+    resetAllConfigs();
+
+    // The board-wide reset this replaces would have taken all four assignments
+    // to settle the one clash on USART1.
+    mspConfigMutable()->msp_uart[0] = SERIAL_PORT_USART1;
+    gpsConfigMutable()->gps_uart = SERIAL_PORT_USART1;
+    rxConfigMutable()->rx_uart = SERIAL_PORT_USART3;
+    blackboxConfigMutable()->blackbox_uart = SERIAL_PORT_UART4;
+    escSensorConfigMutable()->esc_sensor_uart = SERIAL_PORT_UART5;
+
+    conflictingPort = SERIAL_PORT_USART1;
+    serialDropConflictingAssignments();
+    conflictingPort = SERIAL_PORT_NONE;
+
+    EXPECT_EQ(SERIAL_PORT_NONE, gpsConfig()->gps_uart);
+    EXPECT_EQ(SERIAL_PORT_USART3, rxConfig()->rx_uart);
+    EXPECT_EQ(SERIAL_PORT_UART4, blackboxConfig()->blackbox_uart);
+    EXPECT_EQ(SERIAL_PORT_UART5, escSensorConfig()->esc_sensor_uart);
+}
+
+TEST(SerialFeatureMap, DropConflictingKeepsMspSoTheBoardStaysReachable)
+{
+    resetAllConfigs();
+
+    mspConfigMutable()->msp_uart[0] = SERIAL_PORT_USART1;
+    gpsConfigMutable()->gps_uart = SERIAL_PORT_USART1;
+
+    conflictingPort = SERIAL_PORT_USART1;
+    serialDropConflictingAssignments();
+    conflictingPort = SERIAL_PORT_NONE;
+
+    EXPECT_EQ(SERIAL_PORT_USART1, mspConfig()->msp_uart[0]);
+    EXPECT_EQ(FUNCTION_MSP, serialSynthesizeFunctionMask(SERIAL_PORT_USART1));
+}
+
+TEST(SerialFeatureMap, DropConflictingTouchesNothingWhenEveryPortIsHappy)
+{
+    resetAllConfigs();
+
+    mspConfigMutable()->msp_uart[0] = SERIAL_PORT_USART1;
+    blackboxConfigMutable()->blackbox_uart = SERIAL_PORT_USART1;
+    gpsConfigMutable()->gps_uart = SERIAL_PORT_USART3;
+
+    serialDropConflictingAssignments();
+
+    EXPECT_EQ(SERIAL_PORT_USART1, mspConfig()->msp_uart[0]);
+    EXPECT_EQ(SERIAL_PORT_USART1, blackboxConfig()->blackbox_uart);
+    EXPECT_EQ(SERIAL_PORT_USART3, gpsConfig()->gps_uart);
 }
 
 TEST(SerialFeatureMap, UnclaimedPortReportsClassDefaults)
