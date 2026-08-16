@@ -28,7 +28,7 @@
 
 #include "autopilot.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 10);
+PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 11);
 
 PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .landingAltitudeM = 4,
@@ -38,6 +38,7 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .altitudeP = 30,
     .altitudeI = 30,
     .altitudeD = 30,
+    .altitudeA = 30,
     .altitudeF = 30,
     .positionP = 30,
     .positionI = 30,

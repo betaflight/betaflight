@@ -1411,7 +1411,7 @@ case MSP_NAME:
         int16_t w = lrintf(imuAttitudeQuaternion.w * q_scale);
         int16_t x = lrintf(imuAttitudeQuaternion.x * q_scale);
         int16_t y = lrintf(imuAttitudeQuaternion.y * q_scale);
-        int16_t z = lrintf(imuAttitudeQuaternion.z * q_scale); 
+        int16_t z = lrintf(imuAttitudeQuaternion.z * q_scale);
         // Write their bit representation as uint16_t
         sbufWriteU16(dst, *(uint16_t*)&w);
         sbufWriteU16(dst, *(uint16_t*)&x);

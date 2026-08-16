@@ -195,6 +195,8 @@ bool rangefinderInit(void)
     rangefinder.calculatedAltitude = RANGEFINDER_OUT_OF_RANGE;
     rangefinder.maxTiltCos = cos_approx(DECIDEGREES_TO_RADIANS(rangefinder.dev.detectionConeExtendedDeciDegrees / 2.0f));
     rangefinder.lastValidResponseTimeMs = millis();
+    rangefinder.lastDataTimeUs = 0;
+    rangefinder.dataIntervalUs = 0;
     rangefinder.snr = 0;
 
     rangefinderResetDynamicThreshold();
@@ -309,6 +311,17 @@ bool rangefinderProcess(float cosTiltAngle)
             return false;
         }
 
+        // Timestamp actual device samples, so that consumers can measure the true
+        // hardware data rate rather than the (possibly faster) driver poll rate
+        const timeUs_t sampleTimeUs = micros();
+        if (rangefinder.lastDataTimeUs != 0) {
+            const timeDelta_t intervalUs = cmpTimeUs(sampleTimeUs, rangefinder.lastDataTimeUs);
+            if (intervalUs > 0) {
+                rangefinder.dataIntervalUs = intervalUs;
+            }
+        }
+        rangefinder.lastDataTimeUs = sampleTimeUs;
+
         if (distance >= 0) {
             rangefinder.lastValidResponseTimeMs = millis();
             rangefinder.rawAltitude = applyMedianFilter(distance);
@@ -380,6 +393,16 @@ int32_t rangefinderGetLatestAltitude(void)
 int32_t rangefinderGetLatestRawAltitude(void)
 {
     return rangefinder.rawAltitude;
+}
+
+timeUs_t rangefinderGetLatestSampleTimeUs(void)
+{
+    return rangefinder.lastDataTimeUs;
+}
+
+timeDelta_t rangefinderGetSampleIntervalUs(void)
+{
+    return rangefinder.dataIntervalUs;
 }
 
 bool rangefinderIsHealthy(void)

@@ -65,6 +65,7 @@ extern "C" {
     bool isAltHoldActive();
     extern float testAltitudeCm;
     extern float testAltitudeDerivativeCmS;
+    extern float testAltitudeAccelerationCmS;
     extern float testCosTiltAngle;
     extern throttleStatus_e testThrottleStatus;
 }
@@ -87,6 +88,7 @@ protected:
         millisRW = 0;
         testAltitudeCm = 0.0f;
         testAltitudeDerivativeCmS = 0.0f;
+        testAltitudeAccelerationCmS = 0.0f;
         testCosTiltAngle = 1.0f;
         testThrottleStatus = THROTTLE_LOW;
 
@@ -97,6 +99,7 @@ protected:
         apCfg->altitudeP = 50;
         apCfg->altitudeI = 50;
         apCfg->altitudeD = 50;
+        apCfg->altitudeA = 50;
         apCfg->altitudeF = 0;
         apCfg->landingAltitudeM = 5;
 
@@ -163,12 +166,14 @@ TEST_F(AltholdControlUnittest, AltitudeControlRaisesThrottleWhenBelowTarget)
 {
     testAltitudeCm = 0.0f;
     testAltitudeDerivativeCmS = 0.0f;
+    testAltitudeAccelerationCmS = 0.0f;
     altitudeControl(100.0f, 0.01f, 0.0f, 500.0f);
     const float belowTargetThrottle = getAutopilotThrottle();
 
     resetAltitudeControl();
     testAltitudeCm = 200.0f;
     testAltitudeDerivativeCmS = 0.0f;
+    testAltitudeAccelerationCmS = 0.0f;
     altitudeControl(100.0f, 0.01f, 0.0f, 500.0f);
     const float aboveTargetThrottle = getAutopilotThrottle();
 
@@ -179,7 +184,7 @@ TEST_F(AltholdControlUnittest, AltitudeControlRespectsVelocityLimit)
 {
     testAltitudeCm = 0.0f;
     testAltitudeDerivativeCmS = 0.0f;
-
+    testAltitudeAccelerationCmS = 0.0f;
     altitudeControl(200.0f, 0.01f, 0.0f, 100.0f);
     const float limitedThrottle = getAutopilotThrottle();
 
@@ -194,7 +199,7 @@ TEST_F(AltholdControlUnittest, AltitudeControlCompensatesForTilt)
 {
     testAltitudeCm = 100.0f;
     testAltitudeDerivativeCmS = 0.0f;
-
+    testAltitudeAccelerationCmS = 0.0f;
     testCosTiltAngle = 1.0f;
     altitudeControl(100.0f, 0.01f, 0.0f, 500.0f);
     const float levelThrottle = getAutopilotThrottle();
@@ -223,12 +228,14 @@ extern "C" {
 
     float testAltitudeCm = 0.0f;
     float testAltitudeDerivativeCmS = 0.0f;
+    float testAltitudeAccelerationCmS = 0.0f;
     float testCosTiltAngle = 1.0f;
     throttleStatus_e testThrottleStatus = THROTTLE_LOW;
 
     float getAltitudeCm(void) { return testAltitudeCm; }
     float getAltitudeDerivative(void) { return testAltitudeDerivativeCmS; }
     float getAltitudeCmControl(void) { return testAltitudeCm; }
+    float getAltitudeAccelerationControl(void) { return testAltitudeAccelerationCmS; }
     float getAltitudeDerivativeControl(void) { return testAltitudeDerivativeCmS; }
     float getCosTiltAngle(void) { return testCosTiltAngle; }
     float getGpsDataIntervalSeconds(void) { return 0.01f; }

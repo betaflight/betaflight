@@ -167,6 +167,7 @@
 #define PARAM_NAME_AP_ALTITUDE_P "ap_altitude_p"
 #define PARAM_NAME_AP_ALTITUDE_I "ap_altitude_i"
 #define PARAM_NAME_AP_ALTITUDE_D "ap_altitude_d"
+#define PARAM_NAME_AP_ALTITUDE_A "ap_altitude_a"
 #define PARAM_NAME_AP_ALTITUDE_F "ap_altitude_f"
 #define PARAM_NAME_AP_POSITION_P "ap_position_p"
 #define PARAM_NAME_AP_POSITION_I "ap_position_i"
