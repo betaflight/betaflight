@@ -237,6 +237,7 @@ void autopilotSetYawRateLimit(float rateLimitDps)
 }
 
 void autopilotSetLandingSettle(bool) { }
+void autopilotSetLandingActive(bool) { }
 
 void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *distance)
 {

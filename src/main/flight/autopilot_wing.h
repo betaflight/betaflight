@@ -38,6 +38,7 @@ float autopilotGetYawRate(void);
 bool autopilotYawControlActive(void);
 void autopilotSetYawRateLimit(float rateLimitDps);
 void autopilotSetLandingSettle(bool active);
+void autopilotSetLandingActive(bool active);
 
 // Nav inner-loop hooks driven by the shared flight-plan engine. Stubbed until
 // the wing control law lands (Phase 3+); present so the engine links on wing.

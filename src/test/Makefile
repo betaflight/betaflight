@@ -224,6 +224,17 @@ flight_imu_unittest_SRC := \
 		$(USER_DIR)/flight/imu.c
 
 
+landing_ground_effect_unittest_SRC := \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/flight/autopilot_multirotor.c \
+		$(USER_DIR)/flight/position.c \
+		$(USER_DIR)/flight/position_estimator.c \
+		$(USER_DIR)/flight/position_filter.c \
+		$(USER_DIR)/pg/rx.c
+
+
 flight_mixer_unittest :=  \
 		$(USER_DIR)/flight/mixer.c \
 		$(USER_DIR)/flight/servos.c \

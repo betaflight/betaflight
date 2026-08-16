@@ -102,6 +102,11 @@ void autopilotSetLandingSettle(bool active)
     UNUSED(active);
 }
 
+void autopilotSetLandingActive(bool active)
+{
+    UNUSED(active);
+}
+
 void autopilotSetNavHeadingOverride(bool valid, float headingDeg)
 {
     UNUSED(valid);

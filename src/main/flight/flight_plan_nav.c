@@ -905,6 +905,7 @@ static void startLanding(timeUs_t currentTimeUs, float targetEastM, float target
     positionNavSetAccelLimits(0.0f, FP_LANDING_DECEL_MPS2);
 
     autopilotSetLandingSettle(false);
+    autopilotSetLandingActive(true);
     fp.state = FP_NAV_LANDING;
     resetLandingMonitor(currentTimeUs);
 }
@@ -913,6 +914,7 @@ static void startLanding(timeUs_t currentTimeUs, float targetEastM, float target
 static void completeLanding(void)
 {
     autopilotSetLandingSettle(false);
+    autopilotSetLandingActive(false);
     positionNavClearTarget();
     fp.state = FP_NAV_COMPLETE;
     disarm(DISARM_REASON_LANDING);
@@ -924,6 +926,10 @@ static void updateLanding(timeUs_t currentTimeUs)
     const float verticalVelocityCmS = est->velocity.v[ENU_U];
     const float currentAltitudeCm = est->position.v[ENU_U];
     const float commandedDescentCmS = MAX(FP_LANDING_MIN_RATE_MPS * 100.0f, landingDescentRateCmS());
+
+    // Re-asserted every iteration, from the one function both landing entry paths run through,
+    // so the altitude loop's landing sink bound is live for exactly as long as a descent is.
+    autopilotSetLandingActive(true);
 
     if (!fp.landingDescentEstablished
         && verticalVelocityCmS < -0.25f * commandedDescentCmS) {
@@ -1230,6 +1236,7 @@ void flightPlanNavRescueDescent(bool request, timeUs_t currentTimeUs)
     if (!request) {
         if (fp.rescueDescentActive) {
             autopilotSetLandingSettle(false);
+            autopilotSetLandingActive(false);
         }
         fp.rescueDescentActive = false;
         return;
@@ -1567,6 +1574,7 @@ void flightPlanNavDisengage(void)
     // completion paths clear it themselves, and resetAltitudeControl() clears it on every
     // alt-hold and rescue entry.
     autopilotSetLandingSettle(false);
+    autopilotSetLandingActive(false);
     fp.legValid = false;
     fp.carrotSpeedMps = 0.0f;
     fp.carrotPrevValid = false;

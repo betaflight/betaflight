@@ -233,6 +233,8 @@ void autopilotSetYawRateLimit(float rateLimitDps)
 
 bool g_landingSettle = false;
 void autopilotSetLandingSettle(bool active) { g_landingSettle = active; }
+bool g_landingActive = false;
+void autopilotSetLandingActive(bool active) { g_landingActive = active; }
 
 static bool g_forceLevelPark;
 
@@ -1748,6 +1750,43 @@ TEST_F(FlightPlanNavSafetyTest, EstimatorPlungeDoesNotClearTheThrustBleed)
 
     EXPECT_TRUE(g_landingSettle)
         << "an implausible estimator plunge must not read as progress and release the ceiling";
+}
+
+// The altitude loop's landing sink bound is live for exactly as long as a landing descent is,
+// and no longer: outside one, altitudeControl() must behave as it always has. The flag is
+// asserted every iteration from updateLanding(), the one function both landing entry paths run
+// through, and cleared by every exit.
+TEST_F(FlightPlanNavSafetyTest, LandingActiveTracksTheLandingAndNothingElse)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    g_landingActive = false;   // the fixture does not reset the stub globals
+    engageDistantLeg();
+
+    // Flying a normal leg: no landing, so the bound must be inert.
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_FALSE(g_landingActive) << "the bound must not apply while flying a normal leg";
+
+    GPS_distanceToHome = 150;
+    g_stubMicros += 10'000;
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+    EXPECT_TRUE(g_landingActive) << "the landing has started; the bound must be live";
+
+    // Still live before touchdown monitoring engages: the artefact appears during the descent.
+    for (int i = 0; i < 5; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = -40.0f;
+        g_stubEstimate.position.v[ENU_U] -= 4.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+        EXPECT_TRUE(g_landingActive) << "released mid-descent (i=" << i << ")";
+    }
+
+    // A landing abandoned mid-descent must release it.
+    flightPlanNavDisengage();
+    EXPECT_FALSE(g_landingActive) << "disengaging must release the bound";
 }
 
 TEST_F(FlightPlanNavSafetyTest, LandingBounceTriggersThrustBleed)
