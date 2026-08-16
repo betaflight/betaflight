@@ -43,7 +43,12 @@ defaults tuned for a small fast prop rather than a 5" one, and adds a
 `WHOOP TUNE` menu in the goggles for the settings that get changed between
 packs.
 
-It is entirely opt-in - a build without the option is unchanged - and it
+`WHOOP_RACE=yes` (implies `TINYWHOOP=yes`) selects a second, race-tuned variant:
+snappier rates, a shorter feedforward hold, baro/vario dropped for extra flash
+where the board carries one, and IR lap transponder support kept rather than
+cut - standard equipment at indoor whoop tracks.
+
+It is entirely opt-in - a build without either option is unchanged - and it
 produces an ordinary Betaflight configuration that the app and the CLI handle
 as usual. See [docs/TinyWhoop.md](docs/TinyWhoop.md) for what it changes and
 why.

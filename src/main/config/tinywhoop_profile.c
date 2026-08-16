@@ -58,8 +58,16 @@
  * energy into the frame, so the filters are not what is keeping the motors
  * cool. This is the same knob the Configurator filter sliders drive, so the
  * result is still a plain slider setting that a user can wind back down.
+ *
+ * Every constant in this file follows the codebase's existing convention for
+ * a build-time default (see DEFAULT_PID_PROCESS_DENOM in flight/pid.c): wrap
+ * it in #ifndef/#define so a board config.h, or OPTIONS="NAME=value" on the
+ * command line, can override any single number without editing this file or
+ * forking the profile.
  */
+#ifndef TINYWHOOP_FILTER_MULTIPLIER
 #define TINYWHOOP_FILTER_MULTIPLIER 125
+#endif
 
 /*
  * RC smoothing auto factor. The auto cutoff is
@@ -70,7 +78,9 @@
  * deliberately left at the stock factor - throttle smoothness matters more than
  * throttle latency on a light craft, and whoop props react to it instantly.
  */
+#ifndef TINYWHOOP_RC_SMOOTHING_AUTO_FACTOR_RPY
 #define TINYWHOOP_RC_SMOOTHING_AUTO_FACTOR_RPY 20
+#endif
 
 /*
  * Dynamic notch. Whoop motors idle around 8-10k RPM and run to 40k+, so the
@@ -79,9 +89,26 @@
  * lowpasses already handle. Three notches also cost measurable loop time on an
  * F4 whoop board for little benefit when the noise is dominated by one peak.
  */
+#ifndef TINYWHOOP_DYN_NOTCH_MIN_HZ
 #define TINYWHOOP_DYN_NOTCH_MIN_HZ  150
+#endif
+#ifndef TINYWHOOP_DYN_NOTCH_MAX_HZ
 #define TINYWHOOP_DYN_NOTCH_MAX_HZ  700
+#endif
+#ifndef TINYWHOOP_DYN_NOTCH_COUNT
 #define TINYWHOOP_DYN_NOTCH_COUNT   2
+#endif
+
+/*
+ * USE_TINYWHOOP_RACE selects the race variant of the profile below: a whoop
+ * raced around a short indoor track wants a snappier stick response than one
+ * flown freestyle, at the cost of some of the softness around centre that
+ * makes freestyle flying forgiving in a cluttered room. It is a refinement of
+ * the whoop profile, not a separate craft, so it requires USE_TINYWHOOP - that
+ * dependency is enforced in target/common_post.h, not here: this whole file is
+ * only compiled when USE_TINYWHOOP is defined, so a check placed inside it can
+ * never observe the case where USE_TINYWHOOP_RACE is set without it.
+ */
 
 /*
  * Feel / movement.
@@ -92,51 +119,120 @@
  * range is a soft centre for precision between gaps and a still-quick maximum
  * for flips, and yaw is deliberately slower than roll/pitch because a ducted
  * whoop has very little yaw authority to spare.
+ *
+ * The race variant trades away some of that centre softness for a flatter,
+ * more immediate response suited to holding a line at speed.
  */
+#ifndef TINYWHOOP_RC_RATE_ROLL_PITCH
+#ifdef USE_TINYWHOOP_RACE
+#define TINYWHOOP_RC_RATE_ROLL_PITCH   8    // 80 deg/s centre sensitivity
+#else
 #define TINYWHOOP_RC_RATE_ROLL_PITCH   6    // 60 deg/s centre sensitivity
+#endif
+#endif
+#ifndef TINYWHOOP_RATE_ROLL_PITCH
+#ifdef USE_TINYWHOOP_RACE
+#define TINYWHOOP_RATE_ROLL_PITCH      75   // 750 deg/s maximum
+#else
 #define TINYWHOOP_RATE_ROLL_PITCH      62   // 620 deg/s maximum
+#endif
+#endif
+#ifndef TINYWHOOP_RC_RATE_YAW
+#ifdef USE_TINYWHOOP_RACE
+#define TINYWHOOP_RC_RATE_YAW          6    // 60 deg/s centre sensitivity
+#else
 #define TINYWHOOP_RC_RATE_YAW          5    // 50 deg/s centre sensitivity
+#endif
+#endif
+#ifndef TINYWHOOP_RATE_YAW
+#ifdef USE_TINYWHOOP_RACE
+#define TINYWHOOP_RATE_YAW             62   // 620 deg/s maximum
+#else
 #define TINYWHOOP_RATE_YAW             55   // 550 deg/s maximum
+#endif
+#endif
 
 /*
  * Small props accelerate and decay far faster than a 5", so the feedforward
  * time constants that shape the response to a stick step have to be shorter -
  * pid.c documents the stock 100ms yaw hold time as being sized for a 5" and
- * notes that smaller props want to decay faster.
+ * notes that smaller props want to decay faster. The race variant shortens
+ * the hold time further and cuts smoothing again: a track line rewards
+ * immediacy over the smoothness that suits freestyle.
  */
+#ifndef TINYWHOOP_FEEDFORWARD_YAW_HOLD_TIME
+#ifdef USE_TINYWHOOP_RACE
+#define TINYWHOOP_FEEDFORWARD_YAW_HOLD_TIME  40
+#else
 #define TINYWHOOP_FEEDFORWARD_YAW_HOLD_TIME  60
+#endif
+#endif
+#ifndef TINYWHOOP_FEEDFORWARD_SMOOTH_FACTOR
+#ifdef USE_TINYWHOOP_RACE
+#define TINYWHOOP_FEEDFORWARD_SMOOTH_FACTOR  35   // stock 65; race wants minimal smoothing
+#else
 #define TINYWHOOP_FEEDFORWARD_SMOOTH_FACTOR  50   // stock 65; less smoothing, less lag
+#endif
+#endif
+#ifndef TINYWHOOP_FEEDFORWARD_JITTER_FACTOR
 #define TINYWHOOP_FEEDFORWARD_JITTER_FACTOR  10   // stock 7; whoop links are noisier at low deflection
+#endif
 
 /*
  * Thrust linearisation compensates for the strongly non-linear thrust curve of
  * a small prop, where the top of the throttle range produces much less extra
  * thrust per unit of motor output than the bottom. Without it a whoop feels
  * mushy near hover and twitchy up high. 20 is the conservative end of the
- * 20-40 range normally quoted for whoops and toothpicks.
+ * 20-40 range normally quoted for whoops and toothpicks; race motors are
+ * typically run on lighter frames with a flatter curve, so 30 suits them.
  */
+#ifndef TINYWHOOP_THRUST_LINEARIZATION
+#ifdef USE_TINYWHOOP_RACE
+#define TINYWHOOP_THRUST_LINEARIZATION  30
+#else
 #define TINYWHOOP_THRUST_LINEARIZATION  20
+#endif
+#endif
 
 /*
  * Throttle boost adds high-pass filtered throttle to the motor output so that
  * throttle steps arrive without waiting for the prop to spool. Small props
  * respond quickly enough to use more of it than a 5".
  */
+#ifndef TINYWHOOP_THROTTLE_BOOST
 #define TINYWHOOP_THROTTLE_BOOST         8    // stock 5
+#endif
 
 /*
  * A ducted whoop stalls and desyncs more easily than an open prop when the
  * throttle is chopped, so idle sits a little above the stock brushless value.
  * Brushed whoops already default to a higher idle and are left alone.
  */
+#ifndef TINYWHOOP_MOTOR_IDLE
 #define TINYWHOOP_MOTOR_IDLE             650  // 6.5%, stock brushless 550
+#endif
 
 /*
  * Whoops hit things. Crashflip (turtle mode) is the difference between walking
- * over to the craft and flying on, so it is enabled with a rate suited to the
- * low thrust available from an inverted ducted prop.
+ * over to the craft and flying on, so it is turned on with the same rate/percent
+ * pairing USE_RACE_PRO already ships as its own crashflip default.
+ *
+ * crashflip_rate is not cosmetic: mixer.c disables both crashflip attenuators
+ * outright whenever it is zero (the stock non-race default), so motor power
+ * would never ease off as the craft rights itself, and a fixed 10% would either
+ * fail to lift the airframe or keep pushing well past upright. crashflip_rate
+ * must be set alongside crashflip_motor_percent or the feature does not do
+ * anything close to what a "flip over after crash" mode is supposed to do.
  */
+#ifndef TINYWHOOP_CRASHFLIP_MOTOR_PERCENT
 #define TINYWHOOP_CRASHFLIP_MOTOR_PERCENT  10
+#endif
+#ifndef TINYWHOOP_CRASHFLIP_RATE
+#define TINYWHOOP_CRASHFLIP_RATE           30
+#endif
+#ifndef TINYWHOOP_CRASHFLIP_AUTO_REARM
+#define TINYWHOOP_CRASHFLIP_AUTO_REARM     true
+#endif
 
 #ifndef USE_SIMPLIFIED_TUNING
 // Scale a stock cutoff by TINYWHOOP_FILTER_MULTIPLIER. Only needed when the
@@ -287,6 +383,8 @@ void tinywhoopProfileApply(void)
     }
 
     mixerConfigMutable()->crashflip_motor_percent = TINYWHOOP_CRASHFLIP_MOTOR_PERCENT;
+    mixerConfigMutable()->crashflip_rate = TINYWHOOP_CRASHFLIP_RATE;
+    mixerConfigMutable()->crashflip_auto_rearm = TINYWHOOP_CRASHFLIP_AUTO_REARM;
 
     for (uint8_t i = 0; i < PID_PROFILE_COUNT; i++) {
         tinywhoopProfileApplyToPidProfile(i);

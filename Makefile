@@ -36,6 +36,11 @@ CUSTOM_DEFAULTS_EXTENDED ?= no
 # Equivalent to adding USE_TINYWHOOP to OPTIONS; see docs/TinyWhoop.md.
 TINYWHOOP ?= no
 
+# selects the race variant of the whoop profile (snappier rates, shorter
+# feedforward hold, baro dropped for extra flash, IR lap transponder support
+# kept). Implies TINYWHOOP=yes. See docs/TinyWhoop.md.
+WHOOP_RACE ?= no
+
 # Debugger optons:
 #   empty - ordinary build with all optimizations enabled
 #   INFO - ordinary build with debug symbols and all optimizations enabled. Only builds touched files.
@@ -378,8 +383,26 @@ FC_VER           := $(call pp_def_value_str,src/main/build/version.h,FC_VERSION_
 #
 TEMPORARY_FLAGS :=
 
+ifeq ($(WHOOP_RACE),yes)
+ifeq ($(origin TINYWHOOP),command line)
+ifneq ($(TINYWHOOP),yes)
+$(error WHOOP_RACE=yes conflicts with TINYWHOOP=$(TINYWHOOP); omit TINYWHOOP or set it to yes)
+endif
+endif
+# WHOOP_RACE implies TINYWHOOP; only force it when the user did not already
+# say otherwise on the command line (checked above).
+override TINYWHOOP  := yes
+endif
+
 ifeq ($(TINYWHOOP),yes)
-OPTIONS    += USE_TINYWHOOP
+# OPTIONS is a documented command-line override variable (see "Compile-time
+# options" above), so a plain += here is silently dropped by make whenever the
+# user also passes OPTIONS="..." on the same command line - command-line-origin
+# variables reject every in-makefile assignment except one wrapped in 'override'.
+override OPTIONS    += USE_TINYWHOOP
+ifeq ($(WHOOP_RACE),yes)
+override OPTIONS    += USE_TINYWHOOP_RACE
+endif
 endif
 
 EXTRA_WARNING_FLAGS := -Wold-style-definition
@@ -871,6 +894,8 @@ help: Makefile mk/tools.mk
 	@echo ""
 	@echo "To build a tiny whoop optimised firmware:"
 	@echo "        make <config-target> TINYWHOOP=yes"
+	@echo "Or, the race-tuned variant:"
+	@echo "        make <config-target> WHOOP_RACE=yes"
 	@echo ""
 	@sed -n 's/^## //p' $?
 

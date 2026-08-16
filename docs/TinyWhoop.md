@@ -37,6 +37,38 @@ Measured on `CRAZYBEEF4SX1280` (STM32F411, 480KB usable flash):
 The saving is larger on targets whose board config does not already exclude the
 navigation drivers - the same cut on the SITL build removes 96 KB.
 
+### Race variant
+
+```sh
+make CONFIG=CRAZYBEEF4SX1280 WHOOP_RACE=yes
+```
+
+`WHOOP_RACE=yes` implies `TINYWHOOP=yes` (setting `TINYWHOOP=no` at the same
+time is a build error, not a silent override) and layers a second, smaller set
+of changes for whoops raced around a short indoor track rather than flown
+freestyle: snappier rates, a shorter feedforward hold time, and - on a board
+whose config actually defines `USE_BARO` - baro and vario are dropped as well,
+since a race whoop flown wide open on a fixed line has no use for altitude
+hold. IR lap transponder support (`USE_TRANSPONDER` - Arcitimer, ImmersionRC
+ILap, ERLT) is deliberately **not** part of the base feature cut for exactly
+this reason: it is standard equipment at indoor whoop tracks. On a board that
+does not define `USE_BARO` at all (most whoop AIO boards), `WHOOP_RACE=yes` is
+identical in size to `TINYWHOOP=yes` and only the tuning differs.
+
+### Overriding a single number
+
+Every constant in `tinywhoop_profile.c` follows the codebase's existing
+`#ifndef X / #define X value / #endif` convention for a build-time default
+(the same pattern as `DEFAULT_PID_PROCESS_DENOM` in `flight/pid.c`), so any one
+of them can be overridden without editing the file - from a board's
+`config.h`, or directly on the command line:
+
+```sh
+make CONFIG=CRAZYBEEF4SX1280 TINYWHOOP=yes OPTIONS="TINYWHOOP_RATE_ROLL_PITCH=70"
+```
+
+The full list of names is in `tinywhoop_profile.c`.
+
 ## What the build drops
 
 Dropped because a whoop has no hardware for it, so the code is dead weight and,
@@ -49,12 +81,14 @@ for the ones with a scheduler task, loop time the PID controller could have had:
 - legacy telemetry protocols: FrSky Hub, HoTT, IBUS, JetiExBus, LTM, MAVLink,
   SRXL. CRSF and GHST (ELRS) and MSP telemetry are kept, because that is what a
   whoop actually flies on
-- dashboard, transponder, camera control
+- dashboard, camera control
 - servos, and the mixer is fixed to `USE_QUAD_MIXER_ONLY`
+- IR lap transponder support, but only in `WHOOP_RACE=yes` builds - see below
 
 Baro is deliberately **kept**: whoops increasingly carry one and use altitude
-hold. Blackbox is kept as well - a whoop is easier to tune with logs, not
-harder.
+hold. `WHOOP_RACE=yes` drops it, since a race whoop has no use for altitude
+hold on a fixed track. Blackbox is kept in both variants - a whoop is easier
+to tune with logs, not harder.
 
 If you want any of it back, build without `TINYWHOOP=yes`.
 
@@ -81,14 +115,14 @@ smoothness is worth more than throttle latency.
 
 | setting | stock | whoop | why |
 |---|---|---|---|
-| rates (ACTUAL) | 70 centre / 670 max | 60 / 620 roll-pitch, 50 / 550 yaw | softer centre for threading gaps, still quick at the stops. Yaw is slower because a ducted whoop has little yaw authority to spare |
-| `feedforward_yaw_hold_time` | 100 | 60 | the stock value is documented as a 5" value; small props decay faster |
-| `feedforward_smooth_factor` | 65 | 50 | less smoothing, less lag |
+| rates (ACTUAL) | 70 centre / 670 max | 60 / 620 roll-pitch, 50 / 550 yaw (freestyle); 80 / 750 roll-pitch, 60 / 620 yaw (race) | softer centre for threading gaps, still quick at the stops. Yaw is slower because a ducted whoop has little yaw authority to spare. Race trades some of that centre softness for a flatter response suited to holding a line |
+| `feedforward_yaw_hold_time` | 100 | 60 (freestyle), 40 (race) | the stock value is documented as a 5" value; small props decay faster, and a track line rewards immediacy over freestyle's smoothness |
+| `feedforward_smooth_factor` | 65 | 50 (freestyle), 35 (race) | less smoothing, less lag |
 | `feedforward_jitter_factor` | 7 | 10 | whoop links are noisier at small stick deflections |
-| `thrust_linear` | 0 | 20 | a small prop's thrust curve is strongly non-linear; without this a whoop is mushy at hover and twitchy up high |
+| `thrust_linear` | 0 | 20 (freestyle), 30 (race) | a small prop's thrust curve is strongly non-linear; without this a whoop is mushy at hover and twitchy up high. Race motors typically run a flatter curve, hence the higher value |
 | `throttle_boost` | 5 | 8 | small props spool fast enough to use more of it |
 | `motor_idle` | 550 | 650 | a ducted prop stalls and desyncs more easily on a hard throttle chop. Brushed targets already idle higher and are left alone |
-| `crashflip_motor_percent` | - | 10 | whoops hit things; turtle mode saves the walk |
+| `crashflip_motor_percent` / `crashflip_rate` / `crashflip_auto_rearm` | 0 / 0 / off | 10 / 30 / on | whoops hit things; turtle mode saves the walk. `crashflip_rate` is not optional: the mixer disables both crashflip attenuators outright when it is zero (the stock non-race default), so it has to be set alongside the motor percentage or the craft never eases off power as it rights itself. The 10/30 pairing mirrors the rate/auto-rearm combination `USE_RACE_PRO` already ships |
 
 PID gains are **not** touched. The stock gains fly a whoop perfectly well, and
 inventing numbers that cannot be verified on a bench would be worse than
@@ -161,9 +195,9 @@ reset path for a whoop build.
 |---|---|
 | `src/main/config/tinywhoop_profile.c` | the defaults, one commented delta per line |
 | `src/main/cms/cms_menu_tinywhoop.c` | the in-goggle menu |
-| `src/main/target/common_post.h` | the feature cut |
+| `src/main/target/common_post.h` | the feature cut, and the race-mode baro/transponder deltas |
 | `src/main/cli/cli.c` | the `whoop` command |
-| `Makefile` | `TINYWHOOP=yes` |
+| `Makefile` | `TINYWHOOP=yes` / `WHOOP_RACE=yes` |
 
 The profile is applied from `resetConfig()` *before* `targetConfiguration()`, so
 a board config still has the final say on anything hardware specific it sets.

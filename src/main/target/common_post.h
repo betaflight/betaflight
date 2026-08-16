@@ -140,7 +140,18 @@
     derivation further down so nothing is derived from a feature that is gone.
     Everything here is only about *this* build; a board config that wants any of
     it back builds without USE_TINYWHOOP. See docs/TinyWhoop.md.
+
+    USE_TINYWHOOP_RACE is a refinement of the profile for whoop racing rather
+    than a separate craft, so it depends on USE_TINYWHOOP. This check has to
+    live at unconditional scope (not nested inside "#ifdef USE_TINYWHOOP" below,
+    and not in tinywhoop_profile.c, which is only compiled when USE_TINYWHOOP is
+    already defined) so that USE_TINYWHOOP_RACE set on its own is caught here
+    instead of silently compiling a plain whoop build with the race flag ignored.
 */
+#if defined(USE_TINYWHOOP_RACE) && !defined(USE_TINYWHOOP)
+#error "USE_TINYWHOOP_RACE requires USE_TINYWHOOP (add USE_TINYWHOOP to OPTIONS, or build with TINYWHOOP=yes WHOOP_RACE=yes)"
+#endif
+
 #ifdef USE_TINYWHOOP
 
 // Navigation: no whoop carries a GPS or a compass.
@@ -169,15 +180,29 @@
 #undef USE_TELEMETRY_MAVLINK
 #undef USE_TELEMETRY_SRXL
 
-// Peripherals a whoop has no connector for.
+// Peripherals a whoop has no connector for. Lap transponders are the
+// exception for a race build: IR transponders (Arcitimer, ImmersionRC ILap,
+// ERLT) are standard equipment at indoor whoop tracks, so USE_TINYWHOOP_RACE
+// leaves USE_TRANSPONDER alone (a board still has to wire and define it).
 #undef USE_DASHBOARD
+#ifndef USE_TINYWHOOP_RACE
 #undef USE_TRANSPONDER
+#endif
 #undef USE_CAMERA_CONTROL
 #undef USE_SERVOS
 
 // Four motors, no servos: halves the mixer tables and the motor/servo arrays.
 #ifndef USE_QUAD_MIXER_ONLY
 #define USE_QUAD_MIXER_ONLY
+#endif
+
+// USE_TINYWHOOP_RACE: baro is kept for the freestyle variant (see below - many
+// current whoops carry one and use altitude hold), but a race whoop is flown
+// wide open on a fixed line and has no use for it, so the race build trades it
+// for the extra flash. USE_VARIO is derived from USE_BARO/USE_GPS further down
+// common_post.h, so undefining USE_BARO here removes it too.
+#ifdef USE_TINYWHOOP_RACE
+#undef USE_BARO
 #endif
 
 #endif // USE_TINYWHOOP
