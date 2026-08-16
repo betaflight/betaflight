@@ -961,8 +961,15 @@ extern struct linker_symbol __fontdata_end;
 // `#ifdef USE_DRONECAN`, and leaving it set would advertise a stack that was
 // never compiled. The runtime PG flag (dronecan_enabled) still decides whether
 // the task is started.
+// The ESC protocol is its own build option, and it speaks over the stack, so
+// picking it brings the stack with it.
+#if defined(USE_DRONECAN_ESC) && !defined(USE_DRONECAN)
+#define USE_DRONECAN
+#endif
+
 #if defined(USE_DRONECAN) && !ENABLE_CAN
 #undef USE_DRONECAN
+#undef USE_DRONECAN_ESC
 #endif
 
 #if defined(USE_DRONECAN) && !defined(ENABLE_DRONECAN)
@@ -972,10 +979,12 @@ extern struct linker_symbol __fontdata_end;
 #endif
 
 // DroneCAN ESC: command ESCs over CAN (uavcan.equipment.esc.RawCommand) and
-// ingest their telemetry (uavcan.equipment.esc.Status). Built in wherever the
-// DroneCAN stack is, gated at runtime by selecting the DRONECAN motor protocol.
-#if !defined(ENABLE_DRONECAN_ESC)
-#define ENABLE_DRONECAN_ESC ENABLE_DRONECAN
+// ingest their telemetry (uavcan.equipment.esc.Status), gated at runtime by
+// selecting the DRONECAN motor protocol.
+#if defined(USE_DRONECAN_ESC) && !defined(ENABLE_DRONECAN_ESC)
+#define ENABLE_DRONECAN_ESC 1
+#elif !defined(ENABLE_DRONECAN_ESC)
+#define ENABLE_DRONECAN_ESC 0
 #endif
 
 // DroneCAN dynamic node-ID allocation: the FC acts as the centralised allocator,
