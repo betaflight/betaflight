@@ -45,7 +45,6 @@ typedef struct motorOutput_s {
     int pinIndex;            // pinIndex of this motor output
     IO_t io;                 // IO_t for this output
     bool configured;
-    bool enabled;
     PIO pio;
     uint16_t pio_sm;
 } motorOutput_t;

@@ -61,7 +61,29 @@ void pwmShutdownPulsesForAllMotors(void)
     }
 }
 
-void pwmDisableMotors(void)
+static void pwmReleaseMotorIO(unsigned motorIndex)
+{
+    // Disable the pwm and reclaim the motor pin for SIO
+    // (so that e.g. the ESC 4-way passthrough can drive them as plain GPIOs)
+    if (picoPwmMotors[motorIndex].initialised) {
+        gpio_init(IO_Pin(pwmMotors[motorIndex].io));
+    }
+}
+
+static bool pwmReinstateMotorIO(unsigned motorIndex)
+{
+    bprintf("pwmReinstateMotorIO %d", motorIndex);
+    // Reclaim the motor pins for the PIO and reset the pulls and the state machines.
+    bool ok = false;
+    if (picoPwmMotors[motorIndex].initialised) {
+        gpio_set_function(IO_Pin(pwmMotors[motorIndex].io), GPIO_FUNC_PWM);
+        ok = true;
+    }
+
+    return ok;
+}
+
+static void pwmDisableMotors(void)
 {
     pwmShutdownPulsesForAllMotors();
 }
@@ -134,6 +156,8 @@ static motorVTable_t motorPwmVTable = {
     .write = pwmWriteStandard,
     .decodeTelemetry = NULL,
     .updateComplete = pwmCompleteMotorUpdate,
+    .releaseMotorIO = pwmReleaseMotorIO,
+    .reinstateMotorIO = pwmReinstateMotorIO,
     .requestTelemetry = NULL,
     .isMotorIdle = NULL,
     .getMotorIO = pwmGetMotorIO,
