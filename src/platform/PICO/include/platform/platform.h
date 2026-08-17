@@ -166,3 +166,32 @@ extern uint32_t systemUniqueId[3];
 #define NVIC_BUILD_PRIORITY(base,sub) (((((base)<<(4-(7-(NVIC_PRIORITY_GROUPING>>8))))|((sub)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8)))))<<4)&0xf0)
 #define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING>>8))))>>4)
 #define NVIC_PRIORITY_SUB(prio) (((prio)>>4)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8))))
+
+#if OSD_FB_PICO_ENABLE_PIXEL_MODE
+// These pixel-based elements may be disabled in config
+
+#ifndef OSD_FB_ELEMENT_ENABLE_ARTIFICIAL_HORIZON
+#define OSD_FB_ELEMENT_ENABLE_ARTIFICIAL_HORIZON   1
+#endif
+
+#ifndef OSD_FB_ELEMENT_ENABLE_ALTITUDE
+#define OSD_FB_ELEMENT_ENABLE_ALTITUDE             1
+#endif
+
+#endif // OSD_FB_PICO_ENABLE_PIXEL_MODE
+
+#if OSD_FB_ENABLE_SMALLFONT
+
+#ifndef OSD_SMALLFONT_COLS
+#define OSD_SMALLFONT_COLS          46
+#endif
+
+#ifndef OSD_SMALLFONT_ROWS_PAL
+#define OSD_SMALLFONT_ROWS_PAL      24
+#endif
+
+#ifndef OSD_SMALLFONT_ROWS_NTSC
+#define OSD_SMALLFONT_ROWS_NTSC     19
+#endif
+
+#endif //  OSD_FB_PICO_ENABLE_PIXEL_MODE

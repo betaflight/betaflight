@@ -47,6 +47,7 @@
 #include "drivers/time.h"
 
 #include "fc/runtime_config.h"
+#include "io/serial.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -77,6 +78,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig, PG_RANGE
 
 PG_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig,
     .rangefinder_hardware = RANGEFINDER_NONE,
+    .rangefinder_uart = SERIAL_PORT_NONE,
 );
 
 #ifdef USE_RANGEFINDER_HCSR04

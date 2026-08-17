@@ -230,6 +230,15 @@ int32_t taskGuardCycles;
 
 uint32_t micros(void) {return 0;}
 
+// serial_feature_map decomposer is referenced by cliSerial(); the CLI unit
+// tests do not exercise it, so a stub is sufficient.
+bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
+{
+    (void)identifier;
+    (void)mask;
+    return true;
+}
+
 int32_t getAmperage(void)
 {
     return 100;
@@ -485,6 +494,56 @@ TEST(CLIUnittest, TestGetSettingByNameZeroBuffer)
     int written = cliGetSettingByName("array_unit_test", buf, 0);
     EXPECT_EQ(0, written);
 }
+
+#ifdef USE_MSP_CLI_COMMAND
+// Reboot/mode-switch/passthrough commands must be refused: cliExecuteCommand runs them
+// against a NULL-vTable port, so reaching waitForSerialPortToFinishTransmitting() would fault.
+TEST(CLIUnittest, TestCliExecuteCommandRefusesDangerous)
+{
+    char buf[64];
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("bl", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("msc", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("serialpassthrough 1", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults", buf, sizeof(buf)));
+    EXPECT_FALSE(cliMode);
+}
+
+// 'exit' is a no-op (never reboots), and bad arguments are rejected.
+TEST(CLIUnittest, TestCliExecuteCommandGuards)
+{
+    char buf[64];
+    EXPECT_EQ(0, cliExecuteCommand("exit", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand(NULL, buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("version", buf, 0));
+
+    cliMode = true; // already in a CLI session -> must refuse to avoid clobbering state
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("version", buf, sizeof(buf)));
+    cliMode = false;
+}
+
+// An inline comment must not be read as the 'nosave' argument: processCharacter() strips the
+// comment before dispatch, so 'defaults' would run in its saving form and reboot.
+TEST(CLIUnittest, TestCliExecuteCommandRefusesDefaultsWithCommentedNosave)
+{
+    char buf[64];
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults # nosave", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults #nosave", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults // nosave", buf, sizeof(buf)));
+    EXPECT_FALSE(cliMode);
+}
+
+// Persisting or wiping the config while armed must be refused: writeEEPROM() blocks the
+// flight loop, and this path is reachable from a telemetry link in flight.
+TEST(CLIUnittest, TestCliExecuteCommandRefusesWhenArmed)
+{
+    char buf[64];
+    armingFlags |= ARMED;
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("save", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults nosave", buf, sizeof(buf)));
+    armingFlags &= ~ARMED;
+    EXPECT_FALSE(cliMode);
+}
+#endif
 
 // Verifies cliSetSettingByName sets an array value and round-trips via get.
 TEST(CLIUnittest, TestSetSettingByNameArray)
