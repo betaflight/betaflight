@@ -214,8 +214,22 @@ typedef enum {
     OSD_WP_ETA,                 // Estimated time to waypoint
 #endif
 
+#ifdef USE_OSD_NAV_MAP
+    OSD_NAV_MAP,                // minimap of home, flight plan and flown trail
+#endif
+
+#ifdef USE_POSITION_HOLD
+    OSD_POS_HOLD_READY,         // pre-engagement Position Hold readiness indicator
+#endif
+
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
+
+// Number of elements that existed as of MSP API 1.46 (Betaflight 4.5). MSP-query type OSD
+// consumers - the DJI V1 air unit / Caddx Vista render the OSD themselves from MSP_OSD_CONFIG -
+// stop accepting the reply once it grows beyond what 4.5 produced, so they are served a reply
+// truncated to this many elements. Never change this value; it describes a released wire format.
+#define OSD_ITEM_COUNT_API_1_46 80
 
 // *** IMPORTANT ***
 // Whenever new elements are added to 'osd_items_e', make sure to increment
@@ -384,6 +398,8 @@ typedef struct osdConfig_s {
     uint8_t osd_show_spec_prearm;
 #endif // USE_SPEC_PREARM_SCREEN
     displayPortSeverity_e arming_logo;        // font from which to display logo on arming
+    int8_t osd_uart;                          // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned. Bit chosen by displayPortDevice (FRSKYOSD=FUNCTION_FRSKY_OSD, else none).
+    int8_t osd_custom_text_uart;              // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned.  Always maps to FUNCTION_OSD_CUSTOM_TEXT when set.
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);

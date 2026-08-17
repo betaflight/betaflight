@@ -80,6 +80,7 @@
 #include "io/beeper.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
+#include "io/serial.h"
 
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
@@ -433,6 +434,9 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 #ifdef USE_RACE_PRO
     osdConfig->osd_show_spec_prearm = true;
 #endif // USE_RACE_PRO
+
+    osdConfig->osd_uart = SERIAL_PORT_NONE;
+    osdConfig->osd_custom_text_uart = SERIAL_PORT_NONE;
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
@@ -464,6 +468,11 @@ void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
     osdElementConfig->item_pos[OSD_HORIZON_SIDEBARS]   = OSD_POS((midCol - 1), (midRow - 1));
     osdElementConfig->item_pos[OSD_CAMERA_FRAME]       = OSD_POS((midCol - 12), (midRow - 6));
     osdElementConfig->item_pos[OSD_UP_DOWN_REFERENCE]  = OSD_POS((midCol - 2), (midRow - 1));
+#ifdef USE_OSD_NAV_MAP
+    // multi-row map: default to the top-left corner so it never overlaps the
+    // centred defaults of the single-row elements
+    osdElementConfig->item_pos[OSD_NAV_MAP]            = OSD_POS(1, 1);
+#endif
 }
 
 static void osdDrawLogo(int x, int y, displayPortSeverity_e fontSel)
