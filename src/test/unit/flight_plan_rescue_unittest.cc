@@ -36,6 +36,7 @@ extern "C" {
 
     #include "flight/flight_plan_nav.h"
     #include "flight/gps_rescue.h"
+    #include "flight/imu.h"
     #include "flight/position_estimator.h"
     #include "flight/position_nav.h"
 
@@ -53,6 +54,7 @@ extern "C" {
     uint16_t GPS_distanceToHome;
     gpsSolutionData_t gpsSol;
     gpsLocation_t GPS_home_llh;
+    attitudeEulerAngles_t attitude;
 }
 
 #include "unittest_macros.h"
@@ -252,6 +254,9 @@ void pitchForwardOverride(bool request)
     g_pitchForwardCalls++;
     g_lastPitchForward = request;
 }
+
+void autopilotForceLevelPark(bool) {}
+void autopilotSetNavHeadingOverride(bool, float) {}
 
 } // extern "C"
 
@@ -554,7 +559,11 @@ TEST_F(FlightPlanRescueTest, FullRescueRunToLanding)
     ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
     ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
 
-    triggerReached();
+    // wp1 (fly home) is an en-route pass-through leg: it advances through the
+    // executor's carrot gate on a position update, not the positionNav callback.
+    // The estimator places the craft at home (ENU origin), already inside the gate.
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
     ASSERT_EQ(flightPlanNavGetCurrentIndex(), 2);
     ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
 
@@ -579,6 +588,41 @@ TEST_F(FlightPlanRescueTest, FullRescueRunToLanding)
     EXPECT_EQ(g_disarmCalls, 1);
     EXPECT_EQ(g_lastDisarmReason, DISARM_REASON_LANDING);
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_COMPLETE);
+}
+
+// --- Fallback emergency descent (switch rescue: no fix, or plan aborted) ---
+
+TEST_F(FlightPlanRescueTest, RescueDescentDrivesLandingAndDisarms)
+{
+    g_stubMicros = 1'000'000;
+    EXPECT_FALSE(flightPlanNavIsRescueDescentActive());
+
+    // Runs independently of the executor: alt-hold owns the throttle, this only
+    // detects touchdown. Descent established.
+    g_stubEstimate.velocity.v[ENU_U] = -40.0f; // cm/s
+    flightPlanNavRescueDescent(true, g_stubMicros);
+    EXPECT_TRUE(flightPlanNavIsRescueDescentActive());
+    EXPECT_FALSE(flightPlanNavIsActive());
+    EXPECT_EQ(g_disarmCalls, 0);
+
+    // Touchdown: descent stops and the vehicle is quiet, then the timer expires.
+    g_stubEstimate.velocity.v[ENU_U] = 0.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavRescueDescent(true, g_stubMicros);
+    EXPECT_EQ(g_disarmCalls, 0);
+
+    g_stubMicros += 1'100'000; // past landingDetectionTime (1 s)
+    flightPlanNavRescueDescent(true, g_stubMicros);
+    EXPECT_EQ(g_disarmCalls, 1);
+    EXPECT_EQ(g_lastDisarmReason, DISARM_REASON_LANDING);
+}
+
+TEST_F(FlightPlanRescueTest, RescueDescentReleaseClears)
+{
+    flightPlanNavRescueDescent(true, g_stubMicros);
+    EXPECT_TRUE(flightPlanNavIsRescueDescentActive());
+    flightPlanNavRescueDescent(false, g_stubMicros);
+    EXPECT_FALSE(flightPlanNavIsRescueDescentActive());
 }
 
 // --- No staging ---

@@ -72,6 +72,27 @@ void rcModeUpdate(const boxBitmask_t *newState)
     rcModeActivationMask = *newState;
 }
 
+#if ENABLE_TELEMETRY_MAVLINK_COMMANDS
+// Box modes forced active by an external command source (MAVLink). OR'd into the
+// RC-derived mask each loop in updateActivatedModes() so the request survives the
+// per-loop recompute. Forces modes ON only — RC aux can still add modes on top.
+static boxBitmask_t rcModeExternalOverride;
+
+void rcModeSetExternalOverride(boxId_e boxId, bool enabled)
+{
+    if (enabled) {
+        bitArraySet(&rcModeExternalOverride, boxId);
+    } else {
+        bitArrayClr(&rcModeExternalOverride, boxId);
+    }
+}
+
+void rcModeClearExternalOverrides(void)
+{
+    memset(&rcModeExternalOverride, 0, sizeof(rcModeExternalOverride));
+}
+#endif
+
 bool isAirmodeEnabled(void)
 {
     return airmodeEnabled;
@@ -169,6 +190,13 @@ void updateActivatedModes(void)
     }
 
     bitArrayXor(&newMask, sizeof(newMask), &newMask, &andMask);
+
+#if ENABLE_TELEMETRY_MAVLINK_COMMANDS
+    // Force externally-commanded (MAVLink) modes active on top of the RC mask.
+    for (unsigned i = 0; i < sizeof(newMask.bits) / sizeof(newMask.bits[0]); i++) {
+        newMask.bits[i] |= rcModeExternalOverride.bits[i];
+    }
+#endif
 
     rcModeUpdate(&newMask);
 

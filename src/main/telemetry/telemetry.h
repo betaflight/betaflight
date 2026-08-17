@@ -43,6 +43,26 @@ typedef enum {
 } frskyGpsCoordFormat_e;
 
 typedef enum {
+    TELEMETRY_PROTOCOL_NONE = 0,
+    TELEMETRY_PROTOCOL_FRSKY_HUB,
+    TELEMETRY_PROTOCOL_HOTT,
+    TELEMETRY_PROTOCOL_LTM,
+    TELEMETRY_PROTOCOL_SMARTPORT,
+    TELEMETRY_PROTOCOL_MAVLINK,
+    TELEMETRY_PROTOCOL_IBUS,
+} telemetryProtocol_e;
+
+typedef struct telemetryProvider_s {
+    uint8_t protocol;  // telemetryProtocol_e
+    int8_t uart;       // serialPortIdentifier_e; SERIAL_PORT_NONE = unused slot
+} telemetryProvider_t;
+
+// One slot per protocol bit in serialPortFunction_e (FrSky Hub, HoTT, LTM,
+// SmartPort, MAVLink, iBus).  Sized so a legacy functionMask that assigns
+// every telemetry protocol across distinct ports still decomposes cleanly.
+#define MAX_TELEMETRY_PROVIDERS 6
+
+typedef enum {
     SENSOR_VOLTAGE         = 1 << 0,
     SENSOR_CURRENT         = 1 << 1,
     SENSOR_FUEL            = 1 << 2,
@@ -93,6 +113,7 @@ typedef struct telemetryConfig_s {
     uint8_t mavlink_extra2_rate;
     uint8_t mavlink_extra3_rate;
     uint8_t crsf_tlm_accgyro;
+    telemetryProvider_t providers[MAX_TELEMETRY_PROVIDERS];
 } telemetryConfig_t;
 
 PG_DECLARE(telemetryConfig_t, telemetryConfig);
