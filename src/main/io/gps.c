@@ -1568,7 +1568,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
 #ifdef USE_GPS_UBLOX
 #ifdef USE_GPS_NMEA
         if (gpsConfig()->provider == GPS_UBLOX || gpsConfig()->provider == GPS_NMEA) {      // TODO  Send ublox message to nmea GPS?
-#esle
+#else
         if (gpsConfig()->provider == GPS_UBLOX) {
 #endif
             if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_ON) {
