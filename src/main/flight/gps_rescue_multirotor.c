@@ -151,14 +151,11 @@ void gpsRescueInit(void)
     rescueState.isAvailable = true;
     rescueState.sensor.isHeadingOK = true;
     rescueState.isOK = true;
-
 }
 
 #if !ENABLE_RESCUE_PLAN
 static void rescueStart(void)
 {
-    initPositionHold(); // initialise position hold at current location
-
     rescueState.phase = RESCUE_INITIALIZE;
 }
 
@@ -554,8 +551,6 @@ void initRescueValues(void)
     rescueState.intent.xyAttenuator = 0.0f;        // For a slower start to gaining velocity
 
     resetAltitudeControl(); // Initialise altitude in autopilot multirotor
-    resetPositionControl(TASK_GPS_RESCUE_RATE_HZ); // Initialise position control in autopilot multirotor
-
 }
 #endif // !ENABLE_RESCUE_PLAN
 
@@ -594,7 +589,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
             if (rescueState.sensor.distanceToHomeCm < GPS_RESCUE_ACCEPT_RADIUS && isBelowLandingAltitude()) {
                 rescueState.phase = RESCUE_DO_NOTHING;
             } else {
-                initRescueValues(); // fix the target location
+                initRescueValues(); // configure the descent distances and return altitudes
                 returnAltitudeLow = rescueState.sensor.currentAltitudeCm < rescueState.intent.returnAltitudeCm;
                 rescueState.phase = RESCUE_ATTAIN_ALT;
             }
