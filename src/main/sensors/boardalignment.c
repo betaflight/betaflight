@@ -53,7 +53,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(boardAlignment_t, boardAlignment, PG_BOARD_ALIGN
 PG_RESET_TEMPLATE(boardAlignment_t, boardAlignment,
         .rollDegrees = DEFAULT_ALIGN_BOARD_ROLL,
         .pitchDegrees = DEFAULT_ALIGN_BOARD_PITCH,
-        .yawDegrees = DEFAULT_ALIGN_BOARD_YAW,
+        .yawDegrees = 1800,
 );
 
 static bool isBoardAlignmentStandard(const boardAlignment_t *boardAlignment)
