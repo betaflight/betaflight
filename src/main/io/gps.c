@@ -1273,11 +1273,11 @@ static void gpsConfigureUblox(void)
 static void gpsConfigureHardware(void)
 {
     switch (gpsConfig()->provider) {
-    case GPS_NMEA:
 #ifdef USE_GPS_NMEA
+    case GPS_NMEA:
         gpsConfigureNmea();
-#endif
         break;
+#endif
 
     case GPS_UBLOX:
 #ifdef USE_GPS_UBLOX
@@ -1661,11 +1661,11 @@ static ubloxVersion_e ubloxParseVersion(const uint32_t version)
 bool gpsNewFrame(uint8_t c)
 {
     switch (gpsConfig()->provider) {
-    case GPS_NMEA:          // NMEA
 #ifdef USE_GPS_NMEA
+    case GPS_NMEA:          // NMEA
         return gpsNewFrameNMEA(c);
-#endif
         break;
+#endif
     case GPS_UBLOX:         // UBX binary
 #ifdef USE_GPS_UBLOX
         return gpsNewFrameUBLOX(c);
