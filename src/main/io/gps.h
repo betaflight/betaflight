@@ -175,9 +175,12 @@ typedef enum {
     GPS_LONGITUDE
 } gpsCoordinateType_e;
 
-typedef enum {
+enum {
+#if defined (USE_GPS_NMEA)
     GPS_NMEA = 0,
-    GPS_UBLOX,
+#else
+    GPS_UBLOX = 0,
+#endif
     GPS_MSP,
     GPS_VIRTUAL,
     GPS_DRONECAN,
