@@ -393,7 +393,14 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
     int pinIndexMax = -1;
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCountProvisional; motorIndex++) {
         const unsigned reorderedMotorIndex = motorConfig->motorOutputReordering[motorIndex];
-        int pinIndex = DEFIO_TAG_PIN(motorConfig->ioTags[reorderedMotorIndex]);
+        const ioTag_t tag = motorConfig->ioTags[reorderedMotorIndex];
+        const IO_t io = IOGetByTag(tag);
+        if (!tag || !io) {
+            bprintf("Invalid motor tag %d from reordered index %d (original index %d)",
+                    tag, reorderedMotorIndex, motorIndex);
+            return false;
+        }
+        int pinIndex = DEFIO_TAG_PIN(tag);
         pinIndexMin = pinIndex < pinIndexMin ? pinIndex : pinIndexMin;
         pinIndexMax = pinIndex > pinIndexMax ? pinIndex : pinIndexMax;
     }
