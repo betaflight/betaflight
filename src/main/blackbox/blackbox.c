@@ -244,8 +244,8 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
 #endif
     {"rssi",       -1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(RSSI)},
 #ifdef USE_PITOT
-    {"pitot",      0, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(PITOT)},
-    {"pitot",      1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(PITOT)},
+    {"pitot",      0, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PITOT)},
+    {"pitot",      1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PITOT)},
 #endif
 
     /* Gyros and accelerometers base their P-predictions on the average of the previous 2 frames to reduce noise impact */
@@ -856,7 +856,7 @@ static void writeInterframe(void)
      */
     blackboxWriteSignedVB((int32_t) (blackboxHistory[0]->time - 2 * blackboxHistory[1]->time + blackboxHistory[2]->time));
 
-    int32_t deltas[10];
+    int32_t deltas[8];
     int32_t setpointDeltas[4];
 
     if (testBlackboxCondition(CONDITION(PID))) {
@@ -943,14 +943,14 @@ static void writeInterframe(void)
         deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->rssi - blackboxLast->rssi;
     }
 
+    blackboxWriteTag8_8SVB(deltas, optionalFieldCount);
+
 #ifdef USE_PITOT
     if (testBlackboxCondition(CONDITION(PITOT))) {
-        deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->airspeed - blackboxLast->airspeed;
-        deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->diffPressure - blackboxLast->diffPressure;
+        blackboxWriteSignedVB((int32_t) blackboxCurrent->airspeed - blackboxLast->airspeed);
+        blackboxWriteSignedVB((int32_t) blackboxCurrent->diffPressure - blackboxLast->diffPressure);
     }
 #endif
-
-    blackboxWriteTag8_8SVB(deltas, optionalFieldCount);
 
     //Since gyros, accs and motors are noisy, base their predictions on the average of the history:
     if (testBlackboxCondition(CONDITION(GYRO))) {
