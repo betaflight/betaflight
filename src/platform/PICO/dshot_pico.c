@@ -85,7 +85,7 @@ static void resetOutgoingPackets(void)
         outgoingPacket[motorIndex] = -1;
     }
 }
-    
+
 static void dshotUpdateInit(void)
 {
     resetOutgoingPackets();
@@ -286,7 +286,7 @@ static bool dshotReinstateMotorIO(unsigned motorIndex)
 
 static bool dshotEnableMotors(void)
 {
-    // No special processing required    
+    // No special processing required
     return true;
 }
 
