@@ -1566,11 +1566,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
     case GPS_STATE_RECEIVING_DATA:
 #ifdef USE_GPS_UBLOX
-#ifdef USE_GPS_NMEA
         if (gpsConfig()->provider == GPS_UBLOX || gpsConfig()->provider == GPS_NMEA) {      // TODO  Send ublox message to nmea GPS?
-#esle
-        if (gpsConfig()->provider == GPS_UBLOX) {
-#endif
             if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_ON) {
                 // when we are connected up, and get a 3D fix, enable the 'flight' fix model
                 if (!gpsData.ubloxUsingFlightModel && STATE(GPS_FIX)) {
