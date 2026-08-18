@@ -176,7 +176,7 @@ typedef enum {
 } gpsCoordinateType_e;
 
 enum {
-#ifdef USE_GPS_NMEA
+#if defined (USE_GPS_NMEA)
     GPS_NMEA = 0,
 #else
     GPS_UBLOX = 0,
