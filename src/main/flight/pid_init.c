@@ -113,7 +113,7 @@ static void tpaSpeedInit(const pidProfile_t *pidProfile)
     pidRuntime.tpaSpeed.speed = 0.0f;
     pidRuntime.tpaSpeed.maxVoltage = pidProfile->tpa_speed_max_voltage / 100.0f;
     pidRuntime.tpaSpeed.pitchOffset = pidProfile->tpa_speed_pitch_offset * M_PIf / 10.0f / 180.0f;
-    pidRuntime.tpaSpeed.refSpeed = pidProfile->speed_curve_vref;
+    pidRuntime.tpaSpeed.refSpeed = pidProfile->tpa_ref_speed_curve_vref;
 
     switch (pidProfile->tpa_speed_type) {
     case TPA_SPEED_BASIC:
@@ -348,15 +348,15 @@ static void tpaCurveHyperbolicInit(const pidProfile_t *pidProfile)
 static float tpaCurveHyperbolicVrefFunction(float x, void *args)
 {
     const pidProfile_t *pidProfile = (const pidProfile_t*)args;
-    const float power = pidProfile->speed_curve_power * 0.1f;
+    const float power = pidProfile->tpa_ref_speed_curve_power * 0.1f;
     return powf(x, power);
 }
 
 static void tpaCurveHyperbolicVrefInit(const pidProfile_t *pidProfile)
 {
-    const float power = pidProfile->speed_curve_power * 0.1f;
-    const float yMin = pidProfile->speed_curve_min * 0.01f;
-    const float yMax = pidProfile->speed_curve_max * 0.01f;
+    const float power = pidProfile->tpa_ref_speed_curve_power * 0.1f;
+    const float yMin = pidProfile->tpa_ref_speed_curve_min * 0.01f;
+    const float yMax = pidProfile->tpa_ref_speed_curve_max * 0.01f;
     const float xMin = expf(logf(yMin) / power);
     const float xMax = expf(logf(yMax) / power);
     pidRuntime.refSpeedCurveArgMin = xMin;
@@ -374,7 +374,7 @@ static void tpaCurveInit(const pidProfile_t *pidProfile)
             tpaCurveHyperbolicInit(pidProfile);
             return;
 #ifdef USE_WING
-        case TPA_CURVE_VREF:
+        case TPA_CURVE_REF_SPEED_HYPERBOLA:
             tpaCurveHyperbolicVrefInit(pidProfile);
             return;
 #endif
