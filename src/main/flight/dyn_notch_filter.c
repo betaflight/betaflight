@@ -87,6 +87,7 @@
 #define DYN_NOTCH_CALC_TICKS       (XYZ_AXIS_COUNT * STEP_COUNT) // 3 axes and 4 steps per axis
 #define DYN_NOTCH_OSD_MIN_THROTTLE 20
 #define DYN_NOTCH_UPDATE_MIN_HZ    2000
+#define DYN_NOTCH_FLOOR_MIN_HZ     60  // exclude freq range which contains quad motion from noise estimate
 
 typedef enum {
 
@@ -150,8 +151,12 @@ static FAST_DATA_ZERO_INIT float   sdftSampleRateHz;
 static FAST_DATA_ZERO_INIT float   sdftResolutionHz;
 static FAST_DATA_ZERO_INIT int     sdftStartBin;
 static FAST_DATA_ZERO_INIT int     sdftEndBin;
+static FAST_DATA_ZERO_INIT int     sdftFloorStartBin;
 static FAST_DATA_ZERO_INIT float   sdftNoiseThreshold;
 static FAST_DATA_ZERO_INIT float   pt1LooptimeS;
+
+// Reset the sampling buffers and the state machine
+static void resetState(void);
 
 void dynNotchInit(const dynNotchConfig_t *config, const float dt)
 {
@@ -188,7 +193,17 @@ void dynNotchInit(const dynNotchConfig_t *config, const float dt)
     sdftResolutionHz = sdftSampleRateHz / SDFT_SAMPLE_SIZE; // 18.5hz per bin at 8k and 600Hz maxHz
     sdftStartBin = MAX(1, lrintf(dynNotch.minHz / sdftResolutionHz)); // can't use bin 0 because it is DC.
     sdftEndBin = MIN(SDFT_BIN_COUNT - 1, lrintf(dynNotch.maxHz / sdftResolutionHz)); // can't use more than SDFT_BIN_COUNT bins.
+
+    // The noise floor is averaged over [sdftFloorStartBin, sdftEndBin] to exclude the motion region
+    // Fall back to the whole range if excluding it would leave too few bins to average
+    sdftFloorStartBin = MAX(sdftStartBin, lrintf(DYN_NOTCH_FLOOR_MIN_HZ / sdftResolutionHz));
+    if (sdftFloorStartBin > sdftEndBin - 3) {
+        sdftFloorStartBin = sdftStartBin;
+    }
+
     pt1LooptimeS = DYN_NOTCH_CALC_TICKS / looprateHz;
+
+    resetState();
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         sdftInit(&sdft[axis], sdftStartBin, sdftEndBin, sampleCount);
@@ -200,6 +215,24 @@ void dynNotchInit(const dynNotchConfig_t *config, const float dt)
             dynNotch.centerFreq[axis][p] = (p + 0.5f) * (dynNotch.maxHz - dynNotch.minHz) / (float)dynNotch.count + dynNotch.minHz;
             svfNotchInit(&dynNotch.notch[axis][p], dynNotch.centerFreq[axis][p], dt, dynNotch.q);
         }
+    }
+}
+
+static void resetState(void)
+{
+    sampleIndex = 0;
+    state.tick = 0;
+    state.step = 0;
+    state.axis = 0;
+
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        sampleAccumulator[axis] = 0.0f;
+        sampleAvg[axis] = 0.0f;
+    }
+
+    for (int p = 0; p < DYN_NOTCH_COUNT_MAX; p++) {
+        peaks[p].bin = 0;
+        peaks[p].value = 0.0f;
     }
 }
 
@@ -265,9 +298,9 @@ static FAST_CODE_NOINLINE_CRITICAL void dynNotchProcess(void)
         {
             sdftWinSq(&sdft[state.axis], sdftData);
 
-            // Get total vibrational power in dyn notch range for noise floor estimate in STEP_CALC_FREQUENCIES
+            // Get total vibrational power for the noise floor estimate in STEP_CALC_FREQUENCIES
             sdftNoiseThreshold = 0.0f;
-            for (int bin = sdftStartBin; bin <= sdftEndBin; bin++) {
+            for (int bin = sdftFloorStartBin; bin <= sdftEndBin; bin++) {
                 sdftNoiseThreshold += sdftData[bin];  // sdftData contains power spectral density
             }
 
@@ -325,14 +358,14 @@ static FAST_CODE_NOINLINE_CRITICAL void dynNotchProcess(void)
             // Approximate noise floor (= average power spectral density in dyn notch range, excluding peaks)
             int peakCount = 0;
             for (int p = 0; p < dynNotch.count; p++) {
-                if (peaks[p].bin != 0) {
+                if (peaks[p].bin > sdftFloorStartBin) {
                     sdftNoiseThreshold -= 0.75f * sdftData[peaks[p].bin - 1];
                     sdftNoiseThreshold -= sdftData[peaks[p].bin];
                     sdftNoiseThreshold -= 0.75f * sdftData[peaks[p].bin + 1];
                     peakCount++;
                 }
             }
-            sdftNoiseThreshold /= sdftEndBin - sdftStartBin - peakCount + 1;
+            sdftNoiseThreshold /= sdftEndBin - sdftFloorStartBin - peakCount + 1;
 
             // A noise threshold 2 times the noise floor prevents peak tracking being too sensitive to noise
             sdftNoiseThreshold *= 2.0f;
