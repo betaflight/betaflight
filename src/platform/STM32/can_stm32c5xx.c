@@ -48,11 +48,11 @@
 //    a C593 (PB5/PB6/PB12/PB13) are FDCAN1 lines there. Listing one set for
 //    the family would hand those four pins to the wrong instance, so C562 has
 //    its own row below.
-//  - The C562 list is its datasheet's complete AF9 set restricted to the ports
+//  - The C562 list is DS14927's complete AF9 set restricted to the ports
 //    Betaflight compiles in for this part (A-E; C562 has no GPIOF and no
 //    GPIOH, so the datasheet's PH2 FDCAN1_RX option is not reachable).
-//  - The C593 list is its datasheet's complete AF9 set as well (DS15154 covers
-//    C591 and C593 together). Every pin the original commit listed is in it;
+//  - The C593 list is its datasheet's complete AF9 set as well (DS15136, the
+//    STM32C59xxx datasheet, covers C591 and C593 together). Every pin the original commit listed is in it;
 //    what is added is the rest. PH2 is left out for the same reason as on C562
 //    - Betaflight compiles no GPIOH for any C5 - so FDCAN1_RX on PH2 is not
 //    reachable. No C593 target exists yet, so this table is read from the
