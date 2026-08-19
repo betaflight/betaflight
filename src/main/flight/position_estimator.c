@@ -428,7 +428,7 @@ static sensorCalEntry_t zCal[CAL_Z_COUNT];
 static uint16_t gpsStamp = 0;
 static bool gpsDataAvailable = false;
 static timeUs_t gpsDataReceivedAtUs = 0;
-static timeUs_t gpsDataHoldDurationUs = 0;
+static timeDelta_t gpsDataHoldDurationUs = 0;
 static gpsLocation_t armLocationGps;
 static bool gpsArmLocationSet = false;
 static float gpsAltOffsetCm = 0.0f;
@@ -646,8 +646,8 @@ STATIC_UNIT_TESTED bool gpsMeasurementReadyForFusion(timeUs_t nowUs)
     }
 
     const bool withinHoldInterval = gpsDataAvailable &&
-        gpsDataHoldDurationUs > 0 &&
-        nowUs - gpsDataReceivedAtUs < gpsDataHoldDurationUs;
+        (gpsDataHoldDurationUs > 0) &&
+        (cmpTimeUs(nowUs, gpsDataReceivedAtUs) < gpsDataHoldDurationUs);
 
     return hasNewData || withinHoldInterval;
 }
@@ -789,8 +789,8 @@ static void feedGPSMeasurements(timeUs_t nowUs)
         const float rGpsVelMax = 10.0f * R_GPS_VEL_BASE;
         const float rGpsVel = gpsAccuracyR(gpsSol.acc.sAcc, GPS_VEL_ACCURACY_DENOM, R_GPS_VEL_BASE, rGpsVelMax);
 
-        DEBUG_SET(DEBUG_POSITION_EST, 6, lrintf(rGpsPos)); // temporary debug for testing R values
-        DEBUG_SET(DEBUG_POSITION_EST, 7, lrintf(rGpsVel)); // temporary debug for testing R values
+        DEBUG_SET(DEBUG_POSITION_EST, 6, lrintf(rGpsPos));
+        DEBUG_SET(DEBUG_POSITION_EST, 7, lrintf(rGpsVel));
 
 
         kalmanUpdateVelocityToPosition(&kfEast, (float)gpsSol.velned.velE, rGpsVel);
@@ -1199,8 +1199,8 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
 kalmanUpdateVelocityToPosition(&kfEast, velEast, flowR);
 kalmanUpdateVelocityToPosition(&kfNorth, velNorth, flowR);
 
-    DEBUG_SET(DEBUG_POSITION_EST, 3, lrintf(velEast)); // temporary debug for testing optical flow
-    DEBUG_SET(DEBUG_POSITION_EST, 4, lrintf(velNorth)); // temporary debug for testing optical flow
+    DEBUG_SET(DEBUG_POSITION_EST, 3, lrintf(velEast));
+    DEBUG_SET(DEBUG_POSITION_EST, 4, lrintf(velNorth));
 
     lastXYMeasurementUs = nowUs;
 #else

@@ -301,7 +301,7 @@ static bool isSurfaceAltitudeValid(void)
 /**
  * Get the last distance measured by the sonar in centimeters. When the ground is too far away, RANGEFINDER_OUT_OF_RANGE is returned.
  */
-bool rangefinderProcess(float cosTiltAngle)
+bool rangefinderProcess(timeUs_t nowUs, float cosTiltAngle)
 {
     if (rangefinder.dev.read) {
         const int32_t distance = rangefinder.dev.read(&rangefinder.dev);
@@ -313,14 +313,13 @@ bool rangefinderProcess(float cosTiltAngle)
 
         // Timestamp actual device samples, so that consumers can measure the true
         // hardware data rate rather than the (possibly faster) driver poll rate
-        const timeUs_t sampleTimeUs = micros();
         if (rangefinder.lastDataTimeUs != 0) {
-            const timeDelta_t intervalUs = cmpTimeUs(sampleTimeUs, rangefinder.lastDataTimeUs);
+            const timeDelta_t intervalUs = cmpTimeUs(nowUs, rangefinder.lastDataTimeUs);
             if (intervalUs > 0) {
                 rangefinder.dataIntervalUs = intervalUs;
             }
         }
-        rangefinder.lastDataTimeUs = sampleTimeUs;
+        rangefinder.lastDataTimeUs = nowUs;
 
         if (distance >= 0) {
             rangefinder.lastValidResponseTimeMs = millis();

@@ -79,5 +79,5 @@ timeUs_t rangefinderGetLatestSampleTimeUs(void);
 timeDelta_t rangefinderGetSampleIntervalUs(void);
 
 void rangefinderUpdate(void);
-bool rangefinderProcess(float cosTiltAngle);
+bool rangefinderProcess(timeUs_t nowUs, float cosTiltAngle);
 bool rangefinderIsHealthy(void);
