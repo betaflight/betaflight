@@ -382,8 +382,9 @@
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
 #define USE_LATE_TASK_STATISTICS
-// C591 has no FDCAN hardware; enable CAN only on variants that do (e.g. C593).
-#if defined(STM32C593xx) && !defined(ENABLE_CAN)
+// Not every C5 carries FDCAN: C591 has none, while C562 has a single FDCAN1
+// and C593 has FDCAN1 + FDCAN2. Enable CAN only on the variants that have it.
+#if (defined(STM32C562xx) || defined(STM32C593xx)) && !defined(ENABLE_CAN)
 #define ENABLE_CAN 1
 #endif
 #endif
