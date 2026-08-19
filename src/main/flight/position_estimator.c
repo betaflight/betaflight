@@ -870,6 +870,15 @@ static zUpdateAction_e gateZPositionStep(zStepGate_t *gate, float measuredPositi
 // Only applies where the rangefinder is actually a Z source: if the user asked for
 // baro-only altitude, distrusting the baro here would leave nothing driving Z at all.
 //
+// This deliberately works in raw height above ground - rangefinderSampleAltitudeCm() returns
+// the driver's tilt-compensated distance to the terrain, before rangefinderAltOffsetCm is
+// subtracted - and not in the estimator's frame. Ground effect is caused by prop wash off the
+// physical ground, so the band below has to be measured against the terrain directly below.
+// Substituting the frame-relative altitude that feedRangefinderMeasurements() fuses would be
+// a bug: the two diverge across a frame rebase and over any terrain step, and only the raw
+// value predicts whether the craft is actually sitting in its own wash. Being frame-free also
+// means the latch cannot be poisoned by the offset seed or rebase running later in the cycle.
+//
 // Refreshes the ground-effect latch as a side effect. Its only caller sits after the baro's
 // ready-for-fusion gate, so this runs at the baro's own rate rather than the estimator's -
 // around 14 Hz against 100 Hz on the hardware this was measured on. The fade is computed
