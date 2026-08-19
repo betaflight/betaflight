@@ -33,7 +33,7 @@
 
 // C5 FDCAN specifics:
 //  - C591 has no FDCAN peripheral; hardware-table rows only exist when a
-//    variant with FDCAN (C562, C593) is selected.
+//    variant with FDCAN (C562, C593, C5A3) is selected.
 //  - Silicon exposes at most FDCAN1 and FDCAN2. The CANDEV_3 row is emitted as
 //    a zero-initialised placeholder so the fixed-length canHardware[] array
 //    still has CANDEV_COUNT entries; canPinConfigure() skips rows whose reg
@@ -51,12 +51,14 @@
 //  - The C562 list is DS14927's complete AF9 set restricted to the ports
 //    Betaflight compiles in for this part (A-E; C562 has no GPIOF and no
 //    GPIOH, so the datasheet's PH2 FDCAN1_RX option is not reachable).
-//  - The C593 list is its datasheet's complete AF9 set as well (DS15136, the
-//    STM32C59xxx datasheet, covers C591 and C593 together). Every pin the original commit listed is in it;
-//    what is added is the rest. PH2 is left out for the same reason as on C562
-//    - Betaflight compiles no GPIOH for any C5 - so FDCAN1_RX on PH2 is not
-//    reachable. No C593 target exists yet, so this table is read from the
-//    datasheet rather than proved by a build.
+//  - The second row serves both C593 and C5A3, whose FDCAN AF maps are
+//    identical: DS15136 (STM32C59xxx, covering C591 and C593) and DS15137
+//    (STM32C5Axxx) list the same seven TX and six RX pins for FDCAN1 and the
+//    same three each for FDCAN2. Every pin the original commit listed is in
+//    that set; what is added is the rest. PH2 is left out for the same reason
+//    as on C562 - Betaflight compiles no GPIOH for any C5 - so FDCAN1_RX on
+//    PH2 is not reachable. No C593 target exists yet, so that half is read
+//    from the datasheet rather than proved by a build; C5A3 does build.
 const canHardware_t canHardware[CANDEV_COUNT] = {
     {
         .device = CANDEV_1,
