@@ -445,7 +445,7 @@ TEST_F(PosHoldTest, SticksActiveButCentered)
     // Sticks-active uses the I_FREEZE policy, which retains (does not accumulate)
     // the distance integral built up while holding the 1 m offset before the
     // sticks engaged; that frozen integral is the whole residual lean:
-    //   Ki * integral = (30 * 0.00015) * (-100 cm * 200 * 10 ms) = -0.9 deg
+    //   Ki * integral = (30 * 0.00017) * (-100 cm * 200 * 10 ms) = -1.02 deg
     EXPECT_NEAR(autopilotAngle[AI_ROLL], -1.02f, 0.01f);
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.01f);
 }
