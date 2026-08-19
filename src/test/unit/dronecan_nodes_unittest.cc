@@ -205,6 +205,7 @@ TEST_F(DronecanNodesTest, AnonymousNodeStatusIgnored)
 
 TEST_F(DronecanNodesTest, NoteSensorCreatesEntryAndMergesWithStatus)
 {
+    mockMicros = 2000000;
     dronecanNodesNoteSensor(50, DRONECAN_NODE_SENSOR_GPS);
     dronecanNodesNoteSensor(50, DRONECAN_NODE_SENSOR_MAG);
 
@@ -212,6 +213,7 @@ TEST_F(DronecanNodesTest, NoteSensorCreatesEntryAndMergesWithStatus)
     const dronecanNodeEntry_t *node = findEntry(50);
     ASSERT_NE(nullptr, node);
     EXPECT_EQ(DRONECAN_NODE_SENSOR_GPS | DRONECAN_NODE_SENSOR_MAG, node->sensorFlags);
+    EXPECT_EQ(2000000U, node->lastHeardUs);
 
     feedNodeStatus(50, 7, UAVCAN_NODE_HEALTH_OK, UAVCAN_NODE_MODE_OPERATIONAL);
     EXPECT_EQ(1, dronecanNodesCount());

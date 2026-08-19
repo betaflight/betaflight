@@ -156,8 +156,8 @@ static void sendNodeInfoRequest(dronecanNodeEntry_t *node, timeUs_t currentTimeU
     tx.payload             = emptyPayload;
     tx.payload_len         = 0;
 
-    node->infoRetries++;
     if (canardRequestOrRespondObj(dronecanGetInstance(), node->nodeId, &tx) >= 0) {
+        node->infoRetries++;
         pendingNodeId = node->nodeId;
         pendingSentUs = currentTimeUs;
     }
@@ -210,6 +210,7 @@ void dronecanNodesNoteSensor(uint8_t nodeId, uint8_t sensorFlag)
     dronecanNodeEntry_t *node = findOrAddNode(nodeId);
     if (node) {
         node->sensorFlags |= sensorFlag;
+        node->lastHeardUs = micros();
     }
 }
 
