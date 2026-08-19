@@ -21,8 +21,12 @@
 
 #pragma once
 
+#ifdef USE_GPS_SEPTENTRIO
+
 #include <stdbool.h>
 #include <stdint.h>
+
+#include "io/gps.h"
 
 #define SEPTENTRIO_PORT_NAME_LENGTH  6   // Maximum length of the serial port name including the null terminator
 #define SEPTENTRIO_RX_BUF_SIZE       128 // Size of the receive buffer for detecting the Septentrio port response
@@ -227,3 +231,5 @@ void gpsSeptentrioReset(void);
 // Detect the active receiver port 
 void gpsSeptentrioPortDetectorReset(void);
 bool gpsSeptentrioProcessPort(uint8_t data);
+
+#endif // USE_GPS_SEPTENTRIO

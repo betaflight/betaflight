@@ -95,7 +95,7 @@ GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS];
 #define GPS_TIMEOUT_MS 2500
 // Timeout for waiting for an ACK or NAK response to a configuration command
 #define UBLOX_ACK_TIMEOUT_MS 150
-#define SEPTENTRIO_ACK_TIMEOUT_MS 200      
+#define SEPTENTRIO_ACK_TIMEOUT_MS 200
 #define SEPTENTRIO_PORT_DETECTION_TIMEOUT_MS 1500 // Time to wait for a response from the Septentrio receiver when probing for the active port
 
 // Time allowed for module to respond to baud rate change during initial configuration
@@ -1011,11 +1011,11 @@ static void gpsConfigureNmea(void)
 
 #ifdef USE_GPS_SEPTENTRIO
 
-static void septentrioSendCommand(const char *command) 
+static void septentrioSendCommand(const char *command)
 {
     serialWriteBuf(gpsPort, (uint8_t *)command, strlen(command));
-    gpsData.ackState = GPS_ACK_WAITING; 
-    gpsData.lastMessageSent = gpsData.now; 
+    gpsData.ackState = GPS_ACK_WAITING;
+    gpsData.lastMessageSent = gpsData.now;
 }
 
 static void septentrioSendOutputCommand(const char *streamName, const char *sbfBlocks, const char *rate)
@@ -1028,13 +1028,14 @@ static void septentrioSendOutputCommand(const char *streamName, const char *sbfB
 
 static const char *septentrioUpdateRateToString(uint8_t updateRateHz)
 {
-    return (updateRateHz >= 10) ? "msec100" :
+    return (updateRateHz >= 20) ? "msec50" :
+           (updateRateHz >= 10) ? "msec100" :
            (updateRateHz >= 5)  ? "msec200" :
            (updateRateHz >= 2)  ? "msec500" : "sec1"; // default to 1Hz
 }
 
 static void gpsConfigureSeptentrio(void)
-{    
+{
     // Wait until GPS transmit buffer is empty
     if (!isSerialTransmitBufferEmpty(gpsPort)) {
         return;
@@ -1062,12 +1063,12 @@ static void gpsConfigureSeptentrio(void)
         }
 
         // Delay 1 second upon initial entry into the CONFIGURE state (same value as ublox)
-        if (gpsData.state_position == 0 && cmp32(gpsData.now, gpsData.state_ts) < 1000) { 
+        if (gpsData.state_position == 0 && cmp32(gpsData.now, gpsData.state_ts) < 1000) {
             return;
         }
 
-        if (gpsData.ackState == GPS_ACK_IDLE) { // no active command waiting for a response  
-            // Require a minimum delay between configuration commands 
+        if (gpsData.ackState == GPS_ACK_IDLE) { // no active command waiting for a response
+            // Require a minimum delay between configuration commands
             static uint32_t lastStatePositionTime = 0;
             if (lastStatePositionTime == 0) {
                 lastStatePositionTime = gpsData.now;
@@ -1128,7 +1129,7 @@ static void gpsConfigureSeptentrio(void)
                 break;
             }
         } // ACK or NACK are then triggered in the gpsNewFrameSeptentrio(uint8_t) function, which processes incoming data 
-        
+
         // ACK handling for Septentrio receivers (same states as ublox)
         switch (gpsData.ackState) {
         case GPS_ACK_IDLE:
@@ -1136,8 +1137,8 @@ static void gpsConfigureSeptentrio(void)
             break;
         case GPS_ACK_WAITING: {
             // Use a longer timeout for port detection, standard short ACK timeout otherwise
-            int32_t timeout = (gpsData.state_position == SEPTENTRIO_CFG_DETECT_PORT) 
-                ? SEPTENTRIO_PORT_DETECTION_TIMEOUT_MS 
+            int32_t timeout = (gpsData.state_position == SEPTENTRIO_CFG_DETECT_PORT)
+                ? SEPTENTRIO_PORT_DETECTION_TIMEOUT_MS
                 : SEPTENTRIO_ACK_TIMEOUT_MS;
 
             if (cmp32(gpsData.now, gpsData.lastMessageSent) > timeout) {
@@ -1145,7 +1146,7 @@ static void gpsConfigureSeptentrio(void)
                     gpsData.state_position = SEPTENTRIO_CFG_FORCE_INPUT;
                     gpsData.state_ts = gpsData.now;
                     gpsData.ackState = GPS_ACK_IDLE;
-                } else { // standard command timeout treated as NACK 
+                } else { // standard command timeout treated as NACK
                     gpsData.ackState = GPS_ACK_GOT_NACK;
                 }
             }
@@ -2649,8 +2650,8 @@ static void gpsDateTimeFromNavPvt(gpsDateTime_t *dt, const ubxNavPvt_t *navPvt)
     }
 }
 
-// Convert GPS week number and time-of-week to gpsDateTime_t
-static void gpsWeekTimeToDateTime(gpsDateTime_t *dt, int16_t week, uint32_t timeOfWeekMs, int32_t timeOfWeekNs)
+// Convert GPS week number and time-of-week to gpsDateTime_t (shared across GPS protocols)
+void gpsWeekTimeToDateTime(gpsDateTime_t *dt, int16_t week, uint32_t timeOfWeekMs, int32_t timeOfWeekNs)
 {
     int64_t gpsSeconds = (int64_t)week * 7 * 24 * 3600 + timeOfWeekMs / 1000;
 

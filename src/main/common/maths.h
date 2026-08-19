@@ -36,8 +36,10 @@
 #define M_EULERf    2.71828182845904523536f
 #define INV_PIO2    (2.0f / M_PIf)
 
-// Explicit double precision PI constant
-#define M_PI 3.14159265358979323846
+// Guarded double precision PI constant
+#ifndef M_PI
+#define M_PI        3.14159265358979323846
+#endif
 
 #define RAD    (M_PIf / 180.0f)
 #define RAD_D  (M_PI / 180.0)

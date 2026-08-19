@@ -106,7 +106,6 @@ static void sbfResetFrame(void)
     sbfState.expectedLength = 0;
     sbfState.synced = false;
     sbfState.calculatedCrc = 0;
-    memset(sbfState.frame, 0, sizeof(sbfState.frame));
 }
 
 static void sbfResetNavEpoch(void)
@@ -157,6 +156,13 @@ static bool sbfCommitNavEpoch(void)
     const uint8_t modeType = (uint8_t)(pvt->mode & 0x0F); // 0: no GNSS PVT available, 1: stand-alone PVT, 2: differential PVT, 3: fixed solution...
 
     gpsSol.time = sbfState.currentNavTow;
+    // A WNc value of 65535 means that the receiver has not determined a valid week number
+    if (sbfState.currentNavWnc != UINT16_MAX) {
+        gpsWeekTimeToDateTime(&gpsSol.dateTime, (int16_t)sbfState.currentNavWnc, sbfState.currentNavTow, 0);
+        gpsSol.dateTime.valid = true;
+    } else {
+        gpsSol.dateTime.valid = false;
+    }
     gpsSol.llh.lat = (int32_t)lround(RADIANS_TO_DEGREES_D(pvt->latitude) * GPS_DEGREES_DIVIDER);
     gpsSol.llh.lon = (int32_t)lround(RADIANS_TO_DEGREES_D(pvt->longitude) * GPS_DEGREES_DIVIDER);
     gpsSol.llh.altCm = (int32_t)lround((pvt->height - (double)pvt->undulation) * 100.0); // subtract the geoid undulation to get height above mean sea level
@@ -168,12 +174,15 @@ static bool sbfCommitNavEpoch(void)
         gpsSol.dop.vdop = sbfState.dop.vDop;
     }
 
-    gpsSol.groundSpeed = (uint16_t)lround(sqrt(sq(pvt->vn) + sq(pvt->ve)) * 100.0); // ground speed in cm/s, calculated from the north and east velocity components
-    gpsSol.speed3d = (uint16_t)lround(sqrt(sq(pvt->vn) + sq(pvt->ve) + sq(pvt->vu)) * 100.0); // 3D speed in cm/s, calculated from the north, east, and up velocity components
+	// Ground speed in cm/s, calculated from the north and east velocity components
+    gpsSol.groundSpeed = (uint16_t)lround(sqrt(sq(pvt->vn) + sq(pvt->ve)) * 100.0);
+	// 3D speed in cm/s, calculated from the north, east, and up velocity components
+    gpsSol.speed3d = (uint16_t)lround(sqrt(sq(pvt->vn) + sq(pvt->ve) + sq(pvt->vu)) * 100.0);
 
     // Normalize course-over-ground to be within [0, 360) degrees
-    if (isnan(pvt->cog) || isinf(pvt->cog) || pvt->cog < -1e9f) { // invalid course value, set to UINT16_MAX as a sentinel (0 being a valid angle)
-        // Septentrio marks course-over-ground as invalid when the speed is lower than 0.1 m/s
+    if (isnan(pvt->cog) || isinf(pvt->cog) || pvt->cog < -1e9f) {
+		// Invalid course value, set to UINT16_MAX as a sentinel (0 being a valid angle).
+        // Septentrio marks course-over-ground as invalid when the speed is lower than 0.1 m/s.
         gpsSol.groundCourse = UINT16_MAX;
     } else {
         float courseDeg = fmodf(pvt->cog, 360.0f);
@@ -196,15 +205,16 @@ static bool sbfCommitNavEpoch(void)
         // The speed accuracy can be approximated as the square root of the maximum variance among these components.
         const float maxVariance = fmaxf(fmaxf(sbfState.velCov.covVnVn, sbfState.velCov.covVeVe), sbfState.velCov.covVuVu);
         if (maxVariance > 0.0f) {
-            gpsSol.acc.sAcc = (uint32_t)lroundf(sqrtf(maxVariance) * 1000.0f); // the square root of the variance gives the standard deviation (accuracy)
+			// The square root of the variance gives the standard deviation (accuracy)
+            gpsSol.acc.sAcc = (uint32_t)lroundf(sqrtf(maxVariance) * 1000.0f);
         }
     }
     gpsSol.acc.headAcc = UINT32_MAX; // not provided by SBF with this set of blocks (as only course over ground is available)
-    
+
     // Calculate the navigation interval based on the current and last epoch timestamps
     const uint64_t weekDurationMs = 7ULL * 24ULL * 3600ULL * 1000ULL;
     const uint64_t currentNavEpochMs = ((uint64_t)sbfState.currentNavWnc * weekDurationMs) + sbfState.currentNavTow;
-    if (sbfState.lastNavEpochMs == 0U) { 
+    if (sbfState.lastNavEpochMs == 0U) {
         gpsSol.navIntervalMs = 100; // default to 100 ms for the first epoch
     } else {
         const uint64_t navDeltaMs = currentNavEpochMs - sbfState.lastNavEpochMs;
@@ -286,7 +296,7 @@ static void sbfProcessChannelStatus(void)
                         maxTrack = sigTrack;
                     }
                     const uint8_t sigPvt = (s2.pvtStatus >> shift) & 0x03; // 0 if not used in PVT solution 
-                    if (sigPvt == 2) { 
+                    if (sigPvt == 2) {
                         usedInPvt = true;
                     }
                 }
@@ -329,7 +339,7 @@ static void sbfProcessChannelStatus(void)
                     health = 3;
                 }
             }
-            if (health == 1) { 
+            if (health == 1) {
                 quality |= (1 << 4); // healthy
             } else if (health == 3) {
                 quality |= (2 << 4); // unhealthy
@@ -383,14 +393,15 @@ static void sbfProcessBlock(void)
         break;
 
     case SBF_BLOCK_ENDOFPVT:
-        // Navigation epoch commit handled in gpsNewFrameSeptentrio(uint8_t) 
+        // Navigation epoch commit handled in gpsNewFrameSeptentrio(uint8_t)
         break;
 
     case SBF_BLOCK_CHANNELSTATUS:
         if (payloadLength >= sizeof(sbfChannelStatusHeader_t)) {
             const uint16_t availableLength = (uint16_t)MIN((uint32_t)payloadLength, (uint32_t)(SBF_MAX_FRAME_SIZE - SBF_HEADER_SIZE));
             memcpy(sbfState.channelStatusPayload, payload, availableLength);
-            sbfState.channelStatusPayloadLength = availableLength; // store the actual copied bytes length for parsing
+			// Store the actual copied bytes length for parsing
+            sbfState.channelStatusPayloadLength = availableLength;
             sbfState.haveChannelStatus = true;
             sbfProcessChannelStatus();
         }
@@ -411,15 +422,15 @@ static void gpsSeptentrioProcessAck(uint8_t data)
 
     // The reply to a valid command is the command itself, preceded by "$R: ".
     // The reply to an invalid command starts with "$R? ".
-    if (ackIdx >= 3) { 
-        const uint8_t prev2 = ackBuf[(ackIdx - 3) & 0x3]; // 2 bytes ago 
+    if (ackIdx >= 3) {
+        const uint8_t prev2 = ackBuf[(ackIdx - 3) & 0x3]; // 2 bytes ago
         const uint8_t prev1 = ackBuf[(ackIdx - 2) & 0x3]; // 1 byte ago
         const uint8_t prev0 = ackBuf[(ackIdx - 1) & 0x3]; // current byte
 
         if (prev2 == '$' && prev1 == 'R' && prev0 == ':') {
             gpsData.ackState = GPS_ACK_GOT_ACK;
             ackIdx = 0;
-        } else if (prev2 == '$' && prev1 == 'R' && prev0 == '?') { 
+        } else if (prev2 == '$' && prev1 == 'R' && prev0 == '?') {
             gpsData.ackState = GPS_ACK_GOT_NACK;
             ackIdx = 0;
         } // otherwise, continue scanning for the ACK/NACK sequence in the incoming data stream
@@ -431,7 +442,7 @@ bool gpsSeptentrioProcessPort(uint8_t data)
     if (portDetector.isDetected) { // port already detected, no further processing needed
         return true;
     }
-    if (data == 0 || data == '\r') { 
+    if (data == 0 || data == '\r') {
         return false;
     }
 
@@ -447,15 +458,17 @@ bool gpsSeptentrioProcessPort(uint8_t data)
 
     // Match serial and USB port names directly preceding the '>' prompt character
     char *promptPtr = strchr(portDetector.rxBuf, '>');
-    if (promptPtr != NULL) {
+    // Only search if there is at least one byte before '>' to search through,
+    // otherwise promptPtr - 1 would form a pointer before the start of rxBuf (undefined behavior)
+    if (promptPtr != NULL && promptPtr > portDetector.rxBuf) {
         // Reverse-search from '>' back to the start of rxBuf to find "COM" or "USB"
         // Future-proofs against the 1-digit port limit of 4-character matching (promptPtr - 4)
         // (e.g., "COM10" or "USB10" will be detected correctly)
         char *searchPtr = promptPtr - 1;
-        while (searchPtr >= portDetector.rxBuf) {
+        while (true) { // search backwards until we reach the start of the buffer
             // Check if searchPtr currently points to the start of "COM" or "USB"
             if (strncmp(searchPtr, "COM", 3) == 0 || strncmp(searchPtr, "USB", 3) == 0) {
-                size_t nameLen = promptPtr - searchPtr; // length of the port string 
+                size_t nameLen = promptPtr - searchPtr; // length of the port string
 
                 // Ensure the parsed name fits inside the destination buffer
                 if (nameLen < SEPTENTRIO_PORT_NAME_LENGTH) {
@@ -466,16 +479,21 @@ bool gpsSeptentrioProcessPort(uint8_t data)
                     return true;
                 }
             }
+            // Stop once we've checked rxBuf itself,
+            // decrementing further would form a pointer before the start of rxBuf
+            if (searchPtr == portDetector.rxBuf) {
+                break;
+            }
             searchPtr--;
         }
     }
-    return false; // continue accumulating bytes until a valid port name is detected 
+    return false; // continue accumulating bytes until a valid port name is detected
 }
 
 bool gpsNewFrameSeptentrio(uint8_t data)
-{    
+{
     // Non-SBF data processing (port detection and ACK handling)
-    if (gpsData.state == GPS_STATE_CONFIGURE && gpsData.state_position == SEPTENTRIO_CFG_DETECT_PORT) { 
+    if (gpsData.state == GPS_STATE_CONFIGURE && gpsData.state_position == SEPTENTRIO_CFG_DETECT_PORT) {
         gpsSeptentrioProcessPort(data);
         return false; // continue processing until the port is detected and configuration can proceed
     }
@@ -487,7 +505,7 @@ bool gpsNewFrameSeptentrio(uint8_t data)
     // SBF frame processing
     if (!sbfState.synced) { // we are not yet synced, check for the sync sequence
         if (sbfState.index == 0) {
-            if (data != SBF_SYNC1) { 
+            if (data != SBF_SYNC1) {
                 return false;
             }
             sbfState.frame[sbfState.index++] = data; // copy the first sync byte into the frame buffer 
@@ -535,7 +553,7 @@ bool gpsNewFrameSeptentrio(uint8_t data)
             // any excess bytes are not included in the frame buffer and are ignored
             
             // Detect boundary block to commit the navigation epoch to gpsSol
-            if (blockId == SBF_BLOCK_ENDOFPVT) { 
+            if (blockId == SBF_BLOCK_ENDOFPVT) {
                 const bool updated = sbfCommitNavEpoch();
                 sbfResetNavEpoch();
                 sbfResetFrame();

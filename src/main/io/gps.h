@@ -179,7 +179,7 @@ typedef enum {
 typedef enum {
     GPS_NMEA = 0,
     GPS_UBLOX,
-    GPS_SEPTENTRIO,
+    GPS_SEPTENTRIO, // non-definitive index (under discussion)
     GPS_MSP,
     GPS_VIRTUAL,
     GPS_DRONECAN,
@@ -429,3 +429,4 @@ float getGpsDataFrequencyHz(void);      // range 20Hz - 0.4Hz
 
 baudRate_e getGpsPortActualBaudRateIndex(void);
 uint32_t gpsDateTimeToEpoch(const gpsDateTime_t *dt);
+void gpsWeekTimeToDateTime(gpsDateTime_t *dt, int16_t week, uint32_t timeOfWeekMs, int32_t timeOfWeekNs);
