@@ -1205,8 +1205,8 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
     const float velEast  =  velForward * sinYaw - velRight * cosYaw;
     const float velNorth =  velForward * cosYaw + velRight * sinYaw;
 
-kalmanUpdateVelocityToPosition(&kfEast, velEast, flowR);
-kalmanUpdateVelocityToPosition(&kfNorth, velNorth, flowR);
+    kalmanUpdateVelocityToPosition(&kfEast, velEast, flowR);
+    kalmanUpdateVelocityToPosition(&kfNorth, velNorth, flowR);
 
     DEBUG_SET(DEBUG_POSITION_EST, 3, lrintf(velEast));
     DEBUG_SET(DEBUG_POSITION_EST, 4, lrintf(velNorth));

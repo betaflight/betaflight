@@ -456,7 +456,7 @@ static void initNavMode(void)
     resetDistanceError();
     resetDistanceErrorIntegral();
     vector2Zero(&previousTargetVelocity);
-        vector2Zero(&targetAcceleration);
+    vector2Zero(&targetAcceleration);
     ap.isPosHoldBraking = false;
 }
 
