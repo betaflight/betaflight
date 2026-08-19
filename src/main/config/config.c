@@ -62,6 +62,7 @@
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
+#include "io/serial_feature_map.h"
 #include "io/vtx.h"
 
 #include "msp/msp_box.h"
@@ -231,6 +232,12 @@ static void validateAndFixConfig(void)
         PG_RESET(serialConfig);
     }
 
+    // Populate the per-feature UART fields from the legacy functionMask
+    // bitmask so pre-existing configs keep working during the migration
+    // window.  Idempotent — running it every boot is fine while the
+    // legacy mask is still the source of truth.
+    serialBackfillFeatureFields();
+
 #if defined(USE_GPS)
     const serialPortConfig_t *gpsSerial = findSerialPortConfig(FUNCTION_GPS);
     if (GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(gpsConfig()->provider) && gpsSerial) {
@@ -390,7 +397,9 @@ static void validateAndFixConfig(void)
     }
 
 #if defined(USE_ESC_SENSOR)
-    if (!findSerialPortConfig(FUNCTION_ESC_SENSOR)) {
+    // DroneCAN ESC telemetry feeds escSensorData[] without a serial port, so
+    // only a serial-sourced sensor requires one.
+    if (!findSerialPortConfig(FUNCTION_ESC_SENSOR) && !isMotorProtocolDronecan()) {
         featureDisableImmediate(FEATURE_ESC_SENSOR);
     }
 #endif

@@ -350,6 +350,13 @@ STATIC_UNIT_TESTED uint8_t crsfFrameCmdCRC(void)
 }
 #endif
 
+static bool crsfFrameLengthIsValid(void)
+{
+    const uint8_t frameLength = crsfFrame.frame.frameLength;
+    return frameLength >= CRSF_FRAME_LENGTH_TYPE_CRC &&
+        frameLength <= CRSF_FRAME_SIZE_MAX - CRSF_FRAME_LENGTH_ADDRESS - CRSF_FRAME_LENGTH_FRAMELENGTH;
+}
+
 // Receive ISR callback, called back from serial port
 STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
 {
@@ -383,7 +390,15 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
     // assume frame is 5 bytes long until we have received the frame length
     // full frame length includes the length of the address and framelength fields
     // sometimes we can receive some garbage data. So, we need to check max size for preventing buffer overrun.
-    const int fullFrameLength = crsfFramePosition < 3 ? 5 : MIN(crsfFrame.frame.frameLength + CRSF_FRAME_LENGTH_ADDRESS + CRSF_FRAME_LENGTH_FRAMELENGTH, CRSF_FRAME_SIZE_MAX);
+    if (crsfFramePosition == CRSF_FRAME_LENGTH_ADDRESS + CRSF_FRAME_LENGTH_FRAMELENGTH &&
+        !crsfFrameLengthIsValid()) {
+        // Invalid declared lengths are protocol violations, not evidence of a negotiated-baud mismatch.
+        // Drop them without contributing to the CRSFv3 baud fallback error counter.
+        crsfFramePosition = 0;
+        return;
+    }
+    const int fullFrameLength = crsfFramePosition < 3 ? 5 :
+        crsfFrame.frame.frameLength + CRSF_FRAME_LENGTH_ADDRESS + CRSF_FRAME_LENGTH_FRAMELENGTH;
 
     if (crsfFramePosition < fullFrameLength) {
         crsfFrame.bytes[crsfFramePosition++] = (uint8_t)c;
@@ -684,6 +699,15 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 }
 
 #if defined(USE_CRSF_V3)
+static bool eventDrivenTelemetry = false;
+
+// Only set once a baud negotiation has succeeded, so receivers that never negotiate (ELRS)
+// keep the fixed-rate telemetry task and must not be gated on inbound frames.
+bool crsfRxIsEventDrivenTelemetry(void)
+{
+    return eventDrivenTelemetry;
+}
+
 void crsfRxUpdateBaudrate(uint32_t baudrate)
 {
     serialSetBaudRate(serialPort, baudrate);
@@ -696,11 +720,10 @@ void crsfRxUpdateBaudrate(uint32_t baudrate)
     }
 #if defined(USE_TELEMETRY_CRSF)
     task_t* tlmTask = getTask(TASK_TELEMETRY);
-    if (tlmTask && baudrate > CRSF_BAUDRATE) {
-        // switch telemetry task to event driven
-        tlmTask->attribute->checkFunc = crsfTelemetryUpdateCheck;
-    } else if (tlmTask) {
-        tlmTask->attribute->checkFunc = NULL;
+    if (tlmTask) {
+        // above the default baudrate let the inbound frame rate dictate the outbound rate
+        eventDrivenTelemetry = baudrate > CRSF_BAUDRATE;
+        tlmTask->attribute->checkFunc = eventDrivenTelemetry ? crsfTelemetryUpdateCheck : NULL;
     }
 #endif
 }

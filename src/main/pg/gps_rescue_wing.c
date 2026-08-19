@@ -18,7 +18,6 @@
 #include "platform.h"
 
 #ifdef USE_WING
-
 #ifdef USE_GPS_RESCUE
 
 #include "flight/gps_rescue.h"
@@ -36,5 +35,4 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
 );
 
 #endif // USE_GPS_RESCUE
-
 #endif // USE_WING

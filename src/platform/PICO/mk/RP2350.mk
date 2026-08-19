@@ -487,7 +487,7 @@ DEVICE_FLAGS    += \
 # Set the sizes of flash and contents in LD_SCRIPT, other linker files loaded via EXTRA_LD_FLAGS.
 
 # Optional board-specific linker script for setting the size of the primary flash, and the allocation for fonts.
-CONFIG_FLASH_MEM_SCRIPT = $(CONFIG_DIR)/configs/$(CONFIG)/pico_flash_mem.ld
+CONFIG_FLASH_MEM_SCRIPT = $(CONFIG_PATH)/pico_flash_mem.ld
 
 # If pico_flash_mem.ld exists in the config folder, use that, otherwise load defaults from pico_flash_mem_defaults.ld
 ifneq ($(wildcard $(CONFIG_FLASH_MEM_SCRIPT)),)
@@ -577,6 +577,9 @@ MCU_COMMON_SRC = \
             PICO/osd/font_betaflight.c \
             PICO/osd/fb_osd_pico.c \
             PICO/osd/osd_element_ah.c \
+            PICO/osd/osd_element_altitude.c \
+            PICO/osd/osd_element_compassbar.c \
+            PICO/osd/osd_element_crosshairs.c \
             PICO/osd/osd_elements_pico.c \
             PICO/osd/osd_pico.c \
             PICO/persistent.c \

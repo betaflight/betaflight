@@ -26,12 +26,25 @@
 
 #include "common/time.h"
 
+#include "pg/flight_plan.h"
+
 typedef enum {
     FP_NAV_IDLE = 0,
     FP_NAV_TARGETING,
     FP_NAV_HOLDING,
     FP_NAV_COMPLETE,
+    FP_NAV_LANDING,
+    FP_NAV_ABORTED,
 } flightPlanNavState_e;
+
+typedef enum {
+    FP_ABORT_NONE = 0,
+    FP_ABORT_ESTIMATOR,     // XY position estimate became invalid mid-mission
+    FP_ABORT_STALLED,       // no progress toward the target within the stall window
+    FP_ABORT_FLYAWAY,       // distance to target grew past the flyaway margin
+    FP_ABORT_HEADING,       // rescue heading recovery did not converge in time
+    FP_ABORT_MAG_FAULT,     // course-over-ground disagreed with heading at speed: parked wings-level
+} flightPlanAbortReason_e;
 
 void flightPlanNavInit(void);
 
@@ -52,6 +65,62 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs);
 bool flightPlanNavIsActive(void);
 flightPlanNavState_e flightPlanNavGetState(void);
 uint8_t flightPlanNavGetCurrentIndex(void);
+flightPlanAbortReason_e flightPlanNavGetAbortReason(void);
+
+// Live navigation geometry to the active waypoint, for OSD/CLI readouts. All
+// three return a sentinel when the executor is not tracking a target:
+// distance < 0, bearing < 0, ETA == 0. ETA also returns 0 when horizontal
+// speed is below 0.5 m/s (no meaningful estimate), so callers must treat 0 as
+// "no ETA" rather than "arrived".
+float flightPlanNavGetDistanceToWaypointM(void);
+int32_t flightPlanNavGetBearingToWaypointDeciDeg(void);
+uint16_t flightPlanNavGetEtaSeconds(void);
+
+// Set the active waypoint (MAVLink MISSION_SET_CURRENT). While the executor is
+// running the PG mission it re-dispatches to that leg; while idle it becomes
+// the index the next engage starts from. Returns false (and does nothing) for
+// out-of-range indices and while an injected plan is active.
+bool flightPlanNavSetCurrentIndex(uint8_t index);
+
+// Orbit period (deciseconds) at the configured pattern radius for a leg flown
+// at speedCmS (0 = autopilot max velocity). Converts MAVLink LOITER_TURNS turn
+// counts to and from hold durations.
+uint16_t flightPlanNavOrbitPeriodDs(uint16_t speedCmS);
+
+// Replace the active mission with a small synthesised runtime plan (at most 4
+// waypoints, copied). Only valid while the executor is active. The injected
+// plan does not survive a switch cycle: engage and disengage revert to the
+// stored mission, with no resume of what was preempted.
+bool flightPlanNavInjectPlan(const waypoint_t *waypoints, uint8_t count);
+bool flightPlanNavIsInjectedPlanActive(void);
+
+#if ENABLE_RESCUE_PLAN
+// Synthesise a failsafe rescue mission (climb-in-place, fly home, land) from
+// the current position and home, staged for the next flightPlanNavEngage() to
+// consume in place of the PG mission; injected immediately if the executor is
+// already active. Returns false when no home or fix exists to build a plan —
+// the failsafe caller then degrades to auto-landing.
+bool flightPlanNavStageRescuePlan(void);
+bool flightPlanNavIsRescuePlanActive(void);
+
+// Altitude-only emergency descent for a switch-invoked rescue that cannot stage
+// (no home/fix) or whose plan aborts (flyaway/stall/GPS loss/heading). alt-hold
+// drives a baro-only descent - valid with the XY position estimate invalid -
+// while this detects touchdown and disarms (DISARM_REASON_LANDING), matching the
+// legacy emergency-descent behaviour. Call every cycle with the current request;
+// the query drives the alt-hold descent branch and the OSD annunciation.
+void flightPlanNavRescueDescent(bool request, timeUs_t currentTimeUs);
+bool flightPlanNavIsRescueDescentActive(void);
+
+// Vertical-velocity cap (cm/s) the alt-hold coupling applies while a rescue is
+// active: ascendRate climbing, descendRate on the LAND leg and fallback descent.
+// Returns 0 when no rescue is flying, leaving the alt-hold climbRate in force.
+float flightPlanNavGetRescueVerticalRateCmS(void);
+#else
+static inline bool flightPlanNavIsRescuePlanActive(void) { return false; }
+static inline bool flightPlanNavIsRescueDescentActive(void) { return false; }
+static inline float flightPlanNavGetRescueVerticalRateCmS(void) { return 0.0f; }
+#endif
 
 // Single observer slot for "waypoint reached" — invoked with the index of the
 // waypoint that was just reached, before any HOLD timer or advance. Pass NULL

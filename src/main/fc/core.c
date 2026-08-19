@@ -65,7 +65,12 @@
 #include "flight/pos_hold.h"
 
 #if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#include "flight/flight_plan_capture.h"
+#endif
 #include "flight/flight_plan_nav.h"
+
+#ifdef USE_OSD_NAV_MAP
+#include "flight/nav_trail.h"
 #endif
 
 #if defined(USE_DYN_NOTCH_FILTER)
@@ -367,6 +372,14 @@ if (crashFlipModeActive) {
             unsetArmingDisabled(ARMING_DISABLED_POSHOLD);
         }
 
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+        if (IS_RC_MODE_ACTIVE(BOXAUTOPILOT)) {
+            setArmingDisabled(ARMING_DISABLED_AUTOPILOT);
+        } else {
+            unsetArmingDisabled(ARMING_DISABLED_AUTOPILOT);
+        }
+#endif
+
         if (calculateThrottleStatus() != THROTTLE_LOW) {
             setArmingDisabled(ARMING_DISABLED_THROTTLE);
         } else {
@@ -491,6 +504,11 @@ if (crashFlipModeActive) {
 
 void disarm(flightLogDisarmReason_e reason)
 {
+#if ENABLE_TELEMETRY_MAVLINK_COMMANDS
+    // Drop any MAVLink-commanded mode override so it can never persist into a
+    // disarmed state and re-assert modes on the next arm.
+    rcModeClearExternalOverrides();
+#endif
 
     if (!wasLastDisarmUserRequested()) {
         // Non-user disarm, clear the user-initated flag in rc_controls.c
@@ -965,6 +983,8 @@ void processRxModes(timeUs_t currentTimeUs)
         && !featureIsEnabled(FEATURE_3D)
         && !isAirmodeEnabled()
         && !FLIGHT_MODE(GPS_RESCUE_MODE)  // disable auto-disarm when GPS Rescue is active
+        && !flightPlanNavIsRescuePlanActive()  // ... or a plan rescue / fallback descent is flying
+        && !flightPlanNavIsRescueDescentActive()
     ) {
         if (isUsingSticksForArming()) {
             if (throttleStatus == THROTTLE_LOW) {
@@ -1044,13 +1064,117 @@ void processRxModes(timeUs_t currentTimeUs)
         DISABLE_FLIGHT_MODE(ANGLE_MODE); // failsafe support
     }
 
+#if defined(USE_GPS_RESCUE) && !ENABLE_RESCUE_PLAN
+    // Legacy: the pilot's switch and the failsafe procedure both fly the legacy
+    // GPS_RESCUE_MODE controller. (With ENABLE_RESCUE_PLAN both are flown as an
+    // autopilot rescue mission instead - staged below and in failsafe.c.)
+    if (ARMING_FLAG(ARMED) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE)
+        || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE))) {
+        if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
+            ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+        }
+    } else {
+        DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+    }
+#endif
+
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+    // Waypoint capture runs whether or not the mission is engaged - the whole
+    // point is marking waypoints while flying around before engaging. The
+    // channel-validity guard keeps rxfail aux substitution from ghost-editing
+    // the plan during signal loss.
+    flightPlanCaptureUpdate(currentTimeUs,
+                            IS_RC_MODE_ACTIVE(BOXWPCAPTURE),
+                            rxAreFlightChannelsValid());
+
+    // During failsafe the mission flies only while the failsafe state machine
+    // has chosen to (rx-loss policy). In the stage-1 window before failsafe
+    // activates, rxfail substitution already drives the aux channels, so the
+    // switch is only pilot intent while channel data is real — otherwise hold
+    // the current mode and let the policy decide at stage-2 entry.
+    // A BOXGPSRESCUE switch flies the rescue as an autopilot mission: stage the
+    // rescue plan once on activation (it replaces any mission already flying),
+    // then request the autopilot to fly it. Only requests once the plan actually
+    // stages (needs home + GPS fix), so a switch without a fix can't engage a
+    // stale mission.
+    // A held BOXGPSRESCUE switch that cannot stage a plan (no home/fix), or whose
+    // plan aborts, degrades to an altitude-only descent rather than doing nothing
+    // or hovering indefinitely - legacy emergency-descent parity. Failsafe owns
+    // its own degrade path (failsafe.c), so this is switch-only.
+    bool rescueSwitchRequest = false;
+#if defined(USE_GPS_RESCUE) && ENABLE_RESCUE_PLAN
+    bool rescueDescentRequest = false;
+    static bool rescueSwitchStaged = false;
+    static bool rescueSwitchDescending = false;
+    if (ARMING_FLAG(ARMED) && IS_RC_MODE_ACTIVE(BOXGPSRESCUE) && !failsafeIsActive()) {
+        if (!rescueSwitchStaged) {
+            rescueSwitchStaged = flightPlanNavStageRescuePlan();
+        }
+        // Latch the descent once the staged plan aborts: re-engaging would only
+        // re-fly into the same abort. A staging failure (no fix) is not latched -
+        // if a fix returns, staging succeeds next cycle and the real plan flies.
+        if (rescueSwitchStaged && flightPlanNavGetState() == FP_NAV_ABORTED) {
+            rescueSwitchDescending = true;
+        }
+        if (rescueSwitchDescending || !rescueSwitchStaged) {
+            rescueDescentRequest = true;
+        } else {
+            rescueSwitchRequest = true;
+        }
+    } else {
+        rescueSwitchStaged = false;
+        rescueSwitchDescending = false;
+    }
+    flightPlanNavRescueDescent(rescueDescentRequest, currentTimeUs);
+#endif
+
+    bool autopilotRequested;
+    if (failsafeIsActive()) {
+        autopilotRequested = (failsafePhase() == FAILSAFE_AUTOPILOT);
+    } else if (rxAreFlightChannelsValid()) {
+        autopilotRequested = IS_RC_MODE_ACTIVE(BOXAUTOPILOT) || rescueSwitchRequest;
+    } else {
+        autopilotRequested = FLIGHT_MODE(AUTOPILOT_MODE);
+    }
+
+    // Before the hold modes: AUTOPILOT_MODE activates both, so they must see
+    // its state from the same cycle.
+    if (ARMING_FLAG(ARMED)
+        // GPS Rescue has priority over the mission
+        && !FLIGHT_MODE(GPS_RESCUE_MODE)
+        && autopilotRequested
+        && sensors(SENSOR_ACC)
+        && sensors(SENSOR_GPS) && STATE(GPS_FIX)
+        // waypoints carry altitude; without altitude data the mission must not run
+        && isAltitudeAvailable()
+        && wasThrottleRaised()) {
+        if (!FLIGHT_MODE(AUTOPILOT_MODE)) {
+            ENABLE_FLIGHT_MODE(AUTOPILOT_MODE);
+            flightPlanNavEngage();
+        }
+        flightPlanNavUpdate(currentTimeUs);
+    } else {
+        if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+            DISABLE_FLIGHT_MODE(AUTOPILOT_MODE);
+            flightPlanNavDisengage();
+        }
+    }
+#endif
+
+#ifdef USE_OSD_NAV_MAP
+    // record the flown trail for the OSD minimap; internally rate-limited and
+    // needs only the GPS solution, home and the ARMED state
+    navTrailUpdate(currentTimeUs);
+#endif
+
 #ifdef USE_ALTITUDE_HOLD
     // only if armed; can coexist with position hold
     if (ARMING_FLAG(ARMED)
         // and not in GPS_RESCUE_MODE, to give it priority over Altitude Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
-        // and either the alt_hold switch is activated, or are in failsafe landing mode
-        && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive())
+        // and either the alt_hold switch is activated, or are in failsafe landing mode,
+        // or an autopilot mission needs altitude control, or a switch-rescue fallback descent
+        && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive() || FLIGHT_MODE(AUTOPILOT_MODE) || flightPlanNavIsRescueDescentActive())
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
         // and we have altitude data
@@ -1070,8 +1194,9 @@ void processRxModes(timeUs_t currentTimeUs)
     if (ARMING_FLAG(ARMED)
         // and not in GPS_RESCUE_MODE, to give it priority over Position Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
-        // and either the alt_hold switch is activated, or are in failsafe landing mode
-        && (IS_RC_MODE_ACTIVE(BOXPOSHOLD) || failsafeIsActive())
+        // and either the pos_hold switch is activated, or are in failsafe landing mode,
+        // or an autopilot mission needs the position controller
+        && (IS_RC_MODE_ACTIVE(BOXPOSHOLD) || failsafeIsActive() || FLIGHT_MODE(AUTOPILOT_MODE))
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
         // but not until throttle is raised
@@ -1084,24 +1209,6 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 #endif
 
-#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
-    if (ARMING_FLAG(ARMED)
-        && !FLIGHT_MODE(GPS_RESCUE_MODE)
-        && IS_RC_MODE_ACTIVE(BOXAUTOPILOT)
-        && sensors(SENSOR_ACC)
-        && sensors(SENSOR_GPS) && STATE(GPS_FIX)
-        && wasThrottleRaised()) {
-        if (!FLIGHT_MODE(AUTOPILOT_MODE)) {
-            ENABLE_FLIGHT_MODE(AUTOPILOT_MODE);
-            flightPlanNavEngage();
-        }
-        flightPlanNavUpdate(currentTimeUs);
-    } else if (FLIGHT_MODE(AUTOPILOT_MODE)) {
-        DISABLE_FLIGHT_MODE(AUTOPILOT_MODE);
-        flightPlanNavDisengage();
-    }
-#endif
-
     if (IS_RC_MODE_ACTIVE(BOXHORIZON) && canUseHorizonMode && sensors(SENSOR_ACC)) {
         DISABLE_FLIGHT_MODE(ANGLE_MODE);
         if (!FLIGHT_MODE(HORIZON_MODE)) {
@@ -1110,16 +1217,6 @@ void processRxModes(timeUs_t currentTimeUs)
     } else {
         DISABLE_FLIGHT_MODE(HORIZON_MODE);
     }
-
-#ifdef USE_GPS_RESCUE
-    if (ARMING_FLAG(ARMED) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE) || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE))) {
-        if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
-            ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
-        }
-    } else {
-        DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
-    }
-#endif
 
 #ifdef USE_CHIRP
     if (IS_RC_MODE_ACTIVE(BOXCHIRP) && !FLIGHT_MODE(FAILSAFE_MODE) && !FLIGHT_MODE(GPS_RESCUE_MODE)) {
@@ -1214,7 +1311,7 @@ void processRxModes(timeUs_t currentTimeUs)
     pidSetAntiGravityState(IS_RC_MODE_ACTIVE(BOXANTIGRAVITY) || featureIsEnabled(FEATURE_ANTI_GRAVITY));
 }
 
-static FAST_CODE_NOINLINE void subTaskPidController(timeUs_t currentTimeUs)
+static FAST_CODE_NOINLINE_CRITICAL void subTaskPidController(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}

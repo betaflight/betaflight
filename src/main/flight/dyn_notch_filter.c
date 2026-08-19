@@ -250,7 +250,7 @@ FAST_CODE void dynNotchUpdate(void)
 }
 
 // Find frequency peaks and update filters
-static FAST_CODE_NOINLINE void dynNotchProcess(void)
+static FAST_CODE_NOINLINE_CRITICAL void dynNotchProcess(void)
 {
     uint32_t startTime = 0;
     if (debugMode == DEBUG_FFT_TIME) {
