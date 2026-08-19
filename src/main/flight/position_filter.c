@@ -176,110 +176,16 @@ void kalmanUpdatePosition(positionKalman_t *kf, float measuredPosition, float R)
     kf->P[KF_ACCELERATION][KF_POSITION] = kf->P[KF_POSITION][KF_ACCELERATION];
 }
 
-void kalmanUpdateVelocityToPosition(
-    positionKalman_t *kf,
-    float measuredVelocity,
-    float R)
+// Joseph form covariance update: P = A P A' + K R K', with A = (I - K H).
+//
+// Shared by the two updates that correct more than one state, so they cannot drift apart:
+// all that differs between them is the A matrix and the K vector, and H is already folded
+// into A by the caller.
+static void kalmanJosephCovarianceUpdate(positionKalman_t *kf,
+                                         const float A[KF_STATE_COUNT][KF_STATE_COUNT],
+                                         const float K[KF_STATE_COUNT],
+                                         float R)
 {
-    const float Pvv = kf->P[KF_VELOCITY][KF_VELOCITY];
-    const float S = Pvv + R;
-
-    if (S < 1e-9f) {
-        return;
-    }
-
-    const float innovation =
-        measuredVelocity - kf->x[KF_VELOCITY];
-
-    // Velocity innovation corrects velocity and position, but *not* acceleration
-
-    const float K[3] = {
-        [KF_POSITION]     = kf->P[KF_POSITION][KF_VELOCITY] / S,
-        [KF_VELOCITY]     = Pvv / S,
-        [KF_ACCELERATION] = 0.0f,
-    };
-
-    kf->x[KF_POSITION] += K[KF_POSITION] * innovation;
-    kf->x[KF_VELOCITY] += K[KF_VELOCITY] * innovation;
-
-    /*
-     * Joseph covariance update:
-     *
-     * P = (I - K H) P (I - K H)' + K R K'
-     *
-     * For a velocity measurement:
-     * H = [0 1 0]
-     */
-    float A[3][3] = {
-        { 1.0f, -K[KF_POSITION],             0.0f },
-        { 0.0f,  1.0f - K[KF_VELOCITY],     0.0f },
-        { 0.0f, -K[KF_ACCELERATION],         1.0f },
-    };
-
-    float AP[3][3] = { 0 };
-    float newP[3][3] = { 0 };
-
-    for (int row = 0; row < 3; row++) {
-        for (int col = 0; col < 3; col++) {
-            for (int k = 0; k < 3; k++) {
-                AP[row][col] += A[row][k] * kf->P[k][col];
-            }
-        }
-    }
-
-    for (int row = 0; row < 3; row++) {
-        for (int col = 0; col < 3; col++) {
-            for (int k = 0; k < 3; k++) {
-                newP[row][col] += AP[row][k] * A[col][k];
-            }
-
-            newP[row][col] += K[row] * R * K[col];
-        }
-    }
-
-    for (int row = 0; row < 3; row++) {
-        for (int col = 0; col < 3; col++) {
-            kf->P[row][col] = newP[row][col];
-        }
-    }
-}
-
-void kalmanUpdatePositionToVelocity(positionKalman_t *kf, float measuredPosition, float R)
-{
-    const float Ppp = kf->P[KF_POSITION][KF_POSITION];
-    const float S = Ppp + R;
-
-    if (S < 1e-9f) {
-        return;
-    }
-
-    const float innovation = measuredPosition - kf->x[KF_POSITION];
-
-    // Updates position and velocity from position innovation, but not acceleration.
-
-    const float K[KF_STATE_COUNT] = {
-        [KF_POSITION]     = Ppp / S,
-        [KF_VELOCITY]     = kf->P[KF_VELOCITY][KF_POSITION] / S,
-        [KF_ACCELERATION] = 0.0f,
-    };
-
-    kf->x[KF_POSITION] += K[KF_POSITION] * innovation;
-    kf->x[KF_VELOCITY] += K[KF_VELOCITY] * innovation;
-
-    /*
-     * Joseph covariance update:
-     *
-     * P = (I - K H) P (I - K H)' + K R K'
-     *
-     * For a position measurement:
-     * H = [1 0 0]
-     */
-    float A[KF_STATE_COUNT][KF_STATE_COUNT] = {
-        { 1.0f - K[KF_POSITION], 0.0f, 0.0f },
-        {       -K[KF_VELOCITY], 1.0f, 0.0f },
-        {   -K[KF_ACCELERATION], 0.0f, 1.0f },
-    };
-
     float AP[KF_STATE_COUNT][KF_STATE_COUNT] = {{0}};
     float newP[KF_STATE_COUNT][KF_STATE_COUNT] = {{0}};
 
@@ -306,6 +212,74 @@ void kalmanUpdatePositionToVelocity(positionKalman_t *kf, float measuredPosition
             kf->P[row][column] = newP[row][column];
         }
     }
+}
+
+void kalmanUpdateVelocityToPosition(
+    positionKalman_t *kf,
+    float measuredVelocity,
+    float R)
+{
+    const float Pvv = kf->P[KF_VELOCITY][KF_VELOCITY];
+    const float S = Pvv + R;
+
+    if (S < 1e-9f) {
+        return;
+    }
+
+    const float innovation =
+        measuredVelocity - kf->x[KF_VELOCITY];
+
+    // Velocity innovation corrects velocity and position, but *not* acceleration
+
+    const float K[KF_STATE_COUNT] = {
+        [KF_POSITION]     = kf->P[KF_POSITION][KF_VELOCITY] / S,
+        [KF_VELOCITY]     = Pvv / S,
+        [KF_ACCELERATION] = 0.0f,
+    };
+
+    kf->x[KF_POSITION] += K[KF_POSITION] * innovation;
+    kf->x[KF_VELOCITY] += K[KF_VELOCITY] * innovation;
+
+    // A = (I - K H) for a velocity measurement, H = [0 1 0]
+    const float A[KF_STATE_COUNT][KF_STATE_COUNT] = {
+        { 1.0f, -K[KF_POSITION],             0.0f },
+        { 0.0f,  1.0f - K[KF_VELOCITY],     0.0f },
+        { 0.0f, -K[KF_ACCELERATION],         1.0f },
+    };
+
+    kalmanJosephCovarianceUpdate(kf, A, K, R);
+}
+
+void kalmanUpdatePositionToVelocity(positionKalman_t *kf, float measuredPosition, float R)
+{
+    const float Ppp = kf->P[KF_POSITION][KF_POSITION];
+    const float S = Ppp + R;
+
+    if (S < 1e-9f) {
+        return;
+    }
+
+    const float innovation = measuredPosition - kf->x[KF_POSITION];
+
+    // Updates position and velocity from position innovation, but not acceleration.
+
+    const float K[KF_STATE_COUNT] = {
+        [KF_POSITION]     = Ppp / S,
+        [KF_VELOCITY]     = kf->P[KF_VELOCITY][KF_POSITION] / S,
+        [KF_ACCELERATION] = 0.0f,
+    };
+
+    kf->x[KF_POSITION] += K[KF_POSITION] * innovation;
+    kf->x[KF_VELOCITY] += K[KF_VELOCITY] * innovation;
+
+    // A = (I - K H) for a position measurement, H = [1 0 0]
+    const float A[KF_STATE_COUNT][KF_STATE_COUNT] = {
+        { 1.0f - K[KF_POSITION], 0.0f, 0.0f },
+        {       -K[KF_VELOCITY], 1.0f, 0.0f },
+        {   -K[KF_ACCELERATION], 0.0f, 1.0f },
+    };
+
+    kalmanJosephCovarianceUpdate(kf, A, K, R);
 }
 
 void kalmanUpdateAcceleration(positionKalman_t *kf, float measuredAccel, float R)
