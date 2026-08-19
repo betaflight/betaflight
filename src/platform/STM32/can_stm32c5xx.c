@@ -51,9 +51,12 @@
 //  - The C562 list is its datasheet's complete AF9 set restricted to the ports
 //    Betaflight compiles in for this part (A-E; C562 has no GPIOF and no
 //    GPIOH, so the datasheet's PH2 FDCAN1_RX option is not reachable).
-//  - The C593 list is unchanged and still the partial set the original commit
-//    introduced; no C593 target exists yet, and no C593 datasheet was consulted
-//    here, so it is left exactly as it was rather than guessed at.
+//  - The C593 list is its datasheet's complete AF9 set as well (DS15154 covers
+//    C591 and C593 together). Every pin the original commit listed is in it;
+//    what is added is the rest. PH2 is left out for the same reason as on C562
+//    - Betaflight compiles no GPIOH for any C5 - so FDCAN1_RX on PH2 is not
+//    reachable. No C593 target exists yet, so this table is read from the
+//    datasheet rather than proved by a build.
 const canHardware_t canHardware[CANDEV_COUNT] = {
     {
         .device = CANDEV_1,
@@ -82,13 +85,19 @@ const canHardware_t canHardware[CANDEV_COUNT] = {
 #else
         .txPins = {
             { DEFIO_TAG_E(PA12), HAL_GPIO_AF9_FDCAN1 },
+            { DEFIO_TAG_E(PB7),  HAL_GPIO_AF9_FDCAN1 },
             { DEFIO_TAG_E(PB9),  HAL_GPIO_AF9_FDCAN1 },
+            { DEFIO_TAG_E(PC13), HAL_GPIO_AF9_FDCAN1 },
             { DEFIO_TAG_E(PD1),  HAL_GPIO_AF9_FDCAN1 },
+            { DEFIO_TAG_E(PD5),  HAL_GPIO_AF9_FDCAN1 },
+            { DEFIO_TAG_E(PE1),  HAL_GPIO_AF9_FDCAN1 },
         },
         .rxPins = {
             { DEFIO_TAG_E(PA11), HAL_GPIO_AF9_FDCAN1 },
             { DEFIO_TAG_E(PB8),  HAL_GPIO_AF9_FDCAN1 },
+            { DEFIO_TAG_E(PC14), HAL_GPIO_AF9_FDCAN1 },
             { DEFIO_TAG_E(PD0),  HAL_GPIO_AF9_FDCAN1 },
+            { DEFIO_TAG_E(PE0),  HAL_GPIO_AF9_FDCAN1 },
         },
 #endif
         .rcc = RCC_APB1H(FDCAN),
@@ -100,12 +109,14 @@ const canHardware_t canHardware[CANDEV_COUNT] = {
         .device = CANDEV_2,
         .reg = (canResource_t *)FDCAN2,
         .txPins = {
+            { DEFIO_TAG_E(PA10), HAL_GPIO_AF9_FDCAN2 },
             { DEFIO_TAG_E(PB6),  HAL_GPIO_AF9_FDCAN2 },
             { DEFIO_TAG_E(PB13), HAL_GPIO_AF9_FDCAN2 },
         },
         .rxPins = {
             { DEFIO_TAG_E(PB5),  HAL_GPIO_AF9_FDCAN2 },
             { DEFIO_TAG_E(PB12), HAL_GPIO_AF9_FDCAN2 },
+            { DEFIO_TAG_E(PD9),  HAL_GPIO_AF9_FDCAN2 },
         },
         .rcc = RCC_APB1H(FDCAN),
         .irq0 = FDCAN2_IT0_IRQn,

@@ -387,6 +387,14 @@
 #if (defined(STM32C562xx) || defined(STM32C593xx)) && !defined(ENABLE_CAN)
 #define ENABLE_CAN 1
 #endif
+// C591 has no FDCAN at all (DS15154: "FDCAN 0 (on STM32C591xx)"), so the
+// hardware table would fall through to the C593 mapping and hand it register
+// addresses and IRQs that do not exist on the part. Nothing in tree sets this,
+// but a -DENABLE_CAN=1 on the command line would reach it, so fail the build
+// rather than the flight.
+#if defined(STM32C591xx) && ENABLE_CAN
+#error "STM32C591 has no FDCAN peripheral; ENABLE_CAN cannot be set for it"
+#endif
 #endif
 
 #ifdef STM32N6
