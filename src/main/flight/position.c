@@ -101,6 +101,11 @@ PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 7
 
 PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altitude_source = ALTITUDE_SOURCE_DEFAULT,
+    // How far to trust the barometer against the other altitude sources. Range 0-100,
+    // default 50. It scales the baro's measurement noise, so a lower value means less
+    // trust: 100 leaves the noise as-is, 50 doubles it, 20 is 5x. Trust is clamped at the
+    // bottom, so anything at or below 10 is 10x - 0 does not switch the baro off. The
+    // scaling is applied in feedBaroMeasurements().
     .altitude_prefer_baro = 50,
     .altitude_lpf = 300,
     .altitude_d_lpf = 300,

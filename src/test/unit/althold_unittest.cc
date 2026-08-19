@@ -180,6 +180,32 @@ TEST_F(AltholdControlUnittest, AltitudeControlRaisesThrottleWhenBelowTarget)
     EXPECT_GT(belowTargetThrottle, aboveTargetThrottle);
 }
 
+// The A term opposes measured vertical acceleration: altitudeA = -acceleration * altitudeKa,
+// so climbing acceleration must take throttle off. Getting that sign wrong would turn it into
+// positive feedback on vertical acceleration, and no other test would notice - every other
+// case in this file holds testAltitudeAccelerationCmS at zero.
+//
+// Altitude and vertical velocity are held exactly at target so P, I, D and F all contribute
+// nothing and the A term is the only thing that differs between the two scenarios.
+TEST_F(AltholdControlUnittest, AltitudeControlLowersThrottleWhenAcceleratingUpward)
+{
+    testAltitudeCm = 100.0f;
+    testAltitudeDerivativeCmS = 0.0f;
+    testAltitudeAccelerationCmS = 0.0f;
+    altitudeControl(100.0f, 0.01f, 0.0f, 500.0f);
+    const float noAccelerationThrottle = getAutopilotThrottle();
+
+    resetAltitudeControl();
+    testAltitudeCm = 100.0f;
+    testAltitudeDerivativeCmS = 0.0f;
+    testAltitudeAccelerationCmS = 200.0f; // accelerating upward
+    altitudeControl(100.0f, 0.01f, 0.0f, 500.0f);
+    const float upwardAccelerationThrottle = getAutopilotThrottle();
+
+    // altitudeKa is 50 * 0.006 = 0.3, so this is roughly 60 PWM of opposition.
+    EXPECT_LT(upwardAccelerationThrottle, noAccelerationThrottle);
+}
+
 TEST_F(AltholdControlUnittest, AltitudeControlRespectsVelocityLimit)
 {
     testAltitudeCm = 0.0f;
