@@ -27,6 +27,7 @@ extern "C" {
     #include "target.h"
     #include "build/version.h"
     #include "io/gps.h"
+    #include "io/gps_septentrio.h"
     #include "cli/cli.h"
     #include "cli/settings.h"
     #include "common/printf.h"
@@ -404,6 +405,11 @@ const char* serialName(serialPortIdentifier_e identifier, const char* notFound)
     UNUSED(identifier);
     return notFound;
 }
+
+bool gpsNewFrameSeptentrio(uint8_t data) { UNUSED(data); return false; }
+void gpsSeptentrioReset(void) {}
+void gpsSeptentrioPortDetectorReset(void) {}
+septentrioPortDetector_t portDetector;
 
 //void serialSetBaudRateCb(serialPort_t *, void (*)(serialPort_t *context, uint32_t baud), serialPort_t *) {}
 void rescheduleTask(taskId_e, timeDelta_t){}

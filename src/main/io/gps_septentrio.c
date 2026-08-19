@@ -112,6 +112,7 @@ static void sbfResetNavEpoch(void)
 {
     sbfState.currentNavTow = 0;
     sbfState.currentNavWnc = 0;
+    sbfState.haveNavEpoch = false;
     sbfState.havePvt = false;
     sbfState.haveDop = false;
     sbfState.haveVelCov = false;
@@ -138,12 +139,13 @@ void gpsSeptentrioReset(void)
 static void sbfStartNavEpochIfNeeded(uint32_t tow)
 {
     // If we have a new TOW, reset the epoch state to start accumulating new data for this epoch
-    if (sbfState.currentNavTow != 0 && tow != sbfState.currentNavTow) {
+    if (sbfState.haveNavEpoch && tow != sbfState.currentNavTow) {
         sbfState.havePvt = false;
         sbfState.haveDop = false;
         sbfState.haveVelCov = false;
     }
     sbfState.currentNavTow = tow;
+    sbfState.haveNavEpoch = true;
 }
 
 static bool sbfCommitNavEpoch(void)
@@ -418,7 +420,11 @@ static void gpsSeptentrioProcessAck(uint8_t data)
     static uint8_t ackIdx = 0;
 
     ackBuf[ackIdx & 0x3] = data; // & 0x3 equivalent to modulo 4, keeps the index within the bounds of the buffer
-    ackIdx++;
+    if (ackIdx < 4) {
+        ackIdx++; // increment index until we have at least 4 bytes (& 0x3 mask keeps the write position correct)
+    } else {
+        ackIdx = 4 + ((ackIdx + 1) & 0x3); // keep ackIdx >= 3 while preserving the low two bits
+    }
 
     // The reply to a valid command is the command itself, preceded by "$R: ".
     // The reply to an invalid command starts with "$R? ".
@@ -515,6 +521,9 @@ bool gpsNewFrameSeptentrio(uint8_t data)
         if (sbfState.index == 1) { // we have received the first sync byte, now check for the second
             if (data != SBF_SYNC2) {
                 sbfResetFrame();
+                if (data == SBF_SYNC1) { // if the second byte is the first sync byte, start a new frame
+                    sbfState.frame[sbfState.index++] = data;
+                }
                 return false;
             }
             sbfState.frame[sbfState.index++] = data;

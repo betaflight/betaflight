@@ -189,6 +189,7 @@ typedef struct {
     uint32_t currentNavTow;
     uint16_t currentNavWnc;
     uint64_t lastNavEpochMs; // timestamp of the last committed navigation epoch in milliseconds since GPS epoch
+    bool haveNavEpoch;
     // Flags and block data
     bool synced;             // true when the sync sequence has been detected and we are accumulating bytes into the frame buffer
     bool havePvt;
