@@ -71,6 +71,19 @@ static portOptions_e mspSerialPortOptions(serialPortIdentifier_e identifier)
     return options;
 }
 
+/*
+ * AUTO is offered by the baud lookup table but means nothing to MSP, and it
+ * would open the port at zero, taking the link with it.
+ */
+static uint32_t mspSerialBaudRate(uint8_t baud)
+{
+    if (baud == BAUD_AUTO || baud >= BAUD_COUNT) {
+        baud = serialDefaultPortBaud(SERIAL_BAUD_MSP);
+    }
+
+    return baudRates[baud];
+}
+
 static void mspSerialOpenPort(unsigned *portIndex, serialPortIdentifier_e identifier, uint8_t baud)
 {
     while (*portIndex < ARRAYLEN(mspPorts) && mspPorts[*portIndex].port) {
@@ -81,7 +94,7 @@ static void mspSerialOpenPort(unsigned *portIndex, serialPortIdentifier_e identi
     }
 
     serialPort_t *serialPort = openSerialPort(identifier, FUNCTION_MSP, NULL, NULL,
-                                              baudRates[baud], MODE_RXTX, mspSerialPortOptions(identifier));
+                                              mspSerialBaudRate(baud), MODE_RXTX, mspSerialPortOptions(identifier));
     if (!serialPort) {
         return;
     }

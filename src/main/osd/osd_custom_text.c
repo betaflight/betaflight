@@ -59,7 +59,7 @@ bool osdCustomTextInit(void)
 
     // Validate baud rate index and use safe default if out of range
     uint8_t baudrateIndex = osdConfig()->osd_custom_text_baud;
-    if (baudrateIndex >= BAUD_COUNT) {
+    if (baudrateIndex >= BAUD_COUNT || baudrateIndex == BAUD_AUTO) {
         baudrateIndex = BAUD_115200; // Safe default
     }
     const uint32_t baudrate = baudRates[baudrateIndex];

@@ -1426,8 +1426,11 @@ static void printSerial(dumpFlags_t dumpMask, const char *headingStr)
 
 RAM_CODE static void cliSerial(const char *cmdName, char *cmdline)
 {
-    UNUSED(cmdName);
-    UNUSED(cmdline);
+    if (!isEmpty(cmdline)) {
+        // A diff taken from an older firmware still carries assignments here.
+        cliPrintErrorLinef(cmdName, "READ ONLY, ASSIGN PORTS WITH THE <FEATURE>_UART SETTINGS");
+        return;
+    }
 
     printSerial(DUMP_MASTER, NULL);
 }

@@ -419,6 +419,19 @@ TEST(SerialFeatureMap, AllTelemetryProtocols)
     }
 }
 
+TEST(SerialFeatureMap, ResetRestoresTheMspBaudWithTheMspPort)
+{
+    resetAllConfigs();
+
+    mspConfigMutable()->msp_uart[0] = SERIAL_PORT_USART1;
+    mspConfigMutable()->msp_baud[0] = BAUD_9600;
+
+    serialResetFeatureAssignments();
+
+    EXPECT_EQ(serialPortIdentifiers[0], mspConfig()->msp_uart[0]);
+    EXPECT_EQ(serialDefaultPortBaud(SERIAL_BAUD_MSP), mspConfig()->msp_baud[0]);
+}
+
 TEST(SerialFeatureMap, ResetClearsEveryClaimAndRestoresMsp)
 {
     resetAllConfigs();

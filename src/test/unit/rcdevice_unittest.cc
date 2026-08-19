@@ -101,6 +101,7 @@ typedef struct testData_s {
     uint8_t responseBufsLen[MAX_RESPONSES_COUNT];
     uint8_t responseDataReadPos;
     uint32_t millis;
+    serialPortIdentifier_e openedPort;
 } testData_t;
 
 static testData_t testData;
@@ -196,6 +197,7 @@ TEST(RCDeviceTest, TestInitDevice)
     rcdeviceReceive(millis() * 1000);
     testData.millis += minTimeout;
     EXPECT_TRUE(device.isReady);
+    EXPECT_EQ(SERIAL_PORT_USART3, testData.openedPort);
 }
 
 TEST(RCDeviceTest, TestInitDeviceWithInvalidResponse)
@@ -763,7 +765,8 @@ TEST(RCDeviceTest, Test5KeyOSDCableSimulationWithout5KeyFeatureSupport)
 extern "C" {
     serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, void *callbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
     {
-        UNUSED(identifier);
+        testData.openedPort = identifier;
+
         UNUSED(functionMask);
         UNUSED(baudRate);
         UNUSED(mode);

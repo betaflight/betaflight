@@ -133,6 +133,36 @@ extern "C" {
     }
 }
 
+TEST(IoSerialTest, TestFunctionsConflict)
+{
+    memset(stubbedFunctionMask, 0, sizeof(stubbedFunctionMask));
+
+    // a lone function never clashes with itself
+    setStubbedFunctionMask(SERIAL_PORT_UART1, FUNCTION_MSP);
+    EXPECT_FALSE(serialPortFunctionsConflict(SERIAL_PORT_UART1));
+
+    // MSP sharing with what it is allowed to share with
+    setStubbedFunctionMask(SERIAL_PORT_UART1, FUNCTION_MSP | FUNCTION_BLACKBOX);
+    EXPECT_FALSE(serialPortFunctionsConflict(SERIAL_PORT_UART1));
+
+    // an MT rangefinder is heard over MSP on the port it declares
+    setStubbedFunctionMask(SERIAL_PORT_UART1, FUNCTION_MSP | FUNCTION_LIDAR);
+    EXPECT_FALSE(serialPortFunctionsConflict(SERIAL_PORT_UART1));
+
+    // MSP cannot share with serial RX
+    setStubbedFunctionMask(SERIAL_PORT_UART1, FUNCTION_MSP | FUNCTION_RX_SERIAL);
+    EXPECT_TRUE(serialPortFunctionsConflict(SERIAL_PORT_UART1));
+
+    // nor does an allowed pairing excuse a function outside the set
+    setStubbedFunctionMask(SERIAL_PORT_UART1, FUNCTION_MSP | FUNCTION_BLACKBOX | FUNCTION_RX_SERIAL);
+    EXPECT_TRUE(serialPortFunctionsConflict(SERIAL_PORT_UART1));
+
+    setStubbedFunctionMask(SERIAL_PORT_UART1, FUNCTION_MSP | FUNCTION_LIDAR | FUNCTION_GPS);
+    EXPECT_TRUE(serialPortFunctionsConflict(SERIAL_PORT_UART1));
+
+    memset(stubbedFunctionMask, 0, sizeof(stubbedFunctionMask));
+}
+
 TEST(IoSerialTest, TestPassthroughEscape)
 {
     // given

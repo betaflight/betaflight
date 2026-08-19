@@ -448,11 +448,9 @@ bool serialPortFunctionsConflict(serialPortIdentifier_e identifier)
 
     if (bitCount > 1) {
         // shared
-        if (bitCount > (BITCOUNT(FUNCTION_MSP | ALL_FUNCTIONS_SHARABLE_WITH_MSP))) {
-            return true;
-        }
+        const uint32_t sharableWithMsp = FUNCTION_MSP | ALL_FUNCTIONS_SHARABLE_WITH_MSP;
 
-        if ((functionMask & FUNCTION_MSP) && (functionMask & ALL_FUNCTIONS_SHARABLE_WITH_MSP)) {
+        if ((functionMask & FUNCTION_MSP) && (functionMask & ~sharableWithMsp) == 0) {
             // MSP & telemetry
 #ifdef USE_TELEMETRY
         } else if (telemetryCheckRxPortShared(identifier, rxConfig()->serialrx_provider)) {

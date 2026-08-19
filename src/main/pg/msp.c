@@ -29,6 +29,24 @@
 
 PG_REGISTER_WITH_RESET_FN(mspConfig_t, mspConfig, PG_MSP_CONFIG, 0);
 
+static void claimMspPort(mspConfig_t *mspConfig, unsigned *slot, serialPortIdentifier_e identifier)
+{
+    if (identifier == SERIAL_PORT_NONE || *slot >= MAX_MSP_PORT_COUNT) {
+        return;
+    }
+
+    // A target is free to name the same UART twice (MSP_UART and
+    // MSP_DISPLAYPORT_UART commonly agree), and a board without VCP starts
+    // from that same first UART, so a repeat would eat a slot for nothing.
+    for (unsigned i = 0; i < *slot; i++) {
+        if (mspConfig->msp_uart[i] == identifier) {
+            return;
+        }
+    }
+
+    mspConfig->msp_uart[(*slot)++] = identifier;
+}
+
 void pgResetFn_mspConfig(mspConfig_t *mspConfig)
 {
     mspConfig->halfDuplex = 0;
@@ -39,21 +57,14 @@ void pgResetFn_mspConfig(mspConfig_t *mspConfig)
 
     // The first port is always MSP so a freshly flashed board stays reachable.
     unsigned slot = 0;
-    mspConfig->msp_uart[slot++] = serialPortIdentifiers[0];
+    claimMspPort(mspConfig, &slot, serialPortIdentifiers[0]);
 #ifdef MSP_UART
-    if (slot < MAX_MSP_PORT_COUNT) {
-        mspConfig->msp_uart[slot++] = MSP_UART;
-    }
+    claimMspPort(mspConfig, &slot, MSP_UART);
 #endif
 #ifdef USE_MSP_UART
-    if (slot < MAX_MSP_PORT_COUNT) {
-        mspConfig->msp_uart[slot++] = USE_MSP_UART;
-    }
+    claimMspPort(mspConfig, &slot, USE_MSP_UART);
 #endif
 #ifdef MSP_DISPLAYPORT_UART
-    if (slot < MAX_MSP_PORT_COUNT) {
-        mspConfig->msp_uart[slot++] = MSP_DISPLAYPORT_UART;
-    }
+    claimMspPort(mspConfig, &slot, MSP_DISPLAYPORT_UART);
 #endif
-    UNUSED(slot);
 }

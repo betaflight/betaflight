@@ -105,7 +105,8 @@ void telemetryValidateProviders(void)
 {
 #ifdef USE_TELEMETRY_PROVIDERS
     // A protocol resolves to one port, so a later slot repeating it would never
-    // run.  Drop it rather than leave config that silently does nothing.
+    // run.  Drop it rather than leave config that silently does nothing.  Only
+    // an earlier slot that owns a port wins, matching telemetryProviderPort().
     for (unsigned i = 1; i < MAX_TELEMETRY_PROVIDERS; i++) {
         const uint8_t protocol = telemetryConfig()->providers[i].protocol;
         if (protocol == TELEMETRY_PROTOCOL_NONE) {
@@ -113,9 +114,11 @@ void telemetryValidateProviders(void)
         }
 
         for (unsigned j = 0; j < i; j++) {
-            if (telemetryConfig()->providers[j].protocol == protocol) {
+            if (telemetryConfig()->providers[j].protocol == protocol
+                && telemetryConfig()->providers[j].uart != SERIAL_PORT_NONE) {
                 telemetryConfigMutable()->providers[i].protocol = TELEMETRY_PROTOCOL_NONE;
                 telemetryConfigMutable()->providers[i].uart = SERIAL_PORT_NONE;
+                telemetryConfigMutable()->providers[i].baud = BAUD_AUTO;
                 break;
             }
         }

@@ -404,6 +404,9 @@ void serialResetFeatureAssignments(void)
     }
 
     // The first port stays MSP so the board remains reachable after a reset.
+    // Its baud comes back to the class default too: the rate that came with the
+    // rejected configuration is no use on a board whose first port is a UART.
     mspConfigMutable()->msp_uart[0] = serialPortIdentifiers[0];
+    mspConfigMutable()->msp_baud[0] = serialDefaultPortBaud(SERIAL_BAUD_MSP);
 }
 
