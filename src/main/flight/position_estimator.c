@@ -237,6 +237,7 @@ static bool positionEstimatorGpsAltitudeAllowed(void)
 // P_vp / P_pp for every source, independent of its R, so the net velocity drive is
 // that ratio times the weighted sum of the position corrections - and at the
 // position fixed point that sum is zero by definition.
+#if defined(USE_RANGEFINDER) || defined(USE_BARO)
 static bool zPositionInnovationDrivesVelocity(void)
 {
 #ifdef USE_GPS
@@ -249,6 +250,7 @@ static bool zPositionInnovationDrivesVelocity(void)
 
     return true;
 }
+#endif
 
 // True while armed if horizontal fusion should run (POS_HOLD, rescue, GPS, and/or optical flow).
 static bool positionEstimatorWantXYFusion(void)
