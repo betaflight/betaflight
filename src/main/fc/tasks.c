@@ -318,15 +318,13 @@ static void taskCalculateAltitude(timeUs_t currentTimeUs)
 #if defined(USE_RANGEFINDER)
 static void taskUpdateRangefinder(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTimeUs);
-
     if (!sensors(SENSOR_RANGEFINDER)) {
         return;
     }
 
     rangefinderUpdate();
 
-    rangefinderProcess(getCosTiltAngle());
+    rangefinderProcess(currentTimeUs, getCosTiltAngle());
 }
 #endif
 
