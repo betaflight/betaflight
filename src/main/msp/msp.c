@@ -101,6 +101,7 @@
 #include "io/ledstrip.h"
 #include "io/serial.h"
 #include "io/serial_4way.h"
+#include "io/serial_feature_map.h"
 #include "io/transponder_ir.h"
 #include "io/usb_msc.h"
 #include "io/vtx_control.h"
@@ -1058,7 +1059,12 @@ RAM_CODE static bool mspCommonProcessOutCommand(mspDescriptor_t srcDesc, int16_t
 
 #ifdef USE_OSD_SD
         // send video system (AUTO/PAL/NTSC/HD)
+#if OSD_FB_ENABLE_SMALLFONT
+        // represent as HD to Configurator, enabling it to resize the grid appropriately.
+        sbufWriteU8(dst, VIDEO_SYSTEM_HD);
+#else
         sbufWriteU8(dst, vcdProfile()->video_system);
+#endif
 #else
         sbufWriteU8(dst, VIDEO_SYSTEM_HD);
 #endif // USE_OSD_SD
@@ -4311,6 +4317,9 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
                 portConfig->gps_baudrateIndex = sbufReadU8(src);
                 portConfig->telemetry_baudrateIndex = sbufReadU8(src);
                 portConfig->blackbox_baudrateIndex = sbufReadU8(src);
+                if (!serialApplyFunctionMask(identifier, portConfig->functionMask)) {
+                    return MSP_RESULT_ERROR;
+                }
             }
         }
         break;
@@ -4341,6 +4350,9 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             portConfig->gps_baudrateIndex = sbufReadU8(src);
             portConfig->telemetry_baudrateIndex = sbufReadU8(src);
             portConfig->blackbox_baudrateIndex = sbufReadU8(src);
+            if (!serialApplyFunctionMask(identifier, portConfig->functionMask)) {
+                return MSP_RESULT_ERROR;
+            }
             // Skip unknown bytes
             while (start - sbufBytesRemaining(src) < portConfigSize && sbufBytesRemaining(src)) {
                 sbufReadU8(src);

@@ -31,6 +31,7 @@
 #include "drivers/io.h"
 #include "fc/rc.h"
 #include "fc/rc_controls.h"
+#include "io/serial.h"
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
 
@@ -115,6 +116,7 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .sbus_baud_fast = false,
         .msp_override_channels_mask = 0,
         .crsf_use_negotiated_baud = false,
+        .rx_uart = SERIAL_PORT_NONE,
     );
 
 #ifdef RX_CHANNELS_TAER
