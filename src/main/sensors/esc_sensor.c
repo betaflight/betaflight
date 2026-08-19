@@ -75,7 +75,8 @@ Byte 9: 8-bit CRC
 PG_REGISTER_WITH_RESET_TEMPLATE(escSensorConfig_t, escSensorConfig, PG_ESC_SENSOR_CONFIG, 0);
 
 PG_RESET_TEMPLATE(escSensorConfig_t, escSensorConfig,
-        .halfDuplex = 0
+        .halfDuplex = 0,
+        .esc_sensor_uart = SERIAL_PORT_NONE,
 );
 
 /*

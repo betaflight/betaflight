@@ -306,10 +306,6 @@
 #define USE_VTX_RTC6705
 #endif
 
-#ifndef USE_DSHOT
-#undef USE_ESC_SENSOR
-#endif
-
 #ifndef USE_ESC_SENSOR
 #undef USE_ESC_SENSOR_TELEMETRY
 #endif
@@ -457,6 +453,13 @@
 
 #if !defined(USE_TELEMETRY_SMARTPORT) && !defined(USE_TELEMETRY_CRSF) && !defined(USE_TELEMETRY_GHST)
 #undef USE_MSP_OVER_TELEMETRY
+#endif
+
+#if defined(USE_MSP_CLI_COMMAND) && !defined(USE_CLI)
+#undef USE_MSP_CLI_COMMAND
+#endif
+#if defined(USE_MSP_CLI_COMMAND) && !defined(MSP_CLI_COMMAND_BUFFER_SIZE)
+#define MSP_CLI_COMMAND_BUFFER_SIZE 2048
 #endif
 
 #if !defined(USE_RX_MSP) && defined(USE_RX_MSP_OVERRIDE)

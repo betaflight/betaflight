@@ -39,6 +39,7 @@
 
 #include "flight/failsafe.h"
 
+#include "io/serial.h"
 #include "io/vtx_control.h"
 
 #include "pg/pg.h"
@@ -65,6 +66,8 @@ void pgResetFn_vtxSettingsConfig(vtxSettingsConfig_t *vtxSettingsConfig)
     vtxSettingsConfig->lowPowerDisarm = VTX_LOW_POWER_DISARM_OFF;
     vtxSettingsConfig->softserialAlt = 0;
     vtxSettingsConfig->mspDisarmDelay = 0;
+    vtxSettingsConfig->vtx_type = VTXDEV_UNSUPPORTED;
+    vtxSettingsConfig->vtx_uart = SERIAL_PORT_NONE;
 }
 
 typedef enum {
