@@ -141,7 +141,12 @@ int8_t timerGetNumberByIndex(uint8_t index)
 
 int8_t timerGetIndexByNumber(uint8_t number)
 {
-    (void) number;
+    for (uint8_t index = 0; index < HARDWARE_TIMER_DEFINITION_COUNT; index++) {
+        if (timerNumbers[index] == (int8_t) number) {
+            return index;
+        }
+    }
+
     return -1;
 }
 
@@ -168,11 +173,6 @@ FAST_CODE volatile timCCR_t *timerChCCR(const timerHardware_t *timHw)
     const hpmicroTimerHwExt_t *ext = hpmicroTimerHwExtByTimer(timHw);
     uint8_t cmpIndex = (ext) ? ext->cmp_index : 0;
 
-#ifdef HPM6360
     PWM_Type *ptr = (PWM_Type *) timHw->tim;
     return (volatile timCCR_t *) ((volatile char *) &ptr->CMP[cmpIndex]);
-#else
-    PWMV2_Type *ptr = (PWMV2_Type *) timHw->tim;
-    return (volatile timCCR_t *) ((volatile char *) &ptr->SHADOW_VAL[cmp_index + 1]);
-#endif
 }

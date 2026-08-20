@@ -47,29 +47,29 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
         .tim = (timerResource_t *) HPM_PWM1,
         .tag = TIMER_GET_IO_TAG(PA25),
         .channel = DEF_TIM_CHANNEL(CH_CH4),
-        .output = DEF_TIM_OUTPUT(CH_CH5) | 0,
-        .alternateFunction = 0x10,
+        .output = DEF_TIM_OUTPUT(CH_CH4) | 0,
+        .alternateFunction = IOC_PA25_FUNC_CTL_PWM1_P_4,
     },
     {
         .tim = (timerResource_t *) HPM_PWM1,
         .tag = TIMER_GET_IO_TAG(PA24),
         .channel = DEF_TIM_CHANNEL(CH_CH5),
         .output = DEF_TIM_OUTPUT(CH_CH5) | 0,
-        .alternateFunction = 0x10,
+        .alternateFunction = IOC_PA24_FUNC_CTL_PWM1_P_5,
     },
     {
         .tim = (timerResource_t *) HPM_PWM1,
         .tag = TIMER_GET_IO_TAG(PA20),
         .channel = DEF_TIM_CHANNEL(CH_CH6),
-        .output = DEF_TIM_OUTPUT(CH_CH5) | 0,
-        .alternateFunction = 0x10,
+        .output = DEF_TIM_OUTPUT(CH_CH6) | 0,
+        .alternateFunction = IOC_PA20_FUNC_CTL_PWM1_P_6,
     },
     {
         .tim = (timerResource_t *) HPM_PWM1,
         .tag = TIMER_GET_IO_TAG(PA19),
         .channel = DEF_TIM_CHANNEL(CH_CH7),
-        .output = DEF_TIM_OUTPUT(CH_CH4) | 0,
-        .alternateFunction = 0x10,
+        .output = DEF_TIM_OUTPUT(CH_CH7) | 0,
+        .alternateFunction = IOC_PA19_FUNC_CTL_PWM1_P_7,
     }
 };
 
@@ -81,7 +81,7 @@ const hpmicroTimerHwExt_t hpmicroTimerHwExt[FULL_TIMER_CHANNEL_COUNT] = {
         .cmp_index = 0,
         .dma_req_cmp_index = 10,
         .palternateFunction = 0x10,
-        .pwm_ref_src = 0,
+        .pwm_ref_src = HPM_PWM_REF_SRC_NONE,
         .trgm_dma_group = 0,
         .pwm_trgm_index = 1,
         .pwm_trgm_dma_src = HPM_TRGM1_DMA_SRC_PWM1_CMP10,
@@ -95,7 +95,7 @@ const hpmicroTimerHwExt_t hpmicroTimerHwExt[FULL_TIMER_CHANNEL_COUNT] = {
         .cmp_index = 2,
         .dma_req_cmp_index = 11,
         .palternateFunction = 0x10,
-        .pwm_ref_src = 0,
+        .pwm_ref_src = HPM_PWM_REF_SRC_NONE,
         .trgm_dma_group = 1,
         .pwm_trgm_index = 1,
         .pwm_trgm_dma_src = HPM_TRGM1_DMA_SRC_PWM1_CMP11,
@@ -109,7 +109,7 @@ const hpmicroTimerHwExt_t hpmicroTimerHwExt[FULL_TIMER_CHANNEL_COUNT] = {
         .cmp_index = 4,
         .dma_req_cmp_index = 12,
         .palternateFunction = 0x10,
-        .pwm_ref_src = 0,
+        .pwm_ref_src = HPM_PWM_REF_SRC_NONE,
         .trgm_dma_group = 2,
         .pwm_trgm_index = 1,
         .pwm_trgm_dma_src = HPM_TRGM1_DMA_SRC_PWM1_CMP12,
@@ -123,7 +123,7 @@ const hpmicroTimerHwExt_t hpmicroTimerHwExt[FULL_TIMER_CHANNEL_COUNT] = {
         .cmp_index = 6,
         .dma_req_cmp_index = 13,
         .palternateFunction = 0x10,
-        .pwm_ref_src = 0,
+        .pwm_ref_src = HPM_PWM_REF_SRC_NONE,
         .trgm_dma_group = 3,
         .pwm_trgm_index = 1,
         .pwm_trgm_dma_src = HPM_TRGM1_DMA_SRC_PWM1_CMP13,
@@ -145,7 +145,12 @@ int8_t timerGetNumberByIndex(uint8_t index)
 
 int8_t timerGetIndexByNumber(uint8_t number)
 {
-    (void) number;
+    for (uint8_t index = 0; index < HARDWARE_TIMER_DEFINITION_COUNT; index++) {
+        if (timerNumbers[index] == (int8_t) number) {
+            return index;
+        }
+    }
+
     return -1;
 }
 
@@ -172,11 +177,6 @@ FAST_CODE volatile timCCR_t *timerChCCR(const timerHardware_t *timHw)
     const hpmicroTimerHwExt_t *ext = hpmicroTimerHwExtByTimer(timHw);
     uint8_t cmpIndex = (ext) ? ext->cmp_index : 0;
 
-#ifdef HPM6750
     PWM_Type *ptr = (PWM_Type *) timHw->tim;
     return (volatile timCCR_t *) ((volatile char *) &ptr->CMP[cmpIndex]);
-#else
-    PWMV2_Type *ptr = (PWMV2_Type *) timHw->tim;
-    return (volatile timCCR_t *) ((volatile char *) &ptr->SHADOW_VAL[cmp_index + 1]);
-#endif
 }
