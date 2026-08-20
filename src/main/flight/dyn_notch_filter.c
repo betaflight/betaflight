@@ -358,7 +358,7 @@ static FAST_CODE_NOINLINE_CRITICAL void dynNotchProcess(void)
             // Approximate noise floor (= average power spectral density in dyn notch range, excluding peaks)
             int peakCount = 0;
             for (int p = 0; p < dynNotch.count; p++) {
-                if (peaks[p].bin > sdftFloorStartBin) {
+                if (peaks[p].bin >= sdftFloorStartBin) {
                     sdftNoiseThreshold -= 0.75f * sdftData[peaks[p].bin - 1];
                     sdftNoiseThreshold -= sdftData[peaks[p].bin];
                     sdftNoiseThreshold -= 0.75f * sdftData[peaks[p].bin + 1];
