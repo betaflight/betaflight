@@ -115,6 +115,8 @@ bool cliMode = false;
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/dronecan/dronecan.h"
+#include "io/dronecan/dronecan_msg.h"
+#include "io/dronecan/dronecan_nodes.h"
 #include "io/flashfs.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
@@ -6209,6 +6211,36 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
     if (dronecanConfig()->enabled) {
         if (dronecanIsInitialised()) {
             cliPrintLinef("DroneCAN: node %d, device %d", dronecanConfig()->node_id, dronecanConfig()->device);
+
+            static const char * const nodeHealthNames[] = { "OK", "WARNING", "ERROR", "CRITICAL" };
+            static const char * const nodeModeNames[] = { "OPERATIONAL", "INITIALISING", "MAINTENANCE", "UPDATING", "?", "?", "?", "OFFLINE" };
+            for (uint8_t i = 0; i < dronecanNodesCount(); i++) {
+                const dronecanNodeEntry_t *node = dronecanNodesGet(i);
+                cliPrintf("  node %d: %s (%s", node->nodeId,
+                          node->infoValid && node->name[0] ? node->name : "no info",
+                          nodeHealthNames[node->health & 0x03]);
+                if (node->mode != UAVCAN_NODE_MODE_OPERATIONAL) {
+                    cliPrintf(", %s", nodeModeNames[node->mode & 0x07]);
+                }
+                const timeDelta_t sinceHeardUs = cmpTimeUs(micros(), node->lastHeardUs);
+                if (sinceHeardUs > 3000000) {
+                    cliPrintf(", last seen %ds ago", (int)(sinceHeardUs / 1000000));
+                }
+                cliPrint(")");
+                if (node->sensorFlags & DRONECAN_NODE_SENSOR_GPS) {
+                    cliPrint(" GPS");
+                }
+                if (node->sensorFlags & DRONECAN_NODE_SENSOR_MAG) {
+                    cliPrint(" MAG");
+                }
+                if (node->sensorFlags & DRONECAN_NODE_SENSOR_AIRSPEED) {
+                    cliPrint(" AIRSPEED");
+                }
+                if (node->sensorFlags & DRONECAN_NODE_SENSOR_ESC) {
+                    cliPrint(" ESC");
+                }
+                cliPrintLinefeed();
+            }
         } else {
             cliPrintLine("DroneCAN: NOT RUNNING (check dronecan_node_id and dronecan_device)");
         }
