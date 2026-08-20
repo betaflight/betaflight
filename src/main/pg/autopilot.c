@@ -28,7 +28,7 @@
 
 #include "autopilot.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 11);
+PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 12);
 
 PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .landingAltitudeM = 4,
@@ -46,7 +46,7 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .positionA = 30,
     .positionF = 30,
     .positionCutoff = 30,
-    .stopThreshold = 10,
+    .stopThreshold = 5,
     .maxAngle = 50,
 
     // Velocity-based position control with drag compensation
