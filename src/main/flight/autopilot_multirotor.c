@@ -108,7 +108,6 @@
 #define XY_F_SCALE             (0.01f / POSHOLD_TASK_RATE_HZ) // target-velocity delta scale
 #define XY_DRAG_SCALE          0.0002f   // velocity-based drag correction, must stay below the D scale
 
-#define BRAKING_MODE_THRESHOLD               100.0f // enter braking when a fresh hold starts above this speed (cm/s)
 #define POSHOLD_VELOCITY_REVERSAL_THRESHOLD   50.0f // velocity dot-product reversal beyond this ends braking
 
 #define SANITY_CHECK_DISTANCE 2000.0f //20m, increased when stopping from speeds above 10m/s
@@ -415,10 +414,12 @@ static void resetDistanceErrorIntegral(void)
 
 static void setBrakingMode(void)
 {
-    // Brake from a fresh hold only if there is real entry speed to arrest.
-    // Starting a hold while nearly stationary should hold position immediately
-    // with full P authority, not drag the target to current and lose precision.
-    if (ap.speedXY > BRAKING_MODE_THRESHOLD) {
+    // Brake from a fresh hold only if there is real entry speed to arrest, using
+    // the same stop threshold that ends the brake: anything at or below it counts
+    // as stopped. Starting a hold while nearly stationary should hold position
+    // immediately with full P authority, not drag the target to current and lose
+    // precision.
+    if (ap.speedXY > autopilotConfig()->stopThreshold) {
         ap.isPosHoldBraking = true;
         ap.brakingTimer = 0;
     } else {

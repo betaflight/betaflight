@@ -166,7 +166,7 @@ static void initAndSettleAt(float eastCm, float northCm, int16_t yawDecidegrees)
     cfg->positionA  = 30;
     cfg->positionF  = 30;
     cfg->maxVelocity = 500;   // 5 m/s full-stick target; drives the stick-velocity gain
-    cfg->stopThreshold = 10;
+    cfg->stopThreshold = 5;
     cfg->maxAngle   = 30;
     cfg->hoverThrottle = 1500;
     cfg->throttleMin   = 1000;
@@ -551,6 +551,64 @@ TEST_F(PosHoldTest, ReleaseDropsFeedforwardSoBrakingOpposesMotion)
     // Must lean West (negative roll) to brake. If the feedforward push survived
     // the release it would dominate and roll would be positive (still pushing East).
     EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f);
+}
+
+// -- Braking entry threshold (ap_stop_threshold, default 5 cm/s) --
+// Slot 6 of DEBUG_AUTOPILOT_STOP carries the hold status with +1 added while
+// braking, so a settled hold reads BRAKING_STATUS_HELD and a braking entry
+// reads BRAKING_STATUS_BRAKING.
+static const int BRAKING_STATUS_HELD = 3;
+static const int BRAKING_STATUS_BRAKING = 4;
+
+TEST_F(PosHoldTest, EntrySpeedAboveStopThresholdStartsBraking)
+{
+    initAndSettleAt(0, 0, 0);
+    debugMode = DEBUG_AUTOPILOT_STOP;
+
+    // Release the sticks while carrying 40 cm/s East, well above the 5 cm/s stop
+    // threshold: the hold must start in braking mode to arrest it.
+    setSticksActiveStatus(true);
+    testEstimate.velocity.x = 40.0f;
+    runIterations(50);
+    setSticksActiveStatus(false);
+    positionControl(); // capture the point and decide whether to brake
+
+    EXPECT_EQ(debug[6], BRAKING_STATUS_BRAKING);
+    debugMode = DEBUG_NONE;
+}
+
+TEST_F(PosHoldTest, EntrySpeedBelowStopThresholdHoldsImmediately)
+{
+    initAndSettleAt(0, 0, 0);
+    debugMode = DEBUG_AUTOPILOT_STOP;
+
+    // Same release, but at 3 cm/s: below the 5 cm/s threshold there is no entry
+    // speed worth arresting, so the hold locks the captured point straight away
+    // with full P authority rather than dragging the target to the craft.
+    setSticksActiveStatus(true);
+    testEstimate.velocity.x = 3.0f;
+    runIterations(50);
+    setSticksActiveStatus(false);
+    positionControl();
+
+    EXPECT_EQ(debug[6], BRAKING_STATUS_HELD);
+    debugMode = DEBUG_NONE;
+}
+
+TEST_F(PosHoldTest, StopThresholdSettingSetsTheBrakingEntrySpeed)
+{
+    initAndSettleAt(0, 0, 0);
+    debugMode = DEBUG_AUTOPILOT_STOP;
+    autopilotConfigMutable()->stopThreshold = 100; // raise it above the entry speed
+
+    setSticksActiveStatus(true);
+    testEstimate.velocity.x = 40.0f;
+    runIterations(50);
+    setSticksActiveStatus(false);
+    positionControl();
+
+    EXPECT_EQ(debug[6], BRAKING_STATUS_HELD); // 40 cm/s no longer brakes
+    debugMode = DEBUG_NONE;
 }
 
 TEST_F(PosHoldTest, ReleasingSticksBrakesThenHolds)
