@@ -224,7 +224,7 @@ FAST_CODE void dynNotchUpdate(void)
             sampleAvg[axis] = sampleAccumulator[axis] * sampleCountRcp;
             sampleAccumulator[axis] = 0;
             if (axis == gyro.gyroDebugAxis) {
-                DEBUG_SET(DEBUG_FFT, 2, lrintf(sampleAvg[axis]));
+                DEBUG_SET(DEBUG_FFT, 2, lrintf(sampleAvg[axis]));  //!< Gyro Downsampled (dbg-axis) [dps]
             }
         }
 
@@ -257,7 +257,7 @@ static FAST_CODE_NOINLINE_CRITICAL void dynNotchProcess(void)
         startTime = micros();
     }
 
-    DEBUG_SET(DEBUG_FFT_TIME, 0, state.step);
+    DEBUG_SET(DEBUG_FFT_TIME, 0, state.step);  //!< Active Calculation Step [enum:step_e]
 
     switch (state.step) {
 
@@ -271,7 +271,7 @@ static FAST_CODE_NOINLINE_CRITICAL void dynNotchProcess(void)
                 sdftNoiseThreshold += sdftData[bin];  // sdftData contains power spectral density
             }
 
-            DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
+            DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);  //!< Step Duration [us]
 
             break;
         }
@@ -316,7 +316,7 @@ static FAST_CODE_NOINLINE_CRITICAL void dynNotchProcess(void)
                 }
             }
 
-            DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
+            DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);  //!< Step Duration [us]
 
             break;
         }
@@ -376,12 +376,12 @@ static FAST_CODE_NOINLINE_CRITICAL void dynNotchProcess(void)
             if (state.axis == gyro.gyroDebugAxis) {
                 for (int p = 0; p < dynNotch.count && p < DYN_NOTCH_COUNT_MAX; p++) {
                     // debug channel 0 is reserved for pre DN gyro
-                    DEBUG_SET(DEBUG_FFT_FREQ, p + 1, lrintf(dynNotch.centerFreq[state.axis][p]));
+                    DEBUG_SET(DEBUG_FFT_FREQ, p + 1, lrintf(dynNotch.centerFreq[state.axis][p]));  //!< [1..7] Notch {1|2|3|4|5|6|7} Center Frequency (dbg-axis) [Hz]
                 }
-                DEBUG_SET(DEBUG_DYN_LPF, 1, lrintf(dynNotch.centerFreq[state.axis][0]));
+                DEBUG_SET(DEBUG_DYN_LPF, 1, lrintf(dynNotch.centerFreq[state.axis][0]));  //!< Notch 1 Center Frequency (dbg-axis) [Hz]
             }
 
-            DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
+            DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);  //!< Step Duration [us]
 
             break;
         }
@@ -394,7 +394,7 @@ static FAST_CODE_NOINLINE_CRITICAL void dynNotchProcess(void)
                 }
             }
 
-            DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
+            DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);  //!< Step Duration [us]
 
             state.axis = (state.axis + 1) % XYZ_AXIS_COUNT;
         }

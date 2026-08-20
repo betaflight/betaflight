@@ -147,7 +147,7 @@ static void handleIncoming_RADIO_STATUS(void)
 
     mavlinkParseRxStats(&msg);
 
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 1, txbuff_free); // Last known TX buffer free space
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 1, txbuff_free);  //!< TX Buffer Free [bytes]
 }
 
 STATIC_UNIT_TESTED void mavlinkDataReceive(uint16_t c, void *data)
@@ -236,7 +236,7 @@ bool shouldSendMavlinkTelemetry(void) {
     if (txbuff_valid) {
         shouldSendTelemetry = txbuff_free > mavlink_min_txbuff;
     }
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 0, shouldSendTelemetry ? 1 : 0);
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 0, shouldSendTelemetry ? 1 : 0);  //!< Telemetry Due
 
     return shouldSendTelemetry;
 }

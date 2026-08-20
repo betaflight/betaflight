@@ -26,6 +26,57 @@
 extern int16_t debug[DEBUG16_VALUE_COUNT];
 extern uint8_t debugMode;
 
+/*
+ * Debug field annotations
+ *
+ * `debugType_e` below fixes what a debug mode *is*, and the DEBUG_SET() call
+ * sites fix which `debug[n]` each mode writes. Neither records what a field
+ * *means*, so every tool that displays debug data - configurator, blackbox log
+ * viewer, documentation - has kept its own copy of the field labels, written by
+ * reading firmware diffs and drifting silently whenever a mode is reworked.
+ *
+ * Record the meaning at the call site instead, in a trailing `//!<` comment, so
+ * it is updated by the same diff that changes what the field holds. It is a
+ * comment, so it costs no flash:
+ *
+ *     DEBUG_SET(DEBUG_CYCLETIME, 0, getTaskDeltaTimeUs(TASK_SELF));  //!< Cycle Time [us]
+ *     DEBUG_SET(DEBUG_CYCLETIME, 1, getAverageSystemLoadPercent());  //!< CPU Load [%]
+ *
+ * Grammar, on the line the call ends on:
+ *
+ *     //!< [<indices>] <label> [<unit>]
+ *
+ *   <indices>  Which debug[n] this call writes. Omit it when the index argument
+ *              is a compile-time constant; give it when the index is computed at
+ *              run time (`axis`, `2 * axis + 1`, `motorIndex`), because tooling
+ *              cannot evaluate those: `[2]`, `[0..2]`, `[0,2,4]`.
+ *   <label>    What the value is, in the words a pilot reads rather than the name
+ *              of the variable holding it. No `[` or `]`. One `{a|b|c}` group may
+ *              spell out one label per index, in index order, for a call that
+ *              writes a range: `Gyro Filtered {roll|pitch|yaw}`.
+ *   <unit>     Unit of one LSB of the stored value, so tooling can scale and
+ *              label an axis. Optional; omit it for a plain count, flag or
+ *              enumeration. An optional decimal factor precedes the symbol, so
+ *              `lrintf(angleDeg * 10)` is `[0.1deg]` and `pressurePa / 100` is
+ *              `[100Pa]`. The symbol may be left out for a value that is scaled
+ *              but dimensionless: `lrintf(ratio * 1000)` is `[0.001]`.
+ *
+ *              Symbols: s ms us Hz kHz MHz kbit/s rad rad/s deg dps dps2 m cm
+ *              m/s cm/s g g/s V A mAh degC Pa hPa rpm % dB dBm bytes ticks, plus
+ *              the device-native units the firmware stores raw, which only the
+ *              FC's own configuration can convert: gyroADC (gyro ADC counts),
+ *              accADC and accADC/s (accelerometer ADC counts), rcCommand
+ *              (throttle in rcCommand units) and eRPM (Dshot eRPM).
+ *
+ *              A field holding an enumerator names the enum instead of a unit -
+ *              `[enum:failsafePhase_e]` - and tooling then reads the enumerator
+ *              names from it, so it must be visible in the file or in a header
+ *              the file includes.
+ *
+ * An index written from more than one place has to mean one thing in a given
+ * build, so annotations that share an index must agree - a disagreement is a bug
+ * in the debug mode, not in the annotation.
+ */
 #define DEBUG_SET(mode, index, value) do { if (debugMode == (mode)) { debug[(index)] = (value); } } while (0)
 
 typedef enum {
