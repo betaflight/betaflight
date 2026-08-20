@@ -147,7 +147,7 @@ static void handleIncoming_RADIO_STATUS(void)
 
     mavlinkParseRxStats(&msg);
 
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 1, txbuff_free);  //!< TX Buffer Free [bytes]
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 1, txbuff_free);  //!< TX Buffer Free [%]
 }
 
 STATIC_UNIT_TESTED void mavlinkDataReceive(uint16_t c, void *data)
