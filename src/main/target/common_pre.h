@@ -366,7 +366,13 @@
 #define USE_MSP_OVER_TELEMETRY
 
 #define USE_VIRTUAL_CURRENT_METER
+
+// DSHOT builds include ESC sensor support by default. Targets with another
+// telemetry transport may enable USE_ESC_SENSOR explicitly in target.h.
+#ifdef USE_DSHOT
 #define USE_ESC_SENSOR
+#endif
+
 #define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #define USE_RCDEVICE
 
