@@ -545,6 +545,21 @@ $(OBJECT_DIR)/dronecan_mag_unittest/io/dronecan/dronecan_mag.c.o \
 $(OBJECT_DIR)/dronecan_mag_unittest/dronecan_mag_unittest.o: $(DRONECAN_LIBCANARD_DIR)/canard.c
 
 
+dronecan_nodes_unittest_SRC := \
+		$(USER_DIR)/io/dronecan/dronecan_nodes.c \
+		$(TEST_DIR)/dronecan_nodes_canard.c
+
+dronecan_nodes_unittest_DEFINES := \
+		ENABLE_DRONECAN=1
+
+dronecan_nodes_unittest_INCLUDE_DIRS := \
+		$(DRONECAN_LIBCANARD_DIR)
+
+$(OBJECT_DIR)/dronecan_nodes_unittest/dronecan_nodes_canard.c.o \
+$(OBJECT_DIR)/dronecan_nodes_unittest/io/dronecan/dronecan_nodes.c.o \
+$(OBJECT_DIR)/dronecan_nodes_unittest/dronecan_nodes_unittest.o: $(DRONECAN_LIBCANARD_DIR)/canard.c
+
+
 .PHONY: check-pg-ids
 check-pg-ids:
 	@pg=$(USER_DIR)/pg/pg_ids.h; \
