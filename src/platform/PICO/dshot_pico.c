@@ -31,7 +31,7 @@
 #include "dshot_pico.h"
 #include "common/maths.h"
 
-
+// (non-bidir) bit period in PIO clocks
 #define DSHOT_BIT_PERIOD 40
 
 motorOutput_t dshotMotors[MAX_SUPPORTED_MOTORS];
