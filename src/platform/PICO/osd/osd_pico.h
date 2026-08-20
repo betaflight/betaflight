@@ -41,6 +41,7 @@ int osdPioRowsCount(void);
 bool osdPioDrawBackgroundItem(osd_items_e item, uint8_t elemPosX, uint8_t elemPosY);
 bool osdPioDrawForegroundItem(osd_items_e item, uint8_t elemPosX, uint8_t elemPosY);
 void osdPioRedrawBackground(void);
+void osdPioWriteLogo(uint16_t startX, uint16_t startY, uint16_t fontOffset, uint16_t fontMax, uint8_t logoCols, uint8_t logoRows);
 
 // testing, probably don't need
 // bool osdPioInitDevice( const struct vcdProfile_s *vcdProfile);
