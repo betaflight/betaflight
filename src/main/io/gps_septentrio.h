@@ -37,6 +37,18 @@
 #define SBF_SYNC2                    '@' // 0x40
 #define SBF_HEADER_SIZE              14
 
+// SBF documents a "Do-Not-Use" sentinel for unavailable floating-point PVT fields
+#define SBF_PVT_DO_NOT_USE_VALUE         (-2.0e10)
+// Detection threshold: anything below the midpoint between zero and the sentinel is treated as Do-Not-Use.
+// Real position/velocity/course/DOP values never come close to this range,
+// so the exact placement of the midpoint is not sensitive.
+#define SBF_PVT_DO_NOT_USE_THRESHOLD     (SBF_PVT_DO_NOT_USE_VALUE / 2.0)
+
+#define SBF_TOW_DO_NOT_USE_VALUE         UINT32_MAX
+#define SBF_WNC_DO_NOT_USE_VALUE         UINT16_MAX
+#define SBF_ACC_DO_NOT_USE_VALUE         UINT16_MAX
+#define SBF_DOP_DO_NOT_USE_VALUE         0U
+
 // The largest SBF block we parse is ChannelStatus (4013).
 // It consists of a 20-byte base overhead (14-byte global frame header + 6-byte block header),
 // followed by N satellite channels. Each satellite channel includes a 12-byte ChannelSatInfo sub-block.
@@ -186,12 +198,12 @@ typedef struct {
     uint16_t expectedLength;
     uint16_t calculatedCrc;  // accumulated CRC of the received frame  
     // Navigation epoch data
-    uint32_t currentNavTow;
-    uint16_t currentNavWnc;
-    uint64_t lastNavEpochMs; // timestamp of the last committed navigation epoch in milliseconds since GPS epoch
-    bool haveNavEpoch;
+    uint32_t currentNavTow;  // current Time of Week (ms) for the navigation epoch being accumulated
+    uint32_t lastNavTow;     // last Time of Week (ms) for the last committed navigation epoch
+    uint16_t currentNavWnc;  // current Week Number Count (mod 1024) for the navigation epoch being accumulated
     // Flags and block data
     bool synced;             // true when the sync sequence has been detected and we are accumulating bytes into the frame buffer
+    bool haveNavEpoch;
     bool havePvt;
     bool haveDop;
     bool haveVelCov;

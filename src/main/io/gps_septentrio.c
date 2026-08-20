@@ -136,15 +136,23 @@ void gpsSeptentrioReset(void)
     sbfResetChannelStatus();
 }
 
-static void sbfStartNavEpochIfNeeded(uint32_t tow)
+static void sbfStartNavEpochIfNeeded(uint32_t tow, uint16_t wnc)
 {
+    // Reject blocks missing TOW to avoid false epoch matching on startup.
+    // WNc typically becomes valid after TOW, so allow epoch synchronization via TOW alone,
+    // but delay committing the date/time in sbfCommitNavEpoch() until WNc is valid.
+    if (tow == SBF_TOW_DO_NOT_USE_VALUE) {
+        return;
+    }
+
     // If we have a new TOW, reset the epoch state to start accumulating new data for this epoch
-    if (sbfState.haveNavEpoch && tow != sbfState.currentNavTow) {
+    if (sbfState.haveNavEpoch && (tow != sbfState.currentNavTow || wnc != sbfState.currentNavWnc)) {
         sbfState.havePvt = false;
         sbfState.haveDop = false;
         sbfState.haveVelCov = false;
     }
     sbfState.currentNavTow = tow;
+    sbfState.currentNavWnc = wnc;
     sbfState.haveNavEpoch = true;
 }
 
@@ -156,75 +164,94 @@ static bool sbfCommitNavEpoch(void)
 
     const sbfPvtGeodetic_t *pvt = &sbfState.pvt;
     const uint8_t modeType = (uint8_t)(pvt->mode & 0x0F); // 0: no GNSS PVT available, 1: stand-alone PVT, 2: differential PVT, 3: fixed solution...
+    bool hasFix = (modeType != 0U && pvt->error == 0U);   // true if a valid GNSS fix is available
 
     gpsSol.time = sbfState.currentNavTow;
     // A WNc value of 65535 means that the receiver has not determined a valid week number
-    if (sbfState.currentNavWnc != UINT16_MAX) {
+    if (sbfState.currentNavWnc != SBF_WNC_DO_NOT_USE_VALUE) {
         gpsWeekTimeToDateTime(&gpsSol.dateTime, (int16_t)sbfState.currentNavWnc, sbfState.currentNavTow, 0);
         gpsSol.dateTime.valid = true;
     } else {
         gpsSol.dateTime.valid = false;
     }
-    gpsSol.llh.lat = (int32_t)lround(RADIANS_TO_DEGREES_D(pvt->latitude) * GPS_DEGREES_DIVIDER);
-    gpsSol.llh.lon = (int32_t)lround(RADIANS_TO_DEGREES_D(pvt->longitude) * GPS_DEGREES_DIVIDER);
-    gpsSol.llh.altCm = (int32_t)lround((pvt->height - (double)pvt->undulation) * 100.0); // subtract the geoid undulation to get height above mean sea level
     gpsSol.numSat = (pvt->nrSv == 255U) ? 0U : pvt->nrSv;
 
     if (sbfState.haveDop) {
-        gpsSol.dop.pdop = sbfState.dop.pDop;
-        gpsSol.dop.hdop = sbfState.dop.hDop;
-        gpsSol.dop.vdop = sbfState.dop.vDop;
+        // SBF uses 0 for unavailable DOP values
+        gpsSol.dop.pdop = (sbfState.dop.pDop == SBF_DOP_DO_NOT_USE_VALUE) ? UINT16_MAX : sbfState.dop.pDop;
+        gpsSol.dop.hdop = (sbfState.dop.hDop == SBF_DOP_DO_NOT_USE_VALUE) ? UINT16_MAX : sbfState.dop.hDop;
+        gpsSol.dop.vdop = (sbfState.dop.vDop == SBF_DOP_DO_NOT_USE_VALUE) ? UINT16_MAX : sbfState.dop.vDop;
     }
 
-	// Ground speed in cm/s, calculated from the north and east velocity components
-    gpsSol.groundSpeed = (uint16_t)lround(sqrt(sq(pvt->vn) + sq(pvt->ve)) * 100.0);
-	// 3D speed in cm/s, calculated from the north, east, and up velocity components
-    gpsSol.speed3d = (uint16_t)lround(sqrt(sq(pvt->vn) + sq(pvt->ve) + sq(pvt->vu)) * 100.0);
-
-    // Normalize course-over-ground to be within [0, 360) degrees
-    if (isnan(pvt->cog) || isinf(pvt->cog) || pvt->cog < -1e9f) {
-		// Invalid course value, set to UINT16_MAX as a sentinel (0 being a valid angle).
-        // Septentrio marks course-over-ground as invalid when the speed is lower than 0.1 m/s.
-        gpsSol.groundCourse = UINT16_MAX;
-    } else {
-        float courseDeg = fmodf(pvt->cog, 360.0f);
-        if (courseDeg < 0.0f) { // ensure course is non-negative
-            courseDeg += 360.0f;
+    // Position, course, and velocity are only meaningful with an actual fix
+    if (hasFix) {
+        const bool positionValid = (pvt->latitude > SBF_PVT_DO_NOT_USE_THRESHOLD)
+                                 && (pvt->longitude > SBF_PVT_DO_NOT_USE_THRESHOLD)
+                                 && (pvt->height > SBF_PVT_DO_NOT_USE_THRESHOLD);
+        if (positionValid) {
+            gpsSol.llh.lat = (int32_t)lround(RADIANS_TO_DEGREES_D(pvt->latitude) * GPS_DEGREES_DIVIDER);
+            gpsSol.llh.lon = (int32_t)lround(RADIANS_TO_DEGREES_D(pvt->longitude) * GPS_DEGREES_DIVIDER);
+            gpsSol.llh.altCm = (int32_t)lround((pvt->height - (double)pvt->undulation) * 100.0); // subtract the geoid undulation to get height above mean sea level
         }
-        gpsSol.groundCourse = (uint16_t)lroundf(courseDeg * 10.0f);
+
+        // Normalize course-over-ground to be within [0, 360) degrees
+        if (isnan(pvt->cog) || isinf(pvt->cog) || pvt->cog < (float)SBF_PVT_DO_NOT_USE_THRESHOLD) {
+            // If the course is invalid (NaN, infinite, or below the Do-Not-Use threshold),
+            // set it to UINT16_MAX as a sentinel (0 being a valid angle).
+            // Septentrio marks course-over-ground as invalid when the speed is lower than 0.1 m/s.
+            gpsSol.groundCourse = UINT16_MAX;
+        } else {
+            float courseDeg = fmodf(pvt->cog, 360.0f);
+            if (courseDeg < 0.0f) { // ensure course is non-negative
+                courseDeg += 360.0f;
+            }
+            gpsSol.groundCourse = (uint16_t)lroundf(courseDeg * 10.0f);
+        }
+
+        const bool velocityValid = (pvt->vn > (float)SBF_PVT_DO_NOT_USE_THRESHOLD)
+                                 && (pvt->ve > (float)SBF_PVT_DO_NOT_USE_THRESHOLD)
+                                 && (pvt->vu > (float)SBF_PVT_DO_NOT_USE_THRESHOLD);
+        if (velocityValid) {
+            // Ground speed in cm/s, calculated from the north and east velocity components
+            gpsSol.groundSpeed = (uint16_t)lround(sqrt(sq(pvt->vn) + sq(pvt->ve)) * 100.0);
+            // 3D speed in cm/s, calculated from the north, east, and up velocity components
+            gpsSol.speed3d = (uint16_t)lround(sqrt(sq(pvt->vn) + sq(pvt->ve) + sq(pvt->vu)) * 100.0);
+
+            gpsSol.velned.velN = (int16_t)lroundf(pvt->vn * 100.0f);
+            gpsSol.velned.velE = (int16_t)lroundf(pvt->ve * 100.0f);
+            gpsSol.velned.velD = (int16_t)lroundf(-pvt->vu * 100.0f);
+        }
     }
 
-    gpsSol.velned.velN = (int16_t)lroundf(pvt->vn * 100.0f);
-    gpsSol.velned.velE = (int16_t)lroundf(pvt->ve * 100.0f);
-    gpsSol.velned.velD = (int16_t)lroundf(-pvt->vu * 100.0f);
-
-    gpsSol.acc.hAcc = (uint32_t)pvt->hAccuracy * 5U;
-    gpsSol.acc.vAcc = (uint32_t)pvt->vAccuracy * 5U;
+    // 65535 is the SBF Do-Not-Use sentinel for the horizontal and vertical accuracy fields
+    gpsSol.acc.hAcc = (pvt->hAccuracy == SBF_ACC_DO_NOT_USE_VALUE) ? UINT32_MAX : (uint32_t)pvt->hAccuracy * 10U;
+    gpsSol.acc.vAcc = (pvt->vAccuracy == SBF_ACC_DO_NOT_USE_VALUE) ? UINT32_MAX : (uint32_t)pvt->vAccuracy * 10U;
     gpsSol.acc.sAcc = UINT32_MAX;
     if (sbfState.haveVelCov) {
         // SBF does not provide a direct speed accuracy value, but it can be estimated from the velocity covariance matrix.
         // The diagonal elements of the covariance matrix represent the variance of the respective velocity components (vn, ve, vu).
         // The speed accuracy can be approximated as the square root of the maximum variance among these components.
-        const float maxVariance = fmaxf(fmaxf(sbfState.velCov.covVnVn, sbfState.velCov.covVeVe), sbfState.velCov.covVuVu);
-        if (maxVariance > 0.0f) {
-			// The square root of the variance gives the standard deviation (accuracy)
-            gpsSol.acc.sAcc = (uint32_t)lroundf(sqrtf(maxVariance) * 1000.0f);
+        const bool velocityCovValid = (sbfState.velCov.covVnVn > (float)SBF_PVT_DO_NOT_USE_THRESHOLD)
+                                    && (sbfState.velCov.covVeVe > (float)SBF_PVT_DO_NOT_USE_THRESHOLD)
+                                    && (sbfState.velCov.covVuVu > (float)SBF_PVT_DO_NOT_USE_THRESHOLD);
+        if (velocityCovValid) {
+            const float maxVariance = fmaxf(fmaxf(sbfState.velCov.covVnVn, sbfState.velCov.covVeVe), sbfState.velCov.covVuVu);
+            if (maxVariance > 0.0f) {
+                // The square root of the variance gives the standard deviation (accuracy)
+                gpsSol.acc.sAcc = (uint32_t)lroundf(sqrtf(maxVariance) * 1000.0f);
+            }
         }
     }
     gpsSol.acc.headAcc = UINT32_MAX; // not provided by SBF with this set of blocks (as only course over ground is available)
 
-    // Calculate the navigation interval based on the current and last epoch timestamps
-    const uint64_t weekDurationMs = 7ULL * 24ULL * 3600ULL * 1000ULL;
-    const uint64_t currentNavEpochMs = ((uint64_t)sbfState.currentNavWnc * weekDurationMs) + sbfState.currentNavTow;
-    if (sbfState.lastNavEpochMs == 0U) {
-        gpsSol.navIntervalMs = 100; // default to 100 ms for the first epoch
-    } else {
-        const uint64_t navDeltaMs = currentNavEpochMs - sbfState.lastNavEpochMs;
-        gpsSol.navIntervalMs = (uint32_t)constrain((uint32_t)navDeltaMs, 50, 2500); // see calculateNavInterval() function (gps.c)
-    }
-    sbfState.lastNavEpochMs = currentNavEpochMs;
+    // Calculate the navigation interval based on the current and last navigation epoch timestamps
+    // (mirrors calculateNavInterval() in gps.c for the u-blox driver)
+    const uint32_t weekDurationMs = 7UL * 24UL * 3600UL * 1000UL;
+    const uint32_t navDeltaMs = (weekDurationMs + sbfState.currentNavTow - sbfState.lastNavTow) % weekDurationMs;
+    sbfState.lastNavTow = sbfState.currentNavTow;
+    // Interval constrained between 50ms/20hz and 2.5s
+    gpsSol.navIntervalMs = (uint32_t)constrain(navDeltaMs, 50, 2500);
 
-    bool hasFix = (modeType != 0U && pvt->error == 0U); // true if a valid GNSS fix is available
     gpsSetFixState(hasFix);
 
     return true;
@@ -272,9 +299,10 @@ static void sbfProcessChannelStatus(void)
         }
         const size_t satBlockLength = (size_t)satBlockLen64; // safe because satBlockLen64 <= remaining <= SBF_MAX_FRAME_SIZE
 
-        // Resolve SVID and system constellation ID
+        // Resolve SVID, system constellation ID, and satellite ID
         const uint16_t svid = (s1.svID != 0) ? s1.svID : s1.svidFull;
         const uint8_t gnssId = sbfSvidToGnssId(svid);
+        const uint8_t satId = sbfSvidToSatId(svid);
 
         // Health, tracking, and PVT statuses are structured as 2-bit field sequences per frequency band
         // (allowing up to 8 signals per satellite within a uint16_t representation)
@@ -307,14 +335,15 @@ static void sbfProcessChannelStatus(void)
             state += header->sb2Length; // advance to the next ChannelStateInfo sub-block
         }
 
-        if (gnssId == SEPTENTRIO_GNSS_UNKNOWN || maxTrack == 0) { // unknown constellation or idle/not applicable antenna tracking status
+        if (gnssId == SEPTENTRIO_GNSS_UNKNOWN || satId == SEPTENTRIO_SATID_UNKNOWN || maxTrack == 0) {
+            // Unknown constellation, unknown/unmapped satellite slot, or idle/not applicable antenna tracking status
             sat += satBlockLength; // skip to the next ChannelSatInfo sub-block
             continue;
         }
 
         if (svCount < GPS_SV_MAXSATS) { // only process up to the maximum number of satellites we can store
             GPS_svinfo[svCount].chn = gnssId;
-            GPS_svinfo[svCount].svid = sbfSvidToSatId(svid);
+            GPS_svinfo[svCount].svid = satId;
             GPS_svinfo[svCount].cno = 0; // not provided in ChannelStatus
 
             // Build overall satellite quality byte
@@ -368,27 +397,24 @@ static void sbfProcessBlock(void)
 
     switch (blockId) {
     case SBF_BLOCK_PVTGEODETIC:
-        sbfStartNavEpochIfNeeded(header->tow);
-        sbfState.currentNavWnc = header->wnc;
         if (payloadLength >= sizeof(sbfPvtGeodetic_t)) {
+            sbfStartNavEpochIfNeeded(header->tow, header->wnc);
             memcpy(&sbfState.pvt, payload, sizeof(sbfPvtGeodetic_t));
             sbfState.havePvt = true;
         }
         break;
 
     case SBF_BLOCK_DOP:
-        sbfStartNavEpochIfNeeded(header->tow);
-        sbfState.currentNavWnc = header->wnc;
         if (payloadLength >= sizeof(sbfDop_t)) {
+            sbfStartNavEpochIfNeeded(header->tow, header->wnc);
             memcpy(&sbfState.dop, payload, sizeof(sbfDop_t));
             sbfState.haveDop = true;
         }
         break;
 
     case SBF_BLOCK_VELCOVGEODETIC:
-        sbfStartNavEpochIfNeeded(header->tow);
-        sbfState.currentNavWnc = header->wnc;
         if (payloadLength >= sizeof(sbfVelCovGeodetic_t)) {
+            sbfStartNavEpochIfNeeded(header->tow, header->wnc);
             memcpy(&sbfState.velCov, payload, sizeof(sbfVelCovGeodetic_t));
             sbfState.haveVelCov = true;
         }
