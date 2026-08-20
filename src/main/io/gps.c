@@ -35,6 +35,7 @@
 #include "common/gps_conversion.h"
 #include "common/maths.h"
 #include "common/utils.h"
+#include "common/printf.h"
 
 #include "config/feature.h"
 

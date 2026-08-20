@@ -26,7 +26,6 @@
 
 #include "common/axis.h"
 #include "common/time.h"
-#include "common/printf.h"
 #include <common/vector.h>
 
 #include "io/serial.h"
