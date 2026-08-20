@@ -340,8 +340,8 @@ static void performSanityChecks(void)
         return;
     }
 
-    DEBUG_SET(DEBUG_RTH, 2, rescueState.phase);                            //!< Rescue Phase
-    DEBUG_SET(DEBUG_RTH, 3, rescueState.failure);                          //!< Rescue Failure Code
+    DEBUG_SET(DEBUG_RTH, 2, rescueState.phase);                            //!< Rescue Phase [enum:rescuePhase_e]
+    DEBUG_SET(DEBUG_RTH, 3, rescueState.failure);                          //!< Rescue Failure Code [enum:rescueFailureState_e]
     DEBUG_SET(DEBUG_RTH, 4, rescueState.intent.secondsFailing);            //!< Seconds Failing [s]
     DEBUG_SET(DEBUG_RTH, 5, secondsLowSats);                               //!< Seconds With Low Satellite Count [s]
     DEBUG_SET(DEBUG_RTH, 6, lrintf(rescueState.sensor.distanceToHomeCm));  //!< Distance To Home [cm]
@@ -398,7 +398,7 @@ static void performSanityChecks(void)
         }
     }
 
-    DEBUG_SET(DEBUG_RTH, 2, rescueState.phase);  //!< Rescue Phase
+    DEBUG_SET(DEBUG_RTH, 2, rescueState.phase);  //!< Rescue Phase [enum:rescuePhase_e]
 
     static timeUs_t lastSanityCheck = 0;
     if (!oneSecondPassed(currentTimeUs, &lastSanityCheck)) {
@@ -690,8 +690,8 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         break;
     }
 
-    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 1, rescueState.phase);                             //!< Rescue Phase
-    DEBUG_SET(DEBUG_ATTITUDE,            5, rescueState.phase);                             //!< Rescue Phase
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 1, rescueState.phase);                             //!< Rescue Phase [enum:rescuePhase_e]
+    DEBUG_SET(DEBUG_ATTITUDE,            5, rescueState.phase);                             //!< Rescue Phase [enum:rescuePhase_e]
     DEBUG_SET(DEBUG_ATTITUDE,            6, lrintf(rescueState.intent.targetVelocityCmS));  //!< Target Velocity [cm/s]
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 3, lrintf(rescueState.intent.targetAltitudeCm));   //!< Target Altitude [cm]
     DEBUG_SET(DEBUG_RTH,                 7, lrintf(rescueState.intent.targetVelocityCmS));  //!< Target Velocity [cm/s]

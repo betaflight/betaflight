@@ -267,7 +267,7 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
                 case GHST_UL_RC_CHANS_HS4_12_RSSI: {
                     const ghstPayloadPulsesRssi_t* const rssiFrame = (ghstPayloadPulsesRssi_t*)&ghstValidatedFrame->frame.payload;
 
-                    DEBUG_SET(DEBUG_GHST, DEBUG_GHST_RX_RSSI, -rssiFrame->rssi);  //!< Negated RSSI [dBm]
+                    DEBUG_SET(DEBUG_GHST, DEBUG_GHST_RX_RSSI, -rssiFrame->rssi);  //!< Uplink RSSI [dBm]
                     DEBUG_SET(DEBUG_GHST, DEBUG_GHST_RX_LQ, rssiFrame->lq);       //!< Link Quality [%]
 
                     ghstRfProtocol = rssiFrame->rfProtocol;

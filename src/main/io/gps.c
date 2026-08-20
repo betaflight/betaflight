@@ -1011,7 +1011,7 @@ static void gpsConfigureUblox(void)
     switch (gpsData.state) {
     case GPS_STATE_DETECT_BAUD:
 
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, baudRates[gpsInitData[gpsData.tempBaudRateIndex].baudrateIndex] / 100);  //!< Baud Rate, Else Nav Message Age
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, baudRates[gpsInitData[gpsData.tempBaudRateIndex].baudrateIndex] / 100);  //!< Baud Rate / 100, Else Nav Message Age In Milliseconds
 
         // check to see if there has been a response to the version command
         // initially the FC will be at the user-configured baud rate.
@@ -1028,7 +1028,7 @@ static void gpsConfigureUblox(void)
         // Send MON-VER messages at GPS_CONFIG_BAUD_CHANGE_INTERVAL for GPS_BAUDRATE_TEST_COUNT times
         static bool messageSent = false;
         static uint8_t messageCounter = 0;
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 2, initBaudRateCycleCount * 100 + messageCounter);  //!< Baud Detect Progress, Else Nav Message Age
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 2, initBaudRateCycleCount * 100 + messageCounter);  //!< Baud Detect Progress, Else Nav Message Age In Milliseconds
 
         if (messageCounter < GPS_BAUDRATE_TEST_COUNT) {
             if (!messageSent) {
@@ -1069,7 +1069,7 @@ static void gpsConfigureUblox(void)
         }
         // set the FC's serial port to the configured rate
         serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]);
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex] / 100);  //!< Baud Rate, Else Nav Message Age
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex] / 100);  //!< Baud Rate / 100, Else Nav Message Age In Milliseconds
         // then start sending configuration settings
         gpsSetState(GPS_STATE_CONFIGURE);
         break;
@@ -1516,7 +1516,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
             }
 
             // Data is available
-            DEBUG_SET(DEBUG_GPS_CONNECTION, 3, gpsData.now - gpsData.lastNavMessage);  //!< Baud Rate, Else Nav Message Age
+            DEBUG_SET(DEBUG_GPS_CONNECTION, 3, gpsData.now - gpsData.lastNavMessage);  //!< Baud Rate / 100, Else Nav Message Age In Milliseconds
             gpsData.lastNavMessage = gpsData.now;
             sensorsSet(SENSOR_GPS);
 
@@ -1526,7 +1526,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
             GPS_update &= ~GPS_MSP_UPDATE;
         } else {
-            DEBUG_SET(DEBUG_GPS_CONNECTION, 2, gpsData.now - gpsData.lastNavMessage);  //!< Baud Detect Progress, Else Nav Message Age
+            DEBUG_SET(DEBUG_GPS_CONNECTION, 2, gpsData.now - gpsData.lastNavMessage);  //!< Baud Detect Progress, Else Nav Message Age In Milliseconds
             // check for no data/gps timeout/cable disconnection etc
             if (cmp32(gpsData.now, gpsData.lastNavMessage) > GPS_TIMEOUT_MS) {
                 gpsSetState(GPS_STATE_LOST_COMMUNICATION);
@@ -1576,7 +1576,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
             }
         }
 #endif
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 2, gpsData.now - gpsData.lastNavMessage);  //!< Baud Detect Progress, Else Nav Message Age
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 2, gpsData.now - gpsData.lastNavMessage);  //!< Baud Detect Progress, Else Nav Message Age In Milliseconds
         // check for no data/gps timeout/cable disconnection etc
         if (cmp32(gpsData.now, gpsData.lastNavMessage) > GPS_TIMEOUT_MS) {
             gpsSetState(GPS_STATE_LOST_COMMUNICATION);
@@ -1628,7 +1628,7 @@ static void gpsHandleFrameComplete(void)
 {
     DEBUG_SET(DEBUG_GPS_CONNECTION, 1, gpsSol.navIntervalMs);  //!< Nav Interval [ms]
     if (gpsData.state == GPS_STATE_RECEIVING_DATA) {
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, gpsData.now - gpsData.lastNavMessage);  //!< Baud Rate, Else Nav Message Age
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, gpsData.now - gpsData.lastNavMessage);  //!< Baud Rate / 100, Else Nav Message Age In Milliseconds
         gpsData.lastNavMessage = gpsData.now;
         sensorsSet(SENSOR_GPS);
     }

@@ -737,7 +737,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
             const float courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
             const float imuCourseError = imuCalcCourseErr(courseOverGround);
 
-            DEBUG_SET(DEBUG_ATTITUDE, 3, lrintf(imuCourseError * 100.0f));  //!< Course Over Ground Error [0.01rad]
+            DEBUG_SET(DEBUG_ATTITUDE, 3, lrintf(imuCourseError * 100.0f));  //!< Course Over Ground Error Sine [0.01]
 
             cogErr = imuCourseError * groundspeedGain;
             // cogErr is greater with larger heading errors and greater speed in straight pitch forward flight
