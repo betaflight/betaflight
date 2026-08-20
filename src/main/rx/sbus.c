@@ -147,7 +147,7 @@ static void sbusDataReceive(uint16_t c, void *data)
             sbusFrameData->done = false;
         } else {
             sbusFrameData->done = true;
-            DEBUG_SET(DEBUG_SBUS, DEBUG_SBUS_FRAME_TIME, cmpTimeUs(nowUs, sbusFrameData->startAtUs));
+            DEBUG_SET(DEBUG_SBUS, DEBUG_SBUS_FRAME_TIME, cmpTimeUs(nowUs, sbusFrameData->startAtUs));  //!< Frame Time [us]
         }
     }
 }
@@ -160,7 +160,7 @@ static uint8_t sbusFrameStatus(rxRuntimeState_t *rxRuntimeState)
     }
     sbusFrameData->done = false;
 
-    DEBUG_SET(DEBUG_SBUS, DEBUG_SBUS_FRAME_FLAGS, sbusFrameData->frame.frame.channels.flags);
+    DEBUG_SET(DEBUG_SBUS, DEBUG_SBUS_FRAME_FLAGS, sbusFrameData->frame.frame.channels.flags);  //!< Frame Flags
 
     const uint8_t frameStatus = sbusChannelsDecode(rxRuntimeState, &sbusFrameData->frame.frame.channels);
 

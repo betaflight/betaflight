@@ -364,14 +364,14 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     throttleOut = scaleRangef(newThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
     throttleOut = constrainf(throttleOut, 0.0f, 1.0f);
 
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 0, lrintf(newThrottle));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 1, lrintf(targetAltitudeCm));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 2, lrintf(currentAltitudeCm));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 3, lrintf(altitudeP));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 4, lrintf(altitudeI));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 5, lrintf(altitudeD));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 6, lrintf(altitudeA));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 0, lrintf(newThrottle));       //!< Throttle Output [us]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 1, lrintf(targetAltitudeCm));  //!< Target Altitude [cm]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 2, lrintf(currentAltitudeCm)); //!< Current Altitude [cm]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 3, lrintf(altitudeP));         //!< Altitude P Term [us]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 4, lrintf(altitudeI));         //!< Altitude I Term [us]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 5, lrintf(altitudeD));         //!< Altitude D Term [us]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 6, lrintf(altitudeA));         //!< Altitude A Term [us]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));         //!< Altitude Feedforward Term [us]
 }
 
 static void updatePositionHoldTarget(void)
@@ -520,9 +520,9 @@ void handlepositionControlFailure(void)
 {
     resetDistanceError();
     resetDistanceErrorIntegral();
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 100);
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, 100);
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, 100);
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 100);   //!< Status Flags
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, 100);  //!< Status Flags
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, 100);  //!< Status Flags
 
 }
 
@@ -712,9 +712,9 @@ bool positionControl(void)
         disableYawControl();
         autopilotAngle[AI_ROLL]  = 0.0f;
         autopilotAngle[AI_PITCH] = 35.0f;
-        DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 200);
-        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, 200);
-        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, 200);
+        DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 200);   //!< Status Flags
+        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, 200);  //!< Status Flags
+        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, 200);  //!< Status Flags
         return true;
     }
     const vector2_t currentPosition = *(const vector2_t *)&est->position.v;
@@ -1005,32 +1005,32 @@ bool positionControl(void)
     if (abortNavRequested)  statusValue += 100;
     if (isPositionHeld)     statusValue += 3; // plus 1, ie 4,  if stopping
     if (ap.sticksActive)    statusValue += 5;
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 0, lrintf(velocity.v[ap.debugAxis]));
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 1, lrintf(distanceError.v[ap.debugAxis]));
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 2, lrintf(pidP.v[ap.debugAxis] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 3, lrintf(pidI.v[ap.debugAxis] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 4, lrintf(pidD.v[ap.debugAxis] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 5, lrintf(pidA.v[ap.debugAxis] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 6, lrintf(pidF.v[ap.debugAxis] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, statusValue + (ap.isPosHoldBraking ? 1 : 0));
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 0, lrintf(velocity.v[ap.debugAxis]));             //!< Velocity (dbg-axis) [cm/s]
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 1, lrintf(distanceError.v[ap.debugAxis]));        //!< Distance Error (dbg-axis) [cm]
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 2, lrintf(pidP.v[ap.debugAxis] * 10));            //!< P Term (dbg-axis) [0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 3, lrintf(pidI.v[ap.debugAxis] * 10));            //!< I Term (dbg-axis) [0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 4, lrintf(pidD.v[ap.debugAxis] * 10));            //!< D Term (dbg-axis) [0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 5, lrintf(pidA.v[ap.debugAxis] * 10));            //!< A Term (dbg-axis) [0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 6, lrintf(pidF.v[ap.debugAxis] * 10));            //!< Feedforward Term (dbg-axis) [0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, statusValue + (ap.isPosHoldBraking ? 1 : 0));  //!< Status Flags
 
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 0, lrintf(velocityError.v[EF_EAST]));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 1, lrintf(velocityError.v[EF_NORTH]));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 2, lrintf(pidSumVectorEF.v[EF_EAST] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 3, lrintf(pidSumVectorEF.v[EF_NORTH] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 4, lrintf(autopilotAngle[AI_ROLL] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 5, lrintf(autopilotAngle[AI_PITCH] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, statusValue + (ap.isPosHoldBraking ? 1 : 0));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, statusValue + (ap.isPosHoldBraking ? 1 : 0));
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 0, lrintf(velocityError.v[EF_EAST]));             //!< Velocity Error East [cm/s]
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 1, lrintf(velocityError.v[EF_NORTH]));            //!< Velocity Error North [cm/s]
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 2, lrintf(pidSumVectorEF.v[EF_EAST] * 10));       //!< PID Sum East [0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 3, lrintf(pidSumVectorEF.v[EF_NORTH] * 10));      //!< PID Sum North [0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 4, lrintf(autopilotAngle[AI_ROLL] * 10));         //!< Roll Angle Command [0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 5, lrintf(autopilotAngle[AI_PITCH] * 10));        //!< Pitch Angle Command [0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, statusValue + (ap.isPosHoldBraking ? 1 : 0));  //!< Status Flags
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, statusValue + (ap.isPosHoldBraking ? 1 : 0));  //!< Status Flags
 
-    DEBUG_SET(DEBUG_POSITION_NAV, 0, lrintf(targetVelocity.v[ap.debugAxis]));
-    DEBUG_SET(DEBUG_POSITION_NAV, 1, lrintf(velocity.v[ap.debugAxis]));
-    DEBUG_SET(DEBUG_POSITION_NAV, 2, lrintf(velocityError.v[ap.debugAxis]));
-    DEBUG_SET(DEBUG_POSITION_NAV, 3, lrintf(pidP.v[ap.debugAxis] * 10));
-    DEBUG_SET(DEBUG_POSITION_NAV, 4, lrintf(pidI.v[ap.debugAxis] * 10));
-    DEBUG_SET(DEBUG_POSITION_NAV, 5, lrintf(pidD.v[ap.debugAxis] * 10));
-    DEBUG_SET(DEBUG_POSITION_NAV, 6, lrintf(pidA.v[ap.debugAxis] * 10));
-    DEBUG_SET(DEBUG_POSITION_NAV, 7, (anchorOff ? 10 : 0) + (buildupClamped ? 1 : 0));
+    DEBUG_SET(DEBUG_POSITION_NAV, 0, lrintf(targetVelocity.v[ap.debugAxis]));           //!< Target Velocity (dbg-axis) [cm/s]
+    DEBUG_SET(DEBUG_POSITION_NAV, 1, lrintf(velocity.v[ap.debugAxis]));                 //!< Velocity (dbg-axis) [cm/s]
+    DEBUG_SET(DEBUG_POSITION_NAV, 2, lrintf(velocityError.v[ap.debugAxis]));            //!< Velocity Error (dbg-axis) [cm/s]
+    DEBUG_SET(DEBUG_POSITION_NAV, 3, lrintf(pidP.v[ap.debugAxis] * 10));                //!< P Term (dbg-axis) [0.1deg]
+    DEBUG_SET(DEBUG_POSITION_NAV, 4, lrintf(pidI.v[ap.debugAxis] * 10));                //!< I Term (dbg-axis) [0.1deg]
+    DEBUG_SET(DEBUG_POSITION_NAV, 5, lrintf(pidD.v[ap.debugAxis] * 10));                //!< D Term (dbg-axis) [0.1deg]
+    DEBUG_SET(DEBUG_POSITION_NAV, 6, lrintf(pidA.v[ap.debugAxis] * 10));                //!< A Term (dbg-axis) [0.1deg]
+    DEBUG_SET(DEBUG_POSITION_NAV, 7, (anchorOff ? 10 : 0) + (buildupClamped ? 1 : 0));  //!< Status Flags
 
     return true;
 }

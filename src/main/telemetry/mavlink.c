@@ -944,7 +944,7 @@ static void mavlinkSendSystemStatus(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, transmitCounter);
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, transmitCounter);  //!< Heartbeat TX Count
     transmitCounter = (transmitCounter + 1) % 100;
 }
 
@@ -979,7 +979,7 @@ static void mavlinkSendRCChannelsAndRSSI(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 3, transmitCounter);
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 3, transmitCounter);  //!< RC Channels TX Count
     transmitCounter = (transmitCounter + 1) % 100;
 }
 
@@ -1043,7 +1043,7 @@ static void mavlinkSendGpsRaw(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 4, transmitCounter);
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 4, transmitCounter);  //!< GPS Raw TX Count
     transmitCounter = (transmitCounter + 1) % 100;
 }
 
@@ -1149,7 +1149,7 @@ static void mavlinkSendAttitude(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 5, transmitCounter);
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 5, transmitCounter);  //!< Attitude TX Count
     transmitCounter = (transmitCounter + 1) % 100;
 }
 
@@ -1232,7 +1232,7 @@ static void mavlinkSendHeartbeat(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 6, transmitCounter);
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 6, transmitCounter);  //!< VFR HUD TX Count
     transmitCounter = (transmitCounter + 1) % 100;
 }
 
@@ -1339,7 +1339,7 @@ static void mavlinkSendBatteryStatus(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 7, transmitCounter);
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 7, transmitCounter);  //!< System Status TX Count
     transmitCounter = (transmitCounter + 1) % 100;
 }
 

@@ -154,8 +154,8 @@ static void reportFrameError(uint8_t errorReason)
 
     frameErrors++;
 
-    DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_ERRORS, frameErrors);
-    DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_LAST_ERROR, errorReason);
+    DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_ERRORS, frameErrors);      //!< Frame Error Count
+    DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_LAST_ERROR, errorReason);  //!< Last Frame Error Reason
 }
 
 // Receive ISR callback
@@ -194,7 +194,7 @@ static void fportDataReceive(uint16_t c, void *data)
                 telemetryFrame = false;
             }
 
-            DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_INTERVAL, currentTimeUs - lastFrameReceivedUs);
+            DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_INTERVAL, currentTimeUs - lastFrameReceivedUs);  //!< Frame Interval [us]
             lastFrameReceivedUs = currentTimeUs;
 
             escapedCharacter = false;
@@ -372,7 +372,7 @@ static bool fportProcessFrame(const rxRuntimeState_t *rxRuntimeState)
             clearToSend = false;
         }
 
-        DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_TELEMETRY_INTERVAL, currentTimeUs - lastTelemetryFrameSentUs);
+        DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_TELEMETRY_INTERVAL, currentTimeUs - lastTelemetryFrameSentUs);  //!< Telemetry Frame Interval [us]
         lastTelemetryFrameSentUs = currentTimeUs;
     }
 
