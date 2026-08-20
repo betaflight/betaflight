@@ -188,7 +188,7 @@ escSensorData_t *getEscSensorData(uint8_t motorNumber)
 
             combinedDataNeedsUpdate = false;
 
-            DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_DATA_AGE, combinedEscSensorData.dataAge);
+            DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_DATA_AGE, combinedEscSensorData.dataAge);  //!< Data Age
         }
 
         return &combinedEscSensorData;
@@ -315,8 +315,8 @@ static uint8_t decodeEscFrame(void)
         frameStatus = ESC_SENSOR_FRAME_COMPLETE;
 
         if (escSensorMotor < 4) {
-            DEBUG_SET(DEBUG_ESC_SENSOR_RPM, escSensorMotor, lrintf(erpmToRpm(escSensorData[escSensorMotor].rpm) / 10.0f)); // output actual rpm/10 to fit in 16bit signed.
-            DEBUG_SET(DEBUG_ESC_SENSOR_TMP, escSensorMotor, escSensorData[escSensorMotor].temperature);
+            DEBUG_SET(DEBUG_ESC_SENSOR_RPM, escSensorMotor, lrintf(erpmToRpm(escSensorData[escSensorMotor].rpm) / 10.0f));  //!< [0..7] Motor {1|2|3|4|5|6|7|8} RPM [10rpm]
+            DEBUG_SET(DEBUG_ESC_SENSOR_TMP, escSensorMotor, escSensorData[escSensorMotor].temperature);  //!< [0..7] Motor {1|2|3|4|5|6|7|8} Temperature [degC]
         }
     } else {
         frameStatus = ESC_SENSOR_FRAME_FAILED;
@@ -367,7 +367,7 @@ void escSensorProcess(timeUs_t currentTimeUs)
             motorRequestTelemetry(escSensorMotor);
             escSensorTriggerState = ESC_SENSOR_TRIGGER_PENDING;
 
-            DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_MOTOR_INDEX, escSensorMotor + 1);
+            DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_MOTOR_INDEX, escSensorMotor + 1);  //!< Motor Index
 
             break;
         case ESC_SENSOR_TRIGGER_PENDING:
@@ -385,7 +385,7 @@ void escSensorProcess(timeUs_t currentTimeUs)
                         selectNextMotor();
                         escSensorTriggerState = ESC_SENSOR_TRIGGER_READY;
 
-                        DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_NUM_CRC_ERRORS, ++totalCrcErrorCount);
+                        DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_NUM_CRC_ERRORS, ++totalCrcErrorCount);  //!< CRC Error Count
                         break;
                     case ESC_SENSOR_FRAME_PENDING:
                         break;
@@ -397,7 +397,7 @@ void escSensorProcess(timeUs_t currentTimeUs)
                 selectNextMotor();
                 escSensorTriggerState = ESC_SENSOR_TRIGGER_READY;
 
-                DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_NUM_TIMEOUTS, ++totalTimeoutCount);
+                DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_NUM_TIMEOUTS, ++totalTimeoutCount);  //!< Timeout Count
             }
 
             break;

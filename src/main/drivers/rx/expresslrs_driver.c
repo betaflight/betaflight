@@ -77,8 +77,8 @@ static elrsTimerState_t timerState = {
 
 void expressLrsTimerDebug(void)
 {
-    DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 2, timerState.frequencyOffsetTicks);
-    DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 3, timerState.phaseShiftUs);
+    DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 2, timerState.frequencyOffsetTicks);  //!< Timer Frequency Offset [ticks]
+    DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 3, timerState.phaseShiftUs);          //!< Timer Phase Shift [us]
 }
 
 static void expressLrsRecalculatePhaseShiftLimits(void)

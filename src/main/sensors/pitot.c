@@ -244,10 +244,10 @@ uint32_t pitotUpdate(timeUs_t currentTimeUs)
     pitot.diffPressure = diffPressurePa - sourceZero[source];
     pitot.airspeed = airspeedFromPressure(pitot.diffPressure);
 
-    DEBUG_SET(DEBUG_PITOT, 0, lrintf(pitot.airspeed));
-    DEBUG_SET(DEBUG_PITOT, 1, lrintf(pitot.diffPressure));
-    DEBUG_SET(DEBUG_PITOT, 2, lrintf(diffPressurePa));
-    DEBUG_SET(DEBUG_PITOT, 3, lrintf(pitot.temperature - 273.15f));
+    DEBUG_SET(DEBUG_PITOT, 0, lrintf(pitot.airspeed));               //!< Airspeed [cm/s]
+    DEBUG_SET(DEBUG_PITOT, 1, lrintf(pitot.diffPressure));           //!< Differential Pressure [Pa]
+    DEBUG_SET(DEBUG_PITOT, 2, lrintf(diffPressurePa));               //!< Raw Differential Pressure [Pa]
+    DEBUG_SET(DEBUG_PITOT, 3, lrintf(pitot.temperature - 273.15f));  //!< Temperature [degC]
 
     return TASK_PERIOD_HZ(TASK_PITOT_RATE_HZ);
 }

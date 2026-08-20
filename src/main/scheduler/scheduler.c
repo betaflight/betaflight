@@ -474,14 +474,14 @@ FAST_CODE timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTi
         if ((selectedTask - tasks) == schedulerConfig()->debugTask) {
             timeUs_t averageDeltaTime10thUs = selectedTask->movingSumDeltaTime10thUs / TASK_STATS_MOVING_SUM_COUNT;
             int16_t taskFrequency = averageDeltaTime10thUs == 0 ? 0 : lrintf(1e7f / averageDeltaTime10thUs);
-            DEBUG_SET(DEBUG_TASK, 0, schedulerConfig()->debugTask);
-            DEBUG_SET(DEBUG_TASK, 1, taskFrequency);
-            DEBUG_SET(DEBUG_TASK, 2, selectedTask->maxExecutionTimeUs);
-            DEBUG_SET(DEBUG_TASK, 3, selectedTask->movingSumExecutionTime10thUs / TASK_STATS_MOVING_SUM_COUNT / 10);
-            DEBUG_SET(DEBUG_TASK, 4, estimatedExecutionUs);
-            DEBUG_SET(DEBUG_TASK, 5, taskExecutionTimeUs);
-            DEBUG_SET(DEBUG_TASK, 6, estimatedExecutionUs - taskExecutionTimeUs);
-            DEBUG_SET(DEBUG_TASK, 7, selectedTask->lateCount);
+            DEBUG_SET(DEBUG_TASK, 0, schedulerConfig()->debugTask);                                                   //!< Task ID
+            DEBUG_SET(DEBUG_TASK, 1, taskFrequency);                                                                  //!< Task Rate [Hz]
+            DEBUG_SET(DEBUG_TASK, 2, selectedTask->maxExecutionTimeUs);                                               //!< Max Execution Time [us]
+            DEBUG_SET(DEBUG_TASK, 3, selectedTask->movingSumExecutionTime10thUs / TASK_STATS_MOVING_SUM_COUNT / 10);  //!< Average Execution Time [us]
+            DEBUG_SET(DEBUG_TASK, 4, estimatedExecutionUs);                                                           //!< Estimated Execution Time [us]
+            DEBUG_SET(DEBUG_TASK, 5, taskExecutionTimeUs);                                                            //!< Actual Execution Time [us]
+            DEBUG_SET(DEBUG_TASK, 6, estimatedExecutionUs - taskExecutionTimeUs);                                     //!< Estimated Minus Actual [us]
+            DEBUG_SET(DEBUG_TASK, 7, selectedTask->lateCount);                                                        //!< Late Count
         }
 #endif
     }
@@ -597,31 +597,31 @@ FAST_CODE void scheduler(void)
             gyroCyclesNow = cmpTimeCycles(nowCycles, lastTargetCycles);
             gyroCyclesTotal += gyroCyclesNow;
             gyroCyclesCount++;
-            DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 0, clockCyclesTo10thMicros(gyroCyclesNow));
+            DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 0, clockCyclesTo10thMicros(gyroCyclesNow));  //!< Gyro Cycle Time [0.1us]
             int32_t deviationCycles = gyroCyclesNow - gyroCyclesMean;
             devSquared += deviationCycles * deviationCycles;
 
             // % CPU busy
-            DEBUG_SET(DEBUG_TIMING_ACCURACY, 0, getAverageSystemLoadPercent());
+            DEBUG_SET(DEBUG_TIMING_ACCURACY, 0, getAverageSystemLoadPercent());  //!< CPU Load [%]
 
             if (cmpTimeCycles(nextTimingCycles, nowCycles) < 0) {
                 nextTimingCycles += clockMicrosToCycles(1000000);
 
                 // Tasks late in last second
-                DEBUG_SET(DEBUG_TIMING_ACCURACY, 1, lateTaskCount);
+                DEBUG_SET(DEBUG_TIMING_ACCURACY, 1, lateTaskCount);  //!< Late Tasks Per Second
                 // Total lateness in last second in us
-                DEBUG_SET(DEBUG_TIMING_ACCURACY, 2, clockCyclesTo10thMicros(lateTaskTotal));
+                DEBUG_SET(DEBUG_TIMING_ACCURACY, 2, clockCyclesTo10thMicros(lateTaskTotal));  //!< Total Task Lateness Per Second [0.1us]
                 // Total tasks run in last second
-                DEBUG_SET(DEBUG_TIMING_ACCURACY, 3, taskCount);
+                DEBUG_SET(DEBUG_TIMING_ACCURACY, 3, taskCount);  //!< Tasks Per Second
 
                 lateTaskPercentage = 1000 * (uint32_t)lateTaskCount / taskCount;
                 // 10ths % of tasks late in last second
-                DEBUG_SET(DEBUG_TIMING_ACCURACY, 4, lateTaskPercentage);
+                DEBUG_SET(DEBUG_TIMING_ACCURACY, 4, lateTaskPercentage);  //!< Late Tasks [0.1%]
 
                 float gyroCyclesStdDev = sqrtf(devSquared/gyroCyclesCount);
                 int32_t gyroCyclesStdDev100thus = clockCyclesTo100thMicros((int32_t)gyroCyclesStdDev);
-                DEBUG_SET(DEBUG_TIMING_ACCURACY, 7, gyroCyclesStdDev100thus);
-                DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 7, gyroCyclesStdDev100thus);
+                DEBUG_SET(DEBUG_TIMING_ACCURACY, 7, gyroCyclesStdDev100thus);        //!< Gyro Cycle Time Deviation [0.01us]
+                DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 7, gyroCyclesStdDev100thus);  //!< Gyro Cycle Time Deviation [0.01us]
 
                 gyroCyclesMean = gyroCyclesTotal/gyroCyclesCount;
 
@@ -701,10 +701,10 @@ FAST_CODE void scheduler(void)
                     lastTargetCycles -= (accGyroSkew/GYRO_LOCK_COUNT);
 
 #if defined(USE_LATE_TASK_STATISTICS)
-                    DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 3, clockCyclesTo10thMicros(accGyroSkew/GYRO_LOCK_COUNT));
-                    DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 4, clockCyclesTo100thMicros(minGyroPeriod));
-                    DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 5, clockCyclesTo100thMicros(maxGyroPeriod));
-                    DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 6, clockCyclesTo100thMicros(maxGyroPeriod - minGyroPeriod));
+                    DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 3, clockCyclesTo10thMicros(accGyroSkew/GYRO_LOCK_COUNT));  //!< Gyro Skew [0.1us]
+                    DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 4, clockCyclesTo100thMicros(minGyroPeriod));  //!< Min Gyro Period [0.01us]
+                    DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 5, clockCyclesTo100thMicros(maxGyroPeriod));  //!< Max Gyro Period [0.01us]
+                    DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 6, clockCyclesTo100thMicros(maxGyroPeriod - minGyroPeriod));  //!< Gyro Period Range [0.01us]
                     minGyroPeriod = INT_MAX;
                     maxGyroPeriod = INT_MIN;
 #endif
@@ -796,8 +796,8 @@ FAST_CODE void scheduler(void)
 #if defined(USE_LATE_TASK_STATISTICS)
                 if (cyclesOverdue > 0) {
                     if ((currentTask - tasks) != TASK_SERIAL) {
-                        DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 1, currentTask - tasks);
-                        DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 2, clockCyclesTo10thMicros(cyclesOverdue));
+                        DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 1, currentTask - tasks);                     //!< Late Task ID
+                        DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 2, clockCyclesTo10thMicros(cyclesOverdue));  //!< Task Lateness [0.1us]
                         currentTask->lateCount++;
                         lateTaskCount++;
                         lateTaskTotal += cyclesOverdue;
@@ -840,7 +840,7 @@ FAST_CODE void scheduler(void)
     readSchedulerLocals(selectedTask, selectedTaskDynamicPriority);
     UNUSED(taskExecutionTimeUs);
 #else
-    DEBUG_SET(DEBUG_SCHEDULER, 2, micros() - schedulerStartTimeUs - taskExecutionTimeUs); // time spent in scheduler
+    DEBUG_SET(DEBUG_SCHEDULER, 2, micros() - schedulerStartTimeUs - taskExecutionTimeUs);  //!< Scheduler Overhead [us]
 #endif
 
     scheduleCount++;
