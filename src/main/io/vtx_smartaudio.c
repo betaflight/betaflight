@@ -351,7 +351,7 @@ static void saProcessResponse(uint8_t *buf, int len)
         DEBUG_SET(DEBUG_SMARTAUDIO, 0, saDevice.version * 100 + saDevice.mode);  //!< Version And Mode
         DEBUG_SET(DEBUG_SMARTAUDIO, 1, saDevice.channel);                        //!< Channel
         DEBUG_SET(DEBUG_SMARTAUDIO, 2, saDevice.freq);                           //!< Frequency [MHz]
-        DEBUG_SET(DEBUG_SMARTAUDIO, 3, saDevice.power);                          //!< Power Level
+        DEBUG_SET(DEBUG_SMARTAUDIO, 3, saDevice.power);                          //!< Power Table Index
         break;
 
     case SA_CMD_SET_POWER: // Set Power

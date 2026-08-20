@@ -58,8 +58,10 @@ extern uint8_t debugMode;
  *              label an axis. Optional; omit it for a plain count, flag or
  *              enumeration. An optional decimal factor precedes the symbol, so
  *              `lrintf(angleDeg * 10)` is `[0.1deg]` and `pressurePa / 100` is
- *              `[100Pa]`. The symbol may be left out for a value that is scaled
- *              but dimensionless: `lrintf(ratio * 1000)` is `[0.001]`.
+ *              `[100Pa]`. The factor may be negative, for a field that stores the
+ *              magnitude of a negative quantity: a CRSF RSSI is `[-1dBm]`. The
+ *              symbol may be left out for a value that is scaled but
+ *              dimensionless: `lrintf(ratio * 1000)` is `[0.001]`.
  *
  *              Symbols: s ms us Hz kHz MHz kbit/s rad rad/s deg dps dps2 m cm
  *              m/s cm/s g g/s V A mAh degC Pa hPa rpm % dB dBm bytes ticks, plus

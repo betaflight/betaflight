@@ -472,7 +472,7 @@ static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
                                   ((trampConfFreq != trampCurFreq) ?       0x0008 : 0x0000) |
                                   ((trampConfPower != trampCurConfPower) ? 0x0004 : 0x0000) |
                                   ((trampConfPitMode != trampCurPitMode) ? 0x0002 : 0x0000) |
-                                  (configUpdateRequired ?                  0x0001 : 0x0000));  //!< Pit Mode And Config Flags
+                                  (configUpdateRequired ?                  0x0001 : 0x0000));  //!< Packed Pit Modes, Power And Change Flags
     DEBUG_SET(DEBUG_VTX_TRAMP, 3, trampRetryCount);                                            //!< Retry Count
 
 #ifdef USE_CMS

@@ -944,7 +944,7 @@ static void mavlinkSendSystemStatus(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, transmitCounter);  //!< Heartbeat TX Count
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, transmitCounter);  //!< System Status TX Count
     transmitCounter = (transmitCounter + 1) % 100;
 }
 
@@ -1232,7 +1232,7 @@ static void mavlinkSendHeartbeat(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 6, transmitCounter);  //!< VFR HUD TX Count
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 6, transmitCounter);  //!< Heartbeat TX Count
     transmitCounter = (transmitCounter + 1) % 100;
 }
 
@@ -1339,7 +1339,7 @@ static void mavlinkSendBatteryStatus(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 7, transmitCounter);  //!< System Status TX Count
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 7, transmitCounter);  //!< Battery Status TX Count
     transmitCounter = (transmitCounter + 1) % 100;
 }
 

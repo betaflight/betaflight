@@ -153,7 +153,7 @@ void rangefinderUPT1Update(rangefinderDev_t *dev)
         uint8_t c = serialRead(upt1SerialPort);
         upt1_byte_count++;
 
-        DEBUG_SET(DEBUG_LIDAR_TF, 7, upt1FrameState);  //!< Frame Parser State
+        DEBUG_SET(DEBUG_LIDAR_TF, 7, upt1FrameState);  //!< Frame Parser State [enum:upt1FrameState_e]
 
         switch (upt1FrameState) {
         case UPT1_FRAME_WAIT_RESET:

@@ -122,7 +122,7 @@ void checkFlashStop(void)
     checkFlashSeedPRBS = 0xdeadbeef;
     checkFlashErrors = 0;
 
-    DEBUG_SET(DEBUG_FLASH_TEST_PRBS, 6, checkFlashLen / flashGeometry->pageSize);  //!< Checked Pages
+    DEBUG_SET(DEBUG_FLASH_TEST_PRBS, 6, checkFlashLen / flashGeometry->pageSize);  //!< Pages In Check Length
 
     // Verify the data written since flashfsSeekAbs() last called
     while (checkFlashLen) {

@@ -512,13 +512,13 @@ FAST_CODE void gyroFiltering(timeUs_t currentTimeUs)
 
         for (int i = 0; i < GYRO_COUNT; i++) {
             if (gyro.gyroEnabledBitmask & GYRO_MASK(i)) {
-                DEBUG_SET(DEBUG_MULTI_GYRO_RAW, 0 + debugIndex, gyro.gyroSensor[i].gyroDev.gyroADCRaw[X]);  //!< [0,2,4,6] {Gyro 1|Gyro 2|Gyro 3|Gyro 4} Raw Roll [gyroADC]
-                DEBUG_SET(DEBUG_MULTI_GYRO_RAW, 1 + debugIndex, gyro.gyroSensor[i].gyroDev.gyroADCRaw[Y]);  //!< [1,3,5,7] {Gyro 1|Gyro 2|Gyro 3|Gyro 4} Raw Pitch [gyroADC]
-                DEBUG_SET(DEBUG_MULTI_GYRO_SCALED, 0 + debugIndex, lrintf(gyro.gyroSensor[i].gyroDev.gyroADC.x * gyro.gyroSensor[i].gyroDev.scale));  //!< [0,2,4,6] {Gyro 1|Gyro 2|Gyro 3|Gyro 4} Roll [dps]
-                DEBUG_SET(DEBUG_MULTI_GYRO_SCALED, 1 + debugIndex, lrintf(gyro.gyroSensor[i].gyroDev.gyroADC.y * gyro.gyroSensor[i].gyroDev.scale));  //!< [1,3,5,7] {Gyro 1|Gyro 2|Gyro 3|Gyro 4} Pitch [dps]
+                DEBUG_SET(DEBUG_MULTI_GYRO_RAW, 0 + debugIndex, gyro.gyroSensor[i].gyroDev.gyroADCRaw[X]);  //!< [0,2,4,6] Enabled Gyro {1|2|3|4} Raw Roll [gyroADC]
+                DEBUG_SET(DEBUG_MULTI_GYRO_RAW, 1 + debugIndex, gyro.gyroSensor[i].gyroDev.gyroADCRaw[Y]);  //!< [1,3,5,7] Enabled Gyro {1|2|3|4} Raw Pitch [gyroADC]
+                DEBUG_SET(DEBUG_MULTI_GYRO_SCALED, 0 + debugIndex, lrintf(gyro.gyroSensor[i].gyroDev.gyroADC.x * gyro.gyroSensor[i].gyroDev.scale));  //!< [0,2,4,6] Enabled Gyro {1|2|3|4} Roll [dps]
+                DEBUG_SET(DEBUG_MULTI_GYRO_SCALED, 1 + debugIndex, lrintf(gyro.gyroSensor[i].gyroDev.gyroADC.y * gyro.gyroSensor[i].gyroDev.scale));  //!< [1,3,5,7] Enabled Gyro {1|2|3|4} Pitch [dps]
                 // grab the difference between each gyro and the fused gyro output, gyro.gyroADCf (it hasn't had filters applied yet)
-                DEBUG_SET(DEBUG_MULTI_GYRO_DIFF, 0 + debugIndex, lrintf((gyro.gyroSensor[i].gyroDev.gyroADC.x * gyro.gyroSensor[i].gyroDev.scale) - gyro.gyroADCf[0]));  //!< [0,2,4,6] {Gyro 1|Gyro 2|Gyro 3|Gyro 4} Roll Minus Fused [dps]
-                DEBUG_SET(DEBUG_MULTI_GYRO_DIFF, 1 + debugIndex, lrintf((gyro.gyroSensor[i].gyroDev.gyroADC.y * gyro.gyroSensor[i].gyroDev.scale) - gyro.gyroADCf[1]));  //!< [1,3,5,7] {Gyro 1|Gyro 2|Gyro 3|Gyro 4} Pitch Minus Fused [dps]
+                DEBUG_SET(DEBUG_MULTI_GYRO_DIFF, 0 + debugIndex, lrintf((gyro.gyroSensor[i].gyroDev.gyroADC.x * gyro.gyroSensor[i].gyroDev.scale) - gyro.gyroADCf[0]));  //!< [0,2,4,6] Enabled Gyro {1|2|3|4} Roll Minus Fused [dps]
+                DEBUG_SET(DEBUG_MULTI_GYRO_DIFF, 1 + debugIndex, lrintf((gyro.gyroSensor[i].gyroDev.gyroADC.y * gyro.gyroSensor[i].gyroDev.scale) - gyro.gyroADCf[1]));  //!< [1,3,5,7] Enabled Gyro {1|2|3|4} Pitch Minus Fused [dps]
 
                 debugIndex += 2;
                 if (debugIndex >= 8) {
