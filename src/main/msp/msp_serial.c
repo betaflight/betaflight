@@ -35,6 +35,7 @@
 #include "drivers/system.h"
 
 #include "io/displayport_msp.h"
+#include "io/serial_feature_map.h"
 
 #include "msp/msp.h"
 
@@ -53,39 +54,70 @@ static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, bo
     mspPortToReset->descriptor = mspDescriptorAlloc();
 }
 
+// Open an MSP port for `portConfig` in the first free mspPorts[] slot at or
+// after *portIndex, advancing *portIndex past it on success.  *portIndex is
+// left at ARRAYLEN(mspPorts) when every slot is taken.
+static bool mspSerialAllocatePort(const serialPortConfig_t *portConfig, uint8_t *portIndex)
+{
+    while (*portIndex < ARRAYLEN(mspPorts) && mspPorts[*portIndex].port) {
+        (*portIndex)++;
+    }
+
+    if (*portIndex >= ARRAYLEN(mspPorts)) {
+        return false;
+    }
+
+    portOptions_e options = SERIAL_NOT_INVERTED;
+
+    if (mspConfig()->halfDuplex) {
+        options |= SERIAL_BIDIR;
+    } else if (serialType(portConfig->identifier) == SERIALTYPE_UART
+               || serialType(portConfig->identifier) == SERIALTYPE_LPUART
+               || serialType(portConfig->identifier) == SERIALTYPE_PIOUART) {
+#if !ENABLE_SERIAL_SKIP_CHECK_TX
+        options |= SERIAL_CHECK_TX;
+#endif
+    }
+
+    serialPort_t *serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, NULL, baudRates[portConfig->msp_baudrateIndex], MODE_RXTX, options);
+    if (!serialPort) {
+        return false;
+    }
+
+    const bool sharedWithTelemetry = isSerialPortShared(portConfig, FUNCTION_MSP, TELEMETRY_PORT_FUNCTIONS_MASK);
+    resetMspPort(&mspPorts[*portIndex], serialPort, sharedWithTelemetry);
+    (*portIndex)++;
+
+    return true;
+}
+
 void mspSerialAllocatePorts(void)
 {
     uint8_t portIndex = 0;
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
     while (portConfig && portIndex < ARRAYLEN(mspPorts)) {
-        mspPort_t *mspPort = &mspPorts[portIndex];
-
-        if (mspPort->port) {
-            portIndex++;
-            continue;
-        }
-
-        portOptions_e options = SERIAL_NOT_INVERTED;
-
-        if (mspConfig()->halfDuplex) {
-            options |= SERIAL_BIDIR;
-        } else if (serialType(portConfig->identifier) == SERIALTYPE_UART
-                   || serialType(portConfig->identifier) == SERIALTYPE_LPUART
-                   || serialType(portConfig->identifier) == SERIALTYPE_PIOUART) {
-#if !ENABLE_SERIAL_SKIP_CHECK_TX
-            options |= SERIAL_CHECK_TX;
-#endif
-        }
-
-        serialPort_t *serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, NULL, baudRates[portConfig->msp_baudrateIndex], MODE_RXTX, options);
-        if (serialPort) {
-            bool sharedWithTelemetry = isSerialPortShared(portConfig, FUNCTION_MSP, TELEMETRY_PORT_FUNCTIONS_MASK);
-            resetMspPort(mspPort, serialPort, sharedWithTelemetry);
-
-            portIndex++;
-        }
+        mspSerialAllocatePort(portConfig, &portIndex);
 
         portConfig = findNextSerialPortConfig(FUNCTION_MSP);
+    }
+
+    // The serial sensor port when the module reports over MSP: an MT
+    // rangefinder / optical flow sensor pushes MSP2_SENSOR_* frames rather than
+    // opening its UART, so the port it declares is silent until there is an MSP
+    // port on it.  Assigning FUNCTION_MSP by hand alongside is not asked for -
+    // the sensor's own function is what says the module is there, and it is the
+    // only thing Configurator can read back to show which UART it is on.
+    //
+    // Deliberately after the loop rather than folded into the synthesized mask:
+    // an implied port claims no msp_uart[] slot, so it cannot go stale when
+    // rangefinder_hardware changes without the port being reassigned.  Ports
+    // that already carry FUNCTION_MSP are allocated above and openSerialPort()
+    // refuses the second claim, which is what skips them here.
+    if (portIndex < ARRAYLEN(mspPorts) && serialSensorPortUsesMsp()) {
+        const serialPortConfig_t *sensorPortConfig = findSerialPortConfig(FUNCTION_LIDAR);
+        if (sensorPortConfig) {
+            mspSerialAllocatePort(sensorPortConfig, &portIndex);
+        }
     }
 }
 
@@ -607,8 +639,11 @@ bool mspSerialWaiting(void)
  * activity in the last MSP_ACTIVITY_DEFAULT_TIMEOUT_MS (5 s).
  *
  * Only pure FUNCTION_MSP ports count.  Ports that also carry
- * FUNCTION_VTX_MSP (HD VTX / DisplayPort) are excluded so that
- * peripheral traffic does not accidentally muzzle the beeper.
+ * FUNCTION_VTX_MSP (HD VTX / DisplayPort) or FUNCTION_LIDAR (an MT
+ * rangefinder / optical flow module pushing MSP2_SENSOR_* frames) are
+ * excluded so that peripheral traffic does not accidentally muzzle the
+ * beeper or convince failsafe that someone is at a bench.  The sensor
+ * streams continuously in flight, so counting it would mean never again.
  */
 bool mspSerialIsConfiguratorActive(void)
 {
@@ -619,14 +654,13 @@ bool mspSerialIsConfiguratorActive(void)
             continue;
         }
 
-        const serialPortConfig_t *cfg =
-            serialFindPortConfiguration(mspPort->port->identifier);
-        if (!cfg) {
-            continue;
-        }
-
-        // Skip ports shared with a VTX — those are peripherals, not configurators
-        if (cfg->functionMask & FUNCTION_VTX_MSP) {
+        // Skip ports carrying a peripheral rather than a configurator.  Read
+        // through the synthesized view, as every other port lookup in this
+        // file does - the stored mask agrees with it today, but only because
+        // nothing writes a feature's UART field without going through
+        // serialApplyFunctionMask().
+        if (serialSynthesizeFunctionMask(mspPort->port->identifier)
+            & (FUNCTION_VTX_MSP | FUNCTION_LIDAR)) {
             continue;
         }
 

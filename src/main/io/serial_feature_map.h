@@ -26,6 +26,12 @@
 
 #include "io/serial.h"
 
+// True when the configured rangefinder / optical flow hardware reports over
+// MSP rather than opening the serial sensor port itself, i.e. when the port
+// carrying FUNCTION_LIDAR needs an MSP port opened on it for the sensor to be
+// heard.  See the definition for why the two transports differ.
+bool serialSensorPortUsesMsp(void);
+
 // Walk every feature PG that claims a UART and build a functionMask
 // for the given port.  Drives the back-compat view exposed over MSP
 // (MSP_CF_SERIAL_CONFIG) and the CLI `serial` command's output.

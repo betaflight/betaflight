@@ -81,14 +81,47 @@ extern "C" {
     bool cliProcess(void) { return false; }
 
     // --- port allocation mocks (drive mspSerialAllocatePorts -> one MSP port) ---
-    const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) { return &fakePortConfig; }
+    // The sensor port is off by default: fakeSensorPortConfig is only handed
+    // out once a test declares one, so the MSP-port cases below are unchanged.
+    static serialPortConfig_t fakeSensorPortConfig;
+    static serialPort_t fakeSensorSerialPort;
+    static bool sensorPortDeclared;
+    static bool sensorPortIsMspTransport;
+    static bool mspPortDeclared;
+
+    bool serialSensorPortUsesMsp(void) { return sensorPortIsMspTransport; }
+
+    const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function) {
+        if (function == FUNCTION_LIDAR) {
+            return sensorPortDeclared ? &fakeSensorPortConfig : NULL;
+        }
+        return mspPortDeclared ? &fakePortConfig : NULL;
+    }
     const serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e) { return NULL; }
-    serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e,
+    serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFunction_e,
                                  serialReceiveCallbackPtr, void *, uint32_t,
-                                 portMode_e, portOptions_e) { return &fakeSerialPort; }
+                                 portMode_e, portOptions_e) {
+        serialPort_t *port = (identifier == fakeSensorPortConfig.identifier)
+            ? &fakeSensorSerialPort : &fakeSerialPort;
+        // openSerialPort() refuses a port already in use; mspSerialAllocatePorts()
+        // leans on that to skip a sensor port that already carries FUNCTION_MSP.
+        if (getMspSerialPortDescriptor(identifier) != -1) {
+            return NULL;
+        }
+        port->identifier = identifier;
+        return port;
+    }
     bool isSerialPortShared(const serialPortConfig_t *, uint16_t, serialPortFunction_e) { return false; }
     serialType_e serialType(serialPortIdentifier_e) { return SERIALTYPE_UART; }
-    const serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e) { return NULL; }
+    // mspSerialIsConfiguratorActive() resolves each port through the
+    // synthesized view; the sensor port answers FUNCTION_LIDAR so it can be
+    // told apart from a configurator link.
+    uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier) {
+        if (sensorPortDeclared && identifier == fakeSensorPortConfig.identifier) {
+            return FUNCTION_LIDAR;
+        }
+        return FUNCTION_MSP;
+    }
 
     // --- inert serial/system/msp stubs (off the tested path) ---
     uint32_t serialTxBytesFree(const serialPort_t *) { return FAKE_RX_CAP; }
@@ -98,7 +131,10 @@ extern "C" {
     void serialEndWrite(serialPort_t *) {}
     void waitForSerialPortToFinishTransmitting(serialPort_t *) {}
     void closeSerialPort(serialPort_t *) {}
-    mspDescriptor_t mspDescriptorAlloc(void) { return 0; }
+    // Incrementing rather than constant, so a test can count how many ports
+    // mspSerialAllocatePorts() actually took.
+    static int mspDescriptorAllocCount;
+    mspDescriptor_t mspDescriptorAlloc(void) { return (mspDescriptor_t)mspDescriptorAllocCount++; }
     // Never the test port's identifier, so non-MSP bytes are always evaluated.
     serialPortIdentifier_e displayPortMspGetSerial(void) { return (serialPortIdentifier_e)-1; }
 
@@ -133,9 +169,19 @@ protected:
 
         memset(&fakeSerialPort, 0, sizeof(fakeSerialPort));
         memset(&fakePortConfig, 0, sizeof(fakePortConfig));
+        memset(&fakeSensorSerialPort, 0, sizeof(fakeSensorSerialPort));
+        memset(&fakeSensorPortConfig, 0, sizeof(fakeSensorPortConfig));
         memset(&serialConfig_System, 0, sizeof(serialConfig_System));
         memset(&mspConfig_System, 0, sizeof(mspConfig_System));
         serialConfig_System.reboot_character = 'R';
+
+        // Distinct identifiers so an allocated port can be told from the other.
+        fakePortConfig.identifier = SERIAL_PORT_USART1;
+        fakeSensorPortConfig.identifier = SERIAL_PORT_UART5;
+        sensorPortDeclared = false;
+        sensorPortIsMspTransport = false;
+        mspPortDeclared = true;
+        mspDescriptorAllocCount = 0;
 
         // memset all ports + re-allocate one from the mocked config above.
         mspSerialInit();
@@ -230,4 +276,77 @@ TEST_F(MspSerialPendingRequestTest, CleanMspFrame_NoSideEffects)
     process();
     EXPECT_EQ(0, rebootCount);
     EXPECT_EQ(0, cliEnterCount);
+}
+
+// --- Serial sensor port allocation (FUNCTION_LIDAR on MSP-transport hardware) ---
+//
+// An MT rangefinder / optical flow module pushes MSP2_SENSOR_* frames instead of
+// opening its UART, so the port it declares is silent unless mspSerialAllocatePorts()
+// opens an MSP port there. The fixture's mocks hand out a sensor port config only
+// when a test declares one, so the cases above are unaffected.
+
+class MspSerialSensorPortTest : public MspSerialPendingRequestTest {
+protected:
+    void declareSensorPort(bool mspTransport) {
+        sensorPortDeclared = true;
+        sensorPortIsMspTransport = mspTransport;
+        mspDescriptorAllocCount = 0;
+        mspSerialInit();
+    }
+    // serialPortConfig_t stores the identifier as int8_t, so take it that way.
+    static bool isAllocated(int8_t identifier) {
+        return getMspSerialPortDescriptor((serialPortIdentifier_e)identifier) != -1;
+    }
+};
+
+TEST_F(MspSerialSensorPortTest, MspTransportSensorGetsAnMspPortOnItsOwnPort)
+{
+    declareSensorPort(true);
+
+    EXPECT_TRUE(isAllocated(SERIAL_PORT_USART1));               // the ordinary MSP port
+    EXPECT_TRUE(isAllocated(fakeSensorPortConfig.identifier));  // opened from FUNCTION_LIDAR alone
+}
+
+TEST_F(MspSerialSensorPortTest, NativeSerialSensorPortIsLeftToItsDriver)
+{
+    // TF / Nooploop / UPT1 open the port themselves during sensorsAutodetect();
+    // an MSP port there would take the UART the driver is waiting for.
+    declareSensorPort(false);
+
+    EXPECT_TRUE(isAllocated(SERIAL_PORT_USART1));
+    EXPECT_FALSE(isAllocated(fakeSensorPortConfig.identifier));
+}
+
+TEST_F(MspSerialSensorPortTest, SensorPortAlreadyCarryingMspIsNotAllocatedTwice)
+{
+    // A config that names both MSP and the sensor on one UART - which the field
+    // has plenty of - must not consume a second mspPorts[] slot for it.
+    fakeSensorPortConfig.identifier = fakePortConfig.identifier;
+    declareSensorPort(true);
+
+    EXPECT_TRUE(isAllocated(fakePortConfig.identifier));
+    EXPECT_EQ(1, mspDescriptorAllocCount);
+}
+
+TEST_F(MspSerialSensorPortTest, SensorTrafficIsNotConfiguratorActivity)
+{
+    // An MT module streams for the whole flight. Counting it as a configurator
+    // would muzzle the beeper (beeper.c:108,455) and tell failsafe someone is
+    // at a bench (failsafe.c:302) permanently, so the sensor port is excluded
+    // the way a VTX port already is.
+    mspPortDeclared = false;                 // sensor port only
+    declareSensorPort(true);
+    ASSERT_TRUE(isAllocated(fakeSensorPortConfig.identifier));
+
+    feed(VALID_V1_FRAME, sizeof(VALID_V1_FRAME));
+    process();
+    EXPECT_FALSE(mspSerialIsConfiguratorActive());
+
+    // Same traffic on an ordinary MSP port does count.
+    mspPortDeclared = true;
+    sensorPortDeclared = false;
+    mspSerialInit();
+    feed(VALID_V1_FRAME, sizeof(VALID_V1_FRAME));
+    process();
+    EXPECT_TRUE(mspSerialIsConfiguratorActive());
 }

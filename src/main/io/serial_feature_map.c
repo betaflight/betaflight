@@ -57,12 +57,98 @@
 #ifdef USE_RANGEFINDER
 #include "sensors/rangefinder.h"
 #endif
+#ifdef USE_OPTICALFLOW
+#include "sensors/opticalflow.h"
+#endif
 #ifdef USE_OSD
 #include "osd/osd.h"
 #endif
 #ifdef USE_TELEMETRY
 #include "telemetry/telemetry.h"
 #endif
+
+/*
+ * FUNCTION_LIDAR names the UART the rangefinder / optical flow module is wired
+ * to.  It does not say how the module talks, and the two transports differ in
+ * who opens the port:
+ *
+ *   TF / Nooploop / UPT1  - the driver calls openSerialPort() itself during
+ *                           sensorsAutodetect().
+ *   MT family             - rangefinder_lidarmt.c is a bridge over MSP.  The
+ *                           module pushes MSP2_SENSOR_RANGEFINDER_LIDARMT /
+ *                           MSP2_SENSOR_OPTICALFLOW_MT frames, which are
+ *                           handled by the ordinary MSP command dispatcher, so
+ *                           the declared port is only heard once an MSP port
+ *                           has been opened on it.
+ *
+ * True for the second case, i.e. when the sensor port needs an MSP port.
+ *
+ * A pair of selections that disagree - an MT rangefinder alongside a UPT1
+ * optical flow, say - is not a real wiring: there is one declared port and one
+ * module on it.  The native driver wins, because it claims the port during
+ * sensorsAutodetect() and openSerialPort() then refuses the MSP open.  Say so
+ * here rather than leaning on that ordering, so the capacity check below does
+ * not reserve an MSP slot the port will never use.
+ */
+
+#ifdef USE_RANGEFINDER
+// The rangefinder drivers that open the sensor UART themselves.  Enumerated
+// rather than derived as "anything that is not MT", because the two mistakes
+// are not equally bad: calling a serial driver MSP-transport merely attempts
+// an open that openSerialPort() refuses, while calling an MSP one serial
+// suppresses the port it needs and the sensor goes quiet.  A complement would
+// silently sort a future I2C or CAN rangefinder into the second case.
+static bool rangefinderOpensPortItself(void)
+{
+    switch (rangefinderConfig()->rangefinder_hardware) {
+    case RANGEFINDER_TFMINI:
+    case RANGEFINDER_TF02:
+    case RANGEFINDER_TFNOVA:
+    case RANGEFINDER_NOOPLOOP_F2:
+    case RANGEFINDER_NOOPLOOP_F2P:
+    case RANGEFINDER_NOOPLOOP_F2PH:
+    case RANGEFINDER_NOOPLOOP_F:
+    case RANGEFINDER_NOOPLOOP_FP:
+    case RANGEFINDER_NOOPLOOP_F2MINI:
+    case RANGEFINDER_UPT1:
+        return true;
+    default:
+        // RANGEFINDER_NONE claims no UART, and HCSR04 is pin-driven.
+        return false;
+    }
+}
+#endif
+
+bool serialSensorPortUsesMsp(void)
+{
+    bool opensPortItself = false;
+    bool reportsOverMsp = false;
+
+#ifdef USE_RANGEFINDER
+    opensPortItself |= rangefinderOpensPortItself();
+#ifdef USE_RANGEFINDER_MT
+    switch (rangefinderConfig()->rangefinder_hardware) {
+    case RANGEFINDER_MTF01:
+    case RANGEFINDER_MTF02:
+    case RANGEFINDER_MTF01P:
+    case RANGEFINDER_MTF02P:
+        reportsOverMsp = true;
+        break;
+    default:
+        break;
+    }
+#endif
+#endif
+
+#ifdef USE_OPTICALFLOW
+    opensPortItself |= (opticalflowConfig()->opticalflow_hardware == OPTICALFLOW_UPT1);
+#ifdef USE_OPTICALFLOW_MT
+    reportsOverMsp |= (opticalflowConfig()->opticalflow_hardware == OPTICALFLOW_MT);
+#endif
+#endif
+
+    return reportsOverMsp && !opensPortItself;
+}
 
 uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
 {
@@ -304,12 +390,73 @@ static unsigned countTelemetryBits(uint32_t mask)
 }
 #endif
 
+#if defined(USE_RANGEFINDER)
+// Whether `sensorPort` is already accounted for as an explicit MSP port in the
+// post-apply configuration, so the implied allocation must not be counted a
+// second time.  Slots held by `identifier` are about to be cleared, so only
+// this mask speaks for that port.
+static bool sensorPortHoldsMspSlot(serialPortIdentifier_e sensorPort,
+                                   serialPortIdentifier_e identifier, uint32_t mask)
+{
+    if (sensorPort == identifier) {
+        return (mask & FUNCTION_MSP) != 0;
+    }
+
+    for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+        if (mspConfig()->msp_uart[i] == sensorPort) {
+            return true;
+        }
+    }
+
+    return false;
+}
+#endif
+
+// What the MSP count below would come to if this apply changed nothing, i.e.
+// the pressure the configuration is already under.
+static unsigned currentMspPressure(void)
+{
+    unsigned used = 0;
+#if defined(USE_RANGEFINDER)
+    const serialPortIdentifier_e sensorPort =
+        (serialPortIdentifier_e)rangefinderConfig()->rangefinder_uart;
+    bool sensorHoldsSlot = false;
+#endif
+
+    for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+        if (mspConfig()->msp_uart[i] == SERIAL_PORT_NONE) {
+            continue;
+        }
+        used++;
+#if defined(USE_RANGEFINDER)
+        if (mspConfig()->msp_uart[i] == sensorPort) {
+            sensorHoldsSlot = true;
+        }
+#endif
+    }
+
+#if defined(USE_RANGEFINDER)
+    if (serialSensorPortUsesMsp() && sensorPort != SERIAL_PORT_NONE && !sensorHoldsSlot) {
+        used++;
+    }
+#endif
+
+    return used;
+}
+
 // Check whether a mask can be applied to `identifier` without leaving the
 // feature PGs in an inconsistent state.  Counts bits per category and checks
 // MSP/telemetry slot availability as if clearClaimsOnPort(identifier) had
 // already run — slots currently held by this port are considered free for
 // the new mask.  No PG mutations are performed.
-static bool canApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
+//
+// `reserveImpliedSensorPort` keeps a slot for an MSP-transport sensor that
+// claims none of its own; see the MSP capacity block.  The EEPROM migration
+// passes false: a config that is already over budget boots today with a deaf
+// sensor, and rejecting one of its ports there would drop that port's feature
+// claims instead, which is strictly worse.
+static bool canApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask,
+                                 bool reserveImpliedSensorPort)
 {
 #ifdef USE_VTX_COMMON
     unsigned vtxBits = 0;
@@ -327,17 +474,61 @@ static bool canApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mas
     }
 #endif
 
+    // MSP capacity, counted over the whole configuration this apply would
+    // leave behind rather than over this mask alone.  mspPorts[] is sized to
+    // MAX_MSP_PORT_COUNT like msp_uart[] is, and an MSP-transport sensor is
+    // given one of those entries at boot from FUNCTION_LIDAR while claiming no
+    // msp_uart[] slot of its own.  Counting only the mask meant the sensor
+    // could be assigned first and every remaining slot handed out afterwards,
+    // each write passing, and the sensor left silent at boot.
+    //
+    // This guards the write paths; it is not an invariant.  A later change of
+    // rangefinder_hardware from a native serial driver to an MT one does not
+    // come through here and can still strand the sensor - reassigning its port
+    // recovers it.
+    unsigned mspUsed = 0;
+    for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+        if (mspConfig()->msp_uart[i] != SERIAL_PORT_NONE
+            && mspConfig()->msp_uart[i] != identifier) {
+            mspUsed++;
+        }
+    }
     if (mask & FUNCTION_MSP) {
-        unsigned availableMsp = 0;
-        for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
-            if (mspConfig()->msp_uart[i] == SERIAL_PORT_NONE
-                || mspConfig()->msp_uart[i] == identifier) {
-                availableMsp++;
-            }
+        mspUsed++;
+    }
+
+#if defined(USE_RANGEFINDER)
+    if (reserveImpliedSensorPort && serialSensorPortUsesMsp()) {
+        // clearClaimsOnPort() releases rangefinder_uart only when it names
+        // `identifier`, so derive the port this apply leaves behind rather
+        // than reading the current one - otherwise removing FUNCTION_LIDAR
+        // from the sensor's own port still reserves a slot for it.
+        const serialPortIdentifier_e sensorPort = (mask & FUNCTION_LIDAR)
+            ? identifier
+            : (rangefinderConfig()->rangefinder_uart == identifier
+                ? SERIAL_PORT_NONE
+                : (serialPortIdentifier_e)rangefinderConfig()->rangefinder_uart);
+
+        if (sensorPort != SERIAL_PORT_NONE
+            && !sensorPortHoldsMspSlot(sensorPort, identifier, mask)) {
+            mspUsed++;
         }
-        if (availableMsp < 1) {
-            return false;
-        }
+    }
+#else
+    (void)reserveImpliedSensorPort;
+#endif
+
+    // Refuse what makes the pressure worse, not merely what is over budget.
+    // A configuration can go over budget behind this check's back, because
+    // rangefinder_hardware is not written through here: assign the sensor port
+    // while the sensor is still NONE, then pick an MT module on the Sensors
+    // tab.  Refusing every write from there would freeze the Ports tab - its
+    // first record is the USB VCP, which isSerialConfigValid() requires to
+    // carry MSP, so the later record that would free a slot is never reached
+    // and firmware rejects the whole save.  Allowing writes that hold or
+    // lower the count leaves the user a way out.
+    if (mspUsed > MAX_MSP_PORT_COUNT && mspUsed > currentMspPressure()) {
+        return false;
     }
 
 #ifdef USE_TELEMETRY
@@ -359,7 +550,8 @@ static bool canApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mas
     return true;
 }
 
-bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
+static bool applyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask,
+                              bool reserveImpliedSensorPort)
 {
     if (identifier == SERIAL_PORT_NONE) {
         return mask == 0;
@@ -368,7 +560,7 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
     // Validate against the pre-clear state so callers see an atomic
     // success/failure; if the mask can't be represented we must not
     // have touched the PGs.
-    if (!canApplyFunctionMask(identifier, mask)) {
+    if (!canApplyFunctionMask(identifier, mask, reserveImpliedSensorPort)) {
         return false;
     }
 
@@ -472,6 +664,11 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
     return true;
 }
 
+bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
+{
+    return applyFunctionMask(identifier, mask, true);
+}
+
 void serialBackfillFeatureFields(void)
 {
     // Apply every port's mask unconditionally: apply-with-mask=0 runs the
@@ -486,8 +683,16 @@ void serialBackfillFeatureFields(void)
     // synthesized view of a partially-migrated port simply omits the bits
     // that couldn't be represented, which matches the legacy-is-invalid
     // semantics those masks had before migration.
+    //
+    // The implied MSP port for an MSP-transport sensor is deliberately not
+    // reserved here.  A stored config that is already over budget - every MSP
+    // slot taken and an MT sensor on a further port - is well-formed and boots
+    // today with a deaf sensor.  Reserving during migration would reject
+    // whichever port happens to be applied last, dropping that port's feature
+    // claims while its stored mask still names them: a worse outcome, and one
+    // that depends on portConfigs[] iteration order.
     for (unsigned i = 0; i < ARRAYLEN(serialConfig()->portConfigs); i++) {
         const serialPortConfig_t *port = &serialConfig()->portConfigs[i];
-        (void)serialApplyFunctionMask(port->identifier, port->functionMask);
+        (void)applyFunctionMask(port->identifier, port->functionMask, false);
     }
 }

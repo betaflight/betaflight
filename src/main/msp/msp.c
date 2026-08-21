@@ -4268,14 +4268,22 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
                     return MSP_RESULT_ERROR;
                 }
 
-                portConfig->functionMask = sbufReadU16(src);
-                portConfig->msp_baudrateIndex = sbufReadU8(src);
-                portConfig->gps_baudrateIndex = sbufReadU8(src);
-                portConfig->telemetry_baudrateIndex = sbufReadU8(src);
-                portConfig->blackbox_baudrateIndex = sbufReadU8(src);
-                if (!serialApplyFunctionMask(identifier, portConfig->functionMask)) {
+                // Into a copy, committed only once the mask is accepted.  The
+                // stored mask is what isSerialConfigValid() reads at the next
+                // boot, and an invalid one there is answered with
+                // PG_RESET(serialConfig) - so a rejected write must not leave
+                // its mask behind.  cliSerial() has always done it this way.
+                serialPortConfig_t candidate = *portConfig;
+
+                candidate.functionMask = sbufReadU16(src);
+                candidate.msp_baudrateIndex = sbufReadU8(src);
+                candidate.gps_baudrateIndex = sbufReadU8(src);
+                candidate.telemetry_baudrateIndex = sbufReadU8(src);
+                candidate.blackbox_baudrateIndex = sbufReadU8(src);
+                if (!serialApplyFunctionMask(identifier, candidate.functionMask)) {
                     return MSP_RESULT_ERROR;
                 }
+                *portConfig = candidate;
             }
         }
         break;
@@ -4301,14 +4309,20 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
                 return MSP_RESULT_ERROR;
             }
 
-            portConfig->functionMask = sbufReadU32(src);
-            portConfig->msp_baudrateIndex = sbufReadU8(src);
-            portConfig->gps_baudrateIndex = sbufReadU8(src);
-            portConfig->telemetry_baudrateIndex = sbufReadU8(src);
-            portConfig->blackbox_baudrateIndex = sbufReadU8(src);
-            if (!serialApplyFunctionMask(identifier, portConfig->functionMask)) {
+            // See MSP_SET_CF_SERIAL_CONFIG above: validate on a copy so a
+            // rejected mask is not left in the stored config for
+            // isSerialConfigValid() to answer with PG_RESET at the next boot.
+            serialPortConfig_t candidate = *portConfig;
+
+            candidate.functionMask = sbufReadU32(src);
+            candidate.msp_baudrateIndex = sbufReadU8(src);
+            candidate.gps_baudrateIndex = sbufReadU8(src);
+            candidate.telemetry_baudrateIndex = sbufReadU8(src);
+            candidate.blackbox_baudrateIndex = sbufReadU8(src);
+            if (!serialApplyFunctionMask(identifier, candidate.functionMask)) {
                 return MSP_RESULT_ERROR;
             }
+            *portConfig = candidate;
             // Skip unknown bytes
             while (start - sbufBytesRemaining(src) < portConfigSize && sbufBytesRemaining(src)) {
                 sbufReadU8(src);
