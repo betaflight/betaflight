@@ -212,8 +212,8 @@ TEST_F(RcControlsModesTest, twoTapArming)
     PG_RESET(armingConfig);
     EXPECT_EQ(0, armingConfig()->two_tap_arming);
 
-    armingConfigMutable()->two_tap_arming = 1;
-    rcModeSetTwoTapArming(true);
+    armingConfigMutable()->two_tap_arming = 100;
+    rcModeSetTwoTapArming(armingConfig()->two_tap_arming);
     fixedMillis = 0;
     updateActivatedModes();
 
@@ -221,12 +221,12 @@ TEST_F(RcControlsModesTest, twoTapArming)
     updateActivatedModes();
     EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXARM));
 
-    fixedMillis = 100;
+    fixedMillis = 500;
     rcData[AUX1] = PWM_RANGE_MIDDLE;
     updateActivatedModes();
     EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXARM));
 
-    fixedMillis = 200;
+    fixedMillis = 1000;
     rcData[AUX1] = PWM_RANGE_MAX;
     updateActivatedModes();
     EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXARM));
@@ -235,18 +235,34 @@ TEST_F(RcControlsModesTest, twoTapArming)
     updateActivatedModes();
     EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXARM));
 
-    fixedMillis = 300;
+    fixedMillis = 1100;
     rcData[AUX1] = PWM_RANGE_MAX;
     updateActivatedModes();
-    fixedMillis = 801;
+    fixedMillis = 2101;
     updateActivatedModes();
     EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXARM));
 
     rcData[AUX1] = PWM_RANGE_MIDDLE;
     updateActivatedModes();
 
+    armingConfigMutable()->two_tap_arming = 200;
+    rcModeSetTwoTapArming(armingConfig()->two_tap_arming);
+    fixedMillis = 3000;
+    rcData[AUX1] = PWM_RANGE_MAX;
+    updateActivatedModes();
+    fixedMillis = 4000;
+    rcData[AUX1] = PWM_RANGE_MIDDLE;
+    updateActivatedModes();
+    fixedMillis = 5000;
+    rcData[AUX1] = PWM_RANGE_MAX;
+    updateActivatedModes();
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXARM));
+
+    rcData[AUX1] = PWM_RANGE_MIDDLE;
+    updateActivatedModes();
+
     armingConfigMutable()->two_tap_arming = 0;
-    rcModeSetTwoTapArming(false);
+    rcModeSetTwoTapArming(armingConfig()->two_tap_arming);
     rcData[AUX1] = PWM_RANGE_MAX;
     updateActivatedModes();
     EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXARM));

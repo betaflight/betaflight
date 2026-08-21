@@ -68,9 +68,9 @@ static struct {
     timeUs_t firstTapAt;
     twoTapState_e state;
 } twoTapArm;
-static bool twoTapArmingEnabled;
+static timeUs_t twoTapTimeoutUs;
 
-#define TWO_TAP_TIMEOUT_US 500000
+#define TWO_TAP_TIMEOUT_UNIT_US 10000U
 
 PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions, PG_MODE_ACTIVATION_PROFILE, 5);
 
@@ -88,9 +88,9 @@ void rcModeUpdate(const boxBitmask_t *newState)
     rcModeActivationMask = *newState;
 }
 
-void rcModeSetTwoTapArming(bool enabled)
+void rcModeSetTwoTapArming(uint8_t timeoutCentiseconds)
 {
-    twoTapArmingEnabled = enabled;
+    twoTapTimeoutUs = timeoutCentiseconds * TWO_TAP_TIMEOUT_UNIT_US;
     twoTapArm.state = TWO_TAP_IDLE;
 }
 
@@ -108,7 +108,7 @@ static bool processTwoTapArm(timeUs_t currentTimeUs, bool armSwitchActive)
         if (!armSwitchActive) {
             twoTapArm.state = TWO_TAP_WAITING_FOR_SECOND_TAP;
         }
-        if (cmpTimeUs(currentTimeUs, twoTapArm.firstTapAt) > TWO_TAP_TIMEOUT_US) {
+        if (cmpTimeUs(currentTimeUs, twoTapArm.firstTapAt) > (timeDelta_t)twoTapTimeoutUs) {
             twoTapArm.state = armSwitchActive ? TWO_TAP_TIMEOUT : TWO_TAP_IDLE;
         }
         break;
@@ -117,7 +117,7 @@ static bool processTwoTapArm(timeUs_t currentTimeUs, bool armSwitchActive)
         if (armSwitchActive) {
             twoTapArm.state = TWO_TAP_READY;
         }
-        if (cmpTimeUs(currentTimeUs, twoTapArm.firstTapAt) > TWO_TAP_TIMEOUT_US) {
+        if (cmpTimeUs(currentTimeUs, twoTapArm.firstTapAt) > (timeDelta_t)twoTapTimeoutUs) {
             twoTapArm.state = armSwitchActive ? TWO_TAP_TIMEOUT : TWO_TAP_IDLE;
         }
         break;
@@ -266,7 +266,7 @@ void updateActivatedModes(void)
 
     rcModeUpdate(&newMask);
 
-    if (twoTapArmingEnabled && !processTwoTapArm(micros(), IS_RC_MODE_ACTIVE(BOXARM))) {
+    if (twoTapTimeoutUs && !processTwoTapArm(micros(), IS_RC_MODE_ACTIVE(BOXARM))) {
         bitArrayClr(&rcModeActivationMask, BOXARM);
     }
 
