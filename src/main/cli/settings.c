@@ -417,6 +417,12 @@ static const char * const lookupTableVideoSystem[] = {
 };
 #endif
 
+#ifdef USE_OSD_HOME_RELATIVE_OVERLAY
+static const char * const lookupTableOsdHomeRelativeRotation[] = {
+    "0", "90", "180", "270",
+};
+#endif
+
 #if defined(USE_ITERM_RELAX)
 const char * const lookupTableItermRelax[] = {
     "OFF", "RP", "RPY", "RP_INC", "RPY_INC"
@@ -671,6 +677,9 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableThrottleLimitType),
 #if defined(USE_VIDEO_SYSTEM)
     LOOKUP_TABLE_ENTRY(lookupTableVideoSystem),
+#endif
+#ifdef USE_OSD_HOME_RELATIVE_OVERLAY
+    LOOKUP_TABLE_ENTRY(lookupTableOsdHomeRelativeRotation),
 #endif
 #if defined(USE_ITERM_RELAX)
     LOOKUP_TABLE_ENTRY(lookupTableItermRelax),
@@ -1641,6 +1650,12 @@ const clivalue_t valueTable[] = {
     { "osd_stick_overlay_right_pos",   VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_STICK_OVERLAY_RIGHT]) },
 
     { "osd_stick_overlay_radio_mode",  VAR_UINT8   | MASTER_VALUE, .config.minmaxUnsigned = { 1, 4 }, PG_OSD_CONFIG, offsetof(osdConfig_t, overlay_radio_mode) },
+#endif
+
+#ifdef USE_OSD_HOME_RELATIVE_OVERLAY
+    { "osd_home_relative_overlay_pos", VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_HOME_RELATIVE_OVERLAY]) },
+    { "osd_home_relative_scale",       VAR_UINT8   | MASTER_VALUE, .config.minmaxUnsigned = { 1, 255 }, PG_OSD_CONFIG, offsetof(osdConfig_t, home_relative_scale) },
+    { "osd_home_relative_rotation",    VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OSD_HOME_RELATIVE_ROTATION }, PG_OSD_CONFIG, offsetof(osdConfig_t, home_relative_rotation) },
 #endif
 
 #ifdef USE_PROFILE_NAMES

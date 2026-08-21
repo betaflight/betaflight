@@ -305,7 +305,9 @@ osd_unittest_DEFINES := \
 		USE_OSD= \
 		USE_GPS= \
 		USE_RTC_TIME= \
-		USE_ADC_INTERNAL=
+		USE_ADC_INTERNAL= \
+		USE_OSD_STICK_OVERLAY= \
+		USE_OSD_HOME_RELATIVE_OVERLAY=
 
 link_quality_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \

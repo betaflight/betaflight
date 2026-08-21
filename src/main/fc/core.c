@@ -96,6 +96,7 @@
 #include "msp/msp_serial.h"
 
 #include "osd/osd.h"
+#include "osd/osd_elements.h"
 
 #include "pg/motor.h"
 #include "pg/pg.h"
@@ -630,6 +631,10 @@ if (isMotorProtocolDshot()) {
         mixerResetRpmLimiter();
 #endif
         ENABLE_ARMING_FLAG(ARMED);  // ***ARM NOW ***
+
+#ifdef USE_OSD_HOME_RELATIVE_OVERLAY
+        osdHomeRelativeOverlayOnArm();
+#endif
 
 #ifdef USE_RC_STATS
         NotifyRcStatsArming();
@@ -1263,6 +1268,9 @@ void processRxModes(timeUs_t currentTimeUs)
         if (IS_RC_MODE_ACTIVE(BOXHEADADJ) && !FLIGHT_MODE(GPS_RESCUE_MODE)) {
             if (imuQuaternionHeadfreeOffsetSet()) {
                beeper(BEEPER_RX_SET);
+#ifdef USE_OSD_HOME_RELATIVE_OVERLAY
+               osdHomeRelativeOverlayOnHeadingAdjust();
+#endif
             }
         }
     }

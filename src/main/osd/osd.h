@@ -229,6 +229,10 @@ typedef enum {
     OSD_POS_HOLD_READY,         // pre-engagement Position Hold readiness indicator
 #endif
 
+#ifdef USE_OSD_HOME_RELATIVE_OVERLAY
+    OSD_HOME_RELATIVE_OVERLAY,  // aircraft position relative to home, referenced to the heading captured at arming
+#endif
+
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -375,6 +379,10 @@ typedef struct osdConfig_s {
     uint8_t ahInvert;                         // invert the artificial horizon
     uint8_t osdProfileIndex;
     uint8_t overlay_radio_mode;
+#ifdef USE_OSD_HOME_RELATIVE_OVERLAY
+    uint8_t home_relative_scale;              // metres from centre to the edge of the Home Relative Overlay square
+    uint8_t home_relative_rotation;           // index into the 0/90/180/270 CLI table; multiplied by 90 to get the clockwise rotation (degrees) applied to correct heading/GPS reference mismatches
+#endif
     char profile[OSD_PROFILE_COUNT][OSD_PROFILE_NAME_LENGTH + 1];
     uint16_t link_quality_alarm;
     int16_t rssi_dbm_alarm;

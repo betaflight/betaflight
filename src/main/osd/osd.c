@@ -160,9 +160,9 @@ escSensorData_t *osdEscDataCombined;
 
 STATIC_ASSERT(OSD_POS_MAX == OSD_POS(63,31), OSD_POS_MAX_incorrect);
 
-PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 13);
+PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 15);
 
-PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 3);
+PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 4);
 
 // Controls the display order of the OSD post-flight statistics.
 // Adjust the ordering here to control how the post-flight stats are presented.
@@ -372,6 +372,11 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->timers[OSD_TIMER_2] = osdTimerDefault[OSD_TIMER_2];
 
     osdConfig->overlay_radio_mode = 2;
+
+#ifdef USE_OSD_HOME_RELATIVE_OVERLAY
+    osdConfig->home_relative_scale = 10; // metres from centre to edge
+    osdConfig->home_relative_rotation = 3; // 3 = 270 degrees clockwise; corrects the yaw/GPS reference mismatch by default
+#endif
 
     osdConfig->rssi_alarm = 20;
     osdConfig->link_quality_alarm = 80;

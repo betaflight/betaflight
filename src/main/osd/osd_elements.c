@@ -135,6 +135,7 @@
 #include "common/utils.h"
 #include "common/unit.h"
 #include "common/filter.h"
+#include "common/vector.h"
 
 #include "config/config.h"
 #include "config/feature.h"
@@ -197,7 +198,10 @@
 #define AH_SIDEBAR_WIDTH_POS 7
 #define AH_SIDEBAR_HEIGHT_POS 3
 
-// Stick overlay size
+// Small square overlay size. Shared by the Stick Overlay and the Home
+// Relative Overlay: both are rendered with osdBackgroundOverlayReticle()
+// and osdOverlayPlaceMarker() so the geometry is defined once, and both
+// use the same footprint (OSD_STICK_OVERLAY_WIDTH x OSD_STICK_OVERLAY_HEIGHT).
 #define OSD_STICK_OVERLAY_WIDTH 7
 #define OSD_STICK_OVERLAY_HEIGHT 5
 #define OSD_STICK_OVERLAY_SPRITE_HEIGHT 3
@@ -1885,8 +1889,14 @@ static void osdElementRsnr(osdElementParms_t *element)
 }
 #endif // USE_RX_RSNR
 
-#ifdef USE_OSD_STICK_OVERLAY
-static void osdBackgroundStickOverlay(osdElementParms_t *element)
+#if defined(USE_OSD_STICK_OVERLAY) || defined(USE_OSD_HOME_RELATIVE_OVERLAY)
+// Shared background for every small square overlay (Stick Overlay left/right
+// and Home Relative Overlay): a crosshair reticle spanning the full element
+// footprint. Only one item's box is ever mid-render at a time (the caller
+// completes a full multi-pass cycle for one item before starting the next),
+// so it's safe for every overlay item to share this one function and its
+// local render-phase state.
+static void osdBackgroundOverlayReticle(osdElementParms_t *element)
 {
     static enum {VERT, HORZ} renderPhase = VERT;
 
@@ -1922,6 +1932,21 @@ static void osdBackgroundStickOverlay(osdElementParms_t *element)
     }
 }
 
+// Shared tail for every small square overlay's foreground marker: write the
+// glyph and place it at the given cell. `cellY` is in whole character rows
+// (0..OSD_STICK_OVERLAY_HEIGHT-1). Both cellX and cellY are clamped here so
+// that any caller - present or future - can never push the cursor outside
+// the shared overlay footprint, regardless of how its own coordinate math
+// is derived.
+static void osdOverlayPlaceMarker(osdElementParms_t *element, uint8_t cellX, uint8_t cellY, char glyph)
+{
+    tfp_sprintf(element->buff, "%c", glyph);
+    element->elemOffsetX = constrain(cellX, 0, OSD_STICK_OVERLAY_WIDTH - 1);
+    element->elemOffsetY = constrain(cellY, 0, OSD_STICK_OVERLAY_HEIGHT - 1);
+}
+#endif // USE_OSD_STICK_OVERLAY || USE_OSD_HOME_RELATIVE_OVERLAY
+
+#ifdef USE_OSD_STICK_OVERLAY
 static void osdElementStickOverlay(osdElementParms_t *element)
 {
     // Now draw the cursor
@@ -1940,11 +1965,92 @@ static void osdElementStickOverlay(osdElementParms_t *element)
 
     const char cursor = SYM_STICK_OVERLAY_SPRITE_HIGH + (cursorY % OSD_STICK_OVERLAY_SPRITE_HEIGHT);
 
-    tfp_sprintf(element->buff, "%c", cursor);
-    element->elemOffsetX = cursorX;
-    element->elemOffsetY = cursorY / OSD_STICK_OVERLAY_SPRITE_HEIGHT;
+    osdOverlayPlaceMarker(element, cursorX, cursorY / OSD_STICK_OVERLAY_SPRITE_HEIGHT, cursor);
 }
 #endif // USE_OSD_STICK_OVERLAY
+
+#ifdef USE_OSD_HOME_RELATIVE_OVERLAY
+// Heading captured at arming (decidegrees, 0..3599): the permanent "forward"
+// reference for the Home Relative Overlay for the rest of the flight. The
+// only way to change it afterwards is a successful head adjust (BOXHEADADJ)
+// trigger - see osdHomeRelativeOverlayOnHeadingAdjust().
+static int16_t homeRelativeHeadingRef = 0;
+static bool homeRelativeHeadingValid = false;
+
+// Called from tryArm() once per arming event.
+void osdHomeRelativeOverlayOnArm(void)
+{
+    homeRelativeHeadingRef = attitude.values.yaw;
+    homeRelativeHeadingValid = true;
+}
+
+// Called from the BOXHEADADJ handling in core.c whenever a head adjust
+// trigger actually takes effect. Before the first arm there is no reference
+// yet to adjust, so the call is a no-op until osdHomeRelativeOverlayOnArm()
+// has run at least once.
+void osdHomeRelativeOverlayOnHeadingAdjust(void)
+{
+    if (homeRelativeHeadingValid) {
+        homeRelativeHeadingRef = attitude.values.yaw;
+    }
+}
+
+static void osdElementHomeRelativeOverlay(osdElementParms_t *element)
+{
+    const bool positionValid = STATE(GPS_FIX) && STATE(GPS_FIX_HOME) && homeRelativeHeadingValid;
+
+    if (!positionValid) {
+        osdOverlayPlaceMarker(element, (OSD_STICK_OVERLAY_WIDTH - 1) / 2, (OSD_STICK_OVERLAY_HEIGHT - 1) / 2, 'X');
+        return;
+    }
+
+    // Aircraft position relative to home, in home-centred ENU centimetres.
+    // Reuses the GPS North/East offset helper already used by the nav map -
+    // no new GPS distance/bearing maths.
+    vector2_t offsetCm;
+    GPS_distance2d(&GPS_home_llh, &gpsSol.llh, &offsetCm);
+
+    // Rotate that offset into the reference frame captured at arming:
+    // vector2Rotate(v, angle) with v = (East, North) and angle = the
+    // reference heading (radians) yields .x = right-of-reference and
+    // .y = forward-of-reference, which is exactly the X/Y convention
+    // required (+Y forward, +X right).
+    //
+    // attitude.values.yaw and the GPS East/North frame don't share the same
+    // zero reference, so osd_home_relative_rotation (CLI, selectable in
+    // 90-degree steps: 0/90/180/270, default 90) is subtracted here to
+    // compensate. It only affects this position rotation - the arrow below
+    // is a pure heading *difference* and needs no correction.
+    vector2_t local;
+    const float rotationDeg = osdConfig()->home_relative_rotation * 90.0f;
+    const float refAngleDeg = (float)DECIDEGREES_TO_DEGREES(homeRelativeHeadingRef) - rotationDeg;
+    vector2Rotate(&local, &offsetCm, DEGREES_TO_RADIANS(refAngleDeg));
+
+    // The overlay's footprint is fixed at OSD_STICK_OVERLAY_WIDTH x
+    // OSD_STICK_OVERLAY_HEIGHT cells (same as the Stick Overlay), and there's
+    // no sub-cell sprite trick available for an arrow glyph the way there is
+    // for the Stick Overlay's dot - so each cell's real-world size is set by
+    // osd_home_relative_scale. Lowering that setting (a tighter scale) is the
+    // way to get finer resolution over a smaller area without changing the
+    // element's on-screen size.
+    const float scaleCm = constrain(osdConfig()->home_relative_scale, 1, 255) * 100.0f;
+    const float x = constrainf(local.x, -scaleCm, scaleCm);
+    const float y = constrainf(local.y, -scaleCm, scaleCm);
+
+    // Column: left edge = -scale (0), right edge = +scale (WIDTH-1).
+    const uint8_t cursorX = constrain(lrintf(scaleRangef(x, -scaleCm, scaleCm, 0, OSD_STICK_OVERLAY_WIDTH - 1)),
+                                       0, OSD_STICK_OVERLAY_WIDTH - 1);
+    // Row: top edge = +scale (0), bottom edge = -scale (HEIGHT-1).
+    const uint8_t cursorY = constrain(lrintf(scaleRangef(-y, -scaleCm, scaleCm, 0, OSD_STICK_OVERLAY_HEIGHT - 1)),
+                                       0, OSD_STICK_OVERLAY_HEIGHT - 1);
+
+    // Arrow glyph shows the aircraft's current yaw relative to the fixed
+    // reference heading - the display itself never rotates, only the arrow.
+    const char cursor = osdGetDirectionSymbolFromHeading(DECIDEGREES_TO_DEGREES((int)attitude.values.yaw - (int)homeRelativeHeadingRef));
+
+    osdOverlayPlaceMarker(element, cursorX, cursorY, cursor);
+}
+#endif // USE_OSD_HOME_RELATIVE_OVERLAY
 
 static void osdElementThrottlePosition(osdElementParms_t *element)
 {
@@ -2298,6 +2404,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_GPS
     [OSD_FLIGHT_DIST]             = osdElementGpsFlightDistance,
 #endif
+#ifdef USE_OSD_HOME_RELATIVE_OVERLAY
+    [OSD_HOME_RELATIVE_OVERLAY]   = osdElementHomeRelativeOverlay,
+#endif
 #ifdef USE_OSD_STICK_OVERLAY
     [OSD_STICK_OVERLAY_LEFT]      = osdElementStickOverlay,
     [OSD_STICK_OVERLAY_RIGHT]     = osdElementStickOverlay,
@@ -2362,8 +2471,11 @@ const osdElementDrawFn osdElementBackgroundFunction[OSD_ITEM_COUNT] = {
     [OSD_HORIZON_SIDEBARS]        = osdBackgroundHorizonSidebars,
     [OSD_CRAFT_NAME]              = osdBackgroundCraftName,
 #ifdef USE_OSD_STICK_OVERLAY
-    [OSD_STICK_OVERLAY_LEFT]      = osdBackgroundStickOverlay,
-    [OSD_STICK_OVERLAY_RIGHT]     = osdBackgroundStickOverlay,
+    [OSD_STICK_OVERLAY_LEFT]      = osdBackgroundOverlayReticle,
+    [OSD_STICK_OVERLAY_RIGHT]     = osdBackgroundOverlayReticle,
+#endif
+#ifdef USE_OSD_HOME_RELATIVE_OVERLAY
+    [OSD_HOME_RELATIVE_OVERLAY]   = osdBackgroundOverlayReticle,
 #endif
     [OSD_PILOT_NAME]              = osdBackgroundPilotName,
 };
@@ -2404,6 +2516,9 @@ void osdAddActiveElements(void)
         osdAddActiveElement(OSD_HOME_DIR);
         osdAddActiveElement(OSD_FLIGHT_DIST);
         osdAddActiveElement(OSD_EFFICIENCY);
+#ifdef USE_OSD_HOME_RELATIVE_OVERLAY
+        osdAddActiveElement(OSD_HOME_RELATIVE_OVERLAY);
+#endif
 #if ENABLE_FLIGHT_PLAN
         osdAddActiveElement(OSD_WP_NUMBER);
         osdAddActiveElement(OSD_WP_CURRENT_LAT);
