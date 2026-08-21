@@ -1585,7 +1585,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
     }
 
     DEBUG_SET(DEBUG_GPS_CONNECTION, 4, (gpsData.state * 100 + gpsData.state_position));  //!< State And State Position
-    DEBUG_SET(DEBUG_GPS_CONNECTION, 6, gpsData.ackState);                                //!< Config Ack State
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 6, gpsData.ackState);                                //!< Config Ack State [enum:ubloxAckState_e]
 
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
