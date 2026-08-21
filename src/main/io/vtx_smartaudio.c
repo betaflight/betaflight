@@ -349,7 +349,7 @@ static void saProcessResponse(uint8_t *buf, int len)
         }
 
         DEBUG_SET(DEBUG_SMARTAUDIO, 0, saDevice.version * 100 + saDevice.mode);  //!< Version And Mode
-        DEBUG_SET(DEBUG_SMARTAUDIO, 1, saDevice.channel);                        //!< Channel
+        DEBUG_SET(DEBUG_SMARTAUDIO, 1, saDevice.channel);                        //!< Band And Channel Index
         DEBUG_SET(DEBUG_SMARTAUDIO, 2, saDevice.freq);                           //!< Frequency [unit:MHz]
         DEBUG_SET(DEBUG_SMARTAUDIO, 3, saDevice.power);                          //!< Power Table Index
         break;
