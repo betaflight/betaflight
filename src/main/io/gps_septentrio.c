@@ -192,7 +192,8 @@ static bool sbfCommitNavEpoch(void)
     if (hasFix) {
         const bool positionValid = (pvt->latitude > SBF_PVT_DO_NOT_USE_THRESHOLD)
                                  && (pvt->longitude > SBF_PVT_DO_NOT_USE_THRESHOLD)
-                                 && (pvt->height > SBF_PVT_DO_NOT_USE_THRESHOLD);
+                                 && (pvt->height > SBF_PVT_DO_NOT_USE_THRESHOLD)
+                                 && (pvt->undulation > (float)SBF_PVT_DO_NOT_USE_THRESHOLD);
         if (positionValid) {
             gpsSol.llh.lat = (int32_t)lround(RADIANS_TO_DEGREES_D(pvt->latitude) * GPS_DEGREES_DIVIDER);
             gpsSol.llh.lon = (int32_t)lround(RADIANS_TO_DEGREES_D(pvt->longitude) * GPS_DEGREES_DIVIDER);
