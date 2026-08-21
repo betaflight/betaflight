@@ -202,10 +202,10 @@ void opticalflowProcess(void) {
         vector2_t delayedGyroRotated;
         applySensorRotation(&delayedGyroRotated, &delayedGyroRaw);
 
-        DEBUG_SET(DEBUG_OPTICALFLOW, 0, lrintf(processed.x * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 1, lrintf(processed.y * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 2, lrintf(DEGREES_TO_RADIANS(delayedGyroRotated.x) * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 3, lrintf(DEGREES_TO_RADIANS(delayedGyroRotated.y) * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 0, lrintf(processed.x * 1000));                               //!< Rotated Flow Rate X [unit:0.001rad/s]
+        DEBUG_SET(DEBUG_OPTICALFLOW, 1, lrintf(processed.y * 1000));                               //!< Rotated Flow Rate Y [unit:0.001rad/s]
+        DEBUG_SET(DEBUG_OPTICALFLOW, 2, lrintf(DEGREES_TO_RADIANS(delayedGyroRotated.x) * 1000));  //!< Gyro Compensation X [unit:0.001rad/s]
+        DEBUG_SET(DEBUG_OPTICALFLOW, 3, lrintf(DEGREES_TO_RADIANS(delayedGyroRotated.y) * 1000));  //!< Gyro Compensation Y [unit:0.001rad/s]
 
         // Subtract the rate of body rotation (converted from dps to rad/s) from the
         // optical flow
@@ -219,13 +219,13 @@ void opticalflowProcess(void) {
         if (fabsf(delayedGyroRotated.y) > ROTATION_GYRO_LIMIT) {
             processed.y = 0;
         }
-        DEBUG_SET(DEBUG_OPTICALFLOW, 4, lrintf(processed.x * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 5, lrintf(processed.y * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 4, lrintf(processed.x * 1000));  //!< Compensated Flow Rate X [unit:0.001rad/s]
+        DEBUG_SET(DEBUG_OPTICALFLOW, 5, lrintf(processed.y * 1000));  //!< Compensated Flow Rate Y [unit:0.001rad/s]
 
         applyLPF(&processed);
 
-        DEBUG_SET(DEBUG_OPTICALFLOW, 6, lrintf(processed.x * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 7, lrintf(processed.y * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 6, lrintf(processed.x * 1000));  //!< Filtered Flow Rate X [unit:0.001rad/s]
+        DEBUG_SET(DEBUG_OPTICALFLOW, 7, lrintf(processed.y * 1000));  //!< Filtered Flow Rate Y [unit:0.001rad/s]
 
         opticalflow.rawFlowRates = raw;
         opticalflow.processedFlowRates = processed;

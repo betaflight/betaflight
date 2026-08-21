@@ -231,7 +231,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             const float maxIncrease = wasThrottleRaised()
                 ? mixerRuntime.dynIdleMaxIncrease : mixerRuntime.dynIdleStartIncrease;
             float minRps = getMinMotorFrequencyHz();
-            DEBUG_SET(DEBUG_DYN_IDLE, 3, lrintf(minRps * 10.0f));
+            DEBUG_SET(DEBUG_DYN_IDLE, 3, lrintf(minRps * 10.0f));  //!< Minimum Motor Frequency [unit:0.1Hz]
             float rpsError = mixerRuntime.dynIdleMinRps - minRps;
             // PT1 type lowpass delay and smoothing for D
             minRps = mixerRuntime.prevMinRps + mixerRuntime.minRpsDelayK * (minRps - mixerRuntime.prevMinRps);
@@ -242,9 +242,9 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             mixerRuntime.dynIdleI += rpsError * mixerRuntime.dynIdleIGain;
             mixerRuntime.dynIdleI = constrainf(mixerRuntime.dynIdleI, 0.0f, maxIncrease);
             motorRangeMinIncrease = constrainf((dynIdleP + mixerRuntime.dynIdleI + dynIdleD), 0.0f, maxIncrease);
-            DEBUG_SET(DEBUG_DYN_IDLE, 0, MAX(-1000, lrintf(dynIdleP * 10000)));
-            DEBUG_SET(DEBUG_DYN_IDLE, 1, lrintf(mixerRuntime.dynIdleI * 10000));
-            DEBUG_SET(DEBUG_DYN_IDLE, 2, lrintf(dynIdleD * 10000));
+            DEBUG_SET(DEBUG_DYN_IDLE, 0, MAX(-1000, lrintf(dynIdleP * 10000)));   //!< Dyn Idle P [unit:0.0001]
+            DEBUG_SET(DEBUG_DYN_IDLE, 1, lrintf(mixerRuntime.dynIdleI * 10000));  //!< Dyn Idle I [unit:0.0001]
+            DEBUG_SET(DEBUG_DYN_IDLE, 2, lrintf(dynIdleD * 10000));               //!< Dyn Idle D [unit:0.0001]
         } else {
             motorRangeMinIncrease = 0;
         }
@@ -258,8 +258,8 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             // batteryGoodness = 1 when voltage is above vbatFull, and 0 when voltage is below vbatLow
             float batteryGoodness = 1.0f - constrainf((mixerRuntime.vbatFull - currentCellVoltage) / mixerRuntime.vbatRangeToCompensate, 0.0f, 1.0f);
             motorRangeAttenuationFactor = (mixerRuntime.vbatRangeToCompensate / mixerRuntime.vbatFull) * batteryGoodness * mixerRuntime.vbatSagCompensationFactor;
-            DEBUG_SET(DEBUG_BATTERY, 2, lrintf(batteryGoodness * 100));
-            DEBUG_SET(DEBUG_BATTERY, 3, lrintf(motorRangeAttenuationFactor * 1000));
+            DEBUG_SET(DEBUG_BATTERY, 2, lrintf(batteryGoodness * 100));               //!< Sag Compensation Battery Goodness [unit:%]
+            DEBUG_SET(DEBUG_BATTERY, 3, lrintf(motorRangeAttenuationFactor * 1000));  //!< Sag Compensation Attenuation [unit:0.001]
         }
         motorRangeMax = isCrashFlipModeActive() ? mixerRuntime.motorOutputHigh : mixerRuntime.motorOutputHigh - motorRangeAttenuationFactor * (mixerRuntime.motorOutputHigh - mixerRuntime.motorOutputLow);
 #else
@@ -432,14 +432,14 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
     throttle = constrainf(throttle - pidOutput, 0.0f, 1.0f);
     prevError = error;
 
-    DEBUG_SET(DEBUG_RPM_LIMIT, 0, lrintf(averageRpm));
-    DEBUG_SET(DEBUG_RPM_LIMIT, 1, lrintf(rpmLimiterThrottleScaleOffset * 100.0f));
-    DEBUG_SET(DEBUG_RPM_LIMIT, 2, lrintf(mixer->rpmLimiterThrottleScale * 100.0f));
-    DEBUG_SET(DEBUG_RPM_LIMIT, 3, lrintf(throttle * 100.0f));
-    DEBUG_SET(DEBUG_RPM_LIMIT, 4, lrintf(error));
-    DEBUG_SET(DEBUG_RPM_LIMIT, 5, lrintf(p * 100.0f));
-    DEBUG_SET(DEBUG_RPM_LIMIT, 6, lrintf(mixer->rpmLimiterI * 100.0f));
-    DEBUG_SET(DEBUG_RPM_LIMIT, 7, lrintf(d * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 0, lrintf(averageRpm));                               //!< Average RPM [unit:rpm]
+    DEBUG_SET(DEBUG_RPM_LIMIT, 1, lrintf(rpmLimiterThrottleScaleOffset * 100.0f));   //!< Throttle Scale Offset [unit:%]
+    DEBUG_SET(DEBUG_RPM_LIMIT, 2, lrintf(mixer->rpmLimiterThrottleScale * 100.0f));  //!< Throttle Scale [unit:%]
+    DEBUG_SET(DEBUG_RPM_LIMIT, 3, lrintf(throttle * 100.0f));                        //!< Limited Throttle [unit:%]
+    DEBUG_SET(DEBUG_RPM_LIMIT, 4, lrintf(error));                                    //!< RPM Error [unit:rpm]
+    DEBUG_SET(DEBUG_RPM_LIMIT, 5, lrintf(p * 100.0f));                               //!< P Term [unit:%]
+    DEBUG_SET(DEBUG_RPM_LIMIT, 6, lrintf(mixer->rpmLimiterI * 100.0f));              //!< I Term [unit:%]
+    DEBUG_SET(DEBUG_RPM_LIMIT, 7, lrintf(d * 100.0f));                               //!< D Term [unit:%]
 }
 #endif // USE_RPM_LIMIT
 
@@ -501,7 +501,7 @@ static void applyMixToMotors(const float motorMix[MAX_SUPPORTED_MOTORS], motorMi
     motorOutputRms = sqrtf(motorSumSquares / mixerRuntime.motorCount);
 #endif // USE_WING
 
-    DEBUG_SET(DEBUG_EZLANDING, 1, throttle * 10000U);
+    DEBUG_SET(DEBUG_EZLANDING, 1, throttle * 10000U);  //!< Adjusted Throttle [unit:0.0001]
     // DEBUG_EZLANDING 0 is the ezLanding factor 2 is the throttle limit
 }
 
@@ -593,12 +593,12 @@ static float calcEzLandLimit(float maxDeflection, float speed)
     // calculate limit to where the mixer can raise the throttle based on RPY stick deflection
     // 0.0 = no increas allowed, 1.0 = 100% increase allowed
     const float deflectionLimit = mixerRuntime.ezLandingThreshold > 0.0f ? fminf(1.0f, maxDeflection / mixerRuntime.ezLandingThreshold) : 0.0f;
-    DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(deflectionLimit * 10000.0f));
+    DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(deflectionLimit * 10000.0f));  //!< Stick Deflection Limit [unit:0.0001]
 
     // calculate limit to where the mixer can raise the throttle based on speed
     // TODO sanity checks like number of sats, dop, accuracy?
     const float speedLimit = mixerRuntime.ezLandingSpeed > 0.0f ? fminf(1.0f, speed / mixerRuntime.ezLandingSpeed) : 0.0f;
-    DEBUG_SET(DEBUG_EZLANDING, 5, lrintf(speedLimit * 10000.0f));
+    DEBUG_SET(DEBUG_EZLANDING, 5, lrintf(speedLimit * 10000.0f));  //!< Speed Limit [unit:0.0001]
 
     // get the highest of the limits from deflection, speed, and the base ez_landing_limit
     const float deflectionAndSpeedLimit = fmaxf(deflectionLimit, speedLimit);
@@ -645,10 +645,10 @@ static void applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin,
     throttle = constrainf(throttle, lowerLimit, upperLimit);
 
     // Log ezLandFactor, upper throttle limit, and ezLandFactor if throttle was zero
-    DEBUG_SET(DEBUG_EZLANDING, 0, fminf(1.0f, ezLandFactor) * 10000U);
+    DEBUG_SET(DEBUG_EZLANDING, 0, fminf(1.0f, ezLandFactor) * 10000U);  //!< EZ Land Factor [unit:0.0001]
     // DEBUG_EZLANDING 1 is the adjusted throttle
-    DEBUG_SET(DEBUG_EZLANDING, 2, upperLimit * 10000U);
-    DEBUG_SET(DEBUG_EZLANDING, 3, fminf(1.0f, ezLandLimit / absMotorMixMin) * 10000U);
+    DEBUG_SET(DEBUG_EZLANDING, 2, upperLimit * 10000U);                                 //!< Upper Throttle Limit [unit:0.0001]
+    DEBUG_SET(DEBUG_EZLANDING, 3, fminf(1.0f, ezLandLimit / absMotorMixMin) * 10000U);  //!< EZ Land Limit [unit:0.0001]
     // DEBUG_EZLANDING 4 and 5 is the upper limits based on stick input and speed respectively
 }
 
