@@ -94,6 +94,7 @@
 #include "sensors/gyro.h"
 #include "sensors/gyro_init.h"
 #include "sensors/rangefinder.h"
+#include "sensors/pitot.h"
 
 #ifdef USE_FLASH_TEST_PRBS
 void checkFlashStart(void);
@@ -242,6 +243,10 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"surfaceRaw",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(RANGEFINDER)},
 #endif
     {"rssi",       -1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(RSSI)},
+#ifdef USE_PITOT
+    {"pitot",      0, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(PITOT)},
+    {"pitot",      1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(PITOT)},
+#endif
 
     /* Gyros and accelerometers base their P-predictions on the average of the previous 2 frames to reduce noise impact */
     {"gyroADC",     0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(GYRO)},
@@ -393,6 +398,10 @@ typedef struct blackboxMainState_s {
     int32_t surfaceRaw;
 #endif
     uint16_t rssi;
+#ifdef USE_PITOT
+    uint32_t airspeed;
+    uint32_t diffPressure;
+#endif
 } blackboxMainState_t;
 
 typedef struct blackboxGpsState_s {
@@ -569,6 +578,11 @@ static bool testBlackboxConditionUncached(flightLogFieldCondition_e condition)
     case CONDITION(RSSI):
         return isRssiConfigured() && isFieldEnabled(FIELD_SELECT(RSSI));
 
+#ifdef USE_PITOT
+    case CONDITION(PITOT):
+        return sensors(SENSOR_PITOT) && isFieldEnabled(FIELD_SELECT(PITOT));
+#endif
+
     case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
         return blackboxPInterval != blackboxIInterval;
 
@@ -739,6 +753,13 @@ static void writeIntraframe(void)
         blackboxWriteUnsignedVB(blackboxCurrent->rssi);
     }
 
+#ifdef USE_PITOT
+    if (testBlackboxCondition(CONDITION(PITOT))) {
+        blackboxWriteUnsignedVB(blackboxCurrent->airspeed);
+        blackboxWriteUnsignedVB(blackboxCurrent->diffPressure);
+    }
+#endif
+
     if (testBlackboxCondition(CONDITION(GYRO))) {
         blackboxWriteSigned16VBArray(blackboxCurrent->gyroADC, XYZ_AXIS_COUNT);
     }
@@ -835,7 +856,7 @@ static void writeInterframe(void)
      */
     blackboxWriteSignedVB((int32_t) (blackboxHistory[0]->time - 2 * blackboxHistory[1]->time + blackboxHistory[2]->time));
 
-    int32_t deltas[8];
+    int32_t deltas[10];
     int32_t setpointDeltas[4];
 
     if (testBlackboxCondition(CONDITION(PID))) {
@@ -921,6 +942,13 @@ static void writeInterframe(void)
     if (testBlackboxCondition(CONDITION(RSSI))) {
         deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->rssi - blackboxLast->rssi;
     }
+
+#ifdef USE_PITOT
+    if (testBlackboxCondition(CONDITION(PITOT))) {
+        deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->airspeed - blackboxLast->airspeed;
+        deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->diffPressure - blackboxLast->diffPressure;
+    }
+#endif
 
     blackboxWriteTag8_8SVB(deltas, optionalFieldCount);
 
@@ -1321,12 +1349,17 @@ static void loadMainState(timeUs_t currentTimeUs)
 
     blackboxCurrent->rssi = getRssi();
 
+#ifdef USE_PITOT
+    blackboxCurrent->airspeed = (uint32_t)MAX(pitot.airspeed, 0.0f);
+    blackboxCurrent->diffPressure = (uint32_t)MAX(pitot.diffPressure, 0.0f);
+#endif
+
 #ifdef USE_SERVOS
     for (unsigned i = 0; i < ARRAYLEN(blackboxCurrent->servo); i++) {
         blackboxCurrent->servo[i] = servo[i];
     }
 #endif
-#else
+
     UNUSED(currentTimeUs);
 #endif // UNIT_TEST
 }
