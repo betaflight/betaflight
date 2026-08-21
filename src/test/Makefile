@@ -605,6 +605,7 @@ pid_unittest_DEFINES := \
 		USE_RC_SMOOTHING_FILTER= \
 		USE_LAUNCH_CONTROL= \
 		USE_FEEDFORWARD= \
+		USE_THRUST_LINEARIZATION= \
 		USE_ADVANCED_TPA= \
 
 position_rescue_geometry_unittest_SRC := \

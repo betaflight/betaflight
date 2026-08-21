@@ -120,7 +120,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 #define IS_AXIS_IN_ANGLE_MODE(i) false
 #endif // USE_ACC
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 12);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 13);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -182,6 +182,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .launchControlGain = 40,
         .launchControlAllowTriggerReset = true,
         .thrustLinearization = 0,
+        .thrustLinearizationCutoff = 75,
         .d_max = D_MAX_DEFAULT,
         .d_max_gain = 0,
         .d_max_advance = 35,
@@ -504,12 +505,13 @@ void pidAcroTrainerInit(void)
 // steepening near the top of the throttle range.
 //
 // Cost: 4 mults, 2 adds, 2 subs per motor (no sqrt). Called per-motor per loop.
-float pidApplyThrustLinearization(float motorOutput)
+float pidApplyThrustLinearization(float motorOutput, unsigned motorIndex)
 {
     const float e = pidRuntime.thrustLinearization;
     const float inv = 1.0f - motorOutput;
-    motorOutput *= 1.0f + e * inv * (1.0f + e * (inv - motorOutput));
-    return motorOutput;
+    const float linearizedOutput = motorOutput * (1.0f + e * inv * (1.0f + e * (inv - motorOutput)));
+    const float linearizationChange = linearizedOutput - motorOutput;
+    return motorOutput + pt1FilterApply(&pidRuntime.thrustLinearizationMotorFilter[motorIndex], linearizationChange);
 }
 
 // Inverse of the curve above, applied to base throttle so hover throttle is
@@ -520,11 +522,13 @@ float pidApplyThrustLinearization(float motorOutput)
 // by the full forward multiplier.
 float pidCompensateThrustLinearization(float throttle)
 {
+    const float uncompensatedThrottle = throttle;
     if (pidRuntime.thrustLinearization != 0.0f) {
         const float e = pidRuntime.thrustLinearization;
         throttle *= 1.0f - e * (1.0f - throttle);
     }
-    return throttle;
+    const float linearizationChange = throttle - uncompensatedThrottle;
+    return uncompensatedThrottle + pt1FilterApply(&pidRuntime.thrustLinearizationThrottleFilter, linearizationChange);
 }
 #endif
 

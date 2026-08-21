@@ -248,6 +248,41 @@ TEST(pidControllerTest, testInitialisation)
     }
 }
 
+TEST(pidControllerTest, testThrustLinearizationFiltering)
+{
+    setDefaultTestSettings();
+    pidProfile->thrustLinearization = 50;
+    pidProfile->thrustLinearizationCutoff = 0;
+    pidInit(pidProfile);
+
+    EXPECT_NEAR(0.625f, pidApplyThrustLinearization(0.5f, 0), 1e-6f);
+    EXPECT_NEAR(0.375f, pidCompensateThrustLinearization(0.5f), 1e-6f);
+
+    pidProfile->thrustLinearizationCutoff = 75;
+    pidInit(pidProfile);
+
+    const float firstMotor0 = pidApplyThrustLinearization(0.5f, 0);
+    const float firstMotor1 = pidApplyThrustLinearization(0.5f, 1);
+    EXPECT_GT(firstMotor0, 0.5f);
+    EXPECT_LT(firstMotor0, 0.625f);
+    EXPECT_FLOAT_EQ(firstMotor0, firstMotor1);
+    EXPECT_GT(pidApplyThrustLinearization(0.5f, 0), firstMotor0);
+
+    const float firstThrottle = pidCompensateThrustLinearization(0.5f);
+    EXPECT_GT(firstThrottle, 0.375f);
+    EXPECT_LT(firstThrottle, 0.5f);
+    EXPECT_LT(pidCompensateThrustLinearization(0.5f), firstThrottle);
+
+    float motorOutput = 0.0f;
+    float throttle = 0.0f;
+    for (int i = 0; i < 100; i++) {
+        motorOutput = pidApplyThrustLinearization(0.5f, 0);
+        throttle = pidCompensateThrustLinearization(0.5f);
+    }
+    EXPECT_NEAR(0.625f, motorOutput, 1e-5f);
+    EXPECT_NEAR(0.375f, throttle, 1e-5f);
+}
+
 TEST(pidControllerTest, testStabilisationDisabled)
 {
     ENABLE_ARMING_FLAG(ARMED);
