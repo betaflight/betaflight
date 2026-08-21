@@ -51,7 +51,7 @@
 #define DEFAULT_DSHOT_EDT DSHOT_EDT_OFF
 #endif
 
-PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 3);
+PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 4);
 
 void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 {
@@ -77,10 +77,12 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
         motorConfig->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
         motorConfig->dev.useContinuousUpdate = true;
         motorConfig->motorIdle = 700; // historical default minThrottle for brushed was 1070
+        motorConfig->motorSoftIdle = 500;
     } else {
         motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
         motorConfig->dev.useContinuousUpdate = (motorConfig->dev.motorProtocol == MOTOR_PROTOCOL_PWM);
         motorConfig->motorIdle = 550;
+        motorConfig->motorSoftIdle = 300;
     }
 
 #if defined(DEFAULT_MOTOR_PWM_RATE)
