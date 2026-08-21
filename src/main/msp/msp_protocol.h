@@ -219,6 +219,7 @@
 #define MSP_GPSSVINFO                   164  // out message: Get Signal Strength (only U-Blox)
 #define MSP_GPSSTATISTICS               166  // out message: Get GPS debugging data
 #define MSP_ATTITUDE_QUATERNION         167  // out message: Orientation quaternion components (w, x, y, z)
+#define MSP_WING                        169  // out message: WING settings
 
 // OSD specific commands (180-189)
 #define MSP_OSD_VIDEO_CONFIG            180  // out message: Get OSD video settings
@@ -236,6 +237,7 @@
 #define MSP_SET_RAW_RC                  200  // in message:  8 rc chan
 #define MSP_SET_RAW_GPS                 201  // in message:  Fix, numsat, lat, lon, alt, speed
 #define MSP_SET_PID                     202  // in message:  P I D coeff (9 are used currently)
+#define MSP_SET_WING                    203  // in message:  Set WING settings
 #define MSP_SET_RC_TUNING               204  // in message:  RC rate, rc expo, rollpitch rate, yaw rate, dyn throttle PID, yaw expo
 #define MSP_ACC_CALIBRATION             205  // in message:  No param - calibrate accelerometer
 #define MSP_MAG_CALIBRATION             206  // in message:  No param - calibrate magnetometer
