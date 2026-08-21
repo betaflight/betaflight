@@ -19,21 +19,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#ifndef TARGET_BOARD_IDENTIFIER
-#define TARGET_BOARD_IDENTIFIER "235B"
+// Compile libcanard's implementation into the test binary. The submodule path
+// is added to this test's INCLUDE_DIRS so both this shim and the code under
+// test resolve canard.h against the same source.
+#if !__has_include("canard.c")
+#error "libcanard missing; run: git submodule update --init lib/modules/dronecan/libcanard"
 #endif
-
-#ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight - RP2350B"
-#endif
-
-#ifndef RP2350B
-#define RP2350B
-#endif
-
-#define UARTHARDWARE_MAX_PINS 12
-#define MAX_SPI_PIN_SEL 6
-
-#include "../common/target_RP2350.h"
+#include "canard.c"
