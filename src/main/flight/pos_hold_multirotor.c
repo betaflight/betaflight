@@ -55,7 +55,7 @@ void posHoldInit(void)
 
 static void posHoldCheckSticks(void)
 {
-    if (failsafeIsActive()) {
+    if (failsafeIsActive() || FLIGHT_MODE(GPS_RESCUE_MODE)) {
         setSticksActiveStatus(false);
         return;
     }
@@ -84,9 +84,20 @@ static bool sensorsOk(void)
     }
 }
 
-void updatePosHold(timeUs_t currentTimeUs) {
+void updatePosHold(timeUs_t currentTimeUs)
+{
     UNUSED(currentTimeUs);
-    if (FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
+
+    static bool gpsRescueWasActive = false;
+
+    const bool gpsRescueActive = FLIGHT_MODE(GPS_RESCUE_MODE);
+    const bool gpsRescueStarting = gpsRescueActive && !gpsRescueWasActive;
+
+    if (gpsRescueStarting && posHold.isEnabled) {
+        initPositionHold();
+    }
+
+    if (FLIGHT_MODE(POS_HOLD_MODE) || gpsRescueActive) {
         if (!posHold.isEnabled) {
             resetPositionControl(POSHOLD_TASK_RATE_HZ);
             posHold.isControlOk = true;
@@ -98,6 +109,7 @@ void updatePosHold(timeUs_t currentTimeUs) {
         }
         posHold.isEnabled = false;
     }
+    gpsRescueWasActive = gpsRescueActive;
 
     if (posHold.isEnabled) {
         posHoldCheckSticks();
