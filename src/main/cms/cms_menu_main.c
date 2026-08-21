@@ -42,6 +42,7 @@
 #include "cms/cms_menu_osd.h"
 #include "cms/cms_menu_power.h"
 #include "cms/cms_menu_saveexit.h"
+#include "cms/cms_menu_hover_cal.h"
 
 #ifdef USE_PERSISTENT_STATS
 #include "cms/cms_menu_persistent_stats.h"
@@ -98,6 +99,7 @@ static const OSD_Entry menuFeaturesEntries[] =
 #ifdef USE_LED_STRIP
     {"LED STRIP", OME_Submenu, cmsMenuChange, &cmsx_menuLedstrip},
 #endif // LED_STRIP
+    {"HOVER CAL", OME_Submenu, cmsMenuChange, &cmsx_menuHoverCal},
     {"POWER", OME_Submenu, cmsMenuChange, &cmsx_menuPower},
 #ifdef USE_CMS_FAILSAFE_MENU
     {"FAILSAFE", OME_Submenu, cmsMenuChange, &cmsx_menuFailsafe},
