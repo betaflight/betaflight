@@ -224,6 +224,9 @@ typedef enum {
 #ifdef USE_OSD_NAV_MAP
     OSD_NAV_MAP,                // minimap of home, flight plan and flown trail
 #endif
+#ifdef USE_AIRPLANE_SAS
+    OSD_AOA_LIMITER,
+#endif
 
 #ifdef USE_POSITION_HOLD
     OSD_POS_HOLD_READY,         // pre-engagement Position Hold readiness indicator

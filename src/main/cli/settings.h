@@ -168,6 +168,9 @@ typedef enum {
 #ifdef USE_TRANSPONDER
     TABLE_TRANSPONDER_PROVIDER,
 #endif
+#ifdef USE_AIRPLANE_SAS
+    TABLE_PSAS_SPEED_CURVE_MODE,
+#endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
