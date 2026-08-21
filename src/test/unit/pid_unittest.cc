@@ -248,6 +248,32 @@ TEST(pidControllerTest, testInitialisation)
     }
 }
 
+TEST(pidControllerTest, testSoftArm)
+{
+    resetTest();
+
+    // A zero threshold disables soft arming.
+    EXPECT_FLOAT_EQ(1.0f, pidUpdateSoftArm(0.0f));
+
+    pidProfile->soft_arm_throttle_threshold = 25;
+    pidInit(pidProfile);
+
+    // Disarming resets soft arm for the next arm cycle.
+    EXPECT_FLOAT_EQ(0.0f, pidUpdateSoftArm(0.0f));
+
+    ENABLE_ARMING_FLAG(ARMED);
+    pidData[FD_ROLL].I = 1.0f;
+    EXPECT_FLOAT_EQ(0.4f, pidUpdateSoftArm(0.1f));
+    EXPECT_FLOAT_EQ(0.0f, pidData[FD_ROLL].I);
+
+    // Crossing the threshold latches full authority until disarm.
+    EXPECT_FLOAT_EQ(1.0f, pidUpdateSoftArm(0.25f));
+    EXPECT_FLOAT_EQ(1.0f, pidUpdateSoftArm(0.0f));
+
+    DISABLE_ARMING_FLAG(ARMED);
+    EXPECT_FLOAT_EQ(0.0f, pidUpdateSoftArm(0.0f));
+}
+
 TEST(pidControllerTest, testStabilisationDisabled)
 {
     ENABLE_ARMING_FLAG(ARMED);
