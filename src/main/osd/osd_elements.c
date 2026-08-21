@@ -2364,7 +2364,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #if ENABLE_OSD_CUSTOM_TEXT
     [OSD_CUSTOM_SERIAL_TEXT]      = osdElementCustomSerialText,
 #endif
-#if USE_PITOT
+#ifdef USE_PITOT
     [OSD_AIRSPEED]                = osdElementAirspeed,
 #endif
 };
