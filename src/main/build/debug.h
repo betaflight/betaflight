@@ -75,6 +75,20 @@ extern uint8_t debugMode;
  *              names from it, so it must be visible in the file or in a header
  *              the file includes.
  *
+ *              A field holding bit flags names them instead, lowest bit first,
+ *              with `-` for a bit the field does not use:
+ *              `[flags:Channel 17|Channel 18|Signal Loss|Failsafe]`. The names
+ *              are given here rather than read from the source because flag bits
+ *              are `#define`s, not an enum. Tooling then shows which bits are
+ *              set instead of the number they add up to.
+ *
+ * Every field is one of four shapes, and tooling derives a label, a value format
+ * and a graph range from the shape alone: a quantity (unit), an enumerator
+ * (`enum:`), bit flags (`flags:`), or a plain integer when a field is none of
+ * those. A field that packs two values into one index - `state * 100 + position`
+ * - or that writes a sentinel is a plain integer to every consumer, and stays
+ * unreadable however it is annotated; split it across two indices instead.
+ *
  * An index written from more than one place has to mean one thing in a given
  * build, so annotations that share an index must agree - a disagreement is a bug
  * in the debug mode, not in the annotation.
