@@ -160,7 +160,7 @@ static uint8_t sbusFrameStatus(rxRuntimeState_t *rxRuntimeState)
     }
     sbusFrameData->done = false;
 
-    DEBUG_SET(DEBUG_SBUS, DEBUG_SBUS_FRAME_FLAGS, sbusFrameData->frame.frame.channels.flags);  //!< Frame Flags
+    DEBUG_SET(DEBUG_SBUS, DEBUG_SBUS_FRAME_FLAGS, sbusFrameData->frame.frame.channels.flags);  //!< Frame Flags [flags:Channel 17|Channel 18|Signal Loss|Failsafe]
 
     const uint8_t frameStatus = sbusChannelsDecode(rxRuntimeState, &sbusFrameData->frame.frame.channels);
 
