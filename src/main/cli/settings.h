@@ -168,6 +168,10 @@ typedef enum {
 #ifdef USE_TRANSPONDER
     TABLE_TRANSPONDER_PROVIDER,
 #endif
+    TABLE_BAUD_RATE,
+#ifdef USE_TELEMETRY
+    TABLE_TELEMETRY_PROTOCOL,
+#endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
@@ -202,7 +206,24 @@ typedef enum {
     MODE_ARRAY = (2 << VALUE_MODE_OFFSET),
     MODE_BITSET = (3 << VALUE_MODE_OFFSET),
     MODE_STRING = (4 << VALUE_MODE_OFFSET),
+    // Sparse enum shown by name.  A lookup table cannot index these, so the
+    // owning subsystem supplies the name/value conversion via the registry
+    // below and the setting stores the raw identifier.
+    MODE_LOOKUP_IDENTIFIER = (5 << VALUE_MODE_OFFSET),
 } cliValueFlag_e;
+
+typedef enum {
+    IDENTIFIER_LOOKUP_SERIAL_PORT = 0,
+    IDENTIFIER_LOOKUP_COUNT
+} identifierLookupIndex_e;
+
+typedef struct identifierLookupEntry_s {
+    const char *(*nameOf)(int value);              // NULL when the value is unknown
+    bool (*valueOf)(const char *name, int *value);
+    const char *(*nameAt)(unsigned index);         // enumeration, NULL past the end
+} identifierLookupEntry_t;
+
+extern const identifierLookupEntry_t identifierLookups[IDENTIFIER_LOOKUP_COUNT];
 
 #define VALUE_TYPE_MASK (0x07)
 #define VALUE_SECTION_MASK (0x38)
@@ -222,6 +243,10 @@ typedef struct cliLookupTableConfig_s {
     const lookupTableIndex_e tableIndex;
 } cliLookupTableConfig_t;
 
+typedef struct cliIdentifierLookupConfig_s {
+    const uint8_t lookupIndex;                // identifierLookupIndex_e
+} cliIdentifierLookupConfig_t;
+
 typedef struct cliArrayLengthConfig_s {
     const uint8_t length;
 } cliArrayLengthConfig_t;
@@ -237,6 +262,7 @@ typedef struct cliStringLengthConfig_s {
 
 typedef union {
     cliLookupTableConfig_t lookup;            // used for MODE_LOOKUP excl. VAR_UINT32
+    cliIdentifierLookupConfig_t identifier;   // used for MODE_LOOKUP_IDENTIFIER
     cliMinMaxConfig_t minmax;                 // used for MODE_DIRECT with signed parameters
     cliMinMaxUnsignedConfig_t minmaxUnsigned; // used for MODE_DIRECT with unsigned parameters
     cliArrayLengthConfig_t array;             // used for MODE_ARRAY

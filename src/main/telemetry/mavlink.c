@@ -63,6 +63,7 @@
 #include "flight/position.h"
 
 #include "io/serial.h"
+#include "io/serial_feature_map.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
@@ -105,7 +106,7 @@
 extern uint16_t rssi; // FIXME dependency on mw.c
 
 static serialPort_t *mavlinkPort = NULL;
-static const serialPortConfig_t *portConfig;
+static serialPortIdentifier_e telemetryPort = SERIAL_PORT_NONE;
 
 static bool mavlinkTelemetryEnabled =  false;
 static portSharing_e mavlinkPortSharing;
@@ -839,23 +840,23 @@ void freeMAVLinkTelemetryPort(void)
 
 void initMAVLinkTelemetry(void)
 {
-    portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_MAVLINK);
-    mavlinkPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_MAVLINK);
+    telemetryPort = telemetryProviderPort(TELEMETRY_PROTOCOL_MAVLINK);
+    mavlinkPortSharing = determinePortSharing(telemetryPort, FUNCTION_TELEMETRY_MAVLINK);
 }
 
 void configureMAVLinkTelemetryPort(void)
 {
-    if (!portConfig) {
+    if (telemetryPort == SERIAL_PORT_NONE) {
         return;
     }
 
-    baudRate_e baudRateIndex = portConfig->telemetry_baudrateIndex;
+    baudRate_e baudRateIndex = telemetryProviderBaud(TELEMETRY_PROTOCOL_MAVLINK, telemetryPort);
     if (baudRateIndex == BAUD_AUTO) {
         // default rate for minimOSD
         baudRateIndex = BAUD_57600;
     }
 
-    mavlinkPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_MAVLINK, NULL, NULL, baudRates[baudRateIndex], TELEMETRY_MAVLINK_INITIAL_PORT_MODE, telemetryConfig()->telemetry_inverted ? SERIAL_INVERTED : SERIAL_NOT_INVERTED);
+    mavlinkPort = openSerialPort(telemetryPort, FUNCTION_TELEMETRY_MAVLINK, NULL, NULL, baudRates[baudRateIndex], TELEMETRY_MAVLINK_INITIAL_PORT_MODE, telemetryConfig()->telemetry_inverted ? SERIAL_INVERTED : SERIAL_NOT_INVERTED);
 
     if (!mavlinkPort) {
         return;
@@ -1527,7 +1528,7 @@ static void processMAVLinkTelemetry(void)
 
 void checkMAVLinkTelemetryState(void)
 {
-    if (portConfig && telemetryCheckRxPortShared(portConfig, rxRuntimeState.serialrxProvider)) {
+    if (telemetryPort != SERIAL_PORT_NONE && telemetryCheckRxPortShared(telemetryPort, rxRuntimeState.serialrxProvider)) {
         if (!mavlinkTelemetryEnabled && telemetrySharedPort != NULL) {
             mavlinkPort = telemetrySharedPort;
             lastArmingDisableFlags = 0;
