@@ -1459,7 +1459,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
             break;
         }
         rxBytesWaiting = serialRxBytesWaiting(gpsPort);
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 7, rxBytesWaiting);  //!< Rx Bytes Waiting [bytes]
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 7, rxBytesWaiting);  //!< Rx Bytes Waiting [unit:bytes]
         const uint32_t initialCycleCount = getCycleCounter();
         static uint8_t wait = 0;
         static bool isFast = false;
@@ -1488,7 +1488,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
             break;
         }
         rxBytesWaiting = serialRxBytesWaiting(gpsPort);
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 7, rxBytesWaiting);  //!< Rx Bytes Waiting [bytes]
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 7, rxBytesWaiting);  //!< Rx Bytes Waiting [unit:bytes]
         static uint8_t wait = 0;
         static bool isFast = false;
         while (rxBytesWaiting-- > 0) {
@@ -1606,9 +1606,9 @@ void gpsUpdate(timeUs_t currentTimeUs)
     }
 
     DEBUG_SET(DEBUG_GPS_DOP, 0, gpsSol.numSat);    //!< Satellite Count
-    DEBUG_SET(DEBUG_GPS_DOP, 1, gpsSol.dop.pdop);  //!< Positional DOP [0.01]
-    DEBUG_SET(DEBUG_GPS_DOP, 2, gpsSol.dop.hdop);  //!< Horizontal DOP [0.01]
-    DEBUG_SET(DEBUG_GPS_DOP, 3, gpsSol.dop.vdop);  //!< Vertical DOP [0.01]
+    DEBUG_SET(DEBUG_GPS_DOP, 1, gpsSol.dop.pdop);  //!< Positional DOP [unit:0.01]
+    DEBUG_SET(DEBUG_GPS_DOP, 2, gpsSol.dop.hdop);  //!< Horizontal DOP [unit:0.01]
+    DEBUG_SET(DEBUG_GPS_DOP, 3, gpsSol.dop.vdop);  //!< Vertical DOP [unit:0.01]
 
     timeDelta_t executeTimeUs = micros() - currentTimeUs;
     if (executeTimeUs > (gpsStateDurationFractionUs[gpsCurrentState] >> GPS_TASK_DECAY_SHIFT)) {
@@ -1619,14 +1619,14 @@ void gpsUpdate(timeUs_t currentTimeUs)
     }
     schedulerSetNextStateTime(gpsStateDurationFractionUs[gpsCurrentState] >> GPS_TASK_DECAY_SHIFT);
 
-    DEBUG_SET(DEBUG_GPS_CONNECTION, 5, executeTimeUs);  //!< Task Execute Time [us]
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 5, executeTimeUs);  //!< Task Execute Time [unit:us]
 //    keeping temporarily, to be used when debugging the scheduler stuff
 //    DEBUG_SET(DEBUG_GPS_CONNECTION, 6, (gpsStateDurationFractionUs[gpsCurrentState] >> GPS_TASK_DECAY_SHIFT));
 }
 
 static void gpsHandleFrameComplete(void)
 {
-    DEBUG_SET(DEBUG_GPS_CONNECTION, 1, gpsSol.navIntervalMs);  //!< Nav Interval [ms]
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 1, gpsSol.navIntervalMs);  //!< Nav Interval [unit:ms]
     if (gpsData.state == GPS_STATE_RECEIVING_DATA) {
         DEBUG_SET(DEBUG_GPS_CONNECTION, 3, gpsData.now - gpsData.lastNavMessage);  //!< Baud Rate / 100, Else Nav Message Age In Milliseconds
         gpsData.lastNavMessage = gpsData.now;

@@ -39,29 +39,36 @@ extern uint8_t debugMode;
  * it is updated by the same diff that changes what the field holds. It is a
  * comment, so it costs no flash:
  *
- *     DEBUG_SET(DEBUG_CYCLETIME, 0, getTaskDeltaTimeUs(TASK_SELF));  //!< Cycle Time [us]
- *     DEBUG_SET(DEBUG_CYCLETIME, 1, getAverageSystemLoadPercent());  //!< CPU Load [%]
+ *     DEBUG_SET(DEBUG_CYCLETIME, 0, getTaskDeltaTimeUs(TASK_SELF));  //!< Cycle Time [unit:us]
+ *     DEBUG_SET(DEBUG_CYCLETIME, 1, getAverageSystemLoadPercent());  //!< CPU Load [unit:%]
  *
- * Grammar, on the line the call ends on:
+ * Grammar, on the line the call ends on. Every bracket names what it is, so
+ * nothing about an annotation depends on where it sits:
  *
- *     //!< [<indices>] <label> [<unit>]
+ *     //!< [index:<indices>] <label> [<shape>]
  *
- *   <indices>  Which debug[n] this call writes. Omit it when the index argument
+ *   index:     Which debug[n] this call writes. Omit it when the index argument
  *              is a compile-time constant; give it when the index is computed at
  *              run time (`axis`, `2 * axis + 1`, `motorIndex`), because tooling
- *              cannot evaluate those: `[2]`, `[0..2]`, `[0,2,4]`.
+ *              cannot evaluate those: `[index:2]`, `[index:0..2]`,
+ *              `[index:0,2,4]`.
  *   <label>    What the value is, in the words a pilot reads rather than the name
- *              of the variable holding it. No `[` or `]`. One `{a|b|c}` group may
+ *              of the variable holding it. The one part that is prose, and the
+ *              only one without a key. No `[` or `]`. One `{a|b|c}` group may
  *              spell out one label per index, in index order, for a call that
  *              writes a range: `Gyro Filtered {roll|pitch|yaw}`.
- *   <unit>     Unit of one LSB of the stored value, so tooling can scale and
- *              label an axis. Optional; omit it for a plain count, flag or
- *              enumeration. An optional decimal factor precedes the symbol, so
- *              `lrintf(angleDeg * 10)` is `[0.1deg]` and `pressurePa / 100` is
- *              `[100Pa]`. The factor may be negative, for a field that stores the
- *              magnitude of a negative quantity: a CRSF RSSI is `[-1dBm]`. The
- *              symbol may be left out for a value that is scaled but
- *              dimensionless: `lrintf(ratio * 1000)` is `[0.001]`.
+ *   <shape>    What kind of value the field holds. Tooling derives the sample
+ *              format and the graph axis from the shape alone, so a field is one
+ *              of exactly four:
+ *
+ *     unit:    A quantity, given as the unit of one LSB of the stored value. An
+ *              optional decimal factor precedes the symbol, so
+ *              `lrintf(angleDeg * 10)` is `[unit:0.1deg]` and `pressurePa / 100`
+ *              is `[unit:100Pa]`. The factor may be negative, for a field that
+ *              stores the magnitude of a negative quantity: a CRSF RSSI is
+ *              `[unit:-1dBm]`. The symbol may be left out for a value that is
+ *              scaled but dimensionless: `lrintf(ratio * 1000)` is
+ *              `[unit:0.001]`.
  *
  *              Symbols: s ms us Hz kHz MHz kbit/s rad rad/s deg dps dps2 m cm
  *              m/s cm/s g g/s V A mAh degC Pa hPa rpm % dB dBm bytes ticks, plus
@@ -70,23 +77,21 @@ extern uint8_t debugMode;
  *              accADC and accADC/s (accelerometer ADC counts), rcCommand
  *              (throttle in rcCommand units) and eRPM (Dshot eRPM).
  *
- *              A field holding an enumerator names the enum instead of a unit -
- *              `[enum:failsafePhase_e]` - and tooling then reads the enumerator
- *              names from it, so it must be visible in the file or in a header
- *              the file includes.
+ *     enum:    An enumerator, named by its type - `[enum:failsafePhase_e]`.
+ *              Tooling reads the enumerator names from it, so the enum must be
+ *              visible in the file or in a header the file includes.
  *
- *              A field holding bit flags names them instead, lowest bit first,
- *              with `-` for a bit the field does not use:
- *              `[flags:Channel 17|Channel 18|Signal Loss|Failsafe]`. The names
- *              are given here rather than read from the source because flag bits
- *              are `#define`s, not an enum. Tooling then shows which bits are
- *              set instead of the number they add up to.
+ *     flags:   Bit flags, named lowest bit first, with `-` for a bit the field
+ *              does not use: `[flags:Channel 17|Channel 18|Signal Loss|Failsafe]`.
+ *              The names are given here rather than read from the source because
+ *              flag bits are `#define`s, not an enum. Tooling shows which bits
+ *              are set instead of the number they add up to.
  *
- * Every field is one of four shapes, and tooling derives a label, a value format
- * and a graph range from the shape alone: a quantity (unit), an enumerator
- * (`enum:`), bit flags (`flags:`), or a plain integer when a field is none of
- * those. A field that packs two values into one index - `state * 100 + position`
- * - or that writes a sentinel is a plain integer to every consumer, and stays
+ *     (none)   A plain integer: a count, or a state with no enum to name it.
+ *              Tooling shows the number and fits the graph to the logged data.
+ *
+ * A field that packs two values into one index - `state * 100 + position` - or
+ * that writes a sentinel is a plain integer to every consumer, and stays
  * unreadable however it is annotated; split it across two indices instead.
  *
  * An index written from more than one place has to mean one thing in a given

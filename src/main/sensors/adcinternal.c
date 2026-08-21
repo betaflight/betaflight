@@ -92,10 +92,10 @@ void adcInternalProcess(timeUs_t currentTimeUs)
     vrefMv = adcInternalCompensateVref(adcVrefintValue);
     coreTemperature = adcInternalComputeTemperature(adcTempsensorValue, vrefMv);
 
-    DEBUG_SET(DEBUG_ADC_INTERNAL, 0, coreTemperature);   //!< Core Temperature [degC]
+    DEBUG_SET(DEBUG_ADC_INTERNAL, 0, coreTemperature);   //!< Core Temperature [unit:degC]
     DEBUG_SET(DEBUG_ADC_INTERNAL, 1, vrefintSample);     //!< VRefInt Sample
     DEBUG_SET(DEBUG_ADC_INTERNAL, 2, tempsensorSample);  //!< Temperature Sensor Sample
-    DEBUG_SET(DEBUG_ADC_INTERNAL, 3, vrefMv);            //!< VRef [0.001V]
+    DEBUG_SET(DEBUG_ADC_INTERNAL, 3, vrefMv);            //!< VRef [unit:0.001V]
 
     adcInternalStartConversion(); // Start next conversion
 }

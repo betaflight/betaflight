@@ -194,7 +194,7 @@ static void fportDataReceive(uint16_t c, void *data)
                 telemetryFrame = false;
             }
 
-            DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_INTERVAL, currentTimeUs - lastFrameReceivedUs);  //!< Frame Interval [us]
+            DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_INTERVAL, currentTimeUs - lastFrameReceivedUs);  //!< Frame Interval [unit:us]
             lastFrameReceivedUs = currentTimeUs;
 
             escapedCharacter = false;
@@ -372,7 +372,7 @@ static bool fportProcessFrame(const rxRuntimeState_t *rxRuntimeState)
             clearToSend = false;
         }
 
-        DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_TELEMETRY_INTERVAL, currentTimeUs - lastTelemetryFrameSentUs);  //!< Telemetry Frame Interval [us]
+        DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_TELEMETRY_INTERVAL, currentTimeUs - lastTelemetryFrameSentUs);  //!< Telemetry Frame Interval [unit:us]
         lastTelemetryFrameSentUs = currentTimeUs;
     }
 

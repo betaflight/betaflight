@@ -349,9 +349,9 @@ bool rangefinderProcess(timeUs_t nowUs, float cosTiltAngle)
 
         DEBUG_SET(DEBUG_RANGEFINDER, 3, rangefinder.snr);  //!< Signal Quality
 
-        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 0, rangefinder.rawAltitude);               //!< Raw Altitude [cm]
+        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 0, rangefinder.rawAltitude);               //!< Raw Altitude [unit:cm]
         DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 1, rangefinder.snrThresholdReached);       //!< Signal Quality Threshold Reached
-        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 2, rangefinder.dynamicDistanceThreshold);  //!< Dynamic Distance Threshold [cm]
+        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 2, rangefinder.dynamicDistanceThreshold);  //!< Dynamic Distance Threshold [unit:cm]
         DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 3, isSurfaceAltitudeValid());              //!< Surface Altitude Valid
 
     }
@@ -366,16 +366,16 @@ bool rangefinderProcess(timeUs_t nowUs, float cosTiltAngle)
     *
     * When the ground is too far away or the tilt is too large, RANGEFINDER_OUT_OF_RANGE is returned.
     */
-    DEBUG_SET(DEBUG_RANGEFINDER, 4, lrintf(cosTiltAngle * 1000.0f));            //!< Cosine Of Tilt Angle [0.001]
-    DEBUG_SET(DEBUG_RANGEFINDER, 5, lrintf(rangefinder.maxTiltCos * 1000.0f));  //!< Max Usable Tilt Cosine [0.001]
+    DEBUG_SET(DEBUG_RANGEFINDER, 4, lrintf(cosTiltAngle * 1000.0f));            //!< Cosine Of Tilt Angle [unit:0.001]
+    DEBUG_SET(DEBUG_RANGEFINDER, 5, lrintf(rangefinder.maxTiltCos * 1000.0f));  //!< Max Usable Tilt Cosine [unit:0.001]
     if (cosTiltAngle < rangefinder.maxTiltCos || rangefinder.rawAltitude < 0) {
         rangefinder.calculatedAltitude = RANGEFINDER_OUT_OF_RANGE;
     } else {
         rangefinder.calculatedAltitude = rangefinder.rawAltitude * cosTiltAngle;
     }
 
-    DEBUG_SET(DEBUG_RANGEFINDER, 1, rangefinder.rawAltitude);         //!< Raw Altitude [cm]
-    DEBUG_SET(DEBUG_RANGEFINDER, 2, rangefinder.calculatedAltitude);  //!< Tilt Corrected Altitude [cm]
+    DEBUG_SET(DEBUG_RANGEFINDER, 1, rangefinder.rawAltitude);         //!< Raw Altitude [unit:cm]
+    DEBUG_SET(DEBUG_RANGEFINDER, 2, rangefinder.calculatedAltitude);  //!< Tilt Corrected Altitude [unit:cm]
 
     return true;
 }

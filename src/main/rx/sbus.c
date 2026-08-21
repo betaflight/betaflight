@@ -147,7 +147,7 @@ static void sbusDataReceive(uint16_t c, void *data)
             sbusFrameData->done = false;
         } else {
             sbusFrameData->done = true;
-            DEBUG_SET(DEBUG_SBUS, DEBUG_SBUS_FRAME_TIME, cmpTimeUs(nowUs, sbusFrameData->startAtUs));  //!< Frame Time [us]
+            DEBUG_SET(DEBUG_SBUS, DEBUG_SBUS_FRAME_TIME, cmpTimeUs(nowUs, sbusFrameData->startAtUs));  //!< Frame Time [unit:us]
         }
     }
 }

@@ -482,7 +482,7 @@ rx_spi_received_e redpineHandlePacket(uint8_t *const packet, uint8_t *const prot
                         } else {
                             looptime = packet[CHANNEL_START + 7] * 1000;
                         }
-                        DEBUG_SET(DEBUG_RX_FRSKY_SPI, 0, looptime);           //!< Loop Time [us]
+                        DEBUG_SET(DEBUG_RX_FRSKY_SPI, 0, looptime);           //!< Loop Time [unit:us]
                         DEBUG_SET(DEBUG_RX_FRSKY_SPI, 1, packet[ccLen - 2]);  //!< Bind Offset Min, Else RSSI Byte
 
                         packetTimerUs = micros() + looptime / 8;  // add a buffer on the packet time incase tx and  rx clocks are different

@@ -543,10 +543,10 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
                     baro.altitude = 0.0f;
                 }
             }
-            DEBUG_SET(DEBUG_BARO, 1, lrintf(baro.pressure / 100.0f));  //!< Pressure [hPa]
-            DEBUG_SET(DEBUG_BARO, 2, baro.temperature);                //!< Temperature [0.01degC]
+            DEBUG_SET(DEBUG_BARO, 1, lrintf(baro.pressure / 100.0f));  //!< Pressure [unit:hPa]
+            DEBUG_SET(DEBUG_BARO, 2, baro.temperature);                //!< Temperature [unit:0.01degC]
             // altitude carries temperature compensation unless the baro is virtual
-            DEBUG_SET(DEBUG_BARO, 3, lrintf(baro.altitude));           //!< Baro Altitude [cm]
+            DEBUG_SET(DEBUG_BARO, 3, lrintf(baro.altitude));           //!< Baro Altitude [unit:cm]
 
             if (baro.dev.combined_read) {
                 state = BARO_STATE_PRESSURE_START;
