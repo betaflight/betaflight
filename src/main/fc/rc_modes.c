@@ -56,6 +56,22 @@ static uint8_t activeMacArray[MAX_MODE_ACTIVATION_CONDITION_COUNT];
 static int activeLinkedMacCount = 0;
 static uint8_t activeLinkedMacArray[MAX_MODE_ACTIVATION_CONDITION_COUNT];
 
+typedef enum {
+    TWO_TAP_IDLE,
+    TWO_TAP_FIRST_TAP,
+    TWO_TAP_WAITING_FOR_SECOND_TAP,
+    TWO_TAP_READY,
+    TWO_TAP_TIMEOUT,
+} twoTapState_e;
+
+static struct {
+    timeUs_t firstTapAt;
+    twoTapState_e state;
+} twoTapArm;
+static timeUs_t twoTapTimeoutUs;
+
+#define TWO_TAP_TIMEOUT_UNIT_US 10000U
+
 PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions, PG_MODE_ACTIVATION_PROFILE, 5);
 
 #if defined(USE_CUSTOM_BOX_NAMES)
@@ -70,6 +86,56 @@ bool IS_RC_MODE_ACTIVE(boxId_e boxId)
 void rcModeUpdate(const boxBitmask_t *newState)
 {
     rcModeActivationMask = *newState;
+}
+
+void rcModeSetTwoTapArming(uint8_t timeoutCentiseconds)
+{
+    twoTapTimeoutUs = timeoutCentiseconds * TWO_TAP_TIMEOUT_UNIT_US;
+    twoTapArm.state = TWO_TAP_IDLE;
+}
+
+static bool processTwoTapArm(timeUs_t currentTimeUs, bool armSwitchActive)
+{
+    switch (twoTapArm.state) {
+    case TWO_TAP_IDLE:
+        if (armSwitchActive) {
+            twoTapArm.state = TWO_TAP_FIRST_TAP;
+            twoTapArm.firstTapAt = currentTimeUs;
+        }
+        break;
+
+    case TWO_TAP_FIRST_TAP:
+        if (!armSwitchActive) {
+            twoTapArm.state = TWO_TAP_WAITING_FOR_SECOND_TAP;
+        }
+        if (cmpTimeUs(currentTimeUs, twoTapArm.firstTapAt) > (timeDelta_t)twoTapTimeoutUs) {
+            twoTapArm.state = armSwitchActive ? TWO_TAP_TIMEOUT : TWO_TAP_IDLE;
+        }
+        break;
+
+    case TWO_TAP_WAITING_FOR_SECOND_TAP:
+        if (armSwitchActive) {
+            twoTapArm.state = TWO_TAP_READY;
+        }
+        if (cmpTimeUs(currentTimeUs, twoTapArm.firstTapAt) > (timeDelta_t)twoTapTimeoutUs) {
+            twoTapArm.state = armSwitchActive ? TWO_TAP_TIMEOUT : TWO_TAP_IDLE;
+        }
+        break;
+
+    case TWO_TAP_READY:
+        if (!armSwitchActive) {
+            twoTapArm.state = TWO_TAP_IDLE;
+        }
+        break;
+
+    case TWO_TAP_TIMEOUT:
+        if (!armSwitchActive) {
+            twoTapArm.state = TWO_TAP_IDLE;
+        }
+        break;
+    }
+
+    return twoTapArm.state == TWO_TAP_READY;
 }
 
 #if ENABLE_TELEMETRY_MAVLINK_COMMANDS
@@ -199,6 +265,10 @@ void updateActivatedModes(void)
 #endif
 
     rcModeUpdate(&newMask);
+
+    if (twoTapTimeoutUs && !processTwoTapArm(micros(), IS_RC_MODE_ACTIVE(BOXARM))) {
+        bitArrayClr(&rcModeActivationMask, BOXARM);
+    }
 
     airmodeEnabled = featureIsEnabled(FEATURE_AIRMODE) || IS_RC_MODE_ACTIVE(BOXAIRMODE);
 }
