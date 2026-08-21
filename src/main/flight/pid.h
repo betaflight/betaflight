@@ -241,6 +241,7 @@ typedef struct pidProfile_s {
     uint8_t launchControlGain;              // Iterm gain used while launch control is active
     uint8_t launchControlAllowTriggerReset; // Controls trigger behavior and whether the trigger can be reset
     uint8_t thrustLinearization;            // Thrust curve compensation, ≈ ArduPilot MOT_THST_EXPO * 100 (0..150, default 0)
+    uint8_t thrustLinearizationCutoff;      // PT1 cutoff for changes introduced by thrust linearization; below 5 disables filtering
     uint8_t d_max[XYZ_AXIS_COUNT];          // Maximum D value on each axis
     uint8_t d_max_gain;                     // Gain factor for amount of gyro / setpoint activity required to boost D
     uint8_t d_max_advance;                  // Percentage multiplier for setpoint input to boost algorithm
@@ -470,6 +471,8 @@ typedef struct pidRuntime_s {
 
 #ifdef USE_THRUST_LINEARIZATION
     float thrustLinearization;
+    pt1Filter_t thrustLinearizationThrottleFilter;
+    pt1Filter_t thrustLinearizationMotorFilter[MAX_SUPPORTED_MOTORS];
 #endif
 
 #ifdef USE_FEEDFORWARD
@@ -548,7 +551,7 @@ void pidSetAntiGravityState(bool newState);
 bool pidAntiGravityEnabled(void);
 
 #ifdef USE_THRUST_LINEARIZATION
-float pidApplyThrustLinearization(float motorValue);
+float pidApplyThrustLinearization(float motorValue, unsigned motorIndex);
 float pidCompensateThrustLinearization(float throttle);
 #endif
 
