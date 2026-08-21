@@ -79,12 +79,16 @@ static bool dshot_program_init(PIO pio, uint sm, int offset, uint pin)
     return PICO_OK == pio_sm_init(pio, sm, offset, &config);
 }
 
-
-static void dshotUpdateInit(void)
+static void resetOutgoingPackets(void)
 {
     for (int motorIndex = 0; motorIndex < dshotMotorCount; ++motorIndex) {
         outgoingPacket[motorIndex] = -1;
     }
+}
+
+static void dshotUpdateInit(void)
+{
+    resetOutgoingPackets();
 }
 
 // Prepare packet for sending on .updateComplete (dshotUpdateComplete)
@@ -247,39 +251,69 @@ static void dshotUpdateComplete(void)
         cucm = 0; cucrts = 0; cucwait = 0; cucother = 0;
     }
 #endif
+
+    resetOutgoingPackets();
+}
+
+static void dshotReleaseMotorIO(unsigned motorIndex)
+{
+    bprintf("dshotReleaseMotorIO %d", motorIndex);
+    // Disable the state machine and reclaim the motor pin for SIO
+    // (so that e.g. the ESC 4-way passthrough can drive them as plain GPIOs)
+    const motorOutput_t *motor = &dshotMotors[motorIndex];
+    if (motor->configured) {
+        pio_sm_set_enabled(motor->pio, motor->pio_sm, false);
+        gpio_init(motor->pinIndex);
+    }
+}
+
+static bool dshotReinstateMotorIO(unsigned motorIndex)
+{
+    bprintf("dshotReinstateMotorIO %d", motorIndex);
+    // Reclaim the motor pins for the PIO and reset the pulls and the state machines.
+    const motorOutput_t *motor = &dshotMotors[motorIndex];
+    bool ok = false;
+    if (motor->configured) {
+        if (useDshotTelemetry) {
+            ok = dshot_program_bidir_init(motor->pio, motor->pio_sm, motor->offset, motor->pinIndex);
+        } else {
+            ok = dshot_program_init(motor->pio, motor->pio_sm, motor->offset, motor->pinIndex);
+        }
+    }
+
+    return ok;
 }
 
 static bool dshotEnableMotors(void)
 {
-    bprintf("pico dshotEnableMotors (useDshotTelemetry = %d)", useDshotTelemetry);
     // No special processing required
     return true;
 }
 
 static void dshotDisableMotors(void)
 {
-    bprintf("pico dshotDisableMotors");
     // No special processing required
-    return;
 }
 
 static void dshotShutdown(void)
 {
-    // TODO: implement?
-    bprintf("pico dshotShutdown");
+    // DShot signal is only generated if write to motors happen, which is guarded by "enabled" on motorDevice
+    // Hence there's no special processing required here.
     return;
 }
 
 static bool dshotIsMotorEnabled(unsigned index)
 {
-    return dshotMotors[index].enabled;
+    return dshotMotors[index].configured;
 }
 
-static void dshotPostInit(void)
+static IO_t dshotGetMotorIO(unsigned index)
 {
-    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < dshotMotorCount; motorIndex++) {
-        dshotMotors[motorIndex].enabled = true;
+    if (index >= (unsigned)dshotMotorCount) {
+        return IO_NONE;
     }
+
+    return dshotMotors[index].io;
 }
 
 static bool dshotIsMotorIdle(unsigned motorIndex)
@@ -292,6 +326,7 @@ static bool dshotIsMotorIdle(unsigned motorIndex)
 
 static void dshotRequestTelemetry(unsigned index)
 {
+    bprintf("dshotRequestTelemetry, usedst=%d, index=%d", useDshotTelemetry, index);
     if (useDshotTelemetry) {
         if (index < dshotMotorCount) {
             dshotMotors[index].protocolControl.requestTelemetry = true;
@@ -300,7 +335,7 @@ static void dshotRequestTelemetry(unsigned index)
 }
 
 static motorVTable_t dshotVTable = {
-    .postInit = dshotPostInit,
+    .postInit = NULL,
     .enable = dshotEnableMotors,
     .disable = dshotDisableMotors,
     .isMotorEnabled = dshotIsMotorEnabled,
@@ -319,6 +354,9 @@ static motorVTable_t dshotVTable = {
     .convertMotorToExternal = dshotConvertToExternal,
     .shutdown = dshotShutdown,
     .isMotorIdle = dshotIsMotorIdle,
+    .getMotorIO = dshotGetMotorIO,
+    .releaseMotorIO = dshotReleaseMotorIO,
+    .reinstateMotorIO = dshotReinstateMotorIO,
     .requestTelemetry = dshotRequestTelemetry,
 };
 
@@ -328,8 +366,8 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
     dbgPinLo(0);
     dbgPinLo(1);
 
-    device->vTable = NULL; // Only set vTable if initialisation is succesful (TODO: check)
-    dshotMotorCount = 0;   // Only set dshotMotorCount ble if initialisation is succesful (TODO: check)
+    device->vTable = NULL; // Only set vTable if initialisation is succesful
+    dshotMotorCount = 0;   // Only set dshotMotorCount if initialisation is succesful
 
     uint8_t motorCountProvisional = device->count;
     if (motorCountProvisional > 4) {
@@ -354,7 +392,15 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
     int pinIndexMin = 48;
     int pinIndexMax = -1;
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCountProvisional; motorIndex++) {
-        int pinIndex = DEFIO_TAG_PIN(motorConfig->ioTags[motorIndex]);
+        const unsigned reorderedMotorIndex = motorConfig->motorOutputReordering[motorIndex];
+        const ioTag_t tag = motorConfig->ioTags[reorderedMotorIndex];
+        const IO_t io = IOGetByTag(tag);
+        if (!tag || !io) {
+            bprintf("Invalid motor tag %d from reordered index %d (original index %d)",
+                    tag, reorderedMotorIndex, motorIndex);
+            return false;
+        }
+        int pinIndex = DEFIO_TAG_PIN(tag);
         pinIndexMin = pinIndex < pinIndexMin ? pinIndex : pinIndexMin;
         pinIndexMax = pinIndex > pinIndexMax ? pinIndex : pinIndexMax;
     }
@@ -391,9 +437,10 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCountProvisional; motorIndex++) {
         outgoingPacket[motorIndex] = -1;
-        int pinIndex = DEFIO_TAG_PIN(motorConfig->ioTags[motorIndex]);
-        IO_t io = IOGetByTag(motorConfig->ioTags[motorIndex]);
-        bprintf("dshot motor index %d on pin %d",motorIndex, IO_Pin(io));
+        const unsigned reorderedMotorIndex = motorConfig->motorOutputReordering[motorIndex];
+        int pinIndex = DEFIO_TAG_PIN(motorConfig->ioTags[reorderedMotorIndex]);
+        IO_t io = IOGetByTag(motorConfig->ioTags[reorderedMotorIndex]);
+        bprintf("dshot reordered motor index %d (from %d) on pin %d", reorderedMotorIndex, motorIndex, IO_Pin(io));
         if (!IOIsFreeOrPreinit(io)) {
             bprintf("io pin not free");
             return false;
@@ -408,10 +455,8 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
             return false;
         }
 
-        IOInit(io, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
+        IOInit(io, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex));
 
-        // TODO: take account of motor reordering,
-        // cf. versions of  pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint8_t reorderedMotorIndex, motorProtocolTypes_e pwmProtocolType, uint8_t output)
         dshotMotors[motorIndex].pinIndex = pinIndex;
         dshotMotors[motorIndex].io = io;
         dshotMotors[motorIndex].pio = dshotPio;
