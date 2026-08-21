@@ -1359,7 +1359,7 @@ static void loadMainState(timeUs_t currentTimeUs)
         blackboxCurrent->servo[i] = servo[i];
     }
 #endif
-
+#else
     UNUSED(currentTimeUs);
 #endif // UNIT_TEST
 }
