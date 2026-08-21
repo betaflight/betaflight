@@ -463,7 +463,7 @@ static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
         }
     }
 
-    DEBUG_SET(DEBUG_VTX_TRAMP, 0, trampStatus);  //!< Tramp Status
+    DEBUG_SET(DEBUG_VTX_TRAMP, 0, trampStatus);  //!< Tramp Status [enum:trampStatus_e]
     DEBUG_SET(DEBUG_VTX_TRAMP, 1, replyCode);    //!< Reply Code
     DEBUG_SET(DEBUG_VTX_TRAMP, 2, ((trampConfPitMode << 14) &              0xC000) |
                                   ((trampCurPitMode << 12) &               0x3000) |
