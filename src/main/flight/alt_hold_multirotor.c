@@ -149,25 +149,54 @@ static void altHoldUpdateTargetAltitude(void)
 
 static void altHoldUpdate(void)
 {
-    
-    if (altHoldConfig()->climbRate) {
+    const positionNavCommand_t *navCmd = positionNavHasActiveTarget() ? positionNavGetActiveCommand() : NULL;
+    // The altitude-only fallback descent drives the target itself via altHoldUpdateTargetAltitude();
+    // a nav target left active from the previous leg must not shadow it.
+    const bool navOwnsAltitude = (navCmd != NULL) && navCmd->includeAltitude
+                              && !flightPlanNavIsRescueDescentActive();
+
+    // Both paths write altHold.targetAltitudeCm, so only one may run. Under failsafe the stick
+    // integrator's descent term would otherwise cancel a mission climb.
+    if (!navOwnsAltitude && altHoldConfig()->climbRate) {
         altHoldUpdateTargetAltitude(); // check if the pilot has changed the target altitude using sticks
     }
 
-    float targetAltitudeCm = altHold.targetAltitudeCm; 
+    float targetAltitudeCm = altHold.targetAltitudeCm;
     float targetAltitudeVelocity = altHold.targetVelocity;
 
-    if (positionNavHasActiveTarget()) {
-        const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
-        if (navCmd->includeAltitude) {
-            targetAltitudeCm = navCmd->targetPosEfM.z * 100.0f;
-            if (positionNavTargetReached()) {
-                altHold.targetAltitudeCm = targetAltitudeCm; // store target altitude so Alt Hold does not revert to pre-nav target altitude on the next cycle.
+    if (navOwnsAltitude) {
+        const float navEndpointCm = navCmd->targetPosEfM.z * 100.0f;
+        const float maxRateCmS = altHoldMaxClimbRate();
+        if (positionNavTargetReached()) {
+            altHold.targetAltitudeCm = navEndpointCm; // store target altitude so Alt Hold does not revert to pre-nav target altitude on the next cycle.
             targetAltitudeVelocity = 0.0f;
-            } else {
-                 targetAltitudeVelocity = positionNavGetTargetVelocityCmS().z; 
+        } else {
+            // positionNav already rate limits the velocity it publishes, so follow a carrot
+            // advanced at that rate rather than the endpoint: a landing endpoint is deliberately
+            // below ground and never reached, and used directly it drives P and I into throttle
+            // saturation. A carrot keeps the altitude error a tracking error.
+            // The downward bound comes from the leg itself: maxRateCmS is the ascent rate, while
+            // a LAND leg carries its own vertical limit. Bounds the commanded carrot, not the
+            // achieved sink.
+            const float legVertLimitCmS = navCmd->vertSpeedLimitMps * 100.0f;
+            const float downLimitCmS = (legVertLimitCmS > 0.0f) ? legVertLimitCmS : maxRateCmS;
+            targetAltitudeVelocity = constrainf(positionNavGetTargetVelocityCmS().z, -downLimitCmS, maxRateCmS);
+            altHold.targetAltitudeCm += targetAltitudeVelocity * taskIntervalSeconds;
+            // a reachable endpoint, such as a climb to return altitude, must not be overshot
+            if (targetAltitudeVelocity > 0.0f) {
+                altHold.targetAltitudeCm = fminf(altHold.targetAltitudeCm, navEndpointCm);
+            } else if (targetAltitudeVelocity < 0.0f) {
+                altHold.targetAltitudeCm = fmaxf(altHold.targetAltitudeCm, navEndpointCm);
             }
         }
+        // Keep the carrot within one second of travel of the craft. This anchors it when nav
+        // takes over and stops it running away if the craft cannot keep up.
+        const float windowCm = maxRateCmS * 1.0f /* s */;
+        const float currentAltitudeCm = getAltitudeCmControl();
+        altHold.targetAltitudeCm = constrainf(altHold.targetAltitudeCm,
+                                              currentAltitudeCm - windowCm,
+                                              currentAltitudeCm + windowCm);
+        targetAltitudeCm = altHold.targetAltitudeCm;
     }
 
     altitudeControl(targetAltitudeCm, taskIntervalSeconds, targetAltitudeVelocity, altHoldMaxClimbRate());

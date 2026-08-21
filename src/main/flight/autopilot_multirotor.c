@@ -90,6 +90,17 @@
 #define ALTITUDE_F_SCALE       0.1f / ALTITUDE_F_KF_REF // full feedforward scale value when altitudeF CLI = 30
 #define ALTITUDE_VEL_CMD_MAX_DEFAULT_CM_S  1500.0f
 #define ALTITUDE_I_LIMIT      150.0f
+// Landing sink bound for the altitude D term. Near the ground the reported sink is mostly
+// barometer artefact: over logged samples where GPS and a de-spiked baro agree the craft is
+// vertically still, the 99th percentile still reads 381 cm/s. This engages routinely rather
+// than exceptionally - at the default descent rate it is the floor that applies, for most of
+// a descent - and the measured cost when it does clamp a genuine fall is ~10% of peak sink.
+// Half the factor flight_plan_nav.c uses to score landing progress
+// (FP_LANDING_PROGRESS_MAX_FACTOR, 4x), because that averages displacement over 400 ms while
+// this bounds an instantaneous rate. The floor keeps the bound meaningful when the commanded
+// rate is momentarily near zero.
+#define LANDING_SINK_PLAUSIBLE_FACTOR   2.0f
+#define LANDING_SINK_PLAUSIBLE_MIN_CM_S 100.0f
 
 // Unified XY control: a single distance-based PIDAF law serves position hold,
 // nav missions and GPS rescue. D is a velocity-proportional factor, A is
@@ -129,6 +140,16 @@
 
 static pidCoefficient_t xyPid;
 static float xyKDrag;
+
+// previous iteration's output saturation, for iTerm anti-windup
+static bool altitudeOutputSaturatedLow = false;
+static bool altitudeOutputSaturatedHigh = false;
+
+// landing thrust bleed. 1.0 = no ceiling, 0.0 = throttle held at throttleMin
+static float landingSettleScale = 1.0f;
+static bool landingSettleRequested = false;
+// a landing descent is being flown; asserted every iteration by its owner
+static bool landingActive = false;
 
 static float altitudeKp;
 static float altitudeKi;
@@ -263,6 +284,13 @@ void resetAltitudeControl(void)
 {
     altitudeI = 0.0f;
     throttleOut = 0.0f;
+    altitudeOutputSaturatedLow = false;
+    altitudeOutputSaturatedHigh = false;
+    // The ceiling is altitude-loop state and must not outlive a reset: alt hold and rescue reset
+    // the loop independently of flight_plan_nav, so a re-engage could inherit a stale ceiling.
+    landingSettleScale = 1.0f;
+    landingSettleRequested = false;
+    landingActive = false;
 }
 
 uint16_t autopilotGetEffectiveHoverThrottlePwm(void)
@@ -291,19 +319,60 @@ void autopilotClearAltHoldHoverThrottle(void)
     altHoldCapturedHoverPwm = 0;
 }
 
+void autopilotSetLandingActive(bool active)
+{
+    landingActive = active;
+}
+
+void autopilotSetLandingSettle(bool active)
+{
+    if (!active) {
+        landingSettleScale = 1.0f;
+    }
+    landingSettleRequested = active;
+}
+
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeVelCmS, float velLimitCmS)
 {
     // PID controller on altitude error
     const float currentAltitudeCm = getAltitudeCmControl(); // un-filtered altitude from Kalman filter
-    const float altitudeErrorCm = targetAltitudeCm - currentAltitudeCm;
-    const float itermRelax = (fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f; // don't accumulate too much iTerm with transient but large overshoots (>2m error )
+    const float velMax = (velLimitCmS > 1.0f) ? velLimitCmS : ALTITUDE_VEL_CMD_MAX_DEFAULT_CM_S;
+    // Bound the position error to one second of travel at the rate limit, as alt hold already
+    // does for pilot targets: unbounded, P alone saturates throttle and the descent rate is
+    // ignored when a caller sets a target beyond what the rate limit allows.
+    const float rawAltitudeErrorCm = targetAltitudeCm - currentAltitudeCm;
+    const float altitudeErrorCm = constrainf(rawAltitudeErrorCm, -velMax, velMax);
+    // Anti-windup on output saturation, not on the clamp above: the clamp is active for the whole
+    // of any rate-limited move, so it cannot indicate windup.
+    const bool blockIntegration = (altitudeOutputSaturatedLow && altitudeErrorCm < 0.0f)
+                               || (altitudeOutputSaturatedHigh && altitudeErrorCm > 0.0f);
+    const float itermRelax = blockIntegration ? 0.0f
+                           : ((fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f); // don't accumulate too much iTerm with transient but large overshoots (>2m error )
     const float altitudeP = altitudeErrorCm * altitudeKp;
     altitudeI += altitudeErrorCm * altitudeKi * itermRelax * taskIntervalS;
     altitudeI = constrainf(altitudeI, -ALTITUDE_I_LIMIT, ALTITUDE_I_LIMIT);
     // Altitude Derivative
-    const float verticalVelocity = getAltitudeDerivativeControl(); // un-filtered vertical velocity from Kalman filter
-    const float velMax = (velLimitCmS > 1.0f) ? velLimitCmS : ALTITUDE_VEL_CMD_MAX_DEFAULT_CM_S;
+    float verticalVelocity = getAltitudeDerivativeControl(); // un-filtered vertical velocity from Kalman filter
     const float targetVerticalVelocity = constrainf(targetAltitudeVelCmS, -velMax, velMax);
+
+    // Landing, below the landing altitude: bound the apparent sink D is allowed to act on.
+    // Settling into its own downwash the craft sits in raised static pressure and the barometer
+    // reads a height collapse that never happened (22 m in a third of a second on the logged
+    // event, while the accelerometer sat at 1 g). Unbounded, that reaches D as ~900 cm/s of
+    // phantom sink, dBoost multiplies it and the throttle throws the craft off the deck.
+    // A sink this much faster than commanded is the estimate and not the craft, the same
+    // judgement the landing-progress test in flight_plan_nav.c already makes. Two properties
+    // make it safe: it is one-sided, so a genuine climb is never touched and the full authority
+    // to arrest one is kept; and it is memoryless, so it releases in the same iteration the
+    // estimate recovers, rather than lagging the correction the way a slew limit does.
+    // Nothing outside the estimator can tell a real sink from a phantom one, so the estimate,
+    // and with it the reported altitude and the P term, stays corrupted either way.
+    if (landingActive && isBelowLandingAltitude()) {
+        const float sinkBoundCmS = MAX(LANDING_SINK_PLAUSIBLE_FACTOR * fabsf(targetVerticalVelocity),
+                                       LANDING_SINK_PLAUSIBLE_MIN_CM_S);
+        verticalVelocity = MAX(verticalVelocity, -sinkBoundCmS);
+    }
+
     float velocityError = targetVerticalVelocity - verticalVelocity;
 
     float dBoost = 1.0f;
@@ -330,7 +399,28 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     throttleOffset *= tiltMultiplier;
 
     float newThrottle = PWM_RANGE_MIN + throttleOffset;
-    newThrottle = constrainf(newThrottle, autopilotConfig()->throttleMin, autopilotConfig()->throttleMax);
+    const float throttleMinPwm = (float)autopilotConfig()->throttleMin;
+    float ceilingPwm = (float)autopilotConfig()->throttleMax;
+
+    // On ground contact the altitude loop still commands a descent it cannot achieve and holds
+    // thrust just under hover, close enough for ground effect to lift the craft off again. Bleed
+    // the ceiling from hover to throttleMin so contact ends the descent.
+    if (landingSettleRequested) {
+        const float rampS = MAX((float)autopilotConfig()->landingDetectionTime * 0.1f, 0.1f);
+        landingSettleScale = MAX(landingSettleScale - taskIntervalS / rampS, 0.0f);
+        const float hoverPwm = (float)autopilotGetEffectiveHoverThrottlePwm();
+        const float settlePwm = throttleMinPwm + (hoverPwm - throttleMinPwm) * landingSettleScale;
+        // never below throttleMin, and never above the ceiling already in force
+        ceilingPwm = constrainf(settlePwm, throttleMinPwm, ceilingPwm);
+    }
+
+    newThrottle = constrainf(newThrottle, throttleMinPwm, ceilingPwm);
+    // Saturation is measured against the range actually in force, not throttleMin/throttleMax:
+    // while the settle ceiling is bleeding, it is the stop the output rests on. Once it reaches
+    // throttleMin the output is pinned both ways and iTerm must stop entirely, or clearing the
+    // settle releases the accumulated negative iTerm as a thrust dip at the ground.
+    altitudeOutputSaturatedLow = newThrottle <= throttleMinPwm;
+    altitudeOutputSaturatedHigh = newThrottle >= ceilingPwm;
 
     throttleOut = scaleRangef(newThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
     throttleOut = constrainf(throttleOut, 0.0f, 1.0f);

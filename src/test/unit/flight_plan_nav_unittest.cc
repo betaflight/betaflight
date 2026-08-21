@@ -43,6 +43,8 @@ extern "C" {
     #include "pg/gps_rescue.h"
     #include "pg/pg.h"
 
+    #include "sensors/acceleration.h"
+
     int16_t debug[DEBUG16_VALUE_COUNT];
     uint8_t debugMode;
 
@@ -51,6 +53,7 @@ extern "C" {
     gpsSolutionData_t gpsSol;
     gpsLocation_t GPS_home_llh;
     attitudeEulerAngles_t attitude;
+    acc_t acc;
 }
 
 #include "unittest_macros.h"
@@ -72,6 +75,9 @@ struct CapturedTarget {
 };
 
 CapturedTarget g_lastTarget;
+float g_lastMaxAccelMps2;
+float g_lastMaxDecelMps2;
+float g_lastVertSpeedLimitMps;
 vector3_t g_lastDispatchTargetEfM;   // destination from positionNavSetTargetEf only (carrot moves don't touch it)
 int g_setTargetCalls;
 int g_clearTargetCalls;
@@ -91,7 +97,17 @@ flightLogDisarmReason_e g_lastDisarmReason;
 
 } // namespace
 
+static bool g_stubAccPresent = true;
+
 extern "C" {
+
+bool sensors(uint32_t mask)
+{
+    if (mask & SENSOR_ACC) {
+        return g_stubAccPresent;
+    }
+    return true;
+}
 
 void positionNavSetTargetEf(
     const vector3_t *targetPosEfM,
@@ -111,6 +127,11 @@ void positionNavSetTargetEf(
     g_lastTarget.callback = callback;
     g_lastTarget.userData = userData;
     g_lastTarget.valid = true;
+    // Mirror the production reset: per-command limits do not survive a new command, so a test
+    // that asserts on them is asserting the caller stated them rather than inherited them.
+    g_lastMaxAccelMps2 = 0.0f;
+    g_lastMaxDecelMps2 = 0.0f;
+    g_lastVertSpeedLimitMps = 0.0f;
     g_setTargetCalls++;
 }
 
@@ -136,8 +157,13 @@ void positionNavSetAutoClearOnReach(bool autoClear)
 
 void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
 {
-    (void)maxAccelMps2;
-    (void)maxDecelMps2;
+    g_lastMaxAccelMps2 = maxAccelMps2;
+    g_lastMaxDecelMps2 = maxDecelMps2;
+}
+
+void positionNavSetVerticalSpeedLimit(float vertSpeedLimitMps)
+{
+    g_lastVertSpeedLimitMps = vertSpeedLimitMps;
 }
 
 static bool g_altitudeArrivalRequired;
@@ -205,6 +231,11 @@ void autopilotSetYawRateLimit(float rateLimitDps)
     g_yawRateLimitDps = rateLimitDps;
 }
 
+bool g_landingSettle = false;
+void autopilotSetLandingSettle(bool active) { g_landingSettle = active; }
+bool g_landingActive = false;
+void autopilotSetLandingActive(bool active) { g_landingActive = active; }
+
 static bool g_forceLevelPark;
 
 void autopilotForceLevelPark(bool request)
@@ -265,6 +296,8 @@ protected:
         memset(&g_lastDispatchTargetEfM, 0, sizeof(g_lastDispatchTargetEfM));
 
         memset(&attitude, 0, sizeof(attitude));
+        memset(&acc, 0, sizeof(acc));
+        g_stubAccPresent = true;
 
         stateFlags = 0;
         GPS_distanceToHome = 0;
@@ -294,6 +327,7 @@ protected:
         cfg->waypointArrivalRadius = 500;  // 5 m
         cfg->waypointHoldRadius = 200;     // 2 m
         cfg->maxVelocity = 1000;           // 10 m/s
+        cfg->landingAltitudeM = 4;         // as shipped
         cfg->landingDescentRate = 50;      // 0.5 m/s
         cfg->landingDetectionTime = 10;    // 1 s
         cfg->landingVelocityThreshold = 50; // 0.5 m/s
@@ -1069,8 +1103,9 @@ TEST_F(FlightPlanNavTest, LandWaypointArrivalDescendsAtTheWaypoint)
     // Descent anchors at the waypoint, not the current position.
     EXPECT_NEAR(g_lastTarget.targetEfM.x, 10.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.targetEfM.y, 20.0f, 0.1f);
-    EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 200.0f, 0.1f);
-    EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, 0.5f, 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 5.0f, 0.1f);
+    // The descent rate bounds the vertical axis; the horizontal cruise is its own budget.
+    EXPECT_NEAR(g_lastVertSpeedLimitMps, 0.5f, 0.01f);
 }
 
 TEST_F(FlightPlanNavTest, LandWaypointTouchdownDisarmsAndCompletes)
@@ -1126,7 +1161,7 @@ TEST_F(FlightPlanNavTest, LandWaypointWithDurationLoitersThenDescends)
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
     ASSERT_TRUE(g_lastTarget.valid);
     EXPECT_NEAR(g_lastTarget.targetEfM.x, 10.0f, 0.1f);
-    EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 200.0f, 0.1f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 5.0f, 0.1f);
 }
 
 TEST_F(FlightPlanNavTest, LandLoiterExpiryWithLostTargetRedispatchesLeg)
@@ -1296,11 +1331,12 @@ TEST_F(FlightPlanNavSafetyTest, GeofenceBreachWithLandActionStartsLanding)
 
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
     ASSERT_TRUE(g_lastTarget.valid);
-    // Landing target: current position, far below current altitude.
+    // Landing target: current position, a bounded distance below current altitude.
     EXPECT_NEAR(g_lastTarget.targetEfM.x, 12.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.targetEfM.y, 34.0f, 0.1f);
-    EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 200.0f, 0.1f);
-    EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, 0.5f, 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 5.0f, 0.1f);
+    // The descent rate bounds the vertical axis; the horizontal cruise is its own budget.
+    EXPECT_NEAR(g_lastVertSpeedLimitMps, 0.5f, 0.01f);
     EXPECT_FALSE(flightPlanNavIsInjectedPlanActive());
 }
 
@@ -1394,6 +1430,398 @@ TEST_F(FlightPlanNavSafetyTest, GeofenceRthAboveReturnAltReturnsAtCurrentAltitud
     EXPECT_NEAR(g_lastTarget.targetEfM.z, 0.0f, 0.1f);
 }
 
+// A craft bouncing on its feet is moving fast in both directions, so instantaneous vertical
+// velocity cannot tell it apart from flight and the quiet timer keeps resetting. Net altitude
+// progress can: no meaningful descent over consecutive windows means the ground is holding the
+// craft up, and thrust must be bled off or ground effect will float it and it bounces forever.
+// The landing target must stay a bounded distance below the craft and ratchet down as it
+// descends. It cannot be parked hundreds of metres underground: positionNav normalises the 3D
+// error to get its direction, so a huge vertical component collapses the horizontal velocity
+// demand to near zero and horizontal position hold stops working for the whole landing. It must
+// also never walk back up, or a bounce would raise it.
+TEST_F(FlightPlanNavSafetyTest, LandingTargetRatchetsDownAndStaysBounded)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    float lowestTargetM = g_lastTarget.targetEfM.z;
+    for (int i = 0; i < 40; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = -40.0f;
+        g_stubEstimate.position.v[ENU_U] -= 4.0f;      // 40cm/s over 100ms
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+
+        const float altM = g_stubEstimate.position.v[ENU_U] * 0.01f;
+        const float targetM = g_lastTarget.targetEfM.z;
+        EXPECT_LT(targetM, altM) << "target must stay below the craft";
+        EXPECT_GT(targetM, altM - 6.0f) << "target must stay bounded, not parked underground";
+        EXPECT_LE(targetM, lowestTargetM + 0.01f) << "target must never ratchet back up";
+        lowestTargetM = fminf(lowestTargetM, targetM);
+    }
+
+    // A bounce upward must not drag the target up with the craft.
+    const float beforeBounce = g_lastTarget.targetEfM.z;
+    g_stubEstimate.velocity.v[ENU_U] = 90.0f;
+    g_stubEstimate.position.v[ENU_U] += 30.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_LE(g_lastTarget.targetEfM.z, beforeBounce + 0.01f);
+}
+
+// The landing leg must state its own speed and braking limits. It used to state neither: the
+// descent rate doubled as the horizontal cruise cap, and the braking limit was whatever the
+// previous leg happened to leave behind.
+TEST_F(FlightPlanNavSafetyTest, LandingStatesItsOwnSpeedAndBrakingLimits)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    // A geofence LAND is not a rescue, so the descent rate comes from autopilotConfig.
+    autopilotConfigMutable()->landingDescentRate = 50;   // 0.5 m/s
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    // Vertical carries the descent rate; horizontal must not.
+    EXPECT_NEAR(g_lastVertSpeedLimitMps, 0.5f, 0.01f);
+    EXPECT_GT(g_lastTarget.cruiseSpeedMps, 0.5f + 0.01f)
+        << "horizontal approach speed must not be the descent rate";
+
+    // Braking stated, not inherited.
+    EXPECT_GT(g_lastMaxDecelMps2, 0.0f) << "landing must state a horizontal braking limit";
+}
+
+// The same landing reached through a leg that leaves no braking limit must still brake.
+TEST_F(FlightPlanNavSafetyTest, LandingBrakingDoesNotDependOnThePrecedingLeg)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+
+    // Wipe the limits as a gated-carrot or hold-pattern leg would leave them.
+    positionNavSetAccelLimits(0.0f, 0.0f);
+    ASSERT_FLOAT_EQ(g_lastMaxDecelMps2, 0.0f);
+
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    EXPECT_GT(g_lastMaxDecelMps2, 0.0f);
+}
+
+// Companion to LandingBriefDescentThenHoverAtAltitudeDoesNotDisarm, which only covers a descent
+// too brief to register a progress window. A SUSTAINED descent latches the progress flag, and
+// that flag used to authorise the quiet-velocity disarm at any altitude for the rest of the
+// landing. A craft that descends normally and then holds station at 30 m must keep flying.
+TEST_F(FlightPlanNavSafetyTest, LandingSustainedDescentThenHoverAtAltitudeDoesNotDisarm)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    g_stubBelowLandingAltitude = false;
+    g_stubEstimate.position.v[ENU_U] = 3000.0f;   // 30 m
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    // Sustained descent: long enough for progress windows to register real net descent.
+    for (int i = 0; i < 10; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = -40.0f;
+        g_stubEstimate.position.v[ENU_U] -= 4.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    ASSERT_EQ(g_disarmCalls, 0);
+
+    // Now hold station, still ~30 m up. Well past the landing confirmation interval.
+    g_stubEstimate.velocity.v[ENU_U] = 0.0f;
+    for (int i = 0; i < 5; i++) {
+        g_stubMicros += 1'000'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    EXPECT_EQ(g_disarmCalls, 0) << "must not disarm in mid-air after a sustained descent";
+}
+
+// A descent that stalls at altitude is a stalled descent, not a touchdown. Bleeding thrust
+// toward idle there is the opposite of what it needs. Ungated, this fired on every logged
+// flight: eight engagements across four descents, the highest at 51.9 m, one cutting 174 PWM
+// for half a second at 31 m.
+TEST_F(FlightPlanNavSafetyTest, StalledDescentAtAltitudeDoesNotBleedThrust)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    // High up, and descending normally so touchdown monitoring is armed.
+    g_stubBelowLandingAltitude = false;
+    g_stubEstimate.position.v[ENU_U] = 3000.0f;   // 30 m
+    for (int i = 0; i < 10; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = -40.0f;
+        g_stubEstimate.position.v[ENU_U] -= 4.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    ASSERT_FALSE(g_landingSettle);
+
+    // Descent stalls, still 30 m up: several stall windows, well past FP_LANDING_STALL_WINDOWS.
+    for (int i = 0; i < 30; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = 0.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+        EXPECT_FALSE(g_landingSettle)
+            << "thrust must not be bled toward idle for a stall at 30 m (i=" << i << ")";
+    }
+    EXPECT_EQ(g_disarmCalls, 0);
+
+    // The same stall, once actually near the ground, must still bleed. Skittering rather than
+    // quiet, so the quiet-velocity path cannot disarm and end the landing before we look.
+    g_stubBelowLandingAltitude = true;
+    const float groundAltCm = g_stubEstimate.position.v[ENU_U];
+    for (int i = 0; i < 10; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = (i % 2) ? 90.0f : -90.0f;
+        g_stubEstimate.position.v[ENU_U] = groundAltCm + ((i % 2) ? 5.0f : 0.0f);
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    EXPECT_TRUE(g_landingSettle) << "a stall below the landing altitude must still bleed thrust";
+}
+
+// Stall evidence gathered at altitude must not survive the crossing into the landing regime.
+// The counter only clears on a completed 400 ms window that shows progress, so a craft that
+// stalls high, resumes descending, and crosses the landing altitude inside one window would
+// arrive carrying stale evidence and have thrust bled from under it several metres up - the
+// same class of defect this series exists to remove. landingLowSeen is already reset on the
+// way past; this is the counter beside it that was not.
+TEST_F(FlightPlanNavSafetyTest, StallAtAltitudeDoesNotBleedThrustOnCrossingIntoLanding)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    // Descending normally, high up, so touchdown monitoring is armed.
+    g_stubBelowLandingAltitude = false;
+    g_stubEstimate.position.v[ENU_U] = 2000.0f;   // 20 m
+    for (int i = 0; i < 10; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = -100.0f;
+        g_stubEstimate.position.v[ENU_U] -= 10.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    ASSERT_FALSE(g_landingSettle);
+
+    // Stalls at altitude: many windows of no progress, still well above the ground.
+    for (int i = 0; i < 20; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = 0.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    ASSERT_FALSE(g_landingSettle) << "the altitude gate holds while high";
+
+    // Descent resumes at the commanded rate and the craft crosses the landing altitude inside
+    // one progress window, so no fresh window has had a chance to clear the stale count.
+    // Nothing here is a touchdown; the ceiling must stay off.
+    g_stubBelowLandingAltitude = true;
+    for (int i = 0; i < 3; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = -100.0f;
+        g_stubEstimate.position.v[ENU_U] -= 10.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+        EXPECT_FALSE(g_landingSettle)
+            << "stale stall evidence from altitude bled thrust during a healthy descent (i="
+            << i << ")";
+    }
+}
+
+// FP_LANDING_STALL_WINDOWS exists to demand sustained evidence before thrust is bled, so both
+// windows must actually measure the near-ground regime. Clearing the count on the way down is
+// not sufficient on its own: a window opened above the landing altitude and closed below it
+// spans both regimes, and if it still counts, the ceiling engages after roughly one full
+// below-threshold window instead of two. The crossing here lands deliberately mid-window.
+TEST_F(FlightPlanNavSafetyTest, StallWindowsMustLieWhollyBelowTheLandingAltitude)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    // Arm touchdown monitoring with a normal descent, high up.
+    g_stubBelowLandingAltitude = false;
+    g_stubEstimate.position.v[ENU_U] = 2000.0f;   // 20 m
+    for (int i = 0; i < 10; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = -100.0f;
+        g_stubEstimate.position.v[ENU_U] -= 10.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+
+    // Stall high for 2.2 s, chosen so the crossing lands mid-window. Measured engagement after
+    // the crossing, sweeping this length over a whole window: two whole windows below the
+    // threshold gives 8 iterations at every phase, while counting the straddling window gives
+    // 4, 5, 6 or 7 depending purely on where the crossing happens to fall. 4 is one window.
+    for (int i = 0; i < 22; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = 0.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    ASSERT_FALSE(g_landingSettle);
+
+    // Now near the ground and stalled for real: skittering, so the quiet-velocity path cannot
+    // disarm first. Two whole windows below the threshold is 800 ms, so nothing may fire before
+    // then; a straddling window would bring it forward to about 500 ms.
+    g_stubBelowLandingAltitude = true;
+    const float groundAltCm = g_stubEstimate.position.v[ENU_U];
+    for (int i = 0; i < 7; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = (i % 2) ? 90.0f : -90.0f;
+        g_stubEstimate.position.v[ENU_U] = groundAltCm + ((i % 2) ? 5.0f : 0.0f);
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+        EXPECT_FALSE(g_landingSettle)
+            << "a window opened above the landing altitude counted toward the ceiling (i="
+            << i << ", " << (i + 1) * 100 << " ms below)";
+    }
+
+    // ...and it must still engage once two genuine windows have elapsed.
+    for (int i = 7; i < 12; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = (i % 2) ? 90.0f : -90.0f;
+        g_stubEstimate.position.v[ENU_U] = groundAltCm + ((i % 2) ? 5.0f : 0.0f);
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    EXPECT_TRUE(g_landingSettle) << "a genuine ground stall must still bleed thrust";
+}
+
+// Ground contact drives prop downwash into the barometer, which dumps the altitude estimate.
+// One logged touchdown showed 4.07 m of apparent descent in a single 400 ms window, 8x the
+// commanded rate, immediately after the craft had actually stopped descending. Counted as
+// progress it reset the stall counter and released the thrust ceiling 350 ms after it engaged,
+// so the ceiling could never bleed past about 40% of its range and the craft bounced again.
+TEST_F(FlightPlanNavSafetyTest, EstimatorPlungeDoesNotClearTheThrustBleed)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    autopilotConfigMutable()->landingDescentRate = 120;   // 1.2 m/s, as flown
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+    g_stubBelowLandingAltitude = true;
+
+    // Descent establishes, then stalls on contact: skittering, so the quiet path cannot disarm.
+    for (int i = 0; i < 6; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = -120.0f;
+        g_stubEstimate.position.v[ENU_U] -= 12.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    const float contactAltCm = g_stubEstimate.position.v[ENU_U];
+    for (int i = 0; i < 10; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = (i % 2) ? 90.0f : -90.0f;
+        g_stubEstimate.position.v[ENU_U] = contactAltCm + ((i % 2) ? 5.0f : 0.0f);
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    ASSERT_TRUE(g_landingSettle) << "stalled on the ground: the ceiling should be engaged";
+
+    // The downwash artefact: the estimate plunges 4 m inside one window. It is not real descent.
+    g_stubEstimate.position.v[ENU_U] = contactAltCm - 407.0f;
+    g_stubEstimate.velocity.v[ENU_U] = -90.0f;
+    g_stubMicros += 400'000;
+    flightPlanNavUpdate(g_stubMicros);
+
+    EXPECT_TRUE(g_landingSettle)
+        << "an implausible estimator plunge must not read as progress and release the ceiling";
+}
+
+// The altitude loop's landing sink bound is live for exactly as long as a landing descent is,
+// and no longer: outside one, altitudeControl() must behave as it always has. The flag is
+// asserted every iteration from updateLanding(), the one function both landing entry paths run
+// through, and cleared by every exit.
+TEST_F(FlightPlanNavSafetyTest, LandingActiveTracksTheLandingAndNothingElse)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    g_landingActive = false;   // the fixture does not reset the stub globals
+    engageDistantLeg();
+
+    // Flying a normal leg: no landing, so the bound must be inert.
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_FALSE(g_landingActive) << "the bound must not apply while flying a normal leg";
+
+    GPS_distanceToHome = 150;
+    g_stubMicros += 10'000;
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+    EXPECT_TRUE(g_landingActive) << "the landing has started; the bound must be live";
+
+    // Still live before touchdown monitoring engages: the artefact appears during the descent.
+    for (int i = 0; i < 5; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = -40.0f;
+        g_stubEstimate.position.v[ENU_U] -= 4.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+        EXPECT_TRUE(g_landingActive) << "released mid-descent (i=" << i << ")";
+    }
+
+    // A landing abandoned mid-descent must release it.
+    flightPlanNavDisengage();
+    EXPECT_FALSE(g_landingActive) << "disengaging must release the bound";
+}
+
+TEST_F(FlightPlanNavSafetyTest, LandingBounceTriggersThrustBleed)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    // Descent establishes, losing altitude normally.
+    for (int i = 0; i < 20; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = -40.0f;
+        g_stubEstimate.position.v[ENU_U] -= 4.0f;   // 40cm/s over 100ms
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    EXPECT_FALSE(g_landingSettle) << "must not bleed thrust during a healthy descent";
+    EXPECT_EQ(g_disarmCalls, 0);
+
+    // Ground contact: altitude no longer falls, but the craft skitters so vertical velocity
+    // swings well outside the quiet threshold and the quiet timer can never complete.
+    const float bounceAltCm = g_stubEstimate.position.v[ENU_U];
+    for (int i = 0; i < 30; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = (i % 2) ? 90.0f : -90.0f;
+        g_stubEstimate.position.v[ENU_U] = bounceAltCm + ((i % 2) ? 5.0f : 0.0f);
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    EXPECT_EQ(g_disarmCalls, 0) << "quiet timer legitimately cannot confirm while bouncing";
+    EXPECT_TRUE(g_landingSettle) << "no downward progress: thrust must be bled to stop the bounce";
+}
+
 TEST_F(FlightPlanNavSafetyTest, LandingTouchdownDisarms)
 {
     autopilotConfigMutable()->maxDistanceFromHomeM = 100;
@@ -1420,6 +1848,311 @@ TEST_F(FlightPlanNavSafetyTest, LandingTouchdownDisarms)
     flightPlanNavUpdate(g_stubMicros);
     EXPECT_EQ(g_disarmCalls, 1);
     EXPECT_EQ(g_lastDisarmReason, DISARM_REASON_LANDING);
+}
+
+// A transient downward velocity at LAND-leg entry is not proof of ground contact.  The
+// touchdown monitor must not turn that one sample into permanent permission to disarm while the
+// vehicle subsequently holds still at altitude.  This matches the SITL rescue failure where a
+// 31.8 m aircraft was cleanly disarmed after briefly reporting a descent during the arrival
+// transition.
+TEST_F(FlightPlanNavSafetyTest, LandingBriefDescentThenHoverAtAltitudeDoesNotDisarm)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    g_stubBelowLandingAltitude = false;
+    g_stubEstimate.position.v[ENU_U] = 3000.0f;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    // A one-off descent sample can occur while braking into the LAND leg.
+    g_stubEstimate.velocity.v[ENU_U] = -40.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+
+    // The aircraft is still 30 m up and has stopped descending.  Let more than the landing
+    // confirmation interval elapse: this must keep flying rather than disarm in mid-air.
+    g_stubEstimate.velocity.v[ENU_U] = 0.0f;
+    for (int i = 0; i < 3; i++) {
+        g_stubMicros += 1'000'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    EXPECT_EQ(g_disarmCalls, 0);
+}
+
+// Real flight (SEQUREH7V2, GRENGOBL 2026-08-12): the craft landed, then sat on the ground for
+// 18 s still armed because the touchdown test never resolved.  In ground effect the altitude
+// estimate swung over 6.5 m and reported +/-15 m/s of vertical velocity while the craft was
+// stationary, so the quiet-velocity test was almost never satisfied and its timer kept
+// restarting.  Impact jerk is the one ground signal that survives, and a landing has exactly one
+// touchdown, so a single impact must end it immediately.
+TEST_F(FlightPlanNavSafetyTest, LandingDisarmsOnFirstImpactWhenAltitudeEstimateIsUnusable)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    // Establish the descent, as a real landing does.
+    g_stubEstimate.velocity.v[ENU_U] = -40.0f;
+    g_stubMicros += 500'000;
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(g_disarmCalls, 0);
+
+    // Near the ground, with the logged estimator behaviour: the reported vertical velocity never
+    // settles inside landingVelocityThreshold, so the quiet-velocity path can never fire.
+    const float noisyVelCmS[] = {-1500.0f, 900.0f, -400.0f, 1200.0f, -1100.0f, 600.0f};
+    for (int i = 0; i < 12; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = noisyVelCmS[i % 6];
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    ASSERT_EQ(g_disarmCalls, 0) << "disarmed before any ground contact";
+
+    // Touchdown.  Contact arrives as a burst of over-threshold samples a few ms apart, which is
+    // what was measured on the real contact, and that is the landing over with.
+    acc.jerkMagnitude = 900.0f;              // contact peaked at 1210 G/s in the log
+    acc.accMagnitude = 5.5f;                 // and at 5.5 g
+    g_stubMicros += 5'000;
+    flightPlanNavUpdate(g_stubMicros);
+    g_stubMicros += 5'000;
+    flightPlanNavUpdate(g_stubMicros);
+
+    EXPECT_EQ(g_disarmCalls, 1) << "ground impact did not end the landing";
+    EXPECT_EQ(g_lastDisarmReason, DISARM_REASON_LANDING);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_COMPLETE);
+}
+
+// The accelerometer is low-passed before the detector sees it, which attenuates the derivative
+// of a contact step far more than its amplitude. Two logged 5 g contacts produced only 284 and
+// 297 G/s of jerk and were missed, so the craft bounced twice. Amplitude must be able to carry
+// the detection when jerk has been smeared out.
+TEST_F(FlightPlanNavSafetyTest, HardContactWithSmearedJerkStillDisarms)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+    g_stubBelowLandingAltitude = true;
+
+    g_stubEstimate.velocity.v[ENU_U] = -120.0f;
+    g_stubMicros += 200'000;
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(g_disarmCalls, 0);
+
+    // A hard contact as actually logged: 4.6 g, but only 284 G/s of jerk after the 25 Hz LPF,
+    // which is below the 300 G/s the detector used to require.
+    acc.jerkMagnitude = 284.0f;
+    acc.accMagnitude = 4.57f;
+    for (int i = 0; i < 2; i++) {
+        g_stubMicros += 5'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+
+    EXPECT_EQ(g_disarmCalls, 1) << "a 4.6 g contact must end the landing even with smeared jerk";
+    EXPECT_EQ(g_lastDisarmReason, DISARM_REASON_LANDING);
+}
+
+// The amplitude term must not become a disarm on its own. Sustained g-loading without transient
+// content is not a contact, so some jerk is still required.
+TEST_F(FlightPlanNavSafetyTest, SustainedGLoadWithoutJerkDoesNotDisarm)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+    g_stubBelowLandingAltitude = true;
+
+    // High sustained load, no transient: a hard pull-out, not a touchdown.
+    acc.accMagnitude = 3.0f;
+    acc.jerkMagnitude = 20.0f;
+    const float noisyVelCmS[] = {-1500.0f, 900.0f, -400.0f, 1200.0f, -1100.0f, 600.0f};
+    for (int i = 0; i < 20; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = noisyVelCmS[i % 6];
+        g_stubMicros += 5'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+
+    EXPECT_EQ(g_disarmCalls, 0) << "amplitude alone must not be read as ground contact";
+}
+
+// Acting on a single impact is only safe because it is gated on being near the ground.  A prop
+// strike, a hard gust or a single bad sample while still airborne has to be ignored: this is the
+// case that stops one spike from ending a flight in mid-air.
+TEST_F(FlightPlanNavSafetyTest, LandingJerkSpikeAtAltitudeDoesNotDisarm)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    g_stubBelowLandingAltitude = false;
+    g_stubEstimate.position.v[ENU_U] = 3000.0f;   // 30 m up
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    g_stubEstimate.velocity.v[ENU_U] = -40.0f;
+    g_stubMicros += 500'000;
+    flightPlanNavUpdate(g_stubMicros);
+
+    // Repeated impact bursts the whole way down - tight enough to satisfy the burst rule - but
+    // the craft is 30 m up, so only the altitude gate can be what rejects them.
+    acc.jerkMagnitude = 900.0f;
+    acc.accMagnitude = 5.5f;
+    for (int i = 0; i < 40; i++) {
+        for (int b = 0; b < 3; b++) {
+            g_stubMicros += 5'000;
+            flightPlanNavUpdate(g_stubMicros);
+        }
+        g_stubMicros += 85'000;
+        g_stubEstimate.position.v[ENU_U] -= 4.0f;   // still descending normally
+        flightPlanNavUpdate(g_stubMicros);
+    }
+
+    EXPECT_EQ(g_disarmCalls, 0) << "a jerk spike disarmed the craft in mid-air";
+}
+
+// With no usable accelerometer there is no impact signal, so the impact path must stay out of
+// the way and leave the pre-existing touchdown evidence as the only route to a disarm.
+TEST_F(FlightPlanNavSafetyTest, LandingImpactPathInertWithoutAccelerometer)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    g_stubAccPresent = false;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    g_stubEstimate.velocity.v[ENU_U] = -40.0f;
+    g_stubMicros += 500'000;
+    flightPlanNavUpdate(g_stubMicros);
+
+    // Impact bursts the whole time, but the sensor is absent so they must never be seen.
+    acc.jerkMagnitude = 900.0f;
+    acc.accMagnitude = 5.5f;
+    const float noisyVelCmS[] = {-1500.0f, 900.0f, -400.0f, 1200.0f, -1100.0f, 600.0f};
+    for (int i = 0; i < 40; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = noisyVelCmS[i % 6];
+        for (int b = 0; b < 3; b++) {
+            g_stubMicros += 5'000;
+            flightPlanNavUpdate(g_stubMicros);
+        }
+        g_stubMicros += 85'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+
+    EXPECT_EQ(g_disarmCalls, 0) << "impact path fired with no accelerometer present";
+}
+
+// A lone over-threshold sample is vibration, not contact.  Real contact delivers a burst - the
+// logged touchdown put five samples over the threshold inside 200 ms - so a single outlier must
+// not be enough to end a flight.
+TEST_F(FlightPlanNavSafetyTest, LandingIsolatedJerkOutlierDoesNotDisarm)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    g_stubEstimate.velocity.v[ENU_U] = -40.0f;
+    g_stubMicros += 500'000;
+    flightPlanNavUpdate(g_stubMicros);
+
+    // One spike per second: over threshold, but never two inside the burst window.
+    const float noisyVelCmS[] = {-1500.0f, 900.0f, -400.0f, 1200.0f, -1100.0f, 600.0f};
+    for (int i = 0; i < 15; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = noisyVelCmS[i % 6];
+        acc.jerkMagnitude = 900.0f;
+        acc.accMagnitude = 5.5f;
+        g_stubMicros += 1'000'000;
+        flightPlanNavUpdate(g_stubMicros);
+        acc.jerkMagnitude = 5.0f;
+        acc.accMagnitude = 1.0f;
+    }
+
+    EXPECT_EQ(g_disarmCalls, 0) << "an isolated jerk outlier was treated as ground contact";
+}
+
+// A touchdown can be too soft to spike, and the altitude estimate cannot be relied on to notice
+// it: low-passing it and lengthening the progress window were both measured against the logged
+// flight and still scored 36-50% of on-ground windows as fresh descent.  So a landing that has
+// spent far longer at landing altitude than the commanded rate needs must end regardless.
+TEST_F(FlightPlanNavSafetyTest, LandingCompletesWhenTouchdownIsTooSoftToDetect)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    g_stubEstimate.velocity.v[ENU_U] = -40.0f;
+    g_stubMicros += 500'000;
+    flightPlanNavUpdate(g_stubMicros);
+
+    // No impact ever registers, and the estimate never settles.  4 m at 0.5 m/s is 8 s of
+    // descent, so the backstop is 24 s.
+    const float noisyVelCmS[] = {-1500.0f, 900.0f, -400.0f, 1200.0f, -1100.0f, 600.0f};
+    acc.jerkMagnitude = 5.0f;
+    acc.accMagnitude = 1.0f;
+    for (int i = 0; i < 300; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = noisyVelCmS[i % 6];
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+        if (i == 150) {   // 15 s in, still well inside the backstop
+            EXPECT_EQ(g_disarmCalls, 0) << "backstop fired far too early";
+        }
+    }
+
+    EXPECT_EQ(g_disarmCalls, 1) << "a soft touchdown never ended the landing";
+    EXPECT_EQ(g_lastDisarmReason, DISARM_REASON_LANDING);
+}
+
+// The backstop scales with the commanded descent rate, so a deliberately slow landing is not cut
+// short.  At the 0.3 m/s floor, 4 m needs 13.3 s, so the backstop must be far beyond the 24 s
+// that applies at the default rate.
+TEST_F(FlightPlanNavSafetyTest, LandingCommitBackstopScalesWithCommandedRate)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    autopilotConfigMutable()->landingDescentRate = 10;   // clamped up to the 0.3 m/s floor
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    g_stubEstimate.velocity.v[ENU_U] = -20.0f;
+    g_stubMicros += 500'000;
+    flightPlanNavUpdate(g_stubMicros);
+
+    const float noisyVelCmS[] = {-1500.0f, 900.0f, -400.0f, 1200.0f, -1100.0f, 600.0f};
+    acc.jerkMagnitude = 5.0f;
+    acc.accMagnitude = 1.0f;
+    for (int i = 0; i < 300; i++) {   // 30 s: past the default-rate backstop, inside this one
+        g_stubEstimate.velocity.v[ENU_U] = noisyVelCmS[i % 6];
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+
+    EXPECT_EQ(g_disarmCalls, 0) << "a slow commanded descent was cut short by the backstop";
 }
 
 TEST_F(FlightPlanNavSafetyTest, LandingAtAltitudeWithoutDescentNeverDisarms)

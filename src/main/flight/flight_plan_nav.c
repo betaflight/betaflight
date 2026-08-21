@@ -52,6 +52,8 @@
 #ifdef USE_GPS_RESCUE
 #include "pg/gps_rescue.h"
 #endif
+#include "sensors/acceleration.h"
+
 #if ENABLE_RESCUE_PLAN
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
@@ -112,13 +114,45 @@
 // still counts, and the nose still starts swinging, the moment they happen.
 #define FP_MEAS_FILTER_S         0.20f   // PT1 tau on along-track position and ground speed
 
-// Landing descends toward a target far below the current position so vertical
-// arrival can never trigger; touchdown detection is what ends the descent.
-#define FP_LANDING_TARGET_DEPTH_M 200.0f
+// Landing descends toward a target below the craft so vertical arrival can never trigger;
+// touchdown detection ends the descent. The target is a real point in space, not a sentinel:
+// positionNav derives its vertical speed schedule from the distance to it. Keep it shallow and
+// ratchet it down as the craft descends (see updateLanding).
+#define FP_LANDING_TARGET_DEPTH_M 5.0f
 #define FP_LANDING_MIN_RATE_MPS   0.3f
-// Fallback: start touchdown monitoring even if descent was never observed —
-// only near the ground (landing initiated at ground level). At altitude a
-// vehicle that cannot descend must keep trying, not disarm mid-air.
+// Horizontal speed and braking budget for the landing leg, independent of the descent rate.
+// Stated so the landing does not inherit them from whichever leg preceded it.
+#define FP_LANDING_APPROACH_MPS   1.5f
+#define FP_LANDING_DECEL_MPS2     0.3f
+// Descent-progress window used to infer ground contact, and how many consecutive stalled windows
+// before thrust is bled off. 2 x 400 ms keeps a brief hesitation from cutting thrust.
+#define FP_LANDING_PROGRESS_WINDOW_US 400000u
+#define FP_LANDING_STALL_WINDOWS 2
+// Ceiling on what one window may count as real descent, as a multiple of the commanded rate.
+// Rejects the estimator plunge that ground-effect downwash produces at touchdown.
+#define FP_LANDING_PROGRESS_MAX_FACTOR 4.0f
+// Ground contact, because the altitude estimate is not trustworthy at ground level. Contact is
+// an acceleration step, and the accelerometer is low-passed at acc_lpf_hz (25 Hz default) before
+// this sees it. That attenuates the derivative of a step far more than its amplitude, so jerk
+// alone is a poor measure of contact severity: over six logged contacts peak jerk correlates
+// with peak acceleration at only r=0.29, and the two hardest (5.6 g and 4.9 g) produced less
+// jerk than a 4.5 g one. Requiring amplitude as well as jerk catches all six with no false
+// positive anywhere below the landing altitude in four descents; amplitude separates true from
+// false by 3.6x where jerk manages 1.7x. Jerk is kept, at a level low enough never to be the
+// limiting term, so some transient content is still required and a slow g-loading event cannot
+// trigger on amplitude alone. A burst of samples is required so a lone outlier cannot trigger.
+#define FP_LANDING_IMPACT_JERK_GS 150.0f
+#define FP_LANDING_IMPACT_ACC_G   1.0f
+#define FP_LANDING_IMPACT_SAMPLES 2
+#define FP_LANDING_IMPACT_BURST_US 50000u
+// Backstop for a touchdown too soft to spike. Once the craft has been at landing altitude for
+// several times as long as the commanded rate needs to cover that height, the landing is over
+// whatever the sensors claim. Scaling with the rate keeps a slow descent from being cut short;
+// the floor covers a configured landing altitude of zero.
+#define FP_LANDING_COMMIT_FACTOR 3.0f
+#define FP_LANDING_COMMIT_MIN_US 15000000u
+// Start touchdown monitoring even if descent was never observed, but only near the ground. At
+// altitude a vehicle that cannot descend must keep trying, not disarm.
 #define FP_LANDING_ESTABLISH_TIMEOUT_US 5000000u
 
 // Injected runtime plans are small synthesised sequences (geofence RTH,
@@ -226,8 +260,16 @@ static struct {
 
     // Landing state
     timeUs_t landingStartUs;
-    timeUs_t touchdownQuietStartUs;
+    timeUs_t  touchdownQuietStartUs;
+    float     landingProgressRefAltCm;   // altitude at the start of the descent-progress window
+    timeUs_t  landingProgressRefUs;      // start of that window
+    uint8_t   landingStallWindows;       // consecutive windows with no downward progress
     bool landingDescentEstablished;
+    timeUs_t  landingImpactBurstUs;      // start of the current run of over-threshold samples
+    timeUs_t  landingLowStartUs;         // first continuous moment at or below landing altitude
+    uint8_t   landingImpactSamples;      // over-threshold samples in the current burst
+    bool landingImpactBurstOpen;         // a burst is in progress (timestamp is valid)
+    bool landingLowSeen;                 // landingLowStartUs is valid
 } fp;
 
 static flightPlanWaypointReachedFn reachedListener = NULL;
@@ -811,6 +853,40 @@ static float landingDescentRateCmS(void)
     return (float)autopilotConfig()->landingDescentRate;
 }
 
+// Ground-contact spike. Guarded on the accelerometer actually being present: with no usable
+// acc there is no impact signal, so this reports false and the descent-progress and
+// quiet-velocity tests remain the only touchdown evidence, exactly as before.
+static bool landingImpactJerkExceeded(void)
+{
+#ifdef USE_ACC
+    if (!sensors(SENSOR_ACC)) {
+        return false;
+    }
+    return acc.jerkMagnitude > FP_LANDING_IMPACT_JERK_GS
+        && fabsf(acc.accMagnitude - 1.0f) > FP_LANDING_IMPACT_ACC_G;
+#else
+    return false;
+#endif
+}
+
+// Landing/touchdown monitor state. Both entry paths (a LAND leg and a rescue descent) must
+// start from the same clean slate, so it lives in one place - adding a field to the struct and
+// forgetting one of the call sites is how a stale observation leaks into the next descent.
+static void resetLandingMonitor(timeUs_t currentTimeUs)
+{
+    fp.landingStartUs = currentTimeUs;
+    fp.touchdownQuietStartUs = 0;
+    fp.landingProgressRefUs = 0;
+    fp.landingProgressRefAltCm = 0.0f;
+    fp.landingStallWindows = 0;
+    fp.landingDescentEstablished = false;
+    fp.landingImpactBurstUs = 0;
+    fp.landingLowStartUs = 0;
+    fp.landingImpactSamples = 0;
+    fp.landingImpactBurstOpen = false;
+    fp.landingLowSeen = false;
+}
+
 static void startLanding(timeUs_t currentTimeUs, float targetEastM, float targetNorthM)
 {
     const positionEstimate3d_t *est = positionEstimatorGetEstimate();
@@ -821,43 +897,171 @@ static void startLanding(timeUs_t currentTimeUs, float targetEastM, float target
     }};
 
     const float descentMps = MAX(FP_LANDING_MIN_RATE_MPS, landingDescentRateCmS() * 0.01f);
-    positionNavSetTargetEf(&targetM, descentMps, 1.0f, 0.1f, true, NULL, NULL);
+    // The descent rate bounds the vertical axis only; passing it as cruise speed would make
+    // gps_rescue_descend_rate cap the horizontal approach speed too.
+    positionNavSetTargetEf(&targetM, FP_LANDING_APPROACH_MPS, 1.0f, 0.1f, true, NULL, NULL);
+    positionNavSetVerticalSpeedLimit(descentMps);
+    // State the braking limits rather than inheriting whatever the previous leg left.
+    positionNavSetAccelLimits(0.0f, FP_LANDING_DECEL_MPS2);
 
+    autopilotSetLandingSettle(false);
+    autopilotSetLandingActive(true);
     fp.state = FP_NAV_LANDING;
-    fp.landingStartUs = currentTimeUs;
-    fp.touchdownQuietStartUs = 0;
-    fp.landingDescentEstablished = false;
+    resetLandingMonitor(currentTimeUs);
+}
+
+// Touchdown reached: drop the throttle ceiling, release the position target and disarm.
+static void completeLanding(void)
+{
+    autopilotSetLandingSettle(false);
+    autopilotSetLandingActive(false);
+    positionNavClearTarget();
+    fp.state = FP_NAV_COMPLETE;
+    disarm(DISARM_REASON_LANDING);
 }
 
 static void updateLanding(timeUs_t currentTimeUs)
 {
     const positionEstimate3d_t *est = positionEstimatorGetEstimate();
     const float verticalVelocityCmS = est->velocity.v[ENU_U];
+    const float currentAltitudeCm = est->position.v[ENU_U];
     const float commandedDescentCmS = MAX(FP_LANDING_MIN_RATE_MPS * 100.0f, landingDescentRateCmS());
+
+    // Re-asserted every iteration, from the one function both landing entry paths run through,
+    // so the altitude loop's landing sink bound is live for exactly as long as a descent is.
+    autopilotSetLandingActive(true);
 
     if (!fp.landingDescentEstablished
         && verticalVelocityCmS < -0.25f * commandedDescentCmS) {
         fp.landingDescentEstablished = true;
     }
 
+    const bool belowLandingAltitude = isBelowLandingAltitude();
     const bool monitorTouchdown = fp.landingDescentEstablished
-        || (isBelowLandingAltitude()
+        || (belowLandingAltitude
             && cmpTimeUs(currentTimeUs, fp.landingStartUs) >= (timeDelta_t)FP_LANDING_ESTABLISH_TIMEOUT_US);
     if (!monitorTouchdown) {
+        autopilotSetLandingSettle(false);
         return;
     }
 
-    // Touchdown: descent has stopped despite being commanded, and the vehicle
-    // is not moving vertically. A descent at the commanded rate must never
-    // count as quiet, whatever landingVelocityThreshold is configured to.
+    // Infer ground contact from descent progress rather than vertical velocity: a craft
+    // skittering on the ground moves fast in both directions but makes no net progress, which
+    // instantaneous velocity cannot distinguish from flight.
+    // Ratchet the landing target down as the craft descends, so it stays a bounded distance
+    // below without ever rising again (a bounce must not walk the target back up).
+    if (positionNavHasActiveTarget()) {
+        const positionNavCommand_t *cmd = positionNavGetActiveCommand();
+        const float desiredTargetUpM = currentAltitudeCm * 0.01f - FP_LANDING_TARGET_DEPTH_M;
+        if (desiredTargetUpM < cmd->targetPosEfM.v[ENU_U]) {
+            vector3_t moved = cmd->targetPosEfM;
+            moved.v[ENU_U] = desiredTargetUpM;
+            positionNavMoveTargetEf(&moved);
+        }
+    }
+
+    // An impact near the ground is the only touchdown signal that survives contact: the altitude
+    // estimate degrades badly in ground effect, defeating both of the tests further below. Jerk is
+    // sampled every call because contact is a transient that a window boundary would miss.
+    // Two things make it safe to end a flight on. The craft must be below the landing altitude, so
+    // a prop strike or a hard gust at height is ignored; being a conjunction, the noisy near-ground
+    // altitude can only ever delay detection, never trigger it early. And the spikes must arrive
+    // as a burst, which contact produces and an isolated vibration outlier does not.
+    // Only the burst counters are state: contact is acted on in this same call, so there is
+    // nothing to carry into the next one.
+    bool impactContact = false;
+    if (landingImpactJerkExceeded() && belowLandingAltitude) {
+        if (fp.landingImpactBurstOpen
+            && cmpTimeUs(currentTimeUs, fp.landingImpactBurstUs) <= (timeDelta_t)FP_LANDING_IMPACT_BURST_US) {
+            if (fp.landingImpactSamples < UINT8_MAX) {
+                fp.landingImpactSamples++;
+            }
+        } else {
+            fp.landingImpactBurstUs = currentTimeUs;
+            fp.landingImpactSamples = 1;
+            fp.landingImpactBurstOpen = true;
+        }
+        impactContact = fp.landingImpactSamples >= FP_LANDING_IMPACT_SAMPLES;
+    }
+
+    // Time spent at landing altitude, for the backstop below. Climbing back out restarts it, so
+    // this only ever measures one continuous attempt to put the craft down.
+    if (belowLandingAltitude) {
+        if (!fp.landingLowSeen) {
+            fp.landingLowStartUs = currentTimeUs;
+            fp.landingLowSeen = true;
+        }
+    } else {
+        fp.landingLowSeen = false;
+    }
+
+    // A stalled descent only implies contact near the ground, so the whole measurement is scoped
+    // to that regime: the count is dropped and the window restarted while the craft is still
+    // high. Clearing the count alone would not be enough - a window opened above the landing
+    // altitude and closed below it measures partly the wrong regime, yet would still count
+    // toward the two windows that engage the ceiling. Discarding both keeps every window that
+    // can contribute wholly below the landing altitude.
+    if (!belowLandingAltitude) {
+        fp.landingStallWindows = 0;
+        fp.landingProgressRefUs = 0;
+    } else if (fp.landingProgressRefUs == 0) {
+        fp.landingProgressRefUs = currentTimeUs;
+        fp.landingProgressRefAltCm = currentAltitudeCm;
+    } else if (cmpTimeUs(currentTimeUs, fp.landingProgressRefUs) >= (timeDelta_t)FP_LANDING_PROGRESS_WINDOW_US) {
+        const float windowS = FP_LANDING_PROGRESS_WINDOW_US * 1e-6f;
+        const float descendedCm = fp.landingProgressRefAltCm - currentAltitudeCm;
+        // An apparent descent far faster than commanded is the estimate, not the craft: contact
+        // drives downwash into the barometer and dumps it. Counted as progress that would reset
+        // the stall counter and release the thrust ceiling. A craft genuinely falling that fast
+        // is not making progress toward a landing either.
+        const bool plausible = descendedCm < FP_LANDING_PROGRESS_MAX_FACTOR * commandedDescentCmS * windowS;
+        const bool madeProgress = plausible && descendedCm > 0.25f * commandedDescentCmS * windowS;
+        if (madeProgress) {
+            fp.landingStallWindows = 0;
+        } else if (fp.landingStallWindows < UINT8_MAX) {
+            fp.landingStallWindows++;
+        }
+        fp.landingProgressRefUs = currentTimeUs;
+        fp.landingProgressRefAltCm = currentAltitudeCm;
+    }
+
+    // Backstop: the craft has had several times the time the commanded rate needs to cover the
+    // landing altitude, and is still not down. Either it is already on the ground and no sensor
+    // said so, or it cannot descend; both end the same way.
+    const float expectedDescentS = (100.0f * (float)autopilotConfig()->landingAltitudeM) / commandedDescentCmS;
+    const timeDelta_t commitTimeoutUs = (timeDelta_t)MAX((float)FP_LANDING_COMMIT_MIN_US,
+                                                         FP_LANDING_COMMIT_FACTOR * expectedDescentS * 1e6f);
+    const bool commitExpired = fp.landingLowSeen
+        && cmpTimeUs(currentTimeUs, fp.landingLowStartUs) >= commitTimeoutUs;
+
+    // The thrust ceiling serves the stalled descent alone: the craft is down, nothing detected the
+    // contact, and the altitude loop is still holding thrust just under hover. Impact and the
+    // commit timeout disarm on the spot immediately below, so arming the ceiling for those would
+    // apply it for zero iterations. A stall only implies contact when the craft is near the
+    // ground; at altitude it is just a stalled descent, and bleeding thrust toward idle is the
+    // opposite of what that needs.
+    const bool stalledOnGround = belowLandingAltitude
+        && fp.landingStallWindows >= FP_LANDING_STALL_WINDOWS;
+    autopilotSetLandingSettle(stalledOnGround);
+
+    // The impact already is the touchdown, so it completes the landing on the spot. Holding it for
+    // the confirmation window would only keep the motors spinning on the ground, and nothing
+    // arriving during that wait could revoke a contact that has already happened.
+    if (impactContact || commitExpired) {
+        completeLanding();
+        return;
+    }
+
+    // Otherwise infer touchdown: descent has stopped despite being commanded and the vehicle is
+    // quiet. The weakest of the three signals, so it requires the craft to actually be near the
+    // ground - without that gate a craft that descended and then held station could be disarmed
+    // in mid-air. Impact and the commit backstop cover a badly biased altitude estimate.
     const bool descentStopped = verticalVelocityCmS > -0.25f * commandedDescentCmS;
-    if (descentStopped && fabsf(verticalVelocityCmS) < autopilotConfig()->landingVelocityThreshold) {
+    if (belowLandingAltitude && descentStopped && fabsf(verticalVelocityCmS) < autopilotConfig()->landingVelocityThreshold) {
         if (fp.touchdownQuietStartUs == 0) {
             fp.touchdownQuietStartUs = currentTimeUs;
         } else if (cmpTimeUs(currentTimeUs, fp.touchdownQuietStartUs) >= (timeDelta_t)((uint32_t)autopilotConfig()->landingDetectionTime * 100000u)) {
-            positionNavClearTarget();
-            fp.state = FP_NAV_COMPLETE;
-            disarm(DISARM_REASON_LANDING);
+            completeLanding();
         }
     } else {
         fp.touchdownQuietStartUs = 0;
@@ -1030,14 +1234,16 @@ float flightPlanNavGetRescueVerticalRateCmS(void)
 void flightPlanNavRescueDescent(bool request, timeUs_t currentTimeUs)
 {
     if (!request) {
+        if (fp.rescueDescentActive) {
+            autopilotSetLandingSettle(false);
+            autopilotSetLandingActive(false);
+        }
         fp.rescueDescentActive = false;
         return;
     }
     if (!fp.rescueDescentActive) {
         fp.rescueDescentActive = true;
-        fp.landingStartUs = currentTimeUs;
-        fp.touchdownQuietStartUs = 0;
-        fp.landingDescentEstablished = false;
+        resetLandingMonitor(currentTimeUs);
     }
     updateLanding(currentTimeUs);
 }
@@ -1364,6 +1570,11 @@ void flightPlanNavDisengage(void)
     fp.hdgFaultTimeS = 0.0f;
     fp.lastUpdateUs = 0;
     fp.legIsPassGate = false;
+    // A landing abandoned mid-descent is the one exit that leaves the ceiling applied: the
+    // completion paths clear it themselves, and resetAltitudeControl() clears it on every
+    // alt-hold and rescue entry.
+    autopilotSetLandingSettle(false);
+    autopilotSetLandingActive(false);
     fp.legValid = false;
     fp.carrotSpeedMps = 0.0f;
     fp.carrotPrevValid = false;
