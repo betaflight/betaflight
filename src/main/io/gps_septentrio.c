@@ -190,14 +190,20 @@ static bool sbfCommitNavEpoch(void)
 
     // Position, course, and velocity are only meaningful with an actual fix
     if (hasFix) {
-        const bool positionValid = (pvt->latitude > SBF_PVT_DO_NOT_USE_THRESHOLD)
-                                 && (pvt->longitude > SBF_PVT_DO_NOT_USE_THRESHOLD)
-                                 && (pvt->height > SBF_PVT_DO_NOT_USE_THRESHOLD)
-                                 && (pvt->undulation > (float)SBF_PVT_DO_NOT_USE_THRESHOLD);
-        if (positionValid) {
+        const bool coordinateValid = (pvt->latitude > SBF_PVT_DO_NOT_USE_THRESHOLD)
+                                   && (pvt->longitude > SBF_PVT_DO_NOT_USE_THRESHOLD);
+        if (coordinateValid) {
             gpsSol.llh.lat = (int32_t)lround(RADIANS_TO_DEGREES_D(pvt->latitude) * GPS_DEGREES_DIVIDER);
             gpsSol.llh.lon = (int32_t)lround(RADIANS_TO_DEGREES_D(pvt->longitude) * GPS_DEGREES_DIVIDER);
-            gpsSol.llh.altCm = (int32_t)lround((pvt->height - (double)pvt->undulation) * 100.0); // subtract the geoid undulation to get height above mean sea level
+        } else {
+            hasFix = false; // invalidate fix if coordinates are not valid
+        }
+
+        const bool altitudeValid = (pvt->height > SBF_PVT_DO_NOT_USE_THRESHOLD)
+                                 && (pvt->undulation > (float)SBF_PVT_DO_NOT_USE_THRESHOLD);
+        if (altitudeValid) {
+            // Subtract the geoid undulation to get height above mean sea level
+            gpsSol.llh.altCm = (int32_t)lround((pvt->height - (double)pvt->undulation) * 100.0);
         }
 
         // Normalize course-over-ground to be within [0, 360) degrees
