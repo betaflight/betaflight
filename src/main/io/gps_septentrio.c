@@ -136,24 +136,29 @@ void gpsSeptentrioReset(void)
     sbfResetChannelStatus();
 }
 
-static void sbfStartNavEpochIfNeeded(uint32_t tow, uint16_t wnc)
+static bool sbfStartNavEpochIfNeeded(uint32_t tow, uint16_t wnc)
 {
     // Reject blocks missing TOW to avoid false epoch matching on startup.
     // WNc typically becomes valid after TOW, so allow epoch synchronization via TOW alone,
     // but delay committing the date/time in sbfCommitNavEpoch() until WNc is valid.
     if (tow == SBF_TOW_DO_NOT_USE_VALUE) {
-        return;
+        return false;
     }
 
     // If we have a new TOW, reset the epoch state to start accumulating new data for this epoch
-    if (sbfState.haveNavEpoch && (tow != sbfState.currentNavTow || wnc != sbfState.currentNavWnc)) {
+    const bool towChanged = !sbfState.haveNavEpoch || tow != sbfState.currentNavTow;
+    const bool wncChanged = wnc != SBF_WNC_DO_NOT_USE_VALUE
+                          && sbfState.currentNavWnc != SBF_WNC_DO_NOT_USE_VALUE
+                          && wnc != sbfState.currentNavWnc;
+    if (sbfState.haveNavEpoch && (towChanged || wncChanged)) {
         sbfState.havePvt = false;
         sbfState.haveDop = false;
         sbfState.haveVelCov = false;
     }
     sbfState.currentNavTow = tow;
-    sbfState.currentNavWnc = wnc;
+    sbfState.currentNavWnc = wnc; // WNc may be invalid (65535) until the receiver has determined a valid week number
     sbfState.haveNavEpoch = true;
+    return true;
 }
 
 static bool sbfCommitNavEpoch(void)
@@ -397,24 +402,21 @@ static void sbfProcessBlock(void)
 
     switch (blockId) {
     case SBF_BLOCK_PVTGEODETIC:
-        if (payloadLength >= sizeof(sbfPvtGeodetic_t)) {
-            sbfStartNavEpochIfNeeded(header->tow, header->wnc);
+        if (payloadLength >= sizeof(sbfPvtGeodetic_t) && sbfStartNavEpochIfNeeded(header->tow, header->wnc)) {
             memcpy(&sbfState.pvt, payload, sizeof(sbfPvtGeodetic_t));
             sbfState.havePvt = true;
         }
         break;
 
     case SBF_BLOCK_DOP:
-        if (payloadLength >= sizeof(sbfDop_t)) {
-            sbfStartNavEpochIfNeeded(header->tow, header->wnc);
+        if (payloadLength >= sizeof(sbfDop_t) && sbfStartNavEpochIfNeeded(header->tow, header->wnc)) {
             memcpy(&sbfState.dop, payload, sizeof(sbfDop_t));
             sbfState.haveDop = true;
         }
         break;
 
     case SBF_BLOCK_VELCOVGEODETIC:
-        if (payloadLength >= sizeof(sbfVelCovGeodetic_t)) {
-            sbfStartNavEpochIfNeeded(header->tow, header->wnc);
+        if (payloadLength >= sizeof(sbfVelCovGeodetic_t) && sbfStartNavEpochIfNeeded(header->tow, header->wnc)) {
             memcpy(&sbfState.velCov, payload, sizeof(sbfVelCovGeodetic_t));
             sbfState.haveVelCov = true;
         }
@@ -581,15 +583,17 @@ bool gpsNewFrameSeptentrio(uint8_t data)
     // Once we have received the expected length of the frame, we can process it
     if (sbfState.expectedLength != 0 && sbfState.index >= sbfState.expectedLength) {
         memcpy(&sbfState.header, sbfState.frame, sizeof(sbfHeader_t));
-        
+
         if (sbfState.calculatedCrc == sbfState.header.crc) { // accumulated CRC matches the expected CRC in the header
             const uint16_t blockId = sbfBlockId(&sbfState.header);
             sbfProcessBlock(); // only the bytes up to MAX_FRAME_SIZE are processed, 
             // any excess bytes are not included in the frame buffer and are ignored
-            
+
             // Detect boundary block to commit the navigation epoch to gpsSol
             if (blockId == SBF_BLOCK_ENDOFPVT) {
-                const bool updated = sbfCommitNavEpoch();
+                // Check if a navigation epoch is available and the current TOW matches the TOW in the header of the EndOfPVT block
+                const bool towMatches = sbfState.haveNavEpoch && sbfState.header.tow == sbfState.currentNavTow;
+                const bool updated = towMatches && sbfCommitNavEpoch();
                 sbfResetNavEpoch();
                 sbfResetFrame();
                 return updated;
