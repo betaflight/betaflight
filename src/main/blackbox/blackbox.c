@@ -580,7 +580,7 @@ static bool testBlackboxConditionUncached(flightLogFieldCondition_e condition)
 
 #ifdef USE_PITOT
     case CONDITION(PITOT):
-        return sensors(SENSOR_PITOT) && isFieldEnabled(FIELD_SELECT(PITOT));
+        return isFieldEnabled(FIELD_SELECT(PITOT));
 #endif
 
     case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
