@@ -92,6 +92,7 @@
 #define PARAM_NAME_THROTTLE_LIMIT_PERCENT "throttle_limit_percent"
 #define PARAM_NAME_GYRO_CAL_ON_FIRST_ARM "gyro_cal_on_first_arm"
 #define PARAM_NAME_PREARM_ALLOW_REARM "prearm_allow_rearm"
+#define PARAM_NAME_TWO_TAP_ARMING "two_tap_arming"
 #define PARAM_NAME_DEADBAND "deadband"
 #define PARAM_NAME_YAW_DEADBAND "yaw_deadband"
 #define PARAM_NAME_PID_PROCESS_DENOM "pid_process_denom"

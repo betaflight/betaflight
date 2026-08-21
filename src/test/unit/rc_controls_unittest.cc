@@ -195,6 +195,65 @@ TEST_F(RcControlsModesTest, updateActivatedModesUsingValidAuxConfigurationAndRXV
     }
 }
 
+uint32_t fixedMillis;
+
+TEST_F(RcControlsModesTest, twoTapArming)
+{
+    modeActivationConditionsMutable(0)->modeId = BOXARM;
+    modeActivationConditionsMutable(0)->auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT;
+    modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1700);
+    modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(2100);
+
+    memset(&rxRuntimeState, 0, sizeof(rxRuntimeState));
+    rxRuntimeState.channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT;
+    rcData[AUX1] = PWM_RANGE_MIDDLE;
+    analyzeModeActivationConditions();
+
+    PG_RESET(armingConfig);
+    EXPECT_EQ(0, armingConfig()->two_tap_arming);
+
+    armingConfigMutable()->two_tap_arming = 1;
+    rcModeSetTwoTapArming(true);
+    fixedMillis = 0;
+    updateActivatedModes();
+
+    rcData[AUX1] = PWM_RANGE_MAX;
+    updateActivatedModes();
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXARM));
+
+    fixedMillis = 100;
+    rcData[AUX1] = PWM_RANGE_MIDDLE;
+    updateActivatedModes();
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXARM));
+
+    fixedMillis = 200;
+    rcData[AUX1] = PWM_RANGE_MAX;
+    updateActivatedModes();
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXARM));
+
+    rcData[AUX1] = PWM_RANGE_MIDDLE;
+    updateActivatedModes();
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXARM));
+
+    fixedMillis = 300;
+    rcData[AUX1] = PWM_RANGE_MAX;
+    updateActivatedModes();
+    fixedMillis = 801;
+    updateActivatedModes();
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXARM));
+
+    rcData[AUX1] = PWM_RANGE_MIDDLE;
+    updateActivatedModes();
+
+    armingConfigMutable()->two_tap_arming = 0;
+    rcModeSetTwoTapArming(false);
+    rcData[AUX1] = PWM_RANGE_MAX;
+    updateActivatedModes();
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXARM));
+
+    memset(modeActivationConditionsMutable(0), 0, sizeof(modeActivationCondition_t));
+}
+
 enum {
     COUNTER_QUEUE_CONFIRMATION_BEEP,
     COUNTER_CHANGE_CONTROL_RATE_PROFILE
@@ -227,8 +286,6 @@ void resetCallCounters(void)
 {
     memset(&callCounts, 0, sizeof(callCounts));
 }
-
-uint32_t fixedMillis;
 
 extern "C" {
 uint32_t millis(void)
