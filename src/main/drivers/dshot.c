@@ -236,7 +236,7 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
 
         // Update debug buffer
         if (motorIndex < dshotMotorCount && motorIndex < DEBUG16_VALUE_COUNT) {
-            DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, *pDecoded);  //!< [0..7] Motor {1|2|3|4|5|6|7|8} [100eRPM]
+            DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, *pDecoded);  //!< [index:0..7] Motor {1|2|3|4|5|6|7|8} [unit:100eRPM]
         }
     } else {
         // Use lookup table for extended telemetry types

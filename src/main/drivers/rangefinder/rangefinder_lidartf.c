@@ -175,7 +175,7 @@ static int tfProcessFrame(const uint8_t* frame, int len)
     uint16_t distance = frame[0] | (frame[1] << 8);
     uint16_t strength = frame[2] | (frame[3] << 8);
 
-    DEBUG_SET(DEBUG_LIDAR_TF, 0, distance);  //!< Distance [cm]
+    DEBUG_SET(DEBUG_LIDAR_TF, 0, distance);  //!< Distance [unit:cm]
     DEBUG_SET(DEBUG_LIDAR_TF, 1, strength);  //!< Signal Strength
     DEBUG_SET(DEBUG_LIDAR_TF, 2, frame[4]);  //!< Frame Byte 4
     DEBUG_SET(DEBUG_LIDAR_TF, 3, frame[5]);  //!< Frame Byte 5

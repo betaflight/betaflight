@@ -302,7 +302,7 @@ void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal)
             delta = cmpTimeUs(rxTime, lastRxTimeUs);
         }
         lastRxTimeUs = rxTime;
-        DEBUG_SET(DEBUG_RX_TIMING, 1, rxTime / 100);  //!< Frame Timestamp [0.1ms]
+        DEBUG_SET(DEBUG_RX_TIMING, 1, rxTime / 100);  //!< Frame Timestamp [unit:0.1ms]
     } else {
         if (lastRxTimeUs) {
             // no packet received, use current time for delta
@@ -316,16 +316,16 @@ void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal)
     currentRxRateHz = 1e6f / currentRxIntervalUs;
     isRxRateValid = delta == currentRxIntervalUs; // delta is not constrained, therefore not outside limits
 
-    DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(delta / 10, INT16_MAX));                //!< Frame Interval [0.01ms]
+    DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(delta / 10, INT16_MAX));                //!< Frame Interval [unit:0.01ms]
     DEBUG_SET(DEBUG_RX_TIMING, 2, isRxRateValid);                             //!< Frame Interval Within Limits
-    DEBUG_SET(DEBUG_RX_TIMING, 3, MIN(currentRxIntervalUs / 10, INT16_MAX));  //!< Constrained Frame Interval [0.01ms]
-    DEBUG_SET(DEBUG_RX_TIMING, 4, lrintf(currentRxRateHz));                   //!< Current RX Rate [Hz]
+    DEBUG_SET(DEBUG_RX_TIMING, 3, MIN(currentRxIntervalUs / 10, INT16_MAX));  //!< Constrained Frame Interval [unit:0.01ms]
+    DEBUG_SET(DEBUG_RX_TIMING, 4, lrintf(currentRxRateHz));                   //!< Current RX Rate [unit:Hz]
     // temporary debugs
 #ifdef USE_RX_LINK_QUALITY_INFO
-    DEBUG_SET(DEBUG_RX_TIMING, 6, rxGetLinkQualityPercent());  //!< Link Quality [%]
+    DEBUG_SET(DEBUG_RX_TIMING, 6, rxGetLinkQualityPercent());  //!< Link Quality [unit:%]
 #endif
     DEBUG_SET(DEBUG_RX_TIMING, 7, isRxReceivingSignal());       //!< Receiving Signal
-    DEBUG_SET(DEBUG_RC_SMOOTHING, 0, lrintf(currentRxRateHz));  //!< Current RX Rate [Hz]
+    DEBUG_SET(DEBUG_RC_SMOOTHING, 0, lrintf(currentRxRateHz));  //!< Current RX Rate [unit:Hz]
 }
 
 // currently only used in the CLI
@@ -377,9 +377,9 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
         pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection[i], pt3K_SP);
     }
 
-    DEBUG_SET(DEBUG_RC_SMOOTHING, 2, smoothingData->setpointCutoffFrequency);  //!< Setpoint Cutoff [Hz]
-    DEBUG_SET(DEBUG_RC_SMOOTHING, 3, smoothingData->throttleCutoffFrequency);  //!< Throttle Cutoff [Hz]
-    DEBUG_SET(DEBUG_RC_SMOOTHING, 1, lrintf(smoothedRxRateHz));                //!< Smoothed RX Rate For Cutoffs [Hz]
+    DEBUG_SET(DEBUG_RC_SMOOTHING, 2, smoothingData->setpointCutoffFrequency);  //!< Setpoint Cutoff [unit:Hz]
+    DEBUG_SET(DEBUG_RC_SMOOTHING, 3, smoothingData->throttleCutoffFrequency);  //!< Throttle Cutoff [unit:Hz]
+    DEBUG_SET(DEBUG_RC_SMOOTHING, 1, lrintf(smoothedRxRateHz));                //!< Smoothed RX Rate For Cutoffs [unit:Hz]
 }
 
 #ifdef USE_FEEDFORWARD
@@ -389,9 +389,9 @@ static FAST_CODE_NOINLINE void updateFeedforwardFilters(const pidRuntime_t *pid)
         pt1FilterUpdateCutoff(&feedforwardData.filterSetpointSpeed[axis], pt1K);
         pt1FilterUpdateCutoff(&feedforwardData.filterSetpointDelta[axis], pt1K);
     }
-    DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 6, lrintf(pt1K * 1000.0f));    //!< Feedforward Filter Gain [0.001]
-    DEBUG_SET(DEBUG_RC_SMOOTHING, 4, lrintf(pt1K * 1000.0f));         //!< Feedforward Filter Gain [0.001]
-    DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 7, lrintf(smoothedRxRateHz));  //!< Smoothed RX Rate [Hz]
+    DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 6, lrintf(pt1K * 1000.0f));    //!< Feedforward Filter Gain [unit:0.001]
+    DEBUG_SET(DEBUG_RC_SMOOTHING, 4, lrintf(pt1K * 1000.0f));         //!< Feedforward Filter Gain [unit:0.001]
+    DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 7, lrintf(smoothedRxRateHz));  //!< Smoothed RX Rate [unit:Hz]
 }
 #endif
 
@@ -405,7 +405,7 @@ static FAST_CODE void processRcSmoothingFilter(void)
             rxDataToSmooth[i] = i == THROTTLE ? rcCommand[i] : rawSetpoint[i];
             DEBUG_SET(DEBUG_RC_INTERPOLATION, i, i < THROTTLE
                 ? lrintf(rxDataToSmooth[i])
-                : lrintf(rxDataToSmooth[i]) - 1000);  //!< [0..3] Smoothing Input ({roll|pitch|yaw|throttle})
+                : lrintf(rxDataToSmooth[i]) - 1000);  //!< [index:0..3] Smoothing Input ({roll|pitch|yaw|throttle})
         }
     }
 
@@ -523,8 +523,8 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
         pt1FilterUpdateCutoff(&feedforwardYawHoldLpf, gain);
         const float setpointLpfYaw = pt1FilterApply(&feedforwardYawHoldLpf, setpoint);
         const float feedforwardYawHold = pid->feedforwardYawHoldGain * (setpoint - setpointLpfYaw);
-        DEBUG_SET(DEBUG_FEEDFORWARD, 6, lrintf(feedforward * 0.01f));         //!< Yaw Feedforward Without Hold [100]
-        DEBUG_SET(DEBUG_FEEDFORWARD, 7, lrintf(feedforwardYawHold * 0.01f));  //!< Yaw Feedforward With Hold [100]
+        DEBUG_SET(DEBUG_FEEDFORWARD, 6, lrintf(feedforward * 0.01f));         //!< Yaw Feedforward Without Hold [unit:100]
+        DEBUG_SET(DEBUG_FEEDFORWARD, 7, lrintf(feedforwardYawHold * 0.01f));  //!< Yaw Feedforward With Hold [unit:100]
         feedforward += feedforwardYawHold;
     }
 
@@ -535,21 +535,21 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
     }
 
     if ((int)axis == gyro.gyroDebugAxis) {
-        DEBUG_SET(DEBUG_FEEDFORWARD, 0, lrintf(setpoint));                                        //!< Setpoint (dbg-axis) [dps]
-        DEBUG_SET(DEBUG_FEEDFORWARD, 1, lrintf(setpointSpeed * 0.01f));                           //!< Setpoint Speed (dbg-axis) [100dps2]
-        DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(feedforwardBoost * 0.01f));                        //!< Feedforward Boost (dbg-axis) [100]
-        DEBUG_SET(DEBUG_FEEDFORWARD, 3, lrintf(rcCommandDeltaAbs * 10.0f));                       //!< RC Command Delta (dbg-axis) [0.1]
-        DEBUG_SET(DEBUG_FEEDFORWARD, 4, lrintf(jitterAttenuator * 100.0f));                       //!< Jitter Attenuator (dbg-axis) [%]
+        DEBUG_SET(DEBUG_FEEDFORWARD, 0, lrintf(setpoint));                                        //!< Setpoint (dbg-axis) [unit:dps]
+        DEBUG_SET(DEBUG_FEEDFORWARD, 1, lrintf(setpointSpeed * 0.01f));                           //!< Setpoint Speed (dbg-axis) [unit:100dps2]
+        DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(feedforwardBoost * 0.01f));                        //!< Feedforward Boost (dbg-axis) [unit:100]
+        DEBUG_SET(DEBUG_FEEDFORWARD, 3, lrintf(rcCommandDeltaAbs * 10.0f));                       //!< RC Command Delta (dbg-axis) [unit:0.1]
+        DEBUG_SET(DEBUG_FEEDFORWARD, 4, lrintf(jitterAttenuator * 100.0f));                       //!< Jitter Attenuator (dbg-axis) [unit:%]
         DEBUG_SET(DEBUG_FEEDFORWARD, 5, (int16_t)(feedforwardData.isPrevPacketDuplicate[axis]));  //!< Duplicate Packet (dbg-axis)
         // 6 and 7 used for feedforward yaw hold logging
 
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 0, lrintf(jitterAttenuator * 100.0f));        //!< Jitter Attenuation [%]
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 1, lrintf(maxRcRate[axis]));                  //!< Max Setpoint Rate (dbg-axis) [dps]
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 2, lrintf(setpoint));                         //!< Setpoint Unsmoothed (dbg-axis) [dps]
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 3, lrintf(feedforward * 0.01f));              //!< Feedforward Unsmoothed (dbg-axis) [100]
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 4, lrintf(setpointSpeedUnsmoothed * 0.01f));  //!< Setpoint Speed Unsmoothed (dbg-axis) [100dps2]
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 0, lrintf(jitterAttenuator * 100.0f));        //!< Jitter Attenuation [unit:%]
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 1, lrintf(maxRcRate[axis]));                  //!< Max Setpoint Rate (dbg-axis) [unit:dps]
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 2, lrintf(setpoint));                         //!< Setpoint Unsmoothed (dbg-axis) [unit:dps]
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 3, lrintf(feedforward * 0.01f));              //!< Feedforward Unsmoothed (dbg-axis) [unit:100]
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 4, lrintf(setpointSpeedUnsmoothed * 0.01f));  //!< Setpoint Speed Unsmoothed (dbg-axis) [unit:100dps2]
         // compare with debug 4 to check feedforward smoothing
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 5, lrintf(setpointSpeed * 0.01f));            //!< Setpoint Speed Smoothed (dbg-axis) [100dps2]
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 5, lrintf(setpointSpeed * 0.01f));            //!< Setpoint Speed Smoothed (dbg-axis) [unit:100dps2]
         // 6 for feedforward pt1K, 7 for smoothedRxRateHz
     }
 
@@ -637,7 +637,7 @@ FAST_CODE void processRcCommand(void)
 #endif
         }
 #ifdef USE_RC_SMOOTHING_FILTER
-        DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 0, currentRxIntervalUs / 10);  //!< Frame Interval [0.01ms]
+        DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 0, currentRxIntervalUs / 10);  //!< Frame Interval [unit:0.01ms]
         DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 3, updateSmoothing ? 1 : 0);   //!< Cutoffs Updated
 #endif
         maxRcDeflectionAbs = 0.0f;
@@ -680,16 +680,16 @@ FAST_CODE void processRcCommand(void)
             }
 
             rawSetpoint[axis] = constrainf(angleRate, -1.0f * currentControlRateProfile->rate_limit[axis], 1.0f * currentControlRateProfile->rate_limit[axis]);
-            DEBUG_SET(DEBUG_ANGLERATE, axis, angleRate);  //!< [0..2] Setpoint Rate ({roll|pitch|yaw}) [dps]
+            DEBUG_SET(DEBUG_ANGLERATE, axis, angleRate);  //!< [index:0..2] Setpoint Rate ({roll|pitch|yaw}) [unit:dps]
 
 #ifdef USE_FEEDFORWARD
             calculateFeedforward(&pidRuntime, axis);
 #endif // USE_FEEDFORWARD
 
             // log the smoothed Rx Rate from non-outliers, this will not show the steps every three valid packets
-            DEBUG_SET(DEBUG_RX_TIMING, 5, lrintf(smoothedRxRateHz));          //!< Smoothed RX Rate [Hz]
-            DEBUG_SET(DEBUG_RC_SMOOTHING, 5, lrintf(smoothedRxRateHz));       //!< Smoothed RX Rate [Hz]
-            DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 2, lrintf(smoothedRxRateHz));  //!< Smoothed RX Rate [Hz]
+            DEBUG_SET(DEBUG_RX_TIMING, 5, lrintf(smoothedRxRateHz));          //!< Smoothed RX Rate [unit:Hz]
+            DEBUG_SET(DEBUG_RC_SMOOTHING, 5, lrintf(smoothedRxRateHz));       //!< Smoothed RX Rate [unit:Hz]
+            DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 2, lrintf(smoothedRxRateHz));  //!< Smoothed RX Rate [unit:Hz]
         }
         // adjust unfiltered setpoint steps to camera angle (mixing Roll and Yaw)
         if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE)) {

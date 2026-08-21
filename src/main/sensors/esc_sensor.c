@@ -315,8 +315,8 @@ static uint8_t decodeEscFrame(void)
         frameStatus = ESC_SENSOR_FRAME_COMPLETE;
 
         if (escSensorMotor < 4) {
-            DEBUG_SET(DEBUG_ESC_SENSOR_RPM, escSensorMotor, lrintf(erpmToRpm(escSensorData[escSensorMotor].rpm) / 10.0f));  //!< [0..3] Motor {1|2|3|4} RPM [10rpm]
-            DEBUG_SET(DEBUG_ESC_SENSOR_TMP, escSensorMotor, escSensorData[escSensorMotor].temperature);  //!< [0..3] Motor {1|2|3|4} Temperature [degC]
+            DEBUG_SET(DEBUG_ESC_SENSOR_RPM, escSensorMotor, lrintf(erpmToRpm(escSensorData[escSensorMotor].rpm) / 10.0f));  //!< [index:0..3] Motor {1|2|3|4} RPM [unit:10rpm]
+            DEBUG_SET(DEBUG_ESC_SENSOR_TMP, escSensorMotor, escSensorData[escSensorMotor].temperature);  //!< [index:0..3] Motor {1|2|3|4} Temperature [unit:degC]
         }
     } else {
         frameStatus = ESC_SENSOR_FRAME_FAILED;

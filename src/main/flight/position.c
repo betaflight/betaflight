@@ -159,11 +159,11 @@ void calculateEstimatedAltitude(void)
     // 6 = Vertical accelerometer               (written in positionEstimatorUpdate)
     // 7 = KF vertical acceleration
 
-    DEBUG_SET(DEBUG_ALTITUDE, 3, lrintf(kfAltCm));     //!< Estimated Altitude [cm]
-    DEBUG_SET(DEBUG_ALTITUDE, 5, lrintf(kfVelZCm));    //!< Estimated Vertical Velocity [cm/s]
-    DEBUG_SET(DEBUG_ALTITUDE, 7, lrintf(kfAccelZCm));  //!< Estimated Vertical Acceleration [cm/s2]
+    DEBUG_SET(DEBUG_ALTITUDE, 3, lrintf(kfAltCm));     //!< Estimated Altitude [unit:cm]
+    DEBUG_SET(DEBUG_ALTITUDE, 5, lrintf(kfVelZCm));    //!< Estimated Vertical Velocity [unit:cm/s]
+    DEBUG_SET(DEBUG_ALTITUDE, 7, lrintf(kfAccelZCm));  //!< Estimated Vertical Acceleration [unit:cm/s2]
 
-    DEBUG_SET(DEBUG_RTH, 1, lrintf(displayAltitudeCm));  //!< Displayed Altitude [cm]
+    DEBUG_SET(DEBUG_RTH, 1, lrintf(displayAltitudeCm));  //!< Displayed Altitude [unit:cm]
 
 #if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
     wasArmed = isArmed;

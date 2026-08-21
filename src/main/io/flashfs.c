@@ -505,7 +505,7 @@ void flashfsWriteByte(uint8_t byte)
     if (checkFlashActive) {
         byte = checkFlashNextByte();
         checkFlashLen++;
-        DEBUG_SET(DEBUG_FLASH_TEST_PRBS, 2, checkFlashLen);  //!< Checked Length [bytes]
+        DEBUG_SET(DEBUG_FLASH_TEST_PRBS, 2, checkFlashLen);  //!< Checked Length [unit:bytes]
     }
 #endif
 

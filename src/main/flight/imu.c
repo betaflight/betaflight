@@ -547,7 +547,7 @@ static void imuDebug_GPS_RESCUE_HEADING(void)
         if (magYaw < 0) {
             magYaw += 3600;
         }
-        DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 4, magYaw);  //!< Magnetic Heading [0.1deg]
+        DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 4, magYaw);  //!< Magnetic Heading [unit:0.1deg]
         // reset new mag data flag to false to initiate monitoring for new Mag data.
         // note that if the debug doesn't run, this reset will not occur, and we won't waste cycles on the comparison
         mag.isNewMagADCFlag = false;
@@ -685,7 +685,7 @@ static void updateGpsHeadingUsable(float groundspeedGain, float imuCourseError, 
         // if the alignment is already good when arming, confidence is re-gained more quickly
         // powering up the aircraft with its nose facing North helps a lot, since default heading is North
     }
-    DEBUG_SET(DEBUG_ATTITUDE, 1, lrintf(gpsHeadingConfidence * 100.0f));  //!< GPS Heading Confidence [0.01]
+    DEBUG_SET(DEBUG_ATTITUDE, 1, lrintf(gpsHeadingConfidence * 100.0f));  //!< GPS Heading Confidence [unit:0.01]
     DEBUG_SET(DEBUG_ATTITUDE, 4, canUseGPSHeading ? 0 : 1);               //!< GPS Heading Unusable
 }
 #endif
@@ -737,7 +737,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
             const float courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
             const float imuCourseError = imuCalcCourseErr(courseOverGround);
 
-            DEBUG_SET(DEBUG_ATTITUDE, 3, lrintf(imuCourseError * 100.0f));  //!< Course Over Ground Error Sine [0.01]
+            DEBUG_SET(DEBUG_ATTITUDE, 3, lrintf(imuCourseError * 100.0f));  //!< Course Over Ground Error Sine [unit:0.01]
 
             cogErr = imuCourseError * groundspeedGain;
             // cogErr is greater with larger heading errors and greater speed in straight pitch forward flight

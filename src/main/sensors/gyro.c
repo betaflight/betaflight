@@ -237,10 +237,10 @@ STATIC_UNIT_TESTED NOINLINE void performGyroCalibration(gyroSensor_t *gyroSensor
             // DEBUG_GYRO_CALIBRATION_VALUE records the standard deviation of roll
             // into the spare field - debug[3], in DEBUG_GYRO_RAW
             if (axis == X) {
-                DEBUG_SET(DEBUG_GYRO_RAW, DEBUG_GYRO_CALIBRATION_VALUE, lrintf(stddev));  //!< Calibration Deviation (roll) [gyroADC]
+                DEBUG_SET(DEBUG_GYRO_RAW, DEBUG_GYRO_CALIBRATION_VALUE, lrintf(stddev));  //!< Calibration Deviation (roll) [unit:gyroADC]
             }
 
-            DEBUG_SET(DEBUG_GYRO_CALIBRATION, axis, stddev);  //!< [0..2] Calibration Deviation ({roll|pitch|yaw}) [gyroADC]
+            DEBUG_SET(DEBUG_GYRO_CALIBRATION, axis, stddev);  //!< [index:0..2] Calibration Deviation ({roll|pitch|yaw}) [unit:gyroADC]
 
             // check deviation and startover in case the model was moved
             if (gyroMovementCalibrationThreshold && stddev > gyroMovementCalibrationThreshold) {
@@ -512,13 +512,13 @@ FAST_CODE void gyroFiltering(timeUs_t currentTimeUs)
 
         for (int i = 0; i < GYRO_COUNT; i++) {
             if (gyro.gyroEnabledBitmask & GYRO_MASK(i)) {
-                DEBUG_SET(DEBUG_MULTI_GYRO_RAW, 0 + debugIndex, gyro.gyroSensor[i].gyroDev.gyroADCRaw[X]);  //!< [0,2,4,6] Enabled Gyro {1|2|3|4} Raw Roll [gyroADC]
-                DEBUG_SET(DEBUG_MULTI_GYRO_RAW, 1 + debugIndex, gyro.gyroSensor[i].gyroDev.gyroADCRaw[Y]);  //!< [1,3,5,7] Enabled Gyro {1|2|3|4} Raw Pitch [gyroADC]
-                DEBUG_SET(DEBUG_MULTI_GYRO_SCALED, 0 + debugIndex, lrintf(gyro.gyroSensor[i].gyroDev.gyroADC.x * gyro.gyroSensor[i].gyroDev.scale));  //!< [0,2,4,6] Enabled Gyro {1|2|3|4} Roll [dps]
-                DEBUG_SET(DEBUG_MULTI_GYRO_SCALED, 1 + debugIndex, lrintf(gyro.gyroSensor[i].gyroDev.gyroADC.y * gyro.gyroSensor[i].gyroDev.scale));  //!< [1,3,5,7] Enabled Gyro {1|2|3|4} Pitch [dps]
+                DEBUG_SET(DEBUG_MULTI_GYRO_RAW, 0 + debugIndex, gyro.gyroSensor[i].gyroDev.gyroADCRaw[X]);  //!< [index:0,2,4,6] Enabled Gyro {1|2|3|4} Raw Roll [unit:gyroADC]
+                DEBUG_SET(DEBUG_MULTI_GYRO_RAW, 1 + debugIndex, gyro.gyroSensor[i].gyroDev.gyroADCRaw[Y]);  //!< [index:1,3,5,7] Enabled Gyro {1|2|3|4} Raw Pitch [unit:gyroADC]
+                DEBUG_SET(DEBUG_MULTI_GYRO_SCALED, 0 + debugIndex, lrintf(gyro.gyroSensor[i].gyroDev.gyroADC.x * gyro.gyroSensor[i].gyroDev.scale));  //!< [index:0,2,4,6] Enabled Gyro {1|2|3|4} Roll [unit:dps]
+                DEBUG_SET(DEBUG_MULTI_GYRO_SCALED, 1 + debugIndex, lrintf(gyro.gyroSensor[i].gyroDev.gyroADC.y * gyro.gyroSensor[i].gyroDev.scale));  //!< [index:1,3,5,7] Enabled Gyro {1|2|3|4} Pitch [unit:dps]
                 // grab the difference between each gyro and the fused gyro output, gyro.gyroADCf (it hasn't had filters applied yet)
-                DEBUG_SET(DEBUG_MULTI_GYRO_DIFF, 0 + debugIndex, lrintf((gyro.gyroSensor[i].gyroDev.gyroADC.x * gyro.gyroSensor[i].gyroDev.scale) - gyro.gyroADCf[0]));  //!< [0,2,4,6] Enabled Gyro {1|2|3|4} Roll Minus Fused [dps]
-                DEBUG_SET(DEBUG_MULTI_GYRO_DIFF, 1 + debugIndex, lrintf((gyro.gyroSensor[i].gyroDev.gyroADC.y * gyro.gyroSensor[i].gyroDev.scale) - gyro.gyroADCf[1]));  //!< [1,3,5,7] Enabled Gyro {1|2|3|4} Pitch Minus Fused [dps]
+                DEBUG_SET(DEBUG_MULTI_GYRO_DIFF, 0 + debugIndex, lrintf((gyro.gyroSensor[i].gyroDev.gyroADC.x * gyro.gyroSensor[i].gyroDev.scale) - gyro.gyroADCf[0]));  //!< [index:0,2,4,6] Enabled Gyro {1|2|3|4} Roll Minus Fused [unit:dps]
+                DEBUG_SET(DEBUG_MULTI_GYRO_DIFF, 1 + debugIndex, lrintf((gyro.gyroSensor[i].gyroDev.gyroADC.y * gyro.gyroSensor[i].gyroDev.scale) - gyro.gyroADCf[1]));  //!< [index:1,3,5,7] Enabled Gyro {1|2|3|4} Pitch Minus Fused [unit:dps]
 
                 debugIndex += 2;
                 if (debugIndex >= 8) {
@@ -681,7 +681,7 @@ void dynLpfGyroUpdate(float throttle)
         } else {
             cutoffFreq = fmaxf(dynThrottle(throttle) * gyro.dynLpfMax, gyro.dynLpfMin);
         }
-        DEBUG_SET(DEBUG_DYN_LPF, 2, lrintf(cutoffFreq));  //!< Lowpass Cutoff [Hz]
+        DEBUG_SET(DEBUG_DYN_LPF, 2, lrintf(cutoffFreq));  //!< Lowpass Cutoff [unit:Hz]
         const float gyroDt = gyro.targetLooptime * 1e-6f;
         switch (gyro.dynLpfFilter) {
         case DYN_LPF_PT1:

@@ -570,7 +570,7 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
     timeDelta_t needRxSignalMaxDelayUs = RXLOSS_TRIGGER_INTERVAL;
     timeDelta_t reCheckRxSignalInterval = RX_FRAME_RECHECK_INTERVAL;
 
-    DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 2, MIN(2000, currentDeltaTimeUs / 100));  //!< Rx Task Interval [0.1ms]
+    DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 2, MIN(2000, currentDeltaTimeUs / 100));  //!< Rx Task Interval [unit:0.1ms]
 
     if (taskUpdateRxMainInProgress()) {
         //  no need to check for new data as a packet is being processed already
@@ -828,7 +828,7 @@ static void detectAndApplySignalLossBehaviour(void)
         //  -> start stage 1 timer to enter stage2 failsafe the instant we get a good packet or the BOXFAILSAFE switch is reverted
     }
 
-    DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 3, rcData[THROTTLE]);  //!< Throttle Channel [us]
+    DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 3, rcData[THROTTLE]);  //!< Throttle Channel [unit:us]
 }
 
 bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
