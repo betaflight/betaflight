@@ -26,10 +26,10 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // DEBUG_GYRO_RAW records the raw value read from the sensor (not zero offset, not scaled)
-        GYRO_FILTER_DEBUG_SET(DEBUG_GYRO_RAW, axis, gyro.rawSensorDev->gyroADCRaw[axis]);  //!< [0..2] Gyro Raw ({roll|pitch|yaw}) [gyroADC]
+        GYRO_FILTER_DEBUG_SET(DEBUG_GYRO_RAW, axis, gyro.rawSensorDev->gyroADCRaw[axis]);  //!< [index:0..2] Gyro Raw ({roll|pitch|yaw}) [unit:gyroADC]
 
         // DEBUG_GYRO_SAMPLE(0) Record the pre-downsample value for the selected debug axis (same as DEBUG_GYRO_SCALED)
-        GYRO_FILTER_AXIS_DEBUG_SET(axis, DEBUG_GYRO_SAMPLE, 0, lrintf(gyro.gyroADC[axis]));  //!< Gyro Before Downsampling (dbg-axis) [dps]
+        GYRO_FILTER_AXIS_DEBUG_SET(axis, DEBUG_GYRO_SAMPLE, 0, lrintf(gyro.gyroADC[axis]));  //!< Gyro Before Downsampling (dbg-axis) [unit:dps]
 
         // downsample the individual gyro samples
         if (gyro.downsampleFilterEnabled) {
@@ -44,7 +44,7 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
         }
 
         // DEBUG_GYRO_SAMPLE(1) Record the post-downsample value for the selected debug axis
-        GYRO_FILTER_AXIS_DEBUG_SET(axis, DEBUG_GYRO_SAMPLE, 1, lrintf(gyroADCfVec[axis]));  //!< Gyro After Downsampling (dbg-axis) [dps]
+        GYRO_FILTER_AXIS_DEBUG_SET(axis, DEBUG_GYRO_SAMPLE, 1, lrintf(gyroADCfVec[axis]));  //!< Gyro After Downsampling (dbg-axis) [unit:dps]
 
 #ifdef USE_RPM_FILTER
     }
@@ -55,7 +55,7 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
 #endif
         float gyroADCf = gyroADCfVec[axis];
         // DEBUG_GYRO_SAMPLE(2) Record the post-RPM Filter value for the selected debug axis
-        GYRO_FILTER_AXIS_DEBUG_SET(axis, DEBUG_GYRO_SAMPLE, 2, lrintf(gyroADCf));  //!< Gyro After RPM Filter (dbg-axis) [dps]
+        GYRO_FILTER_AXIS_DEBUG_SET(axis, DEBUG_GYRO_SAMPLE, 2, lrintf(gyroADCf));  //!< Gyro After RPM Filter (dbg-axis) [unit:dps]
 
         // apply static notch filters and software lowpass filters
         gyroADCf = gyro.notchFilter1ApplyFn((filter_t *)&gyro.notchFilter1[axis], gyroADCf);
@@ -63,33 +63,33 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
         gyroADCf = gyro.lowpassFilterApplyFn((filter_t *)&gyro.lowpassFilter[axis], gyroADCf);
 
         // DEBUG_GYRO_SAMPLE(3) Record the post-static notch and lowpass filter value for the selected debug axis
-        GYRO_FILTER_AXIS_DEBUG_SET(axis, DEBUG_GYRO_SAMPLE, 3, lrintf(gyroADCf));  //!< Gyro After Static Filters (dbg-axis) [dps]
+        GYRO_FILTER_AXIS_DEBUG_SET(axis, DEBUG_GYRO_SAMPLE, 3, lrintf(gyroADCf));  //!< Gyro After Static Filters (dbg-axis) [unit:dps]
 
 #ifdef USE_DYN_NOTCH_FILTER
         if (isDynNotchActive()) {
             if (axis == gyro.gyroDebugAxis) {
-                GYRO_FILTER_DEBUG_SET(DEBUG_FFT, 0, lrintf(gyroADCf));       //!< Gyro Before Dyn Notch (dbg-axis) [dps]
-                GYRO_FILTER_DEBUG_SET(DEBUG_FFT_FREQ, 0, lrintf(gyroADCf));  //!< Gyro Before Dyn Notch (dbg-axis) [dps]
-                GYRO_FILTER_DEBUG_SET(DEBUG_DYN_LPF, 0, lrintf(gyroADCf));   //!< Gyro Before Dyn Notch (dbg-axis) [dps]
+                GYRO_FILTER_DEBUG_SET(DEBUG_FFT, 0, lrintf(gyroADCf));       //!< Gyro Before Dyn Notch (dbg-axis) [unit:dps]
+                GYRO_FILTER_DEBUG_SET(DEBUG_FFT_FREQ, 0, lrintf(gyroADCf));  //!< Gyro Before Dyn Notch (dbg-axis) [unit:dps]
+                GYRO_FILTER_DEBUG_SET(DEBUG_DYN_LPF, 0, lrintf(gyroADCf));   //!< Gyro Before Dyn Notch (dbg-axis) [unit:dps]
             }
 
             dynNotchPush(axis, gyroADCf);
             gyroADCf = dynNotchFilter(axis, gyroADCf);
 
             if (axis == gyro.gyroDebugAxis) {
-                GYRO_FILTER_DEBUG_SET(DEBUG_FFT, 1, lrintf(gyroADCf));      //!< Gyro After Dyn Notch (dbg-axis) [dps]
-                GYRO_FILTER_DEBUG_SET(DEBUG_DYN_LPF, 3, lrintf(gyroADCf));  //!< Gyro After Dyn Notch (dbg-axis) [dps]
+                GYRO_FILTER_DEBUG_SET(DEBUG_FFT, 1, lrintf(gyroADCf));      //!< Gyro After Dyn Notch (dbg-axis) [unit:dps]
+                GYRO_FILTER_DEBUG_SET(DEBUG_DYN_LPF, 3, lrintf(gyroADCf));  //!< Gyro After Dyn Notch (dbg-axis) [unit:dps]
             }
         }
 #endif
 
         // DEBUG_GYRO_FILTERED records the scaled, filtered, after all software filtering has been applied.
-        GYRO_FILTER_DEBUG_SET(DEBUG_GYRO_FILTERED, axis, lrintf(gyroADCf));  //!< [0..2] Gyro Filtered ({roll|pitch|yaw}) [dps]
+        GYRO_FILTER_DEBUG_SET(DEBUG_GYRO_FILTERED, axis, lrintf(gyroADCf));  //!< [index:0..2] Gyro Filtered ({roll|pitch|yaw}) [unit:dps]
 
         gyro.gyroADCf[axis] = gyroADCf;
     }
 
-    GYRO_FILTER_DEBUG_SET(DEBUG_GYRO_SAMPLE, 4, getAverageSystemLoadPercent());  //!< CPU Load [%]
+    GYRO_FILTER_DEBUG_SET(DEBUG_GYRO_SAMPLE, 4, getAverageSystemLoadPercent());  //!< CPU Load [unit:%]
 
     gyro.sampleCount = 0;
 }

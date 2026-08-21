@@ -139,13 +139,13 @@ void calculateEstimatedAltitude(void)
     estimatedVario = applyDeadband(estimatedVario, 10);
 #endif
 
-    DEBUG_SET(DEBUG_ALTITUDE, 0, lrintf(positionEstimatorGetEstimate()->trustZ * 100));  //!< Altitude Estimate Trust [%]
-    DEBUG_SET(DEBUG_ALTITUDE, 1, lrintf(kfAltCm / 10.0f));                               //!< Estimated Altitude [0.1m]
-    DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(filteredAltitudeCm / 10.0f));                    //!< Smoothed Altitude [0.1m]
+    DEBUG_SET(DEBUG_ALTITUDE, 0, lrintf(positionEstimatorGetEstimate()->trustZ * 100));  //!< Altitude Estimate Trust [unit:%]
+    DEBUG_SET(DEBUG_ALTITUDE, 1, lrintf(kfAltCm / 10.0f));                               //!< Estimated Altitude [unit:0.1m]
+    DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(filteredAltitudeCm / 10.0f));                    //!< Smoothed Altitude [unit:0.1m]
 #ifdef USE_VARIO
-    DEBUG_SET(DEBUG_ALTITUDE, 3, estimatedVario);  //!< Vario [cm/s]
+    DEBUG_SET(DEBUG_ALTITUDE, 3, estimatedVario);  //!< Vario [unit:cm/s]
 #endif
-    DEBUG_SET(DEBUG_RTH, 1, lrintf(displayAltitudeCm / 10.0f));  //!< Displayed Altitude [0.1m]
+    DEBUG_SET(DEBUG_RTH, 1, lrintf(displayAltitudeCm / 10.0f));  //!< Displayed Altitude [unit:0.1m]
 
 #if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
     wasArmed = isArmed;

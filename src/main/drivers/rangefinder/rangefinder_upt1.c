@@ -203,12 +203,12 @@ void rangefinderUPT1Update(rangefinderDev_t *dev)
                 const uint8_t validStatus = upt1Frame[8];
                 const uint8_t confidence = upt1Frame[9];
 
-                DEBUG_SET(DEBUG_LIDAR_TF, 0, distanceMm);        //!< Distance [0.001m]
+                DEBUG_SET(DEBUG_LIDAR_TF, 0, distanceMm);        //!< Distance [unit:0.001m]
                 DEBUG_SET(DEBUG_LIDAR_TF, 1, confidence);        //!< Confidence
                 DEBUG_SET(DEBUG_LIDAR_TF, 2, (int16_t)flow_x);   //!< Optical Flow X
                 DEBUG_SET(DEBUG_LIDAR_TF, 3, (int16_t)flow_y);   //!< Optical Flow Y
                 DEBUG_SET(DEBUG_LIDAR_TF, 4, validStatus);       //!< Laser Valid Status
-                DEBUG_SET(DEBUG_LIDAR_TF, 5, integration_time);  //!< Integration Time [us]
+                DEBUG_SET(DEBUG_LIDAR_TF, 5, integration_time);  //!< Integration Time [unit:us]
 
                 const bool laserValid = (validStatus == 0xF5);
                 const bool distanceInRange = (distanceMm >= UPT1_RANGE_MIN && distanceMm <= UPT1_RANGE_MAX);
@@ -216,11 +216,11 @@ void rangefinderUPT1Update(rangefinderDev_t *dev)
                 // Process rangefinder data — require both a real laser sample and in-range distance
                 if (laserValid && distanceInRange) {
                     upt1Value = distanceMm / 10;                // Convert mm to cm
-                    DEBUG_SET(DEBUG_LIDAR_TF, 6, upt1Value);  //!< Reported Distance [cm]
+                    DEBUG_SET(DEBUG_LIDAR_TF, 6, upt1Value);  //!< Reported Distance [unit:cm]
                 } else {
                     upt1Value = RANGEFINDER_OUT_OF_RANGE;
                     // -99 marks the sample as out of range
-                    DEBUG_SET(DEBUG_LIDAR_TF, 6, -99);  //!< Reported Distance [cm]
+                    DEBUG_SET(DEBUG_LIDAR_TF, 6, -99);  //!< Reported Distance [unit:cm]
                 }
                 hasUPT1RFNewData = true;
 #ifdef USE_OPTICALFLOW
