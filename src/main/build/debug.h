@@ -57,9 +57,9 @@ extern uint8_t debugMode;
  *              only one without a key. No `[` or `]`. One `{a|b|c}` group may
  *              spell out one label per index, in index order, for a call that
  *              writes a range: `Gyro Filtered {roll|pitch|yaw}`.
- *   <shape>    What kind of value the field holds. Tooling derives the sample
- *              format and the graph axis from the shape alone, so a field is one
- *              of exactly four:
+ *   <shape>    What kind of value the field holds, so that a consumer can derive
+ *              the sample format and the graph axis from the shape alone rather
+ *              than from a table of its own. A field is one of exactly four:
  *
  *     unit:    A quantity, given as the unit of one LSB of the stored value. An
  *              optional decimal factor precedes the symbol, so
@@ -84,11 +84,11 @@ extern uint8_t debugMode;
  *     flags:   Bit flags, named lowest bit first, with `-` for a bit the field
  *              does not use: `[flags:Channel 17|Channel 18|Signal Loss|Failsafe]`.
  *              The names are given here rather than read from the source because
- *              flag bits are `#define`s, not an enum. Tooling shows which bits
- *              are set instead of the number they add up to.
+ *              flag bits are `#define`s, not an enum, which lets a consumer name
+ *              the set bits instead of the number they add up to.
  *
  *     (none)   A plain integer: a count, or a state with no enum to name it.
- *              Tooling shows the number and fits the graph to the logged data.
+ *              Nothing scales it, and a graph is left to fit the logged data.
  *
  * A field that packs two values into one index - `state * 100 + position` - or
  * that writes a sentinel is a plain integer to every consumer, and stays
