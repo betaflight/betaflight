@@ -107,6 +107,10 @@
     VTX_CHANNEL
         type 1: Contains Band:Channel:Power:Pit
         type 2: Contains only Power
+
+    OSD_LINK_QUALITY
+        type 1: Contains RF mode:link quality (CRSF only)
+        type 2: Contains only link quality
 */
 
 #include <stdbool.h>
@@ -1530,10 +1534,14 @@ static void osdElementLinkQuality(osdElementParms_t *element)
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
-    if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) { // 0-99
+    if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) { // 0-100
         osdLinkQuality = rxGetLinkQuality();
-        const uint8_t osdRfMode = rxGetRfMode();
-        tfp_sprintf(element->buff, "%c%1d:%2d", SYM_LINK_QUALITY, osdRfMode, osdLinkQuality);
+        if (element->type == OSD_ELEMENT_TYPE_2) {
+            tfp_sprintf(element->buff, "%c%2d", SYM_LINK_QUALITY, osdLinkQuality);
+        } else {
+            const uint8_t osdRfMode = rxGetRfMode();
+            tfp_sprintf(element->buff, "%c%1d:%2d", SYM_LINK_QUALITY, osdRfMode, osdLinkQuality);
+        }
     } else if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_GHST) { // 0-100
         osdLinkQuality = rxGetLinkQuality();
         tfp_sprintf(element->buff, "%c%2d", SYM_LINK_QUALITY, osdLinkQuality);
