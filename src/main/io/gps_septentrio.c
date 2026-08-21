@@ -210,7 +210,8 @@ static bool sbfCommitNavEpoch(void)
             if (courseDeg < 0.0f) { // ensure course is non-negative
                 courseDeg += 360.0f;
             }
-            gpsSol.groundCourse = (uint16_t)lroundf(courseDeg * 10.0f);
+            const uint16_t courseTenths = (uint16_t)lroundf(courseDeg * 10.0f);
+            gpsSol.groundCourse = courseTenths >= 3600U ? 0U : courseTenths;
         }
 
         const bool velocityValid = (pvt->vn > (float)SBF_PVT_DO_NOT_USE_THRESHOLD)
@@ -430,7 +431,7 @@ static void sbfProcessBlock(void)
         if (payloadLength >= sizeof(sbfChannelStatusHeader_t)) {
             const uint16_t availableLength = (uint16_t)MIN((uint32_t)payloadLength, (uint32_t)(SBF_MAX_FRAME_SIZE - SBF_HEADER_SIZE));
             memcpy(sbfState.channelStatusPayload, payload, availableLength);
-			// Store the actual copied bytes length for parsing
+            // Store the actual copied bytes length for parsing
             sbfState.channelStatusPayloadLength = availableLength;
             sbfState.haveChannelStatus = true;
             sbfProcessChannelStatus();
@@ -592,8 +593,12 @@ bool gpsNewFrameSeptentrio(uint8_t data)
             // Detect boundary block to commit the navigation epoch to gpsSol
             if (blockId == SBF_BLOCK_ENDOFPVT) {
                 // Check if a navigation epoch is available and the current TOW matches the TOW in the header of the EndOfPVT block
+                // For WNc, either the header or the current navigation epoch may be invalid (65535) during startup, so we allow a match if either is invalid or if they are equal
                 const bool towMatches = sbfState.haveNavEpoch && sbfState.header.tow == sbfState.currentNavTow;
-                const bool updated = towMatches && sbfCommitNavEpoch();
+                const bool wncMatches = sbfState.header.wnc == SBF_WNC_DO_NOT_USE_VALUE
+                                      || sbfState.currentNavWnc == SBF_WNC_DO_NOT_USE_VALUE
+                                      || sbfState.currentNavWnc == sbfState.header.wnc;
+                const bool updated = towMatches && wncMatches && sbfCommitNavEpoch();
                 sbfResetNavEpoch();
                 sbfResetFrame();
                 return updated;
