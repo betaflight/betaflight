@@ -56,6 +56,11 @@ typedef struct opticalflow_s {
     int16_t quality;
     vector2_t rawFlowRates;
     vector2_t processedFlowRates;
+    // Per-axis usability of processedFlowRates. False when body rotation was too
+    // fast for the compensation to recover a translation rate on that axis; the
+    // consumer must skip the axis, since zero is a measurement of "not moving"
+    // and not an absence of data.
+    bool flowRateValid[2];
     uint32_t timeStampUs;
 } opticalflow_t;
 

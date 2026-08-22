@@ -31,6 +31,7 @@ float accelNoiseR(unsigned axis, float accel, float dt);
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/gyro.h"
+#include "sensors/opticalflow.h"
 #include "sensors/rangefinder.h"
 #include "sensors/sensors.h"
 
@@ -90,6 +91,14 @@ bool gpsHasNewData(uint16_t *gpsStamp)
 
 float getGpsDataFrequencyHz(void) { return gpsDataFrequencyHz; }
 
+// Optical flow: a controllable sensor struct, so tests can present a sample and
+// assert on whether the estimator fuses it.
+attitudeEulerAngles_t attitude;
+static opticalflow_t testFlow;
+static bool flowHealthy = false;
+bool isOpticalflowHealthy(void) { return flowHealthy; }
+const opticalflow_t *getOpticalFlowData(void) { return &testFlow; }
+
 void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *dest)
 {
     // Simplified (no Earth-scale projection): return integer-unit deltas so sign tests work.
@@ -114,6 +123,9 @@ protected:
         memset(&rMat, 0, sizeof(rMat));
         memset(&gpsSol, 0, sizeof(gpsSol));
         memset(debug, 0, sizeof(debug));
+        memset(&attitude, 0, sizeof(attitude));
+        memset(&testFlow, 0, sizeof(testFlow));
+        flowHealthy = false;
 
         // Identity rotation and 1G reciprocal scale so zero accel stays zero.
         rMat.m[NWU_N][X] = 1.0f;
@@ -774,6 +786,72 @@ TEST_F(PositionEstimatorTest, AccelNoiseRRejectsBadArguments)
 {
     EXPECT_FLOAT_EQ(accelNoiseR(0, 500.0f, 0.0f), 1500.0f);   // dt of zero
     EXPECT_FLOAT_EQ(accelNoiseR(9, 500.0f, 0.01f), 1500.0f);  // axis out of range
+}
+
+// A flow sample whose rotation compensation could not be resolved on one axis must
+// be discarded, not fused. Reporting zero for such an axis would enter the filter
+// as a measurement of "not moving", which is what the validity flag prevents.
+static void presentFlowSample(float rateX, float rateY, bool xValid, bool yValid)
+{
+    testFlow.timeStampUs = fakeMicros;
+    testFlow.quality = 100;
+    testFlow.processedFlowRates.x = rateX;
+    testFlow.processedFlowRates.y = rateY;
+    testFlow.flowRateValid[0] = xValid;
+    testFlow.flowRateValid[1] = yValid;
+    testFlow.dev.delayMs = 20;
+}
+
+class OpticalFlowFusionTest : public PositionEstimatorTest {
+protected:
+    void SetUp() override
+    {
+        PositionEstimatorTest::SetUp();
+        enabledSensors = SENSOR_RANGEFINDER | SENSOR_OPTICALFLOW;  // flow only, no GPS
+        flowHealthy = true;
+        rfHealthy = true;
+        rfAltCm = 100.0f;              // 1 m: flow rate in rad/s equals velocity in m/s
+        ENABLE_ARMING_FLAG(ARMED);
+        positionEstimatorEnableXY(true);
+        stepEstimator(5);
+    }
+};
+
+TEST_F(OpticalFlowFusionTest, ValidSampleMovesTheVelocityEstimate)
+{
+    // 0.5 rad/s of forward flow at 1 m is 50 cm/s North with the nose at 0.
+    presentFlowSample(0.0f, 0.5f, true, true);
+    stepEstimator(20);
+
+    EXPECT_GT(positionEstimatorGetEstimate()->velocity.v[ENU_N], 5.0f);
+}
+
+TEST_F(OpticalFlowFusionTest, AxisMarkedInvalidIsNotFused)
+{
+    // Same sample, but the compensation could not resolve the X axis. Both earth
+    // axes depend on both body axes through the heading rotation, so the sample
+    // is dropped entirely and the velocity estimate must not move.
+    presentFlowSample(0.0f, 0.5f, false, true);
+    stepEstimator(20);
+
+    EXPECT_NEAR(positionEstimatorGetEstimate()->velocity.v[ENU_N], 0.0f, 0.5f);
+    EXPECT_NEAR(positionEstimatorGetEstimate()->velocity.v[ENU_E], 0.0f, 0.5f);
+}
+
+TEST_F(OpticalFlowFusionTest, InvalidSampleDoesNotReportZeroVelocity)
+{
+    // Establish real motion from valid samples, then present an unusable one:
+    // the estimate must coast, not be dragged toward zero.
+    presentFlowSample(0.0f, 0.5f, true, true);
+    stepEstimator(30);
+    const float movingVel = positionEstimatorGetEstimate()->velocity.v[ENU_N];
+    ASSERT_GT(movingVel, 5.0f);
+
+    for (int i = 0; i < 5; i++) {
+        presentFlowSample(0.0f, 0.0f, false, false);   // zeroed rate, marked unusable
+        stepEstimator(1);
+    }
+    EXPECT_GT(positionEstimatorGetEstimate()->velocity.v[ENU_N], 0.8f * movingVel);
 }
 
 // Integration counterpart: with the same attitude/thrust, the IMU prediction alone

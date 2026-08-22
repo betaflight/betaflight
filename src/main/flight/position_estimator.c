@@ -1217,7 +1217,17 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
         return;  // quality too low
     }
 
+    // Called after ReadyForFusion so its sample bookkeeping still advances: this
+    // sample is being discarded, not deferred.
     if (!opticalFlowMeasurementReadyForFusion(nowUs, flow)) {
+        return;
+    }
+
+    // Both body axes are needed even for one earth axis, because the pair is
+    // rotated into ENU by heading. So an axis the rotation compensation could not
+    // resolve costs the whole sample; coasting on the accelerometer for one
+    // interval beats fusing a rate that is not a measurement of anything.
+    if (!flow->flowRateValid[0] || !flow->flowRateValid[1]) {
         return;
     }
 

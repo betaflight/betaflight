@@ -70,7 +70,7 @@
 
 // static prototypes
 static void applySensorRotation(vector2_t * dst, vector2_t * src);
-static void applyLPF(vector2_t * flowRates, float sampleIntervalS);
+static float applyLPFAxis(pt2Filter_t * filter, float flowRate, float sampleIntervalS);
 
 PG_REGISTER_WITH_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig, PG_OPTICALFLOW_CONFIG, 2);
 
@@ -147,6 +147,8 @@ bool opticalflowInit(void) {
     opticalflow.rawFlowRates.y = 0;
     opticalflow.processedFlowRates.x = 0;
     opticalflow.processedFlowRates.y = 0;
+    opticalflow.flowRateValid[0] = true;
+    opticalflow.flowRateValid[1] = true;
     opticalflow.timeStampUs = micros();
 
     cosRotAngle = cosf(DEGREES_TO_RADIANS(opticalflowConfig()->rotation));
@@ -230,23 +232,32 @@ void opticalflowProcess(void) {
         processed.x -= DEGREES_TO_RADIANS(delayedGyroRotated.x);
         processed.y -= DEGREES_TO_RADIANS(delayedGyroRotated.y);
 
-        // For large rates of body rotation the velocity will be unreliable, so zero
-        if (fabsf(delayedGyroRotated.x) > ROTATION_GYRO_LIMIT) {
-            processed.x = 0;
-        }
-        if (fabsf(delayedGyroRotated.y) > ROTATION_GYRO_LIMIT) {
-            processed.y = 0;
-        }
-        DEBUG_SET(DEBUG_OPTICALFLOW, 4, lrintf(processed.x * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 5, lrintf(processed.y * 1000));
+        // Beyond this rate of body rotation the compensation cannot recover a
+        // translation rate: the rotation term is larger than the signal and its
+        // timing error alone exceeds it. Mark the axis unusable rather than
+        // reporting zero, which a consumer would read as "not moving" and fuse.
+        const bool xValid = fabsf(delayedGyroRotated.x) <= ROTATION_GYRO_LIMIT;
+        const bool yValid = fabsf(delayedGyroRotated.y) <= ROTATION_GYRO_LIMIT;
 
-        applyLPF(&processed, deltaTimeUs * 1e-6f);
+        DEBUG_SET(DEBUG_OPTICALFLOW, 4, xValid ? lrintf(processed.x * 1000) : 0);
+        DEBUG_SET(DEBUG_OPTICALFLOW, 5, yValid ? lrintf(processed.y * 1000) : 0);
+
+        // Filter per axis. An unusable axis holds its previous value and its filter
+        // is not stepped, so one unresolvable sample cannot smear across the next
+        // several -- which is the error the validity flag exists to avoid.
+        const float sampleIntervalS = deltaTimeUs * 1e-6f;
+        processed.x = xValid ? applyLPFAxis(&xFlowLpf, processed.x, sampleIntervalS)
+                             : opticalflow.processedFlowRates.x;
+        processed.y = yValid ? applyLPFAxis(&yFlowLpf, processed.y, sampleIntervalS)
+                             : opticalflow.processedFlowRates.y;
 
         DEBUG_SET(DEBUG_OPTICALFLOW, 6, lrintf(processed.x * 1000));
         DEBUG_SET(DEBUG_OPTICALFLOW, 7, lrintf(processed.y * 1000));
 
         opticalflow.rawFlowRates = raw;
         opticalflow.processedFlowRates = processed;
+        opticalflow.flowRateValid[0] = xValid;
+        opticalflow.flowRateValid[1] = yValid;
         opticalflow.timeStampUs  = data.timeStampUs;
     }
 }
@@ -256,9 +267,9 @@ static void applySensorRotation(vector2_t * dst, vector2_t * src) {
     dst->y = src->x * sinRotAngle + src->y * cosRotAngle;
 }
 
-static void applyLPF(vector2_t * flowRates, float sampleIntervalS) {
+static float applyLPFAxis(pt2Filter_t * filter, float flowRate, float sampleIntervalS) {
     if (opticalflowConfig()->flow_lpf == 0) {
-        return;
+        return flowRate;
     }
 
     // The filter steps once per sensor sample, so its gain comes from the
@@ -266,13 +277,10 @@ static void applyLPF(vector2_t * flowRates, float sampleIntervalS) {
     // opticalflow_lpf asks for whatever rate the sensor actually delivers.
     if (sampleIntervalS > 0.0f) {
         const float flowCutoffHz = (float)opticalflowConfig()->flow_lpf / 100.0f;
-        const float k = pt2FilterGain(flowCutoffHz, sampleIntervalS);
-        pt2FilterUpdateCutoff(&xFlowLpf, k);
-        pt2FilterUpdateCutoff(&yFlowLpf, k);
+        pt2FilterUpdateCutoff(filter, pt2FilterGain(flowCutoffHz, sampleIntervalS));
     }
 
-    flowRates->x = pt2FilterApply(&xFlowLpf, flowRates->x);
-    flowRates->y = pt2FilterApply(&yFlowLpf, flowRates->y);
+    return pt2FilterApply(filter, flowRate);
 }
 
 const opticalflow_t * getOpticalFlowData(void) {
