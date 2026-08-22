@@ -119,6 +119,13 @@ accgyro_spi_icm426xx_unittest_DEFINES := \
                 USE_ACCGYRO_IIM42652= \
                 USE_ACCGYRO_IIM42653=
 
+accgyro_spi_lsm6dsv320x_unittest_SRC := \
+		$(USER_DIR)/drivers/accgyro/accgyro_spi_lsm6dsv320x.c
+
+accgyro_spi_lsm6dsv320x_unittest_DEFINES := \
+                USE_ACCGYRO_LSM6DSV320X= \
+                USE_GYRO_DLPF_EXPERIMENTAL=
+
 # This test is disabled due to build errors.
 # Its source code is archived in unit/battery_unittest.cc.txt
 #

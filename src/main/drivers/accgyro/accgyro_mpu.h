@@ -53,6 +53,7 @@
 #define IIM42652_WHO_AM_I_CONST             (0x6F)
 #define IIM42653_WHO_AM_I_CONST             (0x56)
 #define LSM6DSV16X_WHO_AM_I_CONST           (0x70)
+#define LSM6DSV320X_WHO_AM_I_CONST          (0x73)
 #define LSM6DSK320X_WHO_AM_I_CONST          (0x75)
 #define ICM40609_WHO_AM_I_CONST             (0x3B)
 
@@ -221,6 +222,7 @@ typedef enum {
     LSM6DSO_SPI,
     L3GD20_SPI,
     LSM6DSV16X_SPI,
+    LSM6DSV320X_SPI,
     LSM6DSK320X_SPI,
     ICM_45605_SPI,
     ICM_45686_SPI,
