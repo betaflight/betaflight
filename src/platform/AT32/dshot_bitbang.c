@@ -441,7 +441,7 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorProtocolTypes_e pwmP
         bbOutputDataInit(bbPort->portOutputBuffer, (1 << pinIndex), DSHOT_BITBANG_NONINVERTED);
     }
 
-    bbSwitchToOutput(bbPort);
+    (void)bbSwitchToOutput(bbPort);
 
     bbMotors[motorIndex].configured = true;
 
@@ -608,12 +608,19 @@ static void bbUpdateComplete(void)
         if (useDshotTelemetry) {
             if (bbPort->direction == DSHOT_BITBANG_DIRECTION_INPUT) {
                 bbPort->inputActive = false;
-                bbSwitchToOutput(bbPort);
+                if (!bbSwitchToOutput(bbPort)) {
+                    // Stream did not stop, so its registers were left alone and
+                    // the port is still an input. Skip the frame rather than
+                    // enable a stream whose configuration was never applied.
+                    continue;
+                }
             }
         } else
 #endif
         {
-            bbSwitchToOutput(bbPort);
+            if (!bbSwitchToOutput(bbPort)) {
+                continue;
+            }
         }
 
         bbDMA_Cmd(bbPort, TRUE);
