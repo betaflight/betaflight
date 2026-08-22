@@ -288,13 +288,13 @@ bool rangefinderUPT1Detect(rangefinderDev_t *dev)
     // Reuse the port if optical flow detection already opened it, since openSerialPort()
     // rejects an already-in-use port and would otherwise clear upt1SerialPort.
     if (upt1SerialPort == NULL) {
-        const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_LIDAR);
-        if (!portConfig) {
+        const serialPortIdentifier_e port = rangefinderConfig()->rangefinder_uart;
+        if (port == SERIAL_PORT_NONE) {
             return false;
         }
 
         // Open serial port at 115200n1 (per UP-T1-001-Plus specification)
-        upt1SerialPort = openSerialPort(portConfig->identifier, FUNCTION_LIDAR, NULL, NULL, UPT1_BAUDRATE, MODE_RXTX, 0);
+        upt1SerialPort = openSerialPort(port, FUNCTION_LIDAR, NULL, NULL, UPT1_BAUDRATE, MODE_RXTX, 0);
         if (upt1SerialPort == NULL) {
             return false;
         }
@@ -340,11 +340,11 @@ bool upt1OpticalflowDetect(opticalflowDev_t *dev)
     // UP-T1-001-Plus uses the same serial port for both rangefinder and optical flow
     // Check if serial port is configured (should already be open from rangefinder detection)
     if (upt1SerialPort == NULL) {
-        const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_LIDAR);
-        if (!portConfig) {
+        const serialPortIdentifier_e port = rangefinderConfig()->rangefinder_uart;
+        if (port == SERIAL_PORT_NONE) {
             return false;
         }
-        upt1SerialPort = openSerialPort(portConfig->identifier, FUNCTION_LIDAR, NULL, NULL, UPT1_BAUDRATE, MODE_RXTX, 0);
+        upt1SerialPort = openSerialPort(port, FUNCTION_LIDAR, NULL, NULL, UPT1_BAUDRATE, MODE_RXTX, 0);
         if (upt1SerialPort == NULL) {
             return false;
         }

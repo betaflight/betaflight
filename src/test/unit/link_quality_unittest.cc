@@ -344,9 +344,9 @@ TEST(LQTest, TestElementLQ_PROTOCOL_CRSF_VALUES)
         simulationTime += 10;
     }
 
-    // crsf setLinkQualityDirect 0-300;
+    // CRSF link quality ranges from 0-100.
 
-    for (uint8_t x = 0; x <= 99; x++) {
+    for (uint8_t x = 0; x <= 100; x++) {
         for (uint8_t m = 0; m <= 4; m++) {
             // when x scaled
             setLinkQualityDirect(x);
@@ -361,6 +361,18 @@ TEST(LQTest, TestElementLQ_PROTOCOL_CRSF_VALUES)
             displayPortTestBufferSubstring(8, 1, "%c%1d:%2d", SYM_LINK_QUALITY, m, x);
         }
     }
+
+    osdElementConfigMutable()->item_pos[OSD_LINK_QUALITY] =
+        OSD_POS(8, 1) | OSD_PROFILE_1_FLAG | (OSD_ELEMENT_TYPE_2 << 14);
+    osdAnalyzeActiveElements();
+    setLinkQualityDirect(100);
+    rxSetRfMode(4);
+    simulationTime += 100000;
+    while (osdUpdateCheck(simulationTime, 0)) {
+        osdUpdate(simulationTime);
+        simulationTime += 10;
+    }
+    displayPortTestBufferSubstring(8, 1, "%c%2d", SYM_LINK_QUALITY, 100);
 }
 /*
  * Tests the LQ Alarms
@@ -496,8 +508,7 @@ extern "C" {
     bool isBlackboxDeviceWorking() { return true; }
     bool isBlackboxDeviceFull() { return false; }
     serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return NULL;}
-    const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
-    bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return false;}
+    bool telemetryCheckRxPortShared(serialPortIdentifier_e, SerialRXType) {return false;}
     bool cmsDisplayPortRegister(displayPort_t *) { return false; }
     uint16_t getCoreTemperatureCelsius(void) { return 0; }
     bool isCrashFlipModeActive(void) { return false; }

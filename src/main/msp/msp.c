@@ -101,6 +101,7 @@
 #include "io/ledstrip.h"
 #include "io/serial.h"
 #include "io/serial_4way.h"
+#include "io/serial_feature_map.h"
 #include "io/transponder_ir.h"
 #include "io/usb_msc.h"
 #include "io/vtx_control.h"
@@ -200,7 +201,6 @@ typedef enum {
     MSP_PASSTHROUGH_ESC_CASTLE = PROTOCOL_CASTLE,
 
     MSP_PASSTHROUGH_SERIAL_ID = 0xFD,
-    MSP_PASSTHROUGH_SERIAL_FUNCTION_ID = 0xFE,
 
     MSP_PASSTHROUGH_ESC_4WAY = 0xFF,
 } mspPassthroughType_e;
@@ -272,14 +272,6 @@ RAM_CODE static serialPort_t *mspFindPassthroughSerialPort(void)
         portUsage = findSerialPortUsageByIdentifier(mspPassthroughArgument);
         break;
     }
-    case MSP_PASSTHROUGH_SERIAL_FUNCTION_ID:
-    {
-        const serialPortConfig_t *portConfig = findSerialPortConfig(1 << mspPassthroughArgument);
-        if (portConfig) {
-            portUsage = findSerialPortUsageByIdentifier(portConfig->identifier);
-        }
-        break;
-    }
     }
     return portUsage ? portUsage->serialPort : NULL;
 }
@@ -310,7 +302,6 @@ RAM_CODE static void mspFcSetPassthroughCommand(sbuf_t *dst, sbuf_t *src, mspPos
     switch (mspPassthroughMode) {
 #ifdef USE_SERIAL_PASSTHROUGH
     case MSP_PASSTHROUGH_SERIAL_ID:
-    case MSP_PASSTHROUGH_SERIAL_FUNCTION_ID:
         if (mspFindPassthroughSerialPort()) {
             if (mspPostProcessFn) {
                 *mspPostProcessFn = mspSerialPassthroughFn;
@@ -652,6 +643,16 @@ RAM_CODE static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, 
  * MSP_OSD_CONFIG and silently drops the whole reply - and with it every OSD element - once it
  * outgrows the Betaflight 4.5 layout. Configurator, on VCP, keeps receiving the full reply.
  */
+// The serial-config commands still present four baud rates per port on the
+// wire.  They are rebuilt from the feature PGs that own them so existing
+// Configurator builds keep working unchanged.
+RAM_CODE static void mspWritePortBaudRates(sbuf_t *dst, serialPortIdentifier_e identifier)
+{
+    for (unsigned i = 0; i < SERIAL_BAUD_CLASS_COUNT; i++) {
+        sbufWriteU8(dst, serialSynthesizePortBaud(identifier, i));
+    }
+}
+
 RAM_CODE static bool mspSrcIsVtxPort(mspDescriptor_t srcDesc)
 {
 #ifdef USE_MSP_DISPLAYPORT
@@ -1058,7 +1059,12 @@ RAM_CODE static bool mspCommonProcessOutCommand(mspDescriptor_t srcDesc, int16_t
 
 #ifdef USE_OSD_SD
         // send video system (AUTO/PAL/NTSC/HD)
+#if OSD_FB_ENABLE_SMALLFONT
+        // represent as HD to Configurator, enabling it to resize the grid appropriately.
+        sbufWriteU8(dst, VIDEO_SYSTEM_HD);
+#else
         sbufWriteU8(dst, vcdProfile()->video_system);
+#endif
 #else
         sbufWriteU8(dst, VIDEO_SYSTEM_HD);
 #endif // USE_OSD_SD
@@ -1770,36 +1776,32 @@ case MSP_NAME:
 
     case MSP_CF_SERIAL_CONFIG:
         for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
-            if (!serialIsPortAvailable(serialConfig()->portConfigs[i].identifier)) {
+            const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
+            if (!serialIsPortAvailable(identifier)) {
                 continue;
             };
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier);
-            sbufWriteU16(dst, serialConfig()->portConfigs[i].functionMask);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].msp_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].gps_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].telemetry_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].blackbox_baudrateIndex);
+            sbufWriteU8(dst, identifier);
+            sbufWriteU16(dst, serialSynthesizeFunctionMask(identifier));
+            mspWritePortBaudRates(dst, identifier);
         }
         break;
 
     case MSP2_COMMON_SERIAL_CONFIG: {
         uint8_t count = 0;
         for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
-            if (serialIsPortAvailable(serialConfig()->portConfigs[i].identifier)) {
+            if (serialIsPortAvailable(serialPortIdentifiers[i])) {
                 count++;
             }
         }
         sbufWriteU8(dst, count);
         for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
-            if (!serialIsPortAvailable(serialConfig()->portConfigs[i].identifier)) {
+            const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
+            if (!serialIsPortAvailable(identifier)) {
                 continue;
             };
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier);
-            sbufWriteU32(dst, serialConfig()->portConfigs[i].functionMask);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].msp_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].gps_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].telemetry_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].blackbox_baudrateIndex);
+            sbufWriteU8(dst, identifier);
+            sbufWriteU32(dst, serialSynthesizeFunctionMask(identifier));
+            mspWritePortBaudRates(dst, identifier);
         }
         break;
     }
@@ -2095,13 +2097,8 @@ case MSP_NAME:
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
 #endif
-#if defined(USE_INTEGRATED_YAW_CONTROL)
-        sbufWriteU8(dst, currentPidProfile->use_integrated_yaw);
-        sbufWriteU8(dst, currentPidProfile->integrated_yaw_relax);
-#else
-        sbufWriteU8(dst, 0);
-        sbufWriteU8(dst, 0);
-#endif
+        sbufWriteU8(dst, 0); // was use_integrated_yaw
+        sbufWriteU8(dst, 0); // was integrated_yaw_relax
 #if defined(USE_ITERM_RELAX)
         // Added in MSP API 1.42
         sbufWriteU8(dst, currentPidProfile->iterm_relax_cutoff);
@@ -3571,13 +3568,8 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             sbufReadU8(src);
             sbufReadU8(src);
 #endif
-#if defined(USE_INTEGRATED_YAW_CONTROL)
-            currentPidProfile->use_integrated_yaw = sbufReadU8(src);
-            currentPidProfile->integrated_yaw_relax = sbufReadU8(src);
-#else
-            sbufReadU8(src);
-            sbufReadU8(src);
-#endif
+            sbufReadU8(src); // was use_integrated_yaw
+            sbufReadU8(src); // was integrated_yaw_relax
         }
         if(sbufBytesRemaining(src) >= 1) {
             // Added in MSP API 1.42
@@ -4252,68 +4244,6 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             rxConfigMutable()->rcmap[i] = sbufReadU8(src);
         }
         break;
-
-    case MSP_SET_CF_SERIAL_CONFIG:
-        {
-            uint8_t portConfigSize = sizeof(uint8_t) + sizeof(uint16_t) + (sizeof(uint8_t) * 4);
-
-            if (dataSize % portConfigSize != 0) {
-                return MSP_RESULT_ERROR;
-            }
-
-            uint8_t remainingPortsInPacket = dataSize / portConfigSize;
-
-            while (remainingPortsInPacket--) {
-                uint8_t identifier = sbufReadU8(src);
-
-                serialPortConfig_t *portConfig = serialFindPortConfigurationMutable(identifier);
-
-                if (!portConfig) {
-                    return MSP_RESULT_ERROR;
-                }
-
-                portConfig->functionMask = sbufReadU16(src);
-                portConfig->msp_baudrateIndex = sbufReadU8(src);
-                portConfig->gps_baudrateIndex = sbufReadU8(src);
-                portConfig->telemetry_baudrateIndex = sbufReadU8(src);
-                portConfig->blackbox_baudrateIndex = sbufReadU8(src);
-            }
-        }
-        break;
-    case MSP2_COMMON_SET_SERIAL_CONFIG: {
-        if (dataSize < 1) {
-            return MSP_RESULT_ERROR;
-        }
-        unsigned count = sbufReadU8(src);
-        if (count == 0 || (dataSize - 1) % count != 0) {
-            return MSP_RESULT_ERROR;
-        }
-        unsigned portConfigSize = (dataSize - 1) / count;
-        unsigned expectedPortSize = sizeof(uint8_t) + sizeof(uint32_t) + (sizeof(uint8_t) * 4);
-        if (portConfigSize < expectedPortSize) {
-            return MSP_RESULT_ERROR;
-        }
-        for (unsigned ii = 0; ii < count; ii++) {
-            unsigned start = sbufBytesRemaining(src);
-            uint8_t identifier = sbufReadU8(src);
-            serialPortConfig_t *portConfig = serialFindPortConfigurationMutable(identifier);
-
-            if (!portConfig) {
-                return MSP_RESULT_ERROR;
-            }
-
-            portConfig->functionMask = sbufReadU32(src);
-            portConfig->msp_baudrateIndex = sbufReadU8(src);
-            portConfig->gps_baudrateIndex = sbufReadU8(src);
-            portConfig->telemetry_baudrateIndex = sbufReadU8(src);
-            portConfig->blackbox_baudrateIndex = sbufReadU8(src);
-            // Skip unknown bytes
-            while (start - sbufBytesRemaining(src) < portConfigSize && sbufBytesRemaining(src)) {
-                sbufReadU8(src);
-            }
-        }
-        break;
-    }
 
 #ifdef USE_LED_STRIP_STATUS_MODE
     case MSP_SET_LED_COLORS:
