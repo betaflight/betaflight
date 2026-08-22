@@ -53,46 +53,147 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
 
 #if defined(USE_TIMER_MGMT)
 const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
-// Auto-generated from 'timer_def.h'
+// Generated from the STM32C5 DFP pinout descriptors
 // Port A
-    DEF_TIM(TIM2, CH1, PA0, 0, 0, 0),
-    DEF_TIM(TIM2, CH2, PA1, 0, 0, 0),
-    DEF_TIM(TIM2, CH3, PA2, 0, 0, 0),
-    DEF_TIM(TIM2, CH4, PA3, 0, 0, 0),
-    DEF_TIM(TIM5, CH1, PA0, 0, 0, 0),
-    DEF_TIM(TIM5, CH2, PA1, 0, 0, 0),
-    DEF_TIM(TIM5, CH3, PA2, 0, 0, 0),
-    DEF_TIM(TIM5, CH4, PA3, 0, 0, 0),
-#if !defined(STM32C562xx)
-    DEF_TIM(TIM3, CH1, PA6, 0, 0, 0),
-    DEF_TIM(TIM3, CH2, PA7, 0, 0, 0),
+    DEF_TIM(TIM2, CH1, PA0, 0, 0, 0),    // AF1
+    DEF_TIM(TIM5, CH1, PA0, 0, 0, 0),    // AF2
+    DEF_TIM(TIM2, CH2, PA1, 0, 0, 0),    // AF1
+    DEF_TIM(TIM5, CH2, PA1, 0, 0, 0),    // AF2
+    DEF_TIM(TIM15, CH1N, PA1, 0, 0, 0),  // AF4
+    DEF_TIM(TIM2, CH3, PA2, 0, 0, 0),    // AF1
+    DEF_TIM(TIM5, CH3, PA2, 0, 0, 0),    // AF2
+    DEF_TIM(TIM15, CH1, PA2, 0, 0, 0),   // AF4
+    DEF_TIM(TIM2, CH4, PA3, 0, 0, 0),    // AF1
+    DEF_TIM(TIM15, CH2, PA3, 0, 0, 0),   // AF4
+    DEF_TIM(TIM2, CH1, PA5, 0, 0, 0),    // AF1
+    DEF_TIM(TIM1, CH3, PA5, 0, 0, 0),    // AF2
+    DEF_TIM(TIM8, CH1N, PA5, 0, 0, 0),   // AF3
+    DEF_TIM(TIM1, CH1N, PA7, 0, 0, 0),   // AF1
+    DEF_TIM(TIM8, CH1N, PA7, 0, 0, 0),   // AF3
+    DEF_TIM(TIM15, CH1, PA7, 0, 0, 0),   // AF4
+    DEF_TIM(TIM1, CH1, PA8, 0, 0, 0),    // AF1
+    DEF_TIM(TIM15, CH2, PA8, 0, 0, 0),   // AF4
+    DEF_TIM(TIM5, CH4, PA8, 0, 0, 0),    // AF8
+    DEF_TIM(TIM2, CH4, PA8, 0, 0, 0),    // AF14
+    DEF_TIM(TIM1, CH2, PA9, 0, 0, 0),    // AF1
+    DEF_TIM(TIM15, CH1N, PA9, 0, 0, 0),  // AF4
+    DEF_TIM(TIM8, CH2N, PA9, 0, 0, 0),   // AF13
+    DEF_TIM(TIM1, CH3, PA10, 0, 0, 0),   // AF1
+    DEF_TIM(TIM1, CH4, PA11, 0, 0, 0),   // AF1
+    DEF_TIM(TIM2, CH1, PA15, 0, 0, 0),   // AF1
+    DEF_TIM(TIM1, CH2N, PA15, 0, 0, 0),  // AF2
+    DEF_TIM(TIM8, CH4N, PA15, 0, 0, 0),  // AF13
+#if defined(STM32C562xx)
+    DEF_TIM(TIM5, CH4, PA3, 0, 0, 0),    // AF2
+    DEF_TIM(TIM5, CH1, PA6, 0, 0, 0),    // AF2
+    DEF_TIM(TIM5, CH2, PA7, 0, 0, 0),    // AF2
+#else
+    DEF_TIM(TIM3, CH3, PA3, 0, 0, 0),    // AF2
+    DEF_TIM(TIM5, CH4, PA3, 0, 0, 0),    // AF8
+    DEF_TIM(TIM3, CH4, PA4, 0, 0, 0),    // AF2
+    DEF_TIM(TIM3, CH1, PA6, 0, 0, 0),    // AF2
+    DEF_TIM(TIM3, CH2, PA7, 0, 0, 0),    // AF2
 #endif
-    DEF_TIM(TIM1, CH1, PA8, 0, 0, 0),
-    DEF_TIM(TIM1, CH2, PA9, 0, 0, 0),
-    DEF_TIM(TIM1, CH3, PA10, 0, 0, 0),
-    DEF_TIM(TIM1, CH4, PA11, 0, 0, 0),
 // Port B
-#if !defined(STM32C562xx)
-    DEF_TIM(TIM3, CH3, PB0, 0, 0, 0),
-    DEF_TIM(TIM3, CH4, PB1, 0, 0, 0),
-    DEF_TIM(TIM4, CH1, PB6, 0, 0, 0),
-    DEF_TIM(TIM4, CH2, PB7, 0, 0, 0),
-    DEF_TIM(TIM4, CH3, PB8, 0, 0, 0),
-    DEF_TIM(TIM4, CH4, PB9, 0, 0, 0),
+    DEF_TIM(TIM1, CH2N, PB0, 0, 0, 0),   // AF1
+    DEF_TIM(TIM8, CH2N, PB0, 0, 0, 0),   // AF3
+    DEF_TIM(TIM1, CH3N, PB1, 0, 0, 0),   // AF1
+    DEF_TIM(TIM8, CH3N, PB1, 0, 0, 0),   // AF3
+    DEF_TIM(TIM8, CH4N, PB2, 0, 0, 0),   // AF3
+    DEF_TIM(TIM2, CH2, PB3, 0, 0, 0),    // AF1
+    DEF_TIM(TIM5, CH3, PB3, 0, 0, 0),    // AF3
+    DEF_TIM(TIM8, CH1, PB3, 0, 0, 0),    // AF13
+    DEF_TIM(TIM8, CH2, PB4, 0, 0, 0),    // AF13
+    DEF_TIM(TIM8, CH3, PB5, 0, 0, 0),    // AF13
+    DEF_TIM(TIM16, CH1N, PB6, 0, 0, 0),  // AF10
+    DEF_TIM(TIM8, CH4, PB6, 0, 0, 0),    // AF13
+    DEF_TIM(TIM17, CH1N, PB7, 0, 0, 0),  // AF1
+    DEF_TIM(TIM16, CH1, PB7, 0, 0, 0),   // AF10
+    DEF_TIM(TIM17, CH1, PB8, 0, 0, 0),   // AF1
+    DEF_TIM(TIM2, CH3, PB10, 0, 0, 0),   // AF1
+    DEF_TIM(TIM8, CH1, PB10, 0, 0, 0),   // AF2
+    DEF_TIM(TIM8, CH3, PB12, 0, 0, 0),   // AF2
+    DEF_TIM(TIM1, CH1N, PB13, 0, 0, 0),  // AF1
+    DEF_TIM(TIM8, CH2, PB13, 0, 0, 0),   // AF2
+    DEF_TIM(TIM1, CH2N, PB14, 0, 0, 0),  // AF1
+    DEF_TIM(TIM12, CH1, PB14, 0, 0, 0),  // AF2
+    DEF_TIM(TIM8, CH2N, PB14, 0, 0, 0),  // AF3
+    DEF_TIM(TIM1, CH3N, PB15, 0, 0, 0),  // AF1
+    DEF_TIM(TIM12, CH2, PB15, 0, 0, 0),  // AF2
+    DEF_TIM(TIM8, CH3N, PB15, 0, 0, 0),  // AF3
+#if defined(STM32C562xx)
+    DEF_TIM(TIM5, CH3, PB0, 0, 0, 0),    // AF2
+    DEF_TIM(TIM5, CH4, PB1, 0, 0, 0),    // AF2
+    DEF_TIM(TIM5, CH1, PB4, 0, 0, 0),    // AF2
+    DEF_TIM(TIM5, CH2, PB5, 0, 0, 0),    // AF2
+#else
+    DEF_TIM(TIM3, CH3, PB0, 0, 0, 0),    // AF2
+    DEF_TIM(TIM3, CH4, PB1, 0, 0, 0),    // AF2
+    DEF_TIM(TIM3, CH1, PB4, 0, 0, 0),    // AF2
+    DEF_TIM(TIM3, CH2, PB5, 0, 0, 0),    // AF2
+    DEF_TIM(TIM4, CH1, PB6, 0, 0, 0),    // AF2
+    DEF_TIM(TIM4, CH2, PB7, 0, 0, 0),    // AF2
+    DEF_TIM(TIM4, CH3, PB8, 0, 0, 0),    // AF2
+    DEF_TIM(TIM4, CH4, PB9, 0, 0, 0),    // AF2
 #endif
-    DEF_TIM(TIM2, CH3, PB10, 0, 0, 0),
-    DEF_TIM(TIM2, CH4, PB11, 0, 0, 0),
 // Port C
-#if !defined(STM32C562xx)
-    DEF_TIM(TIM3, CH1, PC6, 0, 0, 0),
-    DEF_TIM(TIM3, CH2, PC7, 0, 0, 0),
-    DEF_TIM(TIM3, CH3, PC8, 0, 0, 0),
-    DEF_TIM(TIM3, CH4, PC9, 0, 0, 0),
+    DEF_TIM(TIM17, CH1, PC2, 0, 0, 0),   // AF1
+    DEF_TIM(TIM2, CH4, PC4, 0, 0, 0),    // AF1
+    DEF_TIM(TIM16, CH1, PC4, 0, 0, 0),   // AF10
+    DEF_TIM(TIM1, CH4N, PC5, 0, 0, 0),   // AF1
+    DEF_TIM(TIM16, CH1N, PC5, 0, 0, 0),  // AF10
+    DEF_TIM(TIM8, CH1, PC6, 0, 0, 0),    // AF3
+    DEF_TIM(TIM8, CH2, PC7, 0, 0, 0),    // AF3
+    DEF_TIM(TIM8, CH3, PC8, 0, 0, 0),    // AF3
+    DEF_TIM(TIM8, CH4, PC9, 0, 0, 0),    // AF3
+    DEF_TIM(TIM8, CH1N, PC10, 0, 0, 0),  // AF3
+    DEF_TIM(TIM8, CH2N, PC11, 0, 0, 0),  // AF3
+    DEF_TIM(TIM15, CH1, PC12, 0, 0, 0),  // AF2
+    DEF_TIM(TIM8, CH3N, PC12, 0, 0, 0),  // AF3
+#if defined(STM32C562xx)
+    DEF_TIM(TIM5, CH1, PC6, 0, 0, 0),    // AF2
+    DEF_TIM(TIM5, CH2, PC7, 0, 0, 0),    // AF2
+    DEF_TIM(TIM5, CH3, PC8, 0, 0, 0),    // AF2
+    DEF_TIM(TIM5, CH4, PC9, 0, 0, 0),    // AF2
+#else
+    DEF_TIM(TIM4, CH4, PC2, 0, 0, 0),    // AF2
+    DEF_TIM(TIM3, CH1, PC6, 0, 0, 0),    // AF2
+    DEF_TIM(TIM3, CH2, PC7, 0, 0, 0),    // AF2
+    DEF_TIM(TIM3, CH3, PC8, 0, 0, 0),    // AF2
+    DEF_TIM(TIM3, CH4, PC9, 0, 0, 0),    // AF2
 #endif
-    DEF_TIM(TIM8, CH1, PC6, 0, 0, 0),
-    DEF_TIM(TIM8, CH2, PC7, 0, 0, 0),
-    DEF_TIM(TIM8, CH3, PC8, 0, 0, 0),
-    DEF_TIM(TIM8, CH4, PC9, 0, 0, 0),
+// Port D
+    DEF_TIM(TIM8, CH4N, PD0, 0, 0, 0),   // AF3
+    DEF_TIM(TIM1, CH4N, PD5, 0, 0, 0),   // AF1
+    DEF_TIM(TIM8, CH1N, PD12, 0, 0, 0),  // AF3
+    DEF_TIM(TIM8, CH2N, PD13, 0, 0, 0),  // AF3
+    DEF_TIM(TIM8, CH3N, PD14, 0, 0, 0),  // AF3
+    DEF_TIM(TIM8, CH4N, PD15, 0, 0, 0),  // AF3
+#if !defined(STM32C562xx)
+    DEF_TIM(TIM4, CH1, PD12, 0, 0, 0),   // AF2
+    DEF_TIM(TIM4, CH2, PD13, 0, 0, 0),   // AF2
+    DEF_TIM(TIM4, CH3, PD14, 0, 0, 0),   // AF2
+    DEF_TIM(TIM4, CH4, PD15, 0, 0, 0),   // AF2
+#endif
+// Port E
+    DEF_TIM(TIM15, CH1N, PE4, 0, 0, 0),  // AF4
+    DEF_TIM(TIM15, CH1, PE5, 0, 0, 0),   // AF4
+    DEF_TIM(TIM15, CH2, PE6, 0, 0, 0),   // AF4
+    DEF_TIM(TIM1, CH1N, PE8, 0, 0, 0),   // AF1
+    DEF_TIM(TIM1, CH1, PE9, 0, 0, 0),    // AF1
+    DEF_TIM(TIM1, CH2N, PE10, 0, 0, 0),  // AF1
+    DEF_TIM(TIM1, CH2, PE11, 0, 0, 0),   // AF1
+    DEF_TIM(TIM1, CH3N, PE12, 0, 0, 0),  // AF1
+    DEF_TIM(TIM1, CH3, PE13, 0, 0, 0),   // AF1
+    DEF_TIM(TIM1, CH4, PE14, 0, 0, 0),   // AF1
+    DEF_TIM(TIM1, CH4N, PE15, 0, 0, 0),  // AF3
+#if !defined(STM32C562xx)
+// Port F
+    DEF_TIM(TIM16, CH1, PF6, 0, 0, 0),   // AF10
+    DEF_TIM(TIM17, CH1, PF7, 0, 0, 0),   // AF1
+    DEF_TIM(TIM16, CH1N, PF8, 0, 0, 0),  // AF10
+    DEF_TIM(TIM17, CH1N, PF9, 0, 0, 0),  // AF1
+#endif
 };
 #endif
 

@@ -37,6 +37,7 @@
 #error "ENABLE_CAN is set but the target MCU family has no FDCAN support in this driver"
 #endif
 
+#include "common/time.h"
 #include "common/utils.h"
 
 #include "drivers/can/can.h"
@@ -44,7 +45,12 @@
 #include "drivers/io.h"
 #include "drivers/nvic.h"
 #include "drivers/resource.h"
+#include "drivers/time.h"
 #include "platform/rcc.h"
+
+// Zero TX completions for this long while the software ring is saturated is
+// treated as a wedged (unacknowledged) bus — see canTransmit().
+#define CAN_TX_STALL_TIMEOUT_US 100000
 
 //-----------------------------------------------------------------------------
 // Message RAM layout
@@ -110,6 +116,8 @@
 #define CAN_RX_ELEMENT_BYTES    CAN_SRAM_RF_SIZE
 #define CAN_TX_ELEMENT_BYTES    CAN_SRAM_TFQ_SIZE
 
+#define CAN_TX_FIFO_DEPTH       CAN_SRAM_TFQ_NBR
+
 #elif defined(STM32H7)
 
 // H7 layout (software-defined). Values are in *elements* or *bytes* as noted.
@@ -132,6 +140,8 @@
 
 #define CAN_RX_ELEMENT_BYTES        (CAN_H7_ELEMENT_WORDS * 4U)
 #define CAN_TX_ELEMENT_BYTES        (CAN_H7_ELEMENT_WORDS * 4U)
+
+#define CAN_TX_FIFO_DEPTH           CAN_H7_TFQ_NBR
 
 #endif
 
@@ -227,7 +237,28 @@ static uint32_t canPackNominalBitTiming(uint32_t nbrp, uint32_t ntseg1,
 // matches the HAL2 reset default for FDCAN.
 static uint32_t canGetKernelClockHz(void)
 {
-#if defined(STM32G4) || defined(STM32H7)
+#if defined(STM32H7)
+    // H7's HAL_RCCEx_GetPeriphCLKFreq() has no FDCAN branch and returns 0
+    // for it, which left CAN stuck in init on every H7 target. Read the
+    // kernel-clock mux directly. HSE_VALUE is compile-time, but it must
+    // match the crystal for the system clocks to have come up at all.
+    switch (__HAL_RCC_GET_FDCAN_SOURCE()) {
+    case RCC_FDCANCLKSOURCE_HSE:
+        return HSE_VALUE;
+    case RCC_FDCANCLKSOURCE_PLL: {
+        PLL1_ClocksTypeDef clocks;
+        HAL_RCCEx_GetPLL1ClockFreq(&clocks);
+        return clocks.PLL1_Q_Frequency;
+    }
+    case RCC_FDCANCLKSOURCE_PLL2: {
+        PLL2_ClocksTypeDef clocks;
+        HAL_RCCEx_GetPLL2ClockFreq(&clocks);
+        return clocks.PLL2_Q_Frequency;
+    }
+    default:
+        return 0;
+    }
+#elif defined(STM32G4)
     return HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN);
 #else
     return HAL_RCC_GetPCLK1Freq();
@@ -461,6 +492,16 @@ void canInitDevice(canDevice_e device, uint32_t bitrate)
     IOConfigGPIOAF(txIO, IOCFG_AF_PP, pDev->txAF);
     IOConfigGPIOAF(rxIO, IOCFG_AF_PP_UP, pDev->rxAF);
 
+    // Some boards route the transceiver's silent/standby input to a GPIO
+    // (often pulled to silent in hardware); drive it low for normal
+    // operation or the node bus-offs on its first transmission.
+    if (pDev->silent) {
+        IO_t silentIO = IOGetByTag(pDev->silent);
+        IOInit(silentIO, OWNER_CAN_SILENT, RESOURCE_INDEX(device));
+        IOConfigGPIO(silentIO, IOCFG_OUT_PP);
+        IOLo(silentIO);
+    }
+
     if (!canEnterConfigMode(regs)) {
         // Peripheral did not latch INIT; nothing more we can do safely.
         return;
@@ -493,13 +534,28 @@ void canInitDevice(canDevice_e device, uint32_t bitrate)
     canConfigureMessageRamH7(device, regs);
 #endif
 
-    // Enable Rx FIFO 0 new-message and message-lost interrupts, and arm
-    // the peripheral side of IRQ line 0. The line-select register (ILS)
-    // resets to 0 which routes all sources to line 0, so no write needed.
-    // Enabling RF0LE lets the IRQ path observe and clear overrun flags so
-    // the peripheral does not stay stuck in the "lost" state after a burst.
-    regs->IE  |= FDCAN_IE_RF0NE | FDCAN_IE_RF0LE;
+    // Reset the software TX ring so a re-init starts from a clean queue.
+    pDev->txHead = 0;
+    pDev->txTail = 0;
+    pDev->txRingOverflows = 0;
+    pDev->txCompletions = 0;
+    pDev->txCompletionsSeen = 0;
+    pDev->txStallSinceUs = micros();
+    pDev->txStallRecoveries = 0;
+
+    // Enable Rx FIFO 0 new-message and message-lost interrupts, the
+    // transmission-complete interrupt, and arm the peripheral side of IRQ
+    // line 0. The line-select register (ILS) resets to 0 which routes all
+    // sources to line 0, so no write needed. Enabling RF0LE lets the IRQ
+    // path observe and clear overrun flags so the peripheral does not stay
+    // stuck in the "lost" state after a burst. TCE lets a freed Tx FIFO slot
+    // re-trigger the ring drain (see canTxKick).
+    regs->IE  |= FDCAN_IE_RF0NE | FDCAN_IE_RF0LE | FDCAN_IE_TCE;
     regs->ILE |= FDCAN_ILE_EINT0;
+
+    // TXBTIE selects which Tx buffers raise the TC interrupt; set the low
+    // CAN_TX_FIFO_DEPTH bits so every FIFO slot signals completion.
+    regs->TXBTIE = (1UL << CAN_TX_FIFO_DEPTH) - 1UL;
 
     canEnableInterrupt(device, pDev->irq0);
 
@@ -531,10 +587,82 @@ void canRegisterRxCallback(canDevice_e device, canRxCallbackPtr callback)
     canDevice[device].rxCallback = callback;
 }
 
-// NOTE: canTransmit() is NOT internally synchronised. The read-modify-write
-// sequence on the Tx FIFO (read TXFQS put-index, write slot, set TXBAR) is
-// not re-entrant; calling concurrently from thread context and an ISR can
-// corrupt messages. Callers must serialise externally if they need that.
+// Move queued frames from the software TX ring into the hardware Tx FIFO
+// until the ring is empty or the FIFO is full. When the FIFO fills we stop;
+// the transmission-complete (TC) interrupt re-invokes this to resume the
+// drain as slots free up.
+//
+// Concurrency: this is the sole consumer of txTail and the sole writer of the
+// Tx FIFO. It runs either from task context (canTransmit, which masks irq0
+// around the call) or from the TC ISR. Because the task path masks irq0 and
+// the ISR path runs at the CAN NVIC priority, the two can never overlap, so
+// the TXFQS read / slot write / TXBAR sequence stays atomic with respect to
+// itself.
+static void canTxKick(canDevice_e device)
+{
+    canDevice_t *pDev = &canDevice[device];
+    FDCAN_GlobalTypeDef *regs = canRegs(device);
+
+    while (pDev->txTail != pDev->txHead) {
+        // Pair the producer-side fence on txHead so the compiler cannot hoist
+        // the slot reads above the head snapshot above.
+        __asm volatile ("" ::: "memory");
+
+        uint32_t txfqs = regs->TXFQS;
+        if (txfqs & FDCAN_TXFQS_TFQF) {
+            // Hardware FIFO full; the TC interrupt will call us again once a
+            // slot frees. Leave the frame queued at txTail. NOTE: resuming the
+            // backlog relies on this function draining every free slot greedily
+            // on each entry — a single latched TC per batch of completions is
+            // then enough to flush the whole ring, so no wakeup is ever lost.
+            break;
+        }
+
+        const canTxFrame_t *frame = &pDev->txRing[pDev->txTail];
+
+        // Put index tells us which slot in the Tx FIFO the next message
+        // belongs in. The peripheral manages the ring; software just fills
+        // the slot and sets the corresponding TXBAR bit.
+        uint32_t putIndex = (txfqs & FDCAN_TXFQS_TFQPI) >> 16;
+        volatile uint32_t *slot = (volatile uint32_t *)canTxElementAddress(device, putIndex);
+
+        // Word 0: identifier with XTD flag if extended.
+        if (frame->isExtended) {
+            slot[0] = CAN_TX_WORD0_XTD | (frame->id & 0x1FFFFFFFUL);
+        } else {
+            slot[0] = (frame->id & 0x7FFUL) << 18;
+        }
+
+        // Word 1: length only (no BRS/FDF -> classic CAN frame).
+        slot[1] = (uint32_t)frame->length << CAN_TX_WORD1_DLC_POS;
+
+        // Words 2..3: copy the payload in 32-bit chunks. The Tx RAM requires
+        // 32-bit writes and classic CAN tops out at 8 bytes of payload, so
+        // two words is always enough.
+        uint32_t words[2] = { 0, 0 };
+        for (uint8_t i = 0; i < frame->length; i++) {
+            words[i >> 2] |= ((uint32_t)frame->data[i]) << ((i & 3U) * 8U);
+        }
+        slot[2] = words[0];
+        slot[3] = words[1];
+
+        // Trigger transmission of this slot, then release the ring entry.
+        regs->TXBAR = 1UL << putIndex;
+        pDev->txTail = (pDev->txTail + 1U) & CAN_TX_RING_MASK;
+    }
+}
+
+// Queue a classic CAN frame for transmission. The frame is appended to the
+// software TX ring and pushed into the hardware FIFO immediately if room is
+// available; anything that doesn't fit is drained by the TC interrupt.
+//
+// Returns false only on invalid parameters, an uninitialised device, or a
+// genuinely full software ring (true backpressure) — not on a transient
+// hardware-FIFO-full, which the ring now absorbs.
+//
+// Must be called from task context only. The producer index (txHead) assumes
+// a single producer; Betaflight's cooperative scheduler serialises task-level
+// callers, and this function is never called from an ISR.
 bool canTransmit(canDevice_e device, uint32_t identifier, bool isExtended,
                  const uint8_t *data, uint8_t length)
 {
@@ -553,43 +681,61 @@ bool canTransmit(canDevice_e device, uint32_t identifier, bool isExtended,
         return false;
     }
 
-    FDCAN_GlobalTypeDef *regs = canRegs(device);
-
-    // Bail early if the hardware FIFO is full. The caller decides whether to
-    // retry or drop; we don't block so the ISR-side callers stay non-blocking.
-    uint32_t txfqs = regs->TXFQS;
-    if (txfqs & FDCAN_TXFQS_TFQF) {
+    const uint8_t head = pDev->txHead;
+    const uint8_t next = (head + 1U) & CAN_TX_RING_MASK;
+    if (next == pDev->txTail) {
+        // Ring full — genuine backpressure. Drop and report so the caller can
+        // retry; libcanard leaves the frame at its queue head on a false.
+        //
+        // A saturated ring with zero completions means nothing is ACKing
+        // (peers unpowered, bus fault): auto-retransmission keeps the pending
+        // hardware slots busy forever and TC never fires. The FDCAN has no
+        // per-frame one-shot mode and disabling retransmission globally would
+        // drop frames on ordinary arbitration loss, so recover by cancelling
+        // the pending slots and discarding the stale backlog. A live bus
+        // completes a classic frame in well under a millisecond, so this
+        // never fires from congestion alone.
+        const timeUs_t now = micros();
+        if (pDev->txCompletions != pDev->txCompletionsSeen) {
+            pDev->txCompletionsSeen = pDev->txCompletions;
+            pDev->txStallSinceUs = now;
+        } else if (cmpTimeUs(now, pDev->txStallSinceUs) >= CAN_TX_STALL_TIMEOUT_US) {
+            FDCAN_GlobalTypeDef *regs = canRegs(device);
+            NVIC_DisableIRQ((IRQn_Type)pDev->irq0);
+            regs->TXBCR = (1UL << CAN_TX_FIFO_DEPTH) - 1UL;
+            pDev->txTail = head;
+            pDev->txStallRecoveries++;
+            pDev->txStallSinceUs = now;
+            NVIC_EnableIRQ((IRQn_Type)pDev->irq0);
+        }
+        pDev->txRingOverflows++;
         return false;
     }
 
-    // Put index tells us which slot in the Tx FIFO the next message belongs
-    // in. The peripheral manages the ring; software just fills the slot and
-    // sets the corresponding TXBAR bit.
-    uint32_t putIndex = (txfqs & FDCAN_TXFQS_TFQPI) >> 16;
-    volatile uint32_t *slot = (volatile uint32_t *)canTxElementAddress(device, putIndex);
-
-    // Word 0: identifier with XTD flag if extended.
-    if (isExtended) {
-        slot[0] = CAN_TX_WORD0_XTD | (identifier & 0x1FFFFFFFUL);
-    } else {
-        slot[0] = (identifier & 0x7FFUL) << 18;
-    }
-
-    // Word 1: length only (no BRS/FDF -> classic CAN frame).
-    slot[1] = (uint32_t)length << CAN_TX_WORD1_DLC_POS;
-
-    // Words 2..3: copy the payload in 32-bit chunks. The Tx RAM requires
-    // 32-bit writes and classic CAN tops out at 8 bytes of payload, so two
-    // words is always enough.
-    uint32_t words[2] = { 0, 0 };
+    canTxFrame_t *frame = &pDev->txRing[head];
+    frame->id = identifier;
+    frame->isExtended = isExtended;
+    frame->length = length;
     for (uint8_t i = 0; i < length; i++) {
-        words[i >> 2] |= ((uint32_t)data[i]) << ((i & 3U) * 8U);
+        frame->data[i] = data[i];
     }
-    slot[2] = words[0];
-    slot[3] = words[1];
 
-    // Trigger transmission of this slot.
-    regs->TXBAR = 1UL << putIndex;
+    // Publish the filled slot before advancing head so the TC ISR (which
+    // consumes via txTail) never observes an advanced head over a partially
+    // written slot. Cortex-M is strongly ordered in hardware but the compiler
+    // may reorder these non-volatile stores around the volatile head write.
+    __asm volatile ("" ::: "memory");
+    pDev->txHead = next;
+
+    // Push as much as the hardware FIFO will take now. Mask this device's IRQ
+    // so the TC handler (the other canTxKick caller) cannot run concurrently
+    // and corrupt the FIFO put sequence. This also briefly masks RX on the same
+    // line, but the critical section is only a few SRAM writes long. Safe to
+    // unconditionally re-enable: irq0 is always enabled once initialized is set,
+    // and canTransmit is task-context only (never called from an ISR).
+    NVIC_DisableIRQ((IRQn_Type)pDev->irq0);
+    canTxKick(device);
+    NVIC_EnableIRQ((IRQn_Type)pDev->irq0);
 
     return true;
 }
@@ -660,6 +806,14 @@ void canIrqHandler(canDevice_e device)
     if (ir & FDCAN_IR_RF0L) {
         regs->IR = FDCAN_IR_RF0L;
         canDevice[device].rxOverruns++;
+    }
+
+    // TC = transmission complete on a Tx FIFO slot. A slot has freed, so
+    // resume draining the software TX ring into the hardware FIFO.
+    if (ir & FDCAN_IR_TC) {
+        regs->IR = FDCAN_IR_TC;
+        canDevice[device].txCompletions++;
+        canTxKick(device);
     }
 }
 

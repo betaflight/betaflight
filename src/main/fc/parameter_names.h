@@ -34,6 +34,7 @@
 #define PARAM_NAME_ACC_LPF_HZ "acc_lpf_hz"
 #define PARAM_NAME_MAG_HARDWARE "mag_hardware"
 #define PARAM_NAME_BARO_HARDWARE "baro_hardware"
+#define PARAM_NAME_PITOT_HARDWARE "pitot_hardware"
 #define PARAM_NAME_RC_SMOOTHING "rc_smoothing"
 #define PARAM_NAME_RC_SMOOTHING_AUTO_FACTOR "rc_smoothing_auto_factor"
 #define PARAM_NAME_RC_SMOOTHING_AUTO_FACTOR_THROTTLE "rc_smoothing_auto_factor_throttle"
@@ -117,7 +118,6 @@
 #define PARAM_NAME_THROTTLE_BOOST "throttle_boost"
 #define PARAM_NAME_THROTTLE_BOOST_CUTOFF "throttle_boost_cutoff"
 #define PARAM_NAME_THRUST_LINEARIZATION "thrust_linear"
-#define PARAM_NAME_USE_INTEGRATED_YAW "use_integrated_yaw"
 #define PARAM_NAME_D_MAX_GAIN "d_max_gain"
 #define PARAM_NAME_D_MAX_ADVANCE "d_max_advance"
 #define PARAM_NAME_MOTOR_OUTPUT_LIMIT "motor_output_limit"
@@ -172,15 +172,12 @@
 #define PARAM_NAME_AP_POSITION_I "ap_position_i"
 #define PARAM_NAME_AP_POSITION_D "ap_position_d"
 #define PARAM_NAME_AP_POSITION_A "ap_position_a"
+#define PARAM_NAME_AP_POSITION_F "ap_position_f"
 #define PARAM_NAME_AP_POSITION_CUTOFF "ap_position_cutoff"
 #define PARAM_NAME_AP_STOP_THRESHOLD "ap_stop_threshold"
 #define PARAM_NAME_AP_MAX_ANGLE "ap_max_angle"
 
 // Velocity-based position control with drag compensation
-#define PARAM_NAME_AP_VELOCITY_CONTROL_ENABLE "ap_velocity_control_enable"
-#define PARAM_NAME_AP_VELOCITY_P "ap_velocity_p"
-#define PARAM_NAME_AP_VELOCITY_I "ap_velocity_i"
-#define PARAM_NAME_AP_VELOCITY_D "ap_velocity_d"
 #define PARAM_NAME_AP_VELOCITY_DRAG_COEFF "ap_velocity_drag_coeff"
 #define PARAM_NAME_AP_MAX_VELOCITY "ap_max_velocity"
 
@@ -194,6 +191,15 @@
 #define PARAM_NAME_AP_YAW_D "ap_yaw_d"
 #define PARAM_NAME_AP_MAX_YAW_RATE "ap_max_yaw_rate"
 #define PARAM_NAME_AP_MIN_FORWARD_VELOCITY "ap_min_forward_velocity"
+
+// Leg-line carrot path tracking and turn-angle cornering
+#define PARAM_NAME_AP_NAV_CORNER_SPEED "ap_nav_corner_speed"
+#define PARAM_NAME_AP_NAV_CORNER_DELTA_V "ap_nav_corner_delta_v"
+#define PARAM_NAME_AP_NAV_DECEL "ap_nav_decel"
+#define PARAM_NAME_AP_NAV_ACCEL "ap_nav_accel"
+#define PARAM_NAME_AP_NAV_CARROT_LEAD_TIME "ap_nav_carrot_lead_time"
+#define PARAM_NAME_AP_NAV_CARROT_LEAD_MAX "ap_nav_carrot_lead_max"
+#define PARAM_NAME_AP_NAV_PRETURN_DIST "ap_nav_preturn_dist"
 
 // Phase 5: Velocity buildup
 #define PARAM_NAME_AP_VELOCITY_BUILDUP_MAX_PITCH "ap_velocity_buildup_max_pitch"
@@ -215,6 +221,11 @@
 #define PARAM_NAME_AP_RX_LOSS_POLICY "ap_rx_loss_policy"
 #define PARAM_NAME_AP_MAX_DISTANCE_FROM_HOME "ap_max_distance_from_home"
 #define PARAM_NAME_AP_GEOFENCE_ACTION "ap_geofence_action"
+
+// Flight-plan OSD minimap
+#define PARAM_NAME_OSD_NAV_MAP_MODE "osd_nav_map_mode"
+#define PARAM_NAME_OSD_NAV_MAP_CENTRE "osd_nav_map_centre"
+#define PARAM_NAME_OSD_NAV_MAP_MIN_SCALE_M "osd_nav_map_min_scale_m"
 
 // Phase 3: L1 Nonlinear Guidance
 #define PARAM_NAME_AP_L1_ENABLE "ap_l1_enable"

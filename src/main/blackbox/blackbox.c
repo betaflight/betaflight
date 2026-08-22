@@ -111,7 +111,9 @@ PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
     .sample_rate = BLACKBOX_RATE_QUARTER,
     .device = DEFAULT_BLACKBOX_DEVICE,
     .mode = BLACKBOX_MODE_NORMAL,
-    .high_resolution = false
+    .high_resolution = false,
+    .blackbox_uart = SERIAL_PORT_NONE,
+    .blackbox_baud = BAUD_115200,
 );
 
 STATIC_ASSERT((sizeof(blackboxConfig()->fields_disabled_mask) * 8) >= FLIGHT_LOG_FIELD_SELECT_COUNT, too_many_flight_log_fields_selections);
@@ -1631,9 +1633,6 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANTI_GRAVITY_CUTOFF_HZ, "%d",    currentPidProfile->anti_gravity_cutoff_hz);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANTI_GRAVITY_P_GAIN, "%d",    currentPidProfile->anti_gravity_p_gain);
 
-#ifdef USE_INTEGRATED_YAW_CONTROL
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_USE_INTEGRATED_YAW, "%d",     currentPidProfile->use_integrated_yaw);
-#endif
         BLACKBOX_PRINT_HEADER_LINE("ff_weight", "%d,%d,%d",                 currentPidProfile->pid[PID_ROLL].F,
                                                                             currentPidProfile->pid[PID_PITCH].F,
                                                                             currentPidProfile->pid[PID_YAW].F);
@@ -1742,6 +1741,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_I, "%d",         autopilotConfig()->positionI);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_D, "%d",         autopilotConfig()->positionD);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_A, "%d",         autopilotConfig()->positionA);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_F, "%d",         autopilotConfig()->positionF);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_CUTOFF, "%d",    autopilotConfig()->positionCutoff);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_STOP_THRESHOLD, "%d",     autopilotConfig()->stopThreshold);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_MAX_ANGLE, "%d",          autopilotConfig()->maxAngle);

@@ -50,6 +50,14 @@
 // Decay the estimated max task duration by 1/(1 << TASK_EXEC_TIME_SHIFT) on every invocation
 #define TASK_EXEC_TIME_SHIFT            7
 
+// Cap a single measured execution time when updating a task's anticipated
+// duration, 0 = no cap. Hosted targets (SITL) override this: OS preemption
+// produces multi-millisecond wall-clock samples that would otherwise
+// peak-hold the estimate and starve the task out of every scheduling window.
+#ifndef TASK_EXEC_TIME_CLAMP_US
+#define TASK_EXEC_TIME_CLAMP_US         0
+#endif
+
 #define TASK_AGE_EXPEDITE_RX            schedulerConfig()->rxRelaxDeterminism  // Make RX tasks more schedulable if it's failed to be scheduled this many times
 #define TASK_AGE_EXPEDITE_OSD           schedulerConfig()->osdRelaxDeterminism  // Make OSD tasks more schedulable if it's failed to be scheduled this many times
 #define TASK_AGE_EXPEDITE_COUNT         1    // Make aged tasks more schedulable
@@ -137,6 +145,9 @@ typedef enum {
 #endif
 #ifdef USE_OPTICALFLOW
     TASK_OPTICALFLOW,
+#endif
+#ifdef USE_PITOT
+    TASK_PITOT,
 #endif
 #if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
     TASK_ALTITUDE,

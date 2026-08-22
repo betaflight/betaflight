@@ -24,5 +24,7 @@
 typedef struct picoPwmOutput_s {
     uint16_t slice;
     uint16_t channel;
+    uint16_t level;      // The "compare" level, written directly (continuous update) or in pwmCompleteMotorUpdate (one-shot modes)
+    bool sliceHead;    // The first motor on this slice
     bool initialised;
 } picoPwmOutput_t;

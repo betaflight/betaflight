@@ -34,4 +34,14 @@ bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);
 bool isAutopilotInControl(void);
 
+float autopilotGetYawRate(void);
+bool autopilotYawControlActive(void);
+void autopilotSetYawRateLimit(float rateLimitDps);
+
+// Nav inner-loop hooks driven by the shared flight-plan engine. Stubbed until
+// the wing control law lands (Phase 3+); present so the engine links on wing.
+void autopilotSetNavHeadingOverride(bool valid, float headingDeg);
+void autopilotForceLevelPark(bool request);
+void pitchForwardOverride(bool request);
+
 #endif // USE_WING

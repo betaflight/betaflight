@@ -10,16 +10,16 @@
 
 bool mscSdioInitDma(void)
 {
-#ifdef USE_DMA_SPEC
+#if ENABLE_SDIO_EXTERNAL_DMA
     const dmaChannelSpec_t *dmaChannelSpec =
         dmaGetChannelSpecByPeripheral(DMA_PERIPH_SDIO, 0, sdioConfig()->dmaopt);
     dmaResource_t *dmaRef = dmaChannelSpec ? dmaChannelSpec->ref : NULL;
-#else
-    dmaResource_t *dmaRef = NULL;
-#endif
     if (!dmaRef) {
         return false;
     }
+#else
+    dmaResource_t *dmaRef = NULL;
+#endif
     return SD_InitialiseHardware(dmaRef);
 }
 

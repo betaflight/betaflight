@@ -77,19 +77,15 @@ static const int gdmaCpuIntrPool[] = {
 
 static int nextFreeCpuIntr = 0;
 
-// Map from CPU interrupt number back to GDMA channel index for ISR dispatch
-static int cpuIntrToChannel[32];
-
 // Common GDMA RX interrupt handler - dispatches to the registered callback
-static void gdmaRxIsrDispatch(void *arg)
+FAST_IRQ_HANDLER static void gdmaRxIsrDispatch(void *arg)
 {
-    int cpuIntr = (int)(uintptr_t)arg;
-    int channel = cpuIntrToChannel[cpuIntr];
+    dmaChannelDescriptor_t *descriptor = (dmaChannelDescriptor_t *)arg;
+    const int channel = descriptor->channel;
 
     // Clear RX done interrupt
     gdma_ll_rx_clear_interrupt_status(&GDMA, channel, GDMA_LL_EVENT_RX_SUC_EOF);
 
-    dmaChannelDescriptor_t *descriptor = &dmaDescriptors[channel];
     if (descriptor->irqHandlerCallback) {
         descriptor->irqHandlerCallback(descriptor);
     }
@@ -108,7 +104,6 @@ void esp32DmaInit(void)
         gdma_ll_reset_register(0);
     }
 
-    memset(cpuIntrToChannel, 0, sizeof(cpuIntrToChannel));
     gdmaInitialised = true;
 }
 
@@ -135,14 +130,13 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
     // Dynamically assign a CPU interrupt line from the pool to this channel
     if (nextFreeCpuIntr < GDMA_CPU_INTR_POOL_SIZE) {
         int cpuIntr = gdmaCpuIntrPool[nextFreeCpuIntr++];
-        cpuIntrToChannel[cpuIntr] = index;
 
         // Enable RX SUC_EOF interrupt for this GDMA channel
         gdma_ll_rx_enable_interrupt(&GDMA, index, GDMA_LL_EVENT_RX_SUC_EOF, true);
 
         // Route GDMA RX interrupt source to CPU interrupt line
         esp32IntrRoute(cpuIntr, gdmaRxIntrSource[index]);
-        esp32IntrRegister(cpuIntr, gdmaRxIsrDispatch, (void *)(uintptr_t)cpuIntr);
+        esp32IntrRegister(cpuIntr, gdmaRxIsrDispatch, &dmaDescriptors[index]);
         esp32IntrEnable(cpuIntr);
     }
 }

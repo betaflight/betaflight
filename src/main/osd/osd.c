@@ -80,6 +80,7 @@
 #include "io/beeper.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
+#include "io/serial.h"
 
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
@@ -401,8 +402,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->logo_on_arming = OSD_LOGO_ARMING_OFF;
     osdConfig->logo_on_arming_duration = 5;  // 0.5 seconds
 
-    osdConfig->camera_frame_width = 24;
-    osdConfig->camera_frame_height = 11;
+    osdConfig->camera_frame_width = (OSD_CAMERA_FRAME_MAX_WIDTH * 4) / 5; // 24 for MAX7456
+    osdConfig->camera_frame_height = (OSD_CAMERA_FRAME_MAX_HEIGHT * 11) / 16; // 11 for MAX7456
 
     osdConfig->stat_show_cell_value = false;
     osdConfig->framerate_hz = OSD_FRAMERATE_DEFAULT_HZ;
@@ -433,6 +434,10 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 #ifdef USE_RACE_PRO
     osdConfig->osd_show_spec_prearm = true;
 #endif // USE_RACE_PRO
+
+    osdConfig->osd_uart = SERIAL_PORT_NONE;
+    osdConfig->osd_custom_text_uart = SERIAL_PORT_NONE;
+    osdConfig->osd_custom_text_baud = BAUD_115200;
     osdConfig->osd_compass_style = 0; //defaults to 0 e.g. characters (N,S,E,W)
 }
 
@@ -465,12 +470,22 @@ void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
     osdElementConfig->item_pos[OSD_HORIZON_SIDEBARS]   = OSD_POS((midCol - 1), (midRow - 1));
     osdElementConfig->item_pos[OSD_CAMERA_FRAME]       = OSD_POS((midCol - 12), (midRow - 6));
     osdElementConfig->item_pos[OSD_UP_DOWN_REFERENCE]  = OSD_POS((midCol - 2), (midRow - 1));
+#ifdef USE_OSD_NAV_MAP
+    // multi-row map: default to the top-left corner so it never overlaps the
+    // centred defaults of the single-row elements
+    osdElementConfig->item_pos[OSD_NAV_MAP]            = OSD_POS(1, 1);
+#endif
 }
 
 static void osdDrawLogo(int x, int y, displayPortSeverity_e fontSel)
 {
     // display logo and help
-    int fontOffset = 160;
+    int fontOffset = SYM_LOGO_START;
+
+    if (displayWriteLogo(osdDisplayPort, fontOffset, SYM_END_OF_FONT, OSD_LOGO_COLS, OSD_LOGO_ROWS)) {
+        return; // Display port driver has built-in support for drawing logo from font
+    }
+
     for (int row = 0; row < OSD_LOGO_ROWS; row++) {
         for (int column = 0; column < OSD_LOGO_COLS; column++) {
             if (fontOffset <= SYM_END_OF_FONT)

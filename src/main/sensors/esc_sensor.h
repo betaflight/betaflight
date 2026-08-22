@@ -20,12 +20,14 @@
 
 #pragma once
 
+#include "platform.h"
+
 #include "common/time.h"
 
 typedef struct escSensorConfig_s {
     uint8_t halfDuplex;             // Set to false to listen on the TX pin for telemetry data
     uint16_t offset;                // offset consumed by the flight controller / VTX / cam / ... in milliampere
-
+    int8_t esc_sensor_uart;         // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned
 } escSensorConfig_t;
 
 PG_DECLARE(escSensorConfig_t, escSensorConfig);
@@ -49,6 +51,14 @@ void escSensorProcess(timeUs_t currentTime);
 #define ESC_SENSOR_COMBINED 255
 
 escSensorData_t *getEscSensorData(uint8_t motorNumber);
+
+#if ENABLE_DRONECAN_ESC
+// Publish telemetry from an out-of-band source (DroneCAN esc.Status) into the
+// shared escSensorData[] store. Fields use escSensorData_t units.
+void escSensorSetExternal(uint8_t motorIndex, const escSensorData_t *data);
+void escSensorExternalInit(void);
+void escSensorExternalAge(uint8_t motorIndex);
+#endif
 
 void startEscDataRead(uint8_t *frameBuffer, uint8_t frameLength);
 uint8_t getNumberEscBytesRead(void);

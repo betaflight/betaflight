@@ -219,6 +219,7 @@ extern "C" {
     acc_t acc;
     attitudeEulerAngles_t attitude;
     gpsSolutionData_t gpsSol;
+    gyro_t gyro;
 
     float testAltitudeCm = 0.0f;
     float testAltitudeDerivativeCmS = 0.0f;
@@ -242,6 +243,12 @@ extern "C" {
     {
         UNUSED(axis);
         return 0.0f;
+    }
+
+    float getMaxRcRate(int axis)
+    {
+        UNUSED(axis);
+        return 720.0f; // nonzero: autopilotInit divides maxVelocity by this
     }
 
     void GPS_distance2d(const gpsLocation_t* /*from*/, const gpsLocation_t* /*to*/, vector2_t* /*dest*/) { }
