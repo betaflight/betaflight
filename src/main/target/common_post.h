@@ -827,10 +827,9 @@ extern struct linker_symbol __fontdata_end;
 // USE_GPS in target.h which is included after common_pre.h. USE_GPS_RESCUE
 // additionally requires USE_ACC to match the earlier "!USE_ACC undef"
 // invariant; re-apply USE_CMS_GPS_RESCUE_MENU gating afterwards.
+// Add USE_GPS_NMEA for targets that support NMEA protocol
+// to be able to use it at flight time
 #ifdef USE_GPS
-#if !defined(USE_GPS_NMEA)
-#define USE_GPS_NMEA
-#endif
 #if !defined(USE_GPS_UBLOX)
 #define USE_GPS_UBLOX
 #endif
