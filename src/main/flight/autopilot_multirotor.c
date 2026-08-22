@@ -104,7 +104,11 @@
 #define XY_DISTANCE_SCALE      0.004f   // distance P  / velocity I
 #define XY_DISTANCE_I_SCALE    0.00017f  // distance I
 #define XY_VELOCITY_SCALE      0.01f    // distance D  / velocity P (opposes measured velocity)
-#define XY_ACCEL_SCALE         0.0015f   // distance A  / velocity D
+// The A term rides on the Kalman acceleration, whose usable content is small next
+// to its noise: flight logs put the >2 Hz residue at 14.5 cm/s^2 against 10.7 below
+// 0.5 Hz. Scaled so the default gain of 30 asks for 0.015 deg per cm/s^2, which
+// flight-tested as the point where A stops adding high-frequency lean.
+#define XY_ACCEL_SCALE         0.0005f   // distance A  / velocity D
 #define XY_F_SCALE             0.0001f  // degrees per cm/s^2 of target-velocity rate of change, per gain unit
 #define XY_DRAG_SCALE          0.0002f   // velocity-based drag correction, must stay below the D scale
 

@@ -85,7 +85,18 @@
 // R or Measurement noise:  higher means less trust in that input
 
 #define Q_JERK_XY       1500.0f  // lower gives smoother, damped acceleration but doesn't smooth  velocity much; below 500 attenuates output acceleration
-#define R_ACCEL_XY      1500.0f  // higher reduces accel influence
+#define R_ACCEL_XY      1500.0f  // (cm/s^2)^2 floor for the measured accelerometer noise; higher reduces accel influence
+// The accelerometer noise a craft actually delivers varies by an order of magnitude
+// with frame, props and mounting, and R_ACCEL_XY is what tells the filter how much
+// of the acceleration measurement to believe. Measure it instead of assuming it:
+// content above ACCEL_NOISE_CUTOFF_HZ cannot be real horizontal acceleration of an
+// airframe, so its variance is the measurement noise, tracked per axis.
+// The alternative, low-pass filtering the acceleration state, does not work here:
+// what survives the filter sits at 2-5 Hz, so removing it costs more phase than the
+// noise is worth to the consumers (the A term and the velocity lead compensator).
+#define ACCEL_NOISE_CUTOFF_HZ    2.0f    // above this, treat earth-frame acceleration as noise
+#define ACCEL_NOISE_TAU_S        1.0f    // averaging time of the noise variance estimate
+#define R_ACCEL_XY_MAX       20000.0f    // (cm/s^2)^2, sigma 141 cm/s^2; beyond this the accelerometer earns no weight anyway
 #define R_GPS_VEL_BASE   200.0f  // increases as sAcc increases, higher allows more accel influence (not always good)
 #define R_GPS_POS_BASE   160.0f   // cm^2 , increases as hAcc increases to allow more optical flow influence
 
@@ -618,6 +629,29 @@ STATIC_UNIT_TESTED void getLinearAccelENU(float *accelEast, float *accelNorth, f
     *accelEast  = -accEF_NWU.v[NWU_W] * GRAVITY_CMSS;
     *accelNorth =  accEF_NWU.v[NWU_N] * GRAVITY_CMSS;
     *accelUp    = (accEF_NWU.v[NWU_U] - 1.0f) * GRAVITY_CMSS;
+}
+
+// Measurement noise of the horizontal accelerometer, tracked from the signal
+// itself: a high-passed copy holds what an airframe cannot really be doing, and
+// the running mean square of that is its variance. Returns (cm/s^2)^2 for use as
+// the Kalman R, floored at R_ACCEL_XY so a quiet craft keeps today's behaviour.
+STATIC_UNIT_TESTED float accelNoiseR(unsigned axis, float accel, float dt)
+{
+    static float lowpass[EF_AXIS_COUNT];
+    static float variance[EF_AXIS_COUNT];
+
+    if (axis >= EF_AXIS_COUNT || dt <= 0.0f) {
+        return R_ACCEL_XY;
+    }
+
+    const float lpGain = dt / (dt + 1.0f / (2.0f * M_PIf * ACCEL_NOISE_CUTOFF_HZ));
+    lowpass[axis] += lpGain * (accel - lowpass[axis]);
+    const float highpassed = accel - lowpass[axis];
+
+    const float varGain = dt / (dt + ACCEL_NOISE_TAU_S);
+    variance[axis] += varGain * (highpassed * highpassed - variance[axis]);
+
+    return constrainf(variance[axis], R_ACCEL_XY, R_ACCEL_XY_MAX);
 }
 
 #ifdef USE_GPS
@@ -1259,6 +1293,11 @@ void positionEstimatorUpdate(void)
     const float accelToLog = (debugAxis == 0) ? accelEast : accelNorth;
     DEBUG_SET(DEBUG_POSITION_EST, 5, lrintf(accelToLog));
 
+    // Track the accelerometer's own noise every update, armed or not, so the
+    // estimate has converged by the time a consumer switches XY on.
+    const float rAccelEast = accelNoiseR(ENU_E, accelEast, dt);
+    const float rAccelNorth = accelNoiseR(ENU_N, accelNorth, dt);
+
     // Z-axis: always runs (for altitude hold, OSD, vario). While disarmed,
     // measure zero acceleration so covariance continues to evolve without
     // integrating small gravity-removal errors.
@@ -1287,8 +1326,8 @@ void positionEstimatorUpdate(void)
             // survives: home must not move because we lost sight of the ground.
             resetXYFilterState();
         } else {
-            kalmanUpdateAcceleration(&kfEast, accelEast, R_ACCEL_XY);
-            kalmanUpdateAcceleration(&kfNorth, accelNorth, R_ACCEL_XY);
+            kalmanUpdateAcceleration(&kfEast, accelEast, rAccelEast);
+            kalmanUpdateAcceleration(&kfNorth, accelNorth, rAccelNorth);
             kalmanPredict(&kfEast, dt);
             kalmanPredict(&kfNorth, dt);
         }
