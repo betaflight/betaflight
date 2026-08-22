@@ -124,10 +124,14 @@ extern "C" {
         return simulatedMaxRcRate; // full-stick maps to this rate; autopilotInit scales maxVelocity by it
     }
 
+    // TASK_POSHOLD is rescheduled to the flow sensor's data rate, so the loop
+    // interval is not always POSHOLD_TASK_RATE_HZ. Tests set this to check that
+    // the rate-dependent parts of the loop hold up.
+    int simulatedTaskRateHz = 100;
     timeDelta_t getTaskDeltaTimeUs(taskId_e taskId)
     {
         UNUSED(taskId);
-        return TASK_PERIOD_HZ(100); // default poshold rate in tests
+        return 1000000 / simulatedTaskRateHz;
     }
 
     throttleStatus_e calculateThrottleStatus() {
@@ -195,6 +199,7 @@ protected:
         mockNavHasActiveTarget = false;
         mockTargetVelCmS = (vector3_t){{0.0f, 0.0f, 0.0f}};
         flightModeFlags = 0;
+        simulatedTaskRateHz = 100;
     }
 };
 
@@ -609,6 +614,89 @@ TEST_F(PosHoldTest, StopThresholdSettingSetsTheBrakingEntrySpeed)
 
     EXPECT_EQ(debug[6], BRAKING_STATUS_HELD); // 40 cm/s no longer brakes
     debugMode = DEBUG_NONE;
+}
+
+// TASK_POSHOLD runs at the flow sensor's rate, which is not POSHOLD_TASK_RATE_HZ,
+// so the braking phase has to give up after one second of wall-clock time at
+// whatever rate the loop is running.
+static int loopsUntilBrakingEnds(int taskRateHz)
+{
+    simulatedTaskRateHz = taskRateHz;
+    initAndSettleAt(0, 0, 0);
+    debugMode = DEBUG_AUTOPILOT_STOP;
+
+    // Release the sticks while moving East fast enough to brake, and hold that
+    // speed so braking can only end on the timeout.
+    setSticksActiveStatus(true);
+    testEstimate.velocity.x = 40.0f;
+    runIterations(50);
+    setSticksActiveStatus(false);
+
+    int loops = 0;
+    for (int i = 0; i < 10 * taskRateHz; i++) {
+        testEstimate.velocity.x = 40.0f;
+        positionControl();
+        loops++;
+        if (debug[6] == BRAKING_STATUS_HELD) {
+            break;
+        }
+    }
+    debugMode = DEBUG_NONE;
+    return loops;
+}
+
+TEST_F(PosHoldTest, BrakingTimeoutIsOneSecondAtTheNominalTaskRate)
+{
+    const int loops = loopsUntilBrakingEnds(100);
+    EXPECT_NEAR(loops, 100, 3);   // ~1 s at 100 Hz
+}
+
+TEST_F(PosHoldTest, BrakingTimeoutIsOneSecondAtHalfTheNominalTaskRate)
+{
+    const int loops = loopsUntilBrakingEnds(50);
+    EXPECT_NEAR(loops, 50, 3);    // still ~1 s, now at 50 Hz
+}
+
+// The target-velocity feedforward is a rate of change, so the same commanded
+// acceleration must produce the same F contribution whatever the loop interval.
+// F also carries Kd * targetVelocity, which is rate-independent by construction;
+// running to the same final target velocity with and without acceleration
+// isolates the acceleration part.
+static float navFeedforwardAtRate(int taskRateHz, float accelCmSS)
+{
+    simulatedTaskRateHz = taskRateHz;
+    initAndSettleAt(0, 0, 0);
+    debugMode = DEBUG_AUTOPILOT_PID;   // slot 6 is F * 10 on the East axis, before smoothing
+
+    // Nav with an active command anchors to a target position, which keeps the
+    // velocity-buildup clamp (an anchor-off-only feature) out of the way.
+    mockNavHasActiveTarget = true;
+    mockNavCommand.active = true;
+    mockNavCommand.targetPosEfM = (vector3_t){{ 0.0f, 0.0f, 0.0f }};
+
+    const float finalVel = 200.0f;
+    const float dt = 1.0f / taskRateHz;
+    for (int i = 0; i < taskRateHz; i++) {
+        // Ramp at accelCmSS, then sit at finalVel: both rates reach the same
+        // target velocity, so only the acceleration term can differ.
+        const float ramping = accelCmSS * dt * (i + 1);
+        mockTargetVelCmS = (vector3_t){{ (accelCmSS > 0.0f) ? ramping : finalVel, 0.0f, 0.0f }};
+        positionControl();
+    }
+    const float f = debug[6] / 10.0f;
+    debugMode = DEBUG_NONE;
+    return f;
+}
+
+TEST_F(PosHoldTest, FeedforwardIsIndependentOfTaskRate)
+{
+    // At each rate: F while accelerating to 200 cm/s, minus F holding 200 cm/s.
+    const float accel100 = navFeedforwardAtRate(100, 200.0f) - navFeedforwardAtRate(100, 0.0f);
+    const float accel50 = navFeedforwardAtRate(50, 200.0f) - navFeedforwardAtRate(50, 0.0f);
+
+    // 200 cm/s^2 * positionF 30 * XY_F_SCALE 0.0001 = 0.6 deg, at any rate.
+    EXPECT_NEAR(accel100, 0.6f, 0.1f);
+    EXPECT_NEAR(accel50, accel100, 0.1f);
 }
 
 TEST_F(PosHoldTest, ReleasingSticksBrakesThenHolds)

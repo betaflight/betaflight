@@ -105,10 +105,11 @@
 #define XY_DISTANCE_I_SCALE    0.00017f  // distance I
 #define XY_VELOCITY_SCALE      0.01f    // distance D  / velocity P (opposes measured velocity)
 #define XY_ACCEL_SCALE         0.0015f   // distance A  / velocity D
-#define XY_F_SCALE             (0.01f / POSHOLD_TASK_RATE_HZ) // target-velocity delta scale
+#define XY_F_SCALE             0.0001f  // degrees per cm/s^2 of target-velocity rate of change, per gain unit
 #define XY_DRAG_SCALE          0.0002f   // velocity-based drag correction, must stay below the D scale
 
 #define POSHOLD_VELOCITY_REVERSAL_THRESHOLD   50.0f // velocity dot-product reversal beyond this ends braking
+#define BRAKING_TIMEOUT_S                      1.0f // braking gives up and captures the point after this long
 
 #define SANITY_CHECK_DISTANCE 2000.0f //20m, increased when stopping from speeds above 10m/s
 // The settled-hold flyaway fence is graded, not instant: an excursion must
@@ -203,7 +204,7 @@ typedef struct autopilotState_s {
     float speedTrendCmS;        // ~0.5 s lowpass of speedXY: reference for "is the craft slowing?"
     bool speedSlowing;          // speed is meaningfully below its own trend
     bool isPosHoldBraking;      // decelerating toward a captured hold point
-    unsigned brakingTimer;      // loops spent in the current braking phase
+    float brakingTimeS;         // seconds spent in the current braking phase
     xyAnchorMode_e anchor;      // position-anchor selection for this loop
     xyIntegralPolicy_e iPolicy; // integral policy for this loop
     unsigned debugAxis;
@@ -217,13 +218,36 @@ static autopilotState_t ap = {
     .wasSticksActive = false,
 };
 
+static float posLpfDtS = 0.0f;  // interval the F filter gains are currently set for
+
+static float posPidLpfGain(float dtS)
+{
+    const float cutoffHz = fmaxf(autopilotConfig()->positionCutoff * 0.1f, 0.1f); // default of 30 is 3Hz, range 1 to 5Hz
+    return pt3FilterGain(cutoffHz, dtS);
+}
+
 static void initPidLpfs(void)
 {
-    const autopilotConfig_t *cfg = autopilotConfig();
-    const float cutoffHz = fmaxf(cfg->positionCutoff * 0.1f, 0.1f); // default of 30 is 3Hz, range 1 to 5Hz
-    const float k = pt3FilterGain(cutoffHz, HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ));
+    posLpfDtS = HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ);  // nominal until the loop measures itself
+    const float k = posPidLpfGain(posLpfDtS);
     for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
         pt3FilterInit(&posNoisyPidsLpf[i], k);
+    }
+}
+
+// The F filter steps once per loop, so its gain follows the real task interval:
+// TASK_POSHOLD is rescheduled to the flow sensor's rate, which need not be
+// POSHOLD_TASK_RATE_HZ. Retuned in place, without resetting the filter states,
+// whenever the measured interval moves.
+static void updatePidLpfGains(float dtS)
+{
+    if (dtS <= 0.0f || fabsf(dtS - posLpfDtS) < 0.05f * posLpfDtS) {
+        return;
+    }
+    posLpfDtS = dtS;
+    const float k = posPidLpfGain(dtS);
+    for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
+        pt3FilterUpdateCutoff(&posNoisyPidsLpf[i], k);
     }
 }
 
@@ -253,7 +277,7 @@ void autopilotInit(void)
     ap.speedXY = 0.0f;
     ap.speedTrendCmS = 0.0f;
     ap.speedSlowing = false;
-    ap.brakingTimer = 0;
+    ap.brakingTimeS = 0.0f;
     ap.isPosHoldBraking = false;
     abortNavRequested = false;
     forcePitchForward = false;
@@ -421,7 +445,7 @@ static void setBrakingMode(void)
     // precision.
     if (ap.speedXY > autopilotConfig()->stopThreshold) {
         ap.isPosHoldBraking = true;
-        ap.brakingTimer = 0;
+        ap.brakingTimeS = 0.0f;
     } else {
         ap.isPosHoldBraking = false;
     }
@@ -666,6 +690,7 @@ bool positionControl(void)
     const positionEstimate3d_t *est = positionEstimatorGetEstimate();
     const timeDelta_t posholdDtUs = getTaskDeltaTimeUs(TASK_SELF);
     const float dt = (posholdDtUs > 0) ? (posholdDtUs * 1e-6f) : HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ);
+    updatePidLpfGains(dt);
 
     if (!est->isValidXY) {
         disableYawControl();
@@ -781,16 +806,16 @@ bool positionControl(void)
                 ap.anchor = ANCHOR_HOLD;
                 ap.iPolicy = I_FREEZE;
                 targetPosition = currentPosition;
-                ap.brakingTimer = MIN(ap.brakingTimer + 1, (unsigned)POSHOLD_TASK_RATE_HZ);
+                ap.brakingTimeS = MIN(ap.brakingTimeS + dt, BRAKING_TIMEOUT_S);
                 const float velocityDot = (velocity.v[EF_NORTH] * previousVelocity.v[EF_NORTH])
                                         + (velocity.v[EF_EAST]  * previousVelocity.v[EF_EAST]);
                 const bool reversed = velocityDot < -POSHOLD_VELOCITY_REVERSAL_THRESHOLD;
                 const bool stopped  = ap.speedXY < (float)autopilotConfig()->stopThreshold;
-                const bool timedOut = ap.brakingTimer >= (unsigned)POSHOLD_TASK_RATE_HZ;
+                const bool timedOut = ap.brakingTimeS >= BRAKING_TIMEOUT_S;
                 if (stopped || timedOut || reversed) {
                     updatePositionHoldTarget(); // capture the stopped point as the hold target
                     ap.isPosHoldBraking = false;
-                    ap.brakingTimer = 0;
+                    ap.brakingTimeS = 0.0f;
                 } else {
                     // The fence watches the brake too. Braking suppresses the
                     // settled check below, and a genuine flyaway (a bad-mag
@@ -904,7 +929,9 @@ bool positionControl(void)
 
         // Feedforward driver: the rate of change of the target velocity, or the
         // stick setpoint feedforward when the pilot is commanding.
-        float targetVelDelta = (targetVelocity.v[axis] - previousTargetVelocity.v[axis]) * POSHOLD_TASK_RATE_HZ;
+        // Per-loop change divided by the real loop interval, so the same physical
+        // acceleration gives the same feedforward at any task rate.
+        float targetVelDelta = (targetVelocity.v[axis] - previousTargetVelocity.v[axis]) / dt;
         previousTargetVelocity.v[axis] = targetVelocity.v[axis];
 #ifdef USE_FEEDFORWARD
         if (ap.sticksActive) {

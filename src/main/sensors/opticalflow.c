@@ -70,7 +70,7 @@
 
 // static prototypes
 static void applySensorRotation(vector2_t * dst, vector2_t * src);
-static void applyLPF(vector2_t * flowRates);
+static void applyLPF(vector2_t * flowRates, float sampleIntervalS);
 
 PG_REGISTER_WITH_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig, PG_OPTICALFLOW_CONFIG, 2);
 
@@ -151,7 +151,8 @@ bool opticalflowInit(void) {
 
     cosRotAngle = cosf(DEGREES_TO_RADIANS(opticalflowConfig()->rotation));
     sinRotAngle = sinf(DEGREES_TO_RADIANS(opticalflowConfig()->rotation));
-    //low pass filter
+    // Low pass filter. applyLPF() sets the gain per sample from the measured
+    // interval; delayMs serves as the nominal value for the first sample.
     if (opticalflowConfig()->flow_lpf != 0) {
         const float flowCutoffHz = (float)opticalflowConfig()->flow_lpf / 100.0f;
         const float flowGain     = pt2FilterGain(flowCutoffHz, opticalflow.dev.delayMs / 1000.0f);
@@ -185,16 +186,33 @@ void opticalflowProcess(void) {
 
         // Attenuate the optical flow when body rotation is detected
         // There is a delay between a detected gyro motion and this
-        // being seen in the optical flow output
+        // being seen in the optical flow output.
+        // One gyro reading is kept per flow sample; the one closest to
+        // gyroDelayUs old is the one that belongs to this flow measurement.
         static uint8_t gyroSampleIndex = 0;
         static float rollRate[MAX_GYRO_SAMPLE_DELAY];
         static float pitchRate[MAX_GYRO_SAMPLE_DELAY];
+        static timeUs_t gyroSampleTimeUs[MAX_GYRO_SAMPLE_DELAY];
 
-        const uint8_t sampleDelay = (uint8_t)constrain((int)opticalflow.dev.gyroSampleDelay, 1, MAX_GYRO_SAMPLE_DELAY);
-        gyroSampleIndex = (gyroSampleIndex + 1) % sampleDelay;
+        gyroSampleIndex = (gyroSampleIndex + 1) % MAX_GYRO_SAMPLE_DELAY;
         rollRate[gyroSampleIndex] = (float)gyroGetFilteredDownsampled(X);
         pitchRate[gyroSampleIndex] = -(float)gyroGetFilteredDownsampled(Y);
-        delayedGyroSampleIndex = (gyroSampleIndex + 1) % sampleDelay;
+        gyroSampleTimeUs[gyroSampleIndex] = data.timeStampUs;
+
+        const timeDelta_t targetAgeUs = (timeDelta_t)opticalflow.dev.gyroDelayUs;
+        delayedGyroSampleIndex = gyroSampleIndex;
+        timeDelta_t bestAgeErrorUs = INT32_MAX;
+        for (unsigned i = 0; i < MAX_GYRO_SAMPLE_DELAY; i++) {
+            if (gyroSampleTimeUs[i] == 0) {
+                continue;   // slot not filled yet
+            }
+            const timeDelta_t ageUs = cmpTimeUs(data.timeStampUs, gyroSampleTimeUs[i]);
+            const timeDelta_t errorUs = ABS(ageUs - targetAgeUs);
+            if (errorUs < bestAgeErrorUs) {
+                bestAgeErrorUs = errorUs;
+                delayedGyroSampleIndex = i;
+            }
+        }
         vector2_t delayedGyroRaw = {{
             rollRate[delayedGyroSampleIndex],
             pitchRate[delayedGyroSampleIndex]
@@ -222,7 +240,7 @@ void opticalflowProcess(void) {
         DEBUG_SET(DEBUG_OPTICALFLOW, 4, lrintf(processed.x * 1000));
         DEBUG_SET(DEBUG_OPTICALFLOW, 5, lrintf(processed.y * 1000));
 
-        applyLPF(&processed);
+        applyLPF(&processed, deltaTimeUs * 1e-6f);
 
         DEBUG_SET(DEBUG_OPTICALFLOW, 6, lrintf(processed.x * 1000));
         DEBUG_SET(DEBUG_OPTICALFLOW, 7, lrintf(processed.y * 1000));
@@ -238,9 +256,19 @@ static void applySensorRotation(vector2_t * dst, vector2_t * src) {
     dst->y = src->x * sinRotAngle + src->y * cosRotAngle;
 }
 
-static void applyLPF(vector2_t * flowRates) {
+static void applyLPF(vector2_t * flowRates, float sampleIntervalS) {
     if (opticalflowConfig()->flow_lpf == 0) {
         return;
+    }
+
+    // The filter steps once per sensor sample, so its gain comes from the
+    // measured interval between samples: that is what makes the cutoff the one
+    // opticalflow_lpf asks for whatever rate the sensor actually delivers.
+    if (sampleIntervalS > 0.0f) {
+        const float flowCutoffHz = (float)opticalflowConfig()->flow_lpf / 100.0f;
+        const float k = pt2FilterGain(flowCutoffHz, sampleIntervalS);
+        pt2FilterUpdateCutoff(&xFlowLpf, k);
+        pt2FilterUpdateCutoff(&yFlowLpf, k);
     }
 
     flowRates->x = pt2FilterApply(&xFlowLpf, flowRates->x);

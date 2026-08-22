@@ -42,6 +42,12 @@
 
 #define MT_OPTICALFLOW_MIN_RANGE 80  // mm
 #define MT_OPFLOW_MIN_QUALITY_THRESHOLD 30
+// Sensor latency: a flow sample reports motion from this long ago (integration
+// window, image processing and transport), so the rotation compensation uses a
+// gyro reading of that age. Expressed as frame periods, since the latency
+// scales with the frame rate the device runs at.
+#define MT_OPFLOW_GYRO_DELAY_FRAMES 7
+#define MT_OPFLOW_GYRO_DELAY_US(framePeriodMs) (MT_OPFLOW_GYRO_DELAY_FRAMES * (framePeriodMs) * 1000)
 
 // Correct scaling of the flow requires multiplication of the scale factor by 2
 #define MTF01_OPTICAL_FLOW_SCALE (2 * 100.0f) // Flow rate is at 100cm
@@ -150,7 +156,7 @@ bool mtOpticalflowDetect(opticalflowDev_t * dev, rangefinderType_e mtRangefinder
     dev->delayMs = deviceConf->delayMs;
     dev->minRangeCm = MT_OPTICALFLOW_MIN_RANGE;
     dev->minQualityThreshold = MT_OPFLOW_MIN_QUALITY_THRESHOLD;
-    dev->gyroSampleDelay = 7;
+    dev->gyroDelayUs = MT_OPFLOW_GYRO_DELAY_US(deviceConf->delayMs);
 
     dev->init   = &mtOpticalflowInit;
     dev->update = &mtOpticalflowUpdate;
