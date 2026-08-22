@@ -382,6 +382,7 @@
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
 #define USE_LATE_TASK_STATISTICS
+#define USE_USB_MSC
 // C591 has no FDCAN hardware; enable CAN only on variants that do (e.g. C593).
 #if defined(STM32C593xx) && !defined(ENABLE_CAN)
 #define ENABLE_CAN 1
