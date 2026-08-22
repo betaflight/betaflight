@@ -592,7 +592,8 @@ STATIC_UNIT_TESTED float imuCalcMagErr(void)
 #endif
 
 #if defined(USE_GPS)
-static void imuComputeQuaternionFromRPY(quaternionProducts *quatProd, int16_t initialRoll, int16_t initialPitch, int16_t initialYaw)
+// Reinitialize the global attitude quaternion from Euler angles in decidegrees.
+STATIC_UNIT_TESTED void imuComputeQuaternionFromRPY(int16_t initialRoll, int16_t initialPitch, int16_t initialYaw)
 {
     if (initialRoll > 1800) {
         initialRoll -= 3600;
@@ -613,24 +614,13 @@ static void imuComputeQuaternionFromRPY(quaternionProducts *quatProd, int16_t in
     sincosf_approx(DECIDEGREES_TO_RADIANS(initialPitch) * 0.5f, &sinPitch, &cosPitch);
 
     float cosYaw, sinYaw;
-    sincosf_approx(DECIDEGREES_TO_RADIANS(initialYaw) * 0.5f, &sinYaw, &cosYaw);
+    // GPS course increases clockwise, while NWU quaternion yaw increases counter-clockwise.
+    sincosf_approx(DECIDEGREES_TO_RADIANS(-initialYaw) * 0.5f, &sinYaw, &cosYaw);
 
-    const float q0 = cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw;
-    const float q1 = sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw;
-    const float q2 = cosRoll * sinPitch * cosYaw + sinRoll * cosPitch * sinYaw;
-    const float q3 = cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw;
-
-    quatProd->xx = sq(q1);
-    quatProd->yy = sq(q2);
-    quatProd->zz = sq(q3);
-
-    quatProd->xy = q1 * q2;
-    quatProd->xz = q1 * q3;
-    quatProd->yz = q2 * q3;
-
-    quatProd->wx = q0 * q1;
-    quatProd->wy = q0 * q2;
-    quatProd->wz = q0 * q3;
+    q.w = cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw;
+    q.x = sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw;
+    q.y = cosRoll * sinPitch * cosYaw + sinRoll * cosPitch * sinYaw;
+    q.z = cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw;
 
     imuComputeRotationMatrix();
 
@@ -749,7 +739,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
                 // Only reinitialize the quaternion from GPS COG when no mag is providing
                 // yaw reference.  When a mag is healthy it has already established yaw;
                 // overwriting it with an initial COG value would degrade accuracy.
-                imuComputeQuaternionFromRPY(&qP, attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
+                imuComputeQuaternionFromRPY(attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
             }
             gpsHeadingInitialized = true;
         }

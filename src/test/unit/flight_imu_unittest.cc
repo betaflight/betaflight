@@ -61,6 +61,7 @@ extern "C" {
     #include "sensors/sensors.h"
 
     void imuComputeRotationMatrix(void);
+    void imuComputeQuaternionFromRPY(int16_t initialRoll, int16_t initialPitch, int16_t initialYaw);
     void imuUpdateEulerAngles(void);
     void imuMahonyAHRSupdate(float dt,
                              float gx, float gy, float gz,
@@ -179,6 +180,31 @@ TEST(FlightImuTest, TestUpdateEulerAngles)
     EXPECT_EQ(0, attitude.values.roll);
     EXPECT_EQ(0, attitude.values.pitch);
     EXPECT_EQ(450, attitude.values.yaw);
+}
+
+TEST(FlightImuTest, TestComputeQuaternionFromRPY)
+{
+    const quaternion_t savedQ = q;
+    const attitudeEulerAngles_t savedAttitude = attitude;
+
+    q.w = 1.0f;
+    q.x = 0.0f;
+    q.y = 0.0f;
+    q.z = 0.0f;
+    imuComputeRotationMatrix();
+
+    imuComputeQuaternionFromRPY(0, 0, 900);
+    imuUpdateEulerAngles();
+
+    EXPECT_NEAR(sqrt2over2, q.w, 1e-6f);
+    EXPECT_NEAR(0.0f, q.x, 1e-6f);
+    EXPECT_NEAR(0.0f, q.y, 1e-6f);
+    EXPECT_NEAR(-sqrt2over2, q.z, 1e-6f);
+    EXPECT_EQ(900, attitude.values.yaw);
+
+    q = savedQ;
+    attitude = savedAttitude;
+    imuComputeRotationMatrix();
 }
 
 TEST(FlightImuTest, TestSmallAngle)
