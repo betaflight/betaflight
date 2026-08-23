@@ -40,14 +40,21 @@
 
 #include "drivers/opticalflow/opticalflow.h"
 
+// See https://github.com/micoair/MTF-01_USER_MANUAL
+
 #define MT_OPTICALFLOW_MIN_RANGE 80  // mm
 #define MT_OPFLOW_MIN_QUALITY_THRESHOLD 30
 // Sensor latency: a flow sample reports motion from this long ago (integration
 // window, image processing and transport), so the rotation compensation uses a
-// gyro reading of that age. Expressed as frame periods, since the latency
-// scales with the frame rate the device runs at.
-#define MT_OPFLOW_GYRO_DELAY_FRAMES 7
-#define MT_OPFLOW_GYRO_DELAY_US(framePeriodMs) (MT_OPFLOW_GYRO_DELAY_FRAMES * (framePeriodMs) * 1000)
+// gyro reading of that age. It is a property of the sensor pipeline, so it is
+// an absolute time rather than a count of frames or samples, which would make
+// it depend on the rate the device or the flow task happens to run at. One gyro
+// reading is kept per flow sample, so the history spans
+// MT_OPFLOW_GYRO_DELAY_US / frame period entries.
+// Measured on an MTF01 by correlating the reported flow against gyro over
+// rotation-only moves: the best fit is a 40ms integration window ending 45ms
+// before the sample is delivered, i.e. a 65ms centroid, on both axes.
+#define MT_OPFLOW_GYRO_DELAY_US 65000
 
 // Correct scaling of the flow requires multiplication of the scale factor by 2
 #define MTF01_OPTICAL_FLOW_SCALE (2 * 100.0f) // Flow rate is at 100cm
@@ -156,7 +163,7 @@ bool mtOpticalflowDetect(opticalflowDev_t * dev, rangefinderType_e mtRangefinder
     dev->delayMs = deviceConf->delayMs;
     dev->minRangeCm = MT_OPTICALFLOW_MIN_RANGE;
     dev->minQualityThreshold = MT_OPFLOW_MIN_QUALITY_THRESHOLD;
-    dev->gyroDelayUs = MT_OPFLOW_GYRO_DELAY_US(deviceConf->delayMs);
+    dev->gyroDelayUs = MT_OPFLOW_GYRO_DELAY_US;
 
     dev->init   = &mtOpticalflowInit;
     dev->update = &mtOpticalflowUpdate;

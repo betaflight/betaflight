@@ -215,29 +215,32 @@ void opticalflowProcess(void) {
                 delayedGyroSampleIndex = i;
             }
         }
-        vector2_t delayedGyroRaw = {{
+        // The gyro rates are already in the craft frame, and applySensorRotation()
+        // has just put the flow in that frame too, so the rotation term is
+        // subtracted as it stands. Rotating it as well would apply the sensor
+        // mounting rotation twice: at opticalflow_rotation = 180 that inverts the
+        // term and the compensation doubles the rotation error instead of removing it.
+        const vector2_t delayedGyro = {{
             rollRate[delayedGyroSampleIndex],
             pitchRate[delayedGyroSampleIndex]
         }};
-        vector2_t delayedGyroRotated;
-        applySensorRotation(&delayedGyroRotated, &delayedGyroRaw);
 
         DEBUG_SET(DEBUG_OPTICALFLOW, 0, lrintf(processed.x * 1000));
         DEBUG_SET(DEBUG_OPTICALFLOW, 1, lrintf(processed.y * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 2, lrintf(DEGREES_TO_RADIANS(delayedGyroRotated.x) * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 3, lrintf(DEGREES_TO_RADIANS(delayedGyroRotated.y) * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 2, lrintf(DEGREES_TO_RADIANS(delayedGyro.x) * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 3, lrintf(DEGREES_TO_RADIANS(delayedGyro.y) * 1000));
 
         // Subtract the rate of body rotation (converted from dps to rad/s) from the
         // optical flow
-        processed.x -= DEGREES_TO_RADIANS(delayedGyroRotated.x);
-        processed.y -= DEGREES_TO_RADIANS(delayedGyroRotated.y);
+        processed.x -= DEGREES_TO_RADIANS(delayedGyro.x);
+        processed.y -= DEGREES_TO_RADIANS(delayedGyro.y);
 
         // Beyond this rate of body rotation the compensation cannot recover a
         // translation rate: the rotation term is larger than the signal and its
         // timing error alone exceeds it. Mark the axis unusable rather than
         // reporting zero, which a consumer would read as "not moving" and fuse.
-        const bool xValid = fabsf(delayedGyroRotated.x) <= ROTATION_GYRO_LIMIT;
-        const bool yValid = fabsf(delayedGyroRotated.y) <= ROTATION_GYRO_LIMIT;
+        const bool xValid = fabsf(delayedGyro.x) <= ROTATION_GYRO_LIMIT;
+        const bool yValid = fabsf(delayedGyro.y) <= ROTATION_GYRO_LIMIT;
 
         DEBUG_SET(DEBUG_OPTICALFLOW, 4, xValid ? lrintf(processed.x * 1000) : 0);
         DEBUG_SET(DEBUG_OPTICALFLOW, 5, yValid ? lrintf(processed.y * 1000) : 0);
