@@ -649,9 +649,9 @@ static const vtxVTable_t trampVTable = {
 
 bool vtxTrampInit(void)
 {
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_TRAMP);
+    const serialPortIdentifier_e port = vtxSettingsConfig()->vtx_uart;
 
-    if (portConfig) {
+    if (port != SERIAL_PORT_NONE) {
         portOptions_e portOptions = 0;
 #if defined(USE_VTX_COMMON)
         portOptions |= vtxConfig()->halfDuplex ? SERIAL_BIDIR : 0;
@@ -659,7 +659,7 @@ bool vtxTrampInit(void)
         portOptions |= SERIAL_BIDIR;
 #endif
 
-        trampSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_TRAMP, NULL, NULL, 9600, MODE_RXTX, portOptions);
+        trampSerialPort = openSerialPort(port, FUNCTION_VTX_TRAMP, NULL, NULL, 9600, MODE_RXTX, portOptions);
     }
 
     if (!trampSerialPort) {

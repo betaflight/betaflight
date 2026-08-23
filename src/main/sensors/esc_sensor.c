@@ -76,7 +76,11 @@ PG_REGISTER_WITH_RESET_TEMPLATE(escSensorConfig_t, escSensorConfig, PG_ESC_SENSO
 
 PG_RESET_TEMPLATE(escSensorConfig_t, escSensorConfig,
         .halfDuplex = 0,
+#ifdef ESC_SENSOR_UART
+        .esc_sensor_uart = ESC_SENSOR_UART,
+#else
         .esc_sensor_uart = SERIAL_PORT_NONE,
+#endif
 );
 
 /*
@@ -249,15 +253,15 @@ static void escSensorDataReceive(uint16_t c, void *data)
 
 bool escSensorInit(void)
 {
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_ESC_SENSOR);
-    if (!portConfig) {
+    const serialPortIdentifier_e port = escSensorConfig()->esc_sensor_uart;
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
     portOptions_e options = SERIAL_NOT_INVERTED  | (escSensorConfig()->halfDuplex ? SERIAL_BIDIR : 0);
 
     // Initialize serial port
-    escSensorPort = openSerialPort(portConfig->identifier, FUNCTION_ESC_SENSOR, escSensorDataReceive, NULL, ESC_SENSOR_BAUDRATE, MODE_RX, options);
+    escSensorPort = openSerialPort(port, FUNCTION_ESC_SENSOR, escSensorDataReceive, NULL, ESC_SENSOR_BAUDRATE, MODE_RX, options);
 
     for (int i = 0; i < MAX_SUPPORTED_MOTORS; i = i + 1) {
         escSensorData[i].dataAge = ESC_DATA_INVALID;
