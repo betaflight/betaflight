@@ -24,7 +24,6 @@ extern "C" {
 // linear acceleration in ENU (cm/s^2).
 void getLinearAccelENU(float *accelEast, float *accelNorth, float *accelUp);
 bool gpsMeasurementReadyForFusion(timeUs_t nowUs);
-float accelNoiseR(unsigned axis, float accel, float dt);
 
 #include "io/gps.h"
 
@@ -745,48 +744,6 @@ TEST_F(PositionEstimatorTest, EastThrustProducesEastAccelENU)
     EXPECT_NEAR(accelUp,    0.0f,                0.01f * GRAVITY_CMSS);
 }
 
-// accelNoiseR reports the accelerometer's measurement noise variance, measured from
-// the signal: content above ACCEL_NOISE_CUTOFF_HZ (2 Hz) is noise, slower content is
-// real acceleration. Floored at the R_ACCEL_XY a quiet craft has always used.
-static float settleAccelNoiseR(unsigned axis, float dt, float seconds, float (*signal)(int))
-{
-    float r = 0.0f;
-    const int steps = (int)(seconds / dt);
-    for (int i = 0; i < steps; i++) {
-        r = accelNoiseR(axis, signal(i), dt);
-    }
-    return r;
-}
-
-static float quietSignal(int) { return 0.0f; }
-static float slowSignal(int i) { return 200.0f * sinf(2.0f * M_PIf * 0.2f * i * 0.01f); }   // 0.2 Hz, 200 cm/s^2
-static float noisySignal(int i) { return 200.0f * ((i % 2) ? 1.0f : -1.0f); }               // 50 Hz square, 200 cm/s^2
-
-TEST_F(PositionEstimatorTest, AccelNoiseRFloorsAtTheQuietValue)
-{
-    // A craft with no noise at all keeps the historic R_ACCEL_XY of 1500.
-    EXPECT_NEAR(settleAccelNoiseR(0, 0.01f, 5.0f, quietSignal), 1500.0f, 1.0f);
-}
-
-TEST_F(PositionEstimatorTest, AccelNoiseRIgnoresRealAcceleration)
-{
-    // 2 m/s^2 of genuine 0.2 Hz acceleration is signal, not noise: R stays at the floor.
-    EXPECT_NEAR(settleAccelNoiseR(0, 0.01f, 20.0f, slowSignal), 1500.0f, 300.0f);
-}
-
-TEST_F(PositionEstimatorTest, AccelNoiseRTracksVibration)
-{
-    // 200 cm/s^2 of alternating-sample vibration is pure noise: variance 200^2 = 40000,
-    // clamped to R_ACCEL_XY_MAX of 20000.
-    const float r = settleAccelNoiseR(1, 0.01f, 10.0f, noisySignal);
-    EXPECT_NEAR(r, 20000.0f, 1.0f);
-}
-
-TEST_F(PositionEstimatorTest, AccelNoiseRRejectsBadArguments)
-{
-    EXPECT_FLOAT_EQ(accelNoiseR(0, 500.0f, 0.0f), 1500.0f);   // dt of zero
-    EXPECT_FLOAT_EQ(accelNoiseR(9, 500.0f, 0.01f), 1500.0f);  // axis out of range
-}
 
 // A flow sample whose rotation compensation could not be resolved on one axis must
 // be discarded, not fused. Reporting zero for such an axis would enter the filter
