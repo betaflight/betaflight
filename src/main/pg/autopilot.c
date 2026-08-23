@@ -46,7 +46,7 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .positionA = 30,
     .positionF = 30,
     .positionCutoff = 30,
-    .stopThreshold = 5,
+    .stopThreshold = 20,
     .maxAngle = 50,
 
     // Velocity-based position control with drag compensation

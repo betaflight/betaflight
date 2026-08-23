@@ -107,8 +107,7 @@
 #define XY_ACCEL_SCALE         0.0015f   // distance A  / velocity D
 #define XY_F_SCALE             0.0001f  // degrees per cm/s^2 of target-velocity rate of change, per gain unit
 #define XY_DRAG_SCALE          0.0002f   // velocity-based drag correction, must stay below the D scale
-
-#define POSHOLD_VELOCITY_REVERSAL_THRESHOLD   50.0f // velocity dot-product reversal beyond this ends braking
+#define BRAKING_EXIT_SPEED_MIN 1.0f // exit braking mode below this
 #define BRAKING_TIMEOUT_S                      1.0f // braking gives up and captures the point after this long
 
 #define SANITY_CHECK_DISTANCE 2000.0f //20m, increased when stopping from speeds above 10m/s
@@ -205,6 +204,8 @@ typedef struct autopilotState_s {
     bool speedSlowing;          // speed is meaningfully below its own trend
     bool isPosHoldBraking;      // decelerating toward a captured hold point
     float brakingTimeS;         // seconds spent in the current braking phase
+    vector2_t brakingEntryDirection; // velocity direction when entering stopping phase
+    float brakingExitSpeed;
     xyAnchorMode_e anchor;      // position-anchor selection for this loop
     xyIntegralPolicy_e iPolicy; // integral policy for this loop
     unsigned debugAxis;
@@ -438,16 +439,23 @@ static void resetDistanceErrorIntegral(void)
 
 static void setBrakingMode(void)
 {
-    // Brake from a fresh hold only if there is real entry speed to arrest, using
-    // the same stop threshold that ends the brake: anything at or below it counts
-    // as stopped. Starting a hold while nearly stationary should hold position
-    // immediately with full P authority, not drag the target to current and lose
-    // precision.
-    if (ap.speedXY > autopilotConfig()->stopThreshold) {
-        ap.isPosHoldBraking = true;
-        ap.brakingTimeS = 0.0f;
+    const vector2_t *velocity =
+        (const vector2_t *)&positionEstimatorGetEstimate()->velocity.v;
+
+    const float speedXY = vector2Norm(velocity);
+
+    ap.isPosHoldBraking = true;
+    ap.brakingTimeS = 0.0f;
+
+    ap.brakingExitSpeed = MAX(
+        BRAKING_EXIT_SPEED_MIN,
+        speedXY * (float)autopilotConfig()->stopThreshold * 0.01f);
+
+    if (speedXY > BRAKING_EXIT_SPEED_MIN) {
+        ap.brakingEntryDirection.v[EF_NORTH] = velocity->v[EF_NORTH] / speedXY;
+        ap.brakingEntryDirection.v[EF_EAST]  = velocity->v[EF_EAST]  / speedXY;
     } else {
-        ap.isPosHoldBraking = false;
+        vector2Zero(&ap.brakingEntryDirection);
     }
 }
 
@@ -467,6 +475,7 @@ void initPositionHold(void)
 // recovery, the one-shot sanity retry). Enters through the normal braking
 // capture so any speed the craft picked up meanwhile is arrested first, and
 // the fence is re-sized to the current ground speed.
+
 void positionControlReanchor(void)
 {
     initPositionHold();
@@ -803,14 +812,15 @@ bool positionControl(void)
                 // Braking: hold anchor with the target dragged to the craft, the
                 // integral frozen, D boosted (in the loop). End on stop, a 1 s
                 // timeout, or a velocity-vector reversal (overshoot past capture).
+                ap.brakingTimeS = MIN(ap.brakingTimeS + dt, BRAKING_TIMEOUT_S);
                 ap.anchor = ANCHOR_HOLD;
                 ap.iPolicy = I_FREEZE;
                 targetPosition = currentPosition;
-                ap.brakingTimeS = MIN(ap.brakingTimeS + dt, BRAKING_TIMEOUT_S);
-                const float velocityDot = (velocity.v[EF_NORTH] * previousVelocity.v[EF_NORTH])
-                                        + (velocity.v[EF_EAST]  * previousVelocity.v[EF_EAST]);
-                const bool reversed = velocityDot < -POSHOLD_VELOCITY_REVERSAL_THRESHOLD;
-                const bool stopped  = ap.speedXY < (float)autopilotConfig()->stopThreshold;
+                const float velocityAlongEntryDirection =
+                    (velocity.v[EF_NORTH] * ap.brakingEntryDirection.v[EF_NORTH]) +
+                    (velocity.v[EF_EAST]  * ap.brakingEntryDirection.v[EF_EAST]);
+                const bool reversed = velocityAlongEntryDirection < 0.0f;
+                const bool stopped = ap.speedXY < ap.brakingExitSpeed;
                 const bool timedOut = ap.brakingTimeS >= BRAKING_TIMEOUT_S;
                 if (stopped || timedOut || reversed) {
                     updatePositionHoldTarget(); // capture the stopped point as the hold target
