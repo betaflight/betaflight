@@ -148,8 +148,19 @@ uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
     }
 #endif
 #ifdef USE_OSD
-    if (osdConfig()->osd_uart == identifier && osdConfig()->displayPortDevice == OSD_DISPLAYPORT_DEVICE_FRSKYOSD) {
-        mask |= FUNCTION_FRSKY_OSD;
+    if (osdConfig()->osd_uart == identifier) {
+        switch (osdConfig()->displayPortDevice) {
+        case OSD_DISPLAYPORT_DEVICE_FRSKYOSD:
+            mask |= FUNCTION_FRSKY_OSD;
+            break;
+#ifdef USE_MSP_DISPLAYPORT
+        case OSD_DISPLAYPORT_DEVICE_MSP:
+            mask |= FUNCTION_MSP;
+            break;
+#endif
+        default:
+            break;
+        }
     }
     if (osdConfig()->osd_custom_text_uart == identifier) {
         mask |= FUNCTION_OSD_CUSTOM_TEXT;
@@ -278,37 +289,42 @@ static void clearClaimsOnPort(serialPortIdentifier_e identifier, bool keepMsp)
 #endif
 }
 
+static void addImpliedMspPort(serialPortIdentifier_e *ports, unsigned *count, unsigned maxPorts,
+                              serialPortIdentifier_e identifier)
+{
+    if (identifier == SERIAL_PORT_NONE || *count >= maxPorts) {
+        return;
+    }
+
+    for (unsigned i = 0; i < *count; i++) {
+        if (ports[i] == identifier) {
+            return;
+        }
+    }
+
+    ports[(*count)++] = identifier;
+}
+
 unsigned serialImpliedMspPorts(serialPortIdentifier_e *ports, unsigned maxPorts)
 {
     unsigned count = 0;
 
 #ifdef USE_RANGEFINDER_MT
-    if (rangefinderTypeUsesMsp(rangefinderConfig()->rangefinder_hardware)
-        && rangefinderConfig()->rangefinder_uart != SERIAL_PORT_NONE
-        && count < maxPorts) {
-        ports[count++] = rangefinderConfig()->rangefinder_uart;
+    if (rangefinderTypeUsesMsp(rangefinderConfig()->rangefinder_hardware)) {
+        addImpliedMspPort(ports, &count, maxPorts, rangefinderConfig()->rangefinder_uart);
     }
 #endif
 #ifdef USE_OPTICALFLOW_MT
-    if (opticalflowTypeUsesMsp(opticalflowConfig()->opticalflow_hardware)
-        && opticalflowConfig()->opticalflow_uart != SERIAL_PORT_NONE
-        && count < maxPorts) {
-        const serialPortIdentifier_e identifier = opticalflowConfig()->opticalflow_uart;
-
-        bool alreadyClaimed = false;
-        for (unsigned i = 0; i < count; i++) {
-            if (ports[i] == identifier) {
-                alreadyClaimed = true;
-                break;
-            }
-        }
-
-        if (!alreadyClaimed) {
-            ports[count++] = identifier;
-        }
+    if (opticalflowTypeUsesMsp(opticalflowConfig()->opticalflow_hardware)) {
+        addImpliedMspPort(ports, &count, maxPorts, opticalflowConfig()->opticalflow_uart);
     }
 #endif
-#if !defined(USE_RANGEFINDER_MT) && !defined(USE_OPTICALFLOW_MT)
+#if defined(USE_OSD) && defined(USE_MSP_DISPLAYPORT)
+    if (osdConfig()->displayPortDevice == OSD_DISPLAYPORT_DEVICE_MSP) {
+        addImpliedMspPort(ports, &count, maxPorts, osdConfig()->osd_uart);
+    }
+#endif
+#if IMPLIED_MSP_PORT_COUNT == 0
     UNUSED(ports);
     UNUSED(maxPorts);
 #endif

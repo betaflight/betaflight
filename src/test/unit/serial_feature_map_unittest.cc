@@ -278,7 +278,7 @@ TEST(SerialFeatureMap, TransportFollowsHardwareSelection)
 
 TEST(SerialFeatureMap, ImpliedMspPortNeedsBothHardwareAndPort)
 {
-    serialPortIdentifier_e ports[IMPLIED_MSP_SENSOR_PORT_COUNT];
+    serialPortIdentifier_e ports[IMPLIED_MSP_PORT_COUNT];
 
     resetAllConfigs();
     EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
@@ -303,7 +303,7 @@ TEST(SerialFeatureMap, ImpliedMspPortNeedsBothHardwareAndPort)
 
 TEST(SerialFeatureMap, ImpliedMspPortCountsOneModuleOnce)
 {
-    serialPortIdentifier_e ports[IMPLIED_MSP_SENSOR_PORT_COUNT];
+    serialPortIdentifier_e ports[IMPLIED_MSP_PORT_COUNT];
 
     // Both sensors of one MT module land on a single declared port.
     resetAllConfigs();
@@ -329,7 +329,7 @@ TEST(SerialFeatureMap, ImpliedMspPortCountsOneModuleOnce)
 
 TEST(SerialFeatureMap, ImpliedMspPortsRespectsCallerCapacity)
 {
-    serialPortIdentifier_e ports[IMPLIED_MSP_SENSOR_PORT_COUNT];
+    serialPortIdentifier_e ports[IMPLIED_MSP_PORT_COUNT];
 
     resetAllConfigs();
     rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF01;
@@ -349,9 +349,51 @@ TEST(SerialFeatureMap, OsdCollapseByDisplayPortDevice)
     osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_FRSKYOSD;
     EXPECT_EQ(FUNCTION_FRSKY_OSD, serialSynthesizeFunctionMask(SERIAL_PORT_USART1));
 
-    // MSP-displayport uses an existing MSP port, so osd_uart contributes no bit.
+    // An MSP display port speaks MSP on the UART it is given, so the port carries
+    // FUNCTION_MSP whether or not the user also assigned it an msp_uart slot.
     osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
+    EXPECT_EQ(FUNCTION_MSP, serialSynthesizeFunctionMask(SERIAL_PORT_USART1));
+
+    // A device that is not on a UART at all claims nothing.
+    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MAX7456;
     EXPECT_EQ(0u, serialSynthesizeFunctionMask(SERIAL_PORT_USART1));
+}
+
+TEST(SerialFeatureMap, MspDisplayPortImpliesAnMspPort)
+{
+    resetAllConfigs();
+    serialPortIdentifier_e ports[IMPLIED_MSP_PORT_COUNT];
+
+    osdConfigMutable()->osd_uart = SERIAL_PORT_UART4;
+    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
+    ASSERT_EQ(1u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+    EXPECT_EQ(SERIAL_PORT_UART4, ports[0]);
+
+    // FrSky OSD has its own function and protocol, so it implies nothing.
+    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_FRSKYOSD;
+    EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+
+    // No port to imply one on.
+    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
+    osdConfigMutable()->osd_uart = SERIAL_PORT_NONE;
+    EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+}
+
+TEST(SerialFeatureMap, MspDisplayPortSharingASensorPortIsCountedOnce)
+{
+    resetAllConfigs();
+    serialPortIdentifier_e ports[IMPLIED_MSP_PORT_COUNT];
+
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF01;
+    rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_UART4;
+    osdConfigMutable()->osd_uart = SERIAL_PORT_UART4;
+    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
+
+    ASSERT_EQ(1u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+    EXPECT_EQ(SERIAL_PORT_UART4, ports[0]);
+
+    osdConfigMutable()->osd_uart = SERIAL_PORT_UART5;
+    EXPECT_EQ(2u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
 }
 
 TEST(SerialFeatureMap, SharedPortCombinesBits)
