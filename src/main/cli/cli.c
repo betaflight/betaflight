@@ -115,11 +115,14 @@ bool cliMode = false;
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/dronecan/dronecan.h"
+#include "io/dronecan/dronecan_msg.h"
+#include "io/dronecan/dronecan_nodes.h"
 #include "io/flashfs.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
+#include "io/serial_feature_map.h"
 #include "io/transponder_ir.h"
 #include "io/usb_msc.h"
 #include "io/vtx_control.h"
@@ -273,9 +276,9 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
 };
 
 #if defined(USE_SENSOR_NAMES)
-// sync this with sensors_e
+// sync this with sensorIndex_e
 static const char *const sensorTypeDisplayNames[] = {
-    "GYRO", "ACC", "BARO", "MAG", "RANGEFINDER", "OPTICAL-FLOW"
+    "GYRO", "ACC", "BARO", "MAG", "RANGEFINDER", "OPTICAL-FLOW", "PITOT"
 };
 STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorTypeDisplayNames), sensorTypeDisplayNames_array_length_mismatch);
 #endif // USE_SENSOR_NAMES
@@ -635,6 +638,19 @@ static int sprintValuePointer(char *buf, int bufLen, const clivalue_t *var, cons
                 memcpy(buf, str, copy);
             }
             break;
+        case MODE_LOOKUP_IDENTIFIER: {
+                const char *str = identifierLookups[var->config.identifier.lookupIndex].nameOf(value);
+                if (!str) {
+                    if (bufLen > 0) {
+                        buf[0] = '\0';
+                    }
+                    return -1;
+                }
+                required = strlen(str);
+                const int copy = MIN(required, bufLen - 1);
+                memcpy(buf, str, copy);
+            }
+            break;
         case MODE_BITSET: {
                 const char *str = (value & 1U << var->config.bitpos) ? "ON" : "OFF";
                 required = strlen(str);
@@ -720,6 +736,11 @@ static void printValuePointer(const char *cmdName, const clivalue_t *var, const 
         case MODE_LOOKUP:
             if (value < 0 || value >= lookupTables[var->config.lookup.tableIndex].valueCount
                 || !lookupTables[var->config.lookup.tableIndex].values[value]) {
+                valueIsCorrupted = true;
+            }
+            break;
+        case MODE_LOOKUP_IDENTIFIER:
+            if (!identifierLookups[var->config.identifier.lookupIndex].nameOf(value)) {
                 valueIsCorrupted = true;
             }
             break;
@@ -1379,143 +1400,41 @@ RAM_CODE static void cliAux(const char *cmdName, char *cmdline)
     }
 }
 
-static void printSerial(dumpFlags_t dumpMask, const serialConfig_t *serialConfig, const serialConfig_t *serialConfigDefault, const char *headingStr)
+static void printSerial(dumpFlags_t dumpMask, const char *headingStr)
 {
     const char *format = "serial %s %d %ld %ld %ld %ld";
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
-    for (unsigned i = 0; i < ARRAYLEN(serialConfig->portConfigs); i++) {
-        if (!serialIsPortAvailable(serialConfig->portConfigs[i].identifier)) {
+    for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
+        const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
+        if (!serialIsPortAvailable(identifier)) {
             continue;
         };
-        bool equalsDefault = false;
-        if (serialConfigDefault) {
-            equalsDefault = !memcmp(&serialConfig->portConfigs[i], &serialConfigDefault->portConfigs[i], sizeof(serialConfig->portConfigs[i]));
-            headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
-            cliDefaultPrintLinef(dumpMask, equalsDefault, format,
-                serialName(serialConfigDefault->portConfigs[i].identifier, invalidName),
-                serialConfigDefault->portConfigs[i].functionMask,
-                baudRates[serialConfigDefault->portConfigs[i].msp_baudrateIndex],
-                baudRates[serialConfigDefault->portConfigs[i].gps_baudrateIndex],
-                baudRates[serialConfigDefault->portConfigs[i].telemetry_baudrateIndex],
-                baudRates[serialConfigDefault->portConfigs[i].blackbox_baudrateIndex]
-            );
+
+        uint8_t baudRateIndexes[SERIAL_BAUD_CLASS_COUNT];
+        for (unsigned c = 0; c < SERIAL_BAUD_CLASS_COUNT; c++) {
+            baudRateIndexes[c] = serialSynthesizePortBaud(identifier, c);
         }
-        cliDumpPrintLinef(dumpMask, equalsDefault, format,
-            serialName(serialConfig->portConfigs[i].identifier, invalidName),
-            serialConfig->portConfigs[i].functionMask,
-            baudRates[serialConfig->portConfigs[i].msp_baudrateIndex],
-            baudRates[serialConfig->portConfigs[i].gps_baudrateIndex],
-            baudRates[serialConfig->portConfigs[i].telemetry_baudrateIndex],
-            baudRates[serialConfig->portConfigs[i].blackbox_baudrateIndex]
+
+        cliDumpPrintLinef(dumpMask, false, format,
+            serialName(identifier, invalidName),
+            serialSynthesizeFunctionMask(identifier),
+            baudRates[baudRateIndexes[SERIAL_BAUD_MSP]],
+            baudRates[baudRateIndexes[SERIAL_BAUD_GPS]],
+            baudRates[baudRateIndexes[SERIAL_BAUD_TELEMETRY]],
+            baudRates[baudRateIndexes[SERIAL_BAUD_BLACKBOX]]
             );
     }
 }
 
 RAM_CODE static void cliSerial(const char *cmdName, char *cmdline)
 {
-    const char *format = "serial %s %d %ld %ld %ld %ld";
-    if (isEmpty(cmdline)) {
-        printSerial(DUMP_MASTER, serialConfig(), NULL, NULL);
+    if (!isEmpty(cmdline)) {
+        // A diff taken from an older firmware still carries assignments here.
+        cliPrintErrorLinef(cmdName, "READ ONLY, ASSIGN PORTS WITH THE <FEATURE>_UART SETTINGS");
         return;
     }
 
-    serialPortConfig_t portConfig;
-    memset(&portConfig, 0 , sizeof(portConfig));
-
-    uint8_t validArgumentCount = 0;
-
-    char *ptr = cmdline;
-    char *tok = strsep(&ptr, " ");
-    serialPortIdentifier_e identifier = findSerialPortByName(tok, strcasecmp);
-    if (identifier == SERIAL_PORT_NONE) {
-        char *eptr;
-        identifier = strtoul(tok, &eptr, 10);
-        if (*eptr) {
-            // parsing ended before end of token indicating an invalid identifier
-            identifier = SERIAL_PORT_NONE;
-        } else {
-            // correction for legacy configuration where UART1 == 0
-            if (identifier >= SERIAL_PORT_LEGACY_START_IDENTIFIER && identifier < SERIAL_PORT_START_IDENTIFIER) {
-                identifier += SERIAL_PORT_UART1;
-            }
-       }
-    }
-
-    serialPortConfig_t *currentConfig = serialFindPortConfigurationMutable(identifier);
-
-    if (!currentConfig) {
-        cliShowParseError(cmdName);
-        return;
-    }
-
-    portConfig.identifier = identifier;
-    validArgumentCount++;
-
-    tok = strsep(&ptr, " ");
-    if (tok) {
-        int val = strtoul(tok, NULL, 10);
-        portConfig.functionMask = val;
-        validArgumentCount++;
-    }
-
-    for (int i = 0; i < 4; i ++) {
-        tok = strsep(&ptr, " ");
-        if (!tok) {
-            break;
-        }
-
-        int val = atoi(tok);
-
-        uint8_t baudRateIndex = lookupBaudRateIndex(val);
-        if (baudRates[baudRateIndex] != (uint32_t) val) {
-            break;
-        }
-
-        switch (i) {
-        case 0:
-            if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_1000000) {
-                continue;
-            }
-            portConfig.msp_baudrateIndex = baudRateIndex;
-            break;
-        case 1:
-            if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_230400) {
-                continue;
-            }
-            portConfig.gps_baudrateIndex = baudRateIndex;
-            break;
-        case 2:
-            if (baudRateIndex != BAUD_AUTO && baudRateIndex > BAUD_460800) {
-                continue;
-            }
-            portConfig.telemetry_baudrateIndex = baudRateIndex;
-            break;
-        case 3:
-            if (baudRateIndex < BAUD_19200 || baudRateIndex > BAUD_2470000) {
-                continue;
-            }
-            portConfig.blackbox_baudrateIndex = baudRateIndex;
-            break;
-        }
-
-        validArgumentCount++;
-    }
-
-    if (validArgumentCount < 6) {
-        cliShowInvalidArgumentCountError(cmdName);
-        return;
-    }
-
-    memcpy(currentConfig, &portConfig, sizeof(portConfig));
-
-    cliDumpPrintLinef(0, false, format,
-        serialName(portConfig.identifier, invalidName),
-        portConfig.functionMask,
-        baudRates[portConfig.msp_baudrateIndex],
-        baudRates[portConfig.gps_baudrateIndex],
-        baudRates[portConfig.telemetry_baudrateIndex],
-        baudRates[portConfig.blackbox_baudrateIndex]
-        );
+    printSerial(DUMP_MASTER, NULL);
 }
 
 #if defined(USE_SERIAL_PASSTHROUGH)
@@ -1606,8 +1525,11 @@ RAM_CODE static void cliSerialPassthrough(const char *cmdName, char *cmdline)
 #ifdef USE_PWM_OUTPUT
                 escSensorPassthrough = true;
 #endif
-                const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_ESC_SENSOR);
-                portId = portConfig ? portConfig->identifier : SERIAL_PORT_NONE;
+#ifdef USE_ESC_SENSOR
+                portId = escSensorConfig()->esc_sensor_uart;
+#else
+                portId = SERIAL_PORT_NONE;
+#endif
             } else if (strcasecmp(tok, "cli") == 0) {
                 portId = cliPort->identifier;
             } else if ((portId = findSerialPortByName(tok, strcasecmp)) >= 0) {
@@ -5434,6 +5356,16 @@ RAM_CODE STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
 
             break;
 
+        case MODE_LOOKUP_IDENTIFIER: {
+                int identifier;
+                if (identifierLookups[val->config.identifier.lookupIndex].valueOf(eqptr, &identifier)) {
+                    cliSetVar(val, identifier);
+                    valueChanged = true;
+                }
+            }
+
+            break;
+
         case MODE_ARRAY: {
                 if (cliParseArrayValue(eqptr, val, cliGetValuePointer(val))) {
                     valueChanged = true;
@@ -5707,6 +5639,22 @@ int cliGetSettingInfoByName(const char *name, int offset, char *buf, int bufLen,
         infoWriteChar(&w, '\n');
         break;
     }
+    case MODE_LOOKUP_IDENTIFIER: {
+        const identifierLookupEntry_t *entry = &identifierLookups[val->config.identifier.lookupIndex];
+        infoWriteString(&w, "type=lookup\nvalues=");
+        for (unsigned i = 0; ; i++) {
+            const char *name = entry->nameAt(i);
+            if (!name) {
+                break;
+            }
+            if (i) {
+                infoWriteChar(&w, ',');
+            }
+            infoWriteString(&w, name);
+        }
+        infoWriteChar(&w, '\n');
+        break;
+    }
     case MODE_BITSET:
         infoWriteString(&w, "type=bitset\nvalues=OFF,ON\n");
         break;
@@ -5941,6 +5889,15 @@ bool cliSetSettingByName(const char *cmdline)
         }
         break;
 
+    case MODE_LOOKUP_IDENTIFIER: {
+            int identifier;
+            if (!identifierLookups[val->config.identifier.lookupIndex].valueOf(valStr, &identifier)) {
+                return false;
+            }
+            *(int8_t *)ptr = identifier;
+        }
+        break;
+
     case MODE_ARRAY: {
             if (!cliParseArrayValue(valStr, val, ptr)) {
                 return false;
@@ -6087,7 +6044,7 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
 #if defined(USE_SENSOR_NAMES)
     const uint32_t detectedSensorsMask = sensorsMask();
     for (unsigned i = SENSOR_INDEX_ACC; i < SENSOR_INDEX_COUNT; i++) {
-        const uint32_t mask = (1U << i);
+        const uint32_t mask = sensorMaskForIndex(i);
         if ((detectedSensorsMask & mask)) {
 
             const uint8_t sensorHardwareIndex = detectedSensors[i];
@@ -6120,15 +6077,15 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
         if (GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(gpsConfig()->provider)) {
             cliPrint(lookupTables[TABLE_GPS_PROVIDER].values[gpsConfig()->provider]);
         } else {
-            const serialPortConfig_t *gpsPortConfig = findSerialPortConfig(FUNCTION_GPS);
-            if (!gpsPortConfig) {
+            const serialPortIdentifier_e gpsPort = gpsConfig()->gps_uart;
+            if (gpsPort == SERIAL_PORT_NONE) {
                 cliPrint("NO PORT, ");
             } else {
-                cliPrintf("%s %ld (set to ", serialName(gpsPortConfig->identifier, invalidName), baudRates[getGpsPortActualBaudRateIndex()]);
+                cliPrintf("%s %ld (set to ", serialName(gpsPort, invalidName), baudRates[getGpsPortActualBaudRateIndex()]);
                 if (gpsConfig()->autoBaud == GPS_AUTOBAUD_ON) {
                     cliPrint("AUTO");
                 } else {
-                    cliPrintf("%ld", baudRates[gpsPortConfig->gps_baudrateIndex]);
+                    cliPrintf("%ld", baudRates[gpsConfig()->gps_baud]);
                 }
                 cliPrint("), ");
             }
@@ -6199,6 +6156,36 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
     if (dronecanConfig()->enabled) {
         if (dronecanIsInitialised()) {
             cliPrintLinef("DroneCAN: node %d, device %d", dronecanConfig()->node_id, dronecanConfig()->device);
+
+            static const char * const nodeHealthNames[] = { "OK", "WARNING", "ERROR", "CRITICAL" };
+            static const char * const nodeModeNames[] = { "OPERATIONAL", "INITIALISING", "MAINTENANCE", "UPDATING", "?", "?", "?", "OFFLINE" };
+            for (uint8_t i = 0; i < dronecanNodesCount(); i++) {
+                const dronecanNodeEntry_t *node = dronecanNodesGet(i);
+                cliPrintf("  node %d: %s (%s", node->nodeId,
+                          node->infoValid && node->name[0] ? node->name : "no info",
+                          nodeHealthNames[node->health & 0x03]);
+                if (node->mode != UAVCAN_NODE_MODE_OPERATIONAL) {
+                    cliPrintf(", %s", nodeModeNames[node->mode & 0x07]);
+                }
+                const timeDelta_t sinceHeardUs = cmpTimeUs(micros(), node->lastHeardUs);
+                if (sinceHeardUs > 3000000) {
+                    cliPrintf(", last seen %ds ago", (int)(sinceHeardUs / 1000000));
+                }
+                cliPrint(")");
+                if (node->sensorFlags & DRONECAN_NODE_SENSOR_GPS) {
+                    cliPrint(" GPS");
+                }
+                if (node->sensorFlags & DRONECAN_NODE_SENSOR_MAG) {
+                    cliPrint(" MAG");
+                }
+                if (node->sensorFlags & DRONECAN_NODE_SENSOR_AIRSPEED) {
+                    cliPrint(" AIRSPEED");
+                }
+                if (node->sensorFlags & DRONECAN_NODE_SENSOR_ESC) {
+                    cliPrint(" ESC");
+                }
+                cliPrintLinefeed();
+            }
         } else {
             cliPrintLine("DroneCAN: NOT RUNNING (check dronecan_node_id and dronecan_device)");
         }
@@ -6558,7 +6545,7 @@ RAM_CODE static void cliEnv(const char *cmdName, char *cmdline)
 #if defined(USE_SENSOR_NAMES)
     const uint32_t detectedSensorsMask = sensorsMask();
     for (unsigned i = SENSOR_INDEX_ACC; i < SENSOR_INDEX_COUNT; i++) {
-        const uint32_t mask = (1U << i);
+        const uint32_t mask = sensorMaskForIndex(i);
         if ((detectedSensorsMask & mask) == 0) {
             continue;
         }
@@ -8041,8 +8028,6 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
 
         printFeature(dumpMask, featureConfig_Copy.enabledFeatures, featureConfig()->enabledFeatures, "feature");
 
-        printSerial(dumpMask, &serialConfig_Copy, serialConfig(), "serial");
-
         if (!(dumpMask & HARDWARE_ONLY)) {
 #ifndef USE_QUAD_MIXER_ONLY
             const char *mixerHeadingStr = "mixer";
@@ -8384,9 +8369,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("sd_info", "sdcard info", NULL, cliSdInfo),
 #endif
 #if defined(USE_SENSOR_NAMES)
-    CLI_COMMAND_DEF("sensor_hardware", "list supported sensor hardware", "[gyro|acc|baro|mag|rangefinder|opticalflow]", cliSensorHardware),
+    CLI_COMMAND_DEF("sensor_hardware", "list supported sensor hardware", "[gyro|acc|baro|mag|rangefinder|opticalflow|pitot]", cliSensorHardware),
 #endif
-    CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
+    CLI_COMMAND_DEF("serial", "show serial port assignments", NULL, cliSerial),
 #if defined(USE_SERIAL_PASSTHROUGH)
 #if defined(USE_PINIO)
     CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data data from port 1 to VCP / port 2", "<id1> [<baud1>] [<mode1>] [none|<dtr pinio>|reset] [<id2>] [<baud2>] [<mode2>]", cliSerialPassthrough),
@@ -8526,7 +8511,7 @@ static void processCharacter(const char c)
             cliPrompt();
         }
 
-    } else if (bufferIndex < sizeof(cliBuffer) && c >= 32 && c <= 126) {
+    } else if (bufferIndex < sizeof(cliBuffer) - 1 && c >= 32 && c <= 126) {
         if (!bufferIndex && c == ' ') {
             return; // Ignore leading spaces
         }
@@ -8669,15 +8654,7 @@ void cliEnter(serialPort_t *serialPort, bool interactive)
     }
 }
 
-#ifdef CONFIG_IN_FILE
-#include <stdio.h>
-
-static void stdoutBufWrite(void *arg, const uint8_t *data, int count)
-{
-    UNUSED(arg);
-    fwrite(data, 1, count, stdout);
-}
-
+#if defined(CONFIG_IN_FILE) || defined(USE_MSP_CLI_COMMAND)
 // Check if a line (after stripping comments/whitespace) matches a command name
 static bool lineIsCommand(const char *line, const char *command)
 {
@@ -8694,6 +8671,128 @@ static bool lineIsCommand(const char *line, const char *command)
     char next = line[cmdLen];
     return (next == '\0' || next == ' ' || next == '\t' ||
             next == '\n' || next == '\r' || next == '#');
+}
+#endif
+
+#ifdef USE_MSP_CLI_COMMAND
+// Check whether a line carries 'arg' as a discrete argument. Inline comments are stripped
+// first because processCharacter() drops them before dispatch, so a plain substring search
+// would read "defaults # nosave" as carrying the nosave flag when the CLI will not.
+static bool lineHasArg(const char *line, const char *arg)
+{
+    char stripped[CLI_IN_BUFFER_SIZE];
+    strncpy(stripped, line, sizeof(stripped) - 1);
+    stripped[sizeof(stripped) - 1] = '\0';
+
+    char *cp = strchr(stripped, '#');
+    if (cp) {
+        *cp = '\0';
+    }
+    cp = strstr(stripped, "//");
+    if (cp) {
+        *cp = '\0';
+    }
+
+    char *saveptr;
+    for (char *tok = strtok_r(stripped, " \t\r\n", &saveptr); tok;
+         tok = strtok_r(NULL, " \t\r\n", &saveptr)) {
+        if (strcasecmp(tok, arg) == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+typedef struct cliCaptureSink_s {
+    char *buf;
+    int cap;
+    int total;
+} cliCaptureSink_t;
+
+static void cliCaptureBufWrite(void *arg, const uint8_t *data, int count)
+{
+    cliCaptureSink_t *sink = (cliCaptureSink_t *)arg;
+    for (int i = 0; i < count; i++) {
+        if (sink->total < sink->cap) {
+            sink->buf[sink->total] = (char)data[i];
+        }
+        sink->total++;
+    }
+}
+
+int cliExecuteCommand(const char *cmdline, char *outBuf, int outBufLen)
+{
+    if (cliMode || !cmdline || !outBuf || outBufLen <= 0) {
+        return CLI_COMMAND_REFUSED;
+    }
+
+    // The fabricated port below has a NULL vTable, so any command that reaches
+    // waitForSerialPortToFinishTransmitting() (reboot/mode-switch/passthrough) would
+    // fault. Handle those here instead of dispatching them: 'save' persists without
+    // the reboot, 'exit' is a no-op, bare 'defaults' (which reboots) is refused.
+    if (lineIsCommand(cmdline, "exit")) {
+        return 0;
+    }
+    if (lineIsCommand(cmdline, "bl") || lineIsCommand(cmdline, "msc") ||
+        lineIsCommand(cmdline, "serialpassthrough")) {
+        return CLI_COMMAND_REFUSED;
+    }
+    // This is reachable from any MSP link, including telemetry links in flight. writeEEPROM()
+    // blocks the flight loop (MSP_EEPROM_WRITE refuses while armed for the same reason) and
+    // wiping the config mid-flight is never safe.
+    if (ARMING_FLAG(ARMED) &&
+        (lineIsCommand(cmdline, "save") || lineIsCommand(cmdline, "defaults"))) {
+        return CLI_COMMAND_REFUSED;
+    }
+    if (lineIsCommand(cmdline, "defaults") && !lineHasArg(cmdline, "nosave")) {
+        return CLI_COMMAND_REFUSED;
+    }
+
+    cliCaptureSink_t sink = { .buf = outBuf, .cap = outBufLen, .total = 0 };
+
+    cliMode = true;
+    cliInteractive = false;
+
+    static serialPort_t dummyPort;
+    memset(&dummyPort, 0, sizeof(dummyPort));
+    cliPort = &dummyPort;
+
+    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer),
+                  (bufWrite_t)cliCaptureBufWrite, &sink);
+    cliErrorWriter = cliWriter = &cliWriterDesc;
+    cliClearInputBuffer();
+
+    if (lineIsCommand(cmdline, "save")) {
+        if (tryPrepareSave("save")) {
+            writeEEPROM();
+            cliPrintHashLine("saving");
+        }
+    } else {
+        for (const char *p = cmdline; *p; p++) {
+            processCharacter(*p);
+        }
+        processCharacter('\n');
+    }
+
+    cliWriterFlush();
+
+    cliMode = false;
+    cliInteractive = false;
+    cliWriter = cliErrorWriter = NULL;
+    cliPort = NULL;
+
+    return sink.total;
+}
+#endif
+
+#ifdef CONFIG_IN_FILE
+#include <stdio.h>
+
+static void stdoutBufWrite(void *arg, const uint8_t *data, int count)
+{
+    UNUSED(arg);
+    fwrite(data, 1, count, stdout);
 }
 
 void cliProcessConfigFile(const char *filename)
@@ -8762,15 +8861,21 @@ void cliProcessConfigFile(const char *filename)
             if (cp) {
                 *cp = '\0';
             }
-            // Tokenize the comment-stripped line and look for 'nosave' as a discrete token
+            // Tokenize the comment-stripped line and look for 'nosave' as a discrete token.
+            // strtok writes NULs over the delimiters, so run it on a scratch copy: 'stripped'
+            // is reused below to rebuild the line and must keep its arguments intact.
+            char scratch[CLI_IN_BUFFER_SIZE];
+            strncpy(scratch, stripped, sizeof(scratch) - 1);
+            scratch[sizeof(scratch) - 1] = '\0';
             bool hasNosave = false;
-            char *tok = strtok(stripped, " \t\r\n");
+            char *saveptr;
+            char *tok = strtok_r(scratch, " \t\r\n", &saveptr);
             while (tok) {
                 if (strcasecmp(tok, "nosave") == 0) {
                     hasNosave = true;
                     break;
                 }
-                tok = strtok(NULL, " \t\r\n");
+                tok = strtok_r(NULL, " \t\r\n", &saveptr);
             }
             if (!hasNosave) {
                 // Append 'nosave' to the original line (minus any trailing comment/whitespace)
@@ -8786,6 +8891,13 @@ void cliProcessConfigFile(const char *filename)
                     nosaveLine[--len] = '\0';
                 }
                 strcat(nosaveLine, " nosave\n");
+                // processCharacter() stops buffering at CLI_IN_BUFFER_SIZE characters but still
+                // null terminates at bufferIndex when the newline arrives, so a rewritten line
+                // that no longer fits would both run truncated and write one past cliBuffer.
+                if (strlen(nosaveLine) > CLI_IN_BUFFER_SIZE) {
+                    printf("[CONFIG] Line too long to rewrite, skipped: %s\n", stripped);
+                    continue;
+                }
                 for (size_t i = 0; nosaveLine[i]; i++) {
                     processCharacter(nosaveLine[i]);
                 }

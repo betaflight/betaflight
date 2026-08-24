@@ -97,4 +97,20 @@ void autopilotSetYawRateLimit(float rateLimitDps)
     UNUSED(rateLimitDps);
 }
 
+void autopilotSetNavHeadingOverride(bool valid, float headingDeg)
+{
+    UNUSED(valid);
+    UNUSED(headingDeg);
+}
+
+void autopilotForceLevelPark(bool request)
+{
+    UNUSED(request);
+}
+
+void pitchForwardOverride(bool request)
+{
+    UNUSED(request);
+}
+
 #endif // USE_WING

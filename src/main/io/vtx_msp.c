@@ -77,9 +77,9 @@ static uint8_t mspVtxPortIdentifier = 255;
 
 #define MSP_VTX_REQUEST_PERIOD_US (200 * 1000) // 200ms
 
-static bool isCrsfPortConfig(const serialPortConfig_t *portConfig)
+static bool isCrsfPort(serialPortIdentifier_e port)
 {
-    return portConfig->functionMask & FUNCTION_RX_SERIAL && portConfig->functionMask & FUNCTION_VTX_MSP && rxRuntimeState.serialrxProvider == SERIALRX_CRSF;
+    return isSerialPortShared(port, FUNCTION_RX_SERIAL, FUNCTION_VTX_MSP) && rxRuntimeState.serialrxProvider == SERIALRX_CRSF;
 }
 
 static bool isLowPowerDisarmed(void)
@@ -175,7 +175,7 @@ static void vtxMspProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 {
     UNUSED(vtxDevice);
 
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_MSP);
+    const serialPortIdentifier_e port = vtxSettingsConfig()->vtx_uart;
     uint8_t frame[15];
 
     switch (mspVtxStatus) {
@@ -196,10 +196,10 @@ static void vtxMspProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 
             prepareMspFrame(frame);
 
-            if (isCrsfPortConfig(portConfig)) {
+            if (isCrsfPort(port)) {
                 mspCrsfPush(MSP_VTX_CONFIG, frame, sizeof(frame));
             } else {
-                mspSerialPush(portConfig->identifier, MSP_VTX_CONFIG, frame, sizeof(frame), MSP_DIRECTION_REPLY, MSP_V2_NATIVE);
+                mspSerialPush(port, MSP_VTX_CONFIG, frame, sizeof(frame), MSP_DIRECTION_REPLY, MSP_V2_NATIVE);
             }
             packetCounter++;
             mspVtxLastTimeUs = currentTimeUs;
@@ -216,10 +216,10 @@ static void vtxMspProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
     }
 
     DEBUG_SET(DEBUG_VTX_MSP, 0, packetCounter);
-    DEBUG_SET(DEBUG_VTX_MSP, 1, isCrsfPortConfig(portConfig));
+    DEBUG_SET(DEBUG_VTX_MSP, 1, isCrsfPort(port));
     DEBUG_SET(DEBUG_VTX_MSP, 2, isLowPowerDisarmed());
 #if defined(USE_MSP_OVER_TELEMETRY)
-    DEBUG_SET(DEBUG_VTX_MSP, 3, isCrsfPortConfig(portConfig) ? getMspTelemetryDescriptor() : getMspSerialPortDescriptor(mspVtxPortIdentifier));
+    DEBUG_SET(DEBUG_VTX_MSP, 3, isCrsfPort(port) ? getMspTelemetryDescriptor() : getMspSerialPortDescriptor(mspVtxPortIdentifier));
 #else
     DEBUG_SET(DEBUG_VTX_MSP, 3, getMspSerialPortDescriptor(mspVtxPortIdentifier));
 #endif
@@ -371,12 +371,12 @@ static const vtxVTable_t mspVTable = {
 bool vtxMspInit(void)
 {
     // don't bother setting up this device if we don't have MSP vtx enabled
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_MSP);
-    if (!portConfig) {
+    const serialPortIdentifier_e port = vtxSettingsConfig()->vtx_uart;
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
-    mspVtxPortIdentifier = portConfig->identifier;
+    mspVtxPortIdentifier = port;
 
     // XXX Effect of USE_VTX_COMMON should be reviewed, as following call to vtxInit will do nothing if vtxCommonSetDevice is not called.
 #if defined(USE_VTX_COMMON)

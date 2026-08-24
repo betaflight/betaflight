@@ -62,6 +62,7 @@
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
+#include "io/serial_feature_map.h"
 #include "io/vtx.h"
 
 #include "msp/msp_box.h"
@@ -92,7 +93,10 @@
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/compass.h"
+#include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
+
+#include "telemetry/telemetry.h"
 
 #include "config.h"
 
@@ -227,17 +231,28 @@ static void validateAndFixConfig(void)
     }
 #endif
 
-    if (!isSerialConfigValid(serialConfigMutable())) {
-        PG_RESET(serialConfig);
+#ifdef USE_TELEMETRY
+    telemetryValidateProviders();
+#endif
+
+    if (!isSerialConfigValid()) {
+        // Give up only the claims that actually clash before falling back to the
+        // board-wide reset, which would cost the user every other port they had
+        // assigned to settle a single bad one.
+        serialDropConflictingAssignments();
+
+        if (!isSerialConfigValid()) {
+            serialResetFeatureAssignments();
+        }
     }
 
 #if defined(USE_GPS)
-    const serialPortConfig_t *gpsSerial = findSerialPortConfig(FUNCTION_GPS);
-    if (GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(gpsConfig()->provider) && gpsSerial) {
-        serialRemovePort(gpsSerial->identifier);
+    const serialPortIdentifier_e gpsSerial = gpsConfig()->gps_uart;
+    if (GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(gpsConfig()->provider) && gpsSerial != SERIAL_PORT_NONE) {
+        serialRemovePort(gpsSerial);
     }
 
-    if (!GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(gpsConfig()->provider) && !gpsSerial) {
+    if (!GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(gpsConfig()->provider) && gpsSerial == SERIAL_PORT_NONE) {
         featureDisableImmediate(FEATURE_GPS);
     }
 #endif
@@ -392,7 +407,7 @@ static void validateAndFixConfig(void)
 #if defined(USE_ESC_SENSOR)
     // DroneCAN ESC telemetry feeds escSensorData[] without a serial port, so
     // only a serial-sourced sensor requires one.
-    if (!findSerialPortConfig(FUNCTION_ESC_SENSOR) && !isMotorProtocolDronecan()) {
+    if (escSensorConfig()->esc_sensor_uart == SERIAL_PORT_NONE && !isMotorProtocolDronecan()) {
         featureDisableImmediate(FEATURE_ESC_SENSOR);
     }
 #endif
@@ -569,12 +584,11 @@ static void validateAndFixConfig(void)
     // Find the first serial port on which MSP Displayport is enabled
     displayPortMspSetSerial(SERIAL_PORT_NONE);
 
-    for (const serialPortConfig_t *portConfig = serialConfig()->portConfigs;
-         portConfig < ARRAYEND(serialConfig()->portConfigs);
-         portConfig++) {
-        if ((portConfig->identifier != SERIAL_PORT_USB_VCP)
-            && ((portConfig->functionMask & (FUNCTION_VTX_MSP | FUNCTION_MSP)) == (FUNCTION_VTX_MSP | FUNCTION_MSP))) {
-            displayPortMspSetSerial(portConfig->identifier);
+    for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
+        const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
+        if ((identifier != SERIAL_PORT_USB_VCP)
+            && ((serialSynthesizeFunctionMask(identifier) & (FUNCTION_VTX_MSP | FUNCTION_MSP)) == (FUNCTION_VTX_MSP | FUNCTION_MSP))) {
+            displayPortMspSetSerial(identifier);
             break;
         }
     }

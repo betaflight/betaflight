@@ -44,6 +44,7 @@ extern "C" {
     #include "io/beeper.h"
     #include "io/ledstrip.h"
     #include "io/serial.h"
+    #include "io/serial_feature_map.h"
     #include "io/vtx.h"
     #include "msp/msp.h"
     #include "msp/msp_box.h"
@@ -72,6 +73,12 @@ extern "C" {
     };
     const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
     const lookupTableEntry_t lookupTables[] = {};
+    static const char *stubIdentifierName(int) { return "NONE"; }
+    static bool stubIdentifierValue(const char *, int *value) { *value = SERIAL_PORT_NONE; return true; }
+    static const char *stubIdentifierNameAt(unsigned index) { return index == 0 ? "NONE" : NULL; }
+    const identifierLookupEntry_t identifierLookups[IDENTIFIER_LOOKUP_COUNT] = {
+        [IDENTIFIER_LOOKUP_SERIAL_PORT] = { stubIdentifierName, stubIdentifierValue, stubIdentifierNameAt },
+    };
     const char * const lookupTableOsdDisplayPortDevice[] = {};
     const char * const buildKey = NULL;
     const char * const releaseName = NULL;
@@ -230,6 +237,38 @@ int32_t taskGuardCycles;
 
 uint32_t micros(void) {return 0;}
 
+// serial_feature_map is referenced by printSerial(); the CLI unit tests do not
+// exercise it, so stubs are sufficient.
+uint8_t serialDefaultPortBaud(serialBaudClass_e baudClass)
+{
+    (void)baudClass;
+    return BAUD_115200;
+}
+
+uint8_t serialSynthesizePortBaud(serialPortIdentifier_e identifier, serialBaudClass_e baudClass)
+{
+    (void)identifier;
+    (void)baudClass;
+    return BAUD_115200;
+}
+
+uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
+{
+    (void)identifier;
+    return 0;
+}
+
+const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
+    SERIAL_PORT_USB_VCP,
+    SERIAL_PORT_USART1,
+    SERIAL_PORT_USART2,
+    SERIAL_PORT_USART3,
+    SERIAL_PORT_UART4,
+    SERIAL_PORT_UART5,
+    SERIAL_PORT_SOFTSERIAL1,
+    SERIAL_PORT_SOFTSERIAL2,
+};
+
 int32_t getAmperage(void)
 {
     return 100;
@@ -318,11 +357,9 @@ uint8_t getCurrentControlRateProfileIndex(void){ return 1; }
 void changeControlRateProfile(uint8_t) {}
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *) {}
 void writeEEPROM() {}
-serialPortConfig_t *serialFindPortConfigurationMutable(serialPortIdentifier_e) {return NULL; }
 baudRate_e lookupBaudRateIndex(uint32_t){return BAUD_9600; }
 serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e){ return NULL; }
 serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) { return NULL; }
-const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) { return NULL; }
 void serialPassthrough(serialPort_t *, serialPort_t *, serialConsumer *, serialConsumer *) {}
 uint32_t millis(void) { return 0; }
 uint8_t getBatteryCellCount(void) { return 1; }
@@ -485,6 +522,56 @@ TEST(CLIUnittest, TestGetSettingByNameZeroBuffer)
     int written = cliGetSettingByName("array_unit_test", buf, 0);
     EXPECT_EQ(0, written);
 }
+
+#ifdef USE_MSP_CLI_COMMAND
+// Reboot/mode-switch/passthrough commands must be refused: cliExecuteCommand runs them
+// against a NULL-vTable port, so reaching waitForSerialPortToFinishTransmitting() would fault.
+TEST(CLIUnittest, TestCliExecuteCommandRefusesDangerous)
+{
+    char buf[64];
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("bl", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("msc", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("serialpassthrough 1", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults", buf, sizeof(buf)));
+    EXPECT_FALSE(cliMode);
+}
+
+// 'exit' is a no-op (never reboots), and bad arguments are rejected.
+TEST(CLIUnittest, TestCliExecuteCommandGuards)
+{
+    char buf[64];
+    EXPECT_EQ(0, cliExecuteCommand("exit", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand(NULL, buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("version", buf, 0));
+
+    cliMode = true; // already in a CLI session -> must refuse to avoid clobbering state
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("version", buf, sizeof(buf)));
+    cliMode = false;
+}
+
+// An inline comment must not be read as the 'nosave' argument: processCharacter() strips the
+// comment before dispatch, so 'defaults' would run in its saving form and reboot.
+TEST(CLIUnittest, TestCliExecuteCommandRefusesDefaultsWithCommentedNosave)
+{
+    char buf[64];
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults # nosave", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults #nosave", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults // nosave", buf, sizeof(buf)));
+    EXPECT_FALSE(cliMode);
+}
+
+// Persisting or wiping the config while armed must be refused: writeEEPROM() blocks the
+// flight loop, and this path is reachable from a telemetry link in flight.
+TEST(CLIUnittest, TestCliExecuteCommandRefusesWhenArmed)
+{
+    char buf[64];
+    armingFlags |= ARMED;
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("save", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults nosave", buf, sizeof(buf)));
+    armingFlags &= ~ARMED;
+    EXPECT_FALSE(cliMode);
+}
+#endif
 
 // Verifies cliSetSettingByName sets an array value and round-trips via get.
 TEST(CLIUnittest, TestSetSettingByNameArray)

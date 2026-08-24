@@ -31,6 +31,20 @@
 #define MAX_MSP_PORT_COUNT 3
 #endif
 
+// An MSP-transport rangefinder or optical flow module needs an MSP port on the
+// UART it declares, which the user never assigned.  Those get their own budget,
+// so declaring a sensor can never cost a configurator link.  Two modules can
+// sit on separate UARTs; one answering as both sensors dedups to a single port.
+#if defined(USE_RANGEFINDER_MT) && defined(USE_OPTICALFLOW_MT)
+#define IMPLIED_MSP_SENSOR_PORT_COUNT 2
+#elif defined(USE_RANGEFINDER_MT) || defined(USE_OPTICALFLOW_MT)
+#define IMPLIED_MSP_SENSOR_PORT_COUNT 1
+#else
+#define IMPLIED_MSP_SENSOR_PORT_COUNT 0
+#endif
+
+#define MSP_PORT_COUNT (MAX_MSP_PORT_COUNT + IMPLIED_MSP_SENSOR_PORT_COUNT)
+
 typedef enum {
     PORT_IDLE,
     PORT_MSP_PACKET,

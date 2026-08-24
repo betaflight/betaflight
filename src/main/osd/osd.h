@@ -44,10 +44,17 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 
 #define OSD_RCCHANNELS_COUNT 4
 
+#if OSD_FB_ENABLE_SMALLFONT
 #define OSD_CAMERA_FRAME_MIN_WIDTH  2
-#define OSD_CAMERA_FRAME_MAX_WIDTH  30    // Characters per row supportes by MAX7456
+#define OSD_CAMERA_FRAME_MAX_WIDTH  46    // Characters per row supported by PICO FB OSD
+#define OSD_CAMERA_FRAME_MIN_HEIGHT 2
+#define OSD_CAMERA_FRAME_MAX_HEIGHT 24    // Rows supported by PICO FB OSD (PAL)
+#else
+#define OSD_CAMERA_FRAME_MIN_WIDTH  2
+#define OSD_CAMERA_FRAME_MAX_WIDTH  30    // Characters per row supported by MAX7456
 #define OSD_CAMERA_FRAME_MIN_HEIGHT 2
 #define OSD_CAMERA_FRAME_MAX_HEIGHT 16    // Rows supported by MAX7456 (PAL)
+#endif
 
 #define OSD_FRAMERATE_MIN_HZ 1
 #ifndef OSD_FRAMERATE_MAX_HZ
@@ -225,6 +232,12 @@ typedef enum {
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
+// Number of elements that existed as of MSP API 1.46 (Betaflight 4.5). MSP-query type OSD
+// consumers - the DJI V1 air unit / Caddx Vista render the OSD themselves from MSP_OSD_CONFIG -
+// stop accepting the reply once it grows beyond what 4.5 produced, so they are served a reply
+// truncated to this many elements. Never change this value; it describes a released wire format.
+#define OSD_ITEM_COUNT_API_1_46 80
+
 // *** IMPORTANT ***
 // Whenever new elements are added to 'osd_items_e', make sure to increment
 // the parameter group version for 'osdConfig' in 'osd.c'
@@ -392,6 +405,9 @@ typedef struct osdConfig_s {
     uint8_t osd_show_spec_prearm;
 #endif // USE_SPEC_PREARM_SCREEN
     displayPortSeverity_e arming_logo;        // font from which to display logo on arming
+    int8_t osd_uart;                          // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned. Bit chosen by displayPortDevice (FRSKYOSD=FUNCTION_FRSKY_OSD, else none).
+    int8_t osd_custom_text_uart;              // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned.  Always maps to FUNCTION_OSD_CUSTOM_TEXT when set.
+    uint8_t osd_custom_text_baud;             // baudRate_e index for osd_custom_text_uart
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
@@ -452,3 +468,4 @@ void osdSetVisualBeeperState(bool state);
 statistic_t *osdGetStats(void);
 bool osdNeedsAccelerometer(void);
 int osdPrintFloat(char *buffer, char leadingSymbol, float value, char *formatString, unsigned decimalPlaces, bool round, char trailingSymbol);
+bool osdIsBlink(osd_items_e item);

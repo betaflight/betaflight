@@ -44,6 +44,7 @@ extern "C" {
     #include "drivers/serial.h"
     #include "drivers/system.h"
     #include "io/serial.h"
+    #include "io/serial_feature_map.h"
     #include "cli/cli.h"
     #include "msp/msp.h"
     #include "msp/msp_serial.h"
@@ -55,11 +56,10 @@ extern "C" {
 
     // --- faked serial RX queue ---
     #define FAKE_RX_CAP 256
+    #define SERIAL_PORT_DUMMY_IDENTIFIER  (serialPortIdentifier_e)0x12
     static uint8_t  fakeRxBuf[FAKE_RX_CAP];
     static unsigned fakeRxHead;
     static unsigned fakeRxTail;
-    static serialPort_t fakeSerialPort;
-    static serialPortConfig_t fakePortConfig;
 
     uint32_t serialRxBytesWaiting(const serialPort_t *) { return fakeRxTail - fakeRxHead; }
     uint8_t  serialRead(serialPort_t *) { return fakeRxBuf[fakeRxHead++ % FAKE_RX_CAP]; }
@@ -81,14 +81,47 @@ extern "C" {
     bool cliProcess(void) { return false; }
 
     // --- port allocation mocks (drive mspSerialAllocatePorts -> one MSP port) ---
-    const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) { return &fakePortConfig; }
-    const serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e) { return NULL; }
-    serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e,
+    // Each open hands back a distinct port carrying its identifier, so which
+    // UARTs were opened, and in what order, is observable.
+    #define FAKE_PORT_CAP 8
+    static serialPort_t fakePorts[FAKE_PORT_CAP];
+    static unsigned openedCount;
+
+    serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFunction_e,
                                  serialReceiveCallbackPtr, void *, uint32_t,
-                                 portMode_e, portOptions_e) { return &fakeSerialPort; }
-    bool isSerialPortShared(const serialPortConfig_t *, uint16_t, serialPortFunction_e) { return false; }
+                                 portMode_e, portOptions_e) {
+        if (openedCount >= FAKE_PORT_CAP) {
+            return NULL;
+        }
+        serialPort_t *port = &fakePorts[openedCount++];
+        port->identifier = identifier;
+        return port;
+    }
+    bool isSerialPortShared(serialPortIdentifier_e, uint16_t, serialPortFunction_e) { return false; }
     serialType_e serialType(serialPortIdentifier_e) { return SERIALTYPE_UART; }
-    const serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e) { return NULL; }
+
+    // Ports the test has declared as carrying an MSP-transport sensor.
+    static serialPortIdentifier_e fakeSensorPorts[IMPLIED_MSP_SENSOR_PORT_COUNT];
+    static unsigned fakeSensorPortCount;
+
+    uint8_t serialDefaultPortBaud(serialBaudClass_e) { return BAUD_115200; }
+
+    unsigned serialImpliedMspPorts(serialPortIdentifier_e *ports, unsigned maxPorts) {
+        unsigned count = 0;
+        for (unsigned i = 0; i < fakeSensorPortCount && count < maxPorts; i++) {
+            ports[count++] = fakeSensorPorts[i];
+        }
+        return count;
+    }
+
+    uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier) {
+        for (unsigned i = 0; i < fakeSensorPortCount; i++) {
+            if (fakeSensorPorts[i] == identifier) {
+                return FUNCTION_MSP | FUNCTION_LIDAR;
+            }
+        }
+        return FUNCTION_MSP;
+    }
 
     // --- inert serial/system/msp stubs (off the tested path) ---
     uint32_t serialTxBytesFree(const serialPort_t *) { return FAKE_RX_CAP; }
@@ -131,10 +164,15 @@ protected:
         lastRebootRequest = BOOTLOADER_REQUEST_ROM;
         fakeMillis = 1000;
 
-        memset(&fakeSerialPort, 0, sizeof(fakeSerialPort));
-        memset(&fakePortConfig, 0, sizeof(fakePortConfig));
+        memset(fakePorts, 0, sizeof(fakePorts));
+        openedCount = 0;
+        fakeSensorPortCount = 0;
         memset(&serialConfig_System, 0, sizeof(serialConfig_System));
         memset(&mspConfig_System, 0, sizeof(mspConfig_System));
+        for (unsigned slot = 0; slot < MAX_MSP_PORT_COUNT; slot++) {
+            mspConfig_System.msp_uart[slot] = SERIAL_PORT_NONE;
+        }
+        mspConfig_System.msp_uart[0] = SERIAL_PORT_DUMMY_IDENTIFIER;
         serialConfig_System.reboot_character = 'R';
 
         // memset all ports + re-allocate one from the mocked config above.
@@ -231,3 +269,132 @@ TEST_F(MspSerialPendingRequestTest, CleanMspFrame_NoSideEffects)
     EXPECT_EQ(0, rebootCount);
     EXPECT_EQ(0, cliEnterCount);
 }
+
+#if IMPLIED_MSP_SENSOR_PORT_COUNT > 0
+
+#define SENSOR_PORT_IDENTIFIER  (serialPortIdentifier_e)0x21
+#define SENSOR_PORT_IDENTIFIER2 (serialPortIdentifier_e)0x22
+
+class MspSerialAllocationTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        fakeRxHead = fakeRxTail = 0;
+        fakeMillis = 1000;
+
+        memset(fakePorts, 0, sizeof(fakePorts));
+        openedCount = 0;
+        fakeSensorPortCount = 0;
+
+        memset(&mspConfig_System, 0, sizeof(mspConfig_System));
+        for (unsigned slot = 0; slot < MAX_MSP_PORT_COUNT; slot++) {
+            mspConfig_System.msp_uart[slot] = SERIAL_PORT_NONE;
+        }
+    }
+
+    static void declareSensorPort(serialPortIdentifier_e identifier) {
+        fakeSensorPorts[fakeSensorPortCount++] = identifier;
+    }
+
+    static void feedFrame() {
+        for (size_t i = 0; i < sizeof(VALID_V1_FRAME); i++) {
+            fakeRxBuf[fakeRxTail++ % FAKE_RX_CAP] = VALID_V1_FRAME[i];
+        }
+        mspSerialProcess(MSP_EVALUATE_NON_MSP_DATA, fakeCmd, fakeReply);
+    }
+
+    static bool wasOpened(serialPortIdentifier_e identifier) {
+        for (unsigned i = 0; i < openedCount; i++) {
+            if (fakePorts[i].identifier == identifier) {
+                return true;
+            }
+        }
+        return false;
+    }
+};
+
+// An MSP-transport sensor is heard because a port is opened on the UART it
+// declares, without the user ever assigning MSP there.
+TEST_F(MspSerialAllocationTest, DeclaredSensorPortGetsAnMspPort)
+{
+    mspConfig_System.msp_uart[0] = SERIAL_PORT_DUMMY_IDENTIFIER;
+    declareSensorPort(SENSOR_PORT_IDENTIFIER);
+
+    mspSerialInit();
+
+    EXPECT_EQ(2u, openedCount);
+    EXPECT_TRUE(wasOpened(SERIAL_PORT_DUMMY_IDENTIFIER));
+    EXPECT_TRUE(wasOpened(SENSOR_PORT_IDENTIFIER));
+}
+
+// The user is free to put MSP on the sensor port as well; it is one port either
+// way, and openSerialPort() would refuse the second claim.
+TEST_F(MspSerialAllocationTest, SensorPortAlreadyCarryingMspIsOpenedOnce)
+{
+    mspConfig_System.msp_uart[0] = SENSOR_PORT_IDENTIFIER;
+    declareSensorPort(SENSOR_PORT_IDENTIFIER);
+
+    mspSerialInit();
+
+    EXPECT_EQ(1u, openedCount);
+    EXPECT_TRUE(wasOpened(SENSOR_PORT_IDENTIFIER));
+}
+
+// The implied ports have their own budget, so declaring a sensor cannot cost
+// the user a configurator link even with every msp_uart[] slot spoken for.
+TEST_F(MspSerialAllocationTest, ImpliedPortsDoNotSpendMspSlots)
+{
+    for (unsigned slot = 0; slot < MAX_MSP_PORT_COUNT; slot++) {
+        mspConfig_System.msp_uart[slot] = (serialPortIdentifier_e)(0x30 + slot);
+    }
+    declareSensorPort(SENSOR_PORT_IDENTIFIER);
+
+    mspSerialInit();
+
+    EXPECT_EQ(MAX_MSP_PORT_COUNT + 1u, openedCount);
+    for (unsigned slot = 0; slot < MAX_MSP_PORT_COUNT; slot++) {
+        EXPECT_TRUE(wasOpened((serialPortIdentifier_e)(0x30 + slot)));
+    }
+    EXPECT_TRUE(wasOpened(SENSOR_PORT_IDENTIFIER));
+}
+
+#if IMPLIED_MSP_SENSOR_PORT_COUNT > 1
+// Two modules on separate UARTs need a port each.
+TEST_F(MspSerialAllocationTest, SeparateSensorPortsEachGetAPort)
+{
+    declareSensorPort(SENSOR_PORT_IDENTIFIER);
+    declareSensorPort(SENSOR_PORT_IDENTIFIER2);
+
+    mspSerialInit();
+
+    EXPECT_EQ(2u, openedCount);
+    EXPECT_TRUE(wasOpened(SENSOR_PORT_IDENTIFIER));
+    EXPECT_TRUE(wasOpened(SENSOR_PORT_IDENTIFIER2));
+}
+#endif
+
+// An MT module streams for the whole flight, so its traffic must not read as a
+// configurator being attached - failsafe consumes that.
+TEST_F(MspSerialAllocationTest, SensorTrafficIsNotAConfigurator)
+{
+    declareSensorPort(SENSOR_PORT_IDENTIFIER);
+    mspSerialInit();
+    ASSERT_EQ(1u, openedCount);
+
+    feedFrame();
+
+    EXPECT_FALSE(mspSerialIsConfiguratorActive());
+}
+
+// The same traffic on an ordinary MSP port does.
+TEST_F(MspSerialAllocationTest, OrdinaryMspTrafficIsAConfigurator)
+{
+    mspConfig_System.msp_uart[0] = SERIAL_PORT_DUMMY_IDENTIFIER;
+    mspSerialInit();
+    ASSERT_EQ(1u, openedCount);
+
+    feedFrame();
+
+    EXPECT_TRUE(mspSerialIsConfiguratorActive());
+}
+
+#endif // IMPLIED_MSP_SENSOR_PORT_COUNT
