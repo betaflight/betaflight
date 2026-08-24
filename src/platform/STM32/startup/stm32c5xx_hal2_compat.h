@@ -622,6 +622,7 @@ static inline void HAL_GPIO_Init_stub_(void *a __attribute__((unused)), void *b 
 #define LL_GPDMA1_REQUEST_TIM8_CH4   LL_LPDMA1_REQUEST_TIM8_CC4
 #define LL_GPDMA1_REQUEST_TIM8_UP    LL_LPDMA1_REQUEST_TIM8_UPD
 #define LL_GPDMA1_REQUEST_TIM15_CH1  LL_LPDMA1_REQUEST_TIM15_CC1
+#define LL_GPDMA1_REQUEST_TIM15_CH2  LL_LPDMA1_REQUEST_TIM15_CC2
 #define LL_GPDMA1_REQUEST_TIM15_UP   LL_LPDMA1_REQUEST_TIM15_UPD
 #define LL_GPDMA1_REQUEST_TIM16_CH1  LL_LPDMA1_REQUEST_TIM16_CC1
 #define LL_GPDMA1_REQUEST_TIM16_UP   LL_LPDMA1_REQUEST_TIM16_UPD
@@ -672,14 +673,19 @@ typedef struct {
 static inline ErrorStatus LL_SPI_Init(SPI_TypeDef *SPIx,
                                       const LL_SPI_InitTypeDef *init)
 {
-    LL_SPI_SetTransferDirection(SPIx, init->TransferDirection);
-    LL_SPI_SetMode(SPIx, init->Mode);
-    LL_SPI_SetDataWidth(SPIx, init->DataWidth);
-    LL_SPI_SetClockPolarity(SPIx, init->ClockPolarity);
-    LL_SPI_SetClockPhase(SPIx, init->ClockPhase);
-    LL_SPI_SetNSSMode(SPIx, init->NSS);
-    LL_SPI_SetBaudRatePrescaler(SPIx, init->BaudRate);
-    LL_SPI_SetTransferBitOrder(SPIx, init->BitOrder);
+    // Use LL_SPI_SetConfig (the HAL2 path) so SSI is armed BEFORE
+    // CFG2.MASTER is written. The previous per-setter sequence wrote
+    // MASTER first (via LL_SPI_SetMode) with SSM still 0, which on
+    // STM32C5 silicon raises MODF and atomically clears MASTER if
+    // the hardware NSS pin happened to read low. The downstream
+    // "re-arm MASTER" in bus_spi_hal2.c then runs on a peripheral
+    // that's already in slave mode with stale state, and the next
+    // transfer drives no SCK on the pad even though EOT asserts.
+    LL_SPI_SetConfig(SPIx,
+                     init->DataWidth | init->BaudRate,
+                     init->Mode | init->TransferDirection |
+                     init->ClockPolarity | init->ClockPhase |
+                     init->BitOrder | init->NSS);
     if (init->CRCCalculation) {
         LL_SPI_EnableCRC(SPIx);
     }
@@ -705,6 +711,7 @@ static inline void LL_SPI_DeInit(SPI_TypeDef *SPIx)
 #define GPIO_AF5_SPI2    HAL_GPIO_AF5_SPI2
 #define GPIO_AF5_SPI3    HAL_GPIO_AF5_SPI3
 #define GPIO_AF6_SPI3    HAL_GPIO_AF6_SPI3
+#define GPIO_AF7_SPI3    HAL_GPIO_AF7_SPI3
 
 /* --------------------------------------------------------------------------
  * LL_TIM_DeInit: not available in HAL2 LL. Use HAL version.

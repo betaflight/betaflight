@@ -44,6 +44,12 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
+static bool uartCanTx(const uartPort_t *uartPort)
+{
+    const uartDevice_t *uartDevice = container_of(uartPort, uartDevice_t, port);
+    return (uartPort->port.mode & MODE_TX) && uartDevice->tx.pin;
+}
+
 static void usartConfigurePinInversion(uartPort_t *uartPort)
 {
     USART_TypeDef *USARTx = (USART_TypeDef *)uartPort->USARTx;
@@ -74,6 +80,7 @@ static void uartConfigurePinSwap(uartPort_t *uartPort)
 void uartReconfigure(uartPort_t *uartPort)
 {
     USART_TypeDef *USARTx = (USART_TypeDef *)uartPort->USARTx;
+    const bool canTx = uartCanTx(uartPort);
 
     // Disable all UART interrupts before disabling the peripheral to prevent
     // an interrupt storm. With UE=0, TC is always asserted (transmitter idle),
@@ -98,7 +105,7 @@ void uartReconfigure(uartPort_t *uartPort)
     if (uartPort->port.mode & MODE_RX) {
         direction |= LL_USART_DIRECTION_RX;
     }
-    if (uartPort->port.mode & MODE_TX) {
+    if (canTx) {
         direction |= LL_USART_DIRECTION_TX;
     }
     usartInit.TransferDirection = direction;
@@ -167,7 +174,7 @@ void uartReconfigure(uartPort_t *uartPort)
     }
 
     // Transmit DMA or IRQ
-    if (uartPort->port.mode & MODE_TX) {
+    if (canTx) {
 #ifdef USE_DMA
         if (uartPort->txDMAResource) {
             xLL_EX_DMA_ConfigStream(uartPort->txDMAResource,
@@ -234,6 +241,11 @@ void uartTryStartTxDMA(uartPort_t *s)
     USART_TypeDef *USARTx = (USART_TypeDef *)s->USARTx;
 
     ATOMIC_BLOCK(NVIC_PRIO_SERIALUART_TXDMA) {
+        if (!uartCanTx(s)) {
+            s->txDMAEmpty = true;
+            return;
+        }
+
         if (IS_DMA_ENABLED(s->txDMAResource)) {
             // DMA is already in progress
             return;
@@ -291,6 +303,7 @@ void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
 FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
 {
     USART_TypeDef *USARTx = (USART_TypeDef *)s->USARTx;
+    const bool canTx = uartCanTx(s);
 
     /* UART in mode Receiver ---------------------------------------------------*/
     if (LL_USART_IsEnabledIT_RXNE(USARTx) && LL_USART_IsActiveFlag_RXNE(USARTx)) {
@@ -326,8 +339,16 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
         LL_USART_ClearFlag_ORE(USARTx);
     }
 
+    if (!canTx) {
+        CLEAR_BIT(USARTx->CR1, USART_CR1_TXEIE | USART_CR1_TCIE);
+
+        if (LL_USART_IsActiveFlag_TC(USARTx)) {
+            LL_USART_ClearFlag_TC(USARTx);
+        }
+    }
+
     // UART transmission completed
-    if (LL_USART_IsEnabledIT_TC(USARTx) && LL_USART_IsActiveFlag_TC(USARTx)) {
+    if (canTx && LL_USART_IsEnabledIT_TC(USARTx) && LL_USART_IsActiveFlag_TC(USARTx)) {
         LL_USART_ClearFlag_TC(USARTx);
 
         // Switch TX to an input with pull-up so it's state can be monitored
@@ -340,7 +361,7 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
 #endif
     }
 
-    if (LL_USART_IsEnabledIT_TXE(USARTx) && LL_USART_IsActiveFlag_TXE(USARTx)) {
+    if (canTx && LL_USART_IsEnabledIT_TXE(USARTx) && LL_USART_IsActiveFlag_TXE(USARTx)) {
         /* Check that a Tx process is ongoing */
         if (s->port.txBufferTail == s->port.txBufferHead) {
             /* Disable the UART Transmit Data Register Empty Interrupt */

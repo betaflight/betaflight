@@ -21,6 +21,7 @@
 #pragma once
 
 #include "common/time.h"
+#include "common/maths.h"
 
 #include "pg/pg.h"
 #include "pg/rx.h"
@@ -147,6 +148,7 @@ typedef struct rxRuntimeState_s {
     uint16_t            *channelData;
     void                *frameData;
     timeUs_t            lastRcFrameTimeUs;
+    scaleRangef_t       scaleRange[NON_AUX_CHANNEL_COUNT];
 } rxRuntimeState_t;
 
 typedef enum {

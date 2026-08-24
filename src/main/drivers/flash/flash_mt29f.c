@@ -101,6 +101,14 @@
 #define MT29F_BLOCK_TO_PAGE(block)      ((block) * fdevice->geometry.pagesPerSector)
 #define MT29F_BLOCK_TO_LINEAR(block)    (MT29F_BLOCK_TO_PAGE(block) * MT29F_PAGE_SIZE)
 
+// Helper to extract the plane index (0 or 1) from the block address
+// On Micron m79a, even blocks = Plane 0, odd blocks = Plane 1
+#define MT29F_GET_PLANE(block) ((block) & 1)
+
+// Helper to construct the 16-bit column field with the Plane Select bit set
+#define MT29F_MAKE_COLUMN_WITH_PLANE(col, plane, bit_offset) \
+    ((uint16_t)(col) | ((uint16_t)(plane) << (bit_offset)))
+
 // IMPORTANT: Timeout values are currently required to be set to the highest value required by any of the supported flash chips by this driver
 
 // The timeout values (2ms minimum to avoid 1 tick advance in consecutive calls to millis).
@@ -112,7 +120,13 @@
 // Sizes (in bits)  Note: These differ for devices with > 1Gb of flash
 #define MT29F_STATUS_REGISTER_SIZE        8
 #define MT29F_PAGE_ADDRESS_SIZE           24
-#define MT29F_COLUMN_ADDRESS_SIZE         16 // 12 bytes + 3 + plane select
+#define MT29F_COLUMN_ADDRESS_SIZE         16 // 12 bits column + 3 dummy + plane select
+
+// Bit position of the plane select bit within the 16-bit column address.
+// See "READ FROM CACHE" / "PROGRAM LOAD" command diagrams in the datasheet:
+// [15:13] dummy, [12] plane select, [11:0] column address.
+// Only meaningful on multi-plane (>= 2Gb) devices; it's a dummy bit on 1Gb devices.
+#define MT29F_COLUMN_PLANE_SELECT_BIT     12
 
 // Table of recognised FLASH devices
 struct {
@@ -126,20 +140,29 @@ struct {
     // aka 'pages per block'
     uint16_t        pagesPerSector;
     uint16_t        pageSize;
+    // true if the device has more than one plane (see "Array Organization" in the datasheet).
+    // Multi-plane devices require the plane select bit to be set in the column address used
+    // for READ FROM CACHE / PROGRAM LOAD / PROGRAM LOAD RANDOM DATA commands.
+    bool            multiPlane;
 } mt29fFlashConfig[] = {
     // Micron MT29F1G01ABAFDWB-IT:F
     // Datasheet: https://www.micron.com/content/dam/micron/global/secure/products/data-sheet/nand-flash/70-series/m78a-1gb-3v-nand-spi.pdf
-    { 0x2C14, 1024, 64, 2048 }, // 1Gb, 3.3V version - tested
+    { 0x2C14, 1024, 64, 2048, false }, // 1Gb, 3.3V version - tested
 	// Datasheet: https://www.micron.com/content/dam/micron/global/secure/products/data-sheet/nand-flash/70-series/m79a-2gb-nand-spi-auto.pdf
-    { 0x2C24, 2048, 64, 2048 }, // 2Gb, 3.3V version - untested // from m78a-1gb-3v-nand-spi.pdf and m79a-2gb-nand-spi-auto.pdf datasheet
-    { 0x2C36, 3096, 64, 2048 }, // 3Gb, 3.3V version - untested // from m78a-1gb-3v-nand-spi.pdf datasheet only
-    { 0x2C46, 4096, 64, 2048 }, // 4Gb, 3.3V version - untested // from m78a-1gb-3v-nand-spi.pdf datasheet only
+    { 0x2C24, 2048, 64, 2048, true }, // 2Gb, 3.3V version - tested   // from m79a-2gb-nand-spi-auto.pdf and m78a-1gb-3v-nand-spi.pdf datasheets
+    { 0x2C36, 3072, 64, 2048, true }, // 3Gb, 3.3V version - untested // from m78a-1gb-3v-nand-spi.pdf datasheet only
+    { 0x2C46, 4096, 64, 2048, true }, // 4Gb, 3.3V version - untested // from m78a-1gb-3v-nand-spi.pdf datasheet only
     // Micron MT29F4G01ABAFDWB-IT:F
     // Datasheet: https://www.micron.com/content/dam/micron/global/secure/products/data-sheet/nand-flash/70-series/m70a-4gb-3v-nand-spi.pdf
-    { 0x2C34, 2048, 64, 4096 }, // 4Gb, 3.3V version - tested
-    { 0x2C35, 2048, 64, 4096 }, // 4Gb, 1.8V version - untested
-    { 0, 0, 0, 0 },
+    { 0x2C34, 2048, 64, 4096, false  }, // 4Gb, 3.3V version - tested
+    { 0x2C35, 2048, 64, 4096, false  }, // 4Gb, 1.8V version - untested
+    { 0, 0, 0, 0, false },
 };
+
+// Set from mt29fFlashConfig[].multiPlane when the device is identified.
+// True when the detected device has more than one plane and therefore requires
+// the plane select bit to be set in column addresses (see MT29F_COLUMN_PLANE_SELECT_BIT).
+static bool multiPlane = false;
 
 static bool mt29f_waitForReady(flashDevice_t *fdevice);
 
@@ -180,7 +203,7 @@ static void mt29f_performCommandWithPageAddress(flashDeviceIO_t *io, uint8_t com
     if (io->mode == FLASHIO_SPI) {
         extDevice_t *dev = io->handle.dev;
 
-        uint8_t cmd[] = { command, 0, (pageAddress >> 8) & 0xff, (pageAddress >> 0) & 0xff};
+        uint8_t cmd[] = { command, (pageAddress >> 16) & 0xff, (pageAddress >> 8) & 0xff, (pageAddress >> 0) & 0xff};
 
         busSegment_t segments[] = {
                 {.u.buffers = {cmd, NULL}, sizeof(cmd), true, NULL},
@@ -324,6 +347,26 @@ static void mt29f_writeEnable(flashDevice_t *fdevice)
     fdevice->couldBeBusy = true;
 }
 
+/**
+ * Given a byte-column offset within a page and the linear flash address that page belongs to,
+ * return the 16-bit column address to send on the wire, with the plane select bit set as needed.
+ *
+ * On single-plane devices (multiPlane == false) this is a no-op and just returns `column`.
+ * On multi-plane devices the plane select bit must match the plane of the block containing
+ * `linearAddress` (even blocks = plane 0, odd blocks = plane 1), or the READ FROM CACHE /
+ * PROGRAM LOAD / PROGRAM LOAD RANDOM DATA command will address the wrong plane's cache register.
+ */
+static uint16_t mt29f_columnWithPlane(flashDevice_t *fdevice, uint32_t linearAddress, uint16_t column)
+{
+    if (!multiPlane) {
+        return column;
+    }
+
+    const uint32_t block = MT29F_LINEAR_TO_BLOCK(linearAddress);
+
+    return MT29F_MAKE_COLUMN_WITH_PLANE(column, MT29F_GET_PLANE(block), MT29F_COLUMN_PLANE_SELECT_BIT);
+}
+
 const flashVTable_t mt29f_vTable;
 
 bool mt29f_identify(flashDevice_t *fdevice, uint32_t jedecID)
@@ -339,6 +382,7 @@ bool mt29f_identify(flashDevice_t *fdevice, uint32_t jedecID)
             geometry->sectors = mt29fFlashConfig[index].sectors;
             geometry->pagesPerSector = mt29fFlashConfig[index].pagesPerSector;
             geometry->pageSize = mt29fFlashConfig[index].pageSize;
+            multiPlane = mt29fFlashConfig[index].multiPlane;
             break;
         }
     }
@@ -349,6 +393,7 @@ bool mt29f_identify(flashDevice_t *fdevice, uint32_t jedecID)
         fdevice->geometry.pagesPerSector = 0;
         fdevice->geometry.sectorSize = 0;
         fdevice->geometry.totalSize = 0;
+        multiPlane = false;
         return false;
     }
 
@@ -570,10 +615,12 @@ static uint32_t mt29f_pageProgramContinue(flashDevice_t *fdevice, uint8_t const 
 
     isProgramming = false;
 
+    const uint16_t columnWithPlane = mt29f_columnWithPlane(fdevice, programLoadAddress, MT29F_LINEAR_TO_COLUMN(programLoadAddress));
+
     if (!bufferDirty) {
-        mt29f_programDataLoad(fdevice, MT29F_LINEAR_TO_COLUMN(programLoadAddress), buffers[0], bufferSizes[0]);
+        mt29f_programDataLoad(fdevice, columnWithPlane, buffers[0], bufferSizes[0]);
     } else {
-        mt29f_randomProgramDataLoad(fdevice, MT29F_LINEAR_TO_COLUMN(programLoadAddress), buffers[0], bufferSizes[0]);
+        mt29f_randomProgramDataLoad(fdevice, columnWithPlane, buffers[0], bufferSizes[0]);
     }
 
     // XXX Test if write enable is reset after each data loading.
@@ -690,14 +737,14 @@ static uint32_t mt29f_pageProgramContinue(flashDevice_t *fdevice, uint8_t const 
     uint32_t columnAddress;
 
     if (bufferDirty) {
-        columnAddress = MT29F_LINEAR_TO_COLUMN(programLoadAddress);
+        columnAddress = mt29f_columnWithPlane(fdevice, programLoadAddress, MT29F_LINEAR_TO_COLUMN(programLoadAddress));
         // Set the address and buffer details for the random data load
         progRandomProgDataLoad[1] = (columnAddress >> 8) & 0xff;
         progRandomProgDataLoad[2] = columnAddress & 0xff;
         programSegment = segmentsRandomDataLoad;
     } else {
         programStartAddress = programLoadAddress = fdevice->currentWriteAddress;
-        columnAddress = MT29F_LINEAR_TO_COLUMN(programLoadAddress);
+        columnAddress = mt29f_columnWithPlane(fdevice, programLoadAddress, MT29F_LINEAR_TO_COLUMN(programLoadAddress));
         // Set the address and buffer details for the data load
         progExecDataLoad[1] = (columnAddress >> 8) & 0xff;
         progExecDataLoad[2] = columnAddress & 0xff;
@@ -718,6 +765,7 @@ static uint32_t mt29f_pageProgramContinue(flashDevice_t *fdevice, uint8_t const 
         // Flash the loaded data
         currentPage = MT29F_LINEAR_TO_PAGE(programStartAddress);
 
+        progExecCmd[1] = (currentPage >> 16) & 0xff;
         progExecCmd[2] = (currentPage >> 8) & 0xff;
         progExecCmd[3] = currentPage & 0xff;
 
@@ -846,6 +894,8 @@ static int mt29f_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *bu
         transferLength = length;
     }
 
+    const uint16_t columnWithPlane = mt29f_columnWithPlane(fdevice, address, (uint16_t)column);
+
     if (fdevice->io.mode == FLASHIO_SPI) {
         extDevice_t *dev = fdevice->io.handle.dev;
 
@@ -854,8 +904,8 @@ static int mt29f_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *bu
 
         uint8_t cmd[4];
         cmd[0] = MT29F_INSTRUCTION_READ_FROM_CACHE_X1;
-        cmd[1] = (column >> 8) & 0xff;
-        cmd[2] = (column >> 0) & 0xff;
+        cmd[1] = (columnWithPlane >> 8) & 0xff;
+        cmd[2] = (columnWithPlane >> 0) & 0xff;
         cmd[3] = 0;
 
         busSegment_t segments[] = {
@@ -874,7 +924,7 @@ static int mt29f_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *bu
     else if (fdevice->io.mode == FLASHIO_QUADSPI) {
         extDevice_t *dev = fdevice->io.handle.dev;
 
-        quadSpiReceiveWithAddress4LINES(dev, MT29F_INSTRUCTION_READ_FROM_CACHE_X4, 8, column, MT29F_COLUMN_ADDRESS_SIZE, buffer, transferLength);
+        quadSpiReceiveWithAddress4LINES(dev, MT29F_INSTRUCTION_READ_FROM_CACHE_X4, 8, columnWithPlane, MT29F_COLUMN_ADDRESS_SIZE, buffer, transferLength);
     }
 #endif
 
@@ -915,14 +965,15 @@ LOCAL_UNUSED_FUNCTION static int mt29f_readExtensionBytes(flashDevice_t *fdevice
     mt29f_performCommandWithPageAddress(&fdevice->io, MT29F_INSTRUCTION_PAGE_READ, MT29F_LINEAR_TO_PAGE(address));
 
     uint32_t column = MT29F_PAGE_SIZE;
+    const uint16_t columnWithPlane = mt29f_columnWithPlane(fdevice, address, (uint16_t)column);
 
     if (fdevice->io.mode == FLASHIO_SPI) {
         extDevice_t *dev = fdevice->io.handle.dev;
 
         uint8_t cmd[4];
         cmd[0] = MT29F_INSTRUCTION_READ_FROM_CACHE_X1;
-        cmd[1] = (column >> 8) & 0xff;
-        cmd[2] = (column >> 0) & 0xff;
+        cmd[1] = (columnWithPlane >> 8) & 0xff;
+        cmd[2] = (columnWithPlane >> 0) & 0xff;
         cmd[3] = 0;
 
         busSegment_t segments[] = {
@@ -944,7 +995,7 @@ LOCAL_UNUSED_FUNCTION static int mt29f_readExtensionBytes(flashDevice_t *fdevice
     else if (fdevice->io.mode == FLASHIO_QUADSPI) {
         extDevice_t *dev = fdevice->io.handle.dev;
 
-        quadSpiReceiveWithAddress1LINE(dev, MT29F_INSTRUCTION_READ_FROM_CACHE_X1, 8, column, MT29F_COLUMN_ADDRESS_SIZE, buffer, length);
+        quadSpiReceiveWithAddress1LINE(dev, MT29F_INSTRUCTION_READ_FROM_CACHE_X1, 8, columnWithPlane, MT29F_COLUMN_ADDRESS_SIZE, buffer, length);
     }
 #endif
 

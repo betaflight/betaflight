@@ -51,6 +51,8 @@
 
 #include "platform.h"
 
+#ifdef USE_VCP
+
 #include "build/atomic.h"
 
 #include "usbd_conf.h"
@@ -69,6 +71,8 @@
 #define APP_TX_DATA_SIZE  2048
 
 #define APP_TX_BLOCK_SIZE 512
+
+#define CDC_SEND_TIMEOUT_MS 2
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -473,10 +477,15 @@ uint32_t CDC_Send_FreeBytes(void)
  */
 uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 {
-    for (uint32_t i = 0; i < sendLength; i++) {
+    uint32_t i;
+    for (i = 0; i < sendLength; i++) {
+        // Bounded to 2ms per byte; return partial count on timeout.
+        // Subtraction form avoids millis() wraparound false-triggering the deadline.
+        uint32_t start = millis();
         while (CDC_Send_FreeBytes() == 0) {
-            // block until there is free space in the ring buffer
-            delay(1);
+            if (millis() - start >= CDC_SEND_TIMEOUT_MS) {
+                return i;
+            }
         }
         ATOMIC_BLOCK(NVIC_BUILD_PRIORITY(6, 0)) { // Paranoia
             UserTxBuffer[UserTxBufPtrIn] = ptrBuffer[i];
@@ -547,5 +556,7 @@ void CDC_SetCtrlLineStateCb(void (*cb)(void *context, uint16_t ctrlLineState), v
     ctrlLineStateCbContext = context;
     ctrlLineStateCb = cb;
 }
+
+#endif // USE_VCP
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

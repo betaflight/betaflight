@@ -204,7 +204,29 @@ typedef struct pllConfig_s {
     uint32_t vciRange;
 } pllConfig_t;
 
-#if defined(STM32H743xx) || defined(STM32H750xx)
+#if defined(STM32H757xx) && defined(CORE_CM4)
+/*
+   PLL1 configuration for STM32H757 M4 core
+   SYSCLK = 480MHz, HCLK = 240MHz (after HPRE divider)
+*/
+pllConfig_t pll1ConfigH757M4 = {
+    .clockMhz = 240,  // M4 runs at HCLK = 240MHz
+    .m = 4,
+    .n = 960000000 / PLL_SRC_FREQ * 4, // VCO = 960MHz, SYSCLK = 480MHz
+    .p = 2,
+    .q = 8,
+    .r = 5,
+    .vos = PWR_REGULATOR_VOLTAGE_SCALE0,
+    .vciRange = RCC_PLL1VCIRANGE_2,
+};
+
+#define MCU_HCLK_DIVIDER RCC_HCLK_DIV2
+#define MCU_FLASH_LATENCY FLASH_LATENCY_4
+#define MCU_RCC_CRS_SYNC_SOURCE RCC_CRS_SYNC_SOURCE_USB2
+#define USE_H7_HSERDY_SLOW_WORKAROUND
+#define USE_H7_HSE_TIMEOUT_WORKAROUND
+
+#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H757xx)
 /*
    PLL1 configuration for different silicon revisions of H743 and H750.
 
@@ -355,7 +377,9 @@ static void SystemClockHSE_Config(void)
 
     pllConfig_t *pll1Config;
 
-#if defined(STM32H743xx) || defined(STM32H750xx)
+#if defined(STM32H757xx) && defined(CORE_CM4)
+    pll1Config = &pll1ConfigH757M4;
+#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H757xx)
     pll1Config = (HAL_GetREVID() == REV_ID_V) ? &pll1ConfigRevV : &pll1ConfigRevY;
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
     pll1Config = &pll1Config7A3;
@@ -472,8 +496,16 @@ void SystemClock_Config(void)
 {
     // Configure power supply
 
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H7A3xx) || defined(STM32H730xx)
-    // Legacy H7 devices (H743, H750) and newer but SMPS-less devices(H7A3, H723, H730)
+#if defined(STM32H757xx)
+    // CubeOrangePlus H757 M4 - uses SMPS power supply
+    // PWR_CR3 = PWR_CR3_SMPSEN | PWR_CR3_USB33DEN
+
+    HAL_PWREx_ConfigSupply(PWR_DIRECT_SMPS_SUPPLY);
+
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
+
+#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H7A3xx) || defined(STM32H730xx)
+    // Legacy H7 devices (H743, H750, H757) and newer but SMPS-less devices(H7A3, H723, H730)
 
     HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);
 
@@ -526,11 +558,44 @@ void SystemClock_Config(void)
 
     RCC_PeriphCLKInitTypeDef RCC_PeriphClkInit;
 
-    // Configure HSI48 as peripheral clock for USB
+#if defined(USE_USB_CLOCK_PLL3)
+    // PLL3_Q-based USB clock path. HSE → PLL3 → 48 MHz, locked-and-stable.
+    // Mirrors what ArduPilot / ChibiOS use on the same H757 chip
+    // (STM32_USBSEL = STM32_USBSEL_PLL3_Q_CK in stm32h7_mcuconf.h).
+    // The HSI48 + CRS path has a startup race on this dual-core part where
+    // HSI48 isn't accurate enough before USB SOF arrives to calibrate it, and
+    // USB never enumerates so SOF never arrives.
+    //
+    // Dividers below assume HSE = 24 MHz (CubeNode). For other HSE values, M
+    // must be adjusted so the PLL3 input is in the 4-8 MHz range.
+    #if HSE_VALUE != 24000000
+        #error "USE_USB_CLOCK_PLL3 dividers are tuned for HSE=24MHz; please add a case"
+    #endif
+    RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
+    RCC_PeriphClkInit.PLL3.PLL3M       = 4;                       // 24 / 4 = 6 MHz PLL3 input
+    RCC_PeriphClkInit.PLL3.PLL3N       = 80;                      // 6 * 80 = 480 MHz VCO
+    RCC_PeriphClkInit.PLL3.PLL3P       = 2;
+    RCC_PeriphClkInit.PLL3.PLL3Q       = 10;                      // 480 / 10 = 48 MHz USB
+    RCC_PeriphClkInit.PLL3.PLL3R       = 2;
+    RCC_PeriphClkInit.PLL3.PLL3RGE     = RCC_PLL3VCIRANGE_1;      // 4-8 MHz input range
+    RCC_PeriphClkInit.PLL3.PLL3VCOSEL  = RCC_PLL3VCOWIDE;         // 192-960 MHz VCO range
+    RCC_PeriphClkInit.PLL3.PLL3FRACN   = 0;
+    RCC_PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL3;
+    HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
+#else
+    // Configure HSI48 as peripheral clock for USB.
+    // HSI48ON was set in SystemInit but never waited on — selecting HSI48 as the
+    // USB clock source before HSI48RDY asserts means the OTG peripheral starts
+    // with an unstable / dead clock and never enumerates. Mirror what ChibiOS
+    // does in os/hal/ports/STM32/STM32H7xx/hal_lld.c:301-304: spin until ready.
+    while ((RCC->CR & RCC_CR_HSI48RDY) == 0) {
+        // HSI48 typically stabilises in well under 1 ms; no timeout needed.
+    }
 
     RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
     RCC_PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
     HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
+#endif
 
     // Configure CRS for dynamic calibration of HSI48
     // While ES0392 Rev 5 "STM32H742xI/G and STM32H743xI/G device limitations" states CRS not working for REV.Y,
@@ -621,7 +686,7 @@ void SystemClock_Config(void)
 
     RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_SDMMC;
 
-#    if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H725xx) || defined(STM32H735xx)
+#    if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H725xx) || defined(STM32H735xx) || defined(STM32H757xx)
     RCC_PeriphClkInit.PLL2.PLL2M = 5;
     RCC_PeriphClkInit.PLL2.PLL2N = 800000000 / PLL_SRC_FREQ * 5; // Oscillator Frequency / 5 (PLL2M) = 1.6 * this value (PLL2N) = 800Mhz.
     RCC_PeriphClkInit.PLL2.PLL2VCOSEL = RCC_PLL2VCOWIDE; // Wide VCO range:192 to 836 MHz
@@ -654,7 +719,8 @@ void SystemClock_Config(void)
 
     // TODO H730 OCTOSPI clock for 100Mhz flash chips should use PLL2R at 200Mhz
 
-    // Configure MCO clocks for clock test/verification
+#if !defined(CORE_CM4)
+    // Configure MCO clocks for clock test/verification (M7 only)
 
     // Possible sources for MCO1:
     //   RCC_MCO1SOURCE_HSI (hsi_ck)
@@ -675,6 +741,7 @@ void SystemClock_Config(void)
     //   RCC_MCO2SOURCE_LSICLK (lsi_ck)
 
     HAL_RCC_MCOConfig(RCC_MCO2, RCC_MCO2SOURCE_PLLCLK, RCC_MCODIV_15); // PLL1P(400M) / 15 = 26.67M
+#endif
 }
 
 #ifdef USE_CRS_INTERRUPTS
@@ -762,7 +829,7 @@ void SystemInit (void)
     RCC->CR |= RCC_CR_HSEON;
     RCC->CR |= RCC_CR_HSI48ON;
 
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx)
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx) || defined(STM32H757xx)
     /* Reset D1CFGR register */
     RCC->D1CFGR = 0x00000000;
 
@@ -810,8 +877,10 @@ void SystemInit (void)
     /* Disable all interrupts */
     RCC->CIER = 0x00000000;
 
+#if !defined(CORE_CM4)
     /* Change  the switch matrix read issuing capability to 1 for the AXI SRAM target (Target 7) */
   *((__IO uint32_t*)0x51008108) = 0x00000001;
+#endif
 
 #if defined(DATA_IN_ExtSRAM) || defined(DATA_IN_ExtSDRAM)
     SystemInit_ExtMemCtl();
@@ -819,7 +888,7 @@ void SystemInit (void)
 
     /* Configure the Vector Table location add offset address ------------------*/
 #if defined(VECT_TAB_SRAM)
-  #if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx)
+  #if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx) || defined(STM32H757xx)
     SCB->VTOR = D1_AXISRAM_BASE  | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal ITCMSRAM */
   #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
     SCB->VTOR = CD_AXISRAM_BASE  | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal ITCMSRAM */
@@ -842,6 +911,9 @@ void SystemInit (void)
 
     SCB->VTOR = (uint32_t)&ram_isr_vector_table_base;
   #endif
+#elif defined(CORE_CM4)
+    extern uint8_t isr_vector_table_base;
+    SCB->VTOR = (uint32_t)&isr_vector_table_base;         /* M4: use linker-defined vector table base */
 #else
     SCB->VTOR = FLASH_BANK1_BASE | VECT_TAB_OFFSET;       /* Vector Table Relocation in Internal FLASH */
 #endif
@@ -852,6 +924,28 @@ void SystemInit (void)
 
     SystemClock_Config();
     SystemCoreClockUpdate();
+
+#if defined(CORE_CM7) && defined(USE_CUBEFRAMEWORK_M7)
+    // M7 is the boot core on STM32H757. The M4 stays halted by default
+    // until RCC_GCR.BOOT_C2 is set. Probe the M4 vector table at the
+    // partition boundary; only release the M4 if a sane image is present
+    // (valid stack pointer + PC inside the M4 flash region).
+    {
+        const uint32_t m4_vector_base = 0x08180000U;
+        const uint32_t m4_sp = *(volatile uint32_t *)(m4_vector_base + 0U);
+        const uint32_t m4_pc = *(volatile uint32_t *)(m4_vector_base + 4U);
+        const uint32_t sp_min = 0x10000000U;  // ITCM range start (any valid M4 RAM target is above this)
+        const uint32_t sp_max = 0x40000000U;
+        const uint32_t pc_min = 0x08180000U;
+        const uint32_t pc_max = 0x081FFFFFU;
+        if (m4_sp >= sp_min && m4_sp <= sp_max &&
+            m4_pc >= pc_min && m4_pc <= pc_max) {
+            RCC->GCR |= RCC_GCR_BOOT_C2;
+            __DSB();
+        }
+        /* else: no M4 image flashed — leave M4 halted. */
+    }
+#endif
 
 #ifdef STM32H7
     initialiseD2MemorySections();

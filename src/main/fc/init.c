@@ -98,6 +98,9 @@
 #include "flight/alt_hold.h"
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#include "flight/flight_plan_nav.h"
+#endif
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/gps_rescue.h"
@@ -274,9 +277,11 @@ static void configureCANBusses(void)
 {
     canPinConfigure(canPinConfig(0));
     const uint32_t bitrate = (uint32_t)canConfig()->bitrate_khz * 1000U;
-    canInit(CANDEV_1, bitrate);
-    canInit(CANDEV_2, bitrate);
-    canInit(CANDEV_3, bitrate);
+    // Try every CAN device the platform advertises.  canInit() returns
+    // false for absent / unconfigured devices; that is harmless.
+    for (int dev = 0; dev < CANDEV_COUNT; dev++) {
+        canInit((canDevice_e)dev, bitrate);
+    }
 }
 #endif
 
@@ -760,6 +765,7 @@ void initPhase3(void)
     pinioBoxInit(pinioBoxConfig());
 #endif
 
+
     LED1_ON;
     LED0_OFF;
     LED2_OFF;
@@ -769,7 +775,11 @@ void initPhase3(void)
         LED0_TOGGLE;
 #if defined(USE_BEEPER)
         delay(25);
-        if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_SYSTEM_INIT))) {
+        // This boot beep bypasses beeper()/beeperUsbSuppressed(), so honour BEEPER_USB
+        // here directly. MSP is not up yet, but usbCableIsInserted() is already valid.
+        const bool usbSuppressed = (beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
+            && usbCableIsInserted();
+        if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_SYSTEM_INIT)) && !usbSuppressed) {
             BEEP_ON;
         }
         delay(25);
@@ -781,6 +791,7 @@ void initPhase3(void)
 
     LED0_OFF;
     LED1_OFF;
+
 
     imuInit();
 
@@ -861,6 +872,9 @@ void initPhase3(void)
 
     positionInit();
     autopilotInit();
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+    flightPlanNavInit();
+#endif
 
 #if defined(USE_VTX_COMMON) || defined(USE_VTX_CONTROL)
     vtxTableInit();
@@ -1062,7 +1076,9 @@ void initPhase3(void)
 
     debugInit();
 
+#if ENABLE_UNUSED_PINS_INIT
     unusedPinsInit();
+#endif
 
     tasksInit();
 

@@ -21,8 +21,8 @@
 
 #pragma once
 
+// pico sdk header includes
 #include "RP2350.h"
-
 #include "pico.h"
 #include "pico/stdlib.h"
 #include "hardware/dma.h"
@@ -30,6 +30,12 @@
 #include "hardware/i2c.h"
 #include "hardware/spi.h"
 #include "hardware/uart.h"
+#include "pico_trace.h"
+
+// Revert MAX, MIN definitions because they are unsafe for general use (double evaluations).
+// Code that requires MAX, MIN should include common/maths.h
+#undef MAX
+#undef MIN
 
 #define NVIC_PriorityGroup_2         0x500
 #define PLATFORM_NO_LIBC             0
@@ -122,6 +128,13 @@ struct quadSpiResource_s
 #define SERIAL_UART_FIRST_INDEX     0
 #define SERIAL_PIOUART_FIRST_INDEX  0
 
+// This MCU names its bus peripherals from zero (UART0, PIOUART0, SPI0, I2C0). Opt
+// the CLI `resource` command into hardware-instance ordinals so each index matches
+// the peripheral name: the bus peripherals here are 0-based (e.g. `resource
+// SERIAL_RX 1` is UART1), while logical resources (motor 1, servo 1) and sensors
+// (gyro 1) stay 1-based. See resourceDisplayBase() in cli.c.
+#define USE_RESOURCE_INDEX_FROM_ZERO
+
 extern uint32_t systemUniqueId[3];
 
 // PICOs have an 8 byte unique identifier.
@@ -153,3 +166,32 @@ extern uint32_t systemUniqueId[3];
 #define NVIC_BUILD_PRIORITY(base,sub) (((((base)<<(4-(7-(NVIC_PRIORITY_GROUPING>>8))))|((sub)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8)))))<<4)&0xf0)
 #define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING>>8))))>>4)
 #define NVIC_PRIORITY_SUB(prio) (((prio)>>4)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8))))
+
+#if OSD_FB_PICO_ENABLE_PIXEL_MODE
+// These pixel-based elements may be disabled in config
+
+#ifndef OSD_FB_ELEMENT_ENABLE_ARTIFICIAL_HORIZON
+#define OSD_FB_ELEMENT_ENABLE_ARTIFICIAL_HORIZON   1
+#endif
+
+#ifndef OSD_FB_ELEMENT_ENABLE_ALTITUDE
+#define OSD_FB_ELEMENT_ENABLE_ALTITUDE             1
+#endif
+
+#endif // OSD_FB_PICO_ENABLE_PIXEL_MODE
+
+#if OSD_FB_ENABLE_SMALLFONT
+
+#ifndef OSD_SMALLFONT_COLS
+#define OSD_SMALLFONT_COLS          46
+#endif
+
+#ifndef OSD_SMALLFONT_ROWS_PAL
+#define OSD_SMALLFONT_ROWS_PAL      24
+#endif
+
+#ifndef OSD_SMALLFONT_ROWS_NTSC
+#define OSD_SMALLFONT_ROWS_NTSC     19
+#endif
+
+#endif //  OSD_FB_PICO_ENABLE_PIXEL_MODE

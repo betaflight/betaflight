@@ -83,11 +83,13 @@ endif
 ARCH_FLAGS      = -std=c99 -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16
 DEVICE_FLAGS   += -DUSE_ATBSP_DRIVER -DAT32F43x -DHSE_VALUE=$(HSE_VALUE) -DAT32 -DUSE_OTG_HOST_MODE
 
-MCU_COMMON_SRC = \
-            common/stm32/system.c \
-            common/stm32/io_impl.c \
-            common/stm32/config_flash.c \
+# Portable common/stm32 sources shared with the STM32/APM32/X32 families.
+include $(PLATFORM_DIR)/common/stm32/mcu_common_src.mk
+
+MCU_COMMON_SRC += \
             common/stm32/mco.c \
+            common/stm32/bus_spi_hw.c \
+            common/stm32/camera_control.c \
             AT32/startup/at32f435_437_clock.c \
             AT32/startup/system_at32f435_437.c \
             AT32/adc_at32f43x.c \
@@ -101,6 +103,7 @@ MCU_COMMON_SRC = \
             AT32/dshot_bitbang.c \
             AT32/dshot_bitbang_stdperiph.c \
             AT32/exti_at32.c \
+            AT32/gyro_clkin_at32.c \
             AT32/io_at32.c \
             AT32/light_ws2811strip_at32f43x.c \
             AT32/persistent_at32bsp.c \
@@ -117,33 +120,18 @@ MCU_COMMON_SRC = \
             drivers/accgyro/accgyro_mpu.c \
             drivers/dshot_bitbang_decode.c \
             drivers/inverter.c \
-            common/stm32/pwm_output_beeper.c \
-            common/stm32/pwm_output_dshot_shared.c \
-            common/stm32/dshot_dpwm.c \
-            common/stm32/dshot_bitbang_shared.c \
             $(MIDDLEWARES_DIR)/i2c_application_library/i2c_application.c \
             drivers/bus_i2c_timing.c \
             drivers/usb_msc_common.c \
             drivers/adc.c \
             drivers/bus_spi_config.c \
-            common/stm32/bus_i2c_pinconfig.c \
-            common/stm32/bus_spi_pinconfig.c \
-            common/stm32/bus_spi_hw.c \
-            common/stm32/camera_control.c \
-            common/stm32/serial_uart_hw.c \
-            common/stm32/serial_uart_pinconfig.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \
             msc/emfat_file.c \
-            msc/usbd_storage_sd_spi.c \
-            common/stm32/ledstrip_ws2811_stm32.c \
-            common/stm32/debug_pin.c \
-            common/stm32/adc_impl.c \
-            common/stm32/expresslrs_driver_hw.c \
-            common/stm32/fault_handlers.c
+            msc/usbd_storage_sd_spi.c
 
 SPEED_OPTIMISED_SRC += \
             common/stm32/dshot_bitbang_shared.c \

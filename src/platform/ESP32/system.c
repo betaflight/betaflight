@@ -33,7 +33,7 @@
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
 
-#if defined(ESP32S3)
+#if defined(ESP32S3) || defined(ESP32C5) || defined(ESP32P4)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #include "hal/systimer_ll.h"
@@ -43,10 +43,23 @@
 
 #include "esp_rom_sys.h"
 #include "soc/efuse_reg.h"
+
+// FORCE_DOWNLOAD_BOOT lives in the always-on (RTC/LP) domain; its register
+// differs per variant.
+#if defined(ESP32S3)
+#include "soc/rtc_cntl_reg.h"
+#elif defined(ESP32C5)
+#include "soc/lp_aon_reg.h"
+#elif defined(ESP32P4)
+#include "soc/lp_system_reg.h"
+#endif
 #include "soc/soc.h"
 
-// Both ESP32 and ESP32-S3 run at 240 MHz by default
-uint32_t SystemCoreClock = 240000000;
+// Derived at runtime in systemInit() from the ROM ticks-per-microsecond value,
+// which reflects whatever frequency the bootloader actually left the CPU at.
+// Avoids baking in a per-target clock, so future SoCs (e.g. P4, which runs
+// faster than the S3's 240 MHz) report the correct frequency without a change.
+uint32_t SystemCoreClock = 0;
 
 // Peripheral instance storage (port numbers for ESP-IDF)
 esp32_peripheral_t esp32SpiDev0 = 0;
@@ -68,22 +81,55 @@ void cycleCounterInit(void)
     usTicksInv = 1e6f / SystemCoreClock;
 }
 
+#ifdef USE_MULTICORE
+#include "platform/multicore.h"
+#endif
+
 void systemInit(void)
 {
+    // Read the frequency the bootloader left us at rather than assuming one. The
+    // RTC clock-switch routine updates the ROM ticks-per-microsecond on every ESP
+    // target, so this stays correct as new SoCs are brought up. Must run before
+    // cycleCounterInit(), which derives usTicks from SystemCoreClock.
+    const uint32_t cpuTicksPerUs = esp_rom_get_cpu_ticks_per_us();
+    if (cpuTicksPerUs != 0) {
+        SystemCoreClock = cpuTicksPerUs * 1000000U;
+    } else {
+        // Unreachable in practice: the ROM sets ticks-per-microsecond during
+        // first-stage boot. Fall back to the conservative bootloader boot
+        // frequency purely so cycleCounterInit() below cannot divide by zero.
+        SystemCoreClock = 80000000U;
+    }
+
     cycleCounterInit();
 
-#if defined(ESP32S3)
+#ifdef USE_MULTICORE
+    // Bring up core 1 (APP_CPU) and its command loop. Core 0 owns the FC and all
+    // interrupts/peripherals; core 1 is available as a compute-offload helper via
+    // multicoreExecute()/multicoreExecuteBlocking().
+    multicoreStart();
+#endif
+
+#if defined(ESP32S3) || defined(ESP32C5) || defined(ESP32P4)
     // Initialize systimer - should already be running from ROM bootloader,
     // but enable clock and counter 0 to be safe
     systimer_ll_enable_clock(&SYSTIMER, true);
     systimer_ll_enable_counter(&SYSTIMER, 0, true);
+#endif
 
-    // Read 6-byte MAC address from eFuse into systemUniqueId
+    // Read 6-byte MAC address from eFuse into systemUniqueId. Register
+    // names diverge across chips.
+#if defined(ESP32S3)
     uint32_t mac0 = REG_READ(EFUSE_RD_MAC_SPI_SYS_0_REG);
     uint32_t mac1 = REG_READ(EFUSE_RD_MAC_SPI_SYS_1_REG);
+#elif defined(ESP32C5)
+    uint32_t mac0 = REG_READ(EFUSE_RD_MAC_SYS0_REG);
+    uint32_t mac1 = REG_READ(EFUSE_RD_MAC_SYS1_REG);
+#elif defined(ESP32P4)
+    uint32_t mac0 = REG_READ(EFUSE_RD_MAC_SYS_0_REG);
+    uint32_t mac1 = REG_READ(EFUSE_RD_MAC_SYS_1_REG);
 #else
-    // Original ESP32 uses CCOUNT for timing — already running from reset
-    // Read 6-byte MAC address from eFuse (different register names on ESP32)
+    // Original ESP32 (LX6) eFuse layout
     uint32_t mac0 = REG_READ(EFUSE_BLK0_RDATA1_REG);
     uint32_t mac1 = REG_READ(EFUSE_BLK0_RDATA2_REG);
 #endif
@@ -101,17 +147,34 @@ void systemReset(void)
 void systemResetToBootloader(bootloaderRequestType_e requestType)
 {
     UNUSED(requestType);
+
+    // Request the mask-ROM USB/UART download mode on the next boot, then reset.
+    // FORCE_DOWNLOAD_BOOT is in the always-on (RTC/LP) power domain so it
+    // survives the system reset; the ROM first-stage reads it and enters
+    // download mode (esptool/DFU over the native USB) instead of loading the
+    // app - the ESP32 equivalent of jumping to the STM32 system DFU. The host
+    // flashing tool issues a full reset afterwards, which clears the bit.
+#if defined(ESP32S3)
+    REG_SET_BIT(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+#elif defined(ESP32C5)
+    REG_SET_BIT(LP_AON_SYS_CFG_REG, LP_AON_FORCE_DOWNLOAD_BOOT);
+#elif defined(ESP32P4)
+    REG_SET_BIT(LP_SYSTEM_REG_SYS_CTRL_REG, LP_SYSTEM_REG_FORCE_DOWNLOAD_BOOT);
+#endif
+
     systemReset();
 }
 
 STATIC_ASSERT(sizeof(timeMs_t) == sizeof(uint32_t), timeMs_t_is_32_bit_failed);
 STATIC_ASSERT(sizeof(timeUs_t) == sizeof(uint32_t), timeUs_t_is_32_bit_failed);
 
-#if defined(ESP32S3)
-// ESP32-S3 systimer runs at 16 MHz (XTAL_CLK), each tick = 62.5 ns
+#if defined(ESP32S3) || defined(ESP32C5) || defined(ESP32P4)
+// S3 / C5 / P4 systimer ticks at the XTAL frequency. The exact rate
+// (16 MHz on S3, similar on C5/P4) wants verifying when the C5/P4
+// driver port lands.
 #define SYSTIMER_TICKS_PER_US  16
 
-timeUs_t micros(void)
+FAST_CODE timeUs_t micros(void)
 {
     // Take a snapshot of counter unit 0
     systimer_ll_counter_snapshot(&SYSTIMER, 0);
@@ -135,7 +198,7 @@ static uint32_t lastCcount = 0;
 static uint32_t cycleRemainder = 0;
 static uint32_t usAccumulator = 0;
 
-timeUs_t micros(void)
+FAST_CODE timeUs_t micros(void)
 {
     uint32_t ccount;
     __asm__ __volatile__("rsr %0, ccount" : "=a"(ccount));
@@ -158,7 +221,7 @@ timeMs_t millis(void)
     return micros() / 1000;
 }
 
-timeUs_t microsISR(void)
+FAST_CODE timeUs_t microsISR(void)
 {
     return micros();
 }
@@ -173,34 +236,40 @@ void delay(uint32_t ms)
     esp_rom_delay_us(ms * 1000);
 }
 
-uint32_t getCycleCounter(void)
+FAST_CODE uint32_t getCycleCounter(void)
 {
     uint32_t val;
+#if defined(ESP32C5) || defined(ESP32P4)
+    // RISC-V cycle CSR
+    __asm__ __volatile__("csrr %0, mcycle" : "=r"(val));
+#else
+    // Xtensa cycle counter
     __asm__ __volatile__("rsr.ccount %0" : "=r"(val));
+#endif
     return val;
 }
 
-int32_t clockCyclesToMicros(int32_t clockCycles)
+FAST_CODE int32_t clockCyclesToMicros(int32_t clockCycles)
 {
     return clockCycles / usTicks;
 }
 
-float clockCyclesToMicrosf(int32_t clockCycles)
+FAST_CODE float clockCyclesToMicrosf(int32_t clockCycles)
 {
     return clockCycles * usTicksInv;
 }
 
-int32_t clockCyclesTo10thMicros(int32_t clockCycles)
+FAST_CODE int32_t clockCyclesTo10thMicros(int32_t clockCycles)
 {
     return 10 * clockCycles / (int32_t)usTicks;
 }
 
-int32_t clockCyclesTo100thMicros(int32_t clockCycles)
+FAST_CODE int32_t clockCyclesTo100thMicros(int32_t clockCycles)
 {
     return 100 * clockCycles / (int32_t)usTicks;
 }
 
-uint32_t clockMicrosToCycles(uint32_t micros)
+FAST_CODE uint32_t clockMicrosToCycles(uint32_t micros)
 {
     return micros * usTicks;
 }

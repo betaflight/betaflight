@@ -37,9 +37,11 @@
 #define NOINLINE
 #define FAST_CODE
 #define FAST_CODE_NOINLINE
+#define FAST_CODE_NOINLINE_CRITICAL
 #define FAST_CODE_PREF
 #define FAST_DATA_ZERO_INIT
 #define FAST_DATA
+#define RAM_CODE
 
 
 #define PID_PROFILE_COUNT 4

@@ -31,9 +31,9 @@
 
 #if !defined(CONFIG_IN_FLASH)
 #if defined(CONFIG_IN_RAM) && defined(PERSISTENT)
-PERSISTENT uint8_t eepromData[EEPROM_SIZE];
+PERSISTENT __attribute__((aligned(8))) uint8_t eepromData[EEPROM_SIZE];
 #else
-uint8_t eepromData[EEPROM_SIZE];
+__attribute__((aligned(8))) uint8_t eepromData[EEPROM_SIZE];
 #endif
 #endif
 

@@ -25,7 +25,7 @@
 
 #include "platform.h"
 
-#if defined(USE_I2C) && !defined(USE_SOFT_I2C)
+#if defined(USE_I2C) && !defined(USE_SOFT_I2C) && !defined(USE_I3C_AS_I2C)
 
 #include "drivers/io.h"
 #include "drivers/nvic.h"
@@ -142,7 +142,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
         // Some boards are overloading SWD pins with I2C1 for maximum pin utilization on 48-pin CE(U) packages.
         // Be carefull when using SWD on these boards if I2C1 pins are defined by default.
 
-        .sclPins = { I2CPINDEF(PA13, GPIO_AF4_I2C1), I2CPINDEF(PA15, GPIO_AF4_I2C1), I2CPINDEF(PB6,  GPIO_AF4_I2C1), I2CPINDEF(PB8,  GPIO_AF4_I2C1), },
+        .sclPins = { I2CPINDEF(PA13, GPIO_AF4_I2C1), I2CPINDEF(PA15, GPIO_AF4_I2C1), I2CPINDEF(PB8,  GPIO_AF4_I2C1), },
         .sdaPins = { I2CPINDEF(PA14, GPIO_AF4_I2C1), I2CPINDEF(PB7,  GPIO_AF4_I2C1), I2CPINDEF(PB9,  GPIO_AF4_I2C1), },
         .rcc = RCC_APB11(I2C1),
         .ev_irq = I2C1_EV_IRQn,
@@ -153,8 +153,8 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_2,
         .reg = (i2cResource_t *)I2C2,
-        .sclPins = { I2CPINDEF(PA9,  GPIO_AF4_I2C2) },
-        .sdaPins = { I2CPINDEF(PA8, GPIO_AF4_I2C2), I2CPINDEF(PF6, GPIO_AF4_I2C2) },
+        .sclPins = { I2CPINDEF(PA9,  GPIO_AF4_I2C2), I2CPINDEF(PF6, GPIO_AF4_I2C2) },
+        .sdaPins = { I2CPINDEF(PA8,  GPIO_AF4_I2C2) },
         .rcc = RCC_APB11(I2C2),
         .ev_irq = I2C2_EV_IRQn,
         .er_irq = I2C2_ER_IRQn,
@@ -179,8 +179,8 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
         // Here, SWDIO(PA13) is overloaded with I2C4_SCL, too.
         // See comment in the I2C1 section above.
 
-        .sclPins = { I2CPINDEF(PA13, GPIO_AF3_I2C4), I2CPINDEF(PB6,  GPIO_AF3_I2C4), I2CPINDEF(PC6,  GPIO_AF8_I2C4), },
-        .sdaPins = { I2CPINDEF(PB7,  GPIO_AF4_I2C4), I2CPINDEF(PC7,  GPIO_AF8_I2C4), },
+        .sclPins = { I2CPINDEF(PA13, GPIO_AF3_I2C4), I2CPINDEF(PC6,  GPIO_AF8_I2C4), },
+        .sdaPins = { I2CPINDEF(PB7,  GPIO_AF3_I2C4), I2CPINDEF(PC7,  GPIO_AF8_I2C4), },
         .rcc = RCC_APB12(I2C4),
         .ev_irq = I2C4_EV_IRQn,
         .er_irq = I2C4_ER_IRQn,
@@ -203,7 +203,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
         .device = I2CDEV_2,
         .reg = (i2cResource_t *)I2C2,
         .sclPins = { I2CPINDEF(PB10, GPIO_AF4_I2C2), I2CPINDEF(PF1, GPIO_AF4_I2C2) },
-        .sdaPins = { I2CPINDEF(PB11, GPIO_AF4_I2C2), I2CPINDEF(PF0, GPIO_AF4_I2C2) },
+        .sdaPins = { I2CPINDEF(PB3, GPIO_AF4_I2C2), I2CPINDEF(PB11, GPIO_AF4_I2C2), I2CPINDEF(PB12, GPIO_AF4_I2C2), I2CPINDEF(PF0, GPIO_AF4_I2C2) },
         .rcc = RCC_APB1L(I2C2),
         .ev_irq = I2C2_EV_IRQn,
         .er_irq = I2C2_ER_IRQn,
@@ -224,8 +224,8 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_4,
         .reg = (i2cResource_t *)I2C4,
-        .sclPins = { I2CPINDEF(PD12, GPIO_AF4_I2C4), I2CPINDEF(PF14, GPIO_AF4_I2C4), I2CPINDEF(PB6, GPIO_AF6_I2C4), I2CPINDEF(PB8, GPIO_AF6_I2C4) },
-        .sdaPins = { I2CPINDEF(PD13, GPIO_AF4_I2C4), I2CPINDEF(PF15, GPIO_AF4_I2C4), I2CPINDEF(PB7, GPIO_AF6_I2C4), I2CPINDEF(PB9, GPIO_AF6_I2C4) },
+        .sclPins = { I2CPINDEF(PD12, GPIO_AF4_I2C4), I2CPINDEF(PF5, GPIO_AF4_I2C4), I2CPINDEF(PG7, GPIO_AF4_I2C4), I2CPINDEF(PB6, GPIO_AF6_I2C4), I2CPINDEF(PB8, GPIO_AF6_I2C4) },
+        .sdaPins = { I2CPINDEF(PD13, GPIO_AF4_I2C4), I2CPINDEF(PF15, GPIO_AF4_I2C4), I2CPINDEF(PG6, GPIO_AF4_I2C4), I2CPINDEF(PB7, GPIO_AF6_I2C4), I2CPINDEF(PB9, GPIO_AF6_I2C4) },
         .rcc = RCC_APB3(I2C4),
         .ev_irq = I2C4_EV_IRQn,
         .er_irq = I2C4_ER_IRQn,
@@ -236,8 +236,8 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_1,
         .reg = (i2cResource_t *)I2C1,
-        .sclPins = { I2CPINDEF(PB6, GPIO_AF4_I2C1), I2CPINDEF(PB8, GPIO_AF4_I2C1) },
-        .sdaPins = { I2CPINDEF(PB7, GPIO_AF4_I2C1), I2CPINDEF(PB9, GPIO_AF4_I2C1) },
+        .sclPins = { I2CPINDEF(PE5, GPIO_AF4_I2C1), I2CPINDEF(PH9, GPIO_AF4_I2C1) },
+        .sdaPins = { I2CPINDEF(PC1, GPIO_AF4_I2C1), I2CPINDEF(PE6, GPIO_AF4_I2C1) },
         .rcc = RCC_APB1(I2C1),
         .ev_irq = I2C1_EV_IRQn,
         .er_irq = I2C1_ER_IRQn,
@@ -247,8 +247,8 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_2,
         .reg = (i2cResource_t *)I2C2,
-        .sclPins = { I2CPINDEF(PB10, GPIO_AF4_I2C2), I2CPINDEF(PF1, GPIO_AF4_I2C2) },
-        .sdaPins = { I2CPINDEF(PB11, GPIO_AF4_I2C2), I2CPINDEF(PF0, GPIO_AF4_I2C2) },
+        .sclPins = { I2CPINDEF(PB10, GPIO_AF4_I2C2), I2CPINDEF(PD14, GPIO_AF4_I2C2) },
+        .sdaPins = { I2CPINDEF(PB11, GPIO_AF4_I2C2), I2CPINDEF(PD4, GPIO_AF4_I2C2), I2CPINDEF(PD15, GPIO_AF4_I2C2) },
         .rcc = RCC_APB1(I2C2),
         .ev_irq = I2C2_EV_IRQn,
         .er_irq = I2C2_ER_IRQn,
@@ -259,7 +259,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
         .device = I2CDEV_3,
         .reg = (i2cResource_t *)I2C3,
         .sclPins = { I2CPINDEF(PA8, GPIO_AF4_I2C3) },
-        .sdaPins = { I2CPINDEF(PC9, GPIO_AF4_I2C3) },
+        .sdaPins = { I2CPINDEF(PA9, GPIO_AF4_I2C3), I2CPINDEF(PC9, GPIO_AF4_I2C3) },
         .rcc = RCC_APB1(I2C3),
         .ev_irq = I2C3_EV_IRQn,
         .er_irq = I2C3_ER_IRQn,
@@ -269,8 +269,8 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_4,
         .reg = (i2cResource_t *)I2C4,
-        .sclPins = { I2CPINDEF(PD12, GPIO_AF4_I2C4), I2CPINDEF(PB6, GPIO_AF4_I2C4), I2CPINDEF(PB8, GPIO_AF4_I2C4) },
-        .sdaPins = { I2CPINDEF(PD13, GPIO_AF4_I2C4), I2CPINDEF(PB7, GPIO_AF4_I2C4), I2CPINDEF(PB9, GPIO_AF4_I2C4) },
+        .sclPins = { I2CPINDEF(PC10, GPIO_AF4_I2C4), I2CPINDEF(PE13, GPIO_AF4_I2C4) },
+        .sdaPins = { I2CPINDEF(PC11, GPIO_AF4_I2C4), I2CPINDEF(PD11, GPIO_AF4_I2C4), I2CPINDEF(PE14, GPIO_AF4_I2C4) },
         .rcc = RCC_APB4(I2C4),
         .ev_irq = I2C4_EV_IRQn,
         .er_irq = I2C4_ER_IRQn,

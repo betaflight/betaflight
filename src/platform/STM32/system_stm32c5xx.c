@@ -240,6 +240,13 @@ void systemInit(void)
     // .data/.bss copy/clear loop doesn't cover these sections).
     initialiseDmaMemorySections();
 
+    // Route MemManage/BusFault/UsageFault to their specific handlers
+    // instead of escalating straight to HardFault. CFSR/MMFAR/BFAR
+    // survive into the handler so fault_handlers.c can capture them.
+    SCB->SHCSR |= SCB_SHCSR_MEMFAULTENA_Msk
+                | SCB_SHCSR_BUSFAULTENA_Msk
+                | SCB_SHCSR_USGFAULTENA_Msk;
+
     memProtReset();
     memProtConfigure(mpuRegions, mpuRegionCount);
 
@@ -255,26 +262,41 @@ void systemInit(void)
     // call it here instead -- by this point .data is live.
     HAL_Init();
 
-    // ICACHE is intentionally left at reset default (disabled) on STM32C5.
+#if ENABLE_BOOT0_PIN_SELECT
+    // FLASH_OPTSR.BOOT_SEL defaults to 0, which makes the BOOT0 *pin*
+    // inert and forces the boot source to come from the BOOT0 *bit* in
+    // OPTSR. A BF crash before USB-VCP enumerates then leaves no DFU
+    // recovery path short of an SWD mass-erase. Flip BOOT_SEL to 1
+    // once so the BOOT0 button drives boot mode from the next reset on.
+    if (HAL_FLASH_ITF_OB_GetBootSelection(HAL_FLASH) != HAL_FLASH_ITF_OB_BOOT_PIN) {
+        HAL_FLASH_ITF_Unlock(HAL_FLASH);
+        HAL_FLASH_ITF_OB_Unlock(HAL_FLASH);
+        if (HAL_FLASH_ITF_OB_SetBootSelection(HAL_FLASH, HAL_FLASH_ITF_OB_BOOT_PIN) == HAL_OK
+            && HAL_FLASH_ITF_OB_Program(HAL_FLASH) == HAL_OK) {
+            // C5 has no OBL_LAUNCH; OPTSR_CUR only reloads on chip reset.
+            NVIC_SystemReset();
+        }
+        HAL_FLASH_ITF_OB_Lock(HAL_FLASH);
+        HAL_FLASH_ITF_Lock(HAL_FLASH);
+    }
+#endif
+
+    // Enable the STM32C5 (Cortex-M33) instruction cache. Despite the name,
+    // ICACHE sits on the C-AHB code bus and caches anything fetched through it
+    // (instructions and const/flash data); it is the flash accelerator on C5.
     //
-    // Despite the name, ICACHE on Cortex-M33 sits on the C-AHB code bus
-    // and caches *anything* fetched through it -- not only instructions.
-    // SRAM accessed via the code-region alias (addresses below 0x2000_0000)
-    // and const data in flash both go through ICACHE; the system-bus alias
-    // (0x2000_xxxx) bypasses it. ICACHE has only one maintenance op (full
-    // invalidate), so per-region exclusion via MPU is the only knob.
-    //
-    // Enabling it here without an audit risks:
-    //   - stale reads from DMA buffers reached via the code-region alias
-    //     (DMA writes are not snooped by ICACHE);
-    //   - stale flash reads from regions that change at runtime (option
-    //     bytes after a write, OTP, anything reprogrammed by a bootloader
-    //     path).
-    //
-    // Before turning this on a future change must (a) confirm SRAM access
-    // always uses the system-bus alias, (b) add MPU non-cacheable regions
-    // for OTP and any runtime-rewritten flash per ST guidance, and
-    // (c) audit DMA buffer access patterns.
+    // The audit this previously waited on is now satisfied:
+    //   (a) DMA buffers live in SRAM reached via the system-bus alias
+    //       (0x2000_0000+), which bypasses ICACHE — no stale-DMA risk.
+    //   (b) memProtConfigure() above marks the OTP / read-only factory info
+    //       block (0x08FFE000-0x08FFFFFF: UID, calibration, package)
+    //       non-cacheable, so its non-burst-capable reads don't fault an
+    //       ICACHE cache-line refill (the STM32H5-series HardFault footgun).
+    //   (c) configLock() invalidates ICACHE after each config-flash write so
+    //       runtime-rewritten flash stays coherent.
+    // Enabling the cache auto-invalidates it on power-on, so no explicit
+    // pre-invalidate is needed here.
+    SET_BIT(ICACHE->CR, ICACHE_CR_EN);
 
     // Configure NVIC preempt/priority groups (CMSIS direct, HAL2 has no wrapper)
     NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);

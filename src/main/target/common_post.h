@@ -61,6 +61,13 @@
 #define FAST_CODE_NOINLINE
 #endif
 
+// Large functions normally stay out of scarce fast RAM via
+// FAST_CODE_NOINLINE.  Platforms with a larger measured budget may opt the
+// small set of genuinely loop-critical functions back in.
+#ifndef FAST_CODE_NOINLINE_CRITICAL
+#define FAST_CODE_NOINLINE_CRITICAL FAST_CODE_NOINLINE
+#endif
+
 #ifndef CCM_CODE
 #define CCM_CODE
 #endif
@@ -71,6 +78,35 @@
 
 #ifndef FAST_DATA_ZERO_INIT
 #define FAST_DATA_ZERO_INIT
+#endif
+
+/*
+ * Active MMFLASH_* assignments — moved here from platform/platform.h
+ * because target.h is included between platform.h and common_post.h, so
+ * USE_FLASH_MEMORY_MAPPED set in target.h was invisible to platform.h's
+ * conditional. Now that target.h has been processed, USE_FLASH_MEMORY_MAPPED
+ * is reliably visible. Without this, the XSPI driver's
+ * MMFLASH_CODE_NOINLINE annotations on octoSpiDisableMemoryMappedMode /
+ * octoSpiEnableMemoryMappedMode / xspiTestEnableDisableMemoryMappedMode
+ * silently expand to nothing — those functions land in XIP .text and die
+ * the moment they disable memory-mapped mode mid-execution (next
+ * instruction fetch from disabled XSPI hangs the chip silently).
+ */
+#if defined(USE_FLASH_MEMORY_MAPPED)
+#if !defined(USE_RAM_CODE)
+#define USE_RAM_CODE
+#endif
+#if !defined(RAM_CODE)
+#define RAM_CODE                   __attribute__((section(".ram_code")))
+#endif
+#define MMFLASH_CODE               RAM_CODE
+#define MMFLASH_CODE_NOINLINE      RAM_CODE NOINLINE
+#define MMFLASH_DATA               FAST_DATA
+#define MMFLASH_DATA_ZERO_INIT     FAST_DATA_ZERO_INIT
+#endif
+
+#ifndef RAM_CODE
+#define RAM_CODE
 #endif
 
 #ifndef MMFLASH_CODE
@@ -113,6 +149,7 @@
     && !defined(USE_ACCGYRO_ICM42622P) \
     && !defined(USE_ACCGYRO_ICM42686P) \
     && !defined(USE_ACC_SPI_ICM42688P) \
+    && !defined(USE_ACCGYRO_ICM56686) \
     && !defined(USE_ACCGYRO_ICM45686) \
     && !defined(USE_ACCGYRO_ICM45605) \
     && !defined(USE_ACCGYRO_LSM6DSO) \
@@ -140,6 +177,7 @@
     && !defined(USE_ACCGYRO_ICM42686P) \
     && !defined(USE_GYRO_SPI_ICM42688P) \
     && !defined(USE_ACCGYRO_ICM45686) \
+    && !defined(USE_ACCGYRO_ICM56686) \
     && !defined(USE_ACCGYRO_ICM45605) \
     && !defined(USE_ACCGYRO_ICM40609D) \
     && !defined(USE_ACCGYRO_LSM6DSO) \
@@ -266,10 +304,6 @@
 
 #if defined(USE_VTX_RTC6705_SOFTSPI)
 #define USE_VTX_RTC6705
-#endif
-
-#ifndef USE_DSHOT
-#undef USE_ESC_SENSOR
 #endif
 
 #ifndef USE_ESC_SENSOR
@@ -421,6 +455,13 @@
 #undef USE_MSP_OVER_TELEMETRY
 #endif
 
+#if defined(USE_MSP_CLI_COMMAND) && !defined(USE_CLI)
+#undef USE_MSP_CLI_COMMAND
+#endif
+#if defined(USE_MSP_CLI_COMMAND) && !defined(MSP_CLI_COMMAND_BUFFER_SIZE)
+#define MSP_CLI_COMMAND_BUFFER_SIZE 2048
+#endif
+
 #if !defined(USE_RX_MSP) && defined(USE_RX_MSP_OVERRIDE)
 #undef USE_RX_MSP_OVERRIDE
 #endif
@@ -469,7 +510,7 @@
 #define USE_FLASH_W25M
 #endif
 
-#if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M) || defined(USE_FLASH_W25N) || defined(USE_FLASH_W25Q128FV)
+#if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M) || defined(USE_FLASH_W25N) || defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_MX66UW1G45G)
 #if !defined(USE_FLASH_CHIP)
 #define USE_FLASH_CHIP
 #endif
@@ -487,7 +528,7 @@
 #endif
 #endif
 
-#if defined(USE_OCTOSPI) && defined(USE_FLASH_W25Q128FV)
+#if defined(USE_OCTOSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_MX66UW1G45G))
 #if !defined(USE_FLASH_OCTOSPI)
 #define USE_FLASH_OCTOSPI
 #endif
@@ -541,6 +582,7 @@
 #if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) \
     || defined(USE_GYRO_L3GD20) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) \
     || defined(USE_GYRO_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_ACCGYRO_ICM42686P) || defined(USE_GYRO_SPI_ICM42688P) \
+    || defined(USE_ACCGYRO_ICM56686) \
     || defined(USE_ACCGYRO_ICM40609D) || defined(USE_ACCGYRO_ICM45605) || defined(USE_ACCGYRO_ICM45686) \
     || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653) \
     || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_LSM6DSK320X)
@@ -586,7 +628,7 @@
 #endif
 #endif
 
-#if defined(USE_RX_PWM) || defined(USE_DSHOT) || defined(USE_LED_STRIP) || defined(USE_TRANSPONDER) || defined(USE_BEEPER) || defined(USE_SERIAL_4WAY_BLHELI_INTERFACE)
+#if defined(USE_RX_PWM) || defined(USE_DSHOT) || defined(USE_LED_STRIP) || defined(USE_TRANSPONDER) || defined(USE_BEEPER) || defined(USE_SERIAL_4WAY_BLHELI_INTERFACE) || defined(USE_GYRO_CLKIN)
 #ifndef USE_PWM_OUTPUT
 #define USE_PWM_OUTPUT
 #endif
@@ -738,10 +780,6 @@ extern struct linker_symbol __fontdata_end;
 #endif
 #endif
 
-#ifndef USE_ITERM_RELAX
-#undef USE_ABSOLUTE_CONTROL
-#endif
-
 #if defined(USE_RX_EXPRESSLRS)
 // ELRS depends on CRSF telemetry
 #if !defined(USE_TELEMETRY)
@@ -837,10 +875,75 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_SDIO_EXTERNAL_DMA 0
 #endif
 
+// STM32C5: drive boot source from the BOOT0 pin rather than the BOOT0
+// option bit. Default on so a BF crash never strands the board without
+// DFU recovery — set this to 0 in config.h for boards that wire BOOT0
+// to VDD/float, where forcing BOOT_SEL=1 would land in DFU on every boot.
+#if !defined(ENABLE_BOOT0_PIN_SELECT)
+#define ENABLE_BOOT0_PIN_SELECT 1
+#endif
+
 #if defined(USE_FLIGHT_PLAN) && !defined(ENABLE_FLIGHT_PLAN)
 #define ENABLE_FLIGHT_PLAN 1
 #elif !defined(ENABLE_FLIGHT_PLAN)
 #define ENABLE_FLIGHT_PLAN 0
+#endif
+
+// GPS rescue (both the BOXGPSRESCUE switch and the failsafe procedure) flown as
+// a synthesised flight-plan mission through the unified autopilot, instead of
+// the legacy gps_rescue controller. Default-on wherever the flight-plan engine
+// is available; targets without it (or wing, or flash-constrained) fall back to
+// the legacy rescue controller.
+#if !defined(ENABLE_RESCUE_PLAN)
+#if ENABLE_FLIGHT_PLAN && defined(USE_GPS_RESCUE) && !defined(USE_WING)
+#define ENABLE_RESCUE_PLAN 1
+#else
+#define ENABLE_RESCUE_PLAN 0
+#endif
+#endif
+#if ENABLE_RESCUE_PLAN && !(ENABLE_FLIGHT_PLAN && defined(USE_GPS_RESCUE) && !defined(USE_WING))
+#error "ENABLE_RESCUE_PLAN requires ENABLE_FLIGHT_PLAN, USE_GPS_RESCUE and !USE_WING"
+#endif
+
+// Flight-plan OSD minimap: draws the stored mission, home and the flown trail
+// as a character-cell map. Follows the flight-plan executor's multirotor-only
+// gate and additionally needs an OSD and GPS. Derived here so every consumer
+// (pg, osd, cli, core) shares one gate.
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING) && defined(USE_OSD) && defined(USE_GPS)
+#define USE_OSD_NAV_MAP
+#endif
+
+#if defined(USE_POSITION_HOLD) && !(defined(USE_GPS) || defined(USE_OPTICALFLOW))
+#error "USE_POSITION_HOLD requires USE_GPS and/or USE_OPTICALFLOW to be defined"
+#endif
+
+#if !defined(ENABLE_TELEMETRY_MAVLINK_MISSION)
+// flight_plan_nav.c (and the autopilot hook in fc/core.c) are gated on
+// !defined(USE_WING); the mission module reaches into those symbols, so match
+// the same shape here to keep wing builds linkable when USE_FLIGHT_PLAN lands.
+#if defined(USE_TELEMETRY_MAVLINK) && ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#define ENABLE_TELEMETRY_MAVLINK_MISSION 1
+#else
+#define ENABLE_TELEMETRY_MAVLINK_MISSION 0
+#endif
+#endif
+
+// MAVLink inbound COMMAND_LONG / COMMAND_INT actuation (arm/disarm, mode set,
+// RTL, set-home, reboot). Defaults on wherever MAVLink telemetry is built in.
+#if !defined(ENABLE_TELEMETRY_MAVLINK_COMMANDS)
+#if defined(USE_TELEMETRY_MAVLINK)
+#define ENABLE_TELEMETRY_MAVLINK_COMMANDS 1
+#else
+#define ENABLE_TELEMETRY_MAVLINK_COMMANDS 0
+#endif
+#endif
+
+// Remote arming over MAVLink is opt-in at compile time for safety. The disarm
+// path is always compiled in when commands are enabled; only the arm path is
+// gated. When enabled, arming still routes through tryArm() and honours every
+// arming-disable flag — there is no bypass.
+#if !defined(ENABLE_REMOTE_ARM)
+#define ENABLE_REMOTE_ARM 0
 #endif
 
 #if !defined(ENABLE_RX_UDP)
@@ -851,12 +954,53 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_CAN 0
 #endif
 
-// DroneCAN piggy-backs on the same hardware gate as the raw CAN driver: the
-// stack is meaningless without a CAN peripheral to drive. Platforms that
-// compile CAN in also compile DroneCAN in by default, with the runtime PG
-// flag (dronecan_enabled) deciding whether the task is actually started.
-#if !defined(ENABLE_DRONECAN)
-#define ENABLE_DRONECAN ENABLE_CAN
+// DroneCAN is picked as a build option, the same way the flight plan is. The
+// stack is meaningless without a CAN peripheral to drive, so the option is
+// dropped rather than honoured on a platform that has none. Dropping it, rather
+// than just ignoring it, keeps the build info honest: it reports on
+// `#ifdef USE_DRONECAN`, and leaving it set would advertise a stack that was
+// never compiled. The runtime PG flag (dronecan_enabled) still decides whether
+// the task is started.
+// The ESC protocol is its own build option, and it speaks over the stack, so
+// picking it brings the stack with it.
+#if defined(USE_DRONECAN_ESC) && !defined(USE_DRONECAN)
+#define USE_DRONECAN
+#endif
+
+#if defined(USE_DRONECAN) && !ENABLE_CAN
+#undef USE_DRONECAN
+#undef USE_DRONECAN_ESC
+#endif
+
+#if defined(USE_DRONECAN) && !defined(ENABLE_DRONECAN)
+#define ENABLE_DRONECAN 1
+#elif !defined(ENABLE_DRONECAN)
+#define ENABLE_DRONECAN 0
+#endif
+
+// DroneCAN ESC: command ESCs over CAN (uavcan.equipment.esc.RawCommand) and
+// ingest their telemetry (uavcan.equipment.esc.Status), gated at runtime by
+// selecting the DRONECAN motor protocol.
+#if defined(USE_DRONECAN_ESC) && !defined(ENABLE_DRONECAN_ESC)
+#define ENABLE_DRONECAN_ESC 1
+#elif !defined(ENABLE_DRONECAN_ESC)
+#define ENABLE_DRONECAN_ESC 0
+#endif
+
+// DroneCAN dynamic node-ID allocation: the FC acts as the centralised allocator,
+// handing node IDs to unconfigured peers (e.g. ESCs). Runtime PG flag
+// (dronecan_dna_enabled) decides whether the allocator actually runs.
+#if !defined(ENABLE_DRONECAN_DNA)
+#define ENABLE_DRONECAN_DNA ENABLE_DRONECAN
+#endif
+
+// First-cut probe for SPA06-003 (Goertek) over STM32C5 I3C1 in legacy-I2C
+// mode. When set, the probe runs once after baroInit() to confirm I3C bring-up
+// on PC10/PC11 by reading the SPA06 CHIP_ID (reg 0x0D) at address 0x77/0x76.
+// Result lives in `spa06ProbeChipId` / `spa06ProbeStatus` (SWD-readable). Off
+// by default; opt in from the board config.
+#if !defined(ENABLE_BARO_SPA06_PROBE)
+#define ENABLE_BARO_SPA06_PROBE 0
 #endif
 
 // LCD console — runtime debug terminal that scrolls printf/trace output to
@@ -870,4 +1014,29 @@ extern struct linker_symbol __fontdata_end;
 #endif
 #if !defined(ENABLE_LCD_PRINTF_REDIRECT)
 #define ENABLE_LCD_PRINTF_REDIRECT ENABLE_LCD_CONSOLE
+#endif
+
+// Bench debug CLI primitives `dxr` (read) and `dxw` (write) for poking
+// arbitrary 32-bit memory addresses from a connected terminal. Off by
+// default; configs opt in for hardware bring-up by setting
+// ENABLE_DEBUG_CLI_COMMANDS 1.
+#if !defined(ENABLE_DEBUG_CLI_COMMANDS)
+#define ENABLE_DEBUG_CLI_COMMANDS 0
+#endif
+
+// Open Bootloader contract — defaulted off; N6 target.h opts in.
+// Defines BF_OBL_IWDG_REFRESH used to keep OBL's IWDG happy.
+#if !defined(ENABLE_BF_OBL)
+#define ENABLE_BF_OBL 0
+#endif
+
+#if ENABLE_BF_OBL
+#include "platform/bf_obl_contract.h"
+#endif
+
+// Walk every GPIO pin not claimed by a peripheral and put it in a
+// known-safe state at boot. Opted out on platforms whose IO layer
+// can't yet skip restricted (e.g. RIFSC-protected) ports cleanly.
+#if !defined(ENABLE_UNUSED_PINS_INIT)
+#define ENABLE_UNUSED_PINS_INIT 1
 #endif

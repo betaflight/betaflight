@@ -202,20 +202,35 @@ void SystemClock_Config(void); // Forward
 // per RM0481 §6.6). USB FS keeps its own 48 MHz reference from HSI48 +
 // CRS-against-SOF so it is independent of the system clock domain.
 //
-// PLL1 math at HSE_VALUE = 25 MHz:
-//   M = 5  → 5 MHz reference (PLL1_VCIRANGE_2: 4-8 MHz)
-//   N = 100 → 500 MHz VCO    (PLL1_VCORANGE_WIDE: 192-836 MHz)
-//   P = 2   → SYSCLK = 250 MHz
-//   Q = 4   → 125 MHz (free for SAI / SDMMC; USB is fed from HSI48)
-//   R = 2   → 250 MHz
+// PLL1 targets a 500 MHz VCO → 250 MHz SYSCLK (P=2), with PLLM chosen so the
+// PFD (HSE/M) stays inside a single VCIRANGE window and N gives the 500 MHz VCO
+// with an integer ratio. The PFD band determines PLLRGE (RM0481 §10.5), so it
+// is selected per HSE value below rather than hardcoded — HSE_VALUE is derived
+// from each board's SYSTEM_HSE_MHZ (mk/config.mk). To support a new crystal,
+// add a case here (target 500 MHz VCO, PFD in a valid VCIRANGE band).
+//
+//   8 MHz HSE  : M=2 → PFD 4.0 MHz (VCIRANGE_2, lower edge), N=125 → VCO 500 MHz
+//   25 MHz HSE : M=5 → PFD 5.0 MHz (VCIRANGE_2),             N=100 → VCO 500 MHz
+//   common     : P=2 → 250 MHz, Q=4 → 125 MHz, R=2 → 250 MHz, VCORANGE_WIDE
 //
 // Voltage scale 0 covers up to 250 MHz; flash latency at VOS0 / 250 MHz is
 // 5 WS (RM0481 §7.5 Table 39).
 //
 // If HSE fails to start (e.g. development board with crystal removed or
 // damaged) the function falls back to HSI 64 MHz at VOS0, leaving the rest
-// of the platform usable for diagnostics. Override this function from a
-// per-board file if a non-25 MHz HSE or non-default PLL ratio is required.
+// of the platform usable for diagnostics.
+#if HSE_VALUE == 8000000
+#define PLL1_M          2                       // PFD = 4 MHz
+#define PLL1_N          125                     // VCO = 500 MHz
+#define PLL1_VCIRANGE   RCC_PLL1_VCIRANGE_2     // 4-8 MHz PFD band
+#elif HSE_VALUE == 25000000
+#define PLL1_M          5                       // PFD = 5 MHz
+#define PLL1_N          100                     // VCO = 500 MHz
+#define PLL1_VCIRANGE   RCC_PLL1_VCIRANGE_2     // 4-8 MHz PFD band
+#else
+#error "STM32H5 SystemClock_Config: unsupported SYSTEM_HSE_MHZ. Add a PLL1 ratio (target 500 MHz VCO, PFD in a valid VCIRANGE band)."
+#endif
+
 __attribute__((weak))
 void SystemClock_Config(void)
 {
@@ -238,12 +253,12 @@ void SystemClock_Config(void)
     oscInit.HSI48State       = RCC_HSI48_ON;
     oscInit.PLL.PLLState     = RCC_PLL_ON;
     oscInit.PLL.PLLSource    = RCC_PLL1_SOURCE_HSE;
-    oscInit.PLL.PLLM         = 5;
-    oscInit.PLL.PLLN         = 100;
+    oscInit.PLL.PLLM         = PLL1_M;
+    oscInit.PLL.PLLN         = PLL1_N;
     oscInit.PLL.PLLP         = 2;
     oscInit.PLL.PLLQ         = 4;
     oscInit.PLL.PLLR         = 2;
-    oscInit.PLL.PLLRGE       = RCC_PLL1_VCIRANGE_2;
+    oscInit.PLL.PLLRGE       = PLL1_VCIRANGE;
     oscInit.PLL.PLLVCOSEL    = RCC_PLL1_VCORANGE_WIDE;
     oscInit.PLL.PLLFRACN     = 0;
 
@@ -262,6 +277,16 @@ void SystemClock_Config(void)
         if (HAL_RCC_ClockConfig(&clkInit, FLASH_LATENCY_5) != HAL_OK) {
             while (1) { }
         }
+
+        // HAL_RCC_OscConfig only enables the PLL1 P output (system clock). H5
+        // peripherals such as SPI1/2/3 default their kernel clock to pll1_q_ck
+        // (RCC_SPIxCLKSOURCE_PLL1Q == SPIxSEL reset value 0); SDMMC and others
+        // likewise. Without the Q output enabled those peripherals get no kernel
+        // clock and block forever on their first transfer (e.g. gyro SPI detect
+        // spins waiting for TXP/EOT). Enable Q (125 MHz) and R (250 MHz) now that
+        // PLL1 is locked — this mirrors what HAL_RCCEx_PeriphCLKConfig does when a
+        // peripheral selects PLL1Q.
+        __HAL_RCC_PLL1_CLKOUT_ENABLE(RCC_PLL1_DIVQ | RCC_PLL1_DIVR);
     } else {
         // HSE did not lock. Fall back to HSI 64 MHz so the platform stays
         // diagnosable (1 WS at VOS0 covers HSI64 per Table 39).

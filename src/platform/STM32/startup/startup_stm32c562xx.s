@@ -49,11 +49,10 @@ Reset_Handler:
   ldr   r0, =_estack
   mov   sp, r0          /* set stack pointer */
 
-  bl persistentObjectInit
-/* Call the clock system initialization function.*/
-  bl  SystemInit
-
-/* Copy the data segment initializers from flash to SRAM */
+/* Copy the data segment initializers from flash to SRAM. Must run
+ * before any C call so persistentObjectInit / SystemInit / HAL_InitTick
+ * don't read uninitialised globals (e.g. uwTickFreq), which would wedge
+ * HAL_RCC clock config. Same fix as startup_stm32c5a3xx.s. */
   ldr r0, =_sdata
   ldr r1, =_edata
   ldr r2, =_sidata
@@ -83,6 +82,10 @@ FillZerobss:
 LoopFillZerobss:
   cmp r2, r4
   bcc FillZerobss
+
+  bl persistentObjectInit
+/* Call the clock system initialization function.*/
+  bl  SystemInit
 
 /* Call the application's entry point.*/
   bl main

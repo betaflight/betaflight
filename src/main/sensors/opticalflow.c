@@ -55,6 +55,7 @@
 #endif
 
 #include "io/beeper.h"
+#include "io/serial.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -71,13 +72,14 @@
 static void applySensorRotation(vector2_t * dst, vector2_t * src);
 static void applyLPF(vector2_t * flowRates);
 
-PG_REGISTER_WITH_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig, PG_OPTICALFLOW_CONFIG, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig, PG_OPTICALFLOW_CONFIG, 2);
 
 PG_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig,
     .opticalflow_hardware = OPTICALFLOW_NONE,
     .rotation = 0,
     .flip_x = 0,
-    .flow_lpf = 100
+    .flow_lpf = 100,
+    .opticalflow_uart = SERIAL_PORT_NONE,
 );
 
 static opticalflow_t opticalflow;
@@ -185,17 +187,17 @@ void opticalflowProcess(void) {
         // There is a delay between a detected gyro motion and this
         // being seen in the optical flow output
         static uint8_t gyroSampleIndex = 0;
-        static float xRotation[MAX_GYRO_SAMPLE_DELAY];
-        static float yRotation[MAX_GYRO_SAMPLE_DELAY];
+        static float rollRate[MAX_GYRO_SAMPLE_DELAY];
+        static float pitchRate[MAX_GYRO_SAMPLE_DELAY];
 
         const uint8_t sampleDelay = (uint8_t)constrain((int)opticalflow.dev.gyroSampleDelay, 1, MAX_GYRO_SAMPLE_DELAY);
         gyroSampleIndex = (gyroSampleIndex + 1) % sampleDelay;
-        xRotation[gyroSampleIndex] = (float)gyroGetFilteredDownsampled(X);
-        yRotation[gyroSampleIndex] = -(float)gyroGetFilteredDownsampled(Y);
+        rollRate[gyroSampleIndex] = (float)gyroGetFilteredDownsampled(X);
+        pitchRate[gyroSampleIndex] = -(float)gyroGetFilteredDownsampled(Y);
         delayedGyroSampleIndex = (gyroSampleIndex + 1) % sampleDelay;
         vector2_t delayedGyroRaw = {{
-            xRotation[delayedGyroSampleIndex],
-            yRotation[delayedGyroSampleIndex]
+            rollRate[delayedGyroSampleIndex],
+            pitchRate[delayedGyroSampleIndex]
         }};
         vector2_t delayedGyroRotated;
         applySensorRotation(&delayedGyroRotated, &delayedGyroRaw);

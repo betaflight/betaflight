@@ -137,7 +137,7 @@ void setDefaultTestSettings(void)
     pidProfile->pid[PID_YAW]   =  { 70, 45, 20, 60, 0 };
     pidProfile->pid[PID_LEVEL] =  { 50, 50, 75, 50, 0 };
 
-    // Compensate for the upscaling done without 'use_integrated_yaw'
+    // Compensate for the upscaling done on the yaw axis
     pidProfile->pid[PID_YAW].I = pidProfile->pid[PID_YAW].I / 2.5f;
 
     pidProfile->pidSumLimit = PIDSUM_LIMIT;        // 500
@@ -147,7 +147,7 @@ void setDefaultTestSettings(void)
     pidProfile->dterm_lpf2_static_hz = 0;
     pidProfile->dterm_notch_hz = 260;
     pidProfile->dterm_notch_cutoff = 160;
-    pidProfile->dterm_lpf1_type = FILTER_BIQUAD;
+    pidProfile->dterm_lpf1_type = FILTER_SVF;
     pidProfile->itermWindup = 80;
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
     pidProfile->angle_limit = 60;
@@ -173,7 +173,6 @@ void setDefaultTestSettings(void)
     pidProfile->iterm_relax = ITERM_RELAX_OFF,
     pidProfile->iterm_relax_cutoff = 11,
     pidProfile->iterm_relax_type = ITERM_RELAX_SETPOINT,
-    pidProfile->abs_control_gain = 0,
     pidProfile->launchControlMode = LAUNCH_CONTROL_MODE_NORMAL,
     pidProfile->launchControlGain = 40,
     pidProfile->level_race_mode = false,
@@ -862,35 +861,6 @@ TEST(pidControllerTest, testItermRelax)
 }
 
 // TODO - Add more tests
-TEST(pidControllerTest, testAbsoluteControl)
-{
-    resetTest();
-    pidProfile->abs_control_gain = 10;
-    pidInit(pidProfile);
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
-
-    float gyroRate = 0;
-
-    float itermErrorRate = 10;
-    float currentPidSetpoint = 10;
-
-    applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
-
-    EXPECT_NEAR(10.8, itermErrorRate, calculateTolerance(10.8));
-    EXPECT_NEAR(10.8, currentPidSetpoint, calculateTolerance(10.8));
-
-    applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
-    EXPECT_NEAR(10.8, itermErrorRate, calculateTolerance(10.8));
-    EXPECT_NEAR(10.8, currentPidSetpoint, calculateTolerance(10.8));
-
-    gyroRate = -53;
-    axisError[FD_PITCH] = -60;
-    applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
-    EXPECT_NEAR(-79.2, itermErrorRate, calculateTolerance(-79.2));
-    EXPECT_NEAR(-79.2, currentPidSetpoint, calculateTolerance(-79.2));
-}
-
 TEST(pidControllerTest, testDtermFiltering)
 {
 // TODO
@@ -923,16 +893,12 @@ TEST(pidControllerTest, testItermRotationHandling)
     EXPECT_NEAR(860.37, pidData[FD_PITCH].I, calculateTolerance(860.37));
     EXPECT_NEAR(1139.6, pidData[FD_YAW].I, calculateTolerance(1139.6));
 
-    pidProfile->abs_control_gain = 10;
     pidInit(pidProfile);
     pidData[FD_ROLL].I = 10;
     pidData[FD_PITCH].I = 1000;
     pidData[FD_YAW].I = 1000;
 
     gyro.gyroADCf[FD_ROLL] = -1000;
-    // FIXME - axisError changes don't affect the system. This is a potential bug or intendend behaviour?
-    axisError[FD_PITCH] = 1000;
-    axisError[FD_YAW] = 1000;
     rotateItermAndAxisError();
     EXPECT_FLOAT_EQ(pidData[FD_ROLL].I, 10);
     EXPECT_NEAR(860.37, pidData[FD_PITCH].I, calculateTolerance(860.37));

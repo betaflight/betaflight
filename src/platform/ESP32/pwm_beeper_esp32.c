@@ -81,7 +81,7 @@ void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
     uint32_t pin = IO_Pin(beeperIO);
     esp_rom_gpio_pad_select_gpio(pin);
     gpio_ll_output_enable(&GPIO, pin);
-    esp_rom_gpio_connect_out_signal(pin, LEDC_LS_SIG_OUT0_IDX + beeperLedcChannel, false, false);
+    esp_rom_gpio_connect_out_signal(pin, ESP32_LEDC_LS_SIG_OUT0_IDX + beeperLedcChannel, false, false);
 
     // Start silent
     ledc_ll_set_duty_int_part(&LEDC, LEDC_LOW_SPEED_MODE, beeperLedcChannel, 0);

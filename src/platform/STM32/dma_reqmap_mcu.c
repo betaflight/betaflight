@@ -262,7 +262,7 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
 #ifdef USE_ADC
     REQMAP(ADC, 1),
     REQMAP(ADC, 2),
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx)
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx) || defined(STM32H757xx)
     REQMAP(ADC, 3),
 #endif
 #endif
@@ -623,6 +623,7 @@ static dmaChannelSpec_t dmaChannelSpec[MAX_PERIPHERAL_DMA_OPTIONS] = {
 #define LL_LPDMA1_REQUEST_TIM8_CH4  LL_LPDMA1_REQUEST_TIM8_CC4
 #define LL_LPDMA1_REQUEST_TIM8_UP   LL_LPDMA1_REQUEST_TIM8_UPD
 #define LL_LPDMA1_REQUEST_TIM15_CH1 LL_LPDMA1_REQUEST_TIM15_CC1
+#define LL_LPDMA1_REQUEST_TIM15_CH2 LL_LPDMA1_REQUEST_TIM15_CC2
 #define LL_LPDMA1_REQUEST_TIM15_UP  LL_LPDMA1_REQUEST_TIM15_UPD
 #define LL_LPDMA1_REQUEST_TIM16_CH1 LL_LPDMA1_REQUEST_TIM16_CC1
 #define LL_LPDMA1_REQUEST_TIM16_UP  LL_LPDMA1_REQUEST_TIM16_UPD
@@ -729,6 +730,7 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
     REQMAP_TIM(TIM8, CH3),
     REQMAP_TIM(TIM8, CH4),
     REQMAP_TIM(TIM15, CH1),
+    REQMAP_TIM(TIM15, CH2),
     REQMAP_TIM(TIM16, CH1),
     REQMAP_TIM(TIM17, CH1),
 };

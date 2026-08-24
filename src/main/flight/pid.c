@@ -49,10 +49,10 @@
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/rpm_filter.h"
 
 #include "io/gps.h"
 
+#include "pg/autopilot.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
@@ -80,10 +80,6 @@ const char pidNames[] =
 FAST_DATA_ZERO_INIT uint32_t targetPidLooptime;
 FAST_DATA_ZERO_INIT pidAxisData_t pidData[XYZ_AXIS_COUNT];
 FAST_DATA_ZERO_INIT pidRuntime_t pidRuntime;
-
-#if defined(USE_ABSOLUTE_CONTROL)
-STATIC_UNIT_TESTED FAST_DATA_ZERO_INIT float axisError[XYZ_AXIS_COUNT];
-#endif
 
 #if defined(USE_THROTTLE_BOOST)
 FAST_DATA_ZERO_INIT float throttleBoost;
@@ -128,7 +124,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 #define CHIRP_SETTLE_TIME_US 750000 // 750 ms
 #endif // USE_CHIRP
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 11);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 12);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -174,15 +170,11 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .acro_trainer_lookahead_ms = 50,
         .acro_trainer_debug_axis = FD_ROLL,
         .acro_trainer_gain = 75,
-        .abs_control_gain = 0,
-        .abs_control_limit = 90,
-        .abs_control_error_limit = 20,
-        .abs_control_cutoff = 11,
         .dterm_lpf1_static_hz = DTERM_LPF1_DYN_MIN_HZ_DEFAULT,
             // NOTE: dynamic lpf is enabled by default so this setting is actually
             // overridden and the static lowpass 1 is disabled. We can't set this
             // value to 0 otherwise Configurator versions 10.4 and earlier will also
-            // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
+            // reset the lowpass filter type to PT1 overriding the desired Butterworth setting.
         .dterm_lpf2_static_hz = DTERM_LPF2_HZ_DEFAULT,   // second Dterm LPF ON by default
         .dterm_lpf1_type = FILTER_PT1,
         .dterm_lpf2_type = FILTER_PT1,
@@ -193,12 +185,10 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .launchControlAngleLimit = 0,
         .launchControlGain = 40,
         .launchControlAllowTriggerReset = true,
-        .use_integrated_yaw = false,
-        .integrated_yaw_relax = 200,
         .thrustLinearization = 0,
         .d_max = D_MAX_DEFAULT,
-        .d_max_gain = 37,
-        .d_max_advance = 20,
+        .d_max_gain = 0,
+        .d_max_advance = 35,
         .motor_output_limit = 100,
         .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
         .profileName = { 0 },
@@ -321,9 +311,6 @@ void pidResetIterm(void)
 {
     for (int axis = 0; axis < 3; axis++) {
         pidData[axis].I = 0.0f;
-#if defined(USE_ABSOLUTE_CONTROL)
-        axisError[axis] = 0.0f;
-#endif
     }
 }
 
@@ -508,20 +495,41 @@ void pidAcroTrainerInit(void)
 #endif // USE_ACRO_TRAINER
 
 #ifdef USE_THRUST_LINEARIZATION
+// Compensate motor command for a non-linear (~quadratic) motor thrust response.
+// Uses a 2nd-order Taylor expansion of ArduPilot's MOT_THST_EXPO model:
+//   c(x) = x * (1 + e * (1-x) * (1 + e * (1-2x)))
+// where e = thrustLinearization (0..1.5, scaled from the 0..150 CLI value).
+// This matches the small-e Taylor series of (1-e)*m + e*m^2 to second order,
+// so thrust_linear ≈ MOT_THST_EXPO * 100 and ArduPilot's per-prop recommendations
+// (≈55 for 5", ≈65 for 10", ≈75 for 20"+) port directly.
+//
+// The 2nd-order term flips sign at x=0.5, dropping the curve's slope at full
+// throttle from 1.0 to (1 - e + e^2). This prevents the current cubic shape
+// from going tangent to identity at x=1 and softens the motor's natural
+// steepening near the top of the throttle range.
+//
+// Cost: 4 mults, 2 adds, 2 subs per motor (no sqrt). Called per-motor per loop.
+float pidApplyThrustLinearization(float motorOutput)
+{
+    const float e = pidRuntime.thrustLinearization;
+    const float inv = 1.0f - motorOutput;
+    motorOutput *= 1.0f + e * inv * (1.0f + e * (inv - motorOutput));
+    return motorOutput;
+}
+
+// Inverse of the curve above, applied to base throttle so hover throttle is
+// preserved when thrust linearization is active. Expanding c⁻¹(y) as a Taylor
+// series in e gives c⁻¹(y) = y - e·y·(1-y) + 0·e² + O(e³): the e² coefficient
+// vanishes by algebraic cancellation, so this two-term expression is accurate
+// to second order in e — matching the forward — and is cheaper than dividing
+// by the full forward multiplier.
 float pidCompensateThrustLinearization(float throttle)
 {
     if (pidRuntime.thrustLinearization != 0.0f) {
-        // for whoops where a lot of TL is needed, allow more throttle boost
-        const float throttleReversed = (1.0f - throttle);
-        throttle /= 1.0f + pidRuntime.throttleCompensateAmount * sq(throttleReversed);
+        const float e = pidRuntime.thrustLinearization;
+        throttle *= 1.0f - e * (1.0f - throttle);
     }
     return throttle;
-}
-
-float pidApplyThrustLinearization(float motorOutput)
-{
-    motorOutput *= 1.0f + pidRuntime.thrustLinearization * sq(1.0f - motorOutput);
-    return motorOutput;
 }
 #endif
 
@@ -579,7 +587,11 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 #endif // USE_WING
 
 #ifdef USE_GPS_RESCUE
-    angleTarget += gpsRescueAngle[axis] / 100.0f; // Angle is in centidegrees, stepped on roll at 10Hz but not on pitch
+    if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+        angleTarget = autopilotAngle[axis]; // autopilotAngle in degrees
+        angleLimit = (float)autopilotConfig()->maxAngle;
+        angleFeedforward = 0.0f;
+    }
 #endif
 #if defined(USE_POSITION_HOLD) && !defined(USE_WING)
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
@@ -589,8 +601,8 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
             angleTarget = autopilotAngle[axis]; // autopilotAngle in degrees
             angleLimit = 85.0f; // allow autopilot to use whatever angle it needs to stop
         }
-        // limit pilot requested angle to half the autopilot angle to avoid excess speed and chaotic stops
-        angleLimit = fminf(0.5f * autopilotConfig()->maxAngle, angleLimit);
+        // limit pilot requested angle to max autopilot angle to avoid excess speed
+        angleLimit = fminf((float)autopilotConfig()->maxAngle, angleLimit);
     }
 #endif
 
@@ -826,21 +838,12 @@ static void rotateVector(float v[XYZ_AXIS_COUNT], const float rotation[XYZ_AXIS_
 
 STATIC_UNIT_TESTED void rotateItermAndAxisError(void)
 {
-    if (pidRuntime.itermRotation
-#if defined(USE_ABSOLUTE_CONTROL)
-        || pidRuntime.acGain > 0 || debugMode == DEBUG_AC_ERROR
-#endif
-        ) {
+    if (pidRuntime.itermRotation) {
         const float gyroToAngle = pidRuntime.dT * RAD;
         float rotationRads[XYZ_AXIS_COUNT];
         for (int i = FD_ROLL; i <= FD_YAW; i++) {
             rotationRads[i] = gyro.gyroADCf[i] * gyroToAngle;
         }
-#if defined(USE_ABSOLUTE_CONTROL)
-        if (pidRuntime.acGain > 0 || debugMode == DEBUG_AC_ERROR) {
-            rotateVector(axisError, rotationRads);
-        }
-#endif
         if (pidRuntime.itermRotation) {
             float v[XYZ_AXIS_COUNT];
             for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
@@ -855,46 +858,6 @@ STATIC_UNIT_TESTED void rotateItermAndAxisError(void)
 }
 
 #if defined(USE_ITERM_RELAX)
-#if defined(USE_ABSOLUTE_CONTROL)
-STATIC_UNIT_TESTED void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate)
-{
-    if (pidRuntime.acGain > 0 || debugMode == DEBUG_AC_ERROR) {
-        const float setpointLpf = pt1FilterApply(&pidRuntime.acLpf[axis], *currentPidSetpoint);
-        const float setpointHpf = fabsf(*currentPidSetpoint - setpointLpf);
-        float acErrorRate = 0;
-        const float gmaxac = setpointLpf + 2 * setpointHpf;
-        const float gminac = setpointLpf - 2 * setpointHpf;
-        if (gyroRate >= gminac && gyroRate <= gmaxac) {
-            const float acErrorRate1 = gmaxac - gyroRate;
-            const float acErrorRate2 = gminac - gyroRate;
-            if (acErrorRate1 * axisError[axis] < 0) {
-                acErrorRate = acErrorRate1;
-            } else {
-                acErrorRate = acErrorRate2;
-            }
-            if (fabsf(acErrorRate * pidRuntime.dT) > fabsf(axisError[axis]) ) {
-                acErrorRate = -axisError[axis] * pidRuntime.pidFrequency;
-            }
-        } else {
-            acErrorRate = (gyroRate > gmaxac ? gmaxac : gminac ) - gyroRate;
-        }
-
-        if (wasThrottleRaised()) {
-            axisError[axis] = constrainf(axisError[axis] + acErrorRate * pidRuntime.dT,
-                -pidRuntime.acErrorLimit, pidRuntime.acErrorLimit);
-            const float acCorrection = constrainf(axisError[axis] * pidRuntime.acGain, -pidRuntime.acLimit, pidRuntime.acLimit);
-            *currentPidSetpoint += acCorrection;
-            *itermErrorRate += acCorrection;
-            DEBUG_SET(DEBUG_AC_CORRECTION, axis, lrintf(acCorrection * 10));
-            if (axis == FD_ROLL) {
-                DEBUG_SET(DEBUG_ITERM_RELAX, 3, lrintf(acCorrection * 10));
-            }
-        }
-        DEBUG_SET(DEBUG_AC_ERROR, axis, lrintf(axisError[axis] * 10));
-    }
-}
-#endif
-
 STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
     const float gyroRate, float *itermErrorRate, float *currentPidSetpoint)
 {
@@ -926,10 +889,6 @@ STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
                 DEBUG_SET(DEBUG_ITERM_RELAX, 2, lrintf(*itermErrorRate));
             }
         }
-
-#if defined(USE_ABSOLUTE_CONTROL)
-        applyAbsoluteControl(axis, gyroRate, currentPidSetpoint, itermErrorRate);
-#endif
     }
 }
 #endif
@@ -942,7 +901,7 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
         && ((getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f)
 #ifdef USE_ALTITUDE_HOLD
             // or, in altitude hold mode, where throttle can be non-zero
-            || FLIGHT_MODE(ALT_HOLD_MODE)
+            || FLIGHT_MODE(ALT_HOLD_MODE | GPS_RESCUE_MODE)
 #endif
         )) {
         // increase sensitivity by 50% when low and in altitude hold or failsafe landing
@@ -1191,10 +1150,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
     rotateItermAndAxisError();
 
-#ifdef USE_RPM_FILTER
-    rpmFilterUpdate();
-#endif
-
     if (pidRuntime.useEzDisarm) {
         disarmOnImpact();
     }
@@ -1374,18 +1329,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         const float previousIterm = pidData[axis].I;
         float itermErrorRate = errorRate;
 
-#ifdef USE_ABSOLUTE_CONTROL
-        const float uncorrectedSetpoint = currentPidSetpoint;
-#endif
-
 #if defined(USE_ITERM_RELAX)
         if (!launchControlActive && !pidRuntime.inCrashRecoveryMode) {
             applyItermRelax(axis, previousIterm, gyroRate, &itermErrorRate, &currentPidSetpoint);
             errorRate = currentPidSetpoint - gyroRate;
         }
-#endif
-#ifdef USE_ABSOLUTE_CONTROL
-        const float setpointCorrection = currentPidSetpoint - uncorrectedSetpoint;
 #endif
 
         // --------low-level gyro-based PID based on 2DOF PID controller. ----------
@@ -1505,12 +1453,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         previousGyroRateDterm[axis] = gyroRateDterm[axis];
 
         // -----calculate feedforward component
-
-#ifdef USE_ABSOLUTE_CONTROL
-        // include abs control correction in feedforward
-        pidSetpointDelta += setpointCorrection - pidRuntime.oldSetpointCorrection[axis];
-        pidRuntime.oldSetpointCorrection[axis] = setpointCorrection;
-#endif
         // no feedforward in launch control
         const float feedforwardGain = launchControlActive ? 0.0f : pidRuntime.pidCoefficient[axis].Kf;
         pidData[axis].F = feedforwardGain * pidSetpointDelta;
@@ -1563,16 +1505,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         applySpa(axis, pidProfile);
 
         // calculating the PID sum
-        const float pidSum = pidData[axis].P + pidData[axis].I + pidData[axis].D + pidData[axis].F + pidData[axis].S;
-#ifdef USE_INTEGRATED_YAW_CONTROL
-        if (axis == FD_YAW && pidRuntime.useIntegratedYaw) {
-            pidData[axis].Sum += pidSum * pidRuntime.dT * 100.0f;
-            pidData[axis].Sum -= pidData[axis].Sum * pidRuntime.integratedYawRelax / 100000.0f * pidRuntime.dT / 0.000125f;
-        } else
-#endif
-        {
-            pidData[axis].Sum = pidSum;
-        }
+        pidData[axis].Sum = pidData[axis].P + pidData[axis].I + pidData[axis].D + pidData[axis].F + pidData[axis].S;
     }
 
 #ifdef USE_WING
@@ -1650,9 +1583,10 @@ void dynLpfDTermUpdate(float throttle)
                 pt1FilterUpdateCutoff(&pidRuntime.dtermLowpass[axis].pt1Filter, pt1FilterGain(cutoffFreq, pidRuntime.dT));
             }
             break;
-        case DYN_LPF_BIQUAD:
+        case DYN_LPF_SVF:
+            cutoffFreq = MIN(cutoffFreq, 0.475f / pidRuntime.dT); // constrain to be below the nyquist
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                biquadFilterUpdateLPF(&pidRuntime.dtermLowpass[axis].biquadFilter, cutoffFreq, targetPidLooptime);
+                svfLowpassFilterUpdate(&pidRuntime.dtermLowpass[axis].svfLowpassFilter, cutoffFreq, pidRuntime.dT);
             }
             break;
         case DYN_LPF_PT2:

@@ -230,10 +230,10 @@ TEST(CrossFireMSPTest, WriteResponseTest)
 
 }
 
-void testSendMspResponse(uint8_t *payload, const uint8_t )
+void testSendMspResponse(uint8_t *payload, const uint8_t payloadSize)
 {
     sbuf_t *plOut = sbufInit(&payloadOutputBuf, payloadOutput, payloadOutput + 64);
-    sbufWriteData(plOut, payload, *payload + 64);
+    sbufWriteData(plOut, payload, payloadSize);
     sbufSwitchToReader(&payloadOutputBuf, payloadOutput);
 }
 
@@ -267,7 +267,6 @@ extern "C" {
     uint32_t micros(void) {return dummyTimeUs;}
     uint32_t microsISR(void) {return micros();}
     serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return NULL;}
-    const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
     bool isBatteryVoltageConfigured(void) { return true; }
     uint16_t getBatteryVoltage(void) {
         return testBatteryVoltage;
@@ -334,4 +333,6 @@ extern "C" {
     bool IS_RC_MODE_ACTIVE(boxId_e) { return false; }
 
     bool gpsRescueIsConfigured(void) { return false; }
+
+    void schedulerIgnoreTaskExecTime(void) {}
 }

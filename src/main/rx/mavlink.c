@@ -59,6 +59,27 @@ static mavlink_message_t mavRecvMsg;
 static mavlink_status_t mavRecvStatus;
 static volatile uint8_t txbuff_free = 100;  // tx buffer space in %, start with empty buffer
 static volatile bool txbuff_valid = false;
+static mavlinkRxQueue_t mavlinkRxQueue;
+
+static void mavlinkAddMessageToQueue(void)
+{
+    uint8_t next = (mavlinkRxQueue.head + 1) % MAVLINK_RX_QUEUE_SIZE;
+    if (next != mavlinkRxQueue.tail) {
+        mavlinkRxQueue.msgs[mavlinkRxQueue.head] = mavRecvMsg;
+        mavlinkRxQueue.head = next;
+    }
+}
+
+bool mavlinkGetNextQueueMessage(mavlink_message_t *msg)
+{
+    if (mavlinkRxQueue.tail != mavlinkRxQueue.head) {
+        *msg = mavlinkRxQueue.msgs[mavlinkRxQueue.tail];
+        mavlinkRxQueue.tail = (mavlinkRxQueue.tail + 1) % MAVLINK_RX_QUEUE_SIZE;
+        return true;
+    } else {
+        return false;
+    }
+}
 
 void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg) {
     const uint16_t *channelsPtr = (uint16_t*)&msg->chan1_raw;
@@ -136,12 +157,16 @@ STATIC_UNIT_TESTED void mavlinkDataReceive(uint16_t c, void *data)
     if (result == MAVLINK_FRAMING_OK) {
         switch (mavRecvMsg.msgid) {
         case MAVLINK_MSG_ID_RC_CHANNELS_OVERRIDE:
+            // Handle RC CHANNELS data immediately to get maximum RC rate
             handleIncoming_RC_CHANNELS_OVERRIDE();
             rxRuntimeState->lastRcFrameTimeUs = micros();
             break;
         case MAVLINK_MSG_ID_RADIO_STATUS:
             handleIncoming_RADIO_STATUS();
             break;
+        default:
+            // Add another message into the queue, to handle it in the mavlink telemetry task later
+            mavlinkAddMessageToQueue();
         }
     }
 }
@@ -158,18 +183,23 @@ bool mavlinkRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->rcReadRawFn = mavlinkReadRawRC;
     rxRuntimeState->rcFrameStatusFn = mavlinkFrameStatus;
 
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-    if (!portConfig) {
+    const serialPortIdentifier_e port = rxConfig->rx_uart;
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
-    baudRate_e baudRateIndex = portConfig->telemetry_baudrateIndex;
-    if (baudRateIndex == BAUD_AUTO || (portConfig->functionMask & FUNCTION_TELEMETRY_MAVLINK) == 0) {
+    // Share the rate of a MAVLink telemetry provider on this same port, if one
+    // is configured; otherwise the port is RX-only and takes the ELRS default.
+    baudRate_e baudRateIndex = BAUD_AUTO;
+#ifdef USE_TELEMETRY_MAVLINK
+    baudRateIndex = telemetryProviderBaud(TELEMETRY_PROTOCOL_MAVLINK, port);
+#endif
+    if (baudRateIndex == BAUD_AUTO) {
         // default rate for ELRS TX module
         baudRateIndex = MAVLINK_BAUD_RATE_INDEX;
     }
 
-    serialPort = openSerialPort(portConfig->identifier,
+    serialPort = openSerialPort(port,
         FUNCTION_RX_SERIAL,
         mavlinkDataReceive,
         rxRuntimeState,

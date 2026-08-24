@@ -67,6 +67,13 @@
 */
 
 #define USE_PARAMETER_GROUPS
+
+// SPA06-003 shares the SPL07-003 register map; the DPS310 driver handles both.
+// Placed before the CLOUD_BUILD / USE_CONFIG gates so per-board configs that
+// opt in via USE_BARO_SPA06_003 alone still pull the DPS310 driver in.
+#if defined(USE_BARO_SPA06_003) && !defined(USE_BARO_DPS310)
+#define USE_BARO_DPS310
+#endif
 // type conversion warnings.
 // -Wconversion can be turned on to enable the process of eliminating these warnings
 //#pragma GCC diagnostic warning "-Wconversion"
@@ -144,6 +151,7 @@
 #define USE_GYRO_SPI_ICM42688P
 #define USE_ACCGYRO_ICM45686
 #define USE_ACCGYRO_ICM45605
+#define USE_ACCGYRO_ICM56686
 #define USE_ACCGYRO_IIM42652
 #define USE_ACCGYRO_IIM42653
 #define USE_ACC_SPI_ICM42605
@@ -358,7 +366,13 @@
 #define USE_MSP_OVER_TELEMETRY
 
 #define USE_VIRTUAL_CURRENT_METER
+
+// DSHOT builds include ESC sensor support by default. Targets with another
+// telemetry transport may enable USE_ESC_SENSOR explicitly in target.h.
+#ifdef USE_DSHOT
 #define USE_ESC_SENSOR
+#endif
+
 #define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #define USE_RCDEVICE
 
@@ -367,7 +381,6 @@
 #define USE_D_MAX
 
 #define USE_THROTTLE_BOOST
-#define USE_INTEGRATED_YAW_CONTROL
 
 #define USE_ITERM_RELAX
 #define USE_RC_SMOOTHING_FILTER
@@ -408,7 +421,6 @@
 #define USE_SENSOR_NAMES
 #define USE_UNCOMMON_MIXERS
 #define USE_SIGNATURE
-#define USE_ABSOLUTE_CONTROL
 #define USE_HOTT_TEXTMODE
 #define USE_ESC_SENSOR_TELEMETRY
 #define USE_TELEMETRY_SENSORS_DISABLED_DETAILS
@@ -523,15 +535,9 @@
 
 #undef USE_YAW_SPIN_RECOVERY
 #undef USE_LAUNCH_CONTROL
-#undef USE_ABSOLUTE_CONTROL
-#undef USE_INTEGRATED_YAW_CONTROL
 #undef USE_RUNAWAY_TAKEOFF
 
 #endif // USE_WING
-
-#if defined(USE_POSITION_HOLD) && !(defined(USE_GPS) || defined(USE_OPTICALFLOW))
-#error "USE_POSITION_HOLD requires USE_GPS and/or USE_OPTICALFLOW to be defined"
-#endif
 
 // backwards compatibility for older config.h targets
 #ifndef GYRO_CONFIG_USE_GYRO_1

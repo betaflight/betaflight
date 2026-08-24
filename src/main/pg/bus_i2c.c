@@ -71,6 +71,42 @@ PG_REGISTER_ARRAY_WITH_RESET_FN(i2cConfig_t, I2CDEV_COUNT, i2cConfig, PG_I2C_CON
 #ifndef I2C4_SDA_PIN
 #define I2C4_SDA_PIN NONE
 #endif
+#ifndef I2C5_SCL_PIN
+#define I2C5_SCL_PIN NONE
+#endif
+#ifndef I2C5_SDA_PIN
+#define I2C5_SDA_PIN NONE
+#endif
+#ifndef I2C6_SCL_PIN
+#define I2C6_SCL_PIN NONE
+#endif
+#ifndef I2C6_SDA_PIN
+#define I2C6_SDA_PIN NONE
+#endif
+#ifndef I2C7_SCL_PIN
+#define I2C7_SCL_PIN NONE
+#endif
+#ifndef I2C7_SDA_PIN
+#define I2C7_SDA_PIN NONE
+#endif
+#ifndef I2C8_SCL_PIN
+#define I2C8_SCL_PIN NONE
+#endif
+#ifndef I2C8_SDA_PIN
+#define I2C8_SDA_PIN NONE
+#endif
+#ifndef I2C9_SCL_PIN
+#define I2C9_SCL_PIN NONE
+#endif
+#ifndef I2C9_SDA_PIN
+#define I2C9_SDA_PIN NONE
+#endif
+#ifndef I2C10_SCL_PIN
+#define I2C10_SCL_PIN NONE
+#endif
+#ifndef I2C10_SDA_PIN
+#define I2C10_SDA_PIN NONE
+#endif
 
 typedef struct i2cDefaultConfig_s {
     i2cDevice_e device;
@@ -94,6 +130,24 @@ static const i2cDefaultConfig_t i2cDefaultConfig[] = {
 #endif
 #ifdef USE_I2C_DEVICE_4
     { I2CDEV_4, IO_TAG(I2C4_SCL_PIN), IO_TAG(I2C4_SDA_PIN), I2C4_PULLUP, I2C4_CLOCKSPEED },
+#endif
+#ifdef USE_I2C_DEVICE_5
+    { I2CDEV_5, IO_TAG(I2C5_SCL_PIN), IO_TAG(I2C5_SDA_PIN), I2C5_PULLUP, I2C5_CLOCKSPEED },
+#endif
+#ifdef USE_I2C_DEVICE_6
+    { I2CDEV_6, IO_TAG(I2C6_SCL_PIN), IO_TAG(I2C6_SDA_PIN), I2C6_PULLUP, I2C6_CLOCKSPEED },
+#endif
+#ifdef USE_I2C_DEVICE_7
+    { I2CDEV_7, IO_TAG(I2C7_SCL_PIN), IO_TAG(I2C7_SDA_PIN), I2C7_PULLUP, I2C7_CLOCKSPEED },
+#endif
+#ifdef USE_I2C_DEVICE_8
+    { I2CDEV_8, IO_TAG(I2C8_SCL_PIN), IO_TAG(I2C8_SDA_PIN), I2C8_PULLUP, I2C8_CLOCKSPEED },
+#endif
+#ifdef USE_I2C_DEVICE_9
+    { I2CDEV_9, IO_TAG(I2C9_SCL_PIN), IO_TAG(I2C9_SDA_PIN), I2C9_PULLUP, I2C9_CLOCKSPEED },
+#endif
+#ifdef USE_I2C_DEVICE_10
+    { I2CDEV_10, IO_TAG(I2C10_SCL_PIN), IO_TAG(I2C10_SDA_PIN), I2C10_PULLUP, I2C10_CLOCKSPEED },
 #endif
 };
 

@@ -62,6 +62,42 @@ Here are the steps required:
 
 NOTE: this example is with a ready made flight controller on UART, but the same procedure works for STLink debuggers for example.
 
+### STLink debugger (SWD flash/debug via OpenOCD)
+
+To flash/debug over SWD (e.g. `make openocd-gdb`) the container needs access to the
+debugger's own USB device, not just the FC. Add rules for the ST-Link IDs:
+
+```bash
+# ST-Link V2
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="3748", MODE="0666", TAG+="uaccess"
+# ST-Link V2-1 (e.g. integrated on Nucleo boards)
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="374b", MODE="0666", TAG+="uaccess"
+# ST-Link V3 (various modes/variants)
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="374e", MODE="0666", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="374f", MODE="0666", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="3753", MODE="0666", TAG+="uaccess"
+```
+
+Without this the ST-Link node comes up `root:root` and OpenOCD fails with
+`libusb_open() failed with LIBUSB_ERROR_ACCESS`. (A `sudo chmod 666 /dev/bus/usb/<bus>/<dev>`
+works but only until the next replug.)
+
+**Wiring gotcha:** the ST-Link V3 must have its **T_VCC / VREF** pin connected to the
+target's 3.3 V — it senses the target voltage to level-shift SWD. With only SWDIO/SWCLK/GND
+wired, OpenOCD reports `Target voltage: 0.00V` and `examination failed` even though the board
+is powered and running.
+
+The bundled OpenOCD is built from [STMicroelectronics' fork](https://github.com/STMicroelectronics/OpenOCD)
+because the distro package (0.12.0) lacks STM32H5 support. It covers the STM32 F4/F7/G4/H7/H5
+families; other platforms (STM32C5/N6, AT32, CH32, RP2350, …) will be added in follow-ups.
+
+For GDB use the pre-installed `gdb-multiarch`; the toolchain's `arm-none-eabi-gdb` won't start
+on Debian (it needs `libncursesw.so.5`/`libtinfo.so.5`, removed in trixie), e.g.:
+
+```bash
+gdb-multiarch obj/main/betaflight_<TARGET>.elf -ex 'target extended-remote localhost:3333'
+```
+
 ## Installation of tools
 
 Two examples are given here - one using Docker and the other using Podman.
@@ -242,3 +278,89 @@ You can then build and flash the firmware as usual:
         Transitioning to dfuMANIFEST state
 
 ```
+
+## Gazebo SITL Simulation
+
+A separate container is provided for running Betaflight SITL with [Gazebo Harmonic](https://gazebosim.org/) simulation.
+This allows testing firmware changes without physical hardware.
+
+### Architecture
+
+```text
+┌─────────────────────────────────────────────────────┐
+│  Gazebo Container                                   │
+│                                                     │
+│  ┌──────────────┐  UDP 9002/9003  ┌──────────────┐  │
+│  │   Gazebo      │◄──────────────►│ Betaflight   │  │
+│  │   Harmonic    │  motor/sensor  │ SITL (.elf)  │  │
+│  │   + Bridge    │                │              │  │
+│  └──────────────┘                └──────┬───────┘  │
+│                                         │ TCP 5761 │
+└─────────────────────────────────────────┼──────────┘
+                                          │
+                              ┌───────────▼──────────┐
+                              │  Betaflight App      │
+                              │  ws://localhost:6761  │
+                              └──────────────────────┘
+```
+
+### Building the Gazebo container
+
+```bash
+docker build -t bf-dev-gazebo -f .devcontainer/containerfile.gazebo .devcontainer/
+```
+
+### Running a simulation
+
+The simulation requires three processes running concurrently inside the container.
+Use three separate host terminals — the first starts the container, the others attach to it.
+
+> **Note:** Gazebo's GUI requires a display. On Linux the `docker run` command below forwards your host X11 socket into the container. On macOS, install [XQuartz](https://www.xquartz.org) and run `xhost +localhost` first.
+
+**Host terminal 1 — start the container and build SITL:**
+
+```bash
+docker run -it --rm \
+  --name bf-gazebo \
+  --network=host \
+  -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v "$(pwd)":/workspace \
+  bf-dev-gazebo
+
+# Inside the container — build SITL (only needed once per workspace)
+make TARGET=SITL
+
+# Then start SITL
+./obj/main/betaflight_SITL.elf
+```
+
+**Host terminal 2 — attach and start Gazebo:**
+
+```bash
+docker exec -it bf-gazebo bash
+
+# Inside the container
+gz sim -r ~/aeroloop_gazebo/worlds/betaloop_iris_betaflight_demo_harmonic.sdf
+```
+
+**Host terminal 3 — attach and start the WebSocket proxy:**
+
+```bash
+docker exec -it bf-gazebo bash
+
+# Inside the container
+websockify 127.0.0.1:6761 127.0.0.1:5761
+```
+
+Then connect the Betaflight App to `ws://127.0.0.1:6761`.
+
+### Ports
+
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| 9002 | UDP | SITL → Gazebo (motor commands) |
+| 9003 | UDP | Gazebo → SITL (sensor data) |
+| 9004 | UDP | External → SITL (RC input) |
+| 5761 | TCP | SITL UART1 (MSP serial proxy) |
+| 6761 | TCP | WebSocket proxy for Betaflight App |

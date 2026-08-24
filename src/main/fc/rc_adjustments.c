@@ -271,10 +271,6 @@ static const char * const adjustmentLabels[] = {
     "PITCH/ROLL F",
     "FF TRANSITION",
     "HORIZON STRENGTH",
-    "ROLL RC RATE",
-    "PITCH RC RATE",
-    "ROLL RC EXPO",
-    "PITCH RC EXPO",
     "PID AUDIO",
     "PITCH F",
     "ROLL F",
@@ -296,34 +292,18 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
     int newValue;
     switch (adjustmentFunction) {
     case ADJUSTMENT_RC_RATE:
-    case ADJUSTMENT_ROLL_RC_RATE:
         newValue = constrain((int)controlRateConfig->rcRates[FD_ROLL] + delta, 1, CONTROL_RATE_CONFIG_RC_RATES_MAX);
         controlRateConfig->rcRates[FD_ROLL] = newValue;
-        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_RC_RATE, newValue);
-        if (adjustmentFunction == ADJUSTMENT_ROLL_RC_RATE) {
-            break;
-        }
-        // fall through for combined ADJUSTMENT_RC_EXPO
-        FALLTHROUGH;
-    case ADJUSTMENT_PITCH_RC_RATE:
         newValue = constrain((int)controlRateConfig->rcRates[FD_PITCH] + delta, 1, CONTROL_RATE_CONFIG_RC_RATES_MAX);
         controlRateConfig->rcRates[FD_PITCH] = newValue;
-        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_PITCH_RC_RATE, newValue);
+        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_RATE, newValue);
         break;
     case ADJUSTMENT_RC_EXPO:
-    case ADJUSTMENT_ROLL_RC_EXPO:
         newValue = constrain((int)controlRateConfig->rcExpo[FD_ROLL] + delta, 0, CONTROL_RATE_CONFIG_RC_EXPO_MAX);
         controlRateConfig->rcExpo[FD_ROLL] = newValue;
-        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_RC_EXPO, newValue);
-        if (adjustmentFunction == ADJUSTMENT_ROLL_RC_EXPO) {
-            break;
-        }
-        // fall through for combined ADJUSTMENT_RC_EXPO
-        FALLTHROUGH;
-    case ADJUSTMENT_PITCH_RC_EXPO:
         newValue = constrain((int)controlRateConfig->rcExpo[FD_PITCH] + delta, 0, CONTROL_RATE_CONFIG_RC_EXPO_MAX);
         controlRateConfig->rcExpo[FD_PITCH] = newValue;
-        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_PITCH_RC_EXPO, newValue);
+        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_EXPO, newValue);
         break;
     case ADJUSTMENT_THROTTLE_EXPO:
         newValue = constrain((int)controlRateConfig->thrExpo8 + delta, 0, 100); // FIXME magic numbers repeated in cli.c
@@ -459,34 +439,16 @@ static int applyAbsoluteAdjustment(controlRateConfig_t *controlRateConfig, adjus
 
     switch (adjustmentFunction) {
     case ADJUSTMENT_RC_RATE:
-    case ADJUSTMENT_ROLL_RC_RATE:
         newValue = constrain(value, 1, CONTROL_RATE_CONFIG_RC_RATES_MAX);
         controlRateConfig->rcRates[FD_ROLL] = newValue;
-        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_RC_RATE, newValue);
-        if (adjustmentFunction == ADJUSTMENT_ROLL_RC_RATE) {
-            break;
-        }
-        // fall through for combined ADJUSTMENT_RC_EXPO
-        FALLTHROUGH;
-    case ADJUSTMENT_PITCH_RC_RATE:
-        newValue = constrain(value, 1, CONTROL_RATE_CONFIG_RC_RATES_MAX);
         controlRateConfig->rcRates[FD_PITCH] = newValue;
-        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_PITCH_RC_RATE, newValue);
+        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_RATE, newValue);
         break;
     case ADJUSTMENT_RC_EXPO:
-    case ADJUSTMENT_ROLL_RC_EXPO:
-        newValue = constrain(value, 1, CONTROL_RATE_CONFIG_RC_EXPO_MAX);
-        controlRateConfig->rcExpo[FD_ROLL] = newValue;
-        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_RC_EXPO, newValue);
-        if (adjustmentFunction == ADJUSTMENT_ROLL_RC_EXPO) {
-            break;
-        }
-        // fall through for combined ADJUSTMENT_RC_EXPO
-        FALLTHROUGH;
-    case ADJUSTMENT_PITCH_RC_EXPO:
         newValue = constrain(value, 0, CONTROL_RATE_CONFIG_RC_EXPO_MAX);
+        controlRateConfig->rcExpo[FD_ROLL] = newValue;
         controlRateConfig->rcExpo[FD_PITCH] = newValue;
-        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_PITCH_RC_EXPO, newValue);
+        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_EXPO, newValue);
         break;
     case ADJUSTMENT_THROTTLE_EXPO:
         newValue = constrain(value, 0, 100); // FIXME magic numbers repeated in cli.c

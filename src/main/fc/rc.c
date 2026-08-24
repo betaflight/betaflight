@@ -40,13 +40,17 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
+#include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/gps_rescue.h"
 #include "flight/pid.h"
 #include "flight/pid_init.h"
 
+#include "pg/autopilot.h"
+
 #include "pg/rx.h"
+
 #include "rx/rx.h"
 
 #include "sensors/battery.h"
@@ -60,7 +64,7 @@
 typedef float (applyRatesFn)(const int axis, float rcCommandf, const float rcCommandfAbs);
 // note that rcCommand[] is an external float
 
-static float rawSetpoint[XYZ_AXIS_COUNT];
+STATIC_UNIT_TESTED float rawSetpoint[XYZ_AXIS_COUNT];
 
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3]; // deflection range -1 to 1
 static float maxRcDeflectionAbs;
@@ -261,12 +265,12 @@ static float applyQuickRates(const int axis, float rcCommandf, const float rcCom
     return angleRate;
 }
 
-static void scaleRawSetpointToFpvCamAngle(void)
+STATIC_UNIT_TESTED void scaleRawSetpointToFpvCamAngle(void)
 {
     //recalculate sin/cos only when rxConfig()->fpvCamAngleDegrees changed
-    static uint8_t lastFpvCamAngleDegrees = 0;
-    float cosFactor = 1.0f;
-    float sinFactor = 0.0f;
+    static int16_t lastFpvCamAngleDegrees = -1;
+    static float cosFactor = 1.0f;
+    static float sinFactor = 0.0f;
 
     if (lastFpvCamAngleDegrees != rxConfig()->fpvCamAngleDegrees) {
         lastFpvCamAngleDegrees = rxConfig()->fpvCamAngleDegrees;
@@ -651,7 +655,14 @@ FAST_CODE void processRcCommand(void)
                 rcDeflectionAbs[axis] = 0;
             } else
 #endif
-            {
+            if ((axis == FD_YAW) && FLIGHT_MODE(AUTOPILOT_MODE) && autopilotYawControlActive()
+                && fabsf(rcCommand[FD_YAW]) < (float)autopilotConfig()->stickDeadband) {
+                // Mission yaw control, injected the same way as GPS rescue;
+                // a yaw stick deflection past the deadband hands yaw back to the pilot.
+                angleRate = autopilotGetYawRate();
+                rcDeflection[axis] = 0;
+                rcDeflectionAbs[axis] = 0;
+            } else {
                 // scale rcCommandf to range [-1.0, 1.0]
                 float rcCommandf;
                 if (axis == FD_YAW) {

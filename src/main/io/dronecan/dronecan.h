@@ -32,11 +32,11 @@
 
 #include "common/time.h"
 
-// Maximum number of subscribers a single stack instance accepts. NodeStatus
-// + GetNodeInfo use two slots out of the box; consumers added in follow-up
-// PRs (GPS, ESC telemetry, etc.) register into the remainder. Bump if a
-// target needs more — each slot is ~16 bytes of .bss.
-#define DRONECAN_MAX_SUBSCRIBERS    8
+// Maximum number of subscribers a single stack instance accepts. A full
+// build registers 11 (GetNodeInfo server + client, NodeStatus x2, GPS x2,
+// mag x2, airspeed, ESC status, DNA allocation). Bump if a target needs
+// more — each slot is ~16 bytes of .bss.
+#define DRONECAN_MAX_SUBSCRIBERS    12
 
 typedef void (*dronecanRxHandler)(CanardInstance *ins, CanardRxTransfer *transfer);
 
@@ -72,5 +72,12 @@ bool dronecanRegisterSubscriber(const dronecanSubscriber_t *subscriber);
 // responders can call canardBroadcastObj / canardRequestOrRespondObj without
 // each one having to re-discover the pool.
 CanardInstance *dronecanGetInstance(void);
+
+// Drain libcanard's TX queue into the CAN driver. Safe to call from any task
+// context (the cooperative scheduler serialises libcanard access). Used by the
+// PID-loop ESC emission to push a freshly-queued RawCommand straight out, and
+// by the dronecan task as a fallback for anything left when the driver ring
+// was momentarily full. No-op until the stack is initialised.
+void dronecanFlushTx(void);
 
 #endif // ENABLE_DRONECAN
