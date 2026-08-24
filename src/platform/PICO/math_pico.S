@@ -21,6 +21,8 @@
 
 #include "pico/asm_helper.S"
 
+pico_default_asm_setup
+
 .section .text.mathfunctions, "ax"
 
 // Wrapped lrintf function, because gcc arm (13.3) / newlib is
