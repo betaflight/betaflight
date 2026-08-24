@@ -151,6 +151,7 @@ void processRcStickPositions(void)
     static uint8_t rcSticks;
     // an extra guard for disarming through switch to prevent that one frame can disarm it
     static uint8_t rcDisarmTicks;
+    static bool armSwitchWasActive;
     static bool doNotRepeat;
     static bool pendingApplyRollAndPitchTrimDeltaSave = false;
 
@@ -177,10 +178,19 @@ void processRcStickPositions(void)
 
     // perform actions
     if (!isUsingSticksToArm) {
-        if (IS_RC_MODE_ACTIVE(BOXARM)) {
+        const bool armSwitchActive = IS_RC_MODE_ACTIVE(BOXARM);
+        const bool armSwitchReady = rcModeIsTwoTapArmReady();
+        if (armSwitchActive && !armSwitchWasActive && !ARMING_FLAG(ARMED) && !armSwitchReady) {
+            beeperConfirmationBeeps(1);
+        }
+        armSwitchWasActive = armSwitchActive;
+
+        if (armSwitchActive) {
             rcDisarmTicks = 0;
             // Arming via ARM BOX
-            tryArm();
+            if (ARMING_FLAG(ARMED) || armSwitchReady) {
+                tryArm();
+            }
         } else {
             resetTryingToArm();
             // Disarming via ARM BOX
