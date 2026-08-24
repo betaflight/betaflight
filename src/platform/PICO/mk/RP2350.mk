@@ -69,6 +69,7 @@ PICO_LIB_SRC = \
             rp2_common/hardware_i2c/i2c.c \
             rp2_common/hardware_adc/adc.c \
             rp2_common/hardware_pio/pio.c \
+            rp2_common/hardware_ticks/ticks.c \
             rp2_common/hardware_watchdog/watchdog.c \
             rp2_common/hardware_flash/flash.c \
             rp2_common/pico_unique_id/unique_id.c \
