@@ -209,8 +209,9 @@ TEST(SerialFeatureMap, VtxCollapseByType)
     vtxSettingsConfigMutable()->vtx_type = VTXDEV_TRAMP;
     EXPECT_EQ(FUNCTION_VTX_TRAMP, serialSynthesizeFunctionMask(SERIAL_PORT_UART4));
 
+    // An MSP VTX speaks MSP on its UART, so the port carries that bit as well.
     vtxSettingsConfigMutable()->vtx_type = VTXDEV_MSP;
-    EXPECT_EQ(FUNCTION_VTX_MSP, serialSynthesizeFunctionMask(SERIAL_PORT_UART4));
+    EXPECT_EQ((uint32_t)(FUNCTION_VTX_MSP | FUNCTION_MSP), serialSynthesizeFunctionMask(SERIAL_PORT_UART4));
 
     // Unsupported VTX type means the port has no VTX function bit.
     vtxSettingsConfigMutable()->vtx_type = VTXDEV_UNSUPPORTED;
@@ -376,6 +377,26 @@ TEST(SerialFeatureMap, MspDisplayPortImpliesAnMspPort)
     // No port to imply one on.
     osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
     osdConfigMutable()->osd_uart = SERIAL_PORT_NONE;
+    EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+}
+
+TEST(SerialFeatureMap, MspVtxBringsTheMspBitAndImpliesAPort)
+{
+    resetAllConfigs();
+    serialPortIdentifier_e ports[IMPLIED_MSP_PORT_COUNT];
+
+    vtxSettingsConfigMutable()->vtx_uart = SERIAL_PORT_UART4;
+    vtxSettingsConfigMutable()->vtx_type = VTXDEV_MSP;
+
+    // FUNCTION_VTX_MSP alone is a conflict in serial.c, so the port carries MSP too.
+    EXPECT_EQ((uint32_t)(FUNCTION_VTX_MSP | FUNCTION_MSP), serialSynthesizeFunctionMask(SERIAL_PORT_UART4));
+
+    ASSERT_EQ(1u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+    EXPECT_EQ(SERIAL_PORT_UART4, ports[0]);
+
+    // A wire protocol VTX keeps its own bit and implies nothing.
+    vtxSettingsConfigMutable()->vtx_type = VTXDEV_SMARTAUDIO;
+    EXPECT_EQ((uint32_t)FUNCTION_VTX_SMARTAUDIO, serialSynthesizeFunctionMask(SERIAL_PORT_UART4));
     EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
 }
 

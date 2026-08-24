@@ -520,6 +520,13 @@ const char * const lookupTableOsdDisplayPortDevice[] = {
     "NONE", "AUTO", "MAX7456", "MSP", "FRSKYOSD", "FBOSD"
 };
 
+#ifdef USE_VTX_COMMON
+// Indexed by vtxDevType_e, so the gap the enum reserves at 2 has to be held open.
+static const char * const lookupTableVtxType[] = {
+    "NONE", "RTC6705", "RESERVED", "SMARTAUDIO", "TRAMP", "MSP"
+};
+#endif
+
 #ifdef USE_OSD
 static const char * const lookupTableOsdLogoOnArming[] = {
     "OFF", "ON", "FIRST_ARMING",
@@ -720,6 +727,9 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableFeedforwardAveraging),
     LOOKUP_TABLE_ENTRY(lookupTableDshotBitbangedTimer),
     LOOKUP_TABLE_ENTRY(lookupTableOsdDisplayPortDevice),
+#ifdef USE_VTX_COMMON
+    LOOKUP_TABLE_ENTRY(lookupTableVtxType),
+#endif
 
 #ifdef USE_OSD
     LOOKUP_TABLE_ENTRY(lookupTableOsdLogoOnArming),
@@ -1789,6 +1799,7 @@ const clivalue_t valueTable[] = {
     { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, VTX_TABLE_MAX_POWER_LEVELS - 1 }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, power) },
     { "vtx_low_power_disarm",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_VTX_LOW_POWER_DISARM }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, lowPowerDisarm) },
     { "vtx_softserial_alt",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, softserialAlt) },
+    { "vtx_type",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_VTX_TYPE }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, vtx_type) },
     { "vtx_uart",                   VAR_INT8   | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, vtx_uart) },
 #ifdef VTX_SETTINGS_FREQCMD
     { "vtx_freq",                   VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, VTX_SETTINGS_MAX_FREQUENCY_MHZ }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, freq) },

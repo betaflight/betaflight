@@ -127,7 +127,9 @@ uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
 #endif
 #ifdef USE_VTX_MSP
         case VTXDEV_MSP:
-            mask |= FUNCTION_VTX_MSP;
+            // An MSP VTX talks over MSP on its own UART, so it brings the MSP bit
+            // with it; FUNCTION_VTX_MSP on its own is a conflict.
+            mask |= FUNCTION_VTX_MSP | FUNCTION_MSP;
             break;
 #endif
         default:
@@ -322,6 +324,11 @@ unsigned serialImpliedMspPorts(serialPortIdentifier_e *ports, unsigned maxPorts)
 #if defined(USE_OSD) && defined(USE_MSP_DISPLAYPORT)
     if (osdConfig()->displayPortDevice == OSD_DISPLAYPORT_DEVICE_MSP) {
         addImpliedMspPort(ports, &count, maxPorts, osdConfig()->osd_uart);
+    }
+#endif
+#ifdef USE_VTX_MSP
+    if (vtxSettingsConfig()->vtx_type == VTXDEV_MSP) {
+        addImpliedMspPort(ports, &count, maxPorts, vtxSettingsConfig()->vtx_uart);
     }
 #endif
 #if IMPLIED_MSP_PORT_COUNT == 0
