@@ -511,7 +511,7 @@ float pidApplyThrustLinearization(float motorOutput, unsigned motorIndex)
     const float inv = 1.0f - motorOutput;
     const float linearizedOutput = motorOutput * (1.0f + e * inv * (1.0f + e * (inv - motorOutput)));
     const float linearizationChange = linearizedOutput - motorOutput;
-    return motorOutput + pt1FilterApply(&pidRuntime.thrustLinearizationMotorFilter[motorIndex], linearizationChange);
+    return constrainf(motorOutput + pt1FilterApply(&pidRuntime.thrustLinearizationMotorFilter[motorIndex], linearizationChange), 0.0f, 1.0f);
 }
 
 // Inverse of the curve above, applied to base throttle so hover throttle is
@@ -528,7 +528,7 @@ float pidCompensateThrustLinearization(float throttle)
         throttle *= 1.0f - e * (1.0f - throttle);
     }
     const float linearizationChange = throttle - uncompensatedThrottle;
-    return uncompensatedThrottle + pt1FilterApply(&pidRuntime.thrustLinearizationThrottleFilter, linearizationChange);
+    return constrainf(uncompensatedThrottle + pt1FilterApply(&pidRuntime.thrustLinearizationThrottleFilter, linearizationChange), 0.0f, 1.0f);
 }
 #endif
 

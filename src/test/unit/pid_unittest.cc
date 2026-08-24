@@ -258,6 +258,22 @@ TEST(pidControllerTest, testThrustLinearizationFiltering)
     EXPECT_NEAR(0.625f, pidApplyThrustLinearization(0.5f, 0), 1e-6f);
     EXPECT_NEAR(0.375f, pidCompensateThrustLinearization(0.5f), 1e-6f);
 
+    pidProfile->thrustLinearizationCutoff = 4;
+    pidInit(pidProfile);
+
+    EXPECT_NEAR(0.625f, pidApplyThrustLinearization(0.5f, 0), 1e-6f);
+    EXPECT_NEAR(0.375f, pidCompensateThrustLinearization(0.5f), 1e-6f);
+
+    pidProfile->thrustLinearizationCutoff = 5;
+    pidInit(pidProfile);
+
+    const float thresholdMotor = pidApplyThrustLinearization(0.5f, 0);
+    EXPECT_GT(thresholdMotor, 0.5f);
+    EXPECT_LT(thresholdMotor, 0.625f);
+    const float thresholdThrottle = pidCompensateThrustLinearization(0.5f);
+    EXPECT_GT(thresholdThrottle, 0.375f);
+    EXPECT_LT(thresholdThrottle, 0.5f);
+
     pidProfile->thrustLinearizationCutoff = 75;
     pidInit(pidProfile);
 
@@ -281,6 +297,10 @@ TEST(pidControllerTest, testThrustLinearizationFiltering)
     }
     EXPECT_NEAR(0.625f, motorOutput, 1e-5f);
     EXPECT_NEAR(0.375f, throttle, 1e-5f);
+
+    // Retained filter state must not push normalized outputs beyond their valid range.
+    EXPECT_FLOAT_EQ(1.0f, pidApplyThrustLinearization(1.0f, 0));
+    EXPECT_FLOAT_EQ(0.0f, pidCompensateThrustLinearization(0.0f));
 }
 
 TEST(pidControllerTest, testStabilisationDisabled)

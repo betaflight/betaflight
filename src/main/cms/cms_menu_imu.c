@@ -616,7 +616,6 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
     UNUSED(self);
 
     pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
-    pidInitConfig(currentPidProfile);
 
     pidProfile->pid[PID_LEVEL].P = cmsx_angleP;
     pidProfile->pid[PID_LEVEL].F = cmsx_angleFF;
@@ -667,6 +666,7 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
     pidProfile->tpa_low_always = cmsx_tpa_low_always;
     pidProfile->landing_disarm_threshold = cmsx_landing_disarm_threshold;
 
+    pidInitConfig(currentPidProfile);
     initEscEndpoints();
     return NULL;
 }
