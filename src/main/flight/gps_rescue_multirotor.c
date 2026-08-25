@@ -89,11 +89,12 @@ typedef struct {
     float pitchAngleLimitDeg;
     float rollAngleLimitDeg;
     float descentDistanceCm;
+    float invSlowdownDistanceCm;
     float descentDistanceM;
     int8_t secondsFailing;
     float yawAttenuator;
     float targetVelocityCmS;
-    float xyAttenuator;
+    float xyStartAttenuator;
     float proximityAttenuator;
     vector2_t stepEF; // distance to move the craft along the path each iteration
     float cmToEarthAngle;
@@ -106,7 +107,6 @@ typedef struct {
     bool newGpsData;
     bool positionXYAvailable;
     float aircraftHeadingDeg;
-    float bearingToHomeDeg;
     float errorAngleDeg;
     float distanceToHomeCm;
     float velocityCmS; // for debugs only
@@ -141,9 +141,9 @@ void gpsRescueInit(void)
     rescueState.intent.cmToEarthAngle = 1.0f / EARTH_ANGLE_TO_CM; // approx 0.898 cm per unit lat at equator
     rescueState.intent.initialClimbCm = gpsRescueConfig()->initialClimbM * 100.0f;
     rescueState.intent.descentDistanceCm = gpsRescueConfig()->descentDistanceM * 100.0f;
+    rescueState.intent.invSlowdownDistanceCm = gpsRescueConfig()->descentDistanceM ? 1.0f / (2.0f * rescueState.intent.descentDistanceCm): 100.0f;
     rescueState.sensor.currentPositionV  = (vector2_t){{0.0f, 0.0f}};
     rescueState.intent.targetAltitudeVelCmS = 0.0f;
-
     rescueState.sensor.previousPositionV = rescueState.sensor.currentPositionV;
     // Zero out flight angles to keep the craft flat on initiation
     autopilotAngle[AI_ROLL] = 0.0f;
@@ -233,7 +233,7 @@ if (rescueState.sensor.positionXYAvailable) {
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 0, lrintf(rescueState.sensor.velocityCmS));
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 2, lrintf(currentAltitudeCm));
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 4, lrintf(rescueState.sensor.aircraftHeadingDeg));
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 5, lrintf(rescueState.sensor.bearingToHomeDeg));
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 5, lrintf(rescueState.sensor.errorAngleDeg));
 }
 
 #if !ENABLE_RESCUE_PLAN
@@ -248,10 +248,10 @@ static void updateYawStartupAttenuator(void)
 }
 static void updateVelocityStartupAttenuator(void)
 {
-    if (rescueState.intent.xyAttenuator < 1.0f) {
-        rescueState.intent.xyAttenuator += gpsRescueTaskIntervalSeconds;
-        if (rescueState.intent.xyAttenuator > 1.0f) {
-            rescueState.intent.xyAttenuator = 1.0f;
+    if (rescueState.intent.xyStartAttenuator < 1.0f) {
+        rescueState.intent.xyStartAttenuator += gpsRescueTaskIntervalSeconds;
+        if (rescueState.intent.xyStartAttenuator > 1.0f) {
+            rescueState.intent.xyStartAttenuator = 1.0f;
         }
     }
 }
@@ -270,7 +270,7 @@ static void controlYaw(void)
 static void calculateTargetStep(void)
 {
     if (rescueState.sensor.distanceToHomeCm > GPS_RESCUE_ACCEPT_RADIUS) {
-        const float distanceToMoveCm = rescueState.intent.targetVelocityCmS * gpsRescueTaskIntervalSeconds * rescueState.intent.xyAttenuator;
+        const float distanceToMoveCm = rescueState.intent.targetVelocityCmS * gpsRescueTaskIntervalSeconds * rescueState.intent.xyStartAttenuator;
         const float scale = distanceToMoveCm / rescueState.sensor.distanceToHomeCm;
             DEBUG_SET(DEBUG_RTH, 5, lrintf(scale*100.0f));
 
@@ -495,27 +495,29 @@ static void performSanityChecks(void)
     }
 }
 
-
-static void initDescent(void)
-{
-    if (rescueState.sensor.distanceToHomeCm < rescueState.intent.descentDistanceCm) {
-        rescueState.intent.descentDistanceCm = rescueState.sensor.distanceToHomeCm;
-    }
-}
-
 static void descend(void)
 {
-    if (rescueState.intent.descentDistanceCm > GPS_RESCUE_ACCEPT_RADIUS) {
-        float attenuator = rescueState.sensor.distanceToHomeCm / rescueState.intent.descentDistanceCm;
-        attenuator = constrainf(attenuator, 0.0f, 1.0f);
-        rescueState.intent.targetVelocityCmS = gpsRescueConfig()->groundSpeedCmS * attenuator;
-    } else {
-        rescueState.intent.targetVelocityCmS = 0.0f;
-    }
     float verticalVelMax = -(float)gpsRescueConfig()->descendRate;
     float verticalVelAttenuator = scaleRangef(constrainf(rescueState.intent.targetAltitudeCm, 1000, 5000), 1000, 5000, 0.6f, 3.0f);
+
     rescueState.intent.targetAltitudeVelCmS = verticalVelMax * verticalVelAttenuator;
-    rescueYawRate = 0.0f; // keep yaw rate  zero in case we float past the home point
+    rescueYawRate = 0.0f; // keep yaw rate zero in case we float past the home point
+}
+static bool descendIfNeeded(void)
+{
+    if (rescueState.sensor.distanceToHomeCm < rescueState.intent.descentDistanceCm) {
+        rescueState.phase = RESCUE_DESCENT;
+        rescueState.intent.secondsFailing = 0;
+        return true;
+    }
+    return false;
+}
+
+static void updateTargetVelocity(void)
+{
+    float slowdownAttenuator = rescueState.sensor.distanceToHomeCm * rescueState.intent.invSlowdownDistanceCm;
+    slowdownAttenuator = constrainf(slowdownAttenuator, 0.0f, 1.0f);
+    rescueState.intent.targetVelocityCmS = gpsRescueConfig()->groundSpeedCmS * slowdownAttenuator * rescueState.intent.xyStartAttenuator;
 }
 
 void initRescueValues(void)
@@ -549,7 +551,7 @@ void initRescueValues(void)
     rescueState.intent.targetAltitudeVelCmS = 0.0f;
     rescueState.sensor.velocityCmS = 0.0f;
     rescueState.intent.yawAttenuator = 0.0f;       // For a smooth start to the yaw
-    rescueState.intent.xyAttenuator = 0.0f;        // For a slower start to gaining velocity
+    rescueState.intent.xyStartAttenuator = 0.0f;        // For a slower start to gaining velocity
 
     resetAltitudeControl(); // Initialise altitude in autopilot multirotor
 }
@@ -571,6 +573,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE) && rescueState.phase == RESCUE_IDLE) {
         rescueStart(); // sets phase to RESCUE_INITIALIZE
     }
+
     sensorUpdate(); // get latest velocity to home and Altitude data, set some defaults
     checkGPSRescueIsAvailable();
     performSanityChecks();
@@ -609,7 +612,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
             if (!rescueState.sensor.isHeadingOK) {
                 rescueState.phase = RESCUE_PITCH_FORWARD;
             } else {
-            rescueState.phase = RESCUE_ROTATE;
+                rescueState.phase = RESCUE_ROTATE;
             }
         }
         break;
@@ -630,36 +633,35 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
 
     case RESCUE_ROTATE:
         clearTargetStep(); // don't change the target location
-        updateYawStartupAttenuator();
-        controlYaw();
-        if (fabsf(rescueState.sensor.errorAngleDeg) < GPS_RESCUE_ALLOWED_YAW_RANGE) {
-            rescueState.phase = RESCUE_FLY_HOME;
-            rescueState.intent.targetVelocityCmS = gpsRescueConfig()->groundSpeedCmS;
-            rescueState.intent.secondsFailing = 0;
+        if (!descendIfNeeded()) {
+            updateYawStartupAttenuator();
+            controlYaw();
+            if (fabsf(rescueState.sensor.errorAngleDeg) < GPS_RESCUE_ALLOWED_YAW_RANGE) {
+                rescueState.phase = RESCUE_FLY_HOME;
+                rescueState.intent.secondsFailing = 0;
+            }
         }
         break;
 
     case RESCUE_FLY_HOME:
-    updateVelocityStartupAttenuator();
-        calculateTargetStep();
-        controlYaw();
-        if (rescueState.sensor.distanceToHomeCm < rescueState.intent.descentDistanceCm) {
-            rescueState.phase = RESCUE_DESCENT; // enter descend phase
-            initDescent();
-            rescueState.intent.secondsFailing = 0; // reset sanity timer for descent
+        updateVelocityStartupAttenuator(); // starts slowing down at twice descend distance
+        if (!descendIfNeeded()) {
+            updateTargetVelocity();
+            calculateTargetStep();
+            controlYaw();
         }
-        break;
+    break;
 
     case RESCUE_DESCENT:
         updateVelocityStartupAttenuator();
-        descend(); // sets a negstive targetAltitudeVelocity
+        updateTargetVelocity();
         calculateTargetStep();
+        descend(); // sets a negative targetAltitudeVelocity
         if (isBelowLandingAltitude()) {
-            // enter landing mode once below landing altitude
             rescueState.phase = RESCUE_LANDING;
             rescueState.intent.secondsFailing = 0; // reset sanity timer for landing
         }
-        break;
+    break;
 
     case RESCUE_LANDING:
         descend();
@@ -671,7 +673,6 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         descend();
         vector2Zero(&rescueState.intent.stepEF);
         moveTargetLocation(&rescueState.intent.stepEF, TASK_GPS_RESCUE_RATE_HZ, true); // stop position control
-
         break;
 
     case RESCUE_DO_NOTHING:
@@ -679,7 +680,6 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         rescueState.intent.targetAltitudeVelCmS = 0.0f;
         rescueYawRate = 0.0f;
         // altitude control with no change in height or heading, position control at zero target velocity
-
         break;
 
     default:
@@ -689,11 +689,14 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
     DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 1, rescueState.phase);
     DEBUG_SET(DEBUG_ATTITUDE,            5, rescueState.phase);
     DEBUG_SET(DEBUG_ATTITUDE,            6, lrintf(rescueState.intent.targetVelocityCmS));
+
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 1, lrintf(rescueState.intent.targetVelocityCmS));
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 3, lrintf(rescueState.intent.targetAltitudeCm));
-    DEBUG_SET(DEBUG_RTH,                 7, lrintf(rescueState.intent.targetVelocityCmS));
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 6, lrintf(rescueState.sensor.distanceToHomeCm));
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 7, rescueState.phase);
+
     DEBUG_SET(DEBUG_RTH, 0, lrintf(rescueState.sensor.velocityCmS / 10.0f));
-
-
+    DEBUG_SET(DEBUG_RTH, 7, lrintf(rescueState.intent.targetVelocityCmS));
 
     // Autopilot control of altitude is always active when rescue mode is engaged
     if (rescueState.phase > RESCUE_INITIALIZE) {
