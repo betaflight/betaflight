@@ -372,7 +372,7 @@ bool vtxMspInit(void)
 {
     // don't bother setting up this device if we don't have MSP vtx enabled
     const serialPortIdentifier_e port = vtxSettingsConfig()->vtx_uart;
-    if (port == SERIAL_PORT_NONE) {
+    if (port == SERIAL_PORT_NONE || vtxSettingsConfig()->vtx_type != VTXDEV_MSP) {
         return false;
     }
 
