@@ -50,6 +50,8 @@
 #include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
 
+#include "osd/osd.h"
+
 #include "pg/vtx_table.h"
 
 #include "rx/crsf.h"
@@ -76,6 +78,22 @@ STATIC_UNIT_TESTED mspVtxStatus_e mspVtxStatus = MSP_VTX_STATUS_OFFLINE;
 static uint8_t mspVtxPortIdentifier = 255;
 
 #define MSP_VTX_REQUEST_PERIOD_US (200 * 1000) // 200ms
+
+// The port is never opened here, it only names the MSP link the VTX answers on.  A goggle
+// system speaks both the display port and the VTX over that one link, so an unassigned VTX
+// port follows the OSD's rather than making the user name the same UART twice.
+static serialPortIdentifier_e mspVtxPort(void)
+{
+    const serialPortIdentifier_e port = vtxSettingsConfig()->vtx_uart;
+
+#if defined(USE_OSD) && defined(USE_MSP_DISPLAYPORT)
+    if (port == SERIAL_PORT_NONE && osdConfig()->displayPortDevice == OSD_DISPLAYPORT_DEVICE_MSP) {
+        return osdConfig()->osd_uart;
+    }
+#endif
+
+    return port;
+}
 
 static bool isCrsfPort(serialPortIdentifier_e port)
 {
@@ -175,7 +193,7 @@ static void vtxMspProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 {
     UNUSED(vtxDevice);
 
-    const serialPortIdentifier_e port = vtxSettingsConfig()->vtx_uart;
+    const serialPortIdentifier_e port = mspVtxPort();
     uint8_t frame[15];
 
     switch (mspVtxStatus) {
@@ -371,8 +389,12 @@ static const vtxVTable_t mspVTable = {
 bool vtxMspInit(void)
 {
     // don't bother setting up this device if we don't have MSP vtx enabled
-    const serialPortIdentifier_e port = vtxSettingsConfig()->vtx_uart;
-    if (port == SERIAL_PORT_NONE || vtxSettingsConfig()->vtx_type != VTXDEV_MSP) {
+    if (vtxSettingsConfig()->vtx_type != VTXDEV_MSP) {
+        return false;
+    }
+
+    const serialPortIdentifier_e port = mspVtxPort();
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
