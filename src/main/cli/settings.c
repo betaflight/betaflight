@@ -521,9 +521,10 @@ const char * const lookupTableOsdDisplayPortDevice[] = {
 };
 
 #ifdef USE_VTX_COMMON
-// Indexed by vtxDevType_e, so the gap the enum reserves at 2 has to be held open.
+// Indexed by vtxDevType_e. The slot the enum reserves at 2 is a NULL hole, which
+// the CLI skips when matching and when listing what a setting accepts.
 static const char * const lookupTableVtxType[] = {
-    "NONE", "RTC6705", "RESERVED", "SMARTAUDIO", "TRAMP", "MSP"
+    "NONE", "RTC6705", NULL, "SMARTAUDIO", "TRAMP", "MSP"
 };
 #endif
 

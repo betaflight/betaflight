@@ -706,7 +706,7 @@ bool vtxSmartAudioInit(void)
 #endif
 
     const serialPortIdentifier_e port = vtxSettingsConfig()->vtx_uart;
-    if (port == SERIAL_PORT_NONE) {
+    if (port == SERIAL_PORT_NONE || vtxSettingsConfig()->vtx_type != VTXDEV_SMARTAUDIO) {
         return false;
     }
     // Note, for SA, which uses bidirectional mode, would normally require pullups.

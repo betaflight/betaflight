@@ -291,6 +291,7 @@ static void clearClaimsOnPort(serialPortIdentifier_e identifier, bool keepMsp)
 #endif
 }
 
+#if IMPLIED_MSP_PORT_COUNT > 0
 static void addImpliedMspPort(serialPortIdentifier_e *ports, unsigned *count, unsigned maxPorts,
                               serialPortIdentifier_e identifier)
 {
@@ -306,6 +307,7 @@ static void addImpliedMspPort(serialPortIdentifier_e *ports, unsigned *count, un
 
     ports[(*count)++] = identifier;
 }
+#endif
 
 unsigned serialImpliedMspPorts(serialPortIdentifier_e *ports, unsigned maxPorts)
 {
