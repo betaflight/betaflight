@@ -270,6 +270,9 @@ int usbd_msc_sector_read(uint8_t busid, uint8_t lun, uint32_t sector, uint8_t *b
         }
         uint32_t sysBufAddr = core_local_mem_to_sys_address(0, (uint32_t) buffer);
         hpm_stat_t status = sd_read_blocks(&g_sd, (uint8_t *) sysBufAddr, sector, length / g_sd.block_size);
+        if (status == status_success) {
+            mscSetActive();
+        }
         return (status != status_success) ? -1 : 0;
     }
 #endif
@@ -301,6 +304,9 @@ int usbd_msc_sector_write(uint8_t busid, uint8_t lun, uint32_t sector, uint8_t *
         }
         uint32_t sysBufAddr = core_local_mem_to_sys_address(0, (uint32_t) buffer);
         hpm_stat_t status = sd_write_blocks(&g_sd, (uint8_t *) sysBufAddr, sector, length / g_sd.block_size);
+        if (status == status_success) {
+            mscSetActive();
+        }
         return (status != status_success) ? -1 : 0;
     }
 #endif
