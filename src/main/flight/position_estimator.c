@@ -89,7 +89,7 @@
 #define R_GPS_VEL_BASE   200.0f  // increases as sAcc increases, higher allows more accel influence (not always good)
 #define R_GPS_POS_BASE   160.0f   // cm^2 , increases as hAcc increases to allow more optical flow influence
 
-#define R_OPTICALFLOW_VEL 400.0f   // (cm/s)^2 at max quality
+#define R_OPTICALFLOW_VEL 200.0f   // (cm/s)^2 at max quality
 
 #define Q_JERK_Z          3000.0f
 #define R_ACCEL_Z          500.0f
