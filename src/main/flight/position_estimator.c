@@ -97,8 +97,6 @@
 #define R_GPS_VEL_Z_BASE  100.0f   // (cm/s)^2, increases as sAcc increases to allow more baro / accelerometer influence
 #define R_GPS_ALT_BASE    200.0f   // cm^2 , increases as vAcc increases to allow more baro / accel influence
 #define R_RANGEFINDER_ALT 100.0f   // cm^2
-
-#define ACCEL_VELOCITY_LEAD_TIME_XY      0.12f // seconds of Kalman acceleration added to Kalman velocity, as a lead compensator
 #define GPS_VEL_ACCURACY_DENOM     300.0f   // sAcc mm/s: at or below this, use base velocity R values (same sAcc for all axes)
 #define GPS_POS_XY_ACCURACY_DENOM 1000.0f  // hAcc mm: at or below this, use R_GPS_POS_BASE, increase when less accurate, up to 10x
 #define GPS_ALT_ACCURACY_DENOM 1500.0f  // vAcc mm: at or below this, use R_GPS_ALT_BASE, increase when less accurate up to 10x
@@ -1320,8 +1318,8 @@ void positionEstimatorUpdate(void)
 
     // XY velocity carries a lead term; Up does not, as the vertical loop has its
     // own acceleration feedforward in altitudeControl().
-    estimate.velocity.v[ENU_E] = kalmanGetVelocity(&kfEast) + ACCEL_VELOCITY_LEAD_TIME_XY * kalmanGetAcceleration(&kfEast);
-    estimate.velocity.v[ENU_N] = kalmanGetVelocity(&kfNorth) + ACCEL_VELOCITY_LEAD_TIME_XY * kalmanGetAcceleration(&kfNorth);
+    estimate.velocity.v[ENU_E] = kalmanGetVelocity(&kfEast);
+    estimate.velocity.v[ENU_N] = kalmanGetVelocity(&kfNorth);
     estimate.velocity.v[ENU_U] = kalmanGetVelocity(&kfUp);
 
     estimate.acceleration.v[ENU_E] = kalmanGetAcceleration(&kfEast);
