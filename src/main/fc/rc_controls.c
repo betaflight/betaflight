@@ -82,12 +82,13 @@ PG_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig,
     .yaw_control_reversed = false,
 );
 
-PG_REGISTER_WITH_RESET_TEMPLATE(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 2);
+PG_REGISTER_WITH_RESET_TEMPLATE(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 3);
 
 PG_RESET_TEMPLATE(armingConfig_t, armingConfig,
     .gyro_cal_on_first_arm = 0,
     .auto_disarm_delay = 5,
     .prearm_allow_rearm = 0,
+    .switch_disarm_time = 0,
 );
 
 PG_REGISTER_WITH_RESET_TEMPLATE(flight3DConfig_t, flight3DConfig, PG_MOTOR_3D_CONFIG, 0);
@@ -179,6 +180,7 @@ void processRcStickPositions(void)
         if (IS_RC_MODE_ACTIVE(BOXARM)) {
             rcDisarmTicks = 0;
             // Arming via ARM BOX
+            cancelSwitchDisarm();
             tryArm();
         } else {
             resetTryingToArm();
@@ -195,7 +197,7 @@ void processRcStickPositions(void)
                 rcDisarmTicks++;
                 if (rcDisarmTicks > 3) {
                     // require three duplicate disarm values in a row before we disarm
-                    disarm(DISARM_REASON_SWITCH);
+                    requestSwitchDisarm();
                 }
             }
         }

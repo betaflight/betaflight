@@ -882,6 +882,45 @@ TEST(ArmingPreventionTest, GPSRescueSwitchPreventsArm)
     EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
 }
 
+TEST(ArmingPreventionTest, SwitchDisarmTimeUsesTenMillisecondSteps)
+{
+    boxBitmask_t activeModes = {};
+    rcModeUpdate(&activeModes);
+    simulationFeatureFlags = 0;
+    simulationTime = 1000;
+    armingFlags = ARMED;
+    armingConfigMutable()->switch_disarm_time = 100;
+
+    requestSwitchDisarm();
+    updateSwitchDisarm(simulationTime);
+    EXPECT_FLOAT_EQ(1.0f, getSwitchDisarmMotorScale());
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    simulationTime += 500000;
+    updateSwitchDisarm(simulationTime);
+    EXPECT_FLOAT_EQ(0.5f, getSwitchDisarmMotorScale());
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    simulationTime += 500000;
+    updateSwitchDisarm(simulationTime);
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_FLOAT_EQ(1.0f, getSwitchDisarmMotorScale());
+
+    armingConfigMutable()->switch_disarm_time = 0;
+}
+
+TEST(ArmingPreventionTest, ZeroSwitchDisarmTimeDisarmsImmediately)
+{
+    simulationFeatureFlags = 0;
+    armingFlags = ARMED;
+    armingConfigMutable()->switch_disarm_time = 0;
+
+    requestSwitchDisarm();
+
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_FLOAT_EQ(1.0f, getSwitchDisarmMotorScale());
+}
+
 TEST(ArmingPreventionTest, ParalyzeOnAtBoot)
 {
     // given

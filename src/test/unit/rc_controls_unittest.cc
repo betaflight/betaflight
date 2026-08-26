@@ -744,6 +744,8 @@ bool featureIsEnabled(uint32_t) { return false;}
 bool sensors(uint32_t) { return false;}
 void tryArm(void) {}
 void disarm(flightLogDisarmReason_e) {}
+void requestSwitchDisarm(void) {}
+void cancelSwitchDisarm(void) {}
 void dashboardDisablePageCycling() {}
 void dashboardEnablePageCycling() {}
 

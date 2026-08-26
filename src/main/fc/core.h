@@ -76,6 +76,10 @@ void resetArmingDisabled(void);
 
 void disarm(flightLogDisarmReason_e reason);
 void tryArm(void);
+void requestSwitchDisarm(void);
+void cancelSwitchDisarm(void);
+void updateSwitchDisarm(timeUs_t currentTimeUs);
+float getSwitchDisarmMotorScale(void);
 
 bool processRx(timeUs_t currentTimeUs);
 void processRxModes(timeUs_t currentTimeUs);
