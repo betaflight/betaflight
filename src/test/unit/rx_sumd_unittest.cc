@@ -35,10 +35,10 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig, const SerialRXType serialrxProvider)
+bool telemetryCheckRxPortShared(serialPortIdentifier_e identifier, const SerialRXType serialrxProvider)
 {
     //TODO: implement
-    UNUSED(portConfig);
+    UNUSED(identifier);
     UNUSED(serialrxProvider);
 
     return false;
@@ -73,17 +73,8 @@ typedef struct serialPortStub_s {
 } serialPortStub_t;
 
 static serialPort_t serialTestInstance;
-static serialPortConfig_t serialTestInstanceConfig = {
-    .functionMask = 0,
-    .identifier = SERIAL_PORT_DUMMY_IDENTIFIER,
-    .msp_baudrateIndex = 0,
-    .gps_baudrateIndex = 0,
-    .blackbox_baudrateIndex = 0,
-    .telemetry_baudrateIndex = 0,
-};
 
 static serialReceiveCallbackPtr stub_serialRxCallback;
-static serialPortConfig_t *findSerialPortConfig_stub_retval;
 static bool openSerial_called = false;
 static serialPortStub_t serialWriteStub;
 static bool portIsShared = false;
@@ -91,12 +82,6 @@ static bool portIsShared = false;
 static portMode_e serialExpectedMode = MODE_RX;
 static portOptions_e serialExpectedOptions = SERIAL_UNIDIR;
 
-
-const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
-{
-    EXPECT_EQ(function, FUNCTION_RX_SERIAL);
-    return findSerialPortConfig_stub_retval;
-}
 
 serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
@@ -148,9 +133,9 @@ protected:
 
 TEST_F(SumdRxInitUnitTest, Test_SumdRxNotEnabled)
 {
-    const rxConfig_t initialRxConfig = {};
+    rxConfig_t initialRxConfig = {};
+    initialRxConfig.rx_uart = SERIAL_PORT_NONE;
     rxRuntimeState_t rxRuntimeState = {};
-    findSerialPortConfig_stub_retval = NULL;
 
     EXPECT_FALSE(sumdInit(&initialRxConfig, &rxRuntimeState));
 
@@ -162,9 +147,9 @@ TEST_F(SumdRxInitUnitTest, Test_SumdRxNotEnabled)
 
 TEST_F(SumdRxInitUnitTest, Test_SumdRxEnabled)
 {
-    const rxConfig_t initialRxConfig = {};
+    rxConfig_t initialRxConfig = {};
+    initialRxConfig.rx_uart = SERIAL_PORT_DUMMY_IDENTIFIER;
     rxRuntimeState_t rxRuntimeState = {};
-    findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
 
     EXPECT_TRUE(sumdInit(&initialRxConfig, &rxRuntimeState));
 
@@ -185,8 +170,8 @@ protected:
     {
         serialTestResetPort();
 
-        const rxConfig_t initialRxConfig = {};
-        findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
+        rxConfig_t initialRxConfig = {};
+        initialRxConfig.rx_uart = SERIAL_PORT_DUMMY_IDENTIFIER;
 
         EXPECT_TRUE(sumdInit(&initialRxConfig, &rxRuntimeState));
         microseconds_stub_value += 5000;

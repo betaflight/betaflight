@@ -423,8 +423,8 @@ void gpsInit(void)
         return;
     }
 
-    const serialPortConfig_t *gpsPortConfig = findSerialPortConfig(FUNCTION_GPS);
-    if (!gpsPortConfig) {
+    const serialPortIdentifier_e port = gpsConfig()->gps_uart;
+    if (port == SERIAL_PORT_NONE) {
         return;
     }
 
@@ -433,7 +433,7 @@ void gpsInit(void)
     initBaudRateCycleCount = 0;
     gpsData.userBaudRateIndex = DEFAULT_BAUD_RATE_INDEX;
     for (unsigned i = 0; i < ARRAYLEN(gpsInitData); i++) {
-        if (gpsInitData[i].baudrateIndex == gpsPortConfig->gps_baudrateIndex) {
+        if (gpsInitData[i].baudrateIndex == gpsConfig()->gps_baud) {
             gpsData.userBaudRateIndex = i;
             break;
         }
@@ -449,16 +449,16 @@ void gpsInit(void)
         mode &= ~MODE_TX;
     }
 #endif
-    if (serialType(gpsPortConfig->identifier) == SERIALTYPE_UART
-        || serialType(gpsPortConfig->identifier) == SERIALTYPE_LPUART
-        || serialType(gpsPortConfig->identifier) == SERIALTYPE_PIOUART) {
+    if (serialType(port) == SERIALTYPE_UART
+        || serialType(port) == SERIALTYPE_LPUART
+        || serialType(port) == SERIALTYPE_PIOUART) {
 #if !ENABLE_SERIAL_SKIP_CHECK_TX
         options |= SERIAL_CHECK_TX;
 #endif
     }
 
     // no callback - buffer will be consumed in gpsUpdate()
-    gpsPort = openSerialPort(gpsPortConfig->identifier, FUNCTION_GPS, NULL, NULL, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex], mode, options);
+    gpsPort = openSerialPort(port, FUNCTION_GPS, NULL, NULL, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex], mode, options);
     if (!gpsPort) {
         return;
     }
