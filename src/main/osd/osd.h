@@ -224,7 +224,7 @@ typedef enum {
 #ifdef USE_OSD_NAV_MAP
     OSD_NAV_MAP,                // minimap of home, flight plan and flown trail
 #endif
-#ifdef USE_AIRPLANE_SAS
+#ifdef USE_PSAS
     OSD_AOA_LIMITER,
 #endif
 

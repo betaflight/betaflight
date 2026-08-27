@@ -164,7 +164,7 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
-#include "flight/airplane_sas.h"
+#include "flight/psas.h"
 #include "flight/pos_hold.h"
 
 #include "io/gps.h"
@@ -1194,8 +1194,8 @@ static void osdElementFlymode(osdElementParms_t *element)
         strcpy(element->buff, "HEAD");
     } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
         strcpy(element->buff, "PASS");
-#ifdef USE_AIRPLANE_SAS
-    } else if (FLIGHT_MODE(AIRPLANE_SAS_MODE)) {
+#ifdef USE_PSAS
+    } else if (FLIGHT_MODE(PSAS_MODE)) {
         strcpy(element->buff, "PSAS");
 #endif
     } else if (FLIGHT_MODE(POS_HOLD_MODE)) {
@@ -2082,7 +2082,7 @@ static void osdElementSys(osdElementParms_t *element)
 }
 #endif
 
-#ifdef USE_AIRPLANE_SAS
+#ifdef USE_PSAS
 static void osdElementAoaLimiter(osdElementParms_t *element)
 {
     switch (psasData.pitch.aoaLimiterState) {
@@ -2385,7 +2385,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #if ENABLE_OSD_CUSTOM_TEXT
     [OSD_CUSTOM_SERIAL_TEXT]      = osdElementCustomSerialText,
 #endif
-#ifdef USE_AIRPLANE_SAS
+#ifdef USE_PSAS
     [OSD_AOA_LIMITER]             = osdElementAoaLimiter,
 #endif
 };
@@ -2476,7 +2476,7 @@ void osdAddActiveElements(void)
     osdAddActiveElement(OSD_TOTAL_FLIGHTS);
 #endif
 
-#ifdef USE_AIRPLANE_SAS
+#ifdef USE_PSAS
     osdAddActiveElement(OSD_AOA_LIMITER);
 #endif
 }

@@ -55,8 +55,8 @@
 
 #include "rx/rx.h"
 
-#ifdef USE_AIRPLANE_SAS
-#include "flight/airplane_sas.h"
+#ifdef USE_PSAS
+#include "flight/psas.h"
 #endif
 
 PG_REGISTER_WITH_RESET_FN(servoConfig_t, servoConfig, PG_SERVO_CONFIG, 0);
@@ -451,8 +451,8 @@ void servoMixer(void)
         input[INPUT_STABILIZED_PITCH] = rcCommand[PITCH];
         input[INPUT_STABILIZED_YAW] = rcCommand[YAW];
     }
-#ifdef USE_AIRPLANE_SAS
-    else if (FLIGHT_MODE(AIRPLANE_SAS_MODE)) {
+#ifdef USE_PSAS
+    else if (FLIGHT_MODE(PSAS_MODE)) {
         input[INPUT_STABILIZED_ROLL] = psasData.roll.Sum / 100.0f * 500.0f;
         input[INPUT_STABILIZED_PITCH] = psasData.pitch.Sum / 100.0f * 500.0f;
         input[INPUT_STABILIZED_YAW] = psasData.yaw.Sum / 100.0f * 500.0f;

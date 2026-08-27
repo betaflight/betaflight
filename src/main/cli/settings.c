@@ -600,7 +600,7 @@ static const char * const lookupTableTelemetryProtocol[] = {
 };
 #endif
 
-#ifdef USE_AIRPLANE_SAS
+#ifdef USE_PSAS
 static const char * const lookupTablePsasSpeedCurveMode[] = {
     "TPA", "AIRSPEED_TPA", "SPEED_GPS", "AIRSPEED_PITOT"
 };
@@ -766,7 +766,7 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_TELEMETRY
     LOOKUP_TABLE_ENTRY(lookupTableTelemetryProtocol),
 #endif
-#ifdef USE_AIRPLANE_SAS
+#ifdef USE_PSAS
     LOOKUP_TABLE_ENTRY(lookupTablePsasSpeedCurveMode),
 #endif
 };
@@ -1456,7 +1456,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_ANGLE_PITCH_OFFSET, VAR_INT16 | PROFILE_VALUE, .config.minmaxUnsigned = { -ANGLE_PITCH_OFFSET_MAX, ANGLE_PITCH_OFFSET_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, angle_pitch_offset) },
 #endif
 
-#ifdef USE_AIRPLANE_SAS
+#ifdef USE_PSAS
     { PARAM_NAME_PSAS_PITCH_STICK_GAIN,           VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_stick_gain[FD_PITCH]) },
     { PARAM_NAME_PSAS_PITCH_DAMPING_GAIN,         VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_damping_gain[FD_PITCH]) },
     { PARAM_NAME_PSAS_PITCH_DAMPING_FILTER_FREQ,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_pitch_damping_filter_freq) },

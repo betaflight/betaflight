@@ -104,7 +104,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { .boxId = BOXCHIRP, .boxName = "CHIRP", .permanentId = 55},
     { .boxId = BOXAUTOPILOT, .boxName = "AUTOPILOT", .permanentId = 56},
     { .boxId = BOXWPCAPTURE, .boxName = "WP CAPTURE", .permanentId = 57},
-    { .boxId = BOXAIRPLANESAS, .boxName = "AIRPLANE SAS", .permanentId = 58},
+    { .boxId = BOXPSAS, .boxName = "PSAS", .permanentId = 58},
     { .boxId = BOXAOALIMITER, .boxName = "AOA LIM", .permanentId = 59}
 };
 
@@ -380,9 +380,9 @@ void initActiveBoxIds(void)
     BME(BOXCHIRP);
 #endif
 
-#if defined(USE_AIRPLANE_SAS)
+#if defined(USE_PSAS)
     if (isFixedWing()) {
-        BME(BOXAIRPLANESAS);
+        BME(BOXPSAS);
         BME(BOXAOALIMITER);
     }
 #endif

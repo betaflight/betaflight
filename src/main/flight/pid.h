@@ -333,7 +333,7 @@ typedef struct pidProfile_s {
     uint16_t chirp_frequency_end_deci_hz;   // end frequency in units of 0.1 hz
     uint8_t chirp_time_seconds;             // excitation time
 
-#ifdef USE_AIRPLANE_SAS
+#ifdef USE_PSAS
     uint8_t psas_stick_gain[XYZ_AXIS_COUNT];    // Percent control output by pilot stick deflection
     uint16_t psas_damping_gain[XYZ_AXIS_COUNT]; // Percent control range addition by 1 degree per second angle rate *0.001
     uint16_t psas_pitch_damping_filter_freq;    // pitch damping filter cut freq Hz *0.01

@@ -324,7 +324,7 @@
 #define PARAM_NAME_TRUST_MAG "trust_mag"
 #endif
 
-#ifdef USE_AIRPLANE_SAS
+#ifdef USE_PSAS
 #define PARAM_NAME_PSAS_PITCH_STICK_GAIN "psas_pitch_stick_gain"
 #define PARAM_NAME_PSAS_PITCH_DAMPING_GAIN "psas_pitch_damping_gain"
 #define PARAM_NAME_PSAS_PITCH_DAMPING_FILTER_FREQ "psas_pitch_damping_filter_freq"

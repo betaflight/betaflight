@@ -175,7 +175,7 @@ typedef enum {
 #ifdef USE_TELEMETRY
     TABLE_TELEMETRY_PROTOCOL,
 #endif
-#ifdef USE_AIRPLANE_SAS
+#ifdef USE_PSAS
     TABLE_PSAS_SPEED_CURVE_MODE,
 #endif
     LOOKUP_TABLE_COUNT

@@ -1419,7 +1419,7 @@ case MSP_NAME:
         sbufWriteU16(dst, *(uint16_t*)&z);
         break;
     }
-#ifdef USE_AIRPLANE_SAS
+#ifdef USE_PSAS
     case MSP_PSAS_CONFIG:
         sbufWriteU8(dst, currentPidProfile->psas_stick_gain[0]);
         sbufWriteU8(dst, currentPidProfile->psas_stick_gain[1]);
@@ -4534,7 +4534,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
     }
 
-#ifdef USE_AIRPLANE_SAS
+#ifdef USE_PSAS
     case MSP_SET_PSAS_CONFIG:
         const uint32_t expectedSize = 56;
         const uint32_t dataSize = sbufBytesRemaining(src);

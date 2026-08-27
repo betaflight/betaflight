@@ -967,7 +967,7 @@ static CMS_Menu cmsx_menuFilterPerProfile = {
     .entries = cmsx_menuFilterPerProfileEntries,
 };
 
-#ifdef USE_AIRPLANE_SAS
+#ifdef USE_PSAS
 static uint8_t temp_psas_stick_gain[XYZ_AXIS_COUNT];
 static uint16_t temp_psas_damping_gain[XYZ_AXIS_COUNT];
 static uint16_t temp_psas_pitch_stability_gain;
@@ -1171,7 +1171,7 @@ static const OSD_Entry cmsx_menuImuEntries[] =
     { "-- PROFILE --", OME_Label, NULL, NULL},
 
     {"PID PROF",  OME_TAB,     cmsx_profileIndexOnChange,     &(OSD_TAB_t){&tmpPidProfileIndex, PID_PROFILE_COUNT-1, pidProfileNamePtrs}},
-#ifdef USE_AIRPLANE_SAS
+#ifdef USE_PSAS
     {"PSAS",      OME_Submenu, cmsMenuChange,                 &cmsx_menuPSAS},
 #endif
     {"PID",       OME_Submenu, cmsMenuChange,                 &cmsx_menuPid},

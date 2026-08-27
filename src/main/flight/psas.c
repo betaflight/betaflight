@@ -24,7 +24,7 @@
 #include <math.h>
 #include <string.h>
 
-#ifdef USE_AIRPLANE_SAS
+#ifdef USE_PSAS
 
 #include "common/maths.h"
 
@@ -41,7 +41,7 @@
 #include "build/debug.h"
 
 #include "flight/mixer.h"
-#include "flight/airplane_sas.h"
+#include "flight/psas.h"
 
 FAST_DATA_ZERO_INIT psas_data_t psasData;
 FAST_DATA_ZERO_INIT psasRuntime_t psasRuntime;
@@ -496,7 +496,7 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
 
 bool FAST_CODE_NOINLINE psasHandleMode(const pidProfile_t *pidProfile)
 {
-    bool isPSAS = isFixedWing() && FLIGHT_MODE(AIRPLANE_SAS_MODE);
+    bool isPSAS = isFixedWing() && FLIGHT_MODE(PSAS_MODE);
     if (isPSAS) {
         if (!isActivePSAS) {
             for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {

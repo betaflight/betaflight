@@ -64,8 +64,8 @@
 
 #include "pid.h"
 
-#ifdef USE_AIRPLANE_SAS
-#include "airplane_sas.h"
+#ifdef USE_PSAS
+#include "psas.h"
 #endif
 typedef enum {
     LEVEL_MODE_OFF = 0,
@@ -259,7 +259,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_start_deci_hz = 2,
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
-#ifdef USE_AIRPLANE_SAS
+#ifdef USE_PSAS
         // Percent control output by pilot stick deflection
         .psas_stick_gain = {
             [FD_ROLL] = 100,
@@ -1234,7 +1234,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #endif // USE_CHIRP
 
-#ifdef USE_AIRPLANE_SAS
+#ifdef USE_PSAS
     if (psasHandleMode(pidProfile)) {
         return; // PSAS replaces PID controller
     }
