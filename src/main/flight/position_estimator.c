@@ -71,10 +71,10 @@
 // Slots 0, 1, 2 and 5 report the axis selected by gyro_filter_debug_axis:
 // East by default, North when the axis is set to pitch.
 // 0 - KF position cm
-// 1 - KF velocity cm/s, including the ACCEL_VELOCITY_LEAD_TIME_XY lead on East and North
+// 1 - KF velocity cm/s
 // 2 - KF acceleration cm/s^2
-// 3 - optical flow East velocity cm/s   (written only while optical flow is fused)
-// 4 - optical flow North velocity cm/s  (written only while optical flow is fused)
+// 3 - optical flow East velocity cm/s, delay-compensated  (written only while optical flow is fused)
+// 4 - optical flow North velocity cm/s, delay-compensated (written only while optical flow is fused)
 // 5 - earth-frame linear acceleration from the IMU cm/s^2, before the KF
 // 6 - GPS position R cm^2               (written only while GPS XY is fused)
 // 7 - GPS velocity R (cm/s)^2           (written only while GPS XY is fused)
@@ -1213,11 +1213,32 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
     const float velEast  =  velForward * sinYaw - velRight * cosYaw;
     const float velNorth =  velForward * cosYaw + velRight * sinYaw;
 
-    kalmanUpdateVelocityToPosition(&kfEast, velEast, flowR);
-    kalmanUpdateVelocityToPosition(&kfNorth, velNorth, flowR);
+    // Optical flow measures the velocity the craft had when the frame was captured,
+    // gyroDelayUs ago - the same latency opticalflowProcess() already corrects for
+    // when it picks the matching gyro sample. Fusing it as if it described now drags
+    // the estimate back by the velocity change across that window, which is a
+    // systematic error every time the craft accelerates rather than random noise.
+    //
+    // Advance it with the filter's own acceleration state: over a window this short
+    // the acceleration is near enough constant that a*dt stands in for the integral,
+    // and the state is smoother than raw IMU acceleration would be. This is a
+    // correction to the measurement, not a lead on the output - the innovation now
+    // compares like with like, and the Kalman gain still decides how much of it to
+    // believe. A driver that leaves gyroDelayUs unset gets zero, and with it the
+    // uncompensated measurement.
+    //
+    // Safe against feedback: kalmanUpdateVelocityToPosition() has zero gain on the
+    // acceleration state, which is driven by the IMU alone, so the term used here
+    // cannot be reinforced by the update it feeds.
+    const float flowDelayS = flow->dev.gyroDelayUs * 1e-6f;
+    const float velEastNow  = velEast  + kalmanGetAcceleration(&kfEast)  * flowDelayS;
+    const float velNorthNow = velNorth + kalmanGetAcceleration(&kfNorth) * flowDelayS;
 
-    DEBUG_SET(DEBUG_POSITION_EST, 3, lrintf(velEast));
-    DEBUG_SET(DEBUG_POSITION_EST, 4, lrintf(velNorth));
+    kalmanUpdateVelocityToPosition(&kfEast, velEastNow, flowR);
+    kalmanUpdateVelocityToPosition(&kfNorth, velNorthNow, flowR);
+
+    DEBUG_SET(DEBUG_POSITION_EST, 3, lrintf(velEastNow));
+    DEBUG_SET(DEBUG_POSITION_EST, 4, lrintf(velNorthNow));
 
     lastXYMeasurementUs = nowUs;
 #else
@@ -1316,8 +1337,6 @@ void positionEstimatorUpdate(void)
     estimate.position.v[ENU_N] = kalmanGetPosition(&kfNorth);
     estimate.position.v[ENU_U] = kalmanGetPosition(&kfUp);
 
-    // XY velocity carries a lead term; Up does not, as the vertical loop has its
-    // own acceleration feedforward in altitudeControl().
     estimate.velocity.v[ENU_E] = kalmanGetVelocity(&kfEast);
     estimate.velocity.v[ENU_N] = kalmanGetVelocity(&kfNorth);
     estimate.velocity.v[ENU_U] = kalmanGetVelocity(&kfUp);

@@ -232,9 +232,9 @@ void opticalflowProcess(void) {
         DEBUG_SET(DEBUG_OPTICALFLOW, 4, xValid ? lrintf(processed.x * 1000) : 0);
         DEBUG_SET(DEBUG_OPTICALFLOW, 5, yValid ? lrintf(processed.y * 1000) : 0);
 
-        // An unusable axis holds its previous value rather than reporting zero,
-        // which a consumer would read as "not moving" and fuse. The validity flag
-        // travels with it, so a consumer that would rather skip the sample can.
+        // For the same reason, an unusable axis holds its previous value rather than
+        // being zeroed. The validity flag travels with it, so a consumer can still
+        // skip the sample outright, which is what the estimator does.
         processed.x = xValid ? processed.x : opticalflow.processedFlowRates.x;
         processed.y = yValid ? processed.y : opticalflow.processedFlowRates.y;
 

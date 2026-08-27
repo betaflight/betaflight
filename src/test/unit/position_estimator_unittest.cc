@@ -811,6 +811,66 @@ TEST_F(OpticalFlowFusionTest, InvalidSampleDoesNotReportZeroVelocity)
     EXPECT_GT(positionEstimatorGetEstimate()->velocity.v[ENU_N], 0.8f * movingVel);
 }
 
+// -- Sensor delay compensation --
+// The flow sample describes the velocity gyroDelayUs ago, so it is advanced by the
+// filter's acceleration state before fusing. Hold a constant flow rate against a
+// constant acceleration and the velocity state settles where the flow's pull
+// balances the acceleration's ramp; that settling point shifts by exactly
+// accel * delay, whatever the Kalman gain works out to be.
+static const float FLOW_NORTH_RATE = 0.5f;   // rad/s; 50 cm/s North at the 1 m test height
+
+static float settledFlowVelocityNorth(uint32_t gyroDelayUs, float accelG)
+{
+    positionEstimatorEnableXY(false);
+    positionEstimatorEnableXY(true);   // re-init East/North, leaving Z alone
+    acc.accADC.x = accelG;             // identity rMat: body X maps to North
+
+    for (int i = 0; i < 300; i++) {    // 3 s at the 100 Hz test rate
+        presentFlowSample(0.0f, FLOW_NORTH_RATE, true, true);
+        testFlow.dev.gyroDelayUs = gyroDelayUs;
+        stepEstimator(1);
+    }
+    return positionEstimatorGetEstimate()->velocity.v[ENU_N];
+}
+
+TEST_F(OpticalFlowFusionTest, SensorDelayCompensationIsInertWithoutAcceleration)
+{
+    // Nothing to advance the measurement by, so a configured delay must not move
+    // the estimate at all. This is what makes the correction free in steady flight.
+    const float uncompensated = settledFlowVelocityNorth(0, 0.0f);
+    const float compensated   = settledFlowVelocityNorth(60000, 0.0f);
+
+    EXPECT_NEAR(compensated, uncompensated, 0.01f);
+}
+
+TEST_F(OpticalFlowFusionTest, SensorDelayCompensationAdvancesTheMeasurementWhenAccelerating)
+{
+    constexpr float GRAVITY_CMSS = 980.665f;
+    const float accelG = 0.05f;                        // ~49 cm/s^2 North
+    const float accelNorth = accelG * GRAVITY_CMSS;
+    const float delayS = 0.060f;
+
+    const float uncompensated = settledFlowVelocityNorth(0, accelG);
+    const float compensated   = settledFlowVelocityNorth(60000, accelG);
+
+    EXPECT_GT(compensated, uncompensated);
+    EXPECT_NEAR(compensated - uncompensated, accelNorth * delayS, 0.5f);
+}
+
+TEST_F(OpticalFlowFusionTest, SensorDelayCompensationScalesWithTheConfiguredDelay)
+{
+    // Doubling the delay doubles the lead. This pins the compensation to
+    // gyroDelayUs specifically: dev.delayMs is the frame period (10-20 ms), so
+    // reading the delay from that field instead would fail here.
+    const float accelG = 0.05f;
+    const float base    = settledFlowVelocityNorth(0, accelG);
+    const float at60ms  = settledFlowVelocityNorth(60000, accelG);
+    const float at120ms = settledFlowVelocityNorth(120000, accelG);
+
+    ASSERT_GT(at60ms - base, 1.0f);
+    EXPECT_NEAR(at120ms - base, 2.0f * (at60ms - base), 0.5f);
+}
+
 // Integration counterpart: with the same attitude/thrust, the IMU prediction alone
 // (GPS held at the origin) must drive a positive East velocity estimate.
 TEST_F(PositionEstimatorTest, EastThrustProducesPositiveEastVelocity)
