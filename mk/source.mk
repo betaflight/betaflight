@@ -151,7 +151,6 @@ COMMON_SRC = \
             sensors/battery.c \
             sensors/current.c \
             sensors/voltage.c \
-            target/config_helper.c \
             fc/init.c \
             fc/controlrate_profile.c \
             drivers/accgyro/gyro_sync.c \

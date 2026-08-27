@@ -28,6 +28,7 @@
 typedef struct mspConfig_s {
     uint8_t halfDuplex; // allow msp to operate in half duplex mode
     int8_t msp_uart[MAX_MSP_PORT_COUNT];  // serialPortIdentifier_e per slot; SERIAL_PORT_NONE = unused
+    uint8_t msp_baud[MAX_MSP_PORT_COUNT]; // baudRate_e index per slot
 } mspConfig_t;
 
 PG_DECLARE(mspConfig_t, mspConfig);
