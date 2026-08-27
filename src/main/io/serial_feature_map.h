@@ -31,15 +31,40 @@
 // (MSP_CF_SERIAL_CONFIG) and the CLI `serial` command's output.
 uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier);
 
-// Apply a legacy bitmask to the feature PGs.  Used by MSP_SET_CF_SERIAL_CONFIG
-// and the CLI `serial` command's write path, and by the one-shot EEPROM
-// migration on config load.  Returns false when the requested combination
-// cannot be represented (e.g. more MSP ports requested than slots available).
-bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask);
+// Clear the claims on just those ports whose functions cannot coexist, sparing
+// MSP so the board stays reachable.  First recovery step for a stored assignment
+// that isSerialConfigValid() rejects, so one bad assignment costs the user that
+// port rather than every port on the board.
+void serialDropConflictingAssignments(void);
 
-// Walk serialConfig.portConfigs[] and populate the per-feature PG fields
-// from each port's legacy functionMask.  Idempotent.  Called once after
-// EEPROM load so pre-existing configs carry their function assignments
-// into the new per-feature view while the legacy mask is still the
-// runtime source of truth.
-void serialBackfillFeatureFields(void);
+// Clear every feature's port claim and restore MSP on the first port.  Last
+// resort for a configuration still invalid once the conflicting claims are gone,
+// such as one that has lost MSP on the VCP port.
+void serialResetFeatureAssignments(void);
+
+// A rangefinder or optical flow module on an MSP transport is heard by pushing
+// MSP frames, so its declared UART needs an MSP port even though the user never
+// assigned MSP there.  Fills `ports` with the distinct UARTs that need one, one
+// module answering as both sensors counting once, and returns how many.
+unsigned serialImpliedMspPorts(serialPortIdentifier_e *ports, unsigned maxPorts);
+
+// The four baud rates every port carries in the legacy serialPortConfig_t.
+// Each is owned by one feature class rather than by the port, so the pair
+// below translates between the legacy per-port layout and the feature PGs.
+typedef enum {
+    SERIAL_BAUD_MSP = 0,
+    SERIAL_BAUD_GPS,
+    SERIAL_BAUD_TELEMETRY,
+    SERIAL_BAUD_BLACKBOX,
+    SERIAL_BAUD_CLASS_COUNT,
+} serialBaudClass_e;
+
+// Baud a port reports for a class when no feature claims it.  `diff` compares
+// against this to decide whether a port's baud is still at its default.
+uint8_t serialDefaultPortBaud(serialBaudClass_e baudClass);
+
+// Read the baud a port would carry for the given class in the legacy view.
+// Ports no feature claims report the class default, so an untouched config
+// still round-trips through `dump` and MSP unchanged.
+uint8_t serialSynthesizePortBaud(serialPortIdentifier_e identifier, serialBaudClass_e baudClass);
+

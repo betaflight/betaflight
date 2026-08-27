@@ -65,8 +65,22 @@ void pgResetFn_vtxSettingsConfig(vtxSettingsConfig_t *vtxSettingsConfig)
     vtxSettingsConfig->pitModeFreq = VTX_TABLE_DEFAULT_PITMODE_FREQ;
     vtxSettingsConfig->lowPowerDisarm = VTX_LOW_POWER_DISARM_OFF;
     vtxSettingsConfig->softserialAlt = 0;
+#if defined(USE_VTX_SMARTAUDIO) && defined(VTX_SMARTAUDIO_UART)
+    vtxSettingsConfig->vtx_type = VTXDEV_SMARTAUDIO;
+    vtxSettingsConfig->vtx_uart = VTX_SMARTAUDIO_UART;
+#elif defined(USE_VTX_TRAMP) && defined(VTX_TRAMP_UART)
+    vtxSettingsConfig->vtx_type = VTXDEV_TRAMP;
+    vtxSettingsConfig->vtx_uart = VTX_TRAMP_UART;
+#elif defined(USE_VTX_MSP) && defined(VTX_MSP_UART)
+    vtxSettingsConfig->vtx_type = VTXDEV_MSP;
+    vtxSettingsConfig->vtx_uart = VTX_MSP_UART;
+#elif defined(USE_VTX_MSP) && defined(MSP_DISPLAYPORT_UART)
+    vtxSettingsConfig->vtx_type = VTXDEV_MSP;
+    vtxSettingsConfig->vtx_uart = MSP_DISPLAYPORT_UART;
+#else
     vtxSettingsConfig->vtx_type = VTXDEV_UNSUPPORTED;
     vtxSettingsConfig->vtx_uart = SERIAL_PORT_NONE;
+#endif
 }
 
 typedef enum {
