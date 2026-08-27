@@ -438,6 +438,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->osd_uart = SERIAL_PORT_NONE;
     osdConfig->osd_custom_text_uart = SERIAL_PORT_NONE;
     osdConfig->osd_custom_text_baud = BAUD_115200;
+    osdConfig->osd_compass_style = 0; //defaults to 0 e.g. characters (N,S,E,W)
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
