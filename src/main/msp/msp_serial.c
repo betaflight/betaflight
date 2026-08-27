@@ -685,6 +685,13 @@ bool mspSerialIsConfiguratorActive(void)
             continue;
         }
 
+#ifdef USE_MSP_DISPLAYPORT
+        // The goggles polling on the display port UART are a peripheral too.
+        if (mspPort->port->identifier == displayPortMspGetSerial()) {
+            continue;
+        }
+#endif
+
         if (cmp32(now, mspPort->lastActivityMs) < (int32_t)MSP_ACTIVITY_DEFAULT_TIMEOUT_MS) {
             return true;
         }
