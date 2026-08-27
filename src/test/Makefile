@@ -286,7 +286,9 @@ msp_serial_unittest_SRC := \
 
 msp_serial_unittest_DEFINES := \
 		USE_CLI= \
-		USE_MSP_DISPLAYPORT=
+		USE_MSP_DISPLAYPORT= \
+		USE_RANGEFINDER_MT= \
+		USE_OPTICALFLOW_MT=
 
 osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
@@ -429,7 +431,11 @@ serial_feature_map_unittest_DEFINES := \
 		USE_VTX_TRAMP= \
 		USE_VTX_MSP= \
 		USE_RANGEFINDER= \
+		USE_RANGEFINDER_MT= \
+		USE_OPTICALFLOW= \
+		USE_OPTICALFLOW_MT= \
 		USE_OSD= \
+		USE_MSP_DISPLAYPORT= \
 		USE_TELEMETRY= \
 		USE_TELEMETRY_FRSKY_HUB= \
 		USE_TELEMETRY_HOTT= \
@@ -543,6 +549,21 @@ dronecan_mag_unittest_INCLUDE_DIRS := \
 $(OBJECT_DIR)/dronecan_mag_unittest/dronecan_mag_canard.c.o \
 $(OBJECT_DIR)/dronecan_mag_unittest/io/dronecan/dronecan_mag.c.o \
 $(OBJECT_DIR)/dronecan_mag_unittest/dronecan_mag_unittest.o: $(DRONECAN_LIBCANARD_DIR)/canard.c
+
+
+dronecan_nodes_unittest_SRC := \
+		$(USER_DIR)/io/dronecan/dronecan_nodes.c \
+		$(TEST_DIR)/dronecan_nodes_canard.c
+
+dronecan_nodes_unittest_DEFINES := \
+		ENABLE_DRONECAN=1
+
+dronecan_nodes_unittest_INCLUDE_DIRS := \
+		$(DRONECAN_LIBCANARD_DIR)
+
+$(OBJECT_DIR)/dronecan_nodes_unittest/dronecan_nodes_canard.c.o \
+$(OBJECT_DIR)/dronecan_nodes_unittest/io/dronecan/dronecan_nodes.c.o \
+$(OBJECT_DIR)/dronecan_nodes_unittest/dronecan_nodes_unittest.o: $(DRONECAN_LIBCANARD_DIR)/canard.c
 
 
 .PHONY: check-pg-ids

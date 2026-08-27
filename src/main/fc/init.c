@@ -547,7 +547,7 @@ void initPhase2(void)
     busSwitchInit();
 #endif
 
-#if defined(USE_UART)
+#if defined(USE_UART) && SERIAL_TRAIT_PIN_CONFIG
     uartPinConfigure(serialPinConfig());
 #endif
 
