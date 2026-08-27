@@ -55,6 +55,7 @@
 #endif
 
 #include "io/beeper.h"
+#include "io/serial.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -71,13 +72,14 @@
 static void applySensorRotation(vector2_t * dst, vector2_t * src);
 static void applyLPF(vector2_t * flowRates);
 
-PG_REGISTER_WITH_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig, PG_OPTICALFLOW_CONFIG, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig, PG_OPTICALFLOW_CONFIG, 2);
 
 PG_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig,
     .opticalflow_hardware = OPTICALFLOW_NONE,
     .rotation = 0,
     .flip_x = 0,
-    .flow_lpf = 100
+    .flow_lpf = 100,
+    .opticalflow_uart = SERIAL_PORT_NONE,
 );
 
 static opticalflow_t opticalflow;

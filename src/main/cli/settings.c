@@ -520,6 +520,14 @@ const char * const lookupTableOsdDisplayPortDevice[] = {
     "NONE", "AUTO", "MAX7456", "MSP", "FRSKYOSD", "FBOSD"
 };
 
+#ifdef USE_VTX_COMMON
+// Indexed by vtxDevType_e. The slot the enum reserves at 2 is a NULL hole, which
+// the CLI skips when matching and when listing what a setting accepts.
+static const char * const lookupTableVtxType[] = {
+    "NONE", "RTC6705", NULL, "SMARTAUDIO", "TRAMP", "MSP"
+};
+#endif
+
 #ifdef USE_OSD
 static const char * const lookupTableOsdLogoOnArming[] = {
     "OFF", "ON", "FIRST_ARMING",
@@ -581,7 +589,22 @@ static const char * const lookupTableTransponderProvider[] = {
 };
 #endif
 
+static const char * const lookupTableBaudRate[] = {
+    "AUTO", "9600", "19200", "38400", "57600", "115200", "230400", "250000",
+    "400000", "460800", "500000", "921600", "1000000", "1500000", "2000000", "2470000"
+};
+
+#ifdef USE_TELEMETRY
+static const char * const lookupTableTelemetryProtocol[] = {
+    "NONE", "FRSKY_HUB", "HOTT", "LTM", "SMARTPORT", "MAVLINK", "IBUS"
+};
+#endif
+
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
+
+const identifierLookupEntry_t identifierLookups[IDENTIFIER_LOOKUP_COUNT] = {
+    [IDENTIFIER_LOOKUP_SERIAL_PORT] = { serialIdentifierName, serialIdentifierFromName, serialIdentifierNameAt },
+};
 
 const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableOffOn),
@@ -705,6 +728,9 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableFeedforwardAveraging),
     LOOKUP_TABLE_ENTRY(lookupTableDshotBitbangedTimer),
     LOOKUP_TABLE_ENTRY(lookupTableOsdDisplayPortDevice),
+#ifdef USE_VTX_COMMON
+    LOOKUP_TABLE_ENTRY(lookupTableVtxType),
+#endif
 
 #ifdef USE_OSD
     LOOKUP_TABLE_ENTRY(lookupTableOsdLogoOnArming),
@@ -729,6 +755,10 @@ const lookupTableEntry_t lookupTables[] = {
 #endif // USE_WING
 #ifdef USE_TRANSPONDER
     LOOKUP_TABLE_ENTRY(lookupTableTransponderProvider),
+#endif
+    LOOKUP_TABLE_ENTRY(lookupTableBaudRate),
+#ifdef USE_TELEMETRY
+    LOOKUP_TABLE_ENTRY(lookupTableTelemetryProtocol),
 #endif
 };
 
@@ -891,6 +921,7 @@ const clivalue_t valueTable[] = {
     { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { PWM_PULSE_MIN, PWM_PULSE_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rx_min_usec) },
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { PWM_PULSE_MIN, PWM_PULSE_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rx_max_usec) },
     { "serialrx_halfduplex",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RX_CONFIG, offsetof(rxConfig_t, halfDuplex) },
+    { "rx_uart",                    VAR_INT8   | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_RX_CONFIG, offsetof(rxConfig_t, rx_uart) },
 #if defined(USE_RX_MSP_OVERRIDE)
     { "msp_override_channels_mask",      VAR_UINT32 | MASTER_VALUE, .config.u32Max = (1 << MAX_SUPPORTED_RC_CHANNEL_COUNT) - 1, PG_RX_CONFIG, offsetof(rxConfig_t, msp_override_channels_mask)},
     { "msp_override_failsafe",      VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RX_CONFIG, offsetof(rxConfig_t, msp_override_failsafe)},
@@ -950,6 +981,8 @@ const clivalue_t valueTable[] = {
 #endif
     { "blackbox_mode",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BLACKBOX_MODE }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, mode) },
     { "blackbox_high_resolution",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, high_resolution) },
+    { "blackbox_uart",              VAR_INT8   | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, blackbox_uart) },
+    { "blackbox_baud",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BAUD_RATE }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, blackbox_baud) },
 #endif
 
 // PG_MOTOR_CONFIG
@@ -1149,6 +1182,8 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_GPS_USE_3D_SPEED,           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON },         PG_GPS_CONFIG, offsetof(gpsConfig_t, gps_use_3d_speed) },
     { PARAM_NAME_GPS_SBAS_INTEGRITY,         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON },         PG_GPS_CONFIG, offsetof(gpsConfig_t, sbas_integrity) },
     { PARAM_NAME_GPS_NMEA_CUSTOM_COMMANDS,   VAR_UINT8  | MASTER_VALUE | MODE_STRING, .config.string = { 1, NMEA_CUSTOM_COMMANDS_MAX_LENGTH, STRING_FLAGS_NONE }, PG_GPS_CONFIG, offsetof(gpsConfig_t, nmeaCustomCommands) },
+    { "gps_uart",                            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_GPS_CONFIG, offsetof(gpsConfig_t, gps_uart) },
+    { "gps_baud",                            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BAUD_RATE },      PG_GPS_CONFIG, offsetof(gpsConfig_t, gps_baud) },
 
 #ifdef USE_GPS_RESCUE
 #ifndef USE_WING
@@ -1416,6 +1451,21 @@ const clivalue_t valueTable[] = {
 #ifdef USE_TELEMETRY
     { "tlm_inverted",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, telemetry_inverted) },
     { "tlm_halfduplex",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, halfDuplex) },
+#if MAX_TELEMETRY_PROVIDERS > 0
+    { "telemetry_1_protocol",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_TELEMETRY_PROTOCOL }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, providers[0].protocol) },
+    { "telemetry_1_uart",           VAR_INT8   | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, providers[0].uart) },
+    { "telemetry_1_baud",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BAUD_RATE }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, providers[0].baud) },
+#endif
+#if MAX_TELEMETRY_PROVIDERS > 1
+    { "telemetry_2_protocol",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_TELEMETRY_PROTOCOL }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, providers[1].protocol) },
+    { "telemetry_2_uart",           VAR_INT8   | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, providers[1].uart) },
+    { "telemetry_2_baud",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BAUD_RATE }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, providers[1].baud) },
+#endif
+#if MAX_TELEMETRY_PROVIDERS > 2
+    { "telemetry_3_protocol",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_TELEMETRY_PROTOCOL }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, providers[2].protocol) },
+    { "telemetry_3_uart",           VAR_INT8   | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, providers[2].uart) },
+    { "telemetry_3_baud",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BAUD_RATE }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, providers[2].baud) },
+#endif
 #if defined(USE_CRSF_ACCGYRO_TELEMETRY)
     { "crsf_tlm_accgyro",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, crsf_tlm_accgyro) },
 #endif
@@ -1684,6 +1734,7 @@ const clivalue_t valueTable[] = {
 #endif
     { "osd_gps_sats_show_pdop",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, gps_sats_show_pdop) },
     { "osd_displayport_device",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OSD_DISPLAYPORT_DEVICE }, PG_OSD_CONFIG, offsetof(osdConfig_t, displayPortDevice) },
+    { "osd_uart",                   VAR_INT8   | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_OSD_CONFIG, offsetof(osdConfig_t, osd_uart) },
 
     { "osd_rcchannels",             VAR_INT8   | MASTER_VALUE | MODE_ARRAY, .config.array.length = OSD_RCCHANNELS_COUNT, PG_OSD_CONFIG, offsetof(osdConfig_t, rcChannels) },
     { "osd_camera_frame_width",     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { OSD_CAMERA_FRAME_MIN_WIDTH, OSD_CAMERA_FRAME_MAX_WIDTH }, PG_OSD_CONFIG, offsetof(osdConfig_t, camera_frame_width) },
@@ -1707,6 +1758,8 @@ const clivalue_t valueTable[] = {
 #if ENABLE_OSD_CUSTOM_TEXT
     { "osd_custom_serial_text_pos", VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_CUSTOM_SERIAL_TEXT]) },
     { "osd_custom_serial_text_terminator", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OSD_CUSTOM_TEXT_TERMINATOR }, PG_OSD_CUSTOM_TEXT_CONFIG, offsetof(osdCustomTextConfig_t, terminator) },
+    { "osd_custom_text_uart",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_OSD_CONFIG, offsetof(osdConfig_t, osd_custom_text_uart) },
+    { "osd_custom_text_baud",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BAUD_RATE }, PG_OSD_CONFIG, offsetof(osdConfig_t, osd_custom_text_baud) },
 #endif //ENABLE_OSD_CUSTOM_TEXT
 #if defined(USE_GPS) && ENABLE_FLIGHT_PLAN
     { "osd_wp_number_pos",          VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_WP_NUMBER]) },
@@ -1747,6 +1800,8 @@ const clivalue_t valueTable[] = {
     { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, VTX_TABLE_MAX_POWER_LEVELS - 1 }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, power) },
     { "vtx_low_power_disarm",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_VTX_LOW_POWER_DISARM }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, lowPowerDisarm) },
     { "vtx_softserial_alt",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, softserialAlt) },
+    { "vtx_type",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_VTX_TYPE }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, vtx_type) },
+    { "vtx_uart",                   VAR_INT8   | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, vtx_uart) },
 #ifdef VTX_SETTINGS_FREQCMD
     { "vtx_freq",                   VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, VTX_SETTINGS_MAX_FREQUENCY_MHZ }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, freq) },
     { "vtx_pit_mode_freq",          VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, VTX_SETTINGS_MAX_FREQUENCY_MHZ }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, pitModeFreq) },
@@ -1799,6 +1854,7 @@ const clivalue_t valueTable[] = {
 #ifdef USE_ESC_SENSOR
     { "esc_sensor_halfduplex",          VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ESC_SENSOR_CONFIG, offsetof(escSensorConfig_t, halfDuplex) },
     { "esc_sensor_current_offset",      VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 16000 }, PG_ESC_SENSOR_CONFIG, offsetof(escSensorConfig_t, offset) },
+    { "esc_sensor_uart",                VAR_INT8    | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_ESC_SENSOR_CONFIG, offsetof(escSensorConfig_t, esc_sensor_uart) },
 #endif
 
 #ifdef USE_RX_FRSKY_SPI
@@ -1831,11 +1887,13 @@ const clivalue_t valueTable[] = {
 // PG_RANGEFINDER_CONFIG
 #ifdef USE_RANGEFINDER
     { "rangefinder_hardware", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RANGEFINDER_HARDWARE }, PG_RANGEFINDER_CONFIG, offsetof(rangefinderConfig_t, rangefinder_hardware) },
+    { "rangefinder_uart", VAR_INT8 | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_RANGEFINDER_CONFIG, offsetof(rangefinderConfig_t, rangefinder_uart) },
 #endif
 
 // PG_OPTICALFLOW_CONFIG
 #ifdef USE_OPTICALFLOW
     { "opticalflow_hardware",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OPTICALFLOW_HARDWARE }, PG_OPTICALFLOW_CONFIG, offsetof(opticalflowConfig_t, opticalflow_hardware) },
+    { "opticalflow_uart",         VAR_INT8   | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_OPTICALFLOW_CONFIG, offsetof(opticalflowConfig_t, opticalflow_uart) },
     { "opticalflow_rotation",     VAR_INT16  | MASTER_VALUE ,              .config.minmaxUnsigned = {0, 359},               PG_OPTICALFLOW_CONFIG, offsetof(opticalflowConfig_t, rotation) },
     { "opticalflow_lpf",          VAR_UINT16 | MASTER_VALUE ,              .config.minmaxUnsigned = {0, 10000},             PG_OPTICALFLOW_CONFIG, offsetof(opticalflowConfig_t, flow_lpf) },
     { "opticalflow_flip_x",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON },               PG_OPTICALFLOW_CONFIG, offsetof(opticalflowConfig_t, flip_x) },
@@ -1866,6 +1924,7 @@ const clivalue_t valueTable[] = {
     { "rcdevice_init_dev_attempt_interval", VAR_UINT32 | MASTER_VALUE, .config.u32Max = 5000, PG_RCDEVICE_CONFIG, offsetof(rcdeviceConfig_t, initDeviceAttemptInterval) },
     { "rcdevice_protocol_version", VAR_UINT8 | MASTER_VALUE, .config.minmax = { 0, 1 }, PG_RCDEVICE_CONFIG, offsetof(rcdeviceConfig_t, protocolVersion) },
     { "rcdevice_feature", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = {0, 65535}, PG_RCDEVICE_CONFIG, offsetof(rcdeviceConfig_t, feature) },
+    { "rcdevice_uart", VAR_INT8 | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_RCDEVICE_CONFIG, offsetof(rcdeviceConfig_t, rcdevice_uart) },
 #endif
 
 // PG_GYRO_DEVICE_CONFIG
@@ -1967,6 +2026,18 @@ const clivalue_t valueTable[] = {
 #endif
 
     { "serialmsp_halfduplex", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MSP_CONFIG, offsetof(mspConfig_t, halfDuplex) },
+#if MAX_MSP_PORT_COUNT > 0
+    { "msp_uart_1", VAR_INT8   | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_MSP_CONFIG, offsetof(mspConfig_t, msp_uart[0]) },
+    { "msp_baud_1", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BAUD_RATE }, PG_MSP_CONFIG, offsetof(mspConfig_t, msp_baud[0]) },
+#endif
+#if MAX_MSP_PORT_COUNT > 1
+    { "msp_uart_2", VAR_INT8   | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_MSP_CONFIG, offsetof(mspConfig_t, msp_uart[1]) },
+    { "msp_baud_2", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BAUD_RATE }, PG_MSP_CONFIG, offsetof(mspConfig_t, msp_baud[1]) },
+#endif
+#if MAX_MSP_PORT_COUNT > 2
+    { "msp_uart_3", VAR_INT8   | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_MSP_CONFIG, offsetof(mspConfig_t, msp_uart[2]) },
+    { "msp_baud_3", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BAUD_RATE }, PG_MSP_CONFIG, offsetof(mspConfig_t, msp_baud[2]) },
+#endif
 
 // PG_TIMECONFIG
 #ifdef USE_RTC_TIME
@@ -2117,9 +2188,22 @@ const clivalue_t valueTable[] = {
     { "gimbal_yaw_limit",          VAR_INT8 | MASTER_VALUE, .config.minmaxUnsigned = { -100, 100 }, PG_GIMBAL_TRACK_CONFIG, offsetof(gimbalTrackConfig_t, gimbal_yaw_limit) },
     { "gimbal_stabilisation",      VAR_INT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 7 }, PG_GIMBAL_TRACK_CONFIG, offsetof(gimbalTrackConfig_t, gimbal_stabilisation) },
     { "gimbal_sensitivity",        VAR_INT8 | MASTER_VALUE, .config.minmaxUnsigned = { -16, 15 }, PG_GIMBAL_TRACK_CONFIG, offsetof(gimbalTrackConfig_t, gimbal_sensitivity) },
+    { "gimbal_uart",               VAR_INT8 | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_GIMBAL_TRACK_CONFIG, offsetof(gimbalTrackConfig_t, gimbal_uart) },
 #endif
 };
 
 const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
 
 STATIC_ASSERT(LOOKUP_TABLE_COUNT == ARRAYLEN(lookupTables), LOOKUP_TABLE_COUNT_incorrect);
+
+// The msp_uart_N/msp_baud_N entries above are written out one slot at a time,
+// so raising MAX_MSP_PORT_COUNT past 3 means adding a slot's worth of them.
+STATIC_ASSERT(MAX_MSP_PORT_COUNT <= 3, msp_port_settings_incomplete);
+
+#ifdef USE_TELEMETRY
+// The telemetry_N_ entries above are written out one slot at a time, so adding
+// a protocol means adding a slot's worth of them.
+STATIC_ASSERT(MAX_TELEMETRY_PROVIDERS <= 3, telemetry_provider_settings_incomplete);
+STATIC_ASSERT(MAX_TELEMETRY_PROVIDERS < TELEMETRY_PROTOCOL_COUNT, MAX_TELEMETRY_PROVIDERS_unusable);
+STATIC_ASSERT(ARRAYLEN(lookupTableTelemetryProtocol) == TELEMETRY_PROTOCOL_COUNT, lookupTableTelemetryProtocol_incorrect);
+#endif

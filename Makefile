@@ -169,7 +169,7 @@ DFUSE-PACK  := src/utils/dfuse-pack.py
 
 # Command used to link the final ELF. Platform makefiles can override this
 # when linking requires a dedicated linker instead of the C compiler driver.
-ELF_LINK_CMD = $(CROSS_CC) -o $@ $(filter-out %.ld,$^) $(LD_FLAGS)
+ELF_LINK_CMD = $(file > $@.args,$(filter-out %.ld,$^)) $(CROSS_CC) -o $@ @$@.args $(LD_FLAGS)
 
 # Preprocessor helpers (generic .h parsing)
 include $(MAKE_SCRIPT_DIR)/preprocess.mk
