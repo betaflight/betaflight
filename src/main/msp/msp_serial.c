@@ -105,7 +105,7 @@ static void mspSerialOpenPort(unsigned *portIndex, serialPortIdentifier_e identi
     (*portIndex)++;
 }
 
-#if IMPLIED_MSP_SENSOR_PORT_COUNT > 0
+#if IMPLIED_MSP_PORT_COUNT > 0
 static bool mspSerialPortIsOpen(serialPortIdentifier_e identifier)
 {
     for (const mspPort_t *mspPort = mspPorts; mspPort < ARRAYEND(mspPorts); mspPort++) {
@@ -131,19 +131,19 @@ void mspSerialAllocatePorts(void)
         mspSerialOpenPort(&portIndex, identifier, mspConfig()->msp_baud[slot]);
     }
 
-#if IMPLIED_MSP_SENSOR_PORT_COUNT > 0
-    serialPortIdentifier_e sensorPorts[IMPLIED_MSP_SENSOR_PORT_COUNT];
-    const unsigned sensorPortCount = serialImpliedMspPorts(sensorPorts, ARRAYLEN(sensorPorts));
+#if IMPLIED_MSP_PORT_COUNT > 0
+    serialPortIdentifier_e impliedPorts[IMPLIED_MSP_PORT_COUNT];
+    const unsigned impliedPortCount = serialImpliedMspPorts(impliedPorts, ARRAYLEN(impliedPorts));
 
-    for (unsigned i = 0; i < sensorPortCount; i++) {
-        // The user is free to put MSP on the sensor port as well, in which case
-        // it is already open and the module is already heard.  A native serial
+    for (unsigned i = 0; i < impliedPortCount; i++) {
+        // The user is free to put MSP on the same port as well, in which case it
+        // is already open and the feature is already heard.  A native serial
         // sensor claims its UART in sensorsAutodetect() and never reaches here.
-        if (mspSerialPortIsOpen(sensorPorts[i])) {
+        if (mspSerialPortIsOpen(impliedPorts[i])) {
             continue;
         }
 
-        mspSerialOpenPort(&portIndex, sensorPorts[i], serialDefaultPortBaud(SERIAL_BAUD_MSP));
+        mspSerialOpenPort(&portIndex, impliedPorts[i], serialDefaultPortBaud(SERIAL_BAUD_MSP));
     }
 #endif
 }

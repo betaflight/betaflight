@@ -651,7 +651,7 @@ bool vtxTrampInit(void)
 {
     const serialPortIdentifier_e port = vtxSettingsConfig()->vtx_uart;
 
-    if (port != SERIAL_PORT_NONE) {
+    if (port != SERIAL_PORT_NONE && vtxSettingsConfig()->vtx_type == VTXDEV_TRAMP) {
         portOptions_e portOptions = 0;
 #if defined(USE_VTX_COMMON)
         portOptions |= vtxConfig()->halfDuplex ? SERIAL_BIDIR : 0;
