@@ -311,16 +311,16 @@ bool blackboxDeviceOpen(void)
     switch (blackboxConfig()->device) {
     case BLACKBOX_DEVICE_SERIAL:
         {
-            const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_BLACKBOX);
+            const serialPortIdentifier_e port = blackboxConfig()->blackbox_uart;
             baudRate_e baudRateIndex;
             portOptions_e portOptions = SERIAL_PARITY_NO | SERIAL_NOT_INVERTED;
 
-            if (!portConfig) {
+            if (port == SERIAL_PORT_NONE) {
                 return false;
             }
 
-            blackboxPortSharing = determinePortSharing(portConfig, FUNCTION_BLACKBOX);
-            baudRateIndex = portConfig->blackbox_baudrateIndex;
+            blackboxPortSharing = determinePortSharing(port, FUNCTION_BLACKBOX);
+            baudRateIndex = blackboxConfig()->blackbox_baud;
 
             if (baudRates[baudRateIndex] == 230400) {
                 /*
@@ -332,7 +332,7 @@ bool blackboxDeviceOpen(void)
                 portOptions |= SERIAL_STOPBITS_1;
             }
 
-            blackboxPort = openSerialPort(portConfig->identifier, FUNCTION_BLACKBOX, NULL, NULL, baudRates[baudRateIndex],
+            blackboxPort = openSerialPort(port, FUNCTION_BLACKBOX, NULL, NULL, baudRates[baudRateIndex],
                 BLACKBOX_SERIAL_PORT_MODE, portOptions);
 
             /*
