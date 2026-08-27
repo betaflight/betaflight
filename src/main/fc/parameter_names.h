@@ -160,6 +160,10 @@
 #define PARAM_NAME_ALTITUDE_LPF "altitude_lpf"
 #define PARAM_NAME_ALTITUDE_D_LPF "altitude_d_lpf"
 
+#define PARAM_NAME_OPTICALFLOW_HARDWARE "opticalflow_hardware"
+#define PARAM_NAME_OPTICALFLOW_ROTATION "opticalflow_rotation"
+#define PARAM_NAME_OPTICALFLOW_FLIP_X "opticalflow_flip_x"
+
 #define PARAM_NAME_AP_LANDING_ALTITUDE_M "ap_landing_altitude_m"
 #define PARAM_NAME_AP_HOVER_THROTTLE "ap_hover_throttle"
 #define PARAM_NAME_AP_THROTTLE_MIN "ap_throttle_min"

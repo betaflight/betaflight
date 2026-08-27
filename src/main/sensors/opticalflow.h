@@ -38,7 +38,6 @@ typedef struct opticalflowConfig_s {
     uint8_t  opticalflow_hardware;
     uint16_t rotation;
     uint8_t  flip_x;
-    uint16_t flow_lpf;
     int8_t   opticalflow_uart;  // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned. Driver selected by opticalflow_hardware.
 } opticalflowConfig_t;
 
