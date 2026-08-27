@@ -558,12 +558,18 @@ TEST_F(PosHoldTest, ReleaseDropsFeedforwardSoBrakingOpposesMotion)
     EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f);
 }
 
-// -- Braking entry threshold (ap_stop_threshold, default 5 cm/s) --
+// -- Braking exit threshold (ap_stop_threshold, default 10%) --
 // Slot 6 of DEBUG_AUTOPILOT_STOP carries the hold status with +1 added while
 // braking, so a settled hold reads BRAKING_STATUS_HELD and a braking entry
 // reads BRAKING_STATUS_BRAKING.
+//
+// A stick release always enters braking; there is no entry-speed gate. The
+// threshold is a percentage of the entry speed, floored at BRAKING_EXIT_SPEED_MIN
+// (1 cm/s), and braking ends once the speed falls below that fraction of the
+// speed it started with.
 static const int BRAKING_STATUS_HELD = 3;
 static const int BRAKING_STATUS_BRAKING = 4;
+static const float BRAKING_EXIT_SPEED_MIN_CMS = 1.0f;
 
 TEST_F(PosHoldTest, EntrySpeedAboveStopThresholdStartsBraking)
 {
@@ -582,16 +588,17 @@ TEST_F(PosHoldTest, EntrySpeedAboveStopThresholdStartsBraking)
     debugMode = DEBUG_NONE;
 }
 
-TEST_F(PosHoldTest, EntrySpeedBelowStopThresholdHoldsImmediately)
+TEST_F(PosHoldTest, EntrySpeedBelowTheExitFloorHoldsImmediately)
 {
     initAndSettleAt(0, 0, 0);
     debugMode = DEBUG_AUTOPILOT_STOP;
 
-    // Same release, but at 3 cm/s: below the 5 cm/s threshold there is no entry
-    // speed worth arresting, so the hold locks the captured point straight away
-    // with full P authority rather than dragging the target to the craft.
+    // Same release, but at half the 1 cm/s exit floor. Braking is still entered,
+    // and the exit test on the same call finds the craft already stopped, so the
+    // hold locks the captured point with full P authority rather than dragging
+    // the target to the craft.
     setSticksActiveStatus(true);
-    testEstimate.velocity.x = 3.0f;
+    testEstimate.velocity.x = BRAKING_EXIT_SPEED_MIN_CMS / 2.0f;
     runIterations(50);
     setSticksActiveStatus(false);
     positionControl();
@@ -600,11 +607,36 @@ TEST_F(PosHoldTest, EntrySpeedBelowStopThresholdHoldsImmediately)
     debugMode = DEBUG_NONE;
 }
 
-TEST_F(PosHoldTest, StopThresholdSettingSetsTheBrakingEntrySpeed)
+TEST_F(PosHoldTest, StopThresholdSettingSetsTheBrakingExitSpeed)
 {
     initAndSettleAt(0, 0, 0);
     debugMode = DEBUG_AUTOPILOT_STOP;
-    autopilotConfigMutable()->stopThreshold = 100; // raise it above the entry speed
+    autopilotConfigMutable()->stopThreshold = 50; // exit at half the entry speed
+
+    setSticksActiveStatus(true);
+    testEstimate.velocity.x = 40.0f;
+    runIterations(50);
+    setSticksActiveStatus(false);
+    positionControl();
+    EXPECT_EQ(debug[6], BRAKING_STATUS_BRAKING); // exit speed is 20 cm/s
+
+    // Still above the exit speed, so braking continues.
+    testEstimate.velocity.x = 21.0f;
+    positionControl();
+    EXPECT_EQ(debug[6], BRAKING_STATUS_BRAKING);
+
+    // Below it: the stopped point becomes the hold target.
+    testEstimate.velocity.x = 19.0f;
+    positionControl();
+    EXPECT_EQ(debug[6], BRAKING_STATUS_HELD);
+    debugMode = DEBUG_NONE;
+}
+
+TEST_F(PosHoldTest, LowerStopThresholdBrakesForLonger)
+{
+    initAndSettleAt(0, 0, 0);
+    debugMode = DEBUG_AUTOPILOT_STOP;
+    autopilotConfigMutable()->stopThreshold = 10; // exit at a tenth of entry speed
 
     setSticksActiveStatus(true);
     testEstimate.velocity.x = 40.0f;
@@ -612,7 +644,15 @@ TEST_F(PosHoldTest, StopThresholdSettingSetsTheBrakingEntrySpeed)
     setSticksActiveStatus(false);
     positionControl();
 
-    EXPECT_EQ(debug[6], BRAKING_STATUS_HELD); // 40 cm/s no longer brakes
+    // 19 cm/s ended braking at 50%; at 10% the exit speed is 4 cm/s, so the same
+    // speed must still be braking.
+    testEstimate.velocity.x = 19.0f;
+    positionControl();
+    EXPECT_EQ(debug[6], BRAKING_STATUS_BRAKING);
+
+    testEstimate.velocity.x = 3.0f;
+    positionControl();
+    EXPECT_EQ(debug[6], BRAKING_STATUS_HELD);
     debugMode = DEBUG_NONE;
 }
 
