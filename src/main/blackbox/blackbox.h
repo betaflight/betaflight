@@ -66,6 +66,7 @@ typedef struct blackboxConfig_s {
     uint8_t mode;
     uint8_t high_resolution;
     int8_t blackbox_uart;  // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned
+    uint8_t blackbox_baud; // baudRate_e index for blackbox_uart
 } blackboxConfig_t;
 
 PG_DECLARE(blackboxConfig_t, blackboxConfig);

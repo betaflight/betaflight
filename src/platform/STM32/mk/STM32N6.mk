@@ -186,6 +186,7 @@ MCU_COMMON_SRC = \
             STM32/debug_uart_stm32n6xx.c \
             STM32/timer_hal.c \
             STM32/timer_stm32n6xx.c \
+            STM32/camera_control_stm32.c \
             drivers/adc.c \
             drivers/serial_escserial.c \
             STM32/startup/system_stm32n6xx_s.c
