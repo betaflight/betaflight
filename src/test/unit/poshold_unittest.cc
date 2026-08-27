@@ -617,8 +617,12 @@ TEST_F(PosHoldTest, StopThresholdSettingSetsTheBrakingEntrySpeed)
 }
 
 // TASK_POSHOLD runs at the flow sensor's rate, which is not POSHOLD_TASK_RATE_HZ,
-// so the braking phase has to give up after one second of wall-clock time at
-// whatever rate the loop is running.
+// so the braking phase has to give up after a fixed wall-clock time at whatever
+// rate the loop is running. Keep this in step with BRAKING_TIMEOUT_S in
+// autopilot_multirotor.c; the point of the tests is rate-independence, not the
+// particular value.
+static const float EXPECTED_BRAKING_TIMEOUT_S = 1.2f;
+
 static int loopsUntilBrakingEnds(int taskRateHz)
 {
     simulatedTaskRateHz = taskRateHz;
@@ -645,16 +649,16 @@ static int loopsUntilBrakingEnds(int taskRateHz)
     return loops;
 }
 
-TEST_F(PosHoldTest, BrakingTimeoutIsOneSecondAtTheNominalTaskRate)
+TEST_F(PosHoldTest, BrakingTimeoutIsWallClockAtTheNominalTaskRate)
 {
     const int loops = loopsUntilBrakingEnds(100);
-    EXPECT_NEAR(loops, 100, 3);   // ~1 s at 100 Hz
+    EXPECT_NEAR(loops / 100.0f, EXPECTED_BRAKING_TIMEOUT_S, 0.03f);
 }
 
-TEST_F(PosHoldTest, BrakingTimeoutIsOneSecondAtHalfTheNominalTaskRate)
+TEST_F(PosHoldTest, BrakingTimeoutIsWallClockAtHalfTheNominalTaskRate)
 {
     const int loops = loopsUntilBrakingEnds(50);
-    EXPECT_NEAR(loops, 50, 3);    // still ~1 s, now at 50 Hz
+    EXPECT_NEAR(loops / 50.0f, EXPECTED_BRAKING_TIMEOUT_S, 0.06f);
 }
 
 // The target-velocity feedforward is a rate of change, so the same commanded

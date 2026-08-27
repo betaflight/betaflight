@@ -153,7 +153,6 @@ static float throttleOut = 0.0f;
 static vector2_t targetPosition;
 static vector2_t targetVelocity;
 static vector2_t previousTargetVelocity; // EF, for the target-velocity-delta feedforward
-static vector2_t targetAcceleration;     // stick feedforward driver, earth frame
 static vector2_t posHoldStartPosition;
 static vector2_t distanceError;          // deviation from intended position (real or virtual)
 static vector2_t distanceErrorIntegral;  // integral of position error
@@ -465,7 +464,6 @@ void initPositionHold(void)
     resetDistanceError();
     setBrakingMode(); // arrest entry speed only when starting fast
     vector2Zero(&targetVelocity);
-    vector2Zero(&targetAcceleration);
     vector2Zero(&previousTargetVelocity);
     // nb: we do not reset the distanceError integral, to hold its opposition to wind between quick stick inputs
 }
@@ -490,7 +488,6 @@ static void initNavMode(void)
     resetDistanceError();
     resetDistanceErrorIntegral();
     vector2Zero(&previousTargetVelocity);
-    vector2Zero(&targetAcceleration);
     ap.isPosHoldBraking = false;
 }
 
@@ -547,10 +544,10 @@ static bool sanityViolationExpired(void)
 }
 
 // Stick input becomes a target velocity (full stick -> maxVelocity), rotated
-// from body to earth frame. Stick feedforward becomes the target-acceleration
-// driver for the F term. The anchor-off virtual-distance path turns this
-// target velocity into P/I, so there is no targetPosition integration here.
-
+// from body to earth frame. Its per-loop rate of change is the F term driver,
+// so RC smoothing shapes the feedforward. The anchor-off virtual-distance path
+// turns this target velocity into P/I, so there is no targetPosition
+// integration here.
 void sticksSetTargetVelocity(void)
 {
     // full stick maps to maxVelocity; the rates can change between flights, so scale per loop
@@ -787,10 +784,9 @@ bool positionControl(void)
 #ifdef USE_GPS_RESCUE
             if (!FLIGHT_MODE(GPS_RESCUE_MODE)){
 #endif
-                // If in GPS Rescue, we have both velocity and acceleration
-                // otherwise hold position at zero velocity and acceleration
+                // GPS Rescue sets its own target velocity; otherwise hold
+                // position at zero velocity
                 vector2Zero(&targetVelocity);
-                vector2Zero(&targetAcceleration);
 #ifdef USE_GPS_RESCUE
             }
 #endif
@@ -803,12 +799,16 @@ bool positionControl(void)
             }
             if (ap.isPosHoldBraking) {
                 // Braking: hold anchor with the target dragged to the craft, the
-                // integral frozen, D boosted (in the loop). End on stop, a 1 s
-                // timeout, or a velocity-vector reversal (overshoot past capture).
+                // integral frozen, D boosted (in the loop). End on stop, the
+                // BRAKING_TIMEOUT_S timeout, or a velocity-vector reversal
+                // (overshoot past capture).
                 ap.brakingTimeS = MIN(ap.brakingTimeS + dt, BRAKING_TIMEOUT_S);
                 ap.anchor = ANCHOR_HOLD;
                 ap.iPolicy = I_FREEZE;
-            sticksSetTargetVelocity(); // eases smoothly out of target velocity due to FF smoothing.
+                // Sticks are inside the deadband but the RC-smoothed setpoint still
+                // has a tail; keep tracking it so the target velocity, and with it
+                // the F term, eases to zero instead of stepping.
+                sticksSetTargetVelocity();
                 targetPosition = currentPosition;
                 const float velocityAlongEntryDirection =
                     (velocity.v[EF_NORTH] * ap.brakingEntryDirection.v[EF_NORTH]) +
@@ -897,85 +897,87 @@ bool positionControl(void)
     // encoded in ap.anchor / ap.iPolicy / ap.isPosHoldBraking (set above); the
     // maths below is identical for position hold, nav and rescue.
 
-for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
-    velocityError.v[axis] = targetVelocity.v[axis] - velocity.v[axis];
-    const float acceleration = -est->acceleration.v[axis]; // from Kalman acceleration estimate from accelerometer and derivative of other velocity sources)
-    previousVelocity.v[axis] = velocity.v[axis];
+    for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
+        velocityError.v[axis] = targetVelocity.v[axis] - velocity.v[axis];
+        const float acceleration = -est->acceleration.v[axis]; // from Kalman acceleration estimate from accelerometer and derivative of other velocity sources)
+        previousVelocity.v[axis] = velocity.v[axis];
 
-    // Distance error: real (position anchor) or virtual (integral of the
-    // velocity error). The virtual integral carries the steady cruise tilt,
-    // so it accumulates continuously, gated only by saturation anti-windup
-    // (a maxAngle-clamped output stops it growing but may still unwind).
-    if (anchorOff) {
-        const bool windupOk = !wasAngleSaturated || (velocityError.v[axis] * distanceError.v[axis]) < 0.0f;
-        if (windupOk) {
-            distanceError.v[axis] += velocityError.v[axis] * dt;
+        // Distance error: real (position anchor) or virtual (integral of the
+        // velocity error). The virtual integral carries the steady cruise tilt,
+        // so it accumulates continuously, gated only by saturation anti-windup
+        // (a maxAngle-clamped output stops it growing but may still unwind).
+        if (anchorOff) {
+            const bool windupOk = !wasAngleSaturated || (velocityError.v[axis] * distanceError.v[axis]) < 0.0f;
+            if (windupOk) {
+                distanceError.v[axis] += velocityError.v[axis] * dt;
+            }
+        } else {
+            distanceError.v[axis] = targetPosition.v[axis] - currentPosition.v[axis];
         }
-    } else {
-        distanceError.v[axis] = targetPosition.v[axis] - currentPosition.v[axis];
+        const float errLimit = ap.navActive ? NAV_ERROR_DISTANCE_LIMIT : ERROR_DISTANCE_LIMIT;
+        distanceError.v[axis] = constrainf(distanceError.v[axis], -errLimit, errLimit);
+
+        // Integral of the distance error, governed by the integral policy.
+        switch (ap.iPolicy) {
+        case I_ACCUMULATE:
+            distanceErrorIntegral.v[axis] += distanceError.v[axis] * dt;
+            break;
+        case I_ZERO:
+            distanceErrorIntegral.v[axis] = 0.0f;
+            break;
+        case I_FREEZE:
+        default:
+            break;
+        }
+        distanceErrorIntegral.v[axis] = constrainf(distanceErrorIntegral.v[axis], -POSITION_I_LIMIT, POSITION_I_LIMIT);
+
+        // Feedforward driver: the rate of change of the target velocity, which
+        // the RC smoothing behind getSetpointRate() shapes while the pilot is
+        // commanding, and which tails off naturally on stick release.
+        // Per-loop change divided by the real loop interval, so the same physical
+        // acceleration gives the same feedforward at any task rate.
+        const float targetVelDelta = (targetVelocity.v[axis] - previousTargetVelocity.v[axis]) / dt;
+        previousTargetVelocity.v[axis] = targetVelocity.v[axis];
+
+        // Speed-scaled damping boost, ~2x at 20 m/s. Applied to D and to the
+        // matching Kd term in F so the pair still cancels at the target speed.
+        const float brakeBoost = 1.0f + fabsf(velocity.v[axis]) * 0.0005f;
+
+        pidP.v[axis] = distanceError.v[axis] * xyPid.Kp;
+        pidI.v[axis] = distanceErrorIntegral.v[axis] * xyPid.Ki;
+        pidD.v[axis] = -velocity.v[axis] * xyPid.Kd * brakeBoost + velocity.v[axis] * xyKDrag; // damping, minus drag at speed
+        pidA.v[axis] = acceleration * xyPid.Ka;
+        // F: Kd on the target velocity balances D so the pair cancels at
+        // the target speed (reconstructing D-from-error); Kf on the delta is the
+        // tunable acceleration feedforward.
+        pidF.v[axis] = targetVelocity.v[axis] * xyPid.Kd * brakeBoost + targetVelDelta * xyPid.Kf;
+    } // End for loop
+
+    // Buildup clamp: only in the anchor-off fallback, where the velocity-error
+    // drive (D + F = Kd*velocityError plus the accel feedforward) itself carries
+    // the cruise tilt and would otherwise slam the pitch while accelerating. When
+    // anchored to a position (nav carrot or hold), P carries the tilt and D + F
+    // must stay free to track and brake velocity, so the clamp is skipped.
+    bool buildupClamped = false;
+    if (ap.navActive && ap.anchor == ANCHOR_OFF) {
+        const float buildupMaxDeg = autopilotConfig()->velocityBuildupMaxPitch;
+        vector2_t drive = { { pidD.v[EF_EAST] + pidF.v[EF_EAST], pidD.v[EF_NORTH] + pidF.v[EF_NORTH] } };
+        const float driveMag = vector2Norm(&drive);
+        if (driveMag > buildupMaxDeg && driveMag > 0.001f) {
+            buildupClamped = true;
+            const float scale = buildupMaxDeg / driveMag;
+            vector2Scale(&pidD, &pidD, scale);
+            vector2Scale(&pidF, &pidF, scale);
+        }
     }
-    const float errLimit = ap.navActive ? NAV_ERROR_DISTANCE_LIMIT : ERROR_DISTANCE_LIMIT;
-    distanceError.v[axis] = constrainf(distanceError.v[axis], -errLimit, errLimit);
 
-    // Integral of the distance error, governed by the integral policy.
-    switch (ap.iPolicy) {
-    case I_ACCUMULATE:
-        distanceErrorIntegral.v[axis] += distanceError.v[axis] * dt;
-        break;
-    case I_ZERO:
-        distanceErrorIntegral.v[axis] = 0.0f;
-        break;
-    case I_FREEZE:
-    default:
-        break;
+    // Combine: only F is smoothed, being the noisiest term; P, I, D and A all
+    // ride outside the filter. NOTE: D is on raw measured velocity and A on the
+    // raw Kalman acceleration — filter placement is an open tuning item.
+    for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
+        const float smoothedF = pt3FilterApply(&posNoisyPidsLpf[axis], pidF.v[axis]);
+        pidSumVectorEF.v[axis] = pidP.v[axis] + pidI.v[axis] + pidD.v[axis] + pidA.v[axis] + smoothedF;
     }
-    distanceErrorIntegral.v[axis] = constrainf(distanceErrorIntegral.v[axis], -POSITION_I_LIMIT, POSITION_I_LIMIT);
-
-    // Feedforward driver: the rate of change of the target velocity, or the
-    // stick setpoint feedforward when the pilot is commanding.
-    // Per-loop change divided by the real loop interval, so the same physical
-    // acceleration gives the same feedforward at any task rate.
-    float targetVelDelta = (targetVelocity.v[axis] - previousTargetVelocity.v[axis]) / dt;
-    previousTargetVelocity.v[axis] = targetVelocity.v[axis];
-
-const float brakeBoost = 1.0f + fabsf(velocity.v[axis]) * 0.0005f; // ~2x at 20 m/s
-
-    pidP.v[axis] = distanceError.v[axis] * xyPid.Kp;
-    pidI.v[axis] = distanceErrorIntegral.v[axis] * xyPid.Ki;
-    pidD.v[axis] = -velocity.v[axis] * xyPid.Kd * brakeBoost + velocity.v[axis] * xyKDrag; // damping, minus drag at speed
-    pidA.v[axis] = acceleration * xyPid.Ka;
-    // F: Kd on the target velocity balances D so the pair cancels at
-    // the target speed (reconstructing D-from-error); Kf on the delta is the
-    // tunable acceleration feedforward.
-    pidF.v[axis] = targetVelocity.v[axis] * xyPid.Kd * brakeBoost + targetVelDelta * xyPid.Kf;
-
-} // End for loop
-
-// Buildup clamp: only in the anchor-off fallback, where the velocity-error
-// drive (D + F = Kd*velocityError plus the accel feedforward) itself carries
-// the cruise tilt and would otherwise slam the pitch while accelerating. When
-// anchored to a position (nav carrot or hold), P carries the tilt and D + F
-// must stay free to track and brake velocity, so the clamp is skipped.
-bool buildupClamped = false;
-if (ap.navActive && ap.anchor == ANCHOR_OFF) {
-    const float buildupMaxDeg = autopilotConfig()->velocityBuildupMaxPitch;
-    vector2_t drive = { { pidD.v[EF_EAST] + pidF.v[EF_EAST], pidD.v[EF_NORTH] + pidF.v[EF_NORTH] } };
-    const float driveMag = vector2Norm(&drive);
-    if (driveMag > buildupMaxDeg && driveMag > 0.001f) {
-        buildupClamped = true;
-        const float scale = buildupMaxDeg / driveMag;
-        vector2Scale(&pidD, &pidD, scale);
-        vector2Scale(&pidF, &pidF, scale);
-    }
-}
-
-// Combine: only F is smoothed, being the noisiest term; P, I, D and A all
-// ride outside the filter. NOTE: D is on raw measured velocity and A on the
-// raw Kalman acceleration — filter placement is an open tuning item.
-for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
-    const float smoothedF = pt3FilterApply(&posNoisyPidsLpf[axis], pidF.v[axis]);
-    pidSumVectorEF.v[axis] = pidP.v[axis] + pidI.v[axis] + pidD.v[axis] + pidA.v[axis] + smoothedF;
-}
 
     // Rotation from Earth Frame to Body Frame
     const float headingRad = DECIDEGREES_TO_RADIANS(attitude.values.yaw);
