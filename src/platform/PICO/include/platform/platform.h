@@ -100,6 +100,10 @@ struct quadSpiResource_s
 
 #define SCHEDULER_DELAY_LIMIT           10
 
+// GPIO_PIN_ definitions for ease of compatibility with stm32 targets
+#define GPIO_PIN_RESET (0)
+#define GPIO_PIN_SET   (1)
+
 // There is no library definition for pupd, so define one here
 #define GPIO_PULLUP     1
 #define GPIO_PULLDOWN   2
@@ -112,8 +116,8 @@ struct quadSpiResource_s
 #define IOCFG_OUT_OD          IO_CONFIG(GPIO_OUT, 0, 0)
 #define IOCFG_AF_PP           0
 #define IOCFG_AF_OD           0
-#define IOCFG_IPD             IO_CONFIG(GPIO_IN, 0, 0)
-#define IOCFG_IPU             IO_CONFIG(GPIO_IN, 0, 0)
+#define IOCFG_IPD             IO_CONFIG(GPIO_IN, 0, GPIO_PULLDOWN)
+#define IOCFG_IPU             IO_CONFIG(GPIO_IN, 0, GPIO_PULLUP)
 #define IOCFG_IN_FLOATING     IO_CONFIG(GPIO_IN, 0, 0)
 
 // TODO update these and IOConfigGPIO
