@@ -6308,7 +6308,7 @@ static void cliPrintSensorPeripheral(const char *stem, sensorIndex_e sensorIndex
         // Indexes 0 and 1 are AUTO and NONE in every hardware enum - a
         // detection that never recorded which device it found has no name
         // worth printing.
-        if (hardwareIndex <= 1 || hardwareIndex >= count) {
+        if (hardwareIndex <= 1 || hardwareIndex >= count || !names[hardwareIndex]) {
             return;
         }
         cliPrintf("%s: %s", stem, names[hardwareIndex]);
@@ -6316,7 +6316,13 @@ static void cliPrintSensorPeripheral(const char *stem, sensorIndex_e sensorIndex
         cliPrintLinefeed();
     } else if (configuredHardware > 1 && configuredHardware < count) {
         // 0 = AUTO, 1 = NONE for every sensor hardware enum
-        cliPrintLinef("%s: %s configured, not detected", stem, names[configuredHardware]);
+        if (names[configuredHardware]) {
+            cliPrintLinef("%s: %s configured, not detected", stem, names[configuredHardware]);
+        } else {
+            // A selection this build has no entry for, e.g. a DroneCAN mag
+            // setting carried onto a build without DroneCAN.
+            cliPrintLinef("%s: %d configured, not detected", stem, configuredHardware);
+        }
     }
 }
 #endif // USE_SENSOR_NAMES
