@@ -435,7 +435,14 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->osd_show_spec_prearm = true;
 #endif // USE_RACE_PRO
 
+#ifdef MSP_DISPLAYPORT_UART
+    // A board naming a display port UART is wired to goggles, which are drawn
+    // over MSP.  That is the OSD's port, not a VTX's.
+    osdConfig->osd_uart = MSP_DISPLAYPORT_UART;
+    osdConfig->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
+#else
     osdConfig->osd_uart = SERIAL_PORT_NONE;
+#endif
     osdConfig->osd_custom_text_uart = SERIAL_PORT_NONE;
     osdConfig->osd_custom_text_baud = BAUD_115200;
 }

@@ -74,9 +74,6 @@ void pgResetFn_vtxSettingsConfig(vtxSettingsConfig_t *vtxSettingsConfig)
 #elif defined(USE_VTX_MSP) && defined(VTX_MSP_UART)
     vtxSettingsConfig->vtx_type = VTXDEV_MSP;
     vtxSettingsConfig->vtx_uart = VTX_MSP_UART;
-#elif defined(USE_VTX_MSP) && defined(MSP_DISPLAYPORT_UART)
-    vtxSettingsConfig->vtx_type = VTXDEV_MSP;
-    vtxSettingsConfig->vtx_uart = MSP_DISPLAYPORT_UART;
 #else
     vtxSettingsConfig->vtx_type = VTXDEV_UNSUPPORTED;
     vtxSettingsConfig->vtx_uart = SERIAL_PORT_NONE;
