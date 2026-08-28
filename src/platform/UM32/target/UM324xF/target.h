@@ -77,11 +77,6 @@
 #define STANDARD_INQUIRY_DATA_LEN       0x24U
 
 
-#undef USE_MCO
-#undef USE_SDCARD
-#undef USE_TRANSPONDER
-
-
 #undef USE_DSHOT_DMAR
 
 

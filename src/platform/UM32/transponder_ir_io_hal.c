@@ -63,14 +63,15 @@ FAST_IRQ_HANDLER static void TRANSPONDER_DMA_IRQHandler(dmaChannelDescriptor_t* 
 }
 #endif
 
-void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
+bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 {
     UNUSED(transponder);
     if (!ioTag) {
-        return;
+        return false;
     }
 
     transponderInitialised = true;
+    return true;
 }
 
 bool transponderIrInit(const ioTag_t ioTag, const transponderProvider_e provider)
@@ -84,7 +85,7 @@ bool transponderIrInit(const ioTag_t ioTag, const transponderProvider_e provider
     return true;
 }
 
-bool isTransponderIrReady(void)
+bool transponderIrIsReady(void)
 {
     return !transponderIrDataTransferInProgress;
 }
