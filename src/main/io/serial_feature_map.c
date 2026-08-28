@@ -67,6 +67,80 @@
 #include "telemetry/telemetry.h"
 #endif
 
+#ifdef USE_VTX_COMMON
+static uint32_t vtxFunctionMask(void)
+{
+    switch (vtxSettingsConfig()->vtx_type) {
+#ifdef USE_VTX_SMARTAUDIO
+    case VTXDEV_SMARTAUDIO:
+        return FUNCTION_VTX_SMARTAUDIO;
+#endif
+#ifdef USE_VTX_TRAMP
+    case VTXDEV_TRAMP:
+        return FUNCTION_VTX_TRAMP;
+#endif
+#ifdef USE_VTX_MSP
+    case VTXDEV_MSP:
+        // An MSP VTX talks over MSP on its own UART, so it brings the MSP bit
+        // with it; FUNCTION_VTX_MSP on its own is a conflict.
+        return FUNCTION_VTX_MSP | FUNCTION_MSP;
+#endif
+    default:
+        return 0;
+    }
+}
+#endif
+
+#ifdef USE_OSD
+static uint32_t osdFunctionMask(void)
+{
+    switch (osdConfig()->displayPortDevice) {
+    case OSD_DISPLAYPORT_DEVICE_FRSKYOSD:
+        return FUNCTION_FRSKY_OSD;
+#ifdef USE_MSP_DISPLAYPORT
+    case OSD_DISPLAYPORT_DEVICE_MSP:
+        return FUNCTION_MSP;
+#endif
+    default:
+        return 0;
+    }
+}
+#endif
+
+#ifdef USE_TELEMETRY_PROVIDERS
+static uint32_t telemetryProviderFunctionMask(unsigned providerIndex)
+{
+    switch (telemetryConfig()->providers[providerIndex].protocol) {
+#ifdef USE_TELEMETRY_FRSKY_HUB
+    case TELEMETRY_PROTOCOL_FRSKY_HUB:
+        return FUNCTION_TELEMETRY_FRSKY_HUB;
+#endif
+#ifdef USE_TELEMETRY_HOTT
+    case TELEMETRY_PROTOCOL_HOTT:
+        return FUNCTION_TELEMETRY_HOTT;
+#endif
+#ifdef USE_TELEMETRY_LTM
+    case TELEMETRY_PROTOCOL_LTM:
+        return FUNCTION_TELEMETRY_LTM;
+#endif
+#ifdef USE_TELEMETRY_SMARTPORT
+    case TELEMETRY_PROTOCOL_SMARTPORT:
+        return FUNCTION_TELEMETRY_SMARTPORT;
+#endif
+#ifdef USE_TELEMETRY_MAVLINK
+    case TELEMETRY_PROTOCOL_MAVLINK:
+        return FUNCTION_TELEMETRY_MAVLINK;
+#endif
+#ifdef USE_TELEMETRY_IBUS
+    case TELEMETRY_PROTOCOL_IBUS:
+        return FUNCTION_TELEMETRY_IBUS;
+#endif
+    default:
+        return 0;
+    }
+}
+#endif
+
 uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
 {
     if (identifier == SERIAL_PORT_NONE) {
@@ -114,27 +188,7 @@ uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
 #endif
 #ifdef USE_VTX_COMMON
     if (vtxSettingsConfig()->vtx_uart == identifier) {
-        switch (vtxSettingsConfig()->vtx_type) {
-#ifdef USE_VTX_SMARTAUDIO
-        case VTXDEV_SMARTAUDIO:
-            mask |= FUNCTION_VTX_SMARTAUDIO;
-            break;
-#endif
-#ifdef USE_VTX_TRAMP
-        case VTXDEV_TRAMP:
-            mask |= FUNCTION_VTX_TRAMP;
-            break;
-#endif
-#ifdef USE_VTX_MSP
-        case VTXDEV_MSP:
-            // An MSP VTX talks over MSP on its own UART, so it brings the MSP bit
-            // with it; FUNCTION_VTX_MSP on its own is a conflict.
-            mask |= FUNCTION_VTX_MSP | FUNCTION_MSP;
-            break;
-#endif
-        default:
-            break;
-        }
+        mask |= vtxFunctionMask();
     }
 #endif
 #ifdef USE_RANGEFINDER
@@ -151,18 +205,7 @@ uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
 #endif
 #ifdef USE_OSD
     if (osdConfig()->osd_uart == identifier) {
-        switch (osdConfig()->displayPortDevice) {
-        case OSD_DISPLAYPORT_DEVICE_FRSKYOSD:
-            mask |= FUNCTION_FRSKY_OSD;
-            break;
-#ifdef USE_MSP_DISPLAYPORT
-        case OSD_DISPLAYPORT_DEVICE_MSP:
-            mask |= FUNCTION_MSP;
-            break;
-#endif
-        default:
-            break;
-        }
+        mask |= osdFunctionMask();
     }
     if (osdConfig()->osd_custom_text_uart == identifier) {
         mask |= FUNCTION_OSD_CUSTOM_TEXT;
@@ -170,47 +213,118 @@ uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
 #endif
 #ifdef USE_TELEMETRY_PROVIDERS
     for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
-        if (telemetryConfig()->providers[i].uart != identifier) {
-            continue;
-        }
-        switch (telemetryConfig()->providers[i].protocol) {
-#ifdef USE_TELEMETRY_FRSKY_HUB
-        case TELEMETRY_PROTOCOL_FRSKY_HUB:
-            mask |= FUNCTION_TELEMETRY_FRSKY_HUB;
-            break;
-#endif
-#ifdef USE_TELEMETRY_HOTT
-        case TELEMETRY_PROTOCOL_HOTT:
-            mask |= FUNCTION_TELEMETRY_HOTT;
-            break;
-#endif
-#ifdef USE_TELEMETRY_LTM
-        case TELEMETRY_PROTOCOL_LTM:
-            mask |= FUNCTION_TELEMETRY_LTM;
-            break;
-#endif
-#ifdef USE_TELEMETRY_SMARTPORT
-        case TELEMETRY_PROTOCOL_SMARTPORT:
-            mask |= FUNCTION_TELEMETRY_SMARTPORT;
-            break;
-#endif
-#ifdef USE_TELEMETRY_MAVLINK
-        case TELEMETRY_PROTOCOL_MAVLINK:
-            mask |= FUNCTION_TELEMETRY_MAVLINK;
-            break;
-#endif
-#ifdef USE_TELEMETRY_IBUS
-        case TELEMETRY_PROTOCOL_IBUS:
-            mask |= FUNCTION_TELEMETRY_IBUS;
-            break;
-#endif
-        default:
-            break;
+        if (telemetryConfig()->providers[i].uart == identifier) {
+            mask |= telemetryProviderFunctionMask(i);
         }
     }
 #endif
 
     return mask;
+}
+
+unsigned serialGetPortClaims(serialPortIdentifier_e identifier, serialPortClaim_t *claims, unsigned maxClaims)
+{
+    unsigned count = 0;
+
+    if (identifier == SERIAL_PORT_NONE) {
+        return 0;
+    }
+
+#define ADD_CLAIM(claimName, mask) \
+    do { \
+        if (count < maxClaims) { \
+            claims[count].name = (claimName); \
+            claims[count].functionMask = (mask); \
+            count++; \
+        } \
+    } while (0)
+
+    static const char * const mspClaimNames[] = { "msp_1", "msp_2", "msp_3" };
+    for (unsigned i = 0; i < MAX_MSP_PORT_COUNT && i < ARRAYLEN(mspClaimNames); i++) {
+        if (mspConfig()->msp_uart[i] == identifier) {
+            ADD_CLAIM(mspClaimNames[i], FUNCTION_MSP);
+        }
+    }
+
+#ifdef USE_GPS
+    if (gpsConfig()->gps_uart == identifier) {
+        ADD_CLAIM("gps", FUNCTION_GPS);
+    }
+#endif
+#if defined(USE_RX_PWM) || defined(USE_RX_PPM) || defined(USE_SERIALRX) || defined(USE_RX_MSP) || defined(USE_RX_SPI)
+    if (rxConfig()->rx_uart == identifier) {
+        ADD_CLAIM("rx", FUNCTION_RX_SERIAL);
+    }
+#endif
+#ifdef USE_BLACKBOX
+    if (blackboxConfig()->blackbox_uart == identifier) {
+        ADD_CLAIM("blackbox", FUNCTION_BLACKBOX);
+    }
+#endif
+#ifdef USE_ESC_SENSOR
+    if (escSensorConfig()->esc_sensor_uart == identifier) {
+        ADD_CLAIM("esc_sensor", FUNCTION_ESC_SENSOR);
+    }
+#endif
+#ifdef USE_RCDEVICE
+    if (rcdeviceConfig()->rcdevice_uart == identifier) {
+        ADD_CLAIM("rcdevice", FUNCTION_RCDEVICE);
+    }
+#endif
+#ifdef USE_GIMBAL
+    if (gimbalTrackConfig()->gimbal_uart == identifier) {
+        ADD_CLAIM("gimbal", FUNCTION_GIMBAL);
+    }
+#endif
+#ifdef USE_VTX_COMMON
+    if (vtxSettingsConfig()->vtx_uart == identifier) {
+        ADD_CLAIM("vtx", vtxFunctionMask());
+    }
+#endif
+#ifdef USE_RANGEFINDER
+    if (rangefinderConfig()->rangefinder_uart == identifier) {
+        uint32_t mask = FUNCTION_LIDAR;
+#ifdef USE_RANGEFINDER_MT
+        // An MSP-transport module's port opens as an implied MSP port, so
+        // that is the function the claim is active under.
+        if (rangefinderTypeUsesMsp(rangefinderConfig()->rangefinder_hardware)) {
+            mask |= FUNCTION_MSP;
+        }
+#endif
+        ADD_CLAIM("rangefinder", mask);
+    }
+#endif
+#ifdef USE_OPTICALFLOW
+    if (opticalflowConfig()->opticalflow_uart == identifier) {
+        uint32_t mask = FUNCTION_LIDAR;
+#ifdef USE_OPTICALFLOW_MT
+        if (opticalflowTypeUsesMsp(opticalflowConfig()->opticalflow_hardware)) {
+            mask |= FUNCTION_MSP;
+        }
+#endif
+        ADD_CLAIM("opticalflow", mask);
+    }
+#endif
+#ifdef USE_OSD
+    if (osdConfig()->osd_uart == identifier) {
+        ADD_CLAIM("osd", osdFunctionMask());
+    }
+    if (osdConfig()->osd_custom_text_uart == identifier) {
+        ADD_CLAIM("osd_custom_text", FUNCTION_OSD_CUSTOM_TEXT);
+    }
+#endif
+#ifdef USE_TELEMETRY_PROVIDERS
+    static const char * const telemetryClaimNames[] = { "telemetry_1", "telemetry_2", "telemetry_3" };
+    for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS && i < ARRAYLEN(telemetryClaimNames); i++) {
+        if (telemetryConfig()->providers[i].uart == identifier) {
+            ADD_CLAIM(telemetryClaimNames[i], telemetryProviderFunctionMask(i));
+        }
+    }
+#endif
+
+#undef ADD_CLAIM
+
+    return count;
 }
 
 // Clear any feature PG field currently naming `identifier` so the
