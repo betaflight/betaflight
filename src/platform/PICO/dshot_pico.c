@@ -31,31 +31,31 @@
 #include "dshot_pico.h"
 #include "common/maths.h"
 
+// (non-bidir) bit period in PIO clocks
+#define DSHOT_BIT_PERIOD 40
 
-static int32_t outgoingPacket[MAX_SUPPORTED_MOTORS]; // 16-bit packet or -1 for none pending.
-const PIO dshotPio = PIO_INSTANCE(PIO_DSHOT_INDEX); // currently only single pio supported => 4 motors.
-
-motorProtocolTypes_e dshotMotorProtocol;
 motorOutput_t dshotMotors[MAX_SUPPORTED_MOTORS];
-
+float dshotBitPeriodUs = 1.666667f;
 bool useDshotTelemetry = false;
 
-float dshotGetPeriodTiming(void)
+const PIO dshotPio = PIO_INSTANCE(PIO_DSHOT_INDEX); // currently only single pio supported => 4 motors.
+
+static int32_t outgoingPacket[MAX_SUPPORTED_MOTORS]; // 16-bit packet or -1 for none pending.
+
+static float dshotGetPeriodTiming(motorProtocolTypes_e dshotMotorProtocol)
 {
     switch(dshotMotorProtocol) {
-        case MOTOR_PROTOCOL_DSHOT600:
-            return 1.666667f;
-        case MOTOR_PROTOCOL_DSHOT300:
-            return 3.333333f;
-        default:
         case MOTOR_PROTOCOL_DSHOT150:
             return 6.666667f;
+        case MOTOR_PROTOCOL_DSHOT300:
+            return 3.333333f;
+        case MOTOR_PROTOCOL_DSHOT600:
+            return 1.666667f;
+        default:
+            return -1.0f;
     }
 }
 
-#define DSHOT_BIT_PERIOD 40
-
-// TODO DSHOT150, 300
 static bool dshot_program_init(PIO pio, uint sm, int offset, uint pin)
 {
     bprintf("dshot_program_init on pin %d", pin);
@@ -71,9 +71,9 @@ static bool dshot_program_init(PIO pio, uint sm, int offset, uint pin)
 
     float clocks_per_us = clock_get_hz(clk_sys) / 1000000;
 #ifdef TEST_DSHOT_SLOW
-    sm_config_set_clkdiv(&config, (1.0e4f + dshotGetPeriodTiming()) / DSHOT_BIT_PERIOD * clocks_per_us);
+    sm_config_set_clkdiv(&config, (1.0e4f + dshotBitPeriodUs) / DSHOT_BIT_PERIOD * clocks_per_us);
 #else
-    sm_config_set_clkdiv(&config, dshotGetPeriodTiming() / DSHOT_BIT_PERIOD * clocks_per_us);
+    sm_config_set_clkdiv(&config, dshotBitPeriodUs / DSHOT_BIT_PERIOD * clocks_per_us);
 #endif
 
     return PICO_OK == pio_sm_init(pio, sm, offset, &config);
@@ -340,12 +340,14 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
         return false;
     }
 
-    dshotMotorProtocol = motorConfig->motorProtocol;
-    if (dshotMotorProtocol != MOTOR_PROTOCOL_DSHOT600) {
-        bprintf("\n*** DSHOT motor protocol [%d] not currently supported", dshotMotorProtocol);
+    motorProtocolTypes_e motorProtocol = motorConfig->motorProtocol;
+    dshotBitPeriodUs = dshotGetPeriodTiming(motorProtocol);
+    if (dshotBitPeriodUs < 0) {
+        bprintf("\n*** DSHOT motor protocol [%d] not currently supported", motorProtocol);
         return false;
-        // TODO support DSHOT300, DSHOT150
     }
+
+    bprintf("dshot protocol [%d] bit period %.3f us", motorProtocol, (double)dshotBitPeriodUs);
 
 #ifdef USE_DSHOT_TELEMETRY
     useDshotTelemetry = motorConfig->useDshotTelemetry; // as per config set dshotBidir ON/OFF, or from Bidirectional Dshot toggle on motor page in Configurator.
