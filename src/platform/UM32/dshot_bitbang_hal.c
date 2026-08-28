@@ -57,19 +57,16 @@ void bbGpioSetup(bbMotor_t *bbMotor)
 {
     bbPort_t *bbPort = bbMotor->bbPort;
     int pinIndex = bbMotor->pinIndex;
+    
+    // MODE register mask (2 bits per pin) for direct register manipulation
+    bbPort->gpioModeMask  |= (GPIO_MODE << (pinIndex * 2));
+    // MODE register value: 00 = input
+    bbPort->gpioModeInput  |= (MODE_INPUT << (pinIndex * 2));
+    // MODE register value: 01 = output
+    bbPort->gpioModeOutput |= (MODE_OUTPUT << (pinIndex * 2));
 
-    // UM324 uses HAL_GPIO_Init for mode switching (no single MODER register).
-    // Store pin bitmask for bbSwitchToOutput/bbSwitchToInput iteration.
-    bbPort->gpioModeMask |= (1 << pinIndex);
-
-#ifdef USE_DSHOT_TELEMETRY
-    if (useDshotTelemetry) {
-        bbPort->gpioIdleBSRR |= (1 << pinIndex);
-    } else
-#endif
-    {
-        bbPort->gpioIdleBSRR |= (1 << pinIndex);
-    }
+    // Idle value pin mask (used with SET/CLR register, not BSRR)
+    bbPort->gpioIdleBSRR |= (1 << pinIndex);
 
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
@@ -124,29 +121,20 @@ void bbTimerChannelInit(bbPort_t *bbPort)
 
 void bbSwitchToOutput(bbPort_t * bbPort)
 {
-    // Set idle output level via ODATA before switching to output.
-    uint32_t idleODATA = 0;
-    for (int pin = 0; pin < 16; pin++) {
-        if (bbPort->gpioModeMask & (1 << pin)) {
-            if (bbPort->gpioIdleBSRR & (1 << pin)) {
-                idleODATA |= (1 << pin);
-            }
-        }
+    // Set idle output level via SET/CLR register (affects only motor pins)
+#ifdef USE_DSHOT_TELEMETRY
+    if (useDshotTelemetry) {
+        bbPort->gpio->SET = bbPort->gpioIdleBSRR;   // idle HIGH
+    } else
+#endif
+    {
+        bbPort->gpio->CLR = bbPort->gpioIdleBSRR;   // idle LOW
     }
-    // Set idle output level via SET register (affects only motor pins,
-    // leaving other pins on the same port undisturbed).
-    bbPort->gpio->SET = idleODATA;
 
-    // Switch pins to GPIO OUTPUT mode
-    GPIO_InitTypeDef initOut = {
-        .Pin = bbPort->gpioModeMask,
-        .Mode = MODE_OUTPUT,
-        .Speed = GPIO_DS_20MA,
-        .Pull = GPIO_NOPULL,
-        .Driving_Ability = GPIO_DS_14MA,
-        .Alternate = 0,
-    };
-    HAL_GPIO_Init(bbPort->gpio, &initOut);
+    // Switch pins to OUTPUT mode
+    ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
+        MODIFY_REG(bbPort->gpio->MODE, bbPort->gpioModeMask, bbPort->gpioModeOutput);
+    }
 
     // Reinitialize port group DMA for output
     dmaResource_t *dmaResource = bbPort->dmaResource;
@@ -190,16 +178,10 @@ static void bbSaveDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache
 #ifdef USE_DSHOT_TELEMETRY
 void bbSwitchToInput(bbPort_t *bbPort)
 {
-    // Switch pins to floating input mode via HAL_GPIO_Init
-    GPIO_InitTypeDef initIn = {
-        .Pin = bbPort->gpioModeMask,
-        .Mode = MODE_INPUT,
-        .Speed = GPIO_DS_20MA,
-        .Pull = GPIO_NOPULL,
-        .Driving_Ability = GPIO_DS_14MA,
-        .Alternate = 0,
-    };
-    HAL_GPIO_Init(bbPort->gpio, &initIn);
+    // Switch pins to INPUT mode (MODE_INPUT value = 0)
+    ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
+        MODIFY_REG(bbPort->gpio->MODE, bbPort->gpioModeMask, bbPort->gpioModeInput);
+    }
 
     // Reinitialize port group DMA for input
     dmaResource_t *dmaResource = bbPort->dmaResource;
@@ -223,17 +205,17 @@ void bbSwitchToInput(bbPort_t *bbPort)
 void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
 {
     LL_DMA_InitTypeDef *dmainit = (direction == DSHOT_BITBANG_DIRECTION_OUTPUT) ?  &bbPort->outputDmaInit : &bbPort->inputDmaInit;
-    const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(bbPort->timhw);
-
-    LL_DMA_StructInit(dmainit);
+    const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimerValue(bbPort->timhw->tim, bbPort->timhw->channel, dmaGetOptionByTimer(bbPort->timhw));
 
     // Common settings
-    dmainit->Channel = dmaSpec ? dmaSpec->channel : bbPort->dmaChannel;
+    dmainit->Channel = bbPort->dmaChannel;
     dmainit->SrcMSize = LL_DMA_BURST_SRC_NUM_1;
     dmainit->DstMSize = LL_DMA_BURST_DST_NUM_1;
     dmainit->FIFOMode = LL_DMA_FIFOMODE_DISABLE;
     dmainit->FCMode = LL_DMA_FCMODE_DISABLE;
     dmainit->Priority = LL_DMA_PRIORITY_6;
+    dmainit->SrcHsSel = LL_DMA_SRC_HS_HW;
+    dmainit->DstHsSel = LL_DMA_DST_HS_HW;
     dmainit->SrcReload = LL_DMA_SRC_RELOAD_DISABLE;
     dmainit->DstReload = LL_DMA_DST_RELOAD_DISABLE;
 
@@ -245,10 +227,8 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
         dmainit->DstInc = LL_DMA_DSTINC_NOC;
         dmainit->SrcDataAlignment = LL_DMA_SRCDATAALIGN_WORD;
         dmainit->DstDataAlignment = LL_DMA_DSTDATAALIGN_WORD;
-        dmainit->SrcHsSel = LL_DMA_SRC_HS_HW;
-        dmainit->DstHsSel = LL_DMA_DST_HS_HW;
-        dmainit->SrcPer = DMA_SRC_HANDSHAKING(0);
-        dmainit->DstPer = DMA_DST_HANDSHAKING(dmaSpec ? dmaSpec->code : 0);
+        dmainit->SrcPer = DMA_SRC_HANDSHAKING(0xF);
+        dmainit->DstPer = DMA_DST_HANDSHAKING(dmaSpec->code);
         dmainit->NbData = bbPort->portOutputCount;
     } else {
         dmainit->SrcAddress = (uint32_t)&bbPort->gpio->IDATA;
@@ -258,17 +238,14 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
         dmainit->DstInc = LL_DMA_DSTINC_INC;
         dmainit->SrcDataAlignment = LL_DMA_SRCDATAALIGN_HALFWORD;
         dmainit->DstDataAlignment = LL_DMA_DSTDATAALIGN_HALFWORD;
-        dmainit->SrcHsSel = LL_DMA_SRC_HS_HW;
-        dmainit->DstHsSel = LL_DMA_DST_HS_HW;
-        dmainit->SrcPer = DMA_SRC_HANDSHAKING(dmaSpec ? dmaSpec->code : 0);
-        dmainit->DstPer = DMA_DST_HANDSHAKING(0);
+        dmainit->SrcPer = DMA_SRC_HANDSHAKING(dmaSpec->code);
+        dmainit->DstPer = DMA_DST_HANDSHAKING(0xF);
         dmainit->NbData = bbPort->portInputCount;
     }
 
 #ifdef USE_DMA_REGISTER_CACHE
     // Init DMA with this config, then capture register state into cache
     xLL_EX_DMA_Init(bbPort->dmaResource, dmainit);
-    xLL_EX_DMA_EnableIT_TC(bbPort->dmaResource);
     bbSaveDMARegs(bbPort->dmaResource,
                   direction == DSHOT_BITBANG_DIRECTION_OUTPUT
                       ? &bbPort->dmaRegOutput

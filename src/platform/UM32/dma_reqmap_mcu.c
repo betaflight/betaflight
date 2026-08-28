@@ -97,7 +97,7 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
 static const dmaTimerMapping_t dmaTimerMapping[] = {
     // Generated from 'timer_def.h'
     { (timerResource_t *)TIM1, TC(CH1), { DMA(2, 1, 1) } },   //MOTOR PA8
-    { (timerResource_t *)TIM1, TC(CH2), { DMA(2, 3, 2) } },   //MOTOR PA9
+    { (timerResource_t *)TIM1, TC(CH2), { DMA(2, 6, 2) } },   //MOTOR PA9
 
     { (timerResource_t *)TIM2, TC(CH2), { DMA(1, 6, 0) } },
     { (timerResource_t *)TIM2, TC(CH3), { DMA(1, 1, 1) } },    //QFN76 MOTOR PB10
@@ -112,6 +112,7 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
     { (timerResource_t *)TIM8, TC(CH1), { DMA(2, 2, 3) } },
     { (timerResource_t *)TIM8, TC(CH2), { DMA(2, 2, 3) } },
     { (timerResource_t *)TIM8, TC(CH3), { DMA(2, 2, 3) } },
+    { (timerResource_t *)TIM8, TC(CH4), { DMA(2, 7, 3) } },
 
 	{ (timerResource_t *)TIM9, TC(CH1), { DMA(2, 10, 2) } },  //MOTOR PE5, shared PA9
 

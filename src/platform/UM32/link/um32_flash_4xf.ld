@@ -22,8 +22,9 @@ MEMORY
 
     SYSTEM_MEMORY (r) : ORIGIN = 0x4004000, LENGTH = 16K
 
-    RAM (rw)        : ORIGIN = 0x20000000, LENGTH = 98K
-    CODERAM (rx)    : ORIGIN = 0x20018800, LENGTH = 62K
+    RAM (rw)        : ORIGIN = 0x20000000, LENGTH = 100K
+    CODERAM (rx)    : ORIGIN = 0x20019000, LENGTH = 28K
+    RAM1 (rx)       : ORIGIN = 0x20020000, LENGTH = 32K
     RAM2 (rw)       : ORIGIN = 0x20028000, LENGTH = 32K
 }
 
@@ -163,7 +164,7 @@ SECTIONS
 
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
-  } >RAM AT>FLASH1
+  } >RAM1 AT>FLASH1
 
   /* Uninitialized data section */
   . = ALIGN(4);
@@ -195,7 +196,7 @@ SECTIONS
     *(.dmaram_data*)
     . = ALIGN(32);
     _edmaram_data = .;
-  } >RAM AT >FLASH1
+  } >RAM1 AT >FLASH1
 
   . = ALIGN(32);
   .dmaram_bss (NOLOAD) :
@@ -207,7 +208,7 @@ SECTIONS
     . = ALIGN(32);
     _edmaram_bss = .;
     __dmaram_bss_end__ = _edmaram_bss;
-  } >RAM
+  } >RAM1
 
   . = ALIGN(32);
   .DMA_RAM (NOLOAD) :
@@ -262,7 +263,7 @@ SECTIONS
     *(.persistent_data)
     . = ALIGN(4);
     __persistent_data_end__ = .;
-  } >RAM
+  } >RAM1
 
   /* User_heap_stack section, used to check that there is enough RAM left */
   _heap_stack_end = ORIGIN(STACKRAM) + LENGTH(STACKRAM) - _Hot_Reboot_Flags_Size;

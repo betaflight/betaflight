@@ -79,9 +79,7 @@ FAST_DATA_ZERO_INIT timeUs_t dshotFrameUs;
 
 const timerHardware_t bbTimerHardware[] = {
     DEF_TIM(TIM1, CH1, NONE,  0, 0),
-    DEF_TIM(TIM1, CH2, NONE,  0, 0),
-    DEF_TIM(TIM8, CH2, NONE,  0, 0),
-    DEF_TIM(TIM8, CH3, NONE,  0, 0),
+    DEF_TIM(TIM8, CH4, NONE,  0, 0),
 };
 
 static FAST_DATA_ZERO_INIT timeUs_t lastSendUs;
@@ -131,13 +129,14 @@ static void bbOutputDataSet(uint32_t *buffer, int pinNumber, uint16_t value, boo
 
     for (int pos = 0; pos < 16; pos++) {
         bool bitIsOne = (value & 0x8000) != 0;
+
         if (inverted) {
-            // Inverted: bit=1 → pin LOW (0), bit=0 → pin HIGH (1)
+            // Inverted: bit=0 �� short LOW pulse �� set HIGH at middle phase
             if (!bitIsOne) {
                 buffer[pos * 3 + 1] |= pinBit;
             }
         } else {
-            // Non-inverted: bit=1 → pin HIGH (1), bit=0 → pin LOW (0)
+            // Non-inverted: bit=1 �� long HIGH pulse �� keep HIGH at middle phase
             if (bitIsOne) {
                 buffer[pos * 3 + 1] |= pinBit;
             }
@@ -274,11 +273,6 @@ FAST_IRQ_HANDLER void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
 
     bbTIM_DMACmd(bbPort->timhw->tim, bbPort->dmaSource, DISABLE);
 
-    // DMA transfer complete — proceed with telemetry or next frame
-    {
-        if (0) { while (1) {}; } // debug trap (disabled)
-    }
-
     DMA_CLEAR_FLAG(descriptor, CLEARBLOCK);
 
 #ifdef USE_DSHOT_TELEMETRY
@@ -288,19 +282,15 @@ FAST_IRQ_HANDLER void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
 #ifdef DEBUG_COUNT_INTERRUPT
             bbPort->inputIrq++;
 #endif
-            // Disable DMA as telemetry reception is complete
-            bbDMA_Cmd(bbPort, DISABLE);
         } else {
 #ifdef DEBUG_COUNT_INTERRUPT
             bbPort->outputIrq++;
 #endif
 
             // Switch to input
-
+            bbTIM_DMACmd(bbPort->timhw->tim, bbPort->dmaSource, ENABLE);
             bbSwitchToInput(bbPort);
             bbPort->telemetryPending = true;
-
-            bbTIM_DMACmd(bbPort->timhw->tim, bbPort->dmaSource, ENABLE);
         }
     }
 #endif
@@ -458,7 +448,7 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorProtocolTypes_e pwmP
     return true;
 }
 
-static bool bbTelemetryWait(void)
+FAST_CODE static bool bbTelemetryWait(void)
 {
     // Wait for telemetry reception to complete
     bool telemetryPending;
@@ -507,17 +497,11 @@ static bool bbDecodeTelemetry(void)
         }
 #endif
         for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < dshotMotorCount; motorIndex++) {
-#ifdef STM32F4
-            uint32_t rawValue = decode_bb_bitband(
-                bbMotors[motorIndex].bbPort->portInputBuffer,
-                bbMotors[motorIndex].bbPort->portInputCount,
-                bbMotors[motorIndex].pinIndex);
-#else
             uint32_t rawValue = decode_bb(
                 bbMotors[motorIndex].bbPort->portInputBuffer,
                 bbMotors[motorIndex].bbPort->portInputCount,
                 bbMotors[motorIndex].pinIndex);
-#endif
+
             if (rawValue == DSHOT_TELEMETRY_NOEDGE) {
                 DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 1, debug[1] + 1);
                 continue;
@@ -547,7 +531,7 @@ static bool bbDecodeTelemetry(void)
     return true;
 }
 
-static void bbWriteInt(uint8_t motorIndex, uint16_t value)
+FAST_CODE static void bbWriteInt(uint8_t motorIndex, uint16_t value)
 {
     bbMotor_t *const bbmotor = &bbMotors[motorIndex];
 
@@ -579,12 +563,12 @@ static void bbWriteInt(uint8_t motorIndex, uint16_t value)
     }
 }
 
-static void bbWrite(uint8_t motorIndex, float value)
+FAST_CODE static void bbWrite(uint8_t motorIndex, float value)
 {
     bbWriteInt(motorIndex, lrintf(value));
 }
 
-static void bbUpdateComplete(void)
+FAST_CODE static void bbUpdateComplete(void)
 {
     // If there is a dshot command loaded up, time it correctly with motor update
 
@@ -600,14 +584,6 @@ static void bbUpdateComplete(void)
         SCB_CleanDCache_by_Addr(bbPort->portOutputBuffer, MOTOR_DSHOT_BUF_CACHE_ALIGN_BYTES);
 #endif
 
-        // Preserve non-motor pins: ODATA is a full-port write. Read current
-        // state and merge into every buffer word so other pins are undisturbed.
-        uint32_t otherPins = bbPort->gpio->ODATA & ~bbPort->gpioModeMask;
-        uint32_t *buf = bbPort->portOutputBuffer;
-        for (uint32_t j = 0; j < bbPort->portOutputCount; j++) {
-            buf[j] = (buf[j] & bbPort->gpioModeMask) | otherPins;
-        }
-
 #ifdef USE_DSHOT_TELEMETRY
         if (useDshotTelemetry) {
             if (bbPort->direction == DSHOT_BITBANG_DIRECTION_INPUT) {
@@ -617,9 +593,7 @@ static void bbUpdateComplete(void)
         } else
 #endif
         {
-#if defined(STM32G4)
             bbSwitchToOutput(bbPort);
-#endif
         }
 
         bbDMA_Cmd(bbPort, ENABLE);
@@ -743,13 +717,7 @@ bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorCon
         bbMotors[motorIndex].pinIndex = pinIndex;
         bbMotors[motorIndex].io = io;
         bbMotors[motorIndex].output = output;
-#if defined(STM32F4)
-        bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, bbPuPdMode);
-#elif defined(STM32F7) || defined(STM32G4) || defined(STM32H7)
         bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_LOW, bbPuPdMode);
-#else
-        bbMotors[motorIndex].iocfg = IOCFG_OUT_PP;
-#endif
 
         IOInit(io, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
         IOConfigGPIO(io, bbMotors[motorIndex].iocfg);

@@ -50,12 +50,132 @@ const uint8_t AHBPrescTable[16] = {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 1U, 2U, 3U, 4
 const uint8_t APBPrescTable[16] = {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U};
 
 void SystemClock_Config(void); // Forward
-
+void QSPI_QuadEn(QSPI_HandleTypeDef *hqspi);
 /**
   * @brief  Setup the microcontroller system.
   * @param  None
   * @retval None
   */
+
+
+/*
+ * QSPI pin bring-up, written register-level: the betaflight IO driver is not
+ * available this early (SystemInit, before IOInitGlobal), and exFlashInit must
+ * not call into code that may be linked above the QSPI window (0x00080000+),
+ * because the window only comes alive at the end of this function.
+ *
+ * Register model (GPIO_TypeDef, um324xF.h), equivalent to HAL_GPIO_Init as
+ * invoked by io_um32.c IOConfigGPIOAF():
+ *   MODE  2bit/pin   : 00 = input, 10 = alternate function (MODE_AF)
+ *   PULL  PE field [15:0] + PS field [31:16], 1bit/pin each; pull-up = PE|PS
+ *   SR    1bit/pin   : 0 = high speed (GPIO_SPEED_FREQ_HIGH is 0 on this part)
+ *   DS    2bit/pin   : drive strength, 14mA (same as io_um32.c)
+ *   AFL/AFH 4bit/pin : alternate function number (AF10)
+ */
+#define QSPI_PIN_MODE_MASK(pos)    (0x3UL << ((pos) * 2))
+#define QSPI_PIN_PULL_MASK(pos)    ((GPIO_PULL_PS_0 | GPIO_PULL_PE_0) << (pos))
+#define QSPI_PIN_AFSEL_MASK(pos)   (0xFUL << (((pos) & 0x7U) * 4))
+
+static inline __attribute__((always_inline)) void qspiPinAF(GPIO_TypeDef *port, uint32_t pos)
+{
+    const uint32_t shift2 = pos * 2;
+    const uint32_t shift4 = (pos & 0x7U) * 4;
+
+    port->MODE = (port->MODE & ~QSPI_PIN_MODE_MASK(pos)) | ((uint32_t)MODE_AF << shift2);
+    port->PULL = port->PULL | QSPI_PIN_PULL_MASK(pos);                    /* pull-up */
+    port->SR   = port->SR & ~(GPIO_SR_SR_0 << pos);                       /* 0 = high speed */
+    port->DS   = (port->DS & ~(GPIO_DS_20MA << (pos * 2))) | (GPIO_DS_14MA << (pos * 2));
+
+    if (pos < 8U) {
+        port->AFL = (port->AFL & ~QSPI_PIN_AFSEL_MASK(pos)) | ((uint32_t)GPIO_AF10_QSPI << shift4);
+    } else {
+        port->AFH = (port->AFH & ~QSPI_PIN_AFSEL_MASK(pos)) | ((uint32_t)GPIO_AF10_QSPI << shift4);
+    }
+
+    /* input path config, cleared like HAL_GPIO_Init's default (Gpio_Im = 0) */
+    port->IM = port->IM & ~(GPIO_IM_IM_0 << pos);
+}
+
+static inline __attribute__((always_inline)) void qspiPinInputFloating(GPIO_TypeDef *port, uint32_t pos)
+{
+    port->MODE = port->MODE & ~QSPI_PIN_MODE_MASK(pos);                   /* 00 = input */
+    port->PULL = port->PULL & ~QSPI_PIN_PULL_MASK(pos);                   /* no pull */
+}
+
+void exFlashInit(void)
+{
+    /* Port D/E clocks (macros are plain register writes incl. RCM unlock) */
+    __HAL_RCM_GPIOD_CLK_ENABLE();
+    __HAL_RCM_GPIOE_CLK_ENABLE();
+
+    /* free pins that used to share the QSPI footprint */
+    // qspiPinInputFloating(GPIOE, 5);
+    // qspiPinInputFloating(GPIOE, 7);
+    // qspiPinInputFloating(GPIOD, 8);
+
+    /* PE10=CLK, PD3=BK1CS, PD4/5/6=BK1 IO0/1/2, PE15=BK1 IO3, all AF10 pull-up */
+    qspiPinAF(GPIOE, 10);
+    qspiPinAF(GPIOD, 3);
+    qspiPinAF(GPIOD, 4);
+    qspiPinAF(GPIOD, 5);
+    qspiPinAF(GPIOD, 6);
+    qspiPinAF(GPIOE, 15);
+
+    __HAL_RCM_QSPI_CLK_ENABLE();
+    __HAL_RCM_QSPI_RELEASE_RESET();
+
+    QSPI_HandleTypeDef hqspi = {0};
+
+	hqspi.Instance = QSPI;
+	hqspi.DataSize                 = QSPI_DATASIZE_8BIT; 
+    hqspi.Init.CSInvalidDelay      = 0x5; 
+    hqspi.Init.CSStartDelay        = 0x0; 
+    hqspi.Init.CSStopDelay         = 0x5; 
+    
+    hqspi.Init.AddrSizes           = QSPI_ADDRBYTES_3; 
+    hqspi.Init.PageSizes           = 256;
+    hqspi.Init.BlockSizes          = 16; // 2^16B = 64KB earch Block
+    
+    hqspi.Init.WorkMode            = QSPI_WORKMODE_DAC; 
+    hqspi.Init.ClockPrescaler      = QSPI_BRDIV_6; 
+
+    hqspi.Init.ClockMode           = QSPI_CLOCK_MODE_0; 
+
+    /* Setting the QSPI_RDCR register  */
+    hqspi.Init.ReadDelay           = QSPI_DLYR_4; 
+    hqspi.Init.TransDelay          = QSPI_DLYT_0; 
+    hqspi.Init.Sampling_Edge       = QSPI_SMES_TRAILING; 
+    
+    /* Congratulate the read data in the dac mode */
+    hqspi.DacMode.ReadCommand      = 0xEB; 
+    hqspi.DacMode.ReadAddr_Type    = QSPI_ADMODE_DQ0DQ1DQ2DQ3; 
+    hqspi.DacMode.ReadData_Type    = QSPI_DMODE_QUAD;	
+    hqspi.DacMode.ReadData_Dummy   = QSPI_DUMMY_CLKS_6;
+
+    /* Congratulate the write data in the dac mode */
+    hqspi.DacMode.WriteCommand     = 0x32; 
+    hqspi.DacMode.WriteAddr_Type   = QSPI_ADMODE_DQ0; 
+    hqspi.DacMode.WriteData_Type   = QSPI_DMODE_QUAD; 
+    hqspi.DacMode.WriteData_Dummy  = QSPI_DUMMY_CLKS_0;
+
+    /* HAL_QSPI_Init() waits for the controller IDLE flag using hqspi.Timeout;
+     * with Timeout == 0 (from the {0} initialiser) the wait fails on its very
+     * first loop iteration and drops into Error_Handler() ¡ª this is what froze
+     * the boot LED at checkpoint 2. */
+    hqspi.Timeout = 100;
+
+    if (HAL_QSPI_Init(&hqspi) != HAL_OK)
+    {
+        /* Initialization Error */
+        Error_Handler();
+    }
+
+    /* Enable the QE mode */
+    QSPI_QuadEn(&hqspi);
+
+    /* Enable qspi cache  */
+    (*(volatile uint32_t *)(0x3cfffc00)) |= 0x03;
+}
 
 static void initialiseDmaMemorySections(void)
 {
@@ -147,11 +267,6 @@ void SystemInit(void)
     SCB->VTOR = (uint32_t)&isr_vector_table_flash_base;
 #endif
 
-    // Copy .dmaram_data from flash and zero .dmaram_bss before anything
-    // that might touch DMA_DATA-placed variables (the standard Reset_Handler
-    // .data/.bss copy/clear loop doesn't cover these sections).
-    initialiseDmaMemorySections();
-
 #ifdef USE_HAL_DRIVER
     HAL_Init();
 #endif
@@ -159,6 +274,15 @@ void SystemInit(void)
     SystemClock_Config();
     
     SystemCoreClockUpdate();
+
+    exFlashInit();
+
+    initialiseMemorySections();
+
+    // Copy .dmaram_data from flash and zero .dmaram_bss before anything
+    // that might touch DMA_DATA-placed variables (the standard Reset_Handler
+    // .data/.bss copy/clear loop doesn't cover these sections).
+    initialiseDmaMemorySections();
 }
 
 /**
@@ -270,10 +394,9 @@ void Error_Handler(void)
 
 
 // SystemSYSCLKSource
-// Normalised for the CLI's STM32 convention:
 // 0: HSI
-// 1: HSE
-// 2: PLL
+// 1; HSE
+// 2: PLL0
 
 int SystemSYSCLKSource(void)
 {

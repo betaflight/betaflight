@@ -192,7 +192,15 @@ SIZE_OPTIMISED_SRC += \
             common/stm32/bus_spi_pinconfig.c \
             common/stm32/pwm_output_beeper.c \
             common/stm32/pwm_output_dshot_shared.c \
-            common/stm32/serial_uart_pinconfig.c
+            common/stm32/serial_uart_pinconfig.c \
+            msp/msp.c \
+            telemetry/mavlink.c \
+            io/gps.c \
+            blackbox/blackbox.c \
+            io/ledstrip.c \
+            cms/cms_menu_imu.c \
+            telemetry/crsf.c \
+            config/config.c
 
 DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM4

@@ -57,6 +57,10 @@
 #define ENABLE_OVERCLOCK_336_MHZ 1
 #define DEFAULT_CPU_OVERCLOCK 0
 
+// Code and const data placed in EX_FLASH
+#define EX_CODE                   __attribute__((section(".ex_code"), used)) 
+#define EX_DATA                   __attribute__((section(".ex_data"), used))
+
 // Data in RAM which is guaranteed to not be reset on hot reboot
 #define PERSISTENT                  __attribute__ ((section(".persistent_data"), aligned(4)))
   
@@ -164,7 +168,7 @@
 // defined for the target, FAST_CODE_PREF will become an alias to FAST_CODE (in the common post
 // header file), and functions decorated with FAST_CODE_PREF *will* go into ITCM RAM.
 
-#define FAST_CODE_NOINLINE          FAST_CODE NOINLINE
+#define FAST_CODE_NOINLINE          NOINLINE
 #else
 #define FAST_CODE
 #define FAST_CODE_NOINLINE          NOINLINE
