@@ -193,13 +193,13 @@ SIZE_OPTIMISED_SRC += \
             common/stm32/pwm_output_beeper.c \
             common/stm32/pwm_output_dshot_shared.c \
             common/stm32/serial_uart_pinconfig.c \
-            msp/msp.c \
-            telemetry/mavlink.c \
             io/gps.c \
-            blackbox/blackbox.c \
             io/ledstrip.c \
+            msp/msp.c \
             cms/cms_menu_imu.c \
             telemetry/crsf.c \
+            telemetry/mavlink.c \
+            blackbox/blackbox.c \
             config/config.c
 
 DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
