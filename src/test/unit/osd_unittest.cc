@@ -1503,7 +1503,7 @@ TEST_F(OsdTest, TestBatteryUsageCapacityZero)
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
     osdRefresh();
     displayPortTestBufferAttrBits(2, 1, DISPLAYPORT_SEVERITY_CRITICAL);
-    
+
 }
 
 // STUBS
