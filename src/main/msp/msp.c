@@ -1781,7 +1781,10 @@ case MSP_NAME:
                 continue;
             };
             sbufWriteU8(dst, identifier);
-            sbufWriteU16(dst, serialSynthesizeFunctionMask(identifier));
+            // Assignments live on the feature PGs and are surfaced over the
+            // CLI; a zero mask here reads as unassigned on old configurators
+            // rather than a view they would try to edit.
+            sbufWriteU16(dst, 0);
             mspWritePortBaudRates(dst, identifier);
         }
         break;
@@ -1800,7 +1803,7 @@ case MSP_NAME:
                 continue;
             };
             sbufWriteU8(dst, identifier);
-            sbufWriteU32(dst, serialSynthesizeFunctionMask(identifier));
+            sbufWriteU32(dst, 0);
             mspWritePortBaudRates(dst, identifier);
         }
         break;
