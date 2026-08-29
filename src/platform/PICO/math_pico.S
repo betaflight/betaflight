@@ -19,12 +19,17 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "pico/asm_helper.S"
 
-typedef struct picoPwmOutput_s {
-    uint16_t slice;
-    uint16_t channel;
-    uint16_t level;      // The "compare" level, written directly (continuous update) or in pwmCompleteMotorUpdate (one-shot modes)
-    bool sliceHead;    // The first motor on this slice
-    bool initialised;
-} picoPwmOutput_t;
+pico_default_asm_setup
+
+.section .text.mathfunctions, "ax"
+
+// Wrapped lrintf function, because gcc arm (13.3) / newlib is
+// pulling in a long slow function that unpacks floats by hand.
+// Round to nearest integer ("bankers' round", n + 0.5 -> nearest even integer).
+wrapper_func lrintf
+    vmov s0, r0
+    vcvtn.s32.f32 s0, s0
+    vmov  r0, s0
+    bx lr

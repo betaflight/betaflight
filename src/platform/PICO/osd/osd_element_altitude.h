@@ -21,10 +21,9 @@
 
 #pragma once
 
-typedef struct picoPwmOutput_s {
-    uint16_t slice;
-    uint16_t channel;
-    uint16_t level;      // The "compare" level, written directly (continuous update) or in pwmCompleteMotorUpdate (one-shot modes)
-    bool sliceHead;    // The first motor on this slice
-    bool initialised;
-} picoPwmOutput_t;
+#include <stdint.h>
+
+extern bool renderAltitudeComplete;
+
+void cacheAltitudeInfo(uint8_t x, uint8_t y, uint8_t elemType, bool isBlink);
+bool renderAltitudeUntil(uint32_t limit_micros);
