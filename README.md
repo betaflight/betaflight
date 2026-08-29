@@ -1,3 +1,35 @@
+Just to notify you.
+
+Can we discuss the following structure?
+(in russian but I will give a short description in english below)
+https://transitional-writes.dreamwidth.org/64534.html
+https://transitional-writes.dreamwidth.org/64409.html
+
+What can police of private investigator do if he or she found killed young woman in the woods?
+1. Do some inductive investigation. Gather facts. Choose most probable scenario and individuals who did that.
+2. Apply gun to those most probable individuals.
+
+1. The young women see killers by her own eyes.
+2. If she had gun she can just press one button and apply it as a police.
+
+So why young women do not have opportunities to buy the gun?
+What are the properties of the inductive inference in general and in the police
+investigations in partial?
+There is famous Hume inductive inference incompleteness problem.
+You can always choose wrong, random hypothesis. Wrong, random individual who murdered young woman.
+And the most simple, so according to the Occam's razor principle, most probable hypothesis -
+the murderer is the policemen himself or herself.
+
+This is the direct proof of the principle of US constitutions from the
+Hume inductive inference problem.
+Police is the killer so the state is the killer.
+1. The state should be as minimal as it could or could not.
+2. The police should be decentralized and all policeman should investigate each other.
+3. The ordinary people should be able to buy any weapons they want in the shops. And must do that.
+
+As I see a lot of states violate those principles.
+And this will lead to the death of women with mathematical precision.
+
 ![Betaflight](https://raw.githubusercontent.com/betaflight/.github/main/profile/images/bf_logo.svg#gh-light-mode-only)
 ![Betaflight](https://raw.githubusercontent.com/betaflight/.github/main/profile/images/bf_logo_dark.svg#gh-dark-mode-only)
 
