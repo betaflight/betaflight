@@ -238,6 +238,9 @@
 #ifndef USE_MAG_MMC560X
 #define USE_MAG_MMC560X
 #endif
+#ifndef USE_MAG_BMM350
+#define USE_MAG_BMM350
+#endif
 
 #endif // END MAG HW defines
 
