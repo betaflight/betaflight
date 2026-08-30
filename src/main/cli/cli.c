@@ -6327,6 +6327,30 @@ static void cliPrintSensorPeripheral(const char *stem, sensorIndex_e sensorIndex
 }
 #endif // USE_SENSOR_NAMES
 
+static bool serialPortIsSoftSerial(serialPortIdentifier_e identifier)
+{
+#ifdef USE_SOFTSERIAL
+    return serialType(identifier) == SERIALTYPE_SOFTSERIAL;
+#else
+    UNUSED(identifier);
+    return false;
+#endif
+}
+
+// Why a port the build has cannot be opened at all, printed in place of its
+// claim states so the reason is actionable rather than just a missing port.
+static const char *serialPortUnavailableReason(serialPortIdentifier_e identifier)
+{
+#ifdef USE_SOFTSERIAL
+    if (serialPortIsSoftSerial(identifier) && !featureIsEnabled(FEATURE_SOFTSERIAL)) {
+        return "feature SOFTSERIAL off";
+    }
+#else
+    UNUSED(identifier);
+#endif
+    return "no pins";
+}
+
 static void cliPeripherals(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -6334,20 +6358,26 @@ static void cliPeripherals(const char *cmdName, char *cmdline)
 
     for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
         const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
-        if (!serialIsPortAvailable(identifier)) {
-            continue;
-        }
+        const bool available = serialIsPortAvailable(identifier);
 
         serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
         const unsigned claimCount = serialGetPortClaims(identifier, claims, ARRAYLEN(claims));
-        if (!claimCount) {
+
+        // Every port that can be opened is listed, claimed or not.  One that
+        // cannot earns a line only when the user can act on it: a claim it
+        // silently drops, or a soft serial port waiting on its feature.
+        if (!available && !claimCount && !serialPortIsSoftSerial(identifier)) {
             continue;
         }
 
-        const serialPortUsage_t *usage = findSerialPortUsageByIdentifier(identifier);
+        const serialPortUsage_t *usage = available ? findSerialPortUsageByIdentifier(identifier) : NULL;
         const uint32_t openFunction = (usage && usage->serialPort) ? (uint32_t)usage->function : 0;
 
-        cliPrintf("serial %s:", serialName(identifier, invalidName));
+        if (available) {
+            cliPrintf("serial %s:", serialName(identifier, invalidName));
+        } else {
+            cliPrintf("serial %s (%s):", serialName(identifier, invalidName), serialPortUnavailableReason(identifier));
+        }
 
         // Claims the port actually opened for first, each starred; the rest
         // lost boot arbitration or await a reboot.
