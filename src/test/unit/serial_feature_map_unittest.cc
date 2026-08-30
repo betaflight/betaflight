@@ -733,10 +733,13 @@ TEST(SerialFeatureMap, ClaimsNamedByOwningSetting)
     ASSERT_EQ(3u, serialGetPortClaims(SERIAL_PORT_USART2, claims, ARRAYLEN(claims)));
 
     EXPECT_STREQ("msp_2", claims[0].name);
+    EXPECT_STREQ("msp_uart_2", claims[0].setting);
     EXPECT_EQ((uint32_t)FUNCTION_MSP, claims[0].functionMask);
     EXPECT_STREQ("gps", claims[1].name);
+    EXPECT_STREQ("gps_uart", claims[1].setting);
     EXPECT_EQ((uint32_t)FUNCTION_GPS, claims[1].functionMask);
     EXPECT_STREQ("telemetry_2", claims[2].name);
+    EXPECT_STREQ("telemetry_2_uart", claims[2].setting);
     EXPECT_EQ((uint32_t)FUNCTION_TELEMETRY_SMARTPORT, claims[2].functionMask);
 }
 
@@ -783,4 +786,98 @@ TEST(SerialFeatureMap, ClaimsRespectCallerCapacity)
 
     serialPortClaim_t claims[2];
     EXPECT_EQ(2u, serialGetPortClaims(SERIAL_PORT_USART1, claims, ARRAYLEN(claims)));
+}
+
+TEST(SerialFeatureMap, ApplyMaskWritesTheOwningFeatures)
+{
+    resetAllConfigs();
+
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART2,
+        FUNCTION_MSP | FUNCTION_GPS | FUNCTION_TELEMETRY_SMARTPORT));
+
+    EXPECT_EQ(SERIAL_PORT_USART2, mspConfig()->msp_uart[0]);
+    EXPECT_EQ(SERIAL_PORT_USART2, gpsConfig()->gps_uart);
+    EXPECT_EQ(SERIAL_PORT_USART2, telemetryConfig()->providers[0].uart);
+    EXPECT_EQ(TELEMETRY_PROTOCOL_SMARTPORT, telemetryConfig()->providers[0].protocol);
+
+    // What went in reads back out of the synthesized view unchanged.
+    EXPECT_EQ((uint32_t)(FUNCTION_MSP | FUNCTION_GPS | FUNCTION_TELEMETRY_SMARTPORT),
+        serialSynthesizeFunctionMask(SERIAL_PORT_USART2));
+}
+
+TEST(SerialFeatureMap, ApplyMaskPicksTheVtxProtocolFromTheBit)
+{
+    resetAllConfigs();
+
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_VTX_TRAMP));
+    EXPECT_EQ(SERIAL_PORT_USART1, vtxSettingsConfig()->vtx_uart);
+    EXPECT_EQ(VTXDEV_TRAMP, vtxSettingsConfig()->vtx_type);
+
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_VTX_SMARTAUDIO));
+    EXPECT_EQ(VTXDEV_SMARTAUDIO, vtxSettingsConfig()->vtx_type);
+
+    // Two protocols on one port cannot be represented at all.
+    EXPECT_FALSE(serialApplyFunctionMask(SERIAL_PORT_USART1,
+        FUNCTION_VTX_TRAMP | FUNCTION_VTX_SMARTAUDIO));
+    EXPECT_EQ(VTXDEV_SMARTAUDIO, vtxSettingsConfig()->vtx_type);
+}
+
+TEST(SerialFeatureMap, ApplyMaskClearsWhatThePortNoLongerClaims)
+{
+    resetAllConfigs();
+
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_GPS | FUNCTION_BLACKBOX));
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_GPS));
+
+    EXPECT_EQ(SERIAL_PORT_USART3, gpsConfig()->gps_uart);
+    EXPECT_EQ(SERIAL_PORT_NONE, blackboxConfig()->blackbox_uart);
+}
+
+TEST(SerialFeatureMap, ApplyMaskRejectsMoreMspPortsThanSlots)
+{
+    resetAllConfigs();
+
+    for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+        mspConfigMutable()->msp_uart[i] = serialPortIdentifiers[i];
+    }
+
+    EXPECT_FALSE(serialApplyFunctionMask(SERIAL_PORT_UART8, FUNCTION_MSP));
+    for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+        EXPECT_EQ(serialPortIdentifiers[i], mspConfig()->msp_uart[i]);
+    }
+}
+
+TEST(SerialFeatureMap, ApplyBaudLandsOnTheOwningFeature)
+{
+    resetAllConfigs();
+
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART2,
+        FUNCTION_MSP | FUNCTION_GPS | FUNCTION_TELEMETRY_SMARTPORT | FUNCTION_BLACKBOX));
+
+    serialApplyPortBaud(SERIAL_PORT_USART2, SERIAL_BAUD_MSP, BAUD_500000);
+    serialApplyPortBaud(SERIAL_PORT_USART2, SERIAL_BAUD_GPS, BAUD_9600);
+    serialApplyPortBaud(SERIAL_PORT_USART2, SERIAL_BAUD_TELEMETRY, BAUD_38400);
+    serialApplyPortBaud(SERIAL_PORT_USART2, SERIAL_BAUD_BLACKBOX, BAUD_230400);
+
+    EXPECT_EQ(BAUD_500000, mspConfig()->msp_baud[0]);
+    EXPECT_EQ(BAUD_9600, gpsConfig()->gps_baud);
+    EXPECT_EQ(BAUD_38400, telemetryConfig()->providers[0].baud);
+    EXPECT_EQ(BAUD_230400, blackboxConfig()->blackbox_baud);
+
+    for (unsigned c = 0; c < SERIAL_BAUD_CLASS_COUNT; c++) {
+        EXPECT_EQ(serialSynthesizePortBaud(SERIAL_PORT_USART2, (serialBaudClass_e)c),
+            (c == SERIAL_BAUD_MSP) ? BAUD_500000
+            : (c == SERIAL_BAUD_GPS) ? BAUD_9600
+            : (c == SERIAL_BAUD_TELEMETRY) ? BAUD_38400 : BAUD_230400);
+    }
+}
+
+TEST(SerialFeatureMap, ApplyBaudIgnoresAClassNoFeatureOnThePortOwns)
+{
+    resetAllConfigs();
+
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART2, FUNCTION_GPS));
+    serialApplyPortBaud(SERIAL_PORT_USART2, SERIAL_BAUD_BLACKBOX, BAUD_230400);
+
+    EXPECT_EQ(serialDefaultPortBaud(SERIAL_BAUD_BLACKBOX), blackboxConfig()->blackbox_baud);
 }
