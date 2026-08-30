@@ -202,9 +202,11 @@
 #define USE_RX_SX127X
 #endif // !USE_RX_SPI
 
+#if TARGET_FLASH_SIZE >= 1024
 #if !defined(USE_EXST) && !defined(USE_SDCARD)
 #define USE_SDCARD
 #endif
+#endif // TARGET_FLASH_SIZE >= 1024
 
 #endif // !defined(USE_CONFIG)
 
