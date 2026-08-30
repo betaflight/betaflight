@@ -1438,8 +1438,10 @@ static void printSettingIfChanged(const char *cmdName, const char *name)
 
 // Every claim on one port as the commands that would make it, so the port a
 // feature is on can be read off, and pasted back, in the form that now holds it.
-// A rate the feature owns follows its port, but only where it is not the default
-// one, so the output stays as short as what `diff` would carry.
+// What the port opens as, and the rate the feature owns, follow their port: a
+// bare `set vtx_uart = UART1` without its protocol leaves the claim inert.  Both
+// are printed only where they are not the default, so the output stays as short
+// as what `diff` would carry.
 static void printPortClaimSettings(const char *cmdName, serialPortIdentifier_e identifier)
 {
     serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
@@ -1447,6 +1449,9 @@ static void printPortClaimSettings(const char *cmdName, serialPortIdentifier_e i
 
     for (unsigned c = 0; c < claimCount; c++) {
         cliPrintLinef("set %s = %s", claims[c].setting, serialName(identifier, invalidName));
+        if (claims[c].selectorSetting) {
+            printSettingIfChanged(cmdName, claims[c].selectorSetting);
+        }
         if (claims[c].baudSetting) {
             printSettingIfChanged(cmdName, claims[c].baudSetting);
         }

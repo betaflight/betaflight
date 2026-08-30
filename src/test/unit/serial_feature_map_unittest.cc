@@ -733,7 +733,7 @@ TEST(SerialFeatureMap, ClaimsNamedByOwningSetting)
     ASSERT_EQ(3u, serialGetPortClaims(SERIAL_PORT_USART2, claims, ARRAYLEN(claims)));
 
     EXPECT_STREQ("msp_2", claims[0].name);
-    EXPECT_STREQ("msp_uart_2", claims[0].setting);
+    EXPECT_STREQ("msp_2_uart", claims[0].setting);
     EXPECT_EQ((uint32_t)FUNCTION_MSP, claims[0].functionMask);
     EXPECT_STREQ("gps", claims[1].name);
     EXPECT_STREQ("gps_uart", claims[1].setting);
@@ -741,6 +741,31 @@ TEST(SerialFeatureMap, ClaimsNamedByOwningSetting)
     EXPECT_STREQ("telemetry_2", claims[2].name);
     EXPECT_STREQ("telemetry_2_uart", claims[2].setting);
     EXPECT_EQ((uint32_t)FUNCTION_TELEMETRY_SMARTPORT, claims[2].functionMask);
+
+    // The rate and the selector a claim owns travel with it; MSP has no selector
+    // and a telemetry instance's protocol is the whole point of its claim.
+    EXPECT_STREQ("msp_2_baud", claims[0].baudSetting);
+    EXPECT_EQ(nullptr, claims[0].selectorSetting);
+    EXPECT_STREQ("gps_baud", claims[1].baudSetting);
+    EXPECT_STREQ("telemetry_2_protocol", claims[2].selectorSetting);
+    EXPECT_STREQ("telemetry_2_baud", claims[2].baudSetting);
+}
+
+TEST(SerialFeatureMap, ClaimNamesTheSettingThatDecidesWhatThePortOpensAs)
+{
+    resetAllConfigs();
+
+    vtxSettingsConfigMutable()->vtx_uart = SERIAL_PORT_USART1;
+    osdConfigMutable()->osd_uart = SERIAL_PORT_USART2;
+
+    serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
+
+    ASSERT_EQ(1u, serialGetPortClaims(SERIAL_PORT_USART1, claims, ARRAYLEN(claims)));
+    EXPECT_STREQ("vtx_type", claims[0].selectorSetting);
+    EXPECT_EQ(nullptr, claims[0].baudSetting);
+
+    ASSERT_EQ(1u, serialGetPortClaims(SERIAL_PORT_USART2, claims, ARRAYLEN(claims)));
+    EXPECT_STREQ("osd_displayport_device", claims[0].selectorSetting);
 }
 
 TEST(SerialFeatureMap, ClaimMaskFollowsProtocolSelection)

@@ -26,6 +26,8 @@
 
 #include "common/utils.h"
 
+#include "fc/parameter_names.h"
+
 #include "io/serial.h"
 #include "io/serial_feature_map.h"
 
@@ -230,11 +232,12 @@ unsigned serialGetPortClaims(serialPortIdentifier_e identifier, serialPortClaim_
         return 0;
     }
 
-#define ADD_CLAIM(claimName, claimSetting, claimBaudSetting, mask) \
+#define ADD_CLAIM(claimName, claimSetting, claimSelectorSetting, claimBaudSetting, mask) \
     do { \
         if (count < maxClaims) { \
             claims[count].name = (claimName); \
             claims[count].setting = (claimSetting); \
+            claims[count].selectorSetting = (claimSelectorSetting); \
             claims[count].baudSetting = (claimBaudSetting); \
             claims[count].functionMask = (mask); \
             count++; \
@@ -242,47 +245,47 @@ unsigned serialGetPortClaims(serialPortIdentifier_e identifier, serialPortClaim_
     } while (0)
 
     static const char * const mspClaimNames[] = { "msp_1", "msp_2", "msp_3" };
-    static const char * const mspClaimSettings[] = { "msp_uart_1", "msp_uart_2", "msp_uart_3" };
-    static const char * const mspClaimBaudSettings[] = { "msp_baud_1", "msp_baud_2", "msp_baud_3" };
+    static const char * const mspClaimSettings[] = { "msp_1_uart", "msp_2_uart", "msp_3_uart" };
+    static const char * const mspClaimBaudSettings[] = { "msp_1_baud", "msp_2_baud", "msp_3_baud" };
     for (unsigned i = 0; i < MAX_MSP_PORT_COUNT && i < ARRAYLEN(mspClaimNames); i++) {
         if (mspConfig()->msp_uart[i] == identifier) {
-            ADD_CLAIM(mspClaimNames[i], mspClaimSettings[i], mspClaimBaudSettings[i], FUNCTION_MSP);
+            ADD_CLAIM(mspClaimNames[i], mspClaimSettings[i], NULL, mspClaimBaudSettings[i], FUNCTION_MSP);
         }
     }
 
 #ifdef USE_GPS
     if (gpsConfig()->gps_uart == identifier) {
-        ADD_CLAIM("gps", "gps_uart", "gps_baud", FUNCTION_GPS);
+        ADD_CLAIM("gps", "gps_uart", NULL, "gps_baud", FUNCTION_GPS);
     }
 #endif
 #if defined(USE_RX_PWM) || defined(USE_RX_PPM) || defined(USE_SERIALRX) || defined(USE_RX_MSP) || defined(USE_RX_SPI)
     if (rxConfig()->rx_uart == identifier) {
-        ADD_CLAIM("rx", "rx_uart", NULL, FUNCTION_RX_SERIAL);
+        ADD_CLAIM("rx", "rx_uart", NULL, NULL, FUNCTION_RX_SERIAL);
     }
 #endif
 #ifdef USE_BLACKBOX
     if (blackboxConfig()->blackbox_uart == identifier) {
-        ADD_CLAIM("blackbox", "blackbox_uart", "blackbox_baud", FUNCTION_BLACKBOX);
+        ADD_CLAIM("blackbox", "blackbox_uart", NULL, "blackbox_baud", FUNCTION_BLACKBOX);
     }
 #endif
 #ifdef USE_ESC_SENSOR
     if (escSensorConfig()->esc_sensor_uart == identifier) {
-        ADD_CLAIM("esc_sensor", "esc_sensor_uart", NULL, FUNCTION_ESC_SENSOR);
+        ADD_CLAIM("esc_sensor", "esc_sensor_uart", NULL, NULL, FUNCTION_ESC_SENSOR);
     }
 #endif
 #ifdef USE_RCDEVICE
     if (rcdeviceConfig()->rcdevice_uart == identifier) {
-        ADD_CLAIM("rcdevice", "rcdevice_uart", NULL, FUNCTION_RCDEVICE);
+        ADD_CLAIM("rcdevice", "rcdevice_uart", NULL, NULL, FUNCTION_RCDEVICE);
     }
 #endif
 #ifdef USE_GIMBAL
     if (gimbalTrackConfig()->gimbal_uart == identifier) {
-        ADD_CLAIM("gimbal", "gimbal_uart", NULL, FUNCTION_GIMBAL);
+        ADD_CLAIM("gimbal", "gimbal_uart", NULL, NULL, FUNCTION_GIMBAL);
     }
 #endif
 #ifdef USE_VTX_COMMON
     if (vtxSettingsConfig()->vtx_uart == identifier) {
-        ADD_CLAIM("vtx", "vtx_uart", NULL, vtxFunctionMask());
+        ADD_CLAIM("vtx", "vtx_uart", "vtx_type", NULL, vtxFunctionMask());
     }
 #endif
 #ifdef USE_RANGEFINDER
@@ -295,7 +298,7 @@ unsigned serialGetPortClaims(serialPortIdentifier_e identifier, serialPortClaim_
             mask |= FUNCTION_MSP;
         }
 #endif
-        ADD_CLAIM("rangefinder", "rangefinder_uart", NULL, mask);
+        ADD_CLAIM("rangefinder", "rangefinder_uart", "rangefinder_hardware", NULL, mask);
     }
 #endif
 #ifdef USE_OPTICALFLOW
@@ -306,25 +309,28 @@ unsigned serialGetPortClaims(serialPortIdentifier_e identifier, serialPortClaim_
             mask |= FUNCTION_MSP;
         }
 #endif
-        ADD_CLAIM("opticalflow", "opticalflow_uart", NULL, mask);
+        ADD_CLAIM("opticalflow", "opticalflow_uart", PARAM_NAME_OPTICALFLOW_HARDWARE, NULL, mask);
     }
 #endif
 #ifdef USE_OSD
     if (osdConfig()->osd_uart == identifier) {
-        ADD_CLAIM("osd", "osd_uart", NULL, osdFunctionMask());
+        ADD_CLAIM("osd", "osd_uart", "osd_displayport_device", NULL, osdFunctionMask());
     }
     if (osdConfig()->osd_custom_text_uart == identifier) {
-        ADD_CLAIM("osd_custom_text", "osd_custom_text_uart", "osd_custom_text_baud", FUNCTION_OSD_CUSTOM_TEXT);
+        ADD_CLAIM("osd_custom_text", "osd_custom_text_uart", NULL, "osd_custom_text_baud", FUNCTION_OSD_CUSTOM_TEXT);
     }
 #endif
 #ifdef USE_TELEMETRY_PROVIDERS
     static const char * const telemetryClaimNames[] = { "telemetry_1", "telemetry_2", "telemetry_3" };
     static const char * const telemetryClaimSettings[] = { "telemetry_1_uart", "telemetry_2_uart", "telemetry_3_uart" };
+    static const char * const telemetryClaimSelectorSettings[] = {
+        "telemetry_1_protocol", "telemetry_2_protocol", "telemetry_3_protocol",
+    };
     static const char * const telemetryClaimBaudSettings[] = { "telemetry_1_baud", "telemetry_2_baud", "telemetry_3_baud" };
     for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS && i < ARRAYLEN(telemetryClaimNames); i++) {
         if (telemetryConfig()->providers[i].uart == identifier) {
-            ADD_CLAIM(telemetryClaimNames[i], telemetryClaimSettings[i], telemetryClaimBaudSettings[i],
-                telemetryProviderFunctionMask(i));
+            ADD_CLAIM(telemetryClaimNames[i], telemetryClaimSettings[i], telemetryClaimSelectorSettings[i],
+                telemetryClaimBaudSettings[i], telemetryProviderFunctionMask(i));
         }
     }
 #endif
