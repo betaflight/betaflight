@@ -1523,8 +1523,8 @@ RAM_CODE static void cliSerial(const char *cmdName, char *cmdline)
             break;
         }
 
-        validArgumentCount++;
-
+        // A rate outside its class's range counts as no argument at all, so the
+        // line is refused rather than quietly applied at the class default.
         switch (baudOrder[i]) {
         case SERIAL_BAUD_MSP:
             if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_1000000) {
@@ -1551,6 +1551,7 @@ RAM_CODE static void cliSerial(const char *cmdName, char *cmdline)
         }
 
         baudRateIndexes[baudOrder[i]] = baudRateIndex;
+        validArgumentCount++;
     }
 
     if (validArgumentCount < 2 + ARRAYLEN(baudOrder)) {
