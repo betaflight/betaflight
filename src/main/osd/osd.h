@@ -229,6 +229,10 @@ typedef enum {
     OSD_POS_HOLD_READY,         // pre-engagement Position Hold readiness indicator
 #endif
 
+#ifdef USE_PITOT
+    OSD_AIRSPEED,
+#endif
+
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -407,6 +411,7 @@ typedef struct osdConfig_s {
     displayPortSeverity_e arming_logo;        // font from which to display logo on arming
     int8_t osd_uart;                          // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned. Bit chosen by displayPortDevice (FRSKYOSD=FUNCTION_FRSKY_OSD, else none).
     int8_t osd_custom_text_uart;              // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned.  Always maps to FUNCTION_OSD_CUSTOM_TEXT when set.
+    uint8_t osd_custom_text_baud;             // baudRate_e index for osd_custom_text_uart
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);

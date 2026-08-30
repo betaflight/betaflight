@@ -638,6 +638,19 @@ static int sprintValuePointer(char *buf, int bufLen, const clivalue_t *var, cons
                 memcpy(buf, str, copy);
             }
             break;
+        case MODE_LOOKUP_IDENTIFIER: {
+                const char *str = identifierLookups[var->config.identifier.lookupIndex].nameOf(value);
+                if (!str) {
+                    if (bufLen > 0) {
+                        buf[0] = '\0';
+                    }
+                    return -1;
+                }
+                required = strlen(str);
+                const int copy = MIN(required, bufLen - 1);
+                memcpy(buf, str, copy);
+            }
+            break;
         case MODE_BITSET: {
                 const char *str = (value & 1U << var->config.bitpos) ? "ON" : "OFF";
                 required = strlen(str);
@@ -723,6 +736,11 @@ static void printValuePointer(const char *cmdName, const clivalue_t *var, const 
         case MODE_LOOKUP:
             if (value < 0 || value >= lookupTables[var->config.lookup.tableIndex].valueCount
                 || !lookupTables[var->config.lookup.tableIndex].values[value]) {
+                valueIsCorrupted = true;
+            }
+            break;
+        case MODE_LOOKUP_IDENTIFIER:
+            if (!identifierLookups[var->config.identifier.lookupIndex].nameOf(value)) {
                 valueIsCorrupted = true;
             }
             break;
@@ -1382,152 +1400,41 @@ RAM_CODE static void cliAux(const char *cmdName, char *cmdline)
     }
 }
 
-static void printSerial(dumpFlags_t dumpMask, const serialConfig_t *serialConfig, const serialConfig_t *serialConfigDefault, const char *headingStr)
+static void printSerial(dumpFlags_t dumpMask, const char *headingStr)
 {
     const char *format = "serial %s %d %ld %ld %ld %ld";
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
-    for (unsigned i = 0; i < ARRAYLEN(serialConfig->portConfigs); i++) {
-        if (!serialIsPortAvailable(serialConfig->portConfigs[i].identifier)) {
+    for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
+        const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
+        if (!serialIsPortAvailable(identifier)) {
             continue;
         };
-        bool equalsDefault = false;
-        if (serialConfigDefault) {
-            equalsDefault = !memcmp(&serialConfig->portConfigs[i], &serialConfigDefault->portConfigs[i], sizeof(serialConfig->portConfigs[i]));
-            headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
-            cliDefaultPrintLinef(dumpMask, equalsDefault, format,
-                serialName(serialConfigDefault->portConfigs[i].identifier, invalidName),
-                serialConfigDefault->portConfigs[i].functionMask,
-                baudRates[serialConfigDefault->portConfigs[i].msp_baudrateIndex],
-                baudRates[serialConfigDefault->portConfigs[i].gps_baudrateIndex],
-                baudRates[serialConfigDefault->portConfigs[i].telemetry_baudrateIndex],
-                baudRates[serialConfigDefault->portConfigs[i].blackbox_baudrateIndex]
-            );
+
+        uint8_t baudRateIndexes[SERIAL_BAUD_CLASS_COUNT];
+        for (unsigned c = 0; c < SERIAL_BAUD_CLASS_COUNT; c++) {
+            baudRateIndexes[c] = serialSynthesizePortBaud(identifier, c);
         }
-        cliDumpPrintLinef(dumpMask, equalsDefault, format,
-            serialName(serialConfig->portConfigs[i].identifier, invalidName),
-            serialConfig->portConfigs[i].functionMask,
-            baudRates[serialConfig->portConfigs[i].msp_baudrateIndex],
-            baudRates[serialConfig->portConfigs[i].gps_baudrateIndex],
-            baudRates[serialConfig->portConfigs[i].telemetry_baudrateIndex],
-            baudRates[serialConfig->portConfigs[i].blackbox_baudrateIndex]
+
+        cliDumpPrintLinef(dumpMask, false, format,
+            serialName(identifier, invalidName),
+            serialSynthesizeFunctionMask(identifier),
+            baudRates[baudRateIndexes[SERIAL_BAUD_MSP]],
+            baudRates[baudRateIndexes[SERIAL_BAUD_GPS]],
+            baudRates[baudRateIndexes[SERIAL_BAUD_TELEMETRY]],
+            baudRates[baudRateIndexes[SERIAL_BAUD_BLACKBOX]]
             );
     }
 }
 
 RAM_CODE static void cliSerial(const char *cmdName, char *cmdline)
 {
-    const char *format = "serial %s %d %ld %ld %ld %ld";
-    if (isEmpty(cmdline)) {
-        printSerial(DUMP_MASTER, serialConfig(), NULL, NULL);
+    if (!isEmpty(cmdline)) {
+        // A diff taken from an older firmware still carries assignments here.
+        cliPrintErrorLinef(cmdName, "READ ONLY, ASSIGN PORTS WITH THE <FEATURE>_UART SETTINGS");
         return;
     }
 
-    serialPortConfig_t portConfig;
-    memset(&portConfig, 0 , sizeof(portConfig));
-
-    uint8_t validArgumentCount = 0;
-
-    char *ptr = cmdline;
-    char *tok = strsep(&ptr, " ");
-    serialPortIdentifier_e identifier = findSerialPortByName(tok, strcasecmp);
-    if (identifier == SERIAL_PORT_NONE) {
-        char *eptr;
-        identifier = strtoul(tok, &eptr, 10);
-        if (*eptr) {
-            // parsing ended before end of token indicating an invalid identifier
-            identifier = SERIAL_PORT_NONE;
-        } else {
-            // correction for legacy configuration where UART1 == 0
-            if (identifier >= SERIAL_PORT_LEGACY_START_IDENTIFIER && identifier < SERIAL_PORT_START_IDENTIFIER) {
-                identifier += SERIAL_PORT_UART1;
-            }
-       }
-    }
-
-    serialPortConfig_t *currentConfig = serialFindPortConfigurationMutable(identifier);
-
-    if (!currentConfig) {
-        cliShowParseError(cmdName);
-        return;
-    }
-
-    portConfig.identifier = identifier;
-    validArgumentCount++;
-
-    tok = strsep(&ptr, " ");
-    if (tok) {
-        int val = strtoul(tok, NULL, 10);
-        portConfig.functionMask = val;
-        validArgumentCount++;
-    }
-
-    for (int i = 0; i < 4; i ++) {
-        tok = strsep(&ptr, " ");
-        if (!tok) {
-            break;
-        }
-
-        int val = atoi(tok);
-
-        uint8_t baudRateIndex = lookupBaudRateIndex(val);
-        if (baudRates[baudRateIndex] != (uint32_t) val) {
-            break;
-        }
-
-        switch (i) {
-        case 0:
-            if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_1000000) {
-                continue;
-            }
-            portConfig.msp_baudrateIndex = baudRateIndex;
-            break;
-        case 1:
-            if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_230400) {
-                continue;
-            }
-            portConfig.gps_baudrateIndex = baudRateIndex;
-            break;
-        case 2:
-            if (baudRateIndex != BAUD_AUTO && baudRateIndex > BAUD_460800) {
-                continue;
-            }
-            portConfig.telemetry_baudrateIndex = baudRateIndex;
-            break;
-        case 3:
-            if (baudRateIndex < BAUD_19200 || baudRateIndex > BAUD_2470000) {
-                continue;
-            }
-            portConfig.blackbox_baudrateIndex = baudRateIndex;
-            break;
-        }
-
-        validArgumentCount++;
-    }
-
-    if (validArgumentCount < 6) {
-        cliShowInvalidArgumentCountError(cmdName);
-        return;
-    }
-
-    // Mirror the legacy bitmask into the per-feature PG fields.  If the
-    // requested combination cannot be represented we reject the whole
-    // command so the synthesized view and the stored functionMask stay
-    // in sync.
-    if (!serialApplyFunctionMask(portConfig.identifier, portConfig.functionMask)) {
-        cliShowParseError(cmdName);
-        return;
-    }
-
-    memcpy(currentConfig, &portConfig, sizeof(portConfig));
-
-    cliDumpPrintLinef(0, false, format,
-        serialName(portConfig.identifier, invalidName),
-        portConfig.functionMask,
-        baudRates[portConfig.msp_baudrateIndex],
-        baudRates[portConfig.gps_baudrateIndex],
-        baudRates[portConfig.telemetry_baudrateIndex],
-        baudRates[portConfig.blackbox_baudrateIndex]
-        );
+    printSerial(DUMP_MASTER, NULL);
 }
 
 #if defined(USE_SERIAL_PASSTHROUGH)
@@ -1618,8 +1525,11 @@ RAM_CODE static void cliSerialPassthrough(const char *cmdName, char *cmdline)
 #ifdef USE_PWM_OUTPUT
                 escSensorPassthrough = true;
 #endif
-                const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_ESC_SENSOR);
-                portId = portConfig ? portConfig->identifier : SERIAL_PORT_NONE;
+#ifdef USE_ESC_SENSOR
+                portId = escSensorConfig()->esc_sensor_uart;
+#else
+                portId = SERIAL_PORT_NONE;
+#endif
             } else if (strcasecmp(tok, "cli") == 0) {
                 portId = cliPort->identifier;
             } else if ((portId = findSerialPortByName(tok, strcasecmp)) >= 0) {
@@ -4372,7 +4282,7 @@ static void cliPrintGyroRegisters(uint8_t whichSensor)
     // ICM-456xx uses different register addresses than MPU/ICM-426xx sensors
     // Register 0x75 (MPU_RA_WHO_AM_I) is RESERVED on ICM-456xx
     const mpuDetectionResult_t *mpuDetection = gyroMpuDetectionResult();
-    
+
     if (mpuDetection->sensor == ICM_45686_SPI || mpuDetection->sensor == ICM_45605_SPI) {
         // ICM-456xx register addresses (from DS-000577 datasheet)
         cliPrintLinef("# WHO_AM_I      0x%X (0x72)", gyroReadRegister(whichSensor, 0x72));  // Should be 0xE9 or 0xE5
@@ -5446,6 +5356,16 @@ RAM_CODE STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
 
             break;
 
+        case MODE_LOOKUP_IDENTIFIER: {
+                int identifier;
+                if (identifierLookups[val->config.identifier.lookupIndex].valueOf(eqptr, &identifier)) {
+                    cliSetVar(val, identifier);
+                    valueChanged = true;
+                }
+            }
+
+            break;
+
         case MODE_ARRAY: {
                 if (cliParseArrayValue(eqptr, val, cliGetValuePointer(val))) {
                     valueChanged = true;
@@ -5719,6 +5639,22 @@ int cliGetSettingInfoByName(const char *name, int offset, char *buf, int bufLen,
         infoWriteChar(&w, '\n');
         break;
     }
+    case MODE_LOOKUP_IDENTIFIER: {
+        const identifierLookupEntry_t *entry = &identifierLookups[val->config.identifier.lookupIndex];
+        infoWriteString(&w, "type=lookup\nvalues=");
+        for (unsigned i = 0; ; i++) {
+            const char *name = entry->nameAt(i);
+            if (!name) {
+                break;
+            }
+            if (i) {
+                infoWriteChar(&w, ',');
+            }
+            infoWriteString(&w, name);
+        }
+        infoWriteChar(&w, '\n');
+        break;
+    }
     case MODE_BITSET:
         infoWriteString(&w, "type=bitset\nvalues=OFF,ON\n");
         break;
@@ -5953,6 +5889,15 @@ bool cliSetSettingByName(const char *cmdline)
         }
         break;
 
+    case MODE_LOOKUP_IDENTIFIER: {
+            int identifier;
+            if (!identifierLookups[val->config.identifier.lookupIndex].valueOf(valStr, &identifier)) {
+                return false;
+            }
+            *(int8_t *)ptr = identifier;
+        }
+        break;
+
     case MODE_ARRAY: {
             if (!cliParseArrayValue(valStr, val, ptr)) {
                 return false;
@@ -5997,6 +5942,11 @@ static int getTaskAverageRateHz(taskId_e taskId, int *averageDeltaTimeUs)
     }
     return taskInfo.averageDeltaTime10thUs == 0 ? 0 : lrintf(1e7f / taskInfo.averageDeltaTime10thUs);
 }
+
+#if ENABLE_DRONECAN
+static const char * const nodeHealthNames[] = { "OK", "WARNING", "ERROR", "CRITICAL" };
+static const char * const nodeModeNames[] = { "OPERATIONAL", "INITIALISING", "MAINTENANCE", "UPDATING", "?", "?", "?", "OFFLINE" };
+#endif
 
 RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
 {
@@ -6132,15 +6082,15 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
         if (GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(gpsConfig()->provider)) {
             cliPrint(lookupTables[TABLE_GPS_PROVIDER].values[gpsConfig()->provider]);
         } else {
-            const serialPortConfig_t *gpsPortConfig = findSerialPortConfig(FUNCTION_GPS);
-            if (!gpsPortConfig) {
+            const serialPortIdentifier_e gpsPort = gpsConfig()->gps_uart;
+            if (gpsPort == SERIAL_PORT_NONE) {
                 cliPrint("NO PORT, ");
             } else {
-                cliPrintf("%s %ld (set to ", serialName(gpsPortConfig->identifier, invalidName), baudRates[getGpsPortActualBaudRateIndex()]);
+                cliPrintf("%s %ld (set to ", serialName(gpsPort, invalidName), baudRates[getGpsPortActualBaudRateIndex()]);
                 if (gpsConfig()->autoBaud == GPS_AUTOBAUD_ON) {
                     cliPrint("AUTO");
                 } else {
-                    cliPrintf("%ld", baudRates[gpsPortConfig->gps_baudrateIndex]);
+                    cliPrintf("%ld", baudRates[gpsConfig()->gps_baud]);
                 }
                 cliPrint("), ");
             }
@@ -6212,8 +6162,6 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
         if (dronecanIsInitialised()) {
             cliPrintLinef("DroneCAN: node %d, device %d", dronecanConfig()->node_id, dronecanConfig()->device);
 
-            static const char * const nodeHealthNames[] = { "OK", "WARNING", "ERROR", "CRITICAL" };
-            static const char * const nodeModeNames[] = { "OPERATIONAL", "INITIALISING", "MAINTENANCE", "UPDATING", "?", "?", "?", "OFFLINE" };
             for (uint8_t i = 0; i < dronecanNodesCount(); i++) {
                 const dronecanNodeEntry_t *node = dronecanNodesGet(i);
                 cliPrintf("  node %d: %s (%s", node->nodeId,
@@ -6316,6 +6264,158 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
         cliPrintf(" %s", getArmingDisableFlagName(flag));
     }
     cliPrintLinefeed();
+}
+
+#if defined(USE_SENSOR_NAMES)
+static void cliPrintDeviceBus(const extDevice_t *dev)
+{
+    if (!dev || !dev->bus) {
+        return;
+    }
+
+    switch (dev->bus->busType) {
+#ifdef USE_SPI
+    case BUS_TYPE_SPI:
+        cliPrintf(" on SPI%d", SPI_DEV_TO_CFG(spiDeviceByInstance(dev->bus->busType_u.spi.instance)));
+        break;
+#endif
+#ifdef USE_I2C
+    case BUS_TYPE_I2C:
+        cliPrintf(" on I2C%d @0x%02X", I2C_DEV_TO_CFG(dev->bus->busType_u.i2c.device), dev->busType_u.i2c.address);
+        break;
+#endif
+    default:
+        break;
+    }
+}
+
+// One line per sensor class, named by the stem of its *_hardware setting.
+// A class configured to a specific device that never came up still gets a
+// line, so a wiring fault reads as "configured, not detected" rather than
+// silence.
+static void cliPrintSensorPeripheral(const char *stem, sensorIndex_e sensorIndex, uint8_t configuredHardware, const extDevice_t *dev)
+{
+    int count;
+    const char * const *names = sensorHardwareNames(sensorIndex, &count);
+    if (!names) {
+        return;
+    }
+
+    const bool detected = (sensorsMask() & sensorMaskForIndex(sensorIndex)) != 0;
+
+    if (detected) {
+        const uint8_t hardwareIndex = detectedSensors[sensorIndex];
+        // Indexes 0 and 1 are AUTO and NONE in every hardware enum - a
+        // detection that never recorded which device it found has no name
+        // worth printing.
+        if (hardwareIndex <= 1 || hardwareIndex >= count || !names[hardwareIndex]) {
+            return;
+        }
+        cliPrintf("%s: %s", stem, names[hardwareIndex]);
+        cliPrintDeviceBus(dev);
+        cliPrintLinefeed();
+    } else if (configuredHardware > 1 && configuredHardware < count) {
+        // 0 = AUTO, 1 = NONE for every sensor hardware enum
+        if (names[configuredHardware]) {
+            cliPrintLinef("%s: %s configured, not detected", stem, names[configuredHardware]);
+        } else {
+            // A selection this build has no entry for, e.g. a DroneCAN mag
+            // setting carried onto a build without DroneCAN.
+            cliPrintLinef("%s: %d configured, not detected", stem, configuredHardware);
+        }
+    }
+}
+#endif // USE_SENSOR_NAMES
+
+static void cliPeripherals(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+    UNUSED(cmdline);
+
+    for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
+        const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
+        if (!serialIsPortAvailable(identifier)) {
+            continue;
+        }
+
+        serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
+        const unsigned claimCount = serialGetPortClaims(identifier, claims, ARRAYLEN(claims));
+        if (!claimCount) {
+            continue;
+        }
+
+        const serialPortUsage_t *usage = findSerialPortUsageByIdentifier(identifier);
+        const uint32_t openFunction = (usage && usage->serialPort) ? (uint32_t)usage->function : 0;
+
+        cliPrintf("serial %s:", serialName(identifier, invalidName));
+
+        // Claims the port actually opened for first, each starred; the rest
+        // lost boot arbitration or await a reboot.
+        bool first = true;
+        for (unsigned pass = 0; pass < 2; pass++) {
+            const bool wantActive = (pass == 0);
+            for (unsigned c = 0; c < claimCount; c++) {
+                const bool active = (claims[c].functionMask & openFunction) != 0;
+                if (active != wantActive) {
+                    continue;
+                }
+                cliPrintf(first ? " %s%s" : ", %s%s", claims[c].name, active ? "*" : "");
+                first = false;
+            }
+        }
+        cliPrintLinefeed();
+    }
+
+#if ENABLE_DRONECAN
+    if (dronecanConfig()->enabled && dronecanIsInitialised()) {
+        for (uint8_t i = 0; i < dronecanNodesCount(); i++) {
+            const dronecanNodeEntry_t *node = dronecanNodesGet(i);
+            cliPrintf("can node %d: %s (%s", node->nodeId,
+                      node->infoValid && node->name[0] ? node->name : "no info",
+                      nodeHealthNames[node->health & 0x03]);
+            if (node->mode != UAVCAN_NODE_MODE_OPERATIONAL) {
+                cliPrintf(", %s", nodeModeNames[node->mode & 0x07]);
+            }
+            cliPrint(")");
+
+            static const struct { uint8_t flag; const char *name; } sensorFlagNames[] = {
+                { DRONECAN_NODE_SENSOR_GPS, "gps" },
+                { DRONECAN_NODE_SENSOR_MAG, "mag" },
+                { DRONECAN_NODE_SENSOR_AIRSPEED, "airspeed" },
+                { DRONECAN_NODE_SENSOR_ESC, "esc" },
+            };
+            bool first = true;
+            for (unsigned f = 0; f < ARRAYLEN(sensorFlagNames); f++) {
+                if (node->sensorFlags & sensorFlagNames[f].flag) {
+                    cliPrintf(first ? " %s" : ", %s", sensorFlagNames[f].name);
+                    first = false;
+                }
+            }
+            cliPrintLinefeed();
+        }
+    }
+#endif
+
+#if defined(USE_SENSOR_NAMES)
+    for (unsigned pos = 0; pos < GYRO_COUNT; pos++) {
+        if (!(gyroConfig()->gyrosDetected & BIT(pos))) {
+            continue;
+        }
+        cliPrintf("gyro %d: %s%s", pos + 1, lookupTableGyroHardware[detectedGyros[pos]],
+                  (gyro.gyroEnabledBitmask & BIT(pos)) ? "*" : "");
+        cliPrintDeviceBus(&gyro.gyroSensor[pos].gyroDev.dev);
+        cliPrintLinefeed();
+    }
+#if defined(USE_ACC)
+    cliPrintSensorPeripheral("acc", SENSOR_INDEX_ACC, accelerometerConfig()->acc_hardware, acc.dev.gyro ? &acc.dev.gyro->dev : NULL);
+#endif
+#if defined(USE_BARO)
+    cliPrintSensorPeripheral("baro", SENSOR_INDEX_BARO, barometerConfig()->baro_hardware, &baro.dev.dev);
+#endif
+#if defined(USE_MAG)
+    cliPrintSensorPeripheral("mag", SENSOR_INDEX_MAG, compassConfig()->mag_hardware, &magDev.dev);
+#endif
+#endif // USE_SENSOR_NAMES
 }
 
 RAM_CODE static void cliTasks(const char *cmdName, char *cmdline)
@@ -8083,8 +8183,6 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
 
         printFeature(dumpMask, featureConfig_Copy.enabledFeatures, featureConfig()->enabledFeatures, "feature");
 
-        printSerial(dumpMask, &serialConfig_Copy, serialConfig(), "serial");
-
         if (!(dumpMask & HARDWARE_ONLY)) {
 #ifndef USE_QUAD_MIXER_ONLY
             const char *mixerHeadingStr = "mixer";
@@ -8408,6 +8506,7 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("options", "show build options", NULL, cliOptions),
 #ifndef MINIMAL_CLI
+    CLI_COMMAND_DEF("peripherals", "show attached peripherals", NULL, cliPeripherals),
     CLI_COMMAND_DEF("play_sound", NULL, "[<index>]", cliPlaySound),
 #endif
     CLI_COMMAND_DEF("battery_profile", "change battery profile", "[<index>]", cliBatteryProfile),
@@ -8428,7 +8527,7 @@ const clicmd_t cmdTable[] = {
 #if defined(USE_SENSOR_NAMES)
     CLI_COMMAND_DEF("sensor_hardware", "list supported sensor hardware", "[gyro|acc|baro|mag|rangefinder|opticalflow|pitot]", cliSensorHardware),
 #endif
-    CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
+    CLI_COMMAND_DEF("serial", "show serial port assignments", NULL, cliSerial),
 #if defined(USE_SERIAL_PASSTHROUGH)
 #if defined(USE_PINIO)
     CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data data from port 1 to VCP / port 2", "<id1> [<baud1>] [<mode1>] [none|<dtr pinio>|reset] [<id2>] [<baud2>] [<mode2>]", cliSerialPassthrough),

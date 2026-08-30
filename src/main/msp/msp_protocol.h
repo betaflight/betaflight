@@ -124,7 +124,7 @@
 #define MSP_ADJUSTMENT_RANGES           52   // out message: Get adjustment ranges
 #define MSP_SET_ADJUSTMENT_RANGE        53   // in message:  Set adjustment range
 #define MSP_CF_SERIAL_CONFIG            54   // out message: Get Cleanflight serial configuration
-#define MSP_SET_CF_SERIAL_CONFIG        55   // in message:  Set Cleanflight serial configuration
+// 55 was MSP_SET_CF_SERIAL_CONFIG; serial ports are set through the CLI over MSP
 #define MSP_VOLTAGE_METER_CONFIG        56   // out message: Get voltage meter configuration
 #define MSP_SET_VOLTAGE_METER_CONFIG    57   // in message:  Set voltage meter configuration
 #define MSP_SONAR_ALTITUDE              58   // out message: Get sonar altitude [cm]

@@ -107,6 +107,10 @@
     VTX_CHANNEL
         type 1: Contains Band:Channel:Power:Pit
         type 2: Contains only Power
+
+    OSD_LINK_QUALITY
+        type 1: Contains RF mode:link quality (CRSF only)
+        type 2: Contains only link quality
 */
 
 #include <stdbool.h>
@@ -187,6 +191,7 @@
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/rangefinder.h"
+#include "sensors/pitot.h"
 
 #ifdef USE_GPS_PLUS_CODES
 // located in lib/main/google/olc
@@ -1530,10 +1535,14 @@ static void osdElementLinkQuality(osdElementParms_t *element)
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
-    if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) { // 0-99
+    if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) { // 0-100
         osdLinkQuality = rxGetLinkQuality();
-        const uint8_t osdRfMode = rxGetRfMode();
-        tfp_sprintf(element->buff, "%c%1d:%2d", SYM_LINK_QUALITY, osdRfMode, osdLinkQuality);
+        if (element->type == OSD_ELEMENT_TYPE_2) {
+            tfp_sprintf(element->buff, "%c%2d", SYM_LINK_QUALITY, osdLinkQuality);
+        } else {
+            const uint8_t osdRfMode = rxGetRfMode();
+            tfp_sprintf(element->buff, "%c%1d:%2d", SYM_LINK_QUALITY, osdRfMode, osdLinkQuality);
+        }
     } else if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_GHST) { // 0-100
         osdLinkQuality = rxGetLinkQuality();
         tfp_sprintf(element->buff, "%c%2d", SYM_LINK_QUALITY, osdLinkQuality);
@@ -2069,6 +2078,17 @@ static void osdElementSys(osdElementParms_t *element)
 }
 #endif
 
+#ifdef USE_PITOT
+static void osdElementAirspeed(osdElementParms_t *element)
+{
+    if (sensors(SENSOR_PITOT)) {
+        tfp_sprintf(element->buff, "%ca%3d%c", SYM_SPEED, osdGetSpeedToSelectedUnit(pitot.airspeed), osdGetSpeedToSelectedUnitSymbol());
+    } else {
+        tfp_sprintf(element->buff, "%ca%c%c", SYM_SPEED, SYM_HYPHEN, osdGetSpeedToSelectedUnitSymbol());
+    }
+}
+#endif
+
 // Define the order in which the elements are drawn.
 // Elements positioned later in the list will overlay the earlier
 // ones if their character positions overlap
@@ -2352,6 +2372,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #if ENABLE_OSD_CUSTOM_TEXT
     [OSD_CUSTOM_SERIAL_TEXT]      = osdElementCustomSerialText,
 #endif
+#ifdef USE_PITOT
+    [OSD_AIRSPEED]                = osdElementAirspeed,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw its background (static part)
@@ -2438,6 +2461,10 @@ void osdAddActiveElements(void)
 
 #ifdef USE_PERSISTENT_STATS
     osdAddActiveElement(OSD_TOTAL_FLIGHTS);
+#endif
+
+#ifdef USE_PITOT
+    osdAddActiveElement(OSD_AIRSPEED);
 #endif
 }
 
@@ -2814,7 +2841,7 @@ void osdUpdateAlarms(void)
     } else {
         CLR_BLINK(OSD_MAIN_BATT_USAGE);
     }
-   
+
     if ((alt >= osdConfig()->alt_alarm) && ARMING_FLAG(ARMED)) {
         SET_BLINK(OSD_ALTITUDE);
     } else {
