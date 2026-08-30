@@ -226,7 +226,7 @@ void rangefinderUPT1Update(rangefinderDev_t *dev)
                 const uint8_t confidence = upt1Frame[9];
 
                 DEBUG_SET(DEBUG_LIDAR_TF, 0, distanceMm);        //!< Distance [unit:0.001m]
-                DEBUG_SET(DEBUG_LIDAR_TF, 1, confidence);        //!< Confidence
+                DEBUG_SET(DEBUG_LIDAR_TF, 1, confidence);        //!< Confidence [unit:%]
                 DEBUG_SET(DEBUG_LIDAR_TF, 2, (int16_t)flow_x);   //!< Optical Flow X
                 DEBUG_SET(DEBUG_LIDAR_TF, 3, (int16_t)flow_y);   //!< Optical Flow Y
                 DEBUG_SET(DEBUG_LIDAR_TF, 4, validStatus);       //!< Laser Valid Status
