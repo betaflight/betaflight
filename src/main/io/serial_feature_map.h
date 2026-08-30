@@ -40,6 +40,9 @@ uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier);
 typedef struct serialPortClaim_s {
     const char *name;
     const char *setting;
+    // The feature's own baud setting, or NULL where its rate is not its to choose,
+    // as a serial receiver's follows the protocol and a VTX's follows the device.
+    const char *baudSetting;
     uint32_t functionMask;
 } serialPortClaim_t;
 

@@ -1400,15 +1400,56 @@ RAM_CODE static void cliAux(const char *cmdName, char *cmdline)
     }
 }
 
-// Every claim on one port as the command that would make it, so the port a
+STATIC_UNIT_TESTED uint16_t cliGetSettingIndex(const char *name, size_t length);
+
+// Print one setting as `set <name> = <value>`, but only where it has moved off
+// its default, the way `diff` chooses what to carry.  The default comes from a
+// non-destructive PG reset into a scratch buffer, so this holds outside a dump,
+// where pg->copy is not the value being reported.
+static void printSettingIfChanged(const char *cmdName, const char *name)
+{
+    const uint16_t index = cliGetSettingIndex(name, strlen(name));
+    if (index >= valueTableEntryCount) {
+        // a build without the feature has no such setting
+        return;
+    }
+
+    const clivalue_t *value = &valueTable[index];
+    const pgRegistry_t *pg = pgFind(value->pgn);
+    if (!pg) {
+        return;
+    }
+
+    const int valueOffset = getValueOffset(value);
+    const uint16_t pgSizeBytes = pgSize(pg);
+    uint32_t defaultBufAligned[(pgSizeBytes + sizeof(uint32_t) - 1) / sizeof(uint32_t)];
+    uint8_t *defaultBuf = (uint8_t *)defaultBufAligned;
+    pgResetCopy(defaultBuf, value->pgn);
+
+    const void *valuePointer = cliGetValuePointer(value);
+    if (valuePtrEqualsDefault(value, valuePointer, defaultBuf + valueOffset)) {
+        return;
+    }
+
+    cliPrintf("set %s = ", value->name);
+    printValuePointer(cmdName, value, valuePointer, false);
+    cliPrintLinefeed();
+}
+
+// Every claim on one port as the commands that would make it, so the port a
 // feature is on can be read off, and pasted back, in the form that now holds it.
-static void printPortClaimSettings(serialPortIdentifier_e identifier)
+// A rate the feature owns follows its port, but only where it is not the default
+// one, so the output stays as short as what `diff` would carry.
+static void printPortClaimSettings(const char *cmdName, serialPortIdentifier_e identifier)
 {
     serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
     const unsigned claimCount = serialGetPortClaims(identifier, claims, ARRAYLEN(claims));
 
     for (unsigned c = 0; c < claimCount; c++) {
         cliPrintLinef("set %s = %s", claims[c].setting, serialName(identifier, invalidName));
+        if (claims[c].baudSetting) {
+            printSettingIfChanged(cmdName, claims[c].baudSetting);
+        }
     }
 }
 
@@ -1416,7 +1457,7 @@ RAM_CODE static void cliSerial(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
         for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
-            printPortClaimSettings(serialPortIdentifiers[i]);
+            printPortClaimSettings(cmdName, serialPortIdentifiers[i]);
         }
         return;
     }
@@ -1522,7 +1563,7 @@ RAM_CODE static void cliSerial(const char *cmdName, char *cmdline)
     }
 
     cliPrintLine("# WARNING: 'serial' is deprecated, assign ports with the <feature>_uart settings");
-    printPortClaimSettings(identifier);
+    printPortClaimSettings(cmdName, identifier);
 }
 
 #if defined(USE_SERIAL_PASSTHROUGH)
