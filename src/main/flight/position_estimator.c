@@ -814,8 +814,8 @@ static void feedGPSMeasurements(timeUs_t nowUs)
         const float gpsVelocityUp = -(float)gpsSol.velned.velD;
         const float gpsRelativeAltCm = gpsSol.llh.altCm - gpsAltOffsetCm;
 
-        DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(gpsRelativeAltCm));  //!< Relative GPS Altitude [cm]
-        DEBUG_SET(DEBUG_ALTITUDE, 4, lrintf(gpsVelocityUp));  //!< GPS Vertical Velocity [cm/s]
+        DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(gpsRelativeAltCm));  //!< Relative GPS Altitude [unit:cm]
+        DEBUG_SET(DEBUG_ALTITUDE, 4, lrintf(gpsVelocityUp));  //!< GPS Vertical Velocity [unit:cm/s]
 
         kalmanUpdateVelocityToPosition(&kfUp, gpsVelocityUp, gpsVelUpR); // always update velocity and position from GPS velocity innovation
         kalmanUpdatePosition(&kfUp, gpsRelativeAltCm, gpsAltR); // always update position from GPS position innovation
@@ -966,7 +966,7 @@ static void feedBaroMeasurements(timeUs_t nowUs)
     const float baroRelativeAltCm = baroAltCm - baroAltOffsetCm;
 
     // Logged before the gate, so a rejected run is still visible against the estimate.
-    DEBUG_SET(DEBUG_ALTITUDE, 1, lrintf(baroRelativeAltCm));  //!< Relative Baro Altitude [cm]
+    DEBUG_SET(DEBUG_ALTITUDE, 1, lrintf(baroRelativeAltCm));  //!< Relative Baro Altitude [unit:cm]
 
     const zUpdateAction_e action = gateZPositionStep(&baroStepGate, baroRelativeAltCm,
                                                     getBaroSampleIntervalUs());
@@ -1090,7 +1090,7 @@ static void feedRangefinderMeasurements(timeUs_t nowUs)
 
     const float RangeFinderAltitude = altCm - rangefinderAltOffsetCm;
 
-    DEBUG_SET(DEBUG_ALTITUDE, 0, lrintf(RangeFinderAltitude));  //!< Relative Rangefinder Altitude [cm]
+    DEBUG_SET(DEBUG_ALTITUDE, 0, lrintf(RangeFinderAltitude));  //!< Relative Rangefinder Altitude [unit:cm]
 
     // Logged above this point, so the rangefinder's altitude stays visible in
     // DEBUG_ALTITUDE even under a source that does not fuse it.
@@ -1237,8 +1237,8 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
     kalmanUpdateVelocityToPosition(&kfEast, velEastNow, flowR);
     kalmanUpdateVelocityToPosition(&kfNorth, velNorthNow, flowR);
 
-    DEBUG_SET(DEBUG_POSITION_EST, 3, lrintf(velEastNow));  //!< Flow Velocity East [cm/s]
-    DEBUG_SET(DEBUG_POSITION_EST, 4, lrintf(velNorthNow));  //!< Flow Velocity North [cm/s]
+    DEBUG_SET(DEBUG_POSITION_EST, 3, lrintf(velEastNow));  //!< Flow Velocity East [unit:cm/s]
+    DEBUG_SET(DEBUG_POSITION_EST, 4, lrintf(velNorthNow));  //!< Flow Velocity North [unit:cm/s]
 
     lastXYMeasurementUs = nowUs;
 #else
@@ -1286,7 +1286,7 @@ void positionEstimatorUpdate(void)
     getLinearAccelENU(&accelEast, &accelNorth, &accelUp);
 
     const float accelToLog = (debugAxis == 0) ? accelEast : accelNorth;
-    DEBUG_SET(DEBUG_POSITION_EST, 5, lrintf(accelToLog));  //!< Linear Acceleration (dbg-axis) [cm/s2]
+    DEBUG_SET(DEBUG_POSITION_EST, 5, lrintf(accelToLog));  //!< Linear Acceleration (dbg-axis) [unit:cm/s2]
 
     // Z-axis: always runs (for altitude hold, OSD, vario). While disarmed,
     // measure zero acceleration so covariance continues to evolve without
@@ -1345,11 +1345,11 @@ void positionEstimatorUpdate(void)
     estimate.acceleration.v[ENU_N] = kalmanGetAcceleration(&kfNorth);
     estimate.acceleration.v[ENU_U] = kalmanGetAcceleration(&kfUp);
 
-    DEBUG_SET(DEBUG_POSITION_EST, 0, lrintf(estimate.position.v[debugAxis]));  //!< Estimated Position (dbg-axis) [cm]
-    DEBUG_SET(DEBUG_POSITION_EST, 1, lrintf(estimate.velocity.v[debugAxis]));  //!< Estimated Velocity (dbg-axis) [cm/s]
-    DEBUG_SET(DEBUG_POSITION_EST, 2, lrintf(estimate.acceleration.v[debugAxis]));  //!< Estimated Acceleration (dbg-axis) [cm/s2]
+    DEBUG_SET(DEBUG_POSITION_EST, 0, lrintf(estimate.position.v[debugAxis]));  //!< Estimated Position (dbg-axis) [unit:cm]
+    DEBUG_SET(DEBUG_POSITION_EST, 1, lrintf(estimate.velocity.v[debugAxis]));  //!< Estimated Velocity (dbg-axis) [unit:cm/s]
+    DEBUG_SET(DEBUG_POSITION_EST, 2, lrintf(estimate.acceleration.v[debugAxis]));  //!< Estimated Acceleration (dbg-axis) [unit:cm/s2]
 
-    DEBUG_SET(DEBUG_ALTITUDE, 6, lrintf(accelUp));  //!< Vertical Acceleration [cm/s2]
+    DEBUG_SET(DEBUG_ALTITUDE, 6, lrintf(accelUp));  //!< Vertical Acceleration [unit:cm/s2]
 
     // Validity: based on recent measurement updates
     if (xyEnabled) {
