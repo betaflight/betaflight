@@ -38,7 +38,6 @@ typedef struct opticalflowConfig_s {
     uint8_t  opticalflow_hardware;
     uint16_t rotation;
     uint8_t  flip_x;
-    uint16_t flow_lpf;
     int8_t   opticalflow_uart;  // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned. Driver selected by opticalflow_hardware.
 } opticalflowConfig_t;
 
@@ -56,6 +55,11 @@ typedef struct opticalflow_s {
     int16_t quality;
     vector2_t rawFlowRates;
     vector2_t processedFlowRates;
+    // Per-axis usability of processedFlowRates. False when body rotation was too
+    // fast for the compensation to recover a translation rate on that axis; the
+    // consumer must skip the axis, since zero is a measurement of "not moving"
+    // and not an absence of data.
+    bool flowRateValid[2];
     uint32_t timeStampUs;
 } opticalflow_t;
 
