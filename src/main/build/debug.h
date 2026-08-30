@@ -71,7 +71,8 @@ extern uint8_t debugMode;
  *              `[unit:0.001]`.
  *
  *              Symbols: s ms us Hz kHz MHz kbit/s rad rad/s deg dps dps2 m cm
- *              m/s cm/s g g/s V A mAh degC Pa hPa rpm % dB dBm bytes ticks, plus
+ *              m/s cm/s cm/s2 g g/s V A mAh degC Pa hPa rpm % dB dBm bytes
+ *              ticks, plus
  *              the device-native units the firmware stores raw, which only the
  *              FC's own configuration can convert: gyroADC (gyro ADC counts),
  *              accADC and accADC/s (accelerometer ADC counts), rcCommand
