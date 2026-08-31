@@ -258,6 +258,14 @@ uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
     return 0;
 }
 
+unsigned serialGetPortClaims(serialPortIdentifier_e identifier, serialPortClaim_t *claims, unsigned maxClaims)
+{
+    (void)identifier;
+    (void)claims;
+    (void)maxClaims;
+    return 0;
+}
+
 const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
     SERIAL_PORT_USB_VCP,
     SERIAL_PORT_USART1,

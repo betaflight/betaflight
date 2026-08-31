@@ -710,3 +710,77 @@ TEST(SerialFeatureMap, BaudClassesAreIndependentOnASharedPort)
         EXPECT_EQ(expected[c], serialSynthesizePortBaud(SERIAL_PORT_UART4, (serialBaudClass_e)c));
     }
 }
+
+TEST(SerialFeatureMap, ClaimsEmptyWhenNothingAssigned)
+{
+    resetAllConfigs();
+
+    serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
+    EXPECT_EQ(0u, serialGetPortClaims(SERIAL_PORT_USART1, claims, ARRAYLEN(claims)));
+    EXPECT_EQ(0u, serialGetPortClaims(SERIAL_PORT_NONE, claims, ARRAYLEN(claims)));
+}
+
+TEST(SerialFeatureMap, ClaimsNamedByOwningSetting)
+{
+    resetAllConfigs();
+
+    mspConfigMutable()->msp_uart[1] = SERIAL_PORT_USART2;
+    gpsConfigMutable()->gps_uart = SERIAL_PORT_USART2;
+    telemetryConfigMutable()->providers[1].protocol = TELEMETRY_PROTOCOL_SMARTPORT;
+    telemetryConfigMutable()->providers[1].uart = SERIAL_PORT_USART2;
+
+    serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
+    ASSERT_EQ(3u, serialGetPortClaims(SERIAL_PORT_USART2, claims, ARRAYLEN(claims)));
+
+    EXPECT_STREQ("msp_2", claims[0].name);
+    EXPECT_EQ((uint32_t)FUNCTION_MSP, claims[0].functionMask);
+    EXPECT_STREQ("gps", claims[1].name);
+    EXPECT_EQ((uint32_t)FUNCTION_GPS, claims[1].functionMask);
+    EXPECT_STREQ("telemetry_2", claims[2].name);
+    EXPECT_EQ((uint32_t)FUNCTION_TELEMETRY_SMARTPORT, claims[2].functionMask);
+}
+
+TEST(SerialFeatureMap, ClaimMaskFollowsProtocolSelection)
+{
+    resetAllConfigs();
+
+    vtxSettingsConfigMutable()->vtx_uart = SERIAL_PORT_USART1;
+    serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
+
+    ASSERT_EQ(1u, serialGetPortClaims(SERIAL_PORT_USART1, claims, ARRAYLEN(claims)));
+    EXPECT_STREQ("vtx", claims[0].name);
+    EXPECT_EQ(0u, claims[0].functionMask);
+
+    vtxSettingsConfigMutable()->vtx_type = VTXDEV_MSP;
+    ASSERT_EQ(1u, serialGetPortClaims(SERIAL_PORT_USART1, claims, ARRAYLEN(claims)));
+    EXPECT_EQ((uint32_t)(FUNCTION_VTX_MSP | FUNCTION_MSP), claims[0].functionMask);
+}
+
+TEST(SerialFeatureMap, ClaimMaskCarriesTheImpliedMspTransport)
+{
+    resetAllConfigs();
+
+    rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_USART3;
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TF02;
+    serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
+
+    ASSERT_EQ(1u, serialGetPortClaims(SERIAL_PORT_USART3, claims, ARRAYLEN(claims)));
+    EXPECT_STREQ("rangefinder", claims[0].name);
+    EXPECT_EQ((uint32_t)FUNCTION_LIDAR, claims[0].functionMask);
+
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF01;
+    ASSERT_EQ(1u, serialGetPortClaims(SERIAL_PORT_USART3, claims, ARRAYLEN(claims)));
+    EXPECT_EQ((uint32_t)(FUNCTION_LIDAR | FUNCTION_MSP), claims[0].functionMask);
+}
+
+TEST(SerialFeatureMap, ClaimsRespectCallerCapacity)
+{
+    resetAllConfigs();
+
+    mspConfigMutable()->msp_uart[0] = SERIAL_PORT_USART1;
+    gpsConfigMutable()->gps_uart = SERIAL_PORT_USART1;
+    rxConfigMutable()->rx_uart = SERIAL_PORT_USART1;
+
+    serialPortClaim_t claims[2];
+    EXPECT_EQ(2u, serialGetPortClaims(SERIAL_PORT_USART1, claims, ARRAYLEN(claims)));
+}
