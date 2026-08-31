@@ -59,67 +59,35 @@ void QSPI_QuadEn(QSPI_HandleTypeDef *hqspi);
 
 
 /*
- * QSPI pin bring-up, written register-level: the betaflight IO driver is not
- * available this early (SystemInit, before IOInitGlobal), and exFlashInit must
- * not call into code that may be linked above the QSPI window (0x00080000+),
- * because the window only comes alive at the end of this function.
- *
- * Register model (GPIO_TypeDef, um324xF.h), equivalent to HAL_GPIO_Init as
- * invoked by io_um32.c IOConfigGPIOAF():
- *   MODE  2bit/pin   : 00 = input, 10 = alternate function (MODE_AF)
- *   PULL  PE field [15:0] + PS field [31:16], 1bit/pin each; pull-up = PE|PS
- *   SR    1bit/pin   : 0 = high speed (GPIO_SPEED_FREQ_HIGH is 0 on this part)
- *   DS    2bit/pin   : drive strength, 14mA (same as io_um32.c)
- *   AFL/AFH 4bit/pin : alternate function number (AF10)
+ * QSPI pin bring-up via HAL_GPIO_Init â€” the same entry point io_um32.c uses,
+ * so the register programming stays in sync by construction. Safe at
+ * SystemInit time (before .data/.bss init and before the QSPI window is up):
+ * HAL_GPIO_Init only touches GPIO registers and the caller's stack struct,
+ * reads no initialised globals, and lives in internal flash (.text); only
+ * functions explicitly marked EX_CODE are placed on the QSPI XIP window.
  */
-#define QSPI_PIN_MODE_MASK(pos)    (0x3UL << ((pos) * 2))
-#define QSPI_PIN_PULL_MASK(pos)    ((GPIO_PULL_PS_0 | GPIO_PULL_PE_0) << (pos))
-#define QSPI_PIN_AFSEL_MASK(pos)   (0xFUL << (((pos) & 0x7U) * 4))
-
-static inline __attribute__((always_inline)) void qspiPinAF(GPIO_TypeDef *port, uint32_t pos)
-{
-    const uint32_t shift2 = pos * 2;
-    const uint32_t shift4 = (pos & 0x7U) * 4;
-
-    port->MODE = (port->MODE & ~QSPI_PIN_MODE_MASK(pos)) | ((uint32_t)MODE_AF << shift2);
-    port->PULL = port->PULL | QSPI_PIN_PULL_MASK(pos);                    /* pull-up */
-    port->SR   = port->SR & ~(GPIO_SR_SR_0 << pos);                       /* 0 = high speed */
-    port->DS   = (port->DS & ~(GPIO_DS_20MA << (pos * 2))) | (GPIO_DS_14MA << (pos * 2));
-
-    if (pos < 8U) {
-        port->AFL = (port->AFL & ~QSPI_PIN_AFSEL_MASK(pos)) | ((uint32_t)GPIO_AF10_QSPI << shift4);
-    } else {
-        port->AFH = (port->AFH & ~QSPI_PIN_AFSEL_MASK(pos)) | ((uint32_t)GPIO_AF10_QSPI << shift4);
-    }
-
-    /* input path config, cleared like HAL_GPIO_Init's default (Gpio_Im = 0) */
-    port->IM = port->IM & ~(GPIO_IM_IM_0 << pos);
-}
-
-static inline __attribute__((always_inline)) void qspiPinInputFloating(GPIO_TypeDef *port, uint32_t pos)
-{
-    port->MODE = port->MODE & ~QSPI_PIN_MODE_MASK(pos);                   /* 00 = input */
-    port->PULL = port->PULL & ~QSPI_PIN_PULL_MASK(pos);                   /* no pull */
-}
 
 void exFlashInit(void)
 {
-    /* Port D/E clocks (macros are plain register writes incl. RCM unlock) */
+    /* Port D/E clocks â€” HAL_GPIO_Init does not manage the clock tree */
     __HAL_RCM_GPIOD_CLK_ENABLE();
     __HAL_RCM_GPIOE_CLK_ENABLE();
 
-    /* free pins that used to share the QSPI footprint */
-    // qspiPinInputFloating(GPIOE, 5);
-    // qspiPinInputFloating(GPIOE, 7);
-    // qspiPinInputFloating(GPIOD, 8);
+    /* All six QSPI pins share one config: AF10, pull-up, high speed, 14mA.
+     * PE10=CLK, PE15=BK1 IO3, PD3=BK1CS, PD4/5/6=BK1 IO0/1/2 */
+    GPIO_InitTypeDef gpioInit = {
+        .Mode           = GPIO_MODE_AF,
+        .Speed          = GPIO_SPEED_FREQ_HIGH,
+        .Pull           = GPIO_PULLUP,
+        .Driving_Ability = GPIO_DS_14MA,
+        .Alternate      = GPIO_AF10_QSPI,
+    };
 
-    /* PE10=CLK, PD3=BK1CS, PD4/5/6=BK1 IO0/1/2, PE15=BK1 IO3, all AF10 pull-up */
-    qspiPinAF(GPIOE, 10);
-    qspiPinAF(GPIOD, 3);
-    qspiPinAF(GPIOD, 4);
-    qspiPinAF(GPIOD, 5);
-    qspiPinAF(GPIOD, 6);
-    qspiPinAF(GPIOE, 15);
+    gpioInit.Pin = GPIO_PIN_10 | GPIO_PIN_15;
+    HAL_GPIO_Init(GPIOE, &gpioInit);
+
+    gpioInit.Pin = GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6;
+    HAL_GPIO_Init(GPIOD, &gpioInit);
 
     __HAL_RCM_QSPI_CLK_ENABLE();
     __HAL_RCM_QSPI_RELEASE_RESET();
@@ -160,7 +128,7 @@ void exFlashInit(void)
 
     /* HAL_QSPI_Init() waits for the controller IDLE flag using hqspi.Timeout;
      * with Timeout == 0 (from the {0} initialiser) the wait fails on its very
-     * first loop iteration and drops into Error_Handler() ¡ª this is what froze
+     * first loop iteration and drops into Error_Handler() ï¿½ï¿½ this is what froze
      * the boot LED at checkpoint 2. */
     hqspi.Timeout = 100;
 
