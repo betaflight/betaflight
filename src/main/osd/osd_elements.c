@@ -192,6 +192,7 @@
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/rangefinder.h"
+#include "sensors/pitot.h"
 
 #ifdef USE_GPS_PLUS_CODES
 // located in lib/main/google/olc
@@ -2098,6 +2099,16 @@ static void osdElementAoaLimiter(osdElementParms_t *element)
     case LIMITER_ACTIVE:
         tfp_sprintf(element->buff, "%s", "AOA!!!");
         break;
+}
+#endif
+
+#ifdef USE_PITOT
+static void osdElementAirspeed(osdElementParms_t *element)
+{
+    if (sensors(SENSOR_PITOT)) {
+        tfp_sprintf(element->buff, "%ca%3d%c", SYM_SPEED, osdGetSpeedToSelectedUnit(pitot.airspeed), osdGetSpeedToSelectedUnitSymbol());
+    } else {
+        tfp_sprintf(element->buff, "%ca%c%c", SYM_SPEED, SYM_HYPHEN, osdGetSpeedToSelectedUnitSymbol());
     }
 }
 #endif
@@ -2388,6 +2399,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_PSAS
     [OSD_AOA_LIMITER]             = osdElementAoaLimiter,
 #endif
+#ifdef USE_PITOT
+    [OSD_AIRSPEED]                = osdElementAirspeed,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw its background (static part)
@@ -2478,6 +2492,10 @@ void osdAddActiveElements(void)
 
 #ifdef USE_PSAS
     osdAddActiveElement(OSD_AOA_LIMITER);
+#endif
+
+#ifdef USE_PITOT
+    osdAddActiveElement(OSD_AIRSPEED);
 #endif
 }
 
@@ -2854,7 +2872,7 @@ void osdUpdateAlarms(void)
     } else {
         CLR_BLINK(OSD_MAIN_BATT_USAGE);
     }
-   
+
     if ((alt >= osdConfig()->alt_alarm) && ARMING_FLAG(ARMED)) {
         SET_BLINK(OSD_ALTITUDE);
     } else {

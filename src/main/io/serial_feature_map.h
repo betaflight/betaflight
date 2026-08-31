@@ -31,6 +31,20 @@
 // (MSP_CF_SERIAL_CONFIG) and the CLI `serial` command's output.
 uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier);
 
+// One feature's claim on a port, named by the stem of the owning CLI setting
+// ("gps" owns gps_uart, "msp_1" owns msp_uart_1).  functionMask holds the
+// functions the port opens with when the claim wins boot arbitration; 0 when
+// the feature's current protocol selection cannot open the port at all.
+typedef struct serialPortClaim_s {
+    const char *name;
+    uint32_t functionMask;
+} serialPortClaim_t;
+
+// Every *_uart setting that can name one port at once.
+#define SERIAL_PORT_CLAIM_MAX 17
+
+unsigned serialGetPortClaims(serialPortIdentifier_e identifier, serialPortClaim_t *claims, unsigned maxClaims);
+
 // Clear the claims on just those ports whose functions cannot coexist, sparing
 // MSP so the board stays reachable.  First recovery step for a stored assignment
 // that isSerialConfigValid() rejects, so one bad assignment costs the user that

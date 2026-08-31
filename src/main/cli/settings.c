@@ -1834,6 +1834,10 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_OSD_NAV_MAP_CENTRE,      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_NAV_MAP_CENTRE_COUNT - 1 }, PG_OSD_NAV_MAP_CONFIG, offsetof(osdNavMapConfig_t, centre) },
     { PARAM_NAME_OSD_NAV_MAP_MIN_SCALE_M, VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 20, 5000 },                        PG_OSD_NAV_MAP_CONFIG, offsetof(osdNavMapConfig_t, minScaleM) },
 #endif // USE_OSD_NAV_MAP
+
+#ifdef USE_PITOT
+    { "osd_airspeed",            VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_AIRSPEED]) },
+#endif
 #endif // end of #ifdef USE_OSD
 
 // PG_SYSTEM_CONFIG
@@ -1948,11 +1952,10 @@ const clivalue_t valueTable[] = {
 
 // PG_OPTICALFLOW_CONFIG
 #ifdef USE_OPTICALFLOW
-    { "opticalflow_hardware",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OPTICALFLOW_HARDWARE }, PG_OPTICALFLOW_CONFIG, offsetof(opticalflowConfig_t, opticalflow_hardware) },
-    { "opticalflow_uart",         VAR_INT8   | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_OPTICALFLOW_CONFIG, offsetof(opticalflowConfig_t, opticalflow_uart) },
-    { "opticalflow_rotation",     VAR_INT16  | MASTER_VALUE ,              .config.minmaxUnsigned = {0, 359},               PG_OPTICALFLOW_CONFIG, offsetof(opticalflowConfig_t, rotation) },
-    { "opticalflow_lpf",          VAR_UINT16 | MASTER_VALUE ,              .config.minmaxUnsigned = {0, 10000},             PG_OPTICALFLOW_CONFIG, offsetof(opticalflowConfig_t, flow_lpf) },
-    { "opticalflow_flip_x",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON },               PG_OPTICALFLOW_CONFIG, offsetof(opticalflowConfig_t, flip_x) },
+    { PARAM_NAME_OPTICALFLOW_HARDWARE, VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OPTICALFLOW_HARDWARE }, PG_OPTICALFLOW_CONFIG, offsetof(opticalflowConfig_t, opticalflow_hardware) },
+    { "opticalflow_uart",              VAR_INT8   | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_OPTICALFLOW_CONFIG, offsetof(opticalflowConfig_t, opticalflow_uart) },
+    { PARAM_NAME_OPTICALFLOW_ROTATION, VAR_INT16  | MASTER_VALUE ,              .config.minmaxUnsigned = {0, 359},               PG_OPTICALFLOW_CONFIG, offsetof(opticalflowConfig_t, rotation) },
+    { PARAM_NAME_OPTICALFLOW_FLIP_X,   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON },               PG_OPTICALFLOW_CONFIG, offsetof(opticalflowConfig_t, flip_x) },
 #endif
 
 // PG_PINIO_CONFIG
@@ -2148,6 +2151,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_AP_ALTITUDE_P,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, altitudeP) },
     { PARAM_NAME_AP_ALTITUDE_I,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, altitudeI) },
     { PARAM_NAME_AP_ALTITUDE_D,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, altitudeD) },
+    { PARAM_NAME_AP_ALTITUDE_A,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, altitudeA) },
     { PARAM_NAME_AP_ALTITUDE_F,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, altitudeF) },
     { PARAM_NAME_AP_POSITION_P,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, positionP) },
     { PARAM_NAME_AP_POSITION_I,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, positionI) },
@@ -2155,7 +2159,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_AP_POSITION_A,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, positionA) },
     { PARAM_NAME_AP_POSITION_F,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, positionF) },
     { PARAM_NAME_AP_POSITION_CUTOFF,     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 50 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, positionCutoff) },
-    { PARAM_NAME_AP_STOP_THRESHOLD,      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, stopThreshold) },
+    { PARAM_NAME_AP_STOP_THRESHOLD,      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 50 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, stopThreshold) },
     { PARAM_NAME_AP_MAX_ANGLE,           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 70 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, maxAngle) },
 
     // Drag feedforward and velocity setpoint cap
