@@ -2178,6 +2178,12 @@ case MSP_NAME:
 #else
         sbufWriteU8(dst, OPTICALFLOW_NONE);
 #endif
+        // Added in MSP API 1.49
+#ifdef USE_PITOT
+        sbufWriteU8(dst, pitotConfig()->pitot_hardware);
+#else
+        sbufWriteU8(dst, PITOT_NONE);
+#endif
         break;
 
     // Added in MSP API 1.46
@@ -2212,6 +2218,11 @@ case MSP_NAME:
 #endif
 #ifdef USE_OPTICALFLOW
         sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_OPTICALFLOW]);
+#else
+        sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
+#endif
+#ifdef USE_PITOT
+        sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_PITOT]);
 #else
         sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
 #endif
@@ -3714,6 +3725,13 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         if (sbufBytesRemaining(src) >= 1) {
 #ifdef USE_OPTICALFLOW
             opticalflowConfigMutable()->opticalflow_hardware = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+#endif
+        }
+        if (sbufBytesRemaining(src) >= 1) {
+#ifdef USE_PITOT
+            pitotConfigMutable()->pitot_hardware = sbufReadU8(src);
 #else
             sbufReadU8(src);
 #endif
