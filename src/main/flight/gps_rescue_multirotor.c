@@ -650,7 +650,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
             calculateTargetStep();
             controlYaw();
         }
-    break;
+        break;
 
     case RESCUE_DESCENT:
         updateVelocityStartupAttenuator();
@@ -661,7 +661,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
             rescueState.phase = RESCUE_LANDING;
             rescueState.intent.secondsFailing = 0; // reset sanity timer for landing
         }
-    break;
+        break;
 
     case RESCUE_LANDING:
         descend();
