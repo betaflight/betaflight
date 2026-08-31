@@ -153,6 +153,7 @@
 #include "sensors/gyro_init.h"
 #include "sensors/rangefinder.h"
 #include "sensors/opticalflow.h"
+#include "sensors/pitot.h"
 
 #include "telemetry/msp_shared.h"
 #include "telemetry/telemetry.h"
@@ -2326,6 +2327,16 @@ case MSP_NAME:
         sbufWriteU16(dst, (uint16_t)currentPidProfile->angle_pitch_offset);
         break;
     }
+
+    case MSP_PITOT:
+#if defined(USE_PITOT)
+        sbufWriteU32(dst, (uint32_t)MAX(pitot.airspeed, 0.0f));
+        sbufWriteU32(dst, (uint32_t)MAX(pitot.diffPressure, 0.0f));
+#else
+        sbufWriteU32(dst, 0);
+        sbufWriteU32(dst, 0);
+#endif
+        break;
 
     default:
         unsupportedCommand = true;
