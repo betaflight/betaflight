@@ -134,6 +134,7 @@ COMMON_SRC = \
             io/beeper.c \
             io/piniobox.c \
             io/serial.c \
+            io/serial_feature_map.c \
             io/serial_resource.c \
             io/smartaudio_protocol.c \
             io/statusindicator.c \
@@ -150,7 +151,6 @@ COMMON_SRC = \
             sensors/battery.c \
             sensors/current.c \
             sensors/voltage.c \
-            target/config_helper.c \
             fc/init.c \
             fc/controlrate_profile.c \
             drivers/accgyro/gyro_sync.c \
@@ -280,6 +280,8 @@ COMMON_SRC = \
             osd/osd_nav_map.c \
             osd/osd_warnings.c \
             sensors/barometer.c \
+            sensors/pitot.c \
+            drivers/pitot/pitot_ms4525.c \
             sensors/rangefinder.c \
             sensors/opticalflow.c \
             telemetry/telemetry.c \
@@ -317,9 +319,10 @@ COMMON_SRC += \
             drivers/accgyro/accgyro_spi_bmi270.c \
             drivers/accgyro/accgyro_spi_icm20649.c \
             drivers/accgyro/accgyro_spi_icm20689.c \
+            drivers/accgyro/accgyro_spi_icm40609.c \
             drivers/accgyro/accgyro_spi_icm426xx.c \
             drivers/accgyro/accgyro_spi_icm456xx.c \
-            drivers/accgyro/accgyro_spi_icm40609.c \
+            drivers/accgyro/accgyro_spi_icm56686.c \
             drivers/accgyro/accgyro_spi_l3gd20.c \
             drivers/accgyro/accgyro_spi_lsm6dso.c \
             drivers/accgyro/accgyro_spi_lsm6dso_init.c \
@@ -514,6 +517,7 @@ SIZE_OPTIMISED_SRC += \
             config/simplified_tuning.c \
             io/dashboard.c \
             io/serial.c \
+            io/serial_feature_map.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \

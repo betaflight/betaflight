@@ -93,7 +93,9 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 #include "sensors/gyro_init.h"
+#include "sensors/opticalflow.h"
 #include "sensors/rangefinder.h"
+#include "sensors/pitot.h"
 
 #ifdef USE_FLASH_TEST_PRBS
 void checkFlashStart(void);
@@ -111,7 +113,9 @@ PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
     .sample_rate = BLACKBOX_RATE_QUARTER,
     .device = DEFAULT_BLACKBOX_DEVICE,
     .mode = BLACKBOX_MODE_NORMAL,
-    .high_resolution = false
+    .high_resolution = false,
+    .blackbox_uart = SERIAL_PORT_NONE,
+    .blackbox_baud = BAUD_115200,
 );
 
 STATIC_ASSERT((sizeof(blackboxConfig()->fields_disabled_mask) * 8) >= FLIGHT_LOG_FIELD_SELECT_COUNT, too_many_flight_log_fields_selections);
@@ -241,6 +245,10 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"surfaceRaw",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(RANGEFINDER)},
 #endif
     {"rssi",       -1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(RSSI)},
+#ifdef USE_PITOT
+    {"pitot",      0, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PITOT)},
+    {"pitot",      1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PITOT)},
+#endif
 
     /* Gyros and accelerometers base their P-predictions on the average of the previous 2 frames to reduce noise impact */
     {"gyroADC",     0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(GYRO)},
@@ -392,6 +400,10 @@ typedef struct blackboxMainState_s {
     int32_t surfaceRaw;
 #endif
     uint16_t rssi;
+#ifdef USE_PITOT
+    uint32_t airspeed;
+    uint32_t diffPressure;
+#endif
 } blackboxMainState_t;
 
 typedef struct blackboxGpsState_s {
@@ -568,6 +580,11 @@ static bool testBlackboxConditionUncached(flightLogFieldCondition_e condition)
     case CONDITION(RSSI):
         return isRssiConfigured() && isFieldEnabled(FIELD_SELECT(RSSI));
 
+#ifdef USE_PITOT
+    case CONDITION(PITOT):
+        return isFieldEnabled(FIELD_SELECT(PITOT));
+#endif
+
     case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
         return blackboxPInterval != blackboxIInterval;
 
@@ -737,6 +754,13 @@ static void writeIntraframe(void)
     if (testBlackboxCondition(CONDITION(RSSI))) {
         blackboxWriteUnsignedVB(blackboxCurrent->rssi);
     }
+
+#ifdef USE_PITOT
+    if (testBlackboxCondition(CONDITION(PITOT))) {
+        blackboxWriteUnsignedVB(blackboxCurrent->airspeed);
+        blackboxWriteUnsignedVB(blackboxCurrent->diffPressure);
+    }
+#endif
 
     if (testBlackboxCondition(CONDITION(GYRO))) {
         blackboxWriteSigned16VBArray(blackboxCurrent->gyroADC, XYZ_AXIS_COUNT);
@@ -922,6 +946,13 @@ static void writeInterframe(void)
     }
 
     blackboxWriteTag8_8SVB(deltas, optionalFieldCount);
+
+#ifdef USE_PITOT
+    if (testBlackboxCondition(CONDITION(PITOT))) {
+        blackboxWriteSignedVB((int32_t) blackboxCurrent->airspeed - blackboxLast->airspeed);
+        blackboxWriteSignedVB((int32_t) blackboxCurrent->diffPressure - blackboxLast->diffPressure);
+    }
+#endif
 
     //Since gyros, accs and motors are noisy, base their predictions on the average of the history:
     if (testBlackboxCondition(CONDITION(GYRO))) {
@@ -1320,6 +1351,11 @@ static void loadMainState(timeUs_t currentTimeUs)
 
     blackboxCurrent->rssi = getRssi();
 
+#ifdef USE_PITOT
+    blackboxCurrent->airspeed = (uint32_t)MAX(pitot.airspeed, 0.0f);
+    blackboxCurrent->diffPressure = (uint32_t)MAX(pitot.diffPressure, 0.0f);
+#endif
+
 #ifdef USE_SERVOS
     for (unsigned i = 0; i < ARRAYLEN(blackboxCurrent->servo); i++) {
         blackboxCurrent->servo[i] = servo[i];
@@ -1631,9 +1667,6 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANTI_GRAVITY_CUTOFF_HZ, "%d",    currentPidProfile->anti_gravity_cutoff_hz);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANTI_GRAVITY_P_GAIN, "%d",    currentPidProfile->anti_gravity_p_gain);
 
-#ifdef USE_INTEGRATED_YAW_CONTROL
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_USE_INTEGRATED_YAW, "%d",     currentPidProfile->use_integrated_yaw);
-#endif
         BLACKBOX_PRINT_HEADER_LINE("ff_weight", "%d,%d,%d",                 currentPidProfile->pid[PID_ROLL].F,
                                                                             currentPidProfile->pid[PID_PITCH].F,
                                                                             currentPidProfile->pid[PID_YAW].F);
@@ -1737,6 +1770,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_P, "%d",         autopilotConfig()->altitudeP);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_I, "%d",         autopilotConfig()->altitudeI);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_D, "%d",         autopilotConfig()->altitudeD);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_A, "%d",         autopilotConfig()->altitudeA);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_F, "%d",         autopilotConfig()->altitudeF);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_P, "%d",         autopilotConfig()->positionP);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_I, "%d",         autopilotConfig()->positionI);
@@ -1750,6 +1784,15 @@ static bool blackboxWriteSysinfo(void)
 
 #ifdef USE_MAG
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MAG_HARDWARE, "%d",           compassConfig()->mag_hardware);
+#endif
+
+#ifdef USE_OPTICALFLOW
+        // The mounting orientation scales and signs every flow-derived velocity, so a
+        // log is not self-describing without it: a wrong rotation and a genuine
+        // estimator fault look alike after the fact.
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_OPTICALFLOW_HARDWARE, "%d",   opticalflowConfig()->opticalflow_hardware);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_OPTICALFLOW_ROTATION, "%d",   opticalflowConfig()->rotation);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_OPTICALFLOW_FLIP_X, "%d",     opticalflowConfig()->flip_x);
 #endif
 
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GYRO_CAL_ON_FIRST_ARM, "%d",  armingConfig()->gyro_cal_on_first_arm);

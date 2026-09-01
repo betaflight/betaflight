@@ -17,7 +17,9 @@ MCU_COMMON_SRC += \
             io/dronecan/dronecan.c \
             io/dronecan/dronecan_gnss.c \
             io/dronecan/dronecan_mag.c \
+            io/dronecan/dronecan_airspeed.c \
             io/dronecan/dronecan_node.c \
+            io/dronecan/dronecan_nodes.c \
             io/dronecan/dronecan_esc.c \
             io/dronecan/dronecan_dna.c \
             dronecan/libcanard/canard.c
