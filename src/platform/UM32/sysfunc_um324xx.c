@@ -48,6 +48,13 @@ void systemInit(void)
     // cache RCM->RFR value to use it in isMPUSoftReset() and others
     cachedResetFlags = RCM->RFR;
 
+    // Configure NVIC preempt/priority groups. HAL_Init() (called earlier
+    // from SystemInit) sets NVIC_PRIORITYGROUP_4, which discards all
+    // sub-priority bits. Restore the grouping the rest of the codebase
+    // encodes priorities for (2 bits preempt + 2 bits sub), mirroring what
+    // the STM32 platform does in its systemInit().
+    HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
+
     // Init cycle counter
     cycleCounterInit();
 

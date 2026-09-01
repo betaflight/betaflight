@@ -66,7 +66,7 @@ int usb_dc_init(uint8_t busid)
 	__NOP();__NOP();__NOP();__NOP();
 	__NOP();__NOP();__NOP();__NOP();
 
-	HAL_NVIC_SetPriority(USB0_IRQn, 6, 0);
+	HAL_NVIC_SetPriority(USB0_IRQn, 3, 3);
 	HAL_NVIC_EnableIRQ(USB0_IRQn);
 
 	/*** Reset ***/
