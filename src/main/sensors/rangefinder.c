@@ -47,6 +47,7 @@
 #include "drivers/time.h"
 
 #include "fc/runtime_config.h"
+#include "io/serial.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -73,10 +74,11 @@ rangefinder_t rangefinder;
 #define RANGEFINDER_DYNAMIC_THRESHOLD           600     //Used to determine max. usable rangefinder disatance
 #define RANGEFINDER_DYNAMIC_FACTOR              75
 
-PG_REGISTER_WITH_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig, PG_RANGEFINDER_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig, PG_RANGEFINDER_CONFIG, 1);
 
 PG_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig,
     .rangefinder_hardware = RANGEFINDER_NONE,
+    .rangefinder_uart = SERIAL_PORT_NONE,
 );
 
 #ifdef USE_RANGEFINDER_HCSR04
@@ -193,6 +195,8 @@ bool rangefinderInit(void)
     rangefinder.calculatedAltitude = RANGEFINDER_OUT_OF_RANGE;
     rangefinder.maxTiltCos = cos_approx(DECIDEGREES_TO_RADIANS(rangefinder.dev.detectionConeExtendedDeciDegrees / 2.0f));
     rangefinder.lastValidResponseTimeMs = millis();
+    rangefinder.lastDataTimeUs = 0;
+    rangefinder.dataIntervalUs = 0;
     rangefinder.snr = 0;
 
     rangefinderResetDynamicThreshold();
@@ -297,7 +301,7 @@ static bool isSurfaceAltitudeValid(void)
 /**
  * Get the last distance measured by the sonar in centimeters. When the ground is too far away, RANGEFINDER_OUT_OF_RANGE is returned.
  */
-bool rangefinderProcess(float cosTiltAngle)
+bool rangefinderProcess(timeUs_t nowUs, float cosTiltAngle)
 {
     if (rangefinder.dev.read) {
         const int32_t distance = rangefinder.dev.read(&rangefinder.dev);
@@ -306,6 +310,16 @@ bool rangefinderProcess(float cosTiltAngle)
         if (distance == RANGEFINDER_NO_NEW_DATA) {
             return false;
         }
+
+        // Timestamp actual device samples, so that consumers can measure the true
+        // hardware data rate rather than the (possibly faster) driver poll rate
+        if (rangefinder.lastDataTimeUs != 0) {
+            const timeDelta_t intervalUs = cmpTimeUs(nowUs, rangefinder.lastDataTimeUs);
+            if (intervalUs > 0) {
+                rangefinder.dataIntervalUs = intervalUs;
+            }
+        }
+        rangefinder.lastDataTimeUs = nowUs;
 
         if (distance >= 0) {
             rangefinder.lastValidResponseTimeMs = millis();
@@ -378,6 +392,16 @@ int32_t rangefinderGetLatestAltitude(void)
 int32_t rangefinderGetLatestRawAltitude(void)
 {
     return rangefinder.rawAltitude;
+}
+
+timeUs_t rangefinderGetLatestSampleTimeUs(void)
+{
+    return rangefinder.lastDataTimeUs;
+}
+
+timeDelta_t rangefinderGetSampleIntervalUs(void)
+{
+    return rangefinder.dataIntervalUs;
 }
 
 bool rangefinderIsHealthy(void)

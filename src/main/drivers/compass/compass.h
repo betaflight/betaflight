@@ -39,3 +39,5 @@ typedef struct magDev_s {
     int16_t magGain[3];
     uint16_t magOdrHz;
 } magDev_t;
+
+extern magDev_t magDev;

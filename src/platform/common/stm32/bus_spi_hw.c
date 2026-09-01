@@ -103,7 +103,15 @@ uint16_t spiCalculateDivider(uint32_t freq)
 {
 #if defined(STM32F4) || defined(STM32F7) || defined(APM32F4)
     uint32_t spiClk = SystemCoreClock / 2;
-#elif defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
+#elif defined(STM32C5)
+    // C5 leaves every SPI kernel clock on its APB clock (see the STM32C5 note
+    // in spiInitDevice()), and system_stm32c5xx.c programs
+    // HCLK = PCLK1 = PCLK2 = PCLK3 = SYSCLK, so PCLK == SystemCoreClock for
+    // every instance. Read it at runtime rather than hard-coding: SYSCLK is
+    // 144 MHz on both the HSE/PSI and the HSIS path, but stays at the 48 MHz
+    // boot clock if both fail.
+    uint32_t spiClk = SystemCoreClock;
+#elif defined(STM32H7) || defined(STM32H5) || defined(STM32N6)
     uint32_t spiClk = 100000000;
 #elif defined(STM32G4)
     uint32_t spiClk = SystemCoreClock;
@@ -130,7 +138,10 @@ uint32_t spiCalculateClock(uint16_t spiClkDivisor)
 {
 #if defined(STM32F4) || defined(STM32G4) || defined(STM32F7) || defined(APM32F4)
     uint32_t spiClk = SystemCoreClock / 2;
-#elif defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
+#elif defined(STM32C5)
+    // PCLK == SystemCoreClock on C5; see spiCalculateDivider() above.
+    uint32_t spiClk = SystemCoreClock;
+#elif defined(STM32H7) || defined(STM32H5) || defined(STM32N6)
     uint32_t spiClk = 100000000;
 #elif defined(AT32F4)
     uint32_t spiClk = system_core_clock / 2;

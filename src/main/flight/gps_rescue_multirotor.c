@@ -157,8 +157,6 @@ void gpsRescueInit(void)
 #if !ENABLE_RESCUE_PLAN
 static void rescueStart(void)
 {
-    initPositionHold(); // initialise position hold at current location
-
     rescueState.phase = RESCUE_INITIALIZE;
 }
 
@@ -554,8 +552,6 @@ void initRescueValues(void)
     rescueState.intent.xyAttenuator = 0.0f;        // For a slower start to gaining velocity
 
     resetAltitudeControl(); // Initialise altitude in autopilot multirotor
-    resetPositionControl(TASK_GPS_RESCUE_RATE_HZ); // Initialise position control in autopilot multirotor
-
 }
 #endif // !ENABLE_RESCUE_PLAN
 

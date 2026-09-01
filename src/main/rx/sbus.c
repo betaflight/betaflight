@@ -191,13 +191,13 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     rxRuntimeState->rcFrameStatusFn = sbusFrameStatus;
 
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-    if (!portConfig) {
+    const serialPortIdentifier_e port = rxConfig->rx_uart;
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
 #ifdef USE_TELEMETRY
-    bool portShared = telemetryCheckRxPortShared(portConfig, rxRuntimeState->serialrxProvider);
+    bool portShared = telemetryCheckRxPortShared(port, rxRuntimeState->serialrxProvider);
 #else
     bool portShared = false;
 #endif
@@ -206,7 +206,7 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     const portOptions_e portOptions = SBUS_PORT_OPTIONS
         | (rxConfig->serialrx_inverted ? SERIAL_NOT_INVERTED : SERIAL_INVERTED)
         | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0);
-    serialPort_t *sBusPort = openSerialPort(portConfig->identifier,
+    serialPort_t *sBusPort = openSerialPort(port,
         FUNCTION_RX_SERIAL,
         sbusDataReceive,
         &sbusFrameData,

@@ -103,8 +103,17 @@ static bool hasUPT1RFNewData = false;
 #ifdef USE_OPTICALFLOW
 #define UPT1_OPTICALFLOW_MIN_RANGE 80  // mm (adjust based on device spec)
 #define UPT1_OPFLOW_MIN_QUALITY_THRESHOLD 30  // Minimum quality threshold (adjust based on spec)
+// Sensor latency: a flow sample reports motion from this long ago (integration
+// window, image processing and transport), so the rotation compensation uses a
+// gyro reading of that age. One gyro reading is kept per flow sample, so the
+// history spans UPT1_OPFLOW_GYRO_DELAY_US / frame period entries.
+#define UPT1_OPFLOW_GYRO_DELAY_US 60000
+// Longest accumulated window still worth turning into a rate: beyond this the
+// task has been starved for so long that the average is no use to the estimator.
+#define UPT1_OPFLOW_MAX_INTEGRATION_US 1000000
 
 static opticalflowData_t upt1OpticalflowSensorData = {0};
+static uint8_t upt1OpticalflowQuality = 0;   // quality of the most recent usable frame
 static int32_t upt1RFDistanceMm = RANGEFINDER_NO_NEW_DATA;
 static uint32_t upt1RFTimestampUs = 0;
 #endif
@@ -126,6 +135,19 @@ void rangefinderUPT1Update(rangefinderDev_t *dev)
     if (upt1SerialPort == NULL) {
         return;
     }
+
+#ifdef USE_OPTICALFLOW
+    // Every frame carries only its own integration window (20 ms at the module's
+    // 50 Hz frame rate), and several can be waiting when this task runs slower
+    // than the frame rate. Accumulate the displacement and the integration time
+    // across the whole drain and publish one rate over the summed window, so all
+    // the measured motion is used whatever the task rate.
+    int32_t flowSumX = 0;
+    int32_t flowSumY = 0;
+    uint32_t integrationSumUs = 0;
+    unsigned flowFrames = 0;
+    unsigned invalidFlowFrames = 0;
+#endif
 
     while (serialRxBytesWaiting(upt1SerialPort)) {
         uint8_t c = serialRead(upt1SerialPort);
@@ -228,33 +250,28 @@ void rangefinderUPT1Update(rangefinderDev_t *dev)
 #endif
 
 #ifdef USE_OPTICALFLOW
-                // Process optical flow data with explicit validity tracking
-                static uint8_t upt1OpticalDataInvalidCount = 0;
-
+                // Optical flow validity, tracked per frame; the flow itself is
+                // accumulated and published once per call, after the drain loop.
                 const bool sensorFlowValid = laserValid;
                 const bool sensorRangeValid = laserValid
                                               && distanceMm >= UPT1_OPTICALFLOW_MIN_RANGE
                                               && distanceMm <= UPT1_RANGE_MAX;
-                const float dt_s = (float)integration_time / 1e6f;
-                const bool sensorDtValid = (dt_s > 0.0f && dt_s < 1.0f);
+                // uint16_t microseconds, so any non-zero value is a sane window;
+                // the accumulated total is bounded where it is used, below.
+                const bool sensorDtValid = (integration_time > 0);
 
                 upt1OpticalflowSensorData.rangeValid = sensorRangeValid;
                 upt1OpticalflowSensorData.flowValid = sensorFlowValid;
                 upt1OpticalflowSensorData.flowDtValid = sensorDtValid;
 
                 if (sensorFlowValid && sensorDtValid) {
-                    upt1OpticalDataInvalidCount = 0;
-                    upt1OpticalflowSensorData.timeStampUs = micros();
-                    upt1OpticalflowSensorData.flowRate.x = (float)flow_x / UPT1_OPTICAL_FLOW_SCALE / dt_s;
-                    upt1OpticalflowSensorData.flowRate.y = (float)flow_y / UPT1_OPTICAL_FLOW_SCALE / dt_s;
-                    upt1OpticalflowSensorData.quality = sensorRangeValid ? confidence : 0;
+                    flowSumX += flow_x;
+                    flowSumY += flow_y;
+                    integrationSumUs += integration_time;
+                    flowFrames++;
+                    upt1OpticalflowQuality = sensorRangeValid ? confidence : 0;
                 } else {
-                    if (++upt1OpticalDataInvalidCount > UPT1_MAX_INVALID_FRAMES) {
-                        upt1OpticalDataInvalidCount = UPT1_MAX_INVALID_FRAMES;
-                        upt1OpticalflowSensorData.flowRate.x = 0;
-                        upt1OpticalflowSensorData.flowRate.y = 0;
-                        upt1OpticalflowSensorData.quality = 0;
-                    }
+                    invalidFlowFrames++;
                 }
 #endif
             } else {
@@ -267,6 +284,29 @@ void rangefinderUPT1Update(rangefinderDev_t *dev)
             break;
         }
     }
+
+#ifdef USE_OPTICALFLOW
+    static uint8_t upt1OpticalDataInvalidCount = 0;
+
+    if (flowFrames > 0 && integrationSumUs <= UPT1_OPFLOW_MAX_INTEGRATION_US) {
+        // Rate over the summed integration window, so a slow task rate costs
+        // sample rate but not amplitude.
+        const float dt_s = (float)integrationSumUs / 1e6f;
+        upt1OpticalDataInvalidCount = 0;
+        upt1OpticalflowSensorData.timeStampUs = micros();
+        upt1OpticalflowSensorData.flowRate.x = (float)flowSumX / UPT1_OPTICAL_FLOW_SCALE / dt_s;
+        upt1OpticalflowSensorData.flowRate.y = (float)flowSumY / UPT1_OPTICAL_FLOW_SCALE / dt_s;
+        upt1OpticalflowSensorData.quality = upt1OpticalflowQuality;
+    } else if (invalidFlowFrames > 0) {
+        upt1OpticalDataInvalidCount += invalidFlowFrames;
+        if (upt1OpticalDataInvalidCount > UPT1_MAX_INVALID_FRAMES) {
+            upt1OpticalDataInvalidCount = UPT1_MAX_INVALID_FRAMES;
+            upt1OpticalflowSensorData.flowRate.x = 0;
+            upt1OpticalflowSensorData.flowRate.y = 0;
+            upt1OpticalflowSensorData.quality = 0;
+        }
+    }
+#endif
 }
 
 // Return most recent device output in cm
@@ -284,18 +324,20 @@ int32_t rangefinderUPT1GetDistance(rangefinderDev_t *dev)
 
 bool rangefinderUPT1Detect(rangefinderDev_t *dev)
 {
-    // Check if serial port is configured for rangefinder/optical flow
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_LIDAR_TF);
-
-    if (!portConfig) {
-        return false;
-    }
-
-    // Open serial port at 115200n1 (per UP-T1-001-Plus specification)
-    upt1SerialPort = openSerialPort(portConfig->identifier, FUNCTION_LIDAR_TF, NULL, NULL, UPT1_BAUDRATE, MODE_RXTX, 0);
-
+    // UP-T1-001-Plus uses the same serial port for both rangefinder and optical flow.
+    // Reuse the port if optical flow detection already opened it, since openSerialPort()
+    // rejects an already-in-use port and would otherwise clear upt1SerialPort.
     if (upt1SerialPort == NULL) {
-        return false;
+        const serialPortIdentifier_e port = rangefinderConfig()->rangefinder_uart;
+        if (port == SERIAL_PORT_NONE) {
+            return false;
+        }
+
+        // Open serial port at 115200n1 (per UP-T1-001-Plus specification)
+        upt1SerialPort = openSerialPort(port, FUNCTION_LIDAR, NULL, NULL, UPT1_BAUDRATE, MODE_RXTX, 0);
+        if (upt1SerialPort == NULL) {
+            return false;
+        }
     }
 
     dev->delayMs = 10;  // 50Hz frame rate = 20ms period, but oversample 2x
@@ -338,20 +380,20 @@ bool upt1OpticalflowDetect(opticalflowDev_t *dev)
     // UP-T1-001-Plus uses the same serial port for both rangefinder and optical flow
     // Check if serial port is configured (should already be open from rangefinder detection)
     if (upt1SerialPort == NULL) {
-        const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_LIDAR_TF);
-        if (!portConfig) {
+        const serialPortIdentifier_e port = rangefinderConfig()->rangefinder_uart;
+        if (port == SERIAL_PORT_NONE) {
             return false;
         }
-        upt1SerialPort = openSerialPort(portConfig->identifier, FUNCTION_LIDAR_TF, NULL, NULL, UPT1_BAUDRATE, MODE_RXTX, 0);
+        upt1SerialPort = openSerialPort(port, FUNCTION_LIDAR, NULL, NULL, UPT1_BAUDRATE, MODE_RXTX, 0);
         if (upt1SerialPort == NULL) {
             return false;
         }
     }
 
-    dev->delayMs = 20;  // 50Hz frame rate = 20ms period
+    dev->delayMs = UPT1_FRAME_PERIOD_MS;
     dev->minRangeCm = UPT1_OPTICALFLOW_MIN_RANGE / 10;  // Convert mm to cm
     dev->minQualityThreshold = UPT1_OPFLOW_MIN_QUALITY_THRESHOLD;
-    dev->gyroSampleDelay = 3;
+    dev->gyroDelayUs = UPT1_OPFLOW_GYRO_DELAY_US;
 
     dev->init = &upt1OpticalflowInit;
     dev->update = &upt1OpticalflowUpdate;
