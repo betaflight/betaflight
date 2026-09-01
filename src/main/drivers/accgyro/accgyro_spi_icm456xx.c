@@ -343,6 +343,7 @@ static bool icm456xx_read_ireg(const extDevice_t *dev, uint16_t reg, uint8_t *va
     spiWriteRegBuf(dev, ICM456XX_REG_IREG_ADDR_15_8, address, sizeof(address));
     delayMicroseconds(ICM456XX_IREG_ACCESS_DELAY_US); // spec-minimum gap before IREG_DATA read
     *value = spiReadRegMsk(dev, ICM456XX_REG_IREG_DATA);
+    delayMicroseconds(ICM456XX_IREG_ACCESS_DELAY_US); // spec-minimum gap before the next IREG access
 
     return true;
 }
