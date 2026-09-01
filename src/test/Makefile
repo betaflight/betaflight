@@ -435,6 +435,7 @@ serial_feature_map_unittest_DEFINES := \
 		USE_OPTICALFLOW= \
 		USE_OPTICALFLOW_MT= \
 		USE_OSD= \
+		USE_MSP_DISPLAYPORT= \
 		USE_TELEMETRY= \
 		USE_TELEMETRY_FRSKY_HUB= \
 		USE_TELEMETRY_HOTT= \
@@ -627,7 +628,8 @@ position_estimator_unittest_SRC := \
 position_estimator_unittest_DEFINES := \
 		USE_GPS= \
 		USE_BARO= \
-		USE_RANGEFINDER=
+		USE_RANGEFINDER= \
+		USE_OPTICALFLOW=
 
 position_nav_unittest_SRC := \
 		$(USER_DIR)/flight/position_nav.c \

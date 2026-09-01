@@ -33,7 +33,6 @@
 #include "common/maths.h"
 #include "common/time.h"
 #include "common/utils.h"
-#include "common/filter.h"
 
 #include "config/config.h"
 #include "config/feature.h"
@@ -70,22 +69,19 @@
 
 // static prototypes
 static void applySensorRotation(vector2_t * dst, vector2_t * src);
-static void applyLPF(vector2_t * flowRates);
 
-PG_REGISTER_WITH_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig, PG_OPTICALFLOW_CONFIG, 2);
+PG_REGISTER_WITH_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig, PG_OPTICALFLOW_CONFIG, 3);
 
 PG_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig,
     .opticalflow_hardware = OPTICALFLOW_NONE,
     .rotation = 0,
     .flip_x = 0,
-    .flow_lpf = 100,
     .opticalflow_uart = SERIAL_PORT_NONE,
 );
 
 static opticalflow_t opticalflow;
 static float cosRotAngle = 1.0f;
 static float sinRotAngle = 0.0f;
-static pt2Filter_t xFlowLpf, yFlowLpf;
 
 // ======================================================================
 // =================== Opticalflow Main Functions =======================
@@ -147,18 +143,12 @@ bool opticalflowInit(void) {
     opticalflow.rawFlowRates.y = 0;
     opticalflow.processedFlowRates.x = 0;
     opticalflow.processedFlowRates.y = 0;
+    opticalflow.flowRateValid[0] = true;
+    opticalflow.flowRateValid[1] = true;
     opticalflow.timeStampUs = micros();
 
     cosRotAngle = cosf(DEGREES_TO_RADIANS(opticalflowConfig()->rotation));
     sinRotAngle = sinf(DEGREES_TO_RADIANS(opticalflowConfig()->rotation));
-    //low pass filter
-    if (opticalflowConfig()->flow_lpf != 0) {
-        const float flowCutoffHz = (float)opticalflowConfig()->flow_lpf / 100.0f;
-        const float flowGain     = pt2FilterGain(flowCutoffHz, opticalflow.dev.delayMs / 1000.0f);
-
-        pt2FilterInit(&xFlowLpf, flowGain);
-        pt2FilterInit(&yFlowLpf, flowGain);
-    }
     return true;
 }
 
@@ -185,50 +175,76 @@ void opticalflowProcess(void) {
 
         // Attenuate the optical flow when body rotation is detected
         // There is a delay between a detected gyro motion and this
-        // being seen in the optical flow output
+        // being seen in the optical flow output.
+        // One gyro reading is kept per flow sample; the one closest to
+        // gyroDelayUs old is the one that belongs to this flow measurement.
         static uint8_t gyroSampleIndex = 0;
         static float rollRate[MAX_GYRO_SAMPLE_DELAY];
         static float pitchRate[MAX_GYRO_SAMPLE_DELAY];
+        static timeUs_t gyroSampleTimeUs[MAX_GYRO_SAMPLE_DELAY];
 
-        const uint8_t sampleDelay = (uint8_t)constrain((int)opticalflow.dev.gyroSampleDelay, 1, MAX_GYRO_SAMPLE_DELAY);
-        gyroSampleIndex = (gyroSampleIndex + 1) % sampleDelay;
+        gyroSampleIndex = (gyroSampleIndex + 1) % MAX_GYRO_SAMPLE_DELAY;
         rollRate[gyroSampleIndex] = (float)gyroGetFilteredDownsampled(X);
         pitchRate[gyroSampleIndex] = -(float)gyroGetFilteredDownsampled(Y);
-        delayedGyroSampleIndex = (gyroSampleIndex + 1) % sampleDelay;
-        vector2_t delayedGyroRaw = {{
+        gyroSampleTimeUs[gyroSampleIndex] = data.timeStampUs;
+
+        const timeDelta_t targetAgeUs = (timeDelta_t)opticalflow.dev.gyroDelayUs;
+        delayedGyroSampleIndex = gyroSampleIndex;
+        timeDelta_t bestAgeErrorUs = INT32_MAX;
+        for (unsigned i = 0; i < MAX_GYRO_SAMPLE_DELAY; i++) {
+            if (gyroSampleTimeUs[i] == 0) {
+                continue;   // slot not filled yet
+            }
+            const timeDelta_t ageUs = cmpTimeUs(data.timeStampUs, gyroSampleTimeUs[i]);
+            const timeDelta_t errorUs = ABS(ageUs - targetAgeUs);
+            if (errorUs < bestAgeErrorUs) {
+                bestAgeErrorUs = errorUs;
+                delayedGyroSampleIndex = i;
+            }
+        }
+        // The gyro rates are already in the craft frame, and applySensorRotation()
+        // has just put the flow in that frame too, so the rotation term is
+        // subtracted as it stands. Rotating it as well would apply the sensor
+        // mounting rotation twice: at opticalflow_rotation = 180 that inverts the
+        // term and the compensation doubles the rotation error instead of removing it.
+        const vector2_t delayedGyro = {{
             rollRate[delayedGyroSampleIndex],
             pitchRate[delayedGyroSampleIndex]
         }};
-        vector2_t delayedGyroRotated;
-        applySensorRotation(&delayedGyroRotated, &delayedGyroRaw);
 
         DEBUG_SET(DEBUG_OPTICALFLOW, 0, lrintf(processed.x * 1000));
         DEBUG_SET(DEBUG_OPTICALFLOW, 1, lrintf(processed.y * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 2, lrintf(DEGREES_TO_RADIANS(delayedGyroRotated.x) * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 3, lrintf(DEGREES_TO_RADIANS(delayedGyroRotated.y) * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 2, lrintf(DEGREES_TO_RADIANS(delayedGyro.x) * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 3, lrintf(DEGREES_TO_RADIANS(delayedGyro.y) * 1000));
 
         // Subtract the rate of body rotation (converted from dps to rad/s) from the
         // optical flow
-        processed.x -= DEGREES_TO_RADIANS(delayedGyroRotated.x);
-        processed.y -= DEGREES_TO_RADIANS(delayedGyroRotated.y);
+        processed.x -= DEGREES_TO_RADIANS(delayedGyro.x);
+        processed.y -= DEGREES_TO_RADIANS(delayedGyro.y);
 
-        // For large rates of body rotation the velocity will be unreliable, so zero
-        if (fabsf(delayedGyroRotated.x) > ROTATION_GYRO_LIMIT) {
-            processed.x = 0;
-        }
-        if (fabsf(delayedGyroRotated.y) > ROTATION_GYRO_LIMIT) {
-            processed.y = 0;
-        }
-        DEBUG_SET(DEBUG_OPTICALFLOW, 4, lrintf(processed.x * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 5, lrintf(processed.y * 1000));
+        // Beyond this rate of body rotation the compensation cannot recover a
+        // translation rate: the rotation term is larger than the signal and its
+        // timing error alone exceeds it. Mark the axis unusable rather than
+        // reporting zero, which a consumer would read as "not moving" and fuse.
+        const bool xValid = fabsf(delayedGyro.x) <= ROTATION_GYRO_LIMIT;
+        const bool yValid = fabsf(delayedGyro.y) <= ROTATION_GYRO_LIMIT;
 
-        applyLPF(&processed);
+        DEBUG_SET(DEBUG_OPTICALFLOW, 4, xValid ? lrintf(processed.x * 1000) : 0);
+        DEBUG_SET(DEBUG_OPTICALFLOW, 5, yValid ? lrintf(processed.y * 1000) : 0);
+
+        // For the same reason, an unusable axis holds its previous value rather than
+        // being zeroed. The validity flag travels with it, so a consumer can still
+        // skip the sample outright, which is what the estimator does.
+        processed.x = xValid ? processed.x : opticalflow.processedFlowRates.x;
+        processed.y = yValid ? processed.y : opticalflow.processedFlowRates.y;
 
         DEBUG_SET(DEBUG_OPTICALFLOW, 6, lrintf(processed.x * 1000));
         DEBUG_SET(DEBUG_OPTICALFLOW, 7, lrintf(processed.y * 1000));
 
         opticalflow.rawFlowRates = raw;
         opticalflow.processedFlowRates = processed;
+        opticalflow.flowRateValid[0] = xValid;
+        opticalflow.flowRateValid[1] = yValid;
         opticalflow.timeStampUs  = data.timeStampUs;
     }
 }
@@ -236,15 +252,6 @@ void opticalflowProcess(void) {
 static void applySensorRotation(vector2_t * dst, vector2_t * src) {
     dst->x = (opticalflowConfig()->flip_x ? -1.0f : 1.0f) * (src->x * cosRotAngle - src->y * sinRotAngle);
     dst->y = src->x * sinRotAngle + src->y * cosRotAngle;
-}
-
-static void applyLPF(vector2_t * flowRates) {
-    if (opticalflowConfig()->flow_lpf == 0) {
-        return;
-    }
-
-    flowRates->x = pt2FilterApply(&xFlowLpf, flowRates->x);
-    flowRates->y = pt2FilterApply(&yFlowLpf, flowRates->y);
 }
 
 const opticalflow_t * getOpticalFlowData(void) {

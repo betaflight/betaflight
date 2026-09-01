@@ -4282,7 +4282,7 @@ static void cliPrintGyroRegisters(uint8_t whichSensor)
     // ICM-456xx uses different register addresses than MPU/ICM-426xx sensors
     // Register 0x75 (MPU_RA_WHO_AM_I) is RESERVED on ICM-456xx
     const mpuDetectionResult_t *mpuDetection = gyroMpuDetectionResult();
-    
+
     if (mpuDetection->sensor == ICM_45686_SPI || mpuDetection->sensor == ICM_45605_SPI) {
         // ICM-456xx register addresses (from DS-000577 datasheet)
         cliPrintLinef("# WHO_AM_I      0x%X (0x72)", gyroReadRegister(whichSensor, 0x72));  // Should be 0xE9 or 0xE5
@@ -5943,6 +5943,11 @@ static int getTaskAverageRateHz(taskId_e taskId, int *averageDeltaTimeUs)
     return taskInfo.averageDeltaTime10thUs == 0 ? 0 : lrintf(1e7f / taskInfo.averageDeltaTime10thUs);
 }
 
+#if ENABLE_DRONECAN
+static const char * const nodeHealthNames[] = { "OK", "WARNING", "ERROR", "CRITICAL" };
+static const char * const nodeModeNames[] = { "OPERATIONAL", "INITIALISING", "MAINTENANCE", "UPDATING", "?", "?", "?", "OFFLINE" };
+#endif
+
 RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -6157,8 +6162,6 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
         if (dronecanIsInitialised()) {
             cliPrintLinef("DroneCAN: node %d, device %d", dronecanConfig()->node_id, dronecanConfig()->device);
 
-            static const char * const nodeHealthNames[] = { "OK", "WARNING", "ERROR", "CRITICAL" };
-            static const char * const nodeModeNames[] = { "OPERATIONAL", "INITIALISING", "MAINTENANCE", "UPDATING", "?", "?", "?", "OFFLINE" };
             for (uint8_t i = 0; i < dronecanNodesCount(); i++) {
                 const dronecanNodeEntry_t *node = dronecanNodesGet(i);
                 cliPrintf("  node %d: %s (%s", node->nodeId,
@@ -6261,6 +6264,158 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
         cliPrintf(" %s", getArmingDisableFlagName(flag));
     }
     cliPrintLinefeed();
+}
+
+#if defined(USE_SENSOR_NAMES)
+static void cliPrintDeviceBus(const extDevice_t *dev)
+{
+    if (!dev || !dev->bus) {
+        return;
+    }
+
+    switch (dev->bus->busType) {
+#ifdef USE_SPI
+    case BUS_TYPE_SPI:
+        cliPrintf(" on SPI%d", SPI_DEV_TO_CFG(spiDeviceByInstance(dev->bus->busType_u.spi.instance)));
+        break;
+#endif
+#ifdef USE_I2C
+    case BUS_TYPE_I2C:
+        cliPrintf(" on I2C%d @0x%02X", I2C_DEV_TO_CFG(dev->bus->busType_u.i2c.device), dev->busType_u.i2c.address);
+        break;
+#endif
+    default:
+        break;
+    }
+}
+
+// One line per sensor class, named by the stem of its *_hardware setting.
+// A class configured to a specific device that never came up still gets a
+// line, so a wiring fault reads as "configured, not detected" rather than
+// silence.
+static void cliPrintSensorPeripheral(const char *stem, sensorIndex_e sensorIndex, uint8_t configuredHardware, const extDevice_t *dev)
+{
+    int count;
+    const char * const *names = sensorHardwareNames(sensorIndex, &count);
+    if (!names) {
+        return;
+    }
+
+    const bool detected = (sensorsMask() & sensorMaskForIndex(sensorIndex)) != 0;
+
+    if (detected) {
+        const uint8_t hardwareIndex = detectedSensors[sensorIndex];
+        // Indexes 0 and 1 are AUTO and NONE in every hardware enum - a
+        // detection that never recorded which device it found has no name
+        // worth printing.
+        if (hardwareIndex <= 1 || hardwareIndex >= count || !names[hardwareIndex]) {
+            return;
+        }
+        cliPrintf("%s: %s", stem, names[hardwareIndex]);
+        cliPrintDeviceBus(dev);
+        cliPrintLinefeed();
+    } else if (configuredHardware > 1 && configuredHardware < count) {
+        // 0 = AUTO, 1 = NONE for every sensor hardware enum
+        if (names[configuredHardware]) {
+            cliPrintLinef("%s: %s configured, not detected", stem, names[configuredHardware]);
+        } else {
+            // A selection this build has no entry for, e.g. a DroneCAN mag
+            // setting carried onto a build without DroneCAN.
+            cliPrintLinef("%s: %d configured, not detected", stem, configuredHardware);
+        }
+    }
+}
+#endif // USE_SENSOR_NAMES
+
+static void cliPeripherals(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+    UNUSED(cmdline);
+
+    for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
+        const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
+        if (!serialIsPortAvailable(identifier)) {
+            continue;
+        }
+
+        serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
+        const unsigned claimCount = serialGetPortClaims(identifier, claims, ARRAYLEN(claims));
+        if (!claimCount) {
+            continue;
+        }
+
+        const serialPortUsage_t *usage = findSerialPortUsageByIdentifier(identifier);
+        const uint32_t openFunction = (usage && usage->serialPort) ? (uint32_t)usage->function : 0;
+
+        cliPrintf("serial %s:", serialName(identifier, invalidName));
+
+        // Claims the port actually opened for first, each starred; the rest
+        // lost boot arbitration or await a reboot.
+        bool first = true;
+        for (unsigned pass = 0; pass < 2; pass++) {
+            const bool wantActive = (pass == 0);
+            for (unsigned c = 0; c < claimCount; c++) {
+                const bool active = (claims[c].functionMask & openFunction) != 0;
+                if (active != wantActive) {
+                    continue;
+                }
+                cliPrintf(first ? " %s%s" : ", %s%s", claims[c].name, active ? "*" : "");
+                first = false;
+            }
+        }
+        cliPrintLinefeed();
+    }
+
+#if ENABLE_DRONECAN
+    if (dronecanConfig()->enabled && dronecanIsInitialised()) {
+        for (uint8_t i = 0; i < dronecanNodesCount(); i++) {
+            const dronecanNodeEntry_t *node = dronecanNodesGet(i);
+            cliPrintf("can node %d: %s (%s", node->nodeId,
+                      node->infoValid && node->name[0] ? node->name : "no info",
+                      nodeHealthNames[node->health & 0x03]);
+            if (node->mode != UAVCAN_NODE_MODE_OPERATIONAL) {
+                cliPrintf(", %s", nodeModeNames[node->mode & 0x07]);
+            }
+            cliPrint(")");
+
+            static const struct { uint8_t flag; const char *name; } sensorFlagNames[] = {
+                { DRONECAN_NODE_SENSOR_GPS, "gps" },
+                { DRONECAN_NODE_SENSOR_MAG, "mag" },
+                { DRONECAN_NODE_SENSOR_AIRSPEED, "airspeed" },
+                { DRONECAN_NODE_SENSOR_ESC, "esc" },
+            };
+            bool first = true;
+            for (unsigned f = 0; f < ARRAYLEN(sensorFlagNames); f++) {
+                if (node->sensorFlags & sensorFlagNames[f].flag) {
+                    cliPrintf(first ? " %s" : ", %s", sensorFlagNames[f].name);
+                    first = false;
+                }
+            }
+            cliPrintLinefeed();
+        }
+    }
+#endif
+
+#if defined(USE_SENSOR_NAMES)
+    for (unsigned pos = 0; pos < GYRO_COUNT; pos++) {
+        if (!(gyroConfig()->gyrosDetected & BIT(pos))) {
+            continue;
+        }
+        cliPrintf("gyro %d: %s%s", pos + 1, lookupTableGyroHardware[detectedGyros[pos]],
+                  (gyro.gyroEnabledBitmask & BIT(pos)) ? "*" : "");
+        cliPrintDeviceBus(&gyro.gyroSensor[pos].gyroDev.dev);
+        cliPrintLinefeed();
+    }
+#if defined(USE_ACC)
+    cliPrintSensorPeripheral("acc", SENSOR_INDEX_ACC, accelerometerConfig()->acc_hardware, acc.dev.gyro ? &acc.dev.gyro->dev : NULL);
+#endif
+#if defined(USE_BARO)
+    cliPrintSensorPeripheral("baro", SENSOR_INDEX_BARO, barometerConfig()->baro_hardware, &baro.dev.dev);
+#endif
+#if defined(USE_MAG)
+    cliPrintSensorPeripheral("mag", SENSOR_INDEX_MAG, compassConfig()->mag_hardware, &magDev.dev);
+#endif
+#endif // USE_SENSOR_NAMES
 }
 
 RAM_CODE static void cliTasks(const char *cmdName, char *cmdline)
@@ -8351,6 +8506,7 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("options", "show build options", NULL, cliOptions),
 #ifndef MINIMAL_CLI
+    CLI_COMMAND_DEF("peripherals", "show attached peripherals", NULL, cliPeripherals),
     CLI_COMMAND_DEF("play_sound", NULL, "[<index>]", cliPlaySound),
 #endif
     CLI_COMMAND_DEF("battery_profile", "change battery profile", "[<index>]", cliBatteryProfile),

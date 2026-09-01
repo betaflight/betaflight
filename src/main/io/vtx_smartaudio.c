@@ -690,6 +690,11 @@ void saSetMode(int mode)
 
 bool vtxSmartAudioInit(void)
 {
+    const serialPortIdentifier_e port = vtxSettingsConfig()->vtx_uart;
+    if (port == SERIAL_PORT_NONE || vtxSettingsConfig()->vtx_type != VTXDEV_SMARTAUDIO) {
+        return false;
+    }
+
 #if !defined(USE_VTX_TABLE)
     for (int8_t i = 0; i < VTX_SMARTAUDIO_POWER_COUNT + 1; i++) {
         saSupportedPowerLabelPointerArray[i] = saSupportedPowerLabels[i];
@@ -705,10 +710,6 @@ bool vtxSmartAudioInit(void)
     dprintf(("smartAudioInit: OK\r\n"));
 #endif
 
-    const serialPortIdentifier_e port = vtxSettingsConfig()->vtx_uart;
-    if (port == SERIAL_PORT_NONE) {
-        return false;
-    }
     // Note, for SA, which uses bidirectional mode, would normally require pullups.
     // the SA protocol usually requires pulldowns, and therefore uses SERIAL_PULL_SMARTAUDIO together with SERIAL_BIDIR_PP
     // serial driver handles different pullup/pulldown/nopull quirks when SERIAL_PULL_SMARTAUDIO is used

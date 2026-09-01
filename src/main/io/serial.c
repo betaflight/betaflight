@@ -54,6 +54,8 @@
 #include "io/serial.h"
 #include "io/serial_feature_map.h"
 
+#include "pg/msp.h"
+
 #include "msp/msp_serial.h"
 
 #include "pg/pg.h"
@@ -467,16 +469,21 @@ bool serialPortFunctionsConflict(serialPortIdentifier_e identifier)
 
 bool isSerialConfigValid(void)
 {
-    // 1 MSP port minimum, max MSP ports is defined and must be adhered to.
+    // 1 MSP port minimum.  Only the slots the user assigned are counted: a port a
+    // feature implies by speaking MSP is drawn from IMPLIED_MSP_PORT_COUNT, so it
+    // must not eat into the configurator's budget.
     uint8_t mspPortCount = 0;
+
+    for (unsigned slot = 0; slot < MAX_MSP_PORT_COUNT; slot++) {
+        if (mspConfig()->msp_uart[slot] != SERIAL_PORT_NONE) {
+            mspPortCount++;
+        }
+    }
 
     for (unsigned index = 0; index < ARRAYLEN(serialPortIdentifiers); index++) {
         const serialPortIdentifier_e identifier = serialPortIdentifiers[index];
         const uint32_t functionMask = serialSynthesizeFunctionMask(identifier);
 
-        if (functionMask & FUNCTION_MSP) {
-            mspPortCount++;
-        }
         if (identifier == SERIAL_PORT_USB_VCP && (functionMask & FUNCTION_MSP) == 0) {
             // Require MSP to be enabled for the VCP port
             return false;
@@ -487,7 +494,7 @@ bool isSerialConfigValid(void)
         }
     }
 
-    if (mspPortCount == 0 || mspPortCount > MAX_MSP_PORT_COUNT) {
+    if (mspPortCount == 0) {
         return false;
     }
     return true;

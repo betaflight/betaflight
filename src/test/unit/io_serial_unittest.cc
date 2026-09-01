@@ -35,10 +35,12 @@ extern "C" {
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
     #include "pg/rx.h"
+    #include "pg/msp.h"
 
     void serialInit(bool softserialEnabled);
 
     PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
+    PG_REGISTER(mspConfig_t, mspConfig, PG_MSP_CONFIG, 0);
     PG_REGISTER(serialPinConfig_t, serialPinConfig, PG_SERIAL_PIN_CONFIG, 0);
 }
 

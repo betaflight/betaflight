@@ -78,9 +78,9 @@ bool dshot_program_bidir_init(PIO pio, uint sm, int offset, uint pin)
 
     float clocks_per_us = clock_get_hz(clk_sys) / 1000000;
 #ifdef TEST_DSHOT_SLOW
-    sm_config_set_clkdiv(&config, (1.0e4f + dshotGetPeriodTiming()) / DSHOT_BIDIR_BIT_PERIOD * clocks_per_us);
+    sm_config_set_clkdiv(&config, (1.0e4f + dshotBitPeriodUs) / DSHOT_BIDIR_BIT_PERIOD * clocks_per_us);
 #else
-    sm_config_set_clkdiv(&config, dshotGetPeriodTiming() / DSHOT_BIDIR_BIT_PERIOD * clocks_per_us);
+    sm_config_set_clkdiv(&config, dshotBitPeriodUs / DSHOT_BIDIR_BIT_PERIOD * clocks_per_us);
 #endif
 
     bool ok = PICO_OK == pio_sm_init(pio, sm, offset, &config);

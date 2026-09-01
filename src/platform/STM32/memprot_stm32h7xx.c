@@ -59,13 +59,21 @@ mpuRegion_t mpuRegions[] = {
         .bufferable = MPU_ACCESS_NOT_BUFFERABLE,
     },
     {
-        // A region in AXI RAM accessible from SDIO internal DMA
+        // A region in AXI RAM accessible from SDIO internal DMA.
+        //
+        // Shareable, like the dmaram region above, so the M7 leaves it out of the
+        // D cache. Both regions must agree: PMSAv7 rounds each up to a natural
+        // power-of-two window, and once the two windows overlap the higher-numbered
+        // region's attributes win over the whole of the overlap. A non-shareable
+        // region here can therefore silently make dmaram cacheable, and bus_spi
+        // skips cache maintenance for anything inside dmaram on the strength of its
+        // address alone - so DMA writes land in RAM that the CPU never re-reads.
         .start      = (uint32_t)&dmarwaxi_start,
         .end        = (uint32_t)&dmarwaxi_end,
         .size       = 0,  // Size determined by ".end"
         .perm       = MPU_REGION_FULL_ACCESS,
         .exec       = MPU_INSTRUCTION_ACCESS_ENABLE,
-        .shareable  = MPU_ACCESS_NOT_SHAREABLE,
+        .shareable  = MPU_ACCESS_SHAREABLE,
         .cacheable  = MPU_ACCESS_CACHEABLE,
         .bufferable = MPU_ACCESS_NOT_BUFFERABLE,
     },
