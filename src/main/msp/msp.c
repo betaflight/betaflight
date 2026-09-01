@@ -1178,7 +1178,7 @@ RAM_CODE static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMS
 #else
         sbufWriteU16(dst, 0);
 #endif
-        sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_RANGEFINDER) << 4 | sensors(SENSOR_GYRO) << 5 | sensors(SENSOR_OPTICALFLOW) << 6);
+        sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_RANGEFINDER) << 4 | sensors(SENSOR_GYRO) << 5 | sensors(SENSOR_OPTICALFLOW) << 6 | sensors(SENSOR_PITOT) << 7);
         sbufWriteData(dst, &flightModeFlags, 4);        // unconditional part of flags, first 32 bits
         sbufWriteU8(dst, getCurrentPidProfileIndex());
         sbufWriteU16(dst, constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE));
