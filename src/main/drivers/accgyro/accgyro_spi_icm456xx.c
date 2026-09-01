@@ -168,6 +168,7 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 // REG_MISC2 - 0x7F
 #define ICM456XX_SOFT_RESET                     (1 << 1)
 #define ICM456XX_RESET_TIMEOUT_US               20000  // 20 ms
+#define ICM456XX_BIT_IREG_DONE                  (1 << 0)
 
 #define ICM456XX_ACCEL_DATA_X1_UI               0x00
 #define ICM456XX_GYRO_DATA_X1_UI                0x06
@@ -231,7 +232,9 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_GYRO_SRC_CTRL_INTERP_FIR       (0x02 << 5)
 
 // HOST INDIRECT ACCESS REGISTER (IREG)
+// 0x7C-0x7E must be burst-written in a single SPI transaction (DS-000577, Host Indirect Access Register interface)
 #define ICM456XX_REG_IREG_ADDR_15_8             0x7C
+#define ICM456XX_REG_IREG_ADDR_7_0              0x7D
 #define ICM456XX_REG_IREG_DATA                  0x7E
 
 
@@ -259,6 +262,8 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_64       0x05 // 25 Hz ODR = 1600 Hz
 #define ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_128      0x06 // 12.5 Hz ODR = 1600 Hz
 
+// Shared bits 2:0 selector field, both Accel and Gyro UI LPF registers
+#define ICM456XX_UI_LPFBW_SEL_MASK               0x07
 
 #ifndef ICM456XX_CLOCK
 // Default: 24 MHz max SPI frequency
@@ -274,6 +279,7 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_GYRO_STARTUP_TIME_MS           35  // Min gyro startup from OFF/STANDBY/LP
 #define ICM456XX_SENSOR_ENABLE_DELAY_MS         1   // Allow sensors to power on and stabilize
 #define ICM456XX_IREG_ACCESS_DELAY_US           4
+#define ICM456XX_IREG_TIMEOUT_US                5000 // IREG_DONE poll bound (5 ms)
 #define ICM456XX_IREG_UPDATE_RETRIES            3
 
 #define ICM456XX_DATA_LENGTH                    6  // 3 axes * 2 bytes per axis
@@ -301,6 +307,21 @@ static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
     }
 }
 
+// Bounded poll of IREG_DONE (REG_MISC2 bit 0) before starting a new IREG access;
+// "0" means an access is still in progress and a new one must not be triggered
+// (DS-000577, Host Indirect Access Register interface).
+static bool icm456xx_waitIregReady(const extDevice_t *dev)
+{
+    for (uint32_t waitedUs = 0; waitedUs < ICM456XX_IREG_TIMEOUT_US; waitedUs += ICM456XX_IREG_ACCESS_DELAY_US) {
+        if (spiReadRegMsk(dev, ICM456XX_REG_MISC2) & ICM456XX_BIT_IREG_DONE) {
+            return true;
+        }
+        delayMicroseconds(ICM456XX_IREG_ACCESS_DELAY_US);
+    }
+
+    return false;
+}
+
 // IREG accesses must be separated by at least 4 us. Address bytes and the first
 // data byte must share one SPI transaction to avoid the device prefetching from
 // an unintended address (DS-000577, Host Indirect Access Register interface).
@@ -310,22 +331,27 @@ static bool icm456xx_read_ireg(const extDevice_t *dev, uint16_t reg, uint8_t *va
         return false;
     }
 
+    if (!icm456xx_waitIregReady(dev)) {
+        return false;
+    }
+
     uint8_t address[2] = {
         (uint8_t)(reg >> 8),
         (uint8_t)reg,
     };
 
-    delayMicroseconds(ICM456XX_IREG_ACCESS_DELAY_US);
     spiWriteRegBuf(dev, ICM456XX_REG_IREG_ADDR_15_8, address, sizeof(address));
-    delayMicroseconds(ICM456XX_IREG_ACCESS_DELAY_US);
+    delayMicroseconds(ICM456XX_IREG_ACCESS_DELAY_US); // spec-minimum gap before IREG_DATA read
     *value = spiReadRegMsk(dev, ICM456XX_REG_IREG_DATA);
 
     return true;
 }
 
+// No ARMING_FLAG(ARMED) guard here: icm456xx_update_ireg always calls
+// icm456xx_read_ireg first in the same attempt, which already rejects while armed.
 static bool icm456xx_write_ireg(const extDevice_t *dev, uint16_t reg, uint8_t value)
 {
-    if (ARMING_FLAG(ARMED)) {
+    if (!icm456xx_waitIregReady(dev)) {
         return false;
     }
 
@@ -335,9 +361,8 @@ static bool icm456xx_write_ireg(const extDevice_t *dev, uint16_t reg, uint8_t va
         value,
     };
 
-    delayMicroseconds(ICM456XX_IREG_ACCESS_DELAY_US);
     spiWriteRegBuf(dev, ICM456XX_REG_IREG_ADDR_15_8, addressAndData, sizeof(addressAndData));
-    delayMicroseconds(ICM456XX_IREG_ACCESS_DELAY_US);
+    delayMicroseconds(ICM456XX_IREG_ACCESS_DELAY_US); // spec-minimum gap before the next IREG access
 
     return true;
 }
@@ -378,11 +403,11 @@ static bool icm456xx_enableGyroAAFandInterpolator(const extDevice_t *dev)
 
 static bool icm456xx_configureLPF(const extDevice_t *dev, uint16_t reg, uint8_t lpfDiv)
 {
-    if (lpfDiv > 0x07) {
+    if (lpfDiv > ICM456XX_UI_LPFBW_SEL_MASK) {
         return false;
     }
 
-    return icm456xx_update_ireg(dev, reg, 0x07, lpfDiv);
+    return icm456xx_update_ireg(dev, reg, ICM456XX_UI_LPFBW_SEL_MASK, lpfDiv);
 }
 
 static void icm456xx_enableSensors(const extDevice_t *dev, bool enable)
@@ -415,12 +440,14 @@ void icm456xxAccInit(accDev_t *acc)
 
     // ACCEL_SRC_CTRL is a two-bit enum; value 2 enables both the interpolator and FIR AAF.
     if (!icm456xx_enableAccelAAFandInterpolator(dev)) {
-        failureMode(FAILURE_ACC_INIT);
+        // After retries, leave AAF/interpolator disabled rather than halting boot over a filter setting.
+        icm456xx_update_ireg(dev, ICM456XX_ACCEL_SRC_CTRL_IREG_ADDR, ICM456XX_ACCEL_SRC_CTRL_MASK, 0);
     }
 
-    // Set the Accel UI LPF bandwidth cut-off to ODR/8 (Section 7.3 of datasheet)
+    // Set the Accel UI LPF bandwidth cut-off to ODR/8 (IPREG_SYS2_REG_131)
     if (!icm456xx_configureLPF(dev, ICM456XX_ACCEL_UI_LPF_CFG_IREG_ADDR, ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_8)) {
-        failureMode(FAILURE_ACC_INIT);
+        // Fall back to BYPASS rather than halting boot over a filter setting.
+        icm456xx_configureLPF(dev, ICM456XX_ACCEL_UI_LPF_CFG_IREG_ADDR, ICM456XX_ACCEL_UI_LPFBW_BYPASS);
     }
 
     // Set up register addresses for combined DMA reads
@@ -455,12 +482,14 @@ void icm456xxGyroInit(gyroDev_t *gyro)
 
     // GYRO_SRC_CTRL is bits 6:5; enum value 2 enables both the interpolator and FIR AAF.
     if (!icm456xx_enableGyroAAFandInterpolator(dev)) {
-        failureMode(FAILURE_GYRO_INIT_FAILED);
+        // After retries, leave AAF/interpolator disabled rather than halting boot over a filter setting.
+        icm456xx_update_ireg(dev, ICM456XX_GYRO_SRC_CTRL_IREG_ADDR, ICM456XX_GYRO_SRC_CTRL_MASK, 0);
     }
 
-    // Set the Gyro UI LPF bandwidth cut-off (Section 7.3 of datasheet)
+    // Set the Gyro UI LPF bandwidth cut-off (IPREG_SYS1_REG_172)
     if (!icm456xx_configureLPF(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, getGyroLpfConfig(gyroConfig()->gyro_hardware_lpf))) {
-        failureMode(FAILURE_GYRO_INIT_FAILED);
+        // Fall back to BYPASS rather than halting boot over a filter setting.
+        icm456xx_configureLPF(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, ICM456XX_GYRO_UI_LPFBW_BYPASS);
     }
 
     switch (gyro->mpuDetectionResult.sensor) {
