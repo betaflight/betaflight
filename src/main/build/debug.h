@@ -26,6 +26,79 @@
 extern int16_t debug[DEBUG16_VALUE_COUNT];
 extern uint8_t debugMode;
 
+/*
+ * Debug field annotations
+ *
+ * `debugType_e` below fixes what a debug mode *is*, and the DEBUG_SET() call
+ * sites fix which `debug[n]` each mode writes. Neither records what a field
+ * *means*, so every tool that displays debug data - configurator, blackbox log
+ * viewer, documentation - has kept its own copy of the field labels, written by
+ * reading firmware diffs and drifting silently whenever a mode is reworked.
+ *
+ * Record the meaning at the call site instead, in a trailing `//!<` comment, so
+ * it is updated by the same diff that changes what the field holds. It is a
+ * comment, so it costs no flash:
+ *
+ *     DEBUG_SET(DEBUG_CYCLETIME, 0, getTaskDeltaTimeUs(TASK_SELF));  //!< Cycle Time [unit:us]
+ *     DEBUG_SET(DEBUG_CYCLETIME, 1, getAverageSystemLoadPercent());  //!< CPU Load [unit:%]
+ *
+ * Grammar, on the line the call ends on. Every bracket names what it is, so
+ * nothing about an annotation depends on where it sits:
+ *
+ *     //!< [index:<indices>] <label> [<shape>]
+ *
+ *   index:     Which debug[n] this call writes. Omit it when the index argument
+ *              is a compile-time constant; give it when the index is computed at
+ *              run time (`axis`, `2 * axis + 1`, `motorIndex`), because tooling
+ *              cannot evaluate those: `[index:2]`, `[index:0..2]`,
+ *              `[index:0,2,4]`.
+ *   <label>    What the value is, in the words a pilot reads rather than the name
+ *              of the variable holding it. The one part that is prose, and the
+ *              only one without a key. No `[` or `]`. One `{a|b|c}` group may
+ *              spell out one label per index, in index order, for a call that
+ *              writes a range: `Gyro Filtered {roll|pitch|yaw}`.
+ *   <shape>    What kind of value the field holds, so that a consumer can derive
+ *              the sample format and the graph axis from the shape alone rather
+ *              than from a table of its own. A field is one of exactly four:
+ *
+ *     unit:    A quantity, given as the unit of one LSB of the stored value. An
+ *              optional decimal factor precedes the symbol, so
+ *              `lrintf(angleDeg * 10)` is `[unit:0.1deg]` and `pressurePa / 100`
+ *              is `[unit:100Pa]`. The factor may be negative, for a field that
+ *              stores the magnitude of a negative quantity: a CRSF RSSI is
+ *              `[unit:-1dBm]`. The symbol may be left out for a value that is
+ *              scaled but dimensionless: `lrintf(ratio * 1000)` is
+ *              `[unit:0.001]`.
+ *
+ *              Symbols: s ms us Hz kHz MHz kbit/s rad rad/s deg dps dps2 m cm
+ *              m/s cm/s cm/s2 g g/s V A mAh degC Pa hPa rpm % dB dBm bytes
+ *              ticks, plus
+ *              the device-native units the firmware stores raw, which only the
+ *              FC's own configuration can convert: gyroADC (gyro ADC counts),
+ *              accADC and accADC/s (accelerometer ADC counts), rcCommand
+ *              (throttle in rcCommand units) and eRPM (Dshot eRPM).
+ *
+ *     enum:    An enumerator, named by its type - `[enum:failsafePhase_e]`.
+ *              Tooling reads the enumerator names from it, so the enum must be
+ *              visible in the file or in a header the file includes.
+ *
+ *     flags:   Bit flags, named lowest bit first, with `-` for a bit the field
+ *              does not use: `[flags:Channel 17|Channel 18|Signal Loss|Failsafe]`.
+ *              The names are given here rather than read from the source because
+ *              flag bits are `#define`s, not an enum, which lets a consumer name
+ *              the set bits instead of the number they add up to.
+ *
+ *     (none)   A plain integer: a count, or a state with no enum to name it.
+ *              Nothing scales it, and a graph is left to fit the logged data.
+ *
+ * A field that packs two values into one index - `state * 100 + position` - or
+ * that writes a sentinel is a plain integer to every consumer, and stays
+ * unreadable however it is annotated; split it across two indices instead.
+ *
+ * An index written from more than one place has to mean one thing in a given
+ * build, so annotations that share an index must agree - a disagreement is a bug
+ * in the debug mode, not in the annotation.
+ */
 #define DEBUG_SET(mode, index, value) do { if (debugMode == (mode)) { debug[(index)] = (value); } } while (0)
 
 typedef enum {
