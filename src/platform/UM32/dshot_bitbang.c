@@ -497,7 +497,13 @@ static bool bbDecodeTelemetry(void)
         }
 #endif
         for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < dshotMotorCount; motorIndex++) {
+#if defined(USE_DSHOT_BITBAND)
+            // Cortex-M4 bit-band alias decode: single-bit reads through the
+            // 0x22000000 alias region are faster than shifting u16 words.
+            uint32_t rawValue = decode_bb_bitband(
+#else
             uint32_t rawValue = decode_bb(
+#endif
                 bbMotors[motorIndex].bbPort->portInputBuffer,
                 bbMotors[motorIndex].bbPort->portInputCount,
                 bbMotors[motorIndex].pinIndex);

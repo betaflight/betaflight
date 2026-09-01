@@ -25,7 +25,7 @@
 #endif
 
 #ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight UM324xF"
+#define USBD_PRODUCT_STRING     "Betaflight - UM324xF"
 #endif
 
 #ifndef UM324xF
@@ -70,6 +70,13 @@
 #define USE_OPA
 #define USE_EXTI
 
+// DShot bit-band decode: reads telemetry samples through the Cortex-M
+// bit-band alias region (0x22000000). Verified working on UM324xF silicon
+// (telemetry decodes with correct CRC, CPU load -5%); pending written
+// confirmation from the chip design team on how the alias is implemented.
+#define USE_DSHOT_BITBAND
+
+#define USE_BEEPER
 
 // #define USE_PID_DENOM_CHECK  //polo:UM324xF performance is enlough.
 #define DEFAULT_PID_PROCESS_DENOM       1
@@ -78,15 +85,24 @@
 
 
 #undef USE_DSHOT_DMAR
-// #undef USE_TELEMETRY_HOTT
-// #undef USE_TELEMETRY_SRXL
-// #undef USE_TELEMETRY_SMARTPORT
-// #undef USE_TELEMETRY_JETIEXBUS
-// #undef USE_TELEMETRY_GHST
-// #undef USE_TELEMETRY_IBUS
-// #undef USE_TELEMETRY_LTM
-// #undef USE_RANGEFINDER
-// #undef USE_TRANSPONDER
+
+// 4way ESC flashing: keep the BLHeli bootloader (needed for BLHeli_S/32 ESC
+// firmware updates), drop the legacy STK500 (old Atmel ESC) protocol.
+#undef USE_SERIAL_4WAY_SK_BOOTLOADER
+
+// Optional further trims (enabled by uncommenting) — needed if adding
+// DroneCAN (~10KB) to the build:
+#undef USE_TELEMETRY_HOTT
+#undef USE_TELEMETRY_SRXL
+#undef USE_TELEMETRY_SMARTPORT
+#undef USE_TELEMETRY_JETIEXBUS
+#undef USE_TELEMETRY_GHST
+#undef USE_TELEMETRY_IBUS
+#undef USE_TELEMETRY_LTM
+#undef USE_RANGEFINDER
+#undef USE_TRANSPONDER
+// NOTE: do NOT undef USE_GPS if DroneCAN GNSS is planned — the DroneCAN
+// GPS provider feeds gpsSol and depends on the GPS stack.
 
 
 
