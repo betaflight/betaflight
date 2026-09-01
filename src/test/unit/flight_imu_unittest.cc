@@ -445,7 +445,9 @@ extern "C" {
     void positionEstimatorResetZ(void) { }
     bool positionEstimatorIsValidZ(void) { return false; }
     float positionEstimatorGetAltitudeCm(void) { return 0.0f; }
-    float positionEstimatorGetAltitudeDerivative(void) { return 0.0f; }
+    float positionEstimatorGetVerticalVelocity(void) { return 0.0f; }
+    float positionEstimatorGetVerticalAcceleration(void) { return 0.0f; }
+    float positionEstimatorGetTrustZ(void) { return 0.0f; }
     static positionEstimate3d_t stubEstimate = {};
     const positionEstimate3d_t *positionEstimatorGetEstimate(void) { return &stubEstimate; }
 }
