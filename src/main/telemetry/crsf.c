@@ -669,8 +669,12 @@ uint8_t     0x01 (Parameter version 1)
 */
 static void crsfFrameDeviceInfo(sbuf_t *dst)
 {
-    char buff[30];
-    tfp_sprintf(buff, "%s %s: %s", FC_FIRMWARE_NAME, FC_VERSION_STRING, systemConfig()->boardIdentifier);
+    // tfp_sprintf() is unbounded, so size the buffer from the parts that go into it.
+    // The version string is deliberately left out: with calver plus an optional suffix
+    // (e.g. "2026.12.0-alpha") the name no longer fits, and it is of little use in the
+    // transmitter's device list anyway.
+    char buff[sizeof(FC_FIRMWARE_NAME ": ") + sizeof(systemConfig()->boardIdentifier)];
+    tfp_sprintf(buff, "%s: %s", FC_FIRMWARE_NAME, systemConfig()->boardIdentifier);
 
     uint8_t *lengthPtr = sbufPtr(dst);
     sbufWriteU8(dst, 0);
