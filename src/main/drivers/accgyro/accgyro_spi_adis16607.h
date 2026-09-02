@@ -160,6 +160,8 @@
  * the gyro by 4x with nothing to show for it at runtime. There is therefore no
  * default: a board fitting the part states which one it fitted, in its config.h.
  */
+#if defined(USE_ACCGYRO_ADIS16607)
+
 #ifndef ADIS16607_VARIANT
 #error "ADIS16607_VARIANT must be defined as 2 (ADIS16607-2, +/-450 deg/s) or 3 (ADIS16607-3, +/-2000 deg/s) - the two parts share a DEV_ID and differ 4x in gyro sensitivity"
 #endif
@@ -178,6 +180,8 @@
 // 0.005 degC/LSB, offset 25 degC.
 #define ADIS16607_TEMP_SCALE                0.005f
 #define ADIS16607_TEMP_ZERO                 25.0f
+
+#endif // USE_ACCGYRO_ADIS16607
 
 uint8_t adis16607SpiDetect(const extDevice_t *dev);
 
