@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "common/time.h"
+
 #include "pg/pg.h"
 #include "drivers/barometer/barometer.h"
 
@@ -64,6 +66,8 @@ typedef struct baro_s {
     float altitude;
     int32_t temperature;                    // Use temperature for telemetry
     int32_t pressure;                       // Use pressure for telemetry
+    timeUs_t lastDataTimeUs;
+    timeDelta_t dataIntervalUs;
 } baro_t;
 
 extern baro_t baro;
@@ -76,3 +80,5 @@ void baroSetGroundLevel(void);
 uint32_t baroUpdate(timeUs_t currentTimeUs);
 bool isBaroReady(void);
 float getBaroAltitude(void);
+timeUs_t getBaroLatestSampleTimeUs(void);
+timeDelta_t getBaroSampleIntervalUs(void);
