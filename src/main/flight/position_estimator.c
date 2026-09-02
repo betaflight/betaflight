@@ -324,7 +324,7 @@ static bool positionEstimatorWantXYFusion(void)
 // the ideal offset barely changes: this loop only ever chases disagreement between
 // the sources, never shared motion.
 #define CROSS_CAL_TAU_RANGEFINDER_S   2.0f
-#define CROSS_CAL_TAU_GPS_S          300.0f // 5min for gps to cross-cal baro offset
+#define CROSS_CAL_TAU_GPS_S          200.0f // ~5min time constant, depending on vAcc, for gps to cross-cal baro offset
 
 typedef struct {
     float rawReading;   // only populated by drifting sources; unused unless offsetPtr is set
