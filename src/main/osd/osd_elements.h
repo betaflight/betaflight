@@ -76,3 +76,7 @@ bool osdElementsNeedAccelerometer(void);
 #ifdef USE_SPEC_PREARM_SCREEN
 bool osdDrawSpec(displayPort_t *osdDisplayPort);
 #endif // USE_SPEC_PREARM_SCREEN
+#ifdef USE_OSD_HOME_RELATIVE_OVERLAY
+void osdHomeRelativeOverlayOnArm(void);
+void osdHomeRelativeOverlayOnHeadingAdjust(void);
+#endif // USE_OSD_HOME_RELATIVE_OVERLAY

@@ -83,6 +83,7 @@ extern "C" {
     uint32_t GPS_distanceFlownInCm;
     int32_t GPS_coord[2];
     gpsSolutionData_t gpsSol;
+    gpsLocation_t GPS_home_llh;
     float motor[8];
 
     linkQualitySource_e linkQualitySource;
@@ -1509,6 +1510,14 @@ TEST_F(OsdTest, TestBatteryUsageCapacityZero)
 // STUBS
 extern "C" {
     bool featureIsEnabled(uint32_t f) { return simulationFeatureFlags & f; }
+
+    // gps.c isn't linked into this test target; provide the same linear
+    // ENU approximation used by osd_nav_map_unittest.cc's stub.
+    void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *distance)
+    {
+        distance->x = (to->lon - from->lon) * EARTH_ANGLE_TO_CM;
+        distance->y = (to->lat - from->lat) * EARTH_ANGLE_TO_CM;
+    }
 
     void beeperConfirmationBeeps(uint8_t) {}
 
