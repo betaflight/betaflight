@@ -2341,8 +2341,8 @@ case MSP_NAME:
 
     case MSP_PITOT:
 #if defined(USE_PITOT)
-        sbufWriteU32(dst, (uint32_t)MAX(pitot.airspeed, 0.0f));
-        sbufWriteU32(dst, (uint32_t)MAX(pitot.diffPressure, 0.0f));
+        sbufWriteU32(dst, (uint32_t)(int32_t)pitot.airspeed);
+        sbufWriteU32(dst, (uint32_t)(int32_t)pitot.diffPressure);
 #else
         sbufWriteU32(dst, 0);
         sbufWriteU32(dst, 0);
