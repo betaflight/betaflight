@@ -1157,6 +1157,8 @@ extern "C" {
     float getAltitudeDerivative(void) {return 0.0f;}
     float getAltitudeCmControl(void) { return 0.0f; }
     float getAltitudeDerivativeControl(void) { return 0.0f; }
+    float getAltitudeAccelerationControl(void) { return 0.0f; }
+
 
     float sin_approx(float) {return 0.0f;}
     float cos_approx(float) {return 1.0f;}

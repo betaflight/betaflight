@@ -31,7 +31,8 @@
 // All values in local ENU (East-North-Up) centimeters, zeroed at arm point.
 typedef struct positionEstimate3d_s {
     vector3_t position;        // cm, ENU
-    vector3_t velocity;        // cm/s, ENU
+    vector3_t velocity;        // cm/s, ENU; the plain Kalman velocity on all three axes
+    vector3_t acceleration;    // cm/s^2, ENU
     float trustXY;             // 0-1, derived from KF XY covariance
     float trustZ;              // 0-1, derived from KF Z covariance
     bool isValidXY;            // true if at least one XY measurement source active
@@ -49,10 +50,12 @@ void positionEstimatorEnableXY(bool enable);
 const positionEstimate3d_t *positionEstimatorGetEstimate(void);
 
 float positionEstimatorGetAltitudeCm(void);
-float positionEstimatorGetAltitudeDerivative(void);
+float positionEstimatorGetVerticalVelocity(void);
+float positionEstimatorGetVerticalAcceleration(void);
 bool positionEstimatorIsValidXY(void);
 bool positionEstimatorIsValidZ(void);
 float positionEstimatorGetTrustXY(void);
+float positionEstimatorGetTrustZ(void);
 // True when GPS has a fix and is not excluded by positionSource config.
 // Use to decide whether heading validity is required before engaging position hold.
 bool positionEstimatorIsHeadingRequired(void);
