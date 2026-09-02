@@ -175,6 +175,7 @@ typedef enum feedforwardAveraging_e {
 typedef enum tpaCurveType_e {
     TPA_CURVE_CLASSIC,
     TPA_CURVE_HYPERBOLIC,
+    TPA_CURVE_REF_SPEED_HYPERBOLA,
 } tpaCurveType_t;
 
 typedef enum tpaSpeedType_e {
@@ -316,6 +317,10 @@ typedef struct pidProfile_s {
     int16_t tpa_speed_pitch_offset;     // For wings: pitch offset in degrees*10 for craft speed estimation
     uint8_t yaw_type;                   // For wings: type of yaw (rudder or differential thrust)
     int16_t angle_pitch_offset;         // For wings: pitch offset for angle modes; in decidegrees; positive values tilting the wing down
+    uint8_t tpa_ref_speed_curve_vref;   // For wings: Reference speed value which has optimal plane settins m/s
+    uint8_t tpa_ref_speed_curve_power;  // For wings: Hyperbolic curves power *0.1
+    uint16_t tpa_ref_speed_curve_min;   // For wings: Hyperbolic curves minimum *0.01
+    uint16_t tpa_ref_speed_curve_max;   // For wings: Hyperbolic curves maximum *0.01
 
     uint8_t chirp_lag_freq_hz;              // leadlag1Filter cutoff/pole to shape the excitation signal
     uint8_t chirp_lead_freq_hz;             // leadlag1Filter cutoff/zero
@@ -374,6 +379,7 @@ typedef struct tpaSpeedParams_s {
     float speed;
     float maxVoltage;
     float pitchOffset;
+    float refSpeed;
 } tpaSpeedParams_t;
 
 typedef struct pidRuntime_s {
@@ -508,6 +514,10 @@ typedef struct pidRuntime_s {
     pwl_t tpaCurvePwl;
     float tpaCurvePwl_yValues[TPA_CURVE_PWL_SIZE];
     tpaCurveType_t tpaCurveType;
+#ifdef USE_WING
+    float refSpeedCurveArgMin;
+    float refSpeedCurveArgMax;
+#endif
 #endif // USE_ADVANCED_TPA
 
 #ifdef USE_CHIRP
