@@ -282,6 +282,8 @@ static void showWelcomePage(void)
     i2c_OLED_set_line(dev, rowIndex++);
     i2c_OLED_send_string(dev, lineBuffer);
 
+    // shortGitRevision is __REVISION__, so the same check applies to the revision line.
+    STATIC_ASSERT(sizeof("(" __REVISION__ ")") <= sizeof(lineBuffer), revision_line_too_long);
     tfp_sprintf(lineBuffer, "(%s)", shortGitRevision);
     i2c_OLED_set_line(dev, rowIndex++);
     i2c_OLED_send_string(dev, lineBuffer);
