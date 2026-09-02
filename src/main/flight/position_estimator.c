@@ -324,7 +324,7 @@ static bool positionEstimatorWantXYFusion(void)
 // the ideal offset barely changes: this loop only ever chases disagreement between
 // the sources, never shared motion.
 #define CROSS_CAL_TAU_RANGEFINDER_S   2.0f
-#define CROSS_CAL_TAU_GPS_S          60.0f
+#define CROSS_CAL_TAU_GPS_S          300.0f // 5min for gps to cross-cal baro offset
 
 typedef struct {
     float rawReading;   // only populated by drifting sources; unused unless offsetPtr is set
@@ -821,8 +821,12 @@ static void feedGPSMeasurements(timeUs_t nowUs)
         kalmanUpdatePosition(&kfUp, gpsRelativeAltCm, gpsAltR); // always update position from GPS position innovation
 
         lastZMeasurementUs = nowUs;
-
-        zCal[CAL_Z_GPS].active = true;
+        // cross-calibrate baro to gps slowly and only for lower than default prefer baro values
+        if (positionConfig()->altitude_prefer_baro < 50) {
+            const float gpsCrossCalScale = constrainf((float)gpsSol.acc.vAcc / GPS_ALT_ACCURACY_DENOM, 1.0f, 10.0f);
+            zCal[CAL_Z_GPS].anchorTauS = CROSS_CAL_TAU_GPS_S * gpsCrossCalScale;
+            zCal[CAL_Z_GPS].active = true;
+        }
     }
 #else
     UNUSED(nowUs);
