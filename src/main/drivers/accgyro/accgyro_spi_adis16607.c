@@ -64,6 +64,8 @@
 #define ADIS16607_WRITE_RETRIES         8
 #define ADIS16607_CONFIG_RETRIES        3
 
+static bool adis16607ConfigOk;
+
 // Half duplex: the response arrives in the same 32-bit frame as the command.
 static uint16_t adis16607ReadReg(const extDevice_t *dev, uint8_t reg)
 {
@@ -233,9 +235,11 @@ static void adis16607GyroInit(gyroDev_t *gyro)
      * fail their checksum or their data counter rather than publish a
      * misinterpreted frame.
      */
+    adis16607ConfigOk = false;
     for (int tries = 0; tries < ADIS16607_CONFIG_RETRIES; tries++) {
         adis16607Unlock(dev);
         if (adis16607Configure(dev, filterBandwidthOptions[gyroConfig()->gyro_hardware_lpf])) {
+            adis16607ConfigOk = true;
             break;
         }
     }
