@@ -93,7 +93,7 @@
 
 #define Q_JERK_Z          3000.0f
 #define R_ACCEL_Z          500.0f
-#define R_BARO_ALT        150.0f   // cm^2 lower value favours baro data vs others, reduced by higher user prefer baro values
+#define R_BARO_ALT        100.0f   // cm^2 lower value favours baro data vs others, reduced by higher user prefer baro values
 #define R_GPS_VEL_Z_BASE  100.0f   // (cm/s)^2, increases as sAcc increases to allow more baro / accelerometer influence
 #define R_GPS_ALT_BASE    200.0f   // cm^2 , increases as vAcc increases to allow more baro / accel influence
 #define R_RANGEFINDER_ALT 100.0f   // cm^2
