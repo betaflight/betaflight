@@ -67,7 +67,6 @@ SRC_DIR         := $(ROOT)/src/main
 LIB_MAIN_DIR    := $(ROOT)/lib/main
 LIB_MODULES_DIR := $(ROOT)/lib/modules
 OBJECT_DIR      := $(ROOT)/obj/main
-SRC_MANIFEST    := $(OBJECT_DIR)/.src_manifest
 BIN_DIR         := $(ROOT)/obj
 CMSIS_DIR       := $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    := $(SRC_DIR)
@@ -167,6 +166,21 @@ OBJDUMP      = $(ARM_SDK_PREFIX)objdump
 READELF      = $(ARM_SDK_PREFIX)readelf
 SIZE         = $(ARM_SDK_PREFIX)size
 DFUSE-PACK  := src/utils/dfuse-pack.py
+
+# Command used to link the final ELF. Platform makefiles can override this
+# when linking requires a dedicated linker instead of the C compiler driver.
+# $(file ...) needs GNU make 4.0; macOS ships 3.81, which silently expands it to
+# nothing and leaves the linker looking for an arguments file that was never written.
+ifeq ($(filter 3.%,$(MAKE_VERSION)),)
+ELF_LINK_CMD = $(file > $@.args,$(filter-out %.ld,$^)) $(CROSS_CC) -o $@ @$@.args $(LD_FLAGS)
+else
+# Exported so the warning is emitted once, not once per recursive make invocation.
+ifndef OLD_MAKE_WARNED
+export OLD_MAKE_WARNED := 1
+$(warning GNU make $(MAKE_VERSION) detected, falling back to linking without an arguments file. Support for GNU make older than 4.0 may be dropped in a future release. macOS ships an old system make: install a current one with 'brew install make' and build with gmake.)
+endif
+ELF_LINK_CMD = $(CROSS_CC) -o $@ $(filter-out %.ld,$^) $(LD_FLAGS)
+endif
 
 # Preprocessor helpers (generic .h parsing)
 include $(MAKE_SCRIPT_DIR)/preprocess.mk
@@ -467,6 +481,11 @@ TARGET_EXE      := $(BIN_DIR)/$(TARGET_FULLNAME)
 TARGET_DFU      := $(BIN_DIR)/$(TARGET_FULLNAME).dfu
 TARGET_ZIP      := $(BIN_DIR)/$(TARGET_FULLNAME).zip
 TARGET_OBJ_DIR  := $(OBJECT_DIR)/$(TARGET_NAME)
+# Scoped under TARGET_OBJ_DIR, not the shared OBJECT_DIR: concurrent
+# `make TARGET=X` invocations (e.g. `make -jN all_configs`) each run their
+# own validate-deps, and a manifest shared across targets races on the
+# mv below when multiple targets build in parallel.
+SRC_MANIFEST    := $(TARGET_OBJ_DIR)/.src_manifest
 TARGET_ELF      := $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME).elf
 TARGET_EXST_ELF := $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME)_EXST.elf
 TARGET_UNPATCHED_BIN := $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME)_UNPATCHED.bin
@@ -485,7 +504,7 @@ endif
 
 TARGET_EF_HASH_FILE := $(TARGET_OBJ_DIR)/.efhash_$(TARGET_EF_HASH)
 
-CLEAN_ARTIFACTS := $(TARGET_ELF) $(TARGET_EXST_ELF) $(TARGET_MAP)
+CLEAN_ARTIFACTS := $(TARGET_ELF) $(TARGET_ELF).args $(TARGET_EXST_ELF) $(TARGET_MAP)
 CLEAN_ARTIFACTS += $(wildcard $(BIN_DIR)/*$(TARGET_NAME_CLEAN)*)
 
 # Make sure build date and revision is updated on every incremental build
@@ -564,7 +583,7 @@ endif
 
 $(TARGET_ELF): $(TARGET_OBJS) $(LD_SCRIPT) $(LD_SCRIPTS)
 	@echo "Linking $(TARGET_NAME)" "$(STDOUT)"
-	$(V1) $(CROSS_CC) -o $@ $(filter-out %.ld,$^) $(LD_FLAGS)
+	$(V1) $(ELF_LINK_CMD)
 	$(V1) $(SIZE) $(TARGET_ELF)
 
 $(TARGET_UF2): $(TARGET_ELF)
@@ -754,12 +773,14 @@ $(AUTOHYDRATE_STAMPS):
 # the cost is a single cmp call.
 .PHONY: validate-deps
 validate-deps:
-	$(V1) mkdir -p "$(OBJECT_DIR)"; \
+	$(V1) mkdir -p "$(TARGET_OBJ_DIR)"; \
 	printf '%s\n' $(SRC) | sort > "$(SRC_MANIFEST).new"; \
-	if [ -f "$(SRC_MANIFEST)" ] && ! cmp -s "$(SRC_MANIFEST)" "$(SRC_MANIFEST).new"; then \
+	if [ ! -f "$(SRC_MANIFEST)" ]; then \
+	    find "$(TARGET_OBJ_DIR)" -name '*.d' -delete 2>/dev/null; \
+	elif ! cmp -s "$(SRC_MANIFEST)" "$(SRC_MANIFEST).new"; then \
 	    if comm -23 "$(SRC_MANIFEST)" "$(SRC_MANIFEST).new" | grep -q .; then \
 	        echo "Sources removed — clearing stale dependency files"; \
-	        find "$(OBJECT_DIR)" -name '*.d' -delete 2>/dev/null; \
+	        find "$(TARGET_OBJ_DIR)" -name '*.d' -delete 2>/dev/null; \
 	    fi; \
 	fi; \
 	mv -f "$(SRC_MANIFEST).new" "$(SRC_MANIFEST)"
@@ -780,11 +801,17 @@ uf2: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) validate-deps
 exe: $(AUTOHYDRATE_STAMPS) validate-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_EXE)
 
+.PHONY: elf
+elf: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) validate-deps
+	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_ELF)
+
 # FWO (Firmware Output) is the default output for building the firmware
 .PHONY: fwo
 fwo:
 ifeq ($(DEFAULT_OUTPUT),exe)
 	$(V1) $(MAKE) exe
+else ifeq ($(DEFAULT_OUTPUT),elf)
+	$(V1) $(MAKE) elf
 else ifeq ($(DEFAULT_OUTPUT),uf2)
 	$(V1) $(MAKE) uf2
 else ifeq ($(DEFAULT_OUTPUT),bin)

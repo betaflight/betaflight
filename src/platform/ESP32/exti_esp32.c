@@ -45,7 +45,7 @@ static uint32_t extiTriggerMask[DEFIO_USED_COUNT];
 // Shared GPIO ISR - reads interrupt status and dispatches to per-pin callbacks.
 // Handles pins 0-31 via the primary status register and pins 32-48 via the
 // high status register.
-static void EXTI_IRQHandler(void *arg)
+FAST_IRQ_HANDLER static void EXTI_IRQHandler(void *arg)
 {
     UNUSED(arg);
 
