@@ -63,6 +63,7 @@
 #include "flight/gps_rescue.h"
 #include "flight/alt_hold.h"
 #include "flight/pos_hold.h"
+#include "flight/hover_calibration.h"
 
 #if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
 #include "flight/flight_plan_capture.h"
@@ -1033,6 +1034,7 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 
     updateActivatedModes();
+    hoverCalibrationUpdate();
 
 #ifdef USE_DSHOT
     if (crashFlipModeActive) {
