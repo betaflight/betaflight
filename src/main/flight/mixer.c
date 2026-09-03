@@ -505,6 +505,20 @@ static void applyMixToMotors(const float motorMix[MAX_SUPPORTED_MOTORS], motorMi
     // DEBUG_EZLANDING 0 is the ezLanding factor 2 is the throttle limit
 }
 
+static void applySwitchDisarmMotorScale(void)
+{
+    const float scale = getSwitchDisarmMotorScale();
+    if (scale >= 1.0f) {
+        return;
+    }
+
+    for (int i = 0; i < mixerRuntime.motorCount; i++) {
+        if (motor[i] >= mixerRuntime.motorOutputLow) {
+            motor[i] = mixerRuntime.motorOutputLow + scale * (motor[i] - mixerRuntime.motorOutputLow);
+        }
+    }
+}
+
 static float applyThrottleLimit(float throttle)
 {
     if (currentControlRateProfile->throttle_limit_percent < 100 && !RPM_LIMIT_ACTIVE) {
@@ -842,6 +856,8 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
         // Apply the mix to motor endpoints
         applyMixToMotors(motorMix, activeMixer);
     }
+
+    applySwitchDisarmMotorScale();
 }
 
 void mixerSetThrottleAngleCorrection(int correctionValue)

@@ -162,6 +162,9 @@ static timeUs_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 static int lastArmingDisabledReason = 0;
 static timeUs_t lastDisarmTimeUs;
 static int tryingToArm = ARMING_DELAYED_DISARMED;
+static bool switchDisarmActive = false;
+static timeUs_t switchDisarmStartedAt;
+static float switchDisarmMotorScale = 1.0f;
 
 #ifdef USE_RUNAWAY_TAKEOFF
 static timeUs_t runawayTakeoffDeactivateUs = 0;
@@ -502,8 +505,60 @@ if (crashFlipModeActive) {
     }
 }
 
+#define SWITCH_DISARM_TIME_UNIT_US 10000U
+
+void requestSwitchDisarm(void)
+{
+    if (!armingConfig()->switch_disarm_time || featureIsEnabled(FEATURE_3D) || crashFlipModeActive) {
+        disarm(DISARM_REASON_SWITCH);
+        return;
+    }
+
+    if (!switchDisarmActive) {
+        switchDisarmActive = true;
+        switchDisarmStartedAt = micros();
+        switchDisarmMotorScale = 1.0f;
+    }
+}
+
+void cancelSwitchDisarm(void)
+{
+    switchDisarmActive = false;
+    switchDisarmMotorScale = 1.0f;
+}
+
+void updateSwitchDisarm(timeUs_t currentTimeUs)
+{
+    if (!switchDisarmActive) {
+        return;
+    }
+
+    const timeDelta_t elapsedUs = cmpTimeUs(currentTimeUs, switchDisarmStartedAt);
+    const timeDelta_t durationUs = armingConfig()->switch_disarm_time * SWITCH_DISARM_TIME_UNIT_US;
+
+    if (elapsedUs >= durationUs) {
+        const bool armSwitchActive = IS_RC_MODE_ACTIVE(BOXARM);
+        disarm(DISARM_REASON_SWITCH);
+        if (armSwitchActive) {
+            setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+        }
+        return;
+    }
+
+    if (elapsedUs > 0) {
+        switchDisarmMotorScale = 1.0f - (float)elapsedUs / durationUs;
+    }
+}
+
+float getSwitchDisarmMotorScale(void)
+{
+    return switchDisarmMotorScale;
+}
+
 void disarm(flightLogDisarmReason_e reason)
 {
+    cancelSwitchDisarm();
+
 #if ENABLE_TELEMETRY_MAVLINK_COMMANDS
     // Drop any MAVLink-commanded mode override so it can never persist into a
     // disarmed state and re-assert modes on the next arm.
@@ -1417,6 +1472,7 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
         startTime = micros();
     }
 
+    updateSwitchDisarm(currentTimeUs);
     mixTable(currentTimeUs);
 
 #ifdef USE_SERVOS
