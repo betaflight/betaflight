@@ -139,7 +139,7 @@
 // so the onset is around 50 cm and it becomes severe below 20 cm.
 #define GROUND_EFFECT_ALT_CM         50.0f  // baro starts losing validity here
 #define GROUND_EFFECT_FULL_ALT_CM    20.0f  // and is worthless below here
-#define GROUND_EFFECT_BARO_R_SCALE  100.0f  // R multiplier once fully in ground effect
+#define GROUND_EFFECT_BARO_R_SCALE  200.0f  // R multiplier once fully in ground effect
 
 // The rangefinder is what tells us we are in ground effect, so a dropout would otherwise
 // switch the protection off at the moment it is most needed: lose the anchor and the
