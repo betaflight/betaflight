@@ -37,6 +37,8 @@ extern "C" {
 }
 
 #include "unittest_macros.h"
+#include <cmath>
+
 #include "gtest/gtest.h"
 
 static positionEstimate3d_t makeEstimate(float eastCm, float northCm, float velEastCmS, float velNorthCmS, float upCm = 0.0f, float velUpCmS = 0.0f)
@@ -71,6 +73,125 @@ protected:
         lastCallbackUserData = NULL;
     }
 };
+
+// --- Axis decoupling edge cases ---
+//
+// Horizontal and vertical have independent speed budgets. Sharing one 3D direction vector meant
+// whichever axis had the larger error took nearly all of the budget and the other collapsed:
+// a landing target far below stalled horizontal position hold, and once that target was made
+// shallow, any horizontal error stalled the descent instead. These pin both directions.
+
+TEST_F(PositionNavTest, VerticalRateSurvivesLargeHorizontalError)
+{
+    // landing case: 5 m below, but still 20 m out horizontally
+    const vector3_t target = {{ 20.0f, 0.0f, -5.0f }};
+    positionNavSetTargetEf(&target, 0.8f, 1.0f, 0.1f, true, NULL, NULL);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    positionNavUpdate(1.0f, &est);   // full second so the accel slew is not the limit
+
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
+    EXPECT_NEAR(vel.z, -80.0f, 5.0f) << "descent must hold the commanded rate, not a 3D fraction";
+    EXPECT_NEAR(vel.x, 80.0f, 5.0f) << "horizontal must still close at cruise";
+}
+
+TEST_F(PositionNavTest, HorizontalRateSurvivesLargeVerticalError)
+{
+    // the original defect: target parked far below collapsed horizontal correction
+    const vector3_t target = {{ 2.0f, 0.0f, -200.0f }};
+    positionNavSetTargetEf(&target, 1.2f, 1.0f, 0.1f, true, NULL, NULL);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    positionNavUpdate(1.0f, &est);
+
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
+    EXPECT_GT(vel.x, 100.0f) << "2m of horizontal error must still command real correction";
+    EXPECT_NEAR(vel.z, -120.0f, 5.0f);
+}
+
+TEST_F(PositionNavTest, DirectlyBelowGivesPureVerticalNoNaN)
+{
+    const vector3_t target = {{ 0.0f, 0.0f, -5.0f }};
+    positionNavSetTargetEf(&target, 0.8f, 1.0f, 0.1f, true, NULL, NULL);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    positionNavUpdate(1.0f, &est);
+
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
+    EXPECT_FALSE(std::isnan(vel.x));
+    EXPECT_FALSE(std::isnan(vel.y));
+    EXPECT_FALSE(std::isnan(vel.z));
+    EXPECT_NEAR(vel.x, 0.0f, 0.01f);
+    EXPECT_NEAR(vel.y, 0.0f, 0.01f);
+    EXPECT_LT(vel.z, -10.0f);
+}
+
+TEST_F(PositionNavTest, LevelTargetGivesNoVerticalComponent)
+{
+    const vector3_t target = {{ 10.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, true, NULL, NULL);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    positionNavUpdate(1.0f, &est);
+
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
+    EXPECT_NEAR(vel.z, 0.0f, 0.01f);
+    EXPECT_GT(vel.x, 0.0f);
+}
+
+TEST_F(PositionNavTest, VerticalSuppressedWhenIncludeAltitudeFalse)
+{
+    const vector3_t target = {{ 10.0f, 0.0f, -50.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    positionNavUpdate(1.0f, &est);
+
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
+    EXPECT_NEAR(vel.z, 0.0f, 0.01f) << "altitude must be ignored entirely";
+    EXPECT_GT(vel.x, 0.0f);
+}
+
+TEST_F(PositionNavTest, ClimbSignIsPositive)
+{
+    const vector3_t target = {{ 0.0f, 0.0f, 20.0f }};
+    positionNavSetTargetEf(&target, 1.0f, 1.0f, 0.1f, true, NULL, NULL);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    positionNavUpdate(1.0f, &est);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().z, 100.0f, 5.0f);
+}
+
+TEST_F(PositionNavTest, NeitherAxisExceedsCruiseSpeed)
+{
+    // decoupling gives each axis its own budget, so the 3D magnitude may exceed cruise;
+    // what must hold is that no single axis does.
+    const vector3_t target = {{ 60.0f, 60.0f, 60.0f }};
+    positionNavSetTargetEf(&target, 3.0f, 1.0f, 0.5f, true, NULL, NULL);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    for (int i = 0; i < 200; i++) { positionNavUpdate(0.05f, &est); }  // past the accel slew
+
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
+    const float horiz = sqrtf(vel.x * vel.x + vel.y * vel.y);
+    EXPECT_LE(horiz, 300.0f + 1.0f) << "horizontal budget is cruise";
+    EXPECT_LE(fabsf(vel.z), 300.0f + 1.0f) << "vertical budget is cruise";
+}
+
+TEST_F(PositionNavTest, VerticalBrakesNearTargetIndependentlyOfHorizontal)
+{
+    // 0.2 m below but 50 m out: vertical must taper even though horizontal is wide open
+    const vector3_t target = {{ 50.0f, 0.0f, -0.2f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, true, NULL, NULL);
+    positionNavSetAccelLimits(2.5f, 2.5f);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    positionNavUpdate(1.0f, &est);
+
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
+    EXPECT_LT(fabsf(vel.z), 120.0f) << "vertical must brake on its own small error";
+    EXPECT_GT(vel.x, 200.0f) << "horizontal must not be slowed by the vertical braking";
+}
 
 // --- Direction correctness ---
 
@@ -188,6 +309,140 @@ TEST_F(PositionNavTest, BrakingLimitsSpeedNearTarget)
     // Kp speed = 1.0 * 1.0 = 1.0 m/s = 100 cm/s
     // min(10, 1.0, 2.0) = 1.0 → 100 cm/s
     EXPECT_NEAR(speedCmS, 100.0f, 5.0f);
+}
+
+// A new command must not inherit the previous command's braking limit. Landing never set its
+// own, so its horizontal braking silently depended on which leg preceded it: an approach leg
+// left 0.3 m/s^2, a gated carrot or hold pattern left none at all.
+TEST_F(PositionNavTest, SetTargetClearsPreviousAccelLimits)
+{
+    const vector3_t farTarget = {{ 100.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&farTarget, 10.0f, 0.5f, 0.3f, false, NULL, NULL);
+    positionNavSetAccelLimits(0.0f, 2.0f);
+
+    // New command, no accel limits stated: the 2.0 m/s^2 brake must not carry over.
+    const vector3_t target = {{ 1.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 10.0f, 0.5f, 0.3f, false, NULL, NULL);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f);
+    positionNavUpdate(0.01f, &est);
+
+    const positionNavCommand_t *cmd = positionNavGetActiveCommand();
+    EXPECT_FLOAT_EQ(cmd->maxDecelMps2, 0.0f);
+    EXPECT_FLOAT_EQ(cmd->maxAccelMps2, 0.0f);
+
+    // Without a brake the speed is the pure Kp term: 1.0 * 1.0 m = 100 cm/s.
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
+    EXPECT_NEAR(sqrtf(vel.x * vel.x + vel.y * vel.y), 100.0f, 5.0f);
+}
+
+// Horizontal and vertical hold independent speed budgets, so they must also hold independent
+// speed limits. A landing passes a descent rate; without this the same number would cap the
+// horizontal approach speed, letting gps_rescue_descend_rate govern horizontal motion.
+TEST_F(PositionNavTest, VerticalSpeedLimitIsIndependentOfCruiseSpeed)
+{
+    // 20 m east, 20 m below: both axes far enough that only the speed caps bind.
+    const vector3_t target = {{ 20.0f, 0.0f, -20.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.3f, true, NULL, NULL);
+    positionNavSetVerticalSpeedLimit(1.0f);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    positionNavUpdate(0.01f, &est);
+
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
+    EXPECT_NEAR(sqrtf(vel.x * vel.x + vel.y * vel.y), 500.0f, 5.0f);  // horizontal on cruise
+    EXPECT_NEAR(vel.z, -100.0f, 5.0f);                                // vertical on its own cap
+}
+
+TEST_F(PositionNavTest, VerticalSpeedLimitZeroSharesCruiseSpeed)
+{
+    const vector3_t target = {{ 20.0f, 0.0f, -20.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.3f, true, NULL, NULL);
+    // no vertical limit stated
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    positionNavUpdate(0.01f, &est);
+
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
+    EXPECT_NEAR(vel.z, -500.0f, 5.0f);
+}
+
+TEST_F(PositionNavTest, SetTargetClearsPreviousVerticalSpeedLimit)
+{
+    const vector3_t target = {{ 20.0f, 0.0f, -20.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.3f, true, NULL, NULL);
+    positionNavSetVerticalSpeedLimit(1.0f);
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.3f, true, NULL, NULL);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    positionNavUpdate(0.01f, &est);
+
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
+    EXPECT_NEAR(vel.z, -500.0f, 5.0f);  // back to the shared cruise limit
+}
+
+// The ratio of commanded horizontal velocity to horizontal error, alpha = v_target / h, is not
+// a trajectory detail: autopilot_multirotor.c builds pidF as targetVelocity * Kd, so the closed
+// horizontal law is tilt = (Kp + Kd*alpha)*h - Kd*v. alpha therefore sets the effective position
+// gain while the damping term Kd stays fixed, and at stock gains (Kp 0.045, Kd 0.090) alpha has
+// more authority over the loop gain than Kp does.
+//
+// This pins alpha for the landing geometry, where the target is held a fixed
+// FP_LANDING_TARGET_DEPTH_M (5 m) below the craft and the horizontal error is inside the LAND
+// arrival gate (waypointHoldRadius, 2 m default). Before horizontal and vertical were given
+// independent budgets the shared 3D direction vector made alpha about 0.3 /s here; it is now
+// bounded by the braking term. If a change to the speed schedule moves these numbers, it has
+// changed the horizontal loop gain and needs to be justified as such, not just as a speed tweak.
+TEST_F(PositionNavTest, LandingHorizontalVelocityToErrorRatioIsBounded)
+{
+    struct { float h; float expectedAlpha; } cases[] = {
+        { 0.5f, 1.000f },   // Kp term binds: sqrt(2*0.3*0.5)=0.55 > 1.0*0.5
+        { 1.0f, 0.775f },   // braking binds: sqrt(0.6)/1.0
+        { 2.0f, 0.548f },   // braking binds: sqrt(1.2)/2.0
+    };
+
+    for (const auto &c : cases) {
+        // Landing geometry: target c.h east and 5 m below, descent rate on the vertical axis.
+        const vector3_t target = {{ c.h, 0.0f, -5.0f }};
+        positionNavSetTargetEf(&target, 1.5f, 1.0f, 0.1f, true, NULL, NULL);
+        positionNavSetVerticalSpeedLimit(1.5f);
+        positionNavSetAccelLimits(0.0f, 0.3f);
+
+        positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+        positionNavUpdate(0.01f, &est);
+
+        const vector3_t vel = positionNavGetTargetVelocityCmS();
+        const float alpha = (sqrtf(vel.x * vel.x + vel.y * vel.y) * 0.01f) / c.h;
+        EXPECT_NEAR(alpha, c.expectedAlpha, 0.02f)
+            << "alpha changed at h=" << c.h << " m: this is a horizontal loop-gain change";
+    }
+}
+
+// The vertical axis of a landing is deliberately NOT tapered by the horizontal error. The target
+// is ratcheted to stay a fixed depth below the craft, so the descent runs at the commanded rate
+// whatever the horizontal miss. Pinned because the pre-decoupling code did the opposite: it
+// slowed the descent when horizontally far, which read as a glide path.
+TEST_F(PositionNavTest, LandingDescentRateIsIndependentOfHorizontalError)
+{
+    float firstVz = 0.0f;
+    for (float h : { 0.0f, 1.0f, 2.0f, 10.0f }) {
+        const vector3_t target = {{ h, 0.0f, -5.0f }};
+        positionNavSetTargetEf(&target, 1.5f, 1.0f, 0.1f, true, NULL, NULL);
+        positionNavSetVerticalSpeedLimit(1.2f);
+        positionNavSetAccelLimits(0.0f, 0.3f);
+
+        positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+        positionNavUpdate(0.01f, &est);
+
+        const float vz = positionNavGetTargetVelocityCmS().z;
+        if (h == 0.0f) {
+            firstVz = vz;
+            EXPECT_LT(vz, 0.0f) << "must command a descent";
+        } else {
+            EXPECT_NEAR(vz, firstVz, 1.0f)
+                << "descent rate moved with horizontal error at h=" << h;
+        }
+    }
 }
 
 TEST_F(PositionNavTest, BrakingDominatesWhenVeryClose)

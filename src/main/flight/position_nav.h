@@ -35,7 +35,8 @@ typedef struct positionNavCommand_s {
     vector3_t targetPosEfM;         // target position, metres, ENU (index by ENU_E/ENU_N/ENU_U)
     bool includeAltitude;           // when false, ENU_U is ignored for nav, arrival, and alt coupling
 
-    float cruiseSpeedMps;           // maximum cruise speed (m/s)
+    float cruiseSpeedMps;           // maximum horizontal cruise speed (m/s)
+    float vertSpeedLimitMps;        // maximum vertical speed (m/s), 0 = share cruiseSpeedMps
     float acceptanceRadiusM;        // arrival zone radius (metres)
     float completionSpeedMps;       // max ground speed to count as arrived (m/s)
 
@@ -77,6 +78,11 @@ bool positionNavTargetReached(void);
 const positionNavCommand_t *positionNavGetActiveCommand(void);
 
 void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2);
+
+// Vertical speed cap, independent of cruiseSpeedMps: the axes have independent speed budgets, so
+// they need independent limits. 0 shares the horizontal limit. Reset by positionNavSetTargetEf,
+// so set it after that call.
+void positionNavSetVerticalSpeedLimit(float vertSpeedLimitMps);
 void positionNavSetAutoClearOnReach(bool autoClear);
 
 // En-route waypoints advance on horizontal arrival even when the vehicle has
