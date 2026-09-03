@@ -83,6 +83,16 @@ uint16_t gyroSetSampleRate(gyroDev_t *gyro)
             accSampleRateHz = 833;
             break;
 #endif
+#ifdef USE_ACCGYRO_ADIS16607
+        case ADIS16607_SPI:
+            // 9560 Hz base ODR with DEC_RATE = 1 gives 4780 Hz. The accel words
+            // arrive in the same burst at that rate; 1195 is the rate they are
+            // consumed at, not a hardware decimation.
+            gyro->gyroRateKHz = GYRO_RATE_4780_Hz;
+            gyroSampleRateHz = 4780;
+            accSampleRateHz = 1195;
+            break;
+#endif
         case ICM_45686_SPI:
         case ICM_45605_SPI:
         case ICM_56686_SPI:
