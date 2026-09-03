@@ -823,6 +823,24 @@ extern struct linker_symbol __fontdata_end;
 #endif
 #endif // USE_PINIO
 
+// The flight plan flies through the shared autopilot stack: altitude via alt
+// hold, XY via the position-hold task, waypoints via GPS. Derive all of them
+// here so a build (cloud or target) selecting the flight plan alone still gets
+// a complete, flyable stack; without alt hold the missions would silently fly
+// with no altitude control at all. Placed ahead of the GPS secondary defines
+// below so USE_GPS_RESCUE and friends follow from the derived USE_GPS.
+#if defined(USE_FLIGHT_PLAN)
+#if !defined(USE_GPS)
+#define USE_GPS
+#endif
+#if !defined(USE_ALTITUDE_HOLD)
+#define USE_ALTITUDE_HOLD
+#endif
+#if !defined(USE_POSITION_HOLD)
+#define USE_POSITION_HOLD
+#endif
+#endif // USE_FLIGHT_PLAN
+
 // GPS secondary defines - here (not common_pre.h) because SITL defines
 // USE_GPS in target.h which is included after common_pre.h. USE_GPS_RESCUE
 // additionally requires USE_ACC to match the earlier "!USE_ACC undef"
