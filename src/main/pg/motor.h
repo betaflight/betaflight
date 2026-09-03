@@ -80,6 +80,7 @@ typedef struct motorDevConfig_s {
 
 typedef struct motorConfig_s {
     motorDevConfig_t dev;
+    uint16_t motorSoftIdle;                 // Motor idle used while soft arming, in percent * 100
     uint16_t motorIdle;                     // When motors are idling, the percentage of the motor range added above the disarmed value, in percent * 100.
     uint16_t maxthrottle;                   // This is the maximum value for the ESCs at full power. This value can be increased up to 2000
     uint16_t mincommand;                    // This is the value for the ESCs when they are not armed. In some cases, this value must be lowered down to 900 for some specific ESCs

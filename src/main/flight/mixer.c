@@ -113,6 +113,7 @@ static FAST_DATA_ZERO_INIT float motorRangeMin;
 static FAST_DATA_ZERO_INIT float motorRangeMax;
 static FAST_DATA_ZERO_INIT float motorOutputRange;
 static FAST_DATA_ZERO_INIT int8_t motorOutputMixSign;
+static FAST_DATA_ZERO_INIT float softArmFactor = 0.0f;
 static FAST_DATA_ZERO_INIT bool crashflipSuccess = false;
 
 static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
@@ -223,6 +224,10 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             // keep iterm zero for 250ms after motor reversal
             pidResetIterm();
         }
+
+        throttle = constrainf(throttle / currentThrottleInputRange, 0.0f, 1.0f);
+        rcThrottle = throttle;
+        softArmFactor = pidUpdateSoftArm(rcThrottle);
     } else {
         throttle = rcCommand[THROTTLE] - PWM_RANGE_MIN + throttleAngleCorrection;
         currentThrottleInputRange = PWM_RANGE;
@@ -250,6 +255,12 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         }
 #endif
 
+        throttle = constrainf(throttle / currentThrottleInputRange, 0.0f, 1.0f);
+        rcThrottle = throttle;
+        softArmFactor = pidUpdateSoftArm(rcThrottle);
+        const float softArmMotorOutputLow = softArmFactor * mixerRuntime.motorOutputLow
+            + (1.0f - softArmFactor) * mixerRuntime.motorOutputSoftLow;
+
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
         float motorRangeAttenuationFactor = 0;
         // reduce motorRangeMax when battery is full
@@ -261,18 +272,20 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             DEBUG_SET(DEBUG_BATTERY, 2, lrintf(batteryGoodness * 100));
             DEBUG_SET(DEBUG_BATTERY, 3, lrintf(motorRangeAttenuationFactor * 1000));
         }
-        motorRangeMax = isCrashFlipModeActive() ? mixerRuntime.motorOutputHigh : mixerRuntime.motorOutputHigh - motorRangeAttenuationFactor * (mixerRuntime.motorOutputHigh - mixerRuntime.motorOutputLow);
+        motorRangeMax = isCrashFlipModeActive() ? mixerRuntime.motorOutputHigh : mixerRuntime.motorOutputHigh - motorRangeAttenuationFactor * (mixerRuntime.motorOutputHigh - softArmMotorOutputLow);
 #else
         motorRangeMax = mixerRuntime.motorOutputHigh;
 #endif
-        motorRangeMin = mixerRuntime.motorOutputLow + motorRangeMinIncrease * (mixerRuntime.motorOutputHigh - mixerRuntime.motorOutputLow);
+        motorRangeMin = softArmMotorOutputLow + motorRangeMinIncrease * (mixerRuntime.motorOutputHigh - softArmMotorOutputLow);
         motorOutputMin = motorRangeMin;
         motorOutputRange = motorRangeMax - motorRangeMin;
         motorOutputMixSign = 1;
-    }
 
-    throttle = constrainf(throttle / currentThrottleInputRange, 0.0f, 1.0f);
-    rcThrottle = throttle;
+        DEBUG_SET(DEBUG_SOFT_ARM, 0, lrintf(100.0f - softArmFactor * 100.0f));
+        DEBUG_SET(DEBUG_SOFT_ARM, 1, lrintf(softArmFactor * 1000.0f));
+        DEBUG_SET(DEBUG_SOFT_ARM, 2, lrintf(motorRangeMin));
+        DEBUG_SET(DEBUG_SOFT_ARM, 3, lrintf(rcThrottle * 1000.0f));
+    }
 }
 
 static bool applyCrashFlipModeToMotors(void)
@@ -553,7 +566,7 @@ static void updateDynLpfCutoffs(timeUs_t currentTimeUs, float throttle)
 
 DEFINE_SCALE_FN(scaleAirmodeTransition, 0.0f, 0.5f, 0.5f, 1.0f)
 
-static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnabled)
+static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnabled, const float motorDeltaLimit)
 {
     float airmodeTransitionPercent = 1.0f;
     float motorDeltaScale = 0.5f;
@@ -565,12 +578,10 @@ static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnable
         motorDeltaScale *= airmodeTransitionPercent; // this should be half of the motor authority allowed
     }
 
-    const float motorMixNormalizationFactor = motorMixRange > 1.0f ? airmodeTransitionPercent / motorMixRange : airmodeTransitionPercent;
-
     const float motorMixDelta = motorDeltaScale * motorMixRange;
 
     float minMotor = FLT_MAX;
-    float maxMotor = FLT_MIN;
+    float maxMotor = -FLT_MAX;
 
     for (int i = 0; i < mixerRuntime.motorCount; ++i) {
         if (mixerConfig()->mixer_type == MIXER_LINEAR) {
@@ -578,11 +589,20 @@ static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnable
         } else {
             motorMix[i] = scaleRangef(throttle, 0.0f, 1.0f, motorMix[i] + fabsf(motorMix[i]), motorMix[i] - fabsf(motorMix[i]));
         }
-        motorMix[i] *= motorMixNormalizationFactor;
 
         maxMotor = MAX(motorMix[i], maxMotor);
         minMotor = MIN(motorMix[i], minMotor);
     }
+
+    const float adjustedMotorMixRange = maxMotor - minMotor;
+    const float motorMixNormalizationFactor = (adjustedMotorMixRange > 1.0f ? airmodeTransitionPercent / adjustedMotorMixRange : airmodeTransitionPercent) * motorDeltaLimit;
+
+    for (int i = 0; i < mixerRuntime.motorCount; ++i) {
+        motorMix[i] *= motorMixNormalizationFactor;
+    }
+
+    minMotor *= motorMixNormalizationFactor;
+    maxMotor *= motorMixNormalizationFactor;
 
     // constrain throttle so it won't clip any outputs
     throttle = constrainf(throttle, -minMotor, 1.0f - maxMotor);
@@ -605,10 +625,10 @@ static float calcEzLandLimit(float maxDeflection, float speed)
     return fmaxf(mixerRuntime.ezLandingLimit, deflectionAndSpeedLimit);
 }
 
-static void applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin, const float motorMixMax)
+static void applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin, const float motorMixMax, const float motorDeltaLimit)
 {
     // Calculate factor for normalizing motor mix range to <= 1.0
-    const float baseNormalizationFactor = motorMixRange > 1.0f ? 1.0f / motorMixRange : 1.0f;
+    const float baseNormalizationFactor = (motorMixRange > 1.0f ? 1.0f / motorMixRange : 1.0f) * motorDeltaLimit;
     const float normalizedMotorMixMin = motorMixMin * baseNormalizationFactor;
     const float normalizedMotorMixMax = motorMixMax * baseNormalizationFactor;
 
@@ -652,7 +672,7 @@ static void applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin,
     // DEBUG_EZLANDING 4 and 5 is the upper limits based on stick input and speed respectively
 }
 
-static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const float motorMixMax, const bool airmodeEnabled)
+static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const float motorMixMax, const bool airmodeEnabled, const float motorDeltaLimit)
 {
     float airmodeTransitionPercent = 1.0f;
 
@@ -662,7 +682,7 @@ static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const
         airmodeTransitionPercent = scaleAirmodeTransition(throttle); // 0.5 throttle is full transition, and 0.0 throttle is 50% airmodeTransitionPercent
     }
 
-    const float motorMixNormalizationFactor = motorMixRange > 1.0f ? airmodeTransitionPercent / motorMixRange : airmodeTransitionPercent;
+    const float motorMixNormalizationFactor = (motorMixRange > 1.0f ? airmodeTransitionPercent / motorMixRange : airmodeTransitionPercent) * motorDeltaLimit;
 
     for (int i = 0; i < mixerRuntime.motorCount; i++) {
         motorMix[i] *= motorMixNormalizationFactor;
@@ -813,22 +833,31 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
 #endif
 
     motorMixRange = motorMixMax - motorMixMin;
-
     // note that here airmodeEnabled is true also when Launch Control is active
     switch (mixerConfig()->mixer_type) {
     case MIXER_LEGACY:
-        applyMixerAdjustment(motorMix, motorMixMin, motorMixMax, airmodeEnabled);
+        applyMixerAdjustment(motorMix, motorMixMin, motorMixMax, airmodeEnabled, softArmFactor);
         break;
     case MIXER_LINEAR:
     case MIXER_DYNAMIC:
-        applyMixerAdjustmentLinear(motorMix, airmodeEnabled);
+        applyMixerAdjustmentLinear(motorMix, airmodeEnabled, softArmFactor);
         break;
     case MIXER_EZLANDING:
-        applyMixerAdjustmentEzLand(motorMix, motorMixMin, motorMixMax);
+        applyMixerAdjustmentEzLand(motorMix, motorMixMin, motorMixMax, softArmFactor);
         break;
     default:
-        applyMixerAdjustment(motorMix, motorMixMin, motorMixMax, airmodeEnabled);
+        applyMixerAdjustment(motorMix, motorMixMin, motorMixMax, airmodeEnabled, softArmFactor);
         break;
+    }
+
+    if (softArmFactor < 1.0f) {
+        float adjustedMotorMixMin = FLT_MAX;
+        float adjustedMotorMixMax = -FLT_MAX;
+        for (int i = 0; i < mixerRuntime.motorCount; i++) {
+            adjustedMotorMixMin = MIN(adjustedMotorMixMin, motorMix[i]);
+            adjustedMotorMixMax = MAX(adjustedMotorMixMax, motorMix[i]);
+        }
+        motorMixRange = adjustedMotorMixMax - adjustedMotorMixMin;
     }
 
     if (featureIsEnabled(FEATURE_MOTOR_STOP)
