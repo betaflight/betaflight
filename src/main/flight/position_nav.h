@@ -36,7 +36,9 @@ typedef struct positionNavCommand_s {
     bool includeAltitude;           // when false, ENU_U is ignored for nav, arrival, and alt coupling
 
     float cruiseSpeedMps;           // maximum horizontal cruise speed (m/s)
-    float vertSpeedLimitMps;        // maximum vertical speed (m/s), 0 = share cruiseSpeedMps
+    float vertSpeedLimitMps;        // maximum vertical speed (m/s); 0 means positionNav shares
+                                    // cruiseSpeedMps. Other consumers of the command pick their
+                                    // own fallback, so do not read 0 as "cruise speed" elsewhere.
     float acceptanceRadiusM;        // arrival zone radius (metres)
     float completionSpeedMps;       // max ground speed to count as arrived (m/s)
 
