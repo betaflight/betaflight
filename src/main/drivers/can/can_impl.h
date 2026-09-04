@@ -38,10 +38,12 @@
 // the ports Betaflight compiles in, which is the widest set here. Rows that
 // list fewer simply leave the tail zeroed, and canPinConfigure() never matches
 // a zero because it tests the configured ioTag for non-zero first.
+#ifndef CAN_MAX_PIN_SEL
 #if defined(X32M7)
 #define CAN_MAX_PIN_SEL 5
 #else
 #define CAN_MAX_PIN_SEL 9
+#endif
 #endif
 
 // Software TX ring depth (power of two so the index can be masked). Sized to
