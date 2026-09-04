@@ -62,7 +62,7 @@
 
 baro_t baro;                        // barometer access functions
 
-PG_REGISTER_WITH_RESET_FN(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 3);
+PG_REGISTER_WITH_RESET_FN(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 4);
 
 #ifndef DEFAULT_BARO_DEVICE
 #define DEFAULT_BARO_DEVICE BARO_DEFAULT
@@ -166,6 +166,7 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
 
     barometerConfig->baro_eoc_tag = IO_TAG(BARO_EOC_PIN);
     barometerConfig->baro_xclr_tag = IO_TAG(BARO_XCLR_PIN);
+    barometerConfig->baroTempDriftCmPer10C = 0;
 }
 
 #define NUM_CALIBRATION_CYCLES   100        // 10 seconds init_delay + 100 * 25 ms = 12.5 seconds before valid baro altitude
@@ -174,6 +175,7 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
 static uint16_t calibrationCycles = 0;      // baro calibration = get new ground pressure value
 static uint16_t calibrationCycleCount = 0;
 static float baroGroundAltitude = 0.0f;
+static int32_t baroTemperatureAtCalibration = 0;
 static bool baroCalibrated = false;
 static bool baroReady = false;
 
@@ -510,9 +512,14 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
             // If baro.pressure is invalid then skip altitude counting / call of calibration cycle
             if (baro.pressure > 0) {
                 const float altitude = pressureToAltitude(baro.pressure);
+
                 if (baroIsCalibrated()) {
-                    // zero baro altitude
-                    baro.altitude = altitude - baroGroundAltitude;
+                    // zero baro altitude and correct for temperature drift
+                    const float temperatureDriftCorrection =
+                        (baro.temperature - baroTemperatureAtCalibration) *
+                        barometerConfig()->baroTempDriftCmPer10C / 1000.0f;
+
+                    baro.altitude = altitude - baroGroundAltitude - temperatureDriftCorrection;
                 } else {
                     // establish stable baroGroundAltitude value to zero baro altitude with
                     performBaroCalibrationCycle(altitude);
@@ -590,13 +597,15 @@ timeDelta_t getBaroSampleIntervalUs(void)
 static void performBaroCalibrationCycle(const float altitude)
 {
     baroGroundAltitude += altitude;
+    baroTemperatureAtCalibration += baro.temperature;
     calibrationCycleCount++;
 
     if (calibrationCycleCount >= calibrationCycles) {
         baroGroundAltitude /= calibrationCycleCount;  // simple average
+        baroTemperatureAtCalibration /= calibrationCycleCount;
+
         baroCalibrated = true;
         calibrationCycleCount = 0;
     }
 }
-
 #endif /* BARO */
