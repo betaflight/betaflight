@@ -516,18 +516,18 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
                 const float altitude = pressureToAltitude(baro.pressure);
 
                 if (baroIsCalibrated()) {
-                    // zero baro altitude and correct for temperature drift
-                    const float temperatureDriftCorrection =
-                        (baro.temperature - baroTemperatureAtCalibration) *
-                        barometerConfig()->baroTempDriftCmPer10C / 1000.0f;
+                    // zero baro altitude
+                    baro.altitude = altitude - baroGroundAltitude;
 
-                    baro.altitude = altitude - baroGroundAltitude - temperatureDriftCorrection;
-                } else {
-                    // establish stable baroGroundAltitude value to zero baro altitude with
-                    performBaroCalibrationCycle(altitude);
-                    baro.altitude = 0.0f;
+                    // correct physical barometers for temperature drift
+                    if (detectedSensors[SENSOR_INDEX_BARO] != BARO_VIRTUAL) {
+                        const float temperatureDriftCorrection =
+                            (baro.temperature - baroTemperatureAtCalibration) *
+                            barometerConfig()->baroTempDriftCmPer10C / 1000.0f;
+
+                        baro.altitude -= temperatureDriftCorrection;
+                    }
                 }
-
                 if (baro.lastDataTimeUs != 0) {
                     const timeDelta_t intervalUs = cmpTimeUs(currentTimeUs, baro.lastDataTimeUs);
                     if (intervalUs > 0) {
