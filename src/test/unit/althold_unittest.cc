@@ -65,6 +65,7 @@ extern "C" {
     bool isAltHoldActive();
     extern float testAltitudeCm;
     extern float testAltitudeDerivativeCmS;
+    extern float testAltitudeAccelerationCmS;
     extern float testCosTiltAngle;
     extern throttleStatus_e testThrottleStatus;
 }
@@ -87,6 +88,7 @@ protected:
         millisRW = 0;
         testAltitudeCm = 0.0f;
         testAltitudeDerivativeCmS = 0.0f;
+        testAltitudeAccelerationCmS = 0.0f;
         testCosTiltAngle = 1.0f;
         testThrottleStatus = THROTTLE_LOW;
 
@@ -97,6 +99,7 @@ protected:
         apCfg->altitudeP = 50;
         apCfg->altitudeI = 50;
         apCfg->altitudeD = 50;
+        apCfg->altitudeA = 50;
         apCfg->altitudeF = 0;
         apCfg->landingAltitudeM = 5;
 
@@ -163,23 +166,51 @@ TEST_F(AltholdControlUnittest, AltitudeControlRaisesThrottleWhenBelowTarget)
 {
     testAltitudeCm = 0.0f;
     testAltitudeDerivativeCmS = 0.0f;
+    testAltitudeAccelerationCmS = 0.0f;
     altitudeControl(100.0f, 0.01f, 0.0f, 500.0f);
     const float belowTargetThrottle = getAutopilotThrottle();
 
     resetAltitudeControl();
     testAltitudeCm = 200.0f;
     testAltitudeDerivativeCmS = 0.0f;
+    testAltitudeAccelerationCmS = 0.0f;
     altitudeControl(100.0f, 0.01f, 0.0f, 500.0f);
     const float aboveTargetThrottle = getAutopilotThrottle();
 
     EXPECT_GT(belowTargetThrottle, aboveTargetThrottle);
 }
 
+// The A term opposes measured vertical acceleration: altitudeA = -acceleration * altitudeKa,
+// so climbing acceleration must take throttle off. Getting that sign wrong would turn it into
+// positive feedback on vertical acceleration, and no other test would notice - every other
+// case in this file holds testAltitudeAccelerationCmS at zero.
+//
+// Altitude and vertical velocity are held exactly at target so P, I, D and F all contribute
+// nothing and the A term is the only thing that differs between the two scenarios.
+TEST_F(AltholdControlUnittest, AltitudeControlLowersThrottleWhenAcceleratingUpward)
+{
+    testAltitudeCm = 100.0f;
+    testAltitudeDerivativeCmS = 0.0f;
+    testAltitudeAccelerationCmS = 0.0f;
+    altitudeControl(100.0f, 0.01f, 0.0f, 500.0f);
+    const float noAccelerationThrottle = getAutopilotThrottle();
+
+    resetAltitudeControl();
+    testAltitudeCm = 100.0f;
+    testAltitudeDerivativeCmS = 0.0f;
+    testAltitudeAccelerationCmS = 200.0f; // accelerating upward
+    altitudeControl(100.0f, 0.01f, 0.0f, 500.0f);
+    const float upwardAccelerationThrottle = getAutopilotThrottle();
+
+    // altitudeKa is 50 * 0.006 = 0.3, so this is roughly 60 PWM of opposition.
+    EXPECT_LT(upwardAccelerationThrottle, noAccelerationThrottle);
+}
+
 TEST_F(AltholdControlUnittest, AltitudeControlRespectsVelocityLimit)
 {
     testAltitudeCm = 0.0f;
     testAltitudeDerivativeCmS = 0.0f;
-
+    testAltitudeAccelerationCmS = 0.0f;
     altitudeControl(200.0f, 0.01f, 0.0f, 100.0f);
     const float limitedThrottle = getAutopilotThrottle();
 
@@ -194,7 +225,7 @@ TEST_F(AltholdControlUnittest, AltitudeControlCompensatesForTilt)
 {
     testAltitudeCm = 100.0f;
     testAltitudeDerivativeCmS = 0.0f;
-
+    testAltitudeAccelerationCmS = 0.0f;
     testCosTiltAngle = 1.0f;
     altitudeControl(100.0f, 0.01f, 0.0f, 500.0f);
     const float levelThrottle = getAutopilotThrottle();
@@ -223,12 +254,14 @@ extern "C" {
 
     float testAltitudeCm = 0.0f;
     float testAltitudeDerivativeCmS = 0.0f;
+    float testAltitudeAccelerationCmS = 0.0f;
     float testCosTiltAngle = 1.0f;
     throttleStatus_e testThrottleStatus = THROTTLE_LOW;
 
     float getAltitudeCm(void) { return testAltitudeCm; }
     float getAltitudeDerivative(void) { return testAltitudeDerivativeCmS; }
     float getAltitudeCmControl(void) { return testAltitudeCm; }
+    float getAltitudeAccelerationControl(void) { return testAltitudeAccelerationCmS; }
     float getAltitudeDerivativeControl(void) { return testAltitudeDerivativeCmS; }
     float getCosTiltAngle(void) { return testCosTiltAngle; }
     float getGpsDataIntervalSeconds(void) { return 0.01f; }

@@ -382,6 +382,7 @@
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
 #define USE_LATE_TASK_STATISTICS
+#define USE_USB_MSC
 // Not every C5 carries FDCAN: C591 has none, while C562 has a single FDCAN1
 // and C593 and C5A3 have FDCAN1 + FDCAN2. Enable CAN only on the variants that
 // have it.

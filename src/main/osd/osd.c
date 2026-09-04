@@ -162,7 +162,7 @@ STATIC_ASSERT(OSD_POS_MAX == OSD_POS(63,31), OSD_POS_MAX_incorrect);
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 13);
 
-PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 3);
+PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 4);
 
 // Controls the display order of the OSD post-flight statistics.
 // Adjust the ordering here to control how the post-flight stats are presented.
@@ -435,7 +435,14 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->osd_show_spec_prearm = true;
 #endif // USE_RACE_PRO
 
+#ifdef MSP_DISPLAYPORT_UART
+    // A board naming a display port UART is wired to goggles, which are drawn
+    // over MSP.  That is the OSD's port, not a VTX's.
+    osdConfig->osd_uart = MSP_DISPLAYPORT_UART;
+    osdConfig->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
+#else
     osdConfig->osd_uart = SERIAL_PORT_NONE;
+#endif
     osdConfig->osd_custom_text_uart = SERIAL_PORT_NONE;
     osdConfig->osd_custom_text_baud = BAUD_115200;
 }

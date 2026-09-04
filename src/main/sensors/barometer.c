@@ -382,6 +382,8 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
 
 void baroInit(void)
 {
+    baro.lastDataTimeUs = 0;
+    baro.dataIntervalUs = 0;
 #ifndef USE_VIRTUAL_BARO
     baroReady = baroDetect(&baro.dev, barometerConfig()->baro_hardware);
 #else
@@ -516,6 +518,14 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
                     performBaroCalibrationCycle(altitude);
                     baro.altitude = 0.0f;
                 }
+
+                if (baro.lastDataTimeUs != 0) {
+                    const timeDelta_t intervalUs = cmpTimeUs(currentTimeUs, baro.lastDataTimeUs);
+                    if (intervalUs > 0) {
+                        baro.dataIntervalUs = intervalUs;
+                    }
+                }
+                baro.lastDataTimeUs = currentTimeUs;
             } else {
                 // return 0 during calibration, reuse last value otherwise
                 if (!baroIsCalibrated()) {
@@ -565,6 +575,16 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
 float getBaroAltitude(void)
 {
     return baro.altitude;
+}
+
+timeUs_t getBaroLatestSampleTimeUs(void)
+{
+    return baro.lastDataTimeUs;
+}
+
+timeDelta_t getBaroSampleIntervalUs(void)
+{
+    return baro.dataIntervalUs;
 }
 
 static void performBaroCalibrationCycle(const float altitude)
