@@ -74,8 +74,13 @@ Byte 9: 8-bit CRC
 
 PG_REGISTER_WITH_RESET_TEMPLATE(escSensorConfig_t, escSensorConfig, PG_ESC_SENSOR_CONFIG, 0);
 
+// Set by targets whose ESC telemetry shares the TX pad
+#ifndef DEFAULT_ESC_SENSOR_HALFDUPLEX
+#define DEFAULT_ESC_SENSOR_HALFDUPLEX 0
+#endif
+
 PG_RESET_TEMPLATE(escSensorConfig_t, escSensorConfig,
-        .halfDuplex = 0,
+        .halfDuplex = DEFAULT_ESC_SENSOR_HALFDUPLEX,
 #ifdef ESC_SENSOR_UART
         .esc_sensor_uart = ESC_SENSOR_UART,
 #else
