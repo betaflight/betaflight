@@ -93,6 +93,7 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 #include "sensors/gyro_init.h"
+#include "sensors/opticalflow.h"
 #include "sensors/rangefinder.h"
 #include "sensors/pitot.h"
 
@@ -1769,6 +1770,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_P, "%d",         autopilotConfig()->altitudeP);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_I, "%d",         autopilotConfig()->altitudeI);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_D, "%d",         autopilotConfig()->altitudeD);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_A, "%d",         autopilotConfig()->altitudeA);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_F, "%d",         autopilotConfig()->altitudeF);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_P, "%d",         autopilotConfig()->positionP);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_I, "%d",         autopilotConfig()->positionI);
@@ -1782,6 +1784,15 @@ static bool blackboxWriteSysinfo(void)
 
 #ifdef USE_MAG
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MAG_HARDWARE, "%d",           compassConfig()->mag_hardware);
+#endif
+
+#ifdef USE_OPTICALFLOW
+        // The mounting orientation scales and signs every flow-derived velocity, so a
+        // log is not self-describing without it: a wrong rotation and a genuine
+        // estimator fault look alike after the fact.
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_OPTICALFLOW_HARDWARE, "%d",   opticalflowConfig()->opticalflow_hardware);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_OPTICALFLOW_ROTATION, "%d",   opticalflowConfig()->rotation);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_OPTICALFLOW_FLIP_X, "%d",     opticalflowConfig()->flip_x);
 #endif
 
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GYRO_CAL_ON_FIRST_ARM, "%d",  armingConfig()->gyro_cal_on_first_arm);

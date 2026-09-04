@@ -258,6 +258,28 @@ uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
     return 0;
 }
 
+unsigned serialGetPortClaims(serialPortIdentifier_e identifier, serialPortClaim_t *claims, unsigned maxClaims)
+{
+    (void)identifier;
+    (void)claims;
+    (void)maxClaims;
+    return 0;
+}
+
+bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
+{
+    (void)identifier;
+    (void)mask;
+    return true;
+}
+
+void serialApplyPortBaud(serialPortIdentifier_e identifier, serialBaudClass_e baudClass, uint8_t baudIndex)
+{
+    (void)identifier;
+    (void)baudClass;
+    (void)baudIndex;
+}
+
 const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
     SERIAL_PORT_USB_VCP,
     SERIAL_PORT_USART1,
@@ -412,6 +434,7 @@ void changePidProfile(uint8_t) {}
 void changeBatteryProfile(uint8_t) {}
 uint8_t getCurrentBatteryProfileIndex(void) { return 0; }
 bool serialIsPortAvailable(serialPortIdentifier_e) { return false; }
+int findSerialPortIndexByIdentifier(serialPortIdentifier_e) { return -1; }
 void generateLedConfig(ledConfig_t *, char *, size_t) {}
 //bool isSerialTransmitBufferEmpty(const serialPort_t *) {return true; }
 //void serialWrite(serialPort_t *, uint8_t ch) { printf("%c", ch);}
