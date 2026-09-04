@@ -36,7 +36,8 @@
 
 //#define DEBUG_ADC_CHANNELS
 
-#ifdef USE_ADC_INTERNAL
+// Platforms without the factory calibration words provide these two functions themselves
+#if defined(USE_ADC_INTERNAL) && PLATFORM_TRAIT_ADC_INTERNAL_CALIBRATION
 
 /**
  * Use a measurement of the fixed internal vref to calculate the external Vref+
@@ -66,5 +67,5 @@ int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue)
 
     return ((((int32_t)((tempAdcValue * vrefValue) / TEMPSENSOR_CAL_VREFANALOG) - adcTSCAL1) * adcTSSlopeK) + 500) / 1000 + TEMPSENSOR_CAL1_TEMP;
 }
-#endif // USE_ADC_INTERNAL
+#endif // USE_ADC_INTERNAL && PLATFORM_TRAIT_ADC_INTERNAL_CALIBRATION
 #endif
