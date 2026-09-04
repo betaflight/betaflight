@@ -527,7 +527,12 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
 
                         baro.altitude -= temperatureDriftCorrection;
                     }
+                } else {
+                    // establish stable baroGroundAltitude value to zero baro altitude with
+                    performBaroCalibrationCycle(altitude);
+                    baro.altitude = 0.0f;
                 }
+
                 if (baro.lastDataTimeUs != 0) {
                     const timeDelta_t intervalUs = cmpTimeUs(currentTimeUs, baro.lastDataTimeUs);
                     if (intervalUs > 0) {
@@ -541,7 +546,6 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
                     baro.altitude = 0.0f;
                 }
             }
-
             if (debugMode == DEBUG_BARO) {
                 DEBUG_SET(DEBUG_BARO, 1, lrintf(baro.pressure / 100.0f));   // hPa
                 DEBUG_SET(DEBUG_BARO, 2, baro.temperature);                 // c°C
