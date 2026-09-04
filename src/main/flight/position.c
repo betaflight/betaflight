@@ -59,6 +59,7 @@ static float filteredAltitudeDerivative = 0.0f;
 
 static float controlAltitudeCm = 0.0f;
 static float controlAltitudeDerivative = 0.0f;
+static float controlAltitudeAcceleration = 0.0f;
 #if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
 static bool wasArmed = false;
 #endif
@@ -83,6 +84,7 @@ static void positionResetAltitudeState(void)
     filteredAltitudeDerivative = 0.0f;
     controlAltitudeCm = 0.0f;
     controlAltitudeDerivative = 0.0f;
+    controlAltitudeAcceleration = 0.0f;
 }
 
 void positionInit(void)
@@ -99,7 +101,12 @@ PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 7
 
 PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altitude_source = ALTITUDE_SOURCE_DEFAULT,
-    .altitude_prefer_baro = 100,
+    // How far to trust the barometer against the other altitude sources. Range 0-100,
+    // default 50. It scales the baro's measurement noise, so a lower value means less
+    // trust: 100 leaves the noise as-is, 50 doubles it, 20 is 5x. Trust is clamped at the
+    // bottom, so anything at or below 10 is 10x - 0 does not switch the baro off. The
+    // scaling is applied in feedBaroMeasurements().
+    .altitude_prefer_baro = 50,
     .altitude_lpf = 300,
     .altitude_d_lpf = 300,
     .rangefinder_max_range_cm = 400,
@@ -123,14 +130,17 @@ void calculateEstimatedAltitude(void)
 
     // Get raw KF altitude estimate
     const float kfAltCm = positionEstimatorGetAltitudeCm();
-    const float kfVelCm = positionEstimatorGetAltitudeDerivative();
+    const float kfVelZCm = positionEstimatorGetVerticalVelocity();
+    const float kfAccelZCm = positionEstimatorGetVerticalAcceleration();
 
     // Keep altitude estimate updating while disarmed so sensors/debug views show live data.
     // Arming-specific references are handled in estimator sensor offsets/reset logic.
     filteredAltitudeCm = pt2FilterApply(&altitudeLpf, kfAltCm);
     displayAltitudeCm = filteredAltitudeCm;
+
     controlAltitudeCm = kfAltCm;
-    controlAltitudeDerivative = kfVelCm;
+    controlAltitudeDerivative = kfVelZCm;
+    controlAltitudeAcceleration = kfAccelZCm;
 
     filteredAltitudeDerivative = pt2FilterApply(&altitudeDerivativeLpf, controlAltitudeDerivative);
 
@@ -139,13 +149,21 @@ void calculateEstimatedAltitude(void)
     estimatedVario = applyDeadband(estimatedVario, 10);
 #endif
 
-    DEBUG_SET(DEBUG_ALTITUDE, 0, lrintf(positionEstimatorGetEstimate()->trustZ * 100));
-    DEBUG_SET(DEBUG_ALTITUDE, 1, lrintf(kfAltCm / 10.0f));
-    DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(filteredAltitudeCm / 10.0f));
-#ifdef USE_VARIO
-    DEBUG_SET(DEBUG_ALTITUDE, 3, estimatedVario);
-#endif
-    DEBUG_SET(DEBUG_RTH, 1, lrintf(displayAltitudeCm / 10.0f));
+    // DEBUG_ALTITUDE layout:
+    // 0 = relative rangefinder altitude       (written in feedRangefinderMeasurements)
+    // 1 = relative barometer altitude          (written in feedBaroMeasurements)
+    // 2 = relative GPS altitude                (written in feedGPSMeasurements)
+    // 3 = KF altitude
+    // 4 = GPS vertical velocity                (written in feedGPSMeasurements)
+    // 5 = KF vertical velocity
+    // 6 = Vertical accelerometer               (written in positionEstimatorUpdate)
+    // 7 = KF vertical acceleration
+
+    DEBUG_SET(DEBUG_ALTITUDE, 3, lrintf(kfAltCm));
+    DEBUG_SET(DEBUG_ALTITUDE, 5, lrintf(kfVelZCm));
+    DEBUG_SET(DEBUG_ALTITUDE, 7, lrintf(kfAccelZCm));
+
+    DEBUG_SET(DEBUG_RTH, 1, lrintf(displayAltitudeCm));
 
 #if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
     wasArmed = isArmed;
@@ -173,6 +191,11 @@ float getAltitudeDerivativeControl(void)
 {
     return controlAltitudeDerivative;
 }
+float getAltitudeAccelerationControl(void)
+{
+    return controlAltitudeAcceleration;
+}
+
 
 bool isAltitudeAvailable(void)
 {
