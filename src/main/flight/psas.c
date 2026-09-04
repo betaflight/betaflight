@@ -126,7 +126,7 @@ static void FAST_CODE_NOINLINE computeLiftCoefficient(const pidProfile_t *pidPro
     if (ARMING_FLAG(ARMED)) {
 #ifdef USE_PITOT
         if (sensors(SENSOR_PITOT)) {
-            airSpeedPressure = pitot.diffPressure;
+            airSpeedPressure = MAX(pitot.diffPressure, 0.0f);
         } else
 #endif
         if (STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
@@ -316,7 +316,7 @@ static void FAST_CODE_NOINLINE psasComputeAirspeedGains(const pidProfile_t *pidP
     case SPEED_CURVE_MODE_AIRSPEED_PITOT:
 #ifdef USE_PITOT
         if (sensors(SENSOR_PITOT)) {
-            speed = pitot.airspeed * 0.01f;
+            speed = MAX(pitot.airspeed, 0.0f) * 0.01f;
         } else {
             speed = pidProfile->psas_speed_optimum_vref;
         }
