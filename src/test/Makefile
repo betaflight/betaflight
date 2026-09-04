@@ -286,7 +286,9 @@ msp_serial_unittest_SRC := \
 
 msp_serial_unittest_DEFINES := \
 		USE_CLI= \
-		USE_MSP_DISPLAYPORT=
+		USE_MSP_DISPLAYPORT= \
+		USE_RANGEFINDER_MT= \
+		USE_OPTICALFLOW_MT=
 
 osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
@@ -414,6 +416,34 @@ scheduler_unittest_SRC := \
 scheduler_unittest_DEFINES := \
 		USE_OSD=
 
+serial_feature_map_unittest_SRC := \
+		$(USER_DIR)/io/serial_feature_map.c
+
+serial_feature_map_unittest_DEFINES := \
+		USE_GPS= \
+		USE_SERIALRX= \
+		USE_BLACKBOX= \
+		USE_ESC_SENSOR= \
+		USE_RCDEVICE= \
+		USE_GIMBAL= \
+		USE_VTX_COMMON= \
+		USE_VTX_SMARTAUDIO= \
+		USE_VTX_TRAMP= \
+		USE_VTX_MSP= \
+		USE_RANGEFINDER= \
+		USE_RANGEFINDER_MT= \
+		USE_OPTICALFLOW= \
+		USE_OPTICALFLOW_MT= \
+		USE_OSD= \
+		USE_MSP_DISPLAYPORT= \
+		USE_TELEMETRY= \
+		USE_TELEMETRY_FRSKY_HUB= \
+		USE_TELEMETRY_HOTT= \
+		USE_TELEMETRY_LTM= \
+		USE_TELEMETRY_SMARTPORT= \
+		USE_TELEMETRY_MAVLINK= \
+		USE_TELEMETRY_IBUS=
+
 sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/sensors/gyro.c \
 		$(USER_DIR)/sensors/gyro_init.c \
@@ -521,6 +551,21 @@ $(OBJECT_DIR)/dronecan_mag_unittest/io/dronecan/dronecan_mag.c.o \
 $(OBJECT_DIR)/dronecan_mag_unittest/dronecan_mag_unittest.o: $(DRONECAN_LIBCANARD_DIR)/canard.c
 
 
+dronecan_nodes_unittest_SRC := \
+		$(USER_DIR)/io/dronecan/dronecan_nodes.c \
+		$(TEST_DIR)/dronecan_nodes_canard.c
+
+dronecan_nodes_unittest_DEFINES := \
+		ENABLE_DRONECAN=1
+
+dronecan_nodes_unittest_INCLUDE_DIRS := \
+		$(DRONECAN_LIBCANARD_DIR)
+
+$(OBJECT_DIR)/dronecan_nodes_unittest/dronecan_nodes_canard.c.o \
+$(OBJECT_DIR)/dronecan_nodes_unittest/io/dronecan/dronecan_nodes.c.o \
+$(OBJECT_DIR)/dronecan_nodes_unittest/dronecan_nodes_unittest.o: $(DRONECAN_LIBCANARD_DIR)/canard.c
+
+
 .PHONY: check-pg-ids
 check-pg-ids:
 	@pg=$(USER_DIR)/pg/pg_ids.h; \
@@ -583,7 +628,8 @@ position_estimator_unittest_SRC := \
 position_estimator_unittest_DEFINES := \
 		USE_GPS= \
 		USE_BARO= \
-		USE_RANGEFINDER=
+		USE_RANGEFINDER= \
+		USE_OPTICALFLOW=
 
 position_nav_unittest_SRC := \
 		$(USER_DIR)/flight/position_nav.c \

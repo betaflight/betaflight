@@ -202,9 +202,11 @@
 #define USE_RX_SX127X
 #endif // !USE_RX_SPI
 
+#if TARGET_FLASH_SIZE >= 1024
 #if !defined(USE_EXST) && !defined(USE_SDCARD)
 #define USE_SDCARD
 #endif
+#endif // TARGET_FLASH_SIZE >= 1024
 
 #endif // !defined(USE_CONFIG)
 
@@ -366,7 +368,13 @@
 #define USE_MSP_OVER_TELEMETRY
 
 #define USE_VIRTUAL_CURRENT_METER
+
+// DSHOT builds include ESC sensor support by default. Targets with another
+// telemetry transport may enable USE_ESC_SENSOR explicitly in target.h.
+#ifdef USE_DSHOT
 #define USE_ESC_SENSOR
+#endif
+
 #define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #define USE_RCDEVICE
 
