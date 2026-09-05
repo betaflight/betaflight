@@ -72,6 +72,9 @@ struct CapturedTarget {
 };
 
 CapturedTarget g_lastTarget;
+float g_lastMaxAccelMps2;
+float g_lastMaxDecelMps2;
+float g_lastVertSpeedLimitMps;
 vector3_t g_lastDispatchTargetEfM;   // destination from positionNavSetTargetEf only (carrot moves don't touch it)
 int g_setTargetCalls;
 int g_clearTargetCalls;
@@ -111,6 +114,11 @@ void positionNavSetTargetEf(
     g_lastTarget.callback = callback;
     g_lastTarget.userData = userData;
     g_lastTarget.valid = true;
+    // Mirror the production reset: per-command limits do not survive a new command, so a test
+    // that asserts on them is asserting the caller stated them rather than inherited them.
+    g_lastMaxAccelMps2 = 0.0f;
+    g_lastMaxDecelMps2 = 0.0f;
+    g_lastVertSpeedLimitMps = 0.0f;
     g_setTargetCalls++;
 }
 
@@ -136,8 +144,13 @@ void positionNavSetAutoClearOnReach(bool autoClear)
 
 void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
 {
-    (void)maxAccelMps2;
-    (void)maxDecelMps2;
+    g_lastMaxAccelMps2 = maxAccelMps2;
+    g_lastMaxDecelMps2 = maxDecelMps2;
+}
+
+void positionNavSetVerticalSpeedLimit(float vertSpeedLimitMps)
+{
+    g_lastVertSpeedLimitMps = vertSpeedLimitMps;
 }
 
 static bool g_altitudeArrivalRequired;
@@ -294,6 +307,7 @@ protected:
         cfg->waypointArrivalRadius = 500;  // 5 m
         cfg->waypointHoldRadius = 200;     // 2 m
         cfg->maxVelocity = 1000;           // 10 m/s
+        cfg->landingAltitudeM = 4;         // as shipped
         cfg->landingDescentRate = 50;      // 0.5 m/s
         cfg->landingDetectionTime = 10;    // 1 s
         cfg->landingVelocityThreshold = 50; // 0.5 m/s
@@ -1069,8 +1083,9 @@ TEST_F(FlightPlanNavTest, LandWaypointArrivalDescendsAtTheWaypoint)
     // Descent anchors at the waypoint, not the current position.
     EXPECT_NEAR(g_lastTarget.targetEfM.x, 10.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.targetEfM.y, 20.0f, 0.1f);
-    EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 200.0f, 0.1f);
-    EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, 0.5f, 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 5.0f, 0.1f);
+    // The descent rate bounds the vertical axis; the horizontal cruise is its own budget.
+    EXPECT_NEAR(g_lastVertSpeedLimitMps, 0.5f, 0.01f);
 }
 
 TEST_F(FlightPlanNavTest, LandWaypointTouchdownDisarmsAndCompletes)
@@ -1126,7 +1141,7 @@ TEST_F(FlightPlanNavTest, LandWaypointWithDurationLoitersThenDescends)
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
     ASSERT_TRUE(g_lastTarget.valid);
     EXPECT_NEAR(g_lastTarget.targetEfM.x, 10.0f, 0.1f);
-    EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 200.0f, 0.1f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 5.0f, 0.1f);
 }
 
 TEST_F(FlightPlanNavTest, LandLoiterExpiryWithLostTargetRedispatchesLeg)
@@ -1296,11 +1311,12 @@ TEST_F(FlightPlanNavSafetyTest, GeofenceBreachWithLandActionStartsLanding)
 
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
     ASSERT_TRUE(g_lastTarget.valid);
-    // Landing target: current position, far below current altitude.
+    // Landing target: current position, a bounded distance below current altitude.
     EXPECT_NEAR(g_lastTarget.targetEfM.x, 12.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.targetEfM.y, 34.0f, 0.1f);
-    EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 200.0f, 0.1f);
-    EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, 0.5f, 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 5.0f, 0.1f);
+    // The descent rate bounds the vertical axis; the horizontal cruise is its own budget.
+    EXPECT_NEAR(g_lastVertSpeedLimitMps, 0.5f, 0.01f);
     EXPECT_FALSE(flightPlanNavIsInjectedPlanActive());
 }
 
@@ -1392,6 +1408,88 @@ TEST_F(FlightPlanNavSafetyTest, GeofenceRthAboveReturnAltReturnsAtCurrentAltitud
     // which in the estimator's feedback frame is its reading at engage (the
     // stub reads 0 while GPS says 150 m AMSL — a mid-flight engagement).
     EXPECT_NEAR(g_lastTarget.targetEfM.z, 0.0f, 0.1f);
+}
+
+// The landing target must stay a bounded distance below the craft and ratchet down as it
+// descends. It cannot be parked hundreds of metres underground: positionNav normalises the 3D
+// error to get its direction, so a huge vertical component collapses the horizontal velocity
+// demand to near zero and horizontal position hold stops working for the whole landing. It must
+// also never walk back up, or a bounce would raise it.
+TEST_F(FlightPlanNavSafetyTest, LandingTargetRatchetsDownAndStaysBounded)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    float lowestTargetM = g_lastTarget.targetEfM.z;
+    for (int i = 0; i < 40; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = -40.0f;
+        g_stubEstimate.position.v[ENU_U] -= 4.0f;      // 40cm/s over 100ms
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+
+        const float altM = g_stubEstimate.position.v[ENU_U] * 0.01f;
+        const float targetM = g_lastTarget.targetEfM.z;
+        EXPECT_LT(targetM, altM) << "target must stay below the craft";
+        EXPECT_GT(targetM, altM - 6.0f) << "target must stay bounded, not parked underground";
+        EXPECT_LE(targetM, lowestTargetM + 0.01f) << "target must never ratchet back up";
+        lowestTargetM = fminf(lowestTargetM, targetM);
+    }
+
+    // A bounce upward must not drag the target up with the craft.
+    const float beforeBounce = g_lastTarget.targetEfM.z;
+    g_stubEstimate.velocity.v[ENU_U] = 90.0f;
+    g_stubEstimate.position.v[ENU_U] += 30.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_LE(g_lastTarget.targetEfM.z, beforeBounce + 0.01f);
+}
+
+// The landing leg must state its own speed and braking limits. It used to state neither: the
+// descent rate doubled as the horizontal cruise cap, and the braking limit was whatever the
+// previous leg happened to leave behind.
+TEST_F(FlightPlanNavSafetyTest, LandingStatesItsOwnSpeedAndBrakingLimits)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    // A geofence LAND is not a rescue, so the descent rate comes from autopilotConfig.
+    autopilotConfigMutable()->landingDescentRate = 50;   // 0.5 m/s
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    // Vertical carries the descent rate; horizontal must not.
+    EXPECT_NEAR(g_lastVertSpeedLimitMps, 0.5f, 0.01f);
+    EXPECT_GT(g_lastTarget.cruiseSpeedMps, 0.5f + 0.01f)
+        << "horizontal approach speed must not be the descent rate";
+
+    // Braking stated, not inherited.
+    EXPECT_GT(g_lastMaxDecelMps2, 0.0f) << "landing must state a horizontal braking limit";
+}
+
+// The same landing reached through a leg that leaves no braking limit must still brake.
+TEST_F(FlightPlanNavSafetyTest, LandingBrakingDoesNotDependOnThePrecedingLeg)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+
+    // Wipe the limits as a gated-carrot or hold-pattern leg would leave them.
+    positionNavSetAccelLimits(0.0f, 0.0f);
+    ASSERT_FLOAT_EQ(g_lastMaxDecelMps2, 0.0f);
+
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    EXPECT_GT(g_lastMaxDecelMps2, 0.0f);
 }
 
 TEST_F(FlightPlanNavSafetyTest, LandingTouchdownDisarms)
