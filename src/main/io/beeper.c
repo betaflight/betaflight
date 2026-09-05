@@ -490,8 +490,12 @@ void beeperUpdate(timeUs_t currentTimeUs)
     // Note: DShot beacon handling above must run even if no beeper sequence is active.
     // Beeper routine doesn't need to update if there aren't any sounds ongoing
     if (currentBeeperEntry == NULL) {
-        schedulerIgnoreTaskExecTime();
-        return;
+        /* Don't call schedulerIgnoreTaskExecTime() here. The DShot beacon handling above runs on
+         * every call, so this path is not meaningfully shorter than the peak, and as it is the
+         * only path taken while idle, ignoring it would freeze the scheduler's duration estimate
+         * at whatever was learnt during the last beep sequence, making the task perpetually late.
+         */
+       return;
     }
 
     if (beeperNextToggleTime && cmp32(beeperNextToggleTime, currentTimeUs) > 0) {
