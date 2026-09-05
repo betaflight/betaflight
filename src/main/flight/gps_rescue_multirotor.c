@@ -272,7 +272,6 @@ static void calculateTargetStep(void)
     if (rescueState.sensor.distanceToHomeCm > GPS_RESCUE_ACCEPT_RADIUS) {
         const float distanceToMoveCm = rescueState.intent.targetVelocityCmS * gpsRescueTaskIntervalSeconds * rescueState.intent.xyStartAttenuator;
         const float scale = distanceToMoveCm / rescueState.sensor.distanceToHomeCm;
-            DEBUG_SET(DEBUG_RTH, 5, lrintf(scale*100.0f));
 
         vector2Scale(&rescueState.intent.stepEF, &rescueState.sensor.currentPositionV, -scale);
     } else {
@@ -686,7 +685,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         break;
     }
 
-    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 1, rescueState.phase);
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 4, rescueState.phase);
     DEBUG_SET(DEBUG_ATTITUDE,            5, rescueState.phase);
     DEBUG_SET(DEBUG_ATTITUDE,            6, lrintf(rescueState.intent.targetVelocityCmS));
 
