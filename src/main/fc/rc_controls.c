@@ -82,12 +82,13 @@ PG_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig,
     .yaw_control_reversed = false,
 );
 
-PG_REGISTER_WITH_RESET_TEMPLATE(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 2);
+PG_REGISTER_WITH_RESET_TEMPLATE(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 3);
 
 PG_RESET_TEMPLATE(armingConfig_t, armingConfig,
     .gyro_cal_on_first_arm = 0,
     .auto_disarm_delay = 5,
     .prearm_allow_rearm = 0,
+    .two_tap_arming = 0,
 );
 
 PG_REGISTER_WITH_RESET_TEMPLATE(flight3DConfig_t, flight3DConfig, PG_MOTOR_3D_CONFIG, 0);
@@ -150,6 +151,7 @@ void processRcStickPositions(void)
     static uint8_t rcSticks;
     // an extra guard for disarming through switch to prevent that one frame can disarm it
     static uint8_t rcDisarmTicks;
+    static bool armSwitchWasActive;
     static bool doNotRepeat;
     static bool pendingApplyRollAndPitchTrimDeltaSave = false;
 
@@ -176,10 +178,19 @@ void processRcStickPositions(void)
 
     // perform actions
     if (!isUsingSticksToArm) {
-        if (IS_RC_MODE_ACTIVE(BOXARM)) {
+        const bool armSwitchActive = IS_RC_MODE_ACTIVE(BOXARM);
+        const bool armSwitchReady = rcModeIsTwoTapArmReady();
+        if (armSwitchActive && !armSwitchWasActive && !ARMING_FLAG(ARMED) && !armSwitchReady) {
+            beeperConfirmationBeeps(1);
+        }
+        armSwitchWasActive = armSwitchActive;
+
+        if (armSwitchActive) {
             rcDisarmTicks = 0;
             // Arming via ARM BOX
-            tryArm();
+            if (ARMING_FLAG(ARMED) || armSwitchReady) {
+                tryArm();
+            }
         } else {
             resetTryingToArm();
             // Disarming via ARM BOX
@@ -427,5 +438,6 @@ void processRcStickPositions(void)
 void rcControlsInit(void)
 {
     analyzeModeActivationConditions();
+    rcModeSetTwoTapArming(armingConfig()->two_tap_arming);
     isUsingSticksToArm = !isModeActivationConditionPresent(BOXARM) && systemConfig()->enableStickArming;
 }

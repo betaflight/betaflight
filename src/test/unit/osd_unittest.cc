@@ -111,6 +111,7 @@ extern "C" {
     int32_t simulationVerticalSpeed;
     uint16_t simulationCoreTemperature;
     bool simulationGpsHealthy;
+    bool simulationTwoTapArmWaiting;
 }
 
 uint32_t simulationFeatureFlags = FEATURE_GPS;
@@ -145,6 +146,7 @@ void setDefaultSimulationState()
     simulationVerticalSpeed = 0;
     simulationCoreTemperature = 0;
     simulationGpsHealthy = false;
+    simulationTwoTapArmWaiting = false;
 
     rcData[PITCH] = 1500;
 
@@ -1080,6 +1082,31 @@ TEST_F(OsdTest, TestElementCoreTemperature)
     displayPortTestBufferSubstring(1, 8, "C%c 91%c", SYM_TEMPERATURE, SYM_F);
 }
 
+TEST_F(OsdTest, TestElementWarningsTwoTapArming)
+{
+    osdConfigMutable()->enabledWarnings = 0;
+    osdWarnSetState(OSD_WARNING_ARMING_DISABLE, true);
+
+    char warningText[OSD_WARNINGS_MAX_SIZE + 1];
+    bool blinking;
+    uint8_t displayAttr;
+
+    simulationTwoTapArmWaiting = true;
+    renderOsdWarning(warningText, &blinking, &displayAttr);
+    EXPECT_STREQ("TAP AGAIN", warningText);
+    EXPECT_FALSE(blinking);
+    EXPECT_EQ(DISPLAYPORT_SEVERITY_INFO, displayAttr);
+
+    ENABLE_ARMING_FLAG(ARMED);
+    renderOsdWarning(warningText, &blinking, &displayAttr);
+    EXPECT_STREQ("", warningText);
+
+    DISABLE_ARMING_FLAG(ARMED);
+    osdWarnSetState(OSD_WARNING_ARMING_DISABLE, false);
+    renderOsdWarning(warningText, &blinking, &displayAttr);
+    EXPECT_STREQ("", warningText);
+}
+
 /*
  * Tests the battery notifications shown on the warnings OSD element.
  */
@@ -1518,6 +1545,10 @@ extern "C" {
 
     bool IS_RC_MODE_ACTIVE(boxId_e) {
         return false;
+    }
+
+    bool rcModeIsTwoTapArmWaiting(void) {
+        return simulationTwoTapArmWaiting;
     }
 
     uint32_t micros() {
