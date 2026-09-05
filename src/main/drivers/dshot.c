@@ -304,6 +304,10 @@ FAST_CODE_NOINLINE void updateDshotTelemetry(void)
     for (unsigned motor = 0; motor < dshotMotorCount; motor++) {
         motorFrequencyHz[motor] = pt1FilterApply(&motorFreqLpf[motor], erpmToHz * getDshotErpm(motor));
         minMotorFrequencyHz = MIN(minMotorFrequencyHz, motorFrequencyHz[motor]);
+
+        if (motor < DEBUG16_VALUE_COUNT) {
+            DEBUG_SET(DEBUG_RPM_FILTER, motor, lrintf(motorFrequencyHz[motor]));
+        }
     }
 
     // Set state to processed
