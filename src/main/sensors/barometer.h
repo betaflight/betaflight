@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "common/time.h"
+
 #include "pg/pg.h"
 #include "drivers/barometer/barometer.h"
 
@@ -51,6 +53,7 @@ typedef struct barometerConfig_s {
     uint8_t baro_hardware;                  // Barometer hardware to use
     ioTag_t baro_eoc_tag;
     ioTag_t baro_xclr_tag;
+    int16_t baroTempDriftCmPer10C;   // cm per 10°C, signed
 } barometerConfig_t;
 
 PG_DECLARE(barometerConfig_t, barometerConfig);
@@ -64,6 +67,8 @@ typedef struct baro_s {
     float altitude;
     int32_t temperature;                    // Use temperature for telemetry
     int32_t pressure;                       // Use pressure for telemetry
+    timeUs_t lastDataTimeUs;
+    timeDelta_t dataIntervalUs;
 } baro_t;
 
 extern baro_t baro;
@@ -76,3 +81,5 @@ void baroSetGroundLevel(void);
 uint32_t baroUpdate(timeUs_t currentTimeUs);
 bool isBaroReady(void);
 float getBaroAltitude(void);
+timeUs_t getBaroLatestSampleTimeUs(void);
+timeDelta_t getBaroSampleIntervalUs(void);

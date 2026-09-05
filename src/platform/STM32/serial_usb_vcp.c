@@ -50,9 +50,7 @@ extern USBD_ClassTypeDef  USBD_HID_CDC;
 #endif
 USBD_HandleTypeDef USBD_Device;
 #else
-#include "usb_core.h"
-#include "usb_init.h"
-#include "hw_config.h"
+#error "Unsupported MCU family for USE_VCP"
 #endif
 
 #include "drivers/time.h"
@@ -277,10 +275,7 @@ void usbVcpInit(void)
 #endif
 
 #else
-    Set_System();
-    Set_USBClock();
-    USB_Init();
-    USB_Interrupts_Config();
+#error "Unsupported MCU family for USE_VCP"
 #endif
 }
 
