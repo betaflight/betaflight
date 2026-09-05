@@ -306,13 +306,13 @@ void gimbalUpdate(timeUs_t currentTimeUs)
 
 bool gimbalInit(void)
 {
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_GIMBAL);
-    if (!portConfig) {
+    const serialPortIdentifier_e port = gimbalTrackConfig()->gimbal_uart;
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
     // Serial communications is 115200 8N1
-    gimbalSerialPort = openSerialPort(portConfig->identifier, FUNCTION_GIMBAL,
+    gimbalSerialPort = openSerialPort(port, FUNCTION_GIMBAL,
                                       NULL, NULL,
                                       115200, MODE_RXTX, SERIAL_STOPBITS_1 | SERIAL_PARITY_NO);
 

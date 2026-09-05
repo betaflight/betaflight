@@ -423,8 +423,8 @@ void gpsInit(void)
         return;
     }
 
-    const serialPortConfig_t *gpsPortConfig = findSerialPortConfig(FUNCTION_GPS);
-    if (!gpsPortConfig) {
+    const serialPortIdentifier_e port = gpsConfig()->gps_uart;
+    if (port == SERIAL_PORT_NONE) {
         return;
     }
 
@@ -433,7 +433,7 @@ void gpsInit(void)
     initBaudRateCycleCount = 0;
     gpsData.userBaudRateIndex = DEFAULT_BAUD_RATE_INDEX;
     for (unsigned i = 0; i < ARRAYLEN(gpsInitData); i++) {
-        if (gpsInitData[i].baudrateIndex == gpsPortConfig->gps_baudrateIndex) {
+        if (gpsInitData[i].baudrateIndex == gpsConfig()->gps_baud) {
             gpsData.userBaudRateIndex = i;
             break;
         }
@@ -449,16 +449,16 @@ void gpsInit(void)
         mode &= ~MODE_TX;
     }
 #endif
-    if (serialType(gpsPortConfig->identifier) == SERIALTYPE_UART
-        || serialType(gpsPortConfig->identifier) == SERIALTYPE_LPUART
-        || serialType(gpsPortConfig->identifier) == SERIALTYPE_PIOUART) {
+    if (serialType(port) == SERIALTYPE_UART
+        || serialType(port) == SERIALTYPE_LPUART
+        || serialType(port) == SERIALTYPE_PIOUART) {
 #if !ENABLE_SERIAL_SKIP_CHECK_TX
         options |= SERIAL_CHECK_TX;
 #endif
     }
 
     // no callback - buffer will be consumed in gpsUpdate()
-    gpsPort = openSerialPort(gpsPortConfig->identifier, FUNCTION_GPS, NULL, NULL, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex], mode, options);
+    gpsPort = openSerialPort(port, FUNCTION_GPS, NULL, NULL, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex], mode, options);
     if (!gpsPort) {
         return;
     }
@@ -1967,7 +1967,7 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
 static bool gpsNewFrameNMEA(char c)
 {
     static gpsDataNmea_t gps_msg;
-    static char string[15];
+    static char string[16];
     static uint8_t param = 0, offset = 0, parity = 0;
     static uint8_t checksum_param, gps_frame = NO_FRAME;
     bool receivedNavMessage = false;

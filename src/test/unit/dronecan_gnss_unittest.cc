@@ -54,6 +54,12 @@ extern "C" {
         return true;
     }
 
+    void dronecanNodesNoteSensor(uint8_t nodeId, uint8_t sensorFlag)
+    {
+        (void)nodeId;
+        (void)sensorFlag;
+    }
+
     static timeUs_t mockMicros = 0;
 
     timeUs_t micros(void) { return mockMicros; }

@@ -19,6 +19,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "drivers/serial_impl.h"
+#include "drivers/serial_uart.h"
+#include "drivers/serial_uart_impl.h"
+
 #include "hardware/pio.h"
 
 typedef struct pioUartHardware_s {
@@ -29,6 +33,10 @@ typedef struct pioUartHardware_s {
     uint16_t txBufferSize;
     uint16_t rxBufferSize;
 } pioUartHardware_t;
+
+// serial_uart_pico.c
+// (re)apply GPIO inversion overrides, needed after any gpio_set_function on the pins
+void uartApplyGpioInversion(uartPort_t *s, portOptions_e options);
 
 // uart_pio.c
 void uartPinConfigure_pio(const serialPinConfig_t *pSerialPinConfig);
@@ -49,11 +57,12 @@ void uartSelectFunction_hw(uartPort_t *s, uint32_t gpio);
 bool isTxComplete_hw(uartPort_t *s);
 
 // uart_rx_program.c
-extern struct pio_program uart_rx_program;
-void uart_rx_program_init(PIO pio, uint sm, uint offset, uint pin, uint baud);
+extern const struct pio_program uart_rx_program;
+void uart_rx_program_init(PIO pio, uint sm, uint offset, uint pin, uint baud, serialPullMode_t pull);
 
 // uart_tx_program.c
-extern struct pio_program uart_tx_program;
+extern const struct pio_program uart_tx_program;
 extern uint32_t tx_await_offset;
-void uart_tx_program_init(PIO pio, uint sm, uint offset, uint pin, uint baud);
+// halfDuplex: release the pin between frames so the rx state machine can share it
+void uart_tx_program_init(PIO pio, uint sm, uint offset, uint pin, uint baud, bool halfDuplex, bool twoStopBits);
 

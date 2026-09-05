@@ -33,11 +33,15 @@
 #include "platform/rcc_types.h"
 #endif
 
-// Maximum number of alternate pin options per TX/RX line.
+// Maximum number of alternate pin options per TX/RX line. The bound is set by
+// whichever family lists the most: STM32C562 routes FDCAN1_TX to nine pins of
+// the ports Betaflight compiles in, which is the widest set here. Rows that
+// list fewer simply leave the tail zeroed, and canPinConfigure() never matches
+// a zero because it tests the configured ioTag for non-zero first.
 #if defined(X32M7)
 #define CAN_MAX_PIN_SEL 5
 #else
-#define CAN_MAX_PIN_SEL 3
+#define CAN_MAX_PIN_SEL 9
 #endif
 
 // Software TX ring depth (power of two so the index can be masked). Sized to

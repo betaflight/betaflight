@@ -34,6 +34,8 @@
 #include "drivers/rangefinder/rangefinder.h"
 #include "drivers/rangefinder/rangefinder_lidartf.h"
 
+#include "sensors/rangefinder.h"
+
 typedef struct {
     rangefinderType_e rfType;
     uint16_t rangeMin;
@@ -287,12 +289,12 @@ bool lidarTFDetect(rangefinderDev_t *dev, rangefinderType_e rfType)
         return false; // supplied rfType is not TF
     }
 
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_LIDAR);
-    if (!portConfig) {
+    const serialPortIdentifier_e port = rangefinderConfig()->rangefinder_uart;
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
-    tfSerialPort = openSerialPort(portConfig->identifier, FUNCTION_LIDAR, NULL, NULL, 115200, MODE_RXTX, 0);
+    tfSerialPort = openSerialPort(port, FUNCTION_LIDAR, NULL, NULL, 115200, MODE_RXTX, 0);
     if (tfSerialPort == NULL) {
         return false;
     }

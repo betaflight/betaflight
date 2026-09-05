@@ -58,6 +58,7 @@ typedef struct autopilotConfig_s {
     uint8_t altitudeP;
     uint8_t altitudeI;
     uint8_t altitudeD;
+    uint8_t altitudeA;
     uint8_t altitudeF;
     uint8_t positionP;
     uint8_t positionI;
@@ -65,7 +66,7 @@ typedef struct autopilotConfig_s {
     uint8_t positionA;
     uint8_t positionF;
     uint8_t positionCutoff;
-    uint8_t stopThreshold;       // cm/s, speed below which braking captures a position hold target
+    uint8_t stopThreshold;       // percent of the speed carried into braking, floored at 1 cm/s: braking captures the position hold target once the speed falls below it
     uint8_t maxAngle;
 
     // Drag feedforward and velocity setpoint cap (maxVelocity also sets the full-stick velocity target in position hold)

@@ -20,9 +20,51 @@
 
 #include "platform.h"
 
+#include "io/serial.h"
+
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
 #include "msp.h"
 
-PG_REGISTER(mspConfig_t, mspConfig, PG_MSP_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(mspConfig_t, mspConfig, PG_MSP_CONFIG, 0);
+
+static void claimMspPort(mspConfig_t *mspConfig, unsigned *slot, serialPortIdentifier_e identifier)
+{
+    if (identifier == SERIAL_PORT_NONE || *slot >= MAX_MSP_PORT_COUNT) {
+        return;
+    }
+
+    // A target is free to name the same UART twice (MSP_UART and
+    // MSP_DISPLAYPORT_UART commonly agree), and a board without VCP starts
+    // from that same first UART, so a repeat would eat a slot for nothing.
+    for (unsigned i = 0; i < *slot; i++) {
+        if (mspConfig->msp_uart[i] == identifier) {
+            return;
+        }
+    }
+
+    mspConfig->msp_uart[(*slot)++] = identifier;
+}
+
+void pgResetFn_mspConfig(mspConfig_t *mspConfig)
+{
+    mspConfig->halfDuplex = 0;
+    for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+        mspConfig->msp_uart[i] = SERIAL_PORT_NONE;
+        mspConfig->msp_baud[i] = BAUD_115200;
+    }
+
+    // The first port is always MSP so a freshly flashed board stays reachable.
+    unsigned slot = 0;
+    claimMspPort(mspConfig, &slot, serialPortIdentifiers[0]);
+#ifdef MSP_UART
+    claimMspPort(mspConfig, &slot, MSP_UART);
+#endif
+#ifdef USE_MSP_UART
+    claimMspPort(mspConfig, &slot, USE_MSP_UART);
+#endif
+#ifdef MSP_DISPLAYPORT_UART
+    claimMspPort(mspConfig, &slot, MSP_DISPLAYPORT_UART);
+#endif
+}

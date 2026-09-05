@@ -175,18 +175,18 @@ bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->rcReadRawFn = sumdReadRawRC;
     rxRuntimeState->rcFrameStatusFn = sumdFrameStatus;
 
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-    if (!portConfig) {
+    const serialPortIdentifier_e port = rxConfig->rx_uart;
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
 #ifdef USE_TELEMETRY
-    bool portShared = telemetryCheckRxPortShared(portConfig, rxRuntimeState->serialrxProvider);
+    bool portShared = telemetryCheckRxPortShared(port, rxRuntimeState->serialrxProvider);
 #else
     bool portShared = false;
 #endif
 
-    serialPort_t *sumdPort = openSerialPort(portConfig->identifier,
+    serialPort_t *sumdPort = openSerialPort(port,
         FUNCTION_RX_SERIAL,
         sumdDataReceive,
         NULL,

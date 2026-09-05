@@ -59,7 +59,7 @@
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1
-#define API_VERSION_MINOR                   48
+#define API_VERSION_MINOR                   49
 #define API_VERSION_LENGTH                  2
 
 #define MULTIWII_IDENTIFIER "MWII";
@@ -124,7 +124,7 @@
 #define MSP_ADJUSTMENT_RANGES           52   // out message: Get adjustment ranges
 #define MSP_SET_ADJUSTMENT_RANGE        53   // in message:  Set adjustment range
 #define MSP_CF_SERIAL_CONFIG            54   // out message: Get Cleanflight serial configuration
-#define MSP_SET_CF_SERIAL_CONFIG        55   // in message:  Set Cleanflight serial configuration
+// 55 was MSP_SET_CF_SERIAL_CONFIG; serial ports are set through the CLI over MSP
 #define MSP_VOLTAGE_METER_CONFIG        56   // out message: Get voltage meter configuration
 #define MSP_SET_VOLTAGE_METER_CONFIG    57   // in message:  Set voltage meter configuration
 #define MSP_SONAR_ALTITUDE              58   // out message: Get sonar altitude [cm]
@@ -219,6 +219,7 @@
 #define MSP_GPSSVINFO                   164  // out message: Get Signal Strength (only U-Blox)
 #define MSP_GPSSTATISTICS               166  // out message: Get GPS debugging data
 #define MSP_ATTITUDE_QUATERNION         167  // out message: Orientation quaternion components (w, x, y, z)
+#define MSP_WING                        169  // out message: WING settings
 
 // OSD specific commands (180-189)
 #define MSP_OSD_VIDEO_CONFIG            180  // out message: Get OSD video settings
@@ -236,6 +237,7 @@
 #define MSP_SET_RAW_RC                  200  // in message:  8 rc chan
 #define MSP_SET_RAW_GPS                 201  // in message:  Fix, numsat, lat, lon, alt, speed
 #define MSP_SET_PID                     202  // in message:  P I D coeff (9 are used currently)
+#define MSP_SET_WING                    203  // in message:  Set WING settings
 #define MSP_SET_RC_TUNING               204  // in message:  RC rate, rc expo, rollpitch rate, yaw rate, dyn throttle PID, yaw expo
 #define MSP_ACC_CALIBRATION             205  // in message:  No param - calibrate accelerometer
 #define MSP_MAG_CALIBRATION             206  // in message:  No param - calibrate magnetometer

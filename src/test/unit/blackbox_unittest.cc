@@ -376,11 +376,10 @@ uint32_t serialTxBytesFree(const serialPort_t *) {return 0;}
 bool isSerialTransmitBufferEmpty(const serialPort_t *) {return false;}
 bool featureIsEnabled(uint32_t) {return false;}
 void mspSerialReleasePortIfAllocated(serialPort_t *) {}
-const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
 serialPort_t *findSharedSerialPort(uint16_t , serialPortFunction_e ) {return NULL;}
 serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return NULL;}
 void closeSerialPort(serialPort_t *) {}
-portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e ) {return PORTSHARING_UNUSED;}
+portSharing_e determinePortSharing(serialPortIdentifier_e, serialPortFunction_e ) {return PORTSHARING_UNUSED;}
 failsafePhase_e failsafePhase(void) {return FAILSAFE_IDLE;}
 bool rxAreFlightChannelsValid(void) {return false;}
 bool isRxReceivingSignal(void) {return false;}

@@ -81,6 +81,7 @@ extern "C" {
     float getAltitudeDerivative(void) { return 0.0f; }
     float getAltitudeCmControl(void) { return 0.0f; }
     float getAltitudeDerivativeControl(void) { return 0.0f; }
+    float getAltitudeAccelerationControl(void) { return 0.0f; }
     float getCosTiltAngle(void) { return 1.0f; }
 
     uint8_t armingFlags = 0;
@@ -123,10 +124,14 @@ extern "C" {
         return simulatedMaxRcRate; // full-stick maps to this rate; autopilotInit scales maxVelocity by it
     }
 
+    // TASK_POSHOLD is rescheduled to the flow sensor's data rate, so the loop
+    // interval is not always POSHOLD_TASK_RATE_HZ. Tests set this to check that
+    // the rate-dependent parts of the loop hold up.
+    int simulatedTaskRateHz = 100;
     timeDelta_t getTaskDeltaTimeUs(taskId_e taskId)
     {
         UNUSED(taskId);
-        return TASK_PERIOD_HZ(100); // default poshold rate in tests
+        return 1000000 / simulatedTaskRateHz;
     }
 
     throttleStatus_e calculateThrottleStatus() {
@@ -165,7 +170,7 @@ static void initAndSettleAt(float eastCm, float northCm, int16_t yawDecidegrees)
     cfg->positionA  = 30;
     cfg->positionF  = 30;
     cfg->maxVelocity = 500;   // 5 m/s full-stick target; drives the stick-velocity gain
-    cfg->stopThreshold = 10;
+    cfg->stopThreshold = 5;
     cfg->maxAngle   = 30;
     cfg->hoverThrottle = 1500;
     cfg->throttleMin   = 1000;
@@ -173,6 +178,7 @@ static void initAndSettleAt(float eastCm, float northCm, int16_t yawDecidegrees)
     cfg->altitudeP = 50;
     cfg->altitudeI = 50;
     cfg->altitudeD = 50;
+    cfg->altitudeA = 50;
     cfg->altitudeF = 0;
     cfg->landingAltitudeM = 5;
 
@@ -193,6 +199,7 @@ protected:
         mockNavHasActiveTarget = false;
         mockTargetVelCmS = (vector3_t){{0.0f, 0.0f, 0.0f}};
         flightModeFlags = 0;
+        simulatedTaskRateHz = 100;
     }
 };
 
@@ -410,13 +417,13 @@ TEST_F(PosHoldTest, HeadingSouthReversesRollSign)
     initAndSettleAt(0, 0, 0);
     testEstimate.position.x = 100.0f;
     runIterations(SETTLE_ITERATIONS);
-    EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f); 
+    EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f);
 
     // 2. Nose pointed South: Drifting East requires Roll Right (Positive)
     initAndSettleAt(0, 0, 1800);
     testEstimate.position.x = 100.0f;
     runIterations(SETTLE_ITERATIONS);
-    
+
     EXPECT_GT(autopilotAngle[AI_ROLL], 0.0f); // Roll must be  POSITIVE (Roll Right)
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f); // Pitch  must be flat
 }
@@ -438,11 +445,13 @@ TEST_F(PosHoldTest, SticksActiveButCentered)
     setSticksActiveStatus(true);
     runIterations(SETTLE_ITERATIONS);
 
-    // Centred sticks command zero target velocity, so P and D are ~0. Sticks-active
-    // uses the I_FREEZE policy, which retains (does not accumulate) the distance
-    // integral built up while holding the 1 m offset before the sticks engaged;
-    // that frozen integral is the residual lean.
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], -2.796f, 0.01f);
+    // Centred sticks command zero target velocity, and the anchor-off virtual
+    // distance error is reset on stick engagement, so P, D, A and F are all 0.
+    // Sticks-active uses the I_FREEZE policy, which retains (does not accumulate)
+    // the distance integral built up while holding the 1 m offset before the
+    // sticks engaged; that frozen integral is the whole residual lean:
+    //   Ki * integral = (30 * 0.00017) * (-100 cm * 200 * 10 ms) = -1.02 deg
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], -1.02f, 0.01f);
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.01f);
 }
 
@@ -547,6 +556,191 @@ TEST_F(PosHoldTest, ReleaseDropsFeedforwardSoBrakingOpposesMotion)
     // Must lean West (negative roll) to brake. If the feedforward push survived
     // the release it would dominate and roll would be positive (still pushing East).
     EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f);
+}
+
+// -- Braking exit threshold (ap_stop_threshold, default 10%) --
+// Slot 6 of DEBUG_AUTOPILOT_STOP carries the hold status with +1 added while
+// braking, so a settled hold reads BRAKING_STATUS_HELD and a braking entry
+// reads BRAKING_STATUS_BRAKING.
+//
+// A stick release always enters braking; there is no entry-speed gate. The
+// threshold is a percentage of the entry speed, floored at BRAKING_EXIT_SPEED_MIN
+// (1 cm/s), and braking ends once the speed falls below that fraction of the
+// speed it started with.
+static const int BRAKING_STATUS_HELD = 3;
+static const int BRAKING_STATUS_BRAKING = 4;
+static const float BRAKING_EXIT_SPEED_MIN_CMS = 1.0f;
+
+TEST_F(PosHoldTest, EntrySpeedAboveStopThresholdStartsBraking)
+{
+    initAndSettleAt(0, 0, 0);
+    debugMode = DEBUG_AUTOPILOT_STOP;
+
+    // Release the sticks while carrying 40 cm/s East, well above the 5 cm/s stop
+    // threshold: the hold must start in braking mode to arrest it.
+    setSticksActiveStatus(true);
+    testEstimate.velocity.x = 40.0f;
+    runIterations(50);
+    setSticksActiveStatus(false);
+    positionControl(); // capture the point and decide whether to brake
+
+    EXPECT_EQ(debug[6], BRAKING_STATUS_BRAKING);
+    debugMode = DEBUG_NONE;
+}
+
+TEST_F(PosHoldTest, EntrySpeedBelowTheExitFloorHoldsImmediately)
+{
+    initAndSettleAt(0, 0, 0);
+    debugMode = DEBUG_AUTOPILOT_STOP;
+
+    // Same release, but at half the 1 cm/s exit floor. Braking is still entered,
+    // and the exit test on the same call finds the craft already stopped, so the
+    // hold locks the captured point with full P authority rather than dragging
+    // the target to the craft.
+    setSticksActiveStatus(true);
+    testEstimate.velocity.x = BRAKING_EXIT_SPEED_MIN_CMS / 2.0f;
+    runIterations(50);
+    setSticksActiveStatus(false);
+    positionControl();
+
+    EXPECT_EQ(debug[6], BRAKING_STATUS_HELD);
+    debugMode = DEBUG_NONE;
+}
+
+TEST_F(PosHoldTest, StopThresholdSettingSetsTheBrakingExitSpeed)
+{
+    initAndSettleAt(0, 0, 0);
+    debugMode = DEBUG_AUTOPILOT_STOP;
+    autopilotConfigMutable()->stopThreshold = 50; // exit at half the entry speed
+
+    setSticksActiveStatus(true);
+    testEstimate.velocity.x = 40.0f;
+    runIterations(50);
+    setSticksActiveStatus(false);
+    positionControl();
+    EXPECT_EQ(debug[6], BRAKING_STATUS_BRAKING); // exit speed is 20 cm/s
+
+    // Still above the exit speed, so braking continues.
+    testEstimate.velocity.x = 21.0f;
+    positionControl();
+    EXPECT_EQ(debug[6], BRAKING_STATUS_BRAKING);
+
+    // Below it: the stopped point becomes the hold target.
+    testEstimate.velocity.x = 19.0f;
+    positionControl();
+    EXPECT_EQ(debug[6], BRAKING_STATUS_HELD);
+    debugMode = DEBUG_NONE;
+}
+
+TEST_F(PosHoldTest, LowerStopThresholdBrakesForLonger)
+{
+    initAndSettleAt(0, 0, 0);
+    debugMode = DEBUG_AUTOPILOT_STOP;
+    autopilotConfigMutable()->stopThreshold = 10; // exit at a tenth of entry speed
+
+    setSticksActiveStatus(true);
+    testEstimate.velocity.x = 40.0f;
+    runIterations(50);
+    setSticksActiveStatus(false);
+    positionControl();
+
+    // 19 cm/s ended braking at 50%; at 10% the exit speed is 4 cm/s, so the same
+    // speed must still be braking.
+    testEstimate.velocity.x = 19.0f;
+    positionControl();
+    EXPECT_EQ(debug[6], BRAKING_STATUS_BRAKING);
+
+    testEstimate.velocity.x = 3.0f;
+    positionControl();
+    EXPECT_EQ(debug[6], BRAKING_STATUS_HELD);
+    debugMode = DEBUG_NONE;
+}
+
+// TASK_POSHOLD runs at the flow sensor's rate, which is not POSHOLD_TASK_RATE_HZ,
+// so the braking phase has to give up after a fixed wall-clock time at whatever
+// rate the loop is running. Keep this in step with BRAKING_TIMEOUT_S in
+// autopilot_multirotor.c; the point of the tests is rate-independence, not the
+// particular value.
+static const float EXPECTED_BRAKING_TIMEOUT_S = 1.2f;
+
+static int loopsUntilBrakingEnds(int taskRateHz)
+{
+    simulatedTaskRateHz = taskRateHz;
+    initAndSettleAt(0, 0, 0);
+    debugMode = DEBUG_AUTOPILOT_STOP;
+
+    // Release the sticks while moving East fast enough to brake, and hold that
+    // speed so braking can only end on the timeout.
+    setSticksActiveStatus(true);
+    testEstimate.velocity.x = 40.0f;
+    runIterations(50);
+    setSticksActiveStatus(false);
+
+    int loops = 0;
+    for (int i = 0; i < 10 * taskRateHz; i++) {
+        testEstimate.velocity.x = 40.0f;
+        positionControl();
+        loops++;
+        if (debug[6] == BRAKING_STATUS_HELD) {
+            break;
+        }
+    }
+    debugMode = DEBUG_NONE;
+    return loops;
+}
+
+TEST_F(PosHoldTest, BrakingTimeoutIsWallClockAtTheNominalTaskRate)
+{
+    const int loops = loopsUntilBrakingEnds(100);
+    EXPECT_NEAR(loops / 100.0f, EXPECTED_BRAKING_TIMEOUT_S, 0.03f);
+}
+
+TEST_F(PosHoldTest, BrakingTimeoutIsWallClockAtHalfTheNominalTaskRate)
+{
+    const int loops = loopsUntilBrakingEnds(50);
+    EXPECT_NEAR(loops / 50.0f, EXPECTED_BRAKING_TIMEOUT_S, 0.06f);
+}
+
+// The target-velocity feedforward is a rate of change, so the same commanded
+// acceleration must produce the same F contribution whatever the loop interval.
+// F also carries Kd * targetVelocity, which is rate-independent by construction;
+// running to the same final target velocity with and without acceleration
+// isolates the acceleration part.
+static float navFeedforwardAtRate(int taskRateHz, float accelCmSS)
+{
+    simulatedTaskRateHz = taskRateHz;
+    initAndSettleAt(0, 0, 0);
+    debugMode = DEBUG_AUTOPILOT_PID;   // slot 6 is F * 10 on the East axis, before smoothing
+
+    // Nav with an active command anchors to a target position, which keeps the
+    // velocity-buildup clamp (an anchor-off-only feature) out of the way.
+    mockNavHasActiveTarget = true;
+    mockNavCommand.active = true;
+    mockNavCommand.targetPosEfM = (vector3_t){{ 0.0f, 0.0f, 0.0f }};
+
+    const float finalVel = 200.0f;
+    const float dt = 1.0f / taskRateHz;
+    for (int i = 0; i < taskRateHz; i++) {
+        // Ramp at accelCmSS, then sit at finalVel: both rates reach the same
+        // target velocity, so only the acceleration term can differ.
+        const float ramping = accelCmSS * dt * (i + 1);
+        mockTargetVelCmS = (vector3_t){{ (accelCmSS > 0.0f) ? ramping : finalVel, 0.0f, 0.0f }};
+        positionControl();
+    }
+    const float f = debug[6] / 10.0f;
+    debugMode = DEBUG_NONE;
+    return f;
+}
+
+TEST_F(PosHoldTest, FeedforwardIsIndependentOfTaskRate)
+{
+    // At each rate: F while accelerating to 200 cm/s, minus F holding 200 cm/s.
+    const float accel100 = navFeedforwardAtRate(100, 200.0f) - navFeedforwardAtRate(100, 0.0f);
+    const float accel50 = navFeedforwardAtRate(50, 200.0f) - navFeedforwardAtRate(50, 0.0f);
+
+    // 200 cm/s^2 * positionF 30 * XY_F_SCALE 0.0001 = 0.6 deg, at any rate.
+    EXPECT_NEAR(accel100, 0.6f, 0.1f);
+    EXPECT_NEAR(accel50, accel100, 0.1f);
 }
 
 TEST_F(PosHoldTest, ReleasingSticksBrakesThenHolds)

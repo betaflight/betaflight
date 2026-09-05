@@ -6,6 +6,10 @@
 
 #include "pico/asm_helper.S"
 
+// Don't invoke pico_default_asm_setup
+// The instructions below were written in the old "divided" syntax, and would behave differently
+// if assembled assuming "unified" syntax.
+
 .section .text.memfunctions, "ax"
 
 // Wrapped memset and memcpy functions, code copied from rp2040 bootrom source
