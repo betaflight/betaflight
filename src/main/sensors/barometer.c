@@ -561,7 +561,7 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
                     sleepTime = targetCycleUs - cycleElapsedUs;
                 }
             }
-             break;
+            break;
     }
 
     // Where we are using a state machine call schedulerIgnoreTaskExecRate() for all states bar one
