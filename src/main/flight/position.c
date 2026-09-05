@@ -60,7 +60,7 @@ static float filteredAltitudeDerivative = 0.0f;
 static float controlAltitudeCm = 0.0f;
 static float controlAltitudeDerivative = 0.0f;
 static float controlAltitudeAcceleration = 0.0f;
-#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER) || defined(USE_OPTICALFLOW)
 static bool wasArmed = false;
 #endif
 #ifdef USE_VARIO
@@ -69,7 +69,7 @@ static int16_t estimatedVario = 0;
 
 static void positionResetAltitudeState(void)
 {
-    const float sampleTimeS = HZ_TO_INTERVAL(TASK_ALTITUDE_RATE_HZ);
+    const float sampleTimeS = HZ_TO_INTERVAL(TASK_POSITION_RATE_HZ);
 
     const float altitudeCutoffHz = positionConfig()->altitude_lpf / 100.0f;
     const float altitudeGain = pt2FilterGain(altitudeCutoffHz, sampleTimeS);
@@ -90,7 +90,7 @@ static void positionResetAltitudeState(void)
 void positionInit(void)
 {
     positionResetAltitudeState();
-#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER) || defined(USE_OPTICALFLOW)
     wasArmed = ARMING_FLAG(ARMED);
 #endif
 
@@ -112,22 +112,11 @@ PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .rangefinder_max_range_cm = 400,
 );
 
-#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
-void calculateEstimatedAltitude(void)
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER) || defined(USE_OPTICALFLOW)
+// The altitude presentation layer: display smoothing and vario, derived from the
+// Z axis of the estimate. A consumer of the estimator, not the reason it runs.
+static void updateAltitudeFromEstimate(void)
 {
-    const bool isArmed = ARMING_FLAG(ARMED);
-
-#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
-    if (isArmed != wasArmed) {
-        positionEstimatorResetZ();
-        positionResetAltitudeState();
-        wasArmed = isArmed;
-    }
-#endif
-
-    // Run the Kalman filter estimator (prediction + all sensor measurement updates)
-    positionEstimatorUpdate();
-
     // Get raw KF altitude estimate
     const float kfAltCm = positionEstimatorGetAltitudeCm();
     const float kfVelZCm = positionEstimatorGetVerticalVelocity();
@@ -164,13 +153,27 @@ void calculateEstimatedAltitude(void)
     DEBUG_SET(DEBUG_ALTITUDE, 7, lrintf(kfAccelZCm));
 
     DEBUG_SET(DEBUG_RTH, 1, lrintf(displayAltitudeCm));
-
-#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
-    wasArmed = isArmed;
-#endif
 }
 
-#endif // defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
+// TASK_POSITION: run the Kalman filter estimator (prediction plus all sensor
+// measurement updates), then refresh the layers derived from it. The estimate
+// spans all three axes and feeds altitude hold, position hold, nav and rescue,
+// so this is the fusion step for the whole craft, not an altitude calculation.
+void positionUpdate(void)
+{
+    const bool isArmed = ARMING_FLAG(ARMED);
+    if (isArmed != wasArmed) {
+        positionEstimatorResetZ();
+        positionResetAltitudeState();
+        wasArmed = isArmed;
+    }
+
+    positionEstimatorUpdate();
+
+    updateAltitudeFromEstimate();
+}
+
+#endif // defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER) || defined(USE_OPTICALFLOW)
 
 float getAltitudeCm(void)
 {
