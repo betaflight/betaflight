@@ -404,6 +404,8 @@ static void bbFindPacerTimer(void)
     }
 }
 
+static timeDelta_t bbTelemetryTimeoutUs;
+
 static void bbTimebaseSetup(bbPort_t *bbPort, motorProtocolTypes_e dshotProtocolType)
 {
     uint32_t timerclock = timerClock(bbPort->timhw);
@@ -415,6 +417,12 @@ static void bbTimebaseSetup(bbPort_t *bbPort, motorProtocolTypes_e dshotProtocol
     // XXX Explain this formula
     uint32_t inputFreq = outputFreq * 5 * 2 * DSHOT_BITBANG_TELEMETRY_OVER_SAMPLE / 24;
     bbPort->inputARR = timerclock / inputFreq - 1;
+
+    // Backstop for bbTelemetryWait(): capture window plus 25% margin.
+    // DShot600: ~62 us -> ~78 us, DShot300: ~124 us -> ~155 us.
+    // Called per port group, so the last group wins; harmless only because all
+    // groups share one protocol. Make this and dshotFrameUs per port if that ends.
+    bbTelemetryTimeoutUs = (timeDelta_t)(DSHOT_BB_PORT_IP_BUF_LENGTH * 1000000 / inputFreq) * 5 / 4;
 }
 
 //
@@ -505,29 +513,45 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorProtocolTypes_e pwmP
 
 static bool bbTelemetryWait(void)
 {
-    // If telemetry input DMA is still running, abort it rather than busy-waiting.
-    // Skipping one telemetry frame is harmless; busy-waiting can block TASK_RX for
-    // tens of milliseconds on high-loop-rate targets (e.g. F7 at 8K with bidirDSHOT).
-    // bbUpdateComplete() handles the port still being in INPUT direction.
+    // The capture must not be cut short: the window is only a few microseconds
+    // longer than the ESC reply (~62 us against ~58 us at DShot600), so aborting
+    // it leaves bbSwitchToOutput() driving the line push-pull against a still
+    // transmitting ESC. That contention couples into the 3.3 V rail and has been
+    // seen to corrupt I2C barometers on AIO boards (#15533).
+    //
+    // The window is timer paced and always completes, so bbTelemetryTimeoutUs is
+    // a backstop for a stalled DMA only.
+    bool telemetryPending;
     bool telemetryWait = false;
+    const timeUs_t startTimeUs = micros();
 
-    for (int i = 0; i < usedMotorPorts; i++) {
-        if (bbPorts[i].telemetryPending) {
-            bbTIM_DMACmd(bbPorts[i].timhw->tim, bbPorts[i].dmaSource, DISABLE);
-            bbDMA_Cmd(&bbPorts[i], DISABLE);
-            bbPorts[i].telemetryPending = false;
-            // The input capture was aborted mid-transfer, so the buffer holds a
-            // partial frame. Mark the port so decodeTelemetry() skips it rather
-            // than decoding a torn buffer (which could yield a bad-but-valid GCR
-            // frame). Skipping one telemetry frame is harmless.
-            bbPorts[i].telemetryAborted = true;
-            telemetryWait = true;
+    do {
+        telemetryPending = false;
+        for (int i = 0; i < usedMotorPorts; i++) {
+            telemetryPending |= bbPorts[i].telemetryPending;
         }
-    }
 
-    if (telemetryWait) {
-        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);
-    }
+        telemetryWait |= telemetryPending;
+
+        if (cmpTimeUs(micros(), startTimeUs) > bbTelemetryTimeoutUs) {
+            // Leave the stream for bbUpdateComplete() to reinitialise, as it does
+            // on every cycle; stopping it here would additionally race
+            // bbDMAIrqHandler() on the pacer TIMx->DIER, which is shared with the
+            // other port group. The buffers may hold a partial frame, so skip
+            // them rather than decode a bad-but-valid GCR frame.
+            for (int i = 0; i < usedMotorPorts; i++) {
+                if (bbPorts[i].telemetryPending) {
+                    bbPorts[i].telemetryAborted = true;
+                }
+            }
+            // Count timeouts only. Spinning here is normal - the capture window
+            // legitimately overlaps the next update on high loop rates - so
+            // counting every wait would leave debug[2] permanently nonzero
+            // instead of flagging a stalled capture.
+            DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);
+            break;
+        }
+    } while (telemetryPending);
 
     return telemetryWait;
 }
