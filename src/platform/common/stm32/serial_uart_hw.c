@@ -78,6 +78,8 @@ static void enableRxIrq(const uartHardware_t *hardware)
             .NVIC_IRQChannelCmd = ENABLE,
         };
         NVIC_Init(&nvicInit);
+#elif defined(GD32F4)
+        nvic_irq_enable(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
 #else
 # error "Unhandled MCU type"
 #endif
@@ -158,6 +160,13 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
             GPIO_Low_Speed,  // TODO: should use stronger drive
             pushPull ? GPIO_OType_PP : GPIO_OType_OD,
             ((const unsigned[]){GPIO_PuPd_NOPULL, GPIO_PuPd_DOWN, GPIO_PuPd_UP})[pull]
+        );
+#elif defined(GD32F4)
+        const ioConfig_t ioCfg = IO_CONFIG(
+            GPIO_MODE_AF,
+            GPIO_OSPEED_2MHZ,
+            pushPull ? GPIO_OTYPE_PP : GPIO_OTYPE_OD,
+            ((const unsigned[]){GPIO_PUPD_NONE, GPIO_PUPD_PULLDOWN, GPIO_PUPD_PULLUP})[pull]
         );
 #endif
         IOInit(txIO, ownerTxRx, ownerIndex);
@@ -316,6 +325,8 @@ void uartEnableTxInterrupt(uartPort_t *uartPort)
     usart_interrupt_enable((usart_type *)uartPort->USARTx, USART_TDBE_INT, TRUE);
 #elif defined(X32M7)
     USART_ConfigInt((USART_TypeDef *)uartPort->USARTx, USART_INT_TXDE, ENABLE);
+#elif defined(USE_GDBSP_DRIVER)
+    usart_interrupt_enable((uint32_t)uartPort->USARTx, USART_INT_TBE);
 #else
     USART_ITConfig((USART_TypeDef *)uartPort->USARTx, USART_IT_TXE, ENABLE);
 #endif
