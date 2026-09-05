@@ -518,14 +518,13 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
                 if (baroIsCalibrated()) {
                     // zero baro altitude
                     baro.altitude = altitude - baroGroundAltitude;
-
+                    DEBUG_SET(DEBUG_BARO, 4, lrintf(baro.altitude)); // cm, no temp compensation
                     // correct physical barometers for temperature drift
                     if (detectedSensors[SENSOR_INDEX_BARO] != BARO_VIRTUAL) {
-                        const float temperatureDriftCorrection =
-                            (baro.temperature - baroTemperatureAtCalibration) *
-                            barometerConfig()->baroTempDriftCmPer10C / 1000.0f;
-
+                        const float temperatureDriftCorrection = (baro.temperature - baroTemperatureAtCalibration)
+                            * barometerConfig()->baroTempDriftCmPer10C / 1000.0f;
                         baro.altitude -= temperatureDriftCorrection;
+                        DEBUG_SET(DEBUG_BARO, 3, lrintf(baro.altitude)); // cm, with temp compensation
                     }
                 } else {
                     // establish stable baroGroundAltitude value to zero baro altitude with
@@ -546,11 +545,8 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
                     baro.altitude = 0.0f;
                 }
             }
-            if (debugMode == DEBUG_BARO) {
                 DEBUG_SET(DEBUG_BARO, 1, lrintf(baro.pressure / 100.0f));   // hPa
                 DEBUG_SET(DEBUG_BARO, 2, baro.temperature);                 // c°C
-                DEBUG_SET(DEBUG_BARO, 3, lrintf(baro.altitude));            // cm
-            }
 
             if (baro.dev.combined_read) {
                 state = BARO_STATE_PRESSURE_START;
