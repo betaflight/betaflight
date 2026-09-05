@@ -20,6 +20,9 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
 typedef struct mpuRegion_s {
     uint32_t start;
     uint32_t end;        // Zero if determined by size member (MPU_REGION_SIZE_xxx)
@@ -36,3 +39,13 @@ extern unsigned mpuRegionCount;
 
 void memProtReset(void);
 void memProtConfigure(mpuRegion_t *mpuRegions, unsigned regionCount);
+
+// Narrow [start, end) to the longest span within it that the processor will keep out of
+// the D cache, judged from the regions the MPU actually holds rather than from the table
+// it was configured with. Returns an empty range if there is no such span. Available
+// where memProtConfigure() programs a PMSAv7 MPU.
+void memProtFindUncachedRange(uint32_t start, uint32_t end, uint32_t *uncachedStart, uint32_t *uncachedEnd);
+
+// Work out which part of the DMA sections is genuinely uncached, for the bus drivers that
+// skip cache maintenance there. Implemented by the platforms that need it.
+void memProtResolveDmaRam(void);
