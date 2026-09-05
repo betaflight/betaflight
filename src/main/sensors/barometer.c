@@ -514,24 +514,22 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
             // If baro.pressure is invalid then skip altitude counting / call of calibration cycle
             if (baro.pressure > 0) {
                 const float altitude = pressureToAltitude(baro.pressure);
-
                 if (baroIsCalibrated()) {
                     // zero baro altitude
                     baro.altitude = altitude - baroGroundAltitude;
-                    DEBUG_SET(DEBUG_BARO, 4, lrintf(baro.altitude)); // cm, no temp compensation
+                    DEBUG_SET(DEBUG_BARO, 4, lrintf(baro.altitude)); // cm, before temp compensation
+
                     // correct physical barometers for temperature drift
                     if (detectedSensors[SENSOR_INDEX_BARO] != BARO_VIRTUAL) {
                         const float temperatureDriftCorrection = (baro.temperature - baroTemperatureAtCalibration)
                             * barometerConfig()->baroTempDriftCmPer10C / 1000.0f;
                         baro.altitude -= temperatureDriftCorrection;
-                        DEBUG_SET(DEBUG_BARO, 3, lrintf(baro.altitude)); // cm, with temp compensation
                     }
                 } else {
                     // establish stable baroGroundAltitude value to zero baro altitude with
                     performBaroCalibrationCycle(altitude);
                     baro.altitude = 0.0f;
                 }
-
                 if (baro.lastDataTimeUs != 0) {
                     const timeDelta_t intervalUs = cmpTimeUs(currentTimeUs, baro.lastDataTimeUs);
                     if (intervalUs > 0) {
@@ -545,8 +543,10 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
                     baro.altitude = 0.0f;
                 }
             }
-                DEBUG_SET(DEBUG_BARO, 1, lrintf(baro.pressure / 100.0f));   // hPa
-                DEBUG_SET(DEBUG_BARO, 2, baro.temperature);                 // c°C
+                DEBUG_SET(DEBUG_BARO, 1, lrintf(baro.pressure / 100.0f)); // hPa
+                DEBUG_SET(DEBUG_BARO, 2, baro.temperature);               // c°C
+                DEBUG_SET(DEBUG_BARO, 3, lrintf(baro.altitude));          // cm, with temp compensation if not virtual
+
 
             if (baro.dev.combined_read) {
                 state = BARO_STATE_PRESSURE_START;
