@@ -486,7 +486,7 @@
 #if defined(USE_SERIALRX_CRSF)
 
 #define USE_CRSF_V3
-#if defined(USE_TELEMETRY_CRSF) && defined(USE_CRSF_V3)
+#if defined(USE_TELEMETRY_CRSF)
 #define USE_CRSF_ACCGYRO_TELEMETRY
 #endif
 
