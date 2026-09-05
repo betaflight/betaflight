@@ -43,6 +43,11 @@
 
 static const float taskIntervalSeconds = HZ_TO_INTERVAL(ALTHOLD_TASK_RATE_HZ); // i.e. 0.01 s
 
+// Floor on the vertical rate a nav leg is followed at, for the degenerate case where neither the
+// leg nor alt_hold_climb_rate states one. Only has to be non-zero: at zero the carrot is pinned
+// on the craft, and a leg that can never move its target can never complete.
+#define ALT_HOLD_NAV_MIN_RATE_CM_S 10.0f
+
 typedef struct {
     bool isActive;
     float targetAltitudeCm;
@@ -149,28 +154,69 @@ static void altHoldUpdateTargetAltitude(void)
 
 static void altHoldUpdate(void)
 {
-    
-    if (altHoldConfig()->climbRate) {
+    const positionNavCommand_t *navCmd = positionNavHasActiveTarget() ? positionNavGetActiveCommand() : NULL;
+    // The altitude-only fallback descent drives the target itself via altHoldUpdateTargetAltitude();
+    // a nav target left active from the previous leg must not shadow it.
+    const bool navOwnsAltitude = (navCmd != NULL) && navCmd->includeAltitude
+                              && !flightPlanNavIsRescueDescentActive();
+
+    // Both paths write altHold.targetAltitudeCm, so only one may run. Under failsafe the stick
+    // integrator's descent term would otherwise cancel a mission climb.
+    if (!navOwnsAltitude && altHoldConfig()->climbRate) {
         altHoldUpdateTargetAltitude(); // check if the pilot has changed the target altitude using sticks
     }
 
-    float targetAltitudeCm = altHold.targetAltitudeCm; 
+    float targetAltitudeCm = altHold.targetAltitudeCm;
     float targetAltitudeVelocity = altHold.targetVelocity;
+    float velLimitCmS = altHoldMaxClimbRate();
 
-    if (positionNavHasActiveTarget()) {
-        const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
-        if (navCmd->includeAltitude) {
-            targetAltitudeCm = navCmd->targetPosEfM.z * 100.0f;
-            if (positionNavTargetReached()) {
-                altHold.targetAltitudeCm = targetAltitudeCm; // store target altitude so Alt Hold does not revert to pre-nav target altitude on the next cycle.
+    if (navOwnsAltitude) {
+        const float navEndpointCm = navCmd->targetPosEfM.z * 100.0f;
+        const float climbRateCmS = altHoldMaxClimbRate();
+        // The carrot follows what positionNav publishes, so the window it is held in and the limit
+        // altitudeControl() is given must admit the rate this leg can actually be flown at, in
+        // whichever direction it uses: sized from the ascent cap alone a LAND leg's descent would
+        // be silently reduced, ap_landing_descent_rate reaching 200 cm/s where alt_hold_climb_rate
+        // can be set lower. The cruise-speed fallback is the one positionNavUpdate() itself applies
+        // to a leg that states no vertical limit.
+        const float legVertLimitCmS = navCmd->vertSpeedLimitMps * 100.0f;
+        const float navVertCapCmS = (legVertLimitCmS > 0.0f) ? legVertLimitCmS
+                                                             : navCmd->cruiseSpeedMps * 100.0f;
+        // alt_hold_climb_rate carries the rescue ascent rate, so it stays the ascent bound where
+        // it is set; it is allowed to be zero, and then the leg's own rate stands in for it.
+        const float climbBoundCmS = (climbRateCmS > 0.0f) ? climbRateCmS : navVertCapCmS;
+        const float downLimitCmS = (legVertLimitCmS > 0.0f) ? legVertLimitCmS : climbBoundCmS;
+        const float navRateLimitCmS = MAX(MAX(climbBoundCmS, downLimitCmS), ALT_HOLD_NAV_MIN_RATE_CM_S);
+        if (positionNavTargetReached()) {
+            altHold.targetAltitudeCm = navEndpointCm; // store target altitude so Alt Hold does not revert to pre-nav target altitude on the next cycle.
             targetAltitudeVelocity = 0.0f;
-            } else {
-                 targetAltitudeVelocity = positionNavGetTargetVelocityCmS().z; 
+        } else {
+            // Follow a carrot advanced at the velocity positionNav publishes, not the endpoint: a
+            // landing endpoint sits below ground and is never reached, so used directly it drives
+            // P and I into throttle saturation instead of expressing a tracking error.
+            // Each direction keeps its own bound, so a LAND leg descends at its own rate without
+            // that rate becoming a licence to climb at it. This bounds the carrot, not the sink.
+            targetAltitudeVelocity = constrainf(positionNavGetTargetVelocityCmS().z, -downLimitCmS, climbBoundCmS);
+            altHold.targetAltitudeCm += targetAltitudeVelocity * taskIntervalSeconds;
+            // a reachable endpoint, such as a climb to return altitude, must not be overshot
+            if (targetAltitudeVelocity > 0.0f) {
+                altHold.targetAltitudeCm = fminf(altHold.targetAltitudeCm, navEndpointCm);
+            } else if (targetAltitudeVelocity < 0.0f) {
+                altHold.targetAltitudeCm = fmaxf(altHold.targetAltitudeCm, navEndpointCm);
             }
         }
+        // Keep the carrot within one second of travel of the craft. This anchors it when nav
+        // takes over and stops it running away if the craft cannot keep up.
+        const float windowCm = navRateLimitCmS * 1.0f /* s */;
+        const float currentAltitudeCm = getAltitudeCmControl();
+        altHold.targetAltitudeCm = constrainf(altHold.targetAltitudeCm,
+                                              currentAltitudeCm - windowCm,
+                                              currentAltitudeCm + windowCm);
+        targetAltitudeCm = altHold.targetAltitudeCm;
+        velLimitCmS = navRateLimitCmS;
     }
 
-    altitudeControl(targetAltitudeCm, taskIntervalSeconds, targetAltitudeVelocity, altHoldMaxClimbRate());
+    altitudeControl(targetAltitudeCm, taskIntervalSeconds, targetAltitudeVelocity, velLimitCmS);
 }
 
 void updateAltHold(timeUs_t currentTimeUs) {

@@ -53,5 +53,9 @@ float getAutopilotThrottle(void);
 float autopilotGetYawRate(void);
 bool autopilotYawControlActive(void);
 void autopilotSetYawRateLimit(float rateLimitDps); // deg/s, 0 = no mission cap
+// on inferred ground contact, ramp a throttle ceiling from hover down to throttleMin
+void autopilotSetLandingSettle(bool active);
+// a landing descent is being flown: bound the sink the altitude D term may act on
+void autopilotSetLandingActive(bool active);
 
 #endif // !USE_WING
