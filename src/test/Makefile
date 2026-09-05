@@ -111,6 +111,12 @@ baro_ms5611_unittest_DEFINES := \
 accgyro_spi_icm426xx_unittest_SRC := \
 		$(USER_DIR)/drivers/accgyro/accgyro_spi_icm426xx.c
 
+accgyro_spi_adis1657x_unittest_SRC := \
+		$(USER_DIR)/drivers/accgyro/accgyro_spi_adis1657x.c
+
+accgyro_spi_adis1657x_unittest_DEFINES := \
+                USE_ACCGYRO_ADIS1657X=
+
 accgyro_spi_icm426xx_unittest_DEFINES := \
                 USE_GYRO_SPI_ICM42605= \
                 USE_ACCGYRO_ICM42622P= \
