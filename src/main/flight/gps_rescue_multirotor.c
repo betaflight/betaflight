@@ -292,7 +292,7 @@ static void clearTargetStep(void)
 static void controlAltitude(void)
 {
     const float vzLim = 3.0f * fmaxf((float)gpsRescueConfig()->ascendRate, (float)gpsRescueConfig()->descendRate);
-    altitudeControl(rescueState.intent.targetAltitudeCm, gpsRescueTaskIntervalSeconds, rescueState.intent.targetAltitudeVelCmS, vzLim);
+    altitudeControl(rescueState.intent.targetAltitudeCm, HZ_TO_INTERVAL_US(TASK_GPS_RESCUE_RATE_HZ), rescueState.intent.targetAltitudeVelCmS, vzLim);
 }
 
 bool oneSecondPassed(timeUs_t currentTimeUs, timeUs_t *lastTimeUs) {

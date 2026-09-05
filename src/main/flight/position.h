@@ -22,7 +22,7 @@
 
 #include "common/time.h"
 
-#define TASK_ALTITUDE_RATE_HZ 100
+#define TASK_POSITION_RATE_HZ 100
 
 typedef enum {
     ALTITUDE_SOURCE_DEFAULT = 0,
@@ -48,7 +48,8 @@ float getAltitudeDerivative(void);
 float getAltitudeCmControl(void);
 float getAltitudeDerivativeControl(void);
 float getAltitudeAccelerationControl(void);
-void calculateEstimatedAltitude(void);
+// TASK_POSITION: runs the position estimator and everything derived from it.
+void positionUpdate(void);
 void positionInit(void);
 int32_t getEstimatedAltitudeCm(void);
 float getAltitudeAsl(void);

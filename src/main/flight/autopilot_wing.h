@@ -19,6 +19,7 @@
 
 #include <stdbool.h>
 #include "common/axis.h"
+#include "common/time.h"
 
 #ifdef USE_WING
 
@@ -28,7 +29,8 @@ void autopilotInit(void);
 void resetAltitudeControl(void);
 void resetPositionControl(unsigned taskRateHz);
 bool positionControl(void);
-void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeVelCmS, float velLimitCmS);
+void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targetAltitudeVelCmS, float velLimitCmS);
+timeUs_t autopilotTaskIntervalUs(timeUs_t nominalIntervalUs);
 
 bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);

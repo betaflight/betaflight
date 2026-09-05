@@ -34,14 +34,21 @@
 #include "flight/failsafe.h"
 #include "flight/flight_plan_nav.h"
 #include "flight/position.h"
+#include "flight/position_estimator.h"
 #include "flight/position_nav.h"
 
 #include "rx/rx.h"
 #include "pg/autopilot.h"
+#include "scheduler/scheduler.h"
 
 #include "alt_hold.h"
 
-static const float taskIntervalSeconds = HZ_TO_INTERVAL(ALTHOLD_TASK_RATE_HZ); // i.e. 0.01 s
+// TASK_ALTHOLD is event driven off positionEstimatorUpdate(), so it runs as soon
+// as a new altitude estimate exists rather than at an arbitrary phase relative to
+// it. If the estimator is not running at all (TASK_POSITION disabled) this is the
+// interval after which the task falls back to periodic scheduling, so that mode
+// entry and exit are still serviced.
+#define ALTHOLD_FALLBACK_PERIOD_US (2 * TASK_PERIOD_HZ(ALTHOLD_TASK_RATE_HZ))
 
 typedef struct {
     bool isActive;
@@ -95,7 +102,7 @@ static void altHoldProcessTransitions(void) {
     }
 }
 
-static void altHoldUpdateTargetAltitude(void)
+static void altHoldUpdateTargetAltitude(timeUs_t taskIntervalUs)
 {
     // User can adjust the target altitude with throttle, but only when
     // - throttle is outside deadband, and
@@ -143,15 +150,15 @@ static void altHoldUpdateTargetAltitude(void)
     // the altitude target cannot be moved to a location that cannot be reached in 1s at maxClimbRate
     // this constrains the P and I response to user target changes, but not D of F responses
     if (fabsf(getAltitudeCmControl() - altHold.targetAltitudeCm) < maxClimbRate * 1.0f /* s */) {
-        altHold.targetAltitudeCm += altHold.targetVelocity * taskIntervalSeconds;
+        altHold.targetAltitudeCm += altHold.targetVelocity * US_TO_INTERVAL(taskIntervalUs);
     }
 }
 
-static void altHoldUpdate(void)
+static void altHoldUpdate(timeUs_t taskIntervalUs)
 {
-    
+
     if (altHoldConfig()->climbRate) {
-        altHoldUpdateTargetAltitude(); // check if the pilot has changed the target altitude using sticks
+        altHoldUpdateTargetAltitude(taskIntervalUs); // check if the pilot has changed the target altitude using sticks
     }
 
     float targetAltitudeCm = altHold.targetAltitudeCm; 
@@ -170,7 +177,19 @@ static void altHoldUpdate(void)
         }
     }
 
-    altitudeControl(targetAltitudeCm, taskIntervalSeconds, targetAltitudeVelocity, altHoldMaxClimbRate());
+    altitudeControl(targetAltitudeCm, taskIntervalUs, targetAltitudeVelocity, altHoldMaxClimbRate());
+}
+
+bool altHoldUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    if (positionEstimatorTakeUpdate(POS_EST_CONSUMER_ALTHOLD)) {
+        return true;
+    }
+
+    // No estimator running, so fall back to periodic scheduling
+    return currentDeltaTimeUs >= ALTHOLD_FALLBACK_PERIOD_US;
 }
 
 void updateAltHold(timeUs_t currentTimeUs) {
@@ -180,7 +199,8 @@ void updateAltHold(timeUs_t currentTimeUs) {
     altHoldProcessTransitions();
 
     if (altHold.isActive) {
-        altHoldUpdate();
+        // Event driven, so the interval between runs is the estimator's, not the nominal task period
+        altHoldUpdate(autopilotTaskIntervalUs(TASK_PERIOD_HZ(ALTHOLD_TASK_RATE_HZ)));
     }
 }
 
