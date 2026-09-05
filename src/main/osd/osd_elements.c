@@ -1844,19 +1844,18 @@ static void osdElementRemainingTimeEstimate(osdElementParms_t *element)
 
 static void osdElementRssi(osdElementParms_t *element)
 {
-    uint16_t osdRssiPercent = getRssiPercent();
-    if (osdRssiPercent >= 100) {
-        osdRssiPercent = 99;
-    }
+    const uint16_t osdRssiPercent = getRssiPercent();
 
     if (osdRssiPercent < osdConfig()->rssi_alarm) {
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
+    const uint16_t osdRssiPercentDisplay = MIN(osdRssiPercent, 99);
+
 #ifdef OSD_RSSI_WITH_SYMBOL
-    tfp_sprintf(element->buff, "%c%c %2d", SYM_HEADSET, SYM_RSSI, osdRssiPercent);
+    tfp_sprintf(element->buff, "%c%c %2d", SYM_HEADSET, SYM_RSSI, osdRssiPercentDisplay);
 #else
-    tfp_sprintf(element->buff, "%c%2d", SYM_RSSI, osdRssiPercent);
+    tfp_sprintf(element->buff, "%c%2d", SYM_RSSI, osdRssiPercentDisplay);
 #endif
 }
 
