@@ -357,12 +357,15 @@
 #define LSM6DSV_CTRL8_HP_LPF2_XL_BW_2_MASK              0xe0 // See table 69
 #define LSM6DSV_CTRL8_HP_LPF2_XL_BW_2_SHIFT             5
 #define LSM6DSV_CTRL8_XL_DUALC_EN                       0x08
+#define LSM6DSV_CTRL8_VARIANT_BIT                       0x04 // must-be-0 on 16X, must-be-1 on 32X
 #define LSM6DSV_CTRL8_FS_XL_MASK                        0x03
 #define LSM6DSV_CTRL8_FS_XL_SHIFT                       0
 #define LSM6DSV_CTRL8_FS_XL_2G                          0
 #define LSM6DSV_CTRL8_FS_XL_4G                          1
 #define LSM6DSV_CTRL8_FS_XL_8G                          2
 #define LSM6DSV_CTRL8_FS_XL_16G                         3
+// LSM6DSV32X FS_XL codes are shifted: 00=±4g 01=±8g 10=±16g 11=±32g (bit2 must stay 1)
+#define LSM6DSV32X_CTRL8_FS_XL_32G                      LSM6DSV_CTRL8_FS_XL_16G
 
 // Accelerometer HP + LPF2 bandwidth selection
 #define LSM6DSV_CTRL8_HP_LPF2_XL_BW_4                   0
@@ -878,10 +881,20 @@ uint8_t lsm6dsv16xSpiDetect(const extDevice_t *dev)
     return LSM6DSV16X_SPI;
 }
 
+static bool lsm6dsv16xIs32x(const extDevice_t *dev)
+{
+    // LSM6DSV16X and LSM6DSV32X share WHO_AM_I 0x70. After reset, CTRL8 bit2 is
+    // 0 on 16X and 1 on 32X. Gyro init preserves that bit when programming FS.
+    return (spiReadRegMsk(dev, LSM6DSV_CTRL8) & LSM6DSV_CTRL8_VARIANT_BIT) != 0;
+}
+
 static void lsm6dsv16xAccInit(accDev_t *acc)
 {
-    // ±16G mode
-    acc->acc_1G = 512 * 4;
+    if (lsm6dsv16xIs32x(&acc->gyro->dev)) {
+        acc->acc_1G = 512 * 2; // ±32g (1024 LSB/g)
+    } else {
+        acc->acc_1G = 512 * 4; // ±16g (2048 LSB/g)
+    }
 }
 
 static bool lsm6dsv16xAccReadSPI(accDev_t *acc)
@@ -1069,6 +1082,8 @@ static void lsm6dsv16xGyroInit(gyroDev_t *gyro)
     // Autoincrement register address when doing block SPI reads and update continuously
     spiWriteReg(dev, LSM6DSV_CTRL3, LSM6DSV_CTRL3_IF_INC | LSM6DSV_CTRL3_BDU);      /*BDU bit need to be set*/
 
+    const bool is32x = lsm6dsv16xIs32x(dev);
+
     // Select high-accuracy ODR mode 1
     spiWriteReg(dev, LSM6DSV_HAODR_CFG,
                 LSM6DSV_ENCODE_BITS(LSM6DSV_HAODR_MODE1,
@@ -1087,9 +1102,10 @@ static void lsm6dsv16xGyroInit(gyroDev_t *gyro)
                                     LSM6DSV_CTRL2_OP_MODE_G_MASK,
                                     LSM6DSV_CTRL2_OP_MODE_G_SHIFT));
 
-    // Enable 16G sensitivity
+    // 16X: ±16g (FS=11, bit2=0). 32X: ±32g (FS=11, bit2 must remain 1).
     spiWriteReg(dev, LSM6DSV_CTRL8,
-                LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL8_FS_XL_16G,
+                (is32x ? LSM6DSV_CTRL8_VARIANT_BIT : 0) |
+                LSM6DSV_ENCODE_BITS(is32x ? LSM6DSV32X_CTRL8_FS_XL_32G : LSM6DSV_CTRL8_FS_XL_16G,
                                     LSM6DSV_CTRL8_FS_XL_MASK,
                                     LSM6DSV_CTRL8_FS_XL_SHIFT));
 
@@ -1105,13 +1121,12 @@ static void lsm6dsv16xGyroInit(gyroDev_t *gyro)
                                     LSM6DSV_CTRL2_ODR_G_MASK,
                                     LSM6DSV_CTRL2_ODR_G_SHIFT));
 
-    // Enable 2000 deg/s sensitivity and selected LPF1 filter setting
-    // Set the LPF1 filter bandwidth
+    // 16X: ±2000 dps. 32X: ±4000 dps to match IIM-42653-class FPV range.
     spiWriteReg(dev, LSM6DSV_CTRL6,
                 LSM6DSV_ENCODE_BITS(lsm6dsv16xLPF1BandwidthOptions[gyroConfig()->gyro_hardware_lpf],
                                     LSM6DSV_CTRL6_LPF1_G_BW_MASK,
                                     LSM6DSV_CTRL6_LPF1_G_BW_SHIFT) |
-                LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL6_FS_G_2000DPS,
+                LSM6DSV_ENCODE_BITS(is32x ? LSM6DSV_CTRL6_FS_G_4000DPS : LSM6DSV_CTRL6_FS_G_2000DPS,
                                     LSM6DSV_CTRL6_FS_G_MASK,
                                     LSM6DSV_CTRL6_FS_G_SHIFT));
 
@@ -1121,8 +1136,8 @@ static void lsm6dsv16xGyroInit(gyroDev_t *gyro)
     // Generate pulse on interrupt line, not requiring a read to clear
     spiWriteReg(dev, LSM6DSV_CTRL4, LSM6DSV_CTRL4_DRDY_PULSED);
 
-    // From section 4.1, Mechanical characteristics, of the datasheet, G_So is 70mdps/LSB for FS = ±2000 dps.
-    gyro->scale = 0.070f;
+    // Datasheet G_So: 70 mdps/LSB at ±2000 dps, 140 mdps/LSB at ±4000 dps.
+    gyro->scale = is32x ? 0.140f : 0.070f;
 
     // Enable the INT1 output to interrupt when new gyro data is ready
     spiWriteReg(dev, LSM6DSV_INT1_CTRL, LSM6DSV_INT1_CTRL_INT1_DRDY_G);
