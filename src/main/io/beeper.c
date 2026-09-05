@@ -495,7 +495,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
          * only path taken while idle, ignoring it would freeze the scheduler's duration estimate
          * at whatever was learnt during the last beep sequence, making the task perpetually late.
          */
-       return;
+        return;
     }
 
     if (beeperNextToggleTime && cmp32(beeperNextToggleTime, currentTimeUs) > 0) {
