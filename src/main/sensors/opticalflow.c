@@ -106,9 +106,6 @@ static bool opticalflowDetect(opticalflowDev_t * dev, uint8_t opticalflowHardwar
             if (upt1OpticalflowDetect(dev)) {
                 opticalflowHardware = OPTICALFLOW_UPT1;
                 rescheduleTask(TASK_OPTICALFLOW, TASK_PERIOD_MS(dev->delayMs));
-#ifdef USE_POSITION_HOLD
-                rescheduleTask(TASK_POSHOLD, TASK_PERIOD_MS(dev->delayMs));
-#endif
             }
             break;
 #endif

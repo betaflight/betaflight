@@ -297,10 +297,10 @@ static void handleCrsfLinkStatisticsTxFrame(const crsfLinkStatisticsTx_t* statsP
     }
 #endif
 
-    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 0, stats.uplink_RSSI);
-    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 1, stats.uplink_SNR);
-    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 2, stats.uplink_Link_quality);
-    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 3, stats.uplink_RSSI_percentage);
+    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 4, stats.uplink_RSSI);
+    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 5, stats.uplink_SNR);
+    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 6, stats.uplink_Link_quality);
+    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 7, stats.uplink_RSSI_percentage);
 }
 #endif
 #endif
