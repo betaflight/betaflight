@@ -248,8 +248,10 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
         receivingRxData = false;
     }
 
-    // Beep RX lost whenever no RC data is received and the USB cable is not connected
-    if (!receivingRxData && !usbCableIsInserted()) {
+    // Beep RX lost whenever no RC data is received and the USB cable is not connected.
+    // Not usbCableIsInserted(): it latches, so after one bench session the RX_LOST beep and
+    // the DShot beacon below would stay suppressed for the rest of the flight.
+    if (!receivingRxData && !usbCableIsActive()) {
         beeperMode = BEEPER_RX_LOST;
     }
 

@@ -324,6 +324,11 @@ uint8_t usbVcpIsConnected(void)
     return usbIsConnected();
 }
 
+uint8_t usbVcpIsActive(void)
+{
+    return usbIsConnected() && usbIsConfigured();
+}
+
 void OTG_IRQ_HANDLER(void)
 {
     usbd_irq_handler(&otg_core_struct);

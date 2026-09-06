@@ -208,4 +208,10 @@ uint8_t usbVcpIsConnected(void)
     return cdc_usb_connected();
 }
 
+uint8_t usbVcpIsActive(void)
+{
+    // tud_cdc_connected() already requires mounted and not suspended, so it never latches
+    return cdc_usb_connected();
+}
+
 #endif // USE_VCP
