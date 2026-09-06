@@ -533,6 +533,21 @@ void tasksInitData(void)
     }
 }
 
+// Tasks gated on a mode being assigned to a switch, rather than on a feature or a sensor.
+// Features only change across a reboot, but mode ranges change live over MSP
+// (MSP_SET_MODE_RANGE calls rcControlsInit()), so these gates must be re-evaluated
+// whenever the mode configuration is re-analysed - not just at boot. Without that, a mode
+// assigned in the Configurator reports active while its task never runs.
+void tasksUpdateModeGatedEnables(void)
+{
+#ifdef USE_MAG
+    // Heading hold needs only a compass - it is deliberately not tied to position hold,
+    // whose task is gated on GPS or optical flow. MAG_MODE is rarely used, so the task
+    // only runs for pilots who have actually put the mode on a switch.
+    setTaskEnabled(TASK_MAGHOLD, sensors(SENSOR_MAG) && isModeActivationConditionPresent(BOXMAG));
+#endif
+}
+
 void tasksInit(void)
 {
     schedulerInit();
@@ -622,12 +637,9 @@ void tasksInit(void)
                                  featureIsEnabled(FEATURE_OPTICALFLOW));
 #endif
 
+    tasksUpdateModeGatedEnables();
+
 #ifdef USE_MAG
-    // Heading hold needs only a compass - it is deliberately not tied to position hold,
-    // whose task is gated on GPS or optical flow. MAG_MODE is rarely used, so the task
-    // only runs for pilots who have actually put the mode on a switch. Saving a mode
-    // change reboots, so this is re-evaluated whenever the aux config changes.
-    setTaskEnabled(TASK_MAGHOLD, sensors(SENSOR_MAG) && isModeActivationConditionPresent(BOXMAG));
     setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
 #endif
 
