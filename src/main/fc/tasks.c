@@ -51,6 +51,7 @@
 #include "fc/rc.h"
 #include "fc/dispatch.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
 #include "flight/alt_hold.h"
@@ -59,6 +60,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
+#include "flight/autopilot.h"
 #include "flight/pos_hold.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -427,6 +429,7 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 #endif
 
 #ifdef USE_MAG
+    [TASK_MAGHOLD] = DEFINE_TASK("MAGHOLD", NULL, NULL, updateHeadingHold, TASK_PERIOD_HZ(HEADING_HOLD_TASK_RATE_HZ), TASK_PRIORITY_LOW),
     [TASK_COMPASS] = DEFINE_TASK("COMPASS", NULL, NULL, taskUpdateMag, TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ), TASK_PRIORITY_LOW),
 #endif
 
@@ -620,6 +623,11 @@ void tasksInit(void)
 #endif
 
 #ifdef USE_MAG
+    // Heading hold needs only a compass - it is deliberately not tied to position hold,
+    // whose task is gated on GPS or optical flow. MAG_MODE is rarely used, so the task
+    // only runs for pilots who have actually put the mode on a switch. Saving a mode
+    // change reboots, so this is re-evaluated whenever the aux config changes.
+    setTaskEnabled(TASK_MAGHOLD, sensors(SENSOR_MAG) && isModeActivationConditionPresent(BOXMAG));
     setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
 #endif
 

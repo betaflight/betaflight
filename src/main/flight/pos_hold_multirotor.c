@@ -152,6 +152,9 @@ void updatePosHold(timeUs_t currentTimeUs)
             for (unsigned i = 0; i < RP_AXIS_COUNT; i++) {
                 autopilotAngle[i] = 0.0f;
             }
+            // positionControl() is skipped, so the yaw controller cannot stand itself
+            // down; leaving it active would keep injecting the last rate.
+            autopilotDisableYawControl();
         }
     }
 }

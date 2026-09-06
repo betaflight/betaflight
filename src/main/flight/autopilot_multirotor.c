@@ -690,9 +690,10 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     }
 
     // A mission steers the nose per ap_yaw_mode while a leg is being flown. Position
-    // hold has no leg to follow, so it holds the heading it had on engagement.
+    // hold and MAG_MODE have no leg to follow, so they hold the heading they had on
+    // engagement. MAG_MODE is heading hold alone - no position control involved.
     const bool navYawActive = FLIGHT_MODE(AUTOPILOT_MODE) && ap.navActive;
-    const bool holdYawActive = FLIGHT_MODE(POS_HOLD_MODE);
+    const bool holdYawActive = FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(MAG_MODE);
     if (!navYawActive && !holdYawActive) {
         disableYawControl();
         return;
@@ -766,6 +767,29 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 1, lrintf(desiredHeadingDeg * 10.0f));
     DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 2, lrintf(errorDeg * 10.0f));
     DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, lrintf(apYawRateDps * 10.0f));
+}
+
+// TASK_MAGHOLD. Heading hold with no position control behind it: the MAG_MODE switch on
+// its own, which needs only a compass. positionControl() already drives the yaw
+// controller whenever position hold or a rescue is running, so stand aside then -
+// running updateYawControl() twice in a cycle would double the engage ramp and the gyro
+// damping. When nothing wants yaw control this stands it down, every cycle.
+void updateHeadingHold(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    if (FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
+        return;
+    }
+
+    if (!ARMING_FLAG(ARMED)) {
+        // No holding a heading on the bench; re-capture on arming instead.
+        disableYawControl();
+        return;
+    }
+
+    const float dt = US_TO_INTERVAL(autopilotTaskIntervalUs(TASK_PERIOD_HZ(HEADING_HOLD_TASK_RATE_HZ)));
+    updateYawControl(dt, positionEstimatorGetEstimate());
 }
 
 static void xyProcessTransitions(void)

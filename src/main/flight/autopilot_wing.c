@@ -106,6 +106,11 @@ void autopilotDisableYawControl(void)
 {
 }
 
+void updateHeadingHold(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+}
+
 void autopilotSetNavHeadingOverride(bool valid, float headingDeg)
 {
     UNUSED(valid);
