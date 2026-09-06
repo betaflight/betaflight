@@ -542,6 +542,7 @@ void resetPositionControl(unsigned taskRateHz)
     ap.sticksActive = false;
     ap.wasSticksActive = false;
     disableYawControl();
+    apYawDisableReason = 1;
     apYawCourseValid = false;
     wasAngleSaturated = false;
     // Initialise the nav system
@@ -578,6 +579,7 @@ static bool sanityViolationExpired(void)
         return true;
     }
     disableYawControl();
+    apYawDisableReason = 2;
     autopilotAngle[AI_ROLL]  = 0.0f; // Level out
     autopilotAngle[AI_PITCH] = 0.0f;
     handlepositionControlFailure();
@@ -616,6 +618,7 @@ void autopilotSetYawRateLimit(float rateLimitDps)
 void autopilotDisableYawControl(void)
 {
     disableYawControl();
+    apYawDisableReason = 3;
 }
 
 float autopilotGetYawRate(void)
@@ -639,7 +642,7 @@ static void disableYawControl(void)
     apYawActive = false;
     apYawAttenuator = 0.0f;
     apYawRateDps = 0.0f;
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, 0);  //!< Yaw Rate Setpoint [unit:0.1dps]
+
     // Re-capture the hold heading on re-engagement rather than snapping back to a
     // heading the craft may have left long ago.
     apYawHoldHeadingValid = false;
@@ -684,37 +687,39 @@ static bool bearingToTargetDeg(const positionEstimate3d_t *est, float *headingDe
 // resulting rate as the yaw setpoint, exactly as GPS rescue injects its own.
 static void updateYawControl(float dt, const positionEstimate3d_t *est)
 {
-    const autopilotConfig_t *cfg = autopilotConfig();
+const autopilotConfig_t *cfg = autopilotConfig();
 
-    // Nothing holds a heading on the bench. disarm() clears ARMED but leaves the flight
-    // mode flags alone, so POS_HOLD_MODE stays set until processRxModes() next runs and
-    // this task can be scheduled in between; without this the controller would capture a
-    // heading and offer a rate while disarmed. Standing down also drops the captured
-    // heading, so arming re-captures rather than resuming an old one.
-    if (!ARMING_FLAG(ARMED)) {
-        disableYawControl();
-        return;
-    }
+DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 7, apYawDisableReason);
 
-    // Every path below steers to a compass heading, so one the IMU trusts is a hard
-    // requirement: a calibrated compass, or a GPS course it has gained confidence in.
-    // Without it the controller would hold an arbitrary direction. Same requirement
-    // GPS rescue applies.
-    if (!imuIsHeadingValid()) {
-        disableYawControl();
-        return;
-    }
+// Nothing holds a heading on the bench. disarm() clears ARMED but leaves the flight
+// mode flags alone, so POS_HOLD_MODE stays set until processRxModes() next runs and
+// this task can be scheduled in between; without this the controller would capture a
+// heading and offer a rate while disarmed. Standing down also drops the captured
+// heading, so arming re-captures rather than resuming an old one.
+if (!ARMING_FLAG(ARMED)) {
+    disableYawControl();
+    apYawDisableReason = 4;
+    return;
+}
 
-    // A mission steers the nose per ap_yaw_mode while a leg is being flown. Position
-    // hold and MAG_MODE have no leg to follow, so they hold the heading they had on
-    // engagement. MAG_MODE is heading hold alone - no position control involved.
-    const bool navYawActive = FLIGHT_MODE(AUTOPILOT_MODE) && ap.navActive;
-    const bool holdYawActive = FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(MAG_MODE);
-    if (!navYawActive && !holdYawActive) {
-        disableYawControl();
-        return;
-    }
+// Every path below steers to a compass heading, so one the IMU trusts is a hard
+// requirement: a calibrated compass, or a GPS course it has gained confidence in.
+// Without it the controller would hold an arbitrary direction. Same requirement
+// GPS rescue applies.
+if (!imuIsHeadingValid()) {
+    disableYawControl();
+    apYawDisableReason = 5;
+    return;
+}
+const bool rescueYawActive = FLIGHT_MODE(GPS_RESCUE_MODE);
+const bool navYawActive = FLIGHT_MODE(AUTOPILOT_MODE) && ap.navActive;
+const bool holdYawActive = FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(MAG_MODE);
 
+if (!rescueYawActive && !navYawActive && !holdYawActive) {
+    disableYawControl();
+    apYawDisableReason = 6;
+    return;
+}
     const float headingDeg = attitude.values.yaw * 0.1f;
 
     float desiredHeadingDeg = 0.0f;
@@ -778,10 +783,11 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     apYawRateDps = yawRateDps * GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
     apYawActive = true;
 
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 0, lrintf(headingDeg * 10.0f));         //!< Aircraft Heading [unit:0.1deg]
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 1, lrintf(desiredHeadingDeg * 10.0f));  //!< Target Heading [unit:0.1deg]
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 2, lrintf(errorDeg * 10.0f));           //!< Heading Error [unit:0.1deg]
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, lrintf(apYawRateDps * 10.0f));       //!< Yaw Rate Setpoint [unit:0.1dps]
+DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 0, lrintf(headingDeg * 10.0f));
+DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 1, lrintf(desiredHeadingDeg * 10.0f));
+DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 2, lrintf(errorDeg * 10.0f));
+DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, lrintf(apYawRateDps * 10.0f));
+DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 4, lrintf(yawP * 10.0f));
 }
 
 // TASK_MAGHOLD. Heading hold with no position control behind it: the MAG_MODE switch on
@@ -795,7 +801,7 @@ void updateHeadingHold(timeUs_t currentTimeUs)
 
     if (FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
         return;
-    }
+    }    
 
     const float dt = US_TO_INTERVAL(autopilotTaskIntervalUs(TASK_PERIOD_HZ(HEADING_HOLD_TASK_RATE_HZ)));
     updateYawControl(dt, positionEstimatorGetEstimate());
