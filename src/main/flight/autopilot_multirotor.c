@@ -702,6 +702,16 @@ if (!ARMING_FLAG(ARMED)) {
     return;
 }
 
+const bool rescueYawActive = FLIGHT_MODE(GPS_RESCUE_MODE);
+const bool navYawActive = FLIGHT_MODE(AUTOPILOT_MODE) && ap.navActive;
+const bool holdYawActive = FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(MAG_MODE);
+
+if (!rescueYawActive && !navYawActive && !holdYawActive) {
+    disableYawControl();
+    apYawDisableReason = 6;
+    return;
+}
+
 // Every path below steers to a compass heading, so one the IMU trusts is a hard
 // requirement: a calibrated compass, or a GPS course it has gained confidence in.
 // Without it the controller would hold an arbitrary direction. Same requirement
@@ -802,6 +812,29 @@ void updateHeadingHold(timeUs_t currentTimeUs)
     if (FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
         return;
     }    
+
+    const float dt = US_TO_INTERVAL(autopilotTaskIntervalUs(TASK_PERIOD_HZ(HEADING_HOLD_TASK_RATE_HZ)));
+    updateYawControl(dt, positionEstimatorGetEstimate());
+}
+
+// TASK_MAGHOLD. Heading hold with no position control behind it: the MAG_MODE switch on
+// its own, which needs only a compass. positionControl() already drives the yaw
+// controller whenever position hold or a rescue is running, so stand aside then -
+// running updateYawControl() twice in a cycle would double the engage ramp and the gyro
+// damping. When nothing wants yaw control this stands it down, every cycle.
+void updateHeadingHold(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    if (FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
+        return;
+    }
+
+    if (!ARMING_FLAG(ARMED)) {
+        // No holding a heading on the bench; re-capture on arming instead.
+        disableYawControl();
+        return;
+    }
 
     const float dt = US_TO_INTERVAL(autopilotTaskIntervalUs(TASK_PERIOD_HZ(HEADING_HOLD_TASK_RATE_HZ)));
     updateYawControl(dt, positionEstimatorGetEstimate());
