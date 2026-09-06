@@ -640,11 +640,6 @@ void tasksInit(void)
     tasksUpdateModeGatedEnables();
 
 #ifdef USE_MAG
-    // Heading hold needs only a compass - it is deliberately not tied to position hold,
-    // whose task is gated on GPS or optical flow. MAG_MODE is rarely used, so the task
-    // only runs for pilots who have actually put the mode on a switch. Saving a mode
-    // change reboots, so this is re-evaluated whenever the aux config changes.
-    setTaskEnabled(TASK_MAGHOLD, sensors(SENSOR_MAG) && isModeActivationConditionPresent(BOXMAG));
     setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
 #endif
 
