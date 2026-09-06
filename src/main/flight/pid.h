@@ -281,9 +281,10 @@ typedef struct pidProfile_s {
 
     uint8_t anti_gravity_cutoff_hz;
     uint8_t anti_gravity_p_gain;
-    uint8_t tpa_mode;                       // Controls which PID terms TPA effects
-    uint8_t tpa_rate;                       // Percent reduction in P or D at full throttle
-    uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
+    uint8_t tpa_d_rate;                       // Percent reduction in P or D at full throttle
+    uint16_t tpa_d_breakpoint;                // Breakpoint where TPA is activated
+    uint8_t tpa_p_rate;
+    uint16_t tpa_p_breakpoint;
 
     uint8_t angle_feedforward_smoothing_ms; // Smoothing factor for angle feedforward as time constant in milliseconds
     uint8_t angle_earth_ref;                // Control amount of "co-ordination" from yaw into roll while pitched forward in angle mode
@@ -300,6 +301,8 @@ typedef struct pidProfile_s {
     uint16_t spa_center[XYZ_AXIS_COUNT];    // RPY setpoint at which PIDs are reduced to 50% (setpoint PID attenuation)
     uint16_t spa_width[XYZ_AXIS_COUNT];     // Width of smooth transition around spa_center
     uint8_t spa_mode[XYZ_AXIS_COUNT];       // SPA mode for each axis
+    uint8_t tpa_s_rate;
+    uint16_t tpa_s_breakpoint;
     uint8_t tpa_curve_type;                 // Classic type - for multirotor, hyperbolic - usually for wings
     uint8_t tpa_curve_stall_throttle;       // For wings: speed at which PIDs should be maxed out (stall speed)
     uint16_t tpa_curve_pid_thr0;            // For wings: PIDs multiplier at stall speed
@@ -421,9 +424,12 @@ typedef struct pidRuntime_s {
     bool itermRotation;
     bool zeroThrottleItermReset;
     bool levelRaceMode;
-    float tpaFactor;
-    float tpaBreakpoint;
-    float tpaMultiplier;
+    float tpaFactorD;
+    float tpaBreakpointD;
+    float tpaMultiplierD;
+    float tpaFactorP;
+    float tpaBreakpointP;
+    float tpaMultiplierP;
     float tpaLowBreakpoint;
     float tpaLowMultiplier;
     bool tpaLowAlways;
@@ -502,6 +508,9 @@ typedef struct pidRuntime_s {
     tpaSpeedParams_t tpaSpeed;
     float tpaFactorYaw;
     float tpaFactorSterm[XYZ_AXIS_COUNT];
+    float tpaFactorS;
+    float tpaBreakpointS;
+    float tpaMultiplierS;
 #endif // USE_WING
 
 #ifdef USE_ADVANCED_TPA
