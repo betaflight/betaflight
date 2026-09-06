@@ -95,6 +95,7 @@ extern "C" {
     gpsSolutionData_t gpsSol;
     gyro_t gyro;
     float rcCommand[4];
+    bool imuIsHeadingValid(void) { return true; }
 
     bool failsafeIsActive(void) { return false; }
 

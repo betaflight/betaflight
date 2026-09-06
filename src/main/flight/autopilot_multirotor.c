@@ -174,6 +174,8 @@ static float apYawRateLimitDps = 0.0f;
 static bool apYawCourseValid = false;
 static bool apNavHeadingOverrideValid = false;   // mission pre-turn: nose commanded onto the next leg
 static float apNavHeadingOverrideDeg = 0.0f;
+static bool apYawHoldHeadingValid = false;       // position hold: heading captured on engagement
+static float apYawHoldHeadingDeg = 0.0f;
 
 static void disableYawControl(void);
 
@@ -609,6 +611,14 @@ void autopilotSetYawRateLimit(float rateLimitDps)
     apYawRateLimitDps = rateLimitDps;
 }
 
+// updateYawControl() only runs while positionControl() is being called, so the mode
+// that stops calling it must clear the yaw state - otherwise autopilotYawControlActive()
+// stays true and rc.c keeps injecting the last rate.
+void autopilotDisableYawControl(void)
+{
+    disableYawControl();
+}
+
 float autopilotGetYawRate(void)
 {
     return apYawRateDps;
@@ -624,6 +634,9 @@ static void disableYawControl(void)
     apYawActive = false;
     apYawAttenuator = 0.0f;
     apYawRateDps = 0.0f;
+    // Re-capture the hold heading on re-engagement rather than snapping back to a
+    // heading the craft may have left long ago.
+    apYawHoldHeadingValid = false;
 }
 
 static bool courseHeadingDeg(const positionEstimate3d_t *est, float *headingDeg)
@@ -667,38 +680,65 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
 {
     const autopilotConfig_t *cfg = autopilotConfig();
 
-    if (!FLIGHT_MODE(AUTOPILOT_MODE) || !ap.navActive) {
+    // Every path below steers to a compass heading, so one the IMU trusts is a hard
+    // requirement: a calibrated compass, or a GPS course it has gained confidence in.
+    // Without it the controller would hold an arbitrary direction. Same requirement
+    // GPS rescue applies.
+    if (!imuIsHeadingValid()) {
         disableYawControl();
         return;
     }
+
+    // A mission steers the nose per ap_yaw_mode while a leg is being flown. Position
+    // hold has no leg to follow, so it holds the heading it had on engagement.
+    const bool navYawActive = FLIGHT_MODE(AUTOPILOT_MODE) && ap.navActive;
+    const bool holdYawActive = FLIGHT_MODE(POS_HOLD_MODE);
+    if (!navYawActive && !holdYawActive) {
+        disableYawControl();
+        return;
+    }
+
+    const float headingDeg = attitude.values.yaw * 0.1f;
 
     float desiredHeadingDeg = 0.0f;
-    bool haveDesiredHeading = false;
-    if (apNavHeadingOverrideValid) {
-        // Mission pre-turn blend: point the nose onto the next leg regardless of
-        // the configured yaw mode, so it is already there as the gate is crossed.
-        desiredHeadingDeg = apNavHeadingOverrideDeg;
-        haveDesiredHeading = true;
-    } else {
-        switch (cfg->yawMode) {
-        case YAW_MODE_VELOCITY:
-            haveDesiredHeading = courseHeadingDeg(est, &desiredHeadingDeg);
-            break;
-        case YAW_MODE_BEARING:
-            haveDesiredHeading = bearingToTargetDeg(est, &desiredHeadingDeg);
-            break;
-        case YAW_MODE_HYBRID:
-            haveDesiredHeading = courseHeadingDeg(est, &desiredHeadingDeg)
-                || bearingToTargetDeg(est, &desiredHeadingDeg);
-            break;
-        default: // YAW_MODE_FIXED, YAW_MODE_DAMPENER (wing only)
-            break;
+    if (navYawActive) {
+        bool haveDesiredHeading = false;
+        if (apNavHeadingOverrideValid) {
+            // Mission pre-turn blend: point the nose onto the next leg regardless of
+            // the configured yaw mode, so it is already there as the gate is crossed.
+            desiredHeadingDeg = apNavHeadingOverrideDeg;
+            haveDesiredHeading = true;
+        } else {
+            switch (cfg->yawMode) {
+            case YAW_MODE_VELOCITY:
+                haveDesiredHeading = courseHeadingDeg(est, &desiredHeadingDeg);
+                break;
+            case YAW_MODE_BEARING:
+                haveDesiredHeading = bearingToTargetDeg(est, &desiredHeadingDeg);
+                break;
+            case YAW_MODE_HYBRID:
+                haveDesiredHeading = courseHeadingDeg(est, &desiredHeadingDeg)
+                    || bearingToTargetDeg(est, &desiredHeadingDeg);
+                break;
+            default: // YAW_MODE_FIXED, YAW_MODE_DAMPENER (wing only)
+                break;
+            }
         }
-    }
 
-    if (!haveDesiredHeading) {
-        disableYawControl();
-        return;
+        if (!haveDesiredHeading) {
+            disableYawControl();
+            return;
+        }
+    } else {
+        // Position hold. The pilot's yaw stick outranks the hold: past ap_stick_deadband
+        // rc.c flies the stick instead of our rate, so track the heading rather than
+        // accumulating an error to fight on release - the hold resumes wherever the
+        // pilot leaves the nose.
+        if (!apYawHoldHeadingValid || fabsf(rcCommand[FD_YAW]) >= (float)cfg->stickDeadband) {
+            apYawHoldHeadingDeg = headingDeg;
+            apYawHoldHeadingValid = true;
+        }
+        desiredHeadingDeg = apYawHoldHeadingDeg;
     }
 
     apYawAttenuator = fminf(apYawAttenuator + dt / AP_YAW_RAMP_TIME_S, 1.0f);
@@ -706,7 +746,7 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     // The yaw rate setpoint (and gyro) is CCW-positive while compass headings
     // are CW-positive, so the heading error enters the setpoint frame negated:
     // desired ahead of heading (a right turn) demands a negative rate.
-    float errorDeg = attitude.values.yaw * 0.1f - desiredHeadingDeg;
+    float errorDeg = headingDeg - desiredHeadingDeg;
     errorDeg = fmodf(errorDeg + 540.0f, 360.0f) - 180.0f;
 
     float yawRateDps = errorDeg * cfg->yawP * AP_YAW_P_SCALE
@@ -721,6 +761,11 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
 
     apYawRateDps = yawRateDps * GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
     apYawActive = true;
+
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 0, lrintf(headingDeg * 10.0f));
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 1, lrintf(desiredHeadingDeg * 10.0f));
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 2, lrintf(errorDeg * 10.0f));
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, lrintf(apYawRateDps * 10.0f));
 }
 
 static void xyProcessTransitions(void)

@@ -58,5 +58,6 @@ float getAutopilotThrottle(void);
 float autopilotGetYawRate(void);
 bool autopilotYawControlActive(void);
 void autopilotSetYawRateLimit(float rateLimitDps); // deg/s, 0 = no mission cap
+void autopilotDisableYawControl(void);
 
 #endif // !USE_WING

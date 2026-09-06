@@ -126,6 +126,9 @@ void updatePosHold(timeUs_t currentTimeUs)
     } else {
         if (posHold.isEnabled) {
             setSticksActiveStatus(false);
+            // positionControl() stops being called from here, so the yaw controller
+            // can no longer stand itself down; do it for it.
+            autopilotDisableYawControl();
         }
         posHold.isEnabled = false;
     }
