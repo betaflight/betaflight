@@ -702,6 +702,17 @@ if (!ARMING_FLAG(ARMED)) {
     return;
 }
 
+// Nothing holds a heading on the bench. disarm() clears ARMED but leaves the flight
+// mode flags alone, so POS_HOLD_MODE stays set until processRxModes() next runs and
+// this task can be scheduled in between; without this the controller would capture a
+// heading and offer a rate while disarmed. Standing down also drops the captured
+// heading, so arming re-captures rather than resuming an old one.
+if (!ARMING_FLAG(ARMED)) {
+    disableYawControl();
+    apYawDisableReason = 4;
+    return;
+}
+
 const bool rescueYawActive = FLIGHT_MODE(GPS_RESCUE_MODE);
 const bool navYawActive = FLIGHT_MODE(AUTOPILOT_MODE) && ap.navActive;
 const bool holdYawActive = FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(MAG_MODE);
@@ -719,15 +730,6 @@ if (!rescueYawActive && !navYawActive && !holdYawActive) {
 if (!imuIsHeadingValid()) {
     disableYawControl();
     apYawDisableReason = 5;
-    return;
-}
-const bool rescueYawActive = FLIGHT_MODE(GPS_RESCUE_MODE);
-const bool navYawActive = FLIGHT_MODE(AUTOPILOT_MODE) && ap.navActive;
-const bool holdYawActive = FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(MAG_MODE);
-
-if (!rescueYawActive && !navYawActive && !holdYawActive) {
-    disableYawControl();
-    apYawDisableReason = 6;
     return;
 }
     const float headingDeg = attitude.values.yaw * 0.1f;
@@ -827,12 +829,6 @@ void updateHeadingHold(timeUs_t currentTimeUs)
     UNUSED(currentTimeUs);
 
     if (FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
-        return;
-    }
-
-    if (!ARMING_FLAG(ARMED)) {
-        // No holding a heading on the bench; re-capture on arming instead.
-        disableYawControl();
         return;
     }
 

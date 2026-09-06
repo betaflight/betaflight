@@ -1197,8 +1197,8 @@ TEST_F(PosHoldTest, YawControlStandsDownWhileDisarmedWithPosHoldStillLatched)
     initAndSettleAt(0, 0, 0);
 
     autopilotConfig_t *cfg = autopilotConfigMutable();
-    cfg->yawP = 50;
-    cfg->maxYawRate = 30;
+    cfg->yawP = 30;
+    cfg->maxYawRate = 150;
     cfg->stickDeadband = 50;
 
     armingFlags = ARMED;
