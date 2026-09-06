@@ -1158,7 +1158,7 @@ TEST_F(PosHoldTest, YawControlGoesInactiveWithTheModeNotTheNextTick)
     // without defaults here, so the yaw law needs its own setup. stickDeadband must be
     // non-zero or the hold re-captures every tick, mirroring rc.c declining to inject.
     autopilotConfig_t *cfg = autopilotConfigMutable();
-    cfg->yawP = 50;
+    cfg->yawP = 30;
     cfg->maxYawRate = 30;
     cfg->stickDeadband = 50;
 
