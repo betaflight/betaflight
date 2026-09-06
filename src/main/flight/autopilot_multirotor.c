@@ -686,6 +686,16 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
 {
     const autopilotConfig_t *cfg = autopilotConfig();
 
+    // Nothing holds a heading on the bench. disarm() clears ARMED but leaves the flight
+    // mode flags alone, so POS_HOLD_MODE stays set until processRxModes() next runs and
+    // this task can be scheduled in between; without this the controller would capture a
+    // heading and offer a rate while disarmed. Standing down also drops the captured
+    // heading, so arming re-captures rather than resuming an old one.
+    if (!ARMING_FLAG(ARMED)) {
+        disableYawControl();
+        return;
+    }
+
     // Every path below steers to a compass heading, so one the IMU trusts is a hard
     // requirement: a calibrated compass, or a GPS course it has gained confidence in.
     // Without it the controller would hold an arbitrary direction. Same requirement
@@ -785,12 +795,6 @@ void updateHeadingHold(timeUs_t currentTimeUs)
     UNUSED(currentTimeUs);
 
     if (FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
-        return;
-    }
-
-    if (!ARMING_FLAG(ARMED)) {
-        // No holding a heading on the bench; re-capture on arming instead.
-        disableYawControl();
         return;
     }
 

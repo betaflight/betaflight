@@ -200,6 +200,7 @@ protected:
         mockNavHasActiveTarget = false;
         mockTargetVelCmS = (vector3_t){{0.0f, 0.0f, 0.0f}};
         flightModeFlags = 0;
+        armingFlags = 0;
         simulatedTaskRateHz = 100;
     }
 };
@@ -860,6 +861,9 @@ protected:
         mockNavCommand.active = true;
         mockNavCommand.acceptanceRadiusM = 5.0f;
         flightModeFlags |= AUTOPILOT_MODE;
+        // AUTOPILOT_MODE is only ever enabled while armed (core.c), and the yaw
+        // controller stands down when disarmed, so the fixture has to model that.
+        armingFlags = ARMED;
     }
 
     // Enough iterations at 100 Hz for the 1 s engage attenuator to saturate.
@@ -1183,5 +1187,44 @@ TEST_F(PosHoldTest, YawControlGoesInactiveWithTheModeNotTheNextTick)
     // and it stays down once the task does run
     updateHeadingHold(0);
     EXPECT_FALSE(autopilotYawControlActive());
+    EXPECT_FLOAT_EQ(0.0f, autopilotGetYawRate());
+}
+
+// disarm() clears ARMED but leaves the flight mode flags set until processRxModes() next
+// runs, and TASK_POSHOLD can be scheduled in that window. The yaw controller must stand
+// down on the arming flag alone, or it would keep offering a rate for rc.c to inject
+// while disarmed — and would resume against a heading captured on the bench.
+TEST_F(PosHoldTest, YawControlStandsDownWhileDisarmedWithPosHoldStillLatched)
+{
+    initAndSettleAt(0, 0, 0);
+
+    autopilotConfig_t *cfg = autopilotConfigMutable();
+    cfg->yawP = 50;
+    cfg->yawD = 0;
+    cfg->maxYawRate = 30;
+    cfg->stickDeadband = 50;
+
+    armingFlags = ARMED;
+    flightModeFlags = POS_HOLD_MODE;
+
+    attitude.values.yaw = 900;
+    positionControl();
+    attitude.values.yaw = 1200;
+    for (int i = 0; i < 10; i++) {
+        positionControl();
+    }
+    ASSERT_TRUE(autopilotYawControlActive());
+    ASSERT_NE(0.0f, autopilotGetYawRate());
+
+    // disarmed, but POS_HOLD_MODE has not been cleared yet
+    armingFlags = 0;
+    positionControl();
+    EXPECT_FALSE(autopilotYawControlActive());
+    EXPECT_FLOAT_EQ(0.0f, autopilotGetYawRate());
+
+    // re-arming holds the heading it has now, not the one captured before disarm
+    armingFlags = ARMED;
+    attitude.values.yaw = 1800;
+    positionControl();
     EXPECT_FLOAT_EQ(0.0f, autopilotGetYawRate());
 }
