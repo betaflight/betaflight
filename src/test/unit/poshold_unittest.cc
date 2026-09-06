@@ -1138,3 +1138,50 @@ TEST_F(NavModeTest, PositionControlResetIsDeterministic)
         EXPECT_FLOAT_EQ(autopilotAngle[AI_PITCH], baselinePitch[i]);
     }
 }
+
+// -- Yaw control handover --
+
+// The yaw controller is refreshed by TASK_MAGHOLD/TASK_POSHOLD at ~100 Hz, while the rate
+// it produces is consumed once per RX frame and the mode flags are cleared by the RX task
+// in between. autopilotYawControlActive() must therefore go false with the mode rather
+// than waiting for the controller's next tick — otherwise rc.c injects a stale autonomous
+// yaw rate on the first frame after the pilot switches the mode off, exactly when they
+// expect the stick back.
+TEST_F(PosHoldTest, YawControlGoesInactiveWithTheModeNotTheNextTick)
+{
+    initAndSettleAt(0, 0, 0);
+
+    // initAndSettleAt() only sets the position gains, and autopilotConfig is PG_REGISTERed
+    // without defaults here, so the yaw law needs its own setup. stickDeadband must be
+    // non-zero or the hold re-captures every tick, mirroring rc.c declining to inject.
+    autopilotConfig_t *cfg = autopilotConfigMutable();
+    cfg->yawP = 50;
+    cfg->yawD = 0;
+    cfg->maxYawRate = 30;
+    cfg->stickDeadband = 50;
+
+    armingFlags = ARMED;
+    flightModeFlags = MAG_MODE;
+
+    // engage, capturing the current heading
+    attitude.values.yaw = 900;
+    updateHeadingHold(0);
+
+    // nose pushed off the captured heading, so a correcting rate is on offer once the
+    // engage ramp has opened up
+    attitude.values.yaw = 1200;
+    for (int i = 0; i < 10; i++) {
+        updateHeadingHold(0);
+    }
+    ASSERT_TRUE(autopilotYawControlActive());
+    ASSERT_NE(0.0f, autopilotGetYawRate());
+
+    // pilot flicks the mode off; the controller's task has not run again yet
+    flightModeFlags = 0;
+    EXPECT_FALSE(autopilotYawControlActive());
+
+    // and it stays down once the task does run
+    updateHeadingHold(0);
+    EXPECT_FALSE(autopilotYawControlActive());
+    EXPECT_FLOAT_EQ(0.0f, autopilotGetYawRate());
+}

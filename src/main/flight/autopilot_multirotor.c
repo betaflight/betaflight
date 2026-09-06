@@ -626,7 +626,13 @@ float autopilotGetYawRate(void)
 
 bool autopilotYawControlActive(void)
 {
-    return apYawActive;
+    // apYawActive is refreshed by a 100 Hz task while the rate it produces is consumed
+    // once per RX frame, and the mode flags are cleared by the RX task in between. Without
+    // re-checking them here the controller would still look active for up to one task
+    // period after the pilot switched the mode off, injecting a stale yaw rate on the
+    // first frame they expect the stick back.
+    return apYawActive
+        && (FLIGHT_MODE(AUTOPILOT_MODE) || FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(MAG_MODE));
 }
 
 static void disableYawControl(void)
