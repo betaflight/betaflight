@@ -408,11 +408,15 @@ void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targ
     const float verticalAcceleration = getAltitudeAccelerationControl();
     float verticalVelocity = getAltitudeDerivativeControl(); // un-filtered vertical velocity from Kalman filter
     const float velMax = (velLimitCmS > 1.0f) ? velLimitCmS : ALTITUDE_VEL_CMD_MAX_DEFAULT_CM_S;
-    // Bound the position error to one second of travel at the rate limit, as alt hold already
-    // does for pilot targets: unbounded, P alone saturates throttle and the descent rate is
-    // ignored when a caller sets a target beyond what the rate limit allows.
+    // Distance bound, not a velocity limit: one second of travel at the rate limit, hence the
+    // shared number with velMax — deliberately not a second constant that could drift from it.
+    // This constrains the P and I responses; the F response is bounded separately by the
+    // velMax clamp on targetVerticalVelocity below. D is deliberately outside both so a fast
+    // sink retains full damping authority. Same "cannot be reached in 1s" rule alt hold
+    // applies to pilot targets.
+    const float errBoundCm = velMax * 1.0f; // cm = (cm/s) * s
     const float rawAltitudeErrorCm = targetAltitudeCm - currentAltitudeCm;
-    const float altitudeErrorCm = constrainf(rawAltitudeErrorCm, -velMax, velMax);
+    const float altitudeErrorCm = constrainf(rawAltitudeErrorCm, -errBoundCm, errBoundCm);
     // Anti-windup on output saturation, not on the clamp above: the clamp is active for the whole
     // of any rate-limited move, so it cannot indicate windup.
     const bool blockIntegration = (altitudeOutputSaturatedLow && altitudeErrorCm < 0.0f)
