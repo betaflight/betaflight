@@ -6240,7 +6240,15 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
             }
 #ifdef USE_GPS_UBLOX
             if (gpsConfig()->provider == GPS_UBLOX) {
-                cliPrintf(", version =  %s", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
+                if (gpsData.platformVersion == UBX_VERSION_UNKNOWN_GENERATION) {
+                    if (gpsData.unknownHwVersion) {
+                        cliPrintf(", version =  unknown (0x%08x)", gpsData.unknownHwVersion);
+                    } else {
+                        cliPrintf(", version =  unknown (no MON-VER reply)");
+                    }
+                } else {
+                    cliPrintf(", version =  %s", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
+                }
             }
 #endif
         }
@@ -6892,7 +6900,15 @@ RAM_CODE static void cliEnv(const char *cmdName, char *cmdline)
         cliPrintNameValue("GPS_CONNECTED", gpsData.state >= GPS_STATE_CONFIGURE ? "ON" : "OFF");
         cliPrintNameValue("GPS_CONFIGURED", gpsData.state > GPS_STATE_CONFIGURE ? "ON" : "OFF");
 #ifdef USE_GPS_UBLOX
-        cliPrintNameValue("GPS_VERSION", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
+        if (gpsData.platformVersion == UBX_VERSION_UNKNOWN_GENERATION) {
+            if (gpsData.unknownHwVersion) {
+                cliPrintNameValuef("GPS_VERSION", "unknown (0x%08x)", gpsData.unknownHwVersion);
+            } else {
+                cliPrintNameValue("GPS_VERSION", "unknown (no MON-VER reply)");
+            }
+        } else {
+            cliPrintNameValue("GPS_VERSION", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
+        }
 #endif
     }
 #endif

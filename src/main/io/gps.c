@@ -407,6 +407,10 @@ void gpsInit(void)
 #endif
     gpsData.updateRateHz = 10; // initialise at 10hz
     gpsData.platformVersion = UBX_VERSION_UNDEF;
+#ifdef USE_GPS_UBLOX
+    gpsData.unknownHwVersion = 0;
+    gpsData.ubloxValidFrameReceived = false;
+#endif
 
 #ifdef USE_DASHBOARD
     gpsData.errors = 0;
@@ -485,6 +489,10 @@ struct ubloxVersion_s ubloxVersionMap[] = {
     [UBX_VERSION_M8] = { 0x00080000, "M8" },
     [UBX_VERSION_M9] = { 0x00190000, "M9" },
     [UBX_VERSION_M10] = { 0x000A0000, "M10" },
+    // Sentinel entry, never matched by ubloxParseVersion() (hw == ~0, same trick as UBX_VERSION_UNDEF).
+    // platformVersion is set to this value explicitly by the MON-VER handler below when a module
+    // responds with a hw code that isn't in this table, so the raw code isn't lost here.
+    [UBX_VERSION_UNKNOWN_GENERATION] = { ~0, "unknown" },
 };
 
 static uint8_t ubloxAddValSet(ubxMessage_t * tx_buffer, ubxValGetSetBytes_e key, const uint8_t * payload, const uint8_t offset)
@@ -1047,6 +1055,21 @@ static void gpsConfigureUblox(void)
         messageCounter = 0;
         gpsData.state_ts = gpsData.now;
 
+        // We've spent a full dwell (GPS_BAUDRATE_TEST_COUNT retries) at this baud rate without a
+        // MON-VER reply. If a checksum-valid UBX frame nonetheless arrived at this same rate
+        // (ubloxValidFrameReceived - set for any class/id, not just MON-VER), the module is
+        // provably alive and correctly framed right here; it just doesn't implement the MON-VER
+        // poll. Accept it as a module of unknown generation instead of hopping to another baud
+        // rate - since userBaudRateIndex (the configured Ports-tab baud) is always tried first,
+        // this typically resolves in one ~1s dwell instead of a full multi-rate sweep. The next
+        // pass through this state takes the `platformVersion > UBX_VERSION_UNDEF` branch above
+        // and proceeds normally.
+        if (gpsData.ubloxValidFrameReceived) {
+            gpsData.platformVersion = UBX_VERSION_UNKNOWN_GENERATION;
+            gpsData.unknownHwVersion = 0; // no MON-VER reply was ever received, so no hw code to report
+            return;
+        }
+
         // failed to connect at that rate after five attempts
         // try other GPS baudrates, starting at 9600 and moving up
         if (gpsData.tempBaudRateIndex == 0) {
@@ -1056,6 +1079,9 @@ static void gpsConfigureUblox(void)
         }
         // set the FC baud rate to the new temp baud rate
         serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.tempBaudRateIndex].baudrateIndex]);
+        // Only relevant to the check above: a frame received at the baud rate we're leaving
+        // must not be mistaken for proof the *new* rate is correct.
+        gpsData.ubloxValidFrameReceived = false;
         initBaudRateCycleCount++;
 
         break;
@@ -2575,10 +2601,25 @@ static bool UBLOX_parse_gps(void)
 #ifdef USE_DASHBOARD
         *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_UBLOX_MONVER;
 #endif
-        gpsData.platformVersion = ubloxParseVersion(strtoul(ubxRcvMsgPayload.ubxMonVer.hwVersion, NULL, 16));
-        gpsData.ubloxM7orAbove = gpsData.platformVersion >= UBX_VERSION_M7;
-        gpsData.ubloxM8orAbove = gpsData.platformVersion >= UBX_VERSION_M8;
-        gpsData.ubloxM9orAbove = gpsData.platformVersion >= UBX_VERSION_M9;
+        {
+            const uint32_t ubloxHwVersion = strtoul(ubxRcvMsgPayload.ubxMonVer.hwVersion, NULL, 16);
+            gpsData.platformVersion = ubloxParseVersion(ubloxHwVersion);
+            if (gpsData.platformVersion == UBX_VERSION_UNDEF) {
+                // The module answered MON-VER (so it's genuinely there and speaking UBX), it's just
+                // a hw code this firmware doesn't recognize yet (e.g. a clone chipset). Without this,
+                // platformVersion would stay UBX_VERSION_UNDEF forever and GPS_STATE_DETECT_BAUD would
+                // never advance (see the `platformVersion > UBX_VERSION_UNDEF` gate above), even though
+                // the module is fully functional. Treat it as a valid module of unknown generation and
+                // keep the raw code around for `status` / `get GPS_VERSION` to display.
+                gpsData.platformVersion = UBX_VERSION_UNKNOWN_GENERATION;
+                gpsData.unknownHwVersion = ubloxHwVersion;
+            }
+        }
+        // Exclude UBX_VERSION_UNKNOWN_GENERATION from these checks: it sorts after UBX_VERSION_M10 so a bare
+        // `>=` would wrongly claim M7/M8/M9+ capabilities for a module of unconfirmed generation.
+        gpsData.ubloxM7orAbove = gpsData.platformVersion >= UBX_VERSION_M7 && gpsData.platformVersion <= UBX_VERSION_M10;
+        gpsData.ubloxM8orAbove = gpsData.platformVersion >= UBX_VERSION_M8 && gpsData.platformVersion <= UBX_VERSION_M10;
+        gpsData.ubloxM9orAbove = gpsData.platformVersion >= UBX_VERSION_M9 && gpsData.platformVersion <= UBX_VERSION_M10;
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_POSLLH):
 #ifdef USE_DASHBOARD
@@ -2831,6 +2872,11 @@ static bool gpsNewFrameUBLOX(uint8_t data)
     case UBX_PARSE_CHECKSUM_B:
         if (ubxRcvMsgChecksumB == data) {
             // Checksum B also matches, successfully received a new full packet!
+            // Independent of which message this is, a checksum-valid frame proves the module is a
+            // live UBX speaker. GPS_STATE_DETECT_BAUD uses this to give up waiting on a MON-VER
+            // reply that may never come (some modules never implement that poll) instead of
+            // cycling baud rates forever.
+            gpsData.ubloxValidFrameReceived = true;
 #ifdef USE_DASHBOARD
             dashboardGpsPacketCount++;  // Packet counter used by dashboard device.
             shiftPacketLog();           // Make space for message handling to add the message type char to the dashboard device packet log.
