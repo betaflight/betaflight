@@ -54,12 +54,17 @@ void autopilotInit(void)
 void resetAltitudeControl (void) {
 }
 
-void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeVelCmS, float velLimitCmS)
+void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targetAltitudeVelCmS, float velLimitCmS)
 {
     UNUSED(targetAltitudeCm);
-    UNUSED(taskIntervalS);
+    UNUSED(taskIntervalUs);
     UNUSED(targetAltitudeVelCmS);
     UNUSED(velLimitCmS);
+}
+
+timeUs_t autopilotTaskIntervalUs(timeUs_t nominalIntervalUs)
+{
+    return nominalIntervalUs;
 }
 
 bool positionControl(void)

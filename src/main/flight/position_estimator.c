@@ -91,9 +91,9 @@
 
 #define R_OPTICALFLOW_VEL 200.0f   // (cm/s)^2 at max quality
 
-#define Q_JERK_Z          3000.0f
-#define R_ACCEL_Z          500.0f
-#define R_BARO_ALT        150.0f   // cm^2 lower value favours baro data vs others, reduced by higher user prefer baro values
+#define Q_JERK_Z         3000.0f
+#define R_ACCEL_Z         500.0f
+#define R_BARO_ALT         70.0f   // cm^2 lower value favours baro data vs others, increased by lower user prefer baro values
 #define R_GPS_VEL_Z_BASE  100.0f   // (cm/s)^2, increases as sAcc increases to allow more baro / accelerometer influence
 #define R_GPS_ALT_BASE    200.0f   // cm^2 , increases as vAcc increases to allow more baro / accel influence
 #define R_RANGEFINDER_ALT 100.0f   // cm^2
@@ -139,7 +139,7 @@
 // so the onset is around 50 cm and it becomes severe below 20 cm.
 #define GROUND_EFFECT_ALT_CM         50.0f  // baro starts losing validity here
 #define GROUND_EFFECT_FULL_ALT_CM    20.0f  // and is worthless below here
-#define GROUND_EFFECT_BARO_R_SCALE  100.0f  // R multiplier once fully in ground effect
+#define GROUND_EFFECT_BARO_R_SCALE  200.0f  // R multiplier once fully in ground effect
 
 // The rangefinder is what tells us we are in ground effect, so a dropout would otherwise
 // switch the protection off at the moment it is most needed: lose the anchor and the
@@ -324,7 +324,7 @@ static bool positionEstimatorWantXYFusion(void)
 // the ideal offset barely changes: this loop only ever chases disagreement between
 // the sources, never shared motion.
 #define CROSS_CAL_TAU_RANGEFINDER_S   2.0f
-#define CROSS_CAL_TAU_GPS_S          60.0f
+#define CROSS_CAL_TAU_GPS_S          200.0f // ~5min time constant, depending on vAcc, for gps to cross-cal baro offset
 
 typedef struct {
     float rawReading;   // only populated by drifting sources; unused unless offsetPtr is set
@@ -420,6 +420,11 @@ static timeUs_t lastXYMeasurementUs = 0;
 static timeUs_t lastZMeasurementUs = 0;
 static unsigned debugAxis; // 0 for East, 1 for North; selected by gyro_filter_debug_axis
 
+// One bit per positionEstimatorConsumer_e, set by every positionEstimatorUpdate()
+// and cleared as each consumer takes the event. Drives the event-based scheduling
+// of TASK_ALTHOLD and TASK_POSHOLD.
+static uint8_t pendingUpdateMask = 0;
+
 static sensorCalEntry_t zCal[CAL_Z_COUNT];
 
 #ifdef USE_GPS
@@ -503,6 +508,7 @@ void positionEstimatorInit(void)
     xyEnabled = false;
     lastXYMeasurementUs = 0;
     lastZMeasurementUs = 0;
+    pendingUpdateMask = 0;
     debugAxis = (gyroConfig()->gyro_filter_debug_axis == FD_PITCH) ? 1 : 0; //  0 for East, 1 for North
 
 
@@ -821,8 +827,12 @@ static void feedGPSMeasurements(timeUs_t nowUs)
         kalmanUpdatePosition(&kfUp, gpsRelativeAltCm, gpsAltR); // always update position from GPS position innovation
 
         lastZMeasurementUs = nowUs;
-
-        zCal[CAL_Z_GPS].active = true;
+        // cross-calibrate baro to gps slowly and only for lower than default prefer baro values
+        if (positionConfig()->altitude_prefer_baro < 50) {
+            const float gpsCrossCalScale = constrainf((float)gpsSol.acc.vAcc / GPS_ALT_ACCURACY_DENOM, 1.0f, 10.0f);
+            zCal[CAL_Z_GPS].anchorTauS = CROSS_CAL_TAU_GPS_S * gpsCrossCalScale;
+            zCal[CAL_Z_GPS].active = true;
+        }
     }
 #else
     UNUSED(nowUs);
@@ -1274,7 +1284,7 @@ static void crossCalibrateOffsets(sensorCalEntry_t *sources, int count, float kf
 void positionEstimatorUpdate(void)
 {
     const timeUs_t nowUs = micros();
-    const float dt = HZ_TO_INTERVAL(TASK_ALTITUDE_RATE_HZ);
+    const float dt = HZ_TO_INTERVAL(TASK_POSITION_RATE_HZ);
 
     const bool wantXY = positionEstimatorWantXYFusion();
     if (wantXY != xyEnabled) {
@@ -1366,6 +1376,19 @@ void positionEstimatorUpdate(void)
     const float xyVar = (kalmanGetPositionVariance(&kfEast) + kalmanGetPositionVariance(&kfNorth)) * 0.5f;
     estimate.trustXY = 1.0f / (1.0f + xyVar / 10000.0f);
     estimate.trustZ = 1.0f / (1.0f + kalmanGetPositionVariance(&kfUp) / 10000.0f);
+
+    // Publish the update last, so a consumer woken by it reads a complete estimate.
+    pendingUpdateMask = (1 << POS_EST_CONSUMER_COUNT) - 1;
+}
+
+bool positionEstimatorTakeUpdate(positionEstimatorConsumer_e consumer)
+{
+    const uint8_t bit = 1 << consumer;
+    if (pendingUpdateMask & bit) {
+        pendingUpdateMask &= ~bit;
+        return true;
+    }
+    return false;
 }
 
 const positionEstimate3d_t *positionEstimatorGetEstimate(void)
