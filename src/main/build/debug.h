@@ -70,13 +70,16 @@ extern uint8_t debugMode;
  *              scaled but dimensionless: `lrintf(ratio * 1000)` is
  *              `[unit:0.001]`.
  *
+ *              A trailing `2` squares the symbol it follows, so `cm/s2` is an
+ *              acceleration while `cm2/s2` is the variance of a velocity.
+ *
  *              Symbols: s ms us Hz kHz MHz kbit/s rad rad/s deg dps dps2 m cm
- *              m/s cm/s cm/s2 g g/s V A mAh degC Pa hPa rpm % dB dBm bytes
- *              ticks, plus
- *              the device-native units the firmware stores raw, which only the
- *              FC's own configuration can convert: gyroADC (gyro ADC counts),
- *              accADC and accADC/s (accelerometer ADC counts), rcCommand
- *              (throttle in rcCommand units) and eRPM (Dshot eRPM).
+ *              cm2 m/s cm/s cm/s2 cm2/s2 g g/s V A mAh degC Pa hPa rpm % dB
+ *              dBm bytes ticks, plus the device-native units the firmware
+ *              stores raw, which only the FC's own configuration can convert:
+ *              gyroADC (gyro ADC counts), accADC and accADC/s (accelerometer
+ *              ADC counts), rcCommand (throttle in rcCommand units) and eRPM
+ *              (Dshot eRPM).
  *
  *     enum:    An enumerator, named by its type - `[enum:failsafePhase_e]`.
  *              Tooling reads the enumerator names from it, so the enum must be

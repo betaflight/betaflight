@@ -793,8 +793,8 @@ static void feedGPSMeasurements(timeUs_t nowUs)
         const float rGpsVelMax = 10.0f * R_GPS_VEL_BASE;
         const float rGpsVel = gpsAccuracyR(gpsSol.acc.sAcc, GPS_VEL_ACCURACY_DENOM, R_GPS_VEL_BASE, rGpsVelMax);
 
-        DEBUG_SET(DEBUG_POSITION_EST, 6, lrintf(rGpsPos));  //!< GPS Position Measurement Noise
-        DEBUG_SET(DEBUG_POSITION_EST, 7, lrintf(rGpsVel));  //!< GPS Velocity Measurement Noise
+        DEBUG_SET(DEBUG_POSITION_EST, 6, lrintf(rGpsPos));  //!< GPS Position Measurement Variance [unit:cm2]
+        DEBUG_SET(DEBUG_POSITION_EST, 7, lrintf(rGpsVel));  //!< GPS Velocity Measurement Variance [unit:cm2/s2]
 
 
         kalmanUpdateVelocityToPosition(&kfEast, (float)gpsSol.velned.velE, rGpsVel);
