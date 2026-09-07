@@ -156,7 +156,7 @@ extern "C" {
 }
 
 static const float G_CM_S2 = 981.0f;
-static const float DT_S = HZ_TO_INTERVAL(TASK_ALTITUDE_RATE_HZ);
+static const float DT_S = HZ_TO_INTERVAL(TASK_POSITION_RATE_HZ);
 static const float ACC_1G = 2048.0f;
 
 // altitudeControl() starts amplifying D above this. Any phantom sink that reaches it is
@@ -453,7 +453,7 @@ protected:
         // flies the craft to 600 and every altitude in the test is offset by the launch height.
         simBaroAltitudeCm = baroSampleAndHold(0.0f);
         positionEstimatorResetZ();
-        calculateEstimatedAltitude();
+        positionUpdate();
     }
 
     // Present a measured vertical acceleration to the estimator via the accelerometer, in the
@@ -486,8 +486,11 @@ protected:
                   float velLimitCmS, bool motorsCut = false) {
         simBaroAltitudeCm = baroSampleAndHold(ge.reportedAltCm(sim.altCm));
 
-        calculateEstimatedAltitude();                       // real position_estimator.c + position.c
-        altitudeControl(targetAltCm, DT_S, targetVelCmS, velLimitCmS);  // real altitudeControl()
+        positionUpdate();                       // real position_estimator.c + position.c
+        // altitudeControl() takes microSECONDS since #15670 (timeUs_t): pass the 100 Hz
+        // task period, not DT_S seconds. DT_S (0.01) truncated to a timeUs_t is 0 us, which
+        // freezes the iTerm integration and the settle-ceiling ramp, so the hover sinks.
+        altitudeControl(targetAltCm, TASK_PERIOD_HZ(100), targetVelCmS, velLimitCmS);
 
         // disarm(DISARM_REASON_LANDING): the landing is over and the motors stop.
         // getAutopilotThrottle() normalises over [MAX(mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX],
@@ -496,7 +499,7 @@ protected:
         const float lowPwm = MAX((float)rxConfig()->mincheck, (float)PWM_RANGE_MIN);
         const float throttlePwm = motorsCut ? 0.0f
                                             : lowPwm + getAutopilotThrottle() * ((float)PWM_RANGE_MAX - lowPwm);
-        const float measuredAccelUp = sim.step(throttlePwm, kSimHoverPwm, 1000.0f, DT_S);
+        const float measuredAccelUp = sim.step(throttlePwm, kSimHoverPwm, kMinPwm, DT_S);
         setAccelUpCmS2(measuredAccelUp);                    // truthful accelerometer, next cycle
 
         advanceClock();
@@ -628,9 +631,9 @@ static const float LOGGED_POWER = 3.0f;
 // 1. Control: an honest barometer must be completely unaffected.
 // ---------------------------------------------------------------------------------------------
 // The bound sits at twice the commanded descent rate with a 1 m/s floor, and a landing that is
-// tracking its profile never gets near it. Measured here the reported sink peaks at -121 cm/s
+// tracking its profile never gets near it. Measured here the reported sink peaks at -69 cm/s
 // against a 100 cm/s bound only at the moment of contact, and every number below - peak throttle
-// 1307 PWM, lift-off from 10.22 cm, final 4.25 cm - is identical with the bound applied and with
+// 1300 PWM, no liftoff, final 0.00 cm - is identical with the bound applied and with
 // it removed. (The rig floats at 30 cm/s even with a perfect sensor; that is the rig, not the fix.)
 TEST_F(LandingGroundEffectTest, GentleDescentWithAnHonestBaroLandsWithoutBouncing)
 {
@@ -642,8 +645,8 @@ TEST_F(LandingGroundEffectTest, GentleDescentWithAnHonestBaroLandsWithoutBouncin
     LandingSim sim;
     sim.altCm = 300.0f;
     settleInHover(sim, ge, 300.0f, 600);   // 6 s, so the KF converges and iTerm trims up
-    // Holds the commanded 300 cm. Against the pre-#15584 estimator the rig floated down to
-    // ~220 cm over these 6 s; the Kalman filter tracks the hover well enough that it no longer
+    // Holds the commanded 300 cm. An older estimator floated down over these 6 s instead of
+    // holding; the Kalman filter tracks the hover well enough that it no longer
     // does, so this asserts the target rather than the old float.
     ASSERT_NEAR(sim.altCm, 300.0f, 60.0f) << "hover never settled; the landing proves nothing";
 
@@ -671,11 +674,11 @@ TEST_F(LandingGroundEffectTest, GentleDescentWithAnHonestBaroLandsWithoutBouncin
 // its real ~36 Hz:
 //
 //                                 unfixed        with the landing sink bound
-//   peak commanded throttle       1592 PWM       1319 PWM
-//   ... before first contact      1557 PWM       1313 PWM
-//   thrown off the deck by         160 cm           0 cm  (it reached the ground first)
-//   peak height after touchdown    204 cm          65 cm
-//   landing completed at          19.0 s          12.6 s, both on the deck
+//   peak commanded throttle       1678 PWM       1391 PWM
+//   ... before first contact      1415 PWM       1346 PWM
+//   thrown off the deck by         51 cm           47 cm  (it reached the ground first)
+//   peak height after touchdown    139 cm          32 cm
+//   landing completed at          never           11.8 s, on the deck
 //
 // The estimator is untouched, so the phantom sink itself is unchanged and is not asserted on
 // here; test 6 measures what that leaves exposed.
@@ -691,8 +694,8 @@ TEST_F(LandingGroundEffectTest, LoggedGroundEffectBaroCollapseMustNotLaunchTheCr
     LandingSim sim;
     sim.altCm = 300.0f;
     settleInHover(sim, ge, 300.0f, 600);
-    // Holds the commanded 300 cm. Against the pre-#15584 estimator the rig floated down to
-    // ~220 cm over these 6 s; the Kalman filter tracks the hover well enough that it no longer
+    // Holds the commanded 300 cm. An older estimator floated down over these 6 s instead of
+    // holding; the Kalman filter tracks the hover well enough that it no longer
     // does, so this asserts the target rather than the old float.
     ASSERT_NEAR(sim.altCm, 300.0f, 60.0f) << "hover never settled; the landing proves nothing";
 
@@ -709,7 +712,7 @@ TEST_F(LandingGroundEffectTest, LoggedGroundEffectBaroCollapseMustNotLaunchTheCr
     // reached, at any time BEFORE it first touched the ground. This one fitted scenario no longer
     // separates fixed from unfixed on #15584's estimator - it stays under this bar either way -
     // so it is kept as a floor, and the sweep below carries the ablation. What is left here is
-    // the estimate itself: at the worst point the filter reports -430 cm of altitude, and the
+    // the estimate itself: at the worst point the filter reports -2625 cm of altitude, and the
     // terms it drives are P (clamped by the nav-target rate limit), D (clamped by the sink
     // bound), I, against A and F. Closing that needs an estimator-side fix - #15584's
     // baroGroundEffectRScale(), which cannot fire here because this rig has no rangefinder - not
@@ -722,7 +725,7 @@ TEST_F(LandingGroundEffectTest, LoggedGroundEffectBaroCollapseMustNotLaunchTheCr
 
     // A landing never needs thrust far above hover; the airframe here needs about 1300 PWM. This
     // is an absolute sanity bound, not a discriminating one: with the sink bound removed this
-    // scenario measures 1409 PWM against 1411 with it. The sweep below is what separates the two.
+    // scenario measures 1678 PWM against 1391 with it. The sweep below is what separates the two.
     EXPECT_LT(r.peakThrottlePwm, 1450.0f)
         << "commanded " << r.peakThrottlePwm << " PWM during a 60 cm/s landing";
     EXPECT_LT(sim.altCm, 5.0f) << "did not settle on the ground: finished at " << sim.altCm << " cm";
@@ -753,12 +756,12 @@ TEST_F(LandingGroundEffectTest, LandingCompletesWithTheProductionThrustCeiling)
         << "did not settle on the ground: finished at " << sim.altCm
         << " cm with the thrust ceiling " << (settle.armed ? "armed" : "released");
     // The landing must actually end, and end on the deck rather than by dropping the craft from
-    // height when the commit backstop expires. Measured: complete at 12.6 s, 0.0 cm.
+    // height when the commit backstop expires. Measured: complete at 11.8 s, 0.0 cm.
     EXPECT_TRUE(r.disarmed) << "the landing never completed";
     EXPECT_LT(r.disarmAltCm, 5.0f)
         << "the landing completed with the craft still " << r.disarmAltCm
         << " cm up, so the motors were cut on a craft that had not landed";
-    // 204 cm unfixed, 65 cm here. This excursion happens after the craft has already reached the
+    // 139 cm unfixed, 32 cm here. This excursion happens after the craft has already reached the
     // ground and belongs to the touchdown detector's latency, not to the altitude loop.
     EXPECT_LT(r.postTouchdownPeakCm, 100.0f)
         << "lifted back off the deck to " << r.postTouchdownPeakCm
@@ -784,12 +787,15 @@ TEST_F(LandingGroundEffectTest, TheBoundIsInertWhenNoLandingIsActive)
     sim.altCm = 300.0f;
     settleInHover(sim, ge, 300.0f, 600);
 
-    LandingSettleMonitor settle;
-    const LandingResult r = flyLanding(sim, ge, 60.0f, 3000, &settle, false /* no landing */);
+    // landingActive = false: production non-landing paths never run updateLanding(), so the
+    // settle monitor must not run either. A null monitor reproduces that: the bound stays off
+    // (landingActive gates it in flyLanding) and the ceiling never arms, so this cell shows the
+    // unpatched behaviour intact.
+    const LandingResult r = flyLanding(sim, ge, 60.0f, 3000, nullptr, false /* no landing */);
 
-    // The unfixed behaviour. Against the pre-#15584 estimator this cell reached 1592 PWM; the
-    // Kalman filter attenuates the phantom sink (see test 7) so it now reaches 1404, but the
-    // excursion is still there and still unbounded, which is what this test is for.
+    // The unfixed behaviour. The Kalman filter attenuates the phantom sink (see test 7) but
+    // this cell still reaches 1678 PWM here, and the excursion is still there and still
+    // unbounded, which is what this test is for.
     EXPECT_GT(r.peakThrottlePwm, 1380.0f)
         << "peak throttle was only " << r.peakThrottlePwm
         << " PWM with no landing active: something is bounding the loop outside a landing";
@@ -846,12 +852,13 @@ TEST_F(LandingGroundEffectTest, GenuineClimbDuringALandingIsNotBounded)
 // commanded) and is bounded beyond that, so the craft falls slightly faster before the loop
 // recovers it. Measured peak true sink, unbounded vs bounded:
 //
-//   15% shortfall   -152 -> -155 cm/s
-//   30% shortfall   -257 -> -283 cm/s
-//   45% shortfall   -357 -> -388 cm/s
+//   15% shortfall   -78 -> -78 cm/s
+//   30% shortfall   -116 -> -116 cm/s
+//   45% shortfall   -171 -> -202 cm/s
 //
-// That is the honest price of the fix: about 10% more peak sink in a genuine below-4 m fall, in
-// exchange for the 1746 -> 1314 PWM in test 2. It lands in every case.
+// That is the honest price of the fix: up to ~19% more peak sink in the deepest genuine
+// below-4 m fall tested, nothing measurable in the shallower two, in
+// exchange for the 1678 -> 1391 PWM in test 2. It lands in every case.
 TEST_F(LandingGroundEffectTest, GenuineFallDuringALandingCostsLittleArrestAuthority)
 {
     const float sags[] = { 0.85f, 0.70f, 0.55f };
@@ -865,9 +872,8 @@ TEST_F(LandingGroundEffectTest, GenuineFallDuringALandingCostsLittleArrestAuthor
             sim.altCm = 300.0f;
             settleInHover(sim, ge, 300.0f, 600);
             float carrotCm = getAltitudeCmControl();
-            // 18 s at 60 cm/s. The hover now settles at ~300 cm rather than the ~220 cm the
-            // pre-#15584 estimator floated down to, and a 45% thrust shortfall costs further
-            // altitude that has to be re-flown, so 6 s no longer reaches the ground.
+            // 18 s at 60 cm/s. The hover now settles at ~300 cm, and a 45% thrust shortfall costs
+            // further altitude that has to be re-flown, so 6 s no longer reaches the ground.
             for (int i = 0; i < 1800 && !touched[guard]; i++) {
                 autopilotSetLandingActive(guard != 0);
                 sim.thrustScale = (i >= 20 && i < 120) ? sag : 1.0f;   // 1 s of shortfall
@@ -914,13 +920,14 @@ TEST_F(LandingGroundEffectTest, TheAltitudeEstimateItselfRemainsCorrupted)
         sim.vzCmS = -60.0f;
         simBaroAltitudeCm = baroSampleAndHold(ge.reportedAltCm(sim.altCm));
         setAccelUpCmS2(0.0f);                 // constant velocity: the accelerometer reads 1 g
-        calculateEstimatedAltitude();
+        positionUpdate();
         worstEstimatorVz = std::min(worstEstimatorVz, positionEstimatorGetVerticalVelocity());
         advanceClock();
     }
 
-    // Unfixed by this commit: the filter still believes the collapse. #15584's Kalman estimator
-    // attenuates it from about -945 cm/s to about -342 cm/s - a real improvement, and the reason
+    // Unfixed by this commit: the filter still believes the collapse. Measured this session
+    // at about -383 cm/s against a genuine -60 cm/s descent - the Kalman estimator attenuates
+    // the collapse but does not remove it, and the
     // the threshold here is no longer the dBoost knee - but it does not remove it, and the
     // no-rangefinder configuration this rig models is precisely the one where #15584's
     // ground-effect R derate cannot fire (baroGroundEffectRScale() returns 1.0 without a
@@ -936,9 +943,16 @@ TEST_F(LandingGroundEffectTest, TheAltitudeEstimateItselfRemainsCorrupted)
 // 8. The artefact parameters are a least-squares fit to one logged event. Sweep around them.
 // ---------------------------------------------------------------------------------------------
 // A fix that only works at the fitted point is worthless. Each cell is compared against its own
-// honest-barometer control rather than an absolute number, because the rig has behaviours of its
-// own: at 30 cm/s the modelled ground effect alone floats the craft off from about 10 cm even
-// with a perfect sensor. Only the difference the artefact makes is attributable to the fix.
+// honest-barometer control rather than an absolute number, because only the difference the
+// artefact makes is attributable to the fix. The 30 cm/s cells used to need a special branch:
+// pre-rebase the rig's ported touchdown monitor completed those landings mid-air (motors cut
+// high, both peak throttles 0.0 PWM). Post-rebase that artefact is gone, measured this session:
+// all twelve rate-30 cells descend under thrust (smallest pre-contact peak 1293 PWM) and every
+// completed landing disarms on the deck (disarmAltCm 0.00 cm; the bias-500 and bias-2200 cells
+// at onset 60 / rate 30 are still on the ground un-disarmed when the 30 s window ends, at
+// 14.79 / 0.00 cm final). No cell cuts high, so all 36 cells assert the same guarded throttle
+// bounds below. The 0.0-guards stay on every cell: if the mid-air cut ever returns, they are
+// what catches it.
 TEST_F(LandingGroundEffectTest, GroundEffectArtefactSweep)
 {
     const float biases[] = { 500.0f, 1100.0f, 2200.0f, 4400.0f };
@@ -977,21 +991,33 @@ TEST_F(LandingGroundEffectTest, GroundEffectArtefactSweep)
 
                 EXPECT_TRUE(r.touched) << at << ": never reached the ground";
                 EXPECT_LT(r.lowestAltCm, 3.0f) << at << ": closest approach " << r.lowestAltCm << " cm";
+                // Guard: a 0.0 peak means no thrust was ever commanded, and the
+                // bounds below would pass vacuously. Fail first, loudly.
+                EXPECT_GT(r.peakThrottlePreContactPwm, 0.0f)
+                    << at << ": no pre-contact thrust recorded: the bounds below "
+                    << "would pass without exercising anything";
+                EXPECT_GT(r.peakThrottlePwm, 0.0f)
+                    << at << ": no thrust recorded at all: the bound below "
+                    << "would pass without exercising anything";
                 // Worst cell across this grid, measured ON vs OFF over the whole 36-cell sweep
-                // against #15584's estimator: 1564 PWM with the bound against 1816 (throttleMax)
-                // without it, and 11 of the 36 cells saturate at throttleMax unbounded. Peak
-                // rebound over the grid is 74 cm bounded against 201 cm unbounded. That ratio,
+                // on the rebased code: 1460 PWM pre-contact (bias 4400 / onset 20 / rate 120)
+                // and 1553 peak (bias 2200 / onset 60 / rate 120) with the bound, against
+                // 1900/1900 without it (bias 4400 cells, where the ablation saturates at
+                // throttleMax 1900 in nine cells). Peak
+                // rebound over the grid is 103 cm bounded (bias 4400 / onset 60 / rate 120)
+                // against 237 cm unbounded (bias 4400 / onset 60 / rate 30). That ratio,
                 // not the absolute number, is what this test is asserting; the absolutes are
                 // re-baselined from measurement and carry ~5% margin.
-                EXPECT_LT(r.peakThrottlePreContactPwm, 1500.0f)
+                EXPECT_LT(r.peakThrottlePreContactPwm, 1540.0f)
                     << at << ": commanded " << r.peakThrottlePreContactPwm
                     << " PWM before ever reaching the ground";
-                EXPECT_LT(r.peakThrottlePwm, 1650.0f)
+                EXPECT_LT(r.peakThrottlePwm, 1640.0f)
                     << at << ": commanded " << r.peakThrottlePwm << " PWM during a landing";
                 // Rebound is bounded, not eliminated, and this is the ablation that shows it.
-                // Worst residual over this grid is 122 cm, at onset 60 / rate 120; with the sink
-                // bound removed the same grid reaches 180 cm and saturates the throttle at
-                // kMaxPwm in seven cells, which the two assertions above catch. So the bound
+                // Worst residual over this grid is 103 cm, at bias 4400 / onset 60 / rate 120;
+                // with the sink bound removed the same grid reaches 237 cm (bias 4400 /
+                // onset 60 / rate 30) and saturates the throttle at kMaxPwm in nine cells,
+                // which the two assertions above catch. So the bound
                 // stops the launch without closing the residual: what is left needs an
                 // estimator-side fix, not a tighter clamp.
                 EXPECT_LT(r.preContactReboundCm, controlReboundCm + 140.0f)
@@ -1001,4 +1027,3 @@ TEST_F(LandingGroundEffectTest, GroundEffectArtefactSweep)
         }
     }
 }
-

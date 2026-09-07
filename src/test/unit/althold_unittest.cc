@@ -261,7 +261,7 @@ TEST_F(AltholdControlUnittest, AltitudeControlLandingTargetDoesNotSaturateThrott
 
     // hold the target for a few seconds of task iterations so any iTerm windup would show up
     for (int i = 0; i < 500; i++) {
-        altitudeControl(landingTargetCm, 0.01f, -descendRateCmS, descendRateCmS);
+        altitudeControl(landingTargetCm, TASK_PERIOD_HZ(100), -descendRateCmS, descendRateCmS);
     }
 
     const float throttleMin = autopilotConfig()->throttleMin;
@@ -459,6 +459,7 @@ TEST_F(AltholdControlUnittest, LandingSimSettlesOnGroundInsteadOfBouncing)
     auto runStep = [&]() {
         testAltitudeCm = sim.altCm;
         testAltitudeDerivativeCmS = sim.vzCmS;
+        testAltitudeAccelerationCmS = sim.accelCmS2;   // altitudeA is live; leaving it 0 mutes it
         updateAltHold(0);
         const float throttlePwm = autopilotThrottlePwm();
         sim.step(throttlePwm, simHoverPwm, 1000.0f, dt);
@@ -475,7 +476,7 @@ TEST_F(AltholdControlUnittest, LandingSimSettlesOnGroundInsteadOfBouncing)
     testNavCmd.includeAltitude = true;
     testNavTargetVelZCmS = -descendRateCmS;
 
-    int liftoffsAfterContact = 0;
+    int airborneStepsAfterContact = 0;
     bool everTouched = false;
     float stallS = 0.0f;
     for (int i = 0; i < 2000; i++) {
@@ -484,11 +485,11 @@ TEST_F(AltholdControlUnittest, LandingSimSettlesOnGroundInsteadOfBouncing)
         autopilotSetLandingSettle(stallS > 0.8f);
         runStep();
         if (sim.altCm <= 0.01f) { everTouched = true; }
-        else if (everTouched && sim.altCm > 5.0f) { liftoffsAfterContact++; }
+        else if (everTouched && sim.altCm > 5.0f) { airborneStepsAfterContact++; }
     }
 
     EXPECT_TRUE(everTouched) << "never reached the ground";
-    EXPECT_LT(liftoffsAfterContact, 20) << "craft kept leaving the ground after touchdown";
+    EXPECT_LT(airborneStepsAfterContact, 20) << "craft spent too long airborne after touchdown";
     EXPECT_LT(sim.altCm, 5.0f) << "did not settle on the ground";
     EXPECT_NEAR(sim.vzCmS, 0.0f, 25.0f) << "still moving vertically at the end";
 }
@@ -524,6 +525,7 @@ TEST_F(AltholdControlUnittest, LandingSettleDoesNotWindIntegralDownAgainstTheCei
     auto runStep = [&]() {
         testAltitudeCm = sim.altCm;
         testAltitudeDerivativeCmS = sim.vzCmS;
+        testAltitudeAccelerationCmS = sim.accelCmS2;   // altitudeA is live; leaving it 0 mutes it
         updateAltHold(0);
         const float throttlePwm = autopilotThrottlePwm();
         sim.step(throttlePwm, simHoverPwm, 1000.0f, dt);
@@ -576,7 +578,7 @@ TEST_F(AltholdControlUnittest, ResetAltitudeControlClearsLandingSettle)
     testAltitudeCm = 0.0f;
     testAltitudeDerivativeCmS = 0.0f;
     for (int i = 0; i < 500; i++) {
-        altitudeControl(-500.0f, 0.01f, -120.0f, 0.0f);
+        altitudeControl(-500.0f, TASK_PERIOD_HZ(100), -120.0f, 0.0f);
     }
     ASSERT_LE(debug[0], minPwm + 1) << "ceiling never bled down, test cannot prove anything";
 
@@ -584,7 +586,7 @@ TEST_F(AltholdControlUnittest, ResetAltitudeControlClearsLandingSettle)
     // ask for a climb. A stale ceiling would hold the output at throttleMin regardless of demand.
     resetAltitudeControl();
     for (int i = 0; i < 20; i++) {
-        altitudeControl(500.0f, 0.01f, 100.0f, 0.0f);
+        altitudeControl(500.0f, TASK_PERIOD_HZ(100), 100.0f, 0.0f);
     }
 
     EXPECT_GT(debug[0], minPwm + 100)
@@ -649,12 +651,12 @@ TEST_F(AltholdControlUnittest, StaleITermUnwindsWhenTargetIsFarBelow)
     // Build the stale trim the way flight does: a small persistent error inside the rate limit.
     // A large error is itself rate limited and would never integrate.
     for (int i = 0; i < 3000; i++) {
-        altitudeControl(testAltitudeCm + 79.0f, 0.01f, 80.0f, 80.0f);
+        altitudeControl(testAltitudeCm + 79.0f, TASK_PERIOD_HZ(100), 80.0f, 80.0f);
     }
 
     // Target jumps far below, as the fallback descent commands.
     for (int i = 0; i < 6000; i++) {
-        altitudeControl(testAltitudeCm - 2900.0f, 0.01f, -80.0f, 80.0f);
+        altitudeControl(testAltitudeCm - 2900.0f, TASK_PERIOD_HZ(100), -80.0f, 80.0f);
     }
 
     const float throttlePwm = autopilotThrottlePwm();
