@@ -92,10 +92,13 @@ void systemReset(void)
     SCB_DisableICache();
 
     __disable_irq();
+    /*
+     * Leave SDMMC powered until the system reset. The vendor power-down
+     * routine waits without a timeout, so calling it for an unresponsive
+     * SDMMC host could prevent us from reaching NVIC_SystemReset().
+     */
     PWR_MoudlePowerEnable(HSC1_USB1_PWRCTRL, DISABLE);
-    // PWR_MoudlePowerEnable(HSC1_SDMMC1_PWRCTRL, DISABLE);
     PWR_MoudlePowerEnable(HSC2_USB2_PWRCTRL, DISABLE);
-    // PWR_MoudlePowerEnable(HSC2_SDMMC2_PWRCTRL, DISABLE);
     delayMicroseconds(500);
     NVIC_SystemReset();
 }

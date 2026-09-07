@@ -551,7 +551,7 @@ static void usbRecoverStalledTx(void)
  *
  * @param  ptrBuffer   Data to send.
  * @param  sendLength  Number of bytes to send.
- * @return sendLength (always succeeds, may block until buffer has space).
+ * @return Bytes queued, or zero if recovery discarded bytes queued by this call.
  */
 uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 {
@@ -572,6 +572,7 @@ uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
             return 0;
         }
         if ((millis() - waitStartedAt) >= USB_CDC_TX_TIMEOUT_MS) {
+            /* Recovery clears USB_Tx_State and the abandoned queue atomically. */
             usbRecoverStalledTx();
             break;
         }
