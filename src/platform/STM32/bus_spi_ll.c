@@ -380,7 +380,7 @@ void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segmen
     if (txData) {
 #ifdef __DCACHE_PRESENT
 #ifdef STM32H7
-        if ((txData < &_dmaram_start__) || (txData >= &_dmaram_end__)) {
+        if (!isDmaramUncached(txData, len)) {
 #else
         // No need to flush DTCM memory
         if (!IS_DTCM(txData)) {
@@ -413,7 +413,7 @@ void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segmen
 #ifdef __DCACHE_PRESENT
             // No need to flush/invalidate DTCM memory
 #ifdef STM32H7
-            if ((rxData < &_dmaram_start__) || (rxData >= &_dmaram_end__)) {
+            if (!isDmaramUncached(rxData, len)) {
 #else
             // No need to flush DTCM memory
             if (!IS_DTCM(rxData)) {

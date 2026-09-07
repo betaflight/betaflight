@@ -352,7 +352,6 @@ int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
     }
 }
 
-#if !OSD_FB_ELEMENT_ENABLE_ALTITUDE
 static void osdFormatAltitudeString(char * buff, int32_t altitudeCm, osdElementType_e variantType)
 {
     static const struct {
@@ -376,7 +375,6 @@ static void osdFormatAltitudeString(char * buff, int32_t altitudeCm, osdElementT
 
     osdPrintFloat(buff, SYM_ALTITUDE, osdGetMetersToSelectedUnit(alt) / 100.0f, "", decimalPlaces, true, unitSymbol);
 }
-#endif
 
 #ifdef USE_GPS
 static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, osdElementType_e variantType)
@@ -793,9 +791,6 @@ static void osdElementAdjustmentRange(osdElementParms_t *element)
 
 static void osdElementAltitude(osdElementParms_t *element)
 {
-#if OSD_FB_ELEMENT_ENABLE_ALTITUDE
-    UNUSED(element);
-#else
     bool haveBaro = false;
     bool haveGps = false;
 #ifdef USE_BARO
@@ -817,7 +812,6 @@ static void osdElementAltitude(osdElementParms_t *element)
         element->buff[1] = SYM_HYPHEN; // We use this symbol when we don't have a valid measure
         element->buff[2] = '\0';
     }
-#endif
 }
 
 #ifdef USE_ACC
@@ -839,9 +833,6 @@ static void osdElementAntiGravity(osdElementParms_t *element)
 
 static void osdElementArtificialHorizon(osdElementParms_t *element)
 {
-#if OSD_FB_ELEMENT_ENABLE_ARTIFICIAL_HORIZON
-    UNUSED(element);
-#else
     static int x = -4;
     // Get pitch and roll limits in tenths of degrees
     const int maxPitch = osdConfig()->ahMaxPitch * 10;
@@ -874,7 +865,6 @@ static void osdElementArtificialHorizon(osdElementParms_t *element)
         element->rendered = false;
         x++;
     }
-#endif
 }
 
 static void osdElementUpDownReference(osdElementParms_t *element)
@@ -1492,9 +1482,6 @@ static void osdElementGpsLapTimeBest3(osdElementParms_t *element)
 
 static void osdBackgroundHorizonSidebars(osdElementParms_t *element)
 {
-#if OSD_FB_ELEMENT_ENABLE_ARTIFICIAL_HORIZON
-    UNUSED(element);
-#else
     static bool renderLevel = false;
     static int8_t y = -AH_SIDEBAR_HEIGHT_POS;
     // Draw AH sides
@@ -1523,7 +1510,6 @@ static void osdBackgroundHorizonSidebars(osdElementParms_t *element)
     }
 
     element->drawElement = false;  // element already drawn
-#endif
 }
 
 #ifdef USE_RX_LINK_QUALITY_INFO
@@ -1844,19 +1830,18 @@ static void osdElementRemainingTimeEstimate(osdElementParms_t *element)
 
 static void osdElementRssi(osdElementParms_t *element)
 {
-    uint16_t osdRssiPercent = getRssiPercent();
-    if (osdRssiPercent >= 100) {
-        osdRssiPercent = 99;
-    }
+    const uint16_t osdRssiPercent = getRssiPercent();
 
     if (osdRssiPercent < osdConfig()->rssi_alarm) {
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
+    const uint16_t osdRssiPercentDisplay = MIN(osdRssiPercent, 99);
+
 #ifdef OSD_RSSI_WITH_SYMBOL
-    tfp_sprintf(element->buff, "%c%c %2d", SYM_HEADSET, SYM_RSSI, osdRssiPercent);
+    tfp_sprintf(element->buff, "%c%c %2d", SYM_HEADSET, SYM_RSSI, osdRssiPercentDisplay);
 #else
-    tfp_sprintf(element->buff, "%c%2d", SYM_RSSI, osdRssiPercent);
+    tfp_sprintf(element->buff, "%c%2d", SYM_RSSI, osdRssiPercentDisplay);
 #endif
 }
 

@@ -35,9 +35,17 @@
 #include "flight/position.h"
 #include "flight/position_estimator.h"
 #include "rx/rx.h"
+#include "scheduler/scheduler.h"
 
 #include "pg/pos_hold.h"
 #include "pos_hold.h"
+
+// TASK_POSHOLD is event driven off positionEstimatorUpdate(), so the control law
+// sees each new position estimate immediately rather than up to a task period
+// later. If the estimator is not running at all (TASK_POSITION disabled) this is
+// the interval after which the task falls back to periodic scheduling, so that
+// mode entry and exit are still serviced.
+#define POSHOLD_FALLBACK_PERIOD_US (2 * TASK_PERIOD_HZ(POSHOLD_TASK_RATE_HZ))
 
 typedef struct posHoldState_s {
     bool isEnabled;
@@ -82,6 +90,18 @@ static bool sensorsOk(void)
     } else {
         return true; // if no heading is needed, we don't care about it (optical flow situation)
     }
+}
+
+bool posHoldUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    if (positionEstimatorTakeUpdate(POS_EST_CONSUMER_POSHOLD)) {
+        return true;
+    }
+
+    // No estimator running, so fall back to periodic scheduling
+    return currentDeltaTimeUs >= POSHOLD_FALLBACK_PERIOD_US;
 }
 
 void updatePosHold(timeUs_t currentTimeUs)
