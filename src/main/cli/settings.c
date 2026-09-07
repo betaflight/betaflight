@@ -2104,8 +2104,10 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_AP_POSITION_A,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, positionA) },
     { PARAM_NAME_AP_POSITION_F,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, positionF) },
     { PARAM_NAME_AP_POSITION_CUTOFF,     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 50 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, positionCutoff) },
-    { PARAM_NAME_AP_STOP_THRESHOLD,      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 50 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, stopThreshold) },
+    { PARAM_NAME_AP_STOP_THRESHOLD,      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 50 },      PG_AUTOPILOT, offsetof(autopilotConfig_t, stopThreshold) },
     { PARAM_NAME_AP_MAX_ANGLE,           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 70 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, maxAngle) },
+    { PARAM_NAME_AP_MAX_YAW_RATE,        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 250 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, maxYawRate) },
+    { PARAM_NAME_AP_YAW_P,               VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, yawP) },
 
     // Drag feedforward and velocity setpoint cap
     { PARAM_NAME_AP_VELOCITY_DRAG_COEFF, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, velocityDragCoeff) },

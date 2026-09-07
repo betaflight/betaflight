@@ -646,23 +646,10 @@ FAST_CODE void processRcCommand(void)
 
             float angleRate;
 
-#ifdef USE_GPS_RESCUE
-            if ((axis == FD_YAW) && FLIGHT_MODE(GPS_RESCUE_MODE)) {
-                // If GPS Rescue is active then override the setpointRate used in the
-                // pid controller with the value calculated from the desired heading logic.
-                angleRate = gpsRescueGetYawRate();
-                // Treat the stick input as centered to avoid any stick deflection base modifications (like acceleration limit)
-                rcDeflection[axis] = 0;
-                rcDeflectionAbs[axis] = 0;
-            } else
-#endif
             if ((axis == FD_YAW) && autopilotYawControlActive()
                 && fabsf(rcCommand[FD_YAW]) < (float)autopilotConfig()->stickDeadband) {
-                // Mission and position hold yaw control, injected the same way as GPS
-                // rescue; a yaw stick deflection past the deadband hands yaw back to the
-                // pilot. autopilotYawControlActive() is the single source of truth for
-                // whether a rate is on offer - every path that stands the controller
-                // down clears it.
+                // Autopilotyaw control inclusing GPS Rescue. A yaw stick deflection past
+                // the deadband hands yaw back to the pilot.
                 angleRate = autopilotGetYawRate();
                 rcDeflection[axis] = 0;
                 rcDeflectionAbs[axis] = 0;

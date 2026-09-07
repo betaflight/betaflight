@@ -1159,7 +1159,7 @@ TEST_F(PosHoldTest, YawControlGoesInactiveWithTheModeNotTheNextTick)
     // non-zero or the hold re-captures every tick, mirroring rc.c declining to inject.
     autopilotConfig_t *cfg = autopilotConfigMutable();
     cfg->yawP = 30;
-    cfg->maxYawRate = 30;
+    cfg->maxYawRate = 150;
     cfg->stickDeadband = 50;
 
     armingFlags = ARMED;

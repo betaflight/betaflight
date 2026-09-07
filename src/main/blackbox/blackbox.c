@@ -1780,6 +1780,8 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_CUTOFF, "%d",    autopilotConfig()->positionCutoff);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_STOP_THRESHOLD, "%d",     autopilotConfig()->stopThreshold);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_MAX_ANGLE, "%d",          autopilotConfig()->maxAngle);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_MAX_YAW_RATE, "%d",       autopilotConfig()->maxYawRate);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_YAW_P, "%d",              autopilotConfig()->yawP);
 #endif // !USE_WING
 
 #ifdef USE_MAG
