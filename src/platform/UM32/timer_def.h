@@ -184,7 +184,7 @@
 #define DEF_TIM_DMA__BTCH_TIM8_CH1    D(2, 2,  3)  //PC6
 #define DEF_TIM_DMA__BTCH_TIM8_CH2    D(2, 2,  3)  //PC7
 #define DEF_TIM_DMA__BTCH_TIM8_CH3    D(2, 2,  3)  //PC8
-#define DEF_TIM_DMA__BTCH_TIM8_CH4    D(2, 7,  3)  //PC8
+#define DEF_TIM_DMA__BTCH_TIM8_CH4    D(2, 7,  3)  //PC9
 
 #define DEF_TIM_DMA__BTCH_TIM9_CH1    D(2, 10, 2)  //MOTOR PE5, shared PA9
 

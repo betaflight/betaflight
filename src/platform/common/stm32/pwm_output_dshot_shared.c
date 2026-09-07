@@ -220,9 +220,21 @@ static uint32_t decodeTelemetryPacket(const uint32_t buffer[], uint32_t count)
             // as a spurious extra edge; skip padding so the bits != 21 check
             // below rejects the packet (returns 0xffff / DSHOT_TELEMETRY_INVALID).
             len = 21 - bits;
+#if defined(UM324xF)
+            /* UM324: the edges count is the DW_ahb CTLH *remaining* count, so
+             * this decode runs on a PREFIX of the captured timestamps and the
+             * prefix's final level is arbitrary — rejecting on level==0
+             * discards valid packets (M2 marginal-signal error rate went
+             * 0.03% -> 10%). Pad unconditionally, matching the 4.5.x decode
+             * this platform was validated with. */
+            if (len <= 0) {
+                break;
+            }
+#else
             if (len <= 0 || level == 0) {
                 break; // done or spurious pullup edge
             }
+#endif
         }
         value <<= len;
         value |= 1 << (len - 1);

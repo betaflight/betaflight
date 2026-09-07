@@ -89,6 +89,19 @@ void pwmDshotSetDirectionOutput(
     LL_TIM_OC_Init(timer, motor->llChannel, pOcInit);
     LL_TIM_OC_EnablePreload(timer, motor->llChannel);
 
+#ifdef USE_DSHOT_DMAR
+    if (useBurstDshot) {
+        /* Burst mode: the UP feed config set by pwmDshotMotorHardwareConfig
+         * (DMAR destination, UP handshake) must survive — the per-motor
+         * CCR/CC-handshake values below would clobber it. Unidirectional
+         * burst never switches direction. */
+        motor->dmaInitStruct.Direction = LL_DMA_MEMORY_TO_PERIPH;
+        xLL_EX_DMA_Init(motor->dmaRef, pDmaInit);
+        xLL_EX_DMA_EnableIT_TC(motor->dmaRef);
+        return;
+    }
+#endif
+
     motor->dmaInitStruct.Direction = LL_DMA_MEMORY_TO_PERIPH;
     motor->dmaInitStruct.SrcAddress = (uint32_t)motor->dmaBuffer;
     motor->dmaInitStruct.DstAddress = (uint32_t)timerChCCR(timerHardware);
@@ -174,7 +187,6 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, STATUSBLOCK)) {
         motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
-        LL_TIM_DisableCounter((TIM_TypeDef *)motor->timerHardware->tim);
 #ifdef USE_DSHOT_TELEMETRY
         if (!motor->isInput) {
             dshotDMAHandlerCycleCounters.irqAt = getCycleCounter();
@@ -182,14 +194,13 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 #ifdef USE_DSHOT_DMAR
             if (useBurstDshot) {
                 xLL_EX_DMA_DisableResource(motor->timerHardware->dmaTimUPRef);
-                LL_TIM_DisableDMAReq_UPDATE(motor->timerHardware->tim);
+                LL_TIM_DisableDMAReq_UPDATE((TIM_TypeDef *)motor->timerHardware->tim);
             } else
 #endif
             {
-                xLL_EX_DMA_ConsumeRequest(motor->dmaRef);
-
-                LL_EX_TIM_DisableIT((TIM_TypeDef *)motor->timerHardware->tim, motor->timerDmaSource);
+                LL_EX_TIM_DisableIT((TIM_TypeDef *)motor->timerHardware->tim, motor->timerDmaSource);                
                 xLL_EX_DMA_DisableResource(motor->dmaRef);
+                xLL_EX_DMA_ConsumeRequest(motor->dmaRef);
             }
 
 #ifdef USE_DSHOT_TELEMETRY
@@ -202,7 +213,6 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
             }
         }
 #endif
-        LL_TIM_EnableCounter((TIM_TypeDef *)motor->timerHardware->tim);
         DMA_CLEAR_FLAG(descriptor, CLEARBLOCK);
     }
 }
@@ -251,9 +261,9 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
         const resourceOwner_t *owner = dmaGetOwner(dmaIdentifier);
-        if (owner->owner == OWNER_TIMUP && owner->resourceIndex == timerGetTIMNumber(timerHardware->tim)) {
+        if (owner->owner == OWNER_TIMUP && owner->index == timerGetTIMNumber(timerHardware)) {
             dmaIsConfigured = true;
-        } else if (!dmaAllocate(dmaIdentifier, OWNER_TIMUP, timerGetTIMNumber(timerHardware->tim))) {
+        } else if (!dmaAllocate(dmaIdentifier, OWNER_TIMUP, timerGetTIMNumber(timerHardware))) {
             return false;
         }
     } else
@@ -367,7 +377,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
         DMAINIT.Channel = dmaChannel;
         DMAINIT.SrcAddress = (uint32_t)motor->timer->dmaBurstBuffer;
-        DMAINIT.DstAddress = (uint32_t)&timerHardware->tim->DMAR;
+        DMAINIT.DstAddress = (uint32_t)&timer->DMAR;
     } else
 #endif
     {
@@ -387,8 +397,16 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     DMAINIT.DstDataAlignment    = LL_DMA_DSTDATAALIGN_WORD;
     DMAINIT.SrcHsSel            = LL_DMA_SRC_HS_HW;
     DMAINIT.DstHsSel            = LL_DMA_DST_HS_HW;
-    DMAINIT.SrcPer              = DMA_SRC_HANDSHAKING(0);
-    DMAINIT.DstPer              = DMA_DST_HANDSHAKING(dmaSpec->code); 
+#ifdef USE_DSHOT_DMAR
+    if (useBurstDshot) {
+        DMAINIT.SrcPer          = DMA_SRC_HANDSHAKING(0xF);
+        DMAINIT.DstPer          = DMA_DST_HANDSHAKING(timerHardware->tim == (timerResource_t *)TIM1 ? DMA_CODE(2, 5, 1) : DMA_CODE(2, 1, 3));
+    } else
+#endif
+    {
+        DMAINIT.SrcPer          = DMA_SRC_HANDSHAKING(0);
+        DMAINIT.DstPer          = DMA_DST_HANDSHAKING(dmaSpec->code);
+    }
     DMAINIT.SrcReload           = LL_DMA_SRC_RELOAD_DISABLE;
     DMAINIT.DstReload           = LL_DMA_DST_RELOAD_DISABLE;
     DMAINIT.FIFOMode            = LL_DMA_FIFOMODE_DISABLE;

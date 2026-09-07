@@ -62,28 +62,38 @@ EX_CODE void debugInit(void)
     }
 
     //System PIN for internal resource.
-    if(isDshotBitbangActive(&motorConfig()->dev)){
-        io = IOGetByTag(DEFIO_TAG_E(PE5));
+    io = IOGetByTag(DEFIO_TAG_E(PE5));
+    if (IOGetOwner(io) == OWNER_FREE) {
         IOInit(io,  OWNER_SYSTEM,  0);
         IOConfigGPIO(io, IOCFG_IN_FLOATING);
+    }
 
-        io = IOGetByTag(DEFIO_TAG_E(PE7));
+    io = IOGetByTag(DEFIO_TAG_E(PE7));
+    if (IOGetOwner(io) == OWNER_FREE) {
         IOInit(io,  OWNER_SYSTEM,  0);
         IOConfigGPIO(io, IOCFG_IN_FLOATING);
+    }
 
-        io = IOGetByTag(DEFIO_TAG_E(PD8));
+    io = IOGetByTag(DEFIO_TAG_E(PD8));
+    if (IOGetOwner(io) == OWNER_FREE) {
         IOInit(io,  OWNER_SYSTEM,  0);
         IOConfigGPIO(io, IOCFG_IN_FLOATING);
-    } else {
-        io = IOGetByTag(DEFIO_TAG_E(PC8));
-        IOInit(io,  OWNER_SYSTEM,  0);
-        IOConfigGPIO(io, IOCFG_IN_FLOATING);
+    }
 
-        io = IOGetByTag(DEFIO_TAG_E(PC9));
+    io = IOGetByTag(DEFIO_TAG_E(PC8));
+    if (IOGetOwner(io) == OWNER_FREE) {
         IOInit(io,  OWNER_SYSTEM,  0);
         IOConfigGPIO(io, IOCFG_IN_FLOATING);
+    }
 
-        io = IOGetByTag(DEFIO_TAG_E(PA9));
+    io = IOGetByTag(DEFIO_TAG_E(PC9));
+    if (IOGetOwner(io) == OWNER_FREE) {
+        IOInit(io,  OWNER_SYSTEM,  0);
+        IOConfigGPIO(io, IOCFG_IN_FLOATING);
+    }
+
+    io = IOGetByTag(DEFIO_TAG_E(PA9));
+    if (IOGetOwner(io) == OWNER_FREE) {
         IOInit(io,  OWNER_SYSTEM,  0);
         IOConfigGPIO(io, IOCFG_IN_FLOATING);
     }

@@ -53,7 +53,6 @@
 
 // Helps with looptime stability as the CPU is borderline when running native gyro sampling
 #define USE_OVERCLOCK
-#define ENABLE_OVERCLOCK_288_MHZ 1
 #define ENABLE_OVERCLOCK_336_MHZ 1
 #define DEFAULT_CPU_OVERCLOCK 0
 
@@ -153,8 +152,8 @@
 #define MCO_DIVIDER_COUNT  5
 
 #define DMA_TRAIT_CHANNEL 1
-#define DMA_CHANREQ_STRING "Handshake"
-#define DMA_STCH_STRING    "Stream"
+#define DMA_CHANREQ_STRING "Stream"
+#define DMA_STCH_STRING    "Handshake"
 
 
 #ifdef USE_ITCM_RAM
