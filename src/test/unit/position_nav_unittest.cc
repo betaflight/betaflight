@@ -462,6 +462,98 @@ TEST_F(PositionNavTest, BrakingDominatesWhenVeryClose)
     EXPECT_NEAR(speedCmS, 10.0f, 2.0f);
 }
 
+// --- Settled-hold and pass-gate leg geometries ---
+//
+// blckmn's review question on the axis decoupling: the shared 3D direction vector was also the
+// old behaviour on the settled-hold leg (station-keeping arrival braking) and the pass-gate
+// leg (no braking, marched carrot), so either could change. Both legs keep the altitude gate
+// off — settled-hold keeps station (LAND-style) or drops it entirely (en-route), the carrot
+// never sets a vertical limit — so the horizontal and vertical errors are small and bounded
+// together, and the budget math below shows the old shared vector agreed with the new split
+// budgets there to first order. These pin the new budgets directly in those geometries, with
+// the simulation loop style of althold_unittest.cc: advance a fake estimate toward the
+// commanded velocity and watch the published rate converge. Numbers below are measured from
+// the built binary (PASS lines), not hand-derived.
+
+// Settled-hold geometry: 1.5 m out horizontally and 0.5 m off in height, arrival braking on,
+// the full commanded pair a station-keeping leg states (landing states 1.5 m/s + 0.3 m/s^2;
+// this uses the same numbers with the acceptance radius (0.5 m) inside the 1.5 m error,
+// as a HOLD leg's 2 m radius sits inside a far-approach error).
+TEST_F(PositionNavTest, SettledHoldLegCommandsBothAxesAtBrakingSchedule)
+{
+    const vector3_t target = {{ 1.5f, 0.0f, -0.5f }};
+    positionNavSetTargetEf(&target, 1.5f, 0.5f, 1000.0f, true, NULL, NULL);
+    positionNavSetAccelLimits(0.0f, 0.3f);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    positionNavUpdate(0.01f, &est);
+
+    // Horizontal: min(1.5 cruise, 1.0*1.5 Kp, sqrt(2*0.3*1.5)=0.949 braking).
+    // Vertical:   min(1.5 shared cruise, 1.0*0.5=0.5 Kp, sqrt(2*0.3*0.5)=0.548 braking):
+    // the Kp term binds, measured -50.0 cm/s on the built binary.
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
+    EXPECT_NEAR(sqrtf(vel.x * vel.x + vel.y * vel.y), 94.9f, 3.0f);
+    EXPECT_NEAR(vel.z, -50.0f, 3.0f);
+}
+
+// The old shared-3D-vector code would have commanded a single budget split along the 3D
+// direction; on this geometry it agrees with the split budgets (horizontal within ~1 cm/s).
+// A future change that moves the settled-hold horizontal rate off the braking schedule must
+// be justified as a loop-gain change, same as the landing alpha pin above.
+TEST_F(PositionNavTest, SettledHoldLegHorizontalRateMatchesOldSharedVector)
+{
+    const vector3_t target = {{ 1.5f, 0.0f, -0.5f }};
+    positionNavSetTargetEf(&target, 1.5f, 0.5f, 1000.0f, true, NULL, NULL);
+    positionNavSetAccelLimits(0.0f, 0.3f);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    positionNavUpdate(0.01f, &est);
+
+    // Old law: distance = sqrt(1.5^2+0.5^2) = 1.581 m; speed = min(1.5, 1.581, sqrt(0.6*1.581))
+    // = 0.974 m/s along (1.5, 0, -0.5)/1.581, i.e. horizontal 92.4 cm/s.
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
+    EXPECT_NEAR(sqrtf(vel.x * vel.x + vel.y * vel.y), 92.4f, 5.0f)
+        << "settled-hold horizontal rate moved off the old shared-vector value";
+}
+
+// Pass-gate geometry: the executor marches the carrot a bounded lead ahead of the craft and
+// states no braking, so each axis runs its own Kp term. A 6 m lead at 5 m/s cruise sits
+// beyond the 5 m Kp knee: horizontal saturates at cruise while the small vertical offset
+// tapers on its own error. Pinned because the old code coupled them: the same geometry
+// yielded ~4.99 m/s horizontal and a ~41 cm/s climb, i.e. the vertical carrot lagged the
+// waypoint altitude and alt hold chased a shallower climb.
+TEST_F(PositionNavTest, PassGateLegHorizontalCruiseDoesNotStarveVertical)
+{
+    const vector3_t target = {{ 6.0f, 0.0f, 0.5f }};
+    positionNavSetTargetEf(&target, 5.0f, -1.0f, 1000.0f, true, NULL, NULL);
+    positionNavSetAccelLimits(0.0f, 0.0f);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    positionNavUpdate(1.0f, &est);   // full second so the accel slew is not the limit
+
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
+    EXPECT_NEAR(sqrtf(vel.x * vel.x + vel.y * vel.y), 500.0f, 5.0f);
+    EXPECT_NEAR(vel.z, 50.0f, 3.0f) << "vertical tapers on its own 0.5 m error, not the 6 m lead";
+}
+
+// Pass-gate approach at the cruise knee: a 3 m lead at 3 m/s cruise. Both axes inside their
+// Kp knees, so each commands Kp * its own error — horizontal 300 cm/s, vertical 50 cm/s for
+// a 0.5 m altitude offset. The old shared vector gave ~295 cm/s horizontal and ~49 cm/s
+// vertical here: same first-order behaviour, now exact per axis.
+TEST_F(PositionNavTest, PassGateLegTracksBothAxesOnOwnErrors)
+{
+    const vector3_t target = {{ 3.0f, 0.0f, 0.5f }};
+    positionNavSetTargetEf(&target, 3.0f, -1.0f, 1000.0f, true, NULL, NULL);
+    positionNavSetAccelLimits(0.0f, 0.0f);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    positionNavUpdate(1.0f, &est);
+
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
+    EXPECT_NEAR(sqrtf(vel.x * vel.x + vel.y * vel.y), 300.0f, 5.0f);
+    EXPECT_NEAR(vel.z, 50.0f, 3.0f);
+}
+
 // --- Arrival detection ---
 
 TEST_F(PositionNavTest, ArrivalDetectedWhenWithinRadiusAndSlow)

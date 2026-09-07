@@ -356,6 +356,14 @@ protected:
         wp->pattern = pattern;
     }
 
+    static constexpr float kUnitsPerMetre = 1.0e7f / 111319.49f;
+
+    void addWaypointMetresForContract(float eastM, float northM, int32_t altCm, uint8_t type)
+    {
+        addWaypoint((int32_t)lrintf(northM * kUnitsPerMetre),
+                    (int32_t)lrintf(eastM * kUnitsPerMetre), altCm, type);
+    }
+
     void triggerReached() {
         ASSERT_NE(g_lastTarget.callback, nullptr);
         g_lastTarget.callback(g_lastTarget.userData);
@@ -775,6 +783,65 @@ TEST_F(FlightPlanNavPatternTest, PatternClearedOnAdvance)
 
     EXPECT_EQ(g_moveTargetCalls, movesAtAdvance);
     EXPECT_EQ(memcmp(&g_lastTarget.targetEfM, &legTarget, sizeof(legTarget)), 0);
+}
+
+// --- Axis-decoupling leg-contract pins (blckmn review on 33c217f3d) ---
+//
+// The pass-gate and settled-hold legs share positionNav's budget math with landing, so the
+// dispatch contract is pinned where the legs leave it: the carrot leg states no braking and
+// drops the altitude gate, the precise point leg states the 0.3 m/s^2 arrival brake and keeps
+// the gate only for station-keeping. The position_nav_unittest.cc pins on the same geometries
+// show the velocity schedule agrees with the old shared 3D vector there to first order, so
+// these dispatch pins plus those schedule pins are the full per-leg verdict.
+
+// A pass-gate leg is a pure velocity generator chasing the marched carrot: no arrival of its
+// own (negative acceptance sentinel), no braking for positionNav to apply, and no altitude
+// gate (the executor owns advancement). If a later change gives the carrot leg a brake or an
+// altitude gate, gate-crossing timing moves and the carrot tests above stop meaning the same.
+TEST_F(FlightPlanNavTest, PassGateLegDispatchStatesNoBrakingAndNoAltitudeGate)
+{
+    addWaypointMetresForContract(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER); // wp0 (pass-through)
+    addWaypointMetresForContract(0.0f, 200.0f, 15000, WAYPOINT_TYPE_FLYOVER); // wp1 (last)
+
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+
+    ASSERT_TRUE(g_lastTarget.valid);
+    EXPECT_LT(g_lastTarget.acceptanceRadiusM, 0.0f) << "carrot legs never self-complete";
+    EXPECT_FLOAT_EQ(g_lastMaxAccelMps2, 0.0f);
+    EXPECT_FLOAT_EQ(g_lastMaxDecelMps2, 0.0f) << "the carrot trapezoid owns the profile, not positionNav";
+    EXPECT_FALSE(g_altitudeArrivalRequired) << "en-route legs advance on horizontal arrival";
+    EXPECT_EQ(g_lastTarget.callback, nullptr) << "the executor owns gate advancement";
+}
+
+// A precise point leg (the last waypoint: the settled-hold approach) states the arrival brake
+// and keeps the altitude gate off for en-route waypoints, on for station-keeping. Either half
+// missing changes the settle: no brake carries cruise speed into the acceptance radius, and a
+// wrong altitude gate either orbits below the point or completes above it.
+TEST_F(FlightPlanNavTest, PreciseLegDispatchStatesArrivalBrakeAndAltitudeGate)
+{
+    // En-route last leg: brake on, altitude gate off.
+    addWaypointMetresForContract(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER); // only: last
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+
+    ASSERT_TRUE(g_lastTarget.valid);
+    EXPECT_GT(g_lastTarget.acceptanceRadiusM, 0.0f);
+    EXPECT_FLOAT_EQ(g_lastMaxAccelMps2, 0.0f);
+    EXPECT_NEAR(g_lastMaxDecelMps2, 0.3f, 0.001f) << "approach braking stated, not inherited";
+    EXPECT_FALSE(g_altitudeArrivalRequired);
+    EXPECT_NE(g_lastTarget.callback, nullptr);
+    flightPlanNavDisengage();
+
+    // Station-keeping leg: same brake, altitude gate kept.
+    SetUp();
+    addWaypointMetresForContract(0.0f, 100.0f, 15000, WAYPOINT_TYPE_HOLD);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+
+    ASSERT_TRUE(g_lastTarget.valid);
+    EXPECT_NEAR(g_lastMaxDecelMps2, 0.3f, 0.001f);
+    EXPECT_TRUE(g_altitudeArrivalRequired) << "HOLD keeps the altitude gate";
 }
 
 TEST_F(FlightPlanNavTest, OrbitPeriodMatchesRateCapAndCruiseLimit)
