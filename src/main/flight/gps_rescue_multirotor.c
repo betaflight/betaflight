@@ -692,7 +692,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 1, lrintf(rescueState.intent.targetVelocityCmS));  //!< Target Velocity [unit:cm/s]
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 3, lrintf(rescueState.intent.targetAltitudeCm));   //!< Target Altitude [unit:cm]
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 6, lrintf(rescueState.sensor.distanceToHomeCm));   //!< Distance To Home [unit:cm]
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 7, rescueState.phase);                             //!< Rescue Phase
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 7, rescueState.phase);                             //!< Rescue Phase [enum:rescuePhase_e]
 
     DEBUG_SET(DEBUG_RTH, 0, lrintf(rescueState.sensor.velocityCmS / 10.0f));                //!< Ground Speed [unit:0.1m/s]
     DEBUG_SET(DEBUG_RTH, 7, lrintf(rescueState.intent.targetVelocityCmS));                  //!< Target Velocity [unit:cm/s]

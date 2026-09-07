@@ -145,7 +145,8 @@ void updatePosHold(timeUs_t currentTimeUs)
             }
             posHold.isControlOk = positionControl();
         } else {
-            DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 333); // trap !aresensorsOk
+            // 333 traps the sensors-not-OK path
+            DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 333);  //!< Status Flags
             for (unsigned i = 0; i < RP_AXIS_COUNT; i++) {
                 autopilotAngle[i] = 0.0f;
             }

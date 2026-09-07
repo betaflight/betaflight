@@ -517,7 +517,7 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
                 if (baroIsCalibrated()) {
                     // zero baro altitude
                     baro.altitude = altitude - baroGroundAltitude;
-                    DEBUG_SET(DEBUG_BARO, 4, lrintf(baro.altitude)); // cm, before temp compensation
+                    DEBUG_SET(DEBUG_BARO, 4, lrintf(baro.altitude));  //!< Baro Altitude Before Temperature Correction [unit:cm]
 
                     // correct physical barometers for temperature drift
                     if (detectedSensors[SENSOR_INDEX_BARO] != BARO_VIRTUAL) {
