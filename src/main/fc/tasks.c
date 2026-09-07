@@ -150,8 +150,8 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
     UNUSED(currentTimeUs);
 
 #if defined(USE_VCP)
-    DEBUG_SET(DEBUG_USB, 0, usbCableIsInserted());
-    DEBUG_SET(DEBUG_USB, 1, usbVcpIsConnected());
+    DEBUG_SET(DEBUG_USB, 0, usbCableIsInserted());  //!< USB Cable Inserted
+    DEBUG_SET(DEBUG_USB, 1, usbVcpIsConnected());   //!< USB VCP Connected
 #endif
 
     bool evaluateMspData = ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA;
