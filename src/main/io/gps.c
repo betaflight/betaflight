@@ -421,8 +421,12 @@ void gpsInit(void)
     gpsData.platformVersion = UBX_VERSION_UNDEF;
 #ifdef USE_GPS_UBLOX
     gpsData.unknownHwVersion = 0;
+    gpsData.unknownHwVersionValid = false;
     gpsData.ubloxValidFrameReceived = false;
 #endif
+    gpsData.ubloxM7orAbove = false;
+    gpsData.ubloxM8orAbove = false;
+    gpsData.ubloxM9orAbove = false;
 
 #ifdef USE_DASHBOARD
     gpsData.errors = 0;
@@ -1080,7 +1084,13 @@ static void gpsConfigureUblox(void)
         // and proceeds normally.
         if (gpsData.ubloxValidFrameReceived) {
             gpsData.platformVersion = UBX_VERSION_UNKNOWN_GENERATION;
-            gpsData.unknownHwVersion = 0; // no MON-VER reply was ever received, so no hw code to report
+            gpsData.unknownHwVersion = 0;
+            gpsData.unknownHwVersionValid = false; // no MON-VER reply was ever received, so no hw code to report
+            // A module reconnecting here (e.g. after GPS_STATE_LOST_COMMUNICATION) could otherwise
+            // inherit stale capability flags left over from a previously connected, recognized module.
+            gpsData.ubloxM7orAbove = false;
+            gpsData.ubloxM8orAbove = false;
+            gpsData.ubloxM9orAbove = false;
             return;
         }
 
@@ -2667,6 +2677,12 @@ static bool UBLOX_parse_gps(void)
                 // keep the raw code around for `status` / `get GPS_VERSION` to display.
                 gpsData.platformVersion = UBX_VERSION_UNKNOWN_GENERATION;
                 gpsData.unknownHwVersion = ubloxHwVersion;
+                gpsData.unknownHwVersionValid = true;
+            } else {
+                // Recognized module: clear any unknown-hw-code state left over from a previous
+                // module on this port (e.g. swapped without a full reboot).
+                gpsData.unknownHwVersion = 0;
+                gpsData.unknownHwVersionValid = false;
             }
         }
         // Exclude UBX_VERSION_UNKNOWN_GENERATION from these checks: it sorts after UBX_VERSION_M10 so a bare
