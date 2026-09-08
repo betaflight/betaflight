@@ -322,7 +322,8 @@ typedef struct gpsData_s {
 #ifdef USE_GPS_UBLOX
     uint32_t lastNavSolTs;          // time stamp of last UBCX message.  Used to calculate message delta
     ubloxVersion_e platformVersion; // module platform version, mapped from reported hardware version
-    uint32_t unknownHwVersion;      // raw MON-VER hw code when platformVersion == UBX_VERSION_UNKNOWN_GENERATION; 0 if no MON-VER reply was ever received
+    uint32_t unknownHwVersion;      // raw MON-VER hw code when platformVersion == UBX_VERSION_UNKNOWN_GENERATION and unknownHwVersionValid is true; meaningless otherwise
+    bool unknownHwVersionValid;     // true if unknownHwVersion was actually populated from a MON-VER reply (distinguishes a genuine hw code of 0 from "no MON-VER reply was ever received")
     bool ubloxValidFrameReceived;   // set when any checksum-valid UBX frame (any class/id) is received at the current candidate baud rate; cleared each time GPS_STATE_DETECT_BAUD moves to a different baud
 #endif
 } gpsData_t;
