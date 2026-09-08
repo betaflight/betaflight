@@ -53,9 +53,24 @@
 #define DMA_OUTPUT_INDEX    0
 #define DMA_OUTPUT_STRING   "DMA%d Stream %d:"
 
+#define DMA_Handshake_0     0
+#define DMA_Handshake_1     (DMA_Handshake_0 + 1)
+#define DMA_Handshake_2     (DMA_Handshake_0 + 2)
+#define DMA_Handshake_3     (DMA_Handshake_0 + 3)
+#define DMA_Handshake_4     (DMA_Handshake_0 + 4)
+#define DMA_Handshake_5     (DMA_Handshake_0 + 5)
+#define DMA_Handshake_6     (DMA_Handshake_0 + 6)
+#define DMA_Handshake_7     (DMA_Handshake_0 + 7)
+#define DMA_Handshake_8     (DMA_Handshake_0 + 8)
+#define DMA_Handshake_9     (DMA_Handshake_0 + 9)
+#define DMA_Handshake_10    (DMA_Handshake_0 + 10)
+#define DMA_Handshake_11    (DMA_Handshake_0 + 11)
+#define DMA_Handshake_12    (DMA_Handshake_0 + 12)
+#define DMA_Handshake_13    (DMA_Handshake_0 + 13)
+#define DMA_Handshake_Rev   0xF
 
-#define DMA_SRC_HANDSHAKING(code)   (uint32_t)(((code >> 8) & 0xf) << 7)
-#define DMA_DST_HANDSHAKING(code)   (uint32_t)(((code >> 8) & 0xf) << 11)
+#define DMA_SRC_HANDSHAKING(hs)   (uint32_t)((hs & 0xf) << 7)
+#define DMA_DST_HANDSHAKING(hs)   (uint32_t)((hs & 0xf) << 11)
 
 
 #define DEFINE_DMA_CHANNEL(d, s, f) { \

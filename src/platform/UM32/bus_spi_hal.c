@@ -39,6 +39,7 @@
 #if SPI_TRAIT_HANDLE
 #include "platform/bus_spi_hal.h"
 #endif
+#include "pg/bus_spi.h"
 
 // Use DMA if possible if this many bytes are to be transferred
 #define SPI_DMA_THRESHOLD 8
@@ -133,8 +134,9 @@ void spiInitDevice(spiDevice_e device)
 
 void spiInternalResetDescriptors(busDevice_t *bus)
 {
-    const dmaChannelSpec_t *dmaTxChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SPI_SDO, spiDeviceByInstance(bus->busType_u.spi.instance), 0);
-    const dmaChannelSpec_t *dmaRxChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SPI_SDI, spiDeviceByInstance(bus->busType_u.spi.instance), 0);
+    const spiDevice_e device = spiDeviceByInstance(bus->busType_u.spi.instance);
+    const dmaChannelSpec_t *dmaTxSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SPI_SDO, device, spiPinConfig(device)->txDmaopt);
+    const dmaChannelSpec_t *dmaRxSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SPI_SDI, device, spiPinConfig(device)->rxDmaopt);
 
     SPI_TypeDef *instance = (SPI_TypeDef *)bus->busType_u.spi.instance;
     LL_DMA_InitTypeDef *dmaInitTx = bus->dmaInitTx;
@@ -145,9 +147,9 @@ void spiInternalResetDescriptors(busDevice_t *bus)
     dmaInitTx->DstPer = 0;
     dmaInitTx->NbData   = 0x00000000U;
 
-    if (dmaTxChannelSpec) {
-        dmaInitTx->SrcPer = DMA_SRC_HANDSHAKING(0);
-        dmaInitTx->DstPer = DMA_DST_HANDSHAKING(dmaTxChannelSpec->code);
+    if (dmaTxSpec) {
+        dmaInitTx->SrcPer = DMA_SRC_HANDSHAKING(DMA_Handshake_Rev);
+        dmaInitTx->DstPer = DMA_DST_HANDSHAKING(dmaTxSpec->channel);
     }
 
     dmaInitTx->DstAddress = (uint32_t)&(instance->TXREG);
@@ -176,9 +178,9 @@ void spiInternalResetDescriptors(busDevice_t *bus)
         dmaInitRx->DstPer = 0;
         dmaInitRx->NbData   = 0x00000000U;
 
-        if (dmaRxChannelSpec) {
-            dmaInitRx->SrcPer  = DMA_SRC_HANDSHAKING(dmaRxChannelSpec->code);
-            dmaInitRx->DstPer  = DMA_SRC_HANDSHAKING(0);
+        if (dmaRxSpec) {
+            dmaInitRx->SrcPer  = DMA_SRC_HANDSHAKING(dmaRxSpec->channel);
+            dmaInitRx->DstPer  = DMA_DST_HANDSHAKING(DMA_Handshake_Rev);
         }
 
         dmaInitRx->SrcAddress = (uint32_t)&(instance->RXREG);

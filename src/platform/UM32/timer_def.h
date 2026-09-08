@@ -129,11 +129,11 @@
     DEF_TIM_AF(TCH_## tim ## _ ## chan, pin)                            \
     DEF_TIM_DMA_COND(/* add comma */ ,                                  \
         DEF_TIM_DMA_STREAM(dmaopt, TCH_## tim ## _ ## chan),            \
-        DEF_TIM_DMA_CHANNEL(dmaopt, TCH_## tim ## _ ## chan)            \
+        DEF_TIM_DMA_HANDSHAKE(dmaopt, TCH_## tim ## _ ## chan)          \
     )                                                                   \
     DEF_TIM_DMA_COND(/* add comma */ ,                                  \
         DEF_TIM_DMA_STREAM(0, TCH_## tim ## _UP),                       \
-        DEF_TIM_DMA_CHANNEL(0, TCH_## tim ## _UP),                      \
+        DEF_TIM_DMA_HANDSHAKE(0, TCH_## tim ## _UP),                    \
         DEF_TIM_DMA_HANDLER(0, TCH_## tim ## _UP)                       \
     )                                                                   \
 }                                                                       \
@@ -145,19 +145,19 @@
 #define DEF_TIM_AF(timch, pin)                CONCAT(DEF_TIM_AF__, DEF_TIM_AF_GET(timch, pin))
 #define DEF_TIM_AF__D(af_n, tim_n)            GPIO_AF ## af_n ## _TIM ## tim_n
 
-#define DEF_TIM_DMA_CHANNEL(variant, timch) \
-    CONCAT(DEF_TIM_DMA_CHANNEL__, DEF_TIM_DMA_GET(variant, timch))
-#define DEF_TIM_DMA_CHANNEL__D(dma_n, stream_n, chan_n)    DMA_Channel_ ## chan_n
-#define DEF_TIM_DMA_CHANNEL__NONE                          DMA_Channel_0
+#define DEF_TIM_DMA_HANDSHAKE(variant, timch) \
+    CONCAT(DEF_TIM_DMA_HANDSHAKE__, DEF_TIM_DMA_GET(variant, timch))
+#define DEF_TIM_DMA_HANDSHAKE__D(dma_n, hs_n, chan_n)    DMA_Handshake_ ## hs_n
+#define DEF_TIM_DMA_HANDSHAKE__NONE                      DMA_Handshake_Rev
 
 #define DEF_TIM_DMA_STREAM(variant, timch)                              \
     CONCAT(DEF_TIM_DMA_STREAM__, DEF_TIM_DMA_GET(variant, timch))
-#define DEF_TIM_DMA_STREAM__D(dma_n, stream_n, chan_n)  (dmaResource_t *)DMA ## dma_n ## _Stream ## chan_n
+#define DEF_TIM_DMA_STREAM__D(dma_n, hs_n, chan_n)  (dmaResource_t *)DMA ## dma_n ## _Stream ## chan_n
 #define DEF_TIM_DMA_STREAM__NONE                        NULL
 
 #define DEF_TIM_DMA_HANDLER(variant, timch) \
     CONCAT(DEF_TIM_DMA_HANDLER__, DEF_TIM_DMA_GET(variant, timch))
-#define DEF_TIM_DMA_HANDLER__D(dma_n, stream_n, chan_n) DMA ## dma_n ## _ST ## chan_n ## _HANDLER
+#define DEF_TIM_DMA_HANDLER__D(dma_n, hs_n, chan_n) DMA ## dma_n ## _ST ## chan_n ## _HANDLER
 #define DEF_TIM_DMA_HANDLER__NONE                       0
 
 

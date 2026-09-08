@@ -371,8 +371,8 @@ void adcInit(const adcConfig_t *config)
             return;
         }
 
-        adc->DmaHandle.Instance                 = (DMA_TypeDef *)dmaGetInstance(dmaGetIdentifier(dmaSpec->ref));
-        adc->DmaHandle.DmaChannelSel            = dmaSpec->channel;
+        adc->DmaHandle.Instance                 = (DMA_CODE_CONTROLLER(dmaSpec->code) == 1) ? DMA1 : DMA2;
+        adc->DmaHandle.DmaChannelSel            = DMA_CODE_CHANNEL(dmaSpec->code);
 #else
         //...
 #endif
@@ -389,14 +389,14 @@ void adcInit(const adcConfig_t *config)
         adc->DmaHandle.Init.SrcHsSel            = DMA_SRC_HS_HW;       
         adc->DmaHandle.Init.DstHsSel            = DMA_DST_HS_HW;        
     
-        adc->DmaHandle.Init.SrcPer              = DMA_SRC_HANDSHAKING(dmaSpec->code);    
-        adc->DmaHandle.Init.DstPer              = DMA_DST_HANDSHAKING(0);     
+        adc->DmaHandle.Init.SrcPer              = DMA_SRC_HANDSHAKING(dmaSpec->channel);    
+        adc->DmaHandle.Init.DstPer              = DMA_DST_HANDSHAKING(DMA_Handshake_Rev);     
     
         adc->DmaHandle.Init.SrcReload           = DMA_SRC_RELOAD_ENABLE;  
         adc->DmaHandle.Init.DstReload           = DMA_DST_RELOAD_ENABLE; 
     
         adc->DmaHandle.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;    
-        adc->DmaHandle.Init.FCMode              = DMA_FCMODE_ENABLE;   
+        adc->DmaHandle.Init.FCMode              = DMA_FCMODE_DISABLE;   
 
         adc->DmaHandle.Init.Priority            = LL_DMA_PRIORITY_1;
         // Deinitialize  & Initialize the DMA for new transfer

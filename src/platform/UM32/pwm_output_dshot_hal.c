@@ -78,7 +78,7 @@ void pwmDshotSetDirectionOutput(
 
     const timerHardware_t * const timerHardware = motor->timerHardware;
     TIM_TypeDef *timer = (TIM_TypeDef *)timerHardware->tim;
-    const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
+    // const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
 	
     xLL_EX_DMA_DisableResource(motor->dmaRef);
 
@@ -107,8 +107,8 @@ void pwmDshotSetDirectionOutput(
     motor->dmaInitStruct.DstAddress = (uint32_t)timerChCCR(timerHardware);
     motor->dmaInitStruct.SrcInc = LL_DMA_SRCINC_INC;
     motor->dmaInitStruct.DstInc = LL_DMA_DSTINC_NOC;
-    motor->dmaInitStruct.SrcPer = DMA_SRC_HANDSHAKING(0);
-    motor->dmaInitStruct.DstPer = DMA_DST_HANDSHAKING(dmaSpec->code);
+    motor->dmaInitStruct.SrcPer = DMA_SRC_HANDSHAKING(DMA_Handshake_Rev);
+    motor->dmaInitStruct.DstPer = DMA_DST_HANDSHAKING(timerHardware->dmaChannelConfigured);
     xLL_EX_DMA_Init(motor->dmaRef, pDmaInit);
     xLL_EX_DMA_EnableIT_TC(motor->dmaRef);
 }
@@ -122,7 +122,7 @@ FAST_CODE static void pwmDshotSetDirectionInput(
 
     const timerHardware_t * const timerHardware = motor->timerHardware;
     TIM_TypeDef *timer = (TIM_TypeDef *)timerHardware->tim;
-    const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
+    // const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
 	
     xLL_EX_DMA_DisableResource(motor->dmaRef);
 
@@ -140,8 +140,8 @@ FAST_CODE static void pwmDshotSetDirectionInput(
     motor->dmaInitStruct.DstAddress = (uint32_t)motor->dmaBuffer;
     motor->dmaInitStruct.SrcInc = LL_DMA_SRCINC_NOC;
     motor->dmaInitStruct.DstInc = LL_DMA_DSTINC_INC;
-    motor->dmaInitStruct.SrcPer = DMA_SRC_HANDSHAKING(dmaSpec->code);
-    motor->dmaInitStruct.DstPer = DMA_DST_HANDSHAKING(0);
+    motor->dmaInitStruct.SrcPer = DMA_SRC_HANDSHAKING(timerHardware->dmaChannelConfigured);
+    motor->dmaInitStruct.DstPer = DMA_DST_HANDSHAKING(DMA_Handshake_Rev);
     xLL_EX_DMA_Init(motor->dmaRef, pDmaInit);
 }
 #endif
@@ -237,7 +237,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
     if (dmaSpec != NULL) {
         dmaRef = dmaSpec->ref;
-        dmaChannel = dmaSpec->channel;
+        dmaChannel = DMA_CODE_CHANNEL(dmaSpec->code);
     }
 #else
     dmaRef = timerHardware->dmaRef;
@@ -247,7 +247,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
         dmaRef = timerHardware->dmaTimUPRef;
-        dmaChannel = timerHardware->dmaTimUPChannel;
+        dmaChannel = DMA_CODE_CHANNEL(dmaSpec->code);
     }
 #endif
 
@@ -399,13 +399,13 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     DMAINIT.DstHsSel            = LL_DMA_DST_HS_HW;
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
-        DMAINIT.SrcPer          = DMA_SRC_HANDSHAKING(0xF);
-        DMAINIT.DstPer          = DMA_DST_HANDSHAKING(timerHardware->tim == (timerResource_t *)TIM1 ? DMA_CODE(2, 5, 1) : DMA_CODE(2, 1, 3));
+        DMAINIT.SrcPer          = DMA_SRC_HANDSHAKING(DMA_Handshake_Rev);
+        DMAINIT.DstPer          = DMA_DST_HANDSHAKING(timerHardware->dmaTimUPChannel);
     } else
 #endif
     {
-        DMAINIT.SrcPer          = DMA_SRC_HANDSHAKING(0);
-        DMAINIT.DstPer          = DMA_DST_HANDSHAKING(dmaSpec->code);
+        DMAINIT.SrcPer          = DMA_SRC_HANDSHAKING(DMA_Handshake_Rev);
+        DMAINIT.DstPer          = DMA_DST_HANDSHAKING(timerHardware->dmaChannelConfigured);
     }
     DMAINIT.SrcReload           = LL_DMA_SRC_RELOAD_DISABLE;
     DMAINIT.DstReload           = LL_DMA_DST_RELOAD_DISABLE;

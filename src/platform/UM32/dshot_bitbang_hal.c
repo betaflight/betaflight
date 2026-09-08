@@ -205,7 +205,7 @@ void bbSwitchToInput(bbPort_t *bbPort)
 void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
 {
     LL_DMA_InitTypeDef *dmainit = (direction == DSHOT_BITBANG_DIRECTION_OUTPUT) ?  &bbPort->outputDmaInit : &bbPort->inputDmaInit;
-    const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimerValue(bbPort->timhw->tim, bbPort->timhw->channel, dmaGetOptionByTimer(bbPort->timhw));
+    // const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimerValue(bbPort->timhw->tim, bbPort->timhw->channel, dmaGetOptionByTimer(bbPort->timhw));
 
     // Common settings
     dmainit->Channel = bbPort->dmaChannel;
@@ -227,8 +227,8 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
         dmainit->DstInc = LL_DMA_DSTINC_NOC;
         dmainit->SrcDataAlignment = LL_DMA_SRCDATAALIGN_WORD;
         dmainit->DstDataAlignment = LL_DMA_DSTDATAALIGN_WORD;
-        dmainit->SrcPer = DMA_SRC_HANDSHAKING(0xF);
-        dmainit->DstPer = DMA_DST_HANDSHAKING(dmaSpec->code);
+        dmainit->SrcPer = DMA_SRC_HANDSHAKING(DMA_Handshake_Rev);
+        dmainit->DstPer = DMA_DST_HANDSHAKING(bbPort->timhw->dmaChannelConfigured);
         dmainit->NbData = bbPort->portOutputCount;
     } else {
         dmainit->SrcAddress = (uint32_t)&bbPort->gpio->IDATA;
@@ -238,8 +238,8 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
         dmainit->DstInc = LL_DMA_DSTINC_INC;
         dmainit->SrcDataAlignment = LL_DMA_SRCDATAALIGN_HALFWORD;
         dmainit->DstDataAlignment = LL_DMA_DSTDATAALIGN_HALFWORD;
-        dmainit->SrcPer = DMA_SRC_HANDSHAKING(dmaSpec->code);
-        dmainit->DstPer = DMA_DST_HANDSHAKING(0xF);
+        dmainit->SrcPer = DMA_SRC_HANDSHAKING(bbPort->timhw->dmaChannelConfigured);
+        dmainit->DstPer = DMA_DST_HANDSHAKING(DMA_Handshake_Rev);
         dmainit->NbData = bbPort->portInputCount;
     }
 

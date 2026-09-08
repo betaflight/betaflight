@@ -48,7 +48,7 @@ typedef struct dmaTimerMapping_s {
 } dmaTimerMapping_t;
 
 
-#define DMA(d, hs, c) { DMA_CODE(d, hs, c), (dmaResource_t *)DMA ## d ## _Stream ## c, DMA_Channel_ ## c }
+#define DMA(d, hs, c) { DMA_CODE(d, hs, c), (dmaResource_t *)DMA ## d ## _Stream ## c, DMA_Handshake_ ## hs }
 #define NON_DMA   {{0}}
 
 static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {

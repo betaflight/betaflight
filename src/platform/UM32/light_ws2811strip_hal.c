@@ -79,7 +79,7 @@ bool ws2811LedStripHardwareInit(void)
     }
 
     dmaRef = dmaSpec->ref;
-    uint32_t dmaChannel = dmaSpec->channel;
+    uint32_t dmaChannel = DMA_CODE_CHANNEL(dmaSpec->code);
 #else
     dmaRef = timerHardware->dmaRef;
     uint32_t dmaChannel = timerHardware->dmaChannel;
@@ -127,8 +127,8 @@ bool ws2811LedStripHardwareInit(void)
     hdma_tim.Init.SrcHsSel            = DMA_SRC_HS_HW;       
     hdma_tim.Init.DstHsSel            = DMA_DST_HS_HW;        
     
-    hdma_tim.Init.SrcPer              = DMA_SRC_HANDSHAKING(0);    
-    hdma_tim.Init.DstPer              = DMA_DST_HANDSHAKING(dmaSpec->code);     
+    hdma_tim.Init.SrcPer              = DMA_SRC_HANDSHAKING(DMA_Handshake_Rev);    
+    hdma_tim.Init.DstPer              = DMA_DST_HANDSHAKING(timerHardware->dmaChannelConfigured);     
     
     hdma_tim.Init.SrcReload           = DMA_SRC_RELOAD_DISABLE;  
     hdma_tim.Init.DstReload           = DMA_DST_RELOAD_DISABLE; 
@@ -139,7 +139,7 @@ bool ws2811LedStripHardwareInit(void)
     hdma_tim.Init.Priority            = LL_DMA_PRIORITY_3;
     /* Set hdma_tim instance */
     hdma_tim.DmaChannelSel            = dmaChannel;
-    hdma_tim.Instance = (DMA_TypeDef *)dmaGetInstance(dmaGetIdentifier(dmaSpec->ref));
+    hdma_tim.Instance = (DMA_CODE_CONTROLLER(dmaSpec->code) == 1) ? DMA1 : DMA2;
     // hdma_tim.Instance1 = dmaSpec->ref;
 
     uint16_t dmaIndex = timerDmaIndex(timerChannel);
