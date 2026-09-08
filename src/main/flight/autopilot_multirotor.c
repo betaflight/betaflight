@@ -639,6 +639,7 @@ static void disableYawControl(void)
     apYawActive = false;
     apYawAttenuator = 0.0f;
     apYawRateDps = 0.0f;
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, 0);  //!< Yaw Rate Setpoint [unit:0.1dps]
     // Re-capture the hold heading on re-engagement rather than snapping back to a
     // heading the craft may have left long ago.
     apYawHoldHeadingValid = false;
@@ -777,10 +778,10 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     apYawRateDps = yawRateDps * GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
     apYawActive = true;
 
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 0, lrintf(headingDeg * 10.0f));
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 1, lrintf(desiredHeadingDeg * 10.0f));
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 2, lrintf(errorDeg * 10.0f));
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, lrintf(apYawRateDps * 10.0f));
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 0, lrintf(headingDeg * 10.0f));         //!< Aircraft Heading [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 1, lrintf(desiredHeadingDeg * 10.0f));  //!< Target Heading [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 2, lrintf(errorDeg * 10.0f));           //!< Heading Error [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, lrintf(apYawRateDps * 10.0f));       //!< Yaw Rate Setpoint [unit:0.1dps]
 }
 
 // TASK_MAGHOLD. Heading hold with no position control behind it: the MAG_MODE switch on
