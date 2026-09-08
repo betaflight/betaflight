@@ -148,6 +148,13 @@ typedef struct tmr_base_init_s {
 
 #endif
 
+// Where a port's ESC reply capture stood when bbTelemetryWait() last sampled it.
+typedef enum {
+    BB_CAPTURE_COMPLETE = 0,  // buffer holds a finished frame: decode it, send the next
+    BB_CAPTURE_IN_FLIGHT,     // still filling: skip both the decode and the frame
+    BB_CAPTURE_STALLED,       // overdue: the buffer is unusable, but take the port back
+} bbCaptureState_e;
+
 // Per GPIO port and timer channel
 
 typedef struct bbPort_s {
@@ -207,8 +214,11 @@ typedef struct bbPort_s {
     uint16_t *portInputBuffer;
     uint32_t portInputCount;
     bool inputActive;
+    // Set by the DMA IRQ handler: an ESC reply capture is running on this port.
     volatile bool telemetryPending;
-    bool telemetryAborted;
+    bbCaptureState_e captureState;
+    timeUs_t captureDeadlineUs;
+    timeDelta_t captureTimeoutUs;
 
     // Misc
 #ifdef DEBUG_COUNT_INTERRUPT
@@ -316,6 +326,9 @@ static inline bool bbDMAWaitStopped(dmaResource_t *dmaResource)
 
     return false;
 }
+
+void bbSetCaptureTimeout(bbPort_t *bbPort, uint32_t inputFreq);
+bool bbTelemetryWait(void);
 
 void bbDshotRequestTelemetry(unsigned motorIndex);
 bool bbDshotIsMotorIdle(unsigned motorIndex);

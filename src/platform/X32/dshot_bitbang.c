@@ -56,9 +56,6 @@
 // 2 - Count of reception not complete in time
 // 3 - Number of high bits before telemetry start
 
-// Maximum time to wait for telemetry reception to complete
-#define DSHOT_TELEMETRY_TIMEOUT 2000
-
 // For MCUs that use MPU to control DMA coherency, there might be a performance hit
 // on manipulating input buffer content especially if it is read multiple times,
 // as the buffer region is attributed as not cachable.
@@ -373,12 +370,16 @@ static void bbTimebaseSetup(bbPort_t *bbPort, motorProtocolTypes_e dshotProtocol
     uint32_t timerclock = timerClock(bbPort->timhw);
 
     uint32_t outputFreq = getDshotBaseFrequency(dshotProtocolType);
+    // Written per port group, so the last group wins; harmless only because
+    // all groups share one protocol. Make it per port if that ever ends.
     dshotFrameUs = 1000000 * 17 * 3 / outputFreq;
     bbPort->outputARR = timerclock / outputFreq - 1;
 
     // XXX Explain this formula
     uint32_t inputFreq = outputFreq * 5 * 2 * DSHOT_BITBANG_TELEMETRY_OVER_SAMPLE / 24;
     bbPort->inputARR = timerclock / inputFreq - 1;
+
+    bbSetCaptureTimeout(bbPort, inputFreq);
 }
 
 //
@@ -470,33 +471,6 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorProtocolTypes_e pwmP
     return true;
 }
 
-static bool bbTelemetryWait(void)
-{
-    // Wait for telemetry reception to complete
-    bool telemetryPending;
-    bool telemetryWait = false;
-    const timeUs_t startTimeUs = micros();
-
-    do {
-        telemetryPending = false;
-        for (int i = 0; i < usedMotorPorts; i++) {
-            telemetryPending |= bbPorts[i].telemetryPending;
-        }
-
-        telemetryWait |= telemetryPending;
-
-        if (cmpTimeUs(micros(), startTimeUs) > DSHOT_TELEMETRY_TIMEOUT) {
-            break;
-        }
-    } while (telemetryPending);
-
-    if (telemetryWait) {
-        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);  //!< Reception Timeout Count
-    }
-
-    return telemetryWait;
-}
-
 static void bbUpdateInit(void)
 {
     for (int i = 0; i < usedMotorPorts; i++) {
@@ -519,6 +493,11 @@ static bool bbDecodeTelemetry(void)
         }
 #endif
         for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < dshotMotorCount; motorIndex++) {
+            if (bbMotors[motorIndex].bbPort->captureState != BB_CAPTURE_COMPLETE) {
+                // Already counted in debug[2] by bbTelemetryWait(). Don't bump
+                // debug[1] (missing-edge) - the frame is unfinished, not late.
+                continue;
+            }
 #ifdef USE_DSHOT_BITBAND
             uint32_t rawValue = decode_bb_bitband(
                 bbMotors[motorIndex].bbPort->portInputBuffer,
@@ -609,6 +588,12 @@ static void bbUpdateComplete(void)
 
     for (int i = 0; i < usedMotorPorts; i++) {
         bbPort_t *bbPort = &bbPorts[i];
+
+        if (bbPort->captureState == BB_CAPTURE_IN_FLIGHT) {
+            // The ESC is still replying. Leave the capture alone and send
+            // this port's frame on the next cycle.
+            continue;
+        }
 #ifdef USE_DSHOT_CACHE_MGMT
         X32_CLEAN_DCACHE_BY_ADDR(bbPort->portOutputBuffer, MOTOR_DSHOT_BUF_CACHE_ALIGN_BYTES);
 #endif
