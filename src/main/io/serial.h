@@ -168,17 +168,7 @@ serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e s
 //
 // configuration
 //
-typedef struct serialPortConfig_s {
-    uint32_t functionMask;
-    int8_t identifier;
-    uint8_t msp_baudrateIndex;
-    uint8_t gps_baudrateIndex;
-    uint8_t blackbox_baudrateIndex;
-    uint8_t telemetry_baudrateIndex; // not used for all telemetry systems, e.g. HoTT only works at 19200.
-} serialPortConfig_t;
-
 typedef struct serialConfig_s {
-    serialPortConfig_t portConfigs[SERIAL_PORT_COUNT];
     uint16_t serial_update_rate_hz;
     uint8_t reboot_character;               // which byte is used to reboot. Default 'R', could be changed carefully to something else.
 } serialConfig_t;
@@ -193,20 +183,24 @@ typedef void serialConsumer(uint8_t);
 void serialInit(bool softserialEnabled);
 void serialRemovePort(serialPortIdentifier_e identifier);
 bool serialIsPortAvailable(serialPortIdentifier_e identifier);
-bool isSerialConfigValid(serialConfig_t *serialConfig);
-const serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e identifier);
-serialPortConfig_t *serialFindPortConfigurationMutable(serialPortIdentifier_e identifier);
+bool isSerialConfigValid(void);
+// True when the functions claiming this one port cannot coexist on it, which is
+// what serialDropConflictingAssignments() acts on.
+bool serialPortFunctionsConflict(serialPortIdentifier_e identifier);
 bool doesConfigurationUsePort(serialPortIdentifier_e portIdentifier);
-const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function);
-const serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function);
 
-portSharing_e determinePortSharing(const serialPortConfig_t *portConfig, serialPortFunction_e function);
-bool isSerialPortShared(const serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction);
+portSharing_e determinePortSharing(serialPortIdentifier_e identifier, serialPortFunction_e function);
+bool isSerialPortShared(serialPortIdentifier_e identifier, uint16_t functionMask, serialPortFunction_e sharedWithFunction);
 
 serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier);
 int findSerialPortIndexByIdentifier(serialPortIdentifier_e identifier);
 serialPortIdentifier_e findSerialPortByName(const char* portName, int (*cmp)(const char *portName, const char *candidate));
 const char* serialName(serialPortIdentifier_e identifier, const char* notFound);
+
+// name <-> identifier conversion for MODE_LOOKUP_IDENTIFIER settings.
+const char *serialIdentifierName(int identifier);
+bool serialIdentifierFromName(const char *name, int *identifier);
+const char *serialIdentifierNameAt(unsigned index);
 
 //
 // runtime

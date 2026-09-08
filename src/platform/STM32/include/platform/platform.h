@@ -20,6 +20,9 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #if defined(STM32G474xx)
 #include "stm32g4xx.h"
 #include "stm32g4xx_hal.h"
@@ -382,9 +385,21 @@
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
 #define USE_LATE_TASK_STATISTICS
-// C591 has no FDCAN hardware; enable CAN only on variants that do (e.g. C593).
-#if defined(STM32C593xx) && !defined(ENABLE_CAN)
+#define USE_USB_MSC
+// Not every C5 carries FDCAN: C591 has none, while C562 has a single FDCAN1
+// and C593 and C5A3 have FDCAN1 + FDCAN2. Enable CAN only on the variants that
+// have it.
+#if (defined(STM32C562xx) || defined(STM32C593xx) || defined(STM32C5A3xx)) \
+    && !defined(ENABLE_CAN)
 #define ENABLE_CAN 1
+#endif
+// C591 has no FDCAN at all (DS15136: "FDCAN 0 (on STM32C591xx)"), so the
+// hardware table would fall through to the C593 mapping and hand it register
+// addresses and IRQs that do not exist on the part. Nothing in tree sets this,
+// but a -DENABLE_CAN=1 on the command line would reach it, so fail the build
+// rather than the flight.
+#if defined(STM32C591xx) && ENABLE_CAN
+#error "STM32C591 has no FDCAN peripheral; ENABLE_CAN cannot be set for it"
 #endif
 #endif
 
@@ -464,6 +479,30 @@
 #define DMA_RW_AXI __attribute__((section(".DMA_RW_AXI"), aligned(32)))
 extern uint8_t _dmaram_start__;
 extern uint8_t _dmaram_end__;
+
+/* The part of the above the MPU is actually leaving out of the D cache, resolved at boot
+ * by memProtResolveDmaRam(). This answers only whether a transfer needs cache maintenance
+ * to stay coherent - the linker symbols still answer where a buffer was placed, and so
+ * whether DMA can reach it at all.
+ *
+ * Held in DTCM as a base and a length, both loads coming from zero wait state memory.
+ * Zero until resolved, which reads as "cached", so a transfer before then gets the full
+ * maintenance rather than none.
+ *
+ * The whole buffer has to be inside the span, not just its first byte: the span can end
+ * part way through the dmaram sections, and a buffer straddling that edge would otherwise
+ * have its cached tail go unmaintained.
+ */
+extern uint32_t dmaramUncachedBase;
+extern uint32_t dmaramUncachedLength;
+
+static inline bool isDmaramUncached(const void *addr, uint32_t len)
+{
+    const uint32_t offset = (uint32_t)addr - dmaramUncachedBase;
+
+    // The second test cannot underflow: the first has established offset < length
+    return (offset < dmaramUncachedLength) && (len <= dmaramUncachedLength - offset);
+}
 #elif defined(STM32N6)
 #define DMA_RAM __attribute__((section(".DMA_RAM"), aligned(32)))
 #define DMA_RW_AXI __attribute__((section(".DMA_RW_AXI"), aligned(32)))

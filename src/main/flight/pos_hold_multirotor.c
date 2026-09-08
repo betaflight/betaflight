@@ -35,9 +35,17 @@
 #include "flight/position.h"
 #include "flight/position_estimator.h"
 #include "rx/rx.h"
+#include "scheduler/scheduler.h"
 
 #include "pg/pos_hold.h"
 #include "pos_hold.h"
+
+// TASK_POSHOLD is event driven off positionEstimatorUpdate(), so the control law
+// sees each new position estimate immediately rather than up to a task period
+// later. If the estimator is not running at all (TASK_POSITION disabled) this is
+// the interval after which the task falls back to periodic scheduling, so that
+// mode entry and exit are still serviced.
+#define POSHOLD_FALLBACK_PERIOD_US (2 * TASK_PERIOD_HZ(POSHOLD_TASK_RATE_HZ))
 
 typedef struct posHoldState_s {
     bool isEnabled;
@@ -55,7 +63,7 @@ void posHoldInit(void)
 
 static void posHoldCheckSticks(void)
 {
-    if (failsafeIsActive()) {
+    if (failsafeIsActive() || FLIGHT_MODE(GPS_RESCUE_MODE)) {
         setSticksActiveStatus(false);
         return;
     }
@@ -84,9 +92,32 @@ static bool sensorsOk(void)
     }
 }
 
-void updatePosHold(timeUs_t currentTimeUs) {
+bool posHoldUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
+{
     UNUSED(currentTimeUs);
-    if (FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
+
+    if (positionEstimatorTakeUpdate(POS_EST_CONSUMER_POSHOLD)) {
+        return true;
+    }
+
+    // No estimator running, so fall back to periodic scheduling
+    return currentDeltaTimeUs >= POSHOLD_FALLBACK_PERIOD_US;
+}
+
+void updatePosHold(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    static bool gpsRescueWasActive = false;
+
+    const bool gpsRescueActive = FLIGHT_MODE(GPS_RESCUE_MODE);
+    const bool gpsRescueStarting = gpsRescueActive && !gpsRescueWasActive;
+
+    if (gpsRescueStarting && posHold.isEnabled) {
+        initPositionHold();
+    }
+
+    if (FLIGHT_MODE(POS_HOLD_MODE) || gpsRescueActive) {
         if (!posHold.isEnabled) {
             resetPositionControl(POSHOLD_TASK_RATE_HZ);
             posHold.isControlOk = true;
@@ -98,6 +129,7 @@ void updatePosHold(timeUs_t currentTimeUs) {
         }
         posHold.isEnabled = false;
     }
+    gpsRescueWasActive = gpsRescueActive;
 
     if (posHold.isEnabled) {
         posHoldCheckSticks();
@@ -113,6 +145,8 @@ void updatePosHold(timeUs_t currentTimeUs) {
             }
             posHold.isControlOk = positionControl();
         } else {
+            // 333 traps the sensors-not-OK path
+            DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 333);  //!< Status Flags
             for (unsigned i = 0; i < RP_AXIS_COUNT; i++) {
                 autopilotAngle[i] = 0.0f;
             }

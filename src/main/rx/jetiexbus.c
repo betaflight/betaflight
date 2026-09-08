@@ -291,13 +291,13 @@ bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     jetiExBusFrameReset();
 
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    const serialPortIdentifier_e port = rxConfig->rx_uart;
 
-    if (!portConfig) {
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
-    jetiExBusPort = openSerialPort(portConfig->identifier,
+    jetiExBusPort = openSerialPort(port,
         FUNCTION_RX_SERIAL,
         jetiExBusDataReceive,
         NULL,

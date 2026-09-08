@@ -63,6 +63,7 @@
 #include "flight/position.h"
 
 #include "io/serial.h"
+#include "io/serial_feature_map.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
@@ -105,7 +106,7 @@
 extern uint16_t rssi; // FIXME dependency on mw.c
 
 static serialPort_t *mavlinkPort = NULL;
-static const serialPortConfig_t *portConfig;
+static serialPortIdentifier_e telemetryPort = SERIAL_PORT_NONE;
 
 static bool mavlinkTelemetryEnabled =  false;
 static portSharing_e mavlinkPortSharing;
@@ -839,23 +840,23 @@ void freeMAVLinkTelemetryPort(void)
 
 void initMAVLinkTelemetry(void)
 {
-    portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_MAVLINK);
-    mavlinkPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_MAVLINK);
+    telemetryPort = telemetryProviderPort(TELEMETRY_PROTOCOL_MAVLINK);
+    mavlinkPortSharing = determinePortSharing(telemetryPort, FUNCTION_TELEMETRY_MAVLINK);
 }
 
 void configureMAVLinkTelemetryPort(void)
 {
-    if (!portConfig) {
+    if (telemetryPort == SERIAL_PORT_NONE) {
         return;
     }
 
-    baudRate_e baudRateIndex = portConfig->telemetry_baudrateIndex;
+    baudRate_e baudRateIndex = telemetryProviderBaud(TELEMETRY_PROTOCOL_MAVLINK, telemetryPort);
     if (baudRateIndex == BAUD_AUTO) {
         // default rate for minimOSD
         baudRateIndex = BAUD_57600;
     }
 
-    mavlinkPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_MAVLINK, NULL, NULL, baudRates[baudRateIndex], TELEMETRY_MAVLINK_INITIAL_PORT_MODE, telemetryConfig()->telemetry_inverted ? SERIAL_INVERTED : SERIAL_NOT_INVERTED);
+    mavlinkPort = openSerialPort(telemetryPort, FUNCTION_TELEMETRY_MAVLINK, NULL, NULL, baudRates[baudRateIndex], TELEMETRY_MAVLINK_INITIAL_PORT_MODE, telemetryConfig()->telemetry_inverted ? SERIAL_INVERTED : SERIAL_NOT_INVERTED);
 
     if (!mavlinkPort) {
         return;
@@ -943,7 +944,7 @@ static void mavlinkSendSystemStatus(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, transmitCounter);
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, transmitCounter);  //!< System Status TX Count
     transmitCounter = (transmitCounter + 1) % 100;
 }
 
@@ -978,7 +979,7 @@ static void mavlinkSendRCChannelsAndRSSI(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 3, transmitCounter);
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 3, transmitCounter);  //!< RC Channels TX Count
     transmitCounter = (transmitCounter + 1) % 100;
 }
 
@@ -1042,7 +1043,7 @@ static void mavlinkSendGpsRaw(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 4, transmitCounter);
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 4, transmitCounter);  //!< GPS Raw TX Count
     transmitCounter = (transmitCounter + 1) % 100;
 }
 
@@ -1148,7 +1149,7 @@ static void mavlinkSendAttitude(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 5, transmitCounter);
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 5, transmitCounter);  //!< Attitude TX Count
     transmitCounter = (transmitCounter + 1) % 100;
 }
 
@@ -1231,7 +1232,7 @@ static void mavlinkSendHeartbeat(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 6, transmitCounter);
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 6, transmitCounter);  //!< Heartbeat TX Count
     transmitCounter = (transmitCounter + 1) % 100;
 }
 
@@ -1338,7 +1339,7 @@ static void mavlinkSendBatteryStatus(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 7, transmitCounter);
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 7, transmitCounter);  //!< Battery Status TX Count
     transmitCounter = (transmitCounter + 1) % 100;
 }
 
@@ -1527,7 +1528,7 @@ static void processMAVLinkTelemetry(void)
 
 void checkMAVLinkTelemetryState(void)
 {
-    if (portConfig && telemetryCheckRxPortShared(portConfig, rxRuntimeState.serialrxProvider)) {
+    if (telemetryPort != SERIAL_PORT_NONE && telemetryCheckRxPortShared(telemetryPort, rxRuntimeState.serialrxProvider)) {
         if (!mavlinkTelemetryEnabled && telemetrySharedPort != NULL) {
             mavlinkPort = telemetrySharedPort;
             lastArmingDisableFlags = 0;

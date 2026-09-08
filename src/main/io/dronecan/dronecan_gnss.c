@@ -37,6 +37,7 @@
 #include "drivers/time.h"
 
 #include "io/dronecan/dronecan.h"
+#include "io/dronecan/dronecan_nodes.h"
 #include "io/dronecan/dronecan_gnss.h"
 #include "io/dronecan/dronecan_msg.h"
 
@@ -78,6 +79,8 @@ static bool auxReceived = false;
 static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
 {
     UNUSED(ins);
+
+    dronecanNodesNoteSensor(t->source_node_id, DRONECAN_NODE_SENSOR_GPS);
 
     uint64_t gnssTimeUsec = 0;
     uint8_t timeStandard = 0;

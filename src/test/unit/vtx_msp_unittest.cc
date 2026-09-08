@@ -96,7 +96,6 @@ extern "C" {
 
     uint8_t cliMode = 0;
     rxRuntimeState_t rxRuntimeState = rxRuntimeState_t();
-    static serialPortConfig_t *findSerialPortConfig_stub_retval;
 
     bool IS_RC_MODE_ACTIVE(boxId_e) {return false;}
     void beeperConfirmationBeeps(uint8_t) {}
@@ -104,7 +103,7 @@ extern "C" {
     void crsfRxSendTelemetryData(void) {}
     void crsfRxWriteTelemetryData(const void *, int) {}
     bool failsafeIsActive(void) {return false;}
-    const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) {return findSerialPortConfig_stub_retval;}
+    bool isSerialPortShared(serialPortIdentifier_e, uint16_t, serialPortFunction_e) {return false;}
     bool isRangeActive(uint8_t , const channelRange_t *) {return true;}
     int mspSerialPush(serialPortIdentifier_e, uint8_t, uint8_t *, int, mspDirection_e, mspVersion_e) {return 0;}
     void tfp_sprintf(char *, char*, ...) {}

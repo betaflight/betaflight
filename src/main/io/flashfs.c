@@ -76,13 +76,14 @@ static DMA_DATA_ZERO_INIT uint8_t flashWriteBuffer[FLASHFS_WRITE_BUFFER_SIZE];
 static uint8_t bufferHead = 0;
 static volatile uint8_t bufferTail = 0;
 
-/* Track if there is new data to write. Until the contents of the buffer have been completely
- * written flashfsFlushAsync() will be repeatedly called. The tail pointer is only updated
- * once an asynchronous write has completed. To do so any earlier could result in data being
- * overwritten in the ring buffer. This routine checks that flashfsFlushAsync() should attempt
- * to write new data and avoids it writing old data during the race condition that occurs if
- * its called again before the previous write to FLASH has completed.
-  */
+/* Track whether the write interlock is clear, i.e. whether the buffers may be presented to the
+ * device. It is cleared while a write is outstanding and set again once the completion callback
+ * has advanced the tail, or immediately if the driver accepted nothing so no callback will come.
+ * The tail pointer is only updated once an asynchronous write has completed; to do so any earlier
+ * could result in data being overwritten in the ring buffer. flashfsFlushAsync(), flashfsFlushSync()
+ * and flashfsWrite() all check this to avoid re-presenting old data during the race condition that
+ * occurs if they are called again before the previous write to FLASH has completed.
+ */
 static volatile bool dataWritten = true;
 
 // The position of the buffer's tail in the overall flash address space:
@@ -109,7 +110,7 @@ static uint8_t checkFlashNextByte(void)
 // Called from blackboxSetState() to start/stop writing of pseudo-random data to FLASH
 void checkFlashStart(void)
 {
-    DEBUG_SET(DEBUG_FLASH_TEST_PRBS, 0, 1);
+    DEBUG_SET(DEBUG_FLASH_TEST_PRBS, 0, 1);  //!< Test State
     checkFlashSeedPRBS = 0xdeadbeef;
     checkFlashPtr = tailAddress;
     checkFlashLen = 0;
@@ -121,7 +122,7 @@ void checkFlashStop(void)
     checkFlashSeedPRBS = 0xdeadbeef;
     checkFlashErrors = 0;
 
-    DEBUG_SET(DEBUG_FLASH_TEST_PRBS, 6, checkFlashLen / flashGeometry->pageSize);
+    DEBUG_SET(DEBUG_FLASH_TEST_PRBS, 6, checkFlashLen / flashGeometry->pageSize);  //!< Pages In Check Length
 
     // Verify the data written since flashfsSeekAbs() last called
     while (checkFlashLen) {
@@ -143,7 +144,7 @@ void checkFlashStop(void)
         checkFlashLen -= checkLen;
     }
 
-    DEBUG_SET(DEBUG_FLASH_TEST_PRBS, 7, checkFlashErrors);
+    DEBUG_SET(DEBUG_FLASH_TEST_PRBS, 7, checkFlashErrors);  //!< Error Count
 
     checkFlashActive = false;
 }
@@ -331,6 +332,14 @@ static uint32_t flashfsWriteBuffers(uint8_t const **buffers, uint32_t *bufferSiz
 
     bytesWritten = flashPageProgramContinue(buffers, bufferSizes, bufferCount);
 
+    if (bytesWritten == 0) {
+        /* A driver that accepted nothing will not invoke the completion callback, so release
+         * the interlock here rather than waiting for one that never arrives. The buffers stay
+         * dirty and are presented again on the next flush.
+         */
+        dataWritten = true;
+    }
+
     flashPageProgramFinish();
 
     return bytesWritten;
@@ -434,6 +443,10 @@ void flashfsFlushSync(void)
         return; // Nothing to flush
     }
 
+    // Wait for any outstanding asynchronous write to be acknowledged before re-reading
+    // the buffer pointers, otherwise the same bytes would be presented to the device twice.
+    while (!flashfsNewData());
+
     bufCount = flashfsGetDirtyDataBuffers(buffers, bufferSizes);
     if (bufCount) {
         flashfsWriteBuffers(buffers, bufferSizes, bufCount, true);
@@ -492,7 +505,7 @@ void flashfsWriteByte(uint8_t byte)
     if (checkFlashActive) {
         byte = checkFlashNextByte();
         checkFlashLen++;
-        DEBUG_SET(DEBUG_FLASH_TEST_PRBS, 2, checkFlashLen);
+        DEBUG_SET(DEBUG_FLASH_TEST_PRBS, 2, checkFlashLen);  //!< Checked Length [unit:bytes]
     }
 #endif
 
@@ -523,6 +536,20 @@ void flashfsWrite(const uint8_t *data, unsigned int len, bool sync)
     // Buffer up the data the user supplied instead of writing it right away
     for (unsigned int i = 0; i < len; i++) {
         flashfsWriteByte(data[i]);
+    }
+
+    /* An asynchronous write may still be outstanding, in which case bufferTail has not been
+     * advanced yet and the bytes it points at have already been presented to the device.
+     * Presenting them again has both completions counted, advancing bufferTail past bufferHead
+     * and tailAddress beyond the data actually logged; on NAND the driver additionally appends
+     * the repeat at its own load address, duplicating those bytes in the log. This check must
+     * precede flashfsGetDirtyDataBuffers() below, as it is the captured descriptors that go
+     * stale. Bail out as flashfsFlushAsync() does, or wait for the callback if sync was asked.
+     */
+    if (sync) {
+        while (!flashfsNewData());
+    } else if (!flashfsNewData()) {
+        return;
     }
 
     // There could be two dirty buffers to write out already:
