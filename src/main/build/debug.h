@@ -219,6 +219,7 @@ typedef enum {
     DEBUG_VELOCITY_EST,
     DEBUG_SAG_COMPENSATION,
     DEBUG_UPT1,
+    DEBUG_PSAS,
     DEBUG_COUNT
 } debugType_e;
 
