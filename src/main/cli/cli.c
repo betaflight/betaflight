@@ -8526,7 +8526,7 @@ static void processCharacter(const char c)
             cliPrompt();
         }
 
-    } else if (bufferIndex < sizeof(cliBuffer) && c >= 32 && c <= 126) {
+    } else if (bufferIndex < sizeof(cliBuffer) - 1 && c >= 32 && c <= 126) {
         if (!bufferIndex && c == ' ') {
             return; // Ignore leading spaces
         }
@@ -8762,15 +8762,21 @@ void cliProcessConfigFile(const char *filename)
             if (cp) {
                 *cp = '\0';
             }
-            // Tokenize the comment-stripped line and look for 'nosave' as a discrete token
+            // Tokenize the comment-stripped line and look for 'nosave' as a discrete token.
+            // strtok writes NULs over the delimiters, so run it on a scratch copy: 'stripped'
+            // is reused below to rebuild the line and must keep its arguments intact.
+            char scratch[CLI_IN_BUFFER_SIZE];
+            strncpy(scratch, stripped, sizeof(scratch) - 1);
+            scratch[sizeof(scratch) - 1] = '\0';
             bool hasNosave = false;
-            char *tok = strtok(stripped, " \t\r\n");
+            char *saveptr;
+            char *tok = strtok_r(scratch, " \t\r\n", &saveptr);
             while (tok) {
                 if (strcasecmp(tok, "nosave") == 0) {
                     hasNosave = true;
                     break;
                 }
-                tok = strtok(NULL, " \t\r\n");
+                tok = strtok_r(NULL, " \t\r\n", &saveptr);
             }
             if (!hasNosave) {
                 // Append 'nosave' to the original line (minus any trailing comment/whitespace)
@@ -8786,6 +8792,13 @@ void cliProcessConfigFile(const char *filename)
                     nosaveLine[--len] = '\0';
                 }
                 strcat(nosaveLine, " nosave\n");
+                // processCharacter() stops buffering at CLI_IN_BUFFER_SIZE characters but still
+                // null terminates at bufferIndex when the newline arrives, so a rewritten line
+                // that no longer fits would both run truncated and write one past cliBuffer.
+                if (strlen(nosaveLine) > CLI_IN_BUFFER_SIZE) {
+                    printf("[CONFIG] Line too long to rewrite, skipped: %s\n", stripped);
+                    continue;
+                }
                 for (size_t i = 0; nosaveLine[i]; i++) {
                     processCharacter(nosaveLine[i]);
                 }

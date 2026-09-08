@@ -67,7 +67,6 @@ SRC_DIR         := $(ROOT)/src/main
 LIB_MAIN_DIR    := $(ROOT)/lib/main
 LIB_MODULES_DIR := $(ROOT)/lib/modules
 OBJECT_DIR      := $(ROOT)/obj/main
-SRC_MANIFEST    := $(OBJECT_DIR)/.src_manifest
 BIN_DIR         := $(ROOT)/obj
 CMSIS_DIR       := $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    := $(SRC_DIR)
@@ -467,6 +466,11 @@ TARGET_EXE      := $(BIN_DIR)/$(TARGET_FULLNAME)
 TARGET_DFU      := $(BIN_DIR)/$(TARGET_FULLNAME).dfu
 TARGET_ZIP      := $(BIN_DIR)/$(TARGET_FULLNAME).zip
 TARGET_OBJ_DIR  := $(OBJECT_DIR)/$(TARGET_NAME)
+# Scoped under TARGET_OBJ_DIR, not the shared OBJECT_DIR: concurrent
+# `make TARGET=X` invocations (e.g. `make -jN all_configs`) each run their
+# own validate-deps, and a manifest shared across targets races on the
+# mv below when multiple targets build in parallel.
+SRC_MANIFEST    := $(TARGET_OBJ_DIR)/.src_manifest
 TARGET_ELF      := $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME).elf
 TARGET_EXST_ELF := $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME)_EXST.elf
 TARGET_UNPATCHED_BIN := $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME)_UNPATCHED.bin
@@ -754,12 +758,14 @@ $(AUTOHYDRATE_STAMPS):
 # the cost is a single cmp call.
 .PHONY: validate-deps
 validate-deps:
-	$(V1) mkdir -p "$(OBJECT_DIR)"; \
+	$(V1) mkdir -p "$(TARGET_OBJ_DIR)"; \
 	printf '%s\n' $(SRC) | sort > "$(SRC_MANIFEST).new"; \
-	if [ -f "$(SRC_MANIFEST)" ] && ! cmp -s "$(SRC_MANIFEST)" "$(SRC_MANIFEST).new"; then \
+	if [ ! -f "$(SRC_MANIFEST)" ]; then \
+	    find "$(TARGET_OBJ_DIR)" -name '*.d' -delete 2>/dev/null; \
+	elif ! cmp -s "$(SRC_MANIFEST)" "$(SRC_MANIFEST).new"; then \
 	    if comm -23 "$(SRC_MANIFEST)" "$(SRC_MANIFEST).new" | grep -q .; then \
 	        echo "Sources removed — clearing stale dependency files"; \
-	        find "$(OBJECT_DIR)" -name '*.d' -delete 2>/dev/null; \
+	        find "$(TARGET_OBJ_DIR)" -name '*.d' -delete 2>/dev/null; \
 	    fi; \
 	fi; \
 	mv -f "$(SRC_MANIFEST).new" "$(SRC_MANIFEST)"

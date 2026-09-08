@@ -1967,7 +1967,7 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
 static bool gpsNewFrameNMEA(char c)
 {
     static gpsDataNmea_t gps_msg;
-    static char string[15];
+    static char string[16];
     static uint8_t param = 0, offset = 0, parity = 0;
     static uint8_t checksum_param, gps_frame = NO_FRAME;
     bool receivedNavMessage = false;
