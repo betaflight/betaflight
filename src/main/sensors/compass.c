@@ -471,6 +471,14 @@ static bool compassDetect(magDev_t *dev, sensor_align_e *alignment)
 }
 #endif // !ENABLE_SIMULATOR
 
+static bool compassHasCalibration(void)
+{
+
+    return (magZero->raw[X] != 0) ||
+           (magZero->raw[Y] != 0) ||
+           (magZero->raw[Z] != 0);
+}
+
 bool compassInit(void)
 {
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
@@ -504,10 +512,7 @@ bool compassInit(void)
     compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);
     
     const flightDynamicsTrims_t *magZero = &compassConfig()->magZero;
-    compassHasBeenCalibrated =
-        (magZero->raw[X] != 0) ||
-        (magZero->raw[Y] != 0) ||
-        (magZero->raw[Z] != 0);
+    compassHasBeenCalibrated = compassHasCalibration();
 
     if (magDev.magOdrHz) {
         // For Mags that send data at a fixed ODR, we wait some quiet period after a read before checking for new data
@@ -626,7 +631,7 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
                     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                         magZero->raw[axis] = lrintf(compassBiasEstimator.b[axis]);
                     }
-                    compassHasBeenCalibrated = true;
+                    compassHasBeenCalibrated = compassHasCalibration();
                     beeper(BEEPER_GYRO_CALIBRATED); // re-purpose gyro cal success beep
                     saveConfigAndNotify();
                 } else {
