@@ -214,6 +214,7 @@ typedef struct bbPort_s {
 #ifdef DEBUG_COUNT_INTERRUPT
     uint32_t outputIrq;
     uint32_t inputIrq;
+    uint32_t errorIrq;
 #endif
     resourceOwner_t resourceOwner;
 } bbPort_t;
@@ -316,6 +317,8 @@ static inline bool bbDMAWaitStopped(dmaResource_t *dmaResource)
 
     return false;
 }
+
+bool bbDMAHandleTransferError(bbPort_t *bbPort, dmaChannelDescriptor_t *descriptor);
 
 void bbDshotRequestTelemetry(unsigned motorIndex);
 bool bbDshotIsMotorIdle(unsigned motorIndex);

@@ -281,8 +281,9 @@ FAST_IRQ_HANDLER void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
 
     bbTIM_DMACmd(bbPort->timhw->tim, bbPort->dmaSource, DISABLE);
 
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
-        while (1) {};
+    if (bbDMAHandleTransferError(bbPort, descriptor)) {
+        dbgPinLo(0);
+        return;
     }
 
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);

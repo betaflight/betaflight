@@ -19,6 +19,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "drivers/dma.h"
+
+#include "platform/dma.h"
+
 #include "dshot_bitbang_impl.h"
 
 FAST_DATA_ZERO_INIT bbPacer_t bbPacers[MAX_MOTOR_PACERS];  // TIM1 or TIM8
@@ -30,6 +34,41 @@ FAST_DATA_ZERO_INIT int usedMotorPorts;
 FAST_DATA_ZERO_INIT bbMotor_t bbMotors[MAX_SUPPORTED_MOTORS];
 
 dshotBitbangStatus_e bbStatus;
+
+// Deal with a DMA transfer error, if that is what this IRQ was. Returns true when
+// it was, in which case the caller must return without doing any direction work.
+//
+// The stream aborted partway, so its registers no longer describe a usable
+// transfer. The caller has already stopped the stream and the pacer request, so
+// clear the error and mark the port as an input: the next bbUpdateComplete() then
+// runs bbSwitchToOutput(), which reloads the cached register set and reconfigures
+// the pin. Spinning here instead, as this used to, took the flight controller down
+// with it - there is no watchdog to recover an ISR that never returns, so one
+// transfer error meant losing the craft.
+//
+// telemetryPending is left alone if a capture was running: the port then waits out
+// its telemetry timeout before being handed back, by which point the ESC has
+// certainly stopped replying and bbSwitchToOutput() cannot drive the line against
+// it (#15533).
+bool bbDMAHandleTransferError(bbPort_t *bbPort, dmaChannelDescriptor_t *descriptor)
+{
+    if (!DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
+        return false;
+    }
+
+#ifdef DEBUG_COUNT_INTERRUPT
+    bbPort->errorIrq++;
+#endif
+    bbPort->direction = DSHOT_BITBANG_DIRECTION_INPUT;
+
+    // Cleared one at a time: DMA_CLEAR_FLAG() does not parenthesise its flag
+    // argument before shifting it, so an OR-ed mask shifts only the last term and
+    // writes ones into other streams' bits.
+    DMA_CLEAR_FLAG(descriptor, DMA_IT_TEIF);
+    DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
+
+    return true;
+}
 
 void bbDshotRequestTelemetry(unsigned motorIndex)
 {
