@@ -90,6 +90,7 @@
 static timeUs_t magCalEndTime = 0;
 static bool didMovementStart = false;
 static bool magCalProcessActive = false;
+static bool compassHasBeenCalibrated = false;
 
 static compassBiasEstimator_t compassBiasEstimator;
 
@@ -501,6 +502,12 @@ bool compassInit(void)
     buildRotationMatrixFromAngles(&magDev.rotationMatrix, &magCustomAlignment);
 
     compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);
+    
+    const flightDynamicsTrims_t *magZero = &compassConfig()->magZero;
+    compassHasBeenCalibrated =
+        (magZero->raw[X] != 0) ||
+        (magZero->raw[Y] != 0) ||
+        (magZero->raw[Z] != 0);
 
     if (magDev.magOdrHz) {
         // For Mags that send data at a fixed ODR, we wait some quiet period after a read before checking for new data
@@ -515,13 +522,20 @@ bool compassInit(void)
     return true;
 }
 
+static bool compassIsHealthy(void)
+{
+    return (mag.magADC.x != 0) ||
+           (mag.magADC.y != 0) ||
+           (mag.magADC.z != 0);
+           // fail if all axes report zero, the original isHealthy check
+}
+
 bool compassEnabledAndCalibrated(void)
 {
-    const flightDynamicsTrims_t *magZero = &compassConfig()->magZero;
-
     return sensors(SENSOR_MAG)
         && imuConfig()->trust_mag
-        && (magZero->raw[X] != 0 || magZero->raw[Y] != 0 || magZero->raw[Z] != 0);
+        && compassHasBeenCalibrated
+        && compassIsHealthy(); // and appars to have valid data
 }
 
 void compassStartCalibration(void)
@@ -612,6 +626,7 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
                     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                         magZero->raw[axis] = lrintf(compassBiasEstimator.b[axis]);
                     }
+                    compassHasBeenCalibrated = true;
                     beeper(BEEPER_GYRO_CALIBRATED); // re-purpose gyro cal success beep
                     saveConfigAndNotify();
                 } else {
