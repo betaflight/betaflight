@@ -128,7 +128,6 @@
 #define POSITION_I_LIMIT      2000.0f // TO DO: test and set to a useful value, this is 20m
 
 #define AP_YAW_P_SCALE         0.01f
-#define AP_YAW_D_SCALE         0.01f
 #define AP_YAW_RAMP_TIME_S     1.0f
 
 static pidCoefficient_t xyPid;
@@ -766,8 +765,7 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     float errorDeg = headingDeg - desiredHeadingDeg;
     errorDeg = fmodf(errorDeg + 540.0f, 360.0f) - 180.0f;
 
-    float yawRateDps = errorDeg * cfg->yawP * AP_YAW_P_SCALE
-                     - gyro.gyroADCf[FD_YAW] * cfg->yawD * AP_YAW_D_SCALE;
+    float yawRateDps = errorDeg * cfg->yawP * AP_YAW_P_SCALE;
     yawRateDps *= apYawAttenuator;
 
     float maxRateDps = (float)cfg->maxYawRate;
