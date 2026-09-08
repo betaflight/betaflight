@@ -517,7 +517,11 @@ bool compassInit(void)
 
 bool compassEnabledAndCalibrated(void)
 {
-    return sensors(SENSOR_MAG) && (imuConfig()->trust_mag) && (mag.magADC.x != 0) && (mag.magADC.y != 0) && (mag.magADC.z != 0);
+    const flightDynamicsTrims_t *magZero = &compassConfig()->magZero;
+
+    return sensors(SENSOR_MAG)
+        && imuConfig()->trust_mag
+        && (magZero->raw[X] != 0 || magZero->raw[Y] != 0 || magZero->raw[Z] != 0);
 }
 
 void compassStartCalibration(void)
