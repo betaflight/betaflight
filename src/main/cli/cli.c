@@ -6908,8 +6908,10 @@ RAM_CODE static void cliEnv(const char *cmdName, char *cmdline)
         cliPrintNameValue("GPS_CONNECTED", gpsData.state >= GPS_STATE_CONFIGURE ? "ON" : "OFF");
         cliPrintNameValue("GPS_CONFIGURED", gpsData.state > GPS_STATE_CONFIGURE ? "ON" : "OFF");
 #ifdef USE_GPS_UBLOX
-        char gpsVersionBuf[24];
-        cliPrintNameValue("GPS_VERSION", cliGpsUbloxVersionString(gpsVersionBuf));
+        if (gpsConfig()->provider == GPS_UBLOX) {
+            char gpsVersionBuf[24];
+            cliPrintNameValue("GPS_VERSION", cliGpsUbloxVersionString(gpsVersionBuf));
+        }
 #endif
     }
 #endif

@@ -1597,6 +1597,11 @@ void gpsUpdate(timeUs_t currentTimeUs)
         // previously we would attempt a different baud rate here if gps auto-baud was enabled.  that code has been removed.
         gpsSol.numSat = 0;
         DISABLE_STATE(GPS_FIX);
+#ifdef USE_GPS_UBLOX
+        // Defensive: a frame received before the disconnect must not be mistaken for evidence
+        // that a module is still present once we start a fresh detection cycle.
+        gpsData.ubloxValidFrameReceived = false;
+#endif
         gpsSetState(GPS_STATE_DETECT_BAUD);
         break;
 
