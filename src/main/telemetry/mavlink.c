@@ -1526,9 +1526,21 @@ static void processMAVLinkTelemetry(void)
     }
 }
 
+// A MAVLink receiver link is bidirectional, so telemetry rides on the RX port
+// without a provider slot, as CRSF does; a configured provider still wins.
+static bool mavlinkTelemetryOnRxPort(void)
+{
+#ifdef USE_SERIALRX_MAVLINK
+    if (telemetryPort == SERIAL_PORT_NONE && rxRuntimeState.serialrxProvider == SERIALRX_MAVLINK) {
+        return true;
+    }
+#endif
+    return telemetryPort != SERIAL_PORT_NONE && telemetryCheckRxPortShared(telemetryPort, rxRuntimeState.serialrxProvider);
+}
+
 void checkMAVLinkTelemetryState(void)
 {
-    if (telemetryPort != SERIAL_PORT_NONE && telemetryCheckRxPortShared(telemetryPort, rxRuntimeState.serialrxProvider)) {
+    if (mavlinkTelemetryOnRxPort()) {
         if (!mavlinkTelemetryEnabled && telemetrySharedPort != NULL) {
             mavlinkPort = telemetrySharedPort;
             lastArmingDisableFlags = 0;
