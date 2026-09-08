@@ -473,7 +473,7 @@ static bool compassDetect(magDev_t *dev, sensor_align_e *alignment)
 
 static bool compassHasCalibration(void)
 {
-
+    const flightDynamicsTrims_t *magZero = &compassConfig()->magZero;
     return (magZero->raw[X] != 0) ||
            (magZero->raw[Y] != 0) ||
            (magZero->raw[Z] != 0);
@@ -509,9 +509,8 @@ bool compassInit(void)
 
     buildRotationMatrixFromAngles(&magDev.rotationMatrix, &magCustomAlignment);
 
-    compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);
-    
-    const flightDynamicsTrims_t *magZero = &compassConfig()->magZero;
+    compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);  
+
     compassHasBeenCalibrated = compassHasCalibration();
 
     if (magDev.magOdrHz) {
