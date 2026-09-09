@@ -42,7 +42,6 @@
 
 
 void Error_Handler(void);
-uint32_t dmaGetInstance(dmaIdentifier_e identifier);
 
 #define ADC_REGULAR_RANK_1    ((uint32_t)0x00000001)       /*!< ADC regular conversion rank 1  */
 #define ADC_REGULAR_RANK_2    ((uint32_t)0x00000002)       /*!< ADC regular conversion rank 2  */

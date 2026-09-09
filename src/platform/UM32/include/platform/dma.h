@@ -97,6 +97,18 @@
 //flag:STATUSBLOCK
 #define DMA_GET_FLAG_STATUS(d, flag) ((DMA_TypeDef*)(d)->dma)->flag & (0x1 << d->flagsShift)
 
+// Upstream-style channel-busy test for the DW_ahb DMA: the enable bit is not
+// in the per-channel registers but in the controller-level CHENREG bitmap
+// (bit N = channel N). Derive the controller base and channel index from the
+// stream pointer the same way the LL_EX_DMA_* helpers do (controllers are
+// 64K-aligned; channel register blocks are 0x58 apart). Note a channel
+// paused at a block boundary keeps its CH_EN bit set, so this also reports
+// "enabled" for a paused-but-unfinished block — the desired "transfer still
+// in progress" semantics.
+#define IS_DMA_ENABLED(reg) \
+    (((DMA_TypeDef *)((uint32_t)(reg) & ~0xFFFFU))->CHENREG & \
+        (DMA_CHENREG_CH_EN_0 << (((uint32_t)(reg) & 0xFFFFU) / 0x58U)))
+
 
 #if defined(USE_HAL_DRIVER)
 

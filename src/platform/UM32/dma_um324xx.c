@@ -95,12 +95,6 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
     HAL_NVIC_EnableIRQ(dmaDescriptors[index].irqN);
 }
 
-uint32_t dmaGetInstance(dmaIdentifier_e identifier)
-{
-    const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
-    return (uint32_t)(dmaDescriptors[index].ref) & 0xFFFF0000;
-}
-
 int dmaGetHandlerCount(void)
 {
     return DMA_LAST_HANDLER;
