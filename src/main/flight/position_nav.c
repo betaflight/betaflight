@@ -75,6 +75,11 @@ void positionNavSetTargetEf(
     cmd.acceptanceRadiusM = acceptanceRadiusM;
     cmd.completionSpeedMps = completionSpeedMps;
     cmd.altitudeArrivalRequired = true;
+    // Per-command limits start from a clean slate; every caller states its own. They used to
+    // persist, so a leg that set none silently inherited the previous leg's.
+    cmd.vertSpeedLimitMps = 0.0f;
+    cmd.maxAccelMps2 = 0.0f;
+    cmd.maxDecelMps2 = 0.0f;
 
     cmd.callback = callback;
     cmd.callbackUserData = userData;
@@ -125,6 +130,11 @@ void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
     cmd.maxDecelMps2 = maxDecelMps2;
 }
 
+void positionNavSetVerticalSpeedLimit(float vertSpeedLimitMps)
+{
+    cmd.vertSpeedLimitMps = vertSpeedLimitMps;
+}
+
 void positionNavSetAltitudeArrivalRequired(bool required)
 {
     cmd.altitudeArrivalRequired = required;
@@ -153,24 +163,32 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
     }};
 
     const float horizDistM = sqrtf(sq(errorEfM.v[ENU_E]) + sq(errorEfM.v[ENU_N]));
-    const float distanceM = cmd.includeAltitude ? vector3Norm(&errorEfM) : horizDistM;
 
-    vector3_t dirEf;
-    if (distanceM > MIN_DISTANCE_M) {
-        vector3Scale(&dirEf, &errorEfM, 1.0f / distanceM);
-    } else {
-        vector3Zero(&dirEf);
-    }
-
-    float desiredSpeedMps = fminf(cmd.cruiseSpeedMps, POS_TO_VEL_KP * distanceM);
-
+    // Independent speed budgets per axis. A single 3D direction vector couples them, so the axis
+    // with the larger error takes nearly all of the budget and the other collapses: a deep
+    // landing target starves horizontal correction, a shallow one starves the descent. Arrival
+    // is unaffected, it already tests horizontal distance and altitude error separately.
+    float desiredHorizMps = fminf(cmd.cruiseSpeedMps, POS_TO_VEL_KP * horizDistM);
     if (cmd.maxDecelMps2 > 0.0f) {
-        const float brakingSpeed = sqrtf(2.0f * cmd.maxDecelMps2 * distanceM);
-        desiredSpeedMps = fminf(desiredSpeedMps, brakingSpeed);
+        desiredHorizMps = fminf(desiredHorizMps, sqrtf(2.0f * cmd.maxDecelMps2 * horizDistM));
     }
 
     vector3_t targetVelMps;
-    vector3Scale(&targetVelMps, &dirEf, desiredSpeedMps);
+    vector3Zero(&targetVelMps);
+    if (horizDistM > MIN_DISTANCE_M) {
+        targetVelMps.v[ENU_E] = errorEfM.v[ENU_E] / horizDistM * desiredHorizMps;
+        targetVelMps.v[ENU_N] = errorEfM.v[ENU_N] / horizDistM * desiredHorizMps;
+    }
+
+    if (cmd.includeAltitude) {
+        const float errUpM = errorEfM.v[ENU_U];
+        const float vertCruiseMps = (cmd.vertSpeedLimitMps > 0.0f) ? cmd.vertSpeedLimitMps : cmd.cruiseSpeedMps;
+        float desiredVertMps = fminf(vertCruiseMps, POS_TO_VEL_KP * fabsf(errUpM));
+        if (cmd.maxDecelMps2 > 0.0f) {
+            desiredVertMps = fminf(desiredVertMps, sqrtf(2.0f * cmd.maxDecelMps2 * fabsf(errUpM)));
+        }
+        targetVelMps.v[ENU_U] = (errUpM >= 0.0f) ? desiredVertMps : -desiredVertMps;
+    }
 
     if (cmd.maxAccelMps2 > 0.0f && dt > 0.0f) {
         vector3_t delta;
