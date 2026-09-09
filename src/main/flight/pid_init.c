@@ -349,7 +349,7 @@ static float tpaCurveHyperbolicVrefFunction(float x, void *args)
 {
     const pidProfile_t *pidProfile = (const pidProfile_t*)args;
     const float power = pidProfile->speed_curve_power * 0.1f;
-    return powf(x, power);
+    return powf(1.0f / x, power);
 }
 
 static void tpaCurveHyperbolicVrefInit(const pidProfile_t *pidProfile)
@@ -357,8 +357,8 @@ static void tpaCurveHyperbolicVrefInit(const pidProfile_t *pidProfile)
     const float power = pidProfile->speed_curve_power * 0.1f;
     const float yMin = pidProfile->speed_curve_min * 0.01f;
     const float yMax = pidProfile->speed_curve_max * 0.01f;
-    const float xMin = expf(logf(yMin) / power);
-    const float xMax = expf(logf(yMax) / power);
+    const float xMin = expf(logf(yMax) / power);
+    const float xMax = expf(logf(yMin) / power);
     pidRuntime.refSpeedCurveArgMin = xMin;
     pidRuntime.refSpeedCurveArgMax = xMax;
     pwlInitialize(&pidRuntime.tpaCurvePwl, pidRuntime.tpaCurvePwl_yValues, TPA_CURVE_PWL_SIZE, xMin, xMax);
