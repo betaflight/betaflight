@@ -95,6 +95,17 @@ static int writeChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t a
     return 0;
 }
 
+static bool writeLogo(displayPort_t *displayPort, uint16_t fontOffset, uint16_t fontMax, uint8_t logoCols, uint8_t logoRows)
+{
+    UNUSED(displayPort);
+    if (fontOffset + logoCols * logoRows - 1 > fontMax) {
+        return false;
+    }
+
+    fbOsdWriteLogo(displayPort->cols / 2, displayPort->rows / 2, fontOffset, logoCols, logoRows);
+    return true;
+}
+
 static bool isTransferInProgress(const displayPort_t *displayPort)
 {
     UNUSED(displayPort);
@@ -218,6 +229,7 @@ static const displayPortVTable_t fbOsdVTable = {
     .setBackgroundType = setBackgroundType,
     .drawOsdItem = drawOsdItem,
     .redrawBackground = redrawBackground,
+    .writeLogo = writeLogo,
 };
 
 bool fbOsdDisplayPortInit(const vcdProfile_t *vcdProfile, displayPort_t **displayPort)

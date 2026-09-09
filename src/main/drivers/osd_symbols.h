@@ -23,6 +23,7 @@
 
 //Misc
 #define SYM_NONE                    0x00
+#define SYM_LOGO_START              0xA0
 #define SYM_END_OF_FONT             0xFF
 #define SYM_BLANK                   0x20
 #define SYM_HYPHEN                  0x2D
@@ -97,6 +98,20 @@
 
 #define SYM_ARROW_SMALL_UP          0x75
 #define SYM_ARROW_SMALL_DOWN        0x76
+
+#ifdef OSD_RSSI_WITH_SYMBOL
+#define SYM_HEADSET                 0x82
+#endif
+
+#if OSD_FB_PICO_ENABLE_PIXEL_MODE
+#define SYM_ALT_LADDER              SYM_AH_DECORATION // vertical ladder element
+#define SYM_ALT_ABOVEMAX            0x86
+#define SYM_ALT_BELOWZERO           0x87
+#define SYM_CROSSHAIRS_TL           SYM_AH_CENTER_LINE
+#define SYM_CROSSHAIRS_TR           SYM_AH_CENTER
+#define SYM_CROSSHAIRS_BL           SYM_AH_CENTER_LINE_RIGHT
+#define SYM_CROSSHAIRS_BR           0x88
+#endif
 
 // AH Bars
 #define SYM_AH_BAR9_0               0x80

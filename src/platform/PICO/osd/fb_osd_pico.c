@@ -94,7 +94,7 @@ fbOsdInitStatus_e fbOsdInit(const struct fbOsdConfig_s *fbOsdConfig, const struc
     if (first) {
         if (!fbOsdLoadFont()) {
             bprintf("FB_OSD fbOsdInit font data not configured");
-            return FB_OSD_INIT_NOT_CONFIGURED;
+            // can't return as "not configured" here, otherwise never get a chance to upload a font!
         }
 
         if (!osdPioStartDetection()) {
@@ -214,10 +214,17 @@ bool fbOsdWriteFontCharacter(uint8_t char_address, const uint8_t *char_data)
     // -> FB format 10 = black, 11 = white, 00 = transparent
     for (int i=0; i<54; ++i) {
         uint8_t c = *char_data++;
-        uint8_t d = bitConv[c&0x3] << 6;
-        d |= bitConv[(c>>2)&0x3] << 4;
-        d |= bitConv[(c>>4)&0x3] << 2;
-        d |= bitConv[c>>6];
+        uint8_t d;
+        if (char_address == 0) {
+            // retrieve mode information
+            d = c;
+            // bprintf("mode %02x..%02x %02x",4*i,4*i+3,d);
+        } else {
+            d = bitConv[c&0x3] << 6;
+            d |= bitConv[(c>>2)&0x3] << 4;
+            d |= bitConv[(c>>4)&0x3] << 2;
+            d |= bitConv[c>>6];
+        }
         *p++ = d;
     }
 #ifdef OSD_FB_PICO_FLASH_FONT
@@ -264,6 +271,11 @@ void fbOsdWriteChar(uint8_t x, uint8_t y, uint8_t attr, uint8_t c)
     osdPioWriteChar(x, y, c);
 }
 
+void fbOsdWriteLogo(uint16_t midX, uint16_t midY, uint16_t fontOffset, uint8_t logoCols, uint8_t logoRows)
+{
+    cacheLogoInfo(midX, midY, fontOffset, logoCols, logoRows);
+}
+
 void fbOsdClearScreen(void)
 {
     osdPioClearCharBuffer();
@@ -272,7 +284,6 @@ void fbOsdClearScreen(void)
 void fbOsdRefreshAll(void)
 {
     fbOsdReInitIfRequired(true);
-    while (fbOsdDrawScreen()) ; // Call draw function until transfer is completed.
 }
 
 bool fbOsdBufferInUse(void)

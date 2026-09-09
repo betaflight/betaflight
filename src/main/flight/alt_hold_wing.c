@@ -47,6 +47,13 @@ void altHoldInit(void)
 {
 }
 
+bool altHoldUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
+{
+    UNUSED(currentTimeUs);
+    UNUSED(currentDeltaTimeUs);
+    return false;
+}
+
 void updateAltHold(timeUs_t currentTimeUs) {
     UNUSED(currentTimeUs);
 }

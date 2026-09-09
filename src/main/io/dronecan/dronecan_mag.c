@@ -38,6 +38,7 @@
 
 #include "io/dronecan/dronecan.h"
 #include "io/dronecan/dronecan_mag.h"
+#include "io/dronecan/dronecan_nodes.h"
 #include "io/dronecan/dronecan_msg.h"
 
 // Bit offsets into the MagneticFieldStrength2 payload. sensor_id then the
@@ -101,6 +102,8 @@ static void handleMag2(CanardInstance *ins, CanardRxTransfer *t)
 {
     UNUSED(ins);
 
+    dronecanNodesNoteSensor(t->source_node_id, DRONECAN_NODE_SENSOR_MAG);
+
     uint8_t sensorId = 0;
     canardDecodeScalar(t, MAG2_OFFSET_SENSOR_ID, 8, false, &sensorId);
 
@@ -117,6 +120,8 @@ static void handleMag2(CanardInstance *ins, CanardRxTransfer *t)
 static void handleMagLegacy(CanardInstance *ins, CanardRxTransfer *t)
 {
     UNUSED(ins);
+
+    dronecanNodesNoteSensor(t->source_node_id, DRONECAN_NODE_SENSOR_MAG);
 
     publishField(t, MAG_OFFSET_FIELD_X);
 }

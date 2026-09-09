@@ -489,8 +489,8 @@ bool srxl2RxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->rcFrameStatusFn = srxl2FrameStatus;
     rxRuntimeState->rcProcessFrameFn = srxl2ProcessFrame;
 
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-    if (!portConfig) {
+    const serialPortIdentifier_e port = rxConfig->rx_uart;
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
@@ -502,7 +502,7 @@ bool srxl2RxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         options |= SERIAL_BIDIR;
     }
 
-    serialPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, srxl2DataReceive,
+    serialPort = openSerialPort(port, FUNCTION_RX_SERIAL, srxl2DataReceive,
         NULL, SRXL2_PORT_BAUDRATE_DEFAULT, SRXL2_PORT_MODE, options);
 
     if (!serialPort) {

@@ -38,16 +38,28 @@ typedef struct opticalflowConfig_s {
     uint8_t  opticalflow_hardware;
     uint16_t rotation;
     uint8_t  flip_x;
-    uint16_t flow_lpf;
+    int8_t   opticalflow_uart;  // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned. Driver selected by opticalflow_hardware.
 } opticalflowConfig_t;
 
 PG_DECLARE(opticalflowConfig_t, opticalflowConfig);
+
+// True when the device reports by pushing MSP frames rather than being read
+// over a port its own driver opens, so the port needs an MSP port opening on it.
+static inline bool opticalflowTypeUsesMsp(uint8_t type)
+{
+    return type == OPTICALFLOW_MT;
+}
 
 typedef struct opticalflow_s {
     opticalflowDev_t dev;
     int16_t quality;
     vector2_t rawFlowRates;
     vector2_t processedFlowRates;
+    // Per-axis usability of processedFlowRates. False when body rotation was too
+    // fast for the compensation to recover a translation rate on that axis; the
+    // consumer must skip the axis, since zero is a measurement of "not moving"
+    // and not an absence of data.
+    bool flowRateValid[2];
     uint32_t timeStampUs;
 } opticalflow_t;
 

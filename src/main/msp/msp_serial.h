@@ -31,6 +31,38 @@
 #define MAX_MSP_PORT_COUNT 3
 #endif
 
+// A feature that speaks MSP over the UART it declares needs an MSP port there,
+// which the user never assigned: an MSP-transport rangefinder or optical flow
+// module, or an MSP DisplayPort OSD.  Those get their own budget, so declaring
+// one can never cost a configurator link.  Each can sit on its own UART; two
+// features sharing one dedup to a single port.
+#if defined(USE_RANGEFINDER_MT)
+#define IMPLIED_MSP_RANGEFINDER_PORT_COUNT 1
+#else
+#define IMPLIED_MSP_RANGEFINDER_PORT_COUNT 0
+#endif
+#if defined(USE_OPTICALFLOW_MT)
+#define IMPLIED_MSP_OPTICALFLOW_PORT_COUNT 1
+#else
+#define IMPLIED_MSP_OPTICALFLOW_PORT_COUNT 0
+#endif
+#if defined(USE_OSD) && defined(USE_MSP_DISPLAYPORT)
+#define IMPLIED_MSP_OSD_PORT_COUNT 1
+#else
+#define IMPLIED_MSP_OSD_PORT_COUNT 0
+#endif
+#if defined(USE_VTX_MSP)
+#define IMPLIED_MSP_VTX_PORT_COUNT 1
+#else
+#define IMPLIED_MSP_VTX_PORT_COUNT 0
+#endif
+
+#define IMPLIED_MSP_PORT_COUNT \
+    (IMPLIED_MSP_RANGEFINDER_PORT_COUNT + IMPLIED_MSP_OPTICALFLOW_PORT_COUNT \
+     + IMPLIED_MSP_OSD_PORT_COUNT + IMPLIED_MSP_VTX_PORT_COUNT)
+
+#define MSP_PORT_COUNT (MAX_MSP_PORT_COUNT + IMPLIED_MSP_PORT_COUNT)
+
 typedef enum {
     PORT_IDLE,
     PORT_MSP_PACKET,

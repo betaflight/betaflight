@@ -25,8 +25,8 @@
 #include "pico/stdio_uart.h"
 #include "pico/platform/compiler.h"
 
-#if !defined(PICO_TRACE_UART_INSTANCE) || !defined(PICO_TRACE_TX_GPIO) || !defined(PICO_TRACE_RX_GPIO)
-#error PICO_TRACE build requires defines for PICO_TRACE_UART_INSTANCE, PICO_TRACE_TX_GPIO, PICO_TRACE_RX_GPIO
+#if !defined(PICO_TRACE_UART_INSTANCE) || !defined(PICO_TRACE_TX_GPIO)
+#error PICO_TRACE build requires defines for PICO_TRACE_UART_INSTANCE, PICO_TRACE_TX_GPIO
 #endif
 
 // Wrap main to insert the initialisation code.
@@ -35,7 +35,7 @@ extern int REAL_FUNC(main)(int argc, char * argv[]);
 int WRAPPER_FUNC(main)(int argc, char * argv[])
 {
     //stdio_init_all();
-    stdio_uart_init_full(UART_INSTANCE(PICO_TRACE_UART_INSTANCE), 115200, PICO_TRACE_TX_GPIO, PICO_TRACE_RX_GPIO);
+    stdio_uart_init_full(UART_INSTANCE(PICO_TRACE_UART_INSTANCE), 115200, PICO_TRACE_TX_GPIO, -1);
     tprintf("\n=== Betaflight main ===");
     int mr = REAL_FUNC(main)(argc, argv);
     tprintf("\n=== Betaflight main end ===");

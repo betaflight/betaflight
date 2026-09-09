@@ -20,10 +20,10 @@
 
 #pragma once
 
-#ifdef DEBUG_OSD_TEST_SMALLFONT
-#define VIDEO_COLUMNS_SD          DEBUG_OSD_TEST_COLS
-#define VIDEO_LINES_NTSC          DEBUG_OSD_TEST_ROWS_NTSC
-#define VIDEO_LINES_PAL           DEBUG_OSD_TEST_ROWS_PAL
+#if OSD_FB_ENABLE_SMALLFONT
+#define VIDEO_COLUMNS_SD          OSD_SMALLFONT_COLS
+#define VIDEO_LINES_NTSC          OSD_SMALLFONT_ROWS_NTSC
+#define VIDEO_LINES_PAL           OSD_SMALLFONT_ROWS_PAL
 #else
 #define VIDEO_COLUMNS_SD          30
 #define VIDEO_LINES_NTSC          13
@@ -109,8 +109,6 @@ typedef struct displayPort_s {
     void *device;
     uint8_t rows;
     uint8_t cols;
-    uint8_t posX;
-    uint8_t posY;
 
     // CMS state
     bool useFullscreen;
@@ -153,6 +151,7 @@ typedef struct displayPortVTable_s {
     bool (*drawOsdItem)(displayPort_t *displayPort, uint8_t elemPosX, uint8_t elemPosY, uint8_t /* osd_items_e */ item, bool isBackground);
     void (*redrawBackground)(displayPort_t *displayPort);
     void (*fontUpdateCompletion)(displayPort_t *displayPort);
+    bool (*writeLogo)(displayPort_t *displayPort, uint16_t fontOffset, uint16_t fontMax, uint8_t logoCols, uint8_t logoRows);
 } displayPortVTable_t;
 
 void displayGrab(displayPort_t *instance);
@@ -162,7 +161,6 @@ bool displayIsGrabbed(const displayPort_t *instance);
 void displayClearScreen(displayPort_t *instance, displayClearOption_e options);
 bool displayDrawScreen(displayPort_t *instance);
 int displayScreenSize(const displayPort_t *instance);
-void displaySetXY(displayPort_t *instance, uint8_t x, uint8_t y);
 int displaySys(displayPort_t *instance, uint8_t x, uint8_t y, displayPortSystemElement_e systemElement);
 bool displayExtended(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t /* osd_items_e */ item, bool isBackground);
 int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, const char *text);
@@ -185,3 +183,4 @@ bool displayLayerCopy(displayPort_t *instance, displayPortLayer_e destLayer, dis
 void displaySetBackgroundType(displayPort_t *instance, displayPortBackground_e backgroundType);
 bool displaySupportsOsdSymbols(displayPort_t *instance);
 void displayRedrawBackground(displayPort_t *instance);
+bool displayWriteLogo(displayPort_t *instance, uint16_t fontOffset, uint16_t fontMax, uint8_t logoCols, uint8_t logoRows);
