@@ -94,6 +94,9 @@ GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS_M8N];
 #define GPS_CONFIG_BAUD_CHANGE_INTERVAL 330  // Time to wait, in ms, between 'test this baud rate' messages
 #define GPS_CONFIG_CHANGE_INTERVAL 110       // Time to wait, in ms, between CONFIG steps
 #define GPS_BAUDRATE_TEST_COUNT 3      // Number of times to repeat the test message when setting baudrate
+// bound the baud scan - each step re-inits the UART, and a port with no module never stops (#13946)
+#define GPS_BAUD_SWEEP_CYCLE_LIMIT 2
+#define GPS_BAUD_SWEEP_BACKOFF_MS 30000
 #define GPS_RECV_TIME_MAX 25           // Max permitted time, in us, for the NMEA Receive Data process
 #define GPS_UBLOX_RECV_TIME_MAX 15     // Max permitted time, in us, for the UBLOX Receive Data process
 #define GPS_FRAME_PROCESS_TIME_US 10    // Estimated ceiling for time required to process a frame, in us, for the Receive Data process
@@ -351,6 +354,7 @@ typedef enum {
 
 baudRate_e initBaudRateIndex;
 size_t initBaudRateCycleCount;
+static uint32_t lastBaudStepMs;
 #endif // USE_GPS_UBLOX
 
 gpsData_t gpsData;
@@ -431,6 +435,7 @@ void gpsInit(void)
     // set the user's intended baud rate
     initBaudRateIndex = BAUD_COUNT;
     initBaudRateCycleCount = 0;
+    lastBaudStepMs = millis();
     gpsData.userBaudRateIndex = DEFAULT_BAUD_RATE_INDEX;
     for (unsigned i = 0; i < ARRAYLEN(gpsInitData); i++) {
         if (gpsInitData[i].baudrateIndex == gpsConfig()->gps_baud) {
@@ -1046,6 +1051,13 @@ static void gpsConfigureUblox(void)
         }
         messageCounter = 0;
         gpsData.state_ts = gpsData.now;
+
+        // let the opening passes run unthrottled, then stop re-initialising the UART every step
+        if ((initBaudRateCycleCount >= GPS_BAUD_SWEEP_CYCLE_LIMIT * ARRAYLEN(gpsInitData))
+            && (cmp32(gpsData.now, lastBaudStepMs) < GPS_BAUD_SWEEP_BACKOFF_MS)) {
+            break;
+        }
+        lastBaudStepMs = gpsData.now;
 
         // failed to connect at that rate after five attempts
         // try other GPS baudrates, starting at 9600 and moving up
