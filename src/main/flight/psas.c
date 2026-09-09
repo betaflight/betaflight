@@ -179,9 +179,9 @@ static float FAST_CODE_NOINLINE updateAccelZHoldingController(float pitchStick, 
     psasData.pitch.I += servoVelocity * pidRuntime.dT;
     deltaAccP = accelDelta * psasRuntime.pitch_accel_p_gain;
 
-    DEBUG_SET(DEBUG_PSAS, 3, lrintf(accelReq * 10.0f));
-    DEBUG_SET(DEBUG_PSAS, 4, lrintf(accelDelta * 10.0f));
-    DEBUG_SET(DEBUG_PSAS, 5, lrintf(deltaAccP * 10.0f));
+    DEBUG_SET(DEBUG_PSAS, 3, lrintf(accelReq * 10.0f)); //!< Accel Z required [unit:0.1]
+    DEBUG_SET(DEBUG_PSAS, 4, lrintf(accelDelta * 10.0f)); //!< Accel Z delta [unit:0.1]
+    DEBUG_SET(DEBUG_PSAS, 5, lrintf(deltaAccP * 10.0f)); //!< Accel Z P [unit:0.1]
 
     return deltaAccP;
 }
@@ -232,8 +232,8 @@ static bool FAST_CODE_NOINLINE updateAngleOfAttackLimiter(float liftCoef, float 
         psasData.pitch.I -= psasData.pitch.I / psasRuntime.aoa_limiter_tau_return * pidRuntime.dT; // The psas_aoa_limiter_tau_return can not be zero - the CLI minimum value is 1.
     }
 
-    DEBUG_SET(DEBUG_PSAS, 6, lrintf(liftCoefDiff * 100.0f));
-    DEBUG_SET(DEBUG_PSAS, 7, isLimitAoA ? 1 : 0);
+    DEBUG_SET(DEBUG_PSAS, 6, lrintf(liftCoefDiff * 100.0f)); //!< Lift coeff delta [unit:0.01]
+    DEBUG_SET(DEBUG_PSAS, 7, isLimitAoA ? 1 : 0); //!< AoA limiter is on
 
     return isLimitAoA;
 }
@@ -338,7 +338,7 @@ static void FAST_CODE_NOINLINE psasComputeAirspeedGains(const pidProfile_t *pidP
             psasRuntime.speed_gains.main[axis] = mainCurve;
         }
     }
-    DEBUG_SET(DEBUG_PSAS, 0, lrintf(mainCurve * 100.0f));
+    DEBUG_SET(DEBUG_PSAS, 0, lrintf(mainCurve * 100.0f)); //!< Main speed curve [unit:%]
 
     float stickCurve = constrainf(curve, pidProfile->psas_speed_stick_curve_min * 0.01, pidProfile->psas_speed_stick_curve_max * 0.01);
     if (pidProfile->psas_speed_stick_curve_enable[FD_PITCH]) {
@@ -347,7 +347,7 @@ static void FAST_CODE_NOINLINE psasComputeAirspeedGains(const pidProfile_t *pidP
     if (pidProfile->psas_speed_stick_curve_enable[FD_YAW]) {
         psasRuntime.speed_gains.stick[FD_YAW] = stickCurve;
     }
-    DEBUG_SET(DEBUG_PSAS, 1, lrintf(stickCurve * 100.0f));
+    DEBUG_SET(DEBUG_PSAS, 1, lrintf(stickCurve * 100.0f)); //!< Stick speed curve [unit:%]
 
     if (pidProfile->psas_speed_stick_curve_enable[FD_ROLL]) {
         float rollStickCurve = computePower(speedRelation, pidProfile->psas_speed_roll_stick_curve_power);
@@ -491,7 +491,7 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     psasData.yaw.Sum = psasData.yaw.pilot + psasData.yaw.damping + psasData.yaw.stability + psasData.yaw.rollToYawCrossLink;
     psasData.yaw.Sum = constrainf(psasData.yaw.Sum, -100.0f, 100.0f);
 
-    DEBUG_SET(DEBUG_PSAS, 2, lrintf(liftCoef * 100.0f));
+    DEBUG_SET(DEBUG_PSAS, 2, lrintf(liftCoef * 100.0f)); //!< Lift coefficient [unit:0.01]
 }
 
 bool FAST_CODE_NOINLINE psasHandleMode(const pidProfile_t *pidProfile)
