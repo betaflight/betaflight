@@ -42,7 +42,15 @@ extiChannelRec_t extiChannelRecs[16];
 //                                      0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
 static const uint8_t extiGroups[16] = { 0, 1, 2, 3, 4, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6 };
 static uint8_t extiGroupPriority[EXTI_IRQ_GROUPS];
-static GPIO_TypeDef* extiGpio[EXTI_IRQ_GROUPS];
+
+// The pending/enable state (IEN/MIS/IC) lives in EACH GPIO controller, while
+// the SYSCFG EXTICR port mux selects a port per LINE — so two pins in the
+// same IRQ group may sit on different ports. Track every port used per
+// group; the IRQ handler must service all of them or the other port's MIS
+// never clears and the shared NVIC line storms.
+#define EXTI_PORTS_PER_GROUP 6 // GPIOA..E plus headroom
+static GPIO_TypeDef* extiGroupPorts[EXTI_IRQ_GROUPS][EXTI_PORTS_PER_GROUP];
+static uint8_t extiGroupPortCount[EXTI_IRQ_GROUPS];
 static const uint8_t extiGroupIRQn[EXTI_IRQ_GROUPS] = {
     EXTI0_IRQn,
     EXTI1_IRQn,
@@ -63,6 +71,8 @@ void EXTIInit(void)
 {
     memset(extiChannelRecs, 0, sizeof(extiChannelRecs));
     memset(extiGroupPriority, 0xff, sizeof(extiGroupPriority));
+    memset(extiGroupPorts, 0, sizeof(extiGroupPorts));
+    memset(extiGroupPortCount, 0, sizeof(extiGroupPortCount));
 }
 
 void EXTIHandlerInit(extiCallbackRec_t *self, extiHandlerCallback *fn)
@@ -80,8 +90,21 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
 
     int group = extiGroups[chIdx];
     GPIO_TypeDef *GPIOx = IO_GPIO(io);
-    extiGpio[group] = GPIOx;
 
+    // Register this line's port with its IRQ group (deduplicated). Every
+    // port in the group gets serviced by the group's IRQ handler.
+    uint8_t portCount = extiGroupPortCount[group];
+    bool known = false;
+    for (uint8_t i = 0; i < portCount; i++) {
+        if (extiGroupPorts[group][i] == GPIOx) {
+            known = true;
+            break;
+        }
+    }
+    if (!known && portCount < EXTI_PORTS_PER_GROUP) {
+        extiGroupPorts[group][portCount] = GPIOx;
+        extiGroupPortCount[group] = portCount + 1;
+    }
 
     extiChannelRec_t *rec = &extiChannelRecs[chIdx];
     rec->handler = cb;
@@ -126,6 +149,10 @@ void EXTIEnable(IO_t io)
         return;
     }
 
+    /* Clear any stale pending bit BEFORE enabling — otherwise the enable
+     * itself would fire a spurious callback for an edge that arrived while
+     * the line was disabled (X32 exti_x32.c does the same). */
+    IO_GPIO(io)->IC = extiLine;
     IO_GPIO(io)->IEN |= extiLine;
 }
 
@@ -144,18 +171,40 @@ void EXTIDisable(IO_t io)
 
 #define EXTI_EVENT_MASK 0xFFFF // first 16 bits only, see also definition of extiChannelRecs.
 
+// Upstream-shaped: mask is the IRQ group's LINE BITMASK, passed by the
+// vector wrapper with the same literals as the STM32 exti.c wrappers
+// (0x0001..0x0010, 0x03E0, 0xFC00). Two UM324 deviations from the STM32
+// core, both forced by the hardware model:
+//   1. Pending/enable state (IEN/MIS/IC) lives per GPIO controller, so the
+//      handler drains every port registered for the group instead of one
+//      centralized EXTI block. The group index for the port list is the
+//      mask's top line (lines 0-4 -> groups 0-4, 9 -> 5, 15 -> 6).
+//   2. Each port's MIS is masked down to the group's lines: MIS shows every
+//      enabled line of that PORT, so without the mask a port with EXTI pins
+//      in two groups would get cross-dispatched from the wrong IRQ.
 FAST_IRQ_HANDLER void EXTI_IRQHandler(uint32_t mask)
 {
-    GPIO_TypeDef* GPIOx = extiGpio[mask];
-    uint32_t exti_active = GPIOx->MIS;
+    const unsigned top = 31 - __builtin_clz(mask);
+    const uint8_t group = (top <= 4) ? top : ((top <= 9) ? 5 : 6);
+    const uint8_t portCount = extiGroupPortCount[group];
 
-    GPIOx->IC = exti_active;  // clear pending mask (by writing 1) 
+    for (uint8_t p = 0; p < portCount; p++) {
+        GPIO_TypeDef *GPIOx = extiGroupPorts[group][p];
+        uint32_t exti_active = GPIOx->MIS & mask;
 
-    while (exti_active) {
-        unsigned idx = 31 - __builtin_clz(exti_active);
-        uint32_t mask = 1 << idx;
-        extiChannelRecs[idx].handler->fn(extiChannelRecs[idx].handler);
-        exti_active &= ~mask;
+        GPIOx->IC = exti_active;  // clear pending mask (by writing 1)
+
+        while (exti_active) {
+            unsigned idx = 31 - __builtin_clz(exti_active);
+            uint32_t activeMask = 1 << idx;
+
+            extiCallbackRec_t *handler = extiChannelRecs[idx].handler;
+            if (handler && handler->fn) {
+                handler->fn(handler);
+            }
+
+            exti_active &= ~activeMask;
+        }
     }
 }
 
@@ -166,12 +215,12 @@ FAST_IRQ_HANDLER void EXTI_IRQHandler(uint32_t mask)
     struct dummy                                 \
     /**/
 
-_EXTI_IRQ_HANDLER(EXTI0_IRQHandler, 0);
-_EXTI_IRQ_HANDLER(EXTI1_IRQHandler, 1);
-_EXTI_IRQ_HANDLER(EXTI2_IRQHandler, 2);
-_EXTI_IRQ_HANDLER(EXTI3_IRQHandler, 3);
-_EXTI_IRQ_HANDLER(EXTI4_IRQHandler, 4);
-_EXTI_IRQ_HANDLER(EXTI5TO9_IRQHandler, 5);
-_EXTI_IRQ_HANDLER(EXTI10TO15_IRQHandler, 6);
+_EXTI_IRQ_HANDLER(EXTI0_IRQHandler, 0x0001);
+_EXTI_IRQ_HANDLER(EXTI1_IRQHandler, 0x0002);
+_EXTI_IRQ_HANDLER(EXTI2_IRQHandler, 0x0004);
+_EXTI_IRQ_HANDLER(EXTI3_IRQHandler, 0x0008);
+_EXTI_IRQ_HANDLER(EXTI4_IRQHandler, 0x0010);
+_EXTI_IRQ_HANDLER(EXTI5TO9_IRQHandler, 0x03E0);
+_EXTI_IRQ_HANDLER(EXTI10TO15_IRQHandler, 0xFC00);
 
 #endif
