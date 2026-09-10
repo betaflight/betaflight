@@ -306,7 +306,7 @@ FAST_CODE_NOINLINE void updateDshotTelemetry(void)
         minMotorFrequencyHz = MIN(minMotorFrequencyHz, motorFrequencyHz[motor]);
 
         if (motor < DEBUG16_VALUE_COUNT) {
-            DEBUG_SET(DEBUG_RPM_FILTER, motor, lrintf(motorFrequencyHz[motor]));
+            DEBUG_SET(DEBUG_RPM_FILTER, motor, lrintf(motorFrequencyHz[motor]));  //!< [index:0..7] Motor {1|2|3|4|5|6|7|8} Frequency [unit:Hz]
         }
     }
 
