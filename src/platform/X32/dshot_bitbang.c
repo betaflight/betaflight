@@ -491,7 +491,7 @@ static bool bbTelemetryWait(void)
     } while (telemetryPending);
 
     if (telemetryWait) {
-        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);
+        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);  //!< Reception Timeout Count
     }
 
     return telemetryWait;
@@ -532,10 +532,10 @@ static bool bbDecodeTelemetry(void)
 #endif
 
             if (rawValue == DSHOT_TELEMETRY_NOEDGE) {
-                DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 1, debug[1] + 1);
+                DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 1, debug[1] + 1);  //!< Missing Edge Count
                 continue;
             }
-            DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 0, debug[0] + 1);
+            DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 0, debug[0] + 1);  //!< Telemetry Packets Read
             dshotTelemetryState.readCount++;
 
             if (rawValue != DSHOT_TELEMETRY_INVALID) {
