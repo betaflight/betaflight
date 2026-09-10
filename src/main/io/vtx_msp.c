@@ -233,13 +233,13 @@ static void vtxMspProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
         break;
     }
 
-    DEBUG_SET(DEBUG_VTX_MSP, 0, packetCounter);
-    DEBUG_SET(DEBUG_VTX_MSP, 1, isCrsfPort(port));
-    DEBUG_SET(DEBUG_VTX_MSP, 2, isLowPowerDisarmed());
+    DEBUG_SET(DEBUG_VTX_MSP, 0, packetCounter);          //!< Packet Count
+    DEBUG_SET(DEBUG_VTX_MSP, 1, isCrsfPort(port));       //!< Is CRSF Port
+    DEBUG_SET(DEBUG_VTX_MSP, 2, isLowPowerDisarmed());   //!< Low Power Disarmed
 #if defined(USE_MSP_OVER_TELEMETRY)
-    DEBUG_SET(DEBUG_VTX_MSP, 3, isCrsfPort(port) ? getMspTelemetryDescriptor() : getMspSerialPortDescriptor(mspVtxPortIdentifier));
+    DEBUG_SET(DEBUG_VTX_MSP, 3, isCrsfPort(port) ? getMspTelemetryDescriptor() : getMspSerialPortDescriptor(mspVtxPortIdentifier));  //!< MSP Port Descriptor
 #else
-    DEBUG_SET(DEBUG_VTX_MSP, 3, getMspSerialPortDescriptor(mspVtxPortIdentifier));
+    DEBUG_SET(DEBUG_VTX_MSP, 3, getMspSerialPortDescriptor(mspVtxPortIdentifier));  //!< MSP Port Descriptor
 #endif
 }
 

@@ -288,7 +288,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
     // goes true immediately BOXFAILSAFE switch is reverted, or after recovery delay once signal recovers
     // essentially means 'should be in failsafe stage 2'
 
-    DEBUG_SET(DEBUG_FAILSAFE, 2, receivingRxData); // from Rx alone, not considering switch
+    DEBUG_SET(DEBUG_FAILSAFE, 2, receivingRxData);  //!< Receiving Rx Data
 
     bool armed = ARMING_FLAG(ARMED);
     beeperMode_e beeperMode = BEEPER_SILENCE;
@@ -526,8 +526,8 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 break;
         }
 
-        DEBUG_SET(DEBUG_FAILSAFE, 0, failsafeState.boxFailsafeSwitchWasOn);
-        DEBUG_SET(DEBUG_FAILSAFE, 3, failsafeState.phase);
+        DEBUG_SET(DEBUG_FAILSAFE, 0, failsafeState.boxFailsafeSwitchWasOn);  //!< Failsafe Switch Was On
+        DEBUG_SET(DEBUG_FAILSAFE, 3, failsafeState.phase);                   //!< Failsafe Phase [enum:failsafePhase_e]
 
     } while (reprocessState);
 

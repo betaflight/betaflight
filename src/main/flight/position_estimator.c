@@ -420,6 +420,11 @@ static timeUs_t lastXYMeasurementUs = 0;
 static timeUs_t lastZMeasurementUs = 0;
 static unsigned debugAxis; // 0 for East, 1 for North; selected by gyro_filter_debug_axis
 
+// One bit per positionEstimatorConsumer_e, set by every positionEstimatorUpdate()
+// and cleared as each consumer takes the event. Drives the event-based scheduling
+// of TASK_ALTHOLD and TASK_POSHOLD.
+static uint8_t pendingUpdateMask = 0;
+
 static sensorCalEntry_t zCal[CAL_Z_COUNT];
 
 #ifdef USE_GPS
@@ -503,6 +508,7 @@ void positionEstimatorInit(void)
     xyEnabled = false;
     lastXYMeasurementUs = 0;
     lastZMeasurementUs = 0;
+    pendingUpdateMask = 0;
     debugAxis = (gyroConfig()->gyro_filter_debug_axis == FD_PITCH) ? 1 : 0; //  0 for East, 1 for North
 
 
@@ -787,8 +793,8 @@ static void feedGPSMeasurements(timeUs_t nowUs)
         const float rGpsVelMax = 10.0f * R_GPS_VEL_BASE;
         const float rGpsVel = gpsAccuracyR(gpsSol.acc.sAcc, GPS_VEL_ACCURACY_DENOM, R_GPS_VEL_BASE, rGpsVelMax);
 
-        DEBUG_SET(DEBUG_POSITION_EST, 6, lrintf(rGpsPos));
-        DEBUG_SET(DEBUG_POSITION_EST, 7, lrintf(rGpsVel));
+        DEBUG_SET(DEBUG_POSITION_EST, 6, lrintf(rGpsPos));  //!< GPS Position Measurement Variance [unit:cm2]
+        DEBUG_SET(DEBUG_POSITION_EST, 7, lrintf(rGpsVel));  //!< GPS Velocity Measurement Variance [unit:cm2/s2]
 
 
         kalmanUpdateVelocityToPosition(&kfEast, (float)gpsSol.velned.velE, rGpsVel);
@@ -814,8 +820,8 @@ static void feedGPSMeasurements(timeUs_t nowUs)
         const float gpsVelocityUp = -(float)gpsSol.velned.velD;
         const float gpsRelativeAltCm = gpsSol.llh.altCm - gpsAltOffsetCm;
 
-        DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(gpsRelativeAltCm));
-        DEBUG_SET(DEBUG_ALTITUDE, 4, lrintf(gpsVelocityUp));
+        DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(gpsRelativeAltCm));  //!< Relative GPS Altitude [unit:cm]
+        DEBUG_SET(DEBUG_ALTITUDE, 4, lrintf(gpsVelocityUp));  //!< GPS Vertical Velocity [unit:cm/s]
 
         kalmanUpdateVelocityToPosition(&kfUp, gpsVelocityUp, gpsVelUpR); // always update velocity and position from GPS velocity innovation
         kalmanUpdatePosition(&kfUp, gpsRelativeAltCm, gpsAltR); // always update position from GPS position innovation
@@ -970,7 +976,7 @@ static void feedBaroMeasurements(timeUs_t nowUs)
     const float baroRelativeAltCm = baroAltCm - baroAltOffsetCm;
 
     // Logged before the gate, so a rejected run is still visible against the estimate.
-    DEBUG_SET(DEBUG_ALTITUDE, 1, lrintf(baroRelativeAltCm));
+    DEBUG_SET(DEBUG_ALTITUDE, 1, lrintf(baroRelativeAltCm));  //!< Relative Baro Altitude [unit:cm]
 
     const zUpdateAction_e action = gateZPositionStep(&baroStepGate, baroRelativeAltCm,
                                                     getBaroSampleIntervalUs());
@@ -1094,7 +1100,7 @@ static void feedRangefinderMeasurements(timeUs_t nowUs)
 
     const float RangeFinderAltitude = altCm - rangefinderAltOffsetCm;
 
-    DEBUG_SET(DEBUG_ALTITUDE, 0, lrintf(RangeFinderAltitude));
+    DEBUG_SET(DEBUG_ALTITUDE, 0, lrintf(RangeFinderAltitude));  //!< Relative Rangefinder Altitude [unit:cm]
 
     // Logged above this point, so the rangefinder's altitude stays visible in
     // DEBUG_ALTITUDE even under a source that does not fuse it.
@@ -1241,8 +1247,8 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
     kalmanUpdateVelocityToPosition(&kfEast, velEastNow, flowR);
     kalmanUpdateVelocityToPosition(&kfNorth, velNorthNow, flowR);
 
-    DEBUG_SET(DEBUG_POSITION_EST, 3, lrintf(velEastNow));
-    DEBUG_SET(DEBUG_POSITION_EST, 4, lrintf(velNorthNow));
+    DEBUG_SET(DEBUG_POSITION_EST, 3, lrintf(velEastNow));  //!< Flow Velocity East [unit:cm/s]
+    DEBUG_SET(DEBUG_POSITION_EST, 4, lrintf(velNorthNow));  //!< Flow Velocity North [unit:cm/s]
 
     lastXYMeasurementUs = nowUs;
 #else
@@ -1278,7 +1284,7 @@ static void crossCalibrateOffsets(sensorCalEntry_t *sources, int count, float kf
 void positionEstimatorUpdate(void)
 {
     const timeUs_t nowUs = micros();
-    const float dt = HZ_TO_INTERVAL(TASK_ALTITUDE_RATE_HZ);
+    const float dt = HZ_TO_INTERVAL(TASK_POSITION_RATE_HZ);
 
     const bool wantXY = positionEstimatorWantXYFusion();
     if (wantXY != xyEnabled) {
@@ -1290,7 +1296,7 @@ void positionEstimatorUpdate(void)
     getLinearAccelENU(&accelEast, &accelNorth, &accelUp);
 
     const float accelToLog = (debugAxis == 0) ? accelEast : accelNorth;
-    DEBUG_SET(DEBUG_POSITION_EST, 5, lrintf(accelToLog));
+    DEBUG_SET(DEBUG_POSITION_EST, 5, lrintf(accelToLog));  //!< Linear Acceleration (dbg-axis) [unit:cm/s2]
 
     // Z-axis: always runs (for altitude hold, OSD, vario). While disarmed,
     // measure zero acceleration so covariance continues to evolve without
@@ -1349,11 +1355,11 @@ void positionEstimatorUpdate(void)
     estimate.acceleration.v[ENU_N] = kalmanGetAcceleration(&kfNorth);
     estimate.acceleration.v[ENU_U] = kalmanGetAcceleration(&kfUp);
 
-    DEBUG_SET(DEBUG_POSITION_EST, 0, lrintf(estimate.position.v[debugAxis]));
-    DEBUG_SET(DEBUG_POSITION_EST, 1, lrintf(estimate.velocity.v[debugAxis]));
-    DEBUG_SET(DEBUG_POSITION_EST, 2, lrintf(estimate.acceleration.v[debugAxis]));
+    DEBUG_SET(DEBUG_POSITION_EST, 0, lrintf(estimate.position.v[debugAxis]));  //!< Estimated Position (dbg-axis) [unit:cm]
+    DEBUG_SET(DEBUG_POSITION_EST, 1, lrintf(estimate.velocity.v[debugAxis]));  //!< Estimated Velocity (dbg-axis) [unit:cm/s]
+    DEBUG_SET(DEBUG_POSITION_EST, 2, lrintf(estimate.acceleration.v[debugAxis]));  //!< Estimated Acceleration (dbg-axis) [unit:cm/s2]
 
-    DEBUG_SET(DEBUG_ALTITUDE, 6, lrintf(accelUp));
+    DEBUG_SET(DEBUG_ALTITUDE, 6, lrintf(accelUp));  //!< Vertical Acceleration [unit:cm/s2]
 
     // Validity: based on recent measurement updates
     if (xyEnabled) {
@@ -1370,6 +1376,19 @@ void positionEstimatorUpdate(void)
     const float xyVar = (kalmanGetPositionVariance(&kfEast) + kalmanGetPositionVariance(&kfNorth)) * 0.5f;
     estimate.trustXY = 1.0f / (1.0f + xyVar / 10000.0f);
     estimate.trustZ = 1.0f / (1.0f + kalmanGetPositionVariance(&kfUp) / 10000.0f);
+
+    // Publish the update last, so a consumer woken by it reads a complete estimate.
+    pendingUpdateMask = (1 << POS_EST_CONSUMER_COUNT) - 1;
+}
+
+bool positionEstimatorTakeUpdate(positionEstimatorConsumer_e consumer)
+{
+    const uint8_t bit = 1 << consumer;
+    if (pendingUpdateMask & bit) {
+        pendingUpdateMask &= ~bit;
+        return true;
+    }
+    return false;
 }
 
 const positionEstimate3d_t *positionEstimatorGetEstimate(void)
