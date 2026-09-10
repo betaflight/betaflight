@@ -256,6 +256,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_start_deci_hz = 2,
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
+        .soft_arm_throttle_threshold = 0,
     );
 }
 
@@ -307,6 +308,25 @@ void pidResetIterm(void)
     for (int axis = 0; axis < 3; axis++) {
         pidData[axis].I = 0.0f;
     }
+}
+
+float pidUpdateSoftArm(float throttle)
+{
+    if (pidRuntime.softArmThrottleThresholdInv <= 0.0f) {
+        pidRuntime.softArmActive = false;
+        pidRuntime.softArmFactor = 1.0f;
+    } else if (!ARMING_FLAG(ARMED)) {
+        pidRuntime.softArmActive = true;
+        pidRuntime.softArmFactor = 0.0f;
+    } else if (pidRuntime.softArmActive) {
+        pidRuntime.softArmFactor = constrainf(throttle * pidRuntime.softArmThrottleThresholdInv, 0.0f, 1.0f);
+        if (pidRuntime.softArmFactor >= 1.0f) {
+            pidRuntime.softArmActive = false;
+        }
+        pidResetIterm();
+    }
+
+    return pidRuntime.softArmFactor;
 }
 
 #ifdef USE_WING

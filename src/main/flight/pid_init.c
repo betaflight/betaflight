@@ -483,6 +483,12 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.thrustLinearization = pidProfile->thrustLinearization / 100.0f;
 #endif
 
+    pidRuntime.softArmThrottleThresholdInv = pidProfile->soft_arm_throttle_threshold > 0
+        ? 100.0f / pidProfile->soft_arm_throttle_threshold
+        : 0.0f;
+    pidRuntime.softArmActive = pidRuntime.softArmThrottleThresholdInv > 0.0f;
+    pidRuntime.softArmFactor = pidRuntime.softArmActive ? 0.0f : 1.0f;
+
 #ifdef USE_D_MAX
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
         const uint8_t dMax = pidProfile->d_max[axis];

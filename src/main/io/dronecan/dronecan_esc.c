@@ -339,7 +339,7 @@ bool dronecanMotorDevInit(motorDevice_t *device, uint8_t motorCount)
 }
 
 void dronecanMotorInitEndpoints(const motorConfig_t *motorConfig, float outputLimit,
-                                float *outputLow, float *outputHigh, float *disarm,
+                                float *outputLow, float *outputSoftLow, float *outputHigh, float *disarm,
                                 float *deadbandMotor3dHigh, float *deadbandMotor3dLow)
 {
     UNUSED(deadbandMotor3dHigh);
@@ -349,9 +349,11 @@ void dronecanMotorInitEndpoints(const motorConfig_t *motorConfig, float outputLi
     // the DShot endpoint model. 3D/reverse is not yet wired, so forward-only.
     const float range = UAVCAN_ESC_RAWCOMMAND_MAX;
     const float motorIdlePercent = CONVERT_PARAMETER_TO_PERCENT(motorConfig->motorIdle * 0.01f);
+    const float motorSoftIdlePercent = CONVERT_PARAMETER_TO_PERCENT(motorConfig->motorSoftIdle * 0.01f);
 
     *disarm = 0;                                            // RawCommand 0 = stop
     *outputLow = motorIdlePercent * range;
+    *outputSoftLow = motorSoftIdlePercent * range;
     *outputHigh = range * outputLimit;
 }
 

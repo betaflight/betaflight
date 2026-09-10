@@ -56,18 +56,21 @@
 
 FAST_DATA_ZERO_INIT uint8_t dshotMotorCount = 0;
 
-void dshotInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3dHigh, float *deadbandMotor3dLow)
+void dshotInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputSoftLow, float *outputHigh, float *disarm, float *deadbandMotor3dHigh, float *deadbandMotor3dLow)
 {
     float outputLimitOffset = DSHOT_RANGE * (1 - outputLimit);
     const float motorIdlePercent = CONVERT_PARAMETER_TO_PERCENT(motorConfig->motorIdle * 0.01f);
+    const float motorSoftIdlePercent = CONVERT_PARAMETER_TO_PERCENT(motorConfig->motorSoftIdle * 0.01f);
     *disarm = DSHOT_CMD_MOTOR_STOP;
     if (featureIsEnabled(FEATURE_3D)) {
         *outputLow = DSHOT_MIN_THROTTLE + motorIdlePercent * (DSHOT_3D_FORWARD_MIN_THROTTLE - 1 - DSHOT_MIN_THROTTLE);
+        *outputSoftLow = DSHOT_MIN_THROTTLE + motorSoftIdlePercent * (DSHOT_3D_FORWARD_MIN_THROTTLE - 1 - DSHOT_MIN_THROTTLE);
         *outputHigh = DSHOT_MAX_THROTTLE - outputLimitOffset / 2;
         *deadbandMotor3dHigh = DSHOT_3D_FORWARD_MIN_THROTTLE + motorIdlePercent * (DSHOT_MAX_THROTTLE - DSHOT_3D_FORWARD_MIN_THROTTLE);
         *deadbandMotor3dLow = DSHOT_3D_FORWARD_MIN_THROTTLE - 1 - outputLimitOffset / 2;
     } else {
         *outputLow = DSHOT_MIN_THROTTLE + motorIdlePercent * DSHOT_RANGE;
+        *outputSoftLow = DSHOT_MIN_THROTTLE + motorSoftIdlePercent * DSHOT_RANGE;
         *outputHigh = DSHOT_MAX_THROTTLE - outputLimitOffset;
     }
 }

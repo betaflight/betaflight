@@ -52,7 +52,7 @@ void dronecanEscUpdateComplete(void);
 // vtable and define the output endpoints for the DRONECAN protocol family.
 bool dronecanMotorDevInit(motorDevice_t *device, uint8_t motorCount);
 void dronecanMotorInitEndpoints(const motorConfig_t *motorConfig, float outputLimit,
-                                float *outputLow, float *outputHigh, float *disarm,
+                                float *outputLow, float *outputSoftLow, float *outputHigh, float *disarm,
                                 float *deadbandMotor3dHigh, float *deadbandMotor3dLow);
 
 #endif // ENABLE_DRONECAN_ESC

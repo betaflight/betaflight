@@ -32,7 +32,7 @@ void motorPostInit(void);
 void motorWriteAll(float *values);
 void motorRequestTelemetry(unsigned index);
 
-void motorInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3DHigh, float *deadbandMotor3DLow);
+void motorInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputSoftLow, float *outputHigh, float *disarm, float *deadbandMotor3DHigh, float *deadbandMotor3DLow);
 
 float motorConvertFromExternal(uint16_t externalValue);
 uint16_t motorConvertToExternal(float motorValue);
