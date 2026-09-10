@@ -221,7 +221,7 @@ STATIC_UNIT_TESTED uint8_t ghstFrameStatus(rxRuntimeState_t *rxRuntimeState)
             rxRuntimeState->lastRcFrameTimeUs = ghstRxFrameEndAtUs;
             status = RX_FRAME_COMPLETE | RX_FRAME_PROCESSING_REQUIRED;      // request callback through ghstProcessFrame to do the decoding work
         } else {
-            DEBUG_SET(DEBUG_GHST, DEBUG_GHST_CRC_ERRORS, ++crcErrorCount);
+            DEBUG_SET(DEBUG_GHST, DEBUG_GHST_CRC_ERRORS, ++crcErrorCount);  //!< CRC Error Count
             status = RX_FRAME_DROPPED;                            // frame was invalid
         }
     } else {
@@ -267,8 +267,8 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
                 case GHST_UL_RC_CHANS_HS4_12_RSSI: {
                     const ghstPayloadPulsesRssi_t* const rssiFrame = (ghstPayloadPulsesRssi_t*)&ghstValidatedFrame->frame.payload;
 
-                    DEBUG_SET(DEBUG_GHST, DEBUG_GHST_RX_RSSI, -rssiFrame->rssi);
-                    DEBUG_SET(DEBUG_GHST, DEBUG_GHST_RX_LQ, rssiFrame->lq);
+                    DEBUG_SET(DEBUG_GHST, DEBUG_GHST_RX_RSSI, -rssiFrame->rssi);  //!< Uplink RSSI [unit:dBm]
+                    DEBUG_SET(DEBUG_GHST, DEBUG_GHST_RX_LQ, rssiFrame->lq);       //!< Link Quality [unit:%]
 
                     ghstRfProtocol = rssiFrame->rfProtocol;
 
@@ -315,7 +315,7 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
                     break;
 
                 default:
-                    DEBUG_SET(DEBUG_GHST, DEBUG_GHST_UNKNOWN_FRAMES, ++unknownFrameCount);
+                    DEBUG_SET(DEBUG_GHST, DEBUG_GHST_UNKNOWN_FRAMES, ++unknownFrameCount);  //!< Unknown Frame Count
                     break;
             }
 
@@ -356,7 +356,7 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
             case GHST_UL_MSP_REQ:
             case GHST_UL_MSP_WRITE: {
                 static uint8_t mspFrameCounter = 0;
-                DEBUG_SET(DEBUG_GHST_MSP, 0, ++mspFrameCounter);
+                DEBUG_SET(DEBUG_GHST_MSP, 0, ++mspFrameCounter);  //!< MSP Requests Received
                 if (handleMspFrame(ghstValidatedFrame->frame.payload, ghstValidatedFrame->frame.len - GHST_FRAME_LENGTH_CRC - GHST_FRAME_LENGTH_TYPE, NULL)) {
                     ghstScheduleMspResponse();
                 }
@@ -364,7 +364,7 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
             }
 #endif
             default:
-                DEBUG_SET(DEBUG_GHST, DEBUG_GHST_UNKNOWN_FRAMES, ++unknownFrameCount);
+                DEBUG_SET(DEBUG_GHST, DEBUG_GHST_UNKNOWN_FRAMES, ++unknownFrameCount);  //!< Unknown Frame Count
                 break;
             }
         }
