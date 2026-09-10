@@ -139,7 +139,6 @@ void bbSwitchToOutput(bbPort_t * bbPort)
     // Reinitialize port group DMA for output
     dmaResource_t *dmaResource = bbPort->dmaResource;
 #ifdef USE_DMA_REGISTER_CACHE
-    bbDMA_Cmd(bbPort, DISABLE);
     bbLoadDMARegs(dmaResource, &bbPort->dmaRegOutput);
 #else
     xLL_EX_DMA_DeInit(dmaResource);
@@ -149,6 +148,12 @@ void bbSwitchToOutput(bbPort_t * bbPort)
 
     // Reinitialize pacer timer for output
     ((TIM_TypeDef *)bbPort->timhw->tim)->ARR = bbPort->outputARR;
+
+#ifdef USE_DSHOT_TELEMETRY
+    if (useDshotTelemetry) {
+        ((TIM_TypeDef *)bbPort->timhw->tim)->CNT = 0;
+    }
+#endif
 
     bbPort->direction = DSHOT_BITBANG_DIRECTION_OUTPUT;
 }
@@ -262,7 +267,7 @@ void bbTIM_TimeBaseInit(bbPort_t *bbPort, uint16_t period)
     init->CounterMode = LL_TIM_COUNTERMODE_UP;
     init->Autoreload = period;
     LL_TIM_Init((TIM_TypeDef *)bbPort->timhw->tim, init);
-    MODIFY_REG(((TIM_TypeDef *)bbPort->timhw->tim)->CR1, TIM_CR1_ARPE, TIM_AUTORELOAD_PRELOAD_ENABLE);
+    LL_TIM_EnableARRPreload((TIM_TypeDef *)bbPort->timhw->tim);
 }
 
 void bbTIM_DMACmd(void *TIMx, uint16_t TIM_DMASource, FunctionalState NewState)
