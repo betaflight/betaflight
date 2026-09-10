@@ -54,6 +54,7 @@
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/pid.h"
+#include "flight/pos_hold.h"
 #include "flight/position.h"
 
 #include "io/displayport_crsf.h"
@@ -623,10 +624,15 @@ static void crsfFrameFlightMode(sbuf_t *dst)
         flightMode = "RTH";
     } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
         flightMode = "PASS";
+    } else if (FLIGHT_MODE(POS_HOLD_MODE)) {
+        // Position Hold forces Angle mode on, so it must be tested before it, otherwise the branch is unreachable
+#ifdef USE_POSITION_HOLD
+        flightMode = posHoldFailure() ? "PHFL" : "POSH";
+#else
+        flightMode = "POSH";
+#endif
     } else if (FLIGHT_MODE(ANGLE_MODE)) {
         flightMode = "ANGL";
-    } else if (FLIGHT_MODE(POS_HOLD_MODE)) {
-        flightMode = "POSH";
     } else if (FLIGHT_MODE(ALT_HOLD_MODE)) {
         flightMode = "ALTH";
     } else if (FLIGHT_MODE(HORIZON_MODE)) {
