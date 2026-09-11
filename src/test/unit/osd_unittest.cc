@@ -340,7 +340,9 @@ protected:
         batteryProfilesMutable(0)->vbatmincellvoltage = 330;
         batteryProfilesMutable(0)->vbatmaxcellvoltage = 430;
         batteryProfilesMutable(0)->vbatfullcellvoltage = 410;
+        batteryProfilesMutable(0)->batteryCapacity = 0;
         currentBatteryProfile = batteryProfiles(0);
+        osdConfigMutable()->cap_alarm = 2200;
     }
 
     virtual void TearDown() {
@@ -786,6 +788,30 @@ TEST_F(OsdTest, TestAlarms)
     }
 }
 
+TEST_F(OsdTest, TestCapacityAlarmUsesLegacyOsdAlarmWhenProfileCapacityIsUnset)
+{
+    // given
+    batteryProfilesMutable(0)->batteryCapacity = 0;
+    osdConfigMutable()->cap_alarm = 1800;
+
+    // then
+    EXPECT_EQ(1800, osdGetCapacityAlarm());
+}
+
+TEST_F(OsdTest, TestCapacityAlarmUsesCurrentBatteryProfileCapacity)
+{
+    // given
+    osdConfigMutable()->cap_alarm = 2200;
+    batteryProfilesMutable(0)->batteryCapacity = 1300;
+    batteryProfilesMutable(1)->batteryCapacity = 3000;
+    currentBatteryProfile = batteryProfiles(1);
+
+    // then
+    EXPECT_EQ(3000, osdGetCapacityAlarm());
+    currentBatteryProfile = batteryProfiles(0);
+    batteryProfilesMutable(1)->batteryCapacity = 0;
+}
+
 /*
  * Tests the RSSI OSD element.
  */
@@ -820,6 +846,35 @@ TEST_F(OsdTest, TestElementRssi)
 
     // then
     displayPortTestBufferSubstring(8, 1, "%c50", SYM_RSSI);
+}
+
+/*
+ * osd_rssi_alarm is settable up to 100 (settings.c). getRssiPercent() is clamped to 99 before
+ * being written to the display buffer, but the alarm severity must be evaluated against the raw,
+ * unclamped percentage -- otherwise a perfect 100% signal with rssi_alarm=100 spuriously reads
+ * as critical, because the clamped 99 always fails "< 100".
+ */
+TEST_F(OsdTest, TestElementRssiAlarmSeverity)
+{
+    // given
+    const uint8_t previousRssiAlarm = osdConfig()->rssi_alarm;
+    osdElementConfigMutable()->item_pos[OSD_RSSI_VALUE] = OSD_POS(8, 1) | OSD_PROFILE_1_FLAG;
+    osdConfigMutable()->rssi_alarm = 100;
+
+    osdAnalyzeActiveElements();
+
+    // when: true RSSI is a perfect 100%, alarm threshold is also the max (100)
+    rssi = 1023;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then: display clamps to 99 for formatting, but the alarm must not fire at a perfect signal
+    displayPortTestBufferSubstring(8, 1, "%c99", SYM_RSSI);
+    displayPortTestBufferAttrNoBits(8, 1, DISPLAYPORT_SEVERITY_CRITICAL);
+
+    // cleanup: OsdTest::SetUp() does not reset rssi_alarm -- restore it so this test's value
+    // doesn't leak into a later test that assumes a default.
+    osdConfigMutable()->rssi_alarm = previousRssiAlarm;
 }
 
 /*
@@ -1342,6 +1397,7 @@ TEST_F(OsdTest, TestHdPositioning)
 TEST_F(OsdTest, TestBatteryUsageCapacityZero)
 {
     batteryProfilesMutable(0)->batteryCapacity = 0;
+    osdConfigMutable()->cap_alarm = 0;
 
     // TYPE 3
     osdElementConfigMutable()->item_pos[OSD_MAIN_BATT_USAGE] =
@@ -1503,7 +1559,6 @@ TEST_F(OsdTest, TestBatteryUsageCapacityZero)
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
     osdRefresh();
     displayPortTestBufferAttrBits(2, 1, DISPLAYPORT_SEVERITY_CRITICAL);
-
 }
 
 // STUBS
