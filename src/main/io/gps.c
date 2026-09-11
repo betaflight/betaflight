@@ -1025,6 +1025,8 @@ static void gpsConfigureUblox(void)
             serialPrint(gpsPort, gpsInitData[gpsData.userBaudRateIndex].ubx);
             // use this baud rate for re-connections
             gpsData.tempBaudRateIndex = gpsData.userBaudRateIndex;
+            // the link is proven, so a later dropout gets the full-speed sweep again
+            initBaudRateCycleCount = 0;
             // we're done here, let's move the the next state
             gpsSetState(GPS_STATE_CHANGE_BAUD);
             return;
