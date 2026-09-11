@@ -95,7 +95,7 @@ GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS_M8N];
 #define GPS_CONFIG_CHANGE_INTERVAL 110       // Time to wait, in ms, between CONFIG steps
 #define GPS_BAUDRATE_TEST_COUNT 3      // Number of times to repeat the test message when setting baudrate
 // bound the baud scan - each step re-inits the UART, and a port with no module never stops (#13946)
-#define GPS_BAUD_SWEEP_CYCLE_LIMIT 2
+#define GPS_BAUD_SWEEP_CYCLE_LIMIT 2    // in whole passes, so the backoff always starts on the configured baud rate
 #define GPS_BAUD_SWEEP_BACKOFF_MS 30000
 #define GPS_RECV_TIME_MAX 25           // Max permitted time, in us, for the NMEA Receive Data process
 #define GPS_UBLOX_RECV_TIME_MAX 15     // Max permitted time, in us, for the UBLOX Receive Data process
