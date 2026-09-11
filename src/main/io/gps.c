@@ -400,6 +400,14 @@ static void gpsSetState(gpsState_e state)
     gpsData.ackState = UBLOX_ACK_IDLE;
 }
 
+// skip the USART and DMA teardown in uartReconfigure() when the port is already at this rate (#13946)
+static void gpsSetBaudRate(uint32_t baudRate)
+{
+    if (serialGetBaudRate(gpsPort) != baudRate) {
+        serialSetBaudRate(gpsPort, baudRate);
+    }
+}
+
 void gpsInit(void)
 {
     gpsDataIntervalSeconds = 0.1f;
@@ -962,7 +970,7 @@ static void gpsConfigureNmea(void)
 #if !defined(GPS_NMEA_TX_ONLY)
         if (gpsData.state_position < 1) {
             // set the FC's baud rate to the user's configured baud rate
-            serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]);
+            gpsSetBaudRate(baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]);
             gpsData.state_position++;
         } else if (gpsData.state_position < 2) {
             // send NMEA custom commands to select which messages being sent, data rate etc
@@ -1068,7 +1076,7 @@ static void gpsConfigureUblox(void)
             gpsData.tempBaudRateIndex--;
         }
         // set the FC baud rate to the new temp baud rate
-        serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.tempBaudRateIndex].baudrateIndex]);
+        gpsSetBaudRate(baudRates[gpsInitData[gpsData.tempBaudRateIndex].baudrateIndex]);
         // stop counting once backed off, so debug[2] can't overflow
         initBaudRateCycleCount = MIN(initBaudRateCycleCount + 1, GPS_BAUD_SWEEP_STEP_LIMIT);
 
@@ -1082,7 +1090,7 @@ static void gpsConfigureUblox(void)
             return;
         }
         // set the FC's serial port to the configured rate
-        serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]);
+        gpsSetBaudRate(baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]);
         DEBUG_SET(DEBUG_GPS_CONNECTION, 3, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex] / 100);  //!< Baud Rate / 100, Else Nav Message Age In Milliseconds
         // then start sending configuration settings
         gpsSetState(GPS_STATE_CONFIGURE);
