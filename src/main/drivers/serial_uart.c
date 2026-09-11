@@ -347,14 +347,7 @@ static void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
     uartPort_t *uartPort = (uartPort_t *)instance;
     uartDevice_t *uartDevice = container_of(uartPort, uartDevice_t, port);
-    const portMode_e mode = uartSanitizeMode(uartDevice, uartPort->port.mode, uartPort->port.options);
-
-    // skip the full USART and DMA teardown in uartReconfigure() when nothing would change
-    if ((baudRate == uartPort->port.baudRate) && (mode == uartPort->port.mode)) {
-        return;
-    }
-
-    uartPort->port.mode = mode;
+    uartPort->port.mode = uartSanitizeMode(uartDevice, uartPort->port.mode, uartPort->port.options);
     uartPort->port.baudRate = baudRate;
     uartReconfigure(uartPort);
 }
