@@ -220,6 +220,7 @@
 #define MSP_GPSSTATISTICS               166  // out message: Get GPS debugging data
 #define MSP_ATTITUDE_QUATERNION         167  // out message: Orientation quaternion components (w, x, y, z)
 #define MSP_WING                        169  // out message: WING settings
+#define MSP_PITOT                       170  // out message: Pitot data
 
 // OSD specific commands (180-189)
 #define MSP_OSD_VIDEO_CONFIG            180  // out message: Get OSD video settings

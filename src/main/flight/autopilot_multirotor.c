@@ -161,7 +161,6 @@ static vector2_t previousVelocity;       // for reversal of velocity detection
 static pt3Filter_t posNoisyPidsLpf[EF_AXIS_COUNT]; // smooths F, the noisiest term
 
 static bool isPositionHeld;
-static bool wasPositionHeld = false;
 static bool wasNavActive = false;
 static bool abortNavRequested = false;
 static bool forcePitchForward = false;
@@ -189,6 +188,25 @@ typedef enum {
     I_ZERO,           // force the integral to zero (pure velocity tracking: nav / rescue)
 } xyIntegralPolicy_e;
 
+// XY operational modes. xyProcessTransitions() carries every entry/exit side
+// effect, xySelectMode() picks the mode, and one feeder per mode sets the
+// targets and the control policy; the unified PIDAF law below is mode-blind.
+typedef enum {
+    XY_MODE_SETTLED_HOLD = 0, // anchored to a fixed point, integrating against wind
+    XY_MODE_BRAKING,          // arresting speed onto a capture point
+    XY_MODE_STICK_VELOCITY,   // flying the pilot's commanded velocity
+    XY_MODE_NAV_TRACK,        // following nav's moving position target (the carrot)
+    XY_MODE_NAV_VELOCITY,     // flying nav's commanded velocity, no position target
+} xyControlMode_e;
+
+// Outcome of a mode feeder: continue into the unified PIDAF law, hold the
+// previous output for this loop, or hand a fence violation to the retry logic.
+typedef enum {
+    XY_CONTINUE = 0,
+    XY_HOLD_PREVIOUS,
+    XY_FENCE_TRIPPED,
+} xyStepResult_e;
+
 typedef struct autopilotState_s {
     float sanityCheckDistance;
     float sanityViolationS;     // time the settled hold has spent beyond the fence
@@ -207,6 +225,7 @@ typedef struct autopilotState_s {
     float brakingExitSpeed;
     xyAnchorMode_e anchor;      // position-anchor selection for this loop
     xyIntegralPolicy_e iPolicy; // integral policy for this loop
+    xyControlMode_e mode;       // operational mode for this loop
     unsigned debugAxis;
 } autopilotState_t;
 
@@ -217,6 +236,26 @@ static autopilotState_t ap = {
     .sticksActive = false,
     .wasSticksActive = false,
 };
+
+// TASK_ALTHOLD and TASK_POSHOLD are event driven off positionEstimatorUpdate(),
+// so their interval is whatever the estimator delivers rather than the nominal
+// task period, and every dt in the control loops has to be measured. The
+// measurement is bounded: the first run after a task is enabled, or one starved
+// behind a long-running peer, would otherwise hand the integrators a step of
+// arbitrary size.
+#define AP_TASK_INTERVAL_MIN_DIVIDER    4   // shortest accepted interval is nominal / 4
+#define AP_TASK_INTERVAL_MAX_MULTIPLIER 4   // longest accepted interval is nominal * 4
+
+timeUs_t autopilotTaskIntervalUs(timeUs_t nominalIntervalUs)
+{
+    timeDelta_t intervalUs = getTaskDeltaTimeUs(TASK_SELF);
+    if (intervalUs <= 0) {
+        intervalUs = nominalIntervalUs; // no measurement yet
+    }
+    return constrain(intervalUs,
+                     (timeDelta_t)(nominalIntervalUs / AP_TASK_INTERVAL_MIN_DIVIDER),
+                     (timeDelta_t)(nominalIntervalUs * AP_TASK_INTERVAL_MAX_MULTIPLIER));
+}
 
 static float posLpfDtS = 0.0f;  // interval the F filter gains are currently set for
 
@@ -236,9 +275,9 @@ static void initPidLpfs(void)
 }
 
 // The F filter steps once per loop, so its gain follows the real task interval:
-// TASK_POSHOLD is rescheduled to the flow sensor's rate, which need not be
-// POSHOLD_TASK_RATE_HZ. Retuned in place, without resetting the filter states,
-// whenever the measured interval moves.
+// TASK_POSHOLD is event driven off the position estimator, so it runs at the
+// estimator's rate, which need not be POSHOLD_TASK_RATE_HZ. Retuned in place,
+// without resetting the filter states, whenever the measured interval moves.
 static void updatePidLpfGains(float dtS)
 {
     if (dtS <= 0.0f || fabsf(dtS - posLpfDtS) < 0.05f * posLpfDtS) {
@@ -320,8 +359,9 @@ void autopilotClearAltHoldHoverThrottle(void)
     altHoldCapturedHoverPwm = 0;
 }
 
-void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeVelCmS, float velLimitCmS)
+void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targetAltitudeVelCmS, float velLimitCmS)
 {
+    const float taskIntervalS = US_TO_INTERVAL(taskIntervalUs);
     // PID controller on altitude error
     const float currentAltitudeCm = getAltitudeCmControl(); // un-filtered altitude from Kalman filter
     const float verticalAcceleration = getAltitudeAccelerationControl();
@@ -364,14 +404,14 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     throttleOut = scaleRangef(newThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
     throttleOut = constrainf(throttleOut, 0.0f, 1.0f);
 
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 0, lrintf(newThrottle));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 1, lrintf(targetAltitudeCm));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 2, lrintf(currentAltitudeCm));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 3, lrintf(altitudeP));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 4, lrintf(altitudeI));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 5, lrintf(altitudeD));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 6, lrintf(altitudeA));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 0, lrintf(newThrottle));       //!< Throttle Output [unit:us]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 1, lrintf(targetAltitudeCm));  //!< Target Altitude [unit:cm]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 2, lrintf(currentAltitudeCm)); //!< Current Altitude [unit:cm]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 3, lrintf(altitudeP));         //!< Altitude P Term [unit:us]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 4, lrintf(altitudeI));         //!< Altitude I Term [unit:us]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 5, lrintf(altitudeD));         //!< Altitude D Term [unit:us]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 6, lrintf(altitudeA));         //!< Altitude A Term [unit:us]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));         //!< Altitude Feedforward Term [unit:us]
 }
 
 static void updatePositionHoldTarget(void)
@@ -520,9 +560,9 @@ void handlepositionControlFailure(void)
 {
     resetDistanceError();
     resetDistanceErrorIntegral();
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 100);
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, 100);
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, 100);
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 100);   //!< Status Flags
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, 100);  //!< Status Flags
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, 100);  //!< Status Flags
 
 }
 
@@ -683,12 +723,188 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     apYawActive = true;
 }
 
+static void xyProcessTransitions(void)
+{
+    if (ap.navActive) {
+        isPositionHeld = false;
+        if (!wasNavActive) {
+            initNavMode();
+        }
+        ap.isPosHoldBraking = false; // nav sequences its own speed
+        return;
+    }
+    if (!isPositionHeld) {
+        initPositionHold(); // set target position, activate braking mode if moving fast
+        ap.sanityCheckDistance = calculateSanityCheckDistance();
+        isPositionHeld = true;
+    }
+    if (ap.sticksActive) {
+        if (!ap.wasSticksActive) {
+            resetDistanceError();
+            ap.sanityCheckDistance = calculateSanityCheckDistance();
+            ap.isPosHoldBraking = false; // pilot is commanding, don't brake
+        }
+    } else if (ap.wasSticksActive) {
+        // Sticks just released: capture the current point and decide whether to
+        // brake, based on the speed being carried.
+        updatePositionHoldTarget();
+        ap.sanityCheckDistance = calculateSanityCheckDistance();
+        setBrakingMode();
+    }
+}
+
+static xyControlMode_e xySelectMode(void)
+{
+    if (ap.navActive) {
+        const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
+        return (navCmd != NULL && navCmd->active) ? XY_MODE_NAV_TRACK : XY_MODE_NAV_VELOCITY;
+    }
+    if (ap.sticksActive) {
+        return XY_MODE_STICK_VELOCITY;
+    }
+    if (ap.isPosHoldBraking) {
+        return XY_MODE_BRAKING;
+    }
+    return XY_MODE_SETTLED_HOLD;
+}
+
+static xyStepResult_e xyNavTrackUpdate(void)
+{
+    // Anchor to the (moving) carrot: real position feedback keeps straight
+    // and curved legs from drifting, with the commanded velocity as the
+    // feedforward. The carrot's lead distance produces the cruise tilt via P.
+    const vector3_t tgtVel = positionNavGetTargetVelocityCmS();
+    targetVelocity = *(const vector2_t *)&tgtVel.v;
+    const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
+    targetPosition.v[EF_EAST]  = navCmd->targetPosEfM.v[ENU_E] * 100.0f;
+    targetPosition.v[EF_NORTH] = navCmd->targetPosEfM.v[ENU_N] * 100.0f;
+    ap.anchor = ANCHOR_HOLD;
+    ap.iPolicy = I_ZERO; // position feedback carries the trim; no second integral
+    return XY_CONTINUE;
+}
+
+static xyStepResult_e xyNavVelocityUpdate(void)
+{
+    const vector3_t tgtVel = positionNavGetTargetVelocityCmS();
+    targetVelocity = *(const vector2_t *)&tgtVel.v;
+    ap.anchor = ANCHOR_OFF; // no active command target: track velocity only
+    ap.iPolicy = I_ZERO;
+    return XY_CONTINUE;
+}
+
+static xyStepResult_e xyStickVelocityUpdate(const vector2_t *currentPosition)
+{
+    sticksSetTargetVelocity();
+    posHoldStartPosition = *currentPosition; // pilot may fly far; keep the fence with the craft
+    ap.anchor = ANCHOR_OFF;  // fly the commanded velocity via the virtual distance error
+    ap.iPolicy = I_FREEZE;   // retain the integral, do not wind it up while manoeuvring
+    return XY_CONTINUE;
+}
+
+static xyStepResult_e xyBrakingUpdate(float dt, const vector2_t *currentPosition, const vector2_t *velocity)
+{
+    // Braking: hold anchor with the target dragged to the craft, the
+    // integral frozen, D boosted (in the loop). End on stop, the
+    // BRAKING_TIMEOUT_S timeout, or a velocity-vector reversal
+    // (overshoot past capture).
+    ap.brakingTimeS = MIN(ap.brakingTimeS + dt, BRAKING_TIMEOUT_S);
+    ap.anchor = ANCHOR_HOLD;
+    ap.iPolicy = I_FREEZE;
+    // Sticks are inside the deadband but the RC-smoothed setpoint still
+    // has a tail; keep tracking it so the target velocity, and with it
+    // the F term, eases to zero instead of stepping.
+    sticksSetTargetVelocity();
+    targetPosition = *currentPosition;
+    const float velocityAlongEntryDirection =
+        (velocity->v[EF_NORTH] * ap.brakingEntryDirection.v[EF_NORTH]) +
+        (velocity->v[EF_EAST]  * ap.brakingEntryDirection.v[EF_EAST]);
+    const bool stopped = ap.speedXY < ap.brakingExitSpeed; // both axes combined
+    const bool reversed = velocityAlongEntryDirection < 0.0f; // predominant axis
+    const bool timedOut = ap.brakingTimeS >= BRAKING_TIMEOUT_S;
+    if (stopped || timedOut || reversed) {
+        updatePositionHoldTarget(); // capture the stopped point as the hold target
+        ap.isPosHoldBraking = false;
+        ap.brakingTimeS = 0.0f;
+        return XY_CONTINUE;
+    }
+    // The fence watches the brake too. Braking suppresses the
+    // settled check below, and a genuine flyaway (a bad-mag
+    // toilet bowl accelerates, so it never meets the stop or
+    // stall conditions) would otherwise ride the moving target
+    // indefinitely — including straight after the one-shot
+    // retry, which re-enters through this braking capture.
+    // While the craft is actually slowing, growing distance is
+    // brake physics and the fence rides just ahead of it (so a
+    // fast entry whose stopping distance beats 2 s of entry
+    // speed cannot false-trip); beyond the fence and NOT
+    // slowing runs the same violation clock as the settled
+    // hold.
+    vector2_t brakeDeltaV;
+    vector2Sub(&brakeDeltaV, &posHoldStartPosition, currentPosition);
+    const float brakeDistance = vector2Norm(&brakeDeltaV);
+    if (brakeDistance > ap.sanityCheckDistance) {
+        if (ap.speedSlowing) {
+            ap.sanityCheckDistance = brakeDistance + 2.0f * ap.speedXY;
+            ap.sanityViolationS = 0.0f;
+        } else {
+            ap.violationFreeS = 0.0f;
+            ap.sanityViolationS += dt;
+            if (ap.sanityViolationS > SANITY_VIOLATION_LATCH_S) {
+                return XY_FENCE_TRIPPED;
+            }
+        }
+    } else {
+        ap.sanityViolationS = 0.0f;
+    }
+    return XY_CONTINUE;
+}
+
+static xyStepResult_e xySettledHoldUpdate(float dt, const vector2_t *currentPosition)
+{
+    // Settled hold: real position lock, integrate against wind.
+    ap.anchor = ANCHOR_HOLD;
+    ap.iPolicy = I_ACCUMULATE;
+#ifdef USE_GPS_RESCUE
+    // GPS Rescue sets its own target velocity; otherwise hold
+    // position at zero velocity
+    if (!FLIGHT_MODE(GPS_RESCUE_MODE))
+#endif
+    {
+        vector2Zero(&targetVelocity);
+    }
+    // Guard against a position-estimate flyaway.
+    // Graded, not instant: a single bad fix (multipath excursions
+    // of 12-51 m appear in field logs during a clean hover) must
+    // not fail the hold — fed to the PIDs it would also slam P
+    // into the angle clamp, so the previous output is held while
+    // a brief excursion passes. Only a persistent one fails, and
+    // the first sustained trip earns one automatic re-anchor at
+    // the current spot (what a pilot cycling the switch does):
+    // an isolated mid-flight glitch self-heals, while a genuine
+    // flyaway trips again immediately and stays failed.
+    vector2_t deltaPosV;
+    vector2Sub(&deltaPosV, &posHoldStartPosition, currentPosition);
+    if (vector2Norm(&deltaPosV) > ap.sanityCheckDistance) {
+        ap.violationFreeS = 0.0f;
+        ap.sanityViolationS += dt;
+        if (ap.sanityViolationS > SANITY_VIOLATION_LATCH_S) {
+            return XY_FENCE_TRIPPED;
+        }
+        return XY_HOLD_PREVIOUS; // brief excursion: hold the previous command
+    }
+    ap.sanityViolationS = 0.0f;
+    ap.violationFreeS += dt;
+    if (ap.violationFreeS > SANITY_RETRY_REPLENISH_S) {
+        ap.sanityRetryUsed = false;
+    }
+    return XY_CONTINUE;
+}
+
 bool positionControl(void)
 {
 
     const positionEstimate3d_t *est = positionEstimatorGetEstimate();
-    const timeDelta_t posholdDtUs = getTaskDeltaTimeUs(TASK_SELF);
-    const float dt = (posholdDtUs > 0) ? (posholdDtUs * 1e-6f) : HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ);
+    const float dt = US_TO_INTERVAL(autopilotTaskIntervalUs(TASK_PERIOD_HZ(POSHOLD_TASK_RATE_HZ)));
     updatePidLpfGains(dt);
 
     if (!est->isValidXY) {
@@ -712,9 +928,9 @@ bool positionControl(void)
         disableYawControl();
         autopilotAngle[AI_ROLL]  = 0.0f;
         autopilotAngle[AI_PITCH] = 35.0f;
-        DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 200);
-        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, 200);
-        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, 200);
+        DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 200);   //!< Status Flags
+        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, 200);  //!< Status Flags
+        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, 200);  //!< Status Flags
         return true;
     }
     const vector2_t currentPosition = *(const vector2_t *)&est->position.v;
@@ -738,156 +954,41 @@ bool positionControl(void)
     ap.speedSlowing = ap.speedXY < ap.speedTrendCmS - 20.0f;
     ap.speedTrendCmS += (dt / (0.5f + dt)) * (ap.speedXY - ap.speedTrendCmS);
 
-    // Default control policy for the loop; each feeder overrides as needed.
-    ap.anchor = ANCHOR_HOLD;
-    ap.iPolicy = I_ACCUMULATE;
+    xyProcessTransitions();
+    ap.mode = xySelectMode();
 
-    if (ap.navActive) {
-        isPositionHeld = false;
-        if (!wasNavActive) {
-            initNavMode();
-        }
-        const vector3_t tgtVel = positionNavGetTargetVelocityCmS();
-        targetVelocity = *(const vector2_t *)&tgtVel.v;
-        ap.isPosHoldBraking = false; // nav sequences its own speed
-        ap.iPolicy = I_ZERO;         // position feedback carries the trim; no second integral
-        const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
-        if (navCmd != NULL && navCmd->active) {
-            // Anchor to the (moving) carrot: real position feedback keeps straight
-            // and curved legs from drifting, with the commanded velocity as the
-            // feedforward. The carrot's lead distance produces the cruise tilt via P.
-            targetPosition.v[EF_EAST]  = navCmd->targetPosEfM.v[ENU_E] * 100.0f;
-            targetPosition.v[EF_NORTH] = navCmd->targetPosEfM.v[ENU_N] * 100.0f;
-            ap.anchor = ANCHOR_HOLD;
-        } else {
-            ap.anchor = ANCHOR_OFF;  // no active command target: track velocity only
-        }
-    } else {
-        // Control mode should be position hold
-        if (!isPositionHeld) {
-            initPositionHold(); // set target position, activate braking mode if moving fast
-            ap.sanityCheckDistance = calculateSanityCheckDistance();
-            isPositionHeld = true;
-        }
-        if (ap.sticksActive) {
-            if (!ap.wasSticksActive) {
-                resetDistanceError();
-                ap.sanityCheckDistance = calculateSanityCheckDistance();
-                ap.isPosHoldBraking = false; // pilot is commanding, don't brake
-            }
-            sticksSetTargetVelocity();
-            posHoldStartPosition = currentPosition; // pilot may fly far; keep the fence with the craft
-            ap.anchor = ANCHOR_OFF;  // fly the commanded velocity via the virtual distance error
-            ap.iPolicy = I_FREEZE;   // retain the integral, do not wind it up while manoeuvring
-        } else {
-            // No stick input
-#ifdef USE_GPS_RESCUE
-            if (!FLIGHT_MODE(GPS_RESCUE_MODE)){
-#endif
-                // GPS Rescue sets its own target velocity; otherwise hold
-                // position at zero velocity
-                vector2Zero(&targetVelocity);
-#ifdef USE_GPS_RESCUE
-            }
-#endif
-            if (ap.wasSticksActive) {
-                // Sticks just released: capture the current point and decide
-                // whether to brake, based on the speed being carried.
-                updatePositionHoldTarget();
-                ap.sanityCheckDistance = calculateSanityCheckDistance();
-                setBrakingMode();
-            }
-            if (ap.isPosHoldBraking) {
-                // Braking: hold anchor with the target dragged to the craft, the
-                // integral frozen, D boosted (in the loop). End on stop, the
-                // BRAKING_TIMEOUT_S timeout, or a velocity-vector reversal
-                // (overshoot past capture).
-                ap.brakingTimeS = MIN(ap.brakingTimeS + dt, BRAKING_TIMEOUT_S);
-                ap.anchor = ANCHOR_HOLD;
-                ap.iPolicy = I_FREEZE;
-                // Sticks are inside the deadband but the RC-smoothed setpoint still
-                // has a tail; keep tracking it so the target velocity, and with it
-                // the F term, eases to zero instead of stepping.
-                sticksSetTargetVelocity();
-                targetPosition = currentPosition;
-                const float velocityAlongEntryDirection =
-                    (velocity.v[EF_NORTH] * ap.brakingEntryDirection.v[EF_NORTH]) +
-                    (velocity.v[EF_EAST]  * ap.brakingEntryDirection.v[EF_EAST]);
-                const bool stopped = ap.speedXY < ap.brakingExitSpeed; // both axes combined
-                const bool reversed = velocityAlongEntryDirection < 0.0f; // predominant axis
-                const bool timedOut = ap.brakingTimeS >= BRAKING_TIMEOUT_S;
-                if (stopped || timedOut || reversed) {
-                    updatePositionHoldTarget(); // capture the stopped point as the hold target
-                    ap.isPosHoldBraking = false;
-                    ap.brakingTimeS = 0.0f;
-                } else {
-                    // The fence watches the brake too. Braking suppresses the
-                    // settled check below, and a genuine flyaway (a bad-mag
-                    // toilet bowl accelerates, so it never meets the stop or
-                    // stall conditions) would otherwise ride the moving target
-                    // indefinitely — including straight after the one-shot
-                    // retry, which re-enters through this braking capture.
-                    // While the craft is actually slowing, growing distance is
-                    // brake physics and the fence rides just ahead of it (so a
-                    // fast entry whose stopping distance beats 2 s of entry
-                    // speed cannot false-trip); beyond the fence and NOT
-                    // slowing runs the same violation clock as the settled
-                    // hold.
-                    vector2_t brakeDeltaV;
-                    vector2Sub(&brakeDeltaV, &posHoldStartPosition, &currentPosition);
-                    const float brakeDistance = vector2Norm(&brakeDeltaV);
-                    if (brakeDistance > ap.sanityCheckDistance) {
-                        if (ap.speedSlowing) {
-                            ap.sanityCheckDistance = brakeDistance + 2.0f * ap.speedXY;
-                            ap.sanityViolationS = 0.0f;
-                        } else {
-                            ap.violationFreeS = 0.0f;
-                            ap.sanityViolationS += dt;
-                            if (ap.sanityViolationS > SANITY_VIOLATION_LATCH_S) {
-                                return sanityViolationExpired();
-                            }
-                        }
-                    } else {
-                        ap.sanityViolationS = 0.0f;
-                    }
-                }
-            } else {
-                // Settled hold: real position lock, integrate against wind.
-                ap.anchor = ANCHOR_HOLD;
-                ap.iPolicy = I_ACCUMULATE;
-                // Guard against a position-estimate flyaway.
-                // Graded, not instant: a single bad fix (multipath excursions
-                // of 12-51 m appear in field logs during a clean hover) must
-                // not fail the hold — fed to the PIDs it would also slam P
-                // into the angle clamp, so the previous output is held while
-                // a brief excursion passes. Only a persistent one fails, and
-                // the first sustained trip earns one automatic re-anchor at
-                // the current spot (what a pilot cycling the switch does):
-                // an isolated mid-flight glitch self-heals, while a genuine
-                // flyaway trips again immediately and stays failed.
-                vector2_t deltaPosV;
-                vector2Sub(&deltaPosV, &posHoldStartPosition, &currentPosition);
-                if (vector2Norm(&deltaPosV) > ap.sanityCheckDistance) {
-                    ap.violationFreeS = 0.0f;
-                    ap.sanityViolationS += dt;
-                    if (ap.sanityViolationS > SANITY_VIOLATION_LATCH_S) {
-                        return sanityViolationExpired();
-                    }
-                    return true; // brief excursion: hold the previous command
-                } else {
-                    ap.sanityViolationS = 0.0f;
-                    ap.violationFreeS += dt;
-                    if (ap.violationFreeS > SANITY_RETRY_REPLENISH_S) {
-                        ap.sanityRetryUsed = false;
-                    }
-                }
-            }
-        }
+    xyStepResult_e stepResult;
+    switch (ap.mode) {
+    case XY_MODE_NAV_TRACK:
+        stepResult = xyNavTrackUpdate();
+        break;
+    case XY_MODE_NAV_VELOCITY:
+        stepResult = xyNavVelocityUpdate();
+        break;
+    case XY_MODE_STICK_VELOCITY:
+        stepResult = xyStickVelocityUpdate(&currentPosition);
+        break;
+    case XY_MODE_BRAKING:
+        stepResult = xyBrakingUpdate(dt, &currentPosition, &velocity);
+        break;
+    case XY_MODE_SETTLED_HOLD:
+    default:
+        stepResult = xySettledHoldUpdate(dt, &currentPosition);
+        break;
+    }
+
+    switch (stepResult) {
+    case XY_HOLD_PREVIOUS:
+        return true;
+    case XY_FENCE_TRIPPED:
+        return sanityViolationExpired();
+    case XY_CONTINUE:
+    default:
+        break;
     }
 
     updateYawControl(dt, est);
 
-    wasPositionHeld = isPositionHeld;
     wasNavActive = ap.navActive;
     ap.wasSticksActive = ap.sticksActive; // Main frame-to-frame history update
 
@@ -1005,32 +1106,32 @@ bool positionControl(void)
     if (abortNavRequested)  statusValue += 100;
     if (isPositionHeld)     statusValue += 3; // plus 1, ie 4,  if stopping
     if (ap.sticksActive)    statusValue += 5;
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 0, lrintf(velocity.v[ap.debugAxis]));
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 1, lrintf(distanceError.v[ap.debugAxis]));
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 2, lrintf(pidP.v[ap.debugAxis] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 3, lrintf(pidI.v[ap.debugAxis] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 4, lrintf(pidD.v[ap.debugAxis] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 5, lrintf(pidA.v[ap.debugAxis] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 6, lrintf(pidF.v[ap.debugAxis] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, statusValue + (ap.isPosHoldBraking ? 1 : 0));
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 0, lrintf(velocity.v[ap.debugAxis]));             //!< Velocity (dbg-axis) [unit:cm/s]
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 1, lrintf(distanceError.v[ap.debugAxis]));        //!< Distance Error (dbg-axis) [unit:cm]
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 2, lrintf(pidP.v[ap.debugAxis] * 10));            //!< P Term (dbg-axis) [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 3, lrintf(pidI.v[ap.debugAxis] * 10));            //!< I Term (dbg-axis) [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 4, lrintf(pidD.v[ap.debugAxis] * 10));            //!< D Term (dbg-axis) [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 5, lrintf(pidA.v[ap.debugAxis] * 10));            //!< A Term (dbg-axis) [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 6, lrintf(pidF.v[ap.debugAxis] * 10));            //!< Feedforward Term (dbg-axis) [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, statusValue + (ap.isPosHoldBraking ? 1 : 0));  //!< Status Flags
 
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 0, lrintf(velocityError.v[EF_EAST]));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 1, lrintf(velocityError.v[EF_NORTH]));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 2, lrintf(pidSumVectorEF.v[EF_EAST] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 3, lrintf(pidSumVectorEF.v[EF_NORTH] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 4, lrintf(autopilotAngle[AI_ROLL] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 5, lrintf(autopilotAngle[AI_PITCH] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, statusValue + (ap.isPosHoldBraking ? 1 : 0));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, statusValue + (ap.isPosHoldBraking ? 1 : 0));
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 0, lrintf(velocityError.v[EF_EAST]));             //!< Velocity Error East [unit:cm/s]
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 1, lrintf(velocityError.v[EF_NORTH]));            //!< Velocity Error North [unit:cm/s]
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 2, lrintf(pidSumVectorEF.v[EF_EAST] * 10));       //!< PID Sum East [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 3, lrintf(pidSumVectorEF.v[EF_NORTH] * 10));      //!< PID Sum North [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 4, lrintf(autopilotAngle[AI_ROLL] * 10));         //!< Roll Angle Command [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 5, lrintf(autopilotAngle[AI_PITCH] * 10));        //!< Pitch Angle Command [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, statusValue + (ap.isPosHoldBraking ? 1 : 0));  //!< Status Flags
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, statusValue + (ap.isPosHoldBraking ? 1 : 0));  //!< Status Flags
 
-    DEBUG_SET(DEBUG_POSITION_NAV, 0, lrintf(targetVelocity.v[ap.debugAxis]));
-    DEBUG_SET(DEBUG_POSITION_NAV, 1, lrintf(velocity.v[ap.debugAxis]));
-    DEBUG_SET(DEBUG_POSITION_NAV, 2, lrintf(velocityError.v[ap.debugAxis]));
-    DEBUG_SET(DEBUG_POSITION_NAV, 3, lrintf(pidP.v[ap.debugAxis] * 10));
-    DEBUG_SET(DEBUG_POSITION_NAV, 4, lrintf(pidI.v[ap.debugAxis] * 10));
-    DEBUG_SET(DEBUG_POSITION_NAV, 5, lrintf(pidD.v[ap.debugAxis] * 10));
-    DEBUG_SET(DEBUG_POSITION_NAV, 6, lrintf(pidA.v[ap.debugAxis] * 10));
-    DEBUG_SET(DEBUG_POSITION_NAV, 7, (anchorOff ? 10 : 0) + (buildupClamped ? 1 : 0));
+    DEBUG_SET(DEBUG_POSITION_NAV, 0, lrintf(targetVelocity.v[ap.debugAxis]));           //!< Target Velocity (dbg-axis) [unit:cm/s]
+    DEBUG_SET(DEBUG_POSITION_NAV, 1, lrintf(velocity.v[ap.debugAxis]));                 //!< Velocity (dbg-axis) [unit:cm/s]
+    DEBUG_SET(DEBUG_POSITION_NAV, 2, lrintf(velocityError.v[ap.debugAxis]));            //!< Velocity Error (dbg-axis) [unit:cm/s]
+    DEBUG_SET(DEBUG_POSITION_NAV, 3, lrintf(pidP.v[ap.debugAxis] * 10));                //!< P Term (dbg-axis) [unit:0.1deg]
+    DEBUG_SET(DEBUG_POSITION_NAV, 4, lrintf(pidI.v[ap.debugAxis] * 10));                //!< I Term (dbg-axis) [unit:0.1deg]
+    DEBUG_SET(DEBUG_POSITION_NAV, 5, lrintf(pidD.v[ap.debugAxis] * 10));                //!< D Term (dbg-axis) [unit:0.1deg]
+    DEBUG_SET(DEBUG_POSITION_NAV, 6, lrintf(pidA.v[ap.debugAxis] * 10));                //!< A Term (dbg-axis) [unit:0.1deg]
+    DEBUG_SET(DEBUG_POSITION_NAV, 7, (anchorOff ? 10 : 0) + (buildupClamped ? 1 : 0));  //!< Status Flags
 
     return true;
 }

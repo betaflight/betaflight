@@ -335,6 +335,9 @@ void SystemInit(void)
     // Configure MPU
     memProtConfigure(mpuRegions, mpuRegionCount);
 
+    // Work out which part of the DMA sections the MPU is actually keeping uncached
+    memProtResolveDmaRam();
+
     // Enable CPU L1-Cache
     SCB_EnableICache();
     SCB_EnableDCache();

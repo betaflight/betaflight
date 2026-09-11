@@ -331,6 +331,25 @@
 #endif
 #endif
 
+// The flight plan flies through the shared autopilot stack: altitude via alt
+// hold, XY via the position-hold task, waypoints via GPS. Derive all of them
+// here so a build (cloud or target) selecting the flight plan alone still gets
+// a complete, flyable stack; without alt hold the missions would silently fly
+// with no altitude control at all. Placed ahead of every USE_GPS consumer
+// (VARIO below, the !USE_GPS subfeature cleanup, and the GPS secondary
+// defines) so all of them see the derived USE_GPS.
+#if defined(USE_FLIGHT_PLAN)
+#if !defined(USE_GPS)
+#define USE_GPS
+#endif
+#if !defined(USE_ALTITUDE_HOLD)
+#define USE_ALTITUDE_HOLD
+#endif
+#if !defined(USE_POSITION_HOLD)
+#define USE_POSITION_HOLD
+#endif
+#endif // USE_FLIGHT_PLAN
+
 // Add VARIO if BARO or GPS is defined. Remove when none defined.
 #if defined(USE_BARO) || defined(USE_GPS)
 #ifndef USE_VARIO
