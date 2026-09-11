@@ -54,9 +54,17 @@ USBCDC_DIR = STM32_USB_Device_Library_HAL/Class/CDC
 USBCDC_SRC = \
             $(USBCDC_DIR)/Src/usbd_cdc.c
 
+USBMSC_DIR = STM32_USB_Device_Library_HAL/Class/MSC
+USBMSC_SRC = \
+            $(USBMSC_DIR)/Src/usbd_msc_bot.c \
+            $(USBMSC_DIR)/Src/usbd_msc.c \
+            $(USBMSC_DIR)/Src/usbd_msc_data.c \
+            $(USBMSC_DIR)/Src/usbd_msc_scsi.c
+
 DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
                         $(USBCORE_SRC) \
-                        $(USBCDC_SRC)
+                        $(USBCDC_SRC) \
+                        $(USBMSC_SRC)
 
 #CMSIS
 VPATH           := $(VPATH):$(STDPERIPH_DIR):$(STM32C5_LIB)/stm32c5xx_dfp/Include:$(STM32C5_LIB)/stm32c5xx_dfp/Source/Templates
@@ -69,6 +77,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STM32C5_LIB)/stm32c5xx_drivers/ll \
                    $(LIB_MAIN_DIR)/$(USBCORE_DIR)/Inc \
                    $(LIB_MAIN_DIR)/$(USBCDC_DIR)/Inc \
+                   $(LIB_MAIN_DIR)/$(USBMSC_DIR)/Inc \
                    $(STM32C5_LIB)/arch/cmsis/CMSIS/Core/Include \
                    $(STM32C5_LIB)/stm32c5xx_dfp/Include \
                    $(TARGET_PLATFORM_DIR)/vcp_hal
@@ -166,7 +175,17 @@ MCU_COMMON_SRC = \
 
 LIB_SUBMODULES += $(DRONECAN_LIB_DIR)
 
-MSC_SRC =
+# STM32C5 has no SDMMC peripheral, so the SDIO storage backends
+# (msc/usbd_storage_sdio.c and common/stm32/msc_sdio_storage.c) are omitted.
+# Only the SPI SD-card and onboard-flash (emfat) backends are built.
+MSC_SRC = \
+            drivers/usb_msc_common.c \
+            STM32/usb_msc_hal.c \
+            msc/usbd_storage.c \
+            msc/usbd_storage_emfat.c \
+            msc/emfat.c \
+            msc/emfat_file.c \
+            msc/usbd_storage_sd_spi.c
 
 SPEED_OPTIMISED_SRC +=
 

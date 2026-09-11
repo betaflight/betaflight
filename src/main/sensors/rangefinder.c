@@ -195,6 +195,8 @@ bool rangefinderInit(void)
     rangefinder.calculatedAltitude = RANGEFINDER_OUT_OF_RANGE;
     rangefinder.maxTiltCos = cos_approx(DECIDEGREES_TO_RADIANS(rangefinder.dev.detectionConeExtendedDeciDegrees / 2.0f));
     rangefinder.lastValidResponseTimeMs = millis();
+    rangefinder.lastDataTimeUs = 0;
+    rangefinder.dataIntervalUs = 0;
     rangefinder.snr = 0;
 
     rangefinderResetDynamicThreshold();
@@ -299,7 +301,7 @@ static bool isSurfaceAltitudeValid(void)
 /**
  * Get the last distance measured by the sonar in centimeters. When the ground is too far away, RANGEFINDER_OUT_OF_RANGE is returned.
  */
-bool rangefinderProcess(float cosTiltAngle)
+bool rangefinderProcess(timeUs_t nowUs, float cosTiltAngle)
 {
     if (rangefinder.dev.read) {
         const int32_t distance = rangefinder.dev.read(&rangefinder.dev);
@@ -308,6 +310,16 @@ bool rangefinderProcess(float cosTiltAngle)
         if (distance == RANGEFINDER_NO_NEW_DATA) {
             return false;
         }
+
+        // Timestamp actual device samples, so that consumers can measure the true
+        // hardware data rate rather than the (possibly faster) driver poll rate
+        if (rangefinder.lastDataTimeUs != 0) {
+            const timeDelta_t intervalUs = cmpTimeUs(nowUs, rangefinder.lastDataTimeUs);
+            if (intervalUs > 0) {
+                rangefinder.dataIntervalUs = intervalUs;
+            }
+        }
+        rangefinder.lastDataTimeUs = nowUs;
 
         if (distance >= 0) {
             rangefinder.lastValidResponseTimeMs = millis();
@@ -335,12 +347,12 @@ bool rangefinderProcess(float cosTiltAngle)
 
         }
 
-        DEBUG_SET(DEBUG_RANGEFINDER, 3, rangefinder.snr);
+        DEBUG_SET(DEBUG_RANGEFINDER, 3, rangefinder.snr);  //!< Signal Quality
 
-        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 0, rangefinder.rawAltitude);
-        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 1, rangefinder.snrThresholdReached);
-        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 2, rangefinder.dynamicDistanceThreshold);
-        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 3, isSurfaceAltitudeValid());
+        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 0, rangefinder.rawAltitude);               //!< Raw Altitude [unit:cm]
+        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 1, rangefinder.snrThresholdReached);       //!< Signal Quality Threshold Reached
+        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 2, rangefinder.dynamicDistanceThreshold);  //!< Dynamic Distance Threshold [unit:cm]
+        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 3, isSurfaceAltitudeValid());              //!< Surface Altitude Valid
 
     }
     else {
@@ -354,16 +366,16 @@ bool rangefinderProcess(float cosTiltAngle)
     *
     * When the ground is too far away or the tilt is too large, RANGEFINDER_OUT_OF_RANGE is returned.
     */
-    DEBUG_SET(DEBUG_RANGEFINDER, 4, lrintf(cosTiltAngle * 1000.0f));
-    DEBUG_SET(DEBUG_RANGEFINDER, 5, lrintf(rangefinder.maxTiltCos * 1000.0f));
+    DEBUG_SET(DEBUG_RANGEFINDER, 4, lrintf(cosTiltAngle * 1000.0f));            //!< Cosine Of Tilt Angle [unit:0.001]
+    DEBUG_SET(DEBUG_RANGEFINDER, 5, lrintf(rangefinder.maxTiltCos * 1000.0f));  //!< Max Usable Tilt Cosine [unit:0.001]
     if (cosTiltAngle < rangefinder.maxTiltCos || rangefinder.rawAltitude < 0) {
         rangefinder.calculatedAltitude = RANGEFINDER_OUT_OF_RANGE;
     } else {
         rangefinder.calculatedAltitude = rangefinder.rawAltitude * cosTiltAngle;
     }
 
-    DEBUG_SET(DEBUG_RANGEFINDER, 1, rangefinder.rawAltitude);
-    DEBUG_SET(DEBUG_RANGEFINDER, 2, rangefinder.calculatedAltitude);
+    DEBUG_SET(DEBUG_RANGEFINDER, 1, rangefinder.rawAltitude);         //!< Raw Altitude [unit:cm]
+    DEBUG_SET(DEBUG_RANGEFINDER, 2, rangefinder.calculatedAltitude);  //!< Tilt Corrected Altitude [unit:cm]
 
     return true;
 }
@@ -380,6 +392,16 @@ int32_t rangefinderGetLatestAltitude(void)
 int32_t rangefinderGetLatestRawAltitude(void)
 {
     return rangefinder.rawAltitude;
+}
+
+timeUs_t rangefinderGetLatestSampleTimeUs(void)
+{
+    return rangefinder.lastDataTimeUs;
+}
+
+timeDelta_t rangefinderGetSampleIntervalUs(void)
+{
+    return rangefinder.dataIntervalUs;
 }
 
 bool rangefinderIsHealthy(void)

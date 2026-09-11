@@ -34,6 +34,7 @@
 #define PARAM_NAME_ACC_LPF_HZ "acc_lpf_hz"
 #define PARAM_NAME_MAG_HARDWARE "mag_hardware"
 #define PARAM_NAME_BARO_HARDWARE "baro_hardware"
+#define PARAM_NAME_BARO_DRIFT "baro_drift"
 #define PARAM_NAME_PITOT_HARDWARE "pitot_hardware"
 #define PARAM_NAME_RC_SMOOTHING "rc_smoothing"
 #define PARAM_NAME_RC_SMOOTHING_AUTO_FACTOR "rc_smoothing_auto_factor"
@@ -160,6 +161,10 @@
 #define PARAM_NAME_ALTITUDE_LPF "altitude_lpf"
 #define PARAM_NAME_ALTITUDE_D_LPF "altitude_d_lpf"
 
+#define PARAM_NAME_OPTICALFLOW_HARDWARE "opticalflow_hardware"
+#define PARAM_NAME_OPTICALFLOW_ROTATION "opticalflow_rotation"
+#define PARAM_NAME_OPTICALFLOW_FLIP_X "opticalflow_flip_x"
+
 #define PARAM_NAME_AP_LANDING_ALTITUDE_M "ap_landing_altitude_m"
 #define PARAM_NAME_AP_HOVER_THROTTLE "ap_hover_throttle"
 #define PARAM_NAME_AP_THROTTLE_MIN "ap_throttle_min"
@@ -167,6 +172,7 @@
 #define PARAM_NAME_AP_ALTITUDE_P "ap_altitude_p"
 #define PARAM_NAME_AP_ALTITUDE_I "ap_altitude_i"
 #define PARAM_NAME_AP_ALTITUDE_D "ap_altitude_d"
+#define PARAM_NAME_AP_ALTITUDE_A "ap_altitude_a"
 #define PARAM_NAME_AP_ALTITUDE_F "ap_altitude_f"
 #define PARAM_NAME_AP_POSITION_P "ap_position_p"
 #define PARAM_NAME_AP_POSITION_I "ap_position_i"

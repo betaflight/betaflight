@@ -423,7 +423,16 @@ PICO_MEM_WRAP_FNS = \
 
 PICO_MEM_LD_FLAGS = $(foreach fn, $(PICO_MEM_WRAP_FNS), -Wl,--wrap=$(fn))
 
-EXTRA_LD_FLAGS += $(PICO_STDIO_LD_FLAGS) $(PICO_TRACE_LD_FLAGS) $(PICO_FLOAT_LD_FLAGS) $(PICO_DOUBLE_LD_FLAGS) $(PICO_BIT_OPS_LD_FLAGS) $(PICO_MEM_LD_FLAGS)
+PICO_LIB_SRC += \
+            PICO/math_pico.S
+
+# Wrapped version of lrintf (nearest integer to float) for vcvtn instruction instead of slow library function
+PICO_MATH_WRAP_FNS = \
+            lrintf
+
+PICO_MATH_WRAP_FLAGS = $(foreach fn, $(PICO_MATH_WRAP_FNS), -Wl,--wrap=$(fn))
+
+EXTRA_LD_FLAGS += $(PICO_STDIO_LD_FLAGS) $(PICO_TRACE_LD_FLAGS) $(PICO_FLOAT_LD_FLAGS) $(PICO_DOUBLE_LD_FLAGS) $(PICO_BIT_OPS_LD_FLAGS) $(PICO_MEM_LD_FLAGS) $(PICO_MATH_WRAP_FLAGS)
 
 ifdef RP2350_TARGET
 
