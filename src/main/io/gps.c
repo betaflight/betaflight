@@ -124,6 +124,7 @@ static const gpsInitData_t gpsInitData[] = {
 };
 
 #define DEFAULT_BAUD_RATE_INDEX 0
+#define GPS_BAUD_SWEEP_STEP_LIMIT (GPS_BAUD_SWEEP_CYCLE_LIMIT * ARRAYLEN(gpsInitData))
 
 #ifdef USE_GPS_UBLOX
 #define MAX_VALSET_SIZE 128
@@ -1055,7 +1056,7 @@ static void gpsConfigureUblox(void)
         gpsData.state_ts = gpsData.now;
 
         // let the opening passes run unthrottled, then stop re-initialising the UART every step
-        if ((initBaudRateCycleCount >= GPS_BAUD_SWEEP_CYCLE_LIMIT * ARRAYLEN(gpsInitData))
+        if ((initBaudRateCycleCount >= GPS_BAUD_SWEEP_STEP_LIMIT)
             && (cmp32(gpsData.now, lastBaudStepMs) < GPS_BAUD_SWEEP_BACKOFF_MS)) {
             break;
         }
@@ -1070,7 +1071,8 @@ static void gpsConfigureUblox(void)
         }
         // set the FC baud rate to the new temp baud rate
         serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.tempBaudRateIndex].baudrateIndex]);
-        initBaudRateCycleCount++;
+        // stop counting once backed off, so debug[2] can't overflow
+        initBaudRateCycleCount = MIN(initBaudRateCycleCount + 1, GPS_BAUD_SWEEP_STEP_LIMIT);
 
         break;
 
