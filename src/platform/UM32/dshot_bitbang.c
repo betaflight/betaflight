@@ -131,12 +131,12 @@ static void bbOutputDataSet(uint32_t *buffer, int pinNumber, uint16_t value, boo
         bool bitIsOne = (value & 0x8000) != 0;
 
         if (inverted) {
-            // Inverted: bit=0 �� short LOW pulse �� set HIGH at middle phase
+            // Inverted: bit=1 → pin LOW (0), bit=0 → pin HIGH (1)
             if (!bitIsOne) {
                 buffer[pos * 3 + 1] |= pinBit;
             }
         } else {
-            // Non-inverted: bit=1 �� long HIGH pulse �� keep HIGH at middle phase
+            // Non-inverted: bit=1 → pin HIGH (1), bit=0 → pin LOW (0)
             if (bitIsOne) {
                 buffer[pos * 3 + 1] |= pinBit;
             }

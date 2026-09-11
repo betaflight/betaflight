@@ -18,7 +18,9 @@ MEMORY
     FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 8K
     FLASH_CONFIG (rw) : ORIGIN = 0x08002000, LENGTH = 8K
     FLASH1 (rx)       : ORIGIN = 0x08004000, LENGTH = 496K
+#ifdef USE_QSPI_XIP
     EXFLASH (rx)      : ORIGIN = 0x38000000, LENGTH = 512K
+#endif
 
     SYSTEM_MEMORY (r) : ORIGIN = 0x4004000, LENGTH = 16K
 
@@ -80,6 +82,31 @@ SECTIONS
     . = ALIGN(512);
   } >SYSTEM_MEMORY
 
+#ifdef USE_QSPI_XIP
+  /* section for XIP_FLASH */
+  /* NOTE: this output section must stay ABOVE .text in the script: ld claims
+   * input sections in script order, so the file-level object patterns below
+   * have to run before .text's *(.text*) wildcards, or the listed objects'
+   * code would be claimed by .text first. Different MEMORY region, so the
+   * position here does not affect .text's address. */
+  .ex_flash :
+  {
+     . = ALIGN(4) ;
+     KEEP (*(.ex_code))
+     KEEP (*(.ex_data))
+     *(.ex_code*)
+     *(.ex_data*)
+     /* File-level XIP placement: objects listed in EX_FLASH_SRC
+      * (mk/UM324xx.mk), compiled -fno-lto so they survive as named
+      * objects for matching. Match on the PATH SUFFIX, not the bare
+      * basename — e.g. plain *debug.o would also catch build/debug.o
+      * (the hot debug[] array module). */
+     */UM32/debug.o(.text* .rodata*)
+     */UM32/sysfunc_um324xx.o(.text* .rodata*)
+     . = ALIGN(4) ;
+  } > EXFLASH
+#endif
+
   /* The program code and other data goes into FLASH */
   .text :
   {
@@ -139,17 +166,6 @@ SECTIONS
     KEEP (*(.pg_resetdata))
     PROVIDE_HIDDEN (__pg_resetdata_end = .);
   } >FLASH1
-
-  /* section for XIP_FLASH */
-  .ex_flash :
-  {
-     . = ALIGN(4) ;
-     KEEP (*(.ex_code))
-     KEEP (*(.ex_data))
-     *(.ex_code*)
-     *(.ex_data*)
-     . = ALIGN(4) ;
-  } > EXFLASH
 
   /* used by the startup to initialize data */
   _sidata = LOADADDR(.data);
@@ -230,7 +246,11 @@ SECTIONS
     *(.tcm_code*)
     . = ALIGN(4);
     tcm_code_end = .;
+#ifdef USE_QSPI_XIP
   } >CODERAM AT>EXFLASH
+#else
+  } >CODERAM AT>FLASH1
+#endif
 
   /* used during startup to initialized fastram_data */
   _sfastram_idata = LOADADDR(.fastram_data);

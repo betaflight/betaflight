@@ -9761,7 +9761,7 @@ typedef struct
 #define SDIO_RINTSTS_OUTO_CMD_FINISH            SDIO_RINTSTS_OUTO_CMD_FINISH_Msk            /*!< INT_STATUS bit */                       
 
 #define SDIO_RINTSTS_FINISH_BIT_ERROR_Pos   (15U)                                         
-#define SDIO_RINTSTS_FINISH_BIT_ERROR_Msk   SDIO_RINTSTS_FINISH_BIT_ERROR_Pos)         /*!< 0x00008000 */                           
+#define SDIO_RINTSTS_FINISH_BIT_ERROR_Msk   (0x1UL<<SDIO_RINTSTS_FINISH_BIT_ERROR_Pos)         /*!< 0x00008000 */                           
 #define SDIO_RINTSTS_FINISH_BIT_ERROR       SDIO_RINTSTS_FINISH_BIT_ERROR_Msk          /*!< INT_STATUS bit */                       
 
 

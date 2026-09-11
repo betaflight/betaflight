@@ -70,6 +70,10 @@
 #define USE_OPA
 #define USE_EXTI
 
+#ifdef USE_SDCARD
+#define USE_SDCARD_SDIO
+#endif
+
 // DShot bit-band decode: reads telemetry samples through the Cortex-M
 // bit-band alias region (0x22000000).
 #define USE_DSHOT_BITBAND

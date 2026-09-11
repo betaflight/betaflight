@@ -45,7 +45,11 @@
 
 // Use this to speed up writing to SDCARD... asyncfatfs has limited support for multiblock write
 #define FATFS_BLOCK_CACHE_SIZE 16
+#ifdef UM324xF
+DMA_DATA uint8_t writeCache[512 * FATFS_BLOCK_CACHE_SIZE] __attribute__ ((aligned (4)));
+#else
 uint8_t writeCache[512 * FATFS_BLOCK_CACHE_SIZE] __attribute__ ((aligned (4)));
+#endif
 uint32_t cacheCount = 0;
 
 static void cache_write(uint8_t *buffer)

@@ -66,7 +66,7 @@ void QSPI_QuadEn(QSPI_HandleTypeDef *hqspi);
  * reads no initialised globals, and lives in internal flash (.text); only
  * functions explicitly marked EX_CODE are placed on the QSPI XIP window.
  */
-
+#ifdef USE_QSPI_XIP
 void exFlashInit(void)
 {
     /* Port D/E clocks — HAL_GPIO_Init does not manage the clock tree */
@@ -128,7 +128,7 @@ void exFlashInit(void)
 
     /* HAL_QSPI_Init() waits for the controller IDLE flag using hqspi.Timeout;
      * with Timeout == 0 (from the {0} initialiser) the wait fails on its very
-     * first loop iteration and drops into Error_Handler() �� this is what froze
+     * first loop iteration and drops into Error_Handler() ?? this is what froze
      * the boot LED at checkpoint 2. */
     hqspi.Timeout = 100;
 
@@ -144,6 +144,7 @@ void exFlashInit(void)
     /* Enable qspi cache  */
     (*(volatile uint32_t *)(0x3cfffc00)) |= 0x03;
 }
+#endif
 
 static void initialiseDmaMemorySections(void)
 {
@@ -240,10 +241,16 @@ void SystemInit(void)
 #endif
 
     SystemClock_Config();
-    
+
     SystemCoreClockUpdate();
 
+#ifdef USE_QSPI_XIP
+    /* Bring up the QSPI XIP window before anything touches EXFLASH-mapped
+     * code/data (.ex_flash, .tcm_code load image). Skipped entirely on
+     * board variants without the QSPI chip — the pin muxing below must
+     * not run there. */
     exFlashInit();
+#endif
 
     initialiseMemorySections();
 

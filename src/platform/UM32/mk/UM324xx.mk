@@ -99,10 +99,28 @@ DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
 
 ifeq ($(TARGET_MCU),UM324xF)
 DEVICE_FLAGS    += -DUM324xF
-LD_SCRIPT       = $(LINKER_DIR)/um32_flash_4xf.ld
 STARTUP_SRC     = UM32/startup/startup_um324xf.s
+# QSPI XIP code expansion: yes = 512K internal + 512K QSPI (1024K code
+# space, files listed in EX_FLASH_SRC below run from the QSPI XIP window);
+# no = internal FLASH1 only, EX_FLASH_SRC is emptied and the listed files
+# fall back to .text automatically. Drives -DUSE_QSPI_XIP (C code and the
+# linker-script preprocessor) and MCU_FLASH_SIZE (feature gating).
+QSPI_XIP ?= yes
+ifeq ($(QSPI_XIP),yes)
+DEVICE_FLAGS    += -DUSE_QSPI_XIP
 MCU_FLASH_SIZE  = 1024
-# Override the OPTIMISE_SIZE.
+else
+MCU_FLASH_SIZE  = 512
+endif
+# Linker script is preprocessed from the .ld.in source so it can follow
+# USE_QSPI_XIP (EXFLASH region, .ex_flash section, .tcm_code LMA). The mode
+# is encoded in the generated filename — make cannot see that the output
+# depends on the QSPI_XIP variable, so a shared name would silently keep a
+# stale script when switching modes between builds.
+LD_SCRIPT       = $(OBJECT_DIR)/um32_flash_4xf_$(if $(filter yes,$(QSPI_XIP)),qspi,int).ld
+$(LD_SCRIPT): $(LINKER_DIR)/um32_flash_4xf.ld.in
+	@mkdir -p $(OBJECT_DIR)
+	$(V1) $(CROSS_CC) -E -P -xc $(if $(filter yes,$(QSPI_XIP)),-DUSE_QSPI_XIP) -o $@ $<
 else
 $(error Unknown MCU for target)
 endif
@@ -137,6 +155,7 @@ MCU_COMMON_SRC = \
             UM32/pwm_output_hw.c \
             UM32/light_ws2811strip_hal.c \
             UM32/transponder_ir_io_hal.c \
+            UM32/sdio_um324xx.c \
             UM32/camera_control_um32.c \
             UM32/exflash_um324xx_hal.c \
             UM32/sysfunc_um324xx.c \
@@ -204,3 +223,18 @@ SIZE_OPTIMISED_SRC += \
 
 DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM4
+
+# QSPI XIP (EXFLASH) file-level placement: code+rodata of these files go to
+# the .ex_flash section in the preprocessed linker script (matched by object
+# path suffix — keep the two lists in sync). Compiled -Os -fno-lto via the
+# NOT_OPTIMISED_SRC path so the flags win over the default -flto profile.
+# Entries MUST be full paths with "./" prefix (raw $< match, no
+# normalisation). Never list boot-path files or files containing IRQ
+# handlers. Empty when QSPI_XIP=no — files fall back to .text (FLASH1).
+ifeq ($(QSPI_XIP),yes)
+EX_FLASH_SRC := ./src/platform/UM32/debug.c \
+                ./src/platform/UM32/sysfunc_um324xx.c
+endif
+
+NOT_OPTIMISED_SRC += $(EX_FLASH_SRC)
+$(foreach f,$(EX_FLASH_SRC),$(eval SRC_CFLAGS_$(notdir $(f)) += -Os -fno-lto))

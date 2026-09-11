@@ -56,9 +56,19 @@
 #define ENABLE_OVERCLOCK_336_MHZ 1
 #define DEFAULT_CPU_OVERCLOCK 0
 
-// Code and const data placed in EX_FLASH
-#define EX_CODE                   __attribute__((section(".ex_code"), used)) 
+// Per-function QSPI XIP placement (section .ex_code/.ex_data in the
+// preprocessed linker script). Empty without USE_QSPI_XIP (board variant
+// without the QSPI chip) so marked code falls back to .text. Currently
+// unused — the file-level EX_FLASH_SRC list in mk/UM324xx.mk is the
+// preferred mechanism. Never mark boot-path code (runs before exFlashInit)
+// or IRQ handlers.
+#ifdef USE_QSPI_XIP
+#define EX_CODE                   __attribute__((section(".ex_code"), used))
 #define EX_DATA                   __attribute__((section(".ex_data"), used))
+#else
+#define EX_CODE
+#define EX_DATA
+#endif
 
 // Data in RAM which is guaranteed to not be reset on hot reboot
 #define PERSISTENT                  __attribute__ ((section(".persistent_data"), aligned(4)))

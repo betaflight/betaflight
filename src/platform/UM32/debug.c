@@ -24,7 +24,10 @@
 #include "drivers/io.h"
 #include "drivers/dshot.h"
 
-EX_CODE void debugInit(void)
+// No EX_CODE marker: this whole file is routed to QSPI XIP via the
+// file-level EX_FLASH_SRC list in mk/UM324xx.mk (object matched by the
+// .ex_flash section in link/um32_flash_4xf.ld).
+void debugInit(void)
 {
     IO_t io = IOGetByTag(DEFIO_TAG_E(PA13)); // SWDIO
     if (IOGetOwner(io) == OWNER_FREE) {
@@ -35,6 +38,7 @@ EX_CODE void debugInit(void)
         IOInit(io, OWNER_SWD, 0);
     }
 
+#ifdef USE_QSPI_XIP
     //system pin for QSPI internal used.
     io = IOGetByTag(DEFIO_TAG_E(PE10));      // QSPI_CLK
     if (IOGetOwner(io) == OWNER_FREE) {
@@ -60,7 +64,7 @@ EX_CODE void debugInit(void)
     if (IOGetOwner(io) == OWNER_FREE) {
         IOInit(io, OWNER_SYSTEM, 0);
     }
-
+#endif
     //System PIN for internal resource.
     io = IOGetByTag(DEFIO_TAG_E(PE5));
     if (IOGetOwner(io) == OWNER_FREE) {
