@@ -1,0 +1,36 @@
+/* SPDX-License-Identifier: GPL-3.0-only
+ *
+ * Canonical list of object files whose text is copied to ILM.
+ * HPMicro.mk derives its non-LTO source list and the generated .text exclusion
+ * rules from this file, so add or remove ILM code only here.
+ */
+*/io_hpmicro.o(.text .text.*)
+*/system_hpmicro.o(.text .text.*)
+*/timer_hpmicro.o(.text .text.*)
+*/timer_hw_ext.o(.text .text.*)
+*/dma_hpmicro.o(.text .text.*)
+*/bus_spi_hpmicro.o(.text .text.*)
+*/exti_hpmicro.o(.text .text.*)
+*/adc_hpmicro.o(.text .text.*)
+*/pwm_output_hpmicro.o(.text .text.*)
+*/pwm_output_dshot.o(.text .text.*)
+*/pwm_output_dshot_shared.o(.text .text.*)
+*/dshot_dpwm.o(.text .text.*)
+*/trgm_dshot_resource.o(.text .text.*)
+*/dma_reqmap_mcu.o(.text .text.*)
+*/serial_uart_hpmicro.o(.text .text.*)
+*/timer_hpm6360.o(.text .text.*)
+*/timer_hpm6750.o(.text .text.*)
+*/flight/pid.o(.text .text.*)
+*/flight/mixer.o(.text .text.*)
+*/flight/imu.o(.text .text.*)
+*/flight/rpm_filter.o(.text .text.*)
+*/flight/dyn_notch_filter.o(.text .text.*)
+*/common/filter.o(.text .text.*)
+*/scheduler/scheduler.o(.text .text.*)
+*/sensors/gyro.o(.text .text.*)
+*/fc/tasks.o(.text .text.*)
+*/sensors/gyro_filter_impl.o(.text .text.*)
+*/drivers/dshot.o(.text .text.*)
+*/drivers/dshot_command.o(.text .text.*)
+*/drivers/pwm_output.o(.text .text.*)

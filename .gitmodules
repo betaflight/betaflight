@@ -51,3 +51,8 @@
 	url = https://github.com/X-CORE-LABS-PTE-LTD/X32M7_Std_SDK.git
 	ignore = dirty
 	update = none
+[submodule "lib/modules/hpm_sdk"]
+	path = lib/modules/hpm_sdk
+	url = https://github.com/hpmicro/hpm_sdk.git
+	ignore = dirty
+	update = none

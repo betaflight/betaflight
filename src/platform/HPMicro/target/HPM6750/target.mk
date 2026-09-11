@@ -1,0 +1,2 @@
+TARGET_MCU        := HPM6750
+TARGET_MCU_FAMILY := HPMicro
