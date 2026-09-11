@@ -353,8 +353,7 @@ typedef enum {
     UBLOX_CONFIG_COMPLETE   // 22. Config finished, start receiving data
 } ubloxStatePosition_e;
 
-baudRate_e initBaudRateIndex;
-size_t initBaudRateCycleCount;
+static size_t initBaudRateCycleCount;
 static uint32_t lastBaudStepMs;
 #endif // USE_GPS_UBLOX
 
@@ -434,7 +433,6 @@ void gpsInit(void)
     }
 
     // set the user's intended baud rate
-    initBaudRateIndex = BAUD_COUNT;
     initBaudRateCycleCount = 0;
     lastBaudStepMs = millis();
     gpsData.userBaudRateIndex = DEFAULT_BAUD_RATE_INDEX;
