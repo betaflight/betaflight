@@ -68,7 +68,8 @@ const char * const lookupTableGyroHardware[GYRO_HARDWARE_COUNT] = {
     [GYRO_ICM42622P] = "ICM42622P",
     [GYRO_ICM42686P] = "ICM42686P",
     [GYRO_ICM56686] = "ICM56686",
-    [GYRO_VIRTUAL] = "VIRTUAL"
+    [GYRO_VIRTUAL] = "VIRTUAL",
+    [GYRO_ADIS16607] = "ADIS16607"
 };
 
 // sync with accelerationSensor_e
@@ -99,7 +100,8 @@ const char * const lookupTableAccHardware[ACC_HARDWARE_COUNT] = {
     [ACC_ICM42622P] = "ICM42622P",
     [ACC_ICM42686P] = "ICM42686P",
     [ACC_ICM56686] = "ICM56686",
-    [ACC_VIRTUAL] = "VIRTUAL"
+    [ACC_VIRTUAL] = "VIRTUAL",
+    [ACC_ADIS16607] = "ADIS16607"
 };
 
 // sync with baroSensor_e

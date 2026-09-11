@@ -54,6 +54,8 @@
 #define IIM42653_WHO_AM_I_CONST             (0x56)
 #define LSM6DSV16X_WHO_AM_I_CONST           (0x70)
 #define LSM6DSK320X_WHO_AM_I_CONST          (0x75)
+// ADIS16607 has no WHO_AM_I; DEV_ID (0x00) is the equivalent and reads 0x6000.
+#define ADIS16607_DEV_ID_CONST              (0x6000)
 #define ICM40609_WHO_AM_I_CONST             (0x3B)
 
 // RA = Register Address
@@ -225,7 +227,8 @@ typedef enum {
     ICM_45605_SPI,
     ICM_45686_SPI,
     ICM_56686_SPI,
-    ICM_40609_SPI
+    ICM_40609_SPI,
+    ADIS16607_SPI,
 } mpuSensor_e;
 
 typedef enum {
