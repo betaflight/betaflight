@@ -127,12 +127,16 @@
 #define NAV_ERROR_DISTANCE_LIMIT 500.0f // 5m
 #define POSITION_I_LIMIT      2000.0f // TO DO: test and set to a useful value, this is 20m
 
-#define AP_YAW_P_SCALE         0.01f
+#define AP_YAW_P_SCALE         0.06f
 #define AP_YAW_RAMP_TIME_S     1.0f
+
+static int16_t apYawDisableReason;
+static float apExternalYawTargetDeg;
+
 
 static pidCoefficient_t xyPid;
 static float xyKDrag;
-
+static float yawKp;
 static float altitudeKp;
 static float altitudeKi;
 static float altitudeKd;
@@ -304,7 +308,7 @@ void autopilotInit(void)
     altitudeKd = cfg->altitudeD * ALTITUDE_D_SCALE;
     altitudeKa = cfg->altitudeA * ALTITUDE_A_SCALE;
     altitudeKf = cfg->altitudeF * ALTITUDE_F_SCALE;
-
+    yawKp = cfg->yawP * AP_YAW_P_SCALE;
     xyPid.Kp = cfg->positionP * XY_DISTANCE_SCALE;
     xyPid.Ki = cfg->positionI * XY_DISTANCE_I_SCALE;
     xyPid.Kd = cfg->positionD * XY_VELOCITY_SCALE;
@@ -324,6 +328,7 @@ void autopilotInit(void)
     forceLevelPark = false;
     apNavHeadingOverrideValid = false;
     disableYawControl();
+    apYawDisableReason = 0;
     apYawRateLimitDps = 0.0f;
     positionNavInit();
 }
@@ -445,6 +450,11 @@ void moveTargetLocation(const vector2_t *stepEF, unsigned taskRateHz, bool force
     }
 }
 
+void autopilotSetYawTarget(float headingDeg)
+{
+    apExternalYawTargetDeg = headingDeg;
+}
+
 void pitchForwardOverride(bool request)
 {
     forcePitchForward = request;
@@ -508,7 +518,6 @@ void initPositionHold(void)
     vector2Zero(&previousTargetVelocity);
     // nb: we do not reset the distanceError integral, to hold its opposition to wind between quick stick inputs
 }
-
 // Re-anchor the hold at the craft's current position — what a pilot cycling
 // the mode switch achieves, callable from recovery paths (sensor dropout
 // recovery, the one-shot sanity retry). Enters through the normal braking
@@ -542,6 +551,7 @@ void resetPositionControl(unsigned taskRateHz)
     ap.sticksActive = false;
     ap.wasSticksActive = false;
     disableYawControl();
+    apYawDisableReason = 1;
     apYawCourseValid = false;
     wasAngleSaturated = false;
     // Initialise the nav system
@@ -578,6 +588,7 @@ static bool sanityViolationExpired(void)
         return true;
     }
     disableYawControl();
+    apYawDisableReason = 2;
     autopilotAngle[AI_ROLL]  = 0.0f; // Level out
     autopilotAngle[AI_PITCH] = 0.0f;
     handlepositionControlFailure();
@@ -616,6 +627,7 @@ void autopilotSetYawRateLimit(float rateLimitDps)
 void autopilotDisableYawControl(void)
 {
     disableYawControl();
+    apYawDisableReason = 3;
 }
 
 float autopilotGetYawRate(void)
@@ -631,15 +643,17 @@ bool autopilotYawControlActive(void)
     // period after the pilot switched the mode off, injecting a stale yaw rate on the
     // first frame they expect the stick back.
     return apYawActive
-        && (FLIGHT_MODE(AUTOPILOT_MODE) || FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(MAG_MODE));
+        && (FLIGHT_MODE(AUTOPILOT_MODE)
+            || FLIGHT_MODE(POS_HOLD_MODE)
+            || FLIGHT_MODE(MAG_MODE)
+            || FLIGHT_MODE(GPS_RESCUE_MODE));
 }
-
 static void disableYawControl(void)
 {
     apYawActive = false;
     apYawAttenuator = 0.0f;
     apYawRateDps = 0.0f;
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, 0);  //!< Yaw Rate Setpoint [unit:0.1dps]
+
     // Re-capture the hold heading on re-engagement rather than snapping back to a
     // heading the craft may have left long ago.
     apYawHoldHeadingValid = false;
@@ -676,15 +690,15 @@ static bool bearingToTargetDeg(const positionEstimate3d_t *est, float *headingDe
     return true;
 }
 
-// Mission yaw: while navigation is flying a leg, steer the nose to the ground
-// course (VELOCITY), the bearing to the active target (BEARING), or course
-// falling back to bearing when too slow for a reliable course (HYBRID).
-// P on wrapped heading error with a short engage ramp and gyro damping,
-// clamped to ap_max_yaw_rate and any YAW_RATE mission cap; rc.c injects the
-// resulting rate as the yaw setpoint, exactly as GPS rescue injects its own.
+// Yaw control priority is GPS Rescue, active navigation, then heading hold.
+// GPS Rescue supplies its own target heading. Active navigation chooses a
+// heading according to ap_yaw_mode. POS_HOLD and MAG_MODE hold the
+// heading captured on engagement.
 static void updateYawControl(float dt, const positionEstimate3d_t *est)
 {
     const autopilotConfig_t *cfg = autopilotConfig();
+
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 7, apYawDisableReason);
 
     // Nothing holds a heading on the bench. disarm() clears ARMED but leaves the flight
     // mode flags alone, so POS_HOLD_MODE stays set until processRxModes() next runs and
@@ -693,6 +707,17 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     // heading, so arming re-captures rather than resuming an old one.
     if (!ARMING_FLAG(ARMED)) {
         disableYawControl();
+        apYawDisableReason = 4;
+        return;
+    }
+
+    const bool rescueYawActive = FLIGHT_MODE(GPS_RESCUE_MODE);
+    const bool navYawActive = FLIGHT_MODE(AUTOPILOT_MODE) && ap.navActive;
+    const bool holdYawActive = FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(MAG_MODE);
+
+    if (!rescueYawActive && !navYawActive && !holdYawActive) {
+        disableYawControl();
+        apYawDisableReason = 6;
         return;
     }
 
@@ -702,27 +727,21 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     // GPS rescue applies.
     if (!imuIsHeadingValid()) {
         disableYawControl();
-        return;
-    }
-
-    // A mission steers the nose per ap_yaw_mode while a leg is being flown. Position
-    // hold and MAG_MODE have no leg to follow, so they hold the heading they had on
-    // engagement. MAG_MODE is heading hold alone - no position control involved.
-    const bool navYawActive = FLIGHT_MODE(AUTOPILOT_MODE) && ap.navActive;
-    const bool holdYawActive = FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(MAG_MODE);
-    if (!navYawActive && !holdYawActive) {
-        disableYawControl();
+        apYawDisableReason = 5;
         return;
     }
 
     const float headingDeg = attitude.values.yaw * 0.1f;
-
     float desiredHeadingDeg = 0.0f;
-    if (navYawActive) {
+
+    if (rescueYawActive) {
+        apYawHoldHeadingValid = false; // capture current heading when hold resumes
+        desiredHeadingDeg = apExternalYawTargetDeg;
+    } else if (navYawActive) {
+        apYawHoldHeadingValid = false; // capture current heading when hold resumes
         bool haveDesiredHeading = false;
+
         if (apNavHeadingOverrideValid) {
-            // Mission pre-turn blend: point the nose onto the next leg regardless of
-            // the configured yaw mode, so it is already there as the gate is crossed.
             desiredHeadingDeg = apNavHeadingOverrideDeg;
             haveDesiredHeading = true;
         } else {
@@ -737,13 +756,14 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
                 haveDesiredHeading = courseHeadingDeg(est, &desiredHeadingDeg)
                     || bearingToTargetDeg(est, &desiredHeadingDeg);
                 break;
-            default: // YAW_MODE_FIXED, YAW_MODE_DAMPENER (wing only)
+            default:
                 break;
             }
         }
 
         if (!haveDesiredHeading) {
             disableYawControl();
+            apYawDisableReason = 7;
             return;
         }
     } else {
@@ -751,10 +771,13 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
         // rc.c flies the stick instead of our rate, so track the heading rather than
         // accumulating an error to fight on release - the hold resumes wherever the
         // pilot leaves the nose.
-        if (!apYawHoldHeadingValid || fabsf(rcCommand[FD_YAW]) >= (float)cfg->stickDeadband) {
+        const bool sticksMoving = fabsf(rcCommand[FD_YAW]) >= (float)cfg->stickDeadband;
+
+        if (!apYawHoldHeadingValid || sticksMoving) {
             apYawHoldHeadingDeg = headingDeg;
             apYawHoldHeadingValid = true;
         }
+
         desiredHeadingDeg = apYawHoldHeadingDeg;
     }
 
@@ -766,8 +789,8 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     float errorDeg = headingDeg - desiredHeadingDeg;
     errorDeg = fmodf(errorDeg + 540.0f, 360.0f) - 180.0f;
 
-    float yawRateDps = errorDeg * cfg->yawP * AP_YAW_P_SCALE;
-    yawRateDps *= apYawAttenuator;
+    const float yawP = errorDeg * yawKp;
+    float yawRateDps = yawP * apYawAttenuator;
 
     float maxRateDps = (float)cfg->maxYawRate;
     if (apYawRateLimitDps > 0.0f) {
@@ -778,10 +801,11 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     apYawRateDps = yawRateDps * GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
     apYawActive = true;
 
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 0, lrintf(headingDeg * 10.0f));         //!< Aircraft Heading [unit:0.1deg]
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 1, lrintf(desiredHeadingDeg * 10.0f));  //!< Target Heading [unit:0.1deg]
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 2, lrintf(errorDeg * 10.0f));           //!< Heading Error [unit:0.1deg]
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, lrintf(apYawRateDps * 10.0f));       //!< Yaw Rate Setpoint [unit:0.1dps]
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 0, lrintf(headingDeg * 10.0f));
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 1, lrintf(desiredHeadingDeg * 10.0f));
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 2, lrintf(errorDeg * 10.0f));
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, lrintf(apYawRateDps * 10.0f));
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 4, lrintf(yawP * 10.0f));
 }
 
 // TASK_MAGHOLD. Heading hold with no position control behind it: the MAG_MODE switch on
@@ -796,7 +820,6 @@ void updateHeadingHold(timeUs_t currentTimeUs)
     if (FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
         return;
     }
-
     const float dt = US_TO_INTERVAL(autopilotTaskIntervalUs(TASK_PERIOD_HZ(HEADING_HOLD_TASK_RATE_HZ)));
     updateYawControl(dt, positionEstimatorGetEstimate());
 }
@@ -987,10 +1010,12 @@ bool positionControl(void)
 
     if (!est->isValidXY) {
         disableYawControl();
+        apYawDisableReason = 8;
         return false;
     }
     if (abortNavRequested) {
         disableYawControl();
+        apYawDisableReason = 9;
         handlepositionControlFailure();
         return false; // Return failure and show pos hold fail message in OSD
     }
@@ -999,11 +1024,13 @@ bool positionControl(void)
         // fly sideways, so drop to angle-mode self-level (altitude hold, a
         // separate mode, keeps holding height) until a mode-switch cycle clears it.
         disableYawControl();
+        apYawDisableReason = 10;
         handlepositionControlFailure();
         return false;
     }
     if (forcePitchForward) {
         disableYawControl();
+        apYawDisableReason = 11;
         autopilotAngle[AI_ROLL]  = 0.0f;
         autopilotAngle[AI_PITCH] = 35.0f;
         DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 200);   //!< Status Flags

@@ -43,7 +43,6 @@ typedef enum {
 
 void gpsRescueInit(void);
 void gpsRescueUpdate(void);
-float gpsRescueGetYawRate(void);
 float gpsRescueGetMaxAltitudeCm(void);
 bool gpsRescueIsConfigured(void);
 bool gpsRescueIsAvailable(void);
