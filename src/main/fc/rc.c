@@ -648,7 +648,7 @@ FAST_CODE void processRcCommand(void)
 
             if ((axis == FD_YAW) && autopilotYawControlActive()
                 && fabsf(rcCommand[FD_YAW]) < (float)autopilotConfig()->stickDeadband) {
-                // Autopilotyaw control including GPS Rescue. A yaw stick deflection past
+                // Autopilot yaw control including GPS Rescue. A yaw stick deflection past
                 // the deadband hands yaw back to the pilot.
                 angleRate = autopilotGetYawRate();
                 rcDeflection[axis] = 0;
