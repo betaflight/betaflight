@@ -33,6 +33,8 @@
 
 #include "config/feature.h"
 
+#include "drivers/display.h"
+
 #include "sensors/battery.h"
 #include "sensors/current.h"
 #include "sensors/voltage.h"
@@ -43,6 +45,10 @@ uint8_t batteryConfig_voltageMeterSource;
 uint8_t batteryConfig_currentMeterSource;
 
 static uint8_t cmsBatteryProfileIndex;
+static uint8_t tmpBatteryProfileIndex;
+static char batteryProfileNames[BATTERY_PROFILE_COUNT][MAX_BATTERY_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
+static const char *batteryProfileNamePtrs[BATTERY_PROFILE_COUNT];
+
 uint16_t batteryConfig_vbatmincellvoltage;
 uint16_t batteryConfig_vbatmaxcellvoltage;
 uint16_t batteryConfig_vbatwarningcellvoltage;
@@ -57,6 +63,41 @@ int16_t currentSensorVirtualConfig_scale;
 uint16_t currentSensorVirtualConfig_offset;
 #endif
 
+static void cmsx_BatteryProfileRead(void)
+{
+    const batteryProfile_t *batteryProfile = batteryProfiles(cmsBatteryProfileIndex);
+
+    batteryConfig_vbatmincellvoltage = batteryProfile->vbatmincellvoltage;
+    batteryConfig_vbatmaxcellvoltage = batteryProfile->vbatmaxcellvoltage;
+    batteryConfig_vbatwarningcellvoltage = batteryProfile->vbatwarningcellvoltage;
+}
+
+static void cmsx_BatteryProfileWriteback(void)
+{
+    batteryProfile_t *batteryProfile = batteryProfilesMutable(cmsBatteryProfileIndex);
+
+    batteryProfile->vbatmincellvoltage = batteryConfig_vbatmincellvoltage;
+    batteryProfile->vbatmaxcellvoltage = batteryConfig_vbatmaxcellvoltage;
+    batteryProfile->vbatwarningcellvoltage = batteryConfig_vbatwarningcellvoltage;
+}
+
+static const void *cmsx_batteryProfileIndexOnChange(displayPort_t *pDisp, const void *ptr)
+{
+    UNUSED(ptr);
+
+    // save edits to the outgoing profile before the reload below discards them
+    cmsx_BatteryProfileWriteback();
+
+    cmsBatteryProfileIndex = tmpBatteryProfileIndex;
+    changeBatteryProfile(cmsBatteryProfileIndex);
+    cmsx_BatteryProfileRead();
+
+    // the VBAT rows hold the new profile's values now, so redraw the whole page
+    displayClearScreen(pDisp, DISPLAY_CLEAR_WAIT);
+
+    return NULL;
+}
+
 static const void *cmsx_Power_onEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
@@ -64,10 +105,14 @@ static const void *cmsx_Power_onEnter(displayPort_t *pDisp)
     batteryConfig_voltageMeterSource = batteryConfig()->voltageMeterSource;
     batteryConfig_currentMeterSource = batteryConfig()->currentMeterSource;
 
-    cmsBatteryProfileIndex = systemConfig()->activeBatteryProfile;
-    batteryConfig_vbatmincellvoltage = batteryProfiles(cmsBatteryProfileIndex)->vbatmincellvoltage;
-    batteryConfig_vbatmaxcellvoltage = batteryProfiles(cmsBatteryProfileIndex)->vbatmaxcellvoltage;
-    batteryConfig_vbatwarningcellvoltage = batteryProfiles(cmsBatteryProfileIndex)->vbatwarningcellvoltage;
+    for (int i = 0; i < BATTERY_PROFILE_COUNT; i++) {
+        setProfileIndexString(batteryProfileNames[i], i, batteryProfiles(i)->profileName);
+        batteryProfileNamePtrs[i] = batteryProfileNames[i];
+    }
+
+    cmsBatteryProfileIndex = getCurrentBatteryProfileIndex();
+    tmpBatteryProfileIndex = cmsBatteryProfileIndex;
+    cmsx_BatteryProfileRead();
 
     voltageSensorADCConfig_vbatscale = voltageSensorADCConfig(0)->vbatscale;
 
@@ -90,9 +135,7 @@ static const void *cmsx_Power_onExit(displayPort_t *pDisp, const OSD_Entry *self
     batteryConfigMutable()->voltageMeterSource = batteryConfig_voltageMeterSource;
     batteryConfigMutable()->currentMeterSource = batteryConfig_currentMeterSource;
 
-    batteryProfilesMutable(cmsBatteryProfileIndex)->vbatmincellvoltage = batteryConfig_vbatmincellvoltage;
-    batteryProfilesMutable(cmsBatteryProfileIndex)->vbatmaxcellvoltage = batteryConfig_vbatmaxcellvoltage;
-    batteryProfilesMutable(cmsBatteryProfileIndex)->vbatwarningcellvoltage = batteryConfig_vbatwarningcellvoltage;
+    cmsx_BatteryProfileWriteback();
 
     voltageSensorADCConfigMutable(0)->vbatscale = voltageSensorADCConfig_vbatscale;
 
@@ -113,6 +156,8 @@ static const OSD_Entry cmsx_menuPowerEntries[] =
 
     { "V METER", OME_TAB | REBOOT_REQUIRED, NULL, &(OSD_TAB_t){ &batteryConfig_voltageMeterSource, VOLTAGE_METER_COUNT - 1, voltageMeterSourceNames } },
     { "I METER", OME_TAB | REBOOT_REQUIRED, NULL, &(OSD_TAB_t){ &batteryConfig_currentMeterSource, CURRENT_METER_COUNT - 1, currentMeterSourceNames } },
+
+    { "BATT PROF", OME_TAB, cmsx_batteryProfileIndexOnChange, &(OSD_TAB_t){ &tmpBatteryProfileIndex, BATTERY_PROFILE_COUNT - 1, batteryProfileNamePtrs } },
 
     { "VBAT CLMIN", OME_UINT16, NULL, &(OSD_UINT16_t) { &batteryConfig_vbatmincellvoltage, VBAT_CELL_VOTAGE_RANGE_MIN, VBAT_CELL_VOTAGE_RANGE_MAX, 1 } },
     { "VBAT CLMAX", OME_UINT16, NULL, &(OSD_UINT16_t) { &batteryConfig_vbatmaxcellvoltage, VBAT_CELL_VOTAGE_RANGE_MIN, VBAT_CELL_VOTAGE_RANGE_MAX, 1 } },
