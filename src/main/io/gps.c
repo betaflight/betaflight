@@ -94,6 +94,9 @@ GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS_M8N];
 #define GPS_CONFIG_BAUD_CHANGE_INTERVAL 330  // Time to wait, in ms, between 'test this baud rate' messages
 #define GPS_CONFIG_CHANGE_INTERVAL 110       // Time to wait, in ms, between CONFIG steps
 #define GPS_BAUDRATE_TEST_COUNT 3      // Number of times to repeat the test message when setting baudrate
+// bound the baud scan - each step re-inits the UART, and a port with no module never stops (#13946)
+#define GPS_BAUD_SWEEP_CYCLE_LIMIT 2    // in whole passes, so the backoff always starts on the configured baud rate
+#define GPS_BAUD_SWEEP_BACKOFF_MS 30000
 #define GPS_RECV_TIME_MAX 25           // Max permitted time, in us, for the NMEA Receive Data process
 #define GPS_UBLOX_RECV_TIME_MAX 15     // Max permitted time, in us, for the UBLOX Receive Data process
 #define GPS_FRAME_PROCESS_TIME_US 10    // Estimated ceiling for time required to process a frame, in us, for the Receive Data process
@@ -121,6 +124,7 @@ static const gpsInitData_t gpsInitData[] = {
 };
 
 #define DEFAULT_BAUD_RATE_INDEX 0
+#define GPS_BAUD_SWEEP_STEP_LIMIT (GPS_BAUD_SWEEP_CYCLE_LIMIT * ARRAYLEN(gpsInitData))
 
 #ifdef USE_GPS_UBLOX
 #define MAX_VALSET_SIZE 128
@@ -349,8 +353,8 @@ typedef enum {
     UBLOX_CONFIG_COMPLETE   // 22. Config finished, start receiving data
 } ubloxStatePosition_e;
 
-baudRate_e initBaudRateIndex;
-size_t initBaudRateCycleCount;
+static size_t initBaudRateCycleCount;
+static uint32_t lastBaudStepMs;
 #endif // USE_GPS_UBLOX
 
 gpsData_t gpsData;
@@ -396,6 +400,14 @@ static void gpsSetState(gpsState_e state)
     gpsData.ackState = UBLOX_ACK_IDLE;
 }
 
+// skip the USART and DMA teardown in uartReconfigure() when the port is already at this rate (#13946)
+static void gpsSetBaudRate(uint32_t baudRate)
+{
+    if (serialGetBaudRate(gpsPort) != baudRate) {
+        serialSetBaudRate(gpsPort, baudRate);
+    }
+}
+
 void gpsInit(void)
 {
     gpsDataIntervalSeconds = 0.1f;
@@ -429,8 +441,8 @@ void gpsInit(void)
     }
 
     // set the user's intended baud rate
-    initBaudRateIndex = BAUD_COUNT;
     initBaudRateCycleCount = 0;
+    lastBaudStepMs = millis();
     gpsData.userBaudRateIndex = DEFAULT_BAUD_RATE_INDEX;
     for (unsigned i = 0; i < ARRAYLEN(gpsInitData); i++) {
         if (gpsInitData[i].baudrateIndex == gpsConfig()->gps_baud) {
@@ -958,7 +970,7 @@ static void gpsConfigureNmea(void)
 #if !defined(GPS_NMEA_TX_ONLY)
         if (gpsData.state_position < 1) {
             // set the FC's baud rate to the user's configured baud rate
-            serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]);
+            gpsSetBaudRate(baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]);
             gpsData.state_position++;
         } else if (gpsData.state_position < 2) {
             // send NMEA custom commands to select which messages being sent, data rate etc
@@ -1020,6 +1032,8 @@ static void gpsConfigureUblox(void)
             serialPrint(gpsPort, gpsInitData[gpsData.userBaudRateIndex].ubx);
             // use this baud rate for re-connections
             gpsData.tempBaudRateIndex = gpsData.userBaudRateIndex;
+            // the link is proven, so a later dropout gets the full-speed sweep again
+            initBaudRateCycleCount = 0;
             // we're done here, let's move the the next state
             gpsSetState(GPS_STATE_CHANGE_BAUD);
             return;
@@ -1047,6 +1061,13 @@ static void gpsConfigureUblox(void)
         messageCounter = 0;
         gpsData.state_ts = gpsData.now;
 
+        // let the opening passes run unthrottled, then stop re-initialising the UART every step
+        if ((initBaudRateCycleCount >= GPS_BAUD_SWEEP_STEP_LIMIT)
+            && (cmp32(gpsData.now, lastBaudStepMs) < GPS_BAUD_SWEEP_BACKOFF_MS)) {
+            break;
+        }
+        lastBaudStepMs = gpsData.now;
+
         // failed to connect at that rate after five attempts
         // try other GPS baudrates, starting at 9600 and moving up
         if (gpsData.tempBaudRateIndex == 0) {
@@ -1055,8 +1076,9 @@ static void gpsConfigureUblox(void)
             gpsData.tempBaudRateIndex--;
         }
         // set the FC baud rate to the new temp baud rate
-        serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.tempBaudRateIndex].baudrateIndex]);
-        initBaudRateCycleCount++;
+        gpsSetBaudRate(baudRates[gpsInitData[gpsData.tempBaudRateIndex].baudrateIndex]);
+        // stop counting once backed off, so debug[2] can't overflow
+        initBaudRateCycleCount = MIN(initBaudRateCycleCount + 1, GPS_BAUD_SWEEP_STEP_LIMIT);
 
         break;
 
@@ -1068,7 +1090,7 @@ static void gpsConfigureUblox(void)
             return;
         }
         // set the FC's serial port to the configured rate
-        serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]);
+        gpsSetBaudRate(baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]);
         DEBUG_SET(DEBUG_GPS_CONNECTION, 3, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex] / 100);  //!< Baud Rate / 100, Else Nav Message Age In Milliseconds
         // then start sending configuration settings
         gpsSetState(GPS_STATE_CONFIGURE);
