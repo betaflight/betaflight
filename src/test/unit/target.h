@@ -34,6 +34,7 @@
 #define USE_GPS
 #define USE_GPS_NMEA
 #define USE_GPS_UBLOX
+#define USE_GPS_SEPTENTRIO
 #define USE_DASHBOARD
 #define USE_SERIALRX
 #define USE_RX_MSP

@@ -189,7 +189,7 @@ static const char * const lookupTableAlignment[] = {
 
 #ifdef USE_GPS
 static const char * const lookupTableGpsProvider[] = {
-    "NMEA", "UBLOX", "MSP", "VIRTUAL",
+    "NMEA", "UBLOX", "SEPTENTRIO", "MSP", "VIRTUAL",
 #if ENABLE_DRONECAN
     "DRONECAN",
 #endif
