@@ -234,7 +234,7 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
 
         // Handle a skipped check
         if (nextMarginCheckUs < now) {
-            nextMarginCheckUs = now + DSHOT_TELEMETRY_START_MARGIN;
+            nextMarginCheckUs = now + MARGIN_CHECK_INTERVAL_US;
         }
 
         if (minMargin > DSHOT_TELEMETRY_START_MARGIN) {
@@ -365,7 +365,7 @@ FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
 
         // Handle a skipped check
         if (nextMarginCheckUs < now) {
-            nextMarginCheckUs = now + DSHOT_TELEMETRY_START_MARGIN;
+            nextMarginCheckUs = now + MARGIN_CHECK_INTERVAL_US;
         }
 
         if (minMargin > DSHOT_TELEMETRY_START_MARGIN) {
