@@ -42,6 +42,7 @@
 #define GYRO_SCALE_4000DPS (4000.0f / (1 << 15))   //  8.192 dps/lsb scalefactor for 4000dps sensors
 
 // Gyro hardware types were updated in PR #14087 (removed GYRO_L3G4200D, GYRO_MPU3050)
+//                                             and again when the high-g IMU driver was consolidated to LSM6DSK320X only
 typedef enum {
     GYRO_NONE = 0,
     GYRO_DEFAULT,
@@ -60,7 +61,6 @@ typedef enum {
     GYRO_BMI160,
     GYRO_BMI270,
     GYRO_LSM6DSO,
-    GYRO_LSM6DSV16X,
     GYRO_IIM42653,
     GYRO_ICM45605,
     GYRO_ICM45686,
