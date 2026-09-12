@@ -240,6 +240,10 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_curve_pid_thr0 = 200,
         .tpa_curve_pid_thr100 = 70,
         .tpa_curve_expo = 20,
+        .speed_curve_vref = 20,      // Reference speed value which has optimal plane settins m/s
+        .speed_curve_power = 20,     // Hyperbolic curves power *0.1
+        .speed_curve_min = 20,       // Hyperbolic curves minimum *0.01
+        .speed_curve_max = 200,      // Hyperbolic curves maximum *0.01
         .tpa_speed_type = TPA_SPEED_BASIC,
         .tpa_speed_basic_delay = 1000,
         .tpa_speed_basic_gravity = 50,
@@ -438,6 +442,18 @@ void pidUpdateTpaFactor(float throttle)
     case TPA_CURVE_HYPERBOLIC:
         tpaFactor = pwlInterpolate(&pidRuntime.tpaCurvePwl, tpaArgument);
         break;
+#ifdef USE_WING
+    case TPA_CURVE_VREF: {
+        if (isFixedWing()) {
+            float arg = constrainf(pidRuntime.tpaSpeed.speed / pidRuntime.tpaSpeed.refSpeed,
+                                   pidRuntime.refSpeedCurveArgMin, pidRuntime.refSpeedCurveArgMax);
+            tpaFactor = pwlInterpolate(&pidRuntime.tpaCurvePwl, arg);
+        } else {
+            tpaFactor = getTpaFactorClassic(tpaArgument);
+        }
+        break;
+    }
+#endif
     case TPA_CURVE_CLASSIC:
     default:
         tpaFactor = getTpaFactorClassic(tpaArgument);
