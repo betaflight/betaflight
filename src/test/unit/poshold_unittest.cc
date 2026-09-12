@@ -853,7 +853,6 @@ protected:
         autopilotConfig_t *cfg = autopilotConfigMutable();
         cfg->yawMode = yawMode;
         cfg->yawP = 50;                // 0.5 deg/s per deg of heading error
-        cfg->yawD = 0;                 // deterministic P-only response
         cfg->maxYawRate = 30;
         cfg->minForwardVelocity = 100; // 1 m/s
 
@@ -1160,7 +1159,6 @@ TEST_F(PosHoldTest, YawControlGoesInactiveWithTheModeNotTheNextTick)
     // non-zero or the hold re-captures every tick, mirroring rc.c declining to inject.
     autopilotConfig_t *cfg = autopilotConfigMutable();
     cfg->yawP = 50;
-    cfg->yawD = 0;
     cfg->maxYawRate = 30;
     cfg->stickDeadband = 50;
 
@@ -1200,7 +1198,6 @@ TEST_F(PosHoldTest, YawControlStandsDownWhileDisarmedWithPosHoldStillLatched)
 
     autopilotConfig_t *cfg = autopilotConfigMutable();
     cfg->yawP = 50;
-    cfg->yawD = 0;
     cfg->maxYawRate = 30;
     cfg->stickDeadband = 50;
 
