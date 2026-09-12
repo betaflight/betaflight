@@ -55,7 +55,6 @@
 #include "drivers/time.h"
 
 #include "fc/runtime_config.h"
-#include "flight/imu.h"
 #include "io/beeper.h"
 
 #if ENABLE_DRONECAN
@@ -537,9 +536,8 @@ static bool compassIsHealthy(void)
 bool compassEnabledAndCalibrated(void)
 {
     return sensors(SENSOR_MAG)
-        && imuConfig()->trust_mag
         && compassHasBeenCalibrated
-        && compassIsHealthy(); // and appars to have valid data
+        && compassIsHealthy(); // and appears to have valid data
 }
 
 void compassStartCalibration(void)
