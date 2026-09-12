@@ -102,6 +102,15 @@ void autopilotSetYawRateLimit(float rateLimitDps)
     UNUSED(rateLimitDps);
 }
 
+void autopilotDisableYawControl(void)
+{
+}
+
+void updateHeadingHold(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+}
+
 void autopilotSetNavHeadingOverride(bool valid, float headingDeg)
 {
     UNUSED(valid);

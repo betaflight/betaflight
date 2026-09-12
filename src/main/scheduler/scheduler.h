@@ -135,6 +135,7 @@ typedef enum {
     TASK_POSHOLD,
 #endif
 #ifdef USE_MAG
+    TASK_MAGHOLD,
     TASK_COMPASS,
 #endif
 #ifdef USE_BARO

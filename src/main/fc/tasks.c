@@ -51,6 +51,7 @@
 #include "fc/rc.h"
 #include "fc/dispatch.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
 #include "flight/alt_hold.h"
@@ -59,6 +60,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
+#include "flight/autopilot.h"
 #include "flight/pos_hold.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -427,6 +429,7 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 #endif
 
 #ifdef USE_MAG
+    [TASK_MAGHOLD] = DEFINE_TASK("MAGHOLD", NULL, NULL, updateHeadingHold, TASK_PERIOD_HZ(HEADING_HOLD_TASK_RATE_HZ), TASK_PRIORITY_LOW),
     [TASK_COMPASS] = DEFINE_TASK("COMPASS", NULL, NULL, taskUpdateMag, TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ), TASK_PRIORITY_LOW),
 #endif
 
@@ -530,6 +533,21 @@ void tasksInitData(void)
     }
 }
 
+// Tasks gated on a mode being assigned to a switch, rather than on a feature or a sensor.
+// Features only change across a reboot, but mode ranges change live over MSP
+// (MSP_SET_MODE_RANGE calls rcControlsInit()), so these gates must be re-evaluated
+// whenever the mode configuration is re-analysed - not just at boot. Without that, a mode
+// assigned in the Configurator reports active while its task never runs.
+void tasksUpdateModeGatedEnables(void)
+{
+#ifdef USE_MAG
+    // Heading hold needs only a compass - it is deliberately not tied to position hold,
+    // whose task is gated on GPS or optical flow. MAG_MODE is rarely used, so the task
+    // only runs for pilots who have actually put the mode on a switch.
+    setTaskEnabled(TASK_MAGHOLD, sensors(SENSOR_MAG) && isModeActivationConditionPresent(BOXMAG));
+#endif
+}
+
 void tasksInit(void)
 {
     schedulerInit();
@@ -618,6 +636,8 @@ void tasksInit(void)
     setTaskEnabled(TASK_POSHOLD, featureIsEnabled(FEATURE_GPS) ||
                                  featureIsEnabled(FEATURE_OPTICALFLOW));
 #endif
+
+    tasksUpdateModeGatedEnables();
 
 #ifdef USE_MAG
     setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
