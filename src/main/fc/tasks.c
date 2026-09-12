@@ -51,6 +51,7 @@
 #include "fc/rc.h"
 #include "fc/dispatch.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
 #include "flight/alt_hold.h"
@@ -59,6 +60,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
+#include "flight/autopilot.h"
 #include "flight/pos_hold.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -150,8 +152,8 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
     UNUSED(currentTimeUs);
 
 #if defined(USE_VCP)
-    DEBUG_SET(DEBUG_USB, 0, usbCableIsInserted());
-    DEBUG_SET(DEBUG_USB, 1, usbVcpIsConnected());
+    DEBUG_SET(DEBUG_USB, 0, usbCableIsInserted());  //!< USB Cable Inserted
+    DEBUG_SET(DEBUG_USB, 1, usbVcpIsConnected());   //!< USB VCP Connected
 #endif
 
     bool evaluateMspData = ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA;
@@ -307,13 +309,13 @@ static void taskUpdateMag(timeUs_t currentTimeUs)
 }
 #endif
 
-#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
-static void taskCalculateAltitude(timeUs_t currentTimeUs)
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER) || defined(USE_OPTICALFLOW)
+static void taskPositionUpdate(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
-    calculateEstimatedAltitude();
+    positionUpdate();
 }
-#endif // USE_BARO || USE_GPS
+#endif // USE_BARO || USE_GPS || USE_RANGEFINDER || USE_OPTICALFLOW
 
 #if defined(USE_RANGEFINDER)
 static void taskUpdateRangefinder(timeUs_t currentTimeUs)
@@ -419,14 +421,15 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 #endif
 
 #ifdef USE_ALTITUDE_HOLD
-    [TASK_ALTHOLD] = DEFINE_TASK("ALTHOLD", NULL, NULL, updateAltHold, TASK_PERIOD_HZ(ALTHOLD_TASK_RATE_HZ), TASK_PRIORITY_LOW),
+    [TASK_ALTHOLD] = DEFINE_TASK("ALTHOLD", NULL, altHoldUpdateCheck, updateAltHold, TASK_PERIOD_HZ(ALTHOLD_TASK_RATE_HZ), TASK_PRIORITY_LOW), // Event driven by the position estimator, falls back to periodic scheduling
 #endif
 
 #ifdef USE_POSITION_HOLD
-    [TASK_POSHOLD] = DEFINE_TASK("POSHOLD", NULL, NULL, updatePosHold, TASK_PERIOD_HZ(POSHOLD_TASK_RATE_HZ), TASK_PRIORITY_LOW),
+    [TASK_POSHOLD] = DEFINE_TASK("POSHOLD", NULL, posHoldUpdateCheck, updatePosHold, TASK_PERIOD_HZ(POSHOLD_TASK_RATE_HZ), TASK_PRIORITY_LOW), // Event driven by the position estimator, falls back to periodic scheduling
 #endif
 
 #ifdef USE_MAG
+    [TASK_MAGHOLD] = DEFINE_TASK("MAGHOLD", NULL, NULL, updateHeadingHold, TASK_PERIOD_HZ(HEADING_HOLD_TASK_RATE_HZ), TASK_PRIORITY_LOW),
     [TASK_COMPASS] = DEFINE_TASK("COMPASS", NULL, NULL, taskUpdateMag, TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ), TASK_PRIORITY_LOW),
 #endif
 
@@ -434,8 +437,8 @@ task_attribute_t task_attributes[TASK_COUNT] = {
     [TASK_BARO] = DEFINE_TASK("BARO", NULL, NULL, taskUpdateBaro, TASK_PERIOD_HZ(TASK_BARO_RATE_HZ), TASK_PRIORITY_LOW),
 #endif
 
-#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
-    [TASK_ALTITUDE] = DEFINE_TASK("ALTITUDE", NULL, NULL, taskCalculateAltitude, TASK_PERIOD_HZ(TASK_ALTITUDE_RATE_HZ), TASK_PRIORITY_LOW),
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER) || defined(USE_OPTICALFLOW)
+    [TASK_POSITION] = DEFINE_TASK("POSITION", NULL, NULL, taskPositionUpdate, TASK_PERIOD_HZ(TASK_POSITION_RATE_HZ), TASK_PRIORITY_LOW), // Runs the position estimator, which in turn schedules ALTHOLD and POSHOLD
 #endif
 
 #ifdef USE_DASHBOARD
@@ -530,6 +533,21 @@ void tasksInitData(void)
     }
 }
 
+// Tasks gated on a mode being assigned to a switch, rather than on a feature or a sensor.
+// Features only change across a reboot, but mode ranges change live over MSP
+// (MSP_SET_MODE_RANGE calls rcControlsInit()), so these gates must be re-evaluated
+// whenever the mode configuration is re-analysed - not just at boot. Without that, a mode
+// assigned in the Configurator reports active while its task never runs.
+void tasksUpdateModeGatedEnables(void)
+{
+#ifdef USE_MAG
+    // Heading hold needs only a compass - it is deliberately not tied to position hold,
+    // whose task is gated on GPS or optical flow. MAG_MODE is rarely used, so the task
+    // only runs for pilots who have actually put the mode on a switch.
+    setTaskEnabled(TASK_MAGHOLD, sensors(SENSOR_MAG) && isModeActivationConditionPresent(BOXMAG));
+#endif
+}
+
 void tasksInit(void)
 {
     schedulerInit();
@@ -604,15 +622,22 @@ void tasksInit(void)
     setTaskEnabled(TASK_GPS_RESCUE, featureIsEnabled(FEATURE_GPS));
 #endif
 
+    // Both hold modes are driven by TASK_POSITION, so they are judged on the same
+    // terms as it is (see below) restricted to the axes each one needs: Z sources
+    // for altitude hold, XY sources for position hold. Enabling a hold mode whose
+    // estimator is not running would leave it working from a state that never updates.
 #ifdef USE_ALTITUDE_HOLD
     setTaskEnabled(TASK_ALTHOLD, sensors(SENSOR_BARO) ||
-                                 sensors(SENSOR_RANGEFINDER) ||
+                                 featureIsEnabled(FEATURE_RANGEFINDER) ||
                                  featureIsEnabled(FEATURE_GPS));
 #endif
 
 #ifdef USE_POSITION_HOLD
-    setTaskEnabled(TASK_POSHOLD, featureIsEnabled(FEATURE_GPS) || sensors(SENSOR_OPTICALFLOW));
+    setTaskEnabled(TASK_POSHOLD, featureIsEnabled(FEATURE_GPS) ||
+                                 featureIsEnabled(FEATURE_OPTICALFLOW));
 #endif
+
+    tasksUpdateModeGatedEnables();
 
 #ifdef USE_MAG
     setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
@@ -625,8 +650,20 @@ void tasksInit(void)
     setTaskEnabled(TASK_PITOT, pitotIsConfigured());
 #endif
 
-#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
-    setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || featureIsEnabled(FEATURE_GPS) || sensors(SENSOR_RANGEFINDER));
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER) || defined(USE_OPTICALFLOW)
+    // Run the estimator if any measurement source is configured. Judged on the
+    // features, not on detection: this is evaluated once, so a source detected
+    // after tasksInit() would otherwise leave the estimator permanently off, and
+    // a configured source that never appears costs only a prediction step.
+    // Baro has no feature flag so it is judged by detection, which is safe because
+    // it is probed synchronously at boot with nothing to arrive late. SENSOR_GPS
+    // means "has a fix" (set at runtime in gps.c) rather than "hardware present".
+    // Optical flow belongs here because it is an XY source: a flow-only craft has no
+    // baro, GPS or rangefinder but still holds position.
+    setTaskEnabled(TASK_POSITION, sensors(SENSOR_BARO) ||
+                                  featureIsEnabled(FEATURE_GPS) ||
+                                  featureIsEnabled(FEATURE_RANGEFINDER) ||
+                                  featureIsEnabled(FEATURE_OPTICALFLOW));
 #endif
 
 #ifdef USE_DASHBOARD
