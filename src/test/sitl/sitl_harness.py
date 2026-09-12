@@ -675,8 +675,6 @@ def base_config(extra):
         "aux 0 0 0 1700 2100 0 0",   # ARM on AUX1
         "aux 1 56 1 1700 2100 0 0",  # AUTOPILOT on AUX2
         "aux 2 1 2 1700 2100 0 0",   # ANGLE on AUX3 (heading-validation flight)
-        # the estimator needs the truth-fed virtual mag as a heading source
-        "set trust_mag = ON",
         # Unified velocity-primitive controller: cruise tilt is carried by the
         # virtual-distance integral, so drag compensation is a small term kept
         # well below the D (velocity) gain rather than the cruise feedforward.
