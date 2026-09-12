@@ -90,8 +90,8 @@ typedef struct autopilotConfig_s {
 
     // Yaw control parameters
     uint8_t yawMode;                  // autopilotYawMode_e (default YAW_MODE_VELOCITY)
-    uint8_t yawP;                     // scaled by 100 (e.g., 50 = 0.5, default 50)
-    uint8_t maxYawRate;               // deg/s, maximum yaw rate (default 150)
+    uint8_t yawP;                     //heading error P gain, scaled by AP_YAW_P_SCALE
+    uint8_t maxYawRate;               // deg/s, maximum yaw rate
 
     uint16_t minForwardVelocity;      // cm/s, minimum forward velocity: GPS course reliability (multirotor) / stall prevention (wing)
 
