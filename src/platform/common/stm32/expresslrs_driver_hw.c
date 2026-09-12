@@ -48,6 +48,8 @@ void expressLrsTimerEnableIRQs(const timerHardware_t *timer)
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER);
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
+#elif defined(USE_GDBSP_DRIVER)
+    nvic_irq_enable(irq, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER));
 #else
 # error "Unhandled MCU type"
 #endif
