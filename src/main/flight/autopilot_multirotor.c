@@ -693,10 +693,6 @@ static bool bearingToTargetDeg(const positionEstimate3d_t *est, float *headingDe
 // Yaw control priority is GPS Rescue, active navigation, then heading hold.
 // GPS Rescue supplies its own target heading. Active navigation chooses a
 // heading according to ap_yaw_mode. POS_HOLD and MAG_MODE hold the
-// heading captured on engagement. 
-// Yaw control priority is GPS Rescue, active navigation, then heading hold.
-// GPS Rescue supplies its own target heading. Active navigation chooses a
-// heading according to ap_yaw_mode. POS_HOLD and MAG_MODE instead hold the
 // heading captured on engagement.
 static void updateYawControl(float dt, const positionEstimate3d_t *est)
 {
@@ -785,31 +781,31 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
         desiredHeadingDeg = apYawHoldHeadingDeg;
     }
 
-apYawAttenuator = fminf(apYawAttenuator + dt / AP_YAW_RAMP_TIME_S, 1.0f);
+    apYawAttenuator = fminf(apYawAttenuator + dt / AP_YAW_RAMP_TIME_S, 1.0f);
 
-// The yaw rate setpoint (and gyro) is CCW-positive while compass headings
-// are CW-positive, so the heading error enters the setpoint frame negated:
-// desired ahead of heading (a right turn) demands a negative rate.
-float errorDeg = headingDeg - desiredHeadingDeg;
-errorDeg = fmodf(errorDeg + 540.0f, 360.0f) - 180.0f;
+    // The yaw rate setpoint (and gyro) is CCW-positive while compass headings
+    // are CW-positive, so the heading error enters the setpoint frame negated:
+    // desired ahead of heading (a right turn) demands a negative rate.
+    float errorDeg = headingDeg - desiredHeadingDeg;
+    errorDeg = fmodf(errorDeg + 540.0f, 360.0f) - 180.0f;
 
-const float yawP = errorDeg * yawKp;
-float yawRateDps = yawP * apYawAttenuator;
+    const float yawP = errorDeg * yawKp;
+    float yawRateDps = yawP * apYawAttenuator;
 
-float maxRateDps = (float)cfg->maxYawRate;
-if (apYawRateLimitDps > 0.0f) {
-    maxRateDps = fminf(maxRateDps, apYawRateLimitDps);
-}
-yawRateDps = constrainf(yawRateDps, -maxRateDps, maxRateDps);
+    float maxRateDps = (float)cfg->maxYawRate;
+    if (apYawRateLimitDps > 0.0f) {
+        maxRateDps = fminf(maxRateDps, apYawRateLimitDps);
+    }
+    yawRateDps = constrainf(yawRateDps, -maxRateDps, maxRateDps);
 
-apYawRateDps = yawRateDps * GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
-apYawActive = true;
+    apYawRateDps = yawRateDps * GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
+    apYawActive = true;
 
-DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 0, lrintf(headingDeg * 10.0f));
-DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 1, lrintf(desiredHeadingDeg * 10.0f));
-DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 2, lrintf(errorDeg * 10.0f));
-DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, lrintf(apYawRateDps * 10.0f));
-DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 4, lrintf(yawP * 10.0f));
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 0, lrintf(headingDeg * 10.0f));
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 1, lrintf(desiredHeadingDeg * 10.0f));
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 2, lrintf(errorDeg * 10.0f));
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, lrintf(apYawRateDps * 10.0f));
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 4, lrintf(yawP * 10.0f));
 }
 
 // TASK_MAGHOLD. Heading hold with no position control behind it: the MAG_MODE switch on
