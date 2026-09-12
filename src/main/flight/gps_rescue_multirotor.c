@@ -200,22 +200,22 @@ static void sensorUpdate(void)
     rescueState.sensor.distanceToHomeCm = vector2Norm(&rescueState.sensor.currentPositionV);
     rescueState.sensor.velocityCmS = vector2Norm(&rescueState.sensor.currentVelocityV); // only for debugs
 
-rescueState.sensor.aircraftHeadingDeg = DECIDEGREES_TO_DEGREES(attitude.values.yaw); // for debugs only
-if (rescueState.sensor.distanceToHomeCm > GPS_RESCUE_ACCEPT_RADIUS) {
-    rescueState.intent.targetHeadingDeg = RADIANS_TO_DEGREES(atan2f(
-        -rescueState.sensor.currentPositionV.v[EF_EAST],
-        -rescueState.sensor.currentPositionV.v[EF_NORTH]));
-
-    if (rescueState.intent.targetHeadingDeg < 0.0f) {
-        rescueState.intent.targetHeadingDeg += 360.0f;
-    }
-}
-
-rescueState.sensor.errorAngleDeg =
-    rescueState.sensor.aircraftHeadingDeg - rescueState.intent.targetHeadingDeg;
-rescueState.sensor.errorAngleDeg =
-    fmodf(rescueState.sensor.errorAngleDeg + 540.0f, 360.0f) - 180.0f;
+    rescueState.sensor.aircraftHeadingDeg = DECIDEGREES_TO_DEGREES(attitude.values.yaw); // for debugs only
+    if (rescueState.sensor.distanceToHomeCm > GPS_RESCUE_ACCEPT_RADIUS) {
+        rescueState.intent.targetHeadingDeg = RADIANS_TO_DEGREES(atan2f(
+            -rescueState.sensor.currentPositionV.v[EF_EAST],
+            -rescueState.sensor.currentPositionV.v[EF_NORTH]));
     
+        if (rescueState.intent.targetHeadingDeg < 0.0f) {
+            rescueState.intent.targetHeadingDeg += 360.0f;
+        }
+    }
+
+    rescueState.sensor.errorAngleDeg =
+        rescueState.sensor.aircraftHeadingDeg - rescueState.intent.targetHeadingDeg;
+    rescueState.sensor.errorAngleDeg =
+    fmodf(rescueState.sensor.errorAngleDeg + 540.0f, 360.0f) - 180.0f;
+
     DEBUG_SET(DEBUG_ATTITUDE, 0, lrintf(rescueState.sensor.aircraftHeadingDeg));  //!< Aircraft Heading [unit:deg]
     DEBUG_SET(DEBUG_ATTITUDE, 2, lrintf(rescueState.sensor.velocityCmS));         //!< Ground Speed [unit:cm/s]
 

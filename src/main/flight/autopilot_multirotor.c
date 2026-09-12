@@ -1010,12 +1010,12 @@ bool positionControl(void)
 
     if (!est->isValidXY) {
         disableYawControl();
-            apYawDisableReason = 8;
+        apYawDisableReason = 8;
         return false;
     }
     if (abortNavRequested) {
         disableYawControl();
-            apYawDisableReason = 9;
+        apYawDisableReason = 9;
         handlepositionControlFailure();
         return false; // Return failure and show pos hold fail message in OSD
     }
@@ -1024,13 +1024,13 @@ bool positionControl(void)
         // fly sideways, so drop to angle-mode self-level (altitude hold, a
         // separate mode, keeps holding height) until a mode-switch cycle clears it.
         disableYawControl();
-            apYawDisableReason = 10;
+        apYawDisableReason = 10;
         handlepositionControlFailure();
         return false;
     }
     if (forcePitchForward) {
         disableYawControl();
-                    apYawDisableReason = 11;
+        apYawDisableReason = 11;
         autopilotAngle[AI_ROLL]  = 0.0f;
         autopilotAngle[AI_PITCH] = 35.0f;
         DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 200);   //!< Status Flags
