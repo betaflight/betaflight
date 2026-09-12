@@ -209,6 +209,7 @@ typedef enum {
     DEBUG_AUTOPILOT_STOP,
     DEBUG_PITOT,
     DEBUG_POSITION_EST,
+    DEBUG_AUTOPILOT_HEADING,
     DEBUG_COUNT
 } debugType_e;
 

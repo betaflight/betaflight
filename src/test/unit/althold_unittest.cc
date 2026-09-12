@@ -336,6 +336,7 @@ extern "C" {
     float getGpsDataIntervalSeconds(void) { return 0.01f; }
 
     float rcCommand[4];
+    bool imuIsHeadingValid(void) { return true; }
 
     bool gpsHasNewData(uint16_t* gpsStamp) {
         UNUSED(*gpsStamp);
