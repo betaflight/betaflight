@@ -40,6 +40,7 @@ typedef struct vtxSettingsConfig_s {
     uint16_t pitModeFreq;   // sets out-of-range pitmode frequency
     uint8_t lowPowerDisarm; // min power while disarmed, from vtxLowerPowerDisarm_e
     uint8_t softserialAlt;  // prepend 0xff before sending frame even with SOFTSERIAL
+    uint8_t mspDisarmDelay; // seconds to delay MSP low-power/disarm effect (digital VTX)
     uint8_t vtx_type;       // vtxDevType_e: VTXDEV_UNSUPPORTED/SMARTAUDIO/TRAMP/MSP, picks the driver
     int8_t vtx_uart;        // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned
 } vtxSettingsConfig_t;
