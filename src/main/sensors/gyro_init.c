@@ -53,6 +53,7 @@
 
 #include "drivers/accgyro/accgyro_spi_l3gd20.h"
 #include "drivers/accgyro/accgyro_spi_lsm6dso.h"
+#include "drivers/accgyro/accgyro_spi_adis1657x.h"
 #include "drivers/accgyro/accgyro_spi_lsm6dsv16x.h"
 
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
@@ -81,7 +82,16 @@
 // The gyro buffer is split 50/50, the first half for the transmit buffer, the second half for the receive buffer
 // This buffer is large enough for the gyros currently supported in accgyro_mpu.c but should be reviewed id other
 // gyro types are supported with SPI DMA.
+// The ADIS1657x burst frame is 36 bytes, well past the 16 bytes per direction a
+// 32-byte split buffer provides. Widen it only when that driver is enabled so
+// every other target's buffers stay byte-identical. 128 also puts the tx and rx
+// halves on separate 64-byte boundaries, which matters on cores where DMA_DATA
+// is cache-line aligned.
+#if defined(USE_ACCGYRO_ADIS1657X)
+#define GYRO_BUF_SIZE 128
+#else
 #define GYRO_BUF_SIZE 32
+#endif
 
 static uint8_t gyroDetectedFlags = 0;
 
@@ -552,6 +562,15 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
     case GYRO_LSM6DSK320X:
         if (lsm6dsk320xSpiGyroDetect(dev)) {
             gyroHardware = GYRO_LSM6DSK320X;
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
+#ifdef USE_ACCGYRO_ADIS1657X
+    case GYRO_ADIS1657X:
+        if (adis1657xSpiGyroDetect(dev)) {
+            gyroHardware = GYRO_ADIS1657X;
             break;
         }
         FALLTHROUGH;
