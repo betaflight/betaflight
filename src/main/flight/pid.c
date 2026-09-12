@@ -133,6 +133,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
             [PID_PITCH] = PID_PITCH_DEFAULT,
             [PID_YAW] =   PID_YAW_DEFAULT,
             [PID_LEVEL] = { 50, 75, 75, 50, 0 },
+            // Unused since heading hold moved to the autopilot yaw controller (ap_yaw_p).
+            // The slot stays to keep the MSP_PID array length and the stored pidProfile
+            // layout unchanged.
             [PID_MAG] =   { 40, 0, 0, 0, 0 },
         },
         .pidSumLimit = PIDSUM_LIMIT,

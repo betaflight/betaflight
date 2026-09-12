@@ -132,4 +132,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     [DEBUG_PSAS] = "PSAS",
     [DEBUG_PITOT] = "PITOT",
     [DEBUG_POSITION_EST] = "POSITION_EST",
+    [DEBUG_AUTOPILOT_HEADING] = "AUTOPILOT_HEADING",
 };
