@@ -676,8 +676,6 @@ def base_config(extra):
         "aux 0 0 0 1700 2100 0 0",   # ARM on AUX1
         "aux 1 56 1 1700 2100 0 0",  # AUTOPILOT on AUX2
         "aux 2 1 2 1700 2100 0 0",   # ANGLE on AUX3 (heading-validation flight)
-        # the estimator needs the truth-fed virtual mag as a heading source
-        "set trust_mag = ON",
         # compassEnabledAndCalibrated() requires stored calibration values: the
         # virtual compass is never calibrated, so seed a negligible bias to mark
         # it calibrated, or the heading is never trusted and nav stands down
