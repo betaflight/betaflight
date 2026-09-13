@@ -197,11 +197,139 @@ TEST_F(RcControlsModesTest, updateActivatedModesUsingValidAuxConfigurationAndRXV
 
 enum {
     COUNTER_QUEUE_CONFIRMATION_BEEP,
-    COUNTER_CHANGE_CONTROL_RATE_PROFILE
+    COUNTER_CHANGE_CONTROL_RATE_PROFILE,
+    COUNTER_TRY_ARM,
 };
-#define CALL_COUNT_ITEM_COUNT 2
+#define CALL_COUNT_ITEM_COUNT 3
 
 static int callCounts[CALL_COUNT_ITEM_COUNT];
+
+uint32_t fixedMillis;
+
+TEST_F(RcControlsModesTest, twoTapArming)
+{
+    memset(callCounts, 0, sizeof(callCounts));
+
+    modeActivationConditionsMutable(0)->modeId = BOXARM;
+    modeActivationConditionsMutable(0)->auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT;
+    modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1700);
+    modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(2100);
+
+    memset(&rxRuntimeState, 0, sizeof(rxRuntimeState));
+    rxRuntimeState.channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT;
+    rcData[AUX1] = PWM_RANGE_MIDDLE;
+
+    PG_RESET(armingConfig);
+    EXPECT_EQ(0, armingConfig()->two_tap_arming);
+
+    armingConfigMutable()->two_tap_arming = 100;
+    rcControlsInit();
+    fixedMillis = 0;
+    updateActivatedModes();
+
+    rcData[AUX1] = PWM_RANGE_MAX;
+    updateActivatedModes();
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXARM));
+    EXPECT_FALSE(rcModeIsTwoTapArmReady());
+    EXPECT_TRUE(rcModeIsTwoTapArmWaiting());
+    processRcStickPositions();
+    EXPECT_EQ(1, callCounts[COUNTER_QUEUE_CONFIRMATION_BEEP]);
+    EXPECT_EQ(0, callCounts[COUNTER_TRY_ARM]);
+
+    fixedMillis = 500;
+    rcData[AUX1] = PWM_RANGE_MIDDLE;
+    updateActivatedModes();
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXARM));
+    EXPECT_FALSE(rcModeIsTwoTapArmReady());
+    EXPECT_TRUE(rcModeIsTwoTapArmWaiting());
+    processRcStickPositions();
+
+    fixedMillis = 1000;
+    rcData[AUX1] = PWM_RANGE_MAX;
+    updateActivatedModes();
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXARM));
+    EXPECT_TRUE(rcModeIsTwoTapArmReady());
+    EXPECT_FALSE(rcModeIsTwoTapArmWaiting());
+    processRcStickPositions();
+    EXPECT_EQ(1, callCounts[COUNTER_TRY_ARM]);
+
+    fixedMillis = 1001;
+    updateActivatedModes();
+    EXPECT_TRUE(rcModeIsTwoTapArmReady());
+    processRcStickPositions();
+    EXPECT_EQ(2, callCounts[COUNTER_TRY_ARM]);
+
+    ENABLE_ARMING_FLAG(ARMED);
+    rcData[AUX1] = PWM_RANGE_MIDDLE;
+    updateActivatedModes();
+    processRcStickPositions();
+    rcData[AUX1] = PWM_RANGE_MAX;
+    updateActivatedModes();
+    EXPECT_FALSE(rcModeIsTwoTapArmReady());
+    processRcStickPositions();
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+    EXPECT_EQ(3, callCounts[COUNTER_TRY_ARM]);
+    DISABLE_ARMING_FLAG(ARMED);
+    rcModeSetTwoTapArming(100);
+
+    rcData[AUX1] = PWM_RANGE_MIDDLE;
+    updateActivatedModes();
+    processRcStickPositions();
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXARM));
+
+    fixedMillis = 1100;
+    rcData[AUX1] = PWM_RANGE_MAX;
+    updateActivatedModes();
+    fixedMillis = 2101;
+    updateActivatedModes();
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXARM));
+    EXPECT_FALSE(rcModeIsTwoTapArmReady());
+    EXPECT_FALSE(rcModeIsTwoTapArmWaiting());
+
+    rcData[AUX1] = PWM_RANGE_MIDDLE;
+    updateActivatedModes();
+
+    armingConfigMutable()->two_tap_arming = 200;
+    rcModeSetTwoTapArming(armingConfig()->two_tap_arming);
+    fixedMillis = 3000;
+    rcData[AUX1] = PWM_RANGE_MAX;
+    updateActivatedModes();
+    fixedMillis = 4000;
+    rcData[AUX1] = PWM_RANGE_MIDDLE;
+    updateActivatedModes();
+    fixedMillis = 5000;
+    rcData[AUX1] = PWM_RANGE_MAX;
+    updateActivatedModes();
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXARM));
+    EXPECT_TRUE(rcModeIsTwoTapArmReady());
+
+    rcData[AUX1] = PWM_RANGE_MIDDLE;
+    updateActivatedModes();
+
+    rcModeSetTwoTapArming(100);
+    fixedMillis = 4294500U;
+    rcData[AUX1] = PWM_RANGE_MAX;
+    updateActivatedModes();
+    fixedMillis += 200;
+    rcData[AUX1] = PWM_RANGE_MIDDLE;
+    updateActivatedModes();
+    fixedMillis += 400;
+    rcData[AUX1] = PWM_RANGE_MAX;
+    updateActivatedModes();
+    EXPECT_TRUE(rcModeIsTwoTapArmReady());
+
+    rcData[AUX1] = PWM_RANGE_MIDDLE;
+    updateActivatedModes();
+
+    armingConfigMutable()->two_tap_arming = 0;
+    rcModeSetTwoTapArming(armingConfig()->two_tap_arming);
+    rcData[AUX1] = PWM_RANGE_MAX;
+    updateActivatedModes();
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXARM));
+    EXPECT_TRUE(rcModeIsTwoTapArmReady());
+
+    memset(modeActivationConditionsMutable(0), 0, sizeof(modeActivationCondition_t));
+}
 
 #define CALL_COUNTER(item) (callCounts[item])
 
@@ -227,8 +355,6 @@ void resetCallCounters(void)
 {
     memset(&callCounts, 0, sizeof(callCounts));
 }
-
-uint32_t fixedMillis;
 
 extern "C" {
 uint32_t millis(void)
@@ -742,7 +868,7 @@ void applyAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
 void handleInflightCalibrationStickPosition(void) {}
 bool featureIsEnabled(uint32_t) { return false;}
 bool sensors(uint32_t) { return false;}
-void tryArm(void) {}
+void tryArm(void) { callCounts[COUNTER_TRY_ARM]++; }
 void disarm(flightLogDisarmReason_e) {}
 void dashboardDisablePageCycling() {}
 void dashboardEnablePageCycling() {}

@@ -147,6 +147,9 @@ typedef struct modeActivationProfile_s {
 
 bool IS_RC_MODE_ACTIVE(boxId_e boxId);
 void rcModeUpdate(const boxBitmask_t *newState);
+void rcModeSetTwoTapArming(uint8_t timeoutCentiseconds);
+bool rcModeIsTwoTapArmReady(void);
+bool rcModeIsTwoTapArmWaiting(void);
 
 // External (MAVLink command) flight-mode override. Forces the selected box modes
 // active on top of the RC-derived mask each loop, so a MAVLink DO_SET_MODE / RTL
