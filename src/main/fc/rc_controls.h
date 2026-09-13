@@ -126,6 +126,7 @@ typedef struct armingConfig_s {
     uint8_t gyro_cal_on_first_arm;          // calibrate the gyro right before the first arm
     uint8_t auto_disarm_delay;              // allow automatically disarming multicopters after auto_disarm_delay seconds of zero throttle. Disabled when 0
     uint8_t prearm_allow_rearm;
+    uint8_t switch_disarm_time;             // motor ramp-down time in 10ms steps. Disabled when 0
 } armingConfig_t;
 
 PG_DECLARE(armingConfig_t, armingConfig);
