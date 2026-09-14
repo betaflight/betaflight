@@ -90,6 +90,7 @@
 static timeUs_t magCalEndTime = 0;
 static bool didMovementStart = false;
 static bool magCalProcessActive = false;
+static bool compassHasBeenCalibrated = false;
 
 static compassBiasEstimator_t compassBiasEstimator;
 
@@ -470,6 +471,14 @@ static bool compassDetect(magDev_t *dev, sensor_align_e *alignment)
 }
 #endif // !ENABLE_SIMULATOR
 
+static bool compassHasCalibration(void)
+{
+    const flightDynamicsTrims_t *magZero = &compassConfig()->magZero;
+    return (magZero->raw[X] != 0) ||
+           (magZero->raw[Y] != 0) ||
+           (magZero->raw[Z] != 0);
+}
+
 bool compassInit(void)
 {
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
@@ -500,7 +509,9 @@ bool compassInit(void)
 
     buildRotationMatrixFromAngles(&magDev.rotationMatrix, &magCustomAlignment);
 
-    compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);
+    compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);  
+
+    compassHasBeenCalibrated = compassHasCalibration();
 
     if (magDev.magOdrHz) {
         // For Mags that send data at a fixed ODR, we wait some quiet period after a read before checking for new data
@@ -515,9 +526,20 @@ bool compassInit(void)
     return true;
 }
 
+static bool compassIsHealthy(void)
+{
+    return (mag.magADC.x != 0) ||
+           (mag.magADC.y != 0) ||
+           (mag.magADC.z != 0);
+           // fail if all axes report zero, the original isHealthy check
+}
+
 bool compassEnabledAndCalibrated(void)
 {
-    return sensors(SENSOR_MAG) && (imuConfig()->trust_mag) && (mag.magADC.x != 0) && (mag.magADC.y != 0) && (mag.magADC.z != 0);
+    return sensors(SENSOR_MAG)
+        && imuConfig()->trust_mag
+        && compassHasBeenCalibrated
+        && compassIsHealthy(); // and appars to have valid data
 }
 
 void compassStartCalibration(void)
@@ -541,10 +563,10 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
     static timeUs_t previousTaskTimeUs = 0;
     const timeDelta_t dTaskTimeUs = cmpTimeUs(currentTimeUs, previousTaskTimeUs);
     previousTaskTimeUs = currentTimeUs;
-    DEBUG_SET(DEBUG_MAG_TASK_RATE, 6, dTaskTimeUs);
+    DEBUG_SET(DEBUG_MAG_TASK_RATE, 6, dTaskTimeUs);  //!< Task Interval [unit:us]
 
     bool checkBusBusy = busBusy(&magDev.dev, NULL);
-    DEBUG_SET(DEBUG_MAG_TASK_RATE, 4, checkBusBusy);
+    DEBUG_SET(DEBUG_MAG_TASK_RATE, 4, checkBusBusy);  //!< Bus Busy
     if (checkBusBusy) {
         // No action is taken, as the bus was busy.
         schedulerIgnoreTaskExecRate();
@@ -552,7 +574,7 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
     }
 
     bool checkReadState = !magDev.read(&magDev, magADCRaw);
-    DEBUG_SET(DEBUG_MAG_TASK_RATE, 5, checkReadState);
+    DEBUG_SET(DEBUG_MAG_TASK_RATE, 5, checkReadState);  //!< Read State
     if (checkReadState) {
         // The compass reported no data available to be retrieved; it may use a state engine that has more than one read state
         schedulerIgnoreTaskExecRate();
@@ -608,6 +630,7 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
                     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                         magZero->raw[axis] = lrintf(compassBiasEstimator.b[axis]);
                     }
+                    compassHasBeenCalibrated = compassHasCalibration();
                     beeper(BEEPER_GYRO_CALIBRATED); // re-purpose gyro cal success beep
                     saveConfigAndNotify();
                 } else {
@@ -629,12 +652,12 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
     if (debugMode == DEBUG_MAG_CALIB) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             // DEBUG 0-2: magADC.x, magADC.y, magADC.z
-            DEBUG_SET(DEBUG_MAG_CALIB, axis, lrintf(mag.magADC.v[axis]));
+            DEBUG_SET(DEBUG_MAG_CALIB, axis, lrintf(mag.magADC.v[axis]));  //!< [index:0..2] Mag {X|Y|Z}
             // DEBUG 4-6: estimated magnetometer bias, increases above zero when calibration starts
-            DEBUG_SET(DEBUG_MAG_CALIB, axis + 4, lrintf(compassBiasEstimator.b[axis]));
+            DEBUG_SET(DEBUG_MAG_CALIB, axis + 4, lrintf(compassBiasEstimator.b[axis]));  //!< [index:4..6] Estimated Mag Bias {X|Y|Z}
         }
         // DEBUG 3: absolute vector length of magADC, should stay constant independent of the orientation of the quad
-        DEBUG_SET(DEBUG_MAG_CALIB, 3, lrintf(vector3Norm(&mag.magADC)));
+        DEBUG_SET(DEBUG_MAG_CALIB, 3, lrintf(vector3Norm(&mag.magADC)));  //!< Mag Vector Length
         // DEBUG 7: adaptive forgetting factor lambda, only while analysing cal data
         // after the transient phase it should converge to 2000
         // set dsiplayed lambda to zero unless calibrating, to indicate start and finish in Sensors tab
@@ -644,7 +667,7 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
             const float mapLambdaGain = 1.0f / (1.0f - compassBiasEstimator.lambda_min + 1.0e-6f) * 2.0e3f;
             displayLambdaGain = (compassBiasEstimator.lambda - compassBiasEstimator.lambda_min) * mapLambdaGain;
         }
-        DEBUG_SET(DEBUG_MAG_CALIB, 7, lrintf(displayLambdaGain));
+        DEBUG_SET(DEBUG_MAG_CALIB, 7, lrintf(displayLambdaGain));  //!< Calibration Forgetting Factor
     }
 
     if (debugMode == DEBUG_MAG_TASK_RATE) {
@@ -653,10 +676,10 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
         previousTimeUs = currentTimeUs;
         const uint16_t actualCompassDataRateHz = 1e6f / dataIntervalUs;
         timeDelta_t executeTimeUs = micros() - currentTimeUs;
-        DEBUG_SET(DEBUG_MAG_TASK_RATE, 0, TASK_COMPASS_RATE_HZ);
-        DEBUG_SET(DEBUG_MAG_TASK_RATE, 1, actualCompassDataRateHz);
-        DEBUG_SET(DEBUG_MAG_TASK_RATE, 2, dataIntervalUs);
-        DEBUG_SET(DEBUG_MAG_TASK_RATE, 3, executeTimeUs); // time in uS to complete the mag task
+        DEBUG_SET(DEBUG_MAG_TASK_RATE, 0, TASK_COMPASS_RATE_HZ);     //!< Task Rate [unit:Hz]
+        DEBUG_SET(DEBUG_MAG_TASK_RATE, 1, actualCompassDataRateHz);  //!< Actual Data Rate [unit:Hz]
+        DEBUG_SET(DEBUG_MAG_TASK_RATE, 2, dataIntervalUs);           //!< Data Interval [unit:us]
+        DEBUG_SET(DEBUG_MAG_TASK_RATE, 3, executeTimeUs);            //!< Task Execute Time [unit:us]
     }
 
     // don't do the next read check until compassReadIntervalUs has expired

@@ -1400,41 +1400,176 @@ RAM_CODE static void cliAux(const char *cmdName, char *cmdline)
     }
 }
 
-static void printSerial(dumpFlags_t dumpMask, const char *headingStr)
+STATIC_UNIT_TESTED uint16_t cliGetSettingIndex(const char *name, size_t length);
+
+// Print one setting as `set <name> = <value>`, but only where it has moved off
+// its default, the way `diff` chooses what to carry.  The default comes from a
+// non-destructive PG reset into a scratch buffer, so this holds outside a dump,
+// where pg->copy is not the value being reported.
+static void printSettingIfChanged(const char *cmdName, const char *name)
 {
-    const char *format = "serial %s %d %ld %ld %ld %ld";
-    headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
-    for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
-        const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
-        if (!serialIsPortAvailable(identifier)) {
-            continue;
-        };
+    const uint16_t index = cliGetSettingIndex(name, strlen(name));
+    if (index >= valueTableEntryCount) {
+        // a build without the feature has no such setting
+        return;
+    }
 
-        uint8_t baudRateIndexes[SERIAL_BAUD_CLASS_COUNT];
-        for (unsigned c = 0; c < SERIAL_BAUD_CLASS_COUNT; c++) {
-            baudRateIndexes[c] = serialSynthesizePortBaud(identifier, c);
+    const clivalue_t *value = &valueTable[index];
+    const pgRegistry_t *pg = pgFind(value->pgn);
+    if (!pg) {
+        return;
+    }
+
+    const int valueOffset = getValueOffset(value);
+    const uint16_t pgSizeBytes = pgSize(pg);
+    uint32_t defaultBufAligned[(pgSizeBytes + sizeof(uint32_t) - 1) / sizeof(uint32_t)];
+    uint8_t *defaultBuf = (uint8_t *)defaultBufAligned;
+    pgResetCopy(defaultBuf, value->pgn);
+
+    const void *valuePointer = cliGetValuePointer(value);
+    if (valuePtrEqualsDefault(value, valuePointer, defaultBuf + valueOffset)) {
+        return;
+    }
+
+    cliPrintf("set %s = ", value->name);
+    printValuePointer(cmdName, value, valuePointer, false);
+    cliPrintLinefeed();
+}
+
+// Every claim on one port as the commands that would make it, so the port a
+// feature is on can be read off, and pasted back, in the form that now holds it.
+// What the port opens as, and the rate the feature owns, follow their port: a
+// bare `set vtx_uart = UART1` without its protocol leaves the claim inert.  Both
+// are printed only where they are not the default, so the output stays as short
+// as what `diff` would carry.
+static void printPortClaimSettings(const char *cmdName, serialPortIdentifier_e identifier)
+{
+    serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
+    const unsigned claimCount = serialGetPortClaims(identifier, claims, ARRAYLEN(claims));
+
+    for (unsigned c = 0; c < claimCount; c++) {
+        cliPrintLinef("set %s = %s", claims[c].setting, serialName(identifier, invalidName));
+        if (claims[c].selectorSetting) {
+            printSettingIfChanged(cmdName, claims[c].selectorSetting);
         }
-
-        cliDumpPrintLinef(dumpMask, false, format,
-            serialName(identifier, invalidName),
-            serialSynthesizeFunctionMask(identifier),
-            baudRates[baudRateIndexes[SERIAL_BAUD_MSP]],
-            baudRates[baudRateIndexes[SERIAL_BAUD_GPS]],
-            baudRates[baudRateIndexes[SERIAL_BAUD_TELEMETRY]],
-            baudRates[baudRateIndexes[SERIAL_BAUD_BLACKBOX]]
-            );
+        if (claims[c].baudSetting) {
+            printSettingIfChanged(cmdName, claims[c].baudSetting);
+        }
     }
 }
 
 RAM_CODE static void cliSerial(const char *cmdName, char *cmdline)
 {
-    if (!isEmpty(cmdline)) {
-        // A diff taken from an older firmware still carries assignments here.
-        cliPrintErrorLinef(cmdName, "READ ONLY, ASSIGN PORTS WITH THE <FEATURE>_UART SETTINGS");
+    if (isEmpty(cmdline)) {
+        for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
+            printPortClaimSettings(cmdName, serialPortIdentifiers[i]);
+        }
         return;
     }
 
-    printSerial(DUMP_MASTER, NULL);
+    // The legacy form, as an older diff still carries it:
+    //   serial <identifier> <function mask> <msp baud> <gps baud> <telemetry baud> <blackbox baud>
+    // It is translated onto the feature settings rather than refused, so a saved
+    // configuration from before the split still restores.
+    unsigned validArgumentCount = 0;
+
+    char *ptr = cmdline;
+    char *tok = strsep(&ptr, " ");
+    serialPortIdentifier_e identifier = findSerialPortByName(tok, strcasecmp);
+    if (identifier == SERIAL_PORT_NONE) {
+        char *eptr;
+        identifier = strtoul(tok, &eptr, 10);
+        if (*eptr) {
+            // parsing ended before the end of the token, so not an identifier
+            identifier = SERIAL_PORT_NONE;
+        } else if (identifier >= SERIAL_PORT_LEGACY_START_IDENTIFIER && identifier < SERIAL_PORT_START_IDENTIFIER) {
+            // correction for legacy configuration where UART1 == 0
+            identifier += SERIAL_PORT_UART1;
+        }
+    }
+
+    if (identifier == SERIAL_PORT_NONE || findSerialPortIndexByIdentifier(identifier) < 0) {
+        cliShowParseError(cmdName);
+        return;
+    }
+    validArgumentCount++;
+
+    uint32_t functionMask = 0;
+    tok = strsep(&ptr, " ");
+    if (tok) {
+        functionMask = strtoul(tok, NULL, 10);
+        validArgumentCount++;
+    }
+
+    uint8_t baudRateIndexes[SERIAL_BAUD_CLASS_COUNT];
+    for (unsigned c = 0; c < SERIAL_BAUD_CLASS_COUNT; c++) {
+        baudRateIndexes[c] = serialDefaultPortBaud(c);
+    }
+
+    // The legacy line orders its rates msp, gps, telemetry, blackbox, and each
+    // has its own accepted range, as it always did.
+    static const serialBaudClass_e baudOrder[] = {
+        SERIAL_BAUD_MSP, SERIAL_BAUD_GPS, SERIAL_BAUD_TELEMETRY, SERIAL_BAUD_BLACKBOX,
+    };
+    for (unsigned i = 0; i < ARRAYLEN(baudOrder); i++) {
+        tok = strsep(&ptr, " ");
+        if (!tok) {
+            break;
+        }
+
+        const int val = atoi(tok);
+        const uint8_t baudRateIndex = lookupBaudRateIndex(val);
+        if (baudRates[baudRateIndex] != (uint32_t)val) {
+            break;
+        }
+
+        // A rate outside its class's range counts as no argument at all, so the
+        // line is refused rather than quietly applied at the class default.
+        switch (baudOrder[i]) {
+        case SERIAL_BAUD_MSP:
+            if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_1000000) {
+                continue;
+            }
+            break;
+        case SERIAL_BAUD_GPS:
+            if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_230400) {
+                continue;
+            }
+            break;
+        case SERIAL_BAUD_TELEMETRY:
+            if (baudRateIndex != BAUD_AUTO && baudRateIndex > BAUD_460800) {
+                continue;
+            }
+            break;
+        case SERIAL_BAUD_BLACKBOX:
+            if (baudRateIndex < BAUD_19200 || baudRateIndex > BAUD_2470000) {
+                continue;
+            }
+            break;
+        default:
+            continue;
+        }
+
+        baudRateIndexes[baudOrder[i]] = baudRateIndex;
+        validArgumentCount++;
+    }
+
+    if (validArgumentCount < 2 + ARRAYLEN(baudOrder)) {
+        cliShowInvalidArgumentCountError(cmdName);
+        return;
+    }
+
+    if (!serialApplyFunctionMask(identifier, functionMask)) {
+        cliShowParseError(cmdName);
+        return;
+    }
+
+    for (unsigned c = 0; c < SERIAL_BAUD_CLASS_COUNT; c++) {
+        serialApplyPortBaud(identifier, c, baudRateIndexes[c]);
+    }
+
+    cliPrintLine("# WARNING: 'serial' is deprecated, assign ports with the <feature>_uart settings");
+    printPortClaimSettings(cmdName, identifier);
 }
 
 #if defined(USE_SERIAL_PASSTHROUGH)
@@ -6327,6 +6462,30 @@ static void cliPrintSensorPeripheral(const char *stem, sensorIndex_e sensorIndex
 }
 #endif // USE_SENSOR_NAMES
 
+static bool serialPortIsSoftSerial(serialPortIdentifier_e identifier)
+{
+#ifdef USE_SOFTSERIAL
+    return serialType(identifier) == SERIALTYPE_SOFTSERIAL;
+#else
+    UNUSED(identifier);
+    return false;
+#endif
+}
+
+// Why a port the build has cannot be opened at all, printed in place of its
+// claim states so the reason is actionable rather than just a missing port.
+static const char *serialPortUnavailableReason(serialPortIdentifier_e identifier)
+{
+#ifdef USE_SOFTSERIAL
+    if (serialPortIsSoftSerial(identifier) && !featureIsEnabled(FEATURE_SOFTSERIAL)) {
+        return "feature SOFTSERIAL off";
+    }
+#else
+    UNUSED(identifier);
+#endif
+    return "no pins";
+}
+
 static void cliPeripherals(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -6334,20 +6493,26 @@ static void cliPeripherals(const char *cmdName, char *cmdline)
 
     for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
         const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
-        if (!serialIsPortAvailable(identifier)) {
-            continue;
-        }
+        const bool available = serialIsPortAvailable(identifier);
 
         serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
         const unsigned claimCount = serialGetPortClaims(identifier, claims, ARRAYLEN(claims));
-        if (!claimCount) {
+
+        // Every port that can be opened is listed, claimed or not.  One that
+        // cannot earns a line only when the user can act on it: a claim it
+        // silently drops, or a soft serial port waiting on its feature.
+        if (!available && !claimCount && !serialPortIsSoftSerial(identifier)) {
             continue;
         }
 
-        const serialPortUsage_t *usage = findSerialPortUsageByIdentifier(identifier);
+        const serialPortUsage_t *usage = available ? findSerialPortUsageByIdentifier(identifier) : NULL;
         const uint32_t openFunction = (usage && usage->serialPort) ? (uint32_t)usage->function : 0;
 
-        cliPrintf("serial %s:", serialName(identifier, invalidName));
+        if (available) {
+            cliPrintf("serial %s:", serialName(identifier, invalidName));
+        } else {
+            cliPrintf("serial %s (%s):", serialName(identifier, invalidName), serialPortUnavailableReason(identifier));
+        }
 
         // Claims the port actually opened for first, each starred; the rest
         // lost boot arbitration or await a reboot.
@@ -8527,7 +8692,7 @@ const clicmd_t cmdTable[] = {
 #if defined(USE_SENSOR_NAMES)
     CLI_COMMAND_DEF("sensor_hardware", "list supported sensor hardware", "[gyro|acc|baro|mag|rangefinder|opticalflow|pitot]", cliSensorHardware),
 #endif
-    CLI_COMMAND_DEF("serial", "show serial port assignments", NULL, cliSerial),
+    CLI_COMMAND_DEF("serial", "show port assignments as set commands", "[<identifier> <function mask> <msp baud> <gps baud> <telemetry baud> <blackbox baud> (deprecated)]", cliSerial),
 #if defined(USE_SERIAL_PASSTHROUGH)
 #if defined(USE_PINIO)
     CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data data from port 1 to VCP / port 2", "<id1> [<baud1>] [<mode1>] [none|<dtr pinio>|reset] [<id2>] [<baud2>] [<mode2>]", cliSerialPassthrough),

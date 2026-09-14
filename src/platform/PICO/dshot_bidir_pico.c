@@ -379,7 +379,7 @@ bool dshotTelemetryWait(void)
     } while (telemetryPending);
 
     if (telemetryWait) {
-        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);
+        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);  //!< Reception Timeout Count
     }
 
     bprintf("dshotTelemetryWait returning %d", telemetryWait);
@@ -453,7 +453,7 @@ bool dshotDecodeTelemetry(void)
         }
 
         uint32_t rawValue = decodeOversampledTelemetry(motorIndex, sampleBuffer);
-        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 0, debug[0] + 1);
+        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 0, debug[0] + 1);  //!< Telemetry Packets Read
         dshotTelemetryState.readCount++;
 
         if (rawValue != DSHOT_TELEMETRY_INVALID) {

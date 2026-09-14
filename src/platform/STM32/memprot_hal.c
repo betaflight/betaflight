@@ -18,15 +18,175 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "platform.h"
+
+#include "common/utils.h"
 
 #include "drivers/memprot.h"
 
 static void memProtConfigError(void)
 {
     for (;;) {}
+}
+
+/* Read back the region attributes the MPU will actually apply to an address.
+ *
+ * A region's declared attributes are not necessarily the ones it ends up with. PMSAv7
+ * requires every region to be a natural power of two, so memProtConfigure() rounds each
+ * one up until it covers the section it was given, which makes regions overlap routinely
+ * even where the sections they describe do not touch. In an overlap the highest-numbered
+ * region wins outright, taking its attributes with it.
+ *
+ * Returns false if no enabled region covers the address, leaving the background (default
+ * memory map) attributes in force.
+ */
+static bool memProtGetRegionAttributes(uint32_t addr, uint32_t *rasr)
+{
+    bool covered = false;
+
+    for (unsigned region = 0; region < MAX_MPU_REGIONS; region++) {
+        MPU->RNR = region;
+        const uint32_t regionRbar = MPU->RBAR;
+        const uint32_t regionRasr = MPU->RASR;
+
+        if (!(regionRasr & MPU_RASR_ENABLE_Msk)) {
+            continue;
+        }
+
+        // RASR SIZE semantics: region bytes = 2^(SIZE + 1), based at a multiple of that size
+        const uint32_t size = 1U << (((regionRasr & MPU_RASR_SIZE_Msk) >> MPU_RASR_SIZE_Pos) + 1);
+        const uint32_t base = regionRbar & ~(size - 1);
+
+        if ((addr < base) || (addr - base >= size)) {
+            continue;
+        }
+
+        // Regions of 256 bytes or more are split into eighths, any of which can be
+        // disabled; where one is, the region does not apply.
+        if (size >= 256) {
+            const uint32_t srd = (regionRasr & MPU_RASR_SRD_Msk) >> MPU_RASR_SRD_Pos;
+            if (srd & (1U << ((addr - base) / (size / 8)))) {
+                continue;
+            }
+        }
+
+        // A later region would override this one, so record it and keep looking
+        *rasr = regionRasr;
+        covered = true;
+    }
+
+    return covered;
+}
+
+/* Whether the processor will keep an address out of the D cache.
+ *
+ * The Cortex-M7 has no cache coherency hardware, so it never allocates Normal memory
+ * marked shareable into the L1 data cache. That is what keeps the DMA regions coherent
+ * without explicit maintenance.
+ */
+static bool memProtAddrIsUncached(uint32_t addr)
+{
+    uint32_t rasr;
+
+    if (!memProtGetRegionAttributes(addr, &rasr)) {
+        // Background attributes, so assume the worst
+        return false;
+    }
+
+    return (rasr & MPU_RASR_S_Msk) || !(rasr & MPU_RASR_C_Msk);
+}
+
+// Collect the addresses within (start, end) at which the winning region, and so the
+// attributes in force, can change. Sub-region edges are not among them: memProtConfigure()
+// never disables a sub-region.
+static unsigned memProtCollectEdges(uint32_t start, uint32_t end, uint32_t *edges, unsigned maxEdges)
+{
+    unsigned count = 0;
+
+    for (unsigned region = 0; region < MAX_MPU_REGIONS; region++) {
+        MPU->RNR = region;
+        const uint32_t regionRbar = MPU->RBAR;
+        const uint32_t regionRasr = MPU->RASR;
+
+        if (!(regionRasr & MPU_RASR_ENABLE_Msk)) {
+            continue;
+        }
+
+        const uint32_t size = 1U << (((regionRasr & MPU_RASR_SIZE_Msk) >> MPU_RASR_SIZE_Pos) + 1);
+        const uint32_t base = regionRbar & ~(size - 1);
+        const uint32_t regionEdges[] = { base, base + size };
+
+        for (unsigned i = 0; i < ARRAYLEN(regionEdges); i++) {
+            const uint32_t edge = regionEdges[i];
+
+            if ((edge <= start) || (edge >= end) || (count >= maxEdges)) {
+                continue;
+            }
+
+            // Insertion sort, keeping the list ordered and free of duplicates
+            unsigned pos = count;
+            while ((pos > 0) && (edges[pos - 1] > edge)) {
+                edges[pos] = edges[pos - 1];
+                pos--;
+            }
+            if ((pos < count) && (edges[pos] == edge)) {
+                // Already present, so undo the shift
+                while (pos < count) {
+                    edges[pos] = edges[pos + 1];
+                    pos++;
+                }
+                continue;
+            }
+            edges[pos] = edge;
+            count++;
+        }
+    }
+
+    return count;
+}
+
+void memProtFindUncachedRange(uint32_t start, uint32_t end, uint32_t *uncachedStart, uint32_t *uncachedEnd)
+{
+    // Nothing found yet, expressed as an empty range
+    *uncachedStart = start;
+    *uncachedEnd = start;
+
+    if (start >= end) {
+        return;
+    }
+
+    uint32_t edges[2 * MAX_MPU_REGIONS];
+    const unsigned edgeCount = memProtCollectEdges(start, end, edges, ARRAYLEN(edges));
+
+    /* The edges cut [start, end) into spans of constant attributes, so one probe per span
+     * settles it. Return the longest run of adjacent uncached spans: a single range keeps
+     * the test cheap for callers, and a caller finding its buffer outside it is only
+     * obliged to fall back to explicit cache maintenance.
+     */
+    uint32_t runStart = start;
+    bool inRun = false;
+
+    for (unsigned i = 0; i <= edgeCount; i++) {
+        const uint32_t spanStart = (i == 0) ? start : edges[i - 1];
+        const uint32_t spanEnd = (i == edgeCount) ? end : edges[i];
+
+        if (memProtAddrIsUncached(spanStart)) {
+            if (!inRun) {
+                runStart = spanStart;
+                inRun = true;
+            }
+            if (spanEnd - runStart > *uncachedEnd - *uncachedStart) {
+                *uncachedStart = runStart;
+                *uncachedEnd = spanEnd;
+            }
+        } else {
+            inRun = false;
+        }
+    }
 }
 
 void memProtConfigure(mpuRegion_t *regions, unsigned regionCount)
