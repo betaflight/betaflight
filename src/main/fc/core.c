@@ -1392,15 +1392,19 @@ static FAST_CODE_NOINLINE void subTaskPidSubprocesses(timeUs_t currentTimeUs)
 #endif
 
 #ifdef USE_VTX_SMARTAUDIO
-    if(((millis() - saTxstart) == 25) && (saTxstart > 0)){
+    // One-shot: >= (not ==) so a blocked PID loop can still catch up, and the
+    // timestamp clear stops the GPIO reconfig from repeating every gyro cycle.
+    if ((saTxstart > 0) && ((millis() - saTxstart) >= 25)) {
         IOConfigGPIO(txSA, IOCFG_IN_FLOATING);
         IOConfigGPIOAF(rxSA, IOCFG_AF_PP, afSA);
+        saTxstart = 0;
     }
 #endif
 #ifdef USE_VTX_TRAMP
-    if(((millis() - trTxstart) == 20) && (trTxstart > 0)){
+    if ((trTxstart > 0) && ((millis() - trTxstart) >= 20)) {
         IOConfigGPIO(txSA, IOCFG_IN_FLOATING);
         IOConfigGPIOAF(rxSA, IOCFG_AF_PP, afSA);
+        trTxstart = 0;
     }
 #endif
 #endif
