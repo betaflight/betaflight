@@ -845,6 +845,12 @@ static void xyProcessTransitions(void)
 
 static xyControlMode_e xySelectMode(void)
 {
+#if !ENABLE_RESCUE_PLAN
+    if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+        return XY_MODE_RESCUE_VELOCITY;
+    }
+#endif
+
     if (ap.navActive) {
         const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
         return (navCmd != NULL && navCmd->active) ? XY_MODE_NAV_TRACK : XY_MODE_NAV_VELOCITY;
