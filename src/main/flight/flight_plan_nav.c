@@ -112,10 +112,17 @@
 // still counts, and the nose still starts swinging, the moment they happen.
 #define FP_MEAS_FILTER_S         0.20f   // PT1 tau on along-track position and ground speed
 
-// Landing descends toward a target far below the current position so vertical
-// arrival can never trigger; touchdown detection is what ends the descent.
-#define FP_LANDING_TARGET_DEPTH_M 200.0f
+// Landing descends toward a target below the craft so vertical arrival can never trigger;
+// touchdown detection ends the descent. That target is a real point in space, not a sentinel -
+// positionNav derives its speed schedule from the distance to it - so keep it shallow and
+// ratchet it down as the craft descends (see updateLanding).
+#define FP_LANDING_TARGET_DEPTH_M 5.0f
 #define FP_LANDING_MIN_RATE_MPS   0.3f
+// Horizontal speed and braking for the landing leg, stated so it does not inherit them from
+// whichever leg preceded it. A walking-pace approach and a gentle stop: the craft is metres from
+// the ground and the descent, not the traverse, is what the leg is for.
+#define FP_LANDING_APPROACH_MPS   1.5f
+#define FP_LANDING_DECEL_MPS2     0.3f
 // Fallback: start touchdown monitoring even if descent was never observed —
 // only near the ground (landing initiated at ground level). At altitude a
 // vehicle that cannot descend must keep trying, not disarm mid-air.
@@ -821,7 +828,11 @@ static void startLanding(timeUs_t currentTimeUs, float targetEastM, float target
     }};
 
     const float descentMps = MAX(FP_LANDING_MIN_RATE_MPS, landingDescentRateCmS() * 0.01f);
-    positionNavSetTargetEf(&targetM, descentMps, 1.0f, 0.1f, true, NULL, NULL);
+    // The descent rate bounds the vertical axis only; passing it as cruise speed would make
+    // gps_rescue_descend_rate cap the horizontal approach speed too.
+    positionNavSetTargetEf(&targetM, FP_LANDING_APPROACH_MPS, 1.0f, 0.1f, true, NULL, NULL);
+    positionNavSetVerticalSpeedLimit(descentMps);
+    positionNavSetAccelLimits(0.0f, FP_LANDING_DECEL_MPS2);
 
     fp.state = FP_NAV_LANDING;
     fp.landingStartUs = currentTimeUs;
@@ -834,6 +845,19 @@ static void updateLanding(timeUs_t currentTimeUs)
     const positionEstimate3d_t *est = positionEstimatorGetEstimate();
     const float verticalVelocityCmS = est->velocity.v[ENU_U];
     const float commandedDescentCmS = MAX(FP_LANDING_MIN_RATE_MPS * 100.0f, landingDescentRateCmS());
+
+    // Ratchet the landing target down as the craft descends, so it stays a bounded distance
+    // below without ever rising again. Monotonic because the altitude estimate is noisy near the
+    // ground and a bounce must not walk the target back up into a climb command.
+    if (positionNavHasActiveTarget()) {
+        const positionNavCommand_t *cmd = positionNavGetActiveCommand();
+        const float desiredTargetUpM = est->position.v[ENU_U] * 0.01f - FP_LANDING_TARGET_DEPTH_M;
+        if (desiredTargetUpM < cmd->targetPosEfM.v[ENU_U]) {
+            vector3_t moved = cmd->targetPosEfM;
+            moved.v[ENU_U] = desiredTargetUpM;
+            positionNavMoveTargetEf(&moved);
+        }
+    }
 
     if (!fp.landingDescentEstablished
         && verticalVelocityCmS < -0.25f * commandedDescentCmS) {
