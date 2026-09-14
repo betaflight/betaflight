@@ -41,7 +41,7 @@ void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targ
 // period. The autopilot control tasks are event driven, so their interval is
 // real rather than the nominal task period.
 timeUs_t autopilotTaskIntervalUs(timeUs_t nominalIntervalUs);
-void moveTargetLocation(const vector2_t *stepEF, unsigned taskRateHz, bool forceAbortNav);// for nav modes to update the target position
+void setTargetVelocity(const vector2_t *velocityEF, bool forceAbort); // for modes that directly command XY EF velocity
 void pitchForwardOverride(bool request);
 void autopilotForceLevelPark(bool request); // heading/mag fault: force angle-mode self-level, never position hold
 void autopilotSetNavHeadingOverride(bool valid, float headingDeg); // mission pre-turn: command nose heading directly

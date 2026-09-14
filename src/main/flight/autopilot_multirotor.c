@@ -202,6 +202,7 @@ typedef enum {
     XY_MODE_STICK_VELOCITY,   // flying the pilot's commanded velocity
     XY_MODE_NAV_TRACK,        // following nav's moving position target (the carrot)
     XY_MODE_NAV_VELOCITY,     // flying nav's commanded velocity, no position target
+    XY_MODE_RESCUE_VELOCITY   // flying gps rescue's commanded velocity and deriving position target
 } xyControlMode_e;
 
 // Outcome of a mode feeder: continue into the unified PIDAF law, hold the
@@ -432,22 +433,10 @@ void setSticksActiveStatus(bool areSticksActive)
     ap.sticksActive = areSticksActive;
 }
 
-void moveTargetLocation(const vector2_t *stepEF, unsigned taskRateHz, bool forceAbortRequest)
+void setTargetVelocity(const vector2_t *velocityEF, bool forceAbort)
 {
-    if (forceAbortRequest) {
-        abortNavRequested = true;
-    } else {
-        // Force the flag back to false when a normal tracking pass runs
-        abortNavRequested = false;
-
-        if (stepEF != NULL) {
-            targetPosition.v[EF_EAST]  += stepEF->v[EF_EAST];
-            targetPosition.v[EF_NORTH] += stepEF->v[EF_NORTH];
-            targetVelocity.v[EF_EAST]  = stepEF->v[EF_EAST] * taskRateHz;
-            targetVelocity.v[EF_NORTH] = stepEF->v[EF_NORTH] * taskRateHz;
-            posHoldStartPosition = targetPosition; // update start point to new target to prevent poshold sanity failure
-        }
-    }
+    abortNavRequested = forceAbort;
+    targetVelocity = *velocityEF;
 }
 
 void autopilotSetYawTarget(float headingDeg)
@@ -902,6 +891,17 @@ static xyStepResult_e xyStickVelocityUpdate(const vector2_t *currentPosition)
     return XY_CONTINUE;
 }
 
+static xyStepResult_e xyRescueVelocityUpdate(float dt)
+{
+    targetPosition.v[EF_EAST] += targetVelocity.v[EF_EAST] * dt;
+    targetPosition.v[EF_NORTH] += targetVelocity.v[EF_NORTH] * dt;
+
+    posHoldStartPosition = targetPosition;
+    ap.anchor = ANCHOR_HOLD;
+    ap.iPolicy = I_ACCUMULATE;
+    return XY_CONTINUE;
+}
+
 static xyStepResult_e xyBrakingUpdate(float dt, const vector2_t *currentPosition, const vector2_t *velocity)
 {
     // Braking: hold anchor with the target dragged to the craft, the
@@ -1069,6 +1069,9 @@ bool positionControl(void)
         break;
     case XY_MODE_NAV_VELOCITY:
         stepResult = xyNavVelocityUpdate();
+        break;
+    case XY_MODE_RESCUE_VELOCITY:
+        stepResult = xyRescueVelocityUpdate(dt);
         break;
     case XY_MODE_STICK_VELOCITY:
         stepResult = xyStickVelocityUpdate(&currentPosition);
