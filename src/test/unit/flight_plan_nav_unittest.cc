@@ -1600,6 +1600,25 @@ TEST_F(FlightPlanNavCarrotTest, FaceTargetLegGivesUpWaitingForANoseThatWillNotTu
     EXPECT_GT(g_lastTarget.targetEfM.y, 1.0f);
 }
 
+TEST_F(FlightPlanNavCarrotTest, FaceTargetLegInsideTheArrivalRadiusStillWaitsForTheNose)
+{
+    // Dispatched 4 m out, inside the 5 m arrival radius: the leg must not count as arrived on the
+    // first cycle, or a close waypoint skips the nose gate altogether.
+    addWaypointMetres(0.0f, 4.0f, 15000, WAYPOINT_TYPE_FLYOVER, WAYPOINT_YAW_FACE_TARGET);
+    addWaypointMetres(0.0f, 200.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    setCraftMetres(0.0f, 0.0f);
+    attitude.values.yaw = 1800;   // nose south, target due north
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    step();
+
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 0);
+
+    attitude.values.yaw = 100;    // nose comes round onto the leg
+    step();
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+}
+
 TEST_F(FlightPlanNavCarrotTest, FaceTargetHoldLegStationKeepsUntilTheNoseComesRound)
 {
     // Station-keeping legs are not carrot legs, so the gate holds them by commanding a station keep

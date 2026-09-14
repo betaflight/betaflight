@@ -818,7 +818,10 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
         return;   // the sanity check aborted the mission
     }
 
-    if (distM < arriveM || overran) {
+    // A face-the-target leg dispatched already inside the gate must still turn before it counts as
+    // arrived, or the nose gate is skipped entirely on a waypoint that happens to be close. Bounded
+    // by the same alignment timeout that releases the march gate below.
+    if (!fp.legYawGated && (distM < arriveM || overran)) {
         // Gate crossed: the next leg anchors on this waypoint so the drawn
         // wp->wp line and the position target stay continuous through the corner.
         fp.carrotPrevEnuM = wp;
