@@ -657,6 +657,7 @@ WP_EAST_LON = HOME_LON + 150.0 / (M_PER_DEG * math.cos(math.radians(HOME_LAT))) 
 WP_NORTH40_LAT = HOME_LAT + 40.0 / M_PER_DEG  # short leg for the landing mission
 WP_EAST25_LON = HOME_LON + 25.0 / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))
 WP_NORTH90_LAT = HOME_LAT + 90.0 / M_PER_DEG  # far leg for the backwards-engage mission
+WP_EAST90_LON = HOME_LON + 90.0 / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))  # corner for the face-the-next-waypoint mission
 # ~130 deg corner: a 60 m north leg into wp0, then out to (42 m east, 25 m north),
 # so the outgoing leg bears ~130 deg and the pre-turn swings the nose past 90 deg
 # off the inbound leg
@@ -1407,6 +1408,76 @@ def scenario_rescue_switch_descent(sitl, rc, fdm, variant="B"):
     return m
 
 
+def scenario_mission_vert_rate(sitl, rc, fdm):
+    """A leg that states a vertical rate climbs at that rate, not at the alt hold
+    climb rate, and the altitude walks up instead of stepping."""
+    boot_and_engage(sitl, rc, fdm)
+
+    wait_for("climb under way (8 m)", lambda: fdm.model.pos[2] > 8.0, timeout=60, interval=0.5)
+    startT = time.monotonic()
+    startAlt = fdm.model.pos[2]
+    wait_for("climbs through 24 m", lambda: fdm.model.pos[2] > 24.0, timeout=90, interval=0.5)
+    rateMps = (fdm.model.pos[2] - startAlt) / (time.monotonic() - startT)
+    # the leg states 1.0 m/s; the alt hold climb rate this would otherwise take is 5 m/s
+    assert 0.7 <= rateMps <= 1.5, f"leg climb rate off target: {rateMps:.2f} m/s"
+    assert BOX_ARM in sitl.modes(), "unexpected disarm during the rate-limited climb"
+    log(f"climbed at {rateMps:.2f} m/s against the leg's commanded 1.0 m/s")
+
+
+def scenario_mission_face_target(sitl, rc, fdm):
+    """FACE_TARGET: engaged with the nose 180 deg off the leg, the craft holds
+    station until the nose is on the waypoint, then flies it."""
+    boot_and_engage(sitl, rc, fdm)
+
+    def headingErr():
+        return abs((fdm.heading_deg() - 0.0 + 180.0) % 360.0 - 180.0)
+
+    drift = []
+
+    def alignedYet():
+        drift.append(fdm.distance_from_home())
+        return headingErr() < 30.0
+
+    wait_for("nose swings onto the leg (~000)", alignedYet, timeout=25, interval=0.2)
+    heldM = max(drift)
+    assert heldM < 10.0, f"translated {heldM:.1f} m before the nose came round"
+    log(f"held station within {heldM:.1f} m while rotating")
+
+    wait_for("departs once aligned", lambda: fdm.distance_from_home() > 20.0, timeout=45, interval=0.5)
+    wait_for(
+        "reaches the waypoint (ground truth)",
+        lambda: fdm.distance_to_wp(0.0, 90.0) < 12.0,
+        timeout=120,
+        interval=1.0,
+    )
+    assert BOX_ARM in sitl.modes(), "unexpected disarm on the face-the-target leg"
+
+
+def scenario_mission_face_next(sitl, rc, fdm):
+    """FACE_NEXT: flying the first leg north, the nose points at the second
+    waypoint (90 m north, 90 m east) rather than along the course."""
+    boot_and_engage(sitl, rc, fdm)
+
+    samples = []
+
+    def midLeg():
+        north = fdm.model.pos[1]
+        if 30.0 < north < 70.0:
+            bearing = math.degrees(math.atan2(90.0 - fdm.model.pos[0], 90.0 - north)) % 360.0
+            samples.append((fdm.heading_deg(), bearing))
+        return north > 70.0
+
+    wait_for("flies the first leg", midLeg, timeout=90, interval=0.5)
+    assert len(samples) >= 5, f"leg too short to sample: {len(samples)}"
+    errs = [abs((h - b + 180.0) % 360.0 - 180.0) for h, b in samples]
+    avgErr = sum(errs) / len(errs)
+    courseErrs = [abs((h - 0.0 + 180.0) % 360.0 - 180.0) for h, _ in samples]
+    avgCourseErr = sum(courseErrs) / len(courseErrs)
+    assert avgErr < 35.0, f"nose did not track the next waypoint: {avgErr:.0f} deg off its bearing"
+    assert avgCourseErr > 25.0, f"nose tracked the course, not the next waypoint: {avgCourseErr:.0f} deg off course"
+    log(f"nose held the next waypoint's bearing ({avgErr:.0f} deg off it, {avgCourseErr:.0f} deg off course)")
+
+
 SCENARIOS = {
     "baseline": (lambda s, r, f: boot_and_engage(s, r, f), []),
     # FIXED yaw: this scenario validates pure translation control; yaw-coupled
@@ -1479,6 +1550,28 @@ SCENARIOS = {
             "set ap_waypoint_hold_radius = 800",
             f"waypoint update 0 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 none",
             f"waypoint insert 1 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 hold 600 figure8",
+        ],
+    ),
+    "mission_vert_rate": (
+        scenario_mission_vert_rate,
+        [
+            "set ap_yaw_mode = FIXED",
+            # 30 m climb at a leg-stated 1 m/s, over a 300 m leg so the climb finishes en route
+            f"waypoint update 0 {WP_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 30) * 100)} 500 flyover 0 none 100 default",
+        ],
+    ),
+    "mission_face_target": (
+        scenario_mission_face_target,
+        [
+            f"waypoint update 0 {WP_NORTH90_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 none 0 face_target",
+        ],
+        {"initial_yaw_deg": 180.0},
+    ),
+    "mission_face_next": (
+        scenario_mission_face_next,
+        [
+            f"waypoint update 0 {WP_NORTH90_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyby 0 none 0 face_next",
+            f"waypoint insert 1 {WP_NORTH90_LAT:.7f} {WP_EAST90_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 none",
         ],
     ),
     "rx_disable": (lambda s, r, f: scenario_rx_loss(s, r, f, "DISABLE"), ["set ap_rx_loss_policy = DISABLE"]),
