@@ -77,6 +77,10 @@ int g_setTargetCalls;
 int g_clearTargetCalls;
 int g_moveTargetCalls;
 
+float g_lastVertRateMps;
+float g_lastVertStartAltM;
+int g_setVerticalProfileCalls;
+
 gpsLocation_t g_stubGpsOrigin;
 bool g_stubGpsOriginSet;
 
@@ -112,6 +116,13 @@ void positionNavSetTargetEf(
     g_lastTarget.userData = userData;
     g_lastTarget.valid = true;
     g_setTargetCalls++;
+}
+
+void positionNavSetVerticalProfile(float rateMps, float startAltM)
+{
+    g_lastVertRateMps = rateMps;
+    g_lastVertStartAltM = startAltM;
+    g_setVerticalProfileCalls++;
 }
 
 void positionNavMoveTargetEf(const vector3_t *targetPosEfM)
@@ -249,6 +260,9 @@ protected:
     void SetUp() override {
         memset(&g_lastTarget, 0, sizeof(g_lastTarget));
         g_setTargetCalls = 0;
+        g_setVerticalProfileCalls = 0;
+        g_lastVertRateMps = 0.0f;
+        g_lastVertStartAltM = 0.0f;
         g_clearTargetCalls = 0;
         g_moveTargetCalls = 0;
         g_stubMicros = 0;
@@ -329,7 +343,8 @@ protected:
 
     void addWaypoint(int32_t lat, int32_t lon, int32_t altCm,
                      uint8_t type, uint16_t speed = 0, uint16_t duration = 0,
-                     uint8_t pattern = WAYPOINT_PATTERN_NONE)
+                     uint8_t pattern = WAYPOINT_PATTERN_NONE,
+                     uint8_t yawBehaviour = WAYPOINT_YAW_DEFAULT, uint16_t vertRate = 0)
     {
         flightPlanConfig_t *plan = flightPlanConfigMutable();
         waypoint_t *wp = &plan->waypoints[plan->waypointCount++];
@@ -340,6 +355,8 @@ protected:
         wp->speed = speed;
         wp->duration = duration;
         wp->pattern = pattern;
+        wp->yawBehaviour = yawBehaviour;
+        wp->vertRate = vertRate;
     }
 
     void triggerReached() {
@@ -962,8 +979,11 @@ TEST_F(FlightPlanNavTest, InjectedPlanReplacesMissionAndRunsToTermination)
     EXPECT_EQ(g_setTargetCalls, callsBefore + 1);
     EXPECT_FLOAT_EQ(g_yawRateLimitDps, 0.0f);
     ASSERT_TRUE(g_lastTarget.valid);
-    EXPECT_NEAR(g_lastTarget.targetEfM.x, 10.0f, 0.1f);
+    // A carrot leg is dispatched anchored at the craft, not at the waypoint: the carrot marches
+    // out from here on the next update. The leg altitude is commanded from the outset.
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, g_stubEstimate.position.v[ENU_E] * 0.01f, 0.1f);
     EXPECT_NEAR(g_lastTarget.targetEfM.z, 20.0f, 0.1f); // 120 m AMSL - 100 m origin
+    EXPECT_EQ(g_setVerticalProfileCalls, g_setTargetCalls);
 
     // The injected plan advances past the PG waypoint count (1 positional wp).
     // The FLYOVER return leg keeps the arrival-radius gate, so the craft has to
@@ -1348,8 +1368,10 @@ TEST_F(FlightPlanNavSafetyTest, GeofenceBreachWithRthActionInjectsReturnPlan)
     EXPECT_TRUE(flightPlanNavIsInjectedPlanActive());
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
     EXPECT_EQ(g_setTargetCalls, callsBeforeBreach + 1);
+    // Dispatched anchored at the craft (150 m out) at the return altitude; the carrot carries it
+    // home from there, so the destination shows up in the carrot rather than in the dispatch.
     EXPECT_NEAR(g_lastDispatchTargetEfM.x, 0.0f, 0.1f);
-    EXPECT_NEAR(g_lastDispatchTargetEfM.y, 0.0f, 0.1f);
+    EXPECT_NEAR(g_lastDispatchTargetEfM.y, 150.0f, 0.1f);
     EXPECT_NEAR(g_lastDispatchTargetEfM.z, 30.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, 7.5f, 0.01f);
 
@@ -1510,9 +1532,11 @@ class FlightPlanNavCarrotTest : public FlightPlanNavTest {
 protected:
     static constexpr float kUnitsPerMetre = 1.0e7f / 111319.49f;
 
-    void addWaypointMetres(float eastM, float northM, int32_t altCm, uint8_t type) {
+    void addWaypointMetres(float eastM, float northM, int32_t altCm, uint8_t type,
+                           uint8_t yawBehaviour = WAYPOINT_YAW_DEFAULT) {
         addWaypoint((int32_t)lrintf(northM * kUnitsPerMetre),
-                    (int32_t)lrintf(eastM * kUnitsPerMetre), altCm, type);
+                    (int32_t)lrintf(eastM * kUnitsPerMetre), altCm, type,
+                    0, 0, WAYPOINT_PATTERN_NONE, yawBehaviour);
     }
     void setCraftMetres(float eastM, float northM) {
         g_stubEstimate.position.v[ENU_E] = eastM * 100.0f;
@@ -1523,6 +1547,80 @@ protected:
         flightPlanNavUpdate(g_stubMicros);
     }
 };
+
+TEST_F(FlightPlanNavCarrotTest, FaceTargetLegHoldsStationUntilTheNoseComesRound)
+{
+    // The rescue's return leg. Nose 180 degrees out: the position controller must be given nothing
+    // to translate to until the craft is pointing at the target, or it flies home tail first.
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER, WAYPOINT_YAW_FACE_TARGET);
+    addWaypointMetres(0.0f, 200.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    setCraftMetres(0.0f, 0.0f);
+    attitude.values.yaw = 1800;   // nose south, leg due north
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+
+    for (int i = 0; i < 10; i++) {
+        step();
+    }
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_TRUE(g_navHeadingOverrideValid);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, 0.0f, 1.0f);      // nose commanded at the target
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.5f);     // and the target has not moved off the craft
+
+    attitude.values.yaw = 200;    // nose swings to within 20 degrees of the leg
+    for (int i = 0; i < 10; i++) {
+        step();
+    }
+    EXPECT_GT(g_lastTarget.targetEfM.y, 1.0f);             // now it translates
+}
+
+TEST_F(FlightPlanNavCarrotTest, FaceTargetLegGivesUpWaitingForANoseThatWillNotTurn)
+{
+    // A compass that cannot deliver the heading must not leave the craft parked in the air: the
+    // gate times out and the leg is flown anyway, as the legacy rotate phase did.
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER, WAYPOINT_YAW_FACE_TARGET);
+    addWaypointMetres(0.0f, 200.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    setCraftMetres(0.0f, 0.0f);
+    attitude.values.yaw = 1800;   // and it never moves
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    step();
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.5f);
+
+    for (int i = 0; i < 110; i++) {
+        step();                   // 11 s, past the 10 s gate timeout
+    }
+    EXPECT_GT(g_lastTarget.targetEfM.y, 1.0f);
+}
+
+TEST_F(FlightPlanNavCarrotTest, FaceNextLegPointsAtTheFollowingWaypointWithoutGating)
+{
+    // The rescue's climb-in-place leg: turn toward home while climbing, and do not gate on it.
+    addWaypointMetres(0.0f, 0.0f, 15000, WAYPOINT_TYPE_HOLD, WAYPOINT_YAW_FACE_NEXT);
+    addWaypointMetres(100.0f, 0.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    setCraftMetres(0.0f, 0.0f);
+    attitude.values.yaw = 1800;
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    step();
+
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_TRUE(g_navHeadingOverrideValid);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, 90.0f, 1.0f);     // the next waypoint is due east
+}
+
+TEST_F(FlightPlanNavCarrotTest, LegVerticalRateIsDispatchedWithTheLeg)
+{
+    addWaypoint(0, 0, 15000, WAYPOINT_TYPE_FLYOVER, 0, 0, WAYPOINT_PATTERN_NONE,
+                WAYPOINT_YAW_DEFAULT, 250 /* cm/s */);
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+
+    EXPECT_EQ(g_setVerticalProfileCalls, g_setTargetCalls);
+    EXPECT_NEAR(g_lastVertRateMps, 2.5f, 0.01f);
+    EXPECT_NEAR(g_lastVertStartAltM, g_stubEstimate.position.v[ENU_U] * 0.01f, 0.01f);
+}
 
 TEST_F(FlightPlanNavCarrotTest, CarrotTracksLegLineNotCraftCrossTrack)
 {
