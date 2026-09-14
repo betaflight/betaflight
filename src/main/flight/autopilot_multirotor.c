@@ -296,6 +296,12 @@ static void updatePidLpfGains(float dtS)
     }
 }
 
+static void setYawDisableReason(uint8_t reason)
+{
+    apYawDisableReason = reason;
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 7, apYawDisableReason);
+}
+
 void autopilotInit(void)
 {
     const autopilotConfig_t *cfg = autopilotConfig();
@@ -329,7 +335,7 @@ void autopilotInit(void)
     forceLevelPark = false;
     apNavHeadingOverrideValid = false;
     disableYawControl();
-    apYawDisableReason = 0;
+    setYawDisableReason(0);
     apYawRateLimitDps = 0.0f;
     positionNavInit();
 }
@@ -540,7 +546,7 @@ void resetPositionControl(unsigned taskRateHz)
     ap.sticksActive = false;
     ap.wasSticksActive = false;
     disableYawControl();
-    apYawDisableReason = 1;
+    setYawDisableReason(1);
     apYawCourseValid = false;
     wasAngleSaturated = false;
     // Initialise the nav system
@@ -577,7 +583,7 @@ static bool sanityViolationExpired(void)
         return true;
     }
     disableYawControl();
-    apYawDisableReason = 2;
+    setYawDisableReason(2);
     autopilotAngle[AI_ROLL]  = 0.0f; // Level out
     autopilotAngle[AI_PITCH] = 0.0f;
     handlepositionControlFailure();
@@ -616,7 +622,7 @@ void autopilotSetYawRateLimit(float rateLimitDps)
 void autopilotDisableYawControl(void)
 {
     disableYawControl();
-    apYawDisableReason = 3;
+    setYawDisableReason(3);
 }
 
 float autopilotGetYawRate(void)
@@ -696,7 +702,7 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     // heading, so arming re-captures rather than resuming an old one.
     if (!ARMING_FLAG(ARMED)) {
         disableYawControl();
-        apYawDisableReason = 4;
+        setYawDisableReason(4);
         return;
     }
 
@@ -706,7 +712,7 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
 
     if (!rescueYawActive && !navYawActive && !holdYawActive) {
         disableYawControl();
-        apYawDisableReason = 6;
+        setYawDisableReason(5);
         return;
     }
 
@@ -716,7 +722,7 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     // GPS rescue applies.
     if (!imuIsHeadingValid()) {
         disableYawControl();
-        apYawDisableReason = 5;
+        setYawDisableReason(6);
         return;
     }
 
@@ -752,7 +758,7 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
 
         if (!haveDesiredHeading) {
             disableYawControl();
-            apYawDisableReason = 7;
+            setYawDisableReason(7);
             return;
         }
     } else {
@@ -1016,12 +1022,12 @@ bool positionControl(void)
 
     if (!est->isValidXY) {
         disableYawControl();
-        apYawDisableReason = 8;
+        setYawDisableReason(8);
         return false;
     }
     if (abortNavRequested) {
         disableYawControl();
-        apYawDisableReason = 9;
+        setYawDisableReason(9);
         handlepositionControlFailure();
         return false; // Return failure and show pos hold fail message in OSD
     }
@@ -1030,13 +1036,13 @@ bool positionControl(void)
         // fly sideways, so drop to angle-mode self-level (altitude hold, a
         // separate mode, keeps holding height) until a mode-switch cycle clears it.
         disableYawControl();
-        apYawDisableReason = 10;
+        setYawDisableReason(10);
         handlepositionControlFailure();
         return false;
     }
     if (forcePitchForward) {
         disableYawControl();
-        apYawDisableReason = 11;
+        setYawDisableReason(11);
         autopilotAngle[AI_ROLL]  = 0.0f;
         autopilotAngle[AI_PITCH] = 35.0f;
         DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 200);   //!< Status Flags
