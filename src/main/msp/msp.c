@@ -993,18 +993,12 @@ RAM_CODE static bool mspCommonProcessOutCommand(mspDescriptor_t srcDesc, int16_t
     case MSP_OSD_CONFIG: {
 #define OSD_FLAGS_OSD_FEATURE           (1 << 0)
 //#define OSD_FLAGS_OSD_SLAVE             (1 << 1)
-#define OSD_FLAGS_RESERVED_1            (1 << 2)
+#define OSD_FLAGS_OSD_HARDWARE_FB_OSD   (1 << 2) // was OSD_FLAGS_RESERVED_1
 #define OSD_FLAGS_OSD_HARDWARE_FRSKYOSD (1 << 3)
 #define OSD_FLAGS_OSD_HARDWARE_MAX_7456 (1 << 4)
 #define OSD_FLAGS_OSD_DEVICE_DETECTED   (1 << 5)
 #define OSD_FLAGS_OSD_MSP_DEVICE        (1 << 6)
 #define OSD_FLAGS_OSD_HARDWARE_AIRBOT_THEIA_OSD (1 << 7)
-
-#if ENABLE_FB_OSD
-// TODO allocated a new flag for FB_OSD (maybe reuse 1 << 1 ? ), and update Configurator accordingly.
-// For now, pretend to Configurator that we are max7456
-#define OSD_FLAGS_OSD_HARDWARE_FB_OSD   (1 << 4)
-#endif
 
         // HD VTXs are served the MSP API 1.46 layout, see mspSrcIsVtxPort()
         const bool legacyLayout = mspSrcIsVtxPort(srcDesc);
@@ -1060,12 +1054,7 @@ RAM_CODE static bool mspCommonProcessOutCommand(mspDescriptor_t srcDesc, int16_t
 
 #ifdef USE_OSD_SD
         // send video system (AUTO/PAL/NTSC/HD)
-#if OSD_FB_ENABLE_SMALLFONT
-        // represent as HD to Configurator, enabling it to resize the grid appropriately.
-        sbufWriteU8(dst, VIDEO_SYSTEM_HD);
-#else
         sbufWriteU8(dst, vcdProfile()->video_system);
-#endif
 #else
         sbufWriteU8(dst, VIDEO_SYSTEM_HD);
 #endif // USE_OSD_SD
