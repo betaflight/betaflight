@@ -3181,7 +3181,7 @@ RAM_CODE static void cliWaypoint(const char *cmdName, char *cmdline)
     formatDecimalCoordinate(wp->longitude, lonBuffer);
 
     const uint32_t altAbs = (wp->altitude < 0) ? -(uint32_t)wp->altitude : (uint32_t)wp->altitude;
-    cliPrintLinef("waypoint %s %u %s %s %s%u.%02um %u %s %u %s",
+    cliPrintLinef("waypoint %s %u %s %s %s%u.%02um %u %s %u %s %u %s",
         isInsert ? "insert" : "update",
         index,
         latBuffer,
@@ -3190,7 +3190,9 @@ RAM_CODE static void cliWaypoint(const char *cmdName, char *cmdline)
         wp->speed,
         waypointTypeNames[wp->type],
         wp->duration,
-        waypointPatternNames[wp->pattern]
+        waypointPatternNames[wp->pattern],
+        wp->vertRate,
+        waypointYawNames[wp->yawBehaviour]
     );
 }
 

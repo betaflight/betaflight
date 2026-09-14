@@ -77,6 +77,7 @@ int g_setTargetCalls;
 int g_clearTargetCalls;
 int g_moveTargetCalls;
 
+float g_altHoldClimbRateCmS;
 float g_lastVertRateMps;
 float g_lastVertStartAltM;
 int g_setVerticalProfileCalls;
@@ -116,6 +117,11 @@ void positionNavSetTargetEf(
     g_lastTarget.userData = userData;
     g_lastTarget.valid = true;
     g_setTargetCalls++;
+}
+
+float altHoldGetClimbRateCmS(void)
+{
+    return g_altHoldClimbRateCmS;
 }
 
 void positionNavSetVerticalProfile(float rateMps, float startAltM)
@@ -261,6 +267,7 @@ protected:
         memset(&g_lastTarget, 0, sizeof(g_lastTarget));
         g_setTargetCalls = 0;
         g_setVerticalProfileCalls = 0;
+        g_altHoldClimbRateCmS = 500.0f;   // alt_hold_climb_rate default, 5 m/s
         g_lastVertRateMps = 0.0f;
         g_lastVertStartAltM = 0.0f;
         g_clearTargetCalls = 0;
@@ -1591,6 +1598,46 @@ TEST_F(FlightPlanNavCarrotTest, FaceTargetLegGivesUpWaitingForANoseThatWillNotTu
         step();                   // 11 s, past the 10 s gate timeout
     }
     EXPECT_GT(g_lastTarget.targetEfM.y, 1.0f);
+}
+
+TEST_F(FlightPlanNavCarrotTest, FaceTargetHoldLegStationKeepsUntilTheNoseComesRound)
+{
+    // Station-keeping legs are not carrot legs, so the gate holds them by commanding a station keep
+    // at the craft and only issuing the real target, with its arrival gate, once the nose is round.
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_HOLD, WAYPOINT_YAW_FACE_TARGET);
+    setCraftMetres(0.0f, 0.0f);
+    attitude.values.yaw = 1800;   // nose south, target due north
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    step();
+
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.1f);     // held at the craft
+    EXPECT_EQ(g_lastTarget.callback, nullptr);             // and cannot count as arrived
+    EXPECT_TRUE(g_navHeadingOverrideValid);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, 0.0f, 1.0f);
+
+    attitude.values.yaw = 100;    // nose comes round onto the leg
+    step();
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 100.0f, 0.1f);   // now the real target
+    EXPECT_NE(g_lastTarget.callback, nullptr);
+}
+
+TEST_F(FlightPlanNavCarrotTest, PlanCompletionHandsTheNoseBack)
+{
+    // A leg that commanded a heading must not keep the autopilot steering to it once the plan is
+    // over and there is nothing left to fly.
+    addWaypoint(0, 0, 15000, WAYPOINT_TYPE_FLYOVER, 0, 0, WAYPOINT_PATTERN_NONE, WAYPOINT_YAW_HOLD);
+    attitude.values.yaw = 900;
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    step();
+    ASSERT_TRUE(g_navHeadingOverrideValid);
+
+    ASSERT_NE(g_lastTarget.callback, nullptr);
+    g_lastTarget.callback(g_lastTarget.userData);          // arrive at the only waypoint
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_COMPLETE);
+    EXPECT_FALSE(g_navHeadingOverrideValid);
 }
 
 TEST_F(FlightPlanNavCarrotTest, FaceNextLegPointsAtTheFollowingWaypointWithoutGating)

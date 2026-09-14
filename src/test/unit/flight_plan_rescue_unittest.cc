@@ -88,6 +88,7 @@ bool g_navHeadingOverrideValid;
 float g_navHeadingOverrideDeg;
 bool g_emergencyDescentActive;
 float g_emergencyDescentRateCmS;
+float g_altHoldClimbRateCmS;
 float g_lastVertRateMps;
 float g_lastVertStartAltM;
 int g_setVerticalProfileCalls;
@@ -140,6 +141,11 @@ void altHoldSetEmergencyDescent(bool active, float rateCmS)
 {
     g_emergencyDescentActive = active;
     g_emergencyDescentRateCmS = rateCmS;
+}
+
+float altHoldGetClimbRateCmS(void)
+{
+    return g_altHoldClimbRateCmS;
 }
 
 void positionNavSetVerticalProfile(float rateMps, float startAltM)
@@ -296,6 +302,7 @@ protected:
         g_navHeadingOverrideDeg = 0.0f;
         g_emergencyDescentActive = false;
         g_emergencyDescentRateCmS = 0.0f;
+        g_altHoldClimbRateCmS = 500.0f;   // alt_hold_climb_rate default, 5 m/s
         g_lastVertRateMps = 0.0f;
         g_lastVertStartAltM = 0.0f;
         g_clearTargetCalls = 0;

@@ -69,6 +69,12 @@ static float altHoldMaxClimbRate(void)
                                                     : altHold.maxClimbRate;
 }
 
+// The configured rate a climb or descent runs at when it does not state its own (cm/s).
+float altHoldGetClimbRateCmS(void)
+{
+    return altHoldConfig()->climbRate * 10.0f;
+}
+
 // Pushed by whoever owns the descent (an emergency rescue descent with no usable XY estimate).
 // Alt hold owns the throttle for it; the caller owns the rate and when it stops.
 void altHoldSetEmergencyDescent(bool active, float rateCmS)

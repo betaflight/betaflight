@@ -67,7 +67,7 @@ typedef struct {
     int32_t altitude;       // Altitude in centimeters AMSL (above mean sea level, negative values permitted)
     uint16_t speed;         // Horizontal speed in cm/s (0 = autopilot maxVelocity)
     uint16_t duration;      // Duration in deciseconds (0.1s)
-    uint16_t vertRate;      // Climb and descent rate in cm/s (0 = alt hold climbRate, or landingDescentRate on a LAND leg)
+    uint16_t vertRate;      // Climb and descent rate in cm/s (0 = the configured alt hold climb rate, or landingDescentRate on a LAND leg)
     uint8_t type;           // waypointType_e
     uint8_t pattern;        // waypointPattern_e (for hold type)
     uint8_t yawBehaviour;   // waypointYaw_e
