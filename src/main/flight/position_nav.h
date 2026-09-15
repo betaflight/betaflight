@@ -35,9 +35,13 @@ typedef struct positionNavCommand_s {
     vector3_t targetPosEfM;         // target position, metres, ENU (index by ENU_E/ENU_N/ENU_U)
     bool includeAltitude;           // when false, ENU_U is ignored for nav, arrival, and alt coupling
 
-    float cruiseSpeedMps;           // maximum cruise speed (m/s)
+    float cruiseSpeedMps;           // maximum horizontal cruise speed (m/s)
+    float vertRateMps;              // maximum climb/descent rate (m/s), 0 = use cruiseSpeedMps
     float acceptanceRadiusM;        // arrival zone radius (metres)
     float completionSpeedMps;       // max ground speed to count as arrived (m/s)
+
+    float rampAltM;                 // altitude the vertical channel is currently commanding (ENU_U, metres)
+    bool rampValid;                 // rampAltM has been seeded for this command
 
     float maxAccelMps2;             // acceleration limit (m/s^2), 0 = unlimited
     float maxDecelMps2;             // deceleration/braking limit (m/s^2), 0 = unlimited
@@ -79,6 +83,13 @@ const positionNavCommand_t *positionNavGetActiveCommand(void);
 void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2);
 void positionNavSetAutoClearOnReach(bool autoClear);
 
+// The leg's vertical intent: the rate the altitude target is allowed to move at, and the altitude
+// it starts from (normally the craft's current altitude, so the leg begins with no altitude error).
+// Seeds the commanded vertical velocity immediately, so a consumer running before the next
+// positionNavUpdate() already sees the rate this leg is climbing or descending at.
+// rateMps <= 0 falls back to the horizontal cruise speed. No-op without an active command.
+void positionNavSetVerticalProfile(float rateMps, float startAltM);
+
 // En-route waypoints advance on horizontal arrival even when the vehicle has
 // not reached the commanded altitude; station-keeping targets (hold, land)
 // keep the altitude gate. Defaults to true on each new target.
@@ -90,3 +101,11 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est);
 
 // Returns the target velocity computed by the most recent update (cm/s, ENU).
 vector3_t positionNavGetTargetVelocityCmS(void);
+
+// The altitude the vertical channel is commanding right now (cm, estimator frame): the ramp
+// walking toward the leg altitude, not the leg altitude itself. Meaningless (returns the leg
+// altitude) when the command does not include altitude.
+float positionNavGetTargetAltitudeCm(void);
+
+// The leg's climb/descent rate cap (cm/s), or 0 when no command is active.
+float positionNavGetVerticalRateLimitCmS(void);
