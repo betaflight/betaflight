@@ -14,6 +14,10 @@ permissions: {}
 
 jobs:
   approve:
+    # workflow_dispatch can be pointed at any ref, and this job holds the app
+    # key. Pin it to the default branch so a modified copy of this workflow on
+    # a branch cannot be dispatched to run with those credentials.
+    if: github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -28,7 +32,7 @@ jobs:
       # app something else later does not widen this job.
       - name: Mint an installation token
         id: app
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           client-id: ${{ vars.PR_AUTO_APPROVE_APP_CLIENT_ID }}
           private-key: ${{ secrets.PR_AUTO_APPROVE_APP_KEY }}
@@ -61,8 +65,9 @@ jobs:
                 [ .[] | select(.user.login == $who) ] | last as $r
                 | if $r != null
                      and $r.commit_id == $sha
-                     and ((($r.body // "") | split("\n")[0] | ascii_downcase)
-                          | contains("approval recommended"))
+                     and ((($r.body // "") | split("\n")[0] | ascii_downcase
+                            | gsub("^[^a-z]+"; "") | gsub("\\s+$"; ""))
+                          == "approval recommended")
                   then "yes" else empty end' <<<"$reviews")
               [ -n "$ready" ] || continue
 
@@ -71,6 +76,11 @@ jobs:
                                and .state == "APPROVED"
                                and .commit_id == $sha) ] | length' <<<"$reviews")
               [ "$approved" = "0" ] || continue
+
+              # Re-read the head: everything above was decided from a listing
+              # taken earlier in the run, and a push since then would make this
+              # an approval of code nobody assessed.
+              [ "$(gh api "repos/$GH_REPO/pulls/$pr" --jq .head.sha)" = "$sha" ] || continue
 
               gh api "repos/$GH_REPO/pulls/$pr/reviews" \
                 -f event=APPROVE \
