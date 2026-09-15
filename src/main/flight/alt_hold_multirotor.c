@@ -161,12 +161,11 @@ static void altHoldUpdate(void)
         const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
         if (navCmd->includeAltitude) {
             targetAltitudeCm = navCmd->targetPosEfM.z * 100.0f;
-            if (positionNavTargetReached()) {
-                altHold.targetAltitudeCm = targetAltitudeCm; // store target altitude so Alt Hold does not revert to pre-nav target altitude on the next cycle.
-            targetAltitudeVelocity = 0.0f;
-            } else {
-                 targetAltitudeVelocity = positionNavGetTargetVelocityCmS().z; 
-            }
+            // Track the nav target every cycle, not only on arrival: a mission
+            // that ends mid-leg would otherwise hand back to the pre-nav hold
+            // altitude and sink to it.
+            altHold.targetAltitudeCm = targetAltitudeCm;
+            targetAltitudeVelocity = positionNavTargetReached() ? 0.0f : positionNavGetTargetVelocityCmS().z;
         }
     }
 

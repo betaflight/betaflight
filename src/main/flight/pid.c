@@ -883,8 +883,10 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
         // and, either sticks are centred and throttle zeroed,
         && ((getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f)
 #ifdef USE_ALTITUDE_HOLD
-            // or, in altitude hold mode, where throttle can be non-zero
-            || FLIGHT_MODE(ALT_HOLD_MODE | GPS_RESCUE_MODE)
+            // or, in altitude hold mode, where throttle can be non-zero - but
+            // only near the ground. Under an autopilot the throttle can step
+            // hard at any altitude, and a step at height is not a touchdown.
+            || (FLIGHT_MODE(ALT_HOLD_MODE | GPS_RESCUE_MODE) && isBelowLandingAltitude())
 #endif
         )) {
         // increase sensitivity by 50% when low and in altitude hold or failsafe landing

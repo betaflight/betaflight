@@ -125,6 +125,7 @@
 // tighter error bound stops that speed-proportional lead from driving P into a
 // positive-feedback overspeed, leaving the velocity feedforward to set cruise.
 #define NAV_ERROR_DISTANCE_LIMIT 500.0f // 5m
+#define NAV_ALONG_TRACK_MIN_SPEED 20.0f // cm/s below which full position feedback returns
 #define POSITION_I_LIMIT      2000.0f // TO DO: test and set to a useful value, this is 20m
 
 #define AP_YAW_P_SCALE         0.01f
@@ -328,10 +329,15 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     const float verticalVelocity = getAltitudeDerivativeControl();
     const float altitudeErrorCm = targetAltitudeCm - currentAltitudeCm;
     const float itermRelax = (fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f; // don't accumulate too much iTerm with transient but large overshoots (>2m error )
-    const float altitudeP = altitudeErrorCm * altitudeKp;
     altitudeI += altitudeErrorCm * altitudeKi * itermRelax * taskIntervalS;
     altitudeI = constrainf(altitudeI, -ALTITUDE_I_LIMIT, ALTITUDE_I_LIMIT);
     const float velMax = (velLimitCmS > 1.0f) ? velLimitCmS : ALTITUDE_VEL_CMD_MAX_DEFAULT_CM_S;
+    // P is opposed by D, so the climb settles where P + D = 0, i.e. at
+    // errorCm * Kp / Kd. Clamping P to the offset D produces at velMax makes
+    // that settling point velMax exactly - without this the velocity limit has
+    // no authority over the climb and ascend/descend rate settings do nothing.
+    const float altitudePLimit = velMax * altitudeKd;
+    const float altitudeP = constrainf(altitudeErrorCm * altitudeKp, -altitudePLimit, altitudePLimit);
     const float targetVerticalVelocity = constrainf(targetAltitudeVelCmS, -velMax, velMax);
     float dBoost = 1.0f;
     const float boostThreshold = 500.0f; // 5m/s
@@ -755,9 +761,31 @@ bool positionControl(void)
         if (navCmd != NULL && navCmd->active) {
             // Anchor to the (moving) carrot: real position feedback keeps straight
             // and curved legs from drifting, with the commanded velocity as the
-            // feedforward. The carrot's lead distance produces the cruise tilt via P.
+            // feedforward.
             targetPosition.v[EF_EAST]  = navCmd->targetPosEfM.v[ENU_E] * 100.0f;
             targetPosition.v[EF_NORTH] = navCmd->targetPosEfM.v[ENU_N] * 100.0f;
+
+            // Drop the along-track component of the position error while a
+            // cruise velocity is commanded. On a long leg that component is
+            // large by construction - the craft is simply not there yet - so it
+            // pins distanceError at NAV_ERROR_DISTANCE_LIMIT and turns P into a
+            // constant tilt bias on top of the feedforward that already carries
+            // the commanded speed. The craft can only balance that bias by
+            // flying faster than commanded. Cross-track is kept: that is the
+            // part which is a real tracking error. As the leg's speed profile
+            // winds targetVelocity down towards arrival, full position feedback
+            // returns and parks the craft on the point.
+            const float targetSpeed = vector2Norm(&targetVelocity);
+            if (targetSpeed > NAV_ALONG_TRACK_MIN_SPEED) {
+                vector2_t alongDir;
+                vector2Scale(&alongDir, &targetVelocity, 1.0f / targetSpeed);
+                vector2_t posError;
+                vector2Sub(&posError, &targetPosition, &currentPosition);
+                const float alongTrack = vector2Dot(&posError, &alongDir);
+                vector2_t alongOffset;
+                vector2Scale(&alongOffset, &alongDir, alongTrack);
+                vector2Sub(&targetPosition, &targetPosition, &alongOffset);
+            }
             ap.anchor = ANCHOR_HOLD;
         } else {
             ap.anchor = ANCHOR_OFF;  // no active command target: track velocity only
