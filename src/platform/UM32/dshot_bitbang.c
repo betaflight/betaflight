@@ -602,6 +602,11 @@ FAST_CODE static void bbUpdateComplete(void)
             bbSwitchToOutput(bbPort);
         }
 
+        // bbDMA_Cmd(bbPort, ENABLE);
+    }
+
+    for (int i = 0; i < usedMotorPorts; i++) {
+        bbPort_t *bbPort = &bbPorts[i];
         bbDMA_Cmd(bbPort, ENABLE);
     }
 

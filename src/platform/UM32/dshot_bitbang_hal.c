@@ -149,12 +149,6 @@ void bbSwitchToOutput(bbPort_t * bbPort)
     // Reinitialize pacer timer for output
     ((TIM_TypeDef *)bbPort->timhw->tim)->ARR = bbPort->outputARR;
 
-#ifdef USE_DSHOT_TELEMETRY
-    if (useDshotTelemetry) {
-        ((TIM_TypeDef *)bbPort->timhw->tim)->CNT = 0;
-    }
-#endif
-
     bbPort->direction = DSHOT_BITBANG_DIRECTION_OUTPUT;
 }
 

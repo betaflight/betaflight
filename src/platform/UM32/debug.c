@@ -84,6 +84,7 @@ void debugInit(void)
         IOConfigGPIO(io, IOCFG_IN_FLOATING);
     }
 
+#ifndef USE_SDCARD_SDIO
     io = IOGetByTag(DEFIO_TAG_E(PC8));
     if (IOGetOwner(io) == OWNER_FREE) {
         IOInit(io,  OWNER_SYSTEM,  0);
@@ -95,6 +96,7 @@ void debugInit(void)
         IOInit(io,  OWNER_SYSTEM,  0);
         IOConfigGPIO(io, IOCFG_IN_FLOATING);
     }
+#endif
 
     io = IOGetByTag(DEFIO_TAG_E(PA9));
     if (IOGetOwner(io) == OWNER_FREE) {
