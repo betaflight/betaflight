@@ -376,6 +376,8 @@ extern "C" {
     bool positionNavHasActiveTarget(void) { return false; }
     bool positionNavTargetReached(void) { return false; }
     vector3_t positionNavGetTargetVelocityCmS(void) { return (vector3_t){{0, 0, 0}}; }
+    float positionNavGetTargetAltitudeCm(void) { return 0.0f; }
+    float positionNavGetVerticalRateLimitCmS(void) { return 0.0f; }
     const positionNavCommand_t *positionNavGetActiveCommand(void) { return NULL; }
 
     void parseRcChannels(const char *input, rxConfig_t *rxConfig) {

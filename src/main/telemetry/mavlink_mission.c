@@ -314,6 +314,10 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
     wp->speed = 0;
     wp->duration = 0;
     wp->pattern = WAYPOINT_PATTERN_NONE;
+    // MAVLink has no vocabulary for a per-waypoint climb rate or nose behaviour, so an uploaded
+    // mission flies them at their defaults (as FIGURE8 does with its pattern).
+    wp->vertRate = 0;
+    wp->yawBehaviour = WAYPOINT_YAW_DEFAULT;
 
     switch (it->command) {
     case MAV_CMD_NAV_WAYPOINT:
