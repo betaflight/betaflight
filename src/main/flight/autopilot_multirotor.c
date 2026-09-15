@@ -377,8 +377,13 @@ void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targ
     // errorCm * Kp / Kd. Clamping P to the offset D produces at velMax makes
     // that settling point velMax exactly - without this the velocity limit has
     // no authority over the climb and ascend/descend rate settings do nothing.
-    const float altitudePLimit = velMax * altitudeKd;
-    const float altitudeP = constrainf(altitudeErrorCm * altitudeKp, -altitudePLimit, altitudePLimit);
+    // With D disabled there is nothing for P to settle against, so the clamp
+    // would only strip the proportional response: leave P alone in that case.
+    float altitudeP = altitudeErrorCm * altitudeKp;
+    if (altitudeKd > 0.0f) {
+        const float altitudePLimit = velMax * altitudeKd;
+        altitudeP = constrainf(altitudeP, -altitudePLimit, altitudePLimit);
+    }
     const float targetVerticalVelocity = constrainf(targetAltitudeVelCmS, -velMax, velMax);
     float dBoost = 1.0f;
     const float boostThreshold = 500.0f; // 5m/s
