@@ -1,0 +1,80 @@
+name: Copilot PR auto-approve
+
+# Polls rather than reacting to pull_request_review. That event is delivered for
+# fork pull requests but runs with a read-only token and no repository secrets
+# (there is no pull_request_review_target), so it cannot approve the fork PRs
+# that make up most of our traffic. A schedule runs on the default branch in the
+# base repository, where the app credentials are available.
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  approve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # GITHUB_TOKEN is not permitted to approve a pull request, so the approval
+      # comes from a GitHub App. The installation token it mints expires within
+      # the hour, so nothing long-lived is handed to the job and the org's PAT
+      # lifetime policy does not apply. The app's private key is still a
+      # standing credential; it just is not what the job runs with.
+      #
+      # The token is narrowed to the one permission this needs rather than
+      # inheriting whatever the installation happens to hold, so granting the
+      # app something else later does not widen this job.
+      - name: Mint an installation token
+        id: app
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.PR_AUTO_APPROVE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.PR_AUTO_APPROVE_APP_KEY }}
+          permission-pull-requests: write
+
+      - name: Approve pull requests Copilot has cleared
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          # Derived from the app itself rather than configured, so the duplicate
+          # check cannot drift from whoever is actually doing the approving.
+          BOT: ${{ steps.app.outputs.app-slug }}[bot]
+          REVIEWER: copilot-pull-request-reviewer[bot]
+        run: |
+          set -euo pipefail
+
+          gh api "repos/$GH_REPO/pulls?state=open&per_page=100" --paginate \
+            --jq '.[] | select(.draft | not) | "\(.number) \(.head.sha)"' \
+          | while read -r pr sha; do
+              reviews=$(gh api "repos/$GH_REPO/pulls/$pr/reviews?per_page=100" --paginate --jq '.[]' | jq -s '.')
+
+              # Copilot's latest verdict, and only when it still refers to the
+              # current head — a push after the review leaves code it never read.
+              #
+              # It heads the body with its verdict: "🟢 Approval recommended"
+              # when clean, "🟡 Changes recommended" otherwise. Only the first
+              # line counts, so the phrase quoted further down in a summary
+              # cannot be mistaken for the verdict itself.
+              ready=$(jq -r --arg who "$REVIEWER" --arg sha "$sha" '
+                [ .[] | select(.user.login == $who) ] | last as $r
+                | if $r != null
+                     and $r.commit_id == $sha
+                     and ((($r.body // "") | split("\n")[0] | ascii_downcase)
+                          | contains("approval recommended"))
+                  then "yes" else empty end' <<<"$reviews")
+              [ -n "$ready" ] || continue
+
+              approved=$(jq -r --arg bot "$BOT" --arg sha "$sha" '
+                [ .[] | select(.user.login == $bot
+                               and .state == "APPROVED"
+                               and .commit_id == $sha) ] | length' <<<"$reviews")
+              [ "$approved" = "0" ] || continue
+
+              gh api "repos/$GH_REPO/pulls/$pr/reviews" \
+                -f event=APPROVE \
+                -f commit_id="$sha" \
+                -f body="Approving on Copilot's assessment." >/dev/null
+              echo "approved #$pr at $sha"
+            done
