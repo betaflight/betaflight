@@ -48,6 +48,7 @@
 #include "flight/autopilot.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
+#include "flight/launch_wing.h"
 #include "flight/mixer.h"
 
 #include "io/gps.h"
@@ -601,6 +602,23 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     }
 #endif
 
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+    if (FLIGHT_MODE(LAUNCH_MODE)) {
+        // angleTarget currently holds the pilot's own stick-derived target, so
+        // the handover factor blends straight onto it. The pitch offset is the
+        // wing's zero-lift trim, already added above, so the climb angle rides
+        // on top of it rather than replacing it.
+        float launchTarget = autopilotAngle[axis];
+        if (axis == FD_PITCH) {
+            launchTarget += (float)pidProfile->angle_pitch_offset / 10.0f;
+        }
+        const float handover = launchWingHandoverFactor();
+        angleTarget = launchTarget + (angleTarget - launchTarget) * handover;
+        angleLimit = fmaxf(angleLimit, fabsf(launchTarget));
+        angleFeedforward *= handover;
+    }
+#endif
+
     angleTarget = constrainf(angleTarget, -angleLimit, angleLimit);
 
     const float currentAngle = (attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f; // stepped at 500hz with some 4ms flat spots
@@ -620,7 +638,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     // this filter runs at ATTITUDE_CUTOFF_HZ, currently 50hz, so GPS roll may be a bit steppy
     angleRate = pt3FilterApply(&pidRuntime.attitudeFilter[axis], angleRate);
 
-    if (FLIGHT_MODE(ANGLE_MODE| GPS_RESCUE_MODE | POS_HOLD_MODE)) {
+    if (FLIGHT_MODE(ANGLE_MODE| GPS_RESCUE_MODE | POS_HOLD_MODE | LAUNCH_MODE)) {
         currentPidSetpoint = angleRate;
     } else {
         // can only be HORIZON mode - crossfade Angle rate and Acro rate
@@ -1069,9 +1087,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #ifdef USE_POSITION_HOLD
                 || FLIGHT_MODE(POS_HOLD_MODE)
 #endif
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+                || FLIGHT_MODE(LAUNCH_MODE)
+#endif
                 ;
     levelMode_e levelMode;
-    if (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
+    if (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE | GPS_RESCUE_MODE | LAUNCH_MODE)) {
         if (pidRuntime.levelRaceMode && !isExternalAngleModeRequest) {
             levelMode = LEVEL_MODE_R;
         } else {
@@ -1544,6 +1565,16 @@ void pidSetItermReset(bool enabled)
 {
     pidRuntime.zeroThrottleItermReset = enabled;
 }
+
+#ifdef USE_WING
+// The modelled airspeed integrates continuously, including on the bench, so it
+// must be cleared on arming or TPA starts the flight attenuating to a speed the
+// aircraft does not have.
+void pidResetTpaSpeed(void)
+{
+    pidRuntime.tpaSpeed.speed = 0.0f;
+}
+#endif
 
 float pidGetPreviousSetpoint(int axis)
 {

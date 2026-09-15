@@ -28,7 +28,7 @@
 
 #define AP_HOVER_THROTTLE_DEFAULT 1275U
 
-extern float autopilotAngle[RP_AXIS_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGREES
+extern float autopilotAngle[RP_AXIS_COUNT]; // degrees
 
 void autopilotInit(void);
 void resetAltitudeControl(void);
@@ -47,6 +47,10 @@ void autopilotCaptureHoverThrottleForAltHold(void);
 void autopilotClearAltHoldHoverThrottle(void);
 bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);
+
+bool autopilotAltitudeControlAvailable(void);
+bool autopilotPositionControlAvailable(void);
+bool autopilotThrottleValid(void);
 
 // Mission yaw control: rate injected as the yaw setpoint by rc.c while a
 // navigation leg is being flown (see updateYawControl in autopilot_multirotor.c)

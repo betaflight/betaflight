@@ -60,6 +60,8 @@
 #include "fc/stats.h"
 
 #include "flight/failsafe.h"
+#include "flight/autopilot.h"
+#include "flight/launch_wing.h"
 #include "flight/gps_rescue.h"
 #include "flight/alt_hold.h"
 #include "flight/pos_hold.h"
@@ -521,6 +523,7 @@ void disarm(flightLogDisarmReason_e reason)
         }
         DISABLE_ARMING_FLAG(ARMED); // disarm now
         lastDisarmTimeUs = micros();
+        launchWingDisarm();
 
 #ifdef USE_OSD
         if (IS_RC_MODE_ACTIVE(BOXCRASHFLIP) || isLaunchControlActive()) {
@@ -629,6 +632,9 @@ if (isMotorProtocolDshot()) {
 #ifdef USE_RPM_LIMIT
         mixerResetRpmLimiter();
 #endif
+        // Latched once, here, and nowhere else: a launch can never be switched
+        // on mid-air.
+        launchWingArm();
         ENABLE_ARMING_FLAG(ARMED);  // ***ARM NOW ***
 
 #ifdef USE_RC_STATS
@@ -863,7 +869,8 @@ bool processRx(timeUs_t currentTimeUs)
 
     // Note: If Airmode is enabled, on arming, iTerm and PIDs will be off until throttle exceeds the threshold (OFF while disarmed)
     // If not, iTerm will be off at low throttle, with pidStabilisationState determining whether PIDs will be active
-    if (ARMING_FLAG(ARMED) && (isAirmodeActive || throttleActive || launchControlActive || isFixedWing())) {
+    if (ARMING_FLAG(ARMED) && (isAirmodeActive || throttleActive || launchControlActive || isFixedWing())
+        && !launchWingHoldsIterm()) {
         pidSetItermReset(false);
         pidStabilisationState(PID_STABILISATION_ON);
     } else {
@@ -1053,6 +1060,9 @@ void processRxModes(timeUs_t currentTimeUs)
 #ifdef USE_POSITION_HOLD
         || FLIGHT_MODE(POS_HOLD_MODE)
 #endif
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+        || FLIGHT_MODE(LAUNCH_MODE)
+#endif
         ) && (sensors(SENSOR_ACC))) {
         // bumpless transfer to Level mode
         canUseHorizonMode = false;
@@ -1068,7 +1078,8 @@ void processRxModes(timeUs_t currentTimeUs)
     // Legacy: the pilot's switch and the failsafe procedure both fly the legacy
     // GPS_RESCUE_MODE controller. (With ENABLE_RESCUE_PLAN both are flown as an
     // autopilot rescue mission instead - staged below and in failsafe.c.)
-    if (ARMING_FLAG(ARMED) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE)
+    if (ARMING_FLAG(ARMED) && gpsRescueIsConfigured()
+        && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE)
         || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE))) {
         if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
             ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
@@ -1167,16 +1178,37 @@ void processRxModes(timeUs_t currentTimeUs)
     navTrailUpdate(currentTimeUs);
 #endif
 
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+    // The latch is the mid-air guard: it is set only at the arm transition, so
+    // the box alone can never engage a launch in flight.
+    if (ARMING_FLAG(ARMED)
+        && launchWingLatched()
+        && IS_RC_MODE_ACTIVE(BOXLAUNCH)
+        && sensors(SENSOR_ACC)
+        && !failsafeIsActive()
+        && !launchWingIsTerminal()) {
+        if (!FLIGHT_MODE(LAUNCH_MODE)) {
+            ENABLE_FLIGHT_MODE(LAUNCH_MODE);
+        }
+    } else if (FLIGHT_MODE(LAUNCH_MODE)) {
+        DISABLE_FLIGHT_MODE(LAUNCH_MODE);
+        launchWingSwitchOff();
+    }
+#endif
+
 #ifdef USE_ALTITUDE_HOLD
     // only if armed; can coexist with position hold
     if (ARMING_FLAG(ARMED)
         // and not in GPS_RESCUE_MODE, to give it priority over Altitude Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
+        && !FLIGHT_MODE(LAUNCH_MODE)
         // and either the alt_hold switch is activated, or are in failsafe landing mode,
         // or an autopilot mission needs altitude control, or a switch-rescue fallback descent
         && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive() || FLIGHT_MODE(AUTOPILOT_MODE) || flightPlanNavIsRescueDescentActive())
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
+        // and this platform actually has an altitude control law
+        && autopilotAltitudeControlAvailable()
         // and we have altitude data
         && isAltitudeAvailable()
         // but not until throttle is raised
@@ -1194,11 +1226,14 @@ void processRxModes(timeUs_t currentTimeUs)
     if (ARMING_FLAG(ARMED)
         // and not in GPS_RESCUE_MODE, to give it priority over Position Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
+        && !FLIGHT_MODE(LAUNCH_MODE)
         // and either the pos_hold switch is activated, or are in failsafe landing mode,
         // or an autopilot mission needs the position controller
         && (IS_RC_MODE_ACTIVE(BOXPOSHOLD) || failsafeIsActive() || FLIGHT_MODE(AUTOPILOT_MODE))
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
+        // and this platform actually has a position control law
+        && autopilotPositionControlAvailable()
         // but not until throttle is raised
         && wasThrottleRaised()) {
         if (!FLIGHT_MODE(POS_HOLD_MODE)) {
@@ -1514,6 +1549,11 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
 
     subTaskRcCommand(currentTimeUs);
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+    // After rcCommand so the abort test and the hand-back blend see fresh stick
+    // data, and before the PID controller so it reads this cycle's angle target.
+    launchWingUpdate(currentTimeUs);
+#endif
     subTaskPidController(currentTimeUs);
     subTaskMotorUpdate(currentTimeUs);
     subTaskPidSubprocesses(currentTimeUs);
