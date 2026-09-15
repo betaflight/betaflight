@@ -32,11 +32,23 @@
 uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier);
 
 // One feature's claim on a port, named by the stem of the owning CLI setting
-// ("gps" owns gps_uart, "msp_1" owns msp_uart_1).  functionMask holds the
-// functions the port opens with when the claim wins boot arbitration; 0 when
-// the feature's current protocol selection cannot open the port at all.
+// ("gps" owns gps_uart, "msp_1" owns msp_1_uart).  `setting` is that setting in
+// full, so a claim can be printed back as the command that made it.
+// functionMask holds the functions the port opens with when the claim wins boot
+// arbitration; 0 when the feature's current protocol selection cannot open the
+// port at all.
 typedef struct serialPortClaim_s {
     const char *name;
+    const char *setting;
+    // The setting that decides what the port opens as, where the claim has one:
+    // a telemetry instance's protocol, a VTX's device, an OSD's display port, the
+    // hardware a sensor's transport follows.  Without it the port assignment on
+    // its own says nothing, so it belongs beside it.  NULL where the function is
+    // the claim itself, as it is for MSP, GPS or blackbox.
+    const char *selectorSetting;
+    // The feature's own baud setting, or NULL where its rate is not its to choose,
+    // as a serial receiver's follows the protocol and a VTX's follows the device.
+    const char *baudSetting;
     uint32_t functionMask;
 } serialPortClaim_t;
 
@@ -44,6 +56,14 @@ typedef struct serialPortClaim_s {
 #define SERIAL_PORT_CLAIM_MAX 17
 
 unsigned serialGetPortClaims(serialPortIdentifier_e identifier, serialPortClaim_t *claims, unsigned maxClaims);
+
+// Write a legacy per-port function mask into the feature PGs, as the deprecated
+// `serial` command still hands one over.  Every claim on the port is cleared
+// first, so the mask ends up describing the port completely, the way it did when
+// the mask was the stored form.  Returns false and leaves the PGs untouched when
+// the mask cannot be represented: two VTX protocols at once, or more MSP or
+// telemetry claims than there are slots.
+bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask);
 
 // Clear the claims on just those ports whose functions cannot coexist, sparing
 // MSP so the board stays reachable.  First recovery step for a stored assignment
@@ -82,3 +102,7 @@ uint8_t serialDefaultPortBaud(serialBaudClass_e baudClass);
 // still round-trips through `dump` and MSP unchanged.
 uint8_t serialSynthesizePortBaud(serialPortIdentifier_e identifier, serialBaudClass_e baudClass);
 
+// Write one of the four legacy per-port baud rates onto whichever feature on the
+// port owns that class.  A class no feature on the port claims is dropped: the
+// rate belonged to the port in the legacy layout and has no owner here.
+void serialApplyPortBaud(serialPortIdentifier_e identifier, serialBaudClass_e baudClass, uint8_t baudIndex);

@@ -101,6 +101,16 @@ baro_bmp388_unittest_DEFINES := \
                 USE_BARO_BMP388= \
                 USE_BARO_SPI_BMP388=
 
+baro_bmp5xx_unittest_SRC := \
+		$(USER_DIR)/drivers/barometer/barometer_bmp5xx.c
+
+baro_bmp5xx_unittest_DEFINES := \
+                USE_EXTI= \
+                USE_BARO_BMP580= \
+                USE_BARO_SPI_BMP580= \
+                USE_BARO_BMP581= \
+                USE_BARO_SPI_BMP581=
+
 baro_ms5611_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_ms5611.c
 
@@ -648,6 +658,7 @@ flight_plan_nav_unittest_DEFINES := \
 		USE_GPS= \
 		USE_GPS_RESCUE= \
 		USE_FLIGHT_PLAN= \
+		USE_ALTITUDE_HOLD= \
 		ENABLE_FLIGHT_PLAN=1
 
 flight_plan_capture_unittest_SRC := \
@@ -673,6 +684,7 @@ flight_plan_rescue_unittest_DEFINES := \
 		USE_GPS= \
 		USE_GPS_RESCUE= \
 		USE_FLIGHT_PLAN= \
+		USE_ALTITUDE_HOLD= \
 		ENABLE_FLIGHT_PLAN=1 \
 		ENABLE_RESCUE_PLAN=1
 
