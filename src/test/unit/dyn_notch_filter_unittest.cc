@@ -19,7 +19,15 @@
  */
 
 extern "C" {
+#include "fc/core.h"
+#include "build/debug.h"
+#include "sensors/gyro.h"
+#include "drivers/time.h"
 #include "flight/dyn_notch_filter.h"
+
+uint8_t debugMode = 0;
+int16_t debug[DEBUG16_VALUE_COUNT];
+gyro_t gyro = {};
 }
 
 #include "gtest/gtest.h"
