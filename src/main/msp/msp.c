@@ -2820,7 +2820,6 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
 
             // get/response: return "name = value"
             // for set, this confirms the new value; for get, this returns the current value
-            char buf[len + 1];
             // extract just the name (before '=' if present)
             if (eq) {
                 // trim trailing spaces from name
@@ -2830,14 +2829,21 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
                 }
                 *nameEnd = '\0';
             }
-            const int written = cliGetSettingByName(cmdline, buf, len + 1);
-            if (written < 0 || written > (int)sbufBytesRemaining(dst)) {
+            // Format straight into the response buffer, sized by what the response
+            // can actually hold. This previously used a scratch buffer sized from
+            // the REQUEST length, which is never enough for a read: the reply is
+            // "name = value" and the request is only "name", so cliGetSettingByName
+            // always ran out of room and returned -1, and every get answered
+            // MSP_RESULT_ERROR. Writes happened to fit only because there the
+            // request carries the value too.
+            const int written = cliGetSettingByName(cmdline, (char *)sbufPtr(dst), (int)sbufBytesRemaining(dst));
+            if (written < 0) {
                 if (!eq) {
                     return MSP_RESULT_ERROR;
                 }
                 // set succeeded but echo failed; acknowledge the set
             } else {
-                sbufWriteData(dst, buf, written);
+                sbufAdvance(dst, written);
             }
         }
         break;
