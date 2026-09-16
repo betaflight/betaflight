@@ -22,6 +22,8 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
+
 #include "common/vector.h"
 #include "flight/position_estimator.h"
 
@@ -29,6 +31,7 @@ typedef void (*positionNavReachedCallbackFn)(void *userData);
 
 typedef struct positionNavCommand_s {
     bool active;
+    uint32_t sequence;              // bumped on every new target, so consumers can spot a leg change
     bool completed;
     bool completionSignalled;
 

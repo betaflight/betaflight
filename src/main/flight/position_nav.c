@@ -54,7 +54,9 @@ void positionNavInit(void)
 
 void positionNavReset(void)
 {
+    const uint32_t sequence = cmd.sequence;   // stays monotonic so consumers keep spotting the change
     memset(&cmd, 0, sizeof(cmd));
+    cmd.sequence = sequence;
     vector3Zero(&previousTargetVelMps);
     vector3Zero(&currentTargetVelCmS);
     withinAcceptanceRadius = false;
@@ -72,6 +74,7 @@ void positionNavSetTargetEf(
 )
 {
     cmd.active = true;
+    cmd.sequence++;
     cmd.completed = false;
     cmd.completionSignalled = false;
 

@@ -233,6 +233,7 @@ typedef struct autopilotState_s {
     xyIntegralPolicy_e iPolicy; // integral policy for this loop
     xyControlMode_e mode;       // operational mode for this loop
     bool navAnchored;           // nav target close enough for position anchoring
+    uint32_t navAnchorSeq;      // command the anchor state belongs to
     unsigned debugAxis;
 } autopilotState_t;
 
@@ -853,6 +854,13 @@ static xyControlMode_e xySelectMode(void)
         // than commanded. Track the commanded velocity out there instead: the
         // virtual distance error integrates velocity error, so cruise settles
         // on the commanded speed. Hysteresis stops the handover chattering.
+        // A new command starts unanchored and must earn the anchor on its own
+        // range, rather than inheriting its predecessor's state through the
+        // transition.
+        if (ap.navAnchorSeq != navCmd->sequence) {
+            ap.navAnchorSeq = navCmd->sequence;
+            ap.navAnchored = false;
+        }
         const vector2_t *pos = (const vector2_t *)&positionEstimatorGetEstimate()->position.v;
         const vector2_t target = {{ navCmd->targetPosEfM.v[ENU_E] * 100.0f,
                                     navCmd->targetPosEfM.v[ENU_N] * 100.0f }};

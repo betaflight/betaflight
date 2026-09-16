@@ -1033,6 +1033,19 @@ protected:
     {
         mockTargetVelCmS = (vector3_t){{0.0f, cmS, 0.0f}};
     }
+
+    // Status slot 7 carries +10 for nav active and +20 for the anchor being
+    // off, so the anchored/velocity split is directly observable.
+    enum { NAV_STATUS_ANCHORED = 10, NAV_STATUS_VELOCITY = 30 };
+
+    int navStatus()
+    {
+        debugMode = DEBUG_AUTOPILOT_PID;
+        runIterations(1);
+        const int status = debug[7];
+        debugMode = DEBUG_NONE;
+        return status;
+    }
 };
 
 TEST_F(NavModeTest, NavAnchorsToCarrotAhead)
@@ -1063,6 +1076,50 @@ TEST_F(NavModeTest, NavBeyondAnchorRangeFliesTheCommandedVelocity)
 
     EXPECT_LT(fabsf(autopilotAngle[AI_PITCH]), 2.0f);
     EXPECT_LT(fabsf(autopilotAngle[AI_ROLL]), 2.0f);
+}
+
+TEST_F(NavModeTest, NavBeyondAnchorRangeTracksANonZeroCommandedVelocity)
+{
+    // The other half of the contract: out there the commanded velocity holds
+    // the authority, not the carrot. Carrot far to the north but the command
+    // pointing south, so the two disagree and the lean has to follow the
+    // command.
+    engageNav(30, 30, 0, 0, 30, 45);
+    setNavCarrot(0.0f, 50.0f);
+    testEstimate.velocity.y = 0.0f;
+
+    setTargetVelocityNorth(300.0f);
+    runIterations(SETTLE_ITERATIONS);
+    const float pitchNorth = autopilotAngle[AI_PITCH];
+
+    setTargetVelocityNorth(-300.0f);
+    runIterations(SETTLE_ITERATIONS * 4);
+    const float pitchSouth = autopilotAngle[AI_PITCH];
+
+    EXPECT_EQ(NAV_STATUS_VELOCITY, navStatus());
+    EXPECT_GT(fabsf(pitchNorth), 5.0f);
+    EXPECT_GT(fabsf(pitchSouth), 5.0f);
+    EXPECT_LT(pitchNorth * pitchSouth, 0.0f);
+    EXPECT_LT(fabsf(autopilotAngle[AI_ROLL]), 2.0f);
+}
+
+TEST_F(NavModeTest, NavAnchorDoesNotCarryAcrossACommandChange)
+{
+    // A waypoint transition installs the successor before the controller runs
+    // again. An anchored predecessor must not hand its state on, or a successor
+    // sitting between the acquire and release thresholds anchors without ever
+    // satisfying the acquire range.
+    engageNav(30, 30, 0, 0, 30, 45);
+    setNavCarrot(0.0f, 3.0f);
+    setTargetVelocityNorth(0.0f);
+    runIterations(SETTLE_ITERATIONS);
+    ASSERT_EQ(NAV_STATUS_ANCHORED, navStatus());
+
+    mockNavCommand.sequence++;                          // successor installed
+    setNavCarrot(0.0f, 5.2f);                           // inside release, outside acquire
+    runIterations(SETTLE_ITERATIONS);
+
+    EXPECT_EQ(NAV_STATUS_VELOCITY, navStatus());
 }
 
 TEST_F(NavModeTest, NavPositionErrorIsBounded)
