@@ -226,16 +226,17 @@ TEST(BlackboxTest, Test_zero_p_interval)
     EXPECT_EQ(0, blackboxGetPRatio());
 }
 
-TEST(BlackboxTest, Test_zero_p_interval_sample_rate_out_of_range)
+TEST(BlackboxTest, Test_sample_rate_out_of_range)
 {
-    // sample_rate arrives unvalidated over MSP, so it must not shift out of range
+    // sample_rate arrives unvalidated over MSP and is indexed into the CMS and CLI rate
+    // tables, so an out of range value has to be clamped, not just shifted
     blackboxConfigMutable()->sample_rate = 255;
-    // 250Hz PIDloop
-    targetPidLooptime = 4000;
+    // 1kHz PIDloop
+    targetPidLooptime = 1000;
     blackboxInit();
-    EXPECT_EQ(8, blackboxIInterval);
-    EXPECT_EQ(0, blackboxPInterval);
-    EXPECT_EQ(0, blackboxGetPRatio());
+    EXPECT_EQ(32, blackboxIInterval);
+    EXPECT_EQ(BLACKBOX_SAMPLE_RATE_MAX, blackboxConfig()->sample_rate);
+    EXPECT_EQ(16, blackboxPInterval);
 }
 
 TEST(BlackboxTest, Test_CalculatePDenom)
@@ -299,14 +300,14 @@ TEST(BlackboxTest, Test_CalculateSampleRate_zero_p_ratio)
     // 1kHz PIDloop
     targetPidLooptime = 1000;
     // p_ratio of 0 was the legacy sentinel for logging I frames only
-    EXPECT_EQ(BLACKBOX_SAMPLE_RATE_MAX, blackboxCalculateSampleRate(0));
+    EXPECT_EQ(4, blackboxCalculateSampleRate(0));
     // and the result always has to stay a selectable blackbox_sample_rate
-    EXPECT_LE(blackboxCalculateSampleRate(1), BLACKBOX_SAMPLE_RATE_MAX);
+    EXPECT_LE(blackboxCalculateSampleRate(1), 4);
 
-    // 8kHz PIDloop
+    // 8kHz PIDloop, where the unclamped result would be llog2(256) = 8
     targetPidLooptime = 125;
-    EXPECT_EQ(BLACKBOX_SAMPLE_RATE_MAX, blackboxCalculateSampleRate(0));
-    EXPECT_LE(blackboxCalculateSampleRate(1), BLACKBOX_SAMPLE_RATE_MAX);
+    EXPECT_EQ(4, blackboxCalculateSampleRate(0));
+    EXPECT_LE(blackboxCalculateSampleRate(1), 4);
 }
 
 TEST(BlackboxTest, Test_CalculateRates)
