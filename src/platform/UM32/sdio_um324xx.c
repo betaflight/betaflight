@@ -276,7 +276,7 @@ static void SD_DataTransferInit(uint32_t Size, uint32_t DataBlockSize, bool IsIt
 static SD_Error_t SD_TransmitCommand(uint32_t Command, uint32_t Argument, int8_t ResponseType)
 {
     SD_Error_t ErrorState;
-
+    uint32_t TimeOutLocal;
     // Clear raw interrupt status flags before sending command
     SDIO->RINTSTS = 0xFFFFFFFF;
 
@@ -330,7 +330,10 @@ static SD_Error_t SD_TransmitCommand(uint32_t Command, uint32_t Argument, int8_t
 
     cmdReg |= SDIO_CMD_START_CMD;                // Start the command
 
-    while(SDIO->STATUS & SDIO_STATUS_DATA_BUSY);
+    TimeOutLocal = SD_SOFTWARE_COMMAND_TIMEOUT;
+    do {
+        TimeOutLocal--;
+    } while ((SDIO->STATUS & SDIO_STATUS_DATA_BUSY) && (TimeOutLocal > 0));
 
     SDIO->CMD = cmdReg;
 
