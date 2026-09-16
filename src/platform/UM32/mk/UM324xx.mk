@@ -28,7 +28,6 @@ EXCLUDES        = \
                 um324xx_hal_spi.c \
                 um324xx_hal_uart.c \
                 um324xx_hal_vref.c \
-                um324xx_hal_usart.c \
                 um324xx_hal_wwdt.c
 
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))

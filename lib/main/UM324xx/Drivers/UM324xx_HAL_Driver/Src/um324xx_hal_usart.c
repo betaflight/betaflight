@@ -1402,22 +1402,24 @@ static void USART_SetConfig(USART_HandleTypeDef *husart)
        Set NBSTOP bits according to husart->Init.StopBits value */
 	tmpreg = husart->Init.WordLength | husart->Init.Parity | husart->Init.StopBits | husart->Init.OverSampling;
 	MODIFY_REG(husart->Instance->MR, USART_MR_CHRL | USART_MR_MODE9 | USART_MR_PAR | USART_MR_NBSTOP | USART_MR_OVER, tmpreg);
-	
-    if (husart->Instance == USART6)
+
+    /* The USART family exposes USART7 and USART8 only (current manual). */
     {
-		__HAL_RCM_USART6_CLK_SEL_PCLK0();
-        pclk = HAL_RCM_GetPCLK0Freq();
-    }
-    else
-    {
-      #if defined(UM32x42x)
+    #if defined(UM32x42x)
 		__HAL_RCM_USART7_CLK_SEL_PCLK1();
         pclk = HAL_RCM_GetPCLK1Freq();
-        #endif 
-        #if defined(UM324xF)
-        __HAL_RCM_USART7_CLK_SEL_PCLK2();
-        pclk = HAL_RCM_GetPCLK2Freq();
-        #endif
+    #endif 
+    #if defined(UM324xF)
+        if (husart->Instance == USART8) {
+            /* USART8 sits on the AHB2APB2 bridge -> PCLK2 kernel clock */
+            __HAL_RCM_USART8_CLK_SEL_PCLK2();
+            pclk = HAL_RCM_GetPCLK2Freq();
+        } else {
+            /* USART7 sits on the AHB2APB0 bridge -> PCLK0 kernel clock */
+            __HAL_RCM_USART7_CLK_SEL_PCLK0();
+            pclk = HAL_RCM_GetPCLK0Freq();
+        }
+    #endif
     }
 	
     /*-------------------------- USART Baud Rate Configuration ------------------*/
@@ -1506,22 +1508,23 @@ static void USART_LIN_SetConfig(USART_HandleTypeDef *husart)
 	
 	/* Enable USART TX and RX */
 	SET_BIT(husart->Instance->CR, USART_CR_TXEN | USART_CR_RXEN);
-	
-    if (husart->Instance == USART6)
-    {
-      
-		__HAL_RCM_USART6_CLK_SEL_PCLK0();
-        pclk = HAL_RCM_GetPCLK0Freq();
-    }
-    else
+
+    /* The USART family exposes USART7 and USART8 only (current manual). */
     {
 	    #if defined(UM32x42x)
 		__HAL_RCM_USART7_CLK_SEL_PCLK1();
         pclk = HAL_RCM_GetPCLK1Freq();
         #endif 
         #if defined(UM324xF)
-        __HAL_RCM_USART7_CLK_SEL_PCLK2();
-        pclk = HAL_RCM_GetPCLK2Freq();
+        if (husart->Instance == USART8) {
+            /* USART8 sits on the AHB2APB2 bridge -> PCLK2 kernel clock */
+            __HAL_RCM_USART8_CLK_SEL_PCLK2();
+            pclk = HAL_RCM_GetPCLK2Freq();
+        } else {
+            /* USART7 sits on the AHB2APB0 bridge -> PCLK0 kernel clock */
+            __HAL_RCM_USART7_CLK_SEL_PCLK0();
+            pclk = HAL_RCM_GetPCLK0Freq();
+        }
         #endif
     }
 	

@@ -53,6 +53,40 @@
 struct uartHalHandle_s uartHalHandles[UARTDEV_COUNT];
 #endif
 
+#if defined(USE_UART7) || defined(USE_UART8)
+// USART7/USART8 are the SAM-style USART IP, a different register layout from
+// the UART_EX IP of UART1-6. They need no persistent handle: HAL_USART_Init
+// only writes peripheral registers, and all run-time touch points go through
+// the instance registers directly (like the __HAL_UART_EX_* macros do for
+// UART1-6). Init uses a stack handle, so nothing is stored here.
+#include "um324xx_hal_usart.h"
+
+// The SDK driver calls this but never defines it. Clock enable and pin muxing
+// are handled by the generic serial layer via the uartHardware table (rcc tag,
+// IOConfigGPIOAF), so the MSP hook has nothing left to do.
+void HAL_USART_MspInit(USART_HandleTypeDef *husart)
+{
+    UNUSED(husart);
+}
+
+static bool uartSamInstance(const uartPort_t *uartPort, USART_TypeDef **usart)
+{
+#ifdef USE_UART7
+    if (uartPort->USARTx == (usartResource_t *)USART7) {
+        *usart = USART7;
+        return true;
+    }
+#endif
+#ifdef USE_UART8
+    if (uartPort->USARTx == (usartResource_t *)USART8) {
+        *usart = USART8;
+        return true;
+    }
+#endif
+    return false;
+}
+#endif
+
 #define __HAL_UART_EX_GET_IT(__HANDLE__, __INTERRUPT__)   ((READ_BIT((__HANDLE__)->Instance->IER, __INTERRUPT__) == (__INTERRUPT__)) ? SET : RESET) //((((__HANDLE__)->Instance->IER) &  (__INTERRUPT__)) ? SET : RESET) 
 
 #if(0)
@@ -74,6 +108,36 @@ static void uartConfigurePinSwap(uartPort_t *uartPort)
 void uartReconfigure(uartPort_t *uartPort)
 {
     const serialPortIdentifier_e id = uartPort->port.identifier;
+
+#if defined(USE_UART7) || defined(USE_UART8)
+    USART_TypeDef *usartSam;
+    if (uartSamInstance(uartPort, &usartSam)) {
+        USART_HandleTypeDef handle = { 0 };
+        handle.Instance = usartSam;
+        handle.Init.BaudRate = uartPort->port.baudRate;
+        handle.Init.WordLength = USART_WORDLENGTH_8B;
+        handle.Init.StopBits = (uartPort->port.options & SERIAL_STOPBITS_2) ? USART_STOPBITS_2 : USART_STOPBITS_1;
+        handle.Init.Parity = (uartPort->port.options & SERIAL_PARITY_EVEN) ? USART_PARITY_EVEN : USART_PARITY_NONE;
+        // The UART_EX IP of UART1-6 has no TXEN/RXEN concept — its
+        // transmitters are always on. Enable both directions unconditionally
+        // so USART7/8 behaves the same regardless of how the port was opened
+        // (an RX-only protocol would otherwise leave the transmitter dead).
+        handle.Init.Mode = USART_MODE_TX_RX;
+        handle.Init.HwFlowCtl = USART_HWCONTROL_NONE;
+        handle.Init.OverSampling = USART_OVERSAMPLING_16;
+
+        HAL_USART_Init(&handle);
+
+        if (uartPort->port.mode & MODE_RX) {
+            usartSam->IER |= USART_IER_RXRDY;
+        }
+
+        // TX interrupt stays masked until the first byte is queued, mirroring
+        // the UART_EX path where ETBEI is armed on demand (uartEnableTxInterrupt).
+        return;
+    }
+#endif
+
     UART_HandleTypeDef *pHandle = &uartHalHandles[id - SERIAL_PORT_UART_FIRST].hal;
 
     pHandle->Instance = (UART_TypeDef *)uartPort->USARTx;
@@ -176,8 +240,43 @@ void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
 #endif
 
 void uartIrqHandler(uartPort_t *s)
-{   
+{
     const serialPortIdentifier_e id = s->port.identifier;
+
+#if defined(USE_UART7) || defined(USE_UART8)
+    USART_TypeDef *usartSam;
+    if (uartSamInstance(s, &usartSam)) {
+        const uint32_t csr = READ_REG(usartSam->CSR);
+        const uint32_t imr = READ_REG(usartSam->IMR);
+
+        if (csr & (USART_CSR_OVRE | USART_CSR_PARE | USART_CSR_FRAME)) {
+            // Clear latched error status bits (RSTSTA strobe).
+            WRITE_REG(usartSam->CR, USART_CR_RSTSTA);
+        }
+
+        if (((csr & USART_CSR_RXRDY) != 0) && ((imr & USART_IER_RXRDY) != 0)) {
+            const uint8_t rbyte = (uint8_t)(READ_REG(usartSam->RHR) & 0xff);
+
+            if (s->port.rxCallback) {
+                s->port.rxCallback(rbyte, s->port.rxCallbackData);
+            } else {
+                s->port.rxBuffer[s->port.rxBufferHead] = rbyte;
+                s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
+            }
+        }
+
+        if (((csr & USART_CSR_TXRDY) != 0) && ((imr & USART_IER_TXRDY) != 0)) {
+            if (s->port.txBufferTail != s->port.txBufferHead) {
+                WRITE_REG(usartSam->THR, s->port.txBuffer[s->port.txBufferTail]);
+                s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
+            } else {
+                usartSam->IDR |= USART_IER_TXRDY;
+            }
+        }
+        return;
+    }
+#endif
+
     UART_HandleTypeDef *pHandle = &uartHalHandles[id - SERIAL_PORT_UART_FIRST].hal;
 
     pHandle->Instance = (UART_TypeDef *)s->USARTx;

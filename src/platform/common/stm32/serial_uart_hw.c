@@ -338,9 +338,17 @@ void uartEnableTxInterrupt(uartPort_t *uartPort)
 {
 #if defined(USE_HAL_DRIVER)
 #if defined(UM324xF)
-    UART_HandleTypeDef huart = {0};
-    huart.Instance = (UART_TypeDef *)uartPort->USARTx;
-    __HAL_UART_ENABLE_IT(&huart, UART_EX_IT_ETBEI);
+#if defined(USE_UART7) || defined(USE_UART8)
+    if ((uartPort->USARTx == (usartResource_t *)USART7) || (uartPort->USARTx == (usartResource_t *)USART8)) {
+        // SAM-style USART7/8: TXRDY interrupt, set-only via the IER register.
+        ((USART_TypeDef *)uartPort->USARTx)->IER |= USART_IER_TXRDY;
+    } else
+#endif
+    {
+        UART_HandleTypeDef huart = {0};
+        huart.Instance = (UART_TypeDef *)uartPort->USARTx;
+        __HAL_UART_ENABLE_IT(&huart, UART_EX_IT_ETBEI);
+    }
 #else
     LL_USART_EnableIT_TXE((USART_TypeDef *)uartPort->USARTx);
 #endif

@@ -741,10 +741,7 @@ SD_Error_t SD_WriteBlocks_DMA(uint64_t WriteAddress, uint32_t *buffer, uint32_t 
 {
     SD_Error_t ErrorState;
     uint32_t   CmdIndex;
-    // if(SD_Handle.TXCplt != 0)
-    // {
-    //  return ErrorState;
-    // }
+  
     SD_Handle.TXCplt = 1;
 
     if (SD_CardType != SD_HIGH_CAPACITY)

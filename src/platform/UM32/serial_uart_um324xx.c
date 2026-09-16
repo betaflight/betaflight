@@ -197,6 +197,48 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxBufferSize = sizeof(uart6RxBuffer),
     },
 #endif
+
+#ifdef USE_UART7
+    {
+        // USART7/8 are a different IP from UART1-6: SAM-style USART registers
+        // (CR/MR/IER/IDR/IMR/CSR/RHR/THR/BRGR), not the 16550-style UART_EX.
+        // serial_uart_hal.c branches on these instances for init/IRQ handling.
+        // Interrupt-driven only — no DMA resource fields. Kernel clock source
+        // is selected per bridge by the SDK HAL (USART7/PCLK0, USART8/PCLK2).
+        // Note UART8 (PC6/PC7, AF9) shares its pins with UART6 (AF8).
+        .identifier = SERIAL_PORT_USART7,
+        .reg = (usartResource_t *)USART7,
+        .rxPins = { { DEFIO_TAG_E(PC3) } },
+        .txPins = { { DEFIO_TAG_E(PC2) } },
+        .af = GPIO_AF9_USART7,
+        .rcc = RCC_APB0(USART7),
+        .irqn = USART7_IRQn,
+        .txPriority = NVIC_PRIO_SERIALUART7_TXDMA,
+        .rxPriority = NVIC_PRIO_SERIALUART7,
+        .txBuffer = uart7TxBuffer,
+        .rxBuffer = uart7RxBuffer,
+        .txBufferSize = sizeof(uart7TxBuffer),
+        .rxBufferSize = sizeof(uart7RxBuffer),
+    },
+#endif
+
+#ifdef USE_UART8
+    {
+        .identifier = SERIAL_PORT_USART8,
+        .reg = (usartResource_t *)USART8,
+        .rxPins = { { DEFIO_TAG_E(PC7) } },
+        .txPins = { { DEFIO_TAG_E(PC6) } },
+        .af = GPIO_AF9_USART8,
+        .rcc = RCC_APB2(USART8),
+        .irqn = USART8_IRQn,
+        .txPriority = NVIC_PRIO_SERIALUART8_TXDMA,
+        .rxPriority = NVIC_PRIO_SERIALUART8,
+        .txBuffer = uart8TxBuffer,
+        .rxBuffer = uart8RxBuffer,
+        .txBufferSize = sizeof(uart8TxBuffer),
+        .rxBufferSize = sizeof(uart8RxBuffer),
+    },
+#endif
 };
 
 #endif // USE_UART

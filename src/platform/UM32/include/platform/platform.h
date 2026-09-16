@@ -130,11 +130,11 @@
 
 #define I2CDEV_COUNT 1
 #define SPIDEV_COUNT 4
-#define QUADSPIDEV_COUNT 1
+// #define QUADSPIDEV_COUNT 1
 
 #define I2C_TRAIT_HANDLE 1
 #define SPI_TRAIT_HANDLE 1
-#define QSPI_TRAIT_HANDLE 1
+// #define QSPI_TRAIT_HANDLE 1
 
 //UART
 #define UART_TX_BUFFER_ATTRIBUTE 
@@ -246,14 +246,23 @@ typedef UART_EX_HandleTypeDef   UART_HandleTypeDef;
 #define HAL_TIM_DMAError                TIM_DMAError
 
 #define UART_IT_TXE               UART_EX_IT_ETBEI
-#define USART_TypeDef             UART_EX_TypeDef
+// Do NOT alias USART_TypeDef to UART_EX_TypeDef here: the CMSIS device header
+// uses the real USART_TypeDef for the SAM-style USART7/8 IP (CR/MR/IER/IDR/IMR/
+// CSR/RHR/THR/BRGR), a different register layout from UART1-6's UART_EX. The
+// SDK um324xx_hal_usart.c driver and the USART7 glue in serial_uart_hal.c rely
+// on the genuine type. Legacy UART register access goes through UART_EX below.
 
 #define USART1_IRQHandler         UART1_IRQHandler
 #define USART2_IRQHandler         UART2_IRQHandler
 #define USART3_IRQHandler         UART3_IRQHandler
 #define USART6_IRQHandler         UART6_IRQHandler
+// The generic serial layer names the handlers UART7/UART8_IRQHandler; the
+// vector table slots for the SAM-style USART IP are USART7/USART8_IRQHandler
+// (positions 76/77).
+#define UART7_IRQHandler          USART7_IRQHandler
+#define UART8_IRQHandler          USART8_IRQHandler
 
-#define UART_REG_RXD(base) (((USART_TypeDef *)(base))->RBR)
-#define UART_REG_TXD(base) (((USART_TypeDef *)(base))->THR)
+#define UART_REG_RXD(base) (((UART_EX_TypeDef *)(base))->RBR)
+#define UART_REG_TXD(base) (((UART_EX_TypeDef *)(base))->THR)
 
 

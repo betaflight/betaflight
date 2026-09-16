@@ -39,6 +39,8 @@
 #define USE_UART4
 #define USE_UART5
 #define USE_UART6
+#define USE_UART7
+#define USE_UART8
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff

@@ -61,6 +61,8 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     // { DMA_PERIPH_SPI_SDI,  SPIDEV_3,  NON_DMA },
     { DMA_PERIPH_SPI_SDO,  SPIDEV_3,  { DMA(1, 5, 6), DMA(1, 7, 6) } },
     { DMA_PERIPH_SPI_SDI,  SPIDEV_3,  { DMA(1, 0, 7), DMA(1, 2, 7) } },
+    { DMA_PERIPH_SPI_SDO,  SPIDEV_4,  { DMA(2, 9, 6) } },
+    { DMA_PERIPH_SPI_SDI,  SPIDEV_4,  { DMA(2, 8, 7) } },
 #endif // USE_SPI
 #ifdef USE_ADC
     { DMA_PERIPH_ADC,     ADCDEV_1,  { DMA(2, 0, 0), DMA(2, 4, 0) } },
