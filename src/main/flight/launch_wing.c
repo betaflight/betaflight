@@ -36,6 +36,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/autopilot.h"
+#include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -56,6 +57,8 @@
 #define LAUNCH_GRAVITY_CMSS         980.665f
 #define LAUNCH_STATIONARY_SPEED_CMS 50
 #define LAUNCH_STATIONARY_ACC_BAND  0.15f
+#define LAUNCH_STATIONARY_GYRO_DPS  25.0f
+#define LAUNCH_STATIONARY_VARIO_CMS 100.0f
 #define LAUNCH_MIN_SATS             5
 
 typedef struct {
@@ -76,6 +79,16 @@ static void setState(launchWingState_e state, timeUs_t currentTimeUs)
     launchWing.stateEnteredAtUs = currentTimeUs;
 }
 
+// Every exit from launch control hands the aircraft straight back. pidLevel and
+// mixTable keep blending on the handover factor until the mode bit clears on
+// the next rx cycle, so a partial factor would leave the pilot fighting a stale
+// launch demand for that window.
+static void endLaunch(launchWingState_e terminalState)
+{
+    launchWing.state = terminalState;
+    launchWing.handover = 1.0f;
+}
+
 static float elapsedMs(timeUs_t currentTimeUs)
 {
     return cmpTimeUs(currentTimeUs, launchWing.stateEnteredAtUs) * 1e-3f;
@@ -94,6 +107,16 @@ static float rampProgress(timeUs_t currentTimeUs, float durationMs)
 static bool isStationary(void)
 {
     if (fabsf(acc.accMagnitude - 1.0f) > LAUNCH_STATIONARY_ACC_BAND) {
+        return false;
+    }
+    // Specific force alone cannot separate sitting on the ground from a steady
+    // glide, so every other motion signal the airframe has must agree too.
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        if (fabsf(gyro.gyroADCf[axis]) > LAUNCH_STATIONARY_GYRO_DPS) {
+            return false;
+        }
+    }
+    if (isAltitudeAvailable() && fabsf(getAltitudeDerivative()) > LAUNCH_STATIONARY_VARIO_CMS) {
         return false;
     }
 #ifdef USE_GPS
@@ -191,7 +214,7 @@ void launchWingDisarm(void)
 void launchWingSwitchOff(void)
 {
     if (launchWingIsActive()) {
-        launchWing.state = LAUNCH_WING_ABORTED;
+        endLaunch(LAUNCH_WING_ABORTED);
     }
 }
 
@@ -242,9 +265,12 @@ void launchWingUpdate(timeUs_t currentTimeUs)
     const float launchThrottle = cfg->throttlePercent * 0.01f;
     const float climbAngleDeg = cfg->climbAngleDeg;
 
-    if (!FLIGHT_MODE(LAUNCH_MODE)) {
+    // Failsafe is checked here as well as in the mode gate: the gate only
+    // re-evaluates on the rx task, and the launch must not keep commanding
+    // throttle and attitude over the failsafe procedure in the meantime.
+    if (!FLIGHT_MODE(LAUNCH_MODE) || failsafeIsActive()) {
         if (launchWing.state != LAUNCH_WING_IDLE && !launchWingIsTerminal()) {
-            launchWing.state = LAUNCH_WING_ABORTED;
+            endLaunch(LAUNCH_WING_ABORTED);
         }
         return;
     }
@@ -300,7 +326,7 @@ void launchWingUpdate(timeUs_t currentTimeUs)
         launchWing.throttle = idleThrottle;
         launchWing.pitchTargetDeg = climbAngleDeg;
         if (abortRequested(currentTimeUs)) {
-            launchWing.state = LAUNCH_WING_ABORTED;
+            endLaunch(LAUNCH_WING_ABORTED);
         } else if (elapsedMs(currentTimeUs) >= cfg->motorDelayMs) {
             setState(LAUNCH_WING_SPINUP, currentTimeUs);
         }
@@ -311,7 +337,7 @@ void launchWingUpdate(timeUs_t currentTimeUs)
         const float k = rampProgress(currentTimeUs, cfg->spinupTimeMs);
         launchWing.throttle = idleThrottle + (launchThrottle - idleThrottle) * k;
         if (abortRequested(currentTimeUs)) {
-            launchWing.state = LAUNCH_WING_ABORTED;
+            endLaunch(LAUNCH_WING_ABORTED);
         } else if (k >= 1.0f) {
             setState(LAUNCH_WING_IN_PROGRESS, currentTimeUs);
         }
@@ -322,7 +348,7 @@ void launchWingUpdate(timeUs_t currentTimeUs)
         launchWing.throttle = launchThrottle;
         launchWing.pitchTargetDeg = climbAngleDeg;
         if (abortRequested(currentTimeUs)) {
-            launchWing.state = LAUNCH_WING_ABORTED;
+            endLaunch(LAUNCH_WING_ABORTED);
         } else if (maxAltitudeReached()
             || (cfg->timeoutMs > 0 && elapsedMs(currentTimeUs) >= cfg->timeoutMs)) {
             setState(LAUNCH_WING_FINISH, currentTimeUs);
@@ -338,7 +364,7 @@ void launchWingUpdate(timeUs_t currentTimeUs)
         launchWing.handover = rampProgress(currentTimeUs, cfg->endTimeMs);
         // Any stick input ends the handover early - the pilot has taken over.
         if (launchWing.handover >= 1.0f || sticksMoved()) {
-            launchWing.state = LAUNCH_WING_FLYING;
+            endLaunch(LAUNCH_WING_FLYING);
         }
         break;
 
@@ -349,7 +375,9 @@ void launchWingUpdate(timeUs_t currentTimeUs)
 
     if (launchWingIsActive()) {
         autopilotAngle[AI_ROLL] = 0.0f;
-        autopilotAngle[AI_PITCH] = launchWing.pitchTargetDeg;
+        // pitchTargetDeg is the user-facing climb angle, positive nose-up; the
+        // angle target convention is positive nose-down.
+        autopilotAngle[AI_PITCH] = -launchWing.pitchTargetDeg;
     }
 
     DEBUG_SET(DEBUG_LAUNCH, 0, launchWing.state);

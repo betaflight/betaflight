@@ -250,6 +250,7 @@ static bool accNeedsCalibration(void)
             isModeActivationConditionPresent(BOXALTHOLD) ||
             isModeActivationConditionPresent(BOXPOSHOLD) ||
             isModeActivationConditionPresent(BOXGPSRESCUE) ||
+            isModeActivationConditionPresent(BOXLAUNCH) ||
             isModeActivationConditionPresent(BOXCAMSTAB) ||
             isModeActivationConditionPresent(BOXCALIB) ||
             isModeActivationConditionPresent(BOXACROTRAINER)) {
@@ -847,9 +848,10 @@ bool processRx(timeUs_t currentTimeUs)
 
     // Note: If Airmode is enabled, on arming, iTerm and PIDs will be off until throttle exceeds the threshold (OFF while disarmed)
     // If not, iTerm will be off at low throttle, with pidStabilisationState determining whether PIDs will be active
-    if (ARMING_FLAG(ARMED) && (isAirmodeActive || throttleActive || launchControlActive || isFixedWing())
-        && !launchWingHoldsIterm()) {
-        pidSetItermReset(false);
+    if (ARMING_FLAG(ARMED) && (isAirmodeActive || throttleActive || launchControlActive || isFixedWing())) {
+        // the wing launch holds iTerm off until spin-up, but must keep the rest
+        // of the stabilisation running through the motor delay
+        pidSetItermReset(launchWingHoldsIterm());
         pidStabilisationState(PID_STABILISATION_ON);
     } else {
         pidSetItermReset(true);

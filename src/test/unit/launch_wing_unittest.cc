@@ -62,6 +62,8 @@ extern "C" {
     bool testAccPresent = true;
     bool testAltitudeAvailable = true;
     float testAltitudeCm = 0.0f;
+    float testAltitudeDerivative = 0.0f;
+    bool testFailsafeActive = false;
 
     float getCosTiltAngle(void) { return testCosTilt; }
     float getRcDeflectionAbs(int axis) { return testRcDeflection[axis]; }
@@ -70,6 +72,8 @@ extern "C" {
     bool sensors(uint32_t mask) { return (mask == SENSOR_ACC) ? testAccPresent : true; }
     bool isAltitudeAvailable(void) { return testAltitudeAvailable; }
     float getAltitudeCm(void) { return testAltitudeCm; }
+    float getAltitudeDerivative(void) { return testAltitudeDerivative; }
+    bool failsafeIsActive(void) { return testFailsafeActive; }
     bool IS_RC_MODE_ACTIVE(boxId_e boxId) { return boxId == BOXLAUNCH && testLaunchBoxActive; }
 
     int testTpaSpeedResets = 0;
@@ -95,6 +99,8 @@ static void setQuiescent(void)
     acc.accADC.y = 0.0f;
     acc.accADC.z = 1.0f;
     acc.accMagnitude = 1.0f;
+    gyro.gyroADCf[FD_ROLL] = 0.0f;
+    gyro.gyroADCf[FD_PITCH] = 0.0f;
     gyro.gyroADCf[FD_YAW] = 0.0f;
     testCosTilt = 1.0f;
     testRcDeflection[FD_ROLL] = 0.0f;
@@ -104,7 +110,9 @@ static void setQuiescent(void)
     gpsSol.groundSpeed = 0;
     stateFlags = 0;
     testAltitudeCm = 0.0f;
+    testAltitudeDerivative = 0.0f;
     testAltitudeAvailable = true;
+    testFailsafeActive = false;
 }
 
 static void resetForTest(void)
@@ -246,12 +254,12 @@ TEST(LaunchWingTest, IdleRampReachesIdleThrottleAndClimbAngle)
 
     t = run(t, 750);    // halfway through the 1500 ms ramp
     EXPECT_NEAR(idle * 0.5f, launchWingGetThrottle(), idle * 0.1f);
-    EXPECT_NEAR(launchWingConfig()->climbAngleDeg * 0.5f, autopilotAngle[AI_PITCH], 2.0f);
+    EXPECT_NEAR(launchWingConfig()->climbAngleDeg * -0.5f, autopilotAngle[AI_PITCH], 2.0f);
 
     t = run(t, 800);
     EXPECT_EQ(LAUNCH_WING_WAIT_DETECTION, launchWingGetState());
     EXPECT_FLOAT_EQ(idle, launchWingGetThrottle());
-    EXPECT_FLOAT_EQ((float)launchWingConfig()->climbAngleDeg, autopilotAngle[AI_PITCH]);
+    EXPECT_FLOAT_EQ(-(float)launchWingConfig()->climbAngleDeg, autopilotAngle[AI_PITCH]);
     EXPECT_FLOAT_EQ(0.0f, autopilotAngle[AI_ROLL]);
 }
 
@@ -404,7 +412,7 @@ TEST(LaunchWingTest, MotorDelayThenSpinupThenClimbOut)
     t = run(t, launchWingConfig()->spinupTimeMs + 5);
     EXPECT_EQ(LAUNCH_WING_IN_PROGRESS, launchWingGetState());
     EXPECT_FLOAT_EQ(launch, launchWingGetThrottle());
-    EXPECT_FLOAT_EQ((float)launchWingConfig()->climbAngleDeg, autopilotAngle[AI_PITCH]);
+    EXPECT_FLOAT_EQ(-(float)launchWingConfig()->climbAngleDeg, autopilotAngle[AI_PITCH]);
 }
 
 TEST(LaunchWingTest, ItermIsHeldUntilSpinup)
@@ -598,4 +606,91 @@ TEST(LaunchWingTest, SwitchOffAbortsFromAnyActiveState)
     // and is a no-op once terminal
     launchWingSwitchOff();
     EXPECT_EQ(LAUNCH_WING_ABORTED, launchWingGetState());
+}
+
+TEST(LaunchWingTest, ClimbAngleIsCommandedNoseUp)
+{
+    resetForTest();
+    timeUs_t t = run(0, 1);
+    t = reachWaitDetection(t);
+
+    // autopilotAngle is positive nose-down, so a climb must be negative
+    EXPECT_LT(autopilotAngle[AI_PITCH], 0.0f);
+    EXPECT_FLOAT_EQ(-(float)launchWingConfig()->climbAngleDeg, autopilotAngle[AI_PITCH]);
+}
+
+TEST(LaunchWingTest, LatchRejectsMotionWithoutGps)
+{
+    resetForTest();
+
+    // rotating at 1 g: a steady glide looks stationary to the accelerometer alone
+    setQuiescent();
+    gyro.gyroADCf[FD_PITCH] = 60.0f;
+    launchWingArm();
+    EXPECT_FALSE(launchWingLatched());
+
+    // descending at 1 g
+    setQuiescent();
+    testAltitudeDerivative = -250.0f;
+    launchWingArm();
+    EXPECT_FALSE(launchWingLatched());
+
+    setQuiescent();
+    launchWingArm();
+    EXPECT_TRUE(launchWingLatched());
+}
+
+TEST(LaunchWingTest, FailsafeAbortsTheLaunch)
+{
+    resetForTest();
+    timeUs_t t = run(0, 1);
+    t = reachWaitDetection(t);
+    setBungeeThrow();
+    t = run(t, 41);
+    t = run(t, launchWingConfig()->motorDelayMs + launchWingConfig()->spinupTimeMs + 10);
+    ASSERT_EQ(LAUNCH_WING_IN_PROGRESS, launchWingGetState());
+
+    // the mode bit only clears on the next rx cycle, so the launch must stand
+    // down on the failsafe itself
+    testFailsafeActive = true;
+    t = run(t, 1);
+    EXPECT_EQ(LAUNCH_WING_ABORTED, launchWingGetState());
+    EXPECT_FALSE(launchWingThrottleValid());
+}
+
+TEST(LaunchWingTest, EveryExitHandsBackFully)
+{
+    // pidLevel and mixTable blend on the handover factor until the mode bit
+    // clears, so a launch that ends early must not leave it part-way
+    resetForTest();
+    timeUs_t t = run(0, 1);
+    t = reachWaitDetection(t);
+    setBungeeThrow();
+    t = run(t, 41);
+    t = run(t, launchWingConfig()->motorDelayMs + launchWingConfig()->spinupTimeMs + 10);
+    ASSERT_EQ(LAUNCH_WING_IN_PROGRESS, launchWingGetState());
+    ASSERT_FLOAT_EQ(0.0f, launchWingHandoverFactor());
+
+    testRcDeflection[FD_PITCH] = 1.0f;
+    t = run(t, 1);
+    ASSERT_EQ(LAUNCH_WING_ABORTED, launchWingGetState());
+    EXPECT_FLOAT_EQ(1.0f, launchWingHandoverFactor());
+
+    // and the same for a stick abort part-way through the cross-fade
+    resetForTest();
+    t = run(0, 1);
+    t = reachWaitDetection(t);
+    setBungeeThrow();
+    t = run(t, 41);
+    t = run(t, launchWingConfig()->motorDelayMs + launchWingConfig()->spinupTimeMs + 10);
+    t = run(t, launchWingConfig()->timeoutMs + 5);
+    ASSERT_EQ(LAUNCH_WING_FINISH, launchWingGetState());
+    t = run(t, launchWingConfig()->endTimeMs / 4);
+    ASSERT_EQ(LAUNCH_WING_FINISH, launchWingGetState());
+    ASSERT_LT(launchWingHandoverFactor(), 0.5f);
+
+    testRcDeflection[FD_PITCH] = 1.0f;
+    t = run(t, 1);
+    EXPECT_EQ(LAUNCH_WING_FLYING, launchWingGetState());
+    EXPECT_FLOAT_EQ(1.0f, launchWingHandoverFactor());
 }
