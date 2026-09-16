@@ -228,8 +228,9 @@ TEST(BlackboxTest, Test_zero_p_interval)
 
 TEST(BlackboxTest, Test_sample_rate_out_of_range)
 {
-    // sample_rate arrives unvalidated over MSP and is indexed into the CMS and CLI rate
-    // tables, so an out of range value has to be clamped, not just shifted
+    // sample_rate arrives unvalidated over MSP and is indexed into the CMS rate table
+    // with no bounds check, so an out of range value has to be clamped, not just shifted.
+    // The CLI bounds checks the same value and reports it as corrupted instead.
     blackboxConfigMutable()->sample_rate = 255;
     // 1kHz PIDloop
     targetPidLooptime = 1000;
