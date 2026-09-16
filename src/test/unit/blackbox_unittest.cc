@@ -221,6 +221,21 @@ TEST(BlackboxTest, Test_zero_p_interval)
     blackboxAdvanceIterationTimers();
     EXPECT_TRUE(blackboxShouldLogIFrame());
     EXPECT_FALSE(blackboxShouldLogPFrame());
+
+    // the I-frame-only state must be reportable without dividing by the zero P interval
+    EXPECT_EQ(0, blackboxGetPRatio());
+}
+
+TEST(BlackboxTest, Test_zero_p_interval_sample_rate_out_of_range)
+{
+    // sample_rate arrives unvalidated over MSP, so it must not shift out of range
+    blackboxConfigMutable()->sample_rate = 255;
+    // 250Hz PIDloop
+    targetPidLooptime = 4000;
+    blackboxInit();
+    EXPECT_EQ(8, blackboxIInterval);
+    EXPECT_EQ(0, blackboxPInterval);
+    EXPECT_EQ(0, blackboxGetPRatio());
 }
 
 TEST(BlackboxTest, Test_CalculatePDenom)
@@ -262,6 +277,36 @@ TEST(BlackboxTest, Test_CalculatePDenom)
     EXPECT_EQ(64, blackboxCalculatePDenom(1, 4));
     EXPECT_EQ(32, blackboxCalculatePDenom(1, 8)); // 1kHz logging
     EXPECT_EQ(16, blackboxCalculatePDenom(1, 16));
+}
+
+TEST(BlackboxTest, Test_CalculatePDenom_zero_rate)
+{
+    blackboxConfigMutable()->sample_rate = 0;
+    // 1kHz PIDloop
+    targetPidLooptime = 1000;
+    blackboxInit();
+    EXPECT_EQ(32, blackboxIInterval);
+
+    // a legacy MSP_SET_BLACKBOX_CONFIG payload carries rate_num and rate_denom unvalidated
+    EXPECT_EQ(0, blackboxCalculatePDenom(1, 0));
+    EXPECT_EQ(0, blackboxCalculatePDenom(0, 0));
+    // rate_num of 0 was the legacy way of asking for I frames only
+    EXPECT_EQ(0, blackboxCalculatePDenom(0, 1));
+}
+
+TEST(BlackboxTest, Test_CalculateSampleRate_zero_p_ratio)
+{
+    // 1kHz PIDloop
+    targetPidLooptime = 1000;
+    // p_ratio of 0 was the legacy sentinel for logging I frames only
+    EXPECT_EQ(BLACKBOX_SAMPLE_RATE_MAX, blackboxCalculateSampleRate(0));
+    // and the result always has to stay a selectable blackbox_sample_rate
+    EXPECT_LE(blackboxCalculateSampleRate(1), BLACKBOX_SAMPLE_RATE_MAX);
+
+    // 8kHz PIDloop
+    targetPidLooptime = 125;
+    EXPECT_EQ(BLACKBOX_SAMPLE_RATE_MAX, blackboxCalculateSampleRate(0));
+    EXPECT_LE(blackboxCalculateSampleRate(1), BLACKBOX_SAMPLE_RATE_MAX);
 }
 
 TEST(BlackboxTest, Test_CalculateRates)
