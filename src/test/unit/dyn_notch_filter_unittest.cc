@@ -18,21 +18,20 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+extern "C" {
+#include "flight/dyn_notch_filter.h"
+}
 
-#include <stdbool.h>
+#include "gtest/gtest.h"
 
-#include "common/time.h"
+TEST(DynNotchFilterUnittest, TestUpdateRateBoundary)
+{
+    // 499us ~= 2004Hz: above the minimum update rate.
+    EXPECT_TRUE(dynNotchUpdateRateSupported(499));
 
-#include "pg/dyn_notch.h"
+    // 500us = exactly 2000Hz: the regression case, must remain enabled.
+    EXPECT_TRUE(dynNotchUpdateRateSupported(500));
 
-#define DYN_NOTCH_COUNT_MAX 7
-
-void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t looptimeUs);
-void dynNotchPush(const int axis, const float sample);
-void dynNotchUpdate(void);
-float dynNotchFilter(const int axis, float value);
-bool isDynNotchActive(void);
-int getMaxFFT(void);
-void resetMaxFFT(void);
-bool dynNotchUpdateRateSupported(const timeUs_t looptimeUs);
+    // 501us ~= 1996Hz: below the minimum update rate.
+    EXPECT_FALSE(dynNotchUpdateRateSupported(501));
+}
