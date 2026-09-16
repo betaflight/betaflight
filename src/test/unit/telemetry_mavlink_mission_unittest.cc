@@ -218,13 +218,26 @@ TEST_F(MavlinkMissionTest, UploadRejectedWhileAutopilotActive)
     EXPECT_EQ(countOfType(MAVLINK_MSG_ID_MISSION_REQUEST_INT), 0);
 }
 
+static waypoint_t makeWaypoint(int32_t lat, int32_t lon, int32_t altCm, uint8_t type,
+                               uint8_t pattern = WAYPOINT_PATTERN_NONE, uint16_t durationDs = 0)
+{
+    waypoint_t wp = {};
+    wp.latitude = lat;
+    wp.longitude = lon;
+    wp.altitude = altCm;
+    wp.duration = durationDs;
+    wp.type = type;
+    wp.pattern = pattern;
+    return wp;
+}
+
 TEST_F(MavlinkMissionTest, DownloadEncodesWaypointsRoundTrip)
 {
     flightPlanConfig_t *plan = flightPlanConfigMutable();
     plan->waypointCount = 3;
-    plan->waypoints[0] = { 100, 200, 1200, 0, 0, WAYPOINT_TYPE_TAKEOFF, WAYPOINT_PATTERN_NONE };
-    plan->waypoints[1] = { 300, 400, 2000, 0, 300 /* 30 s */, WAYPOINT_TYPE_HOLD, WAYPOINT_PATTERN_ORBIT };
-    plan->waypoints[2] = { 500, 600, 0, 0, 0, WAYPOINT_TYPE_LAND, WAYPOINT_PATTERN_NONE };
+    plan->waypoints[0] = makeWaypoint(100, 200, 1200, WAYPOINT_TYPE_TAKEOFF);
+    plan->waypoints[1] = makeWaypoint(300, 400, 2000, WAYPOINT_TYPE_HOLD, WAYPOINT_PATTERN_ORBIT, 300 /* 30 s */);
+    plan->waypoints[2] = makeWaypoint(500, 600, 0, WAYPOINT_TYPE_LAND);
 
     // REQUEST_LIST -> COUNT.
     mavlink_message_t list;

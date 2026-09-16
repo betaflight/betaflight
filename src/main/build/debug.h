@@ -210,6 +210,7 @@ typedef enum {
     DEBUG_PITOT,
     DEBUG_POSITION_EST,
     DEBUG_AUTOPILOT_HEADING,
+    DEBUG_RX_REDPINE_SPI,
     DEBUG_COUNT
 } debugType_e;
 
