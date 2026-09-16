@@ -72,6 +72,75 @@ protected:
     }
 };
 
+// --- Vertical channel: rate-limited ramp, not a stepped altitude target ---
+
+TEST_F(PositionNavTest, VerticalProfileSeedsTheCommandedRateBeforeAnyUpdate)
+{
+    const vector3_t target = {{ 0.0f, 0.0f, 30.0f }};   // 30 m above the craft
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, true, NULL, NULL);
+    positionNavSetVerticalProfile(1.5f, 0.0f);
+
+    // The altitude controller's feedforward is consumed by a task that can run before the next
+    // positionNavUpdate(): it must already see the rate this leg is climbing at, and an altitude
+    // target still at the craft rather than 30 m above it.
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().z, 150.0f, 1.0f);
+    EXPECT_NEAR(positionNavGetTargetAltitudeCm(), 0.0f, 0.1f);
+    EXPECT_NEAR(positionNavGetVerticalRateLimitCmS(), 150.0f, 0.1f);
+}
+
+TEST_F(PositionNavTest, VerticalProfileRampsTheAltitudeTargetAtTheCommandedRate)
+{
+    const vector3_t target = {{ 0.0f, 0.0f, 30.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, true, NULL, NULL);
+    positionNavSetVerticalProfile(1.5f, 0.0f);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 150.0f);
+    float previousAltCm = positionNavGetTargetAltitudeCm();
+    for (int i = 0; i < 20; i++) {
+        est.position.z += 15.0f;                 // craft climbing at the commanded 1.5 m/s
+        positionNavUpdate(0.1f, &est);
+        const float altCm = positionNavGetTargetAltitudeCm();
+        EXPECT_LE(altCm - previousAltCm, 15.1f); // never more than rate * dt in one cycle
+        EXPECT_LE(altCm - est.position.z, 151.0f); // and never leads the craft by more than the leash
+        previousAltCm = altCm;
+    }
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().z, 150.0f, 1.0f);
+}
+
+TEST_F(PositionNavTest, VerticalProfileGovernsDescentRateToADeepTarget)
+{
+    // The landing target sits far below ground so vertical arrival never triggers; the descent is
+    // governed by the leg's rate, not by how deep that target is.
+    const vector3_t target = {{ 0.0f, 0.0f, -200.0f }};
+    positionNavSetTargetEf(&target, 1.0f, 1.0f, 0.1f, true, NULL, NULL);
+    positionNavSetVerticalProfile(1.0f, 50.0f);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 5000.0f, -100.0f);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().z, -100.0f, 1.0f);
+    for (int i = 0; i < 10; i++) {
+        est.position.z -= 10.0f;
+        positionNavUpdate(0.1f, &est);
+        EXPECT_NEAR(positionNavGetTargetVelocityCmS().z, -100.0f, 1.0f);
+        EXPECT_LE(est.position.z - positionNavGetTargetAltitudeCm(), 101.0f);
+    }
+}
+
+TEST_F(PositionNavTest, ClimbDoesNotRobTheHorizontalCruiseSpeed)
+{
+    // Horizontal and vertical are separate budgets: a steep leg flies its cruise speed and climbs
+    // at its own rate, instead of splitting one 3D speed between the two.
+    const vector3_t target = {{ 100.0f, 0.0f, 50.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, true, NULL, NULL);
+    positionNavSetVerticalProfile(2.0f, 0.0f);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f);
+    positionNavUpdate(0.1f, &est);
+
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
+    EXPECT_NEAR(vel.x, 500.0f, 1.0f);
+    EXPECT_NEAR(vel.z, 200.0f, 1.0f);
+}
+
 // --- Direction correctness ---
 
 TEST_F(PositionNavTest, EastTargetProducesEastwardVelocity)

@@ -658,6 +658,7 @@ flight_plan_nav_unittest_DEFINES := \
 		USE_GPS= \
 		USE_GPS_RESCUE= \
 		USE_FLIGHT_PLAN= \
+		USE_ALTITUDE_HOLD= \
 		ENABLE_FLIGHT_PLAN=1
 
 flight_plan_capture_unittest_SRC := \
@@ -683,6 +684,7 @@ flight_plan_rescue_unittest_DEFINES := \
 		USE_GPS= \
 		USE_GPS_RESCUE= \
 		USE_FLIGHT_PLAN= \
+		USE_ALTITUDE_HOLD= \
 		ENABLE_FLIGHT_PLAN=1 \
 		ENABLE_RESCUE_PLAN=1
 

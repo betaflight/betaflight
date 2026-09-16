@@ -39,8 +39,23 @@ typedef struct positionEstimate3d_s {
     bool isValidZ;             // true if at least one Z measurement source active
 } positionEstimate3d_t;
 
+// Consumers of the estimate that are scheduled by it. Each gets its own bit in
+// the pending-update mask so that one taking the event does not hide it from
+// the other.
+typedef enum {
+    POS_EST_CONSUMER_ALTHOLD = 0,
+    POS_EST_CONSUMER_POSHOLD,
+    POS_EST_CONSUMER_COUNT
+} positionEstimatorConsumer_e;
+
 void positionEstimatorInit(void);
 void positionEstimatorUpdate(void);
+
+// Event-driven scheduling hook: positionEstimatorUpdate() publishes one update
+// event per run, and each consumer takes it exactly once. Returns true if a new
+// estimate has been published since this consumer last took one, and clears the
+// consumer's flag.
+bool positionEstimatorTakeUpdate(positionEstimatorConsumer_e consumer);
 
 // Request XY fusion (normally automatic from armed state / sensors / modes).
 // May re-initialize kfEast/kfNorth when transitioning to enabled; disabling stops prediction only.
