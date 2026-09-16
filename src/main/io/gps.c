@@ -1323,7 +1323,8 @@ static void updateDronecanGPS(void)
     nextUpdateTime = gpsData.now + updateInterval;
 
     gpsSolutionData_t incoming;
-    if (!dronecanGnssGetLatest(&incoming)) {
+    bool incomingHasFix = false;
+    if (!dronecanGnssGetLatest(&incoming, &incomingHasFix)) {
         // No Fix2 frame yet; stay in GPS_STATE_INITIALIZED so the generic
         // connection-timeout bookkeeping doesn't start ticking against an
         // offline bus.
@@ -1363,11 +1364,11 @@ static void updateDronecanGPS(void)
     gpsData.lastNavMessage = gpsData.now;
     sensorsSet(SENSOR_GPS);
 
-    if (gpsSol.numSat > 3) {
-        gpsSetFixState(GPS_FIX);
-    } else {
-        gpsSetFixState(0);
-    }
+    // The module's own fix status decides this, not the satellite count: a
+    // receiver can be tracking more than three satellites and still not have
+    // locked a 3D solution, and the count keeps reporting through that so the
+    // user can watch acquisition progress.
+    gpsSetFixState(incomingHasFix);
     GPS_update ^= GPS_DIRECT_TICK;
 
     calculateNavInterval();
