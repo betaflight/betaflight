@@ -250,7 +250,9 @@ static bool accNeedsCalibration(void)
             isModeActivationConditionPresent(BOXALTHOLD) ||
             isModeActivationConditionPresent(BOXPOSHOLD) ||
             isModeActivationConditionPresent(BOXGPSRESCUE) ||
-            isModeActivationConditionPresent(BOXLAUNCH) ||
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+            (isFixedWing() && isModeActivationConditionPresent(BOXLAUNCH)) ||
+#endif
             isModeActivationConditionPresent(BOXCAMSTAB) ||
             isModeActivationConditionPresent(BOXCALIB) ||
             isModeActivationConditionPresent(BOXACROTRAINER)) {
