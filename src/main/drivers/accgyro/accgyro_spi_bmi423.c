@@ -35,8 +35,6 @@
 #include "drivers/system.h"
 #include "drivers/time.h"
 
-#include "sensors/gyro.h"
-
 #define BMI423_MAX_SPI_CLK_HZ 10000000
 #define BMI423_CHIP_ID 0xAB
 
@@ -62,7 +60,8 @@ typedef enum {
 } bmi423Register_e;
 
 typedef enum {
-    BMI423_VAL_FILTER_CONF = 0x0202,       // second-order IIR filters for accelerometer and gyroscope
+    BMI423_VAL_FILTER_CONF_ACC_IIR2 = 0x0002, // second-order accelerometer IIR filter
+    BMI423_VAL_FILTER_CONF_GYR_IIR2 = 0x0200, // second-order gyroscope IIR filter
     BMI423_VAL_ACC_CONF = 0xE03B,         // high-performance, 800Hz, 16g
     BMI423_VAL_GYR_CONF_BASE = 0xE04E,    // high-performance, 6.4kHz, 2000dps
     BMI423_VAL_IO_INT_CTRL = 0x0005,      // INT1 active-high, push-pull, output enabled
@@ -73,6 +72,7 @@ typedef enum {
 } bmi423ConfigValue_e;
 
 typedef enum {
+    BMI423_GYR_BW_AUTO = 0,
     BMI423_GYR_BW_200HZ = 4,
     BMI423_GYR_BW_400HZ = 5,
     BMI423_GYR_BW_800HZ = 6,
@@ -135,21 +135,39 @@ uint8_t bmi423Detect(const extDevice_t *dev)
     return MPU_NONE;
 }
 
-static uint16_t bmi423GyroBandwidth(void)
+static uint16_t bmi423GyroBandwidth(const gyroHardwareLpf_e hardwareLpf)
 {
-    switch (gyroConfig()->gyro_hardware_lpf) {
-    case GYRO_HARDWARE_LPF_OPTION_1:
+    switch (hardwareLpf) {
+    case GYRO_HARDWARE_LPF_NORMAL:
         return BMI423_GYR_BW_200HZ;
+    case GYRO_HARDWARE_LPF_OPTION_1:
+        return BMI423_GYR_BW_400HZ;
     case GYRO_HARDWARE_LPF_OPTION_2:
         return BMI423_GYR_BW_800HZ;
 #ifdef USE_GYRO_DLPF_EXPERIMENTAL
     case GYRO_HARDWARE_LPF_EXPERIMENTAL:
-        return BMI423_GYR_BW_800HZ;
+        // Bandwidth is ignored when the gyroscope IIR filter is bypassed.
+        return BMI423_GYR_BW_AUTO;
 #endif
-    case GYRO_HARDWARE_LPF_NORMAL:
     default:
-        return BMI423_GYR_BW_400HZ;
+        return BMI423_GYR_BW_200HZ;
     }
+}
+
+static uint16_t bmi423FilterConfig(const gyroHardwareLpf_e hardwareLpf)
+{
+    uint16_t filterConfig = BMI423_VAL_FILTER_CONF_ACC_IIR2 | BMI423_VAL_FILTER_CONF_GYR_IIR2;
+
+#ifdef USE_GYRO_DLPF_EXPERIMENTAL
+    if (hardwareLpf == GYRO_HARDWARE_LPF_EXPERIMENTAL) {
+        // FILTER_CONF.gyr_filter_type = 0 bypasses the gyroscope IIR filter.
+        filterConfig &= ~BMI423_VAL_FILTER_CONF_GYR_IIR2;
+    }
+#else
+    UNUSED(hardwareLpf);
+#endif
+
+    return filterConfig;
 }
 
 static void bmi423Config(gyroDev_t *gyro)
@@ -162,15 +180,20 @@ static void bmi423Config(gyroDev_t *gyro)
     // Betaflight consumes signed 16-bit samples, so select the sensor's legacy
     // representation before configuring the 16g/2000dps ranges.
     bmi423RegisterWrite(dev, BMI423_REG_LEGACY_CONF, BMI423_VAL_LEGACY_CONF, 1);
-    bmi423RegisterWrite(dev, BMI423_REG_FILTER_CONF, BMI423_VAL_FILTER_CONF, 1);
+
+    const uint16_t filterConfig = bmi423FilterConfig(gyro->hardware_lpf);
+
+    // FILTER_CONF settings are latched separately by the next write to each
+    // sensor's configuration register (BMI423 datasheet section 5.6.3).
+    bmi423RegisterWrite(dev, BMI423_REG_FILTER_CONF, filterConfig, 1);
+    bmi423RegisterWrite(dev, BMI423_REG_ACC_CONF, BMI423_VAL_ACC_CONF, 1);
+    bmi423RegisterWrite(dev, BMI423_REG_FILTER_CONF, filterConfig, 1);
+    bmi423RegisterWrite(dev, BMI423_REG_GYR_CONF,
+        BMI423_VAL_GYR_CONF_BASE | (bmi423GyroBandwidth(gyro->hardware_lpf) << BMI423_GYR_BW_SHIFT), 55);
 
     bmi423RegisterWrite(dev, BMI423_REG_IO_INT_CTRL, BMI423_VAL_IO_INT_CTRL, 1);
     bmi423RegisterWrite(dev, BMI423_REG_INT_CONF, BMI423_VAL_INT_CONF, 1);
     bmi423RegisterWrite(dev, BMI423_REG_INT_MAP_HW, BMI423_VAL_INT_MAP_HW, 1);
-
-    bmi423RegisterWrite(dev, BMI423_REG_ACC_CONF, BMI423_VAL_ACC_CONF, 1);
-    bmi423RegisterWrite(dev, BMI423_REG_GYR_CONF,
-        BMI423_VAL_GYR_CONF_BASE | (bmi423GyroBandwidth() << BMI423_GYR_BW_SHIFT), 55);
 }
 
 static void bmi423DecodeSample(const uint8_t *data, int16_t sample[XYZ_AXIS_COUNT])
