@@ -43,6 +43,13 @@ void posHoldInit(void)
 {
 }
 
+bool posHoldUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
+{
+    UNUSED(currentTimeUs);
+    UNUSED(currentDeltaTimeUs);
+    return false;
+}
+
 void updatePosHold(timeUs_t currentTimeUs) {
     UNUSED(currentTimeUs);
 }

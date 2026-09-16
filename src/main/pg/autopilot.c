@@ -75,7 +75,6 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     // Yaw control parameters
     .yawMode = YAW_MODE_VELOCITY,     // Default: follow velocity
     .yawP = 50,                       // 0.5 P gain
-    .yawD = 10,                       // 0.1 D gain
     .maxYawRate = 30,                 // 30 deg/s max
     .minForwardVelocity = 300,        // 3.0 m/s minimum forward velocity (GPS course reliability / stall prevention)
 
