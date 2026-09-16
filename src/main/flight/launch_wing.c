@@ -157,9 +157,9 @@ static bool launchDetected(timeUs_t currentTimeUs)
         && gpsSol.groundSpeed > cfg->detectVelocityCmS && (axG > 0.0f);
 #endif
 
-    DEBUG_SET(DEBUG_LAUNCH, 3, lrintf(axG * 100.0f));
-    DEBUG_SET(DEBUG_LAUNCH, 4, lrintf(swingCmS));
-    DEBUG_SET(DEBUG_LAUNCH, 6, (bungee ? 1 : 0) | (swing ? 2 : 0) | (forward ? 4 : 0));
+    DEBUG_SET(DEBUG_LAUNCH, 3, lrintf(axG * 100.0f));                //!< Forward Acceleration [unit:0.01g]
+    DEBUG_SET(DEBUG_LAUNCH, 4, lrintf(swingCmS));                    //!< Swing Speed [unit:cm/s]
+    DEBUG_SET(DEBUG_LAUNCH, 6, (bungee ? 1 : 0) | (swing ? 2 : 0) | (forward ? 4 : 0));  //!< Launch Detectors [flags:Bungee|Swing|Ground Speed]
     UNUSED(currentTimeUs);
 
     return bungee || swing || forward;
@@ -380,10 +380,10 @@ void launchWingUpdate(timeUs_t currentTimeUs)
         autopilotAngle[AI_PITCH] = -launchWing.pitchTargetDeg;
     }
 
-    DEBUG_SET(DEBUG_LAUNCH, 0, launchWing.state);
-    DEBUG_SET(DEBUG_LAUNCH, 1, lrintf(launchWing.pitchTargetDeg * 10.0f));
-    DEBUG_SET(DEBUG_LAUNCH, 2, lrintf(launchWing.throttle * 1000.0f));
-    DEBUG_SET(DEBUG_LAUNCH, 5, lrintf(launchWing.handover * 1000.0f));
+    DEBUG_SET(DEBUG_LAUNCH, 0, launchWing.state);                            //!< Launch State [enum:launchWingState_e]
+    DEBUG_SET(DEBUG_LAUNCH, 1, lrintf(launchWing.pitchTargetDeg * 10.0f));   //!< Climb Angle Target [unit:0.1deg]
+    DEBUG_SET(DEBUG_LAUNCH, 2, lrintf(launchWing.throttle * 1000.0f));       //!< Launch Throttle [unit:0.001]
+    DEBUG_SET(DEBUG_LAUNCH, 5, lrintf(launchWing.handover * 1000.0f));       //!< Pilot Handover [unit:0.001]
 }
 
 #endif // USE_WING && USE_LAUNCH_WING
