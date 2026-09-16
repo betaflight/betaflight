@@ -32,7 +32,6 @@
 
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
-#include "flight/flight_plan_nav.h"
 #include "flight/position.h"
 #include "flight/position_estimator.h"
 #include "flight/position_nav.h"
@@ -57,16 +56,30 @@ typedef struct {
     float targetVelocity;
     float deadband;
     bool allowStickAdjustment;
+    float emergencyDescentRateCmS;  // > 0 while an emergency descent has been commanded
 } altHoldState_t;
 
 altHoldState_t altHold;
 
-// A rescue in progress substitutes gpsRescueConfig()'s ascend/descend rate for
-// the alt-hold climbRate cap; failsafe auto-landing and pilot alt-hold keep it.
+// The vertical rate alt hold works to when no nav leg is flying: the commanded emergency descent
+// rate if one is running, otherwise the configured climb rate.
 static float altHoldMaxClimbRate(void)
 {
-    const float rescueRate = flightPlanNavGetRescueVerticalRateCmS();
-    return (rescueRate > 0.0f) ? rescueRate : altHold.maxClimbRate;
+    return (altHold.emergencyDescentRateCmS > 0.0f) ? altHold.emergencyDescentRateCmS
+                                                    : altHold.maxClimbRate;
+}
+
+// The configured rate a climb or descent runs at when it does not state its own (cm/s).
+float altHoldGetClimbRateCmS(void)
+{
+    return altHoldConfig()->climbRate * 10.0f;
+}
+
+// Pushed by whoever owns the descent (an emergency rescue descent with no usable XY estimate).
+// Alt hold owns the throttle for it; the caller owns the rate and when it stops.
+void altHoldSetEmergencyDescent(bool active, float rateCmS)
+{
+    altHold.emergencyDescentRateCmS = active ? rateCmS : 0.0f;
 }
 
 static void altHoldReset(void)
@@ -132,8 +145,8 @@ static void altHoldUpdateTargetAltitude(timeUs_t taskIntervalUs)
     // these glitches are minimised  when these transitions are quick
             
     // if failsafe is active, and we get here, we are in failsafe landing mode, it controls throttle.
-    // a switch-invoked rescue that cannot stage or has aborted drives the same descent.
-    if (failsafeIsActive() || flightPlanNavIsRescueDescentActive()) {
+    // a commanded emergency descent (a rescue that cannot stage or has aborted) drives the same descent.
+    if (failsafeIsActive() || altHold.emergencyDescentRateCmS > 0.0f) {
         // descend at up to 10 times faster when high
         // default landing timeout is now 60s; must to get the quad down within this limit
         // need a rapid descent when initiated high, and must slow down closer to ground
@@ -161,23 +174,25 @@ static void altHoldUpdate(timeUs_t taskIntervalUs)
         altHoldUpdateTargetAltitude(taskIntervalUs); // check if the pilot has changed the target altitude using sticks
     }
 
-    float targetAltitudeCm = altHold.targetAltitudeCm; 
+    float targetAltitudeCm = altHold.targetAltitudeCm;
     float targetAltitudeVelocity = altHold.targetVelocity;
+    float velLimitCmS = altHoldMaxClimbRate();
 
+    // A nav leg owns the vertical channel while one is flying. It states the altitude it is
+    // commanding right now (already ramped at the leg's rate), the rate that goes with it, and the
+    // cap on that rate. Nothing here re-derives any of it, or asks what the leg is for.
     if (positionNavHasActiveTarget()) {
         const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
         if (navCmd->includeAltitude) {
-            targetAltitudeCm = navCmd->targetPosEfM.z * 100.0f;
-            if (positionNavTargetReached()) {
-                altHold.targetAltitudeCm = targetAltitudeCm; // store target altitude so Alt Hold does not revert to pre-nav target altitude on the next cycle.
-            targetAltitudeVelocity = 0.0f;
-            } else {
-                 targetAltitudeVelocity = positionNavGetTargetVelocityCmS().z; 
-            }
+            targetAltitudeCm = positionNavGetTargetAltitudeCm();
+            targetAltitudeVelocity = positionNavTargetReached() ? 0.0f : positionNavGetTargetVelocityCmS().z;
+            velLimitCmS = positionNavGetVerticalRateLimitCmS();
+            // track it, so alt hold does not revert to a pre-nav target altitude when the leg ends
+            altHold.targetAltitudeCm = targetAltitudeCm;
         }
     }
 
-    altitudeControl(targetAltitudeCm, taskIntervalUs, targetAltitudeVelocity, altHoldMaxClimbRate());
+    altitudeControl(targetAltitudeCm, taskIntervalUs, targetAltitudeVelocity, velLimitCmS);
 }
 
 bool altHoldUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
