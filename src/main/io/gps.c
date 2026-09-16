@@ -1364,11 +1364,14 @@ static void updateDronecanGPS(void)
     gpsData.lastNavMessage = gpsData.now;
     sensorsSet(SENSOR_GPS);
 
-    // The module's own fix status decides this, not the satellite count: a
-    // receiver can be tracking more than three satellites and still not have
-    // locked a 3D solution, and the count keeps reporting through that so the
-    // user can watch acquisition progress.
-    gpsSetFixState(incomingHasFix);
+    // The module's own status says whether it has a 3D solution; the count is no
+    // longer a proxy for it, because the count now keeps reporting while the
+    // module is still acquiring. Both are required, which is exactly the
+    // condition that held before: numSat was cleared below a 3D fix, so the old
+    // `numSat > 3` test could only pass on a 3D fix with more than three
+    // satellites. Whether the count should still gate the fix at all is a
+    // separate question from reporting it, and is left alone here.
+    gpsSetFixState(incomingHasFix && gpsSol.numSat > 3);
     GPS_update ^= GPS_DIRECT_TICK;
 
     calculateNavInterval();
