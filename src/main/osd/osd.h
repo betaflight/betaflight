@@ -229,6 +229,10 @@ typedef enum {
     OSD_POS_HOLD_READY,         // pre-engagement Position Hold readiness indicator
 #endif
 
+#ifdef USE_PITOT
+    OSD_AIRSPEED,
+#endif
+
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -356,7 +360,7 @@ extern const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT];
 
 typedef struct osdConfig_s {
     // Alarms
-    uint16_t cap_alarm;
+    uint16_t cap_alarm;                     // Legacy fallback when the active battery profile has no capacity set
     uint16_t alt_alarm;
     uint8_t rssi_alarm;
 
@@ -451,6 +455,7 @@ extern uint16_t osdAuxValue;
 void osdInit(displayPort_t *osdDisplayPort, osdDisplayPortDevice_e displayPortDevice);
 bool osdUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
 void osdUpdate(timeUs_t currentTimeUs);
+uint16_t osdGetCapacityAlarm(void);
 
 void osdStatSetState(uint8_t statIndex, bool enabled);
 bool osdStatGetState(uint8_t statIndex);

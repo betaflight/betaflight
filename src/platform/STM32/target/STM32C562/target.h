@@ -56,6 +56,22 @@
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY
 
+// STM32C5 has no SDMMC peripheral -- neither the C5 CMSIS device headers
+// nor the C591/C5A3/C562 datasheets mention SDMMC/SDIO -- so SD cards are
+// supported in SPI mode only.
+//
+// Clock note: the SPI kernel clock is PCLK (see the STM32C5 note in
+// spiInitDevice()) and system_stm32c5xx.c runs PCLK1/2/3 at SYSCLK =
+// 144 MHz, while the SPI master prescaler tops out at /256. So the slowest
+// SCK the hardware can produce is 562.5 kHz, above the 400 kHz ceiling the
+// SD spec sets for card identification. Cards are generally tolerant of
+// this, but a card that refuses to enumerate on C5 while working on other
+// targets is most likely hitting it. The data phase is unaffected: /8 gives
+// 18 MHz, inside the 25 MHz SPI-mode limit.
+#ifdef USE_SDCARD
+#define USE_SDCARD_SPI
+#endif
+
 // Run SPI transfers over LPDMA. Allocated late (after motor timers) so DShot
 // bitbang claims its LPDMA channels first; SPI takes what remains.
 #define USE_SPI_DMA_ENABLE_LATE

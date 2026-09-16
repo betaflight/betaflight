@@ -117,6 +117,8 @@
 #define USE_BARO_SPI_BMP280
 #define USE_BARO_BMP388
 #define USE_BARO_SPI_BMP388
+#define USE_BARO_SPI_BMP580
+#define USE_BARO_SPI_BMP581
 #define USE_BARO_SPI_LPS
 #define USE_BARO_QMP6988
 #define USE_BARO_SPI_QMP6988
@@ -202,9 +204,11 @@
 #define USE_RX_SX127X
 #endif // !USE_RX_SPI
 
+#if TARGET_FLASH_SIZE >= 1024
 #if !defined(USE_EXST) && !defined(USE_SDCARD)
 #define USE_SDCARD
 #endif
+#endif // TARGET_FLASH_SIZE >= 1024
 
 #endif // !defined(USE_CONFIG)
 
@@ -484,7 +488,7 @@
 #if defined(USE_SERIALRX_CRSF)
 
 #define USE_CRSF_V3
-#if defined(USE_TELEMETRY_CRSF) && defined(USE_CRSF_V3)
+#if defined(USE_TELEMETRY_CRSF)
 #define USE_CRSF_ACCGYRO_TELEMETRY
 #endif
 

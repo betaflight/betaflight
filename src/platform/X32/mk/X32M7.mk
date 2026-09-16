@@ -109,7 +109,7 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16
 DEVICE_FLAGS    = -DUSE_STDPERIPH_DRIVER -DSYSCLK_SRC=SYSCLK_USE_HSE_PLL -DUSE_USB_HS_IN_FS -DX32M7
 
 ifeq ($(TARGET_MCU),X32M7B)
-DEVICE_FLAGS    += -DX32M7B -DTCM_SIZE_VALUE=0x03
+DEVICE_FLAGS    += -DX32M7B -DTCM_SIZE_VALUE=0x01
 LD_SCRIPT       = $(LINKER_DIR)/x32_flash_m7b_2m.ld
 STARTUP_SRC     = X32/startup/startup_x32m7b.s
 MCU_FLASH_SIZE  := 2048
@@ -129,7 +129,6 @@ VCP_SRC = \
             X32/usbhs/vcp/usbd_cdc_vcp.c \
             drivers/usb_io.c
 
-# DroneCAN / libcanard — opt in so dronecan.mk wires the stack.
 DRONECAN_LIB_DIR := lib/modules/dronecan/libcanard
 LIB_SUBMODULES   += $(DRONECAN_LIB_DIR)
 

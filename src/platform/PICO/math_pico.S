@@ -19,17 +19,17 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "pico/asm_helper.S"
 
-#include "drivers/rangefinder/rangefinder.h"
+pico_default_asm_setup
 
-#define UPT1_FRAME_PERIOD_MS 20             // 50Hz frame rate, per the module specification
-#define RANGEFINDER_UPT1_TASK_PERIOD_MS UPT1_FRAME_PERIOD_MS
+.section .text.mathfunctions, "ax"
 
-bool rangefinderUPT1Detect(rangefinderDev_t *dev);
-
-#ifdef USE_OPTICALFLOW
-#include "drivers/opticalflow/opticalflow.h"
-bool upt1OpticalflowDetect(opticalflowDev_t *dev);
-void upt1OpticalflowReceiveNewData(const uint8_t *bufferPtr);
-#endif
+// Wrapped lrintf function, because gcc arm (13.3) / newlib is
+// pulling in a long slow function that unpacks floats by hand.
+// Round to nearest integer ("bankers' round", n + 0.5 -> nearest even integer).
+wrapper_func lrintf
+    vmov s0, r0
+    vcvtn.s32.f32 s0, s0
+    vmov  r0, s0
+    bx lr

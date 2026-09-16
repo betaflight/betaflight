@@ -209,8 +209,9 @@ TEST(SerialFeatureMap, VtxCollapseByType)
     vtxSettingsConfigMutable()->vtx_type = VTXDEV_TRAMP;
     EXPECT_EQ(FUNCTION_VTX_TRAMP, serialSynthesizeFunctionMask(SERIAL_PORT_UART4));
 
+    // An MSP VTX speaks MSP on its UART, so the port carries that bit as well.
     vtxSettingsConfigMutable()->vtx_type = VTXDEV_MSP;
-    EXPECT_EQ(FUNCTION_VTX_MSP, serialSynthesizeFunctionMask(SERIAL_PORT_UART4));
+    EXPECT_EQ((uint32_t)(FUNCTION_VTX_MSP | FUNCTION_MSP), serialSynthesizeFunctionMask(SERIAL_PORT_UART4));
 
     // Unsupported VTX type means the port has no VTX function bit.
     vtxSettingsConfigMutable()->vtx_type = VTXDEV_UNSUPPORTED;
@@ -278,7 +279,7 @@ TEST(SerialFeatureMap, TransportFollowsHardwareSelection)
 
 TEST(SerialFeatureMap, ImpliedMspPortNeedsBothHardwareAndPort)
 {
-    serialPortIdentifier_e ports[IMPLIED_MSP_SENSOR_PORT_COUNT];
+    serialPortIdentifier_e ports[IMPLIED_MSP_PORT_COUNT];
 
     resetAllConfigs();
     EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
@@ -303,7 +304,7 @@ TEST(SerialFeatureMap, ImpliedMspPortNeedsBothHardwareAndPort)
 
 TEST(SerialFeatureMap, ImpliedMspPortCountsOneModuleOnce)
 {
-    serialPortIdentifier_e ports[IMPLIED_MSP_SENSOR_PORT_COUNT];
+    serialPortIdentifier_e ports[IMPLIED_MSP_PORT_COUNT];
 
     // Both sensors of one MT module land on a single declared port.
     resetAllConfigs();
@@ -329,7 +330,7 @@ TEST(SerialFeatureMap, ImpliedMspPortCountsOneModuleOnce)
 
 TEST(SerialFeatureMap, ImpliedMspPortsRespectsCallerCapacity)
 {
-    serialPortIdentifier_e ports[IMPLIED_MSP_SENSOR_PORT_COUNT];
+    serialPortIdentifier_e ports[IMPLIED_MSP_PORT_COUNT];
 
     resetAllConfigs();
     rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF01;
@@ -349,9 +350,71 @@ TEST(SerialFeatureMap, OsdCollapseByDisplayPortDevice)
     osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_FRSKYOSD;
     EXPECT_EQ(FUNCTION_FRSKY_OSD, serialSynthesizeFunctionMask(SERIAL_PORT_USART1));
 
-    // MSP-displayport uses an existing MSP port, so osd_uart contributes no bit.
+    // An MSP display port speaks MSP on the UART it is given, so the port carries
+    // FUNCTION_MSP whether or not the user also assigned it an msp_uart slot.
     osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
+    EXPECT_EQ(FUNCTION_MSP, serialSynthesizeFunctionMask(SERIAL_PORT_USART1));
+
+    // A device that is not on a UART at all claims nothing.
+    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MAX7456;
     EXPECT_EQ(0u, serialSynthesizeFunctionMask(SERIAL_PORT_USART1));
+}
+
+TEST(SerialFeatureMap, MspDisplayPortImpliesAnMspPort)
+{
+    resetAllConfigs();
+    serialPortIdentifier_e ports[IMPLIED_MSP_PORT_COUNT];
+
+    osdConfigMutable()->osd_uart = SERIAL_PORT_UART4;
+    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
+    ASSERT_EQ(1u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+    EXPECT_EQ(SERIAL_PORT_UART4, ports[0]);
+
+    // FrSky OSD has its own function and protocol, so it implies nothing.
+    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_FRSKYOSD;
+    EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+
+    // No port to imply one on.
+    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
+    osdConfigMutable()->osd_uart = SERIAL_PORT_NONE;
+    EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+}
+
+TEST(SerialFeatureMap, MspVtxBringsTheMspBitAndImpliesAPort)
+{
+    resetAllConfigs();
+    serialPortIdentifier_e ports[IMPLIED_MSP_PORT_COUNT];
+
+    vtxSettingsConfigMutable()->vtx_uart = SERIAL_PORT_UART4;
+    vtxSettingsConfigMutable()->vtx_type = VTXDEV_MSP;
+
+    // FUNCTION_VTX_MSP alone is a conflict in serial.c, so the port carries MSP too.
+    EXPECT_EQ((uint32_t)(FUNCTION_VTX_MSP | FUNCTION_MSP), serialSynthesizeFunctionMask(SERIAL_PORT_UART4));
+
+    ASSERT_EQ(1u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+    EXPECT_EQ(SERIAL_PORT_UART4, ports[0]);
+
+    // A wire protocol VTX keeps its own bit and implies nothing.
+    vtxSettingsConfigMutable()->vtx_type = VTXDEV_SMARTAUDIO;
+    EXPECT_EQ((uint32_t)FUNCTION_VTX_SMARTAUDIO, serialSynthesizeFunctionMask(SERIAL_PORT_UART4));
+    EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+}
+
+TEST(SerialFeatureMap, MspDisplayPortSharingASensorPortIsCountedOnce)
+{
+    resetAllConfigs();
+    serialPortIdentifier_e ports[IMPLIED_MSP_PORT_COUNT];
+
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF01;
+    rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_UART4;
+    osdConfigMutable()->osd_uart = SERIAL_PORT_UART4;
+    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
+
+    ASSERT_EQ(1u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+    EXPECT_EQ(SERIAL_PORT_UART4, ports[0]);
+
+    osdConfigMutable()->osd_uart = SERIAL_PORT_UART5;
+    EXPECT_EQ(2u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
 }
 
 TEST(SerialFeatureMap, SharedPortCombinesBits)
@@ -646,4 +709,200 @@ TEST(SerialFeatureMap, BaudClassesAreIndependentOnASharedPort)
     for (unsigned c = 0; c < SERIAL_BAUD_CLASS_COUNT; c++) {
         EXPECT_EQ(expected[c], serialSynthesizePortBaud(SERIAL_PORT_UART4, (serialBaudClass_e)c));
     }
+}
+
+TEST(SerialFeatureMap, ClaimsEmptyWhenNothingAssigned)
+{
+    resetAllConfigs();
+
+    serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
+    EXPECT_EQ(0u, serialGetPortClaims(SERIAL_PORT_USART1, claims, ARRAYLEN(claims)));
+    EXPECT_EQ(0u, serialGetPortClaims(SERIAL_PORT_NONE, claims, ARRAYLEN(claims)));
+}
+
+TEST(SerialFeatureMap, ClaimsNamedByOwningSetting)
+{
+    resetAllConfigs();
+
+    mspConfigMutable()->msp_uart[1] = SERIAL_PORT_USART2;
+    gpsConfigMutable()->gps_uart = SERIAL_PORT_USART2;
+    telemetryConfigMutable()->providers[1].protocol = TELEMETRY_PROTOCOL_SMARTPORT;
+    telemetryConfigMutable()->providers[1].uart = SERIAL_PORT_USART2;
+
+    serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
+    ASSERT_EQ(3u, serialGetPortClaims(SERIAL_PORT_USART2, claims, ARRAYLEN(claims)));
+
+    EXPECT_STREQ("msp_2", claims[0].name);
+    EXPECT_STREQ("msp_2_uart", claims[0].setting);
+    EXPECT_EQ((uint32_t)FUNCTION_MSP, claims[0].functionMask);
+    EXPECT_STREQ("gps", claims[1].name);
+    EXPECT_STREQ("gps_uart", claims[1].setting);
+    EXPECT_EQ((uint32_t)FUNCTION_GPS, claims[1].functionMask);
+    EXPECT_STREQ("telemetry_2", claims[2].name);
+    EXPECT_STREQ("telemetry_2_uart", claims[2].setting);
+    EXPECT_EQ((uint32_t)FUNCTION_TELEMETRY_SMARTPORT, claims[2].functionMask);
+
+    // The rate and the selector a claim owns travel with it; MSP has no selector
+    // and a telemetry instance's protocol is the whole point of its claim.
+    EXPECT_STREQ("msp_2_baud", claims[0].baudSetting);
+    EXPECT_EQ(nullptr, claims[0].selectorSetting);
+    EXPECT_STREQ("gps_baud", claims[1].baudSetting);
+    EXPECT_STREQ("telemetry_2_protocol", claims[2].selectorSetting);
+    EXPECT_STREQ("telemetry_2_baud", claims[2].baudSetting);
+}
+
+TEST(SerialFeatureMap, ClaimNamesTheSettingThatDecidesWhatThePortOpensAs)
+{
+    resetAllConfigs();
+
+    vtxSettingsConfigMutable()->vtx_uart = SERIAL_PORT_USART1;
+    osdConfigMutable()->osd_uart = SERIAL_PORT_USART2;
+
+    serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
+
+    ASSERT_EQ(1u, serialGetPortClaims(SERIAL_PORT_USART1, claims, ARRAYLEN(claims)));
+    EXPECT_STREQ("vtx_type", claims[0].selectorSetting);
+    EXPECT_EQ(nullptr, claims[0].baudSetting);
+
+    ASSERT_EQ(1u, serialGetPortClaims(SERIAL_PORT_USART2, claims, ARRAYLEN(claims)));
+    EXPECT_STREQ("osd_displayport_device", claims[0].selectorSetting);
+}
+
+TEST(SerialFeatureMap, ClaimMaskFollowsProtocolSelection)
+{
+    resetAllConfigs();
+
+    vtxSettingsConfigMutable()->vtx_uart = SERIAL_PORT_USART1;
+    serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
+
+    ASSERT_EQ(1u, serialGetPortClaims(SERIAL_PORT_USART1, claims, ARRAYLEN(claims)));
+    EXPECT_STREQ("vtx", claims[0].name);
+    EXPECT_EQ(0u, claims[0].functionMask);
+
+    vtxSettingsConfigMutable()->vtx_type = VTXDEV_MSP;
+    ASSERT_EQ(1u, serialGetPortClaims(SERIAL_PORT_USART1, claims, ARRAYLEN(claims)));
+    EXPECT_EQ((uint32_t)(FUNCTION_VTX_MSP | FUNCTION_MSP), claims[0].functionMask);
+}
+
+TEST(SerialFeatureMap, ClaimMaskCarriesTheImpliedMspTransport)
+{
+    resetAllConfigs();
+
+    rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_USART3;
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TF02;
+    serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
+
+    ASSERT_EQ(1u, serialGetPortClaims(SERIAL_PORT_USART3, claims, ARRAYLEN(claims)));
+    EXPECT_STREQ("rangefinder", claims[0].name);
+    EXPECT_EQ((uint32_t)FUNCTION_LIDAR, claims[0].functionMask);
+
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF01;
+    ASSERT_EQ(1u, serialGetPortClaims(SERIAL_PORT_USART3, claims, ARRAYLEN(claims)));
+    EXPECT_EQ((uint32_t)(FUNCTION_LIDAR | FUNCTION_MSP), claims[0].functionMask);
+}
+
+TEST(SerialFeatureMap, ClaimsRespectCallerCapacity)
+{
+    resetAllConfigs();
+
+    mspConfigMutable()->msp_uart[0] = SERIAL_PORT_USART1;
+    gpsConfigMutable()->gps_uart = SERIAL_PORT_USART1;
+    rxConfigMutable()->rx_uart = SERIAL_PORT_USART1;
+
+    serialPortClaim_t claims[2];
+    EXPECT_EQ(2u, serialGetPortClaims(SERIAL_PORT_USART1, claims, ARRAYLEN(claims)));
+}
+
+TEST(SerialFeatureMap, ApplyMaskWritesTheOwningFeatures)
+{
+    resetAllConfigs();
+
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART2,
+        FUNCTION_MSP | FUNCTION_GPS | FUNCTION_TELEMETRY_SMARTPORT));
+
+    EXPECT_EQ(SERIAL_PORT_USART2, mspConfig()->msp_uart[0]);
+    EXPECT_EQ(SERIAL_PORT_USART2, gpsConfig()->gps_uart);
+    EXPECT_EQ(SERIAL_PORT_USART2, telemetryConfig()->providers[0].uart);
+    EXPECT_EQ(TELEMETRY_PROTOCOL_SMARTPORT, telemetryConfig()->providers[0].protocol);
+
+    // What went in reads back out of the synthesized view unchanged.
+    EXPECT_EQ((uint32_t)(FUNCTION_MSP | FUNCTION_GPS | FUNCTION_TELEMETRY_SMARTPORT),
+        serialSynthesizeFunctionMask(SERIAL_PORT_USART2));
+}
+
+TEST(SerialFeatureMap, ApplyMaskPicksTheVtxProtocolFromTheBit)
+{
+    resetAllConfigs();
+
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_VTX_TRAMP));
+    EXPECT_EQ(SERIAL_PORT_USART1, vtxSettingsConfig()->vtx_uart);
+    EXPECT_EQ(VTXDEV_TRAMP, vtxSettingsConfig()->vtx_type);
+
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_VTX_SMARTAUDIO));
+    EXPECT_EQ(VTXDEV_SMARTAUDIO, vtxSettingsConfig()->vtx_type);
+
+    // Two protocols on one port cannot be represented at all.
+    EXPECT_FALSE(serialApplyFunctionMask(SERIAL_PORT_USART1,
+        FUNCTION_VTX_TRAMP | FUNCTION_VTX_SMARTAUDIO));
+    EXPECT_EQ(VTXDEV_SMARTAUDIO, vtxSettingsConfig()->vtx_type);
+}
+
+TEST(SerialFeatureMap, ApplyMaskClearsWhatThePortNoLongerClaims)
+{
+    resetAllConfigs();
+
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_GPS | FUNCTION_BLACKBOX));
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_GPS));
+
+    EXPECT_EQ(SERIAL_PORT_USART3, gpsConfig()->gps_uart);
+    EXPECT_EQ(SERIAL_PORT_NONE, blackboxConfig()->blackbox_uart);
+}
+
+TEST(SerialFeatureMap, ApplyMaskRejectsMoreMspPortsThanSlots)
+{
+    resetAllConfigs();
+
+    for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+        mspConfigMutable()->msp_uart[i] = serialPortIdentifiers[i];
+    }
+
+    EXPECT_FALSE(serialApplyFunctionMask(SERIAL_PORT_UART8, FUNCTION_MSP));
+    for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+        EXPECT_EQ(serialPortIdentifiers[i], mspConfig()->msp_uart[i]);
+    }
+}
+
+TEST(SerialFeatureMap, ApplyBaudLandsOnTheOwningFeature)
+{
+    resetAllConfigs();
+
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART2,
+        FUNCTION_MSP | FUNCTION_GPS | FUNCTION_TELEMETRY_SMARTPORT | FUNCTION_BLACKBOX));
+
+    serialApplyPortBaud(SERIAL_PORT_USART2, SERIAL_BAUD_MSP, BAUD_500000);
+    serialApplyPortBaud(SERIAL_PORT_USART2, SERIAL_BAUD_GPS, BAUD_9600);
+    serialApplyPortBaud(SERIAL_PORT_USART2, SERIAL_BAUD_TELEMETRY, BAUD_38400);
+    serialApplyPortBaud(SERIAL_PORT_USART2, SERIAL_BAUD_BLACKBOX, BAUD_230400);
+
+    EXPECT_EQ(BAUD_500000, mspConfig()->msp_baud[0]);
+    EXPECT_EQ(BAUD_9600, gpsConfig()->gps_baud);
+    EXPECT_EQ(BAUD_38400, telemetryConfig()->providers[0].baud);
+    EXPECT_EQ(BAUD_230400, blackboxConfig()->blackbox_baud);
+
+    for (unsigned c = 0; c < SERIAL_BAUD_CLASS_COUNT; c++) {
+        EXPECT_EQ(serialSynthesizePortBaud(SERIAL_PORT_USART2, (serialBaudClass_e)c),
+            (c == SERIAL_BAUD_MSP) ? BAUD_500000
+            : (c == SERIAL_BAUD_GPS) ? BAUD_9600
+            : (c == SERIAL_BAUD_TELEMETRY) ? BAUD_38400 : BAUD_230400);
+    }
+}
+
+TEST(SerialFeatureMap, ApplyBaudIgnoresAClassNoFeatureOnThePortOwns)
+{
+    resetAllConfigs();
+
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART2, FUNCTION_GPS));
+    serialApplyPortBaud(SERIAL_PORT_USART2, SERIAL_BAUD_BLACKBOX, BAUD_230400);
+
+    EXPECT_EQ(serialDefaultPortBaud(SERIAL_BAUD_BLACKBOX), blackboxConfig()->blackbox_baud);
 }
