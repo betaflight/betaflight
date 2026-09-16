@@ -234,7 +234,7 @@ static void checkMotorProtocol(const motorDevConfig_t *motorDevConfig)
 }
 
 // End point initialization is called from mixerInit before motorDevInit; can't use vtable...
-void motorInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3dHigh, float *deadbandMotor3dLow)
+void motorInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputSoftLow, float *outputHigh, float *disarm, float *deadbandMotor3dHigh, float *deadbandMotor3dLow)
 {
     checkMotorProtocol(&motorConfig->dev);
 
@@ -242,17 +242,17 @@ void motorInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, flo
         switch (motorGetProtocolFamily()) {
 #ifdef USE_PWM_OUTPUT
         case MOTOR_PROTOCOL_FAMILY_PWM:
-            analogInitEndpoints(motorConfig, outputLimit, outputLow, outputHigh, disarm, deadbandMotor3dHigh, deadbandMotor3dLow);
+            analogInitEndpoints(motorConfig, outputLimit, outputLow, outputSoftLow, outputHigh, disarm, deadbandMotor3dHigh, deadbandMotor3dLow);
             break;
 #endif
 #ifdef USE_DSHOT
         case MOTOR_PROTOCOL_FAMILY_DSHOT:
-            dshotInitEndpoints(motorConfig, outputLimit, outputLow, outputHigh, disarm, deadbandMotor3dHigh, deadbandMotor3dLow);
+            dshotInitEndpoints(motorConfig, outputLimit, outputLow, outputSoftLow, outputHigh, disarm, deadbandMotor3dHigh, deadbandMotor3dLow);
             break;
 #endif
 #if ENABLE_DRONECAN_ESC
         case MOTOR_PROTOCOL_FAMILY_CAN:
-            dronecanMotorInitEndpoints(motorConfig, outputLimit, outputLow, outputHigh, disarm, deadbandMotor3dHigh, deadbandMotor3dLow);
+            dronecanMotorInitEndpoints(motorConfig, outputLimit, outputLow, outputSoftLow, outputHigh, disarm, deadbandMotor3dHigh, deadbandMotor3dLow);
             break;
 #endif
         default:
