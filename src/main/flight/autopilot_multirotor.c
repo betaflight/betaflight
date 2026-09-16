@@ -125,6 +125,11 @@
 // tighter error bound stops that speed-proportional lead from driving P into a
 // positive-feedback overspeed, leaving the velocity feedforward to set cruise.
 #define NAV_ERROR_DISTANCE_LIMIT 500.0f // 5m
+// Range at which anchoring to the nav target takes over from tracking its
+// commanded velocity. Matched to the error clamp: beyond it P is saturated and
+// carries no position information anyway.
+#define NAV_ANCHOR_RANGE      NAV_ERROR_DISTANCE_LIMIT
+#define NAV_ANCHOR_HYSTERESIS 1.5f
 #define POSITION_I_LIMIT      2000.0f // TO DO: test and set to a useful value, this is 20m
 
 #define AP_YAW_P_SCALE         0.01f
@@ -227,6 +232,7 @@ typedef struct autopilotState_s {
     xyAnchorMode_e anchor;      // position-anchor selection for this loop
     xyIntegralPolicy_e iPolicy; // integral policy for this loop
     xyControlMode_e mode;       // operational mode for this loop
+    bool navAnchored;           // nav target close enough for position anchoring
     unsigned debugAxis;
 } autopilotState_t;
 
@@ -835,8 +841,30 @@ static xyControlMode_e xySelectMode(void)
 {
     if (ap.navActive) {
         const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
-        return (navCmd != NULL && navCmd->active) ? XY_MODE_NAV_TRACK : XY_MODE_NAV_VELOCITY;
+        if (navCmd == NULL || !navCmd->active) {
+            return XY_MODE_NAV_VELOCITY;
+        }
+        // Anchoring only earns its keep once the target is close enough for the
+        // position error to mean something. Further out the error is large by
+        // construction - the craft simply is not there yet - so it pins
+        // distanceError at NAV_ERROR_DISTANCE_LIMIT and P degenerates into a
+        // fixed tilt bias on top of the feedforward that already carries the
+        // commanded speed, which the craft can only balance by flying faster
+        // than commanded. Track the commanded velocity out there instead: the
+        // virtual distance error integrates velocity error, so cruise settles
+        // on the commanded speed. Hysteresis stops the handover chattering.
+        const vector2_t *pos = (const vector2_t *)&positionEstimatorGetEstimate()->position.v;
+        const vector2_t target = {{ navCmd->targetPosEfM.v[ENU_E] * 100.0f,
+                                    navCmd->targetPosEfM.v[ENU_N] * 100.0f }};
+        vector2_t delta;
+        vector2Sub(&delta, &target, pos);
+        const float distance = vector2Norm(&delta);
+        const float anchorRange = ap.navAnchored ? NAV_ANCHOR_RANGE * NAV_ANCHOR_HYSTERESIS
+                                                 : NAV_ANCHOR_RANGE;
+        ap.navAnchored = distance <= anchorRange;
+        return ap.navAnchored ? XY_MODE_NAV_TRACK : XY_MODE_NAV_VELOCITY;
     }
+    ap.navAnchored = false;
     if (ap.sticksActive) {
         return XY_MODE_STICK_VELOCITY;
     }

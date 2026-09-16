@@ -1037,10 +1037,10 @@ protected:
 
 TEST_F(NavModeTest, NavAnchorsToCarrotAhead)
 {
-    // Carrot 50 m north, craft at the origin: the position anchor produces a
+    // Carrot 3 m north, inside the anchor range: the position anchor produces a
     // lean toward the carrot (pitch), with negligible roll.
     engageNav(30, 30, 0, 0, 30, 45);
-    setNavCarrot(0.0f, 50.0f);
+    setNavCarrot(0.0f, 3.0f);
     setTargetVelocityNorth(0.0f);
 
     runIterations(SETTLE_ITERATIONS);
@@ -1049,19 +1049,39 @@ TEST_F(NavModeTest, NavAnchorsToCarrotAhead)
     EXPECT_LT(fabsf(autopilotAngle[AI_ROLL]), 2.0f);
 }
 
+TEST_F(NavModeTest, NavBeyondAnchorRangeFliesTheCommandedVelocity)
+{
+    // Out on a leg the position error is large by construction, so anchoring to
+    // it would only saturate P into a fixed tilt bias on top of the velocity
+    // feedforward. Beyond the anchor range the commanded velocity is the
+    // authority: a distant carrot with no commanded velocity must not lean.
+    engageNav(30, 30, 0, 0, 30, 45);
+    setNavCarrot(0.0f, 50.0f);
+    setTargetVelocityNorth(0.0f);
+
+    runIterations(SETTLE_ITERATIONS);
+
+    EXPECT_LT(fabsf(autopilotAngle[AI_PITCH]), 2.0f);
+    EXPECT_LT(fabsf(autopilotAngle[AI_ROLL]), 2.0f);
+}
+
 TEST_F(NavModeTest, NavPositionErrorIsBounded)
 {
-    // The carrot lead grows with speed; NAV_ERROR_DISTANCE_LIMIT bounds the
-    // position error so a distant carrot cannot drive P without limit. Two
-    // carrots well beyond the bound must produce the same (clamped) lean.
+    // NAV_ERROR_DISTANCE_LIMIT still bounds the position error while anchored,
+    // so two carrots beyond the bound produce the same (clamped) lean rather
+    // than an ever-growing one. Anchor close first: hysteresis then holds the
+    // anchor out past the 5 m clamp, which is where the bound does its work.
     engageNav(30, 30, 0, 0, 30, 45);
     setTargetVelocityNorth(0.0f);
 
-    setNavCarrot(0.0f, 50.0f);
+    setNavCarrot(0.0f, 3.0f);
+    runIterations(SETTLE_ITERATIONS);
+
+    setNavCarrot(0.0f, 6.0f);
     runIterations(SETTLE_ITERATIONS);
     const float pitchNear = autopilotAngle[AI_PITCH];
 
-    setNavCarrot(0.0f, 500.0f);
+    setNavCarrot(0.0f, 7.0f);
     runIterations(SETTLE_ITERATIONS);
     const float pitchFar = autopilotAngle[AI_PITCH];
 
