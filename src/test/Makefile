@@ -195,7 +195,7 @@ common_filter_unittest_SRC := \
 		$(USER_DIR)/common/maths.c
 
 dyn_notch_filter_unittest_SRC := \
-        $(USER_DIR)/dyn_notch_filter.c \
+        $(USER_DIR)/flight/dyn_notch_filter.c \
         $(USER_DIR)/common/filter.c \
         $(USER_DIR)/common/maths.c \
         $(USER_DIR)/common/sdft.c
