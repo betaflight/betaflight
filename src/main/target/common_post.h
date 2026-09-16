@@ -141,6 +141,7 @@
     && !defined(USE_ACC_MPU6500) \
     && !defined(USE_ACCGYRO_BMI160) \
     && !defined(USE_ACCGYRO_BMI270) \
+    && !defined(USE_ACCGYRO_BMI423) \
     && !defined(USE_ACC_SPI_ICM20602) \
     && !defined(USE_ACC_SPI_ICM20649) \
     && !defined(USE_ACC_SPI_ICM20689) \
@@ -169,6 +170,7 @@
     && !defined(USE_GYRO_MPU6500) \
     && !defined(USE_ACCGYRO_BMI160) \
     && !defined(USE_ACCGYRO_BMI270) \
+    && !defined(USE_ACCGYRO_BMI423) \
     && !defined(USE_GYRO_SPI_ICM20602) \
     && !defined(USE_GYRO_SPI_ICM20649) \
     && !defined(USE_GYRO_SPI_ICM20689) \
@@ -602,7 +604,7 @@
 
 // Generate USE_SPI_GYRO
 #if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) \
-    || defined(USE_GYRO_L3GD20) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) \
+    || defined(USE_GYRO_L3GD20) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) || defined(USE_ACCGYRO_BMI423) \
     || defined(USE_GYRO_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_ACCGYRO_ICM42686P) || defined(USE_GYRO_SPI_ICM42688P) \
     || defined(USE_ACCGYRO_ICM56686) \
     || defined(USE_ACCGYRO_ICM40609D) || defined(USE_ACCGYRO_ICM45605) || defined(USE_ACCGYRO_ICM45686) \
