@@ -150,6 +150,28 @@ bool isKnownUnitSymbol(const std::string &symbol)
     return false;
 }
 
+// Whether the index argument is something tooling can evaluate without help.
+// Betaflight writes a constant in capitals, so an index written that way is a
+// #define or an enum member, as is a literal. A lower case identifier may still
+// be a constant - only the generator, which reads the headers, can tell - so
+// this stays with what is unambiguous from the call alone.
+bool isCompileTimeIndex(const std::string &argument)
+{
+    if (isUnsignedInteger(argument)) {
+        return true;
+    }
+    if (argument.empty() || !isupper((unsigned char)argument[0])) {
+        return false;
+    }
+    for (size_t i = 0; i < argument.size(); i++) {
+        const char c = argument[i];
+        if (!isupper((unsigned char)c) && !isdigit((unsigned char)c) && c != '_') {
+            return false;
+        }
+    }
+    return true;
+}
+
 // `[index:2]`, `[index:0..2]` and `[index:0,2,4]`. Returns how many indices the
 // spec names, or 0 when it is malformed.
 int indicesNamedBy(const std::string &spec, std::vector<std::string> *errors)
@@ -609,21 +631,32 @@ public:
             findCalls(files[i], lines, &fileCalls);
             calls.insert(calls.end(), fileCalls.begin(), fileCalls.end());
 
+            // The line a call ends on carries its annotation. Every other line
+            // it spans - the one it starts on, and each one in between - is a
+            // line an annotation is read from by nothing.
             std::set<int> endLines;
+            std::set<int> continuationLines;
             for (size_t c = 0; c < fileCalls.size(); c++) {
                 endLines.insert(fileCalls[c].endLine);
+                for (int line = fileCalls[c].beginLine; line < fileCalls[c].endLine; line++) {
+                    continuationLines.insert(line);
+                }
             }
 
             for (size_t line = 0; line < lines.size(); line++) {
                 if (!lines[line].hasAnnotation) {
                     continue;
                 }
-                annotations[FieldKey(files[i], (int)line + 1)] = lines[line].annotation;
-                // An annotation on any other line of a call - the first line of
-                // one that spans several - is read by nothing.
+                const int lineNumber = (int)line + 1;
+                annotations[FieldKey(files[i], lineNumber)] = lines[line].annotation;
+                if (endLines.count(lineNumber)) {
+                    continue;
+                }
+                // A `//!<` outside a call is somebody's doxygen member comment,
+                // and none of this test's business.
                 const bool onACall = lines[line].code.find(DEBUG_SET_NAME) != std::string::npos;
-                if (onACall && !endLines.count((int)line + 1)) {
-                    strayAnnotations.push_back(FieldKey(files[i], (int)line + 1));
+                if (onACall || continuationLines.count(lineNumber)) {
+                    strayAnnotations.push_back(FieldKey(files[i], lineNumber));
                 }
             }
 
@@ -744,6 +777,17 @@ TEST(DebugAnnotationGrammar, ChecksTheIndexSpec)
     EXPECT_NE(std::string::npos, problemsWith("Gyro Filtered [index:0..2]").find("goes in front of the label"));
 }
 
+TEST(DebugAnnotationGrammar, TellsAConstantIndexFromAComputedOne)
+{
+    EXPECT_TRUE(isCompileTimeIndex("3"));
+    EXPECT_TRUE(isCompileTimeIndex("DEBUG_ESC_DATA_AGE"));
+    EXPECT_TRUE(isCompileTimeIndex("FD_YAW"));
+    EXPECT_FALSE(isCompileTimeIndex("axis"));
+    EXPECT_FALSE(isCompileTimeIndex("motorIndex"));
+    EXPECT_FALSE(isCompileTimeIndex("2 * axis + 1"));
+    EXPECT_FALSE(isCompileTimeIndex(""));
+}
+
 TEST(DebugAnnotationGrammar, ChecksEnumsAndFlags)
 {
     EXPECT_NE(std::string::npos, problemsWith("Failsafe Phase [enum:failsafePhase]").find("is not an enum type name"));
@@ -824,13 +868,13 @@ TEST_F(DebugAnnotations, AnIndexSpecIsGivenOnlyForAnIndexComputedAtRunTime)
     ASSERT_FALSE(sourceRoot.empty());
 
     for (size_t i = 0; i < calls.size(); i++) {
-        if (!isUnsignedInteger(calls[i].indexArg)) {
+        if (!isCompileTimeIndex(calls[i].indexArg)) {
             continue;
         }
         if (startsWith(annotationAt(calls[i]), "[index:")) {
             ADD_FAILURE_AT(displayPath(calls[i].file).c_str(), calls[i].endLine)
-                << "the call writes debug[" << calls[i].indexArg << "], which tooling reads from the call itself: "
-                << "drop the [index:...] spec.";
+                << "the call writes debug[" << calls[i].indexArg << "], a compile-time constant that tooling "
+                << "reads from the call itself: drop the [index:...] spec.";
         }
     }
 }
