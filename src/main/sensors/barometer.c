@@ -451,7 +451,7 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
     timeUs_t executeTimeUs;
     timeUs_t sleepTime = 1000; // Wait 1ms between states
 
-    DEBUG_SET(DEBUG_BARO, 0, state);
+    DEBUG_SET(DEBUG_BARO, 0, state);  //!< Baro State [enum:barometerState_e]
 
     if (busBusy(&baro.dev.dev, NULL)) {
         // If the bus is busy, simply return to have another go later
@@ -517,7 +517,7 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
                 if (baroIsCalibrated()) {
                     // zero baro altitude
                     baro.altitude = altitude - baroGroundAltitude;
-                    DEBUG_SET(DEBUG_BARO, 4, lrintf(baro.altitude)); // cm, before temp compensation
+                    DEBUG_SET(DEBUG_BARO, 4, lrintf(baro.altitude));  //!< Baro Altitude Before Temperature Correction [unit:cm]
 
                     // correct physical barometers for temperature drift
                     if (detectedSensors[SENSOR_INDEX_BARO] != BARO_VIRTUAL) {
@@ -543,9 +543,10 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
                     baro.altitude = 0.0f;
                 }
             }
-            DEBUG_SET(DEBUG_BARO, 1, lrintf(baro.pressure / 100.0f)); // hPa
-            DEBUG_SET(DEBUG_BARO, 2, baro.temperature);               // c°C
-            DEBUG_SET(DEBUG_BARO, 3, lrintf(baro.altitude));          // cm, with temp compensation if not virtual
+            DEBUG_SET(DEBUG_BARO, 1, lrintf(baro.pressure / 100.0f));  //!< Pressure [unit:hPa]
+            DEBUG_SET(DEBUG_BARO, 2, baro.temperature);                //!< Temperature [unit:0.01degC]
+            // altitude carries temperature compensation unless the baro is virtual
+            DEBUG_SET(DEBUG_BARO, 3, lrintf(baro.altitude));           //!< Baro Altitude [unit:cm]
 
             if (baro.dev.combined_read) {
                 state = BARO_STATE_PRESSURE_START;

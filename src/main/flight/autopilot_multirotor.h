@@ -58,5 +58,9 @@ float getAutopilotThrottle(void);
 float autopilotGetYawRate(void);
 bool autopilotYawControlActive(void);
 void autopilotSetYawRateLimit(float rateLimitDps); // deg/s, 0 = no mission cap
+void autopilotDisableYawControl(void);
+
+#define HEADING_HOLD_TASK_RATE_HZ 100 // hz
+void updateHeadingHold(timeUs_t currentTimeUs);
 
 #endif // !USE_WING

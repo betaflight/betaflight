@@ -39,6 +39,10 @@ bool isAutopilotInControl(void);
 float autopilotGetYawRate(void);
 bool autopilotYawControlActive(void);
 void autopilotSetYawRateLimit(float rateLimitDps);
+void autopilotDisableYawControl(void);
+
+#define HEADING_HOLD_TASK_RATE_HZ 100 // hz
+void updateHeadingHold(timeUs_t currentTimeUs);
 
 // Nav inner-loop hooks driven by the shared flight-plan engine. Stubbed until
 // the wing control law lands (Phase 3+); present so the engine links on wing.
