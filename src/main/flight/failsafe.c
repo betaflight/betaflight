@@ -42,6 +42,7 @@
 
 #include "flight/failsafe.h"
 #include "flight/flight_plan_nav.h"
+#include "flight/gps_rescue.h"
 
 #include "io/beeper.h"
 
@@ -267,8 +268,15 @@ static void failsafeStartProcedure(failsafeProcedure_e procedure)
                 failsafeStartProcedure(FAILSAFE_PROCEDURE_AUTO_LANDING);
             }
 #else
-            ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
-            failsafeState.phase = FAILSAFE_GPS_RESCUE;
+            if (gpsRescueIsConfigured()) {
+                ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+                failsafeState.phase = FAILSAFE_GPS_RESCUE;
+            } else {
+                // FAILSAFE_GPS_RESCUE has no landing timer: without a rescue
+                // controller behind it the aircraft would fly on rxfail values
+                // until the battery died. Land instead.
+                failsafeStartProcedure(FAILSAFE_PROCEDURE_AUTO_LANDING);
+            }
 #endif
             break;
 #endif

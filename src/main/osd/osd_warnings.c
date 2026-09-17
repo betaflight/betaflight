@@ -48,6 +48,7 @@
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
+#include "flight/launch_wing.h"
 #include "flight/mixer.h"
 #include "flight/mixer_init.h"
 #include "flight/pid.h"
@@ -461,6 +462,35 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         }
     }
 #endif
+
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+    // Shares OSD_WARNING_LAUNCH_CONTROL: the multirotor feature that owns that
+    // bit is undef'd on wing, so the two can never both be built. Sits below
+    // every critical warning - launch status is informational and must not
+    // mask an rx, battery or load failure that happens during the launch.
+    if (osdWarnGetState(OSD_WARNING_LAUNCH_CONTROL) && launchWingIsActive()) {
+        switch (launchWingGetState()) {
+        case LAUNCH_WING_WAIT_THROTTLE:
+            tfp_sprintf(warningText, "RAISE THROTTLE");
+            break;
+        case LAUNCH_WING_MOTOR_IDLE:
+            tfp_sprintf(warningText, "LAUNCH IDLE");
+            break;
+        case LAUNCH_WING_WAIT_DETECTION:
+            tfp_sprintf(warningText, "READY TO LAUNCH");
+            *blinking = true;
+            break;
+        case LAUNCH_WING_FINISH:
+            tfp_sprintf(warningText, "LAUNCH FINISHING");
+            break;
+        default:
+            tfp_sprintf(warningText, "LAUNCHING");
+            break;
+        }
+        *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+        return;
+    }
+#endif // USE_WING && USE_LAUNCH_WING
 
     // Show warning if in HEADFREE flight mode
     if (FLIGHT_MODE(HEADFREE_MODE)) {

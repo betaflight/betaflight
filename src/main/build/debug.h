@@ -215,6 +215,7 @@ typedef enum {
     DEBUG_POSITION_EST,
     DEBUG_AUTOPILOT_HEADING,
     DEBUG_RX_REDPINE_SPI,
+    DEBUG_LAUNCH,
     DEBUG_COUNT
 } debugType_e;
 
