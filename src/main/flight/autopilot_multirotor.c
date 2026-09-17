@@ -806,7 +806,9 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, lrintf(apYawRateDps * 10.0f));      //!< Yaw Rate [unit:0.1deg/s]
     DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 4, lrintf(yawP * 10.0f));              //!< YawP [unit:u]
 
+#ifdef USE_GPS
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 1, gpsSol.groundCourse);              //!< GPS Ground Course [unit:0.1deg]
+#endif
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 2, attitude.values.yaw);              //!< Yaw Attitude [unit:0.1deg]
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 3, lrintf(desiredHeadingDeg));        //!< Direction To Home [unit:deg]
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 4, lrintf(headingDeg));               //!< Aircraft Heading [unit:deg]
