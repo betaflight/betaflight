@@ -1344,14 +1344,20 @@ static void updateDronecanGPS(void)
     // Publish only what the module has actually sent since last time. The cache is polled on a
     // fixed interval rather than driven by arrivals, so without this the same solution is
     // republished every tick: the nav interval would report our poll rate instead of the
-    // module's, and onGpsNewData() would run again on a frame it has already consumed. Compared
-    // for inequality rather than ordering, so a reset cache — dronecanGnssInit() clears the
-    // timestamp — publishes its first frame instead of waiting out the old value.
+    // module's, and onGpsNewData() would run again on a frame it has already consumed.
+    //
+    // Tracked with its own flag rather than treating timestamp 0 as "nothing published yet".
+    // Zero is a legal micros() value — briefly at boot, and again on every 32-bit wrap — so
+    // overloading it would silently drop a frame stamped in that microsecond. Compared for
+    // inequality rather than ordering, so a reset cache (dronecanGnssInit() clears the
+    // timestamp) publishes its first frame instead of waiting out the old value.
     static timeUs_t lastPublishedUpdateUs = 0;
-    if (updateUs == lastPublishedUpdateUs) {
+    static bool havePublished = false;
+    if (havePublished && updateUs == lastPublishedUpdateUs) {
         return;
     }
     lastPublishedUpdateUs = updateUs;
+    havePublished = true;
 
     if (gpsData.state == GPS_STATE_INITIALIZED) {
         gpsSetState(GPS_STATE_RECEIVING_DATA);
