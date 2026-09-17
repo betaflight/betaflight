@@ -51,6 +51,7 @@
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/flashfs.h"
+#include "io/flashfs_log.h"
 #include "io/serial.h"
 
 #include "msp/msp_serial.h"
@@ -62,6 +63,47 @@
 #include "blackbox_virtual.h"
 
 #define BLACKBOX_SERIAL_PORT_MODE MODE_TX
+
+#ifdef USE_FLASHFS
+// True iff the blackbox flash backend is currently using the ring-mode (flashfs_log) layer.
+// All FLASH dispatch sites in this file branch on this flag — when false, the linear path
+// remains bit-for-bit unchanged from before the ring-mode feature was introduced.
+//
+// When USE_BLACKBOX_RING_LOG is undefined (e.g., excluded from cloud build for small chips),
+// this always returns false and all the ring-mode dispatch branches become dead code that
+// resolves to inline-stub flashfsLog* calls (no link dependency on flashfs_log.c).
+static inline bool blackboxFlashUsesRingMode(void)
+{
+#ifdef USE_BLACKBOX_RING_LOG
+    return blackboxConfig()->flash_mode == BLACKBOX_FLASH_MODE_RING;
+#else
+    return false;
+#endif
+}
+
+// Linear-mode safety net: refuse to write when the chip carries ring data (or any
+// other unrecognised content). Required for two scenarios on the same hardware:
+//   - Mode switch from ring → linear within the same firmware (existing ring logs
+//     would be silently overwritten otherwise).
+//   - Sidegrade from a ring-capable build to one with USE_BLACKBOX_RING_LOG turned
+//     off (e.g. an opt-out build for the same MCU family).
+// In both cases the user must erase before linear writes are allowed.
+//
+// Use the cached accessor — also always-compiled on USE_FLASHFS — because the
+// uncached probe is O(partition / sectorSize) (a full trailer-magic scan, ~40 KB
+// of SPI reads on a 128 MB chip) and this predicate is called from polled status
+// paths (blackboxDeviceIsReady / blackboxDeviceIsWorking) hit by MSP at ~10-50 Hz
+// while a configurator session is open. Re-probing each call would burn ~2 MB/s
+// of SPI bandwidth competing with the actual blackbox writes. The cache is seeded
+// at boot by flashfsLogInit and invalidated from the only paths that can change
+// the on-flash format (flashfsLogEraseAll, flashfsLogEndLog, preamble write),
+// so the cached answer is authoritative.
+static inline bool flashChipFormatAllowsLinearWrites(void)
+{
+    const flashfsFlashFormat_e fmt = flashfsLogGetCachedFormat();
+    return fmt == FLASHFS_FLASH_FORMAT_EMPTY || fmt == FLASHFS_FLASH_FORMAT_LINEAR;
+}
+#endif
 
 // How many bytes can we transmit per loop iteration when writing headers?
 static uint8_t blackboxMaxHeaderBytesPerIteration;
@@ -119,7 +161,15 @@ void blackboxWrite(uint8_t value)
     switch (blackboxConfig()->device) {
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
-        flashfsWriteByte(value); // Write byte asynchronously
+        if (blackboxFlashUsesRingMode()) {
+            if (flashfsLogIsHeaderPhase()) {
+                flashfsLogWriteHeaderByte(value);
+            } else {
+                flashfsLogWriteDataByte(value);
+            }
+        } else {
+            flashfsWriteByte(value); // Write byte asynchronously (linear path, unchanged)
+        }
         break;
 #endif
 #ifdef USE_SDCARD
@@ -181,7 +231,19 @@ int blackboxWriteString(const char *s)
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
         length = strlen(s);
-        flashfsWrite((const uint8_t*) s, length, false); // Write asynchronously
+        if (blackboxFlashUsesRingMode()) {
+            // Header phase: byte-by-byte through the header section. Data phase: through the
+            // ring data writer (which handles wrap + sector-boundary eviction).
+            if (flashfsLogIsHeaderPhase()) {
+                for (int i = 0; i < length; i++) {
+                    flashfsLogWriteHeaderByte(((const uint8_t *)s)[i]);
+                }
+            } else {
+                flashfsLogWriteData((const uint8_t *)s, length);
+            }
+        } else {
+            flashfsWrite((const uint8_t*) s, length, false); // Linear path, unchanged
+        }
         break;
 #endif // USE_FLASHFS
 
@@ -228,7 +290,11 @@ void blackboxDeviceFlush(void)
          * devices will progressively write in the background without Blackbox calling anything.
          */
     case BLACKBOX_DEVICE_FLASH:
-        flashfsFlushAsync(false);
+        if (blackboxFlashUsesRingMode()) {
+            flashfsLogFlushAsync(false);
+        } else {
+            flashfsFlushAsync(false);
+        }
         break;
 #endif // USE_FLASHFS
 #ifdef USE_BLACKBOX_VIRTUAL
@@ -256,6 +322,9 @@ bool blackboxDeviceFlushForce(void)
 
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
+        if (blackboxFlashUsesRingMode()) {
+            return flashfsLogFlushAsync(true);
+        }
         return flashfsFlushAsync(true);
 #endif // USE_FLASHFS
 
@@ -368,8 +437,20 @@ bool blackboxDeviceOpen(void)
         break;
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
-        if (!flashfsIsSupported() || isBlackboxDeviceFull()) {
+        if (!flashfsIsSupported()) {
             return false;
+        }
+        if (blackboxFlashUsesRingMode()) {
+            // Ring mode requires the on-flash format to be RING or EMPTY. If it is LINEAR
+            // (or unrecognised) the user must erase before switching modes.
+            if (!flashfsLogIsReady()) {
+                return false;
+            }
+        } else {
+            // Linear mode: same checks as before, plus the ring-format safety net.
+            if (isBlackboxDeviceFull() || !flashChipFormatAllowsLinearWrites()) {
+                return false;
+            }
         }
 
         blackboxMaxHeaderBytesPerIteration = BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION;
@@ -411,7 +492,11 @@ void blackboxEraseAll(void)
          * Possible enhancement here is to restart logging after erase.
          */
         blackboxInit();
-        flashfsEraseCompletely();
+        if (blackboxFlashUsesRingMode()) {
+            flashfsLogEraseAll();
+        } else {
+            flashfsEraseCompletely();
+        }
         break;
     default:
         //not supported
@@ -426,7 +511,16 @@ bool isBlackboxErased(void)
 {
     switch (blackboxConfig()->device) {
     case BLACKBOX_DEVICE_FLASH:
-        return flashfsIsReady();
+        // Mirror the readiness predicate used by blackboxDeviceBeginLog: in ring mode
+        // the ring-aware flashfsLogIsReady() answers correctly (also accounts for the
+        // ring-format-mismatch refusal); linear mode falls back to flashfsIsReady() —
+        // and additionally rejects when the chip currently holds ring-format data, so
+        // status doesn't claim "ready" right before blackboxDeviceBeginLog refuses
+        // the linear write because the chip would clobber an existing ring volume.
+        if (blackboxFlashUsesRingMode()) {
+            return flashfsLogIsReady();
+        }
+        return flashfsIsReady() && flashChipFormatAllowsLinearWrites();
         break;
     default:
     //not supported
@@ -458,8 +552,13 @@ void blackboxDeviceClose(void)
         break;
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
-        // Some flash device, e.g., NAND devices, require explicit close to flush internally buffered data.
-        flashfsClose();
+        // Some flash devices (e.g. NAND) require explicit close to flush internally
+        // buffered data. Ring mode skips this: the active log (if any) is already closed
+        // via blackboxDeviceEndLog(), and the log boundary is recorded explicitly in
+        // metadata — no additional flashfsClose() needed.
+        if (!blackboxFlashUsesRingMode()) {
+            flashfsClose();
+        }
         break;
 #endif
 #ifdef USE_BLACKBOX_VIRTUAL
@@ -606,6 +705,13 @@ bool blackboxDeviceBeginLog(void)
     case BLACKBOX_DEVICE_VIRTUAL:
         return blackboxVirtualBeginLog();
 #endif
+#ifdef USE_FLASHFS
+    case BLACKBOX_DEVICE_FLASH:
+        if (blackboxFlashUsesRingMode()) {
+            return flashfsLogBeginLog();
+        }
+        return true;
+#endif
     default:
         return true;
     }
@@ -621,7 +727,7 @@ bool blackboxDeviceBeginLog(void)
  */
 bool blackboxDeviceEndLog(bool retainLog)
 {
-#ifndef USE_SDCARD
+#if !defined(USE_SDCARD) && !defined(USE_BLACKBOX_RING_LOG)
     UNUSED(retainLog);
 #endif
 
@@ -646,6 +752,20 @@ bool blackboxDeviceEndLog(bool retainLog)
         blackboxVirtualEndLog();
         return true;
 #endif
+#ifdef USE_FLASHFS
+    case BLACKBOX_DEVICE_FLASH:
+        if (blackboxFlashUsesRingMode()) {
+            if (retainLog) {
+                flashfsLogEndLog();
+            } else {
+                // Honor discard request: don't commit a trailer for an aborted/empty
+                // session — those would otherwise be enumerated as normal logs and
+                // waste ring capacity until the next wrap overwrites them.
+                flashfsLogAbortLog();
+            }
+        }
+        return true;
+#endif
 
     default:
         return true;
@@ -660,6 +780,9 @@ bool isBlackboxDeviceFull(void)
 
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
+        if (blackboxFlashUsesRingMode()) {
+            return flashfsLogIsFull(); // ring mode never reports full
+        }
         return flashfsIsEOF();
 #endif // USE_FLASHFS
 
@@ -686,7 +809,13 @@ bool isBlackboxDeviceWorking(void)
 
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
-        return flashfsIsReady();
+        // Same predicate split as isBlackboxErased / blackboxDeviceBeginLog —
+        // including the linear-mode refusal when the chip is ring-formatted, so
+        // "device working" matches what blackboxDeviceBeginLog would actually permit.
+        if (blackboxFlashUsesRingMode()) {
+            return flashfsLogIsReady();
+        }
+        return flashfsIsReady() && flashChipFormatAllowsLinearWrites();
 #endif
 
 #ifdef USE_BLACKBOX_VIRTUAL
@@ -798,8 +927,17 @@ blackboxBufferReserveStatus_e blackboxDeviceReserveBufferSpace(int32_t bytes)
              * The write doesn't currently fit in the buffer, so try to make room for it. Our flushing here means
              * that the Blackbox header writing code doesn't have to guess about the best time to ask flashfs to
              * flush, and doesn't stall waiting for a flush that would otherwise not automatically be called.
+             *
+             * Route through the ring backend in ring mode so the erase-frontier housekeeping
+             * runs on the same backpressure path that header writes hit when the RAM buffer
+             * is tight. Today the ring helper just delegates to flashfsFlushAsync, but the
+             * indirection lets future ring-specific work hook in here without another fix-up.
              */
-            flashfsFlushAsync(true);
+            if (blackboxFlashUsesRingMode()) {
+                flashfsLogFlushAsync(true);
+            } else {
+                flashfsFlushAsync(true);
+            }
         }
         return BLACKBOX_RESERVE_TEMPORARY_FAILURE;
 #endif // USE_FLASHFS

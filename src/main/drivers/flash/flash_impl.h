@@ -106,6 +106,15 @@ typedef struct flashVTable_s {
     bool (*waitForReady)(flashDevice_t *fdevice);
 
     void (*eraseSector)(flashDevice_t *fdevice, uint32_t address);
+    // Optional. If non-NULL, drivers expose a finer-grained erase command (e.g. 4 KB
+    // sub-sector at ~30 ms on Winbond NOR vs the 64 KB block-erase ~150 ms on the
+    // same chip). flashfs_log uses this on its on-the-fly erase pool refill to keep
+    // each chip-BUSY window short so the RAM buffer can absorb it without dropping.
+    // Drivers that don't implement this leave it NULL and consumers must use
+    // eraseSector (and pay the longer per-erase chip-BUSY stall). Address must be
+    // aligned to geometry.subsectorSize when set; bytes outside the sub-sector are
+    // left intact.
+    void (*eraseSubsector)(flashDevice_t *fdevice, uint32_t address);
     void (*eraseCompletely)(flashDevice_t *fdevice);
 
     void (*pageProgramBegin)(flashDevice_t *fdevice, uint32_t address, void (*callback)(uintptr_t arg));

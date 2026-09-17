@@ -47,6 +47,11 @@ typedef enum BlackboxSampleRate { // Sample rate is 1/(2^BlackboxSampleRate)
     BLACKBOX_RATE_16TH
 } BlackboxSampleRate_e;
 
+typedef enum BlackboxFlashMode {
+    BLACKBOX_FLASH_MODE_LINEAR = 0,
+    BLACKBOX_FLASH_MODE_RING = 1
+} BlackboxFlashMode_e;
+
 typedef enum FlightLogEvent {
     FLIGHT_LOG_EVENT_SYNC_BEEP = 0,
     FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_START = 10,   // UNUSED
@@ -67,6 +72,7 @@ typedef struct blackboxConfig_s {
     uint8_t high_resolution;
     int8_t blackbox_uart;  // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned
     uint8_t blackbox_baud; // baudRate_e index for blackbox_uart
+    uint8_t flash_mode; // BlackboxFlashMode_e (LINEAR | RING) — only meaningful for BLACKBOX_DEVICE_FLASH
 } blackboxConfig_t;
 
 PG_DECLARE(blackboxConfig_t, blackboxConfig);
