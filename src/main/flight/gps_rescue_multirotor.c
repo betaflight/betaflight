@@ -200,23 +200,6 @@ static void sensorUpdate(void)
     rescueState.sensor.errorAngleDeg =
         fmodf(rescueState.sensor.errorAngleDeg + 540.0f, 360.0f) - 180.0f;
 
-    DEBUG_SET(DEBUG_ATTITUDE, 0, lrintf(rescueState.sensor.aircraftHeadingDeg));  //!< Aircraft Heading [unit:deg]
-    DEBUG_SET(DEBUG_ATTITUDE, 2, lrintf(rescueState.sensor.currentSpeedCmS));         //!< Ground Speed [unit:cm/s]
-
-    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 0, lrintf(rescueState.intent.targetSpeedCmS));                 //!< Target Ground Speed [unit:cm/s]
-    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 1, lrintf(rescueState.sensor.currentSpeedCmS));                //!<  Ground Speed [unit:cm/s]
-    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 2, lrintf(rescueState.intent.targetVelocityEF.v[EF_EAST]));    //!< Target East Velocity[unit:cm/s]
-    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 3, lrintf(rescueState.intent.targetVelocityEF.v[EF_NORTH]));   //!< Target North Velocity[unit:cm/s]
-    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 0, lrintf(rescueState.sensor.currentSpeedCmS));  //!< Ground Speed [unit:cm/s]
-    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 1, gpsSol.groundCourse);                     //!< GPS Ground Course [unit:0.1deg]
-    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 2, attitude.values.yaw);                     //!< Yaw Attitude [unit:0.1deg]
-    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 3, GPS_directionToHome);                     //!< Direction To Home [unit:0.1deg]
-
-    const float currentAltitudeCm = getAltitudeCm();
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 0, lrintf(rescueState.sensor.currentSpeedCmS));         //!< Ground Speed [unit:cm/s]
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 2, lrintf(currentAltitudeCm));                      //!< Current Altitude [unit:cm]
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 4, lrintf(rescueState.intent.targetHeadingDeg));    //!< Target Heading [unit:deg]
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 5, lrintf(rescueState.sensor.aircraftHeadingDeg));  //!< Aircraft Heading [unit:deg]
 }
 
 #if !ENABLE_RESCUE_PLAN
@@ -316,11 +299,10 @@ static void performSanityChecks(void)
         return;
     }
 
-    DEBUG_SET(DEBUG_RTH, 2, rescueState.phase);                            //!< Rescue Phase [enum:rescuePhase_e]
-    DEBUG_SET(DEBUG_RTH, 3, rescueState.failure);                          //!< Rescue Failure Code [enum:rescueFailureState_e]
-    DEBUG_SET(DEBUG_RTH, 4, rescueState.intent.secondsFailing);            //!< Seconds Failing [unit:s]
-    DEBUG_SET(DEBUG_RTH, 5, secondsLowSats);                               //!< Seconds With Low Satellite Count [unit:s]
-    DEBUG_SET(DEBUG_RTH, 6, lrintf(rescueState.sensor.distanceToHomeCm));  //!< Distance To Home [unit:cm]
+    DEBUG_SET(DEBUG_RTH, 2, rescueState.phase);                 //!< Rescue Phase [enum:rescuePhase_e]
+    DEBUG_SET(DEBUG_RTH, 3, rescueState.failure);               //!< Rescue Failure Code [enum:rescueFailureState_e]
+    DEBUG_SET(DEBUG_RTH, 4, rescueState.intent.secondsFailing); //!< Seconds Failing [unit:s]
+    DEBUG_SET(DEBUG_RTH, 5, secondsLowSats);                    //!< Seconds With Low Satellite Count [unit:s]
 
     if (rescueState.phase == RESCUE_INITIALIZE) {
         if (rescueState.sensor.distanceToHomeCm < GPS_RESCUE_ACCEPT_RADIUS && isBelowLandingAltitude()) {
@@ -655,17 +637,9 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         break;
     }
 
-    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 4, rescueState.phase);                             //!< Rescue Phase [enum:rescuePhase_e]
-    DEBUG_SET(DEBUG_ATTITUDE,            5, rescueState.phase);                             //!< Rescue Phase [enum:rescuePhase_e]
-    DEBUG_SET(DEBUG_ATTITUDE,            6, lrintf(rescueState.intent.targetSpeedCmS));  //!< Target Velocity [unit:cm/s]
-
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 1, lrintf(rescueState.intent.targetSpeedCmS));  //!< Target Velocity [unit:cm/s]
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 3, lrintf(rescueState.intent.targetAltitudeCm));   //!< Target Altitude [unit:cm]
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 6, lrintf(rescueState.sensor.distanceToHomeCm));   //!< Distance To Home [unit:cm]
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 7, rescueState.phase);                             //!< Rescue Phase [enum:rescuePhase_e]
-
-    DEBUG_SET(DEBUG_RTH, 0, lrintf(rescueState.sensor.currentSpeedCmS / 10.0f));                //!< Ground Speed [unit:0.1m/s]
-    DEBUG_SET(DEBUG_RTH, 7, lrintf(rescueState.intent.targetSpeedCmS));                  //!< Target Velocity [unit:0.1m/s]
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 4, rescueState.phase);             //!< Rescue Phase [enum:rescuePhase_e]
+    DEBUG_SET(DEBUG_ATTITUDE,5, rescueState.phase);                         //!< Rescue Phase [enum:rescuePhase_e]
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 7, rescueState.phase);             //!< Rescue Phase [enum:rescuePhase_e]
 
     // Autopilot control of altitude is always active when rescue mode is engaged
     if (rescueState.phase > RESCUE_INITIALIZE) {

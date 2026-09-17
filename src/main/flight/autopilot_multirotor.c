@@ -420,11 +420,16 @@ void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targ
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 0, lrintf(newThrottle));       //!< Throttle Output [unit:us]
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 1, lrintf(targetAltitudeCm));  //!< Target Altitude [unit:cm]
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 2, lrintf(currentAltitudeCm)); //!< Current Altitude [unit:cm]
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 3, lrintf(altitudeP));         //!< Altitude P Term [unit:us]
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 4, lrintf(altitudeI));         //!< Altitude I Term [unit:us]
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 5, lrintf(altitudeD));         //!< Altitude D Term [unit:us]
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 6, lrintf(altitudeA));         //!< Altitude A Term [unit:us]
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));         //!< Altitude Feedforward Term [unit:us]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 3, lrintf(altitudeP));         //!< Altitude P Term [unit:u]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 4, lrintf(altitudeI));         //!< Altitude I Term [unit:u]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 5, lrintf(altitudeD));         //!< Altitude D Term [unit:u]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 6, lrintf(altitudeA));         //!< Altitude A Term [unit:u]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));         //!< Altitude Feedforward Term [unit:u]
+
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 2, lrintf(currentAltitudeCm)); //!< Current Altitude [unit:cm]
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 3, lrintf(targetAltitudeCm));  //!< Target Altitude [unit:cm]
+
+
 }
 
 static void updatePositionHoldTarget(void)
@@ -755,7 +760,6 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
                 break;
             }
         }
-
         if (!haveDesiredHeading) {
             disableYawControl();
             setYawDisableReason(7);
@@ -796,11 +800,22 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     apYawRateDps = yawRateDps * GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
     apYawActive = true;
 
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 0, lrintf(headingDeg * 10.0f));
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 1, lrintf(desiredHeadingDeg * 10.0f));
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 2, lrintf(errorDeg * 10.0f));
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, lrintf(apYawRateDps * 10.0f));
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 4, lrintf(yawP * 10.0f));
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 0, lrintf(headingDeg * 10.0f));        //!< Heading [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 1, lrintf(desiredHeadingDeg * 10.0f)); //!< Target Heading [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 2, lrintf(errorDeg * 10.0f));          //!< Heading Error [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, lrintf(apYawRateDps * 10.0f));      //!< Yaw Rate [unit:0.1deg/s]
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 4, lrintf(yawP * 10.0f));              //!< YawP [unit:u]
+
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 1, gpsSol.groundCourse);              //!< GPS Ground Course [unit:0.1deg]
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 2, attitude.values.yaw);              //!< Yaw Attitude [unit:0.1deg]
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 3, lrintf(desiredHeadingDeg));        //!< Direction To Home [unit:deg]
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 4, lrintf(headingDeg));               //!< Aircraft Heading [unit:deg]
+
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 4, lrintf(desiredHeadingDeg));       //!< Target Heading [unit:deg]
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 5, lrintf(headingDeg));              //!< Aircraft Heading [unit:deg]
+
+    DEBUG_SET(DEBUG_ATTITUDE, 0, lrintf(headingDeg));                         //!< Aircraft Heading [unit:deg]
+
 }
 
 // TASK_MAGHOLD. Heading hold with no position control behind it: the MAG_MODE switch on
@@ -1068,6 +1083,8 @@ bool positionControl(void)
     // own average (judged before the average absorbs the new sample): brake
     // physics (distance grows while speed falls) versus a flyaway (speed held).
     ap.speedXY = vector2Norm(&velocity);
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 0, lrintf(ap.speedXY));         //!< Ground Speed [unit:cm/s]
+
     ap.speedSlowing = ap.speedXY < ap.speedTrendCmS - 20.0f;
     ap.speedTrendCmS += (dt / (0.5f + dt)) * (ap.speedXY - ap.speedTrendCmS);
 
@@ -1226,6 +1243,10 @@ bool positionControl(void)
     if (abortNavRequested)  statusValue += 100;
     if (isPositionHeld)     statusValue += 3; // plus 1, ie 4,  if stopping
     if (ap.sticksActive)    statusValue += 5;
+
+    const float targetSpeedXY = vector2Norm(&targetVelocity);
+    const float distanceToHomeCm = vector2Norm(&currentPosition);
+
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 0, lrintf(velocity.v[ap.debugAxis]));             //!< Velocity (dbg-axis) [unit:cm/s]
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 1, lrintf(distanceError.v[ap.debugAxis]));        //!< Distance Error (dbg-axis) [unit:cm]
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 2, lrintf(pidP.v[ap.debugAxis] * 10));            //!< P Term (dbg-axis) [unit:0.1deg]
@@ -1252,6 +1273,23 @@ bool positionControl(void)
     DEBUG_SET(DEBUG_POSITION_NAV, 5, lrintf(pidD.v[ap.debugAxis] * 10));                //!< D Term (dbg-axis) [unit:0.1deg]
     DEBUG_SET(DEBUG_POSITION_NAV, 6, lrintf(pidA.v[ap.debugAxis] * 10));                //!< A Term (dbg-axis) [unit:0.1deg]
     DEBUG_SET(DEBUG_POSITION_NAV, 7, (anchorOff ? 10 : 0) + (buildupClamped ? 1 : 0));  //!< Status Flags
+
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 0, lrintf(ap.speedXY));       //!<Current Velocity [unit:cm/s]
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 1, lrintf(targetSpeedXY));    //!< Target Velocity [unit:cm/s]
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 6, lrintf(distanceToHomeCm)); //!< Distance To Home [unit:cm]
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 0, lrintf(ap.speedXY));      //!< Ground Speed [unit:cm/s]
+
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 0, lrintf(targetSpeedXY));              //!< Target Ground Speed [unit:cm/s]
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 1, lrintf(ap.speedXY));                 //!< Ground Speed [unit:cm/s]
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 2, lrintf(targetVelocity.v[EF_EAST]));  //!< Target East Velocity[unit:cm/s]
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 3, lrintf(targetVelocity.v[EF_NORTH])); //!< Target North Velocity[unit:cm/s]
+
+    DEBUG_SET(DEBUG_RTH, 0, lrintf(ap.speedXY));       //!<Current Velocity [unit:cm/s]
+    DEBUG_SET(DEBUG_RTH, 6, lrintf(distanceToHomeCm)); //!< Distance To Home [unit:cm]
+    DEBUG_SET(DEBUG_RTH, 7, lrintf(targetSpeedXY));    //!< Target Velocity [unit:0.1m/s]
+
+    DEBUG_SET(DEBUG_ATTITUDE, 2, lrintf(ap.speedXY));       //!<Current Velocity [unit:cm/s]
+    DEBUG_SET(DEBUG_ATTITUDE, 6, lrintf(targetSpeedXY));    //!< Target Ground Speed [unit:cm/s]
 
     return true;
 }
