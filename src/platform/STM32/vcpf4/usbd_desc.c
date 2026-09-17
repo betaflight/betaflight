@@ -65,6 +65,8 @@
 #ifndef USBD_MANUFACTURER_STRING
 #define USBD_MANUFACTURER_STRING        FC_FIRMWARE_NAME
 #endif
+_Static_assert(sizeof(USBD_MANUFACTURER_STRING) * 2 <= USB_MAX_STR_DESC_SIZ,
+    "USBD_MANUFACTURER_STRING is too long for the USB string descriptor buffer");
 
 #ifdef USBD_PRODUCT_STRING
 #define USBD_PRODUCT_HS_STRING          USBD_PRODUCT_STRING
