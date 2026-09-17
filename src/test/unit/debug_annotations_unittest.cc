@@ -35,6 +35,7 @@
  * checker itself is tested, and then run over the firmware sources.
  */
 
+#include <algorithm>
 #include <cctype>
 #include <cstdlib>
 #include <cstring>
@@ -323,13 +324,15 @@ std::vector<std::string> checkAnnotation(const std::string &annotation, Annotati
     }
 
     const size_t firstBrace = label.find('{');
-    if (firstBrace != std::string::npos) {
-        const size_t closeBrace = label.find('}', firstBrace);
-        if (closeBrace == std::string::npos) {
-            errors.push_back("unterminated '{' in label '" + label + "'");
-        } else if (label.find('{', closeBrace) != std::string::npos) {
-            errors.push_back("label '" + label + "' has more than one {a|b|c} group");
-        } else if (!hasIndexSpec) {
+    const size_t closeBrace = label.find('}');
+    const size_t opened = std::count(label.begin(), label.end(), '{');
+    const size_t closed = std::count(label.begin(), label.end(), '}');
+    if (opened > 1) {
+        errors.push_back("label '" + label + "' has more than one {a|b|c} group");
+    } else if (opened != closed || (opened == 1 && closeBrace < firstBrace)) {
+        errors.push_back("label '" + label + "' has an unmatched brace");
+    } else if (opened == 1) {
+        if (!hasIndexSpec) {
             errors.push_back("label '" + label + "' spells out one name per index, "
                              "but the call has no [index:...] spec");
         } else {
@@ -735,6 +738,9 @@ TEST(DebugAnnotationGrammar, ChecksTheIndexSpec)
     EXPECT_NE(std::string::npos, problemsWith("[index:] Unnamed").find("empty index spec"));
     EXPECT_NE(std::string::npos,
               problemsWith("[index:0..2] Gyro Filtered ({roll||yaw}) [unit:dps]").find("leaves one of its fields unnamed"));
+    EXPECT_NE(std::string::npos, problemsWith("[index:0..1] Value {a|b}}").find("unmatched brace"));
+    EXPECT_NE(std::string::npos, problemsWith("Value }").find("unmatched brace"));
+    EXPECT_NE(std::string::npos, problemsWith("[index:0..1] Value {a|b} {c|d}").find("more than one"));
     EXPECT_NE(std::string::npos, problemsWith("Gyro Filtered [index:0..2]").find("goes in front of the label"));
 }
 
@@ -837,9 +843,13 @@ TEST_F(DebugAnnotations, EveryAcceptedUnitIsListedInTheHeader)
     std::set<std::string> words;
     std::istringstream stream(header);
     std::string word;
+    const std::string punctuation = ",.:;()[]";
     while (stream >> word) {
-        while (!word.empty() && (word[word.size() - 1] == ',' || word[word.size() - 1] == '.')) {
+        while (!word.empty() && punctuation.find(word[word.size() - 1]) != std::string::npos) {
             word.erase(word.size() - 1);
+        }
+        while (!word.empty() && punctuation.find(word[0]) != std::string::npos) {
+            word.erase(0, 1);
         }
         words.insert(word);
     }
