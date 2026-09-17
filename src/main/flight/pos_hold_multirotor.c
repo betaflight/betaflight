@@ -73,25 +73,21 @@ static void posHoldCheckSticks(void)
 
 static bool sensorsOk(void)
 {
-    // Optical flow position hold is heading-agnostic: the same yaw is used
-    // to project flow into ENU and to rotate the correction back to body
-    // frame, so a heading error cancels. GPS-assisted hold is not: GPS
-    // provides absolute ENU measurements and a bad yaw in the body-frame
-    // correction rotation will cause a flyaway.
-    // Use the runtime GPS state (fix present + config allows GPS) rather than
-    // the configured source alone, so AUTO mode with no GPS hardware correctly
-
     if (!positionEstimatorIsValidXY()) {
-        return false; // always need valid XY data, can be optical only
+        DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 6, 1);
+        return false;
     }
 
     if (positionEstimatorIsHeadingRequired()) {
-        return imuIsHeadingValid(); // if heading is essential (ie no optical flow), pass or fail based on whether or not heading exists.
-    } else {
-        return true; // if no heading is needed, we don't care about it (optical flow situation)
+        if (!imuIsHeadingValid()) {
+            DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 6, 2);
+            return false;
+        }
     }
-}
 
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 6, 0);
+    return true;
+}
 bool posHoldUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 {
     UNUSED(currentTimeUs);
