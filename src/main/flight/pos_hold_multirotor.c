@@ -74,18 +74,18 @@ static void posHoldCheckSticks(void)
 static bool sensorsOk(void)
 {
     if (!positionEstimatorIsValidXY()) {
-        DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 6, 1);
+        DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 6, 1);  //!< Position Hold Sensor Status
         return false;
     }
 
     if (positionEstimatorIsHeadingRequired()) {
         if (!imuIsHeadingValid()) {
-            DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 6, 2);
+            DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 6, 2);  //!< Position Hold Sensor Status
             return false;
         }
     }
 
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 6, 0);
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 6, 0);  //!< Position Hold Sensor Status
     return true;
 }
 bool posHoldUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
