@@ -125,7 +125,6 @@
 // tighter error bound stops that speed-proportional lead from driving P into a
 // positive-feedback overspeed, leaving the velocity feedforward to set cruise.
 #define NAV_ERROR_DISTANCE_LIMIT 500.0f // 5m
-#define NAV_ALONG_TRACK_MIN_SPEED 20.0f // cm/s below which full position feedback returns
 #define POSITION_I_LIMIT      2000.0f // TO DO: test and set to a useful value, this is 20m
 
 #define AP_YAW_P_SCALE         0.06f
