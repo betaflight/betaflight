@@ -381,10 +381,20 @@ void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targ
     const float verticalVelocity = getAltitudeDerivativeControl();
     const float altitudeErrorCm = targetAltitudeCm - currentAltitudeCm;
     const float itermRelax = (fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f; // don't accumulate too much iTerm with transient but large overshoots (>2m error )
-    const float altitudeP = altitudeErrorCm * altitudeKp;
     altitudeI += altitudeErrorCm * altitudeKi * itermRelax * taskIntervalS;
     altitudeI = constrainf(altitudeI, -ALTITUDE_I_LIMIT, ALTITUDE_I_LIMIT);
     const float velMax = (velLimitCmS > 1.0f) ? velLimitCmS : ALTITUDE_VEL_CMD_MAX_DEFAULT_CM_S;
+    // P is opposed by D, so the climb settles where P + D = 0, i.e. at
+    // errorCm * Kp / Kd. Clamping P to the offset D produces at velMax makes
+    // that settling point velMax exactly - without this the velocity limit has
+    // no authority over the climb and ascend/descend rate settings do nothing.
+    // With D disabled there is nothing for P to settle against, so the clamp
+    // would only strip the proportional response: leave P alone in that case.
+    float altitudeP = altitudeErrorCm * altitudeKp;
+    if (altitudeKd > 0.0f) {
+        const float altitudePLimit = velMax * altitudeKd;
+        altitudeP = constrainf(altitudeP, -altitudePLimit, altitudePLimit);
+    }
     const float targetVerticalVelocity = constrainf(targetAltitudeVelCmS, -velMax, velMax);
     float dBoost = 1.0f;
     const float boostThreshold = 500.0f; // 5m/s

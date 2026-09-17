@@ -881,21 +881,20 @@ STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
 
 static FAST_CODE_NOINLINE void disarmOnImpact(void)
 {
+    const bool autopilotOwnsThrottle = FLIGHT_MODE(ALT_HOLD_MODE | GPS_RESCUE_MODE);
     // if, being armed, and after takeoff...
     if (wasThrottleRaised()
         // and, either sticks are centred and throttle zeroed,
-        && ((getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f)
-#ifdef USE_ALTITUDE_HOLD
-            // or, in altitude hold mode, where throttle can be non-zero
-            || FLIGHT_MODE(ALT_HOLD_MODE | GPS_RESCUE_MODE)
-#endif
-        )) {
-        // increase sensitivity by 50% when low and in altitude hold or failsafe landing
+        // While an autopilot owns the throttle the pilot's stick says nothing
+        // about whether we are landing: it sits low through a controlled
+        // descent, and the autopilot can step the throttle hard at any height.
+        // Require being near the ground before a jerk can disarm in those
+        // modes, and keep the ordinary centred-stick path outside them.
+        && (autopilotOwnsThrottle ? isBelowLandingAltitude()
+                                  : (getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f))) {
+        // increase sensitivity by 50% when low and under autopilot throttle control
         // for more reliable disarm with gentle controlled landings
-        float lowAltitudeSensitivity = 1.0f;
-#ifdef USE_ALTITUDE_HOLD
-        lowAltitudeSensitivity = (FLIGHT_MODE(ALT_HOLD_MODE) && isBelowLandingAltitude()) ? 1.5f : 1.0f;
-#endif
+        const float lowAltitudeSensitivity = (autopilotOwnsThrottle && isBelowLandingAltitude()) ? 1.5f : 1.0f;
         // and disarm if jerk exceeds threshold...
         if ((acc.jerkMagnitude * lowAltitudeSensitivity) > pidRuntime.landingDisarmThreshold) {
             // then disarm
