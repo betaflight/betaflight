@@ -386,12 +386,29 @@ std::vector<std::string> checkAnnotation(const std::string &annotation, Annotati
  */
 
 struct SourceLine {
-    std::string code;       // the line with its comments removed
+    std::string code;       // the line with its comments removed and its string bodies blanked
     std::string annotation; // the text after //!<
+    std::string include;    // the name in #include "...", which blanking would have eaten
     bool hasAnnotation;
 
     SourceLine() : hasAnnotation(false) {}
 };
+
+// `#include "sensors/battery.h"` from the raw line, since the scan below blanks
+// what is between quotes.
+std::string includedFile(const std::string &line)
+{
+    const std::string text = trim(line);
+    if (text.empty() || text[0] != '#' || text.find("include") == std::string::npos) {
+        return "";
+    }
+    const size_t open = text.find('"');
+    if (open == std::string::npos) {
+        return "";
+    }
+    const size_t close = text.find('"', open + 1);
+    return (close == std::string::npos) ? "" : text.substr(open + 1, close - open - 1);
+}
 
 void readSource(const std::string &path, std::vector<SourceLine> *lines)
 {
@@ -401,6 +418,9 @@ void readSource(const std::string &path, std::vector<SourceLine> *lines)
 
     while (std::getline(file, line)) {
         SourceLine source;
+        if (!inBlockComment) {
+            source.include = includedFile(line);
+        }
         size_t i = 0;
         while (i < line.size()) {
             if (inBlockComment) {
@@ -556,6 +576,17 @@ void findCalls(const std::string &file, const std::vector<SourceLine> &lines, st
     }
 }
 
+// The headers a file includes by name, which is how an [enum:...] type reaches
+// the call site. Betaflight writes these relative to src/main.
+void findIncludes(const std::vector<SourceLine> &lines, std::vector<std::string> *includes)
+{
+    for (size_t line = 0; line < lines.size(); line++) {
+        if (!lines[line].include.empty()) {
+            includes->push_back(lines[line].include);
+        }
+    }
+}
+
 void listSources(const std::string &directory, std::vector<std::string> *files)
 {
     DIR *dir = opendir(directory.c_str());
@@ -660,7 +691,10 @@ public:
                 }
             }
 
-            // Every `} name;` in the tree, to check an [enum:...] names a real type.
+            findIncludes(lines, &includesIn[files[i]]);
+
+            // Every `} name;` the file defines, so an [enum:...] can be checked
+            // against the types its call site can actually see.
             for (size_t line = 0; line < lines.size(); line++) {
                 const std::string code = trim(lines[line].code);
                 if (code.size() < 3 || code[0] != '}' || code[code.size() - 1] != ';') {
@@ -672,10 +706,46 @@ public:
                     isIdentifier = isIdentifier && isIdentifierChar(name[c]);
                 }
                 if (isIdentifier) {
-                    typeNames.insert(name);
+                    typesIn[files[i]].insert(name);
+                    if (!definedIn.count(name)) {
+                        definedIn[name] = files[i];
+                    }
                 }
             }
         }
+    }
+
+    // What a file can see: what it defines, and what the headers it includes
+    // define, all the way down. Betaflight writes an include relative to
+    // src/main, so that is how one is resolved back to a file.
+    static std::set<std::string> typesVisibleIn(const std::string &file)
+    {
+        std::set<std::string> visible;
+        std::set<std::string> seen;
+        std::vector<std::string> pending(1, file);
+
+        while (!pending.empty()) {
+            const std::string current = pending.back();
+            pending.pop_back();
+            if (!seen.insert(current).second) {
+                continue;
+            }
+            const std::map<std::string, std::set<std::string> >::const_iterator types = typesIn.find(current);
+            if (types != typesIn.end()) {
+                visible.insert(types->second.begin(), types->second.end());
+            }
+            const std::map<std::string, std::vector<std::string> >::const_iterator includes = includesIn.find(current);
+            if (includes == includesIn.end()) {
+                continue;
+            }
+            for (size_t i = 0; i < includes->second.size(); i++) {
+                const std::string path = sourceRoot + "/" + includes->second[i];
+                if (typesIn.count(path) || includesIn.count(path)) {
+                    pending.push_back(path);
+                }
+            }
+        }
+        return visible;
     }
 
     typedef std::pair<std::string, int> FieldKey;
@@ -691,14 +761,18 @@ public:
     static std::vector<CallSite> calls;
     static std::map<FieldKey, std::string> annotations;
     static std::vector<FieldKey> strayAnnotations;
-    static std::set<std::string> typeNames;
+    static std::map<std::string, std::vector<std::string> > includesIn;
+    static std::map<std::string, std::set<std::string> > typesIn;
+    static std::map<std::string, std::string> definedIn;
 };
 
 std::string DebugAnnotations::sourceRoot;
 std::vector<CallSite> DebugAnnotations::calls;
 std::map<DebugAnnotations::FieldKey, std::string> DebugAnnotations::annotations;
 std::vector<DebugAnnotations::FieldKey> DebugAnnotations::strayAnnotations;
-std::set<std::string> DebugAnnotations::typeNames;
+std::map<std::string, std::vector<std::string> > DebugAnnotations::includesIn;
+std::map<std::string, std::set<std::string> > DebugAnnotations::typesIn;
+std::map<std::string, std::string> DebugAnnotations::definedIn;
 
 } // namespace
 
@@ -855,26 +929,44 @@ TEST_F(DebugAnnotations, AnEnumShapeNamesATypeTheFirmwareDefines)
     for (size_t i = 0; i < calls.size(); i++) {
         Annotation parsed;
         checkAnnotation(annotationAt(calls[i]), &parsed);
-        if (!parsed.enumType.empty() && !typeNames.count(parsed.enumType)) {
+        if (parsed.enumType.empty() || typesVisibleIn(calls[i].file).count(parsed.enumType)) {
+            continue;
+        }
+
+        const std::map<std::string, std::string>::const_iterator elsewhere = definedIn.find(parsed.enumType);
+        if (elsewhere == definedIn.end()) {
             ADD_FAILURE_AT(displayPath(calls[i].file).c_str(), calls[i].endLine)
                 << "no 'typedef enum { ... } " << parsed.enumType << ";' in src/main: "
                 << "tooling reads the enumerator names from the type, so it has to exist.";
+        } else {
+            ADD_FAILURE_AT(displayPath(calls[i].file).c_str(), calls[i].endLine)
+                << parsed.enumType << " is defined in " << displayPath(elsewhere->second)
+                << ", which this file does not include: tooling reads the enumerator names from where the "
+                << "call site can see them.";
         }
     }
 }
 
-TEST_F(DebugAnnotations, AnIndexSpecIsGivenOnlyForAnIndexComputedAtRunTime)
+TEST_F(DebugAnnotations, AnIndexSpecIsGivenExactlyWhenTheIndexIsComputedAtRunTime)
 {
     ASSERT_FALSE(sourceRoot.empty());
 
     for (size_t i = 0; i < calls.size(); i++) {
-        if (!isCompileTimeIndex(calls[i].indexArg)) {
+        const std::string annotation = annotationAt(calls[i]);
+        if (annotation.empty()) {
             continue;
         }
-        if (startsWith(annotationAt(calls[i]), "[index:")) {
+        const bool constant = isCompileTimeIndex(calls[i].indexArg);
+        const bool specified = startsWith(annotation, "[index:");
+
+        if (constant && specified) {
             ADD_FAILURE_AT(displayPath(calls[i].file).c_str(), calls[i].endLine)
                 << "the call writes debug[" << calls[i].indexArg << "], a compile-time constant that tooling "
                 << "reads from the call itself: drop the [index:...] spec.";
+        } else if (!constant && !specified) {
+            ADD_FAILURE_AT(displayPath(calls[i].file).c_str(), calls[i].endLine)
+                << "no static scan can evaluate the index '" << calls[i].indexArg << "', so say what the call "
+                << "writes: [index:2], [index:0..2] or [index:0,2,4]. A constant is written in capitals.";
         }
     }
 }
