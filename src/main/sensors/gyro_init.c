@@ -258,7 +258,7 @@ void gyroInitFilters(void)
     dynLpfFilterInit();
 #endif
 #ifdef USE_DYN_NOTCH_FILTER
-    dynNotchInit(dynNotchConfig(), gyro.targetLooptime * 1e-6f);
+    dynNotchInit(dynNotchConfig(), gyro.targetLooptime);
 #endif
 #ifdef USE_RPM_FILTER
     rpmFilterInit(rpmFilterConfig(), gyro.targetLooptime);
