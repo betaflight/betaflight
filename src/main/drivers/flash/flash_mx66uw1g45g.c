@@ -631,7 +631,7 @@ MMFLASH_CODE static bool mx66_read_raw(uint32_t address, uint8_t *buffer, uint32
 
 MMFLASH_CODE static int mx66uw1g45g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, uint32_t length)
 {
-    if (address >= fdevice->geometry.totalSize) {
+    if (length == 0 || address >= fdevice->geometry.totalSize) {
         return 0;
     }
     const uint32_t remaining = fdevice->geometry.totalSize - address;
