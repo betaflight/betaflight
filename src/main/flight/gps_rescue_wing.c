@@ -71,17 +71,17 @@ bool gpsRescueIsConfigured(void)
 
 bool gpsRescueIsAvailable(void)
 {
-    return true;
+    return false;
 }
 
 bool gpsRescueIsHeadingOK(void)
 {
-    return true;
+    return false;
 }
 
 bool gpsRescueIsOK(void)
 {
-    return true;
+    return false;
 }
 
 
