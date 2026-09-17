@@ -1334,11 +1334,24 @@ static void updateDronecanGPS(void)
     // If the cached frame is stale treat it as no new data: don't bump
     // lastNavMessage or keep SENSOR_GPS pegged, so the normal receive-timeout
     // path can trip to GPS_STATE_LOST_COMMUNICATION when the module dies.
-    const timeUs_t ageUs = micros() - dronecanGnssLastUpdateUs();
+    const timeUs_t updateUs = dronecanGnssLastUpdateUs();
+    const timeUs_t ageUs = micros() - updateUs;
     if (ageUs >= 2000000) { // 2 s
         gpsSetFixState(0);
         return;
     }
+
+    // Publish only what the module has actually sent since last time. The cache is polled on a
+    // fixed interval rather than driven by arrivals, so without this the same solution is
+    // republished every tick: the nav interval would report our poll rate instead of the
+    // module's, and onGpsNewData() would run again on a frame it has already consumed. Compared
+    // for inequality rather than ordering, so a reset cache — dronecanGnssInit() clears the
+    // timestamp — publishes its first frame instead of waiting out the old value.
+    static timeUs_t lastPublishedUpdateUs = 0;
+    if (updateUs == lastPublishedUpdateUs) {
+        return;
+    }
+    lastPublishedUpdateUs = updateUs;
 
     if (gpsData.state == GPS_STATE_INITIALIZED) {
         gpsSetState(GPS_STATE_RECEIVING_DATA);
