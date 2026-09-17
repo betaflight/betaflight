@@ -637,6 +637,21 @@ poshold_unittest_SRC := \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/pg/rx.c
 
+launch_wing_unittest_SRC := \
+		$(USER_DIR)/flight/launch_wing.c \
+		$(USER_DIR)/pg/launch_wing.c \
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
+
+launch_wing_unittest_DEFINES := \
+		USE_WING= \
+		USE_LAUNCH_WING= \
+		USE_GPS= \
+		USE_ACC=
+
 position_estimator_unittest_SRC := \
 		$(USER_DIR)/flight/position_estimator.c \
 		$(USER_DIR)/flight/position_filter.c \

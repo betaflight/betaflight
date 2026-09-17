@@ -1316,4 +1316,19 @@ float getAutopilotThrottle(void)
     return throttleOut;
 }
 
+bool autopilotAltitudeControlAvailable(void)
+{
+    return true;
+}
+
+bool autopilotPositionControlAvailable(void)
+{
+    return true;
+}
+
+bool autopilotThrottleValid(void)
+{
+    return true;
+}
+
 #endif // !USE_WING
