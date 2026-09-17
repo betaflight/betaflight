@@ -35,12 +35,22 @@ uint8_t calculateThrottlePercentAbs(void) { return 0; }
 
 TEST(DynNotchFilterUnittest, TestUpdateRateBoundary)
 {
+    // PG defaults: min_hz, max_hz, q, count
+    const dynNotchConfig_t config = { 100, 600, 300, 3 };
+
     // 499us ~= 2004Hz: above the minimum update rate.
-    EXPECT_TRUE(dynNotchUpdateRateSupported(499));
+    dynNotchInit(&config, 499);
+    EXPECT_TRUE(isDynNotchActive());
 
     // 500us = exactly 2000Hz: the regression case, must remain enabled.
-    EXPECT_TRUE(dynNotchUpdateRateSupported(500));
+    dynNotchInit(&config, 500);
+    EXPECT_TRUE(isDynNotchActive());
 
     // 501us ~= 1996Hz: below the minimum update rate.
-    EXPECT_FALSE(dynNotchUpdateRateSupported(501));
+    dynNotchInit(&config, 501);
+    EXPECT_FALSE(isDynNotchActive());
+
+    // 0us: an invalid looptime must not enable the filter.
+    dynNotchInit(&config, 0);
+    EXPECT_FALSE(isDynNotchActive());
 }
