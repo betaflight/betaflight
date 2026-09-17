@@ -154,6 +154,10 @@ bool isKnownUnitSymbol(const std::string &symbol)
 int indicesNamedBy(const std::string &spec, std::vector<std::string> *errors)
 {
     const std::string text = trim(spec);
+    if (text.empty()) {
+        errors->push_back("empty index spec: name the indices the call writes");
+        return 0;
+    }
     if (isUnsignedInteger(text)) {
         return 1;
     }
@@ -189,22 +193,27 @@ int indicesNamedBy(const std::string &spec, std::vector<std::string> *errors)
 void checkUnit(const std::string &unit, std::vector<std::string> *errors)
 {
     size_t i = 0;
+    size_t digits = 0;
+    bool signOrPoint = false;
     if (i < unit.size() && unit[i] == '-') {
+        signOrPoint = true;
         i++;
     }
-    const size_t digitsStart = i;
     while (i < unit.size() && isdigit((unsigned char)unit[i])) {
+        digits++;
         i++;
     }
     if (i < unit.size() && unit[i] == '.') {
+        signOrPoint = true;
         i++;
         while (i < unit.size() && isdigit((unsigned char)unit[i])) {
+            digits++;
             i++;
         }
     }
-    const bool hasFactor = i > digitsStart;
-    if (!hasFactor && digitsStart > 0) {
-        errors->push_back("unit '" + unit + "' has a sign with no factor");
+    const bool hasFactor = digits > 0;
+    if (!hasFactor && signOrPoint) {
+        errors->push_back("unit '" + unit + "' has a sign or a decimal point with no factor");
         return;
     }
 
@@ -325,7 +334,13 @@ std::vector<std::string> checkAnnotation(const std::string &annotation, Annotati
                              "but the call has no [index:...] spec");
         } else {
             const std::vector<std::string> names = split(label.substr(firstBrace + 1, closeBrace - firstBrace - 1), '|');
-            if ((int)names.size() != parsed->indices) {
+            bool named = true;
+            for (size_t n = 0; n < names.size(); n++) {
+                named = named && !trim(names[n]).empty();
+            }
+            if (!named) {
+                errors.push_back("label '" + label + "' leaves one of its fields unnamed");
+            } else if ((int)names.size() != parsed->indices) {
                 std::ostringstream message;
                 message << "label '" << label << "' names " << names.size()
                         << " field(s) for " << parsed->indices << " index(es)";
@@ -681,6 +696,8 @@ TEST(DebugAnnotationGrammar, AcceptsAFactorASignAndADimensionlessScale)
     EXPECT_EQ("", problemsWith("Uplink RSSI [unit:-1dBm]"));
     EXPECT_EQ("", problemsWith("Throttle Ratio [unit:0.001]"));
     EXPECT_EQ("", problemsWith("Velocity Variance [unit:cm2/s2]"));
+    EXPECT_NE(std::string::npos, problemsWith("Uplink RSSI [unit:-dBm]").find("with no factor"));
+    EXPECT_NE(std::string::npos, problemsWith("Yaw Rate [unit:.dps]").find("with no factor"));
 }
 
 TEST(DebugAnnotationGrammar, RejectsAUnitSymbolNoConsumerKnows)
@@ -715,6 +732,9 @@ TEST(DebugAnnotationGrammar, ChecksTheIndexSpec)
               problemsWith("Gyro Filtered ({roll|pitch|yaw}) [unit:dps]").find("no [index:...] spec"));
     EXPECT_NE(std::string::npos, problemsWith("[index:2..0] Backwards").find("ends before it starts"));
     EXPECT_NE(std::string::npos, problemsWith("[index:axis] Computed").find("is not an index"));
+    EXPECT_NE(std::string::npos, problemsWith("[index:] Unnamed").find("empty index spec"));
+    EXPECT_NE(std::string::npos,
+              problemsWith("[index:0..2] Gyro Filtered ({roll||yaw}) [unit:dps]").find("leaves one of its fields unnamed"));
     EXPECT_NE(std::string::npos, problemsWith("Gyro Filtered [index:0..2]").find("goes in front of the label"));
 }
 
