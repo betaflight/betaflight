@@ -331,15 +331,18 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
     {
         // Acc and gyro data may not be continuous (MPU6xxx has temperature in between)
         const uint8_t gyroDataIndex = ((gyro->gyroDataReg - gyro->dmaReadRegStart) >> 1) + 1;
-        const uint8_t tempDataIndex = ((gyro->tempDataReg - gyro->dmaReadRegStart) >> 1) + 1;
 
         // If read was triggered in interrupt don't bother waiting. The worst that could happen is that we pick
         // up an old value.
         gyro->gyroADCRaw[X] = __builtin_bswap16(gyroData[gyroDataIndex]);
         gyro->gyroADCRaw[Y] = __builtin_bswap16(gyroData[gyroDataIndex + 1]);
         gyro->gyroADCRaw[Z] = __builtin_bswap16(gyroData[gyroDataIndex + 2]);
-        // temperature was read as well, so populate it
-        gyro->temperature = (int16_t)(((int16_t)__builtin_bswap16(gyroData[tempDataIndex])) * gyro->tempScale + gyro->tempZero);
+
+        const uint8_t dmaReadRegEnd = gyro->gyroDataReg + 3 * sizeof(int16_t);
+        if (gyro->tempDataReg >= gyro->dmaReadRegStart && gyro->tempDataReg < dmaReadRegEnd) {
+            const uint8_t tempDataIndex = ((gyro->tempDataReg - gyro->dmaReadRegStart) >> 1) + 1;
+            gyro->temperature = (int16_t)(((int16_t)__builtin_bswap16(gyroData[tempDataIndex])) * gyro->tempScale + gyro->tempZero);
+        }
         break;
     }
 

@@ -463,6 +463,7 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
                 gyroHardware = GYRO_ICM42622P;
                 break;
             case ICM_42688P_SPI:
+            case ICM_42688P_HXY_SPI:
                 gyroHardware = GYRO_ICM42688P;
                 break;
             case ICM_42686P_SPI:

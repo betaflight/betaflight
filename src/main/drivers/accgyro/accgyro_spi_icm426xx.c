@@ -61,6 +61,30 @@
 
 #define ICM426XX_CLKIN_FREQ                         32000
 
+// HXY ICM-42688P-compatible variant, which uses a different register map.
+#define ICM42688P_HXY_MAX_SPI_CLK_HZ                10000000
+#define ICM42688P_HXY_RA_WHO_AM_I                   0x01
+#define ICM42688P_HXY_RA_COM_CFG                    0x05
+#define ICM42688P_HXY_RA_INT_CFG1                   0x06
+#define ICM42688P_HXY_RA_ACCEL_DATA_X1              0x0C
+#define ICM42688P_HXY_RA_GYRO_DATA_X1               0x12
+#define ICM42688P_HXY_RA_TEMP_DATA1                 0x22
+#define ICM42688P_HXY_RA_ACCEL_CONFIG               0x40
+#define ICM42688P_HXY_RA_ACCEL_RANGE                0x41
+#define ICM42688P_HXY_RA_GYRO_CONFIG                0x42
+#define ICM42688P_HXY_RA_GYRO_RANGE                 0x43
+#define ICM42688P_HXY_RA_SOFT_RESET                 0x4A
+#define ICM42688P_HXY_RA_PWR_CTRL                   0x7D
+
+#define ICM42688P_HXY_COM_CFG_AUTO_INCREMENT        0x50
+#define ICM42688P_HXY_INT1_GYRO_DATA_READY          0x03
+#define ICM42688P_HXY_ACCEL_16G                     0x03
+#define ICM42688P_HXY_ACCEL_1600HZ                  0x8C
+#define ICM42688P_HXY_GYRO_2000DPS                  0x00
+#define ICM42688P_HXY_GYRO_3200HZ                   0x8D
+#define ICM42688P_HXY_SOFT_RESET                    0xA5
+#define ICM42688P_HXY_PWR_ALL_ON                    0x0E
+
 // Soft Reset
 #define ICM426XX_RA_DEVICE_CONFIG                   0x11
 #define DEVICE_CONFIG_SOFT_RESET_BIT                (1 << 0) // Soft reset bit
@@ -261,6 +285,11 @@ static void icm426xxSoftReset(const extDevice_t *dev)
 uint8_t icm426xxSpiDetect(const extDevice_t *dev)
 {
     delay(1);                          // power-on time
+
+    if (spiReadRegMsk(dev, ICM42688P_HXY_RA_WHO_AM_I) == ICM42688P_HXY_WHO_AM_I_CONST) {
+        return ICM_42688P_HXY_SPI;
+    }
+
     icm426xxSoftReset(dev);
     spiWriteReg(dev, ICM426XX_RA_PWR_MGMT0, 0x00);
 
@@ -337,6 +366,7 @@ bool icm426xxSpiAccDetect(accDev_t *acc)
     case ICM_42622P_SPI:
     case ICM_42686P_SPI:
     case ICM_42688P_SPI:
+    case ICM_42688P_HXY_SPI:
     case IIM_42652_SPI:
     case IIM_42653_SPI:
         break;
@@ -364,9 +394,44 @@ static void turnGyroAccOn(const extDevice_t *dev)
     delay(1);
 }
 
+static bool icm42688pHxyReadTemperature(gyroDev_t *gyro, int16_t *temperature)
+{
+    uint8_t data[2];
+    if (!busReadRegisterBuffer(&gyro->dev, ICM42688P_HXY_RA_TEMP_DATA1, data, sizeof(data))) {
+        return false;
+    }
+
+    const int16_t rawTemperature = (int16_t)((data[0] << 8) | data[1]);
+    *temperature = rawTemperature / 512 + 23;
+    return true;
+}
+
 void icm426xxGyroInit(gyroDev_t *gyro)
 {
     const extDevice_t *dev = &gyro->dev;
+
+    if (gyro->mpuDetectionResult.sensor == ICM_42688P_HXY_SPI) {
+        spiSetClkDivisor(dev, spiCalculateDivider(ICM42688P_HXY_MAX_SPI_CLK_HZ));
+
+        mpuGyroInit(gyro);
+        gyro->accDataReg = ICM42688P_HXY_RA_ACCEL_DATA_X1;
+        gyro->gyroDataReg = ICM42688P_HXY_RA_GYRO_DATA_X1;
+        gyro->tempDataReg = ICM42688P_HXY_RA_TEMP_DATA1;
+        gyro->dmaReadRegStart = gyro->accDataReg;
+
+        spiWriteReg(dev, ICM42688P_HXY_RA_SOFT_RESET, ICM42688P_HXY_SOFT_RESET);
+        delay(10);
+        spiWriteReg(dev, ICM42688P_HXY_RA_PWR_CTRL, ICM42688P_HXY_PWR_ALL_ON);
+        delay(10);
+        spiWriteReg(dev, ICM42688P_HXY_RA_COM_CFG, ICM42688P_HXY_COM_CFG_AUTO_INCREMENT);
+        spiWriteReg(dev, ICM42688P_HXY_RA_INT_CFG1, ICM42688P_HXY_INT1_GYRO_DATA_READY);
+        spiWriteReg(dev, ICM42688P_HXY_RA_ACCEL_RANGE, ICM42688P_HXY_ACCEL_16G);
+        spiWriteReg(dev, ICM42688P_HXY_RA_GYRO_RANGE, ICM42688P_HXY_GYRO_2000DPS);
+        spiWriteReg(dev, ICM42688P_HXY_RA_ACCEL_CONFIG, ICM42688P_HXY_ACCEL_1600HZ);
+        spiWriteReg(dev, ICM42688P_HXY_RA_GYRO_CONFIG, ICM42688P_HXY_GYRO_3200HZ);
+        delay(15);
+        return;
+    }
 
     spiSetClkDivisor(dev, spiCalculateDivider(ICM426XX_MAX_SPI_CLK_HZ));
 
@@ -476,6 +541,11 @@ bool icm426xxSpiGyroDetect(gyroDev_t *gyro)
         // ICM-42605/ICM-42622P/ICM-42686P/ICM-42688P/IIM-42652: 132.48 LSB/°C for 16-bit register read, offset 25°C
         gyro->tempScale = 1.0f / 132.48f;
         gyro->tempZero = 25.0f;
+        break;
+
+    case ICM_42688P_HXY_SPI:
+        gyro->scale = GYRO_SCALE_2000DPS;
+        gyro->temperatureFn = icm42688pHxyReadTemperature;
         break;
 
 #if ENABLE_42686_EXTENDED_RANGE

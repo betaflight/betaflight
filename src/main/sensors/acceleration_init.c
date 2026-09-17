@@ -238,6 +238,7 @@ retry:
                 accHardware = ACC_ICM42686P;
                 break;
             case ICM_42688P_SPI:
+            case ICM_42688P_HXY_SPI:
                 accHardware = ACC_ICM42688P;
                 break;
             case IIM_42652_SPI:

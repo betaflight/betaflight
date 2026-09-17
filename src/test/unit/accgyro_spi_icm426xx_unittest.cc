@@ -34,6 +34,7 @@ PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
 
 bool icm426xxSpiGyroDetect(gyroDev_t *gyro);
 bool icm426xxSpiAccDetect(accDev_t *acc);
+uint8_t icm426xxSpiDetect(const extDevice_t *dev);
 void icm426xxAccInit(accDev_t *acc);
 
 // MUST mirror the file-static definitions in src/main/drivers/accgyro/accgyro_spi_icm426xx.c
@@ -74,6 +75,21 @@ STATIC_UNIT_TESTED aafConfig_t getGyroAafConfig(const mpuSensor_e gyroModel, con
 static constexpr uint8_t AAF_DELT_42605_NORMAL = 21;
 static constexpr uint8_t AAF_DELT_42688_NORMAL = 6;
 
+static uint8_t testWhoAmI;
+static uint8_t testReadRegister;
+
+// --- icm426xxSpiDetect: WHO_AM_I variants ------------------------------------
+
+TEST(AccgyroSpiIcm426xx, DetectsIcm42688PHxy)
+{
+    extDevice_t dev = {};
+    testWhoAmI = ICM42688P_HXY_WHO_AM_I_CONST;
+    testReadRegister = 0;
+
+    EXPECT_EQ(ICM_42688P_HXY_SPI, icm426xxSpiDetect(&dev));
+    EXPECT_EQ(0x01, testReadRegister);
+}
+
 // --- icm426xxSpiGyroDetect: gyro->scale per sensor ---------------------------
 
 TEST(AccgyroSpiIcm426xx, GyroScaleIcm42605)
@@ -110,6 +126,15 @@ TEST(AccgyroSpiIcm426xx, GyroScaleIcm42688P)
     gyro.mpuDetectionResult.sensor = ICM_42688P_SPI;
     EXPECT_TRUE(icm426xxSpiGyroDetect(&gyro));
     EXPECT_FLOAT_EQ(GYRO_SCALE_2000DPS, gyro.scale);
+}
+
+TEST(AccgyroSpiIcm426xx, GyroScaleIcm42688PHxy)
+{
+    gyroDev_t gyro = {};
+    gyro.mpuDetectionResult.sensor = ICM_42688P_HXY_SPI;
+    EXPECT_TRUE(icm426xxSpiGyroDetect(&gyro));
+    EXPECT_FLOAT_EQ(GYRO_SCALE_2000DPS, gyro.scale);
+    EXPECT_NE(nullptr, gyro.temperatureFn);
 }
 
 TEST(AccgyroSpiIcm426xx, GyroScaleIim42652)
@@ -176,6 +201,14 @@ TEST(AccgyroSpiIcm426xx, AccOneGIcm42688P)
 {
     accDev_t acc = {};
     acc.mpuDetectionResult.sensor = ICM_42688P_SPI;
+    icm426xxAccInit(&acc);
+    EXPECT_EQ(512u * 4u, acc.acc_1G); // ±16g
+}
+
+TEST(AccgyroSpiIcm426xx, AccOneGIcm42688PHxy)
+{
+    accDev_t acc = {};
+    acc.mpuDetectionResult.sensor = ICM_42688P_HXY_SPI;
     icm426xxAccInit(&acc);
     EXPECT_EQ(512u * 4u, acc.acc_1G); // ±16g
 }
@@ -255,11 +288,15 @@ uint16_t spiCalculateDivider(uint32_t)
 
 void spiWriteReg(const extDevice_t *, uint8_t, uint8_t) {}
 
-uint8_t spiReadRegMsk(const extDevice_t *, uint8_t)
+uint8_t spiReadRegMsk(const extDevice_t *, uint8_t reg)
 {
-    // Drives the WHO_AM_I detection loop in icm426xxSpiDetect (not exercised by these tests);
-    // returning 0 is harmless because the tests never call icm426xxSpiDetect.
-    return 0;
+    testReadRegister = reg;
+    return testWhoAmI;
+}
+
+bool busReadRegisterBuffer(const extDevice_t *, uint8_t, uint8_t *, uint8_t)
+{
+    return false;
 }
 
 void mpuGyroInit(gyroDev_t *) {}
