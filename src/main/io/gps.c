@@ -1361,9 +1361,6 @@ static void updateDronecanGPS(void)
     }
 #endif
 
-    gpsData.lastNavMessage = gpsData.now;
-    sensorsSet(SENSOR_GPS);
-
     // The module's own status says whether it has a 3D solution; the count is no
     // longer a proxy for it, because the count now keeps reporting while the
     // module is still acquiring. Both are required, which is exactly the
@@ -1371,11 +1368,17 @@ static void updateDronecanGPS(void)
     // `numSat > 3` test could only pass on a 3D fix with more than three
     // satellites. Whether the count should still gate the fix at all is a
     // separate question from reporting it, and is left alone here.
+    // Set before publishing the frame, so onGpsNewData() sees it.
     gpsSetFixState(incomingHasFix && gpsSol.numSat > 3);
-    GPS_update ^= GPS_DIRECT_TICK;
 
     calculateNavInterval();
-    onGpsNewData();
+
+    // Publish through the shared path rather than repeating it. Besides the
+    // bookkeeping this used to duplicate — lastNavMessage, SENSOR_GPS, the tick
+    // and onGpsNewData() — it carries the two DEBUG_GPS_CONNECTION writes that
+    // live nowhere else, so nav interval and nav message age were stuck at zero
+    // on this provider while every serial one reported them.
+    gpsHandleFrameComplete();
 }
 #endif
 
