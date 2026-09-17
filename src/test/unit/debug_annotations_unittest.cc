@@ -587,6 +587,45 @@ void findIncludes(const std::vector<SourceLine> &lines, std::vector<std::string>
     }
 }
 
+// The `typedef enum { ... } name;` a file defines. Only an enum: a struct
+// typedef carries no enumerator names for a consumer to read, so an
+// [enum:...] that named one would describe nothing.
+void findEnumTypes(const std::vector<SourceLine> &lines, std::set<std::string> *names)
+{
+    int depth = 0;
+    int enumDepth = -1;
+
+    for (size_t line = 0; line < lines.size(); line++) {
+        const std::string &code = lines[line].code;
+        if (enumDepth < 0 && code.find("typedef enum") != std::string::npos) {
+            enumDepth = depth;
+        }
+        for (size_t i = 0; i < code.size(); i++) {
+            if (code[i] == '{') {
+                depth++;
+            } else if (code[i] == '}') {
+                depth--;
+                if (enumDepth < 0 || depth != enumDepth) {
+                    continue;
+                }
+                enumDepth = -1;
+                std::string name = trim(code.substr(i + 1));
+                if (name.empty() || name[name.size() - 1] != ';') {
+                    continue;
+                }
+                name = trim(name.substr(0, name.size() - 1));
+                bool isIdentifier = !name.empty();
+                for (size_t c = 0; c < name.size(); c++) {
+                    isIdentifier = isIdentifier && isIdentifierChar(name[c]);
+                }
+                if (isIdentifier) {
+                    names->insert(name);
+                }
+            }
+        }
+    }
+}
+
 void listSources(const std::string &directory, std::vector<std::string> *files)
 {
     DIR *dir = opendir(directory.c_str());
@@ -693,32 +732,22 @@ public:
 
             findIncludes(lines, &includesIn[files[i]]);
 
-            // Every `} name;` the file defines, so an [enum:...] can be checked
-            // against the types its call site can actually see.
-            for (size_t line = 0; line < lines.size(); line++) {
-                const std::string code = trim(lines[line].code);
-                if (code.size() < 3 || code[0] != '}' || code[code.size() - 1] != ';') {
-                    continue;
-                }
-                const std::string name = trim(code.substr(1, code.size() - 2));
-                bool isIdentifier = !name.empty();
-                for (size_t c = 0; c < name.size(); c++) {
-                    isIdentifier = isIdentifier && isIdentifierChar(name[c]);
-                }
-                if (isIdentifier) {
-                    typesIn[files[i]].insert(name);
-                    if (!definedIn.count(name)) {
-                        definedIn[name] = files[i];
-                    }
+            // The enums the file defines, so an [enum:...] can be checked
+            // against the ones its call site can actually see.
+            findEnumTypes(lines, &enumsIn[files[i]]);
+            const std::set<std::string> &defined = enumsIn[files[i]];
+            for (std::set<std::string>::const_iterator name = defined.begin(); name != defined.end(); ++name) {
+                if (!enumDefinedIn.count(*name)) {
+                    enumDefinedIn[*name] = files[i];
                 }
             }
         }
     }
 
-    // What a file can see: what it defines, and what the headers it includes
-    // define, all the way down. Betaflight writes an include relative to
+    // The enums a file can see: the ones it defines, and the ones the headers
+    // it includes define, all the way down. Betaflight writes an include relative to
     // src/main, so that is how one is resolved back to a file.
-    static std::set<std::string> typesVisibleIn(const std::string &file)
+    static std::set<std::string> enumsVisibleIn(const std::string &file)
     {
         std::set<std::string> visible;
         std::set<std::string> seen;
@@ -730,9 +759,9 @@ public:
             if (!seen.insert(current).second) {
                 continue;
             }
-            const std::map<std::string, std::set<std::string> >::const_iterator types = typesIn.find(current);
-            if (types != typesIn.end()) {
-                visible.insert(types->second.begin(), types->second.end());
+            const std::map<std::string, std::set<std::string> >::const_iterator enums = enumsIn.find(current);
+            if (enums != enumsIn.end()) {
+                visible.insert(enums->second.begin(), enums->second.end());
             }
             const std::map<std::string, std::vector<std::string> >::const_iterator includes = includesIn.find(current);
             if (includes == includesIn.end()) {
@@ -740,7 +769,7 @@ public:
             }
             for (size_t i = 0; i < includes->second.size(); i++) {
                 const std::string path = sourceRoot + "/" + includes->second[i];
-                if (typesIn.count(path) || includesIn.count(path)) {
+                if (enumsIn.count(path) || includesIn.count(path)) {
                     pending.push_back(path);
                 }
             }
@@ -762,8 +791,8 @@ public:
     static std::map<FieldKey, std::string> annotations;
     static std::vector<FieldKey> strayAnnotations;
     static std::map<std::string, std::vector<std::string> > includesIn;
-    static std::map<std::string, std::set<std::string> > typesIn;
-    static std::map<std::string, std::string> definedIn;
+    static std::map<std::string, std::set<std::string> > enumsIn;
+    static std::map<std::string, std::string> enumDefinedIn;
 };
 
 std::string DebugAnnotations::sourceRoot;
@@ -771,8 +800,8 @@ std::vector<CallSite> DebugAnnotations::calls;
 std::map<DebugAnnotations::FieldKey, std::string> DebugAnnotations::annotations;
 std::vector<DebugAnnotations::FieldKey> DebugAnnotations::strayAnnotations;
 std::map<std::string, std::vector<std::string> > DebugAnnotations::includesIn;
-std::map<std::string, std::set<std::string> > DebugAnnotations::typesIn;
-std::map<std::string, std::string> DebugAnnotations::definedIn;
+std::map<std::string, std::set<std::string> > DebugAnnotations::enumsIn;
+std::map<std::string, std::string> DebugAnnotations::enumDefinedIn;
 
 } // namespace
 
@@ -929,12 +958,12 @@ TEST_F(DebugAnnotations, AnEnumShapeNamesATypeTheFirmwareDefines)
     for (size_t i = 0; i < calls.size(); i++) {
         Annotation parsed;
         checkAnnotation(annotationAt(calls[i]), &parsed);
-        if (parsed.enumType.empty() || typesVisibleIn(calls[i].file).count(parsed.enumType)) {
+        if (parsed.enumType.empty() || enumsVisibleIn(calls[i].file).count(parsed.enumType)) {
             continue;
         }
 
-        const std::map<std::string, std::string>::const_iterator elsewhere = definedIn.find(parsed.enumType);
-        if (elsewhere == definedIn.end()) {
+        const std::map<std::string, std::string>::const_iterator elsewhere = enumDefinedIn.find(parsed.enumType);
+        if (elsewhere == enumDefinedIn.end()) {
             ADD_FAILURE_AT(displayPath(calls[i].file).c_str(), calls[i].endLine)
                 << "no 'typedef enum { ... } " << parsed.enumType << ";' in src/main: "
                 << "tooling reads the enumerator names from the type, so it has to exist.";
