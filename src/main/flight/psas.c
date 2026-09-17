@@ -169,15 +169,22 @@ static void FAST_CODE_NOINLINE computeLiftCoefficient(const pidProfile_t *pidPro
 // Accel Z (G load) error integrator with weak P-term: stick → desired G, I-term eliminates offset (astatic).
 static float FAST_CODE_NOINLINE updateAccelZHoldingController(float pitchStick, float accelZ)
 {
-    float deltaAccP = 0.0f;
-    float accelReq = pitchStick < 0.0f ? (1.0f - psasRuntime.pitch_accel_max) * pitchStick + 1.0f
-                                           : -(1.0f + psasRuntime.pitch_accel_min) * pitchStick + 1.0f;
+    float pitch_accel_max = psasRuntime.pitch_accel_max;
+    float pitch_accel_min = psasRuntime.pitch_accel_min;
+    // Decrease min and max accel z value at lower airspeed when pitch stick speed gain is enabled
+    if (psasRuntime.speed_gains.stick[FD_PITCH] > 1.0f) {
+        pitch_accel_max = MAX(pitch_accel_max / psasRuntime.speed_gains.stick[FD_PITCH], 2.0f);
+        pitch_accel_min = MIN(pitch_accel_min / psasRuntime.speed_gains.stick[FD_PITCH], -1.0f);
+    }
+
+    float accelReq = pitchStick < 0.0f ? (1.0f - pitch_accel_max) * pitchStick + 1.0f
+                                      : -(1.0f + pitch_accel_min) * pitchStick + 1.0f;
     float accelDelta = accelZ - accelReq;
     float servoVelocity = accelDelta * psasRuntime.pitch_accel_i_gain;
     servoVelocity = constrainf(servoVelocity, -psasRuntime.servoVelocityLimit, psasRuntime.servoVelocityLimit);
 
     psasData.pitch.I += servoVelocity * pidRuntime.dT;
-    deltaAccP = accelDelta * psasRuntime.pitch_accel_p_gain;
+    float deltaAccP = accelDelta * psasRuntime.pitch_accel_p_gain;
 
     DEBUG_SET(DEBUG_PSAS, 3, lrintf(accelReq * 10.0f)); //!< Accel Z required [unit:0.1]
     DEBUG_SET(DEBUG_PSAS, 4, lrintf(accelDelta * 10.0f)); //!< Accel Z delta [unit:0.1]
