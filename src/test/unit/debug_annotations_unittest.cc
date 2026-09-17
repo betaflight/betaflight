@@ -673,6 +673,12 @@ std::string displayPath(const std::string &path)
     return (main == std::string::npos) ? path : "src/" + path.substr(main);
 }
 
+std::string directoryOf(const std::string &path)
+{
+    const size_t slash = path.rfind('/');
+    return (slash == std::string::npos) ? "." : path.substr(0, slash);
+}
+
 std::string readFile(const std::string &path)
 {
     std::ifstream file(path.c_str());
@@ -768,9 +774,15 @@ public:
                 continue;
             }
             for (size_t i = 0; i < includes->second.size(); i++) {
-                const std::string path = sourceRoot + "/" + includes->second[i];
-                if (enumsIn.count(path) || includesIn.count(path)) {
-                    pending.push_back(path);
+                // A header is named relative to the file that includes it, or
+                // relative to src/main, and the compiler is given both.
+                const std::string beside = directoryOf(current) + "/" + includes->second[i];
+                const std::string rooted = sourceRoot + "/" + includes->second[i];
+                if (enumsIn.count(beside) || includesIn.count(beside)) {
+                    pending.push_back(beside);
+                }
+                if (enumsIn.count(rooted) || includesIn.count(rooted)) {
+                    pending.push_back(rooted);
                 }
             }
         }
