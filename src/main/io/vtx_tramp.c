@@ -463,8 +463,8 @@ static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
         }
     }
 
-    DEBUG_SET(DEBUG_VTX_TRAMP, 0, trampStatus);
-    DEBUG_SET(DEBUG_VTX_TRAMP, 1, replyCode);
+    DEBUG_SET(DEBUG_VTX_TRAMP, 0, trampStatus);  //!< Tramp Status [enum:trampStatus_e]
+    DEBUG_SET(DEBUG_VTX_TRAMP, 1, replyCode);    //!< Reply Code
     DEBUG_SET(DEBUG_VTX_TRAMP, 2, ((trampConfPitMode << 14) &              0xC000) |
                                   ((trampCurPitMode << 12) &               0x3000) |
                                   ((trampConfPower << 8) &                 0x0F00) |
@@ -472,8 +472,8 @@ static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
                                   ((trampConfFreq != trampCurFreq) ?       0x0008 : 0x0000) |
                                   ((trampConfPower != trampCurConfPower) ? 0x0004 : 0x0000) |
                                   ((trampConfPitMode != trampCurPitMode) ? 0x0002 : 0x0000) |
-                                  (configUpdateRequired ?                  0x0001 : 0x0000));
-    DEBUG_SET(DEBUG_VTX_TRAMP, 3, trampRetryCount);
+                                  (configUpdateRequired ?                  0x0001 : 0x0000));  //!< Packed Pit Modes, Power And Change Flags
+    DEBUG_SET(DEBUG_VTX_TRAMP, 3, trampRetryCount);                                            //!< Retry Count
 
 #ifdef USE_CMS
     trampCmsUpdateStatusString();
@@ -649,9 +649,9 @@ static const vtxVTable_t trampVTable = {
 
 bool vtxTrampInit(void)
 {
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_TRAMP);
+    const serialPortIdentifier_e port = vtxSettingsConfig()->vtx_uart;
 
-    if (portConfig) {
+    if (port != SERIAL_PORT_NONE && vtxSettingsConfig()->vtx_type == VTXDEV_TRAMP) {
         portOptions_e portOptions = 0;
 #if defined(USE_VTX_COMMON)
         portOptions |= vtxConfig()->halfDuplex ? SERIAL_BIDIR : 0;
@@ -659,7 +659,7 @@ bool vtxTrampInit(void)
         portOptions |= SERIAL_BIDIR;
 #endif
 
-        trampSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_TRAMP, NULL, NULL, 9600, MODE_RXTX, portOptions);
+        trampSerialPort = openSerialPort(port, FUNCTION_VTX_TRAMP, NULL, NULL, 9600, MODE_RXTX, portOptions);
     }
 
     if (!trampSerialPort) {

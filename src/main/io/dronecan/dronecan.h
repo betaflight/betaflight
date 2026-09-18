@@ -32,11 +32,11 @@
 
 #include "common/time.h"
 
-// Maximum number of subscribers a single stack instance accepts. NodeStatus
-// + GetNodeInfo use two slots out of the box; consumers added in follow-up
-// PRs (GPS, ESC telemetry, etc.) register into the remainder. Bump if a
-// target needs more — each slot is ~16 bytes of .bss.
-#define DRONECAN_MAX_SUBSCRIBERS    8
+// Maximum number of subscribers a single stack instance accepts. A full
+// build registers 11 (GetNodeInfo server + client, NodeStatus x2, GPS x2,
+// mag x2, airspeed, ESC status, DNA allocation). Bump if a target needs
+// more — each slot is ~16 bytes of .bss.
+#define DRONECAN_MAX_SUBSCRIBERS    12
 
 typedef void (*dronecanRxHandler)(CanardInstance *ins, CanardRxTransfer *transfer);
 

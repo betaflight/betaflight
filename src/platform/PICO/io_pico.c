@@ -46,9 +46,6 @@ void IOInitGlobal(void)
 #ifdef PICO_TRACE_TX_GPIO
     ioRecs[PICO_TRACE_TX_GPIO].owner = OWNER_SYSTEM;
 #endif
-#ifdef PICO_TRACE_RX_GPIO
-    ioRecs[PICO_TRACE_RX_GPIO].owner = OWNER_SYSTEM;
-#endif
 #endif
 
     // Some boards (e.g. Hellbender) require a pin to be held low in order to generate a 5V / 9V
@@ -134,15 +131,8 @@ void IOConfigGPIO(IO_t io, ioConfig_t cfg)
     /*
 TODO: update to support the following
 IOCFG_AF_PP
-IOCFG_IN_FLOATING
-IOCFG_IPD
-IOCFG_IPU
 IOCFG_OUT_OD
 IOCFG_OUT_PP
-IO_RESET_CFG
-
-SPI_IO_CS_CFG (as defined)
-SPI_IO_CS_HIGH_CFG (as defined)
     */
     if (!io) {
         return;

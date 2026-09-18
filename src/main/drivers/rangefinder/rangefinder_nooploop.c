@@ -36,6 +36,8 @@
 #include "drivers/rangefinder/rangefinder.h"
 #include "drivers/rangefinder/rangefinder_nooploop.h"
 
+#include "sensors/rangefinder.h"
+
 #define NOOPLOOP_FRAME_SYNC_BYTE_0 0x57
 #define NOOPLOOP_FRAME_SYNC_BYTE_1 0x00
 #define NOOPLOOP_FRAME_LENGTH      16
@@ -235,12 +237,12 @@ bool nooploopDetect(rangefinderDev_t *dev, rangefinderType_e rfType)
         return false;
     }
 
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_LIDAR);
-    if (!portConfig) {
+    const serialPortIdentifier_e port = rangefinderConfig()->rangefinder_uart;
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
-    nooploopSerialPort = openSerialPort(portConfig->identifier, FUNCTION_LIDAR, NULL, NULL, NOOPLOOP_BAUDRATE, MODE_RXTX, 0);
+    nooploopSerialPort = openSerialPort(port, FUNCTION_LIDAR, NULL, NULL, NOOPLOOP_BAUDRATE, MODE_RXTX, 0);
     if (nooploopSerialPort == NULL) {
         return false;
     }

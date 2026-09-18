@@ -50,17 +50,67 @@ typedef enum {
     TELEMETRY_PROTOCOL_SMARTPORT,
     TELEMETRY_PROTOCOL_MAVLINK,
     TELEMETRY_PROTOCOL_IBUS,
+    TELEMETRY_PROTOCOL_COUNT
 } telemetryProtocol_e;
 
 typedef struct telemetryProvider_s {
     uint8_t protocol;  // telemetryProtocol_e
     int8_t uart;       // serialPortIdentifier_e; SERIAL_PORT_NONE = unused slot
+    uint8_t baud;      // baudRate_e index; BAUD_AUTO lets the protocol pick its own default
 } telemetryProvider_t;
 
-// One slot per protocol bit in serialPortFunction_e (FrSky Hub, HoTT, LTM,
-// SmartPort, MAVLink, iBus).  Sized so a legacy functionMask that assigns
-// every telemetry protocol across distinct ports still decomposes cleanly.
-#define MAX_TELEMETRY_PROVIDERS 6
+#ifdef USE_TELEMETRY_FRSKY_HUB
+#define TELEMETRY_HAS_FRSKY_HUB 1
+#else
+#define TELEMETRY_HAS_FRSKY_HUB 0
+#endif
+#ifdef USE_TELEMETRY_HOTT
+#define TELEMETRY_HAS_HOTT 1
+#else
+#define TELEMETRY_HAS_HOTT 0
+#endif
+#ifdef USE_TELEMETRY_LTM
+#define TELEMETRY_HAS_LTM 1
+#else
+#define TELEMETRY_HAS_LTM 0
+#endif
+#ifdef USE_TELEMETRY_SMARTPORT
+#define TELEMETRY_HAS_SMARTPORT 1
+#else
+#define TELEMETRY_HAS_SMARTPORT 0
+#endif
+#ifdef USE_TELEMETRY_MAVLINK
+#define TELEMETRY_HAS_MAVLINK 1
+#else
+#define TELEMETRY_HAS_MAVLINK 0
+#endif
+#ifdef USE_TELEMETRY_IBUS
+#define TELEMETRY_HAS_IBUS 1
+#else
+#define TELEMETRY_HAS_IBUS 0
+#endif
+
+#define TELEMETRY_PROVIDERS_AVAILABLE (TELEMETRY_HAS_FRSKY_HUB + TELEMETRY_HAS_HOTT + TELEMETRY_HAS_LTM \
+                                     + TELEMETRY_HAS_SMARTPORT + TELEMETRY_HAS_MAVLINK + TELEMETRY_HAS_IBUS)
+
+// Concurrent telemetry protocols. Well short of one slot per protocol, which no
+// craft needs and which costs a settings entry per slot. A target may override
+// the default, but never past what it actually builds in.
+#ifndef MAX_TELEMETRY_PROVIDERS_DEFAULT
+#define MAX_TELEMETRY_PROVIDERS_DEFAULT 3
+#endif
+
+#if TELEMETRY_PROVIDERS_AVAILABLE < MAX_TELEMETRY_PROVIDERS_DEFAULT
+#define MAX_TELEMETRY_PROVIDERS TELEMETRY_PROVIDERS_AVAILABLE
+#else
+#define MAX_TELEMETRY_PROVIDERS MAX_TELEMETRY_PROVIDERS_DEFAULT
+#endif
+
+// A build can have telemetry without any slot-based protocol, since CRSF and
+// GHST ride the receiver's own port and never claim one.
+#if MAX_TELEMETRY_PROVIDERS > 0
+#define USE_TELEMETRY_PROVIDERS
+#endif
 
 typedef enum {
     SENSOR_VOLTAGE         = 1 << 0,
@@ -120,8 +170,17 @@ PG_DECLARE(telemetryConfig_t, telemetryConfig);
 
 extern serialPort_t *telemetrySharedPort;
 
+// Port assigned to a telemetry protocol, or SERIAL_PORT_NONE if unassigned.
+serialPortIdentifier_e telemetryProviderPort(uint8_t protocol);
+void telemetryValidateProviders(void);
+
+// Baud configured for a given protocol on a given port, or BAUD_AUTO when no
+// slot matches.  Lets a consumer that shares a port with a telemetry provider
+// (serial MAVLink RX) pick up that provider's rate without reading the mask.
+uint8_t telemetryProviderBaud(uint8_t protocol, serialPortIdentifier_e identifier);
+
 void telemetryInit(void);
-bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig, const SerialRXType serialrxProvider);
+bool telemetryCheckRxPortShared(serialPortIdentifier_e identifier, const SerialRXType serialrxProvider);
 
 void telemetryCheckState(void);
 void telemetryProcess(uint32_t currentTime);

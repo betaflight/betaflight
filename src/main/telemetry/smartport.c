@@ -185,7 +185,7 @@ static frSkyTableInfo_t frSkyEscDataIdTableInfo = {frSkyEscDataIdTable, 0, 0};
 #define SMARTPORT_SERVICE_TIMEOUT_US 1000 // max allowed time to find a value to send
 
 static serialPort_t *smartPortSerialPort = NULL; // The 'SmartPort'(tm) Port.
-static const serialPortConfig_t *portConfig;
+static serialPortIdentifier_e telemetryPort = SERIAL_PORT_NONE;
 
 static portSharing_e smartPortPortSharing;
 
@@ -446,9 +446,9 @@ static void initSmartPortSensors(void)
 bool initSmartPortTelemetry(void)
 {
     if (telemetryState == TELEMETRY_STATE_UNINITIALIZED) {
-        portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_SMARTPORT);
-        if (portConfig) {
-            smartPortPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_SMARTPORT);
+        telemetryPort = telemetryProviderPort(TELEMETRY_PROTOCOL_SMARTPORT);
+        if (telemetryPort != SERIAL_PORT_NONE) {
+            smartPortPortSharing = determinePortSharing(telemetryPort, FUNCTION_TELEMETRY_SMARTPORT);
 
             smartPortWriteFrame = smartPortWriteFrameInternal;
 
@@ -486,12 +486,12 @@ static void freeSmartPortTelemetryPort(void)
 
 static void configureSmartPortTelemetryPort(void)
 {
-    if (portConfig) {
+    if (telemetryPort != SERIAL_PORT_NONE) {
         // On SmartPort, SERIAL_INVERTED is default
         const portOptions_e portOptions = (telemetryConfig()->halfDuplex ? SERIAL_BIDIR : 0)
             | (telemetryConfig()->telemetry_inverted ? SERIAL_NOT_INVERTED : SERIAL_INVERTED);
 
-        smartPortSerialPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_SMARTPORT, NULL, NULL, SMARTPORT_BAUD, SMARTPORT_UART_MODE, portOptions);
+        smartPortSerialPort = openSerialPort(telemetryPort, FUNCTION_TELEMETRY_SMARTPORT, NULL, NULL, SMARTPORT_BAUD, SMARTPORT_UART_MODE, portOptions);
     }
 }
 

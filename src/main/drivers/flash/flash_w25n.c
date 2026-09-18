@@ -131,7 +131,7 @@ struct {
 } w25nFlashConfig[] = {
     // Winbond W25N01GV
     // Datasheet: https://www.winbond.com/resource-files/W25N01GV%20Rev%20R%20070323.pdf
-    { 0xEFAA21, 100, 2048, 64, 1024, 20, 0x05, 0x01, 0x02, 1 },
+    { 0xEFAA21, 100, 1024, 64, 2048, 20, 0x05, 0x01, 0x02, 1 },
     // Winbond W25N02KV
     // Datasheet: https://www.winbond.com/resource-files/W25N02KVxxIRU_Datasheet_RevM.pdf
     { 0xEFAA22, 100, 2048, 64, 2048, 20, 0x05, 0x01, 0x02, 1 },

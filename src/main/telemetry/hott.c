@@ -120,7 +120,7 @@ static uint8_t hottMsgCrc;
 #define HOTT_PORT_MODE MODE_RXTX // must be opened in RXTX so that TX and RX pins are allocated.
 
 static serialPort_t *hottPort = NULL;
-static const serialPortConfig_t *portConfig;
+static serialPortIdentifier_e telemetryPort = SERIAL_PORT_NONE;
 
 static bool hottTelemetryEnabled =  false;
 static portSharing_e hottPortSharing;
@@ -340,13 +340,13 @@ void freeHoTTTelemetryPort(void)
 
 void initHoTTTelemetry(void)
 {
-    portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_HOTT);
+    telemetryPort = telemetryProviderPort(TELEMETRY_PROTOCOL_HOTT);
 
-    if (!portConfig) {
+    if (telemetryPort == SERIAL_PORT_NONE) {
         return;
     }
 
-    hottPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_HOTT);
+    hottPortSharing = determinePortSharing(telemetryPort, FUNCTION_TELEMETRY_HOTT);
 
 #if defined(USE_HOTT_TEXTMODE) && defined(USE_CMS)
     hottDisplayportRegister();
@@ -378,7 +378,7 @@ static void workAroundForHottTelemetryOnUsart(serialPort_t *instance, portMode_e
 
 static bool hottIsUsingHardwareUART(void)
 {
-    return serialType(portConfig->identifier) != SERIALTYPE_SOFTSERIAL;
+    return serialType(telemetryPort) != SERIALTYPE_SOFTSERIAL;
 }
 
 static void hottConfigurePortForTX(void)
@@ -408,7 +408,7 @@ static void hottConfigurePortForRX(void)
 
 void configureHoTTTelemetryPort(void)
 {
-    if (!portConfig) {
+    if (telemetryPort == SERIAL_PORT_NONE) {
         return;
     }
 
@@ -418,7 +418,7 @@ void configureHoTTTelemetryPort(void)
         portOptions |= SERIAL_BIDIR;
     }
 
-    hottPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_HOTT, NULL, NULL, HOTT_BAUDRATE, HOTT_PORT_MODE, portOptions);
+    hottPort = openSerialPort(telemetryPort, FUNCTION_TELEMETRY_HOTT, NULL, NULL, HOTT_BAUDRATE, HOTT_PORT_MODE, portOptions);
 
     if (!hottPort) {
         return;

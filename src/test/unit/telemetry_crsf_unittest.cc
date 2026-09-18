@@ -339,13 +339,12 @@ serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, seria
 void closeSerialPort(serialPort_t *) {}
 bool isSerialTransmitBufferEmpty(const serialPort_t *) { return true; }
 
-const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) {return NULL;}
 
 bool telemetryDetermineEnabledState(portSharing_e) {return true;}
-bool telemetryCheckRxPortShared(const serialPortConfig_t *, SerialRXType) {return true;}
+bool telemetryCheckRxPortShared(serialPortIdentifier_e, SerialRXType) {return true;}
 bool telemetryIsSensorEnabled(sensor_e) {return true;}
 
-portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e) {return PORTSHARING_NOT_SHARED;}
+portSharing_e determinePortSharing(serialPortIdentifier_e, serialPortFunction_e) {return PORTSHARING_NOT_SHARED;}
 
 bool isAirmodeEnabled(void) {return airMode;}
 

@@ -169,7 +169,18 @@ DFUSE-PACK  := src/utils/dfuse-pack.py
 
 # Command used to link the final ELF. Platform makefiles can override this
 # when linking requires a dedicated linker instead of the C compiler driver.
+# $(file ...) needs GNU make 4.0; macOS ships 3.81, which silently expands it to
+# nothing and leaves the linker looking for an arguments file that was never written.
+ifeq ($(filter 3.%,$(MAKE_VERSION)),)
+ELF_LINK_CMD = $(file > $@.args,$(filter-out %.ld,$^)) $(CROSS_CC) -o $@ @$@.args $(LD_FLAGS)
+else
+# Exported so the warning is emitted once, not once per recursive make invocation.
+ifndef OLD_MAKE_WARNED
+export OLD_MAKE_WARNED := 1
+$(warning GNU make $(MAKE_VERSION) detected, falling back to linking without an arguments file. Support for GNU make older than 4.0 may be dropped in a future release. macOS ships an old system make: install a current one with 'brew install make' and build with gmake.)
+endif
 ELF_LINK_CMD = $(CROSS_CC) -o $@ $(filter-out %.ld,$^) $(LD_FLAGS)
+endif
 
 # Preprocessor helpers (generic .h parsing)
 include $(MAKE_SCRIPT_DIR)/preprocess.mk
@@ -493,7 +504,7 @@ endif
 
 TARGET_EF_HASH_FILE := $(TARGET_OBJ_DIR)/.efhash_$(TARGET_EF_HASH)
 
-CLEAN_ARTIFACTS := $(TARGET_ELF) $(TARGET_EXST_ELF) $(TARGET_MAP)
+CLEAN_ARTIFACTS := $(TARGET_ELF) $(TARGET_ELF).args $(TARGET_EXST_ELF) $(TARGET_MAP)
 CLEAN_ARTIFACTS += $(wildcard $(BIN_DIR)/*$(TARGET_NAME_CLEAN)*)
 
 # Make sure build date and revision is updated on every incremental build

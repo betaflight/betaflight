@@ -38,6 +38,7 @@
 #include "drivers/serial_softserial.h"
 
 #include "io/serial.h"
+#include "io/serial_feature_map.h"
 
 #include "config/config.h"
 #include "fc/rc_modes.h"
@@ -60,7 +61,7 @@
 #include "telemetry/ibus.h"
 #include "telemetry/msp_shared.h"
 
-PG_REGISTER_WITH_RESET_FN(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 6);
+PG_REGISTER_WITH_RESET_FN(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 7);
 
 void pgResetFn_telemetryConfig(telemetryConfig_t *telemetryConfig)
 {
@@ -87,10 +88,78 @@ void pgResetFn_telemetryConfig(telemetryConfig_t *telemetryConfig)
     telemetryConfig->mavlink_extra2_rate = 2;
     telemetryConfig->mavlink_extra3_rate = 1;
     telemetryConfig->crsf_tlm_accgyro = 0;
+#ifdef USE_TELEMETRY_PROVIDERS
     for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
         telemetryConfig->providers[i].protocol = TELEMETRY_PROTOCOL_NONE;
         telemetryConfig->providers[i].uart = SERIAL_PORT_NONE;
+        telemetryConfig->providers[i].baud = BAUD_AUTO;
     }
+#endif
+#if defined(SBUS_TELEMETRY_UART) && defined(USE_TELEMETRY_SMARTPORT)
+    telemetryConfig->providers[0].protocol = TELEMETRY_PROTOCOL_SMARTPORT;
+    telemetryConfig->providers[0].uart = SBUS_TELEMETRY_UART;
+#endif
+}
+
+void telemetryValidateProviders(void)
+{
+#ifdef USE_TELEMETRY_PROVIDERS
+    // A protocol resolves to one port, so a later slot repeating it would never
+    // run.  Drop it rather than leave config that silently does nothing.  Only
+    // an earlier slot that owns a port wins, matching telemetryProviderPort().
+    for (unsigned i = 1; i < MAX_TELEMETRY_PROVIDERS; i++) {
+        const uint8_t protocol = telemetryConfig()->providers[i].protocol;
+        if (protocol == TELEMETRY_PROTOCOL_NONE) {
+            continue;
+        }
+
+        for (unsigned j = 0; j < i; j++) {
+            if (telemetryConfig()->providers[j].protocol == protocol
+                && telemetryConfig()->providers[j].uart != SERIAL_PORT_NONE) {
+                telemetryConfigMutable()->providers[i].protocol = TELEMETRY_PROTOCOL_NONE;
+                telemetryConfigMutable()->providers[i].uart = SERIAL_PORT_NONE;
+                telemetryConfigMutable()->providers[i].baud = BAUD_AUTO;
+                break;
+            }
+        }
+    }
+#endif
+}
+
+serialPortIdentifier_e telemetryProviderPort(uint8_t protocol)
+{
+#ifdef USE_TELEMETRY_PROVIDERS
+    for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
+        const telemetryProvider_t *provider = &telemetryConfig()->providers[i];
+        if (provider->protocol == protocol && provider->uart != SERIAL_PORT_NONE) {
+            return provider->uart;
+        }
+    }
+#else
+    UNUSED(protocol);
+#endif
+
+    return SERIAL_PORT_NONE;
+}
+
+uint8_t telemetryProviderBaud(uint8_t protocol, serialPortIdentifier_e identifier)
+{
+    if (identifier == SERIAL_PORT_NONE) {
+        return BAUD_AUTO;
+    }
+
+#ifdef USE_TELEMETRY_PROVIDERS
+    for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
+        const telemetryProvider_t *provider = &telemetryConfig()->providers[i];
+        if (provider->protocol == protocol && provider->uart == identifier) {
+            return provider->baud;
+        }
+    }
+#else
+    UNUSED(protocol);
+#endif
+
+    return BAUD_AUTO;
 }
 
 void telemetryInit(void)
@@ -149,9 +218,11 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
     return enabled;
 }
 
-bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig, const SerialRXType serialrxProvider)
+bool telemetryCheckRxPortShared(serialPortIdentifier_e identifier, const SerialRXType serialrxProvider)
 {
-    if (portConfig->functionMask & FUNCTION_RX_SERIAL && portConfig->functionMask & TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK &&
+    const uint32_t functionMask = serialSynthesizeFunctionMask(identifier);
+
+    if (functionMask & FUNCTION_RX_SERIAL && functionMask & TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK &&
         (serialrxProvider == SERIALRX_SPEKTRUM1024 ||
         serialrxProvider == SERIALRX_SPEKTRUM2048 ||
         serialrxProvider == SERIALRX_SBUS ||
@@ -165,15 +236,15 @@ bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig, const Seri
         return true;
     }
 #ifdef USE_TELEMETRY_IBUS
-    if (portConfig->functionMask & FUNCTION_TELEMETRY_IBUS
-        && portConfig->functionMask & FUNCTION_RX_SERIAL
+    if (functionMask & FUNCTION_TELEMETRY_IBUS
+        && functionMask & FUNCTION_RX_SERIAL
         && serialrxProvider == SERIALRX_IBUS) {
         // IBUS serial RX & telemetry
         return true;
     }
 #endif
 #if defined(USE_MSP_OVER_TELEMETRY) && defined(USE_VTX_MSP)
-    if (portConfig->functionMask & FUNCTION_RX_SERIAL && portConfig->functionMask & FUNCTION_VTX_MSP) {
+    if (functionMask & FUNCTION_RX_SERIAL && functionMask & FUNCTION_VTX_MSP) {
         return true;
     }
 #endif

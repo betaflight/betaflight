@@ -43,13 +43,20 @@ void posHoldInit(void)
 {
 }
 
+bool posHoldUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
+{
+    UNUSED(currentTimeUs);
+    UNUSED(currentDeltaTimeUs);
+    return false;
+}
+
 void updatePosHold(timeUs_t currentTimeUs) {
     UNUSED(currentTimeUs);
 }
 
 bool posHoldFailure(void) {
     // used only to display warning in OSD if requested but failing
-    return true;
+    return false;
 }
 
 bool posHoldReady(void) {

@@ -26,6 +26,8 @@
 
 #include "common/utils.h"
 
+#include "fc/parameter_names.h"
+
 #include "io/serial.h"
 #include "io/serial_feature_map.h"
 
@@ -57,11 +59,88 @@
 #ifdef USE_RANGEFINDER
 #include "sensors/rangefinder.h"
 #endif
+#ifdef USE_OPTICALFLOW
+#include "sensors/opticalflow.h"
+#endif
 #ifdef USE_OSD
 #include "osd/osd.h"
 #endif
 #ifdef USE_TELEMETRY
 #include "telemetry/telemetry.h"
+#endif
+
+#ifdef USE_VTX_COMMON
+static uint32_t vtxFunctionMask(void)
+{
+    switch (vtxSettingsConfig()->vtx_type) {
+#ifdef USE_VTX_SMARTAUDIO
+    case VTXDEV_SMARTAUDIO:
+        return FUNCTION_VTX_SMARTAUDIO;
+#endif
+#ifdef USE_VTX_TRAMP
+    case VTXDEV_TRAMP:
+        return FUNCTION_VTX_TRAMP;
+#endif
+#ifdef USE_VTX_MSP
+    case VTXDEV_MSP:
+        // An MSP VTX talks over MSP on its own UART, so it brings the MSP bit
+        // with it; FUNCTION_VTX_MSP on its own is a conflict.
+        return FUNCTION_VTX_MSP | FUNCTION_MSP;
+#endif
+    default:
+        return 0;
+    }
+}
+#endif
+
+#ifdef USE_OSD
+static uint32_t osdFunctionMask(void)
+{
+    switch (osdConfig()->displayPortDevice) {
+    case OSD_DISPLAYPORT_DEVICE_FRSKYOSD:
+        return FUNCTION_FRSKY_OSD;
+#ifdef USE_MSP_DISPLAYPORT
+    case OSD_DISPLAYPORT_DEVICE_MSP:
+        return FUNCTION_MSP;
+#endif
+    default:
+        return 0;
+    }
+}
+#endif
+
+#ifdef USE_TELEMETRY_PROVIDERS
+static uint32_t telemetryProviderFunctionMask(unsigned providerIndex)
+{
+    switch (telemetryConfig()->providers[providerIndex].protocol) {
+#ifdef USE_TELEMETRY_FRSKY_HUB
+    case TELEMETRY_PROTOCOL_FRSKY_HUB:
+        return FUNCTION_TELEMETRY_FRSKY_HUB;
+#endif
+#ifdef USE_TELEMETRY_HOTT
+    case TELEMETRY_PROTOCOL_HOTT:
+        return FUNCTION_TELEMETRY_HOTT;
+#endif
+#ifdef USE_TELEMETRY_LTM
+    case TELEMETRY_PROTOCOL_LTM:
+        return FUNCTION_TELEMETRY_LTM;
+#endif
+#ifdef USE_TELEMETRY_SMARTPORT
+    case TELEMETRY_PROTOCOL_SMARTPORT:
+        return FUNCTION_TELEMETRY_SMARTPORT;
+#endif
+#ifdef USE_TELEMETRY_MAVLINK
+    case TELEMETRY_PROTOCOL_MAVLINK:
+        return FUNCTION_TELEMETRY_MAVLINK;
+#endif
+#ifdef USE_TELEMETRY_IBUS
+    case TELEMETRY_PROTOCOL_IBUS:
+        return FUNCTION_TELEMETRY_IBUS;
+#endif
+    default:
+        return 0;
+    }
+}
 #endif
 
 uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
@@ -111,25 +190,7 @@ uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
 #endif
 #ifdef USE_VTX_COMMON
     if (vtxSettingsConfig()->vtx_uart == identifier) {
-        switch (vtxSettingsConfig()->vtx_type) {
-#ifdef USE_VTX_SMARTAUDIO
-        case VTXDEV_SMARTAUDIO:
-            mask |= FUNCTION_VTX_SMARTAUDIO;
-            break;
-#endif
-#ifdef USE_VTX_TRAMP
-        case VTXDEV_TRAMP:
-            mask |= FUNCTION_VTX_TRAMP;
-            break;
-#endif
-#ifdef USE_VTX_MSP
-        case VTXDEV_MSP:
-            mask |= FUNCTION_VTX_MSP;
-            break;
-#endif
-        default:
-            break;
-        }
+        mask |= vtxFunctionMask();
     }
 #endif
 #ifdef USE_RANGEFINDER
@@ -137,52 +198,25 @@ uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
         mask |= FUNCTION_LIDAR;
     }
 #endif
+#ifdef USE_OPTICALFLOW
+    // One module can answer as both sensors, so the bit is shared rather than
+    // held per feature; ORing it twice for one port is the same as once.
+    if (opticalflowConfig()->opticalflow_uart == identifier) {
+        mask |= FUNCTION_LIDAR;
+    }
+#endif
 #ifdef USE_OSD
-    if (osdConfig()->osd_uart == identifier && osdConfig()->displayPortDevice == OSD_DISPLAYPORT_DEVICE_FRSKYOSD) {
-        mask |= FUNCTION_FRSKY_OSD;
+    if (osdConfig()->osd_uart == identifier) {
+        mask |= osdFunctionMask();
     }
     if (osdConfig()->osd_custom_text_uart == identifier) {
         mask |= FUNCTION_OSD_CUSTOM_TEXT;
     }
 #endif
-#ifdef USE_TELEMETRY
+#ifdef USE_TELEMETRY_PROVIDERS
     for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
-        if (telemetryConfig()->providers[i].uart != identifier) {
-            continue;
-        }
-        switch (telemetryConfig()->providers[i].protocol) {
-#ifdef USE_TELEMETRY_FRSKY_HUB
-        case TELEMETRY_PROTOCOL_FRSKY_HUB:
-            mask |= FUNCTION_TELEMETRY_FRSKY_HUB;
-            break;
-#endif
-#ifdef USE_TELEMETRY_HOTT
-        case TELEMETRY_PROTOCOL_HOTT:
-            mask |= FUNCTION_TELEMETRY_HOTT;
-            break;
-#endif
-#ifdef USE_TELEMETRY_LTM
-        case TELEMETRY_PROTOCOL_LTM:
-            mask |= FUNCTION_TELEMETRY_LTM;
-            break;
-#endif
-#ifdef USE_TELEMETRY_SMARTPORT
-        case TELEMETRY_PROTOCOL_SMARTPORT:
-            mask |= FUNCTION_TELEMETRY_SMARTPORT;
-            break;
-#endif
-#ifdef USE_TELEMETRY_MAVLINK
-        case TELEMETRY_PROTOCOL_MAVLINK:
-            mask |= FUNCTION_TELEMETRY_MAVLINK;
-            break;
-#endif
-#ifdef USE_TELEMETRY_IBUS
-        case TELEMETRY_PROTOCOL_IBUS:
-            mask |= FUNCTION_TELEMETRY_IBUS;
-            break;
-#endif
-        default:
-            break;
+        if (telemetryConfig()->providers[i].uart == identifier) {
+            mask |= telemetryProviderFunctionMask(i);
         }
     }
 #endif
@@ -190,15 +224,135 @@ uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
     return mask;
 }
 
+unsigned serialGetPortClaims(serialPortIdentifier_e identifier, serialPortClaim_t *claims, unsigned maxClaims)
+{
+    unsigned count = 0;
+
+    if (identifier == SERIAL_PORT_NONE) {
+        return 0;
+    }
+
+#define ADD_CLAIM(claimName, claimSetting, claimSelectorSetting, claimBaudSetting, mask) \
+    do { \
+        if (count < maxClaims) { \
+            claims[count].name = (claimName); \
+            claims[count].setting = (claimSetting); \
+            claims[count].selectorSetting = (claimSelectorSetting); \
+            claims[count].baudSetting = (claimBaudSetting); \
+            claims[count].functionMask = (mask); \
+            count++; \
+        } \
+    } while (0)
+
+    static const char * const mspClaimNames[] = { "msp_1", "msp_2", "msp_3" };
+    static const char * const mspClaimSettings[] = { "msp_1_uart", "msp_2_uart", "msp_3_uart" };
+    static const char * const mspClaimBaudSettings[] = { "msp_1_baud", "msp_2_baud", "msp_3_baud" };
+    for (unsigned i = 0; i < MAX_MSP_PORT_COUNT && i < ARRAYLEN(mspClaimNames); i++) {
+        if (mspConfig()->msp_uart[i] == identifier) {
+            ADD_CLAIM(mspClaimNames[i], mspClaimSettings[i], NULL, mspClaimBaudSettings[i], FUNCTION_MSP);
+        }
+    }
+
+#ifdef USE_GPS
+    if (gpsConfig()->gps_uart == identifier) {
+        ADD_CLAIM("gps", "gps_uart", NULL, "gps_baud", FUNCTION_GPS);
+    }
+#endif
+#if defined(USE_RX_PWM) || defined(USE_RX_PPM) || defined(USE_SERIALRX) || defined(USE_RX_MSP) || defined(USE_RX_SPI)
+    if (rxConfig()->rx_uart == identifier) {
+        ADD_CLAIM("rx", "rx_uart", NULL, NULL, FUNCTION_RX_SERIAL);
+    }
+#endif
+#ifdef USE_BLACKBOX
+    if (blackboxConfig()->blackbox_uart == identifier) {
+        ADD_CLAIM("blackbox", "blackbox_uart", NULL, "blackbox_baud", FUNCTION_BLACKBOX);
+    }
+#endif
+#ifdef USE_ESC_SENSOR
+    if (escSensorConfig()->esc_sensor_uart == identifier) {
+        ADD_CLAIM("esc_sensor", "esc_sensor_uart", NULL, NULL, FUNCTION_ESC_SENSOR);
+    }
+#endif
+#ifdef USE_RCDEVICE
+    if (rcdeviceConfig()->rcdevice_uart == identifier) {
+        ADD_CLAIM("rcdevice", "rcdevice_uart", NULL, NULL, FUNCTION_RCDEVICE);
+    }
+#endif
+#ifdef USE_GIMBAL
+    if (gimbalTrackConfig()->gimbal_uart == identifier) {
+        ADD_CLAIM("gimbal", "gimbal_uart", NULL, NULL, FUNCTION_GIMBAL);
+    }
+#endif
+#ifdef USE_VTX_COMMON
+    if (vtxSettingsConfig()->vtx_uart == identifier) {
+        ADD_CLAIM("vtx", "vtx_uart", "vtx_type", NULL, vtxFunctionMask());
+    }
+#endif
+#ifdef USE_RANGEFINDER
+    if (rangefinderConfig()->rangefinder_uart == identifier) {
+        uint32_t mask = FUNCTION_LIDAR;
+#ifdef USE_RANGEFINDER_MT
+        // An MSP-transport module's port opens as an implied MSP port, so
+        // that is the function the claim is active under.
+        if (rangefinderTypeUsesMsp(rangefinderConfig()->rangefinder_hardware)) {
+            mask |= FUNCTION_MSP;
+        }
+#endif
+        ADD_CLAIM("rangefinder", "rangefinder_uart", "rangefinder_hardware", NULL, mask);
+    }
+#endif
+#ifdef USE_OPTICALFLOW
+    if (opticalflowConfig()->opticalflow_uart == identifier) {
+        uint32_t mask = FUNCTION_LIDAR;
+#ifdef USE_OPTICALFLOW_MT
+        if (opticalflowTypeUsesMsp(opticalflowConfig()->opticalflow_hardware)) {
+            mask |= FUNCTION_MSP;
+        }
+#endif
+        ADD_CLAIM("opticalflow", "opticalflow_uart", PARAM_NAME_OPTICALFLOW_HARDWARE, NULL, mask);
+    }
+#endif
+#ifdef USE_OSD
+    if (osdConfig()->osd_uart == identifier) {
+        ADD_CLAIM("osd", "osd_uart", "osd_displayport_device", NULL, osdFunctionMask());
+    }
+    if (osdConfig()->osd_custom_text_uart == identifier) {
+        ADD_CLAIM("osd_custom_text", "osd_custom_text_uart", NULL, "osd_custom_text_baud", FUNCTION_OSD_CUSTOM_TEXT);
+    }
+#endif
+#ifdef USE_TELEMETRY_PROVIDERS
+    static const char * const telemetryClaimNames[] = { "telemetry_1", "telemetry_2", "telemetry_3" };
+    static const char * const telemetryClaimSettings[] = { "telemetry_1_uart", "telemetry_2_uart", "telemetry_3_uart" };
+    static const char * const telemetryClaimSelectorSettings[] = {
+        "telemetry_1_protocol", "telemetry_2_protocol", "telemetry_3_protocol",
+    };
+    static const char * const telemetryClaimBaudSettings[] = { "telemetry_1_baud", "telemetry_2_baud", "telemetry_3_baud" };
+    for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS && i < ARRAYLEN(telemetryClaimNames); i++) {
+        if (telemetryConfig()->providers[i].uart == identifier) {
+            ADD_CLAIM(telemetryClaimNames[i], telemetryClaimSettings[i], telemetryClaimSelectorSettings[i],
+                telemetryClaimBaudSettings[i], telemetryProviderFunctionMask(i));
+        }
+    }
+#endif
+
+#undef ADD_CLAIM
+
+    return count;
+}
+
 // Clear any feature PG field currently naming `identifier` so the
 // apply phase can reassign cleanly.  Collapsed-enum selectors
 // (rangefinder_hardware, displayPortDevice, vtx_type) are left alone —
 // removing a UART doesn't imply changing the chosen hardware/protocol.
-static void clearClaimsOnPort(serialPortIdentifier_e identifier)
+// `keepMsp` spares an MSP claim on the port, so resolving a conflict cannot
+// take away the link the board is being configured over.
+static void clearClaimsOnPort(serialPortIdentifier_e identifier, bool keepMsp)
 {
-    for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
-        if (mspConfig()->msp_uart[i] == identifier) {
-            mspConfigMutable()->msp_uart[i] = SERIAL_PORT_NONE;
+    if (!keepMsp) {
+        for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+            if (mspConfig()->msp_uart[i] == identifier) {
+                mspConfigMutable()->msp_uart[i] = SERIAL_PORT_NONE;
+            }
         }
     }
 #ifdef USE_GPS
@@ -241,6 +395,11 @@ static void clearClaimsOnPort(serialPortIdentifier_e identifier)
         rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_NONE;
     }
 #endif
+#ifdef USE_OPTICALFLOW
+    if (opticalflowConfig()->opticalflow_uart == identifier) {
+        opticalflowConfigMutable()->opticalflow_uart = SERIAL_PORT_NONE;
+    }
+#endif
 #ifdef USE_OSD
     if (osdConfig()->osd_uart == identifier) {
         osdConfigMutable()->osd_uart = SERIAL_PORT_NONE;
@@ -249,7 +408,7 @@ static void clearClaimsOnPort(serialPortIdentifier_e identifier)
         osdConfigMutable()->osd_custom_text_uart = SERIAL_PORT_NONE;
     }
 #endif
-#ifdef USE_TELEMETRY
+#ifdef USE_TELEMETRY_PROVIDERS
     for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
         if (telemetryConfig()->providers[i].uart == identifier) {
             telemetryConfigMutable()->providers[i].protocol = TELEMETRY_PROTOCOL_NONE;
@@ -259,12 +418,11 @@ static void clearClaimsOnPort(serialPortIdentifier_e identifier)
 #endif
 }
 
-#ifdef USE_TELEMETRY
-// A build can define USE_TELEMETRY without any individual protocol, leaving
-// assignTelemetrySlot() unreachable; mark it possibly-unused so -Werror
-// -Wunused-function doesn't fire (e.g. on PICO).  Callers must pre-validate
-// slot availability via canApplyFunctionMask() — this helper asserts on
-// overflow rather than returning an error.
+#ifdef USE_TELEMETRY_PROVIDERS
+// A build can define the providers without any individual protocol, leaving this
+// unreachable; possibly-unused keeps -Werror -Wunused-function quiet (PICO does
+// this).  Slot availability is pre-validated by canApplyFunctionMask(), so an
+// overflow here is silently dropped rather than reported.
 static MAYBE_UNUSED void assignTelemetrySlot(serialPortIdentifier_e identifier, uint8_t protocol)
 {
     for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
@@ -275,9 +433,7 @@ static MAYBE_UNUSED void assignTelemetrySlot(serialPortIdentifier_e identifier, 
         }
     }
 }
-#endif
 
-#ifdef USE_TELEMETRY
 static unsigned countTelemetryBits(uint32_t mask)
 {
     unsigned n = 0;
@@ -299,16 +455,14 @@ static unsigned countTelemetryBits(uint32_t mask)
 #ifdef USE_TELEMETRY_IBUS
     if (mask & FUNCTION_TELEMETRY_IBUS) n++;
 #endif
-    (void)mask;  // A USE_TELEMETRY build without any sub-protocol touches none.
+    (void)mask;  // a providers build without any sub-protocol touches none
     return n;
 }
-#endif
+#endif // USE_TELEMETRY_PROVIDERS
 
-// Check whether a mask can be applied to `identifier` without leaving the
-// feature PGs in an inconsistent state.  Counts bits per category and checks
-// MSP/telemetry slot availability as if clearClaimsOnPort(identifier) had
-// already run — slots currently held by this port are considered free for
-// the new mask.  No PG mutations are performed.
+// Whether a mask can be written to `identifier` without leaving the feature PGs
+// half-applied.  Slots this port already holds count as free, since the apply
+// clears its own claims first.  Mutates nothing.
 static bool canApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
 {
 #ifdef USE_VTX_COMMON
@@ -340,17 +494,17 @@ static bool canApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mas
         }
     }
 
-#ifdef USE_TELEMETRY
-    const unsigned tlmNeeded = countTelemetryBits(mask);
-    if (tlmNeeded > 0) {
-        unsigned availableTlm = 0;
+#ifdef USE_TELEMETRY_PROVIDERS
+    const unsigned telemetryNeeded = countTelemetryBits(mask);
+    if (telemetryNeeded > 0) {
+        unsigned availableTelemetry = 0;
         for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
             if (telemetryConfig()->providers[i].protocol == TELEMETRY_PROTOCOL_NONE
                 || telemetryConfig()->providers[i].uart == identifier) {
-                availableTlm++;
+                availableTelemetry++;
             }
         }
-        if (availableTlm < tlmNeeded) {
+        if (availableTelemetry < telemetryNeeded) {
             return false;
         }
     }
@@ -365,14 +519,11 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
         return mask == 0;
     }
 
-    // Validate against the pre-clear state so callers see an atomic
-    // success/failure; if the mask can't be represented we must not
-    // have touched the PGs.
     if (!canApplyFunctionMask(identifier, mask)) {
         return false;
     }
 
-    clearClaimsOnPort(identifier);
+    clearClaimsOnPort(identifier, false);
 
     if (mask & FUNCTION_MSP) {
         for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
@@ -413,7 +564,8 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
     }
 #endif
 #ifdef USE_VTX_COMMON
-    // VTX bit count pre-validated ≤ 1; at most one branch fires.
+    // The VTX bit count is pre-validated at no more than one, so at most one of
+    // these fires and the protocol it names is the one the port serves.
 #ifdef USE_VTX_SMARTAUDIO
     if (mask & FUNCTION_VTX_SMARTAUDIO) {
         vtxSettingsConfigMutable()->vtx_uart = identifier;
@@ -434,6 +586,8 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
 #endif
 #endif
 #ifdef USE_RANGEFINDER
+    // The legacy bit says only "a serial rangefinder or optical flow module is
+    // here"; which driver answers stays with rangefinder_hardware.
     if (mask & FUNCTION_LIDAR) {
         rangefinderConfigMutable()->rangefinder_uart = identifier;
     }
@@ -447,8 +601,7 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
         osdConfigMutable()->osd_custom_text_uart = identifier;
     }
 #endif
-#ifdef USE_TELEMETRY
-    // Telemetry slot availability pre-validated; assignTelemetrySlot always fits.
+#ifdef USE_TELEMETRY_PROVIDERS
 #ifdef USE_TELEMETRY_FRSKY_HUB
     if (mask & FUNCTION_TELEMETRY_FRSKY_HUB) assignTelemetrySlot(identifier, TELEMETRY_PROTOCOL_FRSKY_HUB);
 #endif
@@ -472,22 +625,200 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
     return true;
 }
 
-void serialBackfillFeatureFields(void)
+void serialApplyPortBaud(serialPortIdentifier_e identifier, serialBaudClass_e baudClass, uint8_t baudIndex)
 {
-    // Apply every port's mask unconditionally: apply-with-mask=0 runs the
-    // clear phase so stale *_uart fields from EEPROM cannot out-live a
-    // port that no longer claims them in the legacy view.
-    //
-    // A per-port apply can only fail if the legacy mask itself is
-    // structurally invalid (two VTX protocols on one port, two lidar
-    // categories on one port, or more MSP/telemetry claims across ports
-    // than slots hold).  None of those are reachable from a well-formed
-    // legacy config, so the return value is intentionally discarded; the
-    // synthesized view of a partially-migrated port simply omits the bits
-    // that couldn't be represented, which matches the legacy-is-invalid
-    // semantics those masks had before migration.
-    for (unsigned i = 0; i < ARRAYLEN(serialConfig()->portConfigs); i++) {
-        const serialPortConfig_t *port = &serialConfig()->portConfigs[i];
-        (void)serialApplyFunctionMask(port->identifier, port->functionMask);
+    if (identifier == SERIAL_PORT_NONE) {
+        return;
+    }
+
+    switch (baudClass) {
+    case SERIAL_BAUD_MSP:
+        for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+            if (mspConfig()->msp_uart[i] == identifier) {
+                mspConfigMutable()->msp_baud[i] = baudIndex;
+            }
+        }
+        break;
+
+#ifdef USE_GPS
+    case SERIAL_BAUD_GPS:
+        if (gpsConfig()->gps_uart == identifier) {
+            gpsConfigMutable()->gps_baud = baudIndex;
+        }
+        break;
+#endif
+
+#ifdef USE_BLACKBOX
+    case SERIAL_BAUD_BLACKBOX:
+        if (blackboxConfig()->blackbox_uart == identifier) {
+            blackboxConfigMutable()->blackbox_baud = baudIndex;
+        }
+        break;
+#endif
+
+    case SERIAL_BAUD_TELEMETRY:
+#ifdef USE_TELEMETRY_PROVIDERS
+        for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
+            if (telemetryConfig()->providers[i].uart == identifier) {
+                telemetryConfigMutable()->providers[i].baud = baudIndex;
+            }
+        }
+#endif
+#ifdef USE_OSD
+        // OSD custom text rode the port's telemetry baud in the legacy layout,
+        // and reports through that class, so it takes it back the same way.
+        if (osdConfig()->osd_custom_text_uart == identifier) {
+            osdConfigMutable()->osd_custom_text_baud = baudIndex;
+        }
+#endif
+        break;
+
+    default:
+        break;
     }
 }
+
+#if IMPLIED_MSP_PORT_COUNT > 0
+static void addImpliedMspPort(serialPortIdentifier_e *ports, unsigned *count, unsigned maxPorts,
+                              serialPortIdentifier_e identifier)
+{
+    if (identifier == SERIAL_PORT_NONE || *count >= maxPorts) {
+        return;
+    }
+
+    for (unsigned i = 0; i < *count; i++) {
+        if (ports[i] == identifier) {
+            return;
+        }
+    }
+
+    ports[(*count)++] = identifier;
+}
+#endif
+
+unsigned serialImpliedMspPorts(serialPortIdentifier_e *ports, unsigned maxPorts)
+{
+    unsigned count = 0;
+
+#ifdef USE_RANGEFINDER_MT
+    if (rangefinderTypeUsesMsp(rangefinderConfig()->rangefinder_hardware)) {
+        addImpliedMspPort(ports, &count, maxPorts, rangefinderConfig()->rangefinder_uart);
+    }
+#endif
+#ifdef USE_OPTICALFLOW_MT
+    if (opticalflowTypeUsesMsp(opticalflowConfig()->opticalflow_hardware)) {
+        addImpliedMspPort(ports, &count, maxPorts, opticalflowConfig()->opticalflow_uart);
+    }
+#endif
+#if defined(USE_OSD) && defined(USE_MSP_DISPLAYPORT)
+    if (osdConfig()->displayPortDevice == OSD_DISPLAYPORT_DEVICE_MSP) {
+        addImpliedMspPort(ports, &count, maxPorts, osdConfig()->osd_uart);
+    }
+#endif
+#ifdef USE_VTX_MSP
+    if (vtxSettingsConfig()->vtx_type == VTXDEV_MSP) {
+        addImpliedMspPort(ports, &count, maxPorts, vtxSettingsConfig()->vtx_uart);
+    }
+#endif
+#if IMPLIED_MSP_PORT_COUNT == 0
+    UNUSED(ports);
+    UNUSED(maxPorts);
+#endif
+
+    return count;
+}
+
+uint8_t serialDefaultPortBaud(serialBaudClass_e baudClass)
+{
+    switch (baudClass) {
+    case SERIAL_BAUD_MSP:
+        return BAUD_115200;
+    case SERIAL_BAUD_GPS:
+        return BAUD_57600;
+    case SERIAL_BAUD_BLACKBOX:
+        return BAUD_115200;
+    case SERIAL_BAUD_TELEMETRY:
+    default:
+        return BAUD_AUTO;
+    }
+}
+
+uint8_t serialSynthesizePortBaud(serialPortIdentifier_e identifier, serialBaudClass_e baudClass)
+{
+    if (identifier == SERIAL_PORT_NONE) {
+        return serialDefaultPortBaud(baudClass);
+    }
+
+    switch (baudClass) {
+    case SERIAL_BAUD_MSP:
+        for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+            if (mspConfig()->msp_uart[i] == identifier) {
+                return mspConfig()->msp_baud[i];
+            }
+        }
+        break;
+
+#ifdef USE_GPS
+    case SERIAL_BAUD_GPS:
+        if (gpsConfig()->gps_uart == identifier) {
+            return gpsConfig()->gps_baud;
+        }
+        break;
+#endif
+
+#ifdef USE_BLACKBOX
+    case SERIAL_BAUD_BLACKBOX:
+        if (blackboxConfig()->blackbox_uart == identifier) {
+            return blackboxConfig()->blackbox_baud;
+        }
+        break;
+#endif
+
+    case SERIAL_BAUD_TELEMETRY:
+#ifdef USE_TELEMETRY_PROVIDERS
+        for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
+            if (telemetryConfig()->providers[i].uart == identifier) {
+                return telemetryConfig()->providers[i].baud;
+            }
+        }
+#endif
+#ifdef USE_OSD
+        // OSD custom text historically rode the port's telemetry baud, so it
+        // still reports through this class to keep the legacy view intact.
+        if (osdConfig()->osd_custom_text_uart == identifier) {
+            return osdConfig()->osd_custom_text_baud;
+        }
+#endif
+        break;
+
+    default:
+        break;
+    }
+
+    return serialDefaultPortBaud(baudClass);
+}
+
+void serialDropConflictingAssignments(void)
+{
+    for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
+        const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
+
+        if (serialPortFunctionsConflict(identifier)) {
+            clearClaimsOnPort(identifier, true);
+        }
+    }
+}
+
+void serialResetFeatureAssignments(void)
+{
+    for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
+        clearClaimsOnPort(serialPortIdentifiers[i], false);
+    }
+
+    // The first port stays MSP so the board remains reachable after a reset.
+    // Its baud comes back to the class default too: the rate that came with the
+    // rejected configuration is no use on a board whose first port is a UART.
+    mspConfigMutable()->msp_uart[0] = serialPortIdentifiers[0];
+    mspConfigMutable()->msp_baud[0] = serialDefaultPortBaud(SERIAL_BAUD_MSP);
+}
+

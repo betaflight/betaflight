@@ -437,7 +437,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                 }
                 if (!frameReceived) {
                     packetErrors++;
-                    DEBUG_SET(DEBUG_RX_FRSKY_SPI, DEBUG_DATA_BAD_FRAME, packetErrors);
+                    DEBUG_SET(DEBUG_RX_FRSKY_SPI, DEBUG_DATA_BAD_FRAME, packetErrors);  //!< Packet Errors
                     cc2500Strobe(CC2500_SFRX);
                 }
             }
@@ -509,7 +509,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                 break;
             }
             missingPackets++;
-            DEBUG_SET(DEBUG_RX_FRSKY_SPI, DEBUG_DATA_MISSING_PACKETS, missingPackets);
+            DEBUG_SET(DEBUG_RX_FRSKY_SPI, DEBUG_DATA_MISSING_PACKETS, missingPackets);  //!< Missing Packets
             *protocolState = STATE_DATA;
         }
         break;

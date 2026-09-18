@@ -239,13 +239,6 @@ void closeSerialPort(serialPort_t *serialPort)
     UNUSED(serialPort);
 }
 
-const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
-{
-    UNUSED(function);
-
-    return NULL;
-}
-
 bool sensors(uint32_t mask)
 {
     UNUSED(mask);
@@ -263,9 +256,14 @@ bool telemetryIsSensorEnabled(sensor_e sensor)
     return true;
 }
 
-portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e)
+portSharing_e determinePortSharing(serialPortIdentifier_e, serialPortFunction_e)
 {
     return PORTSHARING_NOT_SHARED;
+}
+
+serialPortIdentifier_e telemetryProviderPort(uint8_t)
+{
+    return SERIAL_PORT_NONE;
 }
 
 batteryState_e getBatteryState(void)
