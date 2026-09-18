@@ -912,7 +912,7 @@ TEST_F(OsdTest, TestElementDecimalCompassBar)
         osdRefresh();
 
         // then
-        displayPortTestBufferSubstring(2, 3, testCase.expected);
+        displayPortTestBufferSubstring(2, 3, "%s", testCase.expected);
     }
 
     attitude.values.yaw = 0;
