@@ -6373,6 +6373,12 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
         } else {
             cliPrintLine("DroneCAN: NOT RUNNING (check dronecan_node_id and dronecan_device)");
         }
+    } else {
+        // The stack is compiled in but switched off, so every DroneCAN sensor is
+        // silently inert. Say so: selecting a DroneCAN provider elsewhere (gps_provider,
+        // mag_hardware) is accepted without complaint, and without this line status
+        // gives no hint that the reason nothing arrives is this flag.
+        cliPrintLine("DroneCAN: DISABLED (set dronecan_enabled = ON)");
     }
 #endif
 
