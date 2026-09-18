@@ -765,6 +765,12 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
         desiredHeadingDeg = apYawHoldHeadingDeg;
     }
 
+    // Every bearing source above is an atan2, which is signed; headings are a
+    // compass quantity and every reader of one - the log, the OSD, a pilot -
+    // expects the 0-360 the estimator reports. Normalise once, here, so the
+    // target and the measurement can be compared as logged.
+    desiredHeadingDeg = fmodf(desiredHeadingDeg + 360.0f, 360.0f);
+
     apYawAttenuator = fminf(apYawAttenuator + dt / AP_YAW_RAMP_TIME_S, 1.0f);
 
     // The yaw rate setpoint (and gyro) is CCW-positive while compass headings
