@@ -915,6 +915,18 @@ static void osdElementAverageCellVoltage(osdElementParms_t *element)
     osdPrintFloat(element->buff, osdGetBatterySymbol(cellV), cellV / 100.0f, "", 2, false, SYM_VOLT);
 }
 
+static void osdElementDecimalCompassBar(osdElementParms_t *element)
+{
+    const int heading = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+    const int offset = osdGetHeadingIntoDiscreteDirections(heading, 16);
+
+    // Degree style: display 0/90/180/270 instead of N/E/S/W
+    char bar[9];
+    osdGenerateCompassBarWithDegrees(offset, bar);
+    memcpy(element->buff, bar, 9);
+    element->buff[9] = 0;
+}
+
 static void osdGenerateCompassBarWithDegrees(const int offset, char *bar)
 {
     // Fill with tick characters matching the standard pattern
@@ -953,17 +965,7 @@ static void osdGenerateCompassBarWithDegrees(const int offset, char *bar)
 
 static void osdElementCompassBar(osdElementParms_t *element)
 {
-    const int heading = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
-    const int offset = osdGetHeadingIntoDiscreteDirections(heading, 16);
-
-    if (osdConfig()->osd_compass_style) {
-        // Degree style: display 0/90/180/270 instead of N/E/S/W
-        char bar[9];
-        osdGenerateCompassBarWithDegrees(offset, bar);
-        memcpy(element->buff, bar, 9);
-    } else {
-        memcpy(element->buff, compassBar + offset, 9);
-    }
+    memcpy(element->buff, compassBar + osdGetHeadingIntoDiscreteDirections(DECIDEGREES_TO_DEGREES(attitude.values.yaw), 16), 9);
     element->buff[9] = 0;
 }
 
@@ -2171,6 +2173,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_NUMERICAL_VARIO,
 #endif
     OSD_COMPASS_BAR,
+    OSD_DECIMAL_COMPASS_BAR,
     OSD_ANTI_GRAVITY,
 #ifdef USE_BLACKBOX
     OSD_LOG_STATUS,
@@ -2317,6 +2320,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_NUMERICAL_VARIO]         = osdElementNumericalVario,
 #endif
     [OSD_COMPASS_BAR]             = osdElementCompassBar,
+    [OSD_DECIMAL_COMPASS_BAR]     = osdElementDecimalCompassBar,
 #if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
     [OSD_ESC_TMP]                 = osdElementEscTemperature,
     [OSD_ESC_RPM]                 = osdElementEscRpm,
