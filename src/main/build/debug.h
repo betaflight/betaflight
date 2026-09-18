@@ -101,6 +101,10 @@ extern uint8_t debugMode;
  * An index written from more than one place has to mean one thing in a given
  * build, so annotations that share an index must agree - a disagreement is a bug
  * in the debug mode, not in the annotation.
+ *
+ * `make test` checks every annotation in src/main against this grammar, in
+ * src/test/unit/debug_annotations_unittest.cc, so a malformed one fails the
+ * pull request that writes it rather than the next tool that reads it.
  */
 #define DEBUG_SET(mode, index, value) do { if (debugMode == (mode)) { debug[(index)] = (value); } } while (0)
 
@@ -211,6 +215,7 @@ typedef enum {
     DEBUG_POSITION_EST,
     DEBUG_AUTOPILOT_HEADING,
     DEBUG_RX_REDPINE_SPI,
+    DEBUG_LAUNCH,
     DEBUG_PSAS,
     DEBUG_COUNT
 } debugType_e;

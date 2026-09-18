@@ -106,6 +106,7 @@
 #include "pg/pilot.h"
 #include "pg/pinio.h"
 #include "pg/piniobox.h"
+#include "pg/launch_wing.h"
 #include "pg/pos_hold.h"
 #include "pg/rx.h"
 #include "pg/rx_pwm.h"
@@ -1171,8 +1172,6 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_IMU_PROCESS_DENOM,   VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1,     4 }, PG_IMU_CONFIG, offsetof(imuConfig_t, imu_process_denom) },
 #ifdef USE_MAG
     { PARAM_NAME_IMU_MAG_DECLINATION, VAR_INT16 | MASTER_VALUE, .config.minmax = { -300, 300 }, PG_IMU_CONFIG, offsetof(imuConfig_t, mag_declination) },
-    { PARAM_NAME_TRUST_MAG,           VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON },  PG_IMU_CONFIG, offsetof(imuConfig_t, trust_mag) },
-
 #endif
 
 // PG_ARMING_CONFIG
@@ -1246,6 +1245,25 @@ const clivalue_t valueTable[] = {
     { "poshold_opticalflow_max_range", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50, 1000 }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, opticalflowMaxRange) },
 #endif // !USE_WING
 #endif // USE_POSITION_HOLD
+
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+// PG_LAUNCH_WING_CONFIG
+    { "launch_climb_angle",         VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 45 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, climbAngleDeg) },
+    { "launch_max_angle",           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 80 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, maxAngleDeg) },
+    { "launch_detect_accel",        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 50 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, detectAccelDecig) },
+    { "launch_detect_velocity",     VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 100, 1000 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, detectVelocityCmS) },
+    { "launch_detect_time",         VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 10, 1000 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, detectTimeMs) },
+    { "launch_idle_throttle",       VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 50 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, idleThrottlePercent) },
+    { "launch_idle_delay",          VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 60000 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, idleDelayMs) },
+    { "launch_throttle",            VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, throttlePercent) },
+    { "launch_motor_delay",         VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 5000 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, motorDelayMs) },
+    { "launch_spinup_time",         VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, spinupTimeMs) },
+    { "launch_min_time",            VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 60000 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, minTimeMs) },
+    { "launch_timeout",             VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 60000 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, timeoutMs) },
+    { "launch_max_altitude",        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, maxAltitudeM) },
+    { "launch_end_time",            VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 5000 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, endTimeMs) },
+    { "launch_abort_deadband",      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 50 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, abortDeadbandPercent) },
+#endif // USE_WING && USE_LAUNCH_WING
 
 // PG_PID_CONFIG
     { PARAM_NAME_PID_PROCESS_DENOM, VAR_UINT8  | MASTER_VALUE,  .config.minmaxUnsigned = { 1, MAX_PID_PROCESS_DENOM }, PG_PID_CONFIG, offsetof(pidConfig_t, pid_process_denom) },

@@ -221,6 +221,23 @@ TEST(BlackboxTest, Test_zero_p_interval)
     blackboxAdvanceIterationTimers();
     EXPECT_TRUE(blackboxShouldLogIFrame());
     EXPECT_FALSE(blackboxShouldLogPFrame());
+
+    // the I-frame-only state must be reportable without dividing by the zero P interval
+    EXPECT_EQ(0, blackboxGetPRatio());
+}
+
+TEST(BlackboxTest, Test_sample_rate_out_of_range)
+{
+    // sample_rate arrives unvalidated over MSP and is indexed into the CMS rate table
+    // with no bounds check, so an out of range value has to be clamped, not just shifted.
+    // The CLI bounds checks the same value and reports it as corrupted instead.
+    blackboxConfigMutable()->sample_rate = 255;
+    // 1kHz PIDloop
+    targetPidLooptime = 1000;
+    blackboxInit();
+    EXPECT_EQ(32, blackboxIInterval);
+    EXPECT_EQ(BLACKBOX_SAMPLE_RATE_MAX, blackboxConfig()->sample_rate);
+    EXPECT_EQ(16, blackboxPInterval);
 }
 
 TEST(BlackboxTest, Test_CalculatePDenom)
@@ -262,6 +279,36 @@ TEST(BlackboxTest, Test_CalculatePDenom)
     EXPECT_EQ(64, blackboxCalculatePDenom(1, 4));
     EXPECT_EQ(32, blackboxCalculatePDenom(1, 8)); // 1kHz logging
     EXPECT_EQ(16, blackboxCalculatePDenom(1, 16));
+}
+
+TEST(BlackboxTest, Test_CalculatePDenom_zero_rate)
+{
+    blackboxConfigMutable()->sample_rate = 0;
+    // 1kHz PIDloop
+    targetPidLooptime = 1000;
+    blackboxInit();
+    EXPECT_EQ(32, blackboxIInterval);
+
+    // a legacy MSP_SET_BLACKBOX_CONFIG payload carries rate_num and rate_denom unvalidated
+    EXPECT_EQ(0, blackboxCalculatePDenom(1, 0));
+    EXPECT_EQ(0, blackboxCalculatePDenom(0, 0));
+    // rate_num of 0 was the legacy way of asking for I frames only
+    EXPECT_EQ(0, blackboxCalculatePDenom(0, 1));
+}
+
+TEST(BlackboxTest, Test_CalculateSampleRate_zero_p_ratio)
+{
+    // 1kHz PIDloop
+    targetPidLooptime = 1000;
+    // p_ratio of 0 was the legacy sentinel for logging I frames only
+    EXPECT_EQ(4, blackboxCalculateSampleRate(0));
+    // and the result always has to stay a selectable blackbox_sample_rate
+    EXPECT_LE(blackboxCalculateSampleRate(1), 4);
+
+    // 8kHz PIDloop, where the unclamped result would be llog2(256) = 8
+    targetPidLooptime = 125;
+    EXPECT_EQ(4, blackboxCalculateSampleRate(0));
+    EXPECT_LE(blackboxCalculateSampleRate(1), 4);
 }
 
 TEST(BlackboxTest, Test_CalculateRates)

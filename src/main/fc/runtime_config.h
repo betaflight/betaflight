@@ -94,7 +94,8 @@ typedef enum {
     FAILSAFE_MODE   = (1 << 10),
     GPS_RESCUE_MODE = (1 << 11),
     AUTOPILOT_MODE  = (1 << 12), // GPS waypoint tracking
-    PSAS_MODE = (1 << 13)
+    LAUNCH_MODE     = (1 << 13),  // fixed-wing launch assist
+    PSAS_MODE = (1 << 14)
 } flightModeFlags_e;
 
 extern uint16_t flightModeFlags;
