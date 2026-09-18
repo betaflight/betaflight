@@ -900,7 +900,8 @@ TEST_F(OsdTest, TestElementDecimalCompassBar)
         {   10, { '7', '0', headingDividedLine, headingLine, '0', headingLine, headingDividedLine, headingLine, '9', '\0' } },
         {  900, { '0', headingLine, headingDividedLine, headingLine, '9', '0', headingDividedLine, '1', '8', '\0' } },
         { 1800, { '9', '0', headingDividedLine, '1', '8', '0', headingDividedLine, '2', '7', '\0' } },
-        { 2700, { '8', '0', headingDividedLine, '2', '7', '0', headingDividedLine, headingLine, '0', '\0' } },
+           // Yaw is signed: -900 represents 270 degrees
+        { -900, { '8', '0', headingDividedLine, '2', '7', '0', headingDividedLine, headingLine, '0', '\0' } },
     };
 
     for (const auto &testCase : testCases) {
