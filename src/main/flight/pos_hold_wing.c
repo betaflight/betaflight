@@ -56,7 +56,7 @@ void updatePosHold(timeUs_t currentTimeUs) {
 
 bool posHoldFailure(void) {
     // used only to display warning in OSD if requested but failing
-    return true;
+    return false;
 }
 
 bool posHoldReady(void) {

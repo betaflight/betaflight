@@ -176,12 +176,15 @@ static void initAndSettleAt(float eastCm, float northCm, int16_t yawDecidegrees)
     cfg->hoverThrottle = 1500;
     cfg->throttleMin   = 1000;
     cfg->throttleMax   = 2000;
-    cfg->altitudeP = 50;
-    cfg->altitudeI = 50;
-    cfg->altitudeD = 50;
-    cfg->altitudeA = 50;
-    cfg->altitudeF = 0;
+    cfg->altitudeP = 30;
+    cfg->altitudeI = 30;
+    cfg->altitudeD = 30;
+    cfg->altitudeA = 30;
+    cfg->altitudeF = 30;
     cfg->landingAltitudeM = 5;
+    cfg->yawP = 30;
+    cfg->maxYawRate =150;
+cfg->stickDeadband = 50;
 
     autopilotInit();
     resetPositionControl(100);
@@ -936,7 +939,7 @@ TEST_F(AutopilotYawTest, VelocityModeProportionalBelowClamp)
 
     settleYaw();
     EXPECT_TRUE(autopilotYawControlActive());
-    EXPECT_NEAR(autopilotGetYawRate(), 11.0f, 1.0f);
+    EXPECT_NEAR(autopilotGetYawRate(), 30.0f, 1.0f);
 }
 
 TEST_F(AutopilotYawTest, BearingModeYawsTowardTarget)
@@ -988,11 +991,10 @@ TEST_F(AutopilotYawTest, EngageRampsRateIn)
     engageNavLeg(YAW_MODE_VELOCITY);
     testEstimate.velocity.x = 300.0f;
 
-    // A quarter of the 1 s ramp: attenuated well below the clamp.
-    runIterations(25);
+// A tenth of the 1 s ramp: 90 deg error * 1.8 Kp * 0.1 = 16.2 deg/s.
+    runIterations(10);
     EXPECT_TRUE(autopilotYawControlActive());
-    EXPECT_GT(autopilotGetYawRate(), -15.0f);
-    EXPECT_LT(autopilotGetYawRate(), 0.0f);
+    EXPECT_NEAR(autopilotGetYawRate(), -16.2f, 1.0f);
 }
 
 // -- Nav mode --
@@ -1158,8 +1160,8 @@ TEST_F(PosHoldTest, YawControlGoesInactiveWithTheModeNotTheNextTick)
     // without defaults here, so the yaw law needs its own setup. stickDeadband must be
     // non-zero or the hold re-captures every tick, mirroring rc.c declining to inject.
     autopilotConfig_t *cfg = autopilotConfigMutable();
-    cfg->yawP = 50;
-    cfg->maxYawRate = 30;
+    cfg->yawP = 30;
+    cfg->maxYawRate = 150;
     cfg->stickDeadband = 50;
 
     armingFlags = ARMED;
@@ -1197,8 +1199,8 @@ TEST_F(PosHoldTest, YawControlStandsDownWhileDisarmedWithPosHoldStillLatched)
     initAndSettleAt(0, 0, 0);
 
     autopilotConfig_t *cfg = autopilotConfigMutable();
-    cfg->yawP = 50;
-    cfg->maxYawRate = 30;
+    cfg->yawP = 30;
+    cfg->maxYawRate = 150;
     cfg->stickDeadband = 50;
 
     armingFlags = ARMED;

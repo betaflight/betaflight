@@ -49,6 +49,7 @@
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
+#include "flight/launch_wing.h"
 #include "flight/imu.h"
 #include "flight/mixer_init.h"
 #include "flight/mixer_tricopter.h"
@@ -823,9 +824,11 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
     }
 #endif
 
+    // Never take an autopilot throttle from a platform that does not claim to
+    // produce one - a stubbed control law would command zero and cut the motor.
 #ifdef USE_ALTITUDE_HOLD
     // Throttle value to be used during altitude hold mode (and failsafe landing mode)
-    if (FLIGHT_MODE(ALT_HOLD_MODE)) {
+    if (FLIGHT_MODE(ALT_HOLD_MODE) && autopilotThrottleValid()) {
         throttle = getAutopilotThrottle();
     }
 #endif
@@ -833,8 +836,19 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
 #ifdef USE_GPS_RESCUE
     // If gps rescue is active then override the throttle. This prevents things
     // like throttle boost or throttle limit from negatively affecting the throttle.
-    if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+    if (FLIGHT_MODE(GPS_RESCUE_MODE) && autopilotThrottleValid()) {
         throttle = getAutopilotThrottle();
+    }
+#endif
+
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+    // Same rationale as GPS rescue: a launch throttle must be exactly what was
+    // configured, not what the pilot-feel transforms above make of it. The
+    // handover factor blends back onto the pilot's fully processed throttle,
+    // so the hand-back lands exactly where the pilot's stick already is.
+    if (FLIGHT_MODE(LAUNCH_MODE) && launchWingThrottleValid()) {
+        const float handover = launchWingHandoverFactor();
+        throttle = launchWingGetThrottle() * (1.0f - handover) + throttle * handover;
     }
 #endif
 
@@ -861,7 +875,7 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
         && ARMING_FLAG(ARMED)
         && !mixerRuntime.feature3dEnabled
         && !airmodeEnabled
-        && !FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE)   // disable motor_stop while GPS Rescue / Alt Hold / Pos Hold is active
+        && !FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | LAUNCH_MODE)   // disable motor_stop while GPS Rescue / Alt Hold / Pos Hold / Launch is active
         && (rcData[THROTTLE] < rxConfig()->mincheck)) {
         applyMotorStop();
     } else {
