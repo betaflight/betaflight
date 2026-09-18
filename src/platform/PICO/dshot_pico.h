@@ -45,18 +45,15 @@ typedef struct motorOutput_s {
     int pinIndex;            // pinIndex of this motor output
     IO_t io;                 // IO_t for this output
     bool configured;
-    bool enabled;
     PIO pio;
     uint16_t pio_sm;
 } motorOutput_t;
 
 extern const PIO dshotPio; // currently only single pio supported => 4 motors.
 
-extern motorProtocolTypes_e dshotMotorProtocol;
-
 extern motorOutput_t dshotMotors[MAX_SUPPORTED_MOTORS];
 
-float dshotGetPeriodTiming(void);
+extern float dshotBitPeriodUs;
 
 bool dshot_program_bidir_init(PIO pio, uint sm, int offset, uint pin);
 bool dshotTelemetryWait(void);

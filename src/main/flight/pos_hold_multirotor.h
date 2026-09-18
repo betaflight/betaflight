@@ -25,6 +25,7 @@
 #define POSHOLD_TASK_RATE_HZ 100 // hz
 
 void posHoldInit(void);
+bool posHoldUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
 void updatePosHold(timeUs_t currentTimeUs);
 bool isAutopilotInControl(void);
 

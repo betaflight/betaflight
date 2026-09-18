@@ -56,6 +56,37 @@ void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
     uartPinConfigure_pio(pSerialPinConfig);
 }
 
+// Apply pin inversion for an inverted port, using the GPIO input/output overrides.
+// (Need to reapply after gpio_set_function() which clears any inversions.)
+void uartApplyGpioInversion(uartPort_t *s, portOptions_e options)
+{
+    if (!(options & SERIAL_INVERTED)) {
+        return;
+    }
+
+    uartDevice_t *uartDev = container_of(s, uartDevice_t, port);
+    IO_t txIO = IOGetByTag(uartDev->tx.pin);
+    IO_t rxIO = IOGetByTag(uartDev->rx.pin);
+
+    // Only the PIO UARTs can do half duplex on a single pin (SERIAL_BIDIR).
+    const bool halfDuplex = isPioUART(s->port.identifier) && (options & SERIAL_BIDIR) && txIO;
+
+    if (rxIO && !halfDuplex) {
+        bprintf("UART inverting input on GPIO %d", IO_Pin(rxIO));
+        gpio_set_inover(IO_Pin(rxIO), GPIO_OVERRIDE_INVERT);
+    }
+
+    if (txIO) {
+        bprintf("UART inverting output on GPIO %d", IO_Pin(txIO));
+        gpio_set_outover(IO_Pin(txIO), GPIO_OVERRIDE_INVERT);
+
+        if (halfDuplex) {
+            bprintf("UART inverting input on GPIO %d (half duplex)", IO_Pin(txIO));
+            gpio_set_inover(IO_Pin(txIO), GPIO_OVERRIDE_INVERT);
+        }
+    }
+}
+
 static void setTxMonitorState(uartDevice_t *uartDev, IO_t txIO)
 {
     // Disable USART TX output, set pin state to MONITOR.
@@ -64,6 +95,7 @@ static void setTxMonitorState(uartDevice_t *uartDev, IO_t txIO)
     gpio_set_function(txPin, GPIO_FUNC_SIO);
     gpio_set_dir(txPin, false); // set as input
     gpio_pull_up(txPin);
+    // TODO allow for SERIAL_CHECK_TX with SERIAL_INVERTED? (maybe never required)
 }
 
 static void clearTxMonitorState(uartPort_t *s, bool isPio, uartDevice_t *uartDev, IO_t txIO)
@@ -77,6 +109,9 @@ static void clearTxMonitorState(uartPort_t *s, bool isPio, uartDevice_t *uartDev
     } else {
         uartSelectFunction_hw(s, txPin);
     }
+
+    // Selecting the pin function clears any inversion override, so reapply.
+    uartApplyGpioInversion(s, s->port.options);
 
     uartDev->txPinState = TX_PIN_ACTIVE;
 }
@@ -143,17 +178,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         return NULL;
     }
 
-    if (options & SERIAL_INVERTED) {
-        if (rxIO) {
-            bprintf("UART inverting input on GPIO %d", IO_Pin(rxIO));
-            gpio_set_inover(IO_Pin(rxIO), GPIO_OVERRIDE_INVERT);
-        }
-
-        if (txIO) {
-            bprintf("UART inverting output on GPIO %d", IO_Pin(txIO));
-            gpio_set_outover(IO_Pin(txIO), GPIO_OVERRIDE_INVERT);
-        }
-    }
+    uartApplyGpioInversion(s, options);
 
     if (txIO && (options & SERIAL_CHECK_TX)) {
         bprintf("serialUART option SERIAL_CHECK_TX");

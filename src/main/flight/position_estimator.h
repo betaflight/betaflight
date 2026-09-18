@@ -31,15 +31,31 @@
 // All values in local ENU (East-North-Up) centimeters, zeroed at arm point.
 typedef struct positionEstimate3d_s {
     vector3_t position;        // cm, ENU
-    vector3_t velocity;        // cm/s, ENU
+    vector3_t velocity;        // cm/s, ENU; the plain Kalman velocity on all three axes
+    vector3_t acceleration;    // cm/s^2, ENU
     float trustXY;             // 0-1, derived from KF XY covariance
     float trustZ;              // 0-1, derived from KF Z covariance
     bool isValidXY;            // true if at least one XY measurement source active
     bool isValidZ;             // true if at least one Z measurement source active
 } positionEstimate3d_t;
 
+// Consumers of the estimate that are scheduled by it. Each gets its own bit in
+// the pending-update mask so that one taking the event does not hide it from
+// the other.
+typedef enum {
+    POS_EST_CONSUMER_ALTHOLD = 0,
+    POS_EST_CONSUMER_POSHOLD,
+    POS_EST_CONSUMER_COUNT
+} positionEstimatorConsumer_e;
+
 void positionEstimatorInit(void);
 void positionEstimatorUpdate(void);
+
+// Event-driven scheduling hook: positionEstimatorUpdate() publishes one update
+// event per run, and each consumer takes it exactly once. Returns true if a new
+// estimate has been published since this consumer last took one, and clears the
+// consumer's flag.
+bool positionEstimatorTakeUpdate(positionEstimatorConsumer_e consumer);
 
 // Request XY fusion (normally automatic from armed state / sensors / modes).
 // May re-initialize kfEast/kfNorth when transitioning to enabled; disabling stops prediction only.
@@ -49,10 +65,12 @@ void positionEstimatorEnableXY(bool enable);
 const positionEstimate3d_t *positionEstimatorGetEstimate(void);
 
 float positionEstimatorGetAltitudeCm(void);
-float positionEstimatorGetAltitudeDerivative(void);
+float positionEstimatorGetVerticalVelocity(void);
+float positionEstimatorGetVerticalAcceleration(void);
 bool positionEstimatorIsValidXY(void);
 bool positionEstimatorIsValidZ(void);
 float positionEstimatorGetTrustXY(void);
+float positionEstimatorGetTrustZ(void);
 // True when GPS has a fix and is not excluded by positionSource config.
 // Use to decide whether heading validity is required before engaging position hold.
 bool positionEstimatorIsHeadingRequired(void);

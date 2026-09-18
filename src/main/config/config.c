@@ -581,15 +581,24 @@ static void validateAndFixConfig(void)
     }
 
 #ifdef USE_MSP_DISPLAYPORT
-    // Find the first serial port on which MSP Displayport is enabled
+    // Find the serial port the MSP display port is drawn over.  The OSD's own
+    // assignment names it; an MSP VTX with no OSD port set is the legacy way of
+    // saying the same thing, so its UART stands in when the OSD names none.
     displayPortMspSetSerial(SERIAL_PORT_NONE);
 
-    for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
-        const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
-        if ((identifier != SERIAL_PORT_USB_VCP)
-            && ((serialSynthesizeFunctionMask(identifier) & (FUNCTION_VTX_MSP | FUNCTION_MSP)) == (FUNCTION_VTX_MSP | FUNCTION_MSP))) {
-            displayPortMspSetSerial(identifier);
-            break;
+#ifdef USE_OSD
+    if (osdConfig()->displayPortDevice == OSD_DISPLAYPORT_DEVICE_MSP && osdConfig()->osd_uart != SERIAL_PORT_NONE) {
+        displayPortMspSetSerial(osdConfig()->osd_uart);
+    } else
+#endif
+    {
+        for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
+            const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
+            if ((identifier != SERIAL_PORT_USB_VCP)
+                && (serialSynthesizeFunctionMask(identifier) & FUNCTION_VTX_MSP)) {
+                displayPortMspSetSerial(identifier);
+                break;
+            }
         }
     }
 #endif

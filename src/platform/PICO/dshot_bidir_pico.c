@@ -78,9 +78,9 @@ bool dshot_program_bidir_init(PIO pio, uint sm, int offset, uint pin)
 
     float clocks_per_us = clock_get_hz(clk_sys) / 1000000;
 #ifdef TEST_DSHOT_SLOW
-    sm_config_set_clkdiv(&config, (1.0e4f + dshotGetPeriodTiming()) / DSHOT_BIDIR_BIT_PERIOD * clocks_per_us);
+    sm_config_set_clkdiv(&config, (1.0e4f + dshotBitPeriodUs) / DSHOT_BIDIR_BIT_PERIOD * clocks_per_us);
 #else
-    sm_config_set_clkdiv(&config, dshotGetPeriodTiming() / DSHOT_BIDIR_BIT_PERIOD * clocks_per_us);
+    sm_config_set_clkdiv(&config, dshotBitPeriodUs / DSHOT_BIDIR_BIT_PERIOD * clocks_per_us);
 #endif
 
     bool ok = PICO_OK == pio_sm_init(pio, sm, offset, &config);
@@ -379,7 +379,7 @@ bool dshotTelemetryWait(void)
     } while (telemetryPending);
 
     if (telemetryWait) {
-        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);
+        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);  //!< Reception Timeout Count
     }
 
     bprintf("dshotTelemetryWait returning %d", telemetryWait);
@@ -453,7 +453,7 @@ bool dshotDecodeTelemetry(void)
         }
 
         uint32_t rawValue = decodeOversampledTelemetry(motorIndex, sampleBuffer);
-        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 0, debug[0] + 1);
+        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 0, debug[0] + 1);  //!< Telemetry Packets Read
         dshotTelemetryState.readCount++;
 
         if (rawValue != DSHOT_TELEMETRY_INVALID) {

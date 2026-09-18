@@ -52,7 +52,7 @@ typedef struct batteryProfile_s {
     uint16_t vbatmincellvoltage;            // minimum voltage per cell, this triggers battery critical alarm, in 0.01V units, default is 330 (3.30V)
     uint16_t vbatwarningcellvoltage;        // warning voltage per cell, this triggers battery warning alarm, in 0.01V units, default is 350 (3.50V)
     uint16_t vbatfullcellvoltage;           // Cell voltage at which the battery is deemed to be "full" 0.01V units, default is 410 (4.1V)
-    uint16_t batteryCapacity;               // mAh
+    uint16_t batteryCapacity;               // mAh, used by OSD capacity alarms when set
     uint8_t  forceBatteryCellCount;         // Number of cells in battery, used for overwriting auto-detected cell count if someone has issues with it.
     uint8_t  consumptionWarningPercentage;  // Percentage of remaining capacity that should trigger a battery warning
     char     profileName[MAX_BATTERY_PROFILE_NAME_LENGTH + 1];
