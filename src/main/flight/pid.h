@@ -571,6 +571,9 @@ float calcHorizonLevelStrength(void);
 
 void dynLpfDTermUpdate(float throttle);
 void pidSetItermReset(bool enabled);
+#ifdef USE_WING
+void pidResetTpaSpeed(void);
+#endif
 float pidGetPreviousSetpoint(int axis);
 float pidGetDT(void);
 float pidGetPidFrequency(void);

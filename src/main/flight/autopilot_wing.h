@@ -23,7 +23,7 @@
 
 #ifdef USE_WING
 
-extern float autopilotAngle[RP_AXIS_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGREES
+extern float autopilotAngle[RP_AXIS_COUNT]; // degrees
 
 void autopilotInit(void);
 void resetAltitudeControl(void);
@@ -34,6 +34,10 @@ timeUs_t autopilotTaskIntervalUs(timeUs_t nominalIntervalUs);
 
 bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);
+
+bool autopilotAltitudeControlAvailable(void);
+bool autopilotPositionControlAvailable(void);
+bool autopilotThrottleValid(void);
 bool isAutopilotInControl(void);
 
 float autopilotGetYawRate(void);

@@ -541,6 +541,12 @@
 #undef USE_LAUNCH_CONTROL
 #undef USE_RUNAWAY_TAKEOFF
 
+// Distinct from the multirotor race-start USE_LAUNCH_CONTROL undef'd just
+// above: this is the hand/bungee launch assist for fixed wings.
+#ifndef USE_LAUNCH_WING
+#define USE_LAUNCH_WING
+#endif
+
 #endif // USE_WING
 
 // backwards compatibility for older config.h targets
