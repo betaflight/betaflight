@@ -941,7 +941,7 @@ static void osdGenerateCompassBarWithDegrees(const int offset, char *bar)
         }
 
         // Center the label around position i; out-of-bounds chars are clipped
-        const int startPos = i - (labelLen - 1) / 2;
+const int startPos = constrain(i - (labelLen / 2), 0, 9 - labelLen);
         for (int j = 0; j < labelLen; j++) {
             const int pos = startPos + j;
             if (pos >= 0 && pos < 9) {
