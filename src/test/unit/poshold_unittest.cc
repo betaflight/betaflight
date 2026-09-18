@@ -1046,6 +1046,17 @@ protected:
         debugMode = DEBUG_NONE;
         return status;
     }
+
+    // DEBUG_POSITION_NAV slot 7 carries +10 for the anchor being off and +1 while the buildup
+    // clamp is scaling the drive.
+    bool buildupClampEngaged()
+    {
+        debugMode = DEBUG_POSITION_NAV;
+        runIterations(1);
+        const bool clamped = (debug[7] % 10) == 1;
+        debugMode = DEBUG_NONE;
+        return clamped;
+    }
 };
 
 TEST_F(NavModeTest, NavAnchorsToCarrotAhead)
@@ -1101,6 +1112,38 @@ TEST_F(NavModeTest, NavBeyondAnchorRangeTracksANonZeroCommandedVelocity)
     EXPECT_GT(fabsf(pitchSouth), 5.0f);
     EXPECT_LT(pitchNorth * pitchSouth, 0.0f);
     EXPECT_LT(fabsf(autopilotAngle[AI_ROLL]), 2.0f);
+}
+
+TEST_F(NavModeTest, NavBrakingIsNotLimitedByTheBuildupClamp)
+{
+    // A rescue triggered mid-dash: carrot far behind the craft, the command pointing home, and the
+    // craft still travelling the other way at 17 m/s. The buildup clamp exists to stop the pitch
+    // slamming while speed is being built, and the drive it clamps is the whole of the braking
+    // authority, so out here it has to stand aside or the craft coasts on past its own fence.
+    engageNav(30, 30, 30, 50, 8, 50);
+    setNavCarrot(0.0f, 50.0f);
+    testEstimate.velocity.y = 1700.0f;
+    setTargetVelocityNorth(-300.0f);
+
+    runIterations(SETTLE_ITERATIONS);
+
+    EXPECT_EQ(NAV_STATUS_VELOCITY, navStatus());
+    EXPECT_LT(autopilotAngle[AI_PITCH], -20.0f);   // leaned back hard on the brake, not capped at 8
+    EXPECT_FALSE(buildupClampEngaged());
+}
+
+TEST_F(NavModeTest, NavBuildupClampStillHoldsWhileAccelerating)
+{
+    // The other side of the gate: same geometry, but the command now agrees with the direction of
+    // travel, so the drive is building speed up rather than shedding it and the clamp still owns it.
+    engageNav(30, 30, 30, 50, 8, 50);
+    setNavCarrot(0.0f, 50.0f);
+    testEstimate.velocity.y = 100.0f;
+    setTargetVelocityNorth(1500.0f);
+
+    runIterations(5);
+
+    EXPECT_TRUE(buildupClampEngaged());
 }
 
 TEST_F(NavModeTest, NavAnchorDoesNotCarryAcrossACommandChange)

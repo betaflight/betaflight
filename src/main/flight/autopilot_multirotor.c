@@ -1173,12 +1173,18 @@ bool positionControl(void)
     // the cruise tilt and would otherwise slam the pitch while accelerating. When
     // anchored to a position (nav carrot or hold), P carries the tilt and D + F
     // must stay free to track and brake velocity, so the clamp is skipped.
+    // It limits building speed up, never shedding it: the same drive that leans
+    // into an acceleration is the whole of the braking authority when the
+    // commanded velocity opposes the one being flown, and a rescue or a mission
+    // engaged at speed needs all of it. Braking is the drive opposing the
+    // measured velocity, so the sign of their dot product separates the two.
     bool buildupClamped = false;
     if (ap.navActive && ap.anchor == ANCHOR_OFF) {
         const float buildupMaxDeg = autopilotConfig()->velocityBuildupMaxPitch;
         vector2_t drive = { { pidD.v[EF_EAST] + pidF.v[EF_EAST], pidD.v[EF_NORTH] + pidF.v[EF_NORTH] } };
         const float driveMag = vector2Norm(&drive);
-        if (driveMag > buildupMaxDeg && driveMag > 0.001f) {
+        const bool braking = vector2Dot(&drive, &velocity) < 0.0f;
+        if (!braking && driveMag > buildupMaxDeg && driveMag > 0.001f) {
             buildupClamped = true;
             const float scale = buildupMaxDeg / driveMag;
             vector2Scale(&pidD, &pidD, scale);

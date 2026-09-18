@@ -312,6 +312,7 @@ protected:
 
         autopilotConfig_t *cfg = autopilotConfigMutable();
         memset(cfg, 0, sizeof(*cfg));
+        cfg->maxAngle = 50;                // ap_max_angle default
         cfg->waypointArrivalRadius = 500;  // 5 m
         cfg->waypointHoldRadius = 200;     // 2 m
         cfg->maxVelocity = 1000;           // 10 m/s
@@ -1248,6 +1249,46 @@ TEST_F(FlightPlanNavSafetyTest, MovingAwayPastMarginAbortsAsFlyaway)
     g_stubEstimate.position.v[ENU_N] = -105.0f * 100.0f; // cm
     flightPlanNavUpdate(g_stubMicros + 10'000);
 
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_ABORTED);
+    EXPECT_EQ(flightPlanNavGetAbortReason(), FP_ABORT_FLYAWAY);
+}
+
+TEST_F(FlightPlanNavSafetyTest, FlyawayMarginCoversTheSpeedTheLegWasDispatchedAt)
+{
+    // The rescue case: a leg dispatched while the craft is doing 17 m/s the other way. It cannot
+    // help travelling its braking distance before the controller can turn it around, and a fixed
+    // 20 m fence calls that a flyaway and aborts a rescue that was working.
+    addWaypoint(0, 0, 11000, WAYPOINT_TYPE_HOLD);   // where the craft is, 10 m above it
+    g_stubEstimate.velocity.v[ENU_N] = 1700.0f;
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+
+    // 30 m further out: past the old floor, inside the distance this entry speed needs.
+    g_stubEstimate.position.v[ENU_N] = 3000.0f;
+    flightPlanNavUpdate(g_stubMicros + 100'000);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+
+    // And well past anything the entry speed explains.
+    g_stubEstimate.position.v[ENU_N] = 6000.0f;
+    flightPlanNavUpdate(g_stubMicros + 200'000);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_ABORTED);
+    EXPECT_EQ(flightPlanNavGetAbortReason(), FP_ABORT_FLYAWAY);
+}
+
+TEST_F(FlightPlanNavSafetyTest, FlyawayMarginKeepsItsFloorAtRest)
+{
+    // A craft with no speed to shed has no braking distance to allow for, so the fence stays where
+    // it was: drifting away from a target it was parked on is a flyaway.
+    addWaypoint(0, 0, 11000, WAYPOINT_TYPE_HOLD);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+
+    g_stubEstimate.position.v[ENU_N] = 3200.0f;
+    flightPlanNavUpdate(g_stubMicros + 100'000);
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_ABORTED);
     EXPECT_EQ(flightPlanNavGetAbortReason(), FP_ABORT_FLYAWAY);
 }

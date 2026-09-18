@@ -43,6 +43,7 @@
 #include "flight/autopilot.h"
 #include "flight/flight_plan_nav.h"
 #include "flight/imu.h"
+#include "flight/pid.h"
 #include "flight/position_estimator.h"
 #include "flight/position_nav.h"
 
@@ -77,6 +78,10 @@
 #define FP_FLYAWAY_MARGIN_MIN_M   20.0f
 #define FP_FLYAWAY_MARGIN_MAX_M   100.0f
 #define FP_FLYAWAY_LEG_FRACTION   0.25f
+// Attitude takes this long to swing round and stand the craft on its brake; the speed carried
+// through it is distance the fence has to allow for on top of the braking distance itself.
+#define FP_BRAKE_REVERSAL_S       1.0f
+#define FP_BRAKE_MIN_ANGLE_DEG    10.0f   // ap_max_angle's own lower bound, so a zeroed config cannot divide by zero
 
 // Approach braking: caps the nav velocity target to sqrt(2*decel*distance) so
 // legs decelerate into the waypoint instead of carrying cruise speed into the
@@ -583,14 +588,27 @@ static void navWaypointDeltaEnuM(const positionEstimate3d_t *est, vector3_t *del
     }
 }
 
+// How far the craft travels before the speed it is carrying can be turned around: the braking
+// distance at the deceleration ap_max_angle buys, plus the speed carried through the reversal. A
+// leg dispatched at speed - a rescue triggered mid-dash above all - spends this going the wrong
+// way, and that is physics rather than a flyaway.
+static float brakingDistanceM(const positionEstimate3d_t *est)
+{
+    const float speedMps = sqrtf(sq(est->velocity.v[ENU_E]) + sq(est->velocity.v[ENU_N])) * 0.01f;
+    const float leanDeg = fmaxf((float)autopilotConfig()->maxAngle, FP_BRAKE_MIN_ANGLE_DEG);
+    const float decelMps2 = G_ACCELERATION * tanf(DEGREES_TO_RADIANS(leanDeg));
+    return sq(speedMps) / (2.0f * decelMps2) + speedMps * FP_BRAKE_REVERSAL_S;
+}
+
 // Stall/flyaway sanity against a distance-to-goal. The carrot path passes the
 // distance to the waypoint (not the leading carrot, which never converges);
 // the point path passes the distance to the nav target.
 static void updateProgressTracking(float distanceM, timeUs_t currentTimeUs)
 {
     if (fp.bestDistanceToTargetM == FLT_MAX) {
-        fp.flyawayMarginM = constrainf(distanceM * FP_FLYAWAY_LEG_FRACTION,
-                                       FP_FLYAWAY_MARGIN_MIN_M, FP_FLYAWAY_MARGIN_MAX_M);
+        const float overshootM = fmaxf(distanceM * FP_FLYAWAY_LEG_FRACTION,
+                                       brakingDistanceM(positionEstimatorGetEstimate()));
+        fp.flyawayMarginM = constrainf(overshootM, FP_FLYAWAY_MARGIN_MIN_M, FP_FLYAWAY_MARGIN_MAX_M);
     }
 
     if (distanceM < fp.bestDistanceToTargetM - FP_PROGRESS_EPSILON_M) {
