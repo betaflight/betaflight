@@ -704,7 +704,15 @@ bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorCon
         const timerHardware_t *timerHardware = timerGetConfiguredByTag(motorConfig->ioTags[reorderedMotorIndex]);
         const IO_t io = IOGetByTag(motorConfig->ioTags[reorderedMotorIndex]);
 
-        uint8_t output = motorConfig->motorInversion ?  timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output;
+        // Bit-bang motors only need the pin: a pad with no timerHardware
+        // entry (no timer AF at all, e.g. LGU6 PD0/PD1) is acceptable here
+        // and falls back to default (non-inverted) output flags.
+        uint8_t output;
+        if (timerHardware) {
+            output = motorConfig->motorInversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output;
+        } else {
+            output = motorConfig->motorInversion ? TIMER_OUTPUT_INVERTED : TIMER_OUTPUT_NONE;
+        }
         bbPuPdMode = (output & TIMER_OUTPUT_INVERTED) ? BB_GPIO_PULLDOWN : BB_GPIO_PULLUP;
 
 #ifdef USE_DSHOT_TELEMETRY

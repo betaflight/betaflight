@@ -97,40 +97,54 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
 #define TC(chan) DEF_TIM_CHANNEL(CH_ ## chan)
 
 static const dmaTimerMapping_t dmaTimerMapping[] = {
-    // Generated from 'timer_def.h'
-    { (timerResource_t *)TIM1, TC(CH1), { DMA(2, 1, 1) } },   //MOTOR PA8
-    { (timerResource_t *)TIM1, TC(CH2), { DMA(2, 6, 2) } },   //MOTOR PA9
+    // Regenerated from the DEF_TIM_DMA__BTCH_* table in 'timer_def.h'
+    // (D(DMAx, handshake, Stream) -> DMA(dma, hs, stream)). Keep both tables
+    // in sync: timer_def.h feeds timerHardware, this feeds dmaGet*ByTimer.
 
-    { (timerResource_t *)TIM2, TC(CH2), { DMA(1, 6, 0) } },
-    { (timerResource_t *)TIM2, TC(CH3), { DMA(1, 1, 1) } },    //QFN76 MOTOR PB10
+    { (timerResource_t *)TIM1, TC(CH1), { DMA(2, 1, 3) } },   
+    { (timerResource_t *)TIM1, TC(CH2), { DMA(2, 6, 1) } },   
+    { (timerResource_t *)TIM1, TC(CH3), { DMA(2, 6, 1) } },
 
-    { (timerResource_t *)TIM3, TC(CH2), { DMA(1, 5, 7) } },
-    { (timerResource_t *)TIM3, TC(CH3), { DMA(1, 7, 1) } },
-    { (timerResource_t *)TIM3, TC(CH4), { DMA(1, 2, 2) } },    //PB1
+    { (timerResource_t *)TIM2, TC(CH2), { DMA(1, 6, 0) } },   
+    { (timerResource_t *)TIM2, TC(CH3), { DMA(1, 1, 0) } },   
+    { (timerResource_t *)TIM2, TC(CH4), { DMA(1, 6, 0) } },
 
-    { (timerResource_t *)TIM4, TC(CH1), { DMA(1, 0, 3) } },
-    { (timerResource_t *)TIM4, TC(CH2), { DMA(1, 3, 2) } },
+    { (timerResource_t *)TIM3, TC(CH2), { DMA(1, 5, 7) } },  
+    { (timerResource_t *)TIM3, TC(CH4), { DMA(1, 2, 2) } },   
 
-    { (timerResource_t *)TIM8, TC(CH1), { DMA(2, 2, 3) } },
-    { (timerResource_t *)TIM8, TC(CH2), { DMA(2, 2, 3) } },
-    { (timerResource_t *)TIM8, TC(CH3), { DMA(2, 2, 3) } },
-    { (timerResource_t *)TIM8, TC(CH4), { DMA(2, 7, 3) } },
+    { (timerResource_t *)TIM4, TC(CH1), { DMA(1, 0, 3) } },  
+    { (timerResource_t *)TIM4, TC(CH2), { DMA(1, 3, 2) } },   
+    { (timerResource_t *)TIM4, TC(CH4), { DMA(1, 8, 1) } },   
 
-	{ (timerResource_t *)TIM9, TC(CH1), { DMA(2, 10, 2) } },  //MOTOR PE5, shared PA9
+    { (timerResource_t *)TIM5, TC(CH4), { DMA(1, 1, 0) } },  
 
-    { (timerResource_t *)TIM10, TC(CH1), { DMA(2, 11, 7) } },
-    { (timerResource_t *)TIM10, TC(CH2), { DMA(2, 12, 3) } },
-    { (timerResource_t *)TIM10, TC(CH3), { DMA(2, 13, 3) } },
+    { (timerResource_t *)TIM8, TC(CH1), { DMA(2, 2, 1) } },   
+    { (timerResource_t *)TIM8, TC(CH2), { DMA(2, 2, 1) } },   
+    { (timerResource_t *)TIM8, TC(CH3), { DMA(2, 2, 1) } },  
+    { (timerResource_t *)TIM8, TC(CH4), { DMA(2, 7, 1) } },   
 
-    { (timerResource_t *)TIM11, TC(CH1), { DMA(2, 12, 6) } },
-    { (timerResource_t *)TIM12, TC(CH2), { DMA(1, 8, 1) } },   //MOTOR PB15
-    { (timerResource_t *)TIM12, TC(CH3), { DMA(1, 9, 2) } },   //MOTOR PB12
+    { (timerResource_t *)TIM9, TC(CH1), { DMA(2, 10, 2) } },  
+    { (timerResource_t *)TIM9, TC(CH2), { DMA(2, 11, 1) } },
 
-    { (timerResource_t *)TIM13, TC(CH1), { DMA(1, 8, 1) } },
-	{ (timerResource_t *)TIM13, TC(CH2), { DMA(1, 9, 2) } },   //MOTOR PD8, shared PC9
-    { (timerResource_t *)TIM13, TC(CH4), { DMA(1, 11, 0) } },
+    { (timerResource_t *)TIM10, TC(CH1), { DMA(2, 11, 1) } }, 
+    { (timerResource_t *)TIM10, TC(CH2), { DMA(2, 12, 1) } }, 
+    { (timerResource_t *)TIM10, TC(CH3), { DMA(2, 13, 1) } }, 
 
-	{ (timerResource_t *)TIM14, TC(CH2),{ DMA(1, 10, 3) } },  //MOTOR PE7, shared PC8
+    { (timerResource_t *)TIM11, TC(CH1), { DMA(2, 12, 1) } },
+    { (timerResource_t *)TIM11, TC(CH2), { DMA(2, 13, 1) } },
+
+    { (timerResource_t *)TIM12, TC(CH1), { DMA(1, 13, 3) } },
+    { (timerResource_t *)TIM12, TC(CH2), { DMA(1, 8, 1) } },  
+    { (timerResource_t *)TIM12, TC(CH3), { DMA(1, 9, 2) } },  
+    { (timerResource_t *)TIM12, TC(CH4), { DMA(1, 10, 3) } },
+
+    { (timerResource_t *)TIM13, TC(CH1), { DMA(1, 8, 1) } },  
+    { (timerResource_t *)TIM13, TC(CH2), { DMA(1, 9, 2) } },  
+    { (timerResource_t *)TIM13, TC(CH3), { DMA(1, 10, 3) } }, 
+    { (timerResource_t *)TIM13, TC(CH4), { DMA(1, 11, 3) } }, 
+
+    { (timerResource_t *)TIM14, TC(CH1), { DMA(1, 9, 2) } },  
+    { (timerResource_t *)TIM14, TC(CH2), { DMA(1, 10, 3) } }, 
 };
 
 #undef TC

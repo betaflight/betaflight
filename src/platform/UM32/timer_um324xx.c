@@ -53,38 +53,64 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
 #if defined(USE_TIMER_MGMT)
 const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     // Auto-generated from 'timer_def.h'
-	  DEF_TIM(TIM1, CH1, PA8, 0, 0),    //MOTOR PA8
-      DEF_TIM(TIM1, CH2, PA9, 0, 0),    //MOTOR PA9
+	  DEF_TIM(TIM1, CH1, PA8, 0, 0),   //MOTOR PA8
+      DEF_TIM(TIM1, CH2, PA9, 0, 0),  
+      DEF_TIM(TIM1, CH3, PA4, 0, 0), 
+      DEF_TIM(TIM1, CH3, PA10, 0, 0),   
         
+      DEF_TIM(TIM2, CH2, PA1,  0, 0),
       DEF_TIM(TIM2, CH2, PB3,  0, 0),
-      DEF_TIM(TIM2, CH3, PB10, 0, 0),   //QFN76 MOTOR PB10
+      DEF_TIM(TIM2, CH3, PA2, 0, 0),
+      DEF_TIM(TIM2, CH3, PB10, 0, 0),   
+      DEF_TIM(TIM2, CH4, PA3, 0, 0),
+      DEF_TIM(TIM2, CH4, PB11, 0, 0),  
 
+      DEF_TIM(TIM3, CH2, PA7, 0, 0),
       DEF_TIM(TIM3, CH2, PB5, 0, 0),
-      DEF_TIM(TIM3, CH3, PB0, 0, 0),
-      DEF_TIM(TIM3, CH4, PB1, 0, 0),    //PB1
+      DEF_TIM(TIM3, CH2, PC7, 0, 0),
+      DEF_TIM(TIM3, CH4, PB1, 0, 0),    
+      DEF_TIM(TIM3, CH4, PC9, 0, 0),  
 
       DEF_TIM(TIM4, CH1, PB6, 0, 0),
-      DEF_TIM(TIM4, CH2, PD13, 0, 0),
+      DEF_TIM(TIM4, CH2, PB7, 0, 0),
+      DEF_TIM(TIM4, CH4, PB9, 0, 0),
+
+      DEF_TIM(TIM5, CH4, PA3, 0, 0),
+      DEF_TIM(TIM5, CH4, PC3, 0, 0),
 
       DEF_TIM(TIM8, CH1, PC6, 0, 0),
       DEF_TIM(TIM8, CH2, PC7, 0, 0),
       DEF_TIM(TIM8, CH3, PC8, 0, 0),
       DEF_TIM(TIM8, CH4, PC9, 0, 0),
 
+      DEF_TIM(TIM9, CH1, PA2, 0, 0),
 	  DEF_TIM(TIM9, CH1, PE5, 0, 0),    //MOTOR PE5, shared PA9
+      DEF_TIM(TIM9, CH2, PA3, 0, 0),
 
       DEF_TIM(TIM10, CH1, PC4, 0, 0),
+      DEF_TIM(TIM10, CH1, PB8, 0, 0),
       DEF_TIM(TIM10, CH2, PC5, 0, 0),
+      DEF_TIM(TIM10, CH2, PA15, 0, 0),
       DEF_TIM(TIM10, CH3, PB2, 0, 0),
+      DEF_TIM(TIM10, CH3, PC11, 0, 0),
 
       DEF_TIM(TIM11, CH1, PB9, 0, 0),
+      DEF_TIM(TIM11, CH2, PD2, 0, 0),
+
+      DEF_TIM(TIM12, CH1, PB14, 0, 0), 
 	  DEF_TIM(TIM12, CH2, PB15, 0, 0),  //MOTOR PB15
       DEF_TIM(TIM12, CH3, PB12, 0, 0),
+      DEF_TIM(TIM12, CH4, PB13, 0, 0),
 
-      DEF_TIM(TIM13, CH1, PD7, 0, 0),
+      DEF_TIM(TIM13, CH1, PA6, 0, 0),
+      DEF_TIM(TIM13, CH1, PB2, 0, 0),
+      DEF_TIM(TIM13, CH2, PA5, 0, 0),
+      DEF_TIM(TIM13, CH2, PB3, 0, 0),
 	  DEF_TIM(TIM13, CH2, PD8, 0, 0),   //MOTOR PD8, shared PC9
-      DEF_TIM(TIM13, CH4, PD10, 0, 0),
+      DEF_TIM(TIM13, CH3, PB0, 0, 0),   
+      DEF_TIM(TIM13, CH4, PB1, 0, 0),
 
+      DEF_TIM(TIM14, CH1, PA7, 0, 0), 
 	  DEF_TIM(TIM14, CH2, PE7, 0, 0),   //MOTOR PE7, shared PC8
 };
 #endif
