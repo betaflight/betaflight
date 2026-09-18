@@ -1890,53 +1890,43 @@ TEST_F(FlightPlanNavCarrotTest, CornerSkipsModifierBetweenLegs)
     EXPECT_LT(g_navHeadingOverrideDeg, 90.0f);
 }
 
-TEST_F(FlightPlanNavCarrotTest, OverspeedGovernorHoldsCarrotWithHysteresis)
+TEST_F(FlightPlanNavCarrotTest, OverspeedGovernorSurrendersInProportion)
 {
+    // The governor surrenders carrot speed in proportion to how far over the profile the craft
+    // actually is. A latch that dropped the carrot to a dead stop and waited for the craft to come
+    // back under a release threshold cycled once per crossing, and on a braking leg - where the
+    // craft is over profile for the whole descent of the trapezoid - each cycle walked the
+    // commanded velocity down another stair.
+    auto carrotAfter = [this](float craftSpeedCmS) {
+        flightPlanNavDisengage();
+        setCraftMetres(0.0f, 0.0f);
+        g_stubEstimate.velocity.v[ENU_N] = 0.0f;
+        g_stubMicros += 1'000'000;
+        flightPlanNavEngage();
+        step();   // anchor the leg; craft parked at the origin
+        g_stubEstimate.velocity.v[ENU_N] = craftSpeedCmS;
+        for (int i = 0; i < 100; i++) {
+            step();   // speed filter converges, the carrot speed slews and settles on its lead
+        }
+        return g_lastTarget.targetEfM.y;
+    };
+
     addWaypointMetres(0.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYOVER);
     addWaypointMetres(0.0f, 600.0f, 15000, WAYPOINT_TYPE_FLYOVER); // straight on (last)
-    g_stubMicros = 1'000'000;
-    flightPlanNavEngage();
-    step();   // anchor the leg; craft parked at the origin
 
-    // On profile: the carrot marches away from the parked craft. Keep this
-    // phase short so the hold below happens well inside the minimum 6 m lead
-    // cap — a carrot parked ON the cap would mask a broken governor.
-    for (int i = 0; i < 3; i++) {
-        step();
-    }
-    const float marchingN = g_lastTarget.targetEfM.y;
-    EXPECT_GT(marchingN, 0.05f);
+    // 10 m/s cruise profile. 15 m/s is more than the margin over it, so the carrot gives up all of
+    // its speed; 10.9 m/s is 0.9 of the 1.5 m/s margin, so it keeps the fraction that leaves; on
+    // profile it marches at cruise. The point is the ordering: three distinct speeds, not two.
+    const float stopped = carrotAfter(1500.0f);
+    const float partial = carrotAfter(1090.0f);
+    const float marching = carrotAfter(200.0f);
 
-    // Craft carries 15 m/s against the 10 m/s cruise profile (tailwind /
-    // catch-up): the governor holds the carrot so braking authority returns.
-    g_stubEstimate.velocity.v[ENU_N] = 1500.0f;
-    for (int i = 0; i < 20; i++) {
-        step();   // speed filter converges, carrot speed slews to a stop
-    }
-    const float heldN = g_lastTarget.targetEfM.y;
-    EXPECT_LT(heldN, 5.5f);   // held by the governor, not parked on the lead cap
-    for (int i = 0; i < 10; i++) {
-        step();
-    }
-    EXPECT_NEAR(g_lastTarget.targetEfM.y, heldN, 0.01f);
-
-    // Speed drops into the hysteresis band (10.9 m/s: below the 11.5 entry,
-    // above the 10.75 release). A single-threshold governor resumes marching
-    // here and chatters cruise/freeze at fix rate; the hold must stick.
-    g_stubEstimate.velocity.v[ENU_N] = 1090.0f;
-    for (int i = 0; i < 20; i++) {
-        step();
-    }
-    EXPECT_NEAR(g_lastTarget.targetEfM.y, heldN, 0.01f);
-
-    // Fully back on profile (craft moving gently up the leg so the lead window
-    // opens ahead): the carrot marches again.
-    g_stubEstimate.velocity.v[ENU_N] = 200.0f;
-    for (int i = 0; i < 20; i++) {
-        setCraftMetres(0.0f, (i + 1) * 0.2f);
-        step();
-    }
-    EXPECT_GT(g_lastTarget.targetEfM.y, heldN + 0.5f);
+    // Against a parked craft each settles on its own pursuit lead, which scales with the speed the
+    // governor left the carrot: stopped stays where it was, 4 m/s sits on the 6 m lead floor, and
+    // cruise leads by 1.2 s of it.
+    EXPECT_LT(stopped, 0.75f);
+    EXPECT_NEAR(partial, 6.0f, 0.5f);         // the old latch held here, and stepped on release
+    EXPECT_GT(marching, 10.0f);
 }
 
 TEST_F(FlightPlanNavCarrotTest, ChaseLagCompensationCrossesGateNearCornerSpeed)
