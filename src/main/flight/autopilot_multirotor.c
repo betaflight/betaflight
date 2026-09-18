@@ -299,7 +299,7 @@ static void updatePidLpfGains(float dtS)
 static void setYawDisableReason(uint8_t reason)
 {
     apYawDisableReason = reason;
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 7, apYawDisableReason);
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 7, apYawDisableReason);  //!< Yaw Disable Reason
 }
 
 void autopilotInit(void)
@@ -430,11 +430,11 @@ void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targ
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 0, lrintf(newThrottle));       //!< Throttle Output [unit:us]
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 1, lrintf(targetAltitudeCm));  //!< Target Altitude [unit:cm]
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 2, lrintf(currentAltitudeCm)); //!< Current Altitude [unit:cm]
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 3, lrintf(altitudeP));         //!< Altitude P Term [unit:u]
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 4, lrintf(altitudeI));         //!< Altitude I Term [unit:u]
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 5, lrintf(altitudeD));         //!< Altitude D Term [unit:u]
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 6, lrintf(altitudeA));         //!< Altitude A Term [unit:u]
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));         //!< Altitude Feedforward Term [unit:u]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 3, lrintf(altitudeP));         //!< Altitude P Term [unit:us]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 4, lrintf(altitudeI));         //!< Altitude I Term [unit:us]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 5, lrintf(altitudeD));         //!< Altitude D Term [unit:us]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 6, lrintf(altitudeA));         //!< Altitude A Term [unit:us]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));         //!< Altitude Feedforward Term [unit:us]
 
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 2, lrintf(currentAltitudeCm)); //!< Current Altitude [unit:cm]
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 3, lrintf(targetAltitudeCm));  //!< Target Altitude [unit:cm]
@@ -708,7 +708,7 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
 {
     const autopilotConfig_t *cfg = autopilotConfig();
 
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 7, apYawDisableReason);
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 7, apYawDisableReason);  //!< Yaw Disable Reason
 
     // Nothing holds a heading on the bench. disarm() clears ARMED but leaves the flight
     // mode flags alone, so POS_HOLD_MODE stays set until processRxModes() next runs and
@@ -813,8 +813,8 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 0, lrintf(headingDeg * 10.0f));        //!< Heading [unit:0.1deg]
     DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 1, lrintf(desiredHeadingDeg * 10.0f)); //!< Target Heading [unit:0.1deg]
     DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 2, lrintf(errorDeg * 10.0f));          //!< Heading Error [unit:0.1deg]
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, lrintf(apYawRateDps * 10.0f));      //!< Yaw Rate [unit:0.1deg/s]
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 4, lrintf(yawP * 10.0f));              //!< YawP [unit:u]
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, lrintf(apYawRateDps * 10.0f));      //!< Yaw Rate [unit:0.1dps]
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 4, lrintf(yawP * 10.0f));              //!< Yaw P Term [unit:0.1dps]
 
 #ifdef USE_GPS
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 1, gpsSol.groundCourse);              //!< GPS Ground Course [unit:0.1deg]
