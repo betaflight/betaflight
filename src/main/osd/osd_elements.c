@@ -915,18 +915,6 @@ static void osdElementAverageCellVoltage(osdElementParms_t *element)
     osdPrintFloat(element->buff, osdGetBatterySymbol(cellV), cellV / 100.0f, "", 2, false, SYM_VOLT);
 }
 
-static void osdElementDecimalCompassBar(osdElementParms_t *element)
-{
-    const int heading = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
-    const int offset = osdGetHeadingIntoDiscreteDirections(heading, 16);
-
-    // Degree style: display 0/90/180/270 instead of N/E/S/W
-    char bar[9];
-    osdGenerateCompassBarWithDegrees(offset, bar);
-    memcpy(element->buff, bar, 9);
-    element->buff[9] = 0;
-}
-
 static void osdGenerateCompassBarWithDegrees(const int offset, char *bar)
 {
     // Fill with tick characters matching the standard pattern
@@ -946,10 +934,10 @@ static void osdGenerateCompassBarWithDegrees(const int offset, char *bar)
         const char *label;
         int labelLen;
         switch (cardinalAngle) {
-        case 0:   label = "0";   labelLen = 1; break;
-        case 90:  label = "90";  labelLen = 2; break;
-        case 180: label = "180"; labelLen = 3; break;
-        default:  label = "270"; labelLen = 3; break;
+            case 0:   label = "0";   labelLen = 1; break;
+            case 90:  label = "90";  labelLen = 2; break;
+            case 180: label = "180"; labelLen = 3; break;
+            default:  label = "270"; labelLen = 3; break;
         }
 
         // Center the label around position i; out-of-bounds chars are clipped
@@ -961,6 +949,18 @@ static void osdGenerateCompassBarWithDegrees(const int offset, char *bar)
             }
         }
     }
+}
+
+static void osdElementDecimalCompassBar(osdElementParms_t *element)
+{
+    const int heading = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+    const int offset = osdGetHeadingIntoDiscreteDirections(heading, 16);
+
+    // Degree style: display 0/90/180/270 instead of N/E/S/W
+    char bar[9];
+    osdGenerateCompassBarWithDegrees(offset, bar);
+    memcpy(element->buff, bar, 9);
+    element->buff[9] = 0;
 }
 
 static void osdElementCompassBar(osdElementParms_t *element)
