@@ -1908,13 +1908,13 @@ TEST_F(FlightPlanNavCarrotTest, CornerSkipsModifierBetweenLegs)
     EXPECT_LT(g_navHeadingOverrideDeg, 90.0f);
 }
 
-TEST_F(FlightPlanNavCarrotTest, OverspeedGovernorSurrendersInProportion)
+TEST_F(FlightPlanNavCarrotTest, CarrotSpeedDoesNotDependOnMeasuredSpeed)
 {
-    // The governor surrenders carrot speed in proportion to how far over the profile the craft
-    // actually is. A latch that dropped the carrot to a dead stop and waited for the craft to come
-    // back under a release threshold cycled once per crossing, and on a braking leg - where the
-    // craft is over profile for the whole descent of the trapezoid - each cycle walked the
-    // commanded velocity down another stair.
+    // The carrot marches on its own trapezoid. Feeding measured ground speed back into the
+    // commanded speed - a governor that stalled the carrot whenever the craft was over profile -
+    // closed a loop through the vehicle: the craft ran fast, the carrot stopped, the craft ate the
+    // pursuit lead and the commanded velocity collapsed a second later, apparently uncommanded.
+    // The craft overtaking the carrot is already answered by the brake gap below, continuously.
     auto carrotAfter = [this](float craftSpeedCmS) {
         flightPlanNavDisengage();
         setCraftMetres(0.0f, 0.0f);
@@ -1924,7 +1924,7 @@ TEST_F(FlightPlanNavCarrotTest, OverspeedGovernorSurrendersInProportion)
         step();   // anchor the leg; craft parked at the origin
         g_stubEstimate.velocity.v[ENU_N] = craftSpeedCmS;
         for (int i = 0; i < 100; i++) {
-            step();   // speed filter converges, the carrot speed slews and settles on its lead
+            step();
         }
         return g_lastTarget.targetEfM.y;
     };
@@ -1932,19 +1932,11 @@ TEST_F(FlightPlanNavCarrotTest, OverspeedGovernorSurrendersInProportion)
     addWaypointMetres(0.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYOVER);
     addWaypointMetres(0.0f, 600.0f, 15000, WAYPOINT_TYPE_FLYOVER); // straight on (last)
 
-    // 10 m/s cruise profile. 15 m/s is more than the margin over it, so the carrot gives up all of
-    // its speed; 10.9 m/s is 0.9 of the 1.5 m/s margin, so it keeps the fraction that leaves; on
-    // profile it marches at cruise. The point is the ordering: three distinct speeds, not two.
-    const float stopped = carrotAfter(1500.0f);
-    const float partial = carrotAfter(1090.0f);
-    const float marching = carrotAfter(200.0f);
+    const float onProfile = carrotAfter(200.0f);
+    const float overProfile = carrotAfter(1500.0f);   // 5 m/s over the 10 m/s profile
 
-    // Against a parked craft each settles on its own pursuit lead, which scales with the speed the
-    // governor left the carrot: stopped stays where it was, 4 m/s sits on the 6 m lead floor, and
-    // cruise leads by 1.2 s of it.
-    EXPECT_LT(stopped, 0.75f);
-    EXPECT_NEAR(partial, 6.0f, 0.5f);         // the old latch held here, and stepped on release
-    EXPECT_GT(marching, 10.0f);
+    EXPECT_GT(onProfile, 10.0f);
+    EXPECT_NEAR(overProfile, onProfile, 0.01f);
 }
 
 TEST_F(FlightPlanNavCarrotTest, ChaseLagCompensationCrossesGateNearCornerSpeed)

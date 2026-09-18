@@ -113,7 +113,6 @@
 #define FP_PASS_MAX_M            12.0f   // largest pass-through gate radius
 #define FP_CARROT_LEAD_MIN_M     6.0f    // the carrot always leads by at least this
 #define FP_GATE_RADIUS_SCALE     1.5f    // gate radius = corner speed (m/s) * this
-#define FP_OVERSPEED_MARGIN_MPS  1.5f    // excess over the profile speed at which the carrot has surrendered all of its speed
 #define FP_OVERRUN_LAT_M         8.0f    // a fast gate miss still counts within this lateral corridor
 #define FP_CARROT_NO_ARRIVAL_M   -1.0f   // acceptance radius sentinel: positionNav never self-completes a carrot leg
 // The GPS-fed position estimate steps a metre or two on every fix. Shaping the
@@ -122,7 +121,7 @@
 // Filter the measurements that shape the carrot (not the sensors themselves);
 // gate detection and pre-turn timing stay on the raw estimate so a crossing
 // still counts, and the nose still starts swinging, the moment they happen.
-#define FP_MEAS_FILTER_S         0.20f   // PT1 tau on along-track position and ground speed
+#define FP_MEAS_FILTER_S         0.20f   // PT1 tau on the along-track position the carrot floor rides
 
 // A leg that points the nose at its target does not translate until the nose is on the leg — the
 // legacy rescue's rotate-then-fly-home guarantee, which is why it never flew home tail first.
@@ -252,7 +251,6 @@ static struct {
     bool      carrotPrevValid;
     bool      inPreTurn;        // blending the nose onto the next leg (excluded from the heading-fault check)
     float     alongFiltM;       // PT1-filtered along-track position; shapes the carrot floor and trapezoid
-    float     speedFiltMps;     // PT1-filtered horizontal ground speed; feeds the overspeed governor
     bool      measFiltValid;
 
     // Landing state
@@ -872,15 +870,12 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
     }
     const float craftAlongM = (craft.x - fp.legStartEnuM.x) * legDir.x + (craft.y - fp.legStartEnuM.y) * legDir.y;
 
-    const float horizSpeedMps = sqrtf(sq(est->velocity.v[ENU_E]) + sq(est->velocity.v[ENU_N])) * 0.01f;
     if (!fp.measFiltValid || dtS <= 0.0f) {
         fp.alongFiltM = craftAlongM;
-        fp.speedFiltMps = horizSpeedMps;
         fp.measFiltValid = true;
     } else {
         const float alpha = dtS / (FP_MEAS_FILTER_S + dtS);
         fp.alongFiltM += alpha * (craftAlongM - fp.alongFiltM);
-        fp.speedFiltMps += alpha * (horizSpeedMps - fp.speedFiltMps);
     }
 
     // Trapezoidal profile keyed on the craft's distance to the gate: cruise, then
@@ -901,17 +896,6 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
     const float brakeLagM = fp.carrotSpeedMps * leadTimeS;
     const float remainingBrakeM = fmaxf(remainingFiltM - brakeLagM, 0.0f);
     float desiredMps = fminf(fp.legCruiseMps, sqrtf(sq(cornerSpeedMps) + 2.0f * decelMps2 * remainingBrakeM));
-
-    // Governor on measured speed: a craft carrying more than the profile (tailwind,
-    // catch-up) makes the carrot surrender authority so the craft can close the gap.
-    // Proportional to the excess, not a latch: dropping the carrot to zero and
-    // waiting for the craft to come back cycled once per hysteresis crossing, and
-    // on a braking leg - where the craft is over profile by construction - that
-    // cycle walked the commanded velocity down the leg one stair at a time.
-    const float excessMps = fp.speedFiltMps - desiredMps;
-    if (excessMps > 0.0f) {
-        desiredMps *= 1.0f - constrainf(excessMps / FP_OVERSPEED_MARGIN_MPS, 0.0f, 1.0f);
-    }
 
     const float headingDeg = attitude.values.yaw * 0.1f;
     const float legBearingDeg = RADIANS_TO_DEGREES(atan2_approx(legDir.x, legDir.y));
