@@ -233,6 +233,7 @@ static struct {
     // executor owns gate detection and advancement. State carries across a
     // corner so the profile is continuous (only engage/retry re-anchor it).
     bool      legIsPassGate;    // current leg uses carrot leg-line tracking
+    float     legArriveRadiusM; // this leg's arrival radius, resolved at dispatch
     bool      legValid;         // the leg line is anchored
     vector3_t legTargetEnuM;    // the point this leg flies to (E,N,U metres)
     float     legCruiseMps;     // this leg's cruise cap
@@ -424,7 +425,20 @@ static bool dispatchWaypoint(void)
     const bool isStationKeeping = (effective.type == WAYPOINT_TYPE_HOLD)
                                || (effective.type == WAYPOINT_TYPE_LAND)
                                || (effective.type == WAYPOINT_TYPE_TAKEOFF);
-    const float arrivalRadiusM = (isStationKeeping ? cfg->waypointHoldRadius : cfg->waypointArrivalRadius) * 0.01f;
+    float arrivalRadiusM = isStationKeeping
+        ? cfg->waypointHoldRadius * 0.01f
+        : fminf(cfg->waypointArrivalRadius * 0.01f, FP_PASS_MAX_M);
+#if ENABLE_RESCUE_PLAN
+    // Legacy rescue begins its descent gps_rescue_descent_dist from home and comes down as it
+    // closes the last stretch, rather than arriving overhead and then sinking. The plan gets the
+    // same shape by arriving early: the return leg hands over at that distance and the landing leg
+    // is already inside its own radius when it is dispatched.
+    if (fp.isRescuePlan
+        && (effective.type == WAYPOINT_TYPE_FLYOVER || effective.type == WAYPOINT_TYPE_LAND)) {
+        arrivalRadiusM = fmaxf(arrivalRadiusM, (float)gpsRescueConfig()->descentDistanceM);
+    }
+#endif
+    fp.legArriveRadiusM = arrivalRadiusM;
 
     float cruiseMps = (effective.speed > 0) ? effective.speed * 0.01f : cfg->maxVelocity * 0.01f;
     if (cruiseMps < FP_MIN_CRUISE_MPS) {
@@ -804,17 +818,19 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
                 : fp.legCruiseMps;   // straight through
         }
     }
-    // waypointArrivalRadius can be configured above FP_PASS_MAX_M, which would
-    // otherwise invert the constrainf bounds; clamp the floor to the gate max.
-    const float arriveRadiusM = fminf(cfg->waypointArrivalRadius * 0.01f, FP_PASS_MAX_M);
+    const float arriveRadiusM = fp.legArriveRadiusM;
     // FLYBY cuts the corner: the gate scales up with the corner speed. FLYOVER
     // keeps its fly-over-the-point meaning - the carrot tracking and corner-speed
     // profile still apply, but the gate stays at the arrival radius so the craft
     // passes tight over the point instead of carving the corner wide.
+    // The resolved radius can exceed FP_PASS_MAX_M (a rescue hands over at its
+    // descent distance), which would invert the corner-gate bounds; the corner
+    // gate keeps its own ceiling and the fly-over gate honours the radius.
     const waypoint_t *thisWp = currentWaypoint();
     const bool flyby = (thisWp == NULL) || (thisWp->type == WAYPOINT_TYPE_FLYBY);
     const float arriveM = flyby
-        ? constrainf(cornerSpeedMps * FP_GATE_RADIUS_SCALE, arriveRadiusM, FP_PASS_MAX_M)
+        ? constrainf(cornerSpeedMps * FP_GATE_RADIUS_SCALE,
+                     fminf(arriveRadiusM, FP_PASS_MAX_M), FP_PASS_MAX_M)
         : arriveRadiusM;
 
     // Overrun fallback: a fast crossing that misses the arrive bubble by a hair

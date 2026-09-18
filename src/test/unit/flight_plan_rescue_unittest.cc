@@ -662,6 +662,30 @@ TEST_F(FlightPlanRescueTest, FullRescueRunToLanding)
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_COMPLETE);
 }
 
+TEST_F(FlightPlanRescueTest, DescentStartsAtTheConfiguredDescentDistance)
+{
+    // Legacy rescue starts down at gps_rescue_descent_dist and closes the last stretch while
+    // descending. Arriving overhead first and only then sinking puts the craft over whatever it was
+    // trying to get away from, and the pilot loses the approach they were expecting.
+    gpsRescueConfigMutable()->descentDistanceM = 15;
+    g_stubEstimate.position.v[ENU_N] = 2500.0f;   // 25 m north of home
+    attitude.values.yaw = 1800;                   // nose south, pointing home
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    triggerReached();                             // climb done, fly home
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);  // 25 m out: still on the return leg
+
+    g_stubEstimate.position.v[ENU_N] = 1400.0f;    // inside the descent distance
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 2);  // hands over to the landing leg out here
+    EXPECT_NEAR(g_lastTarget.acceptanceRadiusM, 15.0f, 0.01f);
+}
+
 // --- Fallback emergency descent (switch rescue: no fix, or plan aborted) ---
 
 TEST_F(FlightPlanRescueTest, RescueDescentDrivesLandingAndDisarms)
