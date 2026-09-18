@@ -879,8 +879,8 @@ TEST_F(OsdTest, TestElementRssiAlarmSeverity)
 
 /*
  * Tests the decimal compass bar at each cardinal heading and across the
- * north/360-degree wraparound.  Labels that extend past either end of the
- * nine-character window must be clipped.
+ * north/360-degree wraparound.  Labels near either end of the nine-character
+ * window must be shifted inward so the complete degree value remains visible.
  */
 TEST_F(OsdTest, TestElementDecimalCompassBar)
 {
@@ -895,13 +895,13 @@ TEST_F(OsdTest, TestElementDecimalCompassBar)
         int16_t headingDeciDegrees;
         char expected[10];
     } testCases[] = {
-        { 3590, { '7', '0', headingDividedLine, headingLine, '0', headingLine, headingDividedLine, headingLine, '9', '\0' } },
-        {    0, { '7', '0', headingDividedLine, headingLine, '0', headingLine, headingDividedLine, headingLine, '9', '\0' } },
-        {   10, { '7', '0', headingDividedLine, headingLine, '0', headingLine, headingDividedLine, headingLine, '9', '\0' } },
-        {  900, { '0', headingLine, headingDividedLine, headingLine, '9', '0', headingDividedLine, '1', '8', '\0' } },
-        { 1800, { '9', '0', headingDividedLine, '1', '8', '0', headingDividedLine, '2', '7', '\0' } },
-           // Yaw is signed: -900 represents 270 degrees
-        { -900, { '8', '0', headingDividedLine, '2', '7', '0', headingDividedLine, headingLine, '0', '\0' } },
+        { 3590, { '2', '7', '0', headingLine, '0', headingLine, headingDividedLine, '9', '0', '\0' } },
+        {    0, { '2', '7', '0', headingLine, '0', headingLine, headingDividedLine, '9', '0', '\0' } },
+        {   10, { '2', '7', '0', headingLine, '0', headingLine, headingDividedLine, '9', '0', '\0' } },
+        {  900, { '0', headingLine, headingDividedLine, '9', '0', headingLine, '1', '8', '0', '\0' } },
+        { 1800, { '9', '0', headingDividedLine, '1', '8', '0', '2', '7', '0', '\0' } },
+        // Yaw is signed: -900 represents 270 degrees
+        { -900, { '1', '8', '0', '2', '7', '0', headingDividedLine, headingLine, '0', '\0' } },
     };
 
     for (const auto &testCase : testCases) {
