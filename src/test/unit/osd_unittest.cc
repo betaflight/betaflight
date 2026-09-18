@@ -878,6 +878,47 @@ TEST_F(OsdTest, TestElementRssiAlarmSeverity)
 }
 
 /*
+ * Tests the decimal compass bar at each cardinal heading and across the
+ * north/360-degree wraparound.  Labels that extend past either end of the
+ * nine-character window must be clipped.
+ */
+TEST_F(OsdTest, TestElementDecimalCompassBar)
+{
+    // given
+    osdElementConfigMutable()->item_pos[OSD_DECIMAL_COMPASS_BAR] = OSD_POS(2, 3) | OSD_PROFILE_1_FLAG;
+
+    osdAnalyzeActiveElements();
+
+    const char headingLine = SYM_HEADING_LINE;
+    const char headingDividedLine = SYM_HEADING_DIVIDED_LINE;
+    const struct {
+        int16_t headingDeciDegrees;
+        char expected[10];
+    } testCases[] = {
+        { 3590, { '7', '0', headingDividedLine, headingLine, '0', headingLine, headingDividedLine, headingLine, '9', '\0' } },
+        {    0, { '7', '0', headingDividedLine, headingLine, '0', headingLine, headingDividedLine, headingLine, '9', '\0' } },
+        {   10, { '7', '0', headingDividedLine, headingLine, '0', headingLine, headingDividedLine, headingLine, '9', '\0' } },
+        {  900, { '0', headingLine, headingDividedLine, headingLine, '9', '0', headingDividedLine, '1', '8', '\0' } },
+        { 1800, { '9', '0', headingDividedLine, '1', '8', '0', headingDividedLine, '2', '7', '\0' } },
+        { 2700, { '8', '0', headingDividedLine, '2', '7', '0', headingDividedLine, headingLine, '0', '\0' } },
+    };
+
+    for (const auto &testCase : testCases) {
+        SCOPED_TRACE(testCase.headingDeciDegrees);
+
+        // when
+        attitude.values.yaw = testCase.headingDeciDegrees;
+        displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+        osdRefresh();
+
+        // then
+        displayPortTestBufferSubstring(2, 3, testCase.expected);
+    }
+
+    attitude.values.yaw = 0;
+}
+
+/*
  * Tests the instantaneous battery current OSD element.
  */
 TEST_F(OsdTest, TestElementAmperage)
