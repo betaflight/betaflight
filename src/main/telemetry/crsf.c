@@ -624,17 +624,17 @@ static void crsfFrameFlightMode(sbuf_t *dst)
         flightMode = "RTH";
     } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
         flightMode = "PASS";
+    // Position Hold and Altitude Hold both force Angle mode on, so both must be tested before it, otherwise their branches are unreachable
     } else if (FLIGHT_MODE(POS_HOLD_MODE)) {
-        // Position Hold forces Angle mode on, so it must be tested before it, otherwise the branch is unreachable
 #ifdef USE_POSITION_HOLD
         flightMode = posHoldFailure() ? "PHFL" : "POSH";
 #else
         flightMode = "POSH";
 #endif
-    } else if (FLIGHT_MODE(ANGLE_MODE)) {
-        flightMode = "ANGL";
     } else if (FLIGHT_MODE(ALT_HOLD_MODE)) {
         flightMode = "ALTH";
+    } else if (FLIGHT_MODE(ANGLE_MODE)) {
+        flightMode = "ANGL";
     } else if (FLIGHT_MODE(HORIZON_MODE)) {
         flightMode = "HOR";
     } else if (FLIGHT_MODE(CHIRP_MODE)) {

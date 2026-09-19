@@ -499,6 +499,7 @@ telemetry_crsf_unittest_SRC := \
 
 telemetry_crsf_unittest_DEFINES := \
 		FLASH_SIZE=128 \
+		USE_POSITION_HOLD \
 		__TARGET__="TEST" \
 		__REVISION__="revision"
 
