@@ -60,6 +60,8 @@
 #include "fc/stats.h"
 
 #include "flight/failsafe.h"
+#include "flight/autopilot.h"
+#include "flight/launch_wing.h"
 #include "flight/gps_rescue.h"
 #include "flight/alt_hold.h"
 #include "flight/pos_hold.h"
@@ -149,10 +151,6 @@ enum {
 
 #define DEBUG_RUNAWAY_TAKEOFF_TRUE  1
 #define DEBUG_RUNAWAY_TAKEOFF_FALSE 0
-#endif
-
-#if defined(USE_GPS) || defined(USE_MAG)
-int16_t magHold;
 #endif
 
 static FAST_DATA_ZERO_INIT uint8_t pidUpdateCounter;
@@ -252,6 +250,9 @@ static bool accNeedsCalibration(void)
             isModeActivationConditionPresent(BOXALTHOLD) ||
             isModeActivationConditionPresent(BOXPOSHOLD) ||
             isModeActivationConditionPresent(BOXGPSRESCUE) ||
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+            (isFixedWing() && isModeActivationConditionPresent(BOXLAUNCH)) ||
+#endif
             isModeActivationConditionPresent(BOXCAMSTAB) ||
             isModeActivationConditionPresent(BOXCALIB) ||
             isModeActivationConditionPresent(BOXACROTRAINER)) {
@@ -521,6 +522,7 @@ void disarm(flightLogDisarmReason_e reason)
         }
         DISABLE_ARMING_FLAG(ARMED); // disarm now
         lastDisarmTimeUs = micros();
+        launchWingDisarm();
 
 #ifdef USE_OSD
         if (IS_RC_MODE_ACTIVE(BOXCRASHFLIP) || isLaunchControlActive()) {
@@ -629,6 +631,9 @@ if (isMotorProtocolDshot()) {
 #ifdef USE_RPM_LIMIT
         mixerResetRpmLimiter();
 #endif
+        // Latched once, here, and nowhere else: a launch can never be switched
+        // on mid-air.
+        launchWingArm();
         ENABLE_ARMING_FLAG(ARMED);  // ***ARM NOW ***
 
 #ifdef USE_RC_STATS
@@ -731,24 +736,6 @@ static void updateInflightCalibrationState(void)
         AccInflightCalibrationSavetoEEProm = true;
     }
 }
-
-#if defined(USE_GPS) || defined(USE_MAG)
-static void updateMagHold(void)
-{
-    if (fabsf(rcCommand[YAW]) < 15 && FLIGHT_MODE(MAG_MODE)) {
-        int16_t dif = DECIDEGREES_TO_DEGREES(attitude.values.yaw) - magHold;
-        if (dif <= -180)
-            dif += 360;
-        if (dif >= +180)
-            dif -= 360;
-        dif *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
-        if (isUpright()) {
-            rcCommand[YAW] -= dif * currentPidProfile->pid[PID_MAG].P / 30;    // 18 deg
-        }
-    } else
-        magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
-}
-#endif
 
 #ifdef USE_VTX_CONTROL
 static bool canUpdateVTX(void)
@@ -864,7 +851,9 @@ bool processRx(timeUs_t currentTimeUs)
     // Note: If Airmode is enabled, on arming, iTerm and PIDs will be off until throttle exceeds the threshold (OFF while disarmed)
     // If not, iTerm will be off at low throttle, with pidStabilisationState determining whether PIDs will be active
     if (ARMING_FLAG(ARMED) && (isAirmodeActive || throttleActive || launchControlActive || isFixedWing())) {
-        pidSetItermReset(false);
+        // the wing launch holds iTerm off until spin-up, but must keep the rest
+        // of the stabilisation running through the motor delay
+        pidSetItermReset(launchWingHoldsIterm());
         pidStabilisationState(PID_STABILISATION_ON);
     } else {
         pidSetItermReset(true);
@@ -927,15 +916,15 @@ bool processRx(timeUs_t currentTimeUs)
             runawayTakeoffDeactivateUs = 0;
         }
         if (runawayTakeoffDeactivateUs == 0) {
-            DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_DEACTIVATING_DELAY, DEBUG_RUNAWAY_TAKEOFF_FALSE);
-            DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_DEACTIVATING_TIME, runawayTakeoffAccumulatedUs / 1000);
+            DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_DEACTIVATING_DELAY, DEBUG_RUNAWAY_TAKEOFF_FALSE);  //!< Deactivation Delay Running
+            DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_DEACTIVATING_TIME, runawayTakeoffAccumulatedUs / 1000);  //!< Accumulated Trigger Time [unit:ms]
         } else {
-            DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_DEACTIVATING_DELAY, DEBUG_RUNAWAY_TAKEOFF_TRUE);
-            DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_DEACTIVATING_TIME, (cmpTimeUs(currentTimeUs, runawayTakeoffDeactivateUs) + runawayTakeoffAccumulatedUs) / 1000);
+            DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_DEACTIVATING_DELAY, DEBUG_RUNAWAY_TAKEOFF_TRUE);  //!< Deactivation Delay Running
+            DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_DEACTIVATING_TIME, (cmpTimeUs(currentTimeUs, runawayTakeoffDeactivateUs) + runawayTakeoffAccumulatedUs) / 1000);  //!< Accumulated Trigger Time [unit:ms]
         }
     } else {
-        DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_DEACTIVATING_DELAY, DEBUG_RUNAWAY_TAKEOFF_FALSE);
-        DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_DEACTIVATING_TIME, DEBUG_RUNAWAY_TAKEOFF_FALSE);
+        DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_DEACTIVATING_DELAY, DEBUG_RUNAWAY_TAKEOFF_FALSE);  //!< Deactivation Delay Running
+        DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_DEACTIVATING_TIME, DEBUG_RUNAWAY_TAKEOFF_FALSE);   //!< Accumulated Trigger Time [unit:ms]
     }
 #endif
 
@@ -1053,6 +1042,9 @@ void processRxModes(timeUs_t currentTimeUs)
 #ifdef USE_POSITION_HOLD
         || FLIGHT_MODE(POS_HOLD_MODE)
 #endif
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+        || FLIGHT_MODE(LAUNCH_MODE)
+#endif
         ) && (sensors(SENSOR_ACC))) {
         // bumpless transfer to Level mode
         canUseHorizonMode = false;
@@ -1068,7 +1060,8 @@ void processRxModes(timeUs_t currentTimeUs)
     // Legacy: the pilot's switch and the failsafe procedure both fly the legacy
     // GPS_RESCUE_MODE controller. (With ENABLE_RESCUE_PLAN both are flown as an
     // autopilot rescue mission instead - staged below and in failsafe.c.)
-    if (ARMING_FLAG(ARMED) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE)
+    if (ARMING_FLAG(ARMED) && gpsRescueIsConfigured()
+        && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE)
         || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE))) {
         if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
             ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
@@ -1167,16 +1160,37 @@ void processRxModes(timeUs_t currentTimeUs)
     navTrailUpdate(currentTimeUs);
 #endif
 
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+    // The latch is the mid-air guard: it is set only at the arm transition, so
+    // the box alone can never engage a launch in flight.
+    if (ARMING_FLAG(ARMED)
+        && launchWingLatched()
+        && IS_RC_MODE_ACTIVE(BOXLAUNCH)
+        && sensors(SENSOR_ACC)
+        && !failsafeIsActive()
+        && !launchWingIsTerminal()) {
+        if (!FLIGHT_MODE(LAUNCH_MODE)) {
+            ENABLE_FLIGHT_MODE(LAUNCH_MODE);
+        }
+    } else if (FLIGHT_MODE(LAUNCH_MODE)) {
+        DISABLE_FLIGHT_MODE(LAUNCH_MODE);
+        launchWingSwitchOff();
+    }
+#endif
+
 #ifdef USE_ALTITUDE_HOLD
     // only if armed; can coexist with position hold
     if (ARMING_FLAG(ARMED)
         // and not in GPS_RESCUE_MODE, to give it priority over Altitude Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
+        && !FLIGHT_MODE(LAUNCH_MODE)
         // and either the alt_hold switch is activated, or are in failsafe landing mode,
         // or an autopilot mission needs altitude control, or a switch-rescue fallback descent
         && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive() || FLIGHT_MODE(AUTOPILOT_MODE) || flightPlanNavIsRescueDescentActive())
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
+        // and this platform actually has an altitude control law
+        && autopilotAltitudeControlAvailable()
         // and we have altitude data
         && isAltitudeAvailable()
         // but not until throttle is raised
@@ -1194,11 +1208,14 @@ void processRxModes(timeUs_t currentTimeUs)
     if (ARMING_FLAG(ARMED)
         // and not in GPS_RESCUE_MODE, to give it priority over Position Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
+        && !FLIGHT_MODE(LAUNCH_MODE)
         // and either the pos_hold switch is activated, or are in failsafe landing mode,
         // or an autopilot mission needs the position controller
         && (IS_RC_MODE_ACTIVE(BOXPOSHOLD) || failsafeIsActive() || FLIGHT_MODE(AUTOPILOT_MODE))
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
+        // and this platform actually has a position control law
+        && autopilotPositionControlAvailable()
         // but not until throttle is raised
         && wasThrottleRaised()) {
         if (!FLIGHT_MODE(POS_HOLD_MODE)) {
@@ -1243,16 +1260,6 @@ void processRxModes(timeUs_t currentTimeUs)
 
 #if defined(USE_ACC) || defined(USE_MAG)
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
-#if defined(USE_GPS) || defined(USE_MAG)
-        if (IS_RC_MODE_ACTIVE(BOXMAG)) {
-            if (!FLIGHT_MODE(MAG_MODE)) {
-                ENABLE_FLIGHT_MODE(MAG_MODE);
-                magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
-            }
-        } else {
-            DISABLE_FLIGHT_MODE(MAG_MODE);
-        }
-#endif
         if (IS_RC_MODE_ACTIVE(BOXHEADFREE) && !FLIGHT_MODE(GPS_RESCUE_MODE)) {
             if (!FLIGHT_MODE(HEADFREE_MODE)) {
                 ENABLE_FLIGHT_MODE(HEADFREE_MODE);
@@ -1317,7 +1324,7 @@ static FAST_CODE_NOINLINE_CRITICAL void subTaskPidController(timeUs_t currentTim
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
     // PID - note this is function pointer set by setPIDController()
     pidController(currentPidProfile, currentTimeUs);
-    DEBUG_SET(DEBUG_PIDLOOP, 1, micros() - startTime);
+    DEBUG_SET(DEBUG_PIDLOOP, 1, micros() - startTime);  //!< PID Controller Time [unit:us]
 
 #ifdef USE_RUNAWAY_TAKEOFF
     // Check to see if runaway takeoff detection is active (anti-taz), the pidSum is over the threshold,
@@ -1349,12 +1356,12 @@ static FAST_CODE_NOINLINE_CRITICAL void subTaskPidController(timeUs_t currentTim
         } else {
             runawayTakeoffTriggerUs = 0;
         }
-        DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_ENABLED_STATE, DEBUG_RUNAWAY_TAKEOFF_TRUE);
-        DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_ACTIVATING_DELAY, runawayTakeoffTriggerUs == 0 ? DEBUG_RUNAWAY_TAKEOFF_FALSE : DEBUG_RUNAWAY_TAKEOFF_TRUE);
+        DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_ENABLED_STATE, DEBUG_RUNAWAY_TAKEOFF_TRUE);  //!< Runaway Takeoff Enabled
+        DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_ACTIVATING_DELAY, runawayTakeoffTriggerUs == 0 ? DEBUG_RUNAWAY_TAKEOFF_FALSE : DEBUG_RUNAWAY_TAKEOFF_TRUE);  //!< Activation Delay Running
     } else {
         runawayTakeoffTriggerUs = 0;
-        DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_ENABLED_STATE, DEBUG_RUNAWAY_TAKEOFF_FALSE);
-        DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_ACTIVATING_DELAY, DEBUG_RUNAWAY_TAKEOFF_FALSE);
+        DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_ENABLED_STATE, DEBUG_RUNAWAY_TAKEOFF_FALSE);     //!< Runaway Takeoff Enabled
+        DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_ACTIVATING_DELAY, DEBUG_RUNAWAY_TAKEOFF_FALSE);  //!< Activation Delay Running
     }
 #endif
 
@@ -1372,12 +1379,6 @@ static FAST_CODE_NOINLINE void subTaskPidSubprocesses(timeUs_t currentTimeUs)
         startTime = micros();
     }
 
-#if defined(USE_GPS) || defined(USE_MAG)
-    if (sensors(SENSOR_GPS) || sensors(SENSOR_MAG)) {
-        updateMagHold();
-    }
-#endif
-
 #ifdef USE_BLACKBOX
     if (!cliMode && blackboxConfig()->device) {
         blackboxUpdate(currentTimeUs);
@@ -1386,7 +1387,7 @@ static FAST_CODE_NOINLINE void subTaskPidSubprocesses(timeUs_t currentTimeUs)
     UNUSED(currentTimeUs);
 #endif
 
-    DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);
+    DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);  //!< PID Subprocess Time [unit:us]
 }
 
 #ifdef USE_TELEMETRY
@@ -1437,7 +1438,7 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
     }
 #endif
 
-    DEBUG_SET(DEBUG_PIDLOOP, 2, micros() - startTime);
+    DEBUG_SET(DEBUG_PIDLOOP, 2, micros() - startTime);  //!< Motor Update Time [unit:us]
 }
 
 static FAST_CODE_NOINLINE void subTaskRcCommand(timeUs_t currentTimeUs)
@@ -1511,15 +1512,20 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
     // 1 - subTaskPidController()
     // 2 - subTaskMotorUpdate()
     // 3 - subTaskPidSubprocesses()
-    DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
+    DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);  //!< Gyro Update Time [unit:us]
 
     subTaskRcCommand(currentTimeUs);
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+    // After rcCommand so the abort test and the hand-back blend see fresh stick
+    // data, and before the PID controller so it reads this cycle's angle target.
+    launchWingUpdate(currentTimeUs);
+#endif
     subTaskPidController(currentTimeUs);
     subTaskMotorUpdate(currentTimeUs);
     subTaskPidSubprocesses(currentTimeUs);
 
-    DEBUG_SET(DEBUG_CYCLETIME, 0, getTaskDeltaTimeUs(TASK_SELF));
-    DEBUG_SET(DEBUG_CYCLETIME, 1, getAverageSystemLoadPercent());
+    DEBUG_SET(DEBUG_CYCLETIME, 0, getTaskDeltaTimeUs(TASK_SELF));  //!< Cycle Time [unit:us]
+    DEBUG_SET(DEBUG_CYCLETIME, 1, getAverageSystemLoadPercent());  //!< CPU Load [unit:%]
 }
 
 bool isCrashFlipModeActive(void)

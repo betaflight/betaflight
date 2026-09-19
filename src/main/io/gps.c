@@ -604,7 +604,7 @@ static void ubloxSendPollMessage(uint8_t msg_id)
 
 static void ubloxSendNAV5Message(uint8_t model)
 {
-    DEBUG_SET(DEBUG_GPS_CONNECTION, 0, model);
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 0, model);  //!< GPS Model
     ubxMessage_t tx_buffer;
     if (gpsData.ubloxM9orAbove) {
         uint8_t payload[4];
@@ -934,7 +934,7 @@ static void gpsConfigureNmea(void)
     // - send any NMEA custom commands to the GPS Module
     // the user must configure the power-up baud rate of the module to be fast enough for their data rate
     // Note: we always parse all incoming NMEA messages
-    DEBUG_SET(DEBUG_GPS_CONNECTION, 4, (gpsData.state * 100 + gpsData.state_position));
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 4, (gpsData.state * 100 + gpsData.state_position));  //!< State And State Position
 
     // wait 500ms between changes
     if (cmp32(gpsData.now, gpsData.state_ts) < 500) {
@@ -1011,7 +1011,7 @@ static void gpsConfigureUblox(void)
     switch (gpsData.state) {
     case GPS_STATE_DETECT_BAUD:
 
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, baudRates[gpsInitData[gpsData.tempBaudRateIndex].baudrateIndex] / 100);
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, baudRates[gpsInitData[gpsData.tempBaudRateIndex].baudrateIndex] / 100);  //!< Baud Rate / 100, Else Nav Message Age In Milliseconds
 
         // check to see if there has been a response to the version command
         // initially the FC will be at the user-configured baud rate.
@@ -1028,7 +1028,7 @@ static void gpsConfigureUblox(void)
         // Send MON-VER messages at GPS_CONFIG_BAUD_CHANGE_INTERVAL for GPS_BAUDRATE_TEST_COUNT times
         static bool messageSent = false;
         static uint8_t messageCounter = 0;
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 2, initBaudRateCycleCount * 100 + messageCounter);
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 2, initBaudRateCycleCount * 100 + messageCounter);  //!< Baud Detect Progress, Else Nav Message Age In Milliseconds
 
         if (messageCounter < GPS_BAUDRATE_TEST_COUNT) {
             if (!messageSent) {
@@ -1069,7 +1069,7 @@ static void gpsConfigureUblox(void)
         }
         // set the FC's serial port to the configured rate
         serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]);
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex] / 100);
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex] / 100);  //!< Baud Rate / 100, Else Nav Message Age In Milliseconds
         // then start sending configuration settings
         gpsSetState(GPS_STATE_CONFIGURE);
         break;
@@ -1323,7 +1323,8 @@ static void updateDronecanGPS(void)
     nextUpdateTime = gpsData.now + updateInterval;
 
     gpsSolutionData_t incoming;
-    if (!dronecanGnssGetLatest(&incoming)) {
+    bool incomingHasFix = false;
+    if (!dronecanGnssGetLatest(&incoming, &incomingHasFix)) {
         // No Fix2 frame yet; stay in GPS_STATE_INITIALIZED so the generic
         // connection-timeout bookkeeping doesn't start ticking against an
         // offline bus.
@@ -1333,11 +1334,30 @@ static void updateDronecanGPS(void)
     // If the cached frame is stale treat it as no new data: don't bump
     // lastNavMessage or keep SENSOR_GPS pegged, so the normal receive-timeout
     // path can trip to GPS_STATE_LOST_COMMUNICATION when the module dies.
-    const timeUs_t ageUs = micros() - dronecanGnssLastUpdateUs();
+    const timeUs_t updateUs = dronecanGnssLastUpdateUs();
+    const timeUs_t ageUs = micros() - updateUs;
     if (ageUs >= 2000000) { // 2 s
         gpsSetFixState(0);
         return;
     }
+
+    // Publish only what the module has actually sent since last time. The cache is polled on a
+    // fixed interval rather than driven by arrivals, so without this the same solution is
+    // republished every tick: the nav interval would report our poll rate instead of the
+    // module's, and onGpsNewData() would run again on a frame it has already consumed.
+    //
+    // Tracked with its own flag rather than treating timestamp 0 as "nothing published yet".
+    // Zero is a legal micros() value — briefly at boot, and again on every 32-bit wrap — so
+    // overloading it would silently drop a frame stamped in that microsecond. Compared for
+    // inequality rather than ordering, so a reset cache (dronecanGnssInit() clears the
+    // timestamp) publishes its first frame instead of waiting out the old value.
+    static timeUs_t lastPublishedUpdateUs = 0;
+    static bool havePublished = false;
+    if (havePublished && updateUs == lastPublishedUpdateUs) {
+        return;
+    }
+    lastPublishedUpdateUs = updateUs;
+    havePublished = true;
 
     if (gpsData.state == GPS_STATE_INITIALIZED) {
         gpsSetState(GPS_STATE_RECEIVING_DATA);
@@ -1360,18 +1380,24 @@ static void updateDronecanGPS(void)
     }
 #endif
 
-    gpsData.lastNavMessage = gpsData.now;
-    sensorsSet(SENSOR_GPS);
-
-    if (gpsSol.numSat > 3) {
-        gpsSetFixState(GPS_FIX);
-    } else {
-        gpsSetFixState(0);
-    }
-    GPS_update ^= GPS_DIRECT_TICK;
+    // The module's own status says whether it has a 3D solution; the count is no
+    // longer a proxy for it, because the count now keeps reporting while the
+    // module is still acquiring. Both are required, which is exactly the
+    // condition that held before: numSat was cleared below a 3D fix, so the old
+    // `numSat > 3` test could only pass on a 3D fix with more than three
+    // satellites. Whether the count should still gate the fix at all is a
+    // separate question from reporting it, and is left alone here.
+    // Set before publishing the frame, so onGpsNewData() sees it.
+    gpsSetFixState(incomingHasFix && gpsSol.numSat > 3);
 
     calculateNavInterval();
-    onGpsNewData();
+
+    // Publish through the shared path rather than repeating it. Besides the
+    // bookkeeping this used to duplicate — lastNavMessage, SENSOR_GPS, the tick
+    // and onGpsNewData() — it carries the two DEBUG_GPS_CONNECTION writes that
+    // live nowhere else, so nav interval and nav message age were stuck at zero
+    // on this provider while every serial one reported them.
+    gpsHandleFrameComplete();
 }
 #endif
 
@@ -1459,7 +1485,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
             break;
         }
         rxBytesWaiting = serialRxBytesWaiting(gpsPort);
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 7, rxBytesWaiting);
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 7, rxBytesWaiting);  //!< Rx Bytes Waiting [unit:bytes]
         const uint32_t initialCycleCount = getCycleCounter();
         static uint8_t wait = 0;
         static bool isFast = false;
@@ -1488,7 +1514,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
             break;
         }
         rxBytesWaiting = serialRxBytesWaiting(gpsPort);
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 7, rxBytesWaiting);
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 7, rxBytesWaiting);  //!< Rx Bytes Waiting [unit:bytes]
         static uint8_t wait = 0;
         static bool isFast = false;
         while (rxBytesWaiting-- > 0) {
@@ -1516,7 +1542,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
             }
 
             // Data is available
-            DEBUG_SET(DEBUG_GPS_CONNECTION, 3, gpsData.now - gpsData.lastNavMessage); // interval since last Nav data was received
+            DEBUG_SET(DEBUG_GPS_CONNECTION, 3, gpsData.now - gpsData.lastNavMessage);  //!< Baud Rate / 100, Else Nav Message Age In Milliseconds
             gpsData.lastNavMessage = gpsData.now;
             sensorsSet(SENSOR_GPS);
 
@@ -1526,7 +1552,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
             GPS_update &= ~GPS_MSP_UPDATE;
         } else {
-            DEBUG_SET(DEBUG_GPS_CONNECTION, 2, gpsData.now - gpsData.lastNavMessage); // time since last Nav data, updated each GPS task interval
+            DEBUG_SET(DEBUG_GPS_CONNECTION, 2, gpsData.now - gpsData.lastNavMessage);  //!< Baud Detect Progress, Else Nav Message Age In Milliseconds
             // check for no data/gps timeout/cable disconnection etc
             if (cmp32(gpsData.now, gpsData.lastNavMessage) > GPS_TIMEOUT_MS) {
                 gpsSetState(GPS_STATE_LOST_COMMUNICATION);
@@ -1576,7 +1602,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
             }
         }
 #endif
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 2, gpsData.now - gpsData.lastNavMessage); // time since last Nav data, updated each GPS task interval
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 2, gpsData.now - gpsData.lastNavMessage);  //!< Baud Detect Progress, Else Nav Message Age In Milliseconds
         // check for no data/gps timeout/cable disconnection etc
         if (cmp32(gpsData.now, gpsData.lastNavMessage) > GPS_TIMEOUT_MS) {
             gpsSetState(GPS_STATE_LOST_COMMUNICATION);
@@ -1584,8 +1610,8 @@ void gpsUpdate(timeUs_t currentTimeUs)
         break;
     }
 
-    DEBUG_SET(DEBUG_GPS_CONNECTION, 4, (gpsData.state * 100 + gpsData.state_position));
-    DEBUG_SET(DEBUG_GPS_CONNECTION, 6, gpsData.ackState);
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 4, (gpsData.state * 100 + gpsData.state_position));  //!< State And State Position
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 6, gpsData.ackState);                                //!< Config Ack State [enum:ubloxAckState_e]
 
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
@@ -1605,10 +1631,10 @@ void gpsUpdate(timeUs_t currentTimeUs)
         }
     }
 
-    DEBUG_SET(DEBUG_GPS_DOP, 0, gpsSol.numSat);
-    DEBUG_SET(DEBUG_GPS_DOP, 1, gpsSol.dop.pdop);
-    DEBUG_SET(DEBUG_GPS_DOP, 2, gpsSol.dop.hdop);
-    DEBUG_SET(DEBUG_GPS_DOP, 3, gpsSol.dop.vdop);
+    DEBUG_SET(DEBUG_GPS_DOP, 0, gpsSol.numSat);    //!< Satellite Count
+    DEBUG_SET(DEBUG_GPS_DOP, 1, gpsSol.dop.pdop);  //!< Positional DOP [unit:0.01]
+    DEBUG_SET(DEBUG_GPS_DOP, 2, gpsSol.dop.hdop);  //!< Horizontal DOP [unit:0.01]
+    DEBUG_SET(DEBUG_GPS_DOP, 3, gpsSol.dop.vdop);  //!< Vertical DOP [unit:0.01]
 
     timeDelta_t executeTimeUs = micros() - currentTimeUs;
     if (executeTimeUs > (gpsStateDurationFractionUs[gpsCurrentState] >> GPS_TASK_DECAY_SHIFT)) {
@@ -1619,16 +1645,16 @@ void gpsUpdate(timeUs_t currentTimeUs)
     }
     schedulerSetNextStateTime(gpsStateDurationFractionUs[gpsCurrentState] >> GPS_TASK_DECAY_SHIFT);
 
-    DEBUG_SET(DEBUG_GPS_CONNECTION, 5, executeTimeUs);
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 5, executeTimeUs);  //!< Task Execute Time [unit:us]
 //    keeping temporarily, to be used when debugging the scheduler stuff
 //    DEBUG_SET(DEBUG_GPS_CONNECTION, 6, (gpsStateDurationFractionUs[gpsCurrentState] >> GPS_TASK_DECAY_SHIFT));
 }
 
 static void gpsHandleFrameComplete(void)
 {
-    DEBUG_SET(DEBUG_GPS_CONNECTION, 1, gpsSol.navIntervalMs);
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 1, gpsSol.navIntervalMs);  //!< Nav Interval [unit:ms]
     if (gpsData.state == GPS_STATE_RECEIVING_DATA) {
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, gpsData.now - gpsData.lastNavMessage); // interval since last Nav data was received
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, gpsData.now - gpsData.lastNavMessage);  //!< Baud Rate / 100, Else Nav Message Age In Milliseconds
         gpsData.lastNavMessage = gpsData.now;
         sensorsSet(SENSOR_GPS);
     }

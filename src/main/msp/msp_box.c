@@ -33,6 +33,7 @@
 #include "config/config.h"
 #include "fc/runtime_config.h"
 
+#include "flight/autopilot.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 
@@ -103,7 +104,8 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { .boxId = BOXLAPTIMERRESET, .boxName = "LAP TIMER RESET", .permanentId = 54},
     { .boxId = BOXCHIRP, .boxName = "CHIRP", .permanentId = 55},
     { .boxId = BOXAUTOPILOT, .boxName = "AUTOPILOT", .permanentId = 56},
-    { .boxId = BOXWPCAPTURE, .boxName = "WP CAPTURE", .permanentId = 57}
+    { .boxId = BOXWPCAPTURE, .boxName = "WP CAPTURE", .permanentId = 57},
+    { .boxId = BOXLAUNCH, .boxName = "LAUNCH", .permanentId = 58}
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -225,10 +227,17 @@ void initActiveBoxIds(void)
         BME(BOXANGLE);
         BME(BOXHORIZON);
 #ifdef USE_ALTITUDE_HOLD
-        BME(BOXALTHOLD);
+        if (autopilotAltitudeControlAvailable()) {
+            BME(BOXALTHOLD);
+        }
 #endif
 #ifdef USE_POSITION_HOLD
-        BME(BOXPOSHOLD);
+        if (autopilotPositionControlAvailable()) {
+            BME(BOXPOSHOLD);
+        }
+#endif
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+        BME(BOXLAUNCH);
 #endif
         BME(BOXHEADFREE);
         BME(BOXHEADADJ);
@@ -398,6 +407,10 @@ bool getBoxIdState(boxId_e boxid)
 
     if (boxid == BOXARM) {
         return ARMING_FLAG(ARMED);
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+    } else if (boxid == BOXLAUNCH) {
+        return FLIGHT_MODE(LAUNCH_MODE);
+#endif
     } else if (boxid <= BOXID_FLIGHTMODE_LAST) {
         return FLIGHT_MODE(1 << boxIdToFlightModeMap[boxid]);
     } else {

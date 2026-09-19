@@ -37,6 +37,12 @@ void lsm6dsoExtiHandler(extiCallbackRec_t *cb)
     gyro->dataReady = true;
 }
 
+// A failed read leaves lsm6dso_rx_buf holding uninitialised stack, and
+// publishing that as a sample is worse than publishing nothing: a single
+// outlier in the calibration window blows up the standard deviation,
+// calibration restarts, and until it completes gyroUpdate() forces the output
+// to zero. In flight it would be noise injected straight into the loop.
+
 bool lsm6dsoAccRead(accDev_t *acc)
 {
     enum {
@@ -52,7 +58,9 @@ bool lsm6dsoAccRead(accDev_t *acc)
     uint8_t lsm6dso_rx_buf[BUFFER_SIZE];
 
     extDevice_t *dev = &acc->gyro->dev;
-    busReadRegisterBuffer(dev, LSM6DSO_REG_OUTX_L_A, lsm6dso_rx_buf, BUFFER_SIZE);
+    if (!busReadRegisterBuffer(dev, LSM6DSO_REG_OUTX_L_A, lsm6dso_rx_buf, BUFFER_SIZE)) {
+        return false;
+    }
 
     acc->ADCRaw[X] = (int16_t)((lsm6dso_rx_buf[IDX_ACCEL_XOUT_H] << 8) | lsm6dso_rx_buf[IDX_ACCEL_XOUT_L]);
     acc->ADCRaw[Y] = (int16_t)((lsm6dso_rx_buf[IDX_ACCEL_YOUT_H] << 8) | lsm6dso_rx_buf[IDX_ACCEL_YOUT_L]);
@@ -76,7 +84,9 @@ bool lsm6dsoGyroRead(gyroDev_t *gyro)
     uint8_t lsm6dso_rx_buf[BUFFER_SIZE];
 
     extDevice_t *dev = &gyro->dev;
-    busReadRegisterBuffer(dev, LSM6DSO_REG_OUTX_L_G, lsm6dso_rx_buf, BUFFER_SIZE);
+    if (!busReadRegisterBuffer(dev, LSM6DSO_REG_OUTX_L_G, lsm6dso_rx_buf, BUFFER_SIZE)) {
+        return false;
+    }
 
     gyro->gyroADCRaw[X] = (int16_t)((lsm6dso_rx_buf[IDX_GYRO_XOUT_H] << 8) | lsm6dso_rx_buf[IDX_GYRO_XOUT_L]);
     gyro->gyroADCRaw[Y] = (int16_t)((lsm6dso_rx_buf[IDX_GYRO_YOUT_H] << 8) | lsm6dso_rx_buf[IDX_GYRO_YOUT_L]);
