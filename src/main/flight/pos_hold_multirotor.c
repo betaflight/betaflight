@@ -73,25 +73,21 @@ static void posHoldCheckSticks(void)
 
 static bool sensorsOk(void)
 {
-    // Optical flow position hold is heading-agnostic: the same yaw is used
-    // to project flow into ENU and to rotate the correction back to body
-    // frame, so a heading error cancels. GPS-assisted hold is not: GPS
-    // provides absolute ENU measurements and a bad yaw in the body-frame
-    // correction rotation will cause a flyaway.
-    // Use the runtime GPS state (fix present + config allows GPS) rather than
-    // the configured source alone, so AUTO mode with no GPS hardware correctly
-
     if (!positionEstimatorIsValidXY()) {
-        return false; // always need valid XY data, can be optical only
+        DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 6, 1);  //!< Position Hold Sensor Status
+        return false;
     }
 
     if (positionEstimatorIsHeadingRequired()) {
-        return imuIsHeadingValid(); // if heading is essential (ie no optical flow), pass or fail based on whether or not heading exists.
-    } else {
-        return true; // if no heading is needed, we don't care about it (optical flow situation)
+        if (!imuIsHeadingValid()) {
+            DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 6, 2);  //!< Position Hold Sensor Status
+            return false;
+        }
     }
-}
 
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 6, 0);  //!< Position Hold Sensor Status
+    return true;
+}
 bool posHoldUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 {
     UNUSED(currentTimeUs);
@@ -126,6 +122,9 @@ void updatePosHold(timeUs_t currentTimeUs)
     } else {
         if (posHold.isEnabled) {
             setSticksActiveStatus(false);
+            // positionControl() stops being called from here, so the yaw controller
+            // can no longer stand itself down; do it for it.
+            autopilotDisableYawControl();
         }
         posHold.isEnabled = false;
     }
@@ -150,6 +149,9 @@ void updatePosHold(timeUs_t currentTimeUs)
             for (unsigned i = 0; i < RP_AXIS_COUNT; i++) {
                 autopilotAngle[i] = 0.0f;
             }
+            // positionControl() is skipped, so the yaw controller cannot stand itself
+            // down; leaving it active would keep injecting the last rate.
+            autopilotDisableYawControl();
         }
     }
 }

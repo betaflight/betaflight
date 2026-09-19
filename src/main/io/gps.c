@@ -1323,7 +1323,8 @@ static void updateDronecanGPS(void)
     nextUpdateTime = gpsData.now + updateInterval;
 
     gpsSolutionData_t incoming;
-    if (!dronecanGnssGetLatest(&incoming)) {
+    bool incomingHasFix = false;
+    if (!dronecanGnssGetLatest(&incoming, &incomingHasFix)) {
         // No Fix2 frame yet; stay in GPS_STATE_INITIALIZED so the generic
         // connection-timeout bookkeeping doesn't start ticking against an
         // offline bus.
@@ -1333,11 +1334,30 @@ static void updateDronecanGPS(void)
     // If the cached frame is stale treat it as no new data: don't bump
     // lastNavMessage or keep SENSOR_GPS pegged, so the normal receive-timeout
     // path can trip to GPS_STATE_LOST_COMMUNICATION when the module dies.
-    const timeUs_t ageUs = micros() - dronecanGnssLastUpdateUs();
+    const timeUs_t updateUs = dronecanGnssLastUpdateUs();
+    const timeUs_t ageUs = micros() - updateUs;
     if (ageUs >= 2000000) { // 2 s
         gpsSetFixState(0);
         return;
     }
+
+    // Publish only what the module has actually sent since last time. The cache is polled on a
+    // fixed interval rather than driven by arrivals, so without this the same solution is
+    // republished every tick: the nav interval would report our poll rate instead of the
+    // module's, and onGpsNewData() would run again on a frame it has already consumed.
+    //
+    // Tracked with its own flag rather than treating timestamp 0 as "nothing published yet".
+    // Zero is a legal micros() value — briefly at boot, and again on every 32-bit wrap — so
+    // overloading it would silently drop a frame stamped in that microsecond. Compared for
+    // inequality rather than ordering, so a reset cache (dronecanGnssInit() clears the
+    // timestamp) publishes its first frame instead of waiting out the old value.
+    static timeUs_t lastPublishedUpdateUs = 0;
+    static bool havePublished = false;
+    if (havePublished && updateUs == lastPublishedUpdateUs) {
+        return;
+    }
+    lastPublishedUpdateUs = updateUs;
+    havePublished = true;
 
     if (gpsData.state == GPS_STATE_INITIALIZED) {
         gpsSetState(GPS_STATE_RECEIVING_DATA);
@@ -1360,18 +1380,24 @@ static void updateDronecanGPS(void)
     }
 #endif
 
-    gpsData.lastNavMessage = gpsData.now;
-    sensorsSet(SENSOR_GPS);
-
-    if (gpsSol.numSat > 3) {
-        gpsSetFixState(GPS_FIX);
-    } else {
-        gpsSetFixState(0);
-    }
-    GPS_update ^= GPS_DIRECT_TICK;
+    // The module's own status says whether it has a 3D solution; the count is no
+    // longer a proxy for it, because the count now keeps reporting while the
+    // module is still acquiring. Both are required, which is exactly the
+    // condition that held before: numSat was cleared below a 3D fix, so the old
+    // `numSat > 3` test could only pass on a 3D fix with more than three
+    // satellites. Whether the count should still gate the fix at all is a
+    // separate question from reporting it, and is left alone here.
+    // Set before publishing the frame, so onGpsNewData() sees it.
+    gpsSetFixState(incomingHasFix && gpsSol.numSat > 3);
 
     calculateNavInterval();
-    onGpsNewData();
+
+    // Publish through the shared path rather than repeating it. Besides the
+    // bookkeeping this used to duplicate — lastNavMessage, SENSOR_GPS, the tick
+    // and onGpsNewData() — it carries the two DEBUG_GPS_CONNECTION writes that
+    // live nowhere else, so nav interval and nav message age were stuck at zero
+    // on this provider while every serial one reported them.
+    gpsHandleFrameComplete();
 }
 #endif
 
