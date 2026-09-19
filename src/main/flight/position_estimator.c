@@ -80,6 +80,21 @@
 // 7 - GPS velocity R (cm/s)^2           (written only while GPS XY is fused)
 // Slots 3, 4, 6 and 7 hold their last value when their source is not being fused.
 
+// DEBUG_VELOCITY_EST
+// The same horizontal velocity, as each source reports it and as the KF resolves it,
+// so the three can be compared directly. Everything is in the ENU earth frame; slots 0 to 5
+// are cm/s, slots 6 and 7 cm/s^2.
+// 0 - GPS velocity East                    (written only while GPS XY is fused)
+// 1 - GPS velocity North                   (written only while GPS XY is fused)
+// 2 - optical flow velocity East, delay-compensated  (written only while optical flow is fused)
+// 3 - optical flow velocity North, delay-compensated (written only while optical flow is fused)
+// 4 - KF velocity East
+// 5 - KF velocity North
+// 6 - IMU linear acceleration East cm/s^2
+// 7 - IMU linear acceleration North cm/s^2
+// Slots 0 to 3 hold their last value when their source is not being fused, so a source that
+// has dropped out shows as a frozen trace rather than a zero.
+
 // Constant-acceleration 3 state model tuning
 // Q or Jerk (process noise): higher allows faster adaptations to data change / offset
 // R or Measurement noise:  higher means less trust in that input
@@ -796,6 +811,8 @@ static void feedGPSMeasurements(timeUs_t nowUs)
         DEBUG_SET(DEBUG_POSITION_EST, 6, lrintf(rGpsPos));  //!< GPS Position Measurement Variance [unit:cm2]
         DEBUG_SET(DEBUG_POSITION_EST, 7, lrintf(rGpsVel));  //!< GPS Velocity Measurement Variance [unit:cm2/s2]
 
+        DEBUG_SET(DEBUG_VELOCITY_EST, 0, gpsSol.velned.velE);  //!< GPS Velocity East [unit:cm/s]
+        DEBUG_SET(DEBUG_VELOCITY_EST, 1, gpsSol.velned.velN);  //!< GPS Velocity North [unit:cm/s]
 
         kalmanUpdateVelocityToPosition(&kfEast, (float)gpsSol.velned.velE, rGpsVel);
         kalmanUpdateVelocityToPosition(&kfNorth, (float)gpsSol.velned.velN, rGpsVel);
@@ -1249,6 +1266,8 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
 
     DEBUG_SET(DEBUG_POSITION_EST, 3, lrintf(velEastNow));  //!< Flow Velocity East [unit:cm/s]
     DEBUG_SET(DEBUG_POSITION_EST, 4, lrintf(velNorthNow));  //!< Flow Velocity North [unit:cm/s]
+    DEBUG_SET(DEBUG_VELOCITY_EST, 2, lrintf(velEastNow));  //!< Flow Velocity East [unit:cm/s]
+    DEBUG_SET(DEBUG_VELOCITY_EST, 3, lrintf(velNorthNow));  //!< Flow Velocity North [unit:cm/s]
 
     lastXYMeasurementUs = nowUs;
 #else
@@ -1297,6 +1316,9 @@ void positionEstimatorUpdate(void)
 
     const float accelToLog = (debugAxis == 0) ? accelEast : accelNorth;
     DEBUG_SET(DEBUG_POSITION_EST, 5, lrintf(accelToLog));  //!< Linear Acceleration (dbg-axis) [unit:cm/s2]
+
+    DEBUG_SET(DEBUG_VELOCITY_EST, 6, lrintf(accelEast));  //!< Linear Acceleration East [unit:cm/s2]
+    DEBUG_SET(DEBUG_VELOCITY_EST, 7, lrintf(accelNorth));  //!< Linear Acceleration North [unit:cm/s2]
 
     // Z-axis: always runs (for altitude hold, OSD, vario). While disarmed,
     // measure zero acceleration so covariance continues to evolve without
@@ -1358,6 +1380,9 @@ void positionEstimatorUpdate(void)
     DEBUG_SET(DEBUG_POSITION_EST, 0, lrintf(estimate.position.v[debugAxis]));  //!< Estimated Position (dbg-axis) [unit:cm]
     DEBUG_SET(DEBUG_POSITION_EST, 1, lrintf(estimate.velocity.v[debugAxis]));  //!< Estimated Velocity (dbg-axis) [unit:cm/s]
     DEBUG_SET(DEBUG_POSITION_EST, 2, lrintf(estimate.acceleration.v[debugAxis]));  //!< Estimated Acceleration (dbg-axis) [unit:cm/s2]
+
+    DEBUG_SET(DEBUG_VELOCITY_EST, 4, lrintf(estimate.velocity.v[ENU_E]));  //!< Estimated Velocity East [unit:cm/s]
+    DEBUG_SET(DEBUG_VELOCITY_EST, 5, lrintf(estimate.velocity.v[ENU_N]));  //!< Estimated Velocity North [unit:cm/s]
 
     DEBUG_SET(DEBUG_ALTITUDE, 6, lrintf(accelUp));  //!< Vertical Acceleration [unit:cm/s2]
 
