@@ -405,6 +405,7 @@ extern uint32_t dashboardGpsNavSvInfoRcvCount;                  // Count of time
 #define GPS_DBHZ_MAX 55
 #endif  // USE_DASHBOARD
 
+uint8_t getMinSats(void);
 void gpsInit(void);
 void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);
