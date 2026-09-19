@@ -84,6 +84,9 @@
 #define STATIC_ASSERT(condition, name) static_assert((condition), #name)
 #endif
 
+#ifdef BIT
+#undef BIT
+#endif
 #define BIT(x) (1 << (x))
 
 /*
