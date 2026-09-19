@@ -157,6 +157,19 @@ void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
     (void)maxDecelMps2;
 }
 
+float g_lastApproachSlowdownM;
+float g_lastCruiseSpeedMps;
+
+void positionNavSetApproachSlowdown(float slowdownM)
+{
+    g_lastApproachSlowdownM = slowdownM;
+}
+
+void positionNavSetCruiseSpeed(float cruiseSpeedMps)
+{
+    g_lastCruiseSpeedMps = cruiseSpeedMps;
+}
+
 static bool g_altitudeArrivalRequired;
 
 void positionNavSetAltitudeArrivalRequired(bool required)
@@ -266,6 +279,8 @@ protected:
     void SetUp() override {
         memset(&g_lastTarget, 0, sizeof(g_lastTarget));
         g_setTargetCalls = 0;
+        g_lastApproachSlowdownM = 0.0f;
+        g_lastCruiseSpeedMps = 0.0f;
         g_setVerticalProfileCalls = 0;
         g_altHoldClimbRateCmS = 500.0f;   // alt_hold_climb_rate default, 5 m/s
         g_lastVertRateMps = 0.0f;
@@ -312,6 +327,7 @@ protected:
 
         autopilotConfig_t *cfg = autopilotConfigMutable();
         memset(cfg, 0, sizeof(*cfg));
+        cfg->maxAngle = 50;                // ap_max_angle default
         cfg->waypointArrivalRadius = 500;  // 5 m
         cfg->waypointHoldRadius = 200;     // 2 m
         cfg->maxVelocity = 1000;           // 10 m/s
@@ -1252,6 +1268,64 @@ TEST_F(FlightPlanNavSafetyTest, MovingAwayPastMarginAbortsAsFlyaway)
     EXPECT_EQ(flightPlanNavGetAbortReason(), FP_ABORT_FLYAWAY);
 }
 
+TEST_F(FlightPlanNavSafetyTest, FlyawayMarginCoversTheSpeedTheLegWasDispatchedAt)
+{
+    // The rescue case: a leg dispatched while the craft is doing 17 m/s the other way. It cannot
+    // help travelling its braking distance before the controller can turn it around, and a fixed
+    // 20 m fence calls that a flyaway and aborts a rescue that was working.
+    addWaypoint(0, 0, 11000, WAYPOINT_TYPE_HOLD);   // where the craft is, 10 m above it
+    g_stubEstimate.velocity.v[ENU_N] = 1700.0f;
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+
+    // 30 m further out: past the old floor, inside the distance this entry speed needs.
+    g_stubEstimate.position.v[ENU_N] = 3000.0f;
+    flightPlanNavUpdate(g_stubMicros + 100'000);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+
+    // And well past anything the entry speed explains.
+    g_stubEstimate.position.v[ENU_N] = 6000.0f;
+    flightPlanNavUpdate(g_stubMicros + 200'000);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_ABORTED);
+    EXPECT_EQ(flightPlanNavGetAbortReason(), FP_ABORT_FLYAWAY);
+}
+
+TEST_F(FlightPlanNavSafetyTest, TrackingDebugReportsStateAbortAndLeg)
+{
+    // Slot 7 of the rescue tracking debug used to carry the legacy controller's phase; on the
+    // mission that replaced it, it has to say what the executor is doing and why it stopped.
+    debugMode = DEBUG_GPS_RESCUE_TRACKING;
+    addWaypoint(0, 0, 11000, WAYPOINT_TYPE_HOLD);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(debug[7], FP_NAV_TARGETING * 100);   // targeting, no abort, leg 0
+
+    g_stubEstimate.position.v[ENU_N] = 3200.0f;    // drift out past the fence
+    flightPlanNavUpdate(g_stubMicros + 100'000);
+    flightPlanNavUpdate(g_stubMicros + 200'000);
+    EXPECT_EQ(debug[7], FP_NAV_ABORTED * 100 + FP_ABORT_FLYAWAY * 10);
+    debugMode = DEBUG_NONE;
+}
+
+TEST_F(FlightPlanNavSafetyTest, FlyawayMarginKeepsItsFloorAtRest)
+{
+    // A craft with no speed to shed has no braking distance to allow for, so the fence stays where
+    // it was: drifting away from a target it was parked on is a flyaway.
+    addWaypoint(0, 0, 11000, WAYPOINT_TYPE_HOLD);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+
+    g_stubEstimate.position.v[ENU_N] = 3200.0f;
+    flightPlanNavUpdate(g_stubMicros + 100'000);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_ABORTED);
+    EXPECT_EQ(flightPlanNavGetAbortReason(), FP_ABORT_FLYAWAY);
+}
+
 TEST_F(FlightPlanNavSafetyTest, HeadingFaultParksWingsLevel)
 {
     engageDistantLeg();
@@ -1849,53 +1923,56 @@ TEST_F(FlightPlanNavCarrotTest, CornerSkipsModifierBetweenLegs)
     EXPECT_LT(g_navHeadingOverrideDeg, 90.0f);
 }
 
-TEST_F(FlightPlanNavCarrotTest, OverspeedGovernorHoldsCarrotWithHysteresis)
+TEST_F(FlightPlanNavCarrotTest, CarrotSpeedDoesNotDependOnMeasuredSpeed)
 {
+    // The carrot marches on its own trapezoid. Feeding measured ground speed back into the
+    // commanded speed - a governor that stalled the carrot whenever the craft was over profile -
+    // closed a loop through the vehicle: the craft ran fast, the carrot stopped, the craft ate the
+    // pursuit lead and the commanded velocity collapsed a second later, apparently uncommanded.
+    // The craft overtaking the carrot is already answered by the brake gap below, continuously.
+    auto carrotAfter = [this](float craftSpeedCmS) {
+        flightPlanNavDisengage();
+        setCraftMetres(0.0f, 0.0f);
+        g_stubEstimate.velocity.v[ENU_N] = 0.0f;
+        g_stubMicros += 1'000'000;
+        flightPlanNavEngage();
+        step();   // anchor the leg; craft parked at the origin
+        g_stubEstimate.velocity.v[ENU_N] = craftSpeedCmS;
+        for (int i = 0; i < 100; i++) {
+            step();
+        }
+        return g_lastTarget.targetEfM.y;
+    };
+
     addWaypointMetres(0.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYOVER);
     addWaypointMetres(0.0f, 600.0f, 15000, WAYPOINT_TYPE_FLYOVER); // straight on (last)
+
+    const float onProfile = carrotAfter(200.0f);
+    const float overProfile = carrotAfter(1500.0f);   // 5 m/s over the 10 m/s profile
+
+    EXPECT_GT(onProfile, 10.0f);
+    EXPECT_NEAR(overProfile, onProfile, 0.01f);
+}
+
+TEST_F(FlightPlanNavCarrotTest, CommandedSpeedIsTheCarrotTrapezoid)
+{
+    // The leg's trapezoid is the speed profile, so it is also what the craft is commanded at.
+    // Inferring the commanded speed from the pursuit gap tied it to how far behind the carrot the
+    // craft happened to be sitting, and the chase equilibrium parks that gap right on the position
+    // gain's knee - which is the cruise wobble.
+    addWaypointMetres(0.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypointMetres(0.0f, 600.0f, 15000, WAYPOINT_TYPE_FLYOVER);
     g_stubMicros = 1'000'000;
     flightPlanNavEngage();
-    step();   // anchor the leg; craft parked at the origin
+    step();
 
-    // On profile: the carrot marches away from the parked craft. Keep this
-    // phase short so the hold below happens well inside the minimum 6 m lead
-    // cap — a carrot parked ON the cap would mask a broken governor.
-    for (int i = 0; i < 3; i++) {
+    step();
+    EXPECT_LT(g_lastCruiseSpeedMps, 10.0f);   // slewing in from a standstill, not stepping to cruise
+
+    for (int i = 0; i < 100; i++) {
         step();
     }
-    const float marchingN = g_lastTarget.targetEfM.y;
-    EXPECT_GT(marchingN, 0.05f);
-
-    // Craft carries 15 m/s against the 10 m/s cruise profile (tailwind /
-    // catch-up): the governor holds the carrot so braking authority returns.
-    g_stubEstimate.velocity.v[ENU_N] = 1500.0f;
-    for (int i = 0; i < 20; i++) {
-        step();   // speed filter converges, carrot speed slews to a stop
-    }
-    const float heldN = g_lastTarget.targetEfM.y;
-    EXPECT_LT(heldN, 5.5f);   // held by the governor, not parked on the lead cap
-    for (int i = 0; i < 10; i++) {
-        step();
-    }
-    EXPECT_NEAR(g_lastTarget.targetEfM.y, heldN, 0.01f);
-
-    // Speed drops into the hysteresis band (10.9 m/s: below the 11.5 entry,
-    // above the 10.75 release). A single-threshold governor resumes marching
-    // here and chatters cruise/freeze at fix rate; the hold must stick.
-    g_stubEstimate.velocity.v[ENU_N] = 1090.0f;
-    for (int i = 0; i < 20; i++) {
-        step();
-    }
-    EXPECT_NEAR(g_lastTarget.targetEfM.y, heldN, 0.01f);
-
-    // Fully back on profile (craft moving gently up the leg so the lead window
-    // opens ahead): the carrot marches again.
-    g_stubEstimate.velocity.v[ENU_N] = 200.0f;
-    for (int i = 0; i < 20; i++) {
-        setCraftMetres(0.0f, (i + 1) * 0.2f);
-        step();
-    }
-    EXPECT_GT(g_lastTarget.targetEfM.y, heldN + 0.5f);
+    EXPECT_NEAR(g_lastCruiseSpeedMps, 10.0f, 0.01f);   // and settles flat on the leg cruise
 }
 
 TEST_F(FlightPlanNavCarrotTest, ChaseLagCompensationCrossesGateNearCornerSpeed)

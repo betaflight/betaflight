@@ -40,6 +40,14 @@
 // throttle slam, which is what a stepped altitude target does today.
 #define VERT_RAMP_LEASH_S      1.0f
 #define VERT_RAMP_LEASH_MIN_M  1.0f
+// The ramp brakes into the leg altitude at this rate rather than tapering on the whole remaining
+// error: proportional tapering made every climb shorter than the leg rate in metres a one-second
+// lag that never ran at the rate it was given, and left an exponential tail that never arrived.
+#define VERT_RAMP_DECEL_MPS2   2.0f
+// Vertical arrival window. The horizontal acceptance radius cannot serve: it is sized for the
+// position estimate's lateral scatter and for how tightly a leg wants to be flown through, and a
+// climb shorter than that radius would count as arrived before it began.
+#define VERT_ACCEPTANCE_M      0.5f
 
 static positionNavCommand_t cmd;
 static vector3_t previousTargetVelMps;
@@ -54,7 +62,9 @@ void positionNavInit(void)
 
 void positionNavReset(void)
 {
+    const uint32_t sequence = cmd.sequence;   // stays monotonic so consumers keep spotting the change
     memset(&cmd, 0, sizeof(cmd));
+    cmd.sequence = sequence;
     vector3Zero(&previousTargetVelMps);
     vector3Zero(&currentTargetVelCmS);
     withinAcceptanceRadius = false;
@@ -72,6 +82,7 @@ void positionNavSetTargetEf(
 )
 {
     cmd.active = true;
+    cmd.sequence++;
     cmd.completed = false;
     cmd.completionSignalled = false;
 
@@ -81,6 +92,7 @@ void positionNavSetTargetEf(
     cmd.vertRateMps = 0.0f;
     cmd.rampAltM = 0.0f;
     cmd.rampValid = false;
+    cmd.approachSlowdownM = 0.0f;
     cmd.acceptanceRadiusM = acceptanceRadiusM;
     cmd.completionSpeedMps = completionSpeedMps;
     cmd.altitudeArrivalRequired = true;
@@ -89,7 +101,9 @@ void positionNavSetTargetEf(
     cmd.callbackUserData = userData;
 
     vector3Zero(&previousTargetVelMps);
-    vector3Zero(&currentTargetVelCmS);
+    // The commanded velocity deliberately survives the handover: zeroing it here put a one-cycle
+    // notch in the target at every leg change, which the position controller answers with a pitch
+    // jerk. The next update recomputes it from the new target anyway.
     withinAcceptanceRadius = false;
     withinAcceptanceAltitude = false;
 }
@@ -134,12 +148,12 @@ static float legVertRateMps(void)
     return (cmd.vertRateMps > 0.0f) ? cmd.vertRateMps : cmd.cruiseSpeedMps;
 }
 
-// Signed rate the altitude ramp moves at this cycle: the leg's rate, tapered as the ramp closes on
-// the leg altitude so it settles instead of overshooting. Positive climbs.
+// Signed rate the altitude ramp moves at this cycle: the leg's rate, braked into the leg altitude
+// so it settles instead of overshooting. Positive climbs.
 static float verticalRampRateMps(void)
 {
     const float errorM = cmd.targetPosEfM.v[ENU_U] - cmd.rampAltM;
-    const float rateMps = fminf(legVertRateMps(), POS_TO_VEL_KP * fabsf(errorM));
+    const float rateMps = fminf(legVertRateMps(), sqrtf(2.0f * VERT_RAMP_DECEL_MPS2 * fabsf(errorM)));
     return (errorM < 0.0f) ? -rateMps : rateMps;
 }
 
@@ -161,6 +175,18 @@ void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
 {
     cmd.maxAccelMps2 = maxAccelMps2;
     cmd.maxDecelMps2 = maxDecelMps2;
+}
+
+void positionNavSetCruiseSpeed(float cruiseSpeedMps)
+{
+    if (cmd.active) {
+        cmd.cruiseSpeedMps = cruiseSpeedMps;
+    }
+}
+
+void positionNavSetApproachSlowdown(float slowdownM)
+{
+    cmd.approachSlowdownM = slowdownM;
 }
 
 void positionNavSetAltitudeArrivalRequired(bool required)
@@ -192,6 +218,15 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
     const float horizDistM = sqrtf(sq(errorEastM) + sq(errorNorthM));
 
     float desiredSpeedMps = fminf(cmd.cruiseSpeedMps, POS_TO_VEL_KP * horizDistM);
+
+    // Bleed speed off from a stated range rather than waiting for the position gain to bite a few
+    // metres out: the craft arrives slow instead of braking hard on the doorstep, and a hot arrival
+    // has somewhere to shed its speed. Linear in distance, so the speed decays exponentially in
+    // time - the shape the legacy rescue flew.
+    if (cmd.approachSlowdownM > 0.0f) {
+        desiredSpeedMps = fminf(desiredSpeedMps,
+                                cmd.cruiseSpeedMps * (horizDistM / cmd.approachSlowdownM));
+    }
 
     if (cmd.maxDecelMps2 > 0.0f) {
         const float brakingSpeed = sqrtf(2.0f * cmd.maxDecelMps2 * horizDistM);
@@ -258,11 +293,11 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
 
     if (cmd.includeAltitude) {
         if (!withinAcceptanceAltitude) {
-            if (absErrZM <= cmd.acceptanceRadiusM) {
+            if (absErrZM <= VERT_ACCEPTANCE_M) {
                 withinAcceptanceAltitude = true;
             }
         } else {
-            if (absErrZM > cmd.acceptanceRadiusM * HYSTERESIS_FACTOR) {
+            if (absErrZM > VERT_ACCEPTANCE_M * HYSTERESIS_FACTOR) {
                 withinAcceptanceAltitude = false;
             }
         }
@@ -299,7 +334,10 @@ vector3_t positionNavGetTargetVelocityCmS(void)
 
 float positionNavGetTargetAltitudeCm(void)
 {
-    if (!cmd.includeAltitude || !cmd.rampValid) {
+    // A completed leg stops updating the ramp, so keep handing back the leg altitude rather than
+    // the value the ramp happened to be holding: alt hold latches whatever this returns and would
+    // otherwise hold a stale altitude for the rest of the flight.
+    if (!cmd.includeAltitude || !cmd.rampValid || cmd.completed) {
         return cmd.targetPosEfM.v[ENU_U] * 100.0f;
     }
     return cmd.rampAltM * 100.0f;

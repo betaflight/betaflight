@@ -1035,14 +1035,38 @@ protected:
     {
         mockTargetVelCmS = (vector3_t){{0.0f, cmS, 0.0f}};
     }
+
+    // Status slot 7 carries +10 for nav active and +20 for the anchor being
+    // off, so the anchored/velocity split is directly observable.
+    enum { NAV_STATUS_ANCHORED = 10, NAV_STATUS_VELOCITY = 30 };
+
+    int navStatus()
+    {
+        debugMode = DEBUG_AUTOPILOT_PID;
+        runIterations(1);
+        const int status = debug[7];
+        debugMode = DEBUG_NONE;
+        return status;
+    }
+
+    // DEBUG_POSITION_NAV slot 7 carries +10 for the anchor being off and +1 while the buildup
+    // clamp is scaling the drive.
+    bool buildupClampEngaged()
+    {
+        debugMode = DEBUG_POSITION_NAV;
+        runIterations(1);
+        const bool clamped = (debug[7] % 10) == 1;
+        debugMode = DEBUG_NONE;
+        return clamped;
+    }
 };
 
 TEST_F(NavModeTest, NavAnchorsToCarrotAhead)
 {
-    // Carrot 50 m north, craft at the origin: the position anchor produces a
+    // Carrot 3 m north, inside the anchor range: the position anchor produces a
     // lean toward the carrot (pitch), with negligible roll.
     engageNav(30, 30, 0, 0, 30, 45);
-    setNavCarrot(0.0f, 50.0f);
+    setNavCarrot(0.0f, 3.0f);
     setTargetVelocityNorth(0.0f);
 
     runIterations(SETTLE_ITERATIONS);
@@ -1051,19 +1075,115 @@ TEST_F(NavModeTest, NavAnchorsToCarrotAhead)
     EXPECT_LT(fabsf(autopilotAngle[AI_ROLL]), 2.0f);
 }
 
+TEST_F(NavModeTest, NavBeyondAnchorRangeFliesTheCommandedVelocity)
+{
+    // Out on a leg the position error is large by construction, so anchoring to
+    // it would only saturate P into a fixed tilt bias on top of the velocity
+    // feedforward. Beyond the anchor range the commanded velocity is the
+    // authority: a distant carrot with no commanded velocity must not lean.
+    engageNav(30, 30, 0, 0, 30, 45);
+    setNavCarrot(0.0f, 50.0f);
+    setTargetVelocityNorth(0.0f);
+
+    runIterations(SETTLE_ITERATIONS);
+
+    EXPECT_LT(fabsf(autopilotAngle[AI_PITCH]), 2.0f);
+    EXPECT_LT(fabsf(autopilotAngle[AI_ROLL]), 2.0f);
+}
+
+TEST_F(NavModeTest, NavBeyondAnchorRangeTracksANonZeroCommandedVelocity)
+{
+    // The other half of the contract: out there the commanded velocity holds
+    // the authority, not the carrot. Carrot far to the north but the command
+    // pointing south, so the two disagree and the lean has to follow the
+    // command.
+    engageNav(30, 30, 0, 0, 30, 45);
+    setNavCarrot(0.0f, 50.0f);
+    testEstimate.velocity.y = 0.0f;
+
+    setTargetVelocityNorth(300.0f);
+    runIterations(SETTLE_ITERATIONS);
+    const float pitchNorth = autopilotAngle[AI_PITCH];
+
+    setTargetVelocityNorth(-300.0f);
+    runIterations(SETTLE_ITERATIONS * 4);
+    const float pitchSouth = autopilotAngle[AI_PITCH];
+
+    EXPECT_EQ(NAV_STATUS_VELOCITY, navStatus());
+    EXPECT_GT(fabsf(pitchNorth), 5.0f);
+    EXPECT_GT(fabsf(pitchSouth), 5.0f);
+    EXPECT_LT(pitchNorth * pitchSouth, 0.0f);
+    EXPECT_LT(fabsf(autopilotAngle[AI_ROLL]), 2.0f);
+}
+
+TEST_F(NavModeTest, NavBrakingIsNotLimitedByTheBuildupClamp)
+{
+    // A rescue triggered mid-dash: carrot far behind the craft, the command pointing home, and the
+    // craft still travelling the other way at 17 m/s. The buildup clamp exists to stop the pitch
+    // slamming while speed is being built, and the drive it clamps is the whole of the braking
+    // authority, so out here it has to stand aside or the craft coasts on past its own fence.
+    engageNav(30, 30, 30, 50, 8, 50);
+    setNavCarrot(0.0f, 50.0f);
+    testEstimate.velocity.y = 1700.0f;
+    setTargetVelocityNorth(-300.0f);
+
+    runIterations(SETTLE_ITERATIONS);
+
+    EXPECT_EQ(NAV_STATUS_VELOCITY, navStatus());
+    EXPECT_LT(autopilotAngle[AI_PITCH], -20.0f);   // leaned back hard on the brake, not capped at 8
+    EXPECT_FALSE(buildupClampEngaged());
+}
+
+TEST_F(NavModeTest, NavBuildupClampStillHoldsWhileAccelerating)
+{
+    // The other side of the gate: same geometry, but the command now agrees with the direction of
+    // travel, so the drive is building speed up rather than shedding it and the clamp still owns it.
+    engageNav(30, 30, 30, 50, 8, 50);
+    setNavCarrot(0.0f, 50.0f);
+    testEstimate.velocity.y = 100.0f;
+    setTargetVelocityNorth(1500.0f);
+
+    runIterations(5);
+
+    EXPECT_TRUE(buildupClampEngaged());
+}
+
+TEST_F(NavModeTest, NavAnchorDoesNotCarryAcrossACommandChange)
+{
+    // A waypoint transition installs the successor before the controller runs
+    // again. An anchored predecessor must not hand its state on, or a successor
+    // sitting between the acquire and release thresholds anchors without ever
+    // satisfying the acquire range.
+    engageNav(30, 30, 0, 0, 30, 45);
+    setNavCarrot(0.0f, 3.0f);
+    setTargetVelocityNorth(0.0f);
+    runIterations(SETTLE_ITERATIONS);
+    ASSERT_EQ(NAV_STATUS_ANCHORED, navStatus());
+
+    mockNavCommand.sequence++;                          // successor installed
+    setNavCarrot(0.0f, 5.2f);                           // inside release, outside acquire
+    runIterations(SETTLE_ITERATIONS);
+
+    EXPECT_EQ(NAV_STATUS_VELOCITY, navStatus());
+}
+
 TEST_F(NavModeTest, NavPositionErrorIsBounded)
 {
-    // The carrot lead grows with speed; NAV_ERROR_DISTANCE_LIMIT bounds the
-    // position error so a distant carrot cannot drive P without limit. Two
-    // carrots well beyond the bound must produce the same (clamped) lean.
+    // NAV_ERROR_DISTANCE_LIMIT still bounds the position error while anchored,
+    // so two carrots beyond the bound produce the same (clamped) lean rather
+    // than an ever-growing one. Anchor close first: hysteresis then holds the
+    // anchor out past the 5 m clamp, which is where the bound does its work.
     engageNav(30, 30, 0, 0, 30, 45);
     setTargetVelocityNorth(0.0f);
 
-    setNavCarrot(0.0f, 50.0f);
+    setNavCarrot(0.0f, 3.0f);
+    runIterations(SETTLE_ITERATIONS);
+
+    setNavCarrot(0.0f, 6.0f);
     runIterations(SETTLE_ITERATIONS);
     const float pitchNear = autopilotAngle[AI_PITCH];
 
-    setNavCarrot(0.0f, 500.0f);
+    setNavCarrot(0.0f, 7.0f);
     runIterations(SETTLE_ITERATIONS);
     const float pitchFar = autopilotAngle[AI_PITCH];
 

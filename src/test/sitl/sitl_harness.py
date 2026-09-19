@@ -523,6 +523,9 @@ class FdmFeed(threading.Thread):
     def distance_to_wp(self, east_m, north_m):
         return math.hypot(self.model.pos[0] - east_m, self.model.pos[1] - north_m)
 
+    def ground_speed(self):
+        return math.hypot(self.model.vel[0], self.model.vel[1])
+
     def heading_deg(self):
         return math.degrees(self.model.yaw) % 360.0
 
@@ -892,6 +895,9 @@ WP_CORNER_LON = HOME_LON + 42.0 / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))
 def base_config(extra):
     return [
         "feature GPS",
+        # the executor's state, abort reason and leg ride in slot 7 of this mode: a scenario that
+        # fails leaves a log that says what nav was doing when it did
+        "set debug_mode = GPS_RESCUE_TRACKING",
         "set gps_provider = VIRTUAL",
         "set failsafe_procedure = AUTO-LAND",
         "set failsafe_delay = 10",
@@ -1492,6 +1498,52 @@ def scenario_rescue_ab(sitl, rc, fdm, variant="B"):
     return m
 
 
+def scenario_rescue_fast_entry(sitl, rc, fdm, variant="B"):
+    """RC lost mid-dash, the craft still running away from home at speed. It
+    cannot stop inside the distance a fixed fence allows, so the rescue mission
+    used to trip its own flyaway check while braking, abort, and sink where it
+    was instead of returning."""
+    boot_and_engage(sitl, rc, fdm)
+    wait_for(
+        "vehicle 35 m out and running",
+        lambda: fdm.distance_from_home() > 35.0 and fdm.ground_speed() > 7.0,
+        timeout=60,
+        interval=0.2,
+    )
+    kill_dist = fdm.distance_from_home()
+    entry_speed = fdm.ground_speed()
+    t0 = fdm.now_t()
+    log(f"[{variant}] killing RC {kill_dist:.0f} m out at {entry_speed:.1f} m/s")
+    rc.stop_stream()
+
+    rescue_engagement_asserts(sitl, variant)
+    wait_for(
+        "returns within 20 m of home",
+        lambda: fdm.distance_from_home() < 20.0,
+        timeout=180,
+        interval=1.0,
+    )
+    wait_for(
+        "touchdown disarms",
+        lambda: fdm.model.on_ground() and BOX_ARM not in sitl.modes(),
+        timeout=120,
+        interval=1.0,
+    )
+    m = rescue_metrics(fdm, t0, kill_dist)
+    td = m["touchdown"]
+    assert td is not None, "no touchdown recorded"
+    td_dist = math.hypot(td[1], td[2])
+    assert td_dist < 15.0, f"landed {td_dist:.1f} m from home"
+    # The overshoot is the whole point: the craft has to coast well past the
+    # trigger point and still come home.
+    overshoot = m["max_dist"] - kill_dist
+    log(f"[{variant}] overshot {overshoot:.1f} m, landed {td_dist:.1f} m from home")
+    assert overshoot > 5.0, f"entry too gentle to exercise the fence: {overshoot:.1f} m"
+    m["td_dist"] = td_dist
+    m["overshoot"] = overshoot
+    return m
+
+
 def scenario_rescue_heading(sitl, rc, fdm, variant="B"):
     """No mag, true heading east while the FC believes north: the rescue must
     recover heading via GPS course-over-ground (pitch-forward phase) before
@@ -1845,6 +1897,18 @@ SCENARIOS = {
         scenario_rescue_heading,
         [*RESCUE_CFG, "set mag_hardware = NONE"],
         {"initial_yaw_deg": 90.0},
+    ),
+    "rescue_fast_entry": (
+        scenario_rescue_fast_entry,
+        [
+            *RESCUE_CFG,
+            # a dash, not a cruise: the craft is still running from home when the
+            # rescue takes over
+            f"waypoint update 0 {WP_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 1500 flyover 0 none",
+            "set ap_max_velocity = 1500",
+            "set gps_rescue_return_alt = 15",
+            "set gps_rescue_ascend_rate = 200",
+        ],
     ),
     "rescue_gps_loss": (
         scenario_rescue_gps_loss,

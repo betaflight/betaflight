@@ -125,6 +125,11 @@
 // tighter error bound stops that speed-proportional lead from driving P into a
 // positive-feedback overspeed, leaving the velocity feedforward to set cruise.
 #define NAV_ERROR_DISTANCE_LIMIT 500.0f // 5m
+// Range at which anchoring to the nav target takes over from tracking its
+// commanded velocity. Matched to the error clamp: beyond it P is saturated and
+// carries no position information anyway.
+#define NAV_ANCHOR_RANGE      NAV_ERROR_DISTANCE_LIMIT
+#define NAV_ANCHOR_HYSTERESIS 1.5f
 #define POSITION_I_LIMIT      2000.0f // TO DO: test and set to a useful value, this is 20m
 
 #define AP_YAW_P_SCALE         0.06f
@@ -232,6 +237,8 @@ typedef struct autopilotState_s {
     xyAnchorMode_e anchor;      // position-anchor selection for this loop
     xyIntegralPolicy_e iPolicy; // integral policy for this loop
     xyControlMode_e mode;       // operational mode for this loop
+    bool navAnchored;           // nav target close enough for position anchoring
+    uint32_t navAnchorSeq;      // command the anchor state belongs to
     unsigned debugAxis;
 } autopilotState_t;
 
@@ -790,6 +797,12 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
         desiredHeadingDeg = apYawHoldHeadingDeg;
     }
 
+    // Every bearing source above is an atan2, which is signed; headings are a
+    // compass quantity and every reader of one - the log, the OSD, a pilot -
+    // expects the 0-360 the estimator reports. Normalise once, here, so the
+    // target and the measurement can be compared as logged.
+    desiredHeadingDeg = fmodf(desiredHeadingDeg + 360.0f, 360.0f);
+
     apYawAttenuator = fminf(apYawAttenuator + dt / AP_YAW_RAMP_TIME_S, 1.0f);
 
     // The yaw rate setpoint (and gyro) is CCW-positive while compass headings
@@ -886,8 +899,37 @@ static xyControlMode_e xySelectMode(void)
 
     if (ap.navActive) {
         const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
-        return (navCmd != NULL && navCmd->active) ? XY_MODE_NAV_TRACK : XY_MODE_NAV_VELOCITY;
+        if (navCmd == NULL || !navCmd->active) {
+            return XY_MODE_NAV_VELOCITY;
+        }
+        // Anchoring only earns its keep once the target is close enough for the
+        // position error to mean something. Further out the error is large by
+        // construction - the craft simply is not there yet - so it pins
+        // distanceError at NAV_ERROR_DISTANCE_LIMIT and P degenerates into a
+        // fixed tilt bias on top of the feedforward that already carries the
+        // commanded speed, which the craft can only balance by flying faster
+        // than commanded. Track the commanded velocity out there instead: the
+        // virtual distance error integrates velocity error, so cruise settles
+        // on the commanded speed. Hysteresis stops the handover chattering.
+        // A new command starts unanchored and must earn the anchor on its own
+        // range, rather than inheriting its predecessor's state through the
+        // transition.
+        if (ap.navAnchorSeq != navCmd->sequence) {
+            ap.navAnchorSeq = navCmd->sequence;
+            ap.navAnchored = false;
+        }
+        const vector2_t *pos = (const vector2_t *)&positionEstimatorGetEstimate()->position.v;
+        const vector2_t target = {{ navCmd->targetPosEfM.v[ENU_E] * 100.0f,
+                                    navCmd->targetPosEfM.v[ENU_N] * 100.0f }};
+        vector2_t delta;
+        vector2Sub(&delta, &target, pos);
+        const float distance = vector2Norm(&delta);
+        const float anchorRange = ap.navAnchored ? NAV_ANCHOR_RANGE * NAV_ANCHOR_HYSTERESIS
+                                                 : NAV_ANCHOR_RANGE;
+        ap.navAnchored = distance <= anchorRange;
+        return ap.navAnchored ? XY_MODE_NAV_TRACK : XY_MODE_NAV_VELOCITY;
     }
+    ap.navAnchored = false;
     if (ap.sticksActive) {
         return XY_MODE_STICK_VELOCITY;
     }
@@ -1208,12 +1250,18 @@ bool positionControl(void)
     // the cruise tilt and would otherwise slam the pitch while accelerating. When
     // anchored to a position (nav carrot or hold), P carries the tilt and D + F
     // must stay free to track and brake velocity, so the clamp is skipped.
+    // It limits building speed up, never shedding it: the same drive that leans
+    // into an acceleration is the whole of the braking authority when the
+    // commanded velocity opposes the one being flown, and a rescue or a mission
+    // engaged at speed needs all of it. Braking is the drive opposing the
+    // measured velocity, so the sign of their dot product separates the two.
     bool buildupClamped = false;
     if (ap.navActive && ap.anchor == ANCHOR_OFF) {
         const float buildupMaxDeg = autopilotConfig()->velocityBuildupMaxPitch;
         vector2_t drive = { { pidD.v[EF_EAST] + pidF.v[EF_EAST], pidD.v[EF_NORTH] + pidF.v[EF_NORTH] } };
         const float driveMag = vector2Norm(&drive);
-        if (driveMag > buildupMaxDeg && driveMag > 0.001f) {
+        const bool braking = vector2Dot(&drive, &velocity) < 0.0f;
+        if (!braking && driveMag > buildupMaxDeg && driveMag > 0.001f) {
             buildupClamped = true;
             const float scale = buildupMaxDeg / driveMag;
             vector2Scale(&pidD, &pidD, scale);
