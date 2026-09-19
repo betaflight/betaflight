@@ -214,7 +214,7 @@ typedef struct bbPort_s {
 
     // Set by bbDMAServiceFlags() when a DMA transfer error left the stream's
     // registers unusable; cleared by bbUpdateComplete() once bbSwitchToOutput()
-    // has reloaded them. Written from the DMA ISR, read from the PID task.
+    // has reloaded them. Written from the DMA ISR; read/cleared from the PID task.
     volatile bool reinitRequired;
 
 #ifdef DEBUG_COUNT_INTERRUPT
