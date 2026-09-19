@@ -163,6 +163,45 @@ TEST_F(PositionNavTest, ShortClimbBrakesIntoTheLegAltitudeRatherThanLagging)
     EXPECT_NEAR(positionNavGetTargetAltitudeCm(), 200.0f, 1.0f);      // arrived inside 1.2 s
 }
 
+TEST_F(PositionNavTest, ApproachSlowdownTapersFromTheStatedRange)
+{
+    // Bleed speed from a stated range instead of waiting for the position gain to bite: linear in
+    // distance, so the speed decays exponentially in time, which is the shape the legacy rescue
+    // flew home on.
+    const vector3_t target = {{ 0.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
+    positionNavSetApproachSlowdown(20.0f);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 10000.0f, 0.0f, 0.0f);   // 100 m out
+    positionNavUpdate(0.1f, &est);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, -500.0f, 1.0f);       // outside the range: cruise
+
+    est.position.y = 1000.0f;                                             // 10 m: half the range
+    positionNavUpdate(0.1f, &est);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, -250.0f, 1.0f);
+
+    est.position.y = 200.0f;                                              // 2 m
+    positionNavUpdate(0.1f, &est);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, -50.0f, 1.0f);
+}
+
+TEST_F(PositionNavTest, NewTargetDoesNotNotchTheCommandedVelocity)
+{
+    // A leg change used to zero the commanded velocity until the next update, and the position
+    // controller answers a one-cycle notch with a pitch jerk. The craft is still moving and the
+    // next target is in much the same direction: hold the command until it is recomputed.
+    const vector3_t target = {{ 0.0f, 100.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 500.0f);
+    positionNavUpdate(0.1f, &est);
+    const float flying = positionNavGetTargetVelocityCmS().y;
+    ASSERT_GT(flying, 100.0f);
+
+    const vector3_t next = {{ 0.0f, 200.0f, 0.0f }};
+    positionNavSetTargetEf(&next, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, flying, 0.01f);
+}
+
 TEST_F(PositionNavTest, VerticalProfileGovernsDescentRateToADeepTarget)
 {
     // The landing target sits far below ground so vertical arrival never triggers; the descent is

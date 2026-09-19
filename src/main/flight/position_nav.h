@@ -46,6 +46,7 @@ typedef struct positionNavCommand_s {
     float rampAltM;                 // altitude the vertical channel is currently commanding (ENU_U, metres)
     bool rampValid;                 // rampAltM has been seeded for this command
 
+    float approachSlowdownM;        // taper the commanded speed linearly inside this range, 0 = off
     float maxAccelMps2;             // acceleration limit (m/s^2), 0 = unlimited
     float maxDecelMps2;             // deceleration/braking limit (m/s^2), 0 = unlimited
 
@@ -84,6 +85,14 @@ bool positionNavTargetReached(void);
 const positionNavCommand_t *positionNavGetActiveCommand(void);
 
 void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2);
+
+// The speed this leg is being flown at right now, when its owner governs the profile rather than
+// the leg's own cruise (carrot legs: the executor's trapezoid owns the speed).
+void positionNavSetCruiseSpeed(float cruiseSpeedMps);
+
+// Taper the commanded speed linearly to zero inside this range of the target, the way the legacy
+// rescue bled speed from twice the descent distance. Zero leaves the leg on its own profile.
+void positionNavSetApproachSlowdown(float slowdownM);
 void positionNavSetAutoClearOnReach(bool autoClear);
 
 // The leg's vertical intent: the rate the altitude target is allowed to move at, and the altitude

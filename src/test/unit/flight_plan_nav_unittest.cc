@@ -157,6 +157,19 @@ void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
     (void)maxDecelMps2;
 }
 
+float g_lastApproachSlowdownM;
+float g_lastCruiseSpeedMps;
+
+void positionNavSetApproachSlowdown(float slowdownM)
+{
+    g_lastApproachSlowdownM = slowdownM;
+}
+
+void positionNavSetCruiseSpeed(float cruiseSpeedMps)
+{
+    g_lastCruiseSpeedMps = cruiseSpeedMps;
+}
+
 static bool g_altitudeArrivalRequired;
 
 void positionNavSetAltitudeArrivalRequired(bool required)
@@ -266,6 +279,8 @@ protected:
     void SetUp() override {
         memset(&g_lastTarget, 0, sizeof(g_lastTarget));
         g_setTargetCalls = 0;
+        g_lastApproachSlowdownM = 0.0f;
+        g_lastCruiseSpeedMps = 0.0f;
         g_setVerticalProfileCalls = 0;
         g_altHoldClimbRateCmS = 500.0f;   // alt_hold_climb_rate default, 5 m/s
         g_lastVertRateMps = 0.0f;
@@ -1937,6 +1952,27 @@ TEST_F(FlightPlanNavCarrotTest, CarrotSpeedDoesNotDependOnMeasuredSpeed)
 
     EXPECT_GT(onProfile, 10.0f);
     EXPECT_NEAR(overProfile, onProfile, 0.01f);
+}
+
+TEST_F(FlightPlanNavCarrotTest, CommandedSpeedIsTheCarrotTrapezoid)
+{
+    // The leg's trapezoid is the speed profile, so it is also what the craft is commanded at.
+    // Inferring the commanded speed from the pursuit gap tied it to how far behind the carrot the
+    // craft happened to be sitting, and the chase equilibrium parks that gap right on the position
+    // gain's knee - which is the cruise wobble.
+    addWaypointMetres(0.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypointMetres(0.0f, 600.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    step();
+
+    step();
+    EXPECT_LT(g_lastCruiseSpeedMps, 10.0f);   // slewing in from a standstill, not stepping to cruise
+
+    for (int i = 0; i < 100; i++) {
+        step();
+    }
+    EXPECT_NEAR(g_lastCruiseSpeedMps, 10.0f, 0.01f);   // and settles flat on the leg cruise
 }
 
 TEST_F(FlightPlanNavCarrotTest, ChaseLagCompensationCrossesGateNearCornerSpeed)

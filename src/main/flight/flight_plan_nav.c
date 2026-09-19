@@ -234,6 +234,7 @@ static struct {
     // corner so the profile is continuous (only engage/retry re-anchor it).
     bool      legIsPassGate;    // current leg uses carrot leg-line tracking
     float     legArriveRadiusM; // this leg's arrival radius, resolved at dispatch
+    float     legSlowdownM;     // taper the commanded speed inside this range of the waypoint, 0 = off
     bool      legValid;         // the leg line is anchored
     vector3_t legTargetEnuM;    // the point this leg flies to (E,N,U metres)
     float     legCruiseMps;     // this leg's cruise cap
@@ -439,6 +440,15 @@ static bool dispatchWaypoint(void)
     }
 #endif
     fp.legArriveRadiusM = arrivalRadiusM;
+    // Rescue bleeds speed from twice the descent distance, so it is already slow when it reaches
+    // the point it starts coming down at. Mission legs keep their own trapezoid.
+    fp.legSlowdownM = 0.0f;
+#if ENABLE_RESCUE_PLAN
+    if (fp.isRescuePlan
+        && (effective.type == WAYPOINT_TYPE_FLYOVER || effective.type == WAYPOINT_TYPE_LAND)) {
+        fp.legSlowdownM = 2.0f * (float)gpsRescueConfig()->descentDistanceM;
+    }
+#endif
 
     float cruiseMps = (effective.speed > 0) ? effective.speed * 0.01f : cfg->maxVelocity * 0.01f;
     if (cruiseMps < FP_MIN_CRUISE_MPS) {
@@ -542,6 +552,7 @@ static bool dispatchWaypoint(void)
         positionNavSetTargetEf(&targetEnuM, cruiseMps, arrivalRadiusM,
                                FP_COMPLETION_ANY_MPS, true, onWaypointReached, NULL);
         positionNavSetAccelLimits(0.0f, FP_APPROACH_DECEL_MPS2);
+        positionNavSetApproachSlowdown(fp.legSlowdownM);
         // En-route waypoints advance on horizontal arrival; a vehicle that cannot
         // reach the commanded altitude must not orbit forever. HOLD, LAND and
         // TAKEOFF are station-keeping targets and keep the altitude gate.
@@ -912,6 +923,9 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
     const float brakeLagM = fp.carrotSpeedMps * leadTimeS;
     const float remainingBrakeM = fmaxf(remainingFiltM - brakeLagM, 0.0f);
     float desiredMps = fminf(fp.legCruiseMps, sqrtf(sq(cornerSpeedMps) + 2.0f * decelMps2 * remainingBrakeM));
+    if (fp.legSlowdownM > 0.0f) {
+        desiredMps = fminf(desiredMps, fp.legCruiseMps * (distM / fp.legSlowdownM));
+    }
 
     const float headingDeg = attitude.values.yaw * 0.1f;
     const float legBearingDeg = RADIANS_TO_DEGREES(atan2_approx(legDir.x, legDir.y));
@@ -991,6 +1005,11 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
     fp.carrotPrevEnuM.y = carrot.v[ENU_N];
     fp.carrotPrevValid = true;
     positionNavMoveTargetEf(&carrot);
+    // The trapezoid above is this leg's speed profile, so it is also the speed the craft should be
+    // commanded at. Leaving positionNav to infer it from the pursuit gap tied the commanded speed
+    // to how far behind the carrot the craft happened to be sitting, which is where the cruise
+    // wobble came from: the chase equilibrium parks the gap right on the position gain's knee.
+    positionNavSetCruiseSpeed(fp.carrotSpeedMps);
 }
 
 // The descent is flown at the rate the caller states — the LAND leg's own rate, resolved at

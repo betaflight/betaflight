@@ -180,6 +180,19 @@ void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
     (void)maxDecelMps2;
 }
 
+float g_lastApproachSlowdownM;
+float g_lastCruiseSpeedMps;
+
+void positionNavSetApproachSlowdown(float slowdownM)
+{
+    g_lastApproachSlowdownM = slowdownM;
+}
+
+void positionNavSetCruiseSpeed(float cruiseSpeedMps)
+{
+    g_lastCruiseSpeedMps = cruiseSpeedMps;
+}
+
 void positionNavSetAltitudeArrivalRequired(bool required)
 {
     g_altitudeArrivalRequired = required;
@@ -297,6 +310,8 @@ protected:
     void SetUp() override {
         memset(&g_lastTarget, 0, sizeof(g_lastTarget));
         g_setTargetCalls = 0;
+        g_lastApproachSlowdownM = 0.0f;
+        g_lastCruiseSpeedMps = 0.0f;
         g_setVerticalProfileCalls = 0;
         g_navHeadingOverrideValid = false;
         g_navHeadingOverrideDeg = 0.0f;
@@ -357,6 +372,16 @@ protected:
         cfg->landingDescentRate = 50;      // 0.5 m/s
         cfg->landingDetectionTime = 10;    // 1 s
         cfg->landingVelocityThreshold = 50; // 0.5 m/s
+        cfg->maxAngle = 50;                // ap_max_angle default
+        // Leg-line carrot tracking (PG reset template is not applied under test): without these the
+        // carrot cannot accelerate and every pass-gate leg sits still.
+        cfg->navCornerSpeed = 220;
+        cfg->navCornerDeltaV = 440;
+        cfg->navDecel = 250;
+        cfg->navAccel = 250;
+        cfg->navCarrotLeadTime = 12;
+        cfg->navCarrotLeadMax = 2500;
+        cfg->navPreturnDist = 1500;
 
         flightPlanNavInit();
     }
@@ -684,6 +709,28 @@ TEST_F(FlightPlanRescueTest, DescentStartsAtTheConfiguredDescentDistance)
     flightPlanNavUpdate(g_stubMicros);
     EXPECT_EQ(flightPlanNavGetCurrentIndex(), 2);  // hands over to the landing leg out here
     EXPECT_NEAR(g_lastTarget.acceptanceRadiusM, 15.0f, 0.01f);
+}
+
+TEST_F(FlightPlanRescueTest, ReturnLegBleedsSpeedFromTwiceTheDescentDistance)
+{
+    // Legacy slowed from twice the descent distance so it arrived slow at the point it starts down
+    // at. Arriving at full return speed and braking on the doorstep overruns home when the craft
+    // comes in hot and the descent distance is short.
+    gpsRescueConfigMutable()->descentDistanceM = 10;   // 20 m slowdown range
+    g_stubEstimate.position.v[ENU_N] = 1500.0f;        // 15 m north of home: three quarters out
+    attitude.values.yaw = 1800;                        // nose south, pointing home
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+
+    for (int i = 0; i < 30; i++) {
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    // 15 m of a 20 m range against the 7.5 m/s return speed.
+    EXPECT_NEAR(g_lastCruiseSpeedMps, 7.5f * 15.0f / 20.0f, 0.2f);
 }
 
 // --- Fallback emergency descent (switch rescue: no fix, or plan aborted) ---

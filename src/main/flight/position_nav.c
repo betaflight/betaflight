@@ -92,6 +92,7 @@ void positionNavSetTargetEf(
     cmd.vertRateMps = 0.0f;
     cmd.rampAltM = 0.0f;
     cmd.rampValid = false;
+    cmd.approachSlowdownM = 0.0f;
     cmd.acceptanceRadiusM = acceptanceRadiusM;
     cmd.completionSpeedMps = completionSpeedMps;
     cmd.altitudeArrivalRequired = true;
@@ -100,7 +101,9 @@ void positionNavSetTargetEf(
     cmd.callbackUserData = userData;
 
     vector3Zero(&previousTargetVelMps);
-    vector3Zero(&currentTargetVelCmS);
+    // The commanded velocity deliberately survives the handover: zeroing it here put a one-cycle
+    // notch in the target at every leg change, which the position controller answers with a pitch
+    // jerk. The next update recomputes it from the new target anyway.
     withinAcceptanceRadius = false;
     withinAcceptanceAltitude = false;
 }
@@ -174,6 +177,18 @@ void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
     cmd.maxDecelMps2 = maxDecelMps2;
 }
 
+void positionNavSetCruiseSpeed(float cruiseSpeedMps)
+{
+    if (cmd.active) {
+        cmd.cruiseSpeedMps = cruiseSpeedMps;
+    }
+}
+
+void positionNavSetApproachSlowdown(float slowdownM)
+{
+    cmd.approachSlowdownM = slowdownM;
+}
+
 void positionNavSetAltitudeArrivalRequired(bool required)
 {
     cmd.altitudeArrivalRequired = required;
@@ -203,6 +218,15 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
     const float horizDistM = sqrtf(sq(errorEastM) + sq(errorNorthM));
 
     float desiredSpeedMps = fminf(cmd.cruiseSpeedMps, POS_TO_VEL_KP * horizDistM);
+
+    // Bleed speed off from a stated range rather than waiting for the position gain to bite a few
+    // metres out: the craft arrives slow instead of braking hard on the doorstep, and a hot arrival
+    // has somewhere to shed its speed. Linear in distance, so the speed decays exponentially in
+    // time - the shape the legacy rescue flew.
+    if (cmd.approachSlowdownM > 0.0f) {
+        desiredSpeedMps = fminf(desiredSpeedMps,
+                                cmd.cruiseSpeedMps * (horizDistM / cmd.approachSlowdownM));
+    }
 
     if (cmd.maxDecelMps2 > 0.0f) {
         const float brakingSpeed = sqrtf(2.0f * cmd.maxDecelMps2 * horizDistM);
