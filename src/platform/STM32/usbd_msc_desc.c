@@ -68,7 +68,11 @@
 #define USBD_PID                   0x5720
 
 #define USBD_LANGID_STRING         0x409
+#ifndef USBD_MANUFACTURER_STRING
 #define USBD_MANUFACTURER_STRING   "STMicroelectronics"
+#endif
+_Static_assert(sizeof(USBD_MANUFACTURER_STRING) * 2 <= USB_MAX_STR_DESC_SIZ,
+    "USBD_MANUFACTURER_STRING is too long for the USB string descriptor buffer");
 #define USBD_PRODUCT_HS_STRING        "Betaflight FC Mass Storage (HS Mode)"
 #define USBD_PRODUCT_FS_STRING        "Betaflight FC Mass Storage (FS Mode)"
 #define USBD_CONFIGURATION_HS_STRING  "MSC Config"
@@ -376,4 +380,3 @@ static void IntToUnicode (uint32_t value , uint8_t *pbuf , uint8_t len)
   */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
-
