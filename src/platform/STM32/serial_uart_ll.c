@@ -44,6 +44,10 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
+#if defined(STM32G4)
+#include "stm32g4xx_ll_lpuart.h"
+#endif
+
 static bool uartCanTx(const uartPort_t *uartPort)
 {
     const uartDevice_t *uartDevice = container_of(uartPort, uartDevice_t, port);
@@ -75,6 +79,37 @@ static void uartConfigurePinSwap(uartPort_t *uartPort)
 }
 #endif
 
+#if defined(STM32G4)
+// ST's LL_USART_Init() only knows USART1-3 and UART4-5. For LPUART1 it finds no peripheral
+// clock, never writes BRR and returns ERROR, which leaves the port disabled. LPUART also has a
+// different baud rate divider (BRR = 256 * fck / baud), so it needs LL_LPUART_Init().
+static ErrorStatus uartInitLpuart(USART_TypeDef *USARTx, const uartPort_t *uartPort, bool canTx)
+{
+    LL_LPUART_InitTypeDef init;
+    LL_LPUART_StructInit(&init);
+
+    // fck must be within [3, 4096] x baud. With the kernel clock at PCLK1 (~168 MHz) low bauds such
+    // as 9600 fall outside that range, so prescale it.
+    init.PrescalerValue = LL_LPUART_PRESCALER_DIV8;
+    init.BaudRate = uartPort->port.baudRate;
+    init.DataWidth = (uartPort->port.options & SERIAL_PARITY_EVEN) ? LL_LPUART_DATAWIDTH_9B : LL_LPUART_DATAWIDTH_8B;
+    init.StopBits = (uartPort->port.options & SERIAL_STOPBITS_2) ? LL_LPUART_STOPBITS_2 : LL_LPUART_STOPBITS_1;
+    init.Parity = (uartPort->port.options & SERIAL_PARITY_EVEN) ? LL_LPUART_PARITY_EVEN : LL_LPUART_PARITY_NONE;
+    init.HardwareFlowControl = LL_LPUART_HWCONTROL_NONE;
+
+    uint32_t direction = 0;
+    if (uartPort->port.mode & MODE_RX) {
+        direction |= LL_LPUART_DIRECTION_RX;
+    }
+    if (canTx) {
+        direction |= LL_LPUART_DIRECTION_TX;
+    }
+    init.TransferDirection = direction;
+
+    return LL_LPUART_Init(USARTx, &init);
+}
+#endif
+
 // XXX uartReconfigure does not handle resource management properly.
 
 void uartReconfigure(uartPort_t *uartPort)
@@ -89,7 +124,15 @@ void uartReconfigure(uartPort_t *uartPort)
     CLEAR_BIT(USARTx->CR3, USART_CR3_EIE);
 
     LL_USART_Disable(USARTx);
-    LL_USART_DeInit(USARTx);
+#if defined(STM32G4)
+    // LL_USART_DeInit() does not reset LPUART1, so use LL_LPUART_DeInit()
+    if (USARTx == LPUART1) {
+        LL_LPUART_DeInit(USARTx);
+    } else
+#endif
+    {
+        LL_USART_DeInit(USARTx);
+    }
 
     LL_USART_InitTypeDef usartInit;
     LL_USART_StructInit(&usartInit);
@@ -116,7 +159,18 @@ void uartReconfigure(uartPort_t *uartPort)
     }
 #endif
 
-    if (LL_USART_Init(USARTx, &usartInit) != SUCCESS) {
+    ErrorStatus initStatus;
+#if defined(STM32G4)
+    // LL_USART_Init() cannot initialise LPUART1, see uartInitLpuart()
+    if (USARTx == LPUART1) {
+        initStatus = uartInitLpuart(USARTx, uartPort, canTx);
+    } else
+#endif
+    {
+        initStatus = LL_USART_Init(USARTx, &usartInit);
+    }
+
+    if (initStatus != SUCCESS) {
         // BRR not set — cannot operate this USART, leave it disabled
         return;
     }
