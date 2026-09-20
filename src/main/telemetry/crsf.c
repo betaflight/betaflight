@@ -643,9 +643,10 @@ static void crsfFrameFlightMode(sbuf_t *dst)
         // * = ready to arm
         // ! = arming disabled
         // ? = GPS rescue disabled
+#if defined(USE_GPS) && defined(USE_GPS_RESCUE)
+        bool isGpsRescueDisabled = featureIsEnabled(FEATURE_GPS) && gpsRescueIsConfigured() && gpsSol.numSat < gpsRescueConfig()->minSats && !STATE(GPS_FIX);
+#else
         bool isGpsRescueDisabled = false;
-#ifdef USE_GPS
-        isGpsRescueDisabled = featureIsEnabled(FEATURE_GPS) && gpsRescueIsConfigured() && gpsSol.numSat < gpsRescueConfig()->minSats && !STATE(GPS_FIX);
 #endif
         sbufWriteU8(dst, isArmingDisabled() ? '!' : isGpsRescueDisabled ? '?' : '*');
     }
