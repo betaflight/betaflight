@@ -1,12 +1,40 @@
 /*
 *****************************************************************************
 **
-**  File        : gd32_flash_h7_split.ld
+**  File        : gd32_h757xi_lrun.ld
 **
-**  Abstract    : Common linker script for GD32 devices.
+**  Abstract    : LRUN (Load from flash, Run from RAM) linker script for
+**                GD32H757xI. The image is stored in FLASH1 and copied to AXI
+**                SRAM by Reset_Handler.
 **
 *****************************************************************************
 */
+
+/* memory map */
+MEMORY
+{
+    FLASH (rx)            : ORIGIN = 0x08000000, LENGTH = 128K
+    FLASH_CONFIG (r)      : ORIGIN = 0x08020000, LENGTH = 128K
+    FLASH1 (rx)           : ORIGIN = 0x08040000, LENGTH = 1792K
+
+    SYSTEM_MEMORY (rx)    : ORIGIN = 0x1FF00000, LENGTH = 64K
+
+    ITCM_RAM (rwx)        : ORIGIN = 0x00000000, LENGTH = 64K
+    DTCM_RAM (rwx)        : ORIGIN = 0x20000000, LENGTH = 128K
+    RAM (rwx)             : ORIGIN = 0x24000000, LENGTH = 832K
+    BACKUP_SRAM (rwx)     : ORIGIN = 0x38800000, LENGTH = 4K
+
+    SRAM0_1 (rwx)         : ORIGIN = 0x30000000, LENGTH = 32K /* SRAM0 + SRAM1 */
+
+    MEMORY_B1 (rx)        : ORIGIN = 0x60000000, LENGTH = 0K
+}
+
+REGION_ALIAS("STACKRAM", DTCM_RAM)
+REGION_ALIAS("FASTRAM", DTCM_RAM)
+
+REGION_ALIAS("VECTAB", RAM)
+
+REGION_ALIAS("MOVABLE_FLASH", FLASH1)
 
 /* Entry Point */
 ENTRY(Reset_Handler)
@@ -59,23 +87,15 @@ SECTIONS
     . = ALIGN(4);
   } >SYSTEM_MEMORY
 
-  /* The program code and other data goes into FLASH */
-  .text :
+  /* Must stay in Flash: this code initializes AXI SRAM and copies the runtime
+   * image there before any relocated code runs.
+   */
+  .boot_text :
   {
     . = ALIGN(4);
-    *(.text)           /* .text sections (code) */
-    *(.text*)          /* .text* sections (code) */
-    *(.rodata)         /* .rodata sections (constants, strings, etc.) */
-    *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
-    *(.glue_7)         /* glue arm to thumb code */
-    *(.glue_7t)        /* glue thumb to arm code */
-    *(.eh_frame)
-
-    KEEP (*(.init))
-    KEEP (*(.fini))
-
+    KEEP(*(.text.Reset_Handler))
+    KEEP(*(.text.Default_Handler))
     . = ALIGN(4);
-    _etext = .;        /* define a global symbols at end of code */
   } >FLASH1
 
 
@@ -140,38 +160,36 @@ SECTIONS
     PROVIDE_HIDDEN (__pg_resetdata_start = .);
     KEEP (*(.pg_resetdata))
     PROVIDE_HIDDEN (__pg_resetdata_end = .);
+    /* Sets the LMA of .data; ld does not align an AT> LMA on its own. */
+    . = ALIGN(4);
   } >FLASH1
 
-  /* used by the startup to initialize data */
+  /* The reset handler copies this whole image from Flash to AXI SRAM. */
   _sidata = LOADADDR(.data);
 
-  /* Initialized data sections goes into RAM, load LMA copy after code */
   .data :
   {
     . = ALIGN(4);
-    _sdata = .;        /* create a global symbol at data start */
-    *(.data)           /* .data sections */
-    *(.data*)          /* .data* sections */
+    _sdata = .;
+
+    *(.text)
+    *(.text*)
+    *(.rodata)
+    *(.rodata*)
+    *(.glue_7)
+    *(.glue_7t)
+    *(.eh_frame)
+
+    KEEP(*(.init))
+    KEEP(*(.fini))
+
+    *(.data)
+    *(.data*)
 
     . = ALIGN(4);
-    _edata = .;        /* define a global symbol at data end */
-  } >RAM AT> MOVABLE_FLASH
-
-  /* Uninitialized data section */
-  . = ALIGN(4);
-  .bss (NOLOAD) :
-  {
-    /* This is used by the startup in order to initialize the .bss secion */
-    _sbss = .;         /* define a global symbol at bss start */
-    __bss_start__ = _sbss;
-    *(.bss)
-    *(SORT_BY_ALIGNMENT(.bss*))
-    *(COMMON)
-
-    . = ALIGN(4);
-    _ebss = .;         /* define a global symbol at bss end */
-    __bss_end__ = _ebss;
-  } >RAM
+    _edata = .;
+    _etext = .;
+  } >RAM AT> FLASH1
 
   /* Uninitialized data section */
   . = ALIGN(4);
@@ -231,9 +249,13 @@ SECTIONS
     _edmaram_data = .;        /* define a global symbol at data end */
   } >RAM AT >FLASH1
 
-  . = ALIGN(32);
-  .dmaram_bss (NOLOAD) :
+  /* Keep every zero-initialized AXI section inside [_sbss, _ebss). */
+  .bss (NOLOAD) :
   {
+    . = ALIGN(32);
+    _sbss = .;
+    __bss_start__ = _sbss;
+
     _sdmaram_bss = .;
     __dmaram_bss_start__ = _sdmaram_bss;
     *(.dmaram_bss)
@@ -241,15 +263,30 @@ SECTIONS
     . = ALIGN(32);
     _edmaram_bss = .;
     __dmaram_bss_end__ = _edmaram_bss;
-  } >RAM
 
-  . = ALIGN(32);
-  .DMA_RAM (NOLOAD) :
-  {
+    . = ALIGN(32);
     KEEP(*(.DMA_RAM))
     PROVIDE(dmaram_end = .);
     _edmaram = .;
     _dmaram_end__ = _edmaram;
+
+    . = ALIGN(4);
+    *(.bss)
+    *(SORT_BY_ALIGNMENT(.bss*))
+    *(COMMON)
+
+    . = ALIGN(32);
+    PROVIDE(dmarwaxi_start = .);
+    _sdmarwaxi = .;
+    _dmarwaxi_start__ = _sdmarwaxi;
+    KEEP(*(.DMA_RW_AXI))
+    PROVIDE(dmarwaxi_end = .);
+    _edmarwaxi = .;
+    _dmarwaxi_end__ = _edmarwaxi;
+
+    . = ALIGN(4);
+    _ebss = .;
+    __bss_end__ = _ebss;
   } >RAM
 
   .DMA_RW_D2 (NOLOAD) :
@@ -263,18 +300,6 @@ SECTIONS
     _edmarw = .;
     _dmarw_end__ = _edmarw;
   } >SRAM0_1
-
-  .DMA_RW_AXI (NOLOAD) :
-  {
-    . = ALIGN(32);
-    PROVIDE(dmarwaxi_start = .);
-    _sdmarwaxi = .;
-    _dmarwaxi_start__ = _sdmarwaxi;
-    KEEP(*(.DMA_RW_AXI))
-    PROVIDE(dmarwaxi_end = .);
-    _edmarwaxi = .;
-    _dmarwaxi_end__ = _edmarwaxi;
-  } >RAM
 
   .persistent_data (NOLOAD) :
   {
@@ -317,5 +342,5 @@ SECTIONS
     libnosys.a ( * )
   }
 
-  .ARM.attributes 0 : { *(.ARM.attributes) }
+    .ARM.attributes 0 : { *(.ARM.attributes) }
 }

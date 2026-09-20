@@ -120,9 +120,22 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16
 
 ifeq ($(TARGET_MCU),GD32H757VI)
 DEVICE_FLAGS       += -DGD32H757 -DGD32H7XXV
-DEFAULT_LD_SCRIPT  = $(LINKER_DIR)/gd32h757xi_flash.ld
 STARTUP_SRC        = GD32/startup/startup_gd32h757.S
 MCU_FLASH_SIZE     := 2048
+
+# Linker script layout
+#   GD32_LRUN=yes (default) - image stored in flash, copied to AXI SRAM by Reset_Handler
+#   GD32_LRUN=no            - code executes in place from internal flash
+GD32_LRUN ?= yes
+ifeq ($(filter $(GD32_LRUN),yes no),)
+$(error GD32_LRUN must be 'yes' or 'no', got '$(GD32_LRUN)')
+endif
+ifeq ($(GD32_LRUN),yes)
+DEFAULT_LD_SCRIPT  = $(LINKER_DIR)/gd32_h757xi_lrun.ld
+DEVICE_FLAGS       += -DGD32H7_LRUN_BUILD
+else
+DEFAULT_LD_SCRIPT  = $(LINKER_DIR)/gd32_h757xi_flash.ld
+endif
 else
 $(error Unknown MCU for H7 target)
 endif
