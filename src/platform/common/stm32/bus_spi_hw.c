@@ -188,6 +188,25 @@ void spiInitBusDMA(void)
             continue;
         }
 
+#if defined(STM32N6)
+        // SPI DMA is not implemented on the N6: spiInternalInitStream() has an
+        // explicit "GPDMA uses a completely different LL_DMA API; SPI DMA not
+        // yet supported" stub for this family. Allocating the channels anyway
+        // sets bus->useDMA, so spiUseDMA() returns true and callers select a
+        // DMA path that is never programmed.
+        //
+        // For the gyro this is fatal rather than merely slow. mpuGyroInit()
+        // picks GYRO_EXTI_INT_DMA, the first data-ready interrupt starts a
+        // transfer that never completes, INT_STATUS is therefore never read,
+        // the sensor holds its interrupt line asserted and no further edge is
+        // produced. Measured on an STM32N657 board: detectedEXTI frozen at
+        // 151357, gyroADCRaw stuck at (0,0,0), and not one byte of gyroDev
+        // changing over 0.7 s.
+        //
+        // Leave the bus in polled mode until the GPDMA path exists.
+        continue;
+#endif
+
         dmaIdentifier_e dmaTxIdentifier = DMA_NONE;
         dmaIdentifier_e dmaRxIdentifier = DMA_NONE;
 

@@ -47,6 +47,13 @@ void altHoldInit(void)
 {
 }
 
+// Wing alt hold has no configured climb rate: a leg that does not state one is bounded by its
+// cruise speed instead.
+float altHoldGetClimbRateCmS(void)
+{
+    return 0.0f;
+}
+
 bool altHoldUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 {
     UNUSED(currentTimeUs);

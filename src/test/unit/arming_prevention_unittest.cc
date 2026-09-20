@@ -1074,6 +1074,7 @@ extern "C" {
     void warningLedUpdate(void) {}
     void beeper(beeperMode_e) {}
     void beeperConfirmationBeeps(uint8_t) {}
+    void tasksUpdateModeGatedEnables(void) {}
     void beeperWarningBeeps(uint8_t) {}
     void beeperSilence(void) {}
     void systemBeep(bool) {}
