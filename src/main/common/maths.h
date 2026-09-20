@@ -36,12 +36,19 @@
 #define M_EULERf    2.71828182845904523536f
 #define INV_PIO2    (2.0f / M_PIf)
 
+// Guarded double precision PI constant
+#ifndef M_PI
+#define M_PI        3.14159265358979323846
+#endif
+
 #define RAD    (M_PIf / 180.0f)
+#define RAD_D  (M_PI / 180.0)
 #define DEGREES_TO_DECIDEGREES(angle) ((angle) * 10)
 #define DECIDEGREES_TO_DEGREES(angle) ((angle) / 10)
 #define DECIDEGREES_TO_RADIANS(angle) ((angle) / 10.0f * 0.0174532925f)
 #define DEGREES_TO_RADIANS(angle) ((angle) * RAD)
 #define RADIANS_TO_DEGREES(angle) ((angle) / RAD)
+#define RADIANS_TO_DEGREES_D(angle) ((angle) / RAD_D)
 
 #define CM_S_TO_KM_H(centimetersPerSecond) ((centimetersPerSecond) * 36 / 1000)
 #define CM_S_TO_MPH(centimetersPerSecond) ((centimetersPerSecond) * 10000 / 5080 / 88)
