@@ -27,6 +27,13 @@
 #define ALTHOLD_TASK_RATE_HZ 100         // hz
 
 void altHoldInit(void);
+
+// The configured rate a climb or descent runs at when it does not state its own (cm/s).
+float altHoldGetClimbRateCmS(void);
+
+// Command an emergency descent at rateCmS; alt hold owns the throttle while it runs.
+void altHoldSetEmergencyDescent(bool active, float rateCmS);
+
 bool altHoldUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
 void updateAltHold(timeUs_t currentTimeUs);
 bool isAltHoldActive(void);

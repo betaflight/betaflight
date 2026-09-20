@@ -237,9 +237,26 @@ void memProtConfigure(mpuRegion_t *regions, unsigned regionCount)
                 msbpos += 1;
             }
 
+            // PMSAv7 requires the region base to be aligned to the region size: the MPU
+            // ignores base-address bits below the region size, so an unaligned base
+            // silently snaps down and the tail of the region is left uncovered. E.g. a
+            // 32KB region based at an unaligned dmaram_start protects only the enclosing
+            // aligned 32KB window; DMA buffers linked past its end stay cacheable with no
+            // cache maintenance (bus_spi skips it inside dmaram), corrupting SD writes.
+            // Align the base down and grow the size until the region covers region->end.
+            uint32_t regionBytes = 1U << msbpos;
+            uint32_t alignedStart = start & ~(regionBytes - 1);
+
+            while (alignedStart + regionBytes < region->end) {
+                msbpos += 1;
+                regionBytes <<= 1;
+                alignedStart = start & ~(regionBytes - 1);
+            }
+
             // RASR SIZE field encoding: region_bytes = 2^(SIZE+1), so SIZE = msbpos - 1.
             // msbpos is the exponent such that 2^msbpos >= length (ceil of log2).
             // Writing msbpos directly would configure a region twice as large as needed.
+            mpu_init_struct.region_base_address = alignedStart;
             mpu_init_struct.region_size = msbpos - 1;
         }
 

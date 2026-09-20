@@ -19,6 +19,10 @@ _estack = ORIGIN(STACKRAM) + LENGTH(STACKRAM) - _Hot_Reboot_Flags_Size;    /* en
 __config_start = ORIGIN(FLASH_CONFIG);
 __config_end = ORIGIN(FLASH_CONFIG) + LENGTH(FLASH_CONFIG);
 
+/* Bounds of the AXI SRAM. */
+_sram_axi_start = ORIGIN(RAM);
+_sram_axi_end = ORIGIN(RAM) + LENGTH(RAM);
+
 /* Generate a link error if heap and stack don't fit into RAM */
 _Min_Heap_Size  = 0x200;     /* required amount of heap  */
 _Min_Stack_Size = 0x800;     /* required amount of stack */

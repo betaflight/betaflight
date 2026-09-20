@@ -21,21 +21,31 @@
 
 #include "platform.h"
 
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-#include "pg/flight_plan.h"
+#include "launch_wing.h"
 
-#include "pg/flight_plan.h"
+PG_REGISTER_WITH_RESET_TEMPLATE(launchWingConfig_t, launchWingConfig, PG_LAUNCH_WING_CONFIG, 0);
 
-#if ENABLE_FLIGHT_PLAN
-
-PG_REGISTER_WITH_RESET_TEMPLATE(flightPlanConfig_t, flightPlanConfig, PG_FLIGHT_PLAN_CONFIG, 2);
-
-PG_RESET_TEMPLATE(flightPlanConfig_t, flightPlanConfig,
-    .waypointCount = 0,
-    .waypoints = { { 0 } }
+PG_RESET_TEMPLATE(launchWingConfig_t, launchWingConfig,
+    .climbAngleDeg = 18,
+    .maxAngleDeg = 45,
+    .detectAccelDecig = 19,
+    .detectVelocityCmS = 300,
+    .detectTimeMs = 40,
+    .idleThrottlePercent = 5,
+    .idleDelayMs = 0,
+    .throttlePercent = 80,
+    .motorDelayMs = 500,
+    .spinupTimeMs = 100,
+    .minTimeMs = 0,
+    .timeoutMs = 5000,
+    .maxAltitudeM = 0,
+    .endTimeMs = 3000,
+    .abortDeadbandPercent = 20,
 );
 
-#endif // ENABLE_FLIGHT_PLAN
-
+#endif

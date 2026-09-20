@@ -194,6 +194,17 @@ common_filter_unittest_SRC := \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c
 
+debug_annotations_unittest_SRC := \
+		$(USER_DIR)/build/debug.c
+
+dyn_notch_filter_unittest_SRC := \
+        $(USER_DIR)/flight/dyn_notch_filter.c \
+        $(USER_DIR)/common/filter.c \
+        $(USER_DIR)/common/maths.c \
+        $(USER_DIR)/common/sdft.c
+
+dyn_notch_filter_unittest_DEFINES := \
+        USE_DYN_NOTCH_FILTER=
 
 encoding_unittest_SRC := \
 		$(USER_DIR)/common/encoding.c
@@ -629,6 +640,21 @@ poshold_unittest_SRC := \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/pg/rx.c
 
+launch_wing_unittest_SRC := \
+		$(USER_DIR)/flight/launch_wing.c \
+		$(USER_DIR)/pg/launch_wing.c \
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
+
+launch_wing_unittest_DEFINES := \
+		USE_WING= \
+		USE_LAUNCH_WING= \
+		USE_GPS= \
+		USE_ACC=
+
 position_estimator_unittest_SRC := \
 		$(USER_DIR)/flight/position_estimator.c \
 		$(USER_DIR)/flight/position_filter.c \
@@ -658,6 +684,7 @@ flight_plan_nav_unittest_DEFINES := \
 		USE_GPS= \
 		USE_GPS_RESCUE= \
 		USE_FLIGHT_PLAN= \
+		USE_ALTITUDE_HOLD= \
 		ENABLE_FLIGHT_PLAN=1
 
 flight_plan_capture_unittest_SRC := \
@@ -683,6 +710,7 @@ flight_plan_rescue_unittest_DEFINES := \
 		USE_GPS= \
 		USE_GPS_RESCUE= \
 		USE_FLIGHT_PLAN= \
+		USE_ALTITUDE_HOLD= \
 		ENABLE_FLIGHT_PLAN=1 \
 		ENABLE_RESCUE_PLAN=1
 

@@ -16,6 +16,8 @@
 .word  _esram2
 .word  __fastram_bss_start__
 .word  __fastram_bss_end__
+.word  _sram_axi_start
+.word  _sram_axi_end
 
   .section  .text.Reset_Handler
   .weak  Reset_Handler
@@ -23,29 +25,30 @@
 
 /* reset Handler */
 Reset_Handler:
-    LDR     r1, =0x24000000
-    LDR     r2, =0x80000  /* 512K AXI SRAM */
-    MOV     r0, #0x00
-SRAM_INIT:
-	STM     r1!, {r0}
-	SUBS    r2, r2, #4
-	CMP     r2, #0x00
-	BNE     SRAM_INIT
+  ldr   r1, =_sram_axi_start
+  ldr   r2, =_sram_axi_end
+  movs  r0, #0
 
-  movs r1, #0
+SRAM_INIT:
+  str   r0, [r1], #4
+  cmp   r1, r2
+  bcc   SRAM_INIT
+
+/* Copy the data segment initializers from flash to SRAM */
+  ldr r0, =_sdata
+  ldr r1, =_edata
+  ldr r2, =_sidata
+  movs r3, #0
   b DataInit
 
 CopyData:
-  ldr r3, =_sidata
-  ldr r3, [r3, r1]
-  str r3, [r0, r1]
-  adds r1, r1, #4
+  ldr r4, [r2, r3]
+  str r4, [r0, r3]
+  adds r3, r3, #4
 
 DataInit:
-  ldr r0, =_sdata
-  ldr r3, =_edata
-  adds r2, r0, r1
-  cmp r2, r3
+  adds r4, r0, r3
+  cmp r4, r1
   bcc CopyData
   ldr r2, =_sbss
   b Zerobss
