@@ -46,6 +46,7 @@
 
 #if defined(STM32G4)
 #include "stm32g4xx_ll_lpuart.h"
+#include "stm32g4xx_ll_rcc.h"
 #endif
 
 static bool uartCanTx(const uartPort_t *uartPort)
@@ -80,38 +81,95 @@ static void uartConfigurePinSwap(uartPort_t *uartPort)
 #endif
 
 #if defined(STM32G4)
-// ST's LL_USART_Init() only knows USART1-3 and UART4-5. For LPUART1 it finds no peripheral
-// clock, never writes BRR and returns ERROR, which leaves the port disabled. LPUART also has a
-// different baud rate divider (BRR = 256 * fck / baud), so it needs LL_LPUART_Init().
+typedef struct lpuartPrescaler_s {
+    uint32_t setting;
+    uint32_t divisor;
+} lpuartPrescaler_t;
+
+// DIV8 is the prescaler the old HAL driver always used. The larger ones extend the usable range down to low
+// baud rates, which are out of range for a kernel clock of about 168 MHz.
+static const lpuartPrescaler_t lpuartPrescalers[] = {
+    { LL_LPUART_PRESCALER_DIV8, 8 },
+    { LL_LPUART_PRESCALER_DIV10, 10 },
+    { LL_LPUART_PRESCALER_DIV12, 12 },
+    { LL_LPUART_PRESCALER_DIV16, 16 },
+    { LL_LPUART_PRESCALER_DIV32, 32 },
+    { LL_LPUART_PRESCALER_DIV64, 64 },
+    { LL_LPUART_PRESCALER_DIV128, 128 },
+    { LL_LPUART_PRESCALER_DIV256, 256 },
+};
+
+// The LPUART BRR register must hold a value in this range (RM0440)
+static const uint32_t lpuartBrrMin = 0x300;
+static const uint32_t lpuartBrrMax = 0xFFFFF;
+
+/*
+ * Select the first prescaler that puts the LPUART baud rate divider (BRR = 256 * fck / baud) inside the range
+ * the hardware accepts. LL_LPUART_Init() does not check this and would silently program a wrong baud rate.
+ * Returns false if no prescaler fits.
+ */
+static bool lpuartSelectPrescaler(uint32_t baudRate, uint32_t *prescaler)
+{
+    const uint32_t kernelClock = LL_RCC_GetLPUARTClockFreq(LL_RCC_LPUART1_CLKSOURCE);
+    bool found = false;
+
+    if (kernelClock != LL_RCC_PERIPH_FREQUENCY_NO && baudRate != 0) {
+        for (unsigned int i = 0; i < ARRAYLEN(lpuartPrescalers) && !found; i++) {
+            const uint64_t prescaledClock = kernelClock / lpuartPrescalers[i].divisor;
+            const uint64_t brr = (prescaledClock * 256 + baudRate / 2) / baudRate;
+
+            if (brr >= lpuartBrrMin && brr <= lpuartBrrMax) {
+                *prescaler = lpuartPrescalers[i].setting;
+                found = true;
+            }
+        }
+    }
+
+    return found;
+}
+
+/*
+ * Initialise LPUART1. ST's LL_USART_Init() only knows USART1-3 and UART4-5. For LPUART1 it finds no peripheral
+ * clock, never writes BRR and returns ERROR, which leaves the port disabled. LPUART also has a different baud
+ * rate divider, so it needs LL_LPUART_Init(). Returns ERROR if the baud rate cannot be set.
+ */
 static ErrorStatus uartInitLpuart(USART_TypeDef *USARTx, const uartPort_t *uartPort, bool canTx)
 {
     LL_LPUART_InitTypeDef init;
+    ErrorStatus status = ERROR;
+
     LL_LPUART_StructInit(&init);
 
-    // fck must be within [3, 4096] x baud. With the kernel clock at PCLK1 (~168 MHz) low bauds such
-    // as 9600 fall outside that range, so prescale it.
-    init.PrescalerValue = LL_LPUART_PRESCALER_DIV8;
-    init.BaudRate = uartPort->port.baudRate;
-    init.DataWidth = (uartPort->port.options & SERIAL_PARITY_EVEN) ? LL_LPUART_DATAWIDTH_9B : LL_LPUART_DATAWIDTH_8B;
-    init.StopBits = (uartPort->port.options & SERIAL_STOPBITS_2) ? LL_LPUART_STOPBITS_2 : LL_LPUART_STOPBITS_1;
-    init.Parity = (uartPort->port.options & SERIAL_PARITY_EVEN) ? LL_LPUART_PARITY_EVEN : LL_LPUART_PARITY_NONE;
-    init.HardwareFlowControl = LL_LPUART_HWCONTROL_NONE;
+    if (lpuartSelectPrescaler(uartPort->port.baudRate, &init.PrescalerValue)) {
+        const portOptions_e options = uartPort->port.options;
 
-    uint32_t direction = 0;
-    if (uartPort->port.mode & MODE_RX) {
-        direction |= LL_LPUART_DIRECTION_RX;
-    }
-    if (canTx) {
-        direction |= LL_LPUART_DIRECTION_TX;
-    }
-    init.TransferDirection = direction;
+        init.BaudRate = uartPort->port.baudRate;
+        init.DataWidth = (options & SERIAL_PARITY_EVEN) ? LL_LPUART_DATAWIDTH_9B : LL_LPUART_DATAWIDTH_8B;
+        init.StopBits = (options & SERIAL_STOPBITS_2) ? LL_LPUART_STOPBITS_2 : LL_LPUART_STOPBITS_1;
+        init.Parity = (options & SERIAL_PARITY_EVEN) ? LL_LPUART_PARITY_EVEN : LL_LPUART_PARITY_NONE;
+        init.HardwareFlowControl = LL_LPUART_HWCONTROL_NONE;
 
-    return LL_LPUART_Init(USARTx, &init);
+        uint32_t direction = 0;
+        if (uartPort->port.mode & MODE_RX) {
+            direction |= LL_LPUART_DIRECTION_RX;
+        }
+        if (canTx) {
+            direction |= LL_LPUART_DIRECTION_TX;
+        }
+        init.TransferDirection = direction;
+
+        status = LL_LPUART_Init(USARTx, &init);
+    }
+
+    return status;
 }
 #endif
 
 // XXX uartReconfigure does not handle resource management properly.
 
+/*
+ * Configure the UART peripheral from the port's baud rate, options and mode, then enable it.
+ */
 void uartReconfigure(uartPort_t *uartPort)
 {
     USART_TypeDef *USARTx = (USART_TypeDef *)uartPort->USARTx;
