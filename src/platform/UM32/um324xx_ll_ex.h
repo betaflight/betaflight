@@ -23,7 +23,7 @@
 #include "um324xx.h"
 #include "um324xx_ll_dma.h"
 #include "common/utils.h"
-
+#include <stdbool.h>
 
 
 #define DMA_CHANNEL_MASK 0xFFFFU
@@ -74,12 +74,21 @@ __STATIC_INLINE uint32_t LL_EX_DMA_DeInit(DMA_Stream_TypeDef *DMAx_Channely)
     return LL_DMA_DeInit(DMAx, Channel);
 }
 
+__STATIC_INLINE bool LL_EX_DMA_IsResourceEn(DMA_Stream_TypeDef *DMAx_Channely)
+{
+    DMA_TypeDef *DMAx = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);
+    const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
+
+    return (READ_REG(DMAx->CHENREG) & (DMA_CHENREG_CH_EN_0 << Channel)) != 0;
+}
+
 __STATIC_INLINE void LL_EX_DMA_EnableResource(DMA_Stream_TypeDef *DMAx_Channely)
 {
     DMA_TypeDef *DMAx = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);
     const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
 
-    WRITE_REG(DMAx->CHENREG, ((DMA_CHENREG_CH_EN_WE_0 << Channel) | (DMA_CHENREG_CH_EN_0 << Channel))); __NOP();
+    WRITE_REG(DMAx->CHENREG, ((DMA_CHENREG_CH_EN_WE_0 << Channel) | (DMA_CHENREG_CH_EN_0 << Channel))); 
+    __NOP();
 }
 
 __STATIC_INLINE void LL_EX_DMA_DisableResource(DMA_Stream_TypeDef *DMAx_Channely)
@@ -87,7 +96,10 @@ __STATIC_INLINE void LL_EX_DMA_DisableResource(DMA_Stream_TypeDef *DMAx_Channely
     DMA_TypeDef *DMAx = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);
     const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
 
-    WRITE_REG(DMAx->CHENREG, (DMA_CHENREG_CH_EN_WE_0 << Channel)); __NOP();
+    WRITE_REG(DMAx->CHENREG, (DMA_CHENREG_CH_EN_WE_0 << Channel)); 
+    while(READ_REG(DMAx->CHENREG) & (DMA_CHENREG_CH_EN_0 << Channel)){
+        __NOP();
+    }
 }
 
 __STATIC_INLINE void LL_EX_DMA_EnableIT_TC(DMA_Stream_TypeDef *DMAx_Channely)
@@ -103,7 +115,10 @@ __STATIC_INLINE void LL_EX_DMA_SetDataLength(DMA_Stream_TypeDef* DMAx_Channely, 
     DMA_TypeDef *DMAx = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);
     const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
 
-    DMAx->CHENREG = (DMA_CHENREG_CH_EN_WE_0 << Channel); __NOP();
+    DMAx->CHENREG = (DMA_CHENREG_CH_EN_WE_0 << Channel);
+    while(READ_REG(DMAx->CHENREG) & (DMA_CHENREG_CH_EN_0 << Channel)){
+        __NOP();
+    }
     WRITE_REG(((DMA_Stream_TypeDef*)((uint32_t)((uint32_t)DMAx + STREAM_OFFSET_TAB[Channel])))->CTLH, NbData);
 }
 
@@ -121,6 +136,7 @@ __STATIC_INLINE void LL_EX_DMA_SetSrcAddress(DMA_Stream_TypeDef* DMAx_Channely, 
     DMA_TypeDef *DMAx = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);
     const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
 
-    DMAx->CHENREG = (DMA_CHENREG_CH_EN_WE_0 << Channel); __NOP();
+    DMAx->CHENREG = (DMA_CHENREG_CH_EN_WE_0 << Channel); 
+    __NOP();
     DMAx_Channely->SAR = SrcAddress;
 }

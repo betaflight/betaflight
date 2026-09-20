@@ -146,8 +146,7 @@ bool ws2811LedStripHardwareInit(void)
     __HAL_LINKDMA(&TimHandle, hdma[dmaIndex], hdma_tim);
 
     dmaEnable(dmaGetIdentifier(dmaSpec->ref));
-    // dmaSetHandler(dmaGetIdentifier(dmaSpec->ref), WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, dmaIndex);
-    dmaSetHandler(dmaGetIdentifier(dmaSpec->ref), WS2811_DMA_IRQHandler, NVIC_BUILD_PRIORITY(3, 3), dmaIndex);
+    dmaSetHandler(dmaGetIdentifier(dmaSpec->ref), WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, dmaIndex);
 
     /* Initialize TIMx DMA handle */
     if (HAL_DMA_Init(TimHandle.hdma[dmaIndex]) != HAL_OK) {

@@ -62,9 +62,6 @@ static void enableRxIrq(const uartHardware_t *hardware)
 {
 #if defined(USE_HAL_DRIVER)
         HAL_NVIC_SetPriority(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
-#if defined(UM324xF)
-        HAL_NVIC_SetPriority(hardware->irqn, 3, 2);
-#endif
         HAL_NVIC_EnableIRQ(hardware->irqn);
 #elif defined(STM32F4)
         NVIC_InitTypeDef NVIC_InitStructure;

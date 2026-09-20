@@ -438,8 +438,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     } else
 #endif
     {
-        // dmaSetHandler(dmaIdentifier, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, motor->index);
-        dmaSetHandler(dmaIdentifier, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 0), motor->index);
+        dmaSetHandler(dmaIdentifier, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, motor->index);
     }
 
     LL_TIM_OC_Init(timer, channel, &OCINIT);

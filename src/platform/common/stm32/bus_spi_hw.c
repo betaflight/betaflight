@@ -267,11 +267,7 @@ void spiInitBusDMA(void)
             /* Note that this driver may be called both from the normal thread of execution, or from USB interrupt
              * handlers, so the DMA completion interrupt must be at a higher priority
              */
-#if defined(UM324xF)
-            dmaSetHandler(dmaRxIdentifier, spiRxIrqHandler, NVIC_BUILD_PRIORITY(2, 0), 0);
-#else
             dmaSetHandler(dmaRxIdentifier, spiRxIrqHandler, NVIC_PRIO_SPI_DMA, 0);
-#endif
 
             bus->useDMA = true;
 #ifdef USE_TX_IRQ_HANDLER
@@ -285,11 +281,7 @@ void spiInitBusDMA(void)
 
             spiInternalResetDescriptors(bus);
 
-#if defined(UM324xF)
-            dmaSetHandler(dmaTxIdentifier, spiTxIrqHandler, NVIC_BUILD_PRIORITY(2, 0), 0);
-#else
             dmaSetHandler(dmaTxIdentifier, spiTxIrqHandler, NVIC_PRIO_SPI_DMA, 0);
-#endif
 
             bus->useDMA = true;
 #endif
