@@ -595,11 +595,31 @@ void findCalls(const std::string &file, const std::vector<SourceLine> &lines, st
     }
 }
 
+// The number an index argument names, or "" when the scan cannot tell. A
+// literal is itself; a name is resolved only where the tree agrees on one
+// value for it, so that debug[3] and debug[DEBUG_ESC_DATA_AGE] are one field
+// and not two.
+std::string resolvedIndex(const std::string &argument, const std::map<std::string, std::set<int> > &constants)
+{
+    const std::string index = trim(argument);
+    if (isUnsignedInteger(index)) {
+        return index;
+    }
+    const std::map<std::string, std::set<int> >::const_iterator found = constants.find(index);
+    if (found == constants.end() || found->second.size() != 1) {
+        return "";
+    }
+    std::ostringstream value;
+    value << *found->second.begin();
+    return value.str();
+}
+
 // What a call records about each debug[n] it writes: the annotation with its
 // index spec taken off, and its one {a|b|c} group resolved to the name for that
 // index, paired with the index it describes. The shape stays in, so two calls
 // that agree on a label but not on its unit still read as two meanings.
-std::vector<std::pair<std::string, std::string> > meaningsOf(const CallSite &call, const std::string &annotation)
+std::vector<std::pair<std::string, std::string> > meaningsOf(const CallSite &call, const std::string &annotation,
+                                                             const std::map<std::string, std::set<int> > &constants)
 {
     std::vector<std::pair<std::string, std::string> > meanings;
     std::string text = trim(annotation);
@@ -617,7 +637,8 @@ std::vector<std::pair<std::string, std::string> > meaningsOf(const CallSite &cal
         }
         text = trim(text.substr(close + 1));
     } else {
-        indices.push_back(trim(call.indexArg));
+        const std::string index = resolvedIndex(call.indexArg, constants);
+        indices.push_back(index.empty() ? trim(call.indexArg) : index);
     }
 
     const size_t open = text.find('{');
@@ -635,6 +656,93 @@ std::vector<std::pair<std::string, std::string> > meaningsOf(const CallSite &cal
         meanings.push_back(std::make_pair(indices[i], trim(meaning)));
     }
     return meanings;
+}
+
+// The members of one enum body, numbered the way the compiler numbers them.
+void addEnumerators(const std::string &body, std::map<std::string, std::set<int> > *values)
+{
+    const std::vector<std::string> members = split(body, ',');
+    int next = 0;
+
+    for (size_t i = 0; i < members.size(); i++) {
+        const std::string member = trim(members[i]);
+        if (member.empty()) {
+            continue;
+        }
+        const size_t equals = member.find('=');
+        const std::string name = trim(member.substr(0, equals));
+        if (equals != std::string::npos) {
+            const std::string value = trim(member.substr(equals + 1));
+            if (!isUnsignedInteger(value)) {
+                // The values after an expression are the compiler's to work
+                // out, so stop rather than record a wrong one.
+                return;
+            }
+            next = atoi(value.c_str());
+        }
+        bool isIdentifier = !name.empty() && !isdigit((unsigned char)name[0]);
+        for (size_t c = 0; c < name.size(); c++) {
+            isIdentifier = isIdentifier && isIdentifierChar(name[c]);
+        }
+        if (!isIdentifier) {
+            return;
+        }
+        (*values)[name].insert(next);
+        next++;
+    }
+}
+
+// The integer constants a file defines, so an index written as a name can be
+// grouped with the same index written as a number. Two forms cover every index
+// constant in the tree: `#define NAME <int>`, and a plain enum member with an
+// optional `= <int>`. A member whose value is an expression leaves the rest of
+// its enum unresolved rather than guessed at, and so does a name the tree
+// defines twice with different values.
+void findIndexConstants(const std::vector<SourceLine> &lines, std::map<std::string, std::set<int> > *values)
+{
+    int depth = 0;
+    int enumDepth = -1;
+    std::string body;
+
+    for (size_t line = 0; line < lines.size(); line++) {
+        const std::string &code = lines[line].code;
+
+        const std::string text = trim(code);
+        if (enumDepth < 0 && startsWith(text, "#define")) {
+            std::istringstream stream(text.substr(strlen("#define")));
+            std::string name, value, extra;
+            if ((stream >> name >> value) && !(stream >> extra) && isUnsignedInteger(value)) {
+                (*values)[name].insert(atoi(value.c_str()));
+            }
+            continue;
+        }
+        if (enumDepth < 0 && text.find("enum") != std::string::npos) {
+            enumDepth = depth;
+        }
+
+        for (size_t i = 0; i < code.size(); i++) {
+            const char c = code[i];
+            if (c == '{') {
+                depth++;
+                continue;
+            }
+            if (c == '}') {
+                depth--;
+                if (enumDepth >= 0 && depth == enumDepth) {
+                    addEnumerators(body, values);
+                    body.clear();
+                    enumDepth = -1;
+                }
+                continue;
+            }
+            if (enumDepth >= 0 && depth == enumDepth + 1) {
+                body += c;
+            }
+        }
+        if (enumDepth >= 0 && depth == enumDepth + 1) {
+            body += ' ';
+        }
+    }
 }
 
 // The headers a file includes by name, which is how an [enum:...] type reaches
@@ -799,6 +907,11 @@ public:
 
             findIncludes(lines, &includesIn[files[i]]);
 
+            // An index written as a name is only groupable once it is a
+            // number, and a name is defined in the file or a header it pulls
+            // in, so gather them from the whole tree.
+            findIndexConstants(lines, &indexConstants);
+
             // The enums the file defines, so an [enum:...] can be checked
             // against the ones its call site can actually see.
             findEnumTypes(lines, &enumsIn[files[i]]);
@@ -866,6 +979,7 @@ public:
     static std::map<std::string, std::vector<std::string> > includesIn;
     static std::map<std::string, std::set<std::string> > enumsIn;
     static std::map<std::string, std::string> enumDefinedIn;
+    static std::map<std::string, std::set<int> > indexConstants;
 };
 
 std::string DebugAnnotations::sourceRoot;
@@ -875,6 +989,7 @@ std::vector<DebugAnnotations::FieldKey> DebugAnnotations::strayAnnotations;
 std::map<std::string, std::vector<std::string> > DebugAnnotations::includesIn;
 std::map<std::string, std::set<std::string> > DebugAnnotations::enumsIn;
 std::map<std::string, std::string> DebugAnnotations::enumDefinedIn;
+std::map<std::string, std::set<int> > DebugAnnotations::indexConstants;
 
 } // namespace
 
@@ -1096,7 +1211,7 @@ TEST_F(DebugAnnotations, NoIndexIsGivenTwoMeanings)
         if (annotation.empty() || calls[i].modeArg.empty()) {
             continue;
         }
-        const std::vector<std::pair<std::string, std::string> > meanings = meaningsOf(calls[i], annotation);
+        const std::vector<std::pair<std::string, std::string> > meanings = meaningsOf(calls[i], annotation, indexConstants);
         for (size_t m = 0; m < meanings.size(); m++) {
             fields[Field(calls[i].modeArg, meanings[m].first)][meanings[m].second].push_back(calls[i]);
         }
@@ -1126,6 +1241,34 @@ TEST_F(DebugAnnotations, NoIndexIsGivenTwoMeanings)
                     << "or a debug mode, of its own.";
             }
         }
+    }
+}
+
+/*
+ * NoIndexIsGivenTwoMeanings can only group two calls as one field once it
+ * knows they write the same debug[n], and an index written as a name is only
+ * a number to the compiler. Where the scan cannot resolve one, that grouping
+ * silently splits in two and a clash between the halves goes unreported - so
+ * check the resolver reaches every name rather than trust that it does.
+ */
+
+TEST_F(DebugAnnotations, EveryNamedIndexResolvesToANumber)
+{
+    ASSERT_FALSE(sourceRoot.empty());
+
+    for (size_t i = 0; i < calls.size(); i++) {
+        const std::string index = trim(calls[i].indexArg);
+        if (index.empty() || isUnsignedInteger(index) || !isCompileTimeIndex(index)) {
+            continue;
+        }
+        if (!resolvedIndex(index, indexConstants).empty()) {
+            continue;
+        }
+        ADD_FAILURE_AT(displayPath(calls[i].file).c_str(), calls[i].endLine)
+            << "'" << index << "' is the index this call writes, and the scan cannot work out which "
+            << "debug[n] that is: it reads a '#define " << index << " <number>' and a plain enum member, "
+            << "and needs the tree to agree on one value. Until it resolves, a second call writing the "
+            << "same field by number would not be seen to clash with this one.";
     }
 }
 
