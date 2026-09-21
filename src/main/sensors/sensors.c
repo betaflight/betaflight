@@ -70,6 +70,7 @@ const char * const lookupTableGyroHardware[GYRO_HARDWARE_COUNT] = {
     [GYRO_ICM42686P] = "ICM42686P",
     [GYRO_ICM56686] = "ICM56686",
     [GYRO_BMI423] = "BMI423",
+    [GYRO_ASM330LHH] = "ASM330LHH",
     [GYRO_VIRTUAL] = "VIRTUAL"
 };
 
@@ -103,6 +104,7 @@ const char * const lookupTableAccHardware[ACC_HARDWARE_COUNT] = {
     [ACC_ICM42686P] = "ICM42686P",
     [ACC_ICM56686] = "ICM56686",
     [ACC_BMI423] = "BMI423",
+    [ACC_ASM330LHH] = "ASM330LHH",
     [ACC_VIRTUAL] = "VIRTUAL"
 };
 
