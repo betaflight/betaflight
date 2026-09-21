@@ -153,6 +153,7 @@
 #include "sensors/gyro_init.h"
 #include "sensors/rangefinder.h"
 #include "sensors/opticalflow.h"
+#include "sensors/pitot.h"
 
 #include "telemetry/msp_shared.h"
 #include "telemetry/telemetry.h"
@@ -1177,7 +1178,7 @@ RAM_CODE static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMS
 #else
         sbufWriteU16(dst, 0);
 #endif
-        sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_RANGEFINDER) << 4 | sensors(SENSOR_GYRO) << 5 | sensors(SENSOR_OPTICALFLOW) << 6);
+        sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_RANGEFINDER) << 4 | sensors(SENSOR_GYRO) << 5 | sensors(SENSOR_OPTICALFLOW) << 6 | sensors(SENSOR_PITOT) << 7);
         sbufWriteData(dst, &flightModeFlags, 4);        // unconditional part of flags, first 32 bits
         sbufWriteU8(dst, getCurrentPidProfileIndex());
         sbufWriteU16(dst, constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE));
@@ -1411,7 +1412,7 @@ case MSP_NAME:
         int16_t w = lrintf(imuAttitudeQuaternion.w * q_scale);
         int16_t x = lrintf(imuAttitudeQuaternion.x * q_scale);
         int16_t y = lrintf(imuAttitudeQuaternion.y * q_scale);
-        int16_t z = lrintf(imuAttitudeQuaternion.z * q_scale); 
+        int16_t z = lrintf(imuAttitudeQuaternion.z * q_scale);
         // Write their bit representation as uint16_t
         sbufWriteU16(dst, *(uint16_t*)&w);
         sbufWriteU16(dst, *(uint16_t*)&x);
@@ -1557,6 +1558,9 @@ case MSP_NAME:
 #else
         sbufWriteU8(dst, 0);
 #endif
+
+        // API 1.49
+        sbufWriteU16(dst, motorConfig()->kv);
         break;
 
 #ifdef USE_MAG
@@ -1781,7 +1785,10 @@ case MSP_NAME:
                 continue;
             };
             sbufWriteU8(dst, identifier);
-            sbufWriteU16(dst, serialSynthesizeFunctionMask(identifier));
+            // Assignments live on the feature PGs and are surfaced over the
+            // CLI; a zero mask here reads as unassigned on old configurators
+            // rather than a view they would try to edit.
+            sbufWriteU16(dst, 0);
             mspWritePortBaudRates(dst, identifier);
         }
         break;
@@ -1800,7 +1807,7 @@ case MSP_NAME:
                 continue;
             };
             sbufWriteU8(dst, identifier);
-            sbufWriteU32(dst, serialSynthesizeFunctionMask(identifier));
+            sbufWriteU32(dst, 0);
             mspWritePortBaudRates(dst, identifier);
         }
         break;
@@ -2171,6 +2178,12 @@ case MSP_NAME:
 #else
         sbufWriteU8(dst, OPTICALFLOW_NONE);
 #endif
+        // Added in MSP API 1.49
+#ifdef USE_PITOT
+        sbufWriteU8(dst, pitotConfig()->pitot_hardware);
+#else
+        sbufWriteU8(dst, PITOT_NONE);
+#endif
         break;
 
     // Added in MSP API 1.46
@@ -2205,6 +2218,11 @@ case MSP_NAME:
 #endif
 #ifdef USE_OPTICALFLOW
         sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_OPTICALFLOW]);
+#else
+        sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
+#endif
+#ifdef USE_PITOT
+        sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_PITOT]);
 #else
         sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
 #endif
@@ -2288,6 +2306,48 @@ case MSP_NAME:
         break;
     }
 #endif
+
+    case MSP_WING: {
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            sbufWriteU8(dst, currentPidProfile->pid[i].S);
+        }
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            sbufWriteU16(dst, currentPidProfile->spa_center[i]);
+        }
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            sbufWriteU16(dst, currentPidProfile->spa_width[i]);
+        }
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            sbufWriteU8(dst, currentPidProfile->spa_mode[i]);
+        }
+        sbufWriteU8(dst, currentPidProfile->tpa_curve_type);
+        sbufWriteU8(dst, currentPidProfile->tpa_curve_stall_throttle);
+        sbufWriteU16(dst, currentPidProfile->tpa_curve_pid_thr0);
+        sbufWriteU16(dst, currentPidProfile->tpa_curve_pid_thr100);
+        sbufWriteU8(dst, (uint8_t)currentPidProfile->tpa_curve_expo);
+        sbufWriteU8(dst, currentPidProfile->tpa_speed_type);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_basic_delay);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_basic_gravity);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_adv_prop_pitch);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_adv_mass);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_adv_drag_k);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_adv_thrust);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_max_voltage);
+        sbufWriteU16(dst, (uint16_t)currentPidProfile->tpa_speed_pitch_offset);
+        sbufWriteU8(dst, currentPidProfile->yaw_type);
+        sbufWriteU16(dst, (uint16_t)currentPidProfile->angle_pitch_offset);
+        break;
+    }
+
+    case MSP_PITOT:
+#if defined(USE_PITOT)
+        sbufWriteU32(dst, (uint32_t)(int32_t)pitot.airspeed);
+        sbufWriteU32(dst, (uint32_t)(int32_t)pitot.diffPressure);
+#else
+        sbufWriteU32(dst, 0);
+        sbufWriteU32(dst, 0);
+#endif
+        break;
 
     default:
         unsupportedCommand = true;
@@ -2760,7 +2820,6 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
 
             // get/response: return "name = value"
             // for set, this confirms the new value; for get, this returns the current value
-            char buf[len + 1];
             // extract just the name (before '=' if present)
             if (eq) {
                 // trim trailing spaces from name
@@ -2770,14 +2829,21 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
                 }
                 *nameEnd = '\0';
             }
-            const int written = cliGetSettingByName(cmdline, buf, len + 1);
-            if (written < 0 || written > (int)sbufBytesRemaining(dst)) {
+            // Format straight into the response buffer, sized by what the response
+            // can actually hold. This previously used a scratch buffer sized from
+            // the REQUEST length, which is never enough for a read: the reply is
+            // "name = value" and the request is only "name", so cliGetSettingByName
+            // always ran out of room and returned -1, and every get answered
+            // MSP_RESULT_ERROR. Writes happened to fit only because there the
+            // request carries the value too.
+            const int written = cliGetSettingByName(cmdline, (char *)sbufPtr(dst), (int)sbufBytesRemaining(dst));
+            if (written < 0) {
                 if (!eq) {
                     return MSP_RESULT_ERROR;
                 }
                 // set succeeded but echo failed; acknowledge the set
             } else {
-                sbufWriteData(dst, buf, written);
+                sbufAdvance(dst, written);
             }
         }
         break;
@@ -2989,12 +3055,6 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         }
         break;
 
-#if defined(USE_GPS) || defined(USE_MAG)
-    case MSP_SET_HEADING:
-        magHold = sbufReadU16(src);
-        break;
-#endif
-
     case MSP_SET_RAW_RC:
 #ifdef USE_RX_MSP
         {
@@ -3173,6 +3233,11 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 #else
             sbufReadU8(src);
 #endif
+        }
+
+        // version 1.49
+        if (sbufBytesRemaining(src) >= 2) {
+            motorConfigMutable()->kv = sbufReadU16(src);
         }
         break;
 
@@ -3664,6 +3729,13 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             sbufReadU8(src);
 #endif
         }
+        if (sbufBytesRemaining(src) >= 1) {
+#ifdef USE_PITOT
+            pitotConfigMutable()->pitot_hardware = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+#endif
+        }
         break;
 
 #ifdef USE_ACC
@@ -3719,7 +3791,8 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
             if (sbufBytesRemaining(src) >= 1) {
                 // sample_rate specified, so use it directly
-                blackboxConfigMutable()->sample_rate = sbufReadU8(src);
+                const uint8_t sampleRate = sbufReadU8(src);
+                blackboxConfigMutable()->sample_rate = MIN(sampleRate, (uint8_t)BLACKBOX_SAMPLE_RATE_MAX);
             } else {
                 // sample_rate not specified in MSP, so calculate it from old p_ratio
                 blackboxConfigMutable()->sample_rate = blackboxCalculateSampleRate(pRatio);
@@ -4487,6 +4560,46 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         profile->batteryCapacity = capacity;
         profile->forceBatteryCellCount = forceCellCount;
         profile->consumptionWarningPercentage = consumptionWarnPct;
+        break;
+    }
+
+    case MSP_SET_WING: {
+        const unsigned expectedSize =
+            (sizeof(uint8_t) * (2 * XYZ_AXIS_COUNT + 5)) +
+            (sizeof(uint16_t) * (2 * XYZ_AXIS_COUNT + 11));
+        if (sbufBytesRemaining(src) < (int)expectedSize) {
+            return MSP_RESULT_ERROR;
+        }
+
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            currentPidProfile->pid[i].S = sbufReadU8(src);
+        }
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            currentPidProfile->spa_center[i] = sbufReadU16(src);
+        }
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            currentPidProfile->spa_width[i] = sbufReadU16(src);
+        }
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            currentPidProfile->spa_mode[i] = sbufReadU8(src);
+        }
+        currentPidProfile->tpa_curve_type = sbufReadU8(src);
+        currentPidProfile->tpa_curve_stall_throttle = sbufReadU8(src);
+        currentPidProfile->tpa_curve_pid_thr0 = sbufReadU16(src);
+        currentPidProfile->tpa_curve_pid_thr100 = sbufReadU16(src);
+        currentPidProfile->tpa_curve_expo = (int8_t)sbufReadU8(src);
+        currentPidProfile->tpa_speed_type = sbufReadU8(src);
+        currentPidProfile->tpa_speed_basic_delay = sbufReadU16(src);
+        currentPidProfile->tpa_speed_basic_gravity = sbufReadU16(src);
+        currentPidProfile->tpa_speed_adv_prop_pitch = sbufReadU16(src);
+        currentPidProfile->tpa_speed_adv_mass = sbufReadU16(src);
+        currentPidProfile->tpa_speed_adv_drag_k = sbufReadU16(src);
+        currentPidProfile->tpa_speed_adv_thrust = sbufReadU16(src);
+        currentPidProfile->tpa_speed_max_voltage = sbufReadU16(src);
+        currentPidProfile->tpa_speed_pitch_offset = (int16_t)sbufReadU16(src);
+        currentPidProfile->yaw_type = sbufReadU8(src);
+        currentPidProfile->angle_pitch_offset = (int16_t)sbufReadU16(src);
+        pidInitConfig(currentPidProfile);
         break;
     }
 

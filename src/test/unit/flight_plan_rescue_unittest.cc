@@ -84,6 +84,15 @@ CapturedTarget g_lastTarget;
 int g_setTargetCalls;
 int g_clearTargetCalls;
 
+bool g_navHeadingOverrideValid;
+float g_navHeadingOverrideDeg;
+bool g_emergencyDescentActive;
+float g_emergencyDescentRateCmS;
+float g_altHoldClimbRateCmS;
+float g_lastVertRateMps;
+float g_lastVertStartAltM;
+int g_setVerticalProfileCalls;
+
 gpsLocation_t g_stubGpsOrigin;
 bool g_stubGpsOriginSet;
 
@@ -126,6 +135,24 @@ void positionNavSetTargetEf(
     g_lastTarget.userData = userData;
     g_lastTarget.valid = true;
     g_setTargetCalls++;
+}
+
+void altHoldSetEmergencyDescent(bool active, float rateCmS)
+{
+    g_emergencyDescentActive = active;
+    g_emergencyDescentRateCmS = rateCmS;
+}
+
+float altHoldGetClimbRateCmS(void)
+{
+    return g_altHoldClimbRateCmS;
+}
+
+void positionNavSetVerticalProfile(float rateMps, float startAltM)
+{
+    g_lastVertRateMps = rateMps;
+    g_lastVertStartAltM = startAltM;
+    g_setVerticalProfileCalls++;
 }
 
 void positionNavMoveTargetEf(const vector3_t *targetPosEfM)
@@ -256,7 +283,12 @@ void pitchForwardOverride(bool request)
 }
 
 void autopilotForceLevelPark(bool) {}
-void autopilotSetNavHeadingOverride(bool, float) {}
+
+void autopilotSetNavHeadingOverride(bool valid, float headingDeg)
+{
+    g_navHeadingOverrideValid = valid;
+    g_navHeadingOverrideDeg = headingDeg;
+}
 
 } // extern "C"
 
@@ -265,6 +297,14 @@ protected:
     void SetUp() override {
         memset(&g_lastTarget, 0, sizeof(g_lastTarget));
         g_setTargetCalls = 0;
+        g_setVerticalProfileCalls = 0;
+        g_navHeadingOverrideValid = false;
+        g_navHeadingOverrideDeg = 0.0f;
+        g_emergencyDescentActive = false;
+        g_emergencyDescentRateCmS = 0.0f;
+        g_altHoldClimbRateCmS = 500.0f;   // alt_hold_climb_rate default, 5 m/s
+        g_lastVertRateMps = 0.0f;
+        g_lastVertStartAltM = 0.0f;
         g_clearTargetCalls = 0;
         g_stubMicros = 0;
 
@@ -374,6 +414,38 @@ TEST_F(FlightPlanRescueTest, StageThenEngageDispatchesRescuePlan)
     EXPECT_NEAR(g_lastTarget.targetEfM.x, 30.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.targetEfM.z, kDefaultReturnAltM, 0.1f);
+}
+
+TEST_F(FlightPlanRescueTest, RescuePlanStatesItsOwnRatesAndNoseBehaviour)
+{
+    gpsRescueConfigMutable()->ascendRate = 200;
+    gpsRescueConfigMutable()->descendRate = 150;
+
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+
+    // The climb leg carries the configured ascend rate and turns the nose toward home while it
+    // climbs; nothing downstream has to work out that a rescue is what is flying.
+    EXPECT_NEAR(g_lastVertRateMps, gpsRescueConfig()->ascendRate * 0.01f, 0.01f);
+    EXPECT_NEAR(g_lastVertStartAltM, g_stubEstimate.position.v[ENU_U] * 0.01f, 0.01f);
+    EXPECT_EQ(g_setVerticalProfileCalls, g_setTargetCalls);
+
+    g_stubEstimate.position.v[ENU_E] = 30.0f * 100.0f;   // out east, where the rescue was called
+    triggerReached();                       // climb done, return leg dispatched
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    EXPECT_TRUE(g_navHeadingOverrideValid); // nose commanded at home, not left where it was
+    EXPECT_NEAR(g_navHeadingOverrideDeg, -90.0f, 1.0f);  // home is due west of the craft
+
+    g_stubEstimate.position.v[ENU_E] = 0.0f;             // home reached
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);      // carrot gate: arrive home, dispatch the LAND leg
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 2);
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    // And the descent is flown at the configured descend rate, rather than at whatever a target
+    // 200 m below the ground drives the altitude controller to.
+    EXPECT_NEAR(g_lastVertRateMps, gpsRescueConfig()->descendRate * 0.01f, 0.01f);
 }
 
 TEST_F(FlightPlanRescueTest, StageFailsWithoutHomeFix)

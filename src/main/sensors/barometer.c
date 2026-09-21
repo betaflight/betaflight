@@ -62,7 +62,7 @@
 
 baro_t baro;                        // barometer access functions
 
-PG_REGISTER_WITH_RESET_FN(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 3);
+PG_REGISTER_WITH_RESET_FN(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 4);
 
 #ifndef DEFAULT_BARO_DEVICE
 #define DEFAULT_BARO_DEVICE BARO_DEFAULT
@@ -166,6 +166,7 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
 
     barometerConfig->baro_eoc_tag = IO_TAG(BARO_EOC_PIN);
     barometerConfig->baro_xclr_tag = IO_TAG(BARO_XCLR_PIN);
+    barometerConfig->baroTempDriftCmPer10C = 0;
 }
 
 #define NUM_CALIBRATION_CYCLES   100        // 10 seconds init_delay + 100 * 25 ms = 12.5 seconds before valid baro altitude
@@ -174,6 +175,7 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
 static uint16_t calibrationCycles = 0;      // baro calibration = get new ground pressure value
 static uint16_t calibrationCycleCount = 0;
 static float baroGroundAltitude = 0.0f;
+static int32_t baroTemperatureAtCalibration = 0;
 static bool baroCalibrated = false;
 static bool baroReady = false;
 
@@ -382,6 +384,8 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
 
 void baroInit(void)
 {
+    baro.lastDataTimeUs = 0;
+    baro.dataIntervalUs = 0;
 #ifndef USE_VIRTUAL_BARO
     baroReady = baroDetect(&baro.dev, barometerConfig()->baro_hardware);
 #else
@@ -396,6 +400,7 @@ bool baroIsCalibrated(void)
 
 void baroStartCalibration(void)
 {
+    baroTemperatureAtCalibration = 0;
     if (detectedSensors[SENSOR_INDEX_BARO] == BARO_VIRTUAL) {
         baroCalibrated = true;
         return;
@@ -409,6 +414,7 @@ void baroStartCalibration(void)
 void baroSetGroundLevel(void)
 {
     baroGroundAltitude = 0;
+    baroTemperatureAtCalibration = 0;
     baroCalibrated = false;
     calibrationCycles = NUM_GROUND_LEVEL_CYCLES;
     calibrationCycleCount = 0;
@@ -445,7 +451,7 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
     timeUs_t executeTimeUs;
     timeUs_t sleepTime = 1000; // Wait 1ms between states
 
-    DEBUG_SET(DEBUG_BARO, 0, state);
+    DEBUG_SET(DEBUG_BARO, 0, state);  //!< Baro State [enum:barometerState_e]
 
     if (busBusy(&baro.dev.dev, NULL)) {
         // If the bus is busy, simply return to have another go later
@@ -511,23 +517,36 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
                 if (baroIsCalibrated()) {
                     // zero baro altitude
                     baro.altitude = altitude - baroGroundAltitude;
+                    DEBUG_SET(DEBUG_BARO, 4, lrintf(baro.altitude));  //!< Baro Altitude Before Temperature Correction [unit:cm]
+
+                    // correct physical barometers for temperature drift
+                    if (detectedSensors[SENSOR_INDEX_BARO] != BARO_VIRTUAL) {
+                        const float temperatureDriftCorrection = (baro.temperature - baroTemperatureAtCalibration)
+                            * barometerConfig()->baroTempDriftCmPer10C / 1000.0f;
+                        baro.altitude -= temperatureDriftCorrection;
+                    }
                 } else {
                     // establish stable baroGroundAltitude value to zero baro altitude with
                     performBaroCalibrationCycle(altitude);
                     baro.altitude = 0.0f;
                 }
+                if (baro.lastDataTimeUs != 0) {
+                    const timeDelta_t intervalUs = cmpTimeUs(currentTimeUs, baro.lastDataTimeUs);
+                    if (intervalUs > 0) {
+                        baro.dataIntervalUs = intervalUs;
+                    }
+                }
+                baro.lastDataTimeUs = currentTimeUs;
             } else {
                 // return 0 during calibration, reuse last value otherwise
                 if (!baroIsCalibrated()) {
                     baro.altitude = 0.0f;
                 }
             }
-
-            if (debugMode == DEBUG_BARO) {
-                DEBUG_SET(DEBUG_BARO, 1, lrintf(baro.pressure / 100.0f));   // hPa
-                DEBUG_SET(DEBUG_BARO, 2, baro.temperature);                 // c°C
-                DEBUG_SET(DEBUG_BARO, 3, lrintf(baro.altitude));            // cm
-            }
+            DEBUG_SET(DEBUG_BARO, 1, lrintf(baro.pressure / 100.0f));  //!< Pressure [unit:hPa]
+            DEBUG_SET(DEBUG_BARO, 2, baro.temperature);                //!< Temperature [unit:0.01degC]
+            // altitude carries temperature compensation unless the baro is virtual
+            DEBUG_SET(DEBUG_BARO, 3, lrintf(baro.altitude));           //!< Baro Altitude [unit:cm]
 
             if (baro.dev.combined_read) {
                 state = BARO_STATE_PRESSURE_START;
@@ -567,16 +586,28 @@ float getBaroAltitude(void)
     return baro.altitude;
 }
 
+timeUs_t getBaroLatestSampleTimeUs(void)
+{
+    return baro.lastDataTimeUs;
+}
+
+timeDelta_t getBaroSampleIntervalUs(void)
+{
+    return baro.dataIntervalUs;
+}
+
 static void performBaroCalibrationCycle(const float altitude)
 {
     baroGroundAltitude += altitude;
+    baroTemperatureAtCalibration += baro.temperature;
     calibrationCycleCount++;
 
     if (calibrationCycleCount >= calibrationCycles) {
         baroGroundAltitude /= calibrationCycleCount;  // simple average
+        baroTemperatureAtCalibration /= calibrationCycleCount;
+
         baroCalibrated = true;
         calibrationCycleCount = 0;
     }
 }
-
 #endif /* BARO */
