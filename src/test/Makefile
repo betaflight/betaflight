@@ -119,6 +119,14 @@ accgyro_spi_icm426xx_unittest_DEFINES := \
                 USE_ACCGYRO_IIM42652= \
                 USE_ACCGYRO_IIM42653=
 
+accgyro_spi_lsm6dsv16x_unittest_SRC := \
+		$(USER_DIR)/drivers/accgyro/accgyro_spi_lsm6dsv16x.c
+
+accgyro_spi_lsm6dsv16x_unittest_DEFINES := \
+                USE_ACCGYRO_LSM6DSV16X= \
+                USE_ACCGYRO_LSM6DSK320X= \
+                USE_DMA=
+
 # This test is disabled due to build errors.
 # Its source code is archived in unit/battery_unittest.cc.txt
 #
@@ -458,6 +466,11 @@ sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/pg/gyrodev.c
+
+sensor_gyro_init_unittest_SRC := $(filter-out $(USER_DIR)/drivers/accgyro/accgyro_virtual.c,$(sensor_gyro_unittest_SRC))
+
+sensor_gyro_init_unittest_DEFINES := \
+		GYRO_COUNT=2
 
 sitl_gyro_unittest_SRC := \
 		$(TEST_DIR)/sitl_gyro_unittest_c.c

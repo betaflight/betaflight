@@ -129,6 +129,12 @@ typedef struct gyroDev_s {
     int32_t gyroShortPeriod;
     int32_t gyroDmaMaxDuration;
     busSegment_t segments[2];
+#if defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSK320X)
+    // Completed samples are separate from the buffer being written by SPI DMA.
+    uint32_t lsm6dsvDmaSequence;
+    int16_t lsm6dsvDmaSample[2 * XYZ_AXIS_COUNT];
+    bool lsm6dsvDmaReady;
+#endif
     volatile bool dataReady;
     bool gyro_high_fsr;
     uint8_t hardware_lpf;
