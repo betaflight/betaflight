@@ -49,6 +49,65 @@ constexpr uint8_t HAODR_CFG = 0x62;
 
 enum class Variant { Dsv16x, Dsv32x, Dsk320x };
 
+mpuSensor_e expectedSensor(Variant variant)
+{
+    switch (variant) {
+#ifdef USE_ACCGYRO_LSM6DSV16X
+    case Variant::Dsv16x: return LSM6DSV16X_SPI;
+#endif
+#ifdef USE_ACCGYRO_LSM6DSV32X
+    case Variant::Dsv32x: return LSM6DSV32X_SPI;
+#endif
+#ifdef USE_ACCGYRO_LSM6DSK320X
+    case Variant::Dsk320x: return LSM6DSK320X_SPI;
+#endif
+    default: return MPU_NONE;
+    }
+}
+
+uint8_t detectSensor(const extDevice_t *dev)
+{
+#if defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X)
+    const uint8_t sensor = lsm6dsv16xSpiDetect(dev);
+    if (sensor != MPU_NONE) {
+        return sensor;
+    }
+#endif
+#ifdef USE_ACCGYRO_LSM6DSK320X
+    return lsm6dsk320xSpiDetect(dev);
+#else
+    return MPU_NONE;
+#endif
+}
+
+bool detectGyroCallbacks(gyroDev_t *gyro)
+{
+#ifdef USE_ACCGYRO_LSM6DSK320X
+    if (lsm6dsk320xSpiGyroDetect(gyro)) {
+        return true;
+    }
+#endif
+#if defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X)
+    return lsm6dsv16xSpiGyroDetect(gyro);
+#else
+    return false;
+#endif
+}
+
+bool detectAccCallbacks(accDev_t *acc)
+{
+#ifdef USE_ACCGYRO_LSM6DSK320X
+    if (lsm6dsk320xSpiAccDetect(acc)) {
+        return true;
+    }
+#endif
+#if defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X)
+    return lsm6dsv16xSpiAccDetect(acc);
+#else
+    return false;
+#endif
+}
+
 struct RegisterWrite {
     uint8_t reg;
     uint8_t value;
@@ -58,6 +117,7 @@ struct RegisterWrite {
 std::array<uint8_t, 128> registers;
 std::vector<RegisterWrite> writes;
 std::array<int16_t, 6> nextSample;
+Variant physicalVariant;
 timeMs_t elapsedMs;
 timeUs_t elapsedUs;
 unsigned resetReads;
@@ -91,6 +151,7 @@ protected:
     void SetUp() override
     {
         registers.fill(0);
+        physicalVariant = GetParam();
         writes.clear();
         nextSample = {{255, -256, 32767, -32768, 1024, -1024}};
         elapsedMs = resetReads = mpuInitCalls = mpuCallbackCalls = spiWaitCalls = 0;
@@ -105,7 +166,7 @@ protected:
         memset(rxBuffer, 0, sizeof(rxBuffer));
         gyro.dev.txBuf = txBuffer;
         gyro.dev.rxBuf = rxBuffer;
-        gyro.mpuDetectionResult.sensor = is320x() ? LSM6DSK320X_SPI : LSM6DSV16X_SPI;
+        gyro.mpuDetectionResult.sensor = expectedSensor(GetParam());
         acc.mpuDetectionResult = gyro.mpuDetectionResult;
         acc.gyro = &gyro;
         registers[WHO_AM_I] = is320x() ? 0x75 : 0x70;
@@ -114,8 +175,8 @@ protected:
         registers[CTRL1] = 0x19;
         registers[CTRL2] = 0x1c;
         gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL;
-        ASSERT_TRUE(is320x() ? lsm6dsk320xSpiGyroDetect(&gyro) : lsm6dsv16xSpiGyroDetect(&gyro));
-        ASSERT_TRUE(is320x() ? lsm6dsk320xSpiAccDetect(&acc) : lsm6dsv16xSpiAccDetect(&acc));
+        ASSERT_TRUE(detectGyroCallbacks(&gyro));
+        ASSERT_TRUE(detectAccCallbacks(&acc));
     }
 
     bool is320x() const { return GetParam() == Variant::Dsk320x; }
@@ -153,12 +214,60 @@ protected:
 
 TEST_P(AccgyroSpiLsm6dsv, DetectsExpectedIdentity)
 {
-    EXPECT_EQ(gyro.mpuDetectionResult.sensor,
-        is320x() ? lsm6dsk320xSpiDetect(&gyro.dev) : lsm6dsv16xSpiDetect(&gyro.dev));
+    EXPECT_EQ(gyro.mpuDetectionResult.sensor, detectSensor(&gyro.dev));
     registers[WHO_AM_I] = 0xff;
-    EXPECT_EQ(MPU_NONE,
-        is320x() ? lsm6dsk320xSpiDetect(&gyro.dev) : lsm6dsv16xSpiDetect(&gyro.dev));
+    EXPECT_EQ(MPU_NONE, detectSensor(&gyro.dev));
 }
+
+TEST_P(AccgyroSpiLsm6dsv, DetectsOnlyEnabledVariants)
+{
+    for (const Variant variant : {Variant::Dsv16x, Variant::Dsv32x, Variant::Dsk320x}) {
+        physicalVariant = variant;
+        registers[WHO_AM_I] = variant == Variant::Dsk320x ? 0x75 : 0x70;
+        registers[CTRL8] = variant == Variant::Dsv32x ? 0x04 : 0;
+        resetReads = 0;
+        EXPECT_EQ(expectedSensor(variant), detectSensor(&gyro.dev));
+    }
+}
+
+TEST_P(AccgyroSpiLsm6dsv, CallbackDetectionRejectsDisabledVariants)
+{
+    for (const mpuSensor_e sensor : {LSM6DSV16X_SPI, LSM6DSV32X_SPI, LSM6DSK320X_SPI, MPU_NONE}) {
+        gyro.mpuDetectionResult.sensor = sensor;
+        acc.mpuDetectionResult.sensor = sensor;
+        const bool enabled = sensor != MPU_NONE &&
+            (sensor == expectedSensor(Variant::Dsv16x) ||
+             sensor == expectedSensor(Variant::Dsv32x) ||
+             sensor == expectedSensor(Variant::Dsk320x));
+        EXPECT_EQ(enabled, detectGyroCallbacks(&gyro));
+        EXPECT_EQ(enabled, detectAccCallbacks(&acc));
+    }
+}
+
+#if defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X)
+TEST_P(AccgyroSpiLsm6dsv, DetectsVariantFromResetDefaults)
+{
+    if (is320x()) {
+        return;
+    }
+    // Firmware running before an MCU-only restart may have changed CTRL8.
+    registers[CTRL8] = is32x() ? 0 : 0x04;
+    EXPECT_EQ(gyro.mpuDetectionResult.sensor, detectSensor(&gyro.dev));
+    EXPECT_LT(findWrite(CTRL3, 0x01), writes.size());
+    EXPECT_EQ(is32x() ? 0x04 : 0, registers[CTRL8]);
+}
+
+TEST_P(AccgyroSpiLsm6dsv, ResetTimeoutRejectsDetection)
+{
+    if (is320x()) {
+        return;
+    }
+    resetBusyReads = 1000;
+    EXPECT_EQ(MPU_NONE, detectSensor(&gyro.dev));
+    EXPECT_LT(resetReads, 100u);
+    EXPECT_LE(elapsedMs, 100u);
+}
+#endif
 
 TEST_P(AccgyroSpiLsm6dsv, ConfiguresHighAccuracyRatesFiltersAndFullScale)
 {
@@ -352,7 +461,17 @@ TEST_P(AccgyroSpiLsm6dsv, BlockingReadsWithInterruptsWithoutDmaKeepAxisOffsets)
 }
 
 INSTANTIATE_TEST_SUITE_P(Variants, AccgyroSpiLsm6dsv,
-    ::testing::Values(Variant::Dsv16x, Variant::Dsv32x, Variant::Dsk320x));
+    ::testing::ValuesIn(std::vector<Variant>{
+#ifdef USE_ACCGYRO_LSM6DSV16X
+        Variant::Dsv16x,
+#endif
+#ifdef USE_ACCGYRO_LSM6DSV32X
+        Variant::Dsv32x,
+#endif
+#ifdef USE_ACCGYRO_LSM6DSK320X
+        Variant::Dsk320x,
+#endif
+    }));
 
 } // namespace
 
@@ -376,7 +495,7 @@ void spiWriteReg(const extDevice_t *, uint8_t reg, uint8_t value)
     }
     if (reg == CTRL3 && (value & 0x01)) {
         const uint8_t identity = registers[WHO_AM_I];
-        const uint8_t variant = registers[CTRL8] & 0x04;
+        const uint8_t variant = physicalVariant == Variant::Dsv32x ? 0x04 : 0;
         registers.fill(0);
         registers[WHO_AM_I] = identity;
         registers[CTRL8] = variant;

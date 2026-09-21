@@ -122,10 +122,15 @@ accgyro_spi_icm426xx_unittest_DEFINES := \
 accgyro_spi_lsm6dsv16x_unittest_SRC := \
 		$(USER_DIR)/drivers/accgyro/accgyro_spi_lsm6dsv16x.c
 
-accgyro_spi_lsm6dsv16x_unittest_DEFINES := \
-                USE_ACCGYRO_LSM6DSV16X= \
-                USE_ACCGYRO_LSM6DSK320X= \
-                USE_DMA=
+accgyro_spi_lsm6dsv16x_unittest_16x_DEFINES := USE_ACCGYRO_LSM6DSV16X=
+accgyro_spi_lsm6dsv16x_unittest_32x_DEFINES := USE_ACCGYRO_LSM6DSV32X=
+accgyro_spi_lsm6dsv16x_unittest_320x_DEFINES := USE_ACCGYRO_LSM6DSK320X=
+
+# Run the shared fixture with every variant enabled and with each enabled alone.
+accgyro_spi_lsm6dsv16x_unittest_DEFINES = \
+                USE_DMA= \
+                $(if $1,$(accgyro_spi_lsm6dsv16x_unittest_$1_DEFINES), \
+                    USE_ACCGYRO_LSM6DSV16X= USE_ACCGYRO_LSM6DSV32X= USE_ACCGYRO_LSM6DSK320X=)
 
 # This test is disabled due to build errors.
 # Its source code is archived in unit/battery_unittest.cc.txt
@@ -924,6 +929,7 @@ TEST_BASENAMES = $(TEST_SRCS:$(TEST_DIR)/%.cc=%)
 TESTS_TARGET_SPECIFIC = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),$(test)))
 
 TESTS = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),,$(test)))
+TESTS += $(addprefix accgyro_spi_lsm6dsv16x_unittest.,16x 32x 320x)
 TESTS_ALL = $(TESTS)
 
 # All Google Test headers.  Usually you shouldn't change this

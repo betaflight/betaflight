@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#if defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSK320X)
+#if defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X) || defined(USE_ACCGYRO_LSM6DSK320X)
 
 #include "accgyro_spi_lsm6dsv16x.h"
 
@@ -875,6 +875,15 @@ uint8_t lsm6dsk320xSpiDetect(const extDevice_t *dev)
     return LSM6DSK320X_SPI;
 }
 
+static bool lsm6dsvReset(const extDevice_t *dev, uint8_t whoAmI);
+
+static bool lsm6dsv16xIs32x(const extDevice_t *dev)
+{
+    // LSM6DSV16X and LSM6DSV32X share WHO_AM_I 0x70. After reset, CTRL8 bit2 is
+    // 0 on 16X and 1 on 32X. Gyro init preserves that bit when programming FS.
+    return (spiReadRegMsk(dev, LSM6DSV_CTRL8) & LSM6DSV_CTRL8_VARIANT_BIT) != 0;
+}
+
 uint8_t lsm6dsv16xSpiDetect(const extDevice_t *dev)
 {
     const uint8_t whoAmI = spiReadRegMsk(dev, LSM6DSV_WHO_AM_I);
@@ -883,14 +892,40 @@ uint8_t lsm6dsv16xSpiDetect(const extDevice_t *dev)
         return MPU_NONE;
     }
 
-    return LSM6DSV16X_SPI;
+    // Restore reset values before distinguishing variants; an MCU-only reset
+    // can leave register values written by the previous firmware in the IMU.
+    if (!lsm6dsvReset(dev, whoAmI)) {
+        return MPU_NONE;
+    }
+
+    if (lsm6dsv16xIs32x(dev)) {
+#ifdef USE_ACCGYRO_LSM6DSV32X
+        return LSM6DSV32X_SPI;
+#endif
+    } else {
+#ifdef USE_ACCGYRO_LSM6DSV16X
+        return LSM6DSV16X_SPI;
+#endif
+    }
+
+    return MPU_NONE;
 }
 
-static bool lsm6dsv16xIs32x(const extDevice_t *dev)
+static bool lsm6dsvVariantEnabled(mpuSensor_e sensor)
 {
-    // LSM6DSV16X and LSM6DSV32X share WHO_AM_I 0x70. After reset, CTRL8 bit2 is
-    // 0 on 16X and 1 on 32X. Gyro init preserves that bit when programming FS.
-    return (spiReadRegMsk(dev, LSM6DSV_CTRL8) & LSM6DSV_CTRL8_VARIANT_BIT) != 0;
+    switch (sensor) {
+#ifdef USE_ACCGYRO_LSM6DSV16X
+    case LSM6DSV16X_SPI:
+#endif
+#ifdef USE_ACCGYRO_LSM6DSV32X
+    case LSM6DSV32X_SPI:
+#endif
+#if defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X)
+        return true;
+#endif
+    default:
+        return false;
+    }
 }
 
 static void lsm6dsv16xAccInit(accDev_t *acc)
@@ -1002,7 +1037,7 @@ bool lsm6dsk320xSpiAccDetect(accDev_t *acc)
 
 bool lsm6dsv16xSpiAccDetect(accDev_t *acc)
 {
-    if (acc->mpuDetectionResult.sensor != LSM6DSV16X_SPI) {
+    if (!lsm6dsvVariantEnabled(acc->mpuDetectionResult.sensor)) {
         return false;
     }
 
@@ -1209,7 +1244,7 @@ static bool lsm6dsv16xGyroReadSPI(gyroDev_t *gyro)
 
 bool lsm6dsv16xSpiGyroDetect(gyroDev_t *gyro)
 {
-    if (gyro->mpuDetectionResult.sensor != LSM6DSV16X_SPI) {
+    if (!lsm6dsvVariantEnabled(gyro->mpuDetectionResult.sensor)) {
         return false;
     }
 
@@ -1231,4 +1266,4 @@ bool lsm6dsk320xSpiGyroDetect(gyroDev_t *gyro)
     return true;
 }
 
-#endif // USE_ACCGYRO_LSM6DSV16X || USE_ACCGYRO_LSM6DSK320X
+#endif // USE_ACCGYRO_LSM6DSV16X || USE_ACCGYRO_LSM6DSV32X || USE_ACCGYRO_LSM6DSK320X
