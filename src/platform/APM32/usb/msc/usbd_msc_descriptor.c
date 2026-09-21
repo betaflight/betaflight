@@ -362,7 +362,7 @@ static USBD_DESC_INFO_T USBD_DESC_Ascii2Unicode(uint8_t* desc)
 {
     USBD_DESC_INFO_T descInfo;
     uint8_t* buffer;
-    uint8_t str[USBD_SUP_STR_DESC_MAX_NUM];
+    static uint8_t str[USBD_SUP_STR_DESC_MAX_NUM];
 
     uint8_t* unicode = str;
     uint16_t length = 0;
