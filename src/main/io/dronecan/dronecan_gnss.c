@@ -65,6 +65,9 @@ static int32_t scaleLonLat_1e8to1e7(int64_t deg_1e8)
 // cooperative between tasks today, so the retry loop is defensive against a
 // future preemptive scheduler rather than fixing a current race.
 static gpsSolutionData_t latest;
+// Whether the module reported a 3D fix. Published inside the seqlock below so a
+// reader can never pair this with a solution from a different frame.
+static bool latestHasFix = false;
 static volatile uint32_t latestSeq = 0;
 static volatile bool received = false;
 static volatile timeUs_t lastUpdateUs = 0;
@@ -242,11 +245,15 @@ static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
     latest.dop.vdop    = vdop;
     latest.dateTime    = dateTime;
 
-    // Signal a loss of fix explicitly so the downstream state can react
-    // rather than stay armed on the last position.
-    if (status < UAVCAN_GNSS_FIX2_STATUS_3D_FIX) {
-        latest.numSat = 0;
-    }
+    // Only a 3D fix is usable for navigation, so anything below it is reported
+    // as no fix and the downstream state reacts rather than staying armed on
+    // the last position. The satellite count is NOT cleared with it: a module
+    // that is tracking satellites but has not locked yet is the normal case
+    // while acquiring, and zeroing the count there makes that indistinguishable
+    // from a dead antenna. The serial providers keep reporting the count across
+    // a loss of fix too (see gps.c, gpsSol.numSat = numSV on NAV-PVT), so this
+    // keeps DroneCAN consistent with them.
+    latestHasFix = (status >= UAVCAN_GNSS_FIX2_STATUS_3D_FIX);
 
     lastUpdateUs = micros();
     received = true;
@@ -288,6 +295,7 @@ void dronecanGnssInit(void)
     // Clear the cache before registering so a frame that lands between
     // dronecanRegisterSubscriber() and the reset can't be silently clobbered.
     memset(&latest, 0, sizeof(latest));
+    latestHasFix = false;
     received = false;
     lastUpdateUs = 0;
     auxUpdateUs = 0;
@@ -310,7 +318,7 @@ void dronecanGnssInit(void)
     (void)dronecanRegisterSubscriber(&auxSub);
 }
 
-bool dronecanGnssGetLatest(gpsSolutionData_t *out)
+bool dronecanGnssGetLatest(gpsSolutionData_t *out, bool *hasFix)
 {
     if (!received || out == NULL) {
         return false;
@@ -330,8 +338,12 @@ bool dronecanGnssGetLatest(gpsSolutionData_t *out)
         } while (s1 & 1U);
         __asm volatile ("" ::: "memory");
         *out = latest;
+        const bool fix = latestHasFix;
         __asm volatile ("" ::: "memory");
         s2 = latestSeq;
+        if (s1 == s2 && hasFix != NULL) {
+            *hasFix = fix;
+        }
     } while (s1 != s2);
 
     return true;

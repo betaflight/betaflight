@@ -194,7 +194,6 @@
 #define PARAM_NAME_AP_THROTTLE_DEADBAND "ap_throttle_deadband"
 #define PARAM_NAME_AP_YAW_MODE "ap_yaw_mode"
 #define PARAM_NAME_AP_YAW_P "ap_yaw_p"
-#define PARAM_NAME_AP_YAW_D "ap_yaw_d"
 #define PARAM_NAME_AP_MAX_YAW_RATE "ap_max_yaw_rate"
 #define PARAM_NAME_AP_MIN_FORWARD_VELOCITY "ap_min_forward_velocity"
 
@@ -327,7 +326,6 @@
 
 #ifdef USE_MAG
 #define PARAM_NAME_IMU_MAG_DECLINATION "mag_declination"
-#define PARAM_NAME_TRUST_MAG "trust_mag"
 #endif
 
 #ifdef USE_TRANSPONDER

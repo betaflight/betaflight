@@ -23,6 +23,7 @@ PG_SRC = \
             pg/gps_rescue_multirotor.c \
             pg/gps_rescue_wing.c \
             pg/gyrodev.c \
+            pg/launch_wing.c \
             pg/max7456.c \
             pg/mco.c \
             pg/motor.c \
@@ -175,6 +176,7 @@ COMMON_SRC = \
             flight/gps_rescue_multirotor.c \
             flight/gps_rescue_wing.c \
             flight/imu.c \
+            flight/launch_wing.c \
             flight/mixer.c \
             flight/mixer_init.c \
             flight/mixer_tricopter.c \
