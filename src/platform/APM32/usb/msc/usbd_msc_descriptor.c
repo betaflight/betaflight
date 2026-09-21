@@ -26,15 +26,17 @@
 #include "usbd_msc.h"
 #include "platform.h"
 
+#include "build/version.h"
+
+#include "drivers/usb_descriptor.h"
+
 #include <string.h>
 
 /* Private macro **********************************************************/
 #define USBD_GEEHY_VID                  0x314B
 #define USBD_FS_PID                     0x5720
 #define USBD_LANGID_STR                 0x0409
-#define USBD_MANUFACTURER_STR           "Geehy"
-#define USBD_PRODUCT_HS_STR             "Betaflight FC Mass Storage (HS Mode)"
-#define USBD_PRODUCT_FS_STR             "Betaflight FC Mass Storage (FS Mode)"
+#define USBD_MANUFACTURER_STR           FC_FIRMWARE_NAME
 #define USBD_CONFIGURATION_HS_STR       "MSC Config"
 #define USBD_CONFIGURATION_FS_STR       "MSC Config"
 #define USBD_INTERFACE_HS_STR           "MSC Interface"
@@ -552,18 +554,9 @@ static USBD_DESC_INFO_T USBD_MSC_ManufacturerStrDescHandler(uint8_t usbSpeed)
  */
 static USBD_DESC_INFO_T USBD_MSC_ProductStrDescHandler(uint8_t usbSpeed)
 {
-    USBD_DESC_INFO_T descInfo;
+    UNUSED(usbSpeed);
 
-    if (usbSpeed == USBD_SPEED_HS)
-    {
-        descInfo = USBD_DESC_Ascii2Unicode((uint8_t*)USBD_PRODUCT_HS_STR);
-    }
-    else
-    {
-        descInfo = USBD_DESC_Ascii2Unicode((uint8_t*)USBD_PRODUCT_FS_STR);
-    }
-
-    return descInfo;
+    return USBD_DESC_Ascii2Unicode((uint8_t*)usbDescriptorMscProductString());
 }
 
 /**
