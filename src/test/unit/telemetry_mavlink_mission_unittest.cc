@@ -181,6 +181,21 @@ TEST_F(MavlinkMissionTest, UploadWritesWaypointsToConfig)
     EXPECT_EQ(plan->waypoints[2].type, WAYPOINT_TYPE_LAND);
 }
 
+TEST_F(MavlinkMissionTest, UploadRejectsUnsupportedReturnToLaunch)
+{
+    sendCount(2);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 2, 0.0f, 300, 400, 20.0f);
+    sendItem(1, MAV_CMD_NAV_RETURN_TO_LAUNCH, 2);
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_UNSUPPORTED);
+    EXPECT_EQ(flightPlanConfig()->waypointCount, 0);
+    EXPECT_EQ(s_saveCalls, 0);
+}
+
 TEST_F(MavlinkMissionTest, UploadMapsLoiterTurnsToOrbitHold)
 {
     sendCount(1);
