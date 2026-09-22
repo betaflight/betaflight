@@ -131,6 +131,10 @@ struct serialPortVTable {
     // Optional functions used to buffer large writes.
     void (*beginWrite)(serialPort_t *instance);
     void (*endWrite)(serialPort_t *instance);
+
+    // Optional nonblocking baud change. Retry until true; writes remain queued
+    // while the hardware transmitter drains. A failed port stays inhibited.
+    bool (*trySetBaudRate)(serialPort_t *instance, uint32_t baudRate);
 };
 
 void serialWrite(serialPort_t *instance, uint8_t ch);
@@ -141,6 +145,7 @@ void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count);
 void serialWriteBufNoFlush(serialPort_t *instance, const uint8_t *data, int count);
 uint8_t serialRead(serialPort_t *instance);
 void serialSetBaudRate(serialPort_t *instance, uint32_t baudRate);
+bool serialTrySetBaudRate(serialPort_t *instance, uint32_t baudRate);
 void serialSetMode(serialPort_t *instance, portMode_e mode);
 void serialSetCtrlLineStateCb(serialPort_t *instance, void (*cb)(void *context, uint16_t ctrlLineState), void *context);
 void serialSetBaudRateCb(serialPort_t *instance, void (*cb)(serialPort_t *context, uint32_t baud), serialPort_t *context);
