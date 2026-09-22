@@ -287,8 +287,39 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     }
 
 #ifdef USE_LAUNCH_CONTROL
+    // LIFT: count down the lift, then confirm the handover, so the pilot always
+    // knows whether the flight controller or the sticks are flying the quad
+    if (osdWarnGetState(OSD_WARNING_LAUNCH_CONTROL) && isLaunchControlLifting()) {
+        const uint32_t remainingMs = getLaunchControlLiftRemainingMs();
+        tfp_sprintf(warningText, "LIFT %d.%d", (int)(remainingMs / 1000), (int)((remainingMs % 1000) / 100));
+        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        return;
+    }
+    if (osdWarnGetState(OSD_WARNING_LAUNCH_CONTROL) && isLaunchControlLiftHandoverRecent()) {
+        tfp_sprintf(warningText, "STICKS LIVE");
+        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *blinking = true;
+        return;
+    }
+    // disarmed: the LIFT pre-arm checklist, so any problem shows before the props spin
+    const char *liftPreArmMessage = getLaunchControlLiftPreArmMessage();
+    if (osdWarnGetState(OSD_WARNING_LAUNCH_CONTROL) && liftPreArmMessage) {
+        tfp_sprintf(warningText, "%s", liftPreArmMessage);
+        *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+        return;
+    }
+
     // Warn when in launch control mode
     if (osdWarnGetState(OSD_WARNING_LAUNCH_CONTROL) && isLaunchControlActive()) {
+        if (currentPidProfile->launchControlMode == LAUNCH_CONTROL_MODE_LIFT) {
+            if (isLaunchControlLiftAwaitingTriggerOff()) {
+                tfp_sprintf(warningText, "LIFT: TRIGGER OFF FIRST");
+            } else if (flightModeFlags) {
+                tfp_sprintf(warningText, "LIFT: ACRO ONLY");
+            } else {
+                tfp_sprintf(warningText, "LIFT STAGED");
+            }
+        } else
 #ifdef USE_ACC
         if (sensors(SENSOR_ACC)) {
             const int pitchAngle = constrain((attitude.raw[FD_PITCH] - accelerometerConfig()->accelerometerTrims.raw[FD_PITCH]) / 10, -90, 90);

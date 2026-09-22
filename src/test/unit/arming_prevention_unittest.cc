@@ -90,7 +90,8 @@ extern "C" {
     uint8_t cliMode = 0;
     uint8_t debugMode = 0;
     int16_t debug[DEBUG16_VALUE_COUNT];
-    pidProfile_t *currentPidProfile;
+    static pidProfile_t defaultTestPidProfile;   // zeroed: launch_control_mode NORMAL
+    pidProfile_t *currentPidProfile = &defaultTestPidProfile;
     controlRateConfig_t *currentControlRateProfile;
     attitudeEulerAngles_t attitude;
 
@@ -117,6 +118,8 @@ uint32_t simulationFeatureFlags = 0;
 uint32_t simulationTime = 0;
 bool gyroCalibDone = false;
 bool simulationHaveRx = false;
+bool simulationFailsafeActive = false;
+pidStabilisationState_e simulationPidStabilisationState = PID_STABILISATION_OFF;
 
 #include "gtest/gtest.h"
 
@@ -1057,6 +1060,422 @@ TEST(ArmingPreventionTest, Paralyze)
     EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXVTXPITMODE));
 }
 
+// ---------------------------------------------------------------------------
+// Launch Control, LIFT mode, on one 3-position switch (SC):
+//   down = regular flight, mid = staged (LAUNCH CONTROL), high = send it (+ LAUNCH TRIGGER)
+// ---------------------------------------------------------------------------
+
+#define LIFT_TIME_MS 1000
+#define STICK_LOW     1000
+#define STICK_TAKEOFF 1500   // comfortably above the 20% trigger
+#define ARM_OFF 1000
+#define ARM_ON  1800
+#define SC_DOWN 1000
+#define SC_MID  1500
+#define SC_HIGH 2000
+
+static pidProfile_t liftTestPidProfile;
+
+static void advanceMs(uint32_t ms)
+{
+    simulationTime += ms * 1000;
+    updateActivatedModes();
+    processRx(simulationTime);
+    launchControlLiftUpdate(simulationTime);
+}
+
+static void setSC(uint16_t position)
+{
+    rcData[AUX2] = position;
+    advanceMs(20);   // one RX frame or so
+}
+
+static void arm(void)
+{
+    rcData[AUX1] = ARM_ON;
+    updateActivatedModes();
+    tryArm();
+    advanceMs(20);
+}
+
+static void disarmNow(void)
+{
+    disarm(DISARM_REASON_SWITCH);
+    rcData[AUX1] = ARM_OFF;
+    advanceMs(20);
+}
+
+static void setUpLift(bool withTriggerMode = true)
+{
+    // clean slate: nothing left over from the other tests
+    DISABLE_ARMING_FLAG(ARMED);
+    unsetArmingDisabled((armingDisableFlags_e)0xFFFFFFFF);
+    flightModeFlags = 0;
+    simulationFeatureFlags = 0;
+    simulationFailsafeActive = false;
+    simulationHaveRx = true;
+    gyroCalibDone = true;
+    mockIsUpright = true;
+    simulationTime = 10 * 1000000;
+
+    memset(modeActivationConditionsMutable(0), 0, sizeof(modeActivationCondition_t) * MAX_MODE_ACTIVATION_CONDITION_COUNT);
+    modeActivationConditionsMutable(0)->auxChannelIndex = 0;
+    modeActivationConditionsMutable(0)->modeId = BOXARM;
+    modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    modeActivationConditionsMutable(1)->auxChannelIndex = 1;      // SC mid + high
+    modeActivationConditionsMutable(1)->modeId = BOXLAUNCHCONTROL;
+    modeActivationConditionsMutable(1)->range.startStep = CHANNEL_VALUE_TO_STEP(1300);
+    modeActivationConditionsMutable(1)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    if (withTriggerMode) {
+        modeActivationConditionsMutable(2)->auxChannelIndex = 1;  // SC high
+        modeActivationConditionsMutable(2)->modeId = BOXLAUNCHTRIGGER;
+        modeActivationConditionsMutable(2)->range.startStep = CHANNEL_VALUE_TO_STEP(1700);
+        modeActivationConditionsMutable(2)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    }
+    rcControlsInit();
+    rxConfigMutable()->mincheck = 1050;
+
+    memset(&liftTestPidProfile, 0, sizeof(liftTestPidProfile));
+    liftTestPidProfile.launchControlMode = LAUNCH_CONTROL_MODE_LIFT;
+    liftTestPidProfile.launchControlThrottlePercent = 20;
+    liftTestPidProfile.launchControlAllowTriggerReset = true;
+    liftTestPidProfile.launchControlLiftTime = LIFT_TIME_MS;
+    liftTestPidProfile.launchControlLiftThrottle = 100;
+    currentPidProfile = &liftTestPidProfile;
+
+    // disarmed with SC down resets any earlier launch
+    rcData[THROTTLE] = STICK_LOW;
+    rcData[ROLL] = rcData[PITCH] = rcData[YAW] = 1500;
+    rcData[AUX1] = ARM_OFF;
+    rcData[AUX2] = SC_DOWN;
+    updateActivatedModes();
+    updateArmingStatus();
+    processRx(simulationTime);
+}
+
+// armed with SC in mid: staged in LNCH, ready to send
+static void armAndStage(void)
+{
+    setUpLift();
+    setSC(SC_MID);
+    arm();
+}
+
+TEST(LaunchControlLiftTest, DownAtArmingIsRegularFlight)
+{
+    setUpLift();
+    EXPECT_EQ(NULL, getLaunchControlLiftPreArmMessage());
+    EXPECT_FALSE(isLaunchControlPreStaged());
+    arm();
+
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+    EXPECT_FALSE(isLaunchControlActive());   // no LNCH
+
+    // as with every launch control mode, the switch only counts at arming:
+    // mid or high in the air does nothing, and never pins the motors at idle
+    setSC(SC_MID);
+    EXPECT_FALSE(isLaunchControlActive());
+    setSC(SC_HIGH);
+    EXPECT_FALSE(isLaunchControlLifting());
+    EXPECT_EQ(NULL, getLaunchControlLiftPreArmMessage());   // nothing covering the warnings in flight
+}
+
+TEST(LaunchControlLiftTest, PreArmChecklist)
+{
+    setUpLift();
+
+    setSC(SC_MID);
+    EXPECT_STREQ("LIFT PRE-STAGE", getLaunchControlLiftPreArmMessage());
+    EXPECT_TRUE(isLaunchControlPreStaged());   // mode shows LNCH before arming
+
+    ENABLE_FLIGHT_MODE(ANGLE_MODE);
+    advanceMs(20);
+    EXPECT_STREQ("LIFT: ACRO ONLY", getLaunchControlLiftPreArmMessage());
+    EXPECT_FALSE(isLaunchControlPreStaged());
+    DISABLE_FLIGHT_MODE(ANGLE_MODE);
+
+    setSC(SC_HIGH);
+    EXPECT_STREQ("LIFT: TRIGGER OFF FIRST", getLaunchControlLiftPreArmMessage());
+
+    setSC(SC_DOWN);
+    EXPECT_EQ(NULL, getLaunchControlLiftPreArmMessage());
+    EXPECT_FALSE(isLaunchControlPreStaged());
+
+    setUpLift(false);   // no LAUNCH TRIGGER mode set up
+    setSC(SC_MID);
+    EXPECT_STREQ("LIFT: NO TRIGGER MODE", getLaunchControlLiftPreArmMessage());
+    EXPECT_FALSE(isLaunchControlPreStaged());
+}
+
+TEST(LaunchControlLiftTest, ArmingInMidStages)
+{
+    armAndStage();
+    EXPECT_TRUE(isLaunchControlActive());    // LNCH, "LIFT STAGED"
+    EXPECT_FALSE(isLaunchControlLiftAwaitingTriggerOff());
+    EXPECT_FALSE(isLaunchControlPreStaged());
+    EXPECT_EQ(NULL, getLaunchControlLiftPreArmMessage());
+
+    rcData[THROTTLE] = 1100;   // below the 20% takeoff threshold: keeps holding
+    advanceMs(2000);
+    EXPECT_TRUE(isLaunchControlActive());
+    EXPECT_FALSE(isLaunchControlLifting());
+    rcData[THROTTLE] = STICK_LOW;
+}
+
+TEST(LaunchControlLiftTest, HighSendsItForTheSetTimeThenHandsOverToTheSticks)
+{
+    armAndStage();
+
+    setSC(SC_HIGH);
+    EXPECT_FALSE(isLaunchControlActive());
+    EXPECT_TRUE(isLaunchControlLifting());
+    EXPECT_FLOAT_EQ(1.0f, getLaunchControlLiftThrottle());
+
+    // stick at the bottom the whole time: the lift carries on regardless,
+    // and the PIDs stay on even though the stick throttle is low
+    advanceMs(500);   // the lift clock starts on the RX frame that sees the trigger
+    EXPECT_TRUE(isLaunchControlLifting());
+    EXPECT_EQ(PID_STABILISATION_ON, simulationPidStabilisationState);
+    EXPECT_EQ(500u, getLaunchControlLiftRemainingMs());
+
+    advanceMs(LIFT_TIME_MS - 500 - 1);
+    EXPECT_TRUE(isLaunchControlLifting());
+
+    // time's up: the sticks have it (mode back to AIR), and the OSD says so for a moment
+    advanceMs(1);
+    EXPECT_FALSE(isLaunchControlLifting());
+    EXPECT_FALSE(isLaunchControlActive());
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+    EXPECT_TRUE(isLaunchControlLiftHandoverRecent());
+    advanceMs(LAUNCH_CONTROL_LIFT_HANDOVER_NOTICE_MS);
+    EXPECT_FALSE(isLaunchControlLiftHandoverRecent());
+
+    // one launch per arm: working SC in flight does nothing
+    setSC(SC_MID);
+    setSC(SC_HIGH);
+    setSC(SC_DOWN);
+    setSC(SC_MID);
+    setSC(SC_HIGH);
+    EXPECT_FALSE(isLaunchControlLifting());
+    EXPECT_FALSE(isLaunchControlActive());
+}
+
+TEST(LaunchControlLiftTest, UsesTheConfiguredLiftThrottleAndTime)
+{
+    armAndStage();
+    liftTestPidProfile.launchControlLiftThrottle = 60;
+    liftTestPidProfile.launchControlLiftTime = 2500;
+
+    setSC(SC_HIGH);
+    EXPECT_FLOAT_EQ(0.6f, getLaunchControlLiftThrottle());
+    advanceMs(2500 - 1);
+    EXPECT_TRUE(isLaunchControlLifting());
+    advanceMs(1);
+    EXPECT_FALSE(isLaunchControlLifting());
+}
+
+TEST(LaunchControlLiftTest, SticksDoNotEndTheLift)
+{
+    armAndStage();
+    setSC(SC_HIGH);
+
+    rcData[ROLL] = 2000;
+    rcData[PITCH] = 1000;
+    rcData[YAW] = 2000;
+    rcData[THROTTLE] = 2000;
+    advanceMs(300);
+    EXPECT_TRUE(isLaunchControlLifting());
+    rcData[THROTTLE] = STICK_LOW;
+    advanceMs(300);
+    EXPECT_TRUE(isLaunchControlLifting());
+}
+
+TEST(LaunchControlLiftTest, BackToMidAbortsToTheSticks)
+{
+    armAndStage();
+    setSC(SC_HIGH);
+    advanceMs(200);
+
+    setSC(SC_MID);
+    EXPECT_FALSE(isLaunchControlLifting());
+    EXPECT_FALSE(isLaunchControlActive());   // not back to LNCH: same as the end of a run
+    EXPECT_TRUE(isLaunchControlLiftHandoverRecent());
+}
+
+TEST(LaunchControlLiftTest, AllTheWayDownAbortsToTheSticks)
+{
+    armAndStage();
+    setSC(SC_HIGH);
+    advanceMs(200);
+
+    setSC(SC_DOWN);
+    EXPECT_FALSE(isLaunchControlLifting());
+    EXPECT_TRUE(isLaunchControlLiftHandoverRecent());
+}
+
+TEST(LaunchControlLiftTest, ArmingInHighNeverLaunches)
+{
+    setUpLift();
+    rcData[AUX2] = SC_HIGH;
+    arm();
+
+    EXPECT_TRUE(isLaunchControlActive());
+    EXPECT_TRUE(isLaunchControlLiftAwaitingTriggerOff());
+    advanceMs(2000);
+    EXPECT_FALSE(isLaunchControlLifting());
+
+    setSC(SC_MID);
+    setSC(SC_HIGH);
+    EXPECT_TRUE(isLaunchControlLifting());
+}
+
+TEST(LaunchControlLiftTest, DownBeforeLaunchStandsDownForThisArm)
+{
+    armAndStage();
+
+    setSC(SC_DOWN);
+    EXPECT_FALSE(isLaunchControlActive());   // regular flight: no LNCH hold
+
+    setSC(SC_MID);                            // staging only happens at arming
+    EXPECT_FALSE(isLaunchControlActive());
+    setSC(SC_HIGH);
+    EXPECT_FALSE(isLaunchControlLifting());
+
+    // disarm, re-arm in mid: staged again
+    disarmNow();
+    setSC(SC_MID);
+    arm();
+    EXPECT_TRUE(isLaunchControlActive());
+}
+
+TEST(LaunchControlLiftTest, TakingOffFromLnchOnTheThrottleSkipsTheLift)
+{
+    armAndStage();
+
+    rcData[THROTTLE] = STICK_TAKEOFF;
+    advanceMs(20);
+    EXPECT_FALSE(isLaunchControlActive());
+
+    setSC(SC_HIGH);
+    EXPECT_FALSE(isLaunchControlLifting());
+    rcData[THROTTLE] = STICK_LOW;
+}
+
+TEST(LaunchControlLiftTest, OnlyFromAcro)
+{
+    // armed in Angle with SC mid: not staged (the checklist warned before arming)
+    setUpLift();
+    ENABLE_FLIGHT_MODE(ANGLE_MODE);
+    setSC(SC_MID);
+    arm();
+    EXPECT_FALSE(isLaunchControlActive());
+    disarmNow();
+    DISABLE_FLIGHT_MODE(ANGLE_MODE);
+
+    // staged in acro, then Angle (or Chirp) switched on: the trigger is refused, not saved
+    arm();
+    EXPECT_TRUE(isLaunchControlActive());
+    ENABLE_FLIGHT_MODE(ANGLE_MODE);
+    setSC(SC_HIGH);
+    EXPECT_FALSE(isLaunchControlLifting());
+    DISABLE_FLIGHT_MODE(ANGLE_MODE);
+    advanceMs(500);
+    EXPECT_FALSE(isLaunchControlLifting());
+
+    setSC(SC_MID);
+    setSC(SC_HIGH);
+    EXPECT_TRUE(isLaunchControlLifting());
+}
+
+TEST(LaunchControlLiftTest, NoTriggerModeMeansNoStaging)
+{
+    setUpLift(false);
+    setSC(SC_MID);
+    arm();
+    EXPECT_FALSE(isLaunchControlActive());
+}
+
+TEST(LaunchControlLiftTest, FailsafeEndsTheLift)
+{
+    armAndStage();
+    setSC(SC_HIGH);
+    EXPECT_TRUE(isLaunchControlLifting());
+
+    simulationFailsafeActive = true;
+    advanceMs(10);
+    EXPECT_FALSE(isLaunchControlLifting());
+    EXPECT_FALSE(isLaunchControlLiftHandoverRecent());   // failsafe is flying, not the sticks
+    simulationFailsafeActive = false;
+}
+
+TEST(LaunchControlLiftTest, TimerRunsInThePidLoopEvenWithoutRxFrames)
+{
+    armAndStage();
+    setSC(SC_HIGH);
+
+    // no processRx calls at all from here: only the PID-loop update runs
+    simulationTime += LIFT_TIME_MS * 1000;
+    launchControlLiftUpdate(simulationTime);
+    EXPECT_FALSE(isLaunchControlLifting());
+}
+
+TEST(LaunchControlLiftTest, AfterALaunchScDownWhileDisarmedResetsIt)
+{
+    armAndStage();
+    setSC(SC_HIGH);
+    advanceMs(LIFT_TIME_MS);
+    disarmNow();
+
+    // disarmed with SC still up: the checklist says why it won't stage
+    EXPECT_STREQ("LIFT USED: SWITCH OFF", getLaunchControlLiftPreArmMessage());
+    EXPECT_FALSE(isLaunchControlPreStaged());
+    arm();
+    EXPECT_FALSE(isLaunchControlActive());
+    disarmNow();
+
+    // SC down while disarmed resets it (launch_trigger_allow_reset = ON)
+    setSC(SC_DOWN);
+    setSC(SC_MID);
+    EXPECT_STREQ("LIFT PRE-STAGE", getLaunchControlLiftPreArmMessage());
+    arm();
+    EXPECT_TRUE(isLaunchControlActive());
+}
+
+TEST(LaunchControlLiftTest, DisarmMidLiftCountsAsTheLaunch)
+{
+    armAndStage();
+    setSC(SC_HIGH);
+    EXPECT_TRUE(isLaunchControlLifting());
+
+    disarmNow();
+    EXPECT_FALSE(isLaunchControlLifting());
+    EXPECT_STREQ("LIFT USED: SWITCH OFF", getLaunchControlLiftPreArmMessage());
+}
+
+TEST(LaunchControlLiftTest, OtherLaunchModesAreUnchanged)
+{
+    setUpLift();
+    liftTestPidProfile.launchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
+
+    // no LIFT checklist for the other modes, but LNCH still shows pre-arm
+    setSC(SC_MID);
+    EXPECT_EQ(NULL, getLaunchControlLiftPreArmMessage());
+    EXPECT_TRUE(isLaunchControlPreStaged());
+
+    // switch on at arming: holds, the trigger mode does nothing, the throttle launches with no lift
+    arm();
+    EXPECT_TRUE(isLaunchControlActive());
+    setSC(SC_HIGH);
+    EXPECT_FALSE(isLaunchControlLifting());
+    EXPECT_TRUE(isLaunchControlActive());
+    rcData[THROTTLE] = STICK_TAKEOFF;
+    advanceMs(20);
+    EXPECT_FALSE(isLaunchControlActive());
+    EXPECT_FALSE(isLaunchControlLifting());
+    rcData[THROTTLE] = STICK_LOW;
+}
+
 // STUBS
 extern "C" {
     void sincosf_approx(float x, float *out_s, float *out_c) {
@@ -1086,7 +1505,7 @@ extern "C" {
     void gyroStartCalibration(bool) {}
     bool isFirstArmingGyroCalibrationRunning(void) { return false; }
     void pidController(const pidProfile_t *, timeUs_t) {}
-    void pidStabilisationState(pidStabilisationState_e) {}
+    void pidStabilisationState(pidStabilisationState_e state) { simulationPidStabilisationState = state; }
     void mixTable(timeUs_t) {};
     void writeMotors(void) {};
     void writeServos(void) {};
@@ -1098,7 +1517,7 @@ extern "C" {
     bool failsafeIsMonitoring(void) { return false; }
     void failsafeStartMonitoring(void) {}
     void failsafeUpdateState(void) {}
-    bool failsafeIsActive(void) { return false; }
+    bool failsafeIsActive(void) { return simulationFailsafeActive; }
     bool failsafeIsReceivingRxData(void) { return true; }
     bool rxAreFlightChannelsValid(void) { return false; }
     void pidResetIterm(void) {}

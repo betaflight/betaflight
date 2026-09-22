@@ -677,7 +677,12 @@ static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const
 FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
 {
     const bool launchControlActive = isLaunchControlActive();
-    const bool airmodeEnabled = isAirmodeEnabled() || launchControlActive;
+#ifdef USE_LAUNCH_CONTROL
+    const bool launchControlLifting = isLaunchControlLifting();
+#else
+    const bool launchControlLifting = false;
+#endif
+    const bool airmodeEnabled = isAirmodeEnabled() || launchControlActive || launchControlLifting;
 
     // Find min and max throttle based on conditions. Throttle has to be known before mixing
     calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
@@ -722,6 +727,15 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
     if (currentControlRateProfile->throttle_limit_type != THROTTLE_LIMIT_TYPE_OFF) {
         throttle = applyThrottleLimit(throttle);
     }
+
+#ifdef USE_LAUNCH_CONTROL
+    // LIFT: the pre-programmed lift throttle replaces the stick. Applied here, before
+    // anti-gravity, TPA, the dynamic filters and the blackbox see the throttle, so the
+    // loop is tuned for what the motors actually get, not where the stick happens to be.
+    if (launchControlLifting) {
+        throttle = getLaunchControlLiftThrottle();
+    }
+#endif
 
     // use scaled throttle, without dynamic idle throttle offset, as the input to antigravity
     pidUpdateAntiGravityThrottleFilter(throttle);
