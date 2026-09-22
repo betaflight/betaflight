@@ -413,7 +413,11 @@ static bool dispatchWaypoint(void)
     }
 
     const autopilotConfig_t *cfg = autopilotConfig();
-    const bool isStationKeeping = (effective.type == WAYPOINT_TYPE_HOLD)
+    const bool isTimedWaypoint = effective.duration > 0
+                              && (effective.type == WAYPOINT_TYPE_FLYOVER
+                                  || effective.type == WAYPOINT_TYPE_FLYBY);
+    const bool isStationKeeping = isTimedWaypoint
+                               || (effective.type == WAYPOINT_TYPE_HOLD)
                                || (effective.type == WAYPOINT_TYPE_LAND)
                                || (effective.type == WAYPOINT_TYPE_TAKEOFF);
     const float arrivalRadiusM = (isStationKeeping ? cfg->waypointHoldRadius : cfg->waypointArrivalRadius) * 0.01f;
@@ -1379,10 +1383,12 @@ static void onWaypointReached(void *userData)
     }
 #endif
 
-    // A LAND duration is a pre-descent loiter and a TAKEOFF duration a
-    // post-climb loiter; the hold-expiry path starts the descent (LAND) or
-    // advances (HOLD, TAKEOFF).
-    const bool holdsOnArrival = (wp->type == WAYPOINT_TYPE_HOLD)
+    // A normal waypoint duration is its dwell time, a LAND duration is a
+    // pre-descent loiter and a TAKEOFF duration a post-climb loiter; the
+    // hold-expiry path starts the descent (LAND) or advances otherwise.
+    const bool holdsOnArrival = (wp->type == WAYPOINT_TYPE_FLYOVER)
+                             || (wp->type == WAYPOINT_TYPE_FLYBY)
+                             || (wp->type == WAYPOINT_TYPE_HOLD)
                              || (wp->type == WAYPOINT_TYPE_LAND)
                              || (wp->type == WAYPOINT_TYPE_TAKEOFF);
     if (holdsOnArrival && fp.holdDurationDs > 0) {

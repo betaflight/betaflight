@@ -505,6 +505,37 @@ TEST_F(FlightPlanNavTest, HoldWithZeroDurationAdvancesImmediately)
     EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
 }
 
+TEST_F(FlightPlanNavTest, TimedFlybyHoldsBeforeAdvancing)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYBY, 0, 100 /* 10 s */);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    ASSERT_NE(g_lastTarget.callback, nullptr); // duration disables pass-through
+    triggerReached();
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_HOLDING);
+
+    g_stubMicros += 9'999'999;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_HOLDING);
+
+    g_stubMicros += 1;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+}
+
+TEST_F(FlightPlanNavTest, ZeroDurationFlybyStillPassesThrough)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYBY, 0, 0);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    flightPlanNavEngage();
+    EXPECT_EQ(g_lastTarget.callback, nullptr);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+}
+
 TEST_F(FlightPlanNavTest, TakeoffDispatchClimbsInPlace)
 {
     // Vehicle at (40 E, 30 N) m; TAKEOFF waypoint 100 m away horizontally.

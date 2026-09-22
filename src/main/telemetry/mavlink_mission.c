@@ -209,6 +209,7 @@ static void sendMissionItem(uint8_t partnerSys, uint8_t partnerComp, uint16_t se
     case WAYPOINT_TYPE_FLYBY:
     default:
         command = MAV_CMD_NAV_WAYPOINT;
+        param1 = wp->duration * 0.1f;
         break;
     }
 
