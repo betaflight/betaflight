@@ -241,6 +241,9 @@
 #ifndef USE_MAG_BMM350
 #define USE_MAG_BMM350
 #endif
+#ifndef USE_MAG_AK9916
+#define USE_MAG_AK9916
+#endif
 
 #endif // END MAG HW defines
 
