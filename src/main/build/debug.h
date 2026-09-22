@@ -217,6 +217,8 @@ typedef enum {
     DEBUG_RX_REDPINE_SPI,
     DEBUG_LAUNCH,
     DEBUG_VELOCITY_EST,
+    DEBUG_SAG_COMPENSATION,
+    DEBUG_UPT1,
     DEBUG_COUNT
 } debugType_e;
 
