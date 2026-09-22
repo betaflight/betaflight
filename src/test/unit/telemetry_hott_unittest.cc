@@ -142,6 +142,20 @@ TEST(TelemetryHottTest, UpdateGPSCoordinates3)
     EXPECT_EQ((int16_t)(hottGPSMessage->pos_EW_sec_H << 8 | hottGPSMessage->pos_EW_sec_L), 9999);
 }
 
+TEST(TelemetryHottTest, HomeDirectionUsesTwoDegreeSteps)
+{
+    ENABLE_STATE(GPS_FIX);
+    const int16_t directions[] = { 0, 900, 1800, 2700 };
+    const uint8_t expected[] = { 0, 45, 90, 135 };
+
+    for (unsigned i = 0; i < ARRAYLEN(directions); i++) {
+        HOTT_GPS_MSG_t *message = getGPSMessageForTest();
+        GPS_directionToHome = directions[i];
+        hottPrepareGPSResponse(message);
+        EXPECT_EQ(message->home_direction, expected[i]);
+    }
+}
+
 /*
 TEST(TelemetryHottTest, PrepareGPSMessage_Altitude1m)
 {
@@ -174,7 +188,7 @@ uint8_t useHottAlarmSoundPeriod (void) { return 0; }
 
 gpsSolutionData_t gpsSol;
 uint16_t GPS_distanceToHome;        // distance to home point in meters
-int16_t GPS_directionToHome;        // direction to home or hol point in degrees
+int16_t GPS_directionToHome;        // direction to home or hold point in degrees * 10
 
 
 uint32_t fixedMillis = 0;

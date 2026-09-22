@@ -240,7 +240,8 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
     hottGPSMessage->altitude_L = hottGpsAltitude & 0x00FF;
     hottGPSMessage->altitude_H = hottGpsAltitude >> 8;
 
-    hottGPSMessage->home_direction = GPS_directionToHome / 10;
+    // GPS_directionToHome is in decidegrees; HoTT uses two-degree steps.
+    hottGPSMessage->home_direction = GPS_directionToHome / 20;
 }
 #endif
 
