@@ -85,14 +85,17 @@ static bool sdcardSdio_isFunctional(void)
  */
 static void sdcard_reset(void)
 {
-    if (SD_Init() != 0) {
-        sdcard.failureCount++;
-        if (sdcard.failureCount >= SDCARD_MAX_CONSECUTIVE_FAILURES || !sdcard_isInserted()) {
-            sdcard.state = SDCARD_STATE_NOT_PRESENT;
-        } else {
-            sdcard.operationStartTime = millis();
-            sdcard.state = SDCARD_STATE_RESET;
-        }
+    const bool cardInserted = sdcard_isInserted();
+    if (cardInserted) {
+        SD_Init();
+    }
+
+    sdcard.failureCount++;
+    if (sdcard.failureCount >= SDCARD_MAX_CONSECUTIVE_FAILURES || !cardInserted) {
+        sdcard.state = SDCARD_STATE_NOT_PRESENT;
+    } else {
+        sdcard.operationStartTime = millis();
+        sdcard.state = SDCARD_STATE_RESET;
     }
 }
 
@@ -337,9 +340,10 @@ static bool sdcardSdio_poll(void)
                 goto doMore;
             } // else keep waiting for the CID to arrive
         break;
-        case SDCARD_STATE_SENDING_WRITE:
+        case SDCARD_STATE_SENDING_WRITE: {
             // Have we finished sending the write yet?
-            if (SD_CheckWrite() == SD_OK) {
+            const SD_Error_t writeStatus = SD_CheckWrite();
+            if (writeStatus == SD_OK) {
 
                 // The SD card is now busy committing that write to the card
                 sdcard.state = SDCARD_STATE_WAITING_FOR_WRITE;
@@ -349,7 +353,19 @@ static bool sdcardSdio_poll(void)
                 if (sdcard.pendingOperation.callback) {
                     sdcard.pendingOperation.callback(SDCARD_BLOCK_OPERATION_WRITE, sdcard.pendingOperation.blockIndex, sdcard.pendingOperation.buffer, sdcard.pendingOperation.callbackData);
                 }
+            } else if (writeStatus != SD_BUSY || millis() > sdcard.operationStartTime + SDCARD_TIMEOUT_WRITE_MSEC) {
+                sdcard_reset();
+
+                if (sdcard.pendingOperation.callback) {
+                    sdcard.pendingOperation.callback(
+                        SDCARD_BLOCK_OPERATION_WRITE,
+                        sdcard.pendingOperation.blockIndex,
+                        NULL,
+                        sdcard.pendingOperation.callbackData
+                    );
+                }
             }
+        }
         break;
         case SDCARD_STATE_WAITING_FOR_WRITE:
             if (SD_GetState()) {
@@ -418,7 +434,16 @@ static bool sdcardSdio_poll(void)
                     // Timeout has expired, so fall through to convert to a fatal error
 
                 case SDCARD_RECEIVE_ERROR:
-                    goto doMore;
+                    sdcard_reset();
+
+                    if (sdcard.pendingOperation.callback) {
+                        sdcard.pendingOperation.callback(
+                            SDCARD_BLOCK_OPERATION_READ,
+                            sdcard.pendingOperation.blockIndex,
+                            NULL,
+                            sdcard.pendingOperation.callbackData
+                        );
+                    }
                 break;
             }
         break;
@@ -517,6 +542,7 @@ static sdcardOperationStatus_e sdcardSdio_writeBlock(uint32_t blockIndex, uint8_
     sdcard.pendingOperation.callbackData = callbackData;
     sdcard.pendingOperation.chunkIndex = 1; // (for non-DMA transfers) we've sent chunk #0 already
     sdcard.state = SDCARD_STATE_SENDING_WRITE;
+    sdcard.operationStartTime = millis();
 
     if (SD_WriteBlocks_DMA(blockIndex, (uint32_t*) buffer, 512, block_count) != SD_OK) {
         /* Our write was rejected! This could be due to a bad address but we hope not to attempt that, so assume
