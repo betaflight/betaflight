@@ -468,7 +468,7 @@ static void uartWrite(serialPort_t *instance, uint8_t ch)
     }
 
     // Check if the TX line is being pulled low by an unpowered peripheral
-    if (uartPort->checkUsartTxOutput && !uartPort->checkUsartTxOutput(uartPort)) {
+    if (!uartPort->txInhibited && uartPort->checkUsartTxOutput && !uartPort->checkUsartTxOutput(uartPort)) {
         // TX line is being pulled low, so don't transmit
         return;
     }
@@ -479,6 +479,10 @@ static void uartWrite(serialPort_t *instance, uint8_t ch)
         uartPort->port.txBufferHead = 0;
     } else {
         uartPort->port.txBufferHead++;
+    }
+
+    if (uartPort->txInhibited) {
+        return;
     }
 
 #ifdef USE_DMA
@@ -500,7 +504,7 @@ static void uartBeginWrite(serialPort_t *instance)
     }
 
     // Check if the TX line is being pulled low by an unpowered peripheral
-    if (uartPort->checkUsartTxOutput) {
+    if (!uartPort->txInhibited && uartPort->checkUsartTxOutput) {
         uartPort->checkUsartTxOutput(uartPort);
     }
 }
@@ -516,7 +520,7 @@ static void uartWriteBuf(serialPort_t *instance, const void *data, int count)
     }
 
     // Test if checkUsartTxOutput() detected TX line being pulled low by an unpowered peripheral
-    if (uart->txPinState == TX_PIN_MONITOR) {
+    if (!uartPort->txInhibited && uart->txPinState == TX_PIN_MONITOR) {
         // TX line is being pulled low, so don't transmit
         return;
     }
@@ -542,7 +546,7 @@ static void uartEndWrite(serialPort_t *instance)
     uartPort_t *uartPort = (uartPort_t *)instance;
     uartDevice_t *uart = container_of(uartPort, uartDevice_t, port);
 
-    if (!uartCanWrite(uartPort)) {
+    if (!uartCanWrite(uartPort) || uartPort->txInhibited) {
         return;
     }
 
@@ -576,6 +580,9 @@ const struct serialPortVTable uartVTable[] = {
         .writeBuf = uartWriteBuf,
         .beginWrite = uartBeginWrite,
         .endWrite = uartEndWrite,
+#if UART_TRAIT_ASYNC_RECONFIGURE
+        .trySetBaudRate = uartTrySetBaudRate,
+#endif
     }
 };
 

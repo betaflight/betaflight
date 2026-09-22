@@ -280,6 +280,13 @@ $(OBJECT_DIR)/dronecan_gnss_unittest/dronecan_gnss_unittest.o: \
 		$(ROOT)/lib/modules/dronecan/libcanard/canard.c
 
 
+serial_uart_reconfigure_unittest_SRC := \
+        $(USER_DIR)/drivers/serial.c \
+        $(USER_DIR)/drivers/serial_uart.c
+serial_uart_reconfigure_unittest_DEFINES := \
+        USE_UART= USE_TIMER_AF= UART_TRAIT_AF_PIN=1 UART_TRAIT_ASYNC_RECONFIGURE=1 \
+        UARTHARDWARE_MAX_PINS=1 UART_TX_BUFFER_ATTRIBUTE= UART_RX_BUFFER_ATTRIBUTE= FAST_IRQ_HANDLER=
+
 io_serial_unittest_SRC := \
 		$(USER_DIR)/io/serial.c \
 		$(USER_DIR)/io/serial_resource.c
