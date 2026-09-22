@@ -24,10 +24,13 @@ extern "C" {
 #include "drivers/bus.h"
 
 void bmp280Calculate(int32_t *pressure, int32_t *temperature);
+bool bmp280ReadUP(baroDev_t *baro);
+bool bmp280GetUP(baroDev_t *baro);
 
 extern uint32_t bmp280_up;
 extern uint32_t bmp280_ut;
 extern int32_t t_fine; /* calibration t_fine data */
+extern bool bmp280SampleValid;
 
 typedef struct bmp280_calib_param_s {
     uint16_t dig_T1; /* calibration T1 data */
@@ -58,6 +61,7 @@ TEST(baroBmp280Test, TestBmp280Calculate)
     int32_t pressure, temperature;
     bmp280_up = 415148; // Digital pressure value
     bmp280_ut = 519888; // Digital temperature value
+    bmp280SampleValid = true;
     t_fine = 0;
 
     // and
@@ -88,6 +92,7 @@ TEST(baroBmp280Test, TestBmp280CalculateHighP)
     int32_t pressure, temperature;
     bmp280_up = 215148; // Digital pressure value
     bmp280_ut = 519888; // Digital temperature value
+    bmp280SampleValid = true;
     t_fine = 0;
 
     // and
@@ -118,6 +123,7 @@ TEST(baroBmp280Test, TestBmp280CalculateZeroP)
     int32_t pressure, temperature;
     bmp280_up = 415148; // Digital pressure value
     bmp280_ut = 519888; // Digital temperature value
+    bmp280SampleValid = true;
     t_fine = 0;
 
     // and
@@ -142,14 +148,98 @@ TEST(baroBmp280Test, TestBmp280CalculateZeroP)
     EXPECT_EQ(2508, temperature); // 25.08 degC
 }
 
+static bool testBusBusy;
+static bool testBusError;
+static bool testReadStartResult;
+static bool testPopulateReadBuffer;
+static uint8_t testSensorData[6];
+
+static void encodeBmp280Sample(uint32_t pressure, uint32_t temperature)
+{
+    testSensorData[0] = pressure >> 12;
+    testSensorData[1] = pressure >> 4;
+    testSensorData[2] = pressure << 4;
+    testSensorData[3] = temperature >> 12;
+    testSensorData[4] = temperature >> 4;
+    testSensorData[5] = temperature << 4;
+}
+
+TEST(baroBmp280Test, TestBmp280AcceptsCompletedRead)
+{
+    baroDev_t baro = {};
+    encodeBmp280Sample(415148, 519888);
+    testBusBusy = false;
+    testBusError = false;
+    testReadStartResult = true;
+    testPopulateReadBuffer = true;
+
+    ASSERT_TRUE(bmp280ReadUP(&baro));
+    EXPECT_FALSE(bmp280SampleValid);
+    ASSERT_TRUE(bmp280GetUP(&baro));
+    EXPECT_TRUE(bmp280SampleValid);
+    EXPECT_EQ(415148, bmp280_up);
+    EXPECT_EQ(519888, bmp280_ut);
+}
+
+TEST(baroBmp280Test, TestBmp280RejectsFailedReadWithStaleBuffer)
+{
+    baroDev_t baro = {};
+    encodeBmp280Sample(415148, 519888);
+    testBusBusy = false;
+    testBusError = false;
+    testReadStartResult = true;
+    testPopulateReadBuffer = true;
+    ASSERT_TRUE(bmp280ReadUP(&baro));
+    ASSERT_TRUE(bmp280GetUP(&baro));
+
+    // The next asynchronous read starts but NACKs without changing the DMA buffer.
+    testPopulateReadBuffer = false;
+    ASSERT_TRUE(bmp280ReadUP(&baro));
+    testBusError = true;
+    ASSERT_TRUE(bmp280GetUP(&baro));
+
+    int32_t pressure = -1;
+    bmp280Calculate(&pressure, nullptr);
+    EXPECT_EQ(0, pressure);
+    EXPECT_FALSE(bmp280SampleValid);
+}
+
+TEST(baroBmp280Test, TestBmp280WaitsForRunningRead)
+{
+    baroDev_t baro = {};
+    testBusBusy = true;
+    testBusError = false;
+
+    EXPECT_FALSE(bmp280GetUP(&baro));
+}
+
+TEST(baroBmp280Test, TestBmp280RetriesReadStartFailure)
+{
+    baroDev_t baro = {};
+    testBusBusy = false;
+    testReadStartResult = false;
+
+    EXPECT_FALSE(bmp280ReadUP(&baro));
+}
+
 // STUBS
 
 extern "C" {
 
 void delay(uint32_t) {}
-bool busBusy(const extDevice_t*, bool*) {return false;}
+bool busBusy(const extDevice_t*, bool *error) {
+    if (error) {
+        *error = testBusError;
+    }
+    return testBusBusy;
+}
 bool busReadRegisterBuffer(const extDevice_t*, uint8_t, uint8_t*, uint8_t) {return true;}
-bool busReadRegisterBufferStart(const extDevice_t*, uint8_t, uint8_t*, uint8_t) {return true;}
+bool busReadRegisterBufferStart(const extDevice_t*, uint8_t, uint8_t *data, uint8_t length) {
+    if (testReadStartResult && testPopulateReadBuffer) {
+        memcpy(data, testSensorData, length);
+    }
+    return testReadStartResult;
+}
 bool busWriteRegister(const extDevice_t*, uint8_t, uint8_t) {return true;}
 bool busWriteRegisterStart(const extDevice_t*, uint8_t, uint8_t) {return true;}
 void busDeviceRegister(const extDevice_t*) {}
