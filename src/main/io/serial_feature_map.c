@@ -291,7 +291,7 @@ unsigned serialGetPortClaims(serialPortIdentifier_e identifier, serialPortClaim_
 #ifdef USE_RANGEFINDER
     if (rangefinderConfig()->rangefinder_uart == identifier) {
         uint32_t mask = FUNCTION_LIDAR;
-#ifdef USE_RANGEFINDER_MT
+#if defined(USE_RANGEFINDER_MT) || defined(USE_RANGEFINDER_PB04)
         // An MSP-transport module's port opens as an implied MSP port, so
         // that is the function the claim is active under.
         if (rangefinderTypeUsesMsp(rangefinderConfig()->rangefinder_hardware)) {
@@ -304,7 +304,7 @@ unsigned serialGetPortClaims(serialPortIdentifier_e identifier, serialPortClaim_
 #ifdef USE_OPTICALFLOW
     if (opticalflowConfig()->opticalflow_uart == identifier) {
         uint32_t mask = FUNCTION_LIDAR;
-#ifdef USE_OPTICALFLOW_MT
+#if defined(USE_OPTICALFLOW_MT) || defined(USE_OPTICALFLOW_PB04)
         if (opticalflowTypeUsesMsp(opticalflowConfig()->opticalflow_hardware)) {
             mask |= FUNCTION_MSP;
         }
@@ -700,12 +700,12 @@ unsigned serialImpliedMspPorts(serialPortIdentifier_e *ports, unsigned maxPorts)
 {
     unsigned count = 0;
 
-#ifdef USE_RANGEFINDER_MT
+#if defined(USE_RANGEFINDER_MT) || defined(USE_RANGEFINDER_PB04)
     if (rangefinderTypeUsesMsp(rangefinderConfig()->rangefinder_hardware)) {
         addImpliedMspPort(ports, &count, maxPorts, rangefinderConfig()->rangefinder_uart);
     }
 #endif
-#ifdef USE_OPTICALFLOW_MT
+#if defined(USE_OPTICALFLOW_MT) || defined(USE_OPTICALFLOW_PB04)
     if (opticalflowTypeUsesMsp(opticalflowConfig()->opticalflow_hardware)) {
         addImpliedMspPort(ports, &count, maxPorts, opticalflowConfig()->opticalflow_uart);
     }

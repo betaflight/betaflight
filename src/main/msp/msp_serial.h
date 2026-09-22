@@ -36,12 +36,12 @@
 // module, or an MSP DisplayPort OSD.  Those get their own budget, so declaring
 // one can never cost a configurator link.  Each can sit on its own UART; two
 // features sharing one dedup to a single port.
-#if defined(USE_RANGEFINDER_MT)
+#if defined(USE_RANGEFINDER_MT) || defined(USE_RANGEFINDER_PB04)
 #define IMPLIED_MSP_RANGEFINDER_PORT_COUNT 1
 #else
 #define IMPLIED_MSP_RANGEFINDER_PORT_COUNT 0
 #endif
-#if defined(USE_OPTICALFLOW_MT)
+#if defined(USE_OPTICALFLOW_MT) || defined(USE_OPTICALFLOW_PB04)
 #define IMPLIED_MSP_OPTICALFLOW_PORT_COUNT 1
 #else
 #define IMPLIED_MSP_OPTICALFLOW_PORT_COUNT 0
@@ -168,3 +168,4 @@ mspDescriptor_t getMspSerialPortDescriptor(const serialPortIdentifier_e portIden
 int mspSerialPush(serialPortIdentifier_e port, uint8_t cmd, uint8_t *data, int datalen, mspDirection_e direction, mspVersion_e mspVersion);
 uint32_t mspSerialTxBytesFree(void);
 bool mspSerialIsConfiguratorActive(void);
+timeMs_t mspSerialLastActivityMs(serialPortIdentifier_e identifier);
