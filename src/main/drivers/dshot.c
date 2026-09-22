@@ -46,6 +46,7 @@
 
 #include "drivers/dshot_command.h"
 #include "drivers/nvic.h"
+#include "drivers/time.h"
 
 
 #include "pg/rpm_filter.h"
@@ -275,6 +276,7 @@ FAST_CODE_NOINLINE void updateDshotTelemetry(void)
     const unsigned motorCount = MIN(MAX_SUPPORTED_MOTORS, dshotMotorCount);
     uint32_t erpmTotal = 0;
     uint32_t rpmSamples = 0;
+    timeUs_t currentTimeUs = 0;
 
     // Decode all telemetry data now to discharge interrupt from this task
     for (uint8_t k = 0; k < motorCount; k++) {
@@ -287,7 +289,11 @@ FAST_CODE_NOINLINE void updateDshotTelemetry(void)
             dshotUpdateTelemetryData(k, type, value);
 
             if (type == DSHOT_TELEMETRY_TYPE_eRPM) {
+                if (!rpmSamples) {
+                    currentTimeUs = micros();
+                }
                 dshotRpm[k] = erpmToRpm(value);
+                dshotTelemetryState.motorState[k].lastRpmUpdateUs = currentTimeUs;
                 erpmTotal += value;
                 rpmSamples++;
             }
@@ -356,6 +362,23 @@ bool isDshotTelemetryActive(void)
         return true;
     }
     return false;
+}
+
+bool isDshotRpmTelemetryFresh(timeUs_t currentTimeUs)
+{
+    const unsigned motorCount = dshotMotorCount;
+    if (!motorCount) {
+        return false;
+    }
+
+    for (unsigned i = 0; i < motorCount; i++) {
+        const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[i];
+        if (!(motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_eRPM)) ||
+            cmpTimeUs(currentTimeUs, motorState->lastRpmUpdateUs) > DSHOT_RPM_TELEMETRY_TIMEOUT_US) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void dshotCleanTelemetryData(void)

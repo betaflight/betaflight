@@ -759,7 +759,12 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
 
 #ifdef USE_RPM_LIMIT
     if (RPM_LIMIT_ACTIVE && useDshotTelemetry && ARMING_FLAG(ARMED)) {
-        applyRpmLimiter(&mixerRuntime);
+        if (isDshotRpmTelemetryFresh(currentTimeUs)) {
+            mixerRuntime.rpmLimiterTelemetryFresh = true;
+            applyRpmLimiter(&mixerRuntime);
+        } else if (mixerRuntime.rpmLimiterTelemetryFresh) {
+            mixerResetRpmLimiter();
+        }
     }
 #endif
 

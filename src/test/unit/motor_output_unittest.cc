@@ -24,6 +24,9 @@
 extern "C" {
 #include "drivers/dshot.h"
 #include "build/atomic.h"
+#include "build/debug.h"
+#include "pg/motor.h"
+#include "pg/rpm_filter.h"
 }
 
 #include "unittest_macros.h"
@@ -32,7 +35,15 @@ extern "C" {
 extern "C" {
 
 bool featureIsEnabled(uint8_t f);
-float scaleRangef(float a, float b, float c, float d, float e);
+
+motorConfig_t motorConfig_System;
+motorConfig_t motorConfig_Copy;
+rpmFilterConfig_t rpmFilterConfig_System;
+rpmFilterConfig_t rpmFilterConfig_Copy;
+bool useDshotTelemetry;
+int16_t debug[DEBUG16_VALUE_COUNT];
+uint8_t debugMode;
+static timeUs_t mockTimeUs;
 
 // Mocking functions
 
@@ -42,14 +53,9 @@ bool featureIsEnabled(uint8_t f)
     return true;
 }
 
-float scaleRangef(float a, float b, float c, float d, float e)
+timeUs_t micros(void)
 {
-    UNUSED(a);
-    UNUSED(b);
-    UNUSED(c);
-    UNUSED(d);
-    UNUSED(e);
-    return 0;
+    return mockTimeUs;
 }
 
 }
@@ -104,4 +110,46 @@ TEST(MotorOutputUnittest, TestFixMotorOutputReordering)
     uint8_t a9_expected[size] = {7, 6, 5, 4, 3, 2, 1, 0};
     validateAndfixMotorOutputReordering(a9_initial, size);
     EXPECT_TRUE( 0 == memcmp(a9_expected, a9_initial, sizeof(a9_expected)));
+}
+
+TEST(MotorOutputUnittest, TestDshotRpmTelemetryFreshness)
+{
+    memset(&dshotTelemetryState, 0, sizeof(dshotTelemetryState));
+    memset(&motorConfig_System, 0, sizeof(motorConfig_System));
+    motorConfig_System.dev.useDshotTelemetry = true;
+    motorConfig_System.motorPoleCount = 14;
+    rpmFilterConfig_System.rpm_filter_lpf_hz = 150;
+    useDshotTelemetry = true;
+    dshotMotorCount = 4;
+    mockTimeUs = 1000;
+    initDshotTelemetry(1000);
+
+    for (unsigned motor = 0; motor < dshotMotorCount; motor++) {
+        dshotTelemetryState.motorState[motor].rawValue = 450;
+    }
+    dshotTelemetryState.rawValueState = DSHOT_RAW_VALUE_STATE_NOT_PROCESSED;
+    updateDshotTelemetry();
+
+    EXPECT_NEAR(19043.0f, getDshotRpmAverage(), 1.0f);
+    EXPECT_TRUE(isDshotRpmTelemetryFresh(mockTimeUs));
+    EXPECT_TRUE(isDshotRpmTelemetryFresh(mockTimeUs + DSHOT_RPM_TELEMETRY_TIMEOUT_US));
+    EXPECT_FALSE(isDshotRpmTelemetryFresh(mockTimeUs + DSHOT_RPM_TELEMETRY_TIMEOUT_US + 1));
+
+    mockTimeUs += DSHOT_RPM_TELEMETRY_TIMEOUT_US + 1;
+    for (unsigned motor = 0; motor < dshotMotorCount; motor++) {
+        dshotTelemetryState.motorState[motor].rawValue = DSHOT_TELEMETRY_INVALID;
+    }
+    dshotTelemetryState.rawValueState = DSHOT_RAW_VALUE_STATE_NOT_PROCESSED;
+    updateDshotTelemetry();
+
+    EXPECT_NEAR(19043.0f, getDshotRpmAverage(), 1.0f);
+    EXPECT_FALSE(isDshotRpmTelemetryFresh(mockTimeUs));
+
+    for (unsigned motor = 0; motor < dshotMotorCount; motor++) {
+        dshotTelemetryState.motorState[motor].rawValue = 450;
+    }
+    dshotTelemetryState.rawValueState = DSHOT_RAW_VALUE_STATE_NOT_PROCESSED;
+    updateDshotTelemetry();
+
+    EXPECT_TRUE(isDshotRpmTelemetryFresh(mockTimeUs));
 }

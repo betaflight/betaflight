@@ -38,6 +38,7 @@
 
 #define DSHOT_TELEMETRY_NOEDGE          (0xfffe)
 #define DSHOT_TELEMETRY_INVALID         (0xffff)
+#define DSHOT_RPM_TELEMETRY_TIMEOUT_US  100000
 
 #define MIN_GCR_EDGES                   (7)
 #define MAX_GCR_EDGES                   (22)
@@ -103,6 +104,7 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
 typedef struct dshotTelemetryMotorState_s {
     uint16_t rawValue;
     uint16_t telemetryData[DSHOT_TELEMETRY_TYPE_COUNT];
+    timeUs_t lastRpmUpdateUs;
     uint8_t telemetryTypes;
     uint8_t maxTemp;
 } dshotTelemetryMotorState_t;
@@ -147,6 +149,7 @@ float getMinMotorFrequencyHz(void);
 
 bool isDshotMotorTelemetryActive(uint8_t motorIndex);
 bool isDshotTelemetryActive(void);
+bool isDshotRpmTelemetryFresh(timeUs_t currentTimeUs);
 void dshotCleanTelemetryData(void);
 
 float erpmToRpm(uint32_t erpm);
