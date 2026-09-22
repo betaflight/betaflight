@@ -31,6 +31,7 @@ typedef enum {
     OPTICALFLOW_NONE = 0,
     OPTICALFLOW_MT = 1,
     OPTICALFLOW_UPT1 = 2,
+    OPTICALFLOW_PB04 = 3,
     OPTICALFLOW_HARDWARE_COUNT
 } opticalflowType_e;
 
