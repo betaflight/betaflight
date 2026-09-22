@@ -57,6 +57,7 @@
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
 #include "drivers/accgyro/accgyro_spi_l3gd20.h"
+#include "drivers/accgyro/accgyro_spi_adis16607.h"
 #include "drivers/accgyro/accgyro_spi_lsm6dsv16x.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/accgyro/accgyro_spi_icm40609.h"
@@ -397,6 +398,13 @@ static gyroSpiDetectFn_t gyroSpiDetectFnTable[] = {
 #endif
 #ifdef USE_ACCGYRO_ICM40609D
     icm40609SpiDetect,
+#endif
+#ifdef USE_ACCGYRO_ADIS16607
+    // Deliberately last on two counts: this part has no WHO_AM_I so the probe
+    // matches DEV_ID (0x00), an address every other part here also answers, and
+    // the probe has to write the half-duplex mode key before it can read at all.
+    // Running it last means a known part has already claimed the bus by then.
+    adis16607SpiDetect,
 #endif
     NULL // Avoid an empty array
 };
