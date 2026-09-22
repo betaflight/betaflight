@@ -505,6 +505,53 @@ TEST_F(FlightPlanNavTest, HoldWithZeroDurationAdvancesImmediately)
     EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
 }
 
+TEST_F(FlightPlanNavTest, LongHoldDurationSurvivesMicrosWrap)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_HOLD, 0, 43200 /* 4320 s */);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    triggerReached();
+
+    g_stubMicros += 33'000'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_HOLDING);
+
+    // Advance in realistic sub-wrap intervals.  The 32-bit clock wraps while
+    // the accumulated duration continues to 4319.9 seconds.
+    for (int i = 0; i < 428; i++) {
+        g_stubMicros += 10'000'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    g_stubMicros += 6'900'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_HOLDING);
+
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+}
+
+TEST_F(FlightPlanNavTest, ShortHoldAcrossMicrosWrapExpiresNormally)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_HOLD, 0, 20 /* 2 s */);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    g_stubMicros = UINT32_MAX - 1'000'000;
+    flightPlanNavEngage();
+    triggerReached();
+
+    g_stubMicros += 1'500'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_HOLDING);
+
+    g_stubMicros += 500'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+}
+
 TEST_F(FlightPlanNavTest, TakeoffDispatchClimbsInPlace)
 {
     // Vehicle at (40 E, 30 N) m; TAKEOFF waypoint 100 m away horizontally.
