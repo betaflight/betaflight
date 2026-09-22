@@ -66,7 +66,7 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
 #endif // USE_SPI
 #ifdef USE_ADC
     { DMA_PERIPH_ADC,     ADCDEV_1,  { DMA(2, 0, 0), DMA(2, 4, 0) } },
-    { DMA_PERIPH_ADC,     ADCDEV_2,  { DMA(2, 2, 1), DMA(2, 3, 1) } },
+    { DMA_PERIPH_ADC,     ADCDEV_2,  { DMA(2, 2, 0), DMA(2, 3, 0) } },
 #endif
 #ifdef USE_UART1
     { DMA_PERIPH_UART_TX, UARTDEV_1, { DMA(2, 7, 2) } },
