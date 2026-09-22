@@ -317,6 +317,9 @@ msp_serial_unittest_DEFINES := \
 		USE_RANGEFINDER_MT= \
 		USE_OPTICALFLOW_MT=
 
+msp_reboot_unittest_SRC := \
+		$(USER_DIR)/fc/runtime_config.c
+
 osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
 		$(USER_DIR)/osd/osd_elements.c \
