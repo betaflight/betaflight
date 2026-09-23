@@ -69,7 +69,7 @@ void blackboxPrintfHeaderLine(const char *name, const char *fmt, ...)
 
     blackboxWrite('H');
     blackboxWrite(' ');
-    blackboxWriteString(name);
+    const int nameLength = blackboxWriteString(name);
     blackboxWrite(':');
 
     va_start(va, fmt);
@@ -80,7 +80,7 @@ void blackboxPrintfHeaderLine(const char *name, const char *fmt, ...)
 
     blackboxWrite('\n');
 
-    blackboxHeaderBudget -= written + 3;
+    blackboxHeaderBudget -= nameLength + written + 4;
 }
 
 /**

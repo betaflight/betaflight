@@ -2640,6 +2640,11 @@ static const char * const waypointPatternNames[] = {
 };
 STATIC_ASSERT(WAYPOINT_PATTERN_COUNT == ARRAYLEN(waypointPatternNames), waypointPatternNames_array_length_mismatch);
 
+static const char * const waypointYawNames[] = {
+    "DEFAULT", "FACE_TARGET", "FACE_NEXT", "HOLD",
+};
+STATIC_ASSERT(WAYPOINT_YAW_COUNT == ARRAYLEN(waypointYawNames), waypointYawNames_array_length_mismatch);
+
 // Parse decimal coordinate string to int32 (degrees * 10^7)
 // Accepts formats like: -33.5429890, 151.6664560, -33.5, 151
 static bool parseDecimalCoordinate(const char *str, int32_t *result)
@@ -2759,7 +2764,7 @@ static void formatDecimalCoordinate(int32_t value, char *buffer)
 
 static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flightPlanConfig, const flightPlanConfig_t *defaultFlightPlanConfig, const char *headingStr)
 {
-    const char *format = "waypoint insert %u %s %s %d %u %s %u %s";
+    const char *format = "waypoint insert %u %s %s %d %u %s %u %s %u %s";
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
 
     // Determine if all waypoints equal their defaults
@@ -2800,6 +2805,7 @@ static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flight
 
             const char *defaultTypeName = (defaultWp->type < ARRAYLEN(waypointTypeNames)) ? waypointTypeNames[defaultWp->type] : "UNKNOWN";
             const char *defaultPatternName = (defaultWp->pattern < ARRAYLEN(waypointPatternNames)) ? waypointPatternNames[defaultWp->pattern] : "UNKNOWN";
+            const char *defaultYawName = (defaultWp->yawBehaviour < ARRAYLEN(waypointYawNames)) ? waypointYawNames[defaultWp->yawBehaviour] : "UNKNOWN";
 
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 i,
@@ -2809,7 +2815,9 @@ static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flight
                 defaultWp->speed,
                 defaultTypeName,
                 defaultWp->duration,
-                defaultPatternName
+                defaultPatternName,
+                defaultWp->vertRate,
+                defaultYawName
             );
         }
 
@@ -2818,6 +2826,7 @@ static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flight
 
         const char *typeName = (wp->type < ARRAYLEN(waypointTypeNames)) ? waypointTypeNames[wp->type] : "UNKNOWN";
         const char *patternName = (wp->pattern < ARRAYLEN(waypointPatternNames)) ? waypointPatternNames[wp->pattern] : "UNKNOWN";
+        const char *yawName = (wp->yawBehaviour < ARRAYLEN(waypointYawNames)) ? waypointYawNames[wp->yawBehaviour] : "UNKNOWN";
 
         cliDumpPrintLinef(dumpMask, equalsDefault, format,
             i,
@@ -2827,7 +2836,9 @@ static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flight
             wp->speed,
             typeName,
             wp->duration,
-            patternName
+            patternName,
+            wp->vertRate,
+            yawName
         );
     }
 }
@@ -2849,7 +2860,10 @@ RAM_CODE static void cliWaypoint(const char *cmdName, char *cmdline)
     }
 
     // Parse arguments into args array
-    enum { OP = 0, INDEX, LAT, LON, ALT, SPEED, TYPE, DURATION, PATTERN, MAX_ARGS };
+    enum { OP = 0, INDEX, LAT, LON, ALT, SPEED, TYPE, DURATION, PATTERN, VERT_RATE, YAW, MAX_ARGS };
+    // vertical rate and yaw behaviour are optional: a dump from an older firmware omits them
+    const int argCountShort = PATTERN + 1;
+    const int argCountFull = MAX_ARGS;
     char *args[MAX_ARGS];
     int argCount = 0;
 
@@ -2993,7 +3007,7 @@ RAM_CODE static void cliWaypoint(const char *cmdName, char *cmdline)
         return;
     }
 
-    if (argCount != 9) {
+    if (argCount != argCountShort && argCount != argCountFull) {
         cliShowInvalidArgumentCountError(cmdName);
         return;
     }
@@ -3102,6 +3116,34 @@ RAM_CODE static void cliWaypoint(const char *cmdName, char *cmdline)
         return;
     }
 
+    // Parse the optional vertical rate and yaw behaviour
+    long tmpVertRate = 0;
+    uint8_t yawBehaviour = WAYPOINT_YAW_DEFAULT;
+    if (argCount == argCountFull) {
+        tmpVertRate = strtol(args[VERT_RATE], &endptr, 10);
+        if (*endptr != '\0') {
+            cliPrintErrorLinef(cmdName, "INVALID VERTICAL RATE");
+            return;
+        }
+        if (tmpVertRate < 0 || tmpVertRate > UINT16_MAX) {
+            cliShowArgumentRangeError(cmdName, "vertical rate", 0, UINT16_MAX);
+            return;
+        }
+
+        bool yawFound = false;
+        for (uint8_t i = 0; i < ARRAYLEN(waypointYawNames); i++) {
+            if (strcasecmp(args[YAW], waypointYawNames[i]) == 0) {
+                yawBehaviour = i;
+                yawFound = true;
+                break;
+            }
+        }
+        if (!yawFound) {
+            cliPrintErrorLinef(cmdName, "INVALID YAW BEHAVIOUR. USE: DEFAULT, FACE_TARGET, FACE_NEXT, HOLD");
+            return;
+        }
+    }
+
     // Validate ranges (stored as degrees * 10^7)
     if (latitude < -900000000 || latitude > 900000000) {
         cliPrintErrorLinef(cmdName, "LATITUDE OUT OF RANGE. USE: -90.0 to 90.0");
@@ -3130,6 +3172,8 @@ RAM_CODE static void cliWaypoint(const char *cmdName, char *cmdline)
     wp->duration = (uint16_t)tmpDuration;
     wp->type = type;
     wp->pattern = pattern;
+    wp->vertRate = (uint16_t)tmpVertRate;
+    wp->yawBehaviour = yawBehaviour;
 
     char latBuffer[16];
     char lonBuffer[16];
@@ -3137,7 +3181,7 @@ RAM_CODE static void cliWaypoint(const char *cmdName, char *cmdline)
     formatDecimalCoordinate(wp->longitude, lonBuffer);
 
     const uint32_t altAbs = (wp->altitude < 0) ? -(uint32_t)wp->altitude : (uint32_t)wp->altitude;
-    cliPrintLinef("waypoint %s %u %s %s %s%u.%02um %u %s %u %s",
+    cliPrintLinef("waypoint %s %u %s %s %s%u.%02um %u %s %u %s %u %s",
         isInsert ? "insert" : "update",
         index,
         latBuffer,
@@ -3146,7 +3190,9 @@ RAM_CODE static void cliWaypoint(const char *cmdName, char *cmdline)
         wp->speed,
         waypointTypeNames[wp->type],
         wp->duration,
-        waypointPatternNames[wp->pattern]
+        waypointPatternNames[wp->pattern],
+        wp->vertRate,
+        waypointYawNames[wp->yawBehaviour]
     );
 }
 
@@ -6327,6 +6373,12 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
         } else {
             cliPrintLine("DroneCAN: NOT RUNNING (check dronecan_node_id and dronecan_device)");
         }
+    } else {
+        // The stack is compiled in but switched off, so every DroneCAN sensor is
+        // silently inert. Say so: selecting a DroneCAN provider elsewhere (gps_provider,
+        // mag_hardware) is accepted without complaint, and without this line status
+        // gives no hint that the reason nothing arrives is this flag.
+        cliPrintLine("DroneCAN: DISABLED (set dronecan_enabled = ON)");
     }
 #endif
 
@@ -8734,7 +8786,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("vtxtable", "vtx frequency table", "<band> <bandname> <bandletter> [FACTORY|CUSTOM] <freq> ... <freq>\r\n", cliVtxTable),
 #endif
 #if ENABLE_FLIGHT_PLAN
-    CLI_COMMAND_DEF("waypoint", "configure waypoints", "list | status | insert <idx> <lat.ddddddd> <lon.ddddddd> <alt> <spd> <type> <dur> <pat> | update <idx> <lat.ddddddd> <lon.ddddddd> <alt> <spd> <type> <dur> <pat> | remove <idx> | clear", cliWaypoint),
+    CLI_COMMAND_DEF("waypoint", "configure waypoints", "list | status | insert <idx> <lat.ddddddd> <lon.ddddddd> <alt> <spd> <type> <dur> <pat> [<vrate> <yaw>] | update <idx> <lat.ddddddd> <lon.ddddddd> <alt> <spd> <type> <dur> <pat> [<vrate> <yaw>] | remove <idx> | clear", cliWaypoint),
 #endif
 };
 

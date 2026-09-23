@@ -106,9 +106,6 @@ static bool opticalflowDetect(opticalflowDev_t * dev, uint8_t opticalflowHardwar
             if (upt1OpticalflowDetect(dev)) {
                 opticalflowHardware = OPTICALFLOW_UPT1;
                 rescheduleTask(TASK_OPTICALFLOW, TASK_PERIOD_MS(dev->delayMs));
-#ifdef USE_POSITION_HOLD
-                rescheduleTask(TASK_POSHOLD, TASK_PERIOD_MS(dev->delayMs));
-#endif
             }
             break;
 #endif
@@ -212,10 +209,10 @@ void opticalflowProcess(void) {
             pitchRate[delayedGyroSampleIndex]
         }};
 
-        DEBUG_SET(DEBUG_OPTICALFLOW, 0, lrintf(processed.x * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 1, lrintf(processed.y * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 2, lrintf(DEGREES_TO_RADIANS(delayedGyro.x) * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 3, lrintf(DEGREES_TO_RADIANS(delayedGyro.y) * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 0, lrintf(processed.x * 1000));                        //!< Rotated Flow Rate X [unit:0.001rad/s]
+        DEBUG_SET(DEBUG_OPTICALFLOW, 1, lrintf(processed.y * 1000));                        //!< Rotated Flow Rate Y [unit:0.001rad/s]
+        DEBUG_SET(DEBUG_OPTICALFLOW, 2, lrintf(DEGREES_TO_RADIANS(delayedGyro.x) * 1000));  //!< Gyro Compensation X [unit:0.001rad/s]
+        DEBUG_SET(DEBUG_OPTICALFLOW, 3, lrintf(DEGREES_TO_RADIANS(delayedGyro.y) * 1000));  //!< Gyro Compensation Y [unit:0.001rad/s]
 
         // Subtract the rate of body rotation (converted from dps to rad/s) from the
         // optical flow
@@ -229,8 +226,8 @@ void opticalflowProcess(void) {
         const bool xValid = fabsf(delayedGyro.x) <= ROTATION_GYRO_LIMIT;
         const bool yValid = fabsf(delayedGyro.y) <= ROTATION_GYRO_LIMIT;
 
-        DEBUG_SET(DEBUG_OPTICALFLOW, 4, xValid ? lrintf(processed.x * 1000) : 0);
-        DEBUG_SET(DEBUG_OPTICALFLOW, 5, yValid ? lrintf(processed.y * 1000) : 0);
+        DEBUG_SET(DEBUG_OPTICALFLOW, 4, xValid ? lrintf(processed.x * 1000) : 0);  //!< Compensated Flow Rate X [unit:0.001rad/s]
+        DEBUG_SET(DEBUG_OPTICALFLOW, 5, yValid ? lrintf(processed.y * 1000) : 0);  //!< Compensated Flow Rate Y [unit:0.001rad/s]
 
         // For the same reason, an unusable axis holds its previous value rather than
         // being zeroed. The validity flag travels with it, so a consumer can still
@@ -238,8 +235,8 @@ void opticalflowProcess(void) {
         processed.x = xValid ? processed.x : opticalflow.processedFlowRates.x;
         processed.y = yValid ? processed.y : opticalflow.processedFlowRates.y;
 
-        DEBUG_SET(DEBUG_OPTICALFLOW, 6, lrintf(processed.x * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 7, lrintf(processed.y * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 6, lrintf(processed.x * 1000));  //!< Filtered Flow Rate X [unit:0.001rad/s]
+        DEBUG_SET(DEBUG_OPTICALFLOW, 7, lrintf(processed.y * 1000));  //!< Filtered Flow Rate Y [unit:0.001rad/s]
 
         opticalflow.rawFlowRates = raw;
         opticalflow.processedFlowRates = processed;
