@@ -17,19 +17,21 @@
  * License along with this software.
  *
  * If not, see <http://www.gnu.org/licenses/>.
+ *
+ * BMM350 magnetometer driver (I2C only).
+ *
+ * Magnetic reset (BR/FGR) requires a 2.2 uF capacitor on CRST. Without it,
+ * heading accuracy is degraded. Addresses 0x14 (ADSEL=GND) and 0x15 (ADSEL=VDDIO).
  */
 
 #pragma once
 
-#ifndef TARGET_BOARD_IDENTIFIER
-#define TARGET_BOARD_IDENTIFIER "235B"
-#endif
+#include "drivers/compass/compass.h"
 
-#ifndef RP2350B
-#define RP2350B
-#endif
-
-#define UARTHARDWARE_MAX_PINS 12
-#define MAX_SPI_PIN_SEL 6
-
-#include "../common/target_RP2350.h"
+/**
+ * @brief Detect a BMM350 on I2C and install init/read callbacks.
+ *
+ * @param magDev Magnetometer device (address 0 probes 0x14 then 0x15).
+ * @return true if CHIP_ID 0x33 was read.
+ */
+bool bmm350Detect(magDev_t *magDev);
