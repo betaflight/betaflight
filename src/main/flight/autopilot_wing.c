@@ -54,12 +54,17 @@ void autopilotInit(void)
 void resetAltitudeControl (void) {
 }
 
-void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeVelCmS, float velLimitCmS)
+void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targetAltitudeVelCmS, float velLimitCmS)
 {
     UNUSED(targetAltitudeCm);
-    UNUSED(taskIntervalS);
+    UNUSED(taskIntervalUs);
     UNUSED(targetAltitudeVelCmS);
     UNUSED(velLimitCmS);
+}
+
+timeUs_t autopilotTaskIntervalUs(timeUs_t nominalIntervalUs)
+{
+    return nominalIntervalUs;
 }
 
 bool positionControl(void)
@@ -97,6 +102,15 @@ void autopilotSetYawRateLimit(float rateLimitDps)
     UNUSED(rateLimitDps);
 }
 
+void autopilotDisableYawControl(void)
+{
+}
+
+void updateHeadingHold(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+}
+
 void autopilotSetNavHeadingOverride(bool valid, float headingDeg)
 {
     UNUSED(valid);
@@ -111,6 +125,25 @@ void autopilotForceLevelPark(bool request)
 void pitchForwardOverride(bool request)
 {
     UNUSED(request);
+}
+
+// The wing control law does not exist yet, so every caller that would hand the
+// aircraft to it must be told so. Flip each of these as its phase lands:
+// altitude with the energy controller, position with lateral guidance, throttle
+// with the energy controller.
+bool autopilotAltitudeControlAvailable(void)
+{
+    return false;
+}
+
+bool autopilotPositionControlAvailable(void)
+{
+    return false;
+}
+
+bool autopilotThrottleValid(void)
+{
+    return false;
 }
 
 #endif // USE_WING

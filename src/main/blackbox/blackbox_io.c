@@ -139,13 +139,13 @@ void blackboxWrite(uint8_t value)
 
 #ifdef DEBUG_BB_OUTPUT
             bbBits += 2;
-            DEBUG_SET(DEBUG_BLACKBOX_OUTPUT, 3, txBytesFree);
+            DEBUG_SET(DEBUG_BLACKBOX_OUTPUT, 3, txBytesFree);  //!< Serial TX Bytes Free [unit:bytes]
 #endif
 
             if (txBytesFree == 0) {
 #ifdef DEBUG_BB_OUTPUT
                 ++bbDrops;
-                DEBUG_SET(DEBUG_BLACKBOX_OUTPUT, 2, bbDrops);
+                DEBUG_SET(DEBUG_BLACKBOX_OUTPUT, 2, bbDrops);  //!< Dropped Bytes
 #endif
                 return;
             }
@@ -159,10 +159,10 @@ void blackboxWrite(uint8_t value)
 
     if (now > bbLastclearMs + 100) {  // Debug log every 100[msec]
         uint16_t bbRate = ((bbBits * 10 + 5) / (now - bbLastclearMs)) / 10; // In unit of [Kbps]
-        DEBUG_SET(DEBUG_BLACKBOX_OUTPUT, 0, bbRate);
+        DEBUG_SET(DEBUG_BLACKBOX_OUTPUT, 0, bbRate);  //!< Output Rate [unit:kbit/s]
         if (bbRate > bbRateMax) {
             bbRateMax = bbRate;
-            DEBUG_SET(DEBUG_BLACKBOX_OUTPUT, 1, bbRateMax);
+            DEBUG_SET(DEBUG_BLACKBOX_OUTPUT, 1, bbRateMax);  //!< Peak Output Rate [unit:kbit/s]
         }
         bbLastclearMs = now;
         bbBits = 0;

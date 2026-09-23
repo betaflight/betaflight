@@ -266,6 +266,20 @@ unsigned serialGetPortClaims(serialPortIdentifier_e identifier, serialPortClaim_
     return 0;
 }
 
+bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
+{
+    (void)identifier;
+    (void)mask;
+    return true;
+}
+
+void serialApplyPortBaud(serialPortIdentifier_e identifier, serialBaudClass_e baudClass, uint8_t baudIndex)
+{
+    (void)identifier;
+    (void)baudClass;
+    (void)baudIndex;
+}
+
 const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
     SERIAL_PORT_USB_VCP,
     SERIAL_PORT_USART1,
@@ -420,6 +434,7 @@ void changePidProfile(uint8_t) {}
 void changeBatteryProfile(uint8_t) {}
 uint8_t getCurrentBatteryProfileIndex(void) { return 0; }
 bool serialIsPortAvailable(serialPortIdentifier_e) { return false; }
+int findSerialPortIndexByIdentifier(serialPortIdentifier_e) { return -1; }
 void generateLedConfig(ledConfig_t *, char *, size_t) {}
 //bool isSerialTransmitBufferEmpty(const serialPort_t *) {return true; }
 //void serialWrite(serialPort_t *, uint8_t ch) { printf("%c", ch);}
@@ -521,6 +536,20 @@ TEST(CLIUnittest, TestGetSettingByNameSmallBuffer)
     int written = cliGetSettingByName("array_unit_test", buf, sizeof(buf));
 
     EXPECT_LT(written, 0); // truncated output must return error
+}
+
+// The reply is "name = value", always longer than the name alone, so a buffer
+// sized from the requested name -- all a read request carries -- can never hold
+// it. MSP2_CLI_SETTING sized its scratch buffer exactly that way, so every read
+// over MSP answered MSP_RESULT_ERROR while writes appeared to work (there the
+// request carries the value too, so it happens to fit). Pins the caller contract.
+TEST(CLIUnittest, TestGetSettingByNameRejectsBufferSizedToNameOnly)
+{
+    const char *name = "array_unit_test";
+    char buf[128];
+    memset(buf, 0, sizeof(buf));
+
+    EXPECT_EQ(-1, cliGetSettingByName(name, buf, strlen(name) + 1));
 }
 
 // Verifies cliGetSettingByName returns 0 when buffer length is zero.
