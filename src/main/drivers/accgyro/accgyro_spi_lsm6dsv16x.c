@@ -882,7 +882,7 @@ static bool lsm6dsvReset(const extDevice_t *dev, uint8_t whoAmI);
 static bool lsm6dsv16xIs32x(const extDevice_t *dev)
 {
     // LSM6DSV16X and LSM6DSV32X share WHO_AM_I 0x70. After reset, CTRL8 bit2 is
-    // 0 on 16X and 1 on 32X. Gyro init preserves that bit when programming FS.
+    // 0 on 16X and 1 on 32X. Only detection reads it; init uses the detected identity.
     return (spiReadRegMsk(dev, LSM6DSV_CTRL8) & LSM6DSV_CTRL8_VARIANT_BIT) != 0;
 }
 
@@ -932,7 +932,7 @@ static bool lsm6dsvVariantEnabled(mpuSensor_e sensor)
 
 static void lsm6dsv16xAccInit(accDev_t *acc)
 {
-    if (lsm6dsv16xIs32x(&acc->gyro->dev)) {
+    if (acc->mpuDetectionResult.sensor == LSM6DSV32X_SPI) {
         acc->acc_1G = 512 * 2; // ±32g (1024 LSB/g)
     } else {
         acc->acc_1G = 512 * 4; // ±16g (2048 LSB/g)
@@ -1085,7 +1085,7 @@ static bool lsm6dsvReset(const extDevice_t *dev, uint8_t whoAmI)
     return false;
 }
 
-static bool lsm6dsvConfigure(const extDevice_t *dev, uint8_t whoAmI, bool *is32x)
+static bool lsm6dsvConfigure(const extDevice_t *dev, uint8_t whoAmI, bool is32x)
 {
     // Set default LPF1 filter bandwidth to be as close as possible to MPU6000's 250Hz cutoff.
     static const uint8_t lpf1BandwidthOptions[GYRO_HARDWARE_LPF_COUNT] = {
@@ -1101,7 +1101,6 @@ static bool lsm6dsvConfigure(const extDevice_t *dev, uint8_t whoAmI, bool *is32x
         return false;
     }
 
-    *is32x = whoAmI == LSM6DSV16X_WHO_AM_I_CONST && lsm6dsv16xIs32x(dev);
     const uint8_t accelMode = LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL1_OP_MODE_XL_HIGH_ACCURACY,
         LSM6DSV_CTRL1_OP_MODE_XL_MASK, LSM6DSV_CTRL1_OP_MODE_XL_SHIFT);
     const uint8_t gyroMode = LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL2_OP_MODE_G_HIGH_ACCURACY,
@@ -1119,10 +1118,10 @@ static bool lsm6dsvConfigure(const extDevice_t *dev, uint8_t whoAmI, bool *is32x
         { LSM6DSV_CTRL2, gyroMode },
         // 16X/320X: +/-16g. 32X: +/-32g, preserving its required CTRL8 bit 2.
         // LPF2 bandwidth is ODR/4 (250 Hz at the configured 1 kHz accelerometer ODR).
-        { LSM6DSV_CTRL8, (*is32x ? LSM6DSV_CTRL8_VARIANT_BIT : 0) |
+        { LSM6DSV_CTRL8, (is32x ? LSM6DSV_CTRL8_VARIANT_BIT : 0) |
             LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL8_HP_LPF2_XL_BW_4,
                 LSM6DSV_CTRL8_HP_LPF2_XL_BW_2_MASK, LSM6DSV_CTRL8_HP_LPF2_XL_BW_2_SHIFT) |
-            LSM6DSV_ENCODE_BITS(*is32x ? LSM6DSV32X_CTRL8_FS_XL_32G : LSM6DSV_CTRL8_FS_XL_16G,
+            LSM6DSV_ENCODE_BITS(is32x ? LSM6DSV32X_CTRL8_FS_XL_32G : LSM6DSV_CTRL8_FS_XL_16G,
                 LSM6DSV_CTRL8_FS_XL_MASK, LSM6DSV_CTRL8_FS_XL_SHIFT) },
         { LSM6DSV_CTRL9, LSM6DSV_CTRL9_LPF2_XL_EN },
         // 16X/320X: +/-2000 dps. 32X: +/-4000 dps.
@@ -1130,7 +1129,7 @@ static bool lsm6dsvConfigure(const extDevice_t *dev, uint8_t whoAmI, bool *is32x
         { LSM6DSV_CTRL6, (whoAmI == LSM6DSK320X_WHO_AM_I_CONST ? 0x08 : 0) |
             LSM6DSV_ENCODE_BITS(lpf1BandwidthOptions[gyroConfig()->gyro_hardware_lpf],
                 LSM6DSV_CTRL6_LPF1_G_BW_MASK, LSM6DSV_CTRL6_LPF1_G_BW_SHIFT) |
-            LSM6DSV_ENCODE_BITS(*is32x ? LSM6DSV_CTRL6_FS_G_4000DPS : LSM6DSV_CTRL6_FS_G_2000DPS,
+            LSM6DSV_ENCODE_BITS(is32x ? LSM6DSV_CTRL6_FS_G_4000DPS : LSM6DSV_CTRL6_FS_G_2000DPS,
                 LSM6DSV_CTRL6_FS_G_MASK, LSM6DSV_CTRL6_FS_G_SHIFT) },
         { LSM6DSV_CTRL7, LSM6DSV_CTRL7_LPF1_G_EN },
         // Generate a pulse on INT1 for each new gyro sample without requiring a read to clear.
@@ -1160,10 +1159,10 @@ static void lsm6dsvGyroInit(gyroDev_t *gyro, uint8_t whoAmI)
     const extDevice_t *dev = &gyro->dev;
     spiSetClkDivisor(dev, spiCalculateDivider(LSM6DSV16X_MAX_SPI_CLK_HZ));
 
+    const bool is32x = gyro->mpuDetectionResult.sensor == LSM6DSV32X_SPI;
     bool configured = false;
-    bool is32x = false;
     for (unsigned attempt = 0; attempt < LSM6DSV_INIT_ATTEMPTS && !configured; attempt++) {
-        configured = lsm6dsvConfigure(dev, whoAmI, &is32x);
+        configured = lsm6dsvConfigure(dev, whoAmI, is32x);
     }
     if (!configured) {
         failureMode(FAILURE_GYRO_INIT_FAILED);

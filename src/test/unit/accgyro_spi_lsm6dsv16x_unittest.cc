@@ -130,6 +130,7 @@ int droppedWrite;
 int droppedWriteTimes; // negative: every write
 unsigned stuckResets; // this many SW_RESET writes never complete
 unsigned droppedResets; // this many SW_RESET writes never reach the device
+unsigned ctrl8FlippedReads; // this many CTRL8 reads return bit 2 inverted
 bool resetStuck;
 bool resetPending;
 bool useDma;
@@ -162,7 +163,7 @@ protected:
         elapsedUs = 0;
         resetBusyReads = 2;
         failure = droppedWrite = droppedWriteTimes = -1;
-        stuckResets = droppedResets = 0;
+        stuckResets = droppedResets = ctrl8FlippedReads = 0;
         resetStuck = false;
         resetPending = disconnected = false;
         useDma = true;
@@ -402,6 +403,19 @@ TEST_P(AccgyroSpiLsm6dsv, DroppedResetWriteIsRetriedWithoutStaleVariant)
     EXPECT_FLOAT_EQ(is32x() ? 0.140f : 0.070f, gyro.scale);
 }
 
+TEST_P(AccgyroSpiLsm6dsv, InitTakesVariantFromDetection)
+{
+    // A glitched CTRL8 read must not override the variant detection settled on.
+    ctrl8FlippedReads = 1;
+    gyro.initFn(&gyro);
+    ASSERT_EQ(-1, failure);
+    EXPECT_EQ(is32x() ? 0x07 : 0x03, registers[CTRL8]);
+    EXPECT_FLOAT_EQ(is32x() ? 0.140f : 0.070f, gyro.scale);
+    ctrl8FlippedReads = 1;
+    acc.initFn(&acc);
+    EXPECT_EQ(is32x() ? 1024 : 2048, acc.acc_1G);
+}
+
 TEST_P(AccgyroSpiLsm6dsv, DmaReadersRejectDataBeforeFirstCompletedTransfer)
 {
     EXPECT_FALSE(acc.readFn(&acc));
@@ -578,6 +592,10 @@ uint8_t spiReadRegMsk(const extDevice_t *, uint8_t reg)
             return disconnected ? 0xff : 0x01;
         }
         resetPending = false;
+    }
+    if (reg == CTRL8 && ctrl8FlippedReads > 0 && !disconnected) {
+        --ctrl8FlippedReads;
+        return registers[CTRL8] ^ 0x04;
     }
     return disconnected ? (reg == CTRL3 ? 0 : 0xff) : registers[reg];
 }
