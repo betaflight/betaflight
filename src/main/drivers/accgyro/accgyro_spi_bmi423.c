@@ -276,6 +276,8 @@ static bool bmi423AccRead(accDev_t *acc)
         break;
 
     case GYRO_EXTI_INIT:
+        return false;
+
     default:
         break;
     }
@@ -286,6 +288,11 @@ static bool bmi423AccRead(accDev_t *acc)
 static bool bmi423GyroRead(gyroDev_t *gyro)
 {
     extDevice_t *dev = &gyro->dev;
+
+    if (gyro->gyroModeSPI == GYRO_EXTI_NO_INT
+        && gyro->detectedEXTI > GYRO_EXTI_DETECT_THRESHOLD) {
+        gyro->gyroModeSPI = GYRO_EXTI_INIT;
+    }
 
     switch (gyro->gyroModeSPI) {
     case GYRO_EXTI_INIT:
