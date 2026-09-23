@@ -25,6 +25,9 @@
 
 #include "platform.h"
 
+#include "build/version.h"
+#include "drivers/usb_descriptor.h"
+
 #include "tusb_config.h"
 #include <string.h>
 
@@ -103,16 +106,18 @@ const uint8_t * tud_descriptor_configuration_cb(uint8_t index)
 }
 
 // String descriptors
+#define STRING_DESC_PRODUCT 2
+
 static char const* string_desc_arr[] = {
   (const char[]){ 0x09, 0x04 }, // 0: English (0x0409)
   FC_FIRMWARE_NAME,             // 1: Manufacturer
-  USBD_PRODUCT_STRING,          // 2: Product
+  NULL,                         // 2: Product, composed at runtime
   "123456",                    // 3: Serial (placeholder)
   "Betaflight CDC",            // 4: CDC Interface
   "Betaflight MSC",            // 5: MSC Interface
 };
 
-static uint16_t _desc_str[32];
+static uint16_t _desc_str[64];
 
 uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid)
 {
@@ -124,9 +129,14 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid)
     chr_count = 1;
   } else {
     if (index >= sizeof(string_desc_arr)/sizeof(string_desc_arr[0])) return NULL;
-    const char* str = string_desc_arr[index];
+    const char* str;
+    if (index == STRING_DESC_PRODUCT) {
+      str = pico_msc_active ? usbDescriptorMscProductString() : usbDescriptorProductString();
+    } else {
+      str = string_desc_arr[index];
+    }
     chr_count = (uint8_t) strlen(str);
-    if (chr_count > 31) chr_count = 31;
+    if (chr_count > 63) chr_count = 63;
     for (uint8_t i = 0; i < chr_count; i++) {
       _desc_str[1 + i] = str[i];
     }

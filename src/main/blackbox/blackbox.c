@@ -496,7 +496,7 @@ static bool isFieldEnabled(flightLogFieldSelect_e field)
     return (blackboxConfig()->fields_disabled_mask & (1 << field)) == 0;
 }
 
-static bool testBlackboxConditionUncached(flightLogFieldCondition_e condition)
+STATIC_UNIT_TESTED bool testBlackboxConditionUncached(flightLogFieldCondition_e condition)
 {
     switch (condition) {
     case CONDITION(ALWAYS):
@@ -526,7 +526,7 @@ static bool testBlackboxConditionUncached(flightLogFieldCondition_e condition)
 
 #ifdef USE_SERVOS
     case CONDITION(SERVOS):
-        return hasServos() && (FIELD_SELECT(SERVO));
+        return hasServos() && isFieldEnabled(FIELD_SELECT(SERVO));
 #endif
 
     case CONDITION(PID):
@@ -1805,7 +1805,9 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MOTOR_PWM_RATE, "%d",         motorConfig()->dev.motorPwmRate);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MOTOR_IDLE, "%d",             motorConfig()->motorIdle);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DEBUG_MODE, "%d",             debugMode);
-        BLACKBOX_PRINT_HEADER_LINE("debug_mode_name", "%s",                 debugMode < DEBUG_COUNT ? debugModeNames[debugMode] : "UNKNOWN");
+        // debugModeNames[] is allowed to hold a NULL for a mode that is not offered, and
+        // %s would dereference it, so the name is checked as well as the index.
+        BLACKBOX_PRINT_HEADER_LINE("debug_mode_name", "%s",                 debugMode < DEBUG_COUNT && debugModeNames[debugMode] ? debugModeNames[debugMode] : "UNKNOWN");
         BLACKBOX_PRINT_HEADER_LINE("features", "%d",                        featureConfig()->enabledFeatures);
 
 #ifdef USE_RC_SMOOTHING_FILTER
