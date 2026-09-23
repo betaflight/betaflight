@@ -538,6 +538,20 @@ TEST(CLIUnittest, TestGetSettingByNameSmallBuffer)
     EXPECT_LT(written, 0); // truncated output must return error
 }
 
+// The reply is "name = value", always longer than the name alone, so a buffer
+// sized from the requested name -- all a read request carries -- can never hold
+// it. MSP2_CLI_SETTING sized its scratch buffer exactly that way, so every read
+// over MSP answered MSP_RESULT_ERROR while writes appeared to work (there the
+// request carries the value too, so it happens to fit). Pins the caller contract.
+TEST(CLIUnittest, TestGetSettingByNameRejectsBufferSizedToNameOnly)
+{
+    const char *name = "array_unit_test";
+    char buf[128];
+    memset(buf, 0, sizeof(buf));
+
+    EXPECT_EQ(-1, cliGetSettingByName(name, buf, strlen(name) + 1));
+}
+
 // Verifies cliGetSettingByName returns 0 when buffer length is zero.
 TEST(CLIUnittest, TestGetSettingByNameZeroBuffer)
 {
