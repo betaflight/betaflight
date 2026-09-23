@@ -57,6 +57,7 @@
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
 #include "drivers/accgyro/accgyro_spi_l3gd20.h"
+#include "drivers/accgyro/accgyro_spi_adis1657x.h"
 #include "drivers/accgyro/accgyro_spi_lsm6dsv16x.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/accgyro/accgyro_spi_icm40609.h"
@@ -397,6 +398,12 @@ static gyroSpiDetectFn_t gyroSpiDetectFnTable[] = {
 #endif
 #ifdef USE_ACCGYRO_ICM40609D
     icm40609SpiDetect,
+#endif
+#ifdef USE_ACCGYRO_ADIS1657X
+    // Deliberately last: this probe's read encoding is a write encoding for
+    // other parts above. Running it last means a known part has already
+    // claimed the bus.
+    adis1657xSpiDetect,
 #endif
     NULL // Avoid an empty array
 };
