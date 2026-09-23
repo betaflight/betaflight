@@ -21,15 +21,5 @@
 
 #pragma once
 
-#ifndef TARGET_BOARD_IDENTIFIER
-#define TARGET_BOARD_IDENTIFIER "235B"
-#endif
-
-#ifndef RP2350B
-#define RP2350B
-#endif
-
-#define UARTHARDWARE_MAX_PINS 12
-#define MAX_SPI_PIN_SEL 6
-
-#include "../common/target_RP2350.h"
+const char *usbDescriptorProductString(void);
+const char *usbDescriptorMscProductString(void);
