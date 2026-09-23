@@ -1261,6 +1261,23 @@ TEST(LaunchControlLiftTest, HighSendsItForTheSetTimeThenHandsOverToTheSticks)
     EXPECT_FALSE(isLaunchControlActive());
 }
 
+TEST(LaunchControlLiftTest, HandoverNoticeDoesNotComeBackAfterTheTimerWraps)
+{
+    armAndStage();
+    setSC(SC_HIGH);
+    advanceMs(LIFT_TIME_MS);
+    EXPECT_TRUE(isLaunchControlLiftHandoverRecent());
+    advanceMs(LAUNCH_CONTROL_LIFT_HANDOVER_NOTICE_MS);
+    EXPECT_FALSE(isLaunchControlLiftHandoverRecent());
+
+    // still flying half an hour later: the signed microsecond delta has gone negative,
+    // and the notice must not return and cover the RSSI / LAND NOW warnings
+    for (int minutes = 1; minutes <= 60; minutes++) {
+        advanceMs(60 * 1000);
+        ASSERT_FALSE(isLaunchControlLiftHandoverRecent()) << "returned after " << minutes << " minutes";
+    }
+}
+
 TEST(LaunchControlLiftTest, UsesTheConfiguredLiftThrottleAndTime)
 {
     armAndStage();
@@ -1451,6 +1468,29 @@ TEST(LaunchControlLiftTest, DisarmMidLiftCountsAsTheLaunch)
     disarmNow();
     EXPECT_FALSE(isLaunchControlLifting());
     EXPECT_STREQ("LIFT USED: SWITCH OFF", getLaunchControlLiftPreArmMessage());
+}
+
+TEST(LaunchControlLiftTest, OsdGettersDoNotTouchThePidProfile)
+{
+    // The OSD element and warning tasks call these. They must be plain reads of state
+    // cached by the flight controller tasks: no profile dereference, no arming logic.
+    armAndStage();
+    setSC(SC_HIGH);
+    advanceMs(100);
+
+    pidProfile_t *saved = currentPidProfile;
+    currentPidProfile = NULL;
+
+    EXPECT_TRUE(isLaunchControlLifting());
+    EXPECT_FLOAT_EQ(1.0f, getLaunchControlLiftThrottle());
+    EXPECT_GT(getLaunchControlLiftRemainingMs(), 0u);
+    EXPECT_FALSE(isLaunchControlPreStaged());
+    EXPECT_FALSE(isLaunchControlLiftStaged());
+    EXPECT_FALSE(isLaunchControlLiftAwaitingTriggerOff());
+    EXPECT_FALSE(isLaunchControlLiftHandoverRecent());
+    EXPECT_EQ(NULL, getLaunchControlLiftPreArmMessage());
+
+    currentPidProfile = saved;
 }
 
 TEST(LaunchControlLiftTest, OtherLaunchModesAreUnchanged)

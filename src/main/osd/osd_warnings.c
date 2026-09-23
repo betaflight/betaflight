@@ -311,7 +311,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
     // Warn when in launch control mode
     if (osdWarnGetState(OSD_WARNING_LAUNCH_CONTROL) && isLaunchControlActive()) {
-        if (currentPidProfile->launchControlMode == LAUNCH_CONTROL_MODE_LIFT) {
+        if (isLaunchControlLiftStaged()) {
             if (isLaunchControlLiftAwaitingTriggerOff()) {
                 tfp_sprintf(warningText, "LIFT: TRIGGER OFF FIRST");
             } else if (flightModeFlags) {

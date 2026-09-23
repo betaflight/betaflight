@@ -107,6 +107,7 @@ float getLaunchControlLiftThrottle(void);
 uint32_t getLaunchControlLiftRemainingMs(void);
 bool isLaunchControlLiftHandoverRecent(void);
 bool isLaunchControlLiftAwaitingTriggerOff(void);
+bool isLaunchControlLiftStaged(void);
 bool isLaunchControlPreStaged(void);
 const char *getLaunchControlLiftPreArmMessage(void);
 void launchControlLiftUpdate(timeUs_t currentTimeUs);

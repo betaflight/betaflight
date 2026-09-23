@@ -174,6 +174,17 @@ static launchControlState_e launchControlState = LAUNCH_CONTROL_DISABLED;
 static timeUs_t launchControlLiftStartUs = 0;
 static timeUs_t launchControlLiftEndUs = 0;
 static bool launchControlLiftTriggerSeenOff = false;  // LIFT launches on an off->on edge of the trigger only
+// Snapshot of the LIFT settings and status, taken in the flight controller tasks. The OSD
+// reads these instead of currentPidProfile or canUseLaunchControl(), so no display task
+// dereferences the profile or re-runs the arming checks.
+static uint16_t launchControlLiftTimeMs = 0;
+static float launchControlLiftThrottleFraction = 0.0f;
+static bool launchControlLiftPreStaged = false;
+static bool launchControlLiftStaged = false;
+static bool launchControlLiftAwaitingTrigger = false;
+static const char *launchControlLiftPreArmMessage = NULL;
+static void updateLaunchControlLiftStatus(void);
+
 
 const char * const osdLaunchControlModeNames[] = {
     "NORMAL",
@@ -624,6 +635,7 @@ if (isMotorProtocolDshot()) {
 #endif // USE_DSHOT
 
 #ifdef USE_LAUNCH_CONTROL
+        launchControlLiftEndUs = 0;
         if (!crashFlipModeActive && (canUseLaunchControl() || (tryingToArm == ARMING_DELAYED_LAUNCH_CONTROL))) {
             if (launchControlState == LAUNCH_CONTROL_DISABLED) {  // only activate if it hasn't already been triggered
                 launchControlState = LAUNCH_CONTROL_ACTIVE;
@@ -965,6 +977,8 @@ bool processRx(timeUs_t currentTimeUs)
                     launchControlState = LAUNCH_CONTROL_LIFTING;
                     launchControlLiftStartUs = currentTimeUs;
                     launchControlLiftEndUs = 0;
+                    launchControlLiftTimeMs = currentPidProfile->launchControlLiftTime;
+                    launchControlLiftThrottleFraction = currentPidProfile->launchControlLiftThrottle / 100.0f;
                     pidResetIterm();
                 }
             }
@@ -986,6 +1000,7 @@ bool processRx(timeUs_t currentTimeUs)
             launchControlState = LAUNCH_CONTROL_DISABLED;
         }
     }
+    updateLaunchControlLiftStatus();
 #endif
 
     return true;
@@ -1374,6 +1389,9 @@ static FAST_CODE_NOINLINE_CRITICAL void subTaskPidController(timeUs_t currentTim
         && !crashFlipModeActive
         && !runawayTakeoffTemporarilyDisabled
         && !FLIGHT_MODE(GPS_RESCUE_MODE)   // disable Runaway Takeoff triggering if GPS Rescue is active
+        // Same for a LIFT: the flight controller is flying, the sticks are ignored, and the
+        // stick throttle stays low, so the deactivation check below can never clear it.
+        && !isLaunchControlLifting()
         // check that motors are running
         && (!featureIsEnabled(FEATURE_MOTOR_STOP) || isAirmodeEnabled() || (calculateThrottleStatus() != THROTTLE_LOW))) {
 
@@ -1612,7 +1630,7 @@ bool isLaunchControlLifting(void)
 float getLaunchControlLiftThrottle(void)
 {
 #ifdef USE_LAUNCH_CONTROL
-    return currentPidProfile->launchControlLiftThrottle / 100.0f;
+    return launchControlLiftThrottleFraction;
 #else
     return 0.0f;
 #endif
@@ -1626,7 +1644,7 @@ uint32_t getLaunchControlLiftRemainingMs(void)
         return 0;
     }
     const timeDelta_t elapsedUs = cmpTimeUs(micros(), launchControlLiftStartUs);
-    const timeDelta_t remainingUs = (timeDelta_t)currentPidProfile->launchControlLiftTime * 1000 - MAX(elapsedUs, 0);
+    const timeDelta_t remainingUs = (timeDelta_t)launchControlLiftTimeMs * 1000 - MAX(elapsedUs, 0);
     return remainingUs > 0 ? (uint32_t)remainingUs / 1000 : 0;
 #else
     return 0;
@@ -1637,20 +1655,60 @@ uint32_t getLaunchControlLiftRemainingMs(void)
 bool isLaunchControlLiftAwaitingTriggerOff(void)
 {
 #ifdef USE_LAUNCH_CONTROL
-    return launchControlState == LAUNCH_CONTROL_ACTIVE
-        && currentPidProfile->launchControlMode == LAUNCH_CONTROL_MODE_LIFT
-        && !launchControlLiftTriggerSeenOff;
+    return launchControlLiftAwaitingTrigger;
 #else
     return false;
 #endif
 }
+
+// Armed and holding for a LIFT (as opposed to one of the other launch control modes)
+bool isLaunchControlLiftStaged(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlLiftStaged;
+#else
+    return false;
+#endif
+}
+
+#ifdef USE_LAUNCH_CONTROL
+// Works out what the OSD should say, in the RX task where currentPidProfile is valid.
+// Everything the display asks for afterwards is a plain read of these variables.
+static void updateLaunchControlLiftStatus(void)
+{
+    const bool liftMode = currentPidProfile->launchControlMode == LAUNCH_CONTROL_MODE_LIFT;
+    launchControlLiftPreStaged = !ARMING_FLAG(ARMED)
+        && launchControlState == LAUNCH_CONTROL_DISABLED
+        && canUseLaunchControl();
+    launchControlLiftStaged = liftMode && launchControlState == LAUNCH_CONTROL_ACTIVE;
+    launchControlLiftAwaitingTrigger = launchControlLiftStaged && !launchControlLiftTriggerSeenOff;
+
+    launchControlLiftPreArmMessage = NULL;
+    if (!ARMING_FLAG(ARMED) && liftMode && IS_RC_MODE_ACTIVE(BOXLAUNCHCONTROL)) {
+        if (launchControlState == LAUNCH_CONTROL_TRIGGERED) {
+            launchControlLiftPreArmMessage = currentPidProfile->launchControlAllowTriggerReset
+                ? "LIFT USED: SWITCH OFF" : "LIFT USED: REBOOT";
+        } else if (!isModeActivationConditionPresent(BOXLAUNCHTRIGGER)) {
+            launchControlLiftPreArmMessage = "LIFT: NO TRIGGER MODE";
+        } else if (flightModeFlags) {
+            launchControlLiftPreArmMessage = "LIFT: ACRO ONLY";
+        } else if (!canUseLaunchControl()) {
+            launchControlLiftPreArmMessage = "LIFT: UNAVAILABLE";
+        } else if (IS_RC_MODE_ACTIVE(BOXLAUNCHTRIGGER)) {
+            launchControlLiftPreArmMessage = "LIFT: TRIGGER OFF FIRST";
+        } else {
+            launchControlLiftPreArmMessage = "LIFT PRE-STAGE";
+        }
+    }
+}
+#endif // USE_LAUNCH_CONTROL
 
 // Disarmed with the Launch Control switch on, and launch control will engage on arming
 // (the flight mode display shows LNCH, as it does once armed and holding)
 bool isLaunchControlPreStaged(void)
 {
 #ifdef USE_LAUNCH_CONTROL
-    return !ARMING_FLAG(ARMED) && launchControlState == LAUNCH_CONTROL_DISABLED && canUseLaunchControl();
+    return launchControlLiftPreStaged;
 #else
     return false;
 #endif
@@ -1661,27 +1719,7 @@ bool isLaunchControlPreStaged(void)
 const char *getLaunchControlLiftPreArmMessage(void)
 {
 #ifdef USE_LAUNCH_CONTROL
-    if (ARMING_FLAG(ARMED)
-        || currentPidProfile->launchControlMode != LAUNCH_CONTROL_MODE_LIFT
-        || !IS_RC_MODE_ACTIVE(BOXLAUNCHCONTROL)) {
-        return NULL;
-    }
-    if (launchControlState == LAUNCH_CONTROL_TRIGGERED) {
-        return currentPidProfile->launchControlAllowTriggerReset ? "LIFT USED: SWITCH OFF" : "LIFT USED: REBOOT";
-    }
-    if (!isModeActivationConditionPresent(BOXLAUNCHTRIGGER)) {
-        return "LIFT: NO TRIGGER MODE";
-    }
-    if (flightModeFlags) {
-        return "LIFT: ACRO ONLY";
-    }
-    if (!canUseLaunchControl()) {
-        return "LIFT: UNAVAILABLE";
-    }
-    if (IS_RC_MODE_ACTIVE(BOXLAUNCHTRIGGER)) {
-        return "LIFT: TRIGGER OFF FIRST";
-    }
-    return "LIFT PRE-STAGE";
+    return launchControlLiftPreArmMessage;
 #else
     return NULL;
 #endif
@@ -1691,11 +1729,16 @@ const char *getLaunchControlLiftPreArmMessage(void)
 bool isLaunchControlLiftHandoverRecent(void)
 {
 #ifdef USE_LAUNCH_CONTROL
-    return launchControlLiftEndUs != 0
-        && launchControlState == LAUNCH_CONTROL_TRIGGERED
-        && ARMING_FLAG(ARMED)
-        && !failsafeIsActive()
-        && cmpTimeUs(micros(), launchControlLiftEndUs) < LAUNCH_CONTROL_LIFT_HANDOVER_NOTICE_MS * 1000;
+    if (launchControlLiftEndUs == 0
+        || launchControlState != LAUNCH_CONTROL_TRIGGERED
+        || !ARMING_FLAG(ARMED)
+        || failsafeIsActive()) {
+        return false;
+    }
+    // cmpTimeUs is signed: without the lower bound the notice would return after the
+    // timer wraps, and cover the warnings that come after it
+    const timeDelta_t sinceHandoverUs = cmpTimeUs(micros(), launchControlLiftEndUs);
+    return sinceHandoverUs >= 0 && sinceHandoverUs < LAUNCH_CONTROL_LIFT_HANDOVER_NOTICE_MS * 1000;
 #else
     return false;
 #endif
@@ -1711,7 +1754,7 @@ void launchControlLiftUpdate(timeUs_t currentTimeUs)
     if (launchControlState != LAUNCH_CONTROL_LIFTING) {
         return;
     }
-    const bool timeUp = cmpTimeUs(currentTimeUs, launchControlLiftStartUs) >= (timeDelta_t)currentPidProfile->launchControlLiftTime * 1000;
+    const bool timeUp = cmpTimeUs(currentTimeUs, launchControlLiftStartUs) >= (timeDelta_t)launchControlLiftTimeMs * 1000;
     const bool switchAbort = !IS_RC_MODE_ACTIVE(BOXLAUNCHTRIGGER) || !IS_RC_MODE_ACTIVE(BOXLAUNCHCONTROL);
     if (timeUp || switchAbort || failsafeIsActive() || !ARMING_FLAG(ARMED)) {
         launchControlState = LAUNCH_CONTROL_TRIGGERED;
