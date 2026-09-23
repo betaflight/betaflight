@@ -127,6 +127,9 @@ unsigned mpuCallbackCalls;
 unsigned spiWaitCalls;
 int failure;
 int droppedWrite;
+int droppedWriteTimes; // negative: every write
+unsigned stuckResets; // this many SW_RESET writes never complete
+bool resetStuck;
 bool resetPending;
 bool useDma;
 bool disconnected;
@@ -157,7 +160,9 @@ protected:
         elapsedMs = resetReads = mpuInitCalls = mpuCallbackCalls = spiWaitCalls = 0;
         elapsedUs = 0;
         resetBusyReads = 2;
-        failure = droppedWrite = -1;
+        failure = droppedWrite = droppedWriteTimes = -1;
+        stuckResets = 0;
+        resetStuck = false;
         resetPending = disconnected = false;
         useDma = true;
         gyro = {};
@@ -353,6 +358,25 @@ TEST_P(AccgyroSpiLsm6dsv, FailedCriticalRegisterWriteFailsInitialization)
     EXPECT_EQ(0u, mpuInitCalls);
 }
 
+TEST_P(AccgyroSpiLsm6dsv, TransientRegisterWriteFailureIsRetried)
+{
+    droppedWrite = CTRL9;
+    droppedWriteTimes = 1;
+    gyro.initFn(&gyro);
+    ASSERT_EQ(-1, failure);
+    EXPECT_EQ(1u, mpuInitCalls);
+    EXPECT_EQ(0x08, registers[CTRL9]);
+}
+
+TEST_P(AccgyroSpiLsm6dsv, TransientResetTimeoutIsRetried)
+{
+    stuckResets = 1;
+    gyro.initFn(&gyro);
+    ASSERT_EQ(-1, failure);
+    EXPECT_EQ(1u, mpuInitCalls);
+    EXPECT_EQ(is32x() ? 0x07 : 0x03, registers[CTRL8]);
+}
+
 TEST_P(AccgyroSpiLsm6dsv, DmaReadersRejectDataBeforeFirstCompletedTransfer)
 {
     EXPECT_FALSE(acc.readFn(&acc));
@@ -490,7 +514,10 @@ uint16_t spiCalculateDivider(uint32_t) { return 2; }
 void spiWriteReg(const extDevice_t *, uint8_t reg, uint8_t value)
 {
     writes.push_back({reg, value, elapsedUs});
-    if (reg == droppedWrite) {
+    if (reg == droppedWrite && droppedWriteTimes != 0) {
+        if (droppedWriteTimes > 0) {
+            --droppedWriteTimes;
+        }
         return;
     }
     if (reg == CTRL3 && (value & 0x01)) {
@@ -501,6 +528,10 @@ void spiWriteReg(const extDevice_t *, uint8_t reg, uint8_t value)
         registers[CTRL8] = variant;
         registers[CTRL3] = 0x04;
         resetPending = true;
+        resetStuck = stuckResets > 0;
+        if (resetStuck) {
+            --stuckResets;
+        }
     } else {
         registers[reg] = value;
     }
@@ -510,7 +541,7 @@ uint8_t spiReadRegMsk(const extDevice_t *, uint8_t reg)
 {
     if (resetPending && reg == CTRL3) {
         ++resetReads;
-        if (resetReads <= resetBusyReads || (disconnected && resetReads < 1000)) {
+        if (resetStuck || resetReads <= resetBusyReads || (disconnected && resetReads < 1000)) {
             return disconnected ? 0xff : 0x01;
         }
         resetPending = false;
