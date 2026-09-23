@@ -309,6 +309,20 @@ motor_output_unittest_DEFINES := \
 		USE_DSHOT= \
 		USE_DSHOT_TELEMETRY=
 
+rpm_limiter_unittest_SRC := \
+		$(USER_DIR)/build/atomic.c \
+		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/drivers/dshot.c \
+		$(USER_DIR)/flight/mixer.c \
+		$(USER_DIR)/flight/mixer_init.c
+
+rpm_limiter_unittest_DEFINES := \
+		USE_DSHOT= \
+		USE_DSHOT_TELEMETRY= \
+		USE_RPM_LIMIT=
+
 msp_serial_unittest_SRC := \
 		$(USER_DIR)/msp/msp_serial.c \
 		$(USER_DIR)/common/crc.c \

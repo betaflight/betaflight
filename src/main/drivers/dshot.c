@@ -284,6 +284,10 @@ FAST_CODE_NOINLINE void updateDshotTelemetry(void)
         uint32_t value;
 
         dshot_decode_telemetry_value(k, &value, &type);
+        // The transport only overwrites rawValue on a valid packet. Consume it
+        // once so a missing/invalid packet cannot refresh the previous sample.
+        // Zero is an invalid eRPM period, including with extended telemetry.
+        dshotTelemetryState.motorState[k].rawValue = 0;
 
         if (value != DSHOT_TELEMETRY_INVALID) {
             dshotUpdateTelemetryData(k, type, value);
