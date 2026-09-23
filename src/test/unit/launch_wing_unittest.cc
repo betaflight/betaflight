@@ -103,6 +103,9 @@ static void setQuiescent(void)
     gyro.gyroADCf[FD_PITCH] = 0.0f;
     gyro.gyroADCf[FD_YAW] = 0.0f;
     testCosTilt = 1.0f;
+    attitude.values.roll = 0;
+    attitude.values.pitch = 0;
+    attitude.values.yaw = 0;
     testRcDeflection[FD_ROLL] = 0.0f;
     testRcDeflection[FD_PITCH] = 0.0f;
     rcCommand[THROTTLE] = PWM_RANGE_MIN;
@@ -168,6 +171,17 @@ static timeUs_t reachWaitDetection(timeUs_t t)
     EXPECT_EQ(LAUNCH_WING_MOTOR_IDLE, launchWingGetState());
     t = run(t, 1600);
     EXPECT_EQ(LAUNCH_WING_WAIT_DETECTION, launchWingGetState());
+    return t;
+}
+
+// Throw it and let the motor delay and spin-up run out, landing in the climb-out.
+static timeUs_t reachInProgress(timeUs_t t)
+{
+    t = reachWaitDetection(t);
+    setBungeeThrow();
+    t = run(t, launchWingConfig()->detectTimeMs + 1);
+    t = run(t, launchWingConfig()->motorDelayMs + launchWingConfig()->spinupTimeMs + 10);
+    EXPECT_EQ(LAUNCH_WING_IN_PROGRESS, launchWingGetState());
     return t;
 }
 
@@ -693,4 +707,155 @@ TEST(LaunchWingTest, EveryExitHandsBackFully)
     t = run(t, 1);
     EXPECT_EQ(LAUNCH_WING_FLYING, launchWingGetState());
     EXPECT_FLOAT_EQ(1.0f, launchWingHandoverFactor());
+}
+
+TEST(LaunchWingTest, AttitudeAbortHandsBackOnBank)
+{
+    resetForTest();
+    timeUs_t t = run(0, 1);
+    t = reachInProgress(t);
+
+    attitude.values.roll = 700;     // 70 deg, past the 60 deg default
+    t = run(t, LAUNCH_ATTITUDE_HOLD_MS - 5);
+    EXPECT_EQ(LAUNCH_WING_IN_PROGRESS, launchWingGetState());
+
+    t = run(t, 10);
+    EXPECT_EQ(LAUNCH_WING_ABORTED, launchWingGetState());
+    EXPECT_TRUE(launchWingIsTerminal());
+    EXPECT_FALSE(launchWingThrottleValid());
+    EXPECT_FLOAT_EQ(1.0f, launchWingHandoverFactor());
+
+    // a bank the other way is the same
+    resetForTest();
+    t = reachInProgress(run(0, 1));
+    attitude.values.roll = -700;
+    t = run(t, LAUNCH_ATTITUDE_HOLD_MS + 5);
+    EXPECT_EQ(LAUNCH_WING_ABORTED, launchWingGetState());
+}
+
+TEST(LaunchWingTest, AttitudeAbortHandsBackOnDive)
+{
+    resetForTest();
+    timeUs_t t = run(0, 1);
+    t = reachInProgress(t);
+
+    attitude.values.pitch = 700;    // positive is nose down
+    t = run(t, LAUNCH_ATTITUDE_HOLD_MS + 5);
+    EXPECT_EQ(LAUNCH_WING_ABORTED, launchWingGetState());
+    EXPECT_FALSE(launchWingThrottleValid());
+}
+
+// attitude.values.pitch is positive nose-down, so the sign here is the whole
+// point: a launch that climbs hard must never abort for climbing.
+TEST(LaunchWingTest, ClimbingDoesNotTripTheAttitudeAbort)
+{
+    resetForTest();
+    timeUs_t t = run(0, 1);
+    t = reachInProgress(t);
+
+    attitude.values.pitch = -800;   // 80 deg nose UP
+    t = run(t, LAUNCH_ATTITUDE_HOLD_MS * 4);
+    EXPECT_EQ(LAUNCH_WING_IN_PROGRESS, launchWingGetState());
+    EXPECT_TRUE(launchWingThrottleValid());
+}
+
+TEST(LaunchWingTest, AttitudeAbortIgnoresATransient)
+{
+    resetForTest();
+    timeUs_t t = run(0, 1);
+    t = reachInProgress(t);
+
+    // past the bound for half the hold window, then back inside it
+    attitude.values.roll = 700;
+    t = run(t, LAUNCH_ATTITUDE_HOLD_MS / 2);
+    attitude.values.roll = 0;
+    t = run(t, 10);
+    EXPECT_EQ(LAUNCH_WING_IN_PROGRESS, launchWingGetState());
+
+    // and the clock re-seeded, so the next excursion gets the full window again
+    attitude.values.roll = 700;
+    t = run(t, LAUNCH_ATTITUDE_HOLD_MS - 5);
+    EXPECT_EQ(LAUNCH_WING_IN_PROGRESS, launchWingGetState());
+    t = run(t, 10);
+    EXPECT_EQ(LAUNCH_WING_ABORTED, launchWingGetState());
+}
+
+TEST(LaunchWingTest, AttitudeAbortIsDisabledAtZero)
+{
+    resetForTest();
+    launchWingConfigMutable()->abortAngleDeg = 0;
+    timeUs_t t = run(0, 1);
+    t = reachInProgress(t);
+
+    attitude.values.roll = 1700;    // on its back
+    attitude.values.pitch = 890;
+    t = run(t, LAUNCH_ATTITUDE_HOLD_MS * 4);
+    EXPECT_EQ(LAUNCH_WING_IN_PROGRESS, launchWingGetState());
+}
+
+// The pre-launch window is what core.c disarms on: the aircraft is in the
+// pilot's hands with the throttle stick already up.
+TEST(LaunchWingTest, PreLaunchIsTrueOnlyBeforeDetection)
+{
+    resetForTest();
+    EXPECT_FALSE(launchWingIsPreLaunch());          // IDLE
+
+    timeUs_t t = run(0, 1);
+    ASSERT_EQ(LAUNCH_WING_WAIT_THROTTLE, launchWingGetState());
+    EXPECT_TRUE(launchWingIsPreLaunch());
+
+    testThrottleStatus = THROTTLE_HIGH;
+    t = run(t, 1);
+    ASSERT_EQ(LAUNCH_WING_MOTOR_IDLE, launchWingGetState());
+    EXPECT_TRUE(launchWingIsPreLaunch());
+
+    t = run(t, 1600);
+    ASSERT_EQ(LAUNCH_WING_WAIT_DETECTION, launchWingGetState());
+    EXPECT_TRUE(launchWingIsPreLaunch());
+
+    // the throw is the edge: from here the aircraft is away
+    setBungeeThrow();
+    t = run(t, launchWingConfig()->detectTimeMs + 1);
+    ASSERT_EQ(LAUNCH_WING_MOTOR_DELAY, launchWingGetState());
+    EXPECT_FALSE(launchWingIsPreLaunch());
+
+    t = run(t, launchWingConfig()->motorDelayMs + launchWingConfig()->spinupTimeMs + 10);
+    ASSERT_EQ(LAUNCH_WING_IN_PROGRESS, launchWingGetState());
+    EXPECT_FALSE(launchWingIsPreLaunch());
+
+    launchWingSwitchOff();
+    EXPECT_FALSE(launchWingIsPreLaunch());
+}
+
+// A throw that leaves the airframe past the bound must still get the full hold
+// window, not be measured against a stale clock from before detection.
+TEST(LaunchWingTest, AThrowPastTheBoundStillGetsTheHoldWindow)
+{
+    resetForTest();
+    timeUs_t t = run(0, 1);
+    t = reachWaitDetection(t);
+
+    // banked over as it leaves the hand
+    attitude.values.roll = 700;
+    setBungeeThrow();
+    t = run(t, launchWingConfig()->detectTimeMs + 1);
+    ASSERT_EQ(LAUNCH_WING_MOTOR_DELAY, launchWingGetState());
+
+    t = run(t, LAUNCH_ATTITUDE_HOLD_MS - 5);
+    EXPECT_NE(LAUNCH_WING_ABORTED, launchWingGetState());
+
+    t = run(t, 10);
+    EXPECT_EQ(LAUNCH_WING_ABORTED, launchWingGetState());
+
+    // and a throw that rolls level again inside the window carries on
+    resetForTest();
+    t = reachWaitDetection(run(0, 1));
+    attitude.values.roll = 700;
+    setBungeeThrow();
+    t = run(t, launchWingConfig()->detectTimeMs + 1);
+    ASSERT_EQ(LAUNCH_WING_MOTOR_DELAY, launchWingGetState());
+    t = run(t, LAUNCH_ATTITUDE_HOLD_MS / 2);
+    attitude.values.roll = 0;
+    t = run(t, launchWingConfig()->motorDelayMs + launchWingConfig()->spinupTimeMs + 10);
+    EXPECT_EQ(LAUNCH_WING_IN_PROGRESS, launchWingGetState());
 }

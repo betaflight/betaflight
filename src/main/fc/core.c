@@ -1173,8 +1173,20 @@ void processRxModes(timeUs_t currentTimeUs)
             ENABLE_FLIGHT_MODE(LAUNCH_MODE);
         }
     } else if (FLIGHT_MODE(LAUNCH_MODE)) {
+        // Cancelling before the throw would drop the launch's hold on the motor
+        // and hand the raised throttle stick straight to it, with the aircraft
+        // still in the pilot's hands. Disarm instead, and make them cycle the
+        // arm switch. Only the box going inactive is treated this way; failsafe
+        // and the terminal states reach here too and keep their own handling.
+        const bool cancelledBeforeTheThrow = !IS_RC_MODE_ACTIVE(BOXLAUNCH)
+            && launchWingIsPreLaunch()
+            && ARMING_FLAG(ARMED);
         DISABLE_FLIGHT_MODE(LAUNCH_MODE);
         launchWingSwitchOff();
+        if (cancelledBeforeTheThrow) {
+            setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+            disarm(DISARM_REASON_LAUNCH_ABORT);
+        }
     }
 #endif
 
