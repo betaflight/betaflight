@@ -438,8 +438,6 @@ void icm56686GyroInit(gyroDev_t *gyro)
     icm56686_enableSensors(dev, true);
     delay(ICM56686_GYRO_STARTUP_TIME_MS);
 
-    spiWriteReg(dev, ICM56686_INT1_CONFIG0, ICM56686_INT1_STATUS_EN_DRDY);
-
     // In 16-bit mode FS_SEL is honoured, so use +/-2000 dps.
     gyro->scale = GYRO_SCALE_2000DPS;
     gyro->gyroRateKHz = GYRO_RATE_6400_Hz;
@@ -456,6 +454,8 @@ void icm56686GyroInit(gyroDev_t *gyro)
     gyro->accDataReg = ICM56686_ACCEL_DATA_X1;
     gyro->gyroDataReg = ICM56686_GYRO_DATA_X1;
     gyro->gyroDmaMaxDuration = 0; // DRDY interrupt paces reads
+
+    spiWriteReg(dev, ICM56686_INT1_CONFIG0, ICM56686_INT1_STATUS_EN_DRDY);
 }
 
 bool icm56686GyroReadSPI(gyroDev_t *gyro)
