@@ -1,10 +1,22 @@
 /*
  * This file is part of Betaflight.
  *
- * Betaflight is free software. You can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <cstring>
@@ -38,6 +50,8 @@ static unsigned initCalls;
 static unsigned readCheckCalls;
 static unsigned writeCheckCalls;
 static unsigned stateCalls;
+static unsigned cardInfoCalls;
+static bool failCsdRead;
 static unsigned readCompletesAfterCalls;
 static unsigned cardReadyAfterCalls;
 static unsigned callbackCalls;
@@ -82,7 +96,8 @@ bool SD_GetState(void)
 
 SD_Error_t SD_GetCardInfo(void)
 {
-    return SD_OK;
+    cardInfoCalls++;
+    return failCsdRead && cardInfoCalls % 2 == 0 ? SD_ERROR : SD_OK;
 }
 
 SD_Error_t SD_ReadBlocks_DMA(uint64_t, uint32_t *, uint32_t, uint32_t)
@@ -136,6 +151,8 @@ protected:
         readCheckCalls = 0;
         writeCheckCalls = 0;
         stateCalls = 0;
+        cardInfoCalls = 0;
+        failCsdRead = false;
         readCompletesAfterCalls = std::numeric_limits<unsigned>::max();
         cardReadyAfterCalls = std::numeric_limits<unsigned>::max();
         callbackCalls = 0;
@@ -213,8 +230,8 @@ TEST_F(SdcardSdioTest, SuccessfulReinitChangesWriteRecoveryState)
     EXPECT_FALSE(sdcardSdioVTable.sdcard_poll());
 
     EXPECT_EQ(1u, initCalls);
-    EXPECT_EQ(SDCARD_STATE_CARD_INIT_IN_PROGRESS, sdcard.state);
-    EXPECT_EQ(2u, stateCalls);
+    EXPECT_EQ(SDCARD_STATE_RESET, sdcard.state);
+    EXPECT_EQ(1u, stateCalls);
 }
 
 TEST_F(SdcardSdioTest, TimesOutBusyWriteAndReportsFailure)
@@ -244,4 +261,75 @@ TEST_F(SdcardSdioTest, LeavesBusyWritePendingBeforeTimeout)
     EXPECT_EQ(0u, initCalls);
     EXPECT_EQ(SDCARD_STATE_SENDING_WRITE, sdcard.state);
     EXPECT_EQ(0u, callbackCalls);
+}
+
+TEST_F(SdcardSdioTest, ReportsFailureForNonBusyWriteError)
+{
+    sdcard.state = SDCARD_STATE_READY;
+    ASSERT_EQ(SDCARD_OPERATION_IN_PROGRESS,
+        sdcardSdioVTable.sdcard_writeBlock(7, buffer, operationComplete, 0));
+    mockWriteStatus = SD_ERROR;
+
+    EXPECT_FALSE(sdcardSdioVTable.sdcard_poll());
+
+    EXPECT_EQ(1u, writeCheckCalls);
+    EXPECT_EQ(1u, initCalls);
+    EXPECT_EQ(SDCARD_STATE_RESET, sdcard.state);
+    EXPECT_EQ(1u, callbackCalls);
+    EXPECT_EQ(nullptr, callbackBuffer);
+    sdcardSdioVTable.sdcard_poll();
+    EXPECT_EQ(1u, callbackCalls);
+}
+
+TEST_F(SdcardSdioTest, SuccessfulReinitializationsDoNotExhaustRetryBudget)
+{
+    sdcard.state = SDCARD_STATE_CARD_INIT_IN_PROGRESS;
+    mockCardReady = false;
+    sdcard.failureCount = SDCARD_MAX_CONSECUTIVE_FAILURES - 1;
+
+    for (unsigned i = 0; i < SDCARD_MAX_CONSECUTIVE_FAILURES + 1; i++) {
+        sdcard.operationStartTime = mockTimeMs;
+        mockTimeMs += SDCARD_TIMEOUT_INIT_MILLIS + 1;
+        EXPECT_FALSE(sdcardSdioVTable.sdcard_poll());
+        EXPECT_EQ(i + 1, initCalls);
+        EXPECT_EQ(SDCARD_STATE_RESET, sdcard.state);
+        EXPECT_EQ(0, sdcard.failureCount);
+    }
+
+    mockCardReady = true;
+    EXPECT_TRUE(sdcardSdioVTable.sdcard_poll());
+    EXPECT_EQ(SDCARD_STATE_READY, sdcard.state);
+}
+
+TEST_F(SdcardSdioTest, ConsecutiveFailedReinitializationsDisableCard)
+{
+    sdcard.state = SDCARD_STATE_CARD_INIT_IN_PROGRESS;
+    mockCardReady = false;
+    mockInitStatus = SD_ERROR;
+
+    for (unsigned i = 0; i < SDCARD_MAX_CONSECUTIVE_FAILURES; i++) {
+        sdcard.operationStartTime = mockTimeMs;
+        mockTimeMs += SDCARD_TIMEOUT_INIT_MILLIS + 1;
+        EXPECT_FALSE(sdcardSdioVTable.sdcard_poll());
+        EXPECT_EQ(i + 1, initCalls);
+        EXPECT_EQ(i + 1, sdcard.failureCount);
+    }
+    EXPECT_EQ(SDCARD_STATE_NOT_PRESENT, sdcard.state);
+}
+
+TEST_F(SdcardSdioTest, FailedCsdReadRetriesOnNextPoll)
+{
+    sdcard.state = SDCARD_STATE_CARD_INIT_IN_PROGRESS;
+    sdcard.operationStartTime = mockTimeMs;
+    failCsdRead = true;
+
+    EXPECT_FALSE(sdcardSdioVTable.sdcard_poll());
+    EXPECT_EQ(2u, cardInfoCalls);
+    EXPECT_EQ(1u, initCalls);
+    EXPECT_EQ(SDCARD_STATE_RESET, sdcard.state);
+    EXPECT_EQ(0, sdcard.failureCount);
+
+    failCsdRead = false;
+    EXPECT_TRUE(sdcardSdioVTable.sdcard_poll());
+    EXPECT_EQ(SDCARD_STATE_READY, sdcard.state);
 }

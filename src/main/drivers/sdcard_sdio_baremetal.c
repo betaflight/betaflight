@@ -80,18 +80,22 @@ static bool sdcardSdio_isFunctional(void)
 /**
  * Handle a failure of an SD card operation by resetting the card back to its initialization phase.
  *
- * Increments the failure counter, and when the failure threshold is reached, disables the card until
- * the next call to sdcard_init().
+ * Count consecutive failed reinitializations and disable the card at the failure threshold.
+ * A successful reinitialization starts a new attempt on the next poll.
  */
 static void sdcard_reset(void)
 {
-    const bool cardInserted = sdcard_isInserted();
-    if (cardInserted) {
-        SD_Init();
+    if (!sdcard_isInserted()) {
+        sdcard.state = SDCARD_STATE_NOT_PRESENT;
+        return;
     }
 
-    sdcard.failureCount++;
-    if (sdcard.failureCount >= SDCARD_MAX_CONSECUTIVE_FAILURES || !cardInserted) {
+    if (SD_Init() == SD_OK) {
+        sdcard.failureCount = 0;
+    } else {
+        sdcard.failureCount++;
+    }
+    if (sdcard.failureCount >= SDCARD_MAX_CONSECUTIVE_FAILURES) {
         sdcard.state = SDCARD_STATE_NOT_PRESENT;
     } else {
         sdcard.operationStartTime = millis();
@@ -319,7 +323,6 @@ static bool sdcardSdio_poll(void)
                     goto doMore;
                 } else {
                     sdcard_reset();
-                    goto doMore;
                 }
             }
         break;
@@ -402,7 +405,6 @@ static bool sdcardSdio_poll(void)
                  * them to reuse their buffer milliseconds faster than they otherwise would.
                  */
                 sdcard_reset();
-                goto doMore;
             }
         break;
         case SDCARD_STATE_READING:
@@ -458,7 +460,6 @@ static bool sdcardSdio_poll(void)
 #endif
             } else if (millis() > sdcard.operationStartTime + SDCARD_TIMEOUT_WRITE_MSEC) {
                 sdcard_reset();
-                goto doMore;
             }
         break;
         case SDCARD_STATE_NOT_PRESENT:
