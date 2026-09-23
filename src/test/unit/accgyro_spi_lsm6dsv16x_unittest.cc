@@ -129,6 +129,7 @@ int failure;
 int droppedWrite;
 int droppedWriteTimes; // negative: every write
 unsigned stuckResets; // this many SW_RESET writes never complete
+unsigned droppedResets; // this many SW_RESET writes never reach the device
 bool resetStuck;
 bool resetPending;
 bool useDma;
@@ -161,7 +162,7 @@ protected:
         elapsedUs = 0;
         resetBusyReads = 2;
         failure = droppedWrite = droppedWriteTimes = -1;
-        stuckResets = 0;
+        stuckResets = droppedResets = 0;
         resetStuck = false;
         resetPending = disconnected = false;
         useDma = true;
@@ -260,6 +261,18 @@ TEST_P(AccgyroSpiLsm6dsv, DetectsVariantFromResetDefaults)
     EXPECT_EQ(gyro.mpuDetectionResult.sensor, detectSensor(&gyro.dev));
     EXPECT_LT(findWrite(CTRL3, 0x01), writes.size());
     EXPECT_EQ(is32x() ? 0x04 : 0, registers[CTRL8]);
+}
+
+TEST_P(AccgyroSpiLsm6dsv, DroppedResetWriteRejectsDetection)
+{
+    if (is320x()) {
+        return;
+    }
+    // Stale CTRL8 left by firmware that wrote the other variant's encoding.
+    registers[CTRL8] = is32x() ? 0 : 0x04;
+    registers[CTRL3] = 0x44;
+    droppedResets = 1;
+    EXPECT_EQ(MPU_NONE, detectSensor(&gyro.dev));
 }
 
 TEST_P(AccgyroSpiLsm6dsv, ResetTimeoutRejectsDetection)
@@ -375,6 +388,18 @@ TEST_P(AccgyroSpiLsm6dsv, TransientResetTimeoutIsRetried)
     ASSERT_EQ(-1, failure);
     EXPECT_EQ(1u, mpuInitCalls);
     EXPECT_EQ(is32x() ? 0x07 : 0x03, registers[CTRL8]);
+}
+
+TEST_P(AccgyroSpiLsm6dsv, DroppedResetWriteIsRetriedWithoutStaleVariant)
+{
+    registers[CTRL8] = is32x() ? 0 : 0x04;
+    registers[CTRL3] = 0x44;
+    droppedResets = 1;
+    gyro.initFn(&gyro);
+    ASSERT_EQ(-1, failure);
+    EXPECT_EQ(1u, mpuInitCalls);
+    EXPECT_EQ(is32x() ? 0x07 : 0x03, registers[CTRL8]);
+    EXPECT_FLOAT_EQ(is32x() ? 0.140f : 0.070f, gyro.scale);
 }
 
 TEST_P(AccgyroSpiLsm6dsv, DmaReadersRejectDataBeforeFirstCompletedTransfer)
@@ -520,19 +545,27 @@ void spiWriteReg(const extDevice_t *, uint8_t reg, uint8_t value)
         }
         return;
     }
+    if (reg == CTRL3 && (value & 0x01) && droppedResets > 0) {
+        --droppedResets;
+        return;
+    }
     if (reg == CTRL3 && (value & 0x01)) {
         const uint8_t identity = registers[WHO_AM_I];
         const uint8_t variant = physicalVariant == Variant::Dsv32x ? 0x04 : 0;
         registers.fill(0);
         registers[WHO_AM_I] = identity;
         registers[CTRL8] = variant;
-        registers[CTRL3] = 0x04;
+        registers[CTRL3] = 0x44; // BDU and IF_INC reset values
         resetPending = true;
         resetStuck = stuckResets > 0;
         if (resetStuck) {
             --stuckResets;
         }
     } else {
+        if (reg == CTRL3) {
+            // A later CTRL3 write lands only once the device has left reset.
+            resetPending = resetStuck = false;
+        }
         registers[reg] = value;
     }
 }

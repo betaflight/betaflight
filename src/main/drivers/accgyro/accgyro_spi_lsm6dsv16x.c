@@ -1061,8 +1061,11 @@ static bool lsm6dsvReset(const extDevice_t *dev, uint8_t whoAmI)
     // preserving the operating modes until both ODRs are zero (AN5763 sections 3.1 and 5.7).
     const uint8_t ctrl1 = spiReadRegMsk(dev, LSM6DSV_CTRL1) & ~LSM6DSV_CTRL1_ODR_XL_MASK;
     const uint8_t ctrl2 = spiReadRegMsk(dev, LSM6DSV_CTRL2) & ~LSM6DSV_CTRL2_ODR_G_MASK;
+    // SW_RESET sets BDU back to 1. Clearing it first keeps a dropped SW_RESET write from
+    // passing as a completed reset and leaving the previous firmware's CTRL8 in place.
     if (!lsm6dsvWriteRegVerified(dev, LSM6DSV_CTRL1, ctrl1) ||
-        !lsm6dsvWriteRegVerified(dev, LSM6DSV_CTRL2, ctrl2)) {
+        !lsm6dsvWriteRegVerified(dev, LSM6DSV_CTRL2, ctrl2) ||
+        !lsm6dsvWriteRegVerified(dev, LSM6DSV_CTRL3, LSM6DSV_CTRL3_IF_INC)) {
         return false;
     }
     delayMicroseconds(500);
@@ -1071,8 +1074,8 @@ static bool lsm6dsvReset(const extDevice_t *dev, uint8_t whoAmI)
     // Retain the 320X reset settling time, then bound retries if SW_RESET never clears.
     delay(10);
     for (unsigned elapsedMs = 10; elapsedMs <= LSM6DSV_RESET_TIMEOUT_MS; elapsedMs++) {
-        if (!(spiReadRegMsk(dev, LSM6DSV_CTRL3) & LSM6DSV_CTRL3_SW_RESET)) {
-            // A disconnected device returning zero must not look like a successful reset.
+        const uint8_t ctrl3 = spiReadRegMsk(dev, LSM6DSV_CTRL3);
+        if ((ctrl3 & (LSM6DSV_CTRL3_SW_RESET | LSM6DSV_CTRL3_BDU)) == LSM6DSV_CTRL3_BDU) {
             return spiReadRegMsk(dev, LSM6DSV_WHO_AM_I) == whoAmI;
         }
         if (elapsedMs < LSM6DSV_RESET_TIMEOUT_MS) {
