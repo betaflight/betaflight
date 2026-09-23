@@ -129,7 +129,6 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .small_angle = DEFAULT_SMALL_ANGLE,
     .imu_process_denom = 2,
     .mag_declination = 0,
-    .trust_mag = false, // user must set to true for mag to be accepted as a heading source
 );
 
 static void imuQuaternionComputeProducts(quaternion_t *quat, quaternionProducts *quatProd)
@@ -547,7 +546,7 @@ static void imuDebug_GPS_RESCUE_HEADING(void)
         if (magYaw < 0) {
             magYaw += 3600;
         }
-        DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 4, magYaw);  //!< Magnetic Heading [unit:0.1deg]
+        DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 5, magYaw);  //!< Magnetic Heading [unit:0.1deg]
         // reset new mag data flag to false to initiate monitoring for new Mag data.
         // note that if the debug doesn't run, this reset will not occur, and we won't waste cycles on the comparison
         mag.isNewMagADCFlag = false;
