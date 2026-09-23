@@ -173,9 +173,13 @@
 #define NVM_RAM_SIZE            54
 #define WRITE_NVR               0xA0
 
-// Device type
-#define MAX7456_DEVICE_TYPE_MAX 0
-#define MAX7456_DEVICE_TYPE_AT  1
+// Device type. An enum rather than two #defines so that the debug annotation
+// on DEBUG_MAX7456_SPICLOCK_DEVTYPE can name it, and a consumer reads the
+// device name instead of the number.
+typedef enum {
+    MAX7456_DEVICE_TYPE_MAX = 0,
+    MAX7456_DEVICE_TYPE_AT
+} max7456DeviceType_e;
 
 #define CHARS_PER_LINE      30 // XXX Should be related to VIDEO_BUFFER_CHARS_*?
 
@@ -415,7 +419,7 @@ max7456InitStatus_e max7456Init(const max7456Config_t *max7456Config, const vcdP
     }
 
     DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_OVERCLOCK, cpuOverclock);                              //!< CPU Overclocked
-    DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_DEVTYPE, max7456DeviceType);                           //!< Device Type
+    DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_DEVTYPE, max7456DeviceType);                           //!< Device Type [enum:max7456DeviceType_e]
     DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_DIVISOR, max7456SpiClockDiv);                          //!< SPI Clock Divisor
     DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_X100, spiCalculateClock(max7456SpiClockDiv) / 10000);  //!< SPI Clock [unit:0.01MHz]
 #else

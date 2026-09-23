@@ -22,22 +22,19 @@
 #pragma once
 
 #ifndef TARGET_BOARD_IDENTIFIER
-#define TARGET_BOARD_IDENTIFIER "A405"
+#define TARGET_BOARD_IDENTIFIER "H753"
 #endif
 
-#ifndef APM32F405
-#define APM32F405
+#ifndef USBD_PRODUCT_STRING
+#define USBD_PRODUCT_STRING     "Betaflight - STM32H753"
 #endif
 
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
 #define USE_I2C_DEVICE_3
+#define USE_I2C_DEVICE_4
 
 #define USE_VCP
-
-#define USE_SOFTSERIAL
-
-#define UNIFIED_SERIAL_PORT_COUNT       3
 
 #define USE_UART1
 #define USE_UART2
@@ -45,12 +42,18 @@
 #define USE_UART4
 #define USE_UART5
 #define USE_UART6
-
-#define USE_INVERTER
+#define USE_UART7
+#define USE_UART8
+#define USE_LPUART1
 
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
 #define USE_SPI_DEVICE_3
+#define USE_SPI_DEVICE_4
+#define USE_SPI_DEVICE_5
+#define USE_SPI_DEVICE_6
+
+#define QUADSPIDEV_COUNT 1
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
@@ -58,27 +61,40 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 #define TARGET_IO_PORTF 0xffff
+#define TARGET_IO_PORTG 0xffff
+#define TARGET_IO_PORTH 0xffff
+#define TARGET_IO_PORTI 0xffff
 
 #define USE_I2C
 #define I2C_FULL_RECONFIGURABILITY
 
-#define USE_DSHOT_BITBAND
-
 #define USE_BEEPER
+
+#ifdef USE_SDCARD
+#define USE_SDCARD_SPI
+#define USE_SDCARD_SDIO
+#if !defined(ENABLE_SDIO_INIT)
+#define ENABLE_SDIO_INIT 1
+#endif
+#if !defined(ENABLE_SDIO_PIN_CONFIG)
+#define ENABLE_SDIO_PIN_CONFIG 1
+#endif
+#endif
 
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY
-#define USE_SPI_DMA_ENABLE_EARLY
+#define USE_SPI_DMA_ENABLE_LATE
 
 #define USE_USB_DETECT
 
 #define USE_ESCSERIAL
 
 #define USE_ADC
-
 #define USE_EXTI
+#define USE_TIMER_UP_CONFIG
 
-#define USE_PID_DENOM_CHECK
-#define USE_PID_DENOM_OVERCLOCK_LEVEL 2
+#define FLASH_PAGE_SIZE ((uint32_t)0x20000) // 128K sectors
 
-#define FLASH_PAGE_SIZE ((uint32_t)0x4000) // 16K sectors
+#if defined(USE_LED_STRIP) && !defined(USE_LED_STRIP_CACHE_MGMT)
+#define USE_LED_STRIP_CACHE_MGMT
+#endif
