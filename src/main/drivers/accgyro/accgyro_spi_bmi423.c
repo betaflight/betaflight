@@ -318,7 +318,7 @@ static bool bmi423GyroRead(gyroDev_t *gyro)
         } else {
             gyro->gyroModeSPI = GYRO_EXTI_NO_INT;
         }
-        break;
+        return false;
 
     case GYRO_EXTI_INT:
     case GYRO_EXTI_NO_INT:
