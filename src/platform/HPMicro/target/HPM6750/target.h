@@ -225,15 +225,15 @@
  * ========================================================================== */
 
 #ifndef UART_DIR_SWITCH_GPTMR
-#define UART_DIR_SWITCH_GPTMR         HPM_GPTMR4
+#define UART_DIR_SWITCH_GPTMR         HPM_GPTMR6
 #endif
 
 #ifndef UART_DIR_SWITCH_GPTMR_CLOCK
-#define UART_DIR_SWITCH_GPTMR_CLOCK   clock_gptmr4
+#define UART_DIR_SWITCH_GPTMR_CLOCK   clock_gptmr6
 #endif
 
 #ifndef UART_DIR_SWITCH_GPTMR_IRQ
-#define UART_DIR_SWITCH_GPTMR_IRQ     IRQn_GPTMR4
+#define UART_DIR_SWITCH_GPTMR_IRQ     IRQn_GPTMR6
 #endif
 
 #ifndef UART_DIR_SWITCH_GPTMR_CHANNEL
