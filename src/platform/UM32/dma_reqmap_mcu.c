@@ -102,8 +102,9 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
     // in sync: timer_def.h feeds timerHardware, this feeds dmaGet*ByTimer.
 
     { (timerResource_t *)TIM1, TC(CH1), { DMA(2, 1, 3) } },   
-    { (timerResource_t *)TIM1, TC(CH2), { DMA(2, 6, 1) } },   
+    { (timerResource_t *)TIM1, TC(CH2), { DMA(2, 6, 2) } },   
     { (timerResource_t *)TIM1, TC(CH3), { DMA(2, 6, 1) } },
+    { (timerResource_t *)TIM1, TC(CH4), { DMA(2, 4, 1) } },
 
     { (timerResource_t *)TIM2, TC(CH2), { DMA(1, 6, 0) } },   
     { (timerResource_t *)TIM2, TC(CH3), { DMA(1, 1, 0) } },   
@@ -124,7 +125,9 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
     { (timerResource_t *)TIM8, TC(CH4), { DMA(2, 7, 1) } },   
 
     { (timerResource_t *)TIM9, TC(CH1), { DMA(2, 10, 2) } },  
-    { (timerResource_t *)TIM9, TC(CH2), { DMA(2, 11, 1) } },
+    { (timerResource_t *)TIM9, TC(CH2), { DMA(2, 11, 3) } },
+    { (timerResource_t *)TIM9, TC(CH3), { DMA(2, 12, 6) } },  
+    { (timerResource_t *)TIM9, TC(CH4), { DMA(2, 13, 7) } },
 
     { (timerResource_t *)TIM10, TC(CH1), { DMA(2, 11, 1) } }, 
     { (timerResource_t *)TIM10, TC(CH2), { DMA(2, 12, 1) } }, 
@@ -141,7 +144,7 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
     { (timerResource_t *)TIM13, TC(CH1), { DMA(1, 8, 1) } },  
     { (timerResource_t *)TIM13, TC(CH2), { DMA(1, 9, 2) } },  
     { (timerResource_t *)TIM13, TC(CH3), { DMA(1, 10, 3) } }, 
-    { (timerResource_t *)TIM13, TC(CH4), { DMA(1, 11, 3) } }, 
+    { (timerResource_t *)TIM13, TC(CH4), { DMA(1, 11, 0) } }, 
 
     { (timerResource_t *)TIM14, TC(CH1), { DMA(1, 9, 2) } },  
     { (timerResource_t *)TIM14, TC(CH2), { DMA(1, 10, 3) } }, 

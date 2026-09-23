@@ -139,7 +139,7 @@ static void adcInitDevice(adcDevice_t *adcdev, int channelCount)
 
 static int adcFindTagMapEntry(ioTag_t tag)
 {
-    for (int i = 0; i < ADC_TAG_MAP_COUNT; i++) {
+    for (unsigned i = 0; i < ARRAYLEN(adcTagMap); i++) {
         if (adcTagMap[i].tag == tag) {
             return i;
         }
@@ -170,18 +170,22 @@ void adcInit(const adcConfig_t *config)
 
     if (config->vbat.enabled) {
         adcOperatingConfig[ADC_BATTERY].tag = config->vbat.ioTag;
+        adcOperatingConfig[ADC_BATTERY].adcDevice = ADC_CFG_TO_DEV(config->vbat.device);
     }
 
     if (config->rssi.enabled) {
         adcOperatingConfig[ADC_RSSI].tag = config->rssi.ioTag;  //RSSI_ADC_CHANNEL;
+        adcOperatingConfig[ADC_RSSI].adcDevice = ADC_CFG_TO_DEV(config->rssi.device);
     }
 
     if (config->external1.enabled) {
         adcOperatingConfig[ADC_EXTERNAL1].tag = config->external1.ioTag; //EXTERNAL1_ADC_CHANNEL;
+        adcOperatingConfig[ADC_EXTERNAL1].adcDevice = ADC_CFG_TO_DEV(config->external1.device);
     }
 
     if (config->current.enabled) {
         adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag;  //CURRENT_METER_ADC_CHANNEL;
+        adcOperatingConfig[ADC_CURRENT].adcDevice = ADC_CFG_TO_DEV(config->current.device);
     }
 
 #ifdef USE_ADC_INTERNAL
@@ -208,7 +212,8 @@ void adcInit(const adcConfig_t *config)
 	OPA_HandleTypeDef hopa;
 	
 	/* Opa Base configuration */
-    hopa.Opax = OPA0;     
+    // OPA0 is the ADC1 input buffer, OPA1 is the ADC2 input buffer (per manual).
+    hopa.Opax = (ADC_CFG_TO_DEV(config->device) == ADCDEV_2) ? OPA1 : OPA0;
     hopa.Opa_Mode = HAL_OPA_MODE_UNITBUFF;                
     hopa.Init.Capen = OPA_CAPEN_OPEN;    
     hopa.Init.Fbresen = OPA_FBRESEN_OPEN;
@@ -226,7 +231,7 @@ void adcInit(const adcConfig_t *config)
 
     for (int i = 0; i < ADC_EXTERNAL_COUNT; i++) {
         int map;
-        int dev;
+        int dev = (int)adcOperatingConfig[i].adcDevice; // configured device (adcDevice_e)
 
         {
             if (!adcOperatingConfig[i].tag) {
@@ -239,20 +244,24 @@ void adcInit(const adcConfig_t *config)
             }
 
             // Found a tag map entry for this input pin
-            // Find an ADC device that can handle this input pin
-
-            for (dev = 0; dev < ADCDEV_COUNT; dev++) {
-                if (!adcDevice[dev].ADCx
+            // Prefer the configured device; fall back to auto-scan if the
+            // preset is not usable for this pin.
+            if (dev < 0 || dev >= ADCDEV_COUNT
+                || !adcDevice[dev].ADCx
+                || !(adcTagMap[map].devices & (1 << dev))) {
+                for (dev = 0; dev < ADCDEV_COUNT; dev++) {
+                    if (!adcDevice[dev].ADCx
 #ifndef USE_DMA_SPEC
-                     || !adcDevice[dev].dmaResource
+                         || !adcDevice[dev].dmaResource
 #endif
-                   ) {
-                    // Instance not activated
-                    continue;
-                }
-                if (adcTagMap[map].devices & (1 << dev)) {
-                    // Found an activated ADC instance for this input pin
-                    break;
+                       ) {
+                        // Instance not activated
+                        continue;
+                    }
+                    if (adcTagMap[map].devices & (1 << dev)) {
+                        // Found an activated ADC instance for this input pin
+                        break;
+                    }
                 }
             }
 

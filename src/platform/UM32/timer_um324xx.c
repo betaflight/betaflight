@@ -57,6 +57,9 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
       DEF_TIM(TIM1, CH2, PA9, 0, 0),  
       DEF_TIM(TIM1, CH3, PA4, 0, 0), 
       DEF_TIM(TIM1, CH3, PA10, 0, 0),   
+      DEF_TIM(TIM1, CH4, PA5, 0, 0), 
+      DEF_TIM(TIM1, CH4, PA11, 0, 0),  
+      DEF_TIM(TIM1, CH4, PE14, 0, 0),
         
       DEF_TIM(TIM2, CH2, PA1,  0, 0),
       DEF_TIM(TIM2, CH2, PB3,  0, 0),
@@ -72,7 +75,9 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
       DEF_TIM(TIM3, CH4, PC9, 0, 0),  
 
       DEF_TIM(TIM4, CH1, PB6, 0, 0),
+      DEF_TIM(TIM4, CH1, PD12, 0, 0),
       DEF_TIM(TIM4, CH2, PB7, 0, 0),
+      DEF_TIM(TIM4, CH2, PD13, 0, 0),
       DEF_TIM(TIM4, CH4, PB9, 0, 0),
 
       DEF_TIM(TIM5, CH4, PA3, 0, 0),
@@ -86,6 +91,9 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
       DEF_TIM(TIM9, CH1, PA2, 0, 0),
 	  DEF_TIM(TIM9, CH1, PE5, 0, 0),    //MOTOR PE5, shared PA9
       DEF_TIM(TIM9, CH2, PA3, 0, 0),
+      DEF_TIM(TIM9, CH2, PE6, 0, 0),
+      DEF_TIM(TIM9, CH3, PE3, 0, 0),
+      DEF_TIM(TIM9, CH4, PE4, 0, 0),
 
       DEF_TIM(TIM10, CH1, PC4, 0, 0),
       DEF_TIM(TIM10, CH1, PB8, 0, 0),
@@ -104,11 +112,14 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 
       DEF_TIM(TIM13, CH1, PA6, 0, 0),
       DEF_TIM(TIM13, CH1, PB2, 0, 0),
+      DEF_TIM(TIM13, CH1, PD7, 0, 0),
       DEF_TIM(TIM13, CH2, PA5, 0, 0),
       DEF_TIM(TIM13, CH2, PB3, 0, 0),
 	  DEF_TIM(TIM13, CH2, PD8, 0, 0),   //MOTOR PD8, shared PC9
-      DEF_TIM(TIM13, CH3, PB0, 0, 0),   
+      DEF_TIM(TIM13, CH3, PB0, 0, 0),  
+      DEF_TIM(TIM13, CH3, PD9, 0, 0), 
       DEF_TIM(TIM13, CH4, PB1, 0, 0),
+      DEF_TIM(TIM13, CH4, PD10, 0, 0),
 
       DEF_TIM(TIM14, CH1, PA7, 0, 0), 
 	  DEF_TIM(TIM14, CH2, PE7, 0, 0),   //MOTOR PE7, shared PC8

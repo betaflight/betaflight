@@ -167,9 +167,10 @@
 // D(DMAx, Stream, Channel)
 #endif
 
-#define DEF_TIM_DMA__BTCH_TIM1_CH1    D(2, 1,  3)  //DPWM_1 PA8
-#define DEF_TIM_DMA__BTCH_TIM1_CH2    D(2, 6,  1)  
+#define DEF_TIM_DMA__BTCH_TIM1_CH1    D(2, 1,  3)  //LED PA8-LGU6, DPWM5 PA8-RGT6
+#define DEF_TIM_DMA__BTCH_TIM1_CH2    D(2, 6,  2)  //LED PA9-LGU6, DPWM6 PA9-RGT6
 #define DEF_TIM_DMA__BTCH_TIM1_CH3    D(2, 6,  1)
+#define DEF_TIM_DMA__BTCH_TIM1_CH4    D(2, 4,  1)
 
 //Alternative D-shot pin 
 #define DEF_TIM_DMA__BTCH_TIM2_CH2    D(1, 6,  0)  
@@ -190,11 +191,13 @@
 #define DEF_TIM_DMA__BTCH_TIM8_CH3    D(2, 2,  1)
 #define DEF_TIM_DMA__BTCH_TIM8_CH4    D(2, 7,  1)  
 
-#define DEF_TIM_DMA__BTCH_TIM9_CH1    D(2, 10, 2)  //DPWM_2 PE5, shared PA9
-#define DEF_TIM_DMA__BTCH_TIM9_CH2    D(2, 11, 1)
+#define DEF_TIM_DMA__BTCH_TIM9_CH1    D(2, 10, 2)  //DPWM7 PE5-LGU6
+#define DEF_TIM_DMA__BTCH_TIM9_CH2    D(2, 11, 3)  //DPWM8 PE6-LGU6
+#define DEF_TIM_DMA__BTCH_TIM9_CH3    D(2, 12, 6)  //DPWM5 PE3-LGU6
+#define DEF_TIM_DMA__BTCH_TIM9_CH4    D(2, 13, 7)  //DPWM6 PE4-LGU6
 
 #define DEF_TIM_DMA__BTCH_TIM10_CH1    D(2, 11, 1)  
-#define DEF_TIM_DMA__BTCH_TIM10_CH2    D(2, 12, 1)  
+#define DEF_TIM_DMA__BTCH_TIM10_CH2    D(2, 12, 1)  //LED PA15-RGT6
 #define DEF_TIM_DMA__BTCH_TIM10_CH3    D(2, 13, 1)  
 
 #define DEF_TIM_DMA__BTCH_TIM11_CH1   D(2, 12, 1)  
@@ -205,13 +208,13 @@
 #define DEF_TIM_DMA__BTCH_TIM12_CH3   D(1, 9,  2) 
 #define DEF_TIM_DMA__BTCH_TIM12_CH4   D(1, 10, 3)
 
-#define DEF_TIM_DMA__BTCH_TIM13_CH1   D(1, 8,  1)  
-#define DEF_TIM_DMA__BTCH_TIM13_CH2   D(1, 9,  2)  //DPWM_4 PD8, shared PC9
-#define DEF_TIM_DMA__BTCH_TIM13_CH3   D(1, 10, 3)  
-#define DEF_TIM_DMA__BTCH_TIM13_CH4   D(1, 11, 3)  
+#define DEF_TIM_DMA__BTCH_TIM13_CH1   D(1, 8,  1)  //DPWM1 PD7-LGU6,   DPWM3 PB2-RGT6
+#define DEF_TIM_DMA__BTCH_TIM13_CH2   D(1, 9,  2)  //DPWM2 PD8-LGU6,   DPWM4 PB3-RGT6
+#define DEF_TIM_DMA__BTCH_TIM13_CH3   D(1, 10, 3)  //DPWM3 PD9-LGU6,   DPWM1 PB0-RGT6
+#define DEF_TIM_DMA__BTCH_TIM13_CH4   D(1, 11, 0)  //DPWM4 PD10-LGU6,  DPWM2 PB1-RGT6
 
 #define DEF_TIM_DMA__BTCH_TIM14_CH1   D(1, 9,  2)
-#define DEF_TIM_DMA__BTCH_TIM14_CH2   D(1, 10, 3)  //DPWM_3 PE7, shared PC8
+#define DEF_TIM_DMA__BTCH_TIM14_CH2   D(1, 10, 3)  
 
 
 // TIM_UP table
@@ -364,7 +367,7 @@
 #define DEF_TIM_AF__PE12__TCH_TIM14_CH1     D(9, 14)
 
 
-#define FULL_TIMER_CHANNEL_COUNT    (48)
+#define FULL_TIMER_CHANNEL_COUNT    (59)
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(9) | TIM_N(10) | TIM_N(11) | TIM_N(12) | TIM_N(13) | TIM_N(14))
 #define HARDWARE_TIMER_DEFINITION_COUNT 14
 
