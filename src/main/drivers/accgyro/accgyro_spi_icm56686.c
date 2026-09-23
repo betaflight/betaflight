@@ -300,6 +300,7 @@ static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
     }
 }
 
+// Set PWR_MGMT0 to Low-Noise for both sensors, or power them off.
 static void icm56686_enableSensors(const extDevice_t *dev, bool enable)
 {
     const uint8_t value = enable
@@ -348,6 +349,8 @@ uint8_t icm56686SpiDetect(const extDevice_t *dev)
 // ---------------------------------------------------------------------------
 // Accel
 // ---------------------------------------------------------------------------
+// Set accel scale and sample-rate metadata. Hardware ODR/SRC/LPF are programmed
+// from icm56686GyroInit while the sensors are still off.
 void icm56686AccInit(accDev_t *acc)
 {
     // 16-bit mode, +/-16 g -> 2048 LSB/g. ODR, SRC and the UI LPF are
@@ -387,6 +390,8 @@ bool icm56686AccReadSPI(accDev_t *acc)
 // ---------------------------------------------------------------------------
 // Gyro
 // ---------------------------------------------------------------------------
+// Program filters, ODR, INT1 and power-up while sensors start off; arm DRDY after
+// gyro state fields are assigned so the shared EXTI handler sees valid values.
 void icm56686GyroInit(gyroDev_t *gyro)
 {
     const extDevice_t *dev = &gyro->dev;
