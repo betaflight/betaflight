@@ -532,9 +532,6 @@ void initPhase2(void)
             240,
 #endif
 #if defined(UM324xF)
-#if ENABLE_OVERCLOCK_288_MHZ
-            288,
-#endif
 #if ENABLE_OVERCLOCK_336_MHZ
             336,
 #endif

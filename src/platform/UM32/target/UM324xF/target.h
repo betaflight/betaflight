@@ -85,6 +85,8 @@
 // #define USE_PID_DENOM_CHECK  //polo:UM324xF performance is enlough.
 #define DEFAULT_PID_PROCESS_DENOM       1
 
+#define DEFAULT_CPU_OVERCLOCK 0 //UM324xF default 288M
+
 #define STANDARD_INQUIRY_DATA_LEN       0x24U
 
 // 4way ESC flashing: keep the BLHeli bootloader (needed for BLHeli_S/32 ESC
