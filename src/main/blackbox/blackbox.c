@@ -246,8 +246,8 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
 #endif
     {"rssi",       -1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(RSSI)},
 #ifdef USE_PITOT
-    {"pitot",      0, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PITOT)},
-    {"pitot",      1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PITOT)},
+    {"pitot",      0, SIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PITOT)},
+    {"pitot",      1, SIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PITOT)},
 #endif
 
     /* Gyros and accelerometers base their P-predictions on the average of the previous 2 frames to reduce noise impact */
@@ -401,8 +401,8 @@ typedef struct blackboxMainState_s {
 #endif
     uint16_t rssi;
 #ifdef USE_PITOT
-    uint32_t airspeed;
-    uint32_t diffPressure;
+    int32_t airspeed;
+    int32_t diffPressure;
 #endif
 } blackboxMainState_t;
 
@@ -757,8 +757,8 @@ static void writeIntraframe(void)
 
 #ifdef USE_PITOT
     if (testBlackboxCondition(CONDITION(PITOT))) {
-        blackboxWriteUnsignedVB(blackboxCurrent->airspeed);
-        blackboxWriteUnsignedVB(blackboxCurrent->diffPressure);
+        blackboxWriteSignedVB(blackboxCurrent->airspeed);
+        blackboxWriteSignedVB(blackboxCurrent->diffPressure);
     }
 #endif
 
@@ -949,8 +949,8 @@ static void writeInterframe(void)
 
 #ifdef USE_PITOT
     if (testBlackboxCondition(CONDITION(PITOT))) {
-        blackboxWriteSignedVB((int32_t) blackboxCurrent->airspeed - blackboxLast->airspeed);
-        blackboxWriteSignedVB((int32_t) blackboxCurrent->diffPressure - blackboxLast->diffPressure);
+        blackboxWriteSignedVB(blackboxCurrent->airspeed - blackboxLast->airspeed);
+        blackboxWriteSignedVB(blackboxCurrent->diffPressure - blackboxLast->diffPressure);
     }
 #endif
 
@@ -1352,8 +1352,8 @@ static void loadMainState(timeUs_t currentTimeUs)
     blackboxCurrent->rssi = getRssi();
 
 #ifdef USE_PITOT
-    blackboxCurrent->airspeed = (uint32_t)MAX(pitot.airspeed, 0.0f);
-    blackboxCurrent->diffPressure = (uint32_t)MAX(pitot.diffPressure, 0.0f);
+    blackboxCurrent->airspeed = (int32_t)pitot.airspeed;
+    blackboxCurrent->diffPressure = (int32_t)pitot.diffPressure;
 #endif
 
 #ifdef USE_SERVOS
@@ -1805,6 +1805,9 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MOTOR_PWM_RATE, "%d",         motorConfig()->dev.motorPwmRate);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MOTOR_IDLE, "%d",             motorConfig()->motorIdle);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DEBUG_MODE, "%d",             debugMode);
+        // debugModeNames[] is allowed to hold a NULL for a mode that is not offered, and
+        // %s would dereference it, so the name is checked as well as the index.
+        BLACKBOX_PRINT_HEADER_LINE("debug_mode_name", "%s",                 debugMode < DEBUG_COUNT && debugModeNames[debugMode] ? debugModeNames[debugMode] : "UNKNOWN");
         BLACKBOX_PRINT_HEADER_LINE("features", "%d",                        featureConfig()->enabledFeatures);
 
 #ifdef USE_RC_SMOOTHING_FILTER
