@@ -195,8 +195,7 @@ bool isVtxMspDescriptor(mspDescriptor_t descriptor)
         return true;
     }
 #if defined(USE_MSP_OVER_TELEMETRY)
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_MSP);
-    if (portConfig && isCrsfPortConfig(portConfig) && getMspTelemetryDescriptor() == descriptor) {
+    if (isCrsfPort(mspVtxPortIdentifier) && getMspTelemetryDescriptor() == descriptor) {
         return true;
     }
 #endif
