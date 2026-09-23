@@ -2505,6 +2505,10 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
         }
         break;
     case MSP_REBOOT:
+        if (!mspRebootIsAllowed()) {
+            return MSP_RESULT_ERROR;
+        }
+
         if (sbufBytesRemaining(src)) {
             rebootMode = sbufReadU8(src);
 
@@ -2517,10 +2521,6 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
             }
         } else {
             rebootMode = MSP_REBOOT_FIRMWARE;
-        }
-
-        if (!mspRebootIsAllowed()) {
-            return MSP_RESULT_ERROR;
         }
 
         sbufWriteU8(dst, rebootMode);

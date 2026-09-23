@@ -19,13 +19,16 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "msp/msp.c"
 
-#include <stdbool.h>
-
-#include "fc/runtime_config.h"
-
-static inline bool mspRebootIsAllowed(void)
+void testMspDirectReboot(void)
 {
-    return !ARMING_FLAG(ARMED);
+    rebootMode = MSP_REBOOT_FIRMWARE;
+    mspRebootFn(NULL);
+}
+
+void testMspDelayedReboot(void)
+{
+    rebootMode = MSP_REBOOT_FIRMWARE;
+    mspRebootEntry.dispatch(&mspRebootEntry);
 }
