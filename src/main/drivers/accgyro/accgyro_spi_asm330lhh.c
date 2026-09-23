@@ -417,7 +417,7 @@ static bool asm330lhhAccReadSPI(accDev_t *acc)
     case GYRO_EXTI_INT:
     case GYRO_EXTI_NO_INT:
     {
-        acc->gyro->dev.txBuf[0] = ASM330LHH_OUTX_L_A | 0x80;
+        acc->gyro->dev.txBuf[0] = acc->gyro->accDataReg | 0x80;
 
         busSegment_t segments[] = {
                 {.u.buffers = {NULL, NULL}, 7, true, NULL},
@@ -444,12 +444,14 @@ static bool asm330lhhAccReadSPI(accDev_t *acc)
         // If read was triggered in interrupt don't bother waiting. The worst that could happen is that we pick
         // up an old value.
 
-        // This data was read from the gyro, which is the same SPI device as the acc
+        // The ASM330LHH stores gyro data before accel data in the burst, so compute the accel offset from the
+        // start of the burst instead of hard-coding the array index.
+        const uint8_t accDataIndex = ((acc->gyro->accDataReg - acc->gyro->dmaReadRegStart) >> 1) + 1;
         int16_t *accData = (int16_t *)acc->gyro->dev.rxBuf;
 
-        acc->ADCRaw[X] = accData[4];
-        acc->ADCRaw[Y] = accData[5];
-        acc->ADCRaw[Z] = accData[6];
+        acc->ADCRaw[X] = accData[accDataIndex];
+        acc->ADCRaw[Y] = accData[accDataIndex + 1];
+        acc->ADCRaw[Z] = accData[accDataIndex + 2];
         break;
     }
 
@@ -546,7 +548,7 @@ static void asm330lhhGyroInit(gyroDev_t *gyro)
     gyro->accDataReg = ASM330LHH_OUTX_L_A;
     gyro->gyroDataReg = ASM330LHH_OUTX_L_G;
     gyro->tempDataReg = ASM330LHH_OUT_TEMP_L;
-    gyro->dmaReadRegStart = gyro->accDataReg;
+    gyro->dmaReadRegStart = gyro->gyroDataReg;
 }
 
 static bool asm330lhhGyroReadSPI(gyroDev_t *gyro)
@@ -566,7 +568,7 @@ static bool asm330lhhGyroReadSPI(gyroDev_t *gyro)
 #ifdef USE_DMA
             if (spiUseDMA(&gyro->dev)) {
                 gyro->dev.callbackArg = (uintptr_t)gyro;
-                gyro->dev.txBuf[0] = ASM330LHH_OUTX_L_G | 0x80;
+                gyro->dev.txBuf[0] = gyro->dmaReadRegStart | 0x80;
                 // Read three words of gyro data immediately followed by three bytes of acc data
                 gyro->segments[0].len = sizeof(uint8_t) + 6 * sizeof(int16_t);
                 gyro->segments[0].callback = mpuIntCallback;
@@ -589,7 +591,7 @@ static bool asm330lhhGyroReadSPI(gyroDev_t *gyro)
     case GYRO_EXTI_INT:
     case GYRO_EXTI_NO_INT:
     {
-        gyro->dev.txBuf[0] = ASM330LHH_OUTX_L_G | 0x80;
+        gyro->dev.txBuf[0] = gyro->dmaReadRegStart | 0x80;
 
         busSegment_t segments[] = {
                 {.u.buffers = {NULL, NULL}, 7, true, NULL},
@@ -613,9 +615,10 @@ static bool asm330lhhGyroReadSPI(gyroDev_t *gyro)
     {
         // If read was triggered in interrupt don't bother waiting. The worst that could happen is that we pick
         // up an old value.
-        gyro->gyroADCRaw[X] = gyroData[1];
-        gyro->gyroADCRaw[Y] = gyroData[2];
-        gyro->gyroADCRaw[Z] = gyroData[3];
+        const uint8_t gyroDataIndex = ((gyro->gyroDataReg - gyro->dmaReadRegStart) >> 1) + 1;
+        gyro->gyroADCRaw[X] = gyroData[gyroDataIndex];
+        gyro->gyroADCRaw[Y] = gyroData[gyroDataIndex + 1];
+        gyro->gyroADCRaw[Z] = gyroData[gyroDataIndex + 2];
         break;
     }
 
