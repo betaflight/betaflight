@@ -25,7 +25,7 @@
 #include "usb_std.h"
 #include "usbd_sdr.h"
 #include "usbd_core.h"
-#include "cdc_desc.h"
+#include <cdc_desc.h>
 
 /** @addtogroup AT32F435_437_middlewares_usbd_class
   * @{

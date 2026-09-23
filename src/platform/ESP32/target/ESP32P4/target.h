@@ -30,10 +30,6 @@
 #define TARGET_BOARD_IDENTIFIER "EP4_"
 #endif
 
-#ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight - ESP32-P4"
-#endif
-
 #define USE_UART0
 #define USE_UART1
 #define USE_UART2
