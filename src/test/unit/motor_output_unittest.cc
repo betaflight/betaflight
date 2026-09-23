@@ -153,3 +153,52 @@ TEST(MotorOutputUnittest, TestDshotRpmTelemetryFreshness)
 
     EXPECT_TRUE(isDshotRpmTelemetryFresh(mockTimeUs));
 }
+
+TEST(MotorOutputUnittest, TestDshotRpmFreshnessIsPerMotorAcrossTimerWrap)
+{
+    const timeUs_t startTimes[] = {1000, TIMEUS_MAX - 50000};
+    for (const timeUs_t startTime : startTimes) {
+        memset(&dshotTelemetryState, 0, sizeof(dshotTelemetryState));
+        memset(&motorConfig_System, 0, sizeof(motorConfig_System));
+        motorConfig_System.dev.useDshotTelemetry = true;
+        motorConfig_System.motorPoleCount = 14;
+        rpmFilterConfig_System.rpm_filter_lpf_hz = 150;
+        useDshotTelemetry = true;
+        dshotMotorCount = 4;
+        mockTimeUs = startTime;
+        initDshotTelemetry(1000);
+
+        EXPECT_FALSE(isDshotRpmTelemetryFresh(mockTimeUs));
+        for (unsigned motor = 0; motor < dshotMotorCount; motor++) {
+            dshotTelemetryState.motorState[motor].rawValue = 450;
+        }
+        dshotTelemetryState.rawValueState = DSHOT_RAW_VALUE_STATE_NOT_PROCESSED;
+        updateDshotTelemetry();
+
+        const timeUs_t lastFreshTime = mockTimeUs + DSHOT_RPM_TELEMETRY_TIMEOUT_US;
+        EXPECT_TRUE(isDshotRpmTelemetryFresh(lastFreshTime));
+        mockTimeUs = lastFreshTime + 1;
+
+        // The first two motors have no new packet. Later valid motors must not
+        // refresh their timestamps, even when this interval wraps micros().
+        for (unsigned motor = 2; motor < dshotMotorCount; motor++) {
+            dshotTelemetryState.motorState[motor].rawValue = 450;
+        }
+        dshotTelemetryState.rawValueState = DSHOT_RAW_VALUE_STATE_NOT_PROCESSED;
+        updateDshotTelemetry();
+        for (unsigned motor = 0; motor < dshotMotorCount; motor++) {
+            EXPECT_EQ(motor < 2 ? startTime : mockTimeUs,
+                dshotTelemetryState.motorState[motor].lastRpmUpdateUs);
+        }
+        EXPECT_FALSE(isDshotRpmTelemetryFresh(mockTimeUs));
+
+        // Recover the missing motors; the other two retain their newer sample.
+        mockTimeUs += 1000;
+        for (unsigned motor = 0; motor < 2; motor++) {
+            dshotTelemetryState.motorState[motor].rawValue = 450;
+        }
+        dshotTelemetryState.rawValueState = DSHOT_RAW_VALUE_STATE_NOT_PROCESSED;
+        updateDshotTelemetry();
+        EXPECT_TRUE(isDshotRpmTelemetryFresh(mockTimeUs));
+    }
+}
