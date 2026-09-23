@@ -291,6 +291,15 @@ launchWingState_e launchWingGetState(void)
     return launchWing.state;
 }
 
+static void debugLaunch(void)
+{
+    DEBUG_SET(DEBUG_LAUNCH, 0, launchWing.state);                            //!< Launch State [enum:launchWingState_e]
+    DEBUG_SET(DEBUG_LAUNCH, 1, lrintf(launchWing.pitchTargetDeg * 10.0f));   //!< Climb Angle Target [unit:0.1deg]
+    DEBUG_SET(DEBUG_LAUNCH, 2, lrintf(launchWing.throttle * 1000.0f));       //!< Launch Throttle [unit:0.001]
+    DEBUG_SET(DEBUG_LAUNCH, 5, lrintf(launchWing.handover * 1000.0f));       //!< Pilot Handover [unit:0.001]
+    DEBUG_SET(DEBUG_LAUNCH, 7, launchWing.exit);                             //!< Launch Exit Reason [enum:launchWingExit_e]
+}
+
 void launchWingUpdate(timeUs_t currentTimeUs)
 {
     const launchWingConfig_t *cfg = launchWingConfig();
@@ -305,6 +314,7 @@ void launchWingUpdate(timeUs_t currentTimeUs)
         if (launchWing.state != LAUNCH_WING_IDLE && !launchWingIsTerminal()) {
             endLaunch(LAUNCH_WING_ABORTED, LAUNCH_WING_EXIT_MODE_OFF);
         }
+        debugLaunch();
         return;
     }
 
@@ -432,11 +442,7 @@ void launchWingUpdate(timeUs_t currentTimeUs)
         autopilotAngle[AI_PITCH] = -launchWing.pitchTargetDeg;
     }
 
-    DEBUG_SET(DEBUG_LAUNCH, 0, launchWing.state);                            //!< Launch State [enum:launchWingState_e]
-    DEBUG_SET(DEBUG_LAUNCH, 1, lrintf(launchWing.pitchTargetDeg * 10.0f));   //!< Climb Angle Target [unit:0.1deg]
-    DEBUG_SET(DEBUG_LAUNCH, 2, lrintf(launchWing.throttle * 1000.0f));       //!< Launch Throttle [unit:0.001]
-    DEBUG_SET(DEBUG_LAUNCH, 5, lrintf(launchWing.handover * 1000.0f));       //!< Pilot Handover [unit:0.001]
-    DEBUG_SET(DEBUG_LAUNCH, 7, launchWing.exit);                             //!< Launch Exit Reason [enum:launchWingExit_e]
+    debugLaunch();
 }
 
 #endif // USE_WING && USE_LAUNCH_WING

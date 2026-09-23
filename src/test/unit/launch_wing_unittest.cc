@@ -859,3 +859,21 @@ TEST(LaunchWingTest, AThrowPastTheBoundStillGetsTheHoldWindow)
     t = run(t, launchWingConfig()->motorDelayMs + launchWingConfig()->spinupTimeMs + 10);
     EXPECT_EQ(LAUNCH_WING_IN_PROGRESS, launchWingGetState());
 }
+
+// Once the mode drops, every later update returns early, so the log has to
+// learn why the launch ended on that path too.
+TEST(LaunchWingTest, ModeOffExitReachesTheDebugLog)
+{
+    resetForTest();
+    debugMode = DEBUG_LAUNCH;
+    timeUs_t t = run(0, 1);
+    t = reachInProgress(t);
+
+    launchWingSwitchOff();
+    flightModeFlags = 0;
+    t = run(t, 1);
+    EXPECT_EQ(LAUNCH_WING_ABORTED, debug[0]);
+    EXPECT_EQ(LAUNCH_WING_EXIT_MODE_OFF, debug[7]);
+
+    debugMode = DEBUG_NONE;
+}

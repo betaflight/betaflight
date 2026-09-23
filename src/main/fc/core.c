@@ -1184,7 +1184,11 @@ void processRxModes(timeUs_t currentTimeUs)
         DISABLE_FLIGHT_MODE(LAUNCH_MODE);
         launchWingSwitchOff();
         if (cancelledBeforeTheThrow) {
-            setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+            // Stick arming needs throttle low to re-arm, so it cannot repeat
+            // this, and nothing on that path would ever clear the interlock.
+            if (!isUsingSticksForArming()) {
+                setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+            }
             disarm(DISARM_REASON_LAUNCH_ABORT);
         }
     }
