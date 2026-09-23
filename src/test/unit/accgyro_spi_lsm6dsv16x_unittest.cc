@@ -278,7 +278,7 @@ TEST_P(AccgyroSpiLsm6dsv, ConfiguresHighAccuracyRatesFiltersAndFullScale)
     EXPECT_EQ(0x1c, registers[CTRL2]); // 8 kHz gyro, high accuracy mode
     EXPECT_EQ(0x01, registers[HAODR_CFG]);
     EXPECT_EQ(0x44, registers[CTRL3]); // Block-data update and address increment
-    EXPECT_EQ(is32x() ? 0x0c : 0x04, registers[CTRL6]);
+    EXPECT_EQ(is32x() || is320x() ? 0x0c : 0x04, registers[CTRL6]);
     EXPECT_EQ(0x01, registers[CTRL7]); // Gyro LPF1
     EXPECT_EQ(is32x() ? 0x07 : 0x03, registers[CTRL8]); // ODR/4, variant and FSR
     EXPECT_EQ(0x08, registers[CTRL9]); // Accel LPF2 enable
@@ -319,7 +319,7 @@ TEST_P(AccgyroSpiLsm6dsv, AppliesSelectedGyroLpfWithoutChangingRange)
     gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_OPTION_1;
     gyro.initFn(&gyro);
     ASSERT_EQ(-1, failure);
-    EXPECT_EQ(is32x() ? 0x2c : 0x24, registers[CTRL6]);
+    EXPECT_EQ(is32x() || is320x() ? 0x2c : 0x24, registers[CTRL6]);
 }
 
 TEST_P(AccgyroSpiLsm6dsv, ResetTimeoutFailsBeforeEnablingInterrupts)

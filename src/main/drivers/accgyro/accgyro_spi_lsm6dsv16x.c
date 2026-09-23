@@ -1124,7 +1124,9 @@ static void lsm6dsvGyroInit(gyroDev_t *gyro, uint8_t whoAmI)
                 LSM6DSV_CTRL8_FS_XL_MASK, LSM6DSV_CTRL8_FS_XL_SHIFT) },
         { LSM6DSV_CTRL9, LSM6DSV_CTRL9_LPF2_XL_EN },
         // 16X/320X: +/-2000 dps. 32X: +/-4000 dps.
-        { LSM6DSV_CTRL6, LSM6DSV_ENCODE_BITS(lpf1BandwidthOptions[gyroConfig()->gyro_hardware_lpf],
+        // 320X FS_G is only bits [2:0]; bit 3 must be 1 (DS15060 Table 64, reset value 0x08).
+        { LSM6DSV_CTRL6, (whoAmI == LSM6DSK320X_WHO_AM_I_CONST ? 0x08 : 0) |
+            LSM6DSV_ENCODE_BITS(lpf1BandwidthOptions[gyroConfig()->gyro_hardware_lpf],
                 LSM6DSV_CTRL6_LPF1_G_BW_MASK, LSM6DSV_CTRL6_LPF1_G_BW_SHIFT) |
             LSM6DSV_ENCODE_BITS(is32x ? LSM6DSV_CTRL6_FS_G_4000DPS : LSM6DSV_CTRL6_FS_G_2000DPS,
                 LSM6DSV_CTRL6_FS_G_MASK, LSM6DSV_CTRL6_FS_G_SHIFT) },
