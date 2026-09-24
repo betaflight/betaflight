@@ -141,6 +141,7 @@ const char * const lookupTableMagHardware[MAG_HARDWARE_COUNT] = {
     [MAG_DRONECAN] = "DRONECAN",
 #endif
     [MAG_BMM350] = "BMM350",
+    [MAG_AK9916] = "AK9916",
 };
 
 // sync with rangefinderType_e
