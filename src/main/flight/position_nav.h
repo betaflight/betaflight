@@ -49,6 +49,8 @@ typedef struct positionNavCommand_s {
     bool rampRateSlewed;            // took over from a command still flying: slews out of its rate
 
     float approachSlowdownM;        // taper the commanded speed linearly inside this range, 0 = off
+    bool velocityFfValid;           // the owner states the horizontal velocity: no chase law toward the target
+    vector2_t velocityFfEfMps;      // that velocity, metres/s (x east, y north)
     float maxAccelMps2;             // acceleration limit (m/s^2), 0 = unlimited
     float maxDecelMps2;             // deceleration/braking limit (m/s^2), 0 = unlimited
 
@@ -88,9 +90,11 @@ const positionNavCommand_t *positionNavGetActiveCommand(void);
 
 void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2);
 
-// The speed this leg is being flown at right now, when its owner governs the profile rather than
-// the leg's own cruise (carrot legs: the executor's trapezoid owns the speed).
-void positionNavSetCruiseSpeed(float cruiseSpeedMps);
+// The horizontal velocity to command, for a target its owner flies along a profile of its own (a
+// carrot on a leg line). It replaces the chase law toward the target and is commanded as it stands,
+// the owner shaping its acceleration; the target walks at it between the owner's moves. Cleared by
+// the next positionNavSetTargetEf(); no-op without an active command.
+void positionNavSetVelocityFeedforward(const vector2_t *velEfMps);
 
 // Taper the commanded speed linearly to zero inside this range of the target, the way the legacy
 // rescue bled speed from twice the descent distance. Zero leaves the leg on its own profile.

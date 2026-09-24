@@ -20,6 +20,7 @@
 // flightPlanNavStageRescuePlan(). flight_plan_nav_unittest.cc stays the
 // flag-off regression guard and is not touched by this binary.
 
+#include <math.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -94,11 +95,13 @@ float g_lastVertStartAltM;
 int g_setVerticalProfileCalls;
 float g_stubCommandedAltCm;
 bool g_stubCommandedAltSet;
+vector3_t g_stubTargetVelCmS;
 
 gpsLocation_t g_stubGpsOrigin;
 bool g_stubGpsOriginSet;
 
 timeUs_t g_stubMicros;
+timeUs_t g_targetWalkFromUs;   // positionNav walks a target flown at a stated velocity from when it was last placed
 
 positionEstimate3d_t g_stubEstimate;
 bool g_stubValidXY;
@@ -114,6 +117,17 @@ float g_stubMaxAltitudeCm;
 bool g_stubHeadingValid;
 int g_pitchForwardCalls;
 bool g_lastPitchForward;
+
+vector2_t g_lastFfEfMps;
+bool g_ffValid;
+float g_lastAccelLimitMps2;
+float g_lastDecelLimitMps2;
+
+// The speed of the velocity the carrot last commanded.
+float lastFfSpeedMps(void)
+{
+    return sqrtf(g_lastFfEfMps.x * g_lastFfEfMps.x + g_lastFfEfMps.y * g_lastFfEfMps.y);
+}
 
 } // namespace
 
@@ -136,7 +150,10 @@ void positionNavSetTargetEf(
     g_lastTarget.callback = callback;
     g_lastTarget.userData = userData;
     g_lastTarget.valid = true;
+    g_ffValid = false;
+    memset(&g_lastFfEfMps, 0, sizeof(g_lastFfEfMps));
     g_setTargetCalls++;
+    g_targetWalkFromUs = g_stubMicros;
 }
 
 void altHoldSetEmergencyDescent(bool active, float rateCmS)
@@ -164,12 +181,30 @@ float positionNavGetTargetAltitudeCm(void)
     return g_stubCommandedAltSet ? g_stubCommandedAltCm : g_lastTarget.targetEfM.z * 100.0f;
 }
 
+vector3_t positionNavGetTargetVelocityCmS(void)
+{
+    return g_stubTargetVelCmS;
+}
+
+// Where positionNav has walked the target to by now.
+static vector3_t walkedTargetEfM(void)
+{
+    vector3_t targetEfM = g_lastTarget.targetEfM;
+    if (g_ffValid) {
+        const float walkS = (g_stubMicros - g_targetWalkFromUs) * 1e-6f;
+        targetEfM.x += g_lastFfEfMps.x * walkS;
+        targetEfM.y += g_lastFfEfMps.y * walkS;
+    }
+    return targetEfM;
+}
+
 void positionNavMoveTargetEf(const vector3_t *targetPosEfM)
 {
     if (!g_lastTarget.valid) {
         return;
     }
     g_lastTarget.targetEfM = *targetPosEfM;
+    g_targetWalkFromUs = g_stubMicros;
 }
 
 void positionNavClearTarget(void)
@@ -185,21 +220,26 @@ void positionNavSetAutoClearOnReach(bool autoClear)
 
 void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
 {
-    (void)maxAccelMps2;
-    (void)maxDecelMps2;
+    g_lastAccelLimitMps2 = maxAccelMps2;
+    g_lastDecelLimitMps2 = maxDecelMps2;
 }
 
 float g_lastApproachSlowdownM;
-float g_lastCruiseSpeedMps;
 
 void positionNavSetApproachSlowdown(float slowdownM)
 {
     g_lastApproachSlowdownM = slowdownM;
 }
 
-void positionNavSetCruiseSpeed(float cruiseSpeedMps)
+void positionNavSetVelocityFeedforward(const vector2_t *velEfMps)
 {
-    g_lastCruiseSpeedMps = cruiseSpeedMps;
+    if (!g_lastTarget.valid) {
+        return;
+    }
+    g_lastTarget.targetEfM = walkedTargetEfM();
+    g_targetWalkFromUs = g_stubMicros;
+    g_lastFfEfMps = *velEfMps;
+    g_ffValid = true;
 }
 
 void positionNavSetAltitudeArrivalRequired(bool required)
@@ -241,9 +281,10 @@ const positionNavCommand_t *positionNavGetActiveCommand(void)
     static positionNavCommand_t cmd;
     memset(&cmd, 0, sizeof(cmd));
     cmd.active = g_lastTarget.valid;
-    cmd.targetPosEfM = g_lastTarget.targetEfM;
+    cmd.targetPosEfM = walkedTargetEfM();
     cmd.includeAltitude = g_lastTarget.includeAltitude;
     cmd.cruiseSpeedMps = g_lastTarget.cruiseSpeedMps;
+    cmd.velocityFfValid = g_ffValid;
     return &cmd;
 }
 
@@ -320,7 +361,10 @@ protected:
         memset(&g_lastTarget, 0, sizeof(g_lastTarget));
         g_setTargetCalls = 0;
         g_lastApproachSlowdownM = 0.0f;
-        g_lastCruiseSpeedMps = 0.0f;
+        memset(&g_lastFfEfMps, 0, sizeof(g_lastFfEfMps));
+        g_ffValid = false;
+        g_lastAccelLimitMps2 = -1.0f;
+        g_lastDecelLimitMps2 = -1.0f;
         g_setVerticalProfileCalls = 0;
         g_navHeadingOverrideValid = false;
         g_navHeadingOverrideDeg = 0.0f;
@@ -331,6 +375,7 @@ protected:
         g_lastVertStartAltM = 0.0f;
         g_stubCommandedAltCm = 0.0f;
         g_stubCommandedAltSet = false;
+        memset(&g_stubTargetVelCmS, 0, sizeof(g_stubTargetVelCmS));
         g_clearTargetCalls = 0;
         g_stubMicros = 0;
 
@@ -614,6 +659,65 @@ TEST_F(FlightPlanRescueTest, HeadingGateHoldsAndRecovers)
     EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.1f);
 }
 
+TEST_F(FlightPlanRescueTest, HeadingRecoveryStartsTheReturnWhereTheCraftIs)
+{
+    // Pitched forward for up to 15 s to find its heading, the craft is nowhere near the climb's hold
+    // point by the time it has one. The return leg starts from the craft, not from that point.
+    g_stubEstimate.position.v[ENU_E] = 30.0f * 100.0f;
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    g_stubHeadingValid = false;
+    triggerReached();
+    ASSERT_TRUE(g_lastPitchForward);
+
+    g_stubEstimate.position.v[ENU_N] = 25.0f * 100.0f;   // pitched forward, north
+    g_stubEstimate.velocity.v[ENU_N] = 600.0f;
+    attitude.values.yaw = 0;                            // nose north, well off home
+    g_stubHeadingValid = true;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    EXPECT_FALSE(g_lastPitchForward);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 30.0f, 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 25.0f, 0.01f);
+
+    // Nothing is commanded until the nose is round: the craft brakes out of the pitch-forward at
+    // full authority, held to a carrot it drags along no further than the controller's reach.
+    ASSERT_TRUE(g_ffValid);
+    EXPECT_NEAR(lastFfSpeedMps(), 0.0f, 0.001f);
+    for (int i = 0; i < 20; i++) {
+        g_stubEstimate.position.v[ENU_N] += 30.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+        EXPECT_NEAR(lastFfSpeedMps(), 0.0f, 0.001f);
+        const float gapE = g_lastTarget.targetEfM.x - 30.0f;
+        const float gapN = g_lastTarget.targetEfM.y - g_stubEstimate.position.v[ENU_N] * 0.01f;
+        EXPECT_LE(sqrtf(gapE * gapE + gapN * gapN), 5.0f + 0.01f);
+    }
+}
+
+TEST_F(FlightPlanRescueTest, HeadingRecoveryCarriesTheCommandedAltitudeOn)
+{
+    // Pitching forward, the craft sagged below the altitude the climb had brought its target to.
+    // The return leg's ramp starts from that target, not from the craft.
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    g_stubHeadingValid = false;
+    triggerReached();
+    ASSERT_TRUE(g_lastPitchForward);
+
+    g_stubCommandedAltCm = kDefaultReturnAltM * 100.0f;
+    g_stubCommandedAltSet = true;
+    g_stubEstimate.position.v[ENU_U] = (kDefaultReturnAltM - 0.6f) * 100.0f;
+    const int clearsBefore = g_clearTargetCalls;
+    g_stubHeadingValid = true;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    EXPECT_NEAR(g_lastVertStartAltM, kDefaultReturnAltM, 0.001f);
+    EXPECT_EQ(g_clearTargetCalls, clearsBefore);
+}
+
 TEST_F(FlightPlanRescueTest, HeadingGateTimesOutToAbort)
 {
     g_stubMicros = 1'000'000;
@@ -774,8 +878,10 @@ TEST_F(FlightPlanRescueTest, ReturnLegBleedsSpeedFromTwiceTheDescentDistance)
         flightPlanNavUpdate(g_stubMicros);
     }
     ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
-    // 15 m of a 20 m range against the 7.5 m/s return speed.
-    EXPECT_NEAR(g_lastCruiseSpeedMps, 7.5f * 15.0f / 20.0f, 0.2f);
+    // 15 m of a 20 m range against the 7.5 m/s return speed, commanded along the leg home.
+    ASSERT_TRUE(g_ffValid);
+    EXPECT_NEAR(g_lastFfEfMps.x, 0.0f, 0.01f);
+    EXPECT_NEAR(g_lastFfEfMps.y, -7.5f * 15.0f / 20.0f, 0.2f);
 }
 
 // --- Fallback emergency descent (switch rescue: no fix, or plan aborted) ---

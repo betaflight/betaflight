@@ -96,6 +96,7 @@ void positionNavSetTargetEf(
     cmd.rampRateMps = currentTargetVelCmS.v[ENU_U] * 0.01f;
     cmd.rampRateSlewed = handOver;
     cmd.approachSlowdownM = 0.0f;
+    cmd.velocityFfValid = false;
     cmd.acceptanceRadiusM = acceptanceRadiusM;
     cmd.completionSpeedMps = completionSpeedMps;
     cmd.altitudeArrivalRequired = true;
@@ -200,11 +201,13 @@ void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
     cmd.maxDecelMps2 = maxDecelMps2;
 }
 
-void positionNavSetCruiseSpeed(float cruiseSpeedMps)
+void positionNavSetVelocityFeedforward(const vector2_t *velEfMps)
 {
-    if (cmd.active) {
-        cmd.cruiseSpeedMps = cruiseSpeedMps;
+    if (!cmd.active) {
+        return;
     }
+    cmd.velocityFfValid = true;
+    cmd.velocityFfEfMps = *velEfMps;
 }
 
 void positionNavSetApproachSlowdown(float slowdownM)
@@ -273,6 +276,13 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
         return;
     }
 
+    // A target flown at a stated velocity walks at it between its owner's moves: the owner may run
+    // slower than this, and the position the craft is held to must not move in steps.
+    if (cmd.velocityFfValid) {
+        cmd.targetPosEfM.v[ENU_E] += cmd.velocityFfEfMps.x * dt;
+        cmd.targetPosEfM.v[ENU_N] += cmd.velocityFfEfMps.y * dt;
+    }
+
     // Horizontal and vertical are separate channels. Sharing one 3D speed budget made the climb
     // rate a byproduct of how steep the leg happened to be, and left no way for a leg to state the
     // rate it wants to climb or descend at.
@@ -280,39 +290,44 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
     const float errorNorthM = cmd.targetPosEfM.v[ENU_N] - posNorthM;
     const float horizDistM = sqrtf(sq(errorEastM) + sq(errorNorthM));
 
-    float desiredSpeedMps = fminf(cmd.cruiseSpeedMps, POS_TO_VEL_KP * horizDistM);
-
-    // Bleed speed off from a stated range rather than waiting for the position gain to bite a few
-    // metres out: the craft arrives slow instead of braking hard on the doorstep, and a hot arrival
-    // has somewhere to shed its speed. Linear in distance, so the speed decays exponentially in
-    // time - the shape the legacy rescue flew.
-    if (cmd.approachSlowdownM > 0.0f) {
-        desiredSpeedMps = fminf(desiredSpeedMps,
-                                cmd.cruiseSpeedMps * (horizDistM / cmd.approachSlowdownM));
-    }
-
-    if (cmd.maxDecelMps2 > 0.0f) {
-        const float brakingSpeed = sqrtf(2.0f * cmd.maxDecelMps2 * horizDistM);
-        desiredSpeedMps = fminf(desiredSpeedMps, brakingSpeed);
-    }
-
     vector3_t targetVelMps;
     vector3Zero(&targetVelMps);
-    if (horizDistM > MIN_DISTANCE_M) {
-        targetVelMps.v[ENU_E] = errorEastM / horizDistM * desiredSpeedMps;
-        targetVelMps.v[ENU_N] = errorNorthM / horizDistM * desiredSpeedMps;
-    }
+    if (cmd.velocityFfValid) {
+        targetVelMps.v[ENU_E] = cmd.velocityFfEfMps.x;
+        targetVelMps.v[ENU_N] = cmd.velocityFfEfMps.y;
+    } else {
+        float desiredSpeedMps = fminf(cmd.cruiseSpeedMps, POS_TO_VEL_KP * horizDistM);
 
-    // Horizontal only: the vertical channel is rate-limited by its own ramp below.
-    if (cmd.maxAccelMps2 > 0.0f && dt > 0.0f) {
-        vector3_t delta;
-        vector3Sub(&delta, &targetVelMps, &previousTargetVelMps);
-        const float deltaMag = vector3Norm(&delta);
-        const float maxDelta = cmd.maxAccelMps2 * dt;
-        if (deltaMag > maxDelta && deltaMag > 0.0f) {
-            vector3Scale(&delta, &delta, maxDelta / deltaMag);
+        // Bleed speed off from a stated range rather than waiting for the position gain to bite a few
+        // metres out: the craft arrives slow instead of braking hard on the doorstep, and a hot arrival
+        // has somewhere to shed its speed. Linear in distance, so the speed decays exponentially in
+        // time - the shape the legacy rescue flew.
+        if (cmd.approachSlowdownM > 0.0f) {
+            desiredSpeedMps = fminf(desiredSpeedMps,
+                                    cmd.cruiseSpeedMps * (horizDistM / cmd.approachSlowdownM));
         }
-        vector3Add(&targetVelMps, &previousTargetVelMps, &delta);
+
+        if (cmd.maxDecelMps2 > 0.0f) {
+            const float brakingSpeed = sqrtf(2.0f * cmd.maxDecelMps2 * horizDistM);
+            desiredSpeedMps = fminf(desiredSpeedMps, brakingSpeed);
+        }
+
+        if (horizDistM > MIN_DISTANCE_M) {
+            targetVelMps.v[ENU_E] = errorEastM / horizDistM * desiredSpeedMps;
+            targetVelMps.v[ENU_N] = errorNorthM / horizDistM * desiredSpeedMps;
+        }
+
+        // Horizontal only: the vertical channel is rate-limited by its own ramp below.
+        if (cmd.maxAccelMps2 > 0.0f && dt > 0.0f) {
+            vector3_t delta;
+            vector3Sub(&delta, &targetVelMps, &previousTargetVelMps);
+            const float deltaMag = vector3Norm(&delta);
+            const float maxDelta = cmd.maxAccelMps2 * dt;
+            if (deltaMag > maxDelta && deltaMag > 0.0f) {
+                vector3Scale(&delta, &delta, maxDelta / deltaMag);
+            }
+            vector3Add(&targetVelMps, &previousTargetVelMps, &delta);
+        }
     }
 
     previousTargetVelMps = targetVelMps;

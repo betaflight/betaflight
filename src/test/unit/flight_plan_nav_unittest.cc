@@ -83,11 +83,13 @@ float g_lastVertStartAltM;
 int g_setVerticalProfileCalls;
 float g_stubCommandedAltCm;
 bool g_stubCommandedAltSet;
+vector3_t g_stubTargetVelCmS;
 
 gpsLocation_t g_stubGpsOrigin;
 bool g_stubGpsOriginSet;
 
 timeUs_t g_stubMicros;
+timeUs_t g_targetWalkFromUs;   // positionNav walks a target flown at a stated velocity from when it was last placed
 
 positionEstimate3d_t g_stubEstimate;
 bool g_stubValidXY;
@@ -95,6 +97,17 @@ bool g_stubBelowLandingAltitude;
 
 int g_disarmCalls;
 flightLogDisarmReason_e g_lastDisarmReason;
+
+vector2_t g_lastFfEfMps;
+bool g_ffValid;
+float g_lastAccelLimitMps2;
+float g_lastDecelLimitMps2;
+
+// The speed of the velocity the carrot last commanded.
+float lastFfSpeedMps(void)
+{
+    return sqrtf(g_lastFfEfMps.x * g_lastFfEfMps.x + g_lastFfEfMps.y * g_lastFfEfMps.y);
+}
 
 } // namespace
 
@@ -118,7 +131,10 @@ void positionNavSetTargetEf(
     g_lastTarget.callback = callback;
     g_lastTarget.userData = userData;
     g_lastTarget.valid = true;
+    g_ffValid = false;
+    memset(&g_lastFfEfMps, 0, sizeof(g_lastFfEfMps));
     g_setTargetCalls++;
+    g_targetWalkFromUs = g_stubMicros;
 }
 
 float altHoldGetClimbRateCmS(void)
@@ -140,12 +156,30 @@ float positionNavGetTargetAltitudeCm(void)
     return g_stubCommandedAltSet ? g_stubCommandedAltCm : g_lastTarget.targetEfM.z * 100.0f;
 }
 
+vector3_t positionNavGetTargetVelocityCmS(void)
+{
+    return g_stubTargetVelCmS;
+}
+
+// Where positionNav has walked the target to by now.
+static vector3_t walkedTargetEfM(void)
+{
+    vector3_t targetEfM = g_lastTarget.targetEfM;
+    if (g_ffValid) {
+        const float walkS = (g_stubMicros - g_targetWalkFromUs) * 1e-6f;
+        targetEfM.x += g_lastFfEfMps.x * walkS;
+        targetEfM.y += g_lastFfEfMps.y * walkS;
+    }
+    return targetEfM;
+}
+
 void positionNavMoveTargetEf(const vector3_t *targetPosEfM)
 {
     if (!g_lastTarget.valid) {
         return;
     }
     g_lastTarget.targetEfM = *targetPosEfM;
+    g_targetWalkFromUs = g_stubMicros;
     g_moveTargetCalls++;
 }
 
@@ -162,21 +196,26 @@ void positionNavSetAutoClearOnReach(bool autoClear)
 
 void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
 {
-    (void)maxAccelMps2;
-    (void)maxDecelMps2;
+    g_lastAccelLimitMps2 = maxAccelMps2;
+    g_lastDecelLimitMps2 = maxDecelMps2;
 }
 
 float g_lastApproachSlowdownM;
-float g_lastCruiseSpeedMps;
 
 void positionNavSetApproachSlowdown(float slowdownM)
 {
     g_lastApproachSlowdownM = slowdownM;
 }
 
-void positionNavSetCruiseSpeed(float cruiseSpeedMps)
+void positionNavSetVelocityFeedforward(const vector2_t *velEfMps)
 {
-    g_lastCruiseSpeedMps = cruiseSpeedMps;
+    if (!g_lastTarget.valid) {
+        return;
+    }
+    g_lastTarget.targetEfM = walkedTargetEfM();
+    g_targetWalkFromUs = g_stubMicros;
+    g_lastFfEfMps = *velEfMps;
+    g_ffValid = true;
 }
 
 static bool g_altitudeArrivalRequired;
@@ -220,9 +259,10 @@ const positionNavCommand_t *positionNavGetActiveCommand(void)
     static positionNavCommand_t cmd;
     memset(&cmd, 0, sizeof(cmd));
     cmd.active = g_lastTarget.valid;
-    cmd.targetPosEfM = g_lastTarget.targetEfM;
+    cmd.targetPosEfM = walkedTargetEfM();
     cmd.includeAltitude = g_lastTarget.includeAltitude;
     cmd.cruiseSpeedMps = g_lastTarget.cruiseSpeedMps;
+    cmd.velocityFfValid = g_ffValid;
     return &cmd;
 }
 
@@ -289,13 +329,17 @@ protected:
         memset(&g_lastTarget, 0, sizeof(g_lastTarget));
         g_setTargetCalls = 0;
         g_lastApproachSlowdownM = 0.0f;
-        g_lastCruiseSpeedMps = 0.0f;
+        memset(&g_lastFfEfMps, 0, sizeof(g_lastFfEfMps));
+        g_ffValid = false;
+        g_lastAccelLimitMps2 = -1.0f;
+        g_lastDecelLimitMps2 = -1.0f;
         g_setVerticalProfileCalls = 0;
         g_altHoldClimbRateCmS = 500.0f;   // alt_hold_climb_rate default, 5 m/s
         g_lastVertRateMps = 0.0f;
         g_lastVertStartAltM = 0.0f;
         g_stubCommandedAltCm = 0.0f;
         g_stubCommandedAltSet = false;
+        memset(&g_stubTargetVelCmS, 0, sizeof(g_stubTargetVelCmS));
         g_clearTargetCalls = 0;
         g_moveTargetCalls = 0;
         g_stubMicros = 0;
@@ -1866,24 +1910,35 @@ TEST_F(FlightPlanNavCarrotTest, CarrotTracksLegLineNotCraftCrossTrack)
     addWaypointMetres(0.0f, 200.0f, 15000, WAYPOINT_TYPE_FLYOVER); // wp1 (last)
     g_stubMicros = 1'000'000;
     flightPlanNavEngage();   // craft at the origin: leg0 is origin -> (0,100), due north
-    step();                  // anchor the leg and march
-
-    // Wind pushes the craft 20 m east of the leg line, halfway along. The
-    // along-track measurement is PT1-filtered (0.2 s), so give it a few cycles
-    // to converge on the displaced position.
-    setCraftMetres(20.0f, 50.0f);
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 20; i++) {
+        setCraftMetres(g_lastTarget.targetEfM.x, g_lastTarget.targetEfM.y);
         step();
     }
 
-    // The carrot rides the leg line (E = 0), not the craft (E = 20), so the
-    // position controller is commanded to pull back onto the drawn line. It sits
-    // near the craft's along-track progress (N ~ 50), not stuck at the origin or
-    // the far waypoint.
+    // Wind pushes the craft 20 m east of the leg line. The carrot stays within the position
+    // controller's reach of it, on the line's side, and is flown back toward the drawn line, while
+    // still making way along the leg.
+    const float pushedNorthM = g_lastTarget.targetEfM.y;
+    setCraftMetres(20.0f, pushedNorthM);
+    for (int i = 0; i < 8; i++) {
+        step();
+    }
     ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
     ASSERT_EQ(flightPlanNavGetCurrentIndex(), 0);
+    const float gapE = g_lastTarget.targetEfM.x - 20.0f;
+    const float gapN = g_lastTarget.targetEfM.y - pushedNorthM;
+    EXPECT_LE(sqrtf(gapE * gapE + gapN * gapN), 5.0f + 0.01f);
+    EXPECT_LT(gapE, -2.0f);
+    EXPECT_LT(g_lastFfEfMps.x, 0.0f);
+    EXPECT_GT(g_lastFfEfMps.y, 0.0f);
+
+    // Riding it back, the carrot settles onto the line.
+    for (int i = 0; i < 60; i++) {
+        setCraftMetres(g_lastTarget.targetEfM.x, g_lastTarget.targetEfM.y);
+        step();
+    }
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 0);
     EXPECT_NEAR(g_lastTarget.targetEfM.x, 0.0f, 0.5f);
-    EXPECT_NEAR(g_lastTarget.targetEfM.y, 50.0f, 5.0f);
 }
 
 TEST_F(FlightPlanNavCarrotTest, StraightThroughFlybyAdvancesAtWideGate)
@@ -1955,15 +2010,22 @@ TEST_F(FlightPlanNavCarrotTest, BrakingCarrotBehindKeepsNoseForward)
     attitude.values.yaw = 0;   // nose north, along the leg
     g_stubMicros = 1'000'000;
     flightPlanNavEngage();
-    step();
-    setCraftMetres(0.0f, 60.0f);   // overrun: shoot well past the trailing carrot
+    for (int i = 0; i < 10; i++) {
+        setCraftMetres(0.0f, g_lastTarget.targetEfM.y);
+        step();
+    }
+    setCraftMetres(0.0f, 60.0f);   // overrun: shoot well past the carrot
     step();
 
-    // The carrot is now behind the craft (braking); the nose stays pointed forward
-    // along the leg (north), never swung 180 back at the trailing carrot.
+    // The carrot is now behind the craft (braking). Nothing turns the nose back at it: the nose is
+    // left to the configured yaw mode, and the carrot is still flown forward along the leg, which is
+    // the bearing a bearing-steered nose follows.
     ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
-    EXPECT_TRUE(g_navHeadingOverrideValid);
-    EXPECT_NEAR(g_navHeadingOverrideDeg, 0.0f, 5.0f);
+    EXPECT_LT(g_lastTarget.targetEfM.y, 60.0f);
+    EXPECT_FALSE(g_navHeadingOverrideValid);
+    ASSERT_TRUE(g_ffValid);
+    EXPECT_GT(g_lastFfEfMps.y, 0.5f);
+    EXPECT_NEAR(g_lastFfEfMps.x, 0.0f, 0.01f);
 }
 
 TEST_F(FlightPlanNavCarrotTest, OverrunFallbackAdvancesPastWaypoint)
@@ -2027,8 +2089,7 @@ TEST_F(FlightPlanNavCarrotTest, CarrotSpeedDoesNotDependOnMeasuredSpeed)
     // commanded speed - a governor that stalled the carrot whenever the craft was over profile -
     // closed a loop through the vehicle: the craft ran fast, the carrot stopped, the craft ate the
     // pursuit lead and the commanded velocity collapsed a second later, apparently uncommanded.
-    // The craft overtaking the carrot is already answered by the brake gap below, continuously.
-    auto carrotAfter = [this](float craftSpeedCmS) {
+    auto carrotSpeedAfter = [this](float craftSpeedCmS) {
         flightPlanNavDisengage();
         setCraftMetres(0.0f, 0.0f);
         g_stubEstimate.velocity.v[ENU_N] = 0.0f;
@@ -2036,28 +2097,44 @@ TEST_F(FlightPlanNavCarrotTest, CarrotSpeedDoesNotDependOnMeasuredSpeed)
         flightPlanNavEngage();
         step();   // anchor the leg; craft parked at the origin
         g_stubEstimate.velocity.v[ENU_N] = craftSpeedCmS;
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 20; i++) {
             step();
         }
-        return g_lastTarget.targetEfM.y;
+        return lastFfSpeedMps();
     };
 
     addWaypointMetres(0.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYOVER);
     addWaypointMetres(0.0f, 600.0f, 15000, WAYPOINT_TYPE_FLYOVER); // straight on (last)
 
-    const float onProfile = carrotAfter(200.0f);
-    const float overProfile = carrotAfter(1500.0f);   // 5 m/s over the 10 m/s profile
+    const float onProfile = carrotSpeedAfter(200.0f);
+    const float overProfile = carrotSpeedAfter(1500.0f);   // 5 m/s over the 10 m/s profile
 
-    EXPECT_GT(onProfile, 10.0f);
+    EXPECT_GT(onProfile, 4.0f);
     EXPECT_NEAR(overProfile, onProfile, 0.01f);
 }
 
-TEST_F(FlightPlanNavCarrotTest, CommandedSpeedIsTheCarrotTrapezoid)
+TEST_F(FlightPlanNavCarrotTest, CarrotStaysWithinReachOfACraftThatCannotKeepUp)
 {
-    // The leg's trapezoid is the speed profile, so it is also what the craft is commanded at.
-    // Inferring the commanded speed from the pursuit gap tied it to how far behind the carrot the
-    // craft happened to be sitting, and the chase equilibrium parks that gap right on the position
-    // gain's knee - which is the cruise wobble.
+    // A craft held back (a headwind it cannot beat) must not leave the carrot running away down
+    // the leg for the position error to wind up against: it is dragged along at the controller's
+    // reach.
+    addWaypointMetres(0.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypointMetres(0.0f, 600.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    for (int i = 0; i < 200; i++) {
+        setCraftMetres(0.0f, i * 0.05f);   // crawling at 0.5 m/s
+        step();
+        const float gapE = g_lastTarget.targetEfM.x - g_stubEstimate.position.v[ENU_E] * 0.01f;
+        const float gapN = g_lastTarget.targetEfM.y - g_stubEstimate.position.v[ENU_N] * 0.01f;
+        ASSERT_LE(sqrtf(gapE * gapE + gapN * gapN), 5.0f + 0.01f);
+    }
+}
+
+TEST_F(FlightPlanNavCarrotTest, CommandedVelocityIsTheCarrotTrapezoid)
+{
+    // The leg's trapezoid is the speed profile, so the carrot's velocity along the leg is what the
+    // craft is commanded to fly, however far behind the carrot it sits.
     addWaypointMetres(0.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYOVER);
     addWaypointMetres(0.0f, 600.0f, 15000, WAYPOINT_TYPE_FLYOVER);
     g_stubMicros = 1'000'000;
@@ -2065,15 +2142,74 @@ TEST_F(FlightPlanNavCarrotTest, CommandedSpeedIsTheCarrotTrapezoid)
     step();
 
     step();
-    EXPECT_LT(g_lastCruiseSpeedMps, 10.0f);   // slewing in from a standstill, not stepping to cruise
+    ASSERT_TRUE(g_ffValid);
+    EXPECT_GT(lastFfSpeedMps(), 0.0f);
+    EXPECT_LT(lastFfSpeedMps(), 10.0f);   // slewing in from a standstill, not stepping to cruise
 
     for (int i = 0; i < 100; i++) {
+        setCraftMetres(0.0f, g_lastTarget.targetEfM.y - 3.0f);   // lagging 3 m behind the carrot
         step();
     }
-    EXPECT_NEAR(g_lastCruiseSpeedMps, 10.0f, 0.01f);   // and settles flat on the leg cruise
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 0);
+    EXPECT_GT(g_lastTarget.targetEfM.y - g_stubEstimate.position.v[ENU_N] * 0.01f, 2.0f);
+    EXPECT_NEAR(g_lastFfEfMps.x, 0.0f, 0.01f);
+    EXPECT_NEAR(g_lastFfEfMps.y, 10.0f, 0.01f);   // flat on the leg cruise, along the leg
 }
 
-TEST_F(FlightPlanNavCarrotTest, ChaseLagCompensationCrossesGateNearCornerSpeed)
+TEST_F(FlightPlanNavCarrotTest, CarrotVelocityChangesAtTheCarrotAcceleration)
+{
+    // The carrot's velocity is commanded as it stands, so the carrot itself is what keeps it
+    // continuous: from rest, through the corner, at no more than the carrot acceleration.
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYBY);
+    addWaypointMetres(100.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYBY);
+    addWaypointMetres(200.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYBY);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    EXPECT_NEAR(g_lastAccelLimitMps2, 0.0f, 0.001f);
+    EXPECT_NEAR(g_lastDecelLimitMps2, 0.0f, 0.001f);
+    ASSERT_TRUE(g_ffValid);
+    EXPECT_NEAR(lastFfSpeedMps(), 0.0f, 0.01f);   // from rest: nothing to fly yet
+
+    vector2_t previous = g_lastFfEfMps;
+    for (int i = 0; i < 600 && g_lastTarget.targetEfM.x < 50.0f; i++) {
+        setCraftMetres(g_lastTarget.targetEfM.x, g_lastTarget.targetEfM.y);
+        if (g_navHeadingOverrideValid) {
+            attitude.values.yaw = lrintf(g_navHeadingOverrideDeg * 10.0f);   // the nose follows its command
+        }
+        step();
+        const float stepMps = sqrtf(sq(g_lastFfEfMps.x - previous.x) + sq(g_lastFfEfMps.y - previous.y));
+        ASSERT_LE(stepMps, 2.5f * 0.1f * sqrtf(2.0f) + 0.001f) << "after " << i * 0.1f << " s";
+        previous = g_lastFfEfMps;
+    }
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    EXPECT_GT(g_lastFfEfMps.x, 5.0f);             // round the corner and on down the next leg
+}
+
+TEST_F(FlightPlanNavCarrotTest, DelayExpiryCarriesTheCarrotOnFromWhereItWalkedTo)
+{
+    // The delay's cruise cap lifted mid-leg re-issues the leg: the carrot carries on from where
+    // positionNav has walked it to, not from where the executor last left it a cycle back.
+    addWaypoint(0, 0, 15000, WAYPOINT_TYPE_DELAY, 0, 60);
+    addWaypointMetres(0.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypointMetres(0.0f, 600.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    const int setTargetCallsAtEngage = g_setTargetCalls;
+    for (int i = 0; i < 100 && g_setTargetCalls == setTargetCallsAtEngage; i++) {
+        setCraftMetres(0.0f, positionNavGetActiveCommand()->targetPosEfM.y);
+        g_stubMicros += 100'000;
+        const float walkedNorthM = positionNavGetActiveCommand()->targetPosEfM.y;
+        flightPlanNavUpdate(g_stubMicros);
+        if (g_setTargetCalls != setTargetCallsAtEngage) {
+            ASSERT_GT(g_lastFfEfMps.y, 1.0f);
+            EXPECT_NEAR(g_lastDispatchTargetEfM.y, walkedNorthM, 0.001f);
+        }
+    }
+    EXPECT_EQ(g_setTargetCalls, setTargetCallsAtEngage + 1);
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+}
+
+TEST_F(FlightPlanNavCarrotTest, LagCompensationCrossesGateNearCornerSpeed)
 {
     addWaypointMetres(0.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYBY);   // 90 deg corner here
     addWaypointMetres(300.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYBY); // east leg (last)
@@ -2081,20 +2217,21 @@ TEST_F(FlightPlanNavCarrotTest, ChaseLagCompensationCrossesGateNearCornerSpeed)
     flightPlanNavEngage();
     step();
 
-    // First-order pursuit: the craft chases the commanded carrot with the same
-    // time constant as the configured carrot lead (1.2 s) — the chase lag the
-    // brake compensation exists for. Without the compensation the carrot itself
-    // reaches corner speed at the gate but the craft, answering ~1.2 s late,
-    // crosses hot by roughly lag * decel.
+    // The craft flies the commanded velocity a little late: a first-order lag on the carrot's
+    // velocity, the position controller's share of the lag the brake compensation exists for.
+    // Without it the carrot reaches corner speed at the gate but the craft, answering late, crosses
+    // hot by about lag * decel.
     const float dt = 0.1f;
-    const float tauS = 1.2f;
+    const float tauS = 0.3f;
     float craftE = 0.0f;
     float craftN = 0.0f;
+    float velE = 0.0f;
+    float velN = 0.0f;
     float crossingSpeedMps = -1.0f;
     float maxSpeedMps = 0.0f;
     for (int i = 0; i < 1500 && crossingSpeedMps < 0.0f; i++) {
-        const float velE = (g_lastTarget.targetEfM.x - craftE) / tauS;
-        const float velN = (g_lastTarget.targetEfM.y - craftN) / tauS;
+        velE += (g_lastFfEfMps.x - velE) * dt / tauS;
+        velN += (g_lastFfEfMps.y - velN) * dt / tauS;
         craftE += velE * dt;
         craftN += velN * dt;
         setCraftMetres(craftE, craftN);
@@ -2113,7 +2250,116 @@ TEST_F(FlightPlanNavCarrotTest, ChaseLagCompensationCrossesGateNearCornerSpeed)
     // 3.1 m/s), instead of several m/s hot.
     EXPECT_GT(maxSpeedMps, 8.0f);
     ASSERT_GE(crossingSpeedMps, 0.0f);
-    EXPECT_LT(crossingSpeedMps, 4.3f);
+    EXPECT_LT(crossingSpeedMps, 3.6f);
+    EXPECT_GT(crossingSpeedMps, 2.6f);   // nor crawling in for having braked far too early
+}
+
+// A craft that flies the commanded velocity a little late, with the position error pulling it in
+// behind: enough of the controller to see what the executor's commands do to the position error.
+struct LaggingCraft {
+    float e = 0.0f, n = 0.0f, ve = 0.0f, vn = 0.0f;
+    void follow(const vector3_t &carrotM, const vector2_t &ffMps, float dt) {
+        const float tauS = 0.3f;
+        const float pullPerS = 0.5f;
+        ve += (ffMps.x + pullPerS * (carrotM.x - e) - ve) * dt / tauS;
+        vn += (ffMps.y + pullPerS * (carrotM.y - n) - vn) * dt / tauS;
+        e += ve * dt;
+        n += vn * dt;
+    }
+};
+
+TEST_F(FlightPlanNavCarrotTest, CarrotKeepsTimeThroughAGate)
+{
+    // The update that crosses a gate still moves the carrot on by the time since the last one, or
+    // every gate leaves it that far behind for good.
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypointMetres(0.0f, 200.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypointMetres(0.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    for (int i = 0; i < 1000 && flightPlanNavGetCurrentIndex() == 0; i++) {
+        const vector3_t carrot = g_lastTarget.targetEfM;
+        const vector2_t ff = g_lastFfEfMps;
+        setCraftMetres(carrot.x, carrot.y - 1.0f);
+        step(50'000);
+        if (flightPlanNavGetCurrentIndex() == 1) {
+            ASSERT_GT(ff.y, 5.0f);
+            EXPECT_NEAR(g_lastTarget.targetEfM.y, carrot.y + ff.y * 0.05f, 0.001f);
+        }
+    }
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+}
+
+TEST_F(FlightPlanNavCarrotTest, CarrotCarriesStraightOnThroughAGate)
+{
+    // Two carrot legs meeting at a 90 degree FLYBY corner. The craft sits close behind a carrot it is
+    // flying the velocity of, so a carrot that started the next leg back on the waypoint - a whole
+    // gate radius ahead of the craft - would step the position error by that much at every corner.
+    // Neither the carrot the craft is held to nor the velocity it is commanded may step, at the
+    // gate crossing or anywhere else.
+    addWaypointMetres(0.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYBY);
+    addWaypointMetres(300.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYBY);
+    addWaypointMetres(300.0f, 600.0f, 15000, WAYPOINT_TYPE_FLYBY);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+
+    const float dt = 0.02f;
+    LaggingCraft craft;
+    vector3_t previousCarrot = g_lastTarget.targetEfM;
+    vector2_t previousFf = g_lastFfEfMps;
+    float largestGapM = 0.0f;
+    float largestCarrotStepM = 0.0f;
+    float largestFfStepMps = 0.0f;
+    bool crossed = false;
+    for (int i = 0; i < 20000 && flightPlanNavGetCurrentIndex() < 2; i++) {
+        craft.follow(g_lastTarget.targetEfM, g_lastFfEfMps, dt);
+        setCraftMetres(craft.e, craft.n);
+        g_stubEstimate.velocity.v[ENU_E] = craft.ve * 100.0f;
+        g_stubEstimate.velocity.v[ENU_N] = craft.vn * 100.0f;
+        attitude.values.yaw = lrintf(10.0f * RADIANS_TO_DEGREES(atan2f(craft.ve, craft.vn)));
+        step(20'000);
+        if (flightPlanNavGetCurrentIndex() == 2) {
+            break;   // the last leg is a point leg: its target is the waypoint itself
+        }
+        crossed = crossed || flightPlanNavGetCurrentIndex() == 1;
+        const vector3_t carrot = g_lastTarget.targetEfM;
+        largestCarrotStepM = fmaxf(largestCarrotStepM, sqrtf(sq(carrot.x - previousCarrot.x) + sq(carrot.y - previousCarrot.y)));
+        largestFfStepMps = fmaxf(largestFfStepMps, sqrtf(sq(g_lastFfEfMps.x - previousFf.x) + sq(g_lastFfEfMps.y - previousFf.y)));
+        if (crossed) {
+            largestGapM = fmaxf(largestGapM, sqrtf(sq(carrot.x - craft.e) + sq(carrot.y - craft.n)));
+        }
+        previousCarrot = carrot;
+        previousFf = g_lastFfEfMps;
+    }
+    ASSERT_TRUE(crossed);
+    EXPECT_LT(largestCarrotStepM, 10.0f * dt + 0.01f);        // never faster than the leg cruise
+    EXPECT_LT(largestFfStepMps, 2.5f * dt * 1.5f + 0.01f);    // never faster than the carrot acceleration
+    EXPECT_LT(largestGapM, 2.0f);                              // and the craft is never left behind it
+}
+
+TEST_F(FlightPlanNavCarrotTest, HeadingFaultOnACarrotLegIsJudgedAgainstTheWaypoint)
+{
+    // The carrot rides with the craft, so the bearing to it is noise; eligibility for the heading
+    // fault check is judged against the waypoint the leg is flying to.
+    addWaypointMetres(0.0f, 2000.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypointMetres(0.0f, 4000.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    for (int i = 0; i < 20; i++) {
+        setCraftMetres(0.0f, g_lastTarget.targetEfM.y - 0.2f);
+        step();
+    }
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+
+    attitude.values.yaw = 0;    // nose north, along the leg
+    gpsSol.groundSpeed = 500;
+    gpsSol.groundCourse = 900;  // but the ground course is east: a heading gone wrong
+    for (int i = 0; i < 30 && flightPlanNavGetState() == FP_NAV_TARGETING; i++) {
+        setCraftMetres(0.3f * ((i % 2) ? 1.0f : -1.0f), g_lastTarget.targetEfM.y + 0.1f);   // scatter about the carrot
+        step();
+    }
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_ABORTED);
+    EXPECT_EQ(flightPlanNavGetAbortReason(), FP_ABORT_MAG_FAULT);
 }
 
 // MAVLink MISSION_SET_CURRENT — flightPlanNavSetCurrentIndex().

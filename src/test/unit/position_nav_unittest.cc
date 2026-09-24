@@ -399,6 +399,91 @@ TEST_F(PositionNavTest, ClimbDoesNotRobTheHorizontalCruiseSpeed)
     EXPECT_NEAR(vel.z, 200.0f, 1.0f);
 }
 
+// --- Velocity feedforward: a target flown at the velocity its owner states ---
+
+TEST_F(PositionNavTest, VelocityFeedforwardIsTheCommandedVelocityWhateverTheGap)
+{
+    // A carrot 3 m ahead of a craft flying behind it: the command is the carrot's own velocity,
+    // not the chase law on the gap (which would ask for 3 m/s against the carrot's 4).
+    const vector3_t carrot = {{ 0.0f, 3.0f, 0.0f }};
+    positionNavSetTargetEf(&carrot, 10.0f, -1.0f, 1000.0f, false, NULL, NULL);
+    positionNavSetApproachSlowdown(20.0f);
+    positionNavSetAccelLimits(0.0f, 0.3f);
+    const vector2_t carrotVelMps = {{ 0.0f, 4.0f }};
+    positionNavSetVelocityFeedforward(&carrotVelMps);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 400.0f);
+    for (int i = 0; i < 5; i++) {
+        positionNavUpdate(0.01f, &est);
+        EXPECT_NEAR(positionNavGetTargetVelocityCmS().x, 0.0f, 0.01f);
+        EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, 400.0f, 0.01f);
+    }
+}
+
+TEST_F(PositionNavTest, VelocityFeedforwardIsFlownAsItStandsAcrossAHandOver)
+{
+    // Handed over from a leg flying north to one stating east: the stated velocity is the command
+    // from the first cycle, acceleration limit or not. Its owner shapes how it changes.
+    const vector3_t first = {{ 0.0f, 100.0f, 0.0f }};
+    positionNavSetTargetEf(&first, 4.0f, -1.0f, 1000.0f, false, NULL, NULL);
+    const vector2_t northMps = {{ 0.0f, 4.0f }};
+    positionNavSetVelocityFeedforward(&northMps);
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 400.0f);
+    positionNavUpdate(0.01f, &est);
+    ASSERT_NEAR(positionNavGetTargetVelocityCmS().y, 400.0f, 0.01f);
+
+    const vector3_t second = {{ 100.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&second, 4.0f, -1.0f, 1000.0f, false, NULL, NULL);
+    positionNavSetAccelLimits(2.5f, 0.0f);
+    const vector2_t eastMps = {{ 4.0f, 0.0f }};
+    positionNavSetVelocityFeedforward(&eastMps);
+    positionNavUpdate(0.01f, &est);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().x, 400.0f, 0.01f);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, 0.0f, 0.01f);
+}
+
+TEST_F(PositionNavTest, VelocityFeedforwardWalksItsTarget)
+{
+    // Between its owner's moves the target walks at the stated velocity, at the rate positionNav
+    // runs, and a move puts it wherever the owner says.
+    const vector3_t carrot = {{ 1.0f, 2.0f, 0.0f }};
+    positionNavSetTargetEf(&carrot, 5.0f, -1.0f, 1000.0f, false, NULL, NULL);
+    const vector2_t velMps = {{ 3.0f, -4.0f }};
+    positionNavSetVelocityFeedforward(&velMps);
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f);
+    for (int i = 0; i < 5; i++) {
+        positionNavUpdate(0.01f, &est);
+    }
+    EXPECT_NEAR(positionNavGetActiveCommand()->targetPosEfM.x, 1.15f, 0.001f);
+    EXPECT_NEAR(positionNavGetActiveCommand()->targetPosEfM.y, 1.80f, 0.001f);
+
+    const vector3_t moved = {{ 5.0f, 5.0f, 0.0f }};
+    positionNavMoveTargetEf(&moved);
+    positionNavUpdate(0.01f, &est);
+    EXPECT_NEAR(positionNavGetActiveCommand()->targetPosEfM.x, 5.03f, 0.001f);
+    EXPECT_NEAR(positionNavGetActiveCommand()->targetPosEfM.y, 4.96f, 0.001f);
+}
+
+TEST_F(PositionNavTest, NewTargetClearsTheVelocityFeedforward)
+{
+    const vector3_t carrot = {{ 0.0f, 50.0f, 0.0f }};
+    positionNavSetTargetEf(&carrot, 5.0f, -1.0f, 1000.0f, false, NULL, NULL);
+    const vector2_t velMps = {{ 3.0f, 0.0f }};
+    positionNavSetVelocityFeedforward(&velMps);
+    EXPECT_TRUE(positionNavGetActiveCommand()->velocityFfValid);
+
+    positionNavSetTargetEf(&carrot, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
+    EXPECT_FALSE(positionNavGetActiveCommand()->velocityFfValid);
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f);
+    positionNavUpdate(0.01f, &est);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().x, 0.0f, 0.01f);     // back on the chase law, north
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, 500.0f, 0.01f);
+
+    positionNavReset();
+    positionNavSetVelocityFeedforward(&velMps);                        // no command: nothing to state it on
+    EXPECT_FALSE(positionNavGetActiveCommand()->velocityFfValid);
+}
+
 // --- Direction correctness ---
 
 TEST_F(PositionNavTest, EastTargetProducesEastwardVelocity)

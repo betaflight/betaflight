@@ -975,6 +975,24 @@ TEST_F(AutopilotYawTest, BearingModeYawsTowardTarget)
     EXPECT_NEAR(autopilotGetYawRate(), -30.0f, 0.1f);
 }
 
+TEST_F(AutopilotYawTest, BearingModeOnACarrotSteersAlongItsVelocity)
+{
+    // A carrot rides with the craft: the bearing to it is whatever the last few decimetres of
+    // position scatter say. What it is being flown along is the bearing.
+    engageNavLeg(YAW_MODE_BEARING);
+    mockNavCommand.acceptanceRadiusM = -1.0f;         // a carrot never arrives
+    mockNavCommand.velocityFfValid = true;
+    mockNavCommand.targetPosEfM.v[0] = -0.3f;         // 30 cm west of the craft
+    mockNavCommand.velocityFfEfMps = (vector2_t){{ 4.0f, 0.0f }};   // flown east
+
+    settleYaw();
+    EXPECT_TRUE(autopilotYawControlActive());
+    EXPECT_NEAR(autopilotGetYawRate(), -30.0f, 0.1f);  // a right turn, toward east
+
+    mockNavCommand.velocityFfEfMps = (vector2_t){{ 0.2f, 0.0f }};   // too slow to have a direction
+    expectHoldsHeading();
+}
+
 TEST_F(AutopilotYawTest, BearingModeHoldsHeadingInsideAcceptanceRadius)
 {
     engageNavLeg(YAW_MODE_BEARING);
@@ -1186,6 +1204,22 @@ TEST_F(NavModeTest, NavBuildupClampStillHoldsWhileAccelerating)
     runIterations(5);
 
     EXPECT_TRUE(buildupClampEngaged());
+}
+
+TEST_F(NavModeTest, NavFeedforwardTargetIsAnchoredAtAnyRange)
+{
+    // A carrot flown at its stated velocity is the position reference itself. Pushed 20 m off the
+    // line, the craft must still be pulled back onto it: out of anchor range with nothing but the
+    // velocity to fly, it would carry on along the leg 20 m off it for good.
+    engageNav(30, 30, 0, 0, 30, 45);
+    mockNavCommand.velocityFfValid = true;
+    setNavCarrot(20.0f, 0.0f);                          // line 20 m east
+    setTargetVelocityNorth(300.0f);
+    testEstimate.velocity.y = 300.0f;
+
+    EXPECT_EQ(NAV_STATUS_ANCHORED, navStatus());
+    runIterations(SETTLE_ITERATIONS);
+    EXPECT_GT(autopilotAngle[AI_ROLL], 5.0f);           // rolling east, back toward the line
 }
 
 TEST_F(NavModeTest, NavAnchorDoesNotCarryAcrossACommandChange)

@@ -121,15 +121,12 @@
 // its retry and stays failed.
 #define SANITY_RETRY_REPLENISH_S 10.0f
 #define ERROR_DISTANCE_LIMIT  2000.0f // TO DO: test set to a useful value, this is 20m
-// Nav anchors position to positionNav's carrot, whose lead grows with speed; a
-// tighter error bound stops that speed-proportional lead from driving P into a
-// positive-feedback overspeed, leaving the velocity feedforward to set cruise.
-#define NAV_ERROR_DISTANCE_LIMIT 500.0f // 5m
 // Range at which anchoring to the nav target takes over from tracking its
 // commanded velocity. Matched to the error clamp: beyond it P is saturated and
 // carries no position information anyway.
 #define NAV_ANCHOR_RANGE      NAV_ERROR_DISTANCE_LIMIT
 #define NAV_ANCHOR_HYSTERESIS 1.5f
+#define NAV_BEARING_MIN_SPEED_MPS 0.5f // a stated velocity slower than this has no direction worth steering to
 #define POSITION_I_LIMIT      2000.0f // TO DO: test and set to a useful value, this is 20m
 
 #define AP_YAW_P_SCALE         0.06f
@@ -697,6 +694,15 @@ static bool bearingToTargetDeg(const positionEstimate3d_t *est, float *headingDe
     if (cmd == NULL || !cmd->active) {
         return false;
     }
+    // A target flown at the velocity its owner states rides with the craft, so the bearing to it is
+    // noise: the direction it is being flown in is the bearing.
+    if (cmd->velocityFfValid) {
+        if (vector2Norm(&cmd->velocityFfEfMps) < NAV_BEARING_MIN_SPEED_MPS) {
+            return false;
+        }
+        *headingDeg = RADIANS_TO_DEGREES(atan2_approx(cmd->velocityFfEfMps.x, cmd->velocityFfEfMps.y));
+        return true;
+    }
     const float deltaEastCm  = cmd->targetPosEfM.v[ENU_E] * 100.0f - est->position.v[ENU_E];
     const float deltaNorthCm = cmd->targetPosEfM.v[ENU_N] * 100.0f - est->position.v[ENU_N];
     // Inside the acceptance radius the bearing degenerates; stop steering.
@@ -899,6 +905,20 @@ static xyControlMode_e xySelectMode(void)
         if (navCmd == NULL || !navCmd->active) {
             return XY_MODE_NAV_VELOCITY;
         }
+        // A new command starts unanchored and must earn the anchor on its own
+        // range, rather than inheriting its predecessor's state through the
+        // transition.
+        if (ap.navAnchorSeq != navCmd->sequence) {
+            ap.navAnchorSeq = navCmd->sequence;
+            ap.navAnchored = false;
+        }
+        // A target flown at the velocity its owner states is itself the position reference, kept
+        // alongside the craft rather than out at the destination, so it is anchored at any range:
+        // unanchored, nothing would correct the craft back onto a line it had been pushed off.
+        if (navCmd->velocityFfValid) {
+            ap.navAnchored = true;
+            return XY_MODE_NAV_TRACK;
+        }
         // Anchoring only earns its keep once the target is close enough for the
         // position error to mean something. Further out the error is large by
         // construction - the craft simply is not there yet - so it pins
@@ -908,13 +928,6 @@ static xyControlMode_e xySelectMode(void)
         // than commanded. Track the commanded velocity out there instead: the
         // virtual distance error integrates velocity error, so cruise settles
         // on the commanded speed. Hysteresis stops the handover chattering.
-        // A new command starts unanchored and must earn the anchor on its own
-        // range, rather than inheriting its predecessor's state through the
-        // transition.
-        if (ap.navAnchorSeq != navCmd->sequence) {
-            ap.navAnchorSeq = navCmd->sequence;
-            ap.navAnchored = false;
-        }
         const vector2_t *pos = (const vector2_t *)&positionEstimatorGetEstimate()->position.v;
         const vector2_t target = {{ navCmd->targetPosEfM.v[ENU_E] * 100.0f,
                                     navCmd->targetPosEfM.v[ENU_N] * 100.0f }};
@@ -940,7 +953,7 @@ static xyStepResult_e xyNavTrackUpdate(void)
 {
     // Anchor to the (moving) carrot: real position feedback keeps straight
     // and curved legs from drifting, with the commanded velocity as the
-    // feedforward. The carrot's lead distance produces the cruise tilt via P.
+    // feedforward.
     const vector3_t tgtVel = positionNavGetTargetVelocityCmS();
     targetVelocity = *(const vector2_t *)&tgtVel.v;
     const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
