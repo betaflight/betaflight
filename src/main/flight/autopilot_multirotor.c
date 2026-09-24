@@ -470,6 +470,11 @@ void pitchForwardOverride(bool request)
     forcePitchForward = request;
 }
 
+bool isPitchForwardOverrideActive(void)
+{
+    return forcePitchForward;
+}
+
 void autopilotForceLevelPark(bool request)
 {
     forceLevelPark = request;
