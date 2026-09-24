@@ -83,7 +83,7 @@ typedef struct autopilotConfig_s {
     uint16_t navCornerSpeed;          // cm/s, minimum speed carried across a waypoint gate (default 220)
     uint16_t navCornerDeltaV;         // cm/s, constant velocity-change budget per corner (default 440)
     uint16_t navDecel;                // cm/s^2, approach deceleration for the corner speed profile (default 250)
-    uint16_t navAccel;                // cm/s^2, how fast the carrot's velocity may change (default 250)
+    uint16_t navAccel;                // cm/s^2, how fast a leg's commanded velocity may change: the carrot's, and a point leg's ramp (default 250)
     uint8_t  navCarrotLeadTime;       // deciseconds of travel ahead of it the carrot steers onto the leg line toward (default 12 = 1.2s)
     uint16_t navCarrotLeadMax;        // cm, the most that look-ahead may be (default 2500)
     uint16_t navPreturnDist;          // cm, approach zone over which the nose blends onto the next leg (default 1500)

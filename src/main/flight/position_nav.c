@@ -112,10 +112,13 @@ void positionNavSetTargetEf(
     cmd.callback = callback;
     cmd.callbackUserData = userData;
 
-    vector3Zero(&previousTargetVelMps);
     // The commanded velocity deliberately survives the handover: zeroing it here put a one-cycle
     // notch in the target at every leg change, which the position controller answers with a pitch
-    // jerk. The next update recomputes it from the new target anyway.
+    // jerk. The next update recomputes it from the new target, ramping out of it where the leg is
+    // acceleration limited.
+    previousTargetVelMps.v[ENU_E] = currentTargetVelCmS.v[ENU_E] * 0.01f;
+    previousTargetVelMps.v[ENU_N] = currentTargetVelCmS.v[ENU_N] * 0.01f;
+    previousTargetVelMps.v[ENU_U] = 0.0f;
     previousTargetVelValid = handOver;
     withinAcceptanceRadius = false;
     withinAcceptanceAltitude = false;
@@ -349,6 +352,18 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
             targetVelMps.v[ENU_N] = errorNorthM / horizDistM * desiredSpeedMps;
         }
 
+        // Nothing commanded before this to ramp out of: start at the speed the craft is already
+        // making toward the target, so a leg picked up at speed does not brake to rest first.
+        if (!previousTargetVelValid) {
+            vector3Zero(&previousTargetVelMps);
+            const float wantMps = sqrtf(sq(targetVelMps.v[ENU_E]) + sq(targetVelMps.v[ENU_N]));
+            if (wantMps > 0.0f) {
+                const float towardMps = (est->velocity.v[ENU_E] * targetVelMps.v[ENU_E]
+                                       + est->velocity.v[ENU_N] * targetVelMps.v[ENU_N]) * 0.01f / wantMps;
+                vector3Scale(&previousTargetVelMps, &targetVelMps, constrainf(towardMps, 0.0f, wantMps) / wantMps);
+            }
+        }
+
         // Horizontal only: the vertical channel is rate-limited by its own ramp below.
         if (cmd.maxAccelMps2 > 0.0f && dt > 0.0f) {
             vector3_t delta;
@@ -363,7 +378,7 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
     }
 
     if (!previousTargetVelValid) {
-        cmd.velocityFromCraft = cmd.velocityFfValid;
+        cmd.velocityFromCraft = cmd.velocityFfValid || cmd.maxAccelMps2 > 0.0f;
     }
     previousTargetVelMps = targetVelMps;
     previousTargetVelValid = true;

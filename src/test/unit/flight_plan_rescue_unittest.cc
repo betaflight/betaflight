@@ -1132,6 +1132,8 @@ TEST_F(FlightPlanRescueTest, DescentCarriesOnTheReturnTaper)
         const auto taperMps = [&](float distM) {
             return speedMps * fminf(fmaxf((distM - 1.0f) / (slowdownM - 1.0f), 0.0f), 1.0f);
         };
+        // Its steepest fall: a ramp this quick never holds the taper back.
+        const float rampMps2 = fmaxf(autopilotConfig()->navAccel * 0.01f, speedMps * speedMps / (slowdownM - 1.0f));
 
         g_stubEstimate.position.v[ENU_N] = 3.0f * c.descentDistM * 100.0f;
         attitude.values.yaw = 1800;               // nose south, pointing home
@@ -1154,12 +1156,12 @@ TEST_F(FlightPlanRescueTest, DescentCarriesOnTheReturnTaper)
         flightPlanNavUpdate(g_stubMicros);
         ASSERT_EQ(flightPlanNavGetCurrentIndex(), 2);
         // The landing leg flies positionNav's copy of the taper: same speed, range and still radius,
-        // as it stands, with no braking curve under it or ramp in front of it.
+        // with no braking curve under it.
         EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, speedMps, 0.001f);
         EXPECT_NEAR(g_lastApproachSlowdownM, slowdownM, 0.001f);
         EXPECT_NEAR(g_lastApproachStillRadiusM, 1.0f, 0.001f);
         EXPECT_NEAR(g_lastDecelLimitMps2, 0.0f, 0.001f);
-        EXPECT_NEAR(g_lastAccelLimitMps2, 0.0f, 0.001f);
+        EXPECT_NEAR(g_lastAccelLimitMps2, rampMps2, 0.001f);
 
         triggerReached();
         ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
@@ -1168,7 +1170,7 @@ TEST_F(FlightPlanRescueTest, DescentCarriesOnTheReturnTaper)
         EXPECT_NEAR(g_lastApproachSlowdownM, slowdownM, 0.001f);
         EXPECT_NEAR(g_lastApproachStillRadiusM, 1.0f, 0.001f);
         EXPECT_NEAR(g_lastDecelLimitMps2, 0.0f, 0.001f);
-        EXPECT_NEAR(g_lastAccelLimitMps2, 0.0f, 0.001f);
+        EXPECT_NEAR(g_lastAccelLimitMps2, rampMps2, 0.001f);
         EXPECT_NEAR(g_lastVertRateMps, c.descendRateCmS * 0.01f, 0.001f);
         flightPlanNavDisengage();
     }

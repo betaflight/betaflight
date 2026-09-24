@@ -65,7 +65,8 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .navDecel = 250,                  // 2.5 m/s^2 approach deceleration; with the lag
                                       // compensated profile this stays trackable, and long legs
                                       // no longer begin braking hundreds of metres out
-    .navAccel = 250,                  // 2.5 m/s^2 carrot acceleration, turning and speeding up
+    .navAccel = 250,                  // 2.5 m/s^2 carrot acceleration, turning and speeding up,
+                                      // and the ramp a point leg's commanded velocity changes at
     .navCarrotLeadTime = 12,          // 1.2 s carrot look-ahead onto the leg line
     .navCarrotLeadMax = 2500,         // 25 m maximum carrot look-ahead
     .navPreturnDist = 1500,           // 15 m pre-turn blend zone
