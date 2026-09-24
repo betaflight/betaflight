@@ -312,17 +312,22 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
 
     if (reached && !cmd.completionSignalled) {
         const bool autoClearOnReach = cmd.autoClearOnReach;
+        const uint32_t sequence = cmd.sequence;
         cmd.completed = true;
         cmd.completionSignalled = true;
-
-        vector3Zero(&currentTargetVelCmS);
 
         if (cmd.callback) {
             cmd.callback(cmd.callbackUserData);
         }
 
-        if (autoClearOnReach && cmd.completed && cmd.completionSignalled) {
-            positionNavClearTarget();
+        // A callback that issued the next leg has handed over: this cycle's velocity stands until
+        // the next update computes the new leg's.
+        if (cmd.sequence == sequence) {
+            currentTargetVelCmS.v[ENU_E] = 0.0f;
+            currentTargetVelCmS.v[ENU_N] = 0.0f;
+            if (autoClearOnReach) {
+                positionNavClearTarget();
+            }
         }
     }
 }

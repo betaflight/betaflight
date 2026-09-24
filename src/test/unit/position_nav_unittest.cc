@@ -202,6 +202,46 @@ TEST_F(PositionNavTest, NewTargetDoesNotNotchTheCommandedVelocity)
     EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, flying, 0.01f);
 }
 
+static const vector3_t handoverTarget = {{ 0.0f, 5000.0f, 0.0f }};
+
+static void handOverCallback(void *userData)
+{
+    UNUSED(userData);
+    callbackCount++;
+    positionNavSetTargetEf(&handoverTarget, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
+}
+
+TEST_F(PositionNavTest, CallbackHandOverDoesNotNotchTheCommandedVelocity)
+{
+    // The leg completes and its callback issues the next one in the same update. The velocity this
+    // cycle computed stands until the next update computes the new leg's, rather than the target
+    // dropping to zero for a cycle between them.
+    const vector3_t target = {{ 0.0f, 150.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 2.0f, 10.0f, false, handOverCallback, NULL);
+    positionEstimate3d_t est = makeEstimate(0.0f, 14900.0f, 0.0f, 100.0f);   // 1 m short, inside the radius
+
+    positionNavUpdate(0.01f, &est);
+    ASSERT_EQ(callbackCount, 1);
+    EXPECT_TRUE(positionNavHasActiveTarget());
+    EXPECT_FALSE(positionNavTargetReached());
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, 100.0f, 1.0f);    // POS_TO_VEL_KP * 1 m
+
+    positionNavUpdate(0.01f, &est);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, 500.0f, 1.0f);    // now the next leg's cruise
+}
+
+TEST_F(PositionNavTest, CompletionWithoutAHandOverStillStops)
+{
+    const vector3_t target = {{ 0.0f, 150.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 2.0f, 10.0f, false, testCallback, NULL);
+    positionEstimate3d_t est = makeEstimate(0.0f, 14900.0f, 0.0f, 100.0f);
+
+    positionNavUpdate(0.01f, &est);
+    ASSERT_EQ(callbackCount, 1);
+    EXPECT_TRUE(positionNavTargetReached());
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, 0.0f, 0.01f);
+}
+
 TEST_F(PositionNavTest, VerticalProfileGovernsDescentRateToADeepTarget)
 {
     // The landing target sits far below ground so vertical arrival never triggers; the descent is
