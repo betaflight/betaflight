@@ -49,6 +49,8 @@ typedef struct positionNavCommand_s {
     bool rampRateSlewed;            // took over from a command still flying: slews out of its rate
 
     float approachSlowdownM;        // taper the commanded speed linearly inside this range, 0 = off
+    float approachStillRadiusM;     // ...down to nothing at this range
+    bool approachStill;             // has been inside the still radius: stopped chasing the target
     bool velocityFfValid;           // the owner states the horizontal velocity: no chase law toward the target
     vector2_t velocityFfEfMps;      // that velocity, metres/s (x east, y north)
     bool velocityFromCraft;         // its velocity started from the craft's own motion, not a predecessor's command
@@ -102,9 +104,15 @@ void positionNavSetVelocityFeedforward(const vector2_t *velEfMps);
 // The altitude ramp carries on as it is.
 void positionNavStartAfresh(void);
 
-// Taper the commanded speed linearly to zero inside this range of the target, the way the legacy
-// rescue bled speed from twice the descent distance. Zero leaves the leg on its own profile.
-void positionNavSetApproachSlowdown(float slowdownM);
+// Taper the commanded speed linearly from the cruise at slowdownM from the target to nothing at
+// stillRadiusM, the way the legacy rescue bled speed from twice the descent distance; the taper
+// replaces the position gain's knee. Once inside the still radius the command stops chasing the
+// target for the rest of the leg, and nothing horizontal is commanded. Zero slowdownM leaves the
+// leg on its own profile.
+void positionNavSetApproachSlowdown(float slowdownM, float stillRadiusM);
+// The speed that taper allows distM from the target, for an owner flying the approach ahead of the
+// command that tapers it.
+float positionNavApproachTaperMps(float cruiseSpeedMps, float slowdownM, float stillRadiusM, float distM);
 void positionNavSetAutoClearOnReach(bool autoClear);
 
 // The leg's vertical intent: the rate the altitude target is allowed to move at, and the altitude

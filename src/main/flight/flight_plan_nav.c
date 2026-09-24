@@ -167,6 +167,11 @@
 #define FP_PATTERN_START_SPEED_MPS  1.5f
 #define FP_PATTERN_START_TIMEOUT_US 5000000u
 
+// The rescue's return taper runs out this far from home, and inside it the descent stops chasing
+// home and comes straight down: wind and a wandering position estimate would otherwise walk the
+// last metre around the landing spot.
+#define FP_RESCUE_LAND_STILL_RADIUS_M 1.0f
+
 #if ENABLE_RESCUE_PLAN
 // Legacy PITCH_FORWARD gives up after 15 s of heading recovery
 #define FP_RESCUE_HEADING_TIMEOUT_US 15000000u
@@ -657,8 +662,9 @@ static bool dispatchWaypoint(void)
     } else {
         positionNavSetTargetEf(&targetEnuM, cruiseMps, arrivalRadiusM,
                                FP_COMPLETION_ANY_MPS, true, onWaypointReached, NULL);
-        positionNavSetAccelLimits(0.0f, FP_APPROACH_DECEL_MPS2);
-        positionNavSetApproachSlowdown(fp.legSlowdownM);
+        // An approach taper is continuous with the leg before it, with no braking curve under it.
+        positionNavSetAccelLimits(0.0f, (fp.legSlowdownM > 0.0f) ? 0.0f : FP_APPROACH_DECEL_MPS2);
+        positionNavSetApproachSlowdown(fp.legSlowdownM, FP_RESCUE_LAND_STILL_RADIUS_M);
         // En-route waypoints advance on horizontal arrival; a vehicle that cannot
         // reach the commanded altitude must not orbit forever. HOLD, LAND and
         // TAKEOFF are station-keeping targets and keep the altitude gate, bar the
@@ -1046,9 +1052,6 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
     const float brakeLagM = fp.carrotSpeedMps * FP_CARROT_BRAKE_LAG_S;
     const float remainingBrakeM = fmaxf(remainingFiltM - brakeLagM, 0.0f);
     float desiredMps = fminf(fp.legCruiseMps, sqrtf(sq(cornerSpeedMps) + 2.0f * decelMps2 * remainingBrakeM));
-    if (fp.legSlowdownM > 0.0f) {
-        desiredMps = fminf(desiredMps, fp.legCruiseMps * (distM / fp.legSlowdownM));
-    }
 
     const float headingDeg = attitude.values.yaw * 0.1f;
     const float legBearingDeg = RADIANS_TO_DEGREES(atan2_approx(legDir.x, legDir.y));
@@ -1115,6 +1118,10 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
     }
     const float speedUpMps = sqrtf(fmaxf(sq(budgetMps) - sq(turningMps), 0.0f));
     fp.carrotSpeedMps = constrainf(desiredMps, fp.carrotSpeedMps - budgetMps, fp.carrotSpeedMps + speedUpMps);
+    if (fp.legSlowdownM > 0.0f) {
+        fp.carrotSpeedMps = fminf(fp.carrotSpeedMps,
+                                  positionNavApproachTaperMps(fp.legCruiseMps, fp.legSlowdownM, FP_RESCUE_LAND_STILL_RADIUS_M, distM));
+    }
     vector2Scale(&fp.carrotVelMps, &carrotDir, fp.carrotSpeedMps);
     placeCarrot(est, &fp.carrotEnuM);
 
@@ -1149,7 +1156,9 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
 
 // The descent is flown at the rate the caller states — the LAND leg's own rate, resolved at
 // dispatch. The below-ground target only keeps vertical arrival from ever triggering; it is the
-// rate, not the depth, that decides how fast the craft comes down.
+// rate, not the depth, that decides how fast the craft comes down. A landing at the end of an
+// approach taper closes the rest of it on the way down; any other creeps to its point at the
+// descent rate.
 static void startLanding(timeUs_t currentTimeUs, float targetEastM, float targetNorthM, float descentRateMps)
 {
     const positionEstimate3d_t *est = positionEstimatorGetEstimate();
@@ -1161,7 +1170,10 @@ static void startLanding(timeUs_t currentTimeUs, float targetEastM, float target
 
     const float startAltM = commandedAltitudeM(est);
     const float descentMps = MAX(FP_LANDING_MIN_RATE_MPS, descentRateMps);
-    positionNavSetTargetEf(&targetM, descentMps, 1.0f, 0.1f, true, NULL, NULL);
+    const bool continueTaper = fp.legSlowdownM > 0.0f;
+    positionNavSetTargetEf(&targetM, continueTaper ? fp.legCruiseMps : descentMps, 1.0f, 0.1f, true, NULL, NULL);
+    positionNavSetAccelLimits(0.0f, continueTaper ? 0.0f : FP_APPROACH_DECEL_MPS2);
+    positionNavSetApproachSlowdown(fp.legSlowdownM, FP_RESCUE_LAND_STILL_RADIUS_M);
     positionNavSetVerticalProfile(descentMps, startAltM);
     fp.landingRateMps = descentMps;
 

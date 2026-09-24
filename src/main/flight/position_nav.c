@@ -98,6 +98,8 @@ void positionNavSetTargetEf(
     cmd.rampRateMps = currentTargetVelCmS.v[ENU_U] * 0.01f;
     cmd.rampRateSlewed = handOver;
     cmd.approachSlowdownM = 0.0f;
+    cmd.approachStillRadiusM = 0.0f;
+    cmd.approachStill = false;
     cmd.velocityFfValid = false;
     cmd.velocityFromCraft = false;
     cmd.acceptanceRadiusM = acceptanceRadiusM;
@@ -220,9 +222,17 @@ void positionNavStartAfresh(void)
     previousTargetVelValid = false;
 }
 
-void positionNavSetApproachSlowdown(float slowdownM)
+void positionNavSetApproachSlowdown(float slowdownM, float stillRadiusM)
 {
     cmd.approachSlowdownM = slowdownM;
+    cmd.approachStillRadiusM = stillRadiusM;
+    cmd.approachStill = false;
+}
+
+float positionNavApproachTaperMps(float cruiseSpeedMps, float slowdownM, float stillRadiusM, float distM)
+{
+    const float spanM = fmaxf(slowdownM - stillRadiusM, MIN_DISTANCE_M);
+    return cruiseSpeedMps * constrainf((distM - stillRadiusM) / spanM, 0.0f, 1.0f);
 }
 
 void positionNavSetAltitudeArrivalRequired(bool required)
@@ -313,8 +323,11 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
         // has somewhere to shed its speed. Linear in distance, so the speed decays exponentially in
         // time - the shape the legacy rescue flew.
         if (cmd.approachSlowdownM > 0.0f) {
-            desiredSpeedMps = fminf(desiredSpeedMps,
-                                    cmd.cruiseSpeedMps * (horizDistM / cmd.approachSlowdownM));
+            if (horizDistM <= cmd.approachStillRadiusM) {
+                cmd.approachStill = true;
+            }
+            desiredSpeedMps = cmd.approachStill ? 0.0f
+                : positionNavApproachTaperMps(cmd.cruiseSpeedMps, cmd.approachSlowdownM, cmd.approachStillRadiusM, horizDistM);
         }
 
         if (cmd.maxDecelMps2 > 0.0f) {

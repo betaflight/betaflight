@@ -209,10 +209,18 @@ void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
 }
 
 float g_lastApproachSlowdownM;
+float g_lastApproachStillRadiusM;
 
-void positionNavSetApproachSlowdown(float slowdownM)
+void positionNavSetApproachSlowdown(float slowdownM, float stillRadiusM)
 {
     g_lastApproachSlowdownM = slowdownM;
+    g_lastApproachStillRadiusM = stillRadiusM;
+}
+
+float positionNavApproachTaperMps(float cruiseSpeedMps, float slowdownM, float stillRadiusM, float distM)
+{
+    const float spanM = fmaxf(slowdownM - stillRadiusM, 0.01f);
+    return cruiseSpeedMps * fminf(fmaxf((distM - stillRadiusM) / spanM, 0.0f), 1.0f);
 }
 
 void positionNavSetVelocityFeedforward(const vector2_t *velEfMps)
@@ -342,6 +350,7 @@ protected:
         memset(&g_lastTarget, 0, sizeof(g_lastTarget));
         g_setTargetCalls = 0;
         g_lastApproachSlowdownM = 0.0f;
+        g_lastApproachStillRadiusM = 0.0f;
         memset(&g_lastFfEfMps, 0, sizeof(g_lastFfEfMps));
         g_ffValid = false;
         g_lastAccelLimitMps2 = -1.0f;
@@ -1247,6 +1256,8 @@ TEST_F(FlightPlanNavTest, LandWaypointArrivalDescendsAtTheWaypoint)
     EXPECT_NEAR(g_lastTarget.targetEfM.y, 20.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 200.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, 0.5f, 0.01f);
+    EXPECT_NEAR(g_lastApproachSlowdownM, 0.0f, 0.001f);       // no rescue taper on a mission landing
+    EXPECT_NEAR(g_lastDecelLimitMps2, 0.3f, 0.001f);
 }
 
 TEST_F(FlightPlanNavTest, LandingTakesOverTheVerticalChannelWhereTheLegLeftIt)
