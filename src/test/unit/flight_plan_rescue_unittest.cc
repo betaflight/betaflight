@@ -689,6 +689,30 @@ TEST_F(FlightPlanRescueTest, ClimbHoldsOneStoppingDistanceAhead)
     EXPECT_NEAR(g_lastTarget.targetEfM.z, kDefaultReturnAltM, 0.01f);
 }
 
+TEST_F(FlightPlanRescueTest, ClimbSwingsTheNoseOnlyOnceTheCraftHasBraked)
+{
+    // Called at 7 m/s nose-first away from home: the nose holds where it is while the craft brakes,
+    // and only then turns toward home.
+    g_stubEstimate.position.v[ENU_E] = 30.0f * 100.0f;
+    g_stubEstimate.velocity.v[ENU_E] = 700.0f;
+    attitude.values.yaw = 900;
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    ASSERT_TRUE(g_navHeadingOverrideValid);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, 90.0f, 1.0f);
+
+    g_stubEstimate.velocity.v[ENU_E] = 100.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, -90.0f, 1.0f);   // home is due west
+
+    // A gust once it has braked does not swing the nose back again.
+    g_stubEstimate.velocity.v[ENU_E] = 200.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, -90.0f, 1.0f);
+}
+
 TEST_F(FlightPlanRescueTest, ReturnLegStartsWhereTheClimbHeldTheCraft)
 {
     // The climb completes with the craft still, but not necessarily on its hold point: pushed off
@@ -761,9 +785,9 @@ TEST_F(FlightPlanRescueTest, ClimbWaitsForTheCraftToSettleOnlySoLong)
 
 TEST_F(FlightPlanRescueTest, ClimbBrakingDoesNotTripTheHeadingCheck)
 {
-    // Called running south at 15 m/s with home due north: the nose swings north while the craft
-    // brakes on south toward its hold point. A course opposite a nose that is not pointing at the
-    // hold point is no sign of a bad compass.
+    // Called running south at 15 m/s with the nose already on home, due north: the craft brakes on
+    // south toward its hold point, its course opposite its nose. A course opposite a nose that is
+    // not pointing at the hold point is no sign of a bad compass.
     gpsSol.llh.lon = 0;
     gpsSol.llh.lat = metresToLonUnits(-30.0f);
     float northM = -30.0f;

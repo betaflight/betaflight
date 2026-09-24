@@ -1832,6 +1832,26 @@ TEST_F(FlightPlanNavCarrotTest, FaceTargetLegHoldsStationUntilTheNoseComesRound)
     EXPECT_GT(g_lastTarget.targetEfM.y, 1.0f);             // now it translates
 }
 
+TEST_F(FlightPlanNavCarrotTest, FaceTargetLegSwingsTheNoseOnlyOnceTheCraftHasBraked)
+{
+    // Dispatched flying away from its target (a geofence return): the nose holds where it is while
+    // the craft brakes, and only then swings round, rather than sweeping the brake sideways.
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER, WAYPOINT_YAW_FACE_TARGET);
+    addWaypointMetres(0.0f, 200.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    setCraftMetres(0.0f, 0.0f);
+    g_stubEstimate.velocity.v[ENU_N] = -500.0f;   // 5 m/s away from the leg
+    attitude.values.yaw = 1800;
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    step();
+    ASSERT_TRUE(g_navHeadingOverrideValid);
+    EXPECT_NEAR(fabsf(g_navHeadingOverrideDeg), 180.0f, 1.0f);
+
+    g_stubEstimate.velocity.v[ENU_N] = -100.0f;   // braked
+    step();
+    EXPECT_NEAR(g_navHeadingOverrideDeg, 0.0f, 1.0f);
+}
+
 TEST_F(FlightPlanNavCarrotTest, FaceTargetLegGivesUpWaitingForANoseThatWillNotTurn)
 {
     // A compass that cannot deliver the heading must not leave the craft parked in the air: the
@@ -1849,6 +1869,29 @@ TEST_F(FlightPlanNavCarrotTest, FaceTargetLegGivesUpWaitingForANoseThatWillNotTu
         step();                   // 11 s, past the 10 s gate timeout
     }
     EXPECT_GT(g_lastTarget.targetEfM.y, 1.0f);
+}
+
+TEST_F(FlightPlanNavCarrotTest, FaceTargetLegGivesUpWaitingWhileTheCraftKeepsMoving)
+{
+    // A bad compass that keeps the position hold circling never lets the craft slow to where the
+    // nose would swing: the nose is held only as long as the gate would wait, and then the leg is
+    // flown with the nose on the target, where the heading-fault check can judge the compass.
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER, WAYPOINT_YAW_FACE_TARGET);
+    addWaypointMetres(0.0f, 200.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    setCraftMetres(0.0f, 0.0f);
+    g_stubEstimate.velocity.v[ENU_E] = 300.0f;
+    attitude.values.yaw = 1800;
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    step();
+    EXPECT_NEAR(fabsf(g_navHeadingOverrideDeg), 180.0f, 1.0f);
+    EXPECT_NEAR(lastFfSpeedMps(), 0.0f, 0.01f);
+
+    for (int i = 0; i < 110; i++) {
+        step();                   // 11 s, past the 10 s gate timeout
+    }
+    EXPECT_NEAR(g_navHeadingOverrideDeg, 0.0f, 1.0f);
+    EXPECT_GT(lastFfSpeedMps(), 1.0f);
 }
 
 TEST_F(FlightPlanNavCarrotTest, FaceTargetLegInsideTheArrivalRadiusStillWaitsForTheNose)
