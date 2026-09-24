@@ -47,9 +47,12 @@ extern "C" {
     #include "sensors/gyro.h"
 
     #include "pg/autopilot.h"
+    #include "pg/pos_hold.h"
     #include "flight/autopilot.h"
+    #include "flight/pos_hold.h"
 
     PG_REGISTER(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
+    PG_REGISTER(posHoldConfig_t, posHoldConfig, PG_POSHOLD_CONFIG, 0);
     PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
     PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
     PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
@@ -62,6 +65,9 @@ extern "C" {
     }
     void positionEstimatorEnableXY(bool enable) { UNUSED(enable); }
     bool positionEstimatorIsValidXY(void) { return testEstimate.isValidXY; }
+    bool positionEstimatorTakeUpdate(positionEstimatorConsumer_e) { return false; }
+    static bool mockHeadingRequired = false;
+    bool positionEstimatorIsHeadingRequired(void) { return mockHeadingRequired; }
 
     // Nav stubs: default to no active navigation (plain position hold);
     // yaw-control tests drive them via the mockNav* variables.
@@ -95,7 +101,8 @@ extern "C" {
     gpsSolutionData_t gpsSol;
     gyro_t gyro;
     float rcCommand[4];
-    bool imuIsHeadingValid(void) { return true; }
+    static bool mockHeadingValid = true;
+    bool imuIsHeadingValid(void) { return mockHeadingValid; }
 
     bool failsafeIsActive(void) { return false; }
 
@@ -138,6 +145,8 @@ extern "C" {
     throttleStatus_e calculateThrottleStatus() {
         return THROTTLE_LOW;
     }
+
+    float getRcDeflectionAbs(uint8_t) { return 0.0f; }
 }
 
 #include "unittest_macros.h"
@@ -205,6 +214,10 @@ protected:
         flightModeFlags = 0;
         armingFlags = 0;
         simulatedTaskRateHz = 100;
+        mockHeadingRequired = false;
+        mockHeadingValid = true;
+        pitchForwardOverride(false);
+        updatePosHold(0);
     }
 };
 
@@ -221,6 +234,46 @@ TEST_F(PosHoldTest, ValidEstimateReturnsTrue)
 {
     initAndSettleAt(0, 0, 0);
     EXPECT_TRUE(positionControl());
+}
+
+TEST_F(PosHoldTest, PitchForwardRecoveryRunsWithInvalidHeading)
+{
+    initAndSettleAt(0, 0, 0);
+    mockHeadingRequired = true;
+    mockHeadingValid = true;
+    ENABLE_ARMING_FLAG(ARMED);
+    flightModeFlags |= POS_HOLD_MODE;
+    updatePosHold(0);
+    ASSERT_TRUE(isAutopilotInControl());
+
+    mockHeadingValid = false;
+    pitchForwardOverride(true);
+    for (int i = 0; i < SETTLE_ITERATIONS; i++) {
+        updatePosHold(i * 10000);
+    }
+
+    EXPECT_TRUE(isAutopilotInControl());
+    EXPECT_NEAR(0.0f, autopilotAngle[AI_ROLL], 0.01f);
+    EXPECT_NEAR(35.0f, autopilotAngle[AI_PITCH], 0.01f);
+}
+
+TEST_F(PosHoldTest, InvalidHeadingStillBlocksNormalPositionControl)
+{
+    initAndSettleAt(0, 0, 0);
+    mockHeadingRequired = true;
+    mockHeadingValid = true;
+    ENABLE_ARMING_FLAG(ARMED);
+    flightModeFlags |= POS_HOLD_MODE;
+    updatePosHold(0);
+    ASSERT_TRUE(isAutopilotInControl());
+
+    mockHeadingValid = false;
+    pitchForwardOverride(false);
+    updatePosHold(10000);
+
+    EXPECT_FALSE(isAutopilotInControl());
+    EXPECT_NEAR(0.0f, autopilotAngle[AI_ROLL], 0.01f);
+    EXPECT_NEAR(0.0f, autopilotAngle[AI_PITCH], 0.01f);
 }
 
 TEST_F(PosHoldTest, StationaryAtTargetProducesNearZeroOutput)
