@@ -82,8 +82,19 @@
                                                                     handler(&dmaDescriptors[index]); \
                                                             }
 
-#define DMA_CLEAR_FLAG(d, flag) if (d->flagsShift > 31) ((DMA_TypeDef*)(d)->dma)->HIFCR = (flag << (d->flagsShift - 32)); else ((DMA_TypeDef*)(d)->dma)->LIFCR = (flag << d->flagsShift)
-#define DMA_GET_FLAG_STATUS(d, flag) (d->flagsShift > 31 ? ((DMA_TypeDef*)(d)->dma)->HISR & (flag << (d->flagsShift - 32)): ((DMA_TypeDef*)(d)->dma)->LISR & (flag << d->flagsShift))
+// (flag) and (d) are parenthesised deliberately. Callers pass OR-ed masks, and
+// without the parentheses `A | B` binds as `A | (B << flagsShift)`: only the last
+// flag lands on this stream and the rest write ones into bits 0-5, which are
+// stream 0's flags in the low register and stream 4's in the high one.
+#define DMA_CLEAR_FLAG(d, flag) \
+    do { \
+        if ((d)->flagsShift > 31) { \
+            ((DMA_TypeDef*)(d)->dma)->HIFCR = ((flag) << ((d)->flagsShift - 32)); \
+        } else { \
+            ((DMA_TypeDef*)(d)->dma)->LIFCR = ((flag) << (d)->flagsShift); \
+        } \
+    } while (0)
+#define DMA_GET_FLAG_STATUS(d, flag) ((d)->flagsShift > 31 ? ((DMA_TypeDef*)(d)->dma)->HISR & ((flag) << ((d)->flagsShift - 32)): ((DMA_TypeDef*)(d)->dma)->LISR & ((flag) << (d)->flagsShift))
 
 #define DMA_IT_TCIF         ((uint32_t)0x00000020)
 #define DMA_IT_HTIF         ((uint32_t)0x00000010)
@@ -332,8 +343,12 @@ uint32_t dmaGetChannel(const uint8_t channel);
                                                                             handler(&dmaDescriptors[index]); \
                                                                     }
 
-#define DMA_CLEAR_FLAG(d, flag) ((DMA_TypeDef*)(d)->dma)->IFCR = (flag << d->flagsShift)
-#define DMA_GET_FLAG_STATUS(d, flag) (((DMA_TypeDef*)(d)->dma)->ISR & (flag << d->flagsShift))
+// (flag) and (d) are parenthesised deliberately. Callers pass OR-ed masks, and
+// without the parentheses `A | B` binds as `A | (B << flagsShift)`: only the last
+// flag lands on this channel and the rest write ones into the low bits, which are
+// the first channel's flags.
+#define DMA_CLEAR_FLAG(d, flag) ((DMA_TypeDef*)(d)->dma)->IFCR = ((flag) << (d)->flagsShift)
+#define DMA_GET_FLAG_STATUS(d, flag) (((DMA_TypeDef*)(d)->dma)->ISR & ((flag) << (d)->flagsShift))
 
 #define DMA_IT_TCIF         ((uint32_t)0x00000002)
 #define DMA_IT_HTIF         ((uint32_t)0x00000004)

@@ -557,10 +557,7 @@ RAM_CODE static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, 
     }
     // size will be lower than that requested if we reach end of volume
     const uint32_t flashfsSize = flashfsGetSize();
-    if (readLen > flashfsSize - address) {
-        // truncate the request
-        readLen = flashfsSize - address;
-    }
+    readLen = flashfsReadLength(flashfsSize, address, readLen);
     sbufWriteU32(dst, address);
 
     // legacy format does not support compression
