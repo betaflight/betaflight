@@ -385,6 +385,16 @@ static float legVertRateMps(const waypoint_t *wp)
                                              : altHoldGetClimbRateCmS()) * 0.01f;
 }
 
+// Where a leg taking over from one still flying starts its altitude ramp: starting at the craft
+// steps the altitude target by however far the craft sits off the commanded altitude.
+static float commandedAltitudeM(const positionEstimate3d_t *est)
+{
+    if (positionNavHasActiveTarget() && positionNavGetActiveCommand()->includeAltitude) {
+        return positionNavGetTargetAltitudeCm() * 0.01f;
+    }
+    return est->position.v[ENU_U] * 0.01f;
+}
+
 static bool dispatchWaypoint(void)
 {
     const waypoint_t *wp = drainModifiers();
@@ -497,6 +507,7 @@ static bool dispatchWaypoint(void)
     fp.inPreTurn = false;
 
     const positionEstimate3d_t *dispatchEst = positionEstimatorGetEstimate();
+    const float startAltM = commandedAltitudeM(dispatchEst);
 
     // Gate state belongs to the waypoint, not to the dispatch: a leg re-issued mid-flight (a
     // position-control re-init, the delay-expiry cruise restore, or the swap from the hold below to
@@ -557,9 +568,9 @@ static bool dispatchWaypoint(void)
         positionNavSetAltitudeArrivalRequired(isStationKeeping);
     }
 
-    // Altitude starts where the craft is and walks to the waypoint at the leg's rate, so the
-    // altitude controller never sees the step a raw waypoint altitude used to hand it.
-    positionNavSetVerticalProfile(fp.legVertRateMps, dispatchEst->position.v[ENU_U] * 0.01f);
+    // Altitude walks to the waypoint at the leg's rate from the altitude already commanded, so the
+    // altitude controller never sees a step.
+    positionNavSetVerticalProfile(fp.legVertRateMps, startAltM);
 
     // Command the nose from the dispatch itself, so a leg that states where to point never spends
     // a cycle with the previous leg's nose command, or none at all.
@@ -1022,9 +1033,10 @@ static void startLanding(timeUs_t currentTimeUs, float targetEastM, float target
         [ENU_U] = est->position.v[ENU_U] * 0.01f - FP_LANDING_TARGET_DEPTH_M,
     }};
 
+    const float startAltM = commandedAltitudeM(est);
     const float descentMps = MAX(FP_LANDING_MIN_RATE_MPS, descentRateMps);
     positionNavSetTargetEf(&targetM, descentMps, 1.0f, 0.1f, true, NULL, NULL);
-    positionNavSetVerticalProfile(descentMps, est->position.v[ENU_U] * 0.01f);
+    positionNavSetVerticalProfile(descentMps, startAltM);
     fp.landingRateMps = descentMps;
 
     fp.state = FP_NAV_LANDING;
@@ -1296,8 +1308,10 @@ static void issuePatternCommand(float radiusM)
 {
     vector3_t carrot;
     patternCarrot(fp.patternPhaseRad, radiusM, &carrot);
+    const float startAltM = commandedAltitudeM(positionEstimatorGetEstimate());
     positionNavSetTargetEf(&carrot, fp.patternCruiseMps, radiusM, 0.0f, true, NULL, NULL);
     positionNavSetAccelLimits(0.0f, 0.0f);
+    positionNavSetVerticalProfile(fp.legVertRateMps, startAltM);
 }
 
 static void startHoldPattern(const waypoint_t *wp)

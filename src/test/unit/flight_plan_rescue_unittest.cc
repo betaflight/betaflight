@@ -92,6 +92,8 @@ float g_altHoldClimbRateCmS;
 float g_lastVertRateMps;
 float g_lastVertStartAltM;
 int g_setVerticalProfileCalls;
+float g_stubCommandedAltCm;
+bool g_stubCommandedAltSet;
 
 gpsLocation_t g_stubGpsOrigin;
 bool g_stubGpsOriginSet;
@@ -153,6 +155,13 @@ void positionNavSetVerticalProfile(float rateMps, float startAltM)
     g_lastVertRateMps = rateMps;
     g_lastVertStartAltM = startAltM;
     g_setVerticalProfileCalls++;
+}
+
+// The altitude the active command is walking its ramp through: the leg altitude, as if the ramp
+// had already got there, unless a test states otherwise.
+float positionNavGetTargetAltitudeCm(void)
+{
+    return g_stubCommandedAltSet ? g_stubCommandedAltCm : g_lastTarget.targetEfM.z * 100.0f;
 }
 
 void positionNavMoveTargetEf(const vector3_t *targetPosEfM)
@@ -320,6 +329,8 @@ protected:
         g_altHoldClimbRateCmS = 500.0f;   // alt_hold_climb_rate default, 5 m/s
         g_lastVertRateMps = 0.0f;
         g_lastVertStartAltM = 0.0f;
+        g_stubCommandedAltCm = 0.0f;
+        g_stubCommandedAltSet = false;
         g_clearTargetCalls = 0;
         g_stubMicros = 0;
 

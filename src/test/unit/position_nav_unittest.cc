@@ -130,18 +130,57 @@ TEST_F(PositionNavTest, ShortClimbIsNotArrivedBeforeItStarts)
     EXPECT_TRUE(positionNavTargetReached());
 }
 
-TEST_F(PositionNavTest, CompletedLegKeepsCommandingTheLegAltitude)
+TEST_F(PositionNavTest, CompletedLegWalksItsRampOnToTheLegAltitude)
 {
-    // Arrival stops the ramp advancing. Alt hold latches whatever altitude this reports, so once the
-    // leg is done it has to be the leg's altitude rather than wherever the ramp had reached.
-    const vector3_t target = {{ 0.0f, 0.0f, 2.0f }};
-    positionNavSetTargetEf(&target, 5.0f, 2.0f, 0.5f, true, NULL, NULL);
-    positionNavSetVerticalProfile(5.0f, 0.0f);
+    // A leg that completes before its altitude is reached (no altitude gate) must not hand alt hold
+    // the leg altitude in one step, nor leave it holding wherever the ramp had got to: the ramp
+    // carries on walking to the leg altitude at the leg's rate.
+    const vector3_t target = {{ 0.0f, 0.0f, 10.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 2.0f, 1000.0f, true, NULL, NULL);
+    positionNavSetAltitudeArrivalRequired(false);
+    positionNavSetVerticalProfile(1.0f, 0.0f);
 
-    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 180.0f, 0.0f);
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 100.0f);
     positionNavUpdate(0.1f, &est);
     ASSERT_TRUE(positionNavTargetReached());
-    EXPECT_NEAR(positionNavGetTargetAltitudeCm(), 200.0f, 0.1f);
+    float previousAltCm = positionNavGetTargetAltitudeCm();
+    EXPECT_NEAR(previousAltCm, 10.0f, 0.5f);
+
+    for (int i = 0; i < 150; i++) {
+        est.position.z = positionNavGetTargetAltitudeCm();   // craft tracking the ramp
+        positionNavUpdate(0.1f, &est);
+        const float altCm = positionNavGetTargetAltitudeCm();
+        EXPECT_LE(altCm - previousAltCm, 10.0f + 0.01f);    // 1 m/s over 0.1 s
+        EXPECT_GE(altCm, previousAltCm - 0.01f);
+        previousAltCm = altCm;
+    }
+    EXPECT_NEAR(positionNavGetTargetAltitudeCm(), 1000.0f, 0.1f);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().x, 0.0f, 0.01f);    // nothing horizontal to fly
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, 0.0f, 0.01f);
+}
+
+TEST_F(PositionNavTest, HandOverToAShorterLeashWalksTheRampInRatherThanSnapping)
+{
+    // A climbing leg let the altitude target lead a lagging craft by its own leash; the landing that
+    // takes over has a much shorter one. The target must be walked back inside it, not dropped onto
+    // it in a single cycle.
+    const vector3_t climb = {{ 0.0f, 0.0f, 100.0f }};
+    positionNavSetTargetEf(&climb, 1.0f, 1.0f, 0.1f, true, NULL, NULL);
+    positionNavSetVerticalProfile(1.5f, 21.5f);
+
+    const vector3_t landing = {{ 0.0f, 0.0f, -180.0f }};
+    positionNavSetTargetEf(&landing, 1.0f, 1.0f, 0.1f, true, NULL, NULL);
+    positionNavSetVerticalProfile(0.5f, 21.5f);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 2000.0f, 150.0f);
+    float previousAltCm = positionNavGetTargetAltitudeCm();
+    for (int i = 0; i < 300; i++) {
+        positionNavUpdate(0.01f, &est);
+        const float altCm = positionNavGetTargetAltitudeCm();
+        EXPECT_LE(fabsf(altCm - previousAltCm), 1.5f + 0.5f + 0.01f);   // ramp rate plus walk, over 10 ms
+        previousAltCm = altCm;
+    }
+    EXPECT_LE(positionNavGetTargetAltitudeCm(), 2000.0f + 100.0f + 0.01f);   // inside the 1 m leash by now
 }
 
 TEST_F(PositionNavTest, ShortClimbBrakesIntoTheLegAltitudeRatherThanLagging)
@@ -161,6 +200,90 @@ TEST_F(PositionNavTest, ShortClimbBrakesIntoTheLegAltitudeRatherThanLagging)
         positionNavUpdate(0.1f, &est);
     }
     EXPECT_NEAR(positionNavGetTargetAltitudeCm(), 200.0f, 1.0f);      // arrived inside 1.2 s
+}
+
+TEST_F(PositionNavTest, LegTakingOverSlewsIntoItsVerticalRate)
+{
+    // A landing taking over from a leg holding altitude: the altitude target starts where that leg
+    // left it and the vertical rate slews into the descent, rather than the feedforward flipping to
+    // the full descent rate in one frame.
+    const vector3_t level = {{ 0.0f, 0.0f, 10.0f }};
+    positionNavSetTargetEf(&level, 1.0f, 1.0f, 0.1f, true, NULL, NULL);
+    positionNavSetVerticalProfile(2.0f, 10.0f);
+
+    const vector3_t target = {{ 0.0f, 0.0f, -190.0f }};
+    positionNavSetTargetEf(&target, 1.0f, 1.0f, 0.1f, true, NULL, NULL);
+    positionNavSetVerticalProfile(2.0f, 10.0f);
+
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().z, 0.0f, 0.01f);
+    EXPECT_NEAR(positionNavGetTargetAltitudeCm(), 1000.0f, 0.01f);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 950.0f, 0.0f);
+    float previousRateCmS = 0.0f;
+    float previousAltCm = positionNavGetTargetAltitudeCm();
+    for (int i = 0; i < 150; i++) {
+        positionNavUpdate(0.01f, &est);
+        const float rateCmS = positionNavGetTargetVelocityCmS().z;
+        const float altCm = positionNavGetTargetAltitudeCm();
+        EXPECT_LE(fabsf(rateCmS - previousRateCmS), 2.0f + 0.01f);   // 2 m/s^2 over 10 ms
+        EXPECT_LE(altCm, previousAltCm + 0.01f);
+        EXPECT_GE(altCm, previousAltCm - 2.0f - 0.01f);
+        previousRateCmS = rateCmS;
+        previousAltCm = altCm;
+    }
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().z, -200.0f, 0.5f);
+}
+
+TEST_F(PositionNavTest, LegTakingOverFromAClimbTurnsTheRateRound)
+{
+    // Handed over while still climbing to a leg below: the ramp carries on up while the rate turns
+    // round, instead of the feedforward flipping from climb to descent in one frame or the ramp
+    // being clamped onto a target 200 m below the moment it is seen to be past it.
+    const vector3_t climb = {{ 0.0f, 0.0f, 100.0f }};
+    positionNavSetTargetEf(&climb, 1.0f, 1.0f, 0.1f, true, NULL, NULL);
+    positionNavSetVerticalProfile(1.0f, 10.0f);
+
+    const vector3_t target = {{ 0.0f, 0.0f, -190.0f }};
+    positionNavSetTargetEf(&target, 1.0f, 1.0f, 0.1f, true, NULL, NULL);
+    positionNavSetVerticalProfile(2.0f, 10.0f);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().z, 100.0f, 0.01f);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 1000.0f, 100.0f);
+    positionNavUpdate(0.01f, &est);
+    EXPECT_NEAR(positionNavGetTargetAltitudeCm(), 1001.0f, 0.1f);
+    EXPECT_GT(positionNavGetTargetVelocityCmS().z, 90.0f);
+}
+
+TEST_F(PositionNavTest, RampLandingOnTheLegAltitudeStopsItsRateThere)
+{
+    // Handed over climbing at 5 m/s to a leg only 1 m above the ramp: the slew brakes the ramp onto
+    // the leg altitude, harder than its usual rate as it has to, and the rate the feedforward reports
+    // comes down with it and stops there rather than arriving at speed or carrying on decaying
+    // against a target that no longer moves.
+    const vector3_t climb = {{ 0.0f, 0.0f, 60.0f }};
+    positionNavSetTargetEf(&climb, 5.0f, 1.0f, 0.1f, true, NULL, NULL);
+    positionNavSetVerticalProfile(5.0f, 30.0f);
+    ASSERT_NEAR(positionNavGetTargetVelocityCmS().z, 500.0f, 0.01f);
+
+    const vector3_t next = {{ 0.0f, 0.0f, 31.0f }};
+    positionNavSetTargetEf(&next, 5.0f, 1.0f, 0.1f, true, NULL, NULL);
+    positionNavSetVerticalProfile(5.0f, 30.0f);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 2900.0f, 500.0f);
+    float previousAltCm = positionNavGetTargetAltitudeCm();
+    float previousRateCmS = positionNavGetTargetVelocityCmS().z;
+    for (int i = 0; i < 100; i++) {
+        positionNavUpdate(0.01f, &est);
+        const float altCm = positionNavGetTargetAltitudeCm();
+        const float rateCmS = positionNavGetTargetVelocityCmS().z;
+        EXPECT_NEAR(rateCmS, (altCm - previousAltCm) / 0.01f, 0.5f) << "at " << i;
+        EXPECT_LE(altCm, 3100.0f);
+        EXPECT_LE(fabsf(rateCmS - previousRateCmS), 30.0f) << "at " << i;   // 5 m/s shed over 1 m
+        previousAltCm = altCm;
+        previousRateCmS = rateCmS;
+    }
+    EXPECT_NEAR(positionNavGetTargetAltitudeCm(), 3100.0f, 0.01f);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().z, 0.0f, 0.01f);
 }
 
 TEST_F(PositionNavTest, ApproachSlowdownTapersFromTheStatedRange)

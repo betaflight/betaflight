@@ -71,7 +71,8 @@ extern "C" {
 
     void positionNavInit(void) { }
     void positionNavReset(void) { }
-    void positionNavUpdate(float /*dt*/, const positionEstimate3d_t * /*est*/) { }
+    static int positionNavUpdateCalls;
+    void positionNavUpdate(float /*dt*/, const positionEstimate3d_t * /*est*/) { positionNavUpdateCalls++; }
     bool positionNavHasActiveTarget(void) { return mockNavHasActiveTarget; }
     bool positionNavTargetReached(void) { return false; }
     vector3_t positionNavGetTargetVelocityCmS(void) { return mockTargetVelCmS; }
@@ -221,6 +222,19 @@ TEST_F(PosHoldTest, ValidEstimateReturnsTrue)
 {
     initAndSettleAt(0, 0, 0);
     EXPECT_TRUE(positionControl());
+}
+
+TEST_F(PosHoldTest, PitchForwardKeepsTheNavCommandUpdating)
+{
+    // Alt hold keeps flying the nav command's altitude ramp through a heading-recovery pitch-forward,
+    // so the ramp and its feedforward must keep moving rather than freeze where they were.
+    initAndSettleAt(0, 0, 0);
+    pitchForwardOverride(true);
+    const int callsBefore = positionNavUpdateCalls;
+    runIterations(10);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 35.0f, 0.01f);
+    EXPECT_EQ(positionNavUpdateCalls, callsBefore + 10);
+    pitchForwardOverride(false);
 }
 
 TEST_F(PosHoldTest, StationaryAtTargetProducesNearZeroOutput)

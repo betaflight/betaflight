@@ -45,6 +45,8 @@ typedef struct positionNavCommand_s {
 
     float rampAltM;                 // altitude the vertical channel is currently commanding (ENU_U, metres)
     bool rampValid;                 // rampAltM has been seeded for this command
+    float rampRateMps;              // rate the ramp moved at on the last update (signed, positive climbs)
+    bool rampRateSlewed;            // took over from a command still flying: slews out of its rate
 
     float approachSlowdownM;        // taper the commanded speed linearly inside this range, 0 = off
     float maxAccelMps2;             // acceleration limit (m/s^2), 0 = unlimited
@@ -96,8 +98,10 @@ void positionNavSetApproachSlowdown(float slowdownM);
 void positionNavSetAutoClearOnReach(bool autoClear);
 
 // The leg's vertical intent: the rate the altitude target is allowed to move at, and the altitude
-// it starts from (normally the craft's current altitude, so the leg begins with no altitude error).
-// Seeds the commanded vertical velocity immediately, so a consumer running before the next
+// it starts from - the altitude the command it takes over from was commanding, or the craft's when
+// there was none, so the altitude target does not step. A command taking over from one still flying
+// starts at that one's rate and slews into its own; from rest it starts at its own. Seeds the
+// commanded vertical velocity immediately, so a consumer running before the next
 // positionNavUpdate() already sees the rate this leg is climbing or descending at.
 // rateMps <= 0 falls back to the horizontal cruise speed. No-op without an active command.
 void positionNavSetVerticalProfile(float rateMps, float startAltM);
@@ -115,8 +119,8 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est);
 vector3_t positionNavGetTargetVelocityCmS(void);
 
 // The altitude the vertical channel is commanding right now (cm, estimator frame): the ramp
-// walking toward the leg altitude, not the leg altitude itself. Meaningless (returns the leg
-// altitude) when the command does not include altitude.
+// walking toward the leg altitude, not the leg altitude itself, and still walking it once the leg
+// has completed. Meaningless (returns the leg altitude) when the command does not include altitude.
 float positionNavGetTargetAltitudeCm(void);
 
 // The leg's climb/descent rate cap (cm/s), or 0 when no command is active.

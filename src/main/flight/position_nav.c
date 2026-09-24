@@ -81,6 +81,7 @@ void positionNavSetTargetEf(
     void *userData
 )
 {
+    const bool handOver = cmd.active;
     cmd.active = true;
     cmd.sequence++;
     cmd.completed = false;
@@ -92,6 +93,8 @@ void positionNavSetTargetEf(
     cmd.vertRateMps = 0.0f;
     cmd.rampAltM = 0.0f;
     cmd.rampValid = false;
+    cmd.rampRateMps = currentTargetVelCmS.v[ENU_U] * 0.01f;
+    cmd.rampRateSlewed = handOver;
     cmd.approachSlowdownM = 0.0f;
     cmd.acceptanceRadiusM = acceptanceRadiusM;
     cmd.completionSpeedMps = completionSpeedMps;
@@ -157,6 +160,23 @@ static float verticalRampRateMps(void)
     return (errorM < 0.0f) ? -rateMps : rateMps;
 }
 
+// A ramp taking over from a leg still moving the altitude target slews out of that leg's rate into
+// its own at the same deceleration, or harder where that would carry it through the leg altitude.
+static float slewedVerticalRampRateMps(float dt)
+{
+    const float rateMps = verticalRampRateMps();
+    if (!cmd.rampRateSlewed) {
+        return rateMps;
+    }
+    const float errorM = cmd.targetPosEfM.v[ENU_U] - cmd.rampAltM;
+    float decelMps2 = VERT_RAMP_DECEL_MPS2;
+    if (cmd.rampRateMps * errorM > 0.0f) {
+        decelMps2 = fmaxf(decelMps2, sq(cmd.rampRateMps) / (2.0f * fabsf(errorM)));
+    }
+    const float stepMps = decelMps2 * dt;
+    return constrainf(rateMps, cmd.rampRateMps - stepMps, cmd.rampRateMps + stepMps);
+}
+
 void positionNavSetVerticalProfile(float rateMps, float startAltM)
 {
     if (!cmd.active) {
@@ -165,10 +185,13 @@ void positionNavSetVerticalProfile(float rateMps, float startAltM)
     cmd.vertRateMps = rateMps;
     cmd.rampAltM = startAltM;
     cmd.rampValid = true;
+    if (!cmd.rampRateSlewed) {
+        cmd.rampRateMps = verticalRampRateMps();
+    }
     // Seed the commanded rate now: the altitude controller's feedforward is consumed by a task that
     // can run before the next positionNavUpdate(), and a zero there against a moving altitude target
     // is a throttle notch at the start of every climb.
-    currentTargetVelCmS.v[ENU_U] = cmd.includeAltitude ? verticalRampRateMps() * 100.0f : 0.0f;
+    currentTargetVelCmS.v[ENU_U] = cmd.includeAltitude ? cmd.rampRateMps * 100.0f : 0.0f;
 }
 
 void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
@@ -199,9 +222,41 @@ void positionNavSetAutoClearOnReach(bool autoClear)
     cmd.autoClearOnReach = autoClear;
 }
 
+// March the commanded altitude toward the leg altitude at the leg's rate. The altitude controller
+// sees a ramp it can track and a feedforward that matches it, rather than a step. Returns the rate.
+static float updateVerticalRamp(float dt, float posUpM)
+{
+    if (!cmd.rampValid) {
+        cmd.rampAltM = posUpM;
+        cmd.rampValid = true;
+    }
+    cmd.rampRateMps = slewedVerticalRampRateMps(dt);
+    if (dt > 0.0f) {
+        const float targetAltM = cmd.targetPosEfM.v[ENU_U];
+        const float rampBeforeM = cmd.rampAltM;
+        const float errorBeforeM = targetAltM - rampBeforeM;
+        cmd.rampAltM += cmd.rampRateMps * dt;
+        // The side the ramp started on decides: one still slewing out of a rate pointing away
+        // from the leg altitude has not passed it.
+        if ((errorBeforeM >= 0.0f && cmd.rampAltM > targetAltM)
+            || (errorBeforeM <= 0.0f && cmd.rampAltM < targetAltM)) {
+            cmd.rampAltM = targetAltM;
+            cmd.rampRateMps = errorBeforeM / dt;
+        }
+        const float leashM = fmaxf(VERT_RAMP_LEASH_MIN_M, legVertRateMps() * VERT_RAMP_LEASH_S);
+        const float walkM = legVertRateMps() * dt;
+        if (cmd.rampAltM > posUpM + leashM) {
+            cmd.rampAltM = fmaxf(posUpM + leashM, fminf(cmd.rampAltM, rampBeforeM) - walkM);
+        } else if (cmd.rampAltM < posUpM - leashM) {
+            cmd.rampAltM = fminf(posUpM - leashM, fmaxf(cmd.rampAltM, rampBeforeM) + walkM);
+        }
+    }
+    return cmd.rampRateMps;
+}
+
 void positionNavUpdate(float dt, const positionEstimate3d_t *est)
 {
-    if (!cmd.active || cmd.completed) {
+    if (!cmd.active) {
         vector3Zero(&currentTargetVelCmS);
         return;
     }
@@ -209,6 +264,14 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
     const float posEastM  = est->position.v[ENU_E] * 0.01f;
     const float posNorthM = est->position.v[ENU_N] * 0.01f;
     const float posUpM    = est->position.v[ENU_U] * 0.01f;
+
+    if (cmd.completed) {
+        vector3Zero(&currentTargetVelCmS);
+        if (cmd.includeAltitude) {
+            currentTargetVelCmS.v[ENU_U] = updateVerticalRamp(dt, posUpM) * 100.0f;
+        }
+        return;
+    }
 
     // Horizontal and vertical are separate channels. Sharing one 3D speed budget made the climb
     // rate a byproduct of how steep the leg happened to be, and left no way for a leg to state the
@@ -254,25 +317,8 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
 
     previousTargetVelMps = targetVelMps;
 
-    // March the commanded altitude toward the leg altitude at the leg's rate. The altitude
-    // controller sees a ramp it can track and a feedforward that matches it, rather than a step.
     if (cmd.includeAltitude) {
-        if (!cmd.rampValid) {
-            cmd.rampAltM = posUpM;
-            cmd.rampValid = true;
-        }
-        const float rampRateMps = verticalRampRateMps();
-        if (dt > 0.0f) {
-            const float targetAltM = cmd.targetPosEfM.v[ENU_U];
-            cmd.rampAltM += rampRateMps * dt;
-            if ((rampRateMps > 0.0f && cmd.rampAltM > targetAltM)
-                || (rampRateMps < 0.0f && cmd.rampAltM < targetAltM)) {
-                cmd.rampAltM = targetAltM;
-            }
-            const float leashM = fmaxf(VERT_RAMP_LEASH_MIN_M, legVertRateMps() * VERT_RAMP_LEASH_S);
-            cmd.rampAltM = constrainf(cmd.rampAltM, posUpM - leashM, posUpM + leashM);
-        }
-        targetVelMps.v[ENU_U] = rampRateMps;
+        targetVelMps.v[ENU_U] = updateVerticalRamp(dt, posUpM);
     }
 
     vector3Scale(&currentTargetVelCmS, &targetVelMps, 100.0f);  // m/s -> cm/s, ENU
@@ -339,10 +385,7 @@ vector3_t positionNavGetTargetVelocityCmS(void)
 
 float positionNavGetTargetAltitudeCm(void)
 {
-    // A completed leg stops updating the ramp, so keep handing back the leg altitude rather than
-    // the value the ramp happened to be holding: alt hold latches whatever this returns and would
-    // otherwise hold a stale altitude for the rest of the flight.
-    if (!cmd.includeAltitude || !cmd.rampValid || cmd.completed) {
+    if (!cmd.includeAltitude || !cmd.rampValid) {
         return cmd.targetPosEfM.v[ENU_U] * 100.0f;
     }
     return cmd.rampAltM * 100.0f;

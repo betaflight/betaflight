@@ -81,6 +81,8 @@ float g_altHoldClimbRateCmS;
 float g_lastVertRateMps;
 float g_lastVertStartAltM;
 int g_setVerticalProfileCalls;
+float g_stubCommandedAltCm;
+bool g_stubCommandedAltSet;
 
 gpsLocation_t g_stubGpsOrigin;
 bool g_stubGpsOriginSet;
@@ -129,6 +131,13 @@ void positionNavSetVerticalProfile(float rateMps, float startAltM)
     g_lastVertRateMps = rateMps;
     g_lastVertStartAltM = startAltM;
     g_setVerticalProfileCalls++;
+}
+
+// The altitude the active command is walking its ramp through: the leg altitude, as if the ramp
+// had already got there, unless a test states otherwise.
+float positionNavGetTargetAltitudeCm(void)
+{
+    return g_stubCommandedAltSet ? g_stubCommandedAltCm : g_lastTarget.targetEfM.z * 100.0f;
 }
 
 void positionNavMoveTargetEf(const vector3_t *targetPosEfM)
@@ -285,6 +294,8 @@ protected:
         g_altHoldClimbRateCmS = 500.0f;   // alt_hold_climb_rate default, 5 m/s
         g_lastVertRateMps = 0.0f;
         g_lastVertStartAltM = 0.0f;
+        g_stubCommandedAltCm = 0.0f;
+        g_stubCommandedAltSet = false;
         g_clearTargetCalls = 0;
         g_moveTargetCalls = 0;
         g_stubMicros = 0;
@@ -694,6 +705,22 @@ TEST_F(FlightPlanNavPatternTest, OrbitIssuesNonCompletingCarrotCommand)
     EXPECT_NEAR(g_lastTarget.targetEfM.x, kCentreE + kRadiusM, 0.05f);
     EXPECT_NEAR(g_lastTarget.targetEfM.y, kCentreN, 0.05f);
     EXPECT_NEAR(g_lastTarget.targetEfM.z, kCentreU, 0.01f);
+}
+
+TEST_F(FlightPlanNavPatternTest, PatternCarriesTheHoldsAltitudeRampOn)
+{
+    // The pattern's altitude ramp carries on from the one the hold was walking rather than
+    // restarting on the craft.
+    engageHoldPattern(WAYPOINT_PATTERN_ORBIT);
+    g_stubEstimate.position.x = (kCentreE + 1.5f) * 100.0f;
+    g_stubEstimate.position.y = kCentreN * 100.0f;
+    g_stubEstimate.position.z = (kCentreU - 0.4f) * 100.0f;
+    g_stubCommandedAltCm = (kCentreU - 0.1f) * 100.0f;
+    g_stubCommandedAltSet = true;
+    triggerReached();
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(g_setTargetCalls, 2);
+    EXPECT_NEAR(g_lastVertStartAltM, kCentreU - 0.1f, 0.001f);
 }
 
 TEST_F(FlightPlanNavPatternTest, OrbitCarrotStartsAtVehicleAzimuth)
@@ -1161,6 +1188,29 @@ TEST_F(FlightPlanNavTest, LandWaypointArrivalDescendsAtTheWaypoint)
     EXPECT_NEAR(g_lastTarget.targetEfM.y, 20.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 200.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, 0.5f, 0.01f);
+}
+
+TEST_F(FlightPlanNavTest, LandingTakesOverTheVerticalChannelWhereTheLegLeftIt)
+{
+    // A geofence landing called mid-climb: the descent starts at the altitude the leg was
+    // commanding rather than snapping the altitude target onto the craft.
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    addWaypoint(200000, 0, 15000, WAYPOINT_TYPE_FLYOVER);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+
+    g_stubEstimate.position.v[ENU_U] = 2000.0f;        // craft at 20 m
+    g_stubCommandedAltCm = 2150.0f;                    // leg commanding 21.5 m
+    g_stubCommandedAltSet = true;
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+    EXPECT_NEAR(g_lastVertStartAltM, 21.5f, 0.01f);
+    EXPECT_NEAR(g_lastVertRateMps, 0.5f, 0.01f);
 }
 
 TEST_F(FlightPlanNavTest, LandWaypointTouchdownDisarmsAndCompletes)

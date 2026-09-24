@@ -1106,6 +1106,8 @@ bool positionControl(void)
         handlepositionControlFailure();
         return false;
     }
+    // Ahead of the pitch-forward: alt hold keeps flying this command's altitude ramp through it.
+    positionNavUpdate(dt, est);
     if (forcePitchForward) {
         disableYawControl();
         setYawDisableReason(11);
@@ -1125,8 +1127,6 @@ bool positionControl(void)
     vector2_t pidD               = { { 0 } };
     vector2_t pidA               = { { 0 } };
     vector2_t pidF               = { { 0 } };
-    // Update navigation status
-    positionNavUpdate(dt, est);
     ap.navActive = positionNavHasActiveTarget() && !positionNavTargetReached();
 
     // Horizontal ground speed and its ~0.5 s trend, used by the braking stop
