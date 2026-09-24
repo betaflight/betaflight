@@ -187,16 +187,18 @@ void uartReconfigure(uartPort_t *uartPort)
     const bool irqWasEnabled = NVIC_GetEnableIRQ(irqn) != 0;
     const bool canTx = uartCanTx(uartPort);
 
+    // Mask the line first: clearing the enables below stops new requests, but an IRQ already
+    // latched in the NVIC is still taken and would re-enter uartIrqHandler mid-teardown.
+    NVIC_DisableIRQ(irqn);
+
     // Disable all UART interrupts before disabling the peripheral to prevent
     // an interrupt storm. With UE=0, TC is always asserted (transmitter idle),
     // so TCIE must be cleared before clearing UE.
     CLEAR_BIT(USARTx->CR1, USART_CR1_PEIE | USART_CR1_TXEIE | USART_CR1_TCIE | USART_CR1_RXNEIE | USART_CR1_IDLEIE);
     CLEAR_BIT(USARTx->CR3, USART_CR3_EIE);
 
-    // That stops new requests, but an IRQ already latched in the NVIC is still taken and can
-    // re-enter uartIrqHandler while the peripheral is being torn down. Mask the line and drop
-    // the pending request, with barriers so both land before UE is cleared.
-    NVIC_DisableIRQ(irqn);
+    // Drop anything latched while the enables were still set, and barrier so both the mask and
+    // the clear land before UE goes away.
     NVIC_ClearPendingIRQ(irqn);
     __DSB();
     __ISB();
