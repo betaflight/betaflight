@@ -19,6 +19,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "drivers/dma.h"
+
+#include "platform/dma.h"
+
 #include "dshot_bitbang_impl.h"
 
 FAST_DATA_ZERO_INIT bbPacer_t bbPacers[MAX_MOTOR_PACERS];  // TIM1 or TIM8
