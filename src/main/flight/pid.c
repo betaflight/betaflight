@@ -370,7 +370,8 @@ static float calcWingTpaArgument(void)
 static void updateStermTpaFactor(int axis, float tpaFactor)
 {
     float tpaFactorSterm = tpaFactor;
-    if (pidRuntime.tpaCurveType == TPA_CURVE_HYPERBOLIC) {
+    if (pidRuntime.tpaCurveType == TPA_CURVE_HYPERBOLIC ||
+        pidRuntime.tpaCurveType == TPA_CURVE_VREF) {
         const float maxSterm = tpaFactorSterm * (float)currentPidProfile->pid[axis].S * S_TERM_SCALE;
         if (maxSterm > 1.0f) {
             tpaFactorSterm *=  1.0f / maxSterm;
