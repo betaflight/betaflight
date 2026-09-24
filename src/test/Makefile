@@ -73,6 +73,12 @@ beeper_unittest_DEFINES := \
 		USE_BEEPER= \
 		USE_DSHOT=
 
+compass_ak9916_unittest_SRC := \
+		$(USER_DIR)/drivers/compass/compass_ak9916.c
+
+compass_ak9916_unittest_DEFINES := \
+                USE_MAG_AK9916=
+
 compass_bmm350_unittest_SRC := \
 		$(USER_DIR)/drivers/compass/compass_bmm350.c
 
@@ -296,6 +302,9 @@ $(OBJECT_DIR)/dronecan_gnss_unittest/dronecan_gnss_unittest.o: \
 io_serial_unittest_SRC := \
 		$(USER_DIR)/io/serial.c \
 		$(USER_DIR)/io/serial_resource.c
+
+flashfs_bounds_unittest_SRC := \
+		$(TEST_DIR)/flashfs_bounds_test_support.c
 
 
 ledstrip_unittest_SRC := \
