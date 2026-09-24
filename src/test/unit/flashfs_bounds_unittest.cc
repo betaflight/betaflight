@@ -19,23 +19,25 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <stdbool.h>
 #include <stdint.h>
 
-#include "drivers/accgyro/accgyro.h"
-#include "drivers/bus_spi.h"
+extern "C" unsigned int testFlashfsReadLength(uint32_t volumeSize, uint32_t address, unsigned int requestedLength);
 
-// Discovery functions
-#if defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X)
-uint8_t lsm6dsv16xSpiDetect(const extDevice_t *dev);
-bool lsm6dsv16xSpiAccDetect(accDev_t *acc);
-bool lsm6dsv16xSpiGyroDetect(gyroDev_t *gyro);
-#endif // USE_ACCGYRO_LSM6DSV16X || USE_ACCGYRO_LSM6DSV32X
+#include "gtest/gtest.h"
 
-#ifdef USE_ACCGYRO_LSM6DSK320X
-uint8_t lsm6dsk320xSpiDetect(const extDevice_t *dev);
-bool lsm6dsk320xSpiAccDetect(accDev_t *acc);
-bool lsm6dsk320xSpiGyroDetect(gyroDev_t *gyro);
-#endif // USE_ACCGYRO_LSM6DSK320X
+TEST(FlashfsBoundsTest, PreservesReadInsideVolume)
+{
+    EXPECT_EQ(16U, testFlashfsReadLength(100, 20, 16));
+}
+
+TEST(FlashfsBoundsTest, TruncatesReadAtEndOfVolume)
+{
+    EXPECT_EQ(8U, testFlashfsReadLength(100, 92, 16));
+}
+
+TEST(FlashfsBoundsTest, RejectsReadAtOrBeyondEndOfVolume)
+{
+    EXPECT_EQ(0U, testFlashfsReadLength(100, 100, 16));
+    EXPECT_EQ(0U, testFlashfsReadLength(100, 101, 16));
+    EXPECT_EQ(0U, testFlashfsReadLength(100, UINT32_MAX, 16));
+}

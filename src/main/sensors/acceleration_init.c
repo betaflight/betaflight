@@ -321,10 +321,15 @@ retry:
         FALLTHROUGH;
 #endif
 
+#if defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X)
 #ifdef USE_ACCGYRO_LSM6DSV16X
     case ACC_LSM6DSV16X:
+#endif
+#ifdef USE_ACCGYRO_LSM6DSV32X
+    case ACC_LSM6DSV32X:
+#endif
         if (lsm6dsv16xSpiAccDetect(dev)) {
-            accHardware = ACC_LSM6DSV16X;
+            accHardware = dev->mpuDetectionResult.sensor == LSM6DSV32X_SPI ? ACC_LSM6DSV32X : ACC_LSM6DSV16X;
             break;
         }
         FALLTHROUGH;

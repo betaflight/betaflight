@@ -155,6 +155,7 @@
     && !defined(USE_ACCGYRO_ICM45605) \
     && !defined(USE_ACCGYRO_LSM6DSO) \
     && !defined(USE_ACCGYRO_LSM6DSV16X) \
+    && !defined(USE_ACCGYRO_LSM6DSV32X) \
     && !defined(USE_ACCGYRO_LSM6DSK320X) \
     && !defined(USE_ACC_SPI_MPU6000) \
     && !defined(USE_ACC_SPI_MPU6500) \
@@ -184,6 +185,7 @@
     && !defined(USE_ACCGYRO_ICM40609D) \
     && !defined(USE_ACCGYRO_LSM6DSO) \
     && !defined(USE_ACCGYRO_LSM6DSV16X) \
+    && !defined(USE_ACCGYRO_LSM6DSV32X) \
     && !defined(USE_ACCGYRO_LSM6DSK320X) \
     && !defined(USE_GYRO_SPI_MPU6000) \
     && !defined(USE_GYRO_SPI_MPU6500) \
@@ -242,6 +244,9 @@
 #endif
 #ifndef USE_MAG_BMM350
 #define USE_MAG_BMM350
+#endif
+#ifndef USE_MAG_AK9916
+#define USE_MAG_AK9916
 #endif
 
 #endif // END MAG HW defines
@@ -609,7 +614,7 @@
     || defined(USE_ACCGYRO_ICM56686) \
     || defined(USE_ACCGYRO_ICM40609D) || defined(USE_ACCGYRO_ICM45605) || defined(USE_ACCGYRO_ICM45686) \
     || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653) \
-    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_LSM6DSK320X)
+    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_LSM6DSK320X)
 #ifndef USE_SPI_GYRO
 #define USE_SPI_GYRO
 #endif

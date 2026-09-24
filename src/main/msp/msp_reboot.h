@@ -22,20 +22,10 @@
 #pragma once
 
 #include <stdbool.h>
-#include <stdint.h>
 
-#include "drivers/accgyro/accgyro.h"
-#include "drivers/bus_spi.h"
+#include "fc/runtime_config.h"
 
-// Discovery functions
-#if defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X)
-uint8_t lsm6dsv16xSpiDetect(const extDevice_t *dev);
-bool lsm6dsv16xSpiAccDetect(accDev_t *acc);
-bool lsm6dsv16xSpiGyroDetect(gyroDev_t *gyro);
-#endif // USE_ACCGYRO_LSM6DSV16X || USE_ACCGYRO_LSM6DSV32X
-
-#ifdef USE_ACCGYRO_LSM6DSK320X
-uint8_t lsm6dsk320xSpiDetect(const extDevice_t *dev);
-bool lsm6dsk320xSpiAccDetect(accDev_t *acc);
-bool lsm6dsk320xSpiGyroDetect(gyroDev_t *gyro);
-#endif // USE_ACCGYRO_LSM6DSK320X
+static inline bool mspRebootIsAllowed(void)
+{
+    return !ARMING_FLAG(ARMED);
+}
