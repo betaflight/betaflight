@@ -39,6 +39,7 @@ TCP_PORT = 5761
 RC_PORT = 9004
 FDM_PORT = 9003
 PWM_PORT = 9002
+PWM_RAW_PORT = 9001
 
 HOME_LAT = -27.5000000
 HOME_LON = 153.0000000
@@ -52,6 +53,7 @@ BOX_POSHOLD = 11
 BOX_FAILSAFE = 27
 BOX_GPSRESCUE = 46
 BOX_AUTOPILOT = 56
+BOX_LAUNCH = 58
 
 RC_MID = 1500
 RC_LOW = 1000
@@ -231,6 +233,219 @@ class MotionModel:
             self.impact_ticks = 4
 
 
+# --- fixed wing -------------------------------------------------------------
+
+WING_V_REF = 15.0          # m/s, the airspeed at which the surfaces have full authority
+WING_THRUST_MAX = 12.0     # m/s^2 of thrust acceleration at full throttle
+WING_CD0 = 0.03            # parasitic drag, 1/m: full throttle settles near 20 m/s
+WING_CDI = 0.012           # induced drag coefficient, per CL^2
+WING_KL = 0.0872           # lift acceleration per (m/s)^2 per unit CL
+WING_CL_ALPHA = 5.0        # per radian
+WING_ALPHA_STALL = math.radians(12.0)
+WING_CL_POST_STALL = 0.4   # fraction of CL_max retained once stalled
+WING_ROLL_GAIN = 5.0       # rad/s of roll rate per unit elevon at V_REF
+WING_PITCH_GAIN = 3.0      # rad/s of pitch rate per unit elevon at V_REF
+WING_RATE_TAU = 0.10
+WING_SERVO_SPAN = 500.0    # PWM counts from centre to full deflection
+
+
+class WingMotionModel:
+    """Fixed-wing point-mass plant: elevons -> attitude, attitude -> lift/drag.
+
+    Honours the same contract as MotionModel (ENU pos/vel/accel, roll right
+    positive, pitch nose-DOWN positive, yaw compass CW positive) so FdmFeed's
+    existing frame handling carries over unchanged.
+
+    Control authority scales with airspeed, so an airframe sitting still in the
+    thrower's hand cannot move its own surfaces - which is what makes I-term
+    windup and the pre-launch hold behave the way they do in the air.
+    """
+
+    def __init__(self):
+        self.pos = [0.0, 0.0, 0.0]
+        self.vel = [0.0, 0.0, 0.0]
+        self.accel = [0.0, 0.0, 0.0]
+        self.roll = 0.0
+        self.pitch = 0.0
+        self.yaw = 0.0
+        self.rates = [0.0, 0.0, 0.0]
+        self.held = True          # in the thrower's hand until launched
+        self.crashed = False
+        self.stalled = False
+        self.alpha = 0.0
+        self._throw_ticks = 0
+        self._throw_accel = 0.0
+
+    # -- state the scenarios assert on -------------------------------------
+
+    @property
+    def airspeed(self):
+        return math.sqrt(sum(v * v for v in self.vel))
+
+    def on_ground(self):
+        return self.pos[2] <= 0.001
+
+    # -- launch injection ---------------------------------------------------
+
+    def hold_in_hand(self, pitch_deg=10.0, altitude_m=1.5):
+        """Pin the airframe as if carried: still, nose slightly up, 1 g only."""
+        self.held = True
+        self.vel = [0.0, 0.0, 0.0]
+        self.accel = [0.0, 0.0, 0.0]
+        self.rates = [0.0, 0.0, 0.0]
+        self.roll = 0.0
+        self.pitch = math.radians(-pitch_deg)   # nose-down positive
+        self.pos[2] = altitude_m
+
+    def hand_launch(self, speed_ms=8.0, duration_s=0.25, yaw_rate_dps=0.0):
+        """Throw forward: a velocity step delivered as a real acceleration.
+
+        The FC sees the accompanying body-axis specific force for the whole
+        duration, which is what its detector actually keys on.
+        """
+        self._throw_accel = speed_ms / duration_s
+        self._throw_ticks = max(1, int(round(duration_s / 0.02)))
+        self.rates[2] = math.radians(yaw_rate_dps)
+        self.held = False
+
+    def bungee_launch(self, accel_g=3.0, duration_s=0.3):
+        self._throw_accel = accel_g * GRAVITY
+        self._throw_ticks = max(1, int(round(duration_s / 0.02)))
+        self.held = False
+
+    # -- plant --------------------------------------------------------------
+
+    def _elevons(self, servos):
+        """Demix two elevon servos into normalised pitch and roll commands."""
+        if not servos or len(servos) < 2:
+            return 0.0, 0.0
+        left = (servos[0] - 1500.0) / WING_SERVO_SPAN
+        right = (servos[1] - 1500.0) / WING_SERVO_SPAN
+        pitch_cmd = (left + right) / 2.0
+        roll_cmd = (left - right) / 2.0
+        return max(-1.0, min(1.0, pitch_cmd)), max(-1.0, min(1.0, roll_cmd))
+
+    def step(self, dt, m, servos=None):
+        if self.crashed:
+            self.accel = [0.0, 0.0, 0.0]
+            return
+
+        throttle = m[0] if m else 0.0
+        v = self.airspeed
+        sin_y, cos_y = math.sin(self.yaw), math.cos(self.yaw)
+
+        if self.held and self._throw_ticks == 0:
+            # carried: gravity only, nothing else moves
+            self.vel = [0.0, 0.0, 0.0]
+            self.accel = [0.0, 0.0, 0.0]
+            self.rates = [0.0, 0.0, 0.0]
+            return
+
+        # attitude: elevon authority scales with airspeed, zero at a standstill
+        pitch_cmd, roll_cmd = self._elevons(servos)
+        authority = min(1.0, v / WING_V_REF)
+        target = [
+            WING_ROLL_GAIN * roll_cmd * authority,
+            WING_PITCH_GAIN * pitch_cmd * authority,
+        ]
+        for i in range(2):
+            self.rates[i] += (target[i] - self.rates[i]) * min(1.0, dt / WING_RATE_TAU)
+        self.roll += self.rates[0] * dt
+        self.pitch += self.rates[1] * dt
+        self.roll = max(-1.2, min(1.2, self.roll))
+        self.pitch = max(-1.2, min(1.2, self.pitch))
+
+        # flight path and angle of attack (pitch is nose-down positive)
+        gamma = math.asin(max(-1.0, min(1.0, self.vel[2] / v))) if v > 0.5 else 0.0
+        self.alpha = (-self.pitch) - gamma
+
+        cl_max = WING_CL_ALPHA * WING_ALPHA_STALL
+        if abs(self.alpha) > WING_ALPHA_STALL:
+            self.stalled = True
+            cl = math.copysign(cl_max * WING_CL_POST_STALL, self.alpha)
+        else:
+            self.stalled = False
+            cl = WING_CL_ALPHA * self.alpha
+
+        lift = WING_KL * v * v * cl
+        drag = (WING_CD0 + WING_CDI * cl * cl) * v * v
+        thrust = WING_THRUST_MAX * throttle
+
+        if self._throw_ticks > 0:
+            thrust += self._throw_accel
+            self._throw_ticks -= 1
+
+        # along-track and normal accelerations in the vertical plane
+        a_along = thrust - drag - GRAVITY * math.sin(gamma)
+        a_normal = lift * math.cos(self.roll) - GRAVITY * math.cos(gamma)
+
+        v_new = max(0.0, v + a_along * dt)
+        gamma_new = gamma + (a_normal / max(v, 1.0)) * dt
+        gamma_new = max(-1.4, min(1.4, gamma_new))
+
+        # bank-to-turn: no rudder, the turn comes from the lift vector
+        yaw_rate = GRAVITY * math.tan(self.roll) / max(v, 1.0) if v > 1.0 else self.rates[2]
+        self.rates[2] = yaw_rate
+        self.yaw += yaw_rate * dt
+        sin_y, cos_y = math.sin(self.yaw), math.cos(self.yaw)
+
+        horiz = v_new * math.cos(gamma_new)
+        new_vel = [horiz * sin_y, horiz * cos_y, v_new * math.sin(gamma_new)]
+        for i in range(3):
+            self.accel[i] = (new_vel[i] - self.vel[i]) / dt if dt > 0 else 0.0
+        self.vel = new_vel
+        for i in range(3):
+            self.pos[i] += self.vel[i] * dt
+
+        if self.pos[2] < 0.0:
+            self.pos[2] = 0.0
+            self.crashed = True
+            self.vel = [0.0, 0.0, 0.0]
+            self.accel = [0.0, 0.0, 0.0]
+            self.rates = [0.0, 0.0, 0.0]
+
+
+class PwmRawFeed(threading.Thread):
+    """Listens for SITL's raw PWM outputs (servo_packet_raw on UDP 9001).
+
+    The C struct is uint16_t motorCount followed by float[16], so the floats
+    start at offset 4 after padding: 68 bytes in total.
+    """
+
+    def __init__(self):
+        super().__init__(daemon=True)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.bind(("127.0.0.1", PWM_RAW_PORT))
+        self.sock.settimeout(0.2)
+        self.motor_count = 0
+        self.channels = [1500.0] * 16
+        self.running = True
+
+    @property
+    def servos(self):
+        return self.channels[self.motor_count:]
+
+    def run(self):
+        while self.running:
+            try:
+                data, _ = self.sock.recvfrom(128)
+                if len(data) >= 68:
+                    unpacked = struct.unpack("<H2x16f", data[:68])
+                    self.motor_count = unpacked[0]
+                    self.channels = list(unpacked[1:])
+            except socket.timeout:
+                pass
+            except OSError:
+                break
+
+    def shutdown(self):
+        self.running = False
+        if self.is_alive():
+            self.join(timeout=1.0)
+        self.sock.close()
+
+
 def quat_from_euler_bf(roll, pitch, yaw):
     """Body->world quaternion in Betaflight's internal NWU frames from the
     model conventions (roll right+, pitch nose-down+, yaw compass CW+):
@@ -283,10 +498,11 @@ class FdmFeed(threading.Thread):
     first packet's origin (the FC un-mirrors).
     """
 
-    def __init__(self, motors=None, initial_yaw_deg=0.0, status=None):
+    def __init__(self, motors=None, initial_yaw_deg=0.0, status=None, model=None, pwm_raw=None):
         super().__init__(daemon=True)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.model = MotionModel()
+        self.model = model if model is not None else MotionModel()
+        self.pwm_raw = pwm_raw
         self.model.yaw = math.radians(initial_yaw_deg)
         self.motors = motors
         self.status = status
@@ -352,7 +568,10 @@ class FdmFeed(threading.Thread):
             dt = min(0.1, now - last)
             last = now
             m = self.motors.motors if self.motors else [0.0] * 4
-            self.model.step(dt, m)
+            if self.pwm_raw is not None:
+                self.model.step(dt, m, self.pwm_raw.servos)
+            else:
+                self.model.step(dt, m)
 
             self._hist_decim += 1
             if self._hist_decim >= 5:  # ~10 Hz of the 50 Hz loop
@@ -567,12 +786,15 @@ class Sitl:
 
     def status(self):
         p = self.msp.request(MSP_STATUS)
-        mode_flags = struct.unpack_from("<I", p, 6)[0]
         extra_count = p[15]
         off = 16 + extra_count
         arming_count = p[off]
         arming_flags = struct.unpack_from("<I", p, off + 1)[0]
-        active = {self.boxids[i] for i in range(min(32, len(self.boxids))) if mode_flags & (1 << i)}
+        # The first 32 bits sit at offset 6; any box index past 31 is carried in
+        # the extra bytes at offset 16. A wing with GPS has more than 32 active
+        # boxes, so dropping those makes the high boxes invisible.
+        mode_bits = int.from_bytes(bytes(p[6:10]) + bytes(p[16:16 + extra_count]), "little")
+        active = {self.boxids[i] for i in range(len(self.boxids)) if mode_bits & (1 << i)}
         return {"modes": active, "arming_flags": arming_flags, "arming_count": arming_count}
 
     def modes(self):
@@ -619,6 +841,7 @@ class StatusPoller(threading.Thread):
         BOX_FAILSAFE: "FAILSAFE",
         BOX_GPSRESCUE: "GPSRESCUE",
         BOX_AUTOPILOT: "AUTOPILOT",
+        BOX_LAUNCH: "LAUNCH",
     }
 
     def __init__(self, sitl):
@@ -682,8 +905,6 @@ def base_config(extra):
         "aux 0 0 0 1700 2100 0 0",   # ARM on AUX1
         "aux 1 56 1 1700 2100 0 0",  # AUTOPILOT on AUX2
         "aux 2 1 2 1700 2100 0 0",   # ANGLE on AUX3 (heading-validation flight)
-        # the estimator needs the truth-fed virtual mag as a heading source
-        "set trust_mag = ON",
         # compassEnabledAndCalibrated() requires stored calibration values: the
         # virtual compass is never calibrated, so seed a negligible bias to mark
         # it calibrated, or the heading is never trusted and nav stands down
@@ -1714,31 +1935,38 @@ def decode_blackbox_logs(scenario_dir):
 def run_leg(name, variant, body, extra_cfg, opts, binary, leg_dir):
     os.makedirs(leg_dir)
     sitl = Sitl(binary, leg_dir)
-    rc = motors = fdm = poller = None
+    rc = motors = fdm = poller = pwm_raw = None
     try:
         # feed construction can fail (port 9002 bind); it must fail the
         # scenario, not abort the suite
         rc = RcFeed()
         motors = MotorFeed()
         poller = StatusPoller(sitl) if TELEMETRY_PORT else None
-        fdm = FdmFeed(motors, initial_yaw_deg=opts.get("initial_yaw_deg", 0.0), status=poller)
+        is_wing = opts.get("model") == "wing"
+        if is_wing:
+            pwm_raw = PwmRawFeed()
+        fdm = FdmFeed(motors, initial_yaw_deg=opts.get("initial_yaw_deg", 0.0), status=poller,
+                      model=WingMotionModel() if is_wing else None,
+                      pwm_raw=pwm_raw)
         sitl.provision(base_config(extra_cfg))
         sitl.start()
         motors.start()
+        if pwm_raw:
+            pwm_raw.start()
         if poller:
             poller.start()
         if variant is None:
             return body(sitl, rc, fdm)
         return body(sitl, rc, fdm, variant)
     finally:
-        for feed in (rc, fdm, motors, poller):
+        for feed in (rc, fdm, motors, pwm_raw, poller):
             if feed is not None:
                 feed.shutdown()
         sitl.stop()
         decode_blackbox_logs(leg_dir)
 
 
-def run_scenario(name, binary, workdir, binary_b=None):
+def run_scenario(name, binary, workdir, binary_b=None, binary_wing=None):
     spec = SCENARIOS[name]
     body, extra_cfg = spec[0], spec[1]
     opts = spec[2] if len(spec) > 2 else {}
@@ -1747,6 +1975,11 @@ def run_scenario(name, binary, workdir, binary_b=None):
     os.makedirs(scenario_dir)
 
     log(f"=== scenario: {name}")
+    if opts.get("model") == "wing":
+        if binary_wing is None:
+            log(f"=== SKIP: {name} (wing scenario, no --binary-wing)")
+            return None
+        binary = binary_wing
     try:
         if opts.get("ab"):
             if binary_b is None:
@@ -1769,6 +2002,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--binary", required=True, help="path to betaflight_SITL.elf (built with USE_FLIGHT_PLAN)")
     ap.add_argument("--binary-b", help="rescue-plan binary (-DENABLE_RESCUE_PLAN=1) for A/B scenarios")
+    ap.add_argument("--binary-wing", help="wing binary (-DUSE_WING) for fixed-wing scenarios")
     ap.add_argument("--scenario", default="all", choices=["all"] + list(SCENARIOS))
     ap.add_argument("--workdir", default="/tmp/sitl_harness")
     ap.add_argument("--telemetry-port", type=int, default=TELEMETRY_PORT,
@@ -1780,7 +2014,8 @@ def main():
 
     os.makedirs(args.workdir, exist_ok=True)
     names = list(SCENARIOS) if args.scenario == "all" else [args.scenario]
-    results = {name: run_scenario(name, args.binary, args.workdir, args.binary_b) for name in names}
+    results = {name: run_scenario(name, args.binary, args.workdir, args.binary_b, args.binary_wing)
+               for name in names}
 
     log("--- summary")
     for name, ok in results.items():

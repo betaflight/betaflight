@@ -145,6 +145,7 @@
 #define USE_GYRO_SPI_ICM20689
 #define USE_ACCGYRO_LSM6DSO
 #define USE_ACCGYRO_LSM6DSV16X
+#define USE_ACCGYRO_LSM6DSV32X
 #define USE_ACCGYRO_LSM6DSK320X
 #define USE_ACCGYRO_BMI270
 #define USE_GYRO_SPI_ICM42605
@@ -540,6 +541,12 @@
 #undef USE_YAW_SPIN_RECOVERY
 #undef USE_LAUNCH_CONTROL
 #undef USE_RUNAWAY_TAKEOFF
+
+// Distinct from the multirotor race-start USE_LAUNCH_CONTROL undef'd just
+// above: this is the hand/bungee launch assist for fixed wings.
+#ifndef USE_LAUNCH_WING
+#define USE_LAUNCH_WING
+#endif
 
 #endif // USE_WING
 

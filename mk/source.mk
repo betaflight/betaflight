@@ -23,6 +23,7 @@ PG_SRC = \
             pg/gps_rescue_multirotor.c \
             pg/gps_rescue_wing.c \
             pg/gyrodev.c \
+            pg/launch_wing.c \
             pg/max7456.c \
             pg/mco.c \
             pg/motor.c \
@@ -125,6 +126,7 @@ COMMON_SRC = \
             drivers/transponder_ir_arcitimer.c \
             drivers/transponder_ir_ilap.c \
             drivers/transponder_ir_erlt.c \
+            drivers/usb_descriptor.c \
             fc/board_info.c \
             fc/dispatch.c \
             fc/faults.c \
@@ -175,6 +177,7 @@ COMMON_SRC = \
             flight/gps_rescue_multirotor.c \
             flight/gps_rescue_wing.c \
             flight/imu.c \
+            flight/launch_wing.c \
             flight/mixer.c \
             flight/mixer_init.c \
             flight/mixer_tricopter.c \
@@ -345,6 +348,7 @@ COMMON_SRC += \
             drivers/barometer/barometer_virtual.c \
             drivers/compass/compass_ak8963.c \
             drivers/compass/compass_ak8975.c \
+            drivers/compass/compass_bmm350.c \
             drivers/compass/compass_hmc5883l.c \
             drivers/compass/compass_ist8310.c \
             drivers/compass/compass_lis2mdl.c \
@@ -419,6 +423,7 @@ SIZE_OPTIMISED_SRC += \
             drivers/barometer/barometer_2smpb_02b.c \
             drivers/compass/compass_ak8963.c \
             drivers/compass/compass_ak8975.c \
+            drivers/compass/compass_bmm350.c \
             drivers/compass/compass_hmc5883l.c \
             drivers/compass/compass_qmc5883.c \
             drivers/compass/compass_lis2mdl.c \
@@ -508,6 +513,7 @@ SIZE_OPTIMISED_SRC += \
             cli/cli.c \
             cli/settings.c \
             drivers/light_ws2811strip.c \
+            drivers/usb_descriptor.c \
             drivers/vtx_common.c \
             fc/init.c \
             fc/board_info.c \

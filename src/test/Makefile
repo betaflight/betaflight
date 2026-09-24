@@ -73,6 +73,12 @@ beeper_unittest_DEFINES := \
 		USE_BEEPER= \
 		USE_DSHOT=
 
+compass_bmm350_unittest_SRC := \
+		$(USER_DIR)/drivers/compass/compass_bmm350.c
+
+compass_bmm350_unittest_DEFINES := \
+                USE_MAG_BMM350=
+
 compass_ist8310_unittest_SRC := \
 		$(USER_DIR)/drivers/compass/compass_ist8310.c
 
@@ -128,6 +134,19 @@ accgyro_spi_icm426xx_unittest_DEFINES := \
                 USE_GYRO_SPI_ICM42688P= \
                 USE_ACCGYRO_IIM42652= \
                 USE_ACCGYRO_IIM42653=
+
+accgyro_spi_lsm6dsv16x_unittest_SRC := \
+		$(USER_DIR)/drivers/accgyro/accgyro_spi_lsm6dsv16x.c
+
+accgyro_spi_lsm6dsv16x_unittest_16x_DEFINES := USE_ACCGYRO_LSM6DSV16X=
+accgyro_spi_lsm6dsv16x_unittest_32x_DEFINES := USE_ACCGYRO_LSM6DSV32X=
+accgyro_spi_lsm6dsv16x_unittest_320x_DEFINES := USE_ACCGYRO_LSM6DSK320X=
+
+# Run the shared fixture with every variant enabled and with each enabled alone.
+accgyro_spi_lsm6dsv16x_unittest_DEFINES = \
+                USE_DMA= \
+                $(if $1,$(accgyro_spi_lsm6dsv16x_unittest_$1_DEFINES), \
+                    USE_ACCGYRO_LSM6DSV16X= USE_ACCGYRO_LSM6DSV32X= USE_ACCGYRO_LSM6DSK320X=)
 
 # This test is disabled due to build errors.
 # Its source code is archived in unit/battery_unittest.cc.txt
@@ -194,6 +213,17 @@ common_filter_unittest_SRC := \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c
 
+debug_annotations_unittest_SRC := \
+		$(USER_DIR)/build/debug.c
+
+dyn_notch_filter_unittest_SRC := \
+        $(USER_DIR)/flight/dyn_notch_filter.c \
+        $(USER_DIR)/common/filter.c \
+        $(USER_DIR)/common/maths.c \
+        $(USER_DIR)/common/sdft.c
+
+dyn_notch_filter_unittest_DEFINES := \
+        USE_DYN_NOTCH_FILTER=
 
 encoding_unittest_SRC := \
 		$(USER_DIR)/common/encoding.c
@@ -417,6 +447,11 @@ rx_sumd_unittest_SRC := \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/rx/sumd.c
 
+rx_xbus_unittest_SRC := \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/rx/xbus.c
+
 scheduler_unittest_SRC := \
 		$(USER_DIR)/scheduler/scheduler.c \
 		$(USER_DIR)/common/crc.c \
@@ -469,6 +504,11 @@ sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/pg/gyrodev.c
 
+sensor_gyro_init_unittest_SRC := $(filter-out $(USER_DIR)/drivers/accgyro/accgyro_virtual.c,$(sensor_gyro_unittest_SRC))
+
+sensor_gyro_init_unittest_DEFINES := \
+		GYRO_COUNT=2
+
 sitl_gyro_unittest_SRC := \
 		$(TEST_DIR)/sitl_gyro_unittest_c.c
 
@@ -488,6 +528,7 @@ telemetry_crsf_unittest_SRC := \
 
 telemetry_crsf_unittest_DEFINES := \
 		FLASH_SIZE=128 \
+		USE_POSITION_HOLD \
 		__TARGET__="TEST" \
 		__REVISION__="revision"
 
@@ -628,6 +669,21 @@ poshold_unittest_SRC := \
 		$(USER_DIR)/common/vector.c \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/pg/rx.c
+
+launch_wing_unittest_SRC := \
+		$(USER_DIR)/flight/launch_wing.c \
+		$(USER_DIR)/pg/launch_wing.c \
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
+
+launch_wing_unittest_DEFINES := \
+		USE_WING= \
+		USE_LAUNCH_WING= \
+		USE_GPS= \
+		USE_ACC=
 
 position_estimator_unittest_SRC := \
 		$(USER_DIR)/flight/position_estimator.c \
@@ -923,6 +979,7 @@ TEST_BASENAMES = $(TEST_SRCS:$(TEST_DIR)/%.cc=%)
 TESTS_TARGET_SPECIFIC = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),$(test)))
 
 TESTS = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),,$(test)))
+TESTS += $(addprefix accgyro_spi_lsm6dsv16x_unittest.,16x 32x 320x)
 TESTS_ALL = $(TESTS)
 
 # All Google Test headers.  Usually you shouldn't change this

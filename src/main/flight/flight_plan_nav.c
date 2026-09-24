@@ -174,6 +174,8 @@ static struct {
     uint8_t currentIndex;
     uint8_t pendingStartIndex;  // MISSION_SET_CURRENT while idle; consumed by engage
     timeUs_t holdStartUs;
+    timeUs_t holdLastUpdateUs;
+    uint64_t holdElapsedUs;
     uint16_t holdDurationDs;
     bool active;
     float zBiasM;               // estimator-vs-GPS altitude frame offset, captured at engage
@@ -1426,6 +1428,8 @@ static void onWaypointReached(void *userData)
     if (holdsOnArrival && fp.holdDurationDs > 0) {
         fp.state = FP_NAV_HOLDING;
         fp.holdStartUs = micros();
+        fp.holdLastUpdateUs = fp.holdStartUs;
+        fp.holdElapsedUs = 0;
         if (wp->type == WAYPOINT_TYPE_HOLD && wp->pattern != WAYPOINT_PATTERN_NONE) {
             // Deferred: the update loop starts the pattern once the arrival
             // braking has settled (see FP_PATTERN_START_SPEED_MPS).
@@ -1729,6 +1733,11 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
     }
 
     if (fp.state == FP_NAV_HOLDING) {
+        // Accumulate per-update deltas so durations may exceed one full turn
+        // of the 32-bit micros() clock.  Unsigned subtraction also preserves
+        // the delta for an individual update that crosses the wrap point.
+        fp.holdElapsedUs += (timeUs_t)(currentTimeUs - fp.holdLastUpdateUs);
+        fp.holdLastUpdateUs = currentTimeUs;
         updateLegYaw(positionEstimatorGetEstimate());
         if (fp.patternPending) {
             const waypoint_t *wp = currentWaypoint();
@@ -1748,9 +1757,8 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
         } else if (fp.patternActive) {
             updateHoldPattern(currentTimeUs);
         }
-        const uint32_t holdUs = (uint32_t)fp.holdDurationDs * 100000u;
-        const uint32_t elapsedUs = (uint32_t)(currentTimeUs - fp.holdStartUs);
-        if (elapsedUs >= holdUs) {
+        const uint64_t holdUs = (uint64_t)fp.holdDurationDs * 100000u;
+        if (fp.holdElapsedUs >= holdUs) {
             const waypoint_t *wp = currentWaypoint();
             if (wp != NULL && wp->type == WAYPOINT_TYPE_LAND) {
                 startLandingAtNavTarget(currentTimeUs);
