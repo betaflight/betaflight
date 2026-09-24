@@ -895,9 +895,9 @@ WP_CORNER_LON = HOME_LON + 42.0 / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))
 def base_config(extra):
     return [
         "feature GPS",
-        # the executor's state, abort reason and leg ride in slot 7 of this mode: a scenario that
-        # fails leaves a log that says what nav was doing when it did
-        "set debug_mode = GPS_RESCUE_TRACKING",
+        # the executor's state, abort reason and leg: a scenario that fails leaves a log that says
+        # what nav was doing when it did
+        "set debug_mode = FLIGHT_PLAN",
         "set gps_provider = VIRTUAL",
         "set failsafe_procedure = AUTO-LAND",
         "set failsafe_delay = 10",

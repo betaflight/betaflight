@@ -1339,21 +1339,22 @@ TEST_F(FlightPlanNavSafetyTest, FlyawayMarginCoversTheSpeedTheLegWasDispatchedAt
     EXPECT_EQ(flightPlanNavGetAbortReason(), FP_ABORT_FLYAWAY);
 }
 
-TEST_F(FlightPlanNavSafetyTest, TrackingDebugReportsStateAbortAndLeg)
+TEST_F(FlightPlanNavSafetyTest, DebugReportsStateAbortAndLeg)
 {
-    // Slot 7 of the rescue tracking debug used to carry the legacy controller's phase; on the
-    // mission that replaced it, it has to say what the executor is doing and why it stopped.
-    debugMode = DEBUG_GPS_RESCUE_TRACKING;
+    debugMode = DEBUG_FLIGHT_PLAN;
     addWaypoint(0, 0, 11000, WAYPOINT_TYPE_HOLD);
     g_stubMicros = 1'000'000;
     flightPlanNavEngage();
     flightPlanNavUpdate(g_stubMicros);
-    EXPECT_EQ(debug[7], FP_NAV_TARGETING * 100);   // targeting, no abort, leg 0
+    EXPECT_EQ(debug[0], FP_NAV_TARGETING);
+    EXPECT_EQ(debug[1], FP_ABORT_NONE);
+    EXPECT_EQ(debug[2], 0);
 
     g_stubEstimate.position.v[ENU_N] = 3200.0f;    // drift out past the fence
     flightPlanNavUpdate(g_stubMicros + 100'000);
     flightPlanNavUpdate(g_stubMicros + 200'000);
-    EXPECT_EQ(debug[7], FP_NAV_ABORTED * 100 + FP_ABORT_FLYAWAY * 10);
+    EXPECT_EQ(debug[0], FP_NAV_ABORTED);
+    EXPECT_EQ(debug[1], FP_ABORT_FLYAWAY);
     debugMode = DEBUG_NONE;
 }
 

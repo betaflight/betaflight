@@ -83,10 +83,6 @@
 // Attitude takes this long to swing round and stand the craft on its brake; the speed carried
 // through it is distance the fence has to allow for on top of the braking distance itself.
 #define FP_BRAKE_REVERSAL_S       1.0f
-// DEBUG_GPS_RESCUE_TRACKING slot 7: one readable decimal, state * 100 + abort reason * 10 + leg.
-#define FP_TRACKING_STATE_SCALE   100
-#define FP_TRACKING_ABORT_SCALE   10
-#define FP_TRACKING_INDEX_MAX     9
 #define FP_BRAKE_MIN_ANGLE_DEG    10.0f   // ap_max_angle's own lower bound, so a zeroed config cannot divide by zero
 
 // Approach braking: caps the nav velocity target to sqrt(2*decel*distance) so
@@ -1636,13 +1632,9 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
         return;
     }
 
-    // The legacy rescue controller reported its phase here. The mission that replaced it has no
-    // phase, so report what a rescue log actually has to answer: what the executor is doing, why it
-    // stopped if it did, and which leg it is on.
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 7,
-              (int)fp.state * FP_TRACKING_STATE_SCALE
-              + (int)fp.abortReason * FP_TRACKING_ABORT_SCALE
-              + MIN(fp.currentIndex, FP_TRACKING_INDEX_MAX));  //!< Executor state, abort reason and leg, packed as state*100 + abort*10 + leg
+    DEBUG_SET(DEBUG_FLIGHT_PLAN, 0, fp.state);         //!< Executor State [enum:flightPlanNavState_e]
+    DEBUG_SET(DEBUG_FLIGHT_PLAN, 1, fp.abortReason);   //!< Abort Reason [enum:flightPlanAbortReason_e]
+    DEBUG_SET(DEBUG_FLIGHT_PLAN, 2, fp.currentIndex);  //!< Waypoint Index
 
     const float dtS = (fp.lastUpdateUs != 0)
         ? constrainf(cmpTimeUs(currentTimeUs, fp.lastUpdateUs) * 1e-6f, 0.0f, 0.25f)
