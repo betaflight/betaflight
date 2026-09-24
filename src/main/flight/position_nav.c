@@ -104,6 +104,8 @@ void positionNavSetTargetEf(
     cmd.velocityFromCraft = false;
     cmd.acceptanceRadiusM = acceptanceRadiusM;
     cmd.completionSpeedMps = completionSpeedMps;
+    cmd.settleTimeoutS = 0.0f;
+    cmd.settleS = 0.0f;
     cmd.altitudeArrivalRequired = true;
 
     cmd.callback = callback;
@@ -238,6 +240,11 @@ float positionNavApproachTaperMps(float cruiseSpeedMps, float slowdownM, float s
 void positionNavSetAltitudeArrivalRequired(bool required)
 {
     cmd.altitudeArrivalRequired = required;
+}
+
+void positionNavSetSettleTimeout(float timeoutS)
+{
+    cmd.settleTimeoutS = timeoutS;
 }
 
 void positionNavSetAutoClearOnReach(bool autoClear)
@@ -396,7 +403,11 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
     const bool horizSpeedOk = (horizSpeedMps <= cmd.completionSpeedMps);
     const bool vertSpeedOk = !cmd.includeAltitude || (absVzMps <= cmd.completionSpeedMps);
     const bool altitudeOk = withinAcceptanceAltitude || !cmd.altitudeArrivalRequired;
-    const bool reached = withinAcceptanceRadius && altitudeOk && horizSpeedOk && vertSpeedOk;
+    const bool inPlace = withinAcceptanceRadius && altitudeOk;
+    const bool slowEnough = horizSpeedOk && vertSpeedOk;
+    cmd.settleS = (inPlace && !slowEnough) ? cmd.settleS + dt : 0.0f;
+    const bool settleTimedOut = cmd.settleTimeoutS > 0.0f && cmd.settleS >= cmd.settleTimeoutS;
+    const bool reached = inPlace && (slowEnough || settleTimedOut);
 
     if (reached && !cmd.completionSignalled) {
         const bool autoClearOnReach = cmd.autoClearOnReach;

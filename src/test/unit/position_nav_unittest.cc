@@ -183,6 +183,34 @@ TEST_F(PositionNavTest, HandOverToAShorterLeashWalksTheRampInRatherThanSnapping)
     EXPECT_LE(positionNavGetTargetAltitudeCm(), 2000.0f + 100.0f + 0.01f);   // inside the 1 m leash by now
 }
 
+TEST_F(PositionNavTest, SettleTimeoutCompletesACraftThatNeverQuiteStops)
+{
+    // In place and at altitude, but circling the point a little too fast to count as still: the
+    // wait for the completion speed is bounded, not indefinite.
+    const vector3_t target = {{ 0.0f, 0.0f, 10.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 2.0f, 0.5f, true, testCallback, NULL);
+    positionNavSetVerticalProfile(5.0f, 10.0f);
+    positionNavSetSettleTimeout(3.0f);
+
+    positionEstimate3d_t est = makeEstimate(30.0f, 0.0f, 0.0f, 60.0f, 1000.0f, 0.0f);
+    for (int i = 0; i < 29; i++) {
+        positionNavUpdate(0.1f, &est);
+    }
+    EXPECT_EQ(callbackCount, 0);
+    positionNavUpdate(0.1f, &est);
+    positionNavUpdate(0.1f, &est);
+    EXPECT_EQ(callbackCount, 1);
+
+    // Without one it waits for as long as it takes.
+    callbackCount = 0;
+    positionNavSetTargetEf(&target, 5.0f, 2.0f, 0.5f, true, testCallback, NULL);
+    positionNavSetVerticalProfile(5.0f, 10.0f);
+    for (int i = 0; i < 300; i++) {
+        positionNavUpdate(0.1f, &est);
+    }
+    EXPECT_EQ(callbackCount, 0);
+}
+
 TEST_F(PositionNavTest, ShortClimbBrakesIntoTheLegAltitudeRatherThanLagging)
 {
     // The ramp brakes into the leg altitude. Scaling the rate on the whole remaining error made

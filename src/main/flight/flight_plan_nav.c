@@ -65,7 +65,8 @@
 // Legs complete on acceptance-radius entry at any speed: the position
 // controller integrates distance error to hold cruise and cannot unwind it
 // fast enough to meet a near-stop speed gate at the waypoint (it would orbit
-// instead). The post-completion hold-mode braking handles stopping.
+// instead). The post-completion hold-mode braking handles stopping. The rescue
+// climb, which the return sets off from, gates on its speed itself.
 #define FP_COMPLETION_ANY_MPS     1000.0f
 #define FP_DELAY_MIN_CRUISE_MPS   0.1f
 
@@ -171,6 +172,12 @@
 // home and comes straight down: wind and a wandering position estimate would otherwise walk the
 // last metre around the landing spot.
 #define FP_RESCUE_LAND_STILL_RADIUS_M 1.0f
+
+// The rescue's climb completes below this ground speed, or once it has been in place at altitude
+// this long without getting there: a craft that will not quite settle (gusts, a poor compass) must
+// still set off home rather than stall the rescue.
+#define FP_RESCUE_CLIMB_STILL_MPS 0.5f
+#define FP_RESCUE_CLIMB_SETTLE_S  3.0f
 
 #if ENABLE_RESCUE_PLAN
 // Legacy PITCH_FORWARD gives up after 15 s of heading recovery
@@ -459,6 +466,15 @@ static void readBackCarrot(void)
     fp.carrotEnuM.y = cmd->targetPosEfM.v[ENU_N];
 }
 
+static bool isRescueClimb(void)
+{
+#if ENABLE_RESCUE_PLAN
+    return fp.isRescuePlan && fp.currentIndex == 0;
+#else
+    return false;
+#endif
+}
+
 static bool dispatchWaypoint(void)
 {
     const waypoint_t *wp = drainModifiers();
@@ -492,6 +508,13 @@ static bool dispatchWaypoint(void)
         const positionEstimate3d_t *est = positionEstimatorGetEstimate();
         targetEnuM.v[ENU_E] = est->position.v[ENU_E] * 0.01f;
         targetEnuM.v[ENU_N] = est->position.v[ENU_N] * 0.01f;
+    }
+    const bool rescueClimb = isRescueClimb();
+    if (rescueClimb) {
+        const vector2_t stillMps = { .x = 0.0f, .y = 0.0f };
+        const vector2_t holdM = restPointM(positionEstimatorGetEstimate(), &stillMps);
+        targetEnuM.v[ENU_E] = holdM.x;
+        targetEnuM.v[ENU_N] = holdM.y;
     }
 
     const autopilotConfig_t *cfg = autopilotConfig();
@@ -661,7 +684,8 @@ static bool dispatchWaypoint(void)
         positionNavSetAltitudeArrivalRequired(false);
     } else {
         positionNavSetTargetEf(&targetEnuM, cruiseMps, arrivalRadiusM,
-                               FP_COMPLETION_ANY_MPS, true, onWaypointReached, NULL);
+                               rescueClimb ? FP_RESCUE_CLIMB_STILL_MPS : FP_COMPLETION_ANY_MPS, true,
+                               onWaypointReached, NULL);
         // An approach taper is continuous with the leg before it, with no braking curve under it.
         positionNavSetAccelLimits(0.0f, (fp.legSlowdownM > 0.0f) ? 0.0f : FP_APPROACH_DECEL_MPS2);
         positionNavSetApproachSlowdown(fp.legSlowdownM, FP_RESCUE_LAND_STILL_RADIUS_M);
@@ -677,6 +701,11 @@ static bool dispatchWaypoint(void)
         }
 #endif
         positionNavSetAltitudeArrivalRequired(altitudeGated);
+        if (rescueClimb) {
+            const vector2_t stillMps = { .x = 0.0f, .y = 0.0f };
+            positionNavSetVelocityFeedforward(&stillMps);
+            positionNavSetSettleTimeout(FP_RESCUE_CLIMB_SETTLE_S);
+        }
     }
     if (fp.dispatchAfresh) {
         positionNavStartAfresh();
@@ -1269,10 +1298,9 @@ static void injectReturnHomePlan(timeUs_t currentTimeUs)
 }
 
 #if ENABLE_RESCUE_PLAN
-// Failsafe rescue mission: [climb-in-place HOLD at the current position ->
-// FLYOVER home -> LAND home]. The leading HOLD gates on altitude arrival
-// (dispatchWaypoint sets altitudeArrivalRequired for HOLD), so the climb
-// completes before the return leg starts — legacy ATTAIN_ALT semantics.
+// Failsafe rescue mission: [climb HOLD where the craft comes to a stop ->
+// FLYOVER home -> LAND home]. The climb completes at altitude with the craft
+// still, so the return leg sets off from rest - legacy ATTAIN_ALT semantics.
 static uint8_t buildRescuePlan(waypoint_t out[FP_INJECTED_PLAN_MAX])
 {
     if (!STATE(GPS_FIX_HOME) || !STATE(GPS_FIX)) {
@@ -1559,7 +1587,7 @@ static void onWaypointReached(void *userData)
     // Rescue climb complete but the IMU heading is untrusted: hold here and
     // pitch forward so GPS course-over-ground can teach the estimator its
     // heading before the return leg (legacy PITCH_FORWARD semantics).
-    if (fp.isRescuePlan && fp.currentIndex == 0 && activePlanCount() > 1 && !imuIsHeadingValid()) {
+    if (isRescueClimb() && activePlanCount() > 1 && !imuIsHeadingValid()) {
         fp.rescueHeadingHold = true;
         fp.rescueHeadingStartUs = micros();
         pitchForwardOverride(true);

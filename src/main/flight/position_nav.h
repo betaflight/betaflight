@@ -42,6 +42,8 @@ typedef struct positionNavCommand_s {
     float vertRateMps;              // maximum climb/descent rate (m/s), 0 = use cruiseSpeedMps
     float acceptanceRadiusM;        // arrival zone radius (metres)
     float completionSpeedMps;       // max ground speed to count as arrived (m/s)
+    float settleTimeoutS;           // in place but not yet that slow for this long counts as arrived, 0 = never
+    float settleS;                  // how long it has been in place without being that slow
 
     float rampAltM;                 // altitude the vertical channel is currently commanding (ENU_U, metres)
     bool rampValid;                 // rampAltM has been seeded for this command
@@ -128,6 +130,12 @@ void positionNavSetVerticalProfile(float rateMps, float startAltM);
 // not reached the commanded altitude; station-keeping targets (hold, land)
 // keep the altitude gate. Defaults to true on each new target.
 void positionNavSetAltitudeArrivalRequired(bool required);
+
+// Bound the wait for the completion speed: a command that has been in place (inside its radius,
+// and at altitude where that is required) this long without slowing to it completes anyway, so a
+// craft that never quite comes to rest is not held indefinitely. 0, the default on each new target,
+// waits for as long as it takes.
+void positionNavSetSettleTimeout(float timeoutS);
 
 // Called each control cycle; reads current estimate, computes target velocity,
 // and checks arrival conditions.

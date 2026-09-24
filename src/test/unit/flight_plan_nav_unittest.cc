@@ -241,6 +241,13 @@ void positionNavSetAltitudeArrivalRequired(bool required)
     g_altitudeArrivalRequired = required;
 }
 
+static float g_settleTimeoutS;
+
+void positionNavSetSettleTimeout(float timeoutS)
+{
+    g_settleTimeoutS = timeoutS;
+}
+
 bool positionEstimatorGetGpsOrigin(gpsLocation_t *out)
 {
     if (!g_stubGpsOriginSet || out == NULL) {
