@@ -121,9 +121,9 @@
 // its retry and stays failed.
 #define SANITY_RETRY_REPLENISH_S 10.0f
 #define ERROR_DISTANCE_LIMIT  2000.0f // TO DO: test set to a useful value, this is 20m
-// Range at which anchoring to the nav target takes over from tracking its
-// commanded velocity. Matched to the error clamp: beyond it P is saturated and
-// carries no position information anyway.
+// Range at which anchoring to a target moved without a stated velocity takes
+// over from tracking its commanded velocity. Matched to the error clamp: beyond
+// it P is saturated and carries no position information anyway.
 #define NAV_ANCHOR_RANGE      NAV_ERROR_DISTANCE_LIMIT
 #define NAV_ANCHOR_HYSTERESIS 1.5f
 #define NAV_BEARING_MIN_SPEED_MPS 0.5f // a stated velocity slower than this has no direction worth steering to
@@ -160,6 +160,7 @@ static vector2_t targetVelocity;
 static vector2_t previousTargetVelocity; // EF, for the target-velocity-delta feedforward
 static vector2_t posHoldStartPosition;
 static vector2_t distanceError;          // deviation from intended position (real or virtual)
+static vector2_t navPointReference;      // EF, where a fixed nav target's approach has walked to
 static vector2_t distanceErrorIntegral;  // integral of position error
 static vector2_t previousVelocity;       // for reversal of velocity detection
 
@@ -203,6 +204,7 @@ typedef enum {
     XY_MODE_BRAKING,          // arresting speed onto a capture point
     XY_MODE_STICK_VELOCITY,   // flying the pilot's commanded velocity
     XY_MODE_NAV_TRACK,        // following nav's moving position target (the carrot)
+    XY_MODE_NAV_POINT,        // walking a reference onto nav's fixed target at its commanded velocity
     XY_MODE_NAV_VELOCITY,     // flying nav's commanded velocity, no position target
     XY_MODE_RESCUE_VELOCITY   // flying gps rescue's commanded velocity and deriving position target
 } xyControlMode_e;
@@ -236,6 +238,8 @@ typedef struct autopilotState_s {
     xyControlMode_e mode;       // operational mode for this loop
     bool navAnchored;           // nav target close enough for position anchoring
     uint32_t navAnchorSeq;      // command the anchor state belongs to
+    bool navPointValid;         // navPointReference has been seeded for this approach
+    uint32_t navPointSeq;       // command navPointReference belongs to
     unsigned debugAxis;
 } autopilotState_t;
 
@@ -542,6 +546,7 @@ void initPositionHold(void)
     setBrakingMode(); // arrest entry speed only when starting fast
     vector2Zero(&targetVelocity);
     vector2Zero(&previousTargetVelocity);
+    ap.navPointValid = false;   // a fixed target's approach is acquired afresh from where the craft is now
     // nb: we do not reset the distanceError integral, to hold its opposition to wind between quick stick inputs
 }
 // Re-anchor the hold at the craft's current position — what a pilot cycling
@@ -565,6 +570,7 @@ static void initNavMode(void)
     resetDistanceErrorIntegral();
     vector2Zero(&previousTargetVelocity);
     ap.isPosHoldBraking = false;
+    ap.navPointValid = false;
 }
 
 void resetPositionControl(unsigned taskRateHz)
@@ -931,15 +937,18 @@ static xyControlMode_e xySelectMode(void)
             ap.navAnchored = true;
             return XY_MODE_NAV_TRACK;
         }
-        // Anchoring only earns its keep once the target is close enough for the
-        // position error to mean something. Further out the error is large by
-        // construction - the craft simply is not there yet - so it pins
-        // distanceError at NAV_ERROR_DISTANCE_LIMIT and P degenerates into a
-        // fixed tilt bias on top of the feedforward that already carries the
-        // commanded speed, which the craft can only balance by flying faster
-        // than commanded. Track the commanded velocity out there instead: the
-        // virtual distance error integrates velocity error, so cruise settles
-        // on the commanded speed. Hysteresis stops the handover chattering.
+        if (navCmd->fixedTarget) {
+            ap.navAnchored = false;
+            return XY_MODE_NAV_POINT;
+        }
+        // Left is a target its owner moves without stating its velocity (a hold pattern's carrot).
+        // Anchoring only earns its keep once it is close enough for the position error to mean
+        // something. Further out the error is large by construction - the craft simply is not
+        // there yet - so it pins distanceError at NAV_ERROR_DISTANCE_LIMIT and P degenerates into
+        // a fixed tilt bias on top of the feedforward that already carries the commanded speed,
+        // which the craft can only balance by flying faster than commanded. Track the commanded
+        // velocity out there instead: the virtual distance error integrates velocity error, so
+        // cruise settles on the commanded speed. Hysteresis stops the handover chattering.
         const vector2_t *pos = (const vector2_t *)&positionEstimatorGetEstimate()->position.v;
         const vector2_t target = {{ navCmd->targetPosEfM.v[ENU_E] * 100.0f,
                                     navCmd->targetPosEfM.v[ENU_N] * 100.0f }};
@@ -971,6 +980,45 @@ static xyStepResult_e xyNavTrackUpdate(void)
     const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
     targetPosition.v[EF_EAST]  = navCmd->targetPosEfM.v[ENU_E] * 100.0f;
     targetPosition.v[EF_NORTH] = navCmd->targetPosEfM.v[ENU_N] * 100.0f;
+    ap.anchor = ANCHOR_HOLD;
+    ap.iPolicy = I_ZERO; // position feedback carries the trim; no second integral
+    return XY_CONTINUE;
+}
+
+// A fixed nav target: the craft is held to a reference walking onto the target at the commanded
+// velocity, not to the target itself. The reference is acquired where the position error already
+// stands, so P carries straight on, and it holds where it is whenever nothing is commanded.
+static xyStepResult_e xyNavPointUpdate(float dt, const vector2_t *currentPosition)
+{
+    const vector3_t tgtVel = positionNavGetTargetVelocityCmS();
+    targetVelocity = *(const vector2_t *)&tgtVel.v;
+    const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
+    if (!ap.navPointValid || ap.navPointSeq != navCmd->sequence) {
+        vector2Add(&navPointReference, currentPosition, &distanceError);
+        ap.navPointSeq = navCmd->sequence;
+        ap.navPointValid = true;
+    } else {
+        const vector2_t target = {{ navCmd->targetPosEfM.v[ENU_E] * 100.0f,
+                                    navCmd->targetPosEfM.v[ENU_N] * 100.0f }};
+        vector2_t toTarget;
+        vector2Sub(&toTarget, &target, &navPointReference);
+        vector2_t stepCm;
+        vector2Scale(&stepCm, &targetVelocity, dt);
+        if (vector2Norm(&toTarget) <= vector2Norm(&stepCm)) {
+            navPointReference = target;
+        } else {
+            vector2Add(&navPointReference, &navPointReference, &stepCm);
+        }
+    }
+    // Never further ahead than P can use: a craft that cannot keep up drags the reference along
+    // rather than leaving it to wind up out at the target.
+    for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
+        navPointReference.v[axis] = constrainf(navPointReference.v[axis],
+                                               currentPosition->v[axis] - NAV_ERROR_DISTANCE_LIMIT,
+                                               currentPosition->v[axis] + NAV_ERROR_DISTANCE_LIMIT);
+    }
+
+    targetPosition = navPointReference;
     ap.anchor = ANCHOR_HOLD;
     ap.iPolicy = I_ZERO; // position feedback carries the trim; no second integral
     return XY_CONTINUE;
@@ -1168,11 +1216,17 @@ bool positionControl(void)
     const bool navStarting = ap.navActive && !wasNavActive;
     xyProcessTransitions();
     ap.mode = xySelectMode();
+    if (ap.mode != XY_MODE_NAV_POINT) {
+        ap.navPointValid = false;   // a later approach is acquired afresh
+    }
 
     xyStepResult_e stepResult;
     switch (ap.mode) {
     case XY_MODE_NAV_TRACK:
         stepResult = xyNavTrackUpdate();
+        break;
+    case XY_MODE_NAV_POINT:
+        stepResult = xyNavPointUpdate(dt, &currentPosition);
         break;
     case XY_MODE_NAV_VELOCITY:
         stepResult = xyNavVelocityUpdate();

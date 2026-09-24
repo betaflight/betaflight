@@ -62,11 +62,10 @@
 #endif
 
 #define FP_MIN_CRUISE_MPS         1.0f
-// Legs complete on acceptance-radius entry at any speed: the position
-// controller integrates distance error to hold cruise and cannot unwind it
-// fast enough to meet a near-stop speed gate at the waypoint (it would orbit
-// instead). The post-completion hold-mode braking handles stopping. The rescue
-// climb, which the return sets off from, gates on its speed itself.
+// Legs complete on acceptance-radius entry at any speed: an en-route leg is
+// flown through, and a point leg leaves its stop to the leg after it or to the
+// position hold that takes over. The rescue climb, which the return sets off
+// from, gates on its speed itself.
 #define FP_COMPLETION_ANY_MPS     1000.0f
 #define FP_DELAY_MIN_CRUISE_MPS   0.1f
 
@@ -91,8 +90,8 @@
 
 // Approach braking: caps the nav velocity target to sqrt(2*decel*distance) so
 // legs decelerate into the waypoint instead of carrying cruise speed into the
-// acceptance radius. Deliberately gentle: the position controller tracks
-// velocity through an integrator, so the ramp must be slow enough to unwind.
+// acceptance radius. Deliberately gentle, so a craft held to a reference
+// walked at this velocity arrives slowly enough to stop on the point.
 #define FP_APPROACH_DECEL_MPS2    0.3f
 
 // Heading-fault (magnetometer) detector. While the nose is on command and the
@@ -1489,6 +1488,7 @@ static void issuePatternCommand(float radiusM)
     patternCarrot(fp.patternPhaseRad, radiusM, &carrot);
     const float startAltM = commandedAltitudeM(positionEstimatorGetEstimate());
     positionNavSetTargetEf(&carrot, fp.patternCruiseMps, radiusM, 0.0f, true, NULL, NULL);
+    positionNavMoveTargetEf(&carrot);   // flown as a moving target from its first cycle
     positionNavSetAccelLimits(0.0f, 0.0f);
     positionNavSetVerticalProfile(fp.legVertRateMps, startAltM);
 }

@@ -36,6 +36,7 @@ typedef struct positionNavCommand_s {
     bool completionSignalled;
 
     vector3_t targetPosEfM;         // target position, metres, ENU (index by ENU_E/ENU_N/ENU_U)
+    bool fixedTarget;               // the target has stayed where it was set: never moved by positionNavMoveTargetEf()
     bool includeAltitude;           // when false, ENU_U is ignored for nav, arrival, and alt coupling
 
     float cruiseSpeedMps;           // maximum horizontal cruise speed (m/s)
@@ -83,7 +84,9 @@ void positionNavSetTargetEf(
 
 // Moves the active command's target position without disturbing the velocity
 // ramp, completion state, or callback — for continuously moving targets (hold
-// pattern carrots). No-op when there is no active command.
+// pattern carrots). The command is flown as a moving target from then on
+// (fixedTarget cleared), so an owner that will move its target calls this
+// straight after positionNavSetTargetEf(). No-op when there is no active command.
 void positionNavMoveTargetEf(const vector3_t *targetPosEfM);
 
 void positionNavClearTarget(void);

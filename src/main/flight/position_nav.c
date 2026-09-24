@@ -90,6 +90,7 @@ void positionNavSetTargetEf(
     cmd.completionSignalled = false;
 
     cmd.targetPosEfM = *targetPosEfM;
+    cmd.fixedTarget = true;
     cmd.includeAltitude = includeAltitude;
     cmd.cruiseSpeedMps = cruiseSpeedMps;
     cmd.vertRateMps = 0.0f;
@@ -126,6 +127,7 @@ void positionNavMoveTargetEf(const vector3_t *targetPosEfM)
         return;
     }
     cmd.targetPosEfM = *targetPosEfM;
+    cmd.fixedTarget = false;
 }
 
 void positionNavClearTarget(void)

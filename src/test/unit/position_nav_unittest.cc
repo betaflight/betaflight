@@ -902,6 +902,22 @@ TEST_F(PositionNavTest, MoveTargetPreservesRampAndRedirectsVelocity)
     EXPECT_EQ(callbackCount, 0);
 }
 
+TEST_F(PositionNavTest, MovedTargetIsNoLongerFixed)
+{
+    // The position controller walks a reference onto a target that stays put; one its owner moves
+    // is the reference already.
+    const vector3_t target = {{ 10.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
+    EXPECT_TRUE(positionNavGetActiveCommand()->fixedTarget);
+
+    const vector3_t moved = {{ 11.0f, 0.0f, 0.0f }};
+    positionNavMoveTargetEf(&moved);
+    EXPECT_FALSE(positionNavGetActiveCommand()->fixedTarget);
+
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
+    EXPECT_TRUE(positionNavGetActiveCommand()->fixedTarget);
+}
+
 TEST_F(PositionNavTest, MoveTargetWithoutActiveCommandIsNoOp)
 {
     const vector3_t moved = {{ 5.0f, 5.0f, 0.0f }};

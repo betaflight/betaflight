@@ -798,6 +798,18 @@ TEST_F(FlightPlanNavPatternTest, PatternCarriesTheHoldsAltitudeRampOn)
     EXPECT_NEAR(g_lastVertStartAltM, kCentreU - 0.1f, 0.001f);
 }
 
+TEST_F(FlightPlanNavPatternTest, PatternIsAMovingTargetFromItsFirstCycle)
+{
+    // The pattern's carrot is a moving target from its first cycle, so the position controller
+    // never acquires it as a fixed one and then steps P onto it.
+    engageHoldPattern(WAYPOINT_PATTERN_ORBIT);
+    triggerReached();
+    const int movesBefore = g_moveTargetCalls;
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(g_setTargetCalls, 2);
+    EXPECT_EQ(g_moveTargetCalls, movesBefore + 1);
+}
+
 TEST_F(FlightPlanNavPatternTest, OrbitCarrotStartsAtVehicleAzimuth)
 {
     engageHoldPattern(WAYPOINT_PATTERN_ORBIT);
@@ -855,6 +867,7 @@ TEST_F(FlightPlanNavPatternTest, OrbitCarrotTracksCircleAroundHoldPoint)
     g_stubEstimate.position.y = kCentreN * 100.0f;
     triggerReached();
     flightPlanNavUpdate(g_stubMicros);   // settled: pattern starts
+    const int movesAtStart = g_moveTargetCalls;
 
     // 0.25 rad/s: after 1 s the azimuth is 0.25 rad, after 2 s 0.5 rad.
     float previousAzimuth = 0.0f;
@@ -862,7 +875,7 @@ TEST_F(FlightPlanNavPatternTest, OrbitCarrotTracksCircleAroundHoldPoint)
         g_stubMicros += 1'000'000;
         flightPlanNavUpdate(g_stubMicros);
 
-        EXPECT_EQ(g_moveTargetCalls, step);
+        EXPECT_EQ(g_moveTargetCalls, movesAtStart + step);
         EXPECT_NEAR(distanceFromCentre(), kRadiusM, 0.01f);
         EXPECT_NEAR(g_lastTarget.targetEfM.z, kCentreU, 0.01f);
         const float azimuth = atan2f(g_lastTarget.targetEfM.y - kCentreN,

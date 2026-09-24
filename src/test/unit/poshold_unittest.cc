@@ -1222,6 +1222,106 @@ TEST_F(NavModeTest, NavFeedforwardTargetIsAnchoredAtAnyRange)
     EXPECT_GT(autopilotAngle[AI_ROLL], 5.0f);           // rolling east, back toward the line
 }
 
+// Fly the craft straight at a fixed target 12 m north at the commanded 2 m/s, exactly as commanded,
+// and report the largest cycle-to-cycle pitch change once under way, and the largest pitch inside the
+// anchor range.
+struct NavApproach { float maxPitchStepDeg; float maxPitchInsideDeg; };
+
+static NavApproach flyStraightAtAFixedTarget(void)
+{
+    mockNavCommand.sequence++;
+    mockNavCommand.fixedTarget = true;
+    mockNavCommand.targetPosEfM.v[1] = 12.0f;
+    const float speedCmS = 200.0f;
+    mockTargetVelCmS = (vector3_t){{ 0.0f, speedCmS, 0.0f }};
+    testEstimate.velocity.y = speedCmS;
+
+    NavApproach result = { 0.0f, 0.0f };
+    float previousPitch = 0.0f;
+    while (testEstimate.position.y < 1150.0f) {
+        testEstimate.position.y += speedCmS / simulatedTaskRateHz;
+        runIterations(1);
+        if (testEstimate.position.y > 300.0f) {   // clear of the start-up transient
+            result.maxPitchStepDeg = fmaxf(result.maxPitchStepDeg, fabsf(autopilotAngle[AI_PITCH] - previousPitch));
+        }
+        if (testEstimate.position.y > 1200.0f - 500.0f) {
+            result.maxPitchInsideDeg = fmaxf(result.maxPitchInsideDeg, fabsf(autopilotAngle[AI_PITCH]));
+        }
+        previousPitch = autopilotAngle[AI_PITCH];
+    }
+    return result;
+}
+
+TEST_F(NavModeTest, NavFixedTargetIsAcquiredWithoutAPositionStep)
+{
+    // Flown in from 12 m out through the 5 m anchor range, exactly as commanded: P never steps.
+    engageNav(30, 30, 0, 0, 30, 45);
+    const NavApproach point = flyStraightAtAFixedTarget();
+    EXPECT_LT(point.maxPitchStepDeg, 0.5f);
+    // Flying exactly what was commanded, there is nothing for the controller to add inside 5 m.
+    EXPECT_LT(point.maxPitchInsideDeg, 1.0f);
+}
+
+TEST_F(NavModeTest, NavFixedTargetReferenceStopsAtTheTarget)
+{
+    // The reference walks onto the target at the commanded speed and no further, so a craft that
+    // lags is drawn onto the target, not past it.
+    engageNav(30, 30, 0, 0, 30, 45);
+    mockNavCommand.fixedTarget = true;
+    mockNavCommand.targetPosEfM.v[1] = 1.0f;   // 1 m north
+    mockTargetVelCmS = (vector3_t){{ 0.0f, 100.0f, 0.0f }};
+
+    runIterations(300);   // 3 s at 1 m/s: the reference would be 3 m out if it did not stop
+
+    // The lean left once nothing is commanded is P on the metre to the target alone,
+    // 30 * 0.004 deg/cm * 100 cm.
+    mockTargetVelCmS = (vector3_t){{ 0.0f, 0.0f, 0.0f }};
+    runIterations(100);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 12.0f, 0.5f);
+}
+
+TEST_F(NavModeTest, NavFixedTargetPicksUpThePositionErrorItInherits)
+{
+    // Handed over from a leg that had built up a position error (here the velocity integral of a
+    // craft that could not keep up): P carries straight on rather than resetting to the new target.
+    engageNav(30, 30, 0, 0, 30, 45);
+    setNavCarrot(0.0f, 50.0f);
+    setTargetVelocityNorth(150.0f);
+    runIterations(50);
+    ASSERT_EQ(NAV_STATUS_VELOCITY, navStatus());
+    const float before = autopilotAngle[AI_PITCH];
+
+    mockNavCommand.sequence++;
+    mockNavCommand.fixedTarget = true;
+    setNavCarrot(0.0f, 7.0f);
+    setTargetVelocityNorth(150.0f);
+    runIterations(1);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], before, 1.0f);
+}
+
+TEST_F(NavModeTest, NavFixedTargetReacquiresAfterASensorDropout)
+{
+    // Blind for a while, the craft drifted off the reference it was walking. The re-anchor that
+    // follows a dropout exists so it does not lurch back to where it was: the approach resumes from
+    // where the craft is now.
+    engageNav(30, 30, 0, 0, 30, 45);
+    mockNavCommand.fixedTarget = true;
+    mockNavCommand.targetPosEfM.v[1] = 12.0f;
+    mockTargetVelCmS = (vector3_t){{ 0.0f, 100.0f, 0.0f }};
+    testEstimate.velocity.y = 100.0f;
+    while (testEstimate.position.y < 300.0f) {
+        testEstimate.position.y += 1.0f;
+        runIterations(1);
+    }
+
+    testEstimate.position.x += 200.0f;   // 2 m east and 2 m further north while blind
+    testEstimate.position.y += 200.0f;
+    positionControlReanchor();
+    runIterations(1);
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 2.0f);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 2.0f);
+}
+
 TEST_F(NavModeTest, NavFeedforwardPickedUpMidFlightDoesNotBrake)
 {
     // A carrot anchored on a craft already flying 6 m/s along the leg states that velocity from the
@@ -1240,6 +1340,38 @@ TEST_F(NavModeTest, NavFeedforwardPickedUpMidFlightDoesNotBrake)
         testEstimate.position.y += 6.0f;
     }
     EXPECT_GT(lowestPitch, -2.0f);
+}
+
+TEST_F(NavModeTest, NavFixedTargetPickedUpMidFlightDoesNotBrake)
+{
+    // A point leg engaged on a craft flying 6 m/s toward it starts its commanded velocity there, and
+    // the feedforward must stand there from the first cycle too, as it does for a carrot.
+    engageNav(30, 30, 0, 50, 8, 50);
+    mockNavCommand.fixedTarget = true;
+    mockNavCommand.velocityFromCraft = true;
+    mockNavCommand.targetPosEfM.v[1] = 100.0f;
+    testEstimate.velocity.y = 600.0f;
+    setTargetVelocityNorth(600.0f);
+    float lowestPitch = 90.0f;
+    for (int i = 0; i < 30; i++) {
+        runIterations(1);
+        lowestPitch = fminf(lowestPitch, autopilotAngle[AI_PITCH]);
+        testEstimate.position.y += 6.0f;
+    }
+    EXPECT_GT(lowestPitch, -2.0f);
+}
+
+TEST_F(NavModeTest, NavFixedTargetReferenceHoldsShortOfTheTargetWithNothingCommanded)
+{
+    // The rescue's descent inside its still radius commands nothing and must not be drawn the last
+    // metre onto home: with no velocity to walk at, the reference stays where it is.
+    engageNav(30, 30, 0, 0, 30, 45);
+    mockNavCommand.fixedTarget = true;
+    mockNavCommand.targetPosEfM.v[1] = 1.0f;
+    mockTargetVelCmS = (vector3_t){{ 0.0f, 0.0f, 0.0f }};
+    runIterations(100);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.5f);
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.5f);
 }
 
 TEST_F(NavModeTest, NavFeedforwardPickedUpAfterAPitchForwardDoesNotBrake)
