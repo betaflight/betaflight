@@ -945,6 +945,22 @@ TEST_F(FlightPlanRescueTest, HeadingRecoveryCarriesTheCommandedAltitudeOn)
     EXPECT_EQ(g_startAfreshCalls, 1);   // and does not carry the climb's command on
 }
 
+TEST_F(FlightPlanRescueTest, RestageDuringHeadingRecoveryReleasesThePitch)
+{
+    // A switch rescue pitching forward for its heading, then RX lost and failsafe restages the
+    // rescue on top: the new plan must not inherit a latched pitch-forward.
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    g_stubHeadingValid = false;
+    triggerReached();
+    ASSERT_TRUE(g_lastPitchForward);
+
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    EXPECT_FALSE(g_lastPitchForward);
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 0);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+}
+
 TEST_F(FlightPlanRescueTest, HeadingGateTimesOutToAbort)
 {
     g_stubMicros = 1'000'000;

@@ -1433,7 +1433,10 @@ bool flightPlanNavStageRescuePlan(void)
         fp.currentIndex = 0;
         fp.abortReason = FP_ABORT_NONE;
         fp.isRescuePlan = true;
-        fp.rescueHeadingHold = false;
+        if (fp.rescueHeadingHold) {
+            fp.rescueHeadingHold = false;
+            pitchForwardOverride(false);
+        }
         fp.stagedCount = 0;
         clearModifierState();
         clearLegYawState();
