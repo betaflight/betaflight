@@ -73,6 +73,12 @@ beeper_unittest_DEFINES := \
 		USE_BEEPER= \
 		USE_DSHOT=
 
+compass_ak9916_unittest_SRC := \
+		$(USER_DIR)/drivers/compass/compass_ak9916.c
+
+compass_ak9916_unittest_DEFINES := \
+                USE_MAG_AK9916=
+
 compass_bmm350_unittest_SRC := \
 		$(USER_DIR)/drivers/compass/compass_bmm350.c
 
@@ -134,6 +140,19 @@ accgyro_spi_icm426xx_unittest_DEFINES := \
                 USE_GYRO_SPI_ICM42688P= \
                 USE_ACCGYRO_IIM42652= \
                 USE_ACCGYRO_IIM42653=
+
+accgyro_spi_lsm6dsv16x_unittest_SRC := \
+		$(USER_DIR)/drivers/accgyro/accgyro_spi_lsm6dsv16x.c
+
+accgyro_spi_lsm6dsv16x_unittest_16x_DEFINES := USE_ACCGYRO_LSM6DSV16X=
+accgyro_spi_lsm6dsv16x_unittest_32x_DEFINES := USE_ACCGYRO_LSM6DSV32X=
+accgyro_spi_lsm6dsv16x_unittest_320x_DEFINES := USE_ACCGYRO_LSM6DSK320X=
+
+# Run the shared fixture with every variant enabled and with each enabled alone.
+accgyro_spi_lsm6dsv16x_unittest_DEFINES = \
+                USE_DMA= \
+                $(if $1,$(accgyro_spi_lsm6dsv16x_unittest_$1_DEFINES), \
+                    USE_ACCGYRO_LSM6DSV16X= USE_ACCGYRO_LSM6DSV32X= USE_ACCGYRO_LSM6DSK320X=)
 
 # This test is disabled due to build errors.
 # Its source code is archived in unit/battery_unittest.cc.txt
@@ -284,6 +303,9 @@ io_serial_unittest_SRC := \
 		$(USER_DIR)/io/serial.c \
 		$(USER_DIR)/io/serial_resource.c
 
+flashfs_bounds_unittest_SRC := \
+		$(TEST_DIR)/flashfs_bounds_test_support.c
+
 
 ledstrip_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
@@ -316,6 +338,19 @@ msp_serial_unittest_DEFINES := \
 		USE_MSP_DISPLAYPORT= \
 		USE_RANGEFINDER_MT= \
 		USE_OPTICALFLOW_MT=
+
+msp_reboot_unittest_SRC := \
+		$(USER_DIR)/fc/runtime_config.c \
+		$(TEST_DIR)/msp_reboot_test_support.c
+
+# Compile the complete MSP translation unit; retain only the reboot paths in
+# this focused executable, without replacing production control-flow functions.
+msp_reboot_unittest_C_FLAGS := -ffunction-sections -fdata-sections
+ifeq ($(OSFAMILY), macosx)
+msp_reboot_unittest_LDFLAGS := -Wl,-dead_strip
+else
+msp_reboot_unittest_LDFLAGS := -Wl,--gc-sections
+endif
 
 osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
@@ -434,6 +469,11 @@ rx_sumd_unittest_SRC := \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/rx/sumd.c
 
+rx_xbus_unittest_SRC := \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/rx/xbus.c
+
 scheduler_unittest_SRC := \
 		$(USER_DIR)/scheduler/scheduler.c \
 		$(USER_DIR)/common/crc.c \
@@ -485,6 +525,11 @@ sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/pg/gyrodev.c
+
+sensor_gyro_init_unittest_SRC := $(filter-out $(USER_DIR)/drivers/accgyro/accgyro_virtual.c,$(sensor_gyro_unittest_SRC))
+
+sensor_gyro_init_unittest_DEFINES := \
+		GYRO_COUNT=2
 
 sitl_gyro_unittest_SRC := \
 		$(TEST_DIR)/sitl_gyro_unittest_c.c
@@ -960,6 +1005,7 @@ TEST_BASENAMES = $(TEST_SRCS:$(TEST_DIR)/%.cc=%)
 TESTS_TARGET_SPECIFIC = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),$(test)))
 
 TESTS = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),,$(test)))
+TESTS += $(addprefix accgyro_spi_lsm6dsv16x_unittest.,16x 32x 320x)
 TESTS_ALL = $(TESTS)
 
 # All Google Test headers.  Usually you shouldn't change this
@@ -1103,14 +1149,14 @@ endif
 $(OBJECT_DIR)/$1/%.c.o: $(USER_DIR)/%.c
 	@echo "compiling $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
-	$(V1) $(CC) $(C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
+	$(V1) $(CC) $(C_FLAGS) $($1_C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
                 $$(foreach def,$$($1_DEFINES),-D $$(def)) \
                 -c $$< -o $$@
 
 $(OBJECT_DIR)/$1/%.c.o: $(TEST_DIR)/%.c
 	@echo "compiling test c file: $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
-	$(V1) $(CC) $(C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
+	$(V1) $(CC) $(C_FLAGS) $($1_C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
                 $$(foreach def,$$($1_DEFINES),-D $$(def)) \
                 -c $$< -o $$@
 
@@ -1119,7 +1165,7 @@ ifneq ($1,$(basename $1))
 $(OBJECT_DIR)/$1/%.c.o: $(TARGET_DIR)/$(TARGET)/%.c
 	@echo "compiling target c file: $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
-	$(V1) $(CC) $(C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
+	$(V1) $(CC) $(C_FLAGS) $($1_C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
                 $$(foreach def,$$($1_DEFINES),-D $$(def)) \
                 -c $$< -o $$@
 endif
@@ -1137,7 +1183,7 @@ $(OBJECT_DIR)/$1/$(basename $1): $$($1_OBJS) \
 
 	@echo "linking $$@" "$(STDOUT)"
 	$(V1) mkdir -p $(dir $$@)
-	$(V1) $(CXX) $(CXX_FLAGS) $(LDFLAGS) $$^ -o $$@
+	$(V1) $(CXX) $(CXX_FLAGS) $(LDFLAGS) $($1_LDFLAGS) $$^ -o $$@
 
 test_$1: $(OBJECT_DIR)/$1/$(basename $1)
 	$(V1) $$< $$(EXEC_OPTS) "$(STDOUT)" && echo "running $$@: PASS"
