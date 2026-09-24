@@ -30,10 +30,6 @@
 #define TARGET_BOARD_IDENTIFIER "EC5_"
 #endif
 
-#ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight - ESP32-C5"
-#endif
-
 // The shared drivers back only UART0/UART1 and a single general-purpose SPI
 // master on C5 today (the C5 has no UART2 controller, and only FSPI is exposed
 // as a GP master). Declaring UART2 / a second SPI device here would alias them
