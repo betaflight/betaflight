@@ -687,10 +687,14 @@ position_rescue_geometry_unittest_SRC := \
 
 poshold_unittest_SRC := \
 		$(USER_DIR)/flight/autopilot_multirotor.c \
+		$(USER_DIR)/flight/pos_hold_multirotor.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/vector.c \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/pg/rx.c
+
+poshold_unittest_DEFINES := \
+		USE_POSITION_HOLD=
 
 launch_wing_unittest_SRC := \
 		$(USER_DIR)/flight/launch_wing.c \

@@ -43,6 +43,7 @@ void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targ
 timeUs_t autopilotTaskIntervalUs(timeUs_t nominalIntervalUs);
 void setTargetVelocity(const vector2_t *velocityEF, bool forceAbort); // for modes that directly command XY EF velocity
 void pitchForwardOverride(bool request);
+bool isPitchForwardOverrideActive(void);
 void autopilotForceLevelPark(bool request); // heading/mag fault: force angle-mode self-level, never position hold
 void autopilotSetNavHeadingOverride(bool valid, float headingDeg); // mission pre-turn: command nose heading directly
 void initPositionHold(void);
