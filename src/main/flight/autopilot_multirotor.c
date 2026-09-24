@@ -709,8 +709,8 @@ static bool bearingToTargetDeg(const positionEstimate3d_t *est, float *headingDe
 
 // Yaw control priority is GPS Rescue, active navigation, then heading hold.
 // GPS Rescue supplies its own target heading. Active navigation chooses a
-// heading according to ap_yaw_mode. POS_HOLD and MAG_MODE hold the
-// heading captured on engagement.
+// heading according to ap_yaw_mode. POS_HOLD, MAG_MODE and a mission with no
+// heading to offer hold the heading captured on engagement.
 static void updateYawControl(float dt, const positionEstimate3d_t *est)
 {
     const autopilotConfig_t *cfg = autopilotConfig();
@@ -730,9 +730,9 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
 
     const bool rescueYawActive = FLIGHT_MODE(GPS_RESCUE_MODE);
     const bool navYawActive = FLIGHT_MODE(AUTOPILOT_MODE) && ap.navActive;
-    const bool holdYawActive = FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(MAG_MODE);
+    const bool holdYawActive = FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(MAG_MODE) || FLIGHT_MODE(AUTOPILOT_MODE);
 
-    if (!rescueYawActive && !navYawActive && !holdYawActive) {
+    if (!rescueYawActive && !holdYawActive) {
         disableYawControl();
         setYawDisableReason(5);
         return;
@@ -750,14 +750,12 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
 
     const float headingDeg = attitude.values.yaw * 0.1f;
     float desiredHeadingDeg = 0.0f;
+    bool haveDesiredHeading = false;
 
     if (rescueYawActive) {
-        apYawHoldHeadingValid = false; // capture current heading when hold resumes
         desiredHeadingDeg = apExternalYawTargetDeg;
+        haveDesiredHeading = true;
     } else if (navYawActive) {
-        apYawHoldHeadingValid = false; // capture current heading when hold resumes
-        bool haveDesiredHeading = false;
-
         if (apNavHeadingOverrideValid) {
             desiredHeadingDeg = apNavHeadingOverrideDeg;
             haveDesiredHeading = true;
@@ -777,13 +775,12 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
                 break;
             }
         }
-        if (!haveDesiredHeading) {
-            disableYawControl();
-            setYawDisableReason(7);
-            return;
-        }
+    }
+
+    if (haveDesiredHeading) {
+        apYawHoldHeadingValid = false; // capture current heading when hold resumes
     } else {
-        // Position hold. The pilot's yaw stick outranks the hold: past ap_stick_deadband
+        // Heading hold. The pilot's yaw stick outranks the hold: past ap_stick_deadband
         // rc.c flies the stick instead of our rate, so track the heading rather than
         // accumulating an error to fight on release - the hold resumes wherever the
         // pilot leaves the nose.

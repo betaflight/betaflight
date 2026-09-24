@@ -870,6 +870,18 @@ protected:
 
     // Enough iterations at 100 Hz for the 1 s engage attenuator to saturate.
     void settleYaw() { runIterations(SETTLE_ITERATIONS); }
+
+    // Holding the heading it engaged on: no rate while the nose is there, and a
+    // rate back toward it once the nose is pushed 20 deg right.
+    void expectHoldsHeading() {
+        settleYaw();
+        EXPECT_TRUE(autopilotYawControlActive());
+        EXPECT_NEAR(autopilotGetYawRate(), 0.0f, 0.1f);
+
+        attitude.values.yaw += 200;
+        settleYaw();
+        EXPECT_GT(autopilotGetYawRate(), 0.0f);
+    }
 };
 
 TEST_F(AutopilotYawTest, InactiveWithoutAutopilotMode)
@@ -883,23 +895,21 @@ TEST_F(AutopilotYawTest, InactiveWithoutAutopilotMode)
     EXPECT_FLOAT_EQ(autopilotGetYawRate(), 0.0f);
 }
 
-TEST_F(AutopilotYawTest, InactiveInFixedMode)
+TEST_F(AutopilotYawTest, FixedModeHoldsHeading)
 {
     engageNavLeg(YAW_MODE_FIXED);
     testEstimate.velocity.x = 300.0f;
 
-    settleYaw();
-    EXPECT_FALSE(autopilotYawControlActive());
+    expectHoldsHeading();
 }
 
-TEST_F(AutopilotYawTest, InactiveWithoutNavTarget)
+TEST_F(AutopilotYawTest, HoldsHeadingWithoutNavTarget)
 {
     engageNavLeg(YAW_MODE_VELOCITY);
     mockNavHasActiveTarget = false;
     testEstimate.velocity.x = 300.0f;
 
-    settleYaw();
-    EXPECT_FALSE(autopilotYawControlActive());
+    expectHoldsHeading();
 }
 
 TEST_F(AutopilotYawTest, VelocityModeYawsTowardCourse)
@@ -919,13 +929,12 @@ TEST_F(AutopilotYawTest, VelocityModeYawsTowardCourse)
     EXPECT_NEAR(autopilotGetYawRate(), 30.0f, 0.1f);
 }
 
-TEST_F(AutopilotYawTest, VelocityModeInactiveBelowMinSpeed)
+TEST_F(AutopilotYawTest, VelocityModeHoldsHeadingBelowMinSpeed)
 {
     engageNavLeg(YAW_MODE_VELOCITY);
     testEstimate.velocity.x = 50.0f; // below the 100 cm/s course gate
 
-    settleYaw();
-    EXPECT_FALSE(autopilotYawControlActive());
+    expectHoldsHeading();
 }
 
 TEST_F(AutopilotYawTest, VelocityModeProportionalBelowClamp)
@@ -952,13 +961,30 @@ TEST_F(AutopilotYawTest, BearingModeYawsTowardTarget)
     EXPECT_NEAR(autopilotGetYawRate(), -30.0f, 0.1f);
 }
 
-TEST_F(AutopilotYawTest, BearingModeInactiveInsideAcceptanceRadius)
+TEST_F(AutopilotYawTest, BearingModeHoldsHeadingInsideAcceptanceRadius)
 {
     engageNavLeg(YAW_MODE_BEARING);
     mockNavCommand.targetPosEfM.v[0] = 3.0f; // inside the 5 m radius
 
+    expectHoldsHeading();
+}
+
+TEST_F(AutopilotYawTest, HeldHeadingSurvivesLosingTheCourse)
+{
+    engageNavLeg(YAW_MODE_VELOCITY);
+    attitude.values.yaw = 900;        // nose east
+    testEstimate.velocity.x = 300.0f; // flying east: on course
     settleYaw();
-    EXPECT_FALSE(autopilotYawControlActive());
+    EXPECT_NEAR(autopilotGetYawRate(), 0.0f, 0.1f);
+
+    // Slowing below the course gate hands the nose to the hold, which keeps it
+    // east rather than letting it wander.
+    testEstimate.velocity.x = 0.0f;
+    runIterations(1);
+    attitude.values.yaw = 1100;
+    settleYaw();
+    EXPECT_TRUE(autopilotYawControlActive());
+    EXPECT_GT(autopilotGetYawRate(), 0.0f);
 }
 
 TEST_F(AutopilotYawTest, HybridFallsBackToBearingWhenSlow)
