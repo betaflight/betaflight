@@ -303,6 +303,9 @@ io_serial_unittest_SRC := \
 		$(USER_DIR)/io/serial.c \
 		$(USER_DIR)/io/serial_resource.c
 
+flashfs_bounds_unittest_SRC := \
+		$(TEST_DIR)/flashfs_bounds_test_support.c
+
 
 ledstrip_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
