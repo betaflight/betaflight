@@ -722,6 +722,40 @@ TEST_F(FlightPlanRescueTest, DescentStartsAtTheConfiguredDescentDistance)
     EXPECT_NEAR(g_lastTarget.acceptanceRadiusM, 15.0f, 0.01f);
 }
 
+TEST_F(FlightPlanRescueTest, LandingLegStartsDownAtTheDescentDistanceBelowTheReturnAltitude)
+{
+    // An approach that has sunk 0.7 m below the return altitude still starts down at the descent
+    // distance, rather than carrying on toward home until it is back at that altitude.
+    gpsRescueConfigMutable()->descentDistanceM = 7;
+    g_stubEstimate.position.v[ENU_N] = 2000.0f;   // 20 m north of home
+    attitude.values.yaw = 1800;                   // nose south, pointing home
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    triggerReached();                             // climb done, fly home
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    const float returnAltM = g_lastTarget.targetEfM.z;
+
+    g_stubEstimate.position.v[ENU_N] = 650.0f;
+    g_stubEstimate.position.v[ENU_U] = (returnAltM - 0.7f) * 100.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 2);
+
+    // Arrives on the spot: inside its radius, and nothing waiting on the altitude.
+    EXPECT_FALSE(g_altitudeArrivalRequired);
+    EXPECT_GE(g_lastTarget.acceptanceRadiusM, 6.5f);
+    // Nor has the hand-over dropped the altitude target onto the craft.
+    EXPECT_NEAR(g_lastVertStartAltM, returnAltM, 0.01f);
+
+    // Its ramp had been held on its leash below the return altitude and was climbing back.
+    g_stubCommandedAltCm = (returnAltM - 0.5f) * 100.0f;
+    g_stubCommandedAltSet = true;
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+    // The descent starts from the altitude being commanded.
+    EXPECT_NEAR(g_lastVertStartAltM, returnAltM - 0.5f, 0.01f);
+}
+
 TEST_F(FlightPlanRescueTest, ReturnLegBleedsSpeedFromTwiceTheDescentDistance)
 {
     // Legacy slowed from twice the descent distance so it arrived slow at the point it starts down

@@ -564,8 +564,16 @@ static bool dispatchWaypoint(void)
         positionNavSetApproachSlowdown(fp.legSlowdownM);
         // En-route waypoints advance on horizontal arrival; a vehicle that cannot
         // reach the commanded altitude must not orbit forever. HOLD, LAND and
-        // TAKEOFF are station-keeping targets and keep the altitude gate.
-        positionNavSetAltitudeArrivalRequired(isStationKeeping);
+        // TAKEOFF are station-keeping targets and keep the altitude gate, bar the
+        // rescue's LAND, which starts down at the descent distance wherever the
+        // return left it.
+        bool altitudeGated = isStationKeeping;
+#if ENABLE_RESCUE_PLAN
+        if (fp.isRescuePlan && effective.type == WAYPOINT_TYPE_LAND) {
+            altitudeGated = false;
+        }
+#endif
+        positionNavSetAltitudeArrivalRequired(altitudeGated);
     }
 
     // Altitude walks to the waypoint at the leg's rate from the altitude already commanded, so the
