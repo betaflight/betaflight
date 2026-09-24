@@ -111,6 +111,7 @@
 #include "msp/msp_box.h"
 #include "msp/msp_build_info.h"
 #include "msp/msp_protocol.h"
+#include "msp/msp_reboot.h"
 #include "msp/msp_protocol_v2_betaflight.h"
 #include "msp/msp_protocol_v2_common.h"
 #include "msp/msp_serial.h"
@@ -370,6 +371,10 @@ RAM_CODE static void mspRebootFn(serialPort_t *serialPort)
 {
     UNUSED(serialPort);
 
+    if (!mspRebootIsAllowed()) {
+        return;
+    }
+
     motorShutdown();
 
     switch (rebootMode) {
@@ -421,7 +426,7 @@ RAM_CODE static void mspReboot(dispatchEntry_t* self)
 {
     UNUSED(self);
 
-    if (ARMING_FLAG(ARMED)) {
+    if (!mspRebootIsAllowed()) {
         return;
     }
 
@@ -552,10 +557,7 @@ RAM_CODE static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, 
     }
     // size will be lower than that requested if we reach end of volume
     const uint32_t flashfsSize = flashfsGetSize();
-    if (readLen > flashfsSize - address) {
-        // truncate the request
-        readLen = flashfsSize - address;
-    }
+    readLen = flashfsReadLength(flashfsSize, address, readLen);
     sbufWriteU32(dst, address);
 
     // legacy format does not support compression
@@ -2500,6 +2502,10 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
         }
         break;
     case MSP_REBOOT:
+        if (!mspRebootIsAllowed()) {
+            return MSP_RESULT_ERROR;
+        }
+
         if (sbufBytesRemaining(src)) {
             rebootMode = sbufReadU8(src);
 
