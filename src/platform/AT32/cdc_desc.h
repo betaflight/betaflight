@@ -1,7 +1,7 @@
 /**
   **************************************************************************
-  * @file     msc_desc.h
-  * @brief    usb msc descriptor header file
+  * @file     cdc_desc.h
+  * @brief    usb cdc descriptor header file
   **************************************************************************
   *                       Copyright notice & Disclaimer
   *
@@ -23,14 +23,14 @@
   */
 
 /* define to prevent recursive inclusion -------------------------------------*/
-#ifndef __MSC_DESC_H
-#define __MSC_DESC_H
+#ifndef __CDC_DESC_H
+#define __CDC_DESC_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "msc_class.h"
+#include "cdc_class.h"
 #include "usbd_core.h"
 
 #include "build/version.h"
@@ -40,37 +40,56 @@ extern "C" {
   * @{
   */
 
-/** @addtogroup USB_msc_desc
+/** @addtogroup USB_cdc_desc
   * @{
   */
 
-/** @defgroup USB_msc_desc_definition
+/** @defgroup USB_cdc_desc_definition
   * @{
   */
+/**
+  * @brief usb bcd number define
+  */
+#define CDC_BCD_NUM                      0x0110
 
-#define MSC_BCD_NUM                          0x0110
+/**
+  * @brief usb vendor id and product id define
+  */
+#define USBD_CDC_VENDOR_ID               0x2E3C
+#define USBD_CDC_PRODUCT_ID              0x5740
 
-#define USBD_MSC_VENDOR_ID                   0x2E3C
-#define USBD_MSC_PRODUCT_ID                  0x5720
+/**
+  * @brief usb descriptor size define
+  */
+#define USBD_CDC_CONFIG_DESC_SIZE        67
+#define USBD_CDC_SIZ_STRING_LANGID       4
+#define USBD_CDC_SIZ_STRING_SERIAL       0x1A
 
-#define USBD_MSC_CONFIG_DESC_SIZE            32
-#define USBD_MSC_SIZ_STRING_LANGID           4
-#define USBD_MSC_SIZ_STRING_SERIAL           0x1A
+/**
+  * @brief usb string define(vendor, product configuration, interface)
+  */
+#define USBD_CDC_DESC_MANUFACTURER_STRING    FC_FIRMWARE_NAME
+#define USBD_CDC_DESC_PRODUCT_STRING         usbDescriptorProductString()
+#define USBD_CDC_DESC_CONFIGURATION_STRING   "Virtual ComPort Config"
+#define USBD_CDC_DESC_INTERFACE_STRING       "Virtual ComPort Interface"
 
-#define USBD_MSC_DESC_MANUFACTURER_STRING    FC_FIRMWARE_NAME
-#define USBD_MSC_DESC_PRODUCT_STRING         usbDescriptorMscProductString()
-#define USBD_MSC_DESC_CONFIGURATION_STRING   "MSC Config"
-#define USBD_MSC_DESC_INTERFACE_STRING       "MSC Interface"
+/**
+  * @brief usb endpoint interval define
+  */
+#define CDC_HID_BINTERVAL_TIME                0xFF
 
+/**
+  * @brief usb mcu id address deine
+  */
 #define         MCU_ID1                   (0x1FFFF7E8)
 #define         MCU_ID2                   (0x1FFFF7EC)
 #define         MCU_ID3                   (0x1FFFF7F0)
-
-extern usbd_desc_handler msc_desc_handler;
-
 /**
   * @}
   */
+
+extern usbd_desc_handler cdc_desc_handler;
+
 
 /**
   * @}
