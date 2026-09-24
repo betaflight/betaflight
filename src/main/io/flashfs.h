@@ -20,11 +20,24 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #define FLASHFS_WRITE_BUFFER_SIZE 128
 #define FLASHFS_WRITE_BUFFER_USABLE (FLASHFS_WRITE_BUFFER_SIZE - 1)
 
 // Automatically trigger a flush when this much data is in the buffer
 #define FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN 64
+
+static inline unsigned int flashfsReadLength(uint32_t volumeSize, uint32_t address, unsigned int requestedLength)
+{
+    if (address >= volumeSize) {
+        return 0;
+    }
+
+    const uint32_t remaining = volumeSize - address;
+    return requestedLength > remaining ? remaining : requestedLength;
+}
 
 void flashfsEraseCompletely(void);
 void flashfsEraseRange(uint32_t start, uint32_t end);
