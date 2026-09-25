@@ -280,8 +280,8 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             // batteryGoodness = 1 when voltage is above vbatFull, and 0 when voltage is below vbatLow
             float batteryGoodness = 1.0f - constrainf((mixerRuntime.vbatFull - currentCellVoltage) / mixerRuntime.vbatRangeToCompensate, 0.0f, 1.0f);
             motorRangeAttenuationFactor = (mixerRuntime.vbatRangeToCompensate / mixerRuntime.vbatFull) * batteryGoodness * mixerRuntime.vbatSagCompensationFactor;
-            DEBUG_SET(DEBUG_BATTERY, 2, lrintf(batteryGoodness * 100));               //!< Sag Compensation Battery Goodness [unit:%]
-            DEBUG_SET(DEBUG_BATTERY, 3, lrintf(motorRangeAttenuationFactor * 1000));  //!< Sag Compensation Attenuation [unit:0.001]
+            DEBUG_SET(DEBUG_SAG_COMPENSATION, 0, lrintf(batteryGoodness * 100));               //!< Battery Goodness [unit:%]
+            DEBUG_SET(DEBUG_SAG_COMPENSATION, 1, lrintf(motorRangeAttenuationFactor * 1000));  //!< Motor Range Attenuation [unit:0.001]
         }
         motorRangeMax = isCrashFlipModeActive() ? mixerRuntime.motorOutputHigh : mixerRuntime.motorOutputHigh - motorRangeAttenuationFactor * (mixerRuntime.motorOutputHigh - mixerRuntime.motorOutputLow);
 #else

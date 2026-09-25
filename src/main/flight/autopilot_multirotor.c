@@ -470,6 +470,11 @@ void pitchForwardOverride(bool request)
     forcePitchForward = request;
 }
 
+bool isPitchForwardOverrideActive(void)
+{
+    return forcePitchForward;
+}
+
 void autopilotForceLevelPark(bool request)
 {
     forceLevelPark = request;
@@ -1286,7 +1291,7 @@ bool positionControl(void)
     DEBUG_SET(DEBUG_POSITION_NAV, 6, lrintf(pidA.v[ap.debugAxis] * 10));                //!< A Term (dbg-axis) [unit:0.1deg]
     DEBUG_SET(DEBUG_POSITION_NAV, 7, (anchorOff ? 10 : 0) + (buildupClamped ? 1 : 0));  //!< Status Flags
 
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 0, lrintf(ap.speedXY));       //!<Current Velocity [unit:cm/s]
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 0, lrintf(ap.speedXY));       //!< Ground Speed [unit:cm/s]
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 1, lrintf(targetSpeedXY));    //!< Target Velocity [unit:cm/s]
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 6, lrintf(distanceToHomeCm)); //!< Distance To Home [unit:cm]
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 0, lrintf(ap.speedXY));      //!< Ground Speed [unit:cm/s]

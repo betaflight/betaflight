@@ -1412,8 +1412,8 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
         startTime = micros();
         static uint32_t previousMotorUpdateTime;
         const uint32_t currentDeltaTime = startTime - previousMotorUpdateTime;
-        debug[2] = currentDeltaTime;
-        debug[3] = currentDeltaTime - targetPidLooptime;
+        DEBUG_SET(DEBUG_CYCLETIME, 2, currentDeltaTime);                      //!< Motor Update Interval [unit:us]
+        DEBUG_SET(DEBUG_CYCLETIME, 3, currentDeltaTime - targetPidLooptime);  //!< Motor Update Interval Error [unit:us]
         previousMotorUpdateTime = startTime;
     } else if (debugMode == DEBUG_PIDLOOP) {
         startTime = micros();
@@ -1434,7 +1434,7 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
     if (debugMode == DEBUG_DSHOT_RPM_ERRORS && useDshotTelemetry) {
         const uint8_t motorCount = MIN(getMotorCount(), 4);
         for (uint8_t i = 0; i < motorCount; i++) {
-            debug[i] = getDshotTelemetryMotorInvalidPercent(i);
+            DEBUG_SET(DEBUG_DSHOT_RPM_ERRORS, i, getDshotTelemetryMotorInvalidPercent(i));  //!< [index:0..3] Motor {1|2|3|4} Invalid [unit:%]
         }
     }
 #endif
