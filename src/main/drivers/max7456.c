@@ -324,6 +324,7 @@ static void max7456ReInit(void)
     // Re-enable MAX7456 (last function call disables it)
 
     // Make sure the Max7456 is enabled
+    videoSignalReg |= SYNC_MODE_INTERNAL;
     spiWriteReg(dev, MAX7456ADD_VM0, videoSignalReg);
     spiWriteReg(dev, MAX7456ADD_HOS, hosRegValue);
     spiWriteReg(dev, MAX7456ADD_VOS, vosRegValue);
