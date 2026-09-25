@@ -61,7 +61,7 @@ FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
 #ifdef __DCACHE_PRESENT
 #ifdef STM32H7
     if (bus->curSegment->u.buffers.rxData &&
-        ((bus->curSegment->u.buffers.rxData < &_dmaram_start__) || (bus->curSegment->u.buffers.rxData >= &_dmaram_end__))) {
+        !isDmaramUncached(bus->curSegment->u.buffers.rxData, bus->curSegment->len)) {
 #else
     if (bus->curSegment->u.buffers.rxData) {
 #endif
@@ -103,7 +103,15 @@ uint16_t spiCalculateDivider(uint32_t freq)
 {
 #if defined(STM32F4) || defined(STM32F7) || defined(APM32F4)
     uint32_t spiClk = SystemCoreClock / 2;
-#elif defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
+#elif defined(STM32C5)
+    // C5 leaves every SPI kernel clock on its APB clock (see the STM32C5 note
+    // in spiInitDevice()), and system_stm32c5xx.c programs
+    // HCLK = PCLK1 = PCLK2 = PCLK3 = SYSCLK, so PCLK == SystemCoreClock for
+    // every instance. Read it at runtime rather than hard-coding: SYSCLK is
+    // 144 MHz on both the HSE/PSI and the HSIS path, but stays at the 48 MHz
+    // boot clock if both fail.
+    uint32_t spiClk = SystemCoreClock;
+#elif defined(STM32H7) || defined(STM32H5) || defined(STM32N6)
     uint32_t spiClk = 100000000;
 #elif defined(STM32G4)
     uint32_t spiClk = SystemCoreClock;
@@ -130,7 +138,10 @@ uint32_t spiCalculateClock(uint16_t spiClkDivisor)
 {
 #if defined(STM32F4) || defined(STM32G4) || defined(STM32F7) || defined(APM32F4)
     uint32_t spiClk = SystemCoreClock / 2;
-#elif defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
+#elif defined(STM32C5)
+    // PCLK == SystemCoreClock on C5; see spiCalculateDivider() above.
+    uint32_t spiClk = SystemCoreClock;
+#elif defined(STM32H7) || defined(STM32H5) || defined(STM32N6)
     uint32_t spiClk = 100000000;
 #elif defined(AT32F4)
     uint32_t spiClk = system_core_clock / 2;
@@ -164,6 +175,25 @@ void spiInitBusDMA(void)
             // This bus is not in use
             continue;
         }
+
+#if defined(STM32N6)
+        // SPI DMA is not implemented on the N6: spiInternalInitStream() has an
+        // explicit "GPDMA uses a completely different LL_DMA API; SPI DMA not
+        // yet supported" stub for this family. Allocating the channels anyway
+        // sets bus->useDMA, so spiUseDMA() returns true and callers select a
+        // DMA path that is never programmed.
+        //
+        // For the gyro this is fatal rather than merely slow. mpuGyroInit()
+        // picks GYRO_EXTI_INT_DMA, the first data-ready interrupt starts a
+        // transfer that never completes, INT_STATUS is therefore never read,
+        // the sensor holds its interrupt line asserted and no further edge is
+        // produced. Measured on an STM32N657 board: detectedEXTI frozen at
+        // 151357, gyroADCRaw stuck at (0,0,0), and not one byte of gyroDev
+        // changing over 0.7 s.
+        //
+        // Leave the bus in polled mode until the GPDMA path exists.
+        continue;
+#endif
 
         dmaIdentifier_e dmaTxIdentifier = DMA_NONE;
         dmaIdentifier_e dmaRxIdentifier = DMA_NONE;

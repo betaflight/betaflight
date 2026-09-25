@@ -584,6 +584,21 @@ static void mspProcessPacket(mspPort_t *mspPort, mspProcessCommandFnPtr mspProce
  *
  * Called periodically by the scheduler.
  */
+// A peripheral MSP port has a device streaming on it — the goggles on the
+// display port UART, an MSP VTX, an MSP-transport sensor.  Its bytes are never
+// configurator input, so they must not read as CLI entry, a reboot request, or
+// configurator activity.
+static bool mspPortIsPeripheral(serialPortIdentifier_e identifier)
+{
+#ifdef USE_MSP_DISPLAYPORT
+    if (identifier == displayPortMspGetSerial()) {
+        return true;
+    }
+#endif
+
+    return serialSynthesizeFunctionMask(identifier) & (FUNCTION_VTX_MSP | FUNCTION_LIDAR);
+}
+
 void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessCommandFnPtr mspProcessCommandFn, mspProcessReplyFnPtr mspProcessReplyFn)
 {
     for (mspPort_t *mspPort = mspPorts; mspPort < ARRAYEND(mspPorts); mspPort++) {
@@ -603,11 +618,7 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
                 mspPort->portState = PORT_MSP_PACKET;
                 mspPort->packetState = MSP_HEADER_START;
             } else if ((evaluateNonMspData == MSP_EVALUATE_NON_MSP_DATA)
-#ifdef USE_MSP_DISPLAYPORT
-                       // Don't evaluate non-MSP commands on VTX MSP port
-                       && (mspPort->port->identifier != displayPortMspGetSerial())
-#endif
-                       ) {
+                       && !mspPortIsPeripheral(mspPort->port->identifier)) {
                 // evaluate the non-MSP data
                 if (c == serialConfig()->reboot_character) {
                     mspPort->pendingRequest = MSP_PENDING_BOOTLOADER_ROM;
@@ -678,10 +689,7 @@ bool mspSerialIsConfiguratorActive(void)
             continue;
         }
 
-        // Skip ports shared with a VTX or an MSP-transport sensor — those are
-        // peripherals, not configurators, and a sensor streaming for the whole
-        // flight would otherwise report a configurator permanently attached.
-        if (serialSynthesizeFunctionMask(mspPort->port->identifier) & (FUNCTION_VTX_MSP | FUNCTION_LIDAR)) {
+        if (mspPortIsPeripheral(mspPort->port->identifier)) {
             continue;
         }
 

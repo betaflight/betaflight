@@ -405,6 +405,26 @@ IO_t motorGetIo(unsigned index)
     return motorDevice.vTable->getMotorIO ? motorDevice.vTable->getMotorIO(index) : IO_NONE;
 }
 
+void motorReleaseIo(unsigned index)
+{
+    if (index < motorDevice.count && motorDevice.vTable->releaseMotorIO) {
+        motorDevice.vTable->releaseMotorIO(index);
+    }
+}
+
+bool motorReinstateIo(unsigned index)
+{
+    if (index >= motorDevice.count) {
+        return false;
+    }
+
+    if (motorDevice.vTable->reinstateMotorIO) {
+        return motorDevice.vTable->reinstateMotorIO(index);
+    }
+
+    return true; // return "ok" if no reinstate function on this device.
+}
+
 /* functions below for empty methods and no active motors */
 void motorPostInitNull(void)
 {
@@ -477,6 +497,8 @@ static const motorVTable_t motorNullVTable = {
     .requestTelemetry = NULL,
     .isMotorIdle = NULL,
     .getMotorIO = NULL,
+    .releaseMotorIO = NULL,
+    .reinstateMotorIO = NULL,
 };
 
 void motorNullDevInit(motorDevice_t *device)

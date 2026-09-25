@@ -28,7 +28,7 @@
 
 #include "autopilot.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 10);
+PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 13);
 
 PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .landingAltitudeM = 4,
@@ -38,6 +38,7 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .altitudeP = 30,
     .altitudeI = 30,
     .altitudeD = 30,
+    .altitudeA = 30,
     .altitudeF = 30,
     .positionP = 30,
     .positionI = 30,
@@ -73,9 +74,8 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
 
     // Yaw control parameters
     .yawMode = YAW_MODE_VELOCITY,     // Default: follow velocity
-    .yawP = 50,                       // 0.5 P gain
-    .yawD = 10,                       // 0.1 D gain
-    .maxYawRate = 30,                 // 30 deg/s max
+    .yawP = 30,                       // 1.8 P gain
+    .maxYawRate = 150,                 // 150 deg/s max
     .minForwardVelocity = 300,        // 3.0 m/s minimum forward velocity (GPS course reliability / stall prevention)
 
     // Velocity buildup (acceleration from stationary)

@@ -72,6 +72,8 @@ void cacheAltitudeInfo(uint8_t x, uint8_t y, uint8_t elemType, bool isBlink)
         // Types 2, 3 => ASL
         altCm = getAltitudeAsl();
     }
+#else
+    UNUSED(elemType);
 #endif
 
     int32_t altMax = osdConfig()->alt_alarm;
