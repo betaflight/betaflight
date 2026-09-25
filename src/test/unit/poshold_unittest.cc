@@ -1222,6 +1222,50 @@ TEST_F(NavModeTest, NavFeedforwardTargetIsAnchoredAtAnyRange)
     EXPECT_GT(autopilotAngle[AI_ROLL], 5.0f);           // rolling east, back toward the line
 }
 
+TEST_F(NavModeTest, NavFeedforwardPickedUpMidFlightDoesNotBrake)
+{
+    // A carrot anchored on a craft already flying 6 m/s along the leg states that velocity from the
+    // first cycle. The feedforward must stand there from the first cycle too: climbing out of a
+    // reset filter while the damping acts on the measured speed at once is a max-angle brake pulse.
+    engageNav(30, 30, 0, 50, 8, 50);
+    mockNavCommand.velocityFfValid = true;
+    mockNavCommand.velocityFromCraft = true;
+    testEstimate.velocity.y = 600.0f;
+    setTargetVelocityNorth(600.0f);
+    float lowestPitch = 90.0f;
+    for (int i = 0; i < 30; i++) {
+        setNavCarrot(0.0f, testEstimate.position.y * 0.01f);
+        runIterations(1);
+        lowestPitch = fminf(lowestPitch, autopilotAngle[AI_PITCH]);
+        testEstimate.position.y += 6.0f;
+    }
+    EXPECT_GT(lowestPitch, -2.0f);
+}
+
+TEST_F(NavModeTest, NavFeedforwardPickedUpAfterAPitchForwardDoesNotBrake)
+{
+    // The rescue's return leg set off from the heading-recovery pitch-forward, which flew with nav
+    // standing aside: nav starts again there, so its feedforward stands from the first cycle too.
+    engageNav(30, 30, 0, 50, 8, 50);
+    mockNavCommand.velocityFfValid = true;
+    runIterations(10);
+    pitchForwardOverride(true);
+    testEstimate.velocity.y = 600.0f;
+    runIterations(50);
+    pitchForwardOverride(false);
+    mockNavCommand.sequence++;
+    mockNavCommand.velocityFromCraft = true;
+    setTargetVelocityNorth(600.0f);
+    float lowestPitch = 90.0f;
+    for (int i = 0; i < 30; i++) {
+        setNavCarrot(0.0f, testEstimate.position.y * 0.01f);
+        runIterations(1);
+        lowestPitch = fminf(lowestPitch, autopilotAngle[AI_PITCH]);
+        testEstimate.position.y += 6.0f;
+    }
+    EXPECT_GT(lowestPitch, -2.0f);
+}
+
 TEST_F(NavModeTest, NavAnchorDoesNotCarryAcrossACommandChange)
 {
     // A waypoint transition installs the successor before the controller runs

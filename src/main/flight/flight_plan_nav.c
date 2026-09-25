@@ -83,6 +83,9 @@
 // Attitude takes this long to swing round and stand the craft on its brake; the speed carried
 // through it is distance the fence has to allow for on top of the braking distance itself.
 #define FP_BRAKE_REVERSAL_S       1.0f
+// Where the craft comes to rest is judged on the attitude taking this long to come round onto the
+// brake, which it spends still carrying its speed.
+#define FP_BRAKE_RESPONSE_S       0.15f
 #define FP_BRAKE_MIN_ANGLE_DEG    10.0f   // ap_max_angle's own lower bound, so a zeroed config cannot divide by zero
 
 // Approach braking: caps the nav velocity target to sqrt(2*decel*distance) so
@@ -256,6 +259,7 @@ static struct {
     vector2_t legAnchorEnuM;    // the gate just crossed: where the next leg's line starts
     bool      legAnchorValid;
     bool      inPreTurn;        // blending the nose onto the next leg (excluded from the heading-fault check)
+    bool      dispatchAfresh;   // the next dispatch re-targets rather than carrying on the leg being flown
     float     alongFiltM;       // PT1-filtered along-track position; shapes the trapezoid
     bool      measFiltValid;
 
@@ -401,17 +405,45 @@ static float commandedAltitudeM(const positionEstimate3d_t *est)
     return est->position.v[ENU_U] * 0.01f;
 }
 
-// The carrot at an offset from the craft, never further from it than the position controller's
-// reach: a craft that cannot keep up, or is blown off the line, drags the carrot along rather than
-// leaving it to run away.
-static void placeCarrotFromCraft(const vector2_t *craftM, vector2_t offsetM)
+static float brakingDecelMps2(void)
+{
+    const float leanDeg = fmaxf((float)autopilotConfig()->maxAngle, FP_BRAKE_MIN_ANGLE_DEG);
+    return G_ACCELERATION * tanf(DEGREES_TO_RADIANS(leanDeg));
+}
+
+// Where braking at ap_max_angle brings the craft to rest on something moving at movingMps.
+static vector2_t restPointM(const positionEstimate3d_t *est, const vector2_t *movingMps)
+{
+    vector2_t closingMps = {
+        .x = est->velocity.v[ENU_E] * 0.01f - movingMps->x,
+        .y = est->velocity.v[ENU_N] * 0.01f - movingMps->y,
+    };
+    const float closingSpeedMps = vector2Norm(&closingMps);
+    vector2Scale(&closingMps, &closingMps, closingSpeedMps / (2.0f * brakingDecelMps2()) + FP_BRAKE_RESPONSE_S);
+    return (vector2_t){ .x = est->position.v[ENU_E] * 0.01f + closingMps.x,
+                        .y = est->position.v[ENU_N] * 0.01f + closingMps.y };
+}
+
+// The carrot at carrotM, but never further than the position controller's reach from the craft or
+// from where the craft comes to rest on it: a craft that cannot keep up, or is blown off the line,
+// drags the carrot along rather than leaving it to run away, and one braking onto it is not pulled
+// back from where it stops.
+static void placeCarrot(const positionEstimate3d_t *est, const vector2_t *carrotM)
 {
     const float reachM = NAV_ERROR_DISTANCE_LIMIT * 0.01f;
-    const float offsetLenM = vector2Norm(&offsetM);
-    if (offsetLenM > reachM) {
-        vector2Scale(&offsetM, &offsetM, reachM / offsetLenM);
+    const vector2_t craftM = { .x = est->position.v[ENU_E] * 0.01f, .y = est->position.v[ENU_N] * 0.01f };
+    const vector2_t restM = restPointM(est, &fp.carrotVelMps);
+    vector2_t fromCraftM;
+    vector2_t fromRestM;
+    vector2Sub(&fromCraftM, carrotM, &craftM);
+    vector2Sub(&fromRestM, carrotM, &restM);
+    const bool nearerRest = vector2Norm(&fromRestM) < vector2Norm(&fromCraftM);
+    vector2_t gapM = nearerRest ? fromRestM : fromCraftM;
+    const float gapLenM = vector2Norm(&gapM);
+    if (gapLenM > reachM) {
+        vector2Scale(&gapM, &gapM, reachM / gapLenM);
     }
-    vector2Add(&fp.carrotEnuM, craftM, &offsetM);
+    vector2Add(&fp.carrotEnuM, nearerRest ? &restM : &craftM, &gapM);
 }
 
 // positionNav walks the carrot at its velocity between the executor's updates.
@@ -539,6 +571,7 @@ static bool dispatchWaypoint(void)
 
     const positionEstimate3d_t *dispatchEst = positionEstimatorGetEstimate();
     const float startAltM = commandedAltitudeM(dispatchEst);
+    const bool handingOver = positionNavHasActiveTarget() && !fp.dispatchAfresh;
 
     // Gate state belongs to the waypoint, not to the dispatch: a leg re-issued mid-flight (a
     // position-control re-init, the delay-expiry cruise restore, or the swap from the hold below to
@@ -572,12 +605,31 @@ static bool dispatchWaypoint(void)
         // there is no callback. A carrot already flying carries on across the corner
         // as it is, where it is; only engage/retry and a point leg start one afresh.
         if (!fp.carrotValid) {
-            // A fresh carrot starts at rest on the craft.
-            fp.carrotEnuM.x = craftAtLegAltM.v[ENU_E];
-            fp.carrotEnuM.y = craftAtLegAltM.v[ENU_N];
-            fp.carrotVelMps.x = 0.0f;
-            fp.carrotVelMps.y = 0.0f;
-            fp.carrotSpeedMps = 0.0f;
+            // Taking over from a leg still flying, it starts where that leg held the craft to and at
+            // the velocity it commanded, so neither P nor the commanded velocity steps, and turns
+            // onto this leg from there. Otherwise it sets off at the speed the craft is making along
+            // the leg, never across or backwards along it, from where the craft comes to rest on it.
+            const vector2_t craftM = { .x = craftAtLegAltM.v[ENU_E], .y = craftAtLegAltM.v[ENU_N] };
+            if (handingOver) {
+                const vector3_t commandedCmS = positionNavGetTargetVelocityCmS();
+                fp.carrotVelMps.x = commandedCmS.v[ENU_E] * 0.01f;
+                fp.carrotVelMps.y = commandedCmS.v[ENU_N] * 0.01f;
+                vector2_t heldM = autopilotGetPositionErrorCm();
+                vector2Scale(&heldM, &heldM, 0.01f);
+                vector2Add(&heldM, &heldM, &craftM);
+                placeCarrot(dispatchEst, &heldM);
+            } else {
+                const vector2_t legVecM = { .x = targetEnuM.v[ENU_E] - craftM.x, .y = targetEnuM.v[ENU_N] - craftM.y };
+                const float legLenM = vector2Norm(&legVecM);
+                vector2_t legDir = { .x = 0.0f, .y = 0.0f };
+                if (legLenM > 1.0f) {
+                    vector2Scale(&legDir, &legVecM, 1.0f / legLenM);
+                }
+                const float alongMps = (dispatchEst->velocity.v[ENU_E] * legDir.x + dispatchEst->velocity.v[ENU_N] * legDir.y) * 0.01f;
+                vector2Scale(&fp.carrotVelMps, &legDir, fp.legYawGated ? 0.0f : constrainf(alongMps, 0.0f, cruiseMps));
+                fp.carrotEnuM = restPointM(dispatchEst, &fp.carrotVelMps);
+            }
+            fp.carrotSpeedMps = vector2Norm(&fp.carrotVelMps);
             fp.carrotValid = true;
             fp.legAnchorValid = false;
         } else {
@@ -619,6 +671,10 @@ static bool dispatchWaypoint(void)
         }
 #endif
         positionNavSetAltitudeArrivalRequired(altitudeGated);
+    }
+    if (fp.dispatchAfresh) {
+        positionNavStartAfresh();
+        fp.dispatchAfresh = false;
     }
 
     // Altitude walks to the waypoint at the leg's rate from the altitude already commanded, so the
@@ -685,9 +741,7 @@ static void navWaypointDeltaEnuM(const positionEstimate3d_t *est, vector3_t *del
 static float brakingDistanceM(const positionEstimate3d_t *est)
 {
     const float speedMps = sqrtf(sq(est->velocity.v[ENU_E]) + sq(est->velocity.v[ENU_N])) * 0.01f;
-    const float leanDeg = fmaxf((float)autopilotConfig()->maxAngle, FP_BRAKE_MIN_ANGLE_DEG);
-    const float decelMps2 = G_ACCELERATION * tanf(DEGREES_TO_RADIANS(leanDeg));
-    return sq(speedMps) / (2.0f * decelMps2) + speedMps * FP_BRAKE_REVERSAL_S;
+    return sq(speedMps) / (2.0f * brakingDecelMps2()) + speedMps * FP_BRAKE_REVERSAL_S;
 }
 
 // Stall/flyaway sanity against a distance-to-goal. The carrot path passes the
@@ -1062,10 +1116,7 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
     const float speedUpMps = sqrtf(fmaxf(sq(budgetMps) - sq(turningMps), 0.0f));
     fp.carrotSpeedMps = constrainf(desiredMps, fp.carrotSpeedMps - budgetMps, fp.carrotSpeedMps + speedUpMps);
     vector2Scale(&fp.carrotVelMps, &carrotDir, fp.carrotSpeedMps);
-
-    vector2_t gapM;
-    vector2Sub(&gapM, &fp.carrotEnuM, &craft);
-    placeCarrotFromCraft(&craft, gapM);
+    placeCarrot(est, &fp.carrotEnuM);
 
     // Nose command. On a pass-through leg the executor owns yaw, which is what
     // makes the march gate safe: point the nose along the leg (blending onto the
@@ -1572,6 +1623,7 @@ void flightPlanNavInit(void)
     fp.legValid = false;
     fp.carrotSpeedMps = 0.0f;
     fp.carrotValid = false;
+    fp.dispatchAfresh = false;
     fp.inPreTurn = false;
     fp.measFiltValid = false;
 #if ENABLE_RESCUE_PLAN
@@ -1601,6 +1653,7 @@ void flightPlanNavEngage(void)
     fp.legValid = false;
     fp.carrotSpeedMps = 0.0f;
     fp.carrotValid = false;
+    fp.dispatchAfresh = false;
     fp.inPreTurn = false;
     fp.measFiltValid = false;
     autopilotForceLevelPark(false);   // a fresh engage clears any latched heading-fault park
@@ -1669,6 +1722,7 @@ void flightPlanNavDisengage(void)
     fp.legValid = false;
     fp.carrotSpeedMps = 0.0f;
     fp.carrotValid = false;
+    fp.dispatchAfresh = false;
     fp.inPreTurn = false;
     fp.measFiltValid = false;
     autopilotForceLevelPark(false);
@@ -1697,6 +1751,7 @@ bool flightPlanNavInjectPlan(const waypoint_t *waypoints, uint8_t count)
     fp.currentIndex = 0;
     fp.abortReason = FP_ABORT_NONE;
     fp.carrotValid = false;   // a fresh plan re-anchors on the craft
+    fp.dispatchAfresh = true;
     fp.carrotSpeedMps = 0.0f;
     fp.measFiltValid = false;
 #if ENABLE_RESCUE_PLAN
@@ -1737,6 +1792,7 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
         if (imuIsHeadingValid()) {
             pitchForwardOverride(false);
             fp.rescueHeadingHold = false;
+            fp.dispatchAfresh = true;
             advanceToNext();
         } else if (cmpTimeUs(currentTimeUs, fp.rescueHeadingStartUs) >= (timeDelta_t)FP_RESCUE_HEADING_TIMEOUT_US) {
             pitchForwardOverride(false);
@@ -1930,6 +1986,7 @@ bool flightPlanNavSetCurrentIndex(uint8_t index)
         fp.patternActive = false;
         fp.abortReason = FP_ABORT_NONE;
         fp.carrotValid = false;   // a cursor jump re-anchors on the craft
+        fp.dispatchAfresh = true;
         fp.carrotSpeedMps = 0.0f;
         fp.measFiltValid = false;
         clearModifierState();

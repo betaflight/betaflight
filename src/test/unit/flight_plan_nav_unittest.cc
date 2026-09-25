@@ -80,6 +80,7 @@ int g_moveTargetCalls;
 float g_altHoldClimbRateCmS;
 float g_lastVertRateMps;
 float g_lastVertStartAltM;
+vector2_t g_stubPositionErrorCm;
 int g_setVerticalProfileCalls;
 float g_stubCommandedAltCm;
 bool g_stubCommandedAltSet;
@@ -187,6 +188,13 @@ void positionNavClearTarget(void)
 {
     g_clearTargetCalls++;
     g_lastTarget.valid = false;
+}
+
+static int g_startAfreshCalls;
+
+void positionNavStartAfresh(void)
+{
+    g_startAfreshCalls++;
 }
 
 void positionNavSetAutoClearOnReach(bool autoClear)
@@ -300,6 +308,11 @@ void autopilotSetNavHeadingOverride(bool valid, float headingDeg)
     g_navHeadingOverrideDeg = headingDeg;
 }
 
+vector2_t autopilotGetPositionErrorCm(void)
+{
+    return g_stubPositionErrorCm;
+}
+
 void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *distance)
 {
     // Simplified flat-earth approximation sufficient for unit-test deltas.
@@ -337,10 +350,12 @@ protected:
         g_altHoldClimbRateCmS = 500.0f;   // alt_hold_climb_rate default, 5 m/s
         g_lastVertRateMps = 0.0f;
         g_lastVertStartAltM = 0.0f;
+        memset(&g_stubPositionErrorCm, 0, sizeof(g_stubPositionErrorCm));
         g_stubCommandedAltCm = 0.0f;
         g_stubCommandedAltSet = false;
         memset(&g_stubTargetVelCmS, 0, sizeof(g_stubTargetVelCmS));
         g_clearTargetCalls = 0;
+        g_startAfreshCalls = 0;
         g_moveTargetCalls = 0;
         g_stubMicros = 0;
 
@@ -1597,6 +1612,7 @@ TEST_F(FlightPlanNavSafetyTest, GeofenceBreachWithRthActionInjectsReturnPlan)
     EXPECT_NEAR(g_lastDispatchTargetEfM.y, 150.0f, 0.1f);
     EXPECT_NEAR(g_lastDispatchTargetEfM.z, 30.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, 7.5f, 0.01f);
+    EXPECT_EQ(g_startAfreshCalls, 1);   // started from the craft's motion, not the mission leg's command
 
     // Still outside the fence on the way home: no re-injection.
     g_stubMicros += 1'000'000;
@@ -1615,6 +1631,7 @@ TEST_F(FlightPlanNavSafetyTest, GeofenceBreachWithRthActionInjectsReturnPlan)
 
     triggerReached();  // the LAND leg is a precise point target: its callback advances it
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+    EXPECT_EQ(g_startAfreshCalls, 1);
 
     // No resume: the injected plan dies with disengagement.
     flightPlanNavDisengage();
@@ -2207,6 +2224,179 @@ TEST_F(FlightPlanNavCarrotTest, DelayExpiryCarriesTheCarrotOnFromWhereItWalkedTo
     }
     EXPECT_EQ(g_setTargetCalls, setTargetCallsAtEngage + 1);
     EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+}
+
+TEST_F(FlightPlanNavCarrotTest, FreshAnchorStartsAtTheSpeedTheCraftIsMakingAlongTheLeg)
+{
+    // A mission engaged mid-flight: the carrot starts at the craft's speed along the leg, not at
+    // rest, or the craft brakes to a stop only to set off again.
+    addWaypointMetres(0.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypointMetres(0.0f, 600.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    g_stubEstimate.velocity.v[ENU_E] = 300.0f;    // drifting east across the leg
+    g_stubEstimate.velocity.v[ENU_N] = 600.0f;    // and making 6 m/s along it
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+
+    ASSERT_TRUE(g_ffValid);
+    EXPECT_NEAR(g_lastFfEfMps.x, 0.0f, 0.01f);    // nothing commanded across the leg
+    EXPECT_NEAR(g_lastFfEfMps.y, 6.0f, 0.01f);
+    // Held to where braking brings the drift across the leg to rest, not pulled back onto the craft.
+    const float brakeMps2 = 9.80665f * tanf(50.0f * M_PIf / 180.0f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 3.0f * (3.0f / (2.0f * brakeMps2) + 0.15f), 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.01f);
+    step();
+    step();
+    EXPECT_GT(g_lastFfEfMps.y, 6.0f);             // and carries on building from there
+}
+
+TEST_F(FlightPlanNavCarrotTest, FreshAnchorFasterThanTheLegStartsWhereTheCraftSlowsOntoIt)
+{
+    // Engaged at 12 m/s on a 4 m/s leg: the carrot sets off at 4 m/s from where the craft, braking,
+    // comes down to that speed, so it is neither overrun nor held back below 4 m/s.
+    addWaypoint(lrintf(300.0f * kUnitsPerMetre), 0, 15000, WAYPOINT_TYPE_FLYOVER, 400);
+    addWaypointMetres(0.0f, 600.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    g_stubEstimate.velocity.v[ENU_N] = 1200.0f;
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+
+    ASSERT_TRUE(g_ffValid);
+    EXPECT_NEAR(g_lastFfEfMps.y, 4.0f, 0.01f);
+    const float brakeMps2 = 9.80665f * tanf(50.0f * M_PIf / 180.0f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 8.0f * (8.0f / (2.0f * brakeMps2) + 0.15f), 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 0.0f, 0.01f);
+}
+
+TEST_F(FlightPlanNavCarrotTest, FreshAnchorNeverStartsFlyingTheCraftBackwards)
+{
+    addWaypointMetres(0.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypointMetres(0.0f, 600.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    g_stubEstimate.velocity.v[ENU_N] = -800.0f;   // flying away from the leg at 8 m/s
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+
+    ASSERT_TRUE(g_ffValid);
+    EXPECT_NEAR(lastFfSpeedMps(), 0.0f, 0.01f);
+}
+
+TEST_F(FlightPlanNavCarrotTest, CursorJumpStartsTheCommandedVelocityAfresh)
+{
+    // A jump back to a waypoint behind the craft: the carrot states nothing along the new leg, and
+    // positionNav does not carry the old leg's command on.
+    addWaypointMetres(0.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypointMetres(0.0f, 600.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypointMetres(0.0f, 900.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    g_stubEstimate.velocity.v[ENU_N] = 1000.0f;
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    setCraftMetres(0.0f, 297.0f);
+    step();
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    EXPECT_EQ(g_startAfreshCalls, 0);             // a gate carries the velocity on
+
+    setCraftMetres(0.0f, 400.0f);
+    ASSERT_TRUE(flightPlanNavSetCurrentIndex(0));
+    EXPECT_EQ(g_startAfreshCalls, 1);
+    ASSERT_TRUE(g_ffValid);
+    EXPECT_NEAR(lastFfSpeedMps(), 0.0f, 0.01f);
+}
+
+TEST_F(FlightPlanNavCarrotTest, CarrotAfterAPointLegStartsWhereTheCraftIsHeld)
+{
+    // A HOLD between two carrot legs, the craft held a little downwind of it: the leg after it
+    // starts on the point the position controller was holding the craft to, so P carries on
+    // holding against the wind rather than dropping to nothing at the hand-over. Not from the gate
+    // of the carrot leg before the hold, and not at that leg's speed.
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypointMetres(50.0f, 100.0f, 15000, WAYPOINT_TYPE_HOLD);
+    addWaypointMetres(50.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypointMetres(50.0f, 600.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    for (int i = 0; i < 60; i++) {
+        step();
+    }
+    setCraftMetres(0.0f, 97.0f);                  // through the first gate
+    step();
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+
+    setCraftMetres(49.58f, 100.0f);               // held downwind of the HOLD point
+    g_stubPositionErrorCm.x = 42.0f;
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 2);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 50.0f, 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 100.0f, 0.01f);
+    EXPECT_NEAR(lastFfSpeedMps(), 0.0f, 0.01f);
+    step();
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 50.0f, 0.1f);
+    EXPECT_LT(lastFfSpeedMps(), 1.0f);
+}
+
+TEST_F(FlightPlanNavCarrotTest, CarrotAfterAPointLegTurnsOutOfWhatItCommanded)
+{
+    // A HOLD completed on entering its radius, still closing on it at right angles to the leg after
+    // it: the carrot sets off at the velocity the hold was commanding and turns onto the leg within
+    // the carrot acceleration, rather than dropping the part across the leg in one cycle.
+    addWaypointMetres(50.0f, 100.0f, 15000, WAYPOINT_TYPE_HOLD);
+    addWaypointMetres(50.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypointMetres(50.0f, 600.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    setCraftMetres(48.0f, 100.0f);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    g_stubTargetVelCmS.x = 110.0f;                // the hold's chase law, 2 m out
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    EXPECT_NEAR(g_lastFfEfMps.x, 1.1f, 0.01f);
+    EXPECT_NEAR(g_lastFfEfMps.y, 0.0f, 0.01f);
+
+    const float budgetMps = autopilotConfig()->navAccel * 0.01f * 0.1f;
+    vector2_t previousMps = g_lastFfEfMps;
+    for (int i = 0; i < 30; i++) {
+        step();
+        const vector2_t deltaMps = { .x = g_lastFfEfMps.x - previousMps.x, .y = g_lastFfEfMps.y - previousMps.y };
+        EXPECT_LE(vector2Norm(&deltaMps), 1.5f * budgetMps) << "at " << i;
+        previousMps = g_lastFfEfMps;
+    }
+    EXPECT_GT(g_lastFfEfMps.y, 1.0f);
+    EXPECT_LT(fabsf(g_lastFfEfMps.x), 0.2f);
+}
+
+TEST_F(FlightPlanNavCarrotTest, CarrotAfterATakeoffStartsWhereTheCraftIsHeld)
+{
+    addWaypointMetres(0.0f, 0.0f, 15000, WAYPOINT_TYPE_TAKEOFF);
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypointMetres(0.0f, 200.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    setCraftMetres(0.0f, 0.0f);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    ASSERT_NEAR(g_lastTarget.targetEfM.x, 0.0f, 0.01f);
+
+    setCraftMetres(-0.42f, 0.0f);                 // held downwind of the point
+    g_stubPositionErrorCm.x = 42.0f;
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    ASSERT_TRUE(g_ffValid);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 0.0f, 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.01f);
+}
+
+TEST_F(FlightPlanNavCarrotTest, CarrotStartedAfreshIgnoresTheLegItReplaces)
+{
+    // A cursor jump: the carrot starts on the craft at what it is making along the new leg, not on
+    // the point the old leg held it to or at what that leg commanded.
+    addWaypointMetres(0.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypointMetres(0.0f, 600.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypointMetres(0.0f, 900.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    step();
+    setCraftMetres(3.0f, 100.0f);
+    g_stubEstimate.velocity.v[ENU_N] = 200.0f;
+    g_stubPositionErrorCm.x = -300.0f;
+    g_stubTargetVelCmS.y = 900.0f;
+    ASSERT_TRUE(flightPlanNavSetCurrentIndex(1));
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 3.0f, 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 100.0f, 0.01f);
+    EXPECT_NEAR(g_lastFfEfMps.y, 2.0f, 0.05f);
 }
 
 TEST_F(FlightPlanNavCarrotTest, LagCompensationCrossesGateNearCornerSpeed)

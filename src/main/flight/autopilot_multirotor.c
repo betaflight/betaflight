@@ -275,6 +275,13 @@ static float posPidLpfGain(float dtS)
     return pt3FilterGain(cutoffHz, dtS);
 }
 
+static void pt3FilterSeed(pt3Filter_t *filter, float value)
+{
+    filter->state = value;
+    filter->state1 = value;
+    filter->state2 = value;
+}
+
 static void initPidLpfs(void)
 {
     posLpfDtS = HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ);  // nominal until the loop measures itself
@@ -483,6 +490,11 @@ void autopilotSetNavHeadingOverride(bool valid, float headingDeg)
 {
     apNavHeadingOverrideValid = valid;
     apNavHeadingOverrideDeg = headingDeg;
+}
+
+vector2_t autopilotGetPositionErrorCm(void)
+{
+    return distanceError;
 }
 
 static inline float calculateSanityCheckDistance(void)
@@ -1122,6 +1134,7 @@ bool positionControl(void)
     // Ahead of the pitch-forward: alt hold keeps flying this command's altitude ramp through it.
     positionNavUpdate(dt, est);
     if (forcePitchForward) {
+        wasNavActive = false;
         disableYawControl();
         setYawDisableReason(11);
         autopilotAngle[AI_ROLL]  = 0.0f;
@@ -1152,6 +1165,7 @@ bool positionControl(void)
     ap.speedSlowing = ap.speedXY < ap.speedTrendCmS - 20.0f;
     ap.speedTrendCmS += (dt / (0.5f + dt)) * (ap.speedXY - ap.speedTrendCmS);
 
+    const bool navStarting = ap.navActive && !wasNavActive;
     xyProcessTransitions();
     ap.mode = xySelectMode();
 
@@ -1194,6 +1208,14 @@ bool positionControl(void)
     ap.wasSticksActive = ap.sticksActive; // Main frame-to-frame history update
 
     const bool anchorOff = (ap.anchor == ANCHOR_OFF);
+
+    // Nav taking over a craft with a velocity started from its own motion (a mission picked up
+    // mid-flight) starts its feedforward where it stands: D acts on the measured velocity at once,
+    // and F climbing out of a reset filter against it is a brake pulse the craft never asked for.
+    const bool seedFeedforward = navStarting && positionNavGetActiveCommand()->velocityFromCraft;
+    if (seedFeedforward) {
+        previousTargetVelocity = targetVelocity;
+    }
 
     // One unified distance-based PIDAF law. The mode differences are already
     // encoded in ap.anchor / ap.iPolicy / ap.isPosHoldBraking (set above); the
@@ -1283,6 +1305,9 @@ bool positionControl(void)
     // ride outside the filter. NOTE: D is on raw measured velocity and A on the
     // raw Kalman acceleration — filter placement is an open tuning item.
     for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
+        if (seedFeedforward) {
+            pt3FilterSeed(&posNoisyPidsLpf[axis], pidF.v[axis]);
+        }
         const float smoothedF = pt3FilterApply(&posNoisyPidsLpf[axis], pidF.v[axis]);
         pidSumVectorEF.v[axis] = pidP.v[axis] + pidI.v[axis] + pidD.v[axis] + pidA.v[axis] + smoothedF;
     }

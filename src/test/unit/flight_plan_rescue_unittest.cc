@@ -92,6 +92,7 @@ float g_emergencyDescentRateCmS;
 float g_altHoldClimbRateCmS;
 float g_lastVertRateMps;
 float g_lastVertStartAltM;
+vector2_t g_stubPositionErrorCm;
 int g_setVerticalProfileCalls;
 float g_stubCommandedAltCm;
 bool g_stubCommandedAltSet;
@@ -211,6 +212,13 @@ void positionNavClearTarget(void)
 {
     g_clearTargetCalls++;
     g_lastTarget.valid = false;
+}
+
+static int g_startAfreshCalls;
+
+void positionNavStartAfresh(void)
+{
+    g_startAfreshCalls++;
 }
 
 void positionNavSetAutoClearOnReach(bool autoClear)
@@ -353,6 +361,11 @@ void autopilotSetNavHeadingOverride(bool valid, float headingDeg)
     g_navHeadingOverrideDeg = headingDeg;
 }
 
+vector2_t autopilotGetPositionErrorCm(void)
+{
+    return g_stubPositionErrorCm;
+}
+
 } // extern "C"
 
 class FlightPlanRescueTest : public ::testing::Test {
@@ -373,10 +386,12 @@ protected:
         g_altHoldClimbRateCmS = 500.0f;   // alt_hold_climb_rate default, 5 m/s
         g_lastVertRateMps = 0.0f;
         g_lastVertStartAltM = 0.0f;
+        memset(&g_stubPositionErrorCm, 0, sizeof(g_stubPositionErrorCm));
         g_stubCommandedAltCm = 0.0f;
         g_stubCommandedAltSet = false;
         memset(&g_stubTargetVelCmS, 0, sizeof(g_stubTargetVelCmS));
         g_clearTargetCalls = 0;
+        g_startAfreshCalls = 0;
         g_stubMicros = 0;
 
         memset(&g_stubEstimate, 0, sizeof(g_stubEstimate));
@@ -659,10 +674,11 @@ TEST_F(FlightPlanRescueTest, HeadingGateHoldsAndRecovers)
     EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.1f);
 }
 
-TEST_F(FlightPlanRescueTest, HeadingRecoveryStartsTheReturnWhereTheCraftIs)
+TEST_F(FlightPlanRescueTest, HeadingRecoveryStartsTheReturnWhereTheCraftComesToRest)
 {
     // Pitched forward for up to 15 s to find its heading, the craft is nowhere near the climb's hold
-    // point by the time it has one. The return leg starts from the craft, not from that point.
+    // point by the time it has one, and still flying fast. The return leg starts from where it comes
+    // to rest braking out of the pitch-forward, not from that point, nor from the craft.
     g_stubEstimate.position.v[ENU_E] = 30.0f * 100.0f;
     ASSERT_TRUE(flightPlanNavStageRescuePlan());
     flightPlanNavEngage();
@@ -670,30 +686,38 @@ TEST_F(FlightPlanRescueTest, HeadingRecoveryStartsTheReturnWhereTheCraftIs)
     triggerReached();
     ASSERT_TRUE(g_lastPitchForward);
 
-    g_stubEstimate.position.v[ENU_N] = 25.0f * 100.0f;   // pitched forward, north
-    g_stubEstimate.velocity.v[ENU_N] = 600.0f;
+    const float brakeMps2 = 9.80665f * tanf(50.0f * M_PIf / 180.0f);
+    float northM = 25.0f;                               // pitched forward, north
+    float speedMps = 15.0f;
+    g_stubEstimate.position.v[ENU_N] = northM * 100.0f;
+    g_stubEstimate.velocity.v[ENU_N] = speedMps * 100.0f;
     attitude.values.yaw = 0;                            // nose north, well off home
     g_stubHeadingValid = true;
     g_stubMicros += 100'000;
     flightPlanNavUpdate(g_stubMicros);
     ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
     EXPECT_FALSE(g_lastPitchForward);
+    const float restNorthM = northM + speedMps * (speedMps / (2.0f * brakeMps2) + 0.15f);
     EXPECT_NEAR(g_lastTarget.targetEfM.x, 30.0f, 0.01f);
-    EXPECT_NEAR(g_lastTarget.targetEfM.y, 25.0f, 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, restNorthM, 0.01f);
+    ASSERT_GT(restNorthM - northM, 5.0f);               // further on than the controller's reach
 
-    // Nothing is commanded until the nose is round: the craft brakes out of the pitch-forward at
-    // full authority, held to a carrot it drags along no further than the controller's reach.
+    // Nothing is commanded until the nose is round, and the craft braking out of the pitch-forward
+    // is held to that point all the way in, not dragged back from where its brake ends.
     ASSERT_TRUE(g_ffValid);
     EXPECT_NEAR(lastFfSpeedMps(), 0.0f, 0.001f);
-    for (int i = 0; i < 20; i++) {
-        g_stubEstimate.position.v[ENU_N] += 30.0f;
-        g_stubMicros += 100'000;
+    const float dtS = 0.05f;
+    for (float t = 0.0f; speedMps > 0.0f; t += dtS) {
+        speedMps = (t < 0.15f) ? speedMps : fmaxf(speedMps - brakeMps2 * dtS, 0.0f);
+        northM += speedMps * dtS;
+        g_stubEstimate.position.v[ENU_N] = northM * 100.0f;
+        g_stubEstimate.velocity.v[ENU_N] = speedMps * 100.0f;
+        g_stubMicros += 50'000;
         flightPlanNavUpdate(g_stubMicros);
         EXPECT_NEAR(lastFfSpeedMps(), 0.0f, 0.001f);
-        const float gapE = g_lastTarget.targetEfM.x - 30.0f;
-        const float gapN = g_lastTarget.targetEfM.y - g_stubEstimate.position.v[ENU_N] * 0.01f;
-        EXPECT_LE(sqrtf(gapE * gapE + gapN * gapN), 5.0f + 0.01f);
+        EXPECT_NEAR(g_lastTarget.targetEfM.y, restNorthM, 0.01f) << "at " << t << " s";
     }
+    EXPECT_NEAR(northM, restNorthM, 0.5f);
 }
 
 TEST_F(FlightPlanRescueTest, HeadingRecoveryCarriesTheCommandedAltitudeOn)
@@ -716,6 +740,7 @@ TEST_F(FlightPlanRescueTest, HeadingRecoveryCarriesTheCommandedAltitudeOn)
     ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
     EXPECT_NEAR(g_lastVertStartAltM, kDefaultReturnAltM, 0.001f);
     EXPECT_EQ(g_clearTargetCalls, clearsBefore);
+    EXPECT_EQ(g_startAfreshCalls, 1);   // and does not carry the climb's command on
 }
 
 TEST_F(FlightPlanRescueTest, HeadingGateTimesOutToAbort)

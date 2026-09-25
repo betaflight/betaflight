@@ -464,6 +464,30 @@ TEST_F(PositionNavTest, VelocityFeedforwardWalksItsTarget)
     EXPECT_NEAR(positionNavGetActiveCommand()->targetPosEfM.y, 4.96f, 0.001f);
 }
 
+TEST_F(PositionNavTest, VelocityFeedforwardStartedAfreshIsTakenAsItStands)
+{
+    // A re-target mid-flight (a geofence return) to a carrot held while the nose comes round: the
+    // command is the carrot's nothing at once, as the carrot the craft is held to is not moving.
+    const vector3_t outbound = {{ 0.0f, 500.0f, 0.0f }};
+    positionNavSetTargetEf(&outbound, 15.0f, -1.0f, 1000.0f, false, NULL, NULL);
+    const vector2_t northMps = {{ 0.0f, 15.0f }};
+    positionNavSetVelocityFeedforward(&northMps);
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 300.0f, 1000.0f);
+    positionNavUpdate(0.01f, &est);
+    ASSERT_NEAR(positionNavGetTargetVelocityCmS().y, 1500.0f, 0.01f);
+
+    const vector3_t carrot = {{ 0.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&carrot, 7.5f, -1.0f, 1000.0f, false, NULL, NULL);
+    const vector2_t stillMps = {{ 0.0f, 0.0f }};
+    positionNavSetVelocityFeedforward(&stillMps);
+    positionNavStartAfresh();
+    positionNavUpdate(0.01f, &est);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().x, 0.0f, 0.01f);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, 0.0f, 0.01f);
+    EXPECT_NEAR(positionNavGetActiveCommand()->targetPosEfM.y, 0.0f, 0.001f);
+    EXPECT_TRUE(positionNavGetActiveCommand()->velocityFromCraft);
+}
+
 TEST_F(PositionNavTest, NewTargetClearsTheVelocityFeedforward)
 {
     const vector3_t carrot = {{ 0.0f, 50.0f, 0.0f }};

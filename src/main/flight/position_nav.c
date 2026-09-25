@@ -51,6 +51,7 @@
 
 static positionNavCommand_t cmd;
 static vector3_t previousTargetVelMps;
+static bool previousTargetVelValid;     // previousTargetVelMps is a velocity that was commanded
 static vector3_t currentTargetVelCmS;
 static bool withinAcceptanceRadius;
 static bool withinAcceptanceAltitude;
@@ -66,6 +67,7 @@ void positionNavReset(void)
     memset(&cmd, 0, sizeof(cmd));
     cmd.sequence = sequence;
     vector3Zero(&previousTargetVelMps);
+    previousTargetVelValid = false;
     vector3Zero(&currentTargetVelCmS);
     withinAcceptanceRadius = false;
     withinAcceptanceAltitude = false;
@@ -97,6 +99,7 @@ void positionNavSetTargetEf(
     cmd.rampRateSlewed = handOver;
     cmd.approachSlowdownM = 0.0f;
     cmd.velocityFfValid = false;
+    cmd.velocityFromCraft = false;
     cmd.acceptanceRadiusM = acceptanceRadiusM;
     cmd.completionSpeedMps = completionSpeedMps;
     cmd.altitudeArrivalRequired = true;
@@ -108,6 +111,7 @@ void positionNavSetTargetEf(
     // The commanded velocity deliberately survives the handover: zeroing it here put a one-cycle
     // notch in the target at every leg change, which the position controller answers with a pitch
     // jerk. The next update recomputes it from the new target anyway.
+    previousTargetVelValid = handOver;
     withinAcceptanceRadius = false;
     withinAcceptanceAltitude = false;
 }
@@ -127,6 +131,7 @@ void positionNavClearTarget(void)
     cmd.completionSignalled = false;
     vector3Zero(&currentTargetVelCmS);
     vector3Zero(&previousTargetVelMps);
+    previousTargetVelValid = false;
     withinAcceptanceRadius = false;
     withinAcceptanceAltitude = false;
 }
@@ -208,6 +213,11 @@ void positionNavSetVelocityFeedforward(const vector2_t *velEfMps)
     }
     cmd.velocityFfValid = true;
     cmd.velocityFfEfMps = *velEfMps;
+}
+
+void positionNavStartAfresh(void)
+{
+    previousTargetVelValid = false;
 }
 
 void positionNavSetApproachSlowdown(float slowdownM)
@@ -330,7 +340,11 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
         }
     }
 
+    if (!previousTargetVelValid) {
+        cmd.velocityFromCraft = cmd.velocityFfValid;
+    }
     previousTargetVelMps = targetVelMps;
+    previousTargetVelValid = true;
 
     if (cmd.includeAltitude) {
         targetVelMps.v[ENU_U] = updateVerticalRamp(dt, posUpM);
