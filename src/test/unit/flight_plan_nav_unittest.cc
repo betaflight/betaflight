@@ -2583,6 +2583,61 @@ struct LaggingCraft {
     }
 };
 
+TEST_F(FlightPlanNavCarrotTest, FaceTargetCornerSwingsTheNoseAtOnce)
+{
+    // Two face-the-target legs meeting at a 90 degree corner. The leg handed over at the gate sheds
+    // its speed at the carrot's own acceleration, not at full brake, so its nose swings for the new
+    // leg straight away rather than holding until the craft has all but stopped.
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER, WAYPOINT_YAW_FACE_TARGET);
+    addWaypointMetres(100.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER, WAYPOINT_YAW_FACE_TARGET);
+    addWaypointMetres(200.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+
+    const float dt = 0.02f;
+    LaggingCraft craft;
+    for (int i = 0; i < 20000 && flightPlanNavGetCurrentIndex() == 0; i++) {
+        craft.follow(g_lastTarget.targetEfM, g_lastFfEfMps, dt);
+        setCraftMetres(craft.e, craft.n);
+        g_stubEstimate.velocity.v[ENU_E] = craft.ve * 100.0f;
+        g_stubEstimate.velocity.v[ENU_N] = craft.vn * 100.0f;
+        step(20'000);
+    }
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    ASSERT_GT(sqrtf(sq(craft.ve) + sq(craft.vn)), 2.0f);   // crossing the gate at speed
+    EXPECT_NEAR(g_navHeadingOverrideDeg, 90.0f, 15.0f);    // and the nose already sent round
+}
+
+TEST_F(FlightPlanNavCarrotTest, FaceTargetHoldTakenOverAtAGateSwingsTheNoseOnlyOnceBraked)
+{
+    // A face-the-target HOLD well off the nose, taken over at a carrot leg's gate, stops the craft
+    // where it is rather than shedding speed at the carrot's acceleration, so its nose waits for the
+    // brake as a leg taking over afresh does.
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER, WAYPOINT_YAW_FACE_TARGET);
+    addWaypointMetres(60.0f, 100.0f, 15000, WAYPOINT_TYPE_HOLD, WAYPOINT_YAW_FACE_TARGET);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+
+    const float dt = 0.02f;
+    LaggingCraft craft;
+    for (int i = 0; i < 20000 && flightPlanNavGetCurrentIndex() == 0; i++) {
+        craft.follow(g_lastTarget.targetEfM, g_lastFfEfMps, dt);
+        setCraftMetres(craft.e, craft.n);
+        g_stubEstimate.velocity.v[ENU_E] = craft.ve * 100.0f;
+        g_stubEstimate.velocity.v[ENU_N] = craft.vn * 100.0f;
+        step(20'000);
+    }
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    ASSERT_GT(sqrtf(sq(craft.ve) + sq(craft.vn)), 2.0f);   // crossing the gate at speed
+    EXPECT_NEAR(g_lastAccelLimitMps2, 0.0f, 0.001f);          // stopped where it is
+    EXPECT_NEAR(g_navHeadingOverrideDeg, 0.0f, 1.0f);      // with the nose held on the leg it came off
+
+    g_stubEstimate.velocity.v[ENU_E] = 0.0f;
+    g_stubEstimate.velocity.v[ENU_N] = 100.0f;             // braked
+    step(20'000);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, RADIANS_TO_DEGREES(atan2f(60.0f - craft.e, 100.0f - craft.n)), 1.0f);
+}
+
 TEST_F(FlightPlanNavCarrotTest, CarrotKeepsTimeThroughAGate)
 {
     // The update that crosses a gate still moves the carrot on by the time since the last one, or

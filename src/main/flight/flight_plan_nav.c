@@ -136,9 +136,11 @@
 // failed compass, a yaw controller that has stood down) must not leave the craft parked in the air.
 // Give up waiting and fly the leg anyway.
 #define FP_YAW_ALIGN_TIMEOUT_US   10000000u
-// Nor does it, or the rescue climb, swing the nose until the craft has first braked below this, or
-// that wait has run out: turning it while braking at full angle sweeps the brake sideways, and a
-// craft carried off its line misses the gates it was meant to cross.
+// Nor does a leg that brakes the craft to a stop swing the nose until the craft has first slowed
+// below this, or that wait has run out: one taking over a moving craft afresh, the rescue climb, and
+// a point leg taken over at a gate. Turning it while braking hard sweeps the brake sideways, and a
+// craft carried off its line misses the gates it was meant to cross. A carrot carried on through a
+// gate sheds speed at its own acceleration, so its nose swings at once.
 #define FP_YAW_SWING_MAX_SPEED_MPS 1.5f
 
 // Landing descends toward a target far below the current position so vertical
@@ -265,7 +267,7 @@ static struct {
     bool      legYawHolding;    // and is station-keeping at the craft meanwhile (point legs)
     timeUs_t  legYawGateStartUs;// when that wait started
     bool      legYawTimedOut;   // the nose never came round: fly the leg regardless
-    bool      legYawBraked;     // the craft has slowed enough on this leg for its nose to swing
+    bool      legYawBraked;     // the nose may swing: a carrot leg was handed over, or the craft has since slowed
     uint8_t   legYawIndex;      // the waypoint the gate state above belongs to
     vector2_t legStartEnuM;     // anchor of the leg line (E,N metres)
     float     carrotSpeedMps;   // slewed carrot speed: the leg's speed profile
@@ -637,7 +639,7 @@ static bool dispatchWaypoint(void)
         fp.legYawIndex = fp.currentIndex;
         fp.legYawGateStartUs = micros();
         fp.legYawTimedOut = false;
-        fp.legYawBraked = false;
+        fp.legYawBraked = handingOver && passGate;
     }
     fp.legYawGated = faceTarget && !fp.legYawTimedOut && !legNoseOnTarget(dispatchEst, &targetEnuM);
     fp.legYawHolding = fp.legYawGated && !passGate;

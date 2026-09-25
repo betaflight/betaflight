@@ -714,6 +714,20 @@ TEST_F(FlightPlanRescueTest, ClimbSwingsTheNoseOnlyOnceTheCraftHasBraked)
     EXPECT_NEAR(g_navHeadingOverrideDeg, -90.0f, 1.0f);
 }
 
+TEST_F(FlightPlanRescueTest, ClimbStagedOverAFlyingMissionSwingsTheNoseOnlyOnceBraked)
+{
+    // RX lost mid-mission at 7 m/s: the climb brakes at full angle out of the mission's speed as a
+    // fresh one does, so its nose holds as well.
+    addWaypoint(200000, 0, 15000, WAYPOINT_TYPE_FLYOVER);
+    flightPlanNavEngage();
+    g_stubEstimate.position.v[ENU_E] = 30.0f * 100.0f;
+    g_stubEstimate.velocity.v[ENU_E] = 700.0f;
+    attitude.values.yaw = 900;
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    ASSERT_TRUE(g_navHeadingOverrideValid);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, 90.0f, 1.0f);
+}
+
 TEST_F(FlightPlanRescueTest, ReturnLegStartsWhereTheClimbHeldTheCraft)
 {
     // The climb completes with the craft still, but not necessarily on its hold point: pushed off
