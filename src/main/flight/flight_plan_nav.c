@@ -647,9 +647,9 @@ static bool dispatchWaypoint(void)
         autopilotSetNavHeadingOverride(false, 0.0f);   // precise legs use the configured yaw mode
     }
 
-    // Where the craft is now, at the leg's altitude: what both the carrot and the face-the-target
-    // hold below start from, so neither hands the position controller a leg to fly before the nose
-    // has turned. The altitude is the leg's from the outset - only translation waits.
+    // Where the craft is now, at the leg's altitude: what the face-the-target hold below starts from,
+    // so it hands the position controller no leg to fly before the nose has turned. The altitude is
+    // the leg's from the outset - only translation waits.
     const vector3_t craftAtLegAltM = {.v = {
         [ENU_E] = dispatchEst->position.v[ENU_E] * 0.01f,
         [ENU_N] = dispatchEst->position.v[ENU_N] * 0.01f,
@@ -1658,9 +1658,7 @@ static void onWaypointReached(void *userData)
     // A LAND duration is a pre-descent loiter and a TAKEOFF duration a
     // post-climb loiter; the hold-expiry path starts the descent (LAND) or
     // advances (HOLD, TAKEOFF).
-    const bool holdsOnArrival = (wp->type == WAYPOINT_TYPE_HOLD)
-                             || (wp->type == WAYPOINT_TYPE_LAND)
-                             || (wp->type == WAYPOINT_TYPE_TAKEOFF);
+    const bool holdsOnArrival = isStationKeepingType(wp->type);
     if (holdsOnArrival && fp.holdDurationDs > 0) {
         fp.state = FP_NAV_HOLDING;
         fp.holdStartUs = micros();
@@ -1850,7 +1848,7 @@ bool flightPlanNavInjectPlan(const waypoint_t *waypoints, uint8_t count)
     fp.injectedCount = count;
     fp.currentIndex = 0;
     fp.abortReason = FP_ABORT_NONE;
-    fp.carrotValid = false;   // a fresh plan re-anchors on the craft
+    fp.carrotValid = false;
     fp.dispatchAfresh = true;
     fp.carrotSpeedMps = 0.0f;
     fp.measFiltValid = false;
@@ -1914,8 +1912,8 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
     // activates POS_HOLD_MODE and its first update calls resetPositionControl().
     // Re-issue the current leg whenever the dispatched target has been lost.
     if (fp.state == FP_NAV_TARGETING && !positionNavHasActiveTarget()) {
-        // Position control re-initialised and wiped the target: re-anchor a
-        // carrot leg on the craft's current position, not a stale carrot.
+        // Position control re-initialised and wiped the target: a carrot leg
+        // starts afresh from what the craft is doing, not from a stale carrot.
         fp.carrotValid = false;
         fp.carrotSpeedMps = 0.0f;
         fp.measFiltValid = false;
@@ -2085,7 +2083,7 @@ bool flightPlanNavSetCurrentIndex(uint8_t index)
         fp.patternPending = false;
         fp.patternActive = false;
         fp.abortReason = FP_ABORT_NONE;
-        fp.carrotValid = false;   // a cursor jump re-anchors on the craft
+        fp.carrotValid = false;
         fp.dispatchAfresh = true;
         fp.carrotSpeedMps = 0.0f;
         fp.measFiltValid = false;
