@@ -646,6 +646,7 @@ TEST_F(FlightPlanRescueTest, StageWhileActiveInjectsImmediately)
     EXPECT_EQ(g_setTargetCalls, callsBefore + 1);
     ASSERT_TRUE(g_lastTarget.valid);
     EXPECT_NEAR(g_lastTarget.targetEfM.x, 30.0f, 0.1f); // rescue wp0, not the PG leg
+    EXPECT_EQ(g_startAfreshCalls, 1);                    // and does not carry the mission's command on
 }
 
 // --- Climb-leg altitude gate ---

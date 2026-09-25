@@ -1438,6 +1438,7 @@ bool flightPlanNavStageRescuePlan(void)
             pitchForwardOverride(false);
         }
         fp.stagedCount = 0;
+        fp.dispatchAfresh = true;
         clearModifierState();
         clearLegYawState();
         dispatchWaypoint();

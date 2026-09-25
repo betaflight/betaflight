@@ -1451,6 +1451,35 @@ TEST_F(NavModeTest, NavFeedforwardPickedUpAfterAPitchForwardDoesNotBrake)
     EXPECT_GT(lowestPitch, -2.0f);
 }
 
+TEST_F(NavModeTest, NavReTargetedMidFlightBrakesFromTheFirstCycle)
+{
+    // Flying a carrot at 7 m/s, the command is replaced mid-flight (a geofence return, a rescue
+    // staged over the mission) by one started from the craft's motion that states no velocity and
+    // holds where the craft comes to rest. The feedforward of the command it replaced must
+    // not carry over and point the craft on at that hold while the damping brakes.
+    engageNav(30, 30, 30, 50, 8, 50);
+    mockNavCommand.velocityFfValid = true;
+    testEstimate.velocity.y = 700.0f;
+    setTargetVelocityNorth(700.0f);
+    for (int i = 0; i < 100; i++) {
+        setNavCarrot(0.0f, testEstimate.position.y * 0.01f);
+        runIterations(1);
+        testEstimate.position.y += 7.0f;
+    }
+
+    mockNavCommand.sequence++;
+    mockNavCommand.velocityFromCraft = true;
+    setNavCarrot(0.0f, testEstimate.position.y * 0.01f + 3.4f);
+    setTargetVelocityNorth(0.0f);
+    float highestPitch = -90.0f;
+    for (int i = 0; i < 5; i++) {
+        runIterations(1);
+        highestPitch = fmaxf(highestPitch, autopilotAngle[AI_PITCH]);
+        testEstimate.position.y += 7.0f;
+    }
+    EXPECT_LT(highestPitch, -40.0f);
+}
+
 TEST_F(NavModeTest, NavAnchorDoesNotCarryAcrossACommandChange)
 {
     // A waypoint transition installs the successor before the controller runs

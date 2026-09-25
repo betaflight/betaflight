@@ -240,6 +240,7 @@ typedef struct autopilotState_s {
     uint32_t navAnchorSeq;      // command the anchor state belongs to
     bool navPointValid;         // navPointReference has been seeded for this approach
     uint32_t navPointSeq;       // command navPointReference belongs to
+    uint32_t navFeedforwardSeq; // command the F filter belongs to
     unsigned debugAxis;
 } autopilotState_t;
 
@@ -1268,10 +1269,16 @@ bool positionControl(void)
 
     const bool anchorOff = (ap.anchor == ANCHOR_OFF);
 
-    // Nav taking over a craft with a velocity started from its own motion (a mission picked up
-    // mid-flight) starts its feedforward where it stands: D acts on the measured velocity at once,
-    // and F climbing out of a reset filter against it is a brake pulse the craft never asked for.
-    const bool seedFeedforward = navStarting && positionNavGetActiveCommand()->velocityFromCraft;
+    // A command whose velocity starts from the craft's own motion (a mission picked up mid-flight, or
+    // a re-target while flying) starts its feedforward where it stands: D acts on the measured
+    // velocity at once, and F climbing out of a reset filter, or still carrying the command it
+    // replaced, against it is a pulse the craft never asked for.
+    bool seedFeedforward = false;
+    if (ap.navActive) {
+        const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
+        seedFeedforward = navCmd->velocityFromCraft && (navStarting || navCmd->sequence != ap.navFeedforwardSeq);
+        ap.navFeedforwardSeq = navCmd->sequence;
+    }
     if (seedFeedforward) {
         previousTargetVelocity = targetVelocity;
     }
