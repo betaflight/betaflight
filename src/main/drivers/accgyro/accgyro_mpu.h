@@ -54,6 +54,7 @@
 #define IIM42653_WHO_AM_I_CONST             (0x56)
 #define LSM6DSV16X_WHO_AM_I_CONST           (0x70)
 #define LSM6DSK320X_WHO_AM_I_CONST          (0x75)
+#define ASM330LHH_WHO_AM_I_CONST            (0x6B)
 #define ICM40609_WHO_AM_I_CONST             (0x3B)
 
 // RA = Register Address
@@ -222,6 +223,7 @@ typedef enum {
     L3GD20_SPI,
     LSM6DSV16X_SPI,
     LSM6DSK320X_SPI,
+    ASM330LHH_SPI,
     ICM_45605_SPI,
     ICM_45686_SPI,
     ICM_56686_SPI,
