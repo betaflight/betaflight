@@ -73,6 +73,12 @@ beeper_unittest_DEFINES := \
 		USE_BEEPER= \
 		USE_DSHOT=
 
+compass_ak9916_unittest_SRC := \
+		$(USER_DIR)/drivers/compass/compass_ak9916.c
+
+compass_ak9916_unittest_DEFINES := \
+                USE_MAG_AK9916=
+
 compass_bmm350_unittest_SRC := \
 		$(USER_DIR)/drivers/compass/compass_bmm350.c
 
@@ -297,6 +303,9 @@ io_serial_unittest_SRC := \
 		$(USER_DIR)/io/serial.c \
 		$(USER_DIR)/io/serial_resource.c
 
+flashfs_bounds_unittest_SRC := \
+		$(TEST_DIR)/flashfs_bounds_test_support.c
+
 
 ledstrip_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
@@ -329,6 +338,19 @@ msp_serial_unittest_DEFINES := \
 		USE_MSP_DISPLAYPORT= \
 		USE_RANGEFINDER_MT= \
 		USE_OPTICALFLOW_MT=
+
+msp_reboot_unittest_SRC := \
+		$(USER_DIR)/fc/runtime_config.c \
+		$(TEST_DIR)/msp_reboot_test_support.c
+
+# Compile the complete MSP translation unit; retain only the reboot paths in
+# this focused executable, without replacing production control-flow functions.
+msp_reboot_unittest_C_FLAGS := -ffunction-sections -fdata-sections
+ifeq ($(OSFAMILY), macosx)
+msp_reboot_unittest_LDFLAGS := -Wl,-dead_strip
+else
+msp_reboot_unittest_LDFLAGS := -Wl,--gc-sections
+endif
 
 osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
@@ -665,10 +687,14 @@ position_rescue_geometry_unittest_SRC := \
 
 poshold_unittest_SRC := \
 		$(USER_DIR)/flight/autopilot_multirotor.c \
+		$(USER_DIR)/flight/pos_hold_multirotor.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/vector.c \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/pg/rx.c
+
+poshold_unittest_DEFINES := \
+		USE_POSITION_HOLD=
 
 launch_wing_unittest_SRC := \
 		$(USER_DIR)/flight/launch_wing.c \
@@ -1123,14 +1149,14 @@ endif
 $(OBJECT_DIR)/$1/%.c.o: $(USER_DIR)/%.c
 	@echo "compiling $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
-	$(V1) $(CC) $(C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
+	$(V1) $(CC) $(C_FLAGS) $($1_C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
                 $$(foreach def,$$($1_DEFINES),-D $$(def)) \
                 -c $$< -o $$@
 
 $(OBJECT_DIR)/$1/%.c.o: $(TEST_DIR)/%.c
 	@echo "compiling test c file: $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
-	$(V1) $(CC) $(C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
+	$(V1) $(CC) $(C_FLAGS) $($1_C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
                 $$(foreach def,$$($1_DEFINES),-D $$(def)) \
                 -c $$< -o $$@
 
@@ -1139,7 +1165,7 @@ ifneq ($1,$(basename $1))
 $(OBJECT_DIR)/$1/%.c.o: $(TARGET_DIR)/$(TARGET)/%.c
 	@echo "compiling target c file: $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
-	$(V1) $(CC) $(C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
+	$(V1) $(CC) $(C_FLAGS) $($1_C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
                 $$(foreach def,$$($1_DEFINES),-D $$(def)) \
                 -c $$< -o $$@
 endif
@@ -1157,7 +1183,7 @@ $(OBJECT_DIR)/$1/$(basename $1): $$($1_OBJS) \
 
 	@echo "linking $$@" "$(STDOUT)"
 	$(V1) mkdir -p $(dir $$@)
-	$(V1) $(CXX) $(CXX_FLAGS) $(LDFLAGS) $$^ -o $$@
+	$(V1) $(CXX) $(CXX_FLAGS) $(LDFLAGS) $($1_LDFLAGS) $$^ -o $$@
 
 test_$1: $(OBJECT_DIR)/$1/$(basename $1)
 	$(V1) $$< $$(EXEC_OPTS) "$(STDOUT)" && echo "running $$@: PASS"

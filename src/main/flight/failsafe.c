@@ -321,6 +321,11 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 failsafeState.boxFailsafeSwitchWasOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
                 // store and use the switch state as it was at the start of the failsafe
                 if (armed) {
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+                    const bool autopilotControlsThrottle = FLIGHT_MODE(AUTOPILOT_MODE) && flightPlanNavIsActive();
+#else
+                    const bool autopilotControlsThrottle = false;
+#endif
                     // Track throttle command below minimum time
                     if (calculateThrottleStatus() != THROTTLE_LOW) {
                         failsafeState.throttleLowPeriod = millis() + failsafeConfig()->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
@@ -336,7 +341,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                         //  allow re-arming 1 second after Rx recovery, customisable
                         reprocessState = true;
                     } else if (!receivingRxData) {
-                        if (millis() > failsafeState.throttleLowPeriod
+                        if (millis() > failsafeState.throttleLowPeriod && !autopilotControlsThrottle
 #ifdef USE_GPS_RESCUE
                             && failsafeConfig()->failsafe_procedure != FAILSAFE_PROCEDURE_GPS_RESCUE
 #endif
