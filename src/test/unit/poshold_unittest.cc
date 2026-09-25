@@ -1480,6 +1480,24 @@ TEST_F(NavModeTest, NavReTargetedMidFlightBrakesFromTheFirstCycle)
     EXPECT_LT(highestPitch, -40.0f);
 }
 
+TEST_F(NavModeTest, NavCommandsLeanLimitBoundsItsBrake)
+{
+    // A command stating a gentler lean than ap_max_angle brakes at that, and one stating none at the
+    // whole of ap_max_angle.
+    engageNav(30, 30, 30, 50, 8, 50);
+    mockNavCommand.velocityFfValid = true;
+    mockNavCommand.maxAngleDeg = 35.0f;
+    testEstimate.velocity.y = 700.0f;
+    setNavCarrot(0.0f, 0.0f);
+    setTargetVelocityNorth(0.0f);
+    runIterations(1);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], -35.0f, 0.01f);
+
+    mockNavCommand.maxAngleDeg = 0.0f;
+    runIterations(1);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], -50.0f, 0.01f);
+}
+
 TEST_F(NavModeTest, NavAnchorDoesNotCarryAcrossACommandChange)
 {
     // A waypoint transition installs the successor before the controller runs

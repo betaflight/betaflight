@@ -248,6 +248,11 @@ void positionNavSetSettleTimeout(float timeoutS)
     g_settleTimeoutS = timeoutS;
 }
 
+void positionNavSetMaxAngle(float angleDeg)
+{
+    UNUSED(angleDeg);
+}
+
 bool positionEstimatorGetGpsOrigin(gpsLocation_t *out)
 {
     if (!g_stubGpsOriginSet || out == NULL) {

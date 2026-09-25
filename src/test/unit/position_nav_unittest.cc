@@ -211,6 +211,18 @@ TEST_F(PositionNavTest, SettleTimeoutCompletesACraftThatNeverQuiteStops)
     EXPECT_EQ(callbackCount, 0);
 }
 
+TEST_F(PositionNavTest, LeanLimitLastsOnlyForItsCommand)
+{
+    const vector3_t target = {{ 0.0f, 0.0f, 10.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 2.0f, 0.5f, true, testCallback, NULL);
+    EXPECT_EQ(positionNavGetActiveCommand()->maxAngleDeg, 0.0f);
+    positionNavSetMaxAngle(35.0f);
+    EXPECT_EQ(positionNavGetActiveCommand()->maxAngleDeg, 35.0f);
+
+    positionNavSetTargetEf(&target, 5.0f, 2.0f, 0.5f, true, testCallback, NULL);
+    EXPECT_EQ(positionNavGetActiveCommand()->maxAngleDeg, 0.0f);
+}
+
 TEST_F(PositionNavTest, ShortClimbBrakesIntoTheLegAltitudeRatherThanLagging)
 {
     // The ramp brakes into the leg altitude. Scaling the rate on the whole remaining error made

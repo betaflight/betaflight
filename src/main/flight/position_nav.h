@@ -59,6 +59,7 @@ typedef struct positionNavCommand_s {
     bool velocityFromCraft;         // its velocity started from the craft's own motion, not a predecessor's command
     float maxAccelMps2;             // acceleration limit (m/s^2), 0 = unlimited
     float maxDecelMps2;             // deceleration/braking limit (m/s^2), 0 = unlimited
+    float maxAngleDeg;              // lean limit below ap_max_angle, 0 = ap_max_angle
 
     bool autoClearOnReach;
     bool altitudeArrivalRequired;   // when false, arrival gates on the horizontal radius only
@@ -139,6 +140,10 @@ void positionNavSetAltitudeArrivalRequired(bool required);
 // craft that never quite comes to rest is not held indefinitely. 0, the default on each new target,
 // waits for as long as it takes.
 void positionNavSetSettleTimeout(float timeoutS);
+
+// The steepest the position controller may lean the craft while flying the active command, where
+// that is below ap_max_angle. 0, the default on each new target, leaves it at ap_max_angle.
+void positionNavSetMaxAngle(float angleDeg);
 
 // Called each control cycle; reads current estimate, computes target velocity,
 // and checks arrival conditions.

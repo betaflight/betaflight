@@ -124,6 +124,7 @@ bool g_ffValid;
 float g_lastAccelLimitMps2;
 float g_lastDecelLimitMps2;
 float g_settleTimeoutS;
+float g_maxAngleDeg;
 
 // The speed of the velocity the carrot last commanded.
 float lastFfSpeedMps(void)
@@ -155,6 +156,7 @@ void positionNavSetTargetEf(
     g_ffValid = false;
     memset(&g_lastFfEfMps, 0, sizeof(g_lastFfEfMps));
     g_settleTimeoutS = 0.0f;
+    g_maxAngleDeg = 0.0f;
     g_setTargetCalls++;
     g_targetWalkFromUs = g_stubMicros;
 }
@@ -268,6 +270,11 @@ void positionNavSetAltitudeArrivalRequired(bool required)
 void positionNavSetSettleTimeout(float timeoutS)
 {
     g_settleTimeoutS = timeoutS;
+}
+
+void positionNavSetMaxAngle(float angleDeg)
+{
+    g_maxAngleDeg = angleDeg;
 }
 
 bool positionEstimatorGetGpsOrigin(gpsLocation_t *out)
@@ -667,13 +674,14 @@ TEST_F(FlightPlanRescueTest, ClimbLegAltitudeGated)
 
 TEST_F(FlightPlanRescueTest, ClimbHoldsOneStoppingDistanceAhead)
 {
-    // Called at 6.5 m/s: the climb holds one stopping distance on, braking at ap_max_angle once the
+    // Called at 6.5 m/s: the climb holds one stopping distance on, braking at its own lean once the
     // attitude has come round onto the brake, and commands no velocity at all while it gets there.
     g_stubEstimate.position.v[ENU_E] = 30.0f * 100.0f;
     g_stubEstimate.velocity.v[ENU_E] = 650.0f;
     ASSERT_TRUE(flightPlanNavStageRescuePlan());
     flightPlanNavEngage();
-    const float stopM = 6.5f * (6.5f / (2.0f * 9.80665f * tanf(50.0f * M_PIf / 180.0f)) + 0.15f);
+    ASSERT_NEAR(g_maxAngleDeg, 35.0f, 0.001f);
+    const float stopM = 6.5f * (6.5f / (2.0f * 9.80665f * tanf(35.0f * M_PIf / 180.0f)) + 0.15f);
     EXPECT_NEAR(g_lastTarget.targetEfM.x, 30.0f + stopM, 0.01f);
     EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.01f);
     ASSERT_TRUE(g_ffValid);
@@ -716,7 +724,7 @@ TEST_F(FlightPlanRescueTest, ClimbSwingsTheNoseOnlyOnceTheCraftHasBraked)
 
 TEST_F(FlightPlanRescueTest, ClimbStagedOverAFlyingMissionSwingsTheNoseOnlyOnceBraked)
 {
-    // RX lost mid-mission at 7 m/s: the climb brakes at full angle out of the mission's speed as a
+    // RX lost mid-mission at 7 m/s: the climb brakes hard out of the mission's speed as a
     // fresh one does, so its nose holds as well.
     addWaypoint(200000, 0, 15000, WAYPOINT_TYPE_FLYOVER);
     flightPlanNavEngage();
@@ -796,6 +804,30 @@ TEST_F(FlightPlanRescueTest, ClimbWaitsForTheCraftToSettleOnlySoLong)
     triggerReached();
     ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
     EXPECT_NEAR(g_settleTimeoutS, 0.0f, 0.001f);   // nothing else waits on it
+}
+
+TEST_F(FlightPlanRescueTest, ClimbAloneBrakesAtAGentlerLean)
+{
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    EXPECT_NEAR(g_maxAngleDeg, 35.0f, 0.001f);
+
+    attitude.values.yaw = 2700;
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    EXPECT_NEAR(g_maxAngleDeg, 0.0f, 0.001f);   // the return has the whole of ap_max_angle
+}
+
+TEST_F(FlightPlanRescueTest, ClimbLeansNoFurtherThanApMaxAngle)
+{
+    autopilotConfigMutable()->maxAngle = 30;
+    g_stubEstimate.position.v[ENU_E] = 30.0f * 100.0f;
+    g_stubEstimate.velocity.v[ENU_E] = 650.0f;
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    EXPECT_NEAR(g_maxAngleDeg, 30.0f, 0.001f);
+    const float stopM = 6.5f * (6.5f / (2.0f * 9.80665f * tanf(30.0f * M_PIf / 180.0f)) + 0.15f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 30.0f + stopM, 0.01f);
 }
 
 TEST_F(FlightPlanRescueTest, ClimbBrakingDoesNotTripTheHeadingCheck)

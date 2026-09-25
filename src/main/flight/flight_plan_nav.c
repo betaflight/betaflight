@@ -183,6 +183,10 @@
 // still set off home rather than stall the rescue.
 #define FP_RESCUE_CLIMB_STILL_MPS 0.5f
 #define FP_RESCUE_CLIMB_SETTLE_S  3.0f
+// It brakes at no steeper a lean than this. The position controller lets a brake off in step with
+// the speed it sheds, so off a steeper one faster than the attitude can follow: the lean swings back
+// past level as the craft stops, and the pitch rate spikes.
+#define FP_RESCUE_CLIMB_MAX_ANGLE_DEG 35.0f
 
 #if ENABLE_RESCUE_PLAN
 // Legacy PITCH_FORWARD gives up after 15 s of heading recovery
@@ -448,21 +452,25 @@ static float commandedAltitudeM(const positionEstimate3d_t *est)
     return est->position.v[ENU_U] * 0.01f;
 }
 
-static float brakingDecelMps2(void)
+static float brakingDecelMps2(float angleDeg)
 {
-    const float leanDeg = fmaxf((float)autopilotConfig()->maxAngle, FP_BRAKE_MIN_ANGLE_DEG);
-    return G_ACCELERATION * tanf(DEGREES_TO_RADIANS(leanDeg));
+    return G_ACCELERATION * tanf(DEGREES_TO_RADIANS(fmaxf(angleDeg, FP_BRAKE_MIN_ANGLE_DEG)));
 }
 
-// Where braking at ap_max_angle brings the craft to rest on something moving at movingMps.
-static vector2_t restPointM(const positionEstimate3d_t *est, const vector2_t *movingMps)
+static float rescueClimbMaxAngleDeg(void)
+{
+    return fminf((float)autopilotConfig()->maxAngle, FP_RESCUE_CLIMB_MAX_ANGLE_DEG);
+}
+
+// Where braking at angleDeg brings the craft to rest on something moving at movingMps.
+static vector2_t restPointM(const positionEstimate3d_t *est, const vector2_t *movingMps, float angleDeg)
 {
     vector2_t closingMps = {
         .x = est->velocity.v[ENU_E] * 0.01f - movingMps->x,
         .y = est->velocity.v[ENU_N] * 0.01f - movingMps->y,
     };
     const float closingSpeedMps = vector2Norm(&closingMps);
-    vector2Scale(&closingMps, &closingMps, closingSpeedMps / (2.0f * brakingDecelMps2()) + FP_BRAKE_RESPONSE_S);
+    vector2Scale(&closingMps, &closingMps, closingSpeedMps / (2.0f * brakingDecelMps2(angleDeg)) + FP_BRAKE_RESPONSE_S);
     return (vector2_t){ .x = est->position.v[ENU_E] * 0.01f + closingMps.x,
                         .y = est->position.v[ENU_N] * 0.01f + closingMps.y };
 }
@@ -475,7 +483,7 @@ static void placeCarrot(const positionEstimate3d_t *est, const vector2_t *carrot
 {
     const float reachM = NAV_ERROR_DISTANCE_LIMIT * 0.01f;
     const vector2_t craftM = { .x = est->position.v[ENU_E] * 0.01f, .y = est->position.v[ENU_N] * 0.01f };
-    const vector2_t restM = restPointM(est, &fp.carrotVelMps);
+    const vector2_t restM = restPointM(est, &fp.carrotVelMps, autopilotConfig()->maxAngle);
     vector2_t fromCraftM;
     vector2_t fromRestM;
     vector2Sub(&fromCraftM, carrotM, &craftM);
@@ -554,7 +562,7 @@ static bool dispatchWaypoint(void)
     const bool rescueClimb = isRescueClimb();
     if (rescueClimb) {
         const vector2_t stillMps = { .x = 0.0f, .y = 0.0f };
-        const vector2_t holdM = restPointM(positionEstimatorGetEstimate(), &stillMps);
+        const vector2_t holdM = restPointM(positionEstimatorGetEstimate(), &stillMps, rescueClimbMaxAngleDeg());
         targetEnuM.v[ENU_E] = holdM.x;
         targetEnuM.v[ENU_N] = holdM.y;
     }
@@ -687,7 +695,7 @@ static bool dispatchWaypoint(void)
                 }
                 const float alongMps = (dispatchEst->velocity.v[ENU_E] * legDir.x + dispatchEst->velocity.v[ENU_N] * legDir.y) * 0.01f;
                 vector2Scale(&fp.carrotVelMps, &legDir, fp.legYawGated ? 0.0f : constrainf(alongMps, 0.0f, cruiseMps));
-                fp.carrotEnuM = restPointM(dispatchEst, &fp.carrotVelMps);
+                fp.carrotEnuM = restPointM(dispatchEst, &fp.carrotVelMps, autopilotConfig()->maxAngle);
             }
             fp.carrotSpeedMps = vector2Norm(&fp.carrotVelMps);
             fp.carrotValid = true;
@@ -737,6 +745,7 @@ static bool dispatchWaypoint(void)
             const vector2_t stillMps = { .x = 0.0f, .y = 0.0f };
             positionNavSetVelocityFeedforward(&stillMps);
             positionNavSetSettleTimeout(FP_RESCUE_CLIMB_SETTLE_S);
+            positionNavSetMaxAngle(rescueClimbMaxAngleDeg());
         }
     }
     if (fp.dispatchAfresh) {
@@ -808,7 +817,7 @@ static void navWaypointDeltaEnuM(const positionEstimate3d_t *est, vector3_t *del
 static float brakingDistanceM(const positionEstimate3d_t *est)
 {
     const float speedMps = sqrtf(sq(est->velocity.v[ENU_E]) + sq(est->velocity.v[ENU_N])) * 0.01f;
-    return sq(speedMps) / (2.0f * brakingDecelMps2()) + speedMps * FP_BRAKE_REVERSAL_S;
+    return sq(speedMps) / (2.0f * brakingDecelMps2(autopilotConfig()->maxAngle)) + speedMps * FP_BRAKE_REVERSAL_S;
 }
 
 // Stall/flyaway sanity against a distance-to-goal. The carrot path passes the

@@ -107,6 +107,7 @@ void positionNavSetTargetEf(
     cmd.completionSpeedMps = completionSpeedMps;
     cmd.settleTimeoutS = 0.0f;
     cmd.settleS = 0.0f;
+    cmd.maxAngleDeg = 0.0f;
     cmd.altitudeArrivalRequired = true;
 
     cmd.callback = callback;
@@ -250,6 +251,11 @@ void positionNavSetAltitudeArrivalRequired(bool required)
 void positionNavSetSettleTimeout(float timeoutS)
 {
     cmd.settleTimeoutS = timeoutS;
+}
+
+void positionNavSetMaxAngle(float angleDeg)
+{
+    cmd.maxAngleDeg = angleDeg;
 }
 
 void positionNavSetAutoClearOnReach(bool autoClear)

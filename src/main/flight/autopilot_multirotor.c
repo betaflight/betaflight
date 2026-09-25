@@ -1388,10 +1388,14 @@ bool positionControl(void)
     angleV.v[AI_PITCH] = vector2Dot(&headingV, &pidSumVectorEF);
     angleV.v[AI_ROLL]  = vector2Cross(&headingV, &pidSumVectorEF);
 
+    float maxAngle = ap.maxAngle;
+    if (ap.navActive && positionNavGetActiveCommand()->maxAngleDeg > 0.0f) {
+        maxAngle = fminf(maxAngle, positionNavGetActiveCommand()->maxAngleDeg);
+    }
     const float mag = vector2Norm(&angleV);
-    wasAngleSaturated = (mag > ap.maxAngle);
-    if (mag > ap.maxAngle && mag > 0.001f) {
-        const float scale = ap.maxAngle / mag;
+    wasAngleSaturated = (mag > maxAngle);
+    if (mag > maxAngle && mag > 0.001f) {
+        const float scale = maxAngle / mag;
         vector2Scale(&angleV, &angleV, scale);
     }
 
