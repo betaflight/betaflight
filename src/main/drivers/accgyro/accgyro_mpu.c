@@ -353,7 +353,7 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
 typedef uint8_t (*gyroSpiDetectFn_t)(const extDevice_t *dev);
 
 static gyroSpiDetectFn_t gyroSpiDetectFnTable[] = {
-#ifdef USE_ACCGYRO_LSM6DSV16X
+#if defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X)
     lsm6dsv16xSpiDetect,
 #endif
 #ifdef USE_ACCGYRO_LSM6DSK320X
