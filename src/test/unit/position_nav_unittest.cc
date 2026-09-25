@@ -262,6 +262,33 @@ TEST_F(PositionNavTest, LegTakingOverSlewsIntoItsVerticalRate)
     EXPECT_NEAR(positionNavGetTargetVelocityCmS().z, -200.0f, 0.5f);
 }
 
+TEST_F(PositionNavTest, LegTakingOverASlowerRateCapsTheAltitudeControllerAtTheSlewedRate)
+{
+    // A climb at 5 m/s handed over to a landing at 0.5 m/s: the rate slews down at 2 m/s^2, and the
+    // cap the altitude controller is held to follows it down rather than stepping to 0.5 m/s at
+    // once, which would step its feedforward by the same.
+    const vector3_t climb = {{ 0.0f, 0.0f, 100.0f }};
+    positionNavSetTargetEf(&climb, 5.0f, 1.0f, 0.1f, true, NULL, NULL);
+    positionNavSetVerticalProfile(5.0f, 10.0f);
+
+    const vector3_t land = {{ 0.0f, 0.0f, -190.0f }};
+    positionNavSetTargetEf(&land, 5.0f, 1.0f, 0.1f, true, NULL, NULL);
+    positionNavSetVerticalProfile(0.5f, 10.0f);
+    EXPECT_NEAR(positionNavGetVerticalRateLimitCmS(), 500.0f, 0.1f);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f, 1000.0f, 500.0f);
+    float previousLimitCmS = positionNavGetVerticalRateLimitCmS();
+    for (int i = 0; i < 400; i++) {
+        est.position.z = positionNavGetTargetAltitudeCm();
+        positionNavUpdate(0.01f, &est);
+        const float limitCmS = positionNavGetVerticalRateLimitCmS();
+        EXPECT_GE(limitCmS, fabsf(positionNavGetTargetVelocityCmS().z) - 0.01f);
+        EXPECT_GE(limitCmS, previousLimitCmS - 2.0f - 0.01f);   // 2 m/s^2 over 10 ms
+        previousLimitCmS = limitCmS;
+    }
+    EXPECT_NEAR(positionNavGetVerticalRateLimitCmS(), 50.0f, 0.1f);
+}
+
 TEST_F(PositionNavTest, LegTakingOverFromAClimbTurnsTheRateRound)
 {
     // Handed over while still climbing to a leg below: the ramp carries on up while the rate turns

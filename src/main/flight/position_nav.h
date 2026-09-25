@@ -152,5 +152,6 @@ vector3_t positionNavGetTargetVelocityCmS(void);
 // has completed. Meaningless (returns the leg altitude) when the command does not include altitude.
 float positionNavGetTargetAltitudeCm(void);
 
-// The leg's climb/descent rate cap (cm/s), or 0 when no command is active.
+// The leg's climb/descent rate cap (cm/s), or 0 when no command is active. A ramp handed over faster
+// than its leg's rate is capped at the rate it is still slewing out of, not stepped down to the leg's.
 float positionNavGetVerticalRateLimitCmS(void);

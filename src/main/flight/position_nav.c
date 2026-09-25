@@ -463,5 +463,5 @@ float positionNavGetTargetAltitudeCm(void)
 
 float positionNavGetVerticalRateLimitCmS(void)
 {
-    return cmd.active ? legVertRateMps() * 100.0f : 0.0f;
+    return cmd.active ? fmaxf(legVertRateMps(), fabsf(cmd.rampRateMps)) * 100.0f : 0.0f;
 }
