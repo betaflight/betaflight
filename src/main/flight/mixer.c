@@ -405,14 +405,13 @@ static bool applyCrashFlipModeToMotors(void)
 #define STICK_HIGH_DEADBAND 5    // deadband to make sure throttle cap can raise, even with maxcheck set around 2000
 static void applyRpmLimiter(mixerRuntime_t *mixer)
 {
-    static float prevError = 0.0f;
     const float unsmoothedAverageRpm = getDshotRpmAverage();
     const float averageRpm = pt1FilterApply(&mixer->rpmLimiterAverageRpmFilter, unsmoothedAverageRpm);
     const float error = averageRpm - mixer->rpmLimiterRpmLimit;
 
     // PID
     const float p = error * mixer->rpmLimiterPGain;
-    const float d = (error - prevError) * mixer->rpmLimiterDGain; // rpmLimiterDGain already adjusted for looprate (see mixer_init.c)
+    const float d = (error - mixer->rpmLimiterPreviousError) * mixer->rpmLimiterDGain; // rpmLimiterDGain already adjusted for looprate (see mixer_init.c)
     mixer->rpmLimiterI += error * mixer->rpmLimiterIGain;         // rpmLimiterIGain already adjusted for looprate (see mixer_init.c)
     mixer->rpmLimiterI = MAX(0.0f, mixer->rpmLimiterI);
     float pidOutput = p + mixer->rpmLimiterI + d;
@@ -431,7 +430,7 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
     // Output
     pidOutput = MAX(0.0f, pidOutput);
     throttle = constrainf(throttle - pidOutput, 0.0f, 1.0f);
-    prevError = error;
+    mixer->rpmLimiterPreviousError = error;
 
     DEBUG_SET(DEBUG_RPM_LIMIT, 0, lrintf(averageRpm));                               //!< Average RPM [unit:rpm]
     DEBUG_SET(DEBUG_RPM_LIMIT, 1, lrintf(rpmLimiterThrottleScaleOffset * 100.0f));   //!< Throttle Scale Offset [unit:%]
@@ -759,7 +758,12 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
 
 #ifdef USE_RPM_LIMIT
     if (RPM_LIMIT_ACTIVE && useDshotTelemetry && ARMING_FLAG(ARMED)) {
-        applyRpmLimiter(&mixerRuntime);
+        if (isDshotRpmTelemetryFresh(currentTimeUs)) {
+            mixerRuntime.rpmLimiterTelemetryFresh = true;
+            applyRpmLimiter(&mixerRuntime);
+        } else if (mixerRuntime.rpmLimiterTelemetryFresh) {
+            mixerResetRpmLimiter();
+        }
     }
 #endif
 

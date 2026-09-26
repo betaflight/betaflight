@@ -395,9 +395,13 @@ void mixerInitProfile(void)
 #ifdef USE_RPM_LIMIT
 void mixerResetRpmLimiter(void)
 {
+    mixerRuntime.rpmLimiterTelemetryFresh = false;
     mixerRuntime.rpmLimiterI = 0.0f;
+    mixerRuntime.rpmLimiterPreviousError = 0.0f;
     mixerRuntime.rpmLimiterThrottleScale = constrainf(mixerRuntime.rpmLimiterRpmLimit / motorEstimateMaxRpm(), 0.0f, 1.0f);
     mixerRuntime.rpmLimiterInitialThrottleScale = mixerRuntime.rpmLimiterThrottleScale;
+    mixerRuntime.rpmLimiterAverageRpmFilter.state = 0.0f;
+    mixerRuntime.rpmLimiterThrottleScaleOffsetFilter.state = 0.0f;
 }
 
 #endif // USE_RPM_LIMIT
