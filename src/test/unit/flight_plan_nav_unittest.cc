@@ -184,6 +184,13 @@ void positionNavMoveTargetEf(const vector3_t *targetPosEfM)
     g_moveTargetCalls++;
 }
 
+void positionNavLowerTargetAltitude(float upM)
+{
+    if (g_lastTarget.valid && upM < g_lastTarget.targetEfM.z) {
+        g_lastTarget.targetEfM.z = upM;
+    }
+}
+
 void positionNavClearTarget(void)
 {
     g_clearTargetCalls++;
@@ -1739,6 +1746,70 @@ TEST_F(FlightPlanNavSafetyTest, GeofenceRthAboveReturnAltReturnsAtCurrentAltitud
     // which in the estimator's feedback frame is its reading at engage (the
     // stub reads 0 while GPS says 150 m AMSL — a mid-flight engagement).
     EXPECT_NEAR(g_lastTarget.targetEfM.z, 0.0f, 0.1f);
+}
+
+// The landing target must stay a fixed depth below the craft and ratchet down as it descends. It
+// must also never walk back up, or a bounce would raise it.
+TEST_F(FlightPlanNavSafetyTest, LandingTargetRatchetsDownAndStaysBounded)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    float lowestTargetM = g_lastTarget.targetEfM.z;
+    for (int i = 0; i < 40; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = -40.0f;
+        g_stubEstimate.position.v[ENU_U] -= 4.0f;      // 40cm/s over 100ms
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+
+        const float altM = g_stubEstimate.position.v[ENU_U] * 0.01f;
+        const float targetM = g_lastTarget.targetEfM.z;
+        EXPECT_LT(targetM, altM) << "target must stay below the craft";
+        EXPECT_NEAR(targetM, altM - 200.0f, 0.01f) << "target must follow the craft down";
+        EXPECT_LE(targetM, lowestTargetM + 0.01f) << "target must never ratchet back up";
+        lowestTargetM = fminf(lowestTargetM, targetM);
+    }
+
+    // A bounce upward must not drag the target up with the craft.
+    const float beforeBounce = g_lastTarget.targetEfM.z;
+    g_stubEstimate.velocity.v[ENU_U] = 90.0f;
+    g_stubEstimate.position.v[ENU_U] += 30.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_LE(g_lastTarget.targetEfM.z, beforeBounce + 0.01f);
+}
+
+// Issue #15651: a rescue started 330 m up disarmed at 130 m and fell. The target sat
+// FP_LANDING_TARGET_DEPTH_M below where the descent began, so positionNav's altitude ramp stopped
+// there and left the craft hovering in mid-air. However high a landing starts, its target must stay
+// below the craft all the way down.
+TEST_F(FlightPlanNavSafetyTest, LandingStartedHighKeepsItsTargetBelowTheCraft)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    g_stubBelowLandingAltitude = false;
+    engageDistantLeg();
+    g_stubEstimate.position.v[ENU_U] = 33000.0f;
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    while (g_stubEstimate.position.v[ENU_U] > 100.0f) {
+        g_stubEstimate.velocity.v[ENU_U] = -100.0f;
+        g_stubEstimate.position.v[ENU_U] -= 10.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+
+        const float altM = g_stubEstimate.position.v[ENU_U] * 0.01f;
+        ASSERT_LT(g_lastTarget.targetEfM.z, altM - 1.0f)
+            << "landing target " << g_lastTarget.targetEfM.z << " m is no longer below the craft at " << altM << " m";
+    }
 }
 
 TEST_F(FlightPlanNavSafetyTest, LandingTouchdownDisarms)

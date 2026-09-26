@@ -134,6 +134,13 @@ void positionNavMoveTargetEf(const vector3_t *targetPosEfM)
     cmd.fixedTarget = false;
 }
 
+void positionNavLowerTargetAltitude(float upM)
+{
+    if (cmd.active && upM < cmd.targetPosEfM.v[ENU_U]) {
+        cmd.targetPosEfM.v[ENU_U] = upM;
+    }
+}
+
 void positionNavClearTarget(void)
 {
     cmd.active = false;

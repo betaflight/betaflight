@@ -90,6 +90,12 @@ void positionNavSetTargetEf(
 // straight after positionNavSetTargetEf(). No-op when there is no active command.
 void positionNavMoveTargetEf(const vector3_t *targetPosEfM);
 
+// Lowers the active command's target altitude to upM, never raising it. Unlike
+// positionNavMoveTargetEf() the target stays a fixed one: only its altitude moves. For a descent
+// that has no end point of its own (a landing, ended by touchdown) to keep its target below the
+// craft for as long as it lasts. No-op when there is no active command.
+void positionNavLowerTargetAltitude(float upM);
+
 void positionNavClearTarget(void);
 
 bool positionNavHasActiveTarget(void);

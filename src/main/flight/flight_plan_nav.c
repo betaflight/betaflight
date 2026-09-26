@@ -143,9 +143,10 @@
 // gate sheds speed at its own acceleration, so its nose swings at once.
 #define FP_YAW_SWING_MAX_SPEED_MPS 1.5f
 
-// Landing descends toward a target far below the current position so vertical
-// arrival can never trigger; touchdown detection is what ends the descent. The
-// leg's descent rate, not this depth, sets how fast the craft comes down.
+// Landing descends toward a target held this far below the craft for the whole
+// descent, so vertical arrival can never trigger however high it starts;
+// touchdown detection is what ends the descent. The leg's descent rate, not this
+// depth, sets how fast the craft comes down.
 #define FP_LANDING_TARGET_DEPTH_M 200.0f
 #define FP_LANDING_MIN_RATE_MPS   0.3f
 // Fallback: start touchdown monitoring even if descent was never observed —
@@ -1294,6 +1295,10 @@ static void updateLanding(timeUs_t currentTimeUs)
     const positionEstimate3d_t *est = positionEstimatorGetEstimate();
     const float verticalVelocityCmS = est->velocity.v[ENU_U];
     const float commandedDescentCmS = fp.landingRateMps * 100.0f;
+
+    if (fp.state == FP_NAV_LANDING) {
+        positionNavLowerTargetAltitude(est->position.v[ENU_U] * 0.01f - FP_LANDING_TARGET_DEPTH_M);
+    }
 
     if (!fp.landingDescentEstablished
         && verticalVelocityCmS < -0.25f * commandedDescentCmS) {
