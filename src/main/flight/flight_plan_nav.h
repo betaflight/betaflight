@@ -95,11 +95,13 @@ bool flightPlanNavInjectPlan(const waypoint_t *waypoints, uint8_t count);
 bool flightPlanNavIsInjectedPlanActive(void);
 
 #if ENABLE_RESCUE_PLAN
-// Synthesise a failsafe rescue mission (brake and climb, fly home, land) from
-// the current position and home, staged for the next flightPlanNavEngage() to
+// Synthesise a failsafe rescue mission (brake and climb, fly home, land; or
+// brake and land where the craft stops, when that is near home) from the
+// current position and home, staged for the next flightPlanNavEngage() to
 // consume in place of the PG mission; injected immediately if the executor is
-// already active. Returns false when no home or fix exists to build a plan —
-// the failsafe caller then degrades to auto-landing.
+// already active. Returns false when no home or fix exists to build a plan, or
+// a craft stopping near home has no heading to hold its position with — the
+// caller then degrades to an altitude-only landing.
 bool flightPlanNavStageRescuePlan(void);
 bool flightPlanNavIsRescuePlanActive(void);
 

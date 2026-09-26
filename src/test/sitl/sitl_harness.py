@@ -1544,10 +1544,53 @@ def scenario_rescue_fast_entry(sitl, rc, fdm, variant="B"):
     return m
 
 
-def scenario_rescue_heading(sitl, rc, fdm, variant="B"):
-    """No mag, true heading east while the FC believes north: the rescue must
-    recover heading via GPS course-over-ground (pitch-forward phase) before
-    flying home."""
+def scenario_rescue_near_home(sitl, rc, fdm, variant="B"):
+    """RC lost hovering low a few metres from home. Inside gps_rescue_min_start_dist
+    there is no return to fly, and climbing first only lifts the craft over
+    whoever is near home: it lands where it stops."""
+    boot_and_engage(sitl, rc, fdm)
+    wait_for("vehicle 3 m out", lambda: fdm.distance_from_home() > 3.0, timeout=30, interval=0.1)
+    rc.set(7, RC_HIGH)  # AUX4: ALTHOLD + POSHOLD (pilot hold)
+    rc.set(5, 1000)     # AUX2: AUTOPILOT off, before the mission carries it away
+    wait_for(
+        "pilot hold (AUTOPILOT off, POSHOLD on)",
+        lambda: (lambda m: BOX_AUTOPILOT not in m and BOX_POSHOLD in m)(sitl.modes()),
+        timeout=10,
+    )
+    wait_for("settled in the hold", lambda: fdm.ground_speed() < 0.5, timeout=20, interval=0.2)
+    time.sleep(2.0)
+    start_dist = fdm.distance_from_home()
+    start_e, start_n, start_alt = fdm.model.pos[0], fdm.model.pos[1], fdm.model.pos[2]
+    assert 2.0 < start_dist < 8.0, f"held {start_dist:.1f} m from home, outside the close-range case"
+    t0 = fdm.now_t()
+    log(f"[{variant}] killing RC {start_dist:.1f} m from home at {start_alt:.1f} m")
+    rc.stop_stream()
+
+    rescue_engagement_asserts(sitl, variant)
+    wait_for(
+        "touchdown disarms",
+        lambda: fdm.model.on_ground() and BOX_ARM not in sitl.modes(),
+        timeout=60,
+        interval=0.5,
+    )
+    m = rescue_metrics(fdm, t0, start_dist)
+    td = m["touchdown"]
+    assert td is not None, "no touchdown recorded"
+    climb = m["max_alt"] - start_alt
+    moved = math.hypot(td[1] - start_e, td[2] - start_n)
+    log(f"[{variant}] climbed {climb:.1f} m, landed {moved:.1f} m from where RC was lost")
+    assert climb < 1.0, f"climbed {climb:.1f} m before landing near home"
+    assert moved < 3.0, f"landed {moved:.1f} m from where it stopped"
+    m["climb"] = climb
+    m["moved"] = moved
+    return m
+
+
+def scenario_rescue_near_home_no_heading(sitl, rc, fdm, variant="B"):
+    """No mag and no forward flight, so no heading, and RC lost hovering over
+    home. Position hold cannot run without a heading, so the rescue leaves the
+    landing to the failsafe's altitude-only descent, which lands the craft
+    where it is straight away rather than after the plan stalls."""
     rc.start()
     fdm.start()
     wait_for("GPS fix + RX recovery (arming flags clear)", lambda: sitl.status()["arming_flags"] == 0, timeout=40)
@@ -1573,26 +1616,32 @@ def scenario_rescue_heading(sitl, rc, fdm, variant="B"):
     time.sleep(2.0)
 
     kill_dist = fdm.distance_from_home()
+    start_alt = fdm.model.pos[2]
     t0 = fdm.now_t()
-    log(f"[{variant}] killing RC at hover (heading wrong by 90 deg)")
+    log(f"[{variant}] killing RC at hover, no heading, {kill_dist:.1f} m from home at {start_alt:.1f} m")
     rc.stop_stream()
 
-    rescue_engagement_asserts(sitl, variant)
-    # heading recovery needs forward flight: the craft must depart, learn its
-    # heading from GPS course, then come home and land
     wait_for(
-        "touchdown disarms (heading recovered, rescue completed)",
+        "failsafe landing, no plan to fly (FAILSAFE, no AUTOPILOT)",
+        lambda: (lambda m: BOX_FAILSAFE in m and BOX_AUTOPILOT not in m)(sitl.modes()),
+        timeout=20,
+    )
+    wait_for(
+        "touchdown disarms",
         lambda: fdm.model.on_ground() and BOX_ARM not in sitl.modes(),
-        timeout=240,
-        interval=1.0,
+        timeout=60,
+        interval=0.5,
     )
     m = rescue_metrics(fdm, t0, kill_dist)
-    assert m["max_dist"] <= 150.0, f"heading-recovery excursion ran away: {m['max_dist']:.0f} m"
     td = m["touchdown"]
     assert td is not None, "no touchdown recorded"
     td_dist = math.hypot(td[1], td[2])
-    assert td_dist < 30.0, f"landed {td_dist:.1f} m from home"
-    log(f"recovered heading and landed {td_dist:.1f} m from home")
+    climb = m["max_alt"] - start_alt
+    down_s = td[0] - t0
+    log(f"[{variant}] climbed {climb:.1f} m, down in {down_s:.0f} s, {td_dist:.1f} m from home")
+    assert climb < 1.0, f"climbed {climb:.1f} m before landing near home"
+    assert down_s < 25.0, f"took {down_s:.0f} s to land"
+    assert td_dist < 5.0, f"landed {td_dist:.1f} m from home"
     m["td_dist"] = td_dist
     return m
 
@@ -1893,10 +1942,9 @@ SCENARIOS = {
         scenario_rescue_ab,
         RESCUE_CFG,
     ),
-    "rescue_heading_recovery": (
-        scenario_rescue_heading,
+    "rescue_near_home_no_heading": (
+        scenario_rescue_near_home_no_heading,
         [*RESCUE_CFG, "set mag_hardware = NONE"],
-        {"initial_yaw_deg": 90.0},
     ),
     "rescue_fast_entry": (
         scenario_rescue_fast_entry,
@@ -1909,6 +1957,10 @@ SCENARIOS = {
             "set gps_rescue_return_alt = 15",
             "set gps_rescue_ascend_rate = 200",
         ],
+    ),
+    "rescue_near_home": (
+        scenario_rescue_near_home,
+        [*RESCUE_CFG, "set gps_rescue_min_start_dist = 10"],
     ),
     "rescue_gps_loss": (
         scenario_rescue_gps_loss,

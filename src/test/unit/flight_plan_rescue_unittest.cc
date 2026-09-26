@@ -116,6 +116,8 @@ float g_yawRateLimitDps;
 
 float g_stubMaxAltitudeCm;
 bool g_stubHeadingValid;
+bool g_stubHeadingRequired;
+float g_stubAltitudeCm;
 int g_pitchForwardCalls;
 bool g_lastPitchForward;
 
@@ -288,7 +290,12 @@ bool positionEstimatorGetGpsOrigin(gpsLocation_t *out)
 
 float positionEstimatorGetAltitudeCm(void)
 {
-    return 0.0f;
+    return g_stubAltitudeCm;
+}
+
+bool positionEstimatorIsHeadingRequired(void)
+{
+    return g_stubHeadingRequired;
 }
 
 const positionEstimate3d_t *positionEstimatorGetEstimate(void)
@@ -426,14 +433,16 @@ protected:
 
         g_stubMaxAltitudeCm = 0.0f;
         g_stubHeadingValid = true; // heading trusted unless a test says otherwise
+        g_stubHeadingRequired = true;
+        g_stubAltitudeCm = 0.0f;
         g_pitchForwardCalls = 0;
         g_lastPitchForward = false;
 
         // Home and GPS origin at the equator/prime meridian, 100 m AMSL;
         // current position 30 m east of home so the rescue climb waypoint
-        // (current position) and the return leg (home) are distinguishable.
+        // (current position) and the return leg (home) are distinguishable,
+        // and clear of minStartDistM (15 m).
         stateFlags = GPS_FIX_HOME | GPS_FIX;
-        GPS_distanceToHome = 100; // clear of the close-range branch (minStartDistM = 15)
 
         g_stubGpsOrigin.lat = 0;
         g_stubGpsOrigin.lon = 0;
@@ -620,17 +629,95 @@ TEST_F(FlightPlanRescueTest, ReturnAltPerMode)
     EXPECT_NEAR(g_lastTarget.targetEfM.z, 0.0f, 0.01f);
 }
 
-TEST_F(FlightPlanRescueTest, CloseRangeReturnAltitudeUsesModestHeadroom)
+TEST_F(FlightPlanRescueTest, CloseToHomeLandsWhereTheCraftStops)
 {
-    // Close range (< minStartDistM): MAX(home + 7.5 m, current + climb).
-    // A 2 m climb keeps home+750 (7.5 m) the larger term: 107.5 m -> +7.5 m.
-    GPS_distanceToHome = 10;
-    gpsRescueConfigMutable()->initialClimbM = 2;
+    // A craft coming to a stop inside minStartDistM has no return to fly, and climbing first only
+    // lifts it over whoever is near home: it brakes, holds its nose and lands where it stops.
+    gpsSol.llh.lon = metresToLonUnits(3.0f);
+    gpsRescueConfigMutable()->descendRate = 150;
+    gpsRescueConfigMutable()->descentDistanceM = 7;
+    g_stubEstimate.position.v[ENU_E] = 3.0f * 100.0f;
+    g_stubEstimate.velocity.v[ENU_E] = 400.0f;
+    attitude.values.yaw = 1200;
 
     ASSERT_TRUE(flightPlanNavStageRescuePlan());
     flightPlanNavEngage();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    const float stopM = 4.0f * (4.0f / (2.0f * 9.80665f * tanf(35.0f * M_PIf / 180.0f)) + 0.15f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 3.0f + stopM, 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 0.0f, 0.01f);
+    EXPECT_NEAR(g_lastTarget.acceptanceRadiusM, 2.0f, 0.001f);
+    EXPECT_NEAR(g_lastTarget.completionSpeedMps, 0.5f, 0.001f);
+    EXPECT_NEAR(g_maxAngleDeg, 35.0f, 0.001f);
+    EXPECT_TRUE(g_navHeadingOverrideValid);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, 120.0f, 0.1f);
 
-    EXPECT_NEAR(g_lastTarget.targetEfM.z, 7.5f, 0.01f);
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 3.0f + stopM, 0.01f);
+    EXPECT_NEAR(g_lastApproachSlowdownM, 0.0f, 0.001f);
+    EXPECT_NEAR(g_lastVertRateMps, 1.5f, 0.01f);
+}
+
+TEST_F(FlightPlanRescueTest, PassingHomeAtSpeedStillFliesHome)
+{
+    // 3 m from home at 15 m/s, the craft stops about 22 m out: that is a return, not a landing.
+    gpsSol.llh.lon = metresToLonUnits(3.0f);
+    g_stubEstimate.position.v[ENU_E] = 3.0f * 100.0f;
+    g_stubEstimate.velocity.v[ENU_E] = 1500.0f;
+
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, kDefaultReturnAltM, 0.01f);
+    attitude.values.yaw = 2700;
+    triggerReached();
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+}
+
+TEST_F(FlightPlanRescueTest, ClosingOnHomeAtSpeedLandsWhereItStops)
+{
+    // 20 m out and closing at 10 m/s, it stops about 11 m from home: nothing left to return.
+    gpsSol.llh.lon = metresToLonUnits(20.0f);
+    g_stubEstimate.position.v[ENU_E] = 20.0f * 100.0f;
+    g_stubEstimate.velocity.v[ENU_E] = -1000.0f;
+
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 0.0f, 0.01f);
+    triggerReached();
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+}
+
+TEST_F(FlightPlanRescueTest, CloseToHomeWithoutAHeadingLeavesTheLandingToTheCaller)
+{
+    // Position hold needs a heading, so a landing leg would never start: no plan, and the caller's
+    // altitude-only descent lands the craft where it is.
+    gpsSol.llh.lon = metresToLonUnits(3.0f);
+    g_stubEstimate.position.v[ENU_E] = 3.0f * 100.0f;
+    g_stubHeadingValid = false;
+    EXPECT_FALSE(flightPlanNavStageRescuePlan());
+
+    g_stubHeadingRequired = false;
+    EXPECT_TRUE(flightPlanNavStageRescuePlan());
+}
+
+TEST_F(FlightPlanRescueTest, CloseToHomeOverAFlyingMissionHoldsTheCraftsOwnAltitude)
+{
+    // The mission engaged with GPS and the estimate agreeing; 3 m of GPS drift later the rescue
+    // takes over near home. It lands from where the estimate has the craft, not 3 m above it.
+    addWaypoint(0, metresToLonUnits(300.0f), 12000, WAYPOINT_TYPE_FLYOVER);
+    flightPlanNavEngage();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+
+    gpsSol.llh.lon = metresToLonUnits(3.0f);
+    gpsSol.llh.altCm = 10000 + 800;
+    g_stubAltitudeCm = 500.0f;
+    g_stubEstimate.position.v[ENU_E] = 3.0f * 100.0f;
+    g_stubEstimate.position.v[ENU_U] = 500.0f;
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 5.0f, 0.01f);
 }
 
 // --- Staging while active / already engaged ---

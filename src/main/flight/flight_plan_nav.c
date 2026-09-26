@@ -64,8 +64,8 @@
 #define FP_MIN_CRUISE_MPS         1.0f
 // Legs complete on acceptance-radius entry at any speed: an en-route leg is
 // flown through, and a point leg leaves its stop to the leg after it or to the
-// position hold that takes over. The rescue climb, which the return sets off
-// from, gates on its speed itself.
+// position hold that takes over. The rescue's first leg, which the return or
+// the landing sets off from, gates on its speed itself.
 #define FP_COMPLETION_ANY_MPS     1000.0f
 #define FP_DELAY_MIN_CRUISE_MPS   0.1f
 
@@ -178,15 +178,16 @@
 // last metre around the landing spot.
 #define FP_RESCUE_LAND_STILL_RADIUS_M 1.0f
 
-// The rescue's climb completes below this ground speed, or once it has been in place at altitude
-// this long without getting there: a craft that will not quite settle (gusts, a poor compass) must
-// still set off home rather than stall the rescue.
-#define FP_RESCUE_CLIMB_STILL_MPS 0.5f
-#define FP_RESCUE_CLIMB_SETTLE_S  3.0f
+// The rescue's first leg stops the craft where it will come to rest, to climb there or, near home,
+// to land there. It completes below this ground speed, or once it has been in place this long
+// without getting there: a craft that will not quite settle (gusts, a poor compass) must still get
+// on with the rescue rather than stall it.
+#define FP_RESCUE_STOP_STILL_MPS 0.5f
+#define FP_RESCUE_STOP_SETTLE_S  3.0f
 // It brakes at no steeper a lean than this. The position controller lets a brake off in step with
 // the speed it sheds, so off a steeper one faster than the attitude can follow: the lean swings back
 // past level as the craft stops, and the pitch rate spikes.
-#define FP_RESCUE_CLIMB_MAX_ANGLE_DEG 35.0f
+#define FP_RESCUE_STOP_MAX_ANGLE_DEG 35.0f
 
 #if ENABLE_RESCUE_PLAN
 // Legacy PITCH_FORWARD gives up after 15 s of heading recovery
@@ -384,6 +385,23 @@ static bool computeTargetEnuM(const waypoint_t *wp, vector3_t *out)
     return true;
 }
 
+// Reconcile the estimator's altitude baseline with the GPS frame waypoint
+// altitudes are computed in. The pure frame offset (estimator reading
+// minus GPS height above origin) is valid at any engagement altitude —
+// a failsafe rescue engages mid-flight, where the raw estimator reading
+// would shift the whole plan up by the current height. Taken again whenever
+// a plan built from this instant's GPS replaces one already flying: the two
+// frames drift apart over a flight.
+static void captureAltitudeFrame(void)
+{
+    gpsLocation_t origin;
+    if (positionEstimatorGetGpsOrigin(&origin)) {
+        fp.zBiasM = positionEstimatorGetAltitudeCm() * 0.01f - (gpsSol.llh.altCm - origin.altCm) * 0.01f;
+    } else {
+        fp.zBiasM = positionEstimatorGetAltitudeCm() * 0.01f;
+    }
+}
+
 // Walk fp.currentIndex past any consecutive modifier waypoints, applying their
 // effect to staged fp state. Returns the first positional waypoint, or NULL if
 // the plan ended (caller transitions to FP_NAV_COMPLETE). Bounded by
@@ -457,9 +475,9 @@ static float brakingDecelMps2(float angleDeg)
     return G_ACCELERATION * tanf(DEGREES_TO_RADIANS(fmaxf(angleDeg, FP_BRAKE_MIN_ANGLE_DEG)));
 }
 
-static float rescueClimbMaxAngleDeg(void)
+static float rescueStopMaxAngleDeg(void)
 {
-    return fminf((float)autopilotConfig()->maxAngle, FP_RESCUE_CLIMB_MAX_ANGLE_DEG);
+    return fminf((float)autopilotConfig()->maxAngle, FP_RESCUE_STOP_MAX_ANGLE_DEG);
 }
 
 // Where braking at angleDeg brings the craft to rest on something moving at movingMps.
@@ -516,7 +534,7 @@ static float pointLegAccelMps2(float cruiseMps)
     return fmaxf(accelMps2, sq(cruiseMps) / (fp.legSlowdownM - FP_RESCUE_LAND_STILL_RADIUS_M));
 }
 
-static bool isRescueClimb(void)
+static bool isRescueStop(void)
 {
 #if ENABLE_RESCUE_PLAN
     return fp.isRescuePlan && fp.currentIndex == 0;
@@ -559,10 +577,10 @@ static bool dispatchWaypoint(void)
         targetEnuM.v[ENU_E] = est->position.v[ENU_E] * 0.01f;
         targetEnuM.v[ENU_N] = est->position.v[ENU_N] * 0.01f;
     }
-    const bool rescueClimb = isRescueClimb();
-    if (rescueClimb) {
+    const bool rescueStop = isRescueStop();
+    if (rescueStop) {
         const vector2_t stillMps = { .x = 0.0f, .y = 0.0f };
-        const vector2_t holdM = restPointM(positionEstimatorGetEstimate(), &stillMps, rescueClimbMaxAngleDeg());
+        const vector2_t holdM = restPointM(positionEstimatorGetEstimate(), &stillMps, rescueStopMaxAngleDeg());
         targetEnuM.v[ENU_E] = holdM.x;
         targetEnuM.v[ENU_N] = holdM.y;
     }
@@ -577,7 +595,7 @@ static bool dispatchWaypoint(void)
     // closes the last stretch, rather than arriving overhead and then sinking. The plan gets the
     // same shape by arriving early: the return leg hands over at that distance and the landing leg
     // is already inside its own radius when it is dispatched.
-    if (fp.isRescuePlan
+    if (fp.isRescuePlan && !rescueStop
         && (effective.type == WAYPOINT_TYPE_FLYOVER || effective.type == WAYPOINT_TYPE_LAND)) {
         arrivalRadiusM = fmaxf(arrivalRadiusM, (float)gpsRescueConfig()->descentDistanceM);
     }
@@ -587,7 +605,7 @@ static bool dispatchWaypoint(void)
     // the point it starts coming down at. Mission legs keep their own trapezoid.
     fp.legSlowdownM = 0.0f;
 #if ENABLE_RESCUE_PLAN
-    if (fp.isRescuePlan
+    if (fp.isRescuePlan && !rescueStop
         && (effective.type == WAYPOINT_TYPE_FLYOVER || effective.type == WAYPOINT_TYPE_LAND)) {
         fp.legSlowdownM = 2.0f * (float)gpsRescueConfig()->descentDistanceM;
     }
@@ -724,7 +742,7 @@ static bool dispatchWaypoint(void)
         positionNavSetAltitudeArrivalRequired(false);
     } else {
         positionNavSetTargetEf(&targetEnuM, cruiseMps, arrivalRadiusM,
-                               rescueClimb ? FP_RESCUE_CLIMB_STILL_MPS : FP_COMPLETION_ANY_MPS, true,
+                               rescueStop ? FP_RESCUE_STOP_STILL_MPS : FP_COMPLETION_ANY_MPS, true,
                                onWaypointReached, NULL);
         // An approach taper replaces the braking curve.
         positionNavSetAccelLimits(pointLegAccelMps2(cruiseMps), (fp.legSlowdownM > 0.0f) ? 0.0f : FP_APPROACH_DECEL_MPS2);
@@ -741,11 +759,11 @@ static bool dispatchWaypoint(void)
         }
 #endif
         positionNavSetAltitudeArrivalRequired(altitudeGated);
-        if (rescueClimb) {
+        if (rescueStop) {
             const vector2_t stillMps = { .x = 0.0f, .y = 0.0f };
             positionNavSetVelocityFeedforward(&stillMps);
-            positionNavSetSettleTimeout(FP_RESCUE_CLIMB_SETTLE_S);
-            positionNavSetMaxAngle(rescueClimbMaxAngleDeg());
+            positionNavSetSettleTimeout(FP_RESCUE_STOP_SETTLE_S);
+            positionNavSetMaxAngle(rescueStopMaxAngleDeg());
         }
     }
     if (fp.dispatchAfresh) {
@@ -960,7 +978,7 @@ static void updateLegYaw(const positionEstimate3d_t *est)
     const bool waitedOut = cmpTimeUs(micros(), fp.legYawGateStartUs) >= (timeDelta_t)FP_YAW_ALIGN_TIMEOUT_US;
     const float speedMps = sqrtf(sq(est->velocity.v[ENU_E]) + sq(est->velocity.v[ENU_N])) * 0.01f;
     fp.legYawBraked = fp.legYawBraked || waitedOut || speedMps <= FP_YAW_SWING_MAX_SPEED_MPS;
-    if ((fp.legYawGated || isRescueClimb()) && !fp.legYawBraked) {
+    if ((fp.legYawGated || isRescueStop()) && !fp.legYawBraked) {
         autopilotSetNavHeadingOverride(true, fp.legYawHoldDeg);
         return;
     }
@@ -1364,9 +1382,28 @@ static void injectReturnHomePlan(timeUs_t currentTimeUs)
 }
 
 #if ENABLE_RESCUE_PLAN
+// Whether the craft comes to a stop inside gps_rescue_min_start_dist, braking at the rescue's own
+// lean: one passing close to home at speed stops well clear of it, and one closing fast from
+// further out can stop beside it.
+static bool rescueStopsNearHome(void)
+{
+    const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+    const vector2_t stillMps = { .x = 0.0f, .y = 0.0f };
+    const vector2_t restM = restPointM(est, &stillMps, rescueStopMaxAngleDeg());
+    vector2_t fromHomeCm;
+    GPS_distance2d(&GPS_home_llh, &gpsSol.llh, &fromHomeCm);
+    const float eastM = fromHomeCm.v[EF_EAST] * 0.01f + restM.x - est->position.v[ENU_E] * 0.01f;
+    const float northM = fromHomeCm.v[EF_NORTH] * 0.01f + restM.y - est->position.v[ENU_N] * 0.01f;
+    return sq(eastM) + sq(northM) < sq((float)gpsRescueConfig()->minStartDistM);
+}
+
 // Failsafe rescue mission: [climb HOLD where the craft comes to a stop ->
 // FLYOVER home -> LAND home]. The climb completes at altitude with the craft
 // still, so the return leg sets off from rest - legacy ATTAIN_ALT semantics.
+// A craft that stops near home has no return worth flying, and a climb only
+// lifts it over whoever is standing there: [LAND where the craft comes to a
+// stop]. Without a heading it cannot hold that position, so it gets no plan and
+// the caller's altitude-only descent lands it where it is.
 static uint8_t buildRescuePlan(waypoint_t out[FP_INJECTED_PLAN_MAX])
 {
     if (!STATE(GPS_FIX_HOME) || !STATE(GPS_FIX)) {
@@ -1377,30 +1414,41 @@ static uint8_t buildRescuePlan(waypoint_t out[FP_INJECTED_PLAN_MAX])
     const int32_t currentAltCm = gpsSol.llh.altCm;
     const int32_t climbCm = (int32_t)gpsRescueConfig()->initialClimbM * 100;
     const int32_t fixedCm = (int32_t)gpsRescueConfig()->returnAltitudeM * 100;
+    const uint16_t speedCmS = gpsRescueConfig()->groundSpeedCmS;
+
+    if (rescueStopsNearHome()) {
+        if (positionEstimatorIsHeadingRequired() && !imuIsHeadingValid()) {
+            return 0;
+        }
+        out[0] = (waypoint_t){
+            .latitude = gpsSol.llh.lat,
+            .longitude = gpsSol.llh.lon,
+            .altitude = currentAltCm,
+            .speed = speedCmS,
+            .vertRate = gpsRescueConfig()->descendRate,
+            .type = WAYPOINT_TYPE_LAND,
+            .yawBehaviour = WAYPOINT_YAW_HOLD,
+        };
+        return 1;
+    }
 
     int32_t returnAltCm;
-    if (GPS_distanceToHome < gpsRescueConfig()->minStartDistM) {
-        // Legacy close-range branch: modest headroom rather than a full climb
-        returnAltCm = MAX(homeAltCm + 750, currentAltCm + climbCm);
-    } else {
-        switch (gpsRescueConfig()->altitudeMode) {
-        case GPS_RESCUE_ALT_MODE_FIXED:
-            returnAltCm = homeAltCm + fixedCm;
-            break;
-        case GPS_RESCUE_ALT_MODE_CURRENT:
-            returnAltCm = currentAltCm + climbCm;
-            break;
-        case GPS_RESCUE_ALT_MODE_MAX:
-        default:
-            // Legacy tracks max altitude relative to the arming point; home
-            // altitude anchors it back to the AMSL frame waypoints use.
-            returnAltCm = homeAltCm + (int32_t)gpsRescueGetMaxAltitudeCm() + climbCm;
-            break;
-        }
+    switch (gpsRescueConfig()->altitudeMode) {
+    case GPS_RESCUE_ALT_MODE_FIXED:
+        returnAltCm = homeAltCm + fixedCm;
+        break;
+    case GPS_RESCUE_ALT_MODE_CURRENT:
+        returnAltCm = currentAltCm + climbCm;
+        break;
+    case GPS_RESCUE_ALT_MODE_MAX:
+    default:
+        // Legacy tracks max altitude relative to the arming point; home
+        // altitude anchors it back to the AMSL frame waypoints use.
+        returnAltCm = homeAltCm + (int32_t)gpsRescueGetMaxAltitudeCm() + climbCm;
+        break;
     }
     returnAltCm = MAX(returnAltCm, currentAltCm); // never command an en-route descent
 
-    const uint16_t speedCmS = gpsRescueConfig()->groundSpeedCmS;
     out[0] = (waypoint_t){
         .latitude = gpsSol.llh.lat,
         .longitude = gpsSol.llh.lon,
@@ -1439,6 +1487,7 @@ bool flightPlanNavStageRescuePlan(void)
 
     if (fp.active) {
         // Already flying (rx-loss during a mission): replace it immediately.
+        captureAltitudeFrame();
         memcpy(fp.injected, plan, count * sizeof(plan[0]));
         fp.injectedCount = count;
         fp.currentIndex = 0;
@@ -1656,7 +1705,7 @@ static void onWaypointReached(void *userData)
     // Rescue climb complete but the IMU heading is untrusted: hold here and
     // pitch forward so GPS course-over-ground can teach the estimator its
     // heading before the return leg (legacy PITCH_FORWARD semantics).
-    if (isRescueClimb() && activePlanCount() > 1 && !imuIsHeadingValid()) {
+    if (isRescueStop() && activePlanCount() > 1 && !imuIsHeadingValid()) {
         fp.rescueHeadingHold = true;
         fp.rescueHeadingStartUs = micros();
         pitchForwardOverride(true);
@@ -1768,17 +1817,7 @@ void flightPlanNavEngage(void)
     clearModifierState();
     clearLegYawState();
 
-    // Reconcile the estimator's altitude baseline with the GPS frame waypoint
-    // altitudes are computed in. The pure frame offset (estimator reading
-    // minus GPS height above origin) is valid at any engagement altitude —
-    // a failsafe rescue engages mid-flight, where the raw estimator reading
-    // would shift the whole plan up by the current height.
-    gpsLocation_t origin;
-    if (positionEstimatorGetGpsOrigin(&origin)) {
-        fp.zBiasM = positionEstimatorGetAltitudeCm() * 0.01f - (gpsSol.llh.altCm - origin.altCm) * 0.01f;
-    } else {
-        fp.zBiasM = positionEstimatorGetAltitudeCm() * 0.01f;
-    }
+    captureAltitudeFrame();
 
     // HOLD waypoints keep the position target live for the hold duration; a
     // new target replaces the previous on advance anyway, so this module
