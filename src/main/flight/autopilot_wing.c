@@ -117,6 +117,11 @@ void autopilotSetNavHeadingOverride(bool valid, float headingDeg)
     UNUSED(headingDeg);
 }
 
+vector2_t autopilotGetPositionErrorCm(void)
+{
+    return (vector2_t){{ 0.0f, 0.0f }};
+}
+
 void autopilotForceLevelPark(bool request)
 {
     UNUSED(request);
