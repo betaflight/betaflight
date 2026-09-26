@@ -96,9 +96,9 @@
 
 //#define HOTT_DEBUG
 
-#define HOTT_MESSAGE_PREPARATION_FREQUENCY_5_HZ ((1000 * 1000) / 5)
+#define HOTT_MESSAGE_PREPARATION_FREQUENCY_10_HZ ((1000 * 1000) / 10)
 #define HOTT_RX_SCHEDULE 4000
-#define HOTT_TX_DELAY_US 3000
+#define HOTT_TX_DELAY_US 1000
 #define MILLISECONDS_IN_A_SECOND 1000
 
 static uint32_t rxSchedule = HOTT_RX_SCHEDULE;
@@ -212,6 +212,16 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
 {
     hottGPSMessage->gps_satelites = gpsSol.numSat;
 
+    // Report climb rate regardless of GPS fix
+    const int32_t climbrate = getEstimatedVario();
+    const uint16_t encoded_climbrate = (uint16_t)(30000 + climbrate);
+    hottGPSMessage->climbrate_L = (uint8_t)(encoded_climbrate & 0x00FFU);
+    hottGPSMessage->climbrate_H = (uint8_t)(encoded_climbrate >> 8);
+    uint16_t encoded_climbrate3s = (uint16_t)(3 * climbrate / 100 + HOTT_EAM_OFFSET_M3S);
+	if (encoded_climbrate3s > 255)
+		encoded_climbrate3s = HOTT_EAM_OFFSET_M3S;
+    hottGPSMessage->climbrate3s = (uint8_t)(encoded_climbrate3s);
+
     if (!STATE(GPS_FIX)) {
         hottGPSMessage->gps_fix_char = GPS_FIX_CHAR_NONE;
         return;
@@ -240,7 +250,8 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
     hottGPSMessage->altitude_L = hottGpsAltitude & 0x00FF;
     hottGPSMessage->altitude_H = hottGpsAltitude >> 8;
 
-    hottGPSMessage->home_direction = GPS_directionToHome / 10;
+    hottGPSMessage->home_direction = GPS_directionToHome / 20;
+	hottGPSMessage->flight_direction = gpsSol.groundCourse / 20;	//GPS_direction;	gpsSol.groundCourse	//gps_Msg.ground_course
 }
 #endif
 
@@ -305,9 +316,13 @@ static inline void hottEAMUpdateAltitude(HOTT_EAM_MSG_t *hottEAMMessage)
 static inline void hottEAMUpdateClimbrate(HOTT_EAM_MSG_t *hottEAMMessage)
 {
     const int32_t vario = getEstimatedVario();
-    hottEAMMessage->climbrate_L = (30000 + vario) & 0x00FF;
-    hottEAMMessage->climbrate_H = (30000 + vario) >> 8;
-    hottEAMMessage->climbrate3s = 120 + (vario / 100);
+    const uint16_t encoded_vario = (uint16_t)(30000 + vario);
+    hottEAMMessage->climbrate_L = (uint8_t)(encoded_vario & 0x00FFU);
+    hottEAMMessage->climbrate_H = (uint8_t)(encoded_vario >> 8);
+    uint16_t encoded_climbrate3s = (uint16_t)(3 * vario / 100 + HOTT_EAM_OFFSET_M3S);
+    if (encoded_climbrate3s > 255)
+	    encoded_climbrate3s = HOTT_EAM_OFFSET_M3S;
+    hottEAMMessage->climbrate3s = (uint8_t)(encoded_climbrate3s);
 }
 #endif
 
@@ -651,7 +666,7 @@ static void hottSendTelemetryData(void)
 
 static inline bool shouldPrepareHoTTMessages(uint32_t currentMicros)
 {
-    return currentMicros - lastMessagesPreparedAt >= HOTT_MESSAGE_PREPARATION_FREQUENCY_5_HZ;
+    return currentMicros - lastMessagesPreparedAt >= HOTT_MESSAGE_PREPARATION_FREQUENCY_10_HZ;
 }
 
 static inline bool shouldCheckForHoTTRequest(void)
