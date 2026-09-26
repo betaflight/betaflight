@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include "common/axis.h"
 #include "common/time.h"
+#include "common/vector.h"
 
 #ifdef USE_WING
 
@@ -51,6 +52,7 @@ void updateHeadingHold(timeUs_t currentTimeUs);
 // Nav inner-loop hooks driven by the shared flight-plan engine. Stubbed until
 // the wing control law lands (Phase 3+); present so the engine links on wing.
 void autopilotSetNavHeadingOverride(bool valid, float headingDeg);
+vector2_t autopilotGetPositionErrorCm(void);
 void autopilotForceLevelPark(bool request);
 void pitchForwardOverride(bool request);
 
