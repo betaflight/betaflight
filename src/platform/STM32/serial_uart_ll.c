@@ -33,12 +33,15 @@
 #include "build/atomic.h"
 
 #include "common/utils.h"
+#include "common/maths.h"
+#include "drivers/time.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
 #include "drivers/inverter.h"
 #include "drivers/dma.h"
+#ifdef USE_DMA
 #include "platform/dma.h"
-#include "platform/rcc.h"
+#endif
 
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
@@ -167,21 +170,101 @@ static ErrorStatus uartInitLpuart(USART_TypeDef *USARTx, const uartPort_t *uartP
 
 // XXX uartReconfigure does not handle resource management properly.
 
+static void uartDisableInterruptSources(USART_TypeDef *USARTx)
+{
+    CLEAR_BIT(USARTx->CR1, USART_CR1_PEIE | USART_CR1_TXEIE | USART_CR1_TCIE | USART_CR1_RXNEIE | USART_CR1_IDLEIE);
+    CLEAR_BIT(USARTx->CR3, USART_CR3_EIE);
+}
+
+static void uartClearReceiveStatus(USART_TypeDef *USARTx)
+{
+    LL_USART_RequestRxDataFlush(USARTx);
+    LL_USART_ClearFlag_PE(USARTx);
+    LL_USART_ClearFlag_FE(USARTx);
+    LL_USART_ClearFlag_NE(USARTx);
+    LL_USART_ClearFlag_ORE(USARTx);
+    LL_USART_ClearFlag_IDLE(USARTx);
+}
+
+bool uartTrySetBaudRate(serialPort_t *instance, uint32_t baudRate)
+{
+    uartPort_t *s = (uartPort_t *)instance;
+    USART_TypeDef *USARTx = (USART_TypeDef *)s->USARTx;
+    const uartDevice_t *uart = container_of(s, uartDevice_t, port);
+    const IRQn_Type irqn = (IRQn_Type)uart->hardware->irqn;
+
+    if (s->reconfigureFailed) {
+        return false;
+    }
+#ifdef USE_DMA
+    // This drain protocol is for interrupt-driven ports. Preserve the existing
+    // synchronous API for DMA users, whose completion is managed separately.
+    if (s->txDMAResource || s->rxDMAResource) {
+        instance->vTable->serialSetBaudRate(instance, baudRate);
+        return !s->reconfigureFailed;
+    }
+#endif
+    if (!s->txInhibited && instance->baudRate == baudRate) {
+        return true;
+    }
+
+    const bool irqWasEnabled = NVIC_GetEnableIRQ(irqn);
+    NVIC_DisableIRQ(irqn);
+    __DSB();
+    __ISB();
+    if (!s->txInhibited) {
+        s->txInhibited = true;
+        s->txDrainStartedUs = micros();
+    }
+    // Leave TE and TCIE enabled: bytes already in TDR/the shift register must
+    // finish at the old baud rate. Neither writers nor TXE may feed more bytes.
+    LL_USART_DisableIT_TXE(USARTx);
+
+    // TC may be pending with the ISR masked, or already handled by the ISR.
+    const bool drained = !s->txHardwareBusy || LL_USART_IsActiveFlag_TC(USARTx);
+    // FIFO is disabled: at most two 12-bit frames, plus a 1 ms margin.
+    const uint32_t timeoutUs = 24000000U / MAX(instance->baudRate, 1U) + 1000U;
+    if (!drained && (uint32_t)(micros() - s->txDrainStartedUs) >= timeoutUs) {
+        uartDisableInterruptSources(USARTx);
+        LL_USART_Disable(USARTx);
+        uartClearReceiveStatus(USARTx);
+        NVIC_ClearPendingIRQ(irqn);
+        s->reconfigureFailed = true;
+    }
+    if (drained) {
+        instance->baudRate = baudRate;
+        uartReconfigure(s);
+    }
+    if (irqWasEnabled) {
+        NVIC_EnableIRQ(irqn);
+    }
+    return drained && !s->reconfigureFailed;
+}
+
 /*
  * Configure the UART peripheral from the port's baud rate, options and mode, then enable it.
  */
 void uartReconfigure(uartPort_t *uartPort)
 {
     USART_TypeDef *USARTx = (USART_TypeDef *)uartPort->USARTx;
+    const uartDevice_t *uart = container_of(uartPort, uartDevice_t, port);
+    const IRQn_Type irqn = (IRQn_Type)uart->hardware->irqn;
+    const bool irqWasEnabled = NVIC_GetEnableIRQ(irqn);
     const bool canTx = uartCanTx(uartPort);
+
+    uartPort->txInhibited = true;
+    NVIC_DisableIRQ(irqn);
+    __DSB();
+    __ISB();
 
     // Disable all UART interrupts before disabling the peripheral to prevent
     // an interrupt storm. With UE=0, TC is always asserted (transmitter idle),
     // so TCIE must be cleared before clearing UE.
-    CLEAR_BIT(USARTx->CR1, USART_CR1_PEIE | USART_CR1_TXEIE | USART_CR1_TCIE | USART_CR1_RXNEIE | USART_CR1_IDLEIE);
-    CLEAR_BIT(USARTx->CR3, USART_CR3_EIE);
+    uartDisableInterruptSources(USARTx);
+    NVIC_ClearPendingIRQ(irqn);
 
     LL_USART_Disable(USARTx);
+    uartClearReceiveStatus(USARTx);
 #if defined(STM32G4)
     // LL_USART_DeInit() does not reset LPUART1, so use LL_LPUART_DeInit()
     if (USARTx == LPUART1) {
@@ -191,6 +274,7 @@ void uartReconfigure(uartPort_t *uartPort)
     {
         LL_USART_DeInit(USARTx);
     }
+    uartPort->txHardwareBusy = false;
 
     LL_USART_InitTypeDef usartInit;
     LL_USART_StructInit(&usartInit);
@@ -230,6 +314,10 @@ void uartReconfigure(uartPort_t *uartPort)
 
     if (initStatus != SUCCESS) {
         // BRR not set — cannot operate this USART, leave it disabled
+        uartPort->reconfigureFailed = true;
+        if (irqWasEnabled) {
+            NVIC_EnableIRQ(irqn);
+        }
         return;
     }
 
@@ -253,7 +341,7 @@ void uartReconfigure(uartPort_t *uartPort)
         LL_USART_EnableHalfDuplex(USARTx);
     }
 
-    LL_USART_Enable(USARTx);
+    uartPort->reconfigureFailed = false;
 
     // Receive DMA or IRQ
     if (uartPort->port.mode & MODE_RX) {
@@ -299,9 +387,30 @@ void uartReconfigure(uartPort_t *uartPort)
 #endif
         {
             /* Enable the UART Transmit Data Register Empty Interrupt */
-            SET_BIT(USARTx->CR1, USART_CR1_TXEIE);
+            if (uartPort->port.txBufferHead != uartPort->port.txBufferTail) {
+                SET_BIT(USARTx->CR1, USART_CR1_TXEIE);
+            }
             SET_BIT(USARTx->CR1, USART_CR1_TCIE);
         }
+    }
+
+    uartClearReceiveStatus(USARTx);
+    NVIC_ClearPendingIRQ(irqn);
+    LL_USART_Enable(USARTx);
+    // Clear TC after UE is set: a disabled peripheral can hold TC asserted.
+    // Otherwise the completion handler could release TX before queued data starts.
+    LL_USART_ClearFlag_TC(USARTx);
+    uartPort->txInhibited = false;
+    // Completion of the old transmission may have put the TX pin into monitor
+    // mode. Reconnect it before resuming bytes queued at the new baud rate.
+    if (canTx && uartPort->port.txBufferHead != uartPort->port.txBufferTail
+        && uartPort->checkUsartTxOutput && !uartPort->checkUsartTxOutput(uartPort)) {
+        LL_USART_DisableIT_TXE(USARTx);
+    }
+    __DSB();
+    __ISB();
+    if (irqWasEnabled) {
+        NVIC_EnableIRQ(irqn);
     }
 }
 
@@ -350,6 +459,9 @@ void uartTxMonitor(uartPort_t *s)
 #ifdef USE_DMA
 void uartTryStartTxDMA(uartPort_t *s)
 {
+    if (s->txInhibited) {
+        return;
+    }
     USART_TypeDef *USARTx = (USART_TypeDef *)s->USARTx;
 
     ATOMIC_BLOCK(NVIC_PRIO_SERIALUART_TXDMA) {
@@ -462,6 +574,7 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
     // UART transmission completed
     if (canTx && LL_USART_IsEnabledIT_TC(USARTx) && LL_USART_IsActiveFlag_TC(USARTx)) {
         LL_USART_ClearFlag_TC(USARTx);
+        s->txHardwareBusy = false;
 
         // Switch TX to an input with pull-up so it's state can be monitored
         uartTxMonitor(s);
@@ -473,12 +586,13 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
 #endif
     }
 
-    if (canTx && LL_USART_IsEnabledIT_TXE(USARTx) && LL_USART_IsActiveFlag_TXE(USARTx)) {
+    if (canTx && !s->txInhibited && LL_USART_IsEnabledIT_TXE(USARTx) && LL_USART_IsActiveFlag_TXE(USARTx)) {
         /* Check that a Tx process is ongoing */
         if (s->port.txBufferTail == s->port.txBufferHead) {
             /* Disable the UART Transmit Data Register Empty Interrupt */
             CLEAR_BIT(USARTx->CR1, USART_CR1_TXEIE);
         } else {
+            s->txHardwareBusy = true;
             if ((USARTx->CR1 & USART_CR1_M) && !(USARTx->CR1 & USART_CR1_PS)) {
                 // 9-bit word length without parity
                 USARTx->TDR = ((uint16_t)s->port.txBuffer[s->port.txBufferTail]) & 0x01FFU;

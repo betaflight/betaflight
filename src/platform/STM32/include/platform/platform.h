@@ -669,6 +669,8 @@ extern uint8_t _dmaram_end__;
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
  // pin AF mode is configured for each pin individually
 #define UART_TRAIT_AF_PIN 1
+// Implemented by serial_uart_ll.c, independently of HAL compatibility macros.
+#define UART_TRAIT_ASYNC_RECONFIGURE 1
 #elif defined(STM32F4)
 // all pins on given uart use same AF
 #define UART_TRAIT_AF_PORT 1
@@ -860,4 +862,3 @@ extern uint8_t _dmaram_end__;
 #define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING>>8))))>>4)
 #define NVIC_PRIORITY_SUB(prio) (((prio)>>4)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8))))
 #endif
-
