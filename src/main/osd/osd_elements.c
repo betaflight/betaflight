@@ -1180,6 +1180,12 @@ static void osdElementFlymode(osdElementParms_t *element)
         strcpy(element->buff, "!FS!");
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
         strcpy(element->buff, "RESC");
+#ifdef USE_LAUNCH_CONTROL
+    } else if (isLaunchControlLifting()) {
+        strcpy(element->buff, "LIFT");   // the flight controller is flying, not the sticks
+    } else if (isLaunchControlActive() || isLaunchControlPreStaged()) {
+        strcpy(element->buff, "LNCH");   // holding for launch, or will be once armed
+#endif
     } else if (FLIGHT_MODE(HEADFREE_MODE)) {
         strcpy(element->buff, "HEAD");
     } else if (FLIGHT_MODE(PASSTHRU_MODE)) {

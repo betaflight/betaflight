@@ -453,7 +453,7 @@ static const char * const lookupTableSdcardMode[] = {
 
 #ifdef USE_LAUNCH_CONTROL
 static const char * const lookupTableLaunchControlMode[] = {
-    "NORMAL", "PITCHONLY", "FULL"
+    "NORMAL", "PITCHONLY", "FULL", "LIFT"
 };
 #endif
 
@@ -1380,6 +1380,8 @@ const clivalue_t valueTable[] = {
     { "launch_trigger_throttle_percent", VAR_UINT8 | PROFILE_VALUE,  .config.minmaxUnsigned = { 0, LAUNCH_CONTROL_THROTTLE_TRIGGER_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlThrottlePercent) },
     { "launch_angle_limit",         VAR_UINT8 | PROFILE_VALUE,  .config.minmaxUnsigned = { 0, 80 }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlAngleLimit) },
     { "launch_control_gain",        VAR_UINT8 | PROFILE_VALUE,  .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlGain) },
+    { "launch_lift_time",           VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { LAUNCH_CONTROL_LIFT_TIME_MIN_MS, LAUNCH_CONTROL_LIFT_TIME_MAX_MS }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlLiftTime) },
+    { "launch_lift_throttle",       VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { LAUNCH_CONTROL_LIFT_THROTTLE_MIN, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlLiftThrottle) },
 #endif
 
 #ifdef USE_THRUST_LINEARIZATION
