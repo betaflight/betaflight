@@ -46,6 +46,7 @@ void pitchForwardOverride(bool request);
 bool isPitchForwardOverrideActive(void);
 void autopilotForceLevelPark(bool request); // heading/mag fault: force angle-mode self-level, never position hold
 void autopilotSetNavHeadingOverride(bool valid, float headingDeg); // mission pre-turn: command nose heading directly
+vector2_t autopilotGetPositionErrorCm(void); // EF: where the position controller holds the craft to, relative to it
 void initPositionHold(void);
 void positionControlReanchor(void);
 uint16_t autopilotGetEffectiveHoverThrottlePwm(void);
