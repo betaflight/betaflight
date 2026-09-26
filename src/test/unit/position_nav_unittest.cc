@@ -1077,6 +1077,23 @@ TEST_F(PositionNavTest, MoveTargetWithoutActiveCommandIsNoOp)
     EXPECT_FALSE(positionNavHasActiveTarget());
 }
 
+TEST_F(PositionNavTest, LoweredTargetAltitudeStaysFixedAndNeverRises)
+{
+    // Only the altitude moves, so the horizontal target is still flown as a fixed one.
+    const vector3_t target = {{ 10.0f, 5.0f, -200.0f }};
+    positionNavSetTargetEf(&target, 1.0f, 1.0f, 0.1f, true, NULL, NULL);
+
+    positionNavLowerTargetAltitude(-210.0f);
+    const positionNavCommand_t *cmd = positionNavGetActiveCommand();
+    EXPECT_FLOAT_EQ(cmd->targetPosEfM.v[ENU_U], -210.0f);
+    EXPECT_FLOAT_EQ(cmd->targetPosEfM.v[ENU_E], 10.0f);
+    EXPECT_FLOAT_EQ(cmd->targetPosEfM.v[ENU_N], 5.0f);
+    EXPECT_TRUE(cmd->fixedTarget);
+
+    positionNavLowerTargetAltitude(-205.0f);
+    EXPECT_FLOAT_EQ(cmd->targetPosEfM.v[ENU_U], -210.0f);
+}
+
 // --- Clear target ---
 
 TEST_F(PositionNavTest, ClearTargetDeactivates)
