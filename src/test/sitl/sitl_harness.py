@@ -32,6 +32,7 @@ import uuid
 
 MSP_STATUS = 101
 MSP_RAW_GPS = 106
+MSP_ATTITUDE = 108
 MSP_BOXIDS = 119
 MSP_ACC_CALIBRATION = 205
 MSP_DEBUG = 254
@@ -581,7 +582,7 @@ class FdmFeed(threading.Thread):
                     self.history.append((now - self.t0,
                                          self.model.pos[0], self.model.pos[1], self.model.pos[2],
                                          self.model.vel[0], self.model.vel[1], self.model.vel[2],
-                                         self.heading_deg()))
+                                         self.heading_deg(), math.degrees(self.model.pitch)))
 
             lat_true = HOME_LAT + self.model.pos[1] / M_PER_DEG
             lon_true = HOME_LON + self.model.pos[0] / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))
@@ -814,6 +815,10 @@ class Sitl:
 
     def acc_calibrate(self):
         self.msp.request(MSP_ACC_CALIBRATION)
+
+    def yaw_deg(self):
+        p = self.msp.request(MSP_ATTITUDE)
+        return struct.unpack_from("<h", p, 4)[0] % 360
 
     def debug_values(self):
         p = self.msp.request(MSP_DEBUG)
@@ -1591,11 +1596,13 @@ def scenario_rescue_near_home(sitl, rc, fdm, variant="B"):
     return m
 
 
-def scenario_rescue_heading_recovery(sitl, rc, fdm, variant="B"):
+def scenario_rescue_heading_recovery(sitl, rc, fdm, variant="B", drift=False):
     """No mag, and flown out on roll alone, so the GPS course never teaches the
     IMU a heading: RC lost well clear of home. The rescue climbs level to the
     return altitude, pitches forward until the course has taught the IMU its
-    heading, then flies home and lands."""
+    heading, then flies home and lands. With drift, RC is lost mid-run just
+    under the return altitude, so the climb is over while the craft is still
+    sliding sideways."""
     rc.start()
     fdm.start()
     wait_for("GPS fix + RX recovery (arming flags clear)", lambda: sitl.status()["arming_flags"] == 0, timeout=40)
@@ -1616,28 +1623,36 @@ def scenario_rescue_heading_recovery(sitl, rc, fdm, variant="B"):
             time.sleep(1.0)
     rc.set(2, 1600)
     rc.set(7, RC_HIGH)  # ALTHOLD + POSHOLD: without a heading, POSHOLD passes the sticks through
-    wait_for("climbed clear of ground", lambda: fdm.model.pos[2] > 6.0, timeout=20)
+    climb_to = 13.5 if drift else 6.0
+    wait_for("climbed clear of ground", lambda: fdm.model.pos[2] > climb_to, timeout=30)
     rc.set(2, 1300)
 
     # Past 10 deg of roll the course teaches the IMU nothing, so a sideways run leaves the heading unknown.
     rc.set(0, 1900)
     wait_for("40 m out sideways", lambda: fdm.distance_from_home() > 40.0, timeout=30, interval=0.1)
-    rc.set(0, 1100)
-    wait_for("braked", lambda: fdm.model.vel[0] < 1.0, timeout=15, interval=0.1)
-    rc.set(0, RC_MID)
-    wait_for("stopped", lambda: fdm.ground_speed() < 1.0, timeout=30, interval=0.5)
+    if not drift:
+        rc.set(0, 1100)
+        wait_for("braked", lambda: fdm.model.vel[0] < 1.0, timeout=15, interval=0.1)
+        rc.set(0, RC_MID)
+        wait_for("stopped", lambda: fdm.ground_speed() < 1.0, timeout=30, interval=0.5)
     assert sitl.debug_values()[4] == 1, "the IMU learnt its heading on the way out"
 
     kill_dist = fdm.distance_from_home()
     start_alt = fdm.model.pos[2]
     t0 = fdm.now_t()
-    log(f"[{variant}] killing RC {kill_dist:.0f} m out at {start_alt:.1f} m, heading unknown")
+    log(f"[{variant}] killing RC {kill_dist:.0f} m out at {start_alt:.1f} m, "
+        f"{fdm.ground_speed():.1f} m/s, heading unknown")
     rc.stop_stream()
 
     rescue_engagement_asserts(sitl, variant)
-    wait_for("heading learnt", lambda: sitl.debug_values()[4] == 0, timeout=60, interval=0.5)
+    wait_for("heading learnt", lambda: sitl.debug_values()[4] == 0, timeout=60, interval=0.2)
     learnt_t = fdm.now_t()
     alt_at_learnt = fdm.model.pos[2]
+    # The IMU against the craft's true nose while it settles the heading on the course.
+    heading_err = 0.0
+    while fdm.now_t() < learnt_t + 1.0:
+        heading_err = max(heading_err, abs((sitl.yaw_deg() - fdm.heading_deg() + 180.0) % 360.0 - 180.0))
+        time.sleep(0.1)
     wait_for(
         "returns within 20 m of home",
         lambda: fdm.distance_from_home() < 20.0,
@@ -1660,9 +1675,15 @@ def scenario_rescue_heading_recovery(sitl, rc, fdm, variant="B"):
     climb_speed = max((math.hypot(s[4], s[5]) for s in hist if s[0] >= t0 and s[3] < 12.5), default=0.0)
     # Without a compass the heading is only kept at speed: from learning it to nearly home, never stopped.
     return_speed = min((math.hypot(s[4], s[5]) for s in hist if learnt_t <= s[0] <= home_t), default=0.0)
-    log(f"[{variant}] heading learnt {learnt_t - t0:.0f} s in at {alt_at_learnt:.1f} m, climb speed "
-        f"{climb_speed:.1f} m/s, slowest after {return_speed:.1f} m/s, furthest {m['max_dist']:.0f} m, "
-        f"landed {td_dist:.1f} m from home")
+    pitch_forward = next((s for s in hist if s[0] >= t0 and s[8] > 20.0), None)
+    assert pitch_forward is not None, "never pitched forward"
+    pitch_forward_speed = math.hypot(pitch_forward[4], pitch_forward[5])
+    log(f"[{variant}] pitched forward {pitch_forward[0] - t0:.1f} s in at {pitch_forward_speed:.1f} m/s, "
+        f"heading learnt {learnt_t - t0:.0f} s in at {alt_at_learnt:.1f} m, IMU off the nose by up to "
+        f"{heading_err:.0f} deg, climb speed {climb_speed:.1f} m/s, slowest after {return_speed:.1f} m/s, "
+        f"furthest {m['max_dist']:.0f} m, landed {td_dist:.1f} m from home")
+    assert pitch_forward_speed < 1.5, f"pitched forward still drifting {pitch_forward_speed:.1f} m/s"
+    assert heading_err < 10.0, f"learnt a heading {heading_err:.0f} deg off the nose"
     assert climb_speed < 3.0, f"moving {climb_speed:.1f} m/s before the climb was done"
     assert return_speed > 2.5, f"slowed to {return_speed:.1f} m/s after learning the heading"
     assert m["max_dist"] < kill_dist + 80.0, f"heading-recovery excursion ran away: {m['max_dist']:.0f} m"
@@ -2033,6 +2054,16 @@ SCENARIOS = {
             *RESCUE_CFG,
             "set mag_hardware = NONE",
             "set debug_mode = ATTITUDE",   # [4]: 1 while the IMU has no usable heading
+            "set gps_rescue_return_alt = 15",
+            "set gps_rescue_ascend_rate = 250",
+        ],
+    ),
+    "rescue_heading_recovery_drift": (
+        lambda sitl, rc, fdm: scenario_rescue_heading_recovery(sitl, rc, fdm, drift=True),
+        [
+            *RESCUE_CFG,
+            "set mag_hardware = NONE",
+            "set debug_mode = ATTITUDE",
             "set gps_rescue_return_alt = 15",
             "set gps_rescue_ascend_rate = 250",
         ],

@@ -1037,6 +1037,7 @@ TEST_F(FlightPlanRescueTest, NoHeadingClimbsLevelBeforePitchingForward)
     EXPECT_NEAR(g_lastTarget.targetEfM.x, 90.0f, 0.01f);
     EXPECT_NEAR(g_lastTarget.targetEfM.z, kDefaultReturnAltM, 0.01f);
 
+    g_stubEstimate.velocity.v[ENU_E] = 0.0f;
     triggerReached();
     EXPECT_TRUE(g_lastPitchForward);
     EXPECT_NEAR(g_headingRecoveryPitchDeg, 35.0f, 0.001f);
@@ -1045,6 +1046,67 @@ TEST_F(FlightPlanRescueTest, NoHeadingClimbsLevelBeforePitchingForward)
     settleHeading();
     EXPECT_FALSE(g_headingRecoveryActive);
     EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+}
+
+TEST_F(FlightPlanRescueTest, BlindClimbWaitsForTheDriftToDieBeforePitchingForward)
+{
+    // Pitching forward still sliding sideways would teach the IMU the slide's course, not the nose.
+    g_stubHeadingValid = false;
+    g_stubEstimate.velocity.v[ENU_E] = 500.0f;
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+
+    triggerReached();
+    for (int i = 0; i < 20; i++) {
+        g_stubEstimate.velocity.v[ENU_E] -= 20.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    EXPECT_EQ(g_pitchForwardCalls, 0);
+    EXPECT_TRUE(g_headingRecoveryActive);
+    EXPECT_NEAR(g_headingRecoveryPitchDeg, 0.0f, 0.001f);
+
+    g_stubEstimate.velocity.v[ENU_E] = 90.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(g_pitchForwardCalls, 1);
+    EXPECT_NEAR(g_headingRecoveryPitchDeg, 35.0f, 0.001f);
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 0);
+}
+
+TEST_F(FlightPlanRescueTest, BlindClimbPitchesForwardIntoAWindThatWillNotDie)
+{
+    g_stubHeadingValid = false;
+    g_stubEstimate.velocity.v[ENU_N] = 300.0f;
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+
+    triggerReached();
+    for (int i = 0; i < 49; i++) {
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    EXPECT_EQ(g_pitchForwardCalls, 0);
+
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(g_pitchForwardCalls, 1);
+}
+
+TEST_F(FlightPlanRescueTest, HeadingFoundWaitingOutTheDriftFliesTheStop)
+{
+    g_stubHeadingValid = false;
+    g_stubEstimate.velocity.v[ENU_E] = 400.0f;
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    triggerReached();
+
+    g_stubHeadingValid = true;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_FALSE(g_headingRecoveryActive);
+    EXPECT_EQ(g_pitchForwardCalls, 0);
+    EXPECT_NEAR(g_lastTarget.completionSpeedMps, 0.5f, 0.001f);
 }
 
 TEST_F(FlightPlanRescueTest, BlindClimbSurvivesAPositionControlReset)

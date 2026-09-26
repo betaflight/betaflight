@@ -211,6 +211,12 @@
 #define FP_RESCUE_HEADING_SETTLE_CMS     300
 #define FP_RESCUE_HEADING_SETTLE_US      500000u
 #define FP_RESCUE_HEADING_SETTLE_MAX_US  2000000u
+// A pitch-forward that sets off still sliding sideways teaches the IMU a course that is not the nose,
+// and with no heading nothing can brake the slide, so at altitude the level climb waits for drag to
+// take it out. Five seconds sheds 5 m/s to this on a drag time constant of 3 s; a wind that keeps the
+// craft drifting must not hold it there for good.
+#define FP_RESCUE_DRIFT_STILL_CMS  100.0f
+#define FP_RESCUE_DRIFT_TIMEOUT_US 5000000u
 #endif
 
 static struct {
@@ -250,6 +256,8 @@ static struct {
     uint8_t stagedCount;
     bool isRescuePlan;          // the active injected plan is a failsafe rescue
     bool rescueBlindClimb;      // heading unknown: climbing level before the pitch-forward
+    bool rescueClimbed;         // the blind climb is at altitude, waiting out the drift since rescueClimbedUs
+    timeUs_t rescueClimbedUs;
     bool rescueHeadingHold;     // pitch-forward heading recovery in progress
     timeUs_t rescueHeadingStartUs;
     bool rescueHeadingTrusted;  // the IMU trusts its heading now, since rescueHeadingTrustedUs
@@ -579,13 +587,15 @@ static void endHeadingRecovery(void)
         autopilotHeadingRecovery(false, 0.0f);
     }
     fp.rescueBlindClimb = false;
+    fp.rescueClimbed = false;
     fp.rescueHeadingHold = false;
 }
 #endif
 
 // A rescue's first leg with no heading, and a return still to fly: nothing can hold the craft or
 // brake it, so it climbs level where it drifts and completes on altitude alone, and the pitch-forward
-// that teaches the IMU its heading waits until it is up clear of whatever it started near.
+// that teaches the IMU its heading waits until it is up clear of whatever it started near and the
+// drift has died away.
 static bool isRescueBlindClimb(void)
 {
 #if ENABLE_RESCUE_PLAN
@@ -837,6 +847,7 @@ static bool dispatchWaypoint(void)
 #if ENABLE_RESCUE_PLAN
     if (blindClimb) {
         fp.rescueBlindClimb = true;
+        fp.rescueClimbed = false;
         autopilotHeadingRecovery(true, 0.0f);
     }
 #endif
@@ -1795,6 +1806,26 @@ static void advanceToNext(void)
     dispatchWaypoint();
 }
 
+#if ENABLE_RESCUE_PLAN
+// Rescue climb complete but the IMU heading is untrusted: hold here and pitch forward so GPS
+// course-over-ground can teach the estimator its heading before the return leg (legacy
+// PITCH_FORWARD semantics).
+static void startRescuePitchForward(void)
+{
+    fp.rescueBlindClimb = false;
+    fp.rescueClimbed = false;
+    fp.rescueHeadingHold = true;
+    fp.rescueHeadingStartUs = micros();
+    fp.rescueHeadingTrusted = false;
+    autopilotHeadingRecovery(true, FP_RESCUE_PITCH_FORWARD_DEG);
+}
+
+static bool rescueDrifting(const positionEstimate3d_t *est)
+{
+    return sq(est->velocity.v[ENU_E]) + sq(est->velocity.v[ENU_N]) >= sq(FP_RESCUE_DRIFT_STILL_CMS);
+}
+#endif
+
 static void onWaypointReached(void *userData)
 {
     UNUSED(userData);
@@ -1815,15 +1846,13 @@ static void onWaypointReached(void *userData)
     }
 
 #if ENABLE_RESCUE_PLAN
-    // Rescue climb complete but the IMU heading is untrusted: hold here and
-    // pitch forward so GPS course-over-ground can teach the estimator its
-    // heading before the return leg (legacy PITCH_FORWARD semantics).
     if (isRescueStop() && activePlanCount() > 1 && !imuIsHeadingValid()) {
-        fp.rescueBlindClimb = false;
-        fp.rescueHeadingHold = true;
-        fp.rescueHeadingStartUs = micros();
-        fp.rescueHeadingTrusted = false;
-        autopilotHeadingRecovery(true, FP_RESCUE_PITCH_FORWARD_DEG);
+        if (fp.rescueBlindClimb && rescueDrifting(positionEstimatorGetEstimate())) {
+            fp.rescueClimbed = true;
+            fp.rescueClimbedUs = micros();
+        } else {
+            startRescuePitchForward();
+        }
         return;
     }
     endHeadingRecovery();
@@ -1905,6 +1934,7 @@ void flightPlanNavInit(void)
     fp.stagedCount = 0;
     fp.isRescuePlan = false;
     fp.rescueBlindClimb = false;
+    fp.rescueClimbed = false;
     fp.rescueHeadingHold = false;
     fp.rescueDescentActive = false;
     altHoldSetEmergencyDescent(false, 0.0f);
@@ -2148,7 +2178,12 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
             [ENU_U] = fp.legTargetEnuM.v[ENU_U],
         }};
         positionNavMoveTargetEf(&atCraftM);
-        checkLegProgress(currentTimeUs, est);
+        if (!fp.rescueClimbed) {
+            checkLegProgress(currentTimeUs, est);
+        } else if (!rescueDrifting(est)
+                   || cmpTimeUs(currentTimeUs, fp.rescueClimbedUs) >= (timeDelta_t)FP_RESCUE_DRIFT_TIMEOUT_US) {
+            startRescuePitchForward();
+        }
         return;
     }
 #endif
