@@ -120,7 +120,8 @@ const char * const lookupTableBaroHardware[BARO_HARDWARE_COUNT] = {
     [BARO_BMP580] = "BMP580",
     [BARO_BMP581] = "BMP581",
     [BARO_VIRTUAL] = "VIRTUAL",
-    [BARO_SPA06_003] = "SPA06_003"
+    [BARO_SPA06_003] = "SPA06_003",
+    [BARO_ICP20100] = "ICP20100"
 };
 
 // sync with magSensor_e
