@@ -57,4 +57,4 @@ void pwmWriteChannel(timerChannel_t *channel, uint32_t value);
 
 pwmOutputPort_t *pwmGetMotors(void);
 bool pwmIsSynced(void);
-void analogInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3dHigh, float *deadbandMotor3dLow);
+void analogInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputSoftLow, float *outputHigh, float *disarm, float *deadbandMotor3dHigh, float *deadbandMotor3dLow);

@@ -32,6 +32,7 @@ typedef struct mixerRuntime_s {
 #endif
     bool feature3dEnabled;
     float motorOutputLow;
+    float motorOutputSoftLow;
     float motorOutputHigh;
     float disarmMotorOutput;
     float deadbandMotor3dHigh;
