@@ -1195,7 +1195,10 @@ $(OBJECT_DIR)/$1/$(basename $1): $$($1_OBJS) \
 	$(V1) mkdir -p $(dir $$@)
 	$(V1) $(CXX) $(CXX_FLAGS) $(LDFLAGS) $($1_LDFLAGS) $$^ -o $$@
 
+# Start this executable with fresh counters so stale/incompatible coverage
+# data from an earlier build is not merged into the current run.
 test_$1: $(OBJECT_DIR)/$1/$(basename $1)
+	$(V1) find "$(OBJECT_DIR)/$1" -type f -name '*.gcda' -delete
 	$(V1) $$< $$(EXEC_OPTS) "$(STDOUT)" && echo "running $$@: PASS"
 
 endef
