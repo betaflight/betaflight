@@ -334,6 +334,7 @@ typedef struct pidProfile_s {
     uint16_t chirp_frequency_start_deci_hz; // start frequency in units of 0.1 hz
     uint16_t chirp_frequency_end_deci_hz;   // end frequency in units of 0.1 hz
     uint8_t chirp_time_seconds;             // excitation time
+    uint8_t chirp_repeat;                   // number of repeats per axis
     // ADRC tester settings (ADRC-030..033). Adding a field here changes sizeof(pidProfile_t) and therefore the
     // stride of the pidProfiles PG array: bump the PG version in pid.c whenever this block changes.
     uint8_t adrc_ground_wc;                 // wc [rad/s] while the liftoff gate is closed, all axes, capped at adrc_wc_*; 0 = off
@@ -535,6 +536,10 @@ typedef struct pidRuntime_s {
     float chirpFrequencyStartHz;
     float chirpFrequencyEndHz;
     float chirpTimeSeconds;
+    uint8_t chirpRepeat;
+    uint8_t chirpRepeatsRemaining;
+    flight_dynamics_index_t chirpAxis;
+    bool chirpSeriesIsFinished;
 #endif // USE_CHIRP
 
 #ifdef USE_ADRC
@@ -605,4 +610,8 @@ float pidGetPidFrequency(void);
 float dynLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo);
 #ifdef USE_CHIRP
 bool  pidChirpIsFinished();
+flight_dynamics_index_t pidChirpGetChirpAxis(void);
+uint8_t pidChirpGetRepeatTotal(void);
+uint8_t pidChirpGetRepeatCurrent(void);
+bool pidChirpSeriesIsFinished(void);
 #endif
