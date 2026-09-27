@@ -1663,28 +1663,35 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
     case OSD_ELEMENT_TYPE_1:  // mAh remaining graphical progress bar (shrinks as battery is used)
     default:
         {
-            uint8_t remainingCapacityBars = 0;
+            // Resolution is half a cell, so SYM_PB_HALF can mark the partially filled cell
+            int remainingHalfSteps = 0;
 
             if (currentBatteryProfile->batteryCapacity > 0) {
                 const float batteryRemaining = (float)constrain(currentBatteryProfile->batteryCapacity - displayBasis, 0, currentBatteryProfile->batteryCapacity);
-                const float stepSize = (float)currentBatteryProfile->batteryCapacity / (float)MAIN_BATT_USAGE_STEPS;
-                remainingCapacityBars = ceilf(batteryRemaining / stepSize);
+                const float halfStepSize = (float)currentBatteryProfile->batteryCapacity / (float)(MAIN_BATT_USAGE_STEPS * 2);
+                remainingHalfSteps = ceilf(batteryRemaining / halfStepSize);
             } else if (getBatteryState() != BATTERY_NOT_PRESENT) {
                 uint8_t voltagePercent = calculateBatteryPercentageRemaining();
                 if (element->type == OSD_ELEMENT_TYPE_2) {
                     voltagePercent = 100 - voltagePercent;
                 }
-                remainingCapacityBars = (voltagePercent * MAIN_BATT_USAGE_STEPS + 99) / 100; // integer ceil
+                remainingHalfSteps = (voltagePercent * MAIN_BATT_USAGE_STEPS * 2 + 99) / 100; // integer ceil
             }
+            remainingHalfSteps = MIN(remainingHalfSteps, MAIN_BATT_USAGE_STEPS * 2);
+
+            const int fullBars = remainingHalfSteps / 2;
+            const bool halfBar = remainingHalfSteps & 1;
 
             // Create empty battery indicator bar
             element->buff[0] = SYM_PB_START;
             for (int i = 1; i <= MAIN_BATT_USAGE_STEPS; i++) {
-                element->buff[i] = i <= remainingCapacityBars ? SYM_PB_FULL : SYM_PB_EMPTY;
+                element->buff[i] = i <= fullBars ? SYM_PB_FULL : SYM_PB_EMPTY;
             }
             element->buff[MAIN_BATT_USAGE_STEPS + 1] = SYM_PB_CLOSE;
-            if (remainingCapacityBars > 0 && remainingCapacityBars < MAIN_BATT_USAGE_STEPS) {
-                element->buff[1 + remainingCapacityBars] = SYM_PB_END;
+            if (halfBar) {
+                element->buff[1 + fullBars] = SYM_PB_HALF;
+            } else if (fullBars > 0 && fullBars < MAIN_BATT_USAGE_STEPS) {
+                element->buff[1 + fullBars] = SYM_PB_END;
             }
             element->buff[MAIN_BATT_USAGE_STEPS+2] = '\0';
             break;
