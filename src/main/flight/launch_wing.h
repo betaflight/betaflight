@@ -24,6 +24,10 @@
 
 #if defined(USE_WING) && defined(USE_LAUNCH_WING)
 
+// How long the attitude has to stay outside the abort bound before the launch
+// gives up, so a throw that slaps the airframe over for a few frames does not.
+#define LAUNCH_ATTITUDE_HOLD_MS 100
+
 typedef enum {
     LAUNCH_WING_IDLE = 0,
     LAUNCH_WING_WAIT_THROTTLE,
@@ -37,6 +41,16 @@ typedef enum {
     LAUNCH_WING_ABORTED,
 } launchWingState_e;
 
+typedef enum {
+    LAUNCH_WING_EXIT_NONE = 0,
+    LAUNCH_WING_EXIT_STICKS,
+    LAUNCH_WING_EXIT_ATTITUDE,
+    LAUNCH_WING_EXIT_ALTITUDE,
+    LAUNCH_WING_EXIT_TIMEOUT,
+    LAUNCH_WING_EXIT_HANDOVER,
+    LAUNCH_WING_EXIT_MODE_OFF,
+} launchWingExit_e;
+
 void launchWingInit(void);
 void launchWingArm(void);
 void launchWingDisarm(void);
@@ -45,6 +59,7 @@ void launchWingSwitchOff(void);
 
 bool launchWingLatched(void);
 bool launchWingIsActive(void);
+bool launchWingIsPreLaunch(void);
 bool launchWingIsTerminal(void);
 bool launchWingThrottleValid(void);
 bool launchWingHoldsIterm(void);

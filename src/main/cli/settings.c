@@ -1254,6 +1254,7 @@ const clivalue_t valueTable[] = {
     { "launch_max_altitude",        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, maxAltitudeM) },
     { "launch_end_time",            VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 5000 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, endTimeMs) },
     { "launch_abort_deadband",      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 50 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, abortDeadbandPercent) },
+    { "launch_abort_angle",         VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 90 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, abortAngleDeg) },
 #endif // USE_WING && USE_LAUNCH_WING
 
 // PG_PID_CONFIG
