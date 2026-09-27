@@ -40,6 +40,8 @@ typedef struct gyroDeviceConfig_s {
     uint8_t alignment;        // sensor_align_e
     sensorAlignment_t customAlignment;
     ioTag_t clkIn;
+    // Uses the former trailing padding byte to preserve the version 1 EEPROM layout.
+    ioTag_t accCsnTag;
 } gyroDeviceConfig_t;
 
 PG_DECLARE_ARRAY(gyroDeviceConfig_t, MAX_GYRODEV_COUNT, gyroDeviceConfig);

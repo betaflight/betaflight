@@ -154,6 +154,14 @@ accgyro_spi_lsm6dsv16x_unittest_DEFINES = \
                 $(if $1,$(accgyro_spi_lsm6dsv16x_unittest_$1_DEFINES), \
                     USE_ACCGYRO_LSM6DSV16X= USE_ACCGYRO_LSM6DSV32X= USE_ACCGYRO_LSM6DSK320X=)
 
+accgyro_spi_bmi088_unittest_SRC := \
+		$(USER_DIR)/drivers/accgyro/accgyro_spi_bmi088.c \
+		$(USER_DIR)/drivers/accgyro/gyro_sync.c
+
+accgyro_spi_bmi088_unittest_DEFINES := \
+		USE_ACCGYRO_BMI088= \
+		SPI_IO_CS_CFG=0
+
 # This test is disabled due to build errors.
 # Its source code is archived in unit/battery_unittest.cc.txt
 #

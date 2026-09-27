@@ -47,6 +47,7 @@
 #include "drivers/accgyro/accgyro_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_bmi160.h"
 #include "drivers/accgyro/accgyro_spi_bmi270.h"
+#include "drivers/accgyro/accgyro_spi_bmi088.h"
 #include "drivers/accgyro/accgyro_spi_icm20649.h"
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
 #include "drivers/accgyro/accgyro_spi_icm426xx.h"
@@ -380,6 +381,9 @@ static gyroSpiDetectFn_t gyroSpiDetectFnTable[] = {
 #ifdef USE_ACCGYRO_BMI270
     bmi270Detect,
 #endif
+#ifdef USE_ACCGYRO_BMI088
+    bmi088GyroDetect,
+#endif
 #if defined(USE_GYRO_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_ACCGYRO_ICM42686P) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653)
     icm426xxSpiDetect,
 #endif
@@ -443,6 +447,9 @@ void mpuPreInit(const struct gyroDeviceConfig_s *config)
 {
 #ifdef USE_SPI_GYRO
     ioPreinitByTag(config->csnTag, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
+#ifdef USE_ACCGYRO_BMI088
+    ioPreinitByTag(config->accCsnTag, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
+#endif
 #else
     UNUSED(config);
 #endif

@@ -43,6 +43,7 @@
 
 #include "drivers/accgyro/accgyro_spi_bmi160.h"
 #include "drivers/accgyro/accgyro_spi_bmi270.h"
+#include "drivers/accgyro/accgyro_spi_bmi088.h"
 
 #include "drivers/accgyro/accgyro_spi_icm20649.h"
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
@@ -302,6 +303,15 @@ retry:
         FALLTHROUGH;
 #endif
 
+#ifdef USE_ACCGYRO_BMI088
+    case ACC_BMI088:
+        if (bmi088SpiAccDetect(dev)) {
+            accHardware = ACC_BMI088;
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
 #ifdef USE_ACCGYRO_LSM6DSO
     case ACC_LSM6DSO:
         if (lsm6dsoSpiAccDetect(dev)) {
@@ -391,16 +401,30 @@ void accInitFilters(void)
 bool accInit(uint16_t accSampleRateHz)
 {
     memset(&acc, 0, sizeof(acc));
-    // copy over the common gyro mpu settings
+    // Select the IMU that supplies the accelerometer. Most combined IMUs use
+    // the active gyro. BMI088 has separate accel/gyro dies and can be the
+    // second IMU while another gyro remains active.
+    int accGyroIndex = firstEnabledGyro();
     acc.dev.gyro = gyroActiveDev();
-    acc.dev.mpuDetectionResult = *gyroMpuDetectionResult();
+#ifdef USE_ACCGYRO_BMI088
+    if (accelerometerConfig()->acc_hardware == ACC_BMI088) {
+        gyroDev_t *bmi088Gyro = gyroDevByHardware(GYRO_BMI088, &accGyroIndex);
+        if (bmi088Gyro) {
+            acc.dev.gyro = bmi088Gyro;
+        }
+    }
+#endif
+    if (!acc.dev.gyro || accGyroIndex < 0) {
+        return false;
+    }
+    acc.dev.mpuDetectionResult = acc.dev.gyro->mpuDetectionResult;
     acc.dev.acc_high_fsr = accelerometerConfig()->acc_high_fsr;
 
     // Copy alignment from active gyro, as all production boards use acc-gyro-combi chip.
     // Exception is STM32F411DISCOVERY, and (may be) handled in future enhancement.
 
-    sensor_align_e alignment = gyroDeviceConfig(firstEnabledGyro())->alignment;
-    const sensorAlignment_t* customAlignment = &gyroDeviceConfig(firstEnabledGyro())->customAlignment;
+    sensor_align_e alignment = gyroDeviceConfig(accGyroIndex)->alignment;
+    const sensorAlignment_t* customAlignment = &gyroDeviceConfig(accGyroIndex)->customAlignment;
 
     acc.dev.accAlign = alignment;
     buildRotationMatrixFromAngles(&acc.dev.rotationMatrix, customAlignment);
@@ -412,7 +436,7 @@ bool accInit(uint16_t accSampleRateHz)
     acc.dev.initFn(&acc.dev); // driver initialisation
     acc.dev.acc_1G_rec = 1.0f / acc.dev.acc_1G;
 
-    acc.sampleRateHz = accSampleRateHz;
+    acc.sampleRateHz = acc.dev.gyro->accSampleRateHz ? acc.dev.gyro->accSampleRateHz : accSampleRateHz;
     accInitFilters();
 
     return true;

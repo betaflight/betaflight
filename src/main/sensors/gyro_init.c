@@ -43,6 +43,7 @@
 
 #include "drivers/accgyro/accgyro_spi_bmi160.h"
 #include "drivers/accgyro/accgyro_spi_bmi270.h"
+#include "drivers/accgyro/accgyro_spi_bmi088.h"
 
 #include "drivers/accgyro/accgyro_spi_icm20649.h"
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
@@ -296,6 +297,9 @@ void gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config)
     buildRotationMatrixFromAngles(&gyroSensor->gyroDev.rotationMatrix, &config->customAlignment);
     gyroSensor->gyroDev.mpuIntExtiTag = config->extiTag;
     gyroSensor->gyroDev.hardware_lpf = gyroConfig()->gyro_hardware_lpf;
+    gyroSensor->gyroDev.accCsnTag = config->accCsnTag;
+    gyroSensor->gyroDev.deviceIndex = config->index;
+    gyroSensor->gyroDev.spiBus = config->spiBus;
 
     // The targetLooptime gets set later based on the active sensor's gyroSampleRateHz and pid_process_denom
 #ifdef USE_VIRTUAL_GYRO
@@ -320,6 +324,7 @@ void gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config)
     case GYRO_L3GD20:
     case GYRO_BMI160:
     case GYRO_BMI270:
+    case GYRO_BMI088:
     case GYRO_MPU6000:
     case GYRO_MPU6500:
     case GYRO_MPU9250:
@@ -531,6 +536,15 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
         FALLTHROUGH;
 #endif
 
+#ifdef USE_ACCGYRO_BMI088
+    case GYRO_BMI088:
+        if (bmi088SpiGyroDetect(dev)) {
+            gyroHardware = GYRO_BMI088;
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
 #ifdef USE_ACCGYRO_LSM6DSO
     case GYRO_LSM6DSO:
         if (lsm6dsoSpiGyroDetect(dev)) {
@@ -598,6 +612,11 @@ static bool gyroDetectSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t 
 #ifdef USE_VIRTUAL_GYRO
     UNUSED(config);
 #else
+    // BMI088's accelerometer is a separate SPI die. Preserve its companion
+    // CS before gyro detection so a later accelerometer selection can use it.
+    gyroSensor->gyroDev.accCsnTag = config->accCsnTag;
+    gyroSensor->gyroDev.deviceIndex = config->index;
+    gyroSensor->gyroDev.spiBus = config->spiBus;
     bool gyroFound = mpuDetect(&gyroSensor->gyroDev, config);
     if (!gyroFound) {
         return false;
@@ -849,4 +868,23 @@ int firstEnabledGyro(void)
         // no gyro is enabled
         return -1;
     }
+}
+
+STATIC_UNIT_TESTED int gyroFindSensorIndexByHardware(const gyroSensor_t *sensors, int count, gyroHardware_e hardware)
+{
+    for (int i = 0; i < count; i++) {
+        if (sensors[i].gyroDev.gyroHardware == hardware) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+gyroDev_t *gyroDevByHardware(gyroHardware_e hardware, int *index)
+{
+    const int found = gyroFindSensorIndexByHardware(gyro.gyroSensor, GYRO_COUNT, hardware);
+    if (index) {
+        *index = found;
+    }
+    return found >= 0 ? &gyro.gyroSensor[found].gyroDev : NULL;
 }
