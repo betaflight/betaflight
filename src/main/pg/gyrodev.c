@@ -19,6 +19,7 @@
  */
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include "platform.h"
@@ -47,6 +48,10 @@
 #define GYRO_1_CLKIN_PIN NONE
 #endif
 
+#ifndef ACC_1_CS_PIN
+#define ACC_1_CS_PIN NONE
+#endif
+
 #ifndef GYRO_2_CS_PIN
 #define GYRO_2_CS_PIN NONE
 #endif
@@ -57,6 +62,10 @@
 
 #ifndef GYRO_2_CLKIN_PIN
 #define GYRO_2_CLKIN_PIN NONE
+#endif
+
+#ifndef ACC_2_CS_PIN
+#define ACC_2_CS_PIN NONE
 #endif
 
 #ifndef GYRO_3_CS_PIN
@@ -71,6 +80,10 @@
 #define GYRO_3_CLKIN_PIN NONE
 #endif
 
+#ifndef ACC_3_CS_PIN
+#define ACC_3_CS_PIN NONE
+#endif
+
 #ifndef GYRO_4_CS_PIN
 #define GYRO_4_CS_PIN NONE
 #endif
@@ -81,6 +94,10 @@
 
 #ifndef GYRO_4_CLKIN_PIN
 #define GYRO_4_CLKIN_PIN NONE
+#endif
+
+#ifndef ACC_4_CS_PIN
+#define ACC_4_CS_PIN NONE
 #endif
 
 #ifdef MPU_ADDRESS
@@ -217,12 +234,13 @@ STATIC_ASSERT(GYRO_4_ALIGN == ALIGN_CUSTOM, "GYRO_4_ALIGN and GYRO_4_CUSTOM_ALIG
 #endif // GYRO_4_CUSTOM_ALIGN
 
 #if defined(USE_SPI_GYRO) && (defined(GYRO_1_SPI_INSTANCE) || defined(GYRO_2_SPI_INSTANCE))
-static void gyroResetSpiDeviceConfig(gyroDeviceConfig_t *devconf, spiResource_t *instance, ioTag_t csnTag, ioTag_t extiTag, ioTag_t clkInTag, uint8_t alignment, sensorAlignment_t customAlignment)
+static void gyroResetSpiDeviceConfig(gyroDeviceConfig_t *devconf, spiResource_t *instance, ioTag_t csnTag, ioTag_t extiTag, ioTag_t accCsnTag, ioTag_t clkInTag, uint8_t alignment, sensorAlignment_t customAlignment)
 {
     devconf->busType = BUS_TYPE_SPI;
     devconf->spiBus = SPI_DEV_TO_CFG(spiDeviceByInstance(instance));
     devconf->csnTag = csnTag;
     devconf->extiTag = extiTag;
+    devconf->accCsnTag = accCsnTag;
     devconf->alignment = alignment;
     devconf->customAlignment = customAlignment;
     devconf->clkIn = clkInTag;
@@ -241,6 +259,12 @@ static void gyroResetI2cDeviceConfig(gyroDeviceConfig_t *devconf, i2cDevice_e i2
 }
 #endif
 
+// Keep the version 1 array stride and all pre-existing member offsets stable.
+// accCsnTag occupies the byte that was formerly trailing structure padding.
+STATIC_ASSERT(sizeof(gyroDeviceConfig_t) == 16, gyroDeviceConfig_eeprom_stride_changed);
+STATIC_ASSERT(offsetof(gyroDeviceConfig_t, clkIn) == 14, gyroDeviceConfig_eeprom_layout_changed);
+STATIC_ASSERT(offsetof(gyroDeviceConfig_t, accCsnTag) == 15, gyroDeviceConfig_accCsnTag_must_use_old_padding);
+
 PG_REGISTER_ARRAY_WITH_RESET_FN(gyroDeviceConfig_t, MAX_GYRODEV_COUNT, gyroDeviceConfig, PG_GYRO_DEVICE_CONFIG, 1);
 
 void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
@@ -252,6 +276,7 @@ void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
 #define GYRO_RESET(index, num) \
     gyroResetSpiDeviceConfig(&devconf[index], (spiResource_t *)GYRO_##num##_SPI_INSTANCE, \
         IO_TAG(GYRO_##num##_CS_PIN), IO_TAG(GYRO_##num##_EXTI_PIN), \
+        IO_TAG(ACC_##num##_CS_PIN), \
         IO_TAG(GYRO_##num##_CLKIN_PIN), GYRO_##num##_ALIGN, GYRO_##num##_CUSTOM_ALIGN)
 
 #ifdef GYRO_1_SPI_INSTANCE

@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #include <limits.h>
 #include <algorithm>
@@ -46,6 +47,7 @@ extern "C" {
     struct gyroSensor_s;
     STATIC_UNIT_TESTED void performGyroCalibration(struct gyroSensor_s *gyroSensor, uint8_t gyroMovementCalibrationThreshold);
     STATIC_UNIT_TESTED bool virtualGyroRead(gyroDev_t *gyro);
+    STATIC_UNIT_TESTED int gyroFindSensorIndexByHardware(const gyroSensor_t *sensors, int count, gyroHardware_e hardware);
 
     uint8_t debugMode;
     int16_t debug[DEBUG16_VALUE_COUNT];
@@ -56,11 +58,65 @@ extern "C" {
 extern gyroSensor_s * const gyroSensorPtr;
 extern gyroDev_t * const gyroDevPtr;
 
+extern "C" const pgRegistry_t gyroDeviceConfig_Registry;
+
+typedef struct legacyGyroDeviceConfig_s {
+    int8_t index;
+    uint8_t busType;
+    uint8_t spiBus;
+    ioTag_t csnTag;
+    uint8_t i2cBus;
+    uint8_t i2cAddress;
+    ioTag_t extiTag;
+    uint8_t alignment;
+    sensorAlignment_t customAlignment;
+    ioTag_t clkIn;
+} legacyGyroDeviceConfig_t;
+
+static_assert(sizeof(legacyGyroDeviceConfig_t) == sizeof(gyroDeviceConfig_t), "legacy gyro device PG stride changed");
+static_assert(offsetof(legacyGyroDeviceConfig_t, clkIn) == offsetof(gyroDeviceConfig_t, clkIn), "legacy gyro device PG layout changed");
+
 
 TEST(SensorGyro, Detect)
 {
     const gyroHardware_e detected = gyroDetect(gyroDevPtr);
     EXPECT_EQ(GYRO_VIRTUAL, detected);
+}
+
+TEST(SensorGyro, FindsBmi088InSecondImuSlot)
+{
+    gyroSensor_t sensors[2] = {};
+    sensors[0].gyroDev.gyroHardware = GYRO_ICM45686;
+    sensors[1].gyroDev.gyroHardware = GYRO_BMI088;
+
+    EXPECT_EQ(1, gyroFindSensorIndexByHardware(sensors, 2, GYRO_BMI088));
+    EXPECT_EQ(-1, gyroFindSensorIndexByHardware(sensors, 2, GYRO_BMI270));
+}
+
+TEST(SensorGyro, LoadsVersionOneGyroDeviceArrayWithStableStride)
+{
+    legacyGyroDeviceConfig_t saved[MAX_GYRODEV_COUNT] = {};
+    saved[0].index = 3;
+    saved[0].csnTag = 11;
+    saved[0].clkIn = 12;
+#if MAX_GYRODEV_COUNT > 1
+    saved[1].index = 4;
+    saved[1].csnTag = 21;
+    saved[1].clkIn = 22;
+#endif
+
+    ASSERT_EQ(1, pgVersion(&gyroDeviceConfig_Registry));
+    ASSERT_TRUE(pgLoad(&gyroDeviceConfig_Registry, saved, sizeof(saved), 1));
+    EXPECT_EQ(3, gyroDeviceConfig(0)->index);
+    EXPECT_EQ(11, gyroDeviceConfig(0)->csnTag);
+    EXPECT_EQ(12, gyroDeviceConfig(0)->clkIn);
+    EXPECT_EQ(IO_TAG_NONE, gyroDeviceConfig(0)->accCsnTag);
+#if MAX_GYRODEV_COUNT > 1
+    EXPECT_EQ(4, gyroDeviceConfig(1)->index);
+    EXPECT_EQ(21, gyroDeviceConfig(1)->csnTag);
+    EXPECT_EQ(22, gyroDeviceConfig(1)->clkIn);
+    EXPECT_EQ(IO_TAG_NONE, gyroDeviceConfig(1)->accCsnTag);
+#endif
 }
 
 TEST(SensorGyro, Init)
