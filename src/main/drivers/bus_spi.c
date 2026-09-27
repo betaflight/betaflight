@@ -529,6 +529,11 @@ FAST_IRQ_HANDLER void spiIrqHandler(const extDevice_t *dev)
     busDevice_t *bus = dev->bus;
     busSegment_t *nextSegment;
 
+    // Captured before the callback, which rewinds curSegment to repeat a segment on BUS_BUSY. When
+    // the repeated segment is the first of the list that leaves curSegment pointing in front of the
+    // array, so negateCS can no longer be read from it once the callback has run.
+    const bool negateCS = bus->curSegment->negateCS;
+
     if (bus->curSegment->callback) {
         switch(bus->curSegment->callback(dev->callbackArg)) {
         case BUS_BUSY:
@@ -574,8 +579,6 @@ FAST_IRQ_HANDLER void spiIrqHandler(const extDevice_t *dev)
         }
     } else {
         // Do as much processing as possible before asserting CS to avoid violating minimum high time
-        bool negateCS = bus->curSegment->negateCS;
-
         bus->curSegment = nextSegment;
 
         // After the completion of the first segment setup the init structure for the subsequent segment

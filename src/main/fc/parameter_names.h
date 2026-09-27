@@ -34,6 +34,8 @@
 #define PARAM_NAME_ACC_LPF_HZ "acc_lpf_hz"
 #define PARAM_NAME_MAG_HARDWARE "mag_hardware"
 #define PARAM_NAME_BARO_HARDWARE "baro_hardware"
+#define PARAM_NAME_BARO_DRIFT "baro_drift"
+#define PARAM_NAME_PITOT_HARDWARE "pitot_hardware"
 #define PARAM_NAME_RC_SMOOTHING "rc_smoothing"
 #define PARAM_NAME_RC_SMOOTHING_AUTO_FACTOR "rc_smoothing_auto_factor"
 #define PARAM_NAME_RC_SMOOTHING_AUTO_FACTOR_THROTTLE "rc_smoothing_auto_factor_throttle"
@@ -117,7 +119,6 @@
 #define PARAM_NAME_THROTTLE_BOOST "throttle_boost"
 #define PARAM_NAME_THROTTLE_BOOST_CUTOFF "throttle_boost_cutoff"
 #define PARAM_NAME_THRUST_LINEARIZATION "thrust_linear"
-#define PARAM_NAME_USE_INTEGRATED_YAW "use_integrated_yaw"
 #define PARAM_NAME_D_MAX_GAIN "d_max_gain"
 #define PARAM_NAME_D_MAX_ADVANCE "d_max_advance"
 #define PARAM_NAME_MOTOR_OUTPUT_LIMIT "motor_output_limit"
@@ -160,6 +161,10 @@
 #define PARAM_NAME_ALTITUDE_LPF "altitude_lpf"
 #define PARAM_NAME_ALTITUDE_D_LPF "altitude_d_lpf"
 
+#define PARAM_NAME_OPTICALFLOW_HARDWARE "opticalflow_hardware"
+#define PARAM_NAME_OPTICALFLOW_ROTATION "opticalflow_rotation"
+#define PARAM_NAME_OPTICALFLOW_FLIP_X "opticalflow_flip_x"
+
 #define PARAM_NAME_AP_LANDING_ALTITUDE_M "ap_landing_altitude_m"
 #define PARAM_NAME_AP_HOVER_THROTTLE "ap_hover_throttle"
 #define PARAM_NAME_AP_THROTTLE_MIN "ap_throttle_min"
@@ -167,20 +172,18 @@
 #define PARAM_NAME_AP_ALTITUDE_P "ap_altitude_p"
 #define PARAM_NAME_AP_ALTITUDE_I "ap_altitude_i"
 #define PARAM_NAME_AP_ALTITUDE_D "ap_altitude_d"
+#define PARAM_NAME_AP_ALTITUDE_A "ap_altitude_a"
 #define PARAM_NAME_AP_ALTITUDE_F "ap_altitude_f"
 #define PARAM_NAME_AP_POSITION_P "ap_position_p"
 #define PARAM_NAME_AP_POSITION_I "ap_position_i"
 #define PARAM_NAME_AP_POSITION_D "ap_position_d"
 #define PARAM_NAME_AP_POSITION_A "ap_position_a"
+#define PARAM_NAME_AP_POSITION_F "ap_position_f"
 #define PARAM_NAME_AP_POSITION_CUTOFF "ap_position_cutoff"
 #define PARAM_NAME_AP_STOP_THRESHOLD "ap_stop_threshold"
 #define PARAM_NAME_AP_MAX_ANGLE "ap_max_angle"
 
 // Velocity-based position control with drag compensation
-#define PARAM_NAME_AP_VELOCITY_CONTROL_ENABLE "ap_velocity_control_enable"
-#define PARAM_NAME_AP_VELOCITY_P "ap_velocity_p"
-#define PARAM_NAME_AP_VELOCITY_I "ap_velocity_i"
-#define PARAM_NAME_AP_VELOCITY_D "ap_velocity_d"
 #define PARAM_NAME_AP_VELOCITY_DRAG_COEFF "ap_velocity_drag_coeff"
 #define PARAM_NAME_AP_MAX_VELOCITY "ap_max_velocity"
 
@@ -191,9 +194,17 @@
 #define PARAM_NAME_AP_THROTTLE_DEADBAND "ap_throttle_deadband"
 #define PARAM_NAME_AP_YAW_MODE "ap_yaw_mode"
 #define PARAM_NAME_AP_YAW_P "ap_yaw_p"
-#define PARAM_NAME_AP_YAW_D "ap_yaw_d"
 #define PARAM_NAME_AP_MAX_YAW_RATE "ap_max_yaw_rate"
 #define PARAM_NAME_AP_MIN_FORWARD_VELOCITY "ap_min_forward_velocity"
+
+// Leg-line carrot path tracking and turn-angle cornering
+#define PARAM_NAME_AP_NAV_CORNER_SPEED "ap_nav_corner_speed"
+#define PARAM_NAME_AP_NAV_CORNER_DELTA_V "ap_nav_corner_delta_v"
+#define PARAM_NAME_AP_NAV_DECEL "ap_nav_decel"
+#define PARAM_NAME_AP_NAV_ACCEL "ap_nav_accel"
+#define PARAM_NAME_AP_NAV_CARROT_LEAD_TIME "ap_nav_carrot_lead_time"
+#define PARAM_NAME_AP_NAV_CARROT_LEAD_MAX "ap_nav_carrot_lead_max"
+#define PARAM_NAME_AP_NAV_PRETURN_DIST "ap_nav_preturn_dist"
 
 // Phase 5: Velocity buildup
 #define PARAM_NAME_AP_VELOCITY_BUILDUP_MAX_PITCH "ap_velocity_buildup_max_pitch"
@@ -215,6 +226,11 @@
 #define PARAM_NAME_AP_RX_LOSS_POLICY "ap_rx_loss_policy"
 #define PARAM_NAME_AP_MAX_DISTANCE_FROM_HOME "ap_max_distance_from_home"
 #define PARAM_NAME_AP_GEOFENCE_ACTION "ap_geofence_action"
+
+// Flight-plan OSD minimap
+#define PARAM_NAME_OSD_NAV_MAP_MODE "osd_nav_map_mode"
+#define PARAM_NAME_OSD_NAV_MAP_CENTRE "osd_nav_map_centre"
+#define PARAM_NAME_OSD_NAV_MAP_MIN_SCALE_M "osd_nav_map_min_scale_m"
 
 // Phase 3: L1 Nonlinear Guidance
 #define PARAM_NAME_AP_L1_ENABLE "ap_l1_enable"
@@ -253,6 +269,12 @@
 #define PARAM_NAME_ADRC_LIFTOFF_HOLD_MS "adrc_liftoff_hold_ms"
 #define PARAM_NAME_ADRC_GATED_Z3_DECAY "adrc_gated_z3_decay"
 #define PARAM_NAME_ADRC_B0_SCALE_MAX "adrc_b0_scale_max"
+#define PARAM_NAME_ADRC_B0_LAW "adrc_b0_law"
+#define PARAM_NAME_ADRC_GROUND_WC "adrc_ground_wc"
+#define PARAM_NAME_ADRC_WC_RAMP_MS "adrc_wc_ramp_ms"
+#define PARAM_NAME_ADRC_GROUND_DGAIN "adrc_ground_dgain"
+#define PARAM_NAME_ADRC_B0_SCALE_MIN "adrc_b0_scale_min"
+#define PARAM_NAME_ADRC_SAT_Z3_INHIBIT "adrc_sat_z3_inhibit"
 
 #define PARAM_NAME_HORIZON_LEVEL_STRENGTH "horizon_level_strength"
 #define PARAM_NAME_HORIZON_LIMIT_DEGREES "horizon_limit_degrees"
@@ -330,7 +352,6 @@
 
 #ifdef USE_MAG
 #define PARAM_NAME_IMU_MAG_DECLINATION "mag_declination"
-#define PARAM_NAME_TRUST_MAG "trust_mag"
 #endif
 
 #ifdef USE_TRANSPONDER

@@ -77,7 +77,7 @@
 #include "frsky_hub.h"
 
 static serialPort_t *frSkyHubPort = NULL;
-static const serialPortConfig_t *portConfig = NULL;
+static serialPortIdentifier_e telemetryPort = SERIAL_PORT_NONE;
 
 #define FRSKY_HUB_BAUDRATE 9600
 #define FRSKY_HUB_INITIAL_PORT_MODE MODE_TX
@@ -450,9 +450,9 @@ static void sendHeading(void)
 bool initFrSkyHubTelemetry(void)
 {
     if (telemetryState == TELEMETRY_STATE_UNINITIALIZED) {
-        portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_FRSKY_HUB);
-        if (portConfig) {
-            frSkyHubPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_FRSKY_HUB);
+        telemetryPort = telemetryProviderPort(TELEMETRY_PROTOCOL_FRSKY_HUB);
+        if (telemetryPort != SERIAL_PORT_NONE) {
+            frSkyHubPortSharing = determinePortSharing(telemetryPort, FUNCTION_TELEMETRY_FRSKY_HUB);
 
             frSkyHubWriteByte = frSkyHubWriteByteInternal;
 
@@ -486,15 +486,15 @@ static void freeFrSkyHubTelemetryPort(void)
 
 static void configureFrSkyHubTelemetryPort(void)
 {
-    if (portConfig) {
-        frSkyHubPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_FRSKY_HUB, NULL, NULL, FRSKY_HUB_BAUDRATE, FRSKY_HUB_INITIAL_PORT_MODE, telemetryConfig()->telemetry_inverted ? SERIAL_NOT_INVERTED : SERIAL_INVERTED);
+    if (telemetryPort != SERIAL_PORT_NONE) {
+        frSkyHubPort = openSerialPort(telemetryPort, FUNCTION_TELEMETRY_FRSKY_HUB, NULL, NULL, FRSKY_HUB_BAUDRATE, FRSKY_HUB_INITIAL_PORT_MODE, telemetryConfig()->telemetry_inverted ? SERIAL_NOT_INVERTED : SERIAL_INVERTED);
     }
 }
 
 void checkFrSkyHubTelemetryState(void)
 {
     if (telemetryState == TELEMETRY_STATE_INITIALIZED_SERIAL) {
-        if (telemetryCheckRxPortShared(portConfig, rxRuntimeState.serialrxProvider)) {
+        if (telemetryCheckRxPortShared(telemetryPort, rxRuntimeState.serialrxProvider)) {
             if (frSkyHubPort == NULL && telemetrySharedPort != NULL) {
                 frSkyHubPort = telemetrySharedPort;
             }

@@ -39,7 +39,15 @@
 #error "USE_I3C_AS_I2C requires I3C_AS_I2C_SCL_PIN and I3C_AS_I2C_SDA_PIN in the board config"
 #endif
 
-#define I3C_AS_I2C_GUARD_LOOPS 100000U
+// Every wait below spins in the calling task, so a timeout costs blocked CPU
+// rather than just latency. TIMINGR0 runs SCL at ~300 kHz: a byte is ~30 us and
+// the longest transaction BF issues here, the baro's 6-byte burst read, ~270 us.
+#define I3C_AS_I2C_TIMEOUT_US 1000
+
+// The two FC waits in i2cReadBuffer cannot succeed (see each site) but must
+// still let the frame drain, so this is spent on every successful read -- unlike
+// I3C_AS_I2C_TIMEOUT_US, which is only reached on failure. ~2x a full read.
+#define I3C_AS_I2C_FRAME_SETTLE_US 500
 
 static volatile uint16_t i2cErrorCount = 0;
 static bool i2cInitialised = false;
@@ -54,12 +62,21 @@ volatile uint32_t i2cI3cReadCalls __attribute__((used));
 volatile uint32_t i2cI3cInitCalls __attribute__((used));
 volatile uint32_t i2cI3cWriteCalls __attribute__((used));
 
-static void i3cWaitOrError(uint32_t *guard)
+// Returns false only on timeout. ERRF joins `mask` so a NACK breaks the wait
+// immediately; callers test ERR themselves to tell the two apart. Reads EVR
+// directly rather than via the LL flag helpers, which are not inlined -- a call
+// per flag per pass dominated the cost of this loop.
+static bool i3cWaitEvr(uint32_t mask, timeDelta_t timeoutUs)
 {
-    if (*guard == 0) {
-        return;
+    const timeUs_t startUs = microsISR();
+
+    while (!(I3C1->EVR & (mask | I3C_EVR_ERRF))) {
+        if (cmpTimeUs(microsISR(), startUs) >= timeoutUs) {
+            return false;
+        }
     }
-    --(*guard);
+
+    return true;
 }
 
 static void i3cClearAllEventFlags(void)
@@ -177,21 +194,21 @@ bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, 
     i3cClearAllEventFlags();
     i3cI2cMessage(addr, LL_I3C_DIRECTION_WRITE, LL_I3C_GENERATE_STOP, (uint32_t)len + 1);
 
-    uint32_t guard = I3C_AS_I2C_GUARD_LOOPS;
-    while (!LL_I3C_IsActiveFlag_TXFNF(I3C1) && !LL_I3C_IsActiveFlag_ERR(I3C1) && guard) { i3cWaitOrError(&guard); }
-    if (!guard || LL_I3C_IsActiveFlag_ERR(I3C1)) { i2cErrorCount++; i3cClearAllEventFlags(); return false; }
+    if (!i3cWaitEvr(I3C_EVR_TXFNFF, I3C_AS_I2C_TIMEOUT_US) || LL_I3C_IsActiveFlag_ERR(I3C1)) {
+        i2cErrorCount++; i3cClearAllEventFlags(); return false;
+    }
     LL_I3C_TransmitData8(I3C1, reg);
 
     for (uint8_t i = 0; i < len; i++) {
-        guard = I3C_AS_I2C_GUARD_LOOPS;
-        while (!LL_I3C_IsActiveFlag_TXFNF(I3C1) && !LL_I3C_IsActiveFlag_ERR(I3C1) && guard) { i3cWaitOrError(&guard); }
-        if (!guard || LL_I3C_IsActiveFlag_ERR(I3C1)) { i2cErrorCount++; i3cClearAllEventFlags(); return false; }
+        if (!i3cWaitEvr(I3C_EVR_TXFNFF, I3C_AS_I2C_TIMEOUT_US) || LL_I3C_IsActiveFlag_ERR(I3C1)) {
+            i2cErrorCount++; i3cClearAllEventFlags(); return false;
+        }
         LL_I3C_TransmitData8(I3C1, data[i]);
     }
 
-    guard = I3C_AS_I2C_GUARD_LOOPS;
-    while (!LL_I3C_IsActiveFlag_FC(I3C1) && !LL_I3C_IsActiveFlag_ERR(I3C1) && guard) { i3cWaitOrError(&guard); }
-    const bool ok = guard && !LL_I3C_IsActiveFlag_ERR(I3C1);
+    // Unlike the read path this message ends in a STOP, so FC does assert here,
+    // and waiting for it is what makes a NACKed write visible to the caller.
+    const bool ok = i3cWaitEvr(I3C_EVR_FCF, I3C_AS_I2C_TIMEOUT_US) && !LL_I3C_IsActiveFlag_ERR(I3C1);
     if (!ok) {
         i2cErrorCount++;
     }
@@ -226,21 +243,20 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, u
                                    LL_I3C_DIRECTION_WRITE,
                                    LL_I3C_CONTROLLER_MTYPE_LEGACY_I2C,
                                    LL_I3C_GENERATE_RESTART);
-    uint32_t guard = I3C_AS_I2C_GUARD_LOOPS;
-    while (!LL_I3C_IsActiveFlag_TXFNF(I3C1) && !LL_I3C_IsActiveFlag_ERR(I3C1) && guard) { i3cWaitOrError(&guard); }
-    if (!guard || LL_I3C_IsActiveFlag_ERR(I3C1)) {
+    const bool txReady = i3cWaitEvr(I3C_EVR_TXFNFF, I3C_AS_I2C_TIMEOUT_US);
+    if (!txReady || LL_I3C_IsActiveFlag_ERR(I3C1)) {
         i2cI3cLastEvr = I3C1->EVR; i2cI3cLastSer = I3C1->SER;
-        i2cI3cLastFail = 0xA1E0 | (guard ? 0 : 1);
+        i2cI3cLastFail = 0xA1E0 | (txReady ? 0 : 1);
         i2cErrorCount++; i3cClearAllEventFlags(); return false;
     }
     LL_I3C_TransmitData8(I3C1, reg);
 
     // FC marks the closing STOP; this RESTART message issues no STOP (FC fires
     // after the Phase B read), and FC is unreliable in legacy-I2C controller
-    // mode regardless -- so a guard timeout here is the expected case. Only a
-    // hard ERR is a real failure.
-    guard = I3C_AS_I2C_GUARD_LOOPS;
-    while (!LL_I3C_IsActiveFlag_FC(I3C1) && !LL_I3C_IsActiveFlag_ERR(I3C1) && guard) { i3cWaitOrError(&guard); }
+    // mode regardless -- so the timeout here is the expected case and only a
+    // hard ERR is a real failure. The wait itself is still required: the frame
+    // has to drain before the flags are cleared and phase B is queued.
+    i3cWaitEvr(I3C_EVR_FCF, I3C_AS_I2C_FRAME_SETTLE_US);
     if (LL_I3C_IsActiveFlag_ERR(I3C1)) {
         i2cI3cLastEvr = I3C1->EVR; i2cI3cLastSer = I3C1->SER;
         i2cI3cLastFail = 0xA2E0;
@@ -255,9 +271,7 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, u
                                    LL_I3C_GENERATE_STOP);
 
     for (uint8_t i = 0; i < len; i++) {
-        guard = I3C_AS_I2C_GUARD_LOOPS;
-        while (!LL_I3C_IsActiveFlag_RXFNE(I3C1) && !LL_I3C_IsActiveFlag_ERR(I3C1) && guard) { i3cWaitOrError(&guard); }
-        if (!guard || LL_I3C_IsActiveFlag_ERR(I3C1)) {
+        if (!i3cWaitEvr(I3C_EVR_RXFNEF, I3C_AS_I2C_TIMEOUT_US) || LL_I3C_IsActiveFlag_ERR(I3C1)) {
             i2cI3cLastEvr = I3C1->EVR; i2cI3cLastSer = I3C1->SER;
             i2cI3cLastFail = 0xA3E0 | i;
             i2cErrorCount++; i3cClearAllEventFlags(); return false;
@@ -267,9 +281,9 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, u
 
     // All payload bytes are already latched above. The trailing FC/STOP is bus
     // housekeeping that does not reliably assert in legacy-I2C mode, so a
-    // timeout is benign here -- only a hard ERR is a real failure.
-    guard = I3C_AS_I2C_GUARD_LOOPS;
-    while (!LL_I3C_IsActiveFlag_FC(I3C1) && !LL_I3C_IsActiveFlag_ERR(I3C1) && guard) { i3cWaitOrError(&guard); }
+    // timeout is benign here -- only a hard ERR is a real failure. As in phase A
+    // the wait must still run, so the clear below misses a STOP in flight.
+    i3cWaitEvr(I3C_EVR_FCF, I3C_AS_I2C_FRAME_SETTLE_US);
     if (LL_I3C_IsActiveFlag_ERR(I3C1)) {
         i2cI3cLastEvr = I3C1->EVR; i2cI3cLastSer = I3C1->SER;
         i2cI3cLastFail = 0xA4E0;

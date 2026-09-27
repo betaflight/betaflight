@@ -54,6 +54,7 @@ void fbOsdSetBackgroundType(displayPortBackground_e backgroundType);
 bool fbOsdDrawItem(osd_items_e item, uint8_t elemPosX, uint8_t elemPosY, bool isBackground);
 void fbOsdRedrawBackground(void);
 void fbOsdFontUpdateCompletion(void);
+void fbOsdWriteLogo(uint16_t midX, uint16_t midY, uint16_t fontOffset, uint8_t logoCols, uint8_t logoRows);
 
 // Not currently required / implemented
 // void fbOsdHardwareReset(void);

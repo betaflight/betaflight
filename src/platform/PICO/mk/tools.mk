@@ -50,7 +50,7 @@ picotool_install: | $(PICO_SDK_STAMP) $(DL_DIR) $(TOOLS_DIR)
 		git clone --depth 1 $(PICOTOOL_REPO) "$(PICOTOOL_DL_DIR)" || { echo "Failed to clone picotool repository"; exit 1; }; \
 		echo "\n BUILD      $(PICOTOOL_BUILD_DIR)"; \
 		mkdir -p "$(PICOTOOL_DIR)" "$(PICOTOOL_BUILD_DIR)"; \
-		cmake -S $(PICOTOOL_DL_DIR) -B $(PICOTOOL_BUILD_DIR) -D PICO_SDK_PATH=$(PICO_SDK_PATH) || { echo "CMake configuration failed"; exit 1; }; \
+		cmake -S $(PICOTOOL_DL_DIR) -B $(PICOTOOL_BUILD_DIR) -D PICO_SDK_PATH=$(PICO_SDK_PATH) -D CMAKE_POSITION_INDEPENDENT_CODE=ON || { echo "CMake configuration failed"; exit 1; }; \
 		$(MAKE) -C $(PICOTOOL_BUILD_DIR) || { echo "picotool build failed"; exit 1; }; \
 		cp $(PICOTOOL_BUILD_DIR)/picotool $(PICOTOOL_DIR)/picotool || { echo "Failed to install picotool binary"; exit 1; }; \
 		echo "\n VERSION:"; \

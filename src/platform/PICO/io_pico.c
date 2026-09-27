@@ -46,9 +46,6 @@ void IOInitGlobal(void)
 #ifdef PICO_TRACE_TX_GPIO
     ioRecs[PICO_TRACE_TX_GPIO].owner = OWNER_SYSTEM;
 #endif
-#ifdef PICO_TRACE_RX_GPIO
-    ioRecs[PICO_TRACE_RX_GPIO].owner = OWNER_SYSTEM;
-#endif
 #endif
 
     // Some boards (e.g. Hellbender) require a pin to be held low in order to generate a 5V / 9V
@@ -58,8 +55,13 @@ void IOInitGlobal(void)
     const int pin5 = IO_PINBYTAG(IO_TAG(PICO_BEC_5V_ENABLE_PIN));
     gpio_init(pin5);
     gpio_set_dir(pin5, 1);
+#if PICO_BEC_ENABLE_NONINVERTED
+    gpio_put(pin5, 1);
+    bprintf("5V enable pin: %d set high", pin5);
+#else
     gpio_put(pin5, 0);
     bprintf("5V enable pin: %d set low", pin5);
+#endif
     ioRecs[pin5].owner = OWNER_SYSTEM;
 #endif
 
@@ -67,8 +69,13 @@ void IOInitGlobal(void)
     const int pin9 = IO_PINBYTAG(IO_TAG(PICO_BEC_9V_ENABLE_PIN));
     gpio_init(pin9);
     gpio_set_dir(pin9, 1);
+#if PICO_BEC_ENABLE_NONINVERTED
+    gpio_put(pin9, 1);
+    bprintf("9V enable pin: %d set high", pin9);
+#else
     gpio_put(pin9, 0);
     bprintf("9V enable pin: %d set low", pin9);
+#endif
     ioRecs[pin9].owner = OWNER_SYSTEM;
 #endif
 }
@@ -124,15 +131,8 @@ void IOConfigGPIO(IO_t io, ioConfig_t cfg)
     /*
 TODO: update to support the following
 IOCFG_AF_PP
-IOCFG_IN_FLOATING
-IOCFG_IPD
-IOCFG_IPU
 IOCFG_OUT_OD
 IOCFG_OUT_PP
-IO_RESET_CFG
-
-SPI_IO_CS_CFG (as defined)
-SPI_IO_CS_HIGH_CFG (as defined)
     */
     if (!io) {
         return;

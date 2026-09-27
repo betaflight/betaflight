@@ -137,11 +137,15 @@ TEST(AdrcGateE2eTest, GroundOscillationUnderAirmodeCollectiveKeepsGateClosedAndZ
     pidProfile->adrc.liftoffThrottlePercent = 30;
     pidInitConfig(pidProfile);
 
-    simulatedThrottle = 0.32f;         // applied: airmode headroom, past the 30% threshold
     simulatedCommandedThrottle = 0.0f; // commanded: nothing asked for it
 
     float peakZ3 = 0.0f;
     for (int i = 0; i < 400; ++i) { // 400 loops at the harness looptime, far past liftoffHoldMs
+        // Applied collective held above the threshold for the whole run - the hard case for the
+        // second gate path (ADRC_LIFTOFF_APPLIED_HOLD_S), and what launch control produces. With
+        // the commanded collective at zero the idle interlock must reject it however long it lasts;
+        // the legitimate open, where thrust really was commanded, is covered in adrc_unittest.cc.
+        simulatedThrottle = 0.32f;
         const float groundRate = ((i % 4) < 2) ? 120.0f : -120.0f;
         for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
             gyro.gyroADCf[axis] = (axis == FD_ROLL) ? groundRate : 0.0f;

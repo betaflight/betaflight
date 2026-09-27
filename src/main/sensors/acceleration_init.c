@@ -48,6 +48,7 @@
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
 #include "drivers/accgyro/accgyro_spi_icm426xx.h"
 #include "drivers/accgyro/accgyro_spi_icm456xx.h"
+#include "drivers/accgyro/accgyro_spi_icm56686.h"
 #include "drivers/accgyro/accgyro_spi_icm40609.h"
 
 #include "drivers/accgyro/accgyro_spi_lsm6dso.h"
@@ -274,6 +275,15 @@ retry:
         FALLTHROUGH;
 #endif
 
+#if defined(USE_ACCGYRO_ICM56686)
+    case ACC_ICM56686:
+        if (icm56686SpiAccDetect(dev)) {
+            accHardware = ACC_ICM56686;
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
 #ifdef USE_ACCGYRO_BMI160
     case ACC_BMI160:
         if (bmi160SpiAccDetect(dev)) {
@@ -301,10 +311,15 @@ retry:
         FALLTHROUGH;
 #endif
 
+#if defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X)
 #ifdef USE_ACCGYRO_LSM6DSV16X
     case ACC_LSM6DSV16X:
+#endif
+#ifdef USE_ACCGYRO_LSM6DSV32X
+    case ACC_LSM6DSV32X:
+#endif
         if (lsm6dsv16xSpiAccDetect(dev)) {
-            accHardware = ACC_LSM6DSV16X;
+            accHardware = dev->mpuDetectionResult.sensor == LSM6DSV32X_SPI ? ACC_LSM6DSV32X : ACC_LSM6DSV16X;
             break;
         }
         FALLTHROUGH;

@@ -129,7 +129,6 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .small_angle = DEFAULT_SMALL_ANGLE,
     .imu_process_denom = 2,
     .mag_declination = 0,
-    .trust_mag = false, // user must set to true for mag to be accepted as a heading source
 );
 
 static void imuQuaternionComputeProducts(quaternion_t *quat, quaternionProducts *quatProd)
@@ -166,7 +165,13 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
     rMat.m[NWU_U][Y] = 2.0f * (qP.yz - -qP.wx);
     rMat.m[NWU_U][Z] = 1.0f - 2.0f * qP.xx - 2.0f * qP.yy;
 
-#if ENABLE_SIMULATOR && !defined(USE_IMU_CALC) && !defined(SET_IMU_FROM_EULER)
+#if ENABLE_SIMULATOR && !defined(USE_IMU_CALC) && !defined(SET_IMU_FROM_EULER) && !ENABLE_GAZEBO_BRIDGE
+    // Legacy simulator bridges (X-Plane, RealFlight) send a quaternion with
+    // mirrored pitch/yaw; flipping these two elements patches the Euler
+    // extraction for them, at the price of rMat no longer being a proper
+    // rotation (vector consumers like the position estimator see phantom
+    // earth-frame accelerations at combined pitch and heading). The Gazebo
+    // bridge instead corrects the quaternion itself on receive (sitl.c).
     rMat.m[NWU_W][X] = -2.0f * (qP.xy - -qP.wz);
     rMat.m[NWU_U][X] = -2.0f * (qP.xz + -qP.wy);
 #endif
@@ -541,7 +546,7 @@ static void imuDebug_GPS_RESCUE_HEADING(void)
         if (magYaw < 0) {
             magYaw += 3600;
         }
-        DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 4, magYaw); // mag heading in degrees * 10
+        DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 5, magYaw);  //!< Magnetic Heading [unit:0.1deg]
         // reset new mag data flag to false to initiate monitoring for new Mag data.
         // note that if the debug doesn't run, this reset will not occur, and we won't waste cycles on the comparison
         mag.isNewMagADCFlag = false;
@@ -586,7 +591,8 @@ STATIC_UNIT_TESTED float imuCalcMagErr(void)
 #endif
 
 #if defined(USE_GPS)
-static void imuComputeQuaternionFromRPY(quaternionProducts *quatProd, int16_t initialRoll, int16_t initialPitch, int16_t initialYaw)
+// Reinitialize the global attitude quaternion from Euler angles in decidegrees.
+STATIC_UNIT_TESTED void imuComputeQuaternionFromRPY(int16_t initialRoll, int16_t initialPitch, int16_t initialYaw)
 {
     if (initialRoll > 1800) {
         initialRoll -= 3600;
@@ -607,24 +613,13 @@ static void imuComputeQuaternionFromRPY(quaternionProducts *quatProd, int16_t in
     sincosf_approx(DECIDEGREES_TO_RADIANS(initialPitch) * 0.5f, &sinPitch, &cosPitch);
 
     float cosYaw, sinYaw;
-    sincosf_approx(DECIDEGREES_TO_RADIANS(initialYaw) * 0.5f, &sinYaw, &cosYaw);
+    // GPS course increases clockwise, while NWU quaternion yaw increases counter-clockwise.
+    sincosf_approx(DECIDEGREES_TO_RADIANS(-initialYaw) * 0.5f, &sinYaw, &cosYaw);
 
-    const float q0 = cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw;
-    const float q1 = sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw;
-    const float q2 = cosRoll * sinPitch * cosYaw + sinRoll * cosPitch * sinYaw;
-    const float q3 = cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw;
-
-    quatProd->xx = sq(q1);
-    quatProd->yy = sq(q2);
-    quatProd->zz = sq(q3);
-
-    quatProd->xy = q1 * q2;
-    quatProd->xz = q1 * q3;
-    quatProd->yz = q2 * q3;
-
-    quatProd->wx = q0 * q1;
-    quatProd->wy = q0 * q2;
-    quatProd->wz = q0 * q3;
+    q.w = cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw;
+    q.x = sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw;
+    q.y = cosRoll * sinPitch * cosYaw + sinRoll * cosPitch * sinYaw;
+    q.z = cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw;
 
     imuComputeRotationMatrix();
 
@@ -635,10 +630,14 @@ static void imuComputeQuaternionFromRPY(quaternionProducts *quatProd, int16_t in
 #if ENABLE_SIMULATOR && !defined(USE_IMU_CALC)
 static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 {
+    // Attitude is ground truth from the simulator, so heading is valid by
+    // definition; without this, position hold and missions can never gain
+    // XY authority (imuIsHeadingValid() would be false forever with no mag).
+    canUseGPSHeading = true;
+
     // unused static functions
     UNUSED(imuMahonyAHRSupdate);
     UNUSED(imuIsAccelerometerHealthy);
-    UNUSED(canUseGPSHeading);
     UNUSED(imuCalcKpGain);
     UNUSED(imuCalcMagErr);
     UNUSED(currentTimeUs);
@@ -675,8 +674,8 @@ static void updateGpsHeadingUsable(float groundspeedGain, float imuCourseError, 
         // if the alignment is already good when arming, confidence is re-gained more quickly
         // powering up the aircraft with its nose facing North helps a lot, since default heading is North
     }
-    DEBUG_SET(DEBUG_ATTITUDE, 1, lrintf(gpsHeadingConfidence * 100.0f));
-    DEBUG_SET(DEBUG_ATTITUDE, 4, canUseGPSHeading ? 0 : 1);
+    DEBUG_SET(DEBUG_ATTITUDE, 1, lrintf(gpsHeadingConfidence * 100.0f));  //!< GPS Heading Confidence [unit:0.01]
+    DEBUG_SET(DEBUG_ATTITUDE, 4, canUseGPSHeading ? 0 : 1);               //!< GPS Heading Unusable
 }
 #endif
 
@@ -727,7 +726,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
             const float courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
             const float imuCourseError = imuCalcCourseErr(courseOverGround);
 
-            DEBUG_SET(DEBUG_ATTITUDE, 3, lrintf(imuCourseError * 100.0f));
+            DEBUG_SET(DEBUG_ATTITUDE, 3, lrintf(imuCourseError * 100.0f));  //!< Course Over Ground Error Sine [unit:0.01]
 
             cogErr = imuCourseError * groundspeedGain;
             // cogErr is greater with larger heading errors and greater speed in straight pitch forward flight
@@ -739,7 +738,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
                 // Only reinitialize the quaternion from GPS COG when no mag is providing
                 // yaw reference.  When a mag is healthy it has already established yaw;
                 // overwriting it with an initial COG value would degrade accuracy.
-                imuComputeQuaternionFromRPY(&qP, attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
+                imuComputeQuaternionFromRPY(attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
             }
             gpsHeadingInitialized = true;
         }

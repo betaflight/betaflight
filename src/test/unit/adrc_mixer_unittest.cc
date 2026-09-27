@@ -244,6 +244,51 @@ TEST_F(AdrcMixerUnittest, DynamicMixerPublishesUniformScaleAndLeavesRedistributi
     EXPECT_NEAR(components.yaw, 0.125f, TEST_EPSILON);
 }
 
+// ADRC-033: the saturation flag the observer's z3 growth inhibit keys on.
+extern "C" { extern bool adrcFeedbackMixerSaturated; }
+
+TEST_F(AdrcMixerUnittest, SaturationFlagIsFalseWhileTheMixFits)
+{
+    setRcThrottle(0.5f);
+    pidData[FD_ROLL].Sum = 100.0f;
+    adrcFeedbackMixerSaturated = true;
+    mixTable(2500);
+    EXPECT_FALSE(adrcFeedbackMixerSaturated);
+}
+
+TEST_F(AdrcMixerUnittest, SaturationFlagIsTrueWhenLegacyNormalisesTheMix)
+{
+    setRcThrottle(0.5f);
+    pidData[FD_ROLL].Sum = 400.0f;
+    pidData[FD_PITCH].Sum = 400.0f; // range 1.6 > 1
+    mixTable(2500);
+    EXPECT_TRUE(adrcFeedbackMixerSaturated);
+}
+
+// Counterexample from the b11 adversarial review: MIXER_DYNAMIC reshapes the mix after the range is computed, so a
+// range of 0.8 still clips a motor at high throttle. motorMixRange > 1 alone reported "not saturated" here.
+TEST_F(AdrcMixerUnittest, SaturationFlagIsTrueWhenDynamicClipsBelowRangeOne)
+{
+    mixerConfigMutable()->mixer_type = MIXER_DYNAMIC;
+    setRcThrottle(0.9f);
+    pidData[FD_ROLL].Sum = 200.0f;
+    pidData[FD_PITCH].Sum = -200.0f;
+    pidData[FD_YAW].Sum = -200.0f;
+    mixTable(2500);
+    EXPECT_TRUE(adrcFeedbackMixerSaturated);
+}
+
+TEST_F(AdrcMixerUnittest, SaturationFlagIsFalseOnMotorStopAndCrashFlip)
+{
+    // Whatever the demand, a path that does not drive the motors from the mix must not report clipping.
+    pidData[FD_ROLL].Sum = 400.0f;
+    pidData[FD_PITCH].Sum = 400.0f;
+    testCrashFlipModeActive = true;
+    adrcFeedbackMixerSaturated = true;
+    mixTable(2500);
+    EXPECT_FALSE(adrcFeedbackMixerSaturated);
+}
+
 TEST_F(AdrcMixerUnittest, EzLandingPublishesExactUniformAxisScale)
 {
     mixerConfigMutable()->mixer_type = MIXER_EZLANDING;
@@ -525,6 +570,11 @@ float getCosTiltAngle(void)
     return 1.0f;
 }
 
+bool autopilotThrottleValid(void)
+{
+    return true;
+}
+
 float getAutopilotThrottle(void)
 {
     return testAutopilotThrottle;
@@ -587,6 +637,13 @@ void pidUpdateAdrcAppliedOutput(const pidProfile_t *pidProfile, float axisScale,
     adrcFeedbackProfile = pidProfile;
     adrcFeedbackAxisScale = axisScale;
     adrcFeedbackYawLimit = yawSumLimit;
+}
+
+bool adrcFeedbackMixerSaturated = false;
+void pidUpdateAdrcMixerSaturation(const pidProfile_t *pidProfile, bool saturated)
+{
+    UNUSED(pidProfile);
+    adrcFeedbackMixerSaturated = saturated;
 }
 
 } // extern "C"

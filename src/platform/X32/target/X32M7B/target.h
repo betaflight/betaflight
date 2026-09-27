@@ -24,10 +24,6 @@
 #define TARGET_BOARD_IDENTIFIER "M7B"
 #endif
 
-#ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight X32M7B"
-#endif
-
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
 #define USE_I2C_DEVICE_3
@@ -134,7 +130,7 @@
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x1000U)
 
-#define AFATFS_NUM_CACHE_SECTORS 64
+#define AFATFS_NUM_CACHE_SECTORS 128
 
 #if defined(USE_LED_STRIP) && !defined(USE_LED_STRIP_CACHE_MGMT)
 #define USE_LED_STRIP_CACHE_MGMT

@@ -28,6 +28,27 @@ extern uint8_t dmaram_start;
 extern uint8_t dmaram_end;
 
 mpuRegion_t mpuRegions[] = {
+    {
+        // STM32H5 system-flash information block: OTP (0x08FFF000) plus the
+        // read-only factory area (UID @0x08FFF800, flash size, package, and the
+        // ADC VREFINT / temperature-sensor calibration words at 0x08FFF8xx).
+        // These info blocks only support 16/32-bit reads — burst access is not
+        // supported — so an ICACHE 128-bit cache-line refill over them raises an
+        // ECC/bus fault (HardFault/NMI). Betaflight reads the UID (and, with
+        // USE_ADC_INTERNAL, the calibration words) during init, so with ICACHE
+        // enabled and this region left cacheable the board HardFaults on boot
+        // and never brings up USB. Mark it non-cacheable. This MUST be applied
+        // before HAL_ICACHE_Enable() (systemInit() configures the MPU first).
+        // See ST "How to avoid a HardFault when ICACHE is enabled on STM32H5".
+        .start      = 0x08FFF000,   // FLASH_OTP_BASE
+        .end        = 0x08FFFFFF,   // end of OTP + RO info area
+        .size       = 0,  // Size determined by ".end"
+        .perm       = MPU_REGION_ALL_RO,   // factory/OTP data — read-only
+        .exec       = MPU_INSTRUCTION_ACCESS_DISABLE,
+        .shareable  = MPU_ACCESS_NOT_SHAREABLE,
+        .cacheable  = 0,
+        .bufferable = 0,
+    },
 #ifdef USE_DMA_RAM
     {
         // DMA RAM region — normal memory, non-cacheable, shareable

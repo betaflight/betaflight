@@ -30,6 +30,7 @@ typedef struct rcdeviceConfig_s {
     // sometimes FC can't get featureInfo from devie(still no idea), so user can set it manaually.
     uint32_t feature;
     uint8_t protocolVersion;
+    int8_t rcdevice_uart;  // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned
 } rcdeviceConfig_t;
 
 PG_DECLARE(rcdeviceConfig_t, rcdeviceConfig);

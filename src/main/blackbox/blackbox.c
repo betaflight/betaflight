@@ -93,7 +93,9 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 #include "sensors/gyro_init.h"
+#include "sensors/opticalflow.h"
 #include "sensors/rangefinder.h"
+#include "sensors/pitot.h"
 
 #ifdef USE_FLASH_TEST_PRBS
 void checkFlashStart(void);
@@ -111,12 +113,19 @@ PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
     .sample_rate = BLACKBOX_RATE_QUARTER,
     .device = DEFAULT_BLACKBOX_DEVICE,
     .mode = BLACKBOX_MODE_NORMAL,
-    .high_resolution = false
+    .high_resolution = false,
+    .blackbox_uart = SERIAL_PORT_NONE,
+    .blackbox_baud = BAUD_115200,
 );
 
 STATIC_ASSERT((sizeof(blackboxConfig()->fields_disabled_mask) * 8) >= FLIGHT_LOG_FIELD_SELECT_COUNT, too_many_flight_log_fields_selections);
 
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200
+
+#ifdef USE_ADRC
+#define ADRC_PID_SUM_LOG_SCALE 10
+#define ADRC_COLLECTIVE_LOG_SCALE 1000
+#endif
 
 // Some macros to make writing FLIGHT_LOG_FIELD_* constants shorter:
 
@@ -214,6 +223,17 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"axisS",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_WING_S_1)},
     {"axisS",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_WING_S_2)},
 #endif
+#ifdef USE_ADRC
+    // ADRC observability is opt-in with debug_mode=ADRC. adrcPidSum is the controller's final
+    // pidData[].Sum sampled directly (x10), not a reconstruction from separately rounded fields.
+    {"adrcPidSum",              0, SIGNED,   .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS), .Pencode = ENCODING(SIGNED_VB), CONDITION(ADRC_DEBUG)},
+    {"adrcPidSum",              1, SIGNED,   .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS), .Pencode = ENCODING(SIGNED_VB), CONDITION(ADRC_DEBUG)},
+    {"adrcPidSum",              2, SIGNED,   .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS), .Pencode = ENCODING(SIGNED_VB), CONDITION(ADRC_DEBUG)},
+    {"adrcCommandedCollective",-1, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS), .Pencode = ENCODING(SIGNED_VB), CONDITION(ADRC_DEBUG)},
+    {"adrcAppliedCollective",  -1, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS), .Pencode = ENCODING(SIGNED_VB), CONDITION(ADRC_DEBUG)},
+    {"adrcState",              -1, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS), .Pencode = ENCODING(SIGNED_VB), CONDITION(ADRC_DEBUG)},
+    {"adrcGateResetCount",     -1, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS), .Pencode = ENCODING(SIGNED_VB), CONDITION(ADRC_DEBUG)},
+#endif
     /* rcCommands are encoded together as a group in P-frames: */
     {"rcCommand",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(RC_COMMANDS)},
     {"rcCommand",   1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(RC_COMMANDS)},
@@ -241,6 +261,10 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"surfaceRaw",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(RANGEFINDER)},
 #endif
     {"rssi",       -1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(RSSI)},
+#ifdef USE_PITOT
+    {"pitot",      0, SIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PITOT)},
+    {"pitot",      1, SIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PITOT)},
+#endif
 
     /* Gyros and accelerometers base their P-predictions on the average of the previous 2 frames to reduce noise impact */
     {"gyroADC",     0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(GYRO)},
@@ -364,6 +388,14 @@ typedef struct blackboxMainState_s {
     int32_t axisPID_F[XYZ_AXIS_COUNT];
     int32_t axisPID_S[XYZ_AXIS_COUNT];
 
+#ifdef USE_ADRC
+    int32_t adrcPidSum[XYZ_AXIS_COUNT];
+    uint16_t adrcCommandedCollective;
+    uint16_t adrcAppliedCollective;
+    uint8_t adrcState;
+    uint32_t adrcGateResetCount;
+#endif
+
     int16_t rcCommand[4];
     int16_t setpoint[4];
     int16_t gyroADC[XYZ_AXIS_COUNT];
@@ -392,7 +424,99 @@ typedef struct blackboxMainState_s {
     int32_t surfaceRaw;
 #endif
     uint16_t rssi;
+#ifdef USE_PITOT
+    int32_t airspeed;
+    int32_t diffPressure;
+#endif
 } blackboxMainState_t;
+
+#ifdef USE_ADRC
+static void writeAdrcIntraframeFields(blackboxMainState_t *state)
+{
+    blackboxWriteSignedVBArray(state->adrcPidSum, XYZ_AXIS_COUNT);
+    blackboxWriteUnsignedVB(state->adrcCommandedCollective);
+    blackboxWriteUnsignedVB(state->adrcAppliedCollective);
+    blackboxWriteUnsignedVB(state->adrcState);
+    blackboxWriteUnsignedVB(state->adrcGateResetCount);
+}
+
+static void writeAdrcInterframeFields(blackboxMainState_t *current, const blackboxMainState_t *previous)
+{
+    int32_t deltas[XYZ_AXIS_COUNT];
+    arraySubInt32(deltas, current->adrcPidSum, previous->adrcPidSum, XYZ_AXIS_COUNT);
+    blackboxWriteSignedVBArray(deltas, XYZ_AXIS_COUNT);
+    blackboxWriteSignedVB((int32_t)current->adrcCommandedCollective - previous->adrcCommandedCollective);
+    blackboxWriteSignedVB((int32_t)current->adrcAppliedCollective - previous->adrcAppliedCollective);
+    blackboxWriteSignedVB((int32_t)current->adrcState - previous->adrcState);
+    blackboxWriteSignedVB((int32_t)(current->adrcGateResetCount - previous->adrcGateResetCount));
+}
+
+#ifdef UNIT_TEST
+static const blackboxDeltaFieldDefinition_t *blackboxGetAdrcFieldDefinitionForTestPosition(int position)
+{
+    for (unsigned i = 0; i < ARRAYLEN(blackboxMainFields); i++) {
+        if (blackboxMainFields[i].condition == CONDITION(ADRC_DEBUG) && position-- == 0) {
+            return &blackboxMainFields[i];
+        }
+    }
+    return NULL;
+}
+
+int blackboxGetAdrcFieldCountForTest(void)
+{
+    int count = 0;
+    for (unsigned i = 0; i < ARRAYLEN(blackboxMainFields); i++) {
+        if (blackboxMainFields[i].condition == CONDITION(ADRC_DEBUG)) {
+            count++;
+        }
+    }
+    return count;
+}
+
+bool blackboxGetAdrcFieldDefinitionForTest(int position, blackboxAdrcFieldDefinitionTest_t *result)
+{
+    const blackboxDeltaFieldDefinition_t *field = blackboxGetAdrcFieldDefinitionForTestPosition(position);
+    if (!field || !result) {
+        return false;
+    }
+    *result = (blackboxAdrcFieldDefinitionTest_t) {
+        .name = field->name,
+        .fieldNameIndex = field->fieldNameIndex,
+        .isSigned = field->isSigned,
+        .Ipredict = field->Ipredict,
+        .Iencode = field->Iencode,
+        .Ppredict = field->Ppredict,
+        .Pencode = field->Pencode,
+    };
+    return true;
+}
+
+static void blackboxCopyAdrcTestState(blackboxMainState_t *destination, const blackboxAdrcTestState_t *source)
+{
+    memcpy(destination->adrcPidSum, source->pidSum, sizeof(destination->adrcPidSum));
+    destination->adrcCommandedCollective = source->commandedCollective;
+    destination->adrcAppliedCollective = source->appliedCollective;
+    destination->adrcState = source->state;
+    destination->adrcGateResetCount = source->gateResetCount;
+}
+
+void blackboxWriteAdrcIntraframeForTest(const blackboxAdrcTestState_t *state)
+{
+    blackboxMainState_t mainState = {0};
+    blackboxCopyAdrcTestState(&mainState, state);
+    writeAdrcIntraframeFields(&mainState);
+}
+
+void blackboxWriteAdrcInterframeForTest(const blackboxAdrcTestState_t *current, const blackboxAdrcTestState_t *previous)
+{
+    blackboxMainState_t currentMainState = {0};
+    blackboxMainState_t previousMainState = {0};
+    blackboxCopyAdrcTestState(&currentMainState, current);
+    blackboxCopyAdrcTestState(&previousMainState, previous);
+    writeAdrcInterframeFields(&currentMainState, &previousMainState);
+}
+#endif
+#endif
 
 typedef struct blackboxGpsState_s {
     gpsLocation_t GPS_home;
@@ -484,7 +608,7 @@ static bool isFieldEnabled(flightLogFieldSelect_e field)
     return (blackboxConfig()->fields_disabled_mask & (1 << field)) == 0;
 }
 
-static bool testBlackboxConditionUncached(flightLogFieldCondition_e condition)
+STATIC_UNIT_TESTED bool testBlackboxConditionUncached(flightLogFieldCondition_e condition)
 {
     switch (condition) {
     case CONDITION(ALWAYS):
@@ -514,7 +638,7 @@ static bool testBlackboxConditionUncached(flightLogFieldCondition_e condition)
 
 #ifdef USE_SERVOS
     case CONDITION(SERVOS):
-        return hasServos() && (FIELD_SELECT(SERVO));
+        return hasServos() && isFieldEnabled(FIELD_SELECT(SERVO));
 #endif
 
     case CONDITION(PID):
@@ -523,6 +647,19 @@ static bool testBlackboxConditionUncached(flightLogFieldCondition_e condition)
     case CONDITION(NONZERO_PID_D_0):
     case CONDITION(NONZERO_PID_D_1):
     case CONDITION(NONZERO_PID_D_2):
+#ifdef USE_ADRC
+        // Under ADRC, pidData[].D holds the control law's own D-equivalent term rather than a
+        // classic linear D-gain product (pid.c assigns adrcOutput.D to it), and ADRC never reads
+        // pid[].D at all - so gating the field on that gain drops a live signal. It is not a
+        // cosmetic gap: on yaw the shipped defaults leave pid[FD_YAW].D at 0, and in the one log
+        // where yaw showed a rapidly growing arm-time oscillation
+        // (docs/flight-test-analysis/pr15400-dedlike-mamba) the D-equivalent term was the larger
+        // contributor on exactly that axis and was absent from the log. Log all three axes
+        // whenever ADRC is the active controller.
+        if (currentPidProfile->pid_type == PID_TYPE_ADRC) {
+            return isFieldEnabled(FIELD_SELECT(PID));
+        }
+#endif
         return (currentPidProfile->pid[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0].D != 0) && isFieldEnabled(FIELD_SELECT(PID));
 
 #ifdef USE_WING
@@ -568,6 +705,11 @@ static bool testBlackboxConditionUncached(flightLogFieldCondition_e condition)
     case CONDITION(RSSI):
         return isRssiConfigured() && isFieldEnabled(FIELD_SELECT(RSSI));
 
+#ifdef USE_PITOT
+    case CONDITION(PITOT):
+        return isFieldEnabled(FIELD_SELECT(PITOT));
+#endif
+
     case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
         return blackboxPInterval != blackboxIInterval;
 
@@ -586,6 +728,13 @@ static bool testBlackboxConditionUncached(flightLogFieldCondition_e condition)
     case CONDITION(DEBUG_LOG):
         return (debugMode != DEBUG_NONE) && isFieldEnabled(FIELD_SELECT(DEBUG_LOG));
 
+#ifdef USE_ADRC
+    case CONDITION(ADRC_DEBUG):
+        return currentPidProfile->pid_type == PID_TYPE_ADRC
+            && debugMode == DEBUG_ADRC
+            && isFieldEnabled(FIELD_SELECT(DEBUG_LOG));
+#endif
+
     case CONDITION(NEVER):
         return false;
 
@@ -593,6 +742,13 @@ static bool testBlackboxConditionUncached(flightLogFieldCondition_e condition)
         return false;
     }
 }
+
+#if defined(USE_ADRC) && defined(UNIT_TEST)
+bool blackboxAdrcDebugConditionForTest(void)
+{
+    return testBlackboxConditionUncached(CONDITION(ADRC_DEBUG));
+}
+#endif
 
 static void blackboxBuildConditionCache(void)
 {
@@ -685,6 +841,12 @@ static void writeIntraframe(void)
 #endif
     }
 
+#ifdef USE_ADRC
+    if (testBlackboxCondition(CONDITION(ADRC_DEBUG))) {
+        writeAdrcIntraframeFields(blackboxCurrent);
+    }
+#endif
+
     if (testBlackboxCondition(CONDITION(RC_COMMANDS))) {
         // Write roll, pitch and yaw first:
         blackboxWriteSigned16VBArray(blackboxCurrent->rcCommand, 3);
@@ -737,6 +899,13 @@ static void writeIntraframe(void)
     if (testBlackboxCondition(CONDITION(RSSI))) {
         blackboxWriteUnsignedVB(blackboxCurrent->rssi);
     }
+
+#ifdef USE_PITOT
+    if (testBlackboxCondition(CONDITION(PITOT))) {
+        blackboxWriteSignedVB(blackboxCurrent->airspeed);
+        blackboxWriteSignedVB(blackboxCurrent->diffPressure);
+    }
+#endif
 
     if (testBlackboxCondition(CONDITION(GYRO))) {
         blackboxWriteSigned16VBArray(blackboxCurrent->gyroADC, XYZ_AXIS_COUNT);
@@ -870,6 +1039,12 @@ static void writeInterframe(void)
 #endif
     }
 
+#ifdef USE_ADRC
+    if (testBlackboxCondition(CONDITION(ADRC_DEBUG))) {
+        writeAdrcInterframeFields(blackboxCurrent, blackboxLast);
+    }
+#endif
+
     /*
      * RC tends to stay the same or fairly small for many frames at a time, so use an encoding that
      * can pack multiple values per byte:
@@ -922,6 +1097,13 @@ static void writeInterframe(void)
     }
 
     blackboxWriteTag8_8SVB(deltas, optionalFieldCount);
+
+#ifdef USE_PITOT
+    if (testBlackboxCondition(CONDITION(PITOT))) {
+        blackboxWriteSignedVB(blackboxCurrent->airspeed - blackboxLast->airspeed);
+        blackboxWriteSignedVB(blackboxCurrent->diffPressure - blackboxLast->diffPressure);
+    }
+#endif
 
     //Since gyros, accs and motors are noisy, base their predictions on the average of the history:
     if (testBlackboxCondition(CONDITION(GYRO))) {
@@ -1269,6 +1451,19 @@ static void loadMainState(timeUs_t currentTimeUs)
         blackboxCurrent->magADC[i] = lrintf(mag.magADC.v[i]);
 #endif
     }
+#ifdef USE_ADRC
+    if (currentPidProfile->pid_type == PID_TYPE_ADRC && debugMode == DEBUG_ADRC) {
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            blackboxCurrent->adrcPidSum[i] = lrintf(pidData[i].Sum * ADRC_PID_SUM_LOG_SCALE);
+        }
+        blackboxCurrent->adrcCommandedCollective = lrintf(
+            pidRuntime.adrc.observedCommandedCollective * ADRC_COLLECTIVE_LOG_SCALE);
+        blackboxCurrent->adrcAppliedCollective = lrintf(
+            pidRuntime.adrc.observedAppliedCollective * ADRC_COLLECTIVE_LOG_SCALE);
+        blackboxCurrent->adrcState = adrcStateFlags(&pidRuntime.adrc);
+        blackboxCurrent->adrcGateResetCount = pidRuntime.adrc.gateResetCount;
+    }
+#endif
 #if defined(USE_ACC) // IMU quaternion
     {
         // write x,y,z of IMU quaternion. Make sure that w is always positive
@@ -1319,6 +1514,11 @@ static void loadMainState(timeUs_t currentTimeUs)
 #endif
 
     blackboxCurrent->rssi = getRssi();
+
+#ifdef USE_PITOT
+    blackboxCurrent->airspeed = (int32_t)pitot.airspeed;
+    blackboxCurrent->diffPressure = (int32_t)pitot.diffPressure;
+#endif
 
 #ifdef USE_SERVOS
     for (unsigned i = 0; i < ARRAYLEN(blackboxCurrent->servo); i++) {
@@ -1508,7 +1708,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("Craft name", "%s",                      pilotConfig()->craftName);
         BLACKBOX_PRINT_HEADER_LINE("I interval", "%d",                      blackboxIInterval);
         BLACKBOX_PRINT_HEADER_LINE("P interval", "%d",                      blackboxPInterval);
-        BLACKBOX_PRINT_HEADER_LINE("P ratio", "%d",                         (uint16_t)(blackboxIInterval / blackboxPInterval));
+        BLACKBOX_PRINT_HEADER_LINE("P ratio", "%d",                         blackboxGetPRatio());
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle", "%d",                     motorConfig()->maxthrottle);
         BLACKBOX_PRINT_HEADER_LINE("gyro_scale","0x%x",                     castFloatBytesToInt(1.0f));
         BLACKBOX_PRINT_HEADER_LINE("motorOutput", "%d,%d",                  motorOutputLowInt, motorOutputHighInt);
@@ -1598,7 +1798,6 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("levelPID", "%d,%d,%d",                  currentPidProfile->pid[PID_LEVEL].P,
                                                                             currentPidProfile->pid[PID_LEVEL].I,
                                                                             currentPidProfile->pid[PID_LEVEL].D);
-        BLACKBOX_PRINT_HEADER_LINE("magPID", "%d",                          currentPidProfile->pid[PID_MAG].P);
 #ifdef USE_D_MAX
         BLACKBOX_PRINT_HEADER_LINE("d_max", "%d,%d,%d",                     currentPidProfile->d_max[ROLL],
                                                                             currentPidProfile->d_max[PITCH],
@@ -1626,6 +1825,22 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ADRC_LIFTOFF_HOLD_MS, "%d",       currentPidProfile->adrc.liftoffHoldMs);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ADRC_GATED_Z3_DECAY, "%d",        currentPidProfile->adrc.gatedZ3DecayRate);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ADRC_B0_SCALE_MAX, "%d",          currentPidProfile->adrc.b0ThrottleScaleMax);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ADRC_B0_LAW, "%d",                currentPidProfile->adrc.b0Law);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ADRC_GROUND_WC, "%d",             currentPidProfile->adrc_ground_wc);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ADRC_WC_RAMP_MS, "%d",            currentPidProfile->adrc_wc_ramp_ms);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ADRC_GROUND_DGAIN, "%d",          currentPidProfile->adrc_ground_dgain);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ADRC_B0_SCALE_MIN, "%d",          currentPidProfile->adrc_b0_scale_min);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ADRC_SAT_Z3_INHIBIT, "%d",        currentPidProfile->adrc_sat_z3_inhibit);
+        // ADRC-029: the decode key for the z3 debug fields (debug[2]/[5]/[6] = z3 / this value).
+        // Logs without this line are b9 or earlier and imply 16.
+        BLACKBOX_PRINT_HEADER_LINE("adrc_z3_log_scale", "%lu",                  (unsigned long)adrcZ3LogScale(
+                                                                                    &currentPidProfile->adrc,
+                                                                                    currentPidProfile->pidSumLimit,
+                                                                                    currentPidProfile->pidSumLimitYaw));
+        BLACKBOX_PRINT_HEADER_LINE("adrc_pid_sum_scale", "%d",                  ADRC_PID_SUM_LOG_SCALE);
+        BLACKBOX_PRINT_HEADER_LINE("adrc_collective_scale", "%d",               ADRC_COLLECTIVE_LOG_SCALE);
+        BLACKBOX_PRINT_HEADER_LINE("adrc_state_schema", "%s",                    "liftoff=1,throttle_idle=2,z3_inhibited_rpy=4|8|16,gate_cause_mask=96,gate_cause_shift=5");
+        BLACKBOX_PRINT_HEADER_LINE("adrc_gate_cause_schema", "%s",               "none=0,commanded=1,gyro=2,applied=3");
 #endif
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_LPF1_TYPE, "%d",        currentPidProfile->dterm_lpf1_type);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_LPF1_STATIC_HZ, "%d",   currentPidProfile->dterm_lpf1_static_hz);
@@ -1652,9 +1867,6 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANTI_GRAVITY_CUTOFF_HZ, "%d",    currentPidProfile->anti_gravity_cutoff_hz);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANTI_GRAVITY_P_GAIN, "%d",    currentPidProfile->anti_gravity_p_gain);
 
-#ifdef USE_INTEGRATED_YAW_CONTROL
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_USE_INTEGRATED_YAW, "%d",     currentPidProfile->use_integrated_yaw);
-#endif
         BLACKBOX_PRINT_HEADER_LINE("ff_weight", "%d,%d,%d",                 currentPidProfile->pid[PID_ROLL].F,
                                                                             currentPidProfile->pid[PID_PITCH].F,
                                                                             currentPidProfile->pid[PID_YAW].F);
@@ -1744,6 +1956,7 @@ static bool blackboxWriteSysinfo(void)
 #endif
 #ifdef USE_BARO
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_BARO_HARDWARE, "%d",        barometerConfig()->baro_hardware);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_BARO_DRIFT, "%d",        barometerConfig()->baroTempDriftCmPer10C);
 #endif
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_SOURCE, "%d",      positionConfig()->altitude_source);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_PREFER_BARO, "%d", positionConfig()->altitude_prefer_baro);
@@ -1758,18 +1971,31 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_P, "%d",         autopilotConfig()->altitudeP);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_I, "%d",         autopilotConfig()->altitudeI);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_D, "%d",         autopilotConfig()->altitudeD);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_A, "%d",         autopilotConfig()->altitudeA);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_F, "%d",         autopilotConfig()->altitudeF);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_P, "%d",         autopilotConfig()->positionP);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_I, "%d",         autopilotConfig()->positionI);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_D, "%d",         autopilotConfig()->positionD);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_A, "%d",         autopilotConfig()->positionA);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_F, "%d",         autopilotConfig()->positionF);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_CUTOFF, "%d",    autopilotConfig()->positionCutoff);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_STOP_THRESHOLD, "%d",     autopilotConfig()->stopThreshold);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_MAX_ANGLE, "%d",          autopilotConfig()->maxAngle);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_MAX_YAW_RATE, "%d",       autopilotConfig()->maxYawRate);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_YAW_P, "%d",              autopilotConfig()->yawP);
 #endif // !USE_WING
 
 #ifdef USE_MAG
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MAG_HARDWARE, "%d",           compassConfig()->mag_hardware);
+#endif
+
+#ifdef USE_OPTICALFLOW
+        // The mounting orientation scales and signs every flow-derived velocity, so a
+        // log is not self-describing without it: a wrong rotation and a genuine
+        // estimator fault look alike after the fact.
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_OPTICALFLOW_HARDWARE, "%d",   opticalflowConfig()->opticalflow_hardware);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_OPTICALFLOW_ROTATION, "%d",   opticalflowConfig()->rotation);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_OPTICALFLOW_FLIP_X, "%d",     opticalflowConfig()->flip_x);
 #endif
 
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GYRO_CAL_ON_FIRST_ARM, "%d",  armingConfig()->gyro_cal_on_first_arm);
@@ -1780,6 +2006,9 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MOTOR_PWM_RATE, "%d",         motorConfig()->dev.motorPwmRate);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MOTOR_IDLE, "%d",             motorConfig()->motorIdle);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DEBUG_MODE, "%d",             debugMode);
+        // debugModeNames[] is allowed to hold a NULL for a mode that is not offered, and
+        // %s would dereference it, so the name is checked as well as the index.
+        BLACKBOX_PRINT_HEADER_LINE("debug_mode_name", "%s",                 debugMode < DEBUG_COUNT && debugModeNames[debugMode] ? debugModeNames[debugMode] : "UNKNOWN");
         BLACKBOX_PRINT_HEADER_LINE("features", "%d",                        featureConfig()->enabledFeatures);
 
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -2276,6 +2505,10 @@ void blackboxUpdate(timeUs_t currentTimeUs)
 
 int blackboxCalculatePDenom(int rateNum, int rateDenom)
 {
+    if (rateNum <= 0 || rateDenom <= 0) {
+        // malformed legacy rate, or an explicit request for no P frames
+        return 0;
+    }
     return blackboxIInterval * rateNum / rateDenom;
 }
 
@@ -2287,12 +2520,23 @@ uint8_t blackboxGetRateDenom(void)
 
 uint16_t blackboxGetPRatio(void)
 {
+    if (blackboxPInterval == 0) {
+        // logging I frames only; 0 is the historical sentinel for that state
+        return 0;
+    }
     return blackboxIInterval / blackboxPInterval;
 }
 
 uint8_t blackboxCalculateSampleRate(uint16_t pRatio)
 {
-    return llog2(32000 / (targetPidLooptime * pRatio));
+    if (pRatio == 0) {
+        // Legacy sentinel for logging I frames only. The sparsest selectable rate is the
+        // closest representable answer: it gives I frames only below a 500Hz PID loop, and
+        // the fewest P frames above that. An explicit no-P state is not expressible here,
+        // as it would need a new entry in the CLI, CMS and configurator rate tables.
+        return BLACKBOX_SAMPLE_RATE_MAX;
+    }
+    return MIN(llog2(32000 / (targetPidLooptime * pRatio)), (uint32_t)BLACKBOX_SAMPLE_RATE_MAX);
 }
 
 /**
@@ -2307,6 +2551,12 @@ void blackboxInit(void)
     // targetPidLooptime is 1000 for 1kHz loop, 500 for 2kHz loop etc, targetPidLooptime is rounded for short looptimes
     blackboxIInterval = (uint16_t)(32 * 1000 / targetPidLooptime);
 
+    // sample_rate can be out of range after an MSP write by an older client or a bad
+    // EEPROM read, and cmsx_Blackbox_onEnter() indexes cmsx_BlackboxRateNames[] with it
+    // unchecked, so sanitise the stored value rather than only this shift
+    if (blackboxConfig()->sample_rate > BLACKBOX_SAMPLE_RATE_MAX) {
+        blackboxConfigMutable()->sample_rate = BLACKBOX_SAMPLE_RATE_MAX;
+    }
     blackboxPInterval = 1 << blackboxConfig()->sample_rate;
     if (blackboxPInterval > blackboxIInterval) {
         blackboxPInterval = 0; // log only I frames if logging frequency is too low

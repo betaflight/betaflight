@@ -7,41 +7,9 @@ Betaflight is flight controller software (firmware) used to fly multi-rotor craf
 
 ## Release Schedule
 
-| Date       | Release | Stage             | Status    |
-| ---------- | ------- | ----------------- | --------- |
-| 26-12-2025 | 2025.12 | Release           | Completed |
-| 01-04-2026 | 2026.6  | Beta              |           |
-| 01-05-2026 | 2026.6  | Release Candidate |           |
-| 01-06-2026 | 2026.6  | Release           |           |
-| 01-10-2026 | 2026.12 | Beta              |           |
-| 01-11-2026 | 2026.12 | Release Candidate |           |
-| 01-12-2026 | 2026.12 | Release           |           |
+The Betaflight release schedule and development cadence are published at [betaflight.com](https://betaflight.com/blog/2025/09/01/Calendar%20Versioning%20Change).
 
-## News
-
-### 📣 Announcement: New Versioning Scheme & Release Cadence 📣
-
-To create a more predictable release schedule, we're moving to a new versioning system and development cycle, starting with the next release.
-
-**New Format**: `YYYY.M.PATCH` (e.g., `2025.12.1`)
-
-**Release Cadence**: Two major releases per year.
-
-**Target Months**: June and December.
-
-This means the successor to our current `4.x` series will be Betaflight `2025.12.x`, followed by Betaflight `2026.6.x`. We will also align the Betaflight App and Firmware to the same `YYYY.M.PATCH` releases (and cadence).
-
-**Our New Release Cycle**
-
-To support this schedule, our development phases will be structured as follows:
-
-**Alpha**: For new feature development. Alpha builds for the next version will be available shortly after a stable release is published.
-
-**Beta**: A one-month feature freeze for bug fixes only, and existing pull requests currently being reviewed, starting approximately two months before a release.
-
-**Release Candidate (RC)**: A one-month period for final stabilization and testing before the official release.
-
-### Requirements for the submission of new and updated target configuration
+## Requirements for the submission of new and updated target configuration
 
 The requirements for pull requests adding new targets or modifying existing targets are available on the [betaflight.com website](https://www.betaflight.com/docs/development/manufacturer/requirements-for-submission-of-targets).
 

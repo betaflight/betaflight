@@ -36,6 +36,7 @@
 #include "platform/multicore.h"
 
 #include "hardware/clocks.h"
+#include "hardware/ticks.h"
 #include "hardware/timer.h"
 #include "hardware/watchdog.h"
 #include "pico/bootrom.h"
@@ -85,6 +86,8 @@ uint32_t systemUniqueId[3] = { 0 };
 static uint32_t usTicks = 0;
 static float usTicksInv = 0.0f;
 
+static int32_t millisOffset;
+
 // These are defined in pico-sdk headers as volatile uint32_t types
 #define PICO_DWT_CTRL   m33_hw->dwt_ctrl
 #define PICO_DWT_CYCCNT m33_hw->dwt_cyccnt
@@ -102,12 +105,27 @@ void cycleCounterInit(void)
     // Reset and enable cycle counter
     PICO_DWT_CYCCNT = 0;
     PICO_DWT_CTRL |= M33_DWT_CTRL_CYCCNTENA_BITS;
+
+    // Start a timer, for millis().
+    // The default timer is TIMER0, which is used for time_us_32/64 (for micros).
+    // We can use TIMER1 (spare).
+    // Assuming clk_ref (from XOSC) is at 12Mhz (standard for RP2350, and we're already
+    // assuming this for micros()).
+    tick_stop(TICK_TIMER1);
+
+    // We are allowed to divide the 12Mhz timer down by a number in 1..511.
+    // 12000 = 375 * 32, so we divide by 375 to get a 32kHz timer, then by 32 when reading the counter.
+    tick_start(TICK_TIMER1, 375);
+
+    // Calibrate
+    uint32_t u1 = time_us_32();
+    uint32_t m1 = millis();
+    uint32_t u2 = time_us_32();
+    millisOffset = (u1 + u2) / 2000 - m1; // (m1 + offset) == (u1+u2)/2000 = avg us converted to ms
 }
 
 void systemInit(void)
 {
-    //TODO: implement
-
     SystemInit();
 
     cycleCounterInit();
@@ -142,7 +160,21 @@ STATIC_ASSERT(sizeof(timeUs_t) == sizeof(uint32_t), timeUs_t_is_32_bit_failed);
 // Return system uptime in milliseconds (rollover in 49 days)
 timeMs_t millis(void)
 {
-    return (timeMs_t)(time_us_64() / 1000);
+    // Avoid 64-bit division of time_us_64() / 1000 by using timer1.
+    // Read low and high words carefully, as per timer_time_us_64 in the Pico SDK.
+    uint32_t hi = timer1_hw->timerawh;
+    uint32_t lo;
+    do {
+        lo = timer1_hw->timerawl;
+        // Check that the upper 32 bits haven't incremented, loop if required (will only be once).
+        uint32_t next_hi = timer1_hw->timerawh;
+        if (hi == next_hi) break;
+        hi = next_hi;
+    } while (true);
+
+    // Take the 64-bit value and shift right by 5 (divide by 32).
+    // Add the offset, just in case anyone in the future relies on micros() and millis() being aligned.
+    return ((uint32_t)((uint64_t)hi << 27 | (lo >> 5))) + millisOffset;
 }
 
 // Return system uptime in micros (rollover in 71 mins)

@@ -48,9 +48,12 @@
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
+#include "flight/launch_wing.h"
 #include "flight/mixer.h"
 #include "flight/mixer_init.h"
 #include "flight/pid.h"
+#include "flight/flight_plan_capture.h"
+#include "flight/flight_plan_nav.h"
 #include "flight/pos_hold.h"
 
 #include "io/beeper.h"
@@ -179,8 +182,8 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
 #ifdef USE_GPS_RESCUE
     if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_UNAVAILABLE)
-        && FLIGHT_MODE(GPS_RESCUE_MODE)
-        && !gpsRescueIsOK()) {
+        && ((FLIGHT_MODE(GPS_RESCUE_MODE) && !gpsRescueIsOK())
+            || flightPlanNavIsRescueDescentActive())) {
 
         tfp_sprintf(warningText, "RESCUE FAIL");
         // when a rescue sanity check is active (rescue has failed)
@@ -386,13 +389,108 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #endif // USE_GPS_RESCUE
 
 #ifdef USE_POSITION_HOLD
-    if (osdWarnGetState(OSD_WARNING_POSHOLD_FAILED) && posHoldFailure()) {
+    // A mission abort (e.g. the heading-fault level park) routes through the
+    // position-hold failure path too; let the specific WP warning below own it
+    // rather than masking it with the generic POSHOLD FAIL.
+    bool missionAbortActive = false;
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+    missionAbortActive = FLIGHT_MODE(AUTOPILOT_MODE) && flightPlanNavGetAbortReason() != FP_ABORT_NONE;
+#endif
+    if (osdWarnGetState(OSD_WARNING_POSHOLD_FAILED) && posHoldFailure() && !missionAbortActive) {
         tfp_sprintf(warningText, "POSHOLD FAIL");
         *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
         *blinking = true;
         return;
     }
 #endif
+
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+    if (osdWarnGetState(OSD_WARNING_AUTOPILOT_ABORT)
+        && FLIGHT_MODE(AUTOPILOT_MODE)
+        && flightPlanNavGetAbortReason() != FP_ABORT_NONE) {
+        switch (flightPlanNavGetAbortReason()) {
+        case FP_ABORT_ESTIMATOR:
+            tfp_sprintf(warningText, "WP GPS LOST");
+            break;
+        case FP_ABORT_STALLED:
+            tfp_sprintf(warningText, "WP STALLED");
+            break;
+        case FP_ABORT_FLYAWAY:
+            tfp_sprintf(warningText, "WP FLYAWAY");
+            break;
+        case FP_ABORT_HEADING:
+            tfp_sprintf(warningText, "WP HEADING");
+            break;
+        case FP_ABORT_MAG_FAULT:
+            tfp_sprintf(warningText, "WP MAG FAULT");
+            break;
+        default:
+            tfp_sprintf(warningText, "WP ABORT");
+            break;
+        }
+        *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
+        *blinking = true;
+        return;
+    }
+
+    // Waypoint capture confirmations ("WP3 SET" / "WP2 DELETED" / "WP FULL").
+    // Shown outside AUTOPILOT mode too - capture happens before engaging - and
+    // below every critical warning; the cue self-expires.
+    {
+        const char *captureMsg = flightPlanCaptureOsdMessage();
+        if (captureMsg != NULL) {
+            tfp_sprintf(warningText, "%s", captureMsg);
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            return;
+        }
+    }
+
+    // Mission progress cues, below every critical warning above. The mode
+    // itself is shown by the flight-mode indicator; these surface the two
+    // states that are otherwise invisible: the terminal descent and arrival.
+    if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+        if (flightPlanNavGetState() == FP_NAV_LANDING) {
+            tfp_sprintf(warningText, "WP LANDING");
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            return;
+        }
+        if (flightPlanNavGetState() == FP_NAV_COMPLETE) {
+            tfp_sprintf(warningText, "WP COMPLETE");
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            *blinking = true;
+            return;
+        }
+    }
+#endif
+
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+    // Shares OSD_WARNING_LAUNCH_CONTROL: the multirotor feature that owns that
+    // bit is undef'd on wing, so the two can never both be built. Sits below
+    // every critical warning - launch status is informational and must not
+    // mask an rx, battery or load failure that happens during the launch.
+    if (osdWarnGetState(OSD_WARNING_LAUNCH_CONTROL) && launchWingIsActive()) {
+        switch (launchWingGetState()) {
+        case LAUNCH_WING_WAIT_THROTTLE:
+            tfp_sprintf(warningText, "RAISE THROTTLE");
+            break;
+        case LAUNCH_WING_MOTOR_IDLE:
+            tfp_sprintf(warningText, "LAUNCH IDLE");
+            break;
+        case LAUNCH_WING_WAIT_DETECTION:
+            tfp_sprintf(warningText, "READY TO LAUNCH");
+            *blinking = true;
+            break;
+        case LAUNCH_WING_FINISH:
+            tfp_sprintf(warningText, "LAUNCH FINISHING");
+            break;
+        default:
+            tfp_sprintf(warningText, "LAUNCHING");
+            break;
+        }
+        *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+        return;
+    }
+#endif // USE_WING && USE_LAUNCH_WING
 
     // Show warning if in HEADFREE flight mode
     if (FLIGHT_MODE(HEADFREE_MODE)) {
@@ -420,7 +518,8 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     }
 
     // Show warning if mah consumed is over the configured limit
-    if (osdWarnGetState(OSD_WARNING_OVER_CAP) && ARMING_FLAG(ARMED) && osdConfig()->cap_alarm > 0 && getMAhDrawn() >= osdConfig()->cap_alarm) {
+    const uint16_t capacityAlarm = osdGetCapacityAlarm();
+    if (osdWarnGetState(OSD_WARNING_OVER_CAP) && ARMING_FLAG(ARMED) && capacityAlarm > 0 && getMAhDrawn() >= capacityAlarm) {
         tfp_sprintf(warningText, "OVER CAP");
         *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
         *blinking = true;

@@ -374,7 +374,7 @@
 #define DEF_TIM_AF__PA8__TCH_TIM1_CH1     D(1, 1)
 #define DEF_TIM_AF__PA9__TCH_TIM1_CH2     D(1, 1)
 #define DEF_TIM_AF__PA10__TCH_TIM1_CH3    D(1, 1)
-#define DEF_TIM_AF__PA11__TCH_TIM1_CH1N   D(1, 1)
+#define DEF_TIM_AF__PA11__TCH_TIM1_CH4    D(1, 1)
 #define DEF_TIM_AF__PA15__TCH_TIM2_CH1    D(1, 2)
 
 #define DEF_TIM_AF__PA0__TCH_TIM5_CH1     D(2, 5)
@@ -790,8 +790,8 @@
 #define DEF_TIM_AF__PF8__TCH_TIM16_CH1N   D(1, 16)
 #define DEF_TIM_AF__PF9__TCH_TIM17_CH1N   D(1, 17)
 
-#define DEF_TIM_AF__PF8__TCH_TIM13_CH1N   D(9, 13)
-#define DEF_TIM_AF__PF9__TCH_TIM14_CH1N   D(9, 14)
+#define DEF_TIM_AF__PF8__TCH_TIM13_CH1    D(9, 13)
+#define DEF_TIM_AF__PF9__TCH_TIM14_CH1    D(9, 14)
 
 #if defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx)
 #define DEF_TIM_AF__PF0__TCH_TIM23_CH1    D(13, 23)
@@ -1109,8 +1109,6 @@
 #define DEF_TIM_AF__PF8__TCH_TIM16_CH1N   D(1, 16)
 #define DEF_TIM_AF__PF9__TCH_TIM17_CH1N   D(1, 17)
 
-#define DEF_TIM_AF__PF8__TCH_TIM13_CH1N   D(9, 13)
-#define DEF_TIM_AF__PF9__TCH_TIM14_CH1N   D(9, 14)
 #define DEF_TIM_AF__PF8__TCH_TIM13_CH1    D(9, 13)
 #define DEF_TIM_AF__PF9__TCH_TIM14_CH1    D(9, 14)
 
@@ -1684,9 +1682,6 @@
 #define DEF_TIM_AF__PA2__TCH_TIM2_CH3     D(1, 2)
 #define DEF_TIM_AF__PA2__TCH_TIM5_CH3     D(2, 5)
 #define DEF_TIM_AF__PA2__TCH_TIM15_CH1    D(4, 15)
-#define DEF_TIM_AF__PA3__TCH_TIM2_CH4     D(1, 2)
-#define DEF_TIM_AF__PA3__TCH_TIM5_CH4     D(2, 5)
-#define DEF_TIM_AF__PA3__TCH_TIM15_CH2    D(4, 15)
 #define DEF_TIM_AF__PA3__TCH_TIM16_CH1    D(1, 16)
 #define DEF_TIM_AF__PA5__TCH_TIM2_CH1     D(1, 2)
 #define DEF_TIM_AF__PA5__TCH_TIM9_CH2     D(3, 9)
@@ -1705,7 +1700,6 @@
 
 //PORTB
 #define DEF_TIM_AF__PB0__TCH_TIM1_CH4     D(1, 1)
-#define DEF_TIM_AF__PB0__TCH_TIM3_CH3     D(2, 3)
 #define DEF_TIM_AF__PB0__TCH_TIM15_CH1N   D(7, 15)
 #define DEF_TIM_AF__PB1__TCH_TIM1_CH3N    D(1, 1)
 #define DEF_TIM_AF__PB1__TCH_TIM3_CH4     D(2, 3)
@@ -1749,12 +1743,9 @@
 
 //PORTE
 #define DEF_TIM_AF__PE2__TCH_TIM1_CH2N    D(13, 1)
-#define DEF_TIM_AF__PE4__TCH_TIM15_CH1N   D(4, 15)
 #define DEF_TIM_AF__PE5__TCH_TIM4_CH1     D(2, 4)
-#define DEF_TIM_AF__PE5__TCH_TIM15_CH1    D(4, 15)
 #define DEF_TIM_AF__PE5__TCH_TIM16_CH1N   D(1, 16)
 #define DEF_TIM_AF__PE6__TCH_TIM4_CH2     D(2, 4)
-#define DEF_TIM_AF__PE6__TCH_TIM15_CH2    D(4, 15)
 #define DEF_TIM_AF__PE6__TCH_TIM17_CH1N   D(1, 17)
 #define DEF_TIM_AF__PE8__TCH_TIM1_CH1N    D(1, 1)
 #define DEF_TIM_AF__PE9__TCH_TIM1_CH1     D(1, 1)

@@ -235,7 +235,7 @@ static void ghstSendMspResponse(uint8_t *payload, const uint8_t payloadSize)
     sbuf_t *dst = &ghstPayloadBuf;
 
     static uint8_t mspFrameCounter = 0;
-    DEBUG_SET(DEBUG_GHST_MSP, 1, ++mspFrameCounter);
+    DEBUG_SET(DEBUG_GHST_MSP, 1, ++mspFrameCounter);  //!< MSP Responses Sent
 
     ghstInitializeFrame(dst);                                                               // addr
     sbufWriteU8(dst, GHST_PAYLOAD_SIZE + GHST_FRAME_LENGTH_CRC + GHST_FRAME_LENGTH_TYPE);   // length

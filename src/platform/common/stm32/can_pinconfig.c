@@ -58,6 +58,9 @@ void canPinConfigure(const canPinConfig_t *pConfig)
             }
         }
 
+        // The silent/standby line is a plain GPIO, so any pin is valid.
+        pDev->silent = pConfig[device].ioTagSilent;
+
         if (pDev->tx && pDev->rx) {
             pDev->reg = hw->reg;
 #if PLATFORM_TRAIT_RCC

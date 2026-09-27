@@ -43,6 +43,7 @@ STDPERIPH_SRC   = \
             stm32g4xx_hal_uart_ex.c \
             stm32g4xx_ll_dma.c \
             stm32g4xx_ll_i2c.c \
+            stm32g4xx_ll_lpuart.c \
             stm32g4xx_ll_spi.c \
             stm32g4xx_ll_usart.c \
             stm32g4xx_ll_rcc.c \
@@ -100,7 +101,7 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu
 
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER -DUSE_DMA_RAM -DMAX_MPU_REGIONS=16
 
-# G47X_TARGETS includes G47{3,4}{RE,CE,CEU}
+# STM32G474 target covers the G47{3,4}{RE,CE,CEU} parts
 
 ifeq ($(TARGET_MCU),STM32G474xx)
 DEVICE_FLAGS    += -DSTM32G474xx

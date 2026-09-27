@@ -20,6 +20,10 @@
 
 #include "usbd_desc.h"
 
+#include "build/version.h"
+
+#include "drivers/usb_descriptor.h"
+
 #if defined(__GNUC__)
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
@@ -28,11 +32,8 @@
 #define USBD_PID                          0x5740
 
 #define USBD_LANGID_STRING                0x409
-#define USBD_MANUFACTURER_STRING          "XCORELABS"
+#define USBD_MANUFACTURER_STRING          FC_FIRMWARE_NAME
 
-
-#define USBD_VCP_PRODUCT_HS_STRING        "Virtual ComPort in HS Mode"
-#define USBD_VCP_PRODUCT_FS_STRING        "Virtual ComPort in FS Mode"
 #define USBD_VCP_CONFIGURATION_HS_STRING  "VCP Config"
 #define USBD_VCP_INTERFACE_HS_STRING      "VCP Interface"
 #define USBD_VCP_CONFIGURATION_FS_STRING  "VCP Config"
@@ -220,14 +221,7 @@ uint8_t *USBD_VCP_USER_LangIDStrDescriptor(uint8_t speed, uint16_t * length)
 */
 uint8_t *USBD_VCP_USER_ProductStrDescriptor(uint8_t speed, uint16_t * length)
 {
-    if (speed == 0)
-    {
-        USBD_GetString((uint8_t *)USBD_VCP_PRODUCT_HS_STRING, USBD_StrDesc, length);
-    }
-    else
-    {
-        USBD_GetString((uint8_t *)USBD_VCP_PRODUCT_FS_STRING, USBD_StrDesc, length);
-    }
+    USBD_GetString((uint8_t *)usbDescriptorProductString(), USBD_StrDesc, length);
     return USBD_StrDesc;
 }
 

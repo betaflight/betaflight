@@ -50,15 +50,15 @@ extern USBD_ClassTypeDef  USBD_HID_CDC;
 #endif
 USBD_HandleTypeDef USBD_Device;
 #else
-#include "usb_core.h"
-#include "usb_init.h"
-#include "hw_config.h"
+#error "Unsupported MCU family for USE_VCP"
 #endif
 
 #include "drivers/time.h"
 
 #include "drivers/serial.h"
 #include "drivers/serial_usb_vcp.h"
+
+#include "scheduler/scheduler.h"
 
 #define USB_TIMEOUT  50
 
@@ -136,6 +136,11 @@ static void usbVcpWriteBuf(serialPort_t *instance, const void *data, int count)
         count -= txed;
         p += txed;
 
+        if (count > 0) {
+            // USB backpressure wait is not task execution time.
+            schedulerIgnoreTaskExecTime();
+        }
+
         if (millis() - start > USB_TIMEOUT) {
             break;
         }
@@ -161,6 +166,11 @@ static bool usbVcpFlush(vcpPort_t *port)
         uint32_t txed = CDC_Send_DATA(p, count);
         count -= txed;
         p += txed;
+
+        if (count > 0) {
+            // USB backpressure wait is not task execution time.
+            schedulerIgnoreTaskExecTime();
+        }
 
         if (millis() - start > USB_TIMEOUT) {
             break;
@@ -265,10 +275,7 @@ void usbVcpInit(void)
 #endif
 
 #else
-    Set_System();
-    Set_USBClock();
-    USB_Init();
-    USB_Interrupts_Config();
+#error "Unsupported MCU family for USE_VCP"
 #endif
 }
 
@@ -289,5 +296,13 @@ uint32_t usbVcpGetBaudRate(serialPort_t *instance)
 uint8_t usbVcpIsConnected(void)
 {
     return usbIsConnected();
+}
+
+uint8_t usbVcpIsActive(void)
+{
+    // Unplugging stops the SOFs, which suspends the device out of USBD_STATE_CONFIGURED.
+    // usbIsConnected() alone cannot see this: without VBUS sensing there is no disconnect
+    // interrupt, so the state never returns to USBD_STATE_DEFAULT.
+    return usbIsConnected() && usbIsConfigured();
 }
 #endif

@@ -50,6 +50,8 @@ extern "C" {
     float mixerGetAdrcCommandedThrottle(void) { return simulatedCommandedThrottle; }
 }
 
+#include <algorithm>
+
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
@@ -74,6 +76,7 @@ protected:
 
     void SetUp() override
     {
+        runtime = {};
         simulatedThrottle = 0.0f;
         simulatedCommandedThrottle = 0.0f;
         resetGyro();
@@ -250,16 +253,100 @@ TEST_F(AdrcUnittest, AirmodeHeadroomAloneDoesNotOpenGate)
     // APPLIED collective past liftoffThrottlePercent while nothing was commanded. Re-decoding the
     // wo = 150 arms put the applied proxy at 30.3-32.2% against their adrc_liftoff_throttle = 30 at
     // a throttle stick that never moved, so this - not the gyro path - is what opened the gate.
+    // Sustained, not bursty: this is the hard case for the applied-collective path, and it is what
+    // a wedged craft and launch control both produce. With the throttle stick down the idle
+    // interlock must reject it however long it lasts - duration alone cannot tell this apart from
+    // flight.
     profile.liftoffThrottlePercent = 30;    // as flown in those logs
     simulatedThrottle = 0.32f;              // applied: airmode headroom, past the 30% threshold
     simulatedCommandedThrottle = 0.0f;      // commanded: nothing asked for it
 
-    for (int i = 0; i < 200; i++) { // 1.6 s, two orders past the 25 ms hold
+    for (int i = 0; i < 400; i++) { // 3.2 s, an order past both holds
         gyro.gyroADCf[FD_ROLL] = (i & 1) ? 120.0f : -120.0f;
         adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
         EXPECT_FALSE(runtime.liftoff);
     }
     EXPECT_FLOAT_EQ(0.0f, runtime.gyroActiveS);
+    EXPECT_FLOAT_EQ(0.0f, runtime.appliedActiveS);
+}
+
+TEST_F(AdrcUnittest, AppliedCollectiveHoldOutlastsTheMeasuredGroundBursts)
+{
+    // Pins ADRC_LIFTOFF_APPLIED_HOLD_S from below. Across the ten 2026-08-06 logs the longest
+    // unbroken run above the threshold before the pilot first moved the stick was 43.5 ms at a 40%
+    // threshold and 68.2 ms at 25%; the bursts here are ~104 ms, longer than that worst case with
+    // margin, so shortening the hold to anything near those measurements fails this test. The gyro
+    // path is kept out of the way (rate below liftoffGyroDps) so only the duration test is exercised.
+    profile.liftoffThrottlePercent = 30;
+    simulatedCommandedThrottle = 0.20f;     // above the idle floor, below the 30% threshold
+    gyro.gyroADCf[FD_ROLL] = 5.0f;          // well under the 20 dps gyro path
+
+    // 1250 loops = 10 s, forty times the hold. Duration matters here: a timer that leaked instead
+    // of resetting would integrate any duty cycle above 50% and latch eventually, so a short run
+    // would pass while the guarantee was gone.
+    for (int i = 0; i < 1250; i++) {
+        simulatedThrottle = ((i % 25) < 13) ? 0.32f : 0.10f; // ~104 ms above, ~96 ms below
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+        EXPECT_FALSE(runtime.liftoff);
+    }
+}
+
+TEST_F(AdrcUnittest, AppliedCollectiveHoldIsNotAnIntegratorOfDutyCycle)
+{
+    // The hold must mean "continuously above the threshold", not "above it more often than not".
+    // A timer that drained at its fill rate would latch on any duty cycle over 50% - 1.8 s at 55%,
+    // 0.9 s at 60% - and ground oscillation is exactly that kind of signal, so the margin the
+    // measured burst lengths provide would be void.
+    profile.liftoffThrottlePercent = 30;
+    simulatedCommandedThrottle = 0.20f;
+    gyro.gyroADCf[FD_ROLL] = 5.0f;
+
+    for (int i = 0; i < 2500; i++) { // 20 s at 60% duty (24 loops above, 16 below)
+        simulatedThrottle = ((i % 40) < 24) ? 0.32f : 0.10f;
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+        EXPECT_FALSE(runtime.liftoff);
+    }
+}
+
+TEST_F(AdrcUnittest, AppliedCollectiveHoldHonoursLiftoffHoldMs)
+{
+    // A pilot who hardens the gate after a false open must not find that this path still latches at
+    // the built-in 250 ms; the blackbox header would report a hold that was not in force either.
+    profile.liftoffThrottlePercent = 30;
+    profile.liftoffHoldMs = 500;            // longer than ADRC_LIFTOFF_APPLIED_HOLD_S
+    simulatedThrottle = 0.32f;
+    simulatedCommandedThrottle = 0.20f;
+
+    for (int i = 0; i < 50; i++) { // 400 ms - past the built-in hold, short of the configured one
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+        EXPECT_FALSE(runtime.liftoff);
+    }
+    for (int i = 0; i < 20; i++) { // past 500 ms
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    EXPECT_TRUE(runtime.liftoff);
+}
+
+TEST_F(AdrcUnittest, SustainedAppliedCollectiveOpensGateBelowTheCommandedThreshold)
+{
+    // The other half of ADRC-026, and the reason the commanded collective cannot be the only input:
+    // thrust the mixer applied beyond what the pilot commanded still lifts the craft. Reading only
+    // the commanded value would leave the gate shut for the rest of the arm cycle, flying the
+    // observer with b0*u held at zero - worse than the false open the test above brackets.
+    profile.liftoffThrottlePercent = 30;
+    simulatedThrottle = 0.32f;              // applied: sustained past the threshold, as in flight
+    simulatedCommandedThrottle = 0.20f;     // commanded: real thrust asked for, but under threshold
+
+    // Short of the hold the gate stays shut...
+    for (int i = 0; i < 20; i++) { // 160 ms
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+        EXPECT_FALSE(runtime.liftoff);
+    }
+    // ...and opens once the applied collective has held long enough to mean flight.
+    for (int i = 0; i < 20; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    EXPECT_TRUE(runtime.liftoff);
 }
 
 TEST_F(AdrcUnittest, GyroHoldTimerCannotBeBankedBelowTheThrottleFloor)
@@ -306,16 +393,20 @@ TEST_F(AdrcUnittest, Z3GrowthIsInhibitedWhileUngatedAtIdleThrottle)
     EXPECT_LT(peakZ3, 1000.0f);
 }
 
-TEST_F(AdrcUnittest, Z3GrowsWhileUngatedOnceThrottleLeavesIdle)
+TEST_F(AdrcUnittest, Z3GrowthStaysInhibitedWhileUngatedAboveIdleThrottle)
 {
-    // The inhibit is scoped to idle: a spool-up below liftoffThrottlePercent is still a real command
-    // the observer must be free to estimate against.
+    // The window this closes: throttleAtIdle clears at half the liftoff threshold, so a craft still
+    // on the ground with the stick past that point used to charge z3 freely until the gate opened.
+    // Measured on a 5" (docs/flight-test-analysis/pr15400-b8-mamba) that window ran 0.6 s unloaded
+    // and 5.6 s with a payload, and the estimate plateaus within ~0.25 s of it - so what matters is
+    // that the inhibit holds at all, not how long the window is.
     simulatedCommandedThrottle = 0.30f; // above the floor (20%), below liftoffThrottlePercent (40%)
     adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
     ASSERT_FALSE(runtime.liftoff);
-    ASSERT_FALSE(runtime.throttleAtIdle);
+    ASSERT_FALSE(runtime.throttleAtIdle); // stick is up; the gate, not the stick, must decide
 
-    EXPECT_GT(drivePeakZ3UnderGroundOscillation(), 100000.0f);
+    // Same excitation that charges z3 four orders higher once the gate is open.
+    EXPECT_LT(drivePeakZ3UnderGroundOscillation(), 1000.0f);
 }
 
 TEST_F(AdrcUnittest, Z3StaysLiveThroughAirborneZeroThrottleFloat)
@@ -353,6 +444,7 @@ TEST_F(AdrcUnittest, InhibitedZ3StillDecaysFromAWoundUpValue)
 
 TEST_F(AdrcUnittest, B0ThrottleScaleTracksSquareOfThrottleRatioAboveHover)
 {
+    profile.b0Law = ADRC_B0_LAW_QUADRATIC; // the law under test; the b11 default is SQRT
     profile.hoverThrottlePercent = 35;
     profile.b0ThrottleScaleMax = 9; // raise the ceiling out of the way - the quadratic law itself is under test
 
@@ -363,6 +455,43 @@ TEST_F(AdrcUnittest, B0ThrottleScaleTracksSquareOfThrottleRatioAboveHover)
     simulatedThrottle = 0.70f; // 2x hover -> scale should be 2^2 = 4
     settleB0ThrottleScale();
     EXPECT_NEAR(4.0f, runtime.b0ThrottleScale, 1e-3f);
+}
+
+TEST_F(AdrcUnittest, B0ThrottleScaleFollowsSelectedLaw)
+{
+    // ADRC-021 A/B selector: same 2x-hover operating point, one expectation per candidate law.
+    // The quadratic default is covered by B0ThrottleScaleTracksSquareOfThrottleRatioAboveHover.
+    profile.hoverThrottlePercent = 35;
+    profile.b0ThrottleScaleMax = 9; // ceiling out of the way - the law shapes are under test
+    simulatedThrottle = 0.70f;      // ratio = 2
+
+    profile.b0Law = ADRC_B0_LAW_SQRT;
+    settleB0ThrottleScale();
+    EXPECT_NEAR(1.41421f, runtime.b0ThrottleScale, 1e-3f);
+
+    profile.b0Law = ADRC_B0_LAW_LINEAR;
+    settleB0ThrottleScale();
+    EXPECT_NEAR(2.0f, runtime.b0ThrottleScale, 1e-3f);
+
+    profile.b0Law = ADRC_B0_LAW_FIXED;
+    settleB0ThrottleScale();
+    EXPECT_FLOAT_EQ(1.0f, runtime.b0ThrottleScale);
+}
+
+TEST_F(AdrcUnittest, B0LawAlternativesKeepBothClamps)
+{
+    // The "never below 1 / never above max" policy is law-independent.
+    profile.hoverThrottlePercent = 35;
+    profile.b0Law = ADRC_B0_LAW_SQRT;
+    simulatedThrottle = 0.0f; // below hover
+    settleB0ThrottleScale();
+    EXPECT_FLOAT_EQ(1.0f, runtime.b0ThrottleScale);
+
+    profile.hoverThrottlePercent = 10;
+    profile.b0Law = ADRC_B0_LAW_LINEAR;
+    simulatedThrottle = 1.0f; // ratio = 10 -> clamps to the default max (3)
+    settleB0ThrottleScale();
+    EXPECT_NEAR(3.0f, runtime.b0ThrottleScale, 1e-3f);
 }
 
 TEST_F(AdrcUnittest, B0ThrottleScaleNeverGoesBelowOne)
@@ -386,6 +515,7 @@ TEST_F(AdrcUnittest, B0ThrottleScaleClampsToMax)
 
 TEST_F(AdrcUnittest, B0ThrottleScaleMaxIsConfigurable)
 {
+    profile.b0Law = ADRC_B0_LAW_QUADRATIC; // the law under test; the b11 default is SQRT
     profile.hoverThrottlePercent = 10; // ratio = 10, ratio^2 = 100 at full throttle
     profile.b0ThrottleScaleMax = 20;
     simulatedThrottle = 1.0f;
@@ -395,6 +525,7 @@ TEST_F(AdrcUnittest, B0ThrottleScaleMaxIsConfigurable)
 
 TEST_F(AdrcUnittest, B0ThrottleScaleReleasesGraduallyOnThrottleChop)
 {
+    profile.b0Law = ADRC_B0_LAW_QUADRATIC; // the law under test; the b11 default is SQRT
     // A throttle chop must not collapse the scale within one loop: the z3 that adapted through
     // the inflated b0 during the high-throttle phase over-applies the moment the divisor snaps
     // back to 1, swinging the craft against the punch (flight-measured ~90 deg/s uncommanded
@@ -661,6 +792,185 @@ TEST_F(AdrcUnittest, InitConfigCapsObserverBandwidthAgainstLoopTime)
     EXPECT_FLOAT_EQ(600.0f, runtime.coefficient[FD_ROLL].wo);
 }
 
+TEST_F(AdrcUnittest, Z3LogScaleSpansTheProfilesOwnAntiWindupBound)
+{
+    // ADRC-029. The divisor must be the smallest integer that fits the worst-case z3 bound
+    // (pidSumLimit * b0 * b0ThrottleScaleMax, per axis) into the int16 debug field.
+
+    // Shipped defaults: b0 = 2000 everywhere, scale max 3, limits 500/400.
+    // Worst axis is roll/pitch: 500 * 2000 * 3 = 3 000 000 -> ceil(/32767) = 92.
+    EXPECT_EQ(92u, adrcZ3LogScale(&profile, 500, 400));
+
+    // A flown high-b0 tune (the Air65 corpus that motivated ADRC-029): its roll b0 of 7007
+    // clipped the b9-era /16 field in ordinary flight. 500 * 7007 * 3 = 10 510 500 -> 321.
+    profile.b0[FD_ROLL] = 7007;
+    profile.b0[FD_PITCH] = 4312;
+    profile.b0[FD_YAW] = 5848;
+    EXPECT_EQ(321u, adrcZ3LogScale(&profile, 500, 400));
+
+    // Small bounds never sharpen the divisor below the legacy 16, so old-log resolution is a floor.
+    profile.b0[FD_ROLL] = 100;
+    profile.b0[FD_PITCH] = 100;
+    profile.b0[FD_YAW] = 100;
+    profile.b0ThrottleScaleMax = 1;
+    EXPECT_EQ(16u, adrcZ3LogScale(&profile, 500, 400));
+
+    // Review counterexample against the float32 version this replaced: worst = 385 * 28508 * 48
+    // = 526 827 840, whose float32 quotient rounds to exactly 16078 before ceilf can act, leaving
+    // the endpoint 14 short of the bound. Integer ceil must give 16079.
+    profile.b0[FD_ROLL] = 28508;
+    profile.b0ThrottleScaleMax = 48;
+    EXPECT_EQ(16079u, adrcZ3LogScale(&profile, 385, 400));
+
+    // Second-review counterexample: the runtime clamp is float32, and 976 * 40721 * 49 rounds UP
+    // 48 above the exact product - an exact-bound divisor (59433) left the endpoint 41 short of
+    // what the firmware actually clamps to. The covering divisor is 59434, and minimal.
+    profile.b0[FD_ROLL] = 40721;
+    profile.b0ThrottleScaleMax = 49;
+    EXPECT_EQ(59434u, adrcZ3LogScale(&profile, 976, 400));
+
+    // Third-review boundary: 151 * 217 * 16 = 524272 exactly, representable exactly in float32,
+    // exactly the legacy /16 endpoint. A blanket safety pad wrongly pushed this to /17, costing
+    // 6.25 % resolution for nothing; the minimal covering divisor is the legacy 16.
+    profile.b0[FD_ROLL] = 217;
+    profile.b0[FD_PITCH] = 100;
+    profile.b0[FD_YAW] = 100;
+    profile.b0ThrottleScaleMax = 16;
+    EXPECT_EQ(16u, adrcZ3LogScale(&profile, 151, 151));
+}
+
+TEST_F(AdrcUnittest, Z3LogScaleEndpointAlwaysCoversTheBound)
+{
+    // The one invariant the divisor exists for: scale * 32767 >= pidSumLimit * b0 * scaleMax for
+    // the worst axis, over a deterministic sweep of the valid input space (a float32
+    // implementation failed this on ~0.06 % of it).
+    uint32_t seed = 0x029A5EED;
+    for (int i = 0; i < 20000; i++) {
+        seed = seed * 1664525u + 1013904223u;               // LCG, deterministic
+        const uint16_t limit = 100 + (seed >> 8) % 901;     // 100..1000
+        seed = seed * 1664525u + 1013904223u;
+        const uint16_t b0 = 100 + (seed >> 8) % 65436;      // 100..65535
+        seed = seed * 1664525u + 1013904223u;
+        const uint8_t scaleMax = 1 + (seed >> 8) % 50;      // 1..50
+
+        profile.b0[FD_ROLL] = b0;
+        profile.b0[FD_PITCH] = 100;
+        profile.b0[FD_YAW] = 100;
+        profile.b0ThrottleScaleMax = scaleMax;
+        const uint64_t bound = (uint64_t)limit * b0 * scaleMax;
+        const uint64_t endpoint = (uint64_t)adrcZ3LogScale(&profile, limit, limit) * 32767u;
+        ASSERT_GE(endpoint, bound) << "limit=" << limit << " b0=" << b0
+                                   << " scaleMax=" << (int)scaleMax;
+        // ... and against the clamp as the firmware computes it: float32, in either association
+        // -ffast-math might choose (each product here is integer-valued and exactly convertible).
+        const float clampA = (float)limit * ((float)b0 * (float)scaleMax);
+        const float clampB = ((float)limit * (float)b0) * (float)scaleMax;
+        const uint64_t cover = std::max({bound, (uint64_t)clampA, (uint64_t)clampB});
+        ASSERT_GE(endpoint, cover) << "limit=" << limit << " b0=" << b0
+                                   << " scaleMax=" << (int)scaleMax;
+        // ... and it must be the SMALLEST such divisor (above the legacy floor): one step down
+        // must fail to cover. This is the other half of the contract, which a coverage-only
+        // assertion cannot see.
+        const uint32_t divisor = adrcZ3LogScale(&profile, limit, limit);
+        if (divisor > 16u) {
+            ASSERT_LT((uint64_t)(divisor - 1) * 32767u, cover)
+                << "limit=" << limit << " b0=" << b0 << " scaleMax=" << (int)scaleMax;
+        }
+    }
+}
+
+TEST_F(AdrcUnittest, Z3LogScaleReachesTheRuntimeThroughItsOwnInit)
+{
+    // adrcInitConfig() alone must leave the b9-era divisor (isolated-module callers, incl. these
+    // tests), and adrcInitZ3LogScale() - the pidInitConfig() path - must overwrite it.
+    adrcInitConfig(&profile, &runtime, 0.000125f);
+    EXPECT_FLOAT_EQ(16.0f, runtime.z3LogScale);
+
+    adrcInitZ3LogScale(&runtime, &profile, 500, 400);
+    EXPECT_FLOAT_EQ(92.0f, runtime.z3LogScale);
+}
+
+TEST_F(AdrcUnittest, ObservabilityCachesTheCollectivesConsumedThisIteration)
+{
+    simulatedThrottle = 0.35f;
+    simulatedCommandedThrottle = 0.10f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+
+    EXPECT_FLOAT_EQ(0.35f, runtime.observedAppliedCollective);
+    EXPECT_FLOAT_EQ(0.10f, runtime.observedCommandedCollective);
+    EXPECT_EQ(ADRC_LIFTOFF_CAUSE_NONE, runtime.liftoffCause);
+    EXPECT_EQ(ADRC_STATE_THROTTLE_AT_IDLE, adrcStateFlags(&runtime));
+}
+
+TEST_F(AdrcUnittest, ObservabilityMarksOnlyAxesWhoseZ3GrowthWasActuallyInhibited)
+{
+    simulatedThrottle = simulatedCommandedThrottle = 0.0f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+
+    adrcApplyControl(&runtime, FD_ROLL, 120.0f, 0.0f, TEST_DT, 500.0f);
+    adrcApplyControl(&runtime, FD_PITCH, 0.0f, 0.0f, TEST_DT, 500.0f);
+
+    EXPECT_EQ(1u << FD_ROLL, runtime.z3GrowthInhibitMask);
+    EXPECT_EQ(ADRC_STATE_THROTTLE_AT_IDLE | ADRC_STATE_Z3_INHIBITED_ROLL,
+        adrcStateFlags(&runtime));
+
+    // ADRC-026b keys the inhibit on the closed gate, not on the idle-stick flag. Preserve that
+    // distinction in the log: above the throttle floor but below liftoff, a suppressed z3 update
+    // must still be reported.
+    simulatedThrottle = simulatedCommandedThrottle = 0.25f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    ASSERT_FALSE(runtime.throttleAtIdle);
+    ASSERT_FALSE(runtime.liftoff);
+    adrcApplyControl(&runtime, FD_YAW, 120.0f, 0.0f, TEST_DT, 500.0f);
+    EXPECT_EQ(1u << FD_YAW, runtime.z3GrowthInhibitMask);
+    EXPECT_EQ(ADRC_STATE_Z3_INHIBITED_YAW, adrcStateFlags(&runtime));
+
+    // The next PID iteration starts with a fresh per-axis event mask.
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    EXPECT_EQ(0u, runtime.z3GrowthInhibitMask);
+}
+
+TEST_F(AdrcUnittest, ObservabilityRecordsGateCauseAndResetEpoch)
+{
+    const uint32_t initialResetCount = runtime.gateResetCount;
+
+    simulatedThrottle = 0.60f;
+    simulatedCommandedThrottle = 0.50f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    ASSERT_TRUE(runtime.liftoff);
+    EXPECT_EQ(ADRC_LIFTOFF_CAUSE_COMMANDED_COLLECTIVE, runtime.liftoffCause);
+    EXPECT_EQ(ADRC_STATE_LIFTOFF
+            | (ADRC_LIFTOFF_CAUSE_COMMANDED_COLLECTIVE << ADRC_STATE_LIFTOFF_CAUSE_SHIFT),
+        adrcStateFlags(&runtime));
+
+    adrcResetGate(&runtime);
+    EXPECT_EQ(initialResetCount + 1, runtime.gateResetCount);
+    EXPECT_EQ(ADRC_LIFTOFF_CAUSE_NONE, runtime.liftoffCause);
+
+    simulatedThrottle = 0.10f;
+    simulatedCommandedThrottle = 0.25f;
+    gyro.gyroADCf[FD_ROLL] = 25.0f;
+    for (int i = 0; i < 4; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    ASSERT_TRUE(runtime.liftoff);
+    EXPECT_EQ(ADRC_LIFTOFF_CAUSE_GYRO, runtime.liftoffCause);
+
+    adrcResetGate(&runtime);
+    resetGyro();
+    profile.liftoffThrottlePercent = 30;
+    simulatedThrottle = 0.32f;
+    simulatedCommandedThrottle = 0.20f;
+    for (int i = 0; i < 40; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    ASSERT_TRUE(runtime.liftoff);
+    EXPECT_EQ(ADRC_LIFTOFF_CAUSE_APPLIED_COLLECTIVE, runtime.liftoffCause);
+    EXPECT_EQ(ADRC_STATE_LIFTOFF
+            | (ADRC_LIFTOFF_CAUSE_APPLIED_COLLECTIVE << ADRC_STATE_LIFTOFF_CAUSE_SHIFT),
+        adrcStateFlags(&runtime));
+}
+
 TEST_F(AdrcUnittest, InitConfigCapsCorruptUpperRangeValues)
 {
     constexpr float dT = 0.000125f; // 8 kHz
@@ -870,3 +1180,250 @@ TEST_F(AdrcUnittest, NonFiniteRuntimeStateRecoversToFiniteOutput)
     EXPECT_TRUE(isfinite(invalidInputOut.I));
     EXPECT_TRUE(isfinite(invalidInputOut.D));
 }
+
+// ADRC-030 (experimental): a lower wc while the liftoff gate is closed, ramping to the flight wc
+// once the gate opens. Off by default, in which case the control law must be bit-identical.
+TEST_F(AdrcUnittest, GroundWcDisabledByDefaultLeavesGainsUntouched)
+{
+    ASSERT_FALSE(runtime.liftoff);
+    EXPECT_FLOAT_EQ(runtime.coefficient[FD_ROLL].wc, runtime.coefficient[FD_ROLL].groundWc);
+    // vRef == setpoint (TD off), z1 == 0: P = wc^2 * setpoint / b0 = 60^2 * 100 / 2000 = 180.
+    const adrcOutput_t out = adrcApplyControl(&runtime, FD_ROLL, 0.0f, 100.0f, TEST_DT, 500.0f);
+    EXPECT_FLOAT_EQ(180.0f, out.P);
+}
+
+TEST_F(AdrcUnittest, GroundWcAppliesWhileGateClosedAndRampsAfterLiftoff)
+{
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    adrcSetGroundWc(&runtime, 40, 200, 0);
+    adrcResetGate(&runtime);
+
+    // Gate closed: wc = 40 -> P = 40^2 * 100 / 2000 = 80.
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    ASSERT_FALSE(runtime.liftoff);
+    EXPECT_FLOAT_EQ(80.0f, adrcApplyControl(&runtime, FD_ROLL, 0.0f, 100.0f, TEST_DT, 500.0f).P);
+
+    // Gate opens: 12 loops of 8 ms = 96 ms into a 200 ms ramp -> blend 0.48 -> wc 49.6.
+    runtime.liftoff = true;
+    for (int i = 0; i < 12; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    EXPECT_NEAR(49.6f * 49.6f * 100.0f / 2000.0f,
+        adrcApplyControl(&runtime, FD_ROLL, 0.0f, 100.0f, TEST_DT, 500.0f).P, 0.5f);
+
+    // Ramp complete: wc = 60 -> P = 180, and it stays there.
+    for (int i = 0; i < 40; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    EXPECT_FLOAT_EQ(1.0f, runtime.wcBlend);
+    EXPECT_FLOAT_EQ(180.0f, adrcApplyControl(&runtime, FD_ROLL, 0.0f, 100.0f, TEST_DT, 500.0f).P);
+
+    // Gate reset (disarm-arm) drops straight back to the ground wc.
+    adrcResetGate(&runtime);
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    EXPECT_FLOAT_EQ(80.0f, adrcApplyControl(&runtime, FD_ROLL, 0.0f, 100.0f, TEST_DT, 500.0f).P);
+}
+
+TEST_F(AdrcUnittest, GroundWcIsCappedAtFlightWcAndRampZeroSwitches)
+{
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    adrcSetGroundWc(&runtime, 250, 0, 0); // above wc 60: must not raise the ground gain
+    adrcResetGate(&runtime);
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    EXPECT_FLOAT_EQ(180.0f, adrcApplyControl(&runtime, FD_ROLL, 0.0f, 100.0f, TEST_DT, 500.0f).P);
+
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    adrcSetGroundWc(&runtime, 40, 0, 0);
+    adrcResetGate(&runtime);
+    runtime.liftoff = true;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    EXPECT_FLOAT_EQ(1.0f, runtime.wcBlend);
+    EXPECT_FLOAT_EQ(180.0f, adrcApplyControl(&runtime, FD_ROLL, 0.0f, 100.0f, TEST_DT, 500.0f).P);
+}
+
+TEST_F(AdrcUnittest, SameTypeReinitPreservesActiveGroundWcRamp)
+{
+    // An AUX adjustment re-runs pidInitConfig() -> adrcInitConfig() + adrcSetGroundWc() while armed;
+    // that must not finish (or restart) a ramp that is in progress.
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    adrcSetGroundWc(&runtime, 40, 200, 0);
+    adrcResetGate(&runtime);
+    runtime.liftoff = true;
+    for (int i = 0; i < 12; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    const float blendBefore = runtime.wcBlend;
+    ASSERT_NEAR(0.48f, blendBefore, 0.001f);
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    adrcSetGroundWc(&runtime, 40, 200, 0);
+    EXPECT_FLOAT_EQ(blendBefore, runtime.wcBlend);
+    EXPECT_NEAR(49.6f * 49.6f * 100.0f / 2000.0f,
+        adrcApplyControl(&runtime, FD_ROLL, 0.0f, 100.0f, TEST_DT, 500.0f).P, 0.5f);
+}
+
+TEST_F(AdrcUnittest, GroundDgainCapsGroundWcPerAxis)
+{
+    // dgain 1.0 -> cap = b0 / (2 wo) per axis, using the runtime wo (capped against TEST_DT) and b0;
+    // with the defaults (b0 2000, wo <= 62.5 at 8 ms) that is 16, well below the requested 40.
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    adrcSetGroundWc(&runtime, 40, 0, 10);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        const adrcCoefficient_t &c = runtime.coefficient[axis];
+        EXPECT_NEAR(c.b0 / (2.0f * c.wo), c.groundWc, 1e-3f);
+        EXPECT_LT(c.groundWc, 40.0f);
+    }
+    adrcResetGate(&runtime);
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    // P = groundWc^2 * 100 / b0 on the ground.
+    const adrcCoefficient_t &cr = runtime.coefficient[FD_ROLL];
+    EXPECT_NEAR(cr.groundWc * cr.groundWc * 100.0f / cr.b0,
+        adrcApplyControl(&runtime, FD_ROLL, 0.0f, 100.0f, TEST_DT, 500.0f).P, 1e-2f);
+
+    // A large dgain leaves the plain ground wc in charge; dgain without ground wc does nothing.
+    adrcSetGroundWc(&runtime, 40, 0, 100);
+    EXPECT_FLOAT_EQ(40.0f, runtime.coefficient[FD_ROLL].groundWc);
+    adrcSetGroundWc(&runtime, 0, 0, 10);
+    EXPECT_FLOAT_EQ(60.0f, runtime.coefficient[FD_ROLL].groundWc);
+}
+
+// ADRC-031: adrc_b0_scale_min lets the schedule go below 1 under hover; 100 (default) keeps the
+// b10.1 "scale only up" behaviour exactly, FIXED is unaffected, and the floor is 20 %.
+TEST_F(AdrcUnittest, B0ScaleMinDefaultKeepsScaleOnlyUp)
+{
+    profile.hoverThrottlePercent = 35;
+    profile.b0Law = ADRC_B0_LAW_SQRT;
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    adrcSetB0ScaleMin(&runtime, 100);
+    simulatedThrottle = 0.10f;
+    settleB0ThrottleScale();
+    EXPECT_FLOAT_EQ(1.0f, runtime.b0ThrottleScale);
+}
+
+TEST_F(AdrcUnittest, B0ScaleMinLetsScheduleGoBelowHoverDownToTheFloor)
+{
+    profile.hoverThrottlePercent = 35;
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    adrcSetB0ScaleMin(&runtime, 50);
+    runtime.liftoff = true; // the floor only acts airborne (see the gate test below)
+    simulatedThrottle = 0.10f; // ratio 0.2857
+
+    profile.b0Law = ADRC_B0_LAW_SQRT; // sqrt(0.2857) = 0.535 > 0.5 -> unclamped
+    settleB0ThrottleScale();
+    EXPECT_NEAR(0.5345f, runtime.b0ThrottleScale, 2e-3f);
+
+    profile.b0Law = ADRC_B0_LAW_QUADRATIC; // 0.0816 -> clamped to 0.5
+    settleB0ThrottleScale();
+    EXPECT_NEAR(0.5f, runtime.b0ThrottleScale, 1e-4f);
+
+    profile.b0Law = ADRC_B0_LAW_FIXED;
+    settleB0ThrottleScale();
+    EXPECT_FLOAT_EQ(1.0f, runtime.b0ThrottleScale);
+
+    // Above hover nothing changes: LINEAR at ratio 2 -> 2.
+    profile.b0Law = ADRC_B0_LAW_LINEAR;
+    simulatedThrottle = 0.70f;
+    settleB0ThrottleScale();
+    EXPECT_NEAR(2.0f, runtime.b0ThrottleScale, 1e-3f);
+
+    // The control law sees the scheduled b0: at scale 0.5 the P output doubles (kp * 100 / (b0 * 0.5)).
+    profile.b0Law = ADRC_B0_LAW_QUADRATIC;
+    simulatedThrottle = 0.10f;
+    settleB0ThrottleScale();
+    adrcResetGate(&runtime);
+    const float pFull = runtime.coefficient[FD_ROLL].kp * 100.0f / runtime.coefficient[FD_ROLL].b0;
+    EXPECT_NEAR(2.0f * pFull, adrcApplyControl(&runtime, FD_ROLL, 0.0f, 100.0f, TEST_DT, 500.0f).P, 1e-2f);
+
+    // Floor: 5 % requested -> 20 % (airborne again after the gate reset above).
+    adrcSetB0ScaleMin(&runtime, 5);
+    runtime.liftoff = true;
+    settleB0ThrottleScale();
+    EXPECT_NEAR(0.2f, runtime.b0ThrottleScale, 1e-4f);
+}
+
+TEST_F(AdrcUnittest, B0ScaleMinDoesNotApplyWhileGateIsClosed)
+{
+    // On the ground the stick is below hover, so the floor would divide the P/D b0 by up to 5 and
+    // multiply the closed-gate loop gain; the schedule must stay >= 1 until liftoff.
+    profile.hoverThrottlePercent = 35;
+    profile.b0Law = ADRC_B0_LAW_QUADRATIC;
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    adrcSetB0ScaleMin(&runtime, 20);
+    adrcResetGate(&runtime);
+    simulatedThrottle = 0.10f;
+    settleB0ThrottleScale();
+    ASSERT_FALSE(runtime.liftoff);
+    EXPECT_FLOAT_EQ(1.0f, runtime.b0ThrottleScale);
+    runtime.liftoff = true;
+    settleB0ThrottleScale();
+    EXPECT_NEAR(0.2f, runtime.b0ThrottleScale, 1e-4f);
+    adrcResetGate(&runtime);
+    settleB0ThrottleScale();
+    EXPECT_FLOAT_EQ(1.0f, runtime.b0ThrottleScale);
+}
+
+TEST_F(AdrcUnittest, B0ScaleMinBoundaryValueIsNotTreatedAsOff)
+{
+    // b11-exp5 regression: adrc_b0_scale_min = 20 (the CLI minimum) behaved as 100 on the target
+    // because 20 * 0.01f rounds below 0.2f and the old "< floor -> reset to 1" sanity check fired
+    // under -ffast-math. The floor must engage for 20 exactly like for 21, and a runtime value just
+    // below the floor must be clamped up, not switched off.
+    profile.hoverThrottlePercent = 38;
+    profile.b0Law = ADRC_B0_LAW_SQRT;
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    for (uint8_t pct : {20, 21}) {
+        adrcSetB0ScaleMin(&runtime, pct);
+        EXPECT_GE(runtime.b0ScaleMin, 0.2f);
+        EXPECT_LE(runtime.b0ScaleMin, 0.21f);
+        adrcResetGate(&runtime);
+        runtime.liftoff = true;
+        simulatedThrottle = 0.02f; // idle collective in flight -> raw sqrt(0.02/0.38) = 0.23
+        settleB0ThrottleScale();
+        adrcApplyControl(&runtime, FD_ROLL, 0.0f, 0.0f, TEST_DT, 500.0f);
+        EXPECT_NEAR(0.229f, runtime.b0ThrottleScale, 0.01f) << "pct " << int(pct);
+        EXPECT_GE(runtime.b0ScaleMin, 0.2f);
+    }
+    runtime.b0ScaleMin = 0.19999999f; // what the target computed for 20
+    adrcApplyControl(&runtime, FD_ROLL, 0.0f, 0.0f, TEST_DT, 500.0f);
+    EXPECT_FLOAT_EQ(0.2f, runtime.b0ScaleMin);
+    runtime.b0ScaleMin = NAN;
+    adrcApplyControl(&runtime, FD_ROLL, 0.0f, 0.0f, TEST_DT, 500.0f);
+    EXPECT_FLOAT_EQ(1.0f, runtime.b0ScaleMin);
+}
+
+// ADRC-032: per-axis damping ratio. 100 % leaves the law untouched; 50 % halves D; 0 % removes D; the ground-wc
+// path scales with it too.
+TEST_F(AdrcUnittest, SatZ3InhibitStopsZ3GrowthOnlyWhileMixerSaturatedAndEnabled)
+{
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    adrcResetGate(&runtime);
+    runtime.liftoff = true;
+    // Observer error that drives z3 outward: z1 held at 0, gyro at 200 deg/s, no command.
+    auto step = [&]() { runtime.z1[FD_ROLL] = 0.0f; runtime.z2[FD_ROLL] = 0.0f; runtime.z3GrowthInhibitMask = 0;
+        adrcApplyControl(&runtime, FD_ROLL, 200.0f, 0.0f, TEST_DT, 500.0f); };
+
+    // Default (flag off): a saturated mixer does not stop z3 from charging.
+    adrcSetMixerSaturated(&runtime, true);
+    runtime.z3[FD_ROLL] = 0.0f;
+    step();
+    EXPECT_GT(fabsf(runtime.z3[FD_ROLL]), 0.0f);
+    EXPECT_EQ(0u, runtime.z3GrowthInhibitMask);
+
+    // Flag on + saturated: growth suppressed, mask flags it, decay toward zero still runs.
+    adrcSetSatZ3Inhibit(&runtime, true);
+    runtime.z3[FD_ROLL] = 0.0f;
+    step();
+    EXPECT_FLOAT_EQ(0.0f, runtime.z3[FD_ROLL]);
+    EXPECT_EQ(1u << FD_ROLL, runtime.z3GrowthInhibitMask);
+    runtime.z3[FD_ROLL] = 1000.0f; // same sign as the growth direction would push
+    const float before = runtime.z3[FD_ROLL];
+    step();
+    EXPECT_LE(fabsf(runtime.z3[FD_ROLL]), before); // never grows while inhibited
+
+    // Flag on, mixer freed: charging resumes on the next iteration.
+    adrcSetMixerSaturated(&runtime, false);
+    runtime.z3[FD_ROLL] = 0.0f;
+    step();
+    EXPECT_GT(fabsf(runtime.z3[FD_ROLL]), 0.0f);
+    EXPECT_EQ(0u, runtime.z3GrowthInhibitMask);
+}
+

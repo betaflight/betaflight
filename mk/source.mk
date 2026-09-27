@@ -12,6 +12,7 @@ PG_SRC = \
             pg/can.c \
             pg/dashboard.c \
             pg/dronecan.c \
+            pg/dronecan_dna.c \
             pg/displayport_profiles.c \
             pg/dyn_notch.c \
             pg/flash.c \
@@ -22,10 +23,12 @@ PG_SRC = \
             pg/gps_rescue_multirotor.c \
             pg/gps_rescue_wing.c \
             pg/gyrodev.c \
+            pg/launch_wing.c \
             pg/max7456.c \
             pg/mco.c \
             pg/motor.c \
             pg/msp.c \
+            pg/osd_nav_map.c \
             pg/pg.c \
             pg/pilot.c \
             pg/piniobox.c \
@@ -123,6 +126,7 @@ COMMON_SRC = \
             drivers/transponder_ir_arcitimer.c \
             drivers/transponder_ir_ilap.c \
             drivers/transponder_ir_erlt.c \
+            drivers/usb_descriptor.c \
             fc/board_info.c \
             fc/dispatch.c \
             fc/faults.c \
@@ -132,6 +136,7 @@ COMMON_SRC = \
             io/beeper.c \
             io/piniobox.c \
             io/serial.c \
+            io/serial_feature_map.c \
             io/serial_resource.c \
             io/smartaudio_protocol.c \
             io/statusindicator.c \
@@ -148,7 +153,6 @@ COMMON_SRC = \
             sensors/battery.c \
             sensors/current.c \
             sensors/voltage.c \
-            target/config_helper.c \
             fc/init.c \
             fc/controlrate_profile.c \
             drivers/accgyro/gyro_sync.c \
@@ -169,13 +173,16 @@ COMMON_SRC = \
             flight/autopilot_wing.c \
             flight/dyn_notch_filter.c \
             flight/failsafe.c \
+            flight/flight_plan_capture.c \
             flight/flight_plan_nav.c \
             flight/gps_rescue_multirotor.c \
             flight/gps_rescue_wing.c \
             flight/imu.c \
+            flight/launch_wing.c \
             flight/mixer.c \
             flight/mixer_init.c \
             flight/mixer_tricopter.c \
+            flight/nav_trail.c \
             flight/pid.c \
             flight/pid_init.c \
             flight/position.c \
@@ -274,8 +281,11 @@ COMMON_SRC = \
             osd/osd.c \
             osd/osd_custom_text.c \
             osd/osd_elements.c \
+            osd/osd_nav_map.c \
             osd/osd_warnings.c \
             sensors/barometer.c \
+            sensors/pitot.c \
+            drivers/pitot/pitot_ms4525.c \
             sensors/rangefinder.c \
             sensors/opticalflow.c \
             telemetry/telemetry.c \
@@ -313,9 +323,10 @@ COMMON_SRC += \
             drivers/accgyro/accgyro_spi_bmi270.c \
             drivers/accgyro/accgyro_spi_icm20649.c \
             drivers/accgyro/accgyro_spi_icm20689.c \
+            drivers/accgyro/accgyro_spi_icm40609.c \
             drivers/accgyro/accgyro_spi_icm426xx.c \
             drivers/accgyro/accgyro_spi_icm456xx.c \
-            drivers/accgyro/accgyro_spi_icm40609.c \
+            drivers/accgyro/accgyro_spi_icm56686.c \
             drivers/accgyro/accgyro_spi_l3gd20.c \
             drivers/accgyro/accgyro_spi_lsm6dso.c \
             drivers/accgyro/accgyro_spi_lsm6dso_init.c \
@@ -338,6 +349,8 @@ COMMON_SRC += \
             drivers/barometer/barometer_virtual.c \
             drivers/compass/compass_ak8963.c \
             drivers/compass/compass_ak8975.c \
+            drivers/compass/compass_ak9916.c \
+            drivers/compass/compass_bmm350.c \
             drivers/compass/compass_hmc5883l.c \
             drivers/compass/compass_ist8310.c \
             drivers/compass/compass_lis2mdl.c \
@@ -412,6 +425,8 @@ SIZE_OPTIMISED_SRC += \
             drivers/barometer/barometer_2smpb_02b.c \
             drivers/compass/compass_ak8963.c \
             drivers/compass/compass_ak8975.c \
+            drivers/compass/compass_ak9916.c \
+            drivers/compass/compass_bmm350.c \
             drivers/compass/compass_hmc5883l.c \
             drivers/compass/compass_qmc5883.c \
             drivers/compass/compass_lis2mdl.c \
@@ -501,6 +516,7 @@ SIZE_OPTIMISED_SRC += \
             cli/cli.c \
             cli/settings.c \
             drivers/light_ws2811strip.c \
+            drivers/usb_descriptor.c \
             drivers/vtx_common.c \
             fc/init.c \
             fc/board_info.c \
@@ -510,6 +526,7 @@ SIZE_OPTIMISED_SRC += \
             config/simplified_tuning.c \
             io/dashboard.c \
             io/serial.c \
+            io/serial_feature_map.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
@@ -546,6 +563,7 @@ SIZE_OPTIMISED_SRC += \
             osd/osd.c \
             osd/osd_custom_text.c \
             osd/osd_elements.c \
+            osd/osd_nav_map.c \
             osd/osd_warnings.c \
             rx/rx_bind.c \
             io/vtx_msp.c \

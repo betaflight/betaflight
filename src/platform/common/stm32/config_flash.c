@@ -171,7 +171,7 @@ uint32_t getFLASHSectorForEEPROM(void)
     }
 }
 
-#elif defined(STM32H743xx) || defined(STM32G4) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx) || defined(STM32H757xx) || defined(STM32H5) || defined(STM32C5)
+#elif defined(STM32H743xx) || defined(STM32G4) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx) || defined(STM32H753xx) || defined(STM32H757xx) || defined(STM32H5) || defined(STM32C5)
 /*
 MCUs with uniform array of equal size sectors, handled in two banks having contiguous address.
 (Devices with non-contiguous flash layout is not currently useful anyways.)
@@ -205,7 +205,7 @@ bank operation mode. The code assumes dual bank operation, in which case the
 FLASH_BANK_SIZE constant is set to one half of the available flash size in HAL.
 */
 
-#if defined(STM32H743xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx) || defined(STM32H757xx)
+#if defined(STM32H743xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx) || defined(STM32H753xx) || defined(STM32H757xx)
 #define FLASH_PAGE_PER_BANK 8
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
 #define FLASH_PAGE_PER_BANK 128
@@ -387,6 +387,33 @@ void configLock(void)
 {
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4)
         HAL_FLASH_Lock();
+#if defined(STM32H5)
+        // On H5 the instruction cache also caches const/data reads from the
+        // flash code region, which includes the config storage area. After
+        // rewriting config, invalidate ICACHE so subsequent reads are coherent
+        // instead of being served from stale cache lines.
+        HAL_ICACHE_Invalidate();
+#endif
+#if defined(STM32C5)
+        // On C5 the instruction cache also caches const/data reads from the
+        // flash code region, which includes the config storage area. After
+        // rewriting config, invalidate ICACHE so subsequent reads are coherent
+        // instead of being served from stale cache lines. CMSIS-direct (the C5
+        // HAL2 has no ICACHE wrapper); bounded wait so a stuck flag can't hang.
+        //
+        // Clear any stale busy-end flag first (e.g. left set by the power-on
+        // auto-invalidation) — otherwise the wait below would see BSYENDF
+        // already set and exit before THIS invalidation completes, leaving the
+        // cache with stale config lines.
+        WRITE_REG(ICACHE->FCR, ICACHE_FCR_CBSYENDF);
+        SET_BIT(ICACHE->CR, ICACHE_CR_CACHEINV);
+        for (volatile uint32_t icacheWait = 0;
+             icacheWait < 1000000U && !(ICACHE->SR & ICACHE_SR_BSYENDF);
+             icacheWait++) { }
+        WRITE_REG(ICACHE->FCR, ICACHE_FCR_CBSYENDF);
+        __DSB();
+        __ISB();
+#endif
 #elif defined(X32M7)
         // NOP
 #elif defined(AT32F4)

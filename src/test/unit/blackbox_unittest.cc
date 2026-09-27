@@ -23,6 +23,7 @@ extern "C" {
     #include "build/debug.h"
 
     #include "blackbox/blackbox.h"
+    #include "blackbox/blackbox_fielddefs.h"
     #include "common/utils.h"
 
     #include "pg/pg.h"
@@ -51,12 +52,43 @@ extern "C" {
 
     extern int16_t blackboxIInterval;
     extern int16_t blackboxPInterval;
+    extern struct pidProfile_s *currentPidProfile;
+    bool testBlackboxConditionUncached(flightLogFieldCondition_e condition);
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
 gyroDev_t gyroDev;
+static bool servosPresent = false; // returned by the hasServos() stub
+
+static uint8_t serialCapture[256];
+static size_t serialCaptureSize;
+#ifdef USE_ADRC
+static pidProfile_t adrcTestPidProfile;
+#endif
+
+static uint32_t readUnsignedVB(size_t *offset)
+{
+    uint32_t value = 0;
+    unsigned shift = 0;
+    while (*offset < serialCaptureSize) {
+        const uint8_t byte = serialCapture[(*offset)++];
+        value |= (uint32_t)(byte & 0x7f) << shift;
+        if ((byte & 0x80) == 0) {
+            return value;
+        }
+        shift += 7;
+    }
+    ADD_FAILURE() << "truncated variable-byte value";
+    return 0;
+}
+
+static int32_t readSignedVB(size_t *offset)
+{
+    const uint32_t encoded = readUnsignedVB(offset);
+    return (int32_t)((encoded >> 1) ^ (uint32_t)-(int32_t)(encoded & 1));
+}
 
 TEST(BlackboxTest, TestInitIntervals)
 {
@@ -221,6 +253,23 @@ TEST(BlackboxTest, Test_zero_p_interval)
     blackboxAdvanceIterationTimers();
     EXPECT_TRUE(blackboxShouldLogIFrame());
     EXPECT_FALSE(blackboxShouldLogPFrame());
+
+    // the I-frame-only state must be reportable without dividing by the zero P interval
+    EXPECT_EQ(0, blackboxGetPRatio());
+}
+
+TEST(BlackboxTest, Test_sample_rate_out_of_range)
+{
+    // sample_rate arrives unvalidated over MSP and is indexed into the CMS rate table
+    // with no bounds check, so an out of range value has to be clamped, not just shifted.
+    // The CLI bounds checks the same value and reports it as corrupted instead.
+    blackboxConfigMutable()->sample_rate = 255;
+    // 1kHz PIDloop
+    targetPidLooptime = 1000;
+    blackboxInit();
+    EXPECT_EQ(32, blackboxIInterval);
+    EXPECT_EQ(BLACKBOX_SAMPLE_RATE_MAX, blackboxConfig()->sample_rate);
+    EXPECT_EQ(16, blackboxPInterval);
 }
 
 TEST(BlackboxTest, Test_CalculatePDenom)
@@ -262,6 +311,36 @@ TEST(BlackboxTest, Test_CalculatePDenom)
     EXPECT_EQ(64, blackboxCalculatePDenom(1, 4));
     EXPECT_EQ(32, blackboxCalculatePDenom(1, 8)); // 1kHz logging
     EXPECT_EQ(16, blackboxCalculatePDenom(1, 16));
+}
+
+TEST(BlackboxTest, Test_CalculatePDenom_zero_rate)
+{
+    blackboxConfigMutable()->sample_rate = 0;
+    // 1kHz PIDloop
+    targetPidLooptime = 1000;
+    blackboxInit();
+    EXPECT_EQ(32, blackboxIInterval);
+
+    // a legacy MSP_SET_BLACKBOX_CONFIG payload carries rate_num and rate_denom unvalidated
+    EXPECT_EQ(0, blackboxCalculatePDenom(1, 0));
+    EXPECT_EQ(0, blackboxCalculatePDenom(0, 0));
+    // rate_num of 0 was the legacy way of asking for I frames only
+    EXPECT_EQ(0, blackboxCalculatePDenom(0, 1));
+}
+
+TEST(BlackboxTest, Test_CalculateSampleRate_zero_p_ratio)
+{
+    // 1kHz PIDloop
+    targetPidLooptime = 1000;
+    // p_ratio of 0 was the legacy sentinel for logging I frames only
+    EXPECT_EQ(4, blackboxCalculateSampleRate(0));
+    // and the result always has to stay a selectable blackbox_sample_rate
+    EXPECT_LE(blackboxCalculateSampleRate(1), 4);
+
+    // 8kHz PIDloop, where the unclamped result would be llog2(256) = 8
+    targetPidLooptime = 125;
+    EXPECT_EQ(4, blackboxCalculateSampleRate(0));
+    EXPECT_LE(blackboxCalculateSampleRate(1), 4);
 }
 
 TEST(BlackboxTest, Test_CalculateRates)
@@ -329,6 +408,123 @@ TEST(BlackboxTest, Test_CalculateRates)
 
 }
 
+#ifdef USE_ADRC
+TEST(BlackboxTest, AdrcFieldSchemaAndConditionAreExact)
+{
+    struct expectedField_s {
+        const char *name;
+        int8_t fieldNameIndex;
+        uint8_t isSigned;
+        uint8_t Iencode;
+    };
+    static const expectedField_s expected[] = {
+        {"adrcPidSum", 0, FLIGHT_LOG_FIELD_SIGNED, FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB},
+        {"adrcPidSum", 1, FLIGHT_LOG_FIELD_SIGNED, FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB},
+        {"adrcPidSum", 2, FLIGHT_LOG_FIELD_SIGNED, FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB},
+        {"adrcCommandedCollective", -1, FLIGHT_LOG_FIELD_UNSIGNED, FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB},
+        {"adrcAppliedCollective", -1, FLIGHT_LOG_FIELD_UNSIGNED, FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB},
+        {"adrcState", -1, FLIGHT_LOG_FIELD_UNSIGNED, FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB},
+        {"adrcGateResetCount", -1, FLIGHT_LOG_FIELD_UNSIGNED, FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB},
+    };
+
+    ASSERT_EQ((int)ARRAYLEN(expected), blackboxGetAdrcFieldCountForTest());
+    for (unsigned i = 0; i < ARRAYLEN(expected); i++) {
+        blackboxAdrcFieldDefinitionTest_t actual;
+        ASSERT_TRUE(blackboxGetAdrcFieldDefinitionForTest(i, &actual));
+        EXPECT_STREQ(expected[i].name, actual.name);
+        EXPECT_EQ(expected[i].fieldNameIndex, actual.fieldNameIndex);
+        EXPECT_EQ(expected[i].isSigned, actual.isSigned);
+        EXPECT_EQ(FLIGHT_LOG_FIELD_PREDICTOR_0, actual.Ipredict);
+        EXPECT_EQ(expected[i].Iencode, actual.Iencode);
+        EXPECT_EQ(FLIGHT_LOG_FIELD_PREDICTOR_PREVIOUS, actual.Ppredict);
+        EXPECT_EQ(FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB, actual.Pencode);
+    }
+    blackboxAdrcFieldDefinitionTest_t unused;
+    EXPECT_FALSE(blackboxGetAdrcFieldDefinitionForTest(ARRAYLEN(expected), &unused));
+
+    adrcTestPidProfile = {};
+    currentPidProfile = &adrcTestPidProfile;
+    blackboxConfigMutable()->fields_disabled_mask = 0;
+    adrcTestPidProfile.pid_type = PID_TYPE_ADRC;
+    debugMode = DEBUG_ADRC;
+    EXPECT_TRUE(blackboxAdrcDebugConditionForTest());
+
+    adrcTestPidProfile.pid_type = PID_TYPE_CLASSIC;
+    EXPECT_FALSE(blackboxAdrcDebugConditionForTest());
+    adrcTestPidProfile.pid_type = PID_TYPE_ADRC;
+    debugMode = DEBUG_NONE;
+    EXPECT_FALSE(blackboxAdrcDebugConditionForTest());
+    debugMode = DEBUG_ADRC;
+    blackboxConfigMutable()->fields_disabled_mask = 1u << FLIGHT_LOG_FIELD_SELECT_DEBUG_LOG;
+    EXPECT_FALSE(blackboxAdrcDebugConditionForTest());
+
+    blackboxConfigMutable()->fields_disabled_mask = 0;
+    debugMode = DEBUG_NONE;
+    adrcTestPidProfile.pid_type = PID_TYPE_CLASSIC;
+}
+
+TEST(BlackboxTest, AdrcWireEncodingMatchesFieldOrder)
+{
+    blackboxConfigMutable()->device = BLACKBOX_DEVICE_SERIAL;
+    const blackboxAdrcTestState_t intraframe = {
+        .pidSum = {-10, 0, 300},
+        .commandedCollective = 250,
+        .appliedCollective = 875,
+        .state = 101,
+        .gateResetCount = 123456,
+    };
+
+    serialCaptureSize = 0;
+    blackboxWriteAdrcIntraframeForTest(&intraframe);
+    size_t offset = 0;
+    EXPECT_EQ(-10, readSignedVB(&offset));
+    EXPECT_EQ(0, readSignedVB(&offset));
+    EXPECT_EQ(300, readSignedVB(&offset));
+    EXPECT_EQ(250u, readUnsignedVB(&offset));
+    EXPECT_EQ(875u, readUnsignedVB(&offset));
+    EXPECT_EQ(101u, readUnsignedVB(&offset));
+    EXPECT_EQ(123456u, readUnsignedVB(&offset));
+    EXPECT_EQ(serialCaptureSize, offset);
+
+    const blackboxAdrcTestState_t previous = {
+        .pidSum = {-20, 50, 250},
+        .commandedCollective = 300,
+        .appliedCollective = 800,
+        .state = 97,
+        .gateResetCount = 123450,
+    };
+    serialCaptureSize = 0;
+    blackboxWriteAdrcInterframeForTest(&intraframe, &previous);
+    offset = 0;
+    EXPECT_EQ(10, readSignedVB(&offset));
+    EXPECT_EQ(-50, readSignedVB(&offset));
+    EXPECT_EQ(50, readSignedVB(&offset));
+    EXPECT_EQ(-50, readSignedVB(&offset));
+    EXPECT_EQ(75, readSignedVB(&offset));
+    EXPECT_EQ(4, readSignedVB(&offset));
+    EXPECT_EQ(6, readSignedVB(&offset));
+    EXPECT_EQ(serialCaptureSize, offset);
+    blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
+}
+#endif
+
+TEST(BlackboxTest, Test_servo_field_disable)
+{
+    // CONDITION(SERVOS) used to test the bare FIELD_SELECT(SERVO) constant instead of
+    // isFieldEnabled(), so blackbox_disable_servos could never take the servo fields out of the log
+    servosPresent = true;
+    blackboxConfigMutable()->fields_disabled_mask = 0;
+    EXPECT_TRUE(testBlackboxConditionUncached(FLIGHT_LOG_FIELD_CONDITION_SERVOS));
+
+    blackboxConfigMutable()->fields_disabled_mask = 1 << FLIGHT_LOG_FIELD_SELECT_SERVO;
+    EXPECT_FALSE(testBlackboxConditionUncached(FLIGHT_LOG_FIELD_CONDITION_SERVOS));
+
+    // an enabled field still needs a servo mixer before anything is logged
+    servosPresent = false;
+    blackboxConfigMutable()->fields_disabled_mask = 0;
+    EXPECT_FALSE(testBlackboxConditionUncached(FLIGHT_LOG_FIELD_CONDITION_SERVOS));
+}
+
 
 // STUBS
 extern "C" {
@@ -364,23 +560,27 @@ boxBitmask_t rcModeActivationMask;
 void mspSerialAllocatePorts(void) {}
 uint32_t getArmingBeepTimeMicros(void) {return 0;}
 uint16_t getBatteryVoltageLatest(void) {return 0;}
-bool hasServos(void) { return false; }
+bool hasServos(void) { return servosPresent; }
 uint8_t getMotorCount(void) {return 4;}
 bool areMotorsRunning(void) { return false; }
 bool IS_RC_MODE_ACTIVE(boxId_e) {return false;}
 bool isModeActivationConditionPresent(boxId_e) {return false;}
 uint32_t millis(void) {return 0;}
 bool sensors(uint32_t) {return false;}
-void serialWrite(serialPort_t *, uint8_t) {}
-uint32_t serialTxBytesFree(const serialPort_t *) {return 0;}
+void serialWrite(serialPort_t *, uint8_t value)
+{
+    if (serialCaptureSize < ARRAYLEN(serialCapture)) {
+        serialCapture[serialCaptureSize++] = value;
+    }
+}
+uint32_t serialTxBytesFree(const serialPort_t *) {return ARRAYLEN(serialCapture) - serialCaptureSize;}
 bool isSerialTransmitBufferEmpty(const serialPort_t *) {return false;}
 bool featureIsEnabled(uint32_t) {return false;}
 void mspSerialReleasePortIfAllocated(serialPort_t *) {}
-const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
 serialPort_t *findSharedSerialPort(uint16_t , serialPortFunction_e ) {return NULL;}
 serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return NULL;}
 void closeSerialPort(serialPort_t *) {}
-portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e ) {return PORTSHARING_UNUSED;}
+portSharing_e determinePortSharing(serialPortIdentifier_e, serialPortFunction_e ) {return PORTSHARING_UNUSED;}
 failsafePhase_e failsafePhase(void) {return FAILSAFE_IDLE;}
 bool rxAreFlightChannelsValid(void) {return false;}
 bool isRxReceivingSignal(void) {return false;}

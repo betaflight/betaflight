@@ -427,3 +427,4 @@ float getGpsCosLat(void);
 
 baudRate_e getGpsPortActualBaudRateIndex(void);
 uint32_t gpsDateTimeToEpoch(const gpsDateTime_t *dt);
+void gpsUnixSecondsToDateTime(gpsDateTime_t *dt, int64_t unixSeconds, uint16_t millis);

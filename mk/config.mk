@@ -2,7 +2,13 @@
 CONFIGS_REPO_URL ?= https://github.com/betaflight/config
 # handle only this directory as config submodule
 CONFIGS_SUBMODULE_DIR := src/config
-BASE_CONFIGS           = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(CONFIG_DIR)/configs/*/config.h)))))
+# Configs live either flat (configs/<BOARD>/config.h) or grouped by manufacturer
+# (configs/<MANUFACTURER_ID>/<BOARD>/config.h). Both are accepted; the leaf
+# directory name is always the board name. The two globs never overlap because a
+# manufacturer directory holds board directories, not a config.h of its own.
+BASE_CONFIGS           = $(sort $(notdir $(patsubst %/,%,$(dir \
+                             $(wildcard $(CONFIG_DIR)/configs/*/config.h) \
+                             $(wildcard $(CONFIG_DIR)/configs/*/*/config.h)))))
 
 ifneq ($(words $(CONFIG_DIR)),1)
 $(error CONFIG_DIR/BETAFLIGHT_CONFIG path contains whitespace; unsupported by GNU make wildcard.)
@@ -19,12 +25,30 @@ ifneq ($(TARGET),)
 $(error TARGET or CONFIG should be specified. Not both.)
 endif
 
-CONFIG_HEADER_FILE  = $(CONFIG_DIR)/configs/$(CONFIG)/config.h
-CONFIG_SOURCE_FILE  = $(CONFIG_DIR)/configs/$(CONFIG)/config.c
-INCLUDE_DIRS       += $(CONFIG_DIR)/configs/$(CONFIG)
+# Locate the board's config directory, accepting a flat (configs/<BOARD>) or a
+# manufacturer-grouped (configs/<MANUFACTURER_ID>/<BOARD>) layout. A flat match
+# wins; otherwise search one manufacturer level down and reject only a grouped
+# name that resolves to more than one manufacturer.
+CONFIG_FLAT_MATCH  := $(wildcard $(CONFIG_DIR)/configs/$(CONFIG)/config.h)
+ifneq ($(CONFIG_FLAT_MATCH),)
+CONFIG_PATH        := $(patsubst %/,%,$(dir $(CONFIG_FLAT_MATCH)))
+else
+CONFIG_MATCHES     := $(wildcard $(CONFIG_DIR)/configs/*/$(CONFIG)/config.h)
+ifneq ($(word 2,$(CONFIG_MATCHES)),)
+$(error Ambiguous CONFIG '$(CONFIG)' matches multiple configs: $(CONFIG_MATCHES))
+endif
+CONFIG_PATH        := $(patsubst %/,%,$(dir $(firstword $(CONFIG_MATCHES))))
+endif
+ifeq ($(CONFIG_PATH),)
+$(error CONFIG '$(CONFIG)' not found under $(CONFIG_DIR)/configs (flat or <manufacturer>/<board>).)
+endif
 
-# include $(CONFIG)/config.mk if it exists
--include $(CONFIG_DIR)/configs/$(CONFIG)/config.mk
+CONFIG_HEADER_FILE  = $(CONFIG_PATH)/config.h
+CONFIG_SOURCE_FILE  = $(CONFIG_PATH)/config.c
+INCLUDE_DIRS       += $(CONFIG_PATH)
+
+# include the config's config.mk if it exists
+-include $(CONFIG_PATH)/config.mk
 
 # OCTOSPI_FLASH_CHIP selects the flash chip wired to the OCTOSPI/XSPI peripheral.
 # Set in per-config config.mk (e.g. OCTOSPI_FLASH_CHIP := MX66UW1G45G). Emits both

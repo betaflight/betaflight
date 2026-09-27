@@ -40,6 +40,7 @@
 #include "config/config.h"
 #include "fc/core.h"
 #include "fc/rc.h"
+#include "fc/tasks.h"
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
@@ -428,4 +429,8 @@ void rcControlsInit(void)
 {
     analyzeModeActivationConditions();
     isUsingSticksToArm = !isModeActivationConditionPresent(BOXARM) && systemConfig()->enableStickArming;
+    // Mode ranges change live over MSP, so any task gated on a mode being assigned has to
+    // be re-evaluated here rather than only at boot. Safe before tasksInit(), which starts
+    // by clearing the scheduler queue and re-enabling everything.
+    tasksUpdateModeGatedEnables();
 }

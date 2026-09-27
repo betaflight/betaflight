@@ -198,4 +198,10 @@ uint8_t usbVcpIsConnected(void)
     return usbConnected;
 }
 
+uint8_t usbVcpIsActive(void)
+{
+    // SOF tracking above already expires on unplug, so it never latches
+    return usbVcpIsConnected();
+}
+
 #endif // USE_VCP

@@ -375,15 +375,21 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         pidRuntime.pidCoefficient[axis].Kd = DTERM_SCALE * pidProfile->pid[axis].D;
         pidRuntime.pidCoefficient[axis].Kf = FEEDFORWARD_SCALE * (pidProfile->pid[axis].F * 0.01f);
     }
-
 #ifdef USE_ADRC
     adrcInitConfig(&pidProfile->adrc, &pidRuntime.adrc, pidRuntime.dT);
+    adrcSetGroundWc(&pidRuntime.adrc, pidProfile->adrc_ground_wc, pidProfile->adrc_wc_ramp_ms,
+        pidProfile->adrc_ground_dgain);
+    adrcSetB0ScaleMin(&pidRuntime.adrc, pidProfile->adrc_b0_scale_min);
+    adrcSetSatZ3Inhibit(&pidRuntime.adrc, pidProfile->adrc_sat_z3_inhibit != 0);
+    adrcInitZ3LogScale(&pidRuntime.adrc, &pidProfile->adrc,
+        pidProfile->pidSumLimit, pidProfile->pidSumLimitYaw);
 
     // Stock PID-profile selection paths reject changes while armed. Treat a pid_type change here
     // as a disarmed control-law configuration transition, not as an in-flight handover promise:
     // clear both classic I and ADRC observer/output memory so neither controller inherits the
-    // other's state on the next arm. Same-type pidInitConfig() calls still preserve ADRC state;
-    // adjustment ranges legitimately use that path while armed.
+    // other's state on the next arm. Same-type calls preserve the gate and per-axis observer/output
+    // state, while adrcInitConfig() still resets the b0 scheduling cache; adjustment ranges
+    // legitimately use that path while armed.
     if (pidProfile->pid_type != pidRuntime.activePidType) {
         pidResetIterm();
         if (!ARMING_FLAG(ARMED)) {
@@ -393,12 +399,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     }
 #endif
 
-#ifdef USE_INTEGRATED_YAW_CONTROL
-    if (!pidProfile->use_integrated_yaw)
-#endif
-    {
-        pidRuntime.pidCoefficient[FD_YAW].Ki *= 2.5f;
-    }
+    pidRuntime.pidCoefficient[FD_YAW].Ki *= 2.5f;
     pidRuntime.angleGain = pidProfile->pid[PID_LEVEL].P / 10.0f;
     pidRuntime.angleFeedforwardGain = pidProfile->pid[PID_LEVEL].F / 100.0f;
 #ifdef USE_ACC
@@ -501,10 +502,6 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.launchControlKi = ITERM_SCALE * pidProfile->launchControlGain;
 #endif
 
-#ifdef USE_INTEGRATED_YAW_CONTROL
-    pidRuntime.useIntegratedYaw = pidProfile->use_integrated_yaw;
-    pidRuntime.integratedYawRelax = pidProfile->integrated_yaw_relax;
-#endif
 
 #ifdef USE_THRUST_LINEARIZATION
     pidRuntime.thrustLinearization = pidProfile->thrustLinearization / 100.0f;

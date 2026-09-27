@@ -73,13 +73,15 @@ extern "C" {
     static bool simulatorBoxBeeperOn = false;
     static bool simulatorBoxBeeperMute = false;
     static bool simulatorFailsafeRxDataReceived = true;
+    static bool simulatorFailsafeMonitoring = true;
     static bool simulatorMotorsRunning = false;
     static timeUs_t simulatorLastDisarmTimeUs = 0;
     static bool simulatorTryingToArm = false;
     static uint8_t simulatorMotorCount = 4;
     static timeUs_t simulatorCurrentTimeUs = 10000000;  // 10 seconds after boot
     static batteryState_e simulatorBatteryState = BATTERY_OK;
-    static bool simulatorUsbCableInserted = false;
+    static bool simulatorUsbActive = false;
+    static bool simulatorUsbInsertedQueried = false;
     static int dshotCommandWriteCount = 0;
     static bool beeperOnState = false;
 }
@@ -94,13 +96,15 @@ protected:
         simulatorBoxBeeperOn = false;
         simulatorBoxBeeperMute = false;
         simulatorFailsafeRxDataReceived = true;
+        simulatorFailsafeMonitoring = true;
         simulatorMotorsRunning = false;
         simulatorLastDisarmTimeUs = 0;
         simulatorTryingToArm = false;
         simulatorMotorCount = 4;
         simulatorCurrentTimeUs = 10000000;
         simulatorBatteryState = BATTERY_OK;
-        simulatorUsbCableInserted = false;
+        simulatorUsbActive = false;
+        simulatorUsbInsertedQueried = false;
         dshotCommandWriteCount = 0;
         beeperOnState = false;
 
@@ -143,26 +147,28 @@ TEST_F(BeeperTest, BeeperUsbFlagOn_ConfiguratorNotActive_BeeperSounds)
     EXPECT_TRUE(isBeeperOn());
 }
 
-TEST_F(BeeperTest, BeeperUsbFlagOn_ConfiguratorActive_BeeperSilent)
+TEST_F(BeeperTest, BeeperUsbFlagOn_ConfiguratorActive_NoBattery_BeeperSilent)
 {
-    // BEEPER_USB set in off_flags AND configurator active → should be silenced
+    // BEEPER_USB set in off_flags, configurator active, no battery (bench) → should be silenced
     beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
     simulatorMspConfiguratorActive = true;
+    simulatorBatteryState = BATTERY_NOT_PRESENT;
 
     beeper(BEEPER_RX_SET);
     EXPECT_FALSE(isBeeperOn());
 }
 
-TEST_F(BeeperTest, BeeperUsbFlagOn_ConfiguratorActive_BatteryPresent_BeeperSilent)
+TEST_F(BeeperTest, BeeperUsbFlagOn_ConfiguratorActive_BatteryPresent_BeeperSounds)
 {
-    // Key regression: BEEPER_USB + configurator active + battery present → must be silent
-    // Previously this would have sounded because only BATTERY_NOT_PRESENT was checked
+    // Regression betaflight#15423: BEEPER_USB + configurator active + battery present
+    // must still sound — USB suppression is a bench-only (no battery) feature.
     beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
     simulatorMspConfiguratorActive = true;
     simulatorBatteryState = BATTERY_OK;  // battery present!
 
     beeper(BEEPER_RX_SET);
-    EXPECT_FALSE(isBeeperOn());
+    beeperUpdate(simulatorCurrentTimeUs);
+    EXPECT_TRUE(isBeeperOn());
 }
 
 TEST_F(BeeperTest, BeeperMute_SilencesBeeper)
@@ -178,10 +184,11 @@ TEST_F(BeeperTest, BeeperMute_SilencesBeeper)
 
 TEST_F(BeeperTest, BeeperUsbFlagOn_UsbInserted_ConfiguratorNotActive_BeeperSilent)
 {
-    // USB cable present but MSP idle (>5s polling gap) → must still be silenced
+    // USB cable present but MSP idle (>5s polling gap), no battery (bench) → must still be silenced
     beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
     simulatorMspConfiguratorActive = false;
-    simulatorUsbCableInserted = true;
+    simulatorUsbActive = true;
+    simulatorBatteryState = BATTERY_NOT_PRESENT;
 
     beeper(BEEPER_RX_SET);
     EXPECT_FALSE(isBeeperOn());
@@ -191,7 +198,7 @@ TEST_F(BeeperTest, BeeperUsbFlagOff_UsbInserted_BeeperSounds)
 {
     // BEEPER_USB not set → USB cable alone must not silence the beeper
     beeperConfigMutable()->beeper_off_flags = 0;
-    simulatorUsbCableInserted = true;
+    simulatorUsbActive = true;
 
     beeper(BEEPER_RX_SET);
     beeperUpdate(simulatorCurrentTimeUs);
@@ -228,6 +235,7 @@ TEST_F(BeeperTest, DshotBeaconRxSet_UsbFlagOn_ConfiguratorActive_Silent)
     simulatorFailsafeRxDataReceived = true;
     simulatorMotorsRunning = false;
     simulatorLastDisarmTimeUs = 0;
+    simulatorBatteryState = BATTERY_NOT_PRESENT;
     beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
 
     beeper(BEEPER_RX_SET);
@@ -236,6 +244,25 @@ TEST_F(BeeperTest, DshotBeaconRxSet_UsbFlagOn_ConfiguratorActive_Silent)
     beeperUpdate(simulatorCurrentTimeUs);
 
     EXPECT_EQ(dshotCommandWriteCount, 0);
+}
+
+TEST_F(BeeperTest, DshotBeaconRxSet_UsbFlagOn_ConfiguratorActive_BatteryPresent_Sounds)
+{
+    // Regression betaflight#15423: USB flag + configurator active + battery present
+    // must still fire the DShot beacon — bench-only suppression must not affect flight.
+    simulatorBoxBeeperOn = true;
+    simulatorFailsafeRxDataReceived = true;
+    simulatorMotorsRunning = false;
+    simulatorLastDisarmTimeUs = 0;
+    simulatorBatteryState = BATTERY_OK;
+    beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
+
+    beeper(BEEPER_RX_SET);
+    simulatorCurrentTimeUs = 250000000;
+    simulatorMspConfiguratorActive = true;
+    beeperUpdate(simulatorCurrentTimeUs);
+
+    EXPECT_GT(dshotCommandWriteCount, 0);
 }
 
 TEST_F(BeeperTest, DshotBeaconRxSet_UsbFlagOn_ConfiguratorNotActive_Sounds)
@@ -261,9 +288,9 @@ TEST_F(BeeperTest, DshotBeaconRxLost_ConfiguratorActive_Silent)
     simulatorMotorsRunning = false;
     simulatorLastDisarmTimeUs = 0;
     beeperConfigMutable()->dshotBeaconOffFlags = 0;
+    simulatorFailsafeRxDataReceived = false;
     simulatorMspConfiguratorActive = true;
 
-    beeper(BEEPER_RX_LOST);
     simulatorCurrentTimeUs = 400000000;
     beeperUpdate(simulatorCurrentTimeUs);
 
@@ -276,12 +303,105 @@ TEST_F(BeeperTest, DshotBeaconRxLost_ConfiguratorNotActive_Sounds)
     simulatorMotorsRunning = false;
     simulatorLastDisarmTimeUs = 0;
     beeperConfigMutable()->dshotBeaconOffFlags = 0;
+    simulatorFailsafeRxDataReceived = false;
     simulatorMspConfiguratorActive = false;
 
-    beeper(BEEPER_RX_LOST);
     simulatorCurrentTimeUs = 500000000;
     beeperUpdate(simulatorCurrentTimeUs);
 
+    EXPECT_GT(dshotCommandWriteCount, 0);
+}
+
+TEST_F(BeeperTest, DshotBeaconRxLost_RxLinkUp_Silent)
+{
+    // Negative control: the link is healthy, so the lost-model beacon must stay quiet
+    simulatorMotorsRunning = false;
+    simulatorLastDisarmTimeUs = 0;
+    beeperConfigMutable()->dshotBeaconOffFlags = 0;
+    simulatorFailsafeRxDataReceived = true;
+
+    simulatorCurrentTimeUs = 600000000;
+    beeperUpdate(simulatorCurrentTimeUs);
+
+    EXPECT_EQ(dshotCommandWriteCount, 0);
+}
+
+TEST_F(BeeperTest, DshotBeaconRxLost_FailsafeNotMonitoring_Silent)
+{
+    // Before failsafe monitoring starts (power-on delay) there is no RX loss to report
+    simulatorMotorsRunning = false;
+    simulatorLastDisarmTimeUs = 0;
+    beeperConfigMutable()->dshotBeaconOffFlags = 0;
+    simulatorFailsafeRxDataReceived = false;
+    simulatorFailsafeMonitoring = false;
+
+    simulatorCurrentTimeUs = 700000000;
+    beeperUpdate(simulatorCurrentTimeUs);
+
+    EXPECT_EQ(dshotCommandWriteCount, 0);
+}
+
+// =============================================================================
+// #15473: the lost-model beacon must not depend on the piezo sequence state.
+// Anything that silences beeper() - a held BEEPER MUTE switch, BEEPER_USB
+// suppression - used to take the ESC beacon down with it.
+// =============================================================================
+
+TEST_F(BeeperTest, DshotBeaconRxLost_BeeperMuted_StillSounds)
+{
+    // BOXBEEPERMUTE held through the RX loss silences the piezo, not the beacon
+    simulatorMotorsRunning = false;
+    simulatorLastDisarmTimeUs = 0;
+    beeperConfigMutable()->dshotBeaconOffFlags = 0;
+    simulatorFailsafeRxDataReceived = false;
+    simulatorBoxBeeperMute = true;
+
+    simulatorCurrentTimeUs = 800000000;
+    beeperUpdate(simulatorCurrentTimeUs);
+
+    EXPECT_FALSE(isBeeperOn());
+    EXPECT_GT(dshotCommandWriteCount, 0);
+}
+
+TEST_F(BeeperTest, DshotBeaconRxLost_UsbSuppressedPiezo_StillSounds)
+{
+    // BEEPER_USB suppression applies to the piezo; the beacon is gated on the configurator
+    // only, so a USB session must not mute the lost-model finder
+    simulatorMotorsRunning = false;
+    simulatorLastDisarmTimeUs = 0;
+    beeperConfigMutable()->dshotBeaconOffFlags = 0;
+    beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
+    simulatorFailsafeRxDataReceived = false;
+    simulatorUsbActive = true;
+    simulatorMspConfiguratorActive = false;
+
+    simulatorCurrentTimeUs = 900000000;
+    beeperUpdate(simulatorCurrentTimeUs);
+
+    EXPECT_FALSE(isBeeperOn());
+    EXPECT_GT(dshotCommandWriteCount, 0);
+}
+
+TEST_F(BeeperTest, DshotBeaconRxLost_UsbUnpluggedAfterSession_Sounds)
+{
+    // #15423 regression: usbCableIsInserted() latches, so it kept suppressing the piezo - and
+    // through currentBeeperEntry the beacon - for the whole session after one bench connection
+    simulatorMotorsRunning = false;
+    simulatorLastDisarmTimeUs = 0;
+    beeperConfigMutable()->dshotBeaconOffFlags = 0;
+    beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
+    simulatorFailsafeRxDataReceived = false;
+    simulatorBatteryState = BATTERY_NOT_PRESENT;
+    simulatorUsbActive = false;          // cable pulled, MSP has gone quiet
+    simulatorMspConfiguratorActive = false;
+
+    beeper(BEEPER_RX_LOST);
+    simulatorCurrentTimeUs = 1000000000;
+    beeperUpdate(simulatorCurrentTimeUs);
+
+    // The stubbed usbCableIsInserted() reports a stale 'inserted'; suppression must not read it
+    EXPECT_FALSE(simulatorUsbInsertedQueried);
+    EXPECT_TRUE(isBeeperOn());
     EXPECT_GT(dshotCommandWriteCount, 0);
 }
 
@@ -296,7 +416,7 @@ TEST_F(BeeperTest, SequencePlayback_NotSuppressed_Sounds)
 {
     // Positive control: queue with BEEPER_USB set but nothing engaging suppression.
     beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
-    simulatorUsbCableInserted = false;
+    simulatorUsbActive = false;
     simulatorMspConfiguratorActive = false;
 
     beeper(BEEPER_RX_SET);
@@ -307,9 +427,10 @@ TEST_F(BeeperTest, SequencePlayback_NotSuppressed_Sounds)
 TEST_F(BeeperTest, SequencePlayback_SuppressedAfterQueue_StaysSilent)
 {
     beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
+    simulatorBatteryState = BATTERY_NOT_PRESENT;
 
     // Queue the sequence while NOT suppressed (USB idle, configurator idle).
-    simulatorUsbCableInserted = false;
+    simulatorUsbActive = false;
     simulatorMspConfiguratorActive = false;
     beeper(BEEPER_RX_SET);
 
@@ -319,6 +440,23 @@ TEST_F(BeeperTest, SequencePlayback_SuppressedAfterQueue_StaysSilent)
     // beeperUpdate() must re-check suppression on the BeepOn step and stay silent.
     beeperUpdate(simulatorCurrentTimeUs);
     EXPECT_FALSE(isBeeperOn());
+}
+
+TEST_F(BeeperTest, SequencePlayback_SuppressedConditionsButBatteryPresent_Sounds)
+{
+    // Regression betaflight#15423: even if USB/configurator suppression conditions
+    // are met, a battery present means suppression must not engage.
+    beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
+    simulatorBatteryState = BATTERY_OK;
+
+    simulatorUsbActive = false;
+    simulatorMspConfiguratorActive = false;
+    beeper(BEEPER_RX_SET);
+
+    simulatorMspConfiguratorActive = true;
+
+    beeperUpdate(simulatorCurrentTimeUs);
+    EXPECT_TRUE(isBeeperOn());
 }
 
 // =============================================================================
@@ -332,8 +470,15 @@ bool mspSerialIsConfiguratorActive(void) {
 }
 
 // -- USB --
+bool usbCableIsActive(void) {
+    return simulatorUsbActive;
+}
+
+// The latching signal. Nothing in beeper.c may use it, so this stub models the worst case -
+// a session that enumerated once and never cleared - and records that it was consulted at all.
 bool usbCableIsInserted(void) {
-    return simulatorUsbCableInserted;
+    simulatorUsbInsertedQueried = true;
+    return true;
 }
 
 // -- RC modes --
@@ -348,6 +493,10 @@ bool IS_RC_MODE_ACTIVE(boxId_e boxId) {
 // -- Failsafe --
 bool failsafeIsReceivingRxData(void) {
     return simulatorFailsafeRxDataReceived;
+}
+
+bool failsafeIsMonitoring(void) {
+    return simulatorFailsafeMonitoring;
 }
 
 // -- Motor / mixer --

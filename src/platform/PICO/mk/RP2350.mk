@@ -423,7 +423,16 @@ PICO_MEM_WRAP_FNS = \
 
 PICO_MEM_LD_FLAGS = $(foreach fn, $(PICO_MEM_WRAP_FNS), -Wl,--wrap=$(fn))
 
-EXTRA_LD_FLAGS += $(PICO_STDIO_LD_FLAGS) $(PICO_TRACE_LD_FLAGS) $(PICO_FLOAT_LD_FLAGS) $(PICO_DOUBLE_LD_FLAGS) $(PICO_BIT_OPS_LD_FLAGS) $(PICO_MEM_LD_FLAGS)
+PICO_LIB_SRC += \
+            PICO/math_pico.S
+
+# Wrapped version of lrintf (nearest integer to float) for vcvtn instruction instead of slow library function
+PICO_MATH_WRAP_FNS = \
+            lrintf
+
+PICO_MATH_WRAP_FLAGS = $(foreach fn, $(PICO_MATH_WRAP_FNS), -Wl,--wrap=$(fn))
+
+EXTRA_LD_FLAGS += $(PICO_STDIO_LD_FLAGS) $(PICO_TRACE_LD_FLAGS) $(PICO_FLOAT_LD_FLAGS) $(PICO_DOUBLE_LD_FLAGS) $(PICO_BIT_OPS_LD_FLAGS) $(PICO_MEM_LD_FLAGS) $(PICO_MATH_WRAP_FLAGS)
 
 ifdef RP2350_TARGET
 
@@ -487,7 +496,7 @@ DEVICE_FLAGS    += \
 # Set the sizes of flash and contents in LD_SCRIPT, other linker files loaded via EXTRA_LD_FLAGS.
 
 # Optional board-specific linker script for setting the size of the primary flash, and the allocation for fonts.
-CONFIG_FLASH_MEM_SCRIPT = $(CONFIG_DIR)/configs/$(CONFIG)/pico_flash_mem.ld
+CONFIG_FLASH_MEM_SCRIPT = $(CONFIG_PATH)/pico_flash_mem.ld
 
 # If pico_flash_mem.ld exists in the config folder, use that, otherwise load defaults from pico_flash_mem_defaults.ld
 ifneq ($(wildcard $(CONFIG_FLASH_MEM_SCRIPT)),)
@@ -577,6 +586,9 @@ MCU_COMMON_SRC = \
             PICO/osd/font_betaflight.c \
             PICO/osd/fb_osd_pico.c \
             PICO/osd/osd_element_ah.c \
+            PICO/osd/osd_element_altitude.c \
+            PICO/osd/osd_element_compassbar.c \
+            PICO/osd/osd_element_crosshairs.c \
             PICO/osd/osd_elements_pico.c \
             PICO/osd/osd_pico.c \
             PICO/persistent.c \

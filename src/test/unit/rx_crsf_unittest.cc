@@ -515,8 +515,7 @@ int16_t debug[DEBUG16_VALUE_COUNT];
 uint32_t micros(void) {return dummyTimeUs;}
 uint32_t microsISR(void) {return micros();}
 serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return NULL;}
-const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
-bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return false;}
+bool telemetryCheckRxPortShared(serialPortIdentifier_e, SerialRXType) {return false;}
 serialPort_t *telemetrySharedPort = NULL;
 void crsfScheduleDeviceInfoResponse(void) {};
 void crsfScheduleMspResponse(uint8_t ) {};
@@ -524,4 +523,5 @@ bool bufferMspFrame(uint8_t *, int) {return true;}
 bool isBatteryVoltageAvailable(void) { return true; }
 bool isAmperageAvailable(void) { return true; }
 timeUs_t rxFrameTimeUs(void) { return 0; }
+void schedulerIgnoreTaskExecTime(void) {}
 }

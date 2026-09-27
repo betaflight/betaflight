@@ -12,6 +12,7 @@ DEFAULT_OUTPUT := bin
 # final $(TARGET_BIN) for one-step flashing at 0x0 and delete the temp. The
 # bootloader is built from source by default; see tools.mk and bin/README.md.
 BIN_FROM_ELF_CMD = $(ESP_ELF2IMAGE_TMP) && $(ESP_FLASH_IMAGE_CMD)
+BIN_FROM_ELF_DEPS = $(ESP_BOOTLOADER_INPUTS)
 
 # Auto-hydrate esp-idf submodule when building ESP32 targets
 PLATFORM_SDK := esp_idf

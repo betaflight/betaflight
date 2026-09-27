@@ -68,7 +68,8 @@ typedef enum {
     ARMING_DISABLED_CRASHFLIP       = (1 << 25),
     ARMING_DISABLED_ALTHOLD         = (1 << 26),
     ARMING_DISABLED_POSHOLD         = (1 << 27),
-    ARMING_DISABLED_ARM_SWITCH      = (1 << 28) // Needs to be the last element, since it's always activated if one of the others is active when arming
+    ARMING_DISABLED_AUTOPILOT       = (1 << 28),
+    ARMING_DISABLED_ARM_SWITCH      = (1 << 29) // Needs to be the last element, since it's always activated if one of the others is active when arming
 } armingDisableFlags_e;
 
 #define ARMING_DISABLE_FLAGS_COUNT (LOG2(ARMING_DISABLED_ARM_SWITCH) + 1)
@@ -92,7 +93,8 @@ typedef enum {
 //    RANGEFINDER_MODE= (1 << 9),
     FAILSAFE_MODE   = (1 << 10),
     GPS_RESCUE_MODE = (1 << 11),
-    AUTOPILOT_MODE  = (1 << 12)  // GPS waypoint tracking
+    AUTOPILOT_MODE  = (1 << 12), // GPS waypoint tracking
+    LAUNCH_MODE     = (1 << 13)  // fixed-wing launch assist
 } flightModeFlags_e;
 
 extern uint16_t flightModeFlags;

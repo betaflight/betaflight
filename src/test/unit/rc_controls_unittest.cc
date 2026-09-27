@@ -785,4 +785,5 @@ void setLedBrightness(uint8_t brightness) { UNUSED(brightness); }
 void compassStartCalibration(void) {}
 void pinioBoxTaskControl(void) {}
 void schedulerIgnoreTaskExecTime(void) {}
+void tasksUpdateModeGatedEnables(void) {}
 }

@@ -243,8 +243,6 @@ typedef struct pidProfile_s {
     uint8_t launchControlAngleLimit;        // Optional launch control angle limit (requires ACC)
     uint8_t launchControlGain;              // Iterm gain used while launch control is active
     uint8_t launchControlAllowTriggerReset; // Controls trigger behavior and whether the trigger can be reset
-    uint8_t use_integrated_yaw;             // Selects whether the yaw pidsum should integrated
-    uint8_t integrated_yaw_relax;           // Specifies how much integrated yaw should be reduced to offset the drag based yaw component
     uint8_t thrustLinearization;            // Thrust curve compensation, ≈ ArduPilot MOT_THST_EXPO * 100 (0..150, default 0)
     uint8_t d_max[XYZ_AXIS_COUNT];          // Maximum D value on each axis
     uint8_t d_max_gain;                     // Gain factor for amount of gyro / setpoint activity required to boost D
@@ -336,6 +334,13 @@ typedef struct pidProfile_s {
     uint16_t chirp_frequency_start_deci_hz; // start frequency in units of 0.1 hz
     uint16_t chirp_frequency_end_deci_hz;   // end frequency in units of 0.1 hz
     uint8_t chirp_time_seconds;             // excitation time
+    // ADRC tester settings (ADRC-030..033). Adding a field here changes sizeof(pidProfile_t) and therefore the
+    // stride of the pidProfiles PG array: bump the PG version in pid.c whenever this block changes.
+    uint8_t adrc_ground_wc;                 // wc [rad/s] while the liftoff gate is closed, all axes, capped at adrc_wc_*; 0 = off
+    uint16_t adrc_wc_ramp_ms;               // ramp from adrc_ground_wc to adrc_wc_* after the gate opens; 0 = switch
+    uint8_t adrc_ground_dgain;              // x0.1: also cap the ground wc at dgain * b0 / (2 * wo) per axis; 0 = off
+    uint8_t adrc_b0_scale_min;              // %: floor of the throttle->b0 schedule below hover (ADRC-031); 100 = scale only up
+    uint8_t adrc_sat_z3_inhibit;            // ADRC-033: inhibit z3 growth while the mixer is saturated; 0 = off
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -479,11 +484,6 @@ typedef struct pidRuntime_s {
     float launchControlKi;
 #endif
 
-#ifdef USE_INTEGRATED_YAW_CONTROL
-    bool useIntegratedYaw;
-    uint8_t integratedYawRelax;
-#endif
-
 #ifdef USE_THRUST_LINEARIZATION
     float thrustLinearization;
 #endif
@@ -574,6 +574,7 @@ bool pidAntiGravityEnabled(void);
 // authority signal (zero when the mixer applied no axis command at all - motor stop, Crash Flip);
 // see the definition in pid.c for why the proportional factor is deliberately not applied.
 void pidUpdateAdrcAppliedOutput(const pidProfile_t *pidProfile, float axisScale, float yawSumLimit);
+void pidUpdateAdrcMixerSaturation(const pidProfile_t *pidProfile, bool saturated);
 #endif
 
 #ifdef USE_THRUST_LINEARIZATION
@@ -594,6 +595,9 @@ float calcHorizonLevelStrength(void);
 
 void dynLpfDTermUpdate(float throttle);
 void pidSetItermReset(bool enabled);
+#ifdef USE_WING
+void pidResetTpaSpeed(void);
+#endif
 float pidGetPreviousSetpoint(int axis);
 float pidGetDT(void);
 float pidGetPidFrequency(void);

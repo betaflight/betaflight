@@ -357,14 +357,15 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #endif
     {
 #if defined(STM32N6) || defined(STM32H5) || defined(STM32C5)
-        /* On GPDMA the CCxIF level-sensitive request stays asserted
-         * after each transfer, so a CCxDE-triggered channel races
-         * through the whole DShot frame in microseconds — by the time
-         * the next UEV latches preload to active, the trailing zero
-         * has already overwritten the bit value and the pin never
-         * pulses. Use the update event (UEV / UDE) instead: it's
-         * edge-triggered, so the channel gets exactly one transfer
-         * per TIM cycle, matching the DShot bit period. */
+        /* Empirically, a CCxDE-driven GPDMA channel re-fires
+         * continuously and races through the whole DShot frame in
+         * microseconds — by the time the next UEV latches preload to
+         * active, the trailing zero has already overwritten the bit
+         * value and the pin never pulses. RM0481 documents no semantic
+         * difference between the CC and UP DMA requests; the update
+         * event (UEV / UDE) is the configuration proven to work,
+         * giving exactly one transfer per TIM cycle, matching the
+         * DShot bit period. */
         motor->timerDmaSource = TIM_DIER_UDE;
 #else
         motor->timerDmaSource = timerDmaSource(timerHardware->channel);
@@ -400,12 +401,19 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #endif
     {
         motor->dmaBuffer = &dshotDmaBuffer[motorIndex][0];
-        /* Use the timer's UP-event request as the trigger source — see
-         * the comment near motor->timerDmaSource assignment above for
-         * why we can't use the per-channel CCxDE on N6/H5/C5 GPDMA.
-         * Each motor's channel responds independently to TIMx_UP and
-         * writes to its own CCRx. timerHardware->dmaTimUPChannel is
-         * the per-timer GPDMA request ID (e.g. LL_GPDMA1_REQUEST_TIM1_UP). */
+        /* Use the timer's UP-event request — see the comment near the
+         * motor->timerDmaSource assignment above for why the per-channel
+         * CCxDE doesn't work on N6/H5/C5 GPDMA. Each motor's channel
+         * responds independently to TIMx_UP and writes to its own CCRx.
+         * Note: RM0481 (p.715) cautions against routing one hardware
+         * request (REQSEL) to more than one active channel, with "no
+         * user setting error reporting" — which is what happens here
+         * with more than one motor per timer. This configuration is
+         * empirically stable on this workload (all sharing channels
+         * are armed before UDE is enabled and each consumes one grant
+         * per UEV), but be aware of it when debugging multi-motor DMA
+         * anomalies. timerHardware->dmaTimUPChannel is the per-timer
+         * GPDMA request ID (e.g. LL_GPDMA1_REQUEST_TIM1_UP). */
         DMAINIT.Request = timerHardware->dmaTimUPChannel;
         DMAINIT.DestAddress = (uint32_t)timerChCCR(timerHardware);
         DMAINIT.SrcAddress = (uint32_t)motor->dmaBuffer;
@@ -420,14 +428,17 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     DMAINIT.Priority = LL_DMA_HIGH_PRIORITY;
     DMAINIT.Mode = LL_DMA_NORMAL;
 #if defined(STM32N6) || defined(STM32H5)
-    /* N6/H5 GPDMA1 has two AHB/AXI master ports. Source (DMA buffer in
-     * AXISRAM) needs PORT1 = AXI to reach AXISRAM; destination (TIM
-     * peripheral register) needs PORT0 = AHB. Default LL_DMA_StructInit
-     * leaves both at PORT0, which can't reach AXISRAM — source reads
-     * return 0 silently and writes to peripherals on the AXI side don't
-     * land either. Pattern from CubeN6 TIM_DMA reference. C5's HAL2
-     * compat shim exposes LL_DMA without these fields/enums; its single
-     * GPDMA master serves both sides so the defaults work. */
+    /* GPDMA has two master ports. On N6 the split is mandatory: the
+     * source buffer sits in AXISRAM, reachable only via PORT1 (AXI),
+     * while the TIM registers are reached via PORT0 (AHB) — the
+     * both-PORT0 default of LL_DMA_StructInit reads the buffer as
+     * zeros (pattern from the CubeN6 TIM_DMA reference). On H5 both
+     * ports are AHB masters that reach all memories and peripherals
+     * (RM0481 fig. 1); the same split simply picks each port's
+     * zero-latency fast bus multiplexer path: PORT1 to SRAM1, PORT0 to
+     * the APB bridge (RM0481 section 2.1.7). C5's HAL2 compat shim
+     * exposes LL_DMA without these fields/enums; its single GPDMA
+     * master serves both sides so the defaults work. */
     DMAINIT.SrcAllocatedPort = LL_DMA_SRC_ALLOCATED_PORT1;
     DMAINIT.DestAllocatedPort = LL_DMA_DEST_ALLOCATED_PORT0;
 #endif

@@ -105,6 +105,7 @@ extern "C" {
     float axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPIDSum[3];
     rxRuntimeState_t rxRuntimeState = {};
     acc_t acc = {};
+    gyro_t gyro = {};
     bool mockIsUpright = false;
     uint8_t activePidLoopDenom = 1;
 
@@ -1073,6 +1074,7 @@ extern "C" {
     void warningLedUpdate(void) {}
     void beeper(beeperMode_e) {}
     void beeperConfirmationBeeps(uint8_t) {}
+    void tasksUpdateModeGatedEnables(void) {}
     void beeperWarningBeeps(uint8_t) {}
     void beeperSilence(void) {}
     void systemBeep(bool) {}
@@ -1155,6 +1157,8 @@ extern "C" {
     float getAltitudeDerivative(void) {return 0.0f;}
     float getAltitudeCmControl(void) { return 0.0f; }
     float getAltitudeDerivativeControl(void) { return 0.0f; }
+    float getAltitudeAccelerationControl(void) { return 0.0f; }
+
 
     float sin_approx(float) {return 0.0f;}
     float cos_approx(float) {return 1.0f;}
@@ -1196,6 +1200,12 @@ void GPS_distance2d(const gpsLocation_t* /*from*/, const gpsLocation_t* /*to*/, 
     {
         UNUSED(axis);
         return 0.0f;
+    }
+
+    float getMaxRcRate(int axis)
+    {
+        UNUSED(axis);
+        return 720.0f; // nonzero: autopilotInit divides maxVelocity by this
     }
 
     float getGpsCosLat(void) { return 1.0f; }

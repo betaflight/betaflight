@@ -31,7 +31,6 @@ extern float gpsRescueAngle[RP_AXIS_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGREES
 
 void gpsRescueInit(void);
 void gpsRescueUpdate(void);
-float gpsRescueGetYawRate(void);
 bool gpsRescueIsConfigured(void);
 bool gpsRescueIsAvailable(void);
 bool gpsRescueIsHeadingOK(void);

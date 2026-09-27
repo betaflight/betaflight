@@ -29,6 +29,7 @@
 typedef struct canPinConfig_s {
     ioTag_t ioTagTx;
     ioTag_t ioTagRx;
+    ioTag_t ioTagSilent;
 } canPinConfig_t;
 
 PG_DECLARE_ARRAY(canPinConfig_t, CANDEV_COUNT, canPinConfig);

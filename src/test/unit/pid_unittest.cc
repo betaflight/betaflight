@@ -149,7 +149,7 @@ void setDefaultTestSettings(void)
     pidProfile->pid[PID_YAW]   =  { 70, 45, 20, 60, 0 };
     pidProfile->pid[PID_LEVEL] =  { 50, 50, 75, 50, 0 };
 
-    // Compensate for the upscaling done without 'use_integrated_yaw'
+    // Compensate for the upscaling done on the yaw axis
     pidProfile->pid[PID_YAW].I = pidProfile->pid[PID_YAW].I / 2.5f;
 
     pidProfile->pidSumLimit = PIDSUM_LIMIT;        // 500
@@ -1654,4 +1654,57 @@ TEST(pidControllerTest, testAdrcAppliedOutputRejectsInvalidScaleAndClassicProfil
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         EXPECT_FLOAT_EQ(42.0f, pidRuntime.adrc.lastOutput[axis]);
     }
+}
+
+// ADRC-030: the ground-wc fields must stay the trailing bytes of pidProfile_t so a PG version 13
+// (Ordering only. This is NOT a migration guarantee: pidProfiles is a PG array, see PidProfilesPgVersion below.)
+// pidProfiles is one PG array restored by a single memcpy, so a blob written with a different element size must
+// not be loaded at all. The PR line is at version 15; version-13 blobs (b10.1, b11-exp2..exp8) and version-14 blobs (the b11 tester
+// build, which still had adrc_zeta_*) have to leave the defaults in place instead of loading mis-strided.
+extern "C" {
+    extern const pgRegistry_t pidProfiles_Registry;
+}
+TEST(pidProfileLayoutTest, PidProfilesPgVersionRejectsOlderBlobs)
+{
+    EXPECT_EQ(15, pgVersion(&pidProfiles_Registry));
+    // Four 260-byte "old" elements filled with a pattern that would be poison if it were loaded.
+    static uint8_t oldBlob[260 * PID_PROFILE_COUNT];
+    memset(oldBlob, 0xA5, sizeof(oldBlob));
+    EXPECT_FALSE(pgLoad(&pidProfiles_Registry, oldBlob, sizeof(oldBlob), 13));
+    EXPECT_FALSE(pgLoad(&pidProfiles_Registry, oldBlob, sizeof(oldBlob), 14)); // b11 tester build (with adrc_zeta_*)
+    for (int i = 0; i < PID_PROFILE_COUNT; i++) {
+        EXPECT_EQ(10, pidProfilesMutable(i)->adrc_ground_wc);
+        EXPECT_EQ(100, pidProfilesMutable(i)->adrc_b0_scale_min);
+    }
+    // Same version, same size: loads.
+    static pidProfile_t cur[PID_PROFILE_COUNT];
+    for (int i = 0; i < PID_PROFILE_COUNT; i++) { resetPidProfile(&cur[i]); cur[i].adrc_ground_wc = 20 + i; }
+    EXPECT_TRUE(pgLoad(&pidProfiles_Registry, cur, sizeof(cur), 15));
+    for (int i = 0; i < PID_PROFILE_COUNT; i++) {
+        EXPECT_EQ(20 + i, pidProfilesMutable(i)->adrc_ground_wc);
+    }
+}
+
+// b11 defaults (D1-D3 of the PR discussion): ground wc on, SQRT law, b0 floor off, the two opt-ins off.
+TEST(pidProfileLayoutTest, B11DefaultsAreTheVotedOnes)
+{
+    pidProfile_t p;
+    resetPidProfile(&p);
+    EXPECT_EQ(10, p.adrc_ground_wc);
+    EXPECT_EQ(100, p.adrc_wc_ramp_ms);
+    EXPECT_EQ(40, p.adrc_ground_dgain);
+    EXPECT_EQ(100, p.adrc_b0_scale_min);
+    EXPECT_EQ(0, p.adrc_sat_z3_inhibit);
+    EXPECT_EQ(ADRC_B0_LAW_SQRT, p.adrc.b0Law);
+    EXPECT_EQ(35, p.adrc.hoverThrottlePercent);
+}
+
+TEST(pidProfileLayoutTest, AdrcGroundWcFieldsAreAppendedAtTheEnd)
+{
+    EXPECT_GT(offsetof(pidProfile_t, adrc_ground_wc), offsetof(pidProfile_t, chirp_time_seconds));
+    EXPECT_GT(offsetof(pidProfile_t, adrc_wc_ramp_ms), offsetof(pidProfile_t, adrc_ground_wc));
+    EXPECT_GT(offsetof(pidProfile_t, adrc_ground_dgain), offsetof(pidProfile_t, adrc_wc_ramp_ms));
+    EXPECT_GT(offsetof(pidProfile_t, adrc_b0_scale_min), offsetof(pidProfile_t, adrc_ground_dgain));
+    EXPECT_GT(offsetof(pidProfile_t, adrc_sat_z3_inhibit), offsetof(pidProfile_t, adrc_b0_scale_min));
+    EXPECT_LE(sizeof(pidProfile_t) - offsetof(pidProfile_t, adrc_ground_wc), 12u);
 }

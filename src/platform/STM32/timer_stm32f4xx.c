@@ -69,7 +69,7 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM1, CH1,  PA8, 0, 0),
     DEF_TIM(TIM1, CH2,  PA9, 0, 0),
     DEF_TIM(TIM1, CH3,  PA10, 0, 0),
-    DEF_TIM(TIM1, CH1N, PA11, 0, 0),
+    DEF_TIM(TIM1, CH4,  PA11, 0, 0),
     DEF_TIM(TIM2, CH1,  PA15, 0, 0),
 
     DEF_TIM(TIM5, CH1,  PA0, 0, 0),
