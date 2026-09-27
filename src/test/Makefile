@@ -1199,7 +1199,7 @@ $(OBJECT_DIR)/$1/$(basename $1): $$($1_OBJS) \
 # data from an earlier build is not merged into the current run.
 test_$1: $(OBJECT_DIR)/$1/$(basename $1)
 	$(V1) find "$(OBJECT_DIR)/$1" -type f -name '*.gcda' -delete
-	$(V1) $$< $$(EXEC_OPTS) "$(STDOUT)" && echo "running $$@: PASS"
+	$(V1) $$< $$(EXEC_OPTS) "$(STDOUT)"
 
 endef
 
