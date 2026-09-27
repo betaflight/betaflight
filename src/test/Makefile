@@ -154,12 +154,17 @@ accgyro_spi_lsm6dsv16x_unittest_DEFINES = \
                 $(if $1,$(accgyro_spi_lsm6dsv16x_unittest_$1_DEFINES), \
                     USE_ACCGYRO_LSM6DSV16X= USE_ACCGYRO_LSM6DSV32X= USE_ACCGYRO_LSM6DSK320X=)
 
-# This test is disabled due to build errors.
-# Its source code is archived in unit/battery_unittest.cc.txt
-#
-#battery_unittest_SRC := \
-#		$(USER_DIR)/sensors/battery.c \
-#		$(USER_DIR)/common/maths.c
+battery_unittest_SRC := \
+		$(USER_DIR)/sensors/battery.c \
+		$(USER_DIR)/sensors/voltage.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/pg/pg.c
+
+battery_unittest_DEFINES := \
+		USE_ADC=
 
 battery_profile_unittest_SRC := \
 		$(USER_DIR)/sensors/battery.c \
@@ -270,10 +275,15 @@ flight_imu_unittest_SRC := \
 		$(USER_DIR)/flight/imu.c
 
 
-flight_mixer_unittest :=  \
-		$(USER_DIR)/flight/mixer.c \
-		$(USER_DIR)/flight/servos.c \
-		$(USER_DIR)/common/maths.c
+flight_mixer_unittest_SRC := \
+		$(USER_DIR)/flight/mixer_init.c
+
+flight_mixer_unittest_C_FLAGS := -ffunction-sections -fdata-sections
+ifeq ($(OSFAMILY), macosx)
+flight_mixer_unittest_LDFLAGS := -Wl,-dead_strip
+else
+flight_mixer_unittest_LDFLAGS := -Wl,--gc-sections
+endif
 
 
 gps_conversion_unittest_SRC := \
