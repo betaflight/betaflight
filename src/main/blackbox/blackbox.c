@@ -1536,6 +1536,12 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("Firmware type", "%s",                   "Betaflight");
         BLACKBOX_PRINT_HEADER_LINE("Firmware revision", "%s %s (%s) %s",    FC_FIRMWARE_NAME, FC_VERSION_STRING, shortGitRevision, targetName);
         BLACKBOX_PRINT_HEADER_LINE("Firmware date", "%s %s",                buildDate, buildTime);
+#ifdef BUILD_KEY
+        BLACKBOX_PRINT_HEADER_LINE("Build key", "%s",                       buildKey);
+#endif
+#if defined(BUILD_KEY) && defined(RELEASE_NAME)
+        BLACKBOX_PRINT_HEADER_LINE("Release name", "%s",                    releaseName);
+#endif
         BLACKBOX_PRINT_HEADER_LINE("DeviceUID", "%08x%08x%08x",             U_ID_0, U_ID_1, U_ID_2);
 #ifdef USE_BOARD_INFO
         BLACKBOX_PRINT_HEADER_LINE("Board information", "%s %s",            getManufacturerId(), getBoardName());
