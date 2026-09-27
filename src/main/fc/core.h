@@ -31,6 +31,7 @@ typedef struct throttleCorrectionConfig_s {
 typedef enum {
     LAUNCH_CONTROL_DISABLED = 0,
     LAUNCH_CONTROL_ACTIVE,
+    LAUNCH_CONTROL_LIFTING,     // LIFT mode only: timed, stick-independent climb between trigger and handover
     LAUNCH_CONTROL_TRIGGERED,
 } launchControlState_e;
 
@@ -38,6 +39,7 @@ typedef enum {
     LAUNCH_CONTROL_MODE_NORMAL = 0,
     LAUNCH_CONTROL_MODE_PITCHONLY,
     LAUNCH_CONTROL_MODE_FULL,
+    LAUNCH_CONTROL_MODE_LIFT,   // fixed throttle for a fixed time after the trigger, sticks ignored, then hand over
     LAUNCH_CONTROL_MODE_COUNT // must be the last element
 } launchControlMode_e;
 
@@ -60,6 +62,10 @@ typedef enum {
 
 #ifdef USE_LAUNCH_CONTROL
 #define LAUNCH_CONTROL_THROTTLE_TRIGGER_MAX 90
+#define LAUNCH_CONTROL_LIFT_TIME_MIN_MS 100
+#define LAUNCH_CONTROL_LIFT_TIME_MAX_MS 10000
+#define LAUNCH_CONTROL_LIFT_THROTTLE_MIN 25
+#define LAUNCH_CONTROL_LIFT_HANDOVER_NOTICE_MS 1000  // how long the OSD confirms the sticks are live again
 extern const char * const osdLaunchControlModeNames[LAUNCH_CONTROL_MODE_COUNT];
 #endif
 
@@ -96,3 +102,12 @@ void resetTryingToArm(void);
 void subTaskTelemetryPollSensors(timeUs_t currentTimeUs);
 
 bool isLaunchControlActive(void);
+bool isLaunchControlLifting(void);
+float getLaunchControlLiftThrottle(void);
+uint32_t getLaunchControlLiftRemainingMs(void);
+bool isLaunchControlLiftHandoverRecent(void);
+bool isLaunchControlLiftAwaitingTriggerOff(void);
+bool isLaunchControlLiftStaged(void);
+bool isLaunchControlPreStaged(void);
+const char *getLaunchControlLiftPreArmMessage(void);
+void launchControlLiftUpdate(timeUs_t currentTimeUs);

@@ -89,6 +89,7 @@ extern "C" {
     PG_REGISTER(positionConfig_t, positionConfig, PG_SYSTEM_CONFIG, 4);
 
     bool unitLaunchControlActive = false;
+    bool unitLaunchControlLifting = false;
     launchControlMode_e unitLaunchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
 
     float getMotorMixRange(void) { return simulatedMotorMixRange; }
@@ -113,6 +114,7 @@ extern "C" {
     }
     void beeperConfirmationBeeps(uint8_t) { }
     bool isLaunchControlActive(void) {return unitLaunchControlActive; }
+    bool isLaunchControlLifting(void) {return unitLaunchControlLifting; }
     void disarm(flightLogDisarmReason_e) { }
     float getMaxRcRate(int axis)
     {
@@ -213,6 +215,7 @@ void resetTest(void)
 
     flightModeFlags = 0;
     unitLaunchControlActive = false;
+    unitLaunchControlLifting = false;
     pidProfile->launchControlMode = unitLaunchControlMode;
     pidInit(pidProfile);
     loadControlRateProfile();
@@ -1019,6 +1022,71 @@ TEST(pidControllerTest, testLaunchControl)
     EXPECT_NEAR(-1.56,  pidData[FD_PITCH].I, calculateTolerance(-1.56));
     EXPECT_NEAR(44.84,  pidData[FD_YAW].P,   calculateTolerance(44.84));
     EXPECT_NEAR(1.56,   pidData[FD_YAW].I,  calculateTolerance(1.56));
+}
+
+TEST(pidControllerTest, testLaunchControlLift)
+{
+    // While a LIFT is running the sticks must have no effect at all: the controller
+    // holds zero rotation and adds no feedforward, however hard the sticks are moved.
+
+    // Reference: sticks centred, a gyro disturbance on every axis
+    resetTest();
+    unitLaunchControlLifting = true;
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    pidController(pidProfile, currentTestTime());
+    gyro.gyroADCf[FD_ROLL] = 20;
+    gyro.gyroADCf[FD_PITCH] = -20;
+    gyro.gyroADCf[FD_YAW] = 20;
+    pidController(pidProfile, currentTestTime());
+    const float refP[3] = { pidData[FD_ROLL].P, pidData[FD_PITCH].P, pidData[FD_YAW].P };
+
+    // the controller is actively holding the attitude against the disturbance
+    EXPECT_LT(refP[FD_ROLL], 0);
+    EXPECT_GT(refP[FD_PITCH], 0);
+    EXPECT_LT(refP[FD_YAW], 0);
+
+    // Same disturbance, sticks slammed to full deflection mid-lift
+    resetTest();
+    unitLaunchControlLifting = true;
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    pidController(pidProfile, currentTestTime());
+    setStickPosition(FD_ROLL, 1.0f);
+    setStickPosition(FD_PITCH, -1.0f);
+    setStickPosition(FD_YAW, 1.0f);
+    gyro.gyroADCf[FD_ROLL] = 20;
+    gyro.gyroADCf[FD_PITCH] = -20;
+    gyro.gyroADCf[FD_YAW] = 20;
+    pidController(pidProfile, currentTestTime());
+
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        EXPECT_FLOAT_EQ(refP[axis], pidData[axis].P);   // sticks ignored
+        EXPECT_FLOAT_EQ(0, pidData[axis].F);            // no feedforward from the stick move
+    }
+
+    // Lift over: the same stick positions are live again
+    unitLaunchControlLifting = false;
+    pidController(pidProfile, currentTestTime());
+    EXPECT_GT(pidData[FD_ROLL].P, refP[FD_ROLL] + 100);
+
+    // LIFT mode waiting on the ground (launch control ACTIVE): sticks ignored too,
+    // so the pilot can set them for the handover without the quad moving
+    unitLaunchControlMode = LAUNCH_CONTROL_MODE_LIFT;
+    resetTest();
+    unitLaunchControlActive = true;
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    pidController(pidProfile, currentTestTime());
+    setStickPosition(FD_ROLL, 1.0f);
+    setStickPosition(FD_PITCH, 1.0f);
+    setStickPosition(FD_YAW, -1.0f);
+    pidController(pidProfile, currentTestTime());
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        EXPECT_FLOAT_EQ(0, pidData[axis].P);
+        EXPECT_FLOAT_EQ(0, pidData[axis].F);
+    }
+    unitLaunchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
 }
 
 TEST(pidControllerTest, testTpaClassic)

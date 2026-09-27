@@ -105,7 +105,8 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { .boxId = BOXCHIRP, .boxName = "CHIRP", .permanentId = 55},
     { .boxId = BOXAUTOPILOT, .boxName = "AUTOPILOT", .permanentId = 56},
     { .boxId = BOXWPCAPTURE, .boxName = "WP CAPTURE", .permanentId = 57},
-    { .boxId = BOXLAUNCH, .boxName = "LAUNCH", .permanentId = 58}
+    { .boxId = BOXLAUNCH, .boxName = "LAUNCH", .permanentId = 58},
+    { .boxId = BOXLAUNCHTRIGGER, .boxName = "LAUNCH TRIGGER", .permanentId = 59}
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -368,6 +369,7 @@ void initActiveBoxIds(void)
 
 #ifdef USE_LAUNCH_CONTROL
     BME(BOXLAUNCHCONTROL);
+    BME(BOXLAUNCHTRIGGER);
 #endif
 
 #if defined(USE_RX_MSP_OVERRIDE)

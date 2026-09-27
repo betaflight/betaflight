@@ -240,6 +240,8 @@ typedef struct pidProfile_s {
     uint8_t launchControlAngleLimit;        // Optional launch control angle limit (requires ACC)
     uint8_t launchControlGain;              // Iterm gain used while launch control is active
     uint8_t launchControlAllowTriggerReset; // Controls trigger behavior and whether the trigger can be reset
+    uint16_t launchControlLiftTime;         // LIFT mode: how long the lift runs before the sticks take over [ms]
+    uint8_t launchControlLiftThrottle;      // LIFT mode: throttle held during the lift, sticks ignored [%]
     uint8_t thrustLinearization;            // Thrust curve compensation, ≈ ArduPilot MOT_THST_EXPO * 100 (0..150, default 0)
     uint8_t d_max[XYZ_AXIS_COUNT];          // Maximum D value on each axis
     uint8_t d_max_gain;                     // Gain factor for amount of gyro / setpoint activity required to boost D
