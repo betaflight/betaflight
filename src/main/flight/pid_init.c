@@ -481,6 +481,13 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 
 #ifdef USE_THRUST_LINEARIZATION
     pidRuntime.thrustLinearization = pidProfile->thrustLinearization / 100.0f;
+    const float thrustLinearizationFilterGain = pidProfile->thrustLinearizationCutoff < 5
+        ? 1.0f
+        : pt1FilterGain(pidProfile->thrustLinearizationCutoff, pidRuntime.dT);
+    pt1FilterInit(&pidRuntime.thrustLinearizationThrottleFilter, thrustLinearizationFilterGain);
+    for (unsigned i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
+        pt1FilterInit(&pidRuntime.thrustLinearizationMotorFilter[i], thrustLinearizationFilterGain);
+    }
 #endif
 
 #ifdef USE_D_MAX
