@@ -496,7 +496,7 @@ static bool isFieldEnabled(flightLogFieldSelect_e field)
     return (blackboxConfig()->fields_disabled_mask & (1 << field)) == 0;
 }
 
-static bool testBlackboxConditionUncached(flightLogFieldCondition_e condition)
+STATIC_UNIT_TESTED bool testBlackboxConditionUncached(flightLogFieldCondition_e condition)
 {
     switch (condition) {
     case CONDITION(ALWAYS):
@@ -526,7 +526,7 @@ static bool testBlackboxConditionUncached(flightLogFieldCondition_e condition)
 
 #ifdef USE_SERVOS
     case CONDITION(SERVOS):
-        return hasServos() && (FIELD_SELECT(SERVO));
+        return hasServos() && isFieldEnabled(FIELD_SELECT(SERVO));
 #endif
 
     case CONDITION(PID):

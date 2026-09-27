@@ -303,7 +303,11 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
             return false;
         }
     }
-    if (!isfinite(it->param1) || !isfinite(it->param2) || !isfinite(it->param3) || !isfinite(it->param4)) {
+    // NAV_WAYPOINT explicitly permits NaN yaw to select the current system
+    // heading.  Other non-finite values, including infinite yaw, are invalid.
+    const bool waypointUsesCurrentYaw = it->command == MAV_CMD_NAV_WAYPOINT && isnan(it->param4);
+    if (!isfinite(it->param1) || !isfinite(it->param2) || !isfinite(it->param3)
+        || (!isfinite(it->param4) && !waypointUsesCurrentYaw)) {
         *resultOut = MAV_MISSION_INVALID;
         return false;
     }
