@@ -29,7 +29,10 @@ void setSticksActiveStatus(bool areSticksActive);
 void resetPositionControl(const gpsLocation_t *initialTargetLocation, unsigned taskRateHz);
 void posControlOutput(void);
 bool positionControl(void);
-void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep);
+// custom-patch: hoverThrottle param lets each caller (Alt Hold/Position Hold vs GPS Rescue)
+// supply its own baseline hover throttle instead of always using the shared autopilotConfig()
+// value; see betaflight/betaflight#15775
+void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep, float hoverThrottle);
 
 bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);

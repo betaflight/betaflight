@@ -28,7 +28,8 @@ void resetAltitudeControl(void);
 void setSticksActiveStatus(bool areSticksActive);
 void resetPositionControl(const gpsLocation_t *initialTargetLocation, unsigned taskRateHz);
 bool positionControl(void);
-void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep);
+// custom-patch: signature kept in sync with the multirotor variant; see betaflight/betaflight#15775
+void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep, float hoverThrottle);
 
 bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);

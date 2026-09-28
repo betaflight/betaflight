@@ -1857,6 +1857,7 @@ static bool blackboxWriteSysinfo(void)
         // custom-patch: see betaflight/betaflight#15775
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_DEADBAND_LOW, "%d", altHoldConfig()->deadbandLow);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_FULL_LOW_IS_MAX_DESCEND, "%d", altHoldConfig()->fullLowIsMaxDescend);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_HOVER_THROTTLE, "%d", altHoldConfig()->hoverThrottle);
 #endif // !USE_WING
 #endif // USE_ALTITUDE_HOLD
 

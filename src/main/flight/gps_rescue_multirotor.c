@@ -222,7 +222,8 @@ static void rescueAttainPosition(bool newGpsData)
     /**
         Altitude (throttle) controller
     */
-    altitudeControl(rescueState.intent.targetAltitudeCm, taskIntervalSeconds, rescueState.intent.targetAltitudeStepCm);
+    // custom-patch: GPS Rescue keeps using the shared ap_hover_throttle value unchanged; see betaflight/betaflight#15775
+    altitudeControl(rescueState.intent.targetAltitudeCm, taskIntervalSeconds, rescueState.intent.targetAltitudeStepCm, autopilotConfig()->hoverThrottle);
 
     /**
         Heading / yaw controller

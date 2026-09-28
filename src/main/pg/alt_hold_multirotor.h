@@ -33,6 +33,7 @@ typedef struct altHoldConfig_s {
     uint8_t deadband;      // high-side (climb) deadband, in percent of stick travel above hoverThrottle
     uint8_t deadbandLow;   // custom-patch: low-side (descend) deadband, independent of the high-side value; see betaflight/betaflight#15775
     bool fullLowIsMaxDescend; // custom-patch: when true, throttle below min_check commands max descend instead of forcing hover; see betaflight/betaflight#15775
+    uint16_t hoverThrottle; // custom-patch: independent hover throttle for Alt Hold/Position Hold; 0 = inherit ap_hover_throttle (GPS Rescue keeps using ap_hover_throttle either way); see betaflight/betaflight#15775
 } altHoldConfig_t;
 
 PG_DECLARE(altHoldConfig_t, altHoldConfig);

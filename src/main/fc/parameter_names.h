@@ -264,6 +264,8 @@
 #define PARAM_NAME_ALT_HOLD_DEADBAND_LOW "alt_hold_deadband_low"
 // custom-patch: allow full-low throttle to command max descend instead of forcing hover, see betaflight/betaflight#15775
 #define PARAM_NAME_ALT_HOLD_FULL_LOW_IS_MAX_DESCEND "alt_hold_full_low_is_max_descend"
+// custom-patch: independent hover throttle for Alt Hold/Position Hold (0 = inherit ap_hover_throttle), see betaflight/betaflight#15775
+#define PARAM_NAME_ALT_HOLD_HOVER_THROTTLE "alt_hold_hover_throttle"
 #endif
 
 #ifdef USE_POSITION_HOLD

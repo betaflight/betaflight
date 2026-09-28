@@ -56,11 +56,12 @@ void autopilotInit(void)
 void resetAltitudeControl (void) {
 }
 
-void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep)
+void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep, float hoverThrottle)
 {
     UNUSED(targetAltitudeCm);
     UNUSED(taskIntervalS);
     UNUSED(targetAltitudeStep);
+    UNUSED(hoverThrottle);
 }
 
 void setSticksActiveStatus(bool areSticksActive)

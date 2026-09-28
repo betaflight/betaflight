@@ -164,7 +164,7 @@ void resetAltitudeControl (void) {
     altitudeI = 0.0f;
 }
 
-void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep)
+void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep, float hoverThrottle)
 {
     const float verticalVelocityCmS = getAltitudeDerivative();
     const float altitudeErrorCm = targetAltitudeCm - getAltitudeCm();
@@ -192,7 +192,9 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
 
     const float altitudeF = targetAltitudeStep * altitudePidCoeffs.Kf;
 
-    const float hoverOffset = autopilotConfig()->hoverThrottle - PWM_RANGE_MIN;
+    // custom-patch: hoverThrottle is now supplied by the caller (Alt Hold/Position Hold or
+    // GPS Rescue) instead of always reading the shared autopilotConfig() value; see betaflight/betaflight#15775
+    const float hoverOffset = hoverThrottle - PWM_RANGE_MIN;
     float throttleOffset = altitudeP + altitudeI - altitudeD + altitudeF + hoverOffset;
 
     const float tiltMultiplier = 1.0f / fmaxf(getCosTiltAngle(), 0.5f);

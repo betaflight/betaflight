@@ -1199,6 +1199,8 @@ const clivalue_t valueTable[] = {
     // custom-patch: see betaflight/betaflight#15775
     { PARAM_NAME_ALT_HOLD_DEADBAND_LOW, VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 70 },  PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, deadbandLow) },
     { PARAM_NAME_ALT_HOLD_FULL_LOW_IS_MAX_DESCEND, VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, fullLowIsMaxDescend) },
+    // custom-patch: 0 = inherit ap_hover_throttle (GPS Rescue's value); nonzero = independent Alt Hold/Position Hold hover throttle; see betaflight/betaflight#15775
+    { PARAM_NAME_ALT_HOLD_HOVER_THROTTLE, VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 1700 }, PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, hoverThrottle) },
 #endif // !USE_WING
 #endif // USE_ALTITUDE_HOLD
 
