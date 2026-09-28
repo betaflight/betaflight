@@ -63,7 +63,8 @@ arming_prevention_unittest_SRC := \
 
 arming_prevention_unittest_DEFINES := \
             USE_GPS_RESCUE= \
-            USE_LAUNCH_CONTROL=
+            USE_LAUNCH_CONTROL= \
+            USE_RUNAWAY_TAKEOFF=
 
 atomic_unittest_SRC := \
 		$(USER_DIR)/build/atomic.c \

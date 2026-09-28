@@ -110,6 +110,8 @@ extern "C" {
     gyro_t gyro = {};
     bool mockIsUpright = false;
     float mockCosTiltAngle = 1.0f;   // level
+    pidAxisData_t pidData[3];
+    uint16_t mockGyroAbsRateDps = 0;
     uint8_t activePidLoopDenom = 1;
 
     float getGpsDataIntervalSeconds(void) { return 0.1f; }
@@ -1120,6 +1122,10 @@ static void setUpLift(bool withTriggerMode = true)
     mockIsUpright = true;
     mockCosTiltAngle = 1.0f;
     acc.jerkMagnitude = 0.0f;
+    mockGyroAbsRateDps = 0;
+    memset(pidData, 0, sizeof(pidData));
+    pidConfigMutable()->runaway_takeoff_prevention = 0;
+    rxConfigMutable()->airModeActivateThreshold = 25;
     sensorsSet(SENSOR_ACC);
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         gyro.gyroADCf[axis] = 0.0f;
@@ -1732,6 +1738,25 @@ TEST(LaunchControlLiftTest, StickTakeoffDoesNotReportAPeak)
     EXPECT_STREQ("LIFT USED: SWITCH OFF", getLaunchControlLiftPreArmMessage());
 }
 
+TEST(LaunchControlLiftTest, ALiftIsATakeoffSoTheSticksAreLiveAtHandover)
+{
+    // airmode on (feature or switch), default 25% start threshold, and the pilot never
+    // touches the throttle: the lift itself counts as the takeoff
+    armAndStage();
+    simulationFeatureFlags |= FEATURE_AIRMODE;
+    advanceMs(20);
+    EXPECT_FALSE(wasThrottleRaised());               // on the ground: PIDs held off, no wind-up
+
+    setSC(SC_HIGH);
+    advanceMs(LIFT_TIME_MS);
+    EXPECT_FALSE(isLaunchControlLifting());
+    EXPECT_TRUE(wasThrottleRaised());
+    advanceMs(20);
+    // stick still at zero, and the quad is flying on it: airmode descent, PIDs and I-term live
+    EXPECT_EQ(PID_STABILISATION_ON, simulationPidStabilisationState);
+    simulationFeatureFlags &= ~FEATURE_AIRMODE;
+}
+
 // STUBS
 extern "C" {
     void sincosf_approx(float x, float *out_s, float *out_c) {
@@ -1818,6 +1843,7 @@ extern "C" {
     bool compassIsCalibrationComplete(void) { return true; }
     bool compassEnabledAndCalibrated(void) { return true; }
     bool isUpright(void) { return mockIsUpright; }
+    uint16_t gyroAbsRateDps(int) { return mockGyroAbsRateDps; }
     void blackboxLogEvent(FlightLogEvent, union flightLogEventData_u *) {};
     void gyroFiltering(timeUs_t) {};
     timeDelta_t rxGetFrameDelta() { return 0; }

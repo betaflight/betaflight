@@ -1008,6 +1008,14 @@ bool processRx(timeUs_t currentTimeUs)
                     launchControlLiftImpacted = false;
                     launchControlLiftPeakJerk = 0.0f;
                     launchControlLiftRan = true;
+                    // A lift is a takeoff. When it hands over, the quad is flying on whatever the
+                    // sticks say, exactly as if the pilot had flown it up: airmode and the I-term
+                    // are live even with the throttle left at zero, and runaway takeoff (built for
+                    // a quad still on the ground) can't disarm a flip-and-brake at the top.
+                    throttleRaised = true;
+#ifdef USE_RUNAWAY_TAKEOFF
+                    runawayTakeoffCheckDisabled = true;
+#endif
                     launchControlLiftImpactJerk = currentPidProfile->launchControlLiftImpact * 10.0f;
                     launchControlLiftTimeMs = currentPidProfile->launchControlLiftTime;
                     launchControlLiftThrottleFraction = currentPidProfile->launchControlLiftThrottle / 100.0f;
