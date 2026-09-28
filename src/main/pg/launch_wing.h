@@ -43,6 +43,7 @@ typedef struct launchWingConfig_s {
     uint16_t maxAltitudeM;          // AGL exit, 0 disables
     uint16_t endTimeMs;             // cross-fade back to the pilot
     uint8_t abortDeadbandPercent;   // roll/pitch deflection that aborts
+    uint8_t abortAngleDeg;          // bank and dive bound, 0 disables
 } launchWingConfig_t;
 
 PG_DECLARE(launchWingConfig_t, launchWingConfig);
