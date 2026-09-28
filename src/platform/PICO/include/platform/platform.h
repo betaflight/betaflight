@@ -192,4 +192,4 @@ extern uint32_t systemUniqueId[3];
 #define OSD_SMALLFONT_ROWS_NTSC     19
 #endif
 
-#endif //  OSD_FB_PICO_ENABLE_PIXEL_MODE
+#endif //  OSD_FB_ENABLE_SMALLFONT
