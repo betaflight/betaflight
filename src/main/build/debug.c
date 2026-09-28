@@ -129,8 +129,6 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     [DEBUG_AUTOPILOT_PID] = "AUTOPILOT_PID",
     [DEBUG_POSITION_NAV] = "POSITION_NAV",
     [DEBUG_AUTOPILOT_STOP] = "AUTOPILOT_STOP",
-    // Keep DEBUG_ADRC at its b9 ordinal so retained tester configs do not silently select PITOT.
-    [DEBUG_ADRC] = "ADRC",
     [DEBUG_PITOT] = "PITOT",
     [DEBUG_POSITION_EST] = "POSITION_EST",
     [DEBUG_AUTOPILOT_HEADING] = "AUTOPILOT_HEADING",
@@ -140,4 +138,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     [DEBUG_SAG_COMPENSATION] = "SAG_COMPENSATION",
     [DEBUG_UPT1] = "UPT1",
     [DEBUG_FLIGHT_PLAN] = "FLIGHT_PLAN",
+    [DEBUG_ADRC] = "ADRC",
 };

@@ -380,11 +380,14 @@ void adrcInitConfig(const adrcProfile_t *adrcProfile, adrcRuntime_t *adrcRuntime
         pt2FilterUpdateCutoff(&adrcRuntime->gyroFilter[axis], gyroFilterGain);
     }
 
-    adrcRuntime->b0ThrottleScale = 1.0f;
     adrcRuntime->b0ScaleMin = 1.0f; // ADRC-031 off until adrcSetB0ScaleMin()
     adrcRuntime->satZ3Inhibit = false; // ADRC-033 off until adrcSetSatZ3Inhibit()
     adrcRuntime->mixerSaturated = false;
-    adrcRuntime->b0ScaleThrottle = 0.0f;
+    // ADRC-035: b0ThrottleScale / b0ScaleThrottle are live schedule state, like wcBlend. A same-type
+    // re-init while armed (AUX adjustment) must not restart the collective low-pass from zero, which
+    // snapped the scale to its floor and replayed the throttle-chop z3 rebound the low-pass exists
+    // to prevent. Zero-init covers boot; adrcApplyControl() and adrcUpdatePerLoopState() recover a
+    // non-finite value.
     // Callers that never learn the pidSum limits (unit-test SetUp paths init the ADRC module in
     // isolation) keep the b9-era divisor; production overwrites this one line below via
     // adrcInitZ3LogScale(), which pidInitConfig() calls with the real limits.

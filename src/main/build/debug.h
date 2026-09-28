@@ -211,8 +211,6 @@ typedef enum {
     DEBUG_AUTOPILOT_PID,
     DEBUG_POSITION_NAV,
     DEBUG_AUTOPILOT_STOP,
-    // Preserve the b9 DEBUG_ADRC value; append upstream's newer PITOT mode after it.
-    DEBUG_ADRC,
     DEBUG_PITOT,
     DEBUG_POSITION_EST,
     DEBUG_AUTOPILOT_HEADING,
@@ -222,6 +220,7 @@ typedef enum {
     DEBUG_SAG_COMPENSATION,
     DEBUG_UPT1,
     DEBUG_FLIGHT_PLAN,
+    DEBUG_ADRC,
     DEBUG_COUNT
 } debugType_e;
 
