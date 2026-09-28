@@ -1854,6 +1854,9 @@ static bool blackboxWriteSysinfo(void)
 #ifndef USE_WING
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_CLIMB_RATE,  "%d", altHoldConfig()->climbRate);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_DEADBAND,    "%d", altHoldConfig()->deadband);
+        // custom-patch: see betaflight/betaflight#15775
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_DEADBAND_LOW, "%d", altHoldConfig()->deadbandLow);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_FULL_LOW_IS_MAX_DESCEND, "%d", altHoldConfig()->fullLowIsMaxDescend);
 #endif // !USE_WING
 #endif // USE_ALTITUDE_HOLD
 

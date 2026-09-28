@@ -1196,6 +1196,9 @@ const clivalue_t valueTable[] = {
 #ifndef USE_WING
     { PARAM_NAME_ALT_HOLD_CLIMB_RATE,  VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, climbRate) },
     { PARAM_NAME_ALT_HOLD_DEADBAND,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 70 },  PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, deadband) },
+    // custom-patch: see betaflight/betaflight#15775
+    { PARAM_NAME_ALT_HOLD_DEADBAND_LOW, VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 70 },  PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, deadbandLow) },
+    { PARAM_NAME_ALT_HOLD_FULL_LOW_IS_MAX_DESCEND, VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, fullLowIsMaxDescend) },
 #endif // !USE_WING
 #endif // USE_ALTITUDE_HOLD
 

@@ -46,8 +46,10 @@ typedef struct {
     float targetAltitudeCm;
     float maxVelocity;
     float targetVelocity;
-    float deadband;
+    float deadband;      // high-side (climb) deadband, as a fraction of stick travel
+    float deadbandLow;   // custom-patch: low-side (descend) deadband, independent of deadband; see betaflight/betaflight#15775
     bool allowStickAdjustment;
+    bool fullLowIsMaxDescend; // custom-patch: see betaflight/betaflight#15775
 } altHoldState_t;
 
 altHoldState_t altHold;
@@ -63,7 +65,9 @@ void altHoldInit(void)
 {
     altHold.isActive = false;
     altHold.deadband = altHoldConfig()->deadband / 100.0f;
+    altHold.deadbandLow = altHoldConfig()->deadbandLow / 100.0f; // custom-patch: see betaflight/betaflight#15775
     altHold.allowStickAdjustment = altHoldConfig()->deadband;
+    altHold.fullLowIsMaxDescend = altHoldConfig()->fullLowIsMaxDescend; // custom-patch: see betaflight/betaflight#15775
     altHold.maxVelocity = altHoldConfig()->climbRate * 10.0f; // 50 in CLI means 500cm/s
     altHoldReset();
 }
@@ -99,15 +103,23 @@ static void altHoldUpdateTargetAltitude(void)
 
     float stickFactor = 0.0f;
 
-    if (altHold.allowStickAdjustment && calculateThrottleStatus() != THROTTLE_LOW) {
-        const float rcThrottle = rcCommand[THROTTLE];
-        const float lowThreshold = autopilotConfig()->hoverThrottle - altHold.deadband * (autopilotConfig()->hoverThrottle - PWM_RANGE_MIN);
-        const float highThreshold = autopilotConfig()->hoverThrottle + altHold.deadband * (PWM_RANGE_MAX - autopilotConfig()->hoverThrottle);
+    if (altHold.allowStickAdjustment) {
+        if (calculateThrottleStatus() != THROTTLE_LOW) {
+            const float rcThrottle = rcCommand[THROTTLE];
+            // custom-patch: low (descend) and high (climb) thresholds are now independently configurable
+            // via alt_hold_deadband (high) and alt_hold_deadband_low (low); see betaflight/betaflight#15775
+            const float lowThreshold = autopilotConfig()->hoverThrottle - altHold.deadbandLow * (autopilotConfig()->hoverThrottle - PWM_RANGE_MIN);
+            const float highThreshold = autopilotConfig()->hoverThrottle + altHold.deadband * (PWM_RANGE_MAX - autopilotConfig()->hoverThrottle);
 
-        if (rcThrottle < lowThreshold) {
-            stickFactor = scaleRangef(rcThrottle, PWM_RANGE_MIN, lowThreshold, -1.0f, 0.0f);
-        } else if (rcThrottle > highThreshold) {
-            stickFactor = scaleRangef(rcThrottle, highThreshold, PWM_RANGE_MAX, 0.0f, 1.0f);
+            if (rcThrottle < lowThreshold) {
+                stickFactor = scaleRangef(rcThrottle, PWM_RANGE_MIN, lowThreshold, -1.0f, 0.0f);
+            } else if (rcThrottle > highThreshold) {
+                stickFactor = scaleRangef(rcThrottle, highThreshold, PWM_RANGE_MAX, 0.0f, 1.0f);
+            }
+        } else if (altHold.fullLowIsMaxDescend) {
+            // custom-patch: opt-in - throttle below min_check (THROTTLE_LOW) commands max descend
+            // instead of the stock forced-hover behavior; see betaflight/betaflight#15775
+            stickFactor = -1.0f;
         }
     }
 

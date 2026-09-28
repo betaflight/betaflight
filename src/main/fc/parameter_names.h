@@ -260,6 +260,10 @@
 #ifdef USE_ALTITUDE_HOLD
 #define PARAM_NAME_ALT_HOLD_DEADBAND "alt_hold_deadband"
 #define PARAM_NAME_ALT_HOLD_CLIMB_RATE "alt_hold_climb_rate"
+// custom-patch: independent low-side (descend) deadband threshold, see betaflight/betaflight#15775
+#define PARAM_NAME_ALT_HOLD_DEADBAND_LOW "alt_hold_deadband_low"
+// custom-patch: allow full-low throttle to command max descend instead of forcing hover, see betaflight/betaflight#15775
+#define PARAM_NAME_ALT_HOLD_FULL_LOW_IS_MAX_DESCEND "alt_hold_full_low_is_max_descend"
 #endif
 
 #ifdef USE_POSITION_HOLD

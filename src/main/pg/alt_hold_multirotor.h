@@ -24,12 +24,15 @@
 #ifndef USE_WING
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "pg/pg.h"
 
 typedef struct altHoldConfig_s {
     uint8_t climbRate;
-    uint8_t deadband;
+    uint8_t deadband;      // high-side (climb) deadband, in percent of stick travel above hoverThrottle
+    uint8_t deadbandLow;   // custom-patch: low-side (descend) deadband, independent of the high-side value; see betaflight/betaflight#15775
+    bool fullLowIsMaxDescend; // custom-patch: when true, throttle below min_check commands max descend instead of forcing hover; see betaflight/betaflight#15775
 } altHoldConfig_t;
 
 PG_DECLARE(altHoldConfig_t, altHoldConfig);

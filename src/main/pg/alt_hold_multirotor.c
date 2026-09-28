@@ -32,11 +32,14 @@
 
 #include "alt_hold.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(altHoldConfig_t, altHoldConfig, PG_ALTHOLD_CONFIG, 4);
+// custom-patch: PG version bumped 4 -> 5 for new deadbandLow / fullLowIsMaxDescend fields; see betaflight/betaflight#15775
+PG_REGISTER_WITH_RESET_TEMPLATE(altHoldConfig_t, altHoldConfig, PG_ALTHOLD_CONFIG, 5);
 
 PG_RESET_TEMPLATE(altHoldConfig_t, altHoldConfig,
     .climbRate = 50, // max vertical velocity change at full/zero throttle. 50 means 5 m/s
-    .deadband = 20, // throttle deadband in percent of stick travel
+    .deadband = 20, // high-side (climb) throttle deadband in percent of stick travel
+    .deadbandLow = 20, // custom-patch: low-side (descend) deadband; default matches previous symmetric behavior
+    .fullLowIsMaxDescend = false, // custom-patch: default OFF preserves original forced-hover-at-THROTTLE_LOW behavior
 );
 #endif
 
