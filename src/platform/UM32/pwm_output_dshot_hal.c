@@ -91,13 +91,6 @@ void pwmDshotSetDirectionOutput(
 
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
-        /* Burst mode: the UP feed config set by pwmDshotMotorHardwareConfig
-         * (DMAR destination, UP handshake) must survive — the per-motor
-         * CCR/CC-handshake values below would clobber it. Unidirectional
-         * burst never switches direction. */
-        motor->dmaInitStruct.Direction = LL_DMA_MEMORY_TO_PERIPH;
-        xLL_EX_DMA_Init(motor->dmaRef, pDmaInit);
-        xLL_EX_DMA_EnableIT_TC(motor->dmaRef);
         return;
     }
 #endif
@@ -155,6 +148,7 @@ FAST_CODE void pwmCompleteDshotMotorUpdate(void)
     for (int i = 0; i < dmaMotorTimerCount; i++) {
 #ifdef USE_DSHOT_DMAR
         if (useBurstDshot) {
+            // xLL_EX_DMA_SetSrcAddress(dmaMotorTimers[i].dmaBurstRef, (uint32_t)dmaMotorTimers[i].dmaBurstBuffer);
             xLL_EX_DMA_SetDataLength(dmaMotorTimers[i].dmaBurstRef, dmaMotorTimers[i].dmaBurstLength);
             xLL_EX_DMA_EnableResource(dmaMotorTimers[i].dmaBurstRef);
 
@@ -193,8 +187,9 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 #endif
 #ifdef USE_DSHOT_DMAR
             if (useBurstDshot) {
-                xLL_EX_DMA_DisableResource(motor->timerHardware->dmaTimUPRef);
                 LL_TIM_DisableDMAReq_UPDATE((TIM_TypeDef *)motor->timerHardware->tim);
+                xLL_EX_DMA_DisableResource(motor->timerHardware->dmaTimUPRef);
+                xLL_EX_DMA_ConsumeRequest(motor->timerHardware->dmaTimUPRef);
             } else
 #endif
             {
@@ -371,6 +366,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     }
 
     LL_DMA_StructInit(&DMAINIT);
+    const uint32_t dshotBufferSize = (pwmProtocolType == MOTOR_PROTOCOL_PROSHOT1000 ? PROSHOT_DMA_BUFFER_SIZE : DSHOT_DMA_BUFFER_SIZE);
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
         motor->timer->dmaBurstBuffer = &dshotBurstDmaBuffer[timerIndex][0];
@@ -401,18 +397,19 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     if (useBurstDshot) {
         DMAINIT.SrcPer          = DMA_SRC_HANDSHAKING(DMA_Handshake_Rev);
         DMAINIT.DstPer          = DMA_DST_HANDSHAKING(timerHardware->dmaTimUPChannel);
+        DMAINIT.NbData          = dshotBufferSize * 4;
     } else
 #endif
     {
         DMAINIT.SrcPer          = DMA_SRC_HANDSHAKING(DMA_Handshake_Rev);
         DMAINIT.DstPer          = DMA_DST_HANDSHAKING(timerHardware->dmaChannelConfigured);
+        DMAINIT.NbData          = dshotBufferSize;
     }
     DMAINIT.SrcReload           = LL_DMA_SRC_RELOAD_DISABLE;
     DMAINIT.DstReload           = LL_DMA_DST_RELOAD_DISABLE;
     DMAINIT.FIFOMode            = LL_DMA_FIFOMODE_DISABLE;
     DMAINIT.FCMode              = LL_DMA_FCMODE_DISABLE;
     DMAINIT.Priority            = LL_DMA_PRIORITY_6;
-    DMAINIT.NbData              = pwmProtocolType == PWM_TYPE_PROSHOT1000 ? PROSHOT_DMA_BUFFER_SIZE : DSHOT_DMA_BUFFER_SIZE;
 
     if (!dmaIsConfigured) {
         xLL_EX_DMA_Init(dmaRef, &DMAINIT);

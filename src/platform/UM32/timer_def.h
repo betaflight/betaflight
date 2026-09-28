@@ -184,6 +184,7 @@
 #define DEF_TIM_DMA__BTCH_TIM4_CH2    D(1, 3,  2)  
 #define DEF_TIM_DMA__BTCH_TIM4_CH4    D(1, 8,  1)
 
+#define DEF_TIM_DMA__BTCH_TIM5_CH1    D(1, 2,  1)
 #define DEF_TIM_DMA__BTCH_TIM5_CH4    D(1, 1,  0)
 
 #define DEF_TIM_DMA__BTCH_TIM8_CH1    D(2, 2,  1)
@@ -218,14 +219,14 @@
 
 
 // TIM_UP table
-#define DEF_TIM_DMA__BTCH_TIM1_UP     NONE
+#define DEF_TIM_DMA__BTCH_TIM1_UP     D(2, 5, 2)
 #define DEF_TIM_DMA__BTCH_TIM2_UP     NONE
 #define DEF_TIM_DMA__BTCH_TIM3_UP     NONE
 #define DEF_TIM_DMA__BTCH_TIM4_UP     NONE
 #define DEF_TIM_DMA__BTCH_TIM5_UP     NONE
 #define DEF_TIM_DMA__BTCH_TIM6_UP     NONE
 #define DEF_TIM_DMA__BTCH_TIM7_UP     NONE
-#define DEF_TIM_DMA__BTCH_TIM8_UP     NONE
+#define DEF_TIM_DMA__BTCH_TIM8_UP     D(2, 1, 3)
 #define DEF_TIM_DMA__BTCH_TIM9_UP     NONE
 #define DEF_TIM_DMA__BTCH_TIM10_UP    NONE
 #define DEF_TIM_DMA__BTCH_TIM11_UP    NONE
@@ -367,7 +368,7 @@
 #define DEF_TIM_AF__PE12__TCH_TIM14_CH1     D(9, 14)
 
 
-#define FULL_TIMER_CHANNEL_COUNT    (59)
+#define FULL_TIMER_CHANNEL_COUNT    (60)
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(9) | TIM_N(10) | TIM_N(11) | TIM_N(12) | TIM_N(13) | TIM_N(14))
 #define HARDWARE_TIMER_DEFINITION_COUNT 14
 

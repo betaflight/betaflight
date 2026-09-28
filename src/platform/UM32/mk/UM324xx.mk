@@ -152,6 +152,7 @@ MCU_COMMON_SRC = \
             UM32/dshot_bitbang_hal.c \
             UM32/pwm_output_dshot_hal.c \
             UM32/pwm_output_hw.c \
+            UM32/gyro_clkin_um32.c \
             UM32/light_ws2811strip_hal.c \
             UM32/transponder_ir_io_hal.c \
             UM32/sdio_um324xx.c \
