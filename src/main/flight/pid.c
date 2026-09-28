@@ -121,7 +121,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 #define IS_AXIS_IN_ANGLE_MODE(i) false
 #endif // USE_ACC
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 12);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 13);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -185,6 +185,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .launchControlAngleLimit = 0,
         .launchControlGain = 40,
         .launchControlAllowTriggerReset = true,
+        .launchControlLiftTime = 1000,
+        .launchControlLiftThrottle = 100,
+        .launchControlLiftImpact = 0,       // off: set it from your own quad's LIFT PEAK
         .thrustLinearization = 0,
         .d_max = D_MAX_DEFAULT,
         .d_max_gain = 0,
@@ -940,6 +943,12 @@ static FAST_CODE_NOINLINE float applyLaunchControl(int axis, const rollAndPitchT
     // Scale the rates based on stick deflection only. Fixed rates with a max of 100deg/sec
     // reached at 50% stick deflection. This keeps the launch control positioning consistent
     // regardless of the user's rates.
+    // LIFT ignores the sticks from arming onwards, so the pilot can set them for the
+    // handover while waiting; the quad just holds still on the ground.
+    if (pidRuntime.launchControlMode == LAUNCH_CONTROL_MODE_LIFT) {
+        return 0.0f;
+    }
+
     if ((axis == FD_PITCH) || (pidRuntime.launchControlMode != LAUNCH_CONTROL_MODE_PITCHONLY)) {
         const float stickDeflection = constrainf(getRcDeflection(axis), -0.5f, 0.5f);
         ret = LAUNCH_CONTROL_MAX_RATE * stickDeflection * 2;
@@ -1075,6 +1084,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
 
     const bool launchControlActive = isLaunchControlActive();
+#ifdef USE_LAUNCH_CONTROL
+    const bool launchControlLifting = isLaunchControlLifting();
+#else
+    const bool launchControlLifting = false;
+#endif
 
 #if defined(USE_ACC)
     static timeUs_t levelModeStartTimeUs = 0;
@@ -1155,7 +1169,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
     rotateItermAndAxisError();
 
-    if (pidRuntime.useEzDisarm) {
+    // A LIFT never disarms: the pilot armed it, and the worst it may do is hand the sticks
+    // back early. An impact mid-lift (a ceiling, a branch) with the sticks parked at zero
+    // must not be mistaken for a landing.
+    if (pidRuntime.useEzDisarm && !launchControlLifting) {
         disarmOnImpact();
     }
 
@@ -1254,6 +1271,19 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             currentPidSetpoint = applyLaunchControl(axis, angleTrim);
 #else
             currentPidSetpoint = applyLaunchControl(axis, NULL);
+#endif
+        } else if (launchControlLifting) {
+            // LIFT: whatever the sticks say, self-level on roll and pitch (target 0 deg, with
+            // the pilot's angle_p_gain and accelerometer trims) and hold yaw. It corrects a
+            // launch from uneven ground and drift in the climb. Only the attitude is used:
+            // no stick input and no angle feedforward, so the sticks can't leak in.
+            currentPidSetpoint = 0.0f;
+#if defined(USE_ACC)
+            if (axis != FD_YAW) {
+                const float currentAngle = (attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f;
+                currentPidSetpoint = constrainf(-currentAngle * pidRuntime.angleGain,
+                    -LAUNCH_CONTROL_LIFT_LEVEL_MAX_RATE_DPS, LAUNCH_CONTROL_LIFT_LEVEL_MAX_RATE_DPS);
+            }
 #endif
         }
 #endif
@@ -1360,7 +1390,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             float preTpaD = pidRuntime.pidCoefficient[axis].Kd * delta;
 
 #if defined(USE_ACC)
-            if (cmpTimeUs(currentTimeUs, levelModeStartTimeUs) > CRASH_RECOVERY_DETECTION_DELAY_US) {
+            // not during a LIFT: crash_recovery = DISARM would disarm it, and ON would fight the
+            // lift's own self-level; the lift's abort check hands the sticks back instead
+            if (cmpTimeUs(currentTimeUs, levelModeStartTimeUs) > CRASH_RECOVERY_DETECTION_DELAY_US
+                && !launchControlLifting) {
                 detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
             }
 #endif
@@ -1405,8 +1438,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         previousGyroRateDterm[axis] = gyroRateDterm[axis];
 
         // -----calculate feedforward component
-        // no feedforward in launch control
-        const float feedforwardGain = launchControlActive ? 0.0f : pidRuntime.pidCoefficient[axis].Kf;
+        // no feedforward in launch control, nor during a LIFT (stick moves must not leak in)
+        const float feedforwardGain = (launchControlActive || launchControlLifting) ? 0.0f : pidRuntime.pidCoefficient[axis].Kf;
         pidData[axis].F = feedforwardGain * pidSetpointDelta;
 
 #ifdef USE_YAW_SPIN_RECOVERY

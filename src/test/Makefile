@@ -49,6 +49,8 @@ althold_unittest_DEFINES := \
 
 arming_prevention_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/typeconversion.c \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/vector.c \
 		$(USER_DIR)/fc/core.c \
@@ -60,7 +62,8 @@ arming_prevention_unittest_SRC := \
 		$(USER_DIR)/flight/gps_rescue_multirotor.c
 
 arming_prevention_unittest_DEFINES := \
-            USE_GPS_RESCUE=
+            USE_GPS_RESCUE= \
+            USE_LAUNCH_CONTROL=
 
 atomic_unittest_SRC := \
 		$(USER_DIR)/build/atomic.c \

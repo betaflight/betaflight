@@ -31,6 +31,7 @@ typedef struct throttleCorrectionConfig_s {
 typedef enum {
     LAUNCH_CONTROL_DISABLED = 0,
     LAUNCH_CONTROL_ACTIVE,
+    LAUNCH_CONTROL_LIFTING,     // LIFT mode only: timed, stick-independent climb between trigger and handover
     LAUNCH_CONTROL_TRIGGERED,
 } launchControlState_e;
 
@@ -38,6 +39,7 @@ typedef enum {
     LAUNCH_CONTROL_MODE_NORMAL = 0,
     LAUNCH_CONTROL_MODE_PITCHONLY,
     LAUNCH_CONTROL_MODE_FULL,
+    LAUNCH_CONTROL_MODE_LIFT,   // fixed throttle for a fixed time after the trigger, sticks ignored, then hand over
     LAUNCH_CONTROL_MODE_COUNT // must be the last element
 } launchControlMode_e;
 
@@ -60,6 +62,21 @@ typedef enum {
 
 #ifdef USE_LAUNCH_CONTROL
 #define LAUNCH_CONTROL_THROTTLE_TRIGGER_MAX 90
+#define LAUNCH_CONTROL_LIFT_TIME_MIN_MS 100
+#define LAUNCH_CONTROL_LIFT_TIME_MAX_MS 10000
+#define LAUNCH_CONTROL_LIFT_THROTTLE_MIN 25
+#define LAUNCH_CONTROL_LIFT_HANDOVER_NOTICE_MS 1000  // how long the OSD confirms the sticks are live again
+// LIFT self-levels on roll and pitch, so it can be sent from slightly uneven ground
+#define LAUNCH_CONTROL_LIFT_MAX_START_TILT_DEG 20    // the trigger is refused beyond this tilt
+#define LAUNCH_CONTROL_LIFT_LEVEL_MAX_RATE_DPS 300   // cap on the self-level correction rate
+// It can't hold level (loose prop, motor/ESC fault, strike): tilted past the angle, or
+// rotating faster than the rate on any axis, for the time, ends the lift early
+#define LAUNCH_CONTROL_LIFT_ABORT_TILT_DEG     45
+#define LAUNCH_CONTROL_LIFT_ABORT_RATE_DPS     500
+#define LAUNCH_CONTROL_LIFT_ABORT_TIME_MS      150
+// launch_lift_impact: jerk (the rate of change of acceleration, filtered as for EZ landing)
+// that counts as a hit, in units of 10 g/s like landing_disarm_threshold. 0 = off.
+#define LAUNCH_CONTROL_LIFT_IMPACT_MAX         250
 extern const char * const osdLaunchControlModeNames[LAUNCH_CONTROL_MODE_COUNT];
 #endif
 
@@ -96,3 +113,15 @@ void resetTryingToArm(void);
 void subTaskTelemetryPollSensors(timeUs_t currentTimeUs);
 
 bool isLaunchControlActive(void);
+bool isLaunchControlLifting(void);
+float getLaunchControlLiftThrottle(void);
+uint32_t getLaunchControlLiftRemainingMs(void);
+bool isLaunchControlLiftHandoverRecent(void);
+bool isLaunchControlLiftAborted(void);
+bool isLaunchControlLiftImpacted(void);
+bool isLaunchControlLiftNotLevel(void);
+bool isLaunchControlLiftAwaitingTriggerOff(void);
+bool isLaunchControlLiftStaged(void);
+bool isLaunchControlPreStaged(void);
+const char *getLaunchControlLiftPreArmMessage(void);
+void launchControlLiftUpdate(timeUs_t currentTimeUs);

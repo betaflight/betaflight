@@ -449,6 +449,9 @@ static uint8_t cmsx_launchControlAllowTriggerReset;
 static uint8_t cmsx_launchControlThrottlePercent;
 static uint8_t cmsx_launchControlAngleLimit;
 static uint8_t cmsx_launchControlGain;
+static uint16_t cmsx_launchControlLiftTime;
+static uint8_t cmsx_launchControlLiftThrottle;
+static uint8_t cmsx_launchControlLiftImpact;
 
 static const void *cmsx_launchControlOnEnter(displayPort_t *pDisp)
 {
@@ -461,6 +464,9 @@ static const void *cmsx_launchControlOnEnter(displayPort_t *pDisp)
     cmsx_launchControlThrottlePercent  = pidProfile->launchControlThrottlePercent;
     cmsx_launchControlAngleLimit  = pidProfile->launchControlAngleLimit;
     cmsx_launchControlGain  = pidProfile->launchControlGain;
+    cmsx_launchControlLiftTime = pidProfile->launchControlLiftTime;
+    cmsx_launchControlLiftThrottle = pidProfile->launchControlLiftThrottle;
+    cmsx_launchControlLiftImpact = pidProfile->launchControlLiftImpact;
 
     return NULL;
 }
@@ -477,6 +483,9 @@ static const void *cmsx_launchControlOnExit(displayPort_t *pDisp, const OSD_Entr
     pidProfile->launchControlThrottlePercent = cmsx_launchControlThrottlePercent;
     pidProfile->launchControlAngleLimit = cmsx_launchControlAngleLimit;
     pidProfile->launchControlGain = cmsx_launchControlGain;
+    pidProfile->launchControlLiftTime = cmsx_launchControlLiftTime;
+    pidProfile->launchControlLiftThrottle = cmsx_launchControlLiftThrottle;
+    pidProfile->launchControlLiftImpact = cmsx_launchControlLiftImpact;
 
     return NULL;
 }
@@ -489,6 +498,9 @@ static const OSD_Entry cmsx_menuLaunchControlEntries[] = {
     { "TRIGGER THROTTLE", OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlThrottlePercent, 0,  LAUNCH_CONTROL_THROTTLE_TRIGGER_MAX, 1 }  },
     { "ANGLE LIMIT",      OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlAngleLimit,      0,  80, 1 }  },
     { "ITERM GAIN",       OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlGain,            0, 200, 1 }  },
+    { "LIFT TIME MS",     OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_launchControlLiftTime, LAUNCH_CONTROL_LIFT_TIME_MIN_MS, LAUNCH_CONTROL_LIFT_TIME_MAX_MS, 50 } },
+    { "LIFT THROTTLE",    OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlLiftThrottle, LAUNCH_CONTROL_LIFT_THROTTLE_MIN, 100, 1 } },
+    { "LIFT IMPACT",      OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlLiftImpact, 0, LAUNCH_CONTROL_LIFT_IMPACT_MAX, 1 } },
 
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL}

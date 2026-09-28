@@ -38,6 +38,7 @@
 #include "common/axis.h"
 #include "common/filter.h"
 #include "common/maths.h"
+#include "common/printf.h"
 #include "common/utils.h"
 
 #include "config/config.h"
@@ -171,11 +172,34 @@ static bool runawayTakeoffTemporarilyDisabled = false;
 
 #ifdef USE_LAUNCH_CONTROL
 static launchControlState_e launchControlState = LAUNCH_CONTROL_DISABLED;
+static timeUs_t launchControlLiftStartUs = 0;
+static timeUs_t launchControlLiftEndUs = 0;
+static bool launchControlLiftTriggerSeenOff = false;  // LIFT launches on an off->on edge of the trigger only
+static timeUs_t launchControlLiftTroubleStartUs = 0;  // when it started failing to hold level, 0 if holding
+static bool launchControlLiftAborted = false;         // the last lift ended because it couldn't hold level
+static bool launchControlLiftNotLevel = false;        // OSD snapshot: too tilted to send
+static bool launchControlLiftImpacted = false;        // the last lift ended on an impact (launch_lift_impact)
+static float launchControlLiftImpactJerk = 0.0f;      // impact threshold for this lift [g/s], 0 = off
+static float launchControlLiftPeakJerk = 0.0f;        // highest jerk seen in the last lift [g/s]
+static bool launchControlLiftRan = false;             // a lift actually flew this arm (not skipped by a stick takeoff)
+static char launchControlLiftUsedMessage[32];         // "LIFT USED PEAK 250+: SWITCH OFF"
+// Snapshot of the LIFT settings and status, taken in the flight controller tasks. The OSD
+// reads these instead of currentPidProfile or canUseLaunchControl(), so no display task
+// dereferences the profile or re-runs the arming checks.
+static uint16_t launchControlLiftTimeMs = 0;
+static float launchControlLiftThrottleFraction = 0.0f;
+static bool launchControlLiftPreStaged = false;
+static bool launchControlLiftStaged = false;
+static bool launchControlLiftAwaitingTrigger = false;
+static const char *launchControlLiftPreArmMessage = NULL;
+static void updateLaunchControlLiftStatus(void);
+
 
 const char * const osdLaunchControlModeNames[] = {
     "NORMAL",
     "PITCHONLY",
-    "FULL"
+    "FULL",
+    "LIFT"
 };
 #endif
 
@@ -207,12 +231,28 @@ static bool canUseLaunchControl(void)
     if (!isFixedWing()
         && !isUsingSticksForArming()     // require switch arming for safety
         && IS_RC_MODE_ACTIVE(BOXLAUNCHCONTROL)
+        // LIFT is sent by its own LAUNCH TRIGGER mode, so it must be set up on a switch
+        && (currentPidProfile->launchControlMode != LAUNCH_CONTROL_MODE_LIFT || isModeActivationConditionPresent(BOXLAUNCHTRIGGER))
         && (!featureIsEnabled(FEATURE_MOTOR_STOP) || isAirmodeEnabled()) // either not using motor_stop, or motor_stop is blocked by Airmode
         && !featureIsEnabled(FEATURE_3D) // pitch control is not 3D aware
         && (flightModeFlags == 0)) {     // don't want to use unless in acro mode
         return true;
     }
     return false;
+}
+
+// LIFT self-levels, so it needs a trustworthy attitude, and it only corrects a mild tilt
+// from the ground: steeper than that and a leg digs in, or it leaves at an angle.
+// No accelerometer, or no attitude yet, can't prove level, so the answer is no.
+static bool isLaunchControlLiftLevel(void)
+{
+#ifdef USE_ACC
+    return sensors(SENSOR_ACC)
+        && isUpright()   // attitude established (and within small_angle)
+        && getCosTiltAngle() > cos_approx(DEGREES_TO_RADIANS(LAUNCH_CONTROL_LIFT_MAX_START_TILT_DEG));
+#else
+    return false;
+#endif
 }
 #endif
 
@@ -618,9 +658,14 @@ if (isMotorProtocolDshot()) {
 #endif // USE_DSHOT
 
 #ifdef USE_LAUNCH_CONTROL
+        launchControlLiftEndUs = 0;
         if (!crashFlipModeActive && (canUseLaunchControl() || (tryingToArm == ARMING_DELAYED_LAUNCH_CONTROL))) {
             if (launchControlState == LAUNCH_CONTROL_DISABLED) {  // only activate if it hasn't already been triggered
                 launchControlState = LAUNCH_CONTROL_ACTIVE;
+                // LIFT: armed with the trigger already on, it must go off and on again
+                // to launch, so arming can never be what sends the quad
+                launchControlLiftTriggerSeenOff = !IS_RC_MODE_ACTIVE(BOXLAUNCHTRIGGER);
+                launchControlLiftRan = false;
             }
         }
 #endif
@@ -850,7 +895,9 @@ bool processRx(timeUs_t currentTimeUs)
 
     // Note: If Airmode is enabled, on arming, iTerm and PIDs will be off until throttle exceeds the threshold (OFF while disarmed)
     // If not, iTerm will be off at low throttle, with pidStabilisationState determining whether PIDs will be active
-    if (ARMING_FLAG(ARMED) && (isAirmodeActive || throttleActive || launchControlActive || isFixedWing())) {
+    // A LIFT holds the motors at the lift throttle whatever the stick says, so the
+    // PIDs must stay on even when the pilot's throttle stick is at the bottom.
+    if (ARMING_FLAG(ARMED) && (isAirmodeActive || throttleActive || launchControlActive || isLaunchControlLifting() || isFixedWing())) {
         // the wing launch holds iTerm off until spin-up, but must keep the rest
         // of the stabilisation running through the motor delay
         pidSetItermReset(launchWingHoldsIterm());
@@ -933,10 +980,46 @@ bool processRx(timeUs_t currentTimeUs)
         if (launchControlActive && (throttlePercent > currentPidProfile->launchControlThrottlePercent)) {
             // throttle limit trigger reached, launch triggered
             // reset the iterms as they may be at high values from holding the launch position
+            // (in LIFT mode this means the pilot took off on the sticks: the lift is skipped)
             launchControlState = LAUNCH_CONTROL_TRIGGERED;
             pidResetIterm();
+        } else if (launchControlActive && (currentPidProfile->launchControlMode == LAUNCH_CONTROL_MODE_LIFT)) {
+            // LIFT is staged at arming like every launch control mode; LAUNCH TRIGGER sends it.
+            // On one 3-position switch: LAUNCH CONTROL on mid+high, LAUNCH TRIGGER on high.
+            const bool triggerOn = IS_RC_MODE_ACTIVE(BOXLAUNCHTRIGGER);
+            if (!IS_RC_MODE_ACTIVE(BOXLAUNCHCONTROL)) {
+                // switched to regular before launching: stand down for the rest of this arm
+                launchControlState = LAUNCH_CONTROL_DISABLED;
+            } else if (!triggerOn) {
+                launchControlLiftTriggerSeenOff = true;
+            } else if (launchControlLiftTriggerSeenOff) {
+                // the trigger has just come on: this is the launch
+                launchControlLiftTriggerSeenOff = false;  // consumed, whether or not it launches
+                // only from acro, as for arming launch control: the flip-and-brake
+                // recovery needs full rotation. And only near level: the lift self-levels,
+                // but not from a steep slope, a stand at an angle, or upside down. A refused
+                // press is still used up, so levelling it afterwards can never send it.
+                if (flightModeFlags == 0 && isLaunchControlLiftLevel()) {
+                    launchControlState = LAUNCH_CONTROL_LIFTING;
+                    launchControlLiftStartUs = currentTimeUs;
+                    launchControlLiftEndUs = 0;
+                    launchControlLiftTroubleStartUs = 0;
+                    launchControlLiftAborted = false;
+                    launchControlLiftImpacted = false;
+                    launchControlLiftPeakJerk = 0.0f;
+                    launchControlLiftRan = true;
+                    launchControlLiftImpactJerk = currentPidProfile->launchControlLiftImpact * 10.0f;
+                    launchControlLiftTimeMs = currentPidProfile->launchControlLiftTime;
+                    launchControlLiftThrottleFraction = currentPidProfile->launchControlLiftThrottle / 100.0f;
+                    pidResetIterm();
+                }
+            }
         }
     } else {
+        if (launchControlState == LAUNCH_CONTROL_LIFTING) {
+            // disarmed mid-lift: the launch has been used, exactly as if it had completed
+            launchControlState = LAUNCH_CONTROL_TRIGGERED;
+        }
         if (launchControlState == LAUNCH_CONTROL_TRIGGERED) {
             // If trigger mode is MULTIPLE then reset the state when disarmed
             // and the mode switch is turned off.
@@ -949,6 +1032,7 @@ bool processRx(timeUs_t currentTimeUs)
             launchControlState = LAUNCH_CONTROL_DISABLED;
         }
     }
+    updateLaunchControlLiftStatus();
 #endif
 
     return true;
@@ -1337,6 +1421,9 @@ static FAST_CODE_NOINLINE_CRITICAL void subTaskPidController(timeUs_t currentTim
         && !crashFlipModeActive
         && !runawayTakeoffTemporarilyDisabled
         && !FLIGHT_MODE(GPS_RESCUE_MODE)   // disable Runaway Takeoff triggering if GPS Rescue is active
+        // Same for a LIFT: the flight controller is flying, the sticks are ignored, and the
+        // stick throttle stays low, so the deactivation check below can never clear it.
+        && !isLaunchControlLifting()
         // check that motors are running
         && (!featureIsEnabled(FEATURE_MOTOR_STOP) || isAirmodeEnabled() || (calculateThrottleStatus() != THROTTLE_LOW))) {
 
@@ -1515,6 +1602,10 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);  //!< Gyro Update Time [unit:us]
 
     subTaskRcCommand(currentTimeUs);
+#ifdef USE_LAUNCH_CONTROL
+    // Runs in the PID loop, not the RX task, so the lift ends on time even if RX frames stop.
+    launchControlLiftUpdate(currentTimeUs);
+#endif
 #if defined(USE_WING) && defined(USE_LAUNCH_WING)
     // After rcCommand so the abort test and the hand-back blend see fresh stick
     // data, and before the PID controller so it reads this cycle's angle target.
@@ -1554,5 +1645,228 @@ bool isLaunchControlActive(void)
     return launchControlState == LAUNCH_CONTROL_ACTIVE;
 #else
     return false;
+#endif
+}
+
+// LIFT mode: true from the trigger until the lift hands control back to the sticks
+bool isLaunchControlLifting(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlState == LAUNCH_CONTROL_LIFTING && ARMING_FLAG(ARMED);
+#else
+    return false;
+#endif
+}
+
+// Motor throttle (0..1) the mixer uses in place of the stick while lifting
+float getLaunchControlLiftThrottle(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlLiftThrottleFraction;
+#else
+    return 0.0f;
+#endif
+}
+
+// Time left before the sticks take over, for the OSD countdown
+uint32_t getLaunchControlLiftRemainingMs(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    if (!isLaunchControlLifting()) {
+        return 0;
+    }
+    const timeDelta_t elapsedUs = cmpTimeUs(micros(), launchControlLiftStartUs);
+    const timeDelta_t remainingUs = (timeDelta_t)launchControlLiftTimeMs * 1000 - MAX(elapsedUs, 0);
+    return remainingUs > 0 ? (uint32_t)remainingUs / 1000 : 0;
+#else
+    return 0;
+#endif
+}
+
+// LIFT staged with its trigger already on: it has to go off before it can launch
+bool isLaunchControlLiftAwaitingTriggerOff(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlLiftAwaitingTrigger;
+#else
+    return false;
+#endif
+}
+
+// Armed and holding for a LIFT (as opposed to one of the other launch control modes)
+bool isLaunchControlLiftStaged(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlLiftStaged;
+#else
+    return false;
+#endif
+}
+
+#ifdef USE_LAUNCH_CONTROL
+// Works out what the OSD should say, in the RX task where currentPidProfile is valid.
+// Everything the display asks for afterwards is a plain read of these variables.
+static void updateLaunchControlLiftStatus(void)
+{
+    const bool liftMode = currentPidProfile->launchControlMode == LAUNCH_CONTROL_MODE_LIFT;
+    launchControlLiftPreStaged = !ARMING_FLAG(ARMED)
+        && launchControlState == LAUNCH_CONTROL_DISABLED
+        && canUseLaunchControl();
+    launchControlLiftStaged = liftMode && launchControlState == LAUNCH_CONTROL_ACTIVE;
+    launchControlLiftAwaitingTrigger = launchControlLiftStaged && !launchControlLiftTriggerSeenOff;
+    launchControlLiftNotLevel = liftMode && !isLaunchControlLiftLevel();
+
+    launchControlLiftPreArmMessage = NULL;
+    if (!ARMING_FLAG(ARMED) && liftMode && IS_RC_MODE_ACTIVE(BOXLAUNCHCONTROL)) {
+        if (launchControlState == LAUNCH_CONTROL_TRIGGERED && !launchControlLiftRan) {
+            launchControlLiftPreArmMessage = currentPidProfile->launchControlAllowTriggerReset
+                ? "LIFT USED: SWITCH OFF" : "LIFT USED: REBOOT";
+        } else if (launchControlState == LAUNCH_CONTROL_TRIGGERED) {
+            // the peak jerk of the lift, in launch_lift_impact units: set it a little above
+            // what a clean lift reads, and a hit ends the lift while a clean one never does
+            const unsigned peak = (unsigned)(launchControlLiftPeakJerk / 10.0f + 0.999f);   // rounded up
+            tfp_sprintf(launchControlLiftUsedMessage, "LIFT USED PEAK %u%s: %s",
+                MIN(peak, (unsigned)LAUNCH_CONTROL_LIFT_IMPACT_MAX),
+                peak > (unsigned)LAUNCH_CONTROL_LIFT_IMPACT_MAX ? "+" : "",
+                currentPidProfile->launchControlAllowTriggerReset ? "SWITCH OFF" : "REBOOT");
+            launchControlLiftPreArmMessage = launchControlLiftUsedMessage;
+        } else if (!isModeActivationConditionPresent(BOXLAUNCHTRIGGER)) {
+            launchControlLiftPreArmMessage = "LIFT: NO TRIGGER MODE";
+        } else if (flightModeFlags) {
+            launchControlLiftPreArmMessage = "LIFT: ACRO ONLY";
+        } else if (!canUseLaunchControl()) {
+            launchControlLiftPreArmMessage = "LIFT: UNAVAILABLE";
+        } else if (IS_RC_MODE_ACTIVE(BOXLAUNCHTRIGGER)) {
+            launchControlLiftPreArmMessage = "LIFT: TRIGGER OFF FIRST";
+#ifdef USE_ACC
+        } else if (!sensors(SENSOR_ACC)) {
+            launchControlLiftPreArmMessage = "LIFT: NEEDS ACC";
+#endif
+        } else if (launchControlLiftNotLevel) {
+            launchControlLiftPreArmMessage = "LIFT: NOT LEVEL";
+        } else {
+            launchControlLiftPreArmMessage = "LIFT PRE-STAGE";
+        }
+    }
+}
+#endif // USE_LAUNCH_CONTROL
+
+// Disarmed with the Launch Control switch on, and launch control will engage on arming
+// (the flight mode display shows LNCH, as it does once armed and holding)
+bool isLaunchControlPreStaged(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlLiftPreStaged;
+#else
+    return false;
+#endif
+}
+
+// The LIFT pre-arm checklist for the OSD: disarmed with the Launch Control switch on,
+// what will arming do? NULL when not in LIFT mode or the switch is off.
+const char *getLaunchControlLiftPreArmMessage(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlLiftPreArmMessage;
+#else
+    return NULL;
+#endif
+}
+
+// True for a moment after a lift hands over, so the pilot sees the sticks are live
+bool isLaunchControlLiftHandoverRecent(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    if (launchControlLiftEndUs == 0
+        || launchControlState != LAUNCH_CONTROL_TRIGGERED
+        || !ARMING_FLAG(ARMED)
+        || failsafeIsActive()) {
+        return false;
+    }
+    // cmpTimeUs is signed: without the lower bound the notice would return after the
+    // timer wraps, and cover the warnings that come after it
+    const timeDelta_t sinceHandoverUs = cmpTimeUs(micros(), launchControlLiftEndUs);
+    return sinceHandoverUs >= 0 && sinceHandoverUs < LAUNCH_CONTROL_LIFT_HANDOVER_NOTICE_MS * 1000;
+#else
+    return false;
+#endif
+}
+
+// The last lift was ended early because it couldn't hold level
+bool isLaunchControlLiftAborted(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlLiftAborted;
+#else
+    return false;
+#endif
+}
+
+// The last lift was ended by an impact (launch_lift_impact)
+bool isLaunchControlLiftImpacted(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlLiftImpacted;
+#else
+    return false;
+#endif
+}
+
+// LIFT is selected but the quad is too tilted (or has no attitude) to send
+bool isLaunchControlLiftNotLevel(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlLiftNotLevel;
+#else
+    return false;
+#endif
+}
+
+// Ends a LIFT. Nothing but time, the trigger (or launch control) going off, losing the
+// ability to hold level, a disarm or a failsafe ends it: stick movement deliberately does not, so the pilot can set the
+// sticks for the handover while the quad climbs. On a momentary trigger this makes the
+// lift hold-to-run: letting go hands the quad back to the sticks.
+void launchControlLiftUpdate(timeUs_t currentTimeUs)
+{
+#ifdef USE_LAUNCH_CONTROL
+    if (launchControlState != LAUNCH_CONTROL_LIFTING) {
+        return;
+    }
+    const bool timeUp = cmpTimeUs(currentTimeUs, launchControlLiftStartUs) >= (timeDelta_t)launchControlLiftTimeMs * 1000;
+    const bool switchAbort = !IS_RC_MODE_ACTIVE(BOXLAUNCHTRIGGER) || !IS_RC_MODE_ACTIVE(BOXLAUNCHCONTROL);
+
+    // Can it still hold level? Self-level keeps a healthy quad within a few degrees and
+    // barely rotating. A loose prop, a motor or ESC fault or a strike shows up as a tilt
+    // it can't correct, or a spin, and full throttle would drive it wherever it points.
+    // Brief upsets (a gust, leaving uneven ground) are ridden out; a sustained one hands
+    // the quad straight back to the pilot rather than finishing the climb.
+    bool lostControl = false;
+    bool impact = false;
+#ifdef USE_ACC
+    bool troubled = getCosTiltAngle() < cos_approx(DEGREES_TO_RADIANS(LAUNCH_CONTROL_LIFT_ABORT_TILT_DEG));
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        troubled = troubled || fabsf(gyro.gyroADCf[axis]) > LAUNCH_CONTROL_LIFT_ABORT_RATE_DPS;
+    }
+    // An impact (a ceiling, a bird, a branch) is a spike in jerk that thrust alone doesn't
+    // make, however hard the quad accelerates. Off unless set: it ends the lift at once.
+    launchControlLiftPeakJerk = fmaxf(launchControlLiftPeakJerk, acc.jerkMagnitude);
+    impact = launchControlLiftImpactJerk > 0.0f && acc.jerkMagnitude > launchControlLiftImpactJerk;
+    if (!troubled) {
+        launchControlLiftTroubleStartUs = 0;
+    } else if (launchControlLiftTroubleStartUs == 0) {
+        launchControlLiftTroubleStartUs = currentTimeUs ? currentTimeUs : 1;
+    } else {
+        lostControl = cmpTimeUs(currentTimeUs, launchControlLiftTroubleStartUs) >= LAUNCH_CONTROL_LIFT_ABORT_TIME_MS * 1000;
+    }
+#endif
+
+    if (timeUp || switchAbort || lostControl || impact || failsafeIsActive() || !ARMING_FLAG(ARMED)) {
+        launchControlState = LAUNCH_CONTROL_TRIGGERED;
+        launchControlLiftEndUs = currentTimeUs ? currentTimeUs : 1;
+        launchControlLiftAborted = lostControl || impact;
+        launchControlLiftImpacted = impact;
+    }
+#else
+    UNUSED(currentTimeUs);
 #endif
 }
