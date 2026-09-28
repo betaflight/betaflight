@@ -78,7 +78,6 @@ void pwmDshotSetDirectionOutput(
 
     const timerHardware_t * const timerHardware = motor->timerHardware;
     TIM_TypeDef *timer = (TIM_TypeDef *)timerHardware->tim;
-    // const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
 	
     xLL_EX_DMA_DisableResource(motor->dmaRef);
 
@@ -90,18 +89,26 @@ void pwmDshotSetDirectionOutput(
     LL_TIM_OC_EnablePreload(timer, motor->llChannel);
 
 #ifdef USE_DSHOT_DMAR
-    if (useBurstDshot) {
-        return;
-    }
+    if (useBurstDshot) {        
+        motor->dmaInitStruct.Direction = LL_DMA_MEMORY_TO_PERIPH;
+        motor->dmaInitStruct.SrcAddress = (uint32_t)motor->timer->dmaBurstBuffer;
+        motor->dmaInitStruct.DstAddress = (uint32_t)&timer->DMAR;
+        motor->dmaInitStruct.SrcInc = LL_DMA_SRCINC_INC;
+        motor->dmaInitStruct.DstInc = LL_DMA_DSTINC_NOC;
+        motor->dmaInitStruct.SrcPer = DMA_SRC_HANDSHAKING(DMA_Handshake_Rev);
+        motor->dmaInitStruct.DstPer = DMA_DST_HANDSHAKING(timerHardware->dmaTimUPChannel);
+    }else
 #endif
+    {
+        motor->dmaInitStruct.Direction = LL_DMA_MEMORY_TO_PERIPH;
+        motor->dmaInitStruct.SrcAddress = (uint32_t)motor->dmaBuffer;
+        motor->dmaInitStruct.DstAddress = (uint32_t)timerChCCR(timerHardware);
+        motor->dmaInitStruct.SrcInc = LL_DMA_SRCINC_INC;
+        motor->dmaInitStruct.DstInc = LL_DMA_DSTINC_NOC;
+        motor->dmaInitStruct.SrcPer = DMA_SRC_HANDSHAKING(DMA_Handshake_Rev);
+        motor->dmaInitStruct.DstPer = DMA_DST_HANDSHAKING(timerHardware->dmaChannelConfigured);
+    }
 
-    motor->dmaInitStruct.Direction = LL_DMA_MEMORY_TO_PERIPH;
-    motor->dmaInitStruct.SrcAddress = (uint32_t)motor->dmaBuffer;
-    motor->dmaInitStruct.DstAddress = (uint32_t)timerChCCR(timerHardware);
-    motor->dmaInitStruct.SrcInc = LL_DMA_SRCINC_INC;
-    motor->dmaInitStruct.DstInc = LL_DMA_DSTINC_NOC;
-    motor->dmaInitStruct.SrcPer = DMA_SRC_HANDSHAKING(DMA_Handshake_Rev);
-    motor->dmaInitStruct.DstPer = DMA_DST_HANDSHAKING(timerHardware->dmaChannelConfigured);
     xLL_EX_DMA_Init(motor->dmaRef, pDmaInit);
     xLL_EX_DMA_EnableIT_TC(motor->dmaRef);
 }
@@ -148,12 +155,12 @@ FAST_CODE void pwmCompleteDshotMotorUpdate(void)
     for (int i = 0; i < dmaMotorTimerCount; i++) {
 #ifdef USE_DSHOT_DMAR
         if (useBurstDshot) {
-            // xLL_EX_DMA_SetSrcAddress(dmaMotorTimers[i].dmaBurstRef, (uint32_t)dmaMotorTimers[i].dmaBurstBuffer);
+            xLL_EX_DMA_SetSrcAddress(dmaMotorTimers[i].dmaBurstRef, (uint32_t)dmaMotorTimers[i].dmaBurstBuffer);
             xLL_EX_DMA_SetDataLength(dmaMotorTimers[i].dmaBurstRef, dmaMotorTimers[i].dmaBurstLength);
             xLL_EX_DMA_EnableResource(dmaMotorTimers[i].dmaBurstRef);
 
             /* configure the DMA Burst Mode */
-            LL_TIM_ConfigDMABurst(dmaMotorTimers[i].timer, LL_TIM_DMABURST_BASEADDR_CCR1, LL_TIM_DMABURST_LENGTH_4TRANSFERS);
+            LL_TIM_ConfigDMABurst(dmaMotorTimers[i].timer, LL_TIM_DMABURST_BASEADDR_CCR1, TIM_DCR_DBL_2);
             /* Enable the TIM DMA Request */
             LL_TIM_EnableDMAReq_UPDATE(dmaMotorTimers[i].timer);
         } else
@@ -189,7 +196,7 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
             if (useBurstDshot) {
                 LL_TIM_DisableDMAReq_UPDATE((TIM_TypeDef *)motor->timerHardware->tim);
                 xLL_EX_DMA_DisableResource(motor->timerHardware->dmaTimUPRef);
-                xLL_EX_DMA_ConsumeRequest(motor->timerHardware->dmaTimUPRef);
+                // xLL_EX_DMA_ConsumeRequest(motor->timerHardware->dmaTimUPRef);
             } else
 #endif
             {

@@ -53,8 +53,8 @@ typedef struct dmaTimerMapping_s {
 
 static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
 #ifdef USE_SPI
-    { DMA_PERIPH_SPI_SDO,  SPIDEV_1,  NON_DMA },
-    { DMA_PERIPH_SPI_SDI,  SPIDEV_1,  NON_DMA },
+    { DMA_PERIPH_SPI_SDO,  SPIDEV_1,  { DMA(2, 5, 4), DMA(2, 3, 4) } },
+    { DMA_PERIPH_SPI_SDI,  SPIDEV_1,  { DMA(2, 2, 5), DMA(2, 0, 5) } },
     { DMA_PERIPH_SPI_SDO,  SPIDEV_2,  { DMA(1, 4, 4) } },
     { DMA_PERIPH_SPI_SDI,  SPIDEV_2,  { DMA(1, 3, 5) } },
     // { DMA_PERIPH_SPI_SDO,  SPIDEV_3,  NON_DMA },
@@ -118,7 +118,7 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
     { (timerResource_t *)TIM4, TC(CH4), { DMA(1, 8, 1) } },   
 
     { (timerResource_t *)TIM5, TC(CH1), { DMA(1, 2, 1) } },
-    { (timerResource_t *)TIM5, TC(CH4), { DMA(1, 1, 0) } },
+    { (timerResource_t *)TIM5, TC(CH4), { DMA(1, 1, 0) } },  
 
     { (timerResource_t *)TIM8, TC(CH1), { DMA(2, 2, 1) } },   
     { (timerResource_t *)TIM8, TC(CH2), { DMA(2, 2, 1) } },   

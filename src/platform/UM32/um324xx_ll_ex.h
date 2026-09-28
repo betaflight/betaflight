@@ -137,6 +137,8 @@ __STATIC_INLINE void LL_EX_DMA_SetSrcAddress(DMA_Stream_TypeDef* DMAx_Channely, 
     const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
 
     DMAx->CHENREG = (DMA_CHENREG_CH_EN_WE_0 << Channel); 
-    __NOP();
+    while(READ_REG(DMAx->CHENREG) & (DMA_CHENREG_CH_EN_0 << Channel)){
+        __NOP();
+    }
     DMAx_Channely->SAR = SrcAddress;
 }
