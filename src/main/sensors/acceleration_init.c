@@ -53,6 +53,7 @@
 
 #include "drivers/accgyro/accgyro_spi_lsm6dso.h"
 #include "drivers/accgyro/accgyro_spi_lsm6dsv16x.h"
+#include "drivers/accgyro/accgyro_spi_asm330lhh.h"
 
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
@@ -338,6 +339,15 @@ retry:
     case ACC_LSM6DSK320X:
         if (lsm6dsk320xSpiAccDetect(dev)) {
             accHardware = ACC_LSM6DSK320X;
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
+#ifdef USE_ACCGYRO_ASM330LHH
+    case ACC_ASM330LHH:
+        if (asm330lhhSpiAccDetect(dev)) {
+            accHardware = ACC_ASM330LHH;
             break;
         }
         FALLTHROUGH;
