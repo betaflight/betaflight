@@ -546,6 +546,25 @@ TEST_F(AdrcUnittest, B0ThrottleScaleReleasesGraduallyOnThrottleChop)
     EXPECT_NEAR(1.0f, runtime.b0ThrottleScale, 1e-3f);
 }
 
+TEST_F(AdrcUnittest, SameTypeReinitKeepsTheB0Schedule)
+{
+    // ADRC-035: pidInitConfig() re-runs adrcInitConfig() while armed for AUX adjustments. That
+    // must not restart the collective low-pass from zero: the scale would snap to its floor in one
+    // loop, the same collapse B0ThrottleScaleReleasesGraduallyOnThrottleChop guards against.
+    profile.b0Law = ADRC_B0_LAW_QUADRATIC;
+    profile.hoverThrottlePercent = 35;
+    profile.b0ThrottleScaleMax = 9;
+
+    simulatedThrottle = 0.70f;
+    settleB0ThrottleScale();
+    ASSERT_NEAR(4.0f, runtime.b0ThrottleScale, 1e-3f);
+
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    EXPECT_NEAR(4.0f, runtime.b0ThrottleScale, 1e-3f);
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    EXPECT_NEAR(4.0f, runtime.b0ThrottleScale, 1e-3f);
+}
+
 TEST_F(AdrcUnittest, B0ThrottleScaleIgnoresLoopRateCollectiveModulation)
 {
     // The published collective includes the mixer's per-loop constrain, which tracks the loop's
