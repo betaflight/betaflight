@@ -19,3 +19,7 @@
 #include "flight/pos_hold_multirotor.h"
 #include "flight/autopilot_multirotor.h"
 #include "flight/autopilot_wing.h"
+
+// The most position error the position controller acts on under nav (cm): a nav reference held
+// further from the craft than this adds nothing to the correction and only winds up.
+#define NAV_ERROR_DISTANCE_LIMIT 500.0f

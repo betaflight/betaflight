@@ -141,6 +141,7 @@
     && !defined(USE_ACC_MPU6500) \
     && !defined(USE_ACCGYRO_BMI160) \
     && !defined(USE_ACCGYRO_BMI270) \
+    && !defined(USE_ACCGYRO_BMI423) \
     && !defined(USE_ACC_SPI_ICM20602) \
     && !defined(USE_ACC_SPI_ICM20649) \
     && !defined(USE_ACC_SPI_ICM20689) \
@@ -154,6 +155,7 @@
     && !defined(USE_ACCGYRO_ICM45605) \
     && !defined(USE_ACCGYRO_LSM6DSO) \
     && !defined(USE_ACCGYRO_LSM6DSV16X) \
+    && !defined(USE_ACCGYRO_LSM6DSV32X) \
     && !defined(USE_ACCGYRO_LSM6DSK320X) \
     && !defined(USE_ACC_SPI_MPU6000) \
     && !defined(USE_ACC_SPI_MPU6500) \
@@ -169,6 +171,7 @@
     && !defined(USE_GYRO_MPU6500) \
     && !defined(USE_ACCGYRO_BMI160) \
     && !defined(USE_ACCGYRO_BMI270) \
+    && !defined(USE_ACCGYRO_BMI423) \
     && !defined(USE_GYRO_SPI_ICM20602) \
     && !defined(USE_GYRO_SPI_ICM20649) \
     && !defined(USE_GYRO_SPI_ICM20689) \
@@ -182,6 +185,7 @@
     && !defined(USE_ACCGYRO_ICM40609D) \
     && !defined(USE_ACCGYRO_LSM6DSO) \
     && !defined(USE_ACCGYRO_LSM6DSV16X) \
+    && !defined(USE_ACCGYRO_LSM6DSV32X) \
     && !defined(USE_ACCGYRO_LSM6DSK320X) \
     && !defined(USE_GYRO_SPI_MPU6000) \
     && !defined(USE_GYRO_SPI_MPU6500) \
@@ -237,6 +241,12 @@
 #endif
 #ifndef USE_MAG_MMC560X
 #define USE_MAG_MMC560X
+#endif
+#ifndef USE_MAG_BMM350
+#define USE_MAG_BMM350
+#endif
+#ifndef USE_MAG_AK9916
+#define USE_MAG_AK9916
 #endif
 
 #endif // END MAG HW defines
@@ -331,24 +341,12 @@
 #endif
 #endif
 
-// The flight plan flies through the shared autopilot stack: altitude via alt
-// hold, XY via the position-hold task, waypoints via GPS. Derive all of them
-// here so a build (cloud or target) selecting the flight plan alone still gets
-// a complete, flyable stack; without alt hold the missions would silently fly
-// with no altitude control at all. Placed ahead of every USE_GPS consumer
-// (VARIO below, the !USE_GPS subfeature cleanup, and the GPS secondary
+// The flight plan flies its waypoints via GPS. Placed ahead of every USE_GPS
+// consumer (VARIO below, the !USE_GPS subfeature cleanup, and the GPS secondary
 // defines) so all of them see the derived USE_GPS.
-#if defined(USE_FLIGHT_PLAN)
-#if !defined(USE_GPS)
+#if defined(USE_FLIGHT_PLAN) && !defined(USE_GPS)
 #define USE_GPS
 #endif
-#if !defined(USE_ALTITUDE_HOLD)
-#define USE_ALTITUDE_HOLD
-#endif
-#if !defined(USE_POSITION_HOLD)
-#define USE_POSITION_HOLD
-#endif
-#endif // USE_FLIGHT_PLAN
 
 // Add VARIO if BARO or GPS is defined. Remove when none defined.
 #if defined(USE_BARO) || defined(USE_GPS)
@@ -599,12 +597,12 @@
 
 // Generate USE_SPI_GYRO
 #if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) \
-    || defined(USE_GYRO_L3GD20) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) \
+    || defined(USE_GYRO_L3GD20) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) || defined(USE_ACCGYRO_BMI423) \
     || defined(USE_GYRO_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_ACCGYRO_ICM42686P) || defined(USE_GYRO_SPI_ICM42688P) \
     || defined(USE_ACCGYRO_ICM56686) \
     || defined(USE_ACCGYRO_ICM40609D) || defined(USE_ACCGYRO_ICM45605) || defined(USE_ACCGYRO_ICM45686) \
     || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653) \
-    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_LSM6DSK320X)
+    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_LSM6DSK320X)
 #ifndef USE_SPI_GYRO
 #define USE_SPI_GYRO
 #endif
@@ -857,6 +855,20 @@ extern struct linker_symbol __fontdata_end;
 #define USE_GPS_RESCUE
 #endif
 #endif // USE_GPS
+
+// The flight plan and multirotor GPS rescue fly through the shared autopilot
+// stack: altitude via alt hold, XY via the position-hold task. Derive both so a
+// build (cloud or target) selecting GPS or the flight plan alone still gets a
+// complete, flyable stack; without the position-hold task a rescue climbs and
+// turns for home but never flies there. Placed after USE_GPS_RESCUE is derived.
+#if defined(USE_FLIGHT_PLAN) || (defined(USE_GPS_RESCUE) && !defined(USE_WING))
+#if !defined(USE_ALTITUDE_HOLD)
+#define USE_ALTITUDE_HOLD
+#endif
+#if !defined(USE_POSITION_HOLD)
+#define USE_POSITION_HOLD
+#endif
+#endif
 
 #if (!defined(USE_GPS_RESCUE) || !defined(USE_CMS_FAILSAFE_MENU))
 #undef USE_CMS_GPS_RESCUE_MENU

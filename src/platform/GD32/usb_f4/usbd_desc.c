@@ -42,6 +42,10 @@ OF SUCH DAMAGE.
 
 #include "pg/pg.h"
 #include "pg/usb.h"
+#include "drivers/usb_descriptor.h"
+#ifdef USE_USB_MSC
+#include "drivers/usb_msc.h"
+#endif
 
 #define USBD_VID                          0x28E9U
 #define USBD_PID                          0x018AU
@@ -322,17 +326,13 @@ static void usbd_string_buf_get(const char *src, uint8_t *unicode)
   }
 }
 
-
 void usbd_desc_string_update(void)
 {
-#if defined(USBD_PRODUCT_STRING)
-    usbd_string_buf_get(USBD_PRODUCT_STRING, (uint8_t *)&product_string);
-#endif
+    usbd_string_buf_get(usbDescriptorProductString(), (uint8_t *)&product_string);
 #if defined(FC_FIRMWARE_NAME)
     usbd_string_buf_get(FC_FIRMWARE_NAME, (uint8_t *)&manufacturer_string);
 #endif
 }
-
 
 /*!
     \brief      initialize the CDC ACM device

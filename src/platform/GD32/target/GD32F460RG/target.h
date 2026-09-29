@@ -24,10 +24,6 @@
 #define TARGET_BOARD_IDENTIFIER "G460"
 #endif
 
-#ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight GD32F460"
-#endif
-
 #ifndef GD32F460
 #define GD32F460
 #endif

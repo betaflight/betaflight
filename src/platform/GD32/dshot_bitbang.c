@@ -286,13 +286,10 @@ FAST_IRQ_HANDLER void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
 
     bbTIM_DMACmd(bbPort->timhw->tim, bbPort->dmaSource, DISABLE);
 
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_INT_FLAG_TAE)) {
-        DMA_CLEAR_FLAG(descriptor, DMA_INT_FLAG_TAE);    // Clear Transfer Error flag
-        bbDMA_Cmd(bbPort, DISABLE);
-        bbTIM_DMACmd(bbPort->timhw->tim, bbPort->dmaSource, DISABLE);
+    if (bbDMAServiceFlags(bbPort, descriptor)) {
+        dbgPinLo(0);
+        return;
     }
-
-    DMA_CLEAR_FLAG(descriptor, DMA_INT_FLAG_FTF);
 
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
@@ -651,6 +648,17 @@ static void bbUpdateComplete(void)
 #ifdef USE_DSHOT_CACHE_MGMT
         SCB_CleanDCache_by_Addr(bbPort->portOutputBuffer, MOTOR_DSHOT_BUF_CACHE_ALIGN_BYTES);
 #endif
+
+        if (bbPort->reinitRequired) {
+            // A DMA transfer error left the stream's registers describing a
+            // partial transfer. Reload them before enabling it again; if the
+            // stream will not stop, leave the flag up and retry next cycle.
+            if (!bbSwitchToOutput(bbPort)) {
+                continue;
+            }
+            bbPort->inputActive = false;
+            bbPort->reinitRequired = false;
+        }
 
 #ifdef USE_DSHOT_TELEMETRY
         if (useDshotTelemetry) {

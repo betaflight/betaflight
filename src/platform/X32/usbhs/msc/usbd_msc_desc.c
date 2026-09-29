@@ -21,6 +21,10 @@
 #include "usbd_desc.h"
 #include "usbd_msc_desc.h"
 
+#include "build/version.h"
+
+#include "drivers/usb_descriptor.h"
+
 #if defined(__GNUC__)
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
@@ -29,11 +33,8 @@
 #define USBD_PID                          0x5780
 
 #define USBD_LANGID_STRING                0x409
-#define USBD_MANUFACTURER_STRING          "XCORELABS"
+#define USBD_MANUFACTURER_STRING          FC_FIRMWARE_NAME
 
-
-#define USBD_MSC_PRODUCT_HS_STRING        "Mass Storage in HS Mode"
-#define USBD_MSC_PRODUCT_FS_STRING        "Mass Storage in FS Mode"
 #define USBD_MSC_CONFIGURATION_HS_STRING  "MSC Config"
 #define USBD_MSC_INTERFACE_HS_STRING      "MSC Interface"
 #define USBD_MSC_CONFIGURATION_FS_STRING  "MSC Config"
@@ -125,14 +126,7 @@ uint8_t *USBD_MSC_USER_LangIDStrDescriptor(uint8_t speed, uint16_t * length)
 */
 uint8_t *USBD_MSC_USER_ProductStrDescriptor(uint8_t speed, uint16_t * length)
 {
-    if (speed == USB_SPEED_HIGH)
-    {
-        USBD_GetString((uint8_t *) (uint8_t *) USBD_MSC_PRODUCT_HS_STRING, USBD_StrDesc, length);
-    }
-    else
-    {
-        USBD_GetString((uint8_t *) (uint8_t *) USBD_MSC_PRODUCT_FS_STRING, USBD_StrDesc, length);
-    }
+    USBD_GetString((uint8_t *)usbDescriptorMscProductString(), USBD_StrDesc, length);
     return USBD_StrDesc;
 }
 

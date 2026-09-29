@@ -20,6 +20,7 @@
 // flightPlanNavStageRescuePlan(). flight_plan_nav_unittest.cc stays the
 // flag-off regression guard and is not touched by this binary.
 
+#include <math.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -91,12 +92,17 @@ float g_emergencyDescentRateCmS;
 float g_altHoldClimbRateCmS;
 float g_lastVertRateMps;
 float g_lastVertStartAltM;
+vector2_t g_stubPositionErrorCm;
 int g_setVerticalProfileCalls;
+float g_stubCommandedAltCm;
+bool g_stubCommandedAltSet;
+vector3_t g_stubTargetVelCmS;
 
 gpsLocation_t g_stubGpsOrigin;
 bool g_stubGpsOriginSet;
 
 timeUs_t g_stubMicros;
+timeUs_t g_targetWalkFromUs;   // positionNav walks a target flown at a stated velocity from when it was last placed
 
 positionEstimate3d_t g_stubEstimate;
 bool g_stubValidXY;
@@ -110,8 +116,23 @@ float g_yawRateLimitDps;
 
 float g_stubMaxAltitudeCm;
 bool g_stubHeadingValid;
+bool g_stubHeadingRequired;
+float g_stubAltitudeCm;
 int g_pitchForwardCalls;
 bool g_lastPitchForward;
+
+vector2_t g_lastFfEfMps;
+bool g_ffValid;
+float g_lastAccelLimitMps2;
+float g_lastDecelLimitMps2;
+float g_settleTimeoutS;
+float g_maxAngleDeg;
+
+// The speed of the velocity the carrot last commanded.
+float lastFfSpeedMps(void)
+{
+    return sqrtf(g_lastFfEfMps.x * g_lastFfEfMps.x + g_lastFfEfMps.y * g_lastFfEfMps.y);
+}
 
 } // namespace
 
@@ -134,7 +155,12 @@ void positionNavSetTargetEf(
     g_lastTarget.callback = callback;
     g_lastTarget.userData = userData;
     g_lastTarget.valid = true;
+    g_ffValid = false;
+    memset(&g_lastFfEfMps, 0, sizeof(g_lastFfEfMps));
+    g_settleTimeoutS = 0.0f;
+    g_maxAngleDeg = 0.0f;
     g_setTargetCalls++;
+    g_targetWalkFromUs = g_stubMicros;
 }
 
 void altHoldSetEmergencyDescent(bool active, float rateCmS)
@@ -155,18 +181,50 @@ void positionNavSetVerticalProfile(float rateMps, float startAltM)
     g_setVerticalProfileCalls++;
 }
 
+// The altitude the active command is walking its ramp through: the leg altitude, as if the ramp
+// had already got there, unless a test states otherwise.
+float positionNavGetTargetAltitudeCm(void)
+{
+    return g_stubCommandedAltSet ? g_stubCommandedAltCm : g_lastTarget.targetEfM.z * 100.0f;
+}
+
+vector3_t positionNavGetTargetVelocityCmS(void)
+{
+    return g_stubTargetVelCmS;
+}
+
+// Where positionNav has walked the target to by now.
+static vector3_t walkedTargetEfM(void)
+{
+    vector3_t targetEfM = g_lastTarget.targetEfM;
+    if (g_ffValid) {
+        const float walkS = (g_stubMicros - g_targetWalkFromUs) * 1e-6f;
+        targetEfM.x += g_lastFfEfMps.x * walkS;
+        targetEfM.y += g_lastFfEfMps.y * walkS;
+    }
+    return targetEfM;
+}
+
 void positionNavMoveTargetEf(const vector3_t *targetPosEfM)
 {
     if (!g_lastTarget.valid) {
         return;
     }
     g_lastTarget.targetEfM = *targetPosEfM;
+    g_targetWalkFromUs = g_stubMicros;
 }
 
 void positionNavClearTarget(void)
 {
     g_clearTargetCalls++;
     g_lastTarget.valid = false;
+}
+
+static int g_startAfreshCalls;
+
+void positionNavStartAfresh(void)
+{
+    g_startAfreshCalls++;
 }
 
 void positionNavSetAutoClearOnReach(bool autoClear)
@@ -176,13 +234,49 @@ void positionNavSetAutoClearOnReach(bool autoClear)
 
 void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
 {
-    (void)maxAccelMps2;
-    (void)maxDecelMps2;
+    g_lastAccelLimitMps2 = maxAccelMps2;
+    g_lastDecelLimitMps2 = maxDecelMps2;
+}
+
+float g_lastApproachSlowdownM;
+float g_lastApproachStillRadiusM;
+
+void positionNavSetApproachSlowdown(float slowdownM, float stillRadiusM)
+{
+    g_lastApproachSlowdownM = slowdownM;
+    g_lastApproachStillRadiusM = stillRadiusM;
+}
+
+float positionNavApproachTaperMps(float cruiseSpeedMps, float slowdownM, float stillRadiusM, float distM)
+{
+    const float spanM = fmaxf(slowdownM - stillRadiusM, 0.01f);
+    return cruiseSpeedMps * fminf(fmaxf((distM - stillRadiusM) / spanM, 0.0f), 1.0f);
+}
+
+void positionNavSetVelocityFeedforward(const vector2_t *velEfMps)
+{
+    if (!g_lastTarget.valid) {
+        return;
+    }
+    g_lastTarget.targetEfM = walkedTargetEfM();
+    g_targetWalkFromUs = g_stubMicros;
+    g_lastFfEfMps = *velEfMps;
+    g_ffValid = true;
 }
 
 void positionNavSetAltitudeArrivalRequired(bool required)
 {
     g_altitudeArrivalRequired = required;
+}
+
+void positionNavSetSettleTimeout(float timeoutS)
+{
+    g_settleTimeoutS = timeoutS;
+}
+
+void positionNavSetMaxAngle(float angleDeg)
+{
+    g_maxAngleDeg = angleDeg;
 }
 
 bool positionEstimatorGetGpsOrigin(gpsLocation_t *out)
@@ -196,7 +290,12 @@ bool positionEstimatorGetGpsOrigin(gpsLocation_t *out)
 
 float positionEstimatorGetAltitudeCm(void)
 {
-    return 0.0f;
+    return g_stubAltitudeCm;
+}
+
+bool positionEstimatorIsHeadingRequired(void)
+{
+    return g_stubHeadingRequired;
 }
 
 const positionEstimate3d_t *positionEstimatorGetEstimate(void)
@@ -219,9 +318,10 @@ const positionNavCommand_t *positionNavGetActiveCommand(void)
     static positionNavCommand_t cmd;
     memset(&cmd, 0, sizeof(cmd));
     cmd.active = g_lastTarget.valid;
-    cmd.targetPosEfM = g_lastTarget.targetEfM;
+    cmd.targetPosEfM = walkedTargetEfM();
     cmd.includeAltitude = g_lastTarget.includeAltitude;
     cmd.cruiseSpeedMps = g_lastTarget.cruiseSpeedMps;
+    cmd.velocityFfValid = g_ffValid;
     return &cmd;
 }
 
@@ -290,6 +390,11 @@ void autopilotSetNavHeadingOverride(bool valid, float headingDeg)
     g_navHeadingOverrideDeg = headingDeg;
 }
 
+vector2_t autopilotGetPositionErrorCm(void)
+{
+    return g_stubPositionErrorCm;
+}
+
 } // extern "C"
 
 class FlightPlanRescueTest : public ::testing::Test {
@@ -297,6 +402,12 @@ protected:
     void SetUp() override {
         memset(&g_lastTarget, 0, sizeof(g_lastTarget));
         g_setTargetCalls = 0;
+        g_lastApproachSlowdownM = 0.0f;
+        g_lastApproachStillRadiusM = 0.0f;
+        memset(&g_lastFfEfMps, 0, sizeof(g_lastFfEfMps));
+        g_ffValid = false;
+        g_lastAccelLimitMps2 = -1.0f;
+        g_lastDecelLimitMps2 = -1.0f;
         g_setVerticalProfileCalls = 0;
         g_navHeadingOverrideValid = false;
         g_navHeadingOverrideDeg = 0.0f;
@@ -305,7 +416,12 @@ protected:
         g_altHoldClimbRateCmS = 500.0f;   // alt_hold_climb_rate default, 5 m/s
         g_lastVertRateMps = 0.0f;
         g_lastVertStartAltM = 0.0f;
+        memset(&g_stubPositionErrorCm, 0, sizeof(g_stubPositionErrorCm));
+        g_stubCommandedAltCm = 0.0f;
+        g_stubCommandedAltSet = false;
+        memset(&g_stubTargetVelCmS, 0, sizeof(g_stubTargetVelCmS));
         g_clearTargetCalls = 0;
+        g_startAfreshCalls = 0;
         g_stubMicros = 0;
 
         memset(&g_stubEstimate, 0, sizeof(g_stubEstimate));
@@ -317,14 +433,16 @@ protected:
 
         g_stubMaxAltitudeCm = 0.0f;
         g_stubHeadingValid = true; // heading trusted unless a test says otherwise
+        g_stubHeadingRequired = true;
+        g_stubAltitudeCm = 0.0f;
         g_pitchForwardCalls = 0;
         g_lastPitchForward = false;
 
         // Home and GPS origin at the equator/prime meridian, 100 m AMSL;
         // current position 30 m east of home so the rescue climb waypoint
-        // (current position) and the return leg (home) are distinguishable.
+        // (current position) and the return leg (home) are distinguishable,
+        // and clear of minStartDistM (15 m).
         stateFlags = GPS_FIX_HOME | GPS_FIX;
-        GPS_distanceToHome = 100; // clear of the close-range branch (minStartDistM = 15)
 
         g_stubGpsOrigin.lat = 0;
         g_stubGpsOrigin.lon = 0;
@@ -357,6 +475,16 @@ protected:
         cfg->landingDescentRate = 50;      // 0.5 m/s
         cfg->landingDetectionTime = 10;    // 1 s
         cfg->landingVelocityThreshold = 50; // 0.5 m/s
+        cfg->maxAngle = 50;                // ap_max_angle default
+        // Leg-line carrot tracking (PG reset template is not applied under test): without these the
+        // carrot cannot accelerate and every pass-gate leg sits still.
+        cfg->navCornerSpeed = 220;
+        cfg->navCornerDeltaV = 440;
+        cfg->navDecel = 250;
+        cfg->navAccel = 250;
+        cfg->navCarrotLeadTime = 12;
+        cfg->navCarrotLeadMax = 2500;
+        cfg->navPreturnDist = 1500;
 
         flightPlanNavInit();
     }
@@ -400,6 +528,7 @@ TEST_F(FlightPlanRescueTest, StageThenEngageDispatchesRescuePlan)
 {
     // A PG waypoint at a wildly different place/altitude: must never be flown.
     addWaypoint(500000, 500000, 99999, WAYPOINT_TYPE_FLYOVER);
+    g_stubEstimate.position.v[ENU_E] = 30.0f * 100.0f;   // where the GPS says the craft is
 
     ASSERT_TRUE(flightPlanNavStageRescuePlan());
     flightPlanNavEngage();
@@ -410,7 +539,7 @@ TEST_F(FlightPlanRescueTest, StageThenEngageDispatchesRescuePlan)
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
 
     ASSERT_TRUE(g_lastTarget.valid);
-    // Rescue wp0: HOLD at the current GPS position (30 m east of home/origin).
+    // Rescue wp0: HOLD where the craft is (30 m east of home/origin).
     EXPECT_NEAR(g_lastTarget.targetEfM.x, 30.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.targetEfM.z, kDefaultReturnAltM, 0.1f);
@@ -500,17 +629,95 @@ TEST_F(FlightPlanRescueTest, ReturnAltPerMode)
     EXPECT_NEAR(g_lastTarget.targetEfM.z, 0.0f, 0.01f);
 }
 
-TEST_F(FlightPlanRescueTest, CloseRangeReturnAltitudeUsesModestHeadroom)
+TEST_F(FlightPlanRescueTest, CloseToHomeLandsWhereTheCraftStops)
 {
-    // Close range (< minStartDistM): MAX(home + 7.5 m, current + climb).
-    // A 2 m climb keeps home+750 (7.5 m) the larger term: 107.5 m -> +7.5 m.
-    GPS_distanceToHome = 10;
-    gpsRescueConfigMutable()->initialClimbM = 2;
+    // A craft coming to a stop inside minStartDistM has no return to fly, and climbing first only
+    // lifts it over whoever is near home: it brakes, holds its nose and lands where it stops.
+    gpsSol.llh.lon = metresToLonUnits(3.0f);
+    gpsRescueConfigMutable()->descendRate = 150;
+    gpsRescueConfigMutable()->descentDistanceM = 7;
+    g_stubEstimate.position.v[ENU_E] = 3.0f * 100.0f;
+    g_stubEstimate.velocity.v[ENU_E] = 400.0f;
+    attitude.values.yaw = 1200;
 
     ASSERT_TRUE(flightPlanNavStageRescuePlan());
     flightPlanNavEngage();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    const float stopM = 4.0f * (4.0f / (2.0f * 9.80665f * tanf(35.0f * M_PIf / 180.0f)) + 0.15f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 3.0f + stopM, 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 0.0f, 0.01f);
+    EXPECT_NEAR(g_lastTarget.acceptanceRadiusM, 2.0f, 0.001f);
+    EXPECT_NEAR(g_lastTarget.completionSpeedMps, 0.5f, 0.001f);
+    EXPECT_NEAR(g_maxAngleDeg, 35.0f, 0.001f);
+    EXPECT_TRUE(g_navHeadingOverrideValid);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, 120.0f, 0.1f);
 
-    EXPECT_NEAR(g_lastTarget.targetEfM.z, 7.5f, 0.01f);
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 3.0f + stopM, 0.01f);
+    EXPECT_NEAR(g_lastApproachSlowdownM, 0.0f, 0.001f);
+    EXPECT_NEAR(g_lastVertRateMps, 1.5f, 0.01f);
+}
+
+TEST_F(FlightPlanRescueTest, PassingHomeAtSpeedStillFliesHome)
+{
+    // 3 m from home at 15 m/s, the craft stops about 22 m out: that is a return, not a landing.
+    gpsSol.llh.lon = metresToLonUnits(3.0f);
+    g_stubEstimate.position.v[ENU_E] = 3.0f * 100.0f;
+    g_stubEstimate.velocity.v[ENU_E] = 1500.0f;
+
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, kDefaultReturnAltM, 0.01f);
+    attitude.values.yaw = 2700;
+    triggerReached();
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+}
+
+TEST_F(FlightPlanRescueTest, ClosingOnHomeAtSpeedLandsWhereItStops)
+{
+    // 20 m out and closing at 10 m/s, it stops about 11 m from home: nothing left to return.
+    gpsSol.llh.lon = metresToLonUnits(20.0f);
+    g_stubEstimate.position.v[ENU_E] = 20.0f * 100.0f;
+    g_stubEstimate.velocity.v[ENU_E] = -1000.0f;
+
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 0.0f, 0.01f);
+    triggerReached();
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+}
+
+TEST_F(FlightPlanRescueTest, CloseToHomeWithoutAHeadingLeavesTheLandingToTheCaller)
+{
+    // Position hold needs a heading, so a landing leg would never start: no plan, and the caller's
+    // altitude-only descent lands the craft where it is.
+    gpsSol.llh.lon = metresToLonUnits(3.0f);
+    g_stubEstimate.position.v[ENU_E] = 3.0f * 100.0f;
+    g_stubHeadingValid = false;
+    EXPECT_FALSE(flightPlanNavStageRescuePlan());
+
+    g_stubHeadingRequired = false;
+    EXPECT_TRUE(flightPlanNavStageRescuePlan());
+}
+
+TEST_F(FlightPlanRescueTest, CloseToHomeOverAFlyingMissionHoldsTheCraftsOwnAltitude)
+{
+    // The mission engaged with GPS and the estimate agreeing; 3 m of GPS drift later the rescue
+    // takes over near home. It lands from where the estimate has the craft, not 3 m above it.
+    addWaypoint(0, metresToLonUnits(300.0f), 12000, WAYPOINT_TYPE_FLYOVER);
+    flightPlanNavEngage();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+
+    gpsSol.llh.lon = metresToLonUnits(3.0f);
+    gpsSol.llh.altCm = 10000 + 800;
+    g_stubAltitudeCm = 500.0f;
+    g_stubEstimate.position.v[ENU_E] = 3.0f * 100.0f;
+    g_stubEstimate.position.v[ENU_U] = 500.0f;
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 5.0f, 0.01f);
 }
 
 // --- Staging while active / already engaged ---
@@ -523,6 +730,7 @@ TEST_F(FlightPlanRescueTest, StageWhileActiveInjectsImmediately)
     ASSERT_FALSE(flightPlanNavIsInjectedPlanActive());
     const int callsBefore = g_setTargetCalls;
 
+    g_stubEstimate.position.v[ENU_E] = 30.0f * 100.0f;   // where the GPS says the craft is
     ASSERT_TRUE(flightPlanNavStageRescuePlan());
 
     EXPECT_TRUE(flightPlanNavIsInjectedPlanActive());
@@ -532,12 +740,14 @@ TEST_F(FlightPlanRescueTest, StageWhileActiveInjectsImmediately)
     EXPECT_EQ(g_setTargetCalls, callsBefore + 1);
     ASSERT_TRUE(g_lastTarget.valid);
     EXPECT_NEAR(g_lastTarget.targetEfM.x, 30.0f, 0.1f); // rescue wp0, not the PG leg
+    EXPECT_EQ(g_startAfreshCalls, 1);                    // and does not carry the mission's command on
 }
 
 // --- Climb-leg altitude gate ---
 
 TEST_F(FlightPlanRescueTest, ClimbLegAltitudeGated)
 {
+    g_stubEstimate.position.v[ENU_E] = 30.0f * 100.0f;   // where the GPS says the craft is
     ASSERT_TRUE(flightPlanNavStageRescuePlan());
     flightPlanNavEngage();
 
@@ -547,6 +757,228 @@ TEST_F(FlightPlanRescueTest, ClimbLegAltitudeGated)
     // The climb leg targets the current position, not home.
     EXPECT_NEAR(g_lastTarget.targetEfM.x, 30.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.1f);
+}
+
+TEST_F(FlightPlanRescueTest, ClimbHoldsOneStoppingDistanceAhead)
+{
+    // Called at 6.5 m/s: the climb holds one stopping distance on, braking at its own lean once the
+    // attitude has come round onto the brake, and commands no velocity at all while it gets there.
+    g_stubEstimate.position.v[ENU_E] = 30.0f * 100.0f;
+    g_stubEstimate.velocity.v[ENU_E] = 650.0f;
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    ASSERT_NEAR(g_maxAngleDeg, 35.0f, 0.001f);
+    const float stopM = 6.5f * (6.5f / (2.0f * 9.80665f * tanf(35.0f * M_PIf / 180.0f)) + 0.15f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 30.0f + stopM, 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.01f);
+    ASSERT_TRUE(g_ffValid);
+    EXPECT_NEAR(lastFfSpeedMps(), 0.0f, 0.001f);
+
+    for (float speedMps = 6.0f; speedMps > 0.0f; speedMps -= 1.0f) {
+        g_stubEstimate.position.v[ENU_E] += speedMps * 10.0f;
+        g_stubEstimate.velocity.v[ENU_E] = speedMps * 100.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+        ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    }
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 30.0f + stopM, 0.001f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, kDefaultReturnAltM, 0.01f);
+}
+
+TEST_F(FlightPlanRescueTest, ClimbSwingsTheNoseOnlyOnceTheCraftHasBraked)
+{
+    // Called at 7 m/s nose-first away from home: the nose holds where it is while the craft brakes,
+    // and only then turns toward home.
+    g_stubEstimate.position.v[ENU_E] = 30.0f * 100.0f;
+    g_stubEstimate.velocity.v[ENU_E] = 700.0f;
+    attitude.values.yaw = 900;
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    ASSERT_TRUE(g_navHeadingOverrideValid);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, 90.0f, 1.0f);
+
+    g_stubEstimate.velocity.v[ENU_E] = 100.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, -90.0f, 1.0f);   // home is due west
+
+    // A gust once it has braked does not swing the nose back again.
+    g_stubEstimate.velocity.v[ENU_E] = 200.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, -90.0f, 1.0f);
+}
+
+TEST_F(FlightPlanRescueTest, ClimbStagedOverAFlyingMissionSwingsTheNoseOnlyOnceBraked)
+{
+    // RX lost mid-mission at 7 m/s: the climb brakes hard out of the mission's speed as a
+    // fresh one does, so its nose holds as well.
+    addWaypoint(200000, 0, 15000, WAYPOINT_TYPE_FLYOVER);
+    flightPlanNavEngage();
+    g_stubEstimate.position.v[ENU_E] = 30.0f * 100.0f;
+    g_stubEstimate.velocity.v[ENU_E] = 700.0f;
+    attitude.values.yaw = 900;
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    ASSERT_TRUE(g_navHeadingOverrideValid);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, 90.0f, 1.0f);
+}
+
+TEST_F(FlightPlanRescueTest, ReturnLegStartsWhereTheClimbHeldTheCraft)
+{
+    // The climb completes with the craft still, but not necessarily on its hold point: pushed off
+    // it by the nose swinging round, and being brought back. The return leg's carrot starts on the
+    // point the craft was being held to, so the position error carries over rather than dropping
+    // to nothing the moment the leg changes.
+    g_stubEstimate.position.v[ENU_E] = 30.0f * 100.0f;
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    ASSERT_NEAR(g_lastTarget.targetEfM.x, 30.0f, 0.01f);
+
+    g_stubEstimate.position.v[ENU_E] = 31.5f * 100.0f;
+    g_stubEstimate.position.v[ENU_N] = 0.5f * 100.0f;
+    g_stubPositionErrorCm.x = -150.0f;
+    g_stubPositionErrorCm.y = -50.0f;
+    attitude.values.yaw = 2700;                   // nose west, at home
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 30.0f, 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.01f);
+
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.01f);    // on the line from the hold point home
+    EXPECT_LE(g_lastTarget.targetEfM.x, 30.0f + 0.01f);
+}
+
+TEST_F(FlightPlanRescueTest, ClimbAtRestHoldsWhereItIs)
+{
+    g_stubEstimate.position.v[ENU_E] = 30.0f * 100.0f;
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+
+    g_stubEstimate.position.v[ENU_E] = 30.2f * 100.0f;
+    for (int i = 0; i < 5; i++) {
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 30.0f, 0.001f);
+}
+
+TEST_F(FlightPlanRescueTest, ClimbCompletesOnlyOnceTheCraftIsStill)
+{
+    // Altitude alone does not finish the climb: the return sets off from rest, with the nose round
+    // and nothing yet commanded, so the carrot's ramp starts from zero.
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    EXPECT_NEAR(g_lastTarget.completionSpeedMps, 0.5f, 0.001f);
+    EXPECT_TRUE(g_altitudeArrivalRequired);
+
+    g_stubEstimate.position.v[ENU_E] = 30.0f * 100.0f;
+    attitude.values.yaw = 2700;                   // nose west, at home
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    ASSERT_TRUE(g_ffValid);
+    EXPECT_NEAR(lastFfSpeedMps(), 0.0f, 0.001f);
+}
+
+TEST_F(FlightPlanRescueTest, ClimbWaitsForTheCraftToSettleOnlySoLong)
+{
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    EXPECT_NEAR(g_settleTimeoutS, 3.0f, 0.001f);
+
+    attitude.values.yaw = 2700;
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    EXPECT_NEAR(g_settleTimeoutS, 0.0f, 0.001f);   // nothing else waits on it
+}
+
+TEST_F(FlightPlanRescueTest, ClimbAloneBrakesAtAGentlerLean)
+{
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    EXPECT_NEAR(g_maxAngleDeg, 35.0f, 0.001f);
+
+    attitude.values.yaw = 2700;
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    EXPECT_NEAR(g_maxAngleDeg, 0.0f, 0.001f);   // the return has the whole of ap_max_angle
+}
+
+TEST_F(FlightPlanRescueTest, ClimbLeansNoFurtherThanApMaxAngle)
+{
+    autopilotConfigMutable()->maxAngle = 30;
+    g_stubEstimate.position.v[ENU_E] = 30.0f * 100.0f;
+    g_stubEstimate.velocity.v[ENU_E] = 650.0f;
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    EXPECT_NEAR(g_maxAngleDeg, 30.0f, 0.001f);
+    const float stopM = 6.5f * (6.5f / (2.0f * 9.80665f * tanf(30.0f * M_PIf / 180.0f)) + 0.15f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 30.0f + stopM, 0.01f);
+}
+
+TEST_F(FlightPlanRescueTest, ClimbBrakingDoesNotTripTheHeadingCheck)
+{
+    // Called running south at 15 m/s with the nose already on home, due north: the craft brakes on
+    // south toward its hold point, its course opposite its nose. A course opposite a nose that is
+    // not pointing at the hold point is no sign of a bad compass.
+    gpsSol.llh.lon = 0;
+    gpsSol.llh.lat = metresToLonUnits(-30.0f);
+    float northM = -30.0f;
+    float speedMps = 15.0f;
+    g_stubEstimate.position.v[ENU_N] = northM * 100.0f;
+    g_stubEstimate.velocity.v[ENU_N] = -speedMps * 100.0f;
+    attitude.values.yaw = 0;
+    gpsSol.groundCourse = 1800;
+    gpsSol.groundSpeed = (uint16_t)(speedMps * 100.0f);
+    g_stubMicros = 1'000'000;
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+
+    for (int i = 0; i < 300 && speedMps > 0.5f; i++) {
+        speedMps -= 8.0f * 0.01f;
+        northM -= speedMps * 0.01f;
+        g_stubEstimate.position.v[ENU_N] = northM * 100.0f;
+        g_stubEstimate.velocity.v[ENU_N] = -speedMps * 100.0f;
+        gpsSol.groundSpeed = (uint16_t)(speedMps * 100.0f);
+        g_stubMicros += 10'000;
+        flightPlanNavUpdate(g_stubMicros);
+        ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING) << "after " << i * 0.01f << " s";
+    }
+    EXPECT_LT(speedMps, 0.6f);
+}
+
+TEST_F(FlightPlanRescueTest, ClimbSeesACraftThatIsNotBrakingLeave)
+{
+    // Called at 7 m/s with the heading gone wrong: the zero-velocity command pushes the craft on
+    // instead of braking it. The hold point stays put, so the flyaway check sees it go.
+    for (const float accelMps2 : { 0.0f, 3.0f }) {
+        SetUp();
+        g_stubMicros = 1'000'000;
+        g_stubEstimate.position.v[ENU_E] = 30.0f * 100.0f;
+        g_stubEstimate.velocity.v[ENU_E] = 700.0f;
+        ASSERT_TRUE(flightPlanNavStageRescuePlan());
+        flightPlanNavEngage();
+        const float holdEastM = g_lastTarget.targetEfM.x;
+
+        float eastM = 30.0f;
+        float speedMps = 7.0f;
+        for (int i = 0; i < 300 && flightPlanNavGetState() == FP_NAV_TARGETING; i++) {
+            speedMps += accelMps2 * 0.1f;
+            eastM += speedMps * 0.1f;
+            g_stubEstimate.position.v[ENU_E] = eastM * 100.0f;
+            g_stubEstimate.velocity.v[ENU_E] = speedMps * 100.0f;
+            g_stubMicros += 100'000;
+            flightPlanNavUpdate(g_stubMicros);
+            if (flightPlanNavGetState() == FP_NAV_TARGETING) {
+                ASSERT_NEAR(g_lastTarget.targetEfM.x, holdEastM, 0.001f);
+            }
+        }
+        EXPECT_EQ(flightPlanNavGetState(), FP_NAV_ABORTED);
+        EXPECT_EQ(flightPlanNavGetAbortReason(), FP_ABORT_FLYAWAY);
+        EXPECT_LT(eastM, 110.0f);
+        flightPlanNavDisengage();
+    }
 }
 
 // --- Heading gate ---
@@ -576,6 +1008,91 @@ TEST_F(FlightPlanRescueTest, HeadingGateHoldsAndRecovers)
     // wp1: FLYOVER home.
     EXPECT_NEAR(g_lastTarget.targetEfM.x, 0.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.1f);
+}
+
+TEST_F(FlightPlanRescueTest, HeadingRecoveryStartsTheReturnWhereTheCraftComesToRest)
+{
+    // Pitched forward for up to 15 s to find its heading, the craft is nowhere near the climb's hold
+    // point by the time it has one, and still flying fast. The return leg starts from where it comes
+    // to rest braking out of the pitch-forward, not from that point, nor from the craft.
+    g_stubEstimate.position.v[ENU_E] = 30.0f * 100.0f;
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    g_stubHeadingValid = false;
+    triggerReached();
+    ASSERT_TRUE(g_lastPitchForward);
+
+    const float brakeMps2 = 9.80665f * tanf(50.0f * M_PIf / 180.0f);
+    float northM = 25.0f;                               // pitched forward, north
+    float speedMps = 15.0f;
+    g_stubEstimate.position.v[ENU_N] = northM * 100.0f;
+    g_stubEstimate.velocity.v[ENU_N] = speedMps * 100.0f;
+    attitude.values.yaw = 0;                            // nose north, well off home
+    g_stubHeadingValid = true;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    EXPECT_FALSE(g_lastPitchForward);
+    const float restNorthM = northM + speedMps * (speedMps / (2.0f * brakeMps2) + 0.15f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 30.0f, 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, restNorthM, 0.01f);
+    ASSERT_GT(restNorthM - northM, 5.0f);               // further on than the controller's reach
+
+    // Nothing is commanded until the nose is round, and the craft braking out of the pitch-forward
+    // is held to that point all the way in, not dragged back from where its brake ends.
+    ASSERT_TRUE(g_ffValid);
+    EXPECT_NEAR(lastFfSpeedMps(), 0.0f, 0.001f);
+    const float dtS = 0.05f;
+    for (float t = 0.0f; speedMps > 0.0f; t += dtS) {
+        speedMps = (t < 0.15f) ? speedMps : fmaxf(speedMps - brakeMps2 * dtS, 0.0f);
+        northM += speedMps * dtS;
+        g_stubEstimate.position.v[ENU_N] = northM * 100.0f;
+        g_stubEstimate.velocity.v[ENU_N] = speedMps * 100.0f;
+        g_stubMicros += 50'000;
+        flightPlanNavUpdate(g_stubMicros);
+        EXPECT_NEAR(lastFfSpeedMps(), 0.0f, 0.001f);
+        EXPECT_NEAR(g_lastTarget.targetEfM.y, restNorthM, 0.01f) << "at " << t << " s";
+    }
+    EXPECT_NEAR(northM, restNorthM, 0.5f);
+}
+
+TEST_F(FlightPlanRescueTest, HeadingRecoveryCarriesTheCommandedAltitudeOn)
+{
+    // Pitching forward, the craft sagged below the altitude the climb had brought its target to.
+    // The return leg's ramp starts from that target, not from the craft.
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    g_stubHeadingValid = false;
+    triggerReached();
+    ASSERT_TRUE(g_lastPitchForward);
+
+    g_stubCommandedAltCm = kDefaultReturnAltM * 100.0f;
+    g_stubCommandedAltSet = true;
+    g_stubEstimate.position.v[ENU_U] = (kDefaultReturnAltM - 0.6f) * 100.0f;
+    const int clearsBefore = g_clearTargetCalls;
+    g_stubHeadingValid = true;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    EXPECT_NEAR(g_lastVertStartAltM, kDefaultReturnAltM, 0.001f);
+    EXPECT_EQ(g_clearTargetCalls, clearsBefore);
+    EXPECT_EQ(g_startAfreshCalls, 1);   // and does not carry the climb's command on
+}
+
+TEST_F(FlightPlanRescueTest, RestageDuringHeadingRecoveryReleasesThePitch)
+{
+    // A switch rescue pitching forward for its heading, then RX lost and failsafe restages the
+    // rescue on top: the new plan must not inherit a latched pitch-forward.
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    g_stubHeadingValid = false;
+    triggerReached();
+    ASSERT_TRUE(g_lastPitchForward);
+
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    EXPECT_FALSE(g_lastPitchForward);
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 0);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
 }
 
 TEST_F(FlightPlanRescueTest, HeadingGateTimesOutToAbort)
@@ -660,6 +1177,204 @@ TEST_F(FlightPlanRescueTest, FullRescueRunToLanding)
     EXPECT_EQ(g_disarmCalls, 1);
     EXPECT_EQ(g_lastDisarmReason, DISARM_REASON_LANDING);
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_COMPLETE);
+}
+
+TEST_F(FlightPlanRescueTest, DescentStartsAtTheConfiguredDescentDistance)
+{
+    // Legacy rescue starts down at gps_rescue_descent_dist and closes the last stretch while
+    // descending. Arriving overhead first and only then sinking puts the craft over whatever it was
+    // trying to get away from, and the pilot loses the approach they were expecting.
+    gpsRescueConfigMutable()->descentDistanceM = 15;
+    g_stubEstimate.position.v[ENU_N] = 2500.0f;   // 25 m north of home
+    attitude.values.yaw = 1800;                   // nose south, pointing home
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    triggerReached();                             // climb done, fly home
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);  // 25 m out: still on the return leg
+
+    g_stubEstimate.position.v[ENU_N] = 1400.0f;    // inside the descent distance
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 2);  // hands over to the landing leg out here
+    EXPECT_NEAR(g_lastTarget.acceptanceRadiusM, 15.0f, 0.01f);
+}
+
+TEST_F(FlightPlanRescueTest, LandingLegStartsDownAtTheDescentDistanceBelowTheReturnAltitude)
+{
+    // An approach that has sunk 0.7 m below the return altitude still starts down at the descent
+    // distance, rather than carrying on toward home until it is back at that altitude.
+    gpsRescueConfigMutable()->descentDistanceM = 7;
+    g_stubEstimate.position.v[ENU_N] = 2000.0f;   // 20 m north of home
+    attitude.values.yaw = 1800;                   // nose south, pointing home
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    triggerReached();                             // climb done, fly home
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    const float returnAltM = g_lastTarget.targetEfM.z;
+
+    g_stubEstimate.position.v[ENU_N] = 650.0f;
+    g_stubEstimate.position.v[ENU_U] = (returnAltM - 0.7f) * 100.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 2);
+
+    // Arrives on the spot: inside its radius, and nothing waiting on the altitude.
+    EXPECT_FALSE(g_altitudeArrivalRequired);
+    EXPECT_GE(g_lastTarget.acceptanceRadiusM, 6.5f);
+    // Nor has the hand-over dropped the altitude target onto the craft.
+    EXPECT_NEAR(g_lastVertStartAltM, returnAltM, 0.01f);
+
+    // Its ramp had been held on its leash below the return altitude and was climbing back.
+    g_stubCommandedAltCm = (returnAltM - 0.5f) * 100.0f;
+    g_stubCommandedAltSet = true;
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+    // The descent starts from the altitude being commanded.
+    EXPECT_NEAR(g_lastVertStartAltM, returnAltM - 0.5f, 0.01f);
+}
+
+TEST_F(FlightPlanRescueTest, ReturnLegBleedsSpeedFromTwiceTheDescentDistance)
+{
+    // Legacy slowed from twice the descent distance so it arrived slow at the point it starts down
+    // at. Arriving at full return speed and braking on the doorstep overruns home when the craft
+    // comes in hot and the descent distance is short.
+    gpsRescueConfigMutable()->descentDistanceM = 10;   // 20 m slowdown range
+    g_stubEstimate.position.v[ENU_N] = 1500.0f;        // 15 m north of home: three quarters out
+    attitude.values.yaw = 1800;                        // nose south, pointing home
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+
+    for (int i = 0; i < 30; i++) {
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    // 15 m out on a taper from 20 m down to nothing 1 m from home, against the 7.5 m/s return
+    // speed, commanded along the leg home.
+    ASSERT_TRUE(g_ffValid);
+    EXPECT_NEAR(g_lastFfEfMps.x, 0.0f, 0.01f);
+    EXPECT_NEAR(g_lastFfEfMps.y, -7.5f * (15.0f - 1.0f) / (20.0f - 1.0f), 0.01f);
+}
+
+TEST_F(FlightPlanRescueTest, DescentCarriesOnTheReturnTaper)
+{
+    // One speed law all the way in, as legacy flew: the return speed scaled by the distance left,
+    // from twice the descent distance down. The landing leg and the descent carry on that same law
+    // from the hand-over at the descent distance, so the target velocity does not step there.
+    struct { uint16_t speedCmS; uint16_t descentDistM; uint16_t descendRateCmS; } configs[] = {
+        { 400, 7, 200 },     // the tester's
+        { 750, 20, 150 },    // defaults
+        { 1500, 5, 500 },
+    };
+    for (const auto &c : configs) {
+        SetUp();
+        gpsRescueConfigMutable()->groundSpeedCmS = c.speedCmS;
+        gpsRescueConfigMutable()->descentDistanceM = c.descentDistM;
+        gpsRescueConfigMutable()->descendRate = c.descendRateCmS;
+        const float speedMps = c.speedCmS * 0.01f;
+        const float slowdownM = 2.0f * c.descentDistM;
+        const auto taperMps = [&](float distM) {
+            return speedMps * fminf(fmaxf((distM - 1.0f) / (slowdownM - 1.0f), 0.0f), 1.0f);
+        };
+        // Its steepest fall: a ramp this quick never holds the taper back.
+        const float rampMps2 = fmaxf(autopilotConfig()->navAccel * 0.01f, speedMps * speedMps / (slowdownM - 1.0f));
+
+        g_stubEstimate.position.v[ENU_N] = 3.0f * c.descentDistM * 100.0f;
+        attitude.values.yaw = 1800;               // nose south, pointing home
+        ASSERT_TRUE(flightPlanNavStageRescuePlan());
+        flightPlanNavEngage();
+        triggerReached();                         // climb done, fly home
+        ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+
+        const float outsideM = c.descentDistM + 0.3f;
+        g_stubEstimate.position.v[ENU_N] = outsideM * 100.0f;
+        for (int i = 0; i < 100; i++) {
+            g_stubMicros += 100'000;
+            flightPlanNavUpdate(g_stubMicros);
+        }
+        ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+        EXPECT_NEAR(-g_lastFfEfMps.y, taperMps(outsideM), 0.01f);
+
+        g_stubEstimate.position.v[ENU_N] = (c.descentDistM - 0.1f) * 100.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+        ASSERT_EQ(flightPlanNavGetCurrentIndex(), 2);
+        // The landing leg flies positionNav's copy of the taper: same speed, range and still radius,
+        // with no braking curve under it.
+        EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, speedMps, 0.001f);
+        EXPECT_NEAR(g_lastApproachSlowdownM, slowdownM, 0.001f);
+        EXPECT_NEAR(g_lastApproachStillRadiusM, 1.0f, 0.001f);
+        EXPECT_NEAR(g_lastDecelLimitMps2, 0.0f, 0.001f);
+        EXPECT_NEAR(g_lastAccelLimitMps2, rampMps2, 0.001f);
+
+        triggerReached();
+        ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+        // And so does the descent, however slowly it is coming down.
+        EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, speedMps, 0.001f);
+        EXPECT_NEAR(g_lastApproachSlowdownM, slowdownM, 0.001f);
+        EXPECT_NEAR(g_lastApproachStillRadiusM, 1.0f, 0.001f);
+        EXPECT_NEAR(g_lastDecelLimitMps2, 0.0f, 0.001f);
+        EXPECT_NEAR(g_lastAccelLimitMps2, rampMps2, 0.001f);
+        EXPECT_NEAR(g_lastVertRateMps, c.descendRateCmS * 0.01f, 0.001f);
+        flightPlanNavDisengage();
+    }
+}
+
+TEST_F(FlightPlanRescueTest, SteepReturnTaperIsFlownAsItFalls)
+{
+    // However steep the taper - a fast return, a short descent distance, a gentle carrot
+    // acceleration - the commanded speed follows it down rather than slewing at nav_accel and
+    // reaching the descent distance hot.
+    struct { uint16_t speedCmS; uint16_t descentDistM; uint16_t navAccelCmSS; } configs[] = {
+        { 750, 7, 250 },
+        { 1500, 20, 250 },
+        { 1500, 5, 250 },
+        { 750, 20, 20 },
+    };
+    for (const auto &c : configs) {
+        SetUp();
+        gpsRescueConfigMutable()->groundSpeedCmS = c.speedCmS;
+        gpsRescueConfigMutable()->descentDistanceM = c.descentDistM;
+        autopilotConfigMutable()->navAccel = c.navAccelCmSS;
+        const float speedMps = c.speedCmS * 0.01f;
+        const float slowdownM = 2.0f * c.descentDistM;
+        const auto taperMps = [&](float distM) {
+            return speedMps * fminf(fmaxf((distM - 1.0f) / (slowdownM - 1.0f), 0.0f), 1.0f);
+        };
+
+        // Already at the return speed well outside the taper, heading home (south).
+        float northM = slowdownM + 20.0f;
+        g_stubEstimate.position.v[ENU_N] = northM * 100.0f;
+        g_stubEstimate.velocity.v[ENU_N] = -speedMps * 100.0f;
+        attitude.values.yaw = 1800;
+        ASSERT_TRUE(flightPlanNavStageRescuePlan());
+        flightPlanNavEngage();
+        triggerReached();
+        ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+
+        float velMps = -speedMps;
+        for (int i = 0; i < 2000 && flightPlanNavGetCurrentIndex() == 1; i++) {
+            g_stubMicros += 20'000;
+            flightPlanNavUpdate(g_stubMicros);
+            if (flightPlanNavGetCurrentIndex() != 1) {
+                break;
+            }
+            EXPECT_LE(lastFfSpeedMps(), fmaxf(taperMps(northM), 0.0f) + 0.05f) << "at " << northM << " m";
+            velMps += (g_lastFfEfMps.y - velMps) * 0.02f / 0.3f;   // craft following with a lag
+            northM += velMps * 0.02f;
+            g_stubEstimate.position.v[ENU_N] = northM * 100.0f;
+            g_stubEstimate.velocity.v[ENU_N] = velMps * 100.0f;
+        }
+        ASSERT_EQ(flightPlanNavGetCurrentIndex(), 2);
+        EXPECT_NEAR(lastFfSpeedMps(), 0.0f, 0.001f);   // the landing leg's own command takes over
+        flightPlanNavDisengage();
+    }
 }
 
 // --- Fallback emergency descent (switch rescue: no fix, or plan aborted) ---

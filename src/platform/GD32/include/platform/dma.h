@@ -73,8 +73,25 @@ uint32_t dmaGetChannel(const uint8_t channel);
                                                                     handler(&dmaDescriptors[index]); \
                                                             }
 
-#define DMA_CLEAR_FLAG(d, flag) if (d->flagsShift > 31) DMA_INTC1((uint32_t)d->dma) = (flag << (d->flagsShift - 32)); else DMA_INTC0((uint32_t)d->dma) = (flag << d->flagsShift)
-#define DMA_GET_FLAG_STATUS(d, flag) (d->flagsShift > 31 ? DMA_INTF1((uint32_t)d->dma) & (flag << (d->flagsShift - 32)): DMA_INTF0((uint32_t)d->dma) & (flag << d->flagsShift))
+// (flag) and (d) are parenthesised deliberately. Callers pass OR-ed masks, and
+// without the parentheses `A | B` binds as `A | (B << flagsShift)`: only the last
+// flag lands on this channel and the rest write ones into the low bits, which are
+// the first channel's flags.
+#define DMA_CLEAR_FLAG(d, flag) \
+    do { \
+        if ((d)->flagsShift > 31) { \
+            DMA_INTC1((uint32_t)(d)->dma) = ((flag) << ((d)->flagsShift - 32)); \
+        } else { \
+            DMA_INTC0((uint32_t)(d)->dma) = ((flag) << (d)->flagsShift); \
+        } \
+    } while (0)
+#define DMA_GET_FLAG_STATUS(d, flag) ((d)->flagsShift > 31 ? DMA_INTF1((uint32_t)(d)->dma) & ((flag) << ((d)->flagsShift - 32)) : DMA_INTF0((uint32_t)(d)->dma) & ((flag) << (d)->flagsShift))
+
+#define DMA_IT_TCIF         ((uint32_t)0x00000020)
+#define DMA_IT_HTIF         ((uint32_t)0x00000010)
+#define DMA_IT_TEIF         ((uint32_t)0x00000008)
+#define DMA_IT_DMEIF        ((uint32_t)0x00000004)
+#define DMA_IT_FEIF         ((uint32_t)0x00000001)
 
 extern void gd32_dma_init(uint32_t dma_chan_base, dma_single_data_parameter_struct *init_struct);
 extern void gd32_dma_general_init(uint32_t dma_chan_base, dma_general_config_struct *init_struct);

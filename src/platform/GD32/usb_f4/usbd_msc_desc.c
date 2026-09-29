@@ -37,11 +37,11 @@ OF SUCH DAMAGE.
 #include "usbd_msc_bbb.h"
 #include "usbd_msc_core.h"
 #include "usbd_msc_mem.h"
+#include "build/version.h"
+#include "drivers/usb_descriptor.h"
 
 #define USBD_VID                    0x28E9U
 #define USBD_PID                    0x028FU
-
-#define USBD_PRODUCT_FS_STRING        "Betaflight FC Mass Storage (FS Mode)"
 
 /* local function prototypes ('static') */
 static uint8_t bf_msc_core_init(usb_dev *udev, uint8_t config_index);
@@ -213,7 +213,7 @@ static __ALIGN_BEGIN const usb_desc_LANGID usbd_language_id_desc __ALIGN_END = {
 };
 
 /* USB manufacture string */
-static __ALIGN_BEGIN const usb_desc_str manufacturer_string __ALIGN_END = {
+static __ALIGN_BEGIN usb_desc_str manufacturer_string __ALIGN_END = {
     .header =
     {
         .bLength         = USB_STRING_LEN(10U),
@@ -245,12 +245,24 @@ static __ALIGN_BEGIN usb_desc_str serial_string __ALIGN_END = {
     }
 };
 
+static __ALIGN_BEGIN usb_desc_str configuration_string __ALIGN_END = {
+    .header = { .bLength = USB_STRING_LEN(10U), .bDescriptorType = USB_DESCTYPE_STR },
+    .unicode_string = {'M', 'S', 'C', ' ', 'C', 'o', 'n', 'f', 'i', 'g'}
+};
+
+static __ALIGN_BEGIN usb_desc_str interface_string __ALIGN_END = {
+    .header = { .bLength = USB_STRING_LEN(13U), .bDescriptorType = USB_DESCTYPE_STR },
+    .unicode_string = {'M', 'S', 'C', ' ', 'I', 'n', 't', 'e', 'r', 'f', 'a', 'c', 'e'}
+};
+
 /* USB string descriptor */
 static void *const bf_usbd_msc_strings[] = {
     [STR_IDX_LANGID]  = (uint8_t *)&usbd_language_id_desc,
     [STR_IDX_MFC]     = (uint8_t *)&manufacturer_string,
     [STR_IDX_PRODUCT] = (uint8_t *)&product_string,
-    [STR_IDX_SERIAL]  = (uint8_t *)&serial_string
+    [STR_IDX_SERIAL]  = (uint8_t *)&serial_string,
+    [STR_IDX_CONFIG]  = (uint8_t *)&configuration_string,
+    [STR_IDX_ITF]     = (uint8_t *)&interface_string
 };
 
 usb_desc bf_msc_desc = {
@@ -297,9 +309,8 @@ static void usbd_msc_string_buf_get(const char *src, uint8_t *unicode)
 
 void usbd_msc_desc_string_update(void)
 {
-#if defined(USBD_PRODUCT_FS_STRING)
-    usbd_msc_string_buf_get(USBD_PRODUCT_FS_STRING, (uint8_t *)&product_string);
-#endif
+    usbd_msc_string_buf_get(usbDescriptorMscProductString(), (uint8_t *)&product_string);
+    usbd_msc_string_buf_get(FC_FIRMWARE_NAME, (uint8_t *)&manufacturer_string);
 }
 
 

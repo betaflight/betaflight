@@ -45,5 +45,7 @@ OF SUCH DAMAGE.
 extern usb_desc bf_msc_desc;
 extern usb_class_core bf_msc_class;
 
+void usbd_msc_desc_string_update(void);
+
 #endif /* USB_MSC_DESC_H */
 

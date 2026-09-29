@@ -110,6 +110,8 @@ uint8_t mscStart(void)
     usb_gpio_config();
     usb_rcu_config();
 
+    usbd_msc_desc_string_update();
+
     usbd_init(&USB_OTG_dev, USB_CORE_ENUM_FS, &bf_msc_desc, &bf_msc_class);
     usb_intr_config();
 
