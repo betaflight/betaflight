@@ -99,6 +99,7 @@
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
+#include "io/radar.h"
 #include "io/serial.h"
 #include "io/serial_4way.h"
 #include "io/serial_feature_map.h"
@@ -4158,6 +4159,16 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         GPS_update |= GPS_MSP_UPDATE;        // MSP data signalisation to GPS functions
         break;
 #endif // USE_GPS
+
+#ifdef USE_RADAR
+    case MSP2_COMMON_SET_RADAR_POS:
+        if (!radarReceivePos(sbufPtr(src), dataSize, millis())) {
+            return MSP_RESULT_ERROR;
+        }
+        sbufAdvance(src, dataSize);
+        break;
+#endif
+
     case MSP_SET_FEATURE_CONFIG:
         featureConfigReplace(sbufReadU32(src));
         break;

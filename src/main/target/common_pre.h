@@ -320,6 +320,8 @@
 #define USE_RANGEFINDER_UPT1
 #define USE_OPTICALFLOW_MT
 
+#define USE_RADAR
+
 #endif // TARGET_FLASH_SIZE >= 1024
 
 #endif // !defined(CLOUD_BUILD)

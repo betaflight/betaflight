@@ -280,6 +280,14 @@ gps_conversion_unittest_SRC := \
 		$(USER_DIR)/common/gps_conversion.c
 
 
+radar_unittest_SRC := \
+		$(USER_DIR)/io/radar.c \
+		$(USER_DIR)/common/maths.c
+
+radar_unittest_DEFINES := \
+		USE_RADAR=
+
+
 dronecan_gnss_unittest_SRC := \
 		$(TEST_DIR)/dronecan_gnss_libcanard.c
 
