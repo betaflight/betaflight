@@ -69,6 +69,8 @@ typedef struct {
     float pitchTargetDeg;
     float throttle;
     float handover;   // 0 while the launch owns the aircraft, 1 once the pilot does
+    timeUs_t attitudeLostAtUs;
+    launchWingExit_e exit;
 } launchWingRuntime_t;
 
 static launchWingRuntime_t launchWing;
@@ -83,10 +85,11 @@ static void setState(launchWingState_e state, timeUs_t currentTimeUs)
 // mixTable keep blending on the handover factor until the mode bit clears on
 // the next rx cycle, so a partial factor would leave the pilot fighting a stale
 // launch demand for that window.
-static void endLaunch(launchWingState_e terminalState)
+static void endLaunch(launchWingState_e terminalState, launchWingExit_e exit)
 {
     launchWing.state = terminalState;
     launchWing.handover = 1.0f;
+    launchWing.exit = exit;
 }
 
 static float elapsedMs(timeUs_t currentTimeUs)
@@ -187,6 +190,25 @@ static bool maxAltitudeReached(void)
     return maxAltitudeM > 0 && isAltitudeAvailable() && getAltitudeCm() >= maxAltitudeM * 100.0f;
 }
 
+// Bank and dive are tested separately rather than as one tilt magnitude: the
+// launch commands a climb, and attitude.values.pitch is positive nose-down, so a
+// magnitude bound would abort on the very thing the launch is there to fly.
+// The bound must also hold continuously - a throw can slap the airframe past it
+// for a few frames - so any frame inside the bound re-seeds the clock, the same
+// rule detection uses.
+static bool attitudeLost(timeUs_t currentTimeUs)
+{
+    const int32_t limit = launchWingConfig()->abortAngleDeg * 10;
+    const bool lost = limit > 0
+        && (ABS(attitude.values.roll) > limit || attitude.values.pitch > limit);
+
+    if (!lost) {
+        launchWing.attitudeLostAtUs = currentTimeUs;
+        return false;
+    }
+    return cmpTimeUs(currentTimeUs, launchWing.attitudeLostAtUs) >= LAUNCH_ATTITUDE_HOLD_MS * 1000;
+}
+
 void launchWingInit(void)
 {
     launchWing.state = LAUNCH_WING_IDLE;
@@ -194,6 +216,8 @@ void launchWingInit(void)
     launchWing.pitchTargetDeg = 0.0f;
     launchWing.throttle = 0.0f;
     launchWing.handover = 0.0f;
+    launchWing.attitudeLostAtUs = 0;
+    launchWing.exit = LAUNCH_WING_EXIT_NONE;
 }
 
 void launchWingArm(void)
@@ -214,7 +238,7 @@ void launchWingDisarm(void)
 void launchWingSwitchOff(void)
 {
     if (launchWingIsActive()) {
-        endLaunch(LAUNCH_WING_ABORTED);
+        endLaunch(LAUNCH_WING_ABORTED, LAUNCH_WING_EXIT_MODE_OFF);
     }
 }
 
@@ -231,6 +255,15 @@ bool launchWingIsTerminal(void)
 bool launchWingIsActive(void)
 {
     return launchWing.state > LAUNCH_WING_IDLE && !launchWingIsTerminal();
+}
+
+// Before detection the aircraft is still in the pilot's hands, and the throttle
+// stick is already up because that is what let the launch leave WAIT_THROTTLE.
+// That is what makes cancelling here different from cancelling in the air.
+bool launchWingIsPreLaunch(void)
+{
+    return launchWing.state > LAUNCH_WING_IDLE
+        && launchWing.state <= LAUNCH_WING_WAIT_DETECTION;
 }
 
 bool launchWingThrottleValid(void)
@@ -258,6 +291,15 @@ launchWingState_e launchWingGetState(void)
     return launchWing.state;
 }
 
+static void debugLaunch(void)
+{
+    DEBUG_SET(DEBUG_LAUNCH, 0, launchWing.state);                            //!< Launch State [enum:launchWingState_e]
+    DEBUG_SET(DEBUG_LAUNCH, 1, lrintf(launchWing.pitchTargetDeg * 10.0f));   //!< Climb Angle Target [unit:0.1deg]
+    DEBUG_SET(DEBUG_LAUNCH, 2, lrintf(launchWing.throttle * 1000.0f));       //!< Launch Throttle [unit:0.001]
+    DEBUG_SET(DEBUG_LAUNCH, 5, lrintf(launchWing.handover * 1000.0f));       //!< Pilot Handover [unit:0.001]
+    DEBUG_SET(DEBUG_LAUNCH, 7, launchWing.exit);                             //!< Launch Exit Reason [enum:launchWingExit_e]
+}
+
 void launchWingUpdate(timeUs_t currentTimeUs)
 {
     const launchWingConfig_t *cfg = launchWingConfig();
@@ -270,9 +312,19 @@ void launchWingUpdate(timeUs_t currentTimeUs)
     // throttle and attitude over the failsafe procedure in the meantime.
     if (!FLIGHT_MODE(LAUNCH_MODE) || failsafeIsActive()) {
         if (launchWing.state != LAUNCH_WING_IDLE && !launchWingIsTerminal()) {
-            endLaunch(LAUNCH_WING_ABORTED);
+            endLaunch(LAUNCH_WING_ABORTED, LAUNCH_WING_EXIT_MODE_OFF);
         }
+        debugLaunch();
         return;
+    }
+
+    // One test for every state where the launch is airborne and still
+    // commanding. It hands back rather than cutting the motor: a dead-stick at
+    // launch altitude is its own accident, and the pilot's throttle is already
+    // up.
+    if (launchWing.state >= LAUNCH_WING_MOTOR_DELAY && !launchWingIsTerminal()
+        && attitudeLost(currentTimeUs)) {
+        endLaunch(LAUNCH_WING_ABORTED, LAUNCH_WING_EXIT_ATTITUDE);
     }
 
     switch (launchWing.state) {
@@ -318,6 +370,11 @@ void launchWingUpdate(timeUs_t currentTimeUs)
             launchWing.stateEnteredAtUs = currentTimeUs;
         } else if (elapsedMs(currentTimeUs) >= cfg->detectTimeMs) {
             launchWing.detectedAtUs = currentTimeUs;
+            // Start the attitude hold clock here, not on the first frame that
+            // consults it: a throw that leaves the airframe past the bound
+            // would otherwise measure its hold against a stale timestamp and
+            // abort immediately.
+            launchWing.attitudeLostAtUs = currentTimeUs;
             setState(LAUNCH_WING_MOTOR_DELAY, currentTimeUs);
         }
         break;
@@ -326,7 +383,7 @@ void launchWingUpdate(timeUs_t currentTimeUs)
         launchWing.throttle = idleThrottle;
         launchWing.pitchTargetDeg = climbAngleDeg;
         if (abortRequested(currentTimeUs)) {
-            endLaunch(LAUNCH_WING_ABORTED);
+            endLaunch(LAUNCH_WING_ABORTED, LAUNCH_WING_EXIT_STICKS);
         } else if (elapsedMs(currentTimeUs) >= cfg->motorDelayMs) {
             setState(LAUNCH_WING_SPINUP, currentTimeUs);
         }
@@ -337,7 +394,7 @@ void launchWingUpdate(timeUs_t currentTimeUs)
         const float k = rampProgress(currentTimeUs, cfg->spinupTimeMs);
         launchWing.throttle = idleThrottle + (launchThrottle - idleThrottle) * k;
         if (abortRequested(currentTimeUs)) {
-            endLaunch(LAUNCH_WING_ABORTED);
+            endLaunch(LAUNCH_WING_ABORTED, LAUNCH_WING_EXIT_STICKS);
         } else if (k >= 1.0f) {
             setState(LAUNCH_WING_IN_PROGRESS, currentTimeUs);
         }
@@ -348,9 +405,12 @@ void launchWingUpdate(timeUs_t currentTimeUs)
         launchWing.throttle = launchThrottle;
         launchWing.pitchTargetDeg = climbAngleDeg;
         if (abortRequested(currentTimeUs)) {
-            endLaunch(LAUNCH_WING_ABORTED);
-        } else if (maxAltitudeReached()
-            || (cfg->timeoutMs > 0 && elapsedMs(currentTimeUs) >= cfg->timeoutMs)) {
+            endLaunch(LAUNCH_WING_ABORTED, LAUNCH_WING_EXIT_STICKS);
+        } else if (maxAltitudeReached()) {
+            launchWing.exit = LAUNCH_WING_EXIT_ALTITUDE;
+            setState(LAUNCH_WING_FINISH, currentTimeUs);
+        } else if (cfg->timeoutMs > 0 && elapsedMs(currentTimeUs) >= cfg->timeoutMs) {
+            launchWing.exit = LAUNCH_WING_EXIT_TIMEOUT;
             setState(LAUNCH_WING_FINISH, currentTimeUs);
         }
         break;
@@ -363,8 +423,10 @@ void launchWingUpdate(timeUs_t currentTimeUs)
         launchWing.pitchTargetDeg = climbAngleDeg;
         launchWing.handover = rampProgress(currentTimeUs, cfg->endTimeMs);
         // Any stick input ends the handover early - the pilot has taken over.
-        if (launchWing.handover >= 1.0f || sticksMoved()) {
-            endLaunch(LAUNCH_WING_FLYING);
+        if (sticksMoved()) {
+            endLaunch(LAUNCH_WING_FLYING, LAUNCH_WING_EXIT_STICKS);
+        } else if (launchWing.handover >= 1.0f) {
+            endLaunch(LAUNCH_WING_FLYING, LAUNCH_WING_EXIT_HANDOVER);
         }
         break;
 
@@ -380,10 +442,7 @@ void launchWingUpdate(timeUs_t currentTimeUs)
         autopilotAngle[AI_PITCH] = -launchWing.pitchTargetDeg;
     }
 
-    DEBUG_SET(DEBUG_LAUNCH, 0, launchWing.state);                            //!< Launch State [enum:launchWingState_e]
-    DEBUG_SET(DEBUG_LAUNCH, 1, lrintf(launchWing.pitchTargetDeg * 10.0f));   //!< Climb Angle Target [unit:0.1deg]
-    DEBUG_SET(DEBUG_LAUNCH, 2, lrintf(launchWing.throttle * 1000.0f));       //!< Launch Throttle [unit:0.001]
-    DEBUG_SET(DEBUG_LAUNCH, 5, lrintf(launchWing.handover * 1000.0f));       //!< Pilot Handover [unit:0.001]
+    debugLaunch();
 }
 
 #endif // USE_WING && USE_LAUNCH_WING
