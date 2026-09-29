@@ -1683,9 +1683,9 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
             int remainingHalfSteps = 0;
 
             if (currentBatteryProfile->batteryCapacity > 0) {
-                const float batteryRemaining = (float)constrain(currentBatteryProfile->batteryCapacity - displayBasis, 0, currentBatteryProfile->batteryCapacity);
-                const float halfStepSize = (float)currentBatteryProfile->batteryCapacity / (float)(MAIN_BATT_USAGE_STEPS * 2);
-                remainingHalfSteps = ceilf(batteryRemaining / halfStepSize);
+                const int batteryCapacity = currentBatteryProfile->batteryCapacity;
+                const int batteryRemaining = constrain(batteryCapacity - displayBasis, 0, batteryCapacity);
+                remainingHalfSteps = (batteryRemaining * MAIN_BATT_USAGE_STEPS * 2 + batteryCapacity - 1) / batteryCapacity; // integer ceil
             } else if (getBatteryState() != BATTERY_NOT_PRESENT) {
                 uint8_t voltagePercent = calculateBatteryPercentageRemaining();
                 if (element->type == OSD_ELEMENT_TYPE_2) {
