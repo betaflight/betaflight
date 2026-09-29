@@ -104,7 +104,6 @@
 #undef USE_TELEMETRY_LTM
 #undef USE_RANGEFINDER
 #undef USE_TRANSPONDER
-// #undef USE_DSHOT_DMAR
 // NOTE: do NOT undef USE_GPS if DroneCAN GNSS is planned — the DroneCAN
 // GPS provider feeds gpsSol and depends on the GPS stack.
 

@@ -196,7 +196,6 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
             if (useBurstDshot) {
                 LL_TIM_DisableDMAReq_UPDATE((TIM_TypeDef *)motor->timerHardware->tim);
                 xLL_EX_DMA_DisableResource(motor->timerHardware->dmaTimUPRef);
-                // xLL_EX_DMA_ConsumeRequest(motor->timerHardware->dmaTimUPRef);
             } else
 #endif
             {
