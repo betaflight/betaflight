@@ -54,6 +54,7 @@ typedef enum {
     LSM6DSO_REG_OUTY_H_A = 0x2B,   // acc Y axis MSB
     LSM6DSO_REG_OUTZ_L_A = 0x2C,   // acc Z axis LSB
     LSM6DSO_REG_OUTZ_H_A = 0x2D,   // acc Z axis MSB
+    LSM6DSO_REG_INTERNAL_FREQ_FINE = 0x63, // ODR deviation from typical, 0.15% per LSB, two's complement
 } lsm6dsoRegister_e;
 
 // Contained in accgyro_spi_lsm6dso_init.c which is size-optimized

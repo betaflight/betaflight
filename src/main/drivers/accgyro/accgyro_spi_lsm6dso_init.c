@@ -18,6 +18,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -41,6 +42,10 @@
 
 // equivalent to 70 mdps/LSB, as specified in LSM6DSO datasheet section 4.1, symbol G_So
 #define LSM6DSO_GYRO_SCALE_2000DPS 0.070f
+
+// Typical gyro ODR for ODR_G = 1010, and the step size of INTERNAL_FREQ_FINE, as specified in the LSM6DSO datasheet
+#define LSM6DSO_GYRO_ODR_TYPICAL_HZ 6667
+#define LSM6DSO_FREQ_FINE_STEP 0.0015f
 
 // LSM6DSO register configuration values
 typedef enum {
@@ -168,11 +173,23 @@ static void lsm6dsoIntExtiInit(gyroDev_t *gyro)
     EXTIEnable(mpuIntIO);
 }
 
+static void lsm6dsoSetSampleRate(gyroDev_t *gyro)
+{
+    // The effective ODR of each part deviates from the typical value, the deviation is reported by INTERNAL_FREQ_FINE.
+    // The scheduler locks to the actual EXTI rate, so the looptime used by the filters and PID must match it too.
+    uint8_t freqFine;
+    if (busReadRegisterBuffer(&gyro->dev, LSM6DSO_REG_INTERNAL_FREQ_FINE, &freqFine, 1)) {
+        gyro->gyroSampleRateHz = lrintf(LSM6DSO_GYRO_ODR_TYPICAL_HZ * (1.0f + LSM6DSO_FREQ_FINE_STEP * (int8_t)freqFine));
+    }
+}
+
 static void lsm6dsoSpiGyroInit(gyroDev_t *gyro)
 {
     extDevice_t *dev = &gyro->dev;
 
     lsm6dsoConfig(gyro);
+
+    lsm6dsoSetSampleRate(gyro);
 
     lsm6dsoIntExtiInit(gyro);
 
