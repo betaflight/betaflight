@@ -38,10 +38,11 @@ OF SUCH DAMAGE.
 #include "usbd_msc_core.h"
 #include "usbd_msc_mem.h"
 
+#include "build/version.h"
+#include "drivers/usb_descriptor.h"
+
 #define USBD_VID                    0x28E9U
 #define USBD_PID                    0x028FU
-
-#define USBD_PRODUCT_FS_STRING        "Betaflight FC Mass Storage (FS Mode)"
 
 /* local function prototypes ('static') */
 static uint8_t bf_msc_core_init(usb_dev *udev, uint8_t config_index);
@@ -315,9 +316,8 @@ static void usbd_msc_string_buf_get(const char *src, uint8_t *unicode)
 
 void usbd_msc_desc_string_update(void)
 {
-#if defined(USBD_PRODUCT_FS_STRING)
-    usbd_msc_string_buf_get(USBD_PRODUCT_FS_STRING, (uint8_t *)&product_string);
-#endif
+    usbd_msc_string_buf_get(usbDescriptorMscProductString(), (uint8_t *)&product_string);
+    usbd_msc_string_buf_get(FC_FIRMWARE_NAME, (uint8_t *)&manufacturer_string);
 }
 
 

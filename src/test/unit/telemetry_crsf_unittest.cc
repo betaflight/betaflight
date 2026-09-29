@@ -69,6 +69,7 @@ extern "C" {
 
     rssiSource_e rssiSource;
     bool airMode;
+    bool posHoldFailed;
     baro_t baro;
     mag_t mag;
 
@@ -233,6 +234,7 @@ TEST(TelemetryCrsfTest, TestFlightMode)
     ENABLE_STATE(GPS_FIX_HOME);
 
     airMode = false;
+    posHoldFailed = false;
 
     DISABLE_ARMING_FLAG(ARMED);
 
@@ -278,6 +280,54 @@ TEST(TelemetryCrsfTest, TestFlightMode)
     EXPECT_EQ(0, frame[7]);
     EXPECT_EQ(crfsCrc(frame, frameLen), frame[8]);
 
+    // Altitude Hold forces Angle mode on, so ALTH must still win over ANGL
+    enableFlightMode(ALT_HOLD_MODE);
+    EXPECT_EQ(ANGLE_MODE, FLIGHT_MODE(ANGLE_MODE));
+    frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_FLIGHT_MODE);
+    EXPECT_EQ(5 + FRAME_HEADER_FOOTER_LEN, frameLen);
+    EXPECT_EQ(CRSF_SYNC_BYTE, frame[0]); // address
+    EXPECT_EQ(7, frame[1]); // length
+    EXPECT_EQ(0x21, frame[2]); // type
+    EXPECT_EQ('A', frame[3]);
+    EXPECT_EQ('L', frame[4]);
+    EXPECT_EQ('T', frame[5]);
+    EXPECT_EQ('H', frame[6]);
+    EXPECT_EQ(0, frame[7]);
+    EXPECT_EQ(crfsCrc(frame, frameLen), frame[8]);
+
+    // Position Hold likewise, and it outranks both Altitude Hold and Angle
+    enableFlightMode(POS_HOLD_MODE);
+    EXPECT_EQ(ANGLE_MODE, FLIGHT_MODE(ANGLE_MODE));
+    EXPECT_EQ(ALT_HOLD_MODE, FLIGHT_MODE(ALT_HOLD_MODE));
+    frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_FLIGHT_MODE);
+    EXPECT_EQ(5 + FRAME_HEADER_FOOTER_LEN, frameLen);
+    EXPECT_EQ(CRSF_SYNC_BYTE, frame[0]); // address
+    EXPECT_EQ(7, frame[1]); // length
+    EXPECT_EQ(0x21, frame[2]); // type
+    EXPECT_EQ('P', frame[3]);
+    EXPECT_EQ('O', frame[4]);
+    EXPECT_EQ('S', frame[5]);
+    EXPECT_EQ('H', frame[6]);
+    EXPECT_EQ(0, frame[7]);
+    EXPECT_EQ(crfsCrc(frame, frameLen), frame[8]);
+
+    // a Position Hold that has failed reports PHFL in place of POSH
+    posHoldFailed = true;
+    frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_FLIGHT_MODE);
+    EXPECT_EQ(5 + FRAME_HEADER_FOOTER_LEN, frameLen);
+    EXPECT_EQ(CRSF_SYNC_BYTE, frame[0]); // address
+    EXPECT_EQ(7, frame[1]); // length
+    EXPECT_EQ(0x21, frame[2]); // type
+    EXPECT_EQ('P', frame[3]);
+    EXPECT_EQ('H', frame[4]);
+    EXPECT_EQ('F', frame[5]);
+    EXPECT_EQ('L', frame[6]);
+    EXPECT_EQ(0, frame[7]);
+    EXPECT_EQ(crfsCrc(frame, frameLen), frame[8]);
+    posHoldFailed = false;
+
+    disableFlightMode(POS_HOLD_MODE);
+    disableFlightMode(ALT_HOLD_MODE);
     disableFlightMode(ANGLE_MODE);
     enableFlightMode(HORIZON_MODE);
     EXPECT_EQ(HORIZON_MODE, FLIGHT_MODE(HORIZON_MODE));
@@ -347,6 +397,7 @@ bool telemetryIsSensorEnabled(sensor_e) {return true;}
 portSharing_e determinePortSharing(serialPortIdentifier_e, serialPortFunction_e) {return PORTSHARING_NOT_SHARED;}
 
 bool isAirmodeEnabled(void) {return airMode;}
+bool posHoldFailure(void) {return posHoldFailed;}
 
 int32_t getAmperage(void)
 {

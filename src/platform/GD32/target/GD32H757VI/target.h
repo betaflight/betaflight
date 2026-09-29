@@ -25,10 +25,6 @@
 #define TARGET_BOARD_IDENTIFIER "H757"
 #endif
 
-#ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight - GD32H757"
-#endif
-
 #ifndef GD32H757
 #define GD32H757
 #endif

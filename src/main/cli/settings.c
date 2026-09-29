@@ -981,6 +981,9 @@ const clivalue_t valueTable[] = {
 #ifdef USE_GPS
     { "blackbox_disable_gps",       VAR_UINT32 | MASTER_VALUE | MODE_BITSET, .config.bitpos = FLIGHT_LOG_FIELD_SELECT_GPS,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields_disabled_mask) },
 #endif
+#ifdef USE_PITOT
+    { "blackbox_disable_pitot",       VAR_UINT32 | MASTER_VALUE | MODE_BITSET, .config.bitpos = FLIGHT_LOG_FIELD_SELECT_PITOT,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields_disabled_mask) },
+#endif
     { "blackbox_mode",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BLACKBOX_MODE }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, mode) },
     { "blackbox_high_resolution",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, high_resolution) },
     { "blackbox_uart",              VAR_INT8   | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, blackbox_uart) },
@@ -1251,6 +1254,7 @@ const clivalue_t valueTable[] = {
     { "launch_max_altitude",        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, maxAltitudeM) },
     { "launch_end_time",            VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 5000 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, endTimeMs) },
     { "launch_abort_deadband",      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 50 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, abortDeadbandPercent) },
+    { "launch_abort_angle",         VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 90 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, abortAngleDeg) },
 #endif // USE_WING && USE_LAUNCH_WING
 
 // PG_PID_CONFIG
@@ -1358,6 +1362,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_CHIRP_FREQUENCY_START_DECI_HZ, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, chirp_frequency_start_deci_hz) },
     { PARAM_NAME_CHIRP_FREQUENCY_END_DECI_HZ,   VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 10000 }, PG_PID_PROFILE, offsetof(pidProfile_t, chirp_frequency_end_deci_hz) },
     { PARAM_NAME_CHIRP_TIME_SECONDS,            VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 255 }, PG_PID_PROFILE, offsetof(pidProfile_t, chirp_time_seconds) },
+    { PARAM_NAME_CHIRP_REPEAT,                  VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 9 }, PG_PID_PROFILE, offsetof(pidProfile_t, chirp_repeat) },
 #endif
 
 #ifdef USE_D_MAX

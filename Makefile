@@ -115,7 +115,7 @@ endif
 
 # some targets use parallel build by default
 # MAKEFLAGS is valid only inside target, do not use this at parse phase
-DEFAULT_PARALLEL_JOBS 	:=    # all jobs in parallel (for backward compatibility)
+DEFAULT_PARALLEL_JOBS := $(shell getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 4)
 # MinGW's make requires a numeric argument for -j; detect CPU count via nproc
 ifeq ($(MINGW),1)
   DEFAULT_PARALLEL_JOBS := $(shell nproc 2>/dev/null || echo 4)
@@ -773,6 +773,9 @@ $(AUTOHYDRATE_STAMPS):
 # the cost is a single cmp call.
 .PHONY: validate-deps
 validate-deps:
+ifeq ($(V),1)
+	@echo "Build parallelism: $(if $(filter -j,$(MAKEFLAGS)),unlimited,$(patsubst -j%,%,$(filter -j%,$(MAKEFLAGS) $(MAKE_PARALLEL)))) jobs"
+endif
 	$(V1) mkdir -p "$(TARGET_OBJ_DIR)"; \
 	printf '%s\n' $(SRC) | sort > "$(SRC_MANIFEST).new"; \
 	if [ ! -f "$(SRC_MANIFEST)" ]; then \

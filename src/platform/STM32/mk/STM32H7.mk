@@ -124,6 +124,13 @@ STARTUP_SRC         = STM32/startup/startup_stm32h743xx.s
 MCU_FLASH_SIZE     := 2048
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 
+else ifeq ($(TARGET_MCU),STM32H753xx)
+DEVICE_FLAGS       += -DSTM32H753xx
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h743_2m.ld
+STARTUP_SRC         = STM32/startup/startup_stm32h743xx.s
+MCU_FLASH_SIZE     := 2048
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+
 ifeq ($(RAM_BASED),yes)
 FIRMWARE_SIZE      := 448
 # TARGET_FLASH now becomes the amount of RAM memory that is occupied by the firmware

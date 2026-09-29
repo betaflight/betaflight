@@ -1173,8 +1173,24 @@ void processRxModes(timeUs_t currentTimeUs)
             ENABLE_FLIGHT_MODE(LAUNCH_MODE);
         }
     } else if (FLIGHT_MODE(LAUNCH_MODE)) {
+        // Cancelling before the throw would drop the launch's hold on the motor
+        // and hand the raised throttle stick straight to it, with the aircraft
+        // still in the pilot's hands. Disarm instead, and make them cycle the
+        // arm switch. Only the box going inactive is treated this way; failsafe
+        // and the terminal states reach here too and keep their own handling.
+        const bool cancelledBeforeTheThrow = !IS_RC_MODE_ACTIVE(BOXLAUNCH)
+            && launchWingIsPreLaunch()
+            && ARMING_FLAG(ARMED);
         DISABLE_FLIGHT_MODE(LAUNCH_MODE);
         launchWingSwitchOff();
+        if (cancelledBeforeTheThrow) {
+            // Stick arming needs throttle low to re-arm, so it cannot repeat
+            // this, and nothing on that path would ever clear the interlock.
+            if (!isUsingSticksForArming()) {
+                setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+            }
+            disarm(DISARM_REASON_LAUNCH_ABORT);
+        }
     }
 #endif
 
@@ -1411,8 +1427,8 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
         startTime = micros();
         static uint32_t previousMotorUpdateTime;
         const uint32_t currentDeltaTime = startTime - previousMotorUpdateTime;
-        debug[2] = currentDeltaTime;
-        debug[3] = currentDeltaTime - targetPidLooptime;
+        DEBUG_SET(DEBUG_CYCLETIME, 2, currentDeltaTime);                      //!< Motor Update Interval [unit:us]
+        DEBUG_SET(DEBUG_CYCLETIME, 3, currentDeltaTime - targetPidLooptime);  //!< Motor Update Interval Error [unit:us]
         previousMotorUpdateTime = startTime;
     } else if (debugMode == DEBUG_PIDLOOP) {
         startTime = micros();
@@ -1433,7 +1449,7 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
     if (debugMode == DEBUG_DSHOT_RPM_ERRORS && useDshotTelemetry) {
         const uint8_t motorCount = MIN(getMotorCount(), 4);
         for (uint8_t i = 0; i < motorCount; i++) {
-            debug[i] = getDshotTelemetryMotorInvalidPercent(i);
+            DEBUG_SET(DEBUG_DSHOT_RPM_ERRORS, i, getDshotTelemetryMotorInvalidPercent(i));  //!< [index:0..3] Motor {1|2|3|4} Invalid [unit:%]
         }
     }
 #endif

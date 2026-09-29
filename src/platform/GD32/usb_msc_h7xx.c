@@ -138,6 +138,8 @@ uint8_t mscStart(void)
 
 #endif /* USE_USBHS1 */
 
+    usbd_msc_desc_string_update();
+
     usbd_init(&USB_OTG_dev, &bf_msc_desc, &bf_msc_class);
 
 #ifdef USE_USB_HS
