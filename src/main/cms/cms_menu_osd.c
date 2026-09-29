@@ -194,6 +194,10 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
 #if ENABLE_OSD_CUSTOM_TEXT
     {"SERIAL TEXT",        OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_CUSTOM_SERIAL_TEXT]},
 #endif
+#ifdef USE_RADAR
+    {"RADAR PEER",         OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_RADAR_PEER]},
+    {"RADAR HUD",          OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_RADAR_HUD]},
+#endif
     {"BACK",               OME_Back,    NULL, NULL},
     {NULL,                 OME_END,     NULL, NULL}
 };
