@@ -264,6 +264,17 @@
 #define PARAM_NAME_OSD_NAV_MAP_MODE "osd_nav_map_mode"
 #define PARAM_NAME_OSD_NAV_MAP_CENTRE "osd_nav_map_centre"
 #define PARAM_NAME_OSD_NAV_MAP_MIN_SCALE_M "osd_nav_map_min_scale_m"
+#define PARAM_NAME_RADAR_PEER_TIME "radar_peer_time"
+#define PARAM_NAME_RADAR_HUD_MAX_PEERS "radar_hud_max_peers"
+#define PARAM_NAME_RADAR_HUD_RANGE_MIN "radar_hud_range_min"
+#define PARAM_NAME_RADAR_HUD_RANGE_MAX "radar_hud_range_max"
+#define PARAM_NAME_RADAR_HUD_ALT_TIME "radar_hud_alt_time"
+#define PARAM_NAME_RADAR_HUD_DIST_TIME "radar_hud_dist_time"
+#define PARAM_NAME_RADAR_CAMERA_FOV_H "radar_camera_fov_h"
+#define PARAM_NAME_RADAR_CAMERA_FOV_V "radar_camera_fov_v"
+#define PARAM_NAME_RADAR_CAMERA_UPTILT "radar_camera_uptilt"
+#define PARAM_NAME_RADAR_HUD_MARGIN_H "radar_hud_margin_h"
+#define PARAM_NAME_RADAR_HUD_MARGIN_V "radar_hud_margin_v"
 
 // Phase 3: L1 Nonlinear Guidance
 #define PARAM_NAME_AP_L1_ENABLE "ap_l1_enable"

@@ -71,6 +71,7 @@
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
+#include "io/radar.h"
 #include "io/serial.h"
 #include "io/transponder_ir.h"
 #include "io/vtx.h"
@@ -102,6 +103,7 @@
 #include "pg/motor.h"
 #include "pg/msp.h"
 #include "pg/osd_nav_map.h"
+#include "pg/radar.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/pilot.h"
@@ -1859,6 +1861,21 @@ const clivalue_t valueTable[] = {
 
 #ifdef USE_PITOT
     { "osd_airspeed",            VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_AIRSPEED]) },
+#endif
+#ifdef USE_RADAR
+    { "osd_radar_peer_pos",         VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_RADAR_PEER]) },
+    { "osd_radar_hud_pos",          VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_RADAR_HUD]) },
+    { PARAM_NAME_RADAR_PEER_TIME,     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 10 },     PG_RADAR_CONFIG, offsetof(radarConfig_t, peerDisplayTimeS) },
+    { PARAM_NAME_RADAR_HUD_MAX_PEERS, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, RADAR_MAX_PEERS }, PG_RADAR_CONFIG, offsetof(radarConfig_t, hudMaxPeers) },
+    { PARAM_NAME_RADAR_HUD_RANGE_MIN, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 30 },     PG_RADAR_CONFIG, offsetof(radarConfig_t, hudRangeMinM) },
+    { PARAM_NAME_RADAR_HUD_RANGE_MAX, VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 100, 9990 }, PG_RADAR_CONFIG, offsetof(radarConfig_t, hudRangeMaxM) },
+    { PARAM_NAME_RADAR_HUD_ALT_TIME,  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 10 },     PG_RADAR_CONFIG, offsetof(radarConfig_t, hudAltTimeS) },
+    { PARAM_NAME_RADAR_HUD_DIST_TIME, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 10 },     PG_RADAR_CONFIG, offsetof(radarConfig_t, hudDistTimeS) },
+    { PARAM_NAME_RADAR_CAMERA_FOV_H,  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 60, 150 },   PG_RADAR_CONFIG, offsetof(radarConfig_t, cameraFovH) },
+    { PARAM_NAME_RADAR_CAMERA_FOV_V,  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 30, 120 },   PG_RADAR_CONFIG, offsetof(radarConfig_t, cameraFovV) },
+    { PARAM_NAME_RADAR_CAMERA_UPTILT, VAR_INT8   | MASTER_VALUE, .config.minmax = { -40, 80 },           PG_RADAR_CONFIG, offsetof(radarConfig_t, cameraUptilt) },
+    { PARAM_NAME_RADAR_HUD_MARGIN_H,  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 4 },      PG_RADAR_CONFIG, offsetof(radarConfig_t, hudMarginH) },
+    { PARAM_NAME_RADAR_HUD_MARGIN_V,  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 3 },      PG_RADAR_CONFIG, offsetof(radarConfig_t, hudMarginV) },
 #endif
 #endif // end of #ifdef USE_OSD
 
