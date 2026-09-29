@@ -247,7 +247,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_curve_expo = 20,
         .speed_curve_vref = 20,      // Reference speed value which has optimal plane settins m/s
         .speed_curve_power = 20,     // Hyperbolic curves power *0.1
-        .speed_curve_min = 20,       // Hyperbolic curves minimum *0.01
+        .speed_curve_min = 25,       // Hyperbolic curves minimum *0.01
         .speed_curve_max = 200,      // Hyperbolic curves maximum *0.01
         .tpa_speed_type = TPA_SPEED_BASIC,
         .tpa_speed_basic_delay = 1000,
