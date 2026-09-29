@@ -1549,6 +1549,8 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_EZ_LANDING_LIMIT, "%d",       currentPidProfile->ez_landing_limit);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_EZ_LANDING_SPEED, "%d",       currentPidProfile->ez_landing_speed);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_LANDING_DISARM_THRESHOLD, "%d", currentPidProfile->landing_disarm_threshold);
+        // custom-patch: see betaflight/betaflight#15775
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_LANDING_DISARM_AIRMODE_OFF_ONLY, "%d", currentPidProfile->landing_disarm_airmode_off_only);
 
 #ifdef USE_WING
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SPA_ROLL_CENTER, "%d",        currentPidProfile->spa_center[FD_ROLL]);

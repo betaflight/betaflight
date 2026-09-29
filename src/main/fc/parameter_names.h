@@ -78,6 +78,7 @@
 #define PARAM_NAME_EZ_LANDING_LIMIT "ez_landing_limit"
 #define PARAM_NAME_EZ_LANDING_SPEED "ez_landing_speed"
 #define PARAM_NAME_LANDING_DISARM_THRESHOLD "landing_disarm_threshold"
+#define PARAM_NAME_LANDING_DISARM_AIRMODE_OFF_ONLY "landing_disarm_airmode_off_only" // custom-patch: see betaflight/betaflight#15775
 #define PARAM_NAME_SPA_ROLL_CENTER "spa_roll_center"
 #define PARAM_NAME_SPA_ROLL_WIDTH "spa_roll_width"
 #define PARAM_NAME_SPA_ROLL_MODE "spa_roll_mode"

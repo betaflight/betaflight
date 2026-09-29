@@ -43,6 +43,7 @@
 #include "fc/core.h"
 #include "fc/rc.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
 #include "flight/autopilot.h"
@@ -124,7 +125,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 #define IS_AXIS_IN_ANGLE_MODE(i) false
 #endif // USE_ACC
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 11);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 12); // custom-patch: version bump for landing_disarm_airmode_off_only; see betaflight/betaflight#15775
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -241,6 +242,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .spa_width = { 0, 0, 0 },
         .spa_mode = { 0, 0, 0 },
         .landing_disarm_threshold = 0, // relatively safe values are around 100
+        .landing_disarm_airmode_off_only = 0, // custom-patch: default OFF preserves stock behavior; see betaflight/betaflight#15775
         .feedforward_yaw_hold_gain = 15,  // zero disables; 15-20 is OK for 5in
         .feedforward_yaw_hold_time = 100,  // a value of 100 is a time constant of about 100ms, and is OK for a 5in; smaller values decay faster, eg for smaller props
         .tpa_curve_type = TPA_CURVE_CLASSIC,
@@ -1203,7 +1205,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     rpmFilterUpdate();
 #endif
 
-    if (pidRuntime.useEzDisarm) {
+    // custom-patch: when landing_disarm_airmode_off_only is ON, EZ Disarm only runs while Airmode is OFF
+    // (e.g. pilot toggles Airmode off via AUX switch specifically to land); see betaflight/betaflight#15775
+    if (pidRuntime.useEzDisarm && (!pidRuntime.landingDisarmAirmodeOffOnly || !isAirmodeEnabled())) {
         disarmOnImpact();
     }
 

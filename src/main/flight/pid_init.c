@@ -580,6 +580,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 
     pidRuntime.useEzDisarm = pidProfile->landing_disarm_threshold > 0;
     pidRuntime.landingDisarmThreshold = pidProfile->landing_disarm_threshold * 10.0f;
+    pidRuntime.landingDisarmAirmodeOffOnly = pidProfile->landing_disarm_airmode_off_only; // custom-patch: see betaflight/betaflight#15775
 
 #ifdef USE_WING
     tpaSpeedInit(pidProfile);
