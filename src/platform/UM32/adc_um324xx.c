@@ -194,7 +194,7 @@ void adcInit(const adcConfig_t *config)
 	hts.Init.Mode 		= TS_NORMAL_MODE;
 	hts.Init.WorkMode 	= TS_HIGH_SPEED_MODE;
 	hts.Init.ChopEn 	= TS_CHOP_CLK_EN;
-	hts.Init.ChopDiv 	= 0x3FF;
+	hts.Init.ChopDiv 	= 0x3C0;
 	hts.Init.irq_en    = DISABLE;
 	
 	if(HAL_TS_Init(&hts) != HAL_OK)
