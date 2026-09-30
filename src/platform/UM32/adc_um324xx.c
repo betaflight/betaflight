@@ -40,7 +40,6 @@
 
 #include "pg/adc.h"
 
-
 void Error_Handler(void);
 
 #define ADC_REGULAR_RANK_1    ((uint32_t)0x00000001)       /*!< ADC regular conversion rank 1  */
@@ -193,7 +192,7 @@ void adcInit(const adcConfig_t *config)
 
 	hts.Instance = TS;
 	hts.Init.Mode 		= TS_NORMAL_MODE;
-	hts.Init.WorkMode 	= TS_LOW_SPEED_MODE;
+	hts.Init.WorkMode 	= TS_HIGH_SPEED_MODE;
 	hts.Init.ChopEn 	= TS_CHOP_CLK_EN;
 	hts.Init.ChopDiv 	= 0x3FF;
 	hts.Init.irq_en    = DISABLE;
@@ -490,8 +489,11 @@ uint16_t adcInternalReadVrefint(void)
 
 uint16_t adcInternalReadTempsensor(void)
 {
+    // TS returns a full 12-bit code in both work modes, matching the 12-bit
+    // calibration values (adcTSCAL1/2), so no scaling is applied here.
     uint16_t value = HAL_TS_get_data(&hts);
-    if(value == 0){
+    if (value == 0) {
+        // TS has not completed its first conversion yet
         value = adcTSCAL1 + adcTSCAL1 / 4;
     }
     return value;

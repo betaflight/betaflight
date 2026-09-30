@@ -152,11 +152,11 @@ uint16_t HAL_TS_get_data(TS_HandleTypeDef *hts)
     return rdata;
   }
 	
-	if(hts->Init.WorkMode == TS_HIGH_SPEED_MODE)
-	{
-		rdata = (hts->Instance->DATA & 0x3ff);
-	}
-	else
+	// if(hts->Init.WorkMode == TS_HIGH_SPEED_MODE)
+	// {
+	// 	rdata = (hts->Instance->DATA & 0x3ff);
+	// }
+	// else
 	{
 		rdata = (hts->Instance->DATA & 0xfff);
 	}
