@@ -1522,8 +1522,8 @@ TEST_F(OsdTest, TestBatteryUsageCapacityZero)
         SYM_PB_FULL,
         SYM_PB_FULL,
         SYM_PB_FULL,
-        SYM_PB_FULL,
-        SYM_PB_END,
+        SYM_PB_HALF,
+        SYM_PB_EMPTY,
         SYM_PB_EMPTY,
         SYM_PB_EMPTY,
         SYM_PB_EMPTY);
