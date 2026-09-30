@@ -109,6 +109,28 @@ void stopMotors(void)
 static FAST_DATA_ZERO_INIT float throttle = 0;
 static FAST_DATA_ZERO_INIT float rcThrottle = 0;
 static FAST_DATA_ZERO_INIT float mixerThrottle = 0;
+#ifdef USE_ADRC
+// Final collective throttle from the previous mixer iteration. Unlike mixerThrottle (the
+// blackbox/TPA value), this includes automatic-mode overrides and mixer constraints, so the ADRC
+// plant-gain schedule follows the command that was actually sent to the motor mix.
+static FAST_DATA_ZERO_INIT float mixerAdrcThrottle = 0;
+// The same collective sampled one step earlier: after the automatic-mode overrides, before the
+// mixer's own airmode headroom is added. The two differ by exactly the amount the mixer raised
+// collective to fit the axis mix, which is thrust nobody commanded - on the ground under airmode
+// that alone reached ~32% of range at a zero throttle stick and satisfied the ADRC liftoff gate's
+// throttle test (ADRC-026). The gate therefore reads this value and the b0 schedule reads the
+// applied one above: "was thrust asked for" and "how much thrust is there" are different questions.
+//
+// This is the COMMANDED COLLECTIVE, not the stick. Everything upstream of the sample is still in
+// it: throttleAngleCorrection, throttle_limit, throttle_boost, the ALT_HOLD/GPS_RESCUE overrides
+// (deliberately - an autonomous climb must open the gate), the USE_DYN_IDLE 1% floor and any
+// USE_RPM_LIMIT scaling. Only the mixer adjustment below is excluded. Several of those appear at a
+// zero stick - the dyn-idle floor, throttleAngleCorrection in ANGLE/HORIZON with thr_corr_value
+// set, the autonomous overrides - so a liftoff threshold configured at or below a few percent
+// could be met without any pilot input; the CLI permits adrc_liftoff_throttle down to 1, and
+// nothing here rejects such a setting.
+static FAST_DATA_ZERO_INIT float mixerAdrcCommandedThrottle = 0;
+#endif
 static FAST_DATA_ZERO_INIT float motorOutputMin;
 static FAST_DATA_ZERO_INIT float motorRangeMin;
 static FAST_DATA_ZERO_INIT float motorRangeMax;
@@ -453,6 +475,24 @@ float getMotorOutputRms(void)
 }
 #endif // USE_WING
 
+#ifdef USE_ADRC
+#define ADRC_MIX_CLIP_EPS 0.001f
+// ADRC-033: true when the normalised motor command of any motor falls outside [0, 1], i.e. applyMixToMotors()
+// is about to clip it at an endpoint. motorMixRange > 1 alone misses this for MIXER_DYNAMIC, which reshapes the mix
+// after the range was computed (range 0.8 can still end up clipping at high throttle). Deliberately not FAST_CODE:
+// it only runs for ADRC profiles and ITCM is tight on F7.
+static NOINLINE bool adrcMixWillClip(const float motorMix[MAX_SUPPORTED_MOTORS], const motorMixer_t *activeMixer)
+{
+    for (int i = 0; i < mixerRuntime.motorCount; i++) {
+        const float motorOutput = motorOutputMixSign * motorMix[i] + throttle * activeMixer[i].throttle;
+        if (motorOutput < -ADRC_MIX_CLIP_EPS || motorOutput > 1.0f + ADRC_MIX_CLIP_EPS) {
+            return true;
+        }
+    }
+    return false;
+}
+#endif
+
 static void applyMixToMotors(const float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t *activeMixer)
 {
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
@@ -554,7 +594,7 @@ static void updateDynLpfCutoffs(timeUs_t currentTimeUs, float throttle)
 
 DEFINE_SCALE_FN(scaleAirmodeTransition, 0.0f, 0.5f, 0.5f, 1.0f)
 
-static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnabled)
+static float applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnabled)
 {
     float airmodeTransitionPercent = 1.0f;
     float motorDeltaScale = 0.5f;
@@ -587,6 +627,8 @@ static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnable
 
     // constrain throttle so it won't clip any outputs
     throttle = constrainf(throttle, -minMotor, 1.0f - maxMotor);
+
+    return motorMixNormalizationFactor;
 }
 
 static float calcEzLandLimit(float maxDeflection, float speed)
@@ -606,7 +648,7 @@ static float calcEzLandLimit(float maxDeflection, float speed)
     return fmaxf(mixerRuntime.ezLandingLimit, deflectionAndSpeedLimit);
 }
 
-static void applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin, const float motorMixMax)
+static float applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin, const float motorMixMax)
 {
     // Calculate factor for normalizing motor mix range to <= 1.0
     const float baseNormalizationFactor = motorMixRange > 1.0f ? 1.0f / motorMixRange : 1.0f;
@@ -651,9 +693,11 @@ static void applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin,
     DEBUG_SET(DEBUG_EZLANDING, 2, upperLimit * 10000U);                                 //!< Upper Throttle Limit [unit:0.0001]
     DEBUG_SET(DEBUG_EZLANDING, 3, fminf(1.0f, ezLandLimit / absMotorMixMin) * 10000U);  //!< EZ Land Limit [unit:0.0001]
     // DEBUG_EZLANDING 4 and 5 is the upper limits based on stick input and speed respectively
+
+    return normalizationFactor;
 }
 
-static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const float motorMixMax, const bool airmodeEnabled)
+static float applyMixerAdjustment(float *motorMix, const float motorMixMin, const float motorMixMax, const bool airmodeEnabled)
 {
     float airmodeTransitionPercent = 1.0f;
 
@@ -672,6 +716,8 @@ static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const
     const float normalizedMotorMixMin = motorMixMin * motorMixNormalizationFactor;
     const float normalizedMotorMixMax = motorMixMax * motorMixNormalizationFactor;
     throttle = constrainf(throttle, -normalizedMotorMixMin, 1.0f - normalizedMotorMixMax);
+
+    return motorMixNormalizationFactor;
 }
 
 FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
@@ -683,6 +729,12 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
     calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
 
     if (applyCrashFlipModeToMotors()) {
+#ifdef USE_ADRC
+        mixerAdrcThrottle = 0.0f;
+        mixerAdrcCommandedThrottle = 0.0f;
+        pidUpdateAdrcAppliedOutput(currentPidProfile, 0.0f, currentPidProfile->pidSumLimitYaw);
+        pidUpdateAdrcMixerSaturation(currentPidProfile, false);
+#endif
         return;
         // if crash flip modeis being applied to the motors, mixing is done
 
@@ -828,29 +880,69 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
 
     motorMixRange = motorMixMax - motorMixMin;
 
+#ifdef USE_ADRC
+    // Sample the collective here, between the automatic-mode overrides above and the mixer
+    // adjustment below: this is every source of *commanded* thrust (stick, ALT_HOLD, GPS_RESCUE)
+    // and none of the headroom the adjustment is about to add. See mixerAdrcCommandedThrottle.
+    const float commandedCollectiveThrottle = throttle;
+#endif
+
     // note that here airmodeEnabled is true also when Launch Control is active
+    float appliedAxisScale;
     switch (mixerConfig()->mixer_type) {
     case MIXER_LEGACY:
-        applyMixerAdjustment(motorMix, motorMixMin, motorMixMax, airmodeEnabled);
+        appliedAxisScale = applyMixerAdjustment(motorMix, motorMixMin, motorMixMax, airmodeEnabled);
         break;
     case MIXER_LINEAR:
     case MIXER_DYNAMIC:
-        applyMixerAdjustmentLinear(motorMix, airmodeEnabled);
+        appliedAxisScale = applyMixerAdjustmentLinear(motorMix, airmodeEnabled);
         break;
     case MIXER_EZLANDING:
-        applyMixerAdjustmentEzLand(motorMix, motorMixMin, motorMixMax);
+        appliedAxisScale = applyMixerAdjustmentEzLand(motorMix, motorMixMin, motorMixMax);
         break;
     default:
-        applyMixerAdjustment(motorMix, motorMixMin, motorMixMax, airmodeEnabled);
+        appliedAxisScale = applyMixerAdjustment(motorMix, motorMixMin, motorMixMax, airmodeEnabled);
         break;
     }
 
-    if (featureIsEnabled(FEATURE_MOTOR_STOP)
+    const bool motorStopped = featureIsEnabled(FEATURE_MOTOR_STOP)
         && ARMING_FLAG(ARMED)
         && !mixerRuntime.feature3dEnabled
         && !airmodeEnabled
         && !FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | LAUNCH_MODE)   // disable motor_stop while GPS Rescue / Alt Hold / Pos Hold / Launch is active
-        && (rcData[THROTTLE] < rxConfig()->mincheck)) {
+        && (rcData[THROTTLE] < rxConfig()->mincheck);
+
+#ifdef USE_ADRC
+    // The observer consumes these values on the next PID iteration, matching its existing
+    // one-iteration lastOutput feedback. The scale is the uniform authority factor of the active
+    // mixer mode; the pid layer consumes it as a binary applied/not-applied signal only (see
+    // pidUpdateAdrcAppliedOutput()). MIXER_DYNAMIC's deliberate per-motor redistribution remains
+    // part of the plant/disturbance seen by the observer.
+    float appliedCollectiveThrottle = throttle;
+    float commandedCollective = commandedCollectiveThrottle;
+#ifdef USE_THRUST_LINEARIZATION
+    // throttle is in the inverse-compensated motor-command domain here, while the plant receives
+    // the forward-linearized value below. Publish the same physical-domain base collective; any
+    // nonlinear mixed-axis residual remains part of the disturbance observed by ADRC.
+    appliedCollectiveThrottle = constrainf(pidApplyThrustLinearization(throttle), 0.0f, 1.0f);
+    // Same domain conversion for the commanded value, so the gate's threshold means the same thing
+    // whether or not thrust linearization is configured.
+    commandedCollective = constrainf(pidApplyThrustLinearization(commandedCollectiveThrottle), 0.0f, 1.0f);
+#endif
+    mixerAdrcThrottle = motorStopped ? 0.0f : appliedCollectiveThrottle;
+    mixerAdrcCommandedThrottle = motorStopped ? 0.0f : commandedCollective;
+    pidUpdateAdrcAppliedOutput(currentPidProfile, motorStopped ? 0.0f : appliedAxisScale, yawPidSumLimit);
+    // ADRC-033: the mixer could not deliver the full command this iteration - either it normalised the mix down
+    // (range > 1) or a motor is about to be clipped at an endpoint (see adrcMixWillClip()).
+    if (currentPidProfile->pid_type == PID_TYPE_ADRC) {
+        pidUpdateAdrcMixerSaturation(currentPidProfile,
+            !motorStopped && (motorMixRange > 1.0f || adrcMixWillClip(motorMix, activeMixer)));
+    }
+#else
+    UNUSED(appliedAxisScale);
+#endif
+
+    if (motorStopped) {
         applyMotorStop();
     } else {
         // Apply the mix to motor endpoints
@@ -867,6 +959,18 @@ float mixerGetThrottle(void)
 {
     return mixerThrottle;
 }
+
+#ifdef USE_ADRC
+float mixerGetAdrcThrottle(void)
+{
+    return mixerAdrcThrottle;
+}
+
+float mixerGetAdrcCommandedThrottle(void)
+{
+    return mixerAdrcCommandedThrottle;
+}
+#endif
 
 float mixerGetRcThrottle(void)
 {

@@ -125,7 +125,22 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 #define CHIRP_SETTLE_TIME_US 750000 // 750 ms
 #endif // USE_CHIRP
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 12);
+// Current upstream uses version 12 without adrcProfile_t. The b9/ADRC-029 line uses wrapped
+// version 0 with the ADRC fields. Version 13 is intentionally new to both lineages so an upgrade
+// resets PID profiles instead of copying either incompatible layout into this merged structure.
+// Version 14 (b11): pidProfiles is ONE parameter group holding an array of PID_PROFILE_COUNT elements, and pgLoad()
+// restores it with a single memcpy. Growing pidProfile_t therefore changes the element stride, so a blob saved by
+// a build with a smaller element mis-aligns profiles 2..4 and feeds profile 1's new tail with bytes of the old
+// profile 2. b11-exp2..exp8 grew the element (260 -> 262 -> 264 -> 268 bytes) while keeping version 13; that was
+// wrong. Any change to sizeof(pidProfile_t) MUST bump this version: the profiles then reset to defaults on
+// upgrade instead of loading corrupted. (Upstream master is at 12; 13 was the PR's own bump.)
+// Version 15: the PR line drops ADRC-032 (adrc_zeta_*), which moves adrc_sat_z3_inhibit; a version-14 blob from
+// the b11 tester build must reset, not load shifted.
+// Upstream's chirp_repeat (2026-09-27) sits ahead of the ADRC tail and moves it, but the version stays 15: the PG
+// version is a 4-bit field (0..15, a 16 wraps to 0), 15 is the ceiling, and no build with the pre-chirp_repeat
+// version-15 layout was ever released (it existed only as the PR head of 2026-09-26/27). The final number is for
+// the maintainers to pick when this lands on master (which is at 12).
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 15);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -148,6 +163,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .itermWindup = 80,         // sets iTerm limit to this percentage below pidSumLimit
         .pidAtMinThrottle = PID_STABILISATION_ON,
         .angle_limit = 60,
+        .pid_type = PID_TYPE_CLASSIC,
         .feedforward_transition = 0,
         .yawRateAccelLimit = 0,
         .rateAccelLimit = 0,
@@ -265,7 +281,15 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
         .chirp_repeat = 1,
+        .adrc_ground_wc = 10,           // b11 default (D1): low wc while the liftoff gate is closed
+        .adrc_wc_ramp_ms = 100,
+        .adrc_ground_dgain = 40,        // b11 default (D1): cap non-binding at ground wc 10 on the flown tunes
+        .adrc_b0_scale_min = 100,
+        .adrc_sat_z3_inhibit = 0,
     );
+#ifdef USE_ADRC
+    adrcResetProfile(&pidProfile->adrc);
+#endif
 }
 
 static bool isTpaActive(tpaMode_e tpaMode, term_e term) {
@@ -315,7 +339,15 @@ void pidResetIterm(void)
 {
     for (int axis = 0; axis < 3; axis++) {
         pidData[axis].I = 0.0f;
+#ifdef USE_ADRC
+        adrcResetState(&pidRuntime.adrc, axis);
+#endif
     }
+    // Liftoff-gate state is intentionally not reset here: pidResetIterm() also fires mid-flight
+    // (launch control trigger, 3D motor reversal), where force-closing the gate would wrongly cut
+    // the ESO's b0*u feedback while still airborne. See adrcResetGate(), reached from a
+    // controller-disabled epoch through adrcResetAll(), or directly from pidInitConfig() on a
+    // disarmed pid_type change.
 }
 
 #ifdef USE_WING
@@ -1078,6 +1110,85 @@ NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
 #endif // USE_WING
 }
 
+#ifdef USE_ADRC
+// FAST_CODE_NOINLINE keeps these out of pidController()'s ITCM-resident body (mirrors the existing
+// applyAcroTrainer/applyLaunchControl/handleCrashRecovery pattern above) - they only run for ADRC
+// profiles and are not on the hot path for builds that don't use it.
+void pidUpdateAdrcAppliedOutput(const pidProfile_t *pidProfile, float axisScale, float yawSumLimit)
+{
+    if (pidProfile->pid_type != PID_TYPE_ADRC) {
+        return;
+    }
+
+    // The mixer's authority scale is used as a BINARY signal only: any positive scale means the
+    // command reached the motors (proportionally normalized or not), zero/negative/NaN means it
+    // did not (motor stop, Crash Flip; the comparison is ordered so NaN also reads as no
+    // authority). The proportional factor is deliberately NOT multiplied in: b0 is calibrated in
+    // flight with the mixer's proportional normalization inside the loop, so feeding scale*u
+    // makes the ESO/z3 restore the "missing" authority and over-gains the loop by 1/scale exactly
+    // where scale < 1 - low throttle without airmode. Flight A/B 2026-07-12 (identical tune, only
+    // this feedback changed): a sustained 24-26 Hz roll/pitch limit cycle at 10-30% throttle with
+    // scale*u, absent with u.
+    const bool hasAuthority = axisScale > 0.0f;
+    const float appliedYawLimit = yawSumLimit > 0.0f ? yawSumLimit : pidProfile->pidSumLimitYaw;
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        const float sumLimit = axis == FD_YAW ? appliedYawLimit : pidProfile->pidSumLimit;
+        adrcSetAppliedOutput(&pidRuntime.adrc, axis,
+            hasAuthority ? constrainf(pidData[axis].Sum, -sumLimit, sumLimit) : 0.0f);
+    }
+}
+
+// ADRC-033: mixer clipping flag for the observer's z3 growth inhibit; consumed on the next PID
+// iteration like the applied output above.
+void pidUpdateAdrcMixerSaturation(const pidProfile_t *pidProfile, bool saturated)
+{
+    if (pidProfile->pid_type != PID_TYPE_ADRC) {
+        return;
+    }
+    adrcSetMixerSaturated(&pidRuntime.adrc, saturated);
+}
+
+static FAST_CODE_NOINLINE void updateAdrcSharedState(const pidProfile_t *pidProfile)
+{
+    if (pidProfile->pid_type == PID_TYPE_ADRC) {
+        // A disarm->arm rising edge starts a fresh ADRC epoch (ADRC-017; see adrc.c) - the
+        // stabilisation-disabled reset branch below is dead code at stock pid_at_min_throttle=ON.
+        adrcUpdateArmTransition(&pidRuntime.adrc, ARMING_FLAG(ARMED));
+        adrcUpdatePerLoopState(&pidRuntime.adrc, &pidProfile->adrc, pidRuntime.dT);
+    }
+}
+
+// See updateAdrcSharedState() above for why this is FAST_CODE_NOINLINE. Applies the ADRC control
+// law for one axis, overwriting classic PID's P/I/D output for that axis.
+static FAST_CODE_NOINLINE void applyAdrcControl(int axis, float gyroRate, float currentPidSetpoint,
+    const pidProfile_t *pidProfile, bool yawSpinRecoveryActive, bool crashRecoveryActive)
+{
+    const float adrcSumLimit = (axis == FD_YAW) ? pidProfile->pidSumLimitYaw : pidProfile->pidSumLimit;
+    const adrcOutput_t adrcOutput = adrcApplyControlWithRecovery(&pidRuntime.adrc, axis, gyroRate,
+        currentPidSetpoint, pidRuntime.dT, adrcSumLimit, yawSpinRecoveryActive, crashRecoveryActive);
+    pidData[axis].P = adrcOutput.P;
+    pidData[axis].I = adrcOutput.I;
+    pidData[axis].D = adrcOutput.D;
+}
+
+// See updateAdrcSharedState() above for why this is FAST_CODE_NOINLINE.
+static FAST_CODE_NOINLINE void adrcZeroThrottleItermReset(void)
+{
+    // Keep the ESO running at zero throttle instead of resetting it every loop, so the
+    // disturbance estimate survives spool-up rather than restarting from zero each time
+    // (community fork fix #4, danusha2345/ADRC-betaflight). Safe not because the liftoff gate
+    // zeroes the ESO's b0*u feedback - z3 integrates errorEso regardless of that term - but
+    // because the same closed gate refuses any update that would grow |z3| (ADRC-026, see
+    // adrcApplyControl()). That is what keeps an alive ESO from winding up while grounded
+    // pre-liftoff. Post-landing (gate still open on the ground) windup remains possible, but is
+    // bounded to the current arm cycle by the arm-transition reset in updateAdrcSharedState().
+    // Only the legacy I accumulator is cleared; ADRC recomputes I = -z3/b0 every loop regardless.
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        pidData[axis].I = 0.0f;
+    }
+}
+#endif
+
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
 void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTimeUs)
@@ -1089,6 +1200,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #ifdef USE_YAW_SPIN_RECOVERY
     const bool yawSpinActive = gyroYawSpinDetected();
+#ifdef USE_ADRC
+    // ADRC recovery handling extends one loop past the detector clearing; see adrc.c.
+    const bool adrcYawSpinRecoveryActiveThisLoop = adrcLatchYawSpinRecovery(&pidRuntime.adrc, yawSpinActive);
+#endif
 #endif
 
     const bool launchControlActive = isLaunchControlActive();
@@ -1266,6 +1381,18 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #endif // USE_CHIRP
 
+#ifdef USE_ADRC
+    // Shared (not per-axis) ADRC state - liftoff gate and throttle-scaled b0 - must be updated once
+    // per loop, before the per-axis loop below, so every axis reads consistent state this iteration.
+    updateAdrcSharedState(pidProfile);
+#if defined(USE_ACC)
+    // Latch recovery for the whole PID iteration. handleCrashRecovery() can clear the global flag
+    // on the first axis when the craft has recovered, but every axis must still use the same
+    // zero-disturbance-I policy for this final recovery iteration.
+    bool adrcCrashRecoveryActiveThisLoop = pidRuntime.inCrashRecoveryMode;
+#endif
+#endif
+
     // ----------PID controller----------
     for (flight_dynamics_index_t axis = FD_ROLL; axis <= FD_YAW; ++axis) {
 
@@ -1347,6 +1474,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         handleCrashRecovery(
             pidProfile->crash_recovery, angleTrim, axis, currentTimeUs, gyroRate,
             &currentPidSetpoint, &errorRate);
+#ifdef USE_ADRC
+        adrcCrashRecoveryActiveThisLoop |= pidRuntime.inCrashRecoveryMode;
+#endif
 #endif
 
         const float previousIterm = pidData[axis].I;
@@ -1420,21 +1550,35 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
         pidRuntime.previousPidSetpoint[axis] = currentPidSetpoint; // this is the value sent to blackbox, and used for D-max setpoint
 
-        // disable D if launch control is active
-        if ((pidRuntime.pidCoefficient[axis].Kd > 0) && !launchControlActive) {
+        // Crash detection uses the filtered gyro delta, but ADRC must not depend on the classic
+        // D gain merely to calculate it. Classic PID keeps its existing Kd/launch-control gate.
+        const bool dTermEnabled = (pidRuntime.pidCoefficient[axis].Kd > 0) && !launchControlActive;
+        bool gyroDeltaRequired = dTermEnabled;
+#if defined(USE_ACC) && defined(USE_ADRC)
+        gyroDeltaRequired |= (pidProfile->pid_type == PID_TYPE_ADRC) && !launchControlActive;
+#endif
+        float delta = 0.0f;
+        if (gyroDeltaRequired) {
             // Divide rate change by dT to get differential (ie dr/dt).
             // dT is fixed and calculated from the target PID loop time
             // This is done to avoid DTerm spikes that occur with dynamically
             // calculated deltaT whenever another task causes the PID
             // loop execution to be delayed.
-            const float delta = - (gyroRateDterm[axis] - previousGyroRateDterm[axis]) * pidRuntime.pidFrequency;
-            float preTpaD = pidRuntime.pidCoefficient[axis].Kd * delta;
+            delta = - (gyroRateDterm[axis] - previousGyroRateDterm[axis]) * pidRuntime.pidFrequency;
+        }
 
 #if defined(USE_ACC)
-            if (cmpTimeUs(currentTimeUs, levelModeStartTimeUs) > CRASH_RECOVERY_DETECTION_DELAY_US) {
-                detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
-            }
+        if (gyroDeltaRequired && cmpTimeUs(currentTimeUs, levelModeStartTimeUs) > CRASH_RECOVERY_DETECTION_DELAY_US) {
+            detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
+#ifdef USE_ADRC
+            adrcCrashRecoveryActiveThisLoop |= pidRuntime.inCrashRecoveryMode;
 #endif
+        }
+#endif
+
+        // disable D if launch control is active
+        if (dTermEnabled) {
+            float preTpaD = pidRuntime.pidCoefficient[axis].Kd * delta;
 
 #ifdef USE_D_MAX
             float dMaxMultiplier = 1.0f;
@@ -1474,6 +1618,26 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
 
         previousGyroRateDterm[axis] = gyroRateDterm[axis];
+
+#ifdef USE_ADRC
+        // Classic PID above always runs (identically to upstream) regardless of pid_type, so its
+        // output is simply overwritten here when ADRC is selected instead of being conditionally
+        // skipped. This keeps the classic control law's code and behavior untouched.
+        if (pidProfile->pid_type == PID_TYPE_ADRC) {
+            // The yaw-spin/crash recovery disturbance policy (zeroing the pre-recovery z3 estimate)
+            // lives in adrc.c; pid.c only reports which recovery modes are active this loop.
+            bool adrcYawSpinRecoveryActive = false;
+            bool adrcCrashRecoveryActive = false;
+#if defined(USE_YAW_SPIN_RECOVERY)
+            adrcYawSpinRecoveryActive = adrcYawSpinRecoveryActiveThisLoop;
+#endif
+#if defined(USE_ACC)
+            adrcCrashRecoveryActive = adrcCrashRecoveryActiveThisLoop;
+#endif
+            applyAdrcControl(axis, gyroRate, currentPidSetpoint, pidProfile,
+                adrcYawSpinRecoveryActive, adrcCrashRecoveryActive);
+        }
+#endif
 
         // -----calculate feedforward component
         // no feedforward in launch control
@@ -1518,7 +1682,17 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             agSetpointAttenuator = MAX(agSetpointAttenuator, 1.0f);
             // attenuate effect if turning more than 50 deg/s, half at 100 deg/s
             const float antiGravityPBoost = 1.0f + (pidRuntime.antiGravityThrottleD / agSetpointAttenuator) * pidRuntime.antiGravityPGain;
-            pidData[axis].P *= antiGravityPBoost;
+            // Anti-gravity P boost is a classic-PID heuristic: under ADRC the observer's
+            // disturbance estimate (z3, exposed as the I channel = -z3/b0) already rejects
+            // throttle-sag torque, so multiplying the tuned virtual stiffness (kp = wc^2) by the
+            // boost only injects a transient overshoot at spool-up/takeoff. Skip it for ADRC
+            // profiles; classic PID gets the boost exactly as upstream.
+#ifdef USE_ADRC
+            if (pidProfile->pid_type != PID_TYPE_ADRC)
+#endif
+            {
+                pidData[axis].P *= antiGravityPBoost;
+            }
             if (axis == FD_PITCH) {
                 DEBUG_SET(DEBUG_ANTI_GRAVITY, 3, lrintf(antiGravityPBoost * 1000));  //!< P Gain Multiplier (pitch) [unit:0.001]
             }
@@ -1531,17 +1705,44 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         pidData[axis].Sum = pidData[axis].P + pidData[axis].I + pidData[axis].D + pidData[axis].F + pidData[axis].S;
     }
 
+#if defined(USE_ADRC) && defined(USE_ACC)
+    if (pidProfile->pid_type == PID_TYPE_ADRC && adrcCrashRecoveryActiveThisLoop) {
+        // ADRC uses the I field to expose -z3/b0. Remove that contribution from both the reported
+        // term and the already-calculated actuator command, then keep z3 at zero. This post-pass
+        // also covers a crash first detected on pitch/yaw after an earlier axis was calculated.
+        for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+            const float adrcIterm = pidData[axis].I;
+            pidData[axis].I = 0.0f;
+            adrcClearDisturbanceEstimate(&pidRuntime.adrc, axis);
+            pidData[axis].Sum -= adrcIterm;
+
+            const float adrcSumLimit = (axis == FD_YAW) ? pidProfile->pidSumLimitYaw : pidProfile->pidSumLimit;
+            adrcSetAppliedOutput(&pidRuntime.adrc, axis, constrainf(pidData[axis].Sum, -adrcSumLimit, adrcSumLimit));
+        }
+    }
+#endif
+
 #ifdef USE_WING
     // When PASSTHRU_MODE is active - reset all PIDs to zero so the aircraft won't snap out of control
     // because of accumulated PIDs once PASSTHRU_MODE gets disabled.
     bool isFixedWingAndPassthru = isFixedWing() && FLIGHT_MODE(PASSTHRU_MODE);
 #endif // USE_WING
-    // Disable PID control if at zero throttle or if gyro overflow detected
+
+#ifdef USE_ADRC
+    // Crash Flip owns the motors and may exit through auto-rearm without a disarm. Keep ADRC reset
+    // while turtle mode is active so its gate/ESO cannot learn that separate actuator epoch.
+    const bool adrcCrashFlipActive = pidProfile->pid_type == PID_TYPE_ADRC && isCrashFlipModeActive();
+#endif
+
+    // Disable PID control if at zero throttle or if gyro overflow detected.
     // This may look very innefficient, but it is done on purpose to always show real CPU usage as in flight
     if (!pidRuntime.pidStabilisationEnabled
         || gyroOverflowDetected()
 #ifdef USE_WING
         || isFixedWingAndPassthru
+#endif
+#ifdef USE_ADRC
+        || adrcCrashFlipActive
 #endif
         ) {
         for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
@@ -1553,8 +1754,22 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
             pidData[axis].Sum = 0;
         }
+#ifdef USE_ADRC
+        // Reset ADRC state (per-axis ESO plus the shared liftoff-gate) here. Unlike
+        // pidResetIterm(), these are controller-disabled epochs - stabilisation off, gyro
+        // overflow, a wing in PASSTHRU_MODE, or Crash Flip, where a separate motor command path
+        // owns the craft - so resetting the gate is safe.
+        adrcResetAll(&pidRuntime.adrc);
+#endif
     } else if (pidRuntime.zeroThrottleItermReset) {
-        pidResetIterm();
+#ifdef USE_ADRC
+        if (pidProfile->pid_type == PID_TYPE_ADRC) {
+            adrcZeroThrottleItermReset();
+        } else
+#endif
+        {
+            pidResetIterm();
+        }
     }
 }
 

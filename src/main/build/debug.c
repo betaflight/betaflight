@@ -138,4 +138,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     [DEBUG_SAG_COMPENSATION] = "SAG_COMPENSATION",
     [DEBUG_UPT1] = "UPT1",
     [DEBUG_FLIGHT_PLAN] = "FLIGHT_PLAN",
+    [DEBUG_ADRC] = "ADRC",
 };

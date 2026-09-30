@@ -220,6 +220,7 @@ typedef enum {
     DEBUG_SAG_COMPENSATION,
     DEBUG_UPT1,
     DEBUG_FLIGHT_PLAN,
+    DEBUG_ADRC,
     DEBUG_COUNT
 } debugType_e;
 

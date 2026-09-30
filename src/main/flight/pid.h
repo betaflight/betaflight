@@ -30,6 +30,8 @@
 
 #include "pg/pg.h"
 
+#include "flight/adrc.h"
+
 #define MAX_PID_PROCESS_DENOM       16
 #define PID_CONTROLLER_BETAFLIGHT   1
 #define PID_MIXER_SCALING           1000.0f
@@ -203,6 +205,7 @@ typedef struct pidProfile_s {
     uint16_t pidSumLimitYaw;                // pidSum limit value for yaw
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
     uint8_t angle_limit;                    // Max angle in degrees in Angle mode
+    uint8_t pid_type;                       // Selects the rate control law: classic Betaflight PID or (experimental) ADRC
 
     uint8_t horizon_limit_degrees;          // in Horizon mode, zero levelling when the quad's attitude exceeds this angle
     uint8_t horizon_ignore_sticks;          // 0 = default, meaning both stick and attitude attenuation; 1 = only attitude attenuation
@@ -244,6 +247,12 @@ typedef struct pidProfile_s {
     uint8_t d_max[XYZ_AXIS_COUNT];          // Maximum D value on each axis
     uint8_t d_max_gain;                     // Gain factor for amount of gyro / setpoint activity required to boost D
     uint8_t d_max_advance;                  // Percentage multiplier for setpoint input to boost algorithm
+
+    adrcProfile_t adrc;                     // ADRC tunables; see adrc.h. Ignored unless pid_type == PID_TYPE_ADRC.
+                                            // Deliberately NOT #ifdef USE_ADRC: the persisted pidProfile_t layout
+                                            // must stay identical across targets and across builds that disable
+                                            // ADRC for flash budget (e.g. STM32F446), or a same-PG-version record
+                                            // would be reinterpreted with shifted fields. Only the code is gated.
     uint8_t motor_output_limit;             // Upper limit of the motor output (percent)
     int8_t auto_profile_cell_count;         // Cell count for this profile to be used with if auto PID profile switching is used
     char profileName[MAX_PROFILE_NAME_LENGTH + 1]; // Descriptive name for profile
@@ -326,6 +335,13 @@ typedef struct pidProfile_s {
     uint16_t chirp_frequency_end_deci_hz;   // end frequency in units of 0.1 hz
     uint8_t chirp_time_seconds;             // excitation time
     uint8_t chirp_repeat;                   // number of repeats per axis
+    // ADRC tester settings (ADRC-030..033). Adding a field here changes sizeof(pidProfile_t) and therefore the
+    // stride of the pidProfiles PG array: bump the PG version in pid.c whenever this block changes.
+    uint8_t adrc_ground_wc;                 // wc [rad/s] while the liftoff gate is closed, all axes, capped at adrc_wc_*; 0 = off
+    uint16_t adrc_wc_ramp_ms;               // ramp from adrc_ground_wc to adrc_wc_* after the gate opens; 0 = switch
+    uint8_t adrc_ground_dgain;              // x0.1: also cap the ground wc at dgain * b0 / (2 * wo) per axis; 0 = off
+    uint8_t adrc_b0_scale_min;              // %: floor of the throttle->b0 schedule below hover (ADRC-031); 100 = scale only up
+    uint8_t adrc_sat_z3_inhibit;            // ADRC-033: inhibit z3 growth while the mixer is saturated; 0 = off
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -525,6 +541,12 @@ typedef struct pidRuntime_s {
     flight_dynamics_index_t chirpAxis;
     bool chirpSeriesIsFinished;
 #endif // USE_CHIRP
+
+#ifdef USE_ADRC
+    adrcRuntime_t adrc;
+    uint8_t activePidType;                  // pid_type last initialized into controller memory
+                                            // (pidType_e); configuration changes reset both laws
+#endif
 } pidRuntime_t;
 
 extern pidRuntime_t pidRuntime;
@@ -551,6 +573,14 @@ void pidUpdateAntiGravityThrottleFilter(float throttle);
 bool pidOsdAntiGravityActive(void);
 void pidSetAntiGravityState(bool newState);
 bool pidAntiGravityEnabled(void);
+
+#ifdef USE_ADRC
+// Called by the motor mixer after authority normalization. The scale is consumed as a binary
+// authority signal (zero when the mixer applied no axis command at all - motor stop, Crash Flip);
+// see the definition in pid.c for why the proportional factor is deliberately not applied.
+void pidUpdateAdrcAppliedOutput(const pidProfile_t *pidProfile, float axisScale, float yawSumLimit);
+void pidUpdateAdrcMixerSaturation(const pidProfile_t *pidProfile, bool saturated);
+#endif
 
 #ifdef USE_THRUST_LINEARIZATION
 float pidApplyThrustLinearization(float motorValue);
