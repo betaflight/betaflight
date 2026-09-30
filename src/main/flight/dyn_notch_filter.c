@@ -160,9 +160,6 @@ bool dynNotchUpdateRateSupported(const timeUs_t looptimeUs)
 
 void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t looptimeUs)
 {
-    // dynNotchUpdate() is running at looprateHz (which is the PID looprate aka. 1e6f / gyro.targetLooptime)
-    const float looprateHz = 1.0f / dt;
-    const float nyquistHz = looprateHz / 2.0f;
     // Disable dynamic notch if dynNotchUpdate() would run at less than 2kHz.
     // Use the integer looptime for the boundary check to avoid floating-point
     // rounding disabling the filter at exactly 500us / 2kHz.
@@ -170,6 +167,12 @@ void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t looptimeUs)
         dynNotch.count = 0;
         return;
     }
+
+    const float dt = looptimeUs * 1e-6f;
+
+    // dynNotchUpdate() is running at looprateHz (which is the PID looprate aka. 1e6f / gyro.targetLooptime)
+    const float looprateHz = 1.0f / dt;
+    const float nyquistHz = looprateHz / 2.0f;
 
     // If dynamic notch is available, initialise so it can be activated at any time
     dynNotch.q = config->dyn_notch_q / 100.0f;
