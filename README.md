@@ -108,7 +108,7 @@ We fix Betaflight. Manufacturers support their hardware. Pilots own their builds
 
 Betaflight does not make or sell hardware. We work with many manufacturers, but support for a flight controller or other component comes from the company that made it. If your hardware is faulty, or its config or documentation is wrong, please contact the manufacturer or the shop you bought it from. For help with wiring, setup and tuning, ask the community on [Discord](https://discord.betaflight.com/invite). If you have found a bug in Betaflight itself, please [open an issue](https://github.com/betaflight/betaflight/issues).
 
-See [hardware support](https://betaflight.com/docs/wiki/getting-started/hardware-support) on betaflight.com for more on who looks after what.
+See [hardware support](https://betaflight.com/support) on betaflight.com for more on who looks after what.
 
 ## Betaflight Releases
 
