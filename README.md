@@ -23,7 +23,7 @@ Betaflight has the following features:
 - DShot (150, 300 and 600), Multishot, Oneshot (125 and 42) and Proshot1000 motor protocol support
 - Blackbox flight recorder logging (to onboard flash or external microSD card where equipped)
 - Support for targets that use STM32 F4, F7, G4, H5 and H7 (plus C5 and N6 in developer preview), AT32F435, APM32 and RP2350 (PICO) processors, experimental support for ESP32 and X32, and SITL for simulation (see the [hardware policy](https://betaflight.com/docs/development/manufacturer/hardware-policy) for current status)
-- PWM, PPM, SPI, and Serial (SBus, SumH, SumD, Spektrum 1024/2048, XBus, etc) RX connection with failsafe detection
+- PWM, PPM, SPI, and Serial (CRSF, SBus, SumH, SumD, Spektrum 1024/2048, XBus, etc) RX connection with failsafe detection
 - Multiple telemetry protocols (CRSF, FrSky, HoTT smart-port, MSP, etc)
 - RSSI via ADC - Uses ADC to read PWM RSSI signals, tested with FrSky D4R-II, X8R, X4R-SB, & XSR
 - OSD support & configuration without needing third-party OSD software/firmware/comm devices
@@ -58,7 +58,7 @@ Contributions are welcome and encouraged. You can contribute in many ways:
 - new feature ideas & suggestions;
 - provide a new translation for the app, or help us maintain the existing ones (see [below](#translators)).
 
-The best place to start is the Betaflight Discord (registration [here](https://discord.betaflight.com/invite)). Next place is the github issue tracker:
+The best place to start is the [Betaflight Discord](https://discord.betaflight.com/invite). Next place is the github issue tracker:
 
 https://github.com/betaflight/betaflight/issues
 https://github.com/betaflight/betaflight-configurator/issues
@@ -96,7 +96,7 @@ We want to make Betaflight accessible for pilots who are not fluent in English, 
 We have got a team of volunteer translators who do this work, but additional translators are always welcome to share the workload, and we are keen to add additional languages. If you would like to help us with translations, you have got the following options:
 
 - if you help by suggesting some updates or improvements to translations in a language you are familiar with, head to [crowdin](https://crowdin.com/project/betaflight-configurator) and add your suggested translations there;
-- if you would like to start working on the translation for a new language, or take on responsibility for proof-reading the translation for a language you are very familiar with, please head to the Betaflight Discord chat (registration [here](https://discord.betaflight.com/invite)), and join the ['translation'](https://discord.com/channels/868013470023548938/1057773726915100702) channel - the people in there can help you to get a new language added, or set you up as a proof reader.
+- if you would like to start working on the translation for a new language, or take on responsibility for proof-reading the translation for a language you are very familiar with, please head to the [Betaflight Discord](https://discord.betaflight.com/invite) chat and join the ['translation'](https://discord.com/channels/868013470023548938/1057773726915100702) channel - the people in there can help you to get a new language added, or set you up as a proof reader.
 
 ## Hardware Issues
 
