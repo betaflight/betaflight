@@ -1201,7 +1201,7 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
     vector2_t carrotToWp;
     vector2Sub(&carrotToWp, &wp, &fp.carrotEnuM);
     const float gateDistM = turnsAtGate ? fminf(distM, vector2Norm(&carrotToWp)) : distM;
-    if (!fp.legYawGated && !fp.legTurnIn && (gateDistM < arriveM || overran)) {
+    if (!fp.legYawGated && !fp.legTurnIn && !fp.legTurnCapped && (gateDistM < arriveM || overran)) {
         // Gate crossed: the next leg's line starts on this waypoint, so the flown line is the drawn
         // wp->wp line; the carrot carries on from where it is and turns onto it.
         fp.legAnchorEnuM = wp;

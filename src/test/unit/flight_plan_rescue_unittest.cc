@@ -1216,15 +1216,15 @@ struct TurnIn {
     bool cameRound = false;
     vector2_t ffAtHandOver = { .x = 0.0f, .y = 0.0f };   // what the return was flying when it handed over
     float ffFromHomeM = 0.0f;                            // ...and how far out it was set
+    float courseOffHomeAtHandOverDeg = 180.0f;           // how far the craft's own course was off home
 };
 
-static TurnIn flyTurnIn(float eastM, float northM, float seconds, bool untilHandOver = false)
+static TurnIn flyTurnIn(float eastM, float northM, float seconds, bool untilHandOver = false, float lagS = 0.3f)
 {
     TurnIn r;
     vector2_t craftM = { .x = eastM, .y = northM };
     vector2_t velMps = { .x = g_stubEstimate.velocity.v[ENU_E] * 0.01f, .y = g_stubEstimate.velocity.v[ENU_N] * 0.01f };
     const float dtS = 0.05f;
-    const float lagS = 0.3f;
     for (int i = 0; i < seconds / dtS && flightPlanNavGetCurrentIndex() == 1; i++) {
         const float carrotMps = lastFfSpeedMps();
         r.slowestMps = fminf(r.slowestMps, carrotMps);
@@ -1251,6 +1251,10 @@ static TurnIn flyTurnIn(float eastM, float northM, float seconds, bool untilHand
         g_stubMicros += 50'000;
         flightPlanNavUpdate(g_stubMicros);
         EXPECT_EQ(flightPlanNavGetAbortReason(), FP_ABORT_NONE);
+        if (flightPlanNavGetCurrentIndex() != 1) {
+            r.courseOffHomeAtHandOverDeg = fabsf(RADIANS_TO_DEGREES(
+                remainderf(atan2f(-craftM.x, -craftM.y) - atan2f(velMps.x, velMps.y), 2.0f * M_PIf)));
+        }
         const float homeBearing = atan2f(-craftM.x, -craftM.y);
         const float velBearing = atan2f(velMps.x, velMps.y);
         if (!r.cameRound && fabsf(remainderf(homeBearing - velBearing, 2.0f * M_PIf)) < 0.1f && speedMps > 3.5f) {
@@ -1335,6 +1339,25 @@ TEST_F(FlightPlanRescueTest, TurnInInsideTheArrivalRadiusStillBrakesAndComesRoun
     ASSERT_EQ(flightPlanNavGetCurrentIndex(), 2);
     EXPECT_LE(vector2Norm(&r.ffAtHandOver), positionNavApproachSpeedMps(FLT_MAX, 1.0f, 0.3f, r.ffFromHomeM) + 0.01f);
     EXPECT_LT(r.ffAtHandOver.y, 0.0f);   // coming back towards home, not still running away
+}
+
+TEST_F(FlightPlanRescueTest, TurnInHandsOverOnceTheCraftItselfHasComeRound)
+{
+    // Pitched forward across home 12 m out, inside the return's 20 m arrival radius, on a craft slow
+    // to follow its carrot: the carrot comes round well before the craft does, and the landing must
+    // not take over a craft still crossing, its lean cap lifted.
+    gpsRescueConfigMutable()->descentDistanceM = 20;
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    g_stubHeadingValid = false;
+    triggerReached();
+
+    pitchForwardOutOf(0.0f, 12.0f, 6.0f, 90.0f);
+    settleHeading();
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    const TurnIn r = flyTurnIn(0.0f, 12.0f, 30.0f, true, 0.8f);
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 2);
+    EXPECT_LT(r.courseOffHomeAtHandOverDeg, 15.0f);
 }
 
 TEST_F(FlightPlanRescueTest, TurnInAlreadyOnHomeStillBrakesFirst)
