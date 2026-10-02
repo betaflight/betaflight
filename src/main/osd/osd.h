@@ -233,6 +233,13 @@ typedef enum {
     OSD_AIRSPEED,
 #endif
 
+#ifdef USE_PSAS
+    OSD_PSAS_AOA_LIMITER,
+    OSD_PSAS_TRIM_ROLL,
+    OSD_PSAS_TRIM_PITCH,
+    OSD_PSAS_TRIM_YAW,
+#endif
+
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
