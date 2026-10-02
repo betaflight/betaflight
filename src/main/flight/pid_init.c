@@ -46,6 +46,10 @@
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
+#ifdef USE_PSAS
+#include "psas.h"
+#endif
+
 #include "pid_init.h"
 
 #ifdef USE_D_MAX
@@ -364,6 +368,9 @@ void pidInit(const pidProfile_t *pidProfile)
     pidInitConfig(pidProfile);
 #ifdef USE_ADVANCED_TPA
     tpaCurveInit(pidProfile);
+#endif
+#ifdef USE_PSAS
+    psasInit(pidProfile);
 #endif
 }
 
