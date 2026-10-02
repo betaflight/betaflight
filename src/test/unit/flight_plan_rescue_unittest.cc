@@ -214,6 +214,13 @@ void positionNavMoveTargetEf(const vector3_t *targetPosEfM)
     g_targetWalkFromUs = g_stubMicros;
 }
 
+void positionNavLowerTargetAltitude(float upM)
+{
+    if (g_lastTarget.valid && upM < g_lastTarget.targetEfM.z) {
+        g_lastTarget.targetEfM.z = upM;
+    }
+}
+
 void positionNavClearTarget(void)
 {
     g_clearTargetCalls++;
