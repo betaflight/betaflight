@@ -51,8 +51,8 @@ typedef struct positionNavCommand_s {
     float rampRateMps;              // rate the ramp moved at on the last update (signed, positive climbs)
     bool rampRateSlewed;            // took over from a command still flying: slews out of its rate
 
-    float approachSlowdownM;        // taper the commanded speed linearly inside this range, 0 = off
-    float approachStillRadiusM;     // ...down to nothing at this range
+    float approachDecelMps2;        // brake onto the target at this constant deceleration, 0 = off
+    float approachStillRadiusM;     // ...coming to rest at this range
     bool approachStill;             // has been inside the still radius: stopped chasing the target
     bool velocityFfValid;           // the owner states the horizontal velocity: no chase law toward the target
     vector2_t velocityFfEfMps;      // that velocity, metres/s (x east, y north)
@@ -90,6 +90,12 @@ void positionNavSetTargetEf(
 // straight after positionNavSetTargetEf(). No-op when there is no active command.
 void positionNavMoveTargetEf(const vector3_t *targetPosEfM);
 
+// Lowers the active command's target altitude to upM, never raising it. Unlike
+// positionNavMoveTargetEf() the target stays a fixed one: only its altitude moves. For a descent
+// that has no end point of its own (a landing, ended by touchdown) to keep its target below the
+// craft for as long as it lasts. No-op when there is no active command.
+void positionNavLowerTargetAltitude(float upM);
+
 void positionNavClearTarget(void);
 
 bool positionNavHasActiveTarget(void);
@@ -110,15 +116,14 @@ void positionNavSetVelocityFeedforward(const vector2_t *velEfMps);
 // The altitude ramp carries on as it is.
 void positionNavStartAfresh(void);
 
-// Taper the commanded speed linearly from the cruise at slowdownM from the target to nothing at
-// stillRadiusM, the way the legacy rescue bled speed from twice the descent distance; the taper
+// Brake onto the target at a constant decelMps2, coming to rest stillRadiusM from it; the approach
 // replaces the position gain's knee. Once inside the still radius the command stops chasing the
-// target for the rest of the leg, and nothing horizontal is commanded. Zero slowdownM leaves the
+// target for the rest of the leg, and nothing horizontal is commanded. Zero decelMps2 leaves the
 // leg on its own profile.
-void positionNavSetApproachSlowdown(float slowdownM, float stillRadiusM);
-// The speed that taper allows distM from the target, for an owner flying the approach ahead of the
-// command that tapers it.
-float positionNavApproachTaperMps(float cruiseSpeedMps, float slowdownM, float stillRadiusM, float distM);
+void positionNavSetApproachBrake(float decelMps2, float stillRadiusM);
+// The speed that approach allows distM from the target, for an owner flying it ahead of the
+// command that brakes.
+float positionNavApproachSpeedMps(float cruiseSpeedMps, float decelMps2, float stillRadiusM, float distM);
 void positionNavSetAutoClearOnReach(bool autoClear);
 
 // The leg's vertical intent: the rate the altitude target is allowed to move at, and the altitude
