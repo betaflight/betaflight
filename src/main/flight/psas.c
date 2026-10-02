@@ -95,7 +95,7 @@ void psasInit(const pidProfile_t *pidProfile)
     psasRuntime.pitch_stability_gain = pidProfile->psas_pitch_stability_gain * 0.1f;
     psasRuntime.pitch_accel_p_gain = pidProfile->psas_pitch_accel_p_gain * 0.1f;
     psasRuntime.pitch_accel_i_gain = pidProfile->psas_pitch_accel_i_gain;
-    psasRuntime.pitch_accel_min = pidProfile->psas_pitch_accel_min * 0.1f;
+    psasRuntime.pitch_accel_min = -pidProfile->psas_pitch_accel_min * 0.1f;
     psasRuntime.pitch_accel_max = pidProfile->psas_pitch_accel_max * 0.1f;
     psasRuntime.yaw_stability_gain = pidProfile->psas_yaw_stability_gain * 0.1f;
     psasRuntime.wing_load = pidProfile->psas_wing_load * 0.01f;
@@ -178,7 +178,7 @@ static float FAST_CODE_NOINLINE updateAccelZHoldingController(float pitchStick, 
     }
 
     float accelReq = pitchStick < 0.0f ? (1.0f - pitch_accel_max) * pitchStick + 1.0f
-                                      : -(1.0f + pitch_accel_min) * pitchStick + 1.0f;
+                                      : -(1.0f - pitch_accel_min) * pitchStick + 1.0f;
     float accelDelta = accelZ - accelReq;
     float servoVelocity = accelDelta * psasRuntime.pitch_accel_i_gain;
     servoVelocity = constrainf(servoVelocity, -psasRuntime.servoVelocityLimit, psasRuntime.servoVelocityLimit);
