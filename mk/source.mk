@@ -388,6 +388,7 @@ RX_SRC = \
 
 FLASH_SRC += \
             drivers/flash/flash.c \
+            drivers/flash/flash_fm25v02a.c \
             drivers/flash/flash_m25p16.c \
             drivers/flash/flash_mt29f.c \
             drivers/flash/flash_mx66uw1g45g.c \
