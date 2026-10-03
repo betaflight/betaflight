@@ -4609,7 +4609,6 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 #ifdef USE_PSAS
     case MSP_SET_PSAS_CONFIG: {
         const uint32_t expectedSize = 56;
-        const uint32_t dataSize = sbufBytesRemaining(src);
         if (dataSize < expectedSize) {
             return MSP_RESULT_ERROR;
         }
