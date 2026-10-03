@@ -105,7 +105,7 @@ typedef struct timedAdjustmentState_s {
 
 typedef struct continuosAdjustmentState_s {
     uint8_t adjustmentRangeIndex;
-    int16_t lastRcData;
+    float lastRcData;
 } continuosAdjustmentState_t;
 
 struct controlRateConfig_s;
