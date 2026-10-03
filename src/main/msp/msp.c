@@ -1609,6 +1609,10 @@ case MSP_NAME:
         sbufWriteU16(dst, gpsSol.groundCourse);
         // Added in API version 1.44
         sbufWriteU16(dst, gpsSol.dop.pdop);
+        // Added in API version 1.49
+        sbufWriteU16(dst, gpsSol.dop.hdop);
+        sbufWriteU16(dst, gpsSol.dop.vdop);
+        sbufWriteU8(dst, gpsSol.numSatInView);
         break;
 
     case MSP_COMP_GPS:

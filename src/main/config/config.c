@@ -645,7 +645,7 @@ void validateAndFixGyroConfig(void)
         float motorUpdateRestriction;
 
 #if defined(USE_DSHOT) && defined(USE_PID_DENOM_CHECK)
-        /* If bidirectional DSHOT is being used on an F4 or G4 then force DSHOT300. The motor update restrictions then applied
+        /* If bidirectional DSHOT is being used on an F4, F7 or G4 then force DSHOT300. The motor update restrictions then applied
          * will automatically consider the loop time and adjust pid_process_denom appropriately
          */
         if (true

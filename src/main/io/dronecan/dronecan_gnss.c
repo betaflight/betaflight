@@ -72,9 +72,10 @@ static volatile uint32_t latestSeq = 0;
 static volatile bool received = false;
 static volatile timeUs_t lastUpdateUs = 0;
 
-// Auxiliary hdop/vdop are only carried across Fix2 refreshes while fresh, so
-// a module that stops broadcasting Auxiliary can't pin stale quality figures
-// to live positions. Both handlers run in the dronecan task, so no seqlock.
+// Auxiliary hdop/vdop and satellites in view are only carried across Fix2
+// refreshes while fresh, so a module that stops broadcasting Auxiliary can't
+// pin stale quality figures to live positions. Both handlers run in the
+// dronecan task, so no seqlock.
 #define DRONECAN_GNSS_AUX_FRESH_US 2000000
 static timeUs_t auxUpdateUs = 0;
 static bool auxReceived = false;
@@ -223,6 +224,7 @@ static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
             && cmpTimeUs(micros(), auxUpdateUs) < DRONECAN_GNSS_AUX_FRESH_US;
     const uint16_t hdop = auxFresh ? latest.dop.hdop : 0;
     const uint16_t vdop = auxFresh ? latest.dop.vdop : 0;
+    const uint8_t satsInView = auxFresh ? latest.numSatInView : 0;
 
     memset(&latest, 0, sizeof(latest));
     latest.llh.lat   = scaleLonLat_1e8to1e7(lat_1e8);
@@ -237,6 +239,7 @@ static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
     latest.speed3d     = (uint16_t)constrainf(speed3d * CM_PER_METRE, 0, UINT16_MAX);
     latest.groundCourse = (uint16_t)constrainf(courseDeg * 10.0f, 0, UINT16_MAX);
     latest.numSat      = satsUsed;
+    latest.numSatInView = satsInView;
     latest.acc.hAcc    = hAccMm;
     latest.acc.vAcc    = vAccMm;
     latest.acc.sAcc    = sAccMmS;
@@ -267,11 +270,15 @@ static void handleAuxiliary(CanardInstance *ins, CanardRxTransfer *t)
 {
     UNUSED(ins);
 
-    // Field order is gdop, pdop, hdop, vdop, ...; only hdop/vdop are taken —
-    // pdop stays sourced from Fix2 so both providers scale it identically.
-    // Unknown DOP values are transmitted as NaN.
+    // Field order is gdop, pdop, hdop, vdop, tdop, ndop, edop (float16 each),
+    // then uint7 sats_visible and uint6 sats_used. Only hdop, vdop and
+    // sats_visible are taken — pdop stays sourced from Fix2 so both providers
+    // scale it identically, and Fix2 carries sats_used already. Unknown DOP
+    // values are transmitted as NaN.
     const float hdop = dronecanDecodeFloat16(t, 32);
     const float vdop = dronecanDecodeFloat16(t, 48);
+    uint8_t satsVisible = 0;
+    canardDecodeScalar(t, 112, 7, false, &satsVisible);
 
     auxUpdateUs = micros();
     auxReceived = true;
@@ -285,6 +292,7 @@ static void handleAuxiliary(CanardInstance *ins, CanardRxTransfer *t)
     if (!isnan(vdop) && vdop > 0.0f) {
         latest.dop.vdop = (uint16_t)constrainf(vdop * 100.0f, 0, UINT16_MAX);
     }
+    latest.numSatInView = satsVisible;
 
     __asm volatile ("" ::: "memory");
     latestSeq++;
