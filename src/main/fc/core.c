@@ -772,7 +772,7 @@ void runawayTakeoffTemporaryDisable(uint8_t disableFlag)
 // returns negative values for reversed thrust in 3D mode
 int8_t calculateThrottlePercent(void)
 {
-    const float throttle = constrainf(rcGetChannel(THROTTLE), -1.0f, 1.0f);
+    const float throttle = constrainf(rcGetChannel(THROTTLE), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX);
     float fraction = 0.0f;
 
     if (featureIsEnabled(FEATURE_3D)
@@ -782,13 +782,13 @@ int8_t calculateThrottlePercent(void)
         const float midrc = rcUsToNorm(rxConfig()->midrc);
         const float deadband = rcUsSpanToNorm(flight3DConfig()->deadband3d_throttle);
         if (throttle > midrc + deadband) {
-            fraction = (throttle - midrc - deadband) / (1.0f - midrc - deadband);
+            fraction = (throttle - midrc - deadband) / (NORMALISED_RANGE_MAX - midrc - deadband);
         } else if (throttle < midrc - deadband) {
-            fraction = (throttle - midrc + deadband) / (midrc - deadband + 1.0f);
+            fraction = (throttle - midrc + deadband) / (midrc - deadband - NORMALISED_RANGE_MIN);
         }
     } else {
         const float mincheck = rcUsToNorm(rxConfig()->mincheck);
-        fraction = constrainf((throttle - mincheck) / (1.0f - mincheck), 0.0f, 1.0f);
+        fraction = constrainf((throttle - mincheck) / (NORMALISED_RANGE_MAX - mincheck), 0.0f, 1.0f);
         if (featureIsEnabled(FEATURE_3D)
             && IS_RC_MODE_ACTIVE(BOX3D)
             && flight3DConfig()->switched_mode3d) {
