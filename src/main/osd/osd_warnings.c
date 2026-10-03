@@ -231,6 +231,14 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         }
     }
 
+    if (osdWarnGetState(OSD_WARNING_ARMING_DISABLE)
+        && !ARMING_FLAG(ARMED)
+        && rcModeIsTwoTapArmWaiting()) {
+        tfp_sprintf(warningText, "TAP AGAIN");
+        *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+        return;
+    }
+
 #ifdef USE_DSHOT
     if (isTryingToArm() && !ARMING_FLAG(ARMED)) {
         const int beaconGuard = cmpTimeUs(currentTimeUs, getLastDshotBeaconCommandTimeUs());
