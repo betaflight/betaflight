@@ -133,9 +133,10 @@ const char * const osdTimerSourceNames[] = {
 
 // Things in both OSD and CMS
 
-#define IS_HI(X)  (rcData[X] > 1750)
-#define IS_LO(X)  (rcData[X] < 1250)
-#define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
+#define OSD_STICK_DEFLECTION 0.5f
+#define IS_HI(X)  (rcGetChannel(X) > OSD_STICK_DEFLECTION)
+#define IS_LO(X)  (rcGetChannel(X) < -OSD_STICK_DEFLECTION)
+#define IS_MID(X) (fabsf(rcGetChannel(X)) < OSD_STICK_DEFLECTION)
 
 timeUs_t osdFlyTime = 0;
 timeUs_t osdLaunchTime = 0;
@@ -1324,7 +1325,7 @@ STATIC_UNIT_TESTED bool osdProcessStats1(timeUs_t currentTimeUs)
         const uint8_t auxChannel = osdConfig()->aux_channel + NON_AUX_CHANNEL_COUNT - 1;
         if (currentTimeUs > osdAuxRefreshTimeUs) {
             // aux channel start after main channels
-            osdAuxValue = (constrain(rcData[auxChannel], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * osdConfig()->aux_scale / PWM_RANGE;
+            osdAuxValue = scaleRangef(constrainf(rcGetChannel(auxChannel), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX, 0, osdConfig()->aux_scale);
             osdAuxRefreshTimeUs = currentTimeUs + REFRESH_1S;
         }
     }

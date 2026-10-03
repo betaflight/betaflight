@@ -386,6 +386,17 @@ int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax)
     return 0;
 }
 
+float scaleRangef(float x, float srcMin, float srcMax, float destMin, float destMax)
+{
+    UNUSED(x);
+    UNUSED(srcMin);
+    UNUSED(srcMax);
+    UNUSED(destMin);
+    UNUSED(destMax);
+
+    return 0;
+}
+
 bool failsafeIsActive() { return false; }
 bool isRxReceivingSignal() { return true; }
 

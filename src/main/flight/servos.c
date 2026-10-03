@@ -223,7 +223,7 @@ static int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
 
     if (channelToForwardFrom != CHANNEL_FORWARDING_DISABLED && channelToForwardFrom < rxRuntimeState.channelCount) {
         // TODO make a struct and function version of scaleRangef to handle this at lower cpu
-        return scaleRangef(constrainf(rcData[channelToForwardFrom], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, servoParams(servoIndex)->min, servoParams(servoIndex)->max);
+        return scaleRangef(constrainf(rcGetChannel(channelToForwardFrom), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX, servoParams(servoIndex)->min, servoParams(servoIndex)->max);
     }
 
     return servoParams(servoIndex)->middle;
@@ -334,7 +334,7 @@ STATIC_UNIT_TESTED void forwardAuxChannelsToServos(uint8_t firstServoIndex)
     int channelOffset = servoConfig()->channelForwardingStartChannel;
     const int maxAuxChannelCount = MIN(MAX_AUX_CHANNEL_COUNT, rxConfig()->max_aux_channel);
     for (int servoOffset = 0; servoOffset < maxAuxChannelCount && channelOffset < MAX_SUPPORTED_RC_CHANNEL_COUNT; servoOffset++) {
-        servoWrite(firstServoIndex + servoOffset, rcData[channelOffset++]);
+        servoWrite(firstServoIndex + servoOffset, rcNormToUs(rcGetChannel(channelOffset++)));
     }
 }
 
@@ -437,6 +437,13 @@ void writeServos(void)
     }
 }
 
+#define SERVO_MIXER_INPUT_RANGE 500
+
+static int16_t servoRcInput(rc_alias_e channel)
+{
+    return lrintf((rcGetChannel(channel) - rcUsToNorm(rxConfig()->midrc)) * SERVO_MIXER_INPUT_RANGE);
+}
+
 void servoMixer(void)
 {
     int16_t input[INPUT_SOURCE_COUNT]; // Range [-500:+500]
@@ -454,7 +461,7 @@ void servoMixer(void)
         input[INPUT_STABILIZED_YAW] = pidData[FD_YAW].Sum * PID_SERVO_MIXER_SCALING;
 
         // Reverse yaw servo when inverted in 3D mode
-        if (featureIsEnabled(FEATURE_3D) && (rcData[THROTTLE] < rxConfig()->midrc)) {
+        if (featureIsEnabled(FEATURE_3D) && (rcGetChannel(THROTTLE) < rcUsToNorm(rxConfig()->midrc))) {
             input[INPUT_STABILIZED_YAW] *= -1;
         }
     }
@@ -466,20 +473,14 @@ void servoMixer(void)
     const float throttleMotor = motorDeviceCount() ? motorConvertToExternal(motor[0]) : motor[0];
     input[INPUT_STABILIZED_THROTTLE] = throttleMotor - PWM_RANGE_MIDDLE;  // Since it derives from rcCommand or mincommand and must be [-500:+500]
 
-    // center the RC input value around the RC middle value
-    // by subtracting the RC middle value from the RC input value, we get:
-    // data - middle = input
-    // 2000 - 1500 = +500
-    // 1500 - 1500 = 0
-    // 1000 - 1500 = -500
-    input[INPUT_RC_ROLL]     = rcData[ROLL]     - rxConfig()->midrc;
-    input[INPUT_RC_PITCH]    = rcData[PITCH]    - rxConfig()->midrc;
-    input[INPUT_RC_YAW]      = rcData[YAW]      - rxConfig()->midrc;
-    input[INPUT_RC_THROTTLE] = rcData[THROTTLE] - rxConfig()->midrc;
-    input[INPUT_RC_AUX1]     = rcData[AUX1]     - rxConfig()->midrc;
-    input[INPUT_RC_AUX2]     = rcData[AUX2]     - rxConfig()->midrc;
-    input[INPUT_RC_AUX3]     = rcData[AUX3]     - rxConfig()->midrc;
-    input[INPUT_RC_AUX4]     = rcData[AUX4]     - rxConfig()->midrc;
+    input[INPUT_RC_ROLL]     = servoRcInput(ROLL);
+    input[INPUT_RC_PITCH]    = servoRcInput(PITCH);
+    input[INPUT_RC_YAW]      = servoRcInput(YAW);
+    input[INPUT_RC_THROTTLE] = servoRcInput(THROTTLE);
+    input[INPUT_RC_AUX1]     = servoRcInput(AUX1);
+    input[INPUT_RC_AUX2]     = servoRcInput(AUX2);
+    input[INPUT_RC_AUX3]     = servoRcInput(AUX3);
+    input[INPUT_RC_AUX4]     = servoRcInput(AUX4);
 
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         servo[i] = 0;

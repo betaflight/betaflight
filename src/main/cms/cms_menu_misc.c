@@ -89,7 +89,7 @@ static const void *cmsx_menuRcOnDisplayUpdate(displayPort_t *pDisp, const OSD_En
     UNUSED(selected);
 
     for (int i = 0; i <= AUX4; i++) {
-        rcDataInt[i] = lrintf(rcData[i]);
+        rcDataInt[i] = lrintf(rcNormToUs(rcGetChannel(i)));
     }
 
     return NULL;
