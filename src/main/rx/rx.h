@@ -87,6 +87,22 @@ extern const char rcChannelLetters[];
 
 extern float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [1000;2000]
 
+static inline float rcUsToNorm(float us)
+{
+    return (us - PWM_RANGE_MIDDLE) / (PWM_RANGE / 2.0f);
+}
+
+static inline float rcUsSpanToNorm(float us)
+{
+    return us / (PWM_RANGE / 2.0f);
+}
+
+// -1 at 1000us, 0 at 1500us, +1 at 2000us, not clamped
+static inline float rcGetChannel(int channel)
+{
+    return rcUsToNorm(rcData[channel]);
+}
+
 #define RSSI_SCALE_MIN 1
 #define RSSI_SCALE_MAX 255
 
