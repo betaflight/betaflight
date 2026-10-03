@@ -235,6 +235,14 @@ typedef enum {
     // lets the configurator place this element by the USE_RADAR build option.
     OSD_RADAR_PEER,             // cycling peer readout from a FormationFlight/INAV-Radar module
     OSD_RADAR_HUD,              // peers drawn where they are in the camera view (INAV HUD radar)
+    OSD_RADAR_PEER_1,           // fixed readout for peer A
+    OSD_RADAR_PEER_2,           // fixed readout for peer B
+    OSD_RADAR_PEER_3,           // fixed readout for peer C
+    OSD_RADAR_PEER_4,           // fixed readout for peer D
+    OSD_RADAR_HUD_HOME,         // home drawn where it is in the camera view
+#if ENABLE_FLIGHT_PLAN
+    OSD_RADAR_HUD_WAYPOINT,     // next waypoint drawn where it is in the camera view
+#endif
 #endif
 
 #ifdef USE_PITOT

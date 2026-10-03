@@ -1811,6 +1811,14 @@ const clivalue_t valueTable[] = {
 #ifdef USE_RADAR
     { "osd_radar_peer_pos",         VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_RADAR_PEER]) },
     { "osd_radar_hud_pos",          VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_RADAR_HUD]) },
+    { "osd_radar_peer_1_pos",       VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_RADAR_PEER_1]) },
+    { "osd_radar_peer_2_pos",       VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_RADAR_PEER_2]) },
+    { "osd_radar_peer_3_pos",       VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_RADAR_PEER_3]) },
+    { "osd_radar_peer_4_pos",       VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_RADAR_PEER_4]) },
+    { "osd_radar_hud_home_pos",     VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_RADAR_HUD_HOME]) },
+#if ENABLE_FLIGHT_PLAN
+    { "osd_radar_hud_wp_pos",       VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_RADAR_HUD_WAYPOINT]) },
+#endif
     { PARAM_NAME_RADAR_PEER_TIME,     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 10 },     PG_RADAR_CONFIG, offsetof(radarConfig_t, peerDisplayTimeS) },
     { PARAM_NAME_RADAR_HUD_MAX_PEERS, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, RADAR_MAX_PEERS }, PG_RADAR_CONFIG, offsetof(radarConfig_t, hudMaxPeers) },
     { PARAM_NAME_RADAR_HUD_RANGE_MIN, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 30 },     PG_RADAR_CONFIG, offsetof(radarConfig_t, hudRangeMinM) },
