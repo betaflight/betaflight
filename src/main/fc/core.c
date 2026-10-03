@@ -723,7 +723,7 @@ void handleInflightCalibrationStickPosition(void)
 
 static void updateInflightCalibrationState(void)
 {
-    if (AccInflightCalibrationArmed && ARMING_FLAG(ARMED) && rcData[THROTTLE] > rxConfig()->mincheck && !IS_RC_MODE_ACTIVE(BOXARM)) {   // Copter is airborne and you are turning it off via boxarm : start measurement
+    if (AccInflightCalibrationArmed && ARMING_FLAG(ARMED) && rcGetChannel(THROTTLE) > rcUsToNorm(rxConfig()->mincheck) && !IS_RC_MODE_ACTIVE(BOXARM)) {   // Copter is airborne and you are turning it off via boxarm : start measurement
         InflightcalibratingA = 50;
         AccInflightCalibrationArmed = false;
     }
@@ -769,32 +769,34 @@ void runawayTakeoffTemporaryDisable(uint8_t disableFlag)
 }
 #endif
 
-// calculate the throttle stick percent - integer math is good enough here.
 // returns negative values for reversed thrust in 3D mode
 int8_t calculateThrottlePercent(void)
 {
-    uint8_t ret = 0;
-    int channelData = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
+    const float throttle = constrainf(rcGetChannel(THROTTLE), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX);
+    float fraction = 0.0f;
 
     if (featureIsEnabled(FEATURE_3D)
         && !IS_RC_MODE_ACTIVE(BOX3D)
         && !flight3DConfig()->switched_mode3d) {
 
-        if (channelData > (rxConfig()->midrc + flight3DConfig()->deadband3d_throttle)) {
-            ret = ((channelData - rxConfig()->midrc - flight3DConfig()->deadband3d_throttle) * 100) / (PWM_RANGE_MAX - rxConfig()->midrc - flight3DConfig()->deadband3d_throttle);
-        } else if (channelData < (rxConfig()->midrc - flight3DConfig()->deadband3d_throttle)) {
-            ret = -((rxConfig()->midrc - flight3DConfig()->deadband3d_throttle - channelData) * 100) / (rxConfig()->midrc - flight3DConfig()->deadband3d_throttle - PWM_RANGE_MIN);
+        const float midrc = rcUsToNorm(rxConfig()->midrc);
+        const float deadband = rcUsSpanToNorm(flight3DConfig()->deadband3d_throttle);
+        if (throttle > midrc + deadband) {
+            fraction = (throttle - midrc - deadband) / (NORMALISED_RANGE_MAX - midrc - deadband);
+        } else if (throttle < midrc - deadband) {
+            fraction = (throttle - midrc + deadband) / (midrc - deadband - NORMALISED_RANGE_MIN);
         }
     } else {
-        ret = constrain(((channelData - rxConfig()->mincheck) * 100) / (PWM_RANGE_MAX - rxConfig()->mincheck), 0, 100);
+        const float mincheck = rcUsToNorm(rxConfig()->mincheck);
+        fraction = constrainf((throttle - mincheck) / (NORMALISED_RANGE_MAX - mincheck), 0.0f, 1.0f);
         if (featureIsEnabled(FEATURE_3D)
             && IS_RC_MODE_ACTIVE(BOX3D)
             && flight3DConfig()->switched_mode3d) {
 
-            ret = -ret;  // 3D on a switch is active
+            fraction = -fraction;  // 3D on a switch is active
         }
     }
-    return ret;
+    return fraction * 100;
 }
 
 uint8_t calculateThrottlePercentAbs(void)
@@ -1465,7 +1467,7 @@ static FAST_CODE_NOINLINE void subTaskRcCommand(timeUs_t currentTimeUs)
     // sticks, do not process yaw input from the rx.  We do this so the
     // motors do not spin up while we are trying to arm or disarm.
     // Allow yaw control for tricopters if the user wants the servo to move even when unarmed.
-    if (isUsingSticksForArming() && rcData[THROTTLE] <= rxConfig()->mincheck
+    if (isUsingSticksForArming() && rcGetChannel(THROTTLE) <= rcUsToNorm(rxConfig()->mincheck)
 #ifndef USE_QUAD_MIXER_ONLY
 #ifdef USE_SERVOS
                 && !((mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI) && servoConfig()->tri_unarmed_servo)
