@@ -342,6 +342,7 @@ COMMON_SRC += \
             drivers/barometer/barometer_bmp388.c \
             drivers/barometer/barometer_bmp5xx.c \
             drivers/barometer/barometer_dps310.c \
+            drivers/barometer/barometer_icp20100.c \
             drivers/barometer/barometer_lps22df.c \
             drivers/barometer/barometer_lps.c \
             drivers/barometer/barometer_ms5611.c \
@@ -419,6 +420,7 @@ SIZE_OPTIMISED_SRC += \
             drivers/accgyro/accgyro_spi_lsm6dso_init.c \
             drivers/barometer/barometer_bmp085.c \
             drivers/barometer/barometer_bmp280.c \
+            drivers/barometer/barometer_icp20100.c \
             drivers/barometer/barometer_ms5611.c \
             drivers/barometer/barometer_lps.c \
             drivers/barometer/barometer_qmp6988.c \
