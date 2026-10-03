@@ -515,12 +515,12 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementRpm)
 {
     //Given ibus command: Sensor at address 3, please send your measurement
     //then we respond with: I'm reading 0 rpm
-    rcCommand[THROTTLE] = 0;
+    rcCommand[THROTTLE] = rcUsToThrottle(0);
     checkResponseToCommand("\x04\xA3\x58\xff", 4, "\x06\xA3\x00\x00\x56\xFF", 6);
 
     //Given ibus command: Sensor at address 3, please send your measurement
     //then we respond with: I'm reading 100 rpm
-    rcCommand[THROTTLE] = 100;
+    rcCommand[THROTTLE] = rcUsToThrottle(100);
     checkResponseToCommand("\x04\xA3\x58\xff", 4, "\x06\xA3\x64\x00\xf2\xFe", 6);
 }
 
@@ -585,6 +585,6 @@ TEST_F(IbusTelemteryProtocolUnitTestDaisyChained, Test_IbusRespondToGetMeasureme
 
     //Given ibus command: Sensor at address 5, please send your measurement
     //then we respond with: I'm reading 100 rpm
-    rcCommand[THROTTLE] = 100;
+    rcCommand[THROTTLE] = rcUsToThrottle(100);
     checkResponseToCommand("\x04\xA5\x56\xff", 4, "\x06\xA5\x64\x00\xf0\xFe", 6);
 }

@@ -106,6 +106,21 @@ static inline float rcUsSpanToNorm(float us)
     return us * NORMALISED_RANGE / PWM_RANGE;
 }
 
+static inline float rcUsToThrottle(float us)
+{
+    return (us - PWM_RANGE_MIN) / PWM_RANGE;
+}
+
+static inline float rcUsSpanToThrottle(float us)
+{
+    return us / PWM_RANGE;
+}
+
+static inline float rcThrottleToUs(float throttle)
+{
+    return PWM_RANGE_MIN + throttle * PWM_RANGE;
+}
+
 // -1 at 1000us, 0 at 1500us, +1 at 2000us, not clamped
 static inline float rcGetChannel(int channel)
 {
