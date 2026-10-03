@@ -462,7 +462,9 @@ void servoMixer(void)
     input[INPUT_GIMBAL_PITCH] = scaleRange(attitude.values.pitch, -1800, 1800, -500, +500);
     input[INPUT_GIMBAL_ROLL] = scaleRange(attitude.values.roll, -1800, 1800, -500, +500);
 
-    input[INPUT_STABILIZED_THROTTLE] = motorConvertToExternal(motor[0]) - PWM_RANGE_MIDDLE;  // Since it derives from rcCommand or mincommand and must be [-500:+500]
+    // with no motor device (servo-only throttle) there is nothing to convert through, motor[0] is microseconds for PWM
+    const float throttleMotor = motorDeviceCount() ? motorConvertToExternal(motor[0]) : motor[0];
+    input[INPUT_STABILIZED_THROTTLE] = throttleMotor - PWM_RANGE_MIDDLE;  // Since it derives from rcCommand or mincommand and must be [-500:+500]
 
     // center the RC input value around the RC middle value
     // by subtracting the RC middle value from the RC input value, we get:
