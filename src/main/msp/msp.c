@@ -4607,7 +4607,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
     }
 
 #ifdef USE_PSAS
-    case MSP_SET_PSAS_CONFIG:
+    case MSP_SET_PSAS_CONFIG: {
         const uint32_t expectedSize = 56;
         const uint32_t dataSize = sbufBytesRemaining(src);
         if (dataSize < expectedSize) {
@@ -4656,6 +4656,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         currentPidProfile->psas_speed_curve_mode = sbufReadU8(src);
         pidInitConfig(currentPidProfile);
         break;
+    }
 #endif
 
     case MSP_SET_WING: {
