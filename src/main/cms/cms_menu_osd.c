@@ -195,8 +195,16 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
     {"SERIAL TEXT",        OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_CUSTOM_SERIAL_TEXT]},
 #endif
 #ifdef USE_RADAR
-    {"RADAR PEER",         OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_RADAR_PEER]},
+    {"RADAR PEER CYCLE",   OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_RADAR_PEER]},
+    {"RADAR PEER 1",       OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_RADAR_PEER_1]},
+    {"RADAR PEER 2",       OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_RADAR_PEER_2]},
+    {"RADAR PEER 3",       OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_RADAR_PEER_3]},
+    {"RADAR PEER 4",       OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_RADAR_PEER_4]},
     {"RADAR HUD",          OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_RADAR_HUD]},
+    {"RADAR HUD HOME",     OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_RADAR_HUD_HOME]},
+#if ENABLE_FLIGHT_PLAN
+    {"RADAR HUD WP",       OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_RADAR_HUD_WAYPOINT]},
+#endif
 #endif
     {"BACK",               OME_Back,    NULL, NULL},
     {NULL,                 OME_END,     NULL, NULL}
