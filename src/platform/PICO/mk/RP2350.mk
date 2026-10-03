@@ -384,6 +384,11 @@ ARCH_FLAGS      += -DPICO_COPY_TO_RAM=$(RUN_FROM_RAM)
 # (Calls to memcpy, memset become calls to performant wrapped versions.)
 ARCH_FLAGS      += -fno-builtin-memcpy -fno-builtin-memset
 
+# GCC canonicalises every header found via -isystem with a readlink per path
+# component; with the ~100 pico-sdk system include dirs that is ~23M syscalls a
+# build, which dominates the compile under a sandboxed runtime (gVisor).
+ARCH_FLAGS      += -fno-canonical-system-headers
+
 PICO_STDIO_USB_FLAGS = \
             -DLIB_PICO_PRINTF=1 \
             -DLIB_PICO_PRINTF_PICO=1  \
