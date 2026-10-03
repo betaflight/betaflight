@@ -23,12 +23,14 @@
 extern "C" {
     #include "platform.h"
 
+    #include "common/time.h"
     #include "io/vtx.h"
     #include "io/vtx_msp.h"
     #include "pg/vtx_table.h"
 
     static uint8_t mspFrame[15];
     extern mspVtxStatus_e mspVtxStatus;
+    void prepareMspFrame(uint8_t *mspFrame, const timeUs_t currentTimeUs);
 }
 
 #include "unittest_macros.h"
@@ -50,7 +52,7 @@ TEST(VtxMspUnitTest, TestVtxMspPacket)
 
     uint8_t expectedFrame[15] = {5, 1, 2, 1, 0, 168, 22, 0, 1, 180, 20, 1, 4, 5, 6};
 
-    prepareMspFrame(mspFrame);
+    prepareMspFrame(mspFrame, 0);
 
     for (int i = 0; i < 15; i++) {
         EXPECT_EQ(expectedFrame[i], mspFrame[i]);
