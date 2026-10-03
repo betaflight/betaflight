@@ -54,11 +54,6 @@ PG_RESET_TEMPLATE(vtxConfig_t, vtxConfig,
     .halfDuplex = true
 );
 
-// Latched on first arm and intentionally never cleared for the rest of the session, so band
-// and channel can no longer be changed by switch once the craft has been armed. STATIC_UNIT_TESTED
-// (still 'static' in firmware builds) so unit tests can reset it between cases.
-STATIC_UNIT_TESTED uint8_t locked = 0;
-
 void vtxControlInit(void)
 {
     // NOTHING TO DO
@@ -75,11 +70,7 @@ void vtxControlInputPoll(void)
 
 static void vtxUpdateBandAndChannel(uint8_t bandStep, uint8_t channelStep)
 {
-    if (ARMING_FLAG(ARMED)) {
-        locked = 1;
-    }
-
-    if (!locked && vtxCommonDevice()) {
+    if (vtxCommonDevice()) {
         vtxSettingsConfigMutable()->band += bandStep;
         vtxSettingsConfigMutable()->channel += channelStep;
     }
@@ -107,10 +98,6 @@ void vtxDecrementChannel(void)
 
 void vtxUpdateActivatedChannel(void)
 {
-    if (ARMING_FLAG(ARMED)) {
-        locked = 1;
-    }
-
     if (vtxCommonDevice()) {
         // Apply every active activation condition, like updateActivatedModes() does for mode
         // ranges. Stopping at the first match (or remembering only the last applied index)
@@ -121,13 +108,11 @@ void vtxUpdateActivatedChannel(void)
             const vtxChannelActivationCondition_t *vtxChannelActivationCondition = &vtxConfig()->vtxChannelActivationConditions[index];
 
             if (isRangeActive(vtxChannelActivationCondition->auxChannelIndex, &vtxChannelActivationCondition->range)) {
-                if (!locked) {
-                    if (vtxChannelActivationCondition->band > 0) {
-                        vtxSettingsConfigMutable()->band = vtxChannelActivationCondition->band;
-                    }
-                    if (vtxChannelActivationCondition->channel > 0) {
-                        vtxSettingsConfigMutable()->channel = vtxChannelActivationCondition->channel;
-                    }
+                if (vtxChannelActivationCondition->band > 0) {
+                    vtxSettingsConfigMutable()->band = vtxChannelActivationCondition->band;
+                }
+                if (vtxChannelActivationCondition->channel > 0) {
+                    vtxSettingsConfigMutable()->channel = vtxChannelActivationCondition->channel;
                 }
 
                 if (vtxChannelActivationCondition->power > 0) {
