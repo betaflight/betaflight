@@ -124,7 +124,7 @@ const char * const osdTimerSourceNames[] = {
 
 // Make it obvious on the configurator that the FC doesn't support HD
 #ifndef DEFAULT_OSD_DISPLAYPORT_DEVICE
-#ifdef USE_OSD_HD
+#if defined(USE_OSD_HD) || defined(MSP_DISPLAYPORT_UART)
 #define DEFAULT_OSD_DISPLAYPORT_DEVICE OSD_DISPLAYPORT_DEVICE_MSP
 #else
 #define DEFAULT_OSD_DISPLAYPORT_DEVICE OSD_DISPLAYPORT_DEVICE_AUTO
@@ -455,7 +455,6 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     // A board naming a display port UART is wired to goggles, which are drawn
     // over MSP.  That is the OSD's port, not a VTX's.
     osdConfig->osd_uart = MSP_DISPLAYPORT_UART;
-    osdConfig->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
 #else
     osdConfig->osd_uart = SERIAL_PORT_NONE;
 #endif
