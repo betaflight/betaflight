@@ -167,6 +167,7 @@
 #include "flight/pos_hold.h"
 
 #include "io/gps.h"
+#include "io/radar.h"
 #include "io/vtx.h"
 
 #include "osd/osd.h"
@@ -182,6 +183,7 @@
 #include "pg/flight_plan.h"
 #include "pg/motor.h"
 #include "pg/pilot.h"
+#include "pg/radar.h"
 #include "pg/stats.h"
 
 #include "rx/rx.h"
@@ -1361,12 +1363,15 @@ static void osdElementEfficiency(osdElementParms_t *element)
     }
 }
 
-#if ENABLE_FLIGHT_PLAN
+#if ENABLE_FLIGHT_PLAN || defined(USE_RADAR)
 static void osdPutHyphen(osdElementParms_t *element)
 {
     element->buff[0] = SYM_HYPHEN;
     element->buff[1] = '\0';
 }
+#endif
+
+#if ENABLE_FLIGHT_PLAN
 
 // Current waypoint clamped into the stored plan; valid only when count > 0.
 static uint8_t osdWpCurrentIndex(uint8_t count)
@@ -2099,6 +2104,354 @@ static void osdElementAirspeed(osdElementParms_t *element)
 }
 #endif
 
+#ifdef USE_RADAR
+/*
+ * Peers are only drawn once heading is trusted: without a compass it comes from the
+ * GPS course, and an arrow pointing the wrong way is worse than no arrow.
+ */
+static bool osdIsRadarUsable(void)
+{
+    return STATE(GPS_FIX) && imuIsHeadingValid();
+}
+
+static int osdRadarRelativeBearing(int32_t bearingCentiDeg)
+{
+    return radarWrapAngle180(bearingCentiDeg / 100 - DECIDEGREES_TO_DEGREES(attitude.values.yaw));
+}
+
+/* Writes [up/down arrow][height difference][unit] */
+static void osdFormatRadarAltitude(char *buff, int32_t altitudeDiffCm)
+{
+    const float altitudeDiff = osdGetMetersToSelectedUnit(ABS(altitudeDiffCm)) / 100.0f;
+
+    buff[0] = (altitudeDiffCm < 0) ? SYM_ARROW_SMALL_DOWN : SYM_ARROW_SMALL_UP;
+    osdPrintFloat(&buff[1], SYM_NONE, altitudeDiff, "", 0, true, osdGetMetersToSelectedUnitSymbol());
+}
+
+/* Writes [direction to peer][peer letter][distance][up/down arrow][height difference] */
+static void osdFormatRadarPeer(char *buff, uint8_t peerId, const radarPeer_t *peer)
+{
+    uint32_t distanceCm;
+    int32_t bearingCentiDeg;
+
+    radarCalcDistanceBearing(&distanceCm, &bearingCentiDeg, &gpsSol.llh, &peer->llh);
+    buff[0] = osdGetDirectionSymbolFromHeading(osdRadarRelativeBearing(bearingCentiDeg));
+    buff[1] = radarGetPeerLetter(peerId);
+    osdFormatDistanceString(&buff[2], distanceCm / 100, SYM_NONE);
+    osdFormatRadarAltitude(&buff[strlen(buff)], peer->llh.altCm - gpsSol.llh.altCm);
+}
+
+/* One peer at a time in a fixed place, moving to the next every radar_peer_time seconds */
+static void osdElementRadarPeer(osdElementParms_t *element)
+{
+    static uint8_t peerId;
+    static timeMs_t lastSwitchMs;
+    const timeMs_t nowMs = millis();
+    const timeDelta_t displayTimeMs = radarConfig()->peerDisplayTimeS * 1000;
+
+    if (!radarFindPeer(peerId, nowMs) || cmpTimeMs(nowMs, lastSwitchMs) >= displayTimeMs) {
+        peerId = radarGetNextPeerId(peerId, nowMs);
+        lastSwitchMs = nowMs;
+    }
+
+    const radarPeer_t *peer = radarFindPeer(peerId, nowMs);
+
+    if (peer && osdIsRadarUsable()) {
+        osdFormatRadarPeer(element->buff, peerId, peer);
+    } else {
+        osdPutHyphen(element);
+    }
+}
+
+/* A fixed readout for one peer: Radar Peer 1 is always peer A, Radar Peer 2 is peer B, ... */
+static void osdElementRadarPeerFixed(osdElementParms_t *element)
+{
+    const uint8_t peerId = element->item - OSD_RADAR_PEER_1 + 1;
+    const radarPeer_t *peer = radarFindPeer(peerId, millis());
+
+    if (peer && osdIsRadarUsable()) {
+        osdFormatRadarPeer(element->buff, peerId, peer);
+    } else {
+        // keep the letter so the pilot can tell the empty slots apart
+        element->buff[0] = radarGetPeerLetter(peerId);
+        element->buff[1] = SYM_HYPHEN;
+        element->buff[2] = '\0';
+    }
+}
+
+enum {
+    OSD_HUD_MAX_MARKERS = RADAR_MAX_PEERS + 2,  // every peer, home and the next waypoint
+    OSD_HUD_LABEL_LENGTH = 6,                   // "WP" + up to three digits + terminator
+};
+
+/* One string of the HUD: a marker line or the detail line below it */
+typedef struct osdRadarHudText_s {
+    uint8_t col;
+    uint8_t row;
+    char text[OSD_ELEMENT_BUFFER_LENGTH];
+} osdRadarHudText_t;
+
+/* The strings one HUD element owns in osdHudTexts, and how far it has got in writing them */
+typedef struct osdHudSlice_s {
+    uint8_t start;
+    uint8_t count;
+    uint8_t index;
+} osdHudSlice_t;
+
+/*
+ * Every HUD element (peers, home, next waypoint) places its markers in this one list, so a
+ * marker added later in an OSD refresh can see the ones already placed and stack clear of them.
+ */
+static osdRadarHudText_t osdHudTexts[2 * OSD_HUD_MAX_MARKERS];
+static unsigned osdHudTextCount;
+
+/* Called when an OSD refresh has drawn its last element: the next refresh starts with an empty HUD */
+static void osdResetHud(void)
+{
+    osdHudTextCount = 0;
+}
+
+static radarHudGeometry_t osdGetHudGeometry(const displayPort_t *displayPort)
+{
+    const radarConfig_t *config = radarConfig();
+    const radarHudGeometry_t geometry = {
+        .cols = displayPort->cols,
+        .rows = displayPort->rows,
+        .cameraFovH = config->cameraFovH,
+        .cameraFovV = config->cameraFovV,
+        .cameraUptilt = config->cameraUptilt,
+        .marginH = config->hudMarginH,
+        .marginV = config->hudMarginV,
+    };
+
+    return geometry;
+}
+
+/* The detail line alternates between the height difference and the distance */
+static bool osdIsHudShowingAltitude(void)
+{
+    const radarConfig_t *config = radarConfig();
+    const unsigned cycleS = config->hudAltTimeS + config->hudDistTimeS;
+
+    return (millis() / 1000) % cycleS < config->hudAltTimeS;
+}
+
+/* A marker is two rows: [label][arrow], and the detail line below it starting one column to the left */
+static bool osdIsRadarHudSpaceTaken(int col, int row)
+{
+    bool isTaken = false;
+
+    for (unsigned i = 0; i < osdHudTextCount; i += 2) {
+        isTaken |= ABS(osdHudTexts[i].row - row) < 2 && ABS(osdHudTexts[i].col - col) < 5;
+    }
+
+    return isTaken;
+}
+
+/*
+ * Adds the marker and detail line for one point (a peer, home or a waypoint) to the HUD.
+ * Returns true if it was added, false if it did not fit on the canvas or the HUD is full.
+ */
+static bool osdAddHudMarker(const displayPort_t *displayPort, const char *label, int relBearingDeg,
+                            uint32_t distanceM, int32_t altitudeDiffCm)
+{
+    const radarHudGeometry_t geometry = osdGetHudGeometry(displayPort);
+    const int pitchDeg = DECIDEGREES_TO_DEGREES(attitude.values.pitch);
+    bool isAdded = false;
+    int col;
+    int row;
+
+    radarHudProject(&col, &row, &geometry, relBearingDeg, distanceM, altitudeDiffCm / 100, pitchDeg);
+
+    // clashing markers stack downwards from above the centre, as in INAV
+    if (osdIsRadarHudSpaceTaken(col, row)) {
+        row = geometry.rows / 2 - 3;
+        for (unsigned i = 0; i < OSD_HUD_MAX_MARKERS && osdIsRadarHudSpaceTaken(col, row); i++) {
+            row += 2;
+        }
+    }
+
+    if (row >= 0 && row + 1 < geometry.rows && osdHudTextCount + 2 <= ARRAYLEN(osdHudTexts)) {
+        osdRadarHudText_t *marker = &osdHudTexts[osdHudTextCount];
+        osdRadarHudText_t *detail = &osdHudTexts[osdHudTextCount + 1];
+        const size_t labelLength = strlen(label);
+
+        marker->col = col;
+        marker->row = row;
+        memcpy(marker->text, label, labelLength);
+        marker->text[labelLength] = osdGetDirectionSymbolFromHeading(relBearingDeg);
+        marker->text[labelLength + 1] = '\0';
+
+        detail->col = col - 1;
+        detail->row = row + 1;
+        if (osdIsHudShowingAltitude()) {
+            osdFormatRadarAltitude(detail->text, altitudeDiffCm);
+        } else {
+            osdFormatDistanceString(detail->text, distanceM, SYM_NONE);
+        }
+
+        osdHudTextCount += 2;
+        isAdded = true;
+    }
+
+    return isAdded;
+}
+
+/* Adds one peer to the HUD. Returns false when it is out of range or did not fit. */
+static bool osdAddRadarHudPeer(const displayPort_t *displayPort, uint8_t peerId, const radarPeer_t *peer)
+{
+    const radarConfig_t *config = radarConfig();
+    const char label[] = { radarGetPeerLetter(peerId), '\0' };
+    uint32_t distanceCm;
+    int32_t bearingCentiDeg;
+    bool isAdded = false;
+
+    radarCalcDistanceBearing(&distanceCm, &bearingCentiDeg, &gpsSol.llh, &peer->llh);
+
+    const uint32_t distanceM = distanceCm / 100;
+
+    if (distanceM >= config->hudRangeMinM && distanceM <= config->hudRangeMaxM) {
+        isAdded = osdAddHudMarker(displayPort, label, osdRadarRelativeBearing(bearingCentiDeg), distanceM,
+                                  peer->llh.altCm - gpsSol.llh.altCm);
+    }
+
+    return isAdded;
+}
+
+static void osdAddRadarHudPeers(const displayPort_t *displayPort)
+{
+    const radarConfig_t *config = radarConfig();
+    const timeMs_t nowMs = millis();
+    const bool isUsable = osdIsRadarUsable();
+    unsigned drawn = 0;
+
+    for (uint8_t peerId = 1; isUsable && peerId <= RADAR_MAX_PEERS && drawn < config->hudMaxPeers; peerId++) {
+        const radarPeer_t *peer = radarFindPeer(peerId, nowMs);
+
+        if (peer && osdAddRadarHudPeer(displayPort, peerId, peer)) {
+            drawn++;
+        }
+    }
+}
+
+/* Home drawn as "H" where it is in the camera view. Hidden closer than radar_hud_range_min. */
+static void osdAddHudHome(const displayPort_t *displayPort)
+{
+    if (osdIsRadarUsable() && STATE(GPS_FIX_HOME) && GPS_distanceToHome >= radarConfig()->hudRangeMinM) {
+        const int relBearingDeg = radarWrapAngle180(DECIDEGREES_TO_DEGREES(GPS_directionToHome - attitude.values.yaw));
+
+        // altitude is measured from the home point, so home is that far below (or above) us
+        osdAddHudMarker(displayPort, "H", relBearingDeg, GPS_distanceToHome, -getEstimatedAltitudeCm());
+    }
+}
+
+#if ENABLE_FLIGHT_PLAN
+/*
+ * The next waypoint with a position, drawn as "WP<number>" where it is in the camera view.
+ * Waypoints that only change altitude, wait or set a yaw rate have no position and are skipped.
+ */
+static void osdAddHudWaypoint(const displayPort_t *displayPort)
+{
+    const flightPlanConfig_t *plan = flightPlanConfig();
+    const uint8_t count = plan->waypointCount;
+
+    if (osdIsRadarUsable() && count > 0) {
+        uint8_t index = osdWpCurrentIndex(count);
+
+        while (index < count && plan->waypoints[index].type >= WAYPOINT_TYPE_ALT_CHANGE) {
+            index++;
+        }
+
+        if (index < count) {
+            const waypoint_t *waypoint = &plan->waypoints[index];
+            const gpsLocation_t target = { .lat = waypoint->latitude, .lon = waypoint->longitude, .altCm = waypoint->altitude };
+            char label[OSD_HUD_LABEL_LENGTH];
+            uint32_t distanceCm;
+            int32_t bearingCentiDeg;
+
+            radarCalcDistanceBearing(&distanceCm, &bearingCentiDeg, &gpsSol.llh, &target);
+
+            const uint32_t distanceM = distanceCm / 100;
+
+            if (distanceM >= radarConfig()->hudRangeMinM) {
+                tfp_sprintf(label, "WP%u", index + 1);
+                osdAddHudMarker(displayPort, label, osdRadarRelativeBearing(bearingCentiDeg), distanceM,
+                                target.altCm - gpsSol.llh.altCm);
+            }
+        }
+    }
+}
+#endif
+
+/*
+ * Writes one string of a HUD element per call. The element reports itself as not yet
+ * rendered until every string it owns has been written.
+ */
+static void osdDrawHudSlice(osdElementParms_t *element, osdHudSlice_t *slice)
+{
+    if (slice->count == 0) {
+        element->drawElement = false;
+    } else {
+        const osdRadarHudText_t *text = &osdHudTexts[slice->start + slice->index];
+
+        element->elemPosX = text->col;
+        element->elemPosY = text->row;
+        strcpy(element->buff, text->text);
+        slice->index++;
+        if (slice->index < slice->count) {
+            element->rendered = false;
+        } else {
+            slice->index = 0;
+        }
+    }
+}
+
+/*
+ * The HUD elements draw points where they are in the camera view, following INAV's HUD.
+ * The element position is not used.
+ */
+static void osdElementRadarHud(osdElementParms_t *element)
+{
+    static osdHudSlice_t slice;
+
+    if (slice.index == 0) {
+        slice.start = osdHudTextCount;
+        osdAddRadarHudPeers(element->osdDisplayPort);
+        slice.count = osdHudTextCount - slice.start;
+    }
+
+    osdDrawHudSlice(element, &slice);
+}
+
+static void osdElementRadarHudHome(osdElementParms_t *element)
+{
+    static osdHudSlice_t slice;
+
+    if (slice.index == 0) {
+        slice.start = osdHudTextCount;
+        osdAddHudHome(element->osdDisplayPort);
+        slice.count = osdHudTextCount - slice.start;
+    }
+
+    osdDrawHudSlice(element, &slice);
+}
+
+#if ENABLE_FLIGHT_PLAN
+static void osdElementRadarHudWaypoint(osdElementParms_t *element)
+{
+    static osdHudSlice_t slice;
+
+    if (slice.index == 0) {
+        slice.start = osdHudTextCount;
+        osdAddHudWaypoint(element->osdDisplayPort);
+        slice.count = osdHudTextCount - slice.start;
+    }
+
+    osdDrawHudSlice(element, &slice);
+}
+#endif
+#endif // USE_RADAR
+
 // Define the order in which the elements are drawn.
 // Elements positioned later in the list will overlay the earlier
 // ones if their character positions overlap
@@ -2385,6 +2738,18 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_PITOT
     [OSD_AIRSPEED]                = osdElementAirspeed,
 #endif
+#ifdef USE_RADAR
+    [OSD_RADAR_PEER]              = osdElementRadarPeer,
+    [OSD_RADAR_HUD]               = osdElementRadarHud,
+    [OSD_RADAR_PEER_1]            = osdElementRadarPeerFixed,
+    [OSD_RADAR_PEER_2]            = osdElementRadarPeerFixed,
+    [OSD_RADAR_PEER_3]            = osdElementRadarPeerFixed,
+    [OSD_RADAR_PEER_4]            = osdElementRadarPeerFixed,
+    [OSD_RADAR_HUD_HOME]          = osdElementRadarHudHome,
+#if ENABLE_FLIGHT_PLAN
+    [OSD_RADAR_HUD_WAYPOINT]      = osdElementRadarHudWaypoint,
+#endif
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw its background (static part)
@@ -2449,6 +2814,19 @@ void osdAddActiveElements(void)
 #endif
 #ifdef USE_OSD_NAV_MAP
         osdAddActiveElement(OSD_NAV_MAP);
+#endif
+#ifdef USE_RADAR
+        osdAddActiveElement(OSD_RADAR_PEER);
+        osdAddActiveElement(OSD_RADAR_PEER_1);
+        osdAddActiveElement(OSD_RADAR_PEER_2);
+        osdAddActiveElement(OSD_RADAR_PEER_3);
+        osdAddActiveElement(OSD_RADAR_PEER_4);
+        // the HUD elements stay together and in this order: each one stacks clear of the markers before it
+        osdAddActiveElement(OSD_RADAR_HUD);
+        osdAddActiveElement(OSD_RADAR_HUD_HOME);
+#if ENABLE_FLIGHT_PLAN
+        osdAddActiveElement(OSD_RADAR_HUD_WAYPOINT);
+#endif
 #endif
     }
 #endif // GPS
@@ -2613,13 +2991,22 @@ bool osdDisplayActiveElement(void)
     return false;
 }
 
+// The last active element of this refresh has been drawn: start again from the first
+static void osdEndRefresh(void)
+{
+    activeElementNumber = 0;
+#ifdef USE_RADAR
+    osdResetHud();
+#endif
+}
+
 // Return true if there are more elements to draw
 bool osdDrawNextActiveElement(displayPort_t *osdDisplayPort)
 {
     static bool backgroundRendered = false;
 
     if (activeElementNumber >= activeOsdElementCount) {
-        activeElementNumber = 0;
+        osdEndRefresh();
         return false;
     }
 
@@ -2642,7 +3029,7 @@ bool osdDrawNextActiveElement(displayPort_t *osdDisplayPort)
         backgroundRendered = false;
 
         if (++activeElementNumber >= activeOsdElementCount) {
-            activeElementNumber = 0;
+            osdEndRefresh();
             return false;
         }
     }

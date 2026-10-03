@@ -31,6 +31,7 @@ PG_SRC = \
             pg/osd_nav_map.c \
             pg/pg.c \
             pg/pilot.c \
+            pg/radar.c \
             pg/piniobox.c \
             pg/pinio.c \
             pg/pin_pull_up_down.c \
@@ -277,6 +278,7 @@ COMMON_SRC = \
             io/gps.c \
             io/ledstrip.c \
             io/pidaudio.c \
+            io/radar.c \
             osd/osd.c \
             osd/osd_custom_text.c \
             osd/osd_elements.c \
