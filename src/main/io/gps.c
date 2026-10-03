@@ -350,7 +350,8 @@ typedef enum {
     UBLOX_SAT_INFO,         // 19. MSG_NAV_SAT message
     UBLOX_SET_NAV_RATE,     // 20. set to user requested GPS sample rate
     UBLOX_MSG_CFG_GNSS,     // 21. For not SBAS or GALILEO
-    UBLOX_CONFIG_COMPLETE   // 22. Config finished, start receiving data
+    UBLOX_SET_L5_SIGNALS,   // 22. Configure L5 signals for F10N
+    UBLOX_CONFIG_COMPLETE   // 23. Config finished, start receiving data
 } ubloxStatePosition_e;
 
 static size_t initBaudRateCycleCount;
@@ -936,6 +937,22 @@ static void setSatInfoMessageRate(uint8_t divisor)
     }
 }
 
+static void ubloxSetL5Signals(void)
+{
+    ubxMessage_t tx_buffer;
+    uint8_t payload[1];
+
+    // Enable GPS L5 signal
+    payload[0] = 1;
+    size_t offset = ubloxValSet(&tx_buffer, CFG_SIGNAL_GPS_L5_ENA, payload, UBX_VAL_LAYER_RAM);
+
+    // Set GPS L5 health mask to use L5 satellites
+    payload[0] = 1;
+    offset += ubloxAddValSet(&tx_buffer, CFG_SIGNAL_L5_HEALTH_OVRD, payload, offset);
+
+    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset, true);
+}
+
 #endif // USE_GPS_UBLOX
 
 #ifdef USE_GPS_NMEA
@@ -1243,6 +1260,13 @@ static void gpsConfigureUblox(void)
             case UBLOX_MSG_CFG_GNSS:
                 if ((gpsConfig()->sbasMode == SBAS_NONE) || (gpsConfig()->gps_ublox_use_galileo)) {
                     ubloxSendPollMessage(MSG_CFG_GNSS); // poll messages wait for ACK
+                } else {
+                    gpsData.state_position++;
+                }
+                break;
+            case UBLOX_SET_L5_SIGNALS:
+                if (gpsData.ublox_L5_supported) {
+                    ubloxSetL5Signals();
                 } else {
                     gpsData.state_position++;
                 }
@@ -1694,6 +1718,21 @@ static void gpsNewData(uint8_t c)
 }
 
 #ifdef USE_GPS_UBLOX
+// L1/L5 receivers (DAN-F10N, NEO-F10N) run the SPGL1L5 firmware; L1-only M10s don't have the L5 signal keys
+static bool ubloxIsL1L5Firmware(const ubxMonVer_t *monVer, uint16_t payloadLength)
+{
+    const size_t fieldSize = 30;
+    const size_t headerSize = sizeof(monVer->swVersion) + sizeof(monVer->hwVersion);
+
+    for (size_t offset = 0; offset + fieldSize <= sizeof(monVer->extension) && headerSize + offset + fieldSize <= payloadLength; offset += fieldSize) {
+        if (strncmp(&monVer->extension[offset], "FWVER=SPGL1L5", strlen("FWVER=SPGL1L5")) == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 static ubloxVersion_e ubloxParseVersion(const uint32_t version)
 {
     for (size_t i = 0; i < ARRAYLEN(ubloxVersionMap); ++i) {
@@ -2624,6 +2663,8 @@ static bool UBLOX_parse_gps(void)
         *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_UBLOX_MONVER;
 #endif
         gpsData.platformVersion = ubloxParseVersion(strtoul(ubxRcvMsgPayload.ubxMonVer.hwVersion, NULL, 16));
+        gpsData.ublox_L5_supported = gpsData.platformVersion == UBX_VERSION_M10
+            && ubloxIsL1L5Firmware(&ubxRcvMsgPayload.ubxMonVer, ubxRcvMsgPayloadLength);
         gpsData.ubloxM7orAbove = gpsData.platformVersion >= UBX_VERSION_M7;
         gpsData.ubloxM8orAbove = gpsData.platformVersion >= UBX_VERSION_M8;
         gpsData.ubloxM9orAbove = gpsData.platformVersion >= UBX_VERSION_M9;
