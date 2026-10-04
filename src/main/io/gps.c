@@ -1294,6 +1294,12 @@ static void gpsConfigureUblox(void)
 
 static void gpsConfigureHardware(void)
 {
+    // A serial provider set at runtime, such as by `defaults nosave` on a
+    // board using DroneCAN, has no port until the next boot.
+    if (!gpsPort) {
+        return;
+    }
+
     switch (gpsConfig()->provider) {
     case GPS_NMEA:
 #ifdef USE_GPS_NMEA
