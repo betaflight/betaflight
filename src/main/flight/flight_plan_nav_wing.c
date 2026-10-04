@@ -231,7 +231,7 @@ fpWingEvent_e flightPlanWingUpdateLeg(const positionEstimate3d_t *est, float *pr
     }
     }
 
-    DEBUG_SET(DEBUG_WING_NAV, 5, lrintf(turnDistM));    //!< Turn Distance [unit:m]
+    DEBUG_SET(DEBUG_FLIGHT_PLAN, 5, lrintf(turnDistM));  //!< Turn Distance [unit:m]
 
     if (!reached) {
         return FPW_FLYING;

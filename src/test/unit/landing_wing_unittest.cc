@@ -274,7 +274,7 @@ protected:
         memset(&gyro, 0, sizeof(gyro));
         memset(&attitude, 0, sizeof(attitude));
         armingFlags = 0;
-        debugMode = DEBUG_WING_LANDING;
+        debugMode = DEBUG_AUTOPILOT_LANDING;
         memset(debug, 0, sizeof(debug));
         craft(0.0f, -300.0f, 50.0f, 0.0f, 15.0f);
         landingWingNoteDepartureCourse(g_nowUs);   // disarmed: forgets any departure

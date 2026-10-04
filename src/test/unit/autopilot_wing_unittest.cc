@@ -49,6 +49,7 @@ extern "C" {
     #include "pg/gps.h"
     #include "pg/pg_ids.h"
     #include "pg/pos_hold.h"
+    #include "pg/rx.h"
 
     extern uint8_t __config_start;
     extern uint8_t __config_end;
@@ -107,6 +108,7 @@ extern "C" {
     void disarm(flightLogDisarmReason_e) { testDisarms++; }
     uint8_t stateFlags;
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
+    PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
     bool gpsIsHealthy(void) { return true; }
     bool isAltitudeAvailable(void) { return true; }
 }
@@ -156,7 +158,7 @@ static void resetForTest(void)
     brake(0.0f);
     gyro = {};
     flightModeFlags = 0;
-    debugMode = DEBUG_WING_ALTITUDE;
+    debugMode = DEBUG_AUTOPILOT_CLIMB;
     autopilotAngle[AI_ROLL] = 0.0f;
     autopilotAngle[AI_PITCH] = 0.0f;
     autopilotInit();

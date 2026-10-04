@@ -964,14 +964,14 @@ bool landingWingUpdate(timeUs_t nowUs)
         float crossTrackM = 0.0f;
         const float toTouchdownM = landing.hasPattern
             ? toGoM(&landing.pattern.finalEnuM, &landing.pattern.touchdownEnuM, &craftM, &crossTrackM) : 0.0f;
-        DEBUG_SET(DEBUG_WING_LANDING, 0, landing.phase);                                     //!< Landing Phase [enum:landingWingPhase_e]
-        DEBUG_SET(DEBUG_WING_LANDING, 1, landing.attempts);                                  //!< Go-Arounds Flown
-        DEBUG_SET(DEBUG_WING_LANDING, 2, landing.goAround);                                  //!< Last Go-Around Cause [enum:landingWingGoAround_e]
-        DEBUG_SET(DEBUG_WING_LANDING, 3, lrintf(toTouchdownM));                              //!< Distance To Touchdown Along Final [unit:m]
-        DEBUG_SET(DEBUG_WING_LANDING, 4, lrintf(crossTrackM * 10.0f));                       //!< Cross Track Error Right Of Final [unit:0.1m]
-        DEBUG_SET(DEBUG_WING_LANDING, 5, lrintf(heightM() * 100.0f));                        //!< Height Above Touchdown [unit:cm]
-        DEBUG_SET(DEBUG_WING_LANDING, 6, landing.hasPattern ? lrintf(landing.finalCourseDeg) : -1);   //!< Landing Heading [unit:deg]
-        DEBUG_SET(DEBUG_WING_LANDING, 7, landing.touchdown.still ? 1 : 0);                           //!< Still On The Ground
+        DEBUG_SET(DEBUG_AUTOPILOT_LANDING, 0, landing.phase);                                             //!< Landing Phase [enum:landingWingPhase_e]
+        DEBUG_SET(DEBUG_AUTOPILOT_LANDING, 1, landing.attempts);                                          //!< Go-Arounds Flown
+        DEBUG_SET(DEBUG_AUTOPILOT_LANDING, 2, landing.goAround);                                          //!< Last Go-Around Cause [enum:landingWingGoAround_e]
+        DEBUG_SET(DEBUG_AUTOPILOT_LANDING, 3, lrintf(toTouchdownM));                                      //!< Distance To Touchdown Along Final [unit:m]
+        DEBUG_SET(DEBUG_AUTOPILOT_LANDING, 4, lrintf(crossTrackM * 10.0f));                               //!< Cross Track Error Right Of Final [unit:0.1m]
+        DEBUG_SET(DEBUG_AUTOPILOT_LANDING, 5, lrintf(heightM() * 100.0f));                                //!< Height Above Touchdown [unit:cm]
+        DEBUG_SET(DEBUG_AUTOPILOT_LANDING, 6, landing.hasPattern ? lrintf(landing.finalCourseDeg) : -1);  //!< Landing Heading [unit:deg]
+        DEBUG_SET(DEBUG_AUTOPILOT_LANDING, 7, landing.touchdown.still ? 1 : 0);                           //!< Still On The Ground
     }
 
     return landing.phase == LANDING_WING_TOUCHDOWN;

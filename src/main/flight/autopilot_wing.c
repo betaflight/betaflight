@@ -334,14 +334,19 @@ void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targ
     autopilotAngle[AI_PITCH] = -wingVert.pitchDeg;
     wingVert.engaged = true;
 
-    DEBUG_SET(DEBUG_WING_ALTITUDE, 0, lrintf(wingVert.throttle * 1000.0f));          //!< Throttle Output [unit:0.001]
-    DEBUG_SET(DEBUG_WING_ALTITUDE, 1, lrintf(targetAltitudeCm));                      //!< Target Altitude [unit:cm]
-    DEBUG_SET(DEBUG_WING_ALTITUDE, 2, lrintf(altitudeCm));                            //!< Current Altitude [unit:cm]
-    DEBUG_SET(DEBUG_WING_ALTITUDE, 3, lrintf(climbDemandCmS));                        //!< Climb Rate Demand [unit:cm/s]
-    DEBUG_SET(DEBUG_WING_ALTITUDE, 4, lrintf(wingVert.integralDeg * 10.0f));          //!< Pitch Integrator [unit:0.1deg]
-    DEBUG_SET(DEBUG_WING_ALTITUDE, 5, lrintf(wingVert.pitchDeg * 10.0f));             //!< Pitch Demand From Trim [unit:0.1deg]
-    DEBUG_SET(DEBUG_WING_ALTITUDE, 6, lrintf(climbRateCmS));                          //!< Climb Rate [unit:cm/s]
-    DEBUG_SET(DEBUG_WING_ALTITUDE, 7, lrintf(wingVert.turnPitchRateDps * 10.0f));     //!< Turn Pitch Rate [unit:0.1dps]
+    const float throttlePwm = scaleRangef(wingVert.throttle, 0.0f, 1.0f, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX);
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 0, lrintf(throttlePwm));        //!< Throttle Output [unit:us]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 1, lrintf(targetAltitudeCm));   //!< Target Altitude [unit:cm]
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 2, lrintf(altitudeCm));         //!< Current Altitude [unit:cm]
+
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 2, lrintf(altitudeCm));        //!< Current Altitude [unit:cm]
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 3, lrintf(targetAltitudeCm));  //!< Target Altitude [unit:cm]
+
+    DEBUG_SET(DEBUG_AUTOPILOT_CLIMB, 0, lrintf(climbDemandCmS));                     //!< Climb Rate Demand [unit:cm/s]
+    DEBUG_SET(DEBUG_AUTOPILOT_CLIMB, 1, lrintf(climbRateCmS));                       //!< Climb Rate [unit:cm/s]
+    DEBUG_SET(DEBUG_AUTOPILOT_CLIMB, 2, lrintf(wingVert.integralDeg * 10.0f));       //!< Pitch Integrator [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_CLIMB, 3, lrintf(wingVert.pitchDeg * 10.0f));          //!< Pitch Demand From Trim [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_CLIMB, 4, lrintf(wingVert.turnPitchRateDps * 10.0f));  //!< Turn Pitch Rate [unit:0.1dps]
 }
 
 float autopilotGetTurnPitchRateDps(void)
@@ -427,10 +432,10 @@ static float loiterLateralAccelCmSS(const autopilotWingConfig_t *cfg, const vect
     const bool capturing = distanceCm > radiusCm + l1DistanceCm(speedCmS, periodS, damping)
                         && direction * captureAccel < direction * circleAccel;
 
-    DEBUG_SET(DEBUG_WING_LATERAL, 2, lrintf(distanceCm - radiusCm));    //!< Radius Error [unit:cm]
-    DEBUG_SET(DEBUG_WING_LATERAL, 3, lrintf(radialSpeedCmS));           //!< Radial Speed [unit:cm/s]
-    DEBUG_SET(DEBUG_WING_LATERAL, 4, lrintf(tangentialSpeedCmS));       //!< Tangential Speed [unit:cm/s]
-    DEBUG_SET(DEBUG_WING_LATERAL, 5, capturing ? WING_LATERAL_CAPTURE : 0);   //!< Guidance State [flags:Capture|No Position|Pilot]
+    DEBUG_SET(DEBUG_AUTOPILOT_GUIDANCE, 2, lrintf(distanceCm - radiusCm));         //!< Radius Error [unit:cm]
+    DEBUG_SET(DEBUG_AUTOPILOT_GUIDANCE, 3, lrintf(radialSpeedCmS));                //!< Radial Speed [unit:cm/s]
+    DEBUG_SET(DEBUG_AUTOPILOT_GUIDANCE, 4, lrintf(tangentialSpeedCmS));            //!< Tangential Speed [unit:cm/s]
+    DEBUG_SET(DEBUG_AUTOPILOT_GUIDANCE, 5, capturing ? WING_LATERAL_CAPTURE : 0);  //!< Guidance State [flags:Capture|No Position|Pilot]
 
     return capturing ? captureAccel : circleAccel;
 }
@@ -486,9 +491,9 @@ STATIC_UNIT_TESTED float wingLineLateralAccelCmSS(const vector2_t *pos, const ve
     }
     etaRad = constrainf(etaRad, -M_PIf / 2.0f, M_PIf / 2.0f);
 
-    DEBUG_SET(DEBUG_WING_NAV, 1, lrintf((trackCm - alongCm) * 0.01f));    //!< Distance To Go Along The Track [unit:m]
-    DEBUG_SET(DEBUG_WING_NAV, 2, lrintf(crossTrackCm * 0.1f));            //!< Cross Track Error Right [unit:0.1m]
-    DEBUG_SET(DEBUG_WING_NAV, 3, lrintf(l1Cm * 0.01f));                   //!< Look-Ahead Distance [unit:m]
+    DEBUG_SET(DEBUG_FLIGHT_PLAN, 3, lrintf((trackCm - alongCm) * 0.01f));  //!< Distance To Go Along The Track [unit:m]
+    DEBUG_SET(DEBUG_FLIGHT_PLAN, 4, lrintf(crossTrackCm * 0.1f));          //!< Cross Track Error Right [unit:0.1m]
+    DEBUG_SET(DEBUG_AUTOPILOT_GUIDANCE, 7, lrintf(l1Cm * 0.01f));          //!< Look-Ahead Distance [unit:m]
 
     return 4.0f * sq(damping) * sq(speedCmS) / l1Cm * sin_approx(etaRad);
 }
@@ -549,8 +554,8 @@ bool positionControl(void)
         // the circle is drawn afresh around wherever the pilot lets go
         wingLat.engaged = false;
         wingLat.hasCentre = false;
-        DEBUG_SET(DEBUG_WING_LATERAL, 5, WING_LATERAL_PILOT);           //!< Guidance State [flags:Capture|No Position|Pilot]
-        DEBUG_SET(DEBUG_WING_NAV, 0, WING_GUIDANCE_PILOT);              //!< Guidance [enum:wingGuidance_e]
+        DEBUG_SET(DEBUG_AUTOPILOT_GUIDANCE, 5, WING_LATERAL_PILOT);   //!< Guidance State [flags:Capture|No Position|Pilot]
+        DEBUG_SET(DEBUG_AUTOPILOT_GUIDANCE, 6, WING_GUIDANCE_PILOT);  //!< Guidance [enum:wingGuidance_e]
         return true;
     }
 
@@ -616,7 +621,7 @@ bool positionControl(void)
         accelCmSS = wingTurnSign(cfg->loiterDirection)
                   * fmaxf(sq(speedCmS) / (fmaxf(autopilotWingLoiterRadiusM(), leastRadiusM) * 100.0f), minAccelCmSS);
         guidance = WING_GUIDANCE_NO_POSITION;
-        DEBUG_SET(DEBUG_WING_LATERAL, 5, WING_LATERAL_NO_POSITION);     //!< Guidance State [flags:Capture|No Position|Pilot]
+        DEBUG_SET(DEBUG_AUTOPILOT_GUIDANCE, 5, WING_LATERAL_NO_POSITION);  //!< Guidance State [flags:Capture|No Position|Pilot]
     }
 
     const float bankDeg = constrainf(RADIANS_TO_DEGREES(atan2_approx(accelCmSS, GRAVITY_CMSS)), -bankLimitDeg, bankLimitDeg);
@@ -624,9 +629,9 @@ bool positionControl(void)
     wingLat.rollDeg += constrainf(bankDeg - wingLat.rollDeg, -rollStepDeg, rollStepDeg);
     autopilotAngle[AI_ROLL] = wingLat.rollDeg;
 
-    DEBUG_SET(DEBUG_WING_LATERAL, 0, lrintf(accelCmSS));                //!< Lateral Acceleration Demand [unit:cm/s2]
-    DEBUG_SET(DEBUG_WING_LATERAL, 1, lrintf(wingLat.rollDeg * 10.0f));   //!< Bank Demand [unit:0.1deg]
-    DEBUG_SET(DEBUG_WING_NAV, 0, guidance);                             //!< Guidance [enum:wingGuidance_e]
+    DEBUG_SET(DEBUG_AUTOPILOT_GUIDANCE, 0, lrintf(accelCmSS));                //!< Lateral Acceleration Demand [unit:cm/s2]
+    DEBUG_SET(DEBUG_AUTOPILOT_GUIDANCE, 1, lrintf(wingLat.rollDeg * 10.0f));  //!< Bank Demand [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_GUIDANCE, 6, guidance);                         //!< Guidance [enum:wingGuidance_e]
 
     return est->isValidXY;
 }

@@ -2234,7 +2234,7 @@ def rms(values, what):
 class WingSample(collections.namedtuple("WingSample", "t e n u roll vu yaw_rate gs debug")):
     """Ground truth at t (ENU metres, bank in degrees, climb and yaw rates, groundspeed), and the FC's debug values
     when the trace reads them. The debug accessors follow the scenario's debug mode: FLIGHT_PLAN (nav state, abort,
-    leg) or WING_LANDING (phase, go-arounds, cause)."""
+    leg) or AUTOPILOT_LANDING (phase, go-arounds, cause)."""
 
     __slots__ = ()
 
@@ -2402,7 +2402,7 @@ def scenario_wing_turn(sitl, rc, fdm):
 WING_ALTHOLD_CFG = [
     *WING_CFG,
     "aux 4 3 4 1700 2100 0 0",   # ALTHOLD on AUX5
-    "set debug_mode = WING_ALTITUDE",
+    "set debug_mode = AUTOPILOT_CLIMB",
 ]
 
 
@@ -2547,7 +2547,7 @@ def scenario_wing_launch_into_althold(sitl, rc, fdm):
 WING_POSHOLD_CFG = [
     *WING_ALTHOLD_CFG,
     "aux 5 11 5 1700 2100 0 0",  # POSHOLD on AUX6
-    "set debug_mode = WING_LATERAL",
+    "set debug_mode = AUTOPILOT_GUIDANCE",
 ]
 
 
@@ -2866,7 +2866,7 @@ GO_AROUND_SLOPE = 3
 WING_AUTOLAND_CFG = [
     *WING_CFG,
     *WING_MOTOR_STOP_CFG,
-    "set debug_mode = WING_LANDING",
+    "set debug_mode = AUTOPILOT_LANDING",
     wing_waypoint(0, 0.0, 300.0, "flyover", insert=False, alt_m=50.0),
     wing_waypoint(1, 0.0, 0.0, "land", alt_m=0.0),
 ]
@@ -3003,7 +3003,7 @@ def scenario_wing_autoland_crosswind(sitl, rc, fdm):
 WING_AUTOLAND_NORTH_CFG = [
     *WING_CFG,
     *WING_MOTOR_STOP_CFG,
-    "set debug_mode = WING_LANDING",
+    "set debug_mode = AUTOPILOT_LANDING",
     wing_waypoint(0, 0.0, -300.0, "flyover", insert=False, alt_m=50.0),
     wing_waypoint(1, 0.0, 0.0, "land", alt_m=0.0),
 ]
@@ -3154,7 +3154,7 @@ WING_MISSION_LAND = [
     (300.0, 300.0, "flyover", 40.0),
     (300.0, 0.0, "land", 0.0),
 ]
-WING_MISSION_LAND_CFG = wing_mission_cfg(WING_MISSION_LAND, *WING_MOTOR_STOP_CFG, "set debug_mode = WING_LANDING")
+WING_MISSION_LAND_CFG = wing_mission_cfg(WING_MISSION_LAND, *WING_MOTOR_STOP_CFG, "set debug_mode = AUTOPILOT_LANDING")
 
 
 def scenario_wing_mission_land(sitl, rc, fdm):

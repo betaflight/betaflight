@@ -2372,9 +2372,6 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_FLIGHT_PLAN, 0, fp.state);         //!< Executor State [enum:flightPlanNavState_e]
     DEBUG_SET(DEBUG_FLIGHT_PLAN, 1, fp.abortReason);   //!< Abort Reason [enum:flightPlanAbortReason_e]
     DEBUG_SET(DEBUG_FLIGHT_PLAN, 2, fp.currentIndex);  //!< Waypoint Index
-#ifdef USE_WING
-    DEBUG_SET(DEBUG_WING_NAV, 4, fp.abortReason);      //!< Abort Reason [enum:flightPlanAbortReason_e]
-#endif
 
     const float dtS = (fp.lastUpdateUs != 0)
         ? constrainf(cmpTimeUs(currentTimeUs, fp.lastUpdateUs) * 1e-6f, 0.0f, 0.25f)
