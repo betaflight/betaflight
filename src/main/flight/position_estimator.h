@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include <math.h>
+
 #include "common/axis.h"
 #include "common/vector.h"
 #include "common/time.h"
@@ -38,6 +40,20 @@ typedef struct positionEstimate3d_s {
     bool isValidXY;            // true if at least one XY measurement source active
     bool isValidZ;             // true if at least one Z measurement source active
 } positionEstimate3d_t;
+
+static inline float positionEstimateGroundspeedCmS(const positionEstimate3d_t *est)
+{
+    return sqrtf(est->velocity.v[ENU_E] * est->velocity.v[ENU_E] + est->velocity.v[ENU_N] * est->velocity.v[ENU_N]);
+}
+
+// East and north of the arm point, metres.
+static inline vector2_t positionEstimateHorizontalM(const positionEstimate3d_t *est)
+{
+    vector2_t positionM;
+    positionM.x = est->position.v[ENU_E] * 0.01f;
+    positionM.y = est->position.v[ENU_N] * 0.01f;
+    return positionM;
+}
 
 // Consumers of the estimate that are scheduled by it. Each gets its own bit in
 // the pending-update mask so that one taking the event does not hide it from

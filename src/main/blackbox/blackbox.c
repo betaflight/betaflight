@@ -80,6 +80,7 @@
 
 #include "pg/alt_hold.h"
 #include "pg/autopilot.h"
+#include "pg/autopilot_wing.h"
 #include "pg/motor.h"
 #include "pg/pilot.h"
 #include "pg/pos_hold.h"
@@ -1789,6 +1790,41 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_MAX_YAW_RATE, "%d",       autopilotConfig()->maxYawRate);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_YAW_P, "%d",              autopilotConfig()->yawP);
 #endif // !USE_WING
+#ifdef USE_WING
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_CRUISE_THROTTLE, "%d",   autopilotWingConfig()->cruiseThrottle);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_MIN_THROTTLE, "%d",      autopilotWingConfig()->minThrottle);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_MAX_THROTTLE, "%d",      autopilotWingConfig()->maxThrottle);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_BANK_THROTTLE, "%d",     autopilotWingConfig()->bankThrottle);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_MAX_CLIMB_ANGLE, "%d",   autopilotWingConfig()->maxClimbAngle);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_MAX_DIVE_ANGLE, "%d",    autopilotWingConfig()->maxDiveAngle);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_MAX_CLIMB_RATE, "%d",    autopilotWingConfig()->maxClimbRate);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_MAX_SINK_RATE, "%d",     autopilotWingConfig()->maxSinkRate);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_ALT_TIME_CONSTANT, "%d", autopilotWingConfig()->altTimeConstant);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_CLIMB_P, "%d",           autopilotWingConfig()->climbP);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_CLIMB_I, "%d",           autopilotWingConfig()->climbI);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_VERT_ACCEL, "%d",        autopilotWingConfig()->vertAccel);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_CRUISE_SPEED, "%d",      autopilotWingConfig()->cruiseSpeed);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_TURN_PITCH_FF, "%d",     autopilotWingConfig()->turnPitchFf);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_MAX_BANK, "%d",          autopilotWingConfig()->maxBank);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_L1_PERIOD, "%d",         autopilotWingConfig()->l1Period);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_L1_DAMPING, "%d",        autopilotWingConfig()->l1Damping);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_LOITER_RADIUS, "%d",     autopilotWingConfig()->loiterRadius);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_LOITER_DIRECTION, "%d",  autopilotWingConfig()->loiterDirection);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_LAND_HEADING, "%d",      autopilotWingConfig()->landHeading);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_LAND_SIDE, "%d",         autopilotWingConfig()->landSide);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_LAND_FINAL_LENGTH, "%d", autopilotWingConfig()->landFinalLength);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_LAND_GLIDE_ANGLE, "%d",  autopilotWingConfig()->landGlideAngle);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_LAND_APPROACH_ALT, "%d", autopilotWingConfig()->landApproachAlt);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_LAND_FLARE_HEIGHT, "%d", autopilotWingConfig()->landFlareHeight);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_LAND_FLARE_PITCH, "%d",  autopilotWingConfig()->landFlarePitch);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_LAND_FLARE_SINK, "%d",   autopilotWingConfig()->landFlareSink);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_LAND_FINAL_BANK, "%d",   autopilotWingConfig()->landFinalBank);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_LAND_SLOPE_TOLERANCE, "%d", autopilotWingConfig()->landSlopeTolerance);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_LAND_ATTEMPTS, "%d",     autopilotWingConfig()->landAttempts);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_LAND_MAX_TAILWIND, "%d", autopilotWingConfig()->landMaxTailwind);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_LANDING_DETECTION_TIME, "%d", autopilotConfig()->landingDetectionTime);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_LAND_LAUNCH_HEIGHT, "%d", autopilotWingConfig()->landLaunchHeight);
+#endif // USE_WING
 
 #ifdef USE_MAG
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MAG_HARDWARE, "%d",           compassConfig()->mag_hardware);
@@ -1874,38 +1910,38 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_SET_HOME_POINT_ONCE, "%d",    gpsConfig()->gps_set_home_point_once);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_USE_3D_SPEED, "%d",           gpsConfig()->gps_use_3d_speed);
 
-#ifdef USE_GPS_RESCUE
-#ifndef USE_WING
+#if defined(USE_GPS_RESCUE) && (!defined(USE_WING) || ENABLE_RESCUE_PLAN)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_MIN_START_DIST, "%d",  gpsRescueConfig()->minStartDistM);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_ALT_MODE, "%d",        gpsRescueConfig()->altitudeMode);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_INITIAL_CLIMB, "%d",   gpsRescueConfig()->initialClimbM);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_ASCEND_RATE, "%d",     gpsRescueConfig()->ascendRate);
 
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_RETURN_ALT, "%d",      gpsRescueConfig()->returnAltitudeM);
+#ifndef USE_WING
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_GROUND_SPEED, "%d",    gpsRescueConfig()->groundSpeedCmS);
 
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_DESCENT_DIST, "%d",    gpsRescueConfig()->descentDistanceM);
+#endif
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_DESCEND_RATE, "%d",    gpsRescueConfig()->descendRate);
+#ifndef USE_WING
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_SANITY_CHECKS, "%d",   gpsRescueConfig()->sanityChecks);
+#endif
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_MIN_SATS, "%d",        gpsRescueConfig()->minSats);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_ALLOW_ARMING_WITHOUT_FIX, "%d", gpsRescueConfig()->allowArmingWithoutFix);
 
+#ifndef USE_WING
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_YAW_P, "%d",           gpsRescueConfig()->yawP);
-#endif // !USE_WING
+#endif
 #endif // USE_GPS_RESCUE
 #endif // USE_GPS
 
 #ifdef USE_ALTITUDE_HOLD
-#ifndef USE_WING
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_CLIMB_RATE,  "%d", altHoldConfig()->climbRate);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_DEADBAND,    "%d", altHoldConfig()->deadband);
-#endif // !USE_WING
 #endif // USE_ALTITUDE_HOLD
 
 #ifdef USE_POSITION_HOLD
-#ifndef USE_WING
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POS_HOLD_DEADBAND,    "%d", posHoldConfig()->deadband);
-#endif // !USE_WING
 #endif
 
 #ifdef USE_WING

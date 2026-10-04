@@ -30,6 +30,18 @@
 
 PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 13);
 
+#ifdef USE_WING
+#define DEFAULT_WAYPOINT_ARRIVAL_RADIUS 1000    // 10m: a wing passes a waypoint at speed
+#define DEFAULT_GEOFENCE_ACTION AP_GEOFENCE_RTH
+#define DEFAULT_LANDING_DESCENT_RATE 200        // a wing comes down its loiter over the touchdown at 2 m/s
+#define DEFAULT_LANDING_DETECTION_TIME 20       // a wing sits still for 2 s on the ground before it is landed
+#else
+#define DEFAULT_WAYPOINT_ARRIVAL_RADIUS 500     // 5m for FLYOVER/FLYBY
+#define DEFAULT_GEOFENCE_ACTION AP_GEOFENCE_LAND // Land at current position
+#define DEFAULT_LANDING_DESCENT_RATE 50         // 50 cm/s = 0.5 m/s descent rate
+#define DEFAULT_LANDING_DETECTION_TIME 10       // 1 second below landing altitude for touchdown
+#endif
+
 PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .landingAltitudeM = 4,
     .hoverThrottle = 1275,
@@ -54,7 +66,7 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .maxVelocity = 500,               // 5 m/s max velocity setpoint at full stick
 
     // Waypoint navigation parameters
-    .waypointArrivalRadius = 500,     // 5m for FLYOVER/FLYBY
+    .waypointArrivalRadius = DEFAULT_WAYPOINT_ARRIVAL_RADIUS,
     .waypointHoldRadius = 200,        // 2m for HOLD/LAND
     .stickDeadband = 50,              // RC units
     .throttleDeadband = 50,           // RC units
@@ -86,8 +98,8 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .holdFigure8Width = 2000,         // 20m figure-8 width
 
     // Landing sequence
-    .landingDescentRate = 50,         // 50 cm/s = 0.5 m/s descent rate
-    .landingDetectionTime = 10,       // 1 second below landing altitude for touchdown
+    .landingDescentRate = DEFAULT_LANDING_DESCENT_RATE,
+    .landingDetectionTime = DEFAULT_LANDING_DETECTION_TIME,
     .landingSpiralEnable = 1,         // Spiral descent enabled (avoid vortex ring state)
     .landingSpiralRadius = 200,       // 2m spiral radius
     .landingSpiralRate = 10,          // 10 deg/s rotation rate
@@ -110,5 +122,5 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
 
     // Safety: Geofence
     .maxDistanceFromHomeM = 0,            // Disabled by default
-    .geofenceAction = AP_GEOFENCE_LAND,   // Land at current position
+    .geofenceAction = DEFAULT_GEOFENCE_ACTION,
 );
