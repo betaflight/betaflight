@@ -1623,7 +1623,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
         if (gpsConfig()->provider == GPS_UBLOX || gpsConfig()->provider == GPS_NMEA) {      // TODO  Send ublox message to nmea GPS?
             if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_ON) {
                 // when we are connected up, and get a 3D fix, enable the 'flight' fix model
-                if (!gpsData.ubloxUsingFlightModel && STATE(GPS_FIX)) {
+                if (gpsPort && !gpsData.ubloxUsingFlightModel && STATE(GPS_FIX)) {
                     gpsData.ubloxUsingFlightModel = true;
                     ubloxSendNAV5Message(gpsConfig()->gps_ublox_flight_model);
                 }
