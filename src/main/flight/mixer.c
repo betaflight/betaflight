@@ -537,9 +537,13 @@ static void applyMotorStop(void)
 static void updateDynLpfCutoffs(timeUs_t currentTimeUs, float throttle)
 {
     static timeUs_t lastDynLpfUpdateUs = 0;
+    static bool updateHoldoff = false; // set on update, so lastDynLpfUpdateUs is only compared while fresh
     static int dynLpfPreviousQuantizedThrottle = -1;  // to allow an initial zero throttle to set the filter cutoff
 
-    if (cmpTimeUs(currentTimeUs, lastDynLpfUpdateUs) >= DYN_LPF_THROTTLE_UPDATE_DELAY_US) {
+    if (updateHoldoff && cmpTimeUs(currentTimeUs, lastDynLpfUpdateUs) >= DYN_LPF_THROTTLE_UPDATE_DELAY_US) {
+        updateHoldoff = false;
+    }
+    if (!updateHoldoff) {
         const int quantizedThrottle = lrintf(throttle * DYN_LPF_THROTTLE_STEPS); // quantize the throttle reduce the number of filter updates
         if (quantizedThrottle != dynLpfPreviousQuantizedThrottle) {
             // scale the quantized value back to the throttle range so the filter cutoff steps are repeatable
@@ -548,6 +552,7 @@ static void updateDynLpfCutoffs(timeUs_t currentTimeUs, float throttle)
             dynLpfDTermUpdate(dynLpfThrottle);
             dynLpfPreviousQuantizedThrottle = quantizedThrottle;
             lastDynLpfUpdateUs = currentTimeUs;
+            updateHoldoff = true;
         }
     }
 }
