@@ -32,6 +32,10 @@
 #elif defined(MIMXRT1062)
 #include "MIMXRT1062.h"
 #include "MIMXRT1062_features.h"
+#elif defined(MIMX9596)
+// This port runs on the Cortex-M7; the A55 cores run Linux and the M33 the System Manager.
+#include "MIMX9596_cm7.h"
+#include "MIMX9596_cm7_features.h"
 #elif defined(MIMXRT1176)
 // This port runs on the CM7 and holds the CM4 in reset.
 #include "MIMXRT1176_cm7.h"
@@ -41,6 +45,12 @@
 #endif
 
 #include "platform/nxp_family.h"
+
+// libmetal's headers, used by the rpmsg link, include stdio.h after the sprintf
+// poison.
+#ifdef USE_RPMSG
+#define ENABLE_STDIO_PREINCLUDE
+#endif
 
 #define PLATFORM_NO_LIBC             0
 
@@ -75,6 +85,18 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define I2C2                 ((i2cResource_t *)LPI2C2)
 #define I2C3                 ((i2cResource_t *)LPI2C3)
 #define I2C4                 ((i2cResource_t *)LPI2C4)
+
+#if defined(IMX95)
+#define SPI5                 ((spiResource_t *)LPSPI5)
+#define SPI6                 ((spiResource_t *)LPSPI6)
+
+#define I2C5                 ((i2cResource_t *)LPI2C5)
+#define I2C6                 ((i2cResource_t *)LPI2C6)
+#define I2C7                 ((i2cResource_t *)LPI2C7)
+#define I2C8                 ((i2cResource_t *)LPI2C8)
+
+#define CANDEV_COUNT 5
+#endif
 
 // A board enables a FlexCAN controller by naming CANx_TX_PIN and CANx_RX_PIN.
 #define ENABLE_CAN 1
@@ -146,6 +168,16 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define FAST_DATA_ZERO_INIT             __attribute__((section(".dtcm_bss"), aligned(4)))
 #define FAST_DATA                       __attribute__((section(".dtcm_data"), aligned(4)))
 
+// Large cold zeroed buffers in OCRAM on the i.MX95; OCRAM is cached write back, so never DMA.
+#if defined(IMX95)
+#define SLOW_DATA_ZERO_INIT             __attribute__((section(".ocram2"), aligned(4)))
+// Code that must not fetch from the NOR, such as the flash writer; copied to OCRAM at reset.
+#define OCRAM_CODE                      __attribute__((section(".ocram_text")))
+#define OCRAM_RODATA                    __attribute__((section(".ocram_rodata")))
+#else
+#define SLOW_DATA_ZERO_INIT
+#endif
+
 // Hot constants in DTCM; a section of their own, since GCC rejects const and writable objects in one section.
 #define FAST_RODATA                     __attribute__((section(".dtcm_rodata")))
 
@@ -175,7 +207,13 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define UART_RX_BUFFER_ATTRIBUTE
 
 // 96 bit chip identifier: the 64 bit OCOTP UNIQUE_ID plus the next fuse word.
-#if defined(IMXRT11XX)
+#if defined(IMX95)
+// Three words of the 128 bit UNIQUE_ID in the FSB fuse shadows, the serial number Linux reports; the SDK has no FSB.
+#define NXP_FSB_FUSE(word) (*(const volatile uint32_t *)(0x47518000u + 4u * (word)))
+#define U_ID_0 NXP_FSB_FUSE(48)
+#define U_ID_1 NXP_FSB_FUSE(49)
+#define U_ID_2 NXP_FSB_FUSE(50)
+#elif defined(IMXRT11XX)
 #define U_ID_0 (OCOTP->FUSEN[0x10].FUSE)
 #define U_ID_1 (OCOTP->FUSEN[0x11].FUSE)
 #define U_ID_2 (OCOTP->FUSEN[0x12].FUSE)
@@ -188,6 +226,13 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #endif
 
 extern uint32_t SystemCoreClock;
+
+#if defined(IMX95)
+// The silicon name and revision the System Manager reports, such as "i.MX95 B0".
+const char *nxpMcuTypeName(void);
+#undef __MCU_NAME__
+#define __MCU_NAME__ nxpMcuTypeName()
+#endif
 
 // Startup helpers, called from the family's startup file before main().
 void nxpClockInit(void);
@@ -208,8 +253,13 @@ void nxpMpuInit(void);
 // Each FlexCAN instance reaches at most four pads.
 #define CAN_MAX_PIN_SEL 4
 
-// persistent.c keeps these in the SNVS low power general purpose registers,
-// which survive a reset and, with a backup cell fitted, a power cycle.
+#if defined(IMX95)
+// RAM the startup code neither seeds nor clears, so it survives a restart that
+// does not power the core down: the saved configuration and the persistent objects.
+#define PERSISTENT                      __attribute__((section(".persistent_data")))
+#endif
+
+// Kept in the SNVS LPGPR on the i.MXRT and the PERSISTENT RAM block on the i.MX95.
 #define USE_PERSISTENT_OBJECTS
 
 #define NVIC_PRIORITY_GROUPING NVIC_PriorityGroup_2

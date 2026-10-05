@@ -34,7 +34,33 @@
 
 #define PERSISTENT_OBJECT_MAGIC_VALUE (('B' << 24) | ('e' << 16) | ('f' << 8) | ('1' << 0))
 
-#if defined(IMXRT11XX)
+#if defined(IMX95)
+
+// A RAM block the startup code leaves alone stands in for backup registers.
+static PERSISTENT volatile uint32_t persistentWords[PERSISTENT_OBJECT_COUNT];
+
+static volatile uint32_t *persistentObjectSlot(persistentObjectId_e id)
+{
+    return &persistentWords[id];
+}
+
+static uint32_t persistentObjectMask(persistentObjectId_e id)
+{
+    UNUSED(id);
+    return UINT32_MAX;
+}
+
+static bool persistentStoreIsMarked(void)
+{
+    return persistentWords[PERSISTENT_OBJECT_MAGIC] == PERSISTENT_OBJECT_MAGIC_VALUE;
+}
+
+static void persistentStoreMark(void)
+{
+    persistentWords[PERSISTENT_OBJECT_MAGIC] = PERSISTENT_OBJECT_MAGIC_VALUE;
+}
+
+#elif defined(IMXRT11XX)
 
 // Four SNVS registers on this family: the magic shares the first with the boot
 // mode, and objects without a register read back zero.
@@ -126,6 +152,7 @@ static void persistentObjectValidate(void)
 
 void persistentObjectInit(void)
 {
+#if !defined(IMX95)
     nxpClockGateEnable(NXP_CLK_SNVS);
 
     // Clear the soft lock; a set hard lock in LPLR drops writes until power on reset.
@@ -133,6 +160,7 @@ void persistentObjectInit(void)
 
     // Without GPR_Z_DIS a tamper event zeroes the registers.
     SNVS->LPCR |= SNVS_LPCR_GPR_Z_DIS_MASK;
+#endif
 
     persistentObjectValidate();
 }

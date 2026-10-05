@@ -69,6 +69,11 @@ GPIO_PAD_11XX = re.compile(
     r"^IOMUXC_(?P<pad>[A-Z0-9_]+?)_GPIO(?:_MUX(?P<port>[1-6])|(?P<snvs>13))"
     r"_IO(?P<pin>[0-9]{2})$"
 )
+# On i.MX95 the pad and the signal are split by a double underscore and the GPIO
+# function is GPIO1..GPIO5 bit n, which become ports A..E.
+GPIO_PAD_IMX95 = re.compile(
+    r"^IOMUXC_(?P<pad>[A-Z0-9_]+?)__GPIO(?P<port>[1-5])_IO_BIT(?P<pin>[0-9]+)$"
+)
 
 # Every pad and signal tuple, whatever the signal is. The values are kept as
 # text so the generated macro reads exactly like the vendor one.
@@ -92,13 +97,17 @@ FLEXPWM_11XX = re.compile(
 )
 FLEXIO_10XX = re.compile(r"^FLEXIO(?P<instance>[0-9]+)_FLEXIO(?P<pin>[0-9]{2})$")
 FLEXIO_11XX = re.compile(r"^FLEXIO(?P<instance>[0-9]+)_D(?P<pin>[0-9]{2})$")
+FLEXIO_IMX95 = re.compile(r"^FLEXIO(?P<instance>[0-9]+)_FLEXIO_BIT(?P<pin>[0-9]+)$")
 
 # The peripheral families this platform has a driver for. Every other family the
 # chip offers (ENET, SEMC, CSI, SAI, QTimer and the rest) would be table rows no
 # code ever reads, so they are left out. Adding one is a word in this tuple and
 # a re-run of this script.
 KEPT_FAMILIES = ("LPUART", "LPSPI", "LPI2C", "USDHC", "FLEXPWM", "FLEXIO",
-                 "FLEXCAN")
+                 "FLEXCAN", "TPM")
+
+# i.MX95 calls its FlexCAN signals CAN1..CAN5.
+FAMILY_ALIASES = {"CAN": "FLEXCAN"}
 
 # FlexPWM and FlexIO get a table of their own shape instead of the plain one:
 # their drivers start from a pad and need the submodule, channel or pin number
@@ -124,6 +133,8 @@ SIGNAL_ROLES = {
     "LPI2C": {"SCL": "SCL", "SDA": "SDA", "SCLS": "SCLS", "SDAS": "SDAS",
               "HREQ": "HREQ"},
     "FLEXCAN": {"TX": "TX", "RX": "RX"},
+    "TPM": {"CH0": "CH0", "CH1": "CH1", "CH2": "CH2", "CH3": "CH3",
+            "EXTCLK": "EXTCLK"},
     "USDHC": {"CLK": "CLK", "CMD": "CMD", "WP": "WP", "CD_B": "CD",
               "VSELECT": "VSELECT", "RESET_B": "RESET", "STROBE": "STROBE",
               "DATA0": "DATA0", "DATA1": "DATA1", "DATA2": "DATA2",
@@ -165,6 +176,20 @@ FAMILIES = {
         "define": "IMXRT11XX",
         "title": "i.MXRT 11xx",
     },
+    "imx95": {
+        "name": "imx95",
+        "gpioPad": GPIO_PAD_IMX95,
+        "portLabels": ["GPIO1", "GPIO2", "GPIO3", "GPIO4", "GPIO5"],
+        "baseComment": [
+            "// Base address of the IOMUXC block that holds each port's pad",
+            "// registers. One block holds every pad on this chip.",
+        ],
+        "flexpwm": None,
+        "flexio": FLEXIO_IMX95,
+        "padGroups": False,
+        "define": "IMX95",
+        "title": "i.MX95",
+    },
 }
 
 
@@ -188,6 +213,8 @@ def familyGuard(chip):
 def chipFamily(entries):
     """Which family a header describes, from how it names a pad's GPIO mux."""
     for entry in entries:
+        if GPIO_PAD_IMX95.match("IOMUXC_" + entry["name"]):
+            return "imx95"
         if GPIO_PAD_11XX.match("IOMUXC_" + entry["name"]):
             return "11xx"
     return "10xx"
@@ -352,7 +379,8 @@ def familyOf(signal):
     is stripped here. That keeps one table per peripheral rather than one per
     instance, which is what a driver wants to search.
     """
-    return re.sub(r"[0-9]+$", "", signal.split("_")[0])
+    family = re.sub(r"[0-9]+$", "", signal.split("_")[0])
+    return FAMILY_ALIASES.get(family, family)
 
 
 def instanceRoleOf(family, signal):

@@ -142,9 +142,14 @@ static const flexioHardware_t flexioHardware[] = {
 // FlexIO instances are numbered from one, the arrays here from zero.
 #define FLEXIO_INSTANCE_NUMBER(index)   ((unsigned)(index) + 1u)
 
-// The instances DShot may use and the root clock they share.
+#if defined(NXP_DSHOT_FLEXIO_INSTANCE)
+// Only this instance has its root moved to a rate DShot divides.
+#define FLEXIO_DSHOT_USABLE(index)      (FLEXIO_INSTANCE_NUMBER(index) == NXP_DSHOT_FLEXIO_INSTANCE)
+#define FLEXIO_DSHOT_CLOCK              ((nxpClock_e)(NXP_CLK_FLEXIO1 + NXP_DSHOT_FLEXIO_INSTANCE - 1))
+#else
 #define FLEXIO_DSHOT_USABLE(index)      true
 #define FLEXIO_DSHOT_CLOCK              NXP_CLK_FLEXIO1
+#endif
 
 // Where a channel is in the frame.
 typedef enum {

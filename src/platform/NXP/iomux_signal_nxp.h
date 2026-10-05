@@ -76,13 +76,18 @@ typedef enum {
     // daisy chain register; transmit leaves those two fields zero.
     NXP_ROLE_FLEXCAN_TX,
     NXP_ROLE_FLEXCAN_RX,
+    NXP_ROLE_TPM_CH0,         // CH0 to CH3 are consecutive, so a channel
+    NXP_ROLE_TPM_CH1,         // number is the role minus CH0
+    NXP_ROLE_TPM_CH2,
+    NXP_ROLE_TPM_CH3,
+    NXP_ROLE_TPM_EXTCLK,
     NXP_ROLE_COUNT,
 } nxpSignalRole_e;
 
 typedef struct nxpSignalPin_s {
     uint8_t port;       // 0 is GPIO1, which Betaflight calls port A
     uint8_t pin;
-    uint8_t instance;   // 1 is LPUART1, LPSPI1, LPI2C1 or USDHC1
+    uint8_t instance;   // 1 is LPUART1, LPSPI1, LPI2C1, USDHC1 or TPM1
     uint8_t role;       // nxpSignalRole_e
     nxpPinMux_t mux;
 } nxpSignalPin_t;
