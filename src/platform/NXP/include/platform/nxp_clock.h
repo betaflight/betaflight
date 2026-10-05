@@ -35,6 +35,59 @@ extern "C" {
 
 // Instances of one peripheral are contiguous and in order, so
 // NXP_CLK_LPSPI1 + device names a device's clock.
+#if defined(IMX95)
+typedef enum {
+    NXP_CLK_LPUART1 = 0,
+    NXP_CLK_LPUART2,
+    NXP_CLK_LPUART3,
+    NXP_CLK_LPUART4,
+    NXP_CLK_LPUART5,
+    NXP_CLK_LPUART6,
+    NXP_CLK_LPUART7,
+    NXP_CLK_LPUART8,
+
+    NXP_CLK_LPSPI1,
+    NXP_CLK_LPSPI2,
+    NXP_CLK_LPSPI3,
+    NXP_CLK_LPSPI4,
+    NXP_CLK_LPSPI5,
+    NXP_CLK_LPSPI6,
+    NXP_CLK_LPSPI7,
+    NXP_CLK_LPSPI8,
+
+    NXP_CLK_LPI2C1,
+    NXP_CLK_LPI2C2,
+    NXP_CLK_LPI2C3,
+    NXP_CLK_LPI2C4,
+    NXP_CLK_LPI2C5,
+    NXP_CLK_LPI2C6,
+    NXP_CLK_LPI2C7,
+    NXP_CLK_LPI2C8,
+
+    NXP_CLK_FLEXIO1,
+    NXP_CLK_FLEXIO2,
+
+    NXP_CLK_TPM1,
+    NXP_CLK_TPM2,
+    NXP_CLK_TPM3,
+    NXP_CLK_TPM4,
+    NXP_CLK_TPM5,
+    NXP_CLK_TPM6,
+
+    NXP_CLK_ADC1,
+
+    NXP_CLK_CAN1,
+    NXP_CLK_CAN2,
+    NXP_CLK_CAN3,
+    NXP_CLK_CAN4,
+    NXP_CLK_CAN5,
+
+    // The time base, read only.
+    NXP_CLK_TSTMR2,
+
+    NXP_CLK_COUNT
+} nxpClock_e;
+#else
 typedef enum {
     NXP_CLK_LPUART1 = 0,
     NXP_CLK_LPUART2,
@@ -105,9 +158,13 @@ typedef enum {
 
     NXP_CLK_COUNT
 } nxpClock_e;
+#endif
 
 // Open the clock gate of one peripheral. Calling it again is harmless. False
 // means the clock was refused and the caller must not touch the hardware.
+#if defined(NXP_CLOCKS_OVER_SCMI)
+bool nxpClockGateEnable(nxpClock_e peripheral);
+#else
 void nxpClockGateOpen(nxpClock_e peripheral);
 
 static inline bool nxpClockGateEnable(nxpClock_e peripheral)
@@ -115,6 +172,7 @@ static inline bool nxpClockGateEnable(nxpClock_e peripheral)
     nxpClockGateOpen(peripheral);
     return true;
 }
+#endif
 
 // The functional clock rate of one peripheral in hertz, read from the clock
 // tree; zero means no usable rate, and the caller must not use the hardware.

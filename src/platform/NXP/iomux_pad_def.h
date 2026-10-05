@@ -23,7 +23,9 @@
 
 // The GPIO pad table for the family being built. Only this file names the
 // generated per family tables.
-#if defined(IMXRT11XX)
+#if defined(IMX95)
+#include "iomux_pad_def_imx95.h"
+#elif defined(IMXRT11XX)
 #include "iomux_pad_def_imxrt11xx.h"
 #elif defined(IMXRT10XX)
 #include "iomux_pad_def_imxrt10xx.h"

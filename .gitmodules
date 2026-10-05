@@ -68,3 +68,13 @@
 	branch = release/26.03.00
 	ignore = dirty
 	update = none
+[submodule "lib/modules/open-amp"]
+	path = lib/modules/open-amp
+	url = https://github.com/OpenAMP/open-amp.git
+	ignore = dirty
+	update = none
+[submodule "lib/modules/libmetal"]
+	path = lib/modules/libmetal
+	url = https://github.com/OpenAMP/libmetal.git
+	ignore = dirty
+	update = none

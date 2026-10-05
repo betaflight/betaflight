@@ -79,6 +79,18 @@ const spiHardware_t spiHardware[SPIDEV_COUNT] = {
         .reg = (spiResource_t *)LPSPI4,
     },
 #endif
+#ifdef USE_SPI_DEVICE_5
+    {
+        .device = SPIDEV_5,
+        .reg = (spiResource_t *)LPSPI5,
+    },
+#endif
+#ifdef USE_SPI_DEVICE_6
+    {
+        .device = SPIDEV_6,
+        .reg = (spiResource_t *)LPSPI6,
+    },
+#endif
 };
 
 extern busDevice_t spiBusDevice[SPIDEV_COUNT];
@@ -132,6 +144,7 @@ void spiPinConfigure(const struct spiPinConfig_s *pConfig)
 }
 
 // The divider entry points take no bus, so they use the LPSPI1 clock.
+// The i.MX95 has a clock root per LPSPI, so one that differs from LPSPI1 needs its rate carried per bus.
 STATIC_ASSERT(NXP_CLK_LPI2C1 - NXP_CLK_LPSPI1 >= SPIDEV_COUNT,
               clock_enum_needs_one_entry_per_lpspi_instance);
 
@@ -144,6 +157,11 @@ static uint32_t spiClockHz(spiDevice_e device)
 // Carried as one 16 bit number, PRESCALE in the high byte and SCKDIV in the low byte.
 #define LPSPI_PRESCALE_MAX      7u
 #define LPSPI_SCKDIV_MAX        LPSPI_CCR_SCKDIV_MASK
+#if defined(NXP_LPSPI_EVEN_SCKDIV)
+#define LPSPI_SCKDIV_STEP       2u
+#else
+#define LPSPI_SCKDIV_STEP       1u
+#endif
 
 #define SPI_DIVIDER(prescale, sckdiv)   ((uint16_t)(((prescale) << 8) | (sckdiv)))
 #define SPI_DIVIDER_PRESCALE(d)         (((d) >> 8) & 0x7)
@@ -160,11 +178,11 @@ uint16_t spiCalculateDivider(uint32_t freq)
 
     // Slowest setting, used when even that is faster than requested.
     uint32_t bestPrescale = LPSPI_PRESCALE_MAX;
-    uint32_t bestSckdiv = LPSPI_SCKDIV_MAX;
+    uint32_t bestSckdiv = LPSPI_SCKDIV_MAX + 1 - LPSPI_SCKDIV_STEP;
     uint32_t bestRate = 0;
 
     for (uint32_t prescale = 0; prescale <= LPSPI_PRESCALE_MAX; prescale++) {
-        for (uint32_t sckdiv = 0; sckdiv <= LPSPI_SCKDIV_MAX; sckdiv++) {
+        for (uint32_t sckdiv = 0; sckdiv <= LPSPI_SCKDIV_MAX; sckdiv += LPSPI_SCKDIV_STEP) {
             const uint32_t rate = spiSckHz(clockHz, prescale, sckdiv);
 
             if (rate <= freq && rate > bestRate) {
@@ -405,6 +423,25 @@ static DMA_DATA uint8_t spiDummyTxByte = SPI_DUMMY_TX_BYTE;
 static DMA_DATA uint8_t spiDummyRxByte;
 
 // DMAMUX request sources, one per direction per bus.
+#if NXP_HAS_EDMA5
+static const uint32_t spiDmaMuxTx[SPIDEV_COUNT] = {
+    [SPIDEV_1] = NXP_DMA_REQ_LPSPI1_TX,
+    [SPIDEV_2] = NXP_DMA_REQ_LPSPI2_TX,
+    [SPIDEV_3] = NXP_DMA_REQ_LPSPI3_TX,
+    [SPIDEV_4] = NXP_DMA_REQ_LPSPI4_TX,
+    [SPIDEV_5] = NXP_DMA_REQ_LPSPI5_TX,
+    [SPIDEV_6] = NXP_DMA_REQ_LPSPI6_TX,
+};
+
+static const uint32_t spiDmaMuxRx[SPIDEV_COUNT] = {
+    [SPIDEV_1] = NXP_DMA_REQ_LPSPI1_RX,
+    [SPIDEV_2] = NXP_DMA_REQ_LPSPI2_RX,
+    [SPIDEV_3] = NXP_DMA_REQ_LPSPI3_RX,
+    [SPIDEV_4] = NXP_DMA_REQ_LPSPI4_RX,
+    [SPIDEV_5] = NXP_DMA_REQ_LPSPI5_RX,
+    [SPIDEV_6] = NXP_DMA_REQ_LPSPI6_RX,
+};
+#else
 static const uint32_t spiDmaMuxTx[SPIDEV_COUNT] = {
 #ifdef USE_SPI_DEVICE_1
     [SPIDEV_1] = kDmaRequestMuxLPSPI1Tx,
@@ -434,6 +471,7 @@ static const uint32_t spiDmaMuxRx[SPIDEV_COUNT] = {
     [SPIDEV_4] = kDmaRequestMuxLPSPI4Rx,
 #endif
 };
+#endif
 
 // One byte per request, so the descriptors do not depend on the FIFO watermarks.
 FAST_CODE static bool spiBuildSegmentTcds(LPSPI_Type *lpspi, const busSegment_t *segment,

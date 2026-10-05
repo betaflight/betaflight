@@ -76,3 +76,7 @@ bool flexspiNorEraseSector(uint32_t address);
 // Program one 256 byte page at a page aligned address inside the configuration
 // region, from 32 bit aligned data.
 bool flexspiNorProgramPage(uint32_t address, const uint32_t *data);
+
+// Make the configuration region and its backup readable again after erases and
+// programs; nothing may read that range from the first write until this returns.
+bool flexspiNorFlush(void);

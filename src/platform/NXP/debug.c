@@ -26,7 +26,10 @@
 #include "iomux_pad_def.h"
 
 // Claim the SWD pads so unusedPinsInit() does not turn them into GPIO inputs.
-#if defined(IMXRT11XX)
+#if defined(IMX95)
+#define NXP_SWDIO_PIN       DAP_TMS_SWDIO
+#define NXP_SWCLK_PIN       DAP_TCLK_SWCLK
+#elif defined(IMXRT11XX)
 #define NXP_SWDIO_PIN       GPIO_LPSR_15       // JTAG_MUX_TMS
 #define NXP_SWCLK_PIN       GPIO_LPSR_14       // JTAG_MUX_TCK
 #elif defined(IMXRT10XX)

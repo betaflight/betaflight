@@ -38,12 +38,54 @@
 
 #include "iomux_signal_def.h"
 
+#if defined(NXP_CLOCKS_OVER_SCMI)
+#include "scmi_imx95.h"
+
+// Read over SWD only: pad requests the System Manager refused, and the register of the last one.
+static volatile uint16_t nxpIomuxRefusedCount;
+static volatile uint32_t nxpIomuxRefusedRegister;
+
+static void nxpIomuxCheck(int32_t status, uint32_t muxOrConfigRegister)
+{
+    if (status != SCMI_SUCCESS) {
+        nxpIomuxRefusedCount++;
+        nxpIomuxRefusedRegister = muxOrConfigRegister;
+    }
+}
+#else
 static void iomuxWrite(uint32_t address, uint32_t value)
 {
     *(volatile uint32_t *)(uintptr_t)address = value;
 }
+#endif
 
-#if defined(IMXRT11XX)
+#if defined(IMX95)
+
+// Every pad control register has the same fields: DSE is a thermometer code of
+// up to six driver legs, FSEL1 the slew rate from slow (0) to fast (3).
+#define nxpPadGroupOf(configRegister) 0
+
+static uint32_t nxpPadControlValue(ioConfig_t cfg, uint8_t padGroup)
+{
+    UNUSED(padGroup);
+
+    if (IOCFG_MODE(cfg) == IOCFG_MODE_ANALOG) {
+        return 0;
+    }
+
+    static const uint8_t dseByDrive[4] = { 0x01, 0x03, 0x0f, 0x3f };
+    static const uint8_t fselByDrive[4] = { 0, 1, 2, 3 };
+    const unsigned drive = IOCFG_DRIVE(cfg);
+
+    return IOMUXC_SW_PAD_CTL_PAD_DSE(dseByDrive[drive])
+         | IOMUXC_SW_PAD_CTL_PAD_FSEL1(fselByDrive[drive])
+         | IOMUXC_SW_PAD_CTL_PAD_PU(IOCFG_PULL(cfg) == IOCFG_PULL_UP)
+         | IOMUXC_SW_PAD_CTL_PAD_PD(IOCFG_PULL(cfg) == IOCFG_PULL_DOWN)
+         | IOMUXC_SW_PAD_CTL_PAD_OD(IOCFG_OD(cfg))
+         | IOMUXC_SW_PAD_CTL_PAD_HYS(IOCFG_HYS(cfg));
+}
+
+#elif defined(IMXRT11XX)
 
 // Bit 1, bits 3:2 and open drain (bit 4, 5 or 6) differ per pad group; the table below picks per group.
 #define IMXRT_PAD_SRE_SLOW      IOMUXC_SW_PAD_CTL_PAD_SRE_MASK   // 1 is the slow edge
@@ -228,6 +270,12 @@ void nxpIomuxConfigPin(const nxpPinMux_t *mux, ioConfig_t cfg)
         return;
     }
 
+#if defined(NXP_CLOCKS_OVER_SCMI)
+    nxpIomuxCheck(scmiPinConfigure(mux->muxRegister, nxpMuxValue(mux->muxMode, cfg),
+                                   mux->inputRegister, mux->inputDaisy, mux->configRegister,
+                                   nxpPadControlValue(cfg, nxpPadGroupOf(mux->configRegister))),
+                  mux->muxRegister);
+#else
     // The mux goes first, so a transmitter already on drives the pad before its
     // GPIO pull is taken away.
     iomuxWrite(mux->muxRegister, nxpMuxValue(mux->muxMode, cfg));
@@ -240,6 +288,7 @@ void nxpIomuxConfigPin(const nxpPinMux_t *mux, ioConfig_t cfg)
     if (mux->inputRegister) {
         iomuxWrite(mux->inputRegister, mux->inputDaisy);
     }
+#endif
 }
 
 void nxpIomuxConfigGpio(IO_t io, ioConfig_t cfg)
@@ -263,6 +312,18 @@ void nxpIomuxConfigGpio(IO_t io, ioConfig_t cfg)
         return;
     }
 
+#if defined(NXP_CLOCKS_OVER_SCMI)
+    if (IOCFG_MODE(cfg) == IOCFG_MODE_AF) {
+        nxpIomuxCheck(scmiPadConfigure(base + pad->padCtlRegOffset, nxpPadControlValue(cfg, pad->padGroup)),
+                      base + pad->padCtlRegOffset);
+    } else {
+        // The i.MX95 pad reaches PDIR only with SION set.
+        nxpIomuxCheck(scmiPinConfigure(base + pad->muxRegOffset,
+                                       nxpMuxValue(pad->gpioMuxMode, cfg) | IOMUXC_SW_MUX_CTL_PAD_SION_MASK, 0, 0,
+                                       base + pad->padCtlRegOffset, nxpPadControlValue(cfg, pad->padGroup)),
+                      base + pad->muxRegOffset);
+    }
+#else
     // The pad control goes first, so a pad leaving a peripheral already has its
     // pull when it becomes a GPIO input.
     iomuxWrite(base + pad->padCtlRegOffset, nxpPadControlValue(cfg, pad->padGroup));
@@ -272,4 +333,5 @@ void nxpIomuxConfigGpio(IO_t io, ioConfig_t cfg)
     if (IOCFG_MODE(cfg) != IOCFG_MODE_AF) {
         iomuxWrite(base + pad->muxRegOffset, nxpMuxValue(pad->gpioMuxMode, cfg));
     }
+#endif
 }

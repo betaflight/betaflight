@@ -12,7 +12,7 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard
 
 # The flash writer runs while flash is unreadable and the clock code re-locks the PLL that
 # feeds it, so neither may call memcpy or memset; the MPU setup is held to the same rule.
-NXP_NO_LIBCALL_TARGETS := %/clocks_$(NXP_FAMILY).o %/mpu_$(NXP_FAMILY).o %/flexspi_nor_imxrt.o
+NXP_NO_LIBCALL_TARGETS := %/clocks_$(NXP_FAMILY).o %/mpu_$(NXP_FAMILY).o %/flexspi_nor_imxrt.o %/flexspi_nor_imx95.o
 $(NXP_NO_LIBCALL_TARGETS): CFLAGS += -fno-tree-loop-distribute-patterns \
                                        -fno-builtin-memcpy -fno-builtin-memset
 

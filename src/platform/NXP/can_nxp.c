@@ -69,7 +69,96 @@ typedef struct canCapability_s {
     canRxStructure_e rxStructure;   // always CAN_RX_FIFO
 } canCapability_t;
 
-#if defined(IMXRT11XX)
+#if defined(IMX95)
+
+// The af column is unused; muxing comes from nxpFlexcanPins.
+const canHardware_t canHardware[CANDEV_COUNT] = {
+    {
+        .device = CANDEV_1,
+        .reg = (canResource_t *)CAN1,
+        .txPins = {
+            { DEFIO_TAG_E(PDM_CLK), 0 },
+            { DEFIO_TAG_E(SAI1_TXD0), 0 },
+        },
+        .rxPins = {
+            { DEFIO_TAG_E(PDM_BIT_STREAM0), 0 },
+            { DEFIO_TAG_E(SAI1_TXC), 0 },
+        },
+        .irq0 = CAN1_IRQn,
+        .irq1 = CAN1_ERROR_IRQn,
+    },
+    {
+        .device = CANDEV_2,
+        .reg = (canResource_t *)CAN2,
+        .txPins = {
+            { DEFIO_TAG_E(GPIO_IO25), 0 },
+            { DEFIO_TAG_E(DAP_TDI), 0 },
+            { DEFIO_TAG_E(ENET1_TD3), 0 },
+            { DEFIO_TAG_E(SD2_DATA0), 0 },
+        },
+        .rxPins = {
+            { DEFIO_TAG_E(GPIO_IO27), 0 },
+            { DEFIO_TAG_E(DAP_TDO_TRACESWO), 0 },
+            { DEFIO_TAG_E(ENET1_TD2), 0 },
+            { DEFIO_TAG_E(SD2_DATA1), 0 },
+        },
+        .irq0 = CAN2_IRQn,
+        .irq1 = CAN2_ERROR_IRQn,
+    },
+    {
+        .device = CANDEV_3,
+        .reg = (canResource_t *)CAN3,
+        .txPins = {
+            { DEFIO_TAG_E(GPIO_IO28), 0 },
+            { DEFIO_TAG_E(CCM_CLKO3), 0 },
+        },
+        .rxPins = {
+            { DEFIO_TAG_E(GPIO_IO29), 0 },
+            { DEFIO_TAG_E(CCM_CLKO4), 0 },
+        },
+        .irq0 = CAN3_IRQn,
+        .irq1 = CAN3_ERROR_IRQn,
+    },
+    {
+        .device = CANDEV_4,
+        .reg = (canResource_t *)CAN4,
+        .txPins = {
+            { DEFIO_TAG_E(GPIO_IO04), 0 },
+            { DEFIO_TAG_E(DAP_TMS_SWDIO), 0 },
+        },
+        .rxPins = {
+            { DEFIO_TAG_E(GPIO_IO05), 0 },
+            { DEFIO_TAG_E(DAP_TCLK_SWCLK), 0 },
+        },
+        .irq0 = CAN4_IRQn,
+        .irq1 = CAN4_ERROR_IRQn,
+    },
+    {
+        .device = CANDEV_5,
+        .reg = (canResource_t *)CAN5,
+        .txPins = {
+            { DEFIO_TAG_E(GPIO_IO22), 0 },
+            { DEFIO_TAG_E(GPIO_IO30), 0 },
+        },
+        .rxPins = {
+            { DEFIO_TAG_E(GPIO_IO23), 0 },
+            { DEFIO_TAG_E(GPIO_IO31), 0 },
+        },
+        .irq0 = CAN5_IRQn,
+        .irq1 = CAN5_ERROR_IRQn,
+    },
+};
+
+// The message RAM holds 96 buffers; only the first 32 are used.
+static const canCapability_t canCapability[CANDEV_COUNT] = {
+    [CANDEV_1] = { NXP_CLK_CAN1, 96, true, true, false, CAN_RX_FIFO },
+    [CANDEV_2] = { NXP_CLK_CAN2, 96, true, true, false, CAN_RX_FIFO },
+    [CANDEV_3] = { NXP_CLK_CAN3, 96, true, true, false, CAN_RX_FIFO },
+    [CANDEV_4] = { NXP_CLK_CAN4, 96, true, true, false, CAN_RX_FIFO },
+    [CANDEV_5] = { NXP_CLK_CAN5, 96, true, true, false, CAN_RX_FIFO },
+};
+
+#elif defined(IMXRT11XX)
 
 // The af column is unused; muxing comes from nxpFlexcanPins.
 const canHardware_t canHardware[CANDEV_COUNT] = {
@@ -197,8 +286,13 @@ static const canCapability_t canCapability[CANDEV_COUNT] = {
 #endif
 
 // The clock entry is NXP_CLK_CAN1 plus the device index.
+#if defined(IMX95)
+STATIC_ASSERT(NXP_CLK_COUNT - NXP_CLK_CAN1 >= CANDEV_COUNT,
+              clock_enum_needs_one_entry_per_flexcan_instance);
+#else
 STATIC_ASSERT(NXP_CLK_GPT1 - NXP_CLK_CAN1 >= CANDEV_COUNT,
               clock_enum_needs_one_entry_per_flexcan_instance);
+#endif
 
 // With MCR[RFEN] set and CTRL2[RFFN] zero the FIFO owns buffers 0 to 5 (output
 // at buffer 0) and its eight filters sit in buffers 6 and 7.
@@ -234,8 +328,13 @@ STATIC_ASSERT(CAN_FIRST_FREE_MB + 1u + CAN_TX_WINDOW <= 32u,
 // ECC protected message RAM ranges that must be written before any read.
 #define CAN_ECC_RAM1_START      0x080u
 #define CAN_ECC_RAM1_END        0xAE0u
+#if defined(IMX95)
+#define CAN_ECC_RAM2_START      0xC20u
+#define CAN_ECC_RAM2_END        0x3200u
+#else
 #define CAN_ECC_RAM2_START      0xF28u
 #define CAN_ECC_RAM2_END        0x1000u
+#endif
 
 // Bit timing: 16 quanta per bit sampled at 87.5%; fields hold quanta minus one,
 // and only the prescaler changes with the bit rate.
@@ -496,8 +595,8 @@ static bool canBringUp(canDevice_e device, uint32_t presdiv)
         return false;
     }
 
-    // LBUF sends the lowest numbered buffer first. CLKSRC zero is the 80 MHz root
-    // on the 11xx and absent on the 10xx.
+    // LBUF sends the lowest numbered buffer first. CLKSRC zero is the CAN root
+    // on the 11xx and the i.MX95 and absent on the 10xx.
     can->CTRL1 = CAN_CTRL1_PRESDIV(presdiv)
                | CAN_CTRL1_PROPSEG(CAN_PROPSEG)
                | CAN_CTRL1_PSEG1(CAN_PSEG1)
@@ -933,7 +1032,7 @@ FAST_IRQ_HANDLER void CAN3_IRQHandler(void)
     canIrqHandler(CANDEV_3);
 }
 
-#if defined(IMXRT11XX)
+#if defined(IMXRT11XX) || defined(IMX95)
 
 FAST_IRQ_HANDLER void CAN1_ERROR_IRQHandler(void)
 {
@@ -950,6 +1049,30 @@ FAST_IRQ_HANDLER void CAN3_ERROR_IRQHandler(void)
     canIrqHandler(CANDEV_3);
 }
 
-#endif // IMXRT11XX
+#endif
+
+#if CANDEV_COUNT > 3
+
+FAST_IRQ_HANDLER void CAN4_IRQHandler(void)
+{
+    canIrqHandler(CANDEV_4);
+}
+
+FAST_IRQ_HANDLER void CAN5_IRQHandler(void)
+{
+    canIrqHandler(CANDEV_5);
+}
+
+FAST_IRQ_HANDLER void CAN4_ERROR_IRQHandler(void)
+{
+    canIrqHandler(CANDEV_4);
+}
+
+FAST_IRQ_HANDLER void CAN5_ERROR_IRQHandler(void)
+{
+    canIrqHandler(CANDEV_5);
+}
+
+#endif
 
 #endif // ENABLE_CAN

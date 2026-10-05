@@ -59,12 +59,23 @@
 #endif
 
 // Request source zero means no request on both families, so a row without this has no eDMA.
-#ifdef USE_DMA
+#if defined(USE_DMA) && NXP_HAS_EDMA5
+#define UART_DMA_REQUESTS(n)                            \
+    .txDMAMuxId = NXP_DMA_REQ_LPUART ## n ## _TX,     \
+    .rxDMAMuxId = NXP_DMA_REQ_LPUART ## n ## _RX,
+#elif defined(USE_DMA)
 #define UART_DMA_REQUESTS(n)                            \
     .txDMAMuxId = kDmaRequestMuxLPUART ## n ## Tx,      \
     .rxDMAMuxId = kDmaRequestMuxLPUART ## n ## Rx,
 #else
 #define UART_DMA_REQUESTS(n)
+#endif
+
+// A pad change over SCMI must not run in the port's interrupt, so there the TX line is not watched.
+#if defined(NXP_CLOCKS_OVER_SCMI)
+#define UART_CHECK_TX 0
+#else
+#define UART_CHECK_TX SERIAL_CHECK_TX
 #endif
 
 // Pin arrays are left empty; pads are resolved against the generated nxpLpuartPins table.
@@ -940,6 +951,12 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
     s->USARTx = hardware->reg;
     s->checkUsartTxOutput = checkUsartTxOutput;
 
+#if defined(NXP_LPUART_INSTANCE_MASK)
+    if (!((NXP_LPUART_INSTANCE_MASK >> (hardware->identifier - SERIAL_PORT_USART1 + 1)) & 1)) {
+        return NULL;
+    }
+#endif
+
     if (!nxpClockGateEnable(uartClock(hardware->identifier))) {
         return NULL;
     }
@@ -970,7 +987,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         if ((mode & MODE_TX) && txIO) {
             IOInit(txIO, ownerTxRx, ownerIndex);
 
-            if (options & SERIAL_CHECK_TX) {
+            if (options & UART_CHECK_TX) {
                 uartdev->txPinState = TX_PIN_ACTIVE;
                 uartTxMonitor(s);
             } else {

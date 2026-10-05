@@ -22,7 +22,25 @@
 #pragma once
 
 // Bonded pads only, counted from the generated pad table of each family.
-#if defined(IMXRT11XX)
+#if defined(IMX95)
+// RGPIO ports GPIO1 to GPIO5; a board config narrows them to the pads its
+// System Manager configuration grants the M7.
+#ifndef TARGET_IO_PORTA
+#define TARGET_IO_PORTA 0x0000ffff
+#endif
+#ifndef TARGET_IO_PORTB
+#define TARGET_IO_PORTB 0xffffffff
+#endif
+#ifndef TARGET_IO_PORTC
+#define TARGET_IO_PORTC 0xffffffff
+#endif
+#ifndef TARGET_IO_PORTD
+#define TARGET_IO_PORTD 0x3fffffff
+#endif
+#ifndef TARGET_IO_PORTE
+#define TARGET_IO_PORTE 0x0003ffff
+#endif
+#elif defined(IMXRT11XX)
 // GPIO1 to GPIO6 and GPIO13; port G is the always on block.
 #define TARGET_IO_PORTA 0xffffffff
 #define TARGET_IO_PORTB 0xffffffff

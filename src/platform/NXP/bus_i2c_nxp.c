@@ -58,6 +58,9 @@
 #include "drivers/dma.h"
 #include "platform/dma.h"
 #define NXP_I2C_DMA
+#if defined(IMX95)
+#define NXP_I2C_DMA_RX
+#endif
 #endif
 
 // Pin arrays are left empty; pads are resolved against the generated nxpLpi2cPins table.
@@ -92,6 +95,38 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
         .reg = (i2cResource_t *)LPI2C4,
         .ev_irq = LPI2C4_IRQn,
         .er_irq = LPI2C4_IRQn,
+    },
+#endif
+#ifdef USE_I2C_DEVICE_5
+    {
+        .device = I2CDEV_5,
+        .reg = (i2cResource_t *)LPI2C5,
+        .ev_irq = LPI2C5_IRQn,
+        .er_irq = LPI2C5_IRQn,
+    },
+#endif
+#ifdef USE_I2C_DEVICE_6
+    {
+        .device = I2CDEV_6,
+        .reg = (i2cResource_t *)LPI2C6,
+        .ev_irq = LPI2C6_IRQn,
+        .er_irq = LPI2C6_IRQn,
+    },
+#endif
+#ifdef USE_I2C_DEVICE_7
+    {
+        .device = I2CDEV_7,
+        .reg = (i2cResource_t *)LPI2C7,
+        .ev_irq = LPI2C7_IRQn,
+        .er_irq = LPI2C7_IRQn,
+    },
+#endif
+#ifdef USE_I2C_DEVICE_8
+    {
+        .device = I2CDEV_8,
+        .reg = (i2cResource_t *)LPI2C8,
+        .ev_irq = LPI2C8_IRQn,
+        .er_irq = LPI2C8_IRQn,
     },
 #endif
 };
@@ -337,6 +372,20 @@ static FAST_IRQ_HANDLER void i2cDrainRx(i2cDevice_e device)
 // The engine reads these, so they go in DTCM.
 static DMA_TCD_LIST(i2cTcds, I2CDEV_COUNT * I2C_TCD_MAX);
 
+#if defined(NXP_I2C_DMA_RX)
+// Request sources of LPI2C1 to LPI2C8, transmit and receive.
+static const uint32_t i2cDmaMuxIds[] = {
+    NXP_DMA_REQ_LPI2C1_TX, NXP_DMA_REQ_LPI2C2_TX, NXP_DMA_REQ_LPI2C3_TX, NXP_DMA_REQ_LPI2C4_TX,
+    NXP_DMA_REQ_LPI2C5_TX, NXP_DMA_REQ_LPI2C6_TX, NXP_DMA_REQ_LPI2C7_TX, NXP_DMA_REQ_LPI2C8_TX,
+};
+static const uint32_t i2cDmaRxMuxIds[] = {
+    NXP_DMA_REQ_LPI2C1_RX, NXP_DMA_REQ_LPI2C2_RX, NXP_DMA_REQ_LPI2C3_RX, NXP_DMA_REQ_LPI2C4_RX,
+    NXP_DMA_REQ_LPI2C5_RX, NXP_DMA_REQ_LPI2C6_RX, NXP_DMA_REQ_LPI2C7_RX, NXP_DMA_REQ_LPI2C8_RX,
+};
+STATIC_ASSERT(ARRAYLEN(i2cDmaMuxIds) >= I2CDEV_COUNT, one_request_per_lpi2c_instance);
+
+static dmaIdentifier_e i2cDmaRxChannel[I2CDEV_COUNT];
+#else
 // One DMA request per instance, so a read writes this into MDER to switch to receive.
 static DMA_DATA const uint8_t i2cMderReceive = LPI2C_MDER_RDDE_MASK;
 
@@ -355,6 +404,7 @@ static const uint32_t i2cDmaMuxIds[I2CDEV_COUNT] = {
     [I2CDEV_4] = kDmaRequestMuxLPI2C4,
 #endif
 };
+#endif
 
 static dmaIdentifier_e i2cDmaChannel[I2CDEV_COUNT];
 
@@ -377,6 +427,25 @@ static FAST_IRQ_HANDLER void i2cDmaCallback(dmaChannelDescriptor_t *descriptor)
     dmaDisableRequest(DMA_CHANNEL_TO_IDENTIFIER(descriptor->channel));
 }
 
+#ifdef NXP_I2C_DMA_RX
+// Ends a read whose stop came while bytes were still in the FIFO.
+static FAST_IRQ_HANDLER void i2cDmaRxCallback(dmaChannelDescriptor_t *descriptor)
+{
+    const i2cDevice_e device = (i2cDevice_e)descriptor->userParam;
+
+    if (device >= I2CDEV_COUNT || !i2cTransfers[device].busy) {
+        return;
+    }
+
+    const bool dmaError = DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF) != 0;
+    const uint32_t status = I2C_INST(i2cDevice[device].reg)->MSR;
+
+    if (dmaError || !(status & LPI2C_MSR_MBF_MASK)) {
+        i2cTransferEnd(device, dmaError || (status & LPI2C_MSR_ERROR_FLAGS));
+    }
+}
+#endif
+
 static void i2cDmaInit(i2cDevice_e device)
 {
     if (i2cDmaChannel[device] != DMA_NONE) {
@@ -394,6 +463,21 @@ static void i2cDmaInit(i2cDevice_e device)
     dmaSetHandler(identifier, i2cDmaCallback, I2C_IMXRT_PRIORITY, device);
 
     i2cDmaChannel[device] = identifier;
+
+#ifdef NXP_I2C_DMA_RX
+    // Without a receive channel only writes go through the engine.
+    const dmaIdentifier_e rx = dmaGetFreeIdentifierForRequest(i2cDmaRxMuxIds[device]);
+
+    if (rx == DMA_NONE || !dmaAllocate(rx, OWNER_I2C_SDA, RESOURCE_INDEX(device))) {
+        return;
+    }
+
+    dmaEnable(rx);
+    dmaMuxEnable(rx, i2cDmaRxMuxIds[device]);
+    dmaSetHandler(rx, i2cDmaRxCallback, I2C_IMXRT_PRIORITY, device);
+
+    i2cDmaRxChannel[device] = rx;
+#endif
 }
 
 // False falls back to the interrupt path.
@@ -420,6 +504,7 @@ static bool i2cDmaBuildChain(i2cDevice_e device)
         return false;
     }
 
+#ifndef NXP_I2C_DMA_RX
     if (t->reading) {
         const dmaTransfer_t mderTransfer = {
             .src = &i2cMderReceive,
@@ -436,6 +521,7 @@ static bool i2cDmaBuildChain(i2cDevice_e device)
             return false;
         }
     }
+#endif
 
     // A byte write to MTDR leaves CMD zero, which sends the byte.
     dmaTransfer_t dataTransfer = {
@@ -456,6 +542,17 @@ static bool i2cDmaBuildChain(i2cDevice_e device)
         dataTransfer.srcOffset = 1;
         dataTransfer.dstOffset = 0;
     }
+
+#ifdef NXP_I2C_DMA_RX
+    if (t->reading) {
+        dmaTcd_t *rxList = &list[I2C_TCD_MAX - 1];
+
+        return i2cDmaRxChannel[device] != DMA_NONE
+            && dmaBuildTcd(rxList, &dataTransfer)
+            && dmaSetTransferChain(i2cDmaRxChannel[device], rxList, 1)
+            && dmaSetTransferChain(i2cDmaChannel[device], list, count);
+    }
+#endif
 
     if (!dmaBuildTcd(&list[count++], &dataTransfer)) {
         return false;
@@ -480,6 +577,9 @@ static FAST_IRQ_HANDLER void i2cTransferEnd(i2cDevice_e device, bool failed)
 #ifdef NXP_I2C_DMA
     if (t->usingDma) {
         dmaDisableRequest(i2cDmaChannel[device]);
+#ifdef NXP_I2C_DMA_RX
+        dmaDisableRequest(i2cDmaRxChannel[device]);
+#endif
         lpi2c->MDER = 0;
     }
 #endif
@@ -546,6 +646,12 @@ static FAST_IRQ_HANDLER void i2cIrqHandler(i2cDevice_e device)
         }
         // Only the interrupt path keeps a count to detect a short read.
         const bool shortRead = t->reading && !t->usingDma && t->rxIndex < t->len;
+#ifdef NXP_I2C_DMA_RX
+        // The receive channel ends a read whose last bytes are still in the FIFO.
+        if (t->usingDma && t->reading && dmaChannelBusy(i2cDmaRxChannel[device])) {
+            return;
+        }
+#endif
         i2cTransferEnd(device, shortRead);
     }
 }
@@ -579,9 +685,17 @@ void i2cPinConfigure(const i2cConfig_t *i2cConfig)
             pDev->clockSpeed = i2cConfig[device].clockSpeed;
         }
     }
+
+#if I2CDEV_COUNT > 4
+    // fc/init.c starts I2CDEV_1 to I2CDEV_4 only.
+    for (int device = I2CDEV_4 + 1; device < I2CDEV_COUNT; device++) {
+        i2cInit((i2cDevice_e)device);
+    }
+#endif
 }
 
-static void i2cSetup(i2cDevice_e device)
+// Pad and clock gate work costs System Manager calls on the i.MX95, so a recovery there skips it.
+static void i2cSetup(i2cDevice_e device, bool pads)
 {
     if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return;
@@ -605,38 +719,45 @@ static void i2cSetup(i2cDevice_e device)
     t->alfCount = 0;
 
     // Resolved before claiming anything, so a failed bus leaves nothing behind.
-    const nxpPinMux_t *sclMux = i2cPadMux(device, false, i2cPinTag(pDev->scl));
-    const nxpPinMux_t *sdaMux = i2cPadMux(device, true, i2cPinTag(pDev->sda));
+    const nxpPinMux_t *sclMux = NULL;
+    const nxpPinMux_t *sdaMux = NULL;
 
-    if (!sclMux || !sdaMux) {
-        return;
+    if (pads) {
+        sclMux = i2cPadMux(device, false, i2cPinTag(pDev->scl));
+        sdaMux = i2cPadMux(device, true, i2cPinTag(pDev->sda));
+
+        if (!sclMux || !sdaMux) {
+            return;
+        }
+
+        if (!nxpClockGateEnable((nxpClock_e)(NXP_CLK_LPI2C1 + (device - I2CDEV_1)))) {
+            return;
+        }
+
+        // PARAM reports the FIFO depth as a power of two and survives the reset.
+        i2cTxFifoDepth[device] =
+            1u << ((lpi2c->PARAM & LPI2C_PARAM_MTXFIFO_MASK) >> LPI2C_PARAM_MTXFIFO_SHIFT);
     }
-
-    if (!nxpClockGateEnable((nxpClock_e)(NXP_CLK_LPI2C1 + (device - I2CDEV_1)))) {
-        return;
-    }
-
-    // PARAM reports the FIFO depth as a power of two and survives the reset.
-    i2cTxFifoDepth[device] =
-        1u << ((lpi2c->PARAM & LPI2C_PARAM_MTXFIFO_MASK) >> LPI2C_PARAM_MTXFIFO_SHIFT);
 
     // Release the pads before they are driven by hand; MCR[RST] clears the FIFOs too.
     lpi2c->MIER = 0;
     lpi2c->MCR = LPI2C_MCR_RST_MASK;
     lpi2c->MCR = 0;
 
-    IOInit(pDev->scl, OWNER_I2C_SCL, RESOURCE_INDEX(device));
-    IOInit(pDev->sda, OWNER_I2C_SDA, RESOURCE_INDEX(device));
+    if (pads) {
+        IOInit(pDev->scl, OWNER_I2C_SCL, RESOURCE_INDEX(device));
+        IOInit(pDev->sda, OWNER_I2C_SDA, RESOURCE_INDEX(device));
 
-    // A slave cut off mid byte by a supply dip holds SDA low; clock the bus by hand and send a stop.
-    i2cUnstick(pDev->scl, pDev->sda);
+        // A slave cut off mid byte by a supply dip holds SDA low; clock the bus by hand and send a stop.
+        i2cUnstick(pDev->scl, pDev->sda);
 
-    // Open drain with SION, so the master reads the line for arbitration and clock stretching.
-    const ioConfig_t padCfg = IO_CONFIG(IOCFG_MODE_AF, IOCFG_DRIVE_MEDIUM,
-                                        pDev->pullUp ? IOCFG_PULL_UP : IOCFG_PULL_NONE, 1, 1);
+        // Open drain with SION, so the master reads the line for arbitration and clock stretching.
+        const ioConfig_t padCfg = IO_CONFIG(IOCFG_MODE_AF, IOCFG_DRIVE_MEDIUM,
+                                            pDev->pullUp ? IOCFG_PULL_UP : IOCFG_PULL_NONE, 1, 1);
 
-    nxpIomuxConfigPin(sclMux, padCfg);
-    nxpIomuxConfigPin(sdaMux, padCfg);
+        nxpIomuxConfigPin(sclMux, padCfg);
+        nxpIomuxConfigPin(sdaMux, padCfg);
+    }
 
     i2cTiming_t timing;
     const uint32_t baudHz = (pDev->clockSpeed ? pDev->clockSpeed : 400u) * 1000u;
@@ -665,13 +786,15 @@ static void i2cSetup(i2cDevice_e device)
     lpi2c->MCR = LPI2C_MCR_MEN_MASK;
 
 #ifdef NXP_I2C_DMA
-    i2cDmaInit(device);
+    if (pads) {
+        i2cDmaInit(device);
+    }
 #endif
 }
 
 void i2cInit(i2cDevice_e device)
 {
-    i2cSetup(device);
+    i2cSetup(device, true);
 }
 
 // Runs in thread context only: it waits on the bus and sets the master up again.
@@ -683,13 +806,26 @@ static void i2cRecover(i2cDevice_e device)
     i2cTimeoutCount++;
     i2cTransfers[device].masterBusy = false;
     i2cTransfers[device].recoverUs = microsISR();
-    i2cSetup(device);
+#ifdef LPI2C_MCFGR0_RELAX_MASK
+    i2cSetup(device, false);
+#else
+    // Without relaxed mode a held bus is clocked by hand through the pads.
+    i2cSetup(device, true);
+#endif
     // The master reads the bus busy until both lines have been high for one bus idle time.
     LPI2C_Type *lpi2c = I2C_INST(i2cDevice[device].reg);
     const timeUs_t initUs = microsISR();
     while ((lpi2c->MSR & LPI2C_MSR_BBF_MASK) && cmpTimeUs(microsISR(), initUs) < I2C_BUS_IDLE_WAIT_US) {
     }
     const bool held = (lpi2c->MSR & LPI2C_MSR_BBF_MASK) != 0;
+#ifdef LPI2C_MCFGR0_RELAX_MASK
+    if (held) {
+        // Relaxed mode clocks a busy bus, so one start and stop free a slave cut off mid byte without a wait here.
+        lpi2c->MCFGR0 |= LPI2C_MCFGR0_RELAX_MASK;
+        lpi2c->MTDR = LPI2C_MTDR_CMD(LPI2C_CMD_START);
+        lpi2c->MTDR = LPI2C_MTDR_CMD(LPI2C_CMD_STOP);
+    }
+#endif
     // A bus still held after the bus clear is tried again only once a second.
     i2cTransfers[device].held = held;
     if (held) {
@@ -759,6 +895,15 @@ static bool i2cStart(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len,
             return false;
         }
         t->held = false;
+#ifdef LPI2C_MCFGR0_RELAX_MASK
+        // A transfer never runs in relaxed mode, so the recovery that resets the master comes first.
+        if (lpi2c->MCFGR0 & LPI2C_MCFGR0_RELAX_MASK) {
+            i2cRecover(device);
+            if (t->held) {
+                return false;
+            }
+        }
+#endif
     }
 
     if (!i2cMasterIdle(device, wait)) {
@@ -789,9 +934,17 @@ static bool i2cStart(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len,
         lpi2c->MCFGR1 |= LPI2C_MCFGR1_AUTOSTOP_MASK;
         lpi2c->MIER = LPI2C_MIER_SDIE_MASK | LPI2C_MIER_NDIE_MASK | LPI2C_MIER_ALIE_MASK
                     | LPI2C_MIER_FEIE_MASK | LPI2C_MIER_PLTIE_MASK;
+#ifdef NXP_I2C_DMA_RX
+        if (reading) {
+            dmaEnableRequest(i2cDmaRxChannel[device]);
+        }
+        dmaEnableRequest(i2cDmaChannel[device]);
+        lpi2c->MDER = LPI2C_MDER_TDDE_MASK | (reading ? LPI2C_MDER_RDDE_MASK : 0);
+#else
         dmaEnableRequest(i2cDmaChannel[device]);
         // Start on the transmit request; a read swaps to receive.
         lpi2c->MDER = LPI2C_MDER_TDDE_MASK;
+#endif
         return true;
     }
 
@@ -908,6 +1061,34 @@ FAST_IRQ_HANDLER void LPI2C3_IRQHandler(void)
 FAST_IRQ_HANDLER void LPI2C4_IRQHandler(void)
 {
     i2cIrqHandler(I2CDEV_4);
+}
+#endif
+
+#ifdef USE_I2C_DEVICE_5
+FAST_IRQ_HANDLER void LPI2C5_IRQHandler(void)
+{
+    i2cIrqHandler(I2CDEV_5);
+}
+#endif
+
+#ifdef USE_I2C_DEVICE_6
+FAST_IRQ_HANDLER void LPI2C6_IRQHandler(void)
+{
+    i2cIrqHandler(I2CDEV_6);
+}
+#endif
+
+#ifdef USE_I2C_DEVICE_7
+FAST_IRQ_HANDLER void LPI2C7_IRQHandler(void)
+{
+    i2cIrqHandler(I2CDEV_7);
+}
+#endif
+
+#ifdef USE_I2C_DEVICE_8
+FAST_IRQ_HANDLER void LPI2C8_IRQHandler(void)
+{
+    i2cIrqHandler(I2CDEV_8);
 }
 #endif
 
