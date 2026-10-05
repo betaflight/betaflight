@@ -611,6 +611,7 @@ bool positionControl(void)
                 accelCmSS = wingLineLateralAccelCmSS(&pos, &vel, &startCm, &targetCm,
                                                      cfg->l1Period * 0.1f, cfg->l1Damping * 0.01f, &wingLat.turnLatch);
                 guidance = WING_GUIDANCE_LINE;
+                DEBUG_SET(DEBUG_AUTOPILOT_GUIDANCE, 5, 0);  //!< Guidance State [flags:Capture|No Position|Pilot]
             }
         }
     } else {

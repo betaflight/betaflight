@@ -28,9 +28,11 @@
 
 #include "autopilot.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 13);
+#define AUTOPILOT_CONFIG_VERSION 13
 
 #ifdef USE_WING
+// one version ahead in the 4 bit field, so a wing flashed over a build that hid these settings starts from the wing defaults
+#define AUTOPILOT_CONFIG_VERSION_BUILD ((AUTOPILOT_CONFIG_VERSION + 1) & 0xf)
 #define DEFAULT_WAYPOINT_ARRIVAL_RADIUS 1000    // 10m: a wing passes a waypoint at speed
 #define DEFAULT_GEOFENCE_ACTION AP_GEOFENCE_RTH
 #define DEFAULT_LANDING_DESCENT_RATE 200        // a wing comes down its loiter over the touchdown at 2 m/s
@@ -40,7 +42,10 @@ PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT
 #define DEFAULT_GEOFENCE_ACTION AP_GEOFENCE_LAND // Land at current position
 #define DEFAULT_LANDING_DESCENT_RATE 50         // 50 cm/s = 0.5 m/s descent rate
 #define DEFAULT_LANDING_DETECTION_TIME 10       // 1 second below landing altitude for touchdown
+#define AUTOPILOT_CONFIG_VERSION_BUILD AUTOPILOT_CONFIG_VERSION
 #endif
+
+PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, AUTOPILOT_CONFIG_VERSION_BUILD);
 
 PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .landingAltitudeM = 4,

@@ -569,6 +569,21 @@ TEST(AutopilotWingTest, AltHoldTargetStaysWithinASecondOfTheAircraft)
     EXPECT_LT(holdTargetCm() - entryCm, altHoldGetClimbRateCmS() + 5.0f);
 }
 
+TEST(AutopilotWingTest, AltHoldTargetComesBackTowardsAnAircraftThatFellBehind)
+{
+    engageAltHold();
+    testAltitudeCm -= 300.0f;
+    const float targetCm = holdTargetCm();
+    testPitchDeflection = 1.0f;
+    runAltHold(50);
+    EXPECT_NEAR(targetCm - 100.0f, holdTargetCm(), 3.0f);
+
+    // but climbing it stays put until the aircraft catches up
+    testPitchDeflection = -1.0f;
+    runAltHold(50);
+    EXPECT_NEAR(targetCm - 100.0f, holdTargetCm(), 3.0f);
+}
+
 TEST(AutopilotWingTest, AltHoldFailsafeDescendsWhateverTheSticks)
 {
     engageAltHold();

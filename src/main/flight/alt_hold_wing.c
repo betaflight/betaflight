@@ -136,8 +136,9 @@ static void altHoldUpdateTargetAltitude(timeUs_t taskIntervalUs)
 
     const float maxClimbRate = altHoldMaxClimbRate();
     altHold.targetVelocityCmS = stickFactor * maxClimbRate;
-    // the target never runs further ahead of the aircraft than it can catch up with
-    if (fabsf(getAltitudeCmControl() - altHold.targetAltitudeCm) < maxClimbRate * ALTHOLD_TARGET_LEAD_S) {
+    // the target never runs further ahead of the aircraft than it can catch up with, but may always come back towards it
+    const float leadCm = altHold.targetAltitudeCm - getAltitudeCmControl();
+    if (fabsf(leadCm) < maxClimbRate * ALTHOLD_TARGET_LEAD_S || leadCm * altHold.targetVelocityCmS < 0.0f) {
         altHold.targetAltitudeCm += altHold.targetVelocityCmS * US_TO_INTERVAL(taskIntervalUs);
     }
 }

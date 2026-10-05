@@ -243,7 +243,8 @@ static void cutOnContact(landingWingTouchdown_t *touchdown, timeUs_t nowUs, floa
 // The body rates smoothed: an idling motor shakes the gyro, but it does not turn the aircraft.
 static bool rotating(landingWingTouchdown_t *touchdown, timeUs_t nowUs)
 {
-    const float k = fminf(cmpTimeUs(nowUs, touchdown->rateUs) * 1e-6f / LANDING_WING_STILL_RATE_TAU_S, 1.0f);
+    const float k = (touchdown->rateUs == 0) ? 1.0f
+        : constrainf(cmpTimeUs(nowUs, touchdown->rateUs) * 1e-6f / LANDING_WING_STILL_RATE_TAU_S, 0.0f, 1.0f);
     touchdown->rateUs = nowUs;
     bool turning = false;
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {

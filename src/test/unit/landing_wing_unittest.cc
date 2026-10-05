@@ -761,6 +761,21 @@ TEST_F(LandingWingTest, AnIdlingMotorShakingTheGyroDoesNotStopATouchdown)
     EXPECT_TRUE(landed);
 }
 
+TEST_F(LandingWingTest, ATouchdownStartedAfterHalfTheTimerRangeIsStillDetected)
+{
+    g_nowUs = 0x80000000u + 1000000u;
+    landingWingTouchdown_t touchdown;
+    landingWingTouchdownReset(&touchdown);
+    craft(0.0f, 0.0f, 0.2f, 0.0f, 1.0f);
+    gyro.gyroADCf[FD_ROLL] = 2.0f;
+    bool landed = false;
+    for (int i = 0; i < 150 && !landed; i++) {
+        g_nowUs += STEP_US;
+        landed = landingWingTouchdownUpdate(&touchdown, g_nowUs, 0.2f, 100.0f);
+    }
+    EXPECT_TRUE(landed);
+}
+
 TEST_F(LandingWingTest, OnGroundOfUnknownHeightItHasLandedOnceStillWithItsWingsFlat)
 {
     landingWingTouchdown_t touchdown;
