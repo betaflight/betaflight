@@ -62,3 +62,9 @@
 	url = https://github.com/hathach/tinyusb.git
 	ignore = dirty
 	update = none
+[submodule "lib/modules/mcux-devices-imx"]
+	path = lib/modules/mcux-devices-imx
+	url = https://github.com/nxp-mcuxpresso/mcux-devices-imx.git
+	branch = release/26.03.00
+	ignore = dirty
+	update = none
