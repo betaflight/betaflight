@@ -352,7 +352,6 @@ int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
     }
 }
 
-#if !OSD_FB_ELEMENT_ENABLE_ALTITUDE
 static void osdFormatAltitudeString(char * buff, int32_t altitudeCm, osdElementType_e variantType)
 {
     static const struct {
@@ -376,7 +375,6 @@ static void osdFormatAltitudeString(char * buff, int32_t altitudeCm, osdElementT
 
     osdPrintFloat(buff, SYM_ALTITUDE, osdGetMetersToSelectedUnit(alt) / 100.0f, "", decimalPlaces, true, unitSymbol);
 }
-#endif
 
 #ifdef USE_GPS
 static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, osdElementType_e variantType)
@@ -793,9 +791,6 @@ static void osdElementAdjustmentRange(osdElementParms_t *element)
 
 static void osdElementAltitude(osdElementParms_t *element)
 {
-#if OSD_FB_ELEMENT_ENABLE_ALTITUDE
-    UNUSED(element);
-#else
     bool haveBaro = false;
     bool haveGps = false;
 #ifdef USE_BARO
@@ -817,7 +812,6 @@ static void osdElementAltitude(osdElementParms_t *element)
         element->buff[1] = SYM_HYPHEN; // We use this symbol when we don't have a valid measure
         element->buff[2] = '\0';
     }
-#endif
 }
 
 #ifdef USE_ACC
@@ -839,9 +833,6 @@ static void osdElementAntiGravity(osdElementParms_t *element)
 
 static void osdElementArtificialHorizon(osdElementParms_t *element)
 {
-#if OSD_FB_ELEMENT_ENABLE_ARTIFICIAL_HORIZON
-    UNUSED(element);
-#else
     static int x = -4;
     // Get pitch and roll limits in tenths of degrees
     const int maxPitch = osdConfig()->ahMaxPitch * 10;
@@ -874,7 +865,6 @@ static void osdElementArtificialHorizon(osdElementParms_t *element)
         element->rendered = false;
         x++;
     }
-#endif
 }
 
 static void osdElementUpDownReference(osdElementParms_t *element)
@@ -1198,17 +1188,33 @@ static void osdElementFlymode(osdElementParms_t *element)
         strcpy(element->buff, "POSH");
     } else if (FLIGHT_MODE(ALT_HOLD_MODE)) {
         strcpy(element->buff, "ALTH");
+#ifdef USE_CHIRP
+    } else if (FLIGHT_MODE(CHIRP_MODE)) {
+        static const char axisChar[] = "RPY";
+        if (pidChirpGetRepeatTotal() <= 1) {
+            // the additional check for pidChirpIsFinished() is to have visual feedback for user that don't have warnings enabled in their goggles
+            if (!pidChirpIsFinished()) {
+                strcpy(element->buff, "CHIR");
+            } else {
+                tfp_sprintf(element->buff, "%cFIN", axisChar[pidChirpGetChirpAxis()]);
+            }
+        } else {
+            if (pidChirpSeriesIsFinished()) {
+                tfp_sprintf(element->buff, "%cFIN", axisChar[pidChirpGetChirpAxis()]);
+            } else {
+                tfp_sprintf(element->buff, "%c%u/%u",
+                            axisChar[pidChirpGetChirpAxis()],
+                            pidChirpGetRepeatCurrent(),
+                            pidChirpGetRepeatTotal());
+            }
+        }
+#endif
     } else if (FLIGHT_MODE(ANGLE_MODE)) {
         strcpy(element->buff, "ANGL");
     } else if (FLIGHT_MODE(HORIZON_MODE)) {
         strcpy(element->buff, "HOR ");
     } else if (IS_RC_MODE_ACTIVE(BOXACROTRAINER)) {
         strcpy(element->buff, "ATRN");
-#ifdef USE_CHIRP
-    // the additional check for pidChirpIsFinished() is to have visual feedback for user that don't have warnings enabled in their goggles
-    } else if (FLIGHT_MODE(CHIRP_MODE) && !pidChirpIsFinished()) {
-        strcpy(element->buff, "CHIR");
-#endif
     } else if (isAirmodeEnabled()) {
         strcpy(element->buff, "AIR ");
     } else {
@@ -1492,9 +1498,6 @@ static void osdElementGpsLapTimeBest3(osdElementParms_t *element)
 
 static void osdBackgroundHorizonSidebars(osdElementParms_t *element)
 {
-#if OSD_FB_ELEMENT_ENABLE_ARTIFICIAL_HORIZON
-    UNUSED(element);
-#else
     static bool renderLevel = false;
     static int8_t y = -AH_SIDEBAR_HEIGHT_POS;
     // Draw AH sides
@@ -1523,7 +1526,6 @@ static void osdBackgroundHorizonSidebars(osdElementParms_t *element)
     }
 
     element->drawElement = false;  // element already drawn
-#endif
 }
 
 #ifdef USE_RX_LINK_QUALITY_INFO
@@ -1594,8 +1596,9 @@ static void osdElementLogStatus(osdElementParms_t *element)
 static void osdElementMahDrawn(osdElementParms_t *element)
 {
     const int mAhDrawn = getMAhDrawn();
+    const uint16_t capacityAlarm = osdGetCapacityAlarm();
 
-    if (mAhDrawn >= osdConfig()->cap_alarm) {
+    if (capacityAlarm > 0 && mAhDrawn >= capacityAlarm) {
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
@@ -1606,8 +1609,9 @@ static void osdElementWattHoursDrawn(osdElementParms_t *element)
 {
     const int mAhDrawn = getMAhDrawn();
     const float wattHoursDrawn = getWhDrawn();
+    const uint16_t capacityAlarm = osdGetCapacityAlarm();
 
-    if (mAhDrawn >= osdConfig()->cap_alarm) {
+    if (capacityAlarm > 0 && mAhDrawn >= capacityAlarm) {
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
@@ -1628,18 +1632,17 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
 
     const int mAhDrawn = getMAhDrawn();
     const int usedCapacity = mAhDrawn;
+    const uint16_t capacityAlarm = osdGetCapacityAlarm();
     int displayBasis = usedCapacity;
 
-    if (currentBatteryProfile->batteryCapacity) {
-        if (mAhDrawn >= osdConfig()->cap_alarm) {
+    if (capacityAlarm > 0) {
+        if (mAhDrawn >= capacityAlarm) {
             element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
         }
-    } else {
-        if (getBatteryState() == BATTERY_CRITICAL) {
-            element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
-        } else if (getBatteryState() == BATTERY_WARNING) {
-            element->attr = DISPLAYPORT_SEVERITY_WARNING;
-        }
+    } else if (getBatteryState() == BATTERY_CRITICAL) {
+        element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
+    } else if (getBatteryState() == BATTERY_WARNING) {
+        element->attr = DISPLAYPORT_SEVERITY_WARNING;
     }
 
     switch (element->type) {
@@ -1676,28 +1679,35 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
     case OSD_ELEMENT_TYPE_1:  // mAh remaining graphical progress bar (shrinks as battery is used)
     default:
         {
-            uint8_t remainingCapacityBars = 0;
+            // Resolution is half a cell, so SYM_PB_HALF can mark the partially filled cell
+            int remainingHalfSteps = 0;
 
             if (currentBatteryProfile->batteryCapacity > 0) {
-                const float batteryRemaining = (float)constrain(currentBatteryProfile->batteryCapacity - displayBasis, 0, currentBatteryProfile->batteryCapacity);
-                const float stepSize = (float)currentBatteryProfile->batteryCapacity / (float)MAIN_BATT_USAGE_STEPS;
-                remainingCapacityBars = ceilf(batteryRemaining / stepSize);
+                const int batteryCapacity = currentBatteryProfile->batteryCapacity;
+                const int batteryRemaining = constrain(batteryCapacity - displayBasis, 0, batteryCapacity);
+                remainingHalfSteps = (batteryRemaining * MAIN_BATT_USAGE_STEPS * 2 + batteryCapacity - 1) / batteryCapacity; // integer ceil
             } else if (getBatteryState() != BATTERY_NOT_PRESENT) {
                 uint8_t voltagePercent = calculateBatteryPercentageRemaining();
                 if (element->type == OSD_ELEMENT_TYPE_2) {
                     voltagePercent = 100 - voltagePercent;
                 }
-                remainingCapacityBars = (voltagePercent * MAIN_BATT_USAGE_STEPS + 99) / 100; // integer ceil
+                remainingHalfSteps = (voltagePercent * MAIN_BATT_USAGE_STEPS * 2 + 99) / 100; // integer ceil
             }
+            remainingHalfSteps = MIN(remainingHalfSteps, MAIN_BATT_USAGE_STEPS * 2);
+
+            const int fullBars = remainingHalfSteps / 2;
+            const bool halfBar = remainingHalfSteps & 1;
 
             // Create empty battery indicator bar
             element->buff[0] = SYM_PB_START;
             for (int i = 1; i <= MAIN_BATT_USAGE_STEPS; i++) {
-                element->buff[i] = i <= remainingCapacityBars ? SYM_PB_FULL : SYM_PB_EMPTY;
+                element->buff[i] = i <= fullBars ? SYM_PB_FULL : SYM_PB_EMPTY;
             }
             element->buff[MAIN_BATT_USAGE_STEPS + 1] = SYM_PB_CLOSE;
-            if (remainingCapacityBars > 0 && remainingCapacityBars < MAIN_BATT_USAGE_STEPS) {
-                element->buff[1 + remainingCapacityBars] = SYM_PB_END;
+            if (halfBar) {
+                element->buff[1 + fullBars] = SYM_PB_HALF;
+            } else if (fullBars > 0 && fullBars < MAIN_BATT_USAGE_STEPS) {
+                element->buff[1 + fullBars] = SYM_PB_END;
             }
             element->buff[MAIN_BATT_USAGE_STEPS+2] = '\0';
             break;
@@ -1827,36 +1837,36 @@ static void osdElementRcChannels(osdElementParms_t *element)
 static void osdElementRemainingTimeEstimate(osdElementParms_t *element)
 {
     const int mAhDrawn = getMAhDrawn();
+    const uint16_t capacityAlarm = osdGetCapacityAlarm();
 
-    if (mAhDrawn >= osdConfig()->cap_alarm) {
+    if (capacityAlarm > 0 && mAhDrawn >= capacityAlarm) {
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
-    if (mAhDrawn <= 0.1f * osdConfig()->cap_alarm) {  // also handles the mAhDrawn == 0 condition
+    if (capacityAlarm == 0 || mAhDrawn <= 0.1f * capacityAlarm) {  // also handles the mAhDrawn == 0 condition
         tfp_sprintf(element->buff, "--:--");
-    } else if (mAhDrawn > osdConfig()->cap_alarm) {
+    } else if (mAhDrawn > capacityAlarm) {
         tfp_sprintf(element->buff, "00:00");
     } else {
-        const int remaining_time = (int)((osdConfig()->cap_alarm - mAhDrawn) * ((float)osdFlyTime) / mAhDrawn);
+        const int remaining_time = (int)((capacityAlarm - mAhDrawn) * ((float)osdFlyTime) / mAhDrawn);
         osdFormatTime(element->buff, OSD_TIMER_PREC_SECOND, remaining_time);
     }
 }
 
 static void osdElementRssi(osdElementParms_t *element)
 {
-    uint16_t osdRssiPercent = getRssiPercent();
-    if (osdRssiPercent >= 100) {
-        osdRssiPercent = 99;
-    }
+    const uint16_t osdRssiPercent = getRssiPercent();
 
     if (osdRssiPercent < osdConfig()->rssi_alarm) {
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
+    const uint16_t osdRssiPercentDisplay = MIN(osdRssiPercent, 99);
+
 #ifdef OSD_RSSI_WITH_SYMBOL
-    tfp_sprintf(element->buff, "%c%c %2d", SYM_HEADSET, SYM_RSSI, osdRssiPercent);
+    tfp_sprintf(element->buff, "%c%c %2d", SYM_HEADSET, SYM_RSSI, osdRssiPercentDisplay);
 #else
-    tfp_sprintf(element->buff, "%c%2d", SYM_RSSI, osdRssiPercent);
+    tfp_sprintf(element->buff, "%c%2d", SYM_RSSI, osdRssiPercentDisplay);
 #endif
 }
 
@@ -2827,7 +2837,8 @@ void osdUpdateAlarms(void)
         }
     }
 
-    if (getMAhDrawn() >= osdConfig()->cap_alarm) {
+    const uint16_t capacityAlarm = osdGetCapacityAlarm();
+    if (capacityAlarm > 0 && getMAhDrawn() >= capacityAlarm) {
         SET_BLINK(OSD_MAH_DRAWN);
         SET_BLINK(OSD_REMAINING_TIME_ESTIMATE);
     } else {
@@ -2835,8 +2846,8 @@ void osdUpdateAlarms(void)
         CLR_BLINK(OSD_REMAINING_TIME_ESTIMATE);
     }
 
-    if ((currentBatteryProfile->batteryCapacity && getMAhDrawn() >= osdConfig()->cap_alarm) ||
-        (!currentBatteryProfile->batteryCapacity && getBatteryState() != BATTERY_OK)) {
+    if ((capacityAlarm > 0 && getMAhDrawn() >= capacityAlarm) ||
+        (capacityAlarm == 0 && getBatteryState() != BATTERY_OK)) {
         SET_BLINK(OSD_MAIN_BATT_USAGE);
     } else {
         CLR_BLINK(OSD_MAIN_BATT_USAGE);

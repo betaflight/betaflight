@@ -115,7 +115,7 @@ endif
 
 # some targets use parallel build by default
 # MAKEFLAGS is valid only inside target, do not use this at parse phase
-DEFAULT_PARALLEL_JOBS 	:=    # all jobs in parallel (for backward compatibility)
+DEFAULT_PARALLEL_JOBS := $(shell getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 4)
 # MinGW's make requires a numeric argument for -j; detect CPU count via nproc
 ifeq ($(MINGW),1)
   DEFAULT_PARALLEL_JOBS := $(shell nproc 2>/dev/null || echo 4)
@@ -169,7 +169,18 @@ DFUSE-PACK  := src/utils/dfuse-pack.py
 
 # Command used to link the final ELF. Platform makefiles can override this
 # when linking requires a dedicated linker instead of the C compiler driver.
+# $(file ...) needs GNU make 4.0; macOS ships 3.81, which silently expands it to
+# nothing and leaves the linker looking for an arguments file that was never written.
+ifeq ($(filter 3.%,$(MAKE_VERSION)),)
 ELF_LINK_CMD = $(file > $@.args,$(filter-out %.ld,$^)) $(CROSS_CC) -o $@ @$@.args $(LD_FLAGS)
+else
+# Exported so the warning is emitted once, not once per recursive make invocation.
+ifndef OLD_MAKE_WARNED
+export OLD_MAKE_WARNED := 1
+$(warning GNU make $(MAKE_VERSION) detected, falling back to linking without an arguments file. Support for GNU make older than 4.0 may be dropped in a future release. macOS ships an old system make: install a current one with 'brew install make' and build with gmake.)
+endif
+ELF_LINK_CMD = $(CROSS_CC) -o $@ $(filter-out %.ld,$^) $(LD_FLAGS)
+endif
 
 # Preprocessor helpers (generic .h parsing)
 include $(MAKE_SCRIPT_DIR)/preprocess.mk
@@ -493,7 +504,7 @@ endif
 
 TARGET_EF_HASH_FILE := $(TARGET_OBJ_DIR)/.efhash_$(TARGET_EF_HASH)
 
-CLEAN_ARTIFACTS := $(TARGET_ELF) $(TARGET_EXST_ELF) $(TARGET_MAP)
+CLEAN_ARTIFACTS := $(TARGET_ELF) $(TARGET_ELF).args $(TARGET_EXST_ELF) $(TARGET_MAP)
 CLEAN_ARTIFACTS += $(wildcard $(BIN_DIR)/*$(TARGET_NAME_CLEAN)*)
 
 # Make sure build date and revision is updated on every incremental build
@@ -762,6 +773,9 @@ $(AUTOHYDRATE_STAMPS):
 # the cost is a single cmp call.
 .PHONY: validate-deps
 validate-deps:
+ifeq ($(V),1)
+	@echo "Build parallelism: $(if $(filter -j,$(MAKEFLAGS)),unlimited,$(patsubst -j%,%,$(filter -j%,$(MAKEFLAGS) $(MAKE_PARALLEL)))) jobs"
+endif
 	$(V1) mkdir -p "$(TARGET_OBJ_DIR)"; \
 	printf '%s\n' $(SRC) | sort > "$(SRC_MANIFEST).new"; \
 	if [ ! -f "$(SRC_MANIFEST)" ]; then \

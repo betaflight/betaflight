@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <vector>
 
 extern "C" {
@@ -133,11 +134,12 @@ protected:
 
     // Drive one upload item and return the resulting item write.
     void sendItem(uint16_t seq, uint16_t command, uint16_t total,
-                  float param1 = 0.0f, int32_t lat = 0, int32_t lon = 0, float alt = 0.0f) {
+                  float param1 = 0.0f, int32_t lat = 0, int32_t lon = 0, float alt = 0.0f,
+                  float param4 = 0.0f) {
         mavlink_message_t msg;
         mavlink_msg_mission_item_int_pack(GCS_SYS, GCS_COMP, &msg,
             1, 0, seq, MAV_FRAME_GLOBAL_INT, command, /*current*/ 0, /*autocontinue*/ 1,
-            param1, 0.0f, 0.0f, 0.0f, lat, lon, alt, MAV_MISSION_TYPE_MISSION);
+            param1, 0.0f, 0.0f, param4, lat, lon, alt, MAV_MISSION_TYPE_MISSION);
         (void)total;
         feed(msg);
     }
@@ -181,6 +183,49 @@ TEST_F(MavlinkMissionTest, UploadWritesWaypointsToConfig)
     EXPECT_EQ(plan->waypoints[2].type, WAYPOINT_TYPE_LAND);
 }
 
+TEST_F(MavlinkMissionTest, UploadWaypointAcceptsNanYaw)
+{
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, 0.0f, 300, 400, 20.0f,
+        std::numeric_limits<float>::quiet_NaN());
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_ACCEPTED);
+    ASSERT_EQ(flightPlanConfig()->waypointCount, 1);
+    EXPECT_EQ(flightPlanConfig()->waypoints[0].type, WAYPOINT_TYPE_FLYBY);
+}
+
+TEST_F(MavlinkMissionTest, UploadWaypointRejectsInfiniteYaw)
+{
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, 0.0f, 300, 400, 20.0f,
+        std::numeric_limits<float>::infinity());
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_INVALID);
+    EXPECT_EQ(flightPlanConfig()->waypointCount, 0);
+}
+
+TEST_F(MavlinkMissionTest, UploadWaypointStillRejectsOtherNanParameters)
+{
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1,
+        std::numeric_limits<float>::quiet_NaN(), 300, 400, 20.0f);
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_INVALID);
+    EXPECT_EQ(flightPlanConfig()->waypointCount, 0);
+}
+
 TEST_F(MavlinkMissionTest, UploadMapsLoiterTurnsToOrbitHold)
 {
     sendCount(1);
@@ -218,13 +263,26 @@ TEST_F(MavlinkMissionTest, UploadRejectedWhileAutopilotActive)
     EXPECT_EQ(countOfType(MAVLINK_MSG_ID_MISSION_REQUEST_INT), 0);
 }
 
+static waypoint_t makeWaypoint(int32_t lat, int32_t lon, int32_t altCm, uint8_t type,
+                               uint8_t pattern = WAYPOINT_PATTERN_NONE, uint16_t durationDs = 0)
+{
+    waypoint_t wp = {};
+    wp.latitude = lat;
+    wp.longitude = lon;
+    wp.altitude = altCm;
+    wp.duration = durationDs;
+    wp.type = type;
+    wp.pattern = pattern;
+    return wp;
+}
+
 TEST_F(MavlinkMissionTest, DownloadEncodesWaypointsRoundTrip)
 {
     flightPlanConfig_t *plan = flightPlanConfigMutable();
     plan->waypointCount = 3;
-    plan->waypoints[0] = { 100, 200, 1200, 0, 0, WAYPOINT_TYPE_TAKEOFF, WAYPOINT_PATTERN_NONE };
-    plan->waypoints[1] = { 300, 400, 2000, 0, 300 /* 30 s */, WAYPOINT_TYPE_HOLD, WAYPOINT_PATTERN_ORBIT };
-    plan->waypoints[2] = { 500, 600, 0, 0, 0, WAYPOINT_TYPE_LAND, WAYPOINT_PATTERN_NONE };
+    plan->waypoints[0] = makeWaypoint(100, 200, 1200, WAYPOINT_TYPE_TAKEOFF);
+    plan->waypoints[1] = makeWaypoint(300, 400, 2000, WAYPOINT_TYPE_HOLD, WAYPOINT_PATTERN_ORBIT, 300 /* 30 s */);
+    plan->waypoints[2] = makeWaypoint(500, 600, 0, WAYPOINT_TYPE_LAND);
 
     // REQUEST_LIST -> COUNT.
     mavlink_message_t list;

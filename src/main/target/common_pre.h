@@ -117,6 +117,8 @@
 #define USE_BARO_SPI_BMP280
 #define USE_BARO_BMP388
 #define USE_BARO_SPI_BMP388
+#define USE_BARO_SPI_BMP580
+#define USE_BARO_SPI_BMP581
 #define USE_BARO_SPI_LPS
 #define USE_BARO_QMP6988
 #define USE_BARO_SPI_QMP6988
@@ -143,8 +145,10 @@
 #define USE_GYRO_SPI_ICM20689
 #define USE_ACCGYRO_LSM6DSO
 #define USE_ACCGYRO_LSM6DSV16X
+#define USE_ACCGYRO_LSM6DSV32X
 #define USE_ACCGYRO_LSM6DSK320X
 #define USE_ACCGYRO_BMI270
+#define USE_ACCGYRO_BMI423
 #define USE_GYRO_SPI_ICM42605
 #define USE_ACCGYRO_ICM42622P
 #define USE_ACCGYRO_ICM42686P
@@ -486,7 +490,7 @@
 #if defined(USE_SERIALRX_CRSF)
 
 #define USE_CRSF_V3
-#if defined(USE_TELEMETRY_CRSF) && defined(USE_CRSF_V3)
+#if defined(USE_TELEMETRY_CRSF)
 #define USE_CRSF_ACCGYRO_TELEMETRY
 #endif
 
@@ -538,6 +542,12 @@
 #undef USE_YAW_SPIN_RECOVERY
 #undef USE_LAUNCH_CONTROL
 #undef USE_RUNAWAY_TAKEOFF
+
+// Distinct from the multirotor race-start USE_LAUNCH_CONTROL undef'd just
+// above: this is the hand/bungee launch assist for fixed wings.
+#ifndef USE_LAUNCH_WING
+#define USE_LAUNCH_WING
+#endif
 
 #endif // USE_WING
 

@@ -7,8 +7,8 @@ MEMORY
     /*             origin         length       */
     FLASH    (rx)  : ORIGIN = 0x15020000, LENGTH = 0x00190000   /* 1600 KB NOR-Flash (XIP) */
     FLASH_CONFIG    (r)  : ORIGIN = 0x151C0000, LENGTH = 0x00020000   /* 128 KB NOR-Flash (XIP) */
-    ITCM     (xrw) : ORIGIN = 0x00000000, LENGTH = 0x0009FC00   /* 640 KB - 1KB            */
-    DTCM     (xrw) : ORIGIN = 0x20000000, LENGTH = 0x00060000   /* 384 KB                  */
+    ITCM     (xrw) : ORIGIN = 0x00000000, LENGTH = 0x000DFC00   /* 896 KB - 1KB            */
+    DTCM     (xrw) : ORIGIN = 0x20000000, LENGTH = 0x00020000   /* 128 KB                  */
     AXI_SRAM (xrw) : ORIGIN = 0x24000000, LENGTH = 0x00020000   /* 128 KB                   */
     AHB_SRAM (xrw) : ORIGIN = 0x30000000, LENGTH = 0x00050000   /* 320 KB (excl. SRAM5 @ 0x30050000 for FDCAN) */
 }

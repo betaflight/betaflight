@@ -976,9 +976,9 @@ TEST_F(PositionEstimatorTest, RangefinderOnlyAboveMaxRangeLosesZValidity)
 TEST_F(PositionEstimatorTest, CrossCalibrationFollowsTheFastestActiveAnchor)
 {
     enabledSensors = SENSOR_GPS | SENSOR_BARO | SENSOR_RANGEFINDER;
-    stateFlags = GPS_FIX; // GPS anchors as well, at its own much slower rate
+    stateFlags = GPS_FIX; // GPS anchors as well, at its own much slower rate, if ltitude_prefer_baro <50
     positionConfigMutable()->altitude_source = ALTITUDE_SOURCE_DEFAULT;
-    positionConfigMutable()->altitude_prefer_baro = 50;
+    positionConfigMutable()->altitude_prefer_baro = 49;
 
     rfAltCm = 80.0f;
     baroAltCm = 100.0f;

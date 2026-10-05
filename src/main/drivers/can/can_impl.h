@@ -110,6 +110,7 @@ typedef struct canDevice_s {
     timeUs_t txStallSinceUs;            // when the snapshot was last refreshed
     volatile uint32_t txStallRecoveries;    // cancel-and-drop events (diagnostics)
 
+    volatile uint32_t busOffEvents; // bus-off recoveries initiated (diagnostics)
     bool initialized;
 } canDevice_t;
 

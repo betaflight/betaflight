@@ -549,8 +549,10 @@ void canInitDevice(canDevice_e device, uint32_t bitrate)
     // sources to line 0, so no write needed. Enabling RF0LE lets the IRQ
     // path observe and clear overrun flags so the peripheral does not stay
     // stuck in the "lost" state after a burst. TCE lets a freed Tx FIFO slot
-    // re-trigger the ring drain (see canTxKick).
-    regs->IE  |= FDCAN_IE_RF0NE | FDCAN_IE_RF0LE | FDCAN_IE_TCE;
+    // re-trigger the ring drain (see canTxKick). BOE (bus-off) lets the ISR
+    // restart the peripheral after a bus fault; see the recovery note in
+    // canIrqHandler().
+    regs->IE  |= FDCAN_IE_RF0NE | FDCAN_IE_RF0LE | FDCAN_IE_TCE | FDCAN_IE_BOE;
     regs->ILE |= FDCAN_ILE_EINT0;
 
     // TXBTIE selects which Tx buffers raise the TC interrupt; set the low
@@ -814,6 +816,20 @@ void canIrqHandler(canDevice_e device)
         regs->IR = FDCAN_IR_TC;
         canDevice[device].txCompletions++;
         canTxKick(device);
+    }
+
+    // BO fires on any bus-off status change. On entry (PSR.BO set) the M_CAN
+    // has set CCCR.INIT itself, halting all traffic; without intervention the
+    // bus stays dead until reboot (a hot-plugged node is enough to trip this).
+    // Clearing INIT starts recovery: the peripheral waits the spec-mandated
+    // 129 x 11 recessive bits before rejoining, so a persistent fault
+    // throttles itself while a transient one recovers unattended.
+    if (ir & FDCAN_IR_BO) {
+        regs->IR = FDCAN_IR_BO;
+        if (regs->PSR & FDCAN_PSR_BO) {
+            regs->CCCR &= ~FDCAN_CCCR_INIT;
+            canDevice[device].busOffEvents++;
+        }
     }
 }
 

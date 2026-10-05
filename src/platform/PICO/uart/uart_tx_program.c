@@ -50,7 +50,7 @@
  *   bitloop:
  *       out    pins, 1                ; data bit, LSB first
  *       jmp    x-- bitloop        [6] ; 8 cycles per bit
- *       jmp    !y, tx_next side 1 [5] ; stop bit 1. y == 0 => single stop bit
+ *       jmp    !y, tx_next side 1 [4] ; stop bit 1. y == 0 => single stop bit
  *       nop               side 1  [7] ; stop bit 2
  *   tx_next:
  *       mov    x, status              ; X = ~0 iff the tx FIFO is empty
@@ -86,7 +86,7 @@ static const uint16_t uart_tx_program_instructions[] = {
     0xe027, //  3: set    x, 7
     0x6001, //  4: out    pins, 1
     0x0644, //  5: jmp    x--, 4                 [6]
-    0x1d68, //  6: jmp    !y, 8           side 1 [5]
+    0x1c68, //  6: jmp    !y, 8           side 1 [4]
     0xbf42, //  7: nop                    side 1 [7]
     0xa025, //  8: mov    x, status
     0x0021, //  9: jmp    !x, 1

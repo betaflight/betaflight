@@ -176,9 +176,9 @@ static uint16_t gimbalCrc(uint8_t *buf, uint32_t size)
 // Set the gimbal position on each axis
 static bool gimbalSet(int16_t headtracker_roll, int16_t headtracker_pitch, int16_t headtracker_yaw)
 {
-    DEBUG_SET(DEBUG_GIMBAL, 0, headtracker_roll);
-    DEBUG_SET(DEBUG_GIMBAL, 1, headtracker_pitch);
-    DEBUG_SET(DEBUG_GIMBAL, 2, headtracker_yaw);
+    DEBUG_SET(DEBUG_GIMBAL, 0, headtracker_roll);   //!< Headtracker Roll
+    DEBUG_SET(DEBUG_GIMBAL, 1, headtracker_pitch);  //!< Headtracker Pitch
+    DEBUG_SET(DEBUG_GIMBAL, 2, headtracker_yaw);    //!< Headtracker Yaw
 
     if (!gimbalSerialPort) {
         return false;
@@ -221,9 +221,9 @@ static bool gimbalSet(int16_t headtracker_roll, int16_t headtracker_pitch, int16
     pitch += GIMBAL_PITCH_MAX * gimbalTrackConfig()->gimbal_pitch_offset / 100;
     yaw   += GIMBAL_YAW_MAX * gimbalTrackConfig()->gimbal_yaw_offset / 100;
 
-    DEBUG_SET(DEBUG_GIMBAL, 3, roll);
-    DEBUG_SET(DEBUG_GIMBAL, 4, pitch);
-    DEBUG_SET(DEBUG_GIMBAL, 5, yaw);
+    DEBUG_SET(DEBUG_GIMBAL, 3, roll);   //!< Gimbal Roll
+    DEBUG_SET(DEBUG_GIMBAL, 4, pitch);  //!< Gimbal Pitch
+    DEBUG_SET(DEBUG_GIMBAL, 5, yaw);    //!< Gimbal Yaw
 
     // Constrain to set limits
     gimbalCmdOut.roll  = constrain(roll, GIMBAL_ROLL_MIN * gimbalTrackConfig()->gimbal_roll_limit / 100,

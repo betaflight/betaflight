@@ -53,6 +53,7 @@ typedef struct barometerConfig_s {
     uint8_t baro_hardware;                  // Barometer hardware to use
     ioTag_t baro_eoc_tag;
     ioTag_t baro_xclr_tag;
+    int16_t baroTempDriftCmPer10C;   // cm per 10°C, signed
 } barometerConfig_t;
 
 PG_DECLARE(barometerConfig_t, barometerConfig);

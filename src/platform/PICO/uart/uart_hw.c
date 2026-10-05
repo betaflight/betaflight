@@ -242,7 +242,7 @@ bool serialUART_hw(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOption
     if (options & SERIAL_BIDIR) {
         // The PL011 (hardware uart) has no half duplex mode. Warn rather than fail, so that a
         // protocol which still has some use without responses (e.g. SmartAudio) keeps working.
-        bprintf("Warning: single-wire option SERIAL_BIDIR not supported for hardware UART, tx only unless joining pins with external hardware, or use a PIOUART");
+        bprintf("Warning: single-wire option SERIAL_BIDIR on hardware UART only supports rx only or tx only unless joining pins with external hardware - alternatively use a PIOUART");
     }
 
     if (txIO) {
@@ -266,24 +266,20 @@ bool serialUART_hw(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOption
         }
     }
 
+    const bool twoStop = options & SERIAL_STOPBITS_2;
+    const bool evenParity = options & SERIAL_PARITY_EVEN;
+
     bprintf("serialUART uart init %p baudrate %d (options 0x%0x)", uartInstance, baudRate, options);
     uart_init(uartInstance, baudRate);
-
-    uart_set_hw_flow(uartInstance, false, false);
-    uart_set_format(uartInstance, 8, 1, UART_PARITY_NONE);
+    uart_set_format(uartInstance, 8, twoStop ? 2 : 1, evenParity ? UART_PARITY_EVEN : UART_PARITY_NONE);
     uart_set_fifo_enabled(uartInstance, true);
+    uart_set_hw_flow(uartInstance, false, false);
+
+    uartConfigureExternalPinInversion(s);
 
     bprintf("serialUART_hw: set exclusive handler and enable for irqn %d", hardware->irqn);
     irq_set_exclusive_handler(hardware->irqn, hardware->irqn == UART0_IRQ ? on_uart0 : on_uart1);
     irq_set_enabled(hardware->irqn, true);
-
-    // TODO make further use of s->port.options
-    const bool twoStop = s->port.options & SERIAL_STOPBITS_2;
-    const bool evenParity = s->port.options & SERIAL_PARITY_EVEN;
-    uart_set_format(uartInstance, 8, twoStop ? 2 : 1, evenParity ? UART_PARITY_EVEN : UART_PARITY_NONE);
-    uart_set_fifo_enabled(uartInstance, true);
-    uartConfigureExternalPinInversion(s);
-    uart_set_hw_flow(uartInstance, false, false);
 
     s->port.rxBuffer = hardware->rxBuffer;
     s->port.txBuffer = hardware->txBuffer;
@@ -305,21 +301,32 @@ void uartReconfigure_hw(uartPort_t *s)
     // so we only consider option changes to baud rate and mode here.
 
     uart_inst_t *uartInstance = UART_INST(s->USARTx);
-    int achievedBaudrate = uart_init(uartInstance, s->port.baudRate);
+    uart_hw_t *uartHw = uart_get_hw(uartInstance);
+
+    // Temporarily disable any TX, RX interrupts
+    uart_set_irqs_enabled(uartInstance, false, false);
+
+    // Clear the UARTEN flag (on CR register), so that uart_set_baudrate doesn't insert a huge delay.
+    uint32_t cr_save = uartHw->cr;
+    uartHw->cr = 0;
+    int achievedBaudrate = uart_set_baudrate(uartInstance, s->port.baudRate);
+    uartHw->cr = cr_save;
+
+    uartDevice_t *uartDev = container_of(s, uartDevice_t, port);
+    IO_t rxIO = IOGetByTag(uartDev->rx.pin);
+    if (rxIO && (s->port.mode & MODE_RX)) {
+        uart_set_irqs_enabled(uartInstance, true, false);
+    }
+
 #if defined(PICO_TRACE_UART_EXTRA) && defined(PICO_TRACE)
+    // Can get very noisy, don't always want this, even when PICO_TRACE is defined.
     bprintf("uartReconfigure for port %p with USARTX %p", s, uartInstance);
     bprintf("uartReconfigure h/w %p, requested baudRate %d, achieving %d", uartInstance, s->port.baudRate, achievedBaudrate);
     bprintf("uartReconfigure note options 0x%0x, port.mode = 0x%x", s->port.options, s->port.mode);
+    bprintf("uartReconfigure Actual LCR reg 0x%02x", uartHw->lcr_h);
 #else
     UNUSED(achievedBaudrate);
 #endif
-
-
-// TODO would like to verify rx pin has been setup?
-//    if ((s->mode & MODE_RX) && rxIO) {
-    if (s->port.mode & MODE_RX) {
-        uart_set_irqs_enabled(uartInstance, true, false);
-    }
 }
 
 void uartEnableTxInterrupt_hw(uartPort_t *uartPort)
@@ -335,6 +342,7 @@ void uartEnableTxInterrupt_hw(uartPort_t *uartPort)
 
     // Enable "tx emptying" interrupts.
     hw_set_bits(&(uartHw->imsc), UART_UARTIMSC_TXIM_BITS);
+    hw_write_masked(&(uartHw->ifls), 0, UART_UARTIFLS_TXIFLSEL_BITS); // threshold = 1/8 full as per uart_set_irqs_enabled in pico sdk.
 }
 
 #endif

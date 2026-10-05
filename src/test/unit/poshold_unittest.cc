@@ -47,9 +47,12 @@ extern "C" {
     #include "sensors/gyro.h"
 
     #include "pg/autopilot.h"
+    #include "pg/pos_hold.h"
     #include "flight/autopilot.h"
+    #include "flight/pos_hold.h"
 
     PG_REGISTER(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
+    PG_REGISTER(posHoldConfig_t, posHoldConfig, PG_POSHOLD_CONFIG, 0);
     PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
     PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
     PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
@@ -62,6 +65,9 @@ extern "C" {
     }
     void positionEstimatorEnableXY(bool enable) { UNUSED(enable); }
     bool positionEstimatorIsValidXY(void) { return testEstimate.isValidXY; }
+    bool positionEstimatorTakeUpdate(positionEstimatorConsumer_e) { return false; }
+    static bool mockHeadingRequired = false;
+    bool positionEstimatorIsHeadingRequired(void) { return mockHeadingRequired; }
 
     // Nav stubs: default to no active navigation (plain position hold);
     // yaw-control tests drive them via the mockNav* variables.
@@ -71,7 +77,8 @@ extern "C" {
 
     void positionNavInit(void) { }
     void positionNavReset(void) { }
-    void positionNavUpdate(float /*dt*/, const positionEstimate3d_t * /*est*/) { }
+    static int positionNavUpdateCalls;
+    void positionNavUpdate(float /*dt*/, const positionEstimate3d_t * /*est*/) { positionNavUpdateCalls++; }
     bool positionNavHasActiveTarget(void) { return mockNavHasActiveTarget; }
     bool positionNavTargetReached(void) { return false; }
     vector3_t positionNavGetTargetVelocityCmS(void) { return mockTargetVelCmS; }
@@ -95,6 +102,8 @@ extern "C" {
     gpsSolutionData_t gpsSol;
     gyro_t gyro;
     float rcCommand[4];
+    static bool mockHeadingValid = true;
+    bool imuIsHeadingValid(void) { return mockHeadingValid; }
 
     bool failsafeIsActive(void) { return false; }
 
@@ -137,6 +146,8 @@ extern "C" {
     throttleStatus_e calculateThrottleStatus() {
         return THROTTLE_LOW;
     }
+
+    float getRcDeflectionAbs(uint8_t) { return 0.0f; }
 }
 
 #include "unittest_macros.h"
@@ -175,12 +186,15 @@ static void initAndSettleAt(float eastCm, float northCm, int16_t yawDecidegrees)
     cfg->hoverThrottle = 1500;
     cfg->throttleMin   = 1000;
     cfg->throttleMax   = 2000;
-    cfg->altitudeP = 50;
-    cfg->altitudeI = 50;
-    cfg->altitudeD = 50;
-    cfg->altitudeA = 50;
-    cfg->altitudeF = 0;
+    cfg->altitudeP = 30;
+    cfg->altitudeI = 30;
+    cfg->altitudeD = 30;
+    cfg->altitudeA = 30;
+    cfg->altitudeF = 30;
     cfg->landingAltitudeM = 5;
+    cfg->yawP = 30;
+    cfg->maxYawRate =150;
+cfg->stickDeadband = 50;
 
     autopilotInit();
     resetPositionControl(100);
@@ -199,7 +213,12 @@ protected:
         mockNavHasActiveTarget = false;
         mockTargetVelCmS = (vector3_t){{0.0f, 0.0f, 0.0f}};
         flightModeFlags = 0;
+        armingFlags = 0;
         simulatedTaskRateHz = 100;
+        mockHeadingRequired = false;
+        mockHeadingValid = true;
+        pitchForwardOverride(false);
+        updatePosHold(0);
     }
 };
 
@@ -216,6 +235,59 @@ TEST_F(PosHoldTest, ValidEstimateReturnsTrue)
 {
     initAndSettleAt(0, 0, 0);
     EXPECT_TRUE(positionControl());
+}
+
+TEST_F(PosHoldTest, PitchForwardKeepsTheNavCommandUpdating)
+{
+    // Alt hold keeps flying the nav command's altitude ramp through a heading-recovery pitch-forward,
+    // so the ramp and its feedforward must keep moving rather than freeze where they were.
+    initAndSettleAt(0, 0, 0);
+    pitchForwardOverride(true);
+    const int callsBefore = positionNavUpdateCalls;
+    runIterations(10);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 35.0f, 0.01f);
+    EXPECT_EQ(positionNavUpdateCalls, callsBefore + 10);
+    pitchForwardOverride(false);
+}
+
+TEST_F(PosHoldTest, PitchForwardRecoveryRunsWithInvalidHeading)
+{
+    initAndSettleAt(0, 0, 0);
+    mockHeadingRequired = true;
+    mockHeadingValid = true;
+    ENABLE_ARMING_FLAG(ARMED);
+    flightModeFlags |= POS_HOLD_MODE;
+    updatePosHold(0);
+    ASSERT_TRUE(isAutopilotInControl());
+
+    mockHeadingValid = false;
+    pitchForwardOverride(true);
+    for (int i = 0; i < SETTLE_ITERATIONS; i++) {
+        updatePosHold(i * 10000);
+    }
+
+    EXPECT_TRUE(isAutopilotInControl());
+    EXPECT_NEAR(0.0f, autopilotAngle[AI_ROLL], 0.01f);
+    EXPECT_NEAR(35.0f, autopilotAngle[AI_PITCH], 0.01f);
+}
+
+TEST_F(PosHoldTest, InvalidHeadingStillBlocksNormalPositionControl)
+{
+    initAndSettleAt(0, 0, 0);
+    mockHeadingRequired = true;
+    mockHeadingValid = true;
+    ENABLE_ARMING_FLAG(ARMED);
+    flightModeFlags |= POS_HOLD_MODE;
+    updatePosHold(0);
+    ASSERT_TRUE(isAutopilotInControl());
+
+    mockHeadingValid = false;
+    pitchForwardOverride(false);
+    updatePosHold(10000);
+
+    EXPECT_FALSE(isAutopilotInControl());
+    EXPECT_NEAR(0.0f, autopilotAngle[AI_ROLL], 0.01f);
+    EXPECT_NEAR(0.0f, autopilotAngle[AI_PITCH], 0.01f);
 }
 
 TEST_F(PosHoldTest, StationaryAtTargetProducesNearZeroOutput)
@@ -851,7 +923,6 @@ protected:
         autopilotConfig_t *cfg = autopilotConfigMutable();
         cfg->yawMode = yawMode;
         cfg->yawP = 50;                // 0.5 deg/s per deg of heading error
-        cfg->yawD = 0;                 // deterministic P-only response
         cfg->maxYawRate = 30;
         cfg->minForwardVelocity = 100; // 1 m/s
 
@@ -859,10 +930,25 @@ protected:
         mockNavCommand.active = true;
         mockNavCommand.acceptanceRadiusM = 5.0f;
         flightModeFlags |= AUTOPILOT_MODE;
+        // AUTOPILOT_MODE is only ever enabled while armed (core.c), and the yaw
+        // controller stands down when disarmed, so the fixture has to model that.
+        armingFlags = ARMED;
     }
 
     // Enough iterations at 100 Hz for the 1 s engage attenuator to saturate.
     void settleYaw() { runIterations(SETTLE_ITERATIONS); }
+
+    // Holding the heading it engaged on: no rate while the nose is there, and a
+    // rate back toward it once the nose is pushed 20 deg right.
+    void expectHoldsHeading() {
+        settleYaw();
+        EXPECT_TRUE(autopilotYawControlActive());
+        EXPECT_NEAR(autopilotGetYawRate(), 0.0f, 0.1f);
+
+        attitude.values.yaw += 200;
+        settleYaw();
+        EXPECT_GT(autopilotGetYawRate(), 0.0f);
+    }
 };
 
 TEST_F(AutopilotYawTest, InactiveWithoutAutopilotMode)
@@ -876,23 +962,21 @@ TEST_F(AutopilotYawTest, InactiveWithoutAutopilotMode)
     EXPECT_FLOAT_EQ(autopilotGetYawRate(), 0.0f);
 }
 
-TEST_F(AutopilotYawTest, InactiveInFixedMode)
+TEST_F(AutopilotYawTest, FixedModeHoldsHeading)
 {
     engageNavLeg(YAW_MODE_FIXED);
     testEstimate.velocity.x = 300.0f;
 
-    settleYaw();
-    EXPECT_FALSE(autopilotYawControlActive());
+    expectHoldsHeading();
 }
 
-TEST_F(AutopilotYawTest, InactiveWithoutNavTarget)
+TEST_F(AutopilotYawTest, HoldsHeadingWithoutNavTarget)
 {
     engageNavLeg(YAW_MODE_VELOCITY);
     mockNavHasActiveTarget = false;
     testEstimate.velocity.x = 300.0f;
 
-    settleYaw();
-    EXPECT_FALSE(autopilotYawControlActive());
+    expectHoldsHeading();
 }
 
 TEST_F(AutopilotYawTest, VelocityModeYawsTowardCourse)
@@ -912,13 +996,12 @@ TEST_F(AutopilotYawTest, VelocityModeYawsTowardCourse)
     EXPECT_NEAR(autopilotGetYawRate(), 30.0f, 0.1f);
 }
 
-TEST_F(AutopilotYawTest, VelocityModeInactiveBelowMinSpeed)
+TEST_F(AutopilotYawTest, VelocityModeHoldsHeadingBelowMinSpeed)
 {
     engageNavLeg(YAW_MODE_VELOCITY);
     testEstimate.velocity.x = 50.0f; // below the 100 cm/s course gate
 
-    settleYaw();
-    EXPECT_FALSE(autopilotYawControlActive());
+    expectHoldsHeading();
 }
 
 TEST_F(AutopilotYawTest, VelocityModeProportionalBelowClamp)
@@ -932,7 +1015,7 @@ TEST_F(AutopilotYawTest, VelocityModeProportionalBelowClamp)
 
     settleYaw();
     EXPECT_TRUE(autopilotYawControlActive());
-    EXPECT_NEAR(autopilotGetYawRate(), 11.0f, 1.0f);
+    EXPECT_NEAR(autopilotGetYawRate(), 30.0f, 1.0f);
 }
 
 TEST_F(AutopilotYawTest, BearingModeYawsTowardTarget)
@@ -945,13 +1028,48 @@ TEST_F(AutopilotYawTest, BearingModeYawsTowardTarget)
     EXPECT_NEAR(autopilotGetYawRate(), -30.0f, 0.1f);
 }
 
-TEST_F(AutopilotYawTest, BearingModeInactiveInsideAcceptanceRadius)
+TEST_F(AutopilotYawTest, BearingModeOnACarrotSteersAlongItsVelocity)
+{
+    // A carrot rides with the craft: the bearing to it is whatever the last few decimetres of
+    // position scatter say. What it is being flown along is the bearing.
+    engageNavLeg(YAW_MODE_BEARING);
+    mockNavCommand.acceptanceRadiusM = -1.0f;         // a carrot never arrives
+    mockNavCommand.velocityFfValid = true;
+    mockNavCommand.targetPosEfM.v[0] = -0.3f;         // 30 cm west of the craft
+    mockNavCommand.velocityFfEfMps = (vector2_t){{ 4.0f, 0.0f }};   // flown east
+
+    settleYaw();
+    EXPECT_TRUE(autopilotYawControlActive());
+    EXPECT_NEAR(autopilotGetYawRate(), -30.0f, 0.1f);  // a right turn, toward east
+
+    mockNavCommand.velocityFfEfMps = (vector2_t){{ 0.2f, 0.0f }};   // too slow to have a direction
+    expectHoldsHeading();
+}
+
+TEST_F(AutopilotYawTest, BearingModeHoldsHeadingInsideAcceptanceRadius)
 {
     engageNavLeg(YAW_MODE_BEARING);
     mockNavCommand.targetPosEfM.v[0] = 3.0f; // inside the 5 m radius
 
+    expectHoldsHeading();
+}
+
+TEST_F(AutopilotYawTest, HeldHeadingSurvivesLosingTheCourse)
+{
+    engageNavLeg(YAW_MODE_VELOCITY);
+    attitude.values.yaw = 900;        // nose east
+    testEstimate.velocity.x = 300.0f; // flying east: on course
     settleYaw();
-    EXPECT_FALSE(autopilotYawControlActive());
+    EXPECT_NEAR(autopilotGetYawRate(), 0.0f, 0.1f);
+
+    // Slowing below the course gate hands the nose to the hold, which keeps it
+    // east rather than letting it wander.
+    testEstimate.velocity.x = 0.0f;
+    runIterations(1);
+    attitude.values.yaw = 1100;
+    settleYaw();
+    EXPECT_TRUE(autopilotYawControlActive());
+    EXPECT_GT(autopilotGetYawRate(), 0.0f);
 }
 
 TEST_F(AutopilotYawTest, HybridFallsBackToBearingWhenSlow)
@@ -984,11 +1102,10 @@ TEST_F(AutopilotYawTest, EngageRampsRateIn)
     engageNavLeg(YAW_MODE_VELOCITY);
     testEstimate.velocity.x = 300.0f;
 
-    // A quarter of the 1 s ramp: attenuated well below the clamp.
-    runIterations(25);
+// A tenth of the 1 s ramp: 90 deg error * 1.8 Kp * 0.1 = 16.2 deg/s.
+    runIterations(10);
     EXPECT_TRUE(autopilotYawControlActive());
-    EXPECT_GT(autopilotGetYawRate(), -15.0f);
-    EXPECT_LT(autopilotGetYawRate(), 0.0f);
+    EXPECT_NEAR(autopilotGetYawRate(), -16.2f, 1.0f);
 }
 
 // -- Nav mode --
@@ -1029,14 +1146,38 @@ protected:
     {
         mockTargetVelCmS = (vector3_t){{0.0f, cmS, 0.0f}};
     }
+
+    // Status slot 7 carries +10 for nav active and +20 for the anchor being
+    // off, so the anchored/velocity split is directly observable.
+    enum { NAV_STATUS_ANCHORED = 10, NAV_STATUS_VELOCITY = 30 };
+
+    int navStatus()
+    {
+        debugMode = DEBUG_AUTOPILOT_PID;
+        runIterations(1);
+        const int status = debug[7];
+        debugMode = DEBUG_NONE;
+        return status;
+    }
+
+    // DEBUG_POSITION_NAV slot 7 carries +10 for the anchor being off and +1 while the buildup
+    // clamp is scaling the drive.
+    bool buildupClampEngaged()
+    {
+        debugMode = DEBUG_POSITION_NAV;
+        runIterations(1);
+        const bool clamped = (debug[7] % 10) == 1;
+        debugMode = DEBUG_NONE;
+        return clamped;
+    }
 };
 
 TEST_F(NavModeTest, NavAnchorsToCarrotAhead)
 {
-    // Carrot 50 m north, craft at the origin: the position anchor produces a
+    // Carrot 3 m north, inside the anchor range: the position anchor produces a
     // lean toward the carrot (pitch), with negligible roll.
     engageNav(30, 30, 0, 0, 30, 45);
-    setNavCarrot(0.0f, 50.0f);
+    setNavCarrot(0.0f, 3.0f);
     setTargetVelocityNorth(0.0f);
 
     runIterations(SETTLE_ITERATIONS);
@@ -1045,19 +1186,354 @@ TEST_F(NavModeTest, NavAnchorsToCarrotAhead)
     EXPECT_LT(fabsf(autopilotAngle[AI_ROLL]), 2.0f);
 }
 
+TEST_F(NavModeTest, NavBeyondAnchorRangeFliesTheCommandedVelocity)
+{
+    // Out on a leg the position error is large by construction, so anchoring to
+    // it would only saturate P into a fixed tilt bias on top of the velocity
+    // feedforward. Beyond the anchor range the commanded velocity is the
+    // authority: a distant carrot with no commanded velocity must not lean.
+    engageNav(30, 30, 0, 0, 30, 45);
+    setNavCarrot(0.0f, 50.0f);
+    setTargetVelocityNorth(0.0f);
+
+    runIterations(SETTLE_ITERATIONS);
+
+    EXPECT_LT(fabsf(autopilotAngle[AI_PITCH]), 2.0f);
+    EXPECT_LT(fabsf(autopilotAngle[AI_ROLL]), 2.0f);
+}
+
+TEST_F(NavModeTest, NavBeyondAnchorRangeTracksANonZeroCommandedVelocity)
+{
+    // The other half of the contract: out there the commanded velocity holds
+    // the authority, not the carrot. Carrot far to the north but the command
+    // pointing south, so the two disagree and the lean has to follow the
+    // command.
+    engageNav(30, 30, 0, 0, 30, 45);
+    setNavCarrot(0.0f, 50.0f);
+    testEstimate.velocity.y = 0.0f;
+
+    setTargetVelocityNorth(300.0f);
+    runIterations(SETTLE_ITERATIONS);
+    const float pitchNorth = autopilotAngle[AI_PITCH];
+
+    setTargetVelocityNorth(-300.0f);
+    runIterations(SETTLE_ITERATIONS * 4);
+    const float pitchSouth = autopilotAngle[AI_PITCH];
+
+    EXPECT_EQ(NAV_STATUS_VELOCITY, navStatus());
+    EXPECT_GT(fabsf(pitchNorth), 5.0f);
+    EXPECT_GT(fabsf(pitchSouth), 5.0f);
+    EXPECT_LT(pitchNorth * pitchSouth, 0.0f);
+    EXPECT_LT(fabsf(autopilotAngle[AI_ROLL]), 2.0f);
+}
+
+TEST_F(NavModeTest, NavBrakingIsNotLimitedByTheBuildupClamp)
+{
+    // A rescue triggered mid-dash: carrot far behind the craft, the command pointing home, and the
+    // craft still travelling the other way at 17 m/s. The buildup clamp exists to stop the pitch
+    // slamming while speed is being built, and the drive it clamps is the whole of the braking
+    // authority, so out here it has to stand aside or the craft coasts on past its own fence.
+    engageNav(30, 30, 30, 50, 8, 50);
+    setNavCarrot(0.0f, 50.0f);
+    testEstimate.velocity.y = 1700.0f;
+    setTargetVelocityNorth(-300.0f);
+
+    runIterations(SETTLE_ITERATIONS);
+
+    EXPECT_EQ(NAV_STATUS_VELOCITY, navStatus());
+    EXPECT_LT(autopilotAngle[AI_PITCH], -20.0f);   // leaned back hard on the brake, not capped at 8
+    EXPECT_FALSE(buildupClampEngaged());
+}
+
+TEST_F(NavModeTest, NavBuildupClampStillHoldsWhileAccelerating)
+{
+    // The other side of the gate: same geometry, but the command now agrees with the direction of
+    // travel, so the drive is building speed up rather than shedding it and the clamp still owns it.
+    engageNav(30, 30, 30, 50, 8, 50);
+    setNavCarrot(0.0f, 50.0f);
+    testEstimate.velocity.y = 100.0f;
+    setTargetVelocityNorth(1500.0f);
+
+    runIterations(5);
+
+    EXPECT_TRUE(buildupClampEngaged());
+}
+
+TEST_F(NavModeTest, NavFeedforwardTargetIsAnchoredAtAnyRange)
+{
+    // A carrot flown at its stated velocity is the position reference itself. Pushed 20 m off the
+    // line, the craft must still be pulled back onto it: out of anchor range with nothing but the
+    // velocity to fly, it would carry on along the leg 20 m off it for good.
+    engageNav(30, 30, 0, 0, 30, 45);
+    mockNavCommand.velocityFfValid = true;
+    setNavCarrot(20.0f, 0.0f);                          // line 20 m east
+    setTargetVelocityNorth(300.0f);
+    testEstimate.velocity.y = 300.0f;
+
+    EXPECT_EQ(NAV_STATUS_ANCHORED, navStatus());
+    runIterations(SETTLE_ITERATIONS);
+    EXPECT_GT(autopilotAngle[AI_ROLL], 5.0f);           // rolling east, back toward the line
+}
+
+// Fly the craft straight at a fixed target 12 m north at the commanded 2 m/s, exactly as commanded,
+// and report the largest cycle-to-cycle pitch change once under way, and the largest pitch inside the
+// anchor range.
+struct NavApproach { float maxPitchStepDeg; float maxPitchInsideDeg; };
+
+static NavApproach flyStraightAtAFixedTarget(void)
+{
+    mockNavCommand.sequence++;
+    mockNavCommand.fixedTarget = true;
+    mockNavCommand.targetPosEfM.v[1] = 12.0f;
+    const float speedCmS = 200.0f;
+    mockTargetVelCmS = (vector3_t){{ 0.0f, speedCmS, 0.0f }};
+    testEstimate.velocity.y = speedCmS;
+
+    NavApproach result = { 0.0f, 0.0f };
+    float previousPitch = 0.0f;
+    while (testEstimate.position.y < 1150.0f) {
+        testEstimate.position.y += speedCmS / simulatedTaskRateHz;
+        runIterations(1);
+        if (testEstimate.position.y > 300.0f) {   // clear of the start-up transient
+            result.maxPitchStepDeg = fmaxf(result.maxPitchStepDeg, fabsf(autopilotAngle[AI_PITCH] - previousPitch));
+        }
+        if (testEstimate.position.y > 1200.0f - 500.0f) {
+            result.maxPitchInsideDeg = fmaxf(result.maxPitchInsideDeg, fabsf(autopilotAngle[AI_PITCH]));
+        }
+        previousPitch = autopilotAngle[AI_PITCH];
+    }
+    return result;
+}
+
+TEST_F(NavModeTest, NavFixedTargetIsAcquiredWithoutAPositionStep)
+{
+    // Flown in from 12 m out through the 5 m anchor range, exactly as commanded: P never steps.
+    engageNav(30, 30, 0, 0, 30, 45);
+    const NavApproach point = flyStraightAtAFixedTarget();
+    EXPECT_LT(point.maxPitchStepDeg, 0.5f);
+    // Flying exactly what was commanded, there is nothing for the controller to add inside 5 m.
+    EXPECT_LT(point.maxPitchInsideDeg, 1.0f);
+}
+
+TEST_F(NavModeTest, NavFixedTargetReferenceStopsAtTheTarget)
+{
+    // The reference walks onto the target at the commanded speed and no further, so a craft that
+    // lags is drawn onto the target, not past it.
+    engageNav(30, 30, 0, 0, 30, 45);
+    mockNavCommand.fixedTarget = true;
+    mockNavCommand.targetPosEfM.v[1] = 1.0f;   // 1 m north
+    mockTargetVelCmS = (vector3_t){{ 0.0f, 100.0f, 0.0f }};
+
+    runIterations(300);   // 3 s at 1 m/s: the reference would be 3 m out if it did not stop
+
+    // The lean left once nothing is commanded is P on the metre to the target alone,
+    // 30 * 0.004 deg/cm * 100 cm.
+    mockTargetVelCmS = (vector3_t){{ 0.0f, 0.0f, 0.0f }};
+    runIterations(100);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 12.0f, 0.5f);
+}
+
+TEST_F(NavModeTest, NavFixedTargetPicksUpThePositionErrorItInherits)
+{
+    // Handed over from a leg that had built up a position error (here the velocity integral of a
+    // craft that could not keep up): P carries straight on rather than resetting to the new target.
+    engageNav(30, 30, 0, 0, 30, 45);
+    setNavCarrot(0.0f, 50.0f);
+    setTargetVelocityNorth(150.0f);
+    runIterations(50);
+    ASSERT_EQ(NAV_STATUS_VELOCITY, navStatus());
+    const float before = autopilotAngle[AI_PITCH];
+
+    mockNavCommand.sequence++;
+    mockNavCommand.fixedTarget = true;
+    setNavCarrot(0.0f, 7.0f);
+    setTargetVelocityNorth(150.0f);
+    runIterations(1);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], before, 1.0f);
+}
+
+TEST_F(NavModeTest, NavFixedTargetReacquiresAfterASensorDropout)
+{
+    // Blind for a while, the craft drifted off the reference it was walking. The re-anchor that
+    // follows a dropout exists so it does not lurch back to where it was: the approach resumes from
+    // where the craft is now.
+    engageNav(30, 30, 0, 0, 30, 45);
+    mockNavCommand.fixedTarget = true;
+    mockNavCommand.targetPosEfM.v[1] = 12.0f;
+    mockTargetVelCmS = (vector3_t){{ 0.0f, 100.0f, 0.0f }};
+    testEstimate.velocity.y = 100.0f;
+    while (testEstimate.position.y < 300.0f) {
+        testEstimate.position.y += 1.0f;
+        runIterations(1);
+    }
+
+    testEstimate.position.x += 200.0f;   // 2 m east and 2 m further north while blind
+    testEstimate.position.y += 200.0f;
+    positionControlReanchor();
+    runIterations(1);
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 2.0f);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 2.0f);
+}
+
+TEST_F(NavModeTest, NavFeedforwardPickedUpMidFlightDoesNotBrake)
+{
+    // A carrot anchored on a craft already flying 6 m/s along the leg states that velocity from the
+    // first cycle. The feedforward must stand there from the first cycle too: climbing out of a
+    // reset filter while the damping acts on the measured speed at once is a max-angle brake pulse.
+    engageNav(30, 30, 0, 50, 8, 50);
+    mockNavCommand.velocityFfValid = true;
+    mockNavCommand.velocityFromCraft = true;
+    testEstimate.velocity.y = 600.0f;
+    setTargetVelocityNorth(600.0f);
+    float lowestPitch = 90.0f;
+    for (int i = 0; i < 30; i++) {
+        setNavCarrot(0.0f, testEstimate.position.y * 0.01f);
+        runIterations(1);
+        lowestPitch = fminf(lowestPitch, autopilotAngle[AI_PITCH]);
+        testEstimate.position.y += 6.0f;
+    }
+    EXPECT_GT(lowestPitch, -2.0f);
+}
+
+TEST_F(NavModeTest, NavFixedTargetPickedUpMidFlightDoesNotBrake)
+{
+    // A point leg engaged on a craft flying 6 m/s toward it starts its commanded velocity there, and
+    // the feedforward must stand there from the first cycle too, as it does for a carrot.
+    engageNav(30, 30, 0, 50, 8, 50);
+    mockNavCommand.fixedTarget = true;
+    mockNavCommand.velocityFromCraft = true;
+    mockNavCommand.targetPosEfM.v[1] = 100.0f;
+    testEstimate.velocity.y = 600.0f;
+    setTargetVelocityNorth(600.0f);
+    float lowestPitch = 90.0f;
+    for (int i = 0; i < 30; i++) {
+        runIterations(1);
+        lowestPitch = fminf(lowestPitch, autopilotAngle[AI_PITCH]);
+        testEstimate.position.y += 6.0f;
+    }
+    EXPECT_GT(lowestPitch, -2.0f);
+}
+
+TEST_F(NavModeTest, NavFixedTargetReferenceHoldsShortOfTheTargetWithNothingCommanded)
+{
+    // The rescue's descent inside its still radius commands nothing and must not be drawn the last
+    // metre onto home: with no velocity to walk at, the reference stays where it is.
+    engageNav(30, 30, 0, 0, 30, 45);
+    mockNavCommand.fixedTarget = true;
+    mockNavCommand.targetPosEfM.v[1] = 1.0f;
+    mockTargetVelCmS = (vector3_t){{ 0.0f, 0.0f, 0.0f }};
+    runIterations(100);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.5f);
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.5f);
+}
+
+TEST_F(NavModeTest, NavFeedforwardPickedUpAfterAPitchForwardDoesNotBrake)
+{
+    // The rescue's return leg set off from the heading-recovery pitch-forward, which flew with nav
+    // standing aside: nav starts again there, so its feedforward stands from the first cycle too.
+    engageNav(30, 30, 0, 50, 8, 50);
+    mockNavCommand.velocityFfValid = true;
+    runIterations(10);
+    pitchForwardOverride(true);
+    testEstimate.velocity.y = 600.0f;
+    runIterations(50);
+    pitchForwardOverride(false);
+    mockNavCommand.sequence++;
+    mockNavCommand.velocityFromCraft = true;
+    setTargetVelocityNorth(600.0f);
+    float lowestPitch = 90.0f;
+    for (int i = 0; i < 30; i++) {
+        setNavCarrot(0.0f, testEstimate.position.y * 0.01f);
+        runIterations(1);
+        lowestPitch = fminf(lowestPitch, autopilotAngle[AI_PITCH]);
+        testEstimate.position.y += 6.0f;
+    }
+    EXPECT_GT(lowestPitch, -2.0f);
+}
+
+TEST_F(NavModeTest, NavReTargetedMidFlightBrakesFromTheFirstCycle)
+{
+    // Flying a carrot at 7 m/s, the command is replaced mid-flight (a geofence return, a rescue
+    // staged over the mission) by one started from the craft's motion that states no velocity and
+    // holds where the craft comes to rest. The feedforward of the command it replaced must
+    // not carry over and point the craft on at that hold while the damping brakes.
+    engageNav(30, 30, 30, 50, 8, 50);
+    mockNavCommand.velocityFfValid = true;
+    testEstimate.velocity.y = 700.0f;
+    setTargetVelocityNorth(700.0f);
+    for (int i = 0; i < 100; i++) {
+        setNavCarrot(0.0f, testEstimate.position.y * 0.01f);
+        runIterations(1);
+        testEstimate.position.y += 7.0f;
+    }
+
+    mockNavCommand.sequence++;
+    mockNavCommand.velocityFromCraft = true;
+    setNavCarrot(0.0f, testEstimate.position.y * 0.01f + 3.4f);
+    setTargetVelocityNorth(0.0f);
+    float highestPitch = -90.0f;
+    for (int i = 0; i < 5; i++) {
+        runIterations(1);
+        highestPitch = fmaxf(highestPitch, autopilotAngle[AI_PITCH]);
+        testEstimate.position.y += 7.0f;
+    }
+    EXPECT_LT(highestPitch, -40.0f);
+}
+
+TEST_F(NavModeTest, NavCommandsLeanLimitBoundsItsBrake)
+{
+    // A command stating a gentler lean than ap_max_angle brakes at that, and one stating none at the
+    // whole of ap_max_angle.
+    engageNav(30, 30, 30, 50, 8, 50);
+    mockNavCommand.velocityFfValid = true;
+    mockNavCommand.maxAngleDeg = 35.0f;
+    testEstimate.velocity.y = 700.0f;
+    setNavCarrot(0.0f, 0.0f);
+    setTargetVelocityNorth(0.0f);
+    runIterations(1);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], -35.0f, 0.01f);
+
+    mockNavCommand.maxAngleDeg = 0.0f;
+    runIterations(1);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], -50.0f, 0.01f);
+}
+
+TEST_F(NavModeTest, NavAnchorDoesNotCarryAcrossACommandChange)
+{
+    // A waypoint transition installs the successor before the controller runs
+    // again. An anchored predecessor must not hand its state on, or a successor
+    // sitting between the acquire and release thresholds anchors without ever
+    // satisfying the acquire range.
+    engageNav(30, 30, 0, 0, 30, 45);
+    setNavCarrot(0.0f, 3.0f);
+    setTargetVelocityNorth(0.0f);
+    runIterations(SETTLE_ITERATIONS);
+    ASSERT_EQ(NAV_STATUS_ANCHORED, navStatus());
+
+    mockNavCommand.sequence++;                          // successor installed
+    setNavCarrot(0.0f, 5.2f);                           // inside release, outside acquire
+    runIterations(SETTLE_ITERATIONS);
+
+    EXPECT_EQ(NAV_STATUS_VELOCITY, navStatus());
+}
+
 TEST_F(NavModeTest, NavPositionErrorIsBounded)
 {
-    // The carrot lead grows with speed; NAV_ERROR_DISTANCE_LIMIT bounds the
-    // position error so a distant carrot cannot drive P without limit. Two
-    // carrots well beyond the bound must produce the same (clamped) lean.
+    // NAV_ERROR_DISTANCE_LIMIT still bounds the position error while anchored,
+    // so two carrots beyond the bound produce the same (clamped) lean rather
+    // than an ever-growing one. Anchor close first: hysteresis then holds the
+    // anchor out past the 5 m clamp, which is where the bound does its work.
     engageNav(30, 30, 0, 0, 30, 45);
     setTargetVelocityNorth(0.0f);
 
-    setNavCarrot(0.0f, 50.0f);
+    setNavCarrot(0.0f, 3.0f);
+    runIterations(SETTLE_ITERATIONS);
+
+    setNavCarrot(0.0f, 6.0f);
     runIterations(SETTLE_ITERATIONS);
     const float pitchNear = autopilotAngle[AI_PITCH];
 
-    setNavCarrot(0.0f, 500.0f);
+    setNavCarrot(0.0f, 7.0f);
     runIterations(SETTLE_ITERATIONS);
     const float pitchFar = autopilotAngle[AI_PITCH];
 
@@ -1136,4 +1612,88 @@ TEST_F(NavModeTest, PositionControlResetIsDeterministic)
         EXPECT_FLOAT_EQ(autopilotAngle[AI_ROLL], baselineRoll[i]);
         EXPECT_FLOAT_EQ(autopilotAngle[AI_PITCH], baselinePitch[i]);
     }
+}
+
+// -- Yaw control handover --
+
+// The yaw controller is refreshed by TASK_MAGHOLD/TASK_POSHOLD at ~100 Hz, while the rate
+// it produces is consumed once per RX frame and the mode flags are cleared by the RX task
+// in between. autopilotYawControlActive() must therefore go false with the mode rather
+// than waiting for the controller's next tick — otherwise rc.c injects a stale autonomous
+// yaw rate on the first frame after the pilot switches the mode off, exactly when they
+// expect the stick back.
+TEST_F(PosHoldTest, YawControlGoesInactiveWithTheModeNotTheNextTick)
+{
+    initAndSettleAt(0, 0, 0);
+
+    // initAndSettleAt() only sets the position gains, and autopilotConfig is PG_REGISTERed
+    // without defaults here, so the yaw law needs its own setup. stickDeadband must be
+    // non-zero or the hold re-captures every tick, mirroring rc.c declining to inject.
+    autopilotConfig_t *cfg = autopilotConfigMutable();
+    cfg->yawP = 30;
+    cfg->maxYawRate = 150;
+    cfg->stickDeadband = 50;
+
+    armingFlags = ARMED;
+    flightModeFlags = MAG_MODE;
+
+    // engage, capturing the current heading
+    attitude.values.yaw = 900;
+    updateHeadingHold(0);
+
+    // nose pushed off the captured heading, so a correcting rate is on offer once the
+    // engage ramp has opened up
+    attitude.values.yaw = 1200;
+    for (int i = 0; i < 10; i++) {
+        updateHeadingHold(0);
+    }
+    ASSERT_TRUE(autopilotYawControlActive());
+    ASSERT_NE(0.0f, autopilotGetYawRate());
+
+    // pilot flicks the mode off; the controller's task has not run again yet
+    flightModeFlags = 0;
+    EXPECT_FALSE(autopilotYawControlActive());
+
+    // and it stays down once the task does run
+    updateHeadingHold(0);
+    EXPECT_FALSE(autopilotYawControlActive());
+    EXPECT_FLOAT_EQ(0.0f, autopilotGetYawRate());
+}
+
+// disarm() clears ARMED but leaves the flight mode flags set until processRxModes() next
+// runs, and TASK_POSHOLD can be scheduled in that window. The yaw controller must stand
+// down on the arming flag alone, or it would keep offering a rate for rc.c to inject
+// while disarmed — and would resume against a heading captured on the bench.
+TEST_F(PosHoldTest, YawControlStandsDownWhileDisarmedWithPosHoldStillLatched)
+{
+    initAndSettleAt(0, 0, 0);
+
+    autopilotConfig_t *cfg = autopilotConfigMutable();
+    cfg->yawP = 30;
+    cfg->maxYawRate = 150;
+    cfg->stickDeadband = 50;
+
+    armingFlags = ARMED;
+    flightModeFlags = POS_HOLD_MODE;
+
+    attitude.values.yaw = 900;
+    positionControl();
+    attitude.values.yaw = 1200;
+    for (int i = 0; i < 10; i++) {
+        positionControl();
+    }
+    ASSERT_TRUE(autopilotYawControlActive());
+    ASSERT_NE(0.0f, autopilotGetYawRate());
+
+    // disarmed, but POS_HOLD_MODE has not been cleared yet
+    armingFlags = 0;
+    positionControl();
+    EXPECT_FALSE(autopilotYawControlActive());
+    EXPECT_FLOAT_EQ(0.0f, autopilotGetYawRate());
+
+    // re-arming holds the heading it has now, not the one captured before disarm
+    armingFlags = ARMED;
+    attitude.values.yaw = 1800;
+    positionControl();
+    EXPECT_FLOAT_EQ(0.0f, autopilotGetYawRate());
 }

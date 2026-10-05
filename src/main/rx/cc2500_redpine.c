@@ -49,6 +49,17 @@
 #include "rx/rx_spi_common.h"
 #include "sensors/battery.h"
 
+// DEBUG_RX_REDPINE_SPI field indices. Bind-time and run-time values have slots of
+// their own, so a log that spans a bind stays readable.
+enum {
+    DEBUG_REDPINE_LOOP_TIME = 0,
+    DEBUG_REDPINE_RSSI_BYTE,
+    DEBUG_REDPINE_MISSING_PACKETS,
+    DEBUG_REDPINE_PROTOCOL_STATE,
+    DEBUG_REDPINE_BIND_OFFSET_MIN,
+    DEBUG_REDPINE_BIND_OFFSET_MAX,
+};
+
 enum {
     STATE_INIT = 0,
     STATE_BIND,
@@ -264,7 +275,7 @@ rx_spi_received_e redpineSpiDataReceived(uint8_t *packet)
 
             break;
     }
-    DEBUG_SET(DEBUG_RX_FRSKY_SPI, 3, protocolState);
+    DEBUG_SET(DEBUG_RX_REDPINE_SPI, DEBUG_REDPINE_PROTOCOL_STATE, protocolState);  //!< Protocol State
 
     return ret;
 }
@@ -274,7 +285,7 @@ static void initBindTuneRx(void)
     timeTunedMs = millis();
 
     bindOffset_min = -64;
-    DEBUG_SET(DEBUG_RX_FRSKY_SPI, 1, bindOffset_min);
+    DEBUG_SET(DEBUG_RX_REDPINE_SPI, DEBUG_REDPINE_BIND_OFFSET_MIN, bindOffset_min);  //!< Bind Offset Min
     cc2500WriteReg(CC2500_0C_FSCTRL0, (uint8_t)bindOffset_min);
     cc2500WriteReg(CC2500_07_PKTCTRL1, 0x0C);
     cc2500WriteReg(CC2500_18_MCSM0, 0x8);
@@ -296,18 +307,18 @@ static bool tuneRx1(uint8_t *packet)
 {
     if (bindOffset_min >= 126) {
         bindOffset_min = -126;
-        DEBUG_SET(DEBUG_RX_FRSKY_SPI, 1, bindOffset_min);
+        DEBUG_SET(DEBUG_RX_REDPINE_SPI, DEBUG_REDPINE_BIND_OFFSET_MIN, bindOffset_min);  //!< Bind Offset Min
     }
     if ((millis() - timeTunedMs) > 220) {  // 220ms
         timeTunedMs = millis();
         bindOffset_min += BIND_TUNE_STEP << 3;
-        DEBUG_SET(DEBUG_RX_FRSKY_SPI, 1, bindOffset_min);
+        DEBUG_SET(DEBUG_RX_REDPINE_SPI, DEBUG_REDPINE_BIND_OFFSET_MIN, bindOffset_min);  //!< Bind Offset Min
         cc2500WriteReg(CC2500_0C_FSCTRL0, (uint8_t)bindOffset_min);
         cc2500Strobe(CC2500_SRX);
     }
     if (redpineRxPacketBind(packet)) {
         bindOffset_max = bindOffset_min;
-        DEBUG_SET(DEBUG_RX_FRSKY_SPI, 2, bindOffset_max);
+        DEBUG_SET(DEBUG_RX_REDPINE_SPI, DEBUG_REDPINE_BIND_OFFSET_MAX, bindOffset_max);  //!< Bind Offset Max
         cc2500Strobe(CC2500_SRX);
         timeTunedMs = millis();
         return true;
@@ -327,7 +338,7 @@ static bool tuneRx2(uint8_t *packet)
     if (redpineRxPacketBind(packet)) {
         timeTunedMs = millis();
         bindOffset_max += BIND_TUNE_STEP;
-        DEBUG_SET(DEBUG_RX_FRSKY_SPI, 2, bindOffset_max);
+        DEBUG_SET(DEBUG_RX_REDPINE_SPI, DEBUG_REDPINE_BIND_OFFSET_MAX, bindOffset_max);  //!< Bind Offset Max
         cc2500WriteReg(CC2500_0C_FSCTRL0, (uint8_t)bindOffset_max);
     }
     return false;
@@ -342,7 +353,7 @@ static bool tuneRx3(uint8_t *packet)
     if (redpineRxPacketBind(packet)) {
         timeTunedMs = millis();
         bindOffset_min -= BIND_TUNE_STEP;
-        DEBUG_SET(DEBUG_RX_FRSKY_SPI, 1, bindOffset_min);
+        DEBUG_SET(DEBUG_RX_REDPINE_SPI, DEBUG_REDPINE_BIND_OFFSET_MIN, bindOffset_min);  //!< Bind Offset Min
         cc2500WriteReg(CC2500_0C_FSCTRL0, (uint8_t)bindOffset_min);
     }
     return false;
@@ -482,14 +493,14 @@ rx_spi_received_e redpineHandlePacket(uint8_t *const packet, uint8_t *const prot
                         } else {
                             looptime = packet[CHANNEL_START + 7] * 1000;
                         }
-                        DEBUG_SET(DEBUG_RX_FRSKY_SPI, 0, looptime);
-                        DEBUG_SET(DEBUG_RX_FRSKY_SPI, 1, packet[ccLen - 2]);
+                        DEBUG_SET(DEBUG_RX_REDPINE_SPI, DEBUG_REDPINE_LOOP_TIME, looptime);           //!< Loop Time [unit:us]
+                        DEBUG_SET(DEBUG_RX_REDPINE_SPI, DEBUG_REDPINE_RSSI_BYTE, packet[ccLen - 2]);  //!< RSSI Byte
 
                         packetTimerUs = micros() + looptime / 8;  // add a buffer on the packet time incase tx and  rx clocks are different
                         totalTimerUs = micros();
                         protocolTimerUs = micros();
                         missingPackets = 0;
-                        DEBUG_SET(DEBUG_RX_FRSKY_SPI, 2, missingPackets);
+                        DEBUG_SET(DEBUG_RX_REDPINE_SPI, DEBUG_REDPINE_MISSING_PACKETS, missingPackets);  //!< Missing Packets
 
                         rxSpiLedOn();
 
@@ -517,7 +528,7 @@ rx_spi_received_e redpineHandlePacket(uint8_t *const packet, uint8_t *const prot
                 nextChannel();
                 cc2500Strobe(CC2500_SRX);
                 missingPackets++;
-                DEBUG_SET(DEBUG_RX_FRSKY_SPI, 2, missingPackets);
+                DEBUG_SET(DEBUG_RX_REDPINE_SPI, DEBUG_REDPINE_MISSING_PACKETS, missingPackets);  //!< Missing Packets
 #if defined(USE_RX_CC2500_SPI_DIVERSITY)
                 if (missingPackets >= 2) {
                     cc2500switchAntennae();
