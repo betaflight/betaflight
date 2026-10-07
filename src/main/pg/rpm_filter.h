@@ -25,6 +25,8 @@
 #include "pg/pg.h"
 
 #define RPM_FILTER_HARMONICS_MAX 3
+#define RPM_FILTER_MIN_HZ_MIN 30
+#define RPM_FILTER_MIN_HZ_MAX 200
 
 typedef struct rpmFilterConfig_s
 {

@@ -2395,12 +2395,12 @@ RAM_CODE static void writeSimplifiedPids(const pidProfile_t *pidProfile, sbuf_t 
 RAM_CODE static void readSimplifiedDtermFilters(pidProfile_t* pidProfile, sbuf_t *src)
 {
     pidProfile->simplified_dterm_filter = sbufReadU8(src);
-    pidProfile->simplified_dterm_filter_multiplier = sbufReadU8(src);
-    pidProfile->dterm_lpf1_static_hz = sbufReadU16(src);
-    pidProfile->dterm_lpf2_static_hz = sbufReadU16(src);
+    pidProfile->simplified_dterm_filter_multiplier = constrain(sbufReadU8(src), SIMPLIFIED_TUNING_FILTERS_MIN, SIMPLIFIED_TUNING_MAX);
+    pidProfile->dterm_lpf1_static_hz = MIN(sbufReadU16(src), LPF_MAX_HZ);
+    pidProfile->dterm_lpf2_static_hz = MIN(sbufReadU16(src), LPF_MAX_HZ);
 #if defined(USE_DYN_LPF)
-    pidProfile->dterm_lpf1_dyn_min_hz = sbufReadU16(src);
-    pidProfile->dterm_lpf1_dyn_max_hz = sbufReadU16(src);
+    pidProfile->dterm_lpf1_dyn_min_hz = MIN(sbufReadU16(src), DYN_LPF_MAX_HZ);
+    pidProfile->dterm_lpf1_dyn_max_hz = MIN(sbufReadU16(src), DYN_LPF_MAX_HZ);
 #else
     sbufReadU16(src);
     sbufReadU16(src);
@@ -2431,12 +2431,12 @@ RAM_CODE static void writeSimplifiedDtermFilters(const pidProfile_t* pidProfile,
 RAM_CODE static void readSimplifiedGyroFilters(gyroConfig_t *gyroConfig, sbuf_t *src)
 {
     gyroConfig->simplified_gyro_filter = sbufReadU8(src);
-    gyroConfig->simplified_gyro_filter_multiplier = sbufReadU8(src);
-    gyroConfig->gyro_lpf1_static_hz = sbufReadU16(src);
-    gyroConfig->gyro_lpf2_static_hz = sbufReadU16(src);
+    gyroConfig->simplified_gyro_filter_multiplier = constrain(sbufReadU8(src), SIMPLIFIED_TUNING_FILTERS_MIN, SIMPLIFIED_TUNING_MAX);
+    gyroConfig->gyro_lpf1_static_hz = MIN(sbufReadU16(src), LPF_MAX_HZ);
+    gyroConfig->gyro_lpf2_static_hz = MIN(sbufReadU16(src), LPF_MAX_HZ);
 #if defined(USE_DYN_LPF)
-    gyroConfig->gyro_lpf1_dyn_min_hz = sbufReadU16(src);
-    gyroConfig->gyro_lpf1_dyn_max_hz = sbufReadU16(src);
+    gyroConfig->gyro_lpf1_dyn_min_hz = MIN(sbufReadU16(src), DYN_LPF_MAX_HZ);
+    gyroConfig->gyro_lpf1_dyn_max_hz = MIN(sbufReadU16(src), DYN_LPF_MAX_HZ);
 #else
     sbufReadU16(src);
     sbufReadU16(src);
@@ -3450,13 +3450,13 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
     case MSP_SET_FILTER_CONFIG:
         gyroConfigMutable()->gyro_lpf1_static_hz = sbufReadU8(src);
-        currentPidProfile->dterm_lpf1_static_hz = sbufReadU16(src);
-        currentPidProfile->yaw_lowpass_hz = sbufReadU16(src);
+        currentPidProfile->dterm_lpf1_static_hz = MIN(sbufReadU16(src), LPF_MAX_HZ);
+        currentPidProfile->yaw_lowpass_hz = MIN(sbufReadU16(src), YAW_LOWPASS_HZ_MAX);
         if (sbufBytesRemaining(src) >= 8) {
             gyroConfigMutable()->gyro_soft_notch_hz_1 = sbufReadU16(src);
             gyroConfigMutable()->gyro_soft_notch_cutoff_1 = sbufReadU16(src);
-            currentPidProfile->dterm_notch_hz = sbufReadU16(src);
-            currentPidProfile->dterm_notch_cutoff = sbufReadU16(src);
+            currentPidProfile->dterm_notch_hz = MIN(sbufReadU16(src), LPF_MAX_HZ);
+            currentPidProfile->dterm_notch_cutoff = MIN(sbufReadU16(src), LPF_MAX_HZ);
         }
         if (sbufBytesRemaining(src) >= 4) {
             gyroConfigMutable()->gyro_soft_notch_hz_2 = sbufReadU16(src);
@@ -3472,16 +3472,16 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             gyroConfigMutable()->gyro_lpf2_static_hz = sbufReadU16(src);
             gyroConfigMutable()->gyro_lpf1_type = sbufReadU8(src);
             gyroConfigMutable()->gyro_lpf2_type = sbufReadU8(src);
-            currentPidProfile->dterm_lpf2_static_hz = sbufReadU16(src);
+            currentPidProfile->dterm_lpf2_static_hz = MIN(sbufReadU16(src), LPF_MAX_HZ);
         }
         if (sbufBytesRemaining(src) >= 9) {
             // Added in MSP API 1.41
             currentPidProfile->dterm_lpf2_type = sbufReadU8(src);
 #if defined(USE_DYN_LPF)
-            gyroConfigMutable()->gyro_lpf1_dyn_min_hz = sbufReadU16(src);
-            gyroConfigMutable()->gyro_lpf1_dyn_max_hz = sbufReadU16(src);
-            currentPidProfile->dterm_lpf1_dyn_min_hz = sbufReadU16(src);
-            currentPidProfile->dterm_lpf1_dyn_max_hz = sbufReadU16(src);
+            gyroConfigMutable()->gyro_lpf1_dyn_min_hz = MIN(sbufReadU16(src), DYN_LPF_MAX_HZ);
+            gyroConfigMutable()->gyro_lpf1_dyn_max_hz = MIN(sbufReadU16(src), DYN_LPF_MAX_HZ);
+            currentPidProfile->dterm_lpf1_dyn_min_hz = MIN(sbufReadU16(src), DYN_LPF_MAX_HZ);
+            currentPidProfile->dterm_lpf1_dyn_max_hz = MIN(sbufReadU16(src), DYN_LPF_MAX_HZ);
 #else
             sbufReadU16(src);
             sbufReadU16(src);
@@ -3504,7 +3504,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 #endif
 #if defined(USE_RPM_FILTER)
             rpmFilterConfigMutable()->rpm_filter_harmonics = MIN(sbufReadU8(src), RPM_FILTER_HARMONICS_MAX);
-            rpmFilterConfigMutable()->rpm_filter_min_hz = sbufReadU8(src);
+            rpmFilterConfigMutable()->rpm_filter_min_hz = constrain(sbufReadU8(src), RPM_FILTER_MIN_HZ_MIN, RPM_FILTER_MIN_HZ_MAX);
 #else
             sbufReadU8(src);
             sbufReadU8(src);
@@ -3521,7 +3521,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         if (sbufBytesRemaining(src) >= 2) {
             // Added in MSP API 1.44
 #if defined(USE_DYN_LPF)
-            currentPidProfile->dterm_lpf1_dyn_expo = sbufReadU8(src);
+            currentPidProfile->dterm_lpf1_dyn_expo = MIN(sbufReadU8(src), DTERM_LPF1_DYN_EXPO_MAX);
 #else
             sbufReadU8(src);
 #endif
