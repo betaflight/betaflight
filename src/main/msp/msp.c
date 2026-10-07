@@ -4341,7 +4341,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
 
     case MSP_SET_RSSI_CONFIG:
-        rxConfigMutable()->rssi_channel = sbufReadU8(src);
+        rxConfigMutable()->rssi_channel = MIN(sbufReadU8(src), MAX_SUPPORTED_RC_CHANNEL_COUNT);
         break;
 
     case MSP_SET_RX_MAP: {
