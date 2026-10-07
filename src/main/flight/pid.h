@@ -97,21 +97,21 @@
 
 #define TPA_MAX 100
 #define TPA_SPEED_PARAM_MIN 1
+#define ANGLE_PITCH_OFFSET_MAX 450
+#define TPA_CURVE_STALL_THROTTLE_MAX 100
+#define TPA_CURVE_PID_MAX 1000
+#define TPA_CURVE_EXPO_MIN -100
+#define TPA_CURVE_EXPO_MAX 100
 
 #ifdef USE_WING
-#define ANGLE_PITCH_OFFSET_MAX 450
 #define S_TERM_SCALE 0.01f
 #define TPA_LOW_RATE_MIN INT8_MIN
 #define TPA_GRAVITY_MAX 5000
-#define TPA_CURVE_STALL_THROTTLE_MAX 100
 #else
 #define TPA_LOW_RATE_MIN 0
 #endif
 
 #ifdef USE_ADVANCED_TPA
-#define TPA_CURVE_PID_MAX 1000
-#define TPA_CURVE_EXPO_MIN -100
-#define TPA_CURVE_EXPO_MAX 100
 #define TPA_CURVE_PWL_SIZE 17
 #endif // USE_ADVANCED_TPA
 
@@ -140,6 +140,7 @@ typedef enum {
     SPA_MODE_I,
     SPA_MODE_PID,
     SPA_MODE_PD_I_FREEZE,
+    SPA_MODE_COUNT
 } spaMode_e;
 
 typedef enum {
@@ -203,16 +204,19 @@ typedef enum feedforwardAveraging_e {
 typedef enum tpaCurveType_e {
     TPA_CURVE_CLASSIC,
     TPA_CURVE_HYPERBOLIC,
+    TPA_CURVE_TYPE_COUNT
 } tpaCurveType_t;
 
 typedef enum tpaSpeedType_e {
     TPA_SPEED_BASIC,
     TPA_SPEED_ADVANCED,
+    TPA_SPEED_TYPE_COUNT
 } tpaSpeedType_t;
 
 typedef enum {
     YAW_TYPE_RUDDER,
     YAW_TYPE_DIFF_THRUST,
+    YAW_TYPE_COUNT
 } yawType_e;
 
 #define MAX_PROFILE_NAME_LENGTH 8u

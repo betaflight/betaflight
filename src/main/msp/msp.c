@@ -4620,7 +4620,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         }
 
         for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-            currentPidProfile->pid[i].S = sbufReadU8(src);
+            currentPidProfile->pid[i].S = MIN(sbufReadU8(src), PID_GAIN_MAX);
         }
         for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
             currentPidProfile->spa_center[i] = sbufReadU16(src);
@@ -4629,14 +4629,14 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             currentPidProfile->spa_width[i] = sbufReadU16(src);
         }
         for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-            currentPidProfile->spa_mode[i] = sbufReadU8(src);
+            currentPidProfile->spa_mode[i] = MIN(sbufReadU8(src), SPA_MODE_COUNT - 1);
         }
-        currentPidProfile->tpa_curve_type = sbufReadU8(src);
-        currentPidProfile->tpa_curve_stall_throttle = sbufReadU8(src);
-        currentPidProfile->tpa_curve_pid_thr0 = sbufReadU16(src);
-        currentPidProfile->tpa_curve_pid_thr100 = sbufReadU16(src);
-        currentPidProfile->tpa_curve_expo = (int8_t)sbufReadU8(src);
-        currentPidProfile->tpa_speed_type = sbufReadU8(src);
+        currentPidProfile->tpa_curve_type = MIN(sbufReadU8(src), TPA_CURVE_TYPE_COUNT - 1);
+        currentPidProfile->tpa_curve_stall_throttle = MIN(sbufReadU8(src), TPA_CURVE_STALL_THROTTLE_MAX);
+        currentPidProfile->tpa_curve_pid_thr0 = MIN(sbufReadU16(src), TPA_CURVE_PID_MAX);
+        currentPidProfile->tpa_curve_pid_thr100 = MIN(sbufReadU16(src), TPA_CURVE_PID_MAX);
+        currentPidProfile->tpa_curve_expo = constrain((int8_t)sbufReadU8(src), TPA_CURVE_EXPO_MIN, TPA_CURVE_EXPO_MAX);
+        currentPidProfile->tpa_speed_type = MIN(sbufReadU8(src), TPA_SPEED_TYPE_COUNT - 1);
         currentPidProfile->tpa_speed_basic_delay = MAX(sbufReadU16(src), TPA_SPEED_PARAM_MIN);
         currentPidProfile->tpa_speed_basic_gravity = MAX(sbufReadU16(src), TPA_SPEED_PARAM_MIN);
         currentPidProfile->tpa_speed_adv_prop_pitch = sbufReadU16(src);
@@ -4645,8 +4645,8 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         currentPidProfile->tpa_speed_adv_thrust = MAX(sbufReadU16(src), TPA_SPEED_PARAM_MIN);
         currentPidProfile->tpa_speed_max_voltage = sbufReadU16(src);
         currentPidProfile->tpa_speed_pitch_offset = (int16_t)sbufReadU16(src);
-        currentPidProfile->yaw_type = sbufReadU8(src);
-        currentPidProfile->angle_pitch_offset = (int16_t)sbufReadU16(src);
+        currentPidProfile->yaw_type = MIN(sbufReadU8(src), YAW_TYPE_COUNT - 1);
+        currentPidProfile->angle_pitch_offset = constrain((int16_t)sbufReadU16(src), -ANGLE_PITCH_OFFSET_MAX, ANGLE_PITCH_OFFSET_MAX);
         pidInitConfig(currentPidProfile);
         break;
     }
