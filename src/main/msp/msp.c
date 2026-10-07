@@ -4602,7 +4602,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         if (vbatMin < VBAT_CELL_VOTAGE_RANGE_MIN || vbatMax > VBAT_CELL_VOTAGE_RANGE_MAX || vbatMin > vbatWarn || vbatWarn > vbatFull || vbatFull > vbatMax) {
             return MSP_RESULT_ERROR;
         }
-        if (forceCellCount > 24 || consumptionWarnPct > 100) {
+        if (forceCellCount > BATTERY_FORCE_CELL_COUNT_MAX || consumptionWarnPct > BATTERY_CONSUMPTION_WARNING_PERCENT_MAX) {
             return MSP_RESULT_ERROR;
         }
         batteryProfile_t *profile = batteryProfilesMutable(profileIndex);

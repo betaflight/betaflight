@@ -572,10 +572,10 @@ static void validateAndFixConfig(void)
             batteryProfilesMutable(i)->vbatwarningcellvoltage = 350;
             batteryProfilesMutable(i)->vbatfullcellvoltage = 410;
         }
-        if (profile->forceBatteryCellCount > 24) {
+        if (profile->forceBatteryCellCount > BATTERY_FORCE_CELL_COUNT_MAX) {
             batteryProfilesMutable(i)->forceBatteryCellCount = 0;
         }
-        if (profile->consumptionWarningPercentage > 100) {
+        if (profile->consumptionWarningPercentage > BATTERY_CONSUMPTION_WARNING_PERCENT_MAX) {
             batteryProfilesMutable(i)->consumptionWarningPercentage = 10;
         }
     }

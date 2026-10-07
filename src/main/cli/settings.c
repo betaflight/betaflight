@@ -1048,8 +1048,8 @@ const clivalue_t valueTable[] = {
     { "vbat_full_cell_voltage",     VAR_UINT16  | PROFILE_BATTERY_VALUE, .config.minmaxUnsigned = { VBAT_CELL_VOTAGE_RANGE_MIN, VBAT_CELL_VOTAGE_RANGE_MAX }, PG_BATTERY_PROFILES, offsetof(batteryProfile_t, vbatfullcellvoltage) },
     { "vbat_min_cell_voltage",      VAR_UINT16  | PROFILE_BATTERY_VALUE, .config.minmaxUnsigned = { VBAT_CELL_VOTAGE_RANGE_MIN, VBAT_CELL_VOTAGE_RANGE_MAX }, PG_BATTERY_PROFILES, offsetof(batteryProfile_t, vbatmincellvoltage) },
     { "vbat_warning_cell_voltage",  VAR_UINT16  | PROFILE_BATTERY_VALUE, .config.minmaxUnsigned = { VBAT_CELL_VOTAGE_RANGE_MIN, VBAT_CELL_VOTAGE_RANGE_MAX }, PG_BATTERY_PROFILES, offsetof(batteryProfile_t, vbatwarningcellvoltage) },
-    { "cbat_alert_percent",         VAR_UINT8  | PROFILE_BATTERY_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_BATTERY_PROFILES, offsetof(batteryProfile_t, consumptionWarningPercentage) },
-    { "force_battery_cell_count",   VAR_UINT8  | PROFILE_BATTERY_VALUE, .config.minmaxUnsigned = { 0, 24 }, PG_BATTERY_PROFILES, offsetof(batteryProfile_t, forceBatteryCellCount) },
+    { "cbat_alert_percent",         VAR_UINT8  | PROFILE_BATTERY_VALUE, .config.minmaxUnsigned = { 0, BATTERY_CONSUMPTION_WARNING_PERCENT_MAX }, PG_BATTERY_PROFILES, offsetof(batteryProfile_t, consumptionWarningPercentage) },
+    { "force_battery_cell_count",   VAR_UINT8  | PROFILE_BATTERY_VALUE, .config.minmaxUnsigned = { 0, BATTERY_FORCE_CELL_COUNT_MAX }, PG_BATTERY_PROFILES, offsetof(batteryProfile_t, forceBatteryCellCount) },
 
 // PG_BATTERY_CONFIG (global/hardware settings)
     { "vbat_hysteresis",            VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 250 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbathysteresis) },
