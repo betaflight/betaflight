@@ -3583,7 +3583,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         sbufReadU8(src); // reserved
         sbufReadU8(src); // was vbatPidCompensation
 #if defined(USE_FEEDFORWARD)
-        currentPidProfile->feedforward_transition = sbufReadU8(src);
+        currentPidProfile->feedforward_transition = MIN(sbufReadU8(src), FEEDFORWARD_TRANSITION_MAX);
 #else
         sbufReadU8(src);
 #endif
@@ -3591,55 +3591,55 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         sbufReadU8(src); // reserved
         sbufReadU8(src); // reserved
         sbufReadU8(src); // reserved
-        currentPidProfile->rateAccelLimit = sbufReadU16(src);
-        currentPidProfile->yawRateAccelLimit = sbufReadU16(src);
+        currentPidProfile->rateAccelLimit = MIN(sbufReadU16(src), RATE_ACCEL_LIMIT_MAX);
+        currentPidProfile->yawRateAccelLimit = MIN(sbufReadU16(src), RATE_ACCEL_LIMIT_MAX);
         if (sbufBytesRemaining(src) >= 2) {
             currentPidProfile->angle_limit = constrain(sbufReadU8(src), ANGLE_LIMIT_MIN, ANGLE_LIMIT_MAX);
             sbufReadU8(src); // was pidProfile.levelSensitivity
         }
         if (sbufBytesRemaining(src) >= 4) {
             sbufReadU16(src); // was currentPidProfile->itermThrottleThreshold
-            currentPidProfile->anti_gravity_gain = sbufReadU16(src);
+            currentPidProfile->anti_gravity_gain = MIN(sbufReadU16(src), ITERM_ACCELERATOR_GAIN_MAX);
         }
         if (sbufBytesRemaining(src) >= 2) {
             sbufReadU16(src); // was currentPidProfile->dtermSetpointWeight
         }
         if (sbufBytesRemaining(src) >= 14) {
             // Added in MSP API 1.40
-            currentPidProfile->iterm_rotation = sbufReadU8(src);
+            currentPidProfile->iterm_rotation = !!sbufReadU8(src);
             sbufReadU8(src); // was currentPidProfile->smart_feedforward
 #if defined(USE_ITERM_RELAX)
-            currentPidProfile->iterm_relax = sbufReadU8(src);
-            currentPidProfile->iterm_relax_type = sbufReadU8(src);
+            currentPidProfile->iterm_relax = MIN(sbufReadU8(src), ITERM_RELAX_COUNT - 1);
+            currentPidProfile->iterm_relax_type = MIN(sbufReadU8(src), ITERM_RELAX_TYPE_COUNT - 1);
 #else
             sbufReadU8(src);
             sbufReadU8(src);
 #endif
             sbufReadU8(src); // was abs_control_gain
 #if defined(USE_THROTTLE_BOOST)
-            currentPidProfile->throttle_boost = sbufReadU8(src);
+            currentPidProfile->throttle_boost = MIN(sbufReadU8(src), THROTTLE_BOOST_MAX);
 #else
             sbufReadU8(src);
 #endif
 #if defined(USE_ACRO_TRAINER)
-            currentPidProfile->acro_trainer_angle_limit = sbufReadU8(src);
+            currentPidProfile->acro_trainer_angle_limit = constrain(sbufReadU8(src), ACRO_TRAINER_ANGLE_LIMIT_MIN, ACRO_TRAINER_ANGLE_LIMIT_MAX);
 #else
             sbufReadU8(src);
 #endif
             // PID controller feedforward terms
-            currentPidProfile->pid[PID_ROLL].F = sbufReadU16(src);
-            currentPidProfile->pid[PID_PITCH].F = sbufReadU16(src);
-            currentPidProfile->pid[PID_YAW].F = sbufReadU16(src);
+            currentPidProfile->pid[PID_ROLL].F = MIN(sbufReadU16(src), F_GAIN_MAX);
+            currentPidProfile->pid[PID_PITCH].F = MIN(sbufReadU16(src), F_GAIN_MAX);
+            currentPidProfile->pid[PID_YAW].F = MIN(sbufReadU16(src), F_GAIN_MAX);
             sbufReadU8(src); // was currentPidProfile->antiGravityMode
         }
         if (sbufBytesRemaining(src) >= 7) {
             // Added in MSP API 1.41
 #ifdef USE_D_MAX
-            currentPidProfile->d_max[PID_ROLL] = sbufReadU8(src);
-            currentPidProfile->d_max[PID_PITCH] = sbufReadU8(src);
-            currentPidProfile->d_max[PID_YAW] = sbufReadU8(src);
-            currentPidProfile->d_max_gain = sbufReadU8(src);
-            currentPidProfile->d_max_advance = sbufReadU8(src);
+            currentPidProfile->d_max[PID_ROLL] = MIN(sbufReadU8(src), PID_GAIN_MAX);
+            currentPidProfile->d_max[PID_PITCH] = MIN(sbufReadU8(src), PID_GAIN_MAX);
+            currentPidProfile->d_max[PID_YAW] = MIN(sbufReadU8(src), PID_GAIN_MAX);
+            currentPidProfile->d_max_gain = MIN(sbufReadU8(src), D_MAX_GAIN_MAX);
+            currentPidProfile->d_max_advance = MIN(sbufReadU8(src), D_MAX_ADVANCE_MAX);
 #else
             sbufReadU8(src);
             sbufReadU8(src);
@@ -3653,7 +3653,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         if(sbufBytesRemaining(src) >= 1) {
             // Added in MSP API 1.42
 #if defined(USE_ITERM_RELAX)
-            currentPidProfile->iterm_relax_cutoff = sbufReadU8(src);
+            currentPidProfile->iterm_relax_cutoff = constrain(sbufReadU8(src), ITERM_RELAX_CUTOFF_MIN, ITERM_RELAX_CUTOFF_MAX);
 #else
             sbufReadU8(src);
 #endif
@@ -3661,9 +3661,9 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         if (sbufBytesRemaining(src) >= 3) {
             // Added in MSP API 1.43
             currentPidProfile->motor_output_limit = constrain(sbufReadU8(src), MOTOR_OUTPUT_LIMIT_PERCENT_MIN, MOTOR_OUTPUT_LIMIT_PERCENT_MAX);
-            currentPidProfile->auto_profile_cell_count = sbufReadU8(src);
+            currentPidProfile->auto_profile_cell_count = constrain((int8_t)sbufReadU8(src), AUTO_PROFILE_CELL_COUNT_CHANGE, MAX_AUTO_DETECT_CELL_COUNT);
 #if defined(USE_DYN_IDLE)
-            currentPidProfile->dyn_idle_min_rpm = sbufReadU8(src);
+            currentPidProfile->dyn_idle_min_rpm = MIN(sbufReadU8(src), DYN_IDLE_MIN_RPM_MAX);
 #else
             sbufReadU8(src);
 #endif
@@ -3672,14 +3672,14 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             // Added in MSP API 1.44
 #if defined(USE_FEEDFORWARD)
             i = sbufReadU8(src);
-            if (i > 3) {
+            if (i >= FEEDFORWARD_AVERAGING_COUNT) {
                 return MSP_RESULT_ERROR;
             }
             currentPidProfile->feedforward_averaging = i;
-            currentPidProfile->feedforward_smooth_factor = sbufReadU8(src);
-            currentPidProfile->feedforward_boost = sbufReadU8(src);
-            currentPidProfile->feedforward_max_rate_limit = sbufReadU8(src);
-            currentPidProfile->feedforward_jitter_factor = sbufReadU8(src);
+            currentPidProfile->feedforward_smooth_factor = MIN(sbufReadU8(src), FEEDFORWARD_SMOOTH_FACTOR_MAX);
+            currentPidProfile->feedforward_boost = MIN(sbufReadU8(src), FEEDFORWARD_BOOST_MAX);
+            currentPidProfile->feedforward_max_rate_limit = MIN(sbufReadU8(src), FEEDFORWARD_MAX_RATE_LIMIT_MAX);
+            currentPidProfile->feedforward_jitter_factor = MIN(sbufReadU8(src), FEEDFORWARD_JITTER_FACTOR_MAX);
 #else
             sbufReadU8(src);
             sbufReadU8(src);
@@ -3689,19 +3689,19 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 #endif
 
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
-            currentPidProfile->vbat_sag_compensation = sbufReadU8(src);
+            currentPidProfile->vbat_sag_compensation = MIN(sbufReadU8(src), VBAT_SAG_COMPENSATION_MAX);
 #else
             sbufReadU8(src);
 #endif
 #if defined(USE_THRUST_LINEARIZATION)
-            currentPidProfile->thrustLinearization = sbufReadU8(src);
+            currentPidProfile->thrustLinearization = MIN(sbufReadU8(src), THRUST_LINEARIZATION_MAX);
 #else
             sbufReadU8(src);
 #endif
         }
         if (sbufBytesRemaining(src) >= 4) {
             // Added in API 1.45
-            currentPidProfile->tpa_mode = sbufReadU8(src);
+            currentPidProfile->tpa_mode = MIN(sbufReadU8(src), TPA_MODE_COUNT - 1);
             currentPidProfile->tpa_rate = MIN(sbufReadU8(src), TPA_MAX);
             currentPidProfile->tpa_breakpoint = sbufReadU16(src);
         }
