@@ -3309,14 +3309,14 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
 
     case MSP_SET_GPS_RESCUE_PIDS:
-        autopilotConfigMutable()->altitudeP = sbufReadU16(src);
-        autopilotConfigMutable()->altitudeI = sbufReadU16(src);
-        autopilotConfigMutable()->altitudeD = sbufReadU16(src);
+        autopilotConfigMutable()->altitudeP = MIN(sbufReadU16(src), AUTOPILOT_PID_GAIN_MAX);
+        autopilotConfigMutable()->altitudeI = MIN(sbufReadU16(src), AUTOPILOT_PID_GAIN_MAX);
+        autopilotConfigMutable()->altitudeD = MIN(sbufReadU16(src), AUTOPILOT_PID_GAIN_MAX);
         // altitude_F not included in msp yet
-        autopilotConfigMutable()->positionP = sbufReadU16(src);
-        autopilotConfigMutable()->positionI = sbufReadU16(src);
-        autopilotConfigMutable()->positionD = sbufReadU16(src);
-        gpsRescueConfigMutable()->yawP = sbufReadU16(src);
+        autopilotConfigMutable()->positionP = MIN(sbufReadU16(src), AUTOPILOT_PID_GAIN_MAX);
+        autopilotConfigMutable()->positionI = MIN(sbufReadU16(src), AUTOPILOT_PID_GAIN_MAX);
+        autopilotConfigMutable()->positionD = MIN(sbufReadU16(src), AUTOPILOT_PID_GAIN_MAX);
+        gpsRescueConfigMutable()->yawP = MIN(sbufReadU16(src), GPS_RESCUE_YAW_P_MAX);
         break;
 #endif // !USE_WING
 #endif
