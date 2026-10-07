@@ -140,8 +140,10 @@
 #include "pg/vtx_table.h"
 
 #include "rx/rx.h"
+#include "rx/spektrum.h"
 #include "rx/rx_bind.h"
 #include "rx/msp.h"
+#include "rx/rx_spi.h"
 
 #include "scheduler/scheduler.h"
 
@@ -4227,11 +4229,11 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
 
     case MSP_SET_RX_CONFIG:
-        rxConfigMutable()->serialrx_provider = sbufReadU8(src);
+        rxConfigMutable()->serialrx_provider = MIN(sbufReadU8(src), SERIALRX_PROVIDER_COUNT - 1);
         rxConfigMutable()->maxcheck = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
         rxConfigMutable()->midrc = constrain(sbufReadU16(src), RX_MIDRC_MIN, RX_MIDRC_MAX);
         rxConfigMutable()->mincheck = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
-        rxConfigMutable()->spektrum_sat_bind = sbufReadU8(src);
+        rxConfigMutable()->spektrum_sat_bind = MIN(sbufReadU8(src), SPEKTRUM_SAT_BIND_MAX);
         if (sbufBytesRemaining(src) >= 4) {
             rxConfigMutable()->rx_min_usec = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
             rxConfigMutable()->rx_max_usec = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
@@ -4239,11 +4241,11 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         if (sbufBytesRemaining(src) >= 4) {
             sbufReadU8(src); // not required in API 1.44, was rxConfigMutable()->rcInterpolation
             sbufReadU8(src); // not required in API 1.44, was rxConfigMutable()->rcInterpolationInterval
-            rxConfigMutable()->airModeActivateThreshold = (sbufReadU16(src) - 1000) / 10;
+            rxConfigMutable()->airModeActivateThreshold = (constrain(sbufReadU16(src), PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) / 10;
         }
         if (sbufBytesRemaining(src) >= 6) {
 #ifdef USE_RX_SPI
-            rxSpiConfigMutable()->rx_spi_protocol = sbufReadU8(src);
+            rxSpiConfigMutable()->rx_spi_protocol = MIN(sbufReadU8(src), RX_SPI_PROTOCOL_COUNT - 1);
             rxSpiConfigMutable()->rx_spi_id = sbufReadU32(src);
             rxSpiConfigMutable()->rx_spi_rf_channel_count = sbufReadU8(src);
 #else
@@ -4253,7 +4255,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 #endif
         }
         if (sbufBytesRemaining(src) >= 1) {
-            rxConfigMutable()->fpvCamAngleDegrees = sbufReadU8(src);
+            rxConfigMutable()->fpvCamAngleDegrees = MIN(sbufReadU8(src), RX_FPV_CAM_ANGLE_MAX);
         }
         if (sbufBytesRemaining(src) >= 6) {
             // Added in MSP API 1.40
@@ -4262,7 +4264,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             sbufReadU8(src); // not required in API 1.44, was rc_smoothing_type
             configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_setpoint_cutoff, sbufReadU8(src));
             configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_throttle_cutoff, sbufReadU8(src)); // was rc_smoothing_feedforward_cutoff
-            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_auto_factor_throttle, sbufReadU8(src)); // was rc_smoothing_input_type
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_auto_factor_throttle, constrain(sbufReadU8(src), RC_SMOOTHING_AUTO_FACTOR_MIN, RC_SMOOTHING_AUTO_FACTOR_MAX)); // was rc_smoothing_input_type
             sbufReadU8(src); // not required in API 1.44, was rc_smoothing_derivative_type
 #else
             sbufReadU8(src);
@@ -4276,7 +4278,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             // Added in MSP API 1.40
             // Kept separate from the section above to work around missing Configurator support in version < 10.4.2
 #if defined(USE_USB_CDC_HID)
-            usbDevConfigMutable()->type = sbufReadU8(src);
+            usbDevConfigMutable()->type = !!sbufReadU8(src);
 #else
             sbufReadU8(src);
 #endif
@@ -4296,7 +4298,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         if (sbufBytesRemaining(src) >= 1) {
             // Added in MSP API 1.44
 #if defined(USE_RC_SMOOTHING_FILTER)
-            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing, sbufReadU8(src));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing, !!sbufReadU8(src));
 #else
             sbufReadU8(src);
 #endif
