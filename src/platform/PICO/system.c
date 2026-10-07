@@ -21,6 +21,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "platform.h"
 
@@ -41,7 +42,19 @@
 #include "hardware/watchdog.h"
 #include "pico/bootrom.h"
 #include "pico/unique_id.h"
-// flash.h used by PICO QSPI helpers is included where needed in PICO bus/flash code
+
+#ifndef PICO_TRACE
+// If not using trace, help avoid pulling in printf by overriding the standard (weak) __assert_func definition
+void __assert_func(const char *file, int line, const char *func, const char *failedexpr)
+{
+    UNUSED(file);
+    UNUSED(line);
+    UNUSED(func);
+    UNUSED(failedexpr);
+    exit(1);
+}
+#endif
+
 
 ///////////////////////////////////////////////////
 

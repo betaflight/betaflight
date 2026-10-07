@@ -23,6 +23,12 @@ PICO_MK_DIR = $(TARGET_PLATFORM_DIR)/mk
 
 ifneq ($(PICO_TRACE),)
 include $(PICO_MK_DIR)/PICO_trace.mk
+else
+# If not using trace, then we can avoid pulling in printf, which is referenced by the panic
+# and __assert_func functions (there's no point in those calling printf if we are not tracing).
+# When PICO_PANIC_FUNCTION is defined and empty, pico-sdk provides the simplest panic function.
+# The __assert_func function will be defined in system.c when PICO_TRACE macro is not defined.
+DEVICE_FLAGS += -DPICO_PANIC_FUNCTION=
 endif
 
 ifneq ($(TEST_PIO_DEBUG),)
