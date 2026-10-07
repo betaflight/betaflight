@@ -271,6 +271,31 @@ TEST_F(PosHoldTest, PitchForwardRecoveryRunsWithInvalidHeading)
     EXPECT_NEAR(35.0f, autopilotAngle[AI_PITCH], 0.01f);
 }
 
+TEST_F(PosHoldTest, LevelHeadingRecoveryClimbsWithInvalidHeading)
+{
+    // A rescue with no heading climbs level before it pitches forward: position control cannot hold
+    // the craft, but the nav command's altitude ramp must still be flown.
+    initAndSettleAt(0, 0, 0);
+    mockHeadingRequired = true;
+    mockHeadingValid = false;
+    ENABLE_ARMING_FLAG(ARMED);
+    flightModeFlags |= POS_HOLD_MODE;
+    updatePosHold(0);
+    ASSERT_FALSE(isAutopilotInControl());
+
+    autopilotHeadingRecovery(true, 0.0f);
+    const int callsBefore = positionNavUpdateCalls;
+    for (int i = 1; i <= 10; i++) {
+        updatePosHold(i * 10000);
+    }
+
+    EXPECT_TRUE(isAutopilotInControl());
+    EXPECT_EQ(positionNavUpdateCalls, callsBefore + 10);
+    EXPECT_NEAR(0.0f, autopilotAngle[AI_ROLL], 0.01f);
+    EXPECT_NEAR(0.0f, autopilotAngle[AI_PITCH], 0.01f);
+    autopilotHeadingRecovery(false, 0.0f);
+}
+
 TEST_F(PosHoldTest, InvalidHeadingStillBlocksNormalPositionControl)
 {
     initAndSettleAt(0, 0, 0);
