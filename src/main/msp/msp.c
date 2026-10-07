@@ -3123,10 +3123,10 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             if (box && auxChannelIndex < MAX_AUX_CHANNEL_COUNT) {
                 mac->modeId = box->boxId;
                 mac->auxChannelIndex = auxChannelIndex;
-                mac->range.startStep = sbufReadU8(src);
-                mac->range.endStep = sbufReadU8(src);
+                mac->range.startStep = MIN(sbufReadU8(src), MAX_MODE_RANGE_STEP);
+                mac->range.endStep = MIN(sbufReadU8(src), MAX_MODE_RANGE_STEP);
                 if (sbufBytesRemaining(src) != 0) {
-                    mac->modeLogic = sbufReadU8(src);
+                    mac->modeLogic = MIN(sbufReadU8(src), MODELOGIC_AND);
 
                     i = sbufReadU8(src);
                     const box_t *linkedToBox = findBoxByPermanentId(i);
