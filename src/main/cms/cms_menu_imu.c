@@ -209,17 +209,17 @@ static OSD_Entry cmsx_menuPidEntries[] =
     { "ROLL  P", OME_UINT8 | SLIDER_RP, NULL, &(OSD_UINT8_t){ &tempPid[PID_ROLL][0],  0, 200, 1 }},
     { "ROLL  I", OME_UINT8 | SLIDER_RP, NULL, &(OSD_UINT8_t){ &tempPid[PID_ROLL][1],  0, 200, 1 }},
     { "ROLL  D", OME_UINT8 | SLIDER_RP, NULL, &(OSD_UINT8_t){ &tempPid[PID_ROLL][2],  0, 200, 1 }},
-    { "ROLL  F", OME_UINT16 | SLIDER_RP, NULL, &(OSD_UINT16_t){ &tempPidF[PID_ROLL],  0, 2000, 1 }},
+    { "ROLL  F", OME_UINT16 | SLIDER_RP, NULL, &(OSD_UINT16_t){ &tempPidF[PID_ROLL],  0, F_GAIN_MAX, 1 }},
 
     { "PITCH P", OME_UINT8 | SLIDER_RP, NULL, &(OSD_UINT8_t){ &tempPid[PID_PITCH][0], 0, 200, 1 }},
     { "PITCH I", OME_UINT8 | SLIDER_RP, NULL, &(OSD_UINT8_t){ &tempPid[PID_PITCH][1], 0, 200, 1 }},
     { "PITCH D", OME_UINT8 | SLIDER_RP, NULL, &(OSD_UINT8_t){ &tempPid[PID_PITCH][2], 0, 200, 1 }},
-    { "PITCH F", OME_UINT16 | SLIDER_RP, NULL, &(OSD_UINT16_t){ &tempPidF[PID_PITCH], 0, 2000, 1 }},
+    { "PITCH F", OME_UINT16 | SLIDER_RP, NULL, &(OSD_UINT16_t){ &tempPidF[PID_PITCH], 0, F_GAIN_MAX, 1 }},
 
     { "YAW   P", OME_UINT8 | SLIDER_RPY, NULL, &(OSD_UINT8_t){ &tempPid[PID_YAW][0],   0, 200, 1 }},
     { "YAW   I", OME_UINT8 | SLIDER_RPY, NULL, &(OSD_UINT8_t){ &tempPid[PID_YAW][1],   0, 200, 1 }},
     { "YAW   D", OME_UINT8 | SLIDER_RPY, NULL, &(OSD_UINT8_t){ &tempPid[PID_YAW][2],   0, 200, 1 }},
-    { "YAW   F", OME_UINT16 | SLIDER_RPY, NULL, &(OSD_UINT16_t){ &tempPidF[PID_YAW],   0, 2000, 1 }},
+    { "YAW   F", OME_UINT16 | SLIDER_RPY, NULL, &(OSD_UINT16_t){ &tempPidF[PID_YAW],   0, F_GAIN_MAX, 1 }},
 
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL}
