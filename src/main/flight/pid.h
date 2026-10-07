@@ -102,6 +102,7 @@
 #define TPA_CURVE_PID_MAX 1000
 #define TPA_CURVE_EXPO_MIN -100
 #define TPA_CURVE_EXPO_MAX 100
+#define TPA_CURVE_PWL_SIZE 17
 
 #ifdef USE_WING
 #define S_TERM_SCALE 0.01f
@@ -110,10 +111,6 @@
 #else
 #define TPA_LOW_RATE_MIN 0
 #endif
-
-#ifdef USE_ADVANCED_TPA
-#define TPA_CURVE_PWL_SIZE 17
-#endif // USE_ADVANCED_TPA
 
 #define G_ACCELERATION 9.80665f // gravitational acceleration in m/s^2
 
