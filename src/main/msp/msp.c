@@ -4375,7 +4375,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
     case MSP_SET_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
             hsvColor_t *color = &ledStripStatusModeConfigMutable()->colors[i];
-            color->h = sbufReadU16(src);
+            color->h = MIN(sbufReadU16(src), HSV_HUE_MAX);
             color->s = sbufReadU8(src);
             color->v = sbufReadU8(src);
         }
