@@ -4742,13 +4742,13 @@ RAM_CODE static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, i
 
         switch (id) {
             case CURRENT_METER_ID_BATTERY_1:
-                currentSensorADCConfigMutable()->scale = sbufReadU16(src);
-                currentSensorADCConfigMutable()->offset = sbufReadU16(src);
+                currentSensorADCConfigMutable()->scale = constrain((int16_t)sbufReadU16(src), -CURRENT_METER_SCALE_MAX, CURRENT_METER_SCALE_MAX);
+                currentSensorADCConfigMutable()->offset = constrain((int16_t)sbufReadU16(src), -CURRENT_METER_ADC_OFFSET_MAX, CURRENT_METER_ADC_OFFSET_MAX);
                 break;
 #ifdef USE_VIRTUAL_CURRENT_METER
             case CURRENT_METER_ID_VIRTUAL_1:
-                currentSensorVirtualConfigMutable()->scale = sbufReadU16(src);
-                currentSensorVirtualConfigMutable()->offset = sbufReadU16(src);
+                currentSensorVirtualConfigMutable()->scale = constrain((int16_t)sbufReadU16(src), -CURRENT_METER_SCALE_MAX, CURRENT_METER_SCALE_MAX);
+                currentSensorVirtualConfigMutable()->offset = MIN(sbufReadU16(src), CURRENT_METER_VIRTUAL_OFFSET_MAX);
                 break;
 #endif
             default:
