@@ -3371,9 +3371,9 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
 
     case MSP_SET_MOTOR_3D_CONFIG:
-        flight3DConfigMutable()->deadband3d_low = sbufReadU16(src);
-        flight3DConfigMutable()->deadband3d_high = sbufReadU16(src);
-        flight3DConfigMutable()->neutral3d = sbufReadU16(src);
+        flight3DConfigMutable()->deadband3d_low = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_RANGE_MIDDLE);
+        flight3DConfigMutable()->deadband3d_high = constrain(sbufReadU16(src), PWM_RANGE_MIDDLE, PWM_PULSE_MAX);
+        flight3DConfigMutable()->neutral3d = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
         break;
 
     case MSP_SET_RC_DEADBAND:
