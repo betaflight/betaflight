@@ -3367,16 +3367,24 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         } else {
             const uint8_t targetChannel = sbufReadU8(src);
             const uint8_t inputSource = sbufReadU8(src);
-            if (targetChannel >= MAX_SUPPORTED_SERVOS || inputSource >= INPUT_SOURCE_COUNT) {
+            const int8_t rate = sbufReadU8(src);
+            const uint8_t speed = sbufReadU8(src);
+            const int8_t min = sbufReadU8(src);
+            const int8_t max = sbufReadU8(src);
+            const uint8_t box = sbufReadU8(src);
+            if (targetChannel >= MAX_SUPPORTED_SERVOS || inputSource >= INPUT_SOURCE_COUNT
+                || rate < -SERVO_RATE_MAX || rate > SERVO_RATE_MAX
+                || min < 0 || max > SERVO_MIX_RANGE_MAX || min >= max
+                || box > MAX_SERVO_BOXES) {
                 return MSP_RESULT_ERROR;
             }
             customServoMixersMutable(i)->targetChannel = targetChannel;
             customServoMixersMutable(i)->inputSource = inputSource;
-            customServoMixersMutable(i)->rate = sbufReadU8(src);
-            customServoMixersMutable(i)->speed = sbufReadU8(src);
-            customServoMixersMutable(i)->min = sbufReadU8(src);
-            customServoMixersMutable(i)->max = sbufReadU8(src);
-            customServoMixersMutable(i)->box = sbufReadU8(src);
+            customServoMixersMutable(i)->rate = rate;
+            customServoMixersMutable(i)->speed = speed;
+            customServoMixersMutable(i)->min = min;
+            customServoMixersMutable(i)->max = max;
+            customServoMixersMutable(i)->box = box;
             loadCustomServoMixer();
         }
 #endif
