@@ -79,8 +79,7 @@ extern const char * const failsafeProcedureNames[FAILSAFE_PROCEDURE_COUNT];
 typedef enum {
     FAILSAFE_SWITCH_MODE_STAGE1 = 0,
     FAILSAFE_SWITCH_MODE_KILL,
-    FAILSAFE_SWITCH_MODE_STAGE2,
-    FAILSAFE_SWITCH_MODE_COUNT
+    FAILSAFE_SWITCH_MODE_STAGE2
 } failsafeSwitchMode_e;
 
 typedef struct failsafeState_s {

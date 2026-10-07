@@ -123,7 +123,6 @@ typedef enum {
 #ifdef USE_WING
     TPA_MODE_PDS,
 #endif
-    TPA_MODE_COUNT
 } tpaMode_e;
 
 typedef enum {
@@ -140,7 +139,6 @@ typedef enum {
     SPA_MODE_I,
     SPA_MODE_PID,
     SPA_MODE_PD_I_FREEZE,
-    SPA_MODE_COUNT
 } spaMode_e;
 
 typedef enum {
@@ -198,25 +196,21 @@ typedef enum feedforwardAveraging_e {
     FEEDFORWARD_AVERAGING_2_POINT,
     FEEDFORWARD_AVERAGING_3_POINT,
     FEEDFORWARD_AVERAGING_4_POINT,
-    FEEDFORWARD_AVERAGING_COUNT
 } feedforwardAveraging_t;
 
 typedef enum tpaCurveType_e {
     TPA_CURVE_CLASSIC,
     TPA_CURVE_HYPERBOLIC,
-    TPA_CURVE_TYPE_COUNT
 } tpaCurveType_t;
 
 typedef enum tpaSpeedType_e {
     TPA_SPEED_BASIC,
     TPA_SPEED_ADVANCED,
-    TPA_SPEED_TYPE_COUNT
 } tpaSpeedType_t;
 
 typedef enum {
     YAW_TYPE_RUDDER,
     YAW_TYPE_DIFF_THRUST,
-    YAW_TYPE_COUNT
 } yawType_e;
 
 #define MAX_PROFILE_NAME_LENGTH 8u
