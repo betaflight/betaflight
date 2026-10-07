@@ -4206,9 +4206,9 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 #endif
 
     case MSP_SET_BOARD_ALIGNMENT_CONFIG:
-        boardAlignmentMutable()->rollDegrees = sbufReadU16(src);
-        boardAlignmentMutable()->pitchDegrees = sbufReadU16(src);
-        boardAlignmentMutable()->yawDegrees = sbufReadU16(src);
+        boardAlignmentMutable()->rollDegrees = constrain((int16_t)sbufReadU16(src), BOARD_ALIGNMENT_MIN, BOARD_ALIGNMENT_MAX);
+        boardAlignmentMutable()->pitchDegrees = constrain((int16_t)sbufReadU16(src), BOARD_ALIGNMENT_MIN, BOARD_ALIGNMENT_MAX);
+        boardAlignmentMutable()->yawDegrees = constrain((int16_t)sbufReadU16(src), BOARD_ALIGNMENT_MIN, BOARD_ALIGNMENT_MAX);
         break;
 
     case MSP_SET_MIXER_CONFIG:
