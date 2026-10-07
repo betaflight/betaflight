@@ -46,6 +46,7 @@
 
 #include "flight/pid.h"
 #include "flight/pid_init.h"
+#include "flight/psas_trimming.h"
 #include "config/simplified_tuning.h"
 
 #include "io/beeper.h"
@@ -66,7 +67,7 @@
 
 #define ADJUSTMENT_RANGE_COUNT_INVALID -1
 
-PG_REGISTER_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges, PG_ADJUSTMENT_RANGE_CONFIG, 2);
+PG_REGISTER_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges, PG_ADJUSTMENT_RANGE_CONFIG, 3);
 
 // Track whether the multiplier center has been initialized
 static bool potBasePositionInitialized = false;
@@ -242,6 +243,10 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .adjustmentFunction = ADJUSTMENT_BATTERY_PROFILE,
         .mode = ADJUSTMENT_MODE_SELECT,
         .data = { .switchPositions = BATTERY_PROFILE_COUNT }
+    }, {
+        .adjustmentFunction = ADJUSTMENT_PSAS_TRIMMING,
+        .mode = ADJUSTMENT_MODE_SELECT,
+        .data = { .switchPositions = 3 }
     }
 };
 
@@ -280,6 +285,7 @@ static const char * const adjustmentLabels[] = {
     "LED DIMMER",
     "SLIDER MASTER MULTIPLIER",
     "BATTERY PROFILE",
+    "PSAS TRIMMING",
 };
 
 static int adjustmentRangeNameIndex = 0;
@@ -625,7 +631,7 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
             int scaleFactor = constrain((adjustmentScale > 0) ? adjustmentScale : 125, 0, 250); // Use adjustmentScale (default to 125 = 1.25x if not set)
             int delta = (position - centerPosition) * scaleFactor / 100; // Scale by dividing by 100
             int newValue = constrain(baseMultiplier + delta, 20, 200);
-            
+
             // Apply PID update immediately if changed
             if (newValue != currentPidProfile->simplified_master_multiplier) {
                 currentPidProfile->simplified_master_multiplier = newValue;
@@ -665,6 +671,14 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
 #ifdef USE_LED_STRIP
         if (getLedBrightness() != position) {
             setLedBrightness(position);
+        }
+#endif
+        break;
+    case ADJUSTMENT_PSAS_TRIMMING:
+#ifdef USE_PSAS
+        if (getPsasTrimmingState() != position) {
+            setPsasTrimmingState(position);
+            blackboxLogInflightAdjustmentEvent(ADJUSTMENT_PSAS_TRIMMING, position);
         }
 #endif
         break;

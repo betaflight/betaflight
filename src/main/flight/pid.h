@@ -367,7 +367,13 @@ typedef struct pidProfile_s {
     uint16_t psas_speed_main_curve_max;         // Speed gain maximum for damping and stability *0.01
     uint16_t psas_speed_stick_curve_min;        // Speed gain minimum for sticks *0.01
     uint16_t psas_speed_stick_curve_max;        // Speed gain maximum for sticks *0.01
-    uint8_t psas_speed_curve_mode;             // Speed curves mode (psasSpeedCurveMode_e enum values)
+    uint8_t psas_speed_curve_mode;              // Speed curves mode (psasSpeedCurveMode_e enum values)
+    uint8_t psas_trim_enabled_mask;             // Trimming enabled mask for roll, pitch, yaw
+    uint8_t psas_trim_deadband;                 // Trim activations stick limit, *0.1 % 
+    uint16_t psas_trim_lowpass_time;            // Stick LowPass filters time, ms
+    uint8_t psas_trim_rate;                     // Trim I term, *0.01 1/s
+    uint8_t psas_trim_limit;                    // Trim output limit, %
+    uint16_t psas_trim_tau_reset;               // Trim reset time, ms
 #endif
 } pidProfile_t;
 

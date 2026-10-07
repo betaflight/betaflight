@@ -41,7 +41,9 @@
 #include "build/debug.h"
 
 #include "flight/mixer.h"
+#include "flight/pid.h"
 #include "flight/psas.h"
+#include "flight/psas_trimming.h"
 
 FAST_DATA_ZERO_INIT psas_data_t psasData;
 FAST_DATA_ZERO_INIT psasRuntime_t psasRuntime;
@@ -112,6 +114,8 @@ void psasInit(const pidProfile_t *pidProfile)
     isEnabledAccelZController = sensors(SENSOR_ACC) && pidProfile->psas_pitch_accel_i_gain != 0; // Enable controller for non zero I. The P (psas_pitch_accel_p_gain) is an additional option
     isEnabledLiftCoefEstimation = sensors(SENSOR_ACC) && pidProfile->psas_wing_load != 0;
     isEnabledAoALimiter = isEnabledLiftCoefEstimation && pidProfile->psas_aoa_limiter_gain != 0;
+
+    psasTrimmingInit(pidProfile);
 }
 
 static void FAST_CODE_NOINLINE computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ, float *liftCoef, float *liftCoefVelocity)
@@ -374,6 +378,7 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     float pitchStick = getSetpointRate(FD_PITCH) / maxRcRatePitch;  // pitch stick [-1 ... +1]
     psasData.pitch.pilot = pitchStick * psasRuntime.stick_gain[FD_PITCH];
     psasData.pitch.pilot *= psasRuntime.speed_gains.stick[FD_PITCH];
+    psasData.pitch.pilot += getPsasTrimmingOutput(FD_PITCH);
 
     // Plane pitch damping improvement
     float gyroPitch = !gyroOverflowDetected() ? gyro.gyroADCf[FD_PITCH] : 0.0f;
@@ -447,6 +452,7 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     const float maxRcRateRoll = MAX(getMaxRcRate(FD_ROLL), 1.0f);
     psasData.roll.pilot = getSetpointRate(FD_ROLL) / maxRcRateRoll * psasRuntime.stick_gain[FD_ROLL];
     psasData.roll.pilot *= psasRuntime.speed_gains.stick[FD_ROLL];
+    psasData.roll.pilot +=  getPsasTrimmingOutput(FD_ROLL);
 
     // Plane roll damping improvement
     // On the positive roll gyro rotation (on the right side direction) it needs to turn plane on the left, therefore it needs to use negative sign
@@ -466,6 +472,7 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     const float maxRcRateYaw = MAX(getMaxRcRate(FD_YAW), 1.0f);
     psasData.yaw.pilot = getSetpointRate(FD_YAW) / maxRcRateYaw * psasRuntime.stick_gain[FD_YAW];
     psasData.yaw.pilot *= psasRuntime.speed_gains.stick[FD_YAW];
+    psasData.yaw.pilot += getPsasTrimmingOutput(FD_YAW);
 
     // Plane yaw damping improvement
     float gyroYaw = !gyroOverflowDetected() ? gyro.gyroADCf[FD_YAW] : 0.0f;
@@ -518,6 +525,7 @@ bool FAST_CODE_NOINLINE psasHandleMode(const pidProfile_t *pidProfile)
         }
 
         if (pidRuntime.pidStabilisationEnabled) {
+            psasTrimmingUpdate();
             psasUpdate(pidProfile);
         } else {
             memset(&psasData, 0, sizeof(psasData));

@@ -371,6 +371,14 @@
 #define PARAM_NAME_PSAS_SPEED_STICK_CURVE_MIN "psas_speed_stick_curve_min"
 #define PARAM_NAME_PSAS_SPEED_STICK_CURVE_MAX "psas_speed_stick_curve_max"
 #define PARAM_NAME_PSAS_SPEED_CURVE_MODE "psas_speed_curve_mode"
+#define PARAM_NAME_PSAS_TRIM_ENABLED_ROLL "psas_trim_enabled_roll"
+#define PARAM_NAME_PSAS_TRIM_ENABLED_PITCH "psas_trim_enabled_pitch"
+#define PARAM_NAME_PSAS_TRIM_ENABLED_YAW "psas_trim_enabled_yaw"
+#define PARAM_NAME_PSAS_TRIM_DEADBAND "psas_trim_deadband"
+#define PARAM_NAME_PSAS_TRIM_LOWPASS_TIME "psas_trim_lowpass_time"
+#define PARAM_NAME_PSAS_TRIM_RATE "psas_trim_rate"
+#define PARAM_NAME_PSAS_TRIM_LIMIT "psas_trim_limit"
+#define PARAM_NAME_PSAS_TRIM_TAU_RESET "psas_trim_tau_reset"
 #endif
 
 #ifdef USE_TRANSPONDER

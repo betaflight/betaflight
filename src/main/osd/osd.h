@@ -224,9 +224,6 @@ typedef enum {
 #ifdef USE_OSD_NAV_MAP
     OSD_NAV_MAP,                // minimap of home, flight plan and flown trail
 #endif
-#ifdef USE_PSAS
-    OSD_AOA_LIMITER,
-#endif
 
 #ifdef USE_POSITION_HOLD
     OSD_POS_HOLD_READY,         // pre-engagement Position Hold readiness indicator
@@ -234,6 +231,13 @@ typedef enum {
 
 #ifdef USE_PITOT
     OSD_AIRSPEED,
+#endif
+
+#ifdef USE_PSAS
+    OSD_PSAS_AOA_LIMITER,
+    OSD_PSAS_TRIM_ROLL,
+    OSD_PSAS_TRIM_PITCH,
+    OSD_PSAS_TRIM_YAW,
 #endif
 
     OSD_ITEM_COUNT // MUST BE LAST

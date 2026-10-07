@@ -1529,6 +1529,15 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_PSAS_SPEED_STICK_CURVE_MIN, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 10, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_speed_stick_curve_min) },
     { PARAM_NAME_PSAS_SPEED_STICK_CURVE_MAX, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 100, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_speed_stick_curve_max) },
     { PARAM_NAME_PSAS_SPEED_CURVE_MODE, VAR_UINT8 | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_PSAS_SPEED_CURVE_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_speed_curve_mode) },
+
+    { PARAM_NAME_PSAS_TRIM_ENABLED_ROLL,  VAR_UINT8 | PROFILE_VALUE | MODE_BITSET, .config.bitpos = 0, PG_PID_PROFILE, offsetof(pidProfile_t, psas_trim_enabled_mask) },
+    { PARAM_NAME_PSAS_TRIM_ENABLED_PITCH, VAR_UINT8 | PROFILE_VALUE | MODE_BITSET, .config.bitpos = 1, PG_PID_PROFILE, offsetof(pidProfile_t, psas_trim_enabled_mask) },
+    { PARAM_NAME_PSAS_TRIM_ENABLED_YAW,   VAR_UINT8 | PROFILE_VALUE | MODE_BITSET, .config.bitpos = 2, PG_PID_PROFILE, offsetof(pidProfile_t, psas_trim_enabled_mask) },
+    { PARAM_NAME_PSAS_TRIM_DEADBAND, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_trim_deadband) },
+    { PARAM_NAME_PSAS_TRIM_LOWPASS_TIME, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 200, 3000 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_trim_lowpass_time) },
+    { PARAM_NAME_PSAS_TRIM_RATE, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_trim_rate) },
+    { PARAM_NAME_PSAS_TRIM_LIMIT, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 10, 80 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_trim_limit) },
+    { PARAM_NAME_PSAS_TRIM_TAU_RESET, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 50, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_trim_tau_reset) },
 #endif
 // PG_TELEMETRY_CONFIG
 #ifdef USE_TELEMETRY

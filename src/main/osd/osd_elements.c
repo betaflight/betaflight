@@ -165,6 +165,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/psas.h"
+#include "flight/psas_trimming.h"
 #include "flight/pos_hold.h"
 
 #include "io/gps.h"
@@ -2094,7 +2095,7 @@ static void osdElementSys(osdElementParms_t *element)
 #endif
 
 #ifdef USE_PSAS
-static void osdElementAoaLimiter(osdElementParms_t *element)
+static void osdElementPsasAoaLimiter(osdElementParms_t *element)
 {
     switch (psasData.pitch.aoaLimiterState) {
     case LIMITER_DISABLED:
@@ -2110,6 +2111,76 @@ static void osdElementAoaLimiter(osdElementParms_t *element)
         tfp_sprintf(element->buff, "%s", "AOA!!!");
         break;
     }
+}
+
+static int osdFormatPsasTrim(char *buff, char axisSymbol, float val, char state)
+{
+    const bool vertical = axisSymbol == 'P';
+    const char arrow = (val > 0.05f) ? (vertical ? SYM_ARROW_NORTH : SYM_ARROW_EAST)
+                     : (val < -0.05f) ? (vertical ? SYM_ARROW_SOUTH : SYM_ARROW_WEST)
+                     : ' ';
+    char *p = buff;
+    *p++ = axisSymbol;
+    p += osdPrintFloat(p, SYM_NONE, fabsf(val), "%2u", 1, true, arrow);
+    if (state) {
+        *p++ = state;
+    }
+    return p - buff;
+}
+
+static char getPsasTrimStateSymbol(uint8_t axis, uint8_t state)
+{
+    return (state == TRIMMING_FIX)  ? 'F'
+                                    : (state == TRIMMING_ADJUSTMENT) ? (getPsasTrimmingActiveChannel() == axis ? 'A' : ' ')
+                                    : ' ';
+}
+
+static void osdElementPsasTrimRoll(osdElementParms_t *element)
+{
+    const uint8_t axis = 0;
+    const char axisSymbol = 'R';
+    const uint8_t trimState = getPsasTrimmingState();
+    const float trimValue = getPsasTrimmingOutput(axis);
+    if (!isPsasTrimmingChannelEnabled(axis) ||
+        (trimState == TRIMMING_OFF && fabsf(trimValue) < 0.05f)) {
+        element->drawElement = false;
+        return;
+    }
+
+    const char stateSymbol = getPsasTrimStateSymbol(axis, trimState);
+    osdFormatPsasTrim(element->buff, axisSymbol, trimValue, stateSymbol);
+}
+
+static void osdElementPsasTrimPitch(osdElementParms_t *element)
+{
+    const uint8_t axis = 1;
+    const char axisSymbol = 'P';
+    const uint8_t trimState = getPsasTrimmingState();
+    const float trimValue = getPsasTrimmingOutput(axis);
+    if (!isPsasTrimmingChannelEnabled(axis) ||
+        (trimState == TRIMMING_OFF && fabsf(trimValue) < 0.05f)) {
+        element->drawElement = false;
+        return;
+    }
+
+    const char stateSymbol = getPsasTrimStateSymbol(axis, trimState);
+    osdFormatPsasTrim(element->buff, axisSymbol, trimValue, stateSymbol);
+}
+
+static void osdElementPsasTrimYaw(osdElementParms_t *element)
+{
+    const uint8_t axis = 2;
+    const char axisSymbol = 'Y';
+    const uint8_t trimState = getPsasTrimmingState();
+    const float trimValue = getPsasTrimmingOutput(axis);
+    if (!isPsasTrimmingChannelEnabled(axis) ||
+        (trimState == TRIMMING_OFF && fabsf(trimValue) < 0.05f)) {
+        element->drawElement = false;
+        return;
+    }
+
+    const char stateSymbol = getPsasTrimStateSymbol(axis, trimState);
+    osdFormatPsasTrim(element->buff, axisSymbol, trimValue, stateSymbol);
 }
 #endif
 
@@ -2407,11 +2478,14 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #if ENABLE_OSD_CUSTOM_TEXT
     [OSD_CUSTOM_SERIAL_TEXT]      = osdElementCustomSerialText,
 #endif
-#ifdef USE_PSAS
-    [OSD_AOA_LIMITER]             = osdElementAoaLimiter,
-#endif
 #ifdef USE_PITOT
     [OSD_AIRSPEED]                = osdElementAirspeed,
+#endif
+#ifdef USE_PSAS
+    [OSD_PSAS_AOA_LIMITER]        = osdElementPsasAoaLimiter,
+    [OSD_PSAS_TRIM_ROLL]          = osdElementPsasTrimRoll,
+    [OSD_PSAS_TRIM_PITCH]         = osdElementPsasTrimPitch,
+    [OSD_PSAS_TRIM_YAW]           = osdElementPsasTrimYaw,
 #endif
 };
 
@@ -2501,12 +2575,15 @@ void osdAddActiveElements(void)
     osdAddActiveElement(OSD_TOTAL_FLIGHTS);
 #endif
 
-#ifdef USE_PSAS
-    osdAddActiveElement(OSD_AOA_LIMITER);
-#endif
-
 #ifdef USE_PITOT
     osdAddActiveElement(OSD_AIRSPEED);
+#endif
+
+#ifdef USE_PSAS
+    osdAddActiveElement(OSD_PSAS_AOA_LIMITER);
+    osdAddActiveElement(OSD_PSAS_TRIM_ROLL);
+    osdAddActiveElement(OSD_PSAS_TRIM_PITCH);
+    osdAddActiveElement(OSD_PSAS_TRIM_YAW);
 #endif
 }
 

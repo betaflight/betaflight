@@ -21,8 +21,6 @@
 
 #pragma once
 
-#include "pid.h"
-
 typedef enum {
     LIMITER_DISABLED,
     LIMITER_NOT_READY,

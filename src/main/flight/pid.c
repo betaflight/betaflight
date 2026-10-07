@@ -323,6 +323,12 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .psas_speed_stick_curve_min = 50,      // Speed gain minimum for sticks *0.01
         .psas_speed_stick_curve_max = 200,     // Speed gain maximum for sticks *0.01
         .psas_speed_curve_mode = SPEED_CURVE_MODE_TPA, // Use just Acro mode TPA hyperbolic curves
+        .psas_trim_enabled_mask = 0,    // Trimming disabled by default
+        .psas_trim_deadband = 25,       // Trim activations stick limit, *0.1 %
+        .psas_trim_lowpass_time = 1000, // Stick LowPass filters time, ms
+        .psas_trim_rate = 40,           // Trim I term, *0.01 1/s
+        .psas_trim_limit = 50,          // Trim output limit, %
+        .psas_trim_tau_reset = 350,     // Trim reset time, ms
 #endif
     );
 }
