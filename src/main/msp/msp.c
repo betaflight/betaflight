@@ -4247,7 +4247,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         rxConfigMutable()->serialrx_provider = MIN(sbufReadU8(src), SERIALRX_PROVIDER_COUNT - 1);
         rxConfigMutable()->maxcheck = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
         rxConfigMutable()->midrc = constrain(sbufReadU16(src), RX_MIDRC_MIN, RX_MIDRC_MAX);
-        rxConfigMutable()->mincheck = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
+        rxConfigMutable()->mincheck = constrain(sbufReadU16(src), PWM_PULSE_MIN, RX_MIN_CHECK_MAX);
         rxConfigMutable()->spektrum_sat_bind = MIN(sbufReadU8(src), SPEKTRUM_SAT_BIND_MAX);
         if (sbufBytesRemaining(src) >= 4) {
             rxConfigMutable()->rx_min_usec = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);

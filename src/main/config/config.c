@@ -235,6 +235,10 @@ static void validateAndFixConfig(void)
     telemetryValidateProviders();
 #endif
 
+    if (rxConfig()->mincheck > RX_MIN_CHECK_MAX) {
+        rxConfigMutable()->mincheck = RX_MIN_CHECK_MAX;
+    }
+
     if (!isSerialConfigValid()) {
         // Give up only the claims that actually clash before falling back to the
         // board-wide reset, which would cost the user every other port they had
