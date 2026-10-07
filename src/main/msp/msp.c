@@ -4398,7 +4398,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 #endif
             // API 1.41 - selected ledstrip_profile
             if (sbufBytesRemaining(src) >= 1) {
-                ledStripConfigMutable()->ledstrip_profile = sbufReadU8(src);
+                ledStripConfigMutable()->ledstrip_profile = MIN(sbufReadU8(src), LED_PROFILE_COUNT - 1);
             }
         }
         break;
