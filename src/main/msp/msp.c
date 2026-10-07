@@ -4767,8 +4767,8 @@ RAM_CODE static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, i
         uint16_t vbatMax = sbufReadU8(src) * 10;      // vbatlevel_warn2 in MWC2.3 GUI
         uint16_t vbatWarn = sbufReadU8(src) * 10;      // vbatlevel when buzzer starts to alert
         const uint16_t capacity = sbufReadU16(src);
-        batteryConfigMutable()->voltageMeterSource = sbufReadU8(src);
-        batteryConfigMutable()->currentMeterSource = sbufReadU8(src);
+        batteryConfigMutable()->voltageMeterSource = MIN(sbufReadU8(src), VOLTAGE_METER_COUNT - 1);
+        batteryConfigMutable()->currentMeterSource = MIN(sbufReadU8(src), CURRENT_METER_COUNT - 1);
         if (sbufBytesRemaining(src) >= 6) {
             vbatMin = sbufReadU16(src);
             vbatMax = sbufReadU16(src);
