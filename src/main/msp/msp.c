@@ -3864,7 +3864,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             }
 
             if (sbufBytesRemaining(src) >= 2) {
-                vtxSettingsConfigMutable()->power = sbufReadU8(src);
+                vtxSettingsConfigMutable()->power = MIN(sbufReadU8(src), VTX_TABLE_MAX_POWER_LEVELS - 1);
                 const uint8_t newPitmode = sbufReadU8(src);
                 if (vtxType != VTXDEV_UNKNOWN) {
                     // Delegate pitmode to vtx directly
@@ -3877,21 +3877,21 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             }
 
             if (sbufBytesRemaining(src)) {
-                    vtxSettingsConfigMutable()->lowPowerDisarm = sbufReadU8(src);
+                    vtxSettingsConfigMutable()->lowPowerDisarm = MIN(sbufReadU8(src), VTX_LOW_POWER_DISARM_UNTIL_FIRST_ARM);
             }
 
             // API version 1.42 - this parameter kept separate since clients may already be supplying
             if (sbufBytesRemaining(src) >= 2) {
-                vtxSettingsConfigMutable()->pitModeFreq = sbufReadU16(src);
+                vtxSettingsConfigMutable()->pitModeFreq = MIN(sbufReadU16(src), VTX_SETTINGS_MAX_FREQUENCY_MHZ);
             }
 
             // API version 1.42 - extensions for non-encoded versions of the band, channel or frequency
             if (sbufBytesRemaining(src) >= 4) {
                 // Added standalone values for band, channel and frequency to move
                 // away from the flawed encoded combined method originally implemented.
-                uint8_t newBand = sbufReadU8(src);
-                const uint8_t newChannel = sbufReadU8(src);
-                uint16_t newFreq = sbufReadU16(src);
+                uint8_t newBand = MIN(sbufReadU8(src), VTX_TABLE_MAX_BANDS);
+                const uint8_t newChannel = MIN(sbufReadU8(src), VTX_TABLE_MAX_CHANNELS);
+                uint16_t newFreq = MIN(sbufReadU16(src), VTX_SETTINGS_MAX_FREQUENCY_MHZ);
                 if (newBand) {
                     newFreq = vtxCommonLookupFrequency(vtxDevice, newBand, newChannel);
                 }
