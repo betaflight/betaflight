@@ -4252,22 +4252,33 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         }
         break;
 
-    case MSP_SET_RX_CONFIG:
+    case MSP_SET_RX_CONFIG: {
+        // Read and validate everything up to the rx min/max pair before changing the config
 #ifdef USE_SERIALRX
-        rxConfigMutable()->serialrx_provider = constrainToLookupTable(sbufReadU8(src), TABLE_SERIAL_RX);
+        const uint8_t serialrxProvider = constrainToLookupTable(sbufReadU8(src), TABLE_SERIAL_RX);
 #else
-        rxConfigMutable()->serialrx_provider = sbufReadU8(src);
+        const uint8_t serialrxProvider = sbufReadU8(src);
 #endif
-        rxConfigMutable()->maxcheck = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
-        rxConfigMutable()->midrc = constrain(sbufReadU16(src), RX_MIDRC_MIN, RX_MIDRC_MAX);
-        rxConfigMutable()->mincheck = constrain(sbufReadU16(src), PWM_PULSE_MIN, RX_MIN_CHECK_MAX);
-        rxConfigMutable()->spektrum_sat_bind = MIN(sbufReadU8(src), SPEKTRUM_SAT_BIND_MAX);
-        if (sbufBytesRemaining(src) >= 4) {
-            const uint16_t rxMinUsec = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
-            const uint16_t rxMaxUsec = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
+        const uint16_t maxcheck = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
+        const uint16_t midrc = constrain(sbufReadU16(src), RX_MIDRC_MIN, RX_MIDRC_MAX);
+        const uint16_t mincheck = constrain(sbufReadU16(src), PWM_PULSE_MIN, RX_MIN_CHECK_MAX);
+        const uint8_t spektrumSatBind = MIN(sbufReadU8(src), SPEKTRUM_SAT_BIND_MAX);
+        const bool hasRxUsec = sbufBytesRemaining(src) >= 4;
+        uint16_t rxMinUsec = 0;
+        uint16_t rxMaxUsec = 0;
+        if (hasRxUsec) {
+            rxMinUsec = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
+            rxMaxUsec = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
             if (rxMinUsec >= rxMaxUsec) {
                 return MSP_RESULT_ERROR;
             }
+        }
+        rxConfigMutable()->serialrx_provider = serialrxProvider;
+        rxConfigMutable()->maxcheck = maxcheck;
+        rxConfigMutable()->midrc = midrc;
+        rxConfigMutable()->mincheck = mincheck;
+        rxConfigMutable()->spektrum_sat_bind = spektrumSatBind;
+        if (hasRxUsec) {
             rxConfigMutable()->rx_min_usec = rxMinUsec;
             rxConfigMutable()->rx_max_usec = rxMaxUsec;
         }
@@ -4354,6 +4365,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 #endif
         }
         break;
+    }
     case MSP_SET_FAILSAFE_CONFIG:
         failsafeConfigMutable()->failsafe_delay = constrain(sbufReadU8(src), FAILSAFE_DELAY_MIN, FAILSAFE_DELAY_MAX);
         failsafeConfigMutable()->failsafe_landing_time = MIN(sbufReadU8(src), FAILSAFE_LANDING_TIME_MAX);
@@ -4797,8 +4809,8 @@ RAM_CODE static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, i
         uint16_t vbatMax = sbufReadU8(src) * 10;      // vbatlevel_warn2 in MWC2.3 GUI
         uint16_t vbatWarn = sbufReadU8(src) * 10;      // vbatlevel when buzzer starts to alert
         const uint16_t capacity = sbufReadU16(src);
-        batteryConfigMutable()->voltageMeterSource = constrainToLookupTable(sbufReadU8(src), TABLE_VOLTAGE_METER);
-        batteryConfigMutable()->currentMeterSource = constrainToLookupTable(sbufReadU8(src), TABLE_CURRENT_METER);
+        const uint8_t voltageMeterSource = constrainToLookupTable(sbufReadU8(src), TABLE_VOLTAGE_METER);
+        const uint8_t currentMeterSource = constrainToLookupTable(sbufReadU8(src), TABLE_CURRENT_METER);
         if (sbufBytesRemaining(src) >= 6) {
             vbatMin = sbufReadU16(src);
             vbatMax = sbufReadU16(src);
@@ -4807,6 +4819,8 @@ RAM_CODE static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, i
         if (vbatMin < VBAT_CELL_VOTAGE_RANGE_MIN || vbatMax > VBAT_CELL_VOTAGE_RANGE_MAX || vbatMin > vbatWarn || vbatWarn > vbatMax) {
             return MSP_RESULT_ERROR;
         }
+        batteryConfigMutable()->voltageMeterSource = voltageMeterSource;
+        batteryConfigMutable()->currentMeterSource = currentMeterSource;
         batteryProfile_t *profile = batteryProfilesMutable(systemConfig()->activeBatteryProfile);
         profile->vbatmincellvoltage = vbatMin;
         profile->vbatmaxcellvoltage = vbatMax;
