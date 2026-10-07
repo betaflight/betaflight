@@ -3230,8 +3230,8 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
     case MSP_SET_MOTOR_CONFIG:
         sbufReadU16(src);   // minthrottle deprecated in 4.6
-        motorConfigMutable()->maxthrottle = sbufReadU16(src);
-        motorConfigMutable()->mincommand = sbufReadU16(src);
+        motorConfigMutable()->maxthrottle = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
+        motorConfigMutable()->mincommand = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
 
         // version 1.42
         if (sbufBytesRemaining(src) >= 2) {
