@@ -26,6 +26,8 @@
 
 #define RX_MIDRC_MIN 1200
 #define RX_MIDRC_MAX 1700
+#define RX_MIN_CHECK_DEFAULT 1050
+#define RX_MAX_CHECK_DEFAULT 1900
 #define RX_FPV_CAM_ANGLE_MAX 90
 
 #define GET_FRAME_ERR_LPF_FREQUENCY(period) (10.0f / period)  // period in deciseconds (0.1s)

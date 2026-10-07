@@ -4263,6 +4263,9 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         const uint16_t midrc = constrain(sbufReadU16(src), RX_MIDRC_MIN, RX_MIDRC_MAX);
         const uint16_t mincheck = constrain(sbufReadU16(src), PWM_PULSE_MIN, RX_MIN_CHECK_MAX);
         const uint8_t spektrumSatBind = MIN(sbufReadU8(src), SPEKTRUM_SAT_BIND_MAX);
+        if (mincheck >= maxcheck) {
+            return MSP_RESULT_ERROR;
+        }
         const bool hasRxUsec = sbufBytesRemaining(src) >= 4;
         uint16_t rxMinUsec = 0;
         uint16_t rxMaxUsec = 0;

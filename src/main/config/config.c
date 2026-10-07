@@ -239,6 +239,11 @@ static void validateAndFixConfig(void)
         rxConfigMutable()->mincheck = RX_MIN_CHECK_MAX;
     }
 
+    if (rxConfig()->mincheck >= rxConfig()->maxcheck) {
+        rxConfigMutable()->mincheck = RX_MIN_CHECK_DEFAULT;
+        rxConfigMutable()->maxcheck = RX_MAX_CHECK_DEFAULT;
+    }
+
     if (rxConfig()->rx_min_usec >= rxConfig()->rx_max_usec) {
         rxConfigMutable()->rx_min_usec = RX_MIN_USEC;
         rxConfigMutable()->rx_max_usec = RX_MAX_USEC;
