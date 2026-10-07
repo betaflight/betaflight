@@ -3814,7 +3814,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
     case MSP_SET_BLACKBOX_CONFIG:
         // Don't allow config to be updated while Blackbox is logging
         if (blackboxMayEditConfig()) {
-            blackboxConfigMutable()->device = sbufReadU8(src);
+            blackboxConfigMutable()->device = MIN(sbufReadU8(src), BLACKBOX_DEVICE_VIRTUAL);
             const int rateNum = sbufReadU8(src); // was rate_num
             const int rateDenom = sbufReadU8(src); // was rate_denom
             uint16_t pRatio = 0;
