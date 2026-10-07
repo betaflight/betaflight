@@ -239,6 +239,11 @@ static void validateAndFixConfig(void)
         rxConfigMutable()->mincheck = RX_MIN_CHECK_MAX;
     }
 
+    if (rxConfig()->rx_min_usec >= rxConfig()->rx_max_usec) {
+        rxConfigMutable()->rx_min_usec = RX_MIN_USEC;
+        rxConfigMutable()->rx_max_usec = RX_MAX_USEC;
+    }
+
     if (!isSerialConfigValid()) {
         // Give up only the claims that actually clash before falling back to the
         // board-wide reset, which would cost the user every other port they had

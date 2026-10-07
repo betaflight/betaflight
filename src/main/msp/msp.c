@@ -4250,8 +4250,13 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         rxConfigMutable()->mincheck = constrain(sbufReadU16(src), PWM_PULSE_MIN, RX_MIN_CHECK_MAX);
         rxConfigMutable()->spektrum_sat_bind = MIN(sbufReadU8(src), SPEKTRUM_SAT_BIND_MAX);
         if (sbufBytesRemaining(src) >= 4) {
-            rxConfigMutable()->rx_min_usec = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
-            rxConfigMutable()->rx_max_usec = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
+            const uint16_t rxMinUsec = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
+            const uint16_t rxMaxUsec = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
+            if (rxMinUsec >= rxMaxUsec) {
+                return MSP_RESULT_ERROR;
+            }
+            rxConfigMutable()->rx_min_usec = rxMinUsec;
+            rxConfigMutable()->rx_max_usec = rxMaxUsec;
         }
         if (sbufBytesRemaining(src) >= 4) {
             sbufReadU8(src); // not required in API 1.44, was rxConfigMutable()->rcInterpolation
