@@ -3150,8 +3150,8 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             adjustmentRange_t *adjRange = adjustmentRangesMutable(i);
             sbufReadU8(src); // was adjRange->adjustmentIndex
             const uint8_t auxChannelIndex = sbufReadU8(src);
-            const uint8_t startStep = sbufReadU8(src);
-            const uint8_t endStep = sbufReadU8(src);
+            const uint8_t startStep = MIN(sbufReadU8(src), MAX_MODE_RANGE_STEP);
+            const uint8_t endStep = MIN(sbufReadU8(src), MAX_MODE_RANGE_STEP);
             const uint8_t adjustmentConfig = sbufReadU8(src);
             const uint8_t auxSwitchChannelIndex = sbufReadU8(src);
             if (auxChannelIndex >= MAX_AUX_CHANNEL_COUNT || adjustmentConfig >= ADJUSTMENT_FUNCTION_COUNT || auxSwitchChannelIndex >= MAX_AUX_CHANNEL_COUNT) {
