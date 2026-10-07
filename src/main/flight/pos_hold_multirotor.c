@@ -133,7 +133,7 @@ void updatePosHold(timeUs_t currentTimeUs)
     if (posHold.isEnabled) {
         posHoldCheckSticks();
         const bool sensorsWereOk = posHold.areSensorsOk;
-        posHold.areSensorsOk = sensorsOk(isPitchForwardOverrideActive());
+        posHold.areSensorsOk = sensorsOk(isHeadingRecoveryActive());
         if (posHold.areSensorsOk) {
             if (!sensorsWereOk) {
                 // Sensors came back after a dropout: the craft drifted while
