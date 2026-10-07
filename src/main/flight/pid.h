@@ -42,6 +42,9 @@
 #define PID_GAIN_MAX 250
 #define F_GAIN_MAX 1000
 
+#define ANGLE_LIMIT_MIN 10
+#define ANGLE_LIMIT_MAX 80
+
 // Scaling factors for Pids for better tunable range in configurator for betaflight pid controller. The scaling is based on legacy pid controller or previous float
 #define PTERM_SCALE 0.032029f
 #define ITERM_SCALE 0.244381f
@@ -71,6 +74,7 @@
 #define DTERM_LPF2_HZ_DEFAULT 150
 
 #define TPA_MAX 100
+#define TPA_SPEED_PARAM_MIN 1
 
 #ifdef USE_WING
 #define ANGLE_PITCH_OFFSET_MAX 450

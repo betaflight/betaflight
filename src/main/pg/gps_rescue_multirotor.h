@@ -26,6 +26,16 @@
 
 #include "pg/pg.h"
 
+#define GPS_RESCUE_MIN_START_DIST_MIN_M 5
+#define GPS_RESCUE_MIN_START_DIST_MAX_M 30
+#define GPS_RESCUE_INITIAL_CLIMB_MAX_M 100
+#define GPS_RESCUE_ASCEND_RATE_MIN 50
+#define GPS_RESCUE_ASCEND_RATE_MAX 2500
+#define GPS_RESCUE_RETURN_ALT_MIN_M 5
+#define GPS_RESCUE_RETURN_ALT_MAX_M 1000
+#define GPS_RESCUE_DESCEND_RATE_MIN 25
+#define GPS_RESCUE_DESCEND_RATE_MAX 500
+
 typedef struct gpsRescue_s {
 
     uint16_t minStartDistM; // meters

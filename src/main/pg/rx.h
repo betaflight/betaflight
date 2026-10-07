@@ -24,6 +24,9 @@
 
 #include "pg/pg.h"
 
+#define RX_MIDRC_MIN 1200
+#define RX_MIDRC_MAX 1700
+
 #define GET_FRAME_ERR_LPF_FREQUENCY(period) (10.0f / period)  // period in deciseconds (0.1s)
 #define FRAME_ERR_RESAMPLE_US 100000
 

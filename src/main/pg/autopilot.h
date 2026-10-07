@@ -25,6 +25,13 @@
 
 #include "pg/pg.h"
 
+#define AUTOPILOT_MAX_ANGLE_MIN 10
+#define AUTOPILOT_MAX_ANGLE_MAX 70
+#define AUTOPILOT_THROTTLE_MIN_MIN 1050
+#define AUTOPILOT_THROTTLE_MIN_MAX 1400
+#define AUTOPILOT_THROTTLE_MAX_MIN 1400
+#define AUTOPILOT_THROTTLE_MAX_MAX 2000
+
 // Yaw control modes
 typedef enum {
     YAW_MODE_VELOCITY = 0,  // Multirotor: point nose in velocity direction
