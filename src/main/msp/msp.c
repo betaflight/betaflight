@@ -3168,7 +3168,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             }
             currentControlRateProfile->rcRates[FD_ROLL] = value;
 
-            value = sbufReadU8(src);
+            value = MIN(sbufReadU8(src), CONTROL_RATE_CONFIG_RC_EXPO_MAX);
             if (currentControlRateProfile->rcExpo[FD_PITCH] == currentControlRateProfile->rcExpo[FD_ROLL]) {
                 currentControlRateProfile->rcExpo[FD_PITCH] = value;
             }
@@ -3180,11 +3180,11 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
             sbufReadU8(src);    // tpa_rate is moved to PID profile
             currentControlRateProfile->thrMid8 = MIN(sbufReadU8(src), CONTROL_RATE_CONFIG_THR_MID_MAX);
-            currentControlRateProfile->thrExpo8 = sbufReadU8(src);
+            currentControlRateProfile->thrExpo8 = MIN(sbufReadU8(src), CONTROL_RATE_CONFIG_THR_EXPO_MAX);
             sbufReadU16(src);   // tpa_breakpoint is moved to PID profile
 
             if (sbufBytesRemaining(src) >= 1) {
-                currentControlRateProfile->rcExpo[FD_YAW] = sbufReadU8(src);
+                currentControlRateProfile->rcExpo[FD_YAW] = MIN(sbufReadU8(src), CONTROL_RATE_CONFIG_RC_EXPO_MAX);
             }
 
             if (sbufBytesRemaining(src) >= 1) {
@@ -3196,7 +3196,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             }
 
             if (sbufBytesRemaining(src) >= 1) {
-                currentControlRateProfile->rcExpo[FD_PITCH] = sbufReadU8(src);
+                currentControlRateProfile->rcExpo[FD_PITCH] = MIN(sbufReadU8(src), CONTROL_RATE_CONFIG_RC_EXPO_MAX);
             }
 
             // version 1.41
@@ -3214,12 +3214,12 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
             // version 1.43
             if (sbufBytesRemaining(src) >= 1) {
-                currentControlRateProfile->rates_type = sbufReadU8(src);
+                currentControlRateProfile->rates_type = MIN(sbufReadU8(src), RATES_TYPE_COUNT - 1);
             }
 
             // version 1.47
             if (sbufBytesRemaining(src) >= 1) {
-                currentControlRateProfile->thrHover8 = sbufReadU8(src);
+                currentControlRateProfile->thrHover8 = MIN(sbufReadU8(src), CONTROL_RATE_CONFIG_THR_HOVER_MAX);
             }
 
             initRcProcessing();
