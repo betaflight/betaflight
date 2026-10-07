@@ -3736,24 +3736,24 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
     case MSP_SET_SENSOR_CONFIG:
 #if defined(USE_ACC)
-        accelerometerConfigMutable()->acc_hardware = sbufReadU8(src);
+        accelerometerConfigMutable()->acc_hardware = MIN(sbufReadU8(src), ACC_HARDWARE_COUNT - 1);
 #else
         sbufReadU8(src);
 #endif
 #if defined(USE_BARO)
-        barometerConfigMutable()->baro_hardware = sbufReadU8(src);
+        barometerConfigMutable()->baro_hardware = MIN(sbufReadU8(src), BARO_HARDWARE_COUNT - 1);
 #else
         sbufReadU8(src);
 #endif
 #if defined(USE_MAG)
-        compassConfigMutable()->mag_hardware = sbufReadU8(src);
+        compassConfigMutable()->mag_hardware = MIN(sbufReadU8(src), MAG_HARDWARE_COUNT - 1);
 #else
         sbufReadU8(src);
 #endif
 
         if (sbufBytesRemaining(src) >= 1) {
 #ifdef USE_RANGEFINDER
-            rangefinderConfigMutable()->rangefinder_hardware = sbufReadU8(src);
+            rangefinderConfigMutable()->rangefinder_hardware = MIN(sbufReadU8(src), RANGEFINDER_HARDWARE_COUNT - 1);
 #else
             sbufReadU8(src);
 #endif
@@ -3761,14 +3761,14 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
         if (sbufBytesRemaining(src) >= 1) {
 #ifdef USE_OPTICALFLOW
-            opticalflowConfigMutable()->opticalflow_hardware = sbufReadU8(src);
+            opticalflowConfigMutable()->opticalflow_hardware = MIN(sbufReadU8(src), OPTICALFLOW_HARDWARE_COUNT - 1);
 #else
             sbufReadU8(src);
 #endif
         }
         if (sbufBytesRemaining(src) >= 1) {
 #ifdef USE_PITOT
-            pitotConfigMutable()->pitot_hardware = sbufReadU8(src);
+            pitotConfigMutable()->pitot_hardware = MIN(sbufReadU8(src), PITOT_HARDWARE_COUNT - 1);
 #else
             sbufReadU8(src);
 #endif
