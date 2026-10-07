@@ -4573,9 +4573,9 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
 #ifdef USE_LED_STRIP
     case MSP2_SET_LED_STRIP_CONFIG_VALUES:
-        ledStripConfigMutable()->ledstrip_brightness = sbufReadU8(src);
-        ledStripConfigMutable()->ledstrip_rainbow_delta = sbufReadU16(src);
-        ledStripConfigMutable()->ledstrip_rainbow_freq = sbufReadU16(src);
+        ledStripConfigMutable()->ledstrip_brightness = constrain(sbufReadU8(src), LED_STRIP_BRIGHTNESS_MIN, LED_STRIP_BRIGHTNESS_MAX);
+        ledStripConfigMutable()->ledstrip_rainbow_delta = MIN(sbufReadU16(src), HSV_HUE_MAX);
+        ledStripConfigMutable()->ledstrip_rainbow_freq = constrain(sbufReadU16(src), LED_STRIP_RAINBOW_FREQ_MIN, LED_STRIP_RAINBOW_FREQ_MAX);
         break;
 #endif
 

@@ -34,6 +34,11 @@
 #define LED_MODE_COUNT                  6
 #define LED_DIRECTION_COUNT             6
 #define LED_BASEFUNCTION_COUNT          10
+
+#define LED_STRIP_BRIGHTNESS_MIN        5
+#define LED_STRIP_BRIGHTNESS_MAX        100
+#define LED_STRIP_RAINBOW_FREQ_MIN      1
+#define LED_STRIP_RAINBOW_FREQ_MAX      2000
 #define LED_OVERLAY_COUNT               7
 #define LED_SPECIAL_COLOR_COUNT        11
 
