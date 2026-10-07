@@ -3377,14 +3377,14 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
 
     case MSP_SET_RC_DEADBAND:
-        rcControlsConfigMutable()->deadband = sbufReadU8(src);
-        rcControlsConfigMutable()->yaw_deadband = sbufReadU8(src);
+        rcControlsConfigMutable()->deadband = MIN(sbufReadU8(src), RC_DEADBAND_MAX);
+        rcControlsConfigMutable()->yaw_deadband = MIN(sbufReadU8(src), RC_YAW_DEADBAND_MAX);
 #if defined(USE_POSITION_HOLD) && !defined(USE_WING)
-        posHoldConfigMutable()->deadband = sbufReadU8(src);
+        posHoldConfigMutable()->deadband = MIN(sbufReadU8(src), POSHOLD_DEADBAND_MAX);
 #else
         sbufReadU8(src);
 #endif
-        flight3DConfigMutable()->deadband3d_throttle = sbufReadU16(src);
+        flight3DConfigMutable()->deadband3d_throttle = constrain(sbufReadU16(src), DEADBAND3D_THROTTLE_MIN, DEADBAND3D_THROTTLE_MAX);
         break;
 
     case MSP_SET_RESET_CURR_PID:
