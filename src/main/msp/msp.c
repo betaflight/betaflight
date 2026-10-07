@@ -3421,7 +3421,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         sbufReadU8(src); // was gyroConfigMutable()->gyro_sync_denom - removed in API 1.43
         pidConfigMutable()->pid_process_denom = constrain(sbufReadU8(src), 1, MAX_PID_PROCESS_DENOM);
         motorConfigMutable()->dev.useContinuousUpdate = sbufReadU8(src);
-        motorConfigMutable()->dev.motorProtocol = sbufReadU8(src);
+        motorConfigMutable()->dev.motorProtocol = MIN(sbufReadU8(src), MOTOR_PROTOCOL_MAX - 1);
         motorConfigMutable()->dev.motorPwmRate = constrain(sbufReadU16(src), MOTOR_PWM_RATE_MIN, MOTOR_PWM_RATE_MAX);
         if (sbufBytesRemaining(src) >= 2) {
             motorConfigMutable()->motorIdle = MIN(sbufReadU16(src), MOTOR_IDLE_MAX);
@@ -3435,14 +3435,14 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         if (sbufBytesRemaining(src) >= 8) {
             sbufReadU8(src); // deprecated gyro_to_use
             gyroConfigMutable()->gyro_high_fsr = sbufReadU8(src);
-            gyroConfigMutable()->gyroMovementCalibrationThreshold = sbufReadU8(src);
-            gyroConfigMutable()->gyroCalibrationDuration = sbufReadU16(src);
-            gyroConfigMutable()->gyro_offset_yaw = sbufReadU16(src);
-            gyroConfigMutable()->checkOverflow = sbufReadU8(src);
+            gyroConfigMutable()->gyroMovementCalibrationThreshold = MIN(sbufReadU8(src), GYRO_CALIB_NOISE_LIMIT_MAX);
+            gyroConfigMutable()->gyroCalibrationDuration = constrain(sbufReadU16(src), GYRO_CALIB_DURATION_MIN, GYRO_CALIB_DURATION_MAX);
+            gyroConfigMutable()->gyro_offset_yaw = constrain((int16_t)sbufReadU16(src), -GYRO_OFFSET_YAW_MAX, GYRO_OFFSET_YAW_MAX);
+            gyroConfigMutable()->checkOverflow = MIN(sbufReadU8(src), GYRO_OVERFLOW_CHECK_ALL_AXES);
         }
         if (sbufBytesRemaining(src) >= 1) {
             //Added in MSP API 1.42
-            systemConfigMutable()->debug_mode = sbufReadU8(src);
+            systemConfigMutable()->debug_mode = MIN(sbufReadU8(src), DEBUG_COUNT - 1);
         }
 
         validateAndFixGyroConfig();
