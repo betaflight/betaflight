@@ -181,6 +181,7 @@ typedef enum {
     GPS_MSP,
     GPS_VIRTUAL,
     GPS_DRONECAN,
+    GPS_PROVIDER_COUNT
 } gpsProvider_e;
 
 // Providers whose frame source is another subsystem (not a UART). These skip
