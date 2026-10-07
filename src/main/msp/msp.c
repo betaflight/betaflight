@@ -84,6 +84,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
+#include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -3285,18 +3286,18 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         autopilotConfigMutable()->maxAngle = constrain(sbufReadU16(src), AUTOPILOT_MAX_ANGLE_MIN, AUTOPILOT_MAX_ANGLE_MAX);
         gpsRescueConfigMutable()->returnAltitudeM = constrain(sbufReadU16(src), GPS_RESCUE_RETURN_ALT_MIN_M, GPS_RESCUE_RETURN_ALT_MAX_M);
         gpsRescueConfigMutable()->descentDistanceM = sbufReadU16(src);
-        gpsRescueConfigMutable()->groundSpeedCmS = sbufReadU16(src);
+        gpsRescueConfigMutable()->groundSpeedCmS = MIN(sbufReadU16(src), GPS_RESCUE_GROUND_SPEED_MAX);
         autopilotConfigMutable()->throttleMin = constrain(sbufReadU16(src), AUTOPILOT_THROTTLE_MIN_MIN, AUTOPILOT_THROTTLE_MIN_MAX);
         autopilotConfigMutable()->throttleMax = constrain(sbufReadU16(src), AUTOPILOT_THROTTLE_MAX_MIN, AUTOPILOT_THROTTLE_MAX_MAX);
-        autopilotConfigMutable()->hoverThrottle = sbufReadU16(src);
-        gpsRescueConfigMutable()->sanityChecks = sbufReadU8(src);
-        gpsRescueConfigMutable()->minSats = sbufReadU8(src);
+        autopilotConfigMutable()->hoverThrottle = MIN(sbufReadU16(src), AUTOPILOT_HOVER_THROTTLE_MAX);
+        gpsRescueConfigMutable()->sanityChecks = MIN(sbufReadU8(src), RESCUE_SANITY_COUNT - 1);
+        gpsRescueConfigMutable()->minSats = constrain(sbufReadU8(src), GPS_RESCUE_MIN_SATS_MIN, GPS_RESCUE_MIN_SATS_MAX);
         if (sbufBytesRemaining(src) >= 6) {
             // Added in API version 1.43
             gpsRescueConfigMutable()->ascendRate = constrain(sbufReadU16(src), GPS_RESCUE_ASCEND_RATE_MIN, GPS_RESCUE_ASCEND_RATE_MAX);
             gpsRescueConfigMutable()->descendRate = constrain(sbufReadU16(src), GPS_RESCUE_DESCEND_RATE_MIN, GPS_RESCUE_DESCEND_RATE_MAX);
-            gpsRescueConfigMutable()->allowArmingWithoutFix = sbufReadU8(src);
-            gpsRescueConfigMutable()->altitudeMode = sbufReadU8(src);
+            gpsRescueConfigMutable()->allowArmingWithoutFix = !!sbufReadU8(src);
+            gpsRescueConfigMutable()->altitudeMode = MIN(sbufReadU8(src), GPS_RESCUE_ALT_MODE_COUNT - 1);
         }
         if (sbufBytesRemaining(src) >= 2) {
             // Added in API version 1.44
