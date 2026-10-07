@@ -3569,11 +3569,11 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
                 for (int j = 0; j < RPM_FILTER_HARMONICS_MAX; j++) {
                     weights[j] = sbufReadU8(src);
                 }
-                if (q < 250 || q > 3000 || fadeRangeHz > 1000) {
+                if (q < RPM_FILTER_Q_MIN || q > RPM_FILTER_Q_MAX || fadeRangeHz > RPM_FILTER_FADE_RANGE_HZ_MAX) {
                     return MSP_RESULT_ERROR;
                 }
                 for (int j = 0; j < RPM_FILTER_HARMONICS_MAX; j++) {
-                    if (weights[j] > 100) {
+                    if (weights[j] > RPM_FILTER_WEIGHT_MAX) {
                         return MSP_RESULT_ERROR;
                     }
                 }
