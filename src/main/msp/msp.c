@@ -139,6 +139,7 @@
 #include "pg/vcd.h"
 #include "pg/vtx_table.h"
 
+#include "rx/crsf.h"
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 #include "rx/rx_bind.h"
@@ -4787,7 +4788,7 @@ RAM_CODE static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, i
 
             if ((int8_t)addr == -1) {
                 /* Set general OSD settings */
-                videoSystem_e video_system = sbufReadU8(src);
+                videoSystem_e video_system = MIN(sbufReadU8(src), VIDEO_SYSTEM_HD);
 
                 if ((video_system == VIDEO_SYSTEM_HD) && (vcdProfile()->video_system != VIDEO_SYSTEM_HD)) {
                     // If switching to HD, don't wait for the VTX to communicate the correct resolution, just
@@ -4816,13 +4817,13 @@ RAM_CODE static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, i
 
                 vcdProfileMutable()->video_system = video_system;
 
-                osdConfigMutable()->units = sbufReadU8(src);
+                osdConfigMutable()->units = MIN(sbufReadU8(src), UNIT_BRITISH);
 
                 // Alarms
-                osdConfigMutable()->rssi_alarm = sbufReadU8(src);
-                osdConfigMutable()->cap_alarm = sbufReadU16(src);
+                osdConfigMutable()->rssi_alarm = MIN(sbufReadU8(src), OSD_RSSI_ALARM_MAX);
+                osdConfigMutable()->cap_alarm = MIN(sbufReadU16(src), OSD_CAP_ALARM_MAX);
                 sbufReadU16(src); // Skip unused (previously fly timer)
-                osdConfigMutable()->alt_alarm = sbufReadU16(src);
+                osdConfigMutable()->alt_alarm = MIN(sbufReadU16(src), OSD_ALT_ALARM_MAX);
 
                 if (sbufBytesRemaining(src) >= 2) {
                     /* Enabled warnings */
@@ -4850,7 +4851,7 @@ RAM_CODE static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, i
                     // OSD stick overlay mode
 
 #ifdef USE_OSD_STICK_OVERLAY
-                    osdConfigMutable()->overlay_radio_mode = sbufReadU8(src);
+                    osdConfigMutable()->overlay_radio_mode = constrain(sbufReadU8(src), OSD_STICK_OVERLAY_RADIO_MODE_MIN, OSD_STICK_OVERLAY_RADIO_MODE_MAX);
 #else
                     sbufReadU8(src);
 #endif // USE_OSD_STICK_OVERLAY
@@ -4866,12 +4867,12 @@ RAM_CODE static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, i
 
                 if (sbufBytesRemaining(src) >= 2) {
                     // API >= 1.46
-                    osdConfigMutable()->link_quality_alarm = sbufReadU16(src);
+                    osdConfigMutable()->link_quality_alarm = MIN(sbufReadU16(src), OSD_LINK_QUALITY_ALARM_MAX);
                 }
 
                 if (sbufBytesRemaining(src) >= 2) {
                     // API >= 1.47
-                    osdConfigMutable()->rssi_dbm_alarm = sbufReadU16(src);
+                    osdConfigMutable()->rssi_dbm_alarm = constrain((int16_t)sbufReadU16(src), CRSF_RSSI_MIN, CRSF_RSSI_MAX);
                 }
 
             } else if ((int8_t)addr == -2) {
