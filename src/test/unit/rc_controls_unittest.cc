@@ -651,6 +651,31 @@ TEST_F(RcControlsAdjustmentsTest, processRcRateProfileAdjustments)
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_CHANGE_CONTROL_RATE_PROFILE));
 }
 
+TEST_F(RcControlsAdjustmentsTest, processRcRateProfileAdjustmentsIgnoresUnchangedFractionalInput)
+{
+    // given
+    configureContinuosAdjustment(AUX4 - NON_AUX_CHANNEL_COUNT, ADJUSTMENT_RATE_PROFILE_INDEX);
+
+    // and
+    for (int index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
+        rcData[index] = PWM_RANGE_MIDDLE;
+    }
+
+    // and
+    resetCallCounters();
+    resetMillis();
+
+    // and
+    rcData[AUX4] = PWM_RANGE_MAX - 0.5f;
+
+    // when
+    processRcAdjustments(&controlRateConfig);
+    processRcAdjustments(&controlRateConfig);
+
+    // then
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_CHANGE_CONTROL_RATE_PROFILE));
+}
+
 #define ADJUSTMENT_PITCH_ROLL_P_INDEX 6
 #define ADJUSTMENT_PITCH_ROLL_I_INDEX 7
 #define ADJUSTMENT_PITCH_ROLL_D_INDEX 8
