@@ -31,6 +31,11 @@
 #define PERIOD_RXDATA_FAILURE        10     // millis
 #define PERIOD_RXDATA_RECOVERY       100    // millis
 
+#define FAILSAFE_DELAY_MIN (PERIOD_RXDATA_RECOVERY / MILLIS_PER_TENTH_SECOND)
+#define FAILSAFE_DELAY_MAX 200
+#define FAILSAFE_LANDING_TIME_MAX 250
+#define FAILSAFE_THROTTLE_LOW_DELAY_MAX 300
+
 typedef struct failsafeConfig_s {
     uint16_t failsafe_throttle;             // Throttle level used for landing - specify value between 1000..2000 (pwm pulse width for slightly below hover). center throttle = 1500.
     uint16_t failsafe_throttle_low_delay;   // Time throttle stick must have been below 'min_check' to "JustDisarm" instead of "full failsafe procedure".
@@ -74,7 +79,8 @@ extern const char * const failsafeProcedureNames[FAILSAFE_PROCEDURE_COUNT];
 typedef enum {
     FAILSAFE_SWITCH_MODE_STAGE1 = 0,
     FAILSAFE_SWITCH_MODE_KILL,
-    FAILSAFE_SWITCH_MODE_STAGE2
+    FAILSAFE_SWITCH_MODE_STAGE2,
+    FAILSAFE_SWITCH_MODE_COUNT
 } failsafeSwitchMode_e;
 
 typedef struct failsafeState_s {

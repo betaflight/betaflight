@@ -4320,12 +4320,12 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         }
         break;
     case MSP_SET_FAILSAFE_CONFIG:
-        failsafeConfigMutable()->failsafe_delay = sbufReadU8(src);
-        failsafeConfigMutable()->failsafe_landing_time = sbufReadU8(src);
-        failsafeConfigMutable()->failsafe_throttle = sbufReadU16(src);
-        failsafeConfigMutable()->failsafe_switch_mode = sbufReadU8(src);
-        failsafeConfigMutable()->failsafe_throttle_low_delay = sbufReadU16(src);
-        failsafeConfigMutable()->failsafe_procedure = sbufReadU8(src);
+        failsafeConfigMutable()->failsafe_delay = constrain(sbufReadU8(src), FAILSAFE_DELAY_MIN, FAILSAFE_DELAY_MAX);
+        failsafeConfigMutable()->failsafe_landing_time = MIN(sbufReadU8(src), FAILSAFE_LANDING_TIME_MAX);
+        failsafeConfigMutable()->failsafe_throttle = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
+        failsafeConfigMutable()->failsafe_switch_mode = MIN(sbufReadU8(src), FAILSAFE_SWITCH_MODE_COUNT - 1);
+        failsafeConfigMutable()->failsafe_throttle_low_delay = MIN(sbufReadU16(src), FAILSAFE_THROTTLE_LOW_DELAY_MAX);
+        failsafeConfigMutable()->failsafe_procedure = MIN(sbufReadU8(src), FAILSAFE_PROCEDURE_COUNT - 1);
         break;
 
     case MSP_SET_RXFAIL_CONFIG:
