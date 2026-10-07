@@ -4206,12 +4206,16 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
 #ifdef USE_BEEPER
     case MSP_SET_BEEPER_CONFIG:
-        beeperConfigMutable()->beeper_off_flags = sbufReadU32(src);
+        beeperConfigMutable()->beeper_off_flags = sbufReadU32(src) & BEEPER_ALLOWED_MODES;
         if (sbufBytesRemaining(src) >= 1) {
+#ifdef USE_DSHOT
+            beeperConfigMutable()->dshotBeaconTone = constrain(sbufReadU8(src), DSHOT_CMD_BEACON1, DSHOT_CMD_BEACON5);
+#else
             beeperConfigMutable()->dshotBeaconTone = sbufReadU8(src);
+#endif
         }
         if (sbufBytesRemaining(src) >= 4) {
-            beeperConfigMutable()->dshotBeaconOffFlags = sbufReadU32(src);
+            beeperConfigMutable()->dshotBeaconOffFlags = sbufReadU32(src) & DSHOT_BEACON_ALLOWED_MODES;
         }
         break;
 #endif
