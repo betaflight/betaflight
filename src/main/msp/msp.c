@@ -4945,8 +4945,8 @@ RAM_CODE static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, i
 #ifdef USE_OSD_HD
     case MSP_SET_OSD_CANVAS:
         {
-            osdConfigMutable()->canvas_cols = sbufReadU8(src);
-            osdConfigMutable()->canvas_rows = sbufReadU8(src);
+            osdConfigMutable()->canvas_cols = MIN(sbufReadU8(src), OSD_CANVAS_COLS_MAX);
+            osdConfigMutable()->canvas_rows = MIN(sbufReadU8(src), OSD_CANVAS_ROWS_MAX);
 
             if ((vcdProfile()->video_system != VIDEO_SYSTEM_HD) ||
                 (osdConfig()->displayPortDevice != OSD_DISPLAYPORT_DEVICE_MSP)) {
