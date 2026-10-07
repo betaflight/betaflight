@@ -3873,7 +3873,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             }
 
             if (sbufBytesRemaining(src) >= 2) {
-                vtxSettingsConfigMutable()->power = MIN(sbufReadU8(src), VTX_TABLE_MAX_POWER_LEVELS - 1);
+                vtxSettingsConfigMutable()->power = MIN(sbufReadU8(src), VTX_TABLE_MAX_POWER_LEVELS);
                 const uint8_t newPitmode = sbufReadU8(src);
                 if (vtxType != VTXDEV_UNKNOWN) {
                     // Delegate pitmode to vtx directly
