@@ -3277,7 +3277,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
 #ifdef USE_MAG
     case MSP_SET_COMPASS_CONFIG:
-        imuConfigMutable()->mag_declination = sbufReadU16(src);
+        imuConfigMutable()->mag_declination = constrain((int16_t)sbufReadU16(src), -IMU_MAG_DECLINATION_MAX, IMU_MAG_DECLINATION_MAX);
         break;
 #endif
 

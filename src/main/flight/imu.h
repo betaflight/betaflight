@@ -54,6 +54,8 @@ typedef union {
 } attitudeEulerAngles_t;
 #define EULER_INITIALIZE  { { 0, 0, 0 } }
 
+#define IMU_MAG_DECLINATION_MAX 300
+
 extern attitudeEulerAngles_t attitude;
 extern matrix33_t rMat;
 extern quaternion_t imuAttitudeQuaternion; //attitude quaternion to use in blackbox
