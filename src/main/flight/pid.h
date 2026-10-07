@@ -44,6 +44,10 @@
 
 #define ANGLE_LIMIT_MIN 10
 #define ANGLE_LIMIT_MAX 80
+#define ANGLE_P_GAIN_MAX 200
+#define HORIZON_LEVEL_STRENGTH_MAX 100
+#define HORIZON_LIMIT_STICKS_MIN 10
+#define HORIZON_LIMIT_STICKS_MAX 200
 
 // Scaling factors for Pids for better tunable range in configurator for betaflight pid controller. The scaling is based on legacy pid controller or previous float
 #define PTERM_SCALE 0.032029f

@@ -3093,9 +3093,18 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
     case MSP_SET_PID:
         for (int i = 0; i < PID_ITEM_COUNT; i++) {
-            currentPidProfile->pid[i].P = sbufReadU8(src);
-            currentPidProfile->pid[i].I = sbufReadU8(src);
-            currentPidProfile->pid[i].D = sbufReadU8(src);
+            const uint8_t pGain = sbufReadU8(src);
+            const uint8_t iGain = sbufReadU8(src);
+            const uint8_t dGain = sbufReadU8(src);
+            if (i == PID_LEVEL) {
+                currentPidProfile->pid[i].P = MIN(pGain, ANGLE_P_GAIN_MAX);
+                currentPidProfile->pid[i].I = MIN(iGain, HORIZON_LEVEL_STRENGTH_MAX);
+                currentPidProfile->pid[i].D = constrain(dGain, HORIZON_LIMIT_STICKS_MIN, HORIZON_LIMIT_STICKS_MAX);
+            } else {
+                currentPidProfile->pid[i].P = MIN(pGain, PID_GAIN_MAX);
+                currentPidProfile->pid[i].I = MIN(iGain, PID_GAIN_MAX);
+                currentPidProfile->pid[i].D = MIN(dGain, PID_GAIN_MAX);
+            }
         }
         pidInitConfig(currentPidProfile);
         break;

@@ -1341,14 +1341,14 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_S_YAW,             VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, PID_GAIN_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_YAW].S) },
 #endif // USE_WING
 
-    { PARAM_NAME_ANGLE_P_GAIN,          VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_LEVEL].P) },
+    { PARAM_NAME_ANGLE_P_GAIN,          VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, ANGLE_P_GAIN_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_LEVEL].P) },
     { PARAM_NAME_ANGLE_FEEDFORWARD,     VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_LEVEL].F) },
     { PARAM_NAME_ANGLE_FF_SMOOTHING_MS, VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 10, 250 }, PG_PID_PROFILE, offsetof(pidProfile_t, angle_feedforward_smoothing_ms) },
     { PARAM_NAME_ANGLE_LIMIT,           VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { ANGLE_LIMIT_MIN, ANGLE_LIMIT_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, angle_limit) },
     { PARAM_NAME_ANGLE_EARTH_REF,       VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, angle_earth_ref) },
 
-    { PARAM_NAME_HORIZON_LEVEL_STRENGTH, VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_LEVEL].I) },
-    { PARAM_NAME_HORIZON_LIMIT_STICKS,   VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 10, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_LEVEL].D) },
+    { PARAM_NAME_HORIZON_LEVEL_STRENGTH, VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, HORIZON_LEVEL_STRENGTH_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_LEVEL].I) },
+    { PARAM_NAME_HORIZON_LIMIT_STICKS,   VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { HORIZON_LIMIT_STICKS_MIN, HORIZON_LIMIT_STICKS_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_LEVEL].D) },
     { PARAM_NAME_HORIZON_LIMIT_DEGREES,  VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 10,  250 }, PG_PID_PROFILE, offsetof(pidProfile_t, horizon_limit_degrees) },
     { PARAM_NAME_HORIZON_IGNORE_STICKS,  VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, horizon_ignore_sticks) },
     { PARAM_NAME_HORIZON_DELAY_MS,       VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 10,  5000 }, PG_PID_PROFILE, offsetof(pidProfile_t, horizon_delay_ms) },
