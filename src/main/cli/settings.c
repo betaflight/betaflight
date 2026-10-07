@@ -849,9 +849,9 @@ const clivalue_t valueTable[] = {
 // PG_COMPASS_CONFIG
 #ifdef USE_MAG
     { "align_mag",                  VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_alignment) },
-    { "mag_align_roll",             VAR_INT16  | HARDWARE_VALUE, .config.minmax = { -3600, 3600 }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_customAlignment.roll) },
-    { "mag_align_pitch",            VAR_INT16  | HARDWARE_VALUE, .config.minmax = { -3600, 3600 }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_customAlignment.pitch) },
-    { "mag_align_yaw",              VAR_INT16  | HARDWARE_VALUE, .config.minmax = { -3600, 3600 }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_customAlignment.yaw) },
+    { "mag_align_roll",             VAR_INT16  | HARDWARE_VALUE, .config.minmax = { -SENSOR_CUSTOM_ALIGN_MAX, SENSOR_CUSTOM_ALIGN_MAX }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_customAlignment.roll) },
+    { "mag_align_pitch",            VAR_INT16  | HARDWARE_VALUE, .config.minmax = { -SENSOR_CUSTOM_ALIGN_MAX, SENSOR_CUSTOM_ALIGN_MAX }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_customAlignment.pitch) },
+    { "mag_align_yaw",              VAR_INT16  | HARDWARE_VALUE, .config.minmax = { -SENSOR_CUSTOM_ALIGN_MAX, SENSOR_CUSTOM_ALIGN_MAX }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_customAlignment.yaw) },
     { "mag_bustype",                VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BUS_TYPE }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_busType) },
     { "mag_i2c_device",             VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, I2CDEV_COUNT }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_i2c_device) },
     { "mag_i2c_address",            VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, I2C_ADDR7_MAX }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_i2c_address) },

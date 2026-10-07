@@ -3407,7 +3407,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         sbufReadU8(src);
         sbufReadU8(src);  // discard deprecated acc_align
 #if defined(USE_MAG)
-        compassConfigMutable()->mag_alignment = sbufReadU8(src);
+        compassConfigMutable()->mag_alignment = MIN(sbufReadU8(src), ALIGN_CUSTOM);
 #else
         sbufReadU8(src);
 #endif
@@ -3416,9 +3416,9 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
         if (sbufBytesRemaining(src) >= 6) {
 #ifdef USE_MAG
-            compassConfigMutable()->mag_customAlignment.roll = sbufReadU16(src);
-            compassConfigMutable()->mag_customAlignment.pitch = sbufReadU16(src);
-            compassConfigMutable()->mag_customAlignment.yaw = sbufReadU16(src);
+            compassConfigMutable()->mag_customAlignment.roll = constrain((int16_t)sbufReadU16(src), -SENSOR_CUSTOM_ALIGN_MAX, SENSOR_CUSTOM_ALIGN_MAX);
+            compassConfigMutable()->mag_customAlignment.pitch = constrain((int16_t)sbufReadU16(src), -SENSOR_CUSTOM_ALIGN_MAX, SENSOR_CUSTOM_ALIGN_MAX);
+            compassConfigMutable()->mag_customAlignment.yaw = constrain((int16_t)sbufReadU16(src), -SENSOR_CUSTOM_ALIGN_MAX, SENSOR_CUSTOM_ALIGN_MAX);
 #else
             sbufReadU16(src);
             sbufReadU16(src);

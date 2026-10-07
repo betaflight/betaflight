@@ -42,6 +42,8 @@ typedef enum {
     ALIGN_CUSTOM = 9,    // arbitrary sensor angles, e.g. for external sensors
 } sensor_align_e;
 
+#define SENSOR_CUSTOM_ALIGN_MAX 3600
+
 typedef union sensorAlignment_u {
     // value order is the same as axis_e
 
