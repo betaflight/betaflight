@@ -3346,13 +3346,15 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             const uint16_t servoMin = sbufReadU16(src);
             const uint16_t servoMax = sbufReadU16(src);
             const uint16_t servoMiddle = sbufReadU16(src);
-            if (servoMin < PWM_SERVO_MIN || servoMax > PWM_SERVO_MAX || servoMiddle < servoMin || servoMiddle > servoMax) {
+            const int8_t servoRate = sbufReadU8(src);
+            if (servoMin < PWM_SERVO_MIN || servoMax > PWM_SERVO_MAX || servoMiddle < servoMin || servoMiddle > servoMax
+                || servoRate < -SERVO_RATE_MAX || servoRate > SERVO_RATE_MAX) {
                 return MSP_RESULT_ERROR;
             }
             servoParamsMutable(i)->min = servoMin;
             servoParamsMutable(i)->max = servoMax;
             servoParamsMutable(i)->middle = servoMiddle;
-            servoParamsMutable(i)->rate = sbufReadU8(src);
+            servoParamsMutable(i)->rate = servoRate;
             servoParamsMutable(i)->forwardFromChannel = sbufReadU8(src);
             servoParamsMutable(i)->reversedSources = sbufReadU32(src);
         }
