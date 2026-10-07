@@ -75,6 +75,8 @@ typedef enum {
 
 #define CONTROL_RATE_CONFIG_RC_EXPO_MAX  100
 
+#define AUTO_DISARM_DELAY_MAX  60
+
 #define RC_DEADBAND_MAX  32
 #define RC_YAW_DEADBAND_MAX  100
 

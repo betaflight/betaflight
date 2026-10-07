@@ -3082,13 +3082,13 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
 #endif
     case MSP_SET_ARMING_CONFIG:
-        armingConfigMutable()->auto_disarm_delay = sbufReadU8(src);
+        armingConfigMutable()->auto_disarm_delay = MIN(sbufReadU8(src), AUTO_DISARM_DELAY_MAX);
         sbufReadU8(src); // reserved. disarm_kill_switch was removed in #5073
         if (sbufBytesRemaining(src)) {
-          imuConfigMutable()->small_angle = sbufReadU8(src);
+          imuConfigMutable()->small_angle = MIN(sbufReadU8(src), IMU_SMALL_ANGLE_MAX);
         }
         if (sbufBytesRemaining(src)) {
-            armingConfigMutable()->gyro_cal_on_first_arm = sbufReadU8(src);
+            armingConfigMutable()->gyro_cal_on_first_arm = !!sbufReadU8(src);
         }
         break;
 

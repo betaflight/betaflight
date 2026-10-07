@@ -55,6 +55,7 @@ typedef union {
 #define EULER_INITIALIZE  { { 0, 0, 0 } }
 
 #define IMU_MAG_DECLINATION_MAX 300
+#define IMU_SMALL_ANGLE_MAX 180
 
 extern attitudeEulerAngles_t attitude;
 extern matrix33_t rMat;
