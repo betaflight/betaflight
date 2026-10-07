@@ -3382,7 +3382,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             const uint8_t box = sbufReadU8(src);
             if (targetChannel >= MAX_SUPPORTED_SERVOS || inputSource >= INPUT_SOURCE_COUNT
                 || rate < -SERVO_RATE_MAX || rate > SERVO_RATE_MAX
-                || min < 0 || max > SERVO_MIX_RANGE_MAX || min >= max
+                || (rate != 0 && (min < 0 || max > SERVO_MIX_RANGE_MAX || min >= max))
                 || box > MAX_SERVO_BOXES) {
                 return MSP_RESULT_ERROR;
             }
