@@ -123,6 +123,8 @@
 
 #define USE_PARAMETER_GROUPS
 
+#define USE_MSP_CLI_COMMAND
+
 #ifndef USE_PWM_OUTPUT
 #define USE_PWM_OUTPUT
 #endif

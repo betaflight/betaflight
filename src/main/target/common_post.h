@@ -61,6 +61,13 @@
 #define FAST_CODE_NOINLINE
 #endif
 
+// Large functions normally stay out of scarce fast RAM via
+// FAST_CODE_NOINLINE.  Platforms with a larger measured budget may opt the
+// small set of genuinely loop-critical functions back in.
+#ifndef FAST_CODE_NOINLINE_CRITICAL
+#define FAST_CODE_NOINLINE_CRITICAL FAST_CODE_NOINLINE
+#endif
+
 #ifndef CCM_CODE
 #define CCM_CODE
 #endif
@@ -134,6 +141,7 @@
     && !defined(USE_ACC_MPU6500) \
     && !defined(USE_ACCGYRO_BMI160) \
     && !defined(USE_ACCGYRO_BMI270) \
+    && !defined(USE_ACCGYRO_BMI423) \
     && !defined(USE_ACC_SPI_ICM20602) \
     && !defined(USE_ACC_SPI_ICM20649) \
     && !defined(USE_ACC_SPI_ICM20689) \
@@ -142,10 +150,12 @@
     && !defined(USE_ACCGYRO_ICM42622P) \
     && !defined(USE_ACCGYRO_ICM42686P) \
     && !defined(USE_ACC_SPI_ICM42688P) \
+    && !defined(USE_ACCGYRO_ICM56686) \
     && !defined(USE_ACCGYRO_ICM45686) \
     && !defined(USE_ACCGYRO_ICM45605) \
     && !defined(USE_ACCGYRO_LSM6DSO) \
     && !defined(USE_ACCGYRO_LSM6DSV16X) \
+    && !defined(USE_ACCGYRO_LSM6DSV32X) \
     && !defined(USE_ACCGYRO_LSM6DSK320X) \
     && !defined(USE_ACC_SPI_MPU6000) \
     && !defined(USE_ACC_SPI_MPU6500) \
@@ -161,6 +171,7 @@
     && !defined(USE_GYRO_MPU6500) \
     && !defined(USE_ACCGYRO_BMI160) \
     && !defined(USE_ACCGYRO_BMI270) \
+    && !defined(USE_ACCGYRO_BMI423) \
     && !defined(USE_GYRO_SPI_ICM20602) \
     && !defined(USE_GYRO_SPI_ICM20649) \
     && !defined(USE_GYRO_SPI_ICM20689) \
@@ -169,10 +180,12 @@
     && !defined(USE_ACCGYRO_ICM42686P) \
     && !defined(USE_GYRO_SPI_ICM42688P) \
     && !defined(USE_ACCGYRO_ICM45686) \
+    && !defined(USE_ACCGYRO_ICM56686) \
     && !defined(USE_ACCGYRO_ICM45605) \
     && !defined(USE_ACCGYRO_ICM40609D) \
     && !defined(USE_ACCGYRO_LSM6DSO) \
     && !defined(USE_ACCGYRO_LSM6DSV16X) \
+    && !defined(USE_ACCGYRO_LSM6DSV32X) \
     && !defined(USE_ACCGYRO_LSM6DSK320X) \
     && !defined(USE_GYRO_SPI_MPU6000) \
     && !defined(USE_GYRO_SPI_MPU6500) \
@@ -228,6 +241,12 @@
 #endif
 #ifndef USE_MAG_MMC560X
 #define USE_MAG_MMC560X
+#endif
+#ifndef USE_MAG_BMM350
+#define USE_MAG_BMM350
+#endif
+#ifndef USE_MAG_AK9916
+#define USE_MAG_AK9916
 #endif
 
 #endif // END MAG HW defines
@@ -297,10 +316,6 @@
 #define USE_VTX_RTC6705
 #endif
 
-#ifndef USE_DSHOT
-#undef USE_ESC_SENSOR
-#endif
-
 #ifndef USE_ESC_SENSOR
 #undef USE_ESC_SENSOR_TELEMETRY
 #endif
@@ -324,6 +339,13 @@
 #if defined(USE_BARO_MS5611)
 #undef USE_BARO_MS5611
 #endif
+#endif
+
+// The flight plan flies its waypoints via GPS. Placed ahead of every USE_GPS
+// consumer (VARIO below, the !USE_GPS subfeature cleanup, and the GPS secondary
+// defines) so all of them see the derived USE_GPS.
+#if defined(USE_FLIGHT_PLAN) && !defined(USE_GPS)
+#define USE_GPS
 #endif
 
 // Add VARIO if BARO or GPS is defined. Remove when none defined.
@@ -450,6 +472,13 @@
 #undef USE_MSP_OVER_TELEMETRY
 #endif
 
+#if defined(USE_MSP_CLI_COMMAND) && !defined(USE_CLI)
+#undef USE_MSP_CLI_COMMAND
+#endif
+#if defined(USE_MSP_CLI_COMMAND) && !defined(MSP_CLI_COMMAND_BUFFER_SIZE)
+#define MSP_CLI_COMMAND_BUFFER_SIZE 2048
+#endif
+
 #if !defined(USE_RX_MSP) && defined(USE_RX_MSP_OVERRIDE)
 #undef USE_RX_MSP_OVERRIDE
 #endif
@@ -568,11 +597,12 @@
 
 // Generate USE_SPI_GYRO
 #if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) \
-    || defined(USE_GYRO_L3GD20) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) \
+    || defined(USE_GYRO_L3GD20) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) || defined(USE_ACCGYRO_BMI423) \
     || defined(USE_GYRO_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_ACCGYRO_ICM42686P) || defined(USE_GYRO_SPI_ICM42688P) \
+    || defined(USE_ACCGYRO_ICM56686) \
     || defined(USE_ACCGYRO_ICM40609D) || defined(USE_ACCGYRO_ICM45605) || defined(USE_ACCGYRO_ICM45686) \
     || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653) \
-    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_LSM6DSK320X)
+    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_LSM6DSK320X)
 #ifndef USE_SPI_GYRO
 #define USE_SPI_GYRO
 #endif
@@ -826,6 +856,20 @@ extern struct linker_symbol __fontdata_end;
 #endif
 #endif // USE_GPS
 
+// The flight plan and multirotor GPS rescue fly through the shared autopilot
+// stack: altitude via alt hold, XY via the position-hold task. Derive both so a
+// build (cloud or target) selecting GPS or the flight plan alone still gets a
+// complete, flyable stack; without the position-hold task a rescue climbs and
+// turns for home but never flies there. Placed after USE_GPS_RESCUE is derived.
+#if defined(USE_FLIGHT_PLAN) || (defined(USE_GPS_RESCUE) && !defined(USE_WING))
+#if !defined(USE_ALTITUDE_HOLD)
+#define USE_ALTITUDE_HOLD
+#endif
+#if !defined(USE_POSITION_HOLD)
+#define USE_POSITION_HOLD
+#endif
+#endif
+
 #if (!defined(USE_GPS_RESCUE) || !defined(USE_CMS_FAILSAFE_MENU))
 #undef USE_CMS_GPS_RESCUE_MENU
 #endif
@@ -915,6 +959,24 @@ extern struct linker_symbol __fontdata_end;
 #endif
 #endif
 
+// MAVLink inbound COMMAND_LONG / COMMAND_INT actuation (arm/disarm, mode set,
+// RTL, set-home, reboot). Defaults on wherever MAVLink telemetry is built in.
+#if !defined(ENABLE_TELEMETRY_MAVLINK_COMMANDS)
+#if defined(USE_TELEMETRY_MAVLINK)
+#define ENABLE_TELEMETRY_MAVLINK_COMMANDS 1
+#else
+#define ENABLE_TELEMETRY_MAVLINK_COMMANDS 0
+#endif
+#endif
+
+// Remote arming over MAVLink is opt-in at compile time for safety. The disarm
+// path is always compiled in when commands are enabled; only the arm path is
+// gated. When enabled, arming still routes through tryArm() and honours every
+// arming-disable flag — there is no bypass.
+#if !defined(ENABLE_REMOTE_ARM)
+#define ENABLE_REMOTE_ARM 0
+#endif
+
 #if !defined(ENABLE_RX_UDP)
 #define ENABLE_RX_UDP 0
 #endif
@@ -923,19 +985,37 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_CAN 0
 #endif
 
-// DroneCAN piggy-backs on the same hardware gate as the raw CAN driver: the
-// stack is meaningless without a CAN peripheral to drive. Platforms that
-// compile CAN in also compile DroneCAN in by default, with the runtime PG
-// flag (dronecan_enabled) deciding whether the task is actually started.
-#if !defined(ENABLE_DRONECAN)
-#define ENABLE_DRONECAN ENABLE_CAN
+// DroneCAN is picked as a build option, the same way the flight plan is. The
+// stack is meaningless without a CAN peripheral to drive, so the option is
+// dropped rather than honoured on a platform that has none. Dropping it, rather
+// than just ignoring it, keeps the build info honest: it reports on
+// `#ifdef USE_DRONECAN`, and leaving it set would advertise a stack that was
+// never compiled. The runtime PG flag (dronecan_enabled) still decides whether
+// the task is started.
+// The ESC protocol is its own build option, and it speaks over the stack, so
+// picking it brings the stack with it.
+#if defined(USE_DRONECAN_ESC) && !defined(USE_DRONECAN)
+#define USE_DRONECAN
+#endif
+
+#if defined(USE_DRONECAN) && !ENABLE_CAN
+#undef USE_DRONECAN
+#undef USE_DRONECAN_ESC
+#endif
+
+#if defined(USE_DRONECAN) && !defined(ENABLE_DRONECAN)
+#define ENABLE_DRONECAN 1
+#elif !defined(ENABLE_DRONECAN)
+#define ENABLE_DRONECAN 0
 #endif
 
 // DroneCAN ESC: command ESCs over CAN (uavcan.equipment.esc.RawCommand) and
-// ingest their telemetry (uavcan.equipment.esc.Status). Built in wherever the
-// DroneCAN stack is, gated at runtime by selecting the DRONECAN motor protocol.
-#if !defined(ENABLE_DRONECAN_ESC)
-#define ENABLE_DRONECAN_ESC ENABLE_DRONECAN
+// ingest their telemetry (uavcan.equipment.esc.Status), gated at runtime by
+// selecting the DRONECAN motor protocol.
+#if defined(USE_DRONECAN_ESC) && !defined(ENABLE_DRONECAN_ESC)
+#define ENABLE_DRONECAN_ESC 1
+#elif !defined(ENABLE_DRONECAN_ESC)
+#define ENABLE_DRONECAN_ESC 0
 #endif
 
 // DroneCAN dynamic node-ID allocation: the FC acts as the centralised allocator,

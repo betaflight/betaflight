@@ -40,6 +40,7 @@
 #include "scheduler/scheduler.h"
 
 #include "io/dronecan/dronecan.h"
+#include "io/dronecan/dronecan_nodes.h"
 
 #include "pg/dronecan.h"
 
@@ -56,6 +57,9 @@ void dronecanNodeUpdate(timeUs_t currentTimeUs);
 void dronecanGnssInit(void);
 #ifdef USE_MAG
 void dronecanMagInit(void);
+#endif
+#ifdef USE_PITOT
+void dronecanAirspeedInit(void);
 #endif
 
 //-----------------------------------------------------------------------------
@@ -142,9 +146,11 @@ static void dronecanOnTransferReception(CanardInstance *ins,
         if (sub->dataTypeId == transfer->data_type_id
                 && sub->transferType == transfer->transfer_type) {
             if (sub->handler) {
+                // Keep scanning after a match — independent modules may
+                // subscribe to the same data type (node tracking and DNA
+                // both consume NodeStatus).
                 sub->handler(ins, transfer);
             }
-            return;
         }
     }
 }
@@ -270,6 +276,9 @@ void dronecanInit(void)
     // Wire the node-level publishers/responders (registers the GetNodeInfo
     // subscriber against our table before the first frame can arrive).
     dronecanNodeInit();
+    // Track remote nodes from their NodeStatus broadcasts and fetch their
+    // names via GetNodeInfo, for the CLI's detected-device listing.
+    dronecanNodesInit();
     // Install the GNSS Fix2 subscriber so a DroneCAN GPS module's broadcasts
     // land in our cache as soon as the transport is live.
 #ifdef USE_GPS
@@ -279,6 +288,10 @@ void dronecanInit(void)
     // Install the field-strength subscribers so a DroneCAN compass module's
     // broadcasts land in our cache as soon as the transport is live.
     dronecanMagInit();
+#endif
+#ifdef USE_PITOT
+    // Install the RawAirData subscriber for a DroneCAN airspeed node.
+    dronecanAirspeedInit();
 #endif
 
 #if ENABLE_DRONECAN_ESC
@@ -338,6 +351,7 @@ void dronecanUpdate(timeUs_t currentTimeUs)
     if (cmpTimeUs(currentTimeUs, dronecanLastSecondUs) >= 1000000) {
         dronecanLastSecondUs = currentTimeUs;
         dronecanNodeUpdate(currentTimeUs);
+        dronecanNodesUpdate(currentTimeUs);
         canardCleanupStaleTransfers(&dronecanInstance, (uint64_t)currentTimeUs);
     }
 

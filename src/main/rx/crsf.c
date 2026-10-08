@@ -257,18 +257,18 @@ static void handleCrsfLinkStatisticsFrame(const crsfLinkStatistics_t* statsPtr, 
     rxSetUplinkTxPwrMw(uplinkTXPowerStatesMw[crsfUplinkPowerStatesItemIndex]);
 #endif
 
-    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 0, stats.uplink_RSSI_1);
-    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 1, stats.uplink_RSSI_2);
-    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 2, stats.uplink_Link_quality);
-    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 3, stats.rf_Mode);
+    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 0, stats.uplink_RSSI_1);        //!< Uplink RSSI Antenna 1 [unit:-1dBm]
+    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 1, stats.uplink_RSSI_2);        //!< Uplink RSSI Antenna 2 [unit:-1dBm]
+    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 2, stats.uplink_Link_quality);  //!< Uplink Link Quality [unit:%]
+    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 3, stats.rf_Mode);              //!< RF Mode
 
-    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_PWR, 0, stats.active_antenna);
-    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_PWR, 1, stats.uplink_SNR);
-    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_PWR, 2, stats.uplink_TX_Power);
+    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_PWR, 0, stats.active_antenna);   //!< Active Antenna
+    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_PWR, 1, stats.uplink_SNR);       //!< Uplink SNR [unit:dB]
+    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_PWR, 2, stats.uplink_TX_Power);  //!< Uplink TX Power Index
 
-    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_DOWN, 0, stats.downlink_RSSI);
-    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_DOWN, 1, stats.downlink_Link_quality);
-    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_DOWN, 2, stats.downlink_SNR);
+    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_DOWN, 0, stats.downlink_RSSI);          //!< Downlink RSSI [unit:-1dBm]
+    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_DOWN, 1, stats.downlink_Link_quality);  //!< Downlink Link Quality [unit:%]
+    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_DOWN, 2, stats.downlink_SNR);           //!< Downlink SNR [unit:dB]
 }
 
 #if defined(USE_CRSF_V3)
@@ -297,10 +297,10 @@ static void handleCrsfLinkStatisticsTxFrame(const crsfLinkStatisticsTx_t* statsP
     }
 #endif
 
-    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 0, stats.uplink_RSSI);
-    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 1, stats.uplink_SNR);
-    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 2, stats.uplink_Link_quality);
-    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 3, stats.uplink_RSSI_percentage);
+    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 4, stats.uplink_RSSI);             //!< Uplink RSSI [unit:-1dBm]
+    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 5, stats.uplink_SNR);              //!< Uplink SNR [unit:dB]
+    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 6, stats.uplink_Link_quality);     //!< Uplink Link Quality [unit:%]
+    DEBUG_SET(DEBUG_CRSF_LINK_STATISTICS_UPLINK, 7, stats.uplink_RSSI_percentage);  //!< Uplink RSSI [unit:%]
 }
 #endif
 #endif
@@ -666,8 +666,8 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->rcReadRawFn = crsfReadRawRC;
     rxRuntimeState->rcFrameStatusFn = crsfFrameStatus;
 
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-    if (!portConfig) {
+    const serialPortIdentifier_e port = rxConfig->rx_uart;
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
@@ -677,7 +677,7 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     crsfBaudrate = rxConfig->crsf_use_negotiated_baud ? getCrsfCachedBaudrate() : CRSF_BAUDRATE;
 #endif
 
-    serialPort = openSerialPort(portConfig->identifier,
+    serialPort = openSerialPort(port,
         FUNCTION_RX_SERIAL,
         crsfDataReceive,
         rxRuntimeState,

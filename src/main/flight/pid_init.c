@@ -375,12 +375,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         pidRuntime.pidCoefficient[axis].Kd = DTERM_SCALE * pidProfile->pid[axis].D;
         pidRuntime.pidCoefficient[axis].Kf = FEEDFORWARD_SCALE * (pidProfile->pid[axis].F * 0.01f);
     }
-#ifdef USE_INTEGRATED_YAW_CONTROL
-    if (!pidProfile->use_integrated_yaw)
-#endif
-    {
-        pidRuntime.pidCoefficient[FD_YAW].Ki *= 2.5f;
-    }
+    pidRuntime.pidCoefficient[FD_YAW].Ki *= 2.5f;
     pidRuntime.angleGain = pidProfile->pid[PID_LEVEL].P / 10.0f;
     pidRuntime.angleFeedforwardGain = pidProfile->pid[PID_LEVEL].F / 100.0f;
 #ifdef USE_ACC
@@ -406,6 +401,10 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.chirpFrequencyStartHz = pidProfile->chirp_frequency_start_deci_hz / 10.0f;
     pidRuntime.chirpFrequencyEndHz = pidProfile->chirp_frequency_end_deci_hz / 10.0f;
     pidRuntime.chirpTimeSeconds = pidProfile->chirp_time_seconds;
+    pidRuntime.chirpRepeat = pidProfile->chirp_repeat;
+    pidRuntime.chirpRepeatsRemaining = 0;
+    pidRuntime.chirpAxis = FD_ROLL;
+    pidRuntime.chirpSeriesIsFinished = false;
 #endif
 
     pidRuntime.maxVelocity[FD_ROLL] = pidRuntime.maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * pidRuntime.dT;
@@ -483,10 +482,6 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.launchControlKi = ITERM_SCALE * pidProfile->launchControlGain;
 #endif
 
-#ifdef USE_INTEGRATED_YAW_CONTROL
-    pidRuntime.useIntegratedYaw = pidProfile->use_integrated_yaw;
-    pidRuntime.integratedYawRelax = pidProfile->integrated_yaw_relax;
-#endif
 
 #ifdef USE_THRUST_LINEARIZATION
     pidRuntime.thrustLinearization = pidProfile->thrustLinearization / 100.0f;

@@ -25,10 +25,6 @@
 #define TARGET_BOARD_IDENTIFIER "A435M"
 #endif
 
-#ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight - AT32F435"
-#endif
-
 #ifndef AT32F435
 #define AT32F435
 #endif
@@ -92,9 +88,7 @@
 #define USE_BEEPER
 #undef USE_RX_PPM
 #undef USE_RX_PWM
-#undef USE_RX_SPI
 #undef USE_RX_CC2500
-#undef USE_RX_EXPRESSLRS
 // #undef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #undef USE_SERIAL_4WAY_SK_BOOTLOADER
 #define USE_ESCSERIAL

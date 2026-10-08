@@ -47,10 +47,12 @@
 #include "drivers/accgyro/accgyro_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_bmi160.h"
 #include "drivers/accgyro/accgyro_spi_bmi270.h"
+#include "drivers/accgyro/accgyro_spi_bmi423.h"
 #include "drivers/accgyro/accgyro_spi_icm20649.h"
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
 #include "drivers/accgyro/accgyro_spi_icm426xx.h"
 #include "drivers/accgyro/accgyro_spi_icm456xx.h"
+#include "drivers/accgyro/accgyro_spi_icm56686.h"
 #include "drivers/accgyro/accgyro_spi_lsm6dso.h"
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
@@ -352,7 +354,7 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
 typedef uint8_t (*gyroSpiDetectFn_t)(const extDevice_t *dev);
 
 static gyroSpiDetectFn_t gyroSpiDetectFnTable[] = {
-#ifdef USE_ACCGYRO_LSM6DSV16X
+#if defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X)
     lsm6dsv16xSpiDetect,
 #endif
 #ifdef USE_ACCGYRO_LSM6DSK320X
@@ -379,7 +381,10 @@ static gyroSpiDetectFn_t gyroSpiDetectFnTable[] = {
 #ifdef USE_ACCGYRO_BMI270
     bmi270Detect,
 #endif
-#if defined(USE_GYRO_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_ACCGYRO_ICM42686P) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_IIM42653)
+#ifdef USE_ACCGYRO_BMI423
+    bmi423Detect,
+#endif
+#if defined(USE_GYRO_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_ACCGYRO_ICM42686P) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653)
     icm426xxSpiDetect,
 #endif
 #ifdef USE_GYRO_SPI_ICM20649
@@ -387,6 +392,9 @@ static gyroSpiDetectFn_t gyroSpiDetectFnTable[] = {
 #endif
 #if defined(USE_ACCGYRO_ICM45686) || defined(USE_ACCGYRO_ICM45605)
     icm456xxSpiDetect,
+#endif
+#ifdef USE_ACCGYRO_ICM56686
+    icm56686SpiDetect,
 #endif
 #ifdef USE_GYRO_L3GD20
     l3gd20Detect,
@@ -494,7 +502,6 @@ bool mpuDetect(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
 
 #ifdef USE_SPI_GYRO
     gyro->dev.bus->busType = BUS_TYPE_SPI;
-
     return detectSPISensorsAndUpdateDetectionResult(gyro, config);
 #else
     return false;

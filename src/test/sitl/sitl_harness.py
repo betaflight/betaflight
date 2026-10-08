@@ -32,13 +32,16 @@ import uuid
 
 MSP_STATUS = 101
 MSP_RAW_GPS = 106
+MSP_ATTITUDE = 108
 MSP_BOXIDS = 119
 MSP_ACC_CALIBRATION = 205
+MSP_DEBUG = 254
 
 TCP_PORT = 5761
 RC_PORT = 9004
 FDM_PORT = 9003
 PWM_PORT = 9002
+PWM_RAW_PORT = 9001
 
 HOME_LAT = -27.5000000
 HOME_LON = 153.0000000
@@ -52,6 +55,7 @@ BOX_POSHOLD = 11
 BOX_FAILSAFE = 27
 BOX_GPSRESCUE = 46
 BOX_AUTOPILOT = 56
+BOX_LAUNCH = 58
 
 RC_MID = 1500
 RC_LOW = 1000
@@ -231,6 +235,219 @@ class MotionModel:
             self.impact_ticks = 4
 
 
+# --- fixed wing -------------------------------------------------------------
+
+WING_V_REF = 15.0          # m/s, the airspeed at which the surfaces have full authority
+WING_THRUST_MAX = 12.0     # m/s^2 of thrust acceleration at full throttle
+WING_CD0 = 0.03            # parasitic drag, 1/m: full throttle settles near 20 m/s
+WING_CDI = 0.012           # induced drag coefficient, per CL^2
+WING_KL = 0.0872           # lift acceleration per (m/s)^2 per unit CL
+WING_CL_ALPHA = 5.0        # per radian
+WING_ALPHA_STALL = math.radians(12.0)
+WING_CL_POST_STALL = 0.4   # fraction of CL_max retained once stalled
+WING_ROLL_GAIN = 5.0       # rad/s of roll rate per unit elevon at V_REF
+WING_PITCH_GAIN = 3.0      # rad/s of pitch rate per unit elevon at V_REF
+WING_RATE_TAU = 0.10
+WING_SERVO_SPAN = 500.0    # PWM counts from centre to full deflection
+
+
+class WingMotionModel:
+    """Fixed-wing point-mass plant: elevons -> attitude, attitude -> lift/drag.
+
+    Honours the same contract as MotionModel (ENU pos/vel/accel, roll right
+    positive, pitch nose-DOWN positive, yaw compass CW positive) so FdmFeed's
+    existing frame handling carries over unchanged.
+
+    Control authority scales with airspeed, so an airframe sitting still in the
+    thrower's hand cannot move its own surfaces - which is what makes I-term
+    windup and the pre-launch hold behave the way they do in the air.
+    """
+
+    def __init__(self):
+        self.pos = [0.0, 0.0, 0.0]
+        self.vel = [0.0, 0.0, 0.0]
+        self.accel = [0.0, 0.0, 0.0]
+        self.roll = 0.0
+        self.pitch = 0.0
+        self.yaw = 0.0
+        self.rates = [0.0, 0.0, 0.0]
+        self.held = True          # in the thrower's hand until launched
+        self.crashed = False
+        self.stalled = False
+        self.alpha = 0.0
+        self._throw_ticks = 0
+        self._throw_accel = 0.0
+
+    # -- state the scenarios assert on -------------------------------------
+
+    @property
+    def airspeed(self):
+        return math.sqrt(sum(v * v for v in self.vel))
+
+    def on_ground(self):
+        return self.pos[2] <= 0.001
+
+    # -- launch injection ---------------------------------------------------
+
+    def hold_in_hand(self, pitch_deg=10.0, altitude_m=1.5):
+        """Pin the airframe as if carried: still, nose slightly up, 1 g only."""
+        self.held = True
+        self.vel = [0.0, 0.0, 0.0]
+        self.accel = [0.0, 0.0, 0.0]
+        self.rates = [0.0, 0.0, 0.0]
+        self.roll = 0.0
+        self.pitch = math.radians(-pitch_deg)   # nose-down positive
+        self.pos[2] = altitude_m
+
+    def hand_launch(self, speed_ms=8.0, duration_s=0.25, yaw_rate_dps=0.0):
+        """Throw forward: a velocity step delivered as a real acceleration.
+
+        The FC sees the accompanying body-axis specific force for the whole
+        duration, which is what its detector actually keys on.
+        """
+        self._throw_accel = speed_ms / duration_s
+        self._throw_ticks = max(1, int(round(duration_s / 0.02)))
+        self.rates[2] = math.radians(yaw_rate_dps)
+        self.held = False
+
+    def bungee_launch(self, accel_g=3.0, duration_s=0.3):
+        self._throw_accel = accel_g * GRAVITY
+        self._throw_ticks = max(1, int(round(duration_s / 0.02)))
+        self.held = False
+
+    # -- plant --------------------------------------------------------------
+
+    def _elevons(self, servos):
+        """Demix two elevon servos into normalised pitch and roll commands."""
+        if not servos or len(servos) < 2:
+            return 0.0, 0.0
+        left = (servos[0] - 1500.0) / WING_SERVO_SPAN
+        right = (servos[1] - 1500.0) / WING_SERVO_SPAN
+        pitch_cmd = (left + right) / 2.0
+        roll_cmd = (left - right) / 2.0
+        return max(-1.0, min(1.0, pitch_cmd)), max(-1.0, min(1.0, roll_cmd))
+
+    def step(self, dt, m, servos=None):
+        if self.crashed:
+            self.accel = [0.0, 0.0, 0.0]
+            return
+
+        throttle = m[0] if m else 0.0
+        v = self.airspeed
+        sin_y, cos_y = math.sin(self.yaw), math.cos(self.yaw)
+
+        if self.held and self._throw_ticks == 0:
+            # carried: gravity only, nothing else moves
+            self.vel = [0.0, 0.0, 0.0]
+            self.accel = [0.0, 0.0, 0.0]
+            self.rates = [0.0, 0.0, 0.0]
+            return
+
+        # attitude: elevon authority scales with airspeed, zero at a standstill
+        pitch_cmd, roll_cmd = self._elevons(servos)
+        authority = min(1.0, v / WING_V_REF)
+        target = [
+            WING_ROLL_GAIN * roll_cmd * authority,
+            WING_PITCH_GAIN * pitch_cmd * authority,
+        ]
+        for i in range(2):
+            self.rates[i] += (target[i] - self.rates[i]) * min(1.0, dt / WING_RATE_TAU)
+        self.roll += self.rates[0] * dt
+        self.pitch += self.rates[1] * dt
+        self.roll = max(-1.2, min(1.2, self.roll))
+        self.pitch = max(-1.2, min(1.2, self.pitch))
+
+        # flight path and angle of attack (pitch is nose-down positive)
+        gamma = math.asin(max(-1.0, min(1.0, self.vel[2] / v))) if v > 0.5 else 0.0
+        self.alpha = (-self.pitch) - gamma
+
+        cl_max = WING_CL_ALPHA * WING_ALPHA_STALL
+        if abs(self.alpha) > WING_ALPHA_STALL:
+            self.stalled = True
+            cl = math.copysign(cl_max * WING_CL_POST_STALL, self.alpha)
+        else:
+            self.stalled = False
+            cl = WING_CL_ALPHA * self.alpha
+
+        lift = WING_KL * v * v * cl
+        drag = (WING_CD0 + WING_CDI * cl * cl) * v * v
+        thrust = WING_THRUST_MAX * throttle
+
+        if self._throw_ticks > 0:
+            thrust += self._throw_accel
+            self._throw_ticks -= 1
+
+        # along-track and normal accelerations in the vertical plane
+        a_along = thrust - drag - GRAVITY * math.sin(gamma)
+        a_normal = lift * math.cos(self.roll) - GRAVITY * math.cos(gamma)
+
+        v_new = max(0.0, v + a_along * dt)
+        gamma_new = gamma + (a_normal / max(v, 1.0)) * dt
+        gamma_new = max(-1.4, min(1.4, gamma_new))
+
+        # bank-to-turn: no rudder, the turn comes from the lift vector
+        yaw_rate = GRAVITY * math.tan(self.roll) / max(v, 1.0) if v > 1.0 else self.rates[2]
+        self.rates[2] = yaw_rate
+        self.yaw += yaw_rate * dt
+        sin_y, cos_y = math.sin(self.yaw), math.cos(self.yaw)
+
+        horiz = v_new * math.cos(gamma_new)
+        new_vel = [horiz * sin_y, horiz * cos_y, v_new * math.sin(gamma_new)]
+        for i in range(3):
+            self.accel[i] = (new_vel[i] - self.vel[i]) / dt if dt > 0 else 0.0
+        self.vel = new_vel
+        for i in range(3):
+            self.pos[i] += self.vel[i] * dt
+
+        if self.pos[2] < 0.0:
+            self.pos[2] = 0.0
+            self.crashed = True
+            self.vel = [0.0, 0.0, 0.0]
+            self.accel = [0.0, 0.0, 0.0]
+            self.rates = [0.0, 0.0, 0.0]
+
+
+class PwmRawFeed(threading.Thread):
+    """Listens for SITL's raw PWM outputs (servo_packet_raw on UDP 9001).
+
+    The C struct is uint16_t motorCount followed by float[16], so the floats
+    start at offset 4 after padding: 68 bytes in total.
+    """
+
+    def __init__(self):
+        super().__init__(daemon=True)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.bind(("127.0.0.1", PWM_RAW_PORT))
+        self.sock.settimeout(0.2)
+        self.motor_count = 0
+        self.channels = [1500.0] * 16
+        self.running = True
+
+    @property
+    def servos(self):
+        return self.channels[self.motor_count:]
+
+    def run(self):
+        while self.running:
+            try:
+                data, _ = self.sock.recvfrom(128)
+                if len(data) >= 68:
+                    unpacked = struct.unpack("<H2x16f", data[:68])
+                    self.motor_count = unpacked[0]
+                    self.channels = list(unpacked[1:])
+            except socket.timeout:
+                pass
+            except OSError:
+                break
+
+    def shutdown(self):
+        self.running = False
+        if self.is_alive():
+            self.join(timeout=1.0)
+        self.sock.close()
+
+
 def quat_from_euler_bf(roll, pitch, yaw):
     """Body->world quaternion in Betaflight's internal NWU frames from the
     model conventions (roll right+, pitch nose-down+, yaw compass CW+):
@@ -283,10 +500,11 @@ class FdmFeed(threading.Thread):
     first packet's origin (the FC un-mirrors).
     """
 
-    def __init__(self, motors=None, initial_yaw_deg=0.0, status=None):
+    def __init__(self, motors=None, initial_yaw_deg=0.0, status=None, model=None, pwm_raw=None):
         super().__init__(daemon=True)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.model = MotionModel()
+        self.model = model if model is not None else MotionModel()
+        self.pwm_raw = pwm_raw
         self.model.yaw = math.radians(initial_yaw_deg)
         self.motors = motors
         self.status = status
@@ -306,6 +524,9 @@ class FdmFeed(threading.Thread):
 
     def distance_to_wp(self, east_m, north_m):
         return math.hypot(self.model.pos[0] - east_m, self.model.pos[1] - north_m)
+
+    def ground_speed(self):
+        return math.hypot(self.model.vel[0], self.model.vel[1])
 
     def heading_deg(self):
         return math.degrees(self.model.yaw) % 360.0
@@ -349,7 +570,10 @@ class FdmFeed(threading.Thread):
             dt = min(0.1, now - last)
             last = now
             m = self.motors.motors if self.motors else [0.0] * 4
-            self.model.step(dt, m)
+            if self.pwm_raw is not None:
+                self.model.step(dt, m, self.pwm_raw.servos)
+            else:
+                self.model.step(dt, m)
 
             self._hist_decim += 1
             if self._hist_decim >= 5:  # ~10 Hz of the 50 Hz loop
@@ -358,7 +582,7 @@ class FdmFeed(threading.Thread):
                     self.history.append((now - self.t0,
                                          self.model.pos[0], self.model.pos[1], self.model.pos[2],
                                          self.model.vel[0], self.model.vel[1], self.model.vel[2],
-                                         self.heading_deg()))
+                                         self.heading_deg(), math.degrees(self.model.pitch)))
 
             lat_true = HOME_LAT + self.model.pos[1] / M_PER_DEG
             lon_true = HOME_LON + self.model.pos[0] / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))
@@ -564,12 +788,15 @@ class Sitl:
 
     def status(self):
         p = self.msp.request(MSP_STATUS)
-        mode_flags = struct.unpack_from("<I", p, 6)[0]
         extra_count = p[15]
         off = 16 + extra_count
         arming_count = p[off]
         arming_flags = struct.unpack_from("<I", p, off + 1)[0]
-        active = {self.boxids[i] for i in range(min(32, len(self.boxids))) if mode_flags & (1 << i)}
+        # The first 32 bits sit at offset 6; any box index past 31 is carried in
+        # the extra bytes at offset 16. A wing with GPS has more than 32 active
+        # boxes, so dropping those makes the high boxes invisible.
+        mode_bits = int.from_bytes(bytes(p[6:10]) + bytes(p[16:16 + extra_count]), "little")
+        active = {self.boxids[i] for i in range(len(self.boxids)) if mode_bits & (1 << i)}
         return {"modes": active, "arming_flags": arming_flags, "arming_count": arming_count}
 
     def modes(self):
@@ -588,6 +815,14 @@ class Sitl:
 
     def acc_calibrate(self):
         self.msp.request(MSP_ACC_CALIBRATION)
+
+    def yaw_deg(self):
+        p = self.msp.request(MSP_ATTITUDE)
+        return struct.unpack_from("<h", p, 4)[0] % 360
+
+    def debug_values(self):
+        p = self.msp.request(MSP_DEBUG)
+        return list(struct.unpack_from(f"<{len(p) // 2}h", p))
 
     def stop(self):
         if self.sock:
@@ -616,6 +851,7 @@ class StatusPoller(threading.Thread):
         BOX_FAILSAFE: "FAILSAFE",
         BOX_GPSRESCUE: "GPSRESCUE",
         BOX_AUTOPILOT: "AUTOPILOT",
+        BOX_LAUNCH: "LAUNCH",
     }
 
     def __init__(self, sitl):
@@ -657,6 +893,7 @@ WP_EAST_LON = HOME_LON + 150.0 / (M_PER_DEG * math.cos(math.radians(HOME_LAT))) 
 WP_NORTH40_LAT = HOME_LAT + 40.0 / M_PER_DEG  # short leg for the landing mission
 WP_EAST25_LON = HOME_LON + 25.0 / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))
 WP_NORTH90_LAT = HOME_LAT + 90.0 / M_PER_DEG  # far leg for the backwards-engage mission
+WP_EAST90_LON = HOME_LON + 90.0 / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))  # corner for the face-the-next-waypoint mission
 # ~130 deg corner: a 60 m north leg into wp0, then out to (42 m east, 25 m north),
 # so the outgoing leg bears ~130 deg and the pre-turn swings the nose past 90 deg
 # off the inbound leg
@@ -668,6 +905,9 @@ WP_CORNER_LON = HOME_LON + 42.0 / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))
 def base_config(extra):
     return [
         "feature GPS",
+        # the executor's state, abort reason and leg: a scenario that fails leaves a log that says
+        # what nav was doing when it did
+        "set debug_mode = FLIGHT_PLAN",
         "set gps_provider = VIRTUAL",
         "set failsafe_procedure = AUTO-LAND",
         "set failsafe_delay = 10",
@@ -675,8 +915,10 @@ def base_config(extra):
         "aux 0 0 0 1700 2100 0 0",   # ARM on AUX1
         "aux 1 56 1 1700 2100 0 0",  # AUTOPILOT on AUX2
         "aux 2 1 2 1700 2100 0 0",   # ANGLE on AUX3 (heading-validation flight)
-        # the estimator needs the truth-fed virtual mag as a heading source
-        "set trust_mag = ON",
+        # compassEnabledAndCalibrated() requires stored calibration values: the
+        # virtual compass is never calibrated, so seed a negligible bias to mark
+        # it calibrated, or the heading is never trusted and nav stands down
+        "set mag_calibration = 1,1,1",
         # Unified velocity-primitive controller: cruise tilt is carried by the
         # virtual-distance integral, so drag compensation is a small term kept
         # well below the D (velocity) gain rather than the cruise feedforward.
@@ -1266,10 +1508,195 @@ def scenario_rescue_ab(sitl, rc, fdm, variant="B"):
     return m
 
 
-def scenario_rescue_heading(sitl, rc, fdm, variant="B"):
-    """No mag, true heading east while the FC believes north: the rescue must
-    recover heading via GPS course-over-ground (pitch-forward phase) before
-    flying home."""
+def scenario_rescue_fast_entry(sitl, rc, fdm, variant="B"):
+    """RC lost mid-dash, the craft still running away from home at speed. It
+    cannot stop inside the distance a fixed fence allows, so the rescue mission
+    used to trip its own flyaway check while braking, abort, and sink where it
+    was instead of returning."""
+    boot_and_engage(sitl, rc, fdm)
+    wait_for(
+        "vehicle 35 m out and running",
+        lambda: fdm.distance_from_home() > 35.0 and fdm.ground_speed() > 7.0,
+        timeout=60,
+        interval=0.2,
+    )
+    kill_dist = fdm.distance_from_home()
+    entry_speed = fdm.ground_speed()
+    t0 = fdm.now_t()
+    log(f"[{variant}] killing RC {kill_dist:.0f} m out at {entry_speed:.1f} m/s")
+    rc.stop_stream()
+
+    rescue_engagement_asserts(sitl, variant)
+    wait_for(
+        "returns within 20 m of home",
+        lambda: fdm.distance_from_home() < 20.0,
+        timeout=180,
+        interval=1.0,
+    )
+    wait_for(
+        "touchdown disarms",
+        lambda: fdm.model.on_ground() and BOX_ARM not in sitl.modes(),
+        timeout=120,
+        interval=1.0,
+    )
+    m = rescue_metrics(fdm, t0, kill_dist)
+    td = m["touchdown"]
+    assert td is not None, "no touchdown recorded"
+    td_dist = math.hypot(td[1], td[2])
+    assert td_dist < 15.0, f"landed {td_dist:.1f} m from home"
+    # The overshoot is the whole point: the craft has to coast well past the
+    # trigger point and still come home.
+    overshoot = m["max_dist"] - kill_dist
+    log(f"[{variant}] overshot {overshoot:.1f} m, landed {td_dist:.1f} m from home")
+    assert overshoot > 5.0, f"entry too gentle to exercise the fence: {overshoot:.1f} m"
+    m["td_dist"] = td_dist
+    m["overshoot"] = overshoot
+    return m
+
+
+def scenario_rescue_near_home(sitl, rc, fdm, variant="B"):
+    """RC lost hovering low a few metres from home. Inside gps_rescue_min_start_dist
+    there is no return to fly, and climbing first only lifts the craft over
+    whoever is near home: it lands where it stops."""
+    boot_and_engage(sitl, rc, fdm)
+    wait_for("vehicle 3 m out", lambda: fdm.distance_from_home() > 3.0, timeout=30, interval=0.1)
+    rc.set(7, RC_HIGH)  # AUX4: ALTHOLD + POSHOLD (pilot hold)
+    rc.set(5, 1000)     # AUX2: AUTOPILOT off, before the mission carries it away
+    wait_for(
+        "pilot hold (AUTOPILOT off, POSHOLD on)",
+        lambda: (lambda m: BOX_AUTOPILOT not in m and BOX_POSHOLD in m)(sitl.modes()),
+        timeout=10,
+    )
+    wait_for("settled in the hold", lambda: fdm.ground_speed() < 0.5, timeout=20, interval=0.2)
+    time.sleep(2.0)
+    start_dist = fdm.distance_from_home()
+    start_e, start_n, start_alt = fdm.model.pos[0], fdm.model.pos[1], fdm.model.pos[2]
+    assert 2.0 < start_dist < 8.0, f"held {start_dist:.1f} m from home, outside the close-range case"
+    t0 = fdm.now_t()
+    log(f"[{variant}] killing RC {start_dist:.1f} m from home at {start_alt:.1f} m")
+    rc.stop_stream()
+
+    rescue_engagement_asserts(sitl, variant)
+    wait_for(
+        "touchdown disarms",
+        lambda: fdm.model.on_ground() and BOX_ARM not in sitl.modes(),
+        timeout=60,
+        interval=0.5,
+    )
+    m = rescue_metrics(fdm, t0, start_dist)
+    td = m["touchdown"]
+    assert td is not None, "no touchdown recorded"
+    climb = m["max_alt"] - start_alt
+    moved = math.hypot(td[1] - start_e, td[2] - start_n)
+    log(f"[{variant}] climbed {climb:.1f} m, landed {moved:.1f} m from where RC was lost")
+    assert climb < 1.0, f"climbed {climb:.1f} m before landing near home"
+    assert moved < 3.0, f"landed {moved:.1f} m from where it stopped"
+    m["climb"] = climb
+    m["moved"] = moved
+    return m
+
+
+def scenario_rescue_heading_recovery(sitl, rc, fdm, variant="B", drift=False):
+    """No mag, and flown out on roll alone, so the GPS course never teaches the
+    IMU a heading: RC lost well clear of home. The rescue climbs level to the
+    return altitude, pitches forward until the course has taught the IMU its
+    heading, then flies home and lands. With drift, RC is lost mid-run just
+    under the return altitude, so the climb is over while the craft is still
+    sliding sideways."""
+    rc.start()
+    fdm.start()
+    wait_for("GPS fix + RX recovery (arming flags clear)", lambda: sitl.status()["arming_flags"] == 0, timeout=40)
+    sitl.acc_calibrate()
+    time.sleep(2.0)
+    wait_for("recalibration complete", lambda: sitl.status()["arming_flags"] == 0, timeout=20)
+
+    rc.set(6, RC_HIGH)  # ANGLE
+    for attempt in range(3):
+        rc.set(4, RC_HIGH)
+        try:
+            wait_for("armed", lambda: BOX_ARM in sitl.modes(), timeout=8)
+            break
+        except AssertionError:
+            if attempt == 2:
+                raise
+            rc.set(4, 1000)
+            time.sleep(1.0)
+    rc.set(2, 1600)
+    rc.set(7, RC_HIGH)  # ALTHOLD + POSHOLD: without a heading, POSHOLD passes the sticks through
+    climb_to = 13.5 if drift else 6.0
+    wait_for("climbed clear of ground", lambda: fdm.model.pos[2] > climb_to, timeout=30)
+    rc.set(2, 1300)
+
+    # Past 10 deg of roll the course teaches the IMU nothing, so a sideways run leaves the heading unknown.
+    rc.set(0, 1900)
+    wait_for("40 m out sideways", lambda: fdm.distance_from_home() > 40.0, timeout=30, interval=0.1)
+    if not drift:
+        rc.set(0, 1100)
+        wait_for("braked", lambda: fdm.model.vel[0] < 1.0, timeout=15, interval=0.1)
+        rc.set(0, RC_MID)
+        wait_for("stopped", lambda: fdm.ground_speed() < 1.0, timeout=30, interval=0.5)
+    assert sitl.debug_values()[4] == 1, "the IMU learnt its heading on the way out"
+
+    kill_dist = fdm.distance_from_home()
+    start_alt = fdm.model.pos[2]
+    t0 = fdm.now_t()
+    log(f"[{variant}] killing RC {kill_dist:.0f} m out at {start_alt:.1f} m, "
+        f"{fdm.ground_speed():.1f} m/s, heading unknown")
+    rc.stop_stream()
+
+    rescue_engagement_asserts(sitl, variant)
+    wait_for("heading learnt", lambda: sitl.debug_values()[4] == 0, timeout=60, interval=0.2)
+    learnt_t = fdm.now_t()
+    alt_at_learnt = fdm.model.pos[2]
+    # The IMU against the craft's true nose while it settles the heading on the course.
+    heading_err = 0.0
+    while fdm.now_t() < learnt_t + 1.0:
+        heading_err = max(heading_err, abs((sitl.yaw_deg() - fdm.heading_deg() + 180.0) % 360.0 - 180.0))
+        time.sleep(0.1)
+    wait_for(
+        "returns within 20 m of home",
+        lambda: fdm.distance_from_home() < 20.0,
+        timeout=120,
+        interval=1.0,
+    )
+    home_t = fdm.now_t()
+    wait_for(
+        "touchdown disarms",
+        lambda: fdm.model.on_ground() and BOX_ARM not in sitl.modes(),
+        timeout=120,
+        interval=1.0,
+    )
+    m = rescue_metrics(fdm, t0, kill_dist)
+    td = m["touchdown"]
+    assert td is not None, "no touchdown recorded"
+    td_dist = math.hypot(td[1], td[2])
+    hist = fdm.snapshot_history()
+    # Level until the climb is done: a pitch-forward low down picks up speed well before 12.5 m.
+    climb_speed = max((math.hypot(s[4], s[5]) for s in hist if s[0] >= t0 and s[3] < 12.5), default=0.0)
+    # Without a compass the heading is only kept at speed: from learning it to nearly home, never stopped.
+    return_speed = min((math.hypot(s[4], s[5]) for s in hist if learnt_t <= s[0] <= home_t), default=0.0)
+    pitch_forward = next((s for s in hist if s[0] >= t0 and s[8] > 20.0), None)
+    assert pitch_forward is not None, "never pitched forward"
+    pitch_forward_speed = math.hypot(pitch_forward[4], pitch_forward[5])
+    log(f"[{variant}] pitched forward {pitch_forward[0] - t0:.1f} s in at {pitch_forward_speed:.1f} m/s, "
+        f"heading learnt {learnt_t - t0:.0f} s in at {alt_at_learnt:.1f} m, IMU off the nose by up to "
+        f"{heading_err:.0f} deg, climb speed {climb_speed:.1f} m/s, slowest after {return_speed:.1f} m/s, "
+        f"furthest {m['max_dist']:.0f} m, landed {td_dist:.1f} m from home")
+    assert pitch_forward_speed < 1.5, f"pitched forward still drifting {pitch_forward_speed:.1f} m/s"
+    assert heading_err < 10.0, f"learnt a heading {heading_err:.0f} deg off the nose"
+    assert climb_speed < 3.0, f"moving {climb_speed:.1f} m/s before the climb was done"
+    assert return_speed > 2.5, f"slowed to {return_speed:.1f} m/s after learning the heading"
+    assert m["max_dist"] < kill_dist + 80.0, f"heading-recovery excursion ran away: {m['max_dist']:.0f} m"
+    assert td_dist < 15.0, f"landed {td_dist:.1f} m from home"
+    m["td_dist"] = td_dist
+    return m
+
+
+def scenario_rescue_near_home_no_heading(sitl, rc, fdm, variant="B"):
+    """No mag and no forward flight, so no heading, and RC lost hovering over
+    home. Position hold cannot run without a heading, so the rescue leaves the
+    landing to the failsafe's altitude-only descent, which lands the craft
+    where it is straight away rather than after the plan stalls."""
     rc.start()
     fdm.start()
     wait_for("GPS fix + RX recovery (arming flags clear)", lambda: sitl.status()["arming_flags"] == 0, timeout=40)
@@ -1295,26 +1722,32 @@ def scenario_rescue_heading(sitl, rc, fdm, variant="B"):
     time.sleep(2.0)
 
     kill_dist = fdm.distance_from_home()
+    start_alt = fdm.model.pos[2]
     t0 = fdm.now_t()
-    log(f"[{variant}] killing RC at hover (heading wrong by 90 deg)")
+    log(f"[{variant}] killing RC at hover, no heading, {kill_dist:.1f} m from home at {start_alt:.1f} m")
     rc.stop_stream()
 
-    rescue_engagement_asserts(sitl, variant)
-    # heading recovery needs forward flight: the craft must depart, learn its
-    # heading from GPS course, then come home and land
     wait_for(
-        "touchdown disarms (heading recovered, rescue completed)",
+        "failsafe landing, no plan to fly (FAILSAFE, no AUTOPILOT)",
+        lambda: (lambda m: BOX_FAILSAFE in m and BOX_AUTOPILOT not in m)(sitl.modes()),
+        timeout=20,
+    )
+    wait_for(
+        "touchdown disarms",
         lambda: fdm.model.on_ground() and BOX_ARM not in sitl.modes(),
-        timeout=240,
-        interval=1.0,
+        timeout=60,
+        interval=0.5,
     )
     m = rescue_metrics(fdm, t0, kill_dist)
-    assert m["max_dist"] <= 150.0, f"heading-recovery excursion ran away: {m['max_dist']:.0f} m"
     td = m["touchdown"]
     assert td is not None, "no touchdown recorded"
     td_dist = math.hypot(td[1], td[2])
-    assert td_dist < 30.0, f"landed {td_dist:.1f} m from home"
-    log(f"recovered heading and landed {td_dist:.1f} m from home")
+    climb = m["max_alt"] - start_alt
+    down_s = td[0] - t0
+    log(f"[{variant}] climbed {climb:.1f} m, down in {down_s:.0f} s, {td_dist:.1f} m from home")
+    assert climb < 1.0, f"climbed {climb:.1f} m before landing near home"
+    assert down_s < 25.0, f"took {down_s:.0f} s to land"
+    assert td_dist < 5.0, f"landed {td_dist:.1f} m from home"
     m["td_dist"] = td_dist
     return m
 
@@ -1407,6 +1840,76 @@ def scenario_rescue_switch_descent(sitl, rc, fdm, variant="B"):
     return m
 
 
+def scenario_mission_vert_rate(sitl, rc, fdm):
+    """A leg that states a vertical rate climbs at that rate, not at the alt hold
+    climb rate, and the altitude walks up instead of stepping."""
+    boot_and_engage(sitl, rc, fdm)
+
+    wait_for("climb under way (8 m)", lambda: fdm.model.pos[2] > 8.0, timeout=60, interval=0.5)
+    startT = time.monotonic()
+    startAlt = fdm.model.pos[2]
+    wait_for("climbs through 24 m", lambda: fdm.model.pos[2] > 24.0, timeout=90, interval=0.5)
+    rateMps = (fdm.model.pos[2] - startAlt) / (time.monotonic() - startT)
+    # the leg states 1.0 m/s; the alt hold climb rate this would otherwise take is 5 m/s
+    assert 0.7 <= rateMps <= 1.5, f"leg climb rate off target: {rateMps:.2f} m/s"
+    assert BOX_ARM in sitl.modes(), "unexpected disarm during the rate-limited climb"
+    log(f"climbed at {rateMps:.2f} m/s against the leg's commanded 1.0 m/s")
+
+
+def scenario_mission_face_target(sitl, rc, fdm):
+    """FACE_TARGET: engaged with the nose 180 deg off the leg, the craft holds
+    station until the nose is on the waypoint, then flies it."""
+    boot_and_engage(sitl, rc, fdm)
+
+    def headingErr():
+        return abs((fdm.heading_deg() - 0.0 + 180.0) % 360.0 - 180.0)
+
+    drift = []
+
+    def alignedYet():
+        drift.append(fdm.distance_from_home())
+        return headingErr() < 30.0
+
+    wait_for("nose swings onto the leg (~000)", alignedYet, timeout=25, interval=0.2)
+    heldM = max(drift)
+    assert heldM < 10.0, f"translated {heldM:.1f} m before the nose came round"
+    log(f"held station within {heldM:.1f} m while rotating")
+
+    wait_for("departs once aligned", lambda: fdm.distance_from_home() > 20.0, timeout=45, interval=0.5)
+    wait_for(
+        "reaches the waypoint (ground truth)",
+        lambda: fdm.distance_to_wp(0.0, 90.0) < 12.0,
+        timeout=120,
+        interval=1.0,
+    )
+    assert BOX_ARM in sitl.modes(), "unexpected disarm on the face-the-target leg"
+
+
+def scenario_mission_face_next(sitl, rc, fdm):
+    """FACE_NEXT: flying the first leg north, the nose points at the second
+    waypoint (90 m north, 90 m east) rather than along the course."""
+    boot_and_engage(sitl, rc, fdm)
+
+    samples = []
+
+    def midLeg():
+        north = fdm.model.pos[1]
+        if 30.0 < north < 70.0:
+            bearing = math.degrees(math.atan2(90.0 - fdm.model.pos[0], 90.0 - north)) % 360.0
+            samples.append((fdm.heading_deg(), bearing))
+        return north > 70.0
+
+    wait_for("flies the first leg", midLeg, timeout=90, interval=0.5)
+    assert len(samples) >= 5, f"leg too short to sample: {len(samples)}"
+    errs = [abs((h - b + 180.0) % 360.0 - 180.0) for h, b in samples]
+    avgErr = sum(errs) / len(errs)
+    courseErrs = [abs((h - 0.0 + 180.0) % 360.0 - 180.0) for h, _ in samples]
+    avgCourseErr = sum(courseErrs) / len(courseErrs)
+    assert avgErr < 35.0, f"nose did not track the next waypoint: {avgErr:.0f} deg off its bearing"
+    assert avgCourseErr > 25.0, f"nose tracked the course, not the next waypoint: {avgCourseErr:.0f} deg off course"
+    log(f"nose held the next waypoint's bearing ({avgErr:.0f} deg off it, {avgCourseErr:.0f} deg off course)")
+
+
 SCENARIOS = {
     "baseline": (lambda s, r, f: boot_and_engage(s, r, f), []),
     # FIXED yaw: this scenario validates pure translation control; yaw-coupled
@@ -1481,6 +1984,28 @@ SCENARIOS = {
             f"waypoint insert 1 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 hold 600 figure8",
         ],
     ),
+    "mission_vert_rate": (
+        scenario_mission_vert_rate,
+        [
+            "set ap_yaw_mode = FIXED",
+            # 30 m climb at a leg-stated 1 m/s, over a 300 m leg so the climb finishes en route
+            f"waypoint update 0 {WP_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 30) * 100)} 500 flyover 0 none 100 default",
+        ],
+    ),
+    "mission_face_target": (
+        scenario_mission_face_target,
+        [
+            f"waypoint update 0 {WP_NORTH90_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 none 0 face_target",
+        ],
+        {"initial_yaw_deg": 180.0},
+    ),
+    "mission_face_next": (
+        scenario_mission_face_next,
+        [
+            f"waypoint update 0 {WP_NORTH90_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyby 0 none 0 face_next",
+            f"waypoint insert 1 {WP_NORTH90_LAT:.7f} {WP_EAST90_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 none",
+        ],
+    ),
     "rx_disable": (lambda s, r, f: scenario_rx_loss(s, r, f, "DISABLE"), ["set ap_rx_loss_policy = DISABLE"]),
     "rx_continue": (lambda s, r, f: scenario_rx_loss(s, r, f, "CONTINUE"), ["set ap_rx_loss_policy = CONTINUE"]),
     "rx_land": (lambda s, r, f: scenario_rx_loss(s, r, f, "LAND"), ["set ap_rx_loss_policy = LAND"]),
@@ -1524,9 +2049,44 @@ SCENARIOS = {
         RESCUE_CFG,
     ),
     "rescue_heading_recovery": (
-        scenario_rescue_heading,
+        scenario_rescue_heading_recovery,
+        [
+            *RESCUE_CFG,
+            "set mag_hardware = NONE",
+            "set debug_mode = ATTITUDE",   # [4]: 1 while the IMU has no usable heading
+            "set gps_rescue_return_alt = 15",
+            "set gps_rescue_ascend_rate = 250",
+        ],
+    ),
+    "rescue_heading_recovery_drift": (
+        lambda sitl, rc, fdm: scenario_rescue_heading_recovery(sitl, rc, fdm, drift=True),
+        [
+            *RESCUE_CFG,
+            "set mag_hardware = NONE",
+            "set debug_mode = ATTITUDE",
+            "set gps_rescue_return_alt = 15",
+            "set gps_rescue_ascend_rate = 250",
+        ],
+    ),
+    "rescue_near_home_no_heading": (
+        scenario_rescue_near_home_no_heading,
         [*RESCUE_CFG, "set mag_hardware = NONE"],
-        {"initial_yaw_deg": 90.0},
+    ),
+    "rescue_fast_entry": (
+        scenario_rescue_fast_entry,
+        [
+            *RESCUE_CFG,
+            # a dash, not a cruise: the craft is still running from home when the
+            # rescue takes over
+            f"waypoint update 0 {WP_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 1500 flyover 0 none",
+            "set ap_max_velocity = 1500",
+            "set gps_rescue_return_alt = 15",
+            "set gps_rescue_ascend_rate = 200",
+        ],
+    ),
+    "rescue_near_home": (
+        scenario_rescue_near_home,
+        [*RESCUE_CFG, "set gps_rescue_min_start_dist = 10"],
     ),
     "rescue_gps_loss": (
         scenario_rescue_gps_loss,
@@ -1553,31 +2113,38 @@ def decode_blackbox_logs(scenario_dir):
 def run_leg(name, variant, body, extra_cfg, opts, binary, leg_dir):
     os.makedirs(leg_dir)
     sitl = Sitl(binary, leg_dir)
-    rc = motors = fdm = poller = None
+    rc = motors = fdm = poller = pwm_raw = None
     try:
         # feed construction can fail (port 9002 bind); it must fail the
         # scenario, not abort the suite
         rc = RcFeed()
         motors = MotorFeed()
         poller = StatusPoller(sitl) if TELEMETRY_PORT else None
-        fdm = FdmFeed(motors, initial_yaw_deg=opts.get("initial_yaw_deg", 0.0), status=poller)
+        is_wing = opts.get("model") == "wing"
+        if is_wing:
+            pwm_raw = PwmRawFeed()
+        fdm = FdmFeed(motors, initial_yaw_deg=opts.get("initial_yaw_deg", 0.0), status=poller,
+                      model=WingMotionModel() if is_wing else None,
+                      pwm_raw=pwm_raw)
         sitl.provision(base_config(extra_cfg))
         sitl.start()
         motors.start()
+        if pwm_raw:
+            pwm_raw.start()
         if poller:
             poller.start()
         if variant is None:
             return body(sitl, rc, fdm)
         return body(sitl, rc, fdm, variant)
     finally:
-        for feed in (rc, fdm, motors, poller):
+        for feed in (rc, fdm, motors, pwm_raw, poller):
             if feed is not None:
                 feed.shutdown()
         sitl.stop()
         decode_blackbox_logs(leg_dir)
 
 
-def run_scenario(name, binary, workdir, binary_b=None):
+def run_scenario(name, binary, workdir, binary_b=None, binary_wing=None):
     spec = SCENARIOS[name]
     body, extra_cfg = spec[0], spec[1]
     opts = spec[2] if len(spec) > 2 else {}
@@ -1586,6 +2153,11 @@ def run_scenario(name, binary, workdir, binary_b=None):
     os.makedirs(scenario_dir)
 
     log(f"=== scenario: {name}")
+    if opts.get("model") == "wing":
+        if binary_wing is None:
+            log(f"=== SKIP: {name} (wing scenario, no --binary-wing)")
+            return None
+        binary = binary_wing
     try:
         if opts.get("ab"):
             if binary_b is None:
@@ -1608,6 +2180,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--binary", required=True, help="path to betaflight_SITL.elf (built with USE_FLIGHT_PLAN)")
     ap.add_argument("--binary-b", help="rescue-plan binary (-DENABLE_RESCUE_PLAN=1) for A/B scenarios")
+    ap.add_argument("--binary-wing", help="wing binary (-DUSE_WING) for fixed-wing scenarios")
     ap.add_argument("--scenario", default="all", choices=["all"] + list(SCENARIOS))
     ap.add_argument("--workdir", default="/tmp/sitl_harness")
     ap.add_argument("--telemetry-port", type=int, default=TELEMETRY_PORT,
@@ -1619,7 +2192,8 @@ def main():
 
     os.makedirs(args.workdir, exist_ok=True)
     names = list(SCENARIOS) if args.scenario == "all" else [args.scenario]
-    results = {name: run_scenario(name, args.binary, args.workdir, args.binary_b) for name in names}
+    results = {name: run_scenario(name, args.binary, args.workdir, args.binary_b, args.binary_wing)
+               for name in names}
 
     log("--- summary")
     for name, ok in results.items():

@@ -58,6 +58,7 @@ typedef struct autopilotConfig_s {
     uint8_t altitudeP;
     uint8_t altitudeI;
     uint8_t altitudeD;
+    uint8_t altitudeA;
     uint8_t altitudeF;
     uint8_t positionP;
     uint8_t positionI;
@@ -65,7 +66,7 @@ typedef struct autopilotConfig_s {
     uint8_t positionA;
     uint8_t positionF;
     uint8_t positionCutoff;
-    uint8_t stopThreshold;       // cm/s, speed below which braking captures a position hold target
+    uint8_t stopThreshold;       // percent of the speed carried into braking, floored at 1 cm/s: braking captures the position hold target once the speed falls below it
     uint8_t maxAngle;
 
     // Drag feedforward and velocity setpoint cap (maxVelocity also sets the full-stick velocity target in position hold)
@@ -81,17 +82,17 @@ typedef struct autopilotConfig_s {
     // Leg-line carrot path tracking and turn-angle cornering (en-route FLYOVER/FLYBY legs)
     uint16_t navCornerSpeed;          // cm/s, minimum speed carried across a waypoint gate (default 220)
     uint16_t navCornerDeltaV;         // cm/s, constant velocity-change budget per corner (default 440)
-    uint16_t navDecel;                // cm/s^2, approach deceleration for the corner speed profile (default 100)
-    uint16_t navAccel;                // cm/s^2, carrot speed slew rate (default 250)
-    uint8_t  navCarrotLeadTime;       // deciseconds of travel the carrot leads the craft by (default 12 = 1.2s)
-    uint16_t navCarrotLeadMax;        // cm, maximum carrot lead ahead of the craft (default 2500)
+    uint16_t navDecel;                // cm/s^2, approach deceleration for the corner speed profile (default 250)
+    uint16_t navAccel;                // cm/s^2, how fast a leg's commanded velocity may change: the carrot's, and a point leg's ramp (default 250)
+    uint8_t  navCarrotLeadTime;       // deciseconds of travel ahead of it the carrot steers onto the leg line toward (default 12 = 1.2s)
+    uint16_t navCarrotLeadMax;        // cm, the most that look-ahead may be (default 2500)
     uint16_t navPreturnDist;          // cm, approach zone over which the nose blends onto the next leg (default 1500)
 
     // Yaw control parameters
     uint8_t yawMode;                  // autopilotYawMode_e (default YAW_MODE_VELOCITY)
-    uint16_t yawP;                    // scaled by 100 (e.g., 50 = 0.5, default 50)
-    uint16_t yawD;                    // scaled by 100 (e.g., 10 = 0.1, default 10)
-    uint16_t maxYawRate;              // deg/s, maximum yaw rate (default 30)
+    uint8_t yawP;                     //heading error P gain, scaled by AP_YAW_P_SCALE
+    uint8_t maxYawRate;               // deg/s, maximum yaw rate
+
     uint16_t minForwardVelocity;      // cm/s, minimum forward velocity: GPS course reliability (multirotor) / stall prevention (wing)
 
     // Velocity buildup (acceleration from stationary)

@@ -60,6 +60,15 @@
 #define UAVCAN_MAG_ID                   1001U
 #define UAVCAN_MAG_SIGNATURE            0xe2a7d4a9460bc2f2ULL
 
+// uavcan.equipment.air_data.RawAirData — pitot/airspeed differential + static
+// pressure. Multi-frame: uint8 flags, float32 static_pressure, float32
+// differential_pressure, then float16 temperatures + covariance tail.
+#define UAVCAN_RAWAIRDATA_ID            1027U
+#define UAVCAN_RAWAIRDATA_SIGNATURE     0xc77df38ba122f5daULL
+#define RAWAIRDATA_OFFSET_STATIC_P      8U      // 32 bits float32, Pa
+#define RAWAIRDATA_OFFSET_DIFF_P        40U     // 32 bits float32, Pa
+#define RAWAIRDATA_OFFSET_DIFF_TEMP     88U     // 16 bits float16, K (diff-pressure sensor)
+
 // Fix2.status enum values.
 #define UAVCAN_GNSS_FIX2_STATUS_NO_FIX      0U
 #define UAVCAN_GNSS_FIX2_STATUS_TIME_ONLY   1U

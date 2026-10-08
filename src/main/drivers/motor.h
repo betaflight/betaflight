@@ -56,6 +56,8 @@ bool motorIsEnabled(void);
 bool motorIsMotorEnabled(unsigned index);
 bool motorIsMotorIdle(unsigned index);
 IO_t motorGetIo(unsigned index);
+void motorReleaseIo(unsigned index);
+bool motorReinstateIo(unsigned index);
 
 timeMs_t motorGetMotorEnableTimeMs(void);
 void motorShutdown(void); // Replaces stopPwmAllMotors

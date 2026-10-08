@@ -135,6 +135,7 @@ typedef enum {
     TASK_POSHOLD,
 #endif
 #ifdef USE_MAG
+    TASK_MAGHOLD,
     TASK_COMPASS,
 #endif
 #ifdef USE_BARO
@@ -146,8 +147,11 @@ typedef enum {
 #ifdef USE_OPTICALFLOW
     TASK_OPTICALFLOW,
 #endif
-#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
-    TASK_ALTITUDE,
+#ifdef USE_PITOT
+    TASK_PITOT,
+#endif
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER) || defined(USE_OPTICALFLOW)
+    TASK_POSITION,
 #endif
 #ifdef USE_DASHBOARD
     TASK_DASHBOARD,

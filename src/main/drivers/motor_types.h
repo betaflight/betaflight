@@ -82,6 +82,8 @@ typedef struct motorVTable_s {
     void (*shutdown)(void);
     bool (*isMotorIdle)(unsigned index);
     IO_t (*getMotorIO)(unsigned index);
+    void (*releaseMotorIO)(unsigned index);
+    bool (*reinstateMotorIO)(unsigned index);
 
     // Digital commands
     void (*requestTelemetry)(unsigned index);

@@ -42,6 +42,8 @@ typedef struct gpsConfig_s {
     uint8_t gps_ublox_utc_standard;
     bool gps_ublox_enable_ana;
     char nmeaCustomCommands[NMEA_CUSTOM_COMMANDS_MAX_LENGTH + 1];
+    int8_t gps_uart;  // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned
+    uint8_t gps_baud; // baudRate_e index for gps_uart
 } gpsConfig_t;
 
 PG_DECLARE(gpsConfig_t, gpsConfig);

@@ -8,8 +8,10 @@
  *
  * Requirements established during bring-up (each was a distinct failure):
  *  - Entry point and this stub MUST be in IRAM, in the IRAM-only region below
- *    0x40378000 (the bootloader uses 0x40378000+ as scratch during cache setup;
- *    placing code there gets it corrupted). We use 0x40374000.
+ *    0x40378000 (the bootloader uses 0x40378000+ while loading the app). Hot
+ *    runtime code may use the following dual-port IRAM after loading completes,
+ *    provided its DRAM alias is reserved by the linker script. We enter at
+ *    0x40374000.
  *  - The first instruction MUST be the windowed prologue `entry`.
  *  - Constants live in an inline literal pool reached by l32r (backwards only);
  *    a `j` skips over it.

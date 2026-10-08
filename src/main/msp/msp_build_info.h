@@ -23,8 +23,8 @@
  * WARNING: This is an auto-generated file, please do not edit directly!
  *
  * Generator    : `src/utils/make-build-info.py`
- * Source       : https://build.betaflight.com/api/options/2026.6
- * Input hash   : 7078aa17160739f81692eed6cf885e85
+ * Source       : https://build.betaflight.com/api/options/2026.12
+ * Input hash   : 305e9e75314878377cbadd2550bf4802
  */
 
 #pragma once
@@ -61,6 +61,7 @@
 #define BUILD_OPTION_CAMERA_CONTROL             16407
 #define BUILD_OPTION_CHIRP                      16426
 #define BUILD_OPTION_DASHBOARD                  16408
+#define BUILD_OPTION_DRONECAN                   16430
 #define BUILD_OPTION_EMFAT_TOOLS                16409
 #define BUILD_OPTION_ESCSERIAL_SIMONK           16410
 #define BUILD_OPTION_FLIGHT_PLAN                16427
@@ -80,11 +81,9 @@
 #define BUILD_OPTION_SERVOS                     16420
 #define BUILD_OPTION_VTX                        16421
 #define BUILD_OPTION_WING                       16424
-
-#define BUILD_OPTION_FLIGHT_PLAN                16427
-
 // Motor Protocols
 #define BUILD_OPTION_BRUSHED                    8230
+#define BUILD_OPTION_DRONECAN_ESC               8236
 #define BUILD_OPTION_DSHOT                      8231
 #define BUILD_OPTION_MULTISHOT                  8232
 #define BUILD_OPTION_ONESHOT                    8233

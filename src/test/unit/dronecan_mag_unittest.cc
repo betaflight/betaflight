@@ -49,6 +49,12 @@ extern "C" {
         return true;
     }
 
+    void dronecanNodesNoteSensor(uint8_t nodeId, uint8_t sensorFlag)
+    {
+        (void)nodeId;
+        (void)sensorFlag;
+    }
+
     // Controllable clock; the module timestamps each accepted frame with it.
     static timeUs_t mockMicros = 0;
 

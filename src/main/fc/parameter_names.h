@@ -34,6 +34,8 @@
 #define PARAM_NAME_ACC_LPF_HZ "acc_lpf_hz"
 #define PARAM_NAME_MAG_HARDWARE "mag_hardware"
 #define PARAM_NAME_BARO_HARDWARE "baro_hardware"
+#define PARAM_NAME_BARO_DRIFT "baro_drift"
+#define PARAM_NAME_PITOT_HARDWARE "pitot_hardware"
 #define PARAM_NAME_RC_SMOOTHING "rc_smoothing"
 #define PARAM_NAME_RC_SMOOTHING_AUTO_FACTOR "rc_smoothing_auto_factor"
 #define PARAM_NAME_RC_SMOOTHING_AUTO_FACTOR_THROTTLE "rc_smoothing_auto_factor_throttle"
@@ -117,7 +119,6 @@
 #define PARAM_NAME_THROTTLE_BOOST "throttle_boost"
 #define PARAM_NAME_THROTTLE_BOOST_CUTOFF "throttle_boost_cutoff"
 #define PARAM_NAME_THRUST_LINEARIZATION "thrust_linear"
-#define PARAM_NAME_USE_INTEGRATED_YAW "use_integrated_yaw"
 #define PARAM_NAME_D_MAX_GAIN "d_max_gain"
 #define PARAM_NAME_D_MAX_ADVANCE "d_max_advance"
 #define PARAM_NAME_MOTOR_OUTPUT_LIMIT "motor_output_limit"
@@ -160,6 +161,10 @@
 #define PARAM_NAME_ALTITUDE_LPF "altitude_lpf"
 #define PARAM_NAME_ALTITUDE_D_LPF "altitude_d_lpf"
 
+#define PARAM_NAME_OPTICALFLOW_HARDWARE "opticalflow_hardware"
+#define PARAM_NAME_OPTICALFLOW_ROTATION "opticalflow_rotation"
+#define PARAM_NAME_OPTICALFLOW_FLIP_X "opticalflow_flip_x"
+
 #define PARAM_NAME_AP_LANDING_ALTITUDE_M "ap_landing_altitude_m"
 #define PARAM_NAME_AP_HOVER_THROTTLE "ap_hover_throttle"
 #define PARAM_NAME_AP_THROTTLE_MIN "ap_throttle_min"
@@ -167,6 +172,7 @@
 #define PARAM_NAME_AP_ALTITUDE_P "ap_altitude_p"
 #define PARAM_NAME_AP_ALTITUDE_I "ap_altitude_i"
 #define PARAM_NAME_AP_ALTITUDE_D "ap_altitude_d"
+#define PARAM_NAME_AP_ALTITUDE_A "ap_altitude_a"
 #define PARAM_NAME_AP_ALTITUDE_F "ap_altitude_f"
 #define PARAM_NAME_AP_POSITION_P "ap_position_p"
 #define PARAM_NAME_AP_POSITION_I "ap_position_i"
@@ -188,7 +194,6 @@
 #define PARAM_NAME_AP_THROTTLE_DEADBAND "ap_throttle_deadband"
 #define PARAM_NAME_AP_YAW_MODE "ap_yaw_mode"
 #define PARAM_NAME_AP_YAW_P "ap_yaw_p"
-#define PARAM_NAME_AP_YAW_D "ap_yaw_d"
 #define PARAM_NAME_AP_MAX_YAW_RATE "ap_max_yaw_rate"
 #define PARAM_NAME_AP_MIN_FORWARD_VELOCITY "ap_min_forward_velocity"
 
@@ -259,6 +264,7 @@
 #define PARAM_NAME_CHIRP_FREQUENCY_START_DECI_HZ "chirp_frequency_start_deci_hz"
 #define PARAM_NAME_CHIRP_FREQUENCY_END_DECI_HZ "chirp_frequency_end_deci_hz"
 #define PARAM_NAME_CHIRP_TIME_SECONDS "chirp_time_seconds"
+#define PARAM_NAME_CHIRP_REPEAT "chirp_repeat"
 
 #ifdef USE_GPS
 #define PARAM_NAME_GPS_PROVIDER "gps_provider"
@@ -321,7 +327,6 @@
 
 #ifdef USE_MAG
 #define PARAM_NAME_IMU_MAG_DECLINATION "mag_declination"
-#define PARAM_NAME_TRUST_MAG "trust_mag"
 #endif
 
 #ifdef USE_TRANSPONDER

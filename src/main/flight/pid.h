@@ -240,8 +240,6 @@ typedef struct pidProfile_s {
     uint8_t launchControlAngleLimit;        // Optional launch control angle limit (requires ACC)
     uint8_t launchControlGain;              // Iterm gain used while launch control is active
     uint8_t launchControlAllowTriggerReset; // Controls trigger behavior and whether the trigger can be reset
-    uint8_t use_integrated_yaw;             // Selects whether the yaw pidsum should integrated
-    uint8_t integrated_yaw_relax;           // Specifies how much integrated yaw should be reduced to offset the drag based yaw component
     uint8_t thrustLinearization;            // Thrust curve compensation, ≈ ArduPilot MOT_THST_EXPO * 100 (0..150, default 0)
     uint8_t d_max[XYZ_AXIS_COUNT];          // Maximum D value on each axis
     uint8_t d_max_gain;                     // Gain factor for amount of gyro / setpoint activity required to boost D
@@ -327,6 +325,7 @@ typedef struct pidProfile_s {
     uint16_t chirp_frequency_start_deci_hz; // start frequency in units of 0.1 hz
     uint16_t chirp_frequency_end_deci_hz;   // end frequency in units of 0.1 hz
     uint8_t chirp_time_seconds;             // excitation time
+    uint8_t chirp_repeat;                   // number of repeats per axis
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -470,11 +469,6 @@ typedef struct pidRuntime_s {
     float launchControlKi;
 #endif
 
-#ifdef USE_INTEGRATED_YAW_CONTROL
-    bool useIntegratedYaw;
-    uint8_t integratedYawRelax;
-#endif
-
 #ifdef USE_THRUST_LINEARIZATION
     float thrustLinearization;
 #endif
@@ -526,6 +520,10 @@ typedef struct pidRuntime_s {
     float chirpFrequencyStartHz;
     float chirpFrequencyEndHz;
     float chirpTimeSeconds;
+    uint8_t chirpRepeat;
+    uint8_t chirpRepeatsRemaining;
+    flight_dynamics_index_t chirpAxis;
+    bool chirpSeriesIsFinished;
 #endif // USE_CHIRP
 } pidRuntime_t;
 
@@ -572,6 +570,9 @@ float calcHorizonLevelStrength(void);
 
 void dynLpfDTermUpdate(float throttle);
 void pidSetItermReset(bool enabled);
+#ifdef USE_WING
+void pidResetTpaSpeed(void);
+#endif
 float pidGetPreviousSetpoint(int axis);
 float pidGetDT(void);
 float pidGetPidFrequency(void);
@@ -579,4 +580,8 @@ float pidGetPidFrequency(void);
 float dynLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo);
 #ifdef USE_CHIRP
 bool  pidChirpIsFinished();
+flight_dynamics_index_t pidChirpGetChirpAxis(void);
+uint8_t pidChirpGetRepeatTotal(void);
+uint8_t pidChirpGetRepeatCurrent(void);
+bool pidChirpSeriesIsFinished(void);
 #endif

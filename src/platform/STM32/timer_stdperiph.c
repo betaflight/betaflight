@@ -339,7 +339,7 @@ void timerReconfigureTimeBase(const timerHardware_t *timHw, uint16_t period, uin
     TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
     TIM_TimeBaseStructure.TIM_Period = (period - 1) & 0xFFFF; // AKA TIMx_ARR
 
-    // "The counter clock frequency (CK_CNT) is equal to f CK_PSC / (PSC[15:0] + 1)." - STM32F10x Reference Manual 14.4.11
+    // Counter clock frequency (CK_CNT) = f CK_PSC / (PSC[15:0] + 1) — standard STM32 timer prescaler behavior
     // Thus for 1Mhz: 72000000 / 1000000 = 72, 72 - 1 = 71 = TIM_Prescaler
     TIM_TimeBaseStructure.TIM_Prescaler = (timerClock(timHw) / hz) - 1;
 

@@ -263,7 +263,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
     UNUSED(uartdev);
 }
 
-void uartIrqHandler(uartPort_t *s)
+FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
 {
     int portNum = uartGetPortNum(s->USARTx);
     uart_dev_t *hw = uartGetHw(portNum);
@@ -308,14 +308,14 @@ void uartIrqHandler(uartPort_t *s)
 // Per-UART ISR wrappers for the ROM interrupt dispatch table.
 // ets_isr_attach requires a void(*)(void*) signature.
 
-static void uart0Isr(void *arg)
+FAST_IRQ_HANDLER static void uart0Isr(void *arg)
 {
     UNUSED(arg);
     uartIrqHandler(&uartDevice[UARTDEV_0].port);
 }
 
 #ifdef USE_UART1
-static void uart1Isr(void *arg)
+FAST_IRQ_HANDLER static void uart1Isr(void *arg)
 {
     UNUSED(arg);
     uartIrqHandler(&uartDevice[UARTDEV_1].port);
@@ -323,7 +323,7 @@ static void uart1Isr(void *arg)
 #endif
 
 #ifdef USE_UART2
-static void uart2Isr(void *arg)
+FAST_IRQ_HANDLER static void uart2Isr(void *arg)
 {
     UNUSED(arg);
     uartIrqHandler(&uartDevice[UARTDEV_2].port);

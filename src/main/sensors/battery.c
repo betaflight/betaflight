@@ -174,13 +174,13 @@ void batteryUpdateVoltage(timeUs_t currentTimeUs)
 
     voltageStableUpdate(&voltageMeter);
 
-    DEBUG_SET(DEBUG_BATTERY, 0, voltageMeter.unfiltered);
-    DEBUG_SET(DEBUG_BATTERY, 1, voltageMeter.displayFiltered);
-    DEBUG_SET(DEBUG_BATTERY, 3, voltageMeter.voltageStableBits);
-    DEBUG_SET(DEBUG_BATTERY, 4, voltageIsStable(&voltageMeter) ? 1 : 0);
-    DEBUG_SET(DEBUG_BATTERY, 5, isVoltageFromBattery() ? 1 : 0);
-    DEBUG_SET(DEBUG_BATTERY, 6, voltageMeter.voltageStablePrevFiltered);
-    DEBUG_SET(DEBUG_BATTERY, 7, voltageState);
+    DEBUG_SET(DEBUG_BATTERY, 0, voltageMeter.unfiltered);                 //!< Battery Voltage Unfiltered [unit:0.01V]
+    DEBUG_SET(DEBUG_BATTERY, 1, voltageMeter.displayFiltered);            //!< Battery Voltage [unit:0.01V]
+    DEBUG_SET(DEBUG_BATTERY, 3, voltageMeter.voltageStableBits);          //!< Voltage Stable Bits
+    DEBUG_SET(DEBUG_BATTERY, 4, voltageIsStable(&voltageMeter) ? 1 : 0);  //!< Voltage Is Stable
+    DEBUG_SET(DEBUG_BATTERY, 5, isVoltageFromBattery() ? 1 : 0);          //!< Voltage Is From Battery
+    DEBUG_SET(DEBUG_BATTERY, 6, voltageMeter.voltageStablePrevFiltered);  //!< Last Stable Battery Voltage [unit:0.01V]
+    DEBUG_SET(DEBUG_BATTERY, 7, voltageState);                            //!< Battery Voltage State [enum:batteryState_e]
 }
 
 static void updateBatteryBeeperAlert(void)

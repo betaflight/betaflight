@@ -35,6 +35,7 @@
 #include "drivers/system.h"
 
 #include "io/displayport_msp.h"
+#include "io/serial_feature_map.h"
 
 #include "msp/msp.h"
 
@@ -42,7 +43,7 @@
 
 #include "pg/msp.h"
 
-static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
+static mspPort_t mspPorts[MSP_PORT_COUNT];
 
 static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, bool sharedWithTelemetry)
 {
@@ -53,40 +54,98 @@ static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, bo
     mspPortToReset->descriptor = mspDescriptorAlloc();
 }
 
+static portOptions_e mspSerialPortOptions(serialPortIdentifier_e identifier)
+{
+    portOptions_e options = SERIAL_NOT_INVERTED;
+
+    if (mspConfig()->halfDuplex) {
+        options |= SERIAL_BIDIR;
+    } else if (serialType(identifier) == SERIALTYPE_UART
+               || serialType(identifier) == SERIALTYPE_LPUART
+               || serialType(identifier) == SERIALTYPE_PIOUART) {
+#if !ENABLE_SERIAL_SKIP_CHECK_TX
+        options |= SERIAL_CHECK_TX;
+#endif
+    }
+
+    return options;
+}
+
+/*
+ * AUTO is offered by the baud lookup table but means nothing to MSP, and it
+ * would open the port at zero, taking the link with it.
+ */
+static uint32_t mspSerialBaudRate(uint8_t baud)
+{
+    if (baud == BAUD_AUTO || baud >= BAUD_COUNT) {
+        baud = serialDefaultPortBaud(SERIAL_BAUD_MSP);
+    }
+
+    return baudRates[baud];
+}
+
+static void mspSerialOpenPort(unsigned *portIndex, serialPortIdentifier_e identifier, uint8_t baud)
+{
+    while (*portIndex < ARRAYLEN(mspPorts) && mspPorts[*portIndex].port) {
+        (*portIndex)++;
+    }
+    if (*portIndex >= ARRAYLEN(mspPorts)) {
+        return;
+    }
+
+    serialPort_t *serialPort = openSerialPort(identifier, FUNCTION_MSP, NULL, NULL,
+                                              mspSerialBaudRate(baud), MODE_RXTX, mspSerialPortOptions(identifier));
+    if (!serialPort) {
+        return;
+    }
+
+    const bool sharedWithTelemetry = isSerialPortShared(identifier, FUNCTION_MSP, TELEMETRY_PORT_FUNCTIONS_MASK);
+    resetMspPort(&mspPorts[*portIndex], serialPort, sharedWithTelemetry);
+
+    (*portIndex)++;
+}
+
+#if IMPLIED_MSP_PORT_COUNT > 0
+static bool mspSerialPortIsOpen(serialPortIdentifier_e identifier)
+{
+    for (const mspPort_t *mspPort = mspPorts; mspPort < ARRAYEND(mspPorts); mspPort++) {
+        if (mspPort->port && mspPort->port->identifier == identifier) {
+            return true;
+        }
+    }
+
+    return false;
+}
+#endif
+
 void mspSerialAllocatePorts(void)
 {
-    uint8_t portIndex = 0;
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
-    while (portConfig && portIndex < ARRAYLEN(mspPorts)) {
-        mspPort_t *mspPort = &mspPorts[portIndex];
+    unsigned portIndex = 0;
 
-        if (mspPort->port) {
-            portIndex++;
+    for (unsigned slot = 0; slot < MAX_MSP_PORT_COUNT; slot++) {
+        const serialPortIdentifier_e identifier = mspConfig()->msp_uart[slot];
+        if (identifier == SERIAL_PORT_NONE) {
             continue;
         }
 
-        portOptions_e options = SERIAL_NOT_INVERTED;
-
-        if (mspConfig()->halfDuplex) {
-            options |= SERIAL_BIDIR;
-        } else if (serialType(portConfig->identifier) == SERIALTYPE_UART
-                   || serialType(portConfig->identifier) == SERIALTYPE_LPUART
-                   || serialType(portConfig->identifier) == SERIALTYPE_PIOUART) {
-#if !ENABLE_SERIAL_SKIP_CHECK_TX
-            options |= SERIAL_CHECK_TX;
-#endif
-        }
-
-        serialPort_t *serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, NULL, baudRates[portConfig->msp_baudrateIndex], MODE_RXTX, options);
-        if (serialPort) {
-            bool sharedWithTelemetry = isSerialPortShared(portConfig, FUNCTION_MSP, TELEMETRY_PORT_FUNCTIONS_MASK);
-            resetMspPort(mspPort, serialPort, sharedWithTelemetry);
-
-            portIndex++;
-        }
-
-        portConfig = findNextSerialPortConfig(FUNCTION_MSP);
+        mspSerialOpenPort(&portIndex, identifier, mspConfig()->msp_baud[slot]);
     }
+
+#if IMPLIED_MSP_PORT_COUNT > 0
+    serialPortIdentifier_e impliedPorts[IMPLIED_MSP_PORT_COUNT];
+    const unsigned impliedPortCount = serialImpliedMspPorts(impliedPorts, ARRAYLEN(impliedPorts));
+
+    for (unsigned i = 0; i < impliedPortCount; i++) {
+        // The user is free to put MSP on the same port as well, in which case it
+        // is already open and the feature is already heard.  A native serial
+        // sensor claims its UART in sensorsAutodetect() and never reaches here.
+        if (mspSerialPortIsOpen(impliedPorts[i])) {
+            continue;
+        }
+
+        mspSerialOpenPort(&portIndex, impliedPorts[i], serialDefaultPortBaud(SERIAL_BAUD_MSP));
+    }
+#endif
 }
 
 void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
@@ -525,6 +584,21 @@ static void mspProcessPacket(mspPort_t *mspPort, mspProcessCommandFnPtr mspProce
  *
  * Called periodically by the scheduler.
  */
+// A peripheral MSP port has a device streaming on it — the goggles on the
+// display port UART, an MSP VTX, an MSP-transport sensor.  Its bytes are never
+// configurator input, so they must not read as CLI entry, a reboot request, or
+// configurator activity.
+static bool mspPortIsPeripheral(serialPortIdentifier_e identifier)
+{
+#ifdef USE_MSP_DISPLAYPORT
+    if (identifier == displayPortMspGetSerial()) {
+        return true;
+    }
+#endif
+
+    return serialSynthesizeFunctionMask(identifier) & (FUNCTION_VTX_MSP | FUNCTION_LIDAR);
+}
+
 void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessCommandFnPtr mspProcessCommandFn, mspProcessReplyFnPtr mspProcessReplyFn)
 {
     for (mspPort_t *mspPort = mspPorts; mspPort < ARRAYEND(mspPorts); mspPort++) {
@@ -544,11 +618,7 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
                 mspPort->portState = PORT_MSP_PACKET;
                 mspPort->packetState = MSP_HEADER_START;
             } else if ((evaluateNonMspData == MSP_EVALUATE_NON_MSP_DATA)
-#ifdef USE_MSP_DISPLAYPORT
-                       // Don't evaluate non-MSP commands on VTX MSP port
-                       && (mspPort->port->identifier != displayPortMspGetSerial())
-#endif
-                       ) {
+                       && !mspPortIsPeripheral(mspPort->port->identifier)) {
                 // evaluate the non-MSP data
                 if (c == serialConfig()->reboot_character) {
                     mspPort->pendingRequest = MSP_PENDING_BOOTLOADER_ROM;
@@ -619,14 +689,7 @@ bool mspSerialIsConfiguratorActive(void)
             continue;
         }
 
-        const serialPortConfig_t *cfg =
-            serialFindPortConfiguration(mspPort->port->identifier);
-        if (!cfg) {
-            continue;
-        }
-
-        // Skip ports shared with a VTX — those are peripherals, not configurators
-        if (cfg->functionMask & FUNCTION_VTX_MSP) {
+        if (mspPortIsPeripheral(mspPort->port->identifier)) {
             continue;
         }
 

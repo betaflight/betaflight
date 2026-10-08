@@ -137,7 +137,7 @@ void setDefaultTestSettings(void)
     pidProfile->pid[PID_YAW]   =  { 70, 45, 20, 60, 0 };
     pidProfile->pid[PID_LEVEL] =  { 50, 50, 75, 50, 0 };
 
-    // Compensate for the upscaling done without 'use_integrated_yaw'
+    // Compensate for the upscaling done on the yaw axis
     pidProfile->pid[PID_YAW].I = pidProfile->pid[PID_YAW].I / 2.5f;
 
     pidProfile->pidSumLimit = PIDSUM_LIMIT;        // 500

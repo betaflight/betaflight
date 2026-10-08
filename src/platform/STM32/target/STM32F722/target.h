@@ -24,10 +24,6 @@
 #define TARGET_BOARD_IDENTIFIER "F722"
 #endif
 
-#ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight - STM32F722"
-#endif
-
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
 #define USE_I2C_DEVICE_3
@@ -73,6 +69,8 @@
 #define USE_ADC
 
 #define USE_EXTI
+
+#define USE_PID_DENOM_CHECK
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x4000) // 16K sectors
 

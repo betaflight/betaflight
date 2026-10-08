@@ -53,14 +53,24 @@ typedef enum {
     WAYPOINT_PATTERN_COUNT
 } waypointPattern_e;
 
+typedef enum {
+    WAYPOINT_YAW_DEFAULT = 0,   // the configured autopilot yaw mode owns the nose
+    WAYPOINT_YAW_FACE_TARGET,   // point at this waypoint, and do not translate until aligned
+    WAYPOINT_YAW_FACE_NEXT,     // point at the next positional waypoint (turn while climbing)
+    WAYPOINT_YAW_HOLD,          // hold the heading captured when the leg is dispatched
+    WAYPOINT_YAW_COUNT
+} waypointYaw_e;
+
 typedef struct {
     int32_t latitude;       // Latitude in degrees * 10^7 (7 decimal places, ±90.0000000)
     int32_t longitude;      // Longitude in degrees * 10^7 (7 decimal places, ±180.0000000)
     int32_t altitude;       // Altitude in centimeters AMSL (above mean sea level, negative values permitted)
-    uint16_t speed;         // Speed in cm/s
+    uint16_t speed;         // Horizontal speed in cm/s (0 = autopilot maxVelocity)
     uint16_t duration;      // Duration in deciseconds (0.1s)
+    uint16_t vertRate;      // Climb and descent rate in cm/s (0 = the configured alt hold climb rate, or landingDescentRate on a LAND leg)
     uint8_t type;           // waypointType_e
     uint8_t pattern;        // waypointPattern_e (for hold type)
+    uint8_t yawBehaviour;   // waypointYaw_e
 } waypoint_t;
 
 typedef struct {

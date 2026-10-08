@@ -80,6 +80,7 @@
 #include "io/beeper.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
+#include "io/serial.h"
 
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
@@ -121,6 +122,15 @@ const char * const osdTimerSourceNames[] = {
 #define OSD_LOGO_ROWS 4
 #define OSD_LOGO_COLS 24
 
+// Make it obvious on the configurator that the FC doesn't support HD
+#ifndef DEFAULT_OSD_DISPLAYPORT_DEVICE
+#if defined(USE_OSD_HD) || defined(MSP_DISPLAYPORT_UART)
+#define DEFAULT_OSD_DISPLAYPORT_DEVICE OSD_DISPLAYPORT_DEVICE_MSP
+#else
+#define DEFAULT_OSD_DISPLAYPORT_DEVICE OSD_DISPLAYPORT_DEVICE_AUTO
+#endif
+#endif
+
 // Things in both OSD and CMS
 
 #define IS_HI(X)  (rcData[X] > 1750)
@@ -149,6 +159,15 @@ static displayPort_t *osdDisplayPort;
 static osdDisplayPortDevice_e osdDisplayPortDeviceType;
 static bool osdIsReady;
 
+uint16_t osdGetCapacityAlarm(void)
+{
+    if (currentBatteryProfile && currentBatteryProfile->batteryCapacity > 0) {
+        return currentBatteryProfile->batteryCapacity;
+    }
+
+    return osdConfig()->cap_alarm;
+}
+
 static bool suppressStatsDisplay = false;
 
 static bool backgroundLayerSupported = false;
@@ -161,7 +180,7 @@ STATIC_ASSERT(OSD_POS_MAX == OSD_POS(63,31), OSD_POS_MAX_incorrect);
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 13);
 
-PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 3);
+PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 4);
 
 // Controls the display order of the OSD post-flight statistics.
 // Adjust the ordering here to control how the post-flight stats are presented.
@@ -401,8 +420,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->logo_on_arming = OSD_LOGO_ARMING_OFF;
     osdConfig->logo_on_arming_duration = 5;  // 0.5 seconds
 
-    osdConfig->camera_frame_width = 24;
-    osdConfig->camera_frame_height = 11;
+    osdConfig->camera_frame_width = (OSD_CAMERA_FRAME_MAX_WIDTH * 4) / 5; // 24 for MAX7456
+    osdConfig->camera_frame_height = (OSD_CAMERA_FRAME_MAX_HEIGHT * 11) / 16; // 11 for MAX7456
 
     osdConfig->stat_show_cell_value = false;
     osdConfig->framerate_hz = OSD_FRAMERATE_DEFAULT_HZ;
@@ -415,13 +434,11 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->aux_scale = 200;
     osdConfig->aux_symbol = 'A';
 
-    // Make it obvious on the configurator that the FC doesn't support HD
+    osdConfig->displayPortDevice = DEFAULT_OSD_DISPLAYPORT_DEVICE;
 #ifdef USE_OSD_HD
-    osdConfig->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
     osdConfig->canvas_cols = OSD_HD_COLS;
     osdConfig->canvas_rows = OSD_HD_ROWS;
 #else
-    osdConfig->displayPortDevice = OSD_DISPLAYPORT_DEVICE_AUTO;
     osdConfig->canvas_cols = OSD_SD_COLS;
     osdConfig->canvas_rows = OSD_SD_ROWS;
 #endif
@@ -433,6 +450,16 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 #ifdef USE_RACE_PRO
     osdConfig->osd_show_spec_prearm = true;
 #endif // USE_RACE_PRO
+
+#ifdef MSP_DISPLAYPORT_UART
+    // A board naming a display port UART is wired to goggles, which are drawn
+    // over MSP.  That is the OSD's port, not a VTX's.
+    osdConfig->osd_uart = MSP_DISPLAYPORT_UART;
+#else
+    osdConfig->osd_uart = SERIAL_PORT_NONE;
+#endif
+    osdConfig->osd_custom_text_uart = SERIAL_PORT_NONE;
+    osdConfig->osd_custom_text_baud = BAUD_115200;
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
@@ -474,7 +501,12 @@ void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
 static void osdDrawLogo(int x, int y, displayPortSeverity_e fontSel)
 {
     // display logo and help
-    int fontOffset = 160;
+    int fontOffset = SYM_LOGO_START;
+
+    if (displayWriteLogo(osdDisplayPort, fontOffset, SYM_END_OF_FONT, OSD_LOGO_COLS, OSD_LOGO_ROWS)) {
+        return; // Display port driver has built-in support for drawing logo from font
+    }
+
     for (int row = 0; row < OSD_LOGO_ROWS; row++) {
         for (int column = 0; column < OSD_LOGO_COLS; column++) {
             if (fontOffset <= SYM_END_OF_FONT)

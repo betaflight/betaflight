@@ -40,6 +40,7 @@
 #include "config/config.h"
 #include "fc/core.h"
 #include "fc/rc.h"
+#include "fc/tasks.h"
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
@@ -119,15 +120,18 @@ void clearWasLastDisarmUserRequested(void)
 
 throttleStatus_e calculateThrottleStatus(void)
 {
+    const float throttle = rcGetChannel(THROTTLE);
+    const float mincheck = rcUsToNorm(rxConfig()->mincheck);
+
     if (featureIsEnabled(FEATURE_3D)) {
         if (IS_RC_MODE_ACTIVE(BOX3D) || flight3DConfig()->switched_mode3d) {
-            if (rcData[THROTTLE] < rxConfig()->mincheck) {
+            if (throttle < mincheck) {
                 return THROTTLE_LOW;
             }
-        } else if ((rcData[THROTTLE] > (rxConfig()->midrc - flight3DConfig()->deadband3d_throttle) && rcData[THROTTLE] < (rxConfig()->midrc + flight3DConfig()->deadband3d_throttle))) {
+        } else if (fabsf(throttle - rcUsToNorm(rxConfig()->midrc)) < rcUsSpanToNorm(flight3DConfig()->deadband3d_throttle)) {
             return THROTTLE_LOW;
         }
-    } else if (rcData[THROTTLE] < rxConfig()->mincheck) {
+    } else if (throttle < mincheck) {
         return THROTTLE_LOW;
     }
 
@@ -154,13 +158,15 @@ void processRcStickPositions(void)
     static bool pendingApplyRollAndPitchTrimDeltaSave = false;
 
     // checking sticks positions
+    const float mincheck = rcUsToNorm(rxConfig()->mincheck);
+    const float maxcheck = rcUsToNorm(rxConfig()->maxcheck);
     uint8_t stTmp = 0;
     for (int i = 0; i < 4; i++) {
         stTmp >>= 2;
-        if (rcData[i] > rxConfig()->mincheck) {
+        if (rcGetChannel(i) > mincheck) {
             stTmp |= 0x80;  // check for MIN
         }
-        if (rcData[i] < rxConfig()->maxcheck) {
+        if (rcGetChannel(i) < maxcheck) {
             stTmp |= 0x40;  // check for MAX
         }
     }
@@ -428,4 +434,8 @@ void rcControlsInit(void)
 {
     analyzeModeActivationConditions();
     isUsingSticksToArm = !isModeActivationConditionPresent(BOXARM) && systemConfig()->enableStickArming;
+    // Mode ranges change live over MSP, so any task gated on a mode being assigned has to
+    // be re-evaluated here rather than only at boot. Safe before tasksInit(), which starts
+    // by clearing the scheduler queue and re-enabling everything.
+    tasksUpdateModeGatedEnables();
 }

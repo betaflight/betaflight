@@ -94,12 +94,14 @@
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
+#include "io/displayport_msp.h"
 #include "io/flashfs.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
 #include "io/serial_4way.h"
+#include "io/serial_feature_map.h"
 #include "io/transponder_ir.h"
 #include "io/usb_msc.h"
 #include "io/vtx_control.h"
@@ -109,6 +111,7 @@
 #include "msp/msp_box.h"
 #include "msp/msp_build_info.h"
 #include "msp/msp_protocol.h"
+#include "msp/msp_reboot.h"
 #include "msp/msp_protocol_v2_betaflight.h"
 #include "msp/msp_protocol_v2_common.h"
 #include "msp/msp_serial.h"
@@ -151,6 +154,7 @@
 #include "sensors/gyro_init.h"
 #include "sensors/rangefinder.h"
 #include "sensors/opticalflow.h"
+#include "sensors/pitot.h"
 
 #include "telemetry/msp_shared.h"
 #include "telemetry/telemetry.h"
@@ -199,7 +203,6 @@ typedef enum {
     MSP_PASSTHROUGH_ESC_CASTLE = PROTOCOL_CASTLE,
 
     MSP_PASSTHROUGH_SERIAL_ID = 0xFD,
-    MSP_PASSTHROUGH_SERIAL_FUNCTION_ID = 0xFE,
 
     MSP_PASSTHROUGH_ESC_4WAY = 0xFF,
 } mspPassthroughType_e;
@@ -271,14 +274,6 @@ RAM_CODE static serialPort_t *mspFindPassthroughSerialPort(void)
         portUsage = findSerialPortUsageByIdentifier(mspPassthroughArgument);
         break;
     }
-    case MSP_PASSTHROUGH_SERIAL_FUNCTION_ID:
-    {
-        const serialPortConfig_t *portConfig = findSerialPortConfig(1 << mspPassthroughArgument);
-        if (portConfig) {
-            portUsage = findSerialPortUsageByIdentifier(portConfig->identifier);
-        }
-        break;
-    }
     }
     return portUsage ? portUsage->serialPort : NULL;
 }
@@ -309,7 +304,6 @@ RAM_CODE static void mspFcSetPassthroughCommand(sbuf_t *dst, sbuf_t *src, mspPos
     switch (mspPassthroughMode) {
 #ifdef USE_SERIAL_PASSTHROUGH
     case MSP_PASSTHROUGH_SERIAL_ID:
-    case MSP_PASSTHROUGH_SERIAL_FUNCTION_ID:
         if (mspFindPassthroughSerialPort()) {
             if (mspPostProcessFn) {
                 *mspPostProcessFn = mspSerialPassthroughFn;
@@ -377,6 +371,10 @@ RAM_CODE static void mspRebootFn(serialPort_t *serialPort)
 {
     UNUSED(serialPort);
 
+    if (!mspRebootIsAllowed()) {
+        return;
+    }
+
     motorShutdown();
 
     switch (rebootMode) {
@@ -428,7 +426,7 @@ RAM_CODE static void mspReboot(dispatchEntry_t* self)
 {
     UNUSED(self);
 
-    if (ARMING_FLAG(ARMED)) {
+    if (!mspRebootIsAllowed()) {
         return;
     }
 
@@ -559,10 +557,7 @@ RAM_CODE static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, 
     }
     // size will be lower than that requested if we reach end of volume
     const uint32_t flashfsSize = flashfsGetSize();
-    if (readLen > flashfsSize - address) {
-        // truncate the request
-        readLen = flashfsSize - address;
-    }
+    readLen = flashfsReadLength(flashfsSize, address, readLen);
     sbufWriteU32(dst, address);
 
     // legacy format does not support compression
@@ -643,10 +638,42 @@ RAM_CODE static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, 
 #endif // USE_FLASHFS
 
 /*
+ * Returns true when the request arrived on the UART shared between FUNCTION_MSP and
+ * FUNCTION_VTX_MSP, i.e. from an HD VTX rather than from Configurator.
+ *
+ * Replies to that port have to stay within the wire format the oldest MSP-query type OSD
+ * consumers can still parse. The DJI V1 air unit / Caddx Vista renders the OSD itself from
+ * MSP_OSD_CONFIG and silently drops the whole reply - and with it every OSD element - once it
+ * outgrows the Betaflight 4.5 layout. Configurator, on VCP, keeps receiving the full reply.
+ */
+// The serial-config commands still present four baud rates per port on the
+// wire.  They are rebuilt from the feature PGs that own them so existing
+// Configurator builds keep working unchanged.
+RAM_CODE static void mspWritePortBaudRates(sbuf_t *dst, serialPortIdentifier_e identifier)
+{
+    for (unsigned i = 0; i < SERIAL_BAUD_CLASS_COUNT; i++) {
+        sbufWriteU8(dst, serialSynthesizePortBaud(identifier, i));
+    }
+}
+
+RAM_CODE static bool mspSrcIsVtxPort(mspDescriptor_t srcDesc)
+{
+#ifdef USE_MSP_DISPLAYPORT
+    const serialPortIdentifier_e vtxPort = displayPortMspGetSerial();
+
+    return vtxPort != SERIAL_PORT_NONE && srcDesc == getMspSerialPortDescriptor(vtxPort);
+#else
+    UNUSED(srcDesc);
+
+    return false;
+#endif
+}
+
+/*
  * Returns true if the command was processd, false otherwise.
  * May set mspPostProcessFunc to a function to be called once the command has been processed
  */
-RAM_CODE static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
+RAM_CODE static bool mspCommonProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
 {
     UNUSED(mspPostProcessFn);
 
@@ -665,7 +692,10 @@ RAM_CODE static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, msp
         sbufWriteU8(dst, (uint8_t)(FC_VERSION_YEAR - FC_CALVER_BASE_YEAR)); // year since 2000
         sbufWriteU8(dst, FC_VERSION_MONTH);
         sbufWriteU8(dst, FC_VERSION_PATCH_LEVEL);
-        sbufWritePString(dst, FC_VERSION_STRING);
+        if (!mspSrcIsVtxPort(srcDesc)) {
+            // this reply was 3 bytes up to and including API 1.46; keep that shape for HD VTXs
+            sbufWritePString(dst, FC_VERSION_STRING);
+        }
         break;
 
     case MSP2_MCU_INFO: {
@@ -965,18 +995,16 @@ RAM_CODE static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, msp
     case MSP_OSD_CONFIG: {
 #define OSD_FLAGS_OSD_FEATURE           (1 << 0)
 //#define OSD_FLAGS_OSD_SLAVE             (1 << 1)
-#define OSD_FLAGS_RESERVED_1            (1 << 2)
+#define OSD_FLAGS_OSD_HARDWARE_FB_OSD   (1 << 2) // was OSD_FLAGS_RESERVED_1
 #define OSD_FLAGS_OSD_HARDWARE_FRSKYOSD (1 << 3)
 #define OSD_FLAGS_OSD_HARDWARE_MAX_7456 (1 << 4)
 #define OSD_FLAGS_OSD_DEVICE_DETECTED   (1 << 5)
 #define OSD_FLAGS_OSD_MSP_DEVICE        (1 << 6)
 #define OSD_FLAGS_OSD_HARDWARE_AIRBOT_THEIA_OSD (1 << 7)
 
-#if ENABLE_FB_OSD
-// TODO allocated a new flag for FB_OSD (maybe reuse 1 << 1 ? ), and update Configurator accordingly.
-// For now, pretend to Configurator that we are max7456
-#define OSD_FLAGS_OSD_HARDWARE_FB_OSD   (1 << 4)
-#endif
+        // HD VTXs are served the MSP API 1.46 layout, see mspSrcIsVtxPort()
+        const bool legacyLayout = mspSrcIsVtxPort(srcDesc);
+        const uint8_t itemCount = legacyLayout ? OSD_ITEM_COUNT_API_1_46 : OSD_ITEM_COUNT;
 
         uint8_t osdFlags = 0;
 
@@ -1044,12 +1072,12 @@ RAM_CODE static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, msp
 
         // Reuse old timer alarm (U16) as OSD_ITEM_COUNT
         sbufWriteU8(dst, 0);
-        sbufWriteU8(dst, OSD_ITEM_COUNT);
+        sbufWriteU8(dst, itemCount);
 
         sbufWriteU16(dst, osdConfig()->alt_alarm);
 
         // Element position and visibility
-        for (int i = 0; i < OSD_ITEM_COUNT; i++) {
+        for (int i = 0; i < itemCount; i++) {
             sbufWriteU16(dst, osdElementConfig()->item_pos[i]);
         }
 
@@ -1098,8 +1126,10 @@ RAM_CODE static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, msp
         // API >= 1.46
         sbufWriteU16(dst, osdConfig()->link_quality_alarm);
 
-        // API >= 1.47
-        sbufWriteU16(dst, osdConfig()->rssi_dbm_alarm);
+        if (!legacyLayout) {
+            // API >= 1.47
+            sbufWriteU16(dst, osdConfig()->rssi_dbm_alarm);
+        }
 
         break;
     }
@@ -1139,7 +1169,7 @@ RAM_CODE static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMS
 #else
         sbufWriteU16(dst, 0);
 #endif
-        sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_RANGEFINDER) << 4 | sensors(SENSOR_GYRO) << 5 | sensors(SENSOR_OPTICALFLOW) << 6);
+        sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_RANGEFINDER) << 4 | sensors(SENSOR_GYRO) << 5 | sensors(SENSOR_OPTICALFLOW) << 6 | sensors(SENSOR_PITOT) << 7);
         sbufWriteData(dst, &flightModeFlags, 4);        // unconditional part of flags, first 32 bits
         sbufWriteU8(dst, getCurrentPidProfileIndex());
         sbufWriteU16(dst, constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE));
@@ -1373,7 +1403,7 @@ case MSP_NAME:
         int16_t w = lrintf(imuAttitudeQuaternion.w * q_scale);
         int16_t x = lrintf(imuAttitudeQuaternion.x * q_scale);
         int16_t y = lrintf(imuAttitudeQuaternion.y * q_scale);
-        int16_t z = lrintf(imuAttitudeQuaternion.z * q_scale); 
+        int16_t z = lrintf(imuAttitudeQuaternion.z * q_scale);
         // Write their bit representation as uint16_t
         sbufWriteU16(dst, *(uint16_t*)&w);
         sbufWriteU16(dst, *(uint16_t*)&x);
@@ -1519,6 +1549,9 @@ case MSP_NAME:
 #else
         sbufWriteU8(dst, 0);
 #endif
+
+        // API 1.49
+        sbufWriteU16(dst, motorConfig()->kv);
         break;
 
 #ifdef USE_MAG
@@ -1576,6 +1609,10 @@ case MSP_NAME:
         sbufWriteU16(dst, gpsSol.groundCourse);
         // Added in API version 1.44
         sbufWriteU16(dst, gpsSol.dop.pdop);
+        // Added in API version 1.49
+        sbufWriteU16(dst, gpsSol.dop.hdop);
+        sbufWriteU16(dst, gpsSol.dop.vdop);
+        sbufWriteU8(dst, gpsSol.numSatInView);
         break;
 
     case MSP_COMP_GPS:
@@ -1738,36 +1775,35 @@ case MSP_NAME:
 
     case MSP_CF_SERIAL_CONFIG:
         for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
-            if (!serialIsPortAvailable(serialConfig()->portConfigs[i].identifier)) {
+            const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
+            if (!serialIsPortAvailable(identifier)) {
                 continue;
             };
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier);
-            sbufWriteU16(dst, serialConfig()->portConfigs[i].functionMask);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].msp_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].gps_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].telemetry_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].blackbox_baudrateIndex);
+            sbufWriteU8(dst, identifier);
+            // Assignments live on the feature PGs and are surfaced over the
+            // CLI; a zero mask here reads as unassigned on old configurators
+            // rather than a view they would try to edit.
+            sbufWriteU16(dst, 0);
+            mspWritePortBaudRates(dst, identifier);
         }
         break;
 
     case MSP2_COMMON_SERIAL_CONFIG: {
         uint8_t count = 0;
         for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
-            if (serialIsPortAvailable(serialConfig()->portConfigs[i].identifier)) {
+            if (serialIsPortAvailable(serialPortIdentifiers[i])) {
                 count++;
             }
         }
         sbufWriteU8(dst, count);
         for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
-            if (!serialIsPortAvailable(serialConfig()->portConfigs[i].identifier)) {
+            const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
+            if (!serialIsPortAvailable(identifier)) {
                 continue;
             };
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier);
-            sbufWriteU32(dst, serialConfig()->portConfigs[i].functionMask);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].msp_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].gps_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].telemetry_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].blackbox_baudrateIndex);
+            sbufWriteU8(dst, identifier);
+            sbufWriteU32(dst, 0);
+            mspWritePortBaudRates(dst, identifier);
         }
         break;
     }
@@ -2063,13 +2099,8 @@ case MSP_NAME:
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
 #endif
-#if defined(USE_INTEGRATED_YAW_CONTROL)
-        sbufWriteU8(dst, currentPidProfile->use_integrated_yaw);
-        sbufWriteU8(dst, currentPidProfile->integrated_yaw_relax);
-#else
-        sbufWriteU8(dst, 0);
-        sbufWriteU8(dst, 0);
-#endif
+        sbufWriteU8(dst, 0); // was use_integrated_yaw
+        sbufWriteU8(dst, 0); // was integrated_yaw_relax
 #if defined(USE_ITERM_RELAX)
         // Added in MSP API 1.42
         sbufWriteU8(dst, currentPidProfile->iterm_relax_cutoff);
@@ -2142,6 +2173,12 @@ case MSP_NAME:
 #else
         sbufWriteU8(dst, OPTICALFLOW_NONE);
 #endif
+        // Added in MSP API 1.49
+#ifdef USE_PITOT
+        sbufWriteU8(dst, pitotConfig()->pitot_hardware);
+#else
+        sbufWriteU8(dst, PITOT_NONE);
+#endif
         break;
 
     // Added in MSP API 1.46
@@ -2176,6 +2213,11 @@ case MSP_NAME:
 #endif
 #ifdef USE_OPTICALFLOW
         sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_OPTICALFLOW]);
+#else
+        sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
+#endif
+#ifdef USE_PITOT
+        sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_PITOT]);
 #else
         sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
 #endif
@@ -2259,6 +2301,48 @@ case MSP_NAME:
         break;
     }
 #endif
+
+    case MSP_WING: {
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            sbufWriteU8(dst, currentPidProfile->pid[i].S);
+        }
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            sbufWriteU16(dst, currentPidProfile->spa_center[i]);
+        }
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            sbufWriteU16(dst, currentPidProfile->spa_width[i]);
+        }
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            sbufWriteU8(dst, currentPidProfile->spa_mode[i]);
+        }
+        sbufWriteU8(dst, currentPidProfile->tpa_curve_type);
+        sbufWriteU8(dst, currentPidProfile->tpa_curve_stall_throttle);
+        sbufWriteU16(dst, currentPidProfile->tpa_curve_pid_thr0);
+        sbufWriteU16(dst, currentPidProfile->tpa_curve_pid_thr100);
+        sbufWriteU8(dst, (uint8_t)currentPidProfile->tpa_curve_expo);
+        sbufWriteU8(dst, currentPidProfile->tpa_speed_type);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_basic_delay);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_basic_gravity);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_adv_prop_pitch);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_adv_mass);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_adv_drag_k);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_adv_thrust);
+        sbufWriteU16(dst, currentPidProfile->tpa_speed_max_voltage);
+        sbufWriteU16(dst, (uint16_t)currentPidProfile->tpa_speed_pitch_offset);
+        sbufWriteU8(dst, currentPidProfile->yaw_type);
+        sbufWriteU16(dst, (uint16_t)currentPidProfile->angle_pitch_offset);
+        break;
+    }
+
+    case MSP_PITOT:
+#if defined(USE_PITOT)
+        sbufWriteU32(dst, (uint32_t)(int32_t)pitot.airspeed);
+        sbufWriteU32(dst, (uint32_t)(int32_t)pitot.diffPressure);
+#else
+        sbufWriteU32(dst, 0);
+        sbufWriteU32(dst, 0);
+#endif
+        break;
 
     default:
         unsupportedCommand = true;
@@ -2411,6 +2495,10 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
         }
         break;
     case MSP_REBOOT:
+        if (!mspRebootIsAllowed()) {
+            return MSP_RESULT_ERROR;
+        }
+
         if (sbufBytesRemaining(src)) {
             rebootMode = sbufReadU8(src);
 
@@ -2731,7 +2819,6 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
 
             // get/response: return "name = value"
             // for set, this confirms the new value; for get, this returns the current value
-            char buf[len + 1];
             // extract just the name (before '=' if present)
             if (eq) {
                 // trim trailing spaces from name
@@ -2741,14 +2828,21 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
                 }
                 *nameEnd = '\0';
             }
-            const int written = cliGetSettingByName(cmdline, buf, len + 1);
-            if (written < 0 || written > (int)sbufBytesRemaining(dst)) {
+            // Format straight into the response buffer, sized by what the response
+            // can actually hold. This previously used a scratch buffer sized from
+            // the REQUEST length, which is never enough for a read: the reply is
+            // "name = value" and the request is only "name", so cliGetSettingByName
+            // always ran out of room and returned -1, and every get answered
+            // MSP_RESULT_ERROR. Writes happened to fit only because there the
+            // request carries the value too.
+            const int written = cliGetSettingByName(cmdline, (char *)sbufPtr(dst), (int)sbufBytesRemaining(dst));
+            if (written < 0) {
                 if (!eq) {
                     return MSP_RESULT_ERROR;
                 }
                 // set succeeded but echo failed; acknowledge the set
             } else {
-                sbufWriteData(dst, buf, written);
+                sbufAdvance(dst, written);
             }
         }
         break;
@@ -2802,6 +2896,88 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
             hdr[1] = (totalLen >> 8) & 0xFF;
 
             sbufAdvance(dst, written);
+        }
+        break;
+#endif
+
+#ifdef USE_MSP_CLI_COMMAND
+    case MSP2_CLI_COMMAND:
+        {
+            // request: <cmdline>[\0<offset_u16>]  (offset optional, defaults to 0)
+            // response: <total_len_u16><flags_u8><output window from [offset, ...]>
+            static char cliCmdBuffer[MSP_CLI_COMMAND_BUFFER_SIZE];
+            static char cliCmdName[128];
+            static int cliCmdTotalLen = 0;
+            static bool cliCmdTruncated = false;
+
+            // A line the CLI input buffer cannot hold would be silently truncated by
+            // processCharacter() and then executed as a different command.
+            _Static_assert(sizeof(cliCmdName) < CLI_IN_BUFFER_SIZE,
+                           "MSP CLI command line must fit the CLI input buffer");
+
+            // <cmdline> + NUL + optional u16 offset
+            char req[sizeof(cliCmdName) + 3];
+            const int len = sbufBytesRemaining(src);
+            if (len == 0 || len >= (int)sizeof(req)) {
+                return MSP_RESULT_ERROR;
+            }
+            sbufReadData(src, req, len);
+            req[len] = '\0';
+
+            uint16_t offset = 0;
+            int nameLen = len;
+            const void *nul = memchr(req, '\0', len);
+            if (nul) {
+                nameLen = (const char *)nul - req;
+                if (len - nameLen - 1 >= 2) {
+                    offset = (uint8_t)req[nameLen + 1] | ((uint8_t)req[nameLen + 2] << 8);
+                }
+            }
+            req[nameLen] = '\0';
+
+            if (nameLen >= (int)sizeof(cliCmdName) || sbufBytesRemaining(dst) < 3) {
+                return MSP_RESULT_ERROR;
+            }
+
+            uint8_t flags = 0;
+            if (offset == 0) {
+                // 'dump', 'diff' and 'save' can run long; don't bill it to the MSP task
+                schedulerIgnoreTaskStateTime();
+                const int produced = cliExecuteCommand(req, cliCmdBuffer, sizeof(cliCmdBuffer));
+                if (produced == CLI_COMMAND_REFUSED) {
+                    cliCmdName[0] = '\0';
+                    cliCmdTotalLen = 0;
+                    cliCmdTruncated = false;
+                    sbufWriteU16(dst, 0);
+                    sbufWriteU8(dst, MSP2_CLI_COMMAND_FLAG_REFUSED);
+                    break;
+                }
+                cliCmdTruncated = produced > (int)sizeof(cliCmdBuffer);
+                cliCmdTotalLen = cliCmdTruncated ? (int)sizeof(cliCmdBuffer) : produced;
+                strcpy(cliCmdName, req);
+            } else {
+                // continuation: the client resends the same command line to page further
+                if (cliCmdName[0] == '\0' || strcmp(cliCmdName, req) != 0) {
+                    sbufWriteU16(dst, 0);
+                    sbufWriteU8(dst, MSP2_CLI_COMMAND_FLAG_REFUSED);
+                    break;
+                }
+            }
+            if (cliCmdTruncated) {
+                flags |= MSP2_CLI_COMMAND_FLAG_TRUNCATED;
+            }
+
+            sbufWriteU16(dst, (uint16_t)cliCmdTotalLen);
+            sbufWriteU8(dst, flags);
+
+            if (offset < cliCmdTotalLen) {
+                int window = cliCmdTotalLen - offset;
+                const int room = sbufBytesRemaining(dst);
+                if (window > room) {
+                    window = room;
+                }
+                sbufWriteData(dst, cliCmdBuffer + offset, window);
+            }
         }
         break;
 #endif
@@ -2877,12 +3053,6 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             copyControlRateProfile(dstProfileIndex, srcProfileIndex);
         }
         break;
-
-#if defined(USE_GPS) || defined(USE_MAG)
-    case MSP_SET_HEADING:
-        magHold = sbufReadU16(src);
-        break;
-#endif
 
     case MSP_SET_RAW_RC:
 #ifdef USE_RX_MSP
@@ -3062,6 +3232,11 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 #else
             sbufReadU8(src);
 #endif
+        }
+
+        // version 1.49
+        if (sbufBytesRemaining(src) >= 2) {
+            motorConfigMutable()->kv = sbufReadU16(src);
         }
         break;
 
@@ -3457,13 +3632,8 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             sbufReadU8(src);
             sbufReadU8(src);
 #endif
-#if defined(USE_INTEGRATED_YAW_CONTROL)
-            currentPidProfile->use_integrated_yaw = sbufReadU8(src);
-            currentPidProfile->integrated_yaw_relax = sbufReadU8(src);
-#else
-            sbufReadU8(src);
-            sbufReadU8(src);
-#endif
+            sbufReadU8(src); // was use_integrated_yaw
+            sbufReadU8(src); // was integrated_yaw_relax
         }
         if(sbufBytesRemaining(src) >= 1) {
             // Added in MSP API 1.42
@@ -3558,6 +3728,13 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             sbufReadU8(src);
 #endif
         }
+        if (sbufBytesRemaining(src) >= 1) {
+#ifdef USE_PITOT
+            pitotConfigMutable()->pitot_hardware = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+#endif
+        }
         break;
 
 #ifdef USE_ACC
@@ -3613,7 +3790,8 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
             if (sbufBytesRemaining(src) >= 1) {
                 // sample_rate specified, so use it directly
-                blackboxConfigMutable()->sample_rate = sbufReadU8(src);
+                const uint8_t sampleRate = sbufReadU8(src);
+                blackboxConfigMutable()->sample_rate = MIN(sampleRate, (uint8_t)BLACKBOX_SAMPLE_RATE_MAX);
             } else {
                 // sample_rate not specified in MSP, so calculate it from old p_ratio
                 blackboxConfigMutable()->sample_rate = blackboxCalculateSampleRate(pRatio);
@@ -4139,68 +4317,6 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         }
         break;
 
-    case MSP_SET_CF_SERIAL_CONFIG:
-        {
-            uint8_t portConfigSize = sizeof(uint8_t) + sizeof(uint16_t) + (sizeof(uint8_t) * 4);
-
-            if (dataSize % portConfigSize != 0) {
-                return MSP_RESULT_ERROR;
-            }
-
-            uint8_t remainingPortsInPacket = dataSize / portConfigSize;
-
-            while (remainingPortsInPacket--) {
-                uint8_t identifier = sbufReadU8(src);
-
-                serialPortConfig_t *portConfig = serialFindPortConfigurationMutable(identifier);
-
-                if (!portConfig) {
-                    return MSP_RESULT_ERROR;
-                }
-
-                portConfig->functionMask = sbufReadU16(src);
-                portConfig->msp_baudrateIndex = sbufReadU8(src);
-                portConfig->gps_baudrateIndex = sbufReadU8(src);
-                portConfig->telemetry_baudrateIndex = sbufReadU8(src);
-                portConfig->blackbox_baudrateIndex = sbufReadU8(src);
-            }
-        }
-        break;
-    case MSP2_COMMON_SET_SERIAL_CONFIG: {
-        if (dataSize < 1) {
-            return MSP_RESULT_ERROR;
-        }
-        unsigned count = sbufReadU8(src);
-        if (count == 0 || (dataSize - 1) % count != 0) {
-            return MSP_RESULT_ERROR;
-        }
-        unsigned portConfigSize = (dataSize - 1) / count;
-        unsigned expectedPortSize = sizeof(uint8_t) + sizeof(uint32_t) + (sizeof(uint8_t) * 4);
-        if (portConfigSize < expectedPortSize) {
-            return MSP_RESULT_ERROR;
-        }
-        for (unsigned ii = 0; ii < count; ii++) {
-            unsigned start = sbufBytesRemaining(src);
-            uint8_t identifier = sbufReadU8(src);
-            serialPortConfig_t *portConfig = serialFindPortConfigurationMutable(identifier);
-
-            if (!portConfig) {
-                return MSP_RESULT_ERROR;
-            }
-
-            portConfig->functionMask = sbufReadU32(src);
-            portConfig->msp_baudrateIndex = sbufReadU8(src);
-            portConfig->gps_baudrateIndex = sbufReadU8(src);
-            portConfig->telemetry_baudrateIndex = sbufReadU8(src);
-            portConfig->blackbox_baudrateIndex = sbufReadU8(src);
-            // Skip unknown bytes
-            while (start - sbufBytesRemaining(src) < portConfigSize && sbufBytesRemaining(src)) {
-                sbufReadU8(src);
-            }
-        }
-        break;
-    }
-
 #ifdef USE_LED_STRIP_STATUS_MODE
     case MSP_SET_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
@@ -4443,6 +4559,46 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         profile->batteryCapacity = capacity;
         profile->forceBatteryCellCount = forceCellCount;
         profile->consumptionWarningPercentage = consumptionWarnPct;
+        break;
+    }
+
+    case MSP_SET_WING: {
+        const unsigned expectedSize =
+            (sizeof(uint8_t) * (2 * XYZ_AXIS_COUNT + 5)) +
+            (sizeof(uint16_t) * (2 * XYZ_AXIS_COUNT + 11));
+        if (sbufBytesRemaining(src) < (int)expectedSize) {
+            return MSP_RESULT_ERROR;
+        }
+
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            currentPidProfile->pid[i].S = sbufReadU8(src);
+        }
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            currentPidProfile->spa_center[i] = sbufReadU16(src);
+        }
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            currentPidProfile->spa_width[i] = sbufReadU16(src);
+        }
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            currentPidProfile->spa_mode[i] = sbufReadU8(src);
+        }
+        currentPidProfile->tpa_curve_type = sbufReadU8(src);
+        currentPidProfile->tpa_curve_stall_throttle = sbufReadU8(src);
+        currentPidProfile->tpa_curve_pid_thr0 = sbufReadU16(src);
+        currentPidProfile->tpa_curve_pid_thr100 = sbufReadU16(src);
+        currentPidProfile->tpa_curve_expo = (int8_t)sbufReadU8(src);
+        currentPidProfile->tpa_speed_type = sbufReadU8(src);
+        currentPidProfile->tpa_speed_basic_delay = sbufReadU16(src);
+        currentPidProfile->tpa_speed_basic_gravity = sbufReadU16(src);
+        currentPidProfile->tpa_speed_adv_prop_pitch = sbufReadU16(src);
+        currentPidProfile->tpa_speed_adv_mass = sbufReadU16(src);
+        currentPidProfile->tpa_speed_adv_drag_k = sbufReadU16(src);
+        currentPidProfile->tpa_speed_adv_thrust = sbufReadU16(src);
+        currentPidProfile->tpa_speed_max_voltage = sbufReadU16(src);
+        currentPidProfile->tpa_speed_pitch_offset = (int16_t)sbufReadU16(src);
+        currentPidProfile->yaw_type = sbufReadU8(src);
+        currentPidProfile->angle_pitch_offset = (int16_t)sbufReadU16(src);
+        pidInitConfig(currentPidProfile);
         break;
     }
 
@@ -4776,7 +4932,7 @@ RAM_CODE mspResult_e mspFcProcessCommand(mspDescriptor_t srcDesc, mspPacket_t *c
     // initialize reply by default
     reply->cmd = cmd->cmd;
 
-    if (mspCommonProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
+    if (mspCommonProcessOutCommand(srcDesc, cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
     } else if (mspProcessOutCommand(srcDesc, cmdMSP, dst)) {
         ret = MSP_RESULT_ACK;
@@ -4804,7 +4960,7 @@ RAM_CODE static mspResult_e mspFcProcessOutCommand(mspDescriptor_t srcDesc, int1
     // initialize reply by default
     reply->cmd = cmdMSP;
 
-    if (mspCommonProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
+    if (mspCommonProcessOutCommand(srcDesc, cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
     } else if (mspProcessOutCommand(srcDesc, cmdMSP, dst)) {
         ret = MSP_RESULT_ACK;

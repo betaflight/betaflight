@@ -275,7 +275,16 @@ static void showWelcomePage(void)
 {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
-    tfp_sprintf(lineBuffer, "v%s (%s)", FC_VERSION_STRING, shortGitRevision);
+    // Version and revision no longer share a line: with calver plus an optional suffix
+    // (e.g. "2026.12.0-alpha") "v<version> (<revision>)" overruns lineBuffer.
+    STATIC_ASSERT(sizeof("v" FC_VERSION_STRING) <= sizeof(lineBuffer), version_line_too_long);
+    tfp_sprintf(lineBuffer, "v%s", FC_VERSION_STRING);
+    i2c_OLED_set_line(dev, rowIndex++);
+    i2c_OLED_send_string(dev, lineBuffer);
+
+    // shortGitRevision is __REVISION__, so the same check applies to the revision line.
+    STATIC_ASSERT(sizeof("(" __REVISION__ ")") <= sizeof(lineBuffer), revision_line_too_long);
+    tfp_sprintf(lineBuffer, "(%s)", shortGitRevision);
     i2c_OLED_set_line(dev, rowIndex++);
     i2c_OLED_send_string(dev, lineBuffer);
 
@@ -428,7 +437,9 @@ static void showGpsPage(void)
     i2c_OLED_set_xy(dev, HALF_SCREEN_CHARACTER_COLUMN_COUNT, rowIndex++);
     i2c_OLED_send_string(dev, lineBuffer);
 
+    STATIC_ASSERT(GPS_PACKET_LOG_ENTRY_COUNT < sizeof(lineBuffer), gps_packet_log_too_long);
     strncpy(lineBuffer, dashboardGpsPacketLog, GPS_PACKET_LOG_ENTRY_COUNT);
+    lineBuffer[GPS_PACKET_LOG_ENTRY_COUNT] = 0;
     padHalfLineBuffer();
     i2c_OLED_set_line(dev, rowIndex++);
     i2c_OLED_send_string(dev, lineBuffer);
@@ -440,7 +451,11 @@ static void showBatteryPage(void)
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
     if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE) {
-        tfp_sprintf(lineBuffer, "Volts: %d.%02d Cells: %d", getBatteryVoltage() / 100, getBatteryVoltage() % 100, getBatteryCellCount());
+        // 123456789012345678901
+        // Volts:DDD.DD Cells:DD
+        // force_battery_cell_count goes up to 24, so both fields can be two digits and the
+        // voltage three; the spaces after the colons are dropped to stay inside the line.
+        tfp_sprintf(lineBuffer, "Volts:%d.%02d Cells:%d", getBatteryVoltage() / 100, getBatteryVoltage() % 100, getBatteryCellCount());
         padLineBuffer();
         i2c_OLED_set_line(dev, rowIndex++);
         i2c_OLED_send_string(dev, lineBuffer);
@@ -469,7 +484,9 @@ static void showBatteryPage(void)
 static void showSensorsPage(void)
 {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
-    static const char *format = "%s %5d %5d %5d";
+    // Field width must hold the widest int16 value ("-32768"); the widths still line
+    // the columns up with the header below.
+    static const char *format = "%s%6d%6d%6d";
 
     i2c_OLED_set_line(dev, rowIndex++);
     i2c_OLED_send_string(dev, "        X     Y     Z");

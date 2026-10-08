@@ -30,6 +30,9 @@ GCC_REQUIRED_VERSION ?= 13.3.1
 ifeq ($(OSFAMILY)-$(ARCHFAMILY), linux-x86_64)
   ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi.tar.xz
   DL_CHECKSUM = 0601a9588bc5b9c99ad2b56133b7f118
+else ifeq ($(OSFAMILY)-$(ARCHFAMILY), linux-aarch64)
+  ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-aarch64-arm-none-eabi.tar.xz
+  DL_CHECKSUM = 303102d97b877ebbeb36b3158994b218
 else ifeq ($(OSFAMILY)-$(ARCHFAMILY), macosx-x86_64)
   ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-darwin-x86_64-arm-none-eabi.tar.xz
   DL_CHECKSUM = 4bb141e44b831635fde4e8139d470f1f

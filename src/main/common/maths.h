@@ -71,6 +71,7 @@
 
 #define HZ_TO_INTERVAL(x) (1.0f / (x))
 #define HZ_TO_INTERVAL_US(x) (1000000 / (x))
+#define US_TO_INTERVAL(us) ((us) * 1e-6f)   // microseconds to seconds
 
 #define SCALE_FACTOR(in_start, in_end, out_start, out_end) \
     ((float)((out_end) - (out_start)) / (float)((in_end) - (in_start)))

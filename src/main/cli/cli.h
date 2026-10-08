@@ -39,6 +39,12 @@ void cliProcessConfigFile(const char *filename);
 int cliGetSettingByName(const char *name, char *buf, int bufLen);
 int cliGetSettingInfoByName(const char *name, int offset, char *buf, int bufLen, int *totalLen);
 bool cliSetSettingByName(const char *cmdline);
+#ifdef USE_MSP_CLI_COMMAND
+#define CLI_COMMAND_REFUSED (-1)
+// Returns CLI_COMMAND_REFUSED, or the total logical output length. That length exceeds
+// outBufLen when the output was truncated; only outBufLen bytes are written to outBuf.
+int cliExecuteCommand(const char *cmdline, char *outBuf, int outBufLen);
+#endif
 #endif
 
 #ifdef USE_CLI_DEBUG_PRINT
