@@ -127,6 +127,7 @@ uint8_t getMotorCount(void);
 float getMotorMixRange(void);
 bool areMotorsRunning(void);
 bool areMotorsSaturated(void);
+bool isMotorOutputReversed(void);
 
 void mixerLoadMix(int index, motorMixer_t *customMixers);
 void initEscEndpoints(void);
