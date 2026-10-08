@@ -35,6 +35,10 @@
 #define PWM_RANGE (PWM_RANGE_MAX - PWM_RANGE_MIN)
 #define PWM_RANGE_MIDDLE (PWM_RANGE_MIN + (PWM_RANGE / 2))
 
+#define NORMALISED_RANGE_MIN (-1.0f)
+#define NORMALISED_RANGE_MAX 1.0f
+#define NORMALISED_RANGE (NORMALISED_RANGE_MAX - NORMALISED_RANGE_MIN)
+
 #define PWM_PULSE_MIN   750       // minimum PWM pulse width which is considered valid
 #define PWM_PULSE_MAX   2250      // maximum PWM pulse width which is considered valid
 
@@ -86,6 +90,22 @@ typedef enum {
 extern const char rcChannelLetters[];
 
 extern float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [1000;2000]
+
+static inline float rcUsToNorm(float us)
+{
+    return (us - PWM_RANGE_MIDDLE) * NORMALISED_RANGE / PWM_RANGE;
+}
+
+static inline float rcUsSpanToNorm(float us)
+{
+    return us * NORMALISED_RANGE / PWM_RANGE;
+}
+
+// -1 at 1000us, 0 at 1500us, +1 at 2000us, not clamped
+static inline float rcGetChannel(int channel)
+{
+    return rcUsToNorm(rcData[channel]);
+}
 
 #define RSSI_SCALE_MIN 1
 #define RSSI_SCALE_MAX 255
