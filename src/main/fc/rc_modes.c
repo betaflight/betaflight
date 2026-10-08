@@ -104,9 +104,9 @@ bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range)
         return false;
     }
 
-    const uint16_t channelValue = constrain(rcData[auxChannelIndex + NON_AUX_CHANNEL_COUNT], CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX - 1);
-    return (channelValue >= 900 + (range->startStep * 25) &&
-            channelValue < 900 + (range->endStep * 25));
+    const float value = rcGetChannel(auxChannelIndex + NON_AUX_CHANNEL_COUNT);
+    return (range->startStep == MIN_MODE_RANGE_STEP || value >= MODE_STEP_TO_NORM(range->startStep))
+        && (range->endStep == MAX_MODE_RANGE_STEP || value < MODE_STEP_TO_NORM(range->endStep));
 }
 
 /*
