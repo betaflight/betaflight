@@ -165,6 +165,9 @@ static const uint16_t buildOptions[] = {
 #ifdef USE_RANGEFINDER
         BUILD_OPTION_RANGEFINDER,
 #endif
+#ifdef USE_RADAR
+        BUILD_OPTION_RADAR,
+#endif
 #ifdef USE_SOFTSERIAL
         BUILD_OPTION_SOFTSERIAL,
 #endif

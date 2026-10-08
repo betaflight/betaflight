@@ -944,6 +944,12 @@ extern struct linker_symbol __fontdata_end;
 #define USE_OSD_NAV_MAP
 #endif
 
+// Peer radar (FormationFlight / INAV-Radar over MSP) positions peers relative to
+// our own GPS fix and only shows them on the OSD.
+#if defined(USE_RADAR) && !(defined(USE_GPS) && defined(USE_OSD))
+#undef USE_RADAR
+#endif
+
 #if defined(USE_POSITION_HOLD) && !(defined(USE_GPS) || defined(USE_OPTICALFLOW))
 #error "USE_POSITION_HOLD requires USE_GPS and/or USE_OPTICALFLOW to be defined"
 #endif
