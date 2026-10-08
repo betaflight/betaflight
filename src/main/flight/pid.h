@@ -42,6 +42,13 @@
 #define PID_GAIN_MAX 250
 #define F_GAIN_MAX 1000
 
+#define ANGLE_LIMIT_MIN 10
+#define ANGLE_LIMIT_MAX 80
+#define ANGLE_P_GAIN_MAX 200
+#define HORIZON_LEVEL_STRENGTH_MAX 100
+#define HORIZON_LIMIT_STICKS_MIN 10
+#define HORIZON_LIMIT_STICKS_MAX 200
+
 // Scaling factors for Pids for better tunable range in configurator for betaflight pid controller. The scaling is based on legacy pid controller or previous float
 #define PTERM_SCALE 0.032029f
 #define ITERM_SCALE 0.244381f
@@ -60,6 +67,22 @@
 #define ANTIGRAVITY_KP 0.0034f; // one fifth of the I gain on P by default
 #define ITERM_ACCELERATOR_GAIN_OFF 0
 #define ITERM_ACCELERATOR_GAIN_MAX 250
+#define ITERM_RELAX_CUTOFF_MIN 1
+#define ITERM_RELAX_CUTOFF_MAX 50
+#define RATE_ACCEL_LIMIT_MAX 500
+#define THROTTLE_BOOST_MAX 100
+#define ACRO_TRAINER_ANGLE_LIMIT_MIN 10
+#define ACRO_TRAINER_ANGLE_LIMIT_MAX 80
+#define D_MAX_GAIN_MAX 100
+#define D_MAX_ADVANCE_MAX 200
+#define THRUST_LINEARIZATION_MAX 150
+#define VBAT_SAG_COMPENSATION_MAX 150
+#define DYN_IDLE_MIN_RPM_MAX 200
+#define FEEDFORWARD_TRANSITION_MAX 100
+#define FEEDFORWARD_SMOOTH_FACTOR_MAX 95
+#define FEEDFORWARD_JITTER_FACTOR_MAX 20
+#define FEEDFORWARD_BOOST_MAX 50
+#define FEEDFORWARD_MAX_RATE_LIMIT_MAX 200
 
 #define PID_ROLL_DEFAULT  { 45, 80, 30, 120, 0 }
 #define PID_PITCH_DEFAULT { 47, 84, 34, 125, 0 }
@@ -69,25 +92,25 @@
 #define DTERM_LPF1_DYN_MIN_HZ_DEFAULT 75
 #define DTERM_LPF1_DYN_MAX_HZ_DEFAULT 150
 #define DTERM_LPF2_HZ_DEFAULT 150
+#define DTERM_LPF1_DYN_EXPO_MAX 10
+#define YAW_LOWPASS_HZ_MAX 500
 
 #define TPA_MAX 100
-
-#ifdef USE_WING
+#define TPA_SPEED_PARAM_MIN 1
 #define ANGLE_PITCH_OFFSET_MAX 450
-#define S_TERM_SCALE 0.01f
-#define TPA_LOW_RATE_MIN INT8_MIN
-#define TPA_GRAVITY_MAX 5000
 #define TPA_CURVE_STALL_THROTTLE_MAX 100
-#else
-#define TPA_LOW_RATE_MIN 0
-#endif
-
-#ifdef USE_ADVANCED_TPA
 #define TPA_CURVE_PID_MAX 1000
 #define TPA_CURVE_EXPO_MIN -100
 #define TPA_CURVE_EXPO_MAX 100
 #define TPA_CURVE_PWL_SIZE 17
-#endif // USE_ADVANCED_TPA
+
+#ifdef USE_WING
+#define S_TERM_SCALE 0.01f
+#define TPA_LOW_RATE_MIN INT8_MIN
+#define TPA_GRAVITY_MAX 5000
+#else
+#define TPA_LOW_RATE_MIN 0
+#endif
 
 #define G_ACCELERATION 9.80665f // gravitational acceleration in m/s^2
 
