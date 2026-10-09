@@ -48,6 +48,7 @@
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
+#include "flight/landing_wing.h"
 #include "flight/launch_wing.h"
 #include "flight/mixer.h"
 #include "flight/mixer_init.h"
@@ -393,7 +394,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     // position-hold failure path too; let the specific WP warning below own it
     // rather than masking it with the generic POSHOLD FAIL.
     bool missionAbortActive = false;
-#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#if ENABLE_FLIGHT_PLAN
     missionAbortActive = FLIGHT_MODE(AUTOPILOT_MODE) && flightPlanNavGetAbortReason() != FP_ABORT_NONE;
 #endif
     if (osdWarnGetState(OSD_WARNING_POSHOLD_FAILED) && posHoldFailure() && !missionAbortActive) {
@@ -404,7 +405,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     }
 #endif
 
-#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#if ENABLE_FLIGHT_PLAN
     if (osdWarnGetState(OSD_WARNING_AUTOPILOT_ABORT)
         && FLIGHT_MODE(AUTOPILOT_MODE)
         && flightPlanNavGetAbortReason() != FP_ABORT_NONE) {
@@ -433,6 +434,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         return;
     }
 
+#ifndef USE_WING
     // Waypoint capture confirmations ("WP3 SET" / "WP2 DELETED" / "WP FULL").
     // Shown outside AUTOPILOT mode too - capture happens before engaging - and
     // below every critical warning; the cue self-expires.
@@ -444,13 +446,18 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             return;
         }
     }
+#endif
 
     // Mission progress cues, below every critical warning above. The mode
     // itself is shown by the flight-mode indicator; these surface the two
     // states that are otherwise invisible: the terminal descent and arrival.
     if (FLIGHT_MODE(AUTOPILOT_MODE)) {
         if (flightPlanNavGetState() == FP_NAV_LANDING) {
+#ifdef USE_WING
+            tfp_sprintf(warningText, (landingWingGetPhase() == LANDING_WING_GO_AROUND) ? "GO AROUND" : "WP LANDING");
+#else
             tfp_sprintf(warningText, "WP LANDING");
+#endif
             *displayAttr = DISPLAYPORT_SEVERITY_INFO;
             return;
         }

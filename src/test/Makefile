@@ -47,6 +47,33 @@ althold_unittest_SRC := \
 althold_unittest_DEFINES := \
 		USE_ALTITUDE_HOLD= \
 
+autopilot_wing_unittest_SRC := \
+		$(USER_DIR)/flight/autopilot_wing.c \
+		$(USER_DIR)/flight/alt_hold_wing.c \
+		$(USER_DIR)/flight/landing_wing.c \
+		$(USER_DIR)/flight/pos_hold_wing.c \
+		$(USER_DIR)/flight/gps_rescue_wing.c \
+		$(USER_DIR)/pg/autopilot.c \
+		$(USER_DIR)/pg/autopilot_wing.c \
+		$(USER_DIR)/pg/alt_hold_wing.c \
+		$(USER_DIR)/pg/pos_hold_wing.c \
+		$(USER_DIR)/pg/gps_rescue_wing.c \
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c \
+		$(USER_DIR)/common/filter.c
+
+autopilot_wing_unittest_DEFINES := \
+		USE_WING= \
+		USE_LAUNCH_WING= \
+		USE_ALTITUDE_HOLD= \
+		USE_POSITION_HOLD= \
+		USE_GPS= \
+		USE_GPS_RESCUE= \
+		USE_ACC=
+
 arming_prevention_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/filter.c \
@@ -246,6 +273,22 @@ flight_failsafe_unittest_DEFINES := \
 		USE_GPS_RESCUE= \
 		ENABLE_FLIGHT_PLAN=1
 
+flight_failsafe_wing_unittest_SRC := \
+		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/fc/rc_modes.c \
+		$(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/flight/failsafe.c \
+		$(USER_DIR)/pg/autopilot.c
+
+flight_failsafe_wing_unittest_DEFINES := \
+		USE_WING= \
+		USE_LAUNCH_WING= \
+		USE_ALTITUDE_HOLD= \
+		USE_GPS= \
+		USE_GPS_RESCUE= \
+		ENABLE_FLIGHT_PLAN=1 \
+		ENABLE_RESCUE_PLAN=1
+
 flight_failsafe_rescue_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/fc/rc_modes.c \
@@ -267,13 +310,30 @@ flight_imu_unittest_SRC := \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/flight/position.c \
-		$(USER_DIR)/flight/imu.c
+		$(USER_DIR)/flight/imu.c \
+		$(USER_DIR)/pg/autopilot_wing.c
+
+flight_imu_unittest_DEFINES := \
+		USE_WING=
 
 
 flight_mixer_unittest :=  \
 		$(USER_DIR)/flight/mixer.c \
 		$(USER_DIR)/flight/servos.c \
 		$(USER_DIR)/common/maths.c
+
+flight_mixer_wing_unittest_SRC := \
+		$(USER_DIR)/flight/mixer.c \
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/common/maths.c
+
+flight_mixer_wing_unittest_DEFINES := \
+		USE_WING= \
+		USE_LAUNCH_WING= \
+		USE_ALTITUDE_HOLD=
 
 
 gps_conversion_unittest_SRC := \
@@ -597,6 +657,20 @@ telemetry_mavlink_mission_unittest_DEFINES := \
 		USE_TELEMETRY_MAVLINK= \
 		ENABLE_TELEMETRY_MAVLINK_MISSION=1
 
+telemetry_mavlink_mission_wing_unittest_SRC := \
+		$(USER_DIR)/telemetry/mavlink_mission.c \
+		$(USER_DIR)/pg/flight_plan.c \
+		$(USER_DIR)/pg/autopilot.c
+
+telemetry_mavlink_mission_wing_unittest_DEFINES := \
+		USE_WING= \
+		USE_GPS= \
+		USE_FLIGHT_PLAN= \
+		ENABLE_FLIGHT_PLAN=1 \
+		USE_TELEMETRY= \
+		USE_TELEMETRY_MAVLINK= \
+		ENABLE_TELEMETRY_MAVLINK_MISSION=1
+
 transponder_ir_unittest_SRC := \
 		$(USER_DIR)/drivers/transponder_ir_ilap.c \
 		$(USER_DIR)/drivers/transponder_ir_arcitimer.c
@@ -696,6 +770,26 @@ poshold_unittest_SRC := \
 poshold_unittest_DEFINES := \
 		USE_POSITION_HOLD=
 
+landing_wing_unittest_SRC := \
+		$(USER_DIR)/flight/landing_wing.c \
+		$(USER_DIR)/pg/autopilot.c \
+		$(USER_DIR)/pg/autopilot_wing.c \
+		$(USER_DIR)/pg/gps_rescue_wing.c \
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
+
+landing_wing_unittest_DEFINES := \
+		USE_WING= \
+		USE_LAUNCH_WING= \
+		USE_RANGEFINDER= \
+		USE_GPS= \
+		USE_GPS_RESCUE= \
+		USE_FLIGHT_PLAN= \
+		ENABLE_FLIGHT_PLAN=1
+
 launch_wing_unittest_SRC := \
 		$(USER_DIR)/flight/launch_wing.c \
 		$(USER_DIR)/pg/launch_wing.c \
@@ -708,8 +802,10 @@ launch_wing_unittest_SRC := \
 launch_wing_unittest_DEFINES := \
 		USE_WING= \
 		USE_LAUNCH_WING= \
+		USE_ALTITUDE_HOLD= \
 		USE_GPS= \
-		USE_ACC=
+		USE_ACC= \
+		ENABLE_RESCUE_PLAN=1
 
 position_estimator_unittest_SRC := \
 		$(USER_DIR)/flight/position_estimator.c \
@@ -728,6 +824,9 @@ position_nav_unittest_SRC := \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/vector.c
 
+position_nav_unittest_DEFINES := \
+		USE_WING=
+
 flight_plan_nav_unittest_SRC := \
 		$(USER_DIR)/flight/flight_plan_nav.c \
 		$(USER_DIR)/pg/autopilot.c \
@@ -742,6 +841,25 @@ flight_plan_nav_unittest_DEFINES := \
 		USE_FLIGHT_PLAN= \
 		USE_ALTITUDE_HOLD= \
 		ENABLE_FLIGHT_PLAN=1
+
+flight_plan_nav_wing_unittest_SRC := \
+		$(USER_DIR)/flight/flight_plan_nav.c \
+		$(USER_DIR)/flight/flight_plan_nav_wing.c \
+		$(USER_DIR)/pg/autopilot.c \
+		$(USER_DIR)/pg/autopilot_wing.c \
+		$(USER_DIR)/pg/flight_plan.c \
+		$(USER_DIR)/pg/gps_rescue_wing.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
+
+flight_plan_nav_wing_unittest_DEFINES := \
+		USE_WING= \
+		USE_GPS= \
+		USE_GPS_RESCUE= \
+		USE_FLIGHT_PLAN= \
+		USE_ALTITUDE_HOLD= \
+		ENABLE_FLIGHT_PLAN=1 \
+		ENABLE_RESCUE_PLAN=1
 
 flight_plan_capture_unittest_SRC := \
 		$(USER_DIR)/flight/flight_plan_capture.c \
