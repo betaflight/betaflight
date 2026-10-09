@@ -56,6 +56,18 @@ void ws2811LedStripInit(ioTag_t ioTag, ledStripFormatRGB_e ledFormat)
     ledStripIoTag = ioTag;
 }
 
+// Set every LED bit slot of the transfer buffer to a '0' bit pulse, so each frame is
+// WS2811_DATA_BUFFER_SIZE * WS2811_BITS_PER_LED_MAX bits long whatever the configured LED format.
+// Slots after the last LED of a 24 bit format are otherwise sent as a constant low level, which some
+// LED controllers (e.g. BETAFPV NightFire) do not accept. The trailing delay slots are left at zero.
+// Must be called once BIT_COMPARE_0 is set.
+void ws2811LedStripClearTransferBuffer(void)
+{
+    for (unsigned i = 0; i < WS2811_DATA_BUFFER_SIZE * WS2811_BITS_PER_LED_MAX; i++) {
+        ledStripDMABuffer[i] = BIT_COMPARE_0;
+    }
+}
+
 void ws2811LedStripUpdateTransferBuffer(const rgbColor24bpp_t *color, unsigned ledIndex)
 {
     uint32_t bits_per_led;

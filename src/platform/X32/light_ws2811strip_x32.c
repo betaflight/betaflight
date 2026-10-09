@@ -136,6 +136,7 @@ bool ws2811LedStripHardwareInit(void)
 
     BIT_COMPARE_1 = period / 3 * 2;
     BIT_COMPARE_0 = period / 3;
+    ws2811LedStripClearTransferBuffer();
 
     TIM_TimeBaseInitTypeDef timeBaseInit;
     TIM_InitTimBaseStruct(&timeBaseInit);
