@@ -40,9 +40,13 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
+#include "flight/alt_hold.h"
+#include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/flight_plan_nav.h"
 #include "flight/gps_rescue.h"
+#include "flight/launch_wing.h"
+#include "flight/mixer.h"
 
 #include "io/beeper.h"
 
@@ -283,6 +287,17 @@ static void failsafeStartProcedure(failsafeProcedure_e procedure)
     }
 }
 
+#if ENABLE_RESCUE_PLAN && defined(USE_WING)
+// A wing cannot come down where its mission ends: it stages a rescue to fly home and land there.
+static bool failsafeStageRescueAtMissionEnd(void)
+{
+    return isFixedWing() && FLIGHT_MODE(AUTOPILOT_MODE)
+        && flightPlanNavGetState() == FP_NAV_COMPLETE
+        && !flightPlanNavIsRescuePlanActive()
+        && flightPlanNavStageRescuePlan();
+}
+#endif
+
 FAST_CODE_NOINLINE void failsafeUpdateState(void)
 // triggered directly, and ONLY, by the scheduler, at 10ms = PERIOD_RXDATA_FAILURE - intervals
 {
@@ -321,10 +336,15 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 failsafeState.boxFailsafeSwitchWasOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
                 // store and use the switch state as it was at the start of the failsafe
                 if (armed) {
-#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
-                    const bool autopilotControlsThrottle = FLIGHT_MODE(AUTOPILOT_MODE) && flightPlanNavIsActive();
+#if ENABLE_FLIGHT_PLAN
+                    bool autopilotControlsThrottle = FLIGHT_MODE(AUTOPILOT_MODE) && flightPlanNavIsActive();
 #else
-                    const bool autopilotControlsThrottle = false;
+                    bool autopilotControlsThrottle = false;
+#endif
+#ifdef USE_WING
+                    // a wing in altitude hold flies its own throttle, wherever the stick sits
+                    autopilotControlsThrottle = autopilotControlsThrottle
+                        || (isFixedWing() && FLIGHT_MODE(ALT_HOLD_MODE) && autopilotThrottleValid());
 #endif
                     // Track throttle command below minimum time
                     if (calculateThrottleStatus() != THROTTLE_LOW) {
@@ -341,11 +361,13 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                         //  allow re-arming 1 second after Rx recovery, customisable
                         reprocessState = true;
                     } else if (!receivingRxData) {
-                        if (millis() > failsafeState.throttleLowPeriod && !autopilotControlsThrottle
+                        if ((millis() > failsafeState.throttleLowPeriod && !autopilotControlsThrottle
 #ifdef USE_GPS_RESCUE
                             && failsafeConfig()->failsafe_procedure != FAILSAFE_PROCEDURE_GPS_RESCUE
 #endif
-                            ) {
+                            )
+                            // a wing still in the hand is on the ground, whatever the throttle
+                            || launchWingAwaitingThrow()) {
                             //  JustDisarm if throttle was LOW for at least 'failsafe_throttle_low_delay' before failsafe
                             //  protects against false arming when the Tx is powered up after the quad
                             failsafeState.active = true;
@@ -378,7 +400,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 } else {
                     failsafeState.active = true;
                     failsafeState.events++;
-#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#if ENABLE_FLIGHT_PLAN
                     if (FLIGHT_MODE(AUTOPILOT_MODE) && flightPlanNavIsActive()
                         && flightPlanNavGetState() != FP_NAV_COMPLETE
                         && flightPlanNavGetState() != FP_NAV_ABORTED
@@ -420,6 +442,13 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                     if (armed) {
                         beeperMode = BEEPER_RX_LOST_LANDING;
                     }
+#if defined(USE_WING) && defined(USE_ALTITUDE_HOLD)
+                    if (isAltHoldActive() && !altHoldGroundContact()) {
+                        // coming down under altitude hold, a wing could be anywhere above the ground
+                        // when the time is up: its time only runs on the ground
+                        failsafeState.landingShouldBeFinishedAt = millis() + failsafeConfig()->failsafe_landing_time * MILLIS_PER_SECOND;
+                    }
+#endif
                     if (failsafeShouldHaveCausedLandingByNow() || crashRecoveryModeActive() || !armed) {
                         // to manually disarm while Landing, aux channels must be enabled
                         // note also that disarming via arm box must be possible during failsafe in rc_controls.c
@@ -451,7 +480,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 }
                 break;
 #endif
-#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#if ENABLE_FLIGHT_PLAN
             case FAILSAFE_AUTOPILOT:
                 if (receivingRxData) {
                     if (areSticksActive(failsafeConfig()->failsafe_stick_threshold) || failsafeState.boxFailsafeSwitchWasOn) {
@@ -471,6 +500,10 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                     // a staged rescue mission is waiting for core.c to engage
                     // the executor; give it the grace window before degrading
                     beeperMode = BEEPER_RX_LOST_LANDING;
+#ifdef USE_WING
+                } else if (failsafeStageRescueAtMissionEnd()) {
+                    beeperMode = BEEPER_RX_LOST_LANDING;
+#endif
                 } else if (!FLIGHT_MODE(AUTOPILOT_MODE)
                     || flightPlanNavGetState() == FP_NAV_COMPLETE
                     || flightPlanNavGetState() == FP_NAV_ABORTED) {

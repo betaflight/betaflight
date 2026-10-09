@@ -30,6 +30,7 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
+#include "pg/autopilot_wing.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
@@ -348,11 +349,119 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
     }
 }
 
-static bool imuIsAccelerometerHealthy(void)
+static bool imuIsAccelerometerHealthy(float accMagnitude)
 {
     // Accept accel readings only in range 0.9g - 1.1g
-    return (0.9f < acc.accMagnitude) && (acc.accMagnitude < 1.1f);
+    return (0.9f < accMagnitude) && (accMagnitude < 1.1f);
 }
+
+#ifdef USE_WING
+#define WING_TURN_TAU_S             0.5f
+#define WING_TURN_MIN_RADS          DEGREES_TO_RADIANS(5.0f)    // turning slower, the speed is the groundspeed
+#define WING_TURN_FULL_RADS         DEGREES_TO_RADIANS(10.0f)   // and faster, the speed the turn shows
+#define WING_TRACK_MAX_INTERVAL_US  500000
+#define WING_TRACK_MAX_ACCEL_CMSS   (2.0f * 981.0f)  // harder than any turn it flies: a glitch in the GPS velocity
+#define WING_TURN_SPEED_MIN         0.5f            // of the cruise speed
+#define WING_TURN_SPEED_MAX         2.0f
+
+#ifdef USE_GPS
+// Turning at a steady airspeed through a steady wind, the track's acceleration is the air
+// velocity turning at the heading's rate, so its size over that rate is the airspeed, where the
+// groundspeed is the airspeed plus or minus the wind. The ratio is fitted over the recent turn,
+// each part weighted by how fast it turned, so that rolling from one turn into another, where the
+// GPS track lags the gyro and its acceleration says little, does not upset it.
+static struct {
+    uint16_t gpsStamp;
+    bool hasTrack;
+    vector2_t trackCmS;         // east, north
+    timeUs_t trackUs;
+    int32_t lat;
+    int32_t lon;
+    float turnedRad;            // the heading's turn since the last track
+    vector2_t accelCmSS;
+    float turnRateRadS;
+    float accelByRate;
+    float rateSq;
+} wingTurn;
+
+STATIC_UNIT_TESTED float imuWingTurnSpeedMs(timeUs_t nowUs, float dtS, const vector3_t *gyroRadS)
+{
+    wingTurn.turnedRad += (rMat.m[NWU_U][X] * gyroRadS->x + rMat.m[NWU_U][Y] * gyroRadS->y + rMat.m[NWU_U][Z] * gyroRadS->z) * dtS;
+    // a receiver repeating its last fix while it has none is not reporting a new one
+    if (gpsHasNewData(&wingTurn.gpsStamp) && !(wingTurn.hasTrack && gpsSol.llh.lat == wingTurn.lat && gpsSol.llh.lon == wingTurn.lon)) {
+        const float courseRad = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
+        const vector2_t trackCmS = {{ gpsSol.groundSpeed * sin_approx(courseRad), gpsSol.groundSpeed * cos_approx(courseRad) }};
+        const timeDelta_t intervalUs = cmpTimeUs(nowUs, wingTurn.trackUs);
+        const float intervalS = intervalUs * 1e-6f;
+        vector2_t accelCmSS;
+        vector2Sub(&accelCmSS, &trackCmS, &wingTurn.trackCmS);
+        vector2Scale(&accelCmSS, &accelCmSS, 1.0f / fmaxf(intervalS, 1e-3f));
+        if (wingTurn.hasTrack && intervalUs > 0 && intervalUs < WING_TRACK_MAX_INTERVAL_US) {
+            if (vector2Norm(&accelCmSS) < WING_TRACK_MAX_ACCEL_CMSS) {
+                const float k = intervalS / (WING_TURN_TAU_S + intervalS);
+                wingTurn.accelCmSS.x += k * (accelCmSS.x - wingTurn.accelCmSS.x);
+                wingTurn.accelCmSS.y += k * (accelCmSS.y - wingTurn.accelCmSS.y);
+                wingTurn.turnRateRadS += k * (wingTurn.turnedRad / intervalS - wingTurn.turnRateRadS);
+                const float turnRadS = fabsf(wingTurn.turnRateRadS);
+                wingTurn.accelByRate += k * (vector2Norm(&wingTurn.accelCmSS) * 0.01f * turnRadS - wingTurn.accelByRate);
+                wingTurn.rateSq += k * (sq(turnRadS) - wingTurn.rateSq);
+            }
+        } else {
+            vector2Zero(&wingTurn.accelCmSS);
+            wingTurn.turnRateRadS = 0.0f;
+            wingTurn.accelByRate = 0.0f;
+            wingTurn.rateSq = 0.0f;
+        }
+        wingTurn.hasTrack = true;
+        wingTurn.trackCmS = trackCmS;
+        wingTurn.trackUs = nowUs;
+        wingTurn.lat = gpsSol.llh.lat;
+        wingTurn.lon = gpsSol.llh.lon;
+        wingTurn.turnedRad = 0.0f;
+    }
+
+    const float groundspeedMs = gpsSol.groundSpeed * 0.01f;
+    if (!wingTurn.hasTrack || cmpTimeUs(nowUs, wingTurn.trackUs) > WING_TRACK_MAX_INTERVAL_US) {
+        return groundspeedMs;
+    }
+    const float turnRadS = sqrtf(wingTurn.rateSq);
+    const float turning = constrainf((turnRadS - WING_TURN_MIN_RADS) / (WING_TURN_FULL_RADS - WING_TURN_MIN_RADS), 0.0f, 1.0f);
+    if (turning <= 0.0f) {
+        return groundspeedMs;
+    }
+    const float cruiseMs = autopilotWingConfig()->cruiseSpeed * 0.1f;
+    const float turnSpeedMs = constrainf(wingTurn.accelByRate / wingTurn.rateSq, WING_TURN_SPEED_MIN * cruiseMs, WING_TURN_SPEED_MAX * cruiseMs);
+    return groundspeedMs + turning * (turnSpeedMs - groundspeedMs);
+}
+#endif
+
+static float imuWingForwardSpeed(timeUs_t nowUs, float dtS, const vector3_t *gyroRadS)
+{
+#ifdef USE_GPS
+    if (sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
+        return imuWingTurnSpeedMs(nowUs, dtS, gyroRadS);
+    }
+    wingTurn.hasTrack = false;
+#else
+    UNUSED(nowUs);
+    UNUSED(dtS);
+    UNUSED(gyroRadS);
+#endif
+    return ARMING_FLAG(ARMED) ? autopilotWingConfig()->cruiseSpeed * 0.1f : 0.0f;
+}
+
+// A wing flying along its body X axis reads omega x (V, 0, 0) on top of gravity. In a
+// coordinated turn that leaves the measured vector on the body Z axis whatever the bank,
+// and fused as gravity it levels the attitude estimate.
+STATIC_UNIT_TESTED void imuRemoveCentripetalAcc(vector3_t *accAdc, const vector3_t *gyroRadS, float speedMs)
+{
+    const vector3_t velocity = {{ speedMs, 0.0f, 0.0f }};
+    vector3_t centripetal;
+    vector3Cross(&centripetal, gyroRadS, &velocity);
+    vector3Scale(&centripetal, &centripetal, acc.dev.acc_1G / G_ACCELERATION);
+    vector3Sub(accAdc, accAdc, &centripetal);
+}
+#endif
 
 // Calculate the dcmKpGain to use. When armed, the gain is imuRuntimeConfig.imuDcmKp, i.e., the default value
 // When disarmed after initial boot, the scaling is 10 times higher  for the first 20 seconds to speed up initial convergence.
@@ -641,6 +750,10 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     UNUSED(imuCalcKpGain);
     UNUSED(imuCalcMagErr);
     UNUSED(currentTimeUs);
+#ifdef USE_WING
+    UNUSED(imuWingForwardSpeed);
+    UNUSED(imuRemoveCentripetalAcc);
+#endif
 
 #if defined(USE_GPS)
     UNUSED(imuComputeQuaternionFromRPY);
@@ -752,10 +865,23 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
         gyroAverage[axis] = gyroGetFilteredDownsampled(axis);
     }
 
-    const bool useAcc = imuIsAccelerometerHealthy(); // all smoothed accADC values are within 10% of 1G
+    const vector3_t *accAdc = &acc.accADC;
+    float accMagnitude = acc.accMagnitude;
+#ifdef USE_WING
+    vector3_t accWing;
+    if (isFixedWing()) {
+        const vector3_t gyroRadS = {{ DEGREES_TO_RADIANS(gyroAverage[X]), DEGREES_TO_RADIANS(gyroAverage[Y]), DEGREES_TO_RADIANS(gyroAverage[Z]) }};
+        accWing = acc.accADC;
+        imuRemoveCentripetalAcc(&accWing, &gyroRadS, imuWingForwardSpeed(currentTimeUs, dt, &gyroRadS));
+        accAdc = &accWing;
+        accMagnitude = vector3Norm(&accWing) * acc.dev.acc_1G_rec;
+    }
+#endif
+
+    const bool useAcc = imuIsAccelerometerHealthy(accMagnitude); // the smoothed acceleration, less a wing's turn, is within 10% of 1G
     imuMahonyAHRSupdate(dt,
                         DEGREES_TO_RADIANS(gyroAverage[X]), DEGREES_TO_RADIANS(gyroAverage[Y]), DEGREES_TO_RADIANS(gyroAverage[Z]),
-                        useAcc, acc.accADC.x, acc.accADC.y, acc.accADC.z,
+                        useAcc, accAdc->x, accAdc->y, accAdc->z,
                         magErr, cogErr,
                         imuCalcKpGain(currentTimeUs, useAcc, gyroAverage));
 

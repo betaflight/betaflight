@@ -27,10 +27,12 @@
 
 #define TASK_GPS_RESCUE_RATE_HZ 100  // in sync with altitude task rate
 
-extern float gpsRescueAngle[RP_AXIS_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGREES
-
 void gpsRescueInit(void);
 void gpsRescueUpdate(void);
+// The highest the aircraft has been, which a rescue's return altitude may be taken from. Noted
+// whether or not a rescue is configured: a mission's end may stage one.
+void gpsRescueNoteMaxAltitude(void);
+float gpsRescueGetMaxAltitudeCm(void);
 bool gpsRescueIsConfigured(void);
 bool gpsRescueIsAvailable(void);
 bool gpsRescueIsHeadingOK(void);
