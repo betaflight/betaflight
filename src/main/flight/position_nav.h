@@ -29,6 +29,16 @@
 
 typedef void (*positionNavReachedCallbackFn)(void *userData);
 
+#ifdef USE_WING
+// How a fixed wing, which cannot stop on a point, flies the target. A multirotor flies every
+// target as a point.
+typedef enum {
+    NAV_TRACK_POINT = 0,    // a line from wherever the aircraft was when the target was set
+    NAV_TRACK_LINE,         // the line from trackStartEfM to the target
+    NAV_TRACK_LOITER,       // a circle about the target
+} positionNavTrack_e;
+#endif
+
 typedef struct positionNavCommand_s {
     bool active;
     uint32_t sequence;              // bumped on every new target, so consumers can spot a leg change
@@ -51,8 +61,8 @@ typedef struct positionNavCommand_s {
     float rampRateMps;              // rate the ramp moved at on the last update (signed, positive climbs)
     bool rampRateSlewed;            // took over from a command still flying: slews out of its rate
 
-    float approachSlowdownM;        // taper the commanded speed linearly inside this range, 0 = off
-    float approachStillRadiusM;     // ...down to nothing at this range
+    float approachDecelMps2;        // brake onto the target at this constant deceleration, 0 = off
+    float approachStillRadiusM;     // ...coming to rest at this range
     bool approachStill;             // has been inside the still radius: stopped chasing the target
     bool velocityFfValid;           // the owner states the horizontal velocity: no chase law toward the target
     vector2_t velocityFfEfMps;      // that velocity, metres/s (x east, y north)
@@ -66,6 +76,13 @@ typedef struct positionNavCommand_s {
 
     positionNavReachedCallbackFn callback;
     void *callbackUserData;
+
+#ifdef USE_WING
+    uint8_t track;                  // positionNavTrack_e
+    vector2_t trackStartEfM;        // NAV_TRACK_LINE: where the line starts, metres (x east, y north)
+    float loiterRadiusM;            // NAV_TRACK_LOITER
+    int8_t loiterDirection;         // NAV_TRACK_LOITER: +1 clockwise seen from above, -1 anticlockwise
+#endif
 } positionNavCommand_t;
 
 void positionNavInit(void);
@@ -90,7 +107,20 @@ void positionNavSetTargetEf(
 // straight after positionNavSetTargetEf(). No-op when there is no active command.
 void positionNavMoveTargetEf(const vector3_t *targetPosEfM);
 
+// Lowers the active command's target altitude to upM, never raising it. Unlike
+// positionNavMoveTargetEf() the target stays a fixed one: only its altitude moves. For a descent
+// that has no end point of its own (a landing, ended by touchdown) to keep its target below the
+// craft for as long as it lasts. No-op when there is no active command.
+void positionNavLowerTargetAltitude(float upM);
+
 void positionNavClearTarget(void);
+
+#ifdef USE_WING
+// Fly the active command's target as the end of a line from startEfM, or as the centre of a loiter.
+// positionNavSetTargetEf() reverts to NAV_TRACK_POINT. No-op without an active command.
+void positionNavSetTrackLine(const vector2_t *startEfM);
+void positionNavSetTrackLoiter(float radiusM, int8_t direction);
+#endif
 
 bool positionNavHasActiveTarget(void);
 bool positionNavTargetReached(void);
@@ -110,15 +140,14 @@ void positionNavSetVelocityFeedforward(const vector2_t *velEfMps);
 // The altitude ramp carries on as it is.
 void positionNavStartAfresh(void);
 
-// Taper the commanded speed linearly from the cruise at slowdownM from the target to nothing at
-// stillRadiusM, the way the legacy rescue bled speed from twice the descent distance; the taper
+// Brake onto the target at a constant decelMps2, coming to rest stillRadiusM from it; the approach
 // replaces the position gain's knee. Once inside the still radius the command stops chasing the
-// target for the rest of the leg, and nothing horizontal is commanded. Zero slowdownM leaves the
+// target for the rest of the leg, and nothing horizontal is commanded. Zero decelMps2 leaves the
 // leg on its own profile.
-void positionNavSetApproachSlowdown(float slowdownM, float stillRadiusM);
-// The speed that taper allows distM from the target, for an owner flying the approach ahead of the
-// command that tapers it.
-float positionNavApproachTaperMps(float cruiseSpeedMps, float slowdownM, float stillRadiusM, float distM);
+void positionNavSetApproachBrake(float decelMps2, float stillRadiusM);
+// The speed that approach allows distM from the target, for an owner flying it ahead of the
+// command that brakes.
+float positionNavApproachSpeedMps(float cruiseSpeedMps, float decelMps2, float stillRadiusM, float distM);
 void positionNavSetAutoClearOnReach(bool autoClear);
 
 // The leg's vertical intent: the rate the altitude target is allowed to move at, and the altitude

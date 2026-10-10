@@ -103,6 +103,30 @@ TEST_F(RcControlsModesTest, updateActivatedModesWithAllInputsAtMidde)
     }
 }
 
+TEST_F(RcControlsModesTest, isRangeActiveStepBoundaries)
+{
+    const channelRange_t range = { 4, 44 };
+
+    rcData[AUX1] = 999.9f;
+    EXPECT_FALSE(isRangeActive(AUX1 - NON_AUX_CHANNEL_COUNT, &range));
+    rcData[AUX1] = 1000;
+    EXPECT_TRUE(isRangeActive(AUX1 - NON_AUX_CHANNEL_COUNT, &range));
+    rcData[AUX1] = 1999.9f;
+    EXPECT_TRUE(isRangeActive(AUX1 - NON_AUX_CHANNEL_COUNT, &range));
+    rcData[AUX1] = 2000;
+    EXPECT_FALSE(isRangeActive(AUX1 - NON_AUX_CHANNEL_COUNT, &range));
+}
+
+TEST_F(RcControlsModesTest, isRangeActiveOpenEndedBeyondChannelRange)
+{
+    const channelRange_t range = { MIN_MODE_RANGE_STEP, MAX_MODE_RANGE_STEP };
+
+    rcData[AUX1] = 800;
+    EXPECT_TRUE(isRangeActive(AUX1 - NON_AUX_CHANNEL_COUNT, &range));
+    rcData[AUX1] = 2200;
+    EXPECT_TRUE(isRangeActive(AUX1 - NON_AUX_CHANNEL_COUNT, &range));
+}
+
 TEST_F(RcControlsModesTest, updateActivatedModesUsingValidAuxConfigurationAndRXValues)
 {
     // given
@@ -649,6 +673,53 @@ TEST_F(RcControlsAdjustmentsTest, processRcRateProfileAdjustments)
     // then
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP));
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_CHANGE_CONTROL_RATE_PROFILE));
+}
+
+TEST_F(RcControlsAdjustmentsTest, processRcRateProfileAdjustmentsIgnoresUnchangedFractionalInput)
+{
+    // given
+    configureContinuosAdjustment(AUX4 - NON_AUX_CHANNEL_COUNT, ADJUSTMENT_RATE_PROFILE_INDEX);
+
+    // and
+    for (int index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
+        rcData[index] = PWM_RANGE_MIDDLE;
+    }
+
+    // and
+    resetCallCounters();
+    resetMillis();
+
+    // and
+    rcData[AUX4] = PWM_RANGE_MAX - 0.5f;
+
+    // when
+    processRcAdjustments(&controlRateConfig);
+    processRcAdjustments(&controlRateConfig);
+
+    // then
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_CHANGE_CONTROL_RATE_PROFILE));
+}
+
+TEST_F(RcControlsAdjustmentsTest, processHorizonStrengthSelectDoesNotWrapAtHighInput)
+{
+    // given
+    pidProfile_t pidProfile;
+    memset(&pidProfile, 0, sizeof(pidProfile));
+    currentPidProfile = &pidProfile;
+
+    configureContinuosAdjustment(AUX4 - NON_AUX_CHANNEL_COUNT, ADJUSTMENT_HORIZON_STRENGTH);
+
+    // and
+    for (int index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
+        rcData[index] = PWM_RANGE_MIDDLE;
+    }
+    rcData[AUX4] = PWM_RANGE_MAX;
+
+    // when
+    processRcAdjustments(&controlRateConfig);
+
+    // then
+    EXPECT_EQ(200, pidProfile.pid[PID_LEVEL].D);
 }
 
 #define ADJUSTMENT_PITCH_ROLL_P_INDEX 6
