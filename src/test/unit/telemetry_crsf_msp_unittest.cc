@@ -62,6 +62,7 @@ extern "C" {
     #include "sensors/sensors.h"
 
     #include "telemetry/telemetry.h"
+    #include "telemetry/crsf.h"
     #include "telemetry/msp_shared.h"
     #include "telemetry/smartport.h"
     #include "sensors/acceleration.h"
@@ -91,6 +92,7 @@ extern "C" {
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG,0);
     PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
 
+    void crsfDataReceive(uint16_t c, void *data);
     extern bool crsfFrameDone;
     extern crsfFrame_t crsfFrame;
     extern uint8_t requestBuffer[MSP_TLM_INBUF_SIZE];
@@ -256,6 +258,79 @@ TEST(CrossFireMSPTest, SendMspReply)
     }
 }
 
+static int mspResponseFramesWritten;
+
+static void countingWriteBuf(serialPort_t *, const void *data, int count)
+{
+    if (count > 2 && ((const uint8_t *)data)[2] == CRSF_FRAMETYPE_MSP_RESP) {
+        mspResponseFramesWritten++;
+    }
+}
+
+static struct serialPortVTable countingVTable;
+static serialPort_t fakeCrsfPort;
+
+// MSP_API_VERSION request from the issue: single-chunk request, single-chunk reply
+static void receiveCrsfMspApiVersionRequest(rxRuntimeState_t *rxRuntimeState)
+{
+    uint8_t frame[] = { CRSF_SYNC_BYTE, 0x07, CRSF_FRAMETYPE_MSP_REQ, CRSF_ADDRESS_FLIGHT_CONTROLLER, CRSF_ADDRESS_RADIO_TRANSMITTER, 0x30, 0x00, 0x01, 0x00 };
+    frame[sizeof(frame) - 1] = crc8_dvb_s2_update(0, &frame[2], sizeof(frame) - 3);
+
+    dummyTimeUs += 10000; // well past the inter-frame gap, so this byte starts a new frame
+    for (unsigned i = 0; i < sizeof(frame); i++) {
+        crsfDataReceive(frame[i], rxRuntimeState);
+    }
+}
+
+// Requests that arrive while a reply is being sent must still be answered once it completes,
+// even if they filled the MSP receive buffer meanwhile (betaflight#14779).
+TEST(CrossFireMSPTest, BufferedRequestsAnsweredAfterReplyCompletes)
+{
+    countingVTable.writeBuf = countingWriteBuf;
+    fakeCrsfPort.vTable = &countingVTable;
+
+    rxRuntimeState_t rxRuntimeState;
+    rxConfigMutable()->rx_uart = SERIAL_PORT_USART1;
+    ASSERT_TRUE(crsfRxInit(rxConfig(), &rxRuntimeState));
+    initCrsfTelemetry();
+    initCrsfMspBuffer();
+    initSharedMsp();
+    mspResponseFramesWritten = 0;
+
+    // Two requests handled in one pass: the first reply fills the telemetry buffer, so the
+    // second reply is left pending.
+    receiveCrsfMspApiVersionRequest(&rxRuntimeState);
+    receiveCrsfMspApiVersionRequest(&rxRuntimeState);
+    handleCrsfTelemetry(dummyTimeUs);
+
+    // The host keeps sending without waiting and fills the receive buffer.
+    for (int i = 0; i < 40; i++) {
+        receiveCrsfMspApiVersionRequest(&rxRuntimeState);
+    }
+
+    // Writes the first reply and completes the pending one.
+    handleCrsfTelemetry(dummyTimeUs);
+    EXPECT_EQ(1, mspResponseFramesWritten);
+
+    // Further requests are dropped while the buffer is full; the buffered ones must still be
+    // processed rather than wedging MSP until reboot.
+    receiveCrsfMspApiVersionRequest(&rxRuntimeState);
+    for (int i = 0; i < 4; i++) {
+        dummyTimeUs += 1000;
+        handleCrsfTelemetry(dummyTimeUs);
+    }
+    EXPECT_GE(mspResponseFramesWritten, 3);
+
+    // And once drained, new requests are answered again.
+    const int written = mspResponseFramesWritten;
+    receiveCrsfMspApiVersionRequest(&rxRuntimeState);
+    for (int i = 0; i < 4; i++) {
+        dummyTimeUs += 1000;
+        handleCrsfTelemetry(dummyTimeUs);
+    }
+    EXPECT_GT(mspResponseFramesWritten, written);
+}
+
 // STUBS
 
 extern "C" {
@@ -266,7 +341,7 @@ extern "C" {
 
     uint32_t micros(void) {return dummyTimeUs;}
     uint32_t microsISR(void) {return micros();}
-    serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return NULL;}
+    serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return &fakeCrsfPort;}
     bool isBatteryVoltageConfigured(void) { return true; }
     uint16_t getBatteryVoltage(void) {
         return testBatteryVoltage;
