@@ -229,6 +229,14 @@ typedef enum {
     OSD_POS_HOLD_READY,         // pre-engagement Position Hold readiness indicator
 #endif
 
+#ifdef USE_RADAR
+    // Ahead of OSD_AIRSPEED on purpose: nothing defines USE_PITOT and the configurator has no
+    // build option to detect it, so it always lists PITOT_AIRSPEED last. Keeping this before it
+    // lets the configurator place this element by the USE_RADAR build option.
+    OSD_RADAR_PEER,             // cycling peer readout from a FormationFlight/INAV-Radar module
+    OSD_RADAR_HUD,              // peers drawn where they are in the camera view (INAV HUD radar)
+#endif
+
 #ifdef USE_PITOT
     OSD_AIRSPEED,
 #endif
