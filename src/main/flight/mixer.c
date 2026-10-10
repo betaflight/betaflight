@@ -74,6 +74,15 @@
 #define CRASHFLIP_MOTOR_DEADBAND         0.02f // 2%; send 'disarm' value to motors below this drive value
 #define CRASHFLIP_STICK_DEADBAND         0.15f // 15%
 
+static inline bool autopilotStopsMotor(void)
+{
+#ifdef USE_WING
+    return autopilotWingMotorStopRequested();
+#else
+    return false;
+#endif
+}
+
 static FAST_DATA_ZERO_INIT float motorMixRange;
 
 float FAST_DATA_ZERO_INIT motor[MAX_SUPPORTED_MOTORS];
@@ -845,12 +854,13 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
         break;
     }
 
-    if (featureIsEnabled(FEATURE_MOTOR_STOP)
-        && ARMING_FLAG(ARMED)
-        && !mixerRuntime.feature3dEnabled
-        && !airmodeEnabled
-        && !FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | LAUNCH_MODE)   // disable motor_stop while GPS Rescue / Alt Hold / Pos Hold / Launch is active
-        && (rcData[THROTTLE] < rxConfig()->mincheck)) {
+    if ((autopilotStopsMotor() && ARMING_FLAG(ARMED))
+        || (featureIsEnabled(FEATURE_MOTOR_STOP)
+            && ARMING_FLAG(ARMED)
+            && !mixerRuntime.feature3dEnabled
+            && !airmodeEnabled
+            && !FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | LAUNCH_MODE)   // disable motor_stop while GPS Rescue / Alt Hold / Pos Hold / Launch is active
+            && (rcData[THROTTLE] < rxConfig()->mincheck))) {
         applyMotorStop();
     } else {
         // Apply the mix to motor endpoints

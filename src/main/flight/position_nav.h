@@ -29,6 +29,16 @@
 
 typedef void (*positionNavReachedCallbackFn)(void *userData);
 
+#ifdef USE_WING
+// How a fixed wing, which cannot stop on a point, flies the target. A multirotor flies every
+// target as a point.
+typedef enum {
+    NAV_TRACK_POINT = 0,    // a line from wherever the aircraft was when the target was set
+    NAV_TRACK_LINE,         // the line from trackStartEfM to the target
+    NAV_TRACK_LOITER,       // a circle about the target
+} positionNavTrack_e;
+#endif
+
 typedef struct positionNavCommand_s {
     bool active;
     uint32_t sequence;              // bumped on every new target, so consumers can spot a leg change
@@ -66,6 +76,13 @@ typedef struct positionNavCommand_s {
 
     positionNavReachedCallbackFn callback;
     void *callbackUserData;
+
+#ifdef USE_WING
+    uint8_t track;                  // positionNavTrack_e
+    vector2_t trackStartEfM;        // NAV_TRACK_LINE: where the line starts, metres (x east, y north)
+    float loiterRadiusM;            // NAV_TRACK_LOITER
+    int8_t loiterDirection;         // NAV_TRACK_LOITER: +1 clockwise seen from above, -1 anticlockwise
+#endif
 } positionNavCommand_t;
 
 void positionNavInit(void);
@@ -97,6 +114,13 @@ void positionNavMoveTargetEf(const vector3_t *targetPosEfM);
 void positionNavLowerTargetAltitude(float upM);
 
 void positionNavClearTarget(void);
+
+#ifdef USE_WING
+// Fly the active command's target as the end of a line from startEfM, or as the centre of a loiter.
+// positionNavSetTargetEf() reverts to NAV_TRACK_POINT. No-op without an active command.
+void positionNavSetTrackLine(const vector2_t *startEfM);
+void positionNavSetTrackLoiter(float radiusM, int8_t direction);
+#endif
 
 bool positionNavHasActiveTarget(void);
 bool positionNavTargetReached(void);

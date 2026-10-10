@@ -15,75 +15,80 @@
  * along with Betaflight. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
-#include <stdlib.h>
 #include <math.h>
+#include <stdbool.h>
 
 #include "platform.h"
 
 #ifdef USE_WING
 #ifdef USE_GPS_RESCUE
 
-#include "build/debug.h"
-
-#include "common/axis.h"
-#include "common/filter.h"
-#include "common/maths.h"
-#include "common/utils.h"
-
-#include "config/config.h"
-#include "drivers/time.h"
-
-#include "fc/core.h"
-#include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
-#include "flight/autopilot.h"
 #include "flight/failsafe.h"
-#include "flight/imu.h"
-#include "flight/pid.h"
 #include "flight/position.h"
+#include "flight/position_estimator.h"
 
 #include "io/gps.h"
-#include "rx/rx.h"
-#include "pg/autopilot.h"
-#include "sensors/acceleration.h"
 
 #include "gps_rescue.h"
 
-float gpsRescueAngle[RP_AXIS_COUNT] = { 0, 0 };
+static struct {
+    float maxAltitudeCm;
+    bool isAvailable;
+} rescueState;
 
 void gpsRescueInit(void)
 {
+    rescueState.isAvailable = true;
 }
 
-void gpsRescueUpdate(void)
-// runs at gpsRescueTaskIntervalSeconds, and runs whether or not rescue is active
+// While disarmed the maximum altitude is zero, unless set_home_point_once keeps it until a power cycle
+void gpsRescueNoteMaxAltitude(void)
 {
+    if (!ARMING_FLAG(ARMED) && !gpsConfig()->gps_set_home_point_once) {
+        rescueState.maxAltitudeCm = 0.0f;
+        return;
+    }
+    rescueState.maxAltitudeCm = fmaxf(getAltitudeCmControl(), rescueState.maxAltitudeCm);
 }
 
+// The rescue is flown as an autopilot mission; this only keeps its availability. A wing steers by
+// its course over the ground, so it needs no heading to fly home.
+void gpsRescueUpdate(void)
+{
+    rescueState.isAvailable = STATE(GPS_FIX_HOME) && gpsIsHealthy() && isAltitudeAvailable() && positionEstimatorIsValidXY();
+}
+
+float gpsRescueGetMaxAltitudeCm(void)
+{
+    return rescueState.maxAltitudeCm;
+}
 
 bool gpsRescueIsConfigured(void)
 {
+#if ENABLE_RESCUE_PLAN
+    return failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE || isModeActivationConditionPresent(BOXGPSRESCUE);
+#else
     return false;
+#endif
 }
 
 bool gpsRescueIsAvailable(void)
 {
-    return false;
+    return rescueState.isAvailable;
 }
 
 bool gpsRescueIsHeadingOK(void)
 {
-    return false;
+    return true;
 }
 
 bool gpsRescueIsOK(void)
 {
-    return false;
+    return true;
 }
-
 
 #endif // USE_GPS_RESCUE
 

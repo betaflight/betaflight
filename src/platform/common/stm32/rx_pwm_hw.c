@@ -61,6 +61,37 @@ void pwmICConfig(timerResource_t *tim, uint8_t channel, uint16_t polarity, uint8
 
 #endif
 
+#elif defined(USE_GDBSP_DRIVER)
+
+extern void gd32_timer_input_capture_config(void* timer, uint16_t channel, uint8_t state);
+
+void timerChannelEnable(const timerHardware_t *timHw)
+{
+    gd32_timer_input_capture_config((TIM_TypeDef *)timHw->tim, timHw->channel, ENABLE);
+}
+
+void timerChannelDisable(const timerHardware_t *timHw)
+{
+    gd32_timer_input_capture_config((TIM_TypeDef *)timHw->tim, timHw->channel, DISABLE);
+}
+
+#if defined(USE_RX_PWM) || defined(USE_RX_PPM)
+
+void pwmICConfig(void *tim, uint8_t channel, uint16_t polarity, uint8_t filter)
+{
+    timer_ic_parameter_struct timer_icinitpara;
+
+    timer_channel_input_struct_para_init(&timer_icinitpara);
+    timer_icinitpara.icselection = TIMER_IC_SELECTION_DIRECTTI;
+    timer_icinitpara.icprescaler = TIMER_IC_PSC_DIV1;
+    timer_icinitpara.icpolarity =  (polarity == TIMER_POLARITY_RISING) ? TIMER_IC_POLARITY_RISING : TIMER_IC_POLARITY_FALLING;
+    timer_icinitpara.icfilter = filter;
+
+    timer_input_capture_config((uint32_t)tim, channel, &timer_icinitpara);
+}
+
+#endif
+
 #else
 
 void timerChannelEnable(const timerHardware_t *timHw)
