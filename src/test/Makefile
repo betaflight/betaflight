@@ -150,6 +150,12 @@ baro_bmp5xx_unittest_DEFINES := \
                 USE_BARO_BMP581= \
                 USE_BARO_SPI_BMP581=
 
+baro_icp20100_unittest_SRC := \
+		$(USER_DIR)/drivers/barometer/barometer_icp20100.c
+
+baro_icp20100_unittest_DEFINES := \
+		USE_BARO_ICP20100=
+
 baro_ms5611_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_ms5611.c
 
