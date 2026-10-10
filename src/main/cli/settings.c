@@ -1215,7 +1215,7 @@ const clivalue_t valueTable[] = {
 #ifndef USE_WING
     { PARAM_NAME_GPS_RESCUE_GROUND_SPEED,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 3000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, groundSpeedCmS) },
 
-    { PARAM_NAME_GPS_RESCUE_DESCENT_DIST,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 5, 500 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, descentDistanceM) },
+    { PARAM_NAME_GPS_RESCUE_DESCENT_DIST,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { GPS_RESCUE_DESCENT_DIST_MIN_M, GPS_RESCUE_DESCENT_DIST_MAX_M }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, descentDistanceM) },
 #endif
     { PARAM_NAME_GPS_RESCUE_DESCEND_RATE,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 25, 500 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, descendRate) },
 #ifndef USE_WING

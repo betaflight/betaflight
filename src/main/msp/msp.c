@@ -3266,7 +3266,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
     case MSP_SET_GPS_RESCUE:
         autopilotConfigMutable()->maxAngle = sbufReadU16(src);
         gpsRescueConfigMutable()->returnAltitudeM = sbufReadU16(src);
-        gpsRescueConfigMutable()->descentDistanceM = sbufReadU16(src);
+        gpsRescueConfigMutable()->descentDistanceM = constrain(sbufReadU16(src), GPS_RESCUE_DESCENT_DIST_MIN_M, GPS_RESCUE_DESCENT_DIST_MAX_M); // 0 makes RESCUE_DESCENT unreachable
         gpsRescueConfigMutable()->groundSpeedCmS = sbufReadU16(src);
         autopilotConfigMutable()->throttleMin = sbufReadU16(src);
         autopilotConfigMutable()->throttleMax = sbufReadU16(src);
