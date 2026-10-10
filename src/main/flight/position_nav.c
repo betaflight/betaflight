@@ -112,6 +112,9 @@ void positionNavSetTargetEf(
 
     cmd.callback = callback;
     cmd.callbackUserData = userData;
+#ifdef USE_WING
+    cmd.track = NAV_TRACK_POINT;
+#endif
 
     // The commanded velocity deliberately survives the handover: zeroing it here put a one-cycle
     // notch in the target at every leg change, which the position controller answers with a pitch
@@ -152,6 +155,25 @@ void positionNavClearTarget(void)
     withinAcceptanceRadius = false;
     withinAcceptanceAltitude = false;
 }
+
+#ifdef USE_WING
+void positionNavSetTrackLine(const vector2_t *startEfM)
+{
+    if (cmd.active) {
+        cmd.track = NAV_TRACK_LINE;
+        cmd.trackStartEfM = *startEfM;
+    }
+}
+
+void positionNavSetTrackLoiter(float radiusM, int8_t direction)
+{
+    if (cmd.active) {
+        cmd.track = NAV_TRACK_LOITER;
+        cmd.loiterRadiusM = radiusM;
+        cmd.loiterDirection = direction;
+    }
+}
+#endif
 
 bool positionNavHasActiveTarget(void)
 {

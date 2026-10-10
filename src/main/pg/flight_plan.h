@@ -64,7 +64,8 @@ typedef enum {
 typedef struct {
     int32_t latitude;       // Latitude in degrees * 10^7 (7 decimal places, ±90.0000000)
     int32_t longitude;      // Longitude in degrees * 10^7 (7 decimal places, ±180.0000000)
-    int32_t altitude;       // Altitude in centimeters AMSL (above mean sea level, negative values permitted)
+    int32_t altitude;       // Altitude in centimeters AMSL (above mean sea level, negative values permitted); on a
+                            // fixed wing's LAND waypoint, the elevation of the ground it touches down on
     uint16_t speed;         // Horizontal speed in cm/s (0 = autopilot maxVelocity)
     uint16_t duration;      // Duration in deciseconds (0.1s)
     uint16_t vertRate;      // Climb and descent rate in cm/s (0 = the configured alt hold climb rate, or landingDescentRate on a LAND leg)

@@ -53,6 +53,7 @@ extern "C" {
     #include "rx/rx.h"
 
     #include "pg/autopilot.h"
+    #include "pg/autopilot_wing.h"
 
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
@@ -70,6 +71,8 @@ extern "C" {
                              const float dcmKpGain);
     float imuCalcMagErr(void);
     float imuCalcCourseErr(float courseOverGround);
+    void imuRemoveCentripetalAcc(vector3_t *accAdc, const vector3_t *gyroRadS, float speedMs);
+    float imuWingTurnSpeedMs(timeUs_t nowUs, float dtS, const vector3_t *gyroRadS);
     extern quaternion_t q;
     extern matrix33_t rMat;
     extern bool attitudeIsEstablished;
@@ -410,6 +413,329 @@ INSTANTIATE_TEST_SUITE_P(
       0, 45, -45, 90, 180, 270, 720+45
       ));
 
+// A steady coordinated level turn in the body frame (X forward, Y left, Z up).
+// Positive bank is right wing down, which turns the aircraft clockwise seen
+// from above, i.e. negative about earth up.
+struct CoordinatedTurn {
+    vector3_t up;               // earth up
+    vector3_t gyroRadS;
+    vector3_t specificForceG;
+};
+
+static CoordinatedTurn coordinatedTurn(float bankDeg, float speedMs)
+{
+    const float bank = DEGREES_TO_RADIANS(bankDeg);
+    const float turnRate = -G_ACCELERATION * tanf(bank) / speedMs;
+
+    CoordinatedTurn turn;
+    turn.up = {{ 0.0f, sinf(bank), cosf(bank) }};
+    vector3Scale(&turn.gyroRadS, &turn.up, turnRate);
+    // gravity reaction plus the centripetal acceleration: no side force, 1 / cos(bank) g on Z
+    turn.specificForceG = {{ 0.0f, 0.0f, 1.0f / cosf(bank) }};
+    return turn;
+}
+
+static bool testIsFixedWing;
+static bool testGpsNewData;
+static uint32_t testSensors = SENSOR_ACC;
+static float testGyroDps[XYZ_AXIS_COUNT];
+
+TEST(FlightImuWingTest, CentripetalRemovalLeavesGravityInACoordinatedTurn)
+{
+    acc.dev.acc_1G = 512;
+
+    for (const float bankDeg : { 20.0f, -20.0f, 45.0f, -45.0f }) {
+        const CoordinatedTurn turn = coordinatedTurn(bankDeg, 15.0f);
+        vector3_t accAdc;
+        vector3Scale(&accAdc, &turn.specificForceG, acc.dev.acc_1G);
+
+        imuRemoveCentripetalAcc(&accAdc, &turn.gyroRadS, 15.0f);
+
+        EXPECT_NEAR(0.0f, accAdc.x, 1e-3f) << bankDeg;
+        EXPECT_NEAR(turn.up.y * acc.dev.acc_1G, accAdc.y, 1e-2f) << bankDeg;
+        EXPECT_NEAR(turn.up.z * acc.dev.acc_1G, accAdc.z, 1e-2f) << bankDeg;
+    }
+}
+
+// imu.c keeps the time of its previous update across tests
+static timeUs_t timeUs;
+
+class CoordinatedTurnTest : public ::testing::Test {
+protected:
+    static constexpr float bankDeg = 20.0f;
+    static constexpr float speedMs = 15.0f;
+    static constexpr float dt = 0.01f;
+
+    void SetUp() override
+    {
+        imuConfigMutable()->imu_dcm_kp = 2500;
+        imuConfigMutable()->imu_dcm_ki = 0;
+        imuConfigure(0, 0);
+
+        acc.dev.acc_1G = 512;
+        acc.dev.acc_1G_rec = 1.0f / acc.dev.acc_1G;
+        acc.isAccelUpdatedAtLeastOnce = true;
+        vector3Zero(&mag.magADC);
+
+        armingFlags = ARMED;
+        stateFlags = GPS_FIX;
+        gpsSol.numSat = 12;
+        gpsSol.groundSpeed = speedMs * 100;
+        testSensors = SENSOR_ACC | SENSOR_GPS;
+        testIsFixedWing = true;
+        autopilotWingConfigMutable()->cruiseSpeed = lrintf(speedMs * 10.0f);
+
+        quaternion_from_axis_angle(&q, DEGREES_TO_RADIANS(bankDeg), 1, 0, 0);
+        imuComputeRotationMatrix();
+        imuUpdateEulerAngles();
+    }
+
+    void TearDown() override
+    {
+        armingFlags = 0;
+        stateFlags = 0;
+        testSensors = SENSOR_ACC;
+        testIsFixedWing = false;
+        memset(testGyroDps, 0, sizeof(testGyroDps));
+        memset(gyro.gyroADCf, 0, sizeof(gyro.gyroADCf));
+    }
+
+    // The GPS reporting the track at seconds into the turn, through windEastMs of wind.
+    void reportTrack(float seconds, float windEastMs)
+    {
+        const float headingRad = G_ACCELERATION * tanf(DEGREES_TO_RADIANS(bankDeg)) / speedMs * seconds;
+        const float eastMs = speedMs * sinf(headingRad) + windEastMs;
+        const float northMs = speedMs * cosf(headingRad);
+        gpsSol.groundSpeed = lrintf(hypotf(eastMs, northMs) * 100.0f);
+        gpsSol.groundCourse = lrintf(fmodf(RADIANS_TO_DEGREES(atan2f(eastMs, northMs)) + 360.0f, 360.0f) * 10.0f);
+        gpsSol.llh.lat = lrintf(seconds * 1000.0f);
+        testGpsNewData = true;
+    }
+
+    // fly the turn for the given time, the GPS reporting at 10 Hz; the worst roll and pitch errors from
+    // settleS in, degrees
+    void fly(float seconds, float *maxRollErrDeg, float *maxPitchErrDeg, float windEastMs = 0.0f, float settleS = 0.0f)
+    {
+        const CoordinatedTurn turn = coordinatedTurn(bankDeg, speedMs);
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            testGyroDps[axis] = RADIANS_TO_DEGREES(turn.gyroRadS.v[axis]);
+            gyro.gyroADCf[axis] = testGyroDps[axis];
+        }
+        vector3Scale(&acc.accADC, &turn.specificForceG, acc.dev.acc_1G);
+        acc.accMagnitude = vector3Norm(&acc.accADC) * acc.dev.acc_1G_rec;
+
+        *maxRollErrDeg = 0.0f;
+        *maxPitchErrDeg = 0.0f;
+        float headingChangeDeg = 0.0f;
+        int steps = 0;
+        for (float t = 0.0f; t < seconds; t += dt) {
+            const int16_t previousYaw = attitude.values.yaw;
+            if (steps++ % 10 == 0) {
+                reportTrack(t, windEastMs);
+            }
+            timeUs += lrintf(dt * 1e6f);
+            imuUpdateAttitude(timeUs);
+            headingChangeDeg += remainderf(attitude.values.yaw - previousYaw, 3600.0f) / 10.0f;
+            if (t >= settleS) {
+                *maxRollErrDeg = fmaxf(*maxRollErrDeg, fabsf(attitude.values.roll / 10.0f - bankDeg));
+                *maxPitchErrDeg = fmaxf(*maxPitchErrDeg, fabsf(attitude.values.pitch / 10.0f));
+            }
+        }
+        // a right bank turns clockwise: heading increases at g tan(bank) / V
+        const float expectedHeadingChangeDeg = RADIANS_TO_DEGREES(G_ACCELERATION * tanf(DEGREES_TO_RADIANS(bankDeg)) / speedMs) * seconds;
+        EXPECT_NEAR(expectedHeadingChangeDeg, headingChangeDeg, 0.1f * expectedHeadingChangeDeg);
+    }
+};
+
+TEST_F(CoordinatedTurnTest, WingHoldsTheBankOnGpsSpeed)
+{
+    float maxRollErr, maxPitchErr;
+    fly(60.0f, &maxRollErr, &maxPitchErr);
+
+    EXPECT_LT(maxRollErr, 1.0f);
+    EXPECT_LT(maxPitchErr, 1.0f);
+}
+
+TEST_F(CoordinatedTurnTest, WingHoldsTheBankTurningThroughAWind)
+{
+    float maxRollErr, maxPitchErr;
+    // from a few seconds in, once the turn has shown the airspeed
+    fly(60.0f, &maxRollErr, &maxPitchErr, 5.0f, 5.0f);
+
+    EXPECT_LT(maxRollErr, 1.0f);
+    EXPECT_LT(maxPitchErr, 1.0f);
+}
+
+TEST_F(CoordinatedTurnTest, TurningThroughAWindTheSpeedIsTheAirspeed)
+{
+    const CoordinatedTurn turn = coordinatedTurn(bankDeg, speedMs);
+    float slowest = 1e3f, fastest = 0.0f, slowestOverGround = 1e3f, fastestOverGround = 0.0f;
+    timeUs_t nowUs = 0;
+    for (int i = 0; i < 6000; i++) {
+        const float t = i * dt;
+        if (i % 10 == 0) {
+            reportTrack(t, 5.0f);
+        }
+        nowUs += lrintf(dt * 1e6f);
+        const float speed = imuWingTurnSpeedMs(nowUs, dt, &turn.gyroRadS);
+        if (t > 5.0f) {
+            slowest = fminf(slowest, speed);
+            fastest = fmaxf(fastest, speed);
+            slowestOverGround = fminf(slowestOverGround, gpsSol.groundSpeed * 0.01f);
+            fastestOverGround = fmaxf(fastestOverGround, gpsSol.groundSpeed * 0.01f);
+        }
+    }
+    EXPECT_NEAR(speedMs, slowest, 0.5f);
+    EXPECT_NEAR(speedMs, fastest, 0.5f);
+    EXPECT_GT(fastestOverGround - slowestOverGround, 9.0f);
+}
+
+TEST_F(CoordinatedTurnTest, RollingFromOneTurnIntoAnotherTheSpeedStaysNearTheAirspeed)
+{
+    // turning at 0.3 rad/s one way, then the other, the GPS reporting the track 100 ms late through 5 m/s of wind
+    const CoordinatedTurn turn = coordinatedTurn(bankDeg, speedMs);
+    const vector3_t up = turn.up;
+    float headingRad = 0.0f;
+    float delayedEastMs = 0.0f, delayedNorthMs = speedMs;
+    float worstErr = 0.0f;
+    timeUs_t nowUs = 0;
+    for (int i = 0; i < 3000; i++) {
+        const float t = i * dt;
+        const float turnRadS = (fmodf(t, 10.0f) < 5.0f) ? 0.3f : -0.3f;
+        headingRad += turnRadS * dt;
+        if (i % 10 == 0) {
+            gpsSol.groundSpeed = lrintf(hypotf(delayedEastMs, delayedNorthMs) * 100.0f);
+            gpsSol.groundCourse = lrintf(fmodf(RADIANS_TO_DEGREES(atan2f(delayedEastMs, delayedNorthMs)) + 360.0f, 360.0f) * 10.0f);
+            gpsSol.llh.lat = i;
+            testGpsNewData = true;
+            delayedEastMs = speedMs * sinf(headingRad) + 5.0f;
+            delayedNorthMs = speedMs * cosf(headingRad);
+        }
+        vector3_t gyroRadS;
+        vector3Scale(&gyroRadS, &up, -turnRadS);
+        nowUs += lrintf(dt * 1e6f);
+        const float speed = imuWingTurnSpeedMs(nowUs, dt, &gyroRadS);
+        if (t > 5.0f) {
+            worstErr = fmaxf(worstErr, fabsf(speed - speedMs));
+        }
+    }
+    EXPECT_LT(worstErr, 3.0f);
+}
+
+TEST_F(CoordinatedTurnTest, TurningSlowlyANoisyGpsWithAGlitchDoesNotThrowTheSpeedOff)
+{
+    // at 10 deg/s, where the turn just shows the airspeed, through 5 m/s of wind; the GPS velocity has
+    // 0.1 m/s of noise and once a second jumps 5 m/s for a fix
+    const float turnRadS = DEGREES_TO_RADIANS(10.0f);
+    const vector3_t gyroRadS = {{ 0.0f, 0.0f, -turnRadS }};
+    uint32_t seed = 1;
+    const auto noiseMs = [&seed]() {
+        seed = seed * 1664525u + 1013904223u;
+        return 0.1f * ((seed >> 8) * (2.0f / 16777216.0f) - 1.0f) * sqrtf(3.0f);
+    };
+    float worstErr = 0.0f;
+    timeUs_t nowUs = 0;
+    for (int i = 0; i < 6000; i++) {
+        const float t = i * dt;
+        if (i % 10 == 0) {
+            const float headingRad = turnRadS * t;
+            const float glitchMs = (i % 100 == 50) ? 5.0f : 0.0f;
+            const float eastMs = speedMs * sinf(headingRad) + 5.0f + noiseMs() + glitchMs;
+            const float northMs = speedMs * cosf(headingRad) + noiseMs();
+            gpsSol.groundSpeed = lrintf(hypotf(eastMs, northMs) * 100.0f);
+            gpsSol.groundCourse = lrintf(fmodf(RADIANS_TO_DEGREES(atan2f(eastMs, northMs)) + 360.0f, 360.0f) * 10.0f);
+            gpsSol.llh.lat = i;
+            testGpsNewData = true;
+        }
+        nowUs += lrintf(dt * 1e6f);
+        const float speed = imuWingTurnSpeedMs(nowUs, dt, &gyroRadS);
+        if (t > 5.0f) {
+            worstErr = fmaxf(worstErr, fabsf(speed - speedMs));
+        }
+    }
+    EXPECT_LT(worstErr, 3.0f);
+}
+
+TEST_F(CoordinatedTurnTest, AGpsTrackNoTurnCouldGiveReadsNoFasterThanTwiceTheCruiseSpeed)
+{
+    // the track running away at 1 g while the heading turns at 10 deg/s
+    const vector3_t gyroRadS = {{ 0.0f, 0.0f, -DEGREES_TO_RADIANS(10.0f) }};
+    timeUs_t nowUs = 0;
+    float speed = 0.0f;
+    for (int i = 0; i < 300; i++) {
+        if (i % 10 == 0) {
+            gpsSol.groundSpeed = lrintf(G_ACCELERATION * i * dt * 100.0f);
+            gpsSol.groundCourse = 900;
+            gpsSol.llh.lat = i;
+            testGpsNewData = true;
+        }
+        nowUs += lrintf(dt * 1e6f);
+        speed = imuWingTurnSpeedMs(nowUs, dt, &gyroRadS);
+    }
+    EXPECT_LE(speed, 2.0f * speedMs);
+}
+
+TEST_F(CoordinatedTurnTest, WithTheGpsQuietTheSpeedIsTheLastGroundspeed)
+{
+    const CoordinatedTurn turn = coordinatedTurn(bankDeg, speedMs);
+    timeUs_t nowUs = 0;
+    float speed = 0.0f;
+    for (int i = 0; i < 2000; i++) {
+        if (i % 10 == 0 && i < 1500) {
+            reportTrack(i * dt, 5.0f);
+        }
+        nowUs += lrintf(dt * 1e6f);
+        speed = imuWingTurnSpeedMs(nowUs, dt, &turn.gyroRadS);
+    }
+    EXPECT_FLOAT_EQ(gpsSol.groundSpeed * 0.01f, speed);
+}
+
+TEST_F(CoordinatedTurnTest, WithTheGpsRepeatingItsLastFixTheSpeedIsTheLastGroundspeed)
+{
+    const CoordinatedTurn turn = coordinatedTurn(bankDeg, speedMs);
+    timeUs_t nowUs = 0;
+    float speed = 0.0f;
+    for (int i = 0; i < 2000; i++) {
+        if (i % 10 == 0) {
+            if (i < 1500) {
+                reportTrack(i * dt, 5.0f);
+            } else {
+                testGpsNewData = true;
+            }
+        }
+        nowUs += lrintf(dt * 1e6f);
+        speed = imuWingTurnSpeedMs(nowUs, dt, &turn.gyroRadS);
+    }
+    EXPECT_FLOAT_EQ(gpsSol.groundSpeed * 0.01f, speed);
+}
+
+TEST_F(CoordinatedTurnTest, FlyingStraightTheSpeedIsTheGroundspeed)
+{
+    const vector3_t still = {{ 0.0f, 0.0f, 0.0f }};
+    float speed = 0.0f;
+    timeUs_t nowUs = 0;
+    for (int i = 0; i < 1000; i++) {
+        if (i % 10 == 0) {
+            reportTrack(0.0f, 5.0f);
+            gpsSol.llh.lat = i;
+        }
+        nowUs += lrintf(dt * 1e6f);
+        speed = imuWingTurnSpeedMs(nowUs, dt, &still);
+    }
+    EXPECT_NEAR(hypotf(5.0f, speedMs), speed, 0.01f);
+}
+
+TEST_F(CoordinatedTurnTest, WingHoldsTheBankOnTheCruiseSpeedWithoutGps)
+{
+    stateFlags = 0;
+
+    float maxRollErr, maxPitchErr;
+    fly(60.0f, &maxRollErr, &maxPitchErr);
+
+    EXPECT_LT(maxRollErr, 1.0f);
+    EXPECT_LT(maxPitchErr, 1.0f);
+}
+
 // STUBS
 
 extern "C" {
@@ -422,6 +748,13 @@ extern "C" {
     mag_t mag;
 
     gpsSolutionData_t gpsSol;
+
+    bool gpsHasNewData(uint16_t *)
+    {
+        const bool fresh = testGpsNewData;
+        testGpsNewData = false;
+        return fresh;
+    }
 
     uint8_t debugMode;
     int16_t debug[DEBUG16_VALUE_COUNT];
@@ -441,7 +774,7 @@ extern "C" {
     }
 
     bool sensors(uint32_t mask) {
-        return mask & SENSOR_ACC;
+        return mask & testSensors;
     };
 
     uint32_t millis(void) { return 0; }
@@ -455,13 +788,13 @@ extern "C" {
     bool accGetAccumulationAverage(float *) { return false; }
     void mixerSetThrottleAngleCorrection(int) {};
     bool gpsRescueIsRunning(void) { return false; }
-    bool isFixedWing(void) { return false; }
+    bool isFixedWing(void) { return testIsFixedWing; }
     void pinioBoxTaskControl(void) {}
     void schedulerIgnoreTaskExecTime(void) {}
     void schedulerIgnoreTaskStateTime(void) {}
     void schedulerSetNextStateTime(timeDelta_t) {}
     bool schedulerGetIgnoreTaskExecTime() { return false; }
-    float gyroGetFilteredDownsampled(int) { return 0.0f; }
+    float gyroGetFilteredDownsampled(int axis) { return testGyroDps[axis]; }
     float baroUpsampleAltitude()  { return 0.0f; }
     float getBaroAltitude(void) { return 3000.0f; }
     float getRcDeflectionAbs(int) { return 0.0f; }

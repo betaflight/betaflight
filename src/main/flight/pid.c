@@ -581,6 +581,26 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float calcHorizonLevelStrength(void)
 // Use the FAST_CODE_NOINLINE directive to avoid this code from being inlined into ITCM RAM to avoid overflow.
 // The impact is possibly slightly slower performance on F7/H7 but they have more than enough
 // processing power that it should be a non-issue.
+#if defined(USE_WING) && (defined(USE_ALTITUDE_HOLD) || defined(USE_POSITION_HOLD))
+// Altitude hold flies a wing's pitch, the pitch stick setting its climb rate, and position hold
+// its roll while the roll stick is centred.
+static bool wingAutopilotFliesAxis(int axis)
+{
+    switch (axis) {
+#ifdef USE_ALTITUDE_HOLD
+    case FD_PITCH:
+        return FLIGHT_MODE(ALT_HOLD_MODE) && autopilotThrottleValid();
+#endif
+#ifdef USE_POSITION_HOLD
+    case FD_ROLL:
+        return FLIGHT_MODE(POS_HOLD_MODE) && isAutopilotInControl();
+#endif
+    default:
+        return false;
+    }
+}
+#endif
+
 STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim,
                                                         float currentPidSetpoint, float horizonLevelStrength)
 {
@@ -602,9 +622,9 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     // use acro rates for the angle target in both horizon and angle modes, converted to -1 to +1 range using maxRate
 
 #ifdef USE_WING
-    if (axis == FD_PITCH) {
-        angleTarget += (float)pidProfile->angle_pitch_offset / 10.0f;
-    }
+    // the wing's zero-lift trim: every angle a wing is commanded rides on top of it
+    const float pitchTrimDeg = (axis == FD_PITCH) ? (float)pidProfile->angle_pitch_offset / 10.0f : 0.0f;
+    angleTarget += pitchTrimDeg;
 #endif // USE_WING
 
 #ifdef USE_GPS_RESCUE
@@ -630,17 +650,20 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 #if defined(USE_WING) && defined(USE_LAUNCH_WING)
     if (FLIGHT_MODE(LAUNCH_MODE)) {
         // angleTarget currently holds the pilot's own stick-derived target, so
-        // the handover factor blends straight onto it. The pitch offset is the
-        // wing's zero-lift trim, already added above, so the climb angle rides
-        // on top of it rather than replacing it.
-        float launchTarget = autopilotAngle[axis];
-        if (axis == FD_PITCH) {
-            launchTarget += (float)pidProfile->angle_pitch_offset / 10.0f;
-        }
+        // the handover factor blends straight onto it.
+        const float launchTarget = autopilotAngle[axis] + pitchTrimDeg;
         const float handover = launchWingHandoverFactor();
         angleTarget = launchTarget + (angleTarget - launchTarget) * handover;
         angleLimit = fmaxf(angleLimit, fabsf(launchTarget));
         angleFeedforward *= handover;
+    }
+#endif
+
+#if defined(USE_WING) && (defined(USE_ALTITUDE_HOLD) || defined(USE_POSITION_HOLD))
+    if (wingAutopilotFliesAxis(axis)) {
+        angleTarget = autopilotAngle[axis] + pitchTrimDeg;
+        angleLimit = fmaxf(angleLimit, fabsf(angleTarget));
+        angleFeedforward = 0.0f;
     }
 #endif
 
@@ -658,6 +681,12 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     const float earthRefGain = FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE) ? 1.0f : pidRuntime.angleEarthRef;
     angleRate += pidRuntime.angleYawSetpoint * sinAngle * earthRefGain;
     pidRuntime.angleTarget[axis] = angleTarget;  // set target for alternate axis to current axis, for use in preceding calculation
+
+#if defined(USE_WING) && defined(USE_ALTITUDE_HOLD)
+    if (axis == FD_PITCH && FLIGHT_MODE(ALT_HOLD_MODE)) {
+        angleRate += autopilotGetTurnPitchRateDps();
+    }
+#endif
 
     // smooth final angle rate output to clean up attitude signal steps (500hz), GPS steps (10 or 100hz), RC steps etc
     // this filter runs at ATTITUDE_CUTOFF_HZ, currently 50hz, so GPS roll may be a bit steppy

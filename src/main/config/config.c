@@ -384,7 +384,10 @@ static void validateAndFixConfig(void)
         rxConfigMutable()->rssi_src_frame_errors = false;
     }
 
-    if (featureIsConfigured(FEATURE_3D) || !featureIsConfigured(FEATURE_GPS) || mixerModeIsFixedWing(mixerConfig()->mixerMode)
+    if (featureIsConfigured(FEATURE_3D) || !featureIsConfigured(FEATURE_GPS)
+#if !defined(USE_WING) || !ENABLE_RESCUE_PLAN
+        || mixerModeIsFixedWing(mixerConfig()->mixerMode)
+#endif
 #if !defined(USE_GPS) || !defined(USE_GPS_RESCUE)
         || true
 #endif

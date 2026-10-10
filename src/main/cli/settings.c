@@ -85,6 +85,7 @@
 #include "pg/adc.h"
 #include "pg/alt_hold.h"
 #include "pg/autopilot.h"
+#include "pg/autopilot_wing.h"
 #include "pg/beeper.h"
 #include "pg/beeper_dev.h"
 #include "pg/bus_i2c.h"
@@ -213,7 +214,9 @@ static const char * const lookupTableGpsUbloxUtcStandard[] = {
 static const char * const lookupTableApYawMode[] = {
     "VELOCITY", "BEARING", "HYBRID", "FIXED", "DAMPENER"
 };
+#endif
 
+#if !defined(USE_WING) || ENABLE_FLIGHT_PLAN
 static const char * const lookupTableApRxLossPolicy[] = {
     "DISABLE", "CONTINUE", "LAND"
 };
@@ -410,6 +413,12 @@ static const char * const lookupTableRescueSanityType[] = {
 const char * const lookupTableRescueAltitudeMode[] = {
     "MAX_ALT", "FIXED_ALT", "CURRENT_ALT"
 };
+
+#ifdef USE_WING
+#define GPS_RESCUE_MIN_START_DIST_MAX 1000
+#else
+#define GPS_RESCUE_MIN_START_DIST_MAX 30
+#endif
 #endif
 
 #if defined(USE_VIDEO_SYSTEM)
@@ -582,6 +591,10 @@ const char* const lookupTableTpaSpeedType[] = {
 const char* const lookupTableYawType[] = {
     "RUDDER", "DIFF_THRUST",
 };
+
+static const char * const lookupTableLoiterDirection[] = {
+    "RIGHT", "LEFT",
+};
 #endif // USE_WING
 
 #ifdef USE_TRANSPONDER
@@ -619,6 +632,8 @@ const lookupTableEntry_t lookupTables[] = {
 #endif
 #ifndef USE_WING
     LOOKUP_TABLE_ENTRY(lookupTableApYawMode),
+#endif
+#if !defined(USE_WING) || ENABLE_FLIGHT_PLAN
     LOOKUP_TABLE_ENTRY(lookupTableApRxLossPolicy),
     LOOKUP_TABLE_ENTRY(lookupTableApGeofenceAction),
 #endif
@@ -753,6 +768,7 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_WING
     LOOKUP_TABLE_ENTRY(lookupTableTpaSpeedType),
     LOOKUP_TABLE_ENTRY(lookupTableYawType),
+    LOOKUP_TABLE_ENTRY(lookupTableLoiterDirection),
 #endif // USE_WING
 #ifdef USE_TRANSPONDER
     LOOKUP_TABLE_ENTRY(lookupTableTransponderProvider),
@@ -1188,25 +1204,29 @@ const clivalue_t valueTable[] = {
     { "gps_uart",                            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP_IDENTIFIER, .config.identifier = { IDENTIFIER_LOOKUP_SERIAL_PORT }, PG_GPS_CONFIG, offsetof(gpsConfig_t, gps_uart) },
     { "gps_baud",                            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BAUD_RATE },      PG_GPS_CONFIG, offsetof(gpsConfig_t, gps_baud) },
 
-#ifdef USE_GPS_RESCUE
-#ifndef USE_WING
+#if defined(USE_GPS_RESCUE) && (!defined(USE_WING) || ENABLE_RESCUE_PLAN)
     // PG_GPS_RESCUE
-    { PARAM_NAME_GPS_RESCUE_MIN_START_DIST,  VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 5, 30 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, minStartDistM) },
+    { PARAM_NAME_GPS_RESCUE_MIN_START_DIST,  VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 5, GPS_RESCUE_MIN_START_DIST_MAX }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, minStartDistM) },
     { PARAM_NAME_GPS_RESCUE_ALT_MODE,        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_RESCUE_ALT_MODE }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, altitudeMode) },
     { PARAM_NAME_GPS_RESCUE_INITIAL_CLIMB,   VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, initialClimbM) },
     { PARAM_NAME_GPS_RESCUE_ASCEND_RATE,     VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50, 2500 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, ascendRate) },
 
     { PARAM_NAME_GPS_RESCUE_RETURN_ALT,      VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 1000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, returnAltitudeM) },
+#ifndef USE_WING
     { PARAM_NAME_GPS_RESCUE_GROUND_SPEED,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 3000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, groundSpeedCmS) },
 
     { PARAM_NAME_GPS_RESCUE_DESCENT_DIST,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 5, 500 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, descentDistanceM) },
+#endif
     { PARAM_NAME_GPS_RESCUE_DESCEND_RATE,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 25, 500 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, descendRate) },
+#ifndef USE_WING
     { PARAM_NAME_GPS_RESCUE_SANITY_CHECKS,   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_RESCUE_SANITY_CHECK }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, sanityChecks) },
+#endif
     { PARAM_NAME_GPS_RESCUE_MIN_SATS,        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 50 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, minSats) },
     { PARAM_NAME_GPS_RESCUE_ALLOW_ARMING_WITHOUT_FIX, VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, allowArmingWithoutFix) },
 
+#ifndef USE_WING
     { PARAM_NAME_GPS_RESCUE_YAW_P,           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, yawP) },
-#endif // !USE_WING
+#endif
 #endif // USE_GPS_RESCUE
 
 #ifdef USE_GPS_LAP_TIMER
@@ -1222,15 +1242,13 @@ const clivalue_t valueTable[] = {
     { "yaw_control_reversed",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, yaw_control_reversed) },
 
 #ifdef USE_ALTITUDE_HOLD
-#ifndef USE_WING
     { PARAM_NAME_ALT_HOLD_CLIMB_RATE,  VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, climbRate) },
     { PARAM_NAME_ALT_HOLD_DEADBAND,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 70 },  PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, deadband) },
-#endif // !USE_WING
 #endif // USE_ALTITUDE_HOLD
 
 #ifdef USE_POSITION_HOLD
-#ifndef USE_WING
     { PARAM_NAME_POS_HOLD_DEADBAND,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 50 }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, deadband) },
+#ifndef USE_WING
     { "poshold_position_source",       VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_POSHOLD_SOURCE }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, positionSource) },
     { "poshold_opticalflow_quality_min", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, opticalflowQualityMin) },
     { "poshold_opticalflow_max_range", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50, 1000 }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, opticalflowMaxRange) },
@@ -1256,6 +1274,42 @@ const clivalue_t valueTable[] = {
     { "launch_abort_deadband",      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 50 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, abortDeadbandPercent) },
     { "launch_abort_angle",         VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 90 }, PG_LAUNCH_WING_CONFIG, offsetof(launchWingConfig_t, abortAngleDeg) },
 #endif // USE_WING && USE_LAUNCH_WING
+
+#ifdef USE_WING
+// PG_AUTOPILOT_WING
+    { PARAM_NAME_AP_WING_CRUISE_THROTTLE,   VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, cruiseThrottle) },
+    { PARAM_NAME_AP_WING_MIN_THROTTLE,      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, minThrottle) },
+    { PARAM_NAME_AP_WING_MAX_THROTTLE,      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, maxThrottle) },
+    { PARAM_NAME_AP_WING_BANK_THROTTLE,     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, bankThrottle) },
+    { PARAM_NAME_AP_WING_MAX_CLIMB_ANGLE,   VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 45 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, maxClimbAngle) },
+    { PARAM_NAME_AP_WING_MAX_DIVE_ANGLE,    VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 45 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, maxDiveAngle) },
+    { PARAM_NAME_AP_WING_MAX_CLIMB_RATE,    VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 200 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, maxClimbRate) },
+    { PARAM_NAME_AP_WING_MAX_SINK_RATE,     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 200 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, maxSinkRate) },
+    { PARAM_NAME_AP_WING_ALT_TIME_CONSTANT, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 200 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, altTimeConstant) },
+    { PARAM_NAME_AP_WING_CLIMB_P,           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, climbP) },
+    { PARAM_NAME_AP_WING_CLIMB_I,           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, climbI) },
+    { PARAM_NAME_AP_WING_VERT_ACCEL,        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 200 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, vertAccel) },
+    { PARAM_NAME_AP_WING_CRUISE_SPEED,      VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50, 500 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, cruiseSpeed) },
+    { PARAM_NAME_AP_WING_TURN_PITCH_FF,     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, turnPitchFf) },
+    { PARAM_NAME_AP_WING_MAX_BANK,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 60 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, maxBank) },
+    { PARAM_NAME_AP_WING_L1_PERIOD,         VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50, 400 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, l1Period) },
+    { PARAM_NAME_AP_WING_L1_DAMPING,        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 50, 100 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, l1Damping) },
+    { PARAM_NAME_AP_WING_LOITER_RADIUS,     VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 20, 2000 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, loiterRadius) },
+    { PARAM_NAME_AP_WING_LOITER_DIRECTION,  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LOITER_DIRECTION }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, loiterDirection) },
+    { PARAM_NAME_AP_WING_LAND_HEADING,      VAR_INT16  | MASTER_VALUE, .config.minmax = { -1, 359 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, landHeading) },
+    { PARAM_NAME_AP_WING_LAND_SIDE,         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LOITER_DIRECTION }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, landSide) },
+    { PARAM_NAME_AP_WING_LAND_FINAL_LENGTH, VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50, 1000 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, landFinalLength) },
+    { PARAM_NAME_AP_WING_LAND_GLIDE_ANGLE,  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 2, 15 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, landGlideAngle) },
+    { PARAM_NAME_AP_WING_LAND_APPROACH_ALT, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 200 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, landApproachAlt) },
+    { PARAM_NAME_AP_WING_LAND_FLARE_HEIGHT, VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50, 1500 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, landFlareHeight) },
+    { PARAM_NAME_AP_WING_LAND_FLARE_PITCH,  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 20 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, landFlarePitch) },
+    { PARAM_NAME_AP_WING_LAND_FLARE_SINK,   VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 30 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, landFlareSink) },
+    { PARAM_NAME_AP_WING_LAND_FINAL_BANK,   VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 35 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, landFinalBank) },
+    { PARAM_NAME_AP_WING_LAND_SLOPE_TOLERANCE, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 3, 50 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, landSlopeTolerance) },
+    { PARAM_NAME_AP_WING_LAND_ATTEMPTS,     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 10 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, landAttempts) },
+    { PARAM_NAME_AP_WING_LAND_MAX_TAILWIND, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 150 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, landMaxTailwind) },
+    { PARAM_NAME_AP_WING_LAND_LAUNCH_HEIGHT, VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 500 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, landLaunchHeight) },
+#endif // USE_WING
 
 // PG_PID_CONFIG
     { PARAM_NAME_PID_PROCESS_DENOM, VAR_UINT8  | MASTER_VALUE,  .config.minmaxUnsigned = { 1, MAX_PID_PROCESS_DENOM }, PG_PID_CONFIG, offsetof(pidConfig_t, pid_process_denom) },
@@ -2142,10 +2196,12 @@ const clivalue_t valueTable[] = {
     // Drag feedforward and velocity setpoint cap
     { PARAM_NAME_AP_VELOCITY_DRAG_COEFF, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, velocityDragCoeff) },
     { PARAM_NAME_AP_MAX_VELOCITY,        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 100, 5000 },  PG_AUTOPILOT, offsetof(autopilotConfig_t, maxVelocity) },
+#endif // !USE_WING
 
 // Phase 3: Waypoint navigation & yaw control
 #if ENABLE_FLIGHT_PLAN
     { PARAM_NAME_AP_WAYPOINT_ARRIVAL_RADIUS, VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 100, 5000 },  PG_AUTOPILOT, offsetof(autopilotConfig_t, waypointArrivalRadius) },
+#ifndef USE_WING
     { PARAM_NAME_AP_WAYPOINT_HOLD_RADIUS,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50, 1000 },   PG_AUTOPILOT, offsetof(autopilotConfig_t, waypointHoldRadius) },
     { PARAM_NAME_AP_STICK_DEADBAND,          VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 500 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, stickDeadband) },
     { PARAM_NAME_AP_THROTTLE_DEADBAND,       VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 500 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, throttleDeadband) },
@@ -2171,7 +2227,12 @@ const clivalue_t valueTable[] = {
 
     // Landing sequence
     { PARAM_NAME_AP_LANDING_DESCENT_RATE,    VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 200 },  PG_AUTOPILOT, offsetof(autopilotConfig_t, landingDescentRate) },
+#endif // !USE_WING
+#endif // ENABLE_FLIGHT_PLAN
+#if ENABLE_FLIGHT_PLAN || defined(USE_WING)
     { PARAM_NAME_AP_LANDING_DETECTION_TIME,  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 50 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, landingDetectionTime) },
+#endif
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
     { PARAM_NAME_AP_LANDING_SPIRAL_ENABLE,   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_AUTOPILOT, offsetof(autopilotConfig_t, landingSpiralEnable) },
     { PARAM_NAME_AP_LANDING_SPIRAL_RADIUS,   VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50, 2000 }, PG_AUTOPILOT, offsetof(autopilotConfig_t, landingSpiralRadius) },
     { PARAM_NAME_AP_LANDING_SPIRAL_RATE,     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 45 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, landingSpiralRate) },
@@ -2188,13 +2249,14 @@ const clivalue_t valueTable[] = {
 
     // Vertical track
     { PARAM_NAME_AP_MIN_NAV_ALTITUDE_M,      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 50 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, minNavAltitudeM) },
+#endif
 
+#if ENABLE_FLIGHT_PLAN
     // Safety
     { PARAM_NAME_AP_RX_LOSS_POLICY,          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_AP_RX_LOSS_POLICY }, PG_AUTOPILOT, offsetof(autopilotConfig_t, rxLossPolicy) },
     { PARAM_NAME_AP_MAX_DISTANCE_FROM_HOME,  VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 10000 }, PG_AUTOPILOT, offsetof(autopilotConfig_t, maxDistanceFromHomeM) },
     { PARAM_NAME_AP_GEOFENCE_ACTION,         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_AP_GEOFENCE_ACTION }, PG_AUTOPILOT, offsetof(autopilotConfig_t, geofenceAction) },
 #endif // ENABLE_FLIGHT_PLAN
-#endif // !USE_WING
 
 // PG_MODE_ACTIVATION_CONFIG
 #if defined(USE_CUSTOM_BOX_NAMES)
