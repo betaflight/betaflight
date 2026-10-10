@@ -164,6 +164,8 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/psas.h"
+#include "flight/psas_trimming.h"
 #include "flight/pos_hold.h"
 
 #include "io/gps.h"
@@ -1184,6 +1186,10 @@ static void osdElementFlymode(osdElementParms_t *element)
         strcpy(element->buff, "HEAD");
     } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
         strcpy(element->buff, "PASS");
+#ifdef USE_PSAS
+    } else if (FLIGHT_MODE(PSAS_MODE)) {
+        strcpy(element->buff, "PSAS");
+#endif
     } else if (FLIGHT_MODE(POS_HOLD_MODE)) {
         strcpy(element->buff, "POSH");
     } else if (FLIGHT_MODE(ALT_HOLD_MODE)) {
@@ -2088,6 +2094,97 @@ static void osdElementSys(osdElementParms_t *element)
 }
 #endif
 
+#ifdef USE_PSAS
+static void osdElementPsasAoaLimiter(osdElementParms_t *element)
+{
+    switch (psasData.pitch.aoaLimiterState) {
+    case LIMITER_DISABLED:
+        element->drawElement = false;  // element does not need to be rendered
+        break;
+    case LIMITER_NOT_READY:
+        tfp_sprintf(element->buff, "%s", "AOA N/R");
+        break;
+    case LIMITER_ON:
+        tfp_sprintf(element->buff, "%s", "AOA ON");
+        break;
+    case LIMITER_ACTIVE:
+        tfp_sprintf(element->buff, "%s", "AOA!!!");
+        break;
+    }
+}
+
+static int osdFormatPsasTrim(char *buff, char axisSymbol, float val, char state)
+{
+    const bool vertical = axisSymbol == 'P';
+    const char arrow = (val > 0.05f) ? (vertical ? SYM_ARROW_NORTH : SYM_ARROW_EAST)
+                     : (val < -0.05f) ? (vertical ? SYM_ARROW_SOUTH : SYM_ARROW_WEST)
+                     : ' ';
+    char *p = buff;
+    *p++ = axisSymbol;
+    p += osdPrintFloat(p, SYM_NONE, fabsf(val), "%2u", 1, true, arrow);
+    if (state) {
+        *p++ = state;
+        *p = '\0';
+    }
+    return p - buff;
+}
+
+static char getPsasTrimStateSymbol(uint8_t axis, uint8_t state)
+{
+    return (state == TRIMMING_FIX)  ? 'F'
+                                    : (state == TRIMMING_ADJUSTMENT) ? (getPsasTrimmingActiveChannel() == axis ? 'A' : ' ')
+                                    : ' ';
+}
+
+static void osdElementPsasTrimRoll(osdElementParms_t *element)
+{
+    const uint8_t axis = 0;
+    const char axisSymbol = 'R';
+    const uint8_t trimState = getPsasTrimmingState();
+    const float trimValue = getPsasTrimmingOutput(axis);
+    if (!isPsasTrimmingChannelEnabled(axis) ||
+        (trimState == TRIMMING_OFF && fabsf(trimValue) < 0.05f)) {
+        element->drawElement = false;
+        return;
+    }
+
+    const char stateSymbol = getPsasTrimStateSymbol(axis, trimState);
+    osdFormatPsasTrim(element->buff, axisSymbol, trimValue, stateSymbol);
+}
+
+static void osdElementPsasTrimPitch(osdElementParms_t *element)
+{
+    const uint8_t axis = 1;
+    const char axisSymbol = 'P';
+    const uint8_t trimState = getPsasTrimmingState();
+    const float trimValue = getPsasTrimmingOutput(axis);
+    if (!isPsasTrimmingChannelEnabled(axis) ||
+        (trimState == TRIMMING_OFF && fabsf(trimValue) < 0.05f)) {
+        element->drawElement = false;
+        return;
+    }
+
+    const char stateSymbol = getPsasTrimStateSymbol(axis, trimState);
+    osdFormatPsasTrim(element->buff, axisSymbol, trimValue, stateSymbol);
+}
+
+static void osdElementPsasTrimYaw(osdElementParms_t *element)
+{
+    const uint8_t axis = 2;
+    const char axisSymbol = 'Y';
+    const uint8_t trimState = getPsasTrimmingState();
+    const float trimValue = getPsasTrimmingOutput(axis);
+    if (!isPsasTrimmingChannelEnabled(axis) ||
+        (trimState == TRIMMING_OFF && fabsf(trimValue) < 0.05f)) {
+        element->drawElement = false;
+        return;
+    }
+
+    const char stateSymbol = getPsasTrimStateSymbol(axis, trimState);
+    osdFormatPsasTrim(element->buff, axisSymbol, trimValue, stateSymbol);
+}
+#endif
+
 #ifdef USE_PITOT
 static void osdElementAirspeed(osdElementParms_t *element)
 {
@@ -2385,6 +2482,12 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_PITOT
     [OSD_AIRSPEED]                = osdElementAirspeed,
 #endif
+#ifdef USE_PSAS
+    [OSD_PSAS_AOA_LIMITER]        = osdElementPsasAoaLimiter,
+    [OSD_PSAS_TRIM_ROLL]          = osdElementPsasTrimRoll,
+    [OSD_PSAS_TRIM_PITCH]         = osdElementPsasTrimPitch,
+    [OSD_PSAS_TRIM_YAW]           = osdElementPsasTrimYaw,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw its background (static part)
@@ -2475,6 +2578,13 @@ void osdAddActiveElements(void)
 
 #ifdef USE_PITOT
     osdAddActiveElement(OSD_AIRSPEED);
+#endif
+
+#ifdef USE_PSAS
+    osdAddActiveElement(OSD_PSAS_AOA_LIMITER);
+    osdAddActiveElement(OSD_PSAS_TRIM_ROLL);
+    osdAddActiveElement(OSD_PSAS_TRIM_PITCH);
+    osdAddActiveElement(OSD_PSAS_TRIM_YAW);
 #endif
 }
 
