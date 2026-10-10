@@ -1141,6 +1141,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #if defined(USE_ACC)
     static timeUs_t levelModeStartTimeUs = 0;
+    static bool crashRecoveryGuardActive = false; // set on entering a self-level mode, so levelModeStartTimeUs is only compared while fresh
+    static bool prevLevelMode = false;
     static bool prevExternalAngleRequest = false;
     const rollAndPitchTrims_t *angleTrim = &accelerometerConfig()->accelerometerTrims;
     float horizonLevelStrength = 0.0f;
@@ -1157,18 +1159,21 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
                 ;
     levelMode_e levelMode;
-    if (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE | GPS_RESCUE_MODE | LAUNCH_MODE)) {
+    const bool isLevelMode = FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE | GPS_RESCUE_MODE | LAUNCH_MODE);
+    if (isLevelMode) {
         if (pidRuntime.levelRaceMode && !isExternalAngleModeRequest) {
             levelMode = LEVEL_MODE_R;
         } else {
             levelMode = LEVEL_MODE_RP;
         }
 
-        // Keep track of when we entered a self-level mode so that we can
-        // add a guard time before crash recovery can activate.
-        // Also reset the guard time whenever GPS Rescue is activated.
-        if ((levelModeStartTimeUs == 0) || (isExternalAngleModeRequest && !prevExternalAngleRequest)) {
+        // Guard crash recovery for a short time after entering a self-level mode,
+        // or whenever GPS Rescue etc. takes over.
+        if (!prevLevelMode || (isExternalAngleModeRequest && !prevExternalAngleRequest)) {
             levelModeStartTimeUs = currentTimeUs;
+            crashRecoveryGuardActive = true;
+        } else if (crashRecoveryGuardActive && cmpTimeUs(currentTimeUs, levelModeStartTimeUs) > CRASH_RECOVERY_DETECTION_DELAY_US) {
+            crashRecoveryGuardActive = false;
         }
 
         // Calc horizonLevelStrength if needed
@@ -1177,9 +1182,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
     } else {
         levelMode = LEVEL_MODE_OFF;
-        levelModeStartTimeUs = 0;
+        crashRecoveryGuardActive = false;
     }
 
+    prevLevelMode = isLevelMode;
     prevExternalAngleRequest = isExternalAngleModeRequest;
 #else
     UNUSED(pidProfile);
@@ -1477,7 +1483,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             float preTpaD = pidRuntime.pidCoefficient[axis].Kd * delta;
 
 #if defined(USE_ACC)
-            if (cmpTimeUs(currentTimeUs, levelModeStartTimeUs) > CRASH_RECOVERY_DETECTION_DELAY_US) {
+            if (!crashRecoveryGuardActive) {
                 detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
             }
 #endif
