@@ -132,12 +132,6 @@ TEST(VtxTest, PitMode)
 // vTable, so a stub device with no vTable is sufficient.
 static vtxDevice_t testVtxDevice = { .vTable = NULL };
 
-extern "C" {
-    // STATIC_UNIT_TESTED in vtx_control.c — a session-sticky arm latch with no production reset.
-    // Reset it before each case so the tests are independent of execution order (e.g. shuffle).
-    extern uint8_t locked;
-}
-
 static void clearActivationConditions(void)
 {
     for (int i = 0; i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT; i++) {
@@ -171,7 +165,6 @@ static void setActivationCondition(uint8_t index, uint8_t auxChannelIndex, uint8
 TEST(VtxTest, ActivationConditionsAllAppliedWhenSimultaneouslyActive)
 {
     // given
-    locked = 0;
     DISABLE_ARMING_FLAG(ARMED);
     vtxCommonSetDevice(&testVtxDevice);
     clearActivationConditions();
@@ -198,7 +191,6 @@ TEST(VtxTest, ActivationConditionsAllAppliedWhenSimultaneouslyActive)
 TEST(VtxTest, PowerOnlyConditionDoesNotResetBandAndChannel)
 {
     // given
-    locked = 0;
     DISABLE_ARMING_FLAG(ARMED);
     vtxCommonSetDevice(&testVtxDevice);
     clearActivationConditions();
@@ -224,7 +216,6 @@ TEST(VtxTest, PowerOnlyConditionDoesNotResetBandAndChannel)
 TEST(VtxTest, LastActiveConditionWinsForSameField)
 {
     // given
-    locked = 0;
     DISABLE_ARMING_FLAG(ARMED);
     vtxCommonSetDevice(&testVtxDevice);
     clearActivationConditions();
@@ -251,7 +242,6 @@ TEST(VtxTest, LastActiveConditionWinsForSameField)
 TEST(VtxTest, InactiveConditionLeavesLastValues)
 {
     // given
-    locked = 0;
     DISABLE_ARMING_FLAG(ARMED);
     vtxCommonSetDevice(&testVtxDevice);
     clearActivationConditions();
@@ -277,12 +267,10 @@ TEST(VtxTest, InactiveConditionLeavesLastValues)
     EXPECT_EQ(5, vtxSettingsConfig()->power);
 }
 
-// When armed, band/channel are locked but power may still change. `locked` is reset first so
-// this case no longer depends on running last.
-TEST(VtxTest, ArmedLocksBandAndChannelButNotPower)
+// When armed, band/channel/power are not locked
+TEST(VtxTest, ArmedDoesNotLocksBandOrChannelOrPower)
 {
     // given
-    locked = 0;
     DISABLE_ARMING_FLAG(ARMED);
     vtxCommonSetDevice(&testVtxDevice);
     clearActivationConditions();
@@ -298,9 +286,9 @@ TEST(VtxTest, ArmedLocksBandAndChannelButNotPower)
     vtxUpdateActivatedChannel();
     DISABLE_ARMING_FLAG(ARMED);  // restore global state so later/shuffled tests don't inherit it
 
-    // expect — band/channel locked out, power still applied
-    EXPECT_EQ(0, vtxSettingsConfig()->band);
-    EXPECT_EQ(0, vtxSettingsConfig()->channel);
+    // expect — band/channel/power settings applied
+    EXPECT_EQ(4, vtxSettingsConfig()->band);
+    EXPECT_EQ(6, vtxSettingsConfig()->channel);
     EXPECT_EQ(2, vtxSettingsConfig()->power);
 }
 
