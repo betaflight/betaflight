@@ -135,6 +135,7 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
 #endif
 #endif // GPS
     {"COMPASS BAR",        OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_COMPASS_BAR]},
+    {"DECIMAL COMPASS BAR",OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_DECIMAL_COMPASS_BAR]},
 #ifdef USE_ESC_SENSOR
     {"ESC TEMPERATURE",    OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_ESC_TMP]},
     {"ESC RPM",            OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_ESC_RPM]},
