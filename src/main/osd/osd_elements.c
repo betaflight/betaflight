@@ -2124,6 +2124,7 @@ static int osdFormatPsasTrim(char *buff, char axisSymbol, float val, char state)
     p += osdPrintFloat(p, SYM_NONE, fabsf(val), "%2u", 1, true, arrow);
     if (state) {
         *p++ = state;
+        *p = '\0';
     }
     return p - buff;
 }
