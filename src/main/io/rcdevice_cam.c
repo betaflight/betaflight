@@ -42,9 +42,9 @@
 
 #ifdef USE_RCDEVICE
 
-#define IS_HI(X) (rcData[X] > FIVE_KEY_CABLE_JOYSTICK_MAX)
-#define IS_LO(X) (rcData[X] < FIVE_KEY_CABLE_JOYSTICK_MIN)
-#define IS_MID(X) (rcData[X] > FIVE_KEY_CABLE_JOYSTICK_MID_START && rcData[X] < FIVE_KEY_CABLE_JOYSTICK_MID_END)
+#define IS_HI(X) (rcGetChannel(X) > rcUsToNorm(FIVE_KEY_CABLE_JOYSTICK_MAX))
+#define IS_LO(X) (rcGetChannel(X) < rcUsToNorm(FIVE_KEY_CABLE_JOYSTICK_MIN))
+#define IS_MID(X) (rcGetChannel(X) > rcUsToNorm(FIVE_KEY_CABLE_JOYSTICK_MID_START) && rcGetChannel(X) < rcUsToNorm(FIVE_KEY_CABLE_JOYSTICK_MID_END))
 
 static runcamDevice_t runcamDevice;
 runcamDevice_t *camDevice = &runcamDevice;

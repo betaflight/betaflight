@@ -58,13 +58,18 @@ const uint8_t hidChannelMapping[] = {
     AUX12     // Button 8
 };
 
+static int8_t hidAxisValue(uint8_t channel)
+{
+    return (int)scaleRangef(constrainf(rcGetChannel(channel), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX, 0, USB_CDC_HID_RANGE_MAX - USB_CDC_HID_RANGE_MIN) + USB_CDC_HID_RANGE_MIN;
+}
+
 void sendRcDataToHid(void)
 {
     int8_t report[9];
      // Axes
     for (unsigned i = 0; i < USB_CDC_HID_NUM_AXES; i++) {
         const uint8_t channel = hidChannelMapping[i];
-        report[i] = scaleRange(constrain(rcData[channel], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, USB_CDC_HID_RANGE_MIN, USB_CDC_HID_RANGE_MAX);
+        report[i] = hidAxisValue(channel);
         if (channel == PITCH) {
             // PITCH is inverted in Windows
             report[i] = -report[i];
@@ -76,7 +81,7 @@ void sendRcDataToHid(void)
     report[8] = 0;
     for (unsigned i = 0; i < USB_CDC_HID_NUM_BUTTONS; i++) {
         const uint8_t channel = hidChannelMapping[i + USB_CDC_HID_NUM_AXES];
-        if (scaleRange(constrain(rcData[channel], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, USB_CDC_HID_RANGE_MIN, USB_CDC_HID_RANGE_MAX) > 0) {
+        if (hidAxisValue(channel) > 0) {
             report[8] |= (1 << i);
         }
     }
