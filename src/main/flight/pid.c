@@ -138,9 +138,13 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 // the b11 tester build must reset, not load shifted.
 // Upstream's chirp_repeat (2026-09-27) sits ahead of the ADRC tail and moves it, but the version stays 15: the PG
 // version is a 4-bit field (0..15, a 16 wraps to 0), 15 is the ceiling, and no build with the pre-chirp_repeat
-// version-15 layout was ever released (it existed only as the PR head of 2026-09-26/27). The final number is for
-// the maintainers to pick when this lands on master (which is at 12).
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 15);
+// version-15 layout was ever released (it existed only as the PR head of 2026-09-26/27).
+// Version 1: upstream #15546 (2026-10-10) inserts four wing fields ahead of the chirp block, so the element grows
+// 268 -> 274 bytes - and this time version-15 builds with the 268-byte element are in testers' hands (the PR head
+// and the mp1/mp2 tester builds), so they have to reset. 15 is the ceiling of the 4-bit field and 16 would wrap to
+// 0, which the b9 line used; 1 is the next number no ADRC build and no upstream build of this EEPROM_CONF_VERSION
+// (11, 12) has carried. The final number is for the maintainers to pick when this lands on master (which is at 12).
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 1);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
