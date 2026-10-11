@@ -1819,8 +1819,7 @@ static void osdElementRcChannels(osdElementParms_t *element)
     static uint8_t channel = 0;
 
     if (osdConfig()->rcChannels[channel] >= 0) {
-        // Translate (1000, 2000) to (-1000, 1000)
-        int data = scaleRange(rcData[osdConfig()->rcChannels[channel]], PWM_RANGE_MIN, PWM_RANGE_MAX, -1000, 1000);
+        int data = rcGetChannel(osdConfig()->rcChannels[channel]) * 1000;
         // Opt for the simplest formatting for now.
         // Decimal notation can be added when tfp_sprintf supports float among fancy options.
         tfp_sprintf(element->buff, "%5d", data);
@@ -1941,6 +1940,11 @@ static void osdBackgroundStickOverlay(osdElementParms_t *element)
     }
 }
 
+static uint8_t stickOverlayPosition(rc_alias_e channel, uint8_t positions)
+{
+    return MIN((int)scaleRangef(constrainf(rcGetChannel(channel), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX, 0, positions), positions - 1);
+}
+
 static void osdElementStickOverlay(osdElementParms_t *element)
 {
     // Now draw the cursor
@@ -1954,8 +1958,8 @@ static void osdElementStickOverlay(osdElementParms_t *element)
         horizontal_channel = radioModes[osdConfig()->overlay_radio_mode-1].right_horizontal;
     }
 
-    const uint8_t cursorX = scaleRange(constrain(rcData[horizontal_channel], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_WIDTH);
-    const uint8_t cursorY = OSD_STICK_OVERLAY_VERTICAL_POSITIONS - 1 - scaleRange(constrain(rcData[vertical_channel], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_VERTICAL_POSITIONS);
+    const uint8_t cursorX = stickOverlayPosition(horizontal_channel, OSD_STICK_OVERLAY_WIDTH);
+    const uint8_t cursorY = OSD_STICK_OVERLAY_VERTICAL_POSITIONS - 1 - stickOverlayPosition(vertical_channel, OSD_STICK_OVERLAY_VERTICAL_POSITIONS);
 
     const char cursor = SYM_STICK_OVERLAY_SPRITE_HIGH + (cursorY % OSD_STICK_OVERLAY_SPRITE_HEIGHT);
 

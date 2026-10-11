@@ -96,6 +96,11 @@ static inline float rcUsToNorm(float us)
     return (us - PWM_RANGE_MIDDLE) * NORMALISED_RANGE / PWM_RANGE;
 }
 
+static inline float rcNormToUs(float norm)
+{
+    return norm * (PWM_RANGE / 2.0f) + PWM_RANGE_MIDDLE;
+}
+
 static inline float rcUsSpanToNorm(float us)
 {
     return us * NORMALISED_RANGE / PWM_RANGE;
