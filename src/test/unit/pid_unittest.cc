@@ -785,6 +785,20 @@ TEST(pidControllerTest, testFeedForward)
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].F);
 }
 
+// pidInit() runs from readEEPROM() before rxInit(), so the CRSF check must not depend on rx runtime state
+TEST(pidControllerTest, testFeedforwardInterpolateFollowsRxConfig)
+{
+    resetTest();
+
+    rxConfigMutable()->serialrx_provider = SERIALRX_CRSF;
+    pidInit(pidProfile);
+    EXPECT_FALSE(pidRuntime.feedforwardInterpolate);
+
+    rxConfigMutable()->serialrx_provider = SERIALRX_SBUS;
+    pidInit(pidProfile);
+    EXPECT_TRUE(pidRuntime.feedforwardInterpolate);
+}
+
 TEST(pidControllerTest, testItermRelax)
 {
     resetTest();
