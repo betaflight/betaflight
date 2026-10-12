@@ -23,6 +23,12 @@ PICO_MK_DIR = $(TARGET_PLATFORM_DIR)/mk
 
 ifneq ($(PICO_TRACE),)
 include $(PICO_MK_DIR)/PICO_trace.mk
+else
+# If not using trace, then we can avoid pulling in printf, which is referenced by the panic
+# and __assert_func functions (there's no point in those calling printf if we are not tracing).
+# When PICO_PANIC_FUNCTION is defined and empty, pico-sdk provides the simplest panic function.
+# The __assert_func function will be defined in system.c when PICO_TRACE macro is not defined.
+DEVICE_FLAGS += -DPICO_PANIC_FUNCTION=
 endif
 
 ifneq ($(TEST_PIO_DEBUG),)
@@ -383,6 +389,11 @@ ARCH_FLAGS      += -DPICO_COPY_TO_RAM=$(RUN_FROM_RAM)
 # rather than inlining code that is sometimes broken.
 # (Calls to memcpy, memset become calls to performant wrapped versions.)
 ARCH_FLAGS      += -fno-builtin-memcpy -fno-builtin-memset
+
+# GCC canonicalises every header found via -isystem with a readlink per path
+# component; with the ~100 pico-sdk system include dirs that is ~23M syscalls a
+# build, which dominates the compile under a sandboxed runtime (gVisor).
+ARCH_FLAGS      += -fno-canonical-system-headers
 
 PICO_STDIO_USB_FLAGS = \
             -DLIB_PICO_PRINTF=1 \

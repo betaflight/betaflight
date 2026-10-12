@@ -125,6 +125,11 @@ STATIC_UNIT_TESTED uint8_t responseBuffer[MSP_TLM_OUTBUF_SIZE];
 STATIC_UNIT_TESTED mspPacket_t requestPacket;
 STATIC_UNIT_TESTED mspPacket_t responsePacket;
 static uint8_t lastRequestVersion; // MSP version of last request. Temporary solution. It's better to keep it in requestPacket.
+// Whether the current response's START frame has gone out. Cleared whenever a
+// new response is prepared, not only when one finishes: a request that arrives
+// while a long response is still being sent replaces that response, and the
+// replacement must begin with its own START frame or the receiver discards it.
+static bool headerSent = false;
 
 static mspDescriptor_t mspSharedDescriptor = -1;
 
@@ -147,6 +152,7 @@ static void processMspPacket(void)
     responsePacket.result = 0;
     responsePacket.buf.ptr = responseBuffer;
     responsePacket.buf.end = ARRAYEND(responseBuffer);
+    headerSent = false;
 
     mspPostProcessFnPtr mspPostProcessFn = NULL;
     if (mspFcProcessCommand(mspSharedDescriptor, &requestPacket, &responsePacket, &mspPostProcessFn) == MSP_RESULT_ERROR) {
@@ -164,6 +170,7 @@ static void sendMspErrorResponse(uint8_t error, int16_t cmd)
     responsePacket.cmd = cmd;
     responsePacket.result = 0;
     responsePacket.buf.ptr = responseBuffer;
+    headerSent = false;
 
     sbufWriteU8(&responsePacket.buf, error);
     responsePacket.result = TELEMETRY_MSP_RES_ERROR;
@@ -271,7 +278,6 @@ bool handleMspFrame(uint8_t *const payload, uint8_t const payloadLength, uint8_t
 bool sendMspReply(const uint8_t payloadSizeMax, mspResponseFnPtr responseFn)
 {
     static uint8_t seq = 0;
-    static bool headerSent = false;   
 
     uint8_t payloadArray[payloadSizeMax];
     sbuf_t payloadBufStruct;
