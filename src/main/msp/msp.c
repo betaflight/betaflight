@@ -1396,7 +1396,7 @@ case MSP_NAME:
 
     case MSP_RC:
         for (int i = 0; i < rxRuntimeState.channelCount; i++) {
-            sbufWriteU16(dst, rcData[i]);
+            sbufWriteU16(dst, rcNormToUs(rcGetChannel(i)));
         }
         break;
 
@@ -3293,7 +3293,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
     case MSP_SET_GPS_RESCUE:
         autopilotConfigMutable()->maxAngle = constrain(sbufReadU16(src), AUTOPILOT_MAX_ANGLE_MIN, AUTOPILOT_MAX_ANGLE_MAX);
         gpsRescueConfigMutable()->returnAltitudeM = constrain(sbufReadU16(src), GPS_RESCUE_RETURN_ALT_MIN_M, GPS_RESCUE_RETURN_ALT_MAX_M);
-        gpsRescueConfigMutable()->descentDistanceM = sbufReadU16(src);
+        gpsRescueConfigMutable()->descentDistanceM = constrain(sbufReadU16(src), GPS_RESCUE_DESCENT_DIST_MIN_M, GPS_RESCUE_DESCENT_DIST_MAX_M); // 0 makes RESCUE_DESCENT unreachable
         gpsRescueConfigMutable()->groundSpeedCmS = MIN(sbufReadU16(src), GPS_RESCUE_GROUND_SPEED_MAX);
         autopilotConfigMutable()->throttleMin = constrain(sbufReadU16(src), AUTOPILOT_THROTTLE_MIN_MIN, AUTOPILOT_THROTTLE_MIN_MAX);
         autopilotConfigMutable()->throttleMax = constrain(sbufReadU16(src), AUTOPILOT_THROTTLE_MAX_MIN, AUTOPILOT_THROTTLE_MAX_MAX);

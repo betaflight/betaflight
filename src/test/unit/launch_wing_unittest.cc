@@ -58,6 +58,11 @@ extern "C" {
     float testRcDeflection[3] = { 0.0f, 0.0f, 0.0f };
     throttleStatus_e testThrottleStatus = THROTTLE_LOW;
     bool testLaunchBoxActive = false;
+    bool testAltHoldBoxActive = false;
+    bool testPosHoldBoxActive = false;
+    bool testAutopilotBoxActive = false;
+    bool testRescueBoxActive = false;
+    bool testAutopilotThrottleValid = false;
     bool testIsFixedWing = true;
     bool testAccPresent = true;
     bool testAltitudeAvailable = true;
@@ -74,7 +79,13 @@ extern "C" {
     float getAltitudeCm(void) { return testAltitudeCm; }
     float getAltitudeDerivative(void) { return testAltitudeDerivative; }
     bool failsafeIsActive(void) { return testFailsafeActive; }
-    bool IS_RC_MODE_ACTIVE(boxId_e boxId) { return boxId == BOXLAUNCH && testLaunchBoxActive; }
+    bool IS_RC_MODE_ACTIVE(boxId_e boxId)
+    {
+        return (boxId == BOXLAUNCH && testLaunchBoxActive) || (boxId == BOXALTHOLD && testAltHoldBoxActive)
+            || (boxId == BOXPOSHOLD && testPosHoldBoxActive) || (boxId == BOXAUTOPILOT && testAutopilotBoxActive)
+            || (boxId == BOXGPSRESCUE && testRescueBoxActive);
+    }
+    bool autopilotThrottleValid(void) { return testAutopilotThrottleValid; }
 
     int testTpaSpeedResets = 0;
     void pidResetTpaSpeed(void) { testTpaSpeedResets++; }
@@ -123,6 +134,11 @@ static void resetForTest(void)
     setQuiescent();
     testThrottleStatus = THROTTLE_LOW;
     testLaunchBoxActive = true;
+    testAltHoldBoxActive = false;
+    testPosHoldBoxActive = false;
+    testAutopilotBoxActive = false;
+    testRescueBoxActive = false;
+    testAutopilotThrottleValid = false;
     testIsFixedWing = true;
     testAccPresent = true;
     flightModeFlags = LAUNCH_MODE;
@@ -513,6 +529,155 @@ TEST(LaunchWingTest, FinishCrossFadesThrottleAndPitchBackToThePilot)
     EXPECT_FALSE(launchWingThrottleValid());
 }
 
+// A hold selected alongside the launch takes the climb-out over. The launch
+// flies on until the hold is running, so the sticks never get it in between.
+TEST(LaunchWingTest, FinishFliesOnUntilTheHoldIsRunning)
+{
+    resetForTest();
+    debugMode = DEBUG_LAUNCH;
+    testAltHoldBoxActive = true;
+    timeUs_t t = run(0, 1);
+    t = reachInProgress(t);
+    EXPECT_FALSE(launchWingHandingToHold());
+
+    t = run(t, launchWingConfig()->timeoutMs + launchWingConfig()->endTimeMs + 5);
+    EXPECT_EQ(LAUNCH_WING_FINISH, launchWingGetState());
+    EXPECT_TRUE(launchWingHandingToHold());
+    EXPECT_TRUE(launchWingThrottleValid());
+    EXPECT_FLOAT_EQ(0.0f, launchWingHandoverFactor());
+    EXPECT_FLOAT_EQ(launchWingConfig()->throttlePercent * 0.01f, launchWingGetThrottle());
+    EXPECT_FLOAT_EQ(-(float)launchWingConfig()->climbAngleDeg, autopilotAngle[AI_PITCH]);
+
+    // alt hold engaged but yet to run
+    flightModeFlags |= ALT_HOLD_MODE;
+    t = run(t, 5);
+    EXPECT_TRUE(launchWingHandingToHold());
+
+    testAutopilotThrottleValid = true;
+    run(t, 1);
+    EXPECT_EQ(LAUNCH_WING_FLYING, launchWingGetState());
+    EXPECT_EQ(LAUNCH_WING_EXIT_HOLD, debug[7]);
+    EXPECT_FALSE(launchWingHandingToHold());
+    EXPECT_FALSE(launchWingThrottleValid());
+    debugMode = DEBUG_NONE;
+}
+
+TEST(LaunchWingTest, FinishHandsToPositionHoldToo)
+{
+    resetForTest();
+    testPosHoldBoxActive = true;
+    timeUs_t t = run(0, 1);
+    t = reachInProgress(t);
+    run(t, launchWingConfig()->timeoutMs + 5);
+    EXPECT_TRUE(launchWingHandingToHold());
+}
+
+TEST(LaunchWingTest, FinishHandsToAMissionWithAFix)
+{
+    resetForTest();
+    testAutopilotBoxActive = true;
+    timeUs_t t = run(0, 1);
+    t = reachInProgress(t);
+    t = run(t, launchWingConfig()->timeoutMs + 5);
+    EXPECT_FALSE(launchWingHandingToHold());
+    EXPECT_GT(launchWingHandoverFactor(), 0.0f);
+
+    resetForTest();
+    testAutopilotBoxActive = true;
+    t = run(0, 1);
+    t = reachInProgress(t);
+    stateFlags = GPS_FIX;
+    t = run(t, launchWingConfig()->timeoutMs + 5);
+    EXPECT_TRUE(launchWingHandingToHold());
+
+    // the mission brings alt hold with it
+    flightModeFlags |= ALT_HOLD_MODE;
+    testAutopilotThrottleValid = true;
+    run(t, 1);
+    EXPECT_EQ(LAUNCH_WING_FLYING, launchWingGetState());
+}
+
+TEST(LaunchWingTest, AFlyingEndRecordsTheCourseItClimbedOutOn)
+{
+    float courseDeg;
+    resetForTest();
+    timeUs_t t = run(0, 1);
+    EXPECT_FALSE(launchWingGetCourseDeg(&courseDeg));
+    t = reachInProgress(t);
+    stateFlags = GPS_FIX;
+    gpsSol.groundSpeed = 1400;
+    gpsSol.groundCourse = 2715;
+    run(t, launchWingConfig()->timeoutMs + launchWingConfig()->endTimeMs + 5);
+    ASSERT_EQ(LAUNCH_WING_FLYING, launchWingGetState());
+    EXPECT_TRUE(launchWingGetCourseDeg(&courseDeg));
+    EXPECT_FLOAT_EQ(271.5f, courseDeg);
+
+    // not crawling along, nor aborted
+    resetForTest();
+    t = run(0, 1);
+    t = reachInProgress(t);
+    stateFlags = GPS_FIX;
+    gpsSol.groundSpeed = 200;
+    run(t, launchWingConfig()->timeoutMs + launchWingConfig()->endTimeMs + 5);
+    ASSERT_EQ(LAUNCH_WING_FLYING, launchWingGetState());
+    EXPECT_FALSE(launchWingGetCourseDeg(&courseDeg));
+
+    resetForTest();
+    t = run(0, 1);
+    t = reachInProgress(t);
+    stateFlags = GPS_FIX;
+    gpsSol.groundSpeed = 1400;
+    flightModeFlags = 0;
+    run(t, 1);
+    ASSERT_EQ(LAUNCH_WING_ABORTED, launchWingGetState());
+    EXPECT_FALSE(launchWingGetCourseDeg(&courseDeg));
+}
+
+TEST(LaunchWingTest, AThrowIsRememberedForTheFlight)
+{
+    resetForTest();
+    timeUs_t t = run(0, 1);
+    t = reachWaitDetection(t);
+    EXPECT_FALSE(launchWingThrown());
+    setBungeeThrow();
+    t = run(t, launchWingConfig()->detectTimeMs + 1);
+    EXPECT_TRUE(launchWingThrown());
+
+    // it outlasts the launch, but not the flight
+    flightModeFlags = 0;
+    run(t, 1);
+    ASSERT_EQ(LAUNCH_WING_ABORTED, launchWingGetState());
+    EXPECT_TRUE(launchWingThrown());
+    launchWingDisarm();
+    EXPECT_FALSE(launchWingThrown());
+}
+
+TEST(LaunchWingTest, FinishBlendsWhenAltHoldCannotTakeOver)
+{
+    resetForTest();
+    testAltHoldBoxActive = true;
+    testAltitudeAvailable = false;
+    timeUs_t t = run(0, 1);
+    t = reachInProgress(t);
+    t = run(t, launchWingConfig()->timeoutMs + 5);
+    EXPECT_EQ(LAUNCH_WING_FINISH, launchWingGetState());
+    EXPECT_FALSE(launchWingHandingToHold());
+    EXPECT_LT(launchWingHandoverFactor(), 0.1f);
+}
+
+TEST(LaunchWingTest, ArmingClearsAHoldHandover)
+{
+    resetForTest();
+    testAltHoldBoxActive = true;
+    timeUs_t t = run(0, 1);
+    t = reachInProgress(t);
+    run(t, launchWingConfig()->timeoutMs + 5);
+    ASSERT_TRUE(launchWingHandingToHold());
+
+    launchWingArm();
+    EXPECT_FALSE(launchWingHandingToHold());
+}
+
 TEST(LaunchWingTest, HandoverFactorIsZeroUntilTheHandBack)
 {
     resetForTest();
@@ -569,6 +734,65 @@ TEST(LaunchWingTest, StickAbortHandsBackControlImmediately)
     EXPECT_FALSE(launchWingThrottleValid());
     EXPECT_FALSE(launchWingIsActive());
     EXPECT_TRUE(launchWingIsTerminal());
+}
+
+TEST(LaunchWingTest, AHoldSelectedAtArmStaysOffAfterAnAbortUntilItIsSelectedAgain)
+{
+    resetForTest();
+    testAltHoldBoxActive = true;
+    launchWingArm();
+    EXPECT_TRUE(launchWingHoldWaits());
+    timeUs_t t = run(0, 1);
+    t = reachInProgress(t);
+    EXPECT_TRUE(launchWingHoldWaits());
+
+    testRcDeflection[FD_PITCH] = 0.5f;
+    t = run(t, 1);
+    ASSERT_EQ(LAUNCH_WING_ABORTED, launchWingGetState());
+    t = run(t, 1000);
+    EXPECT_TRUE(launchWingHoldWaits());
+
+    testAltHoldBoxActive = false;
+    t = run(t, 1);
+    EXPECT_FALSE(launchWingHoldWaits());
+    testAltHoldBoxActive = true;
+    run(t, 1);
+    EXPECT_FALSE(launchWingHoldWaits());
+}
+
+TEST(LaunchWingTest, AHoldSelectedAtArmTakesOverOnceTheLaunchHasFlown)
+{
+    resetForTest();
+    testAltHoldBoxActive = true;
+    launchWingArm();
+    timeUs_t t = run(0, 1);
+    t = reachInProgress(t);
+    t = run(t, launchWingConfig()->timeoutMs + 5);
+    ASSERT_TRUE(launchWingHandingToHold());
+    EXPECT_FALSE(launchWingHoldWaits());
+    flightModeFlags |= ALT_HOLD_MODE;
+    testAutopilotThrottleValid = true;
+    run(t, 1);
+    ASSERT_EQ(LAUNCH_WING_FLYING, launchWingGetState());
+    EXPECT_FALSE(launchWingHoldWaits());
+}
+
+TEST(LaunchWingTest, ItIsInTheHandFromArmingUntilTheThrow)
+{
+    resetForTest();
+    EXPECT_TRUE(launchWingAwaitingThrow());
+    timeUs_t t = run(0, 1);
+    t = reachWaitDetection(t);
+    EXPECT_TRUE(launchWingAwaitingThrow());
+    setBungeeThrow();
+    run(t, launchWingConfig()->detectTimeMs + 1);
+    EXPECT_FALSE(launchWingAwaitingThrow());
+
+    // no launch, nothing in the hand
+    resetForTest();
+    testLaunchBoxActive = false;
+    launchWingArm();
+    EXPECT_FALSE(launchWingAwaitingThrow());
 }
 
 TEST(LaunchWingTest, DeflectionInsideTheDeadbandDoesNotAbort)
@@ -654,22 +878,73 @@ TEST(LaunchWingTest, LatchRejectsMotionWithoutGps)
     EXPECT_TRUE(launchWingLatched());
 }
 
-TEST(LaunchWingTest, FailsafeAbortsTheLaunch)
+TEST(LaunchWingTest, FailsafeInTheHandAbortsTheLaunch)
 {
     resetForTest();
     timeUs_t t = run(0, 1);
     t = reachWaitDetection(t);
-    setBungeeThrow();
-    t = run(t, 41);
-    t = run(t, launchWingConfig()->motorDelayMs + launchWingConfig()->spinupTimeMs + 10);
-    ASSERT_EQ(LAUNCH_WING_IN_PROGRESS, launchWingGetState());
-
-    // the mode bit only clears on the next rx cycle, so the launch must stand
-    // down on the failsafe itself
     testFailsafeActive = true;
-    t = run(t, 1);
+    run(t, 1);
     EXPECT_EQ(LAUNCH_WING_ABORTED, launchWingGetState());
     EXPECT_FALSE(launchWingThrottleValid());
+}
+
+TEST(LaunchWingTest, FailsafeInTheAirFliesOnUntilItsHoldIsRunning)
+{
+    resetForTest();
+    debugMode = DEBUG_LAUNCH;
+    timeUs_t t = run(0, 1);
+    t = reachInProgress(t);
+    testFailsafeActive = true;
+    t = run(t, 5);
+    EXPECT_EQ(LAUNCH_WING_FINISH, launchWingGetState());
+    EXPECT_TRUE(launchWingHandingToHold());
+    EXPECT_TRUE(launchWingThrottleValid());
+    EXPECT_FLOAT_EQ(0.0f, launchWingHandoverFactor());
+    EXPECT_FLOAT_EQ(launchWingConfig()->throttlePercent * 0.01f, launchWingGetThrottle());
+
+    flightModeFlags |= ALT_HOLD_MODE;
+    testAutopilotThrottleValid = true;
+    run(t, 1);
+    EXPECT_EQ(LAUNCH_WING_FLYING, launchWingGetState());
+    EXPECT_EQ(LAUNCH_WING_EXIT_HOLD, debug[7]);
+    debugMode = DEBUG_NONE;
+}
+
+TEST(LaunchWingTest, FailsafeWithoutAnAltitudeAbortsTheLaunch)
+{
+    resetForTest();
+    timeUs_t t = run(0, 1);
+    t = reachInProgress(t);
+    testAltitudeAvailable = false;
+    testFailsafeActive = true;
+    run(t, 1);
+    EXPECT_EQ(LAUNCH_WING_ABORTED, launchWingGetState());
+    EXPECT_FALSE(launchWingThrottleValid());
+}
+
+TEST(LaunchWingTest, ARescueTakesTheClimbOutOverOnceThrown)
+{
+    resetForTest();
+    timeUs_t t = run(0, 1);
+    t = reachWaitDetection(t);
+    testRescueBoxActive = true;
+    t = run(t, 5);
+    EXPECT_EQ(LAUNCH_WING_WAIT_DETECTION, launchWingGetState());   // still in the hand
+
+    // the motor still comes up behind the thrower's hand first
+    setBungeeThrow();
+    t = run(t, launchWingConfig()->detectTimeMs + 2);
+    EXPECT_EQ(LAUNCH_WING_MOTOR_DELAY, launchWingGetState());
+    t = run(t, launchWingConfig()->motorDelayMs + launchWingConfig()->spinupTimeMs + 10);
+    EXPECT_EQ(LAUNCH_WING_FINISH, launchWingGetState());
+    EXPECT_TRUE(launchWingHandingToHold());
+    EXPECT_FLOAT_EQ(launchWingConfig()->throttlePercent * 0.01f, launchWingGetThrottle());
+
+    flightModeFlags |= ALT_HOLD_MODE;
+    testAutopilotThrottleValid = true;
+    run(t, 1);
+    EXPECT_EQ(LAUNCH_WING_FLYING, launchWingGetState());
 }
 
 TEST(LaunchWingTest, EveryExitHandsBackFully)

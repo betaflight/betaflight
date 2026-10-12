@@ -72,6 +72,32 @@ protected:
     }
 };
 
+// --- Track geometry: how a fixed wing flies the target ---
+
+TEST_F(PositionNavTest, TrackGeometryLastsUntilTheNextTarget)
+{
+    const vector2_t start = {{ -100.0f, 50.0f }};
+    positionNavSetTrackLine(&start);
+    EXPECT_FALSE(positionNavHasActiveTarget());
+
+    const vector3_t target = {{ 200.0f, 300.0f, 40.0f }};
+    positionNavSetTargetEf(&target, 15.0f, -1.0f, 1000.0f, true, NULL, NULL);
+    EXPECT_EQ(NAV_TRACK_POINT, positionNavGetActiveCommand()->track);
+
+    positionNavSetTrackLine(&start);
+    EXPECT_EQ(NAV_TRACK_LINE, positionNavGetActiveCommand()->track);
+    EXPECT_FLOAT_EQ(-100.0f, positionNavGetActiveCommand()->trackStartEfM.x);
+    EXPECT_FLOAT_EQ(50.0f, positionNavGetActiveCommand()->trackStartEfM.y);
+
+    positionNavSetTrackLoiter(60.0f, -1);
+    EXPECT_EQ(NAV_TRACK_LOITER, positionNavGetActiveCommand()->track);
+    EXPECT_FLOAT_EQ(60.0f, positionNavGetActiveCommand()->loiterRadiusM);
+    EXPECT_EQ(-1, positionNavGetActiveCommand()->loiterDirection);
+
+    positionNavSetTargetEf(&target, 15.0f, -1.0f, 1000.0f, true, NULL, NULL);
+    EXPECT_EQ(NAV_TRACK_POINT, positionNavGetActiveCommand()->track);
+}
+
 // --- Vertical channel: rate-limited ramp, not a stepped altitude target ---
 
 TEST_F(PositionNavTest, VerticalProfileSeedsTheCommandedRateBeforeAnyUpdate)

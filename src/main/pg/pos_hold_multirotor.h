@@ -27,8 +27,6 @@
 
 #include "pg/pg.h"
 
-#define POSHOLD_DEADBAND_MAX 50
-
 typedef enum {
     POSHOLD_SOURCE_AUTO = 0,
     POSHOLD_SOURCE_GPS_ONLY,

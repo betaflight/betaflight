@@ -37,6 +37,9 @@
 #include "fc/runtime_config.h"
 
 #include "flight/flight_plan_nav.h"
+#ifdef USE_WING
+#include "flight/autopilot.h"
+#endif
 
 #include "io/gps.h"
 
@@ -176,7 +179,11 @@ static void sendMissionItem(uint8_t partnerSys, uint8_t partnerComp, uint16_t se
         if (wp->pattern == WAYPOINT_PATTERN_ORBIT) {
             command = MAV_CMD_NAV_LOITER_TURNS;
             param1 = (float)wp->duration / (float)flightPlanNavOrbitPeriodDs(wp->speed);
+#ifdef USE_WING
+            param3 = autopilotWingLoiterRadiusM();
+#else
             param3 = autopilotConfig()->waypointHoldRadius * 0.01f;
+#endif
         } else {
             // FIGURE8 has no MAVLink vocabulary; it downloads as a plain
             // timed loiter (the pattern survives only in the stored mission).
