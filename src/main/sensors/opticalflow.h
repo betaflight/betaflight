@@ -48,7 +48,9 @@ PG_DECLARE(opticalflowConfig_t, opticalflowConfig);
 // over a port its own driver opens, so the port needs an MSP port opening on it.
 static inline bool opticalflowTypeUsesMsp(uint8_t type)
 {
-    return type == OPTICALFLOW_MT;
+    UNUSED(type);
+
+    return false;
 }
 
 typedef struct opticalflow_s {

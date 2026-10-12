@@ -76,11 +76,6 @@ typedef struct rangefinder_s {
 static inline bool rangefinderTypeUsesMsp(uint8_t type)
 {
     switch (type) {
-    case RANGEFINDER_MTF01:
-    case RANGEFINDER_MTF02:
-    case RANGEFINDER_MTF01P:
-    case RANGEFINDER_MTF02P:
-        return true;
     default:
         return false;
     }
