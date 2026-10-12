@@ -230,6 +230,61 @@ TEST(CrossFireMSPTest, WriteResponseTest)
 
 }
 
+// Multi-byte header fields are little-endian; LO and HI bytes differ so a byte-order error is detected.
+//                                  |   crsf                     | msp
+//                                  sync size type to   from stts flag idlo idhi szlo szhi 0    1
+const uint8_t crsfMspV2Request[] = {0x00,0x0C,0x7A,0xC8,0xEA,0x50,0x00,0x01,0x71,0x03,0x00,0x11,0x22};
+const uint8_t crsfMspV2TooBig[] =  {0x00,0x0C,0x7A,0xC8,0xEA,0x50,0x00,0x01,0x71,0x00,0x01,0x11,0x22};
+//                                  sync size type to   from stts size fn   szlo szhi 0    1    2
+const uint8_t crsfJumboRequest[] = {0x00,0x0C,0x7A,0xC8,0xEA,0x30,0xFF,0x70,0x04,0x00,0x11,0x22,0x33};
+
+TEST(CrossFireMSPTest, MspV2RequestHeaderTest)
+{
+    initSharedMsp();
+    const crsfMspFrame_t *framePtr = (const crsfMspFrame_t*)crsfMspV2Request;
+    crsfFrame = *(const crsfFrame_t*)framePtr;
+    crsfFrameDone = true;
+    uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
+    bool pending = handleMspFrame(frameStart, CRSF_FRAME_RX_MSP_FRAME_SIZE, NULL);
+    EXPECT_FALSE(pending); // 3 byte payload, only 2 received
+    EXPECT_EQ(0x7101, requestPacket.cmd);
+    EXPECT_EQ(3, requestPacket.buf.end - requestBuffer);
+    EXPECT_EQ(0x11, requestBuffer[0]);
+    EXPECT_EQ(0x22, requestBuffer[1]);
+}
+
+TEST(CrossFireMSPTest, MspV2RequestTooBigTest)
+{
+    initSharedMsp();
+    responsePacket.result = 0;
+    const crsfMspFrame_t *framePtr = (const crsfMspFrame_t*)crsfMspV2TooBig;
+    crsfFrame = *(const crsfFrame_t*)framePtr;
+    crsfFrameDone = true;
+    uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
+    bool handled = handleMspFrame(frameStart, CRSF_FRAME_RX_MSP_FRAME_SIZE, NULL);
+    EXPECT_TRUE(handled);
+    // 0x0100 exceeds MSP_TLM_INBUF_SIZE, so an error response is sent
+    EXPECT_EQ(-10, responsePacket.result); // TELEMETRY_MSP_RES_ERROR
+    EXPECT_EQ(0x7101, responsePacket.cmd);
+    EXPECT_EQ(3, sbufReadU8(&responsePacket.buf)); // TELEMETRY_MSP_REQUEST_IS_TOO_BIG
+}
+
+TEST(CrossFireMSPTest, JumboRequestHeaderTest)
+{
+    initSharedMsp();
+    const crsfMspFrame_t *framePtr = (const crsfMspFrame_t*)crsfJumboRequest;
+    crsfFrame = *(const crsfFrame_t*)framePtr;
+    crsfFrameDone = true;
+    uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
+    bool pending = handleMspFrame(frameStart, CRSF_FRAME_RX_MSP_FRAME_SIZE, NULL);
+    EXPECT_FALSE(pending); // 4 byte payload, only 3 received
+    EXPECT_EQ(0x70, requestPacket.cmd);
+    EXPECT_EQ(4, requestPacket.buf.end - requestBuffer);
+    EXPECT_EQ(0x11, requestBuffer[0]);
+    EXPECT_EQ(0x22, requestBuffer[1]);
+    EXPECT_EQ(0x33, requestBuffer[2]);
+}
+
 void testSendMspResponse(uint8_t *payload, const uint8_t payloadSize)
 {
     sbuf_t *plOut = sbufInit(&payloadOutputBuf, payloadOutput, payloadOutput + 64);
