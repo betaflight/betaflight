@@ -360,10 +360,32 @@ RAM_CODE MAYBE_UNUSED static void configRebootUpdateCheckU8(uint8_t *parm, uint8
     *parm = value;
 }
 
-// Clamp a lookup value to the range of its CLI lookup table
-RAM_CODE static uint8_t constrainToLookupTable(uint8_t value, lookupTableIndex_e table)
+// Read a value and clamp it to its CLI range. Kept out of line so each
+// call site is a single call rather than an inlined read and clamp.
+RAM_CODE NOINLINE static uint8_t sbufReadU8Constrained(sbuf_t *src, uint8_t min, uint8_t max)
 {
-    return MIN(value, lookupTables[table].valueCount - 1);
+    return constrain(sbufReadU8(src), min, max);
+}
+
+RAM_CODE NOINLINE static uint16_t sbufReadU16Constrained(sbuf_t *src, uint16_t min, uint16_t max)
+{
+    return constrain(sbufReadU16(src), min, max);
+}
+
+RAM_CODE NOINLINE static int8_t sbufReadS8Constrained(sbuf_t *src, int8_t min, int8_t max)
+{
+    return constrain((int8_t)sbufReadU8(src), min, max);
+}
+
+RAM_CODE NOINLINE static int16_t sbufReadS16Constrained(sbuf_t *src, int16_t min, int16_t max)
+{
+    return constrain((int16_t)sbufReadU16(src), min, max);
+}
+
+// Read a lookup value and clamp it to the range of its CLI lookup table
+RAM_CODE NOINLINE static uint8_t sbufReadLookupIndex(sbuf_t *src, lookupTableIndex_e table)
+{
+    return MIN(sbufReadU8(src), lookupTables[table].valueCount - 1);
 }
 
 #ifdef USE_OSD
@@ -2363,7 +2385,7 @@ case MSP_NAME:
 // Reads simplified PID tuning values from MSP buffer
 RAM_CODE static void readSimplifiedPids(pidProfile_t* pidProfile, sbuf_t *src)
 {
-    pidProfile->simplified_pids_mode = constrainToLookupTable(sbufReadU8(src), TABLE_SIMPLIFIED_TUNING_PIDS_MODE);
+    pidProfile->simplified_pids_mode = sbufReadLookupIndex(src, TABLE_SIMPLIFIED_TUNING_PIDS_MODE);
     pidProfile->simplified_master_multiplier = sbufReadU8(src);
     pidProfile->simplified_roll_pitch_ratio = sbufReadU8(src);
     pidProfile->simplified_i_gain = sbufReadU8(src);
@@ -2404,12 +2426,12 @@ RAM_CODE static void writeSimplifiedPids(const pidProfile_t *pidProfile, sbuf_t 
 RAM_CODE static void readSimplifiedDtermFilters(pidProfile_t* pidProfile, sbuf_t *src)
 {
     pidProfile->simplified_dterm_filter = sbufReadU8(src);
-    pidProfile->simplified_dterm_filter_multiplier = constrain(sbufReadU8(src), SIMPLIFIED_TUNING_FILTERS_MIN, SIMPLIFIED_TUNING_MAX);
-    pidProfile->dterm_lpf1_static_hz = MIN(sbufReadU16(src), LPF_MAX_HZ);
-    pidProfile->dterm_lpf2_static_hz = MIN(sbufReadU16(src), LPF_MAX_HZ);
+    pidProfile->simplified_dterm_filter_multiplier = sbufReadU8Constrained(src, SIMPLIFIED_TUNING_FILTERS_MIN, SIMPLIFIED_TUNING_MAX);
+    pidProfile->dterm_lpf1_static_hz = sbufReadU16Constrained(src, 0, LPF_MAX_HZ);
+    pidProfile->dterm_lpf2_static_hz = sbufReadU16Constrained(src, 0, LPF_MAX_HZ);
 #if defined(USE_DYN_LPF)
-    pidProfile->dterm_lpf1_dyn_min_hz = MIN(sbufReadU16(src), DYN_LPF_MAX_HZ);
-    pidProfile->dterm_lpf1_dyn_max_hz = MIN(sbufReadU16(src), DYN_LPF_MAX_HZ);
+    pidProfile->dterm_lpf1_dyn_min_hz = sbufReadU16Constrained(src, 0, DYN_LPF_MAX_HZ);
+    pidProfile->dterm_lpf1_dyn_max_hz = sbufReadU16Constrained(src, 0, DYN_LPF_MAX_HZ);
 #else
     sbufReadU16(src);
     sbufReadU16(src);
@@ -2440,12 +2462,12 @@ RAM_CODE static void writeSimplifiedDtermFilters(const pidProfile_t* pidProfile,
 RAM_CODE static void readSimplifiedGyroFilters(gyroConfig_t *gyroConfig, sbuf_t *src)
 {
     gyroConfig->simplified_gyro_filter = sbufReadU8(src);
-    gyroConfig->simplified_gyro_filter_multiplier = constrain(sbufReadU8(src), SIMPLIFIED_TUNING_FILTERS_MIN, SIMPLIFIED_TUNING_MAX);
-    gyroConfig->gyro_lpf1_static_hz = MIN(sbufReadU16(src), LPF_MAX_HZ);
-    gyroConfig->gyro_lpf2_static_hz = MIN(sbufReadU16(src), LPF_MAX_HZ);
+    gyroConfig->simplified_gyro_filter_multiplier = sbufReadU8Constrained(src, SIMPLIFIED_TUNING_FILTERS_MIN, SIMPLIFIED_TUNING_MAX);
+    gyroConfig->gyro_lpf1_static_hz = sbufReadU16Constrained(src, 0, LPF_MAX_HZ);
+    gyroConfig->gyro_lpf2_static_hz = sbufReadU16Constrained(src, 0, LPF_MAX_HZ);
 #if defined(USE_DYN_LPF)
-    gyroConfig->gyro_lpf1_dyn_min_hz = MIN(sbufReadU16(src), DYN_LPF_MAX_HZ);
-    gyroConfig->gyro_lpf1_dyn_max_hz = MIN(sbufReadU16(src), DYN_LPF_MAX_HZ);
+    gyroConfig->gyro_lpf1_dyn_min_hz = sbufReadU16Constrained(src, 0, DYN_LPF_MAX_HZ);
+    gyroConfig->gyro_lpf1_dyn_max_hz = sbufReadU16Constrained(src, 0, DYN_LPF_MAX_HZ);
 #else
     sbufReadU16(src);
     sbufReadU16(src);
@@ -3081,16 +3103,16 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
 #if defined(USE_ACC)
     case MSP_SET_ACC_TRIM:
-        accelerometerConfigMutable()->accelerometerTrims.values.pitch = constrain((int16_t)sbufReadU16(src), -ACC_TRIM_MAX, ACC_TRIM_MAX);
-        accelerometerConfigMutable()->accelerometerTrims.values.roll  = constrain((int16_t)sbufReadU16(src), -ACC_TRIM_MAX, ACC_TRIM_MAX);
+        accelerometerConfigMutable()->accelerometerTrims.values.pitch = sbufReadS16Constrained(src, -ACC_TRIM_MAX, ACC_TRIM_MAX);
+        accelerometerConfigMutable()->accelerometerTrims.values.roll  = sbufReadS16Constrained(src, -ACC_TRIM_MAX, ACC_TRIM_MAX);
 
         break;
 #endif
     case MSP_SET_ARMING_CONFIG:
-        armingConfigMutable()->auto_disarm_delay = MIN(sbufReadU8(src), AUTO_DISARM_DELAY_MAX);
+        armingConfigMutable()->auto_disarm_delay = sbufReadU8Constrained(src, 0, AUTO_DISARM_DELAY_MAX);
         sbufReadU8(src); // reserved. disarm_kill_switch was removed in #5073
         if (sbufBytesRemaining(src)) {
-          imuConfigMutable()->small_angle = MIN(sbufReadU8(src), IMU_SMALL_ANGLE_MAX);
+          imuConfigMutable()->small_angle = sbufReadU8Constrained(src, 0, IMU_SMALL_ANGLE_MAX);
         }
         if (sbufBytesRemaining(src)) {
             armingConfigMutable()->gyro_cal_on_first_arm = !!sbufReadU8(src);
@@ -3128,10 +3150,10 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             if (box && auxChannelIndex < MAX_AUX_CHANNEL_COUNT) {
                 mac->modeId = box->boxId;
                 mac->auxChannelIndex = auxChannelIndex;
-                mac->range.startStep = MIN(sbufReadU8(src), MAX_MODE_RANGE_STEP);
-                mac->range.endStep = MIN(sbufReadU8(src), MAX_MODE_RANGE_STEP);
+                mac->range.startStep = sbufReadU8Constrained(src, 0, MAX_MODE_RANGE_STEP);
+                mac->range.endStep = sbufReadU8Constrained(src, 0, MAX_MODE_RANGE_STEP);
                 if (sbufBytesRemaining(src) != 0) {
-                    mac->modeLogic = MIN(sbufReadU8(src), MODELOGIC_AND);
+                    mac->modeLogic = sbufReadU8Constrained(src, 0, MODELOGIC_AND);
 
                     i = sbufReadU8(src);
                     const box_t *linkedToBox = findBoxByPermanentId(i);
@@ -3155,8 +3177,8 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             adjustmentRange_t *adjRange = adjustmentRangesMutable(i);
             sbufReadU8(src); // was adjRange->adjustmentIndex
             const uint8_t auxChannelIndex = sbufReadU8(src);
-            const uint8_t startStep = MIN(sbufReadU8(src), MAX_MODE_RANGE_STEP);
-            const uint8_t endStep = MIN(sbufReadU8(src), MAX_MODE_RANGE_STEP);
+            const uint8_t startStep = sbufReadU8Constrained(src, 0, MAX_MODE_RANGE_STEP);
+            const uint8_t endStep = sbufReadU8Constrained(src, 0, MAX_MODE_RANGE_STEP);
             const uint8_t adjustmentConfig = sbufReadU8(src);
             const uint8_t auxSwitchChannelIndex = sbufReadU8(src);
             if (auxChannelIndex >= MAX_AUX_CHANNEL_COUNT || adjustmentConfig >= ADJUSTMENT_FUNCTION_COUNT || auxSwitchChannelIndex >= MAX_AUX_CHANNEL_COUNT) {
@@ -3180,13 +3202,13 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
     case MSP_SET_RC_TUNING:
         if (sbufBytesRemaining(src) >= 10) {
-            value = MAX(sbufReadU8(src), CONTROL_RATE_CONFIG_RC_RATES_MIN);
+            value = sbufReadU8Constrained(src, CONTROL_RATE_CONFIG_RC_RATES_MIN, UINT8_MAX);
             if (currentControlRateProfile->rcRates[FD_PITCH] == currentControlRateProfile->rcRates[FD_ROLL]) {
                 currentControlRateProfile->rcRates[FD_PITCH] = value;
             }
             currentControlRateProfile->rcRates[FD_ROLL] = value;
 
-            value = MIN(sbufReadU8(src), CONTROL_RATE_CONFIG_RC_EXPO_MAX);
+            value = sbufReadU8Constrained(src, 0, CONTROL_RATE_CONFIG_RC_EXPO_MAX);
             if (currentControlRateProfile->rcExpo[FD_PITCH] == currentControlRateProfile->rcExpo[FD_ROLL]) {
                 currentControlRateProfile->rcExpo[FD_PITCH] = value;
             }
@@ -3197,47 +3219,47 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             }
 
             sbufReadU8(src);    // tpa_rate is moved to PID profile
-            currentControlRateProfile->thrMid8 = MIN(sbufReadU8(src), CONTROL_RATE_CONFIG_THR_MID_MAX);
-            currentControlRateProfile->thrExpo8 = MIN(sbufReadU8(src), CONTROL_RATE_CONFIG_THR_EXPO_MAX);
+            currentControlRateProfile->thrMid8 = sbufReadU8Constrained(src, 0, CONTROL_RATE_CONFIG_THR_MID_MAX);
+            currentControlRateProfile->thrExpo8 = sbufReadU8Constrained(src, 0, CONTROL_RATE_CONFIG_THR_EXPO_MAX);
             sbufReadU16(src);   // tpa_breakpoint is moved to PID profile
 
             if (sbufBytesRemaining(src) >= 1) {
-                currentControlRateProfile->rcExpo[FD_YAW] = MIN(sbufReadU8(src), CONTROL_RATE_CONFIG_RC_EXPO_MAX);
+                currentControlRateProfile->rcExpo[FD_YAW] = sbufReadU8Constrained(src, 0, CONTROL_RATE_CONFIG_RC_EXPO_MAX);
             }
 
             if (sbufBytesRemaining(src) >= 1) {
-                currentControlRateProfile->rcRates[FD_YAW] = MAX(sbufReadU8(src), CONTROL_RATE_CONFIG_RC_RATES_MIN);
+                currentControlRateProfile->rcRates[FD_YAW] = sbufReadU8Constrained(src, CONTROL_RATE_CONFIG_RC_RATES_MIN, UINT8_MAX);
             }
 
             if (sbufBytesRemaining(src) >= 1) {
-                currentControlRateProfile->rcRates[FD_PITCH] = MAX(sbufReadU8(src), CONTROL_RATE_CONFIG_RC_RATES_MIN);
+                currentControlRateProfile->rcRates[FD_PITCH] = sbufReadU8Constrained(src, CONTROL_RATE_CONFIG_RC_RATES_MIN, UINT8_MAX);
             }
 
             if (sbufBytesRemaining(src) >= 1) {
-                currentControlRateProfile->rcExpo[FD_PITCH] = MIN(sbufReadU8(src), CONTROL_RATE_CONFIG_RC_EXPO_MAX);
+                currentControlRateProfile->rcExpo[FD_PITCH] = sbufReadU8Constrained(src, 0, CONTROL_RATE_CONFIG_RC_EXPO_MAX);
             }
 
             // version 1.41
             if (sbufBytesRemaining(src) >= 2) {
                 currentControlRateProfile->throttle_limit_type = sbufReadU8(src);
-                currentControlRateProfile->throttle_limit_percent = constrain(sbufReadU8(src), CONTROL_RATE_CONFIG_THROTTLE_LIMIT_PERCENT_MIN, CONTROL_RATE_CONFIG_THROTTLE_LIMIT_PERCENT_MAX);
+                currentControlRateProfile->throttle_limit_percent = sbufReadU8Constrained(src, CONTROL_RATE_CONFIG_THROTTLE_LIMIT_PERCENT_MIN, CONTROL_RATE_CONFIG_THROTTLE_LIMIT_PERCENT_MAX);
             }
 
             // version 1.42
             if (sbufBytesRemaining(src) >= 6) {
-                currentControlRateProfile->rate_limit[FD_ROLL] = constrain(sbufReadU16(src), CONTROL_RATE_CONFIG_RATE_LIMIT_MIN, CONTROL_RATE_CONFIG_RATE_LIMIT_MAX);
-                currentControlRateProfile->rate_limit[FD_PITCH] = constrain(sbufReadU16(src), CONTROL_RATE_CONFIG_RATE_LIMIT_MIN, CONTROL_RATE_CONFIG_RATE_LIMIT_MAX);
-                currentControlRateProfile->rate_limit[FD_YAW] = constrain(sbufReadU16(src), CONTROL_RATE_CONFIG_RATE_LIMIT_MIN, CONTROL_RATE_CONFIG_RATE_LIMIT_MAX);
+                currentControlRateProfile->rate_limit[FD_ROLL] = sbufReadU16Constrained(src, CONTROL_RATE_CONFIG_RATE_LIMIT_MIN, CONTROL_RATE_CONFIG_RATE_LIMIT_MAX);
+                currentControlRateProfile->rate_limit[FD_PITCH] = sbufReadU16Constrained(src, CONTROL_RATE_CONFIG_RATE_LIMIT_MIN, CONTROL_RATE_CONFIG_RATE_LIMIT_MAX);
+                currentControlRateProfile->rate_limit[FD_YAW] = sbufReadU16Constrained(src, CONTROL_RATE_CONFIG_RATE_LIMIT_MIN, CONTROL_RATE_CONFIG_RATE_LIMIT_MAX);
             }
 
             // version 1.43
             if (sbufBytesRemaining(src) >= 1) {
-                currentControlRateProfile->rates_type = constrainToLookupTable(sbufReadU8(src), TABLE_RATES_TYPE);
+                currentControlRateProfile->rates_type = sbufReadLookupIndex(src, TABLE_RATES_TYPE);
             }
 
             // version 1.47
             if (sbufBytesRemaining(src) >= 1) {
-                currentControlRateProfile->thrHover8 = MIN(sbufReadU8(src), CONTROL_RATE_CONFIG_THR_HOVER_MAX);
+                currentControlRateProfile->thrHover8 = sbufReadU8Constrained(src, 0, CONTROL_RATE_CONFIG_THR_HOVER_MAX);
             }
 
             initRcProcessing();
@@ -3248,12 +3270,12 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
     case MSP_SET_MOTOR_CONFIG:
         sbufReadU16(src);   // minthrottle deprecated in 4.6
-        motorConfigMutable()->maxthrottle = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
-        motorConfigMutable()->mincommand = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
+        motorConfigMutable()->maxthrottle = sbufReadU16Constrained(src, PWM_PULSE_MIN, PWM_PULSE_MAX);
+        motorConfigMutable()->mincommand = sbufReadU16Constrained(src, PWM_PULSE_MIN, PWM_PULSE_MAX);
 
         // version 1.42
         if (sbufBytesRemaining(src) >= 2) {
-            motorConfigMutable()->motorPoleCount = MAX(sbufReadU8(src), MOTOR_POLE_COUNT_MIN);
+            motorConfigMutable()->motorPoleCount = sbufReadU8Constrained(src, MOTOR_POLE_COUNT_MIN, UINT8_MAX);
 #if defined(USE_DSHOT_TELEMETRY)
             motorConfigMutable()->dev.useDshotTelemetry = sbufReadU8(src);
 #else
@@ -3269,8 +3291,8 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
 #ifdef USE_GPS
     case MSP_SET_GPS_CONFIG:
-        gpsConfigMutable()->provider = constrainToLookupTable(sbufReadU8(src), TABLE_GPS_PROVIDER);
-        gpsConfigMutable()->sbasMode = constrainToLookupTable(sbufReadU8(src), TABLE_GPS_SBAS_MODE);
+        gpsConfigMutable()->provider = sbufReadLookupIndex(src, TABLE_GPS_PROVIDER);
+        gpsConfigMutable()->sbasMode = sbufReadLookupIndex(src, TABLE_GPS_SBAS_MODE);
         gpsConfigMutable()->autoConfig = !!sbufReadU8(src);
         gpsConfigMutable()->autoBaud = !!sbufReadU8(src);
         if (sbufBytesRemaining(src) >= 2) {
@@ -3283,7 +3305,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
 #ifdef USE_MAG
     case MSP_SET_COMPASS_CONFIG:
-        imuConfigMutable()->mag_declination = constrain((int16_t)sbufReadU16(src), -IMU_MAG_DECLINATION_MAX, IMU_MAG_DECLINATION_MAX);
+        imuConfigMutable()->mag_declination = sbufReadS16Constrained(src, -IMU_MAG_DECLINATION_MAX, IMU_MAG_DECLINATION_MAX);
         break;
 #endif
 
@@ -3291,41 +3313,41 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 #ifdef USE_GPS_RESCUE
 #ifndef USE_WING
     case MSP_SET_GPS_RESCUE:
-        autopilotConfigMutable()->maxAngle = constrain(sbufReadU16(src), AUTOPILOT_MAX_ANGLE_MIN, AUTOPILOT_MAX_ANGLE_MAX);
-        gpsRescueConfigMutable()->returnAltitudeM = constrain(sbufReadU16(src), GPS_RESCUE_RETURN_ALT_MIN_M, GPS_RESCUE_RETURN_ALT_MAX_M);
-        gpsRescueConfigMutable()->descentDistanceM = constrain(sbufReadU16(src), GPS_RESCUE_DESCENT_DIST_MIN_M, GPS_RESCUE_DESCENT_DIST_MAX_M); // 0 makes RESCUE_DESCENT unreachable
-        gpsRescueConfigMutable()->groundSpeedCmS = MIN(sbufReadU16(src), GPS_RESCUE_GROUND_SPEED_MAX);
-        autopilotConfigMutable()->throttleMin = constrain(sbufReadU16(src), AUTOPILOT_THROTTLE_MIN_MIN, AUTOPILOT_THROTTLE_MIN_MAX);
-        autopilotConfigMutable()->throttleMax = constrain(sbufReadU16(src), AUTOPILOT_THROTTLE_MAX_MIN, AUTOPILOT_THROTTLE_MAX_MAX);
-        autopilotConfigMutable()->hoverThrottle = MIN(sbufReadU16(src), AUTOPILOT_HOVER_THROTTLE_MAX);
-        gpsRescueConfigMutable()->sanityChecks = constrainToLookupTable(sbufReadU8(src), TABLE_GPS_RESCUE_SANITY_CHECK);
-        gpsRescueConfigMutable()->minSats = constrain(sbufReadU8(src), GPS_RESCUE_MIN_SATS_MIN, GPS_RESCUE_MIN_SATS_MAX);
+        autopilotConfigMutable()->maxAngle = sbufReadU16Constrained(src, AUTOPILOT_MAX_ANGLE_MIN, AUTOPILOT_MAX_ANGLE_MAX);
+        gpsRescueConfigMutable()->returnAltitudeM = sbufReadU16Constrained(src, GPS_RESCUE_RETURN_ALT_MIN_M, GPS_RESCUE_RETURN_ALT_MAX_M);
+        gpsRescueConfigMutable()->descentDistanceM = sbufReadU16Constrained(src, GPS_RESCUE_DESCENT_DIST_MIN_M, GPS_RESCUE_DESCENT_DIST_MAX_M); // 0 makes RESCUE_DESCENT unreachable
+        gpsRescueConfigMutable()->groundSpeedCmS = sbufReadU16Constrained(src, 0, GPS_RESCUE_GROUND_SPEED_MAX);
+        autopilotConfigMutable()->throttleMin = sbufReadU16Constrained(src, AUTOPILOT_THROTTLE_MIN_MIN, AUTOPILOT_THROTTLE_MIN_MAX);
+        autopilotConfigMutable()->throttleMax = sbufReadU16Constrained(src, AUTOPILOT_THROTTLE_MAX_MIN, AUTOPILOT_THROTTLE_MAX_MAX);
+        autopilotConfigMutable()->hoverThrottle = sbufReadU16Constrained(src, 0, AUTOPILOT_HOVER_THROTTLE_MAX);
+        gpsRescueConfigMutable()->sanityChecks = sbufReadLookupIndex(src, TABLE_GPS_RESCUE_SANITY_CHECK);
+        gpsRescueConfigMutable()->minSats = sbufReadU8Constrained(src, GPS_RESCUE_MIN_SATS_MIN, GPS_RESCUE_MIN_SATS_MAX);
         if (sbufBytesRemaining(src) >= 6) {
             // Added in API version 1.43
-            gpsRescueConfigMutable()->ascendRate = constrain(sbufReadU16(src), GPS_RESCUE_ASCEND_RATE_MIN, GPS_RESCUE_ASCEND_RATE_MAX);
-            gpsRescueConfigMutable()->descendRate = constrain(sbufReadU16(src), GPS_RESCUE_DESCEND_RATE_MIN, GPS_RESCUE_DESCEND_RATE_MAX);
+            gpsRescueConfigMutable()->ascendRate = sbufReadU16Constrained(src, GPS_RESCUE_ASCEND_RATE_MIN, GPS_RESCUE_ASCEND_RATE_MAX);
+            gpsRescueConfigMutable()->descendRate = sbufReadU16Constrained(src, GPS_RESCUE_DESCEND_RATE_MIN, GPS_RESCUE_DESCEND_RATE_MAX);
             gpsRescueConfigMutable()->allowArmingWithoutFix = !!sbufReadU8(src);
-            gpsRescueConfigMutable()->altitudeMode = constrainToLookupTable(sbufReadU8(src), TABLE_GPS_RESCUE_ALT_MODE);
+            gpsRescueConfigMutable()->altitudeMode = sbufReadLookupIndex(src, TABLE_GPS_RESCUE_ALT_MODE);
         }
         if (sbufBytesRemaining(src) >= 2) {
             // Added in API version 1.44
-            gpsRescueConfigMutable()->minStartDistM = constrain(sbufReadU16(src), GPS_RESCUE_MIN_START_DIST_MIN_M, GPS_RESCUE_MIN_START_DIST_MAX_M);
+            gpsRescueConfigMutable()->minStartDistM = sbufReadU16Constrained(src, GPS_RESCUE_MIN_START_DIST_MIN_M, GPS_RESCUE_MIN_START_DIST_MAX_M);
         }
         if (sbufBytesRemaining(src) >= 2) {
             // Added in API version 1.46
-            gpsRescueConfigMutable()->initialClimbM = MIN(sbufReadU16(src), GPS_RESCUE_INITIAL_CLIMB_MAX_M);
+            gpsRescueConfigMutable()->initialClimbM = sbufReadU16Constrained(src, 0, GPS_RESCUE_INITIAL_CLIMB_MAX_M);
         }
         break;
 
     case MSP_SET_GPS_RESCUE_PIDS:
-        autopilotConfigMutable()->altitudeP = MIN(sbufReadU16(src), AUTOPILOT_PID_GAIN_MAX);
-        autopilotConfigMutable()->altitudeI = MIN(sbufReadU16(src), AUTOPILOT_PID_GAIN_MAX);
-        autopilotConfigMutable()->altitudeD = MIN(sbufReadU16(src), AUTOPILOT_PID_GAIN_MAX);
+        autopilotConfigMutable()->altitudeP = sbufReadU16Constrained(src, 0, AUTOPILOT_PID_GAIN_MAX);
+        autopilotConfigMutable()->altitudeI = sbufReadU16Constrained(src, 0, AUTOPILOT_PID_GAIN_MAX);
+        autopilotConfigMutable()->altitudeD = sbufReadU16Constrained(src, 0, AUTOPILOT_PID_GAIN_MAX);
         // altitude_F not included in msp yet
-        autopilotConfigMutable()->positionP = MIN(sbufReadU16(src), AUTOPILOT_PID_GAIN_MAX);
-        autopilotConfigMutable()->positionI = MIN(sbufReadU16(src), AUTOPILOT_PID_GAIN_MAX);
-        autopilotConfigMutable()->positionD = MIN(sbufReadU16(src), AUTOPILOT_PID_GAIN_MAX);
-        gpsRescueConfigMutable()->yawP = MIN(sbufReadU16(src), GPS_RESCUE_YAW_P_MAX);
+        autopilotConfigMutable()->positionP = sbufReadU16Constrained(src, 0, AUTOPILOT_PID_GAIN_MAX);
+        autopilotConfigMutable()->positionI = sbufReadU16Constrained(src, 0, AUTOPILOT_PID_GAIN_MAX);
+        autopilotConfigMutable()->positionD = sbufReadU16Constrained(src, 0, AUTOPILOT_PID_GAIN_MAX);
+        gpsRescueConfigMutable()->yawP = sbufReadU16Constrained(src, 0, GPS_RESCUE_YAW_P_MAX);
         break;
 #endif // !USE_WING
 #endif
@@ -3399,20 +3421,20 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
 
     case MSP_SET_MOTOR_3D_CONFIG:
-        flight3DConfigMutable()->deadband3d_low = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_RANGE_MIDDLE);
-        flight3DConfigMutable()->deadband3d_high = constrain(sbufReadU16(src), PWM_RANGE_MIDDLE, PWM_PULSE_MAX);
-        flight3DConfigMutable()->neutral3d = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
+        flight3DConfigMutable()->deadband3d_low = sbufReadU16Constrained(src, PWM_PULSE_MIN, PWM_RANGE_MIDDLE);
+        flight3DConfigMutable()->deadband3d_high = sbufReadU16Constrained(src, PWM_RANGE_MIDDLE, PWM_PULSE_MAX);
+        flight3DConfigMutable()->neutral3d = sbufReadU16Constrained(src, PWM_PULSE_MIN, PWM_PULSE_MAX);
         break;
 
     case MSP_SET_RC_DEADBAND:
-        rcControlsConfigMutable()->deadband = MIN(sbufReadU8(src), RC_DEADBAND_MAX);
-        rcControlsConfigMutable()->yaw_deadband = MIN(sbufReadU8(src), RC_YAW_DEADBAND_MAX);
+        rcControlsConfigMutable()->deadband = sbufReadU8Constrained(src, 0, RC_DEADBAND_MAX);
+        rcControlsConfigMutable()->yaw_deadband = sbufReadU8Constrained(src, 0, RC_YAW_DEADBAND_MAX);
 #ifdef USE_POSITION_HOLD
-        posHoldConfigMutable()->deadband = MIN(sbufReadU8(src), POSHOLD_DEADBAND_MAX);
+        posHoldConfigMutable()->deadband = sbufReadU8Constrained(src, 0, POSHOLD_DEADBAND_MAX);
 #else
         sbufReadU8(src);
 #endif
-        flight3DConfigMutable()->deadband3d_throttle = constrain(sbufReadU16(src), DEADBAND3D_THROTTLE_MIN, DEADBAND3D_THROTTLE_MAX);
+        flight3DConfigMutable()->deadband3d_throttle = sbufReadU16Constrained(src, DEADBAND3D_THROTTLE_MIN, DEADBAND3D_THROTTLE_MAX);
         break;
 
     case MSP_SET_RESET_CURR_PID:
@@ -3423,7 +3445,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         sbufReadU8(src);
         sbufReadU8(src);  // discard deprecated acc_align
 #if defined(USE_MAG)
-        compassConfigMutable()->mag_alignment = constrainToLookupTable(sbufReadU8(src), TABLE_ALIGNMENT);
+        compassConfigMutable()->mag_alignment = sbufReadLookupIndex(src, TABLE_ALIGNMENT);
 #else
         sbufReadU8(src);
 #endif
@@ -3432,9 +3454,9 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
         if (sbufBytesRemaining(src) >= 6) {
 #ifdef USE_MAG
-            compassConfigMutable()->mag_customAlignment.roll = constrain((int16_t)sbufReadU16(src), -SENSOR_CUSTOM_ALIGN_MAX, SENSOR_CUSTOM_ALIGN_MAX);
-            compassConfigMutable()->mag_customAlignment.pitch = constrain((int16_t)sbufReadU16(src), -SENSOR_CUSTOM_ALIGN_MAX, SENSOR_CUSTOM_ALIGN_MAX);
-            compassConfigMutable()->mag_customAlignment.yaw = constrain((int16_t)sbufReadU16(src), -SENSOR_CUSTOM_ALIGN_MAX, SENSOR_CUSTOM_ALIGN_MAX);
+            compassConfigMutable()->mag_customAlignment.roll = sbufReadS16Constrained(src, -SENSOR_CUSTOM_ALIGN_MAX, SENSOR_CUSTOM_ALIGN_MAX);
+            compassConfigMutable()->mag_customAlignment.pitch = sbufReadS16Constrained(src, -SENSOR_CUSTOM_ALIGN_MAX, SENSOR_CUSTOM_ALIGN_MAX);
+            compassConfigMutable()->mag_customAlignment.yaw = sbufReadS16Constrained(src, -SENSOR_CUSTOM_ALIGN_MAX, SENSOR_CUSTOM_ALIGN_MAX);
 #else
             sbufReadU16(src);
             sbufReadU16(src);
@@ -3447,12 +3469,12 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
     case MSP_SET_ADVANCED_CONFIG:
         sbufReadU8(src); // was gyroConfigMutable()->gyro_sync_denom - removed in API 1.43
-        pidConfigMutable()->pid_process_denom = constrain(sbufReadU8(src), 1, MAX_PID_PROCESS_DENOM);
+        pidConfigMutable()->pid_process_denom = sbufReadU8Constrained(src, 1, MAX_PID_PROCESS_DENOM);
         motorConfigMutable()->dev.useContinuousUpdate = sbufReadU8(src);
-        motorConfigMutable()->dev.motorProtocol = constrainToLookupTable(sbufReadU8(src), TABLE_MOTOR_PWM_PROTOCOL);
-        motorConfigMutable()->dev.motorPwmRate = constrain(sbufReadU16(src), MOTOR_PWM_RATE_MIN, MOTOR_PWM_RATE_MAX);
+        motorConfigMutable()->dev.motorProtocol = sbufReadLookupIndex(src, TABLE_MOTOR_PWM_PROTOCOL);
+        motorConfigMutable()->dev.motorPwmRate = sbufReadU16Constrained(src, MOTOR_PWM_RATE_MIN, MOTOR_PWM_RATE_MAX);
         if (sbufBytesRemaining(src) >= 2) {
-            motorConfigMutable()->motorIdle = MIN(sbufReadU16(src), MOTOR_IDLE_MAX);
+            motorConfigMutable()->motorIdle = sbufReadU16Constrained(src, 0, MOTOR_IDLE_MAX);
         }
         if (sbufBytesRemaining(src)) {
             sbufReadU8(src); // DEPRECATED: gyro_use_32khz
@@ -3463,18 +3485,18 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         if (sbufBytesRemaining(src) >= 8) {
             sbufReadU8(src); // deprecated gyro_to_use
             gyroConfigMutable()->gyro_high_fsr = sbufReadU8(src);
-            gyroConfigMutable()->gyroMovementCalibrationThreshold = MIN(sbufReadU8(src), GYRO_CALIB_NOISE_LIMIT_MAX);
-            gyroConfigMutable()->gyroCalibrationDuration = constrain(sbufReadU16(src), GYRO_CALIB_DURATION_MIN, GYRO_CALIB_DURATION_MAX);
-            gyroConfigMutable()->gyro_offset_yaw = constrain((int16_t)sbufReadU16(src), -GYRO_OFFSET_YAW_MAX, GYRO_OFFSET_YAW_MAX);
+            gyroConfigMutable()->gyroMovementCalibrationThreshold = sbufReadU8Constrained(src, 0, GYRO_CALIB_NOISE_LIMIT_MAX);
+            gyroConfigMutable()->gyroCalibrationDuration = sbufReadU16Constrained(src, GYRO_CALIB_DURATION_MIN, GYRO_CALIB_DURATION_MAX);
+            gyroConfigMutable()->gyro_offset_yaw = sbufReadS16Constrained(src, -GYRO_OFFSET_YAW_MAX, GYRO_OFFSET_YAW_MAX);
 #ifdef USE_GYRO_OVERFLOW_CHECK
-            gyroConfigMutable()->checkOverflow = constrainToLookupTable(sbufReadU8(src), TABLE_GYRO_OVERFLOW_CHECK);
+            gyroConfigMutable()->checkOverflow = sbufReadLookupIndex(src, TABLE_GYRO_OVERFLOW_CHECK);
 #else
             gyroConfigMutable()->checkOverflow = sbufReadU8(src);
 #endif
         }
         if (sbufBytesRemaining(src) >= 1) {
             //Added in MSP API 1.42
-            systemConfigMutable()->debug_mode = constrainToLookupTable(sbufReadU8(src), TABLE_DEBUG);
+            systemConfigMutable()->debug_mode = sbufReadLookupIndex(src, TABLE_DEBUG);
         }
 
         validateAndFixGyroConfig();
@@ -3482,13 +3504,13 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
     case MSP_SET_FILTER_CONFIG:
         gyroConfigMutable()->gyro_lpf1_static_hz = sbufReadU8(src);
-        currentPidProfile->dterm_lpf1_static_hz = MIN(sbufReadU16(src), LPF_MAX_HZ);
-        currentPidProfile->yaw_lowpass_hz = MIN(sbufReadU16(src), YAW_LOWPASS_HZ_MAX);
+        currentPidProfile->dterm_lpf1_static_hz = sbufReadU16Constrained(src, 0, LPF_MAX_HZ);
+        currentPidProfile->yaw_lowpass_hz = sbufReadU16Constrained(src, 0, YAW_LOWPASS_HZ_MAX);
         if (sbufBytesRemaining(src) >= 8) {
             gyroConfigMutable()->gyro_soft_notch_hz_1 = sbufReadU16(src);
             gyroConfigMutable()->gyro_soft_notch_cutoff_1 = sbufReadU16(src);
-            currentPidProfile->dterm_notch_hz = MIN(sbufReadU16(src), LPF_MAX_HZ);
-            currentPidProfile->dterm_notch_cutoff = MIN(sbufReadU16(src), LPF_MAX_HZ);
+            currentPidProfile->dterm_notch_hz = sbufReadU16Constrained(src, 0, LPF_MAX_HZ);
+            currentPidProfile->dterm_notch_cutoff = sbufReadU16Constrained(src, 0, LPF_MAX_HZ);
         }
         if (sbufBytesRemaining(src) >= 4) {
             gyroConfigMutable()->gyro_soft_notch_hz_2 = sbufReadU16(src);
@@ -3504,16 +3526,16 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             gyroConfigMutable()->gyro_lpf2_static_hz = sbufReadU16(src);
             gyroConfigMutable()->gyro_lpf1_type = sbufReadU8(src);
             gyroConfigMutable()->gyro_lpf2_type = sbufReadU8(src);
-            currentPidProfile->dterm_lpf2_static_hz = MIN(sbufReadU16(src), LPF_MAX_HZ);
+            currentPidProfile->dterm_lpf2_static_hz = sbufReadU16Constrained(src, 0, LPF_MAX_HZ);
         }
         if (sbufBytesRemaining(src) >= 9) {
             // Added in MSP API 1.41
             currentPidProfile->dterm_lpf2_type = sbufReadU8(src);
 #if defined(USE_DYN_LPF)
-            gyroConfigMutable()->gyro_lpf1_dyn_min_hz = MIN(sbufReadU16(src), DYN_LPF_MAX_HZ);
-            gyroConfigMutable()->gyro_lpf1_dyn_max_hz = MIN(sbufReadU16(src), DYN_LPF_MAX_HZ);
-            currentPidProfile->dterm_lpf1_dyn_min_hz = MIN(sbufReadU16(src), DYN_LPF_MAX_HZ);
-            currentPidProfile->dterm_lpf1_dyn_max_hz = MIN(sbufReadU16(src), DYN_LPF_MAX_HZ);
+            gyroConfigMutable()->gyro_lpf1_dyn_min_hz = sbufReadU16Constrained(src, 0, DYN_LPF_MAX_HZ);
+            gyroConfigMutable()->gyro_lpf1_dyn_max_hz = sbufReadU16Constrained(src, 0, DYN_LPF_MAX_HZ);
+            currentPidProfile->dterm_lpf1_dyn_min_hz = sbufReadU16Constrained(src, 0, DYN_LPF_MAX_HZ);
+            currentPidProfile->dterm_lpf1_dyn_max_hz = sbufReadU16Constrained(src, 0, DYN_LPF_MAX_HZ);
 #else
             sbufReadU16(src);
             sbufReadU16(src);
@@ -3526,8 +3548,8 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 #if defined(USE_DYN_NOTCH_FILTER)
             sbufReadU8(src); // DEPRECATED 1.43: dyn_notch_range
             sbufReadU8(src); // DEPRECATED 1.44: dyn_notch_width_percent
-            dynNotchConfigMutable()->dyn_notch_q = constrain(sbufReadU16(src), DYN_NOTCH_Q_MIN, DYN_NOTCH_Q_MAX);
-            dynNotchConfigMutable()->dyn_notch_min_hz = constrain(sbufReadU16(src), DYN_NOTCH_MIN_HZ_MIN, DYN_NOTCH_MIN_HZ_MAX);
+            dynNotchConfigMutable()->dyn_notch_q = sbufReadU16Constrained(src, DYN_NOTCH_Q_MIN, DYN_NOTCH_Q_MAX);
+            dynNotchConfigMutable()->dyn_notch_min_hz = sbufReadU16Constrained(src, DYN_NOTCH_MIN_HZ_MIN, DYN_NOTCH_MIN_HZ_MAX);
 #else
             sbufReadU8(src);
             sbufReadU8(src);
@@ -3535,8 +3557,8 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             sbufReadU16(src);
 #endif
 #if defined(USE_RPM_FILTER)
-            rpmFilterConfigMutable()->rpm_filter_harmonics = MIN(sbufReadU8(src), RPM_FILTER_HARMONICS_MAX);
-            rpmFilterConfigMutable()->rpm_filter_min_hz = constrain(sbufReadU8(src), RPM_FILTER_MIN_HZ_MIN, RPM_FILTER_MIN_HZ_MAX);
+            rpmFilterConfigMutable()->rpm_filter_harmonics = sbufReadU8Constrained(src, 0, RPM_FILTER_HARMONICS_MAX);
+            rpmFilterConfigMutable()->rpm_filter_min_hz = sbufReadU8Constrained(src, RPM_FILTER_MIN_HZ_MIN, RPM_FILTER_MIN_HZ_MAX);
 #else
             sbufReadU8(src);
             sbufReadU8(src);
@@ -3545,7 +3567,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         if (sbufBytesRemaining(src) >= 2) {
 #if defined(USE_DYN_NOTCH_FILTER)
             // Added in MSP API 1.43
-            dynNotchConfigMutable()->dyn_notch_max_hz = constrain(sbufReadU16(src), DYN_NOTCH_MAX_HZ_MIN, DYN_NOTCH_MAX_HZ_MAX);
+            dynNotchConfigMutable()->dyn_notch_max_hz = sbufReadU16Constrained(src, DYN_NOTCH_MAX_HZ_MIN, DYN_NOTCH_MAX_HZ_MAX);
 #else
             sbufReadU16(src);
 #endif
@@ -3553,7 +3575,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         if (sbufBytesRemaining(src) >= 2) {
             // Added in MSP API 1.44
 #if defined(USE_DYN_LPF)
-            currentPidProfile->dterm_lpf1_dyn_expo = MIN(sbufReadU8(src), DTERM_LPF1_DYN_EXPO_MAX);
+            currentPidProfile->dterm_lpf1_dyn_expo = sbufReadU8Constrained(src, 0, DTERM_LPF1_DYN_EXPO_MAX);
 #else
             sbufReadU8(src);
 #endif
@@ -3615,7 +3637,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         sbufReadU8(src); // reserved
         sbufReadU8(src); // was vbatPidCompensation
 #if defined(USE_FEEDFORWARD)
-        currentPidProfile->feedforward_transition = MIN(sbufReadU8(src), FEEDFORWARD_TRANSITION_MAX);
+        currentPidProfile->feedforward_transition = sbufReadU8Constrained(src, 0, FEEDFORWARD_TRANSITION_MAX);
 #else
         sbufReadU8(src);
 #endif
@@ -3623,15 +3645,15 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         sbufReadU8(src); // reserved
         sbufReadU8(src); // reserved
         sbufReadU8(src); // reserved
-        currentPidProfile->rateAccelLimit = MIN(sbufReadU16(src), RATE_ACCEL_LIMIT_MAX);
-        currentPidProfile->yawRateAccelLimit = MIN(sbufReadU16(src), RATE_ACCEL_LIMIT_MAX);
+        currentPidProfile->rateAccelLimit = sbufReadU16Constrained(src, 0, RATE_ACCEL_LIMIT_MAX);
+        currentPidProfile->yawRateAccelLimit = sbufReadU16Constrained(src, 0, RATE_ACCEL_LIMIT_MAX);
         if (sbufBytesRemaining(src) >= 2) {
-            currentPidProfile->angle_limit = constrain(sbufReadU8(src), ANGLE_LIMIT_MIN, ANGLE_LIMIT_MAX);
+            currentPidProfile->angle_limit = sbufReadU8Constrained(src, ANGLE_LIMIT_MIN, ANGLE_LIMIT_MAX);
             sbufReadU8(src); // was pidProfile.levelSensitivity
         }
         if (sbufBytesRemaining(src) >= 4) {
             sbufReadU16(src); // was currentPidProfile->itermThrottleThreshold
-            currentPidProfile->anti_gravity_gain = MIN(sbufReadU16(src), ITERM_ACCELERATOR_GAIN_MAX);
+            currentPidProfile->anti_gravity_gain = sbufReadU16Constrained(src, 0, ITERM_ACCELERATOR_GAIN_MAX);
         }
         if (sbufBytesRemaining(src) >= 2) {
             sbufReadU16(src); // was currentPidProfile->dtermSetpointWeight
@@ -3641,37 +3663,37 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             currentPidProfile->iterm_rotation = !!sbufReadU8(src);
             sbufReadU8(src); // was currentPidProfile->smart_feedforward
 #if defined(USE_ITERM_RELAX)
-            currentPidProfile->iterm_relax = constrainToLookupTable(sbufReadU8(src), TABLE_ITERM_RELAX);
-            currentPidProfile->iterm_relax_type = constrainToLookupTable(sbufReadU8(src), TABLE_ITERM_RELAX_TYPE);
+            currentPidProfile->iterm_relax = sbufReadLookupIndex(src, TABLE_ITERM_RELAX);
+            currentPidProfile->iterm_relax_type = sbufReadLookupIndex(src, TABLE_ITERM_RELAX_TYPE);
 #else
             sbufReadU8(src);
             sbufReadU8(src);
 #endif
             sbufReadU8(src); // was abs_control_gain
 #if defined(USE_THROTTLE_BOOST)
-            currentPidProfile->throttle_boost = MIN(sbufReadU8(src), THROTTLE_BOOST_MAX);
+            currentPidProfile->throttle_boost = sbufReadU8Constrained(src, 0, THROTTLE_BOOST_MAX);
 #else
             sbufReadU8(src);
 #endif
 #if defined(USE_ACRO_TRAINER)
-            currentPidProfile->acro_trainer_angle_limit = constrain(sbufReadU8(src), ACRO_TRAINER_ANGLE_LIMIT_MIN, ACRO_TRAINER_ANGLE_LIMIT_MAX);
+            currentPidProfile->acro_trainer_angle_limit = sbufReadU8Constrained(src, ACRO_TRAINER_ANGLE_LIMIT_MIN, ACRO_TRAINER_ANGLE_LIMIT_MAX);
 #else
             sbufReadU8(src);
 #endif
             // PID controller feedforward terms
-            currentPidProfile->pid[PID_ROLL].F = MIN(sbufReadU16(src), F_GAIN_MAX);
-            currentPidProfile->pid[PID_PITCH].F = MIN(sbufReadU16(src), F_GAIN_MAX);
-            currentPidProfile->pid[PID_YAW].F = MIN(sbufReadU16(src), F_GAIN_MAX);
+            currentPidProfile->pid[PID_ROLL].F = sbufReadU16Constrained(src, 0, F_GAIN_MAX);
+            currentPidProfile->pid[PID_PITCH].F = sbufReadU16Constrained(src, 0, F_GAIN_MAX);
+            currentPidProfile->pid[PID_YAW].F = sbufReadU16Constrained(src, 0, F_GAIN_MAX);
             sbufReadU8(src); // was currentPidProfile->antiGravityMode
         }
         if (sbufBytesRemaining(src) >= 7) {
             // Added in MSP API 1.41
 #ifdef USE_D_MAX
-            currentPidProfile->d_max[PID_ROLL] = MIN(sbufReadU8(src), PID_GAIN_MAX);
-            currentPidProfile->d_max[PID_PITCH] = MIN(sbufReadU8(src), PID_GAIN_MAX);
-            currentPidProfile->d_max[PID_YAW] = MIN(sbufReadU8(src), PID_GAIN_MAX);
-            currentPidProfile->d_max_gain = MIN(sbufReadU8(src), D_MAX_GAIN_MAX);
-            currentPidProfile->d_max_advance = MIN(sbufReadU8(src), D_MAX_ADVANCE_MAX);
+            currentPidProfile->d_max[PID_ROLL] = sbufReadU8Constrained(src, 0, PID_GAIN_MAX);
+            currentPidProfile->d_max[PID_PITCH] = sbufReadU8Constrained(src, 0, PID_GAIN_MAX);
+            currentPidProfile->d_max[PID_YAW] = sbufReadU8Constrained(src, 0, PID_GAIN_MAX);
+            currentPidProfile->d_max_gain = sbufReadU8Constrained(src, 0, D_MAX_GAIN_MAX);
+            currentPidProfile->d_max_advance = sbufReadU8Constrained(src, 0, D_MAX_ADVANCE_MAX);
 #else
             sbufReadU8(src);
             sbufReadU8(src);
@@ -3685,17 +3707,17 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         if(sbufBytesRemaining(src) >= 1) {
             // Added in MSP API 1.42
 #if defined(USE_ITERM_RELAX)
-            currentPidProfile->iterm_relax_cutoff = constrain(sbufReadU8(src), ITERM_RELAX_CUTOFF_MIN, ITERM_RELAX_CUTOFF_MAX);
+            currentPidProfile->iterm_relax_cutoff = sbufReadU8Constrained(src, ITERM_RELAX_CUTOFF_MIN, ITERM_RELAX_CUTOFF_MAX);
 #else
             sbufReadU8(src);
 #endif
         }
         if (sbufBytesRemaining(src) >= 3) {
             // Added in MSP API 1.43
-            currentPidProfile->motor_output_limit = constrain(sbufReadU8(src), MOTOR_OUTPUT_LIMIT_PERCENT_MIN, MOTOR_OUTPUT_LIMIT_PERCENT_MAX);
-            currentPidProfile->auto_profile_cell_count = constrain((int8_t)sbufReadU8(src), AUTO_PROFILE_CELL_COUNT_CHANGE, MAX_AUTO_DETECT_CELL_COUNT);
+            currentPidProfile->motor_output_limit = sbufReadU8Constrained(src, MOTOR_OUTPUT_LIMIT_PERCENT_MIN, MOTOR_OUTPUT_LIMIT_PERCENT_MAX);
+            currentPidProfile->auto_profile_cell_count = sbufReadS8Constrained(src, AUTO_PROFILE_CELL_COUNT_CHANGE, MAX_AUTO_DETECT_CELL_COUNT);
 #if defined(USE_DYN_IDLE)
-            currentPidProfile->dyn_idle_min_rpm = MIN(sbufReadU8(src), DYN_IDLE_MIN_RPM_MAX);
+            currentPidProfile->dyn_idle_min_rpm = sbufReadU8Constrained(src, 0, DYN_IDLE_MIN_RPM_MAX);
 #else
             sbufReadU8(src);
 #endif
@@ -3708,10 +3730,10 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
                 return MSP_RESULT_ERROR;
             }
             currentPidProfile->feedforward_averaging = i;
-            currentPidProfile->feedforward_smooth_factor = MIN(sbufReadU8(src), FEEDFORWARD_SMOOTH_FACTOR_MAX);
-            currentPidProfile->feedforward_boost = MIN(sbufReadU8(src), FEEDFORWARD_BOOST_MAX);
-            currentPidProfile->feedforward_max_rate_limit = MIN(sbufReadU8(src), FEEDFORWARD_MAX_RATE_LIMIT_MAX);
-            currentPidProfile->feedforward_jitter_factor = MIN(sbufReadU8(src), FEEDFORWARD_JITTER_FACTOR_MAX);
+            currentPidProfile->feedforward_smooth_factor = sbufReadU8Constrained(src, 0, FEEDFORWARD_SMOOTH_FACTOR_MAX);
+            currentPidProfile->feedforward_boost = sbufReadU8Constrained(src, 0, FEEDFORWARD_BOOST_MAX);
+            currentPidProfile->feedforward_max_rate_limit = sbufReadU8Constrained(src, 0, FEEDFORWARD_MAX_RATE_LIMIT_MAX);
+            currentPidProfile->feedforward_jitter_factor = sbufReadU8Constrained(src, 0, FEEDFORWARD_JITTER_FACTOR_MAX);
 #else
             sbufReadU8(src);
             sbufReadU8(src);
@@ -3721,20 +3743,20 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 #endif
 
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
-            currentPidProfile->vbat_sag_compensation = MIN(sbufReadU8(src), VBAT_SAG_COMPENSATION_MAX);
+            currentPidProfile->vbat_sag_compensation = sbufReadU8Constrained(src, 0, VBAT_SAG_COMPENSATION_MAX);
 #else
             sbufReadU8(src);
 #endif
 #if defined(USE_THRUST_LINEARIZATION)
-            currentPidProfile->thrustLinearization = MIN(sbufReadU8(src), THRUST_LINEARIZATION_MAX);
+            currentPidProfile->thrustLinearization = sbufReadU8Constrained(src, 0, THRUST_LINEARIZATION_MAX);
 #else
             sbufReadU8(src);
 #endif
         }
         if (sbufBytesRemaining(src) >= 4) {
             // Added in API 1.45
-            currentPidProfile->tpa_mode = constrainToLookupTable(sbufReadU8(src), TABLE_TPA_MODE);
-            currentPidProfile->tpa_rate = MIN(sbufReadU8(src), TPA_MAX);
+            currentPidProfile->tpa_mode = sbufReadLookupIndex(src, TABLE_TPA_MODE);
+            currentPidProfile->tpa_rate = sbufReadU8Constrained(src, 0, TPA_MAX);
             currentPidProfile->tpa_breakpoint = sbufReadU16(src);
         }
 
@@ -3745,24 +3767,24 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
     case MSP_SET_SENSOR_CONFIG:
 #if defined(USE_ACC)
-        accelerometerConfigMutable()->acc_hardware = constrainToLookupTable(sbufReadU8(src), TABLE_ACC_HARDWARE);
+        accelerometerConfigMutable()->acc_hardware = sbufReadLookupIndex(src, TABLE_ACC_HARDWARE);
 #else
         sbufReadU8(src);
 #endif
 #if defined(USE_BARO)
-        barometerConfigMutable()->baro_hardware = constrainToLookupTable(sbufReadU8(src), TABLE_BARO_HARDWARE);
+        barometerConfigMutable()->baro_hardware = sbufReadLookupIndex(src, TABLE_BARO_HARDWARE);
 #else
         sbufReadU8(src);
 #endif
 #if defined(USE_MAG)
-        compassConfigMutable()->mag_hardware = constrainToLookupTable(sbufReadU8(src), TABLE_MAG_HARDWARE);
+        compassConfigMutable()->mag_hardware = sbufReadLookupIndex(src, TABLE_MAG_HARDWARE);
 #else
         sbufReadU8(src);
 #endif
 
         if (sbufBytesRemaining(src) >= 1) {
 #ifdef USE_RANGEFINDER
-            rangefinderConfigMutable()->rangefinder_hardware = constrainToLookupTable(sbufReadU8(src), TABLE_RANGEFINDER_HARDWARE);
+            rangefinderConfigMutable()->rangefinder_hardware = sbufReadLookupIndex(src, TABLE_RANGEFINDER_HARDWARE);
 #else
             sbufReadU8(src);
 #endif
@@ -3770,14 +3792,14 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
         if (sbufBytesRemaining(src) >= 1) {
 #ifdef USE_OPTICALFLOW
-            opticalflowConfigMutable()->opticalflow_hardware = constrainToLookupTable(sbufReadU8(src), TABLE_OPTICALFLOW_HARDWARE);
+            opticalflowConfigMutable()->opticalflow_hardware = sbufReadLookupIndex(src, TABLE_OPTICALFLOW_HARDWARE);
 #else
             sbufReadU8(src);
 #endif
         }
         if (sbufBytesRemaining(src) >= 1) {
 #ifdef USE_PITOT
-            pitotConfigMutable()->pitot_hardware = constrainToLookupTable(sbufReadU8(src), TABLE_PITOT_HARDWARE);
+            pitotConfigMutable()->pitot_hardware = sbufReadLookupIndex(src, TABLE_PITOT_HARDWARE);
 #else
             sbufReadU8(src);
 #endif
@@ -3823,7 +3845,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
     case MSP_SET_BLACKBOX_CONFIG:
         // Don't allow config to be updated while Blackbox is logging
         if (blackboxMayEditConfig()) {
-            blackboxConfigMutable()->device = constrainToLookupTable(sbufReadU8(src), TABLE_BLACKBOX_DEVICE);
+            blackboxConfigMutable()->device = sbufReadLookupIndex(src, TABLE_BLACKBOX_DEVICE);
             const int rateNum = sbufReadU8(src); // was rate_num
             const int rateDenom = sbufReadU8(src); // was rate_denom
             uint16_t pRatio = 0;
@@ -3873,7 +3895,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             }
 
             if (sbufBytesRemaining(src) >= 2) {
-                vtxSettingsConfigMutable()->power = MIN(sbufReadU8(src), VTX_TABLE_MAX_POWER_LEVELS);
+                vtxSettingsConfigMutable()->power = sbufReadU8Constrained(src, 0, VTX_TABLE_MAX_POWER_LEVELS);
                 const uint8_t newPitmode = sbufReadU8(src);
                 if (vtxType != VTXDEV_UNKNOWN) {
                     // Delegate pitmode to vtx directly
@@ -3886,21 +3908,21 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             }
 
             if (sbufBytesRemaining(src)) {
-                    vtxSettingsConfigMutable()->lowPowerDisarm = constrainToLookupTable(sbufReadU8(src), TABLE_VTX_LOW_POWER_DISARM);
+                    vtxSettingsConfigMutable()->lowPowerDisarm = sbufReadLookupIndex(src, TABLE_VTX_LOW_POWER_DISARM);
             }
 
             // API version 1.42 - this parameter kept separate since clients may already be supplying
             if (sbufBytesRemaining(src) >= 2) {
-                vtxSettingsConfigMutable()->pitModeFreq = MIN(sbufReadU16(src), VTX_SETTINGS_MAX_FREQUENCY_MHZ);
+                vtxSettingsConfigMutable()->pitModeFreq = sbufReadU16Constrained(src, 0, VTX_SETTINGS_MAX_FREQUENCY_MHZ);
             }
 
             // API version 1.42 - extensions for non-encoded versions of the band, channel or frequency
             if (sbufBytesRemaining(src) >= 4) {
                 // Added standalone values for band, channel and frequency to move
                 // away from the flawed encoded combined method originally implemented.
-                uint8_t newBand = MIN(sbufReadU8(src), VTX_TABLE_MAX_BANDS);
-                const uint8_t newChannel = MIN(sbufReadU8(src), VTX_TABLE_MAX_CHANNELS);
-                uint16_t newFreq = MIN(sbufReadU16(src), VTX_SETTINGS_MAX_FREQUENCY_MHZ);
+                uint8_t newBand = sbufReadU8Constrained(src, 0, VTX_TABLE_MAX_BANDS);
+                const uint8_t newChannel = sbufReadU8Constrained(src, 0, VTX_TABLE_MAX_CHANNELS);
+                uint16_t newFreq = sbufReadU16Constrained(src, 0, VTX_SETTINGS_MAX_FREQUENCY_MHZ);
                 if (newBand) {
                     newFreq = vtxCommonLookupFrequency(vtxDevice, newBand, newChannel);
                 }
@@ -4218,7 +4240,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         beeperConfigMutable()->beeper_off_flags = sbufReadU32(src) & BEEPER_ALLOWED_MODES;
         if (sbufBytesRemaining(src) >= 1) {
 #ifdef USE_DSHOT
-            beeperConfigMutable()->dshotBeaconTone = constrain(sbufReadU8(src), DSHOT_CMD_BEACON1, DSHOT_CMD_BEACON5);
+            beeperConfigMutable()->dshotBeaconTone = sbufReadU8Constrained(src, DSHOT_CMD_BEACON1, DSHOT_CMD_BEACON5);
 #else
             beeperConfigMutable()->dshotBeaconTone = sbufReadU8(src);
 #endif
@@ -4230,9 +4252,9 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 #endif
 
     case MSP_SET_BOARD_ALIGNMENT_CONFIG:
-        boardAlignmentMutable()->rollDegrees = constrain((int16_t)sbufReadU16(src), BOARD_ALIGNMENT_MIN, BOARD_ALIGNMENT_MAX);
-        boardAlignmentMutable()->pitchDegrees = constrain((int16_t)sbufReadU16(src), BOARD_ALIGNMENT_MIN, BOARD_ALIGNMENT_MAX);
-        boardAlignmentMutable()->yawDegrees = constrain((int16_t)sbufReadU16(src), BOARD_ALIGNMENT_MIN, BOARD_ALIGNMENT_MAX);
+        boardAlignmentMutable()->rollDegrees = sbufReadS16Constrained(src, BOARD_ALIGNMENT_MIN, BOARD_ALIGNMENT_MAX);
+        boardAlignmentMutable()->pitchDegrees = sbufReadS16Constrained(src, BOARD_ALIGNMENT_MIN, BOARD_ALIGNMENT_MAX);
+        boardAlignmentMutable()->yawDegrees = sbufReadS16Constrained(src, BOARD_ALIGNMENT_MIN, BOARD_ALIGNMENT_MAX);
         break;
 
     case MSP_SET_MIXER_CONFIG:
@@ -4255,14 +4277,14 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
     case MSP_SET_RX_CONFIG: {
         // Read and validate everything up to the rx min/max pair before changing the config
 #ifdef USE_SERIALRX
-        const uint8_t serialrxProvider = constrainToLookupTable(sbufReadU8(src), TABLE_SERIAL_RX);
+        const uint8_t serialrxProvider = sbufReadLookupIndex(src, TABLE_SERIAL_RX);
 #else
         const uint8_t serialrxProvider = sbufReadU8(src);
 #endif
-        const uint16_t maxcheck = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
-        const uint16_t midrc = constrain(sbufReadU16(src), RX_MIDRC_MIN, RX_MIDRC_MAX);
-        const uint16_t mincheck = constrain(sbufReadU16(src), PWM_PULSE_MIN, RX_MIN_CHECK_MAX);
-        const uint8_t spektrumSatBind = MIN(sbufReadU8(src), SPEKTRUM_SAT_BIND_MAX);
+        const uint16_t maxcheck = sbufReadU16Constrained(src, PWM_PULSE_MIN, PWM_PULSE_MAX);
+        const uint16_t midrc = sbufReadU16Constrained(src, RX_MIDRC_MIN, RX_MIDRC_MAX);
+        const uint16_t mincheck = sbufReadU16Constrained(src, PWM_PULSE_MIN, RX_MIN_CHECK_MAX);
+        const uint8_t spektrumSatBind = sbufReadU8Constrained(src, 0, SPEKTRUM_SAT_BIND_MAX);
         if (mincheck >= maxcheck) {
             return MSP_RESULT_ERROR;
         }
@@ -4270,8 +4292,8 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         uint16_t rxMinUsec = 0;
         uint16_t rxMaxUsec = 0;
         if (hasRxUsec) {
-            rxMinUsec = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
-            rxMaxUsec = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
+            rxMinUsec = sbufReadU16Constrained(src, PWM_PULSE_MIN, PWM_PULSE_MAX);
+            rxMaxUsec = sbufReadU16Constrained(src, PWM_PULSE_MIN, PWM_PULSE_MAX);
             if (rxMinUsec >= rxMaxUsec) {
                 return MSP_RESULT_ERROR;
             }
@@ -4288,11 +4310,11 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         if (sbufBytesRemaining(src) >= 4) {
             sbufReadU8(src); // not required in API 1.44, was rxConfigMutable()->rcInterpolation
             sbufReadU8(src); // not required in API 1.44, was rxConfigMutable()->rcInterpolationInterval
-            rxConfigMutable()->airModeActivateThreshold = (constrain(sbufReadU16(src), PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) / 10;
+            rxConfigMutable()->airModeActivateThreshold = (sbufReadU16Constrained(src, PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) / 10;
         }
         if (sbufBytesRemaining(src) >= 6) {
 #ifdef USE_RX_SPI
-            rxSpiConfigMutable()->rx_spi_protocol = constrainToLookupTable(sbufReadU8(src), TABLE_RX_SPI);
+            rxSpiConfigMutable()->rx_spi_protocol = sbufReadLookupIndex(src, TABLE_RX_SPI);
             rxSpiConfigMutable()->rx_spi_id = sbufReadU32(src);
             rxSpiConfigMutable()->rx_spi_rf_channel_count = sbufReadU8(src);
 #else
@@ -4302,7 +4324,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 #endif
         }
         if (sbufBytesRemaining(src) >= 1) {
-            rxConfigMutable()->fpvCamAngleDegrees = MIN(sbufReadU8(src), RX_FPV_CAM_ANGLE_MAX);
+            rxConfigMutable()->fpvCamAngleDegrees = sbufReadU8Constrained(src, 0, RX_FPV_CAM_ANGLE_MAX);
         }
         if (sbufBytesRemaining(src) >= 6) {
             // Added in MSP API 1.40
@@ -4311,7 +4333,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             sbufReadU8(src); // not required in API 1.44, was rc_smoothing_type
             configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_setpoint_cutoff, sbufReadU8(src));
             configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_throttle_cutoff, sbufReadU8(src)); // was rc_smoothing_feedforward_cutoff
-            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_auto_factor_throttle, constrain(sbufReadU8(src), RC_SMOOTHING_AUTO_FACTOR_MIN, RC_SMOOTHING_AUTO_FACTOR_MAX)); // was rc_smoothing_input_type
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_auto_factor_throttle, sbufReadU8Constrained(src, RC_SMOOTHING_AUTO_FACTOR_MIN, RC_SMOOTHING_AUTO_FACTOR_MAX)); // was rc_smoothing_input_type
             sbufReadU8(src); // not required in API 1.44, was rc_smoothing_derivative_type
 #else
             sbufReadU8(src);
@@ -4337,7 +4359,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             // the 10.6 configurator where it was possible to submit an invalid out-of-range value. We might be
             // able to remove the constraint at some point in the future once the affected versions are deprecated
             // enough that the risk is low.
-            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_auto_factor_rpy, constrain(sbufReadU8(src), RC_SMOOTHING_AUTO_FACTOR_MIN, RC_SMOOTHING_AUTO_FACTOR_MAX));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_auto_factor_rpy, sbufReadU8Constrained(src, RC_SMOOTHING_AUTO_FACTOR_MIN, RC_SMOOTHING_AUTO_FACTOR_MAX));
 #else
             sbufReadU8(src);
 #endif
@@ -4370,12 +4392,12 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
     }
     case MSP_SET_FAILSAFE_CONFIG:
-        failsafeConfigMutable()->failsafe_delay = constrain(sbufReadU8(src), FAILSAFE_DELAY_MIN, FAILSAFE_DELAY_MAX);
-        failsafeConfigMutable()->failsafe_landing_time = MIN(sbufReadU8(src), FAILSAFE_LANDING_TIME_MAX);
-        failsafeConfigMutable()->failsafe_throttle = constrain(sbufReadU16(src), PWM_PULSE_MIN, PWM_PULSE_MAX);
-        failsafeConfigMutable()->failsafe_switch_mode = constrainToLookupTable(sbufReadU8(src), TABLE_FAILSAFE_SWITCH_MODE);
-        failsafeConfigMutable()->failsafe_throttle_low_delay = MIN(sbufReadU16(src), FAILSAFE_THROTTLE_LOW_DELAY_MAX);
-        failsafeConfigMutable()->failsafe_procedure = constrainToLookupTable(sbufReadU8(src), TABLE_FAILSAFE);
+        failsafeConfigMutable()->failsafe_delay = sbufReadU8Constrained(src, FAILSAFE_DELAY_MIN, FAILSAFE_DELAY_MAX);
+        failsafeConfigMutable()->failsafe_landing_time = sbufReadU8Constrained(src, 0, FAILSAFE_LANDING_TIME_MAX);
+        failsafeConfigMutable()->failsafe_throttle = sbufReadU16Constrained(src, PWM_PULSE_MIN, PWM_PULSE_MAX);
+        failsafeConfigMutable()->failsafe_switch_mode = sbufReadLookupIndex(src, TABLE_FAILSAFE_SWITCH_MODE);
+        failsafeConfigMutable()->failsafe_throttle_low_delay = sbufReadU16Constrained(src, 0, FAILSAFE_THROTTLE_LOW_DELAY_MAX);
+        failsafeConfigMutable()->failsafe_procedure = sbufReadLookupIndex(src, TABLE_FAILSAFE);
         break;
 
     case MSP_SET_RXFAIL_CONFIG:
@@ -4389,7 +4411,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
 
     case MSP_SET_RSSI_CONFIG:
-        rxConfigMutable()->rssi_channel = MIN(sbufReadU8(src), MAX_SUPPORTED_RC_CHANNEL_COUNT);
+        rxConfigMutable()->rssi_channel = sbufReadU8Constrained(src, 0, MAX_SUPPORTED_RC_CHANNEL_COUNT);
         break;
 
     case MSP_SET_RX_MAP: {
@@ -4408,7 +4430,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
     case MSP_SET_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
             hsvColor_t *color = &ledStripStatusModeConfigMutable()->colors[i];
-            color->h = MIN(sbufReadU16(src), HSV_HUE_MAX);
+            color->h = sbufReadU16Constrained(src, 0, HSV_HUE_MAX);
             color->s = sbufReadU8(src);
             color->v = sbufReadU8(src);
         }
@@ -4431,7 +4453,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 #endif
             // API 1.41 - selected ledstrip_profile
             if (sbufBytesRemaining(src) >= 1) {
-                ledStripConfigMutable()->ledstrip_profile = constrainToLookupTable(sbufReadU8(src), TABLE_LED_PROFILE);
+                ledStripConfigMutable()->ledstrip_profile = sbufReadLookupIndex(src, TABLE_LED_PROFILE);
             }
         }
         break;
@@ -4606,9 +4628,9 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
 #ifdef USE_LED_STRIP
     case MSP2_SET_LED_STRIP_CONFIG_VALUES:
-        ledStripConfigMutable()->ledstrip_brightness = constrain(sbufReadU8(src), LED_STRIP_BRIGHTNESS_MIN, LED_STRIP_BRIGHTNESS_MAX);
-        ledStripConfigMutable()->ledstrip_rainbow_delta = MIN(sbufReadU16(src), HSV_HUE_MAX);
-        ledStripConfigMutable()->ledstrip_rainbow_freq = constrain(sbufReadU16(src), LED_STRIP_RAINBOW_FREQ_MIN, LED_STRIP_RAINBOW_FREQ_MAX);
+        ledStripConfigMutable()->ledstrip_brightness = sbufReadU8Constrained(src, LED_STRIP_BRIGHTNESS_MIN, LED_STRIP_BRIGHTNESS_MAX);
+        ledStripConfigMutable()->ledstrip_rainbow_delta = sbufReadU16Constrained(src, 0, HSV_HUE_MAX);
+        ledStripConfigMutable()->ledstrip_rainbow_freq = sbufReadU16Constrained(src, LED_STRIP_RAINBOW_FREQ_MIN, LED_STRIP_RAINBOW_FREQ_MAX);
         break;
 #endif
 
@@ -4658,7 +4680,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         }
 
         for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-            currentPidProfile->pid[i].S = MIN(sbufReadU8(src), PID_GAIN_MAX);
+            currentPidProfile->pid[i].S = sbufReadU8Constrained(src, 0, PID_GAIN_MAX);
         }
         for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
             currentPidProfile->spa_center[i] = sbufReadU16(src);
@@ -4667,36 +4689,36 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             currentPidProfile->spa_width[i] = sbufReadU16(src);
         }
         for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-            currentPidProfile->spa_mode[i] = constrainToLookupTable(sbufReadU8(src), TABLE_SPA_MODE);
+            currentPidProfile->spa_mode[i] = sbufReadLookupIndex(src, TABLE_SPA_MODE);
         }
 #ifdef USE_ADVANCED_TPA
-        currentPidProfile->tpa_curve_type = constrainToLookupTable(sbufReadU8(src), TABLE_TPA_CURVE_TYPE);
+        currentPidProfile->tpa_curve_type = sbufReadLookupIndex(src, TABLE_TPA_CURVE_TYPE);
 #else
         currentPidProfile->tpa_curve_type = sbufReadU8(src);
 #endif
-        currentPidProfile->tpa_curve_stall_throttle = MIN(sbufReadU8(src), TPA_CURVE_STALL_THROTTLE_MAX);
-        currentPidProfile->tpa_curve_pid_thr0 = MIN(sbufReadU16(src), TPA_CURVE_PID_MAX);
-        currentPidProfile->tpa_curve_pid_thr100 = MIN(sbufReadU16(src), TPA_CURVE_PID_MAX);
-        currentPidProfile->tpa_curve_expo = constrain((int8_t)sbufReadU8(src), TPA_CURVE_EXPO_MIN, TPA_CURVE_EXPO_MAX);
+        currentPidProfile->tpa_curve_stall_throttle = sbufReadU8Constrained(src, 0, TPA_CURVE_STALL_THROTTLE_MAX);
+        currentPidProfile->tpa_curve_pid_thr0 = sbufReadU16Constrained(src, 0, TPA_CURVE_PID_MAX);
+        currentPidProfile->tpa_curve_pid_thr100 = sbufReadU16Constrained(src, 0, TPA_CURVE_PID_MAX);
+        currentPidProfile->tpa_curve_expo = sbufReadS8Constrained(src, TPA_CURVE_EXPO_MIN, TPA_CURVE_EXPO_MAX);
 #ifdef USE_WING
-        currentPidProfile->tpa_speed_type = constrainToLookupTable(sbufReadU8(src), TABLE_TPA_SPEED_TYPE);
+        currentPidProfile->tpa_speed_type = sbufReadLookupIndex(src, TABLE_TPA_SPEED_TYPE);
 #else
         currentPidProfile->tpa_speed_type = sbufReadU8(src);
 #endif
-        currentPidProfile->tpa_speed_basic_delay = MAX(sbufReadU16(src), TPA_SPEED_PARAM_MIN);
-        currentPidProfile->tpa_speed_basic_gravity = MAX(sbufReadU16(src), TPA_SPEED_PARAM_MIN);
+        currentPidProfile->tpa_speed_basic_delay = sbufReadU16Constrained(src, TPA_SPEED_PARAM_MIN, UINT16_MAX);
+        currentPidProfile->tpa_speed_basic_gravity = sbufReadU16Constrained(src, TPA_SPEED_PARAM_MIN, UINT16_MAX);
         currentPidProfile->tpa_speed_adv_prop_pitch = sbufReadU16(src);
-        currentPidProfile->tpa_speed_adv_mass = MAX(sbufReadU16(src), TPA_SPEED_PARAM_MIN);
-        currentPidProfile->tpa_speed_adv_drag_k = MAX(sbufReadU16(src), TPA_SPEED_PARAM_MIN);
-        currentPidProfile->tpa_speed_adv_thrust = MAX(sbufReadU16(src), TPA_SPEED_PARAM_MIN);
+        currentPidProfile->tpa_speed_adv_mass = sbufReadU16Constrained(src, TPA_SPEED_PARAM_MIN, UINT16_MAX);
+        currentPidProfile->tpa_speed_adv_drag_k = sbufReadU16Constrained(src, TPA_SPEED_PARAM_MIN, UINT16_MAX);
+        currentPidProfile->tpa_speed_adv_thrust = sbufReadU16Constrained(src, TPA_SPEED_PARAM_MIN, UINT16_MAX);
         currentPidProfile->tpa_speed_max_voltage = sbufReadU16(src);
         currentPidProfile->tpa_speed_pitch_offset = (int16_t)sbufReadU16(src);
 #ifdef USE_WING
-        currentPidProfile->yaw_type = constrainToLookupTable(sbufReadU8(src), TABLE_YAW_TYPE);
+        currentPidProfile->yaw_type = sbufReadLookupIndex(src, TABLE_YAW_TYPE);
 #else
         currentPidProfile->yaw_type = sbufReadU8(src);
 #endif
-        currentPidProfile->angle_pitch_offset = constrain((int16_t)sbufReadU16(src), -ANGLE_PITCH_OFFSET_MAX, ANGLE_PITCH_OFFSET_MAX);
+        currentPidProfile->angle_pitch_offset = sbufReadS16Constrained(src, -ANGLE_PITCH_OFFSET_MAX, ANGLE_PITCH_OFFSET_MAX);
         pidInitConfig(currentPidProfile);
         break;
     }
@@ -4771,8 +4793,8 @@ RAM_CODE static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, i
 
         if (voltageSensorADCIndex < MAX_VOLTAGE_SENSOR_ADC) {
             voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatscale = sbufReadU8(src);
-            voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatresdivval = MAX(sbufReadU8(src), VBAT_DIVIDER_MIN);
-            voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatresdivmultiplier = MAX(sbufReadU8(src), VBAT_MULTIPLIER_MIN);
+            voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatresdivval = sbufReadU8Constrained(src, VBAT_DIVIDER_MIN, UINT8_MAX);
+            voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatresdivmultiplier = sbufReadU8Constrained(src, VBAT_MULTIPLIER_MIN, UINT8_MAX);
         } else {
             // if we had any other types of voltage sensor to configure, this is where we'd do it.
             sbufReadU8(src);
@@ -4787,13 +4809,13 @@ RAM_CODE static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, i
 
         switch (id) {
             case CURRENT_METER_ID_BATTERY_1:
-                currentSensorADCConfigMutable()->scale = constrain((int16_t)sbufReadU16(src), -CURRENT_METER_SCALE_MAX, CURRENT_METER_SCALE_MAX);
-                currentSensorADCConfigMutable()->offset = constrain((int16_t)sbufReadU16(src), -CURRENT_METER_ADC_OFFSET_MAX, CURRENT_METER_ADC_OFFSET_MAX);
+                currentSensorADCConfigMutable()->scale = sbufReadS16Constrained(src, -CURRENT_METER_SCALE_MAX, CURRENT_METER_SCALE_MAX);
+                currentSensorADCConfigMutable()->offset = sbufReadS16Constrained(src, -CURRENT_METER_ADC_OFFSET_MAX, CURRENT_METER_ADC_OFFSET_MAX);
                 break;
 #ifdef USE_VIRTUAL_CURRENT_METER
             case CURRENT_METER_ID_VIRTUAL_1:
-                currentSensorVirtualConfigMutable()->scale = constrain((int16_t)sbufReadU16(src), -CURRENT_METER_SCALE_MAX, CURRENT_METER_SCALE_MAX);
-                currentSensorVirtualConfigMutable()->offset = MIN(sbufReadU16(src), CURRENT_METER_VIRTUAL_OFFSET_MAX);
+                currentSensorVirtualConfigMutable()->scale = sbufReadS16Constrained(src, -CURRENT_METER_SCALE_MAX, CURRENT_METER_SCALE_MAX);
+                currentSensorVirtualConfigMutable()->offset = sbufReadU16Constrained(src, 0, CURRENT_METER_VIRTUAL_OFFSET_MAX);
                 break;
 #endif
             default:
@@ -4812,8 +4834,8 @@ RAM_CODE static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, i
         uint16_t vbatMax = sbufReadU8(src) * 10;      // vbatlevel_warn2 in MWC2.3 GUI
         uint16_t vbatWarn = sbufReadU8(src) * 10;      // vbatlevel when buzzer starts to alert
         const uint16_t capacity = sbufReadU16(src);
-        const uint8_t voltageMeterSource = constrainToLookupTable(sbufReadU8(src), TABLE_VOLTAGE_METER);
-        const uint8_t currentMeterSource = constrainToLookupTable(sbufReadU8(src), TABLE_CURRENT_METER);
+        const uint8_t voltageMeterSource = sbufReadLookupIndex(src, TABLE_VOLTAGE_METER);
+        const uint8_t currentMeterSource = sbufReadLookupIndex(src, TABLE_CURRENT_METER);
         if (sbufBytesRemaining(src) >= 6) {
             vbatMin = sbufReadU16(src);
             vbatMax = sbufReadU16(src);
@@ -4840,7 +4862,7 @@ RAM_CODE static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, i
             if ((int8_t)addr == -1) {
                 /* Set general OSD settings */
 #ifdef USE_VIDEO_SYSTEM
-                videoSystem_e video_system = constrainToLookupTable(sbufReadU8(src), TABLE_VIDEO_SYSTEM);
+                videoSystem_e video_system = sbufReadLookupIndex(src, TABLE_VIDEO_SYSTEM);
 #else
                 videoSystem_e video_system = sbufReadU8(src);
 #endif
@@ -4872,13 +4894,13 @@ RAM_CODE static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, i
 
                 vcdProfileMutable()->video_system = video_system;
 
-                osdConfigMutable()->units = constrainToLookupTable(sbufReadU8(src), TABLE_UNIT);
+                osdConfigMutable()->units = sbufReadLookupIndex(src, TABLE_UNIT);
 
                 // Alarms
-                osdConfigMutable()->rssi_alarm = MIN(sbufReadU8(src), OSD_RSSI_ALARM_MAX);
-                osdConfigMutable()->cap_alarm = MIN(sbufReadU16(src), OSD_CAP_ALARM_MAX);
+                osdConfigMutable()->rssi_alarm = sbufReadU8Constrained(src, 0, OSD_RSSI_ALARM_MAX);
+                osdConfigMutable()->cap_alarm = sbufReadU16Constrained(src, 0, OSD_CAP_ALARM_MAX);
                 sbufReadU16(src); // Skip unused (previously fly timer)
-                osdConfigMutable()->alt_alarm = MIN(sbufReadU16(src), OSD_ALT_ALARM_MAX);
+                osdConfigMutable()->alt_alarm = sbufReadU16Constrained(src, 0, OSD_ALT_ALARM_MAX);
 
                 if (sbufBytesRemaining(src) >= 2) {
                     /* Enabled warnings */
@@ -4906,7 +4928,7 @@ RAM_CODE static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, i
                     // OSD stick overlay mode
 
 #ifdef USE_OSD_STICK_OVERLAY
-                    osdConfigMutable()->overlay_radio_mode = constrain(sbufReadU8(src), OSD_STICK_OVERLAY_RADIO_MODE_MIN, OSD_STICK_OVERLAY_RADIO_MODE_MAX);
+                    osdConfigMutable()->overlay_radio_mode = sbufReadU8Constrained(src, OSD_STICK_OVERLAY_RADIO_MODE_MIN, OSD_STICK_OVERLAY_RADIO_MODE_MAX);
 #else
                     sbufReadU8(src);
 #endif // USE_OSD_STICK_OVERLAY
@@ -4922,12 +4944,12 @@ RAM_CODE static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, i
 
                 if (sbufBytesRemaining(src) >= 2) {
                     // API >= 1.46
-                    osdConfigMutable()->link_quality_alarm = MIN(sbufReadU16(src), OSD_LINK_QUALITY_ALARM_MAX);
+                    osdConfigMutable()->link_quality_alarm = sbufReadU16Constrained(src, 0, OSD_LINK_QUALITY_ALARM_MAX);
                 }
 
                 if (sbufBytesRemaining(src) >= 2) {
                     // API >= 1.47
-                    osdConfigMutable()->rssi_dbm_alarm = constrain((int16_t)sbufReadU16(src), CRSF_RSSI_MIN, CRSF_RSSI_MAX);
+                    osdConfigMutable()->rssi_dbm_alarm = sbufReadS16Constrained(src, CRSF_RSSI_MIN, CRSF_RSSI_MAX);
                 }
 
             } else if ((int8_t)addr == -2) {
@@ -5000,8 +5022,8 @@ RAM_CODE static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, i
 #ifdef USE_OSD_HD
     case MSP_SET_OSD_CANVAS:
         {
-            osdConfigMutable()->canvas_cols = MIN(sbufReadU8(src), OSD_CANVAS_COLS_MAX);
-            osdConfigMutable()->canvas_rows = MIN(sbufReadU8(src), OSD_CANVAS_ROWS_MAX);
+            osdConfigMutable()->canvas_cols = sbufReadU8Constrained(src, 0, OSD_CANVAS_COLS_MAX);
+            osdConfigMutable()->canvas_rows = sbufReadU8Constrained(src, 0, OSD_CANVAS_ROWS_MAX);
 
             if ((vcdProfile()->video_system != VIDEO_SYSTEM_HD) ||
                 (osdConfig()->displayPortDevice != OSD_DISPLAYPORT_DEVICE_MSP)) {
