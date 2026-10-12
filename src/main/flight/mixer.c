@@ -860,7 +860,7 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
             && !mixerRuntime.feature3dEnabled
             && !airmodeEnabled
             && !FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | LAUNCH_MODE)   // disable motor_stop while GPS Rescue / Alt Hold / Pos Hold / Launch is active
-            && (rcData[THROTTLE] < rxConfig()->mincheck))) {
+            && (rcGetChannel(THROTTLE) < rcUsToNorm(rxConfig()->mincheck)))) {
         applyMotorStop();
     } else {
         // Apply the mix to motor endpoints
