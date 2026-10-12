@@ -118,6 +118,16 @@ compass_ist8310_unittest_SRC := \
 compass_ist8310_unittest_DEFINES := \
                 USE_MAG_IST8310=
 
+flash_fm25v02a_unittest_SRC := \
+		$(USER_DIR)/drivers/flash/flash_fm25v02a.c \
+		$(USER_DIR)/drivers/flash/flash.c
+
+flash_fm25v02a_unittest_DEFINES := \
+		USE_FLASH_CHIP= \
+		USE_FLASH_SPI= \
+		USE_FLASH_M25P16= \
+		USE_FLASH_FM25V02A=
+
 baro_bmp085_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_bmp085.c
 
