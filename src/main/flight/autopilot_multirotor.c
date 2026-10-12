@@ -121,18 +121,24 @@
 // its retry and stays failed.
 #define SANITY_RETRY_REPLENISH_S 10.0f
 #define ERROR_DISTANCE_LIMIT  2000.0f // TO DO: test set to a useful value, this is 20m
-// Nav anchors position to positionNav's carrot, whose lead grows with speed; a
-// tighter error bound stops that speed-proportional lead from driving P into a
-// positive-feedback overspeed, leaving the velocity feedforward to set cruise.
-#define NAV_ERROR_DISTANCE_LIMIT 500.0f // 5m
+// Range at which anchoring to a target moved without a stated velocity takes
+// over from tracking its commanded velocity. Matched to the error clamp: beyond
+// it P is saturated and carries no position information anyway.
+#define NAV_ANCHOR_RANGE      NAV_ERROR_DISTANCE_LIMIT
+#define NAV_ANCHOR_HYSTERESIS 1.5f
+#define NAV_BEARING_MIN_SPEED_MPS 0.5f // a stated velocity slower than this has no direction worth steering to
 #define POSITION_I_LIMIT      2000.0f // TO DO: test and set to a useful value, this is 20m
 
-#define AP_YAW_P_SCALE         0.01f
+#define AP_YAW_P_SCALE         0.06f
 #define AP_YAW_RAMP_TIME_S     1.0f
+
+static int16_t apYawDisableReason;
+static float apExternalYawTargetDeg;
+
 
 static pidCoefficient_t xyPid;
 static float xyKDrag;
-
+static float yawKp;
 static float altitudeKp;
 static float altitudeKi;
 static float altitudeKd;
@@ -154,6 +160,7 @@ static vector2_t targetVelocity;
 static vector2_t previousTargetVelocity; // EF, for the target-velocity-delta feedforward
 static vector2_t posHoldStartPosition;
 static vector2_t distanceError;          // deviation from intended position (real or virtual)
+static vector2_t navPointReference;      // EF, where a fixed nav target's approach has walked to
 static vector2_t distanceErrorIntegral;  // integral of position error
 static vector2_t previousVelocity;       // for reversal of velocity detection
 
@@ -162,7 +169,8 @@ static pt3Filter_t posNoisyPidsLpf[EF_AXIS_COUNT]; // smooths F, the noisiest te
 static bool isPositionHeld;
 static bool wasNavActive = false;
 static bool abortNavRequested = false;
-static bool forcePitchForward = false;
+static bool headingRecovery = false;
+static float headingRecoveryPitchDeg = 0.0f;
 static bool forceLevelPark = false;
 static bool wasAngleSaturated = false;
 
@@ -197,7 +205,9 @@ typedef enum {
     XY_MODE_BRAKING,          // arresting speed onto a capture point
     XY_MODE_STICK_VELOCITY,   // flying the pilot's commanded velocity
     XY_MODE_NAV_TRACK,        // following nav's moving position target (the carrot)
+    XY_MODE_NAV_POINT,        // walking a reference onto nav's fixed target at its commanded velocity
     XY_MODE_NAV_VELOCITY,     // flying nav's commanded velocity, no position target
+    XY_MODE_RESCUE_VELOCITY   // flying gps rescue's commanded velocity and deriving position target
 } xyControlMode_e;
 
 // Outcome of a mode feeder: continue into the unified PIDAF law, hold the
@@ -227,6 +237,11 @@ typedef struct autopilotState_s {
     xyAnchorMode_e anchor;      // position-anchor selection for this loop
     xyIntegralPolicy_e iPolicy; // integral policy for this loop
     xyControlMode_e mode;       // operational mode for this loop
+    bool navAnchored;           // nav target close enough for position anchoring
+    uint32_t navAnchorSeq;      // command the anchor state belongs to
+    bool navPointValid;         // navPointReference has been seeded for this approach
+    uint32_t navPointSeq;       // command navPointReference belongs to
+    uint32_t navFeedforwardSeq; // command the F filter belongs to
     unsigned debugAxis;
 } autopilotState_t;
 
@@ -266,6 +281,13 @@ static float posPidLpfGain(float dtS)
     return pt3FilterGain(cutoffHz, dtS);
 }
 
+static void pt3FilterSeed(pt3Filter_t *filter, float value)
+{
+    filter->state = value;
+    filter->state1 = value;
+    filter->state2 = value;
+}
+
 static void initPidLpfs(void)
 {
     posLpfDtS = HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ);  // nominal until the loop measures itself
@@ -291,6 +313,12 @@ static void updatePidLpfGains(float dtS)
     }
 }
 
+static void setYawDisableReason(uint8_t reason)
+{
+    apYawDisableReason = reason;
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 7, apYawDisableReason);  //!< Yaw Disable Reason
+}
+
 void autopilotInit(void)
 {
     const autopilotConfig_t *cfg = autopilotConfig();
@@ -304,7 +332,7 @@ void autopilotInit(void)
     altitudeKd = cfg->altitudeD * ALTITUDE_D_SCALE;
     altitudeKa = cfg->altitudeA * ALTITUDE_A_SCALE;
     altitudeKf = cfg->altitudeF * ALTITUDE_F_SCALE;
-
+    yawKp = cfg->yawP * AP_YAW_P_SCALE;
     xyPid.Kp = cfg->positionP * XY_DISTANCE_SCALE;
     xyPid.Ki = cfg->positionI * XY_DISTANCE_I_SCALE;
     xyPid.Kd = cfg->positionD * XY_VELOCITY_SCALE;
@@ -320,10 +348,11 @@ void autopilotInit(void)
     ap.brakingTimeS = 0.0f;
     ap.isPosHoldBraking = false;
     abortNavRequested = false;
-    forcePitchForward = false;
+    headingRecovery = false;
     forceLevelPark = false;
     apNavHeadingOverrideValid = false;
     disableYawControl();
+    setYawDisableReason(0);
     apYawRateLimitDps = 0.0f;
     positionNavInit();
 }
@@ -369,10 +398,20 @@ void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targ
     const float verticalVelocity = getAltitudeDerivativeControl();
     const float altitudeErrorCm = targetAltitudeCm - currentAltitudeCm;
     const float itermRelax = (fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f; // don't accumulate too much iTerm with transient but large overshoots (>2m error )
-    const float altitudeP = altitudeErrorCm * altitudeKp;
     altitudeI += altitudeErrorCm * altitudeKi * itermRelax * taskIntervalS;
     altitudeI = constrainf(altitudeI, -ALTITUDE_I_LIMIT, ALTITUDE_I_LIMIT);
     const float velMax = (velLimitCmS > 1.0f) ? velLimitCmS : ALTITUDE_VEL_CMD_MAX_DEFAULT_CM_S;
+    // P is opposed by D, so the climb settles where P + D = 0, i.e. at
+    // errorCm * Kp / Kd. Clamping P to the offset D produces at velMax makes
+    // that settling point velMax exactly - without this the velocity limit has
+    // no authority over the climb and ascend/descend rate settings do nothing.
+    // With D disabled there is nothing for P to settle against, so the clamp
+    // would only strip the proportional response: leave P alone in that case.
+    float altitudeP = altitudeErrorCm * altitudeKp;
+    if (altitudeKd > 0.0f) {
+        const float altitudePLimit = velMax * altitudeKd;
+        altitudeP = constrainf(altitudeP, -altitudePLimit, altitudePLimit);
+    }
     const float targetVerticalVelocity = constrainf(targetAltitudeVelCmS, -velMax, velMax);
     float dBoost = 1.0f;
     const float boostThreshold = 500.0f; // 5m/s
@@ -413,6 +452,11 @@ void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targ
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 5, lrintf(altitudeD));         //!< Altitude D Term [unit:us]
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 6, lrintf(altitudeA));         //!< Altitude A Term [unit:us]
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));         //!< Altitude Feedforward Term [unit:us]
+
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 2, lrintf(currentAltitudeCm)); //!< Current Altitude [unit:cm]
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 3, lrintf(targetAltitudeCm));  //!< Target Altitude [unit:cm]
+
+
 }
 
 static void updatePositionHoldTarget(void)
@@ -427,27 +471,34 @@ void setSticksActiveStatus(bool areSticksActive)
     ap.sticksActive = areSticksActive;
 }
 
-void moveTargetLocation(const vector2_t *stepEF, unsigned taskRateHz, bool forceAbortRequest)
+void setTargetVelocity(const vector2_t *velocityEF, bool forceAbort)
 {
-    if (forceAbortRequest) {
-        abortNavRequested = true;
-    } else {
-        // Force the flag back to false when a normal tracking pass runs
-        abortNavRequested = false;
+    abortNavRequested = forceAbort;
+    targetVelocity = *velocityEF;
+}
 
-        if (stepEF != NULL) {
-            targetPosition.v[EF_EAST]  += stepEF->v[EF_EAST];
-            targetPosition.v[EF_NORTH] += stepEF->v[EF_NORTH];
-            targetVelocity.v[EF_EAST]  = stepEF->v[EF_EAST] * taskRateHz;
-            targetVelocity.v[EF_NORTH] = stepEF->v[EF_NORTH] * taskRateHz;
-            posHoldStartPosition = targetPosition; // update start point to new target to prevent poshold sanity failure
-        }
-    }
+void autopilotSetYawTarget(float headingDeg)
+{
+    apExternalYawTargetDeg = headingDeg;
+}
+
+// Flown blind while the IMU has no heading to hold position with: level on roll, pitchDeg on pitch,
+// the nose left alone, and the nav command's altitude still flown. Level climbs where it drifts; a
+// forward pitch lets the GPS course teach the IMU its heading.
+void autopilotHeadingRecovery(bool active, float pitchDeg)
+{
+    headingRecovery = active;
+    headingRecoveryPitchDeg = pitchDeg;
 }
 
 void pitchForwardOverride(bool request)
 {
-    forcePitchForward = request;
+    autopilotHeadingRecovery(request, 35.0f);
+}
+
+bool isHeadingRecoveryActive(void)
+{
+    return headingRecovery;
 }
 
 void autopilotForceLevelPark(bool request)
@@ -459,6 +510,11 @@ void autopilotSetNavHeadingOverride(bool valid, float headingDeg)
 {
     apNavHeadingOverrideValid = valid;
     apNavHeadingOverrideDeg = headingDeg;
+}
+
+vector2_t autopilotGetPositionErrorCm(void)
+{
+    return distanceError;
 }
 
 static inline float calculateSanityCheckDistance(void)
@@ -506,9 +562,9 @@ void initPositionHold(void)
     setBrakingMode(); // arrest entry speed only when starting fast
     vector2Zero(&targetVelocity);
     vector2Zero(&previousTargetVelocity);
+    ap.navPointValid = false;   // a fixed target's approach is acquired afresh from where the craft is now
     // nb: we do not reset the distanceError integral, to hold its opposition to wind between quick stick inputs
 }
-
 // Re-anchor the hold at the craft's current position — what a pilot cycling
 // the mode switch achieves, callable from recovery paths (sensor dropout
 // recovery, the one-shot sanity retry). Enters through the normal braking
@@ -530,18 +586,20 @@ static void initNavMode(void)
     resetDistanceErrorIntegral();
     vector2Zero(&previousTargetVelocity);
     ap.isPosHoldBraking = false;
+    ap.navPointValid = false;
 }
 
 void resetPositionControl(unsigned taskRateHz)
 {
     UNUSED(taskRateHz);
     abortNavRequested = false;
-    forcePitchForward = false;
+    headingRecovery = false;
     forceLevelPark = false;
     apNavHeadingOverrideValid = false;
     ap.sticksActive = false;
     ap.wasSticksActive = false;
     disableYawControl();
+    setYawDisableReason(1);
     apYawCourseValid = false;
     wasAngleSaturated = false;
     // Initialise the nav system
@@ -578,6 +636,7 @@ static bool sanityViolationExpired(void)
         return true;
     }
     disableYawControl();
+    setYawDisableReason(2);
     autopilotAngle[AI_ROLL]  = 0.0f; // Level out
     autopilotAngle[AI_PITCH] = 0.0f;
     handlepositionControlFailure();
@@ -616,6 +675,7 @@ void autopilotSetYawRateLimit(float rateLimitDps)
 void autopilotDisableYawControl(void)
 {
     disableYawControl();
+    setYawDisableReason(3);
 }
 
 float autopilotGetYawRate(void)
@@ -631,15 +691,17 @@ bool autopilotYawControlActive(void)
     // period after the pilot switched the mode off, injecting a stale yaw rate on the
     // first frame they expect the stick back.
     return apYawActive
-        && (FLIGHT_MODE(AUTOPILOT_MODE) || FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(MAG_MODE));
+        && (FLIGHT_MODE(AUTOPILOT_MODE)
+            || FLIGHT_MODE(POS_HOLD_MODE)
+            || FLIGHT_MODE(MAG_MODE)
+            || FLIGHT_MODE(GPS_RESCUE_MODE));
 }
-
 static void disableYawControl(void)
 {
     apYawActive = false;
     apYawAttenuator = 0.0f;
     apYawRateDps = 0.0f;
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, 0);  //!< Yaw Rate Setpoint [unit:0.1dps]
+
     // Re-capture the hold heading on re-engagement rather than snapping back to a
     // heading the craft may have left long ago.
     apYawHoldHeadingValid = false;
@@ -666,6 +728,15 @@ static bool bearingToTargetDeg(const positionEstimate3d_t *est, float *headingDe
     if (cmd == NULL || !cmd->active) {
         return false;
     }
+    // A target flown at the velocity its owner states rides with the craft, so the bearing to it is
+    // noise: the direction it is being flown in is the bearing.
+    if (cmd->velocityFfValid) {
+        if (vector2Norm(&cmd->velocityFfEfMps) < NAV_BEARING_MIN_SPEED_MPS) {
+            return false;
+        }
+        *headingDeg = RADIANS_TO_DEGREES(atan2_approx(cmd->velocityFfEfMps.x, cmd->velocityFfEfMps.y));
+        return true;
+    }
     const float deltaEastCm  = cmd->targetPosEfM.v[ENU_E] * 100.0f - est->position.v[ENU_E];
     const float deltaNorthCm = cmd->targetPosEfM.v[ENU_N] * 100.0f - est->position.v[ENU_N];
     // Inside the acceptance radius the bearing degenerates; stop steering.
@@ -676,15 +747,15 @@ static bool bearingToTargetDeg(const positionEstimate3d_t *est, float *headingDe
     return true;
 }
 
-// Mission yaw: while navigation is flying a leg, steer the nose to the ground
-// course (VELOCITY), the bearing to the active target (BEARING), or course
-// falling back to bearing when too slow for a reliable course (HYBRID).
-// P on wrapped heading error with a short engage ramp and gyro damping,
-// clamped to ap_max_yaw_rate and any YAW_RATE mission cap; rc.c injects the
-// resulting rate as the yaw setpoint, exactly as GPS rescue injects its own.
+// Yaw control priority is GPS Rescue, active navigation, then heading hold.
+// GPS Rescue supplies its own target heading. Active navigation chooses a
+// heading according to ap_yaw_mode. POS_HOLD, MAG_MODE and a mission with no
+// heading to offer hold the heading captured on engagement.
 static void updateYawControl(float dt, const positionEstimate3d_t *est)
 {
     const autopilotConfig_t *cfg = autopilotConfig();
+
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 7, apYawDisableReason);  //!< Yaw Disable Reason
 
     // Nothing holds a heading on the bench. disarm() clears ARMED but leaves the flight
     // mode flags alone, so POS_HOLD_MODE stays set until processRxModes() next runs and
@@ -693,6 +764,17 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     // heading, so arming re-captures rather than resuming an old one.
     if (!ARMING_FLAG(ARMED)) {
         disableYawControl();
+        setYawDisableReason(4);
+        return;
+    }
+
+    const bool rescueYawActive = FLIGHT_MODE(GPS_RESCUE_MODE);
+    const bool navYawActive = FLIGHT_MODE(AUTOPILOT_MODE) && ap.navActive;
+    const bool holdYawActive = FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(MAG_MODE) || FLIGHT_MODE(AUTOPILOT_MODE);
+
+    if (!rescueYawActive && !holdYawActive) {
+        disableYawControl();
+        setYawDisableReason(5);
         return;
     }
 
@@ -702,27 +784,19 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     // GPS rescue applies.
     if (!imuIsHeadingValid()) {
         disableYawControl();
-        return;
-    }
-
-    // A mission steers the nose per ap_yaw_mode while a leg is being flown. Position
-    // hold and MAG_MODE have no leg to follow, so they hold the heading they had on
-    // engagement. MAG_MODE is heading hold alone - no position control involved.
-    const bool navYawActive = FLIGHT_MODE(AUTOPILOT_MODE) && ap.navActive;
-    const bool holdYawActive = FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(MAG_MODE);
-    if (!navYawActive && !holdYawActive) {
-        disableYawControl();
+        setYawDisableReason(6);
         return;
     }
 
     const float headingDeg = attitude.values.yaw * 0.1f;
-
     float desiredHeadingDeg = 0.0f;
-    if (navYawActive) {
-        bool haveDesiredHeading = false;
+    bool haveDesiredHeading = false;
+
+    if (rescueYawActive) {
+        desiredHeadingDeg = apExternalYawTargetDeg;
+        haveDesiredHeading = true;
+    } else if (navYawActive) {
         if (apNavHeadingOverrideValid) {
-            // Mission pre-turn blend: point the nose onto the next leg regardless of
-            // the configured yaw mode, so it is already there as the gate is crossed.
             desiredHeadingDeg = apNavHeadingOverrideDeg;
             haveDesiredHeading = true;
         } else {
@@ -737,26 +811,34 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
                 haveDesiredHeading = courseHeadingDeg(est, &desiredHeadingDeg)
                     || bearingToTargetDeg(est, &desiredHeadingDeg);
                 break;
-            default: // YAW_MODE_FIXED, YAW_MODE_DAMPENER (wing only)
+            default:
                 break;
             }
         }
+    }
 
-        if (!haveDesiredHeading) {
-            disableYawControl();
-            return;
-        }
+    if (haveDesiredHeading) {
+        apYawHoldHeadingValid = false; // capture current heading when hold resumes
     } else {
-        // Position hold. The pilot's yaw stick outranks the hold: past ap_stick_deadband
+        // Heading hold. The pilot's yaw stick outranks the hold: past ap_stick_deadband
         // rc.c flies the stick instead of our rate, so track the heading rather than
         // accumulating an error to fight on release - the hold resumes wherever the
         // pilot leaves the nose.
-        if (!apYawHoldHeadingValid || fabsf(rcCommand[FD_YAW]) >= (float)cfg->stickDeadband) {
+        const bool sticksMoving = fabsf(rcCommand[FD_YAW]) >= (float)cfg->stickDeadband;
+
+        if (!apYawHoldHeadingValid || sticksMoving) {
             apYawHoldHeadingDeg = headingDeg;
             apYawHoldHeadingValid = true;
         }
+
         desiredHeadingDeg = apYawHoldHeadingDeg;
     }
+
+    // Every bearing source above is an atan2, which is signed; headings are a
+    // compass quantity and every reader of one - the log, the OSD, a pilot -
+    // expects the 0-360 the estimator reports. Normalise once, here, so the
+    // target and the measurement can be compared as logged.
+    desiredHeadingDeg = fmodf(desiredHeadingDeg + 360.0f, 360.0f);
 
     apYawAttenuator = fminf(apYawAttenuator + dt / AP_YAW_RAMP_TIME_S, 1.0f);
 
@@ -766,8 +848,8 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     float errorDeg = headingDeg - desiredHeadingDeg;
     errorDeg = fmodf(errorDeg + 540.0f, 360.0f) - 180.0f;
 
-    float yawRateDps = errorDeg * cfg->yawP * AP_YAW_P_SCALE;
-    yawRateDps *= apYawAttenuator;
+    const float yawP = errorDeg * yawKp;
+    float yawRateDps = yawP * apYawAttenuator;
 
     float maxRateDps = (float)cfg->maxYawRate;
     if (apYawRateLimitDps > 0.0f) {
@@ -778,10 +860,24 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
     apYawRateDps = yawRateDps * GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
     apYawActive = true;
 
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 0, lrintf(headingDeg * 10.0f));         //!< Aircraft Heading [unit:0.1deg]
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 1, lrintf(desiredHeadingDeg * 10.0f));  //!< Target Heading [unit:0.1deg]
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 2, lrintf(errorDeg * 10.0f));           //!< Heading Error [unit:0.1deg]
-    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, lrintf(apYawRateDps * 10.0f));       //!< Yaw Rate Setpoint [unit:0.1dps]
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 0, lrintf(headingDeg * 10.0f));        //!< Heading [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 1, lrintf(desiredHeadingDeg * 10.0f)); //!< Target Heading [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 2, lrintf(errorDeg * 10.0f));          //!< Heading Error [unit:0.1deg]
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 3, lrintf(apYawRateDps * 10.0f));      //!< Yaw Rate [unit:0.1dps]
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 4, lrintf(yawP * 10.0f));              //!< Yaw P Term [unit:0.1dps]
+
+#ifdef USE_GPS
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 1, gpsSol.groundCourse);              //!< GPS Ground Course [unit:0.1deg]
+#endif
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 2, attitude.values.yaw);              //!< Yaw Attitude [unit:0.1deg]
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 3, lrintf(desiredHeadingDeg));        //!< Direction To Home [unit:deg]
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 4, lrintf(headingDeg));               //!< Aircraft Heading [unit:deg]
+
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 4, lrintf(desiredHeadingDeg));       //!< Target Heading [unit:deg]
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 5, lrintf(headingDeg));              //!< Aircraft Heading [unit:deg]
+
+    DEBUG_SET(DEBUG_ATTITUDE, 0, lrintf(headingDeg));                         //!< Aircraft Heading [unit:deg]
+
 }
 
 // TASK_MAGHOLD. Heading hold with no position control behind it: the MAG_MODE switch on
@@ -796,7 +892,6 @@ void updateHeadingHold(timeUs_t currentTimeUs)
     if (FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
         return;
     }
-
     const float dt = US_TO_INTERVAL(autopilotTaskIntervalUs(TASK_PERIOD_HZ(HEADING_HOLD_TASK_RATE_HZ)));
     updateYawControl(dt, positionEstimatorGetEstimate());
 }
@@ -833,10 +928,55 @@ static void xyProcessTransitions(void)
 
 static xyControlMode_e xySelectMode(void)
 {
+#if !ENABLE_RESCUE_PLAN
+    if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+        return XY_MODE_RESCUE_VELOCITY;
+    }
+#endif
+
     if (ap.navActive) {
         const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
-        return (navCmd != NULL && navCmd->active) ? XY_MODE_NAV_TRACK : XY_MODE_NAV_VELOCITY;
+        if (navCmd == NULL || !navCmd->active) {
+            return XY_MODE_NAV_VELOCITY;
+        }
+        // A new command starts unanchored and must earn the anchor on its own
+        // range, rather than inheriting its predecessor's state through the
+        // transition.
+        if (ap.navAnchorSeq != navCmd->sequence) {
+            ap.navAnchorSeq = navCmd->sequence;
+            ap.navAnchored = false;
+        }
+        // A target flown at the velocity its owner states is itself the position reference, kept
+        // alongside the craft rather than out at the destination, so it is anchored at any range:
+        // unanchored, nothing would correct the craft back onto a line it had been pushed off.
+        if (navCmd->velocityFfValid) {
+            ap.navAnchored = true;
+            return XY_MODE_NAV_TRACK;
+        }
+        if (navCmd->fixedTarget) {
+            ap.navAnchored = false;
+            return XY_MODE_NAV_POINT;
+        }
+        // Left is a target its owner moves without stating its velocity (a hold pattern's carrot).
+        // Anchoring only earns its keep once it is close enough for the position error to mean
+        // something. Further out the error is large by construction - the craft simply is not
+        // there yet - so it pins distanceError at NAV_ERROR_DISTANCE_LIMIT and P degenerates into
+        // a fixed tilt bias on top of the feedforward that already carries the commanded speed,
+        // which the craft can only balance by flying faster than commanded. Track the commanded
+        // velocity out there instead: the virtual distance error integrates velocity error, so
+        // cruise settles on the commanded speed. Hysteresis stops the handover chattering.
+        const vector2_t *pos = (const vector2_t *)&positionEstimatorGetEstimate()->position.v;
+        const vector2_t target = {{ navCmd->targetPosEfM.v[ENU_E] * 100.0f,
+                                    navCmd->targetPosEfM.v[ENU_N] * 100.0f }};
+        vector2_t delta;
+        vector2Sub(&delta, &target, pos);
+        const float distance = vector2Norm(&delta);
+        const float anchorRange = ap.navAnchored ? NAV_ANCHOR_RANGE * NAV_ANCHOR_HYSTERESIS
+                                                 : NAV_ANCHOR_RANGE;
+        ap.navAnchored = distance <= anchorRange;
+        return ap.navAnchored ? XY_MODE_NAV_TRACK : XY_MODE_NAV_VELOCITY;
     }
+    ap.navAnchored = false;
     if (ap.sticksActive) {
         return XY_MODE_STICK_VELOCITY;
     }
@@ -850,12 +990,51 @@ static xyStepResult_e xyNavTrackUpdate(void)
 {
     // Anchor to the (moving) carrot: real position feedback keeps straight
     // and curved legs from drifting, with the commanded velocity as the
-    // feedforward. The carrot's lead distance produces the cruise tilt via P.
+    // feedforward.
     const vector3_t tgtVel = positionNavGetTargetVelocityCmS();
     targetVelocity = *(const vector2_t *)&tgtVel.v;
     const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
     targetPosition.v[EF_EAST]  = navCmd->targetPosEfM.v[ENU_E] * 100.0f;
     targetPosition.v[EF_NORTH] = navCmd->targetPosEfM.v[ENU_N] * 100.0f;
+    ap.anchor = ANCHOR_HOLD;
+    ap.iPolicy = I_ZERO; // position feedback carries the trim; no second integral
+    return XY_CONTINUE;
+}
+
+// A fixed nav target: the craft is held to a reference walking onto the target at the commanded
+// velocity, not to the target itself. The reference is acquired where the position error already
+// stands, so P carries straight on, and it holds where it is whenever nothing is commanded.
+static xyStepResult_e xyNavPointUpdate(float dt, const vector2_t *currentPosition)
+{
+    const vector3_t tgtVel = positionNavGetTargetVelocityCmS();
+    targetVelocity = *(const vector2_t *)&tgtVel.v;
+    const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
+    if (!ap.navPointValid || ap.navPointSeq != navCmd->sequence) {
+        vector2Add(&navPointReference, currentPosition, &distanceError);
+        ap.navPointSeq = navCmd->sequence;
+        ap.navPointValid = true;
+    } else {
+        const vector2_t target = {{ navCmd->targetPosEfM.v[ENU_E] * 100.0f,
+                                    navCmd->targetPosEfM.v[ENU_N] * 100.0f }};
+        vector2_t toTarget;
+        vector2Sub(&toTarget, &target, &navPointReference);
+        vector2_t stepCm;
+        vector2Scale(&stepCm, &targetVelocity, dt);
+        if (vector2Norm(&toTarget) <= vector2Norm(&stepCm)) {
+            navPointReference = target;
+        } else {
+            vector2Add(&navPointReference, &navPointReference, &stepCm);
+        }
+    }
+    // Never further ahead than P can use: a craft that cannot keep up drags the reference along
+    // rather than leaving it to wind up out at the target.
+    for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
+        navPointReference.v[axis] = constrainf(navPointReference.v[axis],
+                                               currentPosition->v[axis] - NAV_ERROR_DISTANCE_LIMIT,
+                                               currentPosition->v[axis] + NAV_ERROR_DISTANCE_LIMIT);
+    }
+
+    targetPosition = navPointReference;
     ap.anchor = ANCHOR_HOLD;
     ap.iPolicy = I_ZERO; // position feedback carries the trim; no second integral
     return XY_CONTINUE;
@@ -876,6 +1055,17 @@ static xyStepResult_e xyStickVelocityUpdate(const vector2_t *currentPosition)
     posHoldStartPosition = *currentPosition; // pilot may fly far; keep the fence with the craft
     ap.anchor = ANCHOR_OFF;  // fly the commanded velocity via the virtual distance error
     ap.iPolicy = I_FREEZE;   // retain the integral, do not wind it up while manoeuvring
+    return XY_CONTINUE;
+}
+
+static xyStepResult_e xyRescueVelocityUpdate(float dt)
+{
+    targetPosition.v[EF_EAST] += targetVelocity.v[EF_EAST] * dt;
+    targetPosition.v[EF_NORTH] += targetVelocity.v[EF_NORTH] * dt;
+
+    posHoldStartPosition = targetPosition;
+    ap.anchor = ANCHOR_HOLD;
+    ap.iPolicy = I_ACCUMULATE;
     return XY_CONTINUE;
 }
 
@@ -987,10 +1177,12 @@ bool positionControl(void)
 
     if (!est->isValidXY) {
         disableYawControl();
+        setYawDisableReason(8);
         return false;
     }
     if (abortNavRequested) {
         disableYawControl();
+        setYawDisableReason(9);
         handlepositionControlFailure();
         return false; // Return failure and show pos hold fail message in OSD
     }
@@ -999,13 +1191,18 @@ bool positionControl(void)
         // fly sideways, so drop to angle-mode self-level (altitude hold, a
         // separate mode, keeps holding height) until a mode-switch cycle clears it.
         disableYawControl();
+        setYawDisableReason(10);
         handlepositionControlFailure();
         return false;
     }
-    if (forcePitchForward) {
+    // Ahead of the heading recovery: alt hold keeps flying this command's altitude ramp through it.
+    positionNavUpdate(dt, est);
+    if (headingRecovery) {
+        wasNavActive = false;
         disableYawControl();
+        setYawDisableReason(11);
         autopilotAngle[AI_ROLL]  = 0.0f;
-        autopilotAngle[AI_PITCH] = 35.0f;
+        autopilotAngle[AI_PITCH] = headingRecoveryPitchDeg;
         DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 200);   //!< Status Flags
         DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, 200);  //!< Status Flags
         DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, 200);  //!< Status Flags
@@ -1020,8 +1217,6 @@ bool positionControl(void)
     vector2_t pidD               = { { 0 } };
     vector2_t pidA               = { { 0 } };
     vector2_t pidF               = { { 0 } };
-    // Update navigation status
-    positionNavUpdate(dt, est);
     ap.navActive = positionNavHasActiveTarget() && !positionNavTargetReached();
 
     // Horizontal ground speed and its ~0.5 s trend, used by the braking stop
@@ -1029,19 +1224,31 @@ bool positionControl(void)
     // own average (judged before the average absorbs the new sample): brake
     // physics (distance grows while speed falls) versus a flyaway (speed held).
     ap.speedXY = vector2Norm(&velocity);
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 0, lrintf(ap.speedXY));         //!< Ground Speed [unit:cm/s]
+
     ap.speedSlowing = ap.speedXY < ap.speedTrendCmS - 20.0f;
     ap.speedTrendCmS += (dt / (0.5f + dt)) * (ap.speedXY - ap.speedTrendCmS);
 
+    const bool navStarting = ap.navActive && !wasNavActive;
     xyProcessTransitions();
     ap.mode = xySelectMode();
+    if (ap.mode != XY_MODE_NAV_POINT) {
+        ap.navPointValid = false;   // a later approach is acquired afresh
+    }
 
     xyStepResult_e stepResult;
     switch (ap.mode) {
     case XY_MODE_NAV_TRACK:
         stepResult = xyNavTrackUpdate();
         break;
+    case XY_MODE_NAV_POINT:
+        stepResult = xyNavPointUpdate(dt, &currentPosition);
+        break;
     case XY_MODE_NAV_VELOCITY:
         stepResult = xyNavVelocityUpdate();
+        break;
+    case XY_MODE_RESCUE_VELOCITY:
+        stepResult = xyRescueVelocityUpdate(dt);
         break;
     case XY_MODE_STICK_VELOCITY:
         stepResult = xyStickVelocityUpdate(&currentPosition);
@@ -1071,6 +1278,20 @@ bool positionControl(void)
     ap.wasSticksActive = ap.sticksActive; // Main frame-to-frame history update
 
     const bool anchorOff = (ap.anchor == ANCHOR_OFF);
+
+    // A command whose velocity starts from the craft's own motion (a mission picked up mid-flight, or
+    // a re-target while flying) starts its feedforward where it stands: D acts on the measured
+    // velocity at once, and F climbing out of a reset filter, or still carrying the command it
+    // replaced, against it is a pulse the craft never asked for.
+    bool seedFeedforward = false;
+    if (ap.navActive) {
+        const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
+        seedFeedforward = navCmd->velocityFromCraft && (navStarting || navCmd->sequence != ap.navFeedforwardSeq);
+        ap.navFeedforwardSeq = navCmd->sequence;
+    }
+    if (seedFeedforward) {
+        previousTargetVelocity = targetVelocity;
+    }
 
     // One unified distance-based PIDAF law. The mode differences are already
     // encoded in ap.anchor / ap.iPolicy / ap.isPosHoldBraking (set above); the
@@ -1137,12 +1358,18 @@ bool positionControl(void)
     // the cruise tilt and would otherwise slam the pitch while accelerating. When
     // anchored to a position (nav carrot or hold), P carries the tilt and D + F
     // must stay free to track and brake velocity, so the clamp is skipped.
+    // It limits building speed up, never shedding it: the same drive that leans
+    // into an acceleration is the whole of the braking authority when the
+    // commanded velocity opposes the one being flown, and a rescue or a mission
+    // engaged at speed needs all of it. Braking is the drive opposing the
+    // measured velocity, so the sign of their dot product separates the two.
     bool buildupClamped = false;
     if (ap.navActive && ap.anchor == ANCHOR_OFF) {
         const float buildupMaxDeg = autopilotConfig()->velocityBuildupMaxPitch;
         vector2_t drive = { { pidD.v[EF_EAST] + pidF.v[EF_EAST], pidD.v[EF_NORTH] + pidF.v[EF_NORTH] } };
         const float driveMag = vector2Norm(&drive);
-        if (driveMag > buildupMaxDeg && driveMag > 0.001f) {
+        const bool braking = vector2Dot(&drive, &velocity) < 0.0f;
+        if (!braking && driveMag > buildupMaxDeg && driveMag > 0.001f) {
             buildupClamped = true;
             const float scale = buildupMaxDeg / driveMag;
             vector2Scale(&pidD, &pidD, scale);
@@ -1154,6 +1381,9 @@ bool positionControl(void)
     // ride outside the filter. NOTE: D is on raw measured velocity and A on the
     // raw Kalman acceleration — filter placement is an open tuning item.
     for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
+        if (seedFeedforward) {
+            pt3FilterSeed(&posNoisyPidsLpf[axis], pidF.v[axis]);
+        }
         const float smoothedF = pt3FilterApply(&posNoisyPidsLpf[axis], pidF.v[axis]);
         pidSumVectorEF.v[axis] = pidP.v[axis] + pidI.v[axis] + pidD.v[axis] + pidA.v[axis] + smoothedF;
     }
@@ -1168,10 +1398,14 @@ bool positionControl(void)
     angleV.v[AI_PITCH] = vector2Dot(&headingV, &pidSumVectorEF);
     angleV.v[AI_ROLL]  = vector2Cross(&headingV, &pidSumVectorEF);
 
+    float maxAngle = ap.maxAngle;
+    if (ap.navActive && positionNavGetActiveCommand()->maxAngleDeg > 0.0f) {
+        maxAngle = fminf(maxAngle, positionNavGetActiveCommand()->maxAngleDeg);
+    }
     const float mag = vector2Norm(&angleV);
-    wasAngleSaturated = (mag > ap.maxAngle);
-    if (mag > ap.maxAngle && mag > 0.001f) {
-        const float scale = ap.maxAngle / mag;
+    wasAngleSaturated = (mag > maxAngle);
+    if (mag > maxAngle && mag > 0.001f) {
+        const float scale = maxAngle / mag;
         vector2Scale(&angleV, &angleV, scale);
     }
 
@@ -1184,6 +1418,10 @@ bool positionControl(void)
     if (abortNavRequested)  statusValue += 100;
     if (isPositionHeld)     statusValue += 3; // plus 1, ie 4,  if stopping
     if (ap.sticksActive)    statusValue += 5;
+
+    const float targetSpeedXY = vector2Norm(&targetVelocity);
+    const float distanceToHomeCm = vector2Norm(&currentPosition);
+
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 0, lrintf(velocity.v[ap.debugAxis]));             //!< Velocity (dbg-axis) [unit:cm/s]
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 1, lrintf(distanceError.v[ap.debugAxis]));        //!< Distance Error (dbg-axis) [unit:cm]
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 2, lrintf(pidP.v[ap.debugAxis] * 10));            //!< P Term (dbg-axis) [unit:0.1deg]
@@ -1211,6 +1449,23 @@ bool positionControl(void)
     DEBUG_SET(DEBUG_POSITION_NAV, 6, lrintf(pidA.v[ap.debugAxis] * 10));                //!< A Term (dbg-axis) [unit:0.1deg]
     DEBUG_SET(DEBUG_POSITION_NAV, 7, (anchorOff ? 10 : 0) + (buildupClamped ? 1 : 0));  //!< Status Flags
 
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 0, lrintf(ap.speedXY));       //!< Ground Speed [unit:cm/s]
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 1, lrintf(targetSpeedXY));    //!< Target Velocity [unit:cm/s]
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 6, lrintf(distanceToHomeCm)); //!< Distance To Home [unit:cm]
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 0, lrintf(ap.speedXY));      //!< Ground Speed [unit:cm/s]
+
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 0, lrintf(targetSpeedXY));              //!< Target Ground Speed [unit:cm/s]
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 1, lrintf(ap.speedXY));                 //!< Ground Speed [unit:cm/s]
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 2, lrintf(targetVelocity.v[EF_EAST]));  //!< Target East Velocity[unit:cm/s]
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 3, lrintf(targetVelocity.v[EF_NORTH])); //!< Target North Velocity[unit:cm/s]
+
+    DEBUG_SET(DEBUG_RTH, 0, lrintf(ap.speedXY));       //!<Current Velocity [unit:cm/s]
+    DEBUG_SET(DEBUG_RTH, 6, lrintf(distanceToHomeCm)); //!< Distance To Home [unit:cm]
+    DEBUG_SET(DEBUG_RTH, 7, lrintf(targetSpeedXY));    //!< Target Velocity [unit:0.1m/s]
+
+    DEBUG_SET(DEBUG_ATTITUDE, 2, lrintf(ap.speedXY));       //!<Current Velocity [unit:cm/s]
+    DEBUG_SET(DEBUG_ATTITUDE, 6, lrintf(targetSpeedXY));    //!< Target Ground Speed [unit:cm/s]
+
     return true;
 }
 
@@ -1222,6 +1477,21 @@ bool isBelowLandingAltitude(void)
 float getAutopilotThrottle(void)
 {
     return throttleOut;
+}
+
+bool autopilotAltitudeControlAvailable(void)
+{
+    return true;
+}
+
+bool autopilotPositionControlAvailable(void)
+{
+    return true;
+}
+
+bool autopilotThrottleValid(void)
+{
+    return true;
 }
 
 #endif // !USE_WING

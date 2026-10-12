@@ -70,6 +70,12 @@ extern "C" {
     extern throttleStatus_e testThrottleStatus;
     extern bool testEstimatorUpdatePending;
     extern timeDelta_t testTaskDeltaTimeUs;
+    extern bool testNavActive;
+    extern bool testNavReached;
+    extern positionNavCommand_t testNavCommand;
+    extern vector3_t testNavTargetVelCmS;
+    extern float testNavTargetAltCm;
+    extern float testNavRateLimitCmS;
 }
 
 #include "unittest_macros.h"
@@ -95,6 +101,12 @@ protected:
         testThrottleStatus = THROTTLE_LOW;
         testEstimatorUpdatePending = false;
         testTaskDeltaTimeUs = TASK_PERIOD_HZ(ALTHOLD_TASK_RATE_HZ);
+        testNavActive = false;
+        testNavReached = false;
+        memset(&testNavCommand, 0, sizeof(testNavCommand));
+        testNavTargetVelCmS = (vector3_t){{0, 0, 0}};
+        testNavTargetAltCm = 0.0f;
+        testNavRateLimitCmS = 0.0f;
 
         autopilotConfig_t *apCfg = autopilotConfigMutable();
         apCfg->hoverThrottle = 1500;
@@ -307,6 +319,23 @@ TEST_F(AltholdControlUnittest, AltHoldIntegratesOverTheMeasuredInterval)
     EXPECT_GT(longStep, shortStep);
 }
 
+TEST_F(AltholdControlUnittest, NavLegClimbFeedforwardOutlivesTheLegsCompletion)
+{
+    // A leg that completes mid-climb still walks its altitude ramp on, and the rate it walks it at
+    // stays in the feedforward: dropping it there is a throttle step against a target still moving.
+    autopilotConfigMutable()->altitudeF = 30;
+    autopilotInit();
+    flightModeFlags |= ALT_HOLD_MODE;
+    testNavActive = true;
+    testNavReached = true;
+    testNavCommand.includeAltitude = true;
+    testNavTargetVelCmS = (vector3_t){{0, 0, 200.0f}};
+    testNavRateLimitCmS = 500.0f;
+    debugMode = DEBUG_AUTOPILOT_ALTITUDE;
+    updateAltHold(currentTimeUs);
+    EXPECT_EQ(debug[7], 120);   // altitude_f 30 at 0.02 us per cm/s, on the ramp's 200 cm/s
+}
+
 // STUBS
 
 extern "C" {
@@ -373,12 +402,18 @@ extern "C" {
     void positionNavInit(void) { }
     void positionNavReset(void) { }
     void positionNavUpdate(float /*dt*/, const positionEstimate3d_t * /*est*/) { }
-    bool positionNavHasActiveTarget(void) { return false; }
-    bool positionNavTargetReached(void) { return false; }
-    vector3_t positionNavGetTargetVelocityCmS(void) { return (vector3_t){{0, 0, 0}}; }
-    float positionNavGetTargetAltitudeCm(void) { return 0.0f; }
-    float positionNavGetVerticalRateLimitCmS(void) { return 0.0f; }
-    const positionNavCommand_t *positionNavGetActiveCommand(void) { return NULL; }
+    bool testNavActive = false;
+    bool testNavReached = false;
+    positionNavCommand_t testNavCommand;
+    vector3_t testNavTargetVelCmS;
+    float testNavTargetAltCm = 0.0f;
+    float testNavRateLimitCmS = 0.0f;
+    bool positionNavHasActiveTarget(void) { return testNavActive; }
+    bool positionNavTargetReached(void) { return testNavReached; }
+    vector3_t positionNavGetTargetVelocityCmS(void) { return testNavTargetVelCmS; }
+    float positionNavGetTargetAltitudeCm(void) { return testNavTargetAltCm; }
+    float positionNavGetVerticalRateLimitCmS(void) { return testNavRateLimitCmS; }
+    const positionNavCommand_t *positionNavGetActiveCommand(void) { return testNavActive ? &testNavCommand : NULL; }
 
     void parseRcChannels(const char *input, rxConfig_t *rxConfig) {
         UNUSED(input);

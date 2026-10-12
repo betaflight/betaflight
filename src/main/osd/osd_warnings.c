@@ -48,6 +48,8 @@
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
+#include "flight/landing_wing.h"
+#include "flight/launch_wing.h"
 #include "flight/mixer.h"
 #include "flight/mixer_init.h"
 #include "flight/pid.h"
@@ -392,7 +394,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     // position-hold failure path too; let the specific WP warning below own it
     // rather than masking it with the generic POSHOLD FAIL.
     bool missionAbortActive = false;
-#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#if ENABLE_FLIGHT_PLAN
     missionAbortActive = FLIGHT_MODE(AUTOPILOT_MODE) && flightPlanNavGetAbortReason() != FP_ABORT_NONE;
 #endif
     if (osdWarnGetState(OSD_WARNING_POSHOLD_FAILED) && posHoldFailure() && !missionAbortActive) {
@@ -403,7 +405,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     }
 #endif
 
-#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#if ENABLE_FLIGHT_PLAN
     if (osdWarnGetState(OSD_WARNING_AUTOPILOT_ABORT)
         && FLIGHT_MODE(AUTOPILOT_MODE)
         && flightPlanNavGetAbortReason() != FP_ABORT_NONE) {
@@ -432,6 +434,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         return;
     }
 
+#ifndef USE_WING
     // Waypoint capture confirmations ("WP3 SET" / "WP2 DELETED" / "WP FULL").
     // Shown outside AUTOPILOT mode too - capture happens before engaging - and
     // below every critical warning; the cue self-expires.
@@ -443,13 +446,18 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             return;
         }
     }
+#endif
 
     // Mission progress cues, below every critical warning above. The mode
     // itself is shown by the flight-mode indicator; these surface the two
     // states that are otherwise invisible: the terminal descent and arrival.
     if (FLIGHT_MODE(AUTOPILOT_MODE)) {
         if (flightPlanNavGetState() == FP_NAV_LANDING) {
+#ifdef USE_WING
+            tfp_sprintf(warningText, (landingWingGetPhase() == LANDING_WING_GO_AROUND) ? "GO AROUND" : "WP LANDING");
+#else
             tfp_sprintf(warningText, "WP LANDING");
+#endif
             *displayAttr = DISPLAYPORT_SEVERITY_INFO;
             return;
         }
@@ -461,6 +469,35 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         }
     }
 #endif
+
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+    // Shares OSD_WARNING_LAUNCH_CONTROL: the multirotor feature that owns that
+    // bit is undef'd on wing, so the two can never both be built. Sits below
+    // every critical warning - launch status is informational and must not
+    // mask an rx, battery or load failure that happens during the launch.
+    if (osdWarnGetState(OSD_WARNING_LAUNCH_CONTROL) && launchWingIsActive()) {
+        switch (launchWingGetState()) {
+        case LAUNCH_WING_WAIT_THROTTLE:
+            tfp_sprintf(warningText, "RAISE THROTTLE");
+            break;
+        case LAUNCH_WING_MOTOR_IDLE:
+            tfp_sprintf(warningText, "LAUNCH IDLE");
+            break;
+        case LAUNCH_WING_WAIT_DETECTION:
+            tfp_sprintf(warningText, "READY TO LAUNCH");
+            *blinking = true;
+            break;
+        case LAUNCH_WING_FINISH:
+            tfp_sprintf(warningText, "LAUNCH FINISHING");
+            break;
+        default:
+            tfp_sprintf(warningText, "LAUNCHING");
+            break;
+        }
+        *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+        return;
+    }
+#endif // USE_WING && USE_LAUNCH_WING
 
     // Show warning if in HEADFREE flight mode
     if (FLIGHT_MODE(HEADFREE_MODE)) {
@@ -523,11 +560,33 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
 #ifdef USE_CHIRP
     // Visual info that chirp excitation is finished
-    if (pidChirpIsFinished()) {
-        tfp_sprintf(warningText, "CHIRP EXC FINISHED");
-        *displayAttr = DISPLAYPORT_SEVERITY_INFO;
-        *blinking = true;
-        return;
+    if (pidChirpGetRepeatTotal() <= 1) {
+        if (pidChirpIsFinished()) {
+            tfp_sprintf(warningText, "CHIRP EXC FINISHED");
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            *blinking = true;
+            return;
+        }
+    } else {
+        if (pidChirpSeriesIsFinished()) {
+            tfp_sprintf(warningText, "CHIRP %u/%u FINISHED",
+                        pidChirpGetRepeatCurrent(),
+                        pidChirpGetRepeatTotal());
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            *blinking = true;
+            return;
+        }
+        if (pidChirpIsFinished()) {
+            static const char axisChar[] = "RPY";
+            const uint8_t justDone = pidChirpGetRepeatCurrent() - 1;
+            tfp_sprintf(warningText, "CHIRP %c %u/%u DONE",
+                        axisChar[pidChirpGetChirpAxis()],
+                        justDone,
+                        pidChirpGetRepeatTotal());
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            *blinking = false;
+            return;
+        }
     }
 #endif // USE_CHIRP
 

@@ -572,20 +572,15 @@ void flashfsWrite(const uint8_t *data, unsigned int len, bool sync)
  */
 int flashfsReadAbs(uint32_t address, uint8_t *buffer, unsigned int len)
 {
-    int bytesRead;
-
-    // Did caller try to read past the end of the volume?
-    if (address + len > flashfsSize) {
-        // Truncate their request
-        len = flashfsSize - address;
+    len = flashfsReadLength(flashfsSize, address, len);
+    if (!len) {
+        return 0;
     }
 
     // Since the read could overlap data in our dirty buffers, force a sync to clear those first
     flashfsFlushSync();
 
-    bytesRead = flashReadBytes(address, buffer, len);
-
-    return bytesRead;
+    return flashReadBytes(address, buffer, len);
 }
 
 /**

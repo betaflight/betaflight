@@ -71,27 +71,23 @@ static void posHoldCheckSticks(void)
     setSticksActiveStatus(sticksDeflected);
 }
 
-static bool sensorsOk(void)
+static bool sensorsOk(bool allowHeadingRecovery)
 {
-    // Optical flow position hold is heading-agnostic: the same yaw is used
-    // to project flow into ENU and to rotate the correction back to body
-    // frame, so a heading error cancels. GPS-assisted hold is not: GPS
-    // provides absolute ENU measurements and a bad yaw in the body-frame
-    // correction rotation will cause a flyaway.
-    // Use the runtime GPS state (fix present + config allows GPS) rather than
-    // the configured source alone, so AUTO mode with no GPS hardware correctly
-
     if (!positionEstimatorIsValidXY()) {
-        return false; // always need valid XY data, can be optical only
+        DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 6, 1);  //!< Position Hold Sensor Status
+        return false;
     }
 
     if (positionEstimatorIsHeadingRequired()) {
-        return imuIsHeadingValid(); // if heading is essential (ie no optical flow), pass or fail based on whether or not heading exists.
-    } else {
-        return true; // if no heading is needed, we don't care about it (optical flow situation)
+        if (!imuIsHeadingValid() && !allowHeadingRecovery) {
+            DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 6, 2);  //!< Position Hold Sensor Status
+            return false;
+        }
     }
-}
 
+    DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 6, 0);  //!< Position Hold Sensor Status
+    return true;
+}
 bool posHoldUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 {
     UNUSED(currentTimeUs);
@@ -137,7 +133,7 @@ void updatePosHold(timeUs_t currentTimeUs)
     if (posHold.isEnabled) {
         posHoldCheckSticks();
         const bool sensorsWereOk = posHold.areSensorsOk;
-        posHold.areSensorsOk = sensorsOk();
+        posHold.areSensorsOk = sensorsOk(isHeadingRecoveryActive());
         if (posHold.areSensorsOk) {
             if (!sensorsWereOk) {
                 // Sensors came back after a dropout: the craft drifted while
@@ -172,7 +168,7 @@ bool posHoldFailure(void) {
 // Pre-engagement readiness: the entry conditions alone, without the
 // control-failure checks in posHoldFailure() that only apply once engaged.
 bool posHoldReady(void) {
-    return sensorsOk();
+    return sensorsOk(false);
 }
 
 #endif // USE_POSITION_HOLD

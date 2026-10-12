@@ -60,6 +60,8 @@
 #include "fc/stats.h"
 
 #include "flight/failsafe.h"
+#include "flight/autopilot.h"
+#include "flight/launch_wing.h"
 #include "flight/gps_rescue.h"
 #include "flight/alt_hold.h"
 #include "flight/pos_hold.h"
@@ -167,6 +169,74 @@ static timeUs_t runawayTakeoffTriggerUs = 0;
 static bool runawayTakeoffTemporarilyDisabled = false;
 #endif
 
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+// A hold or a mission selected alongside a launch takes over when the launch ends, so it may be on at arm.
+MAYBE_UNUSED static inline bool holdFollowsLaunch(void)
+{
+    return isFixedWing() && IS_RC_MODE_ACTIVE(BOXLAUNCH);
+}
+
+MAYBE_UNUSED static inline bool launchOwnsAircraft(void)
+{
+    return launchWingOwnsAircraft();
+}
+#else
+MAYBE_UNUSED static inline bool holdFollowsLaunch(void)
+{
+    return false;
+}
+
+MAYBE_UNUSED static inline bool launchOwnsAircraft(void)
+{
+    return FLIGHT_MODE(LAUNCH_MODE);
+}
+#endif
+
+#ifdef USE_WING
+// A wing holds a position by circling it, which it cannot do without holding its height as well.
+MAYBE_UNUSED static inline bool altHoldSelected(void)
+{
+    return IS_RC_MODE_ACTIVE(BOXALTHOLD) || IS_RC_MODE_ACTIVE(BOXPOSHOLD);
+}
+
+MAYBE_UNUSED static inline bool posHoldHasAltHold(void)
+{
+    return FLIGHT_MODE(ALT_HOLD_MODE);
+}
+
+// Nor can it stop to wait for the GPS: a mission it is flying carries on through the loss.
+MAYBE_UNUSED static inline bool missionKeepsWithoutFix(void)
+{
+    return isFixedWing() && FLIGHT_MODE(AUTOPILOT_MODE);
+}
+
+// Nor come straight down: a rescue's emergency descent circles down.
+MAYBE_UNUSED static inline bool rescueDescentCircles(void)
+{
+    return isFixedWing() && flightPlanNavIsRescueDescentActive();
+}
+#else
+MAYBE_UNUSED static inline bool altHoldSelected(void)
+{
+    return IS_RC_MODE_ACTIVE(BOXALTHOLD);
+}
+
+MAYBE_UNUSED static inline bool posHoldHasAltHold(void)
+{
+    return true;
+}
+
+MAYBE_UNUSED static inline bool missionKeepsWithoutFix(void)
+{
+    return false;
+}
+
+MAYBE_UNUSED static inline bool rescueDescentCircles(void)
+{
+    return false;
+}
+#endif
+
 #ifdef USE_LAUNCH_CONTROL
 static launchControlState_e launchControlState = LAUNCH_CONTROL_DISABLED;
 
@@ -248,6 +318,9 @@ static bool accNeedsCalibration(void)
             isModeActivationConditionPresent(BOXALTHOLD) ||
             isModeActivationConditionPresent(BOXPOSHOLD) ||
             isModeActivationConditionPresent(BOXGPSRESCUE) ||
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+            (isFixedWing() && isModeActivationConditionPresent(BOXLAUNCH)) ||
+#endif
             isModeActivationConditionPresent(BOXCAMSTAB) ||
             isModeActivationConditionPresent(BOXCALIB) ||
             isModeActivationConditionPresent(BOXACROTRAINER)) {
@@ -356,20 +429,20 @@ if (crashFlipModeActive) {
             unsetArmingDisabled(ARMING_DISABLED_BOXFAILSAFE);
         }
 
-        if (IS_RC_MODE_ACTIVE(BOXALTHOLD)) {
+        if (IS_RC_MODE_ACTIVE(BOXALTHOLD) && !holdFollowsLaunch()) {
             setArmingDisabled(ARMING_DISABLED_ALTHOLD);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_ALTHOLD);
         }
 
-        if (IS_RC_MODE_ACTIVE(BOXPOSHOLD)) {
+        if (IS_RC_MODE_ACTIVE(BOXPOSHOLD) && !holdFollowsLaunch()) {
             setArmingDisabled(ARMING_DISABLED_POSHOLD);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_POSHOLD);
         }
 
-#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
-        if (IS_RC_MODE_ACTIVE(BOXAUTOPILOT)) {
+#if ENABLE_FLIGHT_PLAN
+        if (IS_RC_MODE_ACTIVE(BOXAUTOPILOT) && !holdFollowsLaunch()) {
             setArmingDisabled(ARMING_DISABLED_AUTOPILOT);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_AUTOPILOT);
@@ -517,6 +590,7 @@ void disarm(flightLogDisarmReason_e reason)
         }
         DISABLE_ARMING_FLAG(ARMED); // disarm now
         lastDisarmTimeUs = micros();
+        launchWingDisarm();
 
 #ifdef USE_OSD
         if (IS_RC_MODE_ACTIVE(BOXCRASHFLIP) || isLaunchControlActive()) {
@@ -625,6 +699,9 @@ if (isMotorProtocolDshot()) {
 #ifdef USE_RPM_LIMIT
         mixerResetRpmLimiter();
 #endif
+        // Latched once, here, and nowhere else: a launch can never be switched
+        // on mid-air.
+        launchWingArm();
         ENABLE_ARMING_FLAG(ARMED);  // ***ARM NOW ***
 
 #ifdef USE_RC_STATS
@@ -714,7 +791,7 @@ void handleInflightCalibrationStickPosition(void)
 
 static void updateInflightCalibrationState(void)
 {
-    if (AccInflightCalibrationArmed && ARMING_FLAG(ARMED) && rcData[THROTTLE] > rxConfig()->mincheck && !IS_RC_MODE_ACTIVE(BOXARM)) {   // Copter is airborne and you are turning it off via boxarm : start measurement
+    if (AccInflightCalibrationArmed && ARMING_FLAG(ARMED) && rcGetChannel(THROTTLE) > rcUsToNorm(rxConfig()->mincheck) && !IS_RC_MODE_ACTIVE(BOXARM)) {   // Copter is airborne and you are turning it off via boxarm : start measurement
         InflightcalibratingA = 50;
         AccInflightCalibrationArmed = false;
     }
@@ -760,32 +837,34 @@ void runawayTakeoffTemporaryDisable(uint8_t disableFlag)
 }
 #endif
 
-// calculate the throttle stick percent - integer math is good enough here.
 // returns negative values for reversed thrust in 3D mode
 int8_t calculateThrottlePercent(void)
 {
-    uint8_t ret = 0;
-    int channelData = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
+    const float throttle = constrainf(rcGetChannel(THROTTLE), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX);
+    float fraction = 0.0f;
 
     if (featureIsEnabled(FEATURE_3D)
         && !IS_RC_MODE_ACTIVE(BOX3D)
         && !flight3DConfig()->switched_mode3d) {
 
-        if (channelData > (rxConfig()->midrc + flight3DConfig()->deadband3d_throttle)) {
-            ret = ((channelData - rxConfig()->midrc - flight3DConfig()->deadband3d_throttle) * 100) / (PWM_RANGE_MAX - rxConfig()->midrc - flight3DConfig()->deadband3d_throttle);
-        } else if (channelData < (rxConfig()->midrc - flight3DConfig()->deadband3d_throttle)) {
-            ret = -((rxConfig()->midrc - flight3DConfig()->deadband3d_throttle - channelData) * 100) / (rxConfig()->midrc - flight3DConfig()->deadband3d_throttle - PWM_RANGE_MIN);
+        const float midrc = rcUsToNorm(rxConfig()->midrc);
+        const float deadband = rcUsSpanToNorm(flight3DConfig()->deadband3d_throttle);
+        if (throttle > midrc + deadband) {
+            fraction = (throttle - midrc - deadband) / (NORMALISED_RANGE_MAX - midrc - deadband);
+        } else if (throttle < midrc - deadband) {
+            fraction = (throttle - midrc + deadband) / (midrc - deadband - NORMALISED_RANGE_MIN);
         }
     } else {
-        ret = constrain(((channelData - rxConfig()->mincheck) * 100) / (PWM_RANGE_MAX - rxConfig()->mincheck), 0, 100);
+        const float mincheck = rcUsToNorm(rxConfig()->mincheck);
+        fraction = constrainf((throttle - mincheck) / (NORMALISED_RANGE_MAX - mincheck), 0.0f, 1.0f);
         if (featureIsEnabled(FEATURE_3D)
             && IS_RC_MODE_ACTIVE(BOX3D)
             && flight3DConfig()->switched_mode3d) {
 
-            ret = -ret;  // 3D on a switch is active
+            fraction = -fraction;  // 3D on a switch is active
         }
     }
-    return ret;
+    return fraction * 100;
 }
 
 uint8_t calculateThrottlePercentAbs(void)
@@ -842,7 +921,9 @@ bool processRx(timeUs_t currentTimeUs)
     // Note: If Airmode is enabled, on arming, iTerm and PIDs will be off until throttle exceeds the threshold (OFF while disarmed)
     // If not, iTerm will be off at low throttle, with pidStabilisationState determining whether PIDs will be active
     if (ARMING_FLAG(ARMED) && (isAirmodeActive || throttleActive || launchControlActive || isFixedWing())) {
-        pidSetItermReset(false);
+        // the wing launch holds iTerm off until spin-up, but must keep the rest
+        // of the stabilisation running through the motor delay
+        pidSetItermReset(launchWingHoldsIterm());
         pidStabilisationState(PID_STABILISATION_ON);
     } else {
         pidSetItermReset(true);
@@ -1031,6 +1112,9 @@ void processRxModes(timeUs_t currentTimeUs)
 #ifdef USE_POSITION_HOLD
         || FLIGHT_MODE(POS_HOLD_MODE)
 #endif
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+        || FLIGHT_MODE(LAUNCH_MODE)
+#endif
         ) && (sensors(SENSOR_ACC))) {
         // bumpless transfer to Level mode
         canUseHorizonMode = false;
@@ -1046,7 +1130,8 @@ void processRxModes(timeUs_t currentTimeUs)
     // Legacy: the pilot's switch and the failsafe procedure both fly the legacy
     // GPS_RESCUE_MODE controller. (With ENABLE_RESCUE_PLAN both are flown as an
     // autopilot rescue mission instead - staged below and in failsafe.c.)
-    if (ARMING_FLAG(ARMED) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE)
+    if (ARMING_FLAG(ARMED) && gpsRescueIsConfigured()
+        && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE)
         || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE))) {
         if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
             ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
@@ -1056,7 +1141,8 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 #endif
 
-#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#if ENABLE_FLIGHT_PLAN
+#ifndef USE_WING
     // Waypoint capture runs whether or not the mission is engaged - the whole
     // point is marking waypoints while flying around before engaging. The
     // channel-validity guard keeps rxfail aux substitution from ghost-editing
@@ -1064,6 +1150,7 @@ void processRxModes(timeUs_t currentTimeUs)
     flightPlanCaptureUpdate(currentTimeUs,
                             IS_RC_MODE_ACTIVE(BOXWPCAPTURE),
                             rxAreFlightChannelsValid());
+#endif
 
     // During failsafe the mission flies only while the failsafe state machine
     // has chosen to (rx-loss policy). In the stage-1 window before failsafe
@@ -1110,7 +1197,7 @@ void processRxModes(timeUs_t currentTimeUs)
     if (failsafeIsActive()) {
         autopilotRequested = (failsafePhase() == FAILSAFE_AUTOPILOT);
     } else if (rxAreFlightChannelsValid()) {
-        autopilotRequested = IS_RC_MODE_ACTIVE(BOXAUTOPILOT) || rescueSwitchRequest;
+        autopilotRequested = (IS_RC_MODE_ACTIVE(BOXAUTOPILOT) && !launchWingHoldWaits()) || rescueSwitchRequest;
     } else {
         autopilotRequested = FLIGHT_MODE(AUTOPILOT_MODE);
     }
@@ -1120,9 +1207,11 @@ void processRxModes(timeUs_t currentTimeUs)
     if (ARMING_FLAG(ARMED)
         // GPS Rescue has priority over the mission
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
+        && !launchWingOwnsAircraft()
+        && !launchWingAwaitingThrow()
         && autopilotRequested
         && sensors(SENSOR_ACC)
-        && sensors(SENSOR_GPS) && STATE(GPS_FIX)
+        && ((sensors(SENSOR_GPS) && STATE(GPS_FIX)) || missionKeepsWithoutFix())
         // waypoints carry altitude; without altitude data the mission must not run
         && isAltitudeAvailable()
         && wasThrottleRaised()) {
@@ -1145,16 +1234,55 @@ void processRxModes(timeUs_t currentTimeUs)
     navTrailUpdate(currentTimeUs);
 #endif
 
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+    // The latch is the mid-air guard: it is set only at the arm transition, so
+    // the box alone can never engage a launch in flight. A failsafe ends the
+    // launch through the launch itself, which hands an airborne aircraft over.
+    if (ARMING_FLAG(ARMED)
+        && launchWingLatched()
+        && IS_RC_MODE_ACTIVE(BOXLAUNCH)
+        && sensors(SENSOR_ACC)
+        && !launchWingIsTerminal()) {
+        if (!FLIGHT_MODE(LAUNCH_MODE)) {
+            ENABLE_FLIGHT_MODE(LAUNCH_MODE);
+        }
+    } else if (FLIGHT_MODE(LAUNCH_MODE)) {
+        // Cancelling before the throw would drop the launch's hold on the motor
+        // and hand the raised throttle stick straight to it, with the aircraft
+        // still in the pilot's hands. Disarm instead, and make them cycle the
+        // arm switch. Only the box going inactive is treated this way; failsafe
+        // and the terminal states reach here too and keep their own handling.
+        const bool cancelledBeforeTheThrow = !IS_RC_MODE_ACTIVE(BOXLAUNCH)
+            && launchWingIsPreLaunch()
+            && ARMING_FLAG(ARMED);
+        DISABLE_FLIGHT_MODE(LAUNCH_MODE);
+        launchWingSwitchOff();
+        if (cancelledBeforeTheThrow) {
+            // Stick arming needs throttle low to re-arm, so it cannot repeat
+            // this, and nothing on that path would ever clear the interlock.
+            if (!isUsingSticksForArming()) {
+                setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+            }
+            disarm(DISARM_REASON_LAUNCH_ABORT);
+        }
+    }
+#endif
+
 #ifdef USE_ALTITUDE_HOLD
     // only if armed; can coexist with position hold
     if (ARMING_FLAG(ARMED)
         // and not in GPS_RESCUE_MODE, to give it priority over Altitude Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
+        && !launchOwnsAircraft()
+        // nor with the aircraft still in the hand
+        && !launchWingAwaitingThrow()
         // and either the alt_hold switch is activated, or are in failsafe landing mode,
         // or an autopilot mission needs altitude control, or a switch-rescue fallback descent
-        && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive() || FLIGHT_MODE(AUTOPILOT_MODE) || flightPlanNavIsRescueDescentActive())
+        && ((altHoldSelected() && !launchWingHoldWaits()) || failsafeIsActive() || FLIGHT_MODE(AUTOPILOT_MODE) || flightPlanNavIsRescueDescentActive())
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
+        // and this platform actually has an altitude control law
+        && autopilotAltitudeControlAvailable()
         // and we have altitude data
         && isAltitudeAvailable()
         // but not until throttle is raised
@@ -1172,11 +1300,17 @@ void processRxModes(timeUs_t currentTimeUs)
     if (ARMING_FLAG(ARMED)
         // and not in GPS_RESCUE_MODE, to give it priority over Position Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
+        && !launchOwnsAircraft()
         // and either the pos_hold switch is activated, or are in failsafe landing mode,
         // or an autopilot mission needs the position controller
-        && (IS_RC_MODE_ACTIVE(BOXPOSHOLD) || failsafeIsActive() || FLIGHT_MODE(AUTOPILOT_MODE))
+        && ((IS_RC_MODE_ACTIVE(BOXPOSHOLD) && !launchWingHoldWaits()) || failsafeIsActive() || FLIGHT_MODE(AUTOPILOT_MODE)
+            || rescueDescentCircles())
+        // and altitude hold is flying, on a platform that needs it to hold a position
+        && posHoldHasAltHold()
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
+        // and this platform actually has a position control law
+        && autopilotPositionControlAvailable()
         // but not until throttle is raised
         && wasThrottleRaised()) {
         if (!FLIGHT_MODE(POS_HOLD_MODE)) {
@@ -1372,8 +1506,8 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
         startTime = micros();
         static uint32_t previousMotorUpdateTime;
         const uint32_t currentDeltaTime = startTime - previousMotorUpdateTime;
-        debug[2] = currentDeltaTime;
-        debug[3] = currentDeltaTime - targetPidLooptime;
+        DEBUG_SET(DEBUG_CYCLETIME, 2, currentDeltaTime);                      //!< Motor Update Interval [unit:us]
+        DEBUG_SET(DEBUG_CYCLETIME, 3, currentDeltaTime - targetPidLooptime);  //!< Motor Update Interval Error [unit:us]
         previousMotorUpdateTime = startTime;
     } else if (debugMode == DEBUG_PIDLOOP) {
         startTime = micros();
@@ -1394,7 +1528,7 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
     if (debugMode == DEBUG_DSHOT_RPM_ERRORS && useDshotTelemetry) {
         const uint8_t motorCount = MIN(getMotorCount(), 4);
         for (uint8_t i = 0; i < motorCount; i++) {
-            debug[i] = getDshotTelemetryMotorInvalidPercent(i);
+            DEBUG_SET(DEBUG_DSHOT_RPM_ERRORS, i, getDshotTelemetryMotorInvalidPercent(i));  //!< [index:0..3] Motor {1|2|3|4} Invalid [unit:%]
         }
     }
 #endif
@@ -1410,7 +1544,7 @@ static FAST_CODE_NOINLINE void subTaskRcCommand(timeUs_t currentTimeUs)
     // sticks, do not process yaw input from the rx.  We do this so the
     // motors do not spin up while we are trying to arm or disarm.
     // Allow yaw control for tricopters if the user wants the servo to move even when unarmed.
-    if (isUsingSticksForArming() && rcData[THROTTLE] <= rxConfig()->mincheck
+    if (isUsingSticksForArming() && rcGetChannel(THROTTLE) <= rcUsToNorm(rxConfig()->mincheck)
 #ifndef USE_QUAD_MIXER_ONLY
 #ifdef USE_SERVOS
                 && !((mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI) && servoConfig()->tri_unarmed_servo)
@@ -1476,6 +1610,11 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);  //!< Gyro Update Time [unit:us]
 
     subTaskRcCommand(currentTimeUs);
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+    // After rcCommand so the abort test and the hand-back blend see fresh stick
+    // data, and before the PID controller so it reads this cycle's angle target.
+    launchWingUpdate(currentTimeUs);
+#endif
     subTaskPidController(currentTimeUs);
     subTaskMotorUpdate(currentTimeUs);
     subTaskPidSubprocesses(currentTimeUs);

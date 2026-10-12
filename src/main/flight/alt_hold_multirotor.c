@@ -185,7 +185,7 @@ static void altHoldUpdate(timeUs_t taskIntervalUs)
         const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
         if (navCmd->includeAltitude) {
             targetAltitudeCm = positionNavGetTargetAltitudeCm();
-            targetAltitudeVelocity = positionNavTargetReached() ? 0.0f : positionNavGetTargetVelocityCmS().z;
+            targetAltitudeVelocity = positionNavGetTargetVelocityCmS().z;
             velLimitCmS = positionNavGetVerticalRateLimitCmS();
             // track it, so alt hold does not revert to a pre-nav target altitude when the leg ends
             altHold.targetAltitudeCm = targetAltitudeCm;

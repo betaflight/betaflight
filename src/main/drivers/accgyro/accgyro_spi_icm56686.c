@@ -159,6 +159,10 @@ bool icm56686GyroReadSPI(gyroDev_t *gyro);
 #define ICM56686_GYRO_UI_LPFBW_MASK             (0x07 << 4)
 #define ICM56686_GYRO_UI_3RD_ORD_SEL            (1 << 7)
 
+// Gyro notch : IPREG_SYS1 offset 0x9D bit7. Reset is 0 (notch enabled).
+#define ICM56686_GYRO_NOTCH_CFG_IREG_ADDR       (ICM56686_IPREG_SYS1_BASE + 0x9D)
+#define ICM56686_GYRO_NOTCH_BYPASS              (1 << 7)
+
 // Accel SRC control : IPREG_SYS2 offset 0x6D, ACCEL_SRC_CTRL[1:0]
 #define ICM56686_ACCEL_SRC_CTRL_IREG_ADDR       (ICM56686_IPREG_SYS2_BASE + 0x6D)
 #define ICM56686_ACCEL_SRC_CTRL_MASK            (0x03 << 0)
@@ -191,9 +195,7 @@ bool icm56686GyroReadSPI(gyroDev_t *gyro);
 
 #define ICM56686_RESET_TIMEOUT_US               20000 // power-on reset is 5 ms typ
 #define ICM56686_IREG_TIMEOUT_US                5000
-#define ICM56686_SENSOR_ENABLE_DELAY_MS         1
-#define ICM56686_ACCEL_STARTUP_TIME_MS          10
-#define ICM56686_GYRO_STARTUP_TIME_MS           35  // gyro startup 35 ms typ
+#define ICM56686_GYRO_STARTUP_TIME_MS           35  // Table 1, low-noise, typ. Accel Table 2 is 10 ms typ.
 
 #define ICM56686_DATA_LENGTH                    6   // 3 axes * 2 bytes
 #define ICM56686_SPI_BUFFER_SIZE                (1 + ICM56686_DATA_LENGTH)
@@ -298,6 +300,7 @@ static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
     }
 }
 
+// Set PWR_MGMT0 to Low-Noise for both sensors, or power them off.
 static void icm56686_enableSensors(const extDevice_t *dev, bool enable)
 {
     const uint8_t value = enable
@@ -346,24 +349,15 @@ uint8_t icm56686SpiDetect(const extDevice_t *dev)
 // ---------------------------------------------------------------------------
 // Accel
 // ---------------------------------------------------------------------------
+// Set accel scale and sample-rate metadata. Hardware ODR/SRC/LPF are programmed
+// from icm56686GyroInit while the sensors are still off.
 void icm56686AccInit(accDev_t *acc)
 {
-    const extDevice_t *dev = &acc->gyro->dev;
-
-    // Accel sensitivity 16-bit 16G in icm56686GyroInit (which runs first)
-    // 16-bit mode uses +/-16g -> 2048 LSB/g.
+    // 16-bit mode, +/-16 g -> 2048 LSB/g. ODR, SRC and the UI LPF are
+    // programmed in icm56686GyroInit while the sensor is still off.
     acc->acc_1G = 2048;
-    acc->gyro->accSampleRateHz = 1600; // accel ODR set to 1.6 kHz below
+    acc->gyro->accSampleRateHz = 1600;
 
-    // Enable accel SRC + pre-filter.
-    icm56686_modify_ireg(dev, ICM56686_ACCEL_SRC_CTRL_IREG_ADDR,
-                         ICM56686_ACCEL_SRC_CTRL_MASK, ICM56686_ACCEL_SRC_CTRL_SRC_PREFILT_ON);
-
-    // Set the Accel UI LPF bandwidth cut-off to ODR/8 (~ 1600/8 = 200Hz)
-    icm56686_modify_ireg(dev, ICM56686_ACCEL_UI_LPF_CFG_IREG_ADDR,
-                         ICM56686_ACCEL_UI_LPFBW_MASK, ICM56686_UI_LPFBW_ODR_DIV_8);
-
-    // Set up register address (might want for DMA reads later).
     acc->gyro->accDataReg = ICM56686_ACCEL_DATA_X1;
 }
 
@@ -396,6 +390,8 @@ bool icm56686AccReadSPI(accDev_t *acc)
 // ---------------------------------------------------------------------------
 // Gyro
 // ---------------------------------------------------------------------------
+// Program filters, ODR, INT1 and power-up while sensors start off; arm DRDY after
+// gyro state fields are assigned so the shared EXTI handler sees valid values.
 void icm56686GyroInit(gyroDev_t *gyro)
 {
     const extDevice_t *dev = &gyro->dev;
@@ -404,18 +400,14 @@ void icm56686GyroInit(gyroDev_t *gyro)
 
     mpuGyroInit(gyro);
 
-    // Configure 16-bit, little-endian sensor output (chip default is 20-bit big-endian).
+    // Sensors are off here: detect() left PWR_MGMT0 at 0 after soft reset.
+    // DS-000563 v1.1 section 14: a field may be written while its sensor is on
+    // only when the register text says so. SRC, the UI LPF and the notch do not.
+
+    // 16-bit little-endian. Reset 0x0A is 20-bit big-endian. Clearing
+    // sreg_sifs_20bits_en is required for FS_SEL to set the digital full-scale.
     icm56686_write_ireg(dev, ICM56686_SREG_CTRL_IREG_ADDR, ICM56686_SREG_CTRL_16BIT_LE);
 
-    // Power up both sensors in Low-Noise mode.
-    icm56686_enableSensors(dev, true);
-    delay(ICM56686_SENSOR_ENABLE_DELAY_MS);
-
-    // Accel ODR 1.6 kHz with 16G range.
-    spiWriteReg(dev, ICM56686_ACCEL_CONFIG0, ICM56686_ACCEL_FS_SEL_16G | ICM56686_ACCEL_ODR_1K6_LN);
-    delay(ICM56686_ACCEL_STARTUP_TIME_MS);
-
-    // Gyro filters: enable SRC + pre-filter, then UI LPF per gyro_hardware_lpf.
     icm56686_modify_ireg(dev, ICM56686_GYRO_SRC_CTRL_IREG_ADDR,
                          ICM56686_GYRO_SRC_CTRL_MASK, ICM56686_GYRO_SRC_CTRL_SRC_PREFILT_ON);
 
@@ -423,7 +415,34 @@ void icm56686GyroInit(gyroDev_t *gyro)
     icm56686_modify_ireg(dev, ICM56686_GYRO_UI_LPF_CFG_IREG_ADDR,
                          ICM56686_GYRO_UI_LPFBW_MASK, (uint8_t)(lpfSel << 4));
 
-    // Gyro full-scale range + max 6.4 kHz ODR, Low-Noise.
+    // The UI/OIS/LPM notch is enabled at reset and DS-000563 does not publish
+    // its frequency. Bypass it so GYRO_UI_LPFBW_SEL is the only gyro lowpass.
+    icm56686_modify_ireg(dev, ICM56686_GYRO_NOTCH_CFG_IREG_ADDR,
+                         ICM56686_GYRO_NOTCH_BYPASS, ICM56686_GYRO_NOTCH_BYPASS);
+
+    icm56686_modify_ireg(dev, ICM56686_ACCEL_SRC_CTRL_IREG_ADDR,
+                         ICM56686_ACCEL_SRC_CTRL_MASK, ICM56686_ACCEL_SRC_CTRL_SRC_PREFILT_ON);
+
+    // Accel UI LPF at ODR/8: 200 Hz nominal with the 1.6 kHz ODR below.
+    icm56686_modify_ireg(dev, ICM56686_ACCEL_UI_LPF_CFG_IREG_ADDR,
+                         ICM56686_ACCEL_UI_LPFBW_MASK, ICM56686_UI_LPFBW_ODR_DIV_8);
+
+    // ODR and full-scale accept on-the-fly writes. Program them before enable
+    // so the startup interval runs against the final configuration.
+    spiWriteReg(dev, ICM56686_ACCEL_CONFIG0, ICM56686_ACCEL_FS_SEL_16G | ICM56686_ACCEL_ODR_1K6_LN);
+    spiWriteReg(dev, ICM56686_GYRO_CONFIG0, ICM56686_GYRO_FS_SEL_2000DPS | ICM56686_GYRO_ODR_6K4_LN);
+
+    // INT1_CONFIG0 resets to 0x80 (RESET_DONE enabled). INT1_MODE and
+    // INT1_POLARITY may be changed only while every source on this interface
+    // is disabled (section 23.26). Reset pin mode is open-drain, active-low;
+    // the EXTI trigger is rising-edge.
+    spiWriteReg(dev, ICM56686_INT1_CONFIG0, 0x00);
+    spiWriteReg(dev, ICM56686_INT1_CONFIG2,
+                ICM56686_INT1_MODE_PULSED | ICM56686_INT1_DRIVE_CIRCUIT_PP | ICM56686_INT1_POLARITY_ACTIVE_HIGH);
+
+    icm56686_enableSensors(dev, true);
+    delay(ICM56686_GYRO_STARTUP_TIME_MS);
+
     // In 16-bit mode FS_SEL is honoured, so use +/-2000 dps.
     gyro->scale = GYRO_SCALE_2000DPS;
     gyro->gyroRateKHz = GYRO_RATE_6400_Hz;
@@ -434,20 +453,14 @@ void icm56686GyroInit(gyroDev_t *gyro)
     gyro->tempScale = 1.0f / 128.0f;
     gyro->tempZero = 25.0f;
 
-    spiWriteReg(dev, ICM56686_GYRO_CONFIG0, ICM56686_GYRO_FS_SEL_2000DPS | ICM56686_GYRO_ODR_6K4_LN);
-    delay(ICM56686_GYRO_STARTUP_TIME_MS);
-
     gyro->gyroShortPeriod = clockMicrosToCycles(HZ_TO_US(gyro->gyroSampleRateHz));
-
-    // Data-ready interrupt on INT1: push-pull, active-high, pulsed.
-    spiWriteReg(dev, ICM56686_INT1_CONFIG2,
-                ICM56686_INT1_MODE_PULSED | ICM56686_INT1_DRIVE_CIRCUIT_PP | ICM56686_INT1_POLARITY_ACTIVE_HIGH);
-    spiWriteReg(dev, ICM56686_INT1_CONFIG0, ICM56686_INT1_STATUS_EN_DRDY);
 
     // Contiguous data: accel at 0x00, gyro at 0x06.
     gyro->accDataReg = ICM56686_ACCEL_DATA_X1;
     gyro->gyroDataReg = ICM56686_GYRO_DATA_X1;
     gyro->gyroDmaMaxDuration = 0; // DRDY interrupt paces reads
+
+    spiWriteReg(dev, ICM56686_INT1_CONFIG0, ICM56686_INT1_STATUS_EN_DRDY);
 }
 
 bool icm56686GyroReadSPI(gyroDev_t *gyro)

@@ -158,17 +158,26 @@ static FAST_DATA_ZERO_INIT float   pt1LooptimeS;
 // Reset the sampling buffers and the state machine
 static void resetState(void);
 
-void dynNotchInit(const dynNotchConfig_t *config, const float dt)
+bool dynNotchUpdateRateSupported(const timeUs_t looptimeUs)
 {
-    // dynNotchUpdate() is running at looprateHz (which is the PID looprate aka. 1e6f / gyro.targetLooptime)
-    const float looprateHz = 1.0f / dt;
-    const float nyquistHz = looprateHz / 2.0f;
+    return looptimeUs != 0 && looptimeUs <= (1000000U / DYN_NOTCH_UPDATE_MIN_HZ);
+}
 
-    // Disable dynamic notch if dynNotchUpdate() would run at less than 2kHz
-    if (looprateHz < DYN_NOTCH_UPDATE_MIN_HZ) {
+void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t looptimeUs)
+{
+    // Disable dynamic notch if dynNotchUpdate() would run at less than 2kHz.
+    // Use the integer looptime for the boundary check to avoid floating-point
+    // rounding disabling the filter at exactly 500us / 2kHz.
+    if (!dynNotchUpdateRateSupported(looptimeUs)) {
         dynNotch.count = 0;
         return;
     }
+
+    const float dt = looptimeUs * 1e-6f;
+
+    // dynNotchUpdate() is running at looprateHz (which is the PID looprate aka. 1e6f / gyro.targetLooptime)
+    const float looprateHz = 1.0f / dt;
+    const float nyquistHz = looprateHz / 2.0f;
 
     // If dynamic notch is available, initialise so it can be activated at any time
     dynNotch.q = config->dyn_notch_q / 100.0f;
@@ -358,7 +367,7 @@ static FAST_CODE_NOINLINE_CRITICAL void dynNotchProcess(void)
             // Approximate noise floor (= average power spectral density in dyn notch range, excluding peaks)
             int peakCount = 0;
             for (int p = 0; p < dynNotch.count; p++) {
-                if (peaks[p].bin >= sdftFloorStartBin) {
+                if (peaks[p].bin > sdftFloorStartBin) { // a peak on the first floor bin has its lower neighbour outside the sum
                     sdftNoiseThreshold -= 0.75f * sdftData[peaks[p].bin - 1];
                     sdftNoiseThreshold -= sdftData[peaks[p].bin];
                     sdftNoiseThreshold -= 0.75f * sdftData[peaks[p].bin + 1];

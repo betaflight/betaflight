@@ -30,6 +30,8 @@
 #include "usbd_cdc.h"
 #include "platform.h"
 
+#include "drivers/usb_descriptor.h"
+
 #include <string.h>
 
 /* Private macro **********************************************************/
@@ -37,14 +39,6 @@
 #define USBD_PID                    0x5740
 #define USBD_LANGID_STR             0x0409
 #define USBD_MANUFACTURER_STR       FC_FIRMWARE_NAME
-
-#ifdef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_HS_STR         USBD_PRODUCT_STRING
-#define USBD_PRODUCT_FS_STR         USBD_PRODUCT_STRING
-#else
-#define USBD_PRODUCT_HS_STR         "APM32 Virtual ComPort in HS Mode"
-#define USBD_PRODUCT_FS_STR         "APM32 Virtual ComPort in FS Mode"
-#endif /* USBD_PRODUCT_STRING */
 
 #define USBD_CONFIGURATION_HS_STR   "VCP Config"
 #define USBD_CONFIGURATION_FS_STR   "VCP Config"
@@ -529,7 +523,7 @@ static USBD_DESC_INFO_T USBD_DESC_Ascii2Unicode(uint8_t* desc)
 {
     USBD_DESC_INFO_T descInfo;
     uint8_t* buffer;
-    uint8_t str[USBD_SUP_STR_DESC_MAX_NUM];
+    static uint8_t str[USBD_SUP_STR_DESC_MAX_NUM];
 
     uint8_t* unicode = str;
     uint16_t length = 0;
@@ -719,18 +713,9 @@ static USBD_DESC_INFO_T USBD_VCP_ManufacturerStrDescHandler(uint8_t usbSpeed)
  */
 static USBD_DESC_INFO_T USBD_VCP_ProductStrDescHandler(uint8_t usbSpeed)
 {
-    USBD_DESC_INFO_T descInfo;
+    UNUSED(usbSpeed);
 
-    if (usbSpeed == USBD_SPEED_HS)
-    {
-        descInfo = USBD_DESC_Ascii2Unicode((uint8_t*)USBD_PRODUCT_HS_STR);
-    }
-    else
-    {
-        descInfo = USBD_DESC_Ascii2Unicode((uint8_t*)USBD_PRODUCT_FS_STR);
-    }
-
-    return descInfo;
+    return USBD_DESC_Ascii2Unicode((uint8_t*)usbDescriptorProductString());
 }
 
 /**

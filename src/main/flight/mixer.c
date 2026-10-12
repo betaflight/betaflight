@@ -49,6 +49,7 @@
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
+#include "flight/launch_wing.h"
 #include "flight/imu.h"
 #include "flight/mixer_init.h"
 #include "flight/mixer_tricopter.h"
@@ -72,6 +73,15 @@
 
 #define CRASHFLIP_MOTOR_DEADBAND         0.02f // 2%; send 'disarm' value to motors below this drive value
 #define CRASHFLIP_STICK_DEADBAND         0.15f // 15%
+
+static inline bool autopilotStopsMotor(void)
+{
+#ifdef USE_WING
+    return autopilotWingMotorStopRequested();
+#else
+    return false;
+#endif
+}
 
 static FAST_DATA_ZERO_INIT float motorMixRange;
 
@@ -258,8 +268,8 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             // batteryGoodness = 1 when voltage is above vbatFull, and 0 when voltage is below vbatLow
             float batteryGoodness = 1.0f - constrainf((mixerRuntime.vbatFull - currentCellVoltage) / mixerRuntime.vbatRangeToCompensate, 0.0f, 1.0f);
             motorRangeAttenuationFactor = (mixerRuntime.vbatRangeToCompensate / mixerRuntime.vbatFull) * batteryGoodness * mixerRuntime.vbatSagCompensationFactor;
-            DEBUG_SET(DEBUG_BATTERY, 2, lrintf(batteryGoodness * 100));               //!< Sag Compensation Battery Goodness [unit:%]
-            DEBUG_SET(DEBUG_BATTERY, 3, lrintf(motorRangeAttenuationFactor * 1000));  //!< Sag Compensation Attenuation [unit:0.001]
+            DEBUG_SET(DEBUG_SAG_COMPENSATION, 0, lrintf(batteryGoodness * 100));               //!< Battery Goodness [unit:%]
+            DEBUG_SET(DEBUG_SAG_COMPENSATION, 1, lrintf(motorRangeAttenuationFactor * 1000));  //!< Motor Range Attenuation [unit:0.001]
         }
         motorRangeMax = isCrashFlipModeActive() ? mixerRuntime.motorOutputHigh : mixerRuntime.motorOutputHigh - motorRangeAttenuationFactor * (mixerRuntime.motorOutputHigh - mixerRuntime.motorOutputLow);
 #else
@@ -797,9 +807,11 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
     }
 #endif
 
+    // Never take an autopilot throttle from a platform that does not claim to
+    // produce one - a stubbed control law would command zero and cut the motor.
 #ifdef USE_ALTITUDE_HOLD
     // Throttle value to be used during altitude hold mode (and failsafe landing mode)
-    if (FLIGHT_MODE(ALT_HOLD_MODE)) {
+    if (FLIGHT_MODE(ALT_HOLD_MODE) && autopilotThrottleValid()) {
         throttle = getAutopilotThrottle();
     }
 #endif
@@ -807,8 +819,19 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
 #ifdef USE_GPS_RESCUE
     // If gps rescue is active then override the throttle. This prevents things
     // like throttle boost or throttle limit from negatively affecting the throttle.
-    if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+    if (FLIGHT_MODE(GPS_RESCUE_MODE) && autopilotThrottleValid()) {
         throttle = getAutopilotThrottle();
+    }
+#endif
+
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+    // Same rationale as GPS rescue: a launch throttle must be exactly what was
+    // configured, not what the pilot-feel transforms above make of it. The
+    // handover factor blends back onto the pilot's fully processed throttle,
+    // so the hand-back lands exactly where the pilot's stick already is.
+    if (FLIGHT_MODE(LAUNCH_MODE) && launchWingThrottleValid()) {
+        const float handover = launchWingHandoverFactor();
+        throttle = launchWingGetThrottle() * (1.0f - handover) + throttle * handover;
     }
 #endif
 
@@ -831,12 +854,13 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
         break;
     }
 
-    if (featureIsEnabled(FEATURE_MOTOR_STOP)
-        && ARMING_FLAG(ARMED)
-        && !mixerRuntime.feature3dEnabled
-        && !airmodeEnabled
-        && !FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE)   // disable motor_stop while GPS Rescue / Alt Hold / Pos Hold is active
-        && (rcData[THROTTLE] < rxConfig()->mincheck)) {
+    if ((autopilotStopsMotor() && ARMING_FLAG(ARMED))
+        || (featureIsEnabled(FEATURE_MOTOR_STOP)
+            && ARMING_FLAG(ARMED)
+            && !mixerRuntime.feature3dEnabled
+            && !airmodeEnabled
+            && !FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | LAUNCH_MODE)   // disable motor_stop while GPS Rescue / Alt Hold / Pos Hold / Launch is active
+            && (rcGetChannel(THROTTLE) < rcUsToNorm(rxConfig()->mincheck)))) {
         applyMotorStop();
     } else {
         // Apply the mix to motor endpoints
