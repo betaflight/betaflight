@@ -146,7 +146,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             // The min_check range is halved because the output throttle is scaled to half the range.
             // So by using half of min_check we maintain the same low-throttle deadband
             // stick travel as normal non-3D mode.
-            const float mincheckOffset = rcUsToThrottle(rxConfig()->mincheck) / 2;
+            const float mincheckOffset = rcUsSpanToThrottle((rxConfig()->mincheck - PWM_RANGE_MIN) / 2);
             rcCommand3dDeadBandLow = midThrottle - mincheckOffset;
             rcCommand3dDeadBandHigh = midThrottle + mincheckOffset;
         } else {
