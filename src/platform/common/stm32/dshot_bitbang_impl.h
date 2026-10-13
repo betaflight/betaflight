@@ -211,9 +211,16 @@ typedef struct bbPort_s {
     bool telemetryAborted;
 
     // Misc
+
+    // Set by bbDMAServiceFlags() when a DMA transfer error left the stream's
+    // registers unusable; cleared by bbUpdateComplete() once bbSwitchToOutput()
+    // has reloaded them. Written from the DMA ISR; read/cleared from the PID task.
+    volatile bool reinitRequired;
+
 #ifdef DEBUG_COUNT_INTERRUPT
     uint32_t outputIrq;
     uint32_t inputIrq;
+    uint32_t errorIrq;
 #endif
     resourceOwner_t resourceOwner;
 } bbPort_t;
@@ -279,7 +286,7 @@ void bbGpioSetup(bbMotor_t *bbMotor);
 void bbTimerChannelInit(bbPort_t *bbPort);
 void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction);
 void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor);
-void bbSwitchToOutput(bbPort_t * bbPort);
+bool bbSwitchToOutput(bbPort_t * bbPort);
 void bbSwitchToInput(bbPort_t * bbPort);
 
 void bbTIM_TimeBaseInit(bbPort_t *bbPort, uint16_t period);
@@ -295,6 +302,90 @@ void bbDMA_Cmd(bbPort_t *bbPort, confirm_state NewState);
 void bbDMA_Cmd(bbPort_t *bbPort, FunctionalState NewState);
 #endif
 int  bbDMA_Count(bbPort_t *bbPort);
+
+// Disabling a stream is a request, not an act: the controller clears the enable
+// bit only once the in-flight transfer and any FIFO contents have drained, and
+// rewriting the configuration registers before then is forbidden and leaves the
+// stream in an undefined state (RM0090, DMA_SxCR: "It is forbidden to write
+// these registers when the EN bit is read as 1"). The drain is a single
+// non-burst transfer, so a handful of AHB cycles; the bound is only there so a
+// wedged stream cannot hang a motor update. Returns false if it never stopped,
+// in which case the caller must leave the stream alone.
+#define BB_DMA_STOP_SPIN_LIMIT 100
+
+static inline bool bbDMAWaitStopped(dmaResource_t *dmaResource)
+{
+    for (unsigned spin = 0; spin < BB_DMA_STOP_SPIN_LIMIT; spin++) {
+        if (!(IS_DMA_ENABLED(dmaResource))) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// Every status bit a bitbang stream can leave set. A completed frame always
+// leaves HTIF behind - the flag is set by hardware whether or not HTIE is on,
+// and bbDMA_ITConfig() only enables TC - and RM0090 requires a clear status
+// before the stream is started again (DMA_SxCR, EN bit: "Before setting EN bit
+// to '1' to start a new transfer, the event flags corresponding to the stream
+// in DMA_LISR or DMA_HISR register must be cleared"). ST's own HAL does the
+// same, writing IFCR = 0x3F << StreamIndex immediately before enabling.
+//
+// The mask resolves to 0x3D on the stream-based controllers (F4/F7/H7/APM32F4),
+// 0x0E on the channel-based ones (G4/AT32), TCF|HTF|DTEF on H5/C5/N6 GPDMA and
+// 0x13 on X32. Note that AT32 aliases DMA_IT_DMEIF onto DMA_IT_HTIF and X32
+// aliases both DMA_IT_DMEIF and DMA_IT_FEIF onto DMA_IT_TEIF, so which branch
+// those two take is incidental - the resulting mask is the same either way.
+// Requires platform/dma.h ahead of this header, as all includers have.
+#if defined(DMA_IT_FEIF) && defined(DMA_IT_DMEIF)
+#define BB_DMA_FLAGS (DMA_IT_TCIF | DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_DMEIF | DMA_IT_FEIF)
+#else
+#define BB_DMA_FLAGS (DMA_IT_TCIF | DMA_IT_HTIF | DMA_IT_TEIF)
+#endif
+
+// Clear the stream's status flags, and report whether the transfer failed.
+// Returns true on a transfer error, in which case the port has been flagged for
+// reinitialisation and the caller must return without doing any direction work.
+//
+// Only TEIF is tested, because only TEIF means the stream aborted. DMEIF cannot
+// be set on these streams - they run with the FIFO enabled, so direct mode is
+// never used - and escalating FEIF to a port reinitialisation would drop a motor
+// frame for a condition the transfer survives. So the rest are cleared, not
+// acted on.
+//
+// On a transfer error the stream aborted partway and its registers no longer
+// describe a usable transfer. The caller has already stopped the stream and the
+// pacer request, so raise reinitRequired: the next bbUpdateComplete() runs
+// bbSwitchToOutput(), which reloads the cached register set and reconfigures the
+// pin. Spinning here instead, as this used to, took the flight controller down
+// with it - nothing recovers an ISR that never returns on any target except
+// STM32N657, where OBL arms an IWDG that BF refreshes from TASK_SERIAL, and even
+// there it is a reset seconds later.
+//
+// direction is deliberately left alone: it says where the pin and the DMA are
+// actually pointed, and on H5/C5/N6 bbDMA_Cmd(ENABLE) picks the cached register
+// set from it. telemetryPending is left alone too, so a port that was capturing
+// spins out bbTelemetryTimeoutUs in bbTelemetryWait() before being handed back.
+// By then the ESC has certainly stopped replying, and bbSwitchToOutput() cannot
+// drive the line against it (#15533).
+static inline bool bbDMAServiceFlags(bbPort_t *bbPort, dmaChannelDescriptor_t *descriptor)
+{
+    const bool transferError = DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF) != 0;
+
+    DMA_CLEAR_FLAG(descriptor, BB_DMA_FLAGS);
+
+    if (!transferError) {
+        return false;
+    }
+
+#ifdef DEBUG_COUNT_INTERRUPT
+    bbPort->errorIrq++;
+#endif
+    bbPort->reinitRequired = true;
+
+    return true;
+}
 
 void bbDshotRequestTelemetry(unsigned motorIndex);
 bool bbDshotIsMotorIdle(unsigned motorIndex);
