@@ -636,6 +636,13 @@ void resetPositionControl(unsigned taskRateHz)
     resetDistanceErrorIntegral();
 }
 
+// Braking time for DEBUG_AUTOPILOT_STOP[7]: zero whenever braking is inactive,
+// since some transitions end braking without resetting ap.brakingTimeS.
+static int brakingTimeDebug(void)
+{
+    return ap.isPosHoldBraking ? lrintf(ap.brakingTimeS * 100.0f) : 0;
+}
+
 void handlepositionControlFailure(void)
 {
     resetDistanceError();
@@ -643,7 +650,7 @@ void handlepositionControlFailure(void)
     apStatusFlags |= AP_STATUS_CONTROL_FAILURE;
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, apStatusFlags);   //!< Status Flags [flags:Nav Active|Anchor Off|Abort Nav|Position Held|Sticks Active|Braking|Control Failure|Force Pitch Fwd|Sensors Not Ok]
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, apStatusFlags);  //!< Status Flags [flags:Nav Active|Anchor Off|Abort Nav|Position Held|Sticks Active|Braking|Control Failure|Force Pitch Fwd|Sensors Not Ok]
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, lrintf(ap.brakingTimeS * 100.0f));  //!< Braking Time [unit:0.01s]
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, brakingTimeDebug());  //!< Braking Time [unit:0.01s]
 }
 
 void autopilotSetSensorsOkStatus(bool ok)
@@ -654,7 +661,7 @@ void autopilotSetSensorsOkStatus(bool ok)
         apStatusFlags |= AP_STATUS_SENSORS_NOT_OK;
         DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, apStatusFlags);   //!< Status Flags [flags:Nav Active|Anchor Off|Abort Nav|Position Held|Sticks Active|Braking|Control Failure|Force Pitch Fwd|Sensors Not Ok]
         DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, apStatusFlags);  //!< Status Flags [flags:Nav Active|Anchor Off|Abort Nav|Position Held|Sticks Active|Braking|Control Failure|Force Pitch Fwd|Sensors Not Ok]
-        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, lrintf(ap.brakingTimeS * 100.0f));  //!< Braking Time [unit:0.01s]
+        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, brakingTimeDebug());  //!< Braking Time [unit:0.01s]
     }
 }
 
@@ -1243,7 +1250,7 @@ bool positionControl(void)
         apStatusFlags |= AP_STATUS_FORCE_PITCH_FWD;
         DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, apStatusFlags);   //!< Status Flags [flags:Nav Active|Anchor Off|Abort Nav|Position Held|Sticks Active|Braking|Control Failure|Force Pitch Fwd|Sensors Not Ok]
         DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, apStatusFlags);  //!< Status Flags [flags:Nav Active|Anchor Off|Abort Nav|Position Held|Sticks Active|Braking|Control Failure|Force Pitch Fwd|Sensors Not Ok]
-        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, lrintf(ap.brakingTimeS * 100.0f));  //!< Braking Time [unit:0.01s]
+        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, brakingTimeDebug());  //!< Braking Time [unit:0.01s]
         return true;
     }
     const vector2_t currentPosition = *(const vector2_t *)&est->position.v;
@@ -1480,7 +1487,7 @@ bool positionControl(void)
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 4, lrintf(autopilotAngle[AI_ROLL] * 10));         //!< Roll Angle Command [unit:0.1deg]
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 5, lrintf(autopilotAngle[AI_PITCH] * 10));        //!< Pitch Angle Command [unit:0.1deg]
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, apStatusFlags);  //!< Status Flags [flags:Nav Active|Anchor Off|Abort Nav|Position Held|Sticks Active|Braking|Control Failure|Force Pitch Fwd|Sensors Not Ok]
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, lrintf(ap.brakingTimeS * 100.0f));  //!< Braking Time [unit:0.01s]
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, brakingTimeDebug());  //!< Braking Time [unit:0.01s]
 
     DEBUG_SET(DEBUG_POSITION_NAV, 0, lrintf(targetVelocity.v[ap.debugAxis]));           //!< Target Velocity (dbg-axis) [unit:cm/s]
     DEBUG_SET(DEBUG_POSITION_NAV, 1, lrintf(velocity.v[ap.debugAxis]));                 //!< Velocity (dbg-axis) [unit:cm/s]
