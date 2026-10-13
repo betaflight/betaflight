@@ -701,24 +701,6 @@ bool mspSerialIsConfiguratorActive(void)
     return false;
 }
 
-/*
- * When the given port last saw an inbound byte, or 0 if it has seen none or is
- * not open as an MSP port.  A sensor that reaches the flight controller over
- * MSP uses this to tell that the module on the far end is powered and talking -
- * in whatever protocol it was left in, parseable or not - before sending it a
- * configuration command.
- */
-timeMs_t mspSerialLastActivityMs(serialPortIdentifier_e identifier)
-{
-    for (const mspPort_t *mspPort = mspPorts; mspPort < ARRAYEND(mspPorts); mspPort++) {
-        if (mspPort->port && mspPort->port->identifier == identifier) {
-            return mspPort->lastActivityMs;
-        }
-    }
-
-    return 0;
-}
-
 void mspSerialInit(void)
 {
     memset(mspPorts, 0, sizeof(mspPorts));

@@ -44,15 +44,6 @@ typedef struct opticalflowConfig_s {
 
 PG_DECLARE(opticalflowConfig_t, opticalflowConfig);
 
-// True when the device reports by pushing MSP frames rather than being read
-// over a port its own driver opens, so the port needs an MSP port opening on it.
-static inline bool opticalflowTypeUsesMsp(uint8_t type)
-{
-    UNUSED(type);
-
-    return false;
-}
-
 typedef struct opticalflow_s {
     opticalflowDev_t dev;
     int16_t quality;
