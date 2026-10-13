@@ -71,16 +71,6 @@ typedef struct rangefinder_s {
     int16_t snr;
 } rangefinder_t;
 
-// True when the device reports by pushing MSP frames rather than being read
-// over a port its own driver opens, so the port needs an MSP port opening on it.
-static inline bool rangefinderTypeUsesMsp(uint8_t type)
-{
-    switch (type) {
-    default:
-        return false;
-    }
-}
-
 void rangefinderResetDynamicThreshold(void);
 bool rangefinderInit(void);
 

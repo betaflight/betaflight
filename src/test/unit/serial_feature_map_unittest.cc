@@ -253,31 +253,42 @@ TEST(SerialFeatureMap, OpticalflowClaimsTheLidarBit)
     EXPECT_EQ(FUNCTION_LIDAR, serialSynthesizeFunctionMask(SERIAL_PORT_UART5));
 }
 
-TEST(SerialFeatureMap, TransportFollowsHardwareSelection)
+TEST(SerialFeatureMap, NoSensorImpliesAnMspPort)
 {
-    // Native serial devices open the port from their own driver.
-    EXPECT_FALSE(rangefinderTypeUsesMsp(RANGEFINDER_NONE));
-    EXPECT_FALSE(rangefinderTypeUsesMsp(RANGEFINDER_TFMINI));
-    EXPECT_FALSE(rangefinderTypeUsesMsp(RANGEFINDER_TF02));
-    EXPECT_FALSE(rangefinderTypeUsesMsp(RANGEFINDER_TFNOVA));
-    EXPECT_FALSE(rangefinderTypeUsesMsp(RANGEFINDER_NOOPLOOP_F2));
-    EXPECT_FALSE(rangefinderTypeUsesMsp(RANGEFINDER_NOOPLOOP_F2MINI));
-    EXPECT_FALSE(rangefinderTypeUsesMsp(RANGEFINDER_UPT1));
-    // Pin-driven, no UART at all.
-    EXPECT_FALSE(rangefinderTypeUsesMsp(RANGEFINDER_HCSR04));
+    serialPortIdentifier_e ports[IMPLIED_MSP_PORT_COUNT];
 
-    // Every MT variant reports over MSP.
-    EXPECT_TRUE(rangefinderTypeUsesMsp(RANGEFINDER_MTF01));
-    EXPECT_TRUE(rangefinderTypeUsesMsp(RANGEFINDER_MTF02));
-    EXPECT_TRUE(rangefinderTypeUsesMsp(RANGEFINDER_MTF01P));
-    EXPECT_TRUE(rangefinderTypeUsesMsp(RANGEFINDER_MTF02P));
+    // Every rangefinder and optical flow module is read by its own driver, over
+    // a port that driver opens in sensorsAutodetect(), so none of them needs an
+    // MSP port opening on its UART whatever the hardware selection.
+    static const rangefinderType_e rangefinders[] = {
+        RANGEFINDER_HCSR04, RANGEFINDER_TFMINI, RANGEFINDER_TF02,
+        RANGEFINDER_TFNOVA, RANGEFINDER_NOOPLOOP_F2, RANGEFINDER_NOOPLOOP_F2MINI,
+        RANGEFINDER_UPT1, RANGEFINDER_PB04,
+        RANGEFINDER_MTF01, RANGEFINDER_MTF02, RANGEFINDER_MTF01P, RANGEFINDER_MTF02P,
+    };
 
-    EXPECT_FALSE(opticalflowTypeUsesMsp(OPTICALFLOW_NONE));
-    EXPECT_FALSE(opticalflowTypeUsesMsp(OPTICALFLOW_UPT1));
-    EXPECT_TRUE(opticalflowTypeUsesMsp(OPTICALFLOW_MT));
+    for (unsigned i = 0; i < ARRAYLEN(rangefinders); i++) {
+        resetAllConfigs();
+        rangefinderConfigMutable()->rangefinder_hardware = rangefinders[i];
+        rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_UART4;
+        EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)))
+            << "rangefinder_hardware " << (int)rangefinders[i];
+    }
+
+    static const opticalflowType_e flows[] = {
+        OPTICALFLOW_MT, OPTICALFLOW_UPT1, OPTICALFLOW_PB04,
+    };
+
+    for (unsigned i = 0; i < ARRAYLEN(flows); i++) {
+        resetAllConfigs();
+        opticalflowConfigMutable()->opticalflow_hardware = flows[i];
+        opticalflowConfigMutable()->opticalflow_uart = SERIAL_PORT_UART4;
+        EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)))
+            << "opticalflow_hardware " << (int)flows[i];
+    }
 }
 
-TEST(SerialFeatureMap, ImpliedMspPortNeedsBothHardwareAndPort)
+TEST(SerialFeatureMap, ImpliedMspPortNeedsBothProtocolAndPort)
 {
     serialPortIdentifier_e ports[IMPLIED_MSP_PORT_COUNT];
 
@@ -285,45 +296,46 @@ TEST(SerialFeatureMap, ImpliedMspPortNeedsBothHardwareAndPort)
     EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
 
     // A declared port on its own says nothing about the transport.
-    rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_UART4;
+    vtxSettingsConfigMutable()->vtx_uart = SERIAL_PORT_UART4;
     EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
 
-    // Nor does the hardware on its own, with no port to open.
-    rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_NONE;
-    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF02;
+    // Nor does the protocol on its own, with no port to open.
+    vtxSettingsConfigMutable()->vtx_uart = SERIAL_PORT_NONE;
+    vtxSettingsConfigMutable()->vtx_type = VTXDEV_MSP;
     EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
 
-    rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_UART4;
+    vtxSettingsConfigMutable()->vtx_uart = SERIAL_PORT_UART4;
     ASSERT_EQ(1u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
     EXPECT_EQ(SERIAL_PORT_UART4, ports[0]);
 
-    // A native serial sensor claims its UART in sensorsAutodetect() instead.
-    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TFMINI;
+    // A wire protocol VTX speaks for itself on its own function.
+    vtxSettingsConfigMutable()->vtx_type = VTXDEV_SMARTAUDIO;
     EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
 }
 
-TEST(SerialFeatureMap, ImpliedMspPortCountsOneModuleOnce)
+TEST(SerialFeatureMap, ImpliedMspPortCountsOnePortOnce)
 {
     serialPortIdentifier_e ports[IMPLIED_MSP_PORT_COUNT];
 
-    // Both sensors of one MT module land on a single declared port.
+    // Two implied-MSP features sharing one declared port need one port between
+    // them.
     resetAllConfigs();
-    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF02;
-    rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_UART4;
-    opticalflowConfigMutable()->opticalflow_hardware = OPTICALFLOW_MT;
-    opticalflowConfigMutable()->opticalflow_uart = SERIAL_PORT_UART4;
+    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
+    osdConfigMutable()->osd_uart = SERIAL_PORT_UART4;
+    vtxSettingsConfigMutable()->vtx_type = VTXDEV_MSP;
+    vtxSettingsConfigMutable()->vtx_uart = SERIAL_PORT_UART4;
 
     ASSERT_EQ(1u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
     EXPECT_EQ(SERIAL_PORT_UART4, ports[0]);
 
-    // Two modules on separate UARTs need one port each.
-    opticalflowConfigMutable()->opticalflow_uart = SERIAL_PORT_UART5;
+    // On separate UARTs they need one port each.
+    vtxSettingsConfigMutable()->vtx_uart = SERIAL_PORT_UART5;
     ASSERT_EQ(2u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
     EXPECT_EQ(SERIAL_PORT_UART4, ports[0]);
     EXPECT_EQ(SERIAL_PORT_UART5, ports[1]);
 
-    // A native rangefinder alongside an MSP flow module leaves only the flow.
-    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TF02;
+    // Dropping one leaves only the other.
+    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_FRSKYOSD;
     ASSERT_EQ(1u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
     EXPECT_EQ(SERIAL_PORT_UART5, ports[0]);
 }
@@ -333,10 +345,10 @@ TEST(SerialFeatureMap, ImpliedMspPortsRespectsCallerCapacity)
     serialPortIdentifier_e ports[IMPLIED_MSP_PORT_COUNT];
 
     resetAllConfigs();
-    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF01;
-    rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_UART4;
-    opticalflowConfigMutable()->opticalflow_hardware = OPTICALFLOW_MT;
-    opticalflowConfigMutable()->opticalflow_uart = SERIAL_PORT_UART5;
+    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
+    osdConfigMutable()->osd_uart = SERIAL_PORT_UART4;
+    vtxSettingsConfigMutable()->vtx_type = VTXDEV_MSP;
+    vtxSettingsConfigMutable()->vtx_uart = SERIAL_PORT_UART5;
 
     EXPECT_EQ(0u, serialImpliedMspPorts(ports, 0));
     EXPECT_EQ(1u, serialImpliedMspPorts(ports, 1));
@@ -400,11 +412,13 @@ TEST(SerialFeatureMap, MspVtxBringsTheMspBitAndImpliesAPort)
     EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
 }
 
-TEST(SerialFeatureMap, MspDisplayPortSharingASensorPortIsCountedOnce)
+TEST(SerialFeatureMap, MspDisplayPortSharingASensorPortImpliesOnlyItsOwn)
 {
     resetAllConfigs();
     serialPortIdentifier_e ports[IMPLIED_MSP_PORT_COUNT];
 
+    // The sensor opens this UART itself, so only the display port implies an
+    // MSP port on it - sharing the UART does not make it two.
     rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF01;
     rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_UART4;
     osdConfigMutable()->osd_uart = SERIAL_PORT_UART4;
@@ -413,8 +427,10 @@ TEST(SerialFeatureMap, MspDisplayPortSharingASensorPortIsCountedOnce)
     ASSERT_EQ(1u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
     EXPECT_EQ(SERIAL_PORT_UART4, ports[0]);
 
+    // And moving it off that UART still implies just the one.
     osdConfigMutable()->osd_uart = SERIAL_PORT_UART5;
-    EXPECT_EQ(2u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+    ASSERT_EQ(1u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
+    EXPECT_EQ(SERIAL_PORT_UART5, ports[0]);
 }
 
 TEST(SerialFeatureMap, SharedPortCombinesBits)
@@ -788,17 +804,29 @@ TEST(SerialFeatureMap, ClaimMaskCarriesTheImpliedMspTransport)
 {
     resetAllConfigs();
 
-    rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_USART3;
-    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TF02;
     serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
 
+    // An MSP VTX reaches its device over MSP on its own UART, so its claim is
+    // active under FUNCTION_MSP as well as its own bit.
+    vtxSettingsConfigMutable()->vtx_uart = SERIAL_PORT_USART3;
+    vtxSettingsConfigMutable()->vtx_type = VTXDEV_MSP;
+
+    ASSERT_EQ(1u, serialGetPortClaims(SERIAL_PORT_USART3, claims, ARRAYLEN(claims)));
+    EXPECT_STREQ("vtx", claims[0].name);
+    EXPECT_EQ((uint32_t)(FUNCTION_VTX_MSP | FUNCTION_MSP), claims[0].functionMask);
+
+    // A wire protocol VTX carries only its own bit.
+    vtxSettingsConfigMutable()->vtx_type = VTXDEV_SMARTAUDIO;
+    ASSERT_EQ(1u, serialGetPortClaims(SERIAL_PORT_USART3, claims, ARRAYLEN(claims)));
+    EXPECT_EQ((uint32_t)FUNCTION_VTX_SMARTAUDIO, claims[0].functionMask);
+
+    // A sensor opens its own port, so its claim never carries MSP.
+    resetAllConfigs();
+    rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_USART3;
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF01;
     ASSERT_EQ(1u, serialGetPortClaims(SERIAL_PORT_USART3, claims, ARRAYLEN(claims)));
     EXPECT_STREQ("rangefinder", claims[0].name);
     EXPECT_EQ((uint32_t)FUNCTION_LIDAR, claims[0].functionMask);
-
-    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF01;
-    ASSERT_EQ(1u, serialGetPortClaims(SERIAL_PORT_USART3, claims, ARRAYLEN(claims)));
-    EXPECT_EQ((uint32_t)(FUNCTION_LIDAR | FUNCTION_MSP), claims[0].functionMask);
 }
 
 TEST(SerialFeatureMap, ClaimsRespectCallerCapacity)
