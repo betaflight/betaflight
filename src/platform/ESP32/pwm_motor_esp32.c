@@ -25,6 +25,7 @@
 
 #include "platform.h"
 
+#include "common/maths.h"
 #include "common/utils.h"
 #include "drivers/motor.h"
 #include "drivers/motor_impl.h"
@@ -59,6 +60,7 @@ typedef struct {
 
 static pwmMotor_t esp32PwmMotors[PWM_MAX_MOTORS];
 static uint8_t esp32PwmMotorCount = 0;
+static float esp32PwmMotorMaxDuty;
 static bool ledcInitialized = false;
 
 static void pwmMotorPostInit(void) { }
@@ -90,10 +92,9 @@ static void pwmMotorWrite(uint8_t index, float value)
 {
     if (index >= esp32PwmMotorCount || !esp32PwmMotors[index].enabled) return;
 
-    // Convert value to duty cycle
-    uint32_t duty = lrintf(value * esp32PwmMotors[index].pulseScale + esp32PwmMotors[index].pulseOffset);
+    const float duty = constrainf(value * esp32PwmMotors[index].pulseScale + esp32PwmMotors[index].pulseOffset, 0.0f, esp32PwmMotorMaxDuty);
 
-    ledc_ll_set_duty_int_part(&LEDC, LEDC_LOW_SPEED_MODE, esp32PwmMotors[index].ledcChannel, duty);
+    ledc_ll_set_duty_int_part(&LEDC, LEDC_LOW_SPEED_MODE, esp32PwmMotors[index].ledcChannel, lrintf(duty));
     ledc_ll_set_duty_start(&LEDC, LEDC_LOW_SPEED_MODE, esp32PwmMotors[index].ledcChannel);
     ledc_ll_ls_channel_update(&LEDC, LEDC_LOW_SPEED_MODE, esp32PwmMotors[index].ledcChannel);
 }
@@ -221,6 +222,7 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorDevConf
 
     ledc_ll_set_clock_divider(&LEDC, LEDC_LOW_SPEED_MODE, 0, dividerQ8);
     ledc_ll_set_duty_resolution(&LEDC, LEDC_LOW_SPEED_MODE, 0, resolution);
+    esp32PwmMotorMaxDuty = maxDuty;
     ledc_ll_timer_rst(&LEDC, LEDC_LOW_SPEED_MODE, 0);
     ledc_ll_ls_timer_update(&LEDC, LEDC_LOW_SPEED_MODE, 0);
     ledc_ll_timer_resume(&LEDC, LEDC_LOW_SPEED_MODE, 0);  // un-pause: the timer must run

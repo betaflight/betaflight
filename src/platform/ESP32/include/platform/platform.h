@@ -102,8 +102,8 @@ static inline void __disable_irq(void) { }
 __attribute__((always_inline)) static inline void __set_BASEPRI_nb(uint32_t basePri) { __set_BASEPRI(basePri); }
 __attribute__((always_inline)) static inline void __set_BASEPRI_MAX_nb(uint32_t basePri) { __set_BASEPRI_MAX(basePri); }
 
-// NVIC compatibility stub
-static inline void NVIC_SystemReset(void) { while(1); }
+void systemReset(void);
+static inline void NVIC_SystemReset(void) { systemReset(); }
 
 #define NVIC_PriorityGroup_2         0x500
 #define PLATFORM_NO_LIBC             0
@@ -205,17 +205,18 @@ extern esp32_peripheral_t esp32UartDev2;
 // which defines GPIO_MODE_INPUT/OUTPUT as enum members.
 #define BF_GPIO_MODE_INPUT     0
 #define BF_GPIO_MODE_OUTPUT    1
+#define BF_GPIO_MODE_OUTPUT_OD 2
 #define BF_GPIO_PULLUP         1
 #define BF_GPIO_PULLDOWN       2
 
 #define IO_CONFIG(mode, speed, pupd) ((mode) | ((speed) << 2) | ((pupd) << 5))
 
 #define IOCFG_OUT_PP          IO_CONFIG(BF_GPIO_MODE_OUTPUT, 0, 0)
-#define IOCFG_OUT_OD          IO_CONFIG(BF_GPIO_MODE_OUTPUT, 0, 0)
+#define IOCFG_OUT_OD          IO_CONFIG(BF_GPIO_MODE_OUTPUT_OD, 0, 0)
 #define IOCFG_AF_PP           0
 #define IOCFG_AF_OD           0
-#define IOCFG_IPD             IO_CONFIG(BF_GPIO_MODE_INPUT, 0, 0)
-#define IOCFG_IPU             IO_CONFIG(BF_GPIO_MODE_INPUT, 0, 0)
+#define IOCFG_IPD             IO_CONFIG(BF_GPIO_MODE_INPUT, 0, BF_GPIO_PULLDOWN)
+#define IOCFG_IPU             IO_CONFIG(BF_GPIO_MODE_INPUT, 0, BF_GPIO_PULLUP)
 #define IOCFG_IN_FLOATING     IO_CONFIG(BF_GPIO_MODE_INPUT, 0, 0)
 
 #define SPI_IO_AF_CFG           0
