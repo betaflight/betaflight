@@ -579,7 +579,7 @@ static const char* const lookupTableFreqDomain[] = {
 
 #ifdef USE_ADVANCED_TPA
 const char* const lookupTableTpaCurveType[] = {
-    "CLASSIC", "HYPERBOLIC",
+    "CLASSIC", "HYPERBOLIC", "VREF",
 };
 #endif
 
@@ -1215,7 +1215,7 @@ const clivalue_t valueTable[] = {
 #ifndef USE_WING
     { PARAM_NAME_GPS_RESCUE_GROUND_SPEED,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 3000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, groundSpeedCmS) },
 
-    { PARAM_NAME_GPS_RESCUE_DESCENT_DIST,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 5, 500 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, descentDistanceM) },
+    { PARAM_NAME_GPS_RESCUE_DESCENT_DIST,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { GPS_RESCUE_DESCENT_DIST_MIN_M, GPS_RESCUE_DESCENT_DIST_MAX_M }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, descentDistanceM) },
 #endif
     { PARAM_NAME_GPS_RESCUE_DESCEND_RATE,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 25, 500 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, descendRate) },
 #ifndef USE_WING
@@ -1505,6 +1505,13 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_TPA_CURVE_PID_THR100, VAR_UINT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, TPA_CURVE_PID_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_curve_pid_thr100) },
     { PARAM_NAME_TPA_CURVE_EXPO, VAR_INT8  | PROFILE_VALUE, .config.minmaxUnsigned = { TPA_CURVE_EXPO_MIN, TPA_CURVE_EXPO_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_curve_expo) },
 #endif // USE_ADVANCED_TPA
+
+#if defined(USE_WING) && defined(USE_ADVANCED_TPA)
+    { PARAM_NAME_SPEED_CURVE_VREF, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 85 }, PG_PID_PROFILE, offsetof(pidProfile_t, speed_curve_vref) },
+    { PARAM_NAME_SPEED_CURVE_POWER, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 30 }, PG_PID_PROFILE, offsetof(pidProfile_t, speed_curve_power) },
+    { PARAM_NAME_SPEED_CURVE_MIN, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 99 }, PG_PID_PROFILE, offsetof(pidProfile_t, speed_curve_min) },
+    { PARAM_NAME_SPEED_CURVE_MAX, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 100, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, speed_curve_max) },
+#endif
 
     { PARAM_NAME_EZ_LANDING_THRESHOLD,      VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, ez_landing_threshold) },
     { PARAM_NAME_EZ_LANDING_LIMIT,          VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 75 }, PG_PID_PROFILE, offsetof(pidProfile_t, ez_landing_limit) },
