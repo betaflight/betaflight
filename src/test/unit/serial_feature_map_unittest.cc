@@ -412,23 +412,20 @@ TEST(SerialFeatureMap, MspVtxBringsTheMspBitAndImpliesAPort)
     EXPECT_EQ(0u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
 }
 
-TEST(SerialFeatureMap, MspDisplayPortSharingASensorPortImpliesOnlyItsOwn)
+TEST(SerialFeatureMap, MspDisplayPortAlongsideASensorImpliesOnlyItsOwn)
 {
     resetAllConfigs();
     serialPortIdentifier_e ports[IMPLIED_MSP_PORT_COUNT];
 
-    // The sensor opens this UART itself, so only the display port implies an
-    // MSP port on it - sharing the UART does not make it two.
+    // The sensor opens its own UART, so only the display port implies an MSP
+    // port, and only on the UART it was itself given.  The two cannot share one
+    // UART - serial.c rejects FUNCTION_LIDAR beside FUNCTION_MSP - so they are
+    // declared apart here.
     rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_MTF01;
     rangefinderConfigMutable()->rangefinder_uart = SERIAL_PORT_UART4;
-    osdConfigMutable()->osd_uart = SERIAL_PORT_UART4;
+    osdConfigMutable()->osd_uart = SERIAL_PORT_UART5;
     osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
 
-    ASSERT_EQ(1u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
-    EXPECT_EQ(SERIAL_PORT_UART4, ports[0]);
-
-    // And moving it off that UART still implies just the one.
-    osdConfigMutable()->osd_uart = SERIAL_PORT_UART5;
     ASSERT_EQ(1u, serialImpliedMspPorts(ports, ARRAYLEN(ports)));
     EXPECT_EQ(SERIAL_PORT_UART5, ports[0]);
 }
