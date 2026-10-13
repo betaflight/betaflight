@@ -60,6 +60,12 @@ void Error_Handler(void);
 #define ADC_REGULAR_RANK_16   ((uint32_t)0x00000010)       /*!< ADC regular conversion rank 16 */
 
 static TS_HandleTypeDef hts = {0};
+#define TS_CHOP_CLK_DIV_MIN             0U    /*!< Smallest divider: 0 divides by 1 (measured; the manual gives no meaning for 0, the vendor HAL documents 1 as the lower bound) */
+#define TS_CHOP_CLK_DIV_MAX             1023U /*!< Largest divider, CHOP_CLK_DIV is 10 bits, 0x3FF in the vendor HAL */
+#define TS_CHOP_CLK_DIV_RESET           239U  /*!< Reset value 10'hEF */
+#define TS_CHOP_CLK_TYPICAL_HZ          100000U /*!< Typical chopper frequency, also for VREF and TS together: 100 kHz as confirmed by the vendor (the manual's 50 kHz is wrong); CHOP_CLK_DIV 119 with RCH_DIV /2 */
+#define TS_CHOP_CLK_SOURCE_PRESCALER    2U    /*!< The chopper divider divides the RCH_DIV output by 2 first (measured, not in the manual) */
+
 static adcDevice_t adcDevice[ADCDEV_COUNT];
 
 const adcDevice_t adcHardware[ADCDEV_COUNT] = {
@@ -154,6 +160,35 @@ void adcInitCalibrationValues(void)
     adcTSCAL2 = *TEMPSENSOR_CAL2_ADDR;
     adcTSSlopeK = (adcTSCAL2 - adcTSCAL1)/(TEMPSENSOR_CAL2_TEMP - TEMPSENSOR_CAL1_TEMP);
 }
+
+uint32_t tsGetChopperClkSrcFreq(void)
+{
+  return ((RCH_VALUE / ((READ_BIT(RCM->CFGR0, RCM_CFGR0_RCH_DIV) >> RCM_CFGR0_RCH_DIV_Pos) + 1UL))
+          / TS_CHOP_CLK_SOURCE_PRESCALER);
+}
+
+uint32_t tsCalcChopperClkDiv(uint32_t ChopperFreq)
+{
+  uint32_t source = tsGetChopperClkSrcFreq();
+  uint32_t ratio;
+
+  if (ChopperFreq == 0U){
+    return TS_CHOP_CLK_DIV_MAX;
+  }
+
+  /* Nearest ratio source / ChopperFreq; the field holds ratio - 1 */
+  ratio = (uint32_t)(((uint64_t)source + ((uint64_t)ChopperFreq / 2U)) / (uint64_t)ChopperFreq);
+
+  if (ratio < 1U){
+    ratio = 1U;
+  }else if (ratio > (TS_CHOP_CLK_DIV_MAX + 1U)){
+    ratio = TS_CHOP_CLK_DIV_MAX + 1U;
+  }else{
+    /* In range */
+  }
+
+  return (ratio - 1U);
+}
 #endif
 
 // ADC conversion result DMA buffer
@@ -194,7 +229,7 @@ void adcInit(const adcConfig_t *config)
 	hts.Init.Mode 		= TS_NORMAL_MODE;
 	hts.Init.WorkMode 	= TS_HIGH_SPEED_MODE;
 	hts.Init.ChopEn 	= TS_CHOP_CLK_EN;
-	hts.Init.ChopDiv 	= 0x3C0;
+	hts.Init.ChopDiv 	= tsCalcChopperClkDiv(TS_CHOP_CLK_TYPICAL_HZ);
 	hts.Init.irq_en    = DISABLE;
 	
 	if(HAL_TS_Init(&hts) != HAL_OK)
