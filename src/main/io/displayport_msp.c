@@ -209,7 +209,7 @@ static bool room(int bytes)
     static uint32_t waitingSince;
     static bool waiting;
 
-    if (mspSerialTxBytesFree() >= (uint32_t)bytes) {
+    if (mspSerialTxBytesFree(displayPortSerial) >= (uint32_t)bytes) {
         waiting = false;
         return true;
     }
@@ -336,7 +336,7 @@ static int clearScreen(displayPort_t *displayPort, displayClearOption_e options)
     }
     mspScreen.frameCleared = true;
     mspScreen.fresh = false;
-    if (mspScreen.needClear && mspSerialTxBytesFree() >= MSP_DP_COMMAND_BYTES) {
+    if (mspScreen.needClear && mspSerialTxBytesFree(displayPortSerial) >= MSP_DP_COMMAND_BYTES) {
         sendClear(displayPort);
     }
 
@@ -466,7 +466,7 @@ static int writeString(displayPort_t *displayPort, uint8_t col, uint8_t row, uin
 
             return 0;
         }
-        if (mspSerialTxBytesFree() < (uint32_t)writeBytes(n)) {
+        if (mspSerialTxBytesFree(displayPortSerial) < (uint32_t)writeBytes(n)) {
             if (w) {
                 w->attr |= MSP_DP_TOUCHED | MSP_DP_STALE;
             }
@@ -524,14 +524,15 @@ static int writeChar(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8
 }
 
 // The serial transmit buffer drains at the baud rate and a frame that finds it full is dropped without
-// a trace, so the OSD waits for some room before it sends anything. Room for the largest write is enough:
-// one more to follow can wait in turn.
+// a trace, so the OSD waits for some room in the buffer of the display's port before it sends anything,
+// and gives up after a while. Room for the largest write is enough: one more to follow can wait in turn.
+// Switched off, the commands of the OSD go out as they come, as they always have.
 #define MSP_DP_TX_ROOM 64
 
 static bool isTransferInProgress(const displayPort_t *displayPort)
 {
     UNUSED(displayPort);
-    return mspSerialTxBytesFree() < MSP_DP_TX_ROOM;
+    return shadowed() && !room(MSP_DP_TX_ROOM);
 }
 
 static bool isSynced(const displayPort_t *displayPort)
@@ -549,7 +550,7 @@ static void redraw(displayPort_t *displayPort)
 static uint32_t txBytesFree(const displayPort_t *displayPort)
 {
     UNUSED(displayPort);
-    return mspSerialTxBytesFree();
+    return mspSerialTxBytesFree(displayPortSerial);
 }
 
 #ifdef USE_MSP_DISPLAYPORT_FONT

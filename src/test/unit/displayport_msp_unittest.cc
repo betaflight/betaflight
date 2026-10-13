@@ -147,7 +147,7 @@ extern "C" {
         return datalen + 6;
     }
 
-    uint32_t mspSerialTxBytesFree(void) { return txFree; }
+    uint32_t mspSerialTxBytesFree(serialPortIdentifier_e) { return txFree; }
     uint32_t millis(void) { return now; }
 }
 
@@ -682,6 +682,23 @@ TEST(DisplayPortMspTest, NoBudgetOnAnotherCanvas)
 
     frame(dp, { at(0, 0, "123456789012345678901234"), at(1, 0, "123456789012345678901234") });
     EXPECT_EQ(2u, writes().size());
+}
+
+TEST(DisplayPortMspTest, TheOsdWaitsForRoomOnlyForSoLong)
+{
+    displayPort_t *dp = init();
+
+    txFree = 63;
+    EXPECT_TRUE(displayIsTransferInProgress(dp));
+    now += 300;
+    EXPECT_FALSE(displayIsTransferInProgress(dp));      // A port that does not drain does not stop the OSD
+    txFree = 64;
+    EXPECT_FALSE(displayIsTransferInProgress(dp));
+    txFree = 0;
+    EXPECT_TRUE(displayIsTransferInProgress(dp));       // Waiting again once there was room
+
+    displayPortProfileMspMutable()->sendChanges = false;
+    EXPECT_FALSE(displayIsTransferInProgress(dp));      // Switched off, nothing waits
 }
 
 TEST(DisplayPortMspTest, SwitchedOffTheOsdCommandsGoThrough)
