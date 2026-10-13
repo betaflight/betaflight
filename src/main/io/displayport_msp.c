@@ -153,10 +153,15 @@ static int writeChar(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8
     return writeString(displayPort, col, row, attr, buf);
 }
 
+// The serial transmit buffer drains at the baud rate and a frame that finds it full is dropped without
+// a trace, so the OSD waits for some room before it sends anything. Room for the largest write is enough:
+// one more to follow can wait in turn.
+#define MSP_DP_TX_ROOM 64
+
 static bool isTransferInProgress(const displayPort_t *displayPort)
 {
     UNUSED(displayPort);
-    return false;
+    return mspSerialTxBytesFree() < MSP_DP_TX_ROOM;
 }
 
 static bool isSynced(const displayPort_t *displayPort)
