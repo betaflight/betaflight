@@ -242,8 +242,8 @@ static void pb04HandleFrame(const uint8_t *payload)
     const uint16_t distanceMm = pb04ReadU16(&payload[10]);
     const uint8_t rangeQuality = payload[13];
 
-    DEBUG_SET(DEBUG_LIDAR_TF, 0, distanceMm);     //!< Distance [unit:0.001m]
-    DEBUG_SET(DEBUG_LIDAR_TF, 1, rangeQuality);   //!< Confidence [unit:%]
+    DEBUG_SET(DEBUG_PB04, 0, distanceMm);     //!< Distance [unit:0.001m]
+    DEBUG_SET(DEBUG_PB04, 1, rangeQuality);   //!< Confidence [unit:%]
 
     // Beyond its range the module substitutes a fixed 8m reading rather than
     // flagging it (datasheet section 5.1.1), so the module's own limits are the
@@ -255,13 +255,13 @@ static void pb04HandleFrame(const uint8_t *payload)
     hasRFNewData = true;
 
     // -99 marks the sample as out of range
-    DEBUG_SET(DEBUG_LIDAR_TF, 6, distanceInRange ? (int32_t)(distanceMm / 10) : -99); //!< Reported Distance [unit:cm]
+    DEBUG_SET(DEBUG_PB04, 6, distanceInRange ? (int32_t)(distanceMm / 10) : -99); //!< Reported Distance [unit:cm]
 
 #ifdef USE_OPTICALFLOW_PB04
     flowLatestUs = currentTimeUs;
     flowPackets++;
 
-    DEBUG_SET(DEBUG_LIDAR_TF, 4, payload[12]);    //!< Flow Valid Status
+    DEBUG_SET(DEBUG_PB04, 4, payload[12]);    //!< Flow Valid Status
 
     // An unusable frame contributes neither its motion nor its window, which is
     // what keeps it from biasing the rate: the divisor sums only the windows of
@@ -526,7 +526,7 @@ static void pb04OpticalflowPublish(void)
     opticalflowSensorData.rangeValid  = rangeValid;
     opticalflowSensorData.flowValid   = dtValid && flowValid;
 
-    DEBUG_SET(DEBUG_LIDAR_TF, 5, lrintf(dt_s * 1e6f));  //!< Frame Gap [unit:us]
+    DEBUG_SET(DEBUG_PB04, 5, lrintf(dt_s * 1e6f));  //!< Frame Gap [unit:us]
 
     if (dtValid && flowValid) {
         opticalflowSensorData.flowRate.x = (float)flowSumX / (float)flowIntegrationUs;
@@ -540,8 +540,8 @@ static void pb04OpticalflowPublish(void)
         opticalflowSensorData.quality = 0;
     }
 
-    DEBUG_SET(DEBUG_LIDAR_TF, 2, lrintf(opticalflowSensorData.flowRate.x * 1000.0f)); //!< Flow Rate X [unit:0.001rad/s]
-    DEBUG_SET(DEBUG_LIDAR_TF, 3, lrintf(opticalflowSensorData.flowRate.y * 1000.0f)); //!< Flow Rate Y [unit:0.001rad/s]
+    DEBUG_SET(DEBUG_PB04, 2, lrintf(opticalflowSensorData.flowRate.x * 1000.0f)); //!< Flow Rate X [unit:0.001rad/s]
+    DEBUG_SET(DEBUG_PB04, 3, lrintf(opticalflowSensorData.flowRate.y * 1000.0f)); //!< Flow Rate Y [unit:0.001rad/s]
 
     if (!rangeValid) {
         opticalflowSensorData.quality = OPTICALFLOW_OUT_OF_RANGE;
