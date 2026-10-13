@@ -252,6 +252,19 @@ cms_unittest_SRC := \
 		$(USER_DIR)/drivers/display.c
 
 
+displayport_msp_unittest_SRC := \
+		$(USER_DIR)/io/displayport_msp.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/drivers/display.c
+
+displayport_msp_unittest_DEFINES := \
+		USE_MSP_DISPLAYPORT= \
+		USE_OSD= \
+		USE_OSD_HD= \
+		USE_OSD_SD=
+
+
 common_filter_unittest_SRC := \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c
