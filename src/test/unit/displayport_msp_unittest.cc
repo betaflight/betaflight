@@ -425,6 +425,111 @@ TEST(DisplayPortMspTest, UpdatesInPlaceKeepWhatTheyDoNotWrite)
     EXPECT_EQ(drawn({ at(3, 2, "MENU"), at(4, 2, "ITEM 2") }), goggles.shown);
 }
 
+// The CMS: draws a page after a clear in passes of a few rows, then only what changes, and never clears
+// on its own between pages
+struct cms_t {
+    std::vector<packet_t> page;
+    size_t next = 0;                                    // Row to draw next, page.size() when done
+    size_t perPass = 4;
+
+    void pass(displayPort_t *dp)
+    {
+        if (dp->cleared) {
+            dp->cleared = false;
+            next = 0;
+        }
+        for (size_t n = 0; n < perPass && next < page.size(); n++, next++) {
+            displayWrite(dp, page[next].col, page[next].row, page[next].attr, page[next].text.c_str());
+        }
+        if (next == page.size()) {
+            displayWrite(dp, page[3].col, page[3].row, page[3].attr, page[3].text.c_str());   // A polled value
+        }
+    }
+};
+
+static cms_t cmsPage(displayPort_t *dp)
+{
+    cms_t cms;
+
+    for (int i = 0; i < 12; i++) {
+        char text[24];
+        snprintf(text, sizeof(text), "ITEM %02d        %4d", i, i * 37);
+        cms.page.push_back(at(3 + i, 10, text));
+    }
+    displayGrab(dp);                                    // Clears for the page
+    for (int n = 0; n < 4; n++) {
+        cms.pass(dp);
+        displayDrawScreen(dp);
+    }
+    EXPECT_EQ(drawn(cms.page), goggles.shown);
+
+    return cms;
+}
+
+TEST(DisplayPortMspTest, TheCmsPageIsBackWithinASecondAfterTheGogglesRestart)
+{
+    displayPort_t *dp = init();
+    cms_t cms = cmsPage(dp);
+
+    // The CMS runs at 20 Hz and the draw at 12 Hz
+    for (int t = 0; t < 1000; t += 50) {
+        now += 50;
+        cms.pass(dp);
+        if (t % 100 == 0) {
+            displayDrawScreen(dp);
+        }
+    }
+    EXPECT_EQ(drawn(cms.page), goggles.shown);
+
+    gogglesOff();                                       // The goggles restart inside the menu
+    goggles.shown = blank();
+    goggles.blind = true;
+    int clears = 0;
+    int back = -1;
+    packets.clear();
+    for (int t = 0; t < 3000; t += 50) {
+        now += 50;
+        cms.pass(dp);
+        if (t % 100 == 0) {
+            const size_t before = packets.size();
+            displayDrawScreen(dp);
+            for (size_t i = before; i < packets.size(); i++) {
+                clears += packets[i].subcmd == MSP_DP_CLEAR_SCREEN;
+                if (packets[i].subcmd == MSP_DP_DRAW_SCREEN) {
+                    // The goggles never get half a page
+                    EXPECT_TRUE(goggles.shown == blank() || goggles.shown == drawn(cms.page)) << "at " << t;
+                }
+            }
+            if (back < 0 && goggles.shown == drawn(cms.page)) {
+                back = t;
+            }
+        }
+    }
+    EXPECT_GE(back, 0);
+    EXPECT_LE(back, 1500);
+    EXPECT_EQ(3, clears);                               // Once a second
+}
+
+TEST(DisplayPortMspTest, TheCmsDrawWaitsOnlySoLongForThePage)
+{
+    displayPort_t *dp = init();
+    cms_t cms = cmsPage(dp);
+
+    cms.page.resize(6);                                 // The page comes back shorter
+    now += 1100;
+    displayDrawScreen(dp);                              // Clears, asks for the page
+    EXPECT_TRUE(dp->cleared);
+    cms.pass(dp);
+    cms.pass(dp);
+    packets.clear();
+    displayDrawScreen(dp);
+    EXPECT_EQ(0, count(MSP_DP_DRAW_SCREEN));            // Waiting for the cells the page had
+    now += 300;
+    displayDrawScreen(dp);
+    EXPECT_EQ(1, count(MSP_DP_DRAW_SCREEN));
+    EXPECT_EQ(drawn(cms.page), goggles.shown);
+}
+
 TEST(DisplayPortMspTest, AScreenOfItsOwnStartsOnClearGoggles)
 {
     displayPort_t *dp = init();

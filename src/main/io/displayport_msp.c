@@ -76,6 +76,9 @@
 // sent the whole screen this often, in one draw, which they show at once.
 #define MSP_DP_REFRESH_MS 1000
 
+// The CMS draws its page again after a clear, in a few passes. The draw waits this long at most for it.
+#define MSP_DP_REPAINT_MS 300
+
 // DJI O3 Air Unit + Goggles 2 throw away a whole draw when the cells written since the last
 // CLEAR_SCREEN are over a limit: rewriting a cell is free, erasing it with a space gives nothing back,
 // and only a clear frees them. The load of those cells, taken in screen order, is one cell each plus
@@ -106,6 +109,8 @@ static struct {
     mspDpWrite_t writes[MSP_DP_WRITES];         // What the goggles hold
     uint64_t sentSinceClear[MSP_DP_ROWS];       // Cells written to the goggles since they were cleared
     uint32_t refreshAt;
+    uint32_t repaintUntil;
+    uint16_t repaintCells;                      // Cells of the page the CMS draws again, before the draw
     uint16_t bytesSent;                         // In the frame
     uint16_t cellsSent;
     bool frameCleared;                          // The OSD cleared the screen to begin the frame
@@ -248,6 +253,7 @@ static void sendClear(displayPort_t *displayPort)
     memset(mspScreen.sentSinceClear, 0, sizeof(mspScreen.sentSinceClear));
     mspScreen.needClear = mspScreen.full = false;
     mspScreen.fresh = mspScreen.drawPending = true;
+    mspScreen.repaintCells = 0;
     mspScreen.refreshAt = millis() + MSP_DP_REFRESH_MS;
 }
 
@@ -291,6 +297,18 @@ static mspDpWrite_t *newWrite(void)
     }
 
     return w;
+}
+
+// Cells of the writes the table holds
+static int heldCells(void)
+{
+    int cells = 0;
+
+    for (const mspDpWrite_t *w = mspScreen.writes; w < ARRAYEND(mspScreen.writes); w++) {
+        cells += w->len;
+    }
+
+    return cells;
 }
 
 // Cells of a row that the writes of this frame cover. Where one of them covers cells that another
@@ -353,6 +371,19 @@ static bool drawScreen(displayPort_t *displayPort)
         return false;
     }
 
+    // The CMS draws without clearing, so the once a second clear is done here, and the CMS asked to
+    // draw its page again. The goggles get the draw once the page is back, as they show it at the draw.
+    if (!mspScreen.frameCleared && displayIsGrabbed(displayPort) && cmp32(millis(), mspScreen.refreshAt) >= 0
+        && mspSerialTxBytesFree(displayPortSerial) >= MSP_DP_COMMAND_BYTES) {
+        const int page = heldCells();
+
+        sendClear(displayPort);
+        mspScreen.repaintCells = page;
+        mspScreen.repaintUntil = millis() + MSP_DP_REPAINT_MS;
+        displayPort->cleared = true;
+        displayPort->cursorRow = -1;
+    }
+
     int writes = 0;
 
     for (mspDpWrite_t *w = mspScreen.writes; w < ARRAYEND(mspScreen.writes); w++) {
@@ -381,7 +412,10 @@ static bool drawScreen(displayPort_t *displayPort)
     }
     mspScreen.frameCleared = false;
 
-    if (mspScreen.drawPending) {
+    if (mspScreen.repaintCells && (heldCells() >= mspScreen.repaintCells || cmp32(millis(), mspScreen.repaintUntil) >= 0)) {
+        mspScreen.repaintCells = 0;
+    }
+    if (mspScreen.drawPending && !mspScreen.repaintCells) {
         if (!room(sizeof(draw))) {
             return true;
         }
