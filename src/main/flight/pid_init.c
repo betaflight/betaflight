@@ -545,7 +545,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     float feedforwardSmoothingTau = (rxDt * scaledSmoothFactor) / (1.0f - scaledSmoothFactor);
     pidRuntime.feedforwardSmoothFactor = feedforwardSmoothingTau;
     pidRuntime.feedforwardJitterFactor = pidProfile->feedforward_jitter_factor;
-    pidRuntime.feedforwardJitterFactorInv = 1.0f / (1.0f + pidProfile->feedforward_jitter_factor);
+    pidRuntime.feedforwardJitterFactorInv = 1.0f / rcUsSpanToNorm(1.0f + pidProfile->feedforward_jitter_factor);
     pidRuntime.feedforwardBoostFactor = 0.001f * pidProfile->feedforward_boost;
     pidRuntime.feedforwardMaxRateLimit = pidProfile->feedforward_max_rate_limit;
     pidRuntime.feedforwardInterpolate = !(rxRuntimeState.serialrxProvider == SERIALRX_CRSF);
