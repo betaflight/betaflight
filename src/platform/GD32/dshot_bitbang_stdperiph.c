@@ -229,7 +229,11 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
 
     dma_multi_data_para_struct_init(dmainit);
 
+#if defined(GD32H7)
+    dmainit->request = bbPort->dmaChannel;
+#else
     gener_dmainit->sub_periph = bbPort->dmaChannel;
+#endif
 
     dmainit->circular_mode = DMA_CIRCULAR_MODE_DISABLE;
     dmainit->periph_inc = DMA_PERIPH_INCREASE_DISABLE;

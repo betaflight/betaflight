@@ -81,6 +81,11 @@ void dmaEnable(dmaIdentifier_e identifier)
 {
     (void) identifier;
     const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
+
+#if defined(GD32H7)
+    RCC_ClockCmd(RCC_AHB1(DMAMUX), ENABLE);
+#endif
+
     RCC_ClockCmd(DMA_RCU(dmaDescriptors[index].dma), ENABLE);
 }
 
@@ -224,8 +229,9 @@ void gd32_dma_general_init(uint32_t dma_chan_base, dma_general_config_struct *in
     } else {
         dma_single_data_mode_init(dma_periph, channel, (dma_single_data_parameter_struct *)&init_struct->config.init_struct_s);
     }
-
+#if defined(GD32F4)
     dma_channel_subperipheral_select(dma_periph, channel, init_struct->sub_periph);
+#endif
 }
 
 void gd32_dma_deinit(uint32_t dma_chan_base)

@@ -227,7 +227,14 @@ void usbVcpInit(void)
         usb_gpio_config();
         usb_rcu_config();
         usbd_desc_string_update();
+
+#if defined (GD32H7)
+        usb_bsp_para_init();
+        usbd_init(&USB_OTG_dev, &bf_cdc_hid_desc, &bf_cdc_class);
+#else /* GD32H7 */
         usbd_init(&USB_OTG_dev, USB_CORE_ENUM_FS, &bf_cdc_hid_desc, &bf_usbd_cdc_hid_cb);
+#endif /* GD32H7 */
+
         usb_intr_config();
         break;
 #endif
@@ -235,7 +242,14 @@ void usbVcpInit(void)
         usb_gpio_config();
         usb_rcu_config();
         usbd_desc_string_update();
+
+#if defined (GD32H7)
+        usb_bsp_para_init();
+        usbd_init(&USB_OTG_dev, &bf_cdc_desc, &bf_cdc_class);
+#else /* GD32H7 */
         usbd_init(&USB_OTG_dev, USB_CORE_ENUM_FS, &bf_cdc_desc, &bf_cdc_class);
+#endif /* GD32H7 */
+
         usb_intr_config();
         break;
     }

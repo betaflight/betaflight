@@ -55,12 +55,25 @@ void RCC_ClockCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
     case RCC_AHB3:
         rcu_periph_clk_config(&RCU_AHB3EN, mask, NewState);
         break;
+#if defined(GD32H7)
+    case RCC_AHB4:
+        rcu_periph_clk_config(&RCU_AHB4EN, mask, NewState);
+        break;
+#endif
     case RCC_APB1:
         rcu_periph_clk_config(&RCU_APB1EN, mask, NewState);
         break;
     case RCC_APB2:
         rcu_periph_clk_config(&RCU_APB2EN, mask, NewState);
         break;
+#if defined(GD32H7)
+    case RCC_APB3:
+        rcu_periph_clk_config(&RCU_APB3EN, mask, NewState);
+        break;
+    case RCC_APB4:
+        rcu_periph_clk_config(&RCU_APB4EN, mask, NewState);
+        break;
+#endif
     }
 }
 
@@ -79,11 +92,24 @@ void RCC_ResetCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
     case RCC_AHB3:
         rcu_periph_rst_config(&RCU_AHB3RST, mask, NewState);
         break;
+#if defined(GD32H7)
+    case RCC_AHB4:
+        rcu_periph_rst_config(&RCU_AHB4RST, mask, NewState);
+        break;
+#endif
     case RCC_APB1:
         rcu_periph_rst_config(&RCU_APB1RST, mask, NewState);
         break;
     case RCC_APB2:
         rcu_periph_rst_config(&RCU_APB2RST, mask, NewState);
         break;
+#if defined(GD32H7)
+    case RCC_APB3:
+        rcu_periph_rst_config(&RCU_APB3RST, mask, NewState);
+        break;
+    case RCC_APB4:
+        rcu_periph_rst_config(&RCU_APB4RST, mask, NewState);
+        break;
+#endif
     }
 }

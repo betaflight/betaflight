@@ -270,7 +270,8 @@ const int8_t timerNumbers[USED_TIMER_COUNT] = {
 int8_t timerGetNumberByIndex(uint8_t index)
 {
     if (index < USED_TIMER_COUNT) {
-        return timerNumbers[index];
+        /* showTimers() use Timer numbers are 1-based, so add 1 to the index */
+        return timerNumbers[index] + 1;
     } else {
         return 0;
     }
@@ -350,11 +351,19 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 
     switch (irq) {
         case TIMER0_Channel_IRQn:
+#if defined(GD32H7)
+        timerNVICConfigure(TIMER0_UP_IRQn);
+#else
         timerNVICConfigure(TIMER0_UP_TIMER9_IRQn);
+#endif
         break;
 
         case TIMER7_Channel_IRQn:
+#if defined(GD32H7)
+        timerNVICConfigure(TIMER7_UP_IRQn);
+#else
         timerNVICConfigure(TIMER7_UP_TIMER12_IRQn);
+#endif
         break;
     }
 }
@@ -764,7 +773,7 @@ _TIM_IRQ_HANDLER(TIMER5_DAC_IRQHandler, 5);
 #endif
 
 #if USED_TIMERS & TIM_N(6)
-#  if !(defined(USE_VCP) && (defined(GD32F4)))
+#  if !(defined(USE_VCP) && (defined(GD32F4) || defined(GD32F7)))
 _TIM_IRQ_HANDLER_UPDATE_ONLY(TIMER6_IRQHandler, 6);
 #  endif
 #endif

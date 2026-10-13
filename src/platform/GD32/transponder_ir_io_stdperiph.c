@@ -50,7 +50,11 @@ static TIM_TypeDef *timer = NULL;
 uint8_t alternateFunction;
 static dmaResource_t *dmaRef = NULL;
 
+#if defined(GD32H7)
+DMA_RAM transponder_t transponder;
+#else
 transponder_t transponder;
+#endif
 
 static void TRANSPONDER_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
@@ -71,7 +75,8 @@ bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 
     timer_parameter_struct timer_initpara;
     timer_oc_parameter_struct timer_ocintpara;
-    dma_single_data_parameter_struct dma_init_struct;
+
+    DMA_InitTypeDef dma_init_struct;
 
     const timerHardware_t *timerHardware = timerAllocate(ioTag, OWNER_TRANSPONDER, 0);
     if (!timerHardware) {
@@ -107,7 +112,11 @@ bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     transponderIO = IOGetByTag(ioTag);
     IOInit(transponderIO, OWNER_TRANSPONDER, 0);
 
+#if defined(GD32H7)
+    IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_60MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLDOWN), timerHardware->alternateFunction);
+#else
     IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLDOWN), timerHardware->alternateFunction);
+#endif
 
     dmaEnable(dmaGetIdentifier(dmaRef));
     dmaSetHandler(dmaGetIdentifier(dmaRef), TRANSPONDER_DMA_IRQHandler, NVIC_PRIO_TRANSPONDER_DMA, 0);
@@ -126,10 +135,10 @@ bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     timer_initpara.alignedmode       = TIMER_COUNTER_EDGE;
     timer_initpara.counterdirection  = TIMER_COUNTER_UP;
     timer_initpara.repetitioncounter = 0;
-    timer_init((uint32_t)timer, &timer_initpara);
+    timer_init((uint32_t)timerHardware->tim, &timer_initpara);
 
     timer_channel_output_struct_para_init(&timer_ocintpara);
-    timer_channel_output_mode_config((uint32_t)timer, timerHardware->channel, TIMER_OC_MODE_PWM0);
+    timer_channel_output_mode_config((uint32_t)timerHardware->tim, timerHardware->channel, TIMER_OC_MODE_PWM0);
 
     if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
         timer_ocintpara.outputnstate = TIMER_CCXN_ENABLE;
@@ -140,7 +149,7 @@ bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     }
 
     timer_ocintpara.ocpolarity  = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIMER_OC_IDLE_STATE_LOW : TIMER_OC_POLARITY_HIGH;
-    timer_channel_output_pulse_value_config((uint32_t)timer, timerHardware->channel, 0);
+    timer_channel_output_pulse_value_config((uint32_t)timerHardware->tim, timerHardware->channel, 0);
 
     timerOCInit(timer, timerHardware->channel, &timer_ocintpara);
     timerOCModeConfig(timer, timerHardware->channel, TIMER_OC_MODE_PWM0);
@@ -150,29 +159,34 @@ bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     xDMA_Cmd(dmaRef, DISABLE);
     xDMA_DeInit(dmaRef);
 
-    dma_single_data_para_struct_init(&dma_init_struct);
-    dma_init_struct.periph_addr = (uint32_t)timerCCR(timerHardware->tim, timerHardware->channel);
+    dma_single_data_para_struct_init(&dma_init_struct.config.init_struct_s);
+    dma_init_struct.config.init_struct_s.periph_addr = (uint32_t)timerCCR(timerHardware->tim, timerHardware->channel);
 
+#if defined(GD32H7)
+    dma_init_struct.config.init_struct_s.request = dmaChannel;
+#else
     uint32_t temp_dma_periph;
     int temp_dma_channel;
     gd32_dma_chbase_parse((uint32_t)dmaRef, &temp_dma_periph, &temp_dma_channel);
 
     dma_channel_subperipheral_select(temp_dma_periph, temp_dma_channel, dmaChannel);
-
-    dma_init_struct.memory0_addr =(uint32_t)&(transponder->transponderIrDMABuffer);
-    dma_init_struct.direction = DMA_MEMORY_TO_PERIPH;
-    dma_init_struct.number = transponder->dma_buffer_size;
-    dma_init_struct.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
-    dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
-
-#if defined(GD32F4)
-    dma_init_struct.periph_memory_width = DMA_PERIPH_WIDTH_32BIT;
+    dma_init_struct.sub_periph = dmaChannel;
 #endif
 
-    dma_init_struct.circular_mode = DMA_CIRCULAR_MODE_DISABLE;
-    dma_init_struct.priority = DMA_PRIORITY_HIGH;
+    dma_init_struct.config.init_struct_s.memory0_addr =(uint32_t)&(transponder->transponderIrDMABuffer);
+    dma_init_struct.config.init_struct_s.direction = DMA_MEMORY_TO_PERIPH;
+    dma_init_struct.config.init_struct_s.number = transponder->dma_buffer_size;
+    dma_init_struct.config.init_struct_s.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
+    dma_init_struct.config.init_struct_s.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
 
-    gd32_dma_init((uint32_t)dmaRef, &dma_init_struct);
+#if defined(GD32F4) || defined(GD32H7)
+    dma_init_struct.config.init_struct_s.periph_memory_width = DMA_PERIPH_WIDTH_32BIT;
+#endif
+
+    dma_init_struct.config.init_struct_s.circular_mode = DMA_CIRCULAR_MODE_DISABLE;
+    dma_init_struct.config.init_struct_s.priority = DMA_PRIORITY_HIGH;
+
+    xDMA_Init((uint32_t)dmaRef, &dma_init_struct);
 
     timer_dma_enable((uint32_t)timer, timerDmaSource(timerHardware->channel));
 
@@ -247,7 +261,11 @@ void transponderIrDisable(void)
 
     IOInit(transponderIO, OWNER_TRANSPONDER, 0);
 
+#if defined(GD32H7)
+    IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_60MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLDOWN), alternateFunction);
+#else
     IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLDOWN), alternateFunction);
+#endif
 
 #ifdef TRANSPONDER_INVERTED
     IOHi(transponderIO);

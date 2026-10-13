@@ -49,6 +49,7 @@ typedef enum {
     LAUNCH_WING_EXIT_TIMEOUT,
     LAUNCH_WING_EXIT_HANDOVER,
     LAUNCH_WING_EXIT_MODE_OFF,
+    LAUNCH_WING_EXIT_HOLD,
 } launchWingExit_e;
 
 void launchWingInit(void);
@@ -65,7 +66,21 @@ bool launchWingThrottleValid(void);
 bool launchWingHoldsIterm(void);
 float launchWingGetThrottle(void);
 float launchWingHandoverFactor(void);
+bool launchWingHandingToHold(void);
 launchWingState_e launchWingGetState(void);
+// The course over the ground the launch ended flying, when it ended in flight with a GPS fix
+// at speed.
+bool launchWingGetCourseDeg(float *courseDeg);
+// This flight began with the aircraft thrown from where it was armed.
+bool launchWingThrown(void);
+// Armed for a launch, and still in the hand.
+bool launchWingAwaitingThrow(void);
+// A hold or a mission selected to take over when the launch ends, which may be on at arm. Selected
+// at arm, it waits until the launch has flown, or until it is deselected.
+bool launchWingHoldSelected(void);
+bool launchWingHoldWaits(void);
+// The launch flies on until the hold it hands to is running, so the two overlap for that long.
+bool launchWingOwnsAircraft(void);
 
 #else
 
@@ -73,5 +88,12 @@ static inline void launchWingArm(void) { }
 static inline void launchWingDisarm(void) { }
 static inline bool launchWingHoldsIterm(void) { return false; }
 static inline float launchWingHandoverFactor(void) { return 0.0f; }
+static inline float launchWingGetThrottle(void) { return 0.0f; }
+static inline bool launchWingThrottleValid(void) { return false; }
+static inline bool launchWingGetCourseDeg(float *courseDeg) { UNUSED(courseDeg); return false; }
+static inline bool launchWingThrown(void) { return false; }
+static inline bool launchWingAwaitingThrow(void) { return false; }
+static inline bool launchWingHoldWaits(void) { return false; }
+static inline bool launchWingOwnsAircraft(void) { return false; }
 
 #endif // USE_WING && USE_LAUNCH_WING

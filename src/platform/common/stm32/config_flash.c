@@ -376,6 +376,25 @@ uint32_t getFLASHSectorForEEPROM(void)
         failureMode(FAILURE_CONFIG_STORE_FAILURE);
     }
 }
+#elif defined(GD32H7)
+/*
+Sector 0     0x08000000 - 0x08000FFF 4 Kbytes
+Sector 1     0x08001000 - 0x08001FFF 4 Kbytes
+Sector 2     0x08002000 - 0x08002FFF 4 Kbytes
+...
+Sector 511   0x081FE000 - 0x081FEFFF 4 Kbytes
+Sector 512   0x081FF000 - 0x081FFFFF 4 Kbytes
+*/
+
+void getFLASHSectorForEEPROM(void)
+{
+    if ((uint32_t)&__config_start > 0x081FE000) {
+        // Not good
+        while (1) {
+            failureMode(FAILURE_CONFIG_STORE_FAILURE);
+        }
+    }
+}
 #endif
 
 #if defined(X32M7)
@@ -426,7 +445,7 @@ void configUnlock(void)
     DAL_FLASH_Unlock();
 #elif defined(AT32F4)
     flash_unlock();
-#elif defined(GD32F4)
+#elif defined(GD32F4) || defined(GD32H7)
     fmc_unlock();
 #else
     FLASH_Unlock();
@@ -470,7 +489,7 @@ void configLock(void)
         flash_lock();
 #elif defined(APM32F4)
         DAL_FLASH_Lock();
-#elif defined(GD32F4)
+#elif defined(GD32F4) || defined(GD32H7)
         fmc_lock();
 #else
         FLASH_Lock();
@@ -497,10 +516,12 @@ void configClearFlags(void)
     __DAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
 #elif defined(X32M7)
     // SMU flash operations return status directly.
-#elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
-    // NOP
 #elif defined(GD32F4)
     fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_OPERR | FMC_FLAG_WPERR | FMC_FLAG_PGMERR | FMC_FLAG_PGSERR);
+#elif defined(GD32H7)
+    fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGSERR | FMC_FLAG_RPERR | FMC_FLAG_RSERR | FMC_FLAG_ECCCOR | FMC_FLAG_ECCDET);
+#elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
+    // NOP
 #else
 # error "Unsupported CPU"
 #endif
@@ -676,6 +697,20 @@ configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer
 #elif defined(GD32F4)
     if (address % FLASH_PAGE_SIZE == 0) {
         const fmc_state_enum status = fmc_sector_erase(getFLASHSectorForEEPROM());
+        if (status != FMC_READY) {
+            return CONFIG_RESULT_FAILURE;
+        }
+    }
+
+    STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(uint32_t),  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
+    const fmc_state_enum status = fmc_word_program(address, *buffer);
+    if (status != FMC_READY) {
+        return CONFIG_RESULT_ADDRESS_INVALID;
+    }
+#elif defined(GD32H7)
+    if (address % FLASH_PAGE_SIZE == 0) {
+        getFLASHSectorForEEPROM();
+        const fmc_state_enum status = fmc_sector_erase(address);
         if (status != FMC_READY) {
             return CONFIG_RESULT_FAILURE;
         }

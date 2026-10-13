@@ -43,7 +43,7 @@
 #include "platform/light_ws2811strip_stm32.h"
 
 static IO_t ws2811IO = IO_NONE;
-#if defined(GD32F4)
+#if defined(GD32F4) || defined(GD32H7)
 static dmaResource_t *dmaRef = NULL;
 #else
 #error "No MCU definition in light_ws2811strip_stdperiph.c"
@@ -84,7 +84,8 @@ bool ws2811LedStripHardwareInit(void)
 
     timer_parameter_struct timer_initpara;
     timer_oc_parameter_struct timer_ocintpara;
-    dma_single_data_parameter_struct dma_init_struct;
+
+    DMA_InitTypeDef dma_init_struct;
 
     const timerHardware_t *timerHardware = timerAllocate(ledStripIoTag, OWNER_LED_STRIP, 0);
 
@@ -102,14 +103,12 @@ bool ws2811LedStripHardwareInit(void)
     }
 
     dmaRef = dmaSpec->ref;
-#if defined(GD32F4)
+
     uint32_t dmaChannel = dmaSpec->channel;
-#endif
 #else
     dmaRef = timerHardware->dmaRef;
-#if defined(GD32F4)
+
     uint32_t dmaChannel = timerHardware->dmaChannel;
-#endif
 #endif
 
     if (dmaRef == NULL || !dmaAllocate(dmaGetIdentifier(dmaRef), OWNER_LED_STRIP, 0)) {
@@ -118,8 +117,11 @@ bool ws2811LedStripHardwareInit(void)
 
     ws2811IO = IOGetByTag(ledStripIoTag);
     IOInit(ws2811IO, OWNER_LED_STRIP, 0);
+#if defined(GD32F4)
     IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLUP), timerHardware->alternateFunction);
-
+#else
+    IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_60MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLUP), timerHardware->alternateFunction);
+#endif
     RCC_ClockCmd(timerRCC(timerHardware->tim), ENABLE);
 
     // Stop timer
@@ -181,34 +183,35 @@ bool ws2811LedStripHardwareInit(void)
     /* configure DMA */
     xDMA_Cmd(dmaRef, DISABLE);
     xDMA_DeInit(dmaRef);
-    dma_single_data_para_struct_init(&dma_init_struct);
-    dma_init_struct.periph_addr = (uint32_t)timerCCR(timerHardware->tim, timerHardware->channel);
-    dma_init_struct.number = WS2811_DMA_BUFFER_SIZE;
-    dma_init_struct.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
-    dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
+    dma_single_data_para_struct_init(&dma_init_struct.config.init_struct_s);
+    dma_init_struct.config.init_struct_s.periph_addr = (uint32_t)timerCCR(timerHardware->tim, timerHardware->channel);
+    dma_init_struct.config.init_struct_s.number = WS2811_DMA_BUFFER_SIZE;
+    dma_init_struct.config.init_struct_s.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
+    dma_init_struct.config.init_struct_s.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
 
-#if defined(GD32F4)
+#if defined(GD32H7)
+    dma_init_struct.config.init_struct_s.request = dmaChannel;
+#else
 
-    uint32_t temp_dma_periph;
-    int temp_dma_channel;
-
-    gd32_dma_chbase_parse((uint32_t)dmaRef, &temp_dma_periph, &temp_dma_channel);
-
-    dma_channel_subperipheral_select(temp_dma_periph, temp_dma_channel, dmaChannel);
-
-    dma_init_struct.memory0_addr = (uint32_t)ledStripDMABuffer;
-    dma_init_struct.direction = DMA_MEMORY_TO_PERIPH;
-    dma_init_struct.periph_memory_width = DMA_PERIPH_WIDTH_32BIT;
-    dma_init_struct.priority = DMA_PRIORITY_ULTRA_HIGH;
+    dma_init_struct.sub_periph = dmaChannel;
 #endif
+
+    dma_init_struct.config.init_struct_s.memory0_addr = (uint32_t)ledStripDMABuffer;
+    dma_init_struct.config.init_struct_s.direction = DMA_MEMORY_TO_PERIPH;
+    dma_init_struct.config.init_struct_s.periph_memory_width = DMA_PERIPH_WIDTH_32BIT;
+    dma_init_struct.config.init_struct_s.priority = DMA_PRIORITY_ULTRA_HIGH;
+
 
 #if defined(USE_WS2811_SINGLE_COLOUR)
-    dma_init_struct.circular_mode = DMA_CIRCULAR_MODE_ENABLE;
+    dma_init_struct.config.init_struct_s.circular_mode = DMA_CIRCULAR_MODE_ENABLE;
 #else
-    dma_init_struct.circular_mode = DMA_CIRCULAR_MODE_DISABLE;
+    dma_init_struct.config.init_struct_s.circular_mode = DMA_CIRCULAR_MODE_DISABLE;
 #endif
 
-    gd32_dma_init((uint32_t)dmaRef, &dma_init_struct);
+    xDMA_Init((uint32_t)dmaRef, &dma_init_struct);
+#if defined(GD32F4)
+    timer_channel_dma_request_source_select((uint32_t)timer, TIMER_DMAREQUEST_UPDATEEVENT);
+#endif
     timer_dma_enable((uint32_t)timer, timerDmaSource(timerHardware->channel));
     xDMA_ITConfig(dmaRef, DMA_INT_FTF, ENABLE);
 
@@ -217,6 +220,10 @@ bool ws2811LedStripHardwareInit(void)
 
 void ws2811LedStripStartTransfer(void)
 {
+#ifdef USE_LED_STRIP_CACHE_MGMT
+    SCB_CleanDCache_by_Addr(ledStripDMABuffer, WS2811_DMA_BUF_CACHE_ALIGN_BYTES);
+#endif
+
     xDMA_SetCurrDataCounter(dmaRef, WS2811_DMA_BUFFER_SIZE);  // load number of bytes to be transferred
     timer_counter_value_config((uint32_t)timer, 0);
     timer_enable((uint32_t)timer);

@@ -123,8 +123,6 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
 {
     LINE_CODING* plc = (LINE_CODING*)Buf;
 
-    // assert_param(Len>=sizeof(LINE_CODING));
-
     switch (Cmd) {
        /* Not  needed for this driver, AT modem commands */
       case SEND_ENCAPSULATED_COMMAND:

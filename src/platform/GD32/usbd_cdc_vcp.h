@@ -22,7 +22,11 @@
 #ifndef USBD_CDC_VCP_H
 #define USBD_CDC_VCP_H
 
+#if defined(GD32F4)
 #include "gd32f4xx.h"
+#elif defined(GD32H7)
+#include "gd32h7xx.h"
+#endif
 
 #include "usbd_conf.h"
 #include <stdint.h>
@@ -42,6 +46,10 @@ uint8_t usbIsConnected(void);
 uint32_t CDC_BaudRate(void);
 void CDC_SetCtrlLineStateCb(void (*cb)(void *context, uint16_t ctrlLineState), void *context);
 void CDC_SetBaudRateCb(void (*cb)(void *context, uint32_t baud), void *context);
+
+#ifdef GD32H7
+void usb_bsp_para_init(void);
+#endif
 
 /* External variables --------------------------------------------------------*/
 extern __IO uint32_t bDeviceState; /* USB device status */

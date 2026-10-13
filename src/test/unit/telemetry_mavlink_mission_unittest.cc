@@ -58,6 +58,9 @@ extern "C" {
 
     // Fixed orbit period so LOITER_TURNS <-> ORBIT conversion is deterministic.
     uint16_t flightPlanNavOrbitPeriodDs(uint16_t) { return 250; }
+#ifdef USE_WING
+    float autopilotWingLoiterRadiusM(void) { return 60.0f; }
+#endif
 
     void saveConfigAndNotify(void) { s_saveCalls++; }
     uint32_t millis(void) { return s_millis; }
@@ -309,6 +312,31 @@ TEST_F(MavlinkMissionTest, DownloadEncodesWaypointsRoundTrip)
     EXPECT_EQ(requestItem(0), MAV_CMD_NAV_TAKEOFF);
     EXPECT_EQ(requestItem(1), MAV_CMD_NAV_LOITER_TURNS); // ORBIT hold -> LOITER_TURNS
     EXPECT_EQ(requestItem(2), MAV_CMD_NAV_LAND);
+}
+
+TEST_F(MavlinkMissionTest, DownloadGivesTheRadiusTheOrbitIsFlownAt)
+{
+    flightPlanConfig_t *plan = flightPlanConfigMutable();
+    plan->waypointCount = 1;
+    plan->waypoints[0] = makeWaypoint(300, 400, 2000, WAYPOINT_TYPE_HOLD, WAYPOINT_PATTERN_ORBIT, 500);
+
+    mavlink_message_t list;
+    mavlink_msg_mission_request_list_pack(GCS_SYS, GCS_COMP, &list, 1, 0, MAV_MISSION_TYPE_MISSION);
+    feed(list);
+    mavlink_message_t req;
+    mavlink_msg_mission_request_int_pack(GCS_SYS, GCS_COMP, &req, 1, 0, 0, MAV_MISSION_TYPE_MISSION);
+    feed(req);
+    const mavlink_message_t *item = lastOfType(MAVLINK_MSG_ID_MISSION_ITEM_INT);
+    ASSERT_NE(item, nullptr);
+    mavlink_mission_item_int_t it;
+    mavlink_msg_mission_item_int_decode(item, &it);
+    EXPECT_EQ(it.command, MAV_CMD_NAV_LOITER_TURNS);
+    EXPECT_FLOAT_EQ(2.0f, it.param1);       // 500 ds at 250 ds a turn
+#ifdef USE_WING
+    EXPECT_FLOAT_EQ(60.0f, it.param3);      // a wing loiters, at the loiter radius
+#else
+    EXPECT_FLOAT_EQ(8.0f, it.param3);
+#endif
 }
 
 TEST_F(MavlinkMissionTest, MissionItemReachedEmitted)

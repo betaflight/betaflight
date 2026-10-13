@@ -21,5 +21,10 @@
 
 #pragma once
 
+#if defined(GD32H7)
+#define MAX_PERIPHERAL_DMA_OPTIONS 16
+#define MAX_TIMER_DMA_OPTIONS 16
+#else
 #define MAX_PERIPHERAL_DMA_OPTIONS 2
 #define MAX_TIMER_DMA_OPTIONS 3
+#endif

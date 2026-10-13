@@ -70,6 +70,8 @@
 
 #define USE_EXTI
 
+#define USE_PID_DENOM_CHECK
+
 #define FLASH_PAGE_SIZE ((uint32_t)0x4000) // 16K sectors
 
 // ITCM is in short supply for this target.

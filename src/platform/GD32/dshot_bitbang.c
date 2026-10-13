@@ -89,7 +89,20 @@ FAST_DATA_ZERO_INIT timeUs_t dshotFrameUs;
      DEF_TIMER(TIMER0,  CH1, NONE,   0, 1),
      DEF_TIMER(TIMER0,  CH2, NONE,   0, 1),
      DEF_TIMER(TIMER0,  CH3, NONE,   0, 0),
+#elif defined(GD32H7)
+    // XXX TODO:GD32H7 can use any timer for pacing
+    // GD32H7: dmaopt is a direct index into dmaChannelSpec[] due to DMAMUX architecture.
+    // Index mapping: 0-7 = DMA0 Ch0-7, 8-15 = DMA1 Ch0-7
+    // DMA0 CH0,1,2,3 (indices 5/6/7) are duplicated for TIMER0 and TIMER7.
+    DEF_TIMER(TIMER7,  CH0, NONE,   0,  0, 0),  // pacer: DMA0 CH0
+    DEF_TIMER(TIMER7,  CH1, NONE,   0,  1, 0),  // pacer: DMA0 CH1
+    DEF_TIMER(TIMER7,  CH2, NONE,   0,  2, 0),  // pacer: DMA0 CH2
+    DEF_TIMER(TIMER7,  CH3, NONE,   0,  3, 0),  // pacer: DMA1 CH3
 
+    DEF_TIMER(TIMER0,  CH0, NONE,   0, 0, 0),  // pacer: DMA1 CH0
+    DEF_TIMER(TIMER0,  CH1, NONE,   0, 1, 0),  // pacer: DMA1 CH1
+    DEF_TIMER(TIMER0,  CH2, NONE,   0, 2, 0),  // pacer: DMA1 CH2
+    DEF_TIMER(TIMER0,  CH3, NONE,   0, 3, 0),  // pacer: DMA1 CH3
  #else
  #error MCU dependent code required
  #endif
@@ -776,6 +789,14 @@ bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorCon
         const timerHardware_t *timerHardware = timerGetConfiguredByTag(motorConfig->ioTags[reorderedMotorIndex]);
         const IO_t io = IOGetByTag(motorConfig->ioTags[reorderedMotorIndex]);
 
+        if (timerHardware == NULL) {
+            /* not enough motors initialised for the mixer or a break in the motors */
+            device->vTable = NULL;
+            dshotMotorCount = 0;
+            bbStatus = DSHOT_BITBANG_STATUS_MOTOR_PIN_CONFLICT;
+            return false;
+        }
+
         uint8_t output = motorConfig->motorInversion ?  timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output;
         bbPuPdMode = (output & TIMER_OUTPUT_INVERTED) ? BB_GPIO_PULLDOWN : BB_GPIO_PULLUP;
 
@@ -798,9 +819,11 @@ bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorCon
         bbMotors[motorIndex].pinIndex = pinIndex;
         bbMotors[motorIndex].io = io;
         bbMotors[motorIndex].output = output;
-
+#if defined(GD32H7)
+        bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_MODE_OUTPUT, GPIO_OSPEED_60MHZ, GPIO_OTYPE_PP, bbPuPdMode);
+#else
         bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_MODE_OUTPUT, GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, bbPuPdMode);
-
+#endif
         IOInit(io, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
         IOConfigGPIO(io, bbMotors[motorIndex].iocfg);
         if (output & TIMER_OUTPUT_INVERTED) {

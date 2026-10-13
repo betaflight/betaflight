@@ -71,6 +71,8 @@
 #define ADC_TAG_MAP_COUNT 16
 #elif defined(GD32F4)
 #define ADC_TAG_MAP_COUNT 16
+#elif defined(GD32H7)
+#define ADC_TAG_MAP_COUNT 21
 #else
 #define ADC_TAG_MAP_COUNT 10
 #endif
@@ -116,7 +118,7 @@ typedef struct adcDevice_s {
 #endif
 #if !defined(USE_DMA_SPEC)
     dmaResource_t* dmaResource;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(APM32F4) || defined(STM32N6) || defined(GD32F4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(APM32F4) || defined(STM32N6) || defined(GD32F4) || defined(GD32H7)
     uint32_t channel;
 #endif
 #endif // !defined(USE_DMA_SPEC)
@@ -138,7 +140,11 @@ typedef struct adcOperatingConfig_s {
     uint32_t adcChannel;        // Channel number for this input. Note that H7, G4, and N6 HAL requires this to be 32-bit encoded number.
     ioTag_t tag;
     uint8_t dmaIndex;           // index into DMA buffer in case of sparse channels
+#if defined(GD32H7)
+    uint32_t sampleTime;
+#else
     uint8_t sampleTime;
+#endif
     bool enabled;
 #if PLATFORM_TRAIT_ADC_DEVICE
     adcDevice_e adcDevice;      // ADCDEV_x for this input
@@ -235,4 +241,14 @@ void adcGetChannelValues(void);
 #define TEMPSENSOR_CAL1_TEMP               ((int32_t) 25)
 #define TEMPSENSOR_CAL1_V                  (1.40f)
 #define TEMPSENSOR_SLOPE                   (-4.4f) //  mV/C
+#endif
+
+#ifdef GD32H7
+#define VREFINT_EXPECTED                   (1489U)  // 1.2/3.3*4095
+#define VREFINT_CAL_VREF                   (3300U)
+#define TEMPSENSOR_CAL_VREFANALOG          (3300U)
+#define TEMPSENSOR_CAL1_TEMP               ((int32_t) 25)
+#define TEMPSENSOR_CAL2_TEMP               ((int32_t) -40)
+#define TEMPSENSOR_CAL1_ADDR               ((uint16_t*) (0x1FF0F7C0))
+#define TEMPSENSOR_CAL2_ADDR               ((uint16_t*) (0x1FF0F7C2))
 #endif

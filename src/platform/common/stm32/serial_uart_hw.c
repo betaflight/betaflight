@@ -78,7 +78,7 @@ static void enableRxIrq(const uartHardware_t *hardware)
             .NVIC_IRQChannelCmd = ENABLE,
         };
         NVIC_Init(&nvicInit);
-#elif defined(GD32F4)
+#elif defined(USE_GDBSP_DRIVER)
         nvic_irq_enable(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
 #else
 # error "Unhandled MCU type"
@@ -165,6 +165,13 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         const ioConfig_t ioCfg = IO_CONFIG(
             GPIO_MODE_AF,
             GPIO_OSPEED_2MHZ,
+            pushPull ? GPIO_OTYPE_PP : GPIO_OTYPE_OD,
+            ((const unsigned[]){GPIO_PUPD_NONE, GPIO_PUPD_PULLDOWN, GPIO_PUPD_PULLUP})[pull]
+        );
+#elif defined(GD32H7)
+        const ioConfig_t ioCfg = IO_CONFIG(
+            GPIO_MODE_AF,
+            GPIO_OSPEED_12MHZ,
             pushPull ? GPIO_OTYPE_PP : GPIO_OTYPE_OD,
             ((const unsigned[]){GPIO_PUPD_NONE, GPIO_PUPD_PULLDOWN, GPIO_PUPD_PULLUP})[pull]
         );

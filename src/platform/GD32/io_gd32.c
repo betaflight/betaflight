@@ -42,6 +42,15 @@ const struct ioPortDef_s ioPortDefs[] = {
     { RCC_AHB1(PE) },
     { RCC_AHB1(PF) },
 };
+#elif defined(GD32H7)
+const struct ioPortDef_s ioPortDefs[] = {
+    { RCC_AHB4(PA) },
+    { RCC_AHB4(PB) },
+    { RCC_AHB4(PC) },
+    { RCC_AHB4(PD) },
+    { RCC_AHB4(PE) },
+    { RCC_AHB4(PF) },
+};
 #else
 # error "IO PortDefs not defined for MCU"
 #endif
@@ -51,7 +60,7 @@ uint32_t IO_EXTI_Line(IO_t io)
     if (!io) {
         return 0;
     }
-#if defined(GD32F4)
+#if defined(GD32F4) || defined(GD32H7)
     return 1 << IO_GPIOPinIdx(io);
 #elif defined(SIMULATOR_BUILD)
     return 0;
@@ -97,7 +106,7 @@ void IOLo(IO_t io)
     if (!io) {
         return;
     }
-#if defined(GD32F4)
+#if defined(GD32F4) || defined(GD32H7)
     GPIO_BC(PERIPH_INT(IO_GPIO(io))) = IO_Pin(io);
 #endif
 }
@@ -110,12 +119,12 @@ void IOToggle(IO_t io)
 
     uint32_t mask = IO_Pin(io);
     // For GD32F4,use toggle register to toggle GPIO pin status
-#if defined(GD32F4)
+#if defined(GD32F4) || defined(GD32H7)
     GPIO_TG(PERIPH_INT(IO_GPIO(io))) = mask;
 #endif
 }
 
-#if defined(GD32F4)
+#if defined(GD32F4) || defined(GD32H7)
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg)
 {

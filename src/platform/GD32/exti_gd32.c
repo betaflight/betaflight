@@ -45,7 +45,7 @@ extiChannelRec_t extiChannelRecs[16];
 static const uint8_t extiGroups[16] = { 0, 1, 2, 3, 4, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6 };
 static uint8_t extiGroupPriority[EXTI_IRQ_GROUPS];
 
-#if defined(GD32F4)
+#if defined(GD32F4) || defined(GD32H7)
 static const uint8_t extiGroupIRQn[EXTI_IRQ_GROUPS] = {
     EXTI0_IRQn,
     EXTI1_IRQn,
@@ -68,7 +68,11 @@ static uint32_t triggerLookupTable[] = {
 void EXTIInit(void)
 {
     /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
+#if defined(GD32F4)
     RCC_ClockCmd(RCC_APB2(SYSCFG), ENABLE);
+#else
+    RCC_ClockCmd(RCC_APB4(SYSCFG), ENABLE);
+#endif
 
     memset(extiChannelRecs, 0, sizeof(extiChannelRecs));
     memset(extiGroupPriority, 0xff, sizeof(extiGroupPriority));
@@ -81,6 +85,10 @@ void EXTIHandlerInit(extiCallbackRec_t *self, extiHandlerCallback *fn)
 
 void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t config, extiTrigger_t trigger)
 {
+    if (!io) {
+        return;
+    }
+
     int chIdx = IO_GPIOPinIdx(io);
 
     if (chIdx < 0) {
@@ -98,8 +106,11 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
 
     syscfg_exti_line_config(IO_GPIO_PortSource(io), IO_GPIO_PinSource(io));
 
+#if defined(GD32H7)
+    uint32_t extiLine = (chIdx & 0xFF);
+#else
     uint32_t extiLine = IO_EXTI_Line(io);
-
+#endif
     exti_init(extiLine, EXTI_INTERRUPT, triggerLookupTable[trigger]);
 
     if (extiGroupPriority[group] > irqPriority) {
@@ -125,14 +136,17 @@ void EXTIRelease(IO_t io)
 
 void EXTIEnable(IO_t io)
 {
-#if defined(GD32F4)
+#if defined(GD32F4) || defined(GD32H7)
     uint32_t extiLine = IO_EXTI_Line(io);
 
     if (!extiLine) {
         return;
     }
-
+#if defined(GD32H7)
+    EXTI_INTEN0 |= extiLine;
+#else
     EXTI_INTEN |= extiLine;
+#endif
 #else
 # error "Unknown MCU"
 #endif
@@ -141,15 +155,20 @@ void EXTIEnable(IO_t io)
 void EXTIDisable(IO_t io)
 {
     (void) io;
-#if defined(GD32F4)
+#if defined(GD32F4) || defined(GD32H7)
     uint32_t extiLine = IO_EXTI_Line(io);
 
     if (!extiLine) {
         return;
     }
 
+#if defined(GD32H7)
+    EXTI_INTEN0 &= ~extiLine;
+    EXTI_PD0 = extiLine;
+#else
     EXTI_INTEN &= ~extiLine;
     EXTI_PD = extiLine;
+#endif
 #else
 # error "Unknown MCU"
 #endif
@@ -159,9 +178,15 @@ void EXTIDisable(IO_t io)
 
 static void EXTI_IRQHandler(uint32_t mask)
 {
+#if defined(GD32H7)
+    uint32_t exti_active = (EXTI_INTEN0 & EXTI_PD0) & mask;
+
+    EXTI_PD0 = exti_active;  // clear pending mask (by writing 1)
+#else
     uint32_t exti_active = (EXTI_INTEN & EXTI_PD) & mask;
 
     EXTI_PD = exti_active;  // clear pending mask (by writing 1)
+#endif
 
     while (exti_active) {
         unsigned idx = 31 - __builtin_clz(exti_active);

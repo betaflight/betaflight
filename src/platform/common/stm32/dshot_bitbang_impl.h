@@ -127,7 +127,7 @@ typedef struct dmaRegCache_s {
     uint32_t CBR1;
     uint32_t CSAR;
     uint32_t CDAR;
-#elif defined(GD32F4)
+#elif defined(GD32F4) || defined(GD32H7)
     uint32_t CHCTL;
     uint32_t CHCNT;
     uint32_t CHPADDR;
