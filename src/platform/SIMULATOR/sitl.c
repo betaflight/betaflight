@@ -570,7 +570,7 @@ static void* tcpThread(void* data)
     dyad_setUpdateTimeout(0.01f);
 
     while (workerRunning) {
-        dyad_update();
+        tcpDyadUpdate();
     }
 
     dyad_shutdown();
