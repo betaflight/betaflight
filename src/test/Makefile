@@ -909,6 +909,14 @@ flight_plan_rescue_unittest_DEFINES := \
 		ENABLE_FLIGHT_PLAN=1 \
 		ENABLE_RESCUE_PLAN=1
 
+osd_screensaver_unittest_SRC := \
+		$(USER_DIR)/osd/osd_screensaver.c \
+		$(USER_DIR)/common/maths.c
+
+osd_screensaver_unittest_DEFINES := \
+		USE_OSD= \
+		USE_OSD_SCREENSAVER=
+
 osd_nav_map_unittest_SRC := \
 		$(USER_DIR)/osd/osd_nav_map.c \
 		$(USER_DIR)/flight/nav_trail.c \
