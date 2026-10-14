@@ -70,14 +70,15 @@ struct packet_t {
     std::string text;
 };
 
-// The goggles: a screen drawn by the writes, shown at the draw, and the cells written since a clear
+// The goggles: a screen drawn by the writes, a byte a cell and 0 for a blank one, shown at the draw
 static struct {
     screen_t cells;
     screen_t shown;
-    bool sent[ROWS][COLS];
     bool blind;                 // Switched on again: nothing is drawn until a clear
-    uint32_t maxLoad;           // Of the cells written since a clear, at a draw, in thousandths of a cell
+    uint32_t maxLoad;           // Of the screen at a draw, in bytes of the encoding of DJI O3/Goggles 2
 } goggles;
+
+#define DISPLAY_PORT 1          // MSP descriptor of the display's port
 
 static std::vector<packet_t> packets;
 static uint32_t bytes;
@@ -91,26 +92,42 @@ static screen_t blank(void)
 
 static void gogglesOff(void)
 {
-    goggles.cells = blank();
-    memset(goggles.sent, 0, sizeof(goggles.sent));
+    goggles.cells = screen_t(ROWS, std::string(COLS, '\0'));
     goggles.blind = false;
 }
 
-// What DJI O3/Goggles 2 count against their limit: a cell each, 0.75 more for a cell two columns
-// on from the one before it, 1.3 further, in screen order
+// What DJI O3/Goggles 2 hold the screen to: the cells read as little-endian 32 bit words, each coded
+// in LEB128, at most 902 bytes
 static uint32_t gogglesLoad(void)
 {
     uint32_t load = 0;
-    int last = -1;
 
-    for (int p = 0; p < ROWS * COLS; p++) {
-        if (goggles.sent[p / COLS][p % COLS]) {
-            load += 1000 + (p - last == 2 ? 750 : (p - last > 2 ? 1300 : 0));
-            last = p;
+    for (int p = 0; p < ROWS * COLS; p += 4) {
+        uint32_t word = 0;
+        for (int i = 0; i < 4; i++) {
+            word |= (uint32_t)(uint8_t)goggles.cells[(p + i) / COLS][(p + i) % COLS] << (8 * i);
         }
+        do {
+            load++;
+            word >>= 7;
+        } while (word);
     }
 
     return load;
+}
+
+// The screen as the goggles show it: 0 is a blank cell
+static screen_t showing(void)
+{
+    screen_t s = goggles.cells;
+
+    for (auto &row : s) {
+        for (auto &c : row) {
+            c = c ? c : ' ';
+        }
+    }
+
+    return s;
 }
 
 extern "C" {
@@ -125,7 +142,6 @@ extern "C" {
             EXPECT_LE(p.text.size(), 30u);
             for (size_t i = 0; i < p.text.size() && p.col + i < COLS && p.row < ROWS; i++) {
                 goggles.cells[p.row][p.col + i] = p.text[i];
-                goggles.sent[p.row][p.col + i] = true;
             }
             break;
         case MSP_DP_CLEAR_SCREEN:
@@ -133,7 +149,7 @@ extern "C" {
             break;
         case MSP_DP_DRAW_SCREEN:
             if (!goggles.blind) {
-                goggles.shown = goggles.cells;
+                goggles.shown = showing();
             }
             goggles.maxLoad = MAX(goggles.maxLoad, gogglesLoad());
             break;
@@ -148,15 +164,16 @@ extern "C" {
     }
 
     uint32_t mspSerialTxBytesFree(serialPortIdentifier_e) { return txFree; }
+    mspDescriptor_t getMspSerialPortDescriptor(const serialPortIdentifier_e) { return DISPLAY_PORT; }
     uint32_t millis(void) { return now; }
 }
 
-static displayPort_t *init(uint16_t budget = 0)
+static displayPort_t *init(uint16_t budget = DISPLAYPORT_MSP_DJI_BUDGET_DEFAULT)
 {
     vcdProfileMutable()->video_system = VIDEO_SYSTEM_HD;
     osdConfigMutable()->canvas_cols = COLS;
     osdConfigMutable()->canvas_rows = ROWS;
-    displayPortProfileMspMutable()->cellBudget = budget;
+    displayPortProfileMspMutable()->djiBudget = budget;
     displayPortProfileMspMutable()->sendChanges = true;
     for (int i = 0; i < DISPLAYPORT_SEVERITY_COUNT; i++) {
         displayPortProfileMspMutable()->fontSelection[i] = i;
@@ -166,12 +183,31 @@ static displayPort_t *init(uint16_t budget = 0)
     txFree = UINT32_MAX;
     gogglesOff();
     goggles.cells[0] = "what the goggles held before";
-    goggles.shown = goggles.cells;
+    goggles.shown = showing();
     goggles.maxLoad = 0;
 
     packets.clear();
     displayPort_t *dp = displayPortMspInit();
     packets.clear();
+
+    return dp;
+}
+
+// A DJI O3 Air Unit polls on the display's port
+static void o3Polls(void)
+{
+    for (int n = 0; n < 5; n++) {
+        for (int16_t cmd : { MSP_FC_VERSION, MSP_NAME, MSP_FILTER_CONFIG, MSP_PID_ADVANCED, MSP_STATUS, MSP_RC }) {
+            displayPortMspPolled(DISPLAY_PORT, cmd);
+        }
+    }
+}
+
+static displayPort_t *initDji(uint16_t budget = DISPLAYPORT_MSP_DJI_BUDGET_DEFAULT)
+{
+    displayPort_t *dp = init(budget);
+
+    o3Polls();
 
     return dp;
 }
@@ -709,11 +745,80 @@ TEST(DisplayPortMspTest, ShowsWhatTheOsdDraws)
     EXPECT_LT(total / 499, whole / 2);
 }
 
-// Load: a cell each, plus 0.75 for a cell two columns after the one before it and 1.3 further, in screen
-// order. The screen of the OSD here is at 125 to 145 after a clear and builds up as the horizon moves.
+TEST(DisplayPortMspTest, TheO3IsFoundByItsPolls)
+{
+    displayPort_t *dp = init();
+
+    for (int n = 0; n < 4; n++) {
+        displayPortMspPolled(DISPLAY_PORT, MSP_FILTER_CONFIG);
+        displayPortMspPolled(DISPLAY_PORT + 1, MSP_FILTER_CONFIG);  // Another port
+    }
+    frame(dp, { at(3, 2, "A B") });
+    EXPECT_EQ("A B", writes()[0].text);
+    displayPortMspPolled(DISPLAY_PORT, MSP_FILTER_CONFIG);         // The fifth
+    frame(dp, { at(3, 2, "A B") });
+    EXPECT_EQ(1, count(MSP_DP_CLEAR_SCREEN));                       // The screen goes again, for DJI
+    EXPECT_EQ(std::string("A\0B", 3), writes()[0].text);
+    EXPECT_EQ(drawn({ at(3, 2, "A B") }), goggles.shown);
+}
+
+TEST(DisplayPortMspTest, NotAnO3WhenTheOsdIsDrawnFromItsOwnPolls)
+{
+    for (int16_t cmd : { MSP_OSD_CONFIG, MSP_ATTITUDE }) {          // A V1 air unit, or Configurator
+        displayPort_t *dp = init();
+
+        displayPortMspPolled(DISPLAY_PORT, cmd);
+        o3Polls();
+        frame(dp, { at(3, 2, "A B") });
+        EXPECT_EQ("A B", writes()[0].text);
+    }
+}
+
+TEST(DisplayPortMspTest, DjiGetsSpacesAsBlankCells)
+{
+    displayPort_t *dp = initDji();
+
+    frame(dp, { at(3, 2, "ABCD"), at(4, 0, "1.2 V") });
+    frame(dp, { at(3, 2, "AB  "), at(4, 0, "1.2 V") });
+    auto w = writes();
+    ASSERT_EQ(1u, w.size());
+    EXPECT_EQ(std::string("AB\0\0", 4), w[0].text);
+    EXPECT_EQ(drawn({ at(3, 2, "AB"), at(4, 0, "1.2 V") }), goggles.shown);
+    frame(dp, { at(4, 0, "1.2 V") });                                // Blanked
+    EXPECT_EQ(drawn({ at(4, 0, "1.2 V") }), goggles.shown);
+    for (const auto &p : packets) {
+        EXPECT_EQ(std::string::npos, p.text.find(' '));
+    }
+}
+
+// On the bench rows of 53 X fit 637 cells and rows of 53 0x01 850, at 901 and 902 bytes
+TEST(DisplayPortMspTest, TheBudgetIsTheBytesOfTheScreen)
+{
+    for (char c : { 'X', '\x01' }) {
+        displayPort_t *dp = initDji();
+        std::vector<packet_t> s;
+
+        for (int r = 0; r < ROWS; r++) {
+            s.push_back(at(r, 0, std::string(26, c)));
+            s.push_back(at(r, 26, std::string(27, c)));
+        }
+        frame(dp, s);
+        EXPECT_LE(gogglesLoad(), 902u);
+        int cells = 0;
+        for (const auto &row : goggles.shown) {
+            for (char x : row) {
+                cells += x == c;
+            }
+        }
+        EXPECT_EQ(c == 'X' ? 12 * COLS : 16 * COLS, cells) << "glyph " << (int)c;   // Whole rows: the next write is over
+    }
+}
+
+// The screen of the OSD here takes 370 to 398 bytes. The budget holds while the writes of a frame come
+// before the draw blanks what it left out, so a screen near the budget is cleared now and then.
 TEST(DisplayPortMspTest, TheGogglesAreClearedBeforeTheyWouldTakeNoMore)
 {
-    displayPort_t *dp = init(200);
+    displayPort_t *dp = initDji(395);
     uint32_t seed = 7;
     int clears = 0;
     int behind = 0;
@@ -725,16 +830,16 @@ TEST(DisplayPortMspTest, TheGogglesAreClearedBeforeTheyWouldTakeNoMore)
         clears += count(MSP_DP_CLEAR_SCREEN);
         behind += wrongCells(s, last) != 0;
         last = s;
+        goggles.maxLoad = MAX(goggles.maxLoad, gogglesLoad());
     }
-    EXPECT_LE(goggles.maxLoad, 200000u);
-    EXPECT_GT(clears, 3);
-    EXPECT_LE(behind, clears);                          // A frame left behind for each clear at most
+    EXPECT_LE(goggles.maxLoad, 395u);                   // Never more than the goggles take
+    EXPECT_GT(clears, 39);
+    EXPECT_LE(behind, 2 * clears);
 }
 
 TEST(DisplayPortMspTest, RewritingCellsDoesNotUseTheBudget)
 {
-    displayPort_t *dp = init(20);
-
+    displayPort_t *dp = initDji(285);
     int clears = 0;
 
     frame(dp, { at(2, 4, "ALT     0 M") });
@@ -750,21 +855,21 @@ TEST(DisplayPortMspTest, RewritingCellsDoesNotUseTheBudget)
 
 TEST(DisplayPortMspTest, AScreenTooBigIsClearedOnlyOnceASecond)
 {
-    displayPort_t *dp = init(100);
-    const auto s = busy(20);                            // 200 cells
+    displayPort_t *dp = initDji(395);
+    const auto s = busy(40);                            // 400 cells
     int clears = 0;
 
     for (int n = 0; n < 125; n++) {                     // 10 s
         frame(dp, s);
         clears += count(MSP_DP_CLEAR_SCREEN);
-        EXPECT_LE(goggles.maxLoad, 100000u);
+        EXPECT_LE(gogglesLoad(), 400u);
     }
     EXPECT_LE(clears, 11);
 }
 
 TEST(DisplayPortMspTest, AScreenTooBigForTheTableIsShown)
 {
-    displayPort_t *dp = init();
+    displayPort_t *dp = initDji();
     std::vector<packet_t> s;
 
     for (int i = 0; i < 120; i++) {
@@ -779,14 +884,13 @@ TEST(DisplayPortMspTest, AScreenTooBigForTheTableIsShown)
     EXPECT_LE(clears, 11);
 }
 
-TEST(DisplayPortMspTest, NoBudgetOnAnotherCanvas)
+TEST(DisplayPortMspTest, NoBudgetAndSpacesWithoutDji)
 {
-    displayPort_t *dp = init(32);
-    osdConfigMutable()->canvas_cols = 50;               // What HDZero announces
-    osdConfigMutable()->canvas_rows = 18;
+    displayPort_t *dp = init(266);
 
-    frame(dp, { at(0, 0, "123456789012345678901234"), at(1, 0, "123456789012345678901234") });
+    frame(dp, { at(0, 0, "123456789012345678901234"), at(1, 0, "1234 678") });
     EXPECT_EQ(2u, writes().size());
+    EXPECT_EQ("1234 678", writes()[1].text);
 }
 
 TEST(DisplayPortMspTest, TheOsdWaitsForRoomOnlyForSoLong)

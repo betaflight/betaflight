@@ -37,7 +37,7 @@ void pgResetFn_displayPortProfileMsp(displayPortProfile_t *displayPortProfile)
     for (uint8_t font = 0; font < DISPLAYPORT_SEVERITY_COUNT; font++) {
         displayPortProfile->fontSelection[font] = font;
     }
-    displayPortProfile->cellBudget = DISPLAYPORT_MSP_CELL_BUDGET_DEFAULT;
+    displayPortProfile->djiBudget = DISPLAYPORT_MSP_DJI_BUDGET_DEFAULT;
     displayPortProfile->sendChanges = true;
 }
 
