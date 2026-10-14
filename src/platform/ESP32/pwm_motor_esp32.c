@@ -222,7 +222,7 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorDevConf
 
     ledc_ll_set_clock_divider(&LEDC, LEDC_LOW_SPEED_MODE, 0, dividerQ8);
     ledc_ll_set_duty_resolution(&LEDC, LEDC_LOW_SPEED_MODE, 0, resolution);
-    esp32PwmMotorMaxDuty = maxDuty;
+    esp32PwmMotorMaxDuty = maxDuty - 1;
     ledc_ll_timer_rst(&LEDC, LEDC_LOW_SPEED_MODE, 0);
     ledc_ll_ls_timer_update(&LEDC, LEDC_LOW_SPEED_MODE, 0);
     ledc_ll_timer_resume(&LEDC, LEDC_LOW_SPEED_MODE, 0);  // un-pause: the timer must run
