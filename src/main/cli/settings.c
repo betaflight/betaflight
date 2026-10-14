@@ -1291,6 +1291,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_AP_WING_VERT_ACCEL,        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 200 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, vertAccel) },
     { PARAM_NAME_AP_WING_CRUISE_SPEED,      VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50, 500 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, cruiseSpeed) },
     { PARAM_NAME_AP_WING_TURN_PITCH_FF,     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, turnPitchFf) },
+    { PARAM_NAME_AP_WING_TURN_YAW_FF,       VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, turnYawFf) },
     { PARAM_NAME_AP_WING_MAX_BANK,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 60 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, maxBank) },
     { PARAM_NAME_AP_WING_L1_PERIOD,         VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50, 400 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, l1Period) },
     { PARAM_NAME_AP_WING_L1_DAMPING,        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 50, 100 }, PG_AUTOPILOT_WING, offsetof(autopilotWingConfig_t, l1Damping) },

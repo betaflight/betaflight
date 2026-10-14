@@ -657,14 +657,18 @@ bool isAutopilotInControl(void)
     return wingLat.engaged;
 }
 
+// A level turn yaws the nose round at g * sin(bank) / V about the body axis; while the autopilot
+// banks the aircraft the yaw loop holds that, rather than holding the nose off the turn.
 float autopilotGetYawRate(void)
 {
-    return 0.0f;
+    const autopilotWingConfig_t *cfg = autopilotWingConfig();
+    const float bankRad = DEGREES_TO_RADIANS(constrainf(attitude.values.roll / 10.0f, -WING_BANK_LIMIT_DEG, WING_BANK_LIMIT_DEG));
+    return -cfg->turnYawFf * 0.01f * RADIANS_TO_DEGREES(GRAVITY_CMSS * sin_approx(bankRad) / (cfg->cruiseSpeed * 10.0f));
 }
 
 bool autopilotYawControlActive(void)
 {
-    return false;
+    return FLIGHT_MODE(POS_HOLD_MODE) && wingLat.engaged && autopilotWingConfig()->turnYawFf > 0;
 }
 
 void autopilotSetYawRateLimit(float rateLimitDps)
