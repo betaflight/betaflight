@@ -98,7 +98,7 @@ void positionNavSetTargetEf(
     cmd.rampValid = false;
     cmd.rampRateMps = currentTargetVelCmS.v[ENU_U] * 0.01f;
     cmd.rampRateSlewed = handOver;
-    cmd.approachSlowdownM = 0.0f;
+    cmd.approachDecelMps2 = 0.0f;
     cmd.approachStillRadiusM = 0.0f;
     cmd.approachStill = false;
     cmd.velocityFfValid = false;
@@ -112,6 +112,9 @@ void positionNavSetTargetEf(
 
     cmd.callback = callback;
     cmd.callbackUserData = userData;
+#ifdef USE_WING
+    cmd.track = NAV_TRACK_POINT;
+#endif
 
     // The commanded velocity deliberately survives the handover: zeroing it here put a one-cycle
     // notch in the target at every leg change, which the position controller answers with a pitch
@@ -134,6 +137,13 @@ void positionNavMoveTargetEf(const vector3_t *targetPosEfM)
     cmd.fixedTarget = false;
 }
 
+void positionNavLowerTargetAltitude(float upM)
+{
+    if (cmd.active && upM < cmd.targetPosEfM.v[ENU_U]) {
+        cmd.targetPosEfM.v[ENU_U] = upM;
+    }
+}
+
 void positionNavClearTarget(void)
 {
     cmd.active = false;
@@ -145,6 +155,25 @@ void positionNavClearTarget(void)
     withinAcceptanceRadius = false;
     withinAcceptanceAltitude = false;
 }
+
+#ifdef USE_WING
+void positionNavSetTrackLine(const vector2_t *startEfM)
+{
+    if (cmd.active) {
+        cmd.track = NAV_TRACK_LINE;
+        cmd.trackStartEfM = *startEfM;
+    }
+}
+
+void positionNavSetTrackLoiter(float radiusM, int8_t direction)
+{
+    if (cmd.active) {
+        cmd.track = NAV_TRACK_LOITER;
+        cmd.loiterRadiusM = radiusM;
+        cmd.loiterDirection = direction;
+    }
+}
+#endif
 
 bool positionNavHasActiveTarget(void)
 {
@@ -230,17 +259,22 @@ void positionNavStartAfresh(void)
     previousTargetVelValid = false;
 }
 
-void positionNavSetApproachSlowdown(float slowdownM, float stillRadiusM)
+void positionNavSetApproachBrake(float decelMps2, float stillRadiusM)
 {
-    cmd.approachSlowdownM = slowdownM;
+    cmd.approachDecelMps2 = decelMps2;
     cmd.approachStillRadiusM = stillRadiusM;
     cmd.approachStill = false;
 }
 
-float positionNavApproachTaperMps(float cruiseSpeedMps, float slowdownM, float stillRadiusM, float distM)
+// The last stretch closes on the position gain, joined to the braking curve where their slopes
+// meet, so the deceleration never exceeds decelMps2 and the speed runs out at the still radius in
+// finite time rather than tailing off towards it.
+float positionNavApproachSpeedMps(float cruiseSpeedMps, float decelMps2, float stillRadiusM, float distM)
 {
-    const float spanM = fmaxf(slowdownM - stillRadiusM, MIN_DISTANCE_M);
-    return cruiseSpeedMps * constrainf((distM - stillRadiusM) / spanM, 0.0f, 1.0f);
+    const float gapM = fmaxf(distM - stillRadiusM, 0.0f);
+    const float kneeM = decelMps2 / sq(POS_TO_VEL_KP);
+    const float speedMps = (gapM <= kneeM) ? POS_TO_VEL_KP * gapM : sqrtf(decelMps2 * (2.0f * gapM - kneeM));
+    return fminf(cruiseSpeedMps, speedMps);
 }
 
 void positionNavSetAltitudeArrivalRequired(bool required)
@@ -336,16 +370,12 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
     } else {
         float desiredSpeedMps = fminf(cmd.cruiseSpeedMps, POS_TO_VEL_KP * horizDistM);
 
-        // Bleed speed off from a stated range rather than waiting for the position gain to bite a few
-        // metres out: the craft arrives slow instead of braking hard on the doorstep, and a hot arrival
-        // has somewhere to shed its speed. Linear in distance, so the speed decays exponentially in
-        // time - the shape the legacy rescue flew.
-        if (cmd.approachSlowdownM > 0.0f) {
+        if (cmd.approachDecelMps2 > 0.0f) {
             if (horizDistM <= cmd.approachStillRadiusM) {
                 cmd.approachStill = true;
             }
             desiredSpeedMps = cmd.approachStill ? 0.0f
-                : positionNavApproachTaperMps(cmd.cruiseSpeedMps, cmd.approachSlowdownM, cmd.approachStillRadiusM, horizDistM);
+                : positionNavApproachSpeedMps(cmd.cruiseSpeedMps, cmd.approachDecelMps2, cmd.approachStillRadiusM, horizDistM);
         }
 
         if (cmd.maxDecelMps2 > 0.0f) {

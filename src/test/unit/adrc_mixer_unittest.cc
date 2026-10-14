@@ -77,8 +77,9 @@ controlRateConfig_t testControlRateProfile;
 
 void setRcThrottle(const float normalizedThrottle)
 {
-    rcCommand[THROTTLE] = PWM_RANGE_MIN + normalizedThrottle * PWM_RANGE;
-    rcData[THROTTLE] = rcCommand[THROTTLE];
+    // rcCommand[THROTTLE] is the normalised 0..1 throttle since upstream #15821; rcData stays in us
+    rcCommand[THROTTLE] = normalizedThrottle;
+    rcData[THROTTLE] = PWM_RANGE_MIN + normalizedThrottle * PWM_RANGE;
 }
 
 void expectAdrcFeedback(const float expectedAxisScale, const float expectedYawLimit)

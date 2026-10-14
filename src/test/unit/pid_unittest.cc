@@ -1659,19 +1659,21 @@ TEST(pidControllerTest, testAdrcAppliedOutputRejectsInvalidScaleAndClassicProfil
 // ADRC-030: the ground-wc fields must stay the trailing bytes of pidProfile_t so a PG version 13
 // (Ordering only. This is NOT a migration guarantee: pidProfiles is a PG array, see PidProfilesPgVersion below.)
 // pidProfiles is one PG array restored by a single memcpy, so a blob written with a different element size must
-// not be loaded at all. The PR line is at version 15; version-13 blobs (b10.1, b11-exp2..exp8) and version-14 blobs (the b11 tester
-// build, which still had adrc_zeta_*) have to leave the defaults in place instead of loading mis-strided.
+// not be loaded at all. The PR line is at version 1 (see pid.c); version-13 blobs (b10.1, b11-exp2..exp8), version-14 blobs (the b11 tester
+// build, which still had adrc_zeta_*) and version-15 blobs (the PR head and mp1/mp2 before upstream #15546 grew the element) have to
+// leave the defaults in place instead of loading mis-strided.
 extern "C" {
     extern const pgRegistry_t pidProfiles_Registry;
 }
 TEST(pidProfileLayoutTest, PidProfilesPgVersionRejectsOlderBlobs)
 {
-    EXPECT_EQ(15, pgVersion(&pidProfiles_Registry));
+    EXPECT_EQ(1, pgVersion(&pidProfiles_Registry));
     // Four 260-byte "old" elements filled with a pattern that would be poison if it were loaded.
     static uint8_t oldBlob[260 * PID_PROFILE_COUNT];
     memset(oldBlob, 0xA5, sizeof(oldBlob));
     EXPECT_FALSE(pgLoad(&pidProfiles_Registry, oldBlob, sizeof(oldBlob), 13));
     EXPECT_FALSE(pgLoad(&pidProfiles_Registry, oldBlob, sizeof(oldBlob), 14)); // b11 tester build (with adrc_zeta_*)
+    EXPECT_FALSE(pgLoad(&pidProfiles_Registry, oldBlob, sizeof(oldBlob), 15)); // PR head / mp1 / mp2, before upstream #15546
     for (int i = 0; i < PID_PROFILE_COUNT; i++) {
         EXPECT_EQ(10, pidProfilesMutable(i)->adrc_ground_wc);
         EXPECT_EQ(100, pidProfilesMutable(i)->adrc_b0_scale_min);
@@ -1679,7 +1681,7 @@ TEST(pidProfileLayoutTest, PidProfilesPgVersionRejectsOlderBlobs)
     // Same version, same size: loads.
     static pidProfile_t cur[PID_PROFILE_COUNT];
     for (int i = 0; i < PID_PROFILE_COUNT; i++) { resetPidProfile(&cur[i]); cur[i].adrc_ground_wc = 20 + i; }
-    EXPECT_TRUE(pgLoad(&pidProfiles_Registry, cur, sizeof(cur), 15));
+    EXPECT_TRUE(pgLoad(&pidProfiles_Registry, cur, sizeof(cur), 1));
     for (int i = 0; i < PID_PROFILE_COUNT; i++) {
         EXPECT_EQ(20 + i, pidProfilesMutable(i)->adrc_ground_wc);
     }

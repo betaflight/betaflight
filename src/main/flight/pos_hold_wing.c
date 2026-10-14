@@ -21,47 +21,75 @@
 
 #ifdef USE_POSITION_HOLD
 
-#include "math.h"
-#include "build/debug.h"
 #include "common/maths.h"
 
-#include "config/config.h"
-#include "fc/core.h"
-#include "fc/runtime_config.h"
 #include "fc/rc.h"
+#include "fc/runtime_config.h"
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
-#include "flight/imu.h"
-#include "flight/position.h"
-#include "rx/rx.h"
-#include "sensors/compass.h"
+#include "flight/gps_rescue.h"
+#include "flight/landing_wing.h"
+#include "flight/position_estimator.h"
+#include "scheduler/scheduler.h"
 
 #include "pg/pos_hold.h"
 #include "pos_hold.h"
 
+// Event driven off positionEstimatorUpdate(); without the estimator the task falls back to
+// periodic scheduling so that mode entry and exit are still serviced.
+#define POSHOLD_FALLBACK_PERIOD_US (2 * TASK_PERIOD_HZ(POSHOLD_TASK_RATE_HZ))
+
+static bool isEnabled;
+
 void posHoldInit(void)
 {
+    isEnabled = false;
 }
 
 bool posHoldUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 {
     UNUSED(currentTimeUs);
-    UNUSED(currentDeltaTimeUs);
-    return false;
+
+    if (positionEstimatorTakeUpdate(POS_EST_CONSUMER_POSHOLD)) {
+        return true;
+    }
+
+    return currentDeltaTimeUs >= POSHOLD_FALLBACK_PERIOD_US;
 }
 
-void updatePosHold(timeUs_t currentTimeUs) {
-    UNUSED(currentTimeUs);
+// The aircraft loiters about where position hold engaged. The roll stick takes over the steering,
+// and the loiter starts again about wherever it is let go; the pitch stick belongs to altitude hold.
+void updatePosHold(timeUs_t currentTimeUs)
+{
+    landingWingNoteDepartureCourse(currentTimeUs);
+#ifdef USE_GPS_RESCUE
+    gpsRescueNoteMaxAltitude();
+#endif
+
+    if (!FLIGHT_MODE(POS_HOLD_MODE)) {
+        if (isEnabled) {
+            resetPositionControl(POSHOLD_TASK_RATE_HZ);
+        }
+        isEnabled = false;
+        return;
+    }
+
+    if (!isEnabled) {
+        resetPositionControl(POSHOLD_TASK_RATE_HZ);
+        isEnabled = true;
+    }
+    setSticksActiveStatus(!failsafeIsActive() && getRcDeflectionAbs(FD_ROLL) > posHoldConfig()->deadband * 0.01f);
+    positionControl();
 }
 
-bool posHoldFailure(void) {
-    // used only to display warning in OSD if requested but failing
-    return false;
+bool posHoldFailure(void)
+{
+    return FLIGHT_MODE(POS_HOLD_MODE) && !positionEstimatorIsValidXY();
 }
 
-bool posHoldReady(void) {
-    // fixed-wing pos hold has no entry-condition check yet
-    return false;
+bool posHoldReady(void)
+{
+    return positionEstimatorIsValidXY();
 }
 
 #endif // USE_POSITION_HOLD

@@ -169,7 +169,8 @@ static pt3Filter_t posNoisyPidsLpf[EF_AXIS_COUNT]; // smooths F, the noisiest te
 static bool isPositionHeld;
 static bool wasNavActive = false;
 static bool abortNavRequested = false;
-static bool forcePitchForward = false;
+static bool headingRecovery = false;
+static float headingRecoveryPitchDeg = 0.0f;
 static bool forceLevelPark = false;
 static bool wasAngleSaturated = false;
 
@@ -347,7 +348,7 @@ void autopilotInit(void)
     ap.brakingTimeS = 0.0f;
     ap.isPosHoldBraking = false;
     abortNavRequested = false;
-    forcePitchForward = false;
+    headingRecovery = false;
     forceLevelPark = false;
     apNavHeadingOverrideValid = false;
     disableYawControl();
@@ -380,7 +381,7 @@ void autopilotCaptureHoverThrottleForAltHold(void)
         altHoldCapturedHoverPwm = 0;
         return;
     }
-    altHoldCapturedHoverPwm = (uint16_t)lrintf(constrainf(rcCommand[THROTTLE], (float)AP_HOVER_THROTTLE_CAPTURE_MIN, (float)AP_HOVER_THROTTLE_CAPTURE_MAX));
+    altHoldCapturedHoverPwm = (uint16_t)lrintf(constrainf(rcThrottleToUs(rcCommand[THROTTLE]), (float)AP_HOVER_THROTTLE_CAPTURE_MIN, (float)AP_HOVER_THROTTLE_CAPTURE_MAX));
 }
 
 void autopilotClearAltHoldHoverThrottle(void)
@@ -481,14 +482,23 @@ void autopilotSetYawTarget(float headingDeg)
     apExternalYawTargetDeg = headingDeg;
 }
 
-void pitchForwardOverride(bool request)
+// Flown blind while the IMU has no heading to hold position with: level on roll, pitchDeg on pitch,
+// the nose left alone, and the nav command's altitude still flown. Level climbs where it drifts; a
+// forward pitch lets the GPS course teach the IMU its heading.
+void autopilotHeadingRecovery(bool active, float pitchDeg)
 {
-    forcePitchForward = request;
+    headingRecovery = active;
+    headingRecoveryPitchDeg = pitchDeg;
 }
 
-bool isPitchForwardOverrideActive(void)
+void pitchForwardOverride(bool request)
 {
-    return forcePitchForward;
+    autopilotHeadingRecovery(request, 35.0f);
+}
+
+bool isHeadingRecoveryActive(void)
+{
+    return headingRecovery;
 }
 
 void autopilotForceLevelPark(bool request)
@@ -583,7 +593,7 @@ void resetPositionControl(unsigned taskRateHz)
 {
     UNUSED(taskRateHz);
     abortNavRequested = false;
-    forcePitchForward = false;
+    headingRecovery = false;
     forceLevelPark = false;
     apNavHeadingOverrideValid = false;
     ap.sticksActive = false;
@@ -814,7 +824,7 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
         // rc.c flies the stick instead of our rate, so track the heading rather than
         // accumulating an error to fight on release - the hold resumes wherever the
         // pilot leaves the nose.
-        const bool sticksMoving = fabsf(rcCommand[FD_YAW]) >= (float)cfg->stickDeadband;
+        const bool sticksMoving = fabsf(rcCommand[FD_YAW]) >= rcUsSpanToNorm(cfg->stickDeadband);
 
         if (!apYawHoldHeadingValid || sticksMoving) {
             apYawHoldHeadingDeg = headingDeg;
@@ -1185,14 +1195,14 @@ bool positionControl(void)
         handlepositionControlFailure();
         return false;
     }
-    // Ahead of the pitch-forward: alt hold keeps flying this command's altitude ramp through it.
+    // Ahead of the heading recovery: alt hold keeps flying this command's altitude ramp through it.
     positionNavUpdate(dt, est);
-    if (forcePitchForward) {
+    if (headingRecovery) {
         wasNavActive = false;
         disableYawControl();
         setYawDisableReason(11);
         autopilotAngle[AI_ROLL]  = 0.0f;
-        autopilotAngle[AI_PITCH] = 35.0f;
+        autopilotAngle[AI_PITCH] = headingRecoveryPitchDeg;
         DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 200);   //!< Status Flags
         DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, 200);  //!< Status Flags
         DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, 200);  //!< Status Flags

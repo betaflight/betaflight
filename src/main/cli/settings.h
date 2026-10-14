@@ -36,6 +36,8 @@ typedef enum {
 #endif
 #ifndef USE_WING
     TABLE_AP_YAW_MODE,
+#endif
+#if !defined(USE_WING) || ENABLE_FLIGHT_PLAN
     TABLE_AP_RX_LOSS_POLICY,
     TABLE_AP_GEOFENCE_ACTION,
 #endif
@@ -171,6 +173,7 @@ typedef enum {
 #ifdef USE_WING
     TABLE_TPA_SPEED_TYPE,
     TABLE_YAW_TYPE,
+    TABLE_LOITER_DIRECTION,
 #endif // USE_WING
 #ifdef USE_TRANSPONDER
     TABLE_TRANSPONDER_PROVIDER,

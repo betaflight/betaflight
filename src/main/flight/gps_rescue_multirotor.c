@@ -256,15 +256,6 @@ static void controlAltitude(void)
     altitudeControl(rescueState.intent.targetAltitudeCm, HZ_TO_INTERVAL_US(TASK_GPS_RESCUE_RATE_HZ), rescueState.intent.targetAltitudeVelCmS, vzLim);
 }
 
-bool oneSecondPassed(timeUs_t currentTimeUs, timeUs_t *lastTimeUs) {
-    timeDelta_t deltaTime = cmpTimeUs(currentTimeUs, *lastTimeUs);
-    if (deltaTime >= 1000000) {
-        *lastTimeUs = currentTimeUs;
-        return true;
-    }
-    return false;
-}
-
 static void rescueDisarmNow(void)
 {
     rescueState.intent.secondsFailing = 0;
@@ -284,7 +275,6 @@ static void rescueEmergDescent(void)
     }
 }
 
-
 static void performSanityChecks(void)
 {
     static float prevAltitudeCm = 0.0f;
@@ -293,6 +283,12 @@ static void performSanityChecks(void)
     static int8_t secondsLowSats = 0;
     static int8_t secondsDoingNothing;
     const timeUs_t currentTimeUs = micros();
+
+    static timeUs_t lastSanityCheck = 0;
+    static bool oneSecondPassed = true;
+    if (!oneSecondPassed && cmpTimeUs(currentTimeUs, lastSanityCheck) >= 1000000) {
+        oneSecondPassed = true;
+    }
 
     if (rescueState.phase == RESCUE_IDLE) {
         rescueState.failure = RESCUE_HEALTHY;
@@ -358,10 +354,12 @@ static void performSanityChecks(void)
 
     DEBUG_SET(DEBUG_RTH, 2, rescueState.phase);  //!< Rescue Phase [enum:rescuePhase_e]
 
-    static timeUs_t lastSanityCheck = 0;
-    if (!oneSecondPassed(currentTimeUs, &lastSanityCheck)) {
+    if (!oneSecondPassed) {
         return;
     }
+
+    lastSanityCheck = currentTimeUs;
+    oneSecondPassed = false;
 
     if (!rescueState.sensor.gpsHealthy) {
         rescueState.failure = RESCUE_GPSLOST;

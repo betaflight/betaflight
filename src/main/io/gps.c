@@ -1294,6 +1294,12 @@ static void gpsConfigureUblox(void)
 
 static void gpsConfigureHardware(void)
 {
+    // A serial provider set at runtime, such as by `defaults nosave` on a
+    // board using DroneCAN, has no port until the next boot.
+    if (!gpsPort) {
+        return;
+    }
+
     switch (gpsConfig()->provider) {
     case GPS_NMEA:
 #ifdef USE_GPS_NMEA
@@ -1617,7 +1623,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
         if (gpsConfig()->provider == GPS_UBLOX || gpsConfig()->provider == GPS_NMEA) {      // TODO  Send ublox message to nmea GPS?
             if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_ON) {
                 // when we are connected up, and get a 3D fix, enable the 'flight' fix model
-                if (!gpsData.ubloxUsingFlightModel && STATE(GPS_FIX)) {
+                if (gpsPort && !gpsData.ubloxUsingFlightModel && STATE(GPS_FIX)) {
                     gpsData.ubloxUsingFlightModel = true;
                     ubloxSendNAV5Message(gpsConfig()->gps_ublox_flight_model);
                 }
