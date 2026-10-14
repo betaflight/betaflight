@@ -119,7 +119,7 @@ static void setQuiescent(void)
     attitude.values.yaw = 0;
     testRcDeflection[FD_ROLL] = 0.0f;
     testRcDeflection[FD_PITCH] = 0.0f;
-    rcCommand[THROTTLE] = PWM_RANGE_MIN;
+    rcCommand[THROTTLE] = 0.0f;
     gpsSol.numSat = 0;
     gpsSol.groundSpeed = 0;
     stateFlags = 0;
