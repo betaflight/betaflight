@@ -79,8 +79,6 @@ static float smoothedRxRateHz = 100.0f;
 
 static bool isRxDataNew = false;
 static bool isRxRateValid = false;
-static float rcCommandDivider = 500.0f;
-static float rcCommandYawDivider = 500.0f;
 
 enum {
     ROLL_FLAG = 1 << ROLL,
@@ -159,26 +157,14 @@ float getMaxRcDeflectionAbs(void)
 #ifndef THROTTLE_LOOKUP_LENGTH
 # define THROTTLE_LOOKUP_LENGTH 12
 #endif
-static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE
+static float lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE
 
-static int16_t rcLookupThrottle(int32_t tmp)
+static float rcLookupThrottle(float throttle)
 {
-    // tmp is 0…PWM_RANGE
-    // Spread that range evenly over THROTTLE_LOOKUP_LENGTH-1 steps
-    const int32_t steps  = THROTTLE_LOOKUP_LENGTH - 1;
-    const int32_t scaled = tmp * steps;                // 0…PWM_RANGE*steps
-    const int32_t idx    = scaled / PWM_RANGE;         // 0…steps
-    const int32_t rem    = scaled % PWM_RANGE;         // for interpolation
+    const float scaled = constrainf(throttle, 0.0f, 1.0f) * (THROTTLE_LOOKUP_LENGTH - 1);
+    const int index = MIN((int)scaled, THROTTLE_LOOKUP_LENGTH - 2);
 
-    // If index goes outside the valid range, clamp it
-    if (idx >= steps) {
-        return lookupThrottleRC[steps];
-    } else if (idx < 0) {
-        return lookupThrottleRC[0];
-    }
-
-    // Otherwise linearly interpolate between lookupThrottleRC[idx] and [idx+1]
-    return scaleRange(rem, 0, PWM_RANGE, lookupThrottleRC[idx], lookupThrottleRC[idx + 1]);
+    return lookupThrottleRC[index] + (scaled - index) * (lookupThrottleRC[index + 1] - lookupThrottleRC[index]);
 }
 
 #define SETPOINT_RATE_LIMIT_MIN -1998.0f
@@ -405,7 +391,7 @@ static FAST_CODE void processRcSmoothingFilter(void)
             rxDataToSmooth[i] = i == THROTTLE ? rcCommand[i] : rawSetpoint[i];
             DEBUG_SET(DEBUG_RC_INTERPOLATION, i, i < THROTTLE
                 ? lrintf(rxDataToSmooth[i])
-                : lrintf(rxDataToSmooth[i]) - 1000);  //!< [index:0..3] Smoothing Input ({roll|pitch|yaw|throttle})
+                : lrintf(rxDataToSmooth[i] * 1000.0f));  //!< [index:0..3] Smoothing Input ({roll|pitch|yaw|throttle})
         }
     }
 
@@ -489,7 +475,7 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
     feedforwardData.isPrevPacketDuplicate[axis] = isDuplicate;
 
     // Jitter attenuation factor calculation
-    float jitterAttenuator = ((rcCommandDeltaAbs + feedforwardData.prevRcCommandDeltaAbs[axis]) * 0.5f + 1.0f) * pid->feedforwardJitterFactorInv;
+    float jitterAttenuator = ((rcCommandDeltaAbs + feedforwardData.prevRcCommandDeltaAbs[axis]) * 0.5f + rcUsSpanToNorm(1.0f)) * pid->feedforwardJitterFactorInv;
     jitterAttenuator = MIN(jitterAttenuator, 1.0f);
     feedforwardData.prevRcCommandDeltaAbs[axis] = rcCommandDeltaAbs;
 
@@ -538,7 +524,7 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
         DEBUG_SET(DEBUG_FEEDFORWARD, 0, lrintf(setpoint));                                        //!< Setpoint (dbg-axis) [unit:dps]
         DEBUG_SET(DEBUG_FEEDFORWARD, 1, lrintf(setpointSpeed * 0.01f));                           //!< Setpoint Speed (dbg-axis) [unit:100dps2]
         DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(feedforwardBoost * 0.01f));                        //!< Feedforward Boost (dbg-axis) [unit:100]
-        DEBUG_SET(DEBUG_FEEDFORWARD, 3, lrintf(rcCommandDeltaAbs * 10.0f));                       //!< RC Command Delta (dbg-axis) [unit:0.1]
+        DEBUG_SET(DEBUG_FEEDFORWARD, 3, lrintf(rcCommandDeltaAbs * 1000.0f));                     //!< RC Command Delta (dbg-axis) [unit:0.001]
         DEBUG_SET(DEBUG_FEEDFORWARD, 4, lrintf(jitterAttenuator * 100.0f));                       //!< Jitter Attenuator (dbg-axis) [unit:%]
         DEBUG_SET(DEBUG_FEEDFORWARD, 5, (int16_t)(feedforwardData.isPrevPacketDuplicate[axis]));  //!< Duplicate Packet (dbg-axis)
         // 6 and 7 used for feedforward yaw hold logging
@@ -647,20 +633,14 @@ FAST_CODE void processRcCommand(void)
             float angleRate;
 
             if ((axis == FD_YAW) && autopilotYawControlActive()
-                && fabsf(rcCommand[FD_YAW]) < (float)autopilotConfig()->stickDeadband) {
+                && fabsf(rcCommand[FD_YAW]) < rcUsSpanToNorm(autopilotConfig()->stickDeadband)) {
                 // Autopilot yaw control including GPS Rescue. A yaw stick deflection past
                 // the deadband hands yaw back to the pilot.
                 angleRate = autopilotGetYawRate();
                 rcDeflection[axis] = 0;
                 rcDeflectionAbs[axis] = 0;
             } else {
-                // scale rcCommandf to range [-1.0, 1.0]
-                float rcCommandf;
-                if (axis == FD_YAW) {
-                    rcCommandf = rcCommand[axis] / rcCommandYawDivider;
-                } else {
-                    rcCommandf = rcCommand[axis] / rcCommandDivider;
-                }
+                const float rcCommandf = rcCommand[axis];
                 rcDeflection[axis] = rcCommandf;
                 const float rcCommandfAbs = fabsf(rcCommandf);
                 rcDeflectionAbs[axis] = rcCommandfAbs;
@@ -698,48 +678,46 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
 {
     isRxDataNew = true;
 
+    const float midrc = rcUsToNorm(rxConfig()->midrc);
     for (int axis = 0; axis < 3; axis++) {
-        float rc = constrainf(rcData[axis] - rxConfig()->midrc, -500.0f, 500.0f); // -500 to 500
+        float rc = constrainf(rcGetChannel(axis) - midrc, NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX);
         float rcDeadband = 0;
         if (axis == ROLL || axis == PITCH) {
-            rcDeadband = rcControlsConfig()->deadband;
+            rcDeadband = rcUsSpanToNorm(rcControlsConfig()->deadband);
         } else {
-            rcDeadband  = rcControlsConfig()->yaw_deadband;
+            rcDeadband = rcUsSpanToNorm(rcControlsConfig()->yaw_deadband);
             rc *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
         }
-        rcCommand[axis] = fapplyDeadband(rc, rcDeadband);
+        rcCommand[axis] = fapplyDeadband(rc, rcDeadband) / (NORMALISED_RANGE_MAX - rcDeadband);
     }
 
-    int32_t tmp;
+    float throttle;
     if (featureIsEnabled(FEATURE_3D)) {
-        tmp = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
-        tmp = (uint32_t)(tmp - PWM_RANGE_MIN);
+        throttle = (constrainf(rcGetChannel(THROTTLE), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX) - NORMALISED_RANGE_MIN) / NORMALISED_RANGE;
     } else {
-        tmp = constrain(rcData[THROTTLE], rxConfig()->mincheck, PWM_RANGE_MAX);
-        tmp = (uint32_t)(tmp - rxConfig()->mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - rxConfig()->mincheck);
+        const float mincheck = rcUsToNorm(rxConfig()->mincheck);
+        throttle = (constrainf(rcGetChannel(THROTTLE), mincheck, NORMALISED_RANGE_MAX) - mincheck) / (NORMALISED_RANGE_MAX - mincheck);
     }
 
     if (getLowVoltageCutoff()->enabled) {
-        tmp = tmp * getLowVoltageCutoff()->percentage / 100;
+        throttle *= getLowVoltageCutoff()->percentage / 100.0f;
     }
 
-    rcCommand[THROTTLE] = rcLookupThrottle(tmp);
+    rcCommand[THROTTLE] = rcLookupThrottle(throttle);
 
     if (featureIsEnabled(FEATURE_3D) && !failsafeIsActive()) {
+        const float midThrottle = rcUsToThrottle(rxConfig()->midrc);
         if (!flight3DConfig()->switched_mode3d) {
             if (IS_RC_MODE_ACTIVE(BOX3D)) {
-                fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
-                rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
+                rcCommand[THROTTLE] = midThrottle + rcCommand[THROTTLE] * (1.0f - midThrottle);
             }
         } else {
             if (IS_RC_MODE_ACTIVE(BOX3D)) {
                 reverseMotors = true;
-                fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
-                rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MIN - rxConfig()->midrc);
+                rcCommand[THROTTLE] = midThrottle - rcCommand[THROTTLE] * midThrottle;
             } else {
                 reverseMotors = false;
-                fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
-                rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
+                rcCommand[THROTTLE] = midThrottle + rcCommand[THROTTLE] * (1.0f - midThrottle);
             }
         }
     }
@@ -819,9 +797,6 @@ static float quadraticBezier(float x, float p0x, float p1x, float p2x, float p0y
 
 void initRcProcessing(void)
 {
-    rcCommandDivider = 500.0f - rcControlsConfig()->deadband;
-    rcCommandYawDivider = 500.0f - rcControlsConfig()->yaw_deadband;
-
     float thrMid   = currentControlRateProfile->thrMid8   / 100.0f;  // normalized x coordinate for hover point
     float expo     = currentControlRateProfile->thrExpo8   / 100.0f;  // normalized expo (0.0 .. 1.0)
     float thrHover = currentControlRateProfile->thrHover8 / 100.0f;  // normalized y coordinate for hover point
@@ -838,7 +813,6 @@ void initRcProcessing(void)
         Segment 2: from (thrMid, thrHover) to (1, 1)
           - ymid = thrHover, ymax = 1.
           - The control point cp2y blends between [thrHover + (1 - thrHover) / 2] for expo=0 and thrHover for expo=1.
-      - The output y is mapped from [0,1] to the PWM range.
     */
 
     // control points: move between 'on the diagonal' and 'at the same height as the hover point'
@@ -860,7 +834,7 @@ void initRcProcessing(void)
             y = quadraticBezier(x, thrMid, cp2x, 1.0f, thrHover, cp2y, 1.0f);
         }
 
-        lookupThrottleRC[i] = lrintf(scaleRangef(y, 0.0f, 1.0f, PWM_RANGE_MIN, PWM_RANGE_MAX));
+        lookupThrottleRC[i] = y;
     }
 
     switch (currentControlRateProfile->rates_type) {
