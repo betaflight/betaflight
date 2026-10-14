@@ -31,7 +31,6 @@
 
 #include "cli/cli.h"
 
-#include "common/crc.h"
 #include "common/maths.h"
 #include "common/utils.h"
 
@@ -51,18 +50,14 @@
 
 // A busy screen sent whole, as the OSD draws it, needs more than a 115200 baud link carries at the
 // frame rate of the OSD, and what does not fit in the serial buffer is dropped without a trace. The
-// goggles keep what they hold between draws, so the driver sends only the writes of the OSD that
-// changed. It keeps no copy of the screen, only a table of the writes the goggles hold: where each
-// one is, its length and attribute, and a hash of its characters, and two bits a cell for the limit
-// of DJI O3 Air Unit + Goggles 2.
+// goggles keep what they hold between draws, so the driver keeps a copy of it, cell by cell, as the
+// MAX7456 driver does with its shadow buffer, and sends only the cells that changed.
 //
 // The screen is the 53x20 default HD canvas, or smaller. A canvas that does not fit, or the setting
 // switched off, gets the commands of the OSD as they come.
 #define MSP_DP_COLS OSD_HD_COLS
 #define MSP_DP_ROWS OSD_HD_ROWS
-
-// Writes the table holds. A screen with more is still shown, and cleared and sent whole now and then.
-#define MSP_DP_WRITES 96
+#define MSP_DP_CELLS (MSP_DP_COLS * MSP_DP_ROWS)
 
 // MSP_DP_WRITE_STRING carries at most this many characters. DJI O3/Goggles 2 accept 32, other
 // receivers may be sized for 30.
@@ -71,6 +66,10 @@
 // Bytes a write costs besides its characters: the MSP v1 frame (6) and the write header (4)
 #define MSP_DP_WRITE_OVERHEAD 10
 #define MSP_DP_COMMAND_BYTES 7
+
+// Unchanged cells between two changed ones of a write go along with them when there are fewer of
+// them than the bytes a write of its own costs
+#define MSP_DP_MERGE_GAP MSP_DP_WRITE_OVERHEAD
 
 // The goggles can miss a write, or be switched off and on, and nothing tells the flight controller.
 // Switched on again, DJI Goggles 2 draw nothing until a CLEAR_SCREEN. So the goggles are cleared and
@@ -90,33 +89,22 @@
 // So a word takes one to four bytes, as far as its last cell that is not blank, one more when that
 // cell holds at least 0x80, 0x40, 0x20 or 0x10 as the first to fourth cell of the word, and a blank
 // word takes one byte.
-#define MSP_DP_WORDS (MSP_DP_COLS * MSP_DP_ROWS / 4)
+#define MSP_DP_WORDS (MSP_DP_CELLS / 4)
 
 // A DJI O3 Air Unit polls the flight controller five times a second over MSP for, among others,
 // FILTER_CONFIG, and never for OSD_CONFIG or ATTITUDE. The DJI air unit before it (V1, Vista),
 // which draws the OSD itself, asks for both, and so does Configurator. An O4 was not measured.
 #define MSP_DP_DJI_POLLS 5
 
-// Flags of a write in the table, in bits of the attribute that are never sent
-#define MSP_DP_TOUCHED DISPLAYPORT_MSP_ATTR_VERSION     // Written in this frame
-#define MSP_DP_STALE   BIT(5)                           // To be sent again
-
-typedef struct mspDpWrite_s {
-    uint8_t row;
-    uint8_t col;
-    uint8_t len;                                // 0 for a free entry
-    uint8_t attr;
-    uint32_t hash;
-} mspDpWrite_t;
-
 static displayPort_t mspDisplayPort;
 static serialPortIdentifier_e displayPortSerial;
 static int8_t djiPolls;                         // FILTER_CONFIG polls on the display's port, -1 when it is not DJI
 
 static struct {
-    mspDpWrite_t writes[MSP_DP_WRITES];         // What the goggles hold
-    uint64_t held[MSP_DP_ROWS];                 // Cells the goggles hold a character in, a space sent as one too
-    uint64_t wide[MSP_DP_ROWS];                 // Of those, the ones that make their word a byte longer (DJI)
+    uint8_t cells[MSP_DP_CELLS];                // What the goggles hold, as sent: 0 for a blank cell
+    uint8_t fonts[MSP_DP_CELLS / 4];            // Font page of each cell, 2 bits
+    uint64_t blink[MSP_DP_ROWS];                // Cells sent to blink
+    uint64_t drawn[MSP_DP_ROWS];                // Cells the OSD wrote in this frame
     uint16_t load;                              // Bytes of the screen the goggles hold, in their encoding (DJI)
     uint32_t refreshAt;
     uint32_t repaintUntil;
@@ -191,47 +179,88 @@ static uint8_t cellByte(char c)
     return (c == ' ' && dji()) ? 0 : c;
 }
 
+// A cell that shows something: not blank, not a space
+static bool shown(uint8_t c)
+{
+    return c && c != ' ';
+}
+
+static uint8_t fontAt(int cell)
+{
+    return (mspScreen.fonts[cell / 4] >> (cell % 4 * 2)) & DISPLAYPORT_MSP_ATTR_FONT;
+}
+
+static uint64_t span(int col, int len)
+{
+    return (((uint64_t)1 << len) - 1) << col;
+}
+
+// Cells of a row that show something
+static uint64_t shownCells(int row)
+{
+    uint64_t bits = 0;
+
+    for (int col = 0; col < MSP_DP_COLS; col++) {
+        bits |= (uint64_t)shown(mspScreen.cells[row * MSP_DP_COLS + col]) << col;
+    }
+
+    return bits;
+}
+
+static int countShown(void)
+{
+    int n = 0;
+
+    for (int row = 0; row < MSP_DP_ROWS; row++) {
+        n += popcount64(shownCells(row));
+    }
+
+    return n;
+}
+
 // Bytes of a word of the screen the goggles hold, in their encoding
 static int wordLoad(int word)
 {
     for (int pos = 3; pos >= 0; pos--) {
-        const int row = (word * 4 + pos) / MSP_DP_COLS;
-        const int col = (word * 4 + pos) % MSP_DP_COLS;
+        const uint8_t c = mspScreen.cells[word * 4 + pos];
 
-        if ((mspScreen.held[row] >> col) & 1) {
-            return pos + 1 + ((mspScreen.wide[row] >> col) & 1);
+        if (c) {
+            return pos + 1 + (c >= (0x80 >> pos));
         }
     }
 
     return 1;
 }
 
-// Note the cells of a write as the goggles hold them, spaces for no string
-static void putCells(int row, int col, const char *string, int len)
+// Load of the screen with cells from cell on put as bytes, the copy of the screen left so
+static int putLoad(int cell, const uint8_t *bytes, int len)
 {
-    const int first = (row * MSP_DP_COLS + col) / 4;
-    const int last = (row * MSP_DP_COLS + col + len - 1) / 4;
     int load = mspScreen.load;
 
-    for (int word = first; word <= last; word++) {
+    for (int word = cell / 4; word <= (cell + len - 1) / 4; word++) {
         load -= wordLoad(word);
     }
-    for (int i = 0; i < len; i++) {
-        const uint8_t c = cellByte(string ? string[i] : ' ');
-        const uint64_t bit = (uint64_t)1 << (col + i);
-
-        mspScreen.held[row] = c ? mspScreen.held[row] | bit : mspScreen.held[row] & ~bit;
-        mspScreen.wide[row] = c >= (0x80 >> ((row * MSP_DP_COLS + col + i) & 3)) ? mspScreen.wide[row] | bit : mspScreen.wide[row] & ~bit;
-    }
-    for (int word = first; word <= last; word++) {
+    memcpy(&mspScreen.cells[cell], bytes, len);
+    for (int word = cell / 4; word <= (cell + len - 1) / 4; word++) {
         load += wordLoad(word);
     }
-    mspScreen.load = load;
+
+    return load;
 }
 
-static uint64_t span(int col, int len)
+// Note the attribute cells were sent with
+static void putAttr(int row, int col, int len, uint8_t mspAttr)
 {
-    return (((uint64_t)1 << len) - 1) << col;
+    for (int cell = row * MSP_DP_COLS + col; cell < row * MSP_DP_COLS + col + len; cell++) {
+        const int shift = cell % 4 * 2;
+
+        mspScreen.fonts[cell / 4] = (mspScreen.fonts[cell / 4] & ~(DISPLAYPORT_MSP_ATTR_FONT << shift)) | ((mspAttr & DISPLAYPORT_MSP_ATTR_FONT) << shift);
+    }
+    if (mspAttr & DISPLAYPORT_MSP_ATTR_BLINK) {
+        mspScreen.blink[row] |= span(col, len);
+    } else {
+        mspScreen.blink[row] &= ~span(col, len);
+    }
 }
 
 static int writeBytes(int len)
@@ -258,16 +287,14 @@ static bool room(int bytes)
     return cmp32(millis(), waitingSince) > 250;
 }
 
-// Send a write, spaces for no string, in commands of at most MSP_DP_WRITE_MAX characters
-static void sendWrite(displayPort_t *displayPort, int row, int col, uint8_t mspAttr, const char *string, int len)
+// Send cells, in commands of at most MSP_DP_WRITE_MAX characters
+static void sendWrite(displayPort_t *displayPort, int row, int col, uint8_t mspAttr, const uint8_t *bytes, int len)
 {
     for (int done = 0; done < len; done += MSP_DP_WRITE_MAX) {
         const int n = MIN(len - done, MSP_DP_WRITE_MAX);
         uint8_t buf[MSP_DP_WRITE_MAX + 4] = { MSP_DP_WRITE_STRING, row, col + done, mspAttr };
 
-        for (int i = 0; i < n; i++) {
-            buf[4 + i] = cellByte(string ? string[done + i] : ' ');
-        }
+        memcpy(&buf[4], bytes + done, n);
         mspScreen.bytesSent += output(displayPort, MSP_DISPLAYPORT, buf, n + 4);
     }
     mspScreen.cellsSent += len;
@@ -279,9 +306,9 @@ static void sendClear(displayPort_t *displayPort)
     uint8_t subcmd[] = { MSP_DP_CLEAR_SCREEN };
 
     mspScreen.bytesSent += output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
-    memset(mspScreen.writes, 0, sizeof(mspScreen.writes));
-    memset(mspScreen.held, 0, sizeof(mspScreen.held));
-    memset(mspScreen.wide, 0, sizeof(mspScreen.wide));
+    memset(mspScreen.cells, 0, sizeof(mspScreen.cells));
+    memset(mspScreen.fonts, 0, sizeof(mspScreen.fonts));
+    memset(mspScreen.blink, 0, sizeof(mspScreen.blink));
     mspScreen.load = MSP_DP_WORDS;
     mspScreen.needClear = mspScreen.full = false;
     mspScreen.fresh = mspScreen.drawPending = true;
@@ -289,8 +316,8 @@ static void sendClear(displayPort_t *displayPort)
     mspScreen.refreshAt = millis() + MSP_DP_REFRESH_MS;
 }
 
-// The goggles or the table take no more: clear at the start of the next frame, unless this one
-// started with a clear, then what does not fit is left out until the next clear
+// The goggles take no more: clear at the start of the next frame, unless this one started with a
+// clear, then what does not fit is left out until the next clear
 static void overflow(void)
 {
     if (mspScreen.fresh || mspScreen.full) {
@@ -300,65 +327,22 @@ static void overflow(void)
     }
 }
 
-// The write the goggles hold at this place and the frame has not written yet, the one with the same
-// characters if there are more
-static mspDpWrite_t *findWrite(int row, int col, int len, uint32_t hash)
+// The next run of changed cells from col on, with the short gaps of unchanged cells in it, -1 for none
+static int nextRun(uint64_t changed, int col, int *last)
 {
-    mspDpWrite_t *found = NULL;
-
-    for (mspDpWrite_t *w = mspScreen.writes; w < ARRAYEND(mspScreen.writes); w++) {
-        if (w->len && w->row == row && w->col == col && !(w->attr & MSP_DP_TOUCHED)) {
-            if (w->len == len && w->hash == hash) {
-                return w;
-            }
-            found = found ? found : w;
-        }
+    changed &= ~(uint64_t)0 << col;
+    if (!changed) {
+        return -1;
     }
 
-    return found;
-}
+    const int first = __builtin_ctzll(changed);
 
-static mspDpWrite_t *newWrite(void)
-{
-    mspDpWrite_t *w;
-
-    for (w = mspScreen.writes; w < ARRAYEND(mspScreen.writes) && w->len; w++);
-    if (w == ARRAYEND(mspScreen.writes)) {
-        overflow();
-        return NULL;
+    *last = first;
+    for (changed &= changed - 1; changed && __builtin_ctzll(changed) - *last - 1 < MSP_DP_MERGE_GAP; changed &= changed - 1) {
+        *last = __builtin_ctzll(changed);
     }
 
-    return w;
-}
-
-// Cells of the writes the table holds
-static int heldCells(void)
-{
-    int cells = 0;
-
-    for (const mspDpWrite_t *w = mspScreen.writes; w < ARRAYEND(mspScreen.writes); w++) {
-        cells += w->len;
-    }
-
-    return cells;
-}
-
-// Cells of a row that the writes of this frame cover. Where one of them covers cells that another
-// write had drawn over, the goggles may show the other one there, so it is sent again in the next frame.
-static uint64_t covered(int row, uint64_t over)
-{
-    uint64_t bits = 0;
-
-    for (mspDpWrite_t *w = mspScreen.writes; w < ARRAYEND(mspScreen.writes); w++) {
-        if (w->len && w->row == row && (w->attr & MSP_DP_TOUCHED)) {
-            bits |= span(w->col, w->len);
-            if (span(w->col, w->len) & over) {
-                w->attr |= MSP_DP_STALE;
-            }
-        }
-    }
-
-    return bits;
+    return first;
 }
 
 static int release(displayPort_t *displayPort)
@@ -407,7 +391,7 @@ static bool drawScreen(displayPort_t *displayPort)
     // draw its page again. The goggles get the draw once the page is back, as they show it at the draw.
     if (!mspScreen.frameCleared && displayIsGrabbed(displayPort) && cmp32(millis(), mspScreen.refreshAt) >= 0
         && mspSerialTxBytesFree(displayPortSerial) >= MSP_DP_COMMAND_BYTES) {
-        const int page = heldCells();
+        const int page = countShown();
 
         sendClear(displayPort);
         mspScreen.repaintCells = page;
@@ -416,36 +400,29 @@ static bool drawScreen(displayPort_t *displayPort)
         displayPort->cursorRow = -1;
     }
 
-    int writes = 0;
-
-    for (mspDpWrite_t *w = mspScreen.writes; w < ARRAYEND(mspScreen.writes); w++) {
-        if (w->len && !(w->attr & MSP_DP_TOUCHED) && mspScreen.frameCleared) {
-            // Blank what the frame did not write again
-            const uint64_t cells = span(w->col, w->len);
-
-            for (uint64_t blank = cells & ~covered(w->row, cells) & mspScreen.held[w->row]; blank; ) {
+    if (mspScreen.frameCleared) {
+        // Blank what the frame did not write again
+        for (int row = 0; row < MSP_DP_ROWS; row++) {
+            for (uint64_t blank = shownCells(row) & ~mspScreen.drawn[row]; blank; ) {
                 const int col = __builtin_ctzll(blank);
                 const int len = MIN(__builtin_ctzll(~(blank >> col)), MSP_DP_WRITE_MAX);
+                uint8_t bytes[MSP_DP_WRITE_MAX];
 
                 if (!room(len + MSP_DP_WRITE_OVERHEAD)) {
                     return true;
                 }
-                sendWrite(displayPort, w->row, col, 0, NULL, len);
-                putCells(w->row, col, NULL, len);
+                memset(bytes, cellByte(' '), len);
+                mspScreen.load = putLoad(row * MSP_DP_COLS + col, bytes, len);
+                putAttr(row, col, len, 0);
+                sendWrite(displayPort, row, col, 0, bytes, len);
                 blank &= ~span(col, len);
-                w->len -= col + len - w->col;               // What is left, if the draw has to wait
-                w->col = col + len;
             }
-            w->len = 0;
         }
+        mspScreen.frameCleared = false;
     }
-    for (mspDpWrite_t *w = mspScreen.writes; w < ARRAYEND(mspScreen.writes); w++) {
-        w->attr &= ~MSP_DP_TOUCHED;
-        writes += w->len != 0;
-    }
-    mspScreen.frameCleared = false;
+    memset(mspScreen.drawn, 0, sizeof(mspScreen.drawn));
 
-    if (mspScreen.repaintCells && (heldCells() >= mspScreen.repaintCells || cmp32(millis(), mspScreen.repaintUntil) >= 0)) {
+    if (mspScreen.repaintCells && (countShown() >= mspScreen.repaintCells || cmp32(millis(), mspScreen.repaintUntil) >= 0)) {
         mspScreen.repaintCells = 0;
     }
     if (mspScreen.drawPending && !mspScreen.repaintCells) {
@@ -459,7 +436,7 @@ static bool drawScreen(displayPort_t *displayPort)
     DEBUG_SET(DEBUG_MSP_DISPLAYPORT, 0, mspScreen.bytesSent);  //!< Bytes Sent [unit:bytes]
     DEBUG_SET(DEBUG_MSP_DISPLAYPORT, 1, mspScreen.cellsSent);  //!< Cells Sent
     DEBUG_SET(DEBUG_MSP_DISPLAYPORT, 2, dji() ? mspScreen.load : 0);  //!< DJI Screen Load [unit:bytes]
-    DEBUG_SET(DEBUG_MSP_DISPLAYPORT, 3, writes);  //!< Writes Held
+    DEBUG_SET(DEBUG_MSP_DISPLAYPORT, 3, countShown());  //!< Cells Shown
     mspScreen.bytesSent = 0;
     mspScreen.cellsSent = 0;
 
@@ -498,78 +475,53 @@ static int writeString(displayPort_t *displayPort, uint8_t col, uint8_t row, uin
     }
 
     const int len = MIN((int)strlen(string), MSP_DP_COLS - col);
-    const uint32_t hash = fnv_update(FNV_OFFSET_BASIS, string, len);
-    mspDpWrite_t *w = findWrite(row, col, len, hash);
+    const int cell = row * MSP_DP_COLS + col;
+    const bool blink = mspAttr & DISPLAYPORT_MSP_ATTR_BLINK;
+    uint8_t bytes[MSP_DP_COLS];
+    uint64_t changed = 0;
 
-    // A write that blinks is sent every time, as the goggles blink it on their own
-    if (w && w->len == len && w->hash == hash && (w->attr & ~MSP_DP_TOUCHED) == mspAttr && !(mspAttr & DISPLAYPORT_MSP_ATTR_BLINK)) {
-        w->attr |= MSP_DP_TOUCHED;
+    // The cells that differ from what the goggles hold. A space need not go to a cell they hold blank,
+    // and the attribute of a cell that shows nothing does not matter.
+    for (int i = 0; i < len; i++) {
+        const uint8_t held = mspScreen.cells[cell + i];
+
+        bytes[i] = cellByte(string[i]);
+        if (held == bytes[i] ? shown(held) && (fontAt(cell + i) != (mspAttr & DISPLAYPORT_MSP_ATTR_FONT) || ((mspScreen.blink[row] >> (col + i)) & 1) != blink)
+                             : held || bytes[i] != ' ') {
+            changed |= (uint64_t)1 << (col + i);
+        }
+    }
+    mspScreen.drawn[row] |= span(col, len);         // What is not sent shows what was there
+
+    int first, last;
+    int need = 0;
+
+    for (first = nextRun(changed, col, &last); first >= 0; first = nextRun(changed, last + 1, &last)) {
+        need += writeBytes(last - first + 1);
+    }
+    if (!need || mspSerialTxBytesFree(displayPortSerial) < (uint32_t)need) {
+        return 0;                                   // Changes that find no room are sent in the next frame
+    }
+
+    // Too much for DJI with the changes: left out, the goggles show what was there
+    uint8_t saved[MSP_DP_COLS];
+    int load = mspScreen.load;
+
+    memcpy(saved, &mspScreen.cells[cell], len);
+    for (first = nextRun(changed, col, &last); first >= 0; first = nextRun(changed, last + 1, &last)) {
+        mspScreen.load = putLoad(row * MSP_DP_COLS + first, &bytes[first - col], last - first + 1);
+    }
+    if (dji() && displayPortProfileMsp()->djiBudget && mspScreen.load > displayPortProfileMsp()->djiBudget) {
+        memcpy(&mspScreen.cells[cell], saved, len);
+        mspScreen.load = load;
+        overflow();
 
         return 0;
     }
 
-    // Spaces at the ends need not go to cells that are blank on the goggles
-    const uint64_t held = mspScreen.held[row];
-    int first = 0;
-    int last = len - 1;
-
-    while (first <= last && string[first] == ' ' && !((held >> (col + first)) & 1)) {
-        first++;
-    }
-    while (last >= first && string[last] == ' ' && !((held >> (col + last)) & 1)) {
-        last--;
-    }
-
-    if (first <= last) {
-        const int n = last - first + 1;
-        const uint64_t cells = span(col + first, n);
-
-        if (mspSerialTxBytesFree(displayPortSerial) < (uint32_t)writeBytes(n)) {
-            if (w) {
-                w->attr |= MSP_DP_TOUCHED | MSP_DP_STALE;
-            }
-
-            return 0;
-        }
-
-        const uint64_t wide = mspScreen.wide[row];
-        const uint16_t load = mspScreen.load;
-
-        putCells(row, col + first, string + first, n);
-        if (dji() && displayPortProfileMsp()->djiBudget && mspScreen.load > displayPortProfileMsp()->djiBudget) {
-            mspScreen.held[row] = held;
-            mspScreen.wide[row] = wide;
-            mspScreen.load = load;
-            overflow();
-            if (w) {
-                w->attr |= MSP_DP_TOUCHED;                  // The goggles show what was there
-            }
-
-            return 0;
-        }
-        sendWrite(displayPort, row, col + first, mspAttr, string + first, n);
-
-        // What the goggles held under it and the frame has not written yet is not there any more
-        for (mspDpWrite_t *e = mspScreen.writes; e < ARRAYEND(mspScreen.writes); e++) {
-            if (e != w && e->len && e->row == row && !(e->attr & MSP_DP_TOUCHED) && (span(e->col, e->len) & cells)) {
-                e->attr |= MSP_DP_STALE;
-            }
-        }
-    }
-
-    if (w && w->len > len) {
-        // The cells the write no longer covers are blanked at the draw, unless the frame writes them
-        mspDpWrite_t *tail = newWrite();
-
-        if (tail) {
-            *tail = (mspDpWrite_t){ row, col + len, w->len - len, MSP_DP_STALE, 0 };
-        }
-    }
-    if (!w) {
-        w = newWrite();
-    }
-    if (w) {
-        *w = (mspDpWrite_t){ row, col, len, mspAttr | MSP_DP_TOUCHED, hash };
+    for (first = nextRun(changed, col, &last); first >= 0; first = nextRun(changed, last + 1, &last)) {
+        putAttr(row, first, last - first + 1, mspAttr);
+        sendWrite(displayPort, row, first, mspAttr, &bytes[first - col], last - first + 1);
     }
 
     return 0;

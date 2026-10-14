@@ -254,8 +254,6 @@ cms_unittest_SRC := \
 
 displayport_msp_unittest_SRC := \
 		$(USER_DIR)/io/displayport_msp.c \
-		$(USER_DIR)/common/crc.c \
-		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/drivers/display.c
 
 displayport_msp_unittest_DEFINES := \

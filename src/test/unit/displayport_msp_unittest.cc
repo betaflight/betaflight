@@ -19,7 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-// The MSP displayport driver sends the writes of the OSD that changed. The tests run it against a
+// The MSP displayport driver sends the cells of the OSD that changed. The tests run it against a
 // model of the goggles and check what they show.
 
 #include <stdint.h>
@@ -390,9 +390,7 @@ TEST(DisplayPortMspTest, OverlappingWritesShowAsTheOsdDrawsThem)
         frame(dp, s);
         EXPECT_EQ(drawn(s), goggles.shown);
     }
-    // The one on top goes: the goggles may keep it for a frame, as what was under it is not kept here
-    frame(dp, { at(4, 0, "ABCDEFGH"), at(5, 0, "LONG TEXT") });
-    frame(dp, { at(4, 0, "ABCDEFGH"), at(5, 0, "LONG TEXT") });
+    frame(dp, { at(4, 0, "ABCDEFGH"), at(5, 0, "LONG TEXT") });     // The one on top goes
     EXPECT_EQ(drawn({ at(4, 0, "ABCDEFGH"), at(5, 0, "LONG TEXT") }), goggles.shown);
     frame(dp, s);
     EXPECT_EQ(drawn(s), goggles.shown);
@@ -411,21 +409,38 @@ TEST(DisplayPortMspTest, AWriteIsSentWhenOnlyItsAttributeChanges)
     EXPECT_EQ(DISPLAYPORT_SEVERITY_WARNING, w[0].attr);
 }
 
-TEST(DisplayPortMspTest, AWriteThatBlinksIsSentEveryTime)
+TEST(DisplayPortMspTest, ACellIsSentWhenItStartsOrStopsBlinking)
 {
     displayPort_t *dp = init();
-    auto s = busy(40);
 
-    s.push_back(at(19, 40, "AB", DISPLAYPORT_SEVERITY_NORMAL | DISPLAYPORT_BLINK));
-    frame(dp, s);
-    for (int n = 0; n < 3; n++) {
-        frame(dp, s);
-        bool found = false;
-        for (const auto &w : writes()) {
-            found |= w.text == "AB" && w.attr == DISPLAYPORT_MSP_ATTR_BLINK;
-        }
-        EXPECT_TRUE(found);
-    }
+    frame(dp, { at(19, 40, "AB") });
+    frame(dp, { at(19, 40, "AB", DISPLAYPORT_SEVERITY_NORMAL | DISPLAYPORT_BLINK) });
+    auto w = writes();
+    ASSERT_EQ(1u, w.size());
+    EXPECT_EQ(DISPLAYPORT_MSP_ATTR_BLINK, w[0].attr);
+    frame(dp, { at(19, 40, "AB", DISPLAYPORT_SEVERITY_NORMAL | DISPLAYPORT_BLINK) });
+    EXPECT_TRUE(writes().empty());                      // The goggles blink it on their own
+    frame(dp, { at(19, 40, "AB") });
+    w = writes();
+    ASSERT_EQ(1u, w.size());
+    EXPECT_EQ(0, w[0].attr);
+}
+
+TEST(DisplayPortMspTest, OnlyTheCellsThatChangedAreSent)
+{
+    displayPort_t *dp = init();
+
+    frame(dp, { at(3, 2, "ALT  123.4M"), at(5, 0, "A.........B"), at(6, 0, "A..........B") });
+    frame(dp, { at(3, 2, "ALT  123.5M"), at(5, 0, "x.........y"), at(6, 0, "x..........y") });
+    auto w = writes();
+    ASSERT_EQ(4u, w.size());
+    EXPECT_EQ(11, w[0].col);                            // One digit of the altitude
+    EXPECT_EQ("5", w[0].text);
+    EXPECT_EQ("x.........y", w[1].text);                // 9 unchanged cells go along, cheaper than a write
+    EXPECT_EQ("x", w[2].text);                          // 10 do not
+    EXPECT_EQ("y", w[3].text);
+    EXPECT_EQ(11, w[3].col);
+    EXPECT_EQ(drawn({ at(3, 2, "ALT  123.5M"), at(5, 0, "x.........y"), at(6, 0, "x..........y") }), goggles.shown);
 }
 
 TEST(DisplayPortMspTest, ALongWriteIsSplit)
@@ -683,65 +698,24 @@ static std::vector<packet_t> flying(uint32_t &seed)
     return s;
 }
 
-// Cells that more than one write of either frame covers
-static screen_t overlaps(const std::vector<packet_t> &a, const std::vector<packet_t> &b)
-{
-    screen_t over = blank();
-
-    for (const auto *frame : { &a, &b }) {
-        std::vector<std::vector<int>> n(ROWS, std::vector<int>(COLS, 0));
-        for (const auto &w : *frame) {
-            for (size_t i = 0; i < w.text.size() && w.col + i < COLS; i++) {
-                if (++n[w.row][w.col + i] > 1) {
-                    over[w.row][w.col + i] = '#';
-                }
-            }
-        }
-    }
-
-    return over;
-}
-
-// Cells the goggles show wrong, but where elements overlap and one of them went: what was under it
-// is back a frame later
-static int wrongCells(const std::vector<packet_t> &s, const std::vector<packet_t> &last)
-{
-    const screen_t over = overlaps(s, last);
-    const screen_t want = drawn(s);
-    int wrong = 0;
-
-    for (int r = 0; r < ROWS; r++) {
-        for (int c = 0; c < COLS; c++) {
-            wrong += want[r][c] != goggles.shown[r][c] && over[r][c] == ' ';
-        }
-    }
-
-    return wrong;
-}
-
 TEST(DisplayPortMspTest, ShowsWhatTheOsdDraws)
 {
     displayPort_t *dp = init();
     uint32_t seed = 1;
     uint32_t total = 0;
     int clears = 0;
-    int lagging = 0;
-    std::vector<packet_t> last;
     uint32_t whole = 0;
 
     for (int n = 0; n < 500; n++) {
         const auto s = flying(seed);
         frame(dp, s);
-        ASSERT_EQ(0, wrongCells(s, last)) << "frame " << n;
-        lagging += drawn(s) != goggles.shown;
+        ASSERT_EQ(drawn(s), goggles.shown) << "frame " << n;
         clears += count(MSP_DP_CLEAR_SCREEN);
         whole = n ? whole : bytes;
         total += n ? bytes : 0;
-        last = s;
     }
-    printf("whole frame %u bytes, then %u a frame, %d frames lagging\n", whole, total / 499, lagging);
+    printf("whole frame %u bytes, then %u a frame\n", whole, total / 499);
     EXPECT_EQ(39, clears);                              // At the start and once a second
-    EXPECT_LT(lagging, 50);
     EXPECT_LT(total / 499, whole / 2);
 }
 
@@ -782,7 +756,8 @@ TEST(DisplayPortMspTest, DjiGetsSpacesAsBlankCells)
     frame(dp, { at(3, 2, "AB  "), at(4, 0, "1.2 V") });
     auto w = writes();
     ASSERT_EQ(1u, w.size());
-    EXPECT_EQ(std::string("AB\0\0", 4), w[0].text);
+    EXPECT_EQ(4, w[0].col);                             // Only the cells that changed
+    EXPECT_EQ(std::string("\0\0", 2), w[0].text);
     EXPECT_EQ(drawn({ at(3, 2, "AB"), at(4, 0, "1.2 V") }), goggles.shown);
     frame(dp, { at(4, 0, "1.2 V") });                                // Blanked
     EXPECT_EQ(drawn({ at(4, 0, "1.2 V") }), goggles.shown);
@@ -822,14 +797,12 @@ TEST(DisplayPortMspTest, TheGogglesAreClearedBeforeTheyWouldTakeNoMore)
     uint32_t seed = 7;
     int clears = 0;
     int behind = 0;
-    std::vector<packet_t> last;
 
     for (int n = 0; n < 500; n++) {
         const auto s = flying(seed);
         frame(dp, s);
         clears += count(MSP_DP_CLEAR_SCREEN);
-        behind += wrongCells(s, last) != 0;
-        last = s;
+        behind += drawn(s) != goggles.shown;
         goggles.maxLoad = MAX(goggles.maxLoad, gogglesLoad());
     }
     EXPECT_LE(goggles.maxLoad, 395u);                   // Never more than the goggles take
@@ -867,21 +840,30 @@ TEST(DisplayPortMspTest, AScreenTooBigIsClearedOnlyOnceASecond)
     EXPECT_LE(clears, 11);
 }
 
-TEST(DisplayPortMspTest, AScreenTooBigForTheTableIsShown)
+// A screen of many small writes that change, as a falling characters screen saver draws it
+TEST(DisplayPortMspTest, ManySmallWritesAreSentByTheirChanges)
 {
     displayPort_t *dp = initDji();
     std::vector<packet_t> s;
+    uint32_t seed = 3;
+    auto rnd = [&seed](int n) { seed = seed * 1103515245 + 12345; return (int)((seed >> 16) % n); };
 
-    for (int i = 0; i < 120; i++) {
-        s.push_back(at(i / 20 * 3, (i % 20) * 2, std::string(1, 'A' + i % 26)));
+    for (int i = 0; i < 200; i++) {                     // A cell each, as the OSD writes them
+        s.push_back(at(i * 5 % ROWS, i * 5 / ROWS % COLS, std::string(1, 'A' + rnd(26))));
     }
     int clears = 0;
-    for (int n = 0; n < 125; n++) {
+    uint32_t total = 0;
+    for (int n = 0; n < 125; n++) {                     // 10 s
+        for (int k = 0; k < 20; k++) {                  // A tenth of them change in each frame
+            s[rnd(200)].text = std::string(1, 'A' + rnd(26));
+        }
         frame(dp, s);
         clears += count(MSP_DP_CLEAR_SCREEN);
+        total += count(MSP_DP_CLEAR_SCREEN) ? 0 : bytes;
         EXPECT_EQ(drawn(s), goggles.shown);
     }
-    EXPECT_LE(clears, 11);
+    EXPECT_LE(clears, 11);                              // Once a second
+    EXPECT_LT(total / (125 - clears), 20u * 11 + 7);    // The cells that changed, a write each at most
 }
 
 TEST(DisplayPortMspTest, NoBudgetAndSpacesWithoutDji)
