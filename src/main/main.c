@@ -148,6 +148,13 @@ void FAST_CODE run(void)
 {
     while (true) {
         scheduler();
+#if ENABLE_SIMULATOR
+        // lockstep (--lockstep): go straight on while the pass ran a task;
+        // the FDM packet is answered once a pass finds nothing due
+        if (simulatorLoopBusy()) {
+            continue;
+        }
+#endif
 
 #if defined(RUN_LOOP_DELAY_US) && RUN_LOOP_DELAY_US > 0
         delayMicroseconds_real(RUN_LOOP_DELAY_US);

@@ -249,6 +249,7 @@ typedef struct {
 
 typedef struct {
     float motor_speed[4];   // normal: [0.0, 1.0], 3D: [-1.0, 1.0]
+    double timestamp;       // --lockstep only: the FDM timestamp this output answers
 } servo_packet;
 
 typedef struct {
@@ -264,6 +265,11 @@ uint64_t micros64(void);
 uint64_t millis64(void);
 
 int lockMainPID(void);
+
+// Lockstep clock (sitl.c, --lockstep)
+bool simulatorLockstepEnabled(void); // --lockstep given
+bool simulatorLockstep(void);        // FDM timestamps drive the clock
+bool simulatorLoopBusy(void);        // run loop hook after each scheduler pass
 
 int targetParseArgs(int argc, char * argv[]);
 #ifdef CONFIG_IN_FILE

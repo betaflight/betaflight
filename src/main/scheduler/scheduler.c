@@ -87,6 +87,15 @@
 extern task_t tasks[];
 
 static FAST_DATA_ZERO_INIT task_t *currentTask = NULL;
+#if ENABLE_SIMULATOR
+// tasks run so far, so the simulator's run loop can tell an idle pass
+static uint32_t taskExecutionCount = 0;
+
+uint32_t schedulerTaskExecutionCount(void)
+{
+    return taskExecutionCount;
+}
+#endif
 static FAST_DATA_ZERO_INIT bool ignoreCurrentTaskExecRate;
 static FAST_DATA_ZERO_INIT bool ignoreCurrentTaskExecTime;
 
@@ -415,6 +424,9 @@ FAST_CODE timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTi
     timeUs_t taskExecutionTimeUs = 0;
 
     if (selectedTask) {
+#if ENABLE_SIMULATOR
+        taskExecutionCount++;
+#endif
         currentTask = selectedTask;
         ignoreCurrentTaskExecRate = false;
         ignoreCurrentTaskExecTime = false;
@@ -536,6 +548,21 @@ FAST_CODE void scheduler(void)
         nowCycles = getCycleCounter();
 #if defined(UNIT_TEST)
         lastTargetCycles = clockMicrosToCycles(gyroTask->lastExecutedAtUs);
+#endif
+#if ENABLE_SIMULATOR
+        if (simulatorLockstep() && nowCycles != lastTargetCycles) {
+            // In lockstep each simulator step brings one gyro sample and
+            // moves the clock by one gyro period, and the next step waits for
+            // this loop's answer: the gyro task is due exactly when the clock
+            // has moved since it last ran, never at a phase of the period.
+            // The overrun recovery below keeps the phase of the last target,
+            // and with the clock moving in whole periods a phase left by the
+            // boot handshake either spun for good on a target 1 us away or
+            // stayed ahead for good, and the gyro, PID, RX and arming tasks
+            // never ran again. Once it has run (target = now), the other
+            // tasks get the full period, as stock.
+            lastTargetCycles = nowCycles - desiredPeriodCycles;
+        }
 #endif
         nextTargetCycles = lastTargetCycles + desiredPeriodCycles;
         schedLoopRemainingCycles = cmpTimeCycles(nextTargetCycles, nowCycles);

@@ -19,6 +19,7 @@
  */
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -101,6 +102,30 @@ static bool fdm_received = false;
 
 static struct timespec start_time;
 static double simRate = 1.0;
+// Lockstep clock (--lockstep). Once FDM packets flow, Betaflight's time is
+// the FDM timestamp plus a fixed offset, so it advances only as the simulator
+// steps: a stalled or paused simulator pauses the flight controller with it,
+// and every task runs at its rate in simulated time. Before the first FDM
+// packet (boot), time is the host's monotonic clock. Each motor packet
+// carries the timestamp of the FDM packet it answers. Every packet that
+// moves the clock is answered exactly once, by the main loop, once a
+// scheduler pass that began at the new time finds no task due
+// (simulatorLoopBusy): the gyro and PID loop run first, then every other
+// task due at that time, as a real flight controller runs them between two
+// gyro samples, so the simulator's next packet cannot starve them. A
+// repeated FDM packet (the simulator re-sends one it got no answer to) does
+// not move the clock and is answered with the last motor packet again.
+static bool lockstep = false;
+static bool simClockActive = false;
+static int64_t simClockOffsetNs = 0;
+static uint64_t simClockNs = 0;
+static double lastFdmTimestamp = 0.0;
+// the clock value whose packet is owed an answer (set by the UDP thread)
+static uint64_t answerOwedNs = 0;
+// the latest motor outputs (main loop only), and the lock that keeps the UDP
+// thread's re-send of pwmPkt from reading it half written
+static servo_packet latestPkt;
+static pthread_mutex_t answerLock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t tcpWorker, udpWorker, udpWorkerRC;
 static bool workerRunning = true;
 static udpLink_t stateLink, pwmLink, pwmRawLink, rcLink;
@@ -215,6 +240,8 @@ int targetParseArgs(int argc, char * argv[])
             printf("  --config <file>    Load CLI config file, save to EEPROM, and exit\n");
 #endif
             printf("  --gpx              Write GPS track to sitl_track.gpx\n");
+            printf("  --lockstep         Run on the FDM timestamps (1 kHz physics): answer each\n");
+            printf("                     FDM packet once, with its timestamp in the motor packet\n");
             printf("  --help, -h         Show this help message\n");
             exit(0);
 #ifdef CONFIG_IN_FILE
@@ -226,6 +253,8 @@ int targetParseArgs(int argc, char * argv[])
             simulator_ip[sizeof(simulator_ip) - 1] = '\0';
         } else if (strcmp(argv[i], "--gpx") == 0) {
             gpxEnabled = true;
+        } else if (strcmp(argv[i], "--lockstep") == 0) {
+            lockstep = true;
         } else {
             fprintf(stderr, "[SITL] Unknown argument: %s (use --help for usage)\n", argv[i]);
             exit(1);
@@ -269,7 +298,9 @@ int lockMainPID(void)
 
 static void sendMotorUpdate(void)
 {
-    udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
+    // the timestamp is sent only in lockstep, so stock simulators still get
+    // the motor speeds alone
+    udpSend(&pwmLink, &pwmPkt, lockstep ? sizeof(servo_packet) : offsetof(servo_packet, timestamp));
 }
 
 static void updateState(const fdm_packet* pkt)
@@ -282,7 +313,8 @@ static void updateState(const fdm_packet* pkt)
     clock_gettime(CLOCK_MONOTONIC, &now_ts);
 
     const uint64_t realtime_now = micros64_real();
-    if (realtime_now > last_realtime + 500*1e3) { // 500ms timeout
+    // in lockstep a stalled simulator is paused time, not a lost link
+    if (!lockstep && realtime_now > last_realtime + 500*1e3) { // 500ms timeout
         last_timestamp = pkt->timestamp;
         last_realtime = realtime_now;
         sendMotorUpdate();
@@ -291,6 +323,16 @@ static void updateState(const fdm_packet* pkt)
 
     const double deltaSim = pkt->timestamp - last_timestamp;  // in seconds
     if (deltaSim < 0) { // don't use old packet
+        return;
+    }
+    double lastTs;
+    __atomic_load(&lastFdmTimestamp, &lastTs, __ATOMIC_ACQUIRE);
+    if (pkt->timestamp == lastTs && __atomic_load_n(&simClockActive, __ATOMIC_ACQUIRE)) {
+        // the packet last processed, re-sent: its answer was lost
+        last_realtime = realtime_now;
+        pthread_mutex_lock(&answerLock);
+        sendMotorUpdate();
+        pthread_mutex_unlock(&answerLock);
         return;
     }
 
@@ -480,6 +522,28 @@ static void updateState(const fdm_packet* pkt)
 
     last_ts.tv_sec = now_ts.tv_sec;
     last_ts.tv_nsec = now_ts.tv_nsec;
+
+    if (lockstep) {
+        // Advance the lockstep clock before the main loop may send PWM
+        // output, so the output answers this packet's state. Never
+        // backwards. Whole microseconds (rounded: a truncated 1.401 s is
+        // 1.400999 s, and a step that moves the clock by 999 us leaves the
+        // 1 kHz gyro task not yet due, so no PID loop runs and the packet is
+        // never answered).
+        const int64_t tsNs = (int64_t)llround(pkt->timestamp * 1e6) * 1000;
+        if (!__atomic_load_n(&simClockActive, __ATOMIC_ACQUIRE)) {
+            // continue from the boot clock (simRate is still 1 at boot), 1 ms on
+            simClockOffsetNs = ((int64_t)micros64_real() + 1000) * 1000 - tsNs;
+        }
+        const uint64_t clockNs = (uint64_t)(tsNs + simClockOffsetNs);
+        // the stamp first: the main loop reads the clock, then the stamp
+        __atomic_store(&lastFdmTimestamp, &pkt->timestamp, __ATOMIC_RELEASE);
+        if (clockNs > __atomic_load_n(&simClockNs, __ATOMIC_ACQUIRE)) {
+            __atomic_store_n(&simClockNs, clockNs, __ATOMIC_RELEASE);
+            __atomic_store_n(&answerOwedNs, clockNs, __ATOMIC_RELEASE);
+        }
+        __atomic_store_n(&simClockActive, true, __ATOMIC_RELEASE);
+    }
 
     // Periodic status (about 1 Hz)
     static uint64_t lastDebugTimeUs = 0;
@@ -693,6 +757,9 @@ uint64_t millis64_real(void)
 
 uint64_t micros64(void)
 {
+    if (__atomic_load_n(&simClockActive, __ATOMIC_ACQUIRE)) {
+        return __atomic_load_n(&simClockNs, __ATOMIC_ACQUIRE) / 1000;
+    }
     static uint64_t last = 0;
     static uint64_t out = 0;
     uint64_t now = nanos64_real();
@@ -705,6 +772,9 @@ uint64_t micros64(void)
 
 uint64_t millis64(void)
 {
+    if (__atomic_load_n(&simClockActive, __ATOMIC_ACQUIRE)) {
+        return __atomic_load_n(&simClockNs, __ATOMIC_ACQUIRE) / 1000000;
+    }
     static uint64_t last = 0;
     static uint64_t out = 0;
     uint64_t now = nanos64_real();
@@ -760,6 +830,11 @@ static void microsleep(uint32_t usec)
 
 void delayMicroseconds(uint32_t us)
 {
+    if (__atomic_load_n(&simClockActive, __ATOMIC_ACQUIRE)) {
+        // simRate is meaningless once the clock follows the FDM timestamps
+        microsleep(us);
+        return;
+    }
     microsleep(us / simRate);
 }
 
@@ -770,6 +845,13 @@ void delayMicroseconds_real(uint32_t us)
 
 void delay(uint32_t ms)
 {
+    if (__atomic_load_n(&simClockActive, __ATOMIC_ACQUIRE)) {
+        // simulated time only moves with FDM packets: wait in host time
+        for (uint32_t i = 0; i < ms; i++) {
+            microsleep(1000);
+        }
+        return;
+    }
     uint64_t start = millis64();
 
     while ((millis64() - start) < ms) {
@@ -858,6 +940,54 @@ static void pwmShutdownPulsesForAllMotors(void)
     // NOOP
 }
 
+// Scheduler passes at one simulated time before the answer goes anyway: a
+// task that stays ready (an event-driven one signalled on every check) must
+// not hold the simulator up.
+#define SIM_MAX_BUSY_PASSES 100
+
+bool simulatorLockstepEnabled(void)
+{
+    return lockstep;
+}
+
+bool simulatorLockstep(void)
+{
+    return __atomic_load_n(&simClockActive, __ATOMIC_ACQUIRE);
+}
+
+bool simulatorLoopBusy(void)
+{
+    // the clock when this pass began: when the previous call returned
+    static uint64_t passStartNs = 0;
+    static uint64_t answeredNs = 0;
+    static uint32_t lastExecutions = 0;
+    static uint32_t busyPasses = 0;
+    const uint32_t executions = schedulerTaskExecutionCount();
+    const bool ranTask = executions != lastExecutions;
+    lastExecutions = executions;
+    const uint64_t startNs = passStartNs;
+    passStartNs = __atomic_load_n(&simClockNs, __ATOMIC_ACQUIRE);
+    const uint64_t owedNs = __atomic_load_n(&answerOwedNs, __ATOMIC_ACQUIRE);
+    // a pass that began before the packet moved the clock proves nothing
+    if (!__atomic_load_n(&simClockActive, __ATOMIC_ACQUIRE) || owedNs == answeredNs || startNs != owedNs) {
+        busyPasses = 0;
+        return ranTask;
+    }
+    if (ranTask && ++busyPasses < SIM_MAX_BUSY_PASSES) {
+        return true;
+    }
+    // every task due at this simulated time has run: answer the FDM packet
+    pthread_mutex_lock(&answerLock);
+    pwmPkt = latestPkt;
+    __atomic_load(&lastFdmTimestamp, &pwmPkt.timestamp, __ATOMIC_ACQUIRE);
+    sendMotorUpdate();
+    pthread_mutex_unlock(&answerLock);
+    udpSend(&pwmRawLink, &pwmRawPkt, sizeof(servo_packet_raw));
+    answeredNs = owedNs;
+    busyPasses = 0;
+    return false;
+}
+
 static void pwmCompleteMotorUpdate(void)
 {
     // send to simulator
@@ -868,13 +998,22 @@ static void pwmCompleteMotorUpdate(void)
         outScale = 500.0;
     }
 
+    if (__atomic_load_n(&simClockActive, __ATOMIC_ACQUIRE)) {
+        // Lockstep: keep the outputs; simulatorLoopBusy sends them as the
+        // answer to the FDM packet that moved the clock.
+        for (int i = 0; i < 4; i++) {
+            latestPkt.motor_speed[i] = motorsPwm[i] / outScale;
+        }
+        return;
+    }
+
     for (int i = 0; i < 4; i++) {
         pwmPkt.motor_speed[i] = motorsPwm[i] / outScale;
     }
 
     // get one "fdm_packet" can only send one "servo_packet"!!
     if (pthread_mutex_trylock(&updateLock) != 0) return;
-    udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
+    sendMotorUpdate();
     udpSend(&pwmRawLink, &pwmRawPkt, sizeof(servo_packet_raw));
 }
 
