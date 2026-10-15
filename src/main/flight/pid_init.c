@@ -113,6 +113,7 @@ static void tpaSpeedInit(const pidProfile_t *pidProfile)
     pidRuntime.tpaSpeed.speed = 0.0f;
     pidRuntime.tpaSpeed.maxVoltage = pidProfile->tpa_speed_max_voltage / 100.0f;
     pidRuntime.tpaSpeed.pitchOffset = pidProfile->tpa_speed_pitch_offset * M_PIf / 10.0f / 180.0f;
+    pidRuntime.tpaSpeed.refSpeed = pidProfile->speed_curve_vref;
 
     switch (pidProfile->tpa_speed_type) {
     case TPA_SPEED_BASIC:
@@ -343,6 +344,32 @@ static void tpaCurveHyperbolicInit(const pidProfile_t *pidProfile)
     pwlFill(&pidRuntime.tpaCurvePwl, tpaCurveHyperbolicFunction, (void*)pidProfile);
 }
 
+#ifdef USE_WING
+static float tpaCurveHyperbolicVrefFunction(float x, void *args)
+{
+    const pidProfile_t *pidProfile = (const pidProfile_t*)args;
+    const float power = pidProfile->speed_curve_power * 0.1f;
+    return powf(1.0f / x, power);
+}
+
+static void tpaCurveHyperbolicVrefInit(const pidProfile_t *pidProfile)
+{
+    const float power = pidProfile->speed_curve_power * 0.1f;
+    const float yMin = pidProfile->speed_curve_min * 0.01f;
+    const float yMax = pidProfile->speed_curve_max * 0.01f;
+    const float maxSpeed = constrainf(pidRuntime.tpaSpeed.maxSpeed, pidRuntime.tpaSpeed.refSpeed, 85.0f);
+
+    const float xMin = powf(yMax, -1.0f / power);
+    const float xMax = MIN(powf(yMin, -1.0f / power),
+                           maxSpeed / pidRuntime.tpaSpeed.refSpeed);
+
+    pidRuntime.refSpeedCurveArgMin = xMin;
+    pidRuntime.refSpeedCurveArgMax = xMax;
+    pwlInitialize(&pidRuntime.tpaCurvePwl, pidRuntime.tpaCurvePwl_yValues, TPA_CURVE_PWL_SIZE, xMin, xMax);
+    pwlFill(&pidRuntime.tpaCurvePwl, tpaCurveHyperbolicVrefFunction, (void*)pidProfile);
+}
+#endif
+
 static void tpaCurveInit(const pidProfile_t *pidProfile)
 {
         pidRuntime.tpaCurveType = pidProfile->tpa_curve_type;
@@ -350,6 +377,11 @@ static void tpaCurveInit(const pidProfile_t *pidProfile)
         case TPA_CURVE_HYPERBOLIC:
             tpaCurveHyperbolicInit(pidProfile);
             return;
+#ifdef USE_WING
+        case TPA_CURVE_VREF:
+            tpaCurveHyperbolicVrefInit(pidProfile);
+            return;
+#endif
         case TPA_CURVE_CLASSIC:
         default:
             return;
@@ -401,6 +433,10 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.chirpFrequencyStartHz = pidProfile->chirp_frequency_start_deci_hz / 10.0f;
     pidRuntime.chirpFrequencyEndHz = pidProfile->chirp_frequency_end_deci_hz / 10.0f;
     pidRuntime.chirpTimeSeconds = pidProfile->chirp_time_seconds;
+    pidRuntime.chirpRepeat = pidProfile->chirp_repeat;
+    pidRuntime.chirpRepeatsRemaining = 0;
+    pidRuntime.chirpAxis = FD_ROLL;
+    pidRuntime.chirpSeriesIsFinished = false;
 #endif
 
     pidRuntime.maxVelocity[FD_ROLL] = pidRuntime.maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * pidRuntime.dT;
@@ -509,7 +545,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     float feedforwardSmoothingTau = (rxDt * scaledSmoothFactor) / (1.0f - scaledSmoothFactor);
     pidRuntime.feedforwardSmoothFactor = feedforwardSmoothingTau;
     pidRuntime.feedforwardJitterFactor = pidProfile->feedforward_jitter_factor;
-    pidRuntime.feedforwardJitterFactorInv = 1.0f / (1.0f + pidProfile->feedforward_jitter_factor);
+    pidRuntime.feedforwardJitterFactorInv = 1.0f / rcUsSpanToNorm(1.0f + pidProfile->feedforward_jitter_factor);
     pidRuntime.feedforwardBoostFactor = 0.001f * pidProfile->feedforward_boost;
     pidRuntime.feedforwardMaxRateLimit = pidProfile->feedforward_max_rate_limit;
     pidRuntime.feedforwardInterpolate = !(rxRuntimeState.serialrxProvider == SERIALRX_CRSF);

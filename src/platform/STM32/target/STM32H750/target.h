@@ -39,10 +39,6 @@
 #define TARGET_BOARD_IDENTIFIER "H750"
 #endif
 
-#ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight - STM32H750"
-#endif
-
 #if !defined(USE_I2C)
 #define USE_I2C
 #define USE_I2C_DEVICE_1

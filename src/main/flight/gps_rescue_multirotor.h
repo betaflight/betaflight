@@ -34,13 +34,6 @@ typedef enum {
     RESCUE_SANITY_COUNT
 } gpsRescueSanity_e;
 
-typedef enum {
-    GPS_RESCUE_ALT_MODE_MAX = 0,
-    GPS_RESCUE_ALT_MODE_FIXED,
-    GPS_RESCUE_ALT_MODE_CURRENT,
-    GPS_RESCUE_ALT_MODE_COUNT
-} gpsRescueAltitudeMode_e;
-
 void gpsRescueInit(void);
 void gpsRescueUpdate(void);
 float gpsRescueGetMaxAltitudeCm(void);

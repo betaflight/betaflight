@@ -226,7 +226,7 @@ pllConfig_t pll1ConfigH757M4 = {
 #define USE_H7_HSERDY_SLOW_WORKAROUND
 #define USE_H7_HSE_TIMEOUT_WORKAROUND
 
-#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H757xx)
+#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H753xx) || defined(STM32H757xx)
 /*
    PLL1 configuration for different silicon revisions of H743 and H750.
 
@@ -379,7 +379,7 @@ static void SystemClockHSE_Config(void)
 
 #if defined(STM32H757xx) && defined(CORE_CM4)
     pll1Config = &pll1ConfigH757M4;
-#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H757xx)
+#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H753xx) || defined(STM32H757xx)
     pll1Config = (HAL_GetREVID() == REV_ID_V) ? &pll1ConfigRevV : &pll1ConfigRevY;
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
     pll1Config = &pll1Config7A3;
@@ -504,7 +504,7 @@ void SystemClock_Config(void)
 
     __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
 
-#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H7A3xx) || defined(STM32H730xx)
+#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H753xx) || defined(STM32H723xx) || defined(STM32H7A3xx) || defined(STM32H730xx)
     // Legacy H7 devices (H743, H750, H757) and newer but SMPS-less devices(H7A3, H723, H730)
 
     HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);
@@ -686,7 +686,7 @@ void SystemClock_Config(void)
 
     RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_SDMMC;
 
-#    if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H725xx) || defined(STM32H735xx) || defined(STM32H757xx)
+#    if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H725xx) || defined(STM32H735xx) || defined(STM32H753xx) || defined(STM32H757xx)
     RCC_PeriphClkInit.PLL2.PLL2M = 5;
     RCC_PeriphClkInit.PLL2.PLL2N = 800000000 / PLL_SRC_FREQ * 5; // Oscillator Frequency / 5 (PLL2M) = 1.6 * this value (PLL2N) = 800Mhz.
     RCC_PeriphClkInit.PLL2.PLL2VCOSEL = RCC_PLL2VCOWIDE; // Wide VCO range:192 to 836 MHz
@@ -829,7 +829,7 @@ void SystemInit (void)
     RCC->CR |= RCC_CR_HSEON;
     RCC->CR |= RCC_CR_HSI48ON;
 
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx) || defined(STM32H757xx)
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx) || defined(STM32H753xx) || defined(STM32H757xx)
     /* Reset D1CFGR register */
     RCC->D1CFGR = 0x00000000;
 
@@ -888,7 +888,7 @@ void SystemInit (void)
 
     /* Configure the Vector Table location add offset address ------------------*/
 #if defined(VECT_TAB_SRAM)
-  #if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx) || defined(STM32H757xx)
+  #if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx) || defined(STM32H753xx) || defined(STM32H757xx)
     SCB->VTOR = D1_AXISRAM_BASE  | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal ITCMSRAM */
   #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
     SCB->VTOR = CD_AXISRAM_BASE  | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal ITCMSRAM */

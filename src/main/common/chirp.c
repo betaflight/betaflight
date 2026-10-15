@@ -54,7 +54,6 @@ void chirpReset(chirp_t *chirp)
 // reset the chirp signal generator signals
 void chirpResetSignals(chirp_t *chirp)
 {
-    chirp->exc = 0.0f;
     chirp->fchirp = 0.0f;
     chirp->sinarg = 0.0f;
 }
@@ -80,13 +79,6 @@ bool chirpUpdate(chirp_t *chirp)
         // wrap sinarg to 0...2*pi
         chirp->sinarg = fmodf(chirp->sinarg, 2.0f * M_PIf);
 
-        // use cosine so that the angle will oscillate around 0 (integral of gyro)
-        chirp->exc = cos_approx(chirp->sinarg);
-
-        // frequencies below 1 Hz will lead to the same angle magnitude as at 1 Hz (integral of gyro)
-        if (chirp->fchirp < 1.0f) {
-            chirp->exc = chirp->fchirp * chirp->exc;
-        }
         chirp->count++;
 
         return true;

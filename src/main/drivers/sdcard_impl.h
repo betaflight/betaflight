@@ -34,7 +34,7 @@
     #define SDCARD_PROFILING
 #endif
 
-#define SDCARD_TIMEOUT_INIT_MILLIS                  200
+#define SDCARD_TIMEOUT_INIT_MILLIS                  1000
 #define SDCARD_MAX_CONSECUTIVE_FAILURES             8
 
 typedef enum {
