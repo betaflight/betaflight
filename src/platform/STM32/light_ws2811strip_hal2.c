@@ -109,6 +109,7 @@ bool ws2811LedStripHardwareInit(void)
 
     BIT_COMPARE_1 = period / 3 * 2;
     BIT_COMPARE_0 = period / 3;
+    ws2811LedStripClearTransferBuffer();
 
     LL_TIM_SetPrescaler(ws2811Timer, prescaler);
     LL_TIM_SetAutoReload(ws2811Timer, period);
