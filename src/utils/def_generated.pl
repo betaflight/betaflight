@@ -94,7 +94,8 @@ END2
 END2
 
 // DEFIO_IO_USED_COUNT is number of io pins supported on target
-#define DEFIO_IO_USED_COUNT (@{[join('+', map {  "DEFIO_PORT_${_}_USED_COUNT" } @ports) || '0']})
+// A 32 bit port mask makes the sum unsigned; adding 0LL makes it a signed constant without a cast, which #if cannot take
+#define DEFIO_IO_USED_COUNT (@{[join('+', map {  "DEFIO_PORT_${_}_USED_COUNT" } @ports) || '0']} + 0LL)
 
 // DEFIO_PORT_USED_LIST - comma separated list of bitmask for all used ports.
 // DEFIO_PORT_OFFSET_LIST - comma separated list of port offsets (count of pins before this port)
