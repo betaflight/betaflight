@@ -978,6 +978,24 @@ static void replaceWithRescuePlan(const waypoint_t *plan, uint8_t count)
     resetLegState();
     dispatchWaypoint();
 }
+
+#ifdef USE_WING
+// The retry returns at the altitude the rescue set out for, not one raised by the climb it gave up on.
+static void keepReturnAltitude(waypoint_t plan[], uint8_t count)
+{
+    for (unsigned i = 0; i < fp.injectedCount; i++) {
+        if (fp.injected[i].type == WAYPOINT_TYPE_FLYOVER) {
+            const int32_t returnAltCm = MAX(fp.injected[i].altitude, gpsSol.llh.altCm);
+            for (unsigned j = 0; j < count; j++) {
+                if (plan[j].type == WAYPOINT_TYPE_FLYOVER) {
+                    plan[j].altitude = returnAltCm;
+                }
+            }
+            return;
+        }
+    }
+}
+#endif
 #endif
 
 static void abortMission(flightPlanAbortReason_e reason)
@@ -990,6 +1008,7 @@ static void abortMission(flightPlanAbortReason_e reason)
         waypoint_t plan[FP_INJECTED_PLAN_MAX];
         const uint8_t count = buildRescuePlan(plan, false);
         if (count > 0) {
+            keepReturnAltitude(plan, count);
             replaceWithRescuePlan(plan, count);
             fp.rescueDirect = true;
             return;

@@ -1354,7 +1354,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                 float earthRefGain = FLIGHT_MODE(GPS_RESCUE_MODE) ? 1.0f : pidRuntime.angleEarthRef;
 #ifdef USE_WING
                 // the wing autopilot's yaw rate is about the body axis already, and its turn pitch comes from altitude control
-                if (autopilotYawControlActive()) {
+                if (isYawFromAutopilot()) {
                     earthRefGain = 0.0f;
                     pidRuntime.angleYawSetpoint = 0.0f;
                 }

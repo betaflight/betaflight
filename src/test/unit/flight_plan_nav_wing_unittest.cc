@@ -1205,6 +1205,29 @@ TEST_F(FlightPlanNavWingTest, ARescueClimbThatStallsFliesStraightHome)
     expectStraightHomeFrom(0.0f, 400.0f);
 }
 
+TEST_F(FlightPlanNavWingTest, AStraightHomeRetryKeepsTheReturnAltitude)
+{
+    gpsRescueConfigMutable()->altitudeMode = GPS_RESCUE_ALT_MODE_CURRENT;
+    autopilotWingConfigMutable()->landApproachAlt = 0;
+    craftAt(0.0f, 400.0f, 20.0f);
+    setVelocity(0.0f, 15.0f);
+    startRescue();
+    ASSERT_NEAR(30.0f, g_nav.targetEfM.v[ENU_U], 0.1f);
+    flyRescueTo(0.0f, 400.0f, 25.0f);
+    flyRescueTo(-300.0f, 400.0f, 25.0f);
+    ASSERT_EQ(NAV_TRACK_LINE, g_nav.track);
+    EXPECT_NEAR(30.0f, g_nav.targetEfM.v[ENU_U], 0.1f);
+
+    // but never below where it has climbed to
+    flightPlanNavDisengage();
+    craftAt(0.0f, 400.0f, 20.0f);
+    startRescue();
+    flyRescueTo(0.0f, 400.0f, 33.0f);
+    flyRescueTo(-300.0f, 400.0f, 33.0f);
+    ASSERT_EQ(NAV_TRACK_LINE, g_nav.track);
+    EXPECT_NEAR(33.0f, g_nav.targetEfM.v[ENU_U], 0.1f);
+}
+
 TEST_F(FlightPlanNavWingTest, ARescueThatFailsTwiceAborts)
 {
     craftAt(0.0f, 400.0f, 20.0f);
