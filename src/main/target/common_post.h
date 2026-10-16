@@ -339,6 +339,9 @@
 #if defined(USE_BARO_MS5611)
 #undef USE_BARO_MS5611
 #endif
+#if defined(USE_BARO_ICP20100)
+#undef USE_BARO_ICP20100
+#endif
 #endif
 
 // The flight plan flies its waypoints via GPS. Placed ahead of every USE_GPS
