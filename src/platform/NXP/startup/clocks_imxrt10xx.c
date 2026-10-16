@@ -356,10 +356,13 @@ static const clockGate_t clockGates[NXP_CLK_COUNT] = {
     [NXP_CLK_XBARA1]   = { &CCM->CCGR2, CCM_CCGR2_CG11_MASK },
 };
 
-void nxpClockGateOpen(nxpClock_e peripheral)
+bool nxpClockGateOpen(nxpClock_e peripheral)
 {
-    if ((unsigned)peripheral >= ARRAYLEN(clockGates) || !clockGates[peripheral].ccgr) {
-        return;
+    if ((unsigned)peripheral >= ARRAYLEN(clockGates)) {
+        return false;
+    }
+    if (!clockGates[peripheral].ccgr) {
+        return true;
     }
 
     *clockGates[peripheral].ccgr |= clockGates[peripheral].mask;
@@ -369,6 +372,8 @@ void nxpClockGateOpen(nxpClock_e peripheral)
     const uint32_t mask = clockGates[peripheral].mask;
     for (unsigned spin = 0; spin < 1000 && (*clockGates[peripheral].ccgr & mask) != mask; spin++) {
     }
+
+    return (*clockGates[peripheral].ccgr & mask) == mask;
 }
 
 // A PFD puts out its PLL times 18 over its FRAC field; FRAC 0 reads as 0 Hz.

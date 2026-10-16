@@ -207,7 +207,7 @@ FAST_CODE uint32_t cdcUsbWrite(const uint8_t *buf, uint32_t length)
         return 0;
     }
 
-    const timeUs_t startUs = micros();
+    timeUs_t startUs = micros();
     uint32_t written = 0;
 
     while (written < length) {
@@ -219,6 +219,7 @@ FAST_CODE uint32_t cdcUsbWrite(const uint8_t *buf, uint32_t length)
         if (accepted > 0) {
             written += accepted;
             txStalled = false;
+            startUs = micros();
             continue;
         }
 
