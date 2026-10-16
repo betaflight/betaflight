@@ -13,7 +13,8 @@ PG_RESET_TEMPLATE(motorThermalConfig_t, motorThermalConfig,
     .stator_height_dmm = 70,
     .prop_diameter_dinch = 0,
     .gain_percent = 100,
-    .warning_c = 90
+    .warning_c = 90,
+    .resistance_mohm = 0
 );
 
 #endif
