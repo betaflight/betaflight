@@ -128,6 +128,7 @@
 #include "pg/gps_rescue.h"
 #include "pg/gyrodev.h"
 #include "pg/motor.h"
+#include "pg/motor_thermal.h"
 #include "pg/pilot.h"
 #include "pg/pos_hold.h"
 #include "pg/rx.h"
@@ -1583,6 +1584,16 @@ case MSP_NAME:
 
         // API 1.49
         sbufWriteU16(dst, motorConfig()->kv);
+        // motor thermal estimator geometry (0 = not built in)
+#ifdef USE_MOTOR_THERMAL
+        sbufWriteU8(dst, motorThermalConfig()->stator_diameter_mm);
+        sbufWriteU8(dst, motorThermalConfig()->stator_height_dmm);
+        sbufWriteU8(dst, motorThermalConfig()->prop_diameter_dinch);
+#else
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+#endif
         break;
 
 #ifdef USE_MAG
@@ -3286,6 +3297,18 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         // version 1.49
         if (sbufBytesRemaining(src) >= 2) {
             motorConfigMutable()->kv = sbufReadU16(src);
+        }
+        if (sbufBytesRemaining(src) >= 3) {
+#ifdef USE_MOTOR_THERMAL
+            const uint8_t d = sbufReadU8(src), h = sbufReadU8(src), prop = sbufReadU8(src);
+            if (d && h) {   // zeros = client does not know the fields, keep what we have
+                motorThermalConfigMutable()->stator_diameter_mm = d;
+                motorThermalConfigMutable()->stator_height_dmm = h;
+                motorThermalConfigMutable()->prop_diameter_dinch = prop;
+            }
+#else
+            sbufReadU8(src); sbufReadU8(src); sbufReadU8(src);
+#endif
         }
         break;
 

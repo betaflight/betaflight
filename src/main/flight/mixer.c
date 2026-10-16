@@ -67,6 +67,12 @@
 #include "sensors/sensors.h"
 
 #include "mixer.h"
+#ifdef USE_MOTOR_NOISE
+#include "motor_noise.h"
+#endif
+#ifdef USE_MOTOR_THERMAL
+#include "motor_thermal.h"
+#endif
 
 #define DYN_LPF_THROTTLE_STEPS             100
 #define DYN_LPF_THROTTLE_UPDATE_DELAY_US  5000 // minimum of 5ms between updates
@@ -499,6 +505,12 @@ static void applyMixToMotors(const float motorMix[MAX_SUPPORTED_MOTORS], motorMi
             motor[i] = motor_disarmed[i];
         }
     }
+#ifdef USE_MOTOR_NOISE
+    motorNoiseUpdate(motor, mixerRuntime.motorCount);
+#endif
+#ifdef USE_MOTOR_THERMAL
+    motorThermalUpdate(motor, mixerRuntime.motorCount);
+#endif
 
 #ifdef USE_WING
     float motorSumSquares = 0.0f;

@@ -100,6 +100,7 @@
 #include "pg/max7456.h"
 #include "pg/mco.h"
 #include "pg/motor.h"
+#include "pg/motor_thermal.h"
 #include "pg/msp.h"
 #include "pg/osd_nav_map.h"
 #include "pg/pg.h"
@@ -1004,6 +1005,13 @@ const clivalue_t valueTable[] = {
     { "max_throttle",               VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { PWM_PULSE_MIN, PWM_PULSE_MAX }, PG_MOTOR_CONFIG, offsetof(motorConfig_t, maxthrottle) },
     { "min_command",                VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { PWM_PULSE_MIN, PWM_PULSE_MAX }, PG_MOTOR_CONFIG, offsetof(motorConfig_t, mincommand) },
     { "motor_kv",                   VAR_UINT16 | HARDWARE_VALUE, .config.minmaxUnsigned = { 1, 40000 },                   PG_MOTOR_CONFIG, offsetof(motorConfig_t, kv) },
+#ifdef USE_MOTOR_THERMAL
+    { PARAM_NAME_MOTOR_STATOR_DIAMETER, VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 5, 60 },  PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, stator_diameter_mm) },
+    { PARAM_NAME_MOTOR_STATOR_HEIGHT,   VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 10, 250 }, PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, stator_height_dmm) },
+    { PARAM_NAME_MOTOR_PROP_DIAMETER,   VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 200 },  PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, prop_diameter_dinch) },
+    { PARAM_NAME_MOTOR_THERMAL_GAIN,    VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 10, 250 }, PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, gain_percent) },
+    { PARAM_NAME_MOTOR_THERMAL_WARNING, VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 150 },  PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, warning_c) },
+#endif
     { PARAM_NAME_MOTOR_IDLE, VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, MOTOR_IDLE_MAX },                  PG_MOTOR_CONFIG, offsetof(motorConfig_t, motorIdle) },
 #ifdef USE_DSHOT
 #ifdef USE_DSHOT_DMAR
