@@ -40,7 +40,7 @@ $(TINYUSB_STAMP):
 PLATFORM_SDKS += mcux_imx
 PLATFORM_SDK_mcux_imx_SUBMODULE  := lib/modules/mcux-devices-imx lib/modules/open-amp lib/modules/libmetal
 PLATFORM_SDK_mcux_imx_HYDRATE    := mcux_imx_sdk
-PLATFORM_SDK_mcux_imx_TOOLS      := arm_sdk_install
+PLATFORM_SDK_mcux_imx_TOOLS      := arm_sdk_install imgtool_install
 PLATFORM_SDK_mcux_imx_CC         := $(PLATFORM_SDK_arm_CC)
 PLATFORM_SDK_mcux_imx_CC_VERSION := $(PLATFORM_SDK_arm_CC_VERSION)
 PLATFORM_SDK_mcux_imx_CC_INSTALL := arm_sdk_install
@@ -60,3 +60,11 @@ $(MCUX_IMX_STAMP) $(OPENAMP_STAMP) $(LIBMETAL_STAMP):
 	@echo "Downloading $(patsubst $(ROOT_DIR)/%/.git,%,$@) submodule"
 	$(V1) git submodule update --init --checkout -- $(patsubst $(ROOT_DIR)/%/.git,%,$@) || \
 		{ echo "Failed to update $(patsubst $(ROOT_DIR)/%/.git,%,$@)"; exit 1; }
+
+IMGTOOL_DIR := $(TOOLS_DIR)/imgtool
+
+## imgtool_install    : Install imgtool, which signs the i.MX95 mcuboot image
+.PHONY: imgtool_install
+imgtool_install: | $(TOOLS_DIR)
+	$(V1) $(PYTHON) -m venv "$(IMGTOOL_DIR)"
+	$(V1) "$(IMGTOOL_DIR)/bin/pip" install -q imgtool==2.0.0 pyyaml
