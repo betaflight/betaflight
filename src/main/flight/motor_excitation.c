@@ -177,6 +177,8 @@ static void endSession(motorExcitationEnd_e reason)
         status.state = MOTOR_EXCITATION_ENDED;
         status.end = reason;
         stopMask |= params.motorMask;
+        DEBUG_SET(DEBUG_MOTOR_EXCITATION, 0, 0);
+        DEBUG_SET(DEBUG_MOTOR_EXCITATION, 3, status.state * 16 + status.end);
     }
 }
 
@@ -269,7 +271,6 @@ void motorExcitationUpdate(float *motorDisarmed, int motorCount, float disarmOut
         applyStop(motorDisarmed, motorCount, disarmOutput);
     }
     if (!motorExcitationIsActive()) {
-        DEBUG_SET(DEBUG_MOTOR_EXCITATION, 3, status.state * 16 + status.end);
         return;
     }
 
