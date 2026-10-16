@@ -78,13 +78,20 @@ void motorThermalInit(void)
     rt.bellRadiusM = (0.5f * d + 3.0f) * 0.001f;
     const float propInch = c->prop_diameter_dinch ? c->prop_diameter_dinch * 0.1f : autoPropInch(d);
     rt.propDiameterM = propInch * 0.0254f;
-    const int gyroT = gyroGetTemperature();
-    rt.tAmb = (gyroT > 5 && gyroT < 45) ? gyroT : 25.0f;
     rt.decimation = MAX(1, lrintf(1.0f / (UPDATE_HZ * pidGetDT())));
     rt.dt = rt.decimation * pidGetDT();
     rt.counter = 0;
-    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-        node[i].ts = node[i].tc = rt.tAmb;
+
+    // Parameters are recomputed on every (disarmed) profile change, the thermal state only once at boot:
+    // a hot motor must not read as ambient after a profile switch on the ground.
+    static bool stateInitialised = false;
+    if (!stateInitialised) {
+        const int gyroT = gyroGetTemperature();
+        rt.tAmb = (gyroT > 5 && gyroT < 45) ? gyroT : 25.0f;
+        for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
+            node[i].ts = node[i].tc = rt.tAmb;
+        }
+        stateInitialised = true;
     }
 }
 
@@ -96,8 +103,9 @@ void motorThermalUpdate(const float *motorOutput, int motorCount)
     rt.counter = 0;
 
     const float vbat = getBatteryVoltage() * 0.01f;
-    const float kv = motorConfig()->kv;
-    const float maxRpm = motorEstimateMaxRpm();
+    const float kv = MAX(motorConfig()->kv, 100);                     // effective KV: a zero/absurd setting must not silence the model
+    const float unloadedMaxRpm = vbat * kv;
+    const float maxRpm = unloadedMaxRpm * (-5.44e-6f * unloadedMaxRpm + 0.944f);   // same load derating as motorEstimateMaxRpm()
     // battery current split across motors by command² when per-motor ESC current is not available
     const float batteryAmps = getAmperage() * 0.01f;
     float cmdSqSum = 0.0f;

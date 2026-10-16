@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdbool.h>
 
 #include "platform.h"
 
@@ -19,6 +20,7 @@
 typedef struct {
     pt1Filter_t lp[MOTOR_NOISE_BANDS];  // highpass = input - lowpass
     float msq[MOTOR_NOISE_BANDS];       // EMA of squared highpassed value
+    bool seeded;                        // lowpass state follows the first sample, no start-up transient
 } motorNoiseState_t;
 
 static motorNoiseState_t state[MAX_SUPPORTED_MOTORS];
@@ -32,6 +34,7 @@ void motorNoiseInit(float looptimeUs)
         pt1FilterInit(&state[i].lp[0], pt1FilterGain(MOTOR_NOISE_HP0_HZ, dt));
         pt1FilterInit(&state[i].lp[1], pt1FilterGain(MOTOR_NOISE_HP1_HZ, dt));
         state[i].msq[0] = state[i].msq[1] = 0.0f;
+        state[i].seeded = false;
     }
     kAvg = dt / MOTOR_NOISE_AVG_S;
     // internal motor units -> external 1000..2000 units, measured in the linear region
@@ -42,6 +45,12 @@ void motorNoiseUpdate(const float *motorOutput, int motorCount)
 {
     for (int i = 0; i < motorCount && i < MAX_SUPPORTED_MOTORS; i++) {
         const float x = motorOutput[i] * scaleToExternal;
+        if (!state[i].seeded) {
+            for (int b = 0; b < MOTOR_NOISE_BANDS; b++) {
+                state[i].lp[b].state = x;
+            }
+            state[i].seeded = true;
+        }
         for (int b = 0; b < MOTOR_NOISE_BANDS; b++) {
             const float hp = x - pt1FilterApply(&state[i].lp[b], x);
             state[i].msq[b] += kAvg * (hp * hp - state[i].msq[b]);

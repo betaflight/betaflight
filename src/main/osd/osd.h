@@ -239,13 +239,11 @@ typedef enum {
     OSD_POS_HOLD_READY,         // pre-engagement Position Hold readiness indicator
 #endif
 
-#ifdef USE_MOTOR_THERMAL
-    OSD_MOTOR_TEMP_EST,         // estimated winding temperature per motor (before the optional pitot element so indices stay aligned)
-#endif
-
-#ifdef USE_PITOT
+    // The enum is the MSP position address: entries stay in every build so indices never depend on
+    // compile options (the Configurator already lists AIRSPEED for all API 1.49 builds). Only the draw
+    // function and the active-element registration are compile-time gated.
     OSD_AIRSPEED,
-#endif
+    OSD_MOTOR_TEMP_EST,         // estimated winding temperature per motor
 
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;

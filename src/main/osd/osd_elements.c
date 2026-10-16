@@ -2924,13 +2924,13 @@ void osdUpdateAlarms(void)
     } else {
         CLR_BLINK(OSD_ESC_TMP);
     }
+#endif
 #ifdef USE_MOTOR_THERMAL
     if (motorThermalWarning()) {
         SET_BLINK(OSD_MOTOR_TEMP_EST);
     } else {
         CLR_BLINK(OSD_MOTOR_TEMP_EST);
     }
-#endif
 #endif
 }
 

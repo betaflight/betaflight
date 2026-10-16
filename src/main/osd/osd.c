@@ -1013,7 +1013,6 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
     }
 #endif
 
-#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
 #ifdef USE_MOTOR_THERMAL
     case OSD_STAT_MOTOR_TEMP_EST:
     {
@@ -1023,6 +1022,8 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         return true;
     }
 #endif
+
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
 
     case OSD_STAT_MAX_ESC_RPM:
         itoa(stats.max_esc_rpm, buff, 10);
