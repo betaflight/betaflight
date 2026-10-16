@@ -104,11 +104,11 @@ MCU_EXCLUDES = \
 
 # mcuboot image: hash only signature, 0x800 byte header, 7 MB slot.
 DEFAULT_OUTPUT   := bin
-IMGTOOL          ?= imgtool
+IMGTOOL          ?= $(or $(wildcard $(IMGTOOL_DIR)/bin/imgtool),imgtool)
 IMGTOOL_SIGN     := sign --header-size 0x800 --pad-header --slot-size 0x700000 --align 2 --version 0.0.0
 BIN_FROM_ELF_CMD = $(OBJCOPY) -O binary $< $@.raw && \
     if ! command -v $(IMGTOOL) >/dev/null 2>&1; then \
-        echo "$(IMGTOOL) not found: mcuboot only boots a signed image, run pip install imgtool or set IMGTOOL=<path>" >&2; \
+        echo "$(IMGTOOL) not found: mcuboot only boots a signed image, run make imgtool_install or set IMGTOOL=<path>" >&2; \
         exit 1; \
     fi && \
     $(IMGTOOL) $(IMGTOOL_SIGN) $@.raw $@
