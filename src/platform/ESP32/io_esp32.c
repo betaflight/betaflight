@@ -107,12 +107,18 @@ void IOConfigGPIO(IO_t io, ioConfig_t cfg)
     // Select GPIO function for this pad
     esp_rom_gpio_pad_select_gpio(pin);
 
-    if (mode == BF_GPIO_MODE_OUTPUT) {
+    if (mode == BF_GPIO_MODE_OUTPUT || mode == BF_GPIO_MODE_OUTPUT_OD) {
         gpio_ll_output_enable(&GPIO, pin);
-        gpio_ll_input_disable(&GPIO, pin);
+        gpio_ll_input_enable(&GPIO, pin);
+        if (mode == BF_GPIO_MODE_OUTPUT_OD) {
+            gpio_ll_od_enable(&GPIO, pin);
+        } else {
+            gpio_ll_od_disable(&GPIO, pin);
+        }
     } else {
         gpio_ll_output_disable(&GPIO, pin);
         gpio_ll_input_enable(&GPIO, pin);
+        gpio_ll_od_disable(&GPIO, pin);
     }
 
     if (pupd & BF_GPIO_PULLUP) {

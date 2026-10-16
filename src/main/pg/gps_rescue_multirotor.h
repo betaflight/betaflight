@@ -26,8 +26,10 @@
 
 #include "pg/pg.h"
 
+#define GPS_RESCUE_GROUND_SPEED_MAX 3000
 #define GPS_RESCUE_DESCENT_DIST_MIN_M 5
 #define GPS_RESCUE_DESCENT_DIST_MAX_M 500
+#define GPS_RESCUE_YAW_P_MAX 200
 
 typedef struct gpsRescue_s {
 
