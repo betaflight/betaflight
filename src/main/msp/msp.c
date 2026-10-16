@@ -87,6 +87,9 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#ifdef USE_MOTOR_EXCITATION
+#include "flight/motor_excitation.h"
+#endif
 #include "flight/pid.h"
 #include "flight/pid_init.h"
 #include "flight/position.h"
@@ -2274,6 +2277,27 @@ case MSP_NAME:
 #endif
         break;
 
+#ifdef USE_MOTOR_EXCITATION
+    case MSP2_MOTOR_EXCITATION_STATUS: {
+        const motorExcitationParams_t *p = motorExcitationGetParams();
+        const motorExcitationStatus_t *s = motorExcitationGetStatus();
+        sbufWriteU8(dst, 1);                                   // payload version
+        sbufWriteU8(dst, s->state);
+        sbufWriteU8(dst, s->end);
+        sbufWriteU16(dst, p->sessionId);
+        sbufWriteU8(dst, p->motorMask);
+        sbufWriteU8(dst, p->waveform);
+        sbufWriteU32(dst, s->elapsedMs);
+        sbufWriteU16(dst, lrintf(constrainf(s->frequencyHz * 10.0f, 0.0f, 65535.0f)));
+        sbufWriteU16(dst, (int16_t)lrintf(s->sample));
+        sbufWriteU16(dst, lrintf(constrainf(s->rms * 10.0f, 0.0f, 65535.0f)));
+        sbufWriteU32(dst, s->loops);
+        sbufWriteU32(dst, s->clippedLoops);
+        sbufWriteU16(dst, 1000000 / targetPidLooptime);        // signal update rate, Hz
+        break;
+    }
+#endif
+
 #if defined(USE_VTX_COMMON)
     case MSP_VTX_CONFIG: {
         const vtxDevice_t *vtxDevice = vtxCommonDevice();
@@ -3375,6 +3399,41 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
 #endif // !USE_WING
 #endif
+#endif
+
+#ifdef USE_MOTOR_EXCITATION
+    case MSP2_SET_MOTOR_EXCITATION: {
+        // op 0 = stop, 1 = start (parameters follow), 2 = keepalive (session id follows)
+        if (dataSize < 1) {
+            return MSP_RESULT_ERROR;
+        }
+        const uint8_t op = sbufReadU8(src);
+        if (op == 0) {
+            motorExcitationStop();
+        } else if (op == 2 && sbufBytesRemaining(src) >= 2) {
+            motorExcitationKeepalive(sbufReadU16(src));
+        } else if (op == 1 && sbufBytesRemaining(src) >= 24) {   // 24 bytes of parameters
+            motorExcitationParams_t p;
+            p.sessionId = sbufReadU16(src);
+            p.motorMask = sbufReadU8(src);
+            p.waveform = sbufReadU8(src);
+            p.baseCommand = sbufReadU16(src);
+            p.amplitude = sbufReadU16(src);
+            p.freq0DeciHz = sbufReadU16(src);
+            p.freq1DeciHz = sbufReadU16(src);
+            p.durationDs = sbufReadU16(src);
+            p.rampMs = sbufReadU16(src);
+            p.maxCommand = sbufReadU16(src);
+            p.timeoutMs = sbufReadU16(src);
+            p.seed = sbufReadU32(src);
+            if (!motorExcitationStart(&p)) {
+                return MSP_RESULT_ERROR;
+            }
+        } else {
+            return MSP_RESULT_ERROR;
+        }
+        break;
+    }
 #endif
 
     case MSP_SET_MOTOR:

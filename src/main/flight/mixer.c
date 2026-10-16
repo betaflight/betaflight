@@ -73,6 +73,9 @@
 #ifdef USE_MOTOR_THERMAL
 #include "motor_thermal.h"
 #endif
+#ifdef USE_MOTOR_EXCITATION
+#include "motor_excitation.h"
+#endif
 
 #define DYN_LPF_THROTTLE_STEPS             100
 #define DYN_LPF_THROTTLE_UPDATE_DELAY_US  5000 // minimum of 5ms between updates
@@ -705,6 +708,10 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
 #endif
 #ifdef USE_MOTOR_THERMAL
     motorThermalUpdate(motor, mixerRuntime.motorCount);
+#endif
+#ifdef USE_MOTOR_EXCITATION
+    // bench signal generator: writes the motor test values, ends its session when armed
+    motorExcitationUpdate(motor_disarmed, mixerRuntime.motorCount, mixerRuntime.disarmMotorOutput, currentTimeUs);
 #endif
 
     const bool launchControlActive = isLaunchControlActive();

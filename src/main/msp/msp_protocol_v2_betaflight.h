@@ -37,6 +37,8 @@
 #define MSP2_CLI_SETTING                    0x3010
 #define MSP2_CLI_SETTING_INFO               0x3011
 #define MSP2_CLI_COMMAND                    0x3012
+#define MSP2_MOTOR_EXCITATION_STATUS        0x3013  // out: bench motor excitation session status
+#define MSP2_SET_MOTOR_EXCITATION           0x3014  // in: start / keepalive / stop a bench excitation session
 
 // MSP2_CLI_COMMAND response flags (byte following the u16 total-length header)
 #define MSP2_CLI_COMMAND_FLAG_TRUNCATED     (1 << 0) // output exceeded the pageable buffer
