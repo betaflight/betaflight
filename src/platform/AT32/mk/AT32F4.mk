@@ -76,6 +76,8 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 
 ifeq ($(TARGET),AT32F435M)
 LD_SCRIPT       = $(LINKER_DIR)/at32_flash_f43xm.ld
+else ifeq ($(TARGET),AT32F435P)
+LD_SCRIPT       = $(LINKER_DIR)/at32_flash_f43xp.ld
 else
 LD_SCRIPT       = $(LINKER_DIR)/at32_flash_f43xg.ld
 endif
