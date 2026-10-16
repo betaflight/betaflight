@@ -724,10 +724,10 @@ static const clockEntry_t clockEntries[NXP_CLK_COUNT] = {
     [NXP_CLK_XBARA1]   = {  43, 1, ROOT_NONE, 0 },
 };
 
-void nxpClockGateOpen(nxpClock_e peripheral)
+bool nxpClockGateOpen(nxpClock_e peripheral)
 {
     if ((unsigned)peripheral >= ARRAYLEN(clockEntries)) {
-        return;
+        return false;
     }
 
     const clockEntry_t *const entry = &clockEntries[peripheral];
@@ -745,10 +745,12 @@ void nxpClockGateOpen(nxpClock_e peripheral)
         while (!(CCM->LPCG[entry->lpcg + i].STATUS0 & CCM_LPCG_STATUS0_ON_MASK)) {
             if (++spin == 100000) {
                 failureMode(FAILURE_DEVELOPER);
-                return;
+                return false;
             }
         }
     }
+
+    return true;
 }
 
 #if SERIAL_PIOUART_COUNT > 0

@@ -33,7 +33,6 @@
 
 #include "common/maths.h"
 #include "common/time.h"
-#include "build/atomic.h"
 #include "build/debug.h"
 #include "common/utils.h"
 
@@ -206,19 +205,23 @@ FAST_CODE static inline sysTickReading_t sysTickSampleISR(void)
 {
     sysTickReading_t reading;
 
-    ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+    // PRIMASK as in SysTick_Handler, since the priority 0 gyro interrupt also reads CTRL.
+    const uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+
+    reading.val = SysTick->VAL;
+
+    if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
+        sysTickPending = 1;
+
+        // Read again, so the counter is one from after that reload.
         reading.val = SysTick->VAL;
-
-        if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
-            sysTickPending = 1;
-
-            // Read again, so the counter is one from after that reload.
-            reading.val = SysTick->VAL;
-        }
-
-        reading.ms = sysTickUptime;
-        reading.pending = (uint32_t)sysTickPending;
     }
+
+    reading.ms = sysTickUptime;
+    reading.pending = (uint32_t)sysTickPending;
+
+    __set_PRIMASK(primask);
 
     return reading;
 }

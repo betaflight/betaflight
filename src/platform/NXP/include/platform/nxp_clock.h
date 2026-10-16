@@ -108,12 +108,11 @@ typedef enum {
 
 // Open the clock gate of one peripheral. Calling it again is harmless. False
 // means the clock was refused and the caller must not touch the hardware.
-void nxpClockGateOpen(nxpClock_e peripheral);
+bool nxpClockGateOpen(nxpClock_e peripheral);
 
 static inline bool nxpClockGateEnable(nxpClock_e peripheral)
 {
-    nxpClockGateOpen(peripheral);
-    return true;
+    return nxpClockGateOpen(peripheral);
 }
 
 // The functional clock rate of one peripheral in hertz, read from the clock
