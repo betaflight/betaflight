@@ -472,14 +472,14 @@ static void updateState(const fdm_packet* pkt)
         struct timespec out_ts;
         timeval_sub(&out_ts, &now_ts, &last_ts);
         simRate = deltaSim / (out_ts.tv_sec + 1e-9*out_ts.tv_nsec);
+
+        last_ts.tv_sec = now_ts.tv_sec;
+        last_ts.tv_nsec = now_ts.tv_nsec;
     }
 //    printf("simRate = %lf, millis64 = %lu, millis64_real = %lu, deltaSim = %lf\n", simRate, millis64(), millis64_real(), deltaSim*1e6);
 
     last_timestamp = pkt->timestamp;
     last_realtime = micros64_real();
-
-    last_ts.tv_sec = now_ts.tv_sec;
-    last_ts.tv_nsec = now_ts.tv_nsec;
 
     // Periodic status (about 1 Hz)
     static uint64_t lastDebugTimeUs = 0;
