@@ -74,6 +74,9 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#ifdef USE_MOTOR_THERMAL
+#include "flight/motor_thermal.h"
+#endif
 #include "flight/position.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -225,6 +228,7 @@ const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT] = {
     OSD_STAT_FULL_THROTTLE_TIME,
     OSD_STAT_FULL_THROTTLE_COUNTER,
     OSD_STAT_AVG_THROTTLE,
+    OSD_STAT_MOTOR_TEMP_EST,
 };
 
 #define OSD_TASK_MARGIN                 1
@@ -642,6 +646,9 @@ static void osdResetStats(void)
     stats.max_g_force     = 0;
     stats.max_esc_temp_ix = 0;
     stats.max_esc_temp    = 0;
+    stats.max_motor_temp_est = 0;
+    stats.avg_motor_temp_est_acc = 0.0f;
+    stats.avg_motor_temp_est_n = 0;
     stats.max_esc_rpm     = 0;
     stats.min_link_quality = (linkQualitySource == LQ_SOURCE_NONE) ? 99 : 100; // percent
     stats.min_rssi_dbm = CRSF_RSSI_MAX;
@@ -737,6 +744,21 @@ static void osdUpdateStats(void)
         if (stats.max_distance < GPS_distanceToHome) {
             stats.max_distance = GPS_distanceToHome;
         }
+    }
+#endif
+
+#ifdef USE_MOTOR_THERMAL
+    {
+        float sum = 0.0f;
+        for (int k = 0; k < getMotorCount(); k++) {
+            sum += motorThermalGetTemp(k);
+        }
+        const int16_t maxT = lrintf(motorThermalGetMaxTemp());
+        if (stats.max_motor_temp_est < maxT) {
+            stats.max_motor_temp_est = maxT;
+        }
+        stats.avg_motor_temp_est_acc += sum / MAX(getMotorCount(), 1);
+        stats.avg_motor_temp_est_n++;
     }
 #endif
 
@@ -992,6 +1014,16 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 #endif
 
 #if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
+#ifdef USE_MOTOR_THERMAL
+    case OSD_STAT_MOTOR_TEMP_EST:
+    {
+        const int avg = stats.avg_motor_temp_est_n ? lrintf(stats.avg_motor_temp_est_acc / stats.avg_motor_temp_est_n) : 0;
+        tfp_sprintf(buff, "%d/%d%c", osdConvertTemperatureToSelectedUnit(stats.max_motor_temp_est), osdConvertTemperatureToSelectedUnit(avg), osdGetTemperatureSymbolForSelectedUnit());
+        osdDisplayStatisticLabel(midCol, displayRow, "MOTOR TEMP MAX/AVG", buff);
+        return true;
+    }
+#endif
+
     case OSD_STAT_MAX_ESC_RPM:
         itoa(stats.max_esc_rpm, buff, 10);
         osdDisplayStatisticLabel(midCol, displayRow, "MAX ESC RPM", buff);

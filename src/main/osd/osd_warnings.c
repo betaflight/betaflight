@@ -51,6 +51,9 @@
 #include "flight/landing_wing.h"
 #include "flight/launch_wing.h"
 #include "flight/mixer.h"
+#ifdef USE_MOTOR_THERMAL
+#include "flight/motor_thermal.h"
+#endif
 #include "flight/mixer_init.h"
 #include "flight/pid.h"
 #include "flight/flight_plan_capture.h"
@@ -399,6 +402,16 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #endif
     if (osdWarnGetState(OSD_WARNING_POSHOLD_FAILED) && posHoldFailure() && !missionAbortActive) {
         tfp_sprintf(warningText, "POSHOLD FAIL");
+        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *blinking = true;
+        return;
+    }
+#endif
+
+#ifdef USE_MOTOR_THERMAL
+    // estimated motor winding temperature above motor_thermal_warning
+    if (osdWarnGetState(OSD_WARNING_MOTOR_TEMP) && motorThermalWarning()) {
+        tfp_sprintf(warningText, "MOTOR HOT %d%c", osdConvertTemperatureToSelectedUnit(lrintf(motorThermalGetMaxTemp())), osdGetTemperatureSymbolForSelectedUnit());
         *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
         *blinking = true;
         return;
