@@ -81,7 +81,11 @@ typedef struct motorExcitationParams_s {
     uint16_t maxCommand;        // external units, clamp for base + signal
     uint16_t timeoutMs;         // keepalive timeout
     uint32_t seed;              // white noise generator seed
+    uint8_t flags;              // MOTOR_EXCITATION_FLAG_*
+    uint8_t invertMask;         // motors that get the negated signal (e.g. diagonals in antiphase)
 } motorExcitationParams_t;
+
+#define MOTOR_EXCITATION_FLAG_INDEPENDENT  0x01   // WHITE: an independent generator per motor (MIMO identification)
 
 typedef struct motorExcitationStatus_s {
     motorExcitationState_e state;

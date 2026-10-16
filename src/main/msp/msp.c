@@ -3430,6 +3430,8 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             p.maxCommand = sbufReadU16(src);
             p.timeoutMs = sbufReadU16(src);
             p.seed = sbufReadU32(src);
+            p.flags = sbufBytesRemaining(src) >= 1 ? sbufReadU8(src) : 0;        // optional (later hosts)
+            p.invertMask = sbufBytesRemaining(src) >= 1 ? sbufReadU8(src) : 0;
             if (!motorExcitationStart(&p)) {
                 return MSP_RESULT_ERROR;
             }

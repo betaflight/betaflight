@@ -65,6 +65,8 @@ static float lowpass;
 static float lowpassGain;
 static float lowpassNorm;
 static uint32_t rngState;
+static uint32_t motorRng[MAX_SUPPORTED_MOTORS];     // independent white noise per motor
+static float motorLowpass[MAX_SUPPORTED_MOTORS];
 static chirp_t chirp;
 static float rmsSq;
 
@@ -77,12 +79,25 @@ static float toInternal(float external)
     return internalOffset + internalScale * external;
 }
 
+static float rngNext(uint32_t *state)
+{
+    *state ^= *state << 13;
+    *state ^= *state >> 17;
+    *state ^= *state << 5;
+    return (float)(*state & 0xFFFFFF) / (float)0x800000 - 1.0f;   // -1..1
+}
+
 static float rngUniform(void)
 {
-    rngState ^= rngState << 13;
-    rngState ^= rngState >> 17;
-    rngState ^= rngState << 5;
-    return (float)(rngState & 0xFFFFFF) / (float)0x800000 - 1.0f;   // -1..1
+    return rngNext(&rngState);
+}
+
+// unit-sigma lowpassed gaussian for one motor's own generator
+static float motorWhite(int i)
+{
+    const float g = rngNext(&motorRng[i]) + rngNext(&motorRng[i]) + rngNext(&motorRng[i]);
+    motorLowpass[i] += lowpassGain * (g - motorLowpass[i]);
+    return constrainf(motorLowpass[i] * lowpassNorm, -3.0f, 3.0f);
 }
 
 static bool paramsValid(const motorExcitationParams_t *p, float loopHz)
@@ -160,6 +175,13 @@ bool motorExcitationStart(const motorExcitationParams_t *p)
     lowpass = 0.0f;
     rmsSq = 0.0f;
     rngState = params.seed ? params.seed : DEFAULT_SEED;
+    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
+        motorRng[i] = rngState ^ (DEFAULT_SEED * (uint32_t)(i + 1));
+        if (motorRng[i] == 0) {
+            motorRng[i] = DEFAULT_SEED;
+        }
+        motorLowpass[i] = 0.0f;
+    }
     if (params.waveform == MOTOR_EXCITATION_WHITE) {
         lowpassGain = 1.0f - expf(-2.0f * M_PIf * f0 * dt);
         lowpassNorm = 1.0f / sqrtf(lowpassGain / (2.0f - lowpassGain));   // unit sigma after the lowpass
@@ -293,6 +315,7 @@ void motorExcitationUpdate(float *motorDisarmed, int motorCount, float disarmOut
         startUs = currentTimeUs;
     }
     const float dt = pidGetDT();
+    const bool independent = params.flags & MOTOR_EXCITATION_FLAG_INDEPENDENT;
     const timeDelta_t elapsedUs = cmpTimeUs(currentTimeUs, startUs);
     status.elapsedMs = elapsedUs / 1000;
 
@@ -321,39 +344,51 @@ void motorExcitationUpdate(float *motorDisarmed, int motorCount, float disarmOut
             DEBUG_SET(DEBUG_MOTOR_EXCITATION, 4, (int16_t)params.sessionId);
             return;
         }
-        sample = params.amplitude * nextSample(dt);
+        if (!(independent && params.waveform == MOTOR_EXCITATION_WHITE)) {
+            sample = params.amplitude * nextSample(dt);
+        }
         if (!motorExcitationIsActive()) {   // chirp finished
             applyStop(motorDisarmed, motorCount, disarmOutput);
             return;
         }
     }
 
-    float out = currentBase + sample;
-    const float clamped = constrainf(out, MOTOR_EXCITATION_MIN_COMMAND, params.maxCommand);
-    if (status.state == MOTOR_EXCITATION_RUN) {
-        status.loops++;
-        if (clamped != out) {
-            status.clippedLoops++;
-        }
-        const float applied = clamped - currentBase;
-        rmsSq += (dt / RMS_AVERAGING_S) * (applied * applied - rmsSq);
-    }
-    out = clamped;
-    status.sample = sample;
-    status.rms = sqrtf(rmsSq);
-
-    // the disarmed (motor test) value carries the signal: the mixer copies it to the output on every path,
-    // and blackbox MOTOR_TEST mode sees the motor running
-    const float outInternal = toInternal(out);
+    // per motor: shared sample (or the motor's own generator), sign from invertMask, clamp, write the motor test value.
+    // The disarmed (motor test) value carries the signal: the mixer copies it to the output on every path,
+    // and blackbox MOTOR_TEST mode sees the motor running. Status and debug follow the first motor of the mask.
+    const bool running = status.state == MOTOR_EXCITATION_RUN;
     int firstMotor = -1;
+    float out = currentBase;
     for (int i = 0; i < motorCount; i++) {
-        if (params.motorMask & (1u << i)) {
-            motorDisarmed[i] = outInternal;
-            if (firstMotor < 0) {
-                firstMotor = i;
+        if (!(params.motorMask & (1u << i))) {
+            continue;
+        }
+        float s = sample;
+        if (running && independent && params.waveform == MOTOR_EXCITATION_WHITE) {
+            s = params.amplitude * motorWhite(i);
+        }
+        if (params.invertMask & (1u << i)) {
+            s = -s;
+        }
+        const float raw = currentBase + s;
+        const float o = constrainf(raw, MOTOR_EXCITATION_MIN_COMMAND, params.maxCommand);
+        motorDisarmed[i] = toInternal(o);
+        if (firstMotor < 0) {
+            firstMotor = i;
+            out = o;
+            sample = s;
+            if (running) {
+                status.loops++;
+                if (o != raw) {
+                    status.clippedLoops++;
+                }
+                const float applied = o - currentBase;
+                rmsSq += (dt / RMS_AVERAGING_S) * (applied * applied - rmsSq);
             }
         }
     }
+    status.sample = sample;
+    status.rms = sqrtf(rmsSq);
 
     DEBUG_SET(DEBUG_MOTOR_EXCITATION, 0, lrintf(sample));                       //!< Signal sample [unit:command]
     DEBUG_SET(DEBUG_MOTOR_EXCITATION, 1, lrintf(out));                          //!< Applied command, base + signal after clamp [unit:command]
