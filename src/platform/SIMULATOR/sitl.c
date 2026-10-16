@@ -285,6 +285,8 @@ static void updateState(const fdm_packet* pkt)
     if (realtime_now > last_realtime + 500*1e3) { // 500ms timeout
         last_timestamp = pkt->timestamp;
         last_realtime = realtime_now;
+        last_ts.tv_sec  = now_ts.tv_sec;
+        last_ts.tv_nsec = now_ts.tv_nsec;
         sendMotorUpdate();
         return;
     }
@@ -474,6 +476,9 @@ static void updateState(const fdm_packet* pkt)
         simRate = deltaSim / (out_ts.tv_sec + 1e-9*out_ts.tv_nsec);
 
         last_ts.tv_sec = now_ts.tv_sec;
+        last_ts.tv_nsec = now_ts.tv_nsec;
+    } else if (deltaSim >= 0.02) {
+        last_ts.tv_sec  = now_ts.tv_sec;
         last_ts.tv_nsec = now_ts.tv_nsec;
     }
 //    printf("simRate = %lf, millis64 = %lu, millis64_real = %lu, deltaSim = %lf\n", simRate, millis64(), millis64_real(), deltaSim*1e6);
