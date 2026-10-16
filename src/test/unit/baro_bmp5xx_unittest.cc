@@ -40,9 +40,21 @@ int ioInitCalls = 0;
 int ioConfigCalls = 0;
 int spiSetClkDivisorCalls = 0;
 int ioPreinitCalls = 0;
+bool stubBusBusy = false;
+bool stubBusError = false;
+bool stubReadStartResult = true;
+uint8_t readStartReg = 0;
+uint8_t readStartLength = 0;
+uint8_t *readStartData = NULL;
 
 void resetStubs(void)
 {
+    stubBusBusy = false;
+    stubBusError = false;
+    stubReadStartResult = true;
+    readStartReg = 0;
+    readStartLength = 0;
+    readStartData = NULL;
     stubChipId = 0;
     ioHiCalls = 0;
     ioInitCalls = 0;
@@ -62,6 +74,18 @@ baroDev_t makeSpiBaro(void)
     baro.dev.bus = &bus;
     baro.dev.busType_u.spi.csnPin = (IO_t)1;
     return baro;
+}
+
+// End the running read. A good read fills the buffer with a dummy byte, 25 degC and 100000 Pa.
+void completeRead(bool error)
+{
+    const uint8_t frame[] = { 0xFF, 0x00, 0x00, 0x19, 0x00, 0xA8, 0x61 };
+
+    if (!error && readStartData && readStartLength == sizeof(frame)) {
+        memcpy(readStartData, frame, sizeof(frame));
+    }
+    stubBusError = error;
+    stubBusBusy = false;
 }
 
 } // namespace
@@ -100,6 +124,78 @@ TEST(baroBmp5xxTest, DetectDeinitializesSpiBusOnUnknownChip)
     EXPECT_EQ(1, ioPreinitCalls);
 }
 
+TEST(baroBmp5xxTest, ReadUpStartsTheReadAndGetUpWaitsForTheBus)
+{
+    resetStubs();
+
+    bmp5xxConfig_t config = {};
+    baroDev_t baro = makeSpiBaro();
+
+    stubChipId = 0x51;
+    ASSERT_TRUE(bmp5xxDetect(&config, &baro, NULL));
+
+    stubBusBusy = true;
+    EXPECT_FALSE(baro.read_up(&baro));
+    EXPECT_EQ(0, readStartLength);
+
+    stubBusBusy = false;
+    EXPECT_TRUE(baro.read_up(&baro));
+    EXPECT_EQ(0x1D, readStartReg);
+    EXPECT_EQ(7, readStartLength);  // SPI dummy byte + 6 data bytes
+
+    stubBusBusy = true;
+    EXPECT_FALSE(baro.get_up(&baro));
+
+    completeRead(false);
+    EXPECT_TRUE(baro.get_up(&baro));
+
+    int32_t pressure = 0;
+    int32_t temperature = 0;
+    baro.calculate(&pressure, &temperature);
+    EXPECT_EQ(100000, pressure);
+    EXPECT_EQ(2500, temperature);
+}
+
+TEST(baroBmp5xxTest, FailedReadGivesNoPressure)
+{
+    resetStubs();
+
+    bmp5xxConfig_t config = {};
+    baroDev_t baro = makeSpiBaro();
+
+    stubChipId = 0x51;
+    ASSERT_TRUE(bmp5xxDetect(&config, &baro, NULL));
+
+    ASSERT_TRUE(baro.read_up(&baro));
+    completeRead(false);
+    ASSERT_TRUE(baro.get_up(&baro));
+
+    // The next read ends with an error and leaves the old frame in the buffer.
+    ASSERT_TRUE(baro.read_up(&baro));
+    completeRead(true);
+    EXPECT_TRUE(baro.get_up(&baro));
+
+    int32_t pressure = -1;
+    int32_t temperature = -1;
+    baro.calculate(&pressure, &temperature);
+    EXPECT_EQ(0, pressure);
+    EXPECT_EQ(-1, temperature);
+}
+
+TEST(baroBmp5xxTest, ReadUpFailsWhenTheReadDoesNotStart)
+{
+    resetStubs();
+
+    bmp5xxConfig_t config = {};
+    baroDev_t baro = makeSpiBaro();
+
+    stubChipId = 0x51;
+    ASSERT_TRUE(bmp5xxDetect(&config, &baro, NULL));
+
+    stubReadStartResult = false;
+    EXPECT_FALSE(baro.read_up(&baro));
+}
+
 extern "C" {
 
 uint32_t millis(void)
@@ -111,9 +207,12 @@ void delay(uint32_t)
 {
 }
 
-bool busBusy(const extDevice_t *, bool *)
+bool busBusy(const extDevice_t *, bool *error)
 {
-    return false;
+    if (error) {
+        *error = stubBusError;
+    }
+    return stubBusBusy;
 }
 
 bool busReadRegisterBuffer(const extDevice_t *, uint8_t reg, uint8_t *data, uint8_t length)
@@ -125,9 +224,12 @@ bool busReadRegisterBuffer(const extDevice_t *, uint8_t reg, uint8_t *data, uint
     return true;
 }
 
-bool busReadRegisterBufferStart(const extDevice_t *, uint8_t, uint8_t *, uint8_t)
+bool busReadRegisterBufferStart(const extDevice_t *, uint8_t reg, uint8_t *data, uint8_t length)
 {
-    return true;
+    readStartReg = reg;
+    readStartLength = length;
+    readStartData = data;
+    return stubReadStartResult;
 }
 
 bool busWriteRegister(const extDevice_t *, uint8_t, uint8_t)

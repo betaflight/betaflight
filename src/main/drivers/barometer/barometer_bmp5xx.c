@@ -222,6 +222,7 @@
 // Uncompensated pressure and temperature (raw 24-bit values)
 static uint32_t bmp5xx_up = 0;
 static uint32_t bmp5xx_ut = 0;
+static bool bmp5xxSampleValid = false;
 
 // DMA buffer for sensor data (extra byte for SPI dummy)
 static DMA_DATA_ZERO_INIT uint8_t sensor_data_buffer[BMP5XX_DATA_FRAME_SIZE + 1];
@@ -490,31 +491,46 @@ static bool bmp5xxStartUP(baroDev_t *baro)
 }
 
 /**
- * @brief Read pressure and temperature raw data from BMP5XX
+ * @brief Start reading pressure and temperature raw data from BMP5XX
  * @param baro Pointer to barometer device
- * @return true on successful I2C/SPI read, false on failure
+ * @return true once the read has started, false while the bus is busy or on failure
  * @note Reads 6 bytes: 3 for temperature + 3 for pressure
  */
 static bool bmp5xxReadUP(baroDev_t *baro)
 {
-    // Use synchronous read for I2C - async reads can get stuck on PICO
+    if (busBusy(&baro->dev, NULL)) {
+        return false;
+    }
+
     // Read temperature and pressure data (6 bytes starting from TEMP_DATA_XLSB)
     // Registers are: TEMP_XLSB (0x1D), TEMP_LSB (0x1E), TEMP_MSB (0x1F),
     //                PRESS_XLSB (0x20), PRESS_LSB (0x21), PRESS_MSB (0x22)
-    return bmp5xxReadRegisterBuffer(&baro->dev, BMP5XX_REG_TEMP_DATA_XLSB, 
-        sensor_data, BMP5XX_DATA_FRAME_SIZE);
+    const bool started = busReadRegisterBufferStart(&baro->dev, BMP5XX_REG_TEMP_DATA_XLSB, sensor_data_buffer,
+        BMP5XX_DATA_FRAME_SIZE + (sensor_data - sensor_data_buffer));
+    if (started) {
+        bmp5xxSampleValid = false;
+    }
+    return started;
 }
 
 /**
  * @brief Parse raw pressure and temperature data from buffer
  * @param baro Pointer to barometer device
- * @return true always
- * @note Parses 24-bit raw values from sensor_data buffer into bmp5xx_ut and bmp5xx_up
+ * @return true once the read has completed or failed, false while the bus is busy
+ * @note Parses 24-bit raw values from sensor_data buffer into bmp5xx_ut and bmp5xx_up.
+ *       A failed read leaves the sample invalid.
  */
 static bool bmp5xxGetUP(baroDev_t *baro)
 {
-    UNUSED(baro);
-    
+    bool error = false;
+    if (busBusy(&baro->dev, &error)) {
+        return false;
+    }
+
+    if (error) {
+        return true;
+    }
+
     // Parse temperature (24-bit, signed)
     bmp5xx_ut = (uint32_t)sensor_data[0] |
                 ((uint32_t)sensor_data[1] << 8) |
@@ -524,6 +540,7 @@ static bool bmp5xxGetUP(baroDev_t *baro)
     bmp5xx_up = (uint32_t)sensor_data[3] |
                 ((uint32_t)sensor_data[4] << 8) |
                 ((uint32_t)sensor_data[5] << 16);
+    bmp5xxSampleValid = true;
 
     return true;
 }
@@ -535,9 +552,17 @@ static bool bmp5xxGetUP(baroDev_t *baro)
  * @note BMP5XX outputs already compensated data:
  *       - Temperature: raw / 65536 = deg C, converted to centidegrees
  *       - Pressure: raw / 64 = Pa
+ *       Without a valid sample, pressure is 0 and temperature is not changed.
  */
 static void bmp5xxCalculate(int32_t *pressure, int32_t *temperature)
 {
+    if (!bmp5xxSampleValid) {
+        if (pressure) {
+            *pressure = 0;
+        }
+        return;
+    }
+
     // BMP5XX outputs already compensated data
     // Temperature: raw value / 65536 = °C
     // Pressure: raw value / 64 = Pa
