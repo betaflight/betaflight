@@ -1218,7 +1218,11 @@ static bool inMotorTestMode(void)
 {
     static uint32_t resetTime = 0;
 
-    if (!ARMING_FLAG(ARMED) && areMotorsRunning()) {
+    bool benchSession = false;
+#ifdef USE_MOTOR_EXCITATION
+    benchSession = motorExcitationIsActive();   // includes RECORD sessions with the motors stopped (tap test)
+#endif
+    if (!ARMING_FLAG(ARMED) && (areMotorsRunning() || benchSession)) {
         resetTime = millis() + 5000; // add 5 seconds
         return true;
     } else {

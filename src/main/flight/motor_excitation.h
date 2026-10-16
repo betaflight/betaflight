@@ -41,6 +41,7 @@ typedef enum {
     MOTOR_EXCITATION_WHITE,     // amplitude = sigma, gaussian lowpassed at f0, clipped at 3 sigma, seeded
     MOTOR_EXCITATION_CHIRP,     // amplitude = peak, exponential sweep f0 -> f1 over the duration
     MOTOR_EXCITATION_SQUARE,    // amplitude = peak, f0 (step response)
+    MOTOR_EXCITATION_RECORD,    // no motor output: logging window with host markers (tap test); mask may be 0
     MOTOR_EXCITATION_WAVEFORM_COUNT
 } motorExcitationWaveform_e;
 
@@ -91,11 +92,13 @@ typedef struct motorExcitationStatus_s {
     float rms;                  // measured RMS of the applied signal after clipping, external units
     uint32_t loops;             // signal loops in RUN
     uint32_t clippedLoops;      // loops where base + signal hit a clamp
+    uint16_t marker;            // last marker set by the host (RECORD sessions)
 } motorExcitationStatus_t;
 
 // Host side (MSP). Start fails (false) when armed, the parameters are invalid or no motor is selected.
 bool motorExcitationStart(const motorExcitationParams_t *params);
 void motorExcitationKeepalive(uint16_t sessionId);
+void motorExcitationMark(uint16_t sessionId, uint16_t marker);   // also a keepalive
 void motorExcitationStop(void);
 
 bool motorExcitationIsActive(void);

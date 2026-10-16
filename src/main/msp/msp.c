@@ -2294,6 +2294,7 @@ case MSP_NAME:
         sbufWriteU32(dst, s->loops);
         sbufWriteU32(dst, s->clippedLoops);
         sbufWriteU16(dst, 1000000 / targetPidLooptime);        // signal update rate, Hz
+        sbufWriteU16(dst, s->marker);
         break;
     }
 #endif
@@ -3403,7 +3404,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
 #ifdef USE_MOTOR_EXCITATION
     case MSP2_SET_MOTOR_EXCITATION: {
-        // op 0 = stop, 1 = start (parameters follow), 2 = keepalive (session id follows)
+        // op 0 = stop, 1 = start (parameters follow), 2 = keepalive (session id follows), 3 = marker (session, value)
         if (dataSize < 1) {
             return MSP_RESULT_ERROR;
         }
@@ -3412,6 +3413,9 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             motorExcitationStop();
         } else if (op == 2 && sbufBytesRemaining(src) >= 2) {
             motorExcitationKeepalive(sbufReadU16(src));
+        } else if (op == 3 && sbufBytesRemaining(src) >= 4) {   // marker: session id, value
+            const uint16_t session = sbufReadU16(src);
+            motorExcitationMark(session, sbufReadU16(src));
         } else if (op == 1 && sbufBytesRemaining(src) >= 24) {   // 24 bytes of parameters
             motorExcitationParams_t p;
             p.sessionId = sbufReadU16(src);

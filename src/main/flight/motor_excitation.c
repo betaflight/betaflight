@@ -91,10 +91,13 @@ static bool paramsValid(const motorExcitationParams_t *p, float loopHz)
     const float f0 = p->freq0DeciHz * 0.1f;
     const float f1 = p->freq1DeciHz * 0.1f;
 
-    if (p->motorMask == 0 || (p->motorMask >> getMotorCount()) != 0) {
+    if (p->waveform >= MOTOR_EXCITATION_WAVEFORM_COUNT || (p->motorMask >> getMotorCount()) != 0) {
         return false;
     }
-    if (p->waveform >= MOTOR_EXCITATION_WAVEFORM_COUNT) {
+    if (p->waveform == MOTOR_EXCITATION_RECORD) {   // motors stay stopped: only the duration matters
+        return p->durationDs > 0 && p->durationDs <= MOTOR_EXCITATION_MAX_DURATION_DS;
+    }
+    if (p->motorMask == 0) {
         return false;
     }
     if (p->baseCommand < MOTOR_EXCITATION_MIN_COMMAND || p->maxCommand < p->baseCommand
@@ -141,6 +144,9 @@ bool motorExcitationStart(const motorExcitationParams_t *p)
     }
     params.timeoutMs = constrain(params.timeoutMs, MOTOR_EXCITATION_MIN_TIMEOUT_MS, MOTOR_EXCITATION_MAX_TIMEOUT_MS);
 
+    if (params.waveform == MOTOR_EXCITATION_RECORD) {
+        params.rampMs = 0;
+    }
     rampTo = params.baseCommand;
     currentBase = rampFrom;
     durationUs = params.durationDs * 100000u;
@@ -186,6 +192,14 @@ void motorExcitationKeepalive(uint16_t sessionId)
 {
     if (motorExcitationIsActive() && sessionId == params.sessionId) {
         lastKeepaliveUs = micros();
+    }
+}
+
+void motorExcitationMark(uint16_t sessionId, uint16_t marker)
+{
+    if (motorExcitationIsActive() && sessionId == params.sessionId) {
+        lastKeepaliveUs = micros();
+        status.marker = marker;
     }
 }
 
@@ -297,6 +311,14 @@ void motorExcitationUpdate(float *motorDisarmed, int motorCount, float disarmOut
         if (params.waveform != MOTOR_EXCITATION_CHIRP && (uint32_t)cmpTimeUs(currentTimeUs, runStartUs) >= durationUs) {
             endSession(MOTOR_EXCITATION_END_DONE);
             applyStop(motorDisarmed, motorCount, disarmOutput);
+            return;
+        }
+        if (params.waveform == MOTOR_EXCITATION_RECORD) {   // logging window only, motors untouched
+            status.loops++;
+            DEBUG_SET(DEBUG_MOTOR_EXCITATION, 0, 0);
+            DEBUG_SET(DEBUG_MOTOR_EXCITATION, 2, status.marker);                  //!< Host marker (RECORD)
+            DEBUG_SET(DEBUG_MOTOR_EXCITATION, 3, status.state * 16 + status.end);
+            DEBUG_SET(DEBUG_MOTOR_EXCITATION, 4, (int16_t)params.sessionId);
             return;
         }
         sample = params.amplitude * nextSample(dt);
