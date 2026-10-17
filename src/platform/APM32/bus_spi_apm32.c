@@ -229,6 +229,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
          * occurs earlier when the Tx FIFO is empty, but the SPI operation is still in progress
          */
         DDL_EX_DMA_EnableIT_TC(streamRegsRx);
+        DDL_EX_DMA_EnableIT_TE(streamRegsRx);
 
         // Update streams
         DDL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->dmaInitTx);
@@ -259,6 +260,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
         DDL_DMA_WriteReg(streamRegsTx, SCFG, 0U);
 
         DDL_EX_DMA_EnableIT_TC(streamRegsTx);
+        DDL_EX_DMA_EnableIT_TE(streamRegsTx);
 
         // Update streams
         DDL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->dmaInitTx);
@@ -313,6 +315,22 @@ void spiInternalStopDMA (const extDevice_t *dev)
 
         DDL_SPI_DisableDMAReq_TX(instance);
     }
+}
+
+void spiInternalAbortDMA(const extDevice_t *dev)
+{
+    SPI_TypeDef *instance = (SPI_TypeDef *)dev->bus->busType_u.spi.instance;
+
+    spiInternalStopDMA(dev);
+
+    while (DDL_SPI_IsActiveFlag_BSY(instance));
+
+    while (DDL_SPI_IsActiveFlag_RXNE(instance)) {
+        instance->DATA;
+    }
+
+    // An overrun discards everything received after it until cleared
+    DDL_SPI_ClearFlag_OVR(instance);
 }
 
 // DMA transfer setup and start

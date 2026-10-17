@@ -468,6 +468,11 @@ void spiInternalStopDMA (const extDevice_t *dev)
 #endif
 }
 
+void spiInternalAbortDMA(const extDevice_t *dev)
+{
+    spiInternalStopDMA(dev);
+}
+
 // DMA transfer setup and start
 void spiSequenceStart(const extDevice_t *dev)
 {

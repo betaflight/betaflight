@@ -231,7 +231,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
         /* Use the Rx interrupt as this occurs once the SPI operation is complete whereas the Tx interrupt
          * occurs earlier when the Tx FIFO is empty, but the SPI operation is still in progress
          */
-        DMA_ITConfig(streamRegsRx, DMA_IT_TC, ENABLE);
+        DMA_ITConfig(streamRegsRx, DMA_IT_TC | DMA_IT_TE, ENABLE);
 
         // Update streams
         DMA_Init(streamRegsTx, dev->bus->dmaInitTx);
@@ -260,7 +260,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
         // Disable stream to enable update
         streamRegsTx->CR = 0U;
 
-        DMA_ITConfig(streamRegsTx, DMA_IT_TC, ENABLE);
+        DMA_ITConfig(streamRegsTx, DMA_IT_TC | DMA_IT_TE, ENABLE);
 
         // Update stream
         DMA_Init(streamRegsTx, dev->bus->dmaInitTx);
@@ -309,6 +309,23 @@ void spiInternalStopDMA (const extDevice_t *dev)
 
         SPI_I2S_DMACmd(instance, SPI_I2S_DMAReq_Tx, DISABLE);
     }
+}
+
+void spiInternalAbortDMA(const extDevice_t *dev)
+{
+    SPI_TypeDef *instance = (SPI_TypeDef *)dev->bus->busType_u.spi.instance;
+
+    spiInternalStopDMA(dev);
+
+    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_BSY));
+
+    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_RXNE)) {
+        instance->DR;
+    }
+
+    // An overrun discards everything received after it until cleared by reading DR then SR
+    instance->DR;
+    instance->SR;
 }
 
 // DMA transfer setup and start

@@ -255,3 +255,4 @@ bool mpuAccRead(struct accDev_s *acc);
 bool mpuAccReadSPI(struct accDev_s *acc);
 
 busStatus_e mpuIntCallback(uintptr_t arg);
+void mpuGyroStartDmaRead(struct gyroDev_s *gyro);

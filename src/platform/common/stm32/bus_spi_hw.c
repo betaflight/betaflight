@@ -49,6 +49,12 @@ FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
         return;
     }
 
+    // The stream disables itself on a transfer error, so no completion interrupt will follow
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
+        spiAbortTransfer(dev);
+        return;
+    }
+
     busDevice_t *bus = dev->bus;
 
     if (bus->curSegment->negateCS) {
@@ -83,6 +89,11 @@ FAST_IRQ_HANDLER static void spiTxIrqHandler(dmaChannelDescriptor_t* descriptor)
     const extDevice_t *dev = (const extDevice_t *)descriptor->userParam;
 
     if (!dev) {
+        return;
+    }
+
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
+        spiAbortTransfer(dev);
         return;
     }
 

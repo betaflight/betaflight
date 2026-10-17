@@ -222,7 +222,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
         xDMA_Cmd(streamRegsTx, FALSE);
         xDMA_Cmd(streamRegsRx, FALSE);
 
-        xDMA_ITConfig(streamRegsRx, DMA_IT_TCIF, TRUE);
+        xDMA_ITConfig(streamRegsRx, DMA_IT_TCIF | DMA_IT_TEIF, TRUE);
 
         // Update streams
         xDMA_Init(streamRegsTx, dev->bus->dmaInitTx);
@@ -253,7 +253,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
         // Enable stream
         xDMA_Cmd(streamRegsTx, TRUE);
-        xDMA_ITConfig(streamRegsTx, DMA_IT_TCIF, TRUE);
+        xDMA_ITConfig(streamRegsTx, DMA_IT_TCIF | DMA_IT_TEIF, TRUE);
 
         /* Enable the SPI DMA Tx request */
         spi_i2s_dma_transmitter_enable(instance, TRUE);
@@ -294,6 +294,22 @@ void spiInternalStopDMA (const extDevice_t *dev)
 
         spi_i2s_dma_transmitter_enable(instance, FALSE);
     }
+}
+
+void spiInternalAbortDMA(const extDevice_t *dev)
+{
+    spi_type *instance = (spi_type *)dev->bus->busType_u.spi.instance;
+
+    spiInternalStopDMA(dev);
+
+    while (spi_i2s_flag_get(instance, SPI_I2S_BF_FLAG));
+
+    while (spi_i2s_flag_get(instance, SPI_I2S_RDBF_FLAG)) {
+        instance->dt;
+    }
+
+    // An overrun discards everything received after it until cleared
+    spi_i2s_flag_clear(instance, SPI_I2S_ROERR_FLAG);
 }
 
 // DMA transfer setup and start

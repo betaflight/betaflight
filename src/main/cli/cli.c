@@ -6177,7 +6177,7 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
     // Devices
     cliPrint("DEVICES DETECTED:");
 #if defined(USE_SPI)
-    cliPrintf(" SPI=%d", spiGetRegisteredDeviceCount());
+    cliPrintf(" SPI=%d (%d errors)", spiGetRegisteredDeviceCount(), spiGetErrorCounter());
 #if defined(USE_I2C)
     cliPrint(",");
 #endif
@@ -6895,6 +6895,7 @@ RAM_CODE static void cliEnv(const char *cmdName, char *cmdline)
     // Bus devices
 #if defined(USE_SPI)
     cliPrintNameValuef("SPI_COUNT", "%d", spiGetRegisteredDeviceCount());
+    cliPrintNameValuef("SPI_ERRORS", "%d", spiGetErrorCounter());
 #endif
 #if defined(USE_I2C)
     cliPrintNameValuef("I2C_COUNT", "%d", i2cGetRegisteredDeviceCount());
