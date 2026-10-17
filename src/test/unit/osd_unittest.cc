@@ -95,6 +95,7 @@ extern "C" {
     PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
+    PG_REGISTER(modeActivationConfig_t, modeActivationConfig, PG_MODE_ACTIVATION_CONFIG, 0);
     PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
     PG_REGISTER(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
@@ -114,6 +115,7 @@ extern "C" {
 }
 
 uint32_t simulationFeatureFlags = FEATURE_GPS;
+uint64_t simulationActiveModes = 0;
 
 /* #define DEBUG_OSD */
 
@@ -1136,6 +1138,65 @@ TEST_F(OsdTest, TestElementCoreTemperature)
 }
 
 /*
+ * Tests the USER modes element shows the active USER1..USER4 modes by name.
+ */
+TEST_F(OsdTest, TestElementUserModes)
+{
+    // given
+    osdElementConfigMutable()->item_pos[OSD_USER_MODES] = OSD_POS(1, 9) | OSD_PROFILE_1_FLAG;
+    osdAnalyzeActiveElements();
+    memset(modeActivationConfigMutable(), 0, sizeof(modeActivationConfig_t));
+
+    // and no USER mode is active
+    simulationActiveModes = 0;
+
+    // when
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(1, 9, "     ");
+
+    // given USER1 is active with its default name
+    simulationActiveModes = 1ULL << BOXUSER1;
+
+    // when
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(1, 9, "USER1");
+
+    // given USER1 and USER3 are active and USER1 has a custom name
+    simulationActiveModes = (1ULL << BOXUSER1) | (1ULL << BOXUSER3);
+    strcpy(modeActivationConfigMutable()->box_user_names[0], "led");
+
+    // when
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(1, 9, "LED USER3");
+
+    // given all USER modes are active with full length names
+    simulationActiveModes = (1ULL << BOXUSER1) | (1ULL << BOXUSER2) | (1ULL << BOXUSER3) | (1ULL << BOXUSER4);
+    for (int i = 0; i < BOX_USER_NAME_COUNT; i++) {
+        memset(modeActivationConfigMutable()->box_user_names[i], 'A' + i, MAX_BOX_USER_NAME_LENGTH);
+    }
+
+    // when
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then output is truncated to the element buffer without overflowing
+    displayPortTestBufferSubstring(1, 9, "AAAAAAAAAAAAAAAA BBBBBBBBBBBBBB");
+
+    // cleanup
+    simulationActiveModes = 0;
+    memset(modeActivationConfigMutable(), 0, sizeof(modeActivationConfig_t));
+}
+
+/*
  * Tests the battery notifications shown on the warnings OSD element.
  */
 TEST_F(OsdTest, TestElementWarningsBattery)
@@ -1571,8 +1632,8 @@ extern "C" {
         return false;
     }
 
-    bool IS_RC_MODE_ACTIVE(boxId_e) {
-        return false;
+    bool IS_RC_MODE_ACTIVE(boxId_e boxId) {
+        return simulationActiveModes & (1ULL << boxId);
     }
 
     uint32_t micros() {
