@@ -280,3 +280,6 @@ uint32_t getCpuPercentageLate(void);
 void schedulerEnableGyro(void);
 uint16_t getAverageSystemLoadPercent(void);
 float schedulerGetCycleTimeMultiplier(void);
+#if ENABLE_SIMULATOR
+uint32_t schedulerTaskExecutionCount(void);
+#endif

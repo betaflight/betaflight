@@ -96,6 +96,18 @@ uint16_t gyroSetSampleRate(gyroDev_t *gyro)
             accSampleRateHz = 1600;
             break;
         default:
+#if ENABLE_SIMULATOR
+            if (simulatorLockstepEnabled()) {
+                // The virtual gyro gets one sample per simulator FDM packet,
+                // and the lockstep clock (sitl.c) advances one physics step
+                // per packet, 1 ms at a 1 kHz physics rate: the gyro and PID
+                // loop run once per step and the PID dT matches it.
+                gyro->gyroRateKHz = GYRO_RATE_1_kHz;
+                gyroSampleRateHz = 1000;
+                accSampleRateHz = 1000;
+                break;
+            }
+#endif
             gyro->gyroRateKHz = GYRO_RATE_8_kHz;
             gyroSampleRateHz = 8000;
             accSampleRateHz = 1000;
