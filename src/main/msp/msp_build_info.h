@@ -77,6 +77,7 @@
 #define BUILD_OPTION_POSITION_HOLD              16425
 #define BUILD_OPTION_RACE_PRO                   16419
 #define BUILD_OPTION_RANGEFINDER                16429
+#define BUILD_OPTION_RADAR                      16431
 #define BUILD_OPTION_SOFTSERIAL                 16423
 #define BUILD_OPTION_SERVOS                     16420
 #define BUILD_OPTION_VTX                        16421
