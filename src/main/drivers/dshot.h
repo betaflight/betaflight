@@ -132,6 +132,20 @@ extern dshotTelemetryState_t dshotTelemetryState;
 #ifdef USE_DSHOT_TELEMETRY_STATS
 void updateDshotTelemetryQuality(dshotTelemetryQuality_t *qualityStats, bool packetValid, timeMs_t currentTimeMs);
 #endif
+
+#if PLATFORM_TRAIT_DSHOT_TRAINING
+// State of the search for the telemetry rate an ESC replies at, on platforms that cannot calculate it
+typedef struct dshotTrainingStatus_s {
+    uint32_t passMask;  // bit per offset from offsetMin up, set if that offset decoded, at most 32 offsets
+    int8_t offset;      // the chosen offset once done, the one being tried while not
+    int8_t offsetMin;
+    int8_t offsetMax;
+    bool done;
+} dshotTrainingStatus_t;
+
+// Returns false, leaving *status untouched, for a motor the search does not run on
+bool dshotGetTrainingStatus(unsigned motorIndex, dshotTrainingStatus_t *status);
+#endif
 #endif // USE_DSHOT_TELEMETRY
 
 void initDshotTelemetry(const timeUs_t looptimeUs);
