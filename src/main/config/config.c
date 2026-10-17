@@ -68,6 +68,7 @@
 #include "msp/msp_box.h"
 
 #include "osd/osd.h"
+#include "osd/osd_screensaver.h"
 
 #include "pg/adc.h"
 #include "pg/beeper.h"
@@ -540,6 +541,18 @@ static void validateAndFixConfig(void)
              osdConfigMutable()->timers[i] = osdTimerDefault[i];
          }
      }
+#endif
+
+#ifdef USE_OSD_SCREENSAVER
+    if (osdConfig()->screensaver_effect > OSD_SCREENSAVER_CYCLE) {
+        osdConfigMutable()->screensaver_effect = OSD_SCREENSAVER_MATRIX;
+    }
+    if (osdConfig()->screensaver_timeout > OSD_SCREENSAVER_TIMEOUT_MAX) {
+        osdConfigMutable()->screensaver_timeout = 0;
+    }
+    if (osdConfig()->screensaver_cycle < OSD_SCREENSAVER_CYCLE_MIN_S || osdConfig()->screensaver_cycle > OSD_SCREENSAVER_CYCLE_MAX_S) {
+        osdConfigMutable()->screensaver_cycle = OSD_SCREENSAVER_CYCLE_DEFAULT_S;
+    }
 #endif
 
 #if defined(USE_VTX_COMMON) && defined(USE_VTX_TABLE)

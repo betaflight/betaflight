@@ -252,6 +252,17 @@ cms_unittest_SRC := \
 		$(USER_DIR)/drivers/display.c
 
 
+displayport_msp_unittest_SRC := \
+		$(USER_DIR)/io/displayport_msp.c \
+		$(USER_DIR)/drivers/display.c
+
+displayport_msp_unittest_DEFINES := \
+		USE_MSP_DISPLAYPORT= \
+		USE_OSD= \
+		USE_OSD_HD= \
+		USE_OSD_SD=
+
+
 common_filter_unittest_SRC := \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c
@@ -897,6 +908,14 @@ flight_plan_rescue_unittest_DEFINES := \
 		USE_ALTITUDE_HOLD= \
 		ENABLE_FLIGHT_PLAN=1 \
 		ENABLE_RESCUE_PLAN=1
+
+osd_screensaver_unittest_SRC := \
+		$(USER_DIR)/osd/osd_screensaver.c \
+		$(USER_DIR)/common/maths.c
+
+osd_screensaver_unittest_DEFINES := \
+		USE_OSD= \
+		USE_OSD_SCREENSAVER=
 
 osd_nav_map_unittest_SRC := \
 		$(USER_DIR)/osd/osd_nav_map.c \
