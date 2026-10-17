@@ -1376,6 +1376,17 @@ void processRxModes(timeUs_t currentTimeUs)
         DISABLE_FLIGHT_MODE(PASSTHRU_MODE);
     }
 
+#ifdef USE_PSAS
+    if (isFixedWing() && IS_RC_MODE_ACTIVE(BOXPSAS) &&
+        !FLIGHT_MODE(PASSTHRU_MODE) &&
+        !FLIGHT_MODE(FAILSAFE_MODE) && !FLIGHT_MODE(GPS_RESCUE_MODE) &&
+        !FLIGHT_MODE(AUTOPILOT_MODE) && !FLIGHT_MODE(LAUNCH_MODE) &&
+        !FLIGHT_MODE(ALT_HOLD_MODE) && !FLIGHT_MODE(POS_HOLD_MODE)) {
+        ENABLE_FLIGHT_MODE(PSAS_MODE);
+    } else {
+        DISABLE_FLIGHT_MODE(PSAS_MODE);
+    }
+#endif
     if (mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_AIRPLANE) {
         DISABLE_FLIGHT_MODE(HEADFREE_MODE);
     }
