@@ -147,8 +147,12 @@ TEST(IoSerialTest, TestFunctionsConflict)
     setStubbedFunctionMask(SERIAL_PORT_UART1, FUNCTION_MSP | FUNCTION_BLACKBOX);
     EXPECT_FALSE(serialPortFunctionsConflict(SERIAL_PORT_UART1));
 
-    // an MT rangefinder is heard over MSP on the port it declares
+    // a sensor opens its own UART, so MSP cannot have that one as well
     setStubbedFunctionMask(SERIAL_PORT_UART1, FUNCTION_MSP | FUNCTION_LIDAR);
+    EXPECT_TRUE(serialPortFunctionsConflict(SERIAL_PORT_UART1));
+
+    // on its own it is the sensor's port and nothing clashes
+    setStubbedFunctionMask(SERIAL_PORT_UART1, FUNCTION_LIDAR);
     EXPECT_FALSE(serialPortFunctionsConflict(SERIAL_PORT_UART1));
 
     // MSP cannot share with serial RX
@@ -159,7 +163,7 @@ TEST(IoSerialTest, TestFunctionsConflict)
     setStubbedFunctionMask(SERIAL_PORT_UART1, FUNCTION_MSP | FUNCTION_BLACKBOX | FUNCTION_RX_SERIAL);
     EXPECT_TRUE(serialPortFunctionsConflict(SERIAL_PORT_UART1));
 
-    setStubbedFunctionMask(SERIAL_PORT_UART1, FUNCTION_MSP | FUNCTION_LIDAR | FUNCTION_GPS);
+    setStubbedFunctionMask(SERIAL_PORT_UART1, FUNCTION_MSP | FUNCTION_BLACKBOX | FUNCTION_LIDAR);
     EXPECT_TRUE(serialPortFunctionsConflict(SERIAL_PORT_UART1));
 
     memset(stubbedFunctionMask, 0, sizeof(stubbedFunctionMask));
