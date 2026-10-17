@@ -261,6 +261,7 @@ WING_THRUST_MAX = 9.0      # m/s^2 of static thrust at full throttle, growing wi
 WING_PROP_SPEED = 40.0     # m/s of airspeed at which the propeller stops pulling
 WING_SIDE_FORCE = 0.036    # side acceleration per (m/s)^2 per radian of sideslip
 WING_WEATHERVANE_TAU = 0.3   # s, the fins turning the nose into the relative wind
+WING_DIFF_THRUST_YAW = 4.0   # rad/s of yaw rate per unit of motor difference, left motor faster turning the nose right
 WING_V_STALL = math.sqrt(GRAVITY / (WING_KL * WING_CL_ALPHA * WING_ALPHA_STALL))
 WING_V_REF = 15.0          # m/s, the airspeed at which the surfaces have full authority
 WING_ROLL_GAIN = 5.0       # rad/s of roll rate per unit elevon at V_REF
@@ -301,11 +302,18 @@ class WingMotionModel:
     vel is the ground velocity (what GPS reports), integrated from the forces, so it never steps. The aerodynamics see
     the air-relative velocity, vel - wind, with wind a constant ENU vector: lift square to it, drag against it, a side
     force turning it towards the nose, and the fins turning the nose towards it.
+
+    With diff_thrust it has two motors, left and right, and the difference between them yaws the nose off the air
+    path, so a yaw controller holding the wrong rate can stop it turning. Its elevons are then the servos a custom
+    airplane mixer writes them to.
     """
 
-    def __init__(self, wind=(0.0, 0.0, 0.0), ground=None):
+    def __init__(self, wind=(0.0, 0.0, 0.0), ground=None, diff_thrust=False):
         self.wind = list(wind)
         self.ground = ground or (lambda e, n: 0.0)    # the ground's height at east, north metres from home
+        self.diff_thrust = diff_thrust
+        self.elevon_servos = (1, 2) if diff_thrust else (0, 1)
+        self.yaw_cmd = 0.0
         self.pos = [0.0, 0.0, 0.0]
         self.vel = [0.0, 0.0, 0.0]
         self.accel = [0.0, 0.0, 0.0]
@@ -382,10 +390,11 @@ class WingMotionModel:
 
     def _elevons(self, servos):
         """Demix two elevon servos into normalised pitch and roll commands."""
-        if not servos or len(servos) < 2:
+        left_i, right_i = self.elevon_servos
+        if not servos or len(servos) <= right_i:
             return 0.0, 0.0
-        left = (servos[0] - 1500.0) / WING_SERVO_SPAN
-        right = (servos[1] - 1500.0) / WING_SERVO_SPAN
+        left = (servos[left_i] - 1500.0) / WING_SERVO_SPAN
+        right = (servos[right_i] - 1500.0) / WING_SERVO_SPAN
         pitch_cmd = (left + right) / 2.0
         roll_cmd = (left - right) / 2.0
         return max(-1.0, min(1.0, pitch_cmd)), max(-1.0, min(1.0, roll_cmd))
@@ -545,7 +554,7 @@ class WingMotionModel:
 
         # bank-to-turn: no rudder, the air path turns with the lift and the nose follows it
         turn_rate = (lift * sin_r + side) / max(v * horiz, 1.0)
-        self.rates[2] = turn_rate + wrap_pi(course - self.yaw) / WING_WEATHERVANE_TAU
+        self.rates[2] = turn_rate + wrap_pi(course - self.yaw) / WING_WEATHERVANE_TAU + self.yaw_cmd
         self.yaw += self.rates[2] * dt
         self._integrate(dt, acc)
         if self.pos[2] < self.ground_at():
@@ -557,7 +566,11 @@ class WingMotionModel:
             self.accel = [0.0, 0.0, 0.0]
             return
 
-        throttle = m[0] if m else 0.0
+        if self.diff_thrust and m and len(m) >= 2:
+            throttle = (m[0] + m[1]) / 2.0
+            self.yaw_cmd = WING_DIFF_THRUST_YAW * (m[0] - m[1])
+        else:
+            throttle = m[0] if m else 0.0
         pitch_cmd, roll_cmd = self._elevons(servos)
         if self.grounded:
             self._slide(dt, throttle, pitch_cmd)
@@ -3545,6 +3558,20 @@ WING_DESCENT_SLOPE_CFG = wing_descent_cfg(700.0, 50.0, "set alt_hold_climb_rate 
 
 WING_WIND = {"model": "wing", "wind": (5.0, 0.0, 0.0)}   # 5 m/s from the west
 
+# Two motors yawing it by their difference, the elevons on the custom airplane's flaperon servos
+WING_DIFF_THRUST_CFG = [
+    "mixer CUSTOMAIRPLANE",
+    "mmix reset",
+    "mmix 0 1.0 0.0 0.0 1.0",
+    "mmix 1 1.0 0.0 0.0 -1.0",
+    "smix reset",
+    "smix 0 3 0 100 0 0 100 0",
+    "smix 1 3 1 100 0 0 100 0",
+    "smix 2 4 0 -100 0 0 100 0",
+    "smix 3 4 1 100 0 0 100 0",
+]
+WING_DIFF_THRUST = {"model": "wing", "diff_thrust": True}
+
 SCENARIOS = {
     "baseline": (lambda s, r, f: boot_and_engage(s, r, f), []),
     # FIXED yaw: this scenario validates pure translation control; yaw-coupled
@@ -3739,11 +3766,13 @@ SCENARIOS = {
     "wing_loiter": (scenario_wing_loiter, WING_POSHOLD_CFG, {"model": "wing"}),
     "wing_loiter_no_mag": (scenario_wing_loiter, [*WING_POSHOLD_CFG, *WING_NO_MAG_CFG], {"model": "wing"}),
     "wing_loiter_wind": (scenario_wing_loiter_wind, WING_POSHOLD_CFG, WING_WIND),
+    "wing_loiter_diff_thrust": (scenario_wing_loiter, [*WING_POSHOLD_CFG, *WING_DIFF_THRUST_CFG], WING_DIFF_THRUST),
     "wing_loiter_gps_loss": (scenario_wing_loiter_gps_loss, WING_POSHOLD_CFG, WING_WIND),
     "wing_mission": (scenario_wing_mission, WING_MISSION_CFG, {"model": "wing"}),
     "wing_mission_wind": (scenario_wing_mission, WING_MISSION_CFG, WING_WIND),
     "wing_rescue": (scenario_wing_rescue, WING_RESCUE_CFG, {"model": "wing"}),
     "wing_rescue_wind": (scenario_wing_rescue_wind, WING_RESCUE_CFG, WING_WIND),
+    "wing_rescue_diff_thrust": (scenario_wing_rescue, [*WING_RESCUE_CFG, *WING_DIFF_THRUST_CFG], WING_DIFF_THRUST),
     "wing_rescue_gps_loss": (scenario_wing_rescue_gps_loss, WING_RESCUE_CFG, {"model": "wing"}),
     "wing_rescue_armed_in_hand": (
         scenario_wing_rescue_armed_in_hand,
@@ -3810,7 +3839,8 @@ def run_leg(name, variant, body, extra_cfg, opts, binary, leg_dir):
         if is_wing:
             pwm_raw = PwmRawFeed()
         fdm = FdmFeed(motors, initial_yaw_deg=opts.get("initial_yaw_deg", 0.0), status=poller,
-                      model=WingMotionModel(opts.get("wind", (0.0, 0.0, 0.0)), opts.get("ground")) if is_wing else None,
+                      model=WingMotionModel(opts.get("wind", (0.0, 0.0, 0.0)), opts.get("ground"),
+                                            opts.get("diff_thrust", False)) if is_wing else None,
                       pwm_raw=pwm_raw, sensors=SensorErrors() if is_wing else None)
         sitl.provision(base_config(extra_cfg))
         sitl.start()

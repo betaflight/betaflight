@@ -71,6 +71,7 @@ typedef struct autopilotWingConfig_s {
     uint8_t landAttempts;           // go-arounds before a landing is committed to
     uint8_t landMaxTailwind;        // dm/s of tailwind on the landing heading before turning it round, 0 never
     uint16_t landLaunchHeight;      // cm above the ground a thrown launch was armed at
+    uint8_t turnYawFf;              // percent of the yaw rate a level turn needs
 } autopilotWingConfig_t;
 
 PG_DECLARE(autopilotWingConfig_t, autopilotWingConfig);

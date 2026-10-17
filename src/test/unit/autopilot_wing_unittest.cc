@@ -979,6 +979,43 @@ TEST(AutopilotWingTest, PosHoldExitHandsTheRollBack)
     EXPECT_FALSE(posHoldFailure());
 }
 
+TEST(AutopilotWingTest, PosHoldYawsTheNoseRoundTheTurn)
+{
+    // g * sin(30) / 15 m/s = 18.7 deg/s, negative for a turn to the right
+    engagePosHold();
+    EXPECT_TRUE(autopilotYawControlActive());
+    setBankDeg(30.0f);
+    EXPECT_NEAR(-18.73f, autopilotGetYawRate(), 0.05f);
+    setBankDeg(-30.0f);
+    EXPECT_NEAR(18.73f, autopilotGetYawRate(), 0.05f);
+    setBankDeg(0.0f);
+    EXPECT_FLOAT_EQ(0.0f, autopilotGetYawRate());
+
+    autopilotWingConfigMutable()->turnYawFf = 50;
+    setBankDeg(30.0f);
+    EXPECT_NEAR(-9.37f, autopilotGetYawRate(), 0.05f);
+}
+
+TEST(AutopilotWingTest, YawStaysWithThePilotWhenTheLoiterDoesNotFly)
+{
+    resetForTest();
+    EXPECT_FALSE(autopilotYawControlActive());
+
+    engagePosHold();
+    testRollDeflection = -0.2f;
+    runPosHold(1);
+    EXPECT_FALSE(autopilotYawControlActive());
+
+    // the mode goes before the next hold update notices
+    engagePosHold();
+    flightModeFlags = ALT_HOLD_MODE;
+    EXPECT_FALSE(autopilotYawControlActive());
+
+    engagePosHold();
+    autopilotWingConfigMutable()->turnYawFf = 0;
+    EXPECT_FALSE(autopilotYawControlActive());
+}
+
 // Coming down to land where it is
 
 static void runHolds(int steps)
