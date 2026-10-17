@@ -1055,8 +1055,12 @@ static void osdElementCrosshairs(osdElementParms_t *element)
 
 static void osdElementCurrentDraw(osdElementParms_t *element)
 {
-    const float amperage = fabsf(getAmperage() / 100.0f);
-    osdPrintFloat(element->buff, SYM_NONE, amperage, "%3u", 2, false, SYM_AMP);
+    const int32_t amperage = getAmperage();
+    char *format = "%3u";
+    if (amperage < 0) {
+        format = (amperage > -1000) ? " -%u" : "-%2u";
+    }
+    osdPrintFloat(element->buff, SYM_NONE, abs(amperage) / 100.0f, format, 2, false, SYM_AMP);
 }
 
 static void osdElementDebug(osdElementParms_t *element)
