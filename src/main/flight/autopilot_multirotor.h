@@ -50,6 +50,7 @@ void autopilotSetNavHeadingOverride(bool valid, float headingDeg); // mission pr
 vector2_t autopilotGetPositionErrorCm(void); // EF: where the position controller holds the craft to, relative to it
 void initPositionHold(void);
 void positionControlReanchor(void);
+void autopilotSetSensorsOkStatus(bool ok); // latches the SensorsNotOk failure bit until sensors recover
 uint16_t autopilotGetEffectiveHoverThrottlePwm(void);
 void autopilotCaptureHoverThrottleForAltHold(void);
 void autopilotClearAltHoldHoverThrottle(void);
