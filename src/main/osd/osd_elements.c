@@ -163,6 +163,9 @@
 #include "flight/position.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#ifdef USE_MOTOR_THERMAL
+#include "flight/motor_thermal.h"
+#endif
 #include "flight/pid.h"
 #include "flight/pos_hold.h"
 
@@ -2103,6 +2106,18 @@ static void osdElementAirspeed(osdElementParms_t *element)
 }
 #endif
 
+#ifdef USE_MOTOR_THERMAL
+static void osdElementMotorTempEst(osdElementParms_t *element)
+{
+    // estimated winding temperature per motor, see flight/motor_thermal.c
+    uint32_t ix = tfp_sprintf(element->buff, "M%c", SYM_TEMPERATURE);
+    for (int k = 0; k < getMotorCount() && k < 4; k++) {
+        ix += tfp_sprintf(element->buff + ix, "%3d", osdConvertTemperatureToSelectedUnit(lrintf(motorThermalGetTemp(k))));
+    }
+    tfp_sprintf(element->buff + ix, "%c", osdGetTemperatureSymbolForSelectedUnit());
+}
+#endif
+
 // Define the order in which the elements are drawn.
 // Elements positioned later in the list will overlay the earlier
 // ones if their character positions overlap
@@ -2389,6 +2404,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_PITOT
     [OSD_AIRSPEED]                = osdElementAirspeed,
 #endif
+#ifdef USE_MOTOR_THERMAL
+    [OSD_MOTOR_TEMP_EST]          = osdElementMotorTempEst,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw its background (static part)
@@ -2479,6 +2497,10 @@ void osdAddActiveElements(void)
 
 #ifdef USE_PITOT
     osdAddActiveElement(OSD_AIRSPEED);
+#endif
+
+#ifdef USE_MOTOR_THERMAL
+    osdAddActiveElement(OSD_MOTOR_TEMP_EST);
 #endif
 }
 
@@ -2901,6 +2923,13 @@ void osdUpdateAlarms(void)
         SET_BLINK(OSD_ESC_TMP);
     } else {
         CLR_BLINK(OSD_ESC_TMP);
+    }
+#endif
+#ifdef USE_MOTOR_THERMAL
+    if (motorThermalWarning()) {
+        SET_BLINK(OSD_MOTOR_TEMP_EST);
+    } else {
+        CLR_BLINK(OSD_MOTOR_TEMP_EST);
     }
 #endif
 }

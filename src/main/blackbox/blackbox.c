@@ -65,6 +65,9 @@
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/mixer.h"
+#ifdef USE_MOTOR_EXCITATION
+#include "flight/motor_excitation.h"
+#endif
 #include "flight/pid.h"
 #include "flight/position.h"
 #include "flight/rpm_filter.h"
@@ -1215,7 +1218,11 @@ static bool inMotorTestMode(void)
 {
     static uint32_t resetTime = 0;
 
-    if (!ARMING_FLAG(ARMED) && areMotorsRunning()) {
+    bool benchSession = false;
+#ifdef USE_MOTOR_EXCITATION
+    benchSession = motorExcitationIsActive();   // includes RECORD sessions with the motors stopped (tap test)
+#endif
+    if (!ARMING_FLAG(ARMED) && (areMotorsRunning() || benchSession)) {
         resetTime = millis() + 5000; // add 5 seconds
         return true;
     } else {
@@ -1871,6 +1878,16 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_RATES_TYPE, "%d",             currentControlRateProfile->rates_type);
 
         BLACKBOX_PRINT_HEADER_LINE("fields_disabled_mask", "%d",            blackboxConfig()->fields_disabled_mask);
+#ifdef USE_MOTOR_EXCITATION
+        // bench session that started this log (all zero when none); per-frame identity is in DEBUG_MOTOR_EXCITATION
+        BLACKBOX_PRINT_HEADER_LINE("motor_excitation", "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%u",
+                                   motorExcitationGetParams()->sessionId, motorExcitationGetParams()->motorMask,
+                                   motorExcitationGetParams()->waveform, motorExcitationGetParams()->baseCommand,
+                                   motorExcitationGetParams()->amplitude, motorExcitationGetParams()->freq0DeciHz,
+                                   motorExcitationGetParams()->freq1DeciHz, motorExcitationGetParams()->durationDs,
+                                   motorExcitationGetParams()->rampMs, motorExcitationGetParams()->maxCommand,
+                                   (unsigned)motorExcitationGetParams()->seed);
+#endif
         BLACKBOX_PRINT_HEADER_LINE("blackbox_high_resolution", "%d",        blackboxConfig()->high_resolution);
         BLACKBOX_PRINT_HEADER_LINE("rc_command_scale", "%d",                BLACKBOX_RC_COMMAND_SCALE);
 

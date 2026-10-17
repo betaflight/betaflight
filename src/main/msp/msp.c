@@ -87,6 +87,9 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#ifdef USE_MOTOR_EXCITATION
+#include "flight/motor_excitation.h"
+#endif
 #include "flight/pid.h"
 #include "flight/pid_init.h"
 #include "flight/position.h"
@@ -128,6 +131,7 @@
 #include "pg/gps_rescue.h"
 #include "pg/gyrodev.h"
 #include "pg/motor.h"
+#include "pg/motor_thermal.h"
 #include "pg/pilot.h"
 #include "pg/pos_hold.h"
 #include "pg/rx.h"
@@ -1583,6 +1587,16 @@ case MSP_NAME:
 
         // API 1.49
         sbufWriteU16(dst, motorConfig()->kv);
+        // motor thermal estimator geometry (0 = not built in)
+#ifdef USE_MOTOR_THERMAL
+        sbufWriteU8(dst, motorThermalConfig()->stator_diameter_mm);
+        sbufWriteU8(dst, motorThermalConfig()->stator_height_dmm);
+        sbufWriteU8(dst, motorThermalConfig()->prop_diameter_dinch);
+#else
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+#endif
         break;
 
 #ifdef USE_MAG
@@ -2262,6 +2276,28 @@ case MSP_NAME:
         }
 #endif
         break;
+
+#ifdef USE_MOTOR_EXCITATION
+    case MSP2_MOTOR_EXCITATION_STATUS: {
+        const motorExcitationParams_t *p = motorExcitationGetParams();
+        const motorExcitationStatus_t *s = motorExcitationGetStatus();
+        sbufWriteU8(dst, 1);                                   // payload version
+        sbufWriteU8(dst, s->state);
+        sbufWriteU8(dst, s->end);
+        sbufWriteU16(dst, p->sessionId);
+        sbufWriteU8(dst, p->motorMask);
+        sbufWriteU8(dst, p->waveform);
+        sbufWriteU32(dst, s->elapsedMs);
+        sbufWriteU16(dst, lrintf(constrainf(s->frequencyHz * 10.0f, 0.0f, 65535.0f)));
+        sbufWriteU16(dst, (int16_t)lrintf(s->sample));
+        sbufWriteU16(dst, lrintf(constrainf(s->rms * 10.0f, 0.0f, 65535.0f)));
+        sbufWriteU32(dst, s->loops);
+        sbufWriteU32(dst, s->clippedLoops);
+        sbufWriteU16(dst, 1000000 / targetPidLooptime);        // signal update rate, Hz
+        sbufWriteU16(dst, s->marker);
+        break;
+    }
+#endif
 
 #if defined(USE_VTX_COMMON)
     case MSP_VTX_CONFIG: {
@@ -3287,6 +3323,19 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         if (sbufBytesRemaining(src) >= 2) {
             motorConfigMutable()->kv = sbufReadU16(src);
         }
+        if (sbufBytesRemaining(src) >= 3) {
+#ifdef USE_MOTOR_THERMAL
+            const uint8_t d = sbufReadU8(src), h = sbufReadU8(src), prop = sbufReadU8(src);
+            // zeros = client does not know the fields, keep what we have; otherwise apply the CLI ranges
+            if (d >= 5 && d <= 60 && h >= 10 && h <= 250 && prop <= 200) {
+                motorThermalConfigMutable()->stator_diameter_mm = d;
+                motorThermalConfigMutable()->stator_height_dmm = h;
+                motorThermalConfigMutable()->prop_diameter_dinch = prop;
+            }
+#else
+            sbufReadU8(src); sbufReadU8(src); sbufReadU8(src);
+#endif
+        }
         break;
 
 #ifdef USE_GPS
@@ -3351,6 +3400,46 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
 #endif // !USE_WING
 #endif
+#endif
+
+#ifdef USE_MOTOR_EXCITATION
+    case MSP2_SET_MOTOR_EXCITATION: {
+        // op 0 = stop, 1 = start (parameters follow), 2 = keepalive (session id follows), 3 = marker (session, value)
+        if (dataSize < 1) {
+            return MSP_RESULT_ERROR;
+        }
+        const uint8_t op = sbufReadU8(src);
+        if (op == 0) {
+            motorExcitationStop();
+        } else if (op == 2 && sbufBytesRemaining(src) >= 2) {
+            motorExcitationKeepalive(sbufReadU16(src));
+        } else if (op == 3 && sbufBytesRemaining(src) >= 4) {   // marker: session id, value
+            const uint16_t session = sbufReadU16(src);
+            motorExcitationMark(session, sbufReadU16(src));
+        } else if (op == 1 && sbufBytesRemaining(src) >= 24) {   // 24 bytes of parameters
+            motorExcitationParams_t p;
+            p.sessionId = sbufReadU16(src);
+            p.motorMask = sbufReadU8(src);
+            p.waveform = sbufReadU8(src);
+            p.baseCommand = sbufReadU16(src);
+            p.amplitude = sbufReadU16(src);
+            p.freq0DeciHz = sbufReadU16(src);
+            p.freq1DeciHz = sbufReadU16(src);
+            p.durationDs = sbufReadU16(src);
+            p.rampMs = sbufReadU16(src);
+            p.maxCommand = sbufReadU16(src);
+            p.timeoutMs = sbufReadU16(src);
+            p.seed = sbufReadU32(src);
+            p.flags = sbufBytesRemaining(src) >= 1 ? sbufReadU8(src) : 0;        // optional (later hosts)
+            p.invertMask = sbufBytesRemaining(src) >= 1 ? sbufReadU8(src) : 0;
+            if (!motorExcitationStart(&p)) {
+                return MSP_RESULT_ERROR;
+            }
+        } else {
+            return MSP_RESULT_ERROR;
+        }
+        break;
+    }
 #endif
 
     case MSP_SET_MOTOR:

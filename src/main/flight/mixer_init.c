@@ -46,6 +46,12 @@
 #include "sensors/battery.h"
 
 #include "mixer_init.h"
+#ifdef USE_MOTOR_NOISE
+#include "motor_noise.h"
+#endif
+#ifdef USE_MOTOR_THERMAL
+#include "motor_thermal.h"
+#endif
 
 #ifndef YAW_MOTORS_REVERSED
 #define YAW_MOTORS_REVERSED 0
@@ -343,6 +349,12 @@ void initEscEndpoints(void)
 
 void mixerInitProfile(void)
 {
+#ifdef USE_MOTOR_NOISE
+    motorNoiseInit(pidGetDT() * 1e6f);
+#endif
+#ifdef USE_MOTOR_THERMAL
+    motorThermalInit();
+#endif
 #ifdef USE_DYN_IDLE
     if (useDshotTelemetry) {
         mixerRuntime.dynIdleMinRps = currentPidProfile->dyn_idle_min_rpm * 100.0f / 60.0f;
