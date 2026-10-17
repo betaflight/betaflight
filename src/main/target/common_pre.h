@@ -92,6 +92,8 @@
 #endif
 
 #define USE_MOTOR
+#define USE_MOTOR_NOISE     // per-motor command noise index (flight/motor_noise.c)
+#define USE_MOTOR_THERMAL   // motor winding temperature estimator (flight/motor_thermal.c)
 #define USE_DMA
 #define USE_TIMER
 
