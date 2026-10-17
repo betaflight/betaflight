@@ -123,14 +123,14 @@ void spiInitDevice(spiDevice_e device)
     IOInit(IOGetByTag(spi->sck),  OWNER_SPI_SCK,  RESOURCE_INDEX(device));
     IOInit(IOGetByTag(spi->miso), OWNER_SPI_SDI, RESOURCE_INDEX(device));
     IOInit(IOGetByTag(spi->mosi), OWNER_SPI_SDO, RESOURCE_INDEX(device));
-#if defined(GD32F4)
-    IOConfigGPIOAF(IOGetByTag(spi->sck),  SPI_IO_AF_SCK_CFG, spi->af);
-    IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_SDI_CFG, spi->af);
-    IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->af);
-#else
+#if defined(GD32H7)
     IOConfigGPIOAF(IOGetByTag(spi->sck),  SPI_IO_AF_SCK_CFG, spi->sckAF);
     IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_SDI_CFG, spi->misoAF);
     IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->mosiAF);
+#else
+    IOConfigGPIOAF(IOGetByTag(spi->sck),  SPI_IO_AF_SCK_CFG, spi->af);
+    IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_SDI_CFG, spi->af);
+    IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->af);
 #endif
 
     uint32_t spi_periph = PERIPH_INT(spi->dev);
@@ -181,9 +181,9 @@ void spiInternalResetDescriptors(busDevice_t *bus)
 
         dma_single_data_para_struct_init(dmaInitRx);
 #if defined(GD32H7)
-    dmaInitRx->request = bus->dmaRx->channel;
+        dmaInitRx->request = bus->dmaRx->channel;
 #else
-    dmaGenerInitTx->sub_periph = bus->dmaRx->channel;
+        dmaGenerInitRx->sub_periph = bus->dmaRx->channel;
 #endif
         dmaInitRx->direction = DMA_PERIPH_TO_MEMORY;
         dmaInitRx->circular_mode = DMA_CIRCULAR_MODE_DISABLE;
