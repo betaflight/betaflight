@@ -38,6 +38,9 @@
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
+#ifdef USE_HX711
+#include "drivers/hx711.h"
+#endif
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
 #include "drivers/serial_usb_vcp.h"
@@ -158,6 +161,9 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
 
     bool evaluateMspData = ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA;
     mspSerialProcess(evaluateMspData, mspFcProcessCommand, mspFcProcessReply);
+#ifdef USE_HX711
+    hx711Update();
+#endif
 }
 
 static void taskBatteryAlerts(timeUs_t currentTimeUs)
