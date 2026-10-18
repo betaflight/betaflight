@@ -548,7 +548,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.feedforwardJitterFactorInv = 1.0f / rcUsSpanToNorm(1.0f + pidProfile->feedforward_jitter_factor);
     pidRuntime.feedforwardBoostFactor = 0.001f * pidProfile->feedforward_boost;
     pidRuntime.feedforwardMaxRateLimit = pidProfile->feedforward_max_rate_limit;
-    pidRuntime.feedforwardInterpolate = !(rxRuntimeState.serialrxProvider == SERIALRX_CRSF);
+    pidRuntime.feedforwardInterpolate = rxConfig()->serialrx_provider != SERIALRX_CRSF;
     pidRuntime.feedforwardYawHoldTime = 0.001f * pidProfile->feedforward_yaw_hold_time; // input time constant in milliseconds, converted to seconds
     pidRuntime.feedforwardYawHoldGain = pidProfile->feedforward_yaw_hold_gain;
     // normalise/maintain boost when time constant is small, 1.5x at 50ms, 2x at 25ms, almost 3x at 10ms
