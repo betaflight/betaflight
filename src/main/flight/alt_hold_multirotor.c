@@ -126,14 +126,14 @@ static void altHoldUpdateTargetAltitude(timeUs_t taskIntervalUs)
 
     if (altHold.allowStickAdjustment && calculateThrottleStatus() != THROTTLE_LOW) {
         const float rcThrottle = rcCommand[THROTTLE];
-        const float hoverPwm = (float)autopilotGetEffectiveHoverThrottlePwm();
-        const float lowThreshold = hoverPwm - altHold.deadband * (hoverPwm - PWM_RANGE_MIN);
-        const float highThreshold = hoverPwm + altHold.deadband * (PWM_RANGE_MAX - hoverPwm);
+        const float hoverThrottle = rcUsToThrottle(autopilotGetEffectiveHoverThrottlePwm());
+        const float lowThreshold = hoverThrottle - altHold.deadband * hoverThrottle;
+        const float highThreshold = hoverThrottle + altHold.deadband * (1.0f - hoverThrottle);
 
         if (rcThrottle < lowThreshold) {
-            stickFactor = scaleRangef(rcThrottle, PWM_RANGE_MIN, lowThreshold, -1.0f, 0.0f);
+            stickFactor = scaleRangef(rcThrottle, 0.0f, lowThreshold, -1.0f, 0.0f);
         } else if (rcThrottle > highThreshold) {
-            stickFactor = scaleRangef(rcThrottle, highThreshold, PWM_RANGE_MAX, 0.0f, 1.0f);
+            stickFactor = scaleRangef(rcThrottle, highThreshold, 1.0f, 0.0f, 1.0f);
         }
     }
     // StickFactor is a multiplier for maxClimbRate, based on throttle position, that sets the ascend or descend velocity
@@ -185,7 +185,7 @@ static void altHoldUpdate(timeUs_t taskIntervalUs)
         const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
         if (navCmd->includeAltitude) {
             targetAltitudeCm = positionNavGetTargetAltitudeCm();
-            targetAltitudeVelocity = positionNavTargetReached() ? 0.0f : positionNavGetTargetVelocityCmS().z;
+            targetAltitudeVelocity = positionNavGetTargetVelocityCmS().z;
             velLimitCmS = positionNavGetVerticalRateLimitCmS();
             // track it, so alt hold does not revert to a pre-nav target altitude when the leg ends
             altHold.targetAltitudeCm = targetAltitudeCm;

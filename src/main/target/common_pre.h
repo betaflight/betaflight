@@ -148,6 +148,7 @@
 #define USE_ACCGYRO_LSM6DSV32X
 #define USE_ACCGYRO_LSM6DSK320X
 #define USE_ACCGYRO_BMI270
+#define USE_ACCGYRO_BMI423
 #define USE_GYRO_SPI_ICM42605
 #define USE_ACCGYRO_ICM42622P
 #define USE_ACCGYRO_ICM42686P
@@ -180,6 +181,7 @@
 #define USE_FLASHFS
 #define USE_FLASH_TOOLS
 #define USE_FLASH_M25P16
+#define USE_FLASH_FM25V02A  // 256-Kbit Cypress/Infineon SPI F-RAM
 #define USE_FLASH_W25N01G    // 1Gb NAND flash support
 #define USE_FLASH_W25N02K    // 2Gb NAND flash support
 #define USE_FLASH_W25M       // Stacked die support

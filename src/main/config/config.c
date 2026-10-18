@@ -235,6 +235,20 @@ static void validateAndFixConfig(void)
     telemetryValidateProviders();
 #endif
 
+    if (rxConfig()->mincheck > RX_MIN_CHECK_MAX) {
+        rxConfigMutable()->mincheck = RX_MIN_CHECK_MAX;
+    }
+
+    if (rxConfig()->mincheck >= rxConfig()->maxcheck) {
+        rxConfigMutable()->mincheck = RX_MIN_CHECK_DEFAULT;
+        rxConfigMutable()->maxcheck = RX_MAX_CHECK_DEFAULT;
+    }
+
+    if (rxConfig()->rx_min_usec >= rxConfig()->rx_max_usec) {
+        rxConfigMutable()->rx_min_usec = RX_MIN_USEC;
+        rxConfigMutable()->rx_max_usec = RX_MAX_USEC;
+    }
+
     if (!isSerialConfigValid()) {
         // Give up only the claims that actually clash before falling back to the
         // board-wide reset, which would cost the user every other port they had
@@ -277,8 +291,8 @@ static void validateAndFixConfig(void)
         }
 #endif
 
-        if (pidProfilesMutable(i)->motor_output_limit > 100 || pidProfilesMutable(i)->motor_output_limit == 0) {
-            pidProfilesMutable(i)->motor_output_limit = 100;
+        if (pidProfilesMutable(i)->motor_output_limit > MOTOR_OUTPUT_LIMIT_PERCENT_MAX || pidProfilesMutable(i)->motor_output_limit < MOTOR_OUTPUT_LIMIT_PERCENT_MIN) {
+            pidProfilesMutable(i)->motor_output_limit = MOTOR_OUTPUT_LIMIT_PERCENT_MAX;
         }
 
         if (pidProfilesMutable(i)->auto_profile_cell_count > MAX_AUTO_DETECT_CELL_COUNT || pidProfilesMutable(i)->auto_profile_cell_count < AUTO_PROFILE_CELL_COUNT_CHANGE) {
@@ -384,7 +398,10 @@ static void validateAndFixConfig(void)
         rxConfigMutable()->rssi_src_frame_errors = false;
     }
 
-    if (featureIsConfigured(FEATURE_3D) || !featureIsConfigured(FEATURE_GPS) || mixerModeIsFixedWing(mixerConfig()->mixerMode)
+    if (featureIsConfigured(FEATURE_3D) || !featureIsConfigured(FEATURE_GPS)
+#if !defined(USE_WING) || !ENABLE_RESCUE_PLAN
+        || mixerModeIsFixedWing(mixerConfig()->mixerMode)
+#endif
 #if !defined(USE_GPS) || !defined(USE_GPS_RESCUE)
         || true
 #endif
@@ -572,10 +589,10 @@ static void validateAndFixConfig(void)
             batteryProfilesMutable(i)->vbatwarningcellvoltage = 350;
             batteryProfilesMutable(i)->vbatfullcellvoltage = 410;
         }
-        if (profile->forceBatteryCellCount > 24) {
+        if (profile->forceBatteryCellCount > BATTERY_FORCE_CELL_COUNT_MAX) {
             batteryProfilesMutable(i)->forceBatteryCellCount = 0;
         }
-        if (profile->consumptionWarningPercentage > 100) {
+        if (profile->consumptionWarningPercentage > BATTERY_CONSUMPTION_WARNING_PERCENT_MAX) {
             batteryProfilesMutable(i)->consumptionWarningPercentage = 10;
         }
     }
@@ -645,7 +662,7 @@ void validateAndFixGyroConfig(void)
         float motorUpdateRestriction;
 
 #if defined(USE_DSHOT) && defined(USE_PID_DENOM_CHECK)
-        /* If bidirectional DSHOT is being used on an F4 or G4 then force DSHOT300. The motor update restrictions then applied
+        /* If bidirectional DSHOT is being used on an F4, F7 or G4 then force DSHOT300. The motor update restrictions then applied
          * will automatically consider the loop time and adjust pid_process_denom appropriately
          */
         if (true

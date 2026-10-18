@@ -31,6 +31,7 @@
 #include "common/utils.h"
 
 #include "drivers/flash/flash.h"
+#include "drivers/flash/flash_fm25v02a.h"
 #include "drivers/flash/flash_impl.h"
 #include "drivers/flash/flash_m25p16.h"
 #include "drivers/flash/flash_mt29f.h"
@@ -372,8 +373,26 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
     // Manufacturer, memory type, and capacity
     uint32_t jedecID = (readIdResponse[0] << 16) | (readIdResponse[1] << 8) | (readIdResponse[2]);
 
+#ifdef USE_FLASH_FM25V02A
+    /*
+     * FM25V02A places its manufacturer in JEDEC bank 7, so its first six
+     * RDID bytes are continuation code 0x7F.  Read and verify the complete
+     * nine-byte ID only when the short probe has that prefix.  Matching only
+     * 0x7F7F7F would alias every compatible bank-7 F-RAM.
+     */
+    if (readIdResponse[0] == 0x7F && readIdResponse[1] == 0x7F
+        && readIdResponse[2] == 0x7F && readIdResponse[3] == 0x7F) {
+        uint8_t framDeviceId[FM25V02A_DEVICE_ID_LENGTH] = { 0 };
+        spiReadRegBuf(dev, FLASH_INSTRUCTION_RDID, framDeviceId, sizeof(framDeviceId));
+        if (fm25v02a_identify(&flashDevice, framDeviceId, sizeof(framDeviceId))) {
+            jedecID = flashDevice.geometry.jedecId;
+            detected = true;
+        }
+    }
+#endif
+
 #ifdef USE_FLASH_M25P16
-    if (m25p16_identify(&flashDevice, jedecID)) {
+    if (!detected && m25p16_identify(&flashDevice, jedecID)) {
         detected = true;
     }
 #endif
@@ -464,7 +483,12 @@ static bool flashDeviceInit(const flashConfig_t *flashConfig)
         flashDevice.vTable->configure(&flashDevice, configurationFlags);
     }
 
-    return haveFlash;
+    /*
+     * configure() predates drivers that can discover a part and then find it
+     * unusable, so it cannot return a status.  Such drivers invalidate their
+     * geometry; do not report a zero-sized device as successfully initialized.
+     */
+    return haveFlash && flashDevice.geometry.totalSize > 0;
 }
 
 MMFLASH_CODE bool flashIsReady(void)
@@ -551,10 +575,19 @@ MMFLASH_CODE void flashPageProgramBegin(uint32_t address, void (*callback)(uintp
 
 MMFLASH_CODE uint32_t flashPageProgramContinue(const uint8_t **buffers, uint32_t *bufferSizes, uint32_t bufferCount)
 {
-    uint32_t maxBytesToWrite = flashDevice.geometry.pageSize - (flashDevice.currentWriteAddress % flashDevice.geometry.pageSize);
-
-    if (bufferCount == 0) {
+    if (!buffers || !bufferSizes || bufferCount == 0) {
         return 0;
+    }
+
+    uint32_t maxBytesToWrite;
+    if (flashDevice.geometry.flashType == FLASH_TYPE_FRAM) {
+        if (flashDevice.currentWriteAddress >= flashDevice.geometry.totalSize) {
+            return 0;
+        }
+        // F-RAM has no program-page boundary; only stop at the end of the array.
+        maxBytesToWrite = flashDevice.geometry.totalSize - flashDevice.currentWriteAddress;
+    } else {
+        maxBytesToWrite = flashDevice.geometry.pageSize - (flashDevice.currentWriteAddress % flashDevice.geometry.pageSize);
     }
 
     if (bufferSizes[0] >= maxBytesToWrite) {
@@ -606,6 +639,20 @@ const flashGeometry_t *flashGetGeometry(void)
     }
 
     return &noFlashGeometry;
+}
+
+const char *flashTypeGetName(flashType_e type)
+{
+    switch (type) {
+    case FLASH_TYPE_NOR:
+        return "NOR";
+    case FLASH_TYPE_NAND:
+        return "NAND";
+    case FLASH_TYPE_FRAM:
+        return "FRAM";
+    }
+
+    return "UNKNOWN";
 }
 
 /*

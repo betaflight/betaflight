@@ -377,6 +377,7 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
     device->count = esp32DshotMotorCount;
     device->initialized = true;
 
+    dshotMotorCount = esp32DshotMotorCount;
     dshotInitialized = true;
 
     return true;
