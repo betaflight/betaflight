@@ -309,6 +309,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
     // Use the correct callback argument
     dmaRx->userParam = (uint32_t)dev;
+    dmaTx->userParam = (uint32_t)dev;
 
     // Clear transfer flags
     DMA_CLEAR_FLAG(dmaTx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
@@ -333,6 +334,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
     // Enable RX TC interrupt (fires when SPI operation is fully complete)
     LL_DMA_EnableIT_TC(chRx);
     LL_DMA_EnableIT_DTE(chRx);
+    LL_DMA_EnableIT_DTE(chTx);
 
     // Setup SPI transfer size, enable DMA channels, then SPI
     LL_SPI_SetTransferSize(instance, dev->bus->curSegment->len);

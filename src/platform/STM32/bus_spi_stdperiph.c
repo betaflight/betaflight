@@ -219,6 +219,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
         // Use the correct callback argument
         dmaRx->userParam = (uint32_t)dev;
+        dmaTx->userParam = (uint32_t)dev;
 
         // Clear transfer flags
         DMA_CLEAR_FLAG(dmaTx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
@@ -232,6 +233,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
          * occurs earlier when the Tx FIFO is empty, but the SPI operation is still in progress
          */
         DMA_ITConfig(streamRegsRx, DMA_IT_TC | DMA_IT_TE, ENABLE);
+        DMA_ITConfig(streamRegsTx, DMA_IT_TE, ENABLE);
 
         // Update streams
         DMA_Init(streamRegsTx, dev->bus->dmaInitTx);

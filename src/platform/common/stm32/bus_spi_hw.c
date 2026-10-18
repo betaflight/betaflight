@@ -82,6 +82,19 @@ FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
     spiIrqHandler(dev);
 }
 
+// Only the transfer error interrupt is enabled on the transmit stream of a full duplex transfer
+FAST_IRQ_HANDLER static void spiTxErrorIrqHandler(dmaChannelDescriptor_t* descriptor)
+{
+    const extDevice_t *dev = (const extDevice_t *)descriptor->userParam;
+
+    if (!dev || !DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
+        return;
+    }
+
+    DMA_CLEAR_FLAG(descriptor, DMA_IT_TEIF);
+    spiAbortTransfer(dev);
+}
+
 #ifdef USE_TX_IRQ_HANDLER
 // Interrupt handler for SPI transmit DMA completion
 FAST_IRQ_HANDLER static void spiTxIrqHandler(dmaChannelDescriptor_t* descriptor)
@@ -320,6 +333,7 @@ void spiInitBusDMA(void)
              * handlers, so the DMA completion interrupt must be at a higher priority
              */
             dmaSetHandler(dmaRxIdentifier, spiRxIrqHandler, NVIC_PRIO_SPI_DMA, 0);
+            dmaSetHandler(dmaTxIdentifier, spiTxErrorIrqHandler, NVIC_PRIO_SPI_DMA, 0);
 
             bus->useDMA = true;
 #ifdef USE_TX_IRQ_HANDLER

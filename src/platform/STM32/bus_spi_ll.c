@@ -447,6 +447,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
     // Use the correct callback argument
     dmaRx->userParam = (uint32_t)dev;
+    dmaTx->userParam = (uint32_t)dev;
 
     // Clear transfer flags
     DMA_CLEAR_FLAG(dmaTx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
@@ -459,6 +460,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
     // Use the Rx interrupt as this occurs once the SPI operation is complete
     LL_DMA_EnableIT_TC(dmaRx->dma, dmaRx->stream);
     LL_DMA_EnableIT_DTE(dmaRx->dma, dmaRx->stream);
+    LL_DMA_EnableIT_DTE(dmaTx->dma, dmaTx->stream);
 
     // Update channels
     LL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->dmaInitTx);
@@ -486,6 +488,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
 #endif
         // Use the correct callback argument
         dmaRx->userParam = (uint32_t)dev;
+        dmaTx->userParam = (uint32_t)dev;
 
         // Clear transfer flags
         DMA_CLEAR_FLAG(dmaTx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
@@ -501,6 +504,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
          */
         LL_DMA_EnableIT_TC(dmaRx->dma, dmaRx->stream);
         LL_DMA_EnableIT_TE(dmaRx->dma, dmaRx->stream);
+        LL_DMA_EnableIT_TE(dmaTx->dma, dmaTx->stream);
 
         // Update channels
         LL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->dmaInitTx);
@@ -524,6 +528,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
          */
         LL_EX_DMA_EnableIT_TC(streamRegsRx);
         LL_EX_DMA_EnableIT_TE(streamRegsRx);
+        LL_EX_DMA_EnableIT_TE(streamRegsTx);
 
         // Update streams
         LL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->dmaInitTx);

@@ -216,6 +216,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
         // Use the correct callback argument
         dmaRx->userParam = (uint32_t)dev;
+        dmaTx->userParam = (uint32_t)dev;
 
         // Clear transfer flags
         DMA_CLEAR_FLAG(dmaTx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
@@ -230,6 +231,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
          */
         DDL_EX_DMA_EnableIT_TC(streamRegsRx);
         DDL_EX_DMA_EnableIT_TE(streamRegsRx);
+        DDL_EX_DMA_EnableIT_TE(streamRegsTx);
 
         // Update streams
         DDL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->dmaInitTx);
