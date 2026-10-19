@@ -201,7 +201,7 @@ uint8_t BL_ConnectEx(uint8_32_u *pDeviceInfo)
 
     //DeviceInfo.dword=0; is set before
     uint8_t BootInfo[9];
-    uint8_t BootMsg[BootMsgLen-1] = "471";
+    uint8_t BootMsg[BootMsgLen-1] = {'4', '7', '1'};
     // x * 0 + 9
 #if defined(USE_SERIAL_4WAY_SK_BOOTLOADER)
     uint8_t BootInit[] = {0,0,0,0,0,0,0,0,0,0,0,0,0x0D,'B','L','H','e','l','i',0xF4,0x7D};

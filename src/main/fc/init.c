@@ -98,7 +98,7 @@
 #include "flight/alt_hold.h"
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
-#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#if ENABLE_FLIGHT_PLAN
 #include "flight/flight_plan_nav.h"
 #endif
 #include "flight/imu.h"
@@ -547,7 +547,7 @@ void initPhase2(void)
     busSwitchInit();
 #endif
 
-#if defined(USE_UART)
+#if defined(USE_UART) && SERIAL_TRAIT_PIN_CONFIG
     uartPinConfigure(serialPinConfig());
 #endif
 
@@ -872,7 +872,7 @@ void initPhase3(void)
 
     positionInit();
     autopilotInit();
-#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#if ENABLE_FLIGHT_PLAN
     flightPlanNavInit();
 #endif
 

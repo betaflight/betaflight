@@ -75,7 +75,12 @@ Byte 9: 8-bit CRC
 PG_REGISTER_WITH_RESET_TEMPLATE(escSensorConfig_t, escSensorConfig, PG_ESC_SENSOR_CONFIG, 0);
 
 PG_RESET_TEMPLATE(escSensorConfig_t, escSensorConfig,
-        .halfDuplex = 0
+        .halfDuplex = 0,
+#ifdef ESC_SENSOR_UART
+        .esc_sensor_uart = ESC_SENSOR_UART,
+#else
+        .esc_sensor_uart = SERIAL_PORT_NONE,
+#endif
 );
 
 /*
@@ -183,7 +188,7 @@ escSensorData_t *getEscSensorData(uint8_t motorNumber)
 
             combinedDataNeedsUpdate = false;
 
-            DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_DATA_AGE, combinedEscSensorData.dataAge);
+            DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_DATA_AGE, combinedEscSensorData.dataAge);  //!< Data Age
         }
 
         return &combinedEscSensorData;
@@ -248,15 +253,15 @@ static void escSensorDataReceive(uint16_t c, void *data)
 
 bool escSensorInit(void)
 {
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_ESC_SENSOR);
-    if (!portConfig) {
+    const serialPortIdentifier_e port = escSensorConfig()->esc_sensor_uart;
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
     portOptions_e options = SERIAL_NOT_INVERTED  | (escSensorConfig()->halfDuplex ? SERIAL_BIDIR : 0);
 
     // Initialize serial port
-    escSensorPort = openSerialPort(portConfig->identifier, FUNCTION_ESC_SENSOR, escSensorDataReceive, NULL, ESC_SENSOR_BAUDRATE, MODE_RX, options);
+    escSensorPort = openSerialPort(port, FUNCTION_ESC_SENSOR, escSensorDataReceive, NULL, ESC_SENSOR_BAUDRATE, MODE_RX, options);
 
     for (int i = 0; i < MAX_SUPPORTED_MOTORS; i = i + 1) {
         escSensorData[i].dataAge = ESC_DATA_INVALID;
@@ -310,8 +315,8 @@ static uint8_t decodeEscFrame(void)
         frameStatus = ESC_SENSOR_FRAME_COMPLETE;
 
         if (escSensorMotor < 4) {
-            DEBUG_SET(DEBUG_ESC_SENSOR_RPM, escSensorMotor, lrintf(erpmToRpm(escSensorData[escSensorMotor].rpm) / 10.0f)); // output actual rpm/10 to fit in 16bit signed.
-            DEBUG_SET(DEBUG_ESC_SENSOR_TMP, escSensorMotor, escSensorData[escSensorMotor].temperature);
+            DEBUG_SET(DEBUG_ESC_SENSOR_RPM, escSensorMotor, lrintf(erpmToRpm(escSensorData[escSensorMotor].rpm) / 10.0f));  //!< [index:0..3] Motor {1|2|3|4} RPM [unit:10rpm]
+            DEBUG_SET(DEBUG_ESC_SENSOR_TMP, escSensorMotor, escSensorData[escSensorMotor].temperature);  //!< [index:0..3] Motor {1|2|3|4} Temperature [unit:degC]
         }
     } else {
         frameStatus = ESC_SENSOR_FRAME_FAILED;
@@ -362,7 +367,7 @@ void escSensorProcess(timeUs_t currentTimeUs)
             motorRequestTelemetry(escSensorMotor);
             escSensorTriggerState = ESC_SENSOR_TRIGGER_PENDING;
 
-            DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_MOTOR_INDEX, escSensorMotor + 1);
+            DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_MOTOR_INDEX, escSensorMotor + 1);  //!< Motor Index
 
             break;
         case ESC_SENSOR_TRIGGER_PENDING:
@@ -380,7 +385,7 @@ void escSensorProcess(timeUs_t currentTimeUs)
                         selectNextMotor();
                         escSensorTriggerState = ESC_SENSOR_TRIGGER_READY;
 
-                        DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_NUM_CRC_ERRORS, ++totalCrcErrorCount);
+                        DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_NUM_CRC_ERRORS, ++totalCrcErrorCount);  //!< CRC Error Count
                         break;
                     case ESC_SENSOR_FRAME_PENDING:
                         break;
@@ -392,7 +397,7 @@ void escSensorProcess(timeUs_t currentTimeUs)
                 selectNextMotor();
                 escSensorTriggerState = ESC_SENSOR_TRIGGER_READY;
 
-                DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_NUM_TIMEOUTS, ++totalTimeoutCount);
+                DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_NUM_TIMEOUTS, ++totalTimeoutCount);  //!< Timeout Count
             }
 
             break;

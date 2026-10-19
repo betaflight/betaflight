@@ -620,6 +620,7 @@ static busStatus_e sx1280GetStatsCmdComplete(uintptr_t arg);
 static busStatus_e sx1280IsFhssReq(uintptr_t arg);
 static void sx1280SetFrequency(extiCallbackRec_t *cb);
 static busStatus_e sx1280SetFreqComplete(uintptr_t arg);
+static busStatus_e sx1280SetFreqCmdComplete(uintptr_t arg);
 static void sx1280StartReceivingDMA(extiCallbackRec_t *cb);
 static busStatus_e sx1280EnableIRQs(uintptr_t arg);
 static void sx1280SendTelemetryBuffer(extiCallbackRec_t *cb);
@@ -838,12 +839,16 @@ static busStatus_e sx1280GetStatsCmdComplete(uintptr_t arg)
 void sx1280HandleFromTock(void)
 {
     ATOMIC_BLOCK(NVIC_PRIO_MAX) {
-        if (expressLrsIsFhssReq()) {
+        // Evaluate the hop request first: it has side effects (advances the channel)
+        const bool hopDue = expressLrsIsFhssReq();
+        // A hop stays pending until the frequency command has been sent (see
+        // sx1280SetFreqCmdComplete). Retrying a pending one here, every tock, bounds
+        // recovery from a BUSY wait abandoned by sx1280HandleFromTick() to one
+        // packet period: a radio left on the wrong channel receives no packets.
+        if (hopDue || pendingDoFHSS) {
+            pendingDoFHSS = true;
             if (sx1280EnableBusy()) {
-                pendingDoFHSS = false;
                 sx1280SetBusyFn(sx1280SetFrequency);
-            } else {
-                pendingDoFHSS = true;
             }
         }
     }
@@ -855,6 +860,7 @@ static busStatus_e sx1280IsFhssReq(uintptr_t arg)
     UNUSED(arg);
 
     if (expressLrsIsFhssReq()) {
+        pendingDoFHSS = true;   // until sent: this BUSY wait can be abandoned too
         sx1280SetBusyFn(sx1280SetFrequency);
     } else {
         sx1280SetFreqComplete(arg);
@@ -879,18 +885,28 @@ static void sx1280SetFrequency(extiCallbackRec_t *cb)
     setFreqCmd[3] = (uint8_t)(currentFreq & 0xFF);
 
     static busSegment_t segments[] = {
-            {.u.buffers = {setFreqCmd, NULL}, sizeof(setFreqCmd), true, sx1280SetFreqComplete},
+            {.u.buffers = {setFreqCmd, NULL}, sizeof(setFreqCmd), true, sx1280SetFreqCmdComplete},
             {.u.link = {NULL, NULL}, 0, false, NULL},
     };
 
     spiSequence(dev, segments);
 }
 
+// The frequency command has been sent: only now is a deferred hop serviced.
+// pendingDoFHSS is cleared here and nowhere earlier, so a hop survives both
+// sx1280SetFreqComplete() being reached without hopping (via sx1280IsFhssReq)
+// and a sequence abandoned by sx1280HandleFromTick() before the command went out.
+static busStatus_e sx1280SetFreqCmdComplete(uintptr_t arg)
+{
+    pendingDoFHSS = false;
+
+    return sx1280SetFreqComplete(arg);
+}
+
 // Determine if we need to go back to RX or if we need to send TLM data
 static busStatus_e sx1280SetFreqComplete(uintptr_t arg)
 {
     UNUSED(arg);
-    pendingDoFHSS = false;
 
     if (expressLrsTelemRespReq()) {
         expressLrsDoTelem();
@@ -929,7 +945,6 @@ static busStatus_e sx1280EnableIRQs(uintptr_t arg)
     UNUSED(arg);
 
     if (pendingDoFHSS) {
-        pendingDoFHSS = false;
         sx1280SetBusyFn(sx1280SetFrequency);
     } else {
         // Switch back to waiting for EXTI interrupt

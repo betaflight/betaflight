@@ -271,7 +271,7 @@ static void bmp5xx_extiHandler(extiCallbackRec_t *cb)
 
 static void bmp5xxBusInit(const extDevice_t *dev)
 {
-#ifdef USE_BARO_SPI_BMP5XX
+#if defined(USE_BARO_SPI_BMP580) || defined(USE_BARO_SPI_BMP581)
     if (dev->bus->busType == BUS_TYPE_SPI) {
         IOHi(dev->busType_u.spi.csnPin);
         IOInit(dev->busType_u.spi.csnPin, OWNER_BARO_CS, 0);
@@ -285,7 +285,7 @@ static void bmp5xxBusInit(const extDevice_t *dev)
 
 static void bmp5xxBusDeinit(const extDevice_t *dev)
 {
-#ifdef USE_BARO_SPI_BMP5XX
+#if defined(USE_BARO_SPI_BMP580) || defined(USE_BARO_SPI_BMP581)
     if (dev->bus->busType == BUS_TYPE_SPI) {
         ioPreinitByIO(dev->busType_u.spi.csnPin, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
     }

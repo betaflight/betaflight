@@ -281,11 +281,10 @@ FAST_IRQ_HANDLER void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
 
     bbTIM_DMACmd(bbPort->timhw->tim, bbPort->dmaSource, DISABLE);
 
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
-        while (1) {};
+    if (bbDMAServiceFlags(bbPort, descriptor)) {
+        dbgPinLo(0);
+        return;
     }
-
-    DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
 
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
@@ -463,7 +462,7 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorProtocolTypes_e pwmP
         bbOutputDataInit(bbPort->portOutputBuffer, (1 << pinIndex), DSHOT_BITBANG_NONINVERTED);
     }
 
-    bbSwitchToOutput(bbPort);
+    (void)bbSwitchToOutput(bbPort);
 
     bbMotors[motorIndex].configured = true;
 
@@ -491,7 +490,7 @@ static bool bbTelemetryWait(void)
     } while (telemetryPending);
 
     if (telemetryWait) {
-        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);
+        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);  //!< Reception Timeout Count
     }
 
     return telemetryWait;
@@ -532,10 +531,10 @@ static bool bbDecodeTelemetry(void)
 #endif
 
             if (rawValue == DSHOT_TELEMETRY_NOEDGE) {
-                DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 1, debug[1] + 1);
+                DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 1, debug[1] + 1);  //!< Missing Edge Count
                 continue;
             }
-            DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 0, debug[0] + 1);
+            DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 0, debug[0] + 1);  //!< Telemetry Packets Read
             dshotTelemetryState.readCount++;
 
             if (rawValue != DSHOT_TELEMETRY_INVALID) {
@@ -613,17 +612,35 @@ static void bbUpdateComplete(void)
         X32_CLEAN_DCACHE_BY_ADDR(bbPort->portOutputBuffer, MOTOR_DSHOT_BUF_CACHE_ALIGN_BYTES);
 #endif
 
+        if (bbPort->reinitRequired) {
+            // A DMA transfer error left the stream's registers describing a
+            // partial transfer. Reload them before enabling it again; if the
+            // stream will not stop, leave the flag up and retry next cycle.
+            if (!bbSwitchToOutput(bbPort)) {
+                continue;
+            }
+            bbPort->inputActive = false;
+            bbPort->reinitRequired = false;
+        }
+
 #ifdef USE_DSHOT_TELEMETRY
         if (useDshotTelemetry) {
             if (bbPort->direction == DSHOT_BITBANG_DIRECTION_INPUT) {
                 bbPort->inputActive = false;
-                bbSwitchToOutput(bbPort);
+                if (!bbSwitchToOutput(bbPort)) {
+                    // Stream did not stop, so its registers were left alone and
+                    // the port is still an input. Skip the frame rather than
+                    // enable a stream whose configuration was never applied.
+                    continue;
+                }
             }
         } else
 #endif
         {
             // Using circular mode resets the counter one short, so explicitly reload
-            bbSwitchToOutput(bbPort);
+            if (!bbSwitchToOutput(bbPort)) {
+                continue;
+            }
         }
 
         bbDMA_Cmd(bbPort, ENABLE);

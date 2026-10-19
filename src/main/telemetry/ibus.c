@@ -74,7 +74,7 @@
 #define IBUS_RX_BUF_LEN    (IBUS_MAX_RX_LEN)
 
 static serialPort_t *ibusSerialPort = NULL;
-static const serialPortConfig_t *ibusSerialPortConfig;
+static serialPortIdentifier_e telemetryPort = SERIAL_PORT_NONE;
 
 /* The sent bytes will be echoed back since Tx and Rx are wired together, this counter
  * will keep track of how many rx chars that shall be discarded */
@@ -93,8 +93,8 @@ static void pushOntoTail(uint8_t buffer[IBUS_MIN_LEN], size_t bufferLength, uint
 
 void initIbusTelemetry(void)
 {
-    ibusSerialPortConfig = findSerialPortConfig(FUNCTION_TELEMETRY_IBUS);
-    ibusPortSharing = determinePortSharing(ibusSerialPortConfig, FUNCTION_TELEMETRY_IBUS);
+    telemetryPort = telemetryProviderPort(TELEMETRY_PROTOCOL_IBUS);
+    ibusPortSharing = determinePortSharing(telemetryPort, FUNCTION_TELEMETRY_IBUS);
     ibusTelemetryEnabled = false;
 }
 
@@ -141,16 +141,16 @@ bool checkIbusTelemetryState(void)
 
 void configureIbusTelemetryPort(void)
 {
-    if (!ibusSerialPortConfig) {
+    if (telemetryPort == SERIAL_PORT_NONE) {
         return;
     }
 
-    if (isSerialPortShared(ibusSerialPortConfig, FUNCTION_RX_SERIAL, FUNCTION_TELEMETRY_IBUS)) {
+    if (isSerialPortShared(telemetryPort, FUNCTION_RX_SERIAL, FUNCTION_TELEMETRY_IBUS)) {
         // serialRx will open port and handle telemetry
         return;
     }
 
-    ibusSerialPort = openSerialPort(ibusSerialPortConfig->identifier, FUNCTION_TELEMETRY_IBUS, NULL, NULL, IBUS_BAUDRATE, IBUS_UART_MODE, SERIAL_BIDIR | (telemetryConfig()->telemetry_inverted ? SERIAL_INVERTED : SERIAL_NOT_INVERTED));
+    ibusSerialPort = openSerialPort(telemetryPort, FUNCTION_TELEMETRY_IBUS, NULL, NULL, IBUS_BAUDRATE, IBUS_UART_MODE, SERIAL_BIDIR | (telemetryConfig()->telemetry_inverted ? SERIAL_INVERTED : SERIAL_NOT_INVERTED));
 
     if (!ibusSerialPort) {
         return;

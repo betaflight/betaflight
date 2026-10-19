@@ -74,12 +74,6 @@ bool displayIsGrabbed(const displayPort_t *instance)
     return (instance && instance->grabCount > 0);
 }
 
-void displaySetXY(displayPort_t *instance, uint8_t x, uint8_t y)
-{
-    instance->posX = x;
-    instance->posY = y;
-}
-
 int displaySys(displayPort_t *instance, uint8_t x, uint8_t y, displayPortSystemElement_e systemElement)
 {
     if (instance->vTable->writeSys) {
@@ -100,9 +94,6 @@ bool displayExtended(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t /* o
 
 int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, const char *text)
 {
-    instance->posX = x + strlen(text);
-    instance->posY = y;
-
     if (strlen(text) == 0) {
         // No point sending a message to do nothing
         return 0;
@@ -113,9 +104,17 @@ int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, co
 
 int displayWriteChar(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, uint8_t c)
 {
-    instance->posX = x + 1;
-    instance->posY = y;
     return instance->vTable->writeChar(instance, x, y, attr, c);
+}
+
+bool displayWriteLogo(displayPort_t *instance, uint16_t fontOffset, uint16_t fontMax, uint8_t logoCols, uint8_t logoRows)
+{
+    if (instance->vTable->writeLogo) {
+        instance->vTable->writeLogo(instance,fontOffset, fontMax, logoCols,logoRows);
+        return true;
+    }
+
+    return false; // not handled by displayport driver.
 }
 
 bool displayIsTransferInProgress(const displayPort_t *instance)
@@ -236,6 +235,7 @@ bool displaySupportsOsdSymbols(displayPort_t *instance)
 {
     // Assume device types that support OSD display will support the OSD symbols (since the OSD logic will use them)
     if ((instance->deviceType == DISPLAYPORT_DEVICE_TYPE_MAX7456)
+        || (instance->deviceType == DISPLAYPORT_DEVICE_TYPE_FBOSD)
         || (instance->deviceType == DISPLAYPORT_DEVICE_TYPE_MSP)
         || (instance->deviceType == DISPLAYPORT_DEVICE_TYPE_FRSKYOSD)) {
         return true;

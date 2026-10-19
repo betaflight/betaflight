@@ -44,10 +44,17 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 
 #define OSD_RCCHANNELS_COUNT 4
 
+#if OSD_FB_ENABLE_SMALLFONT
 #define OSD_CAMERA_FRAME_MIN_WIDTH  2
-#define OSD_CAMERA_FRAME_MAX_WIDTH  30    // Characters per row supportes by MAX7456
+#define OSD_CAMERA_FRAME_MAX_WIDTH  46    // Characters per row supported by PICO FB OSD
+#define OSD_CAMERA_FRAME_MIN_HEIGHT 2
+#define OSD_CAMERA_FRAME_MAX_HEIGHT 24    // Rows supported by PICO FB OSD (PAL)
+#else
+#define OSD_CAMERA_FRAME_MIN_WIDTH  2
+#define OSD_CAMERA_FRAME_MAX_WIDTH  30    // Characters per row supported by MAX7456
 #define OSD_CAMERA_FRAME_MIN_HEIGHT 2
 #define OSD_CAMERA_FRAME_MAX_HEIGHT 16    // Rows supported by MAX7456 (PAL)
+#endif
 
 #define OSD_FRAMERATE_MIN_HZ 1
 #ifndef OSD_FRAMERATE_MAX_HZ
@@ -92,6 +99,16 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 // Default HD OSD canvas size to be applied unless the goggles announce otherwise
 #define OSD_HD_COLS 53
 #define OSD_HD_ROWS 20
+
+#define OSD_CANVAS_COLS_MAX 63
+#define OSD_CANVAS_ROWS_MAX 31
+
+#define OSD_RSSI_ALARM_MAX 100
+#define OSD_LINK_QUALITY_ALARM_MAX 100
+#define OSD_CAP_ALARM_MAX 20000
+#define OSD_ALT_ALARM_MAX 10000
+#define OSD_STICK_OVERLAY_RADIO_MODE_MIN 1
+#define OSD_STICK_OVERLAY_RADIO_MODE_MAX 4
 
 // Timer configuration
 // Stored as 15[alarm:8][precision:4][source:4]0
@@ -222,6 +239,10 @@ typedef enum {
     OSD_POS_HOLD_READY,         // pre-engagement Position Hold readiness indicator
 #endif
 
+#ifdef USE_PITOT
+    OSD_AIRSPEED,
+#endif
+
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -349,7 +370,7 @@ extern const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT];
 
 typedef struct osdConfig_s {
     // Alarms
-    uint16_t cap_alarm;
+    uint16_t cap_alarm;                     // Legacy fallback when the active battery profile has no capacity set
     uint16_t alt_alarm;
     uint8_t rssi_alarm;
 
@@ -398,6 +419,9 @@ typedef struct osdConfig_s {
     uint8_t osd_show_spec_prearm;
 #endif // USE_SPEC_PREARM_SCREEN
     displayPortSeverity_e arming_logo;        // font from which to display logo on arming
+    int8_t osd_uart;                          // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned. Bit chosen by displayPortDevice (FRSKYOSD=FUNCTION_FRSKY_OSD, else none).
+    int8_t osd_custom_text_uart;              // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned.  Always maps to FUNCTION_OSD_CUSTOM_TEXT when set.
+    uint8_t osd_custom_text_baud;             // baudRate_e index for osd_custom_text_uart
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
@@ -441,6 +465,7 @@ extern uint16_t osdAuxValue;
 void osdInit(displayPort_t *osdDisplayPort, osdDisplayPortDevice_e displayPortDevice);
 bool osdUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
 void osdUpdate(timeUs_t currentTimeUs);
+uint16_t osdGetCapacityAlarm(void);
 
 void osdStatSetState(uint8_t statIndex, bool enabled);
 bool osdStatGetState(uint8_t statIndex);
@@ -458,3 +483,4 @@ void osdSetVisualBeeperState(bool state);
 statistic_t *osdGetStats(void);
 bool osdNeedsAccelerometer(void);
 int osdPrintFloat(char *buffer, char leadingSymbol, float value, char *formatString, unsigned decimalPlaces, bool round, char trailingSymbol);
+bool osdIsBlink(osd_items_e item);

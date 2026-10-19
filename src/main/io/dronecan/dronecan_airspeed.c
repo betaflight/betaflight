@@ -35,6 +35,7 @@
 
 #include "io/dronecan/dronecan.h"
 #include "io/dronecan/dronecan_airspeed.h"
+#include "io/dronecan/dronecan_nodes.h"
 #include "io/dronecan/dronecan_msg.h"
 
 // Seqlock publication (same discipline as dronecan_mag.c): the handler runs on
@@ -59,6 +60,8 @@ static float decodeFloat32(const CanardRxTransfer *t, uint32_t bitOffset)
 static void handleRawAirData(CanardInstance *ins, CanardRxTransfer *t)
 {
     UNUSED(ins);
+
+    dronecanNodesNoteSensor(t->source_node_id, DRONECAN_NODE_SENSOR_AIRSPEED);
 
     const float diffPa = decodeFloat32(t, RAWAIRDATA_OFFSET_DIFF_P);
     const float staticPa = decodeFloat32(t, RAWAIRDATA_OFFSET_STATIC_P);

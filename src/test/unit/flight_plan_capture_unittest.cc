@@ -98,7 +98,12 @@ protected:
         flightPlanConfig_t *plan = flightPlanConfigMutable();
         plan->waypointCount = count;
         for (uint8_t i = 0; i < count; i++) {
-            plan->waypoints[i] = { 100 + i, 200 + i, 1000, 0, 0, WAYPOINT_TYPE_FLYBY, WAYPOINT_PATTERN_NONE };
+            waypoint_t wp = {};
+            wp.latitude = 100 + i;
+            wp.longitude = 200 + i;
+            wp.altitude = 1000;
+            wp.type = WAYPOINT_TYPE_FLYBY;
+            plan->waypoints[i] = wp;
         }
     }
 };

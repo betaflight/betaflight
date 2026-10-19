@@ -136,10 +136,6 @@ typedef struct {
     uint16_t crc;
 }  __attribute__ ((__packed__)) gimbalCalStatus_t;
 
-// Expected input range from RC channels
-#define GIMBAL_RC_SET_MIN   -500
-#define GIMBAL_RC_SET_MAX    500
-
 // Expect input range from head-tracker
 #define GIMBAL_SET_MIN      -2047
 #define GIMBAL_SET_MAX      2047
@@ -173,12 +169,17 @@ static uint16_t gimbalCrc(uint8_t *buf, uint32_t size)
     return __builtin_bswap16(crc16_ccitt_update(0x0000, buf, size));
 }
 
+static float rcDeflection(rc_alias_e channel)
+{
+    return rcGetChannel(channel) - rcUsToNorm(rxConfig()->midrc);
+}
+
 // Set the gimbal position on each axis
 static bool gimbalSet(int16_t headtracker_roll, int16_t headtracker_pitch, int16_t headtracker_yaw)
 {
-    DEBUG_SET(DEBUG_GIMBAL, 0, headtracker_roll);
-    DEBUG_SET(DEBUG_GIMBAL, 1, headtracker_pitch);
-    DEBUG_SET(DEBUG_GIMBAL, 2, headtracker_yaw);
+    DEBUG_SET(DEBUG_GIMBAL, 0, headtracker_roll);   //!< Headtracker Roll
+    DEBUG_SET(DEBUG_GIMBAL, 1, headtracker_pitch);  //!< Headtracker Pitch
+    DEBUG_SET(DEBUG_GIMBAL, 2, headtracker_yaw);    //!< Headtracker Yaw
 
     if (!gimbalSerialPort) {
         return false;
@@ -196,23 +197,23 @@ static bool gimbalSet(int16_t headtracker_roll, int16_t headtracker_pitch, int16
                                                   GIMBAL_YAW_MAX * gimbalTrackConfig()->gimbal_yaw_gain / 100);
 
     // Scale the RC stick inputs and add
-    roll  += scaleRange(rcData[ROLL] - rxConfig()->midrc, GIMBAL_RC_SET_MIN, GIMBAL_RC_SET_MAX,
+    roll  += scaleRangef(rcDeflection(ROLL), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX,
                         GIMBAL_ROLL_MIN * gimbalTrackConfig()->gimbal_roll_rc_gain / 100,
                         GIMBAL_ROLL_MAX * gimbalTrackConfig()->gimbal_roll_rc_gain / 100);
-    if (rcData[PITCH] < rxConfig()->midrc) {
-        pitch += scaleRange(rcData[PITCH] - rxConfig()->midrc, GIMBAL_RC_SET_MIN, 0,
+    if (rcDeflection(PITCH) < 0.0f) {
+        pitch += scaleRangef(rcDeflection(PITCH), NORMALISED_RANGE_MIN, 0.0f,
                             GIMBAL_PITCH_MAX * gimbalTrackConfig()->gimbal_pitch_rc_low_gain / 100,
                             0);
     } else {
-        pitch += scaleRange(rcData[PITCH] - rxConfig()->midrc, 0, GIMBAL_RC_SET_MAX,
+        pitch += scaleRangef(rcDeflection(PITCH), 0.0f, NORMALISED_RANGE_MAX,
                             0,
                             GIMBAL_PITCH_MIN * gimbalTrackConfig()->gimbal_pitch_rc_high_gain / 100);
     }
-    yaw   += scaleRange(rcData[YAW] - rxConfig()->midrc, GIMBAL_RC_SET_MIN, GIMBAL_RC_SET_MAX,
+    yaw   += scaleRangef(rcDeflection(YAW), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX,
                         GIMBAL_YAW_MIN * gimbalTrackConfig()->gimbal_yaw_rc_gain / 100,
                         GIMBAL_YAW_MAX * gimbalTrackConfig()->gimbal_yaw_rc_gain / 100);
 
-    pitch += scaleRange(rcData[THROTTLE] - rxConfig()->midrc, GIMBAL_RC_SET_MIN, GIMBAL_RC_SET_MAX,
+    pitch += scaleRangef(rcDeflection(THROTTLE), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX,
                         GIMBAL_PITCH_MIN * gimbalTrackConfig()->gimbal_pitch_rc_thr_gain / 100,
                         GIMBAL_PITCH_MAX * gimbalTrackConfig()->gimbal_pitch_rc_thr_gain / 100);
 
@@ -221,9 +222,9 @@ static bool gimbalSet(int16_t headtracker_roll, int16_t headtracker_pitch, int16
     pitch += GIMBAL_PITCH_MAX * gimbalTrackConfig()->gimbal_pitch_offset / 100;
     yaw   += GIMBAL_YAW_MAX * gimbalTrackConfig()->gimbal_yaw_offset / 100;
 
-    DEBUG_SET(DEBUG_GIMBAL, 3, roll);
-    DEBUG_SET(DEBUG_GIMBAL, 4, pitch);
-    DEBUG_SET(DEBUG_GIMBAL, 5, yaw);
+    DEBUG_SET(DEBUG_GIMBAL, 3, roll);   //!< Gimbal Roll
+    DEBUG_SET(DEBUG_GIMBAL, 4, pitch);  //!< Gimbal Pitch
+    DEBUG_SET(DEBUG_GIMBAL, 5, yaw);    //!< Gimbal Yaw
 
     // Constrain to set limits
     gimbalCmdOut.roll  = constrain(roll, GIMBAL_ROLL_MIN * gimbalTrackConfig()->gimbal_roll_limit / 100,
@@ -306,13 +307,13 @@ void gimbalUpdate(timeUs_t currentTimeUs)
 
 bool gimbalInit(void)
 {
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_GIMBAL);
-    if (!portConfig) {
+    const serialPortIdentifier_e port = gimbalTrackConfig()->gimbal_uart;
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
     // Serial communications is 115200 8N1
-    gimbalSerialPort = openSerialPort(portConfig->identifier, FUNCTION_GIMBAL,
+    gimbalSerialPort = openSerialPort(port, FUNCTION_GIMBAL,
                                       NULL, NULL,
                                       115200, MODE_RXTX, SERIAL_STOPBITS_1 | SERIAL_PARITY_NO);
 

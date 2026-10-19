@@ -110,6 +110,7 @@ inline bool isEscHi(uint8_t selEsc)
 {
     return (IORead(escHardware[selEsc].io) != GPIO_PIN_RESET);
 }
+
 inline bool isEscLo(uint8_t selEsc)
 {
     return (IORead(escHardware[selEsc].io) == GPIO_PIN_RESET);
@@ -144,6 +145,7 @@ uint8_t esc4wayInit(void)
         if (motorIsMotorEnabled(i)) {
             const IO_t io = motorGetIo(i);
             if (io != IO_NONE) {
+                motorReleaseIo(i);
                 escHardware[escIndex].io = io;
                 setEscInput(escIndex);
                 setEscHi(escIndex);
@@ -151,6 +153,7 @@ uint8_t esc4wayInit(void)
             }
         }
     }
+
     escCount = escIndex;
     return escCount;
 }
@@ -162,7 +165,20 @@ void esc4wayRelease(void)
         IOConfigGPIO(escHardware[escCount].io, IOCFG_AF_PP);
         setEscLo(escCount);
     }
-    motorEnable();
+
+    bool ok = true;
+    for (uint8_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
+        if (motorIsMotorEnabled(i)) {
+            const IO_t io = motorGetIo(i);
+            if (io != IO_NONE) {
+                ok = motorReinstateIo(i) && ok;
+            }
+        }
+    }
+
+    if (ok) {
+        motorEnable();
+    }
 }
 
 #define SET_DISCONNECTED DeviceInfo.words[0] = 0

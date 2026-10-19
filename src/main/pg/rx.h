@@ -24,6 +24,12 @@
 
 #include "pg/pg.h"
 
+#define RX_MIDRC_MIN 1200
+#define RX_MIDRC_MAX 1700
+#define RX_MIN_CHECK_DEFAULT 1050
+#define RX_MAX_CHECK_DEFAULT 1900
+#define RX_FPV_CAM_ANGLE_MAX 90
+
 #define GET_FRAME_ERR_LPF_FREQUENCY(period) (10.0f / period)  // period in deciseconds (0.1s)
 #define FRAME_ERR_RESAMPLE_US 100000
 
@@ -63,6 +69,7 @@ typedef struct rxConfig_s {
     uint32_t msp_override_channels_mask;       // Channels to override when the MSP override mode is enabled
     uint8_t msp_override_failsafe;             // if false then extra RC link is always required in msp_override mode, true - allows control via msp_override without extra RC link (autonomous use case)
     uint8_t crsf_use_negotiated_baud;          // Use negotiated baud rate for CRSF V3
+    int8_t rx_uart;                            // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned
 } rxConfig_t;
 
 PG_DECLARE(rxConfig_t, rxConfig);

@@ -22,6 +22,7 @@ extern "C" {
 
     #include "blackbox/blackbox.h"
     #include "blackbox/blackbox_encoding.h"
+    #include "blackbox/blackbox_io.h"
     #include "common/utils.h"
 
     #include "pg/pg.h"
@@ -105,6 +106,32 @@ void serialTestResetBuffers()
     serialReadEnd = 0;
     memset(&serialWriteBuffer, 0, sizeof(serialWriteBuffer));
     serialWritePos = 0;
+}
+
+// The budget paces writes against the device buffer, so it has to be charged for every
+// byte the line actually emits: 'H', ' ', the name, ':', the value and the newline.
+TEST(BlackboxEncodingTest, TestPrintfHeaderLineChargesEveryByte)
+{
+    serialTestResetBuffers();
+    blackboxHeaderBudget = 100;
+
+    blackboxPrintfHeaderLine("mode", "%d", 42);
+
+    EXPECT_STREQ("H mode:42\n", (const char *)serialWriteBuffer);
+    EXPECT_EQ(100 - 10, blackboxHeaderBudget);
+    EXPECT_EQ(10, serialWritePos);
+}
+
+TEST(BlackboxEncodingTest, TestPrintfHeaderLineWithStringValue)
+{
+    serialTestResetBuffers();
+    blackboxHeaderBudget = 100;
+
+    blackboxPrintfHeaderLine("debug_mode_name", "%s", "GYRO_SCALED");
+
+    EXPECT_STREQ("H debug_mode_name:GYRO_SCALED\n", (const char *)serialWriteBuffer);
+    EXPECT_EQ(100 - 30, blackboxHeaderBudget);
+    EXPECT_EQ(30, serialWritePos);
 }
 
 TEST(BlackboxEncodingTest, TestWriteUnsignedVB)

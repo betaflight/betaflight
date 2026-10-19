@@ -54,6 +54,12 @@ extern "C" {
         return true;
     }
 
+    void dronecanNodesNoteSensor(uint8_t nodeId, uint8_t sensorFlag)
+    {
+        (void)nodeId;
+        (void)sensorFlag;
+    }
+
     static timeUs_t mockMicros = 0;
 
     timeUs_t micros(void) { return mockMicros; }
@@ -134,7 +140,11 @@ static uint16_t buildAuxiliary(uint8_t *buf)
     memset(buf, 0, 32);
     encodeF16(buf, 32, 0.75f); // hdop
     encodeF16(buf, 48, 1.5f);  // vdop
-    return 16;
+    const uint8_t satsVisible = 22;
+    const uint8_t satsUsed = 14;
+    canardEncodeScalar(buf, 112, 7, &satsVisible);
+    canardEncodeScalar(buf, 119, 6, &satsUsed);
+    return 16; // 125 bits
 }
 
 static void feedDefaultFix2(void);
@@ -166,7 +176,7 @@ TEST(DronecanGnssTest, Fix2PositionVelocity)
     feed(handleFix2, buf, len);
 
     gpsSolutionData_t sol;
-    ASSERT_TRUE(dronecanGnssGetLatest(&sol));
+    ASSERT_TRUE(dronecanGnssGetLatest(&sol, nullptr));
 
     EXPECT_EQ(450000000, sol.llh.lat);
     EXPECT_EQ(90000000, sol.llh.lon);
@@ -189,7 +199,7 @@ TEST(DronecanGnssTest, Fix2CovarianceToAccuracy)
     feed(handleFix2, buf, len);
 
     gpsSolutionData_t sol;
-    ASSERT_TRUE(dronecanGnssGetLatest(&sol));
+    ASSERT_TRUE(dronecanGnssGetLatest(&sol, nullptr));
 
     // hAcc = sqrt(mean(xx,yy)) = sqrt(6.5) m -> mm
     EXPECT_EQ((uint32_t)(sqrtf(6.5f) * 1000.0f), sol.acc.hAcc);
@@ -227,7 +237,7 @@ TEST(DronecanGnssTest, Fix2FullCovarianceMatrix)
     feed(handleFix2, buf, len);
 
     gpsSolutionData_t sol;
-    ASSERT_TRUE(dronecanGnssGetLatest(&sol));
+    ASSERT_TRUE(dronecanGnssGetLatest(&sol, nullptr));
 
     EXPECT_EQ((uint32_t)(sqrtf(6.5f) * 1000.0f), sol.acc.hAcc);
     EXPECT_EQ(4000u, sol.acc.vAcc);
@@ -244,7 +254,7 @@ TEST(DronecanGnssTest, Fix2UtcTimestamp)
     feed(handleFix2, buf, len);
 
     gpsSolutionData_t sol;
-    ASSERT_TRUE(dronecanGnssGetLatest(&sol));
+    ASSERT_TRUE(dronecanGnssGetLatest(&sol, nullptr));
 
     EXPECT_TRUE(stubDateTimeCalled);
     EXPECT_EQ(1609459200, stubUnixSeconds);
@@ -262,11 +272,12 @@ TEST(DronecanGnssTest, AuxiliaryDop)
     feed(handleAuxiliary, aux, buildAuxiliary(aux));
 
     gpsSolutionData_t sol;
-    ASSERT_TRUE(dronecanGnssGetLatest(&sol));
+    ASSERT_TRUE(dronecanGnssGetLatest(&sol, nullptr));
 
     EXPECT_EQ(75, sol.dop.hdop);  // 0.75 * 100
     EXPECT_EQ(150, sol.dop.vdop); // 1.5  * 100
     EXPECT_EQ(150, sol.dop.pdop); // still from Fix2
+    EXPECT_EQ(22, sol.numSatInView);
 }
 
 TEST(DronecanGnssTest, Fix2PreservesAuxiliaryDop)
@@ -278,18 +289,20 @@ TEST(DronecanGnssTest, Fix2PreservesAuxiliaryDop)
     uint8_t aux[32];
     feed(handleAuxiliary, aux, buildAuxiliary(aux));
 
-    // A fresh Fix2 must not wipe the hdop/vdop published by Auxiliary.
+    // A fresh Fix2 must not wipe the figures published by Auxiliary.
     feedDefaultFix2();
 
     gpsSolutionData_t sol;
-    ASSERT_TRUE(dronecanGnssGetLatest(&sol));
+    ASSERT_TRUE(dronecanGnssGetLatest(&sol, nullptr));
 
     EXPECT_EQ(75, sol.dop.hdop);
     EXPECT_EQ(150, sol.dop.vdop);
+    EXPECT_EQ(22, sol.numSatInView);
 }
 
 // Anything below a 3D fix is unusable for navigation, so 2D is deliberately
-// reported as no fix.
+// reported as no fix -- but the satellites being tracked are still reported, or
+// a module mid-acquisition would look identical to a dead antenna.
 TEST(DronecanGnssTest, Fix2TreatsTwoDFixAsNoFix)
 {
     resetCache();
@@ -301,8 +314,43 @@ TEST(DronecanGnssTest, Fix2TreatsTwoDFixAsNoFix)
     feed(handleFix2, buf, 62);
 
     gpsSolutionData_t sol;
-    ASSERT_TRUE(dronecanGnssGetLatest(&sol));
-    EXPECT_EQ(0, sol.numSat);
+    bool hasFix = true;
+    ASSERT_TRUE(dronecanGnssGetLatest(&sol, &hasFix));
+    EXPECT_FALSE(hasFix);
+    EXPECT_EQ(12, sol.numSat);
+}
+
+// No fix at all is still no reason to hide the count.
+TEST(DronecanGnssTest, Fix2NoFixKeepsSatelliteCount)
+{
+    resetCache();
+
+    uint8_t buf[64];
+    buildFix2(buf);
+    const uint8_t status = UAVCAN_GNSS_FIX2_STATUS_NO_FIX;
+    canardEncodeScalar(buf, 366, 2, &status);
+    feed(handleFix2, buf, 62);
+
+    gpsSolutionData_t sol;
+    bool hasFix = true;
+    ASSERT_TRUE(dronecanGnssGetLatest(&sol, &hasFix));
+    EXPECT_FALSE(hasFix);
+    EXPECT_EQ(12, sol.numSat);
+}
+
+TEST(DronecanGnssTest, Fix2ThreeDFixReportsFix)
+{
+    resetCache();
+
+    uint8_t buf[64];
+    buildFix2(buf);
+    feed(handleFix2, buf, 62);
+
+    gpsSolutionData_t sol;
+    bool hasFix = false;
+    ASSERT_TRUE(dronecanGnssGetLatest(&sol, &hasFix));
+    EXPECT_TRUE(hasFix);
+    EXPECT_EQ(12, sol.numSat);
 }
 
 TEST(DronecanGnssTest, Fix2ScalarCovariance)
@@ -323,7 +371,7 @@ TEST(DronecanGnssTest, Fix2ScalarCovariance)
     feed(handleFix2, buf, (uint16_t)((pdopBit + 16 + 7) / 8));
 
     gpsSolutionData_t sol;
-    ASSERT_TRUE(dronecanGnssGetLatest(&sol));
+    ASSERT_TRUE(dronecanGnssGetLatest(&sol, nullptr));
 
     // A single scalar variance applies to every axis.
     EXPECT_EQ(2000u, sol.acc.hAcc);
@@ -356,7 +404,7 @@ TEST(DronecanGnssTest, Fix2UpperTriangularCovariance)
     feed(handleFix2, buf, (uint16_t)((pdopBit + 16 + 7) / 8));
 
     gpsSolutionData_t sol;
-    ASSERT_TRUE(dronecanGnssGetLatest(&sol));
+    ASSERT_TRUE(dronecanGnssGetLatest(&sol, nullptr));
 
     EXPECT_EQ((uint32_t)(sqrtf(6.5f) * 1000.0f), sol.acc.hAcc);
     EXPECT_EQ(4000u, sol.acc.vAcc);
@@ -382,7 +430,7 @@ TEST(DronecanGnssTest, Fix2TruncatedCovarianceIsIgnored)
     feed(handleFix2, buf, (uint16_t)((384 + 6 * 16) / 8));
 
     gpsSolutionData_t sol;
-    ASSERT_TRUE(dronecanGnssGetLatest(&sol));
+    ASSERT_TRUE(dronecanGnssGetLatest(&sol, nullptr));
 
     EXPECT_EQ(0u, sol.acc.hAcc);
     EXPECT_EQ(0u, sol.acc.vAcc);
@@ -404,10 +452,11 @@ TEST(DronecanGnssTest, AuxiliaryDopExpires)
     feedDefaultFix2();
 
     gpsSolutionData_t sol;
-    ASSERT_TRUE(dronecanGnssGetLatest(&sol));
+    ASSERT_TRUE(dronecanGnssGetLatest(&sol, nullptr));
 
     EXPECT_EQ(0, sol.dop.hdop);
     EXPECT_EQ(0, sol.dop.vdop);
+    EXPECT_EQ(0, sol.numSatInView);
     EXPECT_EQ(150, sol.dop.pdop);
 }
 
@@ -422,7 +471,7 @@ TEST(DronecanGnssTest, Fix2NonUtcTimestampSkipsDateTime)
     feed(handleFix2, buf, len);
 
     gpsSolutionData_t sol;
-    ASSERT_TRUE(dronecanGnssGetLatest(&sol));
+    ASSERT_TRUE(dronecanGnssGetLatest(&sol, nullptr));
 
     EXPECT_FALSE(stubDateTimeCalled);
     EXPECT_FALSE(sol.dateTime.valid);

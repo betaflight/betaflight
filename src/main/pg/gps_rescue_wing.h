@@ -24,8 +24,14 @@
 #include "pg/pg.h"
 
 typedef struct gpsRescue_s {
-    uint8_t  allowArmingWithoutFix;
+    uint16_t minStartDistM;         // m
+    uint8_t  altitudeMode;          // gpsRescueAltitudeMode_e
+    uint16_t initialClimbM;         // m
+    uint16_t ascendRate;            // cm/s
+    uint16_t returnAltitudeM;       // m
+    uint16_t descendRate;           // cm/s
     uint8_t  minSats;
+    uint8_t  allowArmingWithoutFix;
 } gpsRescueConfig_t;
 
 PG_DECLARE(gpsRescueConfig_t, gpsRescueConfig);

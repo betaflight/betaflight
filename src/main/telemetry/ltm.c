@@ -61,6 +61,7 @@
 #include "sensors/battery.h"
 
 #include "io/serial.h"
+#include "io/serial_feature_map.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
@@ -84,7 +85,7 @@
 #define LTM_CYCLETIME   100
 
 static serialPort_t *ltmPort;
-static const serialPortConfig_t *portConfig;
+static serialPortIdentifier_e telemetryPort = SERIAL_PORT_NONE;
 static bool ltmEnabled;
 static portSharing_e ltmPortSharing;
 static uint8_t ltm_crc;
@@ -269,20 +270,20 @@ void freeLtmTelemetryPort(void)
 
 void initLtmTelemetry(void)
 {
-    portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_LTM);
-    ltmPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_LTM);
+    telemetryPort = telemetryProviderPort(TELEMETRY_PROTOCOL_LTM);
+    ltmPortSharing = determinePortSharing(telemetryPort, FUNCTION_TELEMETRY_LTM);
 }
 
 void configureLtmTelemetryPort(void)
 {
-    if (!portConfig) {
+    if (telemetryPort == SERIAL_PORT_NONE) {
         return;
     }
-    baudRate_e baudRateIndex = portConfig->telemetry_baudrateIndex;
+    baudRate_e baudRateIndex = telemetryProviderBaud(TELEMETRY_PROTOCOL_LTM, telemetryPort);
     if (baudRateIndex == BAUD_AUTO) {
         baudRateIndex = BAUD_19200;
     }
-    ltmPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_LTM, NULL, NULL, baudRates[baudRateIndex], TELEMETRY_LTM_INITIAL_PORT_MODE, telemetryConfig()->telemetry_inverted ? SERIAL_INVERTED : SERIAL_NOT_INVERTED);
+    ltmPort = openSerialPort(telemetryPort, FUNCTION_TELEMETRY_LTM, NULL, NULL, baudRates[baudRateIndex], TELEMETRY_LTM_INITIAL_PORT_MODE, telemetryConfig()->telemetry_inverted ? SERIAL_INVERTED : SERIAL_NOT_INVERTED);
     if (!ltmPort)
         return;
     ltmEnabled = true;
@@ -290,7 +291,7 @@ void configureLtmTelemetryPort(void)
 
 void checkLtmTelemetryState(void)
 {
-    if (portConfig && telemetryCheckRxPortShared(portConfig, rxRuntimeState.serialrxProvider)) {
+    if (telemetryPort != SERIAL_PORT_NONE && telemetryCheckRxPortShared(telemetryPort, rxRuntimeState.serialrxProvider)) {
         if (!ltmEnabled && telemetrySharedPort != NULL) {
             ltmPort = telemetrySharedPort;
             ltmEnabled = true;

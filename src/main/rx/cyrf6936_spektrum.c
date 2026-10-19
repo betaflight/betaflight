@@ -440,7 +440,7 @@ static void checkTimeout(void)
             break;
         case DSM_RECEIVER_RECV:
             dsmReceiver.missedPackets++;
-            DEBUG_SET(DEBUG_RX_SPEKTRUM_SPI, 0, dsmReceiver.missedPackets);
+            DEBUG_SET(DEBUG_RX_SPEKTRUM_SPI, 0, dsmReceiver.missedPackets);  //!< Missed Packets
             if (dsmReceiver.missedPackets < DSM_MAX_MISSED_PACKETS) {
                 dsmReceiverSetNextChannel();
                 if (dsmReceiver.crcSeed == ((dsmReceiver.mfgId[0] << 8) + dsmReceiver.mfgId[1])) {
@@ -457,7 +457,7 @@ static void checkTimeout(void)
             break;
 #ifdef USE_RX_SPEKTRUM_TELEMETRY
         case DSM_RECEIVER_TLM:
-            DEBUG_SET(DEBUG_RX_SPEKTRUM_SPI, 2, (cyrf6936ReadRegister(CYRF6936_TX_IRQ_STATUS) & CYRF6936_TXC_IRQ) == 0);
+            DEBUG_SET(DEBUG_RX_SPEKTRUM_SPI, 2, (cyrf6936ReadRegister(CYRF6936_TX_IRQ_STATUS) & CYRF6936_TXC_IRQ) == 0);  //!< Transmit IRQ Status
             dsmReceiverSetNextChannel();
             dsmReceiver.status = DSM_RECEIVER_RECV;
             dsmReceiver.timeout = (dsmReceiver.numChannels < 8 ? DSM_RECV_LONG_TIMEOUT_US : DSM_RECV_MID_TIMEOUT_US) - DSM_TELEMETRY_TIMEOUT_US;
@@ -491,7 +491,7 @@ void spektrumSpiSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
 
 static bool isValidPacket(const uint8_t *packet)
 {
-    DEBUG_SET(DEBUG_RX_SPEKTRUM_SPI, 1, isError);
+    DEBUG_SET(DEBUG_RX_SPEKTRUM_SPI, 1, isError);  //!< Receive Error
 
     if (isError) {
         if (dsmReceiver.status != DSM_RECEIVER_RECV && (cyrf6936GetRxStatus() & CYRF6936_BAD_CRC)) {
@@ -613,7 +613,7 @@ static rx_spi_received_e spektrumReadPacket(uint8_t *payload, const uint32_t tim
         if (isValidPacket(packet)) {
             setRssi(403 + cyrf6936GetRssi() * 20, RSSI_SOURCE_RX_PROTOCOL);
             dsmReceiver.missedPackets = 0;
-            DEBUG_SET(DEBUG_RX_SPEKTRUM_SPI, 0, dsmReceiver.missedPackets);
+            DEBUG_SET(DEBUG_RX_SPEKTRUM_SPI, 0, dsmReceiver.missedPackets);  //!< Missed Packets
             memcpy(payload, &packet[2], 14);
 #ifdef USE_RX_SPEKTRUM_TELEMETRY
             if (dsmReceiver.sendTelemetry && dsmReceiver.crcSeed == ((dsmReceiver.mfgId[0] << 8) + dsmReceiver.mfgId[1])) {

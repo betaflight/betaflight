@@ -59,7 +59,11 @@ mpuRegion_t mpuRegions[] = {
         .bufferable = MPU_ACCESS_NOT_BUFFERABLE,
     },
     {
-        // A region in AXI RAM accessible from SDIO internal DMA
+        // A region in AXI RAM accessible from SDIO internal DMA.
+        //
+        // Left cached, unlike dmaram above: its users do their own cache maintenance
+        // so that they can read the buffers back at cached speed. DShot bitbang in
+        // particular walks its input buffer repeatedly to decode telemetry.
         .start      = (uint32_t)&dmarwaxi_start,
         .end        = (uint32_t)&dmarwaxi_end,
         .size       = 0,  // Size determined by ".end"
@@ -75,3 +79,35 @@ mpuRegion_t mpuRegions[] = {
 unsigned mpuRegionCount = ARRAYLEN(mpuRegions);
 
 STATIC_ASSERT(ARRAYLEN(mpuRegions) <= MAX_MPU_REGIONS, MPU_region_count_exceeds_limit);
+
+/* The part of the dmaram sections that is genuinely uncached.
+ *
+ * bus_spi skips the cache maintenance around a DMA transfer when the buffer is in memory
+ * the processor is keeping out of the D cache. Which memory that is cannot be read off
+ * the region table: rounding each region up to a power-of-two window makes overlaps
+ * routine, and in an overlap the highest-numbered region's attributes win over all of it,
+ * so a neighbouring region can strip the shareable bit off dmaram without either section
+ * moving.
+ *
+ * Reading it back from the programmed MPU settles it, and costs nothing in the hot path
+ * beyond two loads. A configuration that does not deliver an uncached dmaram narrows the
+ * range, or empties it, and the transfers that fall outside get the maintenance they need
+ * - slower, rather than wrong.
+ *
+ * Zero until resolved, which reads as "cached" for every address.
+ */
+FAST_DATA_ZERO_INIT uint32_t dmaramUncachedBase;
+FAST_DATA_ZERO_INIT uint32_t dmaramUncachedLength;
+
+void memProtResolveDmaRam(void)
+{
+#ifdef USE_DMA_RAM
+    uint32_t uncachedStart;
+    uint32_t uncachedEnd;
+
+    memProtFindUncachedRange((uint32_t)&dmaram_start, (uint32_t)&dmaram_end, &uncachedStart, &uncachedEnd);
+
+    dmaramUncachedBase = uncachedStart;
+    dmaramUncachedLength = uncachedEnd - uncachedStart;
+#endif
+}

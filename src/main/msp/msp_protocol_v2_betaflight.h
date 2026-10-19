@@ -36,6 +36,11 @@
 #define MSP2_SET_BATTERY_PROFILE            0x300F
 #define MSP2_CLI_SETTING                    0x3010
 #define MSP2_CLI_SETTING_INFO               0x3011
+#define MSP2_CLI_COMMAND                    0x3012
+
+// MSP2_CLI_COMMAND response flags (byte following the u16 total-length header)
+#define MSP2_CLI_COMMAND_FLAG_TRUNCATED     (1 << 0) // output exceeded the pageable buffer
+#define MSP2_CLI_COMMAND_FLAG_REFUSED       (1 << 1) // command refused or paging session mismatch
 
 // MSP2_SET_TEXT and MSP2_GET_TEXT variable types
 #define MSP2TEXT_PILOT_NAME                      1

@@ -10,13 +10,14 @@
 ; For >4 motors, could configure pin with disable, config set, enable, [but run out of time in gyro loop? might need another PIO for more SMs]
 ;
 
-; presumably BF writes dshot async, at max of ~10k/sec or so (typical aiming for 8k loop for gyro)
-; dshot frame takes approx. 0.1ms dshot150 or dshot300_bidir
-; so hopefully never going to be overflowing the tx fifo (but could happen with 150bidir and be close with 150, 300bidir)
+; Betaflight is cautious and automatically reduces the PID rate to ensure that
+; the DSHOT exchange fits into the PID rate period, so we should never be overflowing the tx fifo.
 
 ; DSHOT 600 (non-bidirectional)
 ; 1 bit ~ 1.667us = 40 PIO cycles
 ; Min delay between frames of 2us = 48 cycles, allow 56 cycles
+; This program also serves for DSHOT 300 and DSHOT 150, by dividing the PIO clock appropriately,
+; with min delay ~ 4.5us, ~9us respectively (not going to cause any TX buffer overflow at the respective PID rates)
 .program dshot_600
 start:
     set    pins, 0                [31]      ; Set pin low [assumed pin already set for output]
@@ -37,7 +38,7 @@ outzero:
 
 
 ; DSHOT 600 bidirectional with edge detection receive (integer clock divider)
-; Uses 'wait' instructions for precise edge detection (jmp pin is broken on RP2350)
+; Uses 'wait' instructions for precise edge detection
 ;
 ; INTEGER CLOCK DIVIDER: PIO runs at 75 MHz (150 MHz / 2) for clean timing.
 ; This gives exactly 125 cycles per DShot bit and 100 cycles per telemetry bit.
@@ -61,6 +62,11 @@ outzero:
 ;       5.56x oversampling loop (4 outer x 32 inner = 128 samples)
 ;       switch back to output, drive HIGH
 ; Total: 27 instructions
+;
+; This program also serves for DSHOT 300 and DSHOT 150, by dividing the PIO clock appropriately, with
+; delays (of fixed number of PIO cycles) verified to be in spec. Betaflight automatically reduces the
+; PID rate as required for slower DSHOT rates: the DSHOT exchange should fit into a PID cycle
+; up to and including DSHOT 600 bidir at 8K PID rate.
 
 .program dshot_600_bidir
 
@@ -108,7 +114,6 @@ PUBLIC wait_zero:
     ; Telemetry bit = 100 cycles, so 100/18 = 5.56x oversampling
     ; 21 bits × 5.56 = 117 samples needed, fits in 128 with margin (actually only +20 bit periods until final edge)
 
-
 outer_loop:
     set    y, 31                            ; 32 inner loop iterations
 inner_loop:
@@ -126,5 +131,5 @@ PUBLIC complete:
     set    pins, 1                          ; Set pin HIGH (idle state)
     set    y, 4                             ;
 delay_next_output:
-    jmp    !y, delay_next_output [29]       ; TODO how much min delay here? 2us seen somewhere?? 5*30/75 = 2 us
+    jmp    y--, delay_next_output [29]      ; Abundance of caution delay of 2us/4us/8us (at DSHOT 600/300/150) before next transmit
 .wrap

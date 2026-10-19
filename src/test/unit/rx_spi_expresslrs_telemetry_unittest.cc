@@ -434,7 +434,6 @@ extern "C" {
     bool isBatteryVoltageConfigured(void) { return true; }
     bool isAmperageConfigured(void) { return true; }
 
-    const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) { return NULL;}
     serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) { return NULL; }
     void serialWriteBuf(serialPort_t *, const uint8_t *, int) {}
 

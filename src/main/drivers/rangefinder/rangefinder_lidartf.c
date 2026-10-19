@@ -34,6 +34,8 @@
 #include "drivers/rangefinder/rangefinder.h"
 #include "drivers/rangefinder/rangefinder_lidartf.h"
 
+#include "sensors/rangefinder.h"
+
 typedef struct {
     rangefinderType_e rfType;
     uint16_t rangeMin;
@@ -173,10 +175,10 @@ static int tfProcessFrame(const uint8_t* frame, int len)
     uint16_t distance = frame[0] | (frame[1] << 8);
     uint16_t strength = frame[2] | (frame[3] << 8);
 
-    DEBUG_SET(DEBUG_LIDAR_TF, 0, distance);  // 0,1
-    DEBUG_SET(DEBUG_LIDAR_TF, 1, strength);  // 2,3
-    DEBUG_SET(DEBUG_LIDAR_TF, 2, frame[4]);
-    DEBUG_SET(DEBUG_LIDAR_TF, 3, frame[5]);
+    DEBUG_SET(DEBUG_LIDAR_TF, 0, distance);  //!< Distance [unit:cm]
+    DEBUG_SET(DEBUG_LIDAR_TF, 1, strength);  //!< Signal Strength
+    DEBUG_SET(DEBUG_LIDAR_TF, 2, frame[4]);  //!< Frame Byte 4
+    DEBUG_SET(DEBUG_LIDAR_TF, 3, frame[5]);  //!< Frame Byte 5
 
     // common distance check
     if (distance < devInfo->rangeMin || distance > devInfo->rangeMax) {
@@ -254,7 +256,7 @@ static void lidarTFUpdate(rangefinderDev_t *dev)
             } else {
                 // Checksum error. Simply ignore the current frame.
                 ++lidarTFerrors;
-                DEBUG_SET(DEBUG_LIDAR_TF, 4, lidarTFerrors);
+                DEBUG_SET(DEBUG_LIDAR_TF, 4, lidarTFerrors);  //!< Checksum Error Count
             }
             tfFrameState = TF_FRAME_STATE_WAIT_START1;
             tfReceivePosition = 0;
@@ -287,12 +289,12 @@ bool lidarTFDetect(rangefinderDev_t *dev, rangefinderType_e rfType)
         return false; // supplied rfType is not TF
     }
 
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_LIDAR);
-    if (!portConfig) {
+    const serialPortIdentifier_e port = rangefinderConfig()->rangefinder_uart;
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
-    tfSerialPort = openSerialPort(portConfig->identifier, FUNCTION_LIDAR, NULL, NULL, 115200, MODE_RXTX, 0);
+    tfSerialPort = openSerialPort(port, FUNCTION_LIDAR, NULL, NULL, 115200, MODE_RXTX, 0);
     if (tfSerialPort == NULL) {
         return false;
     }
