@@ -51,7 +51,7 @@ typedef struct autopilotWingConfig_s {
     uint8_t climbP;                 // 0.1 degree of pitch per m/s of climb rate error
     uint8_t climbI;                 // 0.1 degree of pitch per metre of accumulated climb rate error
     uint8_t vertAccel;              // dm/s^2, bounds how fast the pitch demand moves
-    uint16_t cruiseSpeed;           // dm/s, the airspeed the pitch and turn geometry assume
+    uint16_t cruiseSpeed;           // dm/s, the airspeed at cruise throttle in level flight
     uint8_t turnPitchFf;            // percent of the pitch rate a level turn needs
     uint8_t maxBank;                // degrees, the steepest bank lateral guidance commands
     uint16_t l1Period;              // ds, the period lateral guidance settles onto a track with

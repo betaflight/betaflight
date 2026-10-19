@@ -582,6 +582,8 @@ void dynLpfDTermUpdate(float throttle);
 void pidSetItermReset(bool enabled);
 #ifdef USE_WING
 void pidResetTpaSpeed(void);
+float pidGetWingTpaSpeed(void);
+float pidWingTpaSteadySpeed(float throttle);
 #endif
 float pidGetPreviousSetpoint(int axis);
 float pidGetDT(void);

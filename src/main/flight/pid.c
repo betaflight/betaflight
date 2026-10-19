@@ -323,15 +323,19 @@ void pidResetIterm(void)
 }
 
 #ifdef USE_WING
+// Without a voltage reading the throttle is taken at its face value, not as no thrust at all.
+static float wingBatteryThrottleFactor(void)
+{
+    const uint16_t voltage = getBatteryVoltageLatest();
+    if (pidRuntime.tpaSpeed.maxVoltage > 0.0f && voltage > 0) {
+        return constrainf(voltage / 100.0f / pidRuntime.tpaSpeed.maxVoltage, 0.0f, 1.0f);
+    }
+    return 1.0f;
+}
+
 static float calcWingThrottle(void)
 {
-    float batteryThrottleFactor = 1.0f;
-    if (pidRuntime.tpaSpeed.maxVoltage > 0.0f) {
-        batteryThrottleFactor = getBatteryVoltageLatest() / 100.0f / pidRuntime.tpaSpeed.maxVoltage;
-        batteryThrottleFactor = constrainf(batteryThrottleFactor, 0.0f, 1.0f);
-    }
-
-    return getMotorOutputRms() * batteryThrottleFactor;
+    return getMotorOutputRms() * wingBatteryThrottleFactor();
 }
 
 static float calcWingAcceleration(float throttle, float pitchAngleRadians)
@@ -1705,6 +1709,25 @@ void pidSetItermReset(bool enabled)
 void pidResetTpaSpeed(void)
 {
     pidRuntime.tpaSpeed.speed = 0.0f;
+}
+
+float pidGetWingTpaSpeed(void)
+{
+    return pidRuntime.tpaSpeed.speed;
+}
+
+// The speed the TPA model settles at in level flight on a throttle, where its thrust less its
+// drag and the pitch offset's share of gravity comes to nothing.
+float pidWingTpaSteadySpeed(float throttle)
+{
+    const tpaSpeedParams_t *tpa = &pidRuntime.tpaSpeed;
+    if (tpa->dragMassRatio <= 0.0f) {
+        return 0.0f;
+    }
+    const float t = throttle * wingBatteryThrottleFactor();
+    const float b = t * tpa->inversePropMaxSpeed * tpa->twr * G_ACCELERATION;
+    const float c = -(t * t * tpa->twr + sin_approx(tpa->pitchOffset)) * G_ACCELERATION;
+    return (-b + sqrtf(fmaxf(b * b - 4.0f * tpa->dragMassRatio * c, 0.0f))) / (2.0f * tpa->dragMassRatio);
 }
 #endif
 

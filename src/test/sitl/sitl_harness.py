@@ -2244,10 +2244,10 @@ def rms(values, what):
     return math.sqrt(sum(v * v for v in require(values, what)) / len(values))
 
 
-class WingSample(collections.namedtuple("WingSample", "t e n u roll vu yaw_rate gs debug")):
-    """Ground truth at t (ENU metres, bank in degrees, climb and yaw rates, groundspeed), and the FC's debug values
-    when the trace reads them. The debug accessors follow the scenario's debug mode: FLIGHT_PLAN (nav state, abort,
-    leg) or AUTOPILOT_LANDING (phase, go-arounds, cause)."""
+class WingSample(collections.namedtuple("WingSample", "t e n u roll vu yaw_rate gs air debug")):
+    """Ground truth at t (ENU metres, bank in degrees, climb and yaw rates, groundspeed, airspeed), and the FC's debug
+    values when the trace reads them. The debug accessors follow the scenario's debug mode: FLIGHT_PLAN (nav state,
+    abort, leg) or AUTOPILOT_LANDING (phase, go-arounds, cause)."""
 
     __slots__ = ()
 
@@ -2293,7 +2293,7 @@ class WingTrace:
             last = self.samples[-1] if self.samples else None
             raise AssertionError(f"crashed: {m.crash_reason}" + (f" (last debug {last.debug})" if last else ""))
         s = WingSample(time.monotonic(), m.pos[0], m.pos[1], m.pos[2], math.degrees(m.roll), m.vel[2], m.rates[2],
-                       math.hypot(m.vel[0], m.vel[1]), self.sitl.debug_values() if self.debug else None)
+                       math.hypot(m.vel[0], m.vel[1]), m.airspeed, self.sitl.debug_values() if self.debug else None)
         assert not self.abort_check or s.abort == 0, f"flight plan aborted (reason {s.abort}) at leg {s.leg}"
         self.samples.append(s)
         return s
