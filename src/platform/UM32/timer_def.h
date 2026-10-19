@@ -231,7 +231,7 @@
 #define DEF_TIM_DMA__BTCH_TIM10_UP    NONE
 #define DEF_TIM_DMA__BTCH_TIM11_UP    NONE
 #define DEF_TIM_DMA__BTCH_TIM12_UP    NONE
-#define DEF_TIM_DMA__BTCH_TIM13_UP    NONE
+#define DEF_TIM_DMA__BTCH_TIM13_UP    D(1, 12, 0)
 #define DEF_TIM_DMA__BTCH_TIM14_UP    NONE
 
 // Dummy AF entries for NONE pin (pacer-only timers for DShot bitbang)
@@ -244,6 +244,7 @@
 #define DEF_TIM_AF__NONE__TCH_TIM8_CH2     D(3, 8)
 #define DEF_TIM_AF__NONE__TCH_TIM8_CH3     D(3, 8)
 #define DEF_TIM_AF__NONE__TCH_TIM8_CH4     D(3, 8)
+#define DEF_TIM_AF__NONE__TCH_TIM2_CH3     D(1, 2)
 
 // AF table
 //PORTA-8-8-5-3-24

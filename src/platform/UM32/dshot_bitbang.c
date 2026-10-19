@@ -80,6 +80,7 @@ FAST_DATA_ZERO_INIT timeUs_t dshotFrameUs;
 const timerHardware_t bbTimerHardware[] = {
     DEF_TIM(TIM1, CH1, NONE,  0, 0),
     DEF_TIM(TIM8, CH4, NONE,  0, 0),
+    DEF_TIM(TIM2, CH3, NONE,  0, 0),
 };
 
 static FAST_DATA_ZERO_INIT timeUs_t lastSendUs;
