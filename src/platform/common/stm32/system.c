@@ -35,7 +35,7 @@
 
 #include "drivers/system.h"
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(AT32F4) || defined(APM32F4) || defined(X32M7) 
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(AT32F4) || defined(APM32F4) || defined(X32M7) || defined(GD32F4) || defined(GD32H7)
 // See "RM CoreSight Architecture Specification"
 // B2.3.10  "LSR and LAR, Software Lock Status Register and Software Lock Access Register"
 // "E1.2.11  LAR, Lock Access Register"
@@ -60,6 +60,15 @@ void cycleCounterInit(void)
 #if defined(CORE_CM4)
     // M4 core on dual-core H755/H757 runs at HCLK (after HPRE division)
     cpuClockFrequency = HAL_RCC_GetHCLKFreq();
+#elif defined(STM32N6)
+    // On the N6 the CPU clock and the system/bus clock are distinct:
+    // HAL_RCC_GetSysClockFreq() reports the bus clock (400 MHz on a 600 MHz
+    // part), but usTicks has to follow the clock SysTick and DWT count, i.e.
+    // the CPU clock. Using the bus figure makes usTicks 400 instead of 600,
+    // and micros() then computes (400000 - SysTick->VAL) / 400 against a
+    // reload of 600000: every VAL above 400000 underflows and micros() jumps
+    // by ~10.7 seconds for a third of every millisecond.
+    cpuClockFrequency = SystemCoreClock;
 #else
     cpuClockFrequency = HAL_RCC_GetSysClockFreq();
 #endif
@@ -67,6 +76,8 @@ void cycleCounterInit(void)
     crm_clocks_freq_type clocks;
     crm_clocks_freq_get(&clocks);
     cpuClockFrequency = clocks.sclk_freq;
+#elif defined(USE_GDBSP_DRIVER)
+    cpuClockFrequency = rcu_clock_freq_get(CK_SYS);
 #else
     RCC_ClocksTypeDef clocks;
     RCC_GetClocksFreq(&clocks);
@@ -78,7 +89,7 @@ void cycleCounterInit(void)
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
 
 #if defined(DWT_LAR_UNLOCK_VALUE)
-#if defined(STM32H7) || defined(AT32F4) || defined(X32M7) 
+#if defined(STM32H7) || defined(AT32F4) || defined(X32M7) || defined(GD32F4) || defined(GD32H7)
     ITM->LAR = DWT_LAR_UNLOCK_VALUE;
 #elif defined(STM32F7)
     DWT->LAR = DWT_LAR_UNLOCK_VALUE;

@@ -31,9 +31,11 @@
 
 #include "alt_hold.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(altHoldConfig_t, altHoldConfig, PG_ALTHOLD_CONFIG, 4);
+PG_REGISTER_WITH_RESET_TEMPLATE(altHoldConfig_t, altHoldConfig, PG_ALTHOLD_CONFIG, 5);
 
 PG_RESET_TEMPLATE(altHoldConfig_t, altHoldConfig,
+    .climbRate = 20, // climb or sink rate at full pitch stick, 20 means 2 m/s
+    .deadband = 10, // pitch stick deadband in percent of stick travel
 );
 
 #endif // USE_ALTITUDE_HOLD

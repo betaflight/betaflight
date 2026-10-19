@@ -136,10 +136,6 @@ typedef struct {
     uint16_t crc;
 }  __attribute__ ((__packed__)) gimbalCalStatus_t;
 
-// Expected input range from RC channels
-#define GIMBAL_RC_SET_MIN   -500
-#define GIMBAL_RC_SET_MAX    500
-
 // Expect input range from head-tracker
 #define GIMBAL_SET_MIN      -2047
 #define GIMBAL_SET_MAX      2047
@@ -173,6 +169,11 @@ static uint16_t gimbalCrc(uint8_t *buf, uint32_t size)
     return __builtin_bswap16(crc16_ccitt_update(0x0000, buf, size));
 }
 
+static float rcDeflection(rc_alias_e channel)
+{
+    return rcGetChannel(channel) - rcUsToNorm(rxConfig()->midrc);
+}
+
 // Set the gimbal position on each axis
 static bool gimbalSet(int16_t headtracker_roll, int16_t headtracker_pitch, int16_t headtracker_yaw)
 {
@@ -196,23 +197,23 @@ static bool gimbalSet(int16_t headtracker_roll, int16_t headtracker_pitch, int16
                                                   GIMBAL_YAW_MAX * gimbalTrackConfig()->gimbal_yaw_gain / 100);
 
     // Scale the RC stick inputs and add
-    roll  += scaleRange(rcData[ROLL] - rxConfig()->midrc, GIMBAL_RC_SET_MIN, GIMBAL_RC_SET_MAX,
+    roll  += scaleRangef(rcDeflection(ROLL), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX,
                         GIMBAL_ROLL_MIN * gimbalTrackConfig()->gimbal_roll_rc_gain / 100,
                         GIMBAL_ROLL_MAX * gimbalTrackConfig()->gimbal_roll_rc_gain / 100);
-    if (rcData[PITCH] < rxConfig()->midrc) {
-        pitch += scaleRange(rcData[PITCH] - rxConfig()->midrc, GIMBAL_RC_SET_MIN, 0,
+    if (rcDeflection(PITCH) < 0.0f) {
+        pitch += scaleRangef(rcDeflection(PITCH), NORMALISED_RANGE_MIN, 0.0f,
                             GIMBAL_PITCH_MAX * gimbalTrackConfig()->gimbal_pitch_rc_low_gain / 100,
                             0);
     } else {
-        pitch += scaleRange(rcData[PITCH] - rxConfig()->midrc, 0, GIMBAL_RC_SET_MAX,
+        pitch += scaleRangef(rcDeflection(PITCH), 0.0f, NORMALISED_RANGE_MAX,
                             0,
                             GIMBAL_PITCH_MIN * gimbalTrackConfig()->gimbal_pitch_rc_high_gain / 100);
     }
-    yaw   += scaleRange(rcData[YAW] - rxConfig()->midrc, GIMBAL_RC_SET_MIN, GIMBAL_RC_SET_MAX,
+    yaw   += scaleRangef(rcDeflection(YAW), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX,
                         GIMBAL_YAW_MIN * gimbalTrackConfig()->gimbal_yaw_rc_gain / 100,
                         GIMBAL_YAW_MAX * gimbalTrackConfig()->gimbal_yaw_rc_gain / 100);
 
-    pitch += scaleRange(rcData[THROTTLE] - rxConfig()->midrc, GIMBAL_RC_SET_MIN, GIMBAL_RC_SET_MAX,
+    pitch += scaleRangef(rcDeflection(THROTTLE), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX,
                         GIMBAL_PITCH_MIN * gimbalTrackConfig()->gimbal_pitch_rc_thr_gain / 100,
                         GIMBAL_PITCH_MAX * gimbalTrackConfig()->gimbal_pitch_rc_thr_gain / 100);
 

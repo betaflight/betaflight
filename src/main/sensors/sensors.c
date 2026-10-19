@@ -59,6 +59,7 @@ const char * const lookupTableGyroHardware[GYRO_HARDWARE_COUNT] = {
     [GYRO_BMI270] = "BMI270",
     [GYRO_LSM6DSO] = "LSM6DSO",
     [GYRO_LSM6DSV16X] = "LSM6DSV16X",
+    [GYRO_LSM6DSV32X] = "LSM6DSV32X",
     [GYRO_IIM42653] = "IIM42653",
     [GYRO_ICM45605] = "ICM45605",
     [GYRO_ICM45686] = "ICM45686",
@@ -68,6 +69,7 @@ const char * const lookupTableGyroHardware[GYRO_HARDWARE_COUNT] = {
     [GYRO_ICM42622P] = "ICM42622P",
     [GYRO_ICM42686P] = "ICM42686P",
     [GYRO_ICM56686] = "ICM56686",
+    [GYRO_BMI423] = "BMI423",
     [GYRO_VIRTUAL] = "VIRTUAL"
 };
 
@@ -90,6 +92,7 @@ const char * const lookupTableAccHardware[ACC_HARDWARE_COUNT] = {
     [ACC_BMI270] = "BMI270",
     [ACC_LSM6DSO] = "LSM6DSO",
     [ACC_LSM6DSV16X] = "LSM6DSV16X",
+    [ACC_LSM6DSV32X] = "LSM6DSV32X",
     [ACC_IIM42653] = "IIM42653",
     [ACC_ICM45605] = "ICM45605",
     [ACC_ICM45686] = "ICM45686",
@@ -99,6 +102,7 @@ const char * const lookupTableAccHardware[ACC_HARDWARE_COUNT] = {
     [ACC_ICM42622P] = "ICM42622P",
     [ACC_ICM42686P] = "ICM42686P",
     [ACC_ICM56686] = "ICM56686",
+    [ACC_BMI423] = "BMI423",
     [ACC_VIRTUAL] = "VIRTUAL"
 };
 
@@ -138,6 +142,8 @@ const char * const lookupTableMagHardware[MAG_HARDWARE_COUNT] = {
 #if ENABLE_DRONECAN
     [MAG_DRONECAN] = "DRONECAN",
 #endif
+    [MAG_BMM350] = "BMM350",
+    [MAG_AK9916] = "AK9916",
 };
 
 // sync with rangefinderType_e

@@ -249,9 +249,7 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
         }
     }
 
-    if (debugMode == DEBUG_RX_STATE_TIME) {
-        debug[oldRxState] = rxStateDurationFractionUs[oldRxState] >> RX_TASK_DECAY_SHIFT;
-    }
+    DEBUG_SET(DEBUG_RX_STATE_TIME, oldRxState, rxStateDurationFractionUs[oldRxState] >> RX_TASK_DECAY_SHIFT);  //!< [index:0..2] RX Task Duration ({check|modes|update}) [unit:us]
 
     schedulerSetNextStateTime(rxStateDurationFractionUs[rxState] >> RX_TASK_DECAY_SHIFT);
 }

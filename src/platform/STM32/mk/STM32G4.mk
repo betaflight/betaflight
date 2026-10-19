@@ -43,6 +43,7 @@ STDPERIPH_SRC   = \
             stm32g4xx_hal_uart_ex.c \
             stm32g4xx_ll_dma.c \
             stm32g4xx_ll_i2c.c \
+            stm32g4xx_ll_lpuart.c \
             stm32g4xx_ll_spi.c \
             stm32g4xx_ll_usart.c \
             stm32g4xx_ll_rcc.c \
