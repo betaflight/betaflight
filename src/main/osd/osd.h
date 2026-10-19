@@ -100,6 +100,16 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 #define OSD_HD_COLS 53
 #define OSD_HD_ROWS 20
 
+#define OSD_CANVAS_COLS_MAX 63
+#define OSD_CANVAS_ROWS_MAX 31
+
+#define OSD_RSSI_ALARM_MAX 100
+#define OSD_LINK_QUALITY_ALARM_MAX 100
+#define OSD_CAP_ALARM_MAX 20000
+#define OSD_ALT_ALARM_MAX 10000
+#define OSD_STICK_OVERLAY_RADIO_MODE_MIN 1
+#define OSD_STICK_OVERLAY_RADIO_MODE_MAX 4
+
 // Timer configuration
 // Stored as 15[alarm:8][precision:4][source:4]0
 #define OSD_TIMER(src, prec, alarm) ((src & 0x0F) | ((prec & 0x0F) << 4) | ((alarm & 0xFF ) << 8))
