@@ -448,6 +448,40 @@ bool loadEEPROM(void)
     return success;
 }
 
+configResetReason_e diagnoseEEPROM(uint16_t *detail)
+{
+    const configHeader_t *header = (const configHeader_t *)&__config_start;
+
+    *detail = 0;
+
+    if (header->magic_be != 0xBE) {
+        return CONFIG_RESET_EMPTY;
+    }
+
+    if (!isEEPROMStructureValid()) {
+        return CONFIG_RESET_CORRUPT;
+    }
+
+    if (header->eepromConfigVersion != EEPROM_CONF_VERSION) {
+        *detail = header->eepromConfigVersion;
+        return CONFIG_RESET_VERSION;
+    }
+
+    PG_FOREACH(reg) {
+        const configRecord_t *rec = findEEPROM(reg, CR_CLASSICATION_SYSTEM);
+        if (!rec) {
+            *detail = pgN(reg);
+            return CONFIG_RESET_PG_MISSING;
+        }
+        if (rec->version != pgVersion(reg)) {
+            *detail = pgN(reg);
+            return CONFIG_RESET_PG_VERSION;
+        }
+    }
+
+    return CONFIG_RESET_NONE;
+}
+
 static bool writeSettingsToEEPROM(void)
 {
     bool dirtyConfig = !isEEPROMVersionValid() || !isEEPROMStructureValid();
