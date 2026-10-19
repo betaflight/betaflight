@@ -455,7 +455,9 @@ configResetReason_e diagnoseEEPROM(uint16_t *detail)
     *detail = 0;
 
     if (header->magic_be != 0xBE) {
-        return CONFIG_RESET_EMPTY;
+        const bool erased = header->eepromConfigVersion == header->magic_be
+            && (header->magic_be == 0xFF || header->magic_be == 0x00);
+        return erased ? CONFIG_RESET_EMPTY : CONFIG_RESET_CORRUPT;
     }
 
     if (!isEEPROMStructureValid()) {
