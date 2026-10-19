@@ -134,7 +134,7 @@ protected:
         testPidProfile.pidSumLimitYaw = 400;
         rxConfigMutable()->mincheck = 1050;
         rcData[THROTTLE] = 1000.0f;
-        rcCommand[THROTTLE] = 1000.0f;
+        rcCommand[THROTTLE] = 0.0f;
         testMotorStopRequested = false;
         testFeatures = 0;
         armingFlags = 0;
