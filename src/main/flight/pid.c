@@ -143,7 +143,9 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 // 268 -> 274 bytes - and this time version-15 builds with the 268-byte element are in testers' hands (the PR head
 // and the mp1/mp2 tester builds), so they have to reset. 15 is the ceiling of the 4-bit field and 16 would wrap to
 // 0, which the b9 line used; 1 is the next number no ADRC build and no upstream build of this EEPROM_CONF_VERSION
-// (11, 12) has carried. The final number is for the maintainers to pick when this lands on master (which is at 12).
+// (11, 12, 13) has carried. Upstream #15830 (2026-10-19) bumped master to 13 for the same #15546 stride change; 13
+// is also what earlier ADRC builds of this PR carried with their own layout, so 1 stays. The final number is for
+// the maintainers.
 PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 1);
 
 void resetPidProfile(pidProfile_t *pidProfile)
