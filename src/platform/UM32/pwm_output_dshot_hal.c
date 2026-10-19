@@ -166,8 +166,6 @@ FAST_CODE void pwmCompleteDshotMotorUpdate(void)
         } else
 #endif
         {
-			motorDmaOutput_t *const motor = &dmaMotors[i];
-					
             LL_TIM_DisableARRPreload(dmaMotorTimers[i].timer);
             ((TIM_TypeDef *)dmaMotorTimers[i].timer)->ARR = dmaMotorTimers[i].outputPeriod;
 
@@ -177,9 +175,24 @@ FAST_CODE void pwmCompleteDshotMotorUpdate(void)
             /* Enable channel DMA requests */
             LL_EX_TIM_EnableIT(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources);
             dmaMotorTimers[i].timerDmaSources = 0;
-			
+        }
+    }
+
+#ifdef USE_DSHOT_DMAR
+    if (!useBurstDshot)
+#endif
+    {
+        /* Non-burst DShot: re-arm each motor's own DMA channel. The UM324xF
+           DW_ahb DMA does not auto-reload its source pointer, so every motor
+           must be re-enabled here — pwmWriteDshotInt only sets the transfer
+           length for UM324xF. */
+        for (int i = 0; i < dshotMotorCount; i++) {
+            motorDmaOutput_t *const motor = &dmaMotors[i];
+            if (!motor->configured) {
+                continue;
+            }
             xLL_EX_DMA_SetSrcAddress(motor->dmaRef, (uint32_t)motor->dmaBuffer);
-			xLL_EX_DMA_EnableResource(motor->dmaRef);
+            xLL_EX_DMA_EnableResource(motor->dmaRef);
         }
     }
 }
