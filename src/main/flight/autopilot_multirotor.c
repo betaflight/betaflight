@@ -381,7 +381,7 @@ void autopilotCaptureHoverThrottleForAltHold(void)
         altHoldCapturedHoverPwm = 0;
         return;
     }
-    altHoldCapturedHoverPwm = (uint16_t)lrintf(constrainf(rcCommand[THROTTLE], (float)AP_HOVER_THROTTLE_CAPTURE_MIN, (float)AP_HOVER_THROTTLE_CAPTURE_MAX));
+    altHoldCapturedHoverPwm = (uint16_t)lrintf(constrainf(rcThrottleToUs(rcCommand[THROTTLE]), (float)AP_HOVER_THROTTLE_CAPTURE_MIN, (float)AP_HOVER_THROTTLE_CAPTURE_MAX));
 }
 
 void autopilotClearAltHoldHoverThrottle(void)
@@ -824,7 +824,7 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
         // rc.c flies the stick instead of our rate, so track the heading rather than
         // accumulating an error to fight on release - the hold resumes wherever the
         // pilot leaves the nose.
-        const bool sticksMoving = fabsf(rcCommand[FD_YAW]) >= (float)cfg->stickDeadband;
+        const bool sticksMoving = fabsf(rcCommand[FD_YAW]) >= rcUsSpanToNorm(cfg->stickDeadband);
 
         if (!apYawHoldHeadingValid || sticksMoving) {
             apYawHoldHeadingDeg = headingDeg;

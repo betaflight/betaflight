@@ -209,17 +209,17 @@ static OSD_Entry cmsx_menuPidEntries[] =
     { "ROLL  P", OME_UINT8 | SLIDER_RP, NULL, &(OSD_UINT8_t){ &tempPid[PID_ROLL][0],  0, 200, 1 }},
     { "ROLL  I", OME_UINT8 | SLIDER_RP, NULL, &(OSD_UINT8_t){ &tempPid[PID_ROLL][1],  0, 200, 1 }},
     { "ROLL  D", OME_UINT8 | SLIDER_RP, NULL, &(OSD_UINT8_t){ &tempPid[PID_ROLL][2],  0, 200, 1 }},
-    { "ROLL  F", OME_UINT16 | SLIDER_RP, NULL, &(OSD_UINT16_t){ &tempPidF[PID_ROLL],  0, 2000, 1 }},
+    { "ROLL  F", OME_UINT16 | SLIDER_RP, NULL, &(OSD_UINT16_t){ &tempPidF[PID_ROLL],  0, F_GAIN_MAX, 1 }},
 
     { "PITCH P", OME_UINT8 | SLIDER_RP, NULL, &(OSD_UINT8_t){ &tempPid[PID_PITCH][0], 0, 200, 1 }},
     { "PITCH I", OME_UINT8 | SLIDER_RP, NULL, &(OSD_UINT8_t){ &tempPid[PID_PITCH][1], 0, 200, 1 }},
     { "PITCH D", OME_UINT8 | SLIDER_RP, NULL, &(OSD_UINT8_t){ &tempPid[PID_PITCH][2], 0, 200, 1 }},
-    { "PITCH F", OME_UINT16 | SLIDER_RP, NULL, &(OSD_UINT16_t){ &tempPidF[PID_PITCH], 0, 2000, 1 }},
+    { "PITCH F", OME_UINT16 | SLIDER_RP, NULL, &(OSD_UINT16_t){ &tempPidF[PID_PITCH], 0, F_GAIN_MAX, 1 }},
 
     { "YAW   P", OME_UINT8 | SLIDER_RPY, NULL, &(OSD_UINT8_t){ &tempPid[PID_YAW][0],   0, 200, 1 }},
     { "YAW   I", OME_UINT8 | SLIDER_RPY, NULL, &(OSD_UINT8_t){ &tempPid[PID_YAW][1],   0, 200, 1 }},
     { "YAW   D", OME_UINT8 | SLIDER_RPY, NULL, &(OSD_UINT8_t){ &tempPid[PID_YAW][2],   0, 200, 1 }},
-    { "YAW   F", OME_UINT16 | SLIDER_RPY, NULL, &(OSD_UINT16_t){ &tempPidF[PID_YAW],   0, 2000, 1 }},
+    { "YAW   F", OME_UINT16 | SLIDER_RPY, NULL, &(OSD_UINT16_t){ &tempPidF[PID_YAW],   0, F_GAIN_MAX, 1 }},
 
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL}
@@ -421,12 +421,12 @@ static const OSD_Entry cmsx_menuRateProfileEntries[] =
     { "RC P EXPO",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcExpo[FD_PITCH],    0, 100, 1, 10 } },
     { "RC Y EXPO",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcExpo[FD_YAW], 0, 100, 1, 10 } },
 
-    { "THR MID",     OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrMid8,           0,  100,  1} },
-    { "THR EXPO",    OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrExpo8,          0,  100,  1} },
-    { "THR HOVER",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrHover8,         0,  100,  1} },
+    { "THR MID",     OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrMid8,           0,  CONTROL_RATE_CONFIG_THR_MID_MAX,  1} },
+    { "THR EXPO",    OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrExpo8,          0,  CONTROL_RATE_CONFIG_THR_EXPO_MAX,  1} },
+    { "THR HOVER",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrHover8,         0,  CONTROL_RATE_CONFIG_THR_HOVER_MAX,  1} },
 
     { "THR LIM TYPE",OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, lookupTableThrottleLimitType} },
-    { "THR LIM %",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.throttle_limit_percent, 25,  100,  1} },
+    { "THR LIM %",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.throttle_limit_percent, CONTROL_RATE_CONFIG_THROTTLE_LIMIT_PERCENT_MIN,  CONTROL_RATE_CONFIG_THROTTLE_LIMIT_PERCENT_MAX,  1} },
 
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL}
@@ -674,30 +674,30 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
 #ifdef USE_FEEDFORWARD
     { "FF TRANSITION", OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &cmsx_feedforward_transition,        0,    100,   1, 10 } },
     { "FF AVERAGING",  OME_TAB,    NULL, &(OSD_TAB_t)    { &cmsx_feedforward_averaging,         4, lookupTableFeedforwardAveraging} },
-    { "FF SMOOTHNESS", OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_smooth_factor,     0,     95,   1  }    },
-    { "FF JITTER",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_jitter_factor,     0,     20,   1  }    },
-    { "FF BOOST",      OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_boost,             0,     50,   1  }    },
+    { "FF SMOOTHNESS", OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_smooth_factor,     0,     FEEDFORWARD_SMOOTH_FACTOR_MAX,   1  }    },
+    { "FF JITTER",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_jitter_factor,     0,     FEEDFORWARD_JITTER_FACTOR_MAX,   1  }    },
+    { "FF BOOST",      OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_boost,             0,     FEEDFORWARD_BOOST_MAX,   1  }    },
 #endif
-    { "ANGLE P",         OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleP,                     0,    200,   1  }    },
+    { "ANGLE P",         OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleP,                     0,    ANGLE_P_GAIN_MAX,   1  }    },
     { "ANGLE FF",        OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleFF,                    0,    200,   1  }    },
-    { "ANGLE LIMIT",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleLimit,                10,     90,   1  }    },
+    { "ANGLE LIMIT",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleLimit,                ANGLE_LIMIT_MIN, ANGLE_LIMIT_MAX, 1 }    },
     { "ANGLE E_REF",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleEarthRef,              0,    100,   1  }    },
 
-    { "HORZN STR",       OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonStrength,            0,    100,   1  }    },
-    { "HORZN LIM_STK",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonLimitSticks,        10,    200,   1  }    },
+    { "HORZN STR",       OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonStrength,            0,    HORIZON_LEVEL_STRENGTH_MAX,   1  }    },
+    { "HORZN LIM_STK",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonLimitSticks,        HORIZON_LIMIT_STICKS_MIN,    HORIZON_LIMIT_STICKS_MAX,   1  }    },
     { "HORZN LIM_DEG",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonLimitDegrees,       10,    250,   1  }    },
 
     { "AG GAIN",     OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &cmsx_antiGravityGain,   ITERM_ACCELERATOR_GAIN_OFF, ITERM_ACCELERATOR_GAIN_MAX, 1, 100 }    },
 #ifdef USE_THROTTLE_BOOST
-    { "THR BOOST",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_throttleBoost,          0,    100,   1  }    },
+    { "THR BOOST",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_throttleBoost,          0,    THROTTLE_BOOST_MAX,   1  }    },
 #endif
 #ifdef USE_THRUST_LINEARIZATION
-    { "THR LINEAR",  OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_thrustLinearization,    0,    150,   1  }    },
+    { "THR LINEAR",  OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_thrustLinearization,    0,    THRUST_LINEARIZATION_MAX,   1  }    },
 #endif
 #ifdef USE_ITERM_RELAX
     { "I_RELAX",         OME_TAB,    NULL, &(OSD_TAB_t)     { &cmsx_iterm_relax,        ITERM_RELAX_COUNT - 1,      lookupTableItermRelax       } },
     { "I_RELAX TYPE",    OME_TAB,    NULL, &(OSD_TAB_t)     { &cmsx_iterm_relax_type,   ITERM_RELAX_TYPE_COUNT - 1, lookupTableItermRelaxType   } },
-    { "I_RELAX CUTOFF",  OME_UINT8,  NULL, &(OSD_UINT8_t)   { &cmsx_iterm_relax_cutoff, 1, 50, 1 } },
+    { "I_RELAX CUTOFF",  OME_UINT8,  NULL, &(OSD_UINT8_t)   { &cmsx_iterm_relax_cutoff, ITERM_RELAX_CUTOFF_MIN, ITERM_RELAX_CUTOFF_MAX, 1 } },
 #endif
 #ifdef USE_LAUNCH_CONTROL
     {"LAUNCH CONTROL", OME_Submenu, cmsMenuChange, &cmsx_menuLaunchControl },
@@ -710,12 +710,12 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "D_MAX ROLL",  OME_UINT8 | SLIDER_RP,  NULL, &(OSD_UINT8_t) { &cmsx_d_max[FD_ROLL],      0, 100, 1 } },
     { "D_MAX PITCH", OME_UINT8 | SLIDER_RP,  NULL, &(OSD_UINT8_t) { &cmsx_d_max[FD_PITCH],     0, 100, 1 } },
     { "D_MAX YAW",   OME_UINT8 | SLIDER_RPY,  NULL, &(OSD_UINT8_t) { &cmsx_d_max[FD_YAW],       0, 100, 1 } },
-    { "D_MAX GAIN",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_max_gain,          0, 100, 1 } },
-    { "D_MAX ADV",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_max_advance,       0, 200, 1 } },
+    { "D_MAX GAIN",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_max_gain,          0, D_MAX_GAIN_MAX, 1 } },
+    { "D_MAX ADV",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_max_advance,       0, D_MAX_ADVANCE_MAX, 1 } },
 #endif
 
 #ifdef USE_BATTERY_VOLTAGE_SAG_COMPENSATION
-    { "VBAT_SAG_COMP", OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_vbat_sag_compensation, 0, 150, 1 } },
+    { "VBAT_SAG_COMP", OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_vbat_sag_compensation, 0, VBAT_SAG_COMPENSATION_MAX, 1 } },
 #endif
 
     { "TPA RATE",      OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &cmsx_tpa_rate, 0, 100, 1, 10} },
@@ -874,18 +874,18 @@ static const OSD_Entry cmsx_menuDynFiltEntries[] =
 
 #ifdef USE_DYN_NOTCH_FILTER
     { "NOTCH COUNT",    OME_UINT8,  NULL, &(OSD_UINT8_t)  { &dynFiltNotchCount,   0, DYN_NOTCH_COUNT_MAX, 1 } },
-    { "NOTCH Q",        OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltNotchQ,       1, 1000, 1 } },
-    { "NOTCH MIN HZ",   OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltNotchMinHz,   20, 250, 1 } },
-    { "NOTCH MAX HZ",   OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltNotchMaxHz,   200, 1000, 1 } },
+    { "NOTCH Q",        OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltNotchQ,       DYN_NOTCH_Q_MIN, DYN_NOTCH_Q_MAX, 1 } },
+    { "NOTCH MIN HZ",   OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltNotchMinHz,   DYN_NOTCH_MIN_HZ_MIN, DYN_NOTCH_MIN_HZ_MAX, 1 } },
+    { "NOTCH MAX HZ",   OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltNotchMaxHz,   DYN_NOTCH_MAX_HZ_MIN, DYN_NOTCH_MAX_HZ_MAX, 1 } },
 #endif
 
 #ifdef USE_DYN_LPF
-    { "GYRO DLPF MIN",   OME_UINT16 | SLIDER_GYRO, NULL, &(OSD_UINT16_t) { &gyroLpfDynMin,  0, 1000, 1 } },
-    { "GYRO DLPF MAX",   OME_UINT16 | SLIDER_GYRO, NULL, &(OSD_UINT16_t) { &gyroLpfDynMax,  0, 1000, 1 } },
+    { "GYRO DLPF MIN",   OME_UINT16 | SLIDER_GYRO, NULL, &(OSD_UINT16_t) { &gyroLpfDynMin,  0, DYN_LPF_MAX_HZ, 1 } },
+    { "GYRO DLPF MAX",   OME_UINT16 | SLIDER_GYRO, NULL, &(OSD_UINT16_t) { &gyroLpfDynMax,  0, DYN_LPF_MAX_HZ, 1 } },
     { "GYRO DLPF EXPO",  OME_UINT8, NULL, &(OSD_UINT8_t) { &gyroLpfDynExpo,   0, 10, 1 } },
-    { "DTERM DLPF MIN",  OME_UINT16 | SLIDER_DTERM, NULL, &(OSD_UINT16_t) { &dtermLpfDynMin, 0, 1000, 1 } },
-    { "DTERM DLPF MAX",  OME_UINT16 | SLIDER_DTERM, NULL, &(OSD_UINT16_t) { &dtermLpfDynMax, 0, 1000, 1 } },
-    { "DTERM DLPF EXPO", OME_UINT8, NULL, &(OSD_UINT8_t) { &dtermLpfDynExpo,  0, 10, 1 } },
+    { "DTERM DLPF MIN",  OME_UINT16 | SLIDER_DTERM, NULL, &(OSD_UINT16_t) { &dtermLpfDynMin, 0, DYN_LPF_MAX_HZ, 1 } },
+    { "DTERM DLPF MAX",  OME_UINT16 | SLIDER_DTERM, NULL, &(OSD_UINT16_t) { &dtermLpfDynMax, 0, DYN_LPF_MAX_HZ, 1 } },
+    { "DTERM DLPF EXPO", OME_UINT8, NULL, &(OSD_UINT8_t) { &dtermLpfDynExpo,  0, DTERM_LPF1_DYN_EXPO_MAX, 1 } },
 #endif
 
     { "BACK", OME_Back, NULL, NULL },
@@ -950,7 +950,7 @@ static const OSD_Entry cmsx_menuFilterPerProfileEntries[] =
     { "DTERM LPF2", OME_UINT16 | SLIDER_DTERM, NULL, &(OSD_UINT16_t){ &cmsx_dterm_lpf2_static_hz, 0, LPF_MAX_HZ, 1 } },
     { "DTERM NF",   OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_hz,       0, LPF_MAX_HZ, 1 } },
     { "DTERM NFCO", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_cutoff,   0, LPF_MAX_HZ, 1 } },
-    { "YAW LPF",    OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_yaw_lowpass_hz,       0, 500, 1 } },
+    { "YAW LPF",    OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_yaw_lowpass_hz,       0, YAW_LOWPASS_HZ_MAX, 1 } },
 
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL}

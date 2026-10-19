@@ -632,7 +632,7 @@ FAST_CODE void spiSequenceStart(const extDevice_t *dev)
         } else {
             // SPI Mode 3: CPOL=1, CPHA=1
             hw->ESP32_SPI_CK_IDLE = 1;    // Clock idle high
-            hw->user.ck_out_edge = 1;     // Data clocked on trailing edge
+            hw->user.ck_out_edge = 0;     // Idle-high clock inverts the edge sense (matches spi_ll_master_set_mode)
         }
         spi_ll_apply_config(hw);
 
