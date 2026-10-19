@@ -35,9 +35,12 @@
 #include "fc/runtime_config.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "sensors/acceleration.h"
 #include "sensors/battery.h"
+#include "sensors/gyro.h"
 #ifdef USE_MOTOR_NOISE
 #include "flight/motor_noise.h"
+#include "flight/frame_wizard.h"
 #endif
 
 #include "motor_excitation.h"
@@ -45,6 +48,29 @@
 #define RMS_AVERAGING_S        0.5f
 #define DEFAULT_TIMEOUT_MS     1000
 #define DEFAULT_SEED           0x9E3779B9u
+
+// ---- tap capture (frame wizard) ----
+#define TAP_IMPULSE_S      0.004f
+#define TAP_DV_S           0.030f
+#define TAP_DECAY_START_S  0.008f
+#define TAP_DECAY_END_S    0.158f
+#define TAP_HOLDOFF_S      0.200f      // dead time after a capture: the ringing must not trigger again (taps are >= 0.25 s apart)
+#define TAP_NOISE_QUIET_S  0.400f      // noise estimate frozen this long after a capture (ringing)
+#define TAP_MIN_STEP_DPS   5.0f       // floor of the trigger (2 re-triggered on the ringing); above it the trigger follows the noise
+#define TAP_CLIP_FRACTION  0.9f       // raw sensor value above this share of full scale: the tap is clipped
+#define TAP_NOISE_FACTOR   6.0f
+#define TAP_PUSH_S         0.003f
+
+static uint16_t tapSeq;
+static struct {
+    bool capturing;
+    float t;                 // seconds since the trigger
+    float baseG[3], baseA[3], prevG[3];
+    float noise;
+    float holdoff;
+    float sinceCapture;
+    motorExcitationTap_t rec;
+} tapState;
 
 static motorExcitationParams_t params;
 static motorExcitationStatus_t status;
@@ -143,6 +169,11 @@ bool motorExcitationStart(const motorExcitationParams_t *p)
     if (ARMING_FLAG(ARMED) || !paramsValid(p, loopHz)) {
         return false;
     }
+#ifdef USE_FRAME_WIZARD
+    if (frameWizardIsActive()) {
+        return false;
+    }
+#endif
 
     const bool wasActive = motorExcitationIsActive();
     // a running session hands over without stopping: ramp from the current base, stop dropped motors
@@ -275,6 +306,97 @@ static float nextSample(float dt)
     default:
         return 0.0f;
     }
+}
+
+static float clipFraction = TAP_CLIP_FRACTION;
+
+void motorExcitationSetClipFraction(float fraction)
+{
+    clipFraction = fraction > 0.0f ? constrainf(fraction, 0.01f, 1.0f) : TAP_CLIP_FRACTION;
+}
+
+static void tapCapture(float dt)
+{
+    float g[3], a[3];
+    const float accScale = acc.dev.acc_1G ? 1.0f / acc.dev.acc_1G : 0.0f;
+    float step = 0.0f;
+    for (int k = 0; k < 3; k++) {
+        g[k] = gyro.gyroADC[k];
+        a[k] = acc.accTap.v[k] * accScale;     // own filter: the user's acc_lpf_hz must not shape the push
+        step += fabsf(g[k] - tapState.prevG[k]);
+        tapState.prevG[k] = g[k];
+    }
+    if (!tapState.capturing) {
+        tapState.holdoff = MAX(0.0f, tapState.holdoff - dt);
+        tapState.sinceCapture += dt;
+        const bool trigger = tapState.holdoff <= 0.0f && step > MAX(TAP_MIN_STEP_DPS, TAP_NOISE_FACTOR * tapState.noise);
+        if (!trigger) {
+            // quiet: track baselines and noise
+            for (int k = 0; k < 3; k++) {
+                tapState.baseG[k] += (dt / 0.02f) * (g[k] - tapState.baseG[k]);
+                tapState.baseA[k] += (dt / 0.05f) * (a[k] - tapState.baseA[k]);
+            }
+            if (tapState.sinceCapture > TAP_NOISE_QUIET_S) {   // ringing after a tap must not raise the threshold
+                tapState.noise += (dt / 0.5f) * (MIN(step, 2.0f * tapState.noise + 1.0f) - tapState.noise);
+            }
+            return;
+        }
+        memset(&tapState.rec, 0, sizeof(tapState.rec));
+        tapState.capturing = true;
+        tapState.t = 0.0f;
+    }
+    const float t = tapState.t;
+    motorExcitationTap_t *r = &tapState.rec;
+    {
+        const float lim = clipFraction * 32767.0f;
+        for (int k = 0; k < 3; k++) {
+            if (fabsf((float)acc.dev.ADCRaw[k]) >= lim) {
+                r->clipped |= MOTOR_EXCITATION_TAP_CLIPPED_ACC;
+            }
+            for (int s = 0; s < GYRO_COUNT; s++) {
+                if (fabsf((float)gyro.gyroSensor[s].gyroDev.gyroADCRaw[k]) >= lim) {
+                    r->clipped |= MOTOR_EXCITATION_TAP_CLIPPED_GYRO;
+                }
+            }
+        }
+    }
+    for (int k = 0; k < 3; k++) {
+        const float dg = g[k] - tapState.baseG[k];
+        if (t < TAP_IMPULSE_S) {
+            r->rot[k] += dg * dt;
+        }
+        if (t < TAP_DV_S) {
+            r->dv[k] += (a[k] - tapState.baseA[k]) * dt;
+        }
+        if (t < TAP_PUSH_S) {
+            r->dv3[k] += (a[k] - tapState.baseA[k]) * dt;
+            if (k == 2 && fabsf(a[2] - tapState.baseA[2]) > fabsf(r->accPeakZ)) {
+                r->accPeakZ = a[2] - tapState.baseA[2];
+            }
+        }
+        r->peak = MAX(r->peak, fabsf(dg));
+    }
+#ifdef USE_FRAME_WIZARD
+    if (t >= TAP_DECAY_START_S && t < TAP_DECAY_END_S) {
+        const float dgAll[3] = { g[0] - tapState.baseG[0], g[1] - tapState.baseG[1], g[2] - tapState.baseG[2] };
+        frameWizardDecaySample(dgAll);
+    }
+#endif
+    tapState.t += dt;
+    if (tapState.t >= TAP_DECAY_END_S) {
+        r->seq = ++tapSeq ? tapSeq : ++tapSeq;
+        tapState.capturing = false;
+        tapState.holdoff = TAP_HOLDOFF_S;
+        tapState.sinceCapture = 0.0f;
+#ifdef USE_FRAME_WIZARD
+        frameWizardTapDone(r);
+#endif
+    }
+}
+
+void motorExcitationTapCapture(float dt)
+{
+    tapCapture(dt);
 }
 
 static void applyStop(float *motorDisarmed, int motorCount, float disarmOutput)

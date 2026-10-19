@@ -185,6 +185,9 @@ COMMON_SRC = \
             flight/motor_noise.c \
             flight/motor_thermal.c \
             flight/motor_excitation.c \
+            flight/frame_wizard.c \
+            flight/filter_autotune.c \
+            flight/bench_scratch.c \
             pg/motor_thermal.c \
             flight/mixer_init.c \
             flight/mixer_tricopter.c \

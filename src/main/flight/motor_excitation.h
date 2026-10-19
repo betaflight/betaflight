@@ -109,6 +109,21 @@ bool motorExcitationIsActive(void);
 const motorExcitationParams_t *motorExcitationGetParams(void);
 const motorExcitationStatus_t *motorExcitationGetStatus(void);
 
+// Tap capture for the frame wizard: the features of each tap on the frame (where it was), and its decay.
+typedef struct motorExcitationTap_s {
+    uint16_t seq;
+    float rot[3];          // gyro rate integrated over the first 4 ms, deg
+    float dv[3];           // acc integrated over the first 30 ms, g*s (velocity change / g)
+    float peak;            // peak |rate|, deg/s
+    float dv3[3];          // acc integrated over the first 3 ms (the push, before the support reacts), g*s
+    float accPeakZ;        // signed peak of the vertical acc change in the first 3 ms, g
+    uint8_t clipped;           // MOTOR_EXCITATION_TAP_CLIPPED_*: a sensor near full scale during the capture
+} motorExcitationTap_t;
+void motorExcitationTapCapture(float dt);   // run the tap detector for one loop (frame wizard)
+#define MOTOR_EXCITATION_TAP_CLIPPED_ACC  (1 << 0)
+#define MOTOR_EXCITATION_TAP_CLIPPED_GYRO (1 << 1)
+void motorExcitationSetClipFraction(float fraction);   // full-scale share that marks a tap clipped (default 0.9)
+
 // Mixer, at the start of every PID loop. Writes the motor test (disarmed) values of the selected motors;
 // ends the session when armed, on timeout or critical battery.
 void motorExcitationUpdate(float *motorDisarmed, int motorCount, float disarmOutput, timeUs_t currentTimeUs);

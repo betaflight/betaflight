@@ -1071,3 +1071,11 @@ extern struct linker_symbol __fontdata_end;
 #if !defined(ENABLE_UNUSED_PINS_INIT)
 #define ENABLE_UNUSED_PINS_INIT 1
 #endif
+
+#if defined(USE_FRAME_WIZARD) && !defined(USE_MOTOR_EXCITATION)
+#undef USE_FRAME_WIZARD
+#endif
+
+#if defined(USE_FILTER_AUTOTUNE) && !(defined(USE_FRAME_WIZARD) && defined(USE_RPM_FILTER) && defined(USE_DYN_NOTCH_FILTER) && defined(USE_DSHOT_TELEMETRY))
+#undef USE_FILTER_AUTOTUNE
+#endif

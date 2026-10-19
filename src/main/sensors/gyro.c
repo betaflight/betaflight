@@ -30,6 +30,8 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
+
+#include "flight/filter_autotune.h"
 #include "common/filter.h"
 
 #include "config/feature.h"

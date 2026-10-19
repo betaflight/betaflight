@@ -75,6 +75,7 @@
 #endif
 #ifdef USE_MOTOR_EXCITATION
 #include "motor_excitation.h"
+#include "frame_wizard.h"
 #endif
 
 #define DYN_LPF_THROTTLE_STEPS             100
@@ -712,6 +713,10 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
 #ifdef USE_MOTOR_EXCITATION
     // bench signal generator: writes the motor test values, ends its session when armed
     motorExcitationUpdate(motor_disarmed, mixerRuntime.motorCount, mixerRuntime.disarmMotorOutput, currentTimeUs);
+#endif
+#ifdef USE_FRAME_WIZARD
+    // bench frame wizard: taps with the motors stopped, then all motors swept at once
+    frameWizardUpdate(motor_disarmed, mixerRuntime.motorCount, mixerRuntime.disarmMotorOutput, currentTimeUs);
 #endif
 
     const bool launchControlActive = isLaunchControlActive();

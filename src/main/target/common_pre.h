@@ -96,6 +96,8 @@
 #define USE_MOTOR_THERMAL   // motor winding temperature estimator (flight/motor_thermal.c)
 #if TARGET_FLASH_SIZE > 512
 #define USE_MOTOR_EXCITATION   // bench excitation sessions for motor / frame tests (flight/motor_excitation.c)
+#define USE_FRAME_WIZARD       // frame test: taps and a motor sweep map the craft's resonances (flight/frame_wizard.c)
+#define USE_FILTER_AUTOTUNE    // FILTER TUNE mode sets the gyro filters from a hover (flight/filter_autotune.c)
 #endif
 #define USE_DMA
 #define USE_TIMER

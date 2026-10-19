@@ -39,6 +39,13 @@
 #define MSP2_CLI_COMMAND                    0x3012
 #define MSP2_MOTOR_EXCITATION_STATUS        0x3013  // out: bench motor excitation session status
 #define MSP2_SET_MOTOR_EXCITATION           0x3014  // in: start / keepalive / stop a bench excitation session
+#define MSP2_SET_FRAME_WIZARD               0x3017  // in: start / keepalive / abort the frame wizard
+#define MSP2_FRAME_WIZARD_STATUS            0x3018  // out: frame wizard progress (polling it is the keepalive)
+#define MSP2_FRAME_WIZARD_RESULT            0x3019  // out: confirmed tap modes per region, confirmed peaks per motor
+#define MSP2_FRAME_WIZARD_RESPONSE          0x301A  // in: base, motor; out: 3 x 128 gain bins; base 2: the spin check
+#define MSP2_FRAME_WIZARD_TAPS              0x301B  // in: page; out: session taps with their peaks, tap features, tap spectrum
+#define MSP2_FILTER_TUNE_STATUS             0x301C  // out: filter autotune state, harmonic strength, residual peaks, proposed / current
+#define MSP2_FRAME_MAP                      0x301D  // out: the stored frame map (modes the frame wizard confirmed)
 
 // MSP2_CLI_COMMAND response flags (byte following the u16 total-length header)
 #define MSP2_CLI_COMMAND_FLAG_TRUNCATED     (1 << 0) // output exceeded the pageable buffer

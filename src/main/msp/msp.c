@@ -89,6 +89,8 @@
 #include "flight/mixer.h"
 #ifdef USE_MOTOR_EXCITATION
 #include "flight/motor_excitation.h"
+#include "flight/frame_wizard.h"
+#include "flight/filter_autotune.h"
 #endif
 #include "flight/pid.h"
 #include "flight/pid_init.h"
@@ -2277,6 +2279,14 @@ case MSP_NAME:
 #endif
         break;
 
+#ifdef USE_FRAME_WIZARD
+    case MSP2_FRAME_WIZARD_STATUS:
+        frameWizardWriteStatus(dst);
+        break;
+    case MSP2_FRAME_WIZARD_RESULT:
+        frameWizardWriteResult(dst);
+        break;
+#endif
 #ifdef USE_MOTOR_EXCITATION
     case MSP2_MOTOR_EXCITATION_STATUS: {
         const motorExcitationParams_t *p = motorExcitationGetParams();
@@ -2967,6 +2977,27 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
         break;
 #endif
 
+#ifdef USE_FILTER_AUTOTUNE
+    case MSP2_FILTER_TUNE_STATUS:
+        filterAutotuneWriteStatus(dst);
+        break;
+    case MSP2_FRAME_MAP:
+        frameMapWrite(dst);
+        break;
+#endif
+#ifdef USE_FRAME_WIZARD
+    case MSP2_FRAME_WIZARD_TAPS:
+        frameWizardWriteTaps(dst, sbufBytesRemaining(src) >= 1 ? sbufReadU8(src) : 0);
+        break;
+    case MSP2_FRAME_WIZARD_RESPONSE: {
+        const uint8_t base = sbufBytesRemaining(src) >= 1 ? sbufReadU8(src) : 0;
+        const uint8_t motor = sbufBytesRemaining(src) >= 1 ? sbufReadU8(src) : 0;
+        frameWizardWriteResponse(dst, base, motor);
+        break;
+    }
+#endif
+
+
 #ifdef USE_MSP_CLI_COMMAND
     case MSP2_CLI_COMMAND:
         {
@@ -3433,6 +3464,46 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             p.flags = sbufBytesRemaining(src) >= 1 ? sbufReadU8(src) : 0;        // optional (later hosts)
             p.invertMask = sbufBytesRemaining(src) >= 1 ? sbufReadU8(src) : 0;
             if (!motorExcitationStart(&p)) {
+                return MSP_RESULT_ERROR;
+            }
+        } else {
+            return MSP_RESULT_ERROR;
+        }
+        break;
+    }
+#endif
+
+#ifdef USE_FRAME_WIZARD
+    case MSP2_SET_FRAME_WIZARD: {
+        // op 0 = abort, 1 = start (u16 base1, u16 base2, u16 amplitude, u8 sweep s, u16 max command), 2 = keepalive
+        if (dataSize < 1) {
+            return MSP_RESULT_ERROR;
+        }
+        const uint8_t op = sbufReadU8(src);
+        if (op == 0) {
+            frameWizardAbort();
+        } else if (op == 2) {
+            frameWizardKeepalive();
+#ifdef USE_FILTER_AUTOTUNE
+        } else if (op == 4) {                                     // revert the last applied filter autotune
+            if (!filterAutotuneRevert()) {
+                return MSP_RESULT_ERROR;
+            }
+        } else if (op == 5) {                                     // forget the frame map
+            frameMapClear();
+#endif
+        } else if (op == 1 && sbufBytesRemaining(src) >= 9) {
+            frameWizardParams_t p;
+            p.base1 = sbufReadU16(src);
+            p.base2 = sbufReadU16(src);
+            p.amplitude = sbufReadU16(src);
+            p.sweepS = sbufReadU8(src);
+            p.maxCommand = sbufReadU16(src);
+            p.flags = sbufBytesRemaining(src) >= 1 ? sbufReadU8(src) : 0;
+            p.rot1Hz = sbufBytesRemaining(src) >= 2 ? sbufReadU16(src) : 0;
+            p.rot2Hz = sbufBytesRemaining(src) >= 2 ? sbufReadU16(src) : 0;
+            p.clipPct = sbufBytesRemaining(src) >= 1 ? sbufReadU8(src) : 0;
+            if (!frameWizardStart(&p)) {
                 return MSP_RESULT_ERROR;
             }
         } else {
