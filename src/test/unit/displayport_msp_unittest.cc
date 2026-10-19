@@ -643,9 +643,12 @@ TEST(DisplayPortMspTest, GivesUpWaitingForARoomThatDoesNotCome)
     displayClearScreen(dp, DISPLAY_CLEAR_NONE);
     txFree = 0;
     packets.clear();
-    EXPECT_TRUE(displayDrawScreen(dp));
+    for (int t = 0; t < 250; t += 10) {                 // The OSD checks again every few ms
+        EXPECT_TRUE(displayDrawScreen(dp));
+        now += 10;
+    }
     EXPECT_TRUE(packets.empty());
-    now += 300;
+    now += 1;
     EXPECT_FALSE(displayDrawScreen(dp));                // Everything goes, to be dropped by the port
     EXPECT_EQ(1, count(MSP_DP_DRAW_SCREEN));
 }
@@ -875,18 +878,34 @@ TEST(DisplayPortMspTest, NoBudgetAndSpacesWithoutDji)
     EXPECT_EQ("1234 678", writes()[1].text);
 }
 
+// The OSD checks every few ms while it waits
+static bool waitFor(displayPort_t *dp, uint32_t ms)
+{
+    bool busy = true;
+
+    for (uint32_t t = 0; t < ms && busy; t += 10) {
+        busy = displayIsTransferInProgress(dp);
+        now += 10;
+    }
+
+    return busy;
+}
+
 TEST(DisplayPortMspTest, TheOsdWaitsForRoomOnlyForSoLong)
 {
     displayPort_t *dp = init();
 
     txFree = 63;
-    EXPECT_TRUE(displayIsTransferInProgress(dp));
-    now += 300;
-    EXPECT_FALSE(displayIsTransferInProgress(dp));      // A port that does not drain does not stop the OSD
+    EXPECT_TRUE(waitFor(dp, 250));
+    EXPECT_FALSE(waitFor(dp, 20));                      // A port that does not drain does not stop the OSD
     txFree = 64;
     EXPECT_FALSE(displayIsTransferInProgress(dp));
     txFree = 0;
-    EXPECT_TRUE(displayIsTransferInProgress(dp));       // Waiting again once there was room
+    EXPECT_TRUE(waitFor(dp, 200));                      // Waiting again once there was room
+
+    now += 300;                                         // The OSD left off waiting for a while
+    EXPECT_TRUE(waitFor(dp, 250));                      // So the wait starts over
+    EXPECT_FALSE(waitFor(dp, 20));
 
     displayPortProfileMspMutable()->sendChanges = false;
     EXPECT_FALSE(displayIsTransferInProgress(dp));      // Switched off, nothing waits

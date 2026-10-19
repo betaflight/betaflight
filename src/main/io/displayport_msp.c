@@ -269,22 +269,28 @@ static int writeBytes(int len)
 }
 
 // Room in the serial buffer, as a command that finds none is dropped. Stop waiting after a while, until
-// there is room again, rather than leave the OSD waiting for a port that does not drain.
+// there is room again, rather than leave the OSD waiting for a port that does not drain. A wait the
+// OSD left off for as long starts over.
+#define MSP_DP_WAIT_MS 250
+
 static bool room(int bytes)
 {
     static uint32_t waitingSince;
+    static uint32_t checkedAt;
     static bool waiting;
+    const uint32_t now = millis();
 
     if (mspSerialTxBytesFree(displayPortSerial) >= (uint32_t)bytes) {
         waiting = false;
         return true;
     }
-    if (!waiting) {
+    if (!waiting || cmp32(now, checkedAt) > MSP_DP_WAIT_MS) {
         waiting = true;
-        waitingSince = millis();
+        waitingSince = now;
     }
+    checkedAt = now;
 
-    return cmp32(millis(), waitingSince) > 250;
+    return cmp32(now, waitingSince) > MSP_DP_WAIT_MS;
 }
 
 // Send cells, in commands of at most MSP_DP_WRITE_MAX characters
