@@ -124,6 +124,38 @@ extern "C" {
 
 pidProfile_t *pidProfile;
 
+TEST(PidProfileStorageTest, RejectsProfilesFromBeforeSpeedCurveFields)
+{
+    const pgRegistry_t *registry = pgFind(PG_PID_PROFILE);
+    ASSERT_NE(nullptr, registry);
+
+    // Version 12 stored smaller array elements, so copying that array would
+    // shift every profile after the first one into unrelated settings.
+    uint8_t savedProfiles[PID_PROFILE_COUNT * 228];
+    memset(savedProfiles, 0xFF, sizeof(savedProfiles));
+    pgReset(registry);
+    pidProfile_t defaults[PID_PROFILE_COUNT];
+    memcpy(defaults, pidProfilesMutable(0), sizeof(defaults));
+
+    EXPECT_FALSE(pgLoad(registry, savedProfiles, sizeof(savedProfiles), 12));
+    EXPECT_EQ(0, memcmp(defaults, pidProfilesMutable(0), sizeof(defaults)));
+}
+
+TEST(PidProfileStorageTest, LoadsCurrentProfilesWithoutShiftingSettings)
+{
+    const pgRegistry_t *registry = pgFind(PG_PID_PROFILE);
+    ASSERT_NE(nullptr, registry);
+    pgReset(registry);
+    for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
+        pidProfilesMutable(i)->pid[PID_ROLL].P = 77 + i;
+        pidProfilesMutable(i)->speed_curve_vref = 30 + i;
+    }
+    pidProfile_t savedProfiles[PID_PROFILE_COUNT];
+    ASSERT_EQ(sizeof(savedProfiles), pgStore(registry, savedProfiles, sizeof(savedProfiles)));
+    ASSERT_TRUE(pgLoad(registry, savedProfiles, sizeof(savedProfiles), pgVersion(registry)));
+    EXPECT_EQ(0, memcmp(savedProfiles, pidProfilesMutable(0), sizeof(savedProfiles)));
+}
+
 int loopIter = 0;
 
 // Always use same defaults for testing in future releases even when defaults change
