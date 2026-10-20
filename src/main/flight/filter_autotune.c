@@ -1010,9 +1010,11 @@ static const float ftIdHz[] = { 10, 14, 20, 28, 40, 56, 80, 112 };
 #define FT_SWEEP_ANGLE_DEG 0.5f              // the swing at FT_SWEEP_F0, less above (amplitude / 2 pi f). Host, closed-loop model
                                               // with the noisiest 5" hover: crossover within 3.5 % at 0.1 deg, 1.3 % at 0.5,
                                               // 1 % at 1 (the grid interpolation left)
-#define FT_SWEEP_STICK     0.1f               // stick deflection that ends it
-#define FT_SWEEP_THR       0.08f              // throttle change that ends it
-#define FT_SWEEP_TILT_DD   150                // attitude change that ends it, 0.1 deg
+#define FT_SWEEP_STICK_START 0.1f             // it starts with the sticks centred
+#define FT_SWEEP_STICK     0.3f               // and ends on a manoeuvre, not on the pilot's trimming: the sticks are
+                                              // not correlated with the sweep, their (mostly < 8 Hz) input is noise to it
+#define FT_SWEEP_THR       0.15f              // throttle change that ends it (holding the height is fine)
+#define FT_SWEEP_TILT_DD   250                // attitude change that ends it, 0.1 deg
 #define FT_SWEEP_RATE_MAX  300.0f             // deg/s
 
 enum { SWEEP_NONE = 0, SWEEP_ROLL, SWEEP_SETTLE, SWEEP_PITCH, SWEEP_DONE, SWEEP_ABORTED };
@@ -1189,10 +1191,9 @@ NOINLINE float filterAutotuneExcitation(int axis, float gyroFiltered)
     return ftx.r;
 }
 
-static bool sweepSticksCentred(void)
+static bool sweepSticksWithin(float limit)
 {
-    return getRcDeflectionAbs(FD_ROLL) < FT_SWEEP_STICK && getRcDeflectionAbs(FD_PITCH) < FT_SWEEP_STICK
-        && getRcDeflectionAbs(FD_YAW) < FT_SWEEP_STICK;
+    return getRcDeflectionAbs(FD_ROLL) < limit && getRcDeflectionAbs(FD_PITCH) < limit && getRcDeflectionAbs(FD_YAW) < limit;
 }
 
 // the task: start the sweep once the frames are in (ANGLE, sticks centred), end it on anything off its limits
@@ -1203,7 +1204,7 @@ static void sweepService(bool modeOn)
         uint8_t end = SWEEP_END_NONE;
         if (!ARMING_FLAG(ARMED) || !modeOn || !FLIGHT_MODE(ANGLE_MODE) || failsafeIsActive()) {
             end = SWEEP_END_MODE;
-        } else if (!sweepSticksCentred()) {
+        } else if (!sweepSticksWithin(FT_SWEEP_STICK)) {
             end = SWEEP_END_STICKS;
         } else if (fabsf(rcCommand[THROTTLE] - ftx.thr0) > FT_SWEEP_THR) {
             end = SWEEP_END_THROTTLE;
@@ -1222,7 +1223,7 @@ static void sweepService(bool modeOn)
 
 static bool sweepTryStart(void)
 {
-    if (ftx.tried || !FLIGHT_MODE(ANGLE_MODE) || !sweepSticksCentred()) {
+    if (ftx.tried || !FLIGHT_MODE(ANGLE_MODE) || !sweepSticksWithin(FT_SWEEP_STICK_START)) {
         return false;
     }
     ftx.tried = true;
