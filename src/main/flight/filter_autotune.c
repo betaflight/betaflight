@@ -79,7 +79,7 @@
 #include "filter_autotune.h"
 
 PG_REGISTER(frameMapConfig_t, frameMapConfig, PG_FRAME_MAP_CONFIG, 2);
-PG_REGISTER(filterTuneBackup_t, filterTuneBackup, PG_FILTER_TUNE_BACKUP, 2);
+PG_REGISTER(filterTuneBackup_t, filterTuneBackup, PG_FILTER_TUNE_BACKUP, 3);
 
 #define FT_N            512
 #define FT_BINS         (FT_N / 2 + 1)
@@ -919,13 +919,16 @@ static void decideRpm(ftResult_t *r, float X[FT_MOTORS][FT_ORDERS], const float 
 {
     const rpmFilterConfig_t *rc = rpmFilterConfig();
     const float minHz = rc->rpm_filter_min_hz, fadeCur = rc->rpm_filter_fade_range_hz, qCur = rc->rpm_filter_q / 100.0f;
+    rpmFilterConfig_t def;                            // the proposal runs with the default min_hz (apply sets it)
+    pgResetCopy(&def, PG_RPM_FILTER_CONFIG);
+    const float minNew = def.rpm_filter_min_hz;
     // fade: the slowest motor's hover 1x clear of min_hz + fade (in the fade the 1x notch only works in part);
     // min_hz stays: lower notches would add delay at low throttle
     float rotLow = rotM[0];
     for (int m = 1; m < FT_MOTORS; m++) {
         rotLow = MIN(rotLow, rotM[m]);
     }
-    const float fadeMax = FT_FADE_CLEAR * rotLow - minHz;
+    const float fadeMax = FT_FADE_CLEAR * rotLow - minNew;
     r->fade = fadeCur <= fadeMax ? (uint16_t)fadeCur : (uint16_t)constrainf(fadeMax, 0.0f, fadeCur);
     // weights per order from the worst motor's line, for FT_RPM_WEIGHT_DB left
     for (int h = 0; h < 3; h++) {
@@ -959,7 +962,7 @@ static void decideRpm(ftResult_t *r, float X[FT_MOTORS][FT_ORDERS], const float 
     float q = FT_RPM_Q_MAX;
     for (int m = 0; m < FT_MOTORS; m++) {
         for (int h = 0; h < 3; h++) {
-            const float w = r->w[h] / 100.0f * fadeWeight((h + 1) * rotM[m], minHz, r->fade);
+            const float w = r->w[h] / 100.0f * fadeWeight((h + 1) * rotM[m], minNew, r->fade);
             if (X[m][h] <= 6.0f || w <= 0.5f) {
                 continue;
             }
@@ -1291,35 +1294,57 @@ static void backupNow(void)
 {
     filterTuneBackup_t *b = filterTuneBackupMutable();
     const rpmFilterConfig_t *rpm = rpmFilterConfig();
+    const dynNotchConfig_t *dn = dynNotchConfig();
     const gyroConfig_t *g = gyroConfig();
+    const pidProfile_t *pp = currentPidProfile;
     for (int h = 0; h < 3; h++) {
         b->rpmWeights[h] = rpm->rpm_filter_weights[h];
     }
     b->rpmQ = rpm->rpm_filter_q;
     b->rpmFadeRangeHz = rpm->rpm_filter_fade_range_hz;
-    b->dynNotchCount = dynNotchConfig()->dyn_notch_count;
+    b->rpmHarmonics = rpm->rpm_filter_harmonics;
+    b->rpmMinHz = rpm->rpm_filter_min_hz;
+    b->rpmLpfHz = rpm->rpm_filter_lpf_hz;
+    b->dynNotchCount = dn->dyn_notch_count;
+    b->dynNotchQ = dn->dyn_notch_q;
+    b->dynNotchMinHz = dn->dyn_notch_min_hz;
+    b->dynNotchMaxHz = dn->dyn_notch_max_hz;
     b->lpf1StaticHz = g->gyro_lpf1_static_hz;
     b->lpf1DynMinHz = g->gyro_lpf1_dyn_min_hz;
+    b->gyroLpf1DynMaxHz = g->gyro_lpf1_dyn_max_hz;
+    b->gyroLpf1Type = g->gyro_lpf1_type;
     b->lpf2StaticHz = g->gyro_lpf2_static_hz;
+    b->gyroLpf2Type = g->gyro_lpf2_type;
     b->simplifiedGyroFilter = g->simplified_gyro_filter;
     b->notch1Hz = g->gyro_soft_notch_hz_1;
     b->notch1Cutoff = g->gyro_soft_notch_cutoff_1;
-    const pidProfile_t *pp = currentPidProfile;
+    b->notch2Hz = g->gyro_soft_notch_hz_2;
+    b->notch2Cutoff = g->gyro_soft_notch_cutoff_2;
+    b->pidProfileIndex = getCurrentPidProfileIndex();
     b->dtermLpf1DynMinHz = pp->dterm_lpf1_dyn_min_hz;
     b->dtermLpf1DynMaxHz = pp->dterm_lpf1_dyn_max_hz;
     b->dtermLpf1StaticHz = pp->dterm_lpf1_static_hz;
     b->dtermLpf2StaticHz = pp->dterm_lpf2_static_hz;
     b->dtermNotchHz = pp->dterm_notch_hz;
+    b->dtermNotchCutoff = pp->dterm_notch_cutoff;
+    b->dtermLpf1Type = pp->dterm_lpf1_type;
+    b->dtermLpf2Type = pp->dterm_lpf2_type;
+    b->dtermLpf1DynExpo = pp->dterm_lpf1_dyn_expo;
     b->simplifiedDtermFilter = pp->simplified_dterm_filter;
     b->valid = 1;
 }
 
+// every parameter of the gyro and D-term sections: the decided ones, the rest to the defaults, so no hand setting works
+// next to the tuned ones (the backup holds them all for the revert). The D-term filters go to the current PID profile.
 static void apply(const ftResult_t *r)
 {
     if (!filterTuneBackup()->valid) {                 // keep the oldest settings: revert goes back to before autotune
         backupNow();
     }
-    rpmFilterConfig_t *rpm = rpmFilterConfigMutable();
+    rpmFilterConfig_t *rpm = rpmFilterConfigMutable(), rpmDef;
+    dynNotchConfig_t *dn = dynNotchConfigMutable(), dnDef;
+    pgResetCopy(&rpmDef, PG_RPM_FILTER_CONFIG);
+    pgResetCopy(&dnDef, PG_DYN_NOTCH_CONFIG);
     gyroConfig_t *g = gyroConfigMutable();
     rpm->rpm_filter_harmonics = MAX(rpm->rpm_filter_harmonics, 3);
     for (int h = 0; h < 3; h++) {
@@ -1327,24 +1352,34 @@ static void apply(const ftResult_t *r)
     }
     rpm->rpm_filter_q = r->q;
     rpm->rpm_filter_fade_range_hz = r->fade;
-    dynNotchConfigMutable()->dyn_notch_count = r->dyn;
+    rpm->rpm_filter_min_hz = rpmDef.rpm_filter_min_hz;
+    rpm->rpm_filter_lpf_hz = rpmDef.rpm_filter_lpf_hz;
+    dn->dyn_notch_count = r->dyn;
+    dn->dyn_notch_q = dnDef.dyn_notch_q;
+    dn->dyn_notch_min_hz = dnDef.dyn_notch_min_hz;
+    dn->dyn_notch_max_hz = dnDef.dyn_notch_max_hz;
     g->simplified_gyro_filter = 0;
     g->gyro_lpf1_static_hz = 0;
     g->gyro_lpf1_dyn_min_hz = 0;
     g->gyro_lpf2_static_hz = r->lpf2;
+    if (r->lpf2) {
+        g->gyro_lpf2_type = FILTER_PT1;               // the cutoffs are for PT1
+    }
     g->gyro_soft_notch_hz_1 = r->notchHz;
     g->gyro_soft_notch_cutoff_1 = r->notchHz ? r->notchCut : 0;
+    g->gyro_soft_notch_hz_2 = 0;
+    g->gyro_soft_notch_cutoff_2 = 0;
     if (r->dMult10) {                                 // the D pair: the defaults times the multiplier, PT1, no notch
         pidProfile_t *pp = currentPidProfile;
         pp->simplified_dterm_filter = 0;
         pp->dterm_lpf1_type = FILTER_PT1;
         pp->dterm_lpf2_type = FILTER_PT1;
+        pp->dterm_lpf1_dyn_expo = FT_DT_EXPO;
         pp->dterm_lpf1_dyn_min_hz = DTERM_LPF1_DYN_MIN_HZ_DEFAULT * r->dMult10 / 10;
         pp->dterm_lpf1_dyn_max_hz = DTERM_LPF1_DYN_MAX_HZ_DEFAULT * r->dMult10 / 10;
         pp->dterm_lpf1_static_hz = pp->dterm_lpf1_dyn_min_hz;
         pp->dterm_lpf2_static_hz = DTERM_LPF2_HZ_DEFAULT * r->dMult10 / 10;
         pp->dterm_notch_hz = 0;
-        g->gyro_lpf2_type = FILTER_PT1;
     }
     saveConfigAndNotify();
     gyroInitFilters();
@@ -1358,30 +1393,47 @@ bool filterAutotuneRevert(void)
         return false;
     }
     rpmFilterConfig_t *rpm = rpmFilterConfigMutable();
+    dynNotchConfig_t *dn = dynNotchConfigMutable();
     gyroConfig_t *g = gyroConfigMutable();
     for (int h = 0; h < 3; h++) {
         rpm->rpm_filter_weights[h] = b->rpmWeights[h];
     }
     rpm->rpm_filter_q = b->rpmQ;
     rpm->rpm_filter_fade_range_hz = b->rpmFadeRangeHz;
-    dynNotchConfigMutable()->dyn_notch_count = b->dynNotchCount;
+    rpm->rpm_filter_harmonics = b->rpmHarmonics;
+    rpm->rpm_filter_min_hz = b->rpmMinHz;
+    rpm->rpm_filter_lpf_hz = b->rpmLpfHz;
+    dn->dyn_notch_count = b->dynNotchCount;
+    dn->dyn_notch_q = b->dynNotchQ;
+    dn->dyn_notch_min_hz = b->dynNotchMinHz;
+    dn->dyn_notch_max_hz = b->dynNotchMaxHz;
     g->gyro_lpf1_static_hz = b->lpf1StaticHz;
     g->gyro_lpf1_dyn_min_hz = b->lpf1DynMinHz;
+    g->gyro_lpf1_dyn_max_hz = b->gyroLpf1DynMaxHz;
+    g->gyro_lpf1_type = b->gyroLpf1Type;
     g->gyro_lpf2_static_hz = b->lpf2StaticHz;
+    g->gyro_lpf2_type = b->gyroLpf2Type;
     g->simplified_gyro_filter = b->simplifiedGyroFilter;
     g->gyro_soft_notch_hz_1 = b->notch1Hz;
     g->gyro_soft_notch_cutoff_1 = b->notch1Cutoff;
-    pidProfile_t *pp = currentPidProfile;
+    g->gyro_soft_notch_hz_2 = b->notch2Hz;
+    g->gyro_soft_notch_cutoff_2 = b->notch2Cutoff;
+    pidProfile_t *pp = pidProfilesMutable(MIN(b->pidProfileIndex, PID_PROFILE_COUNT - 1));   // the profile it applied to
     pp->dterm_lpf1_dyn_min_hz = b->dtermLpf1DynMinHz;
     pp->dterm_lpf1_dyn_max_hz = b->dtermLpf1DynMaxHz;
     pp->dterm_lpf1_static_hz = b->dtermLpf1StaticHz;
     pp->dterm_lpf2_static_hz = b->dtermLpf2StaticHz;
     pp->dterm_notch_hz = b->dtermNotchHz;
+    pp->dterm_notch_cutoff = b->dtermNotchCutoff;
+    pp->dterm_lpf1_type = b->dtermLpf1Type;
+    pp->dterm_lpf2_type = b->dtermLpf2Type;
+    pp->dterm_lpf1_dyn_expo = b->dtermLpf1DynExpo;
     pp->simplified_dterm_filter = b->simplifiedDtermFilter;
     filterTuneBackupMutable()->valid = 0;
+    ft.applied = false;
     saveConfigAndNotify();
     gyroInitFilters();
-    ft.applied = false;
+    pidInitFilters(currentPidProfile);
     return true;
 }
 
@@ -1740,6 +1792,9 @@ void filterAutotuneWriteStatus(sbuf_t *dst)
     sbufWriteU16(dst, r.pdDelayRefUs);
     sbufWriteU8(dst, r.dInPct);
     sbufWriteU8(dst, r.noisePct);
+    // the PID profile the D-term filters go to (the current one) and, after an apply, the one they went to (0xFF none)
+    sbufWriteU8(dst, getCurrentPidProfileIndex());
+    sbufWriteU8(dst, filterTuneBackup()->valid ? filterTuneBackup()->pidProfileIndex : 0xFF);
 }
 
 void frameMapWrite(sbuf_t *dst)

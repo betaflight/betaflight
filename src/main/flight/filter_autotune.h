@@ -78,9 +78,16 @@ typedef struct filterTuneBackup_s {
     uint16_t notch1Hz;
     uint16_t notch1Cutoff;
     uint16_t rpmFadeRangeHz;
-    // the D-term filters of the current PID profile
-    uint16_t dtermLpf1DynMinHz, dtermLpf1DynMaxHz, dtermLpf1StaticHz, dtermLpf2StaticHz, dtermNotchHz;
-    uint8_t simplifiedDtermFilter;
+    // everything else of the gyro and D-term sections the autotune sets (to its values or to the defaults)
+    uint8_t rpmHarmonics, rpmMinHz;
+    uint16_t rpmLpfHz;
+    uint16_t dynNotchQ, dynNotchMinHz, dynNotchMaxHz;
+    uint8_t gyroLpf1Type, gyroLpf2Type;
+    uint16_t gyroLpf1DynMaxHz, notch2Hz, notch2Cutoff;
+    // the D-term filters of the PID profile it applied to
+    uint8_t pidProfileIndex;
+    uint16_t dtermLpf1DynMinHz, dtermLpf1DynMaxHz, dtermLpf1StaticHz, dtermLpf2StaticHz, dtermNotchHz, dtermNotchCutoff;
+    uint8_t dtermLpf1Type, dtermLpf2Type, dtermLpf1DynExpo, simplifiedDtermFilter;
 } filterTuneBackup_t;
 
 PG_DECLARE(filterTuneBackup_t, filterTuneBackup);
