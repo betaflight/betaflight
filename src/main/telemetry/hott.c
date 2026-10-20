@@ -705,7 +705,7 @@ void handleHoTTTelemetry(timeUs_t currentTimeUs)
         return;
     }
 
-    if (shouldPrepareHoTTMessages(currentTimeUs)) {
+    if (!hottIsSending && shouldPrepareHoTTMessages(currentTimeUs)) {
         hottPrepareMessages();
         lastMessagesPreparedAt = currentTimeUs;
     }
