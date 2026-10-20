@@ -882,6 +882,9 @@ static void stepTapSpectrum(void)
 
 #ifdef USE_FILTER_AUTOTUNE
 static bool isCableMode(float f);
+static uint16_t gainU16(float h);
+static uint8_t spinCheckSigns(int8_t sgn[MOTORS]);
+static bool spinCheckReady(void);
 
 // the frame map (kept across reboots, needed by the filter autotune): this run's part replaces the stored one
 // add a mode unless one within 3 % is there already (every point shares most modes: without merging the
@@ -930,6 +933,30 @@ static float tapModeSupport(float f)
     return best;
 }
 
+// the motor run kept in the config: peaks per motor as on the result page, base rotations, spin check
+static void storeMotorProfile(void)
+{
+    frameMapConfig_t *map = frameMapConfigMutable();
+    for (int m = 0; m < MOTORS; m++) {
+        const int n = MIN(fw.motorPeakN[m], FRAME_MAP_MOTOR_PEAKS);
+        map->motorPeakCount[m] = n;
+        for (int i = 0; i < FRAME_MAP_MOTOR_PEAKS; i++) {
+            const fwPeak_t *p = &fw.motorPeaks[m][i];
+            map->motorPeakHz10[m][i] = i < n ? lrintf(p->freq * 10.0f) : 0;
+            map->motorPeakGain[m][i] = i < n ? gainU16(p->amp) : 0;
+            map->motorPeakInfo[m][i] = i < n ? (p->axis | (p->count << 4) | (isCableMode(p->freq) ? FRAME_MAP_PEAK_CABLE : 0)) : 0;
+        }
+    }
+    for (int b = 0; b < 2; b++) {
+        map->rotHz10[b] = lrintf(fw.rotHz[b] * 10.0f);
+    }
+    map->spinCheck = 0;
+    if (spinCheckReady() && fwb->u.m.spinDone) {
+        int8_t sgn[MOTORS];
+        map->spinCheck = FRAME_MAP_SPIN_CHECKED | spinCheckSigns(sgn);
+    }
+}
+
 static void storeFrameMap(uint8_t part)
 {
     float hz[FRAME_MAP_MODES * 2];
@@ -952,6 +979,7 @@ static void storeFrameMap(uint8_t part)
                 }
             }
         }
+        storeMotorProfile();
     }
     bool unstable[FRAME_MAP_MODES * 2] = { false };
     if (part == FRAME_MAP_PART_TAPS) {
@@ -1781,16 +1809,9 @@ void frameWizardWriteTaps(sbuf_t *dst, int first)
     }
 }
 
-// The spin check page: per motor the yaw phase against its tone and the response on each axis; the spin sign
-// against the quad X pattern (motors 1 and 4 one way, 2 and 3 the other), taken from the majority so a single
-// reversed motor stands out; a motor that hardly answered is flagged too.
-static void writeSpinCheck(sbuf_t *dst)
+// spin signs per motor against the strongest answer (0: no answer); returns the motors against the quad X pattern
+static uint8_t spinCheckSigns(int8_t sgn[MOTORS])
 {
-    sbufWriteU8(dst, 2);                              // page version (2: spin check)
-    if (!scratchOwned() || (!fw.sweepBuffers && !(fw.p.flags & FRAME_WIZARD_FLAG_SKIP_TAPS))) {
-        sbufWriteU8(dst, 0);                          // nothing (the buffers hold the taps, or are lent out)
-        return;
-    }
     static const int8_t quadX[MOTORS] = { 1, -1, -1, 1 };
     float mag[MOTORS], vote = 0.0f;
     for (int m = 0; m < MOTORS; m++) {
@@ -1802,7 +1823,6 @@ static void writeSpinCheck(sbuf_t *dst)
             ref = m;
         }
     }
-    int8_t sgn[MOTORS];
     for (int m = 0; m < MOTORS; m++) {
         const float dot = fwb->u.m.spinRe[m][2] * fwb->u.m.spinRe[ref][2] + fwb->u.m.spinIm[m][2] * fwb->u.m.spinIm[ref][2];
         sgn[m] = mag[m] < SPINCHECK_MIN_YAW ? 0 : dot >= 0.0f ? 1 : -1;
@@ -1814,6 +1834,26 @@ static void writeSpinCheck(sbuf_t *dst)
             wrong |= 1 << m;
         }
     }
+    return wrong;
+}
+
+static bool spinCheckReady(void)
+{
+    return scratchOwned() && (fw.sweepBuffers || (fw.p.flags & FRAME_WIZARD_FLAG_SKIP_TAPS));
+}
+
+// The spin check page: per motor the yaw phase against its tone and the response on each axis; the spin sign
+// against the quad X pattern (motors 1 and 4 one way, 2 and 3 the other), taken from the majority so a single
+// reversed motor stands out; a motor that hardly answered is flagged too.
+static void writeSpinCheck(sbuf_t *dst)
+{
+    sbufWriteU8(dst, 2);                              // page version (2: spin check)
+    if (!spinCheckReady()) {
+        sbufWriteU8(dst, 0);                          // nothing (the buffers hold the taps, or are lent out)
+        return;
+    }
+    int8_t sgn[MOTORS];
+    const uint8_t wrong = spinCheckSigns(sgn);
     sbufWriteU8(dst, fwb->u.m.spinDone ? 1 : 0);
     sbufWriteU8(dst, lrintf(SPINCHECK_TONE_HZ));
     sbufWriteU16(dst, lrintf(fwb->u.m.spinAmp));

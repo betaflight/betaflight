@@ -68,7 +68,7 @@
 #include "bench_scratch.h"
 #include "filter_autotune.h"
 
-PG_REGISTER(frameMapConfig_t, frameMapConfig, PG_FRAME_MAP_CONFIG, 0);
+PG_REGISTER(frameMapConfig_t, frameMapConfig, PG_FRAME_MAP_CONFIG, 1);
 PG_REGISTER(filterTuneBackup_t, filterTuneBackup, PG_FILTER_TUNE_BACKUP, 1);
 
 #define FT_N            512
@@ -1350,13 +1350,24 @@ void filterAutotuneWriteStatus(sbuf_t *dst)
 void frameMapWrite(sbuf_t *dst)
 {
     const frameMapConfig_t *map = frameMapConfig();
-    sbufWriteU8(dst, 1);                              // payload version
+    sbufWriteU8(dst, 2);                              // payload version (2: the motor profile follows the modes)
     sbufWriteU8(dst, map->parts);
     sbufWriteU8(dst, map->count);
     for (int i = 0; i < map->count; i++) {
         sbufWriteU16(dst, map->modeHz10[i]);
         sbufWriteU8(dst, map->modeSrc[i]);
     }
+    for (int m = 0; m < FRAME_MAP_MOTORS; m++) {
+        sbufWriteU8(dst, map->motorPeakCount[m]);
+        for (int i = 0; i < map->motorPeakCount[m]; i++) {
+            sbufWriteU16(dst, map->motorPeakHz10[m][i]);
+            sbufWriteU16(dst, map->motorPeakGain[m][i]);
+            sbufWriteU8(dst, map->motorPeakInfo[m][i]);
+        }
+    }
+    sbufWriteU16(dst, map->rotHz10[0]);
+    sbufWriteU16(dst, map->rotHz10[1]);
+    sbufWriteU8(dst, map->spinCheck);
 }
 
 #endif // USE_FILTER_AUTOTUNE

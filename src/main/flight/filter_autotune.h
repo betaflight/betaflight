@@ -38,11 +38,25 @@
 #define FRAME_MAP_SRC_UNSTABLE  (1 << 3)    // a tap mode few taps saw, even at its best point: the FC on its mount, the
                                             // hand, a loose part; not a frame mode the filters should count on
 
+// the motor profile of the last motor run: each motor's response peaks, the base rotations, the spin check
+#define FRAME_MAP_MOTORS        4
+#define FRAME_MAP_MOTOR_PEAKS   8
+#define FRAME_MAP_PEAK_AXIS     0x03        // motorPeakInfo: axis of the strongest answer
+#define FRAME_MAP_PEAK_SPEEDS   0x30        // seen at both base speeds (2) or one (1), << 4
+#define FRAME_MAP_PEAK_CABLE    0x80        // matches a cable mode
+#define FRAME_MAP_SPIN_CHECKED  0x80        // spinCheck: the spin check ran; bits 0-3 the motors against the pattern
+
 typedef struct frameMapConfig_s {
     uint8_t parts;                          // FRAME_MAP_PART_*
     uint8_t count;
     uint16_t modeHz10[FRAME_MAP_MODES];     // Hz x 10, ascending
     uint8_t modeSrc[FRAME_MAP_MODES];       // FRAME_MAP_SRC_*
+    uint8_t motorPeakCount[FRAME_MAP_MOTORS];
+    uint16_t motorPeakHz10[FRAME_MAP_MOTORS][FRAME_MAP_MOTOR_PEAKS];
+    uint16_t motorPeakGain[FRAME_MAP_MOTORS][FRAME_MAP_MOTOR_PEAKS];   // response x 10000
+    uint8_t motorPeakInfo[FRAME_MAP_MOTORS][FRAME_MAP_MOTOR_PEAKS];    // FRAME_MAP_PEAK_*
+    uint16_t rotHz10[2];                    // mean rotation at each base speed, Hz x 10, 0 = unknown
+    uint8_t spinCheck;                      // FRAME_MAP_SPIN_CHECKED | motors against the pattern
 } frameMapConfig_t;
 
 PG_DECLARE(frameMapConfig_t, frameMapConfig);
