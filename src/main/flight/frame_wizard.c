@@ -42,6 +42,7 @@
 #include "flight/motor_excitation.h"
 #include "flight/pid.h"
 #include "sensors/acceleration.h"
+#include "pg/motor.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -91,6 +92,7 @@
 #define SPEC_BINS             400      // 20..1616 Hz, used up to 0.4 x the decay sample rate
 #define PEAKS_PER_TAP         8
 #define LISTEN_TIMEOUT_MS     2000     // listen ends without a request, keepalive or poll
+#define NO_POWER_S            0.5f     // motor run: the battery or the ESC telemetry gone this long ends it
 #define LISTEN_MAX_HZ         1000.0f  // listen spectrum up to here (the frame modes): fewer bins, peaks sooner
 #define LISTEN_FFT_N          DECAY_N  // listen: real FFT of each decay axis in place (zero padded to this)
 #define LISTEN_FFT_M          (LISTEN_FFT_N / 2)
@@ -291,6 +293,7 @@ static struct {
     timeUs_t decayT0Us, decayT1Us;        // first and last decay sample: the real decay sample rate
     float dt;                // taps right after a beep are the beep itself
     bool stopPending;
+    float noPowerS;                       // motor run: time without the battery or the ESC telemetry
     // listen: taps on the craft without a run, their peaks for the Frame chart; nothing goes into the session
     bool listening;
     bool listenDirty;                     // the scratch decay / spectrum hold a listen tap, not the motor sweep
@@ -379,12 +382,30 @@ bool frameWizardListen(void)
     return true;
 }
 
+// the motors can run: a battery (when the FC measures it), and with bidirectional DShot every ESC answers (an
+// unpowered ESC sends nothing). Without this a run on USB power swept still motors and stored peaks of noise.
+static uint8_t motorPowerCheck(void)
+{
+    if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && getBatteryState() == BATTERY_NOT_PRESENT) {
+        return FRAME_WIZARD_END_NO_POWER;
+    }
+#ifdef USE_DSHOT_TELEMETRY
+    if (motorConfig()->dev.useDshotTelemetry && !isDshotTelemetryActive()) {
+        return FRAME_WIZARD_END_NO_SPIN;
+    }
+#endif
+    return FRAME_WIZARD_END_NONE;
+}
+
 bool frameWizardStart(const frameWizardParams_t *params)
 {
     // quad only; the taps need a calibrated accelerometer (calibrated in the Setup tab, the wizard does not)
     if (ARMING_FLAG(ARMED) || motorExcitationIsActive() || getMotorCount() != MOTORS
         || !sensors(SENSOR_ACC) || !accHasBeenCalibrated()) {
         return false;
+    }
+    if (!(params->flags & FRAME_WIZARD_FLAG_TAPS_ONLY) && motorPowerCheck() != FRAME_WIZARD_END_NONE) {
+        return false;                                // a run with the motors: battery in, ESCs answering
     }
     memset(&fw, 0, sizeof(fw));
     fwb = benchScratchClaim(BENCH_SCRATCH_FRAME_WIZARD);
@@ -1754,8 +1775,14 @@ void frameWizardUpdate(float *motorDisarmed, int motorCount, float disarmOutput,
         }
         return;
     }
+    if (fw.phase == FW_SPIN && motorPowerCheck() != FRAME_WIZARD_END_NONE) {
+        fw.noPowerS += dt;                           // a short telemetry gap is not a lost ESC
+    } else {
+        fw.noPowerS = 0.0f;
+    }
     uint8_t end = ARMING_FLAG(ARMED) ? FRAME_WIZARD_END_ARMED
                 : getBatteryState() == BATTERY_CRITICAL ? FRAME_WIZARD_END_BATTERY
+                : fw.noPowerS > NO_POWER_S ? motorPowerCheck()
                 : cmp32(now, fw.lastKeepaliveMs) > (motorsLive() ? KEEPALIVE_MOTORS_MS : KEEPALIVE_TIMEOUT_MS)
                     ? FRAME_WIZARD_END_KEEPALIVE
                 : safetyCheck(dt);
@@ -1795,6 +1822,17 @@ void frameWizardUpdate(float *motorDisarmed, int motorCount, float disarmOutput,
         break;
     case FW_BEEP_START:
         fwStopMotors(motorDisarmed, motorCount, disarmOutput);
+        if (cmp32(now, fw.phaseStartMs) > 2600 && fw.beepN == 0 && motorPowerCheck() != FRAME_WIZARD_END_NONE) {
+            // the battery went (or the ESCs stopped answering) during the taps: the taps are kept, no motor run
+#ifdef USE_FILTER_AUTOTUNE
+            if (!(fw.p.flags & FRAME_WIZARD_FLAG_SKIP_TAPS)) {
+                storeFrameMap(FRAME_MAP_PART_TAPS);
+            }
+#endif
+            fw.endReason = motorPowerCheck();
+            fw.phase = FW_DONE;
+            break;
+        }
         if (cmp32(now, fw.phaseStartMs) > 2600 && fw.beepN == 0) {
             fw.phase = FW_SPIN;
             fw.haveRpm = haveRpmTelemetry();

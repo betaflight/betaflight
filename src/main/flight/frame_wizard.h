@@ -68,6 +68,8 @@ typedef enum {
     FRAME_WIZARD_END_TILT,          // turned over from the start attitude
     FRAME_WIZARD_END_ROTATION,      // spun or swung hard
     FRAME_WIZARD_END_IMPACT,        // hit something
+    FRAME_WIZARD_END_NO_POWER,      // the motor run needs the battery: none at the start, or it went during the run
+    FRAME_WIZARD_END_NO_SPIN,       // bidirectional DShot on, but no ESC answers (no motor would turn)
 } frameWizardEnd_e;
 #define FRAME_WIZARD_SWEEP_BINS     128
 
