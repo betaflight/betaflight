@@ -2041,7 +2041,7 @@ static void printFrameMap(dumpFlags_t dumpMask, const frameMapConfig_t *map, con
         cliDumpPrintLinef(dumpMask, equalsDefault, "framemap mode %d %u.%u %s%s%s%s", i,
             map->modeHz10[i] / 10, map->modeHz10[i] % 10,
             (src & FRAME_MAP_SRC_TAP) ? "t" : "", (src & FRAME_MAP_SRC_MOTOR) ? "m" : "",
-            (src & FRAME_MAP_SRC_CABLE) ? "c" : "", (src & FRAME_MAP_SRC_UNSTABLE) ? "?" : "");
+            (src & FRAME_MAP_SRC_CABLE) ? "c" : "", (src & FRAME_MAP_SRC_UNSTABLE) ? "u" : "");
     }
     static const char axisNames[] = "rpy";
     for (int m = 0; m < FRAME_MAP_MOTORS; m++) {
@@ -2133,7 +2133,7 @@ static void cliFrameMap(const char *cmdName, char *cmdline)
             }
         }
     } else if (strcasecmp(args[0], "mode") == 0) {
-        // mode <index> <hz> <t|m|c|?>: modes are kept ascending, so enter them in order
+        // mode <index> <hz> <t|m|c|u>: modes are kept ascending, so enter them in order ('?' is the CLI's completion key)
         const int i = n >= 2 ? atoi(args[1]) : -1;
         if (n != 4 || i < 0 || i >= FRAME_MAP_MODES || i > map->count || !parseFixed(args[2], 1, &a) || a > UINT16_MAX) {
             cliShowParseError(cmdName);
@@ -2142,7 +2142,7 @@ static void cliFrameMap(const char *cmdName, char *cmdline)
         uint8_t src = 0;
         for (const char *c = args[3]; *c; c++) {
             src |= *c == 't' ? FRAME_MAP_SRC_TAP : *c == 'm' ? FRAME_MAP_SRC_MOTOR : *c == 'c' ? FRAME_MAP_SRC_CABLE
-                : *c == '?' ? FRAME_MAP_SRC_UNSTABLE : 0xFF;
+                : *c == 'u' ? FRAME_MAP_SRC_UNSTABLE : 0xFF;
         }
         if (src == 0xFF || !(src & (FRAME_MAP_SRC_TAP | FRAME_MAP_SRC_MOTOR | FRAME_MAP_SRC_CABLE))) {
             cliShowParseError(cmdName);
@@ -8869,7 +8869,7 @@ const clicmd_t cmdTable[] = {
 #endif
 #ifdef USE_FILTER_AUTOTUNE
     CLI_COMMAND_DEF("framemap", "frame map and motor profile from the frame test",
-        "reset | parts [taps] [motors] | mode <i> <hz> <t|m|c|?> | peak <motor> <i> <hz> <gain> <r|p|y> <speeds> [c]\r\n"
+        "reset | parts [taps] [motors] | mode <i> <hz> <t|m|c|u> | peak <motor> <i> <hz> <gain> <r|p|y> <speeds> [c]\r\n"
         "\trot <hz1> <hz2> | spin pass | spin fail <motor>...", cliFrameMap),
 #endif
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
