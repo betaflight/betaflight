@@ -63,6 +63,8 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 #include "flight/mixer.h"
+#include "flight/pid.h"
+#include "flight/pid_init.h"
 #include "io/beeper.h"
 #include "io/ledstrip.h"
 #include "osd/osd.h"
@@ -77,7 +79,7 @@
 #include "filter_autotune.h"
 
 PG_REGISTER(frameMapConfig_t, frameMapConfig, PG_FRAME_MAP_CONFIG, 2);
-PG_REGISTER(filterTuneBackup_t, filterTuneBackup, PG_FILTER_TUNE_BACKUP, 1);
+PG_REGISTER(filterTuneBackup_t, filterTuneBackup, PG_FILTER_TUNE_BACKUP, 2);
 
 #define FT_N            512
 #define FT_BINS         (FT_N / 2 + 1)
@@ -126,7 +128,7 @@ PG_REGISTER(filterTuneBackup_t, filterTuneBackup, PG_FILTER_TUNE_BACKUP, 1);
 #define FT_HIGH_OFF_DB  3.0f                // lpf2 off when that band is at most this over the floor ...
 #define FT_PEAK_HIGH_HZ 450.0f              // ... and no residual peak above this
 
-enum { LPF2_BY_ORDERS = 0, LPF2_OFF, LPF2_KEPT_HIGH_BAND, LPF2_KEPT_HIGH_PEAK, LPF2_NO_DATA = 255 };
+enum { LPF2_BY_ORDERS = 0, LPF2_OFF, LPF2_KEPT_HIGH_BAND, LPF2_KEPT_HIGH_PEAK, LPF2_BY_DTERM, LPF2_NO_DATA = 255 };
 
 bool filterAutotuneCollecting;
 
@@ -150,6 +152,10 @@ typedef struct {
     int nPeaks;
     ftPeak_t peaks[FT_PEAKS];
     int16_t highDb10;           // 600 Hz .. fs/2 after the RPM filter over the 100..600 Hz floor, dB x 10
+    // the D-term filters with gyro lpf2 (decideDterm): the multiplier of the default pair, 0 = not decided
+    uint8_t dMult10;
+    uint16_t pdDelayUs, pdDelayRefUs;   // P+D output delay at FT_DT_REF_HZ: chosen, stock filters
+    uint8_t dInPct, noisePct;   // D input and motor noise index against the stock filters, %
     uint8_t lpf2Basis;          // LPF2_BY_*
     bool valid;
 } ftResult_t;
@@ -198,6 +204,8 @@ static struct {
     float sumR1;
     uint16_t nR1;
     uint16_t framesPre, framesPost, frames;
+    float thrSum;
+    uint16_t thrN;
     float rotFrameSum[FT_MOTORS];   // rotation of each motor in the frames before the RPM filter, summed
     float fs;
     // flow
@@ -966,6 +974,152 @@ static void decideRpm(ftResult_t *r, float X[FT_MOTORS][FT_ORDERS], const float 
                                                                             : (uint16_t)(lrintf(q / 10.0f) * 10);
 }
 
+// ---------------- D-term filters with gyro lpf2 ----------------
+// research/motor-thermal/dterm: without gyro lowpass the motor noise grows mostly through P, which the D filters do
+// not reach; a light gyro lpf2 with the D pair a little lower keeps the D input and the motor noise near the stock
+// filters while most of the delay win stays. Searched on the hover spectrum after the RPM filter: gyro lpf2 PT1 of
+// ftDtLpf2 x the D pair (dyn PT1 75..150 + PT1 150) times FT_DT_M_MIN..FT_DT_M_MAX / 10. Kept: D input <= the stock
+// chain's (BF default gyro and D lowpass, the notches as decided), motor noise index <= FT_DT_NOISE_MAX x its;
+// chosen: the least P+D output delay at FT_DT_REF_HZ. None passing: D unchanged, lpf2 as decided before.
+
+static const uint16_t ftDtLpf2[] = { 0, 1000, 800, 650, 500 };
+#define FT_DT_M_MIN      5
+#define FT_DT_M_MAX      15
+#define FT_DT_NOISE_MAX  1.15f
+#define FT_DT_REF_HZ     50.0f
+#define FT_DT_HP_HZ      80.0f              // the motor noise index (motor_noise.c): what the motors cannot follow
+#define FT_DT_EXPO       5                  // dynamic lowpass curve expo (BF default)
+
+typedef struct { float re, im; } ftCplx_t;
+
+static ftCplx_t cmul(ftCplx_t a, ftCplx_t b)
+{
+    return (ftCplx_t){ a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re };
+}
+
+static ftCplx_t pt1Cplx(float hz, float dt, float w)  // discrete PT1 at w = 2 pi f dt
+{
+    const float k = pt1FilterGain(hz, dt), a = 1.0f - k;
+    const float dr = 1.0f - a * cos_approx(w), di = a * sin_approx(w), d2 = dr * dr + di * di;
+    return (ftCplx_t){ k * dr / d2, -k * di / d2 };
+}
+
+static float cabs2(ftCplx_t a)
+{
+    return a.re * a.re + a.im * a.im;
+}
+
+static ftCplx_t notchCplx(float f, uint16_t hz, uint16_t cut)
+{
+    if (!hz || cut >= hz) {
+        return (ftCplx_t){ 1.0f, 0.0f };
+    }
+    const float q = (float)hz * cut / ((float)hz * hz - (float)cut * cut);
+    const float x = (float)hz * hz - f * f, y = f * hz / q;    // (w0^2 - w^2) / (w0^2 - w^2 + j w w0 / Q)
+    const float d2 = x * x + y * y;
+    return (ftCplx_t){ x * x / d2, -x * y / d2 };
+}
+
+// the gyro path to the PID: gyro lpf2 PT1 at the gyro rate, or (off) the average of the samples of a loop
+static ftCplx_t gyroLpf2Cplx(float f, uint16_t hz, float dtG, int nAvg)
+{
+    const float wG = 2.0f * M_PIf * f * dtG;
+    if (hz) {
+        return pt1Cplx(hz, dtG, wG);
+    }
+    const float mag = sqrtf(boxcarPower(nAvg, 0.5f * wG)), ph = -0.5f * wG * (nAvg - 1);
+    return (ftCplx_t){ mag * cos_approx(ph), mag * sin_approx(ph) };
+}
+
+static void decideDterm(ftResult_t *r, float df)
+{
+    const pidProfile_t *pp = currentPidProfile;
+    const float kp = PTERM_SCALE * 0.5f * (pp->pid[PID_ROLL].P + pp->pid[PID_PITCH].P);
+    const float kd = DTERM_SCALE * 0.5f * (pp->pid[PID_ROLL].D + pp->pid[PID_PITCH].D);
+    const float dtG = gyro.sampleLooptime * 1e-6f, dtP = gyro.targetLooptime * 1e-6f;
+    if (kd <= 0.0f || dtG <= 0.0f || dtP <= 0.0f || ft.thrN == 0) {
+        return;
+    }
+    const int nAvg = MAX(1, lrintf(dtP / dtG));
+    const float fp = 1.0f / dtP, thr = constrainf(ft.thrSum / ft.thrN, 0.0f, 1.0f);
+    const float gLpf1Ref = dynLpfCutoffFreq(thr, GYRO_LPF1_DYN_MIN_HZ_DEFAULT, GYRO_LPF1_DYN_MAX_HZ_DEFAULT, FT_DT_EXPO);
+    const float dLpf1Def = dynLpfCutoffFreq(thr, DTERM_LPF1_DYN_MIN_HZ_DEFAULT, DTERM_LPF1_DYN_MAX_HZ_DEFAULT, FT_DT_EXPO);
+    enum { NK = ARRAYLEN(ftDtLpf2), NM = FT_DT_M_MAX - FT_DT_M_MIN + 1 };
+    float noise[NK][NM], dIn[NK][NM], noiseRef = 0.0f, dInRef = 0.0f;
+    memset(noise, 0, sizeof(noise));
+    memset(dIn, 0, sizeof(dIn));
+    for (int b = 1; b < FT_BINS; b++) {
+        const float f = b * df, wP = 2.0f * M_PIf * f * dtP;
+        const float s = (ftb->welch[0][b] + ftb->welch[1][b]) * cabs2(notchCplx(f, r->notchHz, r->notchCut));
+        const ftCplx_t hp = { 1.0f - pt1Cplx(FT_DT_HP_HZ, dtP, wP).re, -pt1Cplx(FT_DT_HP_HZ, dtP, wP).im };
+        const float hp2 = cabs2(hp);
+        const ftCplx_t der = { fp * (1.0f - cos_approx(wP)), fp * sin_approx(wP) };
+        // the stock chain: gyro lpf1 dyn + lpf2 500, the D pair x1
+        const float gRef = cabs2(pt1Cplx(gLpf1Ref, dtP, wP)) * cabs2(pt1Cplx(GYRO_LPF2_HZ_DEFAULT, dtG, 2.0f * M_PIf * f * dtG));
+        for (int m = FT_DT_M_MIN; m <= FT_DT_M_MAX; m++) {
+            const float mm = m * 0.1f;
+            const ftCplx_t hd = cmul(pt1Cplx(dLpf1Def * mm, dtP, wP), pt1Cplx(DTERM_LPF2_HZ_DEFAULT * mm, dtP, wP));
+            const ftCplx_t dpath = cmul(der, hd);
+            const float pd2 = cabs2((ftCplx_t){ kp + kd * dpath.re, kd * dpath.im });
+            const float d2 = cabs2(dpath);
+            if (m == 10) {
+                noiseRef += hp2 * pd2 * gRef * s;
+                dInRef += d2 * gRef * s;
+            }
+            for (int k = 0; k < NK; k++) {
+                const float g = cabs2(gyroLpf2Cplx(f, ftDtLpf2[k], dtG, nAvg)) * s;
+                noise[k][m - FT_DT_M_MIN] += hp2 * pd2 * g;
+                dIn[k][m - FT_DT_M_MIN] += d2 * g;
+            }
+        }
+    }
+    if (noiseRef <= 0.0f || dInRef <= 0.0f) {
+        return;
+    }
+    // P+D output delay at FT_DT_REF_HZ against the unfiltered Kp + Kd s
+    const float f0 = FT_DT_REF_HZ, w0 = 2.0f * M_PIf * f0 * dtP;
+    const ftCplx_t der0 = { fp * (1.0f - cos_approx(w0)), fp * sin_approx(w0) };
+    const float phIdeal = atan2_approx(kd * 2.0f * M_PIf * f0, kp);
+    float best = 1e9f, delayRef = 0.0f;
+    int bk = -1, bm = -1;
+    for (int k = -1; k < NK; k++) {                   // -1: the stock chain, for the reference delay
+        for (int m = FT_DT_M_MIN; m <= FT_DT_M_MAX; m++) {
+            if (k < 0 && m != 10) {
+                continue;
+            }
+            const float mm = m * 0.1f;
+            const ftCplx_t hd = cmul(pt1Cplx((k < 0 ? dLpf1Def : dLpf1Def * mm), dtP, w0),
+                pt1Cplx(DTERM_LPF2_HZ_DEFAULT * mm, dtP, w0));
+            const ftCplx_t dp = cmul(der0, hd);
+            ftCplx_t g = k < 0 ? cmul(pt1Cplx(gLpf1Ref, dtP, w0), pt1Cplx(GYRO_LPF2_HZ_DEFAULT, dtG, 2.0f * M_PIf * f0 * dtG))
+                : gyroLpf2Cplx(f0, ftDtLpf2[k], dtG, nAvg);
+            g = cmul(g, notchCplx(f0, r->notchHz, r->notchCut));
+            const ftCplx_t out = cmul(g, (ftCplx_t){ kp + kd * dp.re, kd * dp.im });
+            const float delay = (phIdeal - atan2_approx(out.im, out.re)) / (2.0f * M_PIf * f0);
+            if (k < 0) {
+                delayRef = delay;
+                continue;
+            }
+            const int i = m - FT_DT_M_MIN;
+            if (dIn[k][i] <= dInRef && noise[k][i] <= FT_DT_NOISE_MAX * noiseRef && delay < best) {
+                best = delay;
+                bk = k;
+                bm = m;
+            }
+        }
+    }
+    r->pdDelayRefUs = (uint16_t)constrainf(delayRef * 1e6f, 0.0f, 65535.0f);
+    if (bk < 0) {
+        return;                                       // nothing keeps the stock noise: D unchanged, lpf2 as decided
+    }
+    r->dMult10 = bm;
+    r->lpf2 = ftDtLpf2[bk];
+    r->lpf2Basis = LPF2_BY_DTERM;
+    r->pdDelayUs = (uint16_t)constrainf(best * 1e6f, 0.0f, 65535.0f);
+    r->dInPct = (uint8_t)constrainf(100.0f * sqrtf(dIn[bk][bm - FT_DT_M_MIN] / dInRef), 0.0f, 255.0f);
+    r->noisePct = (uint8_t)constrainf(100.0f * sqrtf(noise[bk][bm - FT_DT_M_MIN] / noiseRef), 0.0f, 255.0f);
+}
+
 static void decide(ftResult_t *r)
 {
     memset(r, 0, sizeof(*r));
@@ -1125,6 +1279,9 @@ static void decide(ftResult_t *r)
     } else {
         r->lpf2Basis = LPF2_NO_DATA;
     }
+    if (r->lpf2Basis != LPF2_NO_DATA) {
+        decideDterm(r, df);
+    }
     r->valid = ft.framesPre >= FT_MIN_FRAMES / 2 && ft.framesPost >= FT_MIN_FRAMES / 2;
 }
 
@@ -1147,6 +1304,13 @@ static void backupNow(void)
     b->simplifiedGyroFilter = g->simplified_gyro_filter;
     b->notch1Hz = g->gyro_soft_notch_hz_1;
     b->notch1Cutoff = g->gyro_soft_notch_cutoff_1;
+    const pidProfile_t *pp = currentPidProfile;
+    b->dtermLpf1DynMinHz = pp->dterm_lpf1_dyn_min_hz;
+    b->dtermLpf1DynMaxHz = pp->dterm_lpf1_dyn_max_hz;
+    b->dtermLpf1StaticHz = pp->dterm_lpf1_static_hz;
+    b->dtermLpf2StaticHz = pp->dterm_lpf2_static_hz;
+    b->dtermNotchHz = pp->dterm_notch_hz;
+    b->simplifiedDtermFilter = pp->simplified_dterm_filter;
     b->valid = 1;
 }
 
@@ -1170,8 +1334,21 @@ static void apply(const ftResult_t *r)
     g->gyro_lpf2_static_hz = r->lpf2;
     g->gyro_soft_notch_hz_1 = r->notchHz;
     g->gyro_soft_notch_cutoff_1 = r->notchHz ? r->notchCut : 0;
+    if (r->dMult10) {                                 // the D pair: the defaults times the multiplier, PT1, no notch
+        pidProfile_t *pp = currentPidProfile;
+        pp->simplified_dterm_filter = 0;
+        pp->dterm_lpf1_type = FILTER_PT1;
+        pp->dterm_lpf2_type = FILTER_PT1;
+        pp->dterm_lpf1_dyn_min_hz = DTERM_LPF1_DYN_MIN_HZ_DEFAULT * r->dMult10 / 10;
+        pp->dterm_lpf1_dyn_max_hz = DTERM_LPF1_DYN_MAX_HZ_DEFAULT * r->dMult10 / 10;
+        pp->dterm_lpf1_static_hz = pp->dterm_lpf1_dyn_min_hz;
+        pp->dterm_lpf2_static_hz = DTERM_LPF2_HZ_DEFAULT * r->dMult10 / 10;
+        pp->dterm_notch_hz = 0;
+        g->gyro_lpf2_type = FILTER_PT1;
+    }
     saveConfigAndNotify();
     gyroInitFilters();
+    pidInitFilters(currentPidProfile);
 }
 
 bool filterAutotuneRevert(void)
@@ -1194,6 +1371,13 @@ bool filterAutotuneRevert(void)
     g->simplified_gyro_filter = b->simplifiedGyroFilter;
     g->gyro_soft_notch_hz_1 = b->notch1Hz;
     g->gyro_soft_notch_cutoff_1 = b->notch1Cutoff;
+    pidProfile_t *pp = currentPidProfile;
+    pp->dterm_lpf1_dyn_min_hz = b->dtermLpf1DynMinHz;
+    pp->dterm_lpf1_dyn_max_hz = b->dtermLpf1DynMaxHz;
+    pp->dterm_lpf1_static_hz = b->dtermLpf1StaticHz;
+    pp->dterm_lpf2_static_hz = b->dtermLpf2StaticHz;
+    pp->dterm_notch_hz = b->dtermNotchHz;
+    pp->simplified_dterm_filter = b->simplifiedDtermFilter;
     filterTuneBackupMutable()->valid = 0;
     saveConfigAndNotify();
     gyroInitFilters();
@@ -1216,6 +1400,8 @@ static void resetSession(void)
         memset(ftb->welchPre, 0, sizeof(ftb->welchPre));
     }
     ft.frames = ft.framesPre = ft.framesPost = 0;
+    ft.thrSum = 0.0f;
+    ft.thrN = 0;
     ft.haveFloor1 = false;
     memset(ft.rotFrameSum, 0, sizeof(ft.rotFrameSum));
     ft.compFs = 0.0f;                                // the filters may have changed (autotune applied)
@@ -1360,6 +1546,8 @@ void filterAutotuneUpdate(timeUs_t currentTimeUs)
             return;
         }
         ft.fs = (FT_N - 1) * 1e6f / dtUs;
+        ft.thrSum += 0.5f * (ft.thrMin + ft.thrMax);   // the hover throttle: the dynamic lowpass cutoffs
+        ft.thrN++;
     }
     if (fftStep()) {
         if (++ft.job >= 3) {
@@ -1543,6 +1731,15 @@ void filterAutotuneWriteStatus(sbuf_t *dst)
     sbufWriteU8(dst, signalChannels());              // FILTER_TUNE_SIGNAL_*: beeper pin, LED strip, OSD
     sbufWriteU16(dst, ft.framesCarried);             // of the frames, from earlier flights (FILTER_TUNE_PARTIAL)
     sbufWriteU8(dst, ft.flightsCarried);
+    // the D-term filters: proposed multiplier x 10 (0 = unchanged), the current D pair, delays and ratios
+    sbufWriteU8(dst, r.dMult10);
+    sbufWriteU16(dst, currentPidProfile->dterm_lpf1_dyn_min_hz);
+    sbufWriteU16(dst, currentPidProfile->dterm_lpf1_dyn_max_hz);
+    sbufWriteU16(dst, currentPidProfile->dterm_lpf2_static_hz);
+    sbufWriteU16(dst, r.pdDelayUs);
+    sbufWriteU16(dst, r.pdDelayRefUs);
+    sbufWriteU8(dst, r.dInPct);
+    sbufWriteU8(dst, r.noisePct);
 }
 
 void frameMapWrite(sbuf_t *dst)

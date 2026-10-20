@@ -78,6 +78,9 @@ typedef struct filterTuneBackup_s {
     uint16_t notch1Hz;
     uint16_t notch1Cutoff;
     uint16_t rpmFadeRangeHz;
+    // the D-term filters of the current PID profile
+    uint16_t dtermLpf1DynMinHz, dtermLpf1DynMaxHz, dtermLpf1StaticHz, dtermLpf2StaticHz, dtermNotchHz;
+    uint8_t simplifiedDtermFilter;
 } filterTuneBackup_t;
 
 PG_DECLARE(filterTuneBackup_t, filterTuneBackup);
