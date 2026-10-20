@@ -51,14 +51,19 @@
 
 #include "common/filter.h"
 #include "common/maths.h"
+#include "common/printf.h"
 #include "common/utils.h"
 #include "config/config.h"
+#include "config/feature.h"
 #include "drivers/dshot.h"
 #include "drivers/time.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 #include "io/beeper.h"
+#include "io/ledstrip.h"
+#include "osd/osd.h"
+#include "pg/beeper_dev.h"
 #include "pg/dyn_notch.h"
 #include "pg/pg_ids.h"
 #include "pg/rpm_filter.h"
@@ -1287,6 +1292,109 @@ void filterAutotuneUpdate(timeUs_t currentTimeUs)
     }
 }
 
+// ---------------- pilot signals ----------------
+
+bool filterAutotuneLedSignal(timeUs_t now, filterTuneLed_e *led)
+{
+    if (!IS_RC_MODE_ACTIVE(BOXFILTERTUNE)) {
+        return false;
+    }
+    const uint32_t ms = now / 1000;
+    const bool slow = (ms % 1000) < 500;              // 1 Hz
+    const bool fast = (ms % 250) < 125;               // 4 Hz
+    switch (ft.state) {
+    case FILTER_TUNE_WAITING:                          // armed, not a steady hover yet
+        *led = slow ? FILTER_TUNE_LED_BLUE : FILTER_TUNE_LED_OFF;
+        return true;
+    case FILTER_TUNE_COLLECTING:
+        *led = fast ? FILTER_TUNE_LED_BLUE : FILTER_TUNE_LED_OFF;
+        return true;
+    case FILTER_TUNE_READY:                            // land and disarm with the mode on
+        *led = FILTER_TUNE_LED_GREEN;
+        return true;
+    case FILTER_TUNE_APPLIED:
+        *led = slow ? FILTER_TUNE_LED_GREEN : FILTER_TUNE_LED_OFF;
+        return true;
+    case FILTER_TUNE_DISCARDED:                        // disarmed with the mode on but too few frames
+        *led = FILTER_TUNE_LED_RED;
+        return true;
+    case FILTER_TUNE_NO_MAP:
+    case FILTER_TUNE_NO_TELEMETRY:
+        *led = fast ? FILTER_TUNE_LED_RED : FILTER_TUNE_LED_OFF;
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool filterAutotuneOsdWarning(char *text, bool *blinking, bool *critical)
+{
+    if (!IS_RC_MODE_ACTIVE(BOXFILTERTUNE)) {
+        return false;
+    }
+    *blinking = false;
+    *critical = false;
+    switch (ft.state) {
+    case FILTER_TUNE_WAITING:
+    case FILTER_TUNE_COLLECTING:
+        if (ft.frames == 0) {
+            tfp_sprintf(text, "FILTER TUNE HOVER");
+        } else {
+            tfp_sprintf(text, "FILTER TUNE %d/%d", MIN(ft.frames, FT_MIN_FRAMES - 1), FT_MIN_FRAMES);
+        }
+        return true;
+    case FILTER_TUNE_READY:
+        tfp_sprintf(text, "FILTER TUNE READY");
+        *blinking = true;
+        return true;
+    case FILTER_TUNE_APPLIED:
+        tfp_sprintf(text, "FILTER TUNE SAVED");
+        return true;
+    case FILTER_TUNE_DISCARDED:
+        tfp_sprintf(text, "FILTER TUNE SHORT");
+        *critical = true;
+        return true;
+    case FILTER_TUNE_NO_MAP:
+        tfp_sprintf(text, "FILTER TUNE NO MAP");
+        *critical = true;
+        return true;
+    case FILTER_TUNE_NO_TELEMETRY:
+        tfp_sprintf(text, "FILTER TUNE NO RPM");
+        *critical = true;
+        return true;
+    default:
+        return false;
+    }
+}
+
+static uint8_t signalChannels(void)
+{
+    uint8_t ch = 0;
+#ifdef USE_BEEPER
+    if (beeperDevConfig()->ioTag != IO_TAG_NONE) {
+        ch |= FILTER_TUNE_SIGNAL_BEEPER;
+    }
+#endif
+#ifdef USE_LED_STRIP_STATUS_MODE
+    // some LED has the filter tune overlay, in the status profile
+    if (featureIsEnabled(FEATURE_LED_STRIP) && ledStripConfig()->ioTag != IO_TAG_NONE
+        && ledStripConfig()->ledstrip_profile == LED_PROFILE_STATUS) {
+        for (int i = 0; i < LED_STRIP_MAX_LENGTH; i++) {
+            if (ledGetOverlayBit(&ledStripStatusModeConfig()->ledConfigs[i], LED_OVERLAY_FILTER_TUNE)) {
+                ch |= FILTER_TUNE_SIGNAL_LED;
+                break;
+            }
+        }
+    }
+#endif
+#ifdef USE_OSD
+    if (featureIsEnabled(FEATURE_OSD) && osdGetDisplayPort(NULL) && osdWarnGetState(OSD_WARNING_FILTER_TUNE)) {
+        ch |= FILTER_TUNE_SIGNAL_OSD;
+    }
+#endif
+    return ch;
+}
+
 // ---------------- MSP ----------------
 
 void filterAutotuneWriteStatus(sbuf_t *dst)
@@ -1345,6 +1453,7 @@ void filterAutotuneWriteStatus(sbuf_t *dst)
     sbufWriteU16(dst, r.fade);                        // rpm_filter_fade_range_hz: proposed, current
     sbufWriteU16(dst, rpm->rpm_filter_fade_range_hz);
     sbufWriteU16(dst, lrintf(constrainf(r.trackErr * 1e5f, 0.0f, 65535.0f)));   // notch tracking error, 0.001 %
+    sbufWriteU8(dst, signalChannels());              // FILTER_TUNE_SIGNAL_*: beeper pin, LED strip, OSD
 }
 
 void frameMapWrite(sbuf_t *dst)

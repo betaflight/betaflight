@@ -103,6 +103,24 @@ void frameMapClear(void);
 void frameMapSetCable(const float *hz, int n);
 bool frameMapIsCable(float hz, float rel, float minHz);
 
+// What the pilot sees without the configurator while the FILTER TUNE mode is on: the LEDs with the filter tune
+// overlay (blinking blue while collecting, green when ready or applied, red when it cannot work) and an OSD warning.
+typedef enum {
+    FILTER_TUNE_LED_OFF = 0,        // the dark half of a blink
+    FILTER_TUNE_LED_BLUE,
+    FILTER_TUNE_LED_GREEN,
+    FILTER_TUNE_LED_RED,
+} filterTuneLed_e;
+
+#define FILTER_TUNE_SIGNAL_BEEPER   (1 << 0)    // MSP status: the channels this FC has for the signal
+#define FILTER_TUNE_SIGNAL_LED      (1 << 1)    // LEDs with the filter tune overlay
+#define FILTER_TUNE_SIGNAL_OSD      (1 << 2)
+
+// false: no signal now (mode off, or nothing to say), the LEDs show their usual colours
+bool filterAutotuneLedSignal(timeUs_t now, filterTuneLed_e *led);
+// false: no warning; else the text (up to 20 characters), and whether it blinks / is critical
+bool filterAutotuneOsdWarning(char *text, bool *blinking, bool *critical);
+
 void filterAutotuneWriteStatus(sbuf_t *dst);
 void frameMapWrite(sbuf_t *dst);
 

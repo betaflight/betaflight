@@ -46,6 +46,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
+#include "flight/filter_autotune.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/landing_wing.h"
@@ -415,6 +416,17 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
         *blinking = true;
         return;
+    }
+#endif
+
+#ifdef USE_FILTER_AUTOTUNE
+    // the FILTER TUNE mode: progress, ready to apply, saved, or why it cannot work
+    if (osdWarnGetState(OSD_WARNING_FILTER_TUNE)) {
+        bool critical;
+        if (filterAutotuneOsdWarning(warningText, blinking, &critical)) {
+            *displayAttr = critical ? DISPLAYPORT_SEVERITY_CRITICAL : DISPLAYPORT_SEVERITY_INFO;
+            return;
+        }
     }
 #endif
 

@@ -55,6 +55,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
+#include "flight/filter_autotune.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -99,6 +100,7 @@ static bool ledStripEnabled = false;
 #define LED_OVERLAY_VTX_RATE_HZ 5
 #define LED_OVERLAY_INDICATOR_RATE_HZ 5
 #define LED_OVERLAY_WARNING_RATE_HZ 10
+#define LED_OVERLAY_FILTER_TUNE_RATE_HZ 16   // the 4 Hz blink of the filter tune signal
 
 #define LED_TASK_MARGIN                 1
 // Decay the estimated max task duration by 1/(1 << LED_EXEC_TIME_SHIFT) on every invocation
@@ -431,7 +433,8 @@ static const char overlayCodes[LED_OVERLAY_COUNT] = {
     [LED_OVERLAY_BLINK] = 'B',
     [LED_OVERLAY_VTX] = 'V',
     [LED_OVERLAY_INDICATOR] = 'I',
-    [LED_OVERLAY_WARNING] = 'W'
+    [LED_OVERLAY_WARNING] = 'W',
+    [LED_OVERLAY_FILTER_TUNE] = 'Z'
 };
 
 #define CHUNK_BUFFER_SIZE 11
@@ -808,6 +811,23 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
         applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_WARNING)), warningColor);
     }
 }
+
+#ifdef USE_FILTER_AUTOTUNE
+// the FILTER TUNE mode on the LEDs given the filter tune overlay: blue blinking while collecting, green when
+// ready or applied, red when it cannot work; the other LEDs keep their scheme
+static void applyLedFilterTuneLayer(bool updateNow, timeUs_t *timer)
+{
+    if (updateNow) {
+        *timer += HZ_TO_US(LED_OVERLAY_FILTER_TUNE_RATE_HZ);
+    }
+    filterTuneLed_e led;
+    if (filterAutotuneLedSignal(micros(), &led)) {
+        const hsvColor_t *color = led == FILTER_TUNE_LED_BLUE ? &HSV(BLUE)
+            : led == FILTER_TUNE_LED_GREEN ? &HSV(GREEN) : led == FILTER_TUNE_LED_RED ? &HSV(RED) : &HSV(BLACK);
+        applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_FILTER_TUNE)), color);
+    }
+}
+#endif
 
 #ifdef USE_VTX_COMMON
 
@@ -1195,6 +1215,9 @@ typedef enum {
     timBattery,
     timRssi,
     timWarning,
+#ifdef USE_FILTER_AUTOTUNE
+    timFilterTune,
+#endif
     timTimerCount
 } timId_e;
 
@@ -1220,6 +1243,9 @@ static applyLayerFn_timed* layerTable[] = {
     [timGps] = &applyLedGpsLayer,
 #endif
     [timWarning] = &applyLedWarningLayer,
+#ifdef USE_FILTER_AUTOTUNE
+    [timFilterTune] = &applyLedFilterTuneLayer,
+#endif
 #ifdef USE_VTX_COMMON
     [timVtx] = &applyLedVtxLayer,
 #endif
@@ -1249,6 +1275,9 @@ void updateRequiredOverlay(void)
     disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_VTX) << timVtx;
 #endif
     disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_INDICATOR) << timIndicator;
+#ifdef USE_FILTER_AUTOTUNE
+    disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_FILTER_TUNE) << timFilterTune;
+#endif
 }
 
 static ledProfileSequence_t applyStatusProfile(timeUs_t now)
