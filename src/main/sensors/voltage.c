@@ -35,6 +35,7 @@
 #include "config/config_reset.h"
 
 #include "drivers/adc.h"
+#include "drivers/dshot.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -270,29 +271,50 @@ void voltageMeterESCInit(void)
 
 void voltageMeterESCRefresh(void)
 {
+#ifdef USE_DSHOT_TELEMETRY
+    // Just check motor 0 EDT data validity
+    if (useDshotTelemetry &&
+        ((dshotTelemetryState.motorState[0].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) != 0) &&
+        (dshotTelemetryState.motorState[0].telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] > 0)) {
+            uint32_t accumulatedVoltage = 0;
+            for (int motor = 0; motor < getMotorCount(); motor++) {
+                accumulatedVoltage += dshotTelemetryState.motorState[motor].telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE];
+            }
+            voltageMeterESCState.voltageUnfiltered = 25 * accumulatedVoltage / getMotorCount();
+            voltageMeterESCState.voltageDisplayFiltered = pt1FilterApply(&voltageMeterESCState.displayFilter, voltageMeterESCState.voltageUnfiltered);
+    } else
+#endif
 #ifdef USE_ESC_SENSOR
-    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
-    if (escData) {
-        voltageMeterESCState.voltageUnfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage : 0;
-        voltageMeterESCState.voltageDisplayFiltered = pt1FilterApply(&voltageMeterESCState.displayFilter, voltageMeterESCState.voltageUnfiltered);
+    {
+        escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
+        if (escData) {
+            voltageMeterESCState.voltageUnfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage : 0;
+            voltageMeterESCState.voltageDisplayFiltered = pt1FilterApply(&voltageMeterESCState.displayFilter, voltageMeterESCState.voltageUnfiltered);
+        }
     }
 #endif
 }
 
 void voltageMeterESCReadMotor(uint8_t motorNumber, voltageMeter_t *voltageMeter)
 {
-#ifndef USE_ESC_SENSOR
-    UNUSED(motorNumber);
-    voltageMeterReset(voltageMeter);
-#else
-    escSensorData_t *escData = getEscSensorData(motorNumber);
-    if (escData) {
-        voltageMeter->unfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage : 0;
-        voltageMeter->displayFiltered = voltageMeter->unfiltered; // no filtering for ESC motors currently.
-    } else {
-        voltageMeterReset(voltageMeter);
+#ifdef USE_DSHOT_TELEMETRY
+    if (useDshotTelemetry &&
+        ((dshotTelemetryState.motorState[motorNumber].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) != 0) &&
+        (dshotTelemetryState.motorState[motorNumber].telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] > 0)) {
+            voltageMeter->unfiltered = 25 * dshotTelemetryState.motorState[motorNumber].telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE];
+            voltageMeter->displayFiltered = voltageMeter->unfiltered; // no filtering for ESC motors currently.
+    } else
+#endif
+#ifdef USE_ESC_SENSOR
+    {
+        escSensorData_t *escData = getEscSensorData(motorNumber);
+        if (escData) {
+            voltageMeter->unfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage : 0;
+            voltageMeter->displayFiltered = voltageMeter->unfiltered; // no filtering for ESC motors currently.
+        } else {
+            voltageMeterReset(voltageMeter);
+        }
     }
-
 #endif
 }
 
