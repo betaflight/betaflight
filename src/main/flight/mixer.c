@@ -127,34 +127,35 @@ static FAST_DATA_ZERO_INIT bool crashflipSuccess = false;
 
 static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 {
-    static uint16_t rcThrottlePrevious = 0;   // Store the last throttle direction for deadband transitions
+    static float rcThrottlePrevious = 0;   // Store the last throttle direction for deadband transitions
     static timeUs_t reversalTimeUs = 0; // time when motors last reversed in 3D mode
     static bool itermHoldActive = false; // set on reversal, so reversalTimeUs is only compared while fresh
     static float motorRangeMinIncrease = 0;
 
     float currentThrottleInputRange = 0;
     if (mixerRuntime.feature3dEnabled) {
-        uint16_t rcCommand3dDeadBandLow;
-        uint16_t rcCommand3dDeadBandHigh;
+        float rcCommand3dDeadBandLow;
+        float rcCommand3dDeadBandHigh;
+        const float midThrottle = rcUsToThrottle(rxConfig()->midrc);
 
         if (!ARMING_FLAG(ARMED)) {
-            rcThrottlePrevious = rxConfig()->midrc; // When disarmed set to mid_rc. It always results in positive direction after arming.
+            rcThrottlePrevious = midThrottle; // When disarmed set to mid_rc. It always results in positive direction after arming.
         }
 
         if (IS_RC_MODE_ACTIVE(BOX3D) || flight3DConfig()->switched_mode3d) {
-            // The min_check range is halved because the output throttle is scaled to 500us.
+            // The min_check range is halved because the output throttle is scaled to half the range.
             // So by using half of min_check we maintain the same low-throttle deadband
             // stick travel as normal non-3D mode.
-            const int mincheckOffset = (rxConfig()->mincheck - PWM_RANGE_MIN) / 2;
-            rcCommand3dDeadBandLow = rxConfig()->midrc - mincheckOffset;
-            rcCommand3dDeadBandHigh = rxConfig()->midrc + mincheckOffset;
+            const float mincheckOffset = rcUsSpanToThrottle((rxConfig()->mincheck - PWM_RANGE_MIN) / 2);
+            rcCommand3dDeadBandLow = midThrottle - mincheckOffset;
+            rcCommand3dDeadBandHigh = midThrottle + mincheckOffset;
         } else {
-            rcCommand3dDeadBandLow = rxConfig()->midrc - flight3DConfig()->deadband3d_throttle;
-            rcCommand3dDeadBandHigh = rxConfig()->midrc + flight3DConfig()->deadband3d_throttle;
+            rcCommand3dDeadBandLow = midThrottle - rcUsSpanToThrottle(flight3DConfig()->deadband3d_throttle);
+            rcCommand3dDeadBandHigh = midThrottle + rcUsSpanToThrottle(flight3DConfig()->deadband3d_throttle);
         }
 
-        const float rcCommandThrottleRange3dLow = rcCommand3dDeadBandLow - PWM_RANGE_MIN;
-        const float rcCommandThrottleRange3dHigh = PWM_RANGE_MAX - rcCommand3dDeadBandHigh;
+        const float rcCommandThrottleRange3dLow = rcCommand3dDeadBandLow;
+        const float rcCommandThrottleRange3dHigh = 1.0f - rcCommand3dDeadBandHigh;
         int8_t mixSign;
 
         if (rcCommand[THROTTLE] <= rcCommand3dDeadBandLow || isCrashFlipModeActive()) {
@@ -235,8 +236,8 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             }
         }
     } else {
-        throttle = rcCommand[THROTTLE] - PWM_RANGE_MIN + throttleAngleCorrection;
-        currentThrottleInputRange = PWM_RANGE;
+        throttle = rcCommand[THROTTLE] + rcUsSpanToThrottle(throttleAngleCorrection);
+        currentThrottleInputRange = 1.0f;
 #ifdef USE_DYN_IDLE
         if (mixerRuntime.dynIdleMinRps > 0.0f) {
             const float maxIncrease = wasThrottleRaised()
@@ -428,9 +429,9 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
     float pidOutput = p + mixer->rpmLimiterI + d;
 
     // Throttle limit learning
-    if (error > 0.0f && rcCommand[THROTTLE] < rxConfig()->maxcheck) {
+    if (error > 0.0f && rcCommand[THROTTLE] < rcUsToThrottle(rxConfig()->maxcheck)) {
         mixer->rpmLimiterThrottleScale *= 1.0f - 4.8f * pidGetDT();
-    } else if (pidOutput < -400.0f * pidGetDT() && lrintf(rcCommand[THROTTLE]) >= rxConfig()->maxcheck - STICK_HIGH_DEADBAND && !areMotorsSaturated()) { // Throttle accel corresponds with motor accel
+    } else if (pidOutput < -400.0f * pidGetDT() && rcCommand[THROTTLE] >= rcUsToThrottle(rxConfig()->maxcheck - STICK_HIGH_DEADBAND) && !areMotorsSaturated()) { // Throttle accel corresponds with motor accel
         mixer->rpmLimiterThrottleScale *= 1.0f + 3.2f * pidGetDT();
     }
     mixer->rpmLimiterThrottleScale = constrainf(mixer->rpmLimiterThrottleScale, 0.01f, 1.0f);
