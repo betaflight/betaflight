@@ -76,7 +76,7 @@
 #include "bench_scratch.h"
 #include "filter_autotune.h"
 
-PG_REGISTER(frameMapConfig_t, frameMapConfig, PG_FRAME_MAP_CONFIG, 1);
+PG_REGISTER(frameMapConfig_t, frameMapConfig, PG_FRAME_MAP_CONFIG, 2);
 PG_REGISTER(filterTuneBackup_t, filterTuneBackup, PG_FILTER_TUNE_BACKUP, 1);
 
 #define FT_N            512
@@ -220,20 +220,46 @@ void frameMapClear(void)
     ft.saveMap = true;
 }
 
-// two entries merged: unstable only while no stable tap entry is among them (a motor one makes it a frame mode anyway)
+// two entries merged: the tap part is unstable only while no stable tap entry is among them, the motor part is of
+// one run only while no repeated motor entry is among them
 static uint8_t mergeSrc(uint8_t a, uint8_t b)
 {
     const bool stableTap = ((a & FRAME_MAP_SRC_TAP) && !(a & FRAME_MAP_SRC_UNSTABLE))
         || ((b & FRAME_MAP_SRC_TAP) && !(b & FRAME_MAP_SRC_UNSTABLE));
-    const uint8_t v = (a | b) & ~FRAME_MAP_SRC_UNSTABLE;
-    return (v & FRAME_MAP_SRC_TAP) && !stableTap ? v | FRAME_MAP_SRC_UNSTABLE : v;
+    const bool repeatedMotor = ((a & FRAME_MAP_SRC_MOTOR) && !(a & FRAME_MAP_SRC_MOTOR_ONCE))
+        || ((b & FRAME_MAP_SRC_MOTOR) && !(b & FRAME_MAP_SRC_MOTOR_ONCE));
+    uint8_t v = (a | b) & ~(FRAME_MAP_SRC_UNSTABLE | FRAME_MAP_SRC_MOTOR_ONCE);
+    if ((v & FRAME_MAP_SRC_TAP) && !stableTap) {
+        v |= FRAME_MAP_SRC_UNSTABLE;
+    }
+    if ((v & FRAME_MAP_SRC_MOTOR) && !repeatedMotor) {
+        v |= FRAME_MAP_SRC_MOTOR_ONCE;
+    }
+    return v;
+}
+
+// an entry the filters can count on: a stable tap mode, or a motor mode two runs in a row saw
+static bool srcStable(uint8_t s)
+{
+    return ((s & FRAME_MAP_SRC_TAP) && !(s & FRAME_MAP_SRC_UNSTABLE))
+        || ((s & FRAME_MAP_SRC_MOTOR) && !(s & FRAME_MAP_SRC_MOTOR_ONCE));
 }
 
 void frameMapSetPart(uint8_t part, const float *hz, const bool *unstable, int n)
 {
     frameMapConfig_t *map = frameMapConfigMutable();
     const uint8_t src = part == FRAME_MAP_PART_TAPS ? FRAME_MAP_SRC_TAP : FRAME_MAP_SRC_MOTOR;
-    const uint8_t drop = part == FRAME_MAP_PART_TAPS ? FRAME_MAP_SRC_TAP | FRAME_MAP_SRC_UNSTABLE : FRAME_MAP_SRC_MOTOR;
+    const uint8_t drop = part == FRAME_MAP_PART_TAPS ? FRAME_MAP_SRC_TAP | FRAME_MAP_SRC_UNSTABLE
+        : FRAME_MAP_SRC_MOTOR | FRAME_MAP_SRC_MOTOR_ONCE;
+    // the motor part: a mode the run before had too (within FRAME_MAP_REPEAT_REL: a wide mode lands a bin apart)
+    // is repeated, else of this run only
+    float prevMotor[FRAME_MAP_MODES];
+    int nPrev = 0;
+    for (int i = 0; i < map->count && part == FRAME_MAP_PART_MOTORS; i++) {
+        if (map->modeSrc[i] & FRAME_MAP_SRC_MOTOR) {
+            prevMotor[nPrev++] = map->modeHz10[i] / 10.0f;
+        }
+    }
     float f[FRAME_MAP_MODES * 3];
     uint8_t s[FRAME_MAP_MODES * 3];
     int k = 0;
@@ -246,7 +272,15 @@ void frameMapSetPart(uint8_t part, const float *hz, const bool *unstable, int n)
     }
     for (int i = 0; i < n && k < FRAME_MAP_MODES * 3; i++) {
         f[k] = hz[i];
-        s[k++] = src | (unstable && unstable[i] ? FRAME_MAP_SRC_UNSTABLE : 0);
+        uint8_t flag = unstable && unstable[i] ? FRAME_MAP_SRC_UNSTABLE : 0;
+        if (part == FRAME_MAP_PART_MOTORS) {
+            bool repeated = false;
+            for (int j = 0; j < nPrev && !repeated; j++) {
+                repeated = fabsf(prevMotor[j] - hz[i]) <= FRAME_MAP_REPEAT_REL * hz[i];
+            }
+            flag = repeated ? 0 : FRAME_MAP_SRC_MOTOR_ONCE;
+        }
+        s[k++] = src | flag;
     }
     // sort, merge within 3 %
     for (int i = 1; i < k; i++) {
@@ -331,7 +365,7 @@ static bool inMap(float hz)
     return false;
 }
 
-// the frame map has modes near hz (8 %) and every one of them is an unstable tap mode
+// the frame map has modes near hz (8 %) and none of them is stable (unstable taps, motor modes of one run only)
 static bool onlyUnstableInMap(float hz)
 {
     const frameMapConfig_t *map = frameMapConfig();
@@ -339,7 +373,7 @@ static bool onlyUnstableInMap(float hz)
     for (int i = 0; i < map->count; i++) {
         const uint8_t s = map->modeSrc[i];
         if ((s & (FRAME_MAP_SRC_TAP | FRAME_MAP_SRC_MOTOR)) && fabsf(map->modeHz10[i] / 10.0f - hz) <= 0.08f * hz) {
-            if (!(s & FRAME_MAP_SRC_UNSTABLE)) {
+            if (srcStable(s)) {
                 return false;
             }
             any = true;
@@ -1532,6 +1566,9 @@ void frameMapWrite(sbuf_t *dst)
     sbufWriteU16(dst, map->rotHz10[0]);
     sbufWriteU16(dst, map->rotHz10[1]);
     sbufWriteU8(dst, map->spinCheck);
+    for (int k = 0; k < 3; k++) {
+        sbufWriteU8(dst, (uint8_t)map->runGravity[k]);   // appended: how the craft was held in the last motor run
+    }
 }
 
 #endif // USE_FILTER_AUTOTUNE

@@ -2038,10 +2038,11 @@ static void printFrameMap(dumpFlags_t dumpMask, const frameMapConfig_t *map, con
     }
     for (int i = 0; i < MIN(map->count, FRAME_MAP_MODES); i++) {
         const uint8_t src = map->modeSrc[i];
-        cliDumpPrintLinef(dumpMask, equalsDefault, "framemap mode %d %u.%u %s%s%s%s", i,
+        cliDumpPrintLinef(dumpMask, equalsDefault, "framemap mode %d %u.%u %s%s%s%s%s", i,
             map->modeHz10[i] / 10, map->modeHz10[i] % 10,
             (src & FRAME_MAP_SRC_TAP) ? "t" : "", (src & FRAME_MAP_SRC_MOTOR) ? "m" : "",
-            (src & FRAME_MAP_SRC_CABLE) ? "c" : "", (src & FRAME_MAP_SRC_UNSTABLE) ? "u" : "");
+            (src & FRAME_MAP_SRC_CABLE) ? "c" : "", (src & FRAME_MAP_SRC_UNSTABLE) ? "u" : "",
+            (src & FRAME_MAP_SRC_MOTOR_ONCE) ? "o" : "");
     }
     static const char axisNames[] = "rpy";
     for (int m = 0; m < FRAME_MAP_MOTORS; m++) {
@@ -2057,6 +2058,9 @@ static void printFrameMap(dumpFlags_t dumpMask, const frameMapConfig_t *map, con
     if (map->rotHz10[0] || map->rotHz10[1]) {
         cliDumpPrintLinef(dumpMask, equalsDefault, "framemap rot %u.%u %u.%u",
             map->rotHz10[0] / 10, map->rotHz10[0] % 10, map->rotHz10[1] / 10, map->rotHz10[1] % 10);
+    }
+    if (map->runGravity[0] || map->runGravity[1] || map->runGravity[2]) {
+        cliDumpPrintLinef(dumpMask, equalsDefault, "framemap att %d %d %d", map->runGravity[0], map->runGravity[1], map->runGravity[2]);
     }
     if (map->spinCheck & FRAME_MAP_SPIN_CHECKED) {
         char motors[2 * FRAME_MAP_MOTORS + 1] = "";
@@ -2133,7 +2137,7 @@ static void cliFrameMap(const char *cmdName, char *cmdline)
             }
         }
     } else if (strcasecmp(args[0], "mode") == 0) {
-        // mode <index> <hz> <t|m|c|u>: modes are kept ascending, so enter them in order ('?' is the CLI's completion key)
+        // mode <index> <hz> <t|m|c|u|o>: modes are kept ascending, so enter them in order ('?' is the CLI's completion key)
         const int i = n >= 2 ? atoi(args[1]) : -1;
         if (n != 4 || i < 0 || i >= FRAME_MAP_MODES || i > map->count || !parseFixed(args[2], 1, &a) || a > UINT16_MAX) {
             cliShowParseError(cmdName);
@@ -2142,7 +2146,7 @@ static void cliFrameMap(const char *cmdName, char *cmdline)
         uint8_t src = 0;
         for (const char *c = args[3]; *c; c++) {
             src |= *c == 't' ? FRAME_MAP_SRC_TAP : *c == 'm' ? FRAME_MAP_SRC_MOTOR : *c == 'c' ? FRAME_MAP_SRC_CABLE
-                : *c == 'u' ? FRAME_MAP_SRC_UNSTABLE : 0xFF;
+                : *c == 'u' ? FRAME_MAP_SRC_UNSTABLE : *c == 'o' ? FRAME_MAP_SRC_MOTOR_ONCE : 0xFF;
         }
         if (src == 0xFF || !(src & (FRAME_MAP_SRC_TAP | FRAME_MAP_SRC_MOTOR | FRAME_MAP_SRC_CABLE))) {
             cliShowParseError(cmdName);
@@ -2175,6 +2179,15 @@ static void cliFrameMap(const char *cmdName, char *cmdline)
         }
         map->rotHz10[0] = a;
         map->rotHz10[1] = b;
+    } else if (strcasecmp(args[0], "att") == 0) {
+        // att <x> <y> <z>: "down" in the body frame x 100 during the last motor run
+        if (n != 4) {
+            cliShowParseError(cmdName);
+            return;
+        }
+        for (int k = 0; k < 3; k++) {
+            map->runGravity[k] = (int8_t)constrain(atoi(args[1 + k]), -100, 100);
+        }
     } else if (strcasecmp(args[0], "spin") == 0) {
         // spin pass | spin fail <motor 1-4>...
         const bool fail = n >= 2 && strcasecmp(args[1], "fail") == 0;
@@ -8869,8 +8882,8 @@ const clicmd_t cmdTable[] = {
 #endif
 #ifdef USE_FILTER_AUTOTUNE
     CLI_COMMAND_DEF("framemap", "frame map and motor profile from the frame test",
-        "reset | parts [taps] [motors] | mode <i> <hz> <t|m|c|u> | peak <motor> <i> <hz> <gain> <r|p|y> <speeds> [c]\r\n"
-        "\trot <hz1> <hz2> | spin pass | spin fail <motor>...", cliFrameMap),
+        "reset | parts [taps] [motors] | mode <i> <hz> <t|m|c|u|o> | peak <motor> <i> <hz> <gain> <r|p|y> <speeds> [c]\r\n"
+        "\trot <hz1> <hz2> | att <x> <y> <z> | spin pass | spin fail <motor>...", cliFrameMap),
 #endif
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
 #ifdef USE_GPS

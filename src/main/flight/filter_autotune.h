@@ -37,6 +37,8 @@
 #define FRAME_MAP_SRC_CABLE     (1 << 2)    // a mode of the USB cable only (bench): never a frame mode
 #define FRAME_MAP_SRC_UNSTABLE  (1 << 3)    // a tap mode few taps saw, even at its best point: the FC on its mount, the
                                             // hand, a loose part; not a frame mode the filters should count on
+#define FRAME_MAP_SRC_MOTOR_ONCE (1 << 4)   // a motor mode of the last run only, not in the run before: the support or the
+                                            // hold (horizontal on a bench, vertical in the hand) rather than the frame
 
 // the motor profile of the last motor run: each motor's response peaks, the base rotations, the spin check
 #define FRAME_MAP_MOTORS        4
@@ -44,6 +46,7 @@
 #define FRAME_MAP_PEAK_AXIS     0x03        // motorPeakInfo: axis of the strongest answer
 #define FRAME_MAP_PEAK_SPEEDS   0x30        // seen at both base speeds (2) or one (1), << 4
 #define FRAME_MAP_PEAK_CABLE    0x80        // matches a cable mode
+#define FRAME_MAP_REPEAT_REL    0.06f       // a motor mode within this of one of the run before is repeated
 #define FRAME_MAP_SPIN_CHECKED  0x80        // spinCheck: the spin check ran; bits 0-3 the motors against the pattern
 
 typedef struct frameMapConfig_s {
@@ -57,6 +60,7 @@ typedef struct frameMapConfig_s {
     uint8_t motorPeakInfo[FRAME_MAP_MOTORS][FRAME_MAP_MOTOR_PEAKS];    // FRAME_MAP_PEAK_*
     uint16_t rotHz10[2];                    // mean rotation at each base speed, Hz x 10, 0 = unknown
     uint8_t spinCheck;                      // FRAME_MAP_SPIN_CHECKED | motors against the pattern
+    int8_t runGravity[3];                   // the last motor run: "down" in the body frame x 100 (how it was held)
 } frameMapConfig_t;
 
 PG_DECLARE(frameMapConfig_t, frameMapConfig);

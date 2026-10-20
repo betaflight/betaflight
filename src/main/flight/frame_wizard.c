@@ -124,6 +124,7 @@
 #define MOTOR_PEAK_PROMINENCE 1.5f     // the stronger side of a pair, or a single peak
 #define MOTOR_PEAK_PROMINENCE_LOW 1.2f // the weaker side of a pair
 #define MOTOR_PEAK_MIN_HZ     25.0f
+#define MOTOR_PEAK_MIN_REL    0.10f    // and at least this share of the motor's strongest peak
 #define CAND                  16
 #define ROT_HARMONICS         4        // rotation lines k x rotation, k = 1..4
 #define ROT_MASK_REL          0.03f    // a peak this close (relative, about one bin) to a rotation line is not a mode
@@ -1196,6 +1197,9 @@ static void storeMotorProfile(void)
     for (int b = 0; b < 2; b++) {
         map->rotHz10[b] = lrintf(fw.rotHz[b] * 10.0f);
     }
+    for (int k = 0; k < 3; k++) {                    // how the craft was held: "down" in the body frame
+        map->runGravity[k] = (int8_t)constrain(lrintf(fw.gravityRef[k] * 100.0f), -100, 100);
+    }
     map->spinCheck = 0;
     if (spinCheckReady() && fwb->u.m.spinDone) {
         int8_t sgn[MOTORS];
@@ -1758,9 +1762,16 @@ static void analyseCoarse(void)
                 const float tp = prom[j]; prom[j] = prom[j - 1]; prom[j - 1] = tp;
             }
         }
-        const int keep = MIN(nc, MOTOR_PEAKS);
-        for (int i = 0; i < keep; i++) {
-            fw.motorPeaks[m][i] = cand[i];
+        // a peak far below the motor's strongest is at the noise of the sweep: it came and went between runs
+        float maxAmp = 0.0f;
+        for (int i = 0; i < nc; i++) {
+            maxAmp = MAX(maxAmp, cand[i].amp);
+        }
+        int keep = 0;
+        for (int i = 0; i < nc && keep < MOTOR_PEAKS; i++) {
+            if (cand[i].amp >= MOTOR_PEAK_MIN_REL * maxAmp) {
+                fw.motorPeaks[m][keep++] = cand[i];
+            }
         }
         sortPeaksByFreq(fw.motorPeaks[m], keep);
         fw.motorPeakN[m] = keep;
