@@ -122,8 +122,6 @@ void motorThermalUpdate(const float *motorOutput, int motorCount)
 #endif
 #ifdef USE_DSHOT_TELEMETRY
     const bool haveRpm = isDshotTelemetryActive();
-#else
-    const bool haveRpm = false;
 #endif
     for (int i = 0; i < motorCount && i < MAX_SUPPORTED_MOTORS; i++) {
         float rpm;
