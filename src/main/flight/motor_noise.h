@@ -7,6 +7,8 @@
 #include <stdint.h>
 
 #define MOTOR_NOISE_BANDS 2   // band 0: > MOTOR_NOISE_HP0_HZ, band 1: > MOTOR_NOISE_HP1_HZ
+#define MOTOR_NOISE_HP0_HZ   80.0f    // below this the prop/bell still follows the command (not ripple)
+#define MOTOR_NOISE_HP1_HZ  300.0f    // winding inductance starts to filter the ripple above here
 
 void motorNoiseInit(float looptimeUs);
 void motorNoiseUpdate(const float *motorOutput, int motorCount);

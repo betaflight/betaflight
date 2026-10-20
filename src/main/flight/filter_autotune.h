@@ -92,6 +92,12 @@ typedef struct filterTuneBackup_s {
 
 PG_DECLARE(filterTuneBackup_t, filterTuneBackup);
 
+typedef struct filterTuneConfig_s {
+    uint8_t heat_budget_dk;     // the motor heating the filters may add over the stock ones (ripple, motor_thermal), 0.1 K
+} filterTuneConfig_t;
+
+PG_DECLARE(filterTuneConfig_t, filterTuneConfig);
+
 typedef enum {
     FILTER_TUNE_NO_MAP = 0,     // no frame test yet: the mode does nothing
     FILTER_TUNE_IDLE,           // mode off, or not armed
@@ -102,12 +108,16 @@ typedef enum {
     FILTER_TUNE_DISCARDED,      // disarmed with the mode off, or without enough frames
     FILTER_TUNE_NO_TELEMETRY,   // needs DShot rotation telemetry and the RPM filter
     FILTER_TUNE_PARTIAL,        // disarmed with the mode on but too few frames: kept, the next flight adds to them
+    FILTER_TUNE_EXCITING,       // enough frames: a short sweep on roll then pitch measures the loop crossover (ANGLE only)
 } filterTuneState_e;
 
 void filterAutotuneInit(void);
 // gyro filter loop: the gyro before and after the RPM filter
 void filterAutotunePush(const float pre[3], const float post[3]);
 void filterAutotuneUpdate(timeUs_t currentTimeUs);
+// PID loop, every axis: the sweep's setpoint offset (deg/s, zero unless exciting); gyroFiltered is what the PID sees
+float filterAutotuneExcitation(int axis, float gyroFiltered);
+extern volatile bool filterAutotuneSweepOn;   // the PID loop calls filterAutotuneExcitation only while set
 bool filterAutotuneRevert(void);
 
 // the frame wizard has new modes for its part (FRAME_MAP_PART_*): replace that part, keep the other; saved later.

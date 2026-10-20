@@ -59,10 +59,16 @@
 #include "drivers/dshot_command.h"
 #include "drivers/motor.h"
 #include "drivers/time.h"
+#include "fc/rc.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
+#include "flight/failsafe.h"
+#include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/mixer_init.h"
+#include "flight/motor_noise.h"
+#include "flight/motor_thermal.h"
 #include "flight/pid.h"
 #include "flight/pid_init.h"
 #include "io/beeper.h"
@@ -72,6 +78,7 @@
 #include "pg/dyn_notch.h"
 #include "pg/pg_ids.h"
 #include "pg/rpm_filter.h"
+#include "sensors/battery.h"
 #include "sensors/gyro.h"
 #include "sensors/gyro_init.h"
 
@@ -80,6 +87,10 @@
 
 PG_REGISTER(frameMapConfig_t, frameMapConfig, PG_FRAME_MAP_CONFIG, 2);
 PG_REGISTER(filterTuneBackup_t, filterTuneBackup, PG_FILTER_TUNE_BACKUP, 3);
+PG_REGISTER_WITH_RESET_TEMPLATE(filterTuneConfig_t, filterTuneConfig, PG_FILTER_TUNE_CONFIG, 0);
+PG_RESET_TEMPLATE(filterTuneConfig_t, filterTuneConfig,
+    .heat_budget_dk = 20,                             // 2 K: research/motor-thermal/dterm, negligible next to the hover heat
+);
 
 #define FT_N            512
 #define FT_BINS         (FT_N / 2 + 1)
@@ -156,6 +167,9 @@ typedef struct {
     uint8_t dMult10;
     uint16_t pdDelayUs, pdDelayRefUs;   // P+D output delay at FT_DT_REF_HZ: chosen, stock filters
     uint8_t dInPct, noisePct;   // D input and motor noise index against the stock filters, %
+    uint16_t crossoverHz10;     // the measured loop crossover the delay counts at, 0.1 Hz (0 = no sweep)
+    uint16_t idxMeas10, idxCur10;   // motor noise index: measured in the hover, the current chain's prediction, x 10
+    uint16_t heatRef100, heatChosen100; // ripple heating of the stock chain and of the choice, 0.01 K
     uint8_t lpf2Basis;          // LPF2_BY_*
     bool valid;
 } ftResult_t;
@@ -206,6 +220,7 @@ static struct {
     uint16_t framesPre, framesPost, frames;
     float thrSum;
     uint16_t thrN;
+    float vbatSum, noiseSum2;   // steady frames: battery voltage, the measured motor noise index squared (motor_noise.c)
     float rotFrameSum[FT_MOTORS];   // rotation of each motor in the frames before the RPM filter, summed
     float fs;
     // flow
@@ -977,21 +992,44 @@ static void decideRpm(ftResult_t *r, float X[FT_MOTORS][FT_ORDERS], const float 
                                                                             : (uint16_t)(lrintf(q / 10.0f) * 10);
 }
 
-// ---------------- D-term filters with gyro lpf2 ----------------
-// research/motor-thermal/dterm: without gyro lowpass the motor noise grows mostly through P, which the D filters do
-// not reach; a light gyro lpf2 with the D pair a little lower keeps the D input and the motor noise near the stock
-// filters while most of the delay win stays. Searched on the hover spectrum after the RPM filter: gyro lpf2 PT1 of
-// ftDtLpf2 x the D pair (dyn PT1 75..150 + PT1 150) times FT_DT_M_MIN..FT_DT_M_MAX / 10. Kept: D input <= the stock
-// chain's (BF default gyro and D lowpass, the notches as decided), motor noise index <= FT_DT_NOISE_MAX x its;
-// chosen: the least P+D output delay at FT_DT_REF_HZ. None passing: D unchanged, lpf2 as decided before.
+// ---------------- the loop crossover, by a short sweep ----------------
+// The P+D delay counts at the craft's own loop crossover, which a passive hover cannot give (the craft hardly moves,
+// thrust -> rotation drowns in vibration). Once the noise frames are in, in ANGLE with the sticks centred, a small
+// sweep (FT_SWEEP_ANGLE_DEG at FT_SWEEP_F0, less above, FT_SWEEP_F0..F1 Hz, nothing slow) goes on the rate setpoint of roll,
+// then pitch. With D on the gyro (BF), the gyro the PID sees answers the setpoint as T = Cr Q / (1 + C Q), Cr = P + I
+// (setpoint path), C = Cr + D (feedback), Q = the craft with the gyro filters: Q = T / (Cr - T C), L = C Q, crossover
+// where |L| = 1. Sticks, throttle, attitude, rate, mode or arming off its limits ends the sweep at once.
 
-static const uint16_t ftDtLpf2[] = { 0, 1000, 800, 650, 500 };
-#define FT_DT_M_MIN      5
-#define FT_DT_M_MAX      15
-#define FT_DT_NOISE_MAX  1.15f
-#define FT_DT_REF_HZ     50.0f
-#define FT_DT_HP_HZ      80.0f              // the motor noise index (motor_noise.c): what the motors cannot follow
-#define FT_DT_EXPO       5                  // dynamic lowpass curve expo (BF default)
+static const float ftIdHz[] = { 10, 14, 20, 28, 40, 56, 80, 112 };
+#define FT_ID_N            ((int)ARRAYLEN(ftIdHz))
+#define FT_SWEEP_F0        8.0f
+#define FT_SWEEP_F1        125.0f
+#define FT_SWEEP_S         6.0f
+#define FT_SWEEP_RAMP_S    0.3f
+#define FT_SWEEP_SETTLE_S  1.0f
+#define FT_SWEEP_ANGLE_DEG 0.5f              // the swing at FT_SWEEP_F0, less above (amplitude / 2 pi f). Host, closed-loop model
+                                              // with the noisiest 5" hover: crossover within 3.5 % at 0.1 deg, 1.3 % at 0.5,
+                                              // 1 % at 1 (the grid interpolation left)
+#define FT_SWEEP_STICK     0.1f               // stick deflection that ends it
+#define FT_SWEEP_THR       0.08f              // throttle change that ends it
+#define FT_SWEEP_TILT_DD   150                // attitude change that ends it, 0.1 deg
+#define FT_SWEEP_RATE_MAX  300.0f             // deg/s
+
+enum { SWEEP_NONE = 0, SWEEP_ROLL, SWEEP_SETTLE, SWEEP_PITCH, SWEEP_DONE, SWEEP_ABORTED };
+enum { SWEEP_END_NONE = 0, SWEEP_END_STICKS, SWEEP_END_THROTTLE, SWEEP_END_ATTITUDE, SWEEP_END_RATE, SWEEP_END_MODE };
+
+static struct {
+    volatile uint8_t phase;
+    uint8_t endReason;
+    bool tried;
+    float t, ph, r, amp;
+    float pr[FT_ID_N], pi[FT_ID_N], dr[FT_ID_N], di[FT_ID_N];
+    float rr[FT_ID_N], ri[FT_ID_N], yr[FT_ID_N], yi[FT_ID_N];
+    float fNow;                             // the sweep's frequency now
+    float fc[2], pmDeg[2];                  // per axis, 0 = not found
+    int16_t att0[2];
+    float thr0;
+} ftx;
 
 typedef struct { float re, im; } ftCplx_t;
 
@@ -1000,17 +1038,228 @@ static ftCplx_t cmul(ftCplx_t a, ftCplx_t b)
     return (ftCplx_t){ a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re };
 }
 
-static ftCplx_t pt1Cplx(float hz, float dt, float w)  // discrete PT1 at w = 2 pi f dt
+static ftCplx_t cdiv(ftCplx_t a, ftCplx_t b)
 {
-    const float k = pt1FilterGain(hz, dt), a = 1.0f - k;
-    const float dr = 1.0f - a * cos_approx(w), di = a * sin_approx(w), d2 = dr * dr + di * di;
-    return (ftCplx_t){ k * dr / d2, -k * di / d2 };
+    const float d = MAX(b.re * b.re + b.im * b.im, 1e-20f);
+    return (ftCplx_t){ (a.re * b.re + a.im * b.im) / d, (a.im * b.re - a.re * b.im) / d };
 }
 
 static float cabs2(ftCplx_t a)
 {
     return a.re * a.re + a.im * a.im;
 }
+
+static ftCplx_t pt1Cplx(float hz, float dt, float w)  // discrete PT1 at w = 2 pi f dt; hz 0 = none
+{
+    if (hz <= 0.0f) {
+        return (ftCplx_t){ 1.0f, 0.0f };
+    }
+    const float k = pt1FilterGain(hz, dt), a = 1.0f - k;
+    const float dr = 1.0f - a * cos_approx(w), di = a * sin_approx(w), d2 = dr * dr + di * di;
+    return (ftCplx_t){ k * dr / d2, -k * di / d2 };
+}
+
+static float hoverThrottle(void)
+{
+    return ft.thrN ? constrainf(ft.thrSum / ft.thrN, 0.0f, 1.0f) : 0.3f;
+}
+
+// the D-term lowpass pair of a profile at the hover throttle (PT1 assumed, as the autotune sets)
+static ftCplx_t dtermCplx(float dynMin, float dynMax, float stat, float lpf2, float dtP, float w)
+{
+    const float c1 = dynMin > 0.0f ? dynLpfCutoffFreq(hoverThrottle(), dynMin, dynMax, currentPidProfile->dterm_lpf1_dyn_expo) : stat;
+    return cmul(pt1Cplx(c1, dtP, w), pt1Cplx(lpf2, dtP, w));
+}
+
+// each grid frequency is summed only while the sweep is within half a grid step of it: its dwell, not the whole sweep's
+// noise (host: 2.5x less crossover error at the same amplitude)
+static bool sweepGate(int j)
+{
+    const float half = sqrtf(ftIdHz[1] / ftIdHz[0]);
+    return ftx.fNow >= ftIdHz[j] / half && ftx.fNow < ftIdHz[j] * half;
+}
+
+static void sweepStartAxis(uint8_t phase)
+{
+    const float dt = pidGetDT();
+    ftx.t = ftx.ph = ftx.r = 0.0f;
+    for (int j = 0; j < FT_ID_N; j++) {
+        const float w = 2.0f * M_PIf * ftIdHz[j] * dt;
+        ftx.pr[j] = 1.0f; ftx.pi[j] = 0.0f;
+        ftx.dr[j] = cosf(w); ftx.di[j] = -sinf(w);      // e^{-j w}: the phasor of the DFT
+        ftx.rr[j] = ftx.ri[j] = ftx.yr[j] = ftx.yi[j] = 0.0f;
+    }
+    ftx.phase = phase;
+    filterAutotuneSweepOn = true;
+}
+
+static void sweepCrossover(int axis)
+{
+    const pidProfile_t *pp = currentPidProfile;
+    const float kp = PTERM_SCALE * pp->pid[axis].P, ki = ITERM_SCALE * pp->pid[axis].I, kd = DTERM_SCALE * pp->pid[axis].D;
+    const float dtP = pidGetDT(), fp = 1.0f / dtP;
+    float prevMag = 0.0f, prevPh = 0.0f;
+    ftx.fc[axis] = ftx.pmDeg[axis] = 0.0f;
+    for (int j = 0; j < FT_ID_N; j++) {
+        if (ftx.rr[j] * ftx.rr[j] + ftx.ri[j] * ftx.ri[j] <= 1e-6f) {
+            continue;
+        }
+        const float w = 2.0f * M_PIf * ftIdHz[j], wd = w * dtP;
+        const ftCplx_t t = cdiv((ftCplx_t){ ftx.yr[j], ftx.yi[j] }, (ftCplx_t){ ftx.rr[j], ftx.ri[j] });
+        const ftCplx_t cr = { kp, -ki / w };
+        const ftCplx_t der = { fp * (1.0f - cos_approx(wd)), fp * sin_approx(wd) };
+        const ftCplx_t dd = cmul(der, dtermCplx(pp->dterm_lpf1_dyn_min_hz, pp->dterm_lpf1_dyn_max_hz, pp->dterm_lpf1_static_hz,
+            pp->dterm_lpf2_static_hz, dtP, wd));
+        const ftCplx_t c = { cr.re + kd * dd.re, cr.im + kd * dd.im };
+        const ftCplx_t tc = cmul(t, c);
+        const ftCplx_t q = cdiv(t, (ftCplx_t){ cr.re - tc.re, cr.im - tc.im });
+        const ftCplx_t l = cmul(c, q);
+        const float mag = sqrtf(cabs2(l)), ph = atan2_approx(l.im, l.re);
+        if (j > 0 && prevMag >= 1.0f && mag < 1.0f) {   // the first crossing down: log interpolation
+            const float x = logf(prevMag) / (logf(prevMag) - logf(MAX(mag, 1e-6f)));
+            ftx.fc[axis] = ftIdHz[j - 1] * powf(ftIdHz[j] / ftIdHz[j - 1], x);
+            ftx.pmDeg[axis] = 180.0f + RADIANS_TO_DEGREES(prevPh + x * (ph - prevPh));
+            break;
+        }
+        prevMag = mag;
+        prevPh = ph;
+    }
+}
+
+volatile bool filterAutotuneSweepOn;
+
+NOINLINE float filterAutotuneExcitation(int axis, float gyroFiltered)
+{
+    const uint8_t phase = ftx.phase;
+    if (phase != SWEEP_ROLL && phase != SWEEP_PITCH && phase != SWEEP_SETTLE) {
+        return 0.0f;
+    }
+    if (axis == FD_ROLL) {                            // once a loop: the next sample of the sweep
+        const float dt = pidGetDT();
+        ftx.t += dt;
+        if (phase == SWEEP_SETTLE) {
+            if (ftx.t >= FT_SWEEP_SETTLE_S) {
+                sweepStartAxis(SWEEP_PITCH);
+            }
+            return 0.0f;
+        }
+        if (ftx.t >= FT_SWEEP_S) {
+            const int a = phase == SWEEP_PITCH ? FD_PITCH : FD_ROLL;
+            sweepCrossover(a);
+            if (phase == SWEEP_ROLL) {
+                ftx.t = 0.0f;
+                ftx.phase = SWEEP_SETTLE;
+            } else {
+                ftx.phase = SWEEP_DONE;
+                filterAutotuneSweepOn = false;
+            }
+            ftx.r = 0.0f;
+            return 0.0f;
+        }
+        for (int j = 0; j < FT_ID_N; j++) {           // phasors to this sample
+            const float pr = ftx.pr[j] * ftx.dr[j] - ftx.pi[j] * ftx.di[j];
+            ftx.pi[j] = ftx.pr[j] * ftx.di[j] + ftx.pi[j] * ftx.dr[j];
+            ftx.pr[j] = pr;
+        }
+        const float k = logf(FT_SWEEP_F1 / FT_SWEEP_F0) / FT_SWEEP_S;
+        ftx.ph += 2.0f * M_PIf * FT_SWEEP_F0 * expf(k * ftx.t) * dt;
+        if (ftx.ph > M_PIf) {
+            ftx.ph -= 2.0f * M_PIf;
+        }
+        const float taper = MIN(1.0f, MIN(ftx.t, FT_SWEEP_S - ftx.t) / FT_SWEEP_RAMP_S);
+        ftx.r = ftx.amp * taper * sin_approx(ftx.ph);
+        ftx.fNow = FT_SWEEP_F0 * expf(k * ftx.t);
+        for (int j = 0; j < FT_ID_N; j++) {
+            if (sweepGate(j)) {
+                ftx.rr[j] += ftx.r * ftx.pr[j];
+                ftx.ri[j] += ftx.r * ftx.pi[j];
+            }
+        }
+    }
+    const int active = phase == SWEEP_PITCH ? FD_PITCH : FD_ROLL;
+    if (phase == SWEEP_SETTLE || axis != active) {
+        return 0.0f;
+    }
+    for (int j = 0; j < FT_ID_N; j++) {
+        if (sweepGate(j)) {
+            ftx.yr[j] += gyroFiltered * ftx.pr[j];
+            ftx.yi[j] += gyroFiltered * ftx.pi[j];
+        }
+    }
+    return ftx.r;
+}
+
+static bool sweepSticksCentred(void)
+{
+    return getRcDeflectionAbs(FD_ROLL) < FT_SWEEP_STICK && getRcDeflectionAbs(FD_PITCH) < FT_SWEEP_STICK
+        && getRcDeflectionAbs(FD_YAW) < FT_SWEEP_STICK;
+}
+
+// the task: start the sweep once the frames are in (ANGLE, sticks centred), end it on anything off its limits
+static void sweepService(bool modeOn)
+{
+    const uint8_t phase = ftx.phase;
+    if (phase == SWEEP_ROLL || phase == SWEEP_SETTLE || phase == SWEEP_PITCH) {
+        uint8_t end = SWEEP_END_NONE;
+        if (!ARMING_FLAG(ARMED) || !modeOn || !FLIGHT_MODE(ANGLE_MODE) || failsafeIsActive()) {
+            end = SWEEP_END_MODE;
+        } else if (!sweepSticksCentred()) {
+            end = SWEEP_END_STICKS;
+        } else if (fabsf(rcCommand[THROTTLE] - ftx.thr0) > FT_SWEEP_THR) {
+            end = SWEEP_END_THROTTLE;
+        } else if (ABS(attitude.values.roll - ftx.att0[0]) > FT_SWEEP_TILT_DD || ABS(attitude.values.pitch - ftx.att0[1]) > FT_SWEEP_TILT_DD) {
+            end = SWEEP_END_ATTITUDE;
+        } else if (fabsf(gyro.gyroADCf[FD_ROLL]) > FT_SWEEP_RATE_MAX || fabsf(gyro.gyroADCf[FD_PITCH]) > FT_SWEEP_RATE_MAX) {
+            end = SWEEP_END_RATE;
+        }
+        if (end != SWEEP_END_NONE) {
+            ftx.phase = SWEEP_ABORTED;                // the PID loop sees it at once: no more offset
+            ftx.endReason = end;
+            filterAutotuneSweepOn = false;
+        }
+    }
+}
+
+static bool sweepTryStart(void)
+{
+    if (ftx.tried || !FLIGHT_MODE(ANGLE_MODE) || !sweepSticksCentred()) {
+        return false;
+    }
+    ftx.tried = true;
+    ftx.amp = FT_SWEEP_ANGLE_DEG * 2.0f * M_PIf * FT_SWEEP_F0;   // deg/s
+    ftx.att0[0] = attitude.values.roll;
+    ftx.att0[1] = attitude.values.pitch;
+    ftx.thr0 = rcCommand[THROTTLE];
+    ftx.endReason = SWEEP_END_NONE;
+    sweepStartAxis(SWEEP_ROLL);
+    return true;
+}
+
+static bool sweepActive(void)
+{
+    return ftx.phase == SWEEP_ROLL || ftx.phase == SWEEP_SETTLE || ftx.phase == SWEEP_PITCH;
+}
+
+// the measured crossover: the mean of the axes that gave one, 0 = none
+static float sweepCrossoverHz(void)
+{
+    const int n = (ftx.fc[0] > 0.0f) + (ftx.fc[1] > 0.0f);
+    return n ? (ftx.fc[0] + ftx.fc[1]) / n : 0.0f;
+}
+
+// ---------------- D-term filters with gyro lpf2 ----------------
+// research/motor-thermal/dterm: without gyro lowpass the motor noise grows mostly through P, which the D filters do
+// not reach. Searched on the hover spectrum after the RPM filter: gyro lpf2 PT1 of ftDtLpf2 x the D pair (dyn PT1
+// 75..150 + PT1 150) times FT_DT_M_MIN..FT_DT_M_MAX / 10. Kept: the motor heating from the command ripple (motor_noise.c
+// index -> motor_thermal.c) at most filter_tune_heat_budget over the stock chain's; chosen: the least P+D output delay
+// at the measured loop crossover. The index is absolute: the hover spectrum as a PSD through the PID, plus what the
+// filters do not make (the measured index over the current chain's prediction). No crossover (no sweep) or no motor
+// model: D unchanged, lpf2 as decided before.
+
+static const uint16_t ftDtLpf2[] = { 0, 1000, 800, 650, 500 };
+#define FT_DT_M_MIN      5
+#define FT_DT_M_MAX      15
+#define FT_DT_EXPO       5                  // dynamic lowpass curve expo (BF default)
 
 static ftCplx_t notchCplx(float f, uint16_t hz, uint16_t cut)
 {
@@ -1019,7 +1268,7 @@ static ftCplx_t notchCplx(float f, uint16_t hz, uint16_t cut)
     }
     const float q = (float)hz * cut / ((float)hz * hz - (float)cut * cut);
     const float x = (float)hz * hz - f * f, y = f * hz / q;    // (w0^2 - w^2) / (w0^2 - w^2 + j w w0 / Q)
-    const float d2 = x * x + y * y;
+    const float d2 = MAX(x * x + y * y, 1e-12f);
     return (ftCplx_t){ x * x / d2, -x * y / d2 };
 }
 
@@ -1036,63 +1285,94 @@ static ftCplx_t gyroLpf2Cplx(float f, uint16_t hz, float dtG, int nAvg)
 
 static void decideDterm(ftResult_t *r, float df)
 {
+#if defined(USE_MOTOR_NOISE) && defined(USE_MOTOR_THERMAL)
     const pidProfile_t *pp = currentPidProfile;
     const float kp = PTERM_SCALE * 0.5f * (pp->pid[PID_ROLL].P + pp->pid[PID_PITCH].P);
     const float kd = DTERM_SCALE * 0.5f * (pp->pid[PID_ROLL].D + pp->pid[PID_PITCH].D);
     const float dtG = gyro.sampleLooptime * 1e-6f, dtP = gyro.targetLooptime * 1e-6f;
-    if (kd <= 0.0f || dtG <= 0.0f || dtP <= 0.0f || ft.thrN == 0) {
+    const float f0 = sweepCrossoverHz();
+    r->crossoverHz10 = lrintf(f0 * 10.0f);
+    if (kd <= 0.0f || dtG <= 0.0f || dtP <= 0.0f || ft.thrN == 0 || ft.framesPost == 0 || f0 <= 0.0f) {
         return;
     }
     const int nAvg = MAX(1, lrintf(dtP / dtG));
-    const float fp = 1.0f / dtP, thr = constrainf(ft.thrSum / ft.thrN, 0.0f, 1.0f);
+    const float fp = 1.0f / dtP, thr = hoverThrottle();
+    const gyroConfig_t *gc = gyroConfig();
     const float gLpf1Ref = dynLpfCutoffFreq(thr, GYRO_LPF1_DYN_MIN_HZ_DEFAULT, GYRO_LPF1_DYN_MAX_HZ_DEFAULT, FT_DT_EXPO);
+    const float gLpf1Cur = gc->gyro_lpf1_dyn_min_hz ? dynLpfCutoffFreq(thr, gc->gyro_lpf1_dyn_min_hz, gc->gyro_lpf1_dyn_max_hz, FT_DT_EXPO)
+        : gc->gyro_lpf1_static_hz;
     const float dLpf1Def = dynLpfCutoffFreq(thr, DTERM_LPF1_DYN_MIN_HZ_DEFAULT, DTERM_LPF1_DYN_MAX_HZ_DEFAULT, FT_DT_EXPO);
+    // the hover PSD of one axis: the welch sums are |X|^2 of a Hann window, three axes summed, over framesPost frames
+    const float psdScale = 2.0f / (ft.fs * FT_N * 0.375f * ft.framesPost * 3.0f);
+    float mixK = 0.0f;                                // the mean squared roll / pitch mix of a motor
+    for (int m = 0; m < FT_MOTORS; m++) {
+        mixK += sq(mixerRuntime.currentMixer[m].roll) + sq(mixerRuntime.currentMixer[m].pitch);
+    }
+    mixK /= FT_MOTORS;                                // idx^2 = mean(mix_roll^2 + mix_pitch^2) x the per-axis variance
     enum { NK = ARRAYLEN(ftDtLpf2), NM = FT_DT_M_MAX - FT_DT_M_MIN + 1 };
-    float noise[NK][NM], dIn[NK][NM], noiseRef = 0.0f, dInRef = 0.0f;
-    memset(noise, 0, sizeof(noise));
+    float var[NK][NM], dIn[NK][NM], varRef = 0.0f, dInRef = 0.0f, varCur = 0.0f;
+    memset(var, 0, sizeof(var));
     memset(dIn, 0, sizeof(dIn));
     for (int b = 1; b < FT_BINS; b++) {
-        const float f = b * df, wP = 2.0f * M_PIf * f * dtP;
-        const float s = (ftb->welch[0][b] + ftb->welch[1][b]) * cabs2(notchCplx(f, r->notchHz, r->notchCut));
-        const ftCplx_t hp = { 1.0f - pt1Cplx(FT_DT_HP_HZ, dtP, wP).re, -pt1Cplx(FT_DT_HP_HZ, dtP, wP).im };
-        const float hp2 = cabs2(hp);
+        const float f = b * df, wP = 2.0f * M_PIf * f * dtP, wG = 2.0f * M_PIf * f * dtG;
+        const float psd = (ftb->welch[0][b] + ftb->welch[1][b]) * psdScale * df;
+        const float s = psd * cabs2(notchCplx(f, r->notchHz, r->notchCut));
+        const ftCplx_t lp80 = pt1Cplx(MOTOR_NOISE_HP0_HZ, dtP, wP);
+        const float hp2 = cabs2((ftCplx_t){ 1.0f - lp80.re, -lp80.im });
         const ftCplx_t der = { fp * (1.0f - cos_approx(wP)), fp * sin_approx(wP) };
-        // the stock chain: gyro lpf1 dyn + lpf2 500, the D pair x1
-        const float gRef = cabs2(pt1Cplx(gLpf1Ref, dtP, wP)) * cabs2(pt1Cplx(GYRO_LPF2_HZ_DEFAULT, dtG, 2.0f * M_PIf * f * dtG));
+        // the stock chain: gyro lpf1 dyn + lpf2 500, the D pair x1; the current one as it flew
+        const float gRef = cabs2(pt1Cplx(gLpf1Ref, dtP, wP)) * cabs2(pt1Cplx(GYRO_LPF2_HZ_DEFAULT, dtG, wG));
+        const float gCur = cabs2(pt1Cplx(gLpf1Cur, dtP, wP)) * cabs2(gyroLpf2Cplx(f, gc->gyro_lpf2_static_hz, dtG, nAvg))
+            * cabs2(notchCplx(f, gc->gyro_soft_notch_hz_1, gc->gyro_soft_notch_cutoff_1))
+            * cabs2(notchCplx(f, gc->gyro_soft_notch_hz_2, gc->gyro_soft_notch_cutoff_2));
+        const ftCplx_t dCur = cmul(der, dtermCplx(pp->dterm_lpf1_dyn_min_hz, pp->dterm_lpf1_dyn_max_hz, pp->dterm_lpf1_static_hz,
+            pp->dterm_lpf2_static_hz, dtP, wP));
+        varCur += hp2 * cabs2((ftCplx_t){ kp + kd * dCur.re, kd * dCur.im }) * gCur * psd;
         for (int m = FT_DT_M_MIN; m <= FT_DT_M_MAX; m++) {
             const float mm = m * 0.1f;
-            const ftCplx_t hd = cmul(pt1Cplx(dLpf1Def * mm, dtP, wP), pt1Cplx(DTERM_LPF2_HZ_DEFAULT * mm, dtP, wP));
-            const ftCplx_t dpath = cmul(der, hd);
+            const ftCplx_t dpath = cmul(der, cmul(pt1Cplx(dLpf1Def * mm, dtP, wP), pt1Cplx(DTERM_LPF2_HZ_DEFAULT * mm, dtP, wP)));
             const float pd2 = cabs2((ftCplx_t){ kp + kd * dpath.re, kd * dpath.im });
             const float d2 = cabs2(dpath);
             if (m == 10) {
-                noiseRef += hp2 * pd2 * gRef * s;
+                varRef += hp2 * pd2 * gRef * s;
                 dInRef += d2 * gRef * s;
             }
             for (int k = 0; k < NK; k++) {
                 const float g = cabs2(gyroLpf2Cplx(f, ftDtLpf2[k], dtG, nAvg)) * s;
-                noise[k][m - FT_DT_M_MIN] += hp2 * pd2 * g;
+                var[k][m - FT_DT_M_MIN] += hp2 * pd2 * g;
                 dIn[k][m - FT_DT_M_MIN] += d2 * g;
             }
         }
     }
-    if (noiseRef <= 0.0f || dInRef <= 0.0f) {
+    if (varRef <= 0.0f || dInRef <= 0.0f) {
         return;
     }
-    // P+D output delay at FT_DT_REF_HZ against the unfiltered Kp + Kd s
-    const float f0 = FT_DT_REF_HZ, w0 = 2.0f * M_PIf * f0 * dtP;
+    // absolute: what the filters do not make is the measured index over the current chain's prediction
+    const float idxMeas2 = ft.noiseSum2 / ft.thrN, idxCur2 = mixK * varCur;
+    const float other2 = MAX(idxMeas2 - idxCur2, 0.0f);
+    float rpm = 0.0f;
+    for (int m = 0; m < FT_MOTORS; m++) {
+        rpm += ft.framesPre ? ft.rotFrameSum[m] / ft.framesPre * 60.0f / FT_MOTORS : 0.0f;
+    }
+    const float vbat = ft.vbatSum / ft.thrN;
+    const float heatRef = motorThermalRippleRise(sqrtf(mixK * varRef + other2), rpm, vbat);
+    const float budget = filterTuneConfig()->heat_budget_dk * 0.1f;
+    r->idxMeas10 = (uint16_t)constrainf(sqrtf(idxMeas2) * 10.0f, 0.0f, 65535.0f);
+    r->idxCur10 = (uint16_t)constrainf(sqrtf(idxCur2) * 10.0f, 0.0f, 65535.0f);
+    r->heatRef100 = (uint16_t)constrainf(heatRef * 100.0f, 0.0f, 65535.0f);
+    // P+D output delay at the crossover against the unfiltered Kp + Kd s
+    const float w0 = 2.0f * M_PIf * f0 * dtP;
     const ftCplx_t der0 = { fp * (1.0f - cos_approx(w0)), fp * sin_approx(w0) };
     const float phIdeal = atan2_approx(kd * 2.0f * M_PIf * f0, kp);
-    float best = 1e9f, delayRef = 0.0f;
+    float best = 1e9f, delayRef = 0.0f, bestHeat = 0.0f;
     int bk = -1, bm = -1;
-    for (int k = -1; k < NK; k++) {                   // -1: the stock chain, for the reference delay
+    for (int k = -1; k < (int)NK; k++) {              // -1: the stock chain, for the reference delay
         for (int m = FT_DT_M_MIN; m <= FT_DT_M_MAX; m++) {
             if (k < 0 && m != 10) {
                 continue;
             }
             const float mm = m * 0.1f;
-            const ftCplx_t hd = cmul(pt1Cplx((k < 0 ? dLpf1Def : dLpf1Def * mm), dtP, w0),
-                pt1Cplx(DTERM_LPF2_HZ_DEFAULT * mm, dtP, w0));
+            const ftCplx_t hd = cmul(pt1Cplx(dLpf1Def * mm, dtP, w0), pt1Cplx(DTERM_LPF2_HZ_DEFAULT * mm, dtP, w0));
             const ftCplx_t dp = cmul(der0, hd);
             ftCplx_t g = k < 0 ? cmul(pt1Cplx(gLpf1Ref, dtP, w0), pt1Cplx(GYRO_LPF2_HZ_DEFAULT, dtG, 2.0f * M_PIf * f0 * dtG))
                 : gyroLpf2Cplx(f0, ftDtLpf2[k], dtG, nAvg);
@@ -1104,23 +1384,30 @@ static void decideDterm(ftResult_t *r, float df)
                 continue;
             }
             const int i = m - FT_DT_M_MIN;
-            if (dIn[k][i] <= dInRef && noise[k][i] <= FT_DT_NOISE_MAX * noiseRef && delay < best) {
+            const float heat = motorThermalRippleRise(sqrtf(mixK * var[k][i] + other2), rpm, vbat);
+            if (heat <= heatRef + budget && delay < best) {
                 best = delay;
                 bk = k;
                 bm = m;
+                bestHeat = heat;
             }
         }
     }
     r->pdDelayRefUs = (uint16_t)constrainf(delayRef * 1e6f, 0.0f, 65535.0f);
     if (bk < 0) {
-        return;                                       // nothing keeps the stock noise: D unchanged, lpf2 as decided
+        return;                                       // nothing within the heat budget: D unchanged, lpf2 as decided
     }
     r->dMult10 = bm;
     r->lpf2 = ftDtLpf2[bk];
     r->lpf2Basis = LPF2_BY_DTERM;
     r->pdDelayUs = (uint16_t)constrainf(best * 1e6f, 0.0f, 65535.0f);
+    r->heatChosen100 = (uint16_t)constrainf(bestHeat * 100.0f, 0.0f, 65535.0f);
     r->dInPct = (uint8_t)constrainf(100.0f * sqrtf(dIn[bk][bm - FT_DT_M_MIN] / dInRef), 0.0f, 255.0f);
-    r->noisePct = (uint8_t)constrainf(100.0f * sqrtf(noise[bk][bm - FT_DT_M_MIN] / noiseRef), 0.0f, 255.0f);
+    r->noisePct = (uint8_t)constrainf(100.0f * sqrtf(var[bk][bm - FT_DT_M_MIN] / varRef), 0.0f, 255.0f);
+#else
+    UNUSED(r);
+    UNUSED(df);
+#endif
 }
 
 static void decide(ftResult_t *r)
@@ -1454,6 +1741,9 @@ static void resetSession(void)
     ft.frames = ft.framesPre = ft.framesPost = 0;
     ft.thrSum = 0.0f;
     ft.thrN = 0;
+    ft.vbatSum = ft.noiseSum2 = 0.0f;
+    memset(&ftx, 0, sizeof(ftx));
+    filterAutotuneSweepOn = false;
     ft.haveFloor1 = false;
     memset(ft.rotFrameSum, 0, sizeof(ft.rotFrameSum));
     ft.compFs = 0.0f;                                // the filters may have changed (autotune applied)
@@ -1520,7 +1810,8 @@ void filterAutotuneUpdate(timeUs_t currentTimeUs)
     // disarm: apply, or keep the frames for the next flight, or discard
     if (ft.wasArmed && !armed) {
         filterAutotuneCollecting = false;
-        if (ft.state == FILTER_TUNE_COLLECTING || ft.state == FILTER_TUNE_READY || ft.state == FILTER_TUNE_WAITING) {
+        if (ft.state == FILTER_TUNE_COLLECTING || ft.state == FILTER_TUNE_READY || ft.state == FILTER_TUNE_WAITING
+            || ft.state == FILTER_TUNE_EXCITING) {
             decide(&ft.result);
             if (modeOn && ft.result.valid) {
                 apply(&ft.result);
@@ -1548,6 +1839,7 @@ void filterAutotuneUpdate(timeUs_t currentTimeUs)
     }
     ft.wasArmed = armed;
     serviceBeacons(armed);
+    sweepService(modeOn);
 
     if (!mapReady()) {
         ft.state = FILTER_TUNE_NO_MAP;
@@ -1569,6 +1861,21 @@ void filterAutotuneUpdate(timeUs_t currentTimeUs)
         return;
     }
 
+    // the sweep: no noise frames while it runs; once over (or ended), ready
+    if (ft.state == FILTER_TUNE_EXCITING) {
+        filterAutotuneCollecting = false;
+        if (ftx.phase == SWEEP_NONE) {
+            sweepTryStart();                          // waits for ANGLE and centred sticks
+        }
+        if (!sweepActive() && ftx.phase != SWEEP_NONE) {
+            ft.state = FILTER_TUNE_READY;
+            if (!ft.readyBeeped) {
+                ft.readyBeeped = true;
+                beeperConfirmationBeeps(2);           // enough: land and disarm with the mode on to apply
+            }
+        }
+        return;
+    }
     if (!scratchOwned()) {                            // the buffers: from the frame wizard (disarmed only) to us
         ftb = benchScratchClaim(BENCH_SCRATCH_FILTER_AUTOTUNE);
         const uint8_t sig = ft.sig;
@@ -1599,17 +1906,32 @@ void filterAutotuneUpdate(timeUs_t currentTimeUs)
         }
         ft.fs = (FT_N - 1) * 1e6f / dtUs;
         ft.thrSum += 0.5f * (ft.thrMin + ft.thrMax);   // the hover throttle: the dynamic lowpass cutoffs
+        ft.vbatSum += getBatteryVoltage() * 0.01f;
+#ifdef USE_MOTOR_NOISE
+        float n2 = 0.0f;
+        for (int m = 0; m < FT_MOTORS; m++) {
+            n2 += sq(motorNoiseRms(m, 0));
+        }
+        ft.noiseSum2 += n2 / FT_MOTORS;
+#endif
         ft.thrN++;
     }
     if (fftStep()) {
         if (++ft.job >= 3) {
             analyseFrame();
             resetFrame();
-            ft.state = ft.framesPre >= FT_MIN_FRAMES / 2 && ft.framesPost >= FT_MIN_FRAMES / 2
-                ? FILTER_TUNE_READY : FILTER_TUNE_COLLECTING;
-            if (ft.state == FILTER_TUNE_READY && !ft.readyBeeped) {
-                ft.readyBeeped = true;
-                beeperConfirmationBeeps(2);               // enough: land and disarm with the mode on to apply
+            const bool enough = ft.framesPre >= FT_MIN_FRAMES / 2 && ft.framesPost >= FT_MIN_FRAMES / 2;
+            if (!enough) {
+                ft.state = FILTER_TUNE_COLLECTING;
+            } else if (!ftx.tried) {
+                ft.state = FILTER_TUNE_EXCITING;          // the frames are in: the sweep next (ANGLE, sticks centred)
+                sweepTryStart();
+            } else {
+                ft.state = FILTER_TUNE_READY;
+                if (!ft.readyBeeped) {
+                    ft.readyBeeped = true;
+                    beeperConfirmationBeeps(2);           // enough: land and disarm with the mode on to apply
+                }
             }
         }
     }
@@ -1631,6 +1953,7 @@ bool filterAutotuneLedSignal(timeUs_t now, filterTuneLed_e *led)
         *led = slow ? FILTER_TUNE_LED_BLUE : FILTER_TUNE_LED_OFF;
         return true;
     case FILTER_TUNE_COLLECTING:
+    case FILTER_TUNE_EXCITING:
         *led = fast ? FILTER_TUNE_LED_BLUE : FILTER_TUNE_LED_OFF;
         return true;
     case FILTER_TUNE_READY:                            // land and disarm with the mode on
@@ -1669,6 +1992,14 @@ bool filterAutotuneOsdWarning(char *text, bool *blinking, bool *critical)
         return true;
     case FILTER_TUNE_PARTIAL:
         tfp_sprintf(text, "FILTER TUNE MORE %d/%d", MIN(ft.frames, FT_MIN_FRAMES - 1), FT_MIN_FRAMES);
+        return true;
+    case FILTER_TUNE_EXCITING:
+        if (ftx.phase == SWEEP_NONE && !FLIGHT_MODE(ANGLE_MODE)) {
+            tfp_sprintf(text, "FILTER TUNE ANGLE");   // the sweep needs ANGLE
+            *blinking = true;
+        } else {
+            tfp_sprintf(text, "FILTER TUNE SWEEP");
+        }
         return true;
     case FILTER_TUNE_READY:
         tfp_sprintf(text, "FILTER TUNE READY");
@@ -1795,6 +2126,19 @@ void filterAutotuneWriteStatus(sbuf_t *dst)
     // the PID profile the D-term filters go to (the current one) and, after an apply, the one they went to (0xFF none)
     sbufWriteU8(dst, getCurrentPidProfileIndex());
     sbufWriteU8(dst, filterTuneBackup()->valid ? filterTuneBackup()->pidProfileIndex : 0xFF);
+    // the sweep and the heat budget
+    sbufWriteU8(dst, ftx.phase);                     // SWEEP_*
+    sbufWriteU8(dst, ftx.endReason);                 // SWEEP_END_*
+    sbufWriteU16(dst, lrintf(ftx.amp * 10.0f));      // amplitude, 0.1 deg/s
+    sbufWriteU16(dst, lrintf(ftx.fc[0] * 10.0f));    // crossover roll / pitch, 0.1 Hz (0 = none)
+    sbufWriteU16(dst, lrintf(ftx.fc[1] * 10.0f));
+    sbufWriteU8(dst, (uint8_t)constrainf(ftx.pmDeg[0], 0.0f, 255.0f));   // phase margin roll / pitch, deg
+    sbufWriteU8(dst, (uint8_t)constrainf(ftx.pmDeg[1], 0.0f, 255.0f));
+    sbufWriteU16(dst, r.idxMeas10);
+    sbufWriteU16(dst, r.idxCur10);
+    sbufWriteU16(dst, r.heatRef100);
+    sbufWriteU16(dst, r.heatChosen100);
+    sbufWriteU8(dst, filterTuneConfig()->heat_budget_dk);
 }
 
 void frameMapWrite(sbuf_t *dst)

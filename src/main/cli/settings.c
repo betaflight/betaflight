@@ -60,6 +60,7 @@
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
+#include "flight/filter_autotune.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
@@ -1008,6 +1009,9 @@ const clivalue_t valueTable[] = {
 #ifdef USE_MOTOR_THERMAL
     { PARAM_NAME_MOTOR_STATOR_DIAMETER, VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 5, 60 },  PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, stator_diameter_mm) },
     { PARAM_NAME_MOTOR_STATOR_HEIGHT,   VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 10, 250 }, PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, stator_height_dmm) },
+#ifdef USE_FILTER_AUTOTUNE
+    { "filter_tune_heat_budget",        VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 1, 200 }, PG_FILTER_TUNE_CONFIG, offsetof(filterTuneConfig_t, heat_budget_dk) },
+#endif
     { PARAM_NAME_MOTOR_PROP_DIAMETER,   VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 200 },  PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, prop_diameter_dinch) },
     { PARAM_NAME_MOTOR_THERMAL_GAIN,    VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 10, 250 }, PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, gain_percent) },
     { PARAM_NAME_MOTOR_THERMAL_WARNING, VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 150 },  PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, warning_c) },

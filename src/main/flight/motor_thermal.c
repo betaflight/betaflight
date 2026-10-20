@@ -168,6 +168,16 @@ void motorThermalUpdate(const float *motorOutput, int motorCount)
     }
 }
 
+float motorThermalRippleRise(float noiseRms, float rpm, float vbat)
+{
+    const float kv = MAX(motorConfig()->kv, 100);
+    const float n = rpm / 60.0f;
+    const float vBell = 2.0f * M_PIf * n * rt.bellRadiusM, vProp = n * rt.propDiameterM * PROP_VI_K;
+    const float air = 1.0f + AIR_GAIN * powf(sqrtf(vBell * vBell + vProp * vProp) * 0.1f, 1.5f);
+    const float pCu = rt.kCu * sq(kv * vbat * noiseRms * 0.001f);
+    return pCu * (rt.rsc + rt.rca / air);            // windings -> core -> air, in series
+}
+
 float motorThermalGetTemp(int motor)
 {
     return (motor >= 0 && motor < MAX_SUPPORTED_MOTORS) ? node[motor].ts : 0.0f;

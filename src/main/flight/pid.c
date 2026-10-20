@@ -46,6 +46,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/autopilot.h"
+#include "flight/filter_autotune.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/launch_wing.h"
@@ -1390,6 +1391,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             currentPidSetpoint = 0.0f;
         }
 #endif // USE_YAW_SPIN_RECOVERY
+
+#ifdef USE_FILTER_AUTOTUNE
+        // FILTER TUNE: a short small sweep on the rate setpoint measures the loop crossover
+        if (filterAutotuneSweepOn) {
+            currentPidSetpoint += filterAutotuneExcitation(axis, gyro.gyroADCf[axis]);
+        }
+#endif
 
         // -----calculate error rate
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec

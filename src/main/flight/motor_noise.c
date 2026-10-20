@@ -13,8 +13,6 @@
 
 #include "motor_noise.h"
 
-#define MOTOR_NOISE_HP0_HZ   80.0f    // below this the prop/bell still follows the command (not ripple)
-#define MOTOR_NOISE_HP1_HZ  300.0f    // winding inductance starts to filter the ripple above here
 #define MOTOR_NOISE_AVG_S     0.5f    // RMS averaging time constant
 
 typedef struct {
