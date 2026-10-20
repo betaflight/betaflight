@@ -1017,9 +1017,15 @@ static const float ftIdHz[] = { 10, 14, 20, 28, 40, 56, 80, 112 };
 #define FT_SWEEP_ANGLE_DEG 0.5f              // the swing at FT_SWEEP_F0, less above (amplitude / 2 pi f). Host, closed-loop model
                                               // with the noisiest 5" hover: crossover within 3.5 % at 0.1 deg, 1.3 % at 0.5,
                                               // 1 % at 1 (the grid interpolation left)
-#define FT_SWEEP_STICK_START 0.1f             // it starts with the sticks centred
-#define FT_SWEEP_STICK     0.3f               // and ends on a manoeuvre, not on the pilot's trimming: the sticks are
-                                              // not correlated with the sweep, their (mostly < 8 Hz) input is noise to it
+// The sticks decide by how they MOVE, not where they are: in ANGLE a pilot holding a drifting craft keeps a steady
+// offset (a flight log: roll -0.18, pitch -0.35 for 90 s), and a sweep on top of a steady tilt is as good as on a
+// level hover. The sweep starts when the sticks are steady, and ends on a manoeuvre: a move from where they were at
+// the start. The pilot's own small corrections (mostly under 8 Hz) are not correlated with the sweep: noise to it.
+#define FT_SWEEP_STICK_STEADY 0.06f           // mean stick movement over the last second, to start
+#define FT_SWEEP_STICK_MAX 0.7f               // no sweep with the sticks this far out (a big tilt)
+#define FT_SWEEP_STICK     0.3f               // move from the start position that ends it
+#define FT_TASK_S          0.002f             // the autotune task period (TASK_FILTER_TUNE, 500 Hz)
+#define FT_STICK_TAU_S     0.5f
 #define FT_SWEEP_THR       0.15f              // throttle change that ends it (holding the height is fine)
 #define FT_SWEEP_TILT_DD   250                // attitude change that ends it, 0.1 deg
 #define FT_SWEEP_RATE_MAX  300.0f             // deg/s
@@ -1038,6 +1044,8 @@ static struct {
     float fc[2], pmDeg[2];                  // per axis, 0 = not found
     int16_t att0[2];
     float thr0;
+    float lp[3], dev[3], s0[3];             // sticks: smoothed, mean movement around it, at the start
+    bool trackOn;
 } ftx;
 
 typedef struct { float re, im; } ftCplx_t;
@@ -1198,20 +1206,59 @@ NOINLINE float filterAutotuneExcitation(int axis, float gyroFiltered)
     return ftx.r;
 }
 
-static bool sweepSticksWithin(float limit)
+// the task, every call: the sticks' smoothed position and how much they move around it
+static void sticksTrack(void)
 {
-    return getRcDeflectionAbs(FD_ROLL) < limit && getRcDeflectionAbs(FD_PITCH) < limit && getRcDeflectionAbs(FD_YAW) < limit;
+    const float k = FT_TASK_S / FT_STICK_TAU_S;
+    for (int a = 0; a < 3; a++) {
+        const float x = getRcDeflection(a);
+        if (!ftx.trackOn) {
+            ftx.lp[a] = x;
+            ftx.dev[a] = 1.0f;                // unknown until it has seen them move
+        } else {
+            ftx.dev[a] += (fabsf(x - ftx.lp[a]) - ftx.dev[a]) * k;
+            ftx.lp[a] += (x - ftx.lp[a]) * k;
+        }
+    }
+    ftx.trackOn = true;
+}
+
+static bool sticksSteady(void)
+{
+    for (int a = 0; a < 3; a++) {
+        if (ftx.dev[a] > FT_SWEEP_STICK_STEADY || fabsf(ftx.lp[a]) > FT_SWEEP_STICK_MAX) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// a manoeuvre: a stick moved from where it was at the start, or is far out
+static bool sticksMoved(void)
+{
+    for (int a = 0; a < 3; a++) {
+        const float x = getRcDeflection(a);
+        if (fabsf(x - ftx.s0[a]) > FT_SWEEP_STICK || fabsf(x) > FT_SWEEP_STICK_MAX + FT_SWEEP_STICK) {
+            return true;
+        }
+    }
+    return false;
 }
 
 // the task: start the sweep once the frames are in (ANGLE, sticks centred), end it on anything off its limits
 static void sweepService(bool modeOn)
 {
     const uint8_t phase = ftx.phase;
+    if (ARMING_FLAG(ARMED) && modeOn) {
+        sticksTrack();
+    } else {
+        ftx.trackOn = false;
+    }
     if (phase == SWEEP_ROLL || phase == SWEEP_SETTLE || phase == SWEEP_PITCH) {
         uint8_t end = SWEEP_END_NONE;
         if (!ARMING_FLAG(ARMED) || !modeOn || !FLIGHT_MODE(ANGLE_MODE) || failsafeIsActive()) {
             end = SWEEP_END_MODE;
-        } else if (!sweepSticksWithin(FT_SWEEP_STICK)) {
+        } else if (sticksMoved()) {
             end = SWEEP_END_STICKS;
         } else if (fabsf(rcCommand[THROTTLE] - ftx.thr0) > FT_SWEEP_THR) {
             end = SWEEP_END_THROTTLE;
@@ -1230,7 +1277,7 @@ static void sweepService(bool modeOn)
 
 static bool sweepTryStart(void)
 {
-    if (ftx.tried || !FLIGHT_MODE(ANGLE_MODE) || !sweepSticksWithin(FT_SWEEP_STICK_START)) {
+    if (ftx.tried || !FLIGHT_MODE(ANGLE_MODE) || !sticksSteady()) {
         return false;
     }
     ftx.tried = true;
@@ -1238,6 +1285,9 @@ static bool sweepTryStart(void)
     ftx.att0[0] = attitude.values.roll;
     ftx.att0[1] = attitude.values.pitch;
     ftx.thr0 = rcCommand[THROTTLE];
+    for (int a = 0; a < 3; a++) {
+        ftx.s0[a] = ftx.lp[a];
+    }
     ftx.endReason = SWEEP_END_NONE;
     sweepStartAxis(SWEEP_ROLL);
     return true;
@@ -1939,7 +1989,7 @@ void filterAutotuneUpdate(timeUs_t currentTimeUs)
     if (ft.state == FILTER_TUNE_EXCITING) {
         filterAutotuneCollecting = false;
         if (ftx.phase == SWEEP_NONE) {
-            sweepTryStart();                          // waits for ANGLE and centred sticks
+            sweepTryStart();                          // waits for ANGLE and steady sticks
         }
         if (!sweepActive() && ftx.phase != SWEEP_NONE) {
             ft.state = FILTER_TUNE_READY;
@@ -2074,6 +2124,9 @@ bool filterAutotuneOsdWarning(char *text, bool *blinking, bool *critical)
     case FILTER_TUNE_EXCITING:
         if (ftx.phase == SWEEP_NONE && !FLIGHT_MODE(ANGLE_MODE)) {
             tfp_sprintf(text, "FILTER TUNE ANGLE");   // the sweep needs ANGLE
+            *blinking = true;
+        } else if (ftx.phase == SWEEP_NONE && !sticksSteady()) {
+            tfp_sprintf(text, "FILTER TUNE STEADY");  // and the sticks held still
             *blinking = true;
         } else {
             tfp_sprintf(text, "FILTER TUNE SWEEP");
