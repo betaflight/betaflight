@@ -155,6 +155,33 @@ extern uint32_t SystemCoreClock;
 #define UARTHARDWARE_MAX_PINS           1
 #endif
 
+/* ── Generic serial_uart.c platform contract ────────────────────────────────
+ * The NavQ95 UART7 driver uses Betaflight's generic drivers/serial_uart.c core
+ * (buffered TX/RX, IRQ wrappers, uartVTable) plus the i.MX 95 platform layer in
+ * NAVQ95/serial_uart_navq95.c. That core needs these platform traits:
+ *   - UART_{TX,RX}_BUFFER_ATTRIBUTE: section attribute for the static UART ring
+ *     buffers. Plain SRAM here (no DMA / special section yet), so empty.
+ *   - UART_TRAIT_AF_PORT: the LPUART alt function is selected per-port over SCMI
+ *     (one function per UART), not via a per-pin AF register, so AF_PORT (not
+ *     AF_PIN). serial_uart_impl.h requires exactly one of AF_PIN / AF_PORT.
+ *   - SERIAL_TRAIT_PIN_CONFIG: compile drivers/serial_uart_pinconfig.c, which
+ *     maps the UART7_RX/TX_PIN tags into the serialPinConfig parameter group.
+ * RCC / DMA / PINSWAP traits are intentionally left undefined (== 0): the i.MX
+ * 95 LPUART needs no RCC gating from the M7 (the SM clocks it) and the driver is
+ * interrupt-driven, not DMA. */
+#ifndef UART_TX_BUFFER_ATTRIBUTE
+#define UART_TX_BUFFER_ATTRIBUTE        /* none — plain SRAM */
+#endif
+#ifndef UART_RX_BUFFER_ATTRIBUTE
+#define UART_RX_BUFFER_ATTRIBUTE        /* none — plain SRAM */
+#endif
+#ifndef UART_TRAIT_AF_PORT
+#define UART_TRAIT_AF_PORT              1
+#endif
+#ifndef SERIAL_TRAIT_PIN_CONFIG
+#define SERIAL_TRAIT_PIN_CONFIG         1
+#endif
+
 /* ── Misc capability defaults referenced by common config ──────────────────── */
 #ifndef DEFAULT_CPU_OVERCLOCK
 #define DEFAULT_CPU_OVERCLOCK           0

@@ -1,10 +1,12 @@
 /*
  * startup_navq95.s — startup for the NavQ95 (NXP i.MX 95, Cortex-M7).
  *
- * Vector table (16 core exceptions + external IRQs up to the LPUART2 console
- * IRQ) and Reset_Handler. External IRQ numbers are the raw NVIC external index;
- * LPUART2 = external IRQ 20 (vector table index 36). External vectors default
- * to Default_Handler (weak) except LPUART2_IRQHandler (provided in C).
+ * external IRQs up to the LPUART7 IRQ) and Reset_Handler. External IRQ numbers
+ * are the raw NVIC external index; LPUART2 = external IRQ 20 (vector index 36) —
+ * console; LPUART7 = external IRQ 68 (vector index 84) — the UART7 serial port,
+ * whose handler is the generic UART7_IRQHandler emitted by drivers/serial_uart.c.
+ * External vectors default to Default_Handler (weak) except LPUART2_IRQHandler
+ * and UART7_IRQHandler.
  *
  * Reset_Handler copies .data (flash->SRAM), zeroes .bss, sets VTOR to this
  * table, then calls SystemInit and main(). The table is placed by the linker
@@ -15,9 +17,9 @@
     .arch   armv7e-m
     .thumb
 
-/* Emit external IRQ slots up to and past LPUART2 (ext 20). Unused slots point
+/* Emit external IRQ slots up to and past LPUART7 (ext 68). Unused slots point
  * at Default_Handler and are harmless; the CPU only dispatches raised IRQs. */
-    .equ    NAVQ95_NUM_EXT_IRQ, 24
+    .equ    NAVQ95_NUM_EXT_IRQ, 70
 
 /* ── Vector table ───────────────────────────────────────────────────────── */
     .section .isr_vector, "a"
@@ -43,8 +45,8 @@ __isr_vector:
     .long   SysTick_Handler             /* 0x3C: SysTick                    */
 
     /* External IRQ vectors 0 .. (NAVQ95_NUM_EXT_IRQ-1).
-     * Emit Default_Handler for all, then OVERRIDE ext #20 (LPUART2) below by
-     * laying the table out explicitly. */
+     * Emit Default_Handler for all, then OVERRIDE ext #20 (LPUART2) and ext #68
+     * (LPUART7) below by laying the table out explicitly. */
     .long   Default_Handler             /* ext 0  */
     .long   Default_Handler             /* ext 1  */
     .long   Default_Handler             /* ext 2  */
@@ -69,6 +71,52 @@ __isr_vector:
     .long   Default_Handler             /* ext 21 */
     .long   Default_Handler             /* ext 22 */
     .long   Default_Handler             /* ext 23 */
+    .long   Default_Handler             /* ext 24 */
+    .long   Default_Handler             /* ext 25 */
+    .long   Default_Handler             /* ext 26 */
+    .long   Default_Handler             /* ext 27 */
+    .long   Default_Handler             /* ext 28 */
+    .long   Default_Handler             /* ext 29 */
+    .long   Default_Handler             /* ext 30 */
+    .long   Default_Handler             /* ext 31 */
+    .long   Default_Handler             /* ext 32 */
+    .long   Default_Handler             /* ext 33 */
+    .long   Default_Handler             /* ext 34 */
+    .long   Default_Handler             /* ext 35 */
+    .long   Default_Handler             /* ext 36 */
+    .long   Default_Handler             /* ext 37 */
+    .long   Default_Handler             /* ext 38 */
+    .long   Default_Handler             /* ext 39 */
+    .long   Default_Handler             /* ext 40 */
+    .long   Default_Handler             /* ext 41 */
+    .long   Default_Handler             /* ext 42 */
+    .long   Default_Handler             /* ext 43 */
+    .long   Default_Handler             /* ext 44 */
+    .long   Default_Handler             /* ext 45 */
+    .long   Default_Handler             /* ext 46 */
+    .long   Default_Handler             /* ext 47 */
+    .long   Default_Handler             /* ext 48 */
+    .long   Default_Handler             /* ext 49 */
+    .long   Default_Handler             /* ext 50 */
+    .long   Default_Handler             /* ext 51 */
+    .long   Default_Handler             /* ext 52 */
+    .long   Default_Handler             /* ext 53 */
+    .long   Default_Handler             /* ext 54 */
+    .long   Default_Handler             /* ext 55 */
+    .long   Default_Handler             /* ext 56 */
+    .long   Default_Handler             /* ext 57 */
+    .long   Default_Handler             /* ext 58 */
+    .long   Default_Handler             /* ext 59 */
+    .long   Default_Handler             /* ext 60 */
+    .long   Default_Handler             /* ext 61 */
+    .long   Default_Handler             /* ext 62 */
+    .long   Default_Handler             /* ext 63 */
+    .long   Default_Handler             /* ext 64 (LPUART3) */
+    .long   Default_Handler             /* ext 65 (LPUART4) */
+    .long   Default_Handler             /* ext 66 (LPUART5) */
+    .long   Default_Handler             /* ext 67 (LPUART6) */
+    .long   UART7_IRQHandler            /* ext 68 (LPUART7 — UART7 port)     */
+    .long   Default_Handler             /* ext 69 (LPUART8) */
     .size   __isr_vector, . - __isr_vector
 
 /* ── Reset handler ──────────────────────────────────────────────────────── */
@@ -156,5 +204,7 @@ Default_Handler:
     .thumb_set SysTick_Handler, Default_Handler
     .weak   LPUART2_IRQHandler
     .thumb_set LPUART2_IRQHandler, Default_Handler
+    .weak   UART7_IRQHandler
+    .thumb_set UART7_IRQHandler, Default_Handler
 
     .end

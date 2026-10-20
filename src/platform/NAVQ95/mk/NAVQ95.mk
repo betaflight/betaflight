@@ -65,10 +65,20 @@ STARTUP_SRC     = NAVQ95/startup/startup_navq95.s
 MCU_COMMON_SRC  = \
             NAVQ95/platform_stubs.c \
             NAVQ95/system.c \
-            NAVQ95/io_navq95.c
+            NAVQ95/io_navq95.c \
+            NAVQ95/serial_uart_navq95.c \
+            drivers/serial_pinconfig.c
 
 # No peripheral SDK sources yet.
 DEVICE_STDPERIPH_SRC :=
+
+# ── Serial: use the generic drivers/serial_uart.c core (force-added to
+# COMMON_SRC by mk/source.mk) plus the i.MX 95 platform layer in
+# NAVQ95/serial_uart_navq95.c, which supplies the uartHardware[] table and the
+# platform hooks (serialUART/uartReconfigure/uartIrqHandler/uartPinConfigure/
+# uartEnableTxInterrupt/...). This mirrors the PICO port (serial_uart_pico.c +
+# uart_hw.c). drivers/serial_uart_pinconfig.c is also force-added and maps the
+# UART7_RX/TX_PIN tags into the serialPinConfig PG (SERIAL_TRAIT_PIN_CONFIG).
 
 # ── MCU_EXCLUDES: external-storage drivers not yet supported ──────────────────
 # mk/source.mk unconditionally adds the flash-chip, SD card, FAT and USB MSC
