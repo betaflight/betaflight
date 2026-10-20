@@ -15,9 +15,13 @@
 #include "io/gps.h"
 #include "pg/motor.h"
 #include "pg/motor_thermal.h"
+#include "sensors/adcinternal.h"
+#include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/current.h"
+#include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
+#include "sensors/sensors.h"
 
 #include "motor_thermal.h"
 
@@ -37,6 +41,10 @@
 #define AIR_GAIN        1.56f   // convection: 1 + AIR_GAIN·(v/10 m/s)^1.5
 #define PROP_VI_K       0.252f     // induced velocity = n[rev/s]·D[m]·sqrt(2·Ct/π), Ct≈0.1
 #define UPDATE_HZ       100
+#define IDLE_AMPS_TAU_S 2.0f       // the non-motor current (FC, VTX, receiver), averaged while disarmed
+#define AMBIENT_MIN_C   5
+#define AMBIENT_MAX_C   45
+#define AMBIENT_DEFAULT_C 25.0f
 
 typedef struct { float ts, tc; } thermalNode_t;
 
@@ -44,7 +52,59 @@ static thermalNode_t node[MAX_SUPPORTED_MOTORS];
 static struct {
     float cs, cc, rsc, rca, aIron, kCu, rLoad, bellRadiusM, propDiameterM, tAmb, dt;
     int decimation, counter;
+    float idleAmps;             // battery current with the motors stopped: not motor current
+    int ambientCounter;
+    bool armedOnce;
 } rt;
+
+static void ambientConsider(int t, int *best)
+{
+    if (t > AMBIENT_MIN_C && t < AMBIENT_MAX_C && t < *best) {
+        *best = t;
+    }
+}
+
+// The ambient before the first arm: the lowest plausible temperature any sensor on the craft reports. Every
+// one of them sits on something that warms it (the FC board, the MCU, the ESC), so the lowest is the
+// closest to the air. Taken again once a second while disarmed, so a source that comes later (ESC telemetry
+// once the battery is in) still counts; frozen at the first arm. Without any, the default stays.
+static void ambientUpdate(void)
+{
+    if (rt.armedOnce || ++rt.ambientCounter < UPDATE_HZ) {
+        return;
+    }
+    rt.ambientCounter = 0;
+    int best = INT16_MAX;
+    gyroReadTemperature();                      // the cached value is otherwise refreshed by the telemetry task only
+    ambientConsider(gyroGetTemperature(), &best);
+#ifdef USE_BARO
+    if (sensors(SENSOR_BARO)) {
+        ambientConsider(baro.temperature / 100, &best);
+    }
+#endif
+#ifdef USE_ADC_INTERNAL
+    ambientConsider(getCoreTemperatureCelsius(), &best);
+#endif
+    for (int i = 0; i < getMotorCount() && i < MAX_SUPPORTED_MOTORS; i++) {
+#ifdef USE_DSHOT_TELEMETRY
+        if (dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) {
+            ambientConsider(dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE], &best);
+        }
+#endif
+#ifdef USE_ESC_SENSOR
+        const escSensorData_t *esc = getEscSensorData(i);
+        if (esc && esc->dataAge < ESC_DATA_INVALID) {
+            ambientConsider(esc->temperature, &best);
+        }
+#endif
+    }
+    if (best != INT16_MAX) {
+        rt.tAmb = best;
+        for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
+            node[i].ts = node[i].tc = rt.tAmb;      // nothing has run yet: the motors are at the ambient
+        }
+    }
+}
 
 static float autoPropInch(float statorDmm)
 {
@@ -86,11 +146,13 @@ void motorThermalInit(void)
     // a hot motor must not read as ambient after a profile switch on the ground.
     static bool stateInitialised = false;
     if (!stateInitialised) {
-        const int gyroT = gyroGetTemperature();
-        rt.tAmb = (gyroT > 5 && gyroT < 45) ? gyroT : 25.0f;
+        rt.tAmb = AMBIENT_DEFAULT_C;
         for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             node[i].ts = node[i].tc = rt.tAmb;
         }
+        rt.idleAmps = 0.0f;
+        rt.ambientCounter = UPDATE_HZ;          // the first update looks at once
+        rt.armedOnce = false;
         stateInitialised = true;
     }
 }
@@ -102,12 +164,23 @@ void motorThermalUpdate(const float *motorOutput, int motorCount)
     }
     rt.counter = 0;
 
+    const bool armed = ARMING_FLAG(ARMED);
+    if (armed) {
+        rt.armedOnce = true;
+    }
+    ambientUpdate();
+
     const float vbat = getBatteryVoltage() * 0.01f;
     const float kv = MAX(motorConfig()->kv, 100);                     // effective KV: a zero/absurd setting must not silence the model
     const float unloadedMaxRpm = vbat * kv;
     const float maxRpm = unloadedMaxRpm * (-5.44e-6f * unloadedMaxRpm + 0.944f);   // same load derating as motorEstimateMaxRpm()
-    // battery current split across motors by command² when per-motor ESC current is not available
+    // battery current split across motors by command² when per-motor ESC current is not available; the
+    // current with the motors stopped (FC, VTX, receiver) is not motor current and is taken off first
     const float batteryAmps = getAmperage() * 0.01f;
+    if (!armed) {
+        rt.idleAmps += (batteryAmps - rt.idleAmps) * MIN(1.0f, rt.dt / IDLE_AMPS_TAU_S);
+    }
+    const float motorsAmps = armed ? MAX(batteryAmps - rt.idleAmps, 0.0f) : 0.0f;
     float cmdSqSum = 0.0f;
     float cmdFrac[MAX_SUPPORTED_MOTORS];
     for (int i = 0; i < motorCount && i < MAX_SUPPORTED_MOTORS; i++) {
@@ -151,10 +224,11 @@ void motorThermalUpdate(const float *motorOutput, int motorCount)
         } else
 #endif
         if (cmdSqSum > 0.0f) {
-            motorAmps = batteryAmps * sq(cmdFrac[i]) / cmdSqSum;
+            motorAmps = motorsAmps * sq(cmdFrac[i]) / cmdSqSum;
         }
         const float iLoad = MAX(motorAmps - pCu / MAX(vbat, 1.0f), 0.0f);
-        const float pLoad = rt.rLoad * sq(iLoad / MAX(cmdFrac[i], 0.05f));
+        // the winding cannot lose more than the motor takes in: the /duty step must not blow up a small current
+        const float pLoad = MIN(rt.rLoad * sq(iLoad / MAX(cmdFrac[i], 0.05f)), motorAmps * vbat);
 
         thermalNode_t *s = &node[i];
         const float q = (s->ts - s->tc) / rt.rsc;
