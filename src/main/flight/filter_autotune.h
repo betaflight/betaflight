@@ -59,6 +59,7 @@ typedef struct filterTuneBackup_s {
     uint8_t simplifiedGyroFilter;
     uint16_t notch1Hz;
     uint16_t notch1Cutoff;
+    uint16_t rpmFadeRangeHz;
 } filterTuneBackup_t;
 
 PG_DECLARE(filterTuneBackup_t, filterTuneBackup);

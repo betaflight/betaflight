@@ -69,7 +69,7 @@
 #include "filter_autotune.h"
 
 PG_REGISTER(frameMapConfig_t, frameMapConfig, PG_FRAME_MAP_CONFIG, 0);
-PG_REGISTER(filterTuneBackup_t, filterTuneBackup, PG_FILTER_TUNE_BACKUP, 0);
+PG_REGISTER(filterTuneBackup_t, filterTuneBackup, PG_FILTER_TUNE_BACKUP, 1);
 
 #define FT_N            512
 #define FT_BINS         (FT_N / 2 + 1)
@@ -92,7 +92,14 @@ PG_REGISTER(filterTuneBackup_t, filterTuneBackup, PG_FILTER_TUNE_BACKUP, 0);
 #define FT_NOTCH_KEEP_REL 0.03f             // a current static notch within this of the bump stays
 #define FT_NOTCH_SHARE  3.0f                // static notch: the bump's excess holds at least this % of the 100..600 Hz power
 #define FT_NOTCH_REF_HZ 400.0f              // ... at this frequency; lower down the notch costs more delay (1 / f)
-#define FT_KEEP_DB      1.0f                // a current rpm weight within this of the measurement stays
+#define FT_RPM_TARGET_DB 1.0f               // rpm lines: what may be left over the floor after the filter ...
+#define FT_RPM_WEIGHT_DB 0.5f               // ... of it the weights take this much (rounded up), q the rest
+#define FT_RPM_Q_MIN    250.0f
+#define FT_RPM_Q_MAX    500.0f              // narrower only with evidence a hover cannot give (fast rpm changes)
+#define FT_RPM_W_KEEP   3                   // a current weight up to this % over the need stays ...
+#define FT_RPM_W_SHORT  2                   // ... or this % under it (the need moves by 1-2 % from run to run)
+#define FT_RPM_Q_KEEP   0.1f                // a current q within this of the need stays
+#define FT_FADE_CLEAR   0.95f               // min_hz + fade stays under this x the slowest motor's hover 1x
 #define FT_LINE_REL     0.04f               // within this of a motor's rotation line (1x..5x)
 #define FT_PEAK_REL     0.12f
 #define FT_PEAK_SEP_REL 0.06f               // one peak per +-6 % (one notch takes it)
@@ -123,6 +130,8 @@ typedef struct {
 typedef struct {
     uint8_t w[3];
     uint16_t q;
+    uint16_t fade;              // rpm_filter_fade_range_hz
+    float trackErr;             // the notches' tracking error, a share of the line frequency
     uint8_t dyn;
     uint16_t lpf2;
     uint16_t notchHz, notchCut;
@@ -172,6 +181,9 @@ static struct {
     float sumX[FT_MOTORS][FT_ORDERS];
     uint16_t nX[FT_MOTORS][FT_ORDERS];
     float floor1[FT_MOTORS];    // the last frame before the RPM filter: 1x floor per motor
+    float floorPre[FT_MOTORS][3];   // ... 1x..3x floors per motor
+    float sumR[FT_MOTORS][3];   // after the RPM filter: 1x..3x line over that floor, dB, summed
+    uint16_t nR[FT_MOTORS][3];
     bool haveFloor1;
     float sumR1;
     uint16_t nR1;
@@ -582,6 +594,9 @@ static void analysePre(const float *rot, float df)
             if (h == 0) {
                 ft.floor1[m] = floor;
             }
+            if (h < 3) {
+                ft.floorPre[m][h] = floor;
+            }
         }
     }
     for (int b = 0; b < FT_BINS; b++) {
@@ -600,6 +615,16 @@ static void analysePost(const float *rot, float df)
         if (r > 0.0f && ft.floor1[m] > 0.0f) {
             ft.sumR1 += 10.0f * log10f(r / ft.floor1[m]);
             ft.nR1++;
+        }
+    }
+    for (int m = 0; m < FT_MOTORS && ft.haveFloor1; m++) {
+        for (int h = 0; h < 3; h++) {
+            const int b = lrintf((h + 1) * rot[m] / df);
+            const float r = b >= 1 && b + 1 < FT_BINS ? maxAround(b) : 0.0f;
+            if (r > 0.0f && ft.floorPre[m][h] > 0.0f) {
+                ft.sumR[m][h] += 10.0f * log10f(r / ft.floorPre[m][h]);
+                ft.nR[m][h]++;
+            }
         }
     }
     const int half = ft.framesPost & 1;
@@ -806,13 +831,90 @@ static float notchCutoff(float center, float q)
     return center * (sqrtf(1.0f + 4.0f * q * q) - 1.0f) / (2.0f * q);
 }
 
-static uint8_t weightFor(float x)
+// ---- RPM filter ----
+// A line X (power over the floor) through a notch of weight w and quality q that misses it by delta (a share of
+// the frequency: telemetry error and lag) keeps about (1 - w)^2 + w^2 (2 q delta)^2 of its excess. The residual
+// after the filter tells delta, then q for the target follows in one step: absolute, not a ratchet.
+
+static float fadeWeight(float f, float minHz, float fadeHz)
 {
-    if (x < 3.0f) {
+    return fadeHz > 0.0f ? constrainf((f - minHz) / fadeHz, 0.0f, 1.0f) : (f >= minHz ? 1.0f : 0.0f);
+}
+
+static float lineTrackError(float xDb, float rDb, float q, float w)
+{
+    const float x = powf(10.0f, xDb / 10.0f), r = powf(10.0f, rDb / 10.0f);
+    const float left = MAX(r - 1.0f, 1e-3f) / MAX(x - 1.0f, 1e-3f) - (1.0f - w) * (1.0f - w);
+    return sqrtf(MAX(left, 1e-6f)) / (2.0f * q * MAX(w, 1e-3f));
+}
+
+static uint8_t rpmWeightFor(float xDb)
+{
+    if (xDb < 3.0f) {
         return 0;
     }
-    const float w = 100.0f * (1.0f - powf(10.0f, -x / 20.0f));
-    return (uint8_t)constrain(5 * lrintf(w / 5.0f), 0, 100);
+    const float t = powf(10.0f, FT_RPM_WEIGHT_DB / 10.0f);
+    const float w = 1.0f - sqrtf((t - 1.0f) / MAX(powf(10.0f, xDb / 10.0f) - 1.0f, 1e-3f));
+    return (uint8_t)constrain((int)ceilf(100.0f * w - 1e-3f), 0, 100);
+}
+
+static void decideRpm(ftResult_t *r, float X[FT_MOTORS][FT_ORDERS], const float *rotM)
+{
+    const rpmFilterConfig_t *rc = rpmFilterConfig();
+    const float minHz = rc->rpm_filter_min_hz, fadeCur = rc->rpm_filter_fade_range_hz, qCur = rc->rpm_filter_q / 100.0f;
+    // fade: the slowest motor's hover 1x clear of min_hz + fade (in the fade the 1x notch only works in part);
+    // min_hz stays: lower notches would add delay at low throttle
+    float rotLow = rotM[0];
+    for (int m = 1; m < FT_MOTORS; m++) {
+        rotLow = MIN(rotLow, rotM[m]);
+    }
+    const float fadeMax = FT_FADE_CLEAR * rotLow - minHz;
+    r->fade = fadeCur <= fadeMax ? (uint16_t)fadeCur : (uint16_t)constrainf(fadeMax, 0.0f, fadeCur);
+    // weights per order from the worst motor's line, for FT_RPM_WEIGHT_DB left
+    for (int h = 0; h < 3; h++) {
+        float x = 0.0f;
+        for (int m = 0; m < FT_MOTORS; m++) {
+            x = MAX(x, X[m][h]);
+        }
+        const uint8_t need = rpmWeightFor(x), cur = rc->rpm_filter_weights[h];
+        r->w[h] = cur + FT_RPM_W_SHORT >= need && cur <= need + FT_RPM_W_KEEP ? cur : need;
+    }
+    // tracking error from the lines as they went through the current filter
+    float err[FT_MOTORS * 3];
+    int n = 0;
+    for (int m = 0; m < FT_MOTORS; m++) {
+        for (int h = 0; h < 3; h++) {
+            const float w = rc->rpm_filter_weights[h] / 100.0f * fadeWeight((h + 1) * rotM[m], minHz, fadeCur);
+            if (X[m][h] > 6.0f && w > 0.5f && ft.nR[m][h]) {
+                err[n++] = lineTrackError(X[m][h], ft.sumR[m][h] / ft.nR[m][h], qCur, w);
+            }
+        }
+    }
+    if (n == 0) {
+        r->q = rc->rpm_filter_q;
+        r->trackErr = 0.0f;
+        return;
+    }
+    const float delta = median(err, n);
+    r->trackErr = delta;
+    // q: the narrowest that keeps every line within the target with the new weights and fade
+    const float t = powf(10.0f, FT_RPM_TARGET_DB / 10.0f);
+    float q = FT_RPM_Q_MAX;
+    for (int m = 0; m < FT_MOTORS; m++) {
+        for (int h = 0; h < 3; h++) {
+            const float w = r->w[h] / 100.0f * fadeWeight((h + 1) * rotM[m], minHz, r->fade);
+            if (X[m][h] <= 6.0f || w <= 0.5f) {
+                continue;
+            }
+            const float allowed = (t - 1.0f) / MAX(powf(10.0f, X[m][h] / 10.0f) - 1.0f, 1e-3f) - (1.0f - w) * (1.0f - w);
+            if (allowed > 0.0f) {                     // else the weight alone leaves the line over: q cannot help
+                q = MIN(q, sqrtf(allowed) / (2.0f * delta * w) * 100.0f);
+            }
+        }
+    }
+    q = constrainf(q, FT_RPM_Q_MIN, FT_RPM_Q_MAX);
+    r->q = fabsf(q - rc->rpm_filter_q) <= FT_RPM_Q_KEEP * rc->rpm_filter_q ? rc->rpm_filter_q
+                                                                            : (uint16_t)(lrintf(q / 10.0f) * 10);
 }
 
 static void decide(ftResult_t *r)
@@ -834,29 +936,7 @@ static void decide(ftResult_t *r)
             X[m][h] = ft.nX[m][h] ? ft.sumX[m][h] / ft.nX[m][h] : 0.0f;
         }
     }
-    for (int h = 0; h < 3; h++) {
-        float x = 0.0f;
-        int n = 1;
-        for (int m = 0; m < FT_MOTORS; m++) {
-            if (X[m][h] > x) {
-                x = X[m][h];
-                n = MAX(ft.nX[m][h], 1);
-            }
-        }
-        // the current weight stays while it fits the measurement within +-keep: a harmonic at a 5 % step boundary
-        // does not move it back and forth from one autotune run to the next. Wider when that motor's line was clear
-        // of the others in few frames (the standard error goes as 1 / sqrt(n))
-        const float keep = FT_KEEP_DB * constrainf(sqrtf((FT_MIN_FRAMES / 2.0f) / n), 1.0f, 3.0f);
-        const uint8_t cur = rpmFilterConfig()->rpm_filter_weights[h];
-        r->w[h] = cur >= weightFor(x - keep) && cur <= weightFor(x + keep) ? cur : weightFor(x);
-    }
-    const float r1 = ft.nR1 ? ft.sumR1 / ft.nR1 : 0.0f;
-    const float q0 = rpmFilterConfig()->rpm_filter_q;
-    // narrower notches (higher q) while the 1x residual is under 3 dB, wider over 6 dB, kept between; short ramps
-    // instead of steps at 3 and 6 dB, so a residual right at a threshold does not jump q by 25 or 40 %
-    const float q = q0 * (r1 < 3.5f ? scaleRangef(constrainf(r1, 2.5f, 3.5f), 2.5f, 3.5f, 1.25f, 1.0f)
-                        : scaleRangef(constrainf(r1, 5.5f, 6.5f), 5.5f, 6.5f, 1.0f, 0.6f));
-    r->q = (uint16_t)(constrainf(q, 250.0f, 500.0f) / 10) * 10;
+    decideRpm(r, X, rotM);
 
     // residual peaks: from both sums together, then the same place in each sum on its own, a little lower allowed
     // (hysteresis: a peak right at the threshold does not come and go with the frame order)
@@ -1010,6 +1090,7 @@ static void backupNow(void)
         b->rpmWeights[h] = rpm->rpm_filter_weights[h];
     }
     b->rpmQ = rpm->rpm_filter_q;
+    b->rpmFadeRangeHz = rpm->rpm_filter_fade_range_hz;
     b->dynNotchCount = dynNotchConfig()->dyn_notch_count;
     b->lpf1StaticHz = g->gyro_lpf1_static_hz;
     b->lpf1DynMinHz = g->gyro_lpf1_dyn_min_hz;
@@ -1032,6 +1113,7 @@ static void apply(const ftResult_t *r)
         rpm->rpm_filter_weights[h] = r->w[h];
     }
     rpm->rpm_filter_q = r->q;
+    rpm->rpm_filter_fade_range_hz = r->fade;
     dynNotchConfigMutable()->dyn_notch_count = r->dyn;
     g->simplified_gyro_filter = 0;
     g->gyro_lpf1_static_hz = 0;
@@ -1055,6 +1137,7 @@ bool filterAutotuneRevert(void)
         rpm->rpm_filter_weights[h] = b->rpmWeights[h];
     }
     rpm->rpm_filter_q = b->rpmQ;
+    rpm->rpm_filter_fade_range_hz = b->rpmFadeRangeHz;
     dynNotchConfigMutable()->dyn_notch_count = b->dynNotchCount;
     g->gyro_lpf1_static_hz = b->lpf1StaticHz;
     g->gyro_lpf1_dyn_min_hz = b->lpf1DynMinHz;
@@ -1075,6 +1158,8 @@ static void resetSession(void)
 {
     memset(ft.sumX, 0, sizeof(ft.sumX));
     memset(ft.nX, 0, sizeof(ft.nX));
+    memset(ft.sumR, 0, sizeof(ft.sumR));
+    memset(ft.nR, 0, sizeof(ft.nR));
     ft.sumR1 = 0.0f;
     ft.nR1 = 0;
     if (scratchOwned()) {
@@ -1257,6 +1342,9 @@ void filterAutotuneWriteStatus(sbuf_t *dst)
     // appended (same payload version: readers take them only when the bytes are there)
     sbufWriteU16(dst, (uint16_t)r.highDb10);
     sbufWriteU8(dst, r.lpf2Basis);
+    sbufWriteU16(dst, r.fade);                        // rpm_filter_fade_range_hz: proposed, current
+    sbufWriteU16(dst, rpm->rpm_filter_fade_range_hz);
+    sbufWriteU16(dst, lrintf(constrainf(r.trackErr * 1e5f, 0.0f, 65535.0f)));   // notch tracking error, 0.001 %
 }
 
 void frameMapWrite(sbuf_t *dst)
