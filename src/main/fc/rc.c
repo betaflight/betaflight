@@ -33,6 +33,8 @@
 #include "config/config.h"
 #include "config/feature.h"
 
+#include "drivers/time.h"
+
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/rc.h"
@@ -79,6 +81,7 @@ static float smoothedRxRateHz = 100.0f;
 
 static bool isRxDataNew = false;
 static bool isRxRateValid = false;
+static timeUs_t lastRxFrameTimeUs;    // time of the last frame, 0 until the first one
 
 enum {
     ROLL_FLAG = 1 << ROLL,
@@ -288,6 +291,7 @@ void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal)
             delta = cmpTimeUs(rxTime, lastRxTimeUs);
         }
         lastRxTimeUs = rxTime;
+        lastRxFrameTimeUs = rxTime;
         DEBUG_SET(DEBUG_RX_TIMING, 1, rxTime / 100);  //!< Frame Timestamp [unit:0.1ms]
     } else {
         if (lastRxTimeUs) {
@@ -546,6 +550,42 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
 
     feedforwardRaw[axis] = feedforward;
 }
+
+// Feedforward comes from the stick speed between the last two frames and is held until the next frame.
+// When frames stop (link stalled, receiver rebooting) it would be held until RX loss is detected
+// (RXLOSS_TRIGGER_INTERVAL, 150 ms), so a fast stick move in the last frame keeps the motors driven that
+// long. Drop it, and the history it is computed from, once no frame came for several frame intervals.
+// On slow links (intervals near RX_INTERVAL_MAX_US) the limit is beyond RX loss and nothing changes.
+#define FEEDFORWARD_STALE_MIN_US     20000
+#define FEEDFORWARD_STALE_INTERVALS  3
+
+static FAST_CODE_NOINLINE void resetStaleFeedforward(timeUs_t currentTimeUs)
+{
+    static bool isStale = false;
+
+    if (isRxDataNew || !lastRxFrameTimeUs) {
+        isStale = false;
+        return;
+    }
+    if (isStale) {
+        return;
+    }
+    const timeDelta_t staleUs = MAX(FEEDFORWARD_STALE_MIN_US, FEEDFORWARD_STALE_INTERVALS * (timeDelta_t)currentRxIntervalUs);
+    if (cmpTimeUs(currentTimeUs, lastRxFrameTimeUs) <= staleUs) {
+        return;
+    }
+    isStale = true;
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        feedforwardRaw[axis] = 0.0f;
+        feedforwardData.filterSetpointSpeed[axis].state = 0.0f;
+        feedforwardData.filterSetpointDelta[axis].state = 0.0f;
+        feedforwardData.prevSetpointSpeed[axis] = 0.0f;
+        feedforwardData.prevSetpointSpeedDelta[axis] = 0.0f;
+        if (feedforwardAveraging) {
+            laggedMovingAverageInit(&feedforwardDeltaAvg[axis].filter, feedforwardAveraging + 1, (float *)&feedforwardDeltaAvg[axis].buf[0]);
+        }
+    }
+}
 #endif // USE_FEEDFORWARD
 
 bool shouldUpdateSmoothing(void)
@@ -666,6 +706,10 @@ FAST_CODE void processRcCommand(void)
             scaleRawSetpointToFpvCamAngle();
         }
     }
+
+#ifdef USE_FEEDFORWARD
+    resetStaleFeedforward(micros());
+#endif
 
 #ifdef USE_RC_SMOOTHING_FILTER
     processRcSmoothingFilter();

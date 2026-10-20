@@ -479,8 +479,13 @@ rc_unittest_SRC := \
 		$(USER_DIR)/fc/controlrate_profile.c \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/common/maths.c
+
+rc_unittest_DEFINES := \
+		USE_FEEDFORWARD= \
+		USE_RC_SMOOTHING_FILTER=
 
 rc_controls_unittest_SRC := \
 		$(USER_DIR)/fc/rc_controls.c \
