@@ -120,6 +120,7 @@ typedef struct motorExcitationTap_s {
     uint8_t clipped;           // MOTOR_EXCITATION_TAP_CLIPPED_*: a sensor near full scale during the capture
 } motorExcitationTap_t;
 void motorExcitationTapCapture(float dt);   // run the tap detector for one loop (frame wizard)
+uint8_t motorExcitationTapClipped(void);    // the tap being captured hit full scale so far (MOTOR_EXCITATION_TAP_CLIPPED_*)
 #define MOTOR_EXCITATION_TAP_CLIPPED_ACC  (1 << 0)
 #define MOTOR_EXCITATION_TAP_CLIPPED_GYRO (1 << 1)
 void motorExcitationSetClipFraction(float fraction);   // full-scale share that marks a tap clipped (default 0.9)

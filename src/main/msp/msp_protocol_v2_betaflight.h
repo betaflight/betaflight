@@ -46,6 +46,7 @@
 #define MSP2_FRAME_WIZARD_TAPS              0x301B  // in: page; out: session taps with their peaks, tap features, tap spectrum
 #define MSP2_FILTER_TUNE_STATUS             0x301C  // out: filter autotune state, harmonic strength, residual peaks, proposed / current
 #define MSP2_FRAME_MAP                      0x301D  // out: the stored frame map (modes the frame wizard confirmed)
+#define MSP2_FRAME_WIZARD_LISTEN            0x301E  // out: listen mode, the last tap's peaks (polling it holds the mode)
 
 // MSP2_CLI_COMMAND response flags (byte following the u16 total-length header)
 #define MSP2_CLI_COMMAND_FLAG_TRUNCATED     (1 << 0) // output exceeded the pageable buffer

@@ -344,6 +344,9 @@ static void tapCapture(float dt)
         memset(&tapState.rec, 0, sizeof(tapState.rec));
         tapState.capturing = true;
         tapState.t = 0.0f;
+#ifdef USE_FRAME_WIZARD
+        frameWizardTapTriggered();
+#endif
     }
     const float t = tapState.t;
     motorExcitationTap_t *r = &tapState.rec;
@@ -397,6 +400,11 @@ static void tapCapture(float dt)
 void motorExcitationTapCapture(float dt)
 {
     tapCapture(dt);
+}
+
+uint8_t motorExcitationTapClipped(void)
+{
+    return tapState.capturing ? tapState.rec.clipped : 0;
 }
 
 static void applyStop(float *motorDisarmed, int motorCount, float disarmOutput)

@@ -90,6 +90,11 @@
 #define SPEC_STEP             4.0f
 #define SPEC_BINS             400      // 20..1616 Hz, used up to 0.4 x the decay sample rate
 #define PEAKS_PER_TAP         8
+#define LISTEN_TIMEOUT_MS     2000     // listen ends without a request, keepalive or poll
+#define LISTEN_MAX_HZ         1000.0f  // listen spectrum up to here (the frame modes): fewer bins, peaks sooner
+#define LISTEN_FFT_N          DECAY_N  // listen: real FFT of each decay axis in place (zero padded to this)
+#define LISTEN_FFT_M          (LISTEN_FFT_N / 2)
+#define TAP_PEAK_FLOOR_HZ     32.0f    // the local floor of a peak: within +-this
 #define TAPS_NEEDED           5
 #define TAPS_FALLBACK         8        // a point with this many taps is done even without a confirmed peak
 #define CONFIRM_TAPS          3
@@ -97,7 +102,6 @@
 #define CONFIRM_REL           0.03f    // same peak in two taps: within 3 %, but at least CONFIRM_MIN_HZ
 #define CONFIRM_MIN_HZ        8.0f     // two spectrum steps: low-Q modes scatter by a few Hz
 #define TAP_PEAK_MIN_HZ       25.0f    // below: fewer than 4 cycles in the decay window, hand motion
-#define TAP_PEAK_FLOOR_BINS   8        // local floor within +-32 Hz
 #define TAP_PEAK_PROMINENCE   2.0f     // power over the local floor (1.4 x in amplitude)
 #define TAP_PEAK_MIN_REL      0.003f   // and at least -25 dB of the strongest bin above TAP_PEAK_MIN_HZ (a light
                                        // craft swings in the hand after a tap: the lowest bins dwarf the modes)
@@ -287,6 +291,24 @@ static struct {
     timeUs_t decayT0Us, decayT1Us;        // first and last decay sample: the real decay sample rate
     float dt;                // taps right after a beep are the beep itself
     bool stopPending;
+    // listen: taps on the craft without a run, their peaks for the Frame chart; nothing goes into the session
+    bool listening;
+    bool listenDirty;                     // the scratch decay / spectrum hold a listen tap, not the motor sweep
+    timeMs_t listenMs;                    // last request or poll
+    timeMs_t listenTapMs;
+    uint16_t listenSeq;                   // taps since the listening started
+    uint16_t listenTrigSeq;               // tap triggers since the listening started (before their peaks)
+    timeMs_t listenTrigMs;
+    uint16_t listenLatencyMs;             // last tap: trigger to its peaks (or to its clipped / no-decay end)
+    uint8_t listenFlags;                  // FRAME_WIZARD_LISTEN_*
+    uint8_t listenN;
+    float listenHz[PEAKS_PER_TAP];
+    float listenPow[PEAKS_PER_TAP];
+    uint8_t listenFftAxis;                // listen FFT: the next axis, 3 = the peaks
+    uint8_t listenFftStage;               // of that axis: window, FFT, split
+    bool listenPublished;                 // the current tap is reported (its peaks, or clipped / no decay)
+    // the spectrum grid of fwb->u.t.spec: bin b at specF0 + specStep x b
+    float specF0, specStep;
 } fw;
 
 static float tablesFs;                 // decay sample rate of the spectrum being computed
@@ -329,6 +351,32 @@ bool frameWizardIsActive(void)
 void frameWizardKeepalive(void)
 {
     fw.lastKeepaliveMs = millis();
+    if (fw.listening) {
+        fw.listenMs = fw.lastKeepaliveMs;
+    }
+}
+
+// listen: disarmed, no run, no motors, no beeps; taps on the craft give their peaks (frameWizardWriteListen).
+// Held by requests, keepalives or polls; ends after LISTEN_TIMEOUT_MS without one, on abort, arming or a run.
+bool frameWizardListen(void)
+{
+    if (ARMING_FLAG(ARMED) || frameWizardIsActive() || motorExcitationIsActive() || !sensors(SENSOR_ACC)) {
+        return false;
+    }
+    if (!fw.listening) {
+        fwb = benchScratchClaim(BENCH_SCRATCH_FRAME_WIZARD);
+        fw.listening = true;
+        fw.listenDirty = true;                        // the decay buffer shares the motor sweep's memory
+        fw.capturing = false;
+        fw.analysing = false;
+        fw.listenSeq = 0;
+        fw.listenTrigSeq = 0;
+        fw.listenN = 0;
+        fw.listenFlags = 0;
+        fw.listenTapMs = 0;
+    }
+    fw.listenMs = millis();
+    return true;
 }
 
 bool frameWizardStart(const frameWizardParams_t *params)
@@ -380,6 +428,7 @@ static void fwStopMotors(float *motorDisarmed, int motorCount, float disarmOutpu
 
 void frameWizardAbort(void)
 {
+    fw.listening = false;
     if (frameWizardIsActive()) {
         fw.phase = FW_ABORTED;
         fw.endReason = FRAME_WIZARD_END_USER;
@@ -447,8 +496,10 @@ static uint8_t safetyCheck(float dt)
 
 bool frameWizardWantsDecay(void)
 {
-    return (fw.phase == FW_TAPS || fw.phase == FW_CABLE) && !fw.analysing;
+    return (fw.phase == FW_TAPS || fw.phase == FW_CABLE || fw.listening) && !fw.analysing;
 }
+
+static void listenDecayFull(void);
 
 void frameWizardDecaySample(const float dg[3])
 {
@@ -481,12 +532,17 @@ void frameWizardDecaySample(const float dg[3])
         }
         fw.decimCount = 0;
         fw.decayN++;
+        if (fw.listening && !frameWizardIsActive() && fw.decayN >= fw.decayExpected) {
+            listenDecayFull();
+        }
     }
 }
 
 static void spectrumTables(float fs)
 {
     tablesFs = fs;                                   // the bin coefficients come from it, one per step (no table: RAM)
+    fw.specF0 = SPEC_F0;
+    fw.specStep = SPEC_STEP;
     // bins up to 0.4 x the decay sample rate (no aliasing on slow loops)
     fw.specBins = constrain((int)((FREQ_MAX_OF_RATE * fs - SPEC_F0) / SPEC_STEP) + 1, 8, SPEC_BINS);
 }
@@ -692,8 +748,153 @@ static void relabelSession(void)
     }
 }
 
+static void startTapSpectrum(void);
+static int tapSpectrumPeaks(float *freq, float *power);
+
+static void listenPublish(uint8_t flags, int n)
+{
+    fw.listenFlags = flags;
+    fw.listenN = n;
+    fw.listenTapMs = millis();
+    fw.listenLatencyMs = MIN(cmp32(fw.listenTapMs, fw.listenTrigMs), 65534);
+    fw.listenPublished = true;
+    fw.listenSeq++;
+}
+
+// listen: the decay is complete (before the detector's own window ends): the spectrum starts at once
+static void listenDecayFull(void)
+{
+    if (motorExcitationTapClipped()) {
+        listenPublish(FRAME_WIZARD_LISTEN_CLIPPED, 0);
+        fw.analysing = true;                          // no more decay samples for this tap
+        fw.listenFftAxis = 3 + 1;                     // nothing to compute
+        return;
+    }
+    const float span = cmpTimeUs(fw.decayT1Us, fw.decayT0Us) * 1e-6f;
+    const float fs = span > 0.0f ? (fw.decayN - 1) / span : 1.0f / (fw.dt * fw.decim);
+    fw.specF0 = 0.0f;
+    fw.specStep = fs / LISTEN_FFT_N;
+    fw.specBins = constrain((int)(MIN(LISTEN_MAX_HZ, FREQ_MAX_OF_RATE * fs) / fw.specStep) + 1, 8, LISTEN_FFT_M + 1);
+    memset(fwb->u.t.spec, 0, fw.specBins * sizeof(fwb->u.t.spec[0]));
+    fw.listenDirty = true;
+    fw.listenFftAxis = 0;
+    fw.listenFftStage = 0;
+    fw.analysing = true;
+}
+
+// rotate the phasor (c, s) by (dc, ds)
+#define FW_ROTATE(c, s, dc, ds) do { const float cn_ = c * dc - s * ds; s = s * dc + c * ds; c = cn_; } while (0)
+
+// listen: the power spectrum of each decay axis added to fwb->u.t.spec. Real FFT in place: the LISTEN_FFT_N samples
+// are LISTEN_FFT_M complex points (even real, odd imaginary), a radix-2 FFT of those, then the split into the real
+// signal's bins. Window, FFT and split are one loop each (a whole axis in one loop stretched it to ~2 ms).
+static void listenWindow(float *x)
+{
+    const float dc = cosf(2.0f * M_PIf / (fw.decayN - 1)), ds = sinf(2.0f * M_PIf / (fw.decayN - 1));
+    float c = 1.0f, s = 0.0f;                         // Hann by a rotating phasor, zeros after the samples
+    for (int n = 0; n < LISTEN_FFT_N; n++) {
+        x[n] = n < fw.decayN ? x[n] * (0.5f - 0.5f * c) : 0.0f;
+        FW_ROTATE(c, s, dc, ds);
+    }
+}
+
+static void listenFft(float *z)
+{
+    const int M = LISTEN_FFT_M;
+    for (int i = 1, j = 0; i < M; i++) {              // bit reversal
+        int bit = M >> 1;
+        for (; j & bit; bit >>= 1) {
+            j ^= bit;
+        }
+        j ^= bit;
+        if (i < j) {
+            float t = z[2 * i]; z[2 * i] = z[2 * j]; z[2 * j] = t;
+            t = z[2 * i + 1]; z[2 * i + 1] = z[2 * j + 1]; z[2 * j + 1] = t;
+        }
+    }
+    for (int half = 1; half < M; half <<= 1) {
+        const float dc = cosf(M_PIf / half), ds = -sinf(M_PIf / half);
+        float c = 1.0f, s = 0.0f;                     // twiddle exp(-j pi k / half)
+        for (int k = 0; k < half; k++) {
+            for (int a = k; a < M; a += 2 * half) {
+                const int b = a + half;
+                const float tr = z[2 * b] * c - z[2 * b + 1] * s;
+                const float ti = z[2 * b] * s + z[2 * b + 1] * c;
+                z[2 * b] = z[2 * a] - tr;
+                z[2 * b + 1] = z[2 * a + 1] - ti;
+                z[2 * a] += tr;
+                z[2 * a + 1] += ti;
+            }
+            FW_ROTATE(c, s, dc, ds);
+        }
+    }
+}
+
+// X[k] = E[k] + W^k O[k], E = (Z[k] + Z*[M-k]) / 2, O = (Z[k] - Z*[M-k]) / 2j, W = exp(-j 2 pi / N)
+static void listenSplit(const float *z)
+{
+    const int M = LISTEN_FFT_M;
+    const float dc = cosf(2.0f * M_PIf / LISTEN_FFT_N), ds = -sinf(2.0f * M_PIf / LISTEN_FFT_N);
+    float c = 1.0f, s = 0.0f;
+    for (int k = 0; k < fw.specBins; k++) {
+        const int a = k & (M - 1), b = (M - k) & (M - 1);
+        const float er = 0.5f * (z[2 * a] + z[2 * b]), ei = 0.5f * (z[2 * a + 1] - z[2 * b + 1]);
+        const float or_ = 0.5f * (z[2 * a + 1] + z[2 * b + 1]), oi = -0.5f * (z[2 * a] - z[2 * b]);
+        const float xr = er + c * or_ - s * oi, xi = ei + c * oi + s * or_;
+        fwb->u.t.spec[k] += xr * xr + xi * xi;
+        FW_ROTATE(c, s, dc, ds);
+    }
+}
+
+// listen, one step per loop: an axis, then the peaks
+static void listenStep(void)
+{
+    if (fw.listenFftAxis < 3) {
+        float *z = fwb->u.t.decay[fw.listenFftAxis];
+        if (fw.listenFftStage == 0) {
+            listenWindow(z);
+        } else if (fw.listenFftStage == 1) {
+            listenFft(z);
+        } else {
+            listenSplit(z);
+        }
+        if (++fw.listenFftStage == 3) {
+            fw.listenFftStage = 0;
+            fw.listenFftAxis++;
+        }
+        return;
+    }
+    if (fw.listenFftAxis == 3) {
+        listenPublish(0, tapSpectrumPeaks(fw.listenHz, fw.listenPow));
+    }
+    fw.analysing = false;
+}
+
+static void listenTapDone(const motorExcitationTap_t *tap)
+{
+    // the detector's window is over: a tap whose decay never completed is reported now
+    const bool haveDecay = fw.capturing && fw.decayN >= fw.decayExpected;
+    fw.capturing = false;
+    if (!fw.listenPublished && !fw.analysing && !haveDecay) {
+        listenPublish((tap->clipped ? FRAME_WIZARD_LISTEN_CLIPPED : 0) | FRAME_WIZARD_LISTEN_NO_DECAY, 0);
+    }
+}
+
+void frameWizardTapTriggered(void)
+{
+    if (fw.listening && !frameWizardIsActive()) {
+        fw.listenTrigSeq++;
+        fw.listenTrigMs = millis();
+        fw.listenPublished = false;
+    }
+}
+
 void frameWizardTapDone(const motorExcitationTap_t *tap)
 {
+    if (fw.listening && !frameWizardIsActive()) {
+        listenTapDone(tap);
+        return;
+    }
     if (fw.phase != FW_TAPS && fw.phase != FW_CABLE) {
         return;
     }
@@ -759,6 +960,11 @@ void frameWizardTapDone(const motorExcitationTap_t *tap)
     tapFeatures(tap, &fwb->tap[fw.tapN]);              // counted once its spectrum is ready
     fwb->tap[fw.tapN].seq = tap->seq;
     fw.pendingSeq = tap->seq;
+    startTapSpectrum();
+}
+
+static void startTapSpectrum(void)
+{
     // the decay sample rate measured over this capture, not assumed from the loop rate
     const float span = cmpTimeUs(fw.decayT1Us, fw.decayT0Us) * 1e-6f;
     spectrumTables(span > 0.0f ? (fw.decayN - 1) / span : 1.0f / (fw.dt * fw.decim));
@@ -773,29 +979,29 @@ void frameWizardTapDone(const motorExcitationTap_t *tap)
     memset(fwb->u.t.spec, 0, sizeof(fwb->u.t.spec));
 }
 
-static void finishTapSpectrum(void)
+// peaks of the summed power spectrum by prominence over the local floor (a global threshold lets hand motion
+// at the low end hide the modes): local maximum, power >= TAP_PEAK_PROMINENCE x the higher of the lowest values
+// within +-TAP_PEAK_FLOOR_HZ, >= TAP_PEAK_MIN_REL of the strongest bin; the most prominent PEAKS_PER_TAP kept
+static int tapSpectrumPeaks(float *freq, float *power)
 {
-    // peaks of the summed power spectrum by prominence over the local floor (a global threshold lets hand motion
-    // at the low end hide the modes): local maximum, power >= TAP_PEAK_PROMINENCE x the higher of the lowest values
-    // within +-TAP_PEAK_FLOOR_BINS, >= TAP_PEAK_MIN_REL of the strongest bin; the most prominent PEAKS_PER_TAP kept
     const int nb = fw.specBins;
+    const int floorBins = MAX(2, lrintf(TAP_PEAK_FLOOR_HZ / fw.specStep));
     float maxP = 0.0f;
     for (int b = 0; b < nb; b++) {
-        if (SPEC_F0 + SPEC_STEP * b >= TAP_PEAK_MIN_HZ) {
+        if (fw.specF0 + fw.specStep * b >= TAP_PEAK_MIN_HZ) {
             maxP = MAX(maxP, fwb->u.t.spec[b]);
         }
     }
-    fwTap_t *t = &fwb->tap[fw.tapN];
     float pq[PEAKS_PER_TAP];
     int np = 0;
     for (int b = 1; b < nb - 1; b++) {
         const float v = fwb->u.t.spec[b];
-        if (SPEC_F0 + SPEC_STEP * b < TAP_PEAK_MIN_HZ || !(v > fwb->u.t.spec[b - 1] && v >= fwb->u.t.spec[b + 1])
+        if (fw.specF0 + fw.specStep * b < TAP_PEAK_MIN_HZ || !(v > fwb->u.t.spec[b - 1] && v >= fwb->u.t.spec[b + 1])
             || v < TAP_PEAK_MIN_REL * maxP) {
             continue;
         }
         float lowL = v, lowR = v;
-        for (int d = 1; d <= TAP_PEAK_FLOOR_BINS; d++) {
+        for (int d = 1; d <= floorBins; d++) {
             if (b - d >= 0) {
                 lowL = MIN(lowL, fwb->u.t.spec[b - d]);
             }
@@ -811,7 +1017,7 @@ static void finishTapSpectrum(void)
         const float a = fwb->u.t.spec[b - 1], c = fwb->u.t.spec[b + 1];
         const float den = a - 2.0f * v + c;
         const float off = fabsf(den) > 1e-12f ? 0.5f * (a - c) / den : 0.0f;
-        const float f = SPEC_F0 + SPEC_STEP * (b + constrainf(off, -0.5f, 0.5f));
+        const float f = fw.specF0 + fw.specStep * (b + constrainf(off, -0.5f, 0.5f));
         int slot = np;
         if (np >= PEAKS_PER_TAP) {
             slot = 0;
@@ -826,8 +1032,18 @@ static void finishTapSpectrum(void)
         } else {
             np++;
         }
-        t->peaks[slot] = f; pq[slot] = q;
+        freq[slot] = f; pq[slot] = q;
+        if (power) {
+            power[slot] = v;
+        }
     }
+    return np;
+}
+
+static void finishTapSpectrum(void)
+{
+    fwTap_t *t = &fwb->tap[fw.tapN];
+    const int np = tapSpectrumPeaks(t->peaks, NULL);
     t->nPeaks = np;
     t->fixed = fw.phase == FW_CABLE;
     t->label = t->fixed ? FRAME_WIZARD_REGION_CABLE : LABEL_PENDING;
@@ -1523,6 +1739,19 @@ void frameWizardUpdate(float *motorDisarmed, int motorCount, float disarmOutput,
             fw.stopPending = false;
             fwStopMotors(motorDisarmed, motorCount, disarmOutput);
         }
+        if (fw.listening) {
+            if (ARMING_FLAG(ARMED) || motorExcitationIsActive() || !scratchOwned()
+                || cmp32(now, fw.listenMs) > LISTEN_TIMEOUT_MS) {
+                fw.listening = false;
+                fw.capturing = false;
+                fw.analysing = false;
+            } else {
+                motorExcitationTapCapture(dt);
+                if (fw.analysing) {
+                    listenStep();
+                }
+            }
+        }
         return;
     }
     uint8_t end = ARMING_FLAG(ARMED) ? FRAME_WIZARD_END_ARMED
@@ -1760,8 +1989,9 @@ void frameWizardWriteTaps(sbuf_t *dst, int first)
     }
     if (first >= 200) {
         // the last tap's power spectrum, 64 bins per page (first = 200 + page): u16 bins, u8 page, then f32 bins
+        // (none once listening used the buffer: its spectrum is on another grid)
         const int b0 = (first - 200) * 64;
-        const int n = constrain(fw.specBins - b0, 0, 64);
+        const int n = fw.listenDirty ? 0 : constrain(fw.specBins - b0, 0, 64);
         sbufWriteU16(dst, fw.specBins);
         sbufWriteU8(dst, first - 200);
         sbufWriteU8(dst, n);
@@ -1839,7 +2069,7 @@ static uint8_t spinCheckSigns(int8_t sgn[MOTORS])
 
 static bool spinCheckReady(void)
 {
-    return scratchOwned() && (fw.sweepBuffers || (fw.p.flags & FRAME_WIZARD_FLAG_SKIP_TAPS));
+    return scratchOwned() && !fw.listenDirty && (fw.sweepBuffers || (fw.p.flags & FRAME_WIZARD_FLAG_SKIP_TAPS));
 }
 
 // The spin check page: per motor the yaw phase against its tone and the response on each axis; the spin sign
@@ -1867,13 +2097,39 @@ static void writeSpinCheck(sbuf_t *dst)
     }
 }
 
+void frameWizardWriteListen(sbuf_t *dst)
+{
+    if (fw.listening) {
+        fw.listenMs = millis();                       // polling holds the listening
+    }
+    sbufWriteU8(dst, 1);                              // payload version
+    sbufWriteU8(dst, fw.listening ? 1 : 0);
+    sbufWriteU16(dst, fw.listenSeq);
+    sbufWriteU16(dst, fw.listenSeq ? MIN(cmp32(millis(), fw.listenTapMs), 65534) : 65535);
+    sbufWriteU8(dst, fw.listenFlags);
+    float maxP = 0.0f;
+    for (int i = 0; i < fw.listenN; i++) {
+        maxP = MAX(maxP, fw.listenPow[i]);
+    }
+    sbufWriteU8(dst, fw.listenN);
+    for (int i = 0; i < fw.listenN; i++) {
+        sbufWriteU16(dst, lrintf(fw.listenHz[i] * 10.0f));
+        const float db = maxP > 0.0f ? 10.0f * log10f(MAX(fw.listenPow[i], 1e-12f) / maxP) : 0.0f;
+        sbufWriteU16(dst, (uint16_t)(int16_t)lrintf(MAX(db, -300.0f) * 10.0f));
+    }
+    // appended (same version): the trigger at once, before the peaks; and the last tap's trigger-to-peaks time
+    sbufWriteU16(dst, fw.listenTrigSeq);
+    sbufWriteU16(dst, fw.listenTrigSeq ? MIN(cmp32(millis(), fw.listenTrigMs), 65534) : 65535);
+    sbufWriteU16(dst, fw.listenSeq ? fw.listenLatencyMs : 65535);
+}
+
 void frameWizardWriteResponse(sbuf_t *dst, int base, int motor)
 {
     if (base == FRAME_WIZARD_RESPONSE_SPIN) {
         writeSpinCheck(dst);
         return;
     }
-    if (!scratchOwned() || (!fw.sweepBuffers && !(fw.p.flags & FRAME_WIZARD_FLAG_SKIP_TAPS))) {
+    if (!spinCheckReady()) {
         for (int i = 0; i < 3 * SWEEP_BINS; i++) {
             sbufWriteU16(dst, 0);                    // no sweep gains (the buffers hold the taps, or are lent out)
         }

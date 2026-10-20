@@ -2286,6 +2286,9 @@ case MSP_NAME:
     case MSP2_FRAME_WIZARD_RESULT:
         frameWizardWriteResult(dst);
         break;
+    case MSP2_FRAME_WIZARD_LISTEN:
+        frameWizardWriteListen(dst);
+        break;
 #endif
 #ifdef USE_MOTOR_EXCITATION
     case MSP2_MOTOR_EXCITATION_STATUS: {
@@ -3484,6 +3487,10 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             frameWizardAbort();
         } else if (op == 2) {
             frameWizardKeepalive();
+        } else if (op == 8) {                                     // listen: taps without a run (disarmed, motors off)
+            if (!frameWizardListen()) {
+                return MSP_RESULT_ERROR;
+            }
 #ifdef USE_FILTER_AUTOTUNE
         } else if (op == 4) {                                     // revert the last applied filter autotune
             if (!filterAutotuneRevert()) {

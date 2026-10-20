@@ -43,6 +43,8 @@
 #define FRAME_WIZARD_REGIONS        6      // arm 1-4, frame, USB cable
 #define FRAME_WIZARD_REGION_FRAME   4
 #define FRAME_WIZARD_REGION_CABLE   5      // the USB cable rings too: its modes are marked in the results
+#define FRAME_WIZARD_LISTEN_CLIPPED  (1 << 0)  // listen page flags: the last tap hit full scale (no peaks)
+#define FRAME_WIZARD_LISTEN_NO_DECAY (1 << 1)  // the last tap had no complete decay (no peaks)
 #define FRAME_WIZARD_PEAK_CABLE     (1 << 7)   // motor peak axis byte / tap peak flags: matches a cable mode
 #define FRAME_WIZARD_FLAG_SKIP_TAPS (1 << 0)   // bench: straight to the motors
 #define FRAME_WIZARD_FLAG_TAPS_ONLY (1 << 3)   // the frame and arms by taps only: done after the taps, no motors
@@ -87,11 +89,13 @@ bool frameWizardStart(const frameWizardParams_t *params);
 void frameWizardAbort(void);
 void frameWizardKeepalive(void);
 bool frameWizardIsActive(void);
+bool frameWizardListen(void);           // taps without a run: their peaks only (MSP2_FRAME_WIZARD_LISTEN)
 
 // from the tap capture (motor_excitation.c)
 bool frameWizardWantsDecay(void);
 void frameWizardDecaySample(const float dg[3]);
 void frameWizardTapDone(const struct motorExcitationTap_s *tap);
+void frameWizardTapTriggered(void);      // a tap started (before its decay)
 
 // mixer path, every PID loop while active
 void frameWizardUpdate(float *motorDisarmed, int motorCount, float disarmOutput, timeUs_t currentTimeUs);
@@ -100,3 +104,4 @@ void frameWizardWriteStatus(sbuf_t *dst);
 void frameWizardWriteResult(sbuf_t *dst);
 void frameWizardWriteResponse(sbuf_t *dst, int base, int motor);
 void frameWizardWriteTaps(sbuf_t *dst, int first);
+void frameWizardWriteListen(sbuf_t *dst);
