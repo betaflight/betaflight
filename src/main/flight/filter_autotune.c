@@ -57,6 +57,9 @@
 #include "config/feature.h"
 #include "drivers/dshot.h"
 #include "drivers/dshot_command.h"
+#ifdef USE_DSHOT_BITBANG
+#include "drivers/dshot_bitbang.h"
+#endif
 #include "drivers/motor.h"
 #include "drivers/time.h"
 #include "fc/rc.h"
@@ -78,6 +81,7 @@
 #include "pg/dyn_notch.h"
 #include "pg/pg_ids.h"
 #include "pg/rpm_filter.h"
+#include "scheduler/scheduler.h"
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
 #include "sensors/gyro_init.h"
@@ -226,6 +230,9 @@ static struct {
     // flow
     filterTuneState_e state;
     bool wasArmed, readyBeeped, saveMap, applied;
+    // the real PID loop rate (scheduler statistics), smoothed while armed; kept after the disarm for the status
+    float loopHz;
+    timeUs_t armedAtUs, loopAtUs;
     uint16_t framesCarried;     // frames from earlier flights of this session (FILTER_TUNE_PARTIAL)
     uint8_t flightsCarried;
     // the result after a disarm with the mode on, by DShot beacons (any DShot FC, no buzzer needed)
@@ -1794,9 +1801,48 @@ static bool telemetryOk(void)
     return isDshotTelemetryActive() && rpmFilterConfig()->rpm_filter_harmonics > 0;
 }
 
+// DShot bitbang without its timer (another resource, e.g. the LED strip, took the pacer): the motors get nothing
+static bool bitbangFailed(void)
+{
+#ifdef USE_DSHOT_BITBANG
+    return isDshotBitbangActive(&motorConfig()->dev) && dshotBitbangGetStatus() != DSHOT_BITBANG_STATUS_OK;
+#else
+    return false;
+#endif
+}
+
+// The filters and the PID use the configured loop period. A PID loop that runs slower in flight (an overloaded FC:
+// timer DMA DShot with telemetry instead of bitbang, blackbox, OSD) shifts every cutoff, the D gain and the sweep,
+// and a tune measured that way is wrong for a healthy loop. The rate comes from the scheduler statistics.
+#define FT_LOOP_MIN_RATIO   0.9f        // of the configured PID rate
+#define FT_LOOP_SETTLE_US   2000000     // after the arm, before it counts
+#define FT_LOOP_TAU_S       1.0f
+
+static float loopTargetHz(void)
+{
+    return 1.0f / pidGetDT();
+}
+
+static void loopRateUpdate(timeUs_t now)
+{
+    taskInfo_t info;
+    getTaskInfo(TASK_PID, &info);
+    if (info.averageDeltaTime10thUs == 0) {
+        return;
+    }
+    const float hz = 1e7f / info.averageDeltaTime10thUs;
+    const float dt = ft.loopAtUs ? cmpTimeUs(now, ft.loopAtUs) * 1e-6f : FT_LOOP_TAU_S;
+    ft.loopHz += (hz - ft.loopHz) * MIN(1.0f, dt / FT_LOOP_TAU_S);
+    ft.loopAtUs = now;
+}
+
+static bool loopSlow(timeUs_t now)
+{
+    return cmpTimeUs(now, ft.armedAtUs) > FT_LOOP_SETTLE_US && ft.loopHz < FT_LOOP_MIN_RATIO * loopTargetHz();
+}
+
 void filterAutotuneUpdate(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTimeUs);
     const bool armed = ARMING_FLAG(ARMED);
     const bool modeOn = IS_RC_MODE_ACTIVE(BOXFILTERTUNE);
 
@@ -1832,6 +1878,12 @@ void filterAutotuneUpdate(timeUs_t currentTimeUs)
         }
     }
     if (!ft.wasArmed && armed) {
+        ft.armedAtUs = currentTimeUs;
+        ft.loopAtUs = 0;
+        ft.loopHz = loopTargetHz();
+        if (ft.state == FILTER_TUNE_LOOP_SLOW) {
+            ft.state = FILTER_TUNE_IDLE;              // a new flight measures the loop again
+        }
         // the frames of an earlier flight stay while the mode stays on (the buffers are ours and the filters the same)
         const bool carryOn = modeOn && ft.state == FILTER_TUNE_PARTIAL && scratchOwned();
         if (!carryOn && (modeOn || ft.state != FILTER_TUNE_APPLIED)) {
@@ -1839,8 +1891,20 @@ void filterAutotuneUpdate(timeUs_t currentTimeUs)
         }
     }
     ft.wasArmed = armed;
+    if (armed) {
+        loopRateUpdate(currentTimeUs);
+    }
     serviceBeacons(armed);
     sweepService(modeOn);
+
+    if (modeOn && bitbangFailed()) {                 // arming is blocked too (DSHOT_BBANG): say why
+        ft.state = FILTER_TUNE_BITBANG;
+        filterAutotuneCollecting = false;
+        return;
+    }
+    if (ft.state == FILTER_TUNE_BITBANG) {
+        ft.state = mapReady() ? FILTER_TUNE_IDLE : FILTER_TUNE_NO_MAP;
+    }
 
     if (!mapReady()) {
         ft.state = FILTER_TUNE_NO_MAP;
@@ -1858,6 +1922,15 @@ void filterAutotuneUpdate(timeUs_t currentTimeUs)
     }
     if (!telemetryOk()) {
         ft.state = FILTER_TUNE_NO_TELEMETRY;
+        filterAutotuneCollecting = false;
+        return;
+    }
+    // a slow loop: the frames so far are dropped, nothing is applied at the disarm (until the next arm)
+    if (ft.state == FILTER_TUNE_LOOP_SLOW || loopSlow(currentTimeUs)) {
+        if (ft.state != FILTER_TUNE_LOOP_SLOW) {
+            resetSession();                           // ends the sweep too
+            ft.state = FILTER_TUNE_LOOP_SLOW;
+        }
         filterAutotuneCollecting = false;
         return;
     }
@@ -1970,6 +2043,10 @@ bool filterAutotuneLedSignal(timeUs_t now, filterTuneLed_e *led)
     case FILTER_TUNE_NO_TELEMETRY:
         *led = fast ? FILTER_TUNE_LED_RED : FILTER_TUNE_LED_OFF;
         return true;
+    case FILTER_TUNE_BITBANG:                          // the FC setup: red / blue by turns
+    case FILTER_TUNE_LOOP_SLOW:
+        *led = fast ? FILTER_TUNE_LED_RED : FILTER_TUNE_LED_BLUE;
+        return true;
     default:
         return false;
     }
@@ -2019,6 +2096,14 @@ bool filterAutotuneOsdWarning(char *text, bool *blinking, bool *critical)
         return true;
     case FILTER_TUNE_NO_TELEMETRY:
         tfp_sprintf(text, "FILTER TUNE NO RPM");
+        *critical = true;
+        return true;
+    case FILTER_TUNE_BITBANG:
+        tfp_sprintf(text, "FILTER TUNE BITBANG");
+        *critical = true;
+        return true;
+    case FILTER_TUNE_LOOP_SLOW:
+        tfp_sprintf(text, "FILTER TUNE LOOP %d/%d", (int)lrintf(ft.loopHz), (int)lrintf(loopTargetHz()));
         *critical = true;
         return true;
     default:
@@ -2140,6 +2225,9 @@ void filterAutotuneWriteStatus(sbuf_t *dst)
     sbufWriteU16(dst, r.heatRef100);
     sbufWriteU16(dst, r.heatChosen100);
     sbufWriteU8(dst, filterTuneConfig()->heat_budget_dk);
+    // the PID loop: measured in the last armed time (0 = not armed yet) and configured, Hz
+    sbufWriteU16(dst, lrintf(constrainf(ft.loopHz, 0.0f, 65535.0f)));
+    sbufWriteU16(dst, lrintf(loopTargetHz()));
 }
 
 void frameMapWrite(sbuf_t *dst)

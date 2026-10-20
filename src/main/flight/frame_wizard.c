@@ -32,6 +32,9 @@
 #include "common/utils.h"
 #include "drivers/dshot.h"
 #include "drivers/dshot_command.h"
+#ifdef USE_DSHOT_BITBANG
+#include "drivers/dshot_bitbang.h"
+#endif
 #include "drivers/motor.h"
 #include "drivers/motor_types.h"
 #include "drivers/time.h"
@@ -96,6 +99,9 @@
 #define LISTEN_PEAK_PROMINENCE 4.0f    // and 6 dB over the local floor
 #define SPIN_EVIDENCE_RATIO   4.0f     // without telemetry: spinning motors at least double the gyro's step noise
 #define NO_POWER_S            0.5f     // motor run: the battery or the ESC telemetry gone this long ends it
+#define LOOP_MIN_RATIO        0.9f     // motor run: the PID loop below this share of its rate ...
+#define LOOP_SLOW_S           1.0f     // ... this long (after the spin-up) ends it: a tune on that FC would be skewed
+#define LOOP_SPINUP_S         1.0f
 #define LISTEN_MAX_HZ         1000.0f  // listen spectrum up to here (the frame modes): fewer bins, peaks sooner
 #define LISTEN_FFT_N          DECAY_N  // listen: real FFT of each decay axis in place (zero padded to this)
 #define LISTEN_FFT_M          (LISTEN_FFT_N / 2)
@@ -298,6 +304,7 @@ static struct {
     float dt;                // taps right after a beep are the beep itself
     bool stopPending;
     float noPowerS;                       // motor run: time without the battery or the ESC telemetry
+    float loopSlowS;                      // motor run: time with the PID loop below LOOP_MIN_RATIO of its rate
     // spin evidence without telemetry: the gyro's sample-to-sample steps, still motors vs the first base speed
     float prevG[3];
     float quietSq, spinSq;
@@ -395,6 +402,12 @@ bool frameWizardListen(void)
 // unpowered ESC sends nothing). Without this a run on USB power swept still motors and stored peaks of noise.
 static uint8_t motorPowerCheck(void)
 {
+#ifdef USE_DSHOT_BITBANG
+    // bitbang without its timer (another resource took the pacer): the ESCs get no DShot at all
+    if (isDshotBitbangActive(&motorConfig()->dev) && dshotBitbangGetStatus() != DSHOT_BITBANG_STATUS_OK) {
+        return FRAME_WIZARD_END_BITBANG;
+    }
+#endif
     if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && getBatteryState() == BATTERY_NOT_PRESENT) {
         return FRAME_WIZARD_END_NO_POWER;
     }
@@ -413,8 +426,14 @@ bool frameWizardStart(const frameWizardParams_t *params)
         || !sensors(SENSOR_ACC) || !accHasBeenCalibrated()) {
         return false;
     }
-    if (!(params->flags & FRAME_WIZARD_FLAG_TAPS_ONLY) && motorPowerCheck() != FRAME_WIZARD_END_NONE) {
-        return false;                                // a run with the motors: battery in, ESCs answering
+    if (!(params->flags & FRAME_WIZARD_FLAG_TAPS_ONLY)) {
+        const uint8_t power = motorPowerCheck();    // a run with the motors: DShot out, battery in, ESCs answering
+        if (power != FRAME_WIZARD_END_NONE) {
+            if (!frameWizardIsActive()) {
+                fw.endReason = power;                // the status tells the host why it was refused
+            }
+            return false;
+        }
     }
     memset(&fw, 0, sizeof(fw));
     fwb = benchScratchClaim(BENCH_SCRATCH_FRAME_WIZARD);
@@ -1821,14 +1840,26 @@ void frameWizardUpdate(float *motorDisarmed, int motorCount, float disarmOutput,
     } else {
         fw.noPowerS = 0.0f;
     }
+    // the loop rate with the motors and their telemetry running: the load of a flight, close to it
+    if (fw.phase == FW_SPIN && fw.t > LOOP_SPINUP_S && fw.dt * LOOP_MIN_RATIO > nominal) {
+        fw.loopSlowS += dt;
+    } else {
+        fw.loopSlowS = 0.0f;
+    }
     uint8_t end = ARMING_FLAG(ARMED) ? FRAME_WIZARD_END_ARMED
                 : getBatteryState() == BATTERY_CRITICAL ? FRAME_WIZARD_END_BATTERY
                 : fw.noPowerS > NO_POWER_S ? motorPowerCheck()
                 : fw.noSpin ? FRAME_WIZARD_END_NO_SPIN
+                : fw.loopSlowS > LOOP_SLOW_S ? FRAME_WIZARD_END_LOOP_SLOW
                 : cmp32(now, fw.lastKeepaliveMs) > (motorsLive() ? KEEPALIVE_MOTORS_MS : KEEPALIVE_TIMEOUT_MS)
                     ? FRAME_WIZARD_END_KEEPALIVE
                 : safetyCheck(dt);
     if (end != FRAME_WIZARD_END_NONE) {
+        if (end == FRAME_WIZARD_END_LOOP_SLOW) {
+            fw.endInfo[0] = lrintf(1.0f / fw.dt);        // measured / configured loop rate, Hz
+            fw.endInfo[1] = lrintf(1.0f / nominal);
+            fw.endInfo[2] = fw.endInfo[3] = 0;
+        }
         fw.phase = FW_ABORTED;
         fw.endReason = end;
         fw.stopPending = false;

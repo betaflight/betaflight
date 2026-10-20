@@ -109,6 +109,8 @@ typedef enum {
     FILTER_TUNE_NO_TELEMETRY,   // needs DShot rotation telemetry and the RPM filter
     FILTER_TUNE_PARTIAL,        // disarmed with the mode on but too few frames: kept, the next flight adds to them
     FILTER_TUNE_EXCITING,       // enough frames: a short sweep on roll then pitch measures the loop crossover (ANGLE only)
+    FILTER_TUNE_BITBANG,        // DShot bitbang has no timer (a resource such as the LED strip takes it): no motors
+    FILTER_TUNE_LOOP_SLOW,      // the PID loop runs below its configured rate in flight: frames dropped, nothing applied
 } filterTuneState_e;
 
 void filterAutotuneInit(void);

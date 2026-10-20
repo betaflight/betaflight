@@ -70,6 +70,8 @@ typedef enum {
     FRAME_WIZARD_END_IMPACT,        // hit something
     FRAME_WIZARD_END_NO_POWER,      // the motor run needs the battery: none at the start, or it went during the run
     FRAME_WIZARD_END_NO_SPIN,       // the motors do not turn: no ESC telemetry with bidirectional DShot, or no vibration
+    FRAME_WIZARD_END_BITBANG,       // DShot bitbang has no timer: a resource (e.g. the LED strip) takes the one it needs
+    FRAME_WIZARD_END_LOOP_SLOW,     // the PID loop runs below 90 % of its rate with the motors on (end info: Hz, configured Hz)
 } frameWizardEnd_e;
 #define FRAME_WIZARD_SWEEP_BINS     128
 
