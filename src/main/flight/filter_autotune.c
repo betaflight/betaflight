@@ -56,10 +56,13 @@
 #include "config/config.h"
 #include "config/feature.h"
 #include "drivers/dshot.h"
+#include "drivers/dshot_command.h"
+#include "drivers/motor.h"
 #include "drivers/time.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
+#include "flight/mixer.h"
 #include "io/beeper.h"
 #include "io/ledstrip.h"
 #include "osd/osd.h"
@@ -84,6 +87,8 @@ PG_REGISTER(filterTuneBackup_t, filterTuneBackup, PG_FILTER_TUNE_BACKUP, 1);
 #define FT_ORDERS       5                   // measured; the RPM filter covers 3
 #define FT_FS_TARGET    2000.0f             // decimated sample rate target, Hz
 #define FT_MIN_FRAMES   60                  // ~16 s of samples, ~32 s of steady hover
+#define FT_BEACON_GUARD_MS 1500                // the result beacons after a disarm: past DSHOT_BEACON_GUARD_DELAY_US
+#define FT_BEACON_GAP_MS   400
 #define FT_ROT_MIN_HZ   40.0f
 #define FT_RATE_MAX     60.0f               // smoothed |gyro|, deg/s
 #define FT_THR_RANGE    0.06f               // throttle change within a frame
@@ -198,6 +203,11 @@ static struct {
     // flow
     filterTuneState_e state;
     bool wasArmed, readyBeeped, saveMap, applied;
+    uint16_t framesCarried;     // frames from earlier flights of this session (FILTER_TUNE_PARTIAL)
+    uint8_t flightsCarried;
+    // the result after a disarm with the mode on, by DShot beacons (any DShot FC, no buzzer needed)
+    uint8_t beacon[3], beaconN, beaconI;
+    timeMs_t beaconAt;
     ftResult_t result;
 } ft;
 
@@ -1176,7 +1186,35 @@ static void resetSession(void)
     memset(ft.rotFrameSum, 0, sizeof(ft.rotFrameSum));
     ft.compFs = 0.0f;                                // the filters may have changed (autotune applied)
     ft.readyBeeped = false;
+    ft.framesCarried = 0;
+    ft.flightsCarried = 0;
     resetFrame();
+}
+
+// after the disarm guard (the props stopping), short and only after a disarm with the mode on
+static void queueBeacons(const uint8_t *cmd, int n)
+{
+    ft.beaconN = MIN(n, (int)ARRAYLEN(ft.beacon));
+    memcpy(ft.beacon, cmd, ft.beaconN);
+    ft.beaconI = 0;
+    ft.beaconAt = millis() + FT_BEACON_GUARD_MS;
+}
+
+static void serviceBeacons(bool armed)
+{
+    if (armed) {
+        ft.beaconN = 0;
+        return;
+    }
+    if (ft.beaconI < ft.beaconN && cmp32(millis(), ft.beaconAt) >= 0) {
+#ifdef USE_DSHOT
+        if (isMotorProtocolDshot()) {
+            dshotCommandWrite(ALL_MOTORS, getMotorCount(), ft.beacon[ft.beaconI], DSHOT_CMD_TYPE_INLINE);
+        }
+#endif
+        ft.beaconI++;
+        ft.beaconAt = millis() + FT_BEACON_GAP_MS;
+    }
 }
 
 void filterAutotuneInit(void)
@@ -1207,7 +1245,7 @@ void filterAutotuneUpdate(timeUs_t currentTimeUs)
         }
     }
 
-    // disarm: apply or discard
+    // disarm: apply, or keep the frames for the next flight, or discard
     if (ft.wasArmed && !armed) {
         filterAutotuneCollecting = false;
         if (ft.state == FILTER_TUNE_COLLECTING || ft.state == FILTER_TUNE_READY || ft.state == FILTER_TUNE_WAITING) {
@@ -1216,17 +1254,28 @@ void filterAutotuneUpdate(timeUs_t currentTimeUs)
                 apply(&ft.result);
                 ft.applied = true;
                 ft.state = FILTER_TUNE_APPLIED;
+                static const uint8_t applied[] = { DSHOT_CMD_BEACON1, DSHOT_CMD_BEACON3, DSHOT_CMD_BEACON5 };
+                queueBeacons(applied, ARRAYLEN(applied));        // rising: saved
+            } else if (modeOn) {
+                ft.state = FILTER_TUNE_PARTIAL;                  // hover more: the next flight adds to these frames
+                ft.framesCarried = ft.frames;
+                ft.flightsCarried++;
+                static const uint8_t more[] = { DSHOT_CMD_BEACON2, DSHOT_CMD_BEACON2 };
+                queueBeacons(more, ARRAYLEN(more));              // two low: not enough yet
             } else {
                 ft.state = FILTER_TUNE_DISCARDED;
             }
         }
     }
     if (!ft.wasArmed && armed) {
-        if (modeOn || ft.state != FILTER_TUNE_APPLIED) {
+        // the frames of an earlier flight stay while the mode stays on (the buffers are ours and the filters the same)
+        const bool carryOn = modeOn && ft.state == FILTER_TUNE_PARTIAL && scratchOwned();
+        if (!carryOn && (modeOn || ft.state != FILTER_TUNE_APPLIED)) {
             resetSession();
         }
     }
     ft.wasArmed = armed;
+    serviceBeacons(armed);
 
     if (!mapReady()) {
         ft.state = FILTER_TUNE_NO_MAP;
@@ -1304,6 +1353,7 @@ bool filterAutotuneLedSignal(timeUs_t now, filterTuneLed_e *led)
     const bool fast = (ms % 250) < 125;               // 4 Hz
     switch (ft.state) {
     case FILTER_TUNE_WAITING:                          // armed, not a steady hover yet
+    case FILTER_TUNE_PARTIAL:                          // landed with too few frames: fly again with the mode on
         *led = slow ? FILTER_TUNE_LED_BLUE : FILTER_TUNE_LED_OFF;
         return true;
     case FILTER_TUNE_COLLECTING:
@@ -1315,7 +1365,7 @@ bool filterAutotuneLedSignal(timeUs_t now, filterTuneLed_e *led)
     case FILTER_TUNE_APPLIED:
         *led = slow ? FILTER_TUNE_LED_GREEN : FILTER_TUNE_LED_OFF;
         return true;
-    case FILTER_TUNE_DISCARDED:                        // disarmed with the mode on but too few frames
+    case FILTER_TUNE_DISCARDED:                        // disarmed with the mode off: the frames dropped
         *led = FILTER_TUNE_LED_RED;
         return true;
     case FILTER_TUNE_NO_MAP:
@@ -1342,6 +1392,9 @@ bool filterAutotuneOsdWarning(char *text, bool *blinking, bool *critical)
         } else {
             tfp_sprintf(text, "FILTER TUNE %d/%d", MIN(ft.frames, FT_MIN_FRAMES - 1), FT_MIN_FRAMES);
         }
+        return true;
+    case FILTER_TUNE_PARTIAL:
+        tfp_sprintf(text, "FILTER TUNE MORE %d/%d", MIN(ft.frames, FT_MIN_FRAMES - 1), FT_MIN_FRAMES);
         return true;
     case FILTER_TUNE_READY:
         tfp_sprintf(text, "FILTER TUNE READY");
@@ -1454,6 +1507,8 @@ void filterAutotuneWriteStatus(sbuf_t *dst)
     sbufWriteU16(dst, rpm->rpm_filter_fade_range_hz);
     sbufWriteU16(dst, lrintf(constrainf(r.trackErr * 1e5f, 0.0f, 65535.0f)));   // notch tracking error, 0.001 %
     sbufWriteU8(dst, signalChannels());              // FILTER_TUNE_SIGNAL_*: beeper pin, LED strip, OSD
+    sbufWriteU16(dst, ft.framesCarried);             // of the frames, from earlier flights (FILTER_TUNE_PARTIAL)
+    sbufWriteU8(dst, ft.flightsCarried);
 }
 
 void frameMapWrite(sbuf_t *dst)

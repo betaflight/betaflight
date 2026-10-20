@@ -87,6 +87,7 @@ typedef enum {
     FILTER_TUNE_APPLIED,        // saved at the last disarm, active from the next arm
     FILTER_TUNE_DISCARDED,      // disarmed with the mode off, or without enough frames
     FILTER_TUNE_NO_TELEMETRY,   // needs DShot rotation telemetry and the RPM filter
+    FILTER_TUNE_PARTIAL,        // disarmed with the mode on but too few frames: kept, the next flight adds to them
 } filterTuneState_e;
 
 void filterAutotuneInit(void);
