@@ -218,12 +218,15 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
     hottGPSMessage->climbrate_L = (uint8_t)(encoded_climbrate & 0x00FFU);
     hottGPSMessage->climbrate_H = (uint8_t)(encoded_climbrate >> 8);
     uint16_t encoded_climbrate3s = (uint16_t)(3 * climbrate / 100 + HOTT_EAM_OFFSET_M3S);
-	if (encoded_climbrate3s > 255)
-		encoded_climbrate3s = HOTT_EAM_OFFSET_M3S;
+    if (climbrate > 4500)
+        encoded_climbrate3s = 255;
+    else if (climbrate < -4000)
+        encoded_climbrate3s = 0;
     hottGPSMessage->climbrate3s = (uint8_t)(encoded_climbrate3s);
-
     if (!STATE(GPS_FIX)) {
         hottGPSMessage->gps_fix_char = GPS_FIX_CHAR_NONE;
+        hottGPSMessage->home_direction = 0;
+        hottGPSMessage->flight_direction = 0;
         return;
     }
 
@@ -251,7 +254,7 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
     hottGPSMessage->altitude_H = hottGpsAltitude >> 8;
 
     hottGPSMessage->home_direction = GPS_directionToHome / 20;
-	hottGPSMessage->flight_direction = gpsSol.groundCourse / 20;	//GPS_direction;	gpsSol.groundCourse	//gps_Msg.ground_course
+    hottGPSMessage->flight_direction = gpsSol.groundCourse / 20;
 }
 #endif
 
@@ -316,12 +319,14 @@ static inline void hottEAMUpdateAltitude(HOTT_EAM_MSG_t *hottEAMMessage)
 static inline void hottEAMUpdateClimbrate(HOTT_EAM_MSG_t *hottEAMMessage)
 {
     const int32_t vario = getEstimatedVario();
-    const uint16_t encoded_vario = (uint16_t)(30000 + vario);
-    hottEAMMessage->climbrate_L = (uint8_t)(encoded_vario & 0x00FFU);
-    hottEAMMessage->climbrate_H = (uint8_t)(encoded_vario >> 8);
+	const uint16_t encoded_climbrate = (uint16_t)(30000 + vario);
+    hottEAMMessage->climbrate_L = (uint8_t)(encoded_climbrate & 0x00FFU);
+    hottEAMMessage->climbrate_H = (uint8_t)(encoded_climbrate >> 8);
     uint16_t encoded_climbrate3s = (uint16_t)(3 * vario / 100 + HOTT_EAM_OFFSET_M3S);
-    if (encoded_climbrate3s > 255)
-	    encoded_climbrate3s = HOTT_EAM_OFFSET_M3S;
+    if (vario > 4500)
+        encoded_climbrate3s = 255;
+    else if (vario < -4000)
+        encoded_climbrate3s = 0;
     hottEAMMessage->climbrate3s = (uint8_t)(encoded_climbrate3s);
 }
 #endif
