@@ -42,7 +42,7 @@
 #define PROP_VI_K       0.252f     // induced velocity = n[rev/s]·D[m]·sqrt(2·Ct/π), Ct≈0.1
 #define UPDATE_HZ       100
 #define IDLE_AMPS_TAU_S 2.0f       // the non-motor current (FC, VTX, receiver), averaged while disarmed
-#define AMBIENT_MIN_C   5
+#define AMBIENT_MIN_C   (-30)
 #define AMBIENT_MAX_C   45
 #define AMBIENT_DEFAULT_C 25.0f
 
@@ -59,7 +59,9 @@ static struct {
 
 static void ambientConsider(int t, int *best)
 {
-    if (t > AMBIENT_MIN_C && t < AMBIENT_MAX_C && t < *best) {
+    // 0 is what a sensor holds before its first reading; a real 0 °C is skipped too, the other sensors
+    // on the craft read close to it
+    if (t != 0 && t > AMBIENT_MIN_C && t < AMBIENT_MAX_C && t < *best) {
         *best = t;
     }
 }
