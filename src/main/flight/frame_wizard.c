@@ -92,6 +92,8 @@
 #define SPEC_BINS             400      // 20..1616 Hz, used up to 0.4 x the decay sample rate
 #define PEAKS_PER_TAP         8
 #define LISTEN_TIMEOUT_MS     2000     // listen ends without a request, keepalive or poll
+#define LISTEN_PEAK_MIN_REL   0.0316f  // listen: peaks within 15 dB of the strongest
+#define LISTEN_PEAK_PROMINENCE 4.0f    // and 6 dB over the local floor
 #define NO_POWER_S            0.5f     // motor run: the battery or the ESC telemetry gone this long ends it
 #define LISTEN_MAX_HZ         1000.0f  // listen spectrum up to here (the frame modes): fewer bins, peaks sooner
 #define LISTEN_FFT_N          DECAY_N  // listen: real FFT of each decay axis in place (zero padded to this)
@@ -770,7 +772,7 @@ static void relabelSession(void)
 }
 
 static void startTapSpectrum(void);
-static int tapSpectrumPeaks(float *freq, float *power);
+static int tapSpectrumPeaks(float *freq, float *power, float minRel, float minProminence);
 
 static void listenPublish(uint8_t flags, int n)
 {
@@ -886,7 +888,8 @@ static void listenStep(void)
         return;
     }
     if (fw.listenFftAxis == 3) {
-        listenPublish(0, tapSpectrumPeaks(fw.listenHz, fw.listenPow));
+        // one tap lights the chart at once: only the clear peaks (the wizard pools many taps, it takes weaker ones)
+        listenPublish(0, tapSpectrumPeaks(fw.listenHz, fw.listenPow, LISTEN_PEAK_MIN_REL, LISTEN_PEAK_PROMINENCE));
     }
     fw.analysing = false;
 }
@@ -1001,9 +1004,9 @@ static void startTapSpectrum(void)
 }
 
 // peaks of the summed power spectrum by prominence over the local floor (a global threshold lets hand motion
-// at the low end hide the modes): local maximum, power >= TAP_PEAK_PROMINENCE x the higher of the lowest values
-// within +-TAP_PEAK_FLOOR_HZ, >= TAP_PEAK_MIN_REL of the strongest bin; the most prominent PEAKS_PER_TAP kept
-static int tapSpectrumPeaks(float *freq, float *power)
+// at the low end hide the modes): local maximum, power >= minProminence x the higher of the lowest values
+// within +-TAP_PEAK_FLOOR_HZ, >= minRel of the strongest bin; the most prominent PEAKS_PER_TAP kept
+static int tapSpectrumPeaks(float *freq, float *power, float minRel, float minProminence)
 {
     const int nb = fw.specBins;
     const int floorBins = MAX(2, lrintf(TAP_PEAK_FLOOR_HZ / fw.specStep));
@@ -1018,7 +1021,7 @@ static int tapSpectrumPeaks(float *freq, float *power)
     for (int b = 1; b < nb - 1; b++) {
         const float v = fwb->u.t.spec[b];
         if (fw.specF0 + fw.specStep * b < TAP_PEAK_MIN_HZ || !(v > fwb->u.t.spec[b - 1] && v >= fwb->u.t.spec[b + 1])
-            || v < TAP_PEAK_MIN_REL * maxP) {
+            || v < minRel * maxP) {
             continue;
         }
         float lowL = v, lowR = v;
@@ -1031,7 +1034,7 @@ static int tapSpectrumPeaks(float *freq, float *power)
             }
         }
         const float q = v / MAX(MAX(lowL, lowR), 1e-12f);
-        if (q < TAP_PEAK_PROMINENCE) {
+        if (q < minProminence) {
             continue;
         }
         // parabolic refinement of the peak position
@@ -1064,7 +1067,7 @@ static int tapSpectrumPeaks(float *freq, float *power)
 static void finishTapSpectrum(void)
 {
     fwTap_t *t = &fwb->tap[fw.tapN];
-    const int np = tapSpectrumPeaks(t->peaks, NULL);
+    const int np = tapSpectrumPeaks(t->peaks, NULL, TAP_PEAK_MIN_REL, TAP_PEAK_PROMINENCE);
     t->nPeaks = np;
     t->fixed = fw.phase == FW_CABLE;
     t->label = t->fixed ? FRAME_WIZARD_REGION_CABLE : LABEL_PENDING;
