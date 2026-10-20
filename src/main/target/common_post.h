@@ -1072,8 +1072,13 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_UNUSED_PINS_INIT 1
 #endif
 
+// one build option is enough (512 KB targets): the autotune needs the frame map, the wizard the tap capture and
+// motor output of the excitation
+#if defined(USE_FILTER_AUTOTUNE) && !defined(USE_FRAME_WIZARD)
+#define USE_FRAME_WIZARD
+#endif
 #if defined(USE_FRAME_WIZARD) && !defined(USE_MOTOR_EXCITATION)
-#undef USE_FRAME_WIZARD
+#define USE_MOTOR_EXCITATION
 #endif
 
 #if defined(USE_FILTER_AUTOTUNE) && !(defined(USE_FRAME_WIZARD) && defined(USE_RPM_FILTER) && defined(USE_DYN_NOTCH_FILTER) && defined(USE_DSHOT_TELEMETRY))

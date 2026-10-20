@@ -94,6 +94,7 @@
 #define LISTEN_TIMEOUT_MS     2000     // listen ends without a request, keepalive or poll
 #define LISTEN_PEAK_MIN_REL   0.0316f  // listen: peaks within 15 dB of the strongest
 #define LISTEN_PEAK_PROMINENCE 4.0f    // and 6 dB over the local floor
+#define SPIN_EVIDENCE_RATIO   4.0f     // without telemetry: spinning motors at least double the gyro's step noise
 #define NO_POWER_S            0.5f     // motor run: the battery or the ESC telemetry gone this long ends it
 #define LISTEN_MAX_HZ         1000.0f  // listen spectrum up to here (the frame modes): fewer bins, peaks sooner
 #define LISTEN_FFT_N          DECAY_N  // listen: real FFT of each decay axis in place (zero padded to this)
@@ -296,6 +297,11 @@ static struct {
     float dt;                // taps right after a beep are the beep itself
     bool stopPending;
     float noPowerS;                       // motor run: time without the battery or the ESC telemetry
+    // spin evidence without telemetry: the gyro's sample-to-sample steps, still motors vs the first base speed
+    float prevG[3];
+    float quietSq, spinSq;
+    uint32_t quietN, spinN;
+    bool noSpin;
     // listen: taps on the craft without a run, their peaks for the Frame chart; nothing goes into the session
     bool listening;
     bool listenDirty;                     // the scratch decay / spectrum hold a listen tap, not the motor sweep
@@ -365,8 +371,8 @@ void frameWizardKeepalive(void)
 // Held by requests, keepalives or polls; ends after LISTEN_TIMEOUT_MS without one, on abort, arming or a run.
 bool frameWizardListen(void)
 {
-    if (ARMING_FLAG(ARMED) || frameWizardIsActive() || motorExcitationIsActive() || !sensors(SENSOR_ACC)) {
-        return false;
+    if (ARMING_FLAG(ARMED) || frameWizardIsActive() || motorExcitationIsActive()) {
+        return false;                                 // the gyro is enough: the spectrum is the gyro decay
     }
     if (!fw.listening) {
         fwb = benchScratchClaim(BENCH_SCRATCH_FRAME_WIZARD);
@@ -1392,8 +1398,21 @@ static void startBase(int base)
 
 static void spinCheckStep(float *motorDisarmed, float dt);
 
+// the gyro's step since the last loop, squared and summed over the axes: the motors' vibration, not the hand
+static float gyroStepSq(void)
+{
+    float s = 0.0f;
+    for (int k = 0; k < 3; k++) {
+        const float d = gyro.gyroADC[k] - fw.prevG[k];
+        s += d * d;
+        fw.prevG[k] = gyro.gyroADC[k];
+    }
+    return s;
+}
+
 static void spinStep(float *motorDisarmed, float dt)
 {
+    const float stepSq = gyroStepSq();                // every loop: the step is always from the last loop
     trackGyroMean(dt);
     fw.stageT += dt;
     if (fw.stage == SPIN_SEEK) {
@@ -1422,6 +1441,14 @@ static void spinStep(float *motorDisarmed, float dt)
             fw.stageT = 0.0f;
         }
     } else if (fw.stage == SPIN_SETTLE) {
+        if (fw.base == 0 && !fw.haveRpm) {
+            fw.spinSq += stepSq;
+            fw.spinN++;
+        }
+        if (fw.stageT >= SEEK_SETTLE_S && fw.base == 0 && !fw.haveRpm && fw.quietN && fw.spinN
+            && fw.spinSq / fw.spinN < SPIN_EVIDENCE_RATIO * fw.quietSq / fw.quietN) {
+            fw.noSpin = true;                         // no telemetry and no vibration: the motors are not turning
+        }
         if (fw.stageT >= SEEK_SETTLE_S) {
             fw.stage = SPIN_SWEEP;
             fw.stageT = 0.0f;
@@ -1786,6 +1813,7 @@ void frameWizardUpdate(float *motorDisarmed, int motorCount, float disarmOutput,
     uint8_t end = ARMING_FLAG(ARMED) ? FRAME_WIZARD_END_ARMED
                 : getBatteryState() == BATTERY_CRITICAL ? FRAME_WIZARD_END_BATTERY
                 : fw.noPowerS > NO_POWER_S ? motorPowerCheck()
+                : fw.noSpin ? FRAME_WIZARD_END_NO_SPIN
                 : cmp32(now, fw.lastKeepaliveMs) > (motorsLive() ? KEEPALIVE_MOTORS_MS : KEEPALIVE_TIMEOUT_MS)
                     ? FRAME_WIZARD_END_KEEPALIVE
                 : safetyCheck(dt);
@@ -1835,6 +1863,13 @@ void frameWizardUpdate(float *motorDisarmed, int motorCount, float disarmOutput,
             fw.endReason = motorPowerCheck();
             fw.phase = FW_DONE;
             break;
+        }
+        // the still craft's gyro step noise after the beeps, for the spin evidence
+        if (cmp32(now, fw.phaseStartMs) > 2000) {
+            fw.quietSq += gyroStepSq();
+            fw.quietN++;
+        } else {
+            gyroStepSq();
         }
         if (cmp32(now, fw.phaseStartMs) > 2600 && fw.beepN == 0) {
             fw.phase = FW_SPIN;
