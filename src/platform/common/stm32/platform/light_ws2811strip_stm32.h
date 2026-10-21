@@ -58,3 +58,5 @@ extern uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 extern uint16_t BIT_COMPARE_1;
 extern uint16_t BIT_COMPARE_0;
 extern ioTag_t ledStripIoTag;
+
+void ws2811LedStripClearTransferBuffer(void);
