@@ -1026,6 +1026,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_MOTOR_THERMAL_GAIN,    VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 10, 250 }, PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, gain_percent) },
     { PARAM_NAME_MOTOR_THERMAL_WARNING, VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 150 },  PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, warning_c) },
     { PARAM_NAME_MOTOR_RESISTANCE,      VAR_UINT16 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 5000 }, PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, resistance_mohm) },
+    { PARAM_NAME_MOTOR_IDLE_CURRENT,    VAR_UINT16 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 20000 }, PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, idle_current_ma) },
 #endif
     { PARAM_NAME_MOTOR_IDLE, VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, MOTOR_IDLE_MAX },                  PG_MOTOR_CONFIG, offsetof(motorConfig_t, motorIdle) },
 #ifdef USE_DSHOT

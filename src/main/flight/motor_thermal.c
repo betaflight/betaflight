@@ -56,7 +56,8 @@
 #define REF_RCA         11.3f   // core -> air, still air, K/W
 #define REF_A_IRON      0.0449f   // iron loss per (rpm/1000)², W
 #define REF_K_CU        7.94e-07f   // ripple copper loss per (KV·Vbat·duty_rms)², W
-#define REF_R_LL        0.2f       // line-to-line winding resistance (load-current copper loss)
+#define REF_R_LL        0.070f     // line-to-line winding resistance, datasheet (load-current copper loss)
+#define REF_I0_A        1.4f       // no-load current at 10 V, datasheet; the bench no-load power agrees within 20 %
 #define AIR_GAIN        1.56f   // convection: 1 + AIR_GAIN·(v/10 m/s)^1.5
 #define PROP_VI_K       0.252f     // induced velocity = n[rev/s]·D[m]·sqrt(2·Ct/π), Ct≈0.1
 #define UPDATE_HZ       100
@@ -159,14 +160,19 @@ void motorThermalInit(void)
     rt.invCc = 1.0f / (REF_CC * heatCap);
     rt.rsc = REF_RSC / sqrtf(dr * hr);
     rt.rca = REF_RCA / sqrtf(area);
-    // no-load loss at the same rpm barely depends on the size; ∝ electrical frequency through the magnet count
-    rt.aIron = REF_A_IRON * 1e-6f * powf(dr, 0.15f) * sqrtf(sqrtf(hr)) * (MAX(motorConfig()->motorPoleCount, 2) / REF_POLES);
     const float gain = c->gain_percent * 0.01f;
     rt.kv = MAX(motorConfig()->kv, 100);                                                      // a zero/absurd setting must not silence the model
+    if (c->idle_current_ma) {
+        // datasheet no-load current at 10 V: the no-load power P0 = 10 V·I0 at KV·10 rpm, relative to the reference
+        rt.aIron = REF_A_IRON * 1e-6f * (c->idle_current_ma * 0.001f / REF_I0_A) * sq(REF_KV / rt.kv);
+    } else {
+        // no-load loss at the same rpm barely depends on the size; ∝ electrical frequency through the magnet count
+        rt.aIron = REF_A_IRON * 1e-6f * powf(dr, 0.15f) * sqrtf(sqrtf(hr)) * (MAX(motorConfig()->motorPoleCount, 2) / REF_POLES);
+    }
     const float rScale = hr * sq(dr) * sqrtf(dr);                                             // R ∝ 1/(KV²·H·D^2.5)
     rt.kCu = REF_K_CU * rScale * gain * sq(rt.kv * 0.001f);                                   // ripple loss ∝ 1/R, noise -> duty
     rt.rLoad = c->resistance_mohm ? c->resistance_mohm * 0.001f * gain
-                                  : REF_R_LL * sq(REF_KV / rt.kv) / rScale * gain;              // measured, or the same R law for the torque current
+                                  : REF_R_LL * sq(REF_KV / rt.kv) / rScale * gain;              // datasheet / measured, or the same R law for the torque current
     unsigned p = 0;
     while (d > autoProp[p].maxStatorMm) {
         p++;
