@@ -3304,11 +3304,13 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         if (sbufBytesRemaining(src) >= 3) {
 #ifdef USE_MOTOR_THERMAL
             const uint8_t d = sbufReadU8(src), h = sbufReadU8(src), prop = sbufReadU8(src);
-            // zeros = client does not know the fields, keep what we have; otherwise apply the CLI ranges
+            // all zeros = client does not know the fields, keep what we have; otherwise the CLI ranges apply
             if (d >= 5 && d <= 60 && h >= 10 && h <= 250 && prop <= 200) {
                 motorThermalConfigMutable()->stator_diameter_mm = d;
                 motorThermalConfigMutable()->stator_height_dmm = h;
                 motorThermalConfigMutable()->prop_diameter_dinch = prop;
+            } else if (d || h || prop) {
+                return MSP_RESULT_ERROR;
             }
 #else
             sbufReadU8(src); sbufReadU8(src); sbufReadU8(src);
