@@ -1894,13 +1894,22 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("fields_disabled_mask", "%d",            blackboxConfig()->fields_disabled_mask);
 #ifdef USE_MOTOR_EXCITATION
         // bench session that started this log (all zero when none); per-frame identity is in DEBUG_MOTOR_EXCITATION
-        BLACKBOX_PRINT_HEADER_LINE("motor_excitation", "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%u",
-                                   excitationHeader.sessionId, excitationHeader.motorMask,
-                                   excitationHeader.waveform, excitationHeader.baseCommand,
-                                   excitationHeader.amplitude, excitationHeader.freq0DeciHz,
-                                   excitationHeader.freq1DeciHz, excitationHeader.durationDs,
-                                   excitationHeader.rampMs, excitationHeader.maxCommand,
-                                   (unsigned)excitationHeader.seed);
+        // longer than the 64 bytes reserved above: up to 86 with every field at its maximum
+        BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
+            const blackboxBufferReserveStatus_e reserve = blackboxDeviceReserveBufferSpace(96);
+            if (reserve == BLACKBOX_RESERVE_TEMPORARY_FAILURE) {
+                return false;   // try this line again later
+            }
+            if (reserve == BLACKBOX_RESERVE_SUCCESS) {  // a device buffer too small for it skips the line
+                blackboxPrintfHeaderLine("motor_excitation", "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%u",
+                                       excitationHeader.sessionId, excitationHeader.motorMask,
+                                       excitationHeader.waveform, excitationHeader.baseCommand,
+                                       excitationHeader.amplitude, excitationHeader.freq0DeciHz,
+                                       excitationHeader.freq1DeciHz, excitationHeader.durationDs,
+                                       excitationHeader.rampMs, excitationHeader.maxCommand,
+                                       (unsigned)excitationHeader.seed);
+            }
+        );
 #endif
         BLACKBOX_PRINT_HEADER_LINE("blackbox_high_resolution", "%d",        blackboxConfig()->high_resolution);
         BLACKBOX_PRINT_HEADER_LINE("rc_command_scale", "%d",                BLACKBOX_RC_COMMAND_SCALE);
