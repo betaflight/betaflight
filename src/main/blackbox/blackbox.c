@@ -1525,6 +1525,15 @@ STATIC_UNIT_TESTED char *blackboxGetStartDateTime(char *buf)
  * Transmit a portion of the system information headers. Call the first time with xmitState.headerIndex == 0. Returns
  * true iff transmission is complete, otherwise call again later to continue transmission.
  */
+#ifdef USE_MOTOR_EXCITATION
+// the parameters of the bench session that started this log, all zero when none is running
+static const motorExcitationParams_t *excitationHeaderParams(void)
+{
+    static const motorExcitationParams_t noSession;
+    return motorExcitationIsActive() ? motorExcitationGetParams() : &noSession;
+}
+#endif
+
 static bool blackboxWriteSysinfo(void)
 {
 #ifndef UNIT_TEST
@@ -1881,12 +1890,12 @@ static bool blackboxWriteSysinfo(void)
 #ifdef USE_MOTOR_EXCITATION
         // bench session that started this log (all zero when none); per-frame identity is in DEBUG_MOTOR_EXCITATION
         BLACKBOX_PRINT_HEADER_LINE("motor_excitation", "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%u",
-                                   motorExcitationGetParams()->sessionId, motorExcitationGetParams()->motorMask,
-                                   motorExcitationGetParams()->waveform, motorExcitationGetParams()->baseCommand,
-                                   motorExcitationGetParams()->amplitude, motorExcitationGetParams()->freq0DeciHz,
-                                   motorExcitationGetParams()->freq1DeciHz, motorExcitationGetParams()->durationDs,
-                                   motorExcitationGetParams()->rampMs, motorExcitationGetParams()->maxCommand,
-                                   (unsigned)motorExcitationGetParams()->seed);
+                                   excitationHeaderParams()->sessionId, excitationHeaderParams()->motorMask,
+                                   excitationHeaderParams()->waveform, excitationHeaderParams()->baseCommand,
+                                   excitationHeaderParams()->amplitude, excitationHeaderParams()->freq0DeciHz,
+                                   excitationHeaderParams()->freq1DeciHz, excitationHeaderParams()->durationDs,
+                                   excitationHeaderParams()->rampMs, excitationHeaderParams()->maxCommand,
+                                   (unsigned)excitationHeaderParams()->seed);
 #endif
         BLACKBOX_PRINT_HEADER_LINE("blackbox_high_resolution", "%d",        blackboxConfig()->high_resolution);
         BLACKBOX_PRINT_HEADER_LINE("rc_command_scale", "%d",                BLACKBOX_RC_COMMAND_SCALE);

@@ -92,7 +92,8 @@
 #endif
 
 #define USE_MOTOR
-#if TARGET_FLASH_SIZE > 512
+// cloud and core builds pick these as options (FILTER_AUTOTUNE pulls in the other two)
+#if TARGET_FLASH_SIZE > 512 && !defined(CLOUD_BUILD) && !defined(CORE_BUILD)
 #define USE_MOTOR_EXCITATION   // bench excitation sessions for motor / frame tests (flight/motor_excitation.c)
 #define USE_FRAME_WIZARD       // frame test: taps and a motor sweep map the craft's resonances (flight/frame_wizard.c)
 #define USE_FILTER_AUTOTUNE    // FILTER TUNE mode sets the gyro filters from a hover (flight/filter_autotune.c)
