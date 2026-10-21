@@ -261,3 +261,35 @@ TEST_F(FeedforwardStallTest, SlowLinkIsLeftAlone)
     loopWithoutFrame(140000);
     EXPECT_FLOAT_EQ(feedforward, getFeedforward(FD_PITCH));
 }
+
+TEST_F(FeedforwardStallTest, OneLongGapDoesNotStretchTheLimit)
+{
+    // a single frame after a 60 ms gap brings a stick move, then the frames stop again right away
+    testTimeUs += 60000 - frameIntervalUs;
+    rcData[PITCH] = 1580;
+    frame();
+    EXPECT_GT(fabsf(getFeedforward(FD_PITCH)), 100.0f);
+
+    loopWithoutFrame(25000);                       // the limit follows the 4 ms link, not the 60 ms gap
+    EXPECT_FLOAT_EQ(0.0f, getFeedforward(FD_PITCH));
+}
+
+TEST_F(FeedforwardStallTest, SmoothedFeedforwardDropsWhenFramesStop)
+{
+    rxConfigMutable()->rc_smoothing = 1;
+    initRcProcessing();
+    for (int i = 0; i < 20; i++) {
+        frame();
+    }
+    rcData[PITCH] = 1580;
+    frame();
+    for (int us = 250; us < 4 * (int)frameIntervalUs; us += 250) {
+        loopWithoutFrame(us);                      // the PT3 output builds up between loops
+    }
+    EXPECT_GT(fabsf(getFeedforward(FD_PITCH)), 10.0f);
+
+    loopWithoutFrame(25000);
+    EXPECT_FLOAT_EQ(0.0f, getFeedforward(FD_PITCH));
+    loopWithoutFrame(25250);                       // and stays there, no decay from old filter state
+    EXPECT_FLOAT_EQ(0.0f, getFeedforward(FD_PITCH));
+}

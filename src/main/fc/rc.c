@@ -555,7 +555,9 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
 // When frames stop (link stalled, receiver rebooting) it would be held until RX loss is detected
 // (RXLOSS_TRIGGER_INTERVAL, 150 ms), so a fast stick move in the last frame keeps the motors driven that
 // long. Drop it, and the history it is computed from, once no frame came for several frame intervals.
-// On slow links (intervals near RX_INTERVAL_MAX_US) the limit is beyond RX loss and nothing changes.
+// The shorter of the last two intervals is used, so a single long gap does not stretch the limit for a
+// second stall right after it. On slow links (intervals near RX_INTERVAL_MAX_US) the limit is beyond
+// RX loss and nothing changes.
 #define FEEDFORWARD_STALE_MIN_US     20000
 #define FEEDFORWARD_STALE_INTERVALS  3
 
@@ -570,7 +572,8 @@ static FAST_CODE_NOINLINE void resetStaleFeedforward(timeUs_t currentTimeUs)
     if (isStale) {
         return;
     }
-    const timeDelta_t staleUs = MAX(FEEDFORWARD_STALE_MIN_US, FEEDFORWARD_STALE_INTERVALS * (timeDelta_t)currentRxIntervalUs);
+    const timeDelta_t intervalUs = MIN(currentRxIntervalUs, previousRxIntervalUs ? previousRxIntervalUs : currentRxIntervalUs);
+    const timeDelta_t staleUs = MAX(FEEDFORWARD_STALE_MIN_US, FEEDFORWARD_STALE_INTERVALS * intervalUs);
     if (cmpTimeUs(currentTimeUs, lastRxFrameTimeUs) <= staleUs) {
         return;
     }
@@ -584,6 +587,13 @@ static FAST_CODE_NOINLINE void resetStaleFeedforward(timeUs_t currentTimeUs)
         if (feedforwardAveraging) {
             laggedMovingAverageInit(&feedforwardDeltaAvg[axis].filter, feedforwardAveraging + 1, (float *)&feedforwardDeltaAvg[axis].buf[0]);
         }
+#ifdef USE_RC_SMOOTHING_FILTER
+        // with rc_smoothing on, getFeedforward() returns the PT3 output: drop it too instead of letting it decay
+        feedforwardSmoothed[axis] = 0.0f;
+        rcSmoothingData.filterFeedforward[axis].state = 0.0f;
+        rcSmoothingData.filterFeedforward[axis].state1 = 0.0f;
+        rcSmoothingData.filterFeedforward[axis].state2 = 0.0f;
+#endif
     }
 }
 #endif // USE_FEEDFORWARD
