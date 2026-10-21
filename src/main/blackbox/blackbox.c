@@ -1118,6 +1118,12 @@ static void blackboxResetIterationTimers(void)
 /**
  * Start Blackbox logging if it is not already running. Intended to be called upon arming.
  */
+#ifdef USE_MOTOR_EXCITATION
+// the parameters of the bench session that started this log, all zero when none was running; taken when
+// the log starts, as the session can end before the headers are written
+static motorExcitationParams_t excitationHeader;
+#endif
+
 static void blackboxStart(void)
 {
     blackboxValidateConfig();
@@ -1154,6 +1160,14 @@ static void blackboxStart(void)
      */
     blackboxLastArmingBeep = getArmingBeepTimeMicros();
     memcpy(&blackboxLastFlightModeFlags, &rcModeActivationMask, sizeof(blackboxLastFlightModeFlags)); // record startup status
+
+#ifdef USE_MOTOR_EXCITATION
+    if (motorExcitationIsActive()) {
+        excitationHeader = *motorExcitationGetParams();
+    } else {
+        memset(&excitationHeader, 0, sizeof(excitationHeader));
+    }
+#endif
 
     blackboxSetState(BLACKBOX_STATE_PREPARE_LOG_FILE);
 }
@@ -1525,15 +1539,6 @@ STATIC_UNIT_TESTED char *blackboxGetStartDateTime(char *buf)
  * Transmit a portion of the system information headers. Call the first time with xmitState.headerIndex == 0. Returns
  * true iff transmission is complete, otherwise call again later to continue transmission.
  */
-#ifdef USE_MOTOR_EXCITATION
-// the parameters of the bench session that started this log, all zero when none is running
-static const motorExcitationParams_t *excitationHeaderParams(void)
-{
-    static const motorExcitationParams_t noSession;
-    return motorExcitationIsActive() ? motorExcitationGetParams() : &noSession;
-}
-#endif
-
 static bool blackboxWriteSysinfo(void)
 {
 #ifndef UNIT_TEST
@@ -1890,12 +1895,12 @@ static bool blackboxWriteSysinfo(void)
 #ifdef USE_MOTOR_EXCITATION
         // bench session that started this log (all zero when none); per-frame identity is in DEBUG_MOTOR_EXCITATION
         BLACKBOX_PRINT_HEADER_LINE("motor_excitation", "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%u",
-                                   excitationHeaderParams()->sessionId, excitationHeaderParams()->motorMask,
-                                   excitationHeaderParams()->waveform, excitationHeaderParams()->baseCommand,
-                                   excitationHeaderParams()->amplitude, excitationHeaderParams()->freq0DeciHz,
-                                   excitationHeaderParams()->freq1DeciHz, excitationHeaderParams()->durationDs,
-                                   excitationHeaderParams()->rampMs, excitationHeaderParams()->maxCommand,
-                                   (unsigned)excitationHeaderParams()->seed);
+                                   excitationHeader.sessionId, excitationHeader.motorMask,
+                                   excitationHeader.waveform, excitationHeader.baseCommand,
+                                   excitationHeader.amplitude, excitationHeader.freq0DeciHz,
+                                   excitationHeader.freq1DeciHz, excitationHeader.durationDs,
+                                   excitationHeader.rampMs, excitationHeader.maxCommand,
+                                   (unsigned)excitationHeader.seed);
 #endif
         BLACKBOX_PRINT_HEADER_LINE("blackbox_high_resolution", "%d",        blackboxConfig()->high_resolution);
         BLACKBOX_PRINT_HEADER_LINE("rc_command_scale", "%d",                BLACKBOX_RC_COMMAND_SCALE);
