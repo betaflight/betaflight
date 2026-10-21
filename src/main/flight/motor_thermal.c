@@ -1,3 +1,20 @@
+/*
+ * This file is part of Betaflight.
+ *
+ * Betaflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Betaflight. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <math.h>
 
 #include "platform.h"
@@ -11,7 +28,6 @@
 #include "fc/runtime_config.h"
 #include "flight/mixer.h"
 #include "flight/motor_noise.h"
-#include "flight/pid.h"
 #include "io/gps.h"
 #include "pg/motor.h"
 #include "pg/motor_thermal.h"
@@ -42,7 +58,7 @@
 #define PROP_VI_K       0.252f     // induced velocity = n[rev/s]·D[m]·sqrt(2·Ct/π), Ct≈0.1
 #define UPDATE_HZ       100
 #define IDLE_AMPS_TAU_S 2.0f       // the non-motor current (FC, VTX, receiver), averaged while disarmed
-#define AMBIENT_MIN_C   5
+#define AMBIENT_MIN_C   (-30)
 #define AMBIENT_MAX_C   45
 #define AMBIENT_DEFAULT_C 25.0f
 
@@ -50,8 +66,13 @@ typedef struct { float ts, tc; } thermalNode_t;
 
 static thermalNode_t node[MAX_SUPPORTED_MOTORS];
 static struct {
-    float cs, cc, rsc, rca, aIron, kCu, rLoad, bellRadiusM, propDiameterM, tAmb, dt;
-    int decimation, counter;
+    float invCs, invCc;         // inverse windings and core heat capacities, K/J
+    float rsc, rca, rLoad, tAmb;
+    float aIron;                // iron loss per rpm², W
+    float kCu;                  // ripple copper loss per (Vbat·command noise)², W
+    float kv;                   // effective KV
+    float airK;                 // squared air speed at the stator from the bell and the prop per rpm², (m/s)²
+    timeUs_t lastUs;
     float idleAmps;             // battery current with the motors stopped: not motor current
     int ambientCounter;
     bool armedOnce;
@@ -59,7 +80,9 @@ static struct {
 
 static void ambientConsider(int t, int *best)
 {
-    if (t > AMBIENT_MIN_C && t < AMBIENT_MAX_C && t < *best) {
+    // 0 is what a sensor holds before its first reading; a real 0 °C is skipped too, the other sensors
+    // on the craft read close to it
+    if (t != 0 && t > AMBIENT_MIN_C && t < AMBIENT_MAX_C && t < *best) {
         *best = t;
     }
 }
@@ -106,17 +129,19 @@ static void ambientUpdate(void)
     }
 }
 
-static float autoPropInch(float statorDmm)
+// motor_prop_diameter 0 (auto): the usual prop for the stator diameter
+static const struct {
+    uint8_t maxStatorMm;
+    uint8_t propDinch;
+} autoProp[] = {
+    { 9, 16 }, { 12, 25 }, { 15, 30 }, { 19, 35 }, { 22, 45 }, { 23, 50 }, { 27, 55 }, { 30, 70 }, { UINT8_MAX, 80 },
+};
+
+// convection: 1 + AIR_GAIN·(v/10 m/s)^1.5, from the squared air speed at the stator
+static float airFactor(float airSpeedSq)
 {
-    if (statorDmm <= 9)  return 1.6f;
-    if (statorDmm <= 12) return 2.5f;
-    if (statorDmm <= 15) return 3.0f;
-    if (statorDmm <= 19) return 3.5f;
-    if (statorDmm <= 22) return 4.5f;
-    if (statorDmm <= 23) return 5.0f;
-    if (statorDmm <= 27) return 5.5f;
-    if (statorDmm <= 30) return 7.0f;
-    return 8.0f;
+    const float v = sqrtf(airSpeedSq) * 0.1f;
+    return 1.0f + AIR_GAIN * v * sqrtf(v);
 }
 
 void motorThermalInit(void)
@@ -125,22 +150,23 @@ void motorThermalInit(void)
     const float d = MAX(c->stator_diameter_mm, 5), h = MAX(c->stator_height_dmm, 10) * 0.1f;
     const float mass = (d * d * h) / (REF_D_MM * REF_D_MM * REF_H_MM);                     // volume ratio
     const float area = (d * h + 0.5f * d * d) / (REF_D_MM * REF_H_MM + 0.5f * REF_D_MM * REF_D_MM);
-    rt.cs = REF_CS * mass;
-    rt.cc = REF_CC * mass;
+    rt.invCs = 1.0f / (REF_CS * mass);
+    rt.invCc = 1.0f / (REF_CC * mass);
     rt.rsc = REF_RSC / ((d * h) / (REF_D_MM * REF_H_MM));
     rt.rca = REF_RCA / area;
-    rt.aIron = REF_A_IRON * mass;
+    rt.aIron = REF_A_IRON * 1e-6f * mass;
     const float gain = c->gain_percent * 0.01f;
-    const float kv = MAX(motorConfig()->kv, 100);
-    rt.kCu = REF_K_CU * (h / REF_H_MM) * gain;                                                // ripple loss ∝ KV²·H (R ∝ 1/(KV²·H))
+    rt.kv = MAX(motorConfig()->kv, 100);                                                      // a zero/absurd setting must not silence the model
+    rt.kCu = REF_K_CU * (h / REF_H_MM) * gain * sq(rt.kv * 0.001f);                           // ripple loss ∝ KV²·H (R ∝ 1/(KV²·H)), noise -> duty
     rt.rLoad = c->resistance_mohm ? c->resistance_mohm * 0.001f * gain
-                                  : REF_R_LL * sq(REF_KV / kv) * (REF_H_MM / h) * gain;         // measured, or the same R law for the torque current
-    rt.bellRadiusM = (0.5f * d + 3.0f) * 0.001f;
-    const float propInch = c->prop_diameter_dinch ? c->prop_diameter_dinch * 0.1f : autoPropInch(d);
-    rt.propDiameterM = propInch * 0.0254f;
-    rt.decimation = MAX(1, lrintf(1.0f / (UPDATE_HZ * pidGetDT())));
-    rt.dt = rt.decimation * pidGetDT();
-    rt.counter = 0;
+                                  : REF_R_LL * sq(REF_KV / rt.kv) * (REF_H_MM / h) * gain;      // measured, or the same R law for the torque current
+    unsigned p = 0;
+    while (d > autoProp[p].maxStatorMm) {
+        p++;
+    }
+    const int propDinch = c->prop_diameter_dinch ? c->prop_diameter_dinch : autoProp[p].propDinch;
+    const float bellRadiusM = (0.5f * d + 3.0f) * 0.001f, propDiameterM = propDinch * 0.1f * 0.0254f;
+    rt.airK = (sq(2.0f * M_PIf * bellRadiusM) + sq(propDiameterM * PROP_VI_K)) / sq(60.0f);  // bell surface and prop induced speed
 
     // Parameters are recomputed on every (disarmed) profile change, the thermal state only once at boot:
     // a hot motor must not read as ambient after a profile switch on the ground.
@@ -157,12 +183,13 @@ void motorThermalInit(void)
     }
 }
 
-void motorThermalUpdate(const float *motorOutput, int motorCount)
+// Scheduler task at UPDATE_HZ, fed with the mixer's final motor outputs, so that every output path (normal
+// mix, motor stop, crash flip) is covered. The model integrates over the real interval: a late run stays right.
+void motorThermalUpdate(timeUs_t currentTimeUs)
 {
-    if (++rt.counter < rt.decimation) {
-        return;
-    }
-    rt.counter = 0;
+    const float dt = rt.lastUs ? constrainf(cmpTimeUs(currentTimeUs, rt.lastUs) * 1e-6f, 0.0f, 0.1f) : 1.0f / UPDATE_HZ;
+    rt.lastUs = currentTimeUs;
+    const int motorCount = getMotorCount();
 
     const bool armed = ARMING_FLAG(ARMED);
     if (armed) {
@@ -171,51 +198,41 @@ void motorThermalUpdate(const float *motorOutput, int motorCount)
     ambientUpdate();
 
     const float vbat = getBatteryVoltage() * 0.01f;
-    const float kv = MAX(motorConfig()->kv, 100);                     // effective KV: a zero/absurd setting must not silence the model
-    const float unloadedMaxRpm = vbat * kv;
+    const float unloadedMaxRpm = vbat * rt.kv;
     const float maxRpm = unloadedMaxRpm * (-5.44e-6f * unloadedMaxRpm + 0.944f);   // same load derating as motorEstimateMaxRpm()
+    const float kCu = rt.kCu * sq(vbat);
     // battery current split across motors by command² when per-motor ESC current is not available; the
     // current with the motors stopped (FC, VTX, receiver) is not motor current and is taken off first
     const float batteryAmps = getAmperage() * 0.01f;
     if (!armed) {
-        rt.idleAmps += (batteryAmps - rt.idleAmps) * MIN(1.0f, rt.dt / IDLE_AMPS_TAU_S);
+        rt.idleAmps += (batteryAmps - rt.idleAmps) * MIN(1.0f, dt / IDLE_AMPS_TAU_S);
     }
     const float motorsAmps = armed ? MAX(batteryAmps - rt.idleAmps, 0.0f) : 0.0f;
     float cmdSqSum = 0.0f;
     float cmdFrac[MAX_SUPPORTED_MOTORS];
     for (int i = 0; i < motorCount && i < MAX_SUPPORTED_MOTORS; i++) {
-        cmdFrac[i] = constrainf((motorConvertToExternal(motorOutput[i]) - 1000) * 0.001f, 0.0f, 1.0f);
+        cmdFrac[i] = constrainf((motorConvertToExternal(motor[i]) - 1000) * 0.001f, 0.0f, 1.0f);
         cmdSqSum += sq(cmdFrac[i]);
     }
-    float vCraft = 0.0f;
+    float vCraftSq = 0.0f;
 #ifdef USE_GPS
     if (STATE(GPS_FIX)) {
-        vCraft = gpsSol.groundSpeed * 0.01f;
+        vCraftSq = sq(gpsSol.groundSpeed * 0.01f);
     }
 #endif
 #ifdef USE_DSHOT_TELEMETRY
     const bool haveRpm = isDshotTelemetryActive();
 #endif
     for (int i = 0; i < motorCount && i < MAX_SUPPORTED_MOTORS; i++) {
-        float rpm;
+        float rpm = cmdFrac[i] * maxRpm;                            // no telemetry: no-load estimate
 #ifdef USE_DSHOT_TELEMETRY
         if (haveRpm) {
             rpm = getDshotRpm(i);
-        } else
-#endif
-        {
-            const float frac = (motorConvertToExternal(motorOutput[i]) - 1000) * 0.001f;   // no telemetry: no-load estimate
-            rpm = constrainf(frac, 0.0f, 1.0f) * maxRpm;
         }
-        const float n = rpm / 60.0f;
-        const float vBell = 2.0f * M_PIf * n * rt.bellRadiusM;
-        const float vProp = n * rt.propDiameterM * PROP_VI_K;
-        const float v = sqrtf(vBell * vBell + vProp * vProp + vCraft * vCraft);
-        const float air = 1.0f + AIR_GAIN * powf(v * 0.1f, 1.5f);
-
-        const float duty = motorNoiseRms(i, 0) * 0.001f;          // command units -> duty fraction
-        const float pCu = rt.kCu * sq(kv * vbat * duty);
-        const float pIron = rt.aIron * sq(rpm * 0.001f);
+#endif
+        const float air = airFactor(sq(rpm) * rt.airK + vCraftSq);
+        const float pCu = kCu * sq(motorNoiseRms(i, 0));
+        const float pIron = rt.aIron * sq(rpm);
         // torque current copper loss: phase current ≈ bus current / duty, ripple energy (already in pCu) removed
         float motorAmps = 0.0f;
 #ifdef USE_DSHOT_TELEMETRY
@@ -232,8 +249,8 @@ void motorThermalUpdate(const float *motorOutput, int motorCount)
 
         thermalNode_t *s = &node[i];
         const float q = (s->ts - s->tc) / rt.rsc;
-        s->ts += rt.dt * (pCu + pLoad - q) / rt.cs;
-        s->tc += rt.dt * (pIron + q - (s->tc - rt.tAmb) * air / rt.rca) / rt.cc;
+        s->ts += (pCu + pLoad - q) * dt * rt.invCs;
+        s->tc += (pIron + q - (s->tc - rt.tAmb) * air / rt.rca) * dt * rt.invCc;
         if (i < 4) {
             DEBUG_SET(DEBUG_MOTOR_THERMAL, i, lrintf(10.0f * s->ts));   //!< [index:0..3] Motor {1|2|3|4} Estimated Winding Temperature [unit:0.1degC]
         }
@@ -242,12 +259,8 @@ void motorThermalUpdate(const float *motorOutput, int motorCount)
 
 float motorThermalRippleRise(float noiseRms, float rpm, float vbat)
 {
-    const float kv = MAX(motorConfig()->kv, 100);
-    const float n = rpm / 60.0f;
-    const float vBell = 2.0f * M_PIf * n * rt.bellRadiusM, vProp = n * rt.propDiameterM * PROP_VI_K;
-    const float air = 1.0f + AIR_GAIN * powf(sqrtf(vBell * vBell + vProp * vProp) * 0.1f, 1.5f);
-    const float pCu = rt.kCu * sq(kv * vbat * noiseRms * 0.001f);
-    return pCu * (rt.rsc + rt.rca / air);            // windings -> core -> air, in series
+    const float pCu = rt.kCu * sq(vbat * noiseRms);
+    return pCu * (rt.rsc + rt.rca / airFactor(sq(rpm) * rt.airK));   // windings -> core -> air, in series
 }
 
 float motorThermalGetTemp(int motor)

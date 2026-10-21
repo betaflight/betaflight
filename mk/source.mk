@@ -525,6 +525,7 @@ SIZE_OPTIMISED_SRC += \
             sensors/acceleration_init.c \
             flight/pid_init.c \
             flight/mixer_init.c \
+            flight/motor_thermal.c \
             cli/cli.c \
             cli/settings.c \
             drivers/light_ws2811strip.c \
