@@ -1319,6 +1319,7 @@ static const uint16_t ftDtLpf2[] = { 0, 1000, 800, 650, 500 };
 // or more (the steps widen at the top: each one is NK x 2 floats of search state)
 static const uint8_t ftDtMult10[] = { 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 19, 22, 25 };
 #define FT_DT_M_STOCK    5                  // the index of x 1 in ftDtMult10
+#define FT_IDX_CAL_MIN   0.1f               // the prediction is trusted to read 3x high at most (variance 10x)
 #define FT_DT_EXPO       5                  // dynamic lowpass curve expo (BF default)
 
 static ftCplx_t notchCplx(float f, uint16_t hz, uint16_t cut)
@@ -1410,9 +1411,14 @@ static void decideDterm(ftResult_t *r, float df)
     if (varRef <= 0.0f || dInRef <= 0.0f) {
         return;
     }
-    // absolute: what the filters do not make is the measured index over the current chain's prediction
+    // absolute, calibrated on the hover: the spectrum through the PID predicts the index of the chain that flew.
+    // Over the measured index (on a 5": 4.8 against 3.0), the prediction scales down by their ratio, so the heat is
+    // in real kelvin rather than 2.5x on the safe side; under it, the rest is what the filters do not make (feed
+    // forward, the pilot, turbulence) and adds as it is.
     const float idxMeas2 = ft.noiseSum2 / ft.thrN, idxCur2 = mixK * varCur;
+    const float cal = (idxCur2 > idxMeas2 && idxCur2 > 0.0f) ? MAX(idxMeas2 / idxCur2, FT_IDX_CAL_MIN) : 1.0f;
     const float other2 = MAX(idxMeas2 - idxCur2, 0.0f);
+    mixK *= cal;
     float rpm = 0.0f;
     for (int m = 0; m < FT_MOTORS; m++) {
         rpm += ft.framesPre ? ft.rotFrameSum[m] / ft.framesPre * 60.0f / FT_MOTORS : 0.0f;
