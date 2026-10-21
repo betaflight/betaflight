@@ -87,6 +87,9 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#ifdef USE_MOTOR_THERMAL
+#include "flight/motor_thermal.h"
+#endif
 #include "flight/pid.h"
 #include "flight/pid_init.h"
 #include "flight/position.h"
@@ -3311,6 +3314,9 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             sbufReadU8(src); sbufReadU8(src); sbufReadU8(src);
 #endif
         }
+#ifdef USE_MOTOR_THERMAL
+        motorThermalInit();     // new KV or geometry take effect now; the temperatures are kept
+#endif
         break;
 
 #ifdef USE_GPS
