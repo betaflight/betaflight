@@ -93,7 +93,7 @@ PG_REGISTER(frameMapConfig_t, frameMapConfig, PG_FRAME_MAP_CONFIG, 2);
 PG_REGISTER(filterTuneBackup_t, filterTuneBackup, PG_FILTER_TUNE_BACKUP, 3);
 PG_REGISTER_WITH_RESET_TEMPLATE(filterTuneConfig_t, filterTuneConfig, PG_FILTER_TUNE_CONFIG, 0);
 PG_RESET_TEMPLATE(filterTuneConfig_t, filterTuneConfig,
-    .heat_budget_dk = 20,                             // 2 K: research/motor-thermal/dterm, negligible next to the hover heat
+    .heat_budget_dk = FILTER_TUNE_HEAT_BALANCED,      // the configurator's Low noise / Balanced / Low delay presets
 );
 
 #define FT_N            512
@@ -1308,15 +1308,17 @@ static float sweepCrossoverHz(void)
 // ---------------- D-term filters with gyro lpf2 ----------------
 // research/motor-thermal/dterm: without gyro lowpass the motor noise grows mostly through P, which the D filters do
 // not reach. Searched on the hover spectrum after the RPM filter: gyro lpf2 PT1 of ftDtLpf2 x the D pair (dyn PT1
-// 75..150 + PT1 150) times FT_DT_M_MIN..FT_DT_M_MAX / 10. Kept: the motor heating from the command ripple (motor_noise.c
+// 75..150 + PT1 150) times ftDtMult10[] / 10. Kept: the motor heating from the command ripple (motor_noise.c
 // index -> motor_thermal.c) at most filter_tune_heat_budget over the stock chain's; chosen: the least P+D output delay
 // at the measured loop crossover. The index is absolute: the hover spectrum as a PSD through the PID, plus what the
 // filters do not make (the measured index over the current chain's prediction). No crossover (no sweep) or no motor
 // model: D unchanged, lpf2 as decided before.
 
 static const uint16_t ftDtLpf2[] = { 0, 1000, 800, 650, 500 };
-#define FT_DT_M_MIN      5
-#define FT_DT_M_MAX      15
+// the D pair's multipliers x 10, about 10 % apart: x 1 is the stock pair; up to x 2.5 for a heat budget of a kelvin
+// or more (the steps widen at the top: each one is NK x 2 floats of search state)
+static const uint8_t ftDtMult10[] = { 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 19, 22, 25 };
+#define FT_DT_M_STOCK    5                  // the index of x 1 in ftDtMult10
 #define FT_DT_EXPO       5                  // dynamic lowpass curve expo (BF default)
 
 static ftCplx_t notchCplx(float f, uint16_t hz, uint16_t cut)
@@ -1367,8 +1369,11 @@ static void decideDterm(ftResult_t *r, float df)
         mixK += sq(mixerRuntime.currentMixer[m].roll) + sq(mixerRuntime.currentMixer[m].pitch);
     }
     mixK /= FT_MOTORS;                                // idx^2 = mean(mix_roll^2 + mix_pitch^2) x the per-axis variance
-    enum { NK = ARRAYLEN(ftDtLpf2), NM = FT_DT_M_MAX - FT_DT_M_MIN + 1 };
-    float var[NK][NM], dIn[NK][NM], varRef = 0.0f, dInRef = 0.0f, varCur = 0.0f;
+    enum { NK = ARRAYLEN(ftDtLpf2), NM = ARRAYLEN(ftDtMult10) };
+    // static, not on the stack: decide() runs from the task and the MSP status (one scheduler thread, never nested),
+    // and the 2 KB main stack of the small F4s has no room for these
+    static float var[NK][NM], dIn[NK][NM];
+    float varRef = 0.0f, dInRef = 0.0f, varCur = 0.0f;
     memset(var, 0, sizeof(var));
     memset(dIn, 0, sizeof(dIn));
     for (int b = 1; b < FT_BINS; b++) {
@@ -1386,19 +1391,19 @@ static void decideDterm(ftResult_t *r, float df)
         const ftCplx_t dCur = cmul(der, dtermCplx(pp->dterm_lpf1_dyn_min_hz, pp->dterm_lpf1_dyn_max_hz, pp->dterm_lpf1_static_hz,
             pp->dterm_lpf2_static_hz, dtP, wP));
         varCur += hp2 * cabs2((ftCplx_t){ kp + kd * dCur.re, kd * dCur.im }) * gCur * psd;
-        for (int m = FT_DT_M_MIN; m <= FT_DT_M_MAX; m++) {
-            const float mm = m * 0.1f;
+        for (int i = 0; i < NM; i++) {
+            const float mm = ftDtMult10[i] * 0.1f;
             const ftCplx_t dpath = cmul(der, cmul(pt1Cplx(dLpf1Def * mm, dtP, wP), pt1Cplx(DTERM_LPF2_HZ_DEFAULT * mm, dtP, wP)));
             const float pd2 = cabs2((ftCplx_t){ kp + kd * dpath.re, kd * dpath.im });
             const float d2 = cabs2(dpath);
-            if (m == 10) {
+            if (i == FT_DT_M_STOCK) {
                 varRef += hp2 * pd2 * gRef * s;
                 dInRef += d2 * gRef * s;
             }
             for (int k = 0; k < NK; k++) {
                 const float g = cabs2(gyroLpf2Cplx(f, ftDtLpf2[k], dtG, nAvg)) * s;
-                var[k][m - FT_DT_M_MIN] += hp2 * pd2 * g;
-                dIn[k][m - FT_DT_M_MIN] += d2 * g;
+                var[k][i] += hp2 * pd2 * g;
+                dIn[k][i] += d2 * g;
             }
         }
     }
@@ -1425,11 +1430,11 @@ static void decideDterm(ftResult_t *r, float df)
     float best = 1e9f, delayRef = 0.0f, bestHeat = 0.0f;
     int bk = -1, bm = -1;
     for (int k = -1; k < (int)NK; k++) {              // -1: the stock chain, for the reference delay
-        for (int m = FT_DT_M_MIN; m <= FT_DT_M_MAX; m++) {
-            if (k < 0 && m != 10) {
+        for (int i = 0; i < NM; i++) {
+            if (k < 0 && i != FT_DT_M_STOCK) {
                 continue;
             }
-            const float mm = m * 0.1f;
+            const float mm = ftDtMult10[i] * 0.1f;
             const ftCplx_t hd = cmul(pt1Cplx(dLpf1Def * mm, dtP, w0), pt1Cplx(DTERM_LPF2_HZ_DEFAULT * mm, dtP, w0));
             const ftCplx_t dp = cmul(der0, hd);
             ftCplx_t g = k < 0 ? cmul(pt1Cplx(gLpf1Ref, dtP, w0), pt1Cplx(GYRO_LPF2_HZ_DEFAULT, dtG, 2.0f * M_PIf * f0 * dtG))
@@ -1441,12 +1446,11 @@ static void decideDterm(ftResult_t *r, float df)
                 delayRef = delay;
                 continue;
             }
-            const int i = m - FT_DT_M_MIN;
             const float heat = motorThermalRippleRise(sqrtf(mixK * var[k][i] + other2), rpm, vbat);
             if (heat <= heatRef + budget && delay < best) {
                 best = delay;
                 bk = k;
-                bm = m;
+                bm = i;
                 bestHeat = heat;
             }
         }
@@ -1455,13 +1459,13 @@ static void decideDterm(ftResult_t *r, float df)
     if (bk < 0) {
         return;                                       // nothing within the heat budget: D unchanged, lpf2 as decided
     }
-    r->dMult10 = bm;
+    r->dMult10 = ftDtMult10[bm];
     r->lpf2 = ftDtLpf2[bk];
     r->lpf2Basis = LPF2_BY_DTERM;
     r->pdDelayUs = (uint16_t)constrainf(best * 1e6f, 0.0f, 65535.0f);
     r->heatChosen100 = (uint16_t)constrainf(bestHeat * 100.0f, 0.0f, 65535.0f);
-    r->dInPct = (uint8_t)constrainf(100.0f * sqrtf(dIn[bk][bm - FT_DT_M_MIN] / dInRef), 0.0f, 255.0f);
-    r->noisePct = (uint8_t)constrainf(100.0f * sqrtf(var[bk][bm - FT_DT_M_MIN] / varRef), 0.0f, 255.0f);
+    r->dInPct = (uint8_t)constrainf(100.0f * sqrtf(dIn[bk][bm] / dInRef), 0.0f, 255.0f);
+    r->noisePct = (uint8_t)constrainf(100.0f * sqrtf(var[bk][bm] / varRef), 0.0f, 255.0f);
 #else
     UNUSED(r);
     UNUSED(df);
@@ -1746,6 +1750,16 @@ static void apply(const ftResult_t *r)
     pidInitFilters(currentPidProfile);
 }
 
+bool filterAutotuneSetHeatBudget(uint8_t dk)
+{
+    if (ARMING_FLAG(ARMED) || dk > FILTER_TUNE_HEAT_MAX) {
+        return false;
+    }
+    filterTuneConfigMutable()->heat_budget_dk = dk;
+    ft.saveMap = true;                                // the config is written by the task while disarmed
+    return true;
+}
+
 bool filterAutotuneRevert(void)
 {
     const filterTuneBackup_t *b = filterTuneBackup();
@@ -1911,7 +1925,7 @@ void filterAutotuneUpdate(timeUs_t currentTimeUs)
     const bool armed = ARMING_FLAG(ARMED);
     const bool modeOn = IS_RC_MODE_ACTIVE(BOXFILTERTUNE);
 
-    if (!armed && ft.saveMap) {                       // the frame wizard stored a new map
+    if (!armed && ft.saveMap) {                       // the frame wizard stored a new map, or a setting changed
         ft.saveMap = false;
         saveConfigAndNotify();
         if (ft.state == FILTER_TUNE_NO_MAP && mapReady()) {

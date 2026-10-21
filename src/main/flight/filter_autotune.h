@@ -102,6 +102,12 @@ typedef struct filterTuneConfig_s {
     uint8_t heat_budget_dk;     // the motor heating the filters may add over the stock ones (ripple, motor_thermal), 0.1 K
 } filterTuneConfig_t;
 
+// the heat budget presets the configurator offers, 0.1 K: the stock noise at most, the default, the least delay
+#define FILTER_TUNE_HEAT_LOW_NOISE  0
+#define FILTER_TUNE_HEAT_BALANCED   5
+#define FILTER_TUNE_HEAT_LOW_DELAY  10
+#define FILTER_TUNE_HEAT_MAX        200
+
 PG_DECLARE(filterTuneConfig_t, filterTuneConfig);
 
 typedef enum {
@@ -127,6 +133,7 @@ void filterAutotuneUpdate(timeUs_t currentTimeUs);
 float filterAutotuneExcitation(int axis, float gyroFiltered);
 extern volatile bool filterAutotuneSweepOn;   // the PID loop calls filterAutotuneExcitation only while set
 bool filterAutotuneRevert(void);
+bool filterAutotuneSetHeatBudget(uint8_t dk);  // disarmed only; saved by the task
 
 // the frame wizard has new modes for its part (FRAME_MAP_PART_*): replace that part, keep the other; saved later.
 // unstable (may be NULL): per mode, FRAME_MAP_SRC_UNSTABLE
