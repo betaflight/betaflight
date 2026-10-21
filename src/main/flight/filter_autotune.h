@@ -131,12 +131,14 @@ void frameMapSetCable(const float *hz, int n);
 bool frameMapIsCable(float hz, float rel, float minHz);
 
 // What the pilot sees without the configurator while the FILTER TUNE mode is on: the LEDs with the filter tune
-// overlay (blinking blue while collecting, green when ready or applied, red when it cannot work) and an OSD warning.
+// overlay, one steady colour per phase (blue waiting, violet collecting or sweeping, green ready or applied, red
+// when it cannot work), and an OSD warning.
 typedef enum {
-    FILTER_TUNE_LED_OFF = 0,        // the dark half of a blink
+    FILTER_TUNE_LED_OFF = 0,
     FILTER_TUNE_LED_BLUE,
     FILTER_TUNE_LED_GREEN,
     FILTER_TUNE_LED_RED,
+    FILTER_TUNE_LED_VIOLET,
 } filterTuneLed_e;
 
 #define FILTER_TUNE_SIGNAL_BEEPER   (1 << 0)    // MSP status: the channels this FC has for the signal

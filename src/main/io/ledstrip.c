@@ -100,7 +100,7 @@ static bool ledStripEnabled = false;
 #define LED_OVERLAY_VTX_RATE_HZ 5
 #define LED_OVERLAY_INDICATOR_RATE_HZ 5
 #define LED_OVERLAY_WARNING_RATE_HZ 10
-#define LED_OVERLAY_FILTER_TUNE_RATE_HZ 16   // the 4 Hz blink of the filter tune signal
+#define LED_OVERLAY_FILTER_TUNE_RATE_HZ 16   // the filter tune phase colour follows the state quickly
 
 #define LED_TASK_MARGIN                 1
 // Decay the estimated max task duration by 1/(1 << LED_EXEC_TIME_SHIFT) on every invocation
@@ -823,7 +823,8 @@ static void applyLedFilterTuneLayer(bool updateNow, timeUs_t *timer)
     filterTuneLed_e led;
     if (filterAutotuneLedSignal(micros(), &led)) {
         const hsvColor_t *color = led == FILTER_TUNE_LED_BLUE ? &HSV(BLUE)
-            : led == FILTER_TUNE_LED_GREEN ? &HSV(GREEN) : led == FILTER_TUNE_LED_RED ? &HSV(RED) : &HSV(BLACK);
+            : led == FILTER_TUNE_LED_GREEN ? &HSV(GREEN) : led == FILTER_TUNE_LED_RED ? &HSV(RED)
+            : led == FILTER_TUNE_LED_VIOLET ? &HSV(DARK_VIOLET) : &HSV(BLACK);
         applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_FILTER_TUNE)), color);
     }
 }

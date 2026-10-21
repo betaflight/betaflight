@@ -2068,34 +2068,27 @@ bool filterAutotuneLedSignal(timeUs_t now, filterTuneLed_e *led)
     if (!IS_RC_MODE_ACTIVE(BOXFILTERTUNE)) {
         return false;
     }
-    const uint32_t ms = now / 1000;
-    const bool slow = (ms % 1000) < 500;              // 1 Hz
-    const bool fast = (ms % 250) < 125;               // 4 Hz
+    UNUSED(now);
+    // one steady colour per phase, no blinking: the phase reads at a glance and the same way on every LED
     switch (ft.state) {
     case FILTER_TUNE_WAITING:                          // armed, not a steady hover yet
     case FILTER_TUNE_PARTIAL:                          // landed with too few frames: fly again with the mode on
-        *led = slow ? FILTER_TUNE_LED_BLUE : FILTER_TUNE_LED_OFF;
+        *led = FILTER_TUNE_LED_BLUE;
         return true;
     case FILTER_TUNE_COLLECTING:
-    case FILTER_TUNE_EXCITING:
-        *led = fast ? FILTER_TUNE_LED_BLUE : FILTER_TUNE_LED_OFF;
+    case FILTER_TUNE_EXCITING:                         // the sweep after the frames
+        *led = FILTER_TUNE_LED_VIOLET;
         return true;
     case FILTER_TUNE_READY:                            // land and disarm with the mode on
+    case FILTER_TUNE_APPLIED:
         *led = FILTER_TUNE_LED_GREEN;
         return true;
-    case FILTER_TUNE_APPLIED:
-        *led = slow ? FILTER_TUNE_LED_GREEN : FILTER_TUNE_LED_OFF;
-        return true;
     case FILTER_TUNE_DISCARDED:                        // disarmed with the mode off: the frames dropped
-        *led = FILTER_TUNE_LED_RED;
-        return true;
     case FILTER_TUNE_NO_MAP:
     case FILTER_TUNE_NO_TELEMETRY:
-        *led = fast ? FILTER_TUNE_LED_RED : FILTER_TUNE_LED_OFF;
-        return true;
-    case FILTER_TUNE_BITBANG:                          // the FC setup: red / blue by turns
+    case FILTER_TUNE_BITBANG:                          // the FC setup: the OSD and the configurator say which
     case FILTER_TUNE_LOOP_SLOW:
-        *led = fast ? FILTER_TUNE_LED_RED : FILTER_TUNE_LED_BLUE;
+        *led = FILTER_TUNE_LED_RED;
         return true;
     default:
         return false;
