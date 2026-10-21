@@ -1071,3 +1071,8 @@ extern struct linker_symbol __fontdata_end;
 #if !defined(ENABLE_UNUSED_PINS_INIT)
 #define ENABLE_UNUSED_PINS_INIT 1
 #endif
+
+// the thermal model's ripple loss comes from the motor command noise index
+#if defined(USE_MOTOR_THERMAL) && !defined(USE_MOTOR_NOISE)
+#define USE_MOTOR_NOISE
+#endif
