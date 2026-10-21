@@ -28,6 +28,7 @@
 #include "fc/runtime_config.h"
 #include "flight/mixer.h"
 #include "flight/motor_noise.h"
+#include "flight/position.h"
 #include "io/gps.h"
 #include "pg/motor.h"
 #include "pg/motor_thermal.h"
@@ -59,6 +60,13 @@
 #define REF_R_LL        0.070f     // line-to-line winding resistance, datasheet (load-current copper loss)
 #define AIR_GAIN        1.56f   // convection: 1 + AIR_GAIN·(v/10 m/s)^1.5
 #define PROP_VI_K       0.252f     // induced velocity = n[rev/s]·D[m]·sqrt(2·Ct/π), Ct≈0.1
+// Prop wash over the motor: forced convection on the windings and the core, Newton cooling with the turbulent
+// h ∝ v^0.8. The bench motor had no prop, so the bench fit is unchanged. Centred on 220 published full-throttle
+// temperatures of 9 brands (research/motor-thermal/DATASHEET_VALIDATION.md): model/datasheet temperature rise
+// median 0.98, IQR 0.63-1.54 (2.72, IQR 1.25-4.50 without this term); the exponent shows no trend with wash speed.
+#define WASH_REF_MS     1.0f       // wash speed at which the extra cooling equals the still-air core cooling
+#define WASH_N          0.8f
+#define WASH_MAX        100.0f     // keeps the 10 ms explicit step stable on the smallest motors
 #define UPDATE_HZ       100
 #define IDLE_AMPS_TAU_S 2.0f       // the non-motor current (FC, VTX, receiver), averaged while disarmed
 #define AMBIENT_MIN_C   (-30)
@@ -75,6 +83,7 @@ static struct {
     float kCu;                  // ripple copper loss per (Vbat·command noise)², W
     float kv;                   // effective KV
     float airK;                 // squared air speed at the stator from the bell and the prop per rpm², (m/s)²
+    float washK;                // prop wash speed per rpm, m/s
     timeUs_t lastUs;
     float idleAmps;             // battery current with the motors stopped: not motor current
     int ambientCounter;
@@ -174,6 +183,7 @@ void motorThermalInit(void)
     const int propDinch = c->prop_diameter_dinch ? c->prop_diameter_dinch : autoProp[p].propDinch;
     const float bellRadiusM = (0.5f * d + 3.0f) * 0.001f, propDiameterM = propDinch * 0.1f * 0.0254f;
     rt.airK = (sq(2.0f * M_PIf * bellRadiusM) + sq(propDiameterM * PROP_VI_K)) / sq(60.0f);  // bell surface and prop induced speed
+    rt.washK = propDiameterM * PROP_VI_K / 60.0f;
 
     // Parameters are recomputed on every (disarmed) profile change, the thermal state only once at boot:
     // a hot motor must not read as ambient after a profile switch on the ground.
@@ -227,6 +237,9 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
         vCraftSq = sq(gpsSol.groundSpeed * 0.01f);
     }
 #endif
+    if (isAltitudeAvailable()) {
+        vCraftSq += sq(getAltitudeDerivative() * 0.01f);         // climb and descent: baro (and GPS) altitude rate, cm/s
+    }
 #ifdef USE_DSHOT_TELEMETRY
     const bool haveRpm = isDshotTelemetryActive();
 #endif
@@ -238,6 +251,7 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
         }
 #endif
         const float air = airFactor(sq(rpm) * rt.airK + vCraftSq);
+        const float wash = MIN(powf(rpm * rt.washK / WASH_REF_MS, WASH_N), WASH_MAX);
         const float pCu = kCu * sq(motorNoiseRms(i, 0));
         const float pIron = rt.aIron * sq(rpm);
         // torque current copper loss: phase current ≈ bus current / duty, ripple energy (already in pCu) removed
@@ -256,8 +270,8 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
 
         thermalNode_t *s = &node[i];
         const float q = (s->ts - s->tc) / rt.rsc;
-        s->ts += (pCu + pLoad - q) * dt * rt.invCs;
-        s->tc += (pIron + q - (s->tc - rt.tAmb) * air / rt.rca) * dt * rt.invCc;
+        s->ts += (pCu + pLoad - q - (s->ts - rt.tAmb) * wash / rt.rca) * dt * rt.invCs;
+        s->tc += (pIron + q - (s->tc - rt.tAmb) * (air + wash) / rt.rca) * dt * rt.invCc;
         if (i < 4) {
             DEBUG_SET(DEBUG_MOTOR_THERMAL, i, lrintf(10.0f * s->ts));   //!< [index:0..3] Motor {1|2|3|4} Estimated Winding Temperature [unit:0.1degC]
         }
