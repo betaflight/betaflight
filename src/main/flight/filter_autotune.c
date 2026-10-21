@@ -1726,6 +1726,21 @@ static void apply(const ftResult_t *r)
         pp->dterm_lpf2_static_hz = DTERM_LPF2_HZ_DEFAULT * r->dMult10 / 10;
         pp->dterm_notch_hz = 0;
     }
+    // the measurement behind it, readable after a restart (the session's own status lives in RAM)
+    filterTuneBackup_t *b = filterTuneBackupMutable();
+    for (int a = 0; a < 2; a++) {
+        b->lastCrossoverHz10[a] = lrintf(constrainf(ftx.fc[a] * 10.0f, 0.0f, 65535.0f));
+        b->lastPhaseMarginDeg[a] = (uint8_t)constrainf(ftx.pmDeg[a], 0.0f, 255.0f);
+    }
+    b->lastDMult10 = r->dMult10;
+    b->lastDInPct = r->dInPct;
+    b->lastNoisePct = r->noisePct;
+    b->lastPdDelayUs = r->pdDelayUs;
+    b->lastPdDelayRefUs = r->pdDelayRefUs;
+    b->lastIdxMeas10 = r->idxMeas10;
+    b->lastIdxCur10 = r->idxCur10;
+    b->lastHeatRef100 = r->heatRef100;
+    b->lastHeatChosen100 = r->heatChosen100;
     saveConfigAndNotify();
     gyroInitFilters();
     pidInitFilters(currentPidProfile);
@@ -2201,10 +2216,26 @@ void filterAutotuneWriteStatus(sbuf_t *dst)
     }
     const rpmFilterConfig_t *rpm = rpmFilterConfig();
     const gyroConfig_t *g = gyroConfig();
+    // no measurement in this session (restarted since): the D-term and sweep fields of the last applied tune
+    const filterTuneBackup_t *b = filterTuneBackup();
+    const bool kept = !r.valid && ftx.phase == SWEEP_NONE && b->valid
+        && (b->lastDMult10 || b->lastCrossoverHz10[0] || b->lastCrossoverHz10[1]);
+    if (kept) {
+        r.dMult10 = b->lastDMult10;
+        r.dInPct = b->lastDInPct;
+        r.noisePct = b->lastNoisePct;
+        r.pdDelayUs = b->lastPdDelayUs;
+        r.pdDelayRefUs = b->lastPdDelayRefUs;
+        r.idxMeas10 = b->lastIdxMeas10;
+        r.idxCur10 = b->lastIdxCur10;
+        r.heatRef100 = b->lastHeatRef100;
+        r.heatChosen100 = b->lastHeatChosen100;
+    }
     sbufWriteU8(dst, 1);                              // payload version
     sbufWriteU8(dst, ft.state);
     sbufWriteU8(dst, (mapReady() ? 1 : 0) | (telemetryOk() ? 2 : 0) | (IS_RC_MODE_ACTIVE(BOXFILTERTUNE) ? 4 : 0)
-                     | (r.valid ? 8 : 0) | (filterTuneBackup()->valid ? 16 : 0) | (ft.applied ? 32 : 0));
+                     | (r.valid ? 8 : 0) | (b->valid ? 16 : 0) | (ft.applied ? 32 : 0)
+                     | (kept ? 64 : 0));             // 64: the D-term and sweep fields are the last applied tune's
     sbufWriteU16(dst, ft.frames);
     sbufWriteU16(dst, FT_MIN_FRAMES);
     sbufWriteU16(dst, lrintf(ft.fs));
@@ -2263,13 +2294,15 @@ void filterAutotuneWriteStatus(sbuf_t *dst)
     sbufWriteU8(dst, getCurrentPidProfileIndex());
     sbufWriteU8(dst, filterTuneBackup()->valid ? filterTuneBackup()->pidProfileIndex : 0xFF);
     // the sweep and the heat budget
-    sbufWriteU8(dst, ftx.phase);                     // SWEEP_*
+    sbufWriteU8(dst, kept ? SWEEP_DONE : ftx.phase);                     // SWEEP_*
     sbufWriteU8(dst, ftx.endReason);                 // SWEEP_END_*
-    sbufWriteU16(dst, lrintf(ftx.amp * 10.0f));      // amplitude, 0.1 deg/s
-    sbufWriteU16(dst, lrintf(ftx.fc[0] * 10.0f));    // crossover roll / pitch, 0.1 Hz (0 = none)
-    sbufWriteU16(dst, lrintf(ftx.fc[1] * 10.0f));
-    sbufWriteU8(dst, (uint8_t)constrainf(ftx.pmDeg[0], 0.0f, 255.0f));   // phase margin roll / pitch, deg
-    sbufWriteU8(dst, (uint8_t)constrainf(ftx.pmDeg[1], 0.0f, 255.0f));
+    sbufWriteU16(dst, lrintf((kept ? FT_SWEEP_ANGLE_DEG * 2.0f * M_PIf * FT_SWEEP_F0 : ftx.amp) * 10.0f));   // 0.1 deg/s
+    for (int a = 0; a < 2; a++) {                    // crossover roll / pitch, 0.1 Hz (0 = none)
+        sbufWriteU16(dst, kept ? b->lastCrossoverHz10[a] : lrintf(ftx.fc[a] * 10.0f));
+    }
+    for (int a = 0; a < 2; a++) {                    // phase margin roll / pitch, deg
+        sbufWriteU8(dst, kept ? b->lastPhaseMarginDeg[a] : (uint8_t)constrainf(ftx.pmDeg[a], 0.0f, 255.0f));
+    }
     sbufWriteU16(dst, r.idxMeas10);
     sbufWriteU16(dst, r.idxCur10);
     sbufWriteU16(dst, r.heatRef100);

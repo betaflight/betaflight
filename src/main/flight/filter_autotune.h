@@ -88,6 +88,12 @@ typedef struct filterTuneBackup_s {
     uint8_t pidProfileIndex;
     uint16_t dtermLpf1DynMinHz, dtermLpf1DynMaxHz, dtermLpf1StaticHz, dtermLpf2StaticHz, dtermNotchHz, dtermNotchCutoff;
     uint8_t dtermLpf1Type, dtermLpf2Type, dtermLpf1DynExpo, simplifiedDtermFilter;
+    // what the last applied tune measured, for the status after a restart (appended: an older config loads it as 0)
+    uint16_t lastCrossoverHz10[2];
+    uint8_t lastPhaseMarginDeg[2];
+    uint8_t lastDMult10, lastDInPct, lastNoisePct;
+    uint16_t lastPdDelayUs, lastPdDelayRefUs;
+    uint16_t lastIdxMeas10, lastIdxCur10, lastHeatRef100, lastHeatChosen100;
 } filterTuneBackup_t;
 
 PG_DECLARE(filterTuneBackup_t, filterTuneBackup);
