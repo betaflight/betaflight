@@ -299,7 +299,6 @@
 #define PARAM_NAME_MOTOR_THERMAL_GAIN "motor_thermal_gain"
 #define PARAM_NAME_MOTOR_THERMAL_WARNING "motor_thermal_warning"
 #define PARAM_NAME_MOTOR_RESISTANCE "motor_resistance"
-#define PARAM_NAME_MOTOR_IDLE_CURRENT "motor_idle_current"
 #define PARAM_NAME_CHIRP_LAG_FREQ_HZ "chirp_lag_freq_hz"
 #define PARAM_NAME_CHIRP_LEAD_FREQ_HZ "chirp_lead_freq_hz"
 #define PARAM_NAME_CHIRP_AMPLITUDE_ROLL "chirp_amplitude_roll"
