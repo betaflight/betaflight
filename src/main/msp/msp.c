@@ -1592,10 +1592,14 @@ case MSP_NAME:
         sbufWriteU8(dst, motorThermalConfig()->stator_diameter_mm);
         sbufWriteU8(dst, motorThermalConfig()->stator_height_dmm);
         sbufWriteU8(dst, motorThermalConfig()->prop_diameter_dinch);
+        sbufWriteU16(dst, motorThermalConfig()->resistance_mohm);
+        sbufWriteU16(dst, motorThermalConfig()->idle_current_ma);
 #else
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
 #endif
         break;
 
@@ -3314,6 +3318,20 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             }
 #else
             sbufReadU8(src); sbufReadU8(src); sbufReadU8(src);
+#endif
+        }
+        if (sbufBytesRemaining(src) >= 4) {
+            // datasheet winding resistance (mOhm) and no-load current at 10 V (mA), 0 = derive from the size
+            const uint16_t resistance = sbufReadU16(src), idleCurrent = sbufReadU16(src);
+#ifdef USE_MOTOR_THERMAL
+            if (resistance > 5000 || idleCurrent > 20000) {
+                return MSP_RESULT_ERROR;
+            }
+            motorThermalConfigMutable()->resistance_mohm = resistance;
+            motorThermalConfigMutable()->idle_current_ma = idleCurrent;
+#else
+            UNUSED(resistance);
+            UNUSED(idleCurrent);
 #endif
         }
 #ifdef USE_MOTOR_THERMAL

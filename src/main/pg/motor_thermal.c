@@ -23,7 +23,7 @@
 #include "pg/pg_ids.h"
 #include "pg/motor_thermal.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(motorThermalConfig_t, motorThermalConfig, PG_MOTOR_THERMAL_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(motorThermalConfig_t, motorThermalConfig, PG_MOTOR_THERMAL_CONFIG, 1);
 
 PG_RESET_TEMPLATE(motorThermalConfig_t, motorThermalConfig,
     // default geometry is the common 5" motor (2207); the bench reference (2203.5) is the calibration
@@ -33,7 +33,8 @@ PG_RESET_TEMPLATE(motorThermalConfig_t, motorThermalConfig,
     .prop_diameter_dinch = 0,
     .gain_percent = 100,
     .warning_c = 0,               // off: the model is bench-checked only, a false MOTOR HOT is worse than none
-    .resistance_mohm = 0
+    .resistance_mohm = 0,
+    .idle_current_ma = 0
 );
 
 #endif
