@@ -1846,8 +1846,9 @@ void frameWizardUpdate(float *motorDisarmed, int motorCount, float disarmOutput,
     } else {
         fw.loopSlowS = 0.0f;
     }
+    // the battery only matters with the motors running: the taps work on USB power alone
     uint8_t end = ARMING_FLAG(ARMED) ? FRAME_WIZARD_END_ARMED
-                : getBatteryState() == BATTERY_CRITICAL ? FRAME_WIZARD_END_BATTERY
+                : motorsLive() && getBatteryState() == BATTERY_CRITICAL ? FRAME_WIZARD_END_BATTERY
                 : fw.noPowerS > NO_POWER_S ? motorPowerCheck()
                 : fw.noSpin ? FRAME_WIZARD_END_NO_SPIN
                 : fw.loopSlowS > LOOP_SLOW_S ? FRAME_WIZARD_END_LOOP_SLOW
