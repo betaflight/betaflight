@@ -351,9 +351,11 @@ static void serviceBeeps(void)
     const timeMs_t now = millis();
     for (int i = 0; i < fw.beepN; ) {
         if (cmp32(now, fw.beep[i].at) >= 0) {
+#ifdef USE_DSHOT
             if (isMotorProtocolDshot()) {
                 dshotCommandWrite(fw.beep[i].index, getMotorCount(), fw.beep[i].cmd, DSHOT_CMD_TYPE_INLINE);
             }
+#endif
             fw.quietUntilMs = now + 500;
             fw.beep[i] = fw.beep[--fw.beepN];
         } else {
@@ -419,6 +421,16 @@ static uint8_t motorPowerCheck(void)
     return FRAME_WIZARD_END_NONE;
 }
 
+// a USB cable to tap: only targets with USB detection or a VCP can tell
+static bool usbCablePresent(void)
+{
+#if defined(USE_VCP) || defined(USE_USB_DETECT)
+    return usbCableIsActive();
+#else
+    return false;
+#endif
+}
+
 bool frameWizardStart(const frameWizardParams_t *params)
 {
     // quad only; the taps need a calibrated accelerometer (calibrated in the Setup tab, the wizard does not)
@@ -456,7 +468,7 @@ bool frameWizardStart(const frameWizardParams_t *params)
     for (int m = 0; m < MOTORS; m++) {
         fw.ampM[m] = fw.p.amplitude;
     }
-    fw.cableSkipped = !usbCableIsActive();             // over Bluetooth / a UART there is no cable to tap
+    fw.cableSkipped = !usbCablePresent();             // over Bluetooth / a UART there is no cable to tap
     if (fw.cableSkipped) {
         fw.beeped |= 1 << FRAME_WIZARD_REGION_CABLE;
         fw.noMode |= 1 << FRAME_WIZARD_REGION_CABLE;
@@ -502,7 +514,7 @@ static uint8_t safetyCheck(float dt)
 {
     // the cable out (started on USB): stop at once, without waiting for the keepalive. usbCableIsActive() sees
     // an unplug through the detect pin or the bus suspend; usbCableIsInserted() stays true without VBUS sensing
-    if (!fw.cableSkipped && !usbCableIsActive()) {
+    if (!fw.cableSkipped && !usbCablePresent()) {
         return FRAME_WIZARD_END_CABLE;
     }
     if (!motorsLive()) {
@@ -773,7 +785,7 @@ static void relabelSession(void)
         }
         return;
     }
-    float v[SESSION_TAPS];
+    float v[SESSION_TAPS] = { 0 };
     int n = 0;
     for (int i = 0; i < fw.tapN; i++) { if (!fwb->tap[i].fixed) { v[n++] = fwb->tap[i].R; } }
     fw.scaleR = percentile90(v, n);

@@ -238,8 +238,8 @@ static void endSession(motorExcitationEnd_e reason)
         status.state = MOTOR_EXCITATION_ENDED;
         status.end = reason;
         stopMask |= params.motorMask;
-        DEBUG_SET(DEBUG_MOTOR_EXCITATION, 0, 0);
-        DEBUG_SET(DEBUG_MOTOR_EXCITATION, 3, status.state * 16 + status.end);
+        DEBUG_SET(DEBUG_MOTOR_EXCITATION, 0, 0);                                    //!< Signal sample [unit:us]
+        DEBUG_SET(DEBUG_MOTOR_EXCITATION, 3, status.state * 16 + status.end);       //!< State * 16 + end reason
     }
 }
 
@@ -470,10 +470,10 @@ void motorExcitationUpdate(float *motorDisarmed, int motorCount, float disarmOut
         }
         if (params.waveform == MOTOR_EXCITATION_RECORD) {   // logging window only, motors untouched
             status.loops++;
-            DEBUG_SET(DEBUG_MOTOR_EXCITATION, 0, 0);
-            DEBUG_SET(DEBUG_MOTOR_EXCITATION, 2, status.marker);                  //!< Host marker (RECORD)
-            DEBUG_SET(DEBUG_MOTOR_EXCITATION, 3, status.state * 16 + status.end);
-            DEBUG_SET(DEBUG_MOTOR_EXCITATION, 4, (int16_t)params.sessionId);
+            DEBUG_SET(DEBUG_MOTOR_EXCITATION, 0, 0);                                //!< Signal sample [unit:us]
+            DEBUG_SET(DEBUG_MOTOR_EXCITATION, 3, status.state * 16 + status.end);   //!< State * 16 + end reason
+            DEBUG_SET(DEBUG_MOTOR_EXCITATION, 4, (int16_t)params.sessionId);        //!< Session id
+            DEBUG_SET(DEBUG_MOTOR_EXCITATION, 5, status.marker);                    //!< Host marker
             return;
         }
         if (!(independent && params.waveform == MOTOR_EXCITATION_WHITE)) {
@@ -522,12 +522,12 @@ void motorExcitationUpdate(float *motorDisarmed, int motorCount, float disarmOut
     status.sample = sample;
     status.rms = sqrtf(rmsSq);
 
-    DEBUG_SET(DEBUG_MOTOR_EXCITATION, 0, lrintf(sample));                       //!< Signal sample [unit:command]
-    DEBUG_SET(DEBUG_MOTOR_EXCITATION, 1, lrintf(out));                          //!< Applied command, base + signal after clamp [unit:command]
-    DEBUG_SET(DEBUG_MOTOR_EXCITATION, 2, lrintf(MIN(status.frequencyHz * 10.0f, 32767.0f)));  //!< Signal frequency [unit:0.1 Hz]
+    DEBUG_SET(DEBUG_MOTOR_EXCITATION, 0, lrintf(sample));                       //!< Signal sample [unit:us]
+    DEBUG_SET(DEBUG_MOTOR_EXCITATION, 1, lrintf(out));                          //!< Applied command, base + signal after clamp [unit:us]
+    DEBUG_SET(DEBUG_MOTOR_EXCITATION, 2, lrintf(MIN(status.frequencyHz * 10.0f, 32767.0f)));  //!< Signal frequency [unit:0.1Hz]
     DEBUG_SET(DEBUG_MOTOR_EXCITATION, 3, status.state * 16 + status.end);       //!< State * 16 + end reason
     DEBUG_SET(DEBUG_MOTOR_EXCITATION, 4, (int16_t)params.sessionId);            //!< Session id
-    DEBUG_SET(DEBUG_MOTOR_EXCITATION, 5, lrintf(10.0f * status.rms));           //!< Applied signal RMS [unit:0.1 command]
+    DEBUG_SET(DEBUG_MOTOR_EXCITATION, 5, status.marker);                        //!< Host marker
 #ifdef USE_MOTOR_NOISE
     DEBUG_SET(DEBUG_MOTOR_EXCITATION, 6, lrintf(10.0f * motorNoiseRms(firstMotor, 0)));  //!< Measured noise index >80 Hz [unit:0.1]
     DEBUG_SET(DEBUG_MOTOR_EXCITATION, 7, lrintf(10.0f * motorNoiseRms(firstMotor, 1)));  //!< Measured noise index >300 Hz [unit:0.1]
