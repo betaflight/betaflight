@@ -100,7 +100,7 @@ static bool ledStripEnabled = false;
 #define LED_OVERLAY_VTX_RATE_HZ 5
 #define LED_OVERLAY_INDICATOR_RATE_HZ 5
 #define LED_OVERLAY_WARNING_RATE_HZ 10
-#define LED_OVERLAY_FILTER_TUNE_RATE_HZ 16   // the filter tune phase colour follows the state quickly
+#define LED_OVERLAY_FILTER_TUNE_RATE_HZ 16   // the 4 Hz blink of the filter tune sweep
 
 #define LED_TASK_MARGIN                 1
 // Decay the estimated max task duration by 1/(1 << LED_EXEC_TIME_SHIFT) on every invocation

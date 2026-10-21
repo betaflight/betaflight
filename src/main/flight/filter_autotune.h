@@ -131,10 +131,10 @@ void frameMapSetCable(const float *hz, int n);
 bool frameMapIsCable(float hz, float rel, float minHz);
 
 // What the pilot sees without the configurator while the FILTER TUNE mode is on: the LEDs with the filter tune
-// overlay, one steady colour per phase (blue waiting, violet collecting or sweeping, green ready or applied, red
-// when it cannot work), and an OSD warning.
+// overlay (blue while waiting and collecting, blinking blue during the sweep, violet when the frames are in and it
+// waits for the sweep, green when ready to land or applied, red when it cannot work), and an OSD warning.
 typedef enum {
-    FILTER_TUNE_LED_OFF = 0,
+    FILTER_TUNE_LED_OFF = 0,        // the dark half of the sweep's blink
     FILTER_TUNE_LED_BLUE,
     FILTER_TUNE_LED_GREEN,
     FILTER_TUNE_LED_RED,

@@ -2068,16 +2068,20 @@ bool filterAutotuneLedSignal(timeUs_t now, filterTuneLed_e *led)
     if (!IS_RC_MODE_ACTIVE(BOXFILTERTUNE)) {
         return false;
     }
-    UNUSED(now);
-    // one steady colour per phase, no blinking: the phase reads at a glance and the same way on every LED
+    // a steady colour per phase; only the sweep blinks, so the pilot sees the craft is being wiggled on purpose
+    const bool blink = ((now / 1000) % 250) < 125;     // 4 Hz
     switch (ft.state) {
     case FILTER_TUNE_WAITING:                          // armed, not a steady hover yet
+    case FILTER_TUNE_COLLECTING:
     case FILTER_TUNE_PARTIAL:                          // landed with too few frames: fly again with the mode on
         *led = FILTER_TUNE_LED_BLUE;
         return true;
-    case FILTER_TUNE_COLLECTING:
-    case FILTER_TUNE_EXCITING:                         // the sweep after the frames
-        *led = FILTER_TUNE_LED_VIOLET;
+    case FILTER_TUNE_EXCITING:
+        if (ftx.phase == SWEEP_ROLL || ftx.phase == SWEEP_SETTLE || ftx.phase == SWEEP_PITCH) {
+            *led = blink ? FILTER_TUNE_LED_BLUE : FILTER_TUNE_LED_OFF;
+        } else {
+            *led = FILTER_TUNE_LED_VIOLET;             // the frames are in: ready for the sweep (ANGLE, steady sticks)
+        }
         return true;
     case FILTER_TUNE_READY:                            // land and disarm with the mode on
     case FILTER_TUNE_APPLIED:
