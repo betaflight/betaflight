@@ -67,7 +67,7 @@ __isr_vector:
     .long   Default_Handler             /* ext 17 */
     .long   Default_Handler             /* ext 18 */
     .long   Default_Handler             /* ext 19 (LPUART1) */
-    .long   LPUART2_IRQHandler          /* ext 20 (LPUART2 — console)       */
+    .long   USART2_IRQHandler           /* ext 20 (LPUART2 — RC / SBUS, generic core) */
     .long   Default_Handler             /* ext 21 */
     .long   Default_Handler             /* ext 22 */
     .long   Default_Handler             /* ext 23 */
@@ -113,7 +113,7 @@ __isr_vector:
     .long   Default_Handler             /* ext 63 */
     .long   Default_Handler             /* ext 64 (LPUART3) */
     .long   Default_Handler             /* ext 65 (LPUART4) */
-    .long   Default_Handler             /* ext 66 (LPUART5) */
+    .long   LPUART5_IRQHandler          /* ext 66 (LPUART5 — console)       */
     .long   Default_Handler             /* ext 67 (LPUART6) */
     .long   UART7_IRQHandler            /* ext 68 (LPUART7 — UART7 port)     */
     .long   Default_Handler             /* ext 69 (LPUART8) */
@@ -181,9 +181,12 @@ Default_Handler:
     b       Default_Handler
     .size   Default_Handler, . - Default_Handler
 
-/* ── Weak aliases: core-exception + LPUART2 handlers default to Default_Handler
- *    unless a strong symbol (e.g. LPUART2_IRQHandler in platform_stubs.c) is
- *    provided. ──────────────────────────────────────────────────────────── */
+/* ── Weak aliases: core-exception + UART handlers default to Default_Handler
+ *    unless a strong symbol is provided. The strong UART handlers are:
+ *      USART2_IRQHandler  (generic drivers/serial_uart.c — RC/SBUS on LPUART2)
+ *      LPUART5_IRQHandler (platform_stubs.c — console RX)
+ *      UART7_IRQHandler   (generic drivers/serial_uart.c — MSP on LPUART7)
+ *    The weak aliases are a safety net only; the strong symbols win at link. ─ */
     .weak   NMI_Handler
     .thumb_set NMI_Handler, Default_Handler
     .weak   HardFault_Handler
@@ -202,8 +205,10 @@ Default_Handler:
     .thumb_set PendSV_Handler, Default_Handler
     .weak   SysTick_Handler
     .thumb_set SysTick_Handler, Default_Handler
-    .weak   LPUART2_IRQHandler
-    .thumb_set LPUART2_IRQHandler, Default_Handler
+    .weak   USART2_IRQHandler
+    .thumb_set USART2_IRQHandler, Default_Handler
+    .weak   LPUART5_IRQHandler
+    .thumb_set LPUART5_IRQHandler, Default_Handler
     .weak   UART7_IRQHandler
     .thumb_set UART7_IRQHandler, Default_Handler
 

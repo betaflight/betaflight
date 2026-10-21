@@ -138,6 +138,13 @@ extern uint32_t SystemCoreClock;
 #define SPIDEV_COUNT                    1
 #endif
 
+/* SPI1 names the LPSPI1 instance. The generic SPI layer treats spiResource_t*
+ * as an opaque handle and only compares/forwards it; the platform SPI driver
+ * casts it back to the LPSPI base address. (i.MX 95 LPSPI1 = 0x44360000.) */
+#ifndef SPI1
+#define SPI1                            ((void *)0x44360000u)
+#endif
+
 /* ── Bus pin-selection table sizing ──────────────────────────────────────────
  * The generic bus impl headers size their per-bus pin-option arrays by these:
  *   bus_spi_impl.h:  spiPinDef_t sck/miso/mosiPins[MAX_SPI_PIN_SEL]

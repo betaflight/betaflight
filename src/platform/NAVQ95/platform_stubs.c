@@ -18,6 +18,8 @@
 #include "drivers/servo_impl.h"
 #include "drivers/serial.h"
 #include "drivers/serial_usb_vcp.h"
+#include "drivers/serial_uart.h"
+#include "io/serial.h"
 #include "drivers/dma.h"
 #include "drivers/transponder_ir.h"
 #include "drivers/system.h"
@@ -47,8 +49,12 @@
  *   5=0x42590000 6=0x425A0000 7=0x42690000 8=0x426A0000
  */
 #ifndef NAVQ95_CONSOLE_LPUART_BASE
-#define NAVQ95_CONSOLE_LPUART_BASE 0x44390000u   /* LPUART2 */
+#define NAVQ95_CONSOLE_LPUART_BASE 0x42590000u   /* LPUART5 (console moved here;
+                                                  * RC/SBUS now owns LPUART2) */
 #endif
+/* The console LPUART5 root is NOT clock-enabled by the SM at boot (unlike the
+ * old LPUART2 console, which the boot ROM/U-Boot left running). Enable it. */
+#define NAVQ95_CONSOLE_CLK_ROOT    103u          /* LPUART5 CCM root */
 
 #define LPUART_GLOBAL_OFFSET 0x08u
 #define LPUART_BAUD_OFFSET   0x10u
@@ -113,15 +119,15 @@ static void navq95_lowputs(const char *s)
 
 /*
  * Interrupt-driven console RX: the LPUART IRQ fills a ring buffer that the
- * serialPort_t read path drains. LPUART2_IRQHandler sits at external IRQ 20
- * (vector index 36) in startup_navq95.s.
+ * serialPort_t read path drains. The console now lives on LPUART5 (external IRQ
+ * 66, vector index 82) in startup_navq95.s; RC/SBUS owns LPUART2.
  */
 #define NAVQ95_RX_RING_SZ 256u                 /* power of two */
 static volatile uint8_t  s_rxRing[NAVQ95_RX_RING_SZ];
 static volatile uint32_t s_rxHead;             /* written by IRQ  */
 static volatile uint32_t s_rxTail;             /* read by thread  */
 
-void LPUART2_IRQHandler(void)
+void LPUART5_IRQHandler(void)
 {
     volatile uint32_t *stat =
         (volatile uint32_t *)(NAVQ95_CONSOLE_LPUART_BASE + LPUART_STAT_OFFSET);
@@ -165,7 +171,7 @@ static void navq95_rx_poll_drain(void)
     volatile uint32_t *data =
         (volatile uint32_t *)(NAVQ95_CONSOLE_LPUART_BASE + LPUART_DATA_OFFSET);
 
-    NVIC_DisableIRQ(LPUART2_IRQn);
+    NVIC_DisableIRQ(LPUART5_IRQn);
     if (*stat & LPUART_STAT_OR) {
         *stat = LPUART_STAT_OR;                /* clear overrun */
     }
@@ -177,7 +183,7 @@ static void navq95_rx_poll_drain(void)
             s_rxHead = next;
         }
     }
-    NVIC_EnableIRQ(LPUART2_IRQn);
+    NVIC_EnableIRQ(LPUART5_IRQn);
 }
 
 /* Enable the LPUART RX interrupt: set CTRL.RIE and enable the NVIC line. The
@@ -188,7 +194,7 @@ static void navq95_uart_rx_irq_enable(void)
     volatile uint32_t *ctrl =
         (volatile uint32_t *)(NAVQ95_CONSOLE_LPUART_BASE + LPUART_CTRL_OFFSET);
     *ctrl |= LPUART_CTRL_RIE;
-    NVIC_EnableIRQ(LPUART2_IRQn);
+    NVIC_EnableIRQ(LPUART5_IRQn);
 }
 
 /*
@@ -259,6 +265,23 @@ static void navq95_uart_rx_irq_enable(void)
 /* PINCTRL config entry types + attributes. */
 #define SCMI_PINCTRL_TYPE_MUX    192u
 #define SCMI_PINCTRL_TYPE_CONFIG 193u
+/* CLOCK protocol (0x14): CLOCK_CONFIG_SET ungates a clock root. The SM clock id
+ * = CCM root index + ROOT_CLOCK_OFFSET; attributes bit0 = ENABLE. */
+#define SCMI_PROTO_CLOCK         0x14u
+#define SCMI_MSG_CLOCK_CONFIG_SET 0x07u
+#define SCMI_CLOCK_ROOT_OFFSET   41u
+/* SYSTEM power-state protocol (0x12): SYSTEM_POWER_STATE_SET performs a warm
+ * reset of this core's logical machine (other cores keep running). This is a
+ * void-reply SET like the PINCTRL/CLOCK messages, so navq95_scmi_txn handles it
+ * safely (no payload-returning GET on the boot path). Payload = { flags, state }.
+ * Ported from PR #15853 scmi_imx95.c scmiSystemReset() (GPLv3), which sends
+ * tx[] = { SCMI_SYSTEM_FORCEFUL=0, SCMI_SYSTEM_WARM_RESET=2 }. NOTE: FORCEFUL is
+ * the VALUE 0 here (the SCMI flags word), not a bit — graceful vs forceful is
+ * encoded as 0 in this message as #15853 uses it. */
+#define SCMI_PROTO_SYSTEM             0x12u
+#define SCMI_MSG_SYSTEM_POWER_STATE_SET 0x03u
+#define SCMI_SYSTEM_FORCEFUL          0u          /* flags word = 0 (as #15853)  */
+#define SCMI_SYSTEM_WARM_RESET        2u          /* system state: warm reset    */
 
 static inline void navq95_w32(uint32_t addr, uint32_t v)
 {
@@ -319,19 +342,15 @@ static void navq95_smt_crc(uint32_t len)
 }
 
 /*
- * Send one SCMI PINCTRL_CONFIG_SET to the SM, muxing a single pad: set its MUX
- * (mode + optional SION) and CONFIG (pad electrical) value. Blocks (bounded)
- * until the SM frees the channel, then returns the SCMI status (0 = success,
- * negative = SCMI error, 1 = timeout waiting for the channel).
+ * Send one SCMI message (header already built by the caller into SMT_MSG_HEADER
+ * and payload words written) of `len` bytes, and return the SM status word.
+ * Handles the SMT handshake: wait FREE, write resv/flags/length, CRC, clear
+ * FREE, ring the doorbell, wait for the response. Returns the SCMI status
+ * (0 = success, negative = SCMI error, 1 = channel timeout). The caller must
+ * have written SMT_MSG_HEADER + the payload before calling.
  */
-static int navq95_scmi_pinmux(uint32_t muxReg, uint32_t muxMode, uint32_t sion,
-                              uint32_t padReg, uint32_t padVal)
+static int navq95_scmi_txn(uint32_t len)
 {
-    static uint32_t token = 0u;
-
-    (void)padReg;   /* identifier is derived from muxReg; padReg kept for clarity */
-
-    /* 1. Wait for the SM to mark the channel FREE. */
     uint32_t spin = 2000000u;
     while (!(navq95_r32(SMT_CHAN_STATUS) & SMT_FREE) && spin) {
         spin--;
@@ -340,43 +359,18 @@ static int navq95_scmi_pinmux(uint32_t muxReg, uint32_t muxMode, uint32_t sion,
         return 1;   /* channel never became free */
     }
 
-    /* 2. Build the message. header = msg | (proto<<10) | (type0) | (token<<18) */
-    uint32_t hdr = (SCMI_MSG_PINCTRL_SET & 0xFFu)
-                 | ((SCMI_PROTO_PINCTRL & 0xFFu) << 10)
-                 | ((token & 0x3FFu) << 18);
-    uint32_t identifier = (muxReg - IOMUXC_BASE) / 4u;   /* pin selector */
-    uint32_t attributes = (2u << 2);                      /* SEL_PIN, num_configs=2 */
-    uint32_t muxVal = (muxMode & 0x7u) | ((sion & 0x1u) << 4);
-
     navq95_w32(SMT_A2P_BUF + 0x00u, 0u);          /* resv */
     navq95_w32(SMT_CHAN_FLAGS, 0u);               /* poll, no completion IRQ */
-    navq95_w32(SMT_MSG_HEADER, hdr);
-    navq95_w32(SMT_PAYLOAD + 0x00u, identifier);
-    navq95_w32(SMT_PAYLOAD + 0x04u, 0xFFFFFFFFu); /* function_id = no function */
-    navq95_w32(SMT_PAYLOAD + 0x08u, attributes);
-    navq95_w32(SMT_PAYLOAD + 0x0Cu, SCMI_PINCTRL_TYPE_MUX);
-    navq95_w32(SMT_PAYLOAD + 0x10u, muxVal);
-    navq95_w32(SMT_PAYLOAD + 0x14u, SCMI_PINCTRL_TYPE_CONFIG);
-    navq95_w32(SMT_PAYLOAD + 0x18u, padVal);
-    /* length = SCMI header word (4) + identifier+function_id+attributes (12)
-     *          + 2 config entries * 8 = 32 bytes. */
-    uint32_t msgLen = 4u + 12u + 2u * 8u;
-    navq95_w32(SMT_LENGTH, msgLen);
+    navq95_w32(SMT_LENGTH, len);
+    navq95_smt_crc(len);                          /* CRC AFTER length, BEFORE FREE */
 
-    /* Compute the channel CRC (if the SM enabled one) over the message. Must be
-     * done AFTER length is final and BEFORE handing the channel to the SM. */
-    navq95_smt_crc(msgLen);
-
-    /* 3. Hand the channel to the SM (clear FREE) and ring the doorbell. */
     navq95_w32(SMT_CHAN_STATUS, navq95_r32(SMT_CHAN_STATUS) & ~SMT_FREE);
     navq95_w32(MU5_GCR, navq95_r32(MU5_GCR) | MU5_GCR_GIR0);
 
-    /* 4. Wait for the response (SM sets FREE again), then read status. */
     spin = 2000000u;
     while (!(navq95_r32(SMT_CHAN_STATUS) & SMT_FREE) && spin) {
         spin--;
     }
-    token++;
     if (!(navq95_r32(SMT_CHAN_STATUS) & SMT_FREE)) {
         return 1;   /* no response */
     }
@@ -386,16 +380,62 @@ static int navq95_scmi_pinmux(uint32_t muxReg, uint32_t muxMode, uint32_t sion,
     return 0;
 }
 
-/* Mux both LPUART2 console pads (TX + RX) via the SM over SCMI. Returns 0 if the
- * SM accepted both, else the first non-zero SCMI status. */
-static int navq95_lpuart2_iomux(void)
+static uint32_t s_scmiToken;
+
+static inline uint32_t navq95_scmi_header(uint32_t proto, uint32_t msg)
 {
-    int rxs = navq95_scmi_pinmux(IOMUXC_MUX_UART2_RX, 0u, 1u,
-                                 IOMUXC_PAD_UART2_RX, IOMUXC_PAD_LPUART_RXVAL);
-    int txs = navq95_scmi_pinmux(IOMUXC_MUX_UART2_TX, 0u, 0u,
-                                 IOMUXC_PAD_UART2_TX, IOMUXC_PAD_LPUART_TXVAL);
-    return rxs ? rxs : txs;
+    uint32_t h = (msg & 0xFFu) | ((proto & 0xFFu) << 10) | ((s_scmiToken & 0x3FFu) << 18);
+    s_scmiToken++;
+    return h;
 }
+
+/*
+ * SCMI PINCTRL_CONFIG_SET for a single pad: set its MUX (mode + optional SION)
+ * and CONFIG (pad electrical) value. Returns the SCMI status (0 = success).
+ */
+static int navq95_scmi_pinmux(uint32_t muxReg, uint32_t muxMode, uint32_t sion,
+                              uint32_t padReg, uint32_t padVal)
+{
+    (void)padReg;   /* identifier is derived from muxReg; padReg kept for clarity */
+
+    uint32_t identifier = (muxReg - IOMUXC_BASE) / 4u;   /* pin selector */
+    uint32_t attributes = (2u << 2);                      /* SEL_PIN, num_configs=2 */
+    uint32_t muxVal = (muxMode & 0x7u) | ((sion & 0x1u) << 4);
+
+    navq95_w32(SMT_MSG_HEADER, navq95_scmi_header(SCMI_PROTO_PINCTRL, SCMI_MSG_PINCTRL_SET));
+    navq95_w32(SMT_PAYLOAD + 0x00u, identifier);
+    navq95_w32(SMT_PAYLOAD + 0x04u, 0xFFFFFFFFu); /* function_id = no function */
+    navq95_w32(SMT_PAYLOAD + 0x08u, attributes);
+    navq95_w32(SMT_PAYLOAD + 0x0Cu, SCMI_PINCTRL_TYPE_MUX);
+    navq95_w32(SMT_PAYLOAD + 0x10u, muxVal);
+    navq95_w32(SMT_PAYLOAD + 0x14u, SCMI_PINCTRL_TYPE_CONFIG);
+    navq95_w32(SMT_PAYLOAD + 0x18u, padVal);
+    /* length = header(4) + identifier+function_id+attributes(12) + 2*config(16) = 32 */
+    return navq95_scmi_txn(4u + 12u + 2u * 8u);
+}
+
+/*
+ * SCMI CLOCK_CONFIG_SET: ungate (enable) a clock root. clockRootId is the i.MX95
+ * CCM root index (e.g. LPSPI1 = 8); the SM clock id = root + ROOT_CLOCK_OFFSET
+ * (41). Enabling alone is enough to ungate — we keep the SM's default parent/
+ * rate. Returns the SCMI status (0 = success).
+ */
+static int navq95_scmi_clock_enable(uint32_t clockRootId)
+{
+    uint32_t clkId = clockRootId + SCMI_CLOCK_ROOT_OFFSET;
+
+    navq95_w32(SMT_MSG_HEADER, navq95_scmi_header(SCMI_PROTO_CLOCK, SCMI_MSG_CLOCK_CONFIG_SET));
+    navq95_w32(SMT_PAYLOAD + 0x00u, clkId);       /* clock id            */
+    navq95_w32(SMT_PAYLOAD + 0x04u, 1u);          /* attributes: ENABLE  */
+    navq95_w32(SMT_PAYLOAD + 0x08u, 0u);          /* oem_config_val = 0  */
+    /* length = header(4) + clockid+attributes+oem(12) = 16 */
+    return navq95_scmi_txn(4u + 12u);
+}
+
+/* NOTE: the LPUART2 (RC/SBUS) pad mux is NOT done here — RC/SBUS runs through
+ * the generic serial core, and NAVQ95/serial_uart_navq95.c muxes the dedicated
+ * UART2 pads over SCMI in serialUART(). The console (LPUART5) pinmux lives in
+ * navq95_lpuart5_iomux() further down. */
 
 /*
  * Compute a BAUD register value for a target baud from a known functional
@@ -505,48 +545,88 @@ void SystemCoreClockUpdate(void)
  */
 uint32_t SystemCoreClock = 800000000U;
 
+/* Forward decl: the console (moved to LPUART5) muxes its pads with the daisy
+ * pinmux helper, which is defined further down with the RC/serial block. */
+static int navq95_lpuart5_iomux(void);
+
 void systemInit(void)
 {
     cycleCounterInit();                        /* DWT microsecond time base */
     navq95_timebaseInit();                     /* 1 kHz SysTick folds CYCCNT wraps */
 
     /*
-     * Console (LPUART2) init. On i.MX 95 the M7 cannot write IOMUXC/CCM
-     * directly — those blocks are owned by the System Manager (SM). We therefore
-     * mux the TX/RX pads over SCMI (navq95_lpuart2_iomux), then do a local
-     * software reset + FIFO + BAUD setup (navq95_lpuart_init). The LPUART
-     * functional clock is the 24 MHz oscillator root the SM leaves enabled.
+     * Console (LPUART5) init. RC/SBUS owns LPUART2's dedicated pads, so the
+     * console lives on LPUART5. On i.MX 95 the M7 cannot write IOMUXC/CCM
+     * directly — those blocks are owned by the System Manager (SM). So we:
+     * (1) enable the LPUART5 clock root over SCMI (unlike LPUART2, the SM does
+     * NOT leave LPUART5 clocked at boot); (2) mux the shared ALT5 TX/RX pads
+     * over SCMI including the SELECT_INPUT daisy (navq95_lpuart5_iomux); then
+     * (3) do the local reset + FIFO + BAUD setup.
      */
-    (void)navq95_lpuart2_iomux();
+    navq95_scmi_clock_enable(NAVQ95_CONSOLE_CLK_ROOT);
+    (void)navq95_lpuart5_iomux();
     navq95_lpuart_init(NAVQ95_CONSOLE_LPUART_BASE, NAVQ95_LPUART_CLK_HZ,
                        NAVQ95_CONSOLE_BAUD);
     navq95_uart_rx_irq_enable();
 
     navq95_lowputs("\nBetaflight NAVQ95 (NXP i.MX 95, Cortex-M7)\n");
+    navq95_lowputs("Console on LPUART5; RC/SBUS on LPUART2 (Betaflight UART2).\n");
     navq95_lowputs("Type '#' then Enter to open the CLI.\n");
 }
 
 /*
- * ────────────────────────────────────────────────────────────────────────────
  * NOTE: the DWT-based time base (micros/microsISR/millis/delay/
  * delayMicroseconds), the cycle counter (cycleCounterInit/getCycleCounter) and
- * the clock-cycle conversions now live in NAVQ95/system.c, matching the
- * per-platform system.c layout of the other targets. The reset and failure
- * primitives below are still stubs and stay here until implemented.
- * ────────────────────────────────────────────────────────────────────────────
+ * the clock-cycle conversions live in NAVQ95/system.c, matching the per-platform
+ * system.c layout of the other targets.
  */
 
-/* ── Reset (stubs) ──────────────────────────────────────────────────────── */
+/* ── Reset (SCMI warm reset) ────────────────────────────────────────────── */
+
+/*
+ * SCMI SYSTEM_POWER_STATE_SET warm reset. The System Manager resets this core's
+ * logical machine; on success the SM resets us before the SCMI transaction even
+ * returns. Returns the SCMI status (0 = success, negative = SCMI error,
+ * 1 = channel timeout).
+ */
+static int navq95_scmi_system_reset(void)
+{
+    navq95_w32(SMT_MSG_HEADER,
+               navq95_scmi_header(SCMI_PROTO_SYSTEM, SCMI_MSG_SYSTEM_POWER_STATE_SET));
+    navq95_w32(SMT_PAYLOAD + 0x00u, SCMI_SYSTEM_FORCEFUL);   /* flags */
+    navq95_w32(SMT_PAYLOAD + 0x04u, SCMI_SYSTEM_WARM_RESET); /* state */
+    return navq95_scmi_txn(4u + 2u * 4u);   /* header + 2 payload words */
+}
+
+/* First two words of our vector table: [0]=initial SP, [1]=reset handler. */
+extern uint32_t __isr_vector[];
 
 void systemReset(void)
 {
+    __disable_irq();
+
+    /* On success the System Manager resets this core; the fall-through below is
+     * only reached if the SM refuses the reset. */
+    if (navq95_scmi_system_reset() == 0) {
+        for (;;) { }
+    }
+
+    /* Fallback (SM refused): re-enter our own reset vector from thread mode.
+     * Only valid outside an exception (IPSR == 0). */
+    if (__get_IPSR() == 0u) {
+        __set_CONTROL(0);
+        __ISB();
+        ((void (*)(void))__isr_vector[1])();
+    }
+
     for (;;) { }
 }
 
 void systemResetToBootloader(bootloaderRequestType_e requestType)
 {
     (void)requestType;
-    for (;;) { }
+    /* This core has no separate bootloader to enter; a warm reset is all we do. */
+    systemReset();
 }
 
 /*
@@ -677,6 +757,93 @@ uint8_t usbVcpIsActive(void)
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
+ * Console (LPUART5) shared-pad pinmux.
+ *
+ * The CLI console runs on LPUART5 (exposed as the USB-VCP port above). LPUART5's
+ * TX/RX use the SHARED GPIO_IO00/GPIO_IO01 pads at ALT5, which REQUIRE the
+ * SELECT_INPUT/daisy register (unlike a dedicated pad). navq95_scmi_pinmux_daisy()
+ * emits the extra DAISY_ID(194)/DAISY_CFG(195) SCMI config pairs, per NuttX
+ * imx9_sm_iomucx_configure. RC/SBUS (UART2) uses the DEDICATED UART2 pads and is
+ * muxed by serial_uart_navq95.c's own (non-daisy) SCMI pinmux.
+ *
+ * LPUART5 hardware (from PX4 board.h + NuttX imx9 hardware headers):
+ *   base 0x42590000 (NAVQ95_CONSOLE_LPUART_BASE); CLK_ROOT index 103
+ *   (NAVQ95_CONSOLE_CLK_ROOT, enabled over SCMI in systemInit — the SM does NOT
+ *   leave LPUART5 clocked at boot). RX pad GPIO_IO01 (MUX 0x0014 ALT5 +SION, PAD
+ *   0x0218, daisy 0x0570 val 0x1); TX pad GPIO_IO00 (MUX 0x0010 ALT5, PAD 0x0214,
+ *   daisy 0x0574 val 0x1).
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+/* LPUART5 (console) pad registers (absolute = IOMUXC_BASE + offset). */
+#define IOMUXC_MUX_LPUART5_RX      (IOMUXC_BASE + 0x0014u)   /* GPIO_IO01 */
+#define IOMUXC_MUX_LPUART5_TX      (IOMUXC_BASE + 0x0010u)   /* GPIO_IO00 */
+#define IOMUXC_PAD_LPUART5_RX      (IOMUXC_BASE + 0x0218u)
+#define IOMUXC_PAD_LPUART5_TX      (IOMUXC_BASE + 0x0214u)
+#define IOMUXC_DSY_LPUART5_RX      (IOMUXC_BASE + 0x0570u)   /* RXD SELECT_INPUT */
+#define IOMUXC_DSY_LPUART5_TX      (IOMUXC_BASE + 0x0574u)   /* TXD SELECT_INPUT */
+#define IOMUXC_LPUART5_ALT         5u                        /* ALT mux mode     */
+#define IOMUXC_LPUART5_DSY_VAL     1u                        /* daisy select     */
+
+/* SCMI pinctrl daisy type ids (NuttX imx9_scmi.h). MUX=192/CONFIG=193 already
+ * defined above for the console. DAISYREG base offset = IOMUXC_BASE + 0x408. */
+#define SCMI_PINCTRL_TYPE_DAISY_ID  194u
+#define SCMI_PINCTRL_TYPE_DAISY_CFG 195u
+#define SCMI_PINCTRL_DAISYREG_OFF   0x408u
+
+/*
+ * SCMI PINCTRL_CONFIG_SET for a SHARED pad that needs a SELECT_INPUT/daisy
+ * register (ALT != 0 alternate-function routing). Emits 4 config pairs:
+ * MUX, DAISY_ID, DAISY_CFG, CONFIG (num_configs = 4), mirroring NuttX
+ * imx9_sm_iomucx_configure(). daisyReg is the absolute SELECT_INPUT register;
+ * daisyVal is the input mux selector (0x1 for both LPUART5 pads).
+ */
+static int navq95_scmi_pinmux_daisy(uint32_t muxReg, uint32_t muxMode, uint32_t sion,
+                                    uint32_t daisyReg, uint32_t daisyVal,
+                                    uint32_t padVal)
+{
+    uint32_t identifier = (muxReg - IOMUXC_BASE) / 4u;
+    uint32_t daisyId    = (daisyReg - (IOMUXC_BASE + SCMI_PINCTRL_DAISYREG_OFF)) / 4u;
+    uint32_t attributes = (4u << 2);                      /* SEL_PIN, num_configs=4 */
+    uint32_t muxVal = (muxMode & 0x7u) | ((sion & 0x1u) << 4);
+
+    navq95_w32(SMT_MSG_HEADER, navq95_scmi_header(SCMI_PROTO_PINCTRL, SCMI_MSG_PINCTRL_SET));
+    navq95_w32(SMT_PAYLOAD + 0x00u, identifier);
+    navq95_w32(SMT_PAYLOAD + 0x04u, 0xFFFFFFFFu); /* function_id = no function */
+    navq95_w32(SMT_PAYLOAD + 0x08u, attributes);
+    navq95_w32(SMT_PAYLOAD + 0x0Cu, SCMI_PINCTRL_TYPE_MUX);
+    navq95_w32(SMT_PAYLOAD + 0x10u, muxVal);
+    navq95_w32(SMT_PAYLOAD + 0x14u, SCMI_PINCTRL_TYPE_DAISY_ID);
+    navq95_w32(SMT_PAYLOAD + 0x18u, daisyId);
+    navq95_w32(SMT_PAYLOAD + 0x1Cu, SCMI_PINCTRL_TYPE_DAISY_CFG);
+    navq95_w32(SMT_PAYLOAD + 0x20u, daisyVal);
+    navq95_w32(SMT_PAYLOAD + 0x24u, SCMI_PINCTRL_TYPE_CONFIG);
+    navq95_w32(SMT_PAYLOAD + 0x28u, padVal);
+    /* length = header(4) + id+func+attr(12) + 4*config(32) = 48 */
+    return navq95_scmi_txn(4u + 12u + 4u * 8u);
+}
+
+/* Mux both LPUART5 pads (RX + TX) via the SM over SCMI (with daisy). RX pad gets
+ * SION + PU|HYS (0x0900) so the idle-high line reads; TX pad gets 0x0F. */
+static int navq95_lpuart5_iomux(void)
+{
+    int rxs = navq95_scmi_pinmux_daisy(IOMUXC_MUX_LPUART5_RX, IOMUXC_LPUART5_ALT, 1u,
+                                       IOMUXC_DSY_LPUART5_RX, IOMUXC_LPUART5_DSY_VAL,
+                                       IOMUXC_PAD_LPUART_RXVAL);
+    int txs = navq95_scmi_pinmux_daisy(IOMUXC_MUX_LPUART5_TX, IOMUXC_LPUART5_ALT, 0u,
+                                       IOMUXC_DSY_LPUART5_TX, IOMUXC_LPUART5_DSY_VAL,
+                                       IOMUXC_PAD_LPUART_TXVAL);
+    return rxs ? rxs : txs;
+}
+
+/* RC/SBUS (UART2 == LPUART2) is handled by the GENERIC serial core
+ * (drivers/serial_uart.c) plus NAVQ95/serial_uart_navq95.c (uartHardware[] row
+ * for UART2 + SBUS 8E2/RXINV framing in uartReconfigure). openSerialPort()
+ * routes UART identifiers to the generic uartOpen(); this file no longer
+ * provides its own uartOpen()/uartPinConfigure(). The LPUART5 pinmux helpers
+ * above (navq95_scmi_pinmux_daisy / navq95_lpuart5_iomux) are kept — the
+ * console (LPUART5) uses them. */
+
+/* ════════════════════════════════════════════════════════════════════════════
  * Platform helpers and IO primitives the common code requires (cycle-count
  * conversions, IO record access, EXTI, failure handling, newlib syscalls, ...).
  * Uses CMSIS-Core intrinsics only; no vendor SDK dependency.
@@ -693,11 +860,9 @@ uint8_t usbVcpIsActive(void)
 void EXTIInit(void)            { }
 void EXTIRelease(IO_t io)      { (void)io; }
 
-/* ── System / failure (stubs) ───────────────────────────────────────────── */
-/* failureMode() / indicateFailure() now live in NAVQ95/system.c (they drive
- * the beeper and, once ported, the LED), matching the per-platform system.c
- * layout. Only the remaining reset-reason / pin stubs stay here. */
-
+/* ── System / failure ───────────────────────────────────────────────────────
+ * failureMode()/indicateFailure() live in NAVQ95/system.c (they use the beeper
+ * + delay()). isMPUSoftReset/unusedPinsInit stay here. */
 bool isMPUSoftReset(void)      { return false; }
 void unusedPinsInit(void)      { }
 
@@ -801,34 +966,194 @@ void _exit(int status) { (void)status; while (1) { } }
  *  implementations as the corresponding drivers are brought up.
  * ========================================================================= */
 
-/* ── SPI (drivers/bus_spi.h) ────────────────────────────────────────────── */
-uint8_t spiReadReg(const extDevice_t *dev, uint8_t reg) { (void)dev; (void)reg; return 0; }
-uint8_t spiReadRegMsk(const extDevice_t *dev, uint8_t reg) { (void)dev; (void)reg; return 0; }
-void spiReadRegBuf(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t length) { (void)dev; (void)reg; (void)data; (void)length; }
-bool spiReadRegBufRB(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t length) { (void)dev; (void)reg; (void)data; (void)length; return false; }
-bool spiReadRegMskBufRB(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t length) { (void)dev; (void)reg; (void)data; (void)length; return false; }
-void spiWrite(const extDevice_t *dev, uint8_t data) { (void)dev; (void)data; }
-void spiWriteReg(const extDevice_t *dev, uint8_t reg, uint8_t data) { (void)dev; (void)reg; (void)data; }
-bool spiWriteRegRB(const extDevice_t *dev, uint8_t reg, uint8_t data) { (void)dev; (void)reg; (void)data; return false; }
-uint8_t spiReadWrite(const extDevice_t *dev, uint8_t data) { (void)dev; (void)data; return 0; }
-void spiWriteRegBuf(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint32_t length) { (void)dev; (void)reg; (void)data; (void)length; }
-uint8_t spiReadWriteReg(const extDevice_t *dev, uint8_t reg, uint8_t data) { (void)dev; (void)reg; (void)data; return 0; }
-void spiReadWriteBuf(const extDevice_t *dev, uint8_t *txData, uint8_t *rxData, int len) { (void)dev; (void)txData; (void)rxData; (void)len; }
-bool spiReadWriteBufRB(const extDevice_t *dev, uint8_t *txData, uint8_t *rxData, int length) { (void)dev; (void)txData; (void)rxData; (void)length; return false; }
-void spiSequence(const extDevice_t *dev, busSegment_t *segments) { (void)dev; (void)segments; }
-void spiWait(const extDevice_t *dev) { (void)dev; }
-bool spiIsBusy(const extDevice_t *dev) { (void)dev; return false; }
-void spiSetClkDivisor(const extDevice_t *dev, uint16_t divider) { (void)dev; (void)divider; }
-void spiSetClkPhasePolarity(const extDevice_t *dev, bool leadingEdge) { (void)dev; (void)leadingEdge; }
-uint16_t spiCalculateDivider(uint32_t freq) { (void)freq; return 1; }
-bool spiSetBusInstance(extDevice_t *dev, uint32_t device) { (void)dev; (void)device; return false; }
-void spiDmaEnable(const extDevice_t *dev, bool enable) { (void)dev; (void)enable; }
-bool spiUseDMA(const extDevice_t *dev) { (void)dev; return false; }
-bool spiUseSDO_DMA(const extDevice_t *dev) { (void)dev; return false; }
-spiDevice_e spiDeviceByInstance(const spiResource_t *instance) { (void)instance; return SPIINVALID; }
-void spiLinkSegments(const extDevice_t *dev, busSegment_t *firstSegment, busSegment_t *secondSegment) { (void)dev; (void)firstSegment; (void)secondSegment; }
-/* spiSequenceStart: platform hook in bus_spi_impl.h, called by bus_spi.c. */
-void spiSequenceStart(const extDevice_t *dev) { (void)dev; }
+/* ── SPI: register-level LPSPI driver (polled) ──────────────────────────────
+ * Betaflight's common bus_spi.c provides the high-level API (spiReadReg/
+ * spiWriteReg/spiSequence/...) once USE_SPI is defined; the platform supplies
+ * the hardware hooks below. This is a polled driver (no DMA): spiSequenceStart
+ * calls the common spiProcessSegmentsPolled(), which drives the CS GPIO and
+ * calls spiInternalReadWriteBufPolled() per segment.
+ *
+ * i.MX 95 LPSPI register layout (NuttX arch/arm/src/imx9/hardware/imx9_lpspi.h).
+ * CS is a software GPIO (not hardware PCS); the common polled path toggles it.
+ * The LPSPI functional clock is ungated over SCMI; the pads are muxed over SCMI
+ * pinctrl (same path as the console). SPI1 == LPSPI1 (0x44360000, platform.h).
+ */
+#define LPSPI_CR_OFFSET     0x10u
+#define LPSPI_SR_OFFSET     0x14u
+#define LPSPI_CFGR1_OFFSET  0x24u
+#define LPSPI_CCR_OFFSET    0x40u
+#define LPSPI_FCR_OFFSET    0x58u
+#define LPSPI_TCR_OFFSET    0x60u
+#define LPSPI_TDR_OFFSET    0x64u
+#define LPSPI_RDR_OFFSET    0x74u
+#define LPSPI_CR_MEN        (1u << 0)
+#define LPSPI_CR_RST        (1u << 1)
+#define LPSPI_CR_RTF        (1u << 8)
+#define LPSPI_CR_RRF        (1u << 9)
+#define LPSPI_SR_TDF        (1u << 0)
+#define LPSPI_SR_RDF        (1u << 1)
+#define LPSPI_CFGR1_MASTER  (1u << 0)
+#define LPSPI_TCR_FRAMESZ(n)  ((uint32_t)(n) & 0xFFFu)
+#define LPSPI_TCR_PRESCALE(n) (((uint32_t)(n) & 0x7u) << 27)
+#define LPSPI_TCR_PCS(n)      (((uint32_t)(n) & 0x7u) << 24)
+#define LPSPI_TCR_CPHA      (1u << 30)
+#define LPSPI_TCR_CPOL      (1u << 31)
+#define LPSPI_CCR_SCKDIV(n) ((uint32_t)(n) & 0xFFu)
+
+/* NavQ95 LPSPI1 is on the OSC_24M root (SCMI CLOCK_ROOT id 8). */
+#define NAVQ95_LPSPI1_BASE     0x44360000u
+#define NAVQ95_LPSPI1_CLK_ROOT 8u
+#define NAVQ95_LPSPI1_SRC_HZ   24000000u
+
+/* LPSPI1 pads (IOMUXC, ALT 2 for the LPSPI function; CS is a GPIO, ALT 5).
+ * Source: PX4/NuttX NavQ95 board.h (SAI1_* balls routed to LPSPI1). */
+#define IOMUXC_MUX_LPSPI1_SCK  (IOMUXC_BASE + 0x01F4u)   /* SAI1_TXD0 */
+#define IOMUXC_PAD_LPSPI1_SCK  (IOMUXC_BASE + 0x03F8u)
+#define IOMUXC_MUX_LPSPI1_SOUT (IOMUXC_BASE + 0x01F8u)   /* SAI1_RXD0 (MOSI) */
+#define IOMUXC_PAD_LPSPI1_SOUT (IOMUXC_BASE + 0x03FCu)
+#define IOMUXC_MUX_LPSPI1_SIN  (IOMUXC_BASE + 0x01F0u)   /* SAI1_TXC  (MISO) */
+#define IOMUXC_PAD_LPSPI1_SIN  (IOMUXC_BASE + 0x03F4u)
+#define IOMUXC_MUX_LPSPI1_CS   (IOMUXC_BASE + 0x01ECu)   /* SAI1_TXFS -> GPIO1_IO11 */
+#define IOMUXC_PAD_LPSPI1_CS   (IOMUXC_BASE + 0x03F0u)
+#define IOMUXC_LPSPI1_ALT      0x2u
+#define IOMUXC_LPSPI1_CS_ALT   0x5u                       /* GPIO alt for the CS pad */
+/* Pad value (pre-shift, SM applies <<1): SPI signals get drive strength;
+ * MISO (input) + CS readback get hysteresis. */
+#define IOMUXC_PAD_SPI_OUT     0x0Fu                      /* -> raw 0x1E (DSE X4)      */
+#define IOMUXC_PAD_SPI_IN      0x0900u                    /* -> raw 0x1200 (PU | HYS)  */
+
+static int navq95_lpspi1_padmux(void)
+{
+    int s = 0, r;
+    r = navq95_scmi_pinmux(IOMUXC_MUX_LPSPI1_SCK,  IOMUXC_LPSPI1_ALT, 0u,
+                           IOMUXC_PAD_LPSPI1_SCK,  IOMUXC_PAD_SPI_OUT); if (!s) s = r;
+    r = navq95_scmi_pinmux(IOMUXC_MUX_LPSPI1_SOUT, IOMUXC_LPSPI1_ALT, 0u,
+                           IOMUXC_PAD_LPSPI1_SOUT, IOMUXC_PAD_SPI_OUT); if (!s) s = r;
+    r = navq95_scmi_pinmux(IOMUXC_MUX_LPSPI1_SIN,  IOMUXC_LPSPI1_ALT, 1u,
+                           IOMUXC_PAD_LPSPI1_SIN,  IOMUXC_PAD_SPI_IN);  if (!s) s = r;
+    /* CS as GPIO (software-driven by the common polled path). */
+    r = navq95_scmi_pinmux(IOMUXC_MUX_LPSPI1_CS,   IOMUXC_LPSPI1_CS_ALT, 0u,
+                           IOMUXC_PAD_LPSPI1_CS,   IOMUXC_PAD_SPI_OUT); if (!s) s = r;
+    return s;
+}
+
+/* Program LPSPI1 as an 8-bit SPI mode-3 master. SCK ~= src/(2^prescale*(sckdiv+2)).
+ * Mode 3 (CPOL=1,CPHA=1) is the ICM-45686 default. divider selects SCK. */
+static void navq95_lpspi1_configure(uint32_t sckdiv, uint32_t prescale)
+{
+    volatile uint32_t *cr    = (volatile uint32_t *)(NAVQ95_LPSPI1_BASE + LPSPI_CR_OFFSET);
+    volatile uint32_t *cfgr1 = (volatile uint32_t *)(NAVQ95_LPSPI1_BASE + LPSPI_CFGR1_OFFSET);
+    volatile uint32_t *ccr   = (volatile uint32_t *)(NAVQ95_LPSPI1_BASE + LPSPI_CCR_OFFSET);
+    volatile uint32_t *fcr   = (volatile uint32_t *)(NAVQ95_LPSPI1_BASE + LPSPI_FCR_OFFSET);
+    volatile uint32_t *tcr   = (volatile uint32_t *)(NAVQ95_LPSPI1_BASE + LPSPI_TCR_OFFSET);
+
+    *cr = 0u;                                   /* disable (MEN=0) */
+    *cr = LPSPI_CR_RST;                         /* software reset  */
+    *cr = LPSPI_CR_RTF | LPSPI_CR_RRF;          /* flush FIFOs     */
+    *cr = 0u;
+
+    *cfgr1 = LPSPI_CFGR1_MASTER;                /* master, SIN/SOUT, output retain */
+    *ccr   = LPSPI_CCR_SCKDIV(sckdiv);          /* SCK divider (MEN must be 0) */
+    *fcr   = 0u;                                /* watermarks 0 */
+
+    *cr = LPSPI_CR_MEN;                         /* enable so TCR is writable */
+    *tcr = LPSPI_TCR_FRAMESZ(7u)                /* 8-bit frames (bits-1) */
+         | LPSPI_TCR_PRESCALE(prescale)
+         | LPSPI_TCR_PCS(0u)
+         | LPSPI_TCR_CPOL | LPSPI_TCR_CPHA;     /* SPI mode 3 */
+    (void)*tcr;
+}
+
+/* spiHardware[] — SPI1 maps to LPSPI1. Pins are placeholders (real CS/SCK/etc.
+ * come from the PG config / target.h); the common layer matches ioTags against
+ * these, but our single-bus bring-up resolves the instance directly. */
+const spiHardware_t spiHardware[SPIDEV_COUNT] = {
+    {
+        .device = SPIDEV_1,
+        .reg    = (spiResource_t *)SPI1,
+    },
+};
+
+void spiPinConfigure(const struct spiPinConfig_s *pConfig)
+{
+    (void)pConfig;
+    /* Single bus: bind SPI1 -> LPSPI1 so spiInstanceByDevice() resolves it. */
+    extern spiDevice_t spiDevice[SPIDEV_COUNT];
+    spiDevice[SPIDEV_1].dev = (spiResource_t *)SPI1;
+}
+
+void spiInitDevice(spiDevice_e device)
+{
+    if (device != SPIDEV_1) {
+        return;
+    }
+    /* Ungate the LPSPI1 clock + mux its pads via the SM, then configure the
+     * peripheral. ~6 MHz SCK (24 MHz src, prescale 0, sckdiv 2) for bring-up. */
+    navq95_scmi_clock_enable(NAVQ95_LPSPI1_CLK_ROOT);
+    navq95_lpspi1_padmux();
+    navq95_lpspi1_configure(2u, 0u);
+}
+
+/* Betaflight encodes SPI speed as a power-of-two "divider" of a nominal clock.
+ * We keep it simple: carry the divider through and derive the LPSPI SCKDIV in
+ * spiInternal* if needed. For bring-up the fixed configure() rate is used. */
+uint16_t spiCalculateDivider(uint32_t freq)
+{
+    uint32_t div = NAVQ95_LPSPI1_SRC_HZ / (freq ? freq : 1u);
+    if (div < 2u) {
+        div = 2u;
+    }
+    return (uint16_t)div;
+}
+
+uint32_t spiCalculateClock(uint16_t spiClkDivisor)
+{
+    return NAVQ95_LPSPI1_SRC_HZ / (spiClkDivisor ? spiClkDivisor : 1u);
+}
+
+void spiInitBusDMA(void)
+{
+    /* Polled-only: no DMA. Called unconditionally from fc/init.c. */
+}
+
+/* Platform polled transfer: exchange `len` bytes on `instance` (== LPSPI1).
+ * NULL tx => send 0xFF; NULL rx => discard. One RDR read per TDR write. */
+bool spiInternalReadWriteBufPolled(spiResource_t *instance, const uint8_t *txData,
+                                   uint8_t *rxData, int len)
+{
+    uint32_t base = (uint32_t)instance;
+    volatile uint32_t *sr  = (volatile uint32_t *)(base + LPSPI_SR_OFFSET);
+    volatile uint32_t *tdr = (volatile uint32_t *)(base + LPSPI_TDR_OFFSET);
+    volatile uint32_t *rdr = (volatile uint32_t *)(base + LPSPI_RDR_OFFSET);
+
+    for (int i = 0; i < len; i++) {
+        uint8_t tx = txData ? txData[i] : 0xFFu;
+
+        uint32_t spin = 1000000u;
+        while (!(*sr & LPSPI_SR_TDF) && spin) {
+            spin--;
+        }
+        *tdr = tx;
+
+        spin = 1000000u;
+        while (!(*sr & LPSPI_SR_RDF) && spin) {
+            spin--;
+        }
+        uint8_t rx = (uint8_t)(*rdr & 0xFFu);
+        if (rxData) {
+            rxData[i] = rx;
+        }
+        (void)*sr;                              /* read SR clears error flags */
+    }
+    return true;
+}
+
+/* Platform SPI sequence entry: polled-only, so always use the common polled
+ * segment processor (which drives the CS GPIO and calls the primitive above). */
+void spiSequenceStart(const extDevice_t *dev)
+{
+    spiProcessSegmentsPolled(dev);
+}
 
 /* ── EXTI (drivers/exti.h) — EXTIInit/EXTIRelease are stubbed earlier ────── */
 void EXTIHandlerInit(extiCallbackRec_t *cb, extiHandlerCallback *fn) { (void)cb; (void)fn; }
@@ -846,39 +1171,17 @@ bool useDshotTelemetry = false;
 dshotTelemetryCycleCounters_t dshotDMAHandlerCycleCounters;
 #endif
 
-/* ── flash (drivers/flash/flash.h) ──────────────────────────────────────── */
-const flashGeometry_t *flashGetGeometry(void) { return NULL; }
-const flashPartition_t *flashPartitionFindByIndex(uint8_t index) { (void)index; return NULL; }
-const char *flashPartitionGetTypeName(flashPartitionType_e type) { (void)type; return NULL; }
-flashPartition_t *flashPartitionFindByType(flashPartitionType_e type) { (void)type; return NULL; }
+/* flash + flashfs: now provided by the REAL drivers/flash/flash.c and
+ * io/flashfs.c (built in NAVQ95.mk; USE_SPI auto-enables USE_FLASH_CHIP via
+ * common_post.h). Their stubs were REMOVED from here to avoid duplicate
+ * symbols (flashInit, flashGetGeometry, flashPartitionXxx, flashfsXxx). */
 
 /* ── Peripheral init entry points (no-op until the drivers are implemented) ─ */
 void timerInit(void) { }
-bool flashInit(const flashConfig_t *cfg) { (void)cfg; return false; }
-void flashfsInit(void) { }
 void sdcard_init(const sdcardConfig_t *config) { (void)config; }
 void afatfs_init(void) { }
 void debugInit(void) { }
-spiResource_t *spiInstanceByDevice(spiDevice_e device) { (void)device; return NULL; }
 
-/* ── flashfs (io/flashfs.h) ─────────────────────────────────────────────── */
-bool flashfsIsSupported(void) { return false; }
-void flashfsEraseCompletely(void) { }
-bool flashfsIsReady(void) { return false; }
-void flashfsEraseAsync(void) { }
-uint32_t flashfsGetOffset(void) { return 0; }
-void flashfsSeekAbs(uint32_t offset) { (void)offset; }
-void flashfsWrite(const uint8_t *data, unsigned int len, bool sync) { (void)data; (void)len; (void)sync; }
-void flashfsFlushSync(void) { }
-int flashfsReadAbs(uint32_t offset, uint8_t *data, unsigned int len) { (void)offset; (void)data; (void)len; return 0; }
-bool flashfsVerifyEntireFlash(void) { return false; }
-uint32_t flashfsGetSize(void) { return 0; }
-void flashfsClose(void) { }
-bool flashfsIsEOF(void) { return true; }
-uint32_t flashfsGetWriteBufferSize(void) { return 0; }
-uint32_t flashfsGetWriteBufferFreeSpace(void) { return 0; }
-bool flashfsFlushAsync(bool force) { (void)force; return true; }
-void flashfsWriteByte(uint8_t byte) { (void)byte; }
 
 /* ── sdcard (drivers/sdcard.h) ──────────────────────────────────────────── */
 bool sdcard_isInserted(void) { return false; }
@@ -934,7 +1237,10 @@ int IO_GPIOPinIdx(IO_t io)
 }
 
 /* ── USB cable detect (drivers/usb_io.h; usb_io.c not compiled for NAVQ95) ─
- * Report inserted when the VCP reports connected, else false. */
+ * Report inserted/active when the VCP reports connected/active, else false.
+ * usbCableIsActive() is the "live" check beeper.c uses (io/beeper.c) and must
+ * be provided alongside usbCableIsInserted(); without it the link fails with
+ * "undefined reference to usbCableIsActive" once USE_BEEPER is enabled. */
 bool usbCableIsInserted(void)
 {
 #if defined(USE_VCP)
@@ -944,9 +1250,6 @@ bool usbCableIsInserted(void)
 #endif
 }
 
-/* Live cable detect, used by io/beeper.c (beeperUsbSuppressed) once USE_BEEPER
- * is enabled. No USB_DETECT pin on NavQ95, so mirror the real usb_io.c path and
- * fall back to the VCP active state. */
 bool usbCableIsActive(void)
 {
 #if defined(USE_VCP)

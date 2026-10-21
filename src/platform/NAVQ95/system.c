@@ -250,20 +250,20 @@ void indicateFailure(failureMode_e mode, int codeRepeatsRemaining)
 
 void failureMode(failureMode_e mode)
 {
+    /* Indicate the failure code a few times, then warm-reset the core via the
+     * real SCMI systemReset() (platform_stubs.c). */
     indicateFailure(mode, 10);
 
-    /* No reset backend on NavQ95 yet (systemReset/systemResetToBootloader are
-     * still stubs), so keep indicating the failure forever instead of
-     * returning to the caller. Swap to systemReset()/systemResetToBootloader()
-     * once those are implemented. */
+    systemReset();
+
+    /* systemReset() does not return on success; keep indicating as a fallback. */
     for (;;) {
         indicateFailure(mode, 1);
     }
 }
 
 /*
- * Reset (systemReset/systemResetToBootloader) and the remaining failure
- * handling (isMPUSoftReset/unusedPinsInit) are still stubs and remain in
- * platform_stubs.c. They move here once they have real implementations.
+ * Reset (systemReset/systemResetToBootloader) uses the real SCMI warm reset and
+ * lives in platform_stubs.c. isMPUSoftReset/unusedPinsInit are still stubs there.
  */
 

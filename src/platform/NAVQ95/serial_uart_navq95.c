@@ -82,6 +82,13 @@
 #define LPUART_BAUD_BOTHEDGE  (1u << 17)
 #define LPUART_BAUD_OSR(n)    (((uint32_t)((n) - 1u) & 0x1Fu) << 24)
 #define LPUART_DATA_MASK      0xFFu
+/* SBUS framing: 8E2 inverted. PE/PT/M select 8E (parity in the 9th slot),
+ * BAUD.SBNS = 2 stop bits, STAT.RXINV inverts the RX line (the SBUS inversion). */
+#define LPUART_CTRL_PE        (1u << 1)         /* parity enable                */
+#define LPUART_CTRL_PT        (1u << 0)         /* 0 = even parity              */
+#define LPUART_CTRL_M         (1u << 4)         /* 9-bit (8 data + parity)      */
+#define LPUART_BAUD_SBNS      (1u << 13)        /* 2 stop bits                  */
+#define LPUART_STAT_RXINV     (1u << 28)        /* invert RX data               */
 
 /* The LPUART functional clock root is the 24 MHz crystal oscillator; U-Boot/the
  * SM leave LPUART7 on it (assumed clock-enabled for now, as agreed). */
@@ -111,6 +118,22 @@ static inline volatile uint32_t *lpReg(const usartResource_t *reg, uint32_t off)
  * RX raw 0x1200 (PU bit9 | HYS bit12). */
 #define IOMUXC_PAD_UART7_TXVAL (0x1Eu >> 1)
 #define IOMUXC_PAD_UART7_RXVAL (0x1200u >> 1)
+
+/* ── LPUART2 (RC / SBUS) ─────────────────────────────────────────────────────
+ * UART2 == LPUART2 (base 0x44390000). Pads are the DEDICATED UART2_TXD/RXD at
+ * ALT0 (no SELECT_INPUT/daisy — unlike the shared LPUART7 pads). The SM leaves
+ * LPUART2's clock running at boot (24 MHz XTAL), so no SCMI clock-enable is
+ * needed. SBUS framing (8E2 + inverted RX) is applied in uartReconfigure() from
+ * the port options; everything else matches the LPUART7 path. */
+#define LPUART2_BASE          0x44390000u
+#define IOMUXC_MUX_UART2_TX   0x443C01DCu   /* UART2_TXD, ALT0 */
+#define IOMUXC_MUX_UART2_RX   0x443C01D8u   /* UART2_RXD, ALT0 (+SION) */
+#define IOMUXC_PAD_UART2_TX   0x443C03E0u
+#define IOMUXC_PAD_UART2_RX   0x443C03DCu
+#define LPUART2_ALT_MODE      0x0u
+/* TX raw 0x1E -> 0x0F; RX raw 0x1200 (PU|HYS) -> 0x0900 (idle-high line reads). */
+#define IOMUXC_PAD_UART2_TXVAL (0x1Eu >> 1)
+#define IOMUXC_PAD_UART2_RXVAL (0x1200u >> 1)
 
 /* ── SCMI-over-MU5 transport (minimal, polled) — same channel the console uses.
  * The SM owns side-B and leaves the channel FREE at boot. */
@@ -260,6 +283,17 @@ static int navq95_lpuart7_iomux(void)
     return rxs ? rxs : txs;
 }
 
+/* Mux both LPUART2 pads via the SM. DEDICATED UART2_TXD/RXD pads at ALT0 — no
+ * SELECT_INPUT/daisy (dsyReg = 0). RX pad gets SION so the input path is forced. */
+static int navq95_lpuart2_iomux(void)
+{
+    int rxs = navq95_scmi_pinmux(IOMUXC_MUX_UART2_RX, LPUART2_ALT_MODE, 1u,
+                                 IOMUXC_PAD_UART2_RXVAL, 0u, 0u);
+    int txs = navq95_scmi_pinmux(IOMUXC_MUX_UART2_TX, LPUART2_ALT_MODE, 0u,
+                                 IOMUXC_PAD_UART2_TXVAL, 0u, 0u);
+    return rxs ? rxs : txs;
+}
+
 /* BAUD value search (NuttX imx9_lpuart_configure): OSR 4..32, smallest error. */
 static uint32_t navq95_lpuart_baudval(uint32_t clkHz, uint32_t baud)
 {
@@ -294,8 +328,12 @@ static uint32_t navq95_lpuart_baudval(uint32_t clkHz, uint32_t baud)
 
 /* Full LPUART init at a known functional clock (NuttX imx9_lpuart_configure):
  * software reset, flush + enable RX/TX FIFOs, clear MODIR, program BAUD, clear
- * stale W1C flags, enable RE|TE for 8N1 (TX/RX interrupts left off). */
-static void navq95_lpuart_init(const usartResource_t *reg, uint32_t clkHz, uint32_t baud)
+ * stale W1C flags, enable RE|TE. `inverted` sets STAT.RXINV; `evenParity2Stop`
+ * selects 8E2 framing (SBUS). Default (false/false) is 8N1. TX/RX interrupts
+ * are left off here; the generic core enables them via uartReconfigure/
+ * uartEnableTxInterrupt. */
+static void navq95_lpuart_init(const usartResource_t *reg, uint32_t clkHz, uint32_t baud,
+                               bool inverted, bool evenParity2Stop)
 {
     volatile uint32_t *global = lpReg(reg, LPUART_GLOBAL_OFFSET);
     volatile uint32_t *fifo   = lpReg(reg, LPUART_FIFO_OFFSET);
@@ -315,17 +353,51 @@ static void navq95_lpuart_init(const usartResource_t *reg, uint32_t clkHz, uint3
     *fifo = LPUART_FIFO_RXFE | LPUART_FIFO_TXFE |
             LPUART_FIFO_RXFLUSH | LPUART_FIFO_TXFLUSH;
     *modir = 0u;
-    *baudr = navq95_lpuart_baudval(clkHz, baud);
-    *statr = LPUART_STAT_W1C;
-    *ctrl = LPUART_CTRL_RE | LPUART_CTRL_TE;    /* 8N1, M=0 */
+
+    uint32_t bv = navq95_lpuart_baudval(clkHz, baud);
+    if (evenParity2Stop) {
+        bv |= LPUART_BAUD_SBNS;                 /* 2 stop bits */
+    }
+    *baudr = bv;
+
+    uint32_t st = *statr | LPUART_STAT_W1C;
+    if (inverted) {
+        st |= LPUART_STAT_RXINV;
+    } else {
+        st &= ~LPUART_STAT_RXINV;
+    }
+    *statr = st;
+
+    uint32_t c = LPUART_CTRL_RE | LPUART_CTRL_TE;
+    if (evenParity2Stop) {
+        c |= LPUART_CTRL_PE | LPUART_CTRL_M;    /* 8E: parity enable + 9-bit; PT=0 even */
+    }
+    *ctrl = c;
     (void)*ctrl;
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
  * uartHardware[] — the per-UART description table the generic core indexes by
- * uartDeviceIdx_e. Only LPUART7 (UARTDEV_7) is wired on NavQ95.
+ * uartDeviceIdx_e. NavQ95 wires LPUART2 (UARTDEV_2, RC/SBUS) and LPUART7
+ * (UARTDEV_7, MSP). Rows are matched by .identifier (order is not significant).
  * ════════════════════════════════════════════════════════════════════════════ */
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
+#ifdef USE_UART2
+    {
+        .identifier = SERIAL_PORT_UART2,
+        .reg        = (usartResource_t *)LPUART2_BASE,
+        /* Dedicated UART2_RXD/TXD pads (ALT0). UART2_RX/TX_PIN are NONE in
+         * target.h; serialUART() muxes the pads directly over SCMI, so the pin
+         * tags here only need to be non-conflicting placeholders. */
+        .rxPins     = { { DEFIO_TAG_E(NONE) } },
+        .txPins     = { { DEFIO_TAG_E(NONE) } },
+        .irqn       = LPUART2_IRQn,
+        .txBuffer   = uart2TxBuffer,
+        .rxBuffer   = uart2RxBuffer,
+        .txBufferSize = sizeof(uart2TxBuffer),
+        .rxBufferSize = sizeof(uart2RxBuffer),
+    },
+#endif
 #ifdef USE_UART7
     {
         .identifier = SERIAL_PORT_UART7,
@@ -358,6 +430,15 @@ void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
         uartDevice_t *uartdev = uartDeviceFromIdentifier(identifier);
         const int resourceIndex = serialResourceIndex(identifier);
         if (uartdev == NULL || resourceIndex < 0) {
+            continue;
+        }
+
+        /* Dedicated-pad UART (both hardware pin tags are NONE, e.g. UART2 ==
+         * LPUART2 on the fixed UART2_RXD/TXD pads): there is nothing to match
+         * against the serialPinConfig, so bind ->hardware unconditionally. The
+         * pads are muxed over SCMI in serialUART(). */
+        if (!hardware->rxPins[0].pin && !hardware->txPins[0].pin) {
+            uartdev->hardware = hardware;
             continue;
         }
 
@@ -404,11 +485,10 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
     const int ownerIndex = serialOwnerIndex(identifier);
     const resourceOwner_e ownerTxRx = serialOwnerTxRx(identifier);   /* rx = +1 */
 
+    /* UART7 pins are RGPIO IO tags (claim them via the IO HAL); UART2 uses the
+     * dedicated UART2_RXD/TXD pads with no IO-HAL record (tags are NONE). */
     IO_t txIO = IOGetByTag(uartdev->tx.pin);
     IO_t rxIO = IOGetByTag(uartdev->rx.pin);
-    if (!txIO && !rxIO) {
-        return NULL;
-    }
     if (txIO) {
         IOInit(txIO, ownerTxRx, ownerIndex);
     }
@@ -416,8 +496,14 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         IOInit(rxIO, ownerTxRx + 1, ownerIndex);
     }
 
-    /* Pad mux over SCMI (TX ALT5, RX ALT5 + SELECT_INPUT daisy). */
-    (void)navq95_lpuart7_iomux();
+    /* Pad mux over SCMI, per UART:
+     *   UART7 : shared GPIO_IO08/09 pads, ALT5 + RX SELECT_INPUT daisy.
+     *   UART2 : dedicated UART2_RXD/TXD pads, ALT0 (no daisy). */
+    if (identifier == SERIAL_PORT_UART2) {
+        (void)navq95_lpuart2_iomux();
+    } else {
+        (void)navq95_lpuart7_iomux();
+    }
 
     s->port.rxBuffer     = hardware->rxBuffer;
     s->port.txBuffer     = hardware->txBuffer;
@@ -432,10 +518,15 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
 }
 
 /*
- * uartReconfigure() — (re)program the LPUART from the current port baud/mode.
- * Called by the generic uartOpen() and by uartSetBaudRate()/uartSetMode().
- * Enable the RX interrupt when the port is in RX mode. The NVIC line is enabled
- * once here; the TX interrupt is primed separately by uartEnableTxInterrupt().
+ * uartReconfigure() — (re)program the LPUART from the current port baud/mode/
+ * options. Called by the generic uartOpen() and by uartSetBaudRate()/
+ * uartSetMode(). Framing is derived from the port options so this one path
+ * serves both the 8N1 MSP port (UART7) and the 8E2-inverted SBUS port (UART2):
+ *   SERIAL_INVERTED    -> STAT.RXINV (invert the RX line)
+ *   SERIAL_PARITY_EVEN -> 8E (CTRL.PE | CTRL.M, PT=0 even)
+ *   SERIAL_STOPBITS_2  -> BAUD.SBNS (2 stop bits)
+ * Enable the RX interrupt when the port is in RX mode; the TX interrupt is
+ * primed separately by uartEnableTxInterrupt().
  */
 void uartReconfigure(uartPort_t *s)
 {
@@ -444,7 +535,14 @@ void uartReconfigure(uartPort_t *s)
         return;
     }
 
-    navq95_lpuart_init(s->USARTx, NAVQ95_LPUART_CLK_HZ, s->port.baudRate);
+    const portOptions_e options = s->port.options;
+    const bool inverted = (options & SERIAL_INVERTED) != 0;
+    /* SBUS = 8E2: Betaflight passes SERIAL_PARITY_EVEN | SERIAL_STOPBITS_2. */
+    const bool evenParity2Stop = (options & SERIAL_PARITY_EVEN) &&
+                                 (options & SERIAL_STOPBITS_2);
+
+    navq95_lpuart_init(s->USARTx, NAVQ95_LPUART_CLK_HZ, s->port.baudRate,
+                       inverted, evenParity2Stop);
 
     volatile uint32_t *ctrl = lpReg(s->USARTx, LPUART_CTRL_OFFSET);
     if (s->port.mode & MODE_RX) {
