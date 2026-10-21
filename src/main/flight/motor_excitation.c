@@ -40,6 +40,8 @@
 #include "sensors/gyro.h"
 #ifdef USE_MOTOR_NOISE
 #include "flight/motor_noise.h"
+#endif
+#ifdef USE_FRAME_WIZARD
 #include "flight/frame_wizard.h"
 #endif
 
