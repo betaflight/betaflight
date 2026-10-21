@@ -98,14 +98,23 @@ typedef struct filterTuneBackup_s {
 
 PG_DECLARE(filterTuneBackup_t, filterTuneBackup);
 
+// Where on the delay / motor heat trade-off the D-term search picks, read off the craft's own front of the least
+// delay for each heat (no fixed kelvins): no more heat than stock, the knee of the front, the knee of what is left
+// after it; or the least delay within heat_budget_dk.
+typedef enum {
+    FILTER_TUNE_PRESET_LOW_NOISE = 0,
+    FILTER_TUNE_PRESET_BALANCED,
+    FILTER_TUNE_PRESET_LOW_DELAY,
+    FILTER_TUNE_PRESET_MANUAL,
+    FILTER_TUNE_PRESET_COUNT
+} filterTunePreset_e;
+
 typedef struct filterTuneConfig_s {
-    uint8_t heat_budget_dk;     // the motor heating the filters may add over the stock ones (ripple, motor_thermal), 0.1 K
+    uint8_t heat_budget_dk;     // MANUAL: the motor heating the filters may add over the stock ones (ripple, motor_thermal), 0.1 K
+    uint8_t preset;             // filterTunePreset_e (appended: an older config loads the default)
 } filterTuneConfig_t;
 
-// the heat budget presets the configurator offers, 0.1 K: the stock noise at most, the default, the least delay
-#define FILTER_TUNE_HEAT_LOW_NOISE  0
-#define FILTER_TUNE_HEAT_BALANCED   5
-#define FILTER_TUNE_HEAT_LOW_DELAY  10
+#define FILTER_TUNE_HEAT_DEFAULT    5
 #define FILTER_TUNE_HEAT_MAX        200
 
 PG_DECLARE(filterTuneConfig_t, filterTuneConfig);
@@ -133,7 +142,7 @@ void filterAutotuneUpdate(timeUs_t currentTimeUs);
 float filterAutotuneExcitation(int axis, float gyroFiltered);
 extern volatile bool filterAutotuneSweepOn;   // the PID loop calls filterAutotuneExcitation only while set
 bool filterAutotuneRevert(void);
-bool filterAutotuneSetHeatBudget(uint8_t dk);  // disarmed only; saved by the task
+bool filterAutotuneSetPreset(uint8_t preset, int budgetDk);   // budgetDk < 0: keep; disarmed only; saved by the task
 
 // the frame wizard has new modes for its part (FRAME_MAP_PART_*): replace that part, keep the other; saved later.
 // unstable (may be NULL): per mode, FRAME_MAP_SRC_UNSTABLE

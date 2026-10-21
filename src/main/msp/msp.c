@@ -3504,8 +3504,10 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             }
         } else if (op == 5) {                                     // forget the frame map
             frameMapClear();
-        } else if (op == 9 && sbufBytesRemaining(src) >= 1) {     // filter autotune heat budget, 0.1 K (0 / 5 / 10: the presets)
-            if (!filterAutotuneSetHeatBudget(sbufReadU8(src))) {
+        } else if (op == 9 && sbufBytesRemaining(src) >= 1) {     // filter autotune preset, then optionally the MANUAL budget (0.1 K)
+            const uint8_t preset = sbufReadU8(src);
+            const int budget = sbufBytesRemaining(src) >= 1 ? sbufReadU8(src) : -1;
+            if (!filterAutotuneSetPreset(preset, budget)) {
                 return MSP_RESULT_ERROR;
             }
 #endif

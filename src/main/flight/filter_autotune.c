@@ -93,7 +93,8 @@ PG_REGISTER(frameMapConfig_t, frameMapConfig, PG_FRAME_MAP_CONFIG, 2);
 PG_REGISTER(filterTuneBackup_t, filterTuneBackup, PG_FILTER_TUNE_BACKUP, 3);
 PG_REGISTER_WITH_RESET_TEMPLATE(filterTuneConfig_t, filterTuneConfig, PG_FILTER_TUNE_CONFIG, 0);
 PG_RESET_TEMPLATE(filterTuneConfig_t, filterTuneConfig,
-    .heat_budget_dk = FILTER_TUNE_HEAT_BALANCED,      // the configurator's Low noise / Balanced / Low delay presets
+    .heat_budget_dk = FILTER_TUNE_HEAT_DEFAULT,       // 0.5 K, for the MANUAL preset
+    .preset = FILTER_TUNE_PRESET_BALANCED,
 );
 
 #define FT_N            512
@@ -174,6 +175,9 @@ typedef struct {
     uint16_t crossoverHz10;     // the measured loop crossover the delay counts at, 0.1 Hz (0 = no sweep)
     uint16_t idxMeas10, idxCur10;   // motor noise index: measured in the hover, the current chain's prediction, x 10
     uint16_t heatRef100, heatChosen100; // ripple heating of the stock chain and of the choice, 0.01 K
+    // the front's points of the three presets (Low noise, Balanced, Low delay), for the configurator's slider
+    uint8_t presetMult10[3];
+    uint16_t presetLpf2[3], presetDelayUs[3], presetHeat100[3];
     uint8_t lpf2Basis;          // LPF2_BY_*
     bool valid;
 } ftResult_t;
@@ -1344,6 +1348,36 @@ static ftCplx_t gyroLpf2Cplx(float f, uint16_t hz, float dtG, int nAvg)
     return (ftCplx_t){ mag * cos_approx(ph), mag * sin_approx(ph) };
 }
 
+#if defined(USE_MOTOR_NOISE) && defined(USE_MOTOR_THERMAL)
+// The knee of the delay / heat front between candidates a and b: the one furthest above the straight line from a to
+// b, with delay and heat each normalised to that span. No knee (a straight or empty span): a itself. Dominated
+// candidates never win, so the front need not be built.
+static void kneeOfFront(const float delay[][ARRAYLEN(ftDtMult10)], const float heat[][ARRAYLEN(ftDtMult10)],
+    int ak, int am, int bk, int bm, int *ok, int *om)
+{
+    *ok = ak;
+    *om = am;
+    const float d0 = delay[ak][am], h0 = heat[ak][am], d1 = delay[bk][bm], h1 = heat[bk][bm];
+    if (!(h1 > h0) || !(d0 > d1)) {
+        return;
+    }
+    float best = 0.0f;
+    for (unsigned k = 0; k < ARRAYLEN(ftDtLpf2); k++) {
+        for (unsigned i = 0; i < ARRAYLEN(ftDtMult10); i++) {
+            if (heat[k][i] < h0 || heat[k][i] > h1) {
+                continue;
+            }
+            const float knee = (d0 - delay[k][i]) / (d0 - d1) - (heat[k][i] - h0) / (h1 - h0);
+            if (knee > best) {
+                best = knee;
+                *ok = k;
+                *om = i;
+            }
+        }
+    }
+}
+#endif
+
 static void decideDterm(ftResult_t *r, float df)
 {
 #if defined(USE_MOTOR_NOISE) && defined(USE_MOTOR_THERMAL)
@@ -1433,8 +1467,8 @@ static void decideDterm(ftResult_t *r, float df)
     const float w0 = 2.0f * M_PIf * f0 * dtP;
     const ftCplx_t der0 = { fp * (1.0f - cos_approx(w0)), fp * sin_approx(w0) };
     const float phIdeal = atan2_approx(kd * 2.0f * M_PIf * f0, kp);
-    float best = 1e9f, delayRef = 0.0f, bestHeat = 0.0f;
-    int bk = -1, bm = -1;
+    static float candDelay[NK][NM], candHeat[NK][NM];
+    float delayRef = 0.0f;
     for (int k = -1; k < (int)NK; k++) {              // -1: the stock chain, for the reference delay
         for (int i = 0; i < NM; i++) {
             if (k < 0 && i != FT_DT_M_STOCK) {
@@ -1452,19 +1486,71 @@ static void decideDterm(ftResult_t *r, float df)
                 delayRef = delay;
                 continue;
             }
-            const float heat = motorThermalRippleRise(sqrtf(mixK * var[k][i] + other2), rpm, vbat);
-            if (heat <= heatRef + budget && delay < best) {
-                best = delay;
-                bk = k;
-                bm = i;
-                bestHeat = heat;
-            }
+            candDelay[k][i] = delay;
+            candHeat[k][i] = motorThermalRippleRise(sqrtf(mixK * var[k][i] + other2), rpm, vbat);
         }
     }
     r->pdDelayRefUs = (uint16_t)constrainf(delayRef * 1e6f, 0.0f, 65535.0f);
+    // the three presets on the front of the least delay for each heat
+    int pk[3] = { -1, -1, -1 }, pm[3] = { -1, -1, -1 };
+    for (int k = 0; k < NK; k++) {
+        for (int i = 0; i < NM; i++) {
+            // Low noise: the least delay with no more heat than stock
+            if (candHeat[k][i] <= heatRef && (pk[0] < 0 || candDelay[k][i] < candDelay[pk[0]][pm[0]])) {
+                pk[0] = k;
+                pm[0] = i;
+            }
+        }
+    }
+    if (pk[0] < 0) {                                  // every candidate heats more than stock: the coolest one
+        for (int k = 0; k < NK; k++) {
+            for (int i = 0; i < NM; i++) {
+                if (pk[0] < 0 || candHeat[k][i] < candHeat[pk[0]][pm[0]]) {
+                    pk[0] = k;
+                    pm[0] = i;
+                }
+            }
+        }
+    }
+    // the end of the front: the least delay the search reaches (the coolest such candidate)
+    int ek = pk[0], em = pm[0];
+    for (int k = 0; k < NK; k++) {
+        for (int i = 0; i < NM; i++) {
+            if (candDelay[k][i] < candDelay[ek][em] - 1e-9f
+                || (candDelay[k][i] <= candDelay[ek][em] + 1e-9f && candHeat[k][i] < candHeat[ek][em])) {
+                ek = k;
+                em = i;
+            }
+        }
+    }
+    // Balanced: the knee of the front from Low noise to its end; Low delay: the knee of what is left after Balanced
+    kneeOfFront(candDelay, candHeat, pk[0], pm[0], ek, em, &pk[1], &pm[1]);
+    kneeOfFront(candDelay, candHeat, pk[1], pm[1], ek, em, &pk[2], &pm[2]);
+    for (int p = 0; p < 3; p++) {
+        r->presetMult10[p] = ftDtMult10[pm[p]];
+        r->presetLpf2[p] = ftDtLpf2[pk[p]];
+        r->presetDelayUs[p] = (uint16_t)constrainf(candDelay[pk[p]][pm[p]] * 1e6f, 0.0f, 65535.0f);
+        r->presetHeat100[p] = (uint16_t)constrainf(candHeat[pk[p]][pm[p]] * 100.0f, 0.0f, 65535.0f);
+    }
+    int bk = -1, bm = -1;
+    const uint8_t preset = filterTuneConfig()->preset;
+    if (preset < FILTER_TUNE_PRESET_MANUAL) {
+        bk = pk[preset];
+        bm = pm[preset];
+    } else {                                          // MANUAL: the least delay within the heat budget
+        for (int k = 0; k < NK; k++) {
+            for (int i = 0; i < NM; i++) {
+                if (candHeat[k][i] <= heatRef + budget && (bk < 0 || candDelay[k][i] < candDelay[bk][bm])) {
+                    bk = k;
+                    bm = i;
+                }
+            }
+        }
+    }
     if (bk < 0) {
         return;                                       // nothing within the heat budget: D unchanged, lpf2 as decided
     }
+    const float best = candDelay[bk][bm], bestHeat = candHeat[bk][bm];
     r->dMult10 = ftDtMult10[bm];
     r->lpf2 = ftDtLpf2[bk];
     r->lpf2Basis = LPF2_BY_DTERM;
@@ -1756,12 +1842,15 @@ static void apply(const ftResult_t *r)
     pidInitFilters(currentPidProfile);
 }
 
-bool filterAutotuneSetHeatBudget(uint8_t dk)
+bool filterAutotuneSetPreset(uint8_t preset, int budgetDk)
 {
-    if (ARMING_FLAG(ARMED) || dk > FILTER_TUNE_HEAT_MAX) {
+    if (ARMING_FLAG(ARMED) || preset >= FILTER_TUNE_PRESET_COUNT || budgetDk > FILTER_TUNE_HEAT_MAX) {
         return false;
     }
-    filterTuneConfigMutable()->heat_budget_dk = dk;
+    filterTuneConfigMutable()->preset = preset;
+    if (budgetDk >= 0) {
+        filterTuneConfigMutable()->heat_budget_dk = budgetDk;
+    }
     ft.saveMap = true;                                // the config is written by the task while disarmed
     return true;
 }
@@ -2331,6 +2420,15 @@ void filterAutotuneWriteStatus(sbuf_t *dst)
     // the PID loop: measured in the last armed time (0 = not armed yet) and configured, Hz
     sbufWriteU16(dst, lrintf(constrainf(ft.loopHz, 0.0f, 65535.0f)));
     sbufWriteU16(dst, lrintf(loopTargetHz()));
+    // the preset (filterTunePreset_e) and the front's points of Low noise, Balanced, Low delay in this session
+    // (zeros without a measurement): D multiplier x 10, gyro lpf2 Hz, P+D delay us, ripple heat 0.01 K
+    sbufWriteU8(dst, filterTuneConfig()->preset);
+    for (int p = 0; p < 3; p++) {
+        sbufWriteU8(dst, r.presetMult10[p]);
+        sbufWriteU16(dst, r.presetLpf2[p]);
+        sbufWriteU16(dst, r.presetDelayUs[p]);
+        sbufWriteU16(dst, r.presetHeat100[p]);
+    }
 }
 
 void frameMapWrite(sbuf_t *dst)
