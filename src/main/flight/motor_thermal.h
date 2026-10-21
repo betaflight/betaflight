@@ -25,8 +25,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "common/time.h"
+
 void motorThermalInit(void);
-void motorThermalUpdate(const float *motorOutput, int motorCount);   // call at PID rate; decimates to 100 Hz
+void motorThermalUpdate(timeUs_t currentTimeUs);                     // scheduler task, 100 Hz
 float motorThermalGetTemp(int motor);                                  // estimated winding temperature, °C
 float motorThermalGetMaxTemp(void);
 bool motorThermalWarning(void);

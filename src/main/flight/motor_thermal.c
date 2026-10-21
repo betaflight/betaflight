@@ -28,7 +28,6 @@
 #include "fc/runtime_config.h"
 #include "flight/mixer.h"
 #include "flight/motor_noise.h"
-#include "flight/pid.h"
 #include "io/gps.h"
 #include "pg/motor.h"
 #include "pg/motor_thermal.h"
@@ -67,14 +66,13 @@ typedef struct { float ts, tc; } thermalNode_t;
 
 static thermalNode_t node[MAX_SUPPORTED_MOTORS];
 static struct {
-    float dtCs, dtCc;           // update period over the windings and core heat capacities
+    float invCs, invCc;         // inverse windings and core heat capacities, K/J
     float rsc, rca, rLoad, tAmb;
     float aIron;                // iron loss per rpm², W
     float kCu;                  // ripple copper loss per (Vbat·command noise)², W
     float kv;                   // effective KV
     float airK;                 // squared air speed at the stator from the bell and the prop per rpm², (m/s)²
-    float idleK;                // idle current averaging gain per update
-    int decimation, counter;
+    timeUs_t lastUs;
     float idleAmps;             // battery current with the motors stopped: not motor current
     int ambientCounter;
     bool armedOnce;
@@ -152,10 +150,8 @@ void motorThermalInit(void)
     const float d = MAX(c->stator_diameter_mm, 5), h = MAX(c->stator_height_dmm, 10) * 0.1f;
     const float mass = (d * d * h) / (REF_D_MM * REF_D_MM * REF_H_MM);                     // volume ratio
     const float area = (d * h + 0.5f * d * d) / (REF_D_MM * REF_H_MM + 0.5f * REF_D_MM * REF_D_MM);
-    rt.decimation = MAX(1, lrintf(1.0f / (UPDATE_HZ * pidGetDT())));
-    const float dt = rt.decimation * pidGetDT();
-    rt.dtCs = dt / (REF_CS * mass);
-    rt.dtCc = dt / (REF_CC * mass);
+    rt.invCs = 1.0f / (REF_CS * mass);
+    rt.invCc = 1.0f / (REF_CC * mass);
     rt.rsc = REF_RSC / ((d * h) / (REF_D_MM * REF_H_MM));
     rt.rca = REF_RCA / area;
     rt.aIron = REF_A_IRON * 1e-6f * mass;
@@ -171,8 +167,6 @@ void motorThermalInit(void)
     const int propDinch = c->prop_diameter_dinch ? c->prop_diameter_dinch : autoProp[p].propDinch;
     const float bellRadiusM = (0.5f * d + 3.0f) * 0.001f, propDiameterM = propDinch * 0.1f * 0.0254f;
     rt.airK = (sq(2.0f * M_PIf * bellRadiusM) + sq(propDiameterM * PROP_VI_K)) / sq(60.0f);  // bell surface and prop induced speed
-    rt.idleK = MIN(1.0f, dt / IDLE_AMPS_TAU_S);
-    rt.counter = 0;
 
     // Parameters are recomputed on every (disarmed) profile change, the thermal state only once at boot:
     // a hot motor must not read as ambient after a profile switch on the ground.
@@ -189,10 +183,14 @@ void motorThermalInit(void)
     }
 }
 
-// Out of line: motorThermalUpdate() is inlined into the speed-optimised mixTable(), only the decimation check
-// belongs there.
-static NOINLINE void motorThermalStep(const float *motorOutput, int motorCount)
+// Scheduler task at UPDATE_HZ, fed with the mixer's final motor outputs, so that every output path (normal
+// mix, motor stop, crash flip) is covered. The model integrates over the real interval: a late run stays right.
+void motorThermalUpdate(timeUs_t currentTimeUs)
 {
+    const float dt = rt.lastUs ? constrainf(cmpTimeUs(currentTimeUs, rt.lastUs) * 1e-6f, 0.0f, 0.1f) : 1.0f / UPDATE_HZ;
+    rt.lastUs = currentTimeUs;
+    const int motorCount = getMotorCount();
+
     const bool armed = ARMING_FLAG(ARMED);
     if (armed) {
         rt.armedOnce = true;
@@ -207,13 +205,13 @@ static NOINLINE void motorThermalStep(const float *motorOutput, int motorCount)
     // current with the motors stopped (FC, VTX, receiver) is not motor current and is taken off first
     const float batteryAmps = getAmperage() * 0.01f;
     if (!armed) {
-        rt.idleAmps += (batteryAmps - rt.idleAmps) * rt.idleK;
+        rt.idleAmps += (batteryAmps - rt.idleAmps) * MIN(1.0f, dt / IDLE_AMPS_TAU_S);
     }
     const float motorsAmps = armed ? MAX(batteryAmps - rt.idleAmps, 0.0f) : 0.0f;
     float cmdSqSum = 0.0f;
     float cmdFrac[MAX_SUPPORTED_MOTORS];
     for (int i = 0; i < motorCount && i < MAX_SUPPORTED_MOTORS; i++) {
-        cmdFrac[i] = constrainf((motorConvertToExternal(motorOutput[i]) - 1000) * 0.001f, 0.0f, 1.0f);
+        cmdFrac[i] = constrainf((motorConvertToExternal(motor[i]) - 1000) * 0.001f, 0.0f, 1.0f);
         cmdSqSum += sq(cmdFrac[i]);
     }
     float vCraftSq = 0.0f;
@@ -251,21 +249,12 @@ static NOINLINE void motorThermalStep(const float *motorOutput, int motorCount)
 
         thermalNode_t *s = &node[i];
         const float q = (s->ts - s->tc) / rt.rsc;
-        s->ts += (pCu + pLoad - q) * rt.dtCs;
-        s->tc += (pIron + q - (s->tc - rt.tAmb) * air / rt.rca) * rt.dtCc;
+        s->ts += (pCu + pLoad - q) * dt * rt.invCs;
+        s->tc += (pIron + q - (s->tc - rt.tAmb) * air / rt.rca) * dt * rt.invCc;
         if (i < 4) {
             DEBUG_SET(DEBUG_MOTOR_THERMAL, i, lrintf(10.0f * s->ts));   //!< [index:0..3] Motor {1|2|3|4} Estimated Winding Temperature [unit:0.1degC]
         }
     }
-}
-
-void motorThermalUpdate(const float *motorOutput, int motorCount)
-{
-    if (++rt.counter < rt.decimation) {
-        return;
-    }
-    rt.counter = 0;
-    motorThermalStep(motorOutput, motorCount);
 }
 
 float motorThermalGetTemp(int motor)
