@@ -172,10 +172,12 @@ void motorThermalInit(void)
     rt.kv = MAX(motorConfig()->kv, 100);                                                      // a zero/absurd setting must not silence the model
     // no-load loss at the same rpm barely depends on the size; ∝ electrical frequency through the magnet count
     rt.aIron = REF_A_IRON * 1e-6f * powf(dr, 0.15f) * sqrtf(sqrtf(hr)) * (MAX(motorConfig()->motorPoleCount, 2) / REF_POLES);
-    const float rScale = hr * sq(dr) * sqrtf(dr);                                             // R ∝ 1/(KV²·H·D^2.5)
-    rt.kCu = REF_K_CU * rScale * gain * sq(rt.kv * 0.001f);                                   // ripple loss ∝ 1/R, noise -> duty
+    const float rScale = hr * sq(dr) * sqrtf(dr);                                             // H·D^2.5, fitted on the bench motors
+    rt.kCu = REF_K_CU * rScale * gain * sq(rt.kv * 0.001f);                                   // ripple loss, noise -> duty
+    // measured, or R ∝ 1/(KV²·H^1.29·D^3.95): exponents from 772 motor datasheets, level from the 2203.5 reference,
+    // which matches 81 published winding temperatures (rise ratio 0.95)
     rt.rLoad = c->resistance_mohm ? c->resistance_mohm * 0.001f * gain
-                                  : REF_R_LL * sq(REF_KV / rt.kv) / rScale * gain;              // datasheet / measured, or the same R law for the torque current
+                                  : REF_R_LL * sq(REF_KV / rt.kv) / (powf(hr, 1.29f) * powf(dr, 3.95f)) * gain;
     unsigned p = 0;
     while (d > autoProp[p].maxStatorMm) {
         p++;
