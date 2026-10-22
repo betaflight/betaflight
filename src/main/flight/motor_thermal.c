@@ -321,7 +321,7 @@ float motorThermalRippleRise(float noiseRms, float rpm, float vbat)
     const float pCu = rt.kCu * sq(vbat * noiseRms);
     const float wash = MIN(powf(rpm * rt.washK / WASH_REF_MS, WASH_N), WASH_MAX);
     // windings -> core -> air in series, in parallel with windings -> air through the prop wash
-    const float viaCore = rt.rsc + rt.rca / (airFactor(sq(rpm) * rt.airK) + wash);
+    const float viaCore = rt.rsc + rt.rca / airFactor(sq(rpm) * rt.airK);
     return pCu * viaCore / (1.0f + viaCore * wash / rt.rca);
 }
 
