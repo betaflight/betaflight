@@ -81,7 +81,7 @@ static float smoothedRxRateHz = 100.0f;
 
 static bool isRxDataNew = false;
 static bool isRxRateValid = false;
-static timeUs_t lastRxFrameTimeUs;    // time of the last frame, 0 until the first one
+static timeUs_t lastRxTimeUs;         // time of the last frame, 0 until the first one
 
 enum {
     ROLL_FLAG = 1 << ROLL,
@@ -279,7 +279,6 @@ void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal)
     // - every time a new frame is detected,
     // - if we stop getting data, at the expiry of RXLOSS_TRIGGER_INTERVAL since the last good frame
     // - if that interval is exceeded and still no data, every RX_FRAME_RECHECK_INTERVAL, until a new frame is detected
-    static timeUs_t lastRxTimeUs = 0;
     timeDelta_t delta = 0;
 
     if (rxReceivingSignal) { // true while receiving data and until RXLOSS_TRIGGER_INTERVAL expires, otherwise false
@@ -291,7 +290,6 @@ void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal)
             delta = cmpTimeUs(rxTime, lastRxTimeUs);
         }
         lastRxTimeUs = rxTime;
-        lastRxFrameTimeUs = rxTime;
         DEBUG_SET(DEBUG_RX_TIMING, 1, rxTime / 100);  //!< Frame Timestamp [unit:0.1ms]
     } else {
         if (lastRxTimeUs) {
@@ -561,11 +559,11 @@ static FAST_CODE_NOINLINE void resetStaleFeedforward(timeUs_t currentTimeUs)
 {
     static bool isStale = false;
 
-    if (isRxDataNew || !lastRxFrameTimeUs) {
+    if (isRxDataNew || !lastRxTimeUs) {
         isStale = false;
         return;
     }
-    if (isStale || cmpTimeUs(currentTimeUs, lastRxFrameTimeUs) <= RX_INTERVAL_MAX_US) {
+    if (isStale || cmpTimeUs(currentTimeUs, lastRxTimeUs) <= RX_INTERVAL_MAX_US) {
         return;
     }
     isStale = true;
