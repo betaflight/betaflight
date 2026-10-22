@@ -212,7 +212,7 @@ static float coreCooling(float rpm, float vCraftSq)
 
 static float windingCooling(float rpm)
 {
-    return MIN(powf(rpm * rt.washK / WASH_REF_MS, WASH_N), WASH_MAX);
+    return MIN(powf(MAX(rpm, 0.0f) * rt.washK / WASH_REF_MS, WASH_N), WASH_MAX);
 }
 
 void motorThermalInit(void)
@@ -279,7 +279,8 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
 
     const float vbat = getBatteryVoltage() * 0.01f;
     const float unloadedMaxRpm = vbat * rt.kv;
-    const float maxRpm = unloadedMaxRpm * (-5.44e-6f * unloadedMaxRpm + 0.944f);   // same load derating as motorEstimateMaxRpm()
+    // same load derating as motorEstimateMaxRpm(); it turns negative past KV·Vbat ≈ 173k (e.g. 21000 KV on 2S)
+    const float maxRpm = MAX(unloadedMaxRpm * (-5.44e-6f * unloadedMaxRpm + 0.944f), 0.0f);
     const float kCu = rt.kCu * sq(vbat);
     // battery current split across motors by command² when per-motor ESC current is not available; the
     // current with the motors stopped (FC, VTX, receiver) is not motor current and is taken off first
