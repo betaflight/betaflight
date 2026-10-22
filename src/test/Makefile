@@ -76,6 +76,8 @@ autopilot_wing_unittest_DEFINES := \
 
 arming_prevention_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/typeconversion.c \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/vector.c \
 		$(USER_DIR)/fc/core.c \
@@ -87,7 +89,11 @@ arming_prevention_unittest_SRC := \
 		$(USER_DIR)/flight/gps_rescue_multirotor.c
 
 arming_prevention_unittest_DEFINES := \
-            USE_GPS_RESCUE=
+            USE_DSHOT_TELEMETRY= \
+            USE_GPS_RESCUE= \
+            USE_LAUNCH_CONTROL= \
+            USE_LAUNCH_CONTROL_LIFT= \
+            USE_RUNAWAY_TAKEOFF=
 
 atomic_unittest_SRC := \
 		$(USER_DIR)/build/atomic.c \
@@ -450,6 +456,8 @@ osd_unittest_SRC := \
 
 osd_unittest_DEFINES := \
 		USE_OSD= \
+		USE_LAUNCH_CONTROL= \
+		USE_LAUNCH_CONTROL_LIFT= \
 		USE_GPS= \
 		USE_RTC_TIME= \
 		USE_ADC_INTERNAL=
@@ -775,6 +783,7 @@ pid_unittest_DEFINES := \
 		USE_ITERM_RELAX= \
 		USE_RC_SMOOTHING_FILTER= \
 		USE_LAUNCH_CONTROL= \
+		USE_LAUNCH_CONTROL_LIFT= \
 		USE_FEEDFORWARD= \
 		USE_ADVANCED_TPA= \
 

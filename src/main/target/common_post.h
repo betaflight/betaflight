@@ -870,6 +870,15 @@ extern struct linker_symbol __fontdata_end;
 #endif
 #endif
 
+// LIFT (launch_control_mode = LIFT) is about 10 KB of flash: built in by default above
+// 512 KB. A 512 KB board can still have it by defining USE_LAUNCH_CONTROL_LIFT.
+#if defined(USE_LAUNCH_CONTROL) && TARGET_FLASH_SIZE > 512 && !defined(USE_LAUNCH_CONTROL_LIFT)
+#define USE_LAUNCH_CONTROL_LIFT
+#endif
+#if !defined(USE_LAUNCH_CONTROL)
+#undef USE_LAUNCH_CONTROL_LIFT
+#endif
+
 #if (!defined(USE_GPS_RESCUE) || !defined(USE_CMS_FAILSAFE_MENU))
 #undef USE_CMS_GPS_RESCUE_MENU
 #endif

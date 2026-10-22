@@ -303,6 +303,13 @@ static void validateAndFixConfig(void)
             pidProfilesMutable(i)->auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY;
         }
 
+#ifdef USE_LAUNCH_CONTROL
+        // a launch control mode this build doesn't have (LIFT, kept from a build with LIFT)
+        if (pidProfilesMutable(i)->launchControlMode >= LAUNCH_CONTROL_MODE_COUNT) {
+            pidProfilesMutable(i)->launchControlMode = LAUNCH_CONTROL_MODE_PITCHONLY;
+        }
+#endif
+
         // If the d_max value for any axis is <= the D gain then reset d_max to 0 for consistent Configurator behavior
         for (unsigned axis = 0; axis <= FD_YAW; axis++) {
             if (pidProfilesMutable(i)->d_max[axis] < pidProfilesMutable(i)->pid[axis].D) {
