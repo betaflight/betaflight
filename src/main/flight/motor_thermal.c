@@ -62,10 +62,11 @@
 #define REF_R_LL        0.070f     // line-to-line winding resistance, datasheet (load-current copper loss)
 #define AIR_GAIN        1.56f   // convection: 1 + AIR_GAIN·(v/10 m/s)^1.5
 #define PROP_VI_K       0.252f     // induced velocity = n[rev/s]·D[m]·sqrt(2·Ct/π), Ct≈0.1
-// Prop wash over the motor: forced convection on the windings and the core, Newton cooling with the turbulent
-// h ∝ v^0.8. The bench motor had no prop, so the bench fit is unchanged. Centred on 220 published full-throttle
-// temperatures of 9 brands (research/motor-thermal/DATASHEET_VALIDATION.md): model/datasheet temperature rise
-// median 0.98, IQR 0.63-1.54 (2.72, IQR 1.25-4.50 without this term); the exponent shows no trend with wash speed.
+// Prop wash over the motor: forced convection on the windings (end turns in the wash), Newton cooling with the
+// turbulent h ∝ v^0.8. The core already sees the prop's induced flow through airFactor(), so the wash is not added
+// there again. The bench motor had no prop, so the bench fit is unchanged. Checked on 81 published BrotherHobby
+// winding temperatures at full throttle (research/motor-thermal/DATASHEET_VALIDATION.md): model/datasheet rise
+// median 0.99, IQR 0.77-1.33 (3.25 without this term), and on a 5" flight against a thermistor on a winding.
 #define WASH_REF_MS     1.0f       // wash speed at which the extra cooling equals the still-air core cooling
 #define WASH_N          0.8f
 #define WASH_MAX        100.0f     // keeps the 10 ms explicit step stable on the smallest motors
@@ -308,7 +309,7 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
         thermalNode_t *s = &node[i];
         const float q = (s->ts - s->tc) / rt.rsc;
         s->ts += (pCu + pLoad - q - (s->ts - rt.tAmb) * wash / rt.rca) * dt * rt.invCs;
-        s->tc += (pIron + q - (s->tc - rt.tAmb) * (air + wash) / rt.rca) * dt * rt.invCc;
+        s->tc += (pIron + q - (s->tc - rt.tAmb) * air / rt.rca) * dt * rt.invCc;
         if (i < 4) {
             DEBUG_SET(DEBUG_MOTOR_THERMAL, i, lrintf(10.0f * s->ts));   //!< [index:0..3] Motor {1|2|3|4} Estimated Winding Temperature [unit:0.1degC]
         }
