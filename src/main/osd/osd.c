@@ -279,15 +279,15 @@ int osdPrintFloat(char *buffer, char leadingSymbol, float value, char *formatStr
 void osdStatSetState(uint8_t statIndex, bool enabled)
 {
     if (enabled) {
-        osdConfigMutable()->enabled_stats |= (1 << statIndex);
+        osdConfigMutable()->enabled_stats |= (1u << statIndex);
     } else {
-        osdConfigMutable()->enabled_stats &= ~(1 << statIndex);
+        osdConfigMutable()->enabled_stats &= ~(1u << statIndex);
     }
 }
 
 bool osdStatGetState(uint8_t statIndex)
 {
-    return osdConfig()->enabled_stats & (1 << statIndex);
+    return osdConfig()->enabled_stats & (1u << statIndex);
 }
 
 void osdWarnSetState(uint8_t warningIndex, bool enabled)

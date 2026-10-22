@@ -3360,6 +3360,9 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         if (sbufBytesRemaining(src) >= 2) {
             motorConfigMutable()->kv = sbufReadU16(src);
         }
+#ifdef USE_MOTOR_THERMAL
+        bool geometryValid = true;
+#endif
         if (sbufBytesRemaining(src) >= 3) {
 #ifdef USE_MOTOR_THERMAL
             const uint8_t d = sbufReadU8(src), h = sbufReadU8(src), prop = sbufReadU8(src);
@@ -3369,7 +3372,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
                 motorThermalConfigMutable()->stator_height_dmm = h;
                 motorThermalConfigMutable()->prop_diameter_dinch = prop;
             } else if (d || h || prop) {
-                return MSP_RESULT_ERROR;
+                geometryValid = false;      // geometry kept; the rest is already stored, so the model still follows it
             }
 #else
             sbufReadU8(src); sbufReadU8(src); sbufReadU8(src);
@@ -3377,6 +3380,9 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         }
 #ifdef USE_MOTOR_THERMAL
         motorThermalInit();     // new KV or geometry take effect now; the temperatures are kept
+        if (!geometryValid) {
+            return MSP_RESULT_ERROR;
+        }
 #endif
         break;
 
