@@ -7226,6 +7226,41 @@ static ioTag_t* getIoTag(const cliResourceValue_t value, uint8_t index)
     return (ioTag_t *)(rec->address + value.stride * index + value.offset);
 }
 
+#if defined(USE_TIMER_MGMT) || defined(USE_DMA_SPEC)
+static void printClaimedBy(printFn *printValue, dumpFlags_t dumpMask, bool equalsDefault, const char *name, int number, const resourceOwner_t *actual)
+{
+    // TIMUP keeps the TIM number as its index; every other owner stores a 1-based resource index
+    if (actual->index == 0) {
+        printValue(dumpMask, equalsDefault, "# %s %d: CLAIMED BY %s", name, number, getOwnerName(actual->owner));
+    } else {
+        const int actualNumber = actual->owner == OWNER_TIMUP ? actual->index : resourceIndexToInput(actual->owner, actual->index - 1);
+        printValue(dumpMask, equalsDefault, "# %s %d: CLAIMED BY %s %d", name, number, getOwnerName(actual->owner), actualNumber);
+    }
+}
+#endif
+
+#if defined(USE_TIMER_MGMT)
+static void printResourceClaim(printFn *printValue, dumpFlags_t dumpMask, bool equalsDefault, unsigned resourceIdx, int index, ioTag_t ioTag)
+{
+    // dump/diff reset the live pinmap to defaults while timerOwners[] still holds the boot claims
+    if (isReadingConfigFromCopy()) {
+        return;
+    }
+    // OWNER_FREE means the driver never claimed the timer this boot, not a conflict
+    const timerHardware_t *timer = ioTag ? timerGetConfiguredByTag(ioTag) : NULL;
+    if (!timer) {
+        return;
+    }
+    const resourceOwner_t *actual = timerGetOwner(timer);
+    const resourceOwner_e owner = resourceTable[resourceIdx].owner;
+    // single-instance owners claim with index 0
+    if (actual->owner == OWNER_FREE || (actual->owner == owner && (resourceTable[resourceIdx].maxIndex == 0 || actual->index == RESOURCE_INDEX(index)))) {
+        return;
+    }
+    printClaimedBy(printValue, dumpMask, equalsDefault, getOwnerName(owner), resourceIndexToInput(owner, index), actual);
+}
+#endif
+
 static void printResource(dumpFlags_t dumpMask, const char *headingStr)
 {
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
@@ -7261,6 +7296,9 @@ static void printResource(dumpFlags_t dumpMask, const char *headingStr)
             }
             if (ioTag) {
                 cliDumpPrintLinef(dumpMask, equalsDefault, format, owner, resourceOrdinal, IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag));
+#if defined(USE_TIMER_MGMT)
+                printResourceClaim(cliDumpPrintLinef, dumpMask, equalsDefault, i, index, ioTag);
+#endif
             } else if (!(dumpMask & HIDE_UNUSED)) {
                 cliDumpPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, resourceOrdinal);
             }
@@ -7486,6 +7524,54 @@ static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
     return (index < 0 || index >= entry->maxIndex) ? -1 : index;
 }
 
+// Reports a configured dmaopt whose stream another owner holds. LPUART rows are skipped: the table index is not the driver's UARTDEV_LPx lookup index
+static void printDmaoptClaim(const dmaoptEntry_t *entry, int index, int uiIndex, const dmaChannelSpec_t *dmaChannelSpec, dumpFlags_t dumpMask, bool equalsDefault)
+{
+    resourceOwner_e expected;
+    int expectedIndex = RESOURCE_INDEX(index);
+    switch (entry->peripheral) {
+    case DMA_PERIPH_UART_TX:
+    case DMA_PERIPH_UART_RX:
+        if (strncasecmp(entry->device, "LPUART", 6) == 0) {
+            return;
+        }
+        expected = entry->peripheral == DMA_PERIPH_UART_TX ? OWNER_SERIAL_TX : OWNER_SERIAL_RX;
+        break;
+    case DMA_PERIPH_SPI_SDO:
+        expected = OWNER_SPI_SDO;
+        break;
+    case DMA_PERIPH_SPI_SDI:
+        expected = OWNER_SPI_SDI;
+        break;
+    case DMA_PERIPH_ADC:
+        expected = OWNER_ADC;
+        expectedIndex = -1;   // claimed with a driver-specific index
+        break;
+    case DMA_PERIPH_SDIO:
+        expected = OWNER_SDCARD;
+        expectedIndex = -1;
+        break;
+    case DMA_PERIPH_TIMUP:
+        expected = OWNER_TIMUP;
+        expectedIndex = uiIndex;
+        break;
+    default:
+        return;
+    }
+
+    const resourceOwner_t *actual = dmaGetOwner(dmaGetIdentifier(dmaChannelSpec->ref));
+    if (actual == &resourceOwnerInvalid) {
+        // the reqmap names a stream missing from the descriptor table: a map bug, not contention
+        cliDumpPrintLinef(dumpMask, equalsDefault, "# %s %d: DMA MAP ERROR", entry->device, uiIndex);
+        return;
+    }
+    // OWNER_FREE means the peripheral was not opened this boot, not a conflict
+    if (actual->owner == OWNER_FREE || (actual->owner == expected && (expectedIndex < 0 || actual->index == expectedIndex))) {
+        return;
+    }
+    printClaimedBy(cliDumpPrintLinef, dumpMask, equalsDefault, entry->device, uiIndex, actual);
+}
+
 static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const dmaoptValue_t dmaopt, const bool equalsDefault, const dumpFlags_t dumpMask, printFn *printValue)
 {
     // We compute number to display for different peripherals in advance.
@@ -7511,6 +7597,9 @@ static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const 
         printValue(dumpMask, equalsDefault,
             "# %s %d: " DMASPEC_FORMAT_STRING,
             entry->device, uiIndex, DMA_CODE_CONTROLLER(dmaCode), DMA_CODE_STREAM(dmaCode), DMA_CODE_CHANNEL(dmaCode));
+        if (dmaChannelSpec && printValue == cliDumpPrintLinef) {
+            printDmaoptClaim(entry, index, uiIndex, dmaChannelSpec, dumpMask, equalsDefault);
+        }
     } else if (!(dumpMask & HIDE_UNUSED)) {
         printValue(dumpMask, equalsDefault,
             "dma %s %d NONE",
@@ -8237,6 +8326,9 @@ RAM_CODE static void cliResource(const char *cmdName, char *cmdline)
             tfp_sprintf(ioName, "%c%02d", IO_GPIOPortIdxByTag(tag) + 'A', IO_GPIOPinIdxByTag(tag));
         }
         cliPrintLinef("# resource %s %d %s", getOwnerName(resourceTable[resourceIndex].owner), resourceIndexToInput(resourceTable[resourceIndex].owner, index), tag ? ioName : "NONE");
+#if defined(USE_TIMER_MGMT)
+        printResourceClaim(cliDumpPrintLinef, DUMP_MASTER, true, resourceIndex, index, tag);
+#endif
     }
 }
 #endif
