@@ -226,9 +226,12 @@ TEST_F(FeedforwardStallTest, FeedforwardDropsWhenFramesStop)
 {
     rcData[PITCH] = 1580;
     frame();
-    EXPECT_GT(fabsf(getFeedforward(FD_PITCH)), 100.0f);
+    const float feedforward = getFeedforward(FD_PITCH);
+    EXPECT_GT(fabsf(feedforward), 100.0f);
 
-    loopWithoutFrame(25000);                       // no frame for 25 ms on a 4 ms link
+    loopWithoutFrame(60000);                       // within RX_INTERVAL_MAX_US: still held
+    EXPECT_FLOAT_EQ(feedforward, getFeedforward(FD_PITCH));
+    loopWithoutFrame(70000);                       // past it: dropped
     EXPECT_FLOAT_EQ(0.0f, getFeedforward(FD_PITCH));
     loopWithoutFrame(100000);
     EXPECT_FLOAT_EQ(0.0f, getFeedforward(FD_PITCH));
@@ -238,43 +241,16 @@ TEST_F(FeedforwardStallTest, NoStaleFeedforwardWhenFramesComeBack)
 {
     rcData[PITCH] = 1580;
     frame();
-    loopWithoutFrame(25000);
+    loopWithoutFrame(70000);
     ASSERT_FLOAT_EQ(0.0f, getFeedforward(FD_PITCH));
 
     // the stick did not move while frames were missing
-    testTimeUs = rxRuntimeState.lastRcFrameTimeUs + 30000 - frameIntervalUs;
+    testTimeUs = rxRuntimeState.lastRcFrameTimeUs + 75000 - frameIntervalUs;
     frame();
     EXPECT_LT(fabsf(getFeedforward(FD_PITCH)), 10.0f);
 }
 
-TEST_F(FeedforwardStallTest, SlowLinkIsLeftAlone)
-{
-    // 12.5 Hz (DJI O3 before arming): the limit is beyond RX loss, feedforward is held as before
-    frameIntervalUs = 80000;
-    for (int i = 0; i < 5; i++) {
-        frame();
-    }
-    rcData[PITCH] = 1580;
-    frame();
-    const float feedforward = getFeedforward(FD_PITCH);
-    EXPECT_NE(0.0f, feedforward);
-    loopWithoutFrame(140000);
-    EXPECT_FLOAT_EQ(feedforward, getFeedforward(FD_PITCH));
-}
-
-TEST_F(FeedforwardStallTest, OneLongGapDoesNotStretchTheLimit)
-{
-    // a single frame after a 60 ms gap brings a stick move, then the frames stop again right away
-    testTimeUs += 60000 - frameIntervalUs;
-    rcData[PITCH] = 1580;
-    frame();
-    EXPECT_GT(fabsf(getFeedforward(FD_PITCH)), 100.0f);
-
-    loopWithoutFrame(25000);                       // the limit follows the 4 ms link, not the 60 ms gap
-    EXPECT_FLOAT_EQ(0.0f, getFeedforward(FD_PITCH));
-}
-
-TEST_F(FeedforwardStallTest, SmoothedFeedforwardDropsWhenFramesStop)
+TEST_F(FeedforwardStallTest, SmoothedFeedforwardDecaysWhenFramesStop)
 {
     rxConfigMutable()->rc_smoothing = 1;
     initRcProcessing();
@@ -283,13 +259,21 @@ TEST_F(FeedforwardStallTest, SmoothedFeedforwardDropsWhenFramesStop)
     }
     rcData[PITCH] = 1580;
     frame();
-    for (int us = 250; us < 4 * (int)frameIntervalUs; us += 250) {
-        loopWithoutFrame(us);                      // the PT3 output builds up between loops
+    int us = 250;
+    for (; us <= 60000; us += 250) {
+        loopWithoutFrame(us);                      // the PT3 output settles on the held value
     }
-    EXPECT_GT(fabsf(getFeedforward(FD_PITCH)), 10.0f);
+    const float held = getFeedforward(FD_PITCH);
+    EXPECT_GT(fabsf(held), 10.0f);
 
-    loopWithoutFrame(25000);
-    EXPECT_FLOAT_EQ(0.0f, getFeedforward(FD_PITCH));
-    loopWithoutFrame(25250);                       // and stays there, no decay from old filter state
-    EXPECT_FLOAT_EQ(0.0f, getFeedforward(FD_PITCH));
+    for (; us <= 70000; us += 250) {
+        loopWithoutFrame(us);                      // past RX_INTERVAL_MAX_US the input is zero...
+    }
+    const float decaying = getFeedforward(FD_PITCH);
+    EXPECT_LT(fabsf(decaying), fabsf(held));       // ...and the output follows it down without a step
+    EXPECT_GT(fabsf(decaying), 0.0f);
+    for (; us <= 170000; us += 250) {
+        loopWithoutFrame(us);
+    }
+    EXPECT_LT(fabsf(getFeedforward(FD_PITCH)), 0.05f * fabsf(held));
 }
