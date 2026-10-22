@@ -23,7 +23,9 @@
 
 #include "build/debug.h"
 #include "common/maths.h"
+#include "config/feature.h"
 #include "drivers/dshot.h"
+#include "drivers/dshot_command.h"
 #include "drivers/motor.h"
 #include "fc/runtime_config.h"
 #include "flight/mixer.h"
@@ -68,6 +70,7 @@
 #define WASH_N          0.8f
 #define WASH_MAX        100.0f     // keeps the 10 ms explicit step stable on the smallest motors
 #define UPDATE_HZ       100
+#define EDT_TRIES       10         // ESCs that ignore the extended telemetry request are left alone after this
 #define IDLE_AMPS_TAU_S 2.0f       // the non-motor current (FC, VTX, receiver), averaged while disarmed
 #define AMBIENT_MIN_C   (-30)
 #define AMBIENT_MAX_C   45
@@ -87,6 +90,7 @@ static struct {
     timeUs_t lastUs;
     float idleAmps;             // battery current with the motors stopped: not motor current
     int ambientCounter;
+    uint8_t edtTries;
     bool armedOnce;
 } rt;
 
@@ -99,6 +103,34 @@ static void ambientConsider(int t, int *best)
     }
 }
 
+#ifdef USE_DSHOT_TELEMETRY
+// Bidirectional DShot ESCs report only eRPM until asked for the extended telemetry (temperature, ...), which the
+// core asks for at arming. A cold ESC is the best ambient reference, so with dshot_edt on ask while disarmed:
+// only with every motor stopped (no disarmed motor test or excitation running) and nothing else in the queue.
+static void edtRequest(void)
+{
+    if (!motorConfig()->dev.useDshotEdt || rt.edtTries >= EDT_TRIES || !isDshotTelemetryActive() || !dshotCommandQueueEmpty()) {
+        return;
+    }
+#ifdef USE_ESC_SENSOR
+    if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
+        return;
+    }
+#endif
+    bool missing = false;
+    for (int i = 0; i < getMotorCount(); i++) {
+        if (!motorIsMotorIdle(i)) {
+            return;
+        }
+        missing |= !(dshotTelemetryState.motorState[i].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK);
+    }
+    if (missing) {
+        rt.edtTries++;
+        dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_EXTENDED_TELEMETRY_ENABLE, DSHOT_CMD_TYPE_INLINE);
+    }
+}
+#endif
+
 // The ambient before the first arm: the lowest plausible temperature any sensor on the craft reports. Every
 // one of them sits on something that warms it (the FC board, the MCU, the ESC), so the lowest is the
 // closest to the air. Taken again once a second while disarmed, so a source that comes later (ESC telemetry
@@ -109,6 +141,9 @@ static void ambientUpdate(void)
         return;
     }
     rt.ambientCounter = 0;
+#ifdef USE_DSHOT_TELEMETRY
+    edtRequest();
+#endif
     int best = INT16_MAX;
     gyroReadTemperature();                      // the cached value is otherwise refreshed by the telemetry task only
     ambientConsider(gyroGetTemperature(), &best);
