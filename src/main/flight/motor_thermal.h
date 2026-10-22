@@ -32,3 +32,5 @@ void motorThermalUpdate(timeUs_t currentTimeUs);                     // schedule
 float motorThermalGetTemp(int motor);                                  // estimated winding temperature, °C
 float motorThermalGetMaxTemp(void);
 bool motorThermalWarning(void);
+// steady winding temperature rise from command ripple (motorNoiseRms band 0, external units) at rpm and vbat
+float motorThermalRippleRise(float noiseRms, float rpm, float vbat);
