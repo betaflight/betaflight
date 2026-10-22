@@ -192,6 +192,19 @@ static float airFactor(float airSpeedSq)
     return 1.0f + AIR_GAIN * v * sqrtf(v);
 }
 
+// Cooling to the air at this rpm, as multiples of the still-air conductance 1/rca: the core through the airflow over
+// the stator (bell, prop induced flow, craft speed), the windings through the prop wash over the end turns. Shared by
+// the time step and the steady-state ripple rise, so the two cannot drift apart.
+static float coreCooling(float rpm, float vCraftSq)
+{
+    return airFactor(sq(rpm) * rt.airK + vCraftSq);
+}
+
+static float windingCooling(float rpm)
+{
+    return MIN(powf(rpm * rt.washK / WASH_REF_MS, WASH_N), WASH_MAX);
+}
+
 void motorThermalInit(void)
 {
     const motorThermalConfig_t *c = motorThermalConfig();
@@ -288,8 +301,8 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
             rpm = getDshotRpm(i);
         }
 #endif
-        const float air = airFactor(sq(rpm) * rt.airK + vCraftSq);
-        const float wash = MIN(powf(rpm * rt.washK / WASH_REF_MS, WASH_N), WASH_MAX);
+        const float air = coreCooling(rpm, vCraftSq);
+        const float wash = windingCooling(rpm);
         const float pCu = kCu * sq(motorNoiseRms(i, 0));
         const float pIron = rt.aIron * sq(rpm);
         // torque current copper loss: phase current ≈ bus current / duty, ripple energy (already in pCu) removed
@@ -316,13 +329,13 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
     }
 }
 
+// Steady winding rise from the ripple loss alone at a hover point, for the filter autotune's heat budget: the windings
+// reach the air through the core (in series) and through the prop wash (in parallel), as in the time step.
 float motorThermalRippleRise(float noiseRms, float rpm, float vbat)
 {
     const float pCu = rt.kCu * sq(vbat * noiseRms);
-    const float wash = MIN(powf(rpm * rt.washK / WASH_REF_MS, WASH_N), WASH_MAX);
-    // windings -> core -> air in series, in parallel with windings -> air through the prop wash
-    const float viaCore = rt.rsc + rt.rca / airFactor(sq(rpm) * rt.airK);
-    return pCu * viaCore / (1.0f + viaCore * wash / rt.rca);
+    const float viaCore = rt.rsc + rt.rca / coreCooling(rpm, 0.0f);
+    return pCu * viaCore / (1.0f + viaCore * windingCooling(rpm) / rt.rca);
 }
 
 float motorThermalGetTemp(int motor)
