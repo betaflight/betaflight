@@ -97,6 +97,7 @@ extern "C" {
     PG_REGISTER(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
     PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
     PG_REGISTER(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
+    PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);   // launch control warning
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
 
     timeUs_t simulationTime = 0;
@@ -1094,6 +1095,88 @@ TEST_F(OsdTest, TestElementAltitude)
 /*
  * Tests the core temperature OSD element.
  */
+extern "C" {
+    extern bool simLiftLifting, simLaunchActive, simLiftStaged, simLaunchPreStaged;
+    extern uint8_t simLiftLogState;
+}
+
+/*
+ * The LIFT sequence on the flight mode element
+ */
+TEST_F(OsdTest, TestElementFlymodeLiftSequence)
+{
+    osdElementConfigMutable()->item_pos[OSD_FLYMODE] = OSD_POS(1, 3) | OSD_PROFILE_1_FLAG;
+    osdAnalyzeActiveElements();
+
+    const struct { bool pre, active, staged, lifting; uint8_t state; const char *name; } steps[] = {
+        { true,  false, false, false, LAUNCH_LIFT_LOG_NONE,   "PREP" },
+        { false, true,  true,  false, LAUNCH_LIFT_LOG_STAGED, "LNCH" },
+        { false, true,  false, false, LAUNCH_LIFT_LOG_NONE,   "LNCH" },  // the other launch modes
+        { false, false, false, true,  LAUNCH_LIFT_LOG_CLIMB,  "LIFT" },
+        { false, false, false, true,  LAUNCH_LIFT_LOG_FLIP,   "INVT" },
+        { false, false, false, true,  LAUNCH_LIFT_LOG_BRAKE,  "BRKE" },
+        { false, false, false, false, LAUNCH_LIFT_LOG_ENDED,  "ACRO" },  // sticks live
+    };
+    for (const auto &step : steps) {
+        simLaunchPreStaged = step.pre;
+        simLaunchActive = step.active;
+        simLiftStaged = step.staged;
+        simLiftLifting = step.lifting;
+        simLiftLogState = step.state;
+
+        displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+        osdRefresh();
+        displayPortTestBufferSubstring(1, 3, "%s", step.name);
+    }
+
+    simLaunchPreStaged = simLaunchActive = simLiftStaged = simLiftLifting = false;
+    simLiftLogState = 0;
+    osdElementConfigMutable()->item_pos[OSD_FLYMODE] = 0;
+    osdAnalyzeActiveElements();
+}
+
+extern "C" {
+    extern int32_t simLiftHeightCm;
+    extern bool simLiftAtTop;
+}
+
+TEST_F(OsdTest, TestElementLaunchHeight)
+{
+    osdElementConfigMutable()->item_pos[OSD_LAUNCH_HEIGHT] = OSD_POS(1, 6) | OSD_PROFILE_1_FLAG;
+    osdAnalyzeActiveElements();
+
+    // no lift: blank
+    simLiftHeightCm = -1;
+    simLiftAtTop = false;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+    displayPortTestBufferIsEmpty();
+
+    // climbing: live, with an up arrow
+    osdConfigMutable()->units = UNIT_METRIC;
+    simLiftHeightCm = 4630;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+    displayPortTestBufferSubstring(1, 6, "LAUNCH %c46%c", SYM_ARROW_SMALL_UP, SYM_M);
+
+    // the top: final, in the OSD's units (83 m is 272 ft)
+    simLiftHeightCm = 8300;
+    simLiftAtTop = true;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+    displayPortTestBufferSubstring(1, 6, "LAUNCH: 83%c", SYM_M);
+    osdConfigMutable()->units = UNIT_IMPERIAL;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+    displayPortTestBufferSubstring(1, 6, "LAUNCH: 272%c", SYM_FT);
+
+    simLiftHeightCm = -1;
+    simLiftAtTop = false;
+    osdConfigMutable()->units = UNIT_METRIC;
+    osdElementConfigMutable()->item_pos[OSD_LAUNCH_HEIGHT] = 0;
+    osdAnalyzeActiveElements();
+}
+
 TEST_F(OsdTest, TestElementCoreTemperature)
 {
     // given
@@ -1590,6 +1673,29 @@ extern "C" {
     bool isAirmodeEnabled() {
         return false;
     }
+
+    // LIFT, as the flight mode element and the warnings see it
+    bool simLiftLifting = false;
+    bool simLaunchActive = false;
+    bool simLiftStaged = false;
+    bool simLaunchPreStaged = false;
+    uint8_t simLiftLogState = 0;
+    bool isLaunchControlLifting(void) { return simLiftLifting; }
+    bool isLaunchControlActive(void) { return simLaunchActive; }
+    bool isLaunchControlLiftStaged(void) { return simLiftStaged; }
+    bool isLaunchControlPreStaged(void) { return simLaunchPreStaged; }
+    uint8_t getLaunchControlLiftLogState(void) { return simLiftLogState; }
+    bool isLaunchControlLiftBraking(void) { return false; }
+    bool isLaunchControlLiftHandoverRecent(void) { return false; }
+    bool isLaunchControlLiftNotLevel(void) { return false; }
+    uint8_t getLaunchControlLiftStoppedMotor(void) { return 0; }
+    int32_t simLiftHeightCm = -1;
+    bool simLiftAtTop = false;
+    int32_t getLaunchControlLiftHeightCm(bool *atTop) { *atTop = simLiftAtTop; return simLiftHeightCm; }
+    bool isLaunchControlLiftAwaitingTriggerOff(void) { return false; }
+    uint32_t getLaunchControlLiftRemainingMs(void) { return 0; }
+    const char *getLaunchControlLiftPreArmMessage(void) { return NULL; }
+    const char *getLaunchControlLiftHandoverMessage(void) { return "STICKS LIVE"; }
 
     uint8_t getCurrentPidProfileIndex() {
         return 0;

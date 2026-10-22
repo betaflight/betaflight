@@ -88,6 +88,7 @@ extern "C" {
     PG_REGISTER(positionConfig_t, positionConfig, PG_SYSTEM_CONFIG, 4);
 
     bool unitLaunchControlActive = false;
+    bool unitLaunchControlLifting = false;
     launchControlMode_e unitLaunchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
 
     float getMotorMixRange(void) { return simulatedMotorMixRange; }
@@ -112,7 +113,13 @@ extern "C" {
     }
     void beeperConfirmationBeeps(uint8_t) { }
     bool isLaunchControlActive(void) {return unitLaunchControlActive; }
-    void disarm(flightLogDisarmReason_e) { }
+    bool isLaunchControlLifting(void) {return unitLaunchControlLifting; }
+    bool unitLaunchControlLiftBraking = false;
+    float unitLaunchControlLiftRate[3] = { 0.0f, 0.0f, 0.0f };
+    bool isLaunchControlLiftBraking(void) { return unitLaunchControlLiftBraking; }
+    float getLaunchControlLiftRate(int axis) { return unitLaunchControlLiftRate[axis]; }
+    int simulatedDisarmCount = 0;
+    void disarm(flightLogDisarmReason_e) { simulatedDisarmCount++; }
     float getMaxRcRate(int axis)
     {
         UNUSED(axis);
@@ -244,6 +251,7 @@ void resetTest(void)
 
     flightModeFlags = 0;
     unitLaunchControlActive = false;
+    unitLaunchControlLifting = false;
     pidProfile->launchControlMode = unitLaunchControlMode;
     pidInit(pidProfile);
     loadControlRateProfile();
@@ -1064,6 +1072,180 @@ TEST(pidControllerTest, testLaunchControl)
     EXPECT_NEAR(-1.56,  pidData[FD_PITCH].I, calculateTolerance(-1.56));
     EXPECT_NEAR(44.84,  pidData[FD_YAW].P,   calculateTolerance(44.84));
     EXPECT_NEAR(1.56,   pidData[FD_YAW].I,  calculateTolerance(1.56));
+}
+
+TEST(pidControllerTest, testLaunchControlLift)
+{
+    // While a LIFT is running the sticks must have no effect at all: the controller
+    // holds zero rotation and adds no feedforward, however hard the sticks are moved.
+
+    // Reference: sticks centred, a gyro disturbance on every axis
+    resetTest();
+    unitLaunchControlLifting = true;
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    pidController(pidProfile, currentTestTime());
+    gyro.gyroADCf[FD_ROLL] = 20;
+    gyro.gyroADCf[FD_PITCH] = -20;
+    gyro.gyroADCf[FD_YAW] = 20;
+    pidController(pidProfile, currentTestTime());
+    const float refP[3] = { pidData[FD_ROLL].P, pidData[FD_PITCH].P, pidData[FD_YAW].P };
+
+    // the controller is actively holding the attitude against the disturbance
+    EXPECT_LT(refP[FD_ROLL], 0);
+    EXPECT_GT(refP[FD_PITCH], 0);
+    EXPECT_LT(refP[FD_YAW], 0);
+
+    // Same disturbance, sticks slammed to full deflection mid-lift
+    resetTest();
+    unitLaunchControlLifting = true;
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    pidController(pidProfile, currentTestTime());
+    setStickPosition(FD_ROLL, 1.0f);
+    setStickPosition(FD_PITCH, -1.0f);
+    setStickPosition(FD_YAW, 1.0f);
+    gyro.gyroADCf[FD_ROLL] = 20;
+    gyro.gyroADCf[FD_PITCH] = -20;
+    gyro.gyroADCf[FD_YAW] = 20;
+    pidController(pidProfile, currentTestTime());
+
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        EXPECT_FLOAT_EQ(refP[axis], pidData[axis].P);   // sticks ignored
+        EXPECT_FLOAT_EQ(0, pidData[axis].F);            // no feedforward from the stick move
+    }
+
+    // Lift over: the same stick positions are live again
+    unitLaunchControlLifting = false;
+    pidController(pidProfile, currentTestTime());
+    EXPECT_GT(pidData[FD_ROLL].P, refP[FD_ROLL] + 100);
+
+    // LIFT mode waiting on the ground (launch control ACTIVE): sticks ignored too,
+    // so the pilot can set them for the handover without the quad moving
+    unitLaunchControlMode = LAUNCH_CONTROL_MODE_LIFT;
+    resetTest();
+    unitLaunchControlActive = true;
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    pidController(pidProfile, currentTestTime());
+    setStickPosition(FD_ROLL, 1.0f);
+    setStickPosition(FD_PITCH, 1.0f);
+    setStickPosition(FD_YAW, -1.0f);
+    pidController(pidProfile, currentTestTime());
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        EXPECT_FLOAT_EQ(0, pidData[axis].P);
+        EXPECT_FLOAT_EQ(0, pidData[axis].F);
+    }
+    unitLaunchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
+}
+
+TEST(pidControllerTest, testLaunchControlLiftSelfLevels)
+{
+    // A LIFT self-levels on roll and pitch from the attitude alone, and holds yaw
+    resetTest();
+    unitLaunchControlLifting = true;
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+
+    attitude.values.roll = 100;     // 10 deg right, as if launched from a slope
+    attitude.values.pitch = -50;    // 5 deg nose down
+    pidController(pidProfile, currentTestTime());
+    const float levelP[3] = { pidData[FD_ROLL].P, pidData[FD_PITCH].P, pidData[FD_YAW].P };
+
+    EXPECT_LT(levelP[FD_ROLL], 0);          // rolls back left
+    EXPECT_GT(levelP[FD_PITCH], 0);         // pitches back up
+    EXPECT_FLOAT_EQ(0, levelP[FD_YAW]);     // yaw just held
+    EXPECT_GT(fabsf(levelP[FD_ROLL]), fabsf(levelP[FD_PITCH]));   // proportional to the tilt
+
+    // sticks slammed mid-lift: no effect on the correction
+    resetTest();
+    unitLaunchControlLifting = true;
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    attitude.values.roll = 100;
+    attitude.values.pitch = -50;
+    pidController(pidProfile, currentTestTime());
+    setStickPosition(FD_ROLL, 1.0f);
+    setStickPosition(FD_PITCH, 1.0f);
+    setStickPosition(FD_YAW, -1.0f);
+    pidController(pidProfile, currentTestTime());
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        EXPECT_FLOAT_EQ(levelP[axis], pidData[axis].P);
+        EXPECT_FLOAT_EQ(0, pidData[axis].F);
+    }
+
+    // far over: the correction rate is capped, not unbounded
+    resetTest();
+    unitLaunchControlLifting = true;
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    attitude.values.roll = 900;
+    pidController(pidProfile, currentTestTime());
+    const float cappedP = pidData[FD_ROLL].P;
+    attitude.values.roll = 1700;
+    pidController(pidProfile, currentTestTime());
+    EXPECT_FLOAT_EQ(cappedP, pidData[FD_ROLL].P);
+}
+
+TEST(pidControllerTest, testLaunchControlLiftBrakeFlipsOnTheLiftsRates)
+{
+    // at the end of a lift with launch_lift_brake, the lift steers: the rates it asks for
+    // replace the self-level, and the sticks still can't leak in
+    resetTest();
+    unitLaunchControlLifting = true;
+    unitLaunchControlLiftBraking = true;
+    unitLaunchControlLiftRate[FD_ROLL] = 1200.0f;   // rolling over
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    attitude.values.roll = 100;     // would self-level back left if this were the climb
+    pidController(pidProfile, currentTestTime());
+    const float flipP[3] = { pidData[FD_ROLL].P, pidData[FD_PITCH].P, pidData[FD_YAW].P };
+    EXPECT_GT(flipP[FD_ROLL], 0);   // rolls right, as asked
+    EXPECT_FLOAT_EQ(0, flipP[FD_PITCH]);
+    EXPECT_FLOAT_EQ(0, flipP[FD_YAW]);
+
+    setStickPosition(FD_ROLL, -1.0f);
+    setStickPosition(FD_PITCH, 1.0f);
+    setStickPosition(FD_YAW, 1.0f);
+    pidController(pidProfile, currentTestTime());
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        EXPECT_FLOAT_EQ(flipP[axis], pidData[axis].P);
+        EXPECT_FLOAT_EQ(0, pidData[axis].F);
+    }
+
+    unitLaunchControlLiftBraking = false;
+    unitLaunchControlLiftRate[FD_ROLL] = 0.0f;
+    unitLaunchControlLifting = false;
+}
+
+TEST(pidControllerTest, testLaunchControlLiftNeverDisarmsOnImpact)
+{
+    // landing disarm on, sticks parked at zero during the lift, then a hard jolt
+    // (a ceiling, a branch): that is not a landing, and a LIFT never disarms
+    resetTest();
+    pidProfile->landing_disarm_threshold = 10;
+    pidInit(pidProfile);
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    simulatedThrottleRaised = true;
+    simulatedMaxRcDeflectionAbs = 0.0f;
+    simulatedMixerGetRcThrottle = 0.0f;
+    acc.jerkMagnitude = 1000.0f;
+
+    simulatedDisarmCount = 0;
+    unitLaunchControlLifting = true;
+    pidController(pidProfile, currentTestTime());
+    EXPECT_EQ(0, simulatedDisarmCount);
+
+    // the same jolt outside a lift is a landing, as before
+    unitLaunchControlLifting = false;
+    pidController(pidProfile, currentTestTime());
+    EXPECT_EQ(1, simulatedDisarmCount);
+
+    acc.jerkMagnitude = 0.0f;
+    simulatedThrottleRaised = true;   // the file default
+    pidProfile->landing_disarm_threshold = 0;
+    pidInit(pidProfile);
 }
 
 TEST(pidControllerTest, testTpaClassic)
