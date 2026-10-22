@@ -129,10 +129,12 @@ extern uint32_t SystemCoreClock;
 
 /* ── Bus instance counts ─────────────────────────────────────────────────────
  * The config parameter-group arrays (pg/bus_i2c.h, pg/bus_spi.h) are sized by
- * these. A nonzero count is used until the real bus drivers set the actual
- * wired-up instance count. */
+ * these. For I2C we use Option-A numbering (I2CDEV_1 -> LPI2C1, I2CDEV_6 ->
+ * LPI2C6). With no USE_I2C_DEVICE_0, the i2cDevice_e enum numbers I2CDEV_1 = 0
+ * ... I2CDEV_6 = 5, so the PG arrays must be sized for 6 slots (indices 0..5).
+ * Only slots 0 (I2CDEV_1) and 5 (I2CDEV_6) are wired; 1..4 stay NONE/unused. */
 #ifndef I2CDEV_COUNT
-#define I2CDEV_COUNT                    1
+#define I2CDEV_COUNT                    6
 #endif
 #ifndef SPIDEV_COUNT
 #define SPIDEV_COUNT                    1
@@ -143,6 +145,19 @@ extern uint32_t SystemCoreClock;
  * casts it back to the LPSPI base address. (i.MX 95 LPSPI1 = 0x44360000.) */
 #ifndef SPI1
 #define SPI1                            ((void *)0x44360000u)
+#endif
+
+/* I2Cn name the LPI2Cn instances. Like SPI1 above, the generic I2C layer treats
+ * i2cResource_t* as an opaque handle; the platform I2C driver (bus_i2c_navq95.c)
+ * casts it back to the LPI2C base address. Option-A bus numbering is used:
+ * Betaflight I2CDEV_1 -> LPI2C1 and I2CDEV_6 -> LPI2C6, so the CLI/Configurator
+ * bus number matches the silicon instance. (i.MX 95 LPI2C1 = 0x44340000 in the
+ * AONMIX domain; LPI2C6 = 0x426C0000 in the WAKEUPMIX domain.) */
+#ifndef I2C1
+#define I2C1                            ((void *)0x44340000u)
+#endif
+#ifndef I2C6
+#define I2C6                            ((void *)0x426C0000u)
 #endif
 
 /* ── Bus pin-selection table sizing ──────────────────────────────────────────

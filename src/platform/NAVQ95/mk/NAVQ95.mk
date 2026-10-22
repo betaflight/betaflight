@@ -25,12 +25,31 @@ DEVICE_FLAGS    += \
 # Virtual sensors. These must be defined on the command line (not in target.h):
 # platform.h includes target/common_pre.h before target.h, and common_pre.h's
 # default-build block enables the full real baro/mag driver list unless
-# USE_VIRTUAL_* is already defined at that point.
-# GYRO/ACC are now REAL (ICM-45686 over LPSPI1); only MAG/BARO stay virtual until
-# their I2C bus is brought up.
+# USE_VIRTUAL_* / USE_BARO is already defined at that point.
+# GYRO/ACC are REAL (ICM-45686 over LPSPI1). MAG is REAL (BMM350 on LPI2C1 @0x14,
+# Phase 5): with USE_VIRTUAL_MAG removed and USE_MAG set, common_post.h enables
+# the mag driver list (incl. USE_MAG_BMM350) and compass_bmm350.c (already in
+# COMMON_SRC) is compiled. The mag bus/address default comes from
+# MAG_I2C_INSTANCE / MAG_I2C_ADDRESS in target.h.
+#
+# BARO is now REAL too (BMP581 on LPI2C1 @0x46, Phase 6). The BMP581 I2C path is
+# SPECIAL and must be forced on the COMMAND LINE (common_pre.h runs before
+# target.h):
+#  - common_pre.h's default baro list only enables the *SPI* BMP5xx variants
+#    (USE_BARO_SPI_BMP580/581), NOT the I2C USE_BARO_BMP581, and its auto-default
+#    selector (barometer.c) never picks BMP5xx (it prefers DPS310/BMP388/...).
+#  - Defining USE_BARO here makes common_pre.h SKIP its whole default baro list
+#    (`#if !defined(USE_BARO) ...`), so DPS310/etc. are NOT pulled in and cannot
+#    win the default-bus selection.
+#  - USE_BARO_BMP581 enables the I2C BMP5xx driver gate; DEFAULT_BARO_BMP581
+#    makes pgResetFn_barometerConfig take the I2C bus branch; DEFAULT_BARO_DEVICE
+#    selects BMP581 as the default baro hardware. Bus/addr come from
+#    BARO_I2C_INSTANCE / BARO_I2C_ADDRESS in target.h.
 DEVICE_FLAGS    += \
-            -DUSE_VIRTUAL_MAG \
-            -DUSE_VIRTUAL_BARO
+            -DUSE_BARO \
+            -DUSE_BARO_BMP581 \
+            -DDEFAULT_BARO_BMP581 \
+            -DDEFAULT_BARO_DEVICE=BARO_BMP581
 
 # Real sensor + bus: ICM-45686 6-axis IMU on LPSPI1 (polled register-level SPI).
 # NOTE: do NOT pass -DUSE_ACCGYRO_ICM45686 here. common_pre.h's classic-build
@@ -44,6 +63,16 @@ DEVICE_FLAGS    += \
 DEVICE_FLAGS    += \
             -DUSE_SPI \
             -DUSE_SPI_DEVICE_1
+
+# ── I2C (Phase 1): two LPI2C master instances over the generic I2C core ──────
+# Betaflight's common drivers/bus_i2c_*.c provide the high-level API and the
+# config parameter group; the platform supplies the hardware hooks in
+# NAVQ95/bus_i2c_navq95.c (register-level polled LPI2C, pads muxed + clock
+# ungated over SCMI). USE_I2C enables the common I2C core; the per-instance
+# USE_I2C_DEVICE_1 / USE_I2C_DEVICE_6 spellings live in target.h (Option-A
+# numbering: I2CDEV_1 -> LPI2C1, I2CDEV_6 -> LPI2C6). NOT soft-I2C.
+DEVICE_FLAGS    += \
+            -DUSE_I2C
 
 # ── Include directories ───────────────────────────────────────────────────────
 INCLUDE_DIRS    += \
@@ -86,6 +115,7 @@ MCU_COMMON_SRC  = \
             NAVQ95/io_navq95.c \
             NAVQ95/serial_uart_navq95.c \
             NAVQ95/config_navq95.c \
+            NAVQ95/bus_i2c_navq95.c \
             drivers/bus_spi_config.c \
             drivers/serial_pinconfig.c
 

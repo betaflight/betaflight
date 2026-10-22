@@ -41,6 +41,11 @@
 #include "io/asyncfatfs/fat_standard.h"
 #include "build/debug.h"
 
+/* Shared i.MX 95 System-Manager SCMI helpers (pinmux/clock), defined below and
+ * used by the peripheral bring-up files (LPI2C in bus_i2c_navq95.c). Including
+ * the header here checks the definitions match the shared declarations. */
+#include "navq95_scmi.h"
+
 /*
  * Console LPUART (LPUART2). systemInit() muxes the pads (over SCMI) and does a
  * local reset + BAUD setup. Register offsets per the i.MX 95 LPUART block;
@@ -114,6 +119,23 @@ static void navq95_lowputs(const char *s)
             navq95_lowputc('\r');
         }
         navq95_lowputc((uint8_t)*s++);
+    }
+}
+
+/* Exposed console debug helpers (declared in navq95_scmi.h) used by the I2C
+ * bring-up diagnostics. They write to the same LPUART5 console as the banner. */
+void navq95_dbg_puts(const char *s)
+{
+    navq95_lowputs(s);
+}
+
+void navq95_dbg_hex32(uint32_t v)
+{
+    static const char hexd[] = "0123456789ABCDEF";
+    navq95_lowputc('0');
+    navq95_lowputc('x');
+    for (int i = 28; i >= 0; i -= 4) {
+        navq95_lowputc((uint8_t)hexd[(v >> i) & 0xFu]);
     }
 }
 
@@ -266,9 +288,14 @@ static void navq95_uart_rx_irq_enable(void)
 #define SCMI_PINCTRL_TYPE_MUX    192u
 #define SCMI_PINCTRL_TYPE_CONFIG 193u
 /* CLOCK protocol (0x14): CLOCK_CONFIG_SET ungates a clock root. The SM clock id
- * = CCM root index + ROOT_CLOCK_OFFSET; attributes bit0 = ENABLE. */
+ * = CCM root index + ROOT_CLOCK_OFFSET; attributes bit0 = ENABLE. CLOCK_RATE_SET
+ * (0x05) programs the root's physical rate in Hz (64-bit, lower+upper). Some
+ * roots (LPSPI1/LPUART5) are left at a sane rate by the boot ROM/U-Boot, but
+ * others (e.g. the LPI2C roots) may come up with no rate set — so the M7 must
+ * program the rate itself or the peripheral gets no functional clock. */
 #define SCMI_PROTO_CLOCK         0x14u
 #define SCMI_MSG_CLOCK_CONFIG_SET 0x07u
+#define SCMI_MSG_CLOCK_RATE_SET   0x05u
 #define SCMI_CLOCK_ROOT_OFFSET   41u
 /* SYSTEM power-state protocol (0x12): SYSTEM_POWER_STATE_SET performs a warm
  * reset of this core's logical machine (other cores keep running). This is a
@@ -393,8 +420,8 @@ static inline uint32_t navq95_scmi_header(uint32_t proto, uint32_t msg)
  * SCMI PINCTRL_CONFIG_SET for a single pad: set its MUX (mode + optional SION)
  * and CONFIG (pad electrical) value. Returns the SCMI status (0 = success).
  */
-static int navq95_scmi_pinmux(uint32_t muxReg, uint32_t muxMode, uint32_t sion,
-                              uint32_t padReg, uint32_t padVal)
+int navq95_scmi_pinmux(uint32_t muxReg, uint32_t muxMode, uint32_t sion,
+                       uint32_t padReg, uint32_t padVal)
 {
     (void)padReg;   /* identifier is derived from muxReg; padReg kept for clarity */
 
@@ -420,7 +447,7 @@ static int navq95_scmi_pinmux(uint32_t muxReg, uint32_t muxMode, uint32_t sion,
  * (41). Enabling alone is enough to ungate — we keep the SM's default parent/
  * rate. Returns the SCMI status (0 = success).
  */
-static int navq95_scmi_clock_enable(uint32_t clockRootId)
+int navq95_scmi_clock_enable(uint32_t clockRootId)
 {
     uint32_t clkId = clockRootId + SCMI_CLOCK_ROOT_OFFSET;
 
@@ -430,6 +457,27 @@ static int navq95_scmi_clock_enable(uint32_t clockRootId)
     navq95_w32(SMT_PAYLOAD + 0x08u, 0u);          /* oem_config_val = 0  */
     /* length = header(4) + clockid+attributes+oem(12) = 16 */
     return navq95_scmi_txn(4u + 12u);
+}
+
+/*
+ * SCMI CLOCK_RATE_SET: program a clock root's physical rate (Hz). Ported from
+ * NuttX imx9_scmi_clockratesett() (msg_tclockd5_t = { header, flags, clockid,
+ * rate.lower, rate.upper }). flags = 0 (synchronous, round down). clockRootId
+ * is the CCM root index; the SM clock id = root + ROOT_CLOCK_OFFSET (41).
+ * Returns the SCMI status (0 = success). Needed for roots the boot firmware
+ * leaves un-rated (e.g. the LPI2C roots) so the peripheral gets a real clock.
+ */
+int navq95_scmi_clock_rate_set(uint32_t clockRootId, uint32_t rateHz)
+{
+    uint32_t clkId = clockRootId + SCMI_CLOCK_ROOT_OFFSET;
+
+    navq95_w32(SMT_MSG_HEADER, navq95_scmi_header(SCMI_PROTO_CLOCK, SCMI_MSG_CLOCK_RATE_SET));
+    navq95_w32(SMT_PAYLOAD + 0x00u, 0u);          /* flags: sync, round down */
+    navq95_w32(SMT_PAYLOAD + 0x04u, clkId);       /* clock id                */
+    navq95_w32(SMT_PAYLOAD + 0x08u, rateHz);      /* rate lower 32 bits (Hz) */
+    navq95_w32(SMT_PAYLOAD + 0x0Cu, 0u);          /* rate upper 32 bits      */
+    /* length = header(4) + flags+clockid+rate.lo+rate.hi(16) = 20 */
+    return navq95_scmi_txn(4u + 16u);
 }
 
 /* NOTE: the LPUART2 (RC/SBUS) pad mux is NOT done here — RC/SBUS runs through
@@ -797,9 +845,9 @@ uint8_t usbVcpIsActive(void)
  * imx9_sm_iomucx_configure(). daisyReg is the absolute SELECT_INPUT register;
  * daisyVal is the input mux selector (0x1 for both LPUART5 pads).
  */
-static int navq95_scmi_pinmux_daisy(uint32_t muxReg, uint32_t muxMode, uint32_t sion,
-                                    uint32_t daisyReg, uint32_t daisyVal,
-                                    uint32_t padVal)
+int navq95_scmi_pinmux_daisy(uint32_t muxReg, uint32_t muxMode, uint32_t sion,
+                             uint32_t daisyReg, uint32_t daisyVal,
+                             uint32_t padVal)
 {
     uint32_t identifier = (muxReg - IOMUXC_BASE) / 4u;
     uint32_t daisyId    = (daisyReg - (IOMUXC_BASE + SCMI_PINCTRL_DAISYREG_OFF)) / 4u;

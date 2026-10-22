@@ -142,6 +142,76 @@
 #define GYRO_1_SPI_INSTANCE     SPI1
 #define GYRO_1_CS_PIN           PA11
 
+/*
+ * I2C (Phase 1 bring-up): two LPI2C master instances, register-level polled
+ * driver in NAVQ95/bus_i2c_navq95.c. Option-A Betaflight bus numbering so the
+ * CLI/Configurator bus number matches the silicon instance:
+ *
+ *   I2CDEV_1 == LPI2C1 (AONMIX,    base 0x44340000, CCM clock root 6)
+ *              dedicated I2C1_SCL / I2C1_SDA pads (ALT0, no SELECT_INPUT daisy).
+ *   I2CDEV_6 == LPI2C6 (WAKEUPMIX, base 0x426C0000, CCM clock root 91)
+ *              shared GPIO_IO02 (SDA) / GPIO_IO03 (SCL) pads at ALT6, each with
+ *              a SELECT_INPUT daisy. In Betaflight tag terms GPIO_IO02 = PA2 and
+ *              GPIO_IO03 = PA3 (RGPIO1 bits 2/3).
+ *
+ * The LPI2C pad mux + functional-clock ungate are done over SCMI by the System
+ * Manager inside the driver (the M7 owns neither IOMUXC nor the CCM), so the
+ * pin TAGS here are cosmetic (CLI resource listing). The dedicated I2C1 pads
+ * have no GPIO tag, so they are NONE.
+ *
+ * Clock speed is 100 kHz for bring-up (external pull-ups are present on both
+ * buses, so no internal pull-up is enabled -> I2Cn_PULLUP left default false).
+ * I2CDEV_COUNT = 6 (platform.h): enum I2CDEV_1..I2CDEV_6 map to indices 0..5.
+ *
+ * NOTE: USE_I2C itself is defined on the command line in mk/NAVQ95.mk (mirroring
+ * USE_SPI), NOT here - defining it in both places collides under -Werror
+ * ("USE_I2C" redefined). Only the per-device USE_I2C_DEVICE_n spellings and the
+ * pin/clock config live in target.h.
+ */
+#define USE_I2C_DEVICE_1
+#define I2C1_SCL_PIN            NONE
+#define I2C1_SDA_PIN            NONE
+#define I2C1_CLOCKSPEED         100
+
+#define USE_I2C_DEVICE_6
+#define I2C6_SCL_PIN            PA3
+#define I2C6_SDA_PIN            PA2
+#define I2C6_CLOCKSPEED         100
+
+/*
+ * Magnetometer (Phase 5): Bosch BMM350 on LPI2C1 (I2CDEV_1) at I2C address 0x14
+ * (ADSEL = GND; 0x15 is ADSEL = VDDIO). Confirmed present on i2c1 by the bus
+ * scan. The real BMM350 driver is enabled by removing -DUSE_VIRTUAL_MAG in
+ * mk/NAVQ95.mk; with USE_MAG set and USE_VIRTUAL_MAG gone, common_post.h turns
+ * on the mag driver list (incl. USE_MAG_BMM350) and compass_bmm350.c (already
+ * in COMMON_SRC) is compiled. pg/compass.c's pgResetFn_compassConfig() seeds the
+ * default bus/address from MAG_I2C_INSTANCE / MAG_I2C_ADDRESS below.
+ *   MAG_I2C_INSTANCE -> I2CDEV_1 (LPI2C1)
+ *   MAG_I2C_ADDRESS  -> 0x14     (BMM350, ADSEL=GND)
+ * The BMM350 needs a 2.2 uF cap on CRST for magnetic reset / full heading
+ * accuracy (per the driver header).
+ */
+#define MAG_I2C_INSTANCE        I2CDEV_1
+#define MAG_I2C_ADDRESS         0x14
+
+/*
+ * Barometer (Phase 6): Bosch BMP581 on LPI2C1 (I2CDEV_1) at I2C address 0x46
+ * (SDO = LOW; BMP5XX_I2C_ADDR_SECONDARY — 0x47 is SDO = HIGH / primary).
+ * Confirmed present on i2c1 by the bus scan. The BMP581 I2C path is forced on
+ * the command line in mk/NAVQ95.mk (USE_BARO + USE_BARO_BMP581 +
+ * DEFAULT_BARO_BMP581 + DEFAULT_BARO_DEVICE=BARO_BMP581), because the default
+ * baro list only ships the SPI BMP5xx variants and its auto-selector never
+ * picks BMP5xx. pg/barometer.c's pgResetFn_barometerConfig() then seeds the
+ * default bus/address from BARO_I2C_INSTANCE / DEFAULT_BARO_I2C_ADDRESS below.
+ *   BARO_I2C_INSTANCE        -> I2CDEV_1 (LPI2C1)
+ *   DEFAULT_BARO_I2C_ADDRESS -> 0x46     (BMP581, SDO=LOW)
+ * NOTE: the baro PG reads DEFAULT_BARO_I2C_ADDRESS (not BARO_I2C_ADDRESS). If
+ * left 0, bmp5xxDetect() auto-probes 0x47 then 0x46; we set 0x46 explicitly to
+ * skip the (absent) 0x47 probe. barometer_bmp5xx.c reads CHIP_ID (BMP581=0x51).
+ */
+#define BARO_I2C_INSTANCE       I2CDEV_1
+#define DEFAULT_BARO_I2C_ADDRESS 0x46
+
 /* Pull in the platform abstraction (CMSIS includes, type shims, capabilities). */
 #include "platform.h"
 
