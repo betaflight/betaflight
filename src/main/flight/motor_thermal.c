@@ -91,6 +91,8 @@ static struct {
     timeUs_t lastUs;
     float idleAmps;             // battery current with the motors stopped: not motor current
     int ambientCounter;
+    int boardLowest;            // lowest FC-board reading (gyro, baro, MCU) since power-up, °C
+    int escLowest;              // lowest ESC reading since power-up, °C
     uint8_t edtTries;
     bool armedOnce;
 } rt;
@@ -132,10 +134,11 @@ static void edtRequest(void)
 }
 #endif
 
-// The ambient before the first arm: the lowest plausible temperature any sensor on the craft reports. Every
-// one of them sits on something that warms it (the FC board, the MCU, the ESC), so the lowest is the
-// closest to the air. Taken again once a second while disarmed, so a source that comes later (ESC telemetry
-// once the battery is in) still counts; frozen at the first arm. Without any, the default stays.
+// The ambient before the first arm. A cold ESC is the best reference (within ~1 °C of a thermistor on a 5"), so its
+// temperature (DShot extended telemetry or ESC sensor) is used when any ESC reports one. Otherwise the FC board's
+// sensors (gyro, baro, MCU): they warm up after power-up (+9 °C over the air after an hour on USB), so the lowest
+// since power-up is kept. Looked at once a second while disarmed, so a source that comes later (ESC telemetry once
+// the battery is in) still counts; frozen at the first arm. Without any reading, the default stays.
 static void ambientUpdate(void)
 {
     if (rt.armedOnce || ++rt.ambientCounter < UPDATE_HZ) {
@@ -145,32 +148,36 @@ static void ambientUpdate(void)
 #ifdef USE_DSHOT_TELEMETRY
     edtRequest();
 #endif
-    int best = INT16_MAX;
+    int board = INT16_MAX;
     gyroReadTemperature();                      // the cached value is otherwise refreshed by the telemetry task only
-    ambientConsider(gyroGetTemperature(), &best);
+    ambientConsider(gyroGetTemperature(), &board);
 #ifdef USE_BARO
     if (sensors(SENSOR_BARO)) {
-        ambientConsider(baro.temperature / 100, &best);
+        ambientConsider(baro.temperature / 100, &board);
     }
 #endif
 #ifdef USE_ADC_INTERNAL
-    ambientConsider(getCoreTemperatureCelsius(), &best);
+    ambientConsider(getCoreTemperatureCelsius(), &board);
 #endif
+    int escTemp = INT16_MAX;
     for (int i = 0; i < getMotorCount() && i < MAX_SUPPORTED_MOTORS; i++) {
 #ifdef USE_DSHOT_TELEMETRY
         if (dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) {
-            ambientConsider(dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE], &best);
+            ambientConsider(dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE], &escTemp);
         }
 #endif
 #ifdef USE_ESC_SENSOR
         const escSensorData_t *esc = getEscSensorData(i);
         if (esc && esc->dataAge < ESC_DATA_INVALID) {
-            ambientConsider(esc->temperature, &best);
+            ambientConsider(esc->temperature, &escTemp);
         }
 #endif
     }
-    if (best != INT16_MAX) {
-        rt.tAmb = best;
+    rt.boardLowest = MIN(rt.boardLowest, board);
+    rt.escLowest = MIN(rt.escLowest, escTemp);
+    const int ambient = rt.escLowest != INT16_MAX ? rt.escLowest : rt.boardLowest;
+    if (ambient != INT16_MAX) {
+        rt.tAmb = ambient;
         for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             node[i].ts = node[i].tc = rt.tAmb;      // nothing has run yet: the motors are at the ambient
         }
@@ -246,6 +253,8 @@ void motorThermalInit(void)
         }
         rt.idleAmps = 0.0f;
         rt.ambientCounter = UPDATE_HZ;          // the first update looks at once
+        rt.boardLowest = INT16_MAX;
+        rt.escLowest = INT16_MAX;
         rt.armedOnce = false;
         stateInitialised = true;
     }
