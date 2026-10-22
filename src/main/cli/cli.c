@@ -7229,12 +7229,10 @@ static ioTag_t* getIoTag(const cliResourceValue_t value, uint8_t index)
 #if defined(USE_TIMER_MGMT) || defined(USE_DMA_SPEC)
 static void printClaimedBy(printFn *printValue, dumpFlags_t dumpMask, bool equalsDefault, const char *name, int number, const resourceOwner_t *actual)
 {
-    // TIMUP keeps the TIM number as its index; every other owner stores a 1-based resource index
     if (actual->index == 0) {
         printValue(dumpMask, equalsDefault, "# %s %d: CLAIMED BY %s", name, number, getOwnerName(actual->owner));
     } else {
-        const int actualNumber = actual->owner == OWNER_TIMUP ? actual->index : resourceIndexToInput(actual->owner, actual->index - 1);
-        printValue(dumpMask, equalsDefault, "# %s %d: CLAIMED BY %s %d", name, number, getOwnerName(actual->owner), actualNumber);
+        printValue(dumpMask, equalsDefault, "# %s %d: CLAIMED BY %s %d", name, number, getOwnerName(actual->owner), resourceIndexToInput(actual->owner, actual->index - 1));
     }
 }
 #endif
