@@ -577,7 +577,7 @@ static void showTasksPage(void)
 static void showBBPage(void)
 {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
-    int8_t fileNo;
+    int32_t fileNo;
     if (isBlackboxDeviceWorking()) {
         switch (blackboxConfig()->device) {
         case BLACKBOX_DEVICE_SDCARD:
