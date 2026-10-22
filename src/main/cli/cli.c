@@ -7547,14 +7547,6 @@ static void printDmaoptClaim(const dmaoptEntry_t *entry, int index, int uiIndex,
         expected = OWNER_ADC;
         expectedIndex = -1;   // claimed with a driver-specific index
         break;
-    case DMA_PERIPH_SDIO:
-        expected = OWNER_SDCARD;
-        expectedIndex = -1;
-        break;
-    case DMA_PERIPH_TIMUP:
-        expected = OWNER_TIMUP;
-        expectedIndex = uiIndex;
-        break;
     default:
         return;
     }
