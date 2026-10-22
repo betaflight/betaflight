@@ -421,6 +421,8 @@ static uint8_t motorPowerCheck(void)
     return FRAME_WIZARD_END_NONE;
 }
 
+static void startMotorBeep(timeMs_t now);
+
 // a USB cable to tap: only targets with USB detection or a VCP can tell
 static bool usbCablePresent(void)
 {
@@ -473,9 +475,13 @@ bool frameWizardStart(const frameWizardParams_t *params)
         fw.beeped |= 1 << FRAME_WIZARD_REGION_CABLE;
         fw.noMode |= 1 << FRAME_WIZARD_REGION_CABLE;
     }
-    // the cable first (on USB), then the arms and the frame in any order
-    fw.phase = (fw.p.flags & FRAME_WIZARD_FLAG_SKIP_TAPS) ? FW_BEEP_START : fw.cableSkipped ? FW_TAPS : FW_CABLE;
-    fw.phaseStartMs = millis();
+    if (fw.p.flags & FRAME_WIZARD_FLAG_SKIP_TAPS) {
+        startMotorBeep(millis());                     // the motor run alone: the same long beep before the motors start
+    } else {
+        // the cable first (on USB), then the arms and the frame in any order
+        fw.phase = fw.cableSkipped ? FW_TAPS : FW_CABLE;
+        fw.phaseStartMs = millis();
+    }
     frameWizardKeepalive();
     return true;
 }
