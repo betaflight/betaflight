@@ -7552,13 +7552,8 @@ static void printDmaoptClaim(const dmaoptEntry_t *entry, int index, int uiIndex,
     }
 
     const resourceOwner_t *actual = dmaGetOwner(dmaGetIdentifier(dmaChannelSpec->ref));
-    if (actual == &resourceOwnerInvalid) {
-        // the reqmap names a stream missing from the descriptor table: a map bug, not contention
-        cliDumpPrintLinef(dumpMask, equalsDefault, "# %s %d: DMA MAP ERROR", entry->device, uiIndex);
-        return;
-    }
-    // OWNER_FREE means the peripheral was not opened this boot, not a conflict
-    if (actual->owner == OWNER_FREE || (actual->owner == expected && (expectedIndex < 0 || actual->index == expectedIndex))) {
+    // OWNER_FREE: not opened this boot. OWNER_INVALID: stream not in the descriptor table. Neither is a conflict
+    if (actual->owner <= OWNER_FREE || (actual->owner == expected && (expectedIndex < 0 || actual->index == expectedIndex))) {
         return;
     }
     printClaimedBy(cliDumpPrintLinef, dumpMask, equalsDefault, entry->device, uiIndex, actual);
