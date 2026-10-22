@@ -283,17 +283,17 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
     const float kCu = rt.kCu * sq(vbat);
     // battery current split across motors by command² when per-motor ESC current is not available; the
     // current with the motors stopped (FC, VTX, receiver) is not motor current and is taken off first
-    const float batteryAmps = getAmperage() * 0.01f;
-    if (!armed) {
-        rt.idleAmps += (batteryAmps - rt.idleAmps) * MIN(1.0f, dt / IDLE_AMPS_TAU_S);
-    }
-    const float motorsAmps = armed ? MAX(batteryAmps - rt.idleAmps, 0.0f) : 0.0f;
     float cmdSqSum = 0.0f;
     float cmdFrac[MAX_SUPPORTED_MOTORS];
     for (int i = 0; i < motorCount && i < MAX_SUPPORTED_MOTORS; i++) {
         cmdFrac[i] = constrainf((motorConvertToExternal(motor[i]) - 1000) * 0.001f, 0.0f, 1.0f);
         cmdSqSum += sq(cmdFrac[i]);
     }
+    const float batteryAmps = getAmperage() * 0.01f;
+    if (!armed && cmdSqSum == 0.0f) {       // learnt only with every motor stopped: not during a disarmed motor test
+        rt.idleAmps += (batteryAmps - rt.idleAmps) * MIN(1.0f, dt / IDLE_AMPS_TAU_S);
+    }
+    const float motorsAmps = armed ? MAX(batteryAmps - rt.idleAmps, 0.0f) : 0.0f;
     float vCraftSq = 0.0f;
 #ifdef USE_GPS
     if (STATE(GPS_FIX)) {
