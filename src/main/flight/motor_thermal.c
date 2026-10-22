@@ -177,9 +177,12 @@ static void ambientUpdate(void)
     rt.escLowest = MIN(rt.escLowest, escTemp);
     const int ambient = MIN(rt.escLowest, rt.boardLowest);
     if (ambient != INT16_MAX) {
+        // shift by the change, not overwrite: a disarmed motor test, excitation or frame wizard run has heated them
+        const float delta = ambient - rt.tAmb;
         rt.tAmb = ambient;
         for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-            node[i].ts = node[i].tc = rt.tAmb;      // nothing has run yet: the motors are at the ambient
+            node[i].ts += delta;
+            node[i].tc += delta;
         }
     }
 }
