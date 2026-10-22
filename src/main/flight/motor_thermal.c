@@ -134,11 +134,11 @@ static void edtRequest(void)
 }
 #endif
 
-// The ambient before the first arm. A cold ESC is the best reference (within ~1 °C of a thermistor on a 5"), so its
-// temperature (DShot extended telemetry or ESC sensor) is used when any ESC reports one. Otherwise the FC board's
-// sensors (gyro, baro, MCU): they warm up after power-up (+9 °C over the air after an hour on USB), so the lowest
-// since power-up is kept. Looked at once a second while disarmed, so a source that comes later (ESC telemetry once
-// the battery is in) still counts; frozen at the first arm. Without any reading, the default stays.
+// The ambient before the first arm: the lowest plausible reading of the ESCs (DShot extended telemetry or ESC sensor;
+// a cold ESC was within ~1 °C of a thermistor on a 5") and of the FC board's sensors (gyro, baro, MCU). Each source
+// keeps its lowest reading since power-up: the board warms up afterwards (+9 °C over the air after an hour on USB),
+// so its first readings are the closest to the air. Looked at once a second while disarmed, so a source that comes
+// later (ESC telemetry once the battery is in) still counts; frozen at the first arm. Without any, the default stays.
 static void ambientUpdate(void)
 {
     if (rt.armedOnce || ++rt.ambientCounter < UPDATE_HZ) {
@@ -175,7 +175,7 @@ static void ambientUpdate(void)
     }
     rt.boardLowest = MIN(rt.boardLowest, board);
     rt.escLowest = MIN(rt.escLowest, escTemp);
-    const int ambient = rt.escLowest != INT16_MAX ? rt.escLowest : rt.boardLowest;
+    const int ambient = MIN(rt.escLowest, rt.boardLowest);
     if (ambient != INT16_MAX) {
         rt.tAmb = ambient;
         for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
