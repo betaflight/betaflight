@@ -1592,12 +1592,10 @@ case MSP_NAME:
         sbufWriteU8(dst, motorThermalConfig()->stator_diameter_mm);
         sbufWriteU8(dst, motorThermalConfig()->stator_height_dmm);
         sbufWriteU8(dst, motorThermalConfig()->prop_diameter_dinch);
-        sbufWriteU16(dst, motorThermalConfig()->resistance_mohm);
 #else
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
-        sbufWriteU16(dst, 0);
 #endif
         break;
 
@@ -3316,18 +3314,6 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             }
 #else
             sbufReadU8(src); sbufReadU8(src); sbufReadU8(src);
-#endif
-        }
-        if (sbufBytesRemaining(src) >= 2) {
-            // datasheet winding resistance (mOhm), 0 = derive from KV and stator size
-            const uint16_t resistance = sbufReadU16(src);
-#ifdef USE_MOTOR_THERMAL
-            if (resistance > 5000) {
-                return MSP_RESULT_ERROR;
-            }
-            motorThermalConfigMutable()->resistance_mohm = resistance;
-#else
-            UNUSED(resistance);
 #endif
         }
 #ifdef USE_MOTOR_THERMAL
