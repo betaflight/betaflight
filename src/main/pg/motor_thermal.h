@@ -29,7 +29,7 @@ typedef struct motorThermalConfig_s {
     uint8_t prop_diameter_dinch;   // 0.1 inch units, 0 = auto from stator size
     uint8_t gain_percent;          // copper-loss gain, 100 = bench reference; raise if motors run hotter than estimated
     uint8_t warning_c;             // winding temperature warning threshold, 0 = off (default)
-    uint16_t resistance_mohm;      // line-to-line winding resistance, milliohm (datasheet "internal resistance"); 0 = derive from KV and stator size
+    uint16_t resistance_mohm;      // line-to-line winding resistance, milliohm, 4-wire measured; 0 = size law from KV and stator (CLI only)
 } motorThermalConfig_t;
 
 PG_DECLARE(motorThermalConfig_t, motorThermalConfig);
