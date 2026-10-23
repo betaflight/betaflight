@@ -73,6 +73,9 @@
 #define UPDATE_HZ       100
 #define EDT_TRIES       10         // ESCs that ignore the extended telemetry request are left alone after this
 #define IDLE_AMPS_TAU_S 2.0f       // the non-motor current (FC, VTX, receiver), averaged while disarmed
+#define PROP_K_TAU_S    10.0f      // prop power per krpm³, learnt in normal flight
+#define PROP_K_MIN_AMPS 1.0f       // learn only with some motor current
+#define STALL_RPM_FRAC  0.5f       // a motor below this fraction of its no-load rpm for the command counts as held back
 #define AMBIENT_MIN_C   (-30)
 #define AMBIENT_MAX_C   45
 #define AMBIENT_DEFAULT_C 25.0f
@@ -90,6 +93,7 @@ static struct {
     float washK;                // prop wash speed per rpm, m/s
     timeUs_t lastUs;
     float idleAmps;             // battery current with the motors stopped: not motor current
+    float propK;                // prop shaft power per krpm³, W; 0 = not learnt yet
     int ambientCounter;
     int boardLowest;            // lowest FC-board reading (gyro, baro, MCU) since power-up, °C
     int escLowest;              // lowest ESC reading since power-up, °C
@@ -134,6 +138,24 @@ static void edtRequest(void)
 }
 #endif
 
+// ESC temperature from DShot extended telemetry, else from the ESC sensor; 0 = none
+static int escTemperature(int motor)
+{
+#ifdef USE_DSHOT_TELEMETRY
+    if (dshotTelemetryState.motorState[motor].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) {
+        return dshotTelemetryState.motorState[motor].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE];
+    }
+#endif
+#ifdef USE_ESC_SENSOR
+    const escSensorData_t *esc = getEscSensorData(motor);
+    if (esc && esc->dataAge < ESC_DATA_INVALID) {
+        return esc->temperature;
+    }
+#endif
+    UNUSED(motor);
+    return 0;
+}
+
 // The ambient before the first arm: the lowest plausible reading of the ESCs (DShot extended telemetry or ESC sensor;
 // a cold ESC was within ~1 °C of a thermistor on a 5") and of the FC board's sensors (gyro, baro, MCU). Each source
 // keeps its lowest reading since power-up: the board warms up afterwards (+9 °C over the air after an hour on USB),
@@ -161,17 +183,7 @@ static void ambientUpdate(void)
 #endif
     int escTemp = INT16_MAX;
     for (int i = 0; i < getMotorCount() && i < MAX_SUPPORTED_MOTORS; i++) {
-#ifdef USE_DSHOT_TELEMETRY
-        if (dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) {
-            ambientConsider(dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE], &escTemp);
-        }
-#endif
-#ifdef USE_ESC_SENSOR
-        const escSensorData_t *esc = getEscSensorData(i);
-        if (esc && esc->dataAge < ESC_DATA_INVALID) {
-            ambientConsider(esc->temperature, &escTemp);
-        }
-#endif
+        ambientConsider(escTemperature(i), &escTemp);
     }
     rt.boardLowest = MIN(rt.boardLowest, board);
     rt.escLowest = MIN(rt.escLowest, escTemp);
@@ -255,6 +267,7 @@ void motorThermalInit(void)
             node[i].ts = node[i].tc = rt.tAmb;
         }
         rt.idleAmps = 0.0f;
+        rt.propK = 0.0f;
         rt.ambientCounter = UPDATE_HZ;          // the first update looks at once
         rt.boardLowest = INT16_MAX;
         rt.escLowest = INT16_MAX;
@@ -285,22 +298,27 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
 #ifdef USE_DSHOT_TELEMETRY
     const bool haveRpm = isDshotTelemetryActive();
 #endif
-    // Battery current split across motors when per-motor ESC current is not available: by the prop power, rpm³,
-    // with rpm telemetry, else by command². The command alone gives a stalled motor (crash, blocked prop) the
-    // largest share although it takes almost none, and starves the motors that are working. The current with
-    // the motors stopped (FC, VTX, receiver) is not motor current and is taken off first.
-    float cmdSqSum = 0.0f, rpmCubeSum = 0.0f;
-    float cmdFrac[MAX_SUPPORTED_MOTORS], rpmOf[MAX_SUPPORTED_MOTORS];
+    // Battery current split across motors when per-motor ESC current is not available. With rpm telemetry each
+    // motor gets the current its prop takes, propK·rpm³/Vbat, with propK learnt in normal flight; what the props do
+    // not explain goes to the motors held back below their rpm for the command (stalled in a crash, a blocked prop),
+    // which take current without turning it into thrust. Before propK is learnt: by rpm³. Without telemetry: by
+    // command². The command alone gives a stalled motor the largest share whether it takes current or not.
+    float cmdSqSum = 0.0f, rpmCubeSum = 0.0f, heldSum = 0.0f;
+    float cmdFrac[MAX_SUPPORTED_MOTORS], rpmOf[MAX_SUPPORTED_MOTORS], held[MAX_SUPPORTED_MOTORS];
     for (int i = 0; i < motorCount && i < MAX_SUPPORTED_MOTORS; i++) {
         cmdFrac[i] = constrainf((motorConvertToExternal(motor[i]) - 1000) * 0.001f, 0.0f, 1.0f);
         cmdSqSum += sq(cmdFrac[i]);
-        rpmOf[i] = cmdFrac[i] * maxRpm;                             // no telemetry: no-load estimate
+        const float freeRpm = cmdFrac[i] * maxRpm;                  // no-load estimate for the command
+        rpmOf[i] = freeRpm;
 #ifdef USE_DSHOT_TELEMETRY
         if (haveRpm) {
             rpmOf[i] = getDshotRpm(i);
         }
 #endif
         rpmCubeSum += power3(rpmOf[i] * 0.001f);
+        // how far the motor is held back: 0 when it turns as the command asks, 1 when stalled at that command
+        held[i] = freeRpm > 1.0f ? sq(cmdFrac[i]) * constrainf(1.0f - rpmOf[i] / (STALL_RPM_FRAC * freeRpm), 0.0f, 1.0f) : 0.0f;
+        heldSum += held[i];
     }
 #ifdef USE_DSHOT_TELEMETRY
     const bool splitByRpm = haveRpm && rpmCubeSum > 0.0f;
@@ -312,6 +330,16 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
         rt.idleAmps += (batteryAmps - rt.idleAmps) * MIN(1.0f, dt / IDLE_AMPS_TAU_S);
     }
     const float motorsAmps = armed ? MAX(batteryAmps - rt.idleAmps, 0.0f) : 0.0f;
+    if (splitByRpm && heldSum == 0.0f && motorsAmps > PROP_K_MIN_AMPS) {
+        // every motor turns as commanded: the motor current is all prop load
+        const float sample = motorsAmps * vbat / rpmCubeSum;
+        rt.propK = rt.propK > 0.0f ? rt.propK + (sample - rt.propK) * MIN(1.0f, dt / PROP_K_TAU_S) : sample;
+    }
+    float propAmpsSum = 0.0f;
+    if (splitByRpm && rt.propK > 0.0f) {
+        propAmpsSum = rt.propK * rpmCubeSum / MAX(vbat, 1.0f);
+    }
+    const float heldAmps = MAX(motorsAmps - propAmpsSum, 0.0f);     // current the props do not explain
     float vCraftSq = 0.0f;
 #ifdef USE_GPS
     if (STATE(GPS_FIX)) {
@@ -334,7 +362,14 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
             motorAmps = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT];
         } else
 #endif
-        if (splitByRpm) {
+        if (propAmpsSum > 0.0f) {
+            const float propAmps = rt.propK * power3(rpm * 0.001f) / MAX(vbat, 1.0f);
+            if (heldSum > 0.0f) {
+                motorAmps = MIN(propAmps, motorsAmps * propAmps / propAmpsSum) + heldAmps * held[i] / heldSum;
+            } else {
+                motorAmps = motorsAmps * propAmps / propAmpsSum;    // nothing held back: all of it is prop load
+            }
+        } else if (splitByRpm) {
             motorAmps = motorsAmps * power3(rpm * 0.001f) / rpmCubeSum;
         } else if (cmdSqSum > 0.0f) {
             motorAmps = motorsAmps * sq(cmdFrac[i]) / cmdSqSum;
@@ -349,6 +384,7 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
         s->tc += (pIron + q - (s->tc - rt.tAmb) * air / rt.rca) * dt * rt.invCc;
         if (i < 4) {
             DEBUG_SET(DEBUG_MOTOR_THERMAL, i, lrintf(10.0f * s->ts));   //!< [index:0..3] Motor {1|2|3|4} Estimated Winding Temperature [unit:0.1degC]
+            DEBUG_SET(DEBUG_MOTOR_THERMAL, 4 + i, escTemperature(i));    //!< [index:4..7] ESC {1|2|3|4} Temperature [unit:degC]
         }
     }
 }
