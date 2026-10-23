@@ -28,3 +28,4 @@
 void motorNoiseInit(float looptimeUs);
 void motorNoiseUpdate(const float *motorOutput, int motorCount);
 float motorNoiseRms(int motor, int band);   // external (1000..2000) command units
+float motorNoiseMsq(int motor, int band);   // mean square of the above, no sqrtf

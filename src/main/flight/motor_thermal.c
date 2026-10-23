@@ -371,7 +371,7 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
         const float rpm = rpmOf[i];
         const float air = coreCooling(rpm, vCraftSq);
         const float wash = windingCooling(rpm);
-        const float pCu = kCu * sq(motorNoiseRms(i, 0));
+        const float pCu = kCu * motorNoiseMsq(i, 0);
         const float pIron = rt.aIron * sq(rpm);
         // torque current copper loss: phase current ≈ bus current / duty, ripple energy (already in pCu) removed
         float motorAmps = 0.0f;
