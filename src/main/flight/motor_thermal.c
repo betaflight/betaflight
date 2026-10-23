@@ -282,14 +282,31 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
     // same load derating as motorEstimateMaxRpm(); it turns negative past KV·Vbat ≈ 173k (e.g. 21000 KV on 2S)
     const float maxRpm = MAX(unloadedMaxRpm * (-5.44e-6f * unloadedMaxRpm + 0.944f), 0.0f);
     const float kCu = rt.kCu * sq(vbat);
-    // battery current split across motors by command² when per-motor ESC current is not available; the
-    // current with the motors stopped (FC, VTX, receiver) is not motor current and is taken off first
-    float cmdSqSum = 0.0f;
-    float cmdFrac[MAX_SUPPORTED_MOTORS];
+#ifdef USE_DSHOT_TELEMETRY
+    const bool haveRpm = isDshotTelemetryActive();
+#endif
+    // Battery current split across motors when per-motor ESC current is not available: by the prop power, rpm³,
+    // with rpm telemetry, else by command². The command alone gives a stalled motor (crash, blocked prop) the
+    // largest share although it takes almost none, and starves the motors that are working. The current with
+    // the motors stopped (FC, VTX, receiver) is not motor current and is taken off first.
+    float cmdSqSum = 0.0f, rpmCubeSum = 0.0f;
+    float cmdFrac[MAX_SUPPORTED_MOTORS], rpmOf[MAX_SUPPORTED_MOTORS];
     for (int i = 0; i < motorCount && i < MAX_SUPPORTED_MOTORS; i++) {
         cmdFrac[i] = constrainf((motorConvertToExternal(motor[i]) - 1000) * 0.001f, 0.0f, 1.0f);
         cmdSqSum += sq(cmdFrac[i]);
+        rpmOf[i] = cmdFrac[i] * maxRpm;                             // no telemetry: no-load estimate
+#ifdef USE_DSHOT_TELEMETRY
+        if (haveRpm) {
+            rpmOf[i] = getDshotRpm(i);
+        }
+#endif
+        rpmCubeSum += power3(rpmOf[i] * 0.001f);
     }
+#ifdef USE_DSHOT_TELEMETRY
+    const bool splitByRpm = haveRpm && rpmCubeSum > 0.0f;
+#else
+    const bool splitByRpm = false;
+#endif
     const float batteryAmps = getAmperage() * 0.01f;
     if (!armed && cmdSqSum == 0.0f) {       // learnt only with every motor stopped: not during a disarmed motor test
         rt.idleAmps += (batteryAmps - rt.idleAmps) * MIN(1.0f, dt / IDLE_AMPS_TAU_S);
@@ -304,16 +321,8 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
     if (isAltitudeAvailable()) {
         vCraftSq += sq(getAltitudeDerivative() * 0.01f);         // climb and descent: baro (and GPS) altitude rate, cm/s
     }
-#ifdef USE_DSHOT_TELEMETRY
-    const bool haveRpm = isDshotTelemetryActive();
-#endif
     for (int i = 0; i < motorCount && i < MAX_SUPPORTED_MOTORS; i++) {
-        float rpm = cmdFrac[i] * maxRpm;                            // no telemetry: no-load estimate
-#ifdef USE_DSHOT_TELEMETRY
-        if (haveRpm) {
-            rpm = getDshotRpm(i);
-        }
-#endif
+        const float rpm = rpmOf[i];
         const float air = coreCooling(rpm, vCraftSq);
         const float wash = windingCooling(rpm);
         const float pCu = kCu * sq(motorNoiseRms(i, 0));
@@ -325,7 +334,9 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
             motorAmps = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT];
         } else
 #endif
-        if (cmdSqSum > 0.0f) {
+        if (splitByRpm) {
+            motorAmps = motorsAmps * power3(rpm * 0.001f) / rpmCubeSum;
+        } else if (cmdSqSum > 0.0f) {
             motorAmps = motorsAmps * sq(cmdFrac[i]) / cmdSqSum;
         }
         const float iLoad = MAX(motorAmps - pCu / MAX(vbat, 1.0f), 0.0f);
