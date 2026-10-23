@@ -22,10 +22,9 @@
 /*
  * NavQ95 board default configuration (targetConfiguration).
  *
- * Config storage is CONFIG_IN_RAM (volatile), so the SBUS receiver is set up
- * here as a firmware default rather than via CLI + save. targetConfiguration()
- * is called from resetConfig() on every boot. RC/SBUS is on LPUART2 (Betaflight
- * UART2): we enable FEATURE_RX_SERIAL and select the SBUS provider (inverted).
+ * targetConfiguration() runs from resetConfig() on every boot and seeds the
+ * SBUS receiver as a firmware default: FEATURE_RX_SERIAL + SBUS provider bound
+ * to UART5 (== LPUART5, the RC/SBUS pads).
  */
 
 #include <stdint.h>
@@ -36,26 +35,32 @@
 #include "config/config.h"
 #include "config/feature.h"
 
+#include "drivers/serial.h"
+
 #include "pg/rx.h"
 
+#include "io/serial.h"
 #include "rx/rx.h"
 
 void targetConfiguration(void)
 {
-    /* SBUS needs FEATURE_RX_SERIAL. featureConfigSet() writes the config read at
-     * boot; featureEnableImmediate() sets the live mask too. */
     featureConfigSet(FEATURE_RX_SERIAL);
     featureEnableImmediate(FEATURE_RX_SERIAL);
 
     rxConfigMutable()->serialrx_provider = SERIALRX_SBUS;
-    rxConfigMutable()->serialrx_inverted = 1;   /* SBUS idles high / is inverted */
 
     /*
-     * The UART2 -> FUNCTION_RX_SERIAL port mapping is not set here (the
-     * serialFindPortConfigurationMutable finder / serialPortConfig_t layout
-     * differs across Betaflight versions). Assign it over the CLI instead:
-     *     serial 1 64 115200 57600 0 115200   (UART2 -> FUNCTION_RX_SERIAL)
-     *     set serialrx_provider = SBUS
-     *     set serialrx_inverted = ON
+     * serialrx_inverted LEFT OFF (0): sbus.c inverts this flag, so OFF applies
+     * the STANDARD SBUS inversion (SERIAL_INVERTED), which the LPUART5 framing
+     * sweep proved the NavQ95 line needs (8E2 inverted). ON would open the port
+     * non-inverted.
      */
+    rxConfigMutable()->serialrx_inverted = 0;
+
+    /*
+     * Bind serial RX to UART5. This tree derives the per-port FUNCTION_RX_SERIAL
+     * mapping from rxConfig()->rx_uart (serialSynthesizeFunctionMask), so a
+     * single field assigns SBUS to the port.
+     */
+    rxConfigMutable()->rx_uart = SERIAL_PORT_UART5;
 }

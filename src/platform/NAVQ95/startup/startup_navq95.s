@@ -67,7 +67,7 @@ __isr_vector:
     .long   Default_Handler             /* ext 17 */
     .long   Default_Handler             /* ext 18 */
     .long   Default_Handler             /* ext 19 (LPUART1) */
-    .long   USART2_IRQHandler           /* ext 20 (LPUART2 — RC / SBUS, generic core) */
+    .long   LPUART2_IRQHandler          /* ext 20 (LPUART2 — console, platform_stubs) */
     .long   Default_Handler             /* ext 21 */
     .long   Default_Handler             /* ext 22 */
     .long   Default_Handler             /* ext 23 */
@@ -113,7 +113,7 @@ __isr_vector:
     .long   Default_Handler             /* ext 63 */
     .long   Default_Handler             /* ext 64 (LPUART3) */
     .long   Default_Handler             /* ext 65 (LPUART4) */
-    .long   LPUART5_IRQHandler          /* ext 66 (LPUART5 — console)       */
+    .long   UART5_IRQHandler            /* ext 66 (LPUART5 — RC/SBUS, generic core)*/
     .long   Default_Handler             /* ext 67 (LPUART6) */
     .long   UART7_IRQHandler            /* ext 68 (LPUART7 — UART7 port)     */
     .long   Default_Handler             /* ext 69 (LPUART8) */
@@ -151,6 +151,19 @@ Reset_Handler:
 .Lcopy_check:
     cmp     r1, r2
     blt     .Lcopy_loop
+
+    /* Copy .ocram_text: flash (LMA) -> OCRAM (VMA). The FlexSPI NOR-write
+     * routines run from OCRAM so they do not fetch from the NOR being erased. */
+    ldr     r0, =_ocram_text_load
+    ldr     r1, =_ocram_text_start
+    ldr     r2, =_ocram_text_end
+    b       .Locram_copy_check
+.Locram_copy_loop:
+    ldr     r3, [r0], #4
+    str     r3, [r1], #4
+.Locram_copy_check:
+    cmp     r1, r2
+    blt     .Locram_copy_loop
 
     /* Zero .bss */
     ldr     r0, =_bss_start
@@ -205,10 +218,10 @@ Default_Handler:
     .thumb_set PendSV_Handler, Default_Handler
     .weak   SysTick_Handler
     .thumb_set SysTick_Handler, Default_Handler
-    .weak   USART2_IRQHandler
-    .thumb_set USART2_IRQHandler, Default_Handler
-    .weak   LPUART5_IRQHandler
-    .thumb_set LPUART5_IRQHandler, Default_Handler
+    .weak   LPUART2_IRQHandler
+    .thumb_set LPUART2_IRQHandler, Default_Handler
+    .weak   UART5_IRQHandler
+    .thumb_set UART5_IRQHandler, Default_Handler
     .weak   UART7_IRQHandler
     .thumb_set UART7_IRQHandler, Default_Handler
 

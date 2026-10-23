@@ -109,12 +109,19 @@ STARTUP_SRC     = NAVQ95/startup/startup_navq95.s
 # (see IMXRT.mk / STM32_COMMON.mk). The common SPI core drivers/bus_spi.c IS added
 # by source.mk when USE_SPI is defined.
 # NAVQ95/config_navq95.c implements targetConfiguration() (SBUS board defaults).
+# NAVQ95/sdio_usdhc_navq95.c is the i.MX 95 uSDHC SD-card driver (USE_SDCARD_SDIO;
+# provides the SD_* HAL that drivers/sdcard_sdio_baremetal.c calls; ADMA2 polled).
 MCU_COMMON_SRC  = \
             NAVQ95/platform_stubs.c \
             NAVQ95/system.c \
             NAVQ95/io_navq95.c \
             NAVQ95/serial_uart_navq95.c \
             NAVQ95/config_navq95.c \
+            NAVQ95/sdio_usdhc_navq95.c \
+            NAVQ95/pwm_navq95.c \
+            NAVQ95/flexspi_nor_imx95.c \
+            NAVQ95/flexspi_nor_selftest.c \
+            NAVQ95/config_flash_navq95.c \
             NAVQ95/bus_i2c_navq95.c \
             drivers/bus_spi_config.c \
             drivers/serial_pinconfig.c
@@ -141,15 +148,15 @@ DEVICE_STDPERIPH_SRC :=
 # USE_FLASH_CHIP from the classic-build USE_FLASH_M25P16, which makes
 # bus_spi_config.c's spiPreinit() call flashPreinit() — so flash.c must build or
 # the link fails. With no flash chip on the bus, flashDeviceInit() just returns
-# haveFlash=false. SD card stays excluded (USE_SDCARD_SPI is never defined, so the
-# sdcard_preinit call is dead).
+# haveFlash=false.
+#
+# SD card: USE_SDCARD + USE_SDCARD_SDIO build the SDIO path — so sdcard.c,
+# sdcard_sdio_baremetal.c (the SD_* HAL glue), sdcard_standard.c, and the
+# AsyncFatFS stack (asyncfatfs.c + fat_standard.c) are NOT excluded. Only the
+# SPI-mode SD backend (sdcard_spi.c) is excluded (USE_SDCARD_SPI is not defined).
+# The platform SD_* HAL lives in NAVQ95/sdio_usdhc_navq95.c.
 MCU_EXCLUDES += \
-            drivers/sdcard.c \
-            drivers/sdcard_spi.c \
-            drivers/sdcard_sdio_baremetal.c \
-            drivers/sdcard_standard.c \
-            io/asyncfatfs/asyncfatfs.c \
-            io/asyncfatfs/fat_standard.c
+            drivers/sdcard_spi.c
 
 # USB mass-storage (MSC_SRC) is likewise force-added and pulls in the same
 # storage backends + USB stack.

@@ -119,21 +119,25 @@ static inline volatile uint32_t *lpReg(const usartResource_t *reg, uint32_t off)
 #define IOMUXC_PAD_UART7_TXVAL (0x1Eu >> 1)
 #define IOMUXC_PAD_UART7_RXVAL (0x1200u >> 1)
 
-/* ── LPUART2 (RC / SBUS) ─────────────────────────────────────────────────────
- * UART2 == LPUART2 (base 0x44390000). Pads are the DEDICATED UART2_TXD/RXD at
- * ALT0 (no SELECT_INPUT/daisy — unlike the shared LPUART7 pads). The SM leaves
- * LPUART2's clock running at boot (24 MHz XTAL), so no SCMI clock-enable is
- * needed. SBUS framing (8E2 + inverted RX) is applied in uartReconfigure() from
- * the port options; everything else matches the LPUART7 path. */
-#define LPUART2_BASE          0x44390000u
-#define IOMUXC_MUX_UART2_TX   0x443C01DCu   /* UART2_TXD, ALT0 */
-#define IOMUXC_MUX_UART2_RX   0x443C01D8u   /* UART2_RXD, ALT0 (+SION) */
-#define IOMUXC_PAD_UART2_TX   0x443C03E0u
-#define IOMUXC_PAD_UART2_RX   0x443C03DCu
-#define LPUART2_ALT_MODE      0x0u
+/* ── LPUART5 (RC / SBUS) — DIAGNOSTIC ────────────────────────────────────────
+ * UART5 == LPUART5 (base 0x42590000). SHARED GPIO_IO00/IO01 pads at ALT5 that
+ * REQUIRE the SELECT_INPUT/daisy register on BOTH TX and RX (these are the
+ * HW-proven console pads). The SM does NOT clock LPUART5 at boot, so an SCMI
+ * clock-enable (root 103) is issued in serialUART(). SBUS framing (8E2 +
+ * inverted RX) is applied in uartReconfigure() from the port options. */
+#define LPUART5_BASE          0x42590000u
+#define LPUART5_CLK_ROOT      103u
+#define IOMUXC_MUX_UART5_TX   0x443C0010u   /* GPIO_IO00, ALT5           */
+#define IOMUXC_MUX_UART5_RX   0x443C0014u   /* GPIO_IO01, ALT5 (+SION)   */
+#define IOMUXC_PAD_UART5_TX   0x443C0214u
+#define IOMUXC_PAD_UART5_RX   0x443C0218u
+#define IOMUXC_DSY_UART5_TX   0x443C0574u   /* LPUART5_TX SELECT_INPUT   */
+#define IOMUXC_DSY_UART5_RX   0x443C0570u   /* LPUART5_RX SELECT_INPUT   */
+#define LPUART5_ALT_MODE      0x5u
+#define LPUART5_DAISY         0x1u
 /* TX raw 0x1E -> 0x0F; RX raw 0x1200 (PU|HYS) -> 0x0900 (idle-high line reads). */
-#define IOMUXC_PAD_UART2_TXVAL (0x1Eu >> 1)
-#define IOMUXC_PAD_UART2_RXVAL (0x1200u >> 1)
+#define IOMUXC_PAD_UART5_TXVAL (0x1Eu >> 1)
+#define IOMUXC_PAD_UART5_RXVAL (0x1200u >> 1)
 
 /* ── SCMI-over-MU5 transport (minimal, polled) — same channel the console uses.
  * The SM owns side-B and leaves the channel FREE at boot. */
@@ -283,14 +287,15 @@ static int navq95_lpuart7_iomux(void)
     return rxs ? rxs : txs;
 }
 
-/* Mux both LPUART2 pads via the SM. DEDICATED UART2_TXD/RXD pads at ALT0 — no
- * SELECT_INPUT/daisy (dsyReg = 0). RX pad gets SION so the input path is forced. */
-static int navq95_lpuart2_iomux(void)
+/* Mux both LPUART5 pads via the SM. SHARED GPIO_IO00/IO01 at ALT5 — BOTH carry a
+ * SELECT_INPUT/daisy (dsyReg != 0). RX pad gets SION + PU|HYS so the idle-high
+ * line reads. */
+static int navq95_lpuart5_iomux(void)
 {
-    int rxs = navq95_scmi_pinmux(IOMUXC_MUX_UART2_RX, LPUART2_ALT_MODE, 1u,
-                                 IOMUXC_PAD_UART2_RXVAL, 0u, 0u);
-    int txs = navq95_scmi_pinmux(IOMUXC_MUX_UART2_TX, LPUART2_ALT_MODE, 0u,
-                                 IOMUXC_PAD_UART2_TXVAL, 0u, 0u);
+    int rxs = navq95_scmi_pinmux(IOMUXC_MUX_UART5_RX, LPUART5_ALT_MODE, 1u,
+                                 IOMUXC_PAD_UART5_RXVAL, IOMUXC_DSY_UART5_RX, LPUART5_DAISY);
+    int txs = navq95_scmi_pinmux(IOMUXC_MUX_UART5_TX, LPUART5_ALT_MODE, 0u,
+                                 IOMUXC_PAD_UART5_TXVAL, IOMUXC_DSY_UART5_TX, LPUART5_DAISY);
     return rxs ? rxs : txs;
 }
 
@@ -382,20 +387,25 @@ static void navq95_lpuart_init(const usartResource_t *reg, uint32_t clkHz, uint3
  * (UARTDEV_7, MSP). Rows are matched by .identifier (order is not significant).
  * ════════════════════════════════════════════════════════════════════════════ */
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
-#ifdef USE_UART2
+#ifdef USE_UART5
     {
-        .identifier = SERIAL_PORT_UART2,
-        .reg        = (usartResource_t *)LPUART2_BASE,
-        /* Dedicated UART2_RXD/TXD pads (ALT0). UART2_RX/TX_PIN are NONE in
-         * target.h; serialUART() muxes the pads directly over SCMI, so the pin
-         * tags here only need to be non-conflicting placeholders. */
-        .rxPins     = { { DEFIO_TAG_E(NONE) } },
-        .txPins     = { { DEFIO_TAG_E(NONE) } },
-        .irqn       = LPUART2_IRQn,
-        .txBuffer   = uart2TxBuffer,
-        .rxBuffer   = uart2RxBuffer,
-        .txBufferSize = sizeof(uart2TxBuffer),
-        .rxBufferSize = sizeof(uart2RxBuffer),
+        .identifier = SERIAL_PORT_UART5,
+        .reg        = (usartResource_t *)LPUART5_BASE,
+        /* Shared GPIO_IO00/IO01 pads (ALT5 + daisy). The REAL pads are muxed over
+         * SCMI in serialUART() (navq95_lpuart5_iomux); they have NO RGPIO IO-HAL
+         * tag. BUT the generic core's uartSanitizeMode() strips MODE_RX/MODE_TX
+         * when rx.pin/tx.pin are 0, disabling the SBUS receiver. So we give this
+         * row NON-NONE PLACEHOLDER RGPIO tags (PA6/PA7, otherwise unused) so
+         * rx.pin/tx.pin are non-zero and the mode survives. serialUART() SKIPS
+         * IOInit for UART5, so these placeholder RGPIO pins are never driven —
+         * only the LPUART5 pads over SCMI. */
+        .rxPins     = { { DEFIO_TAG_E(PA6) } },
+        .txPins     = { { DEFIO_TAG_E(PA7) } },
+        .irqn       = LPUART5_IRQn,
+        .txBuffer   = uart5TxBuffer,
+        .rxBuffer   = uart5RxBuffer,
+        .txBufferSize = sizeof(uart5TxBuffer),
+        .rxBufferSize = sizeof(uart5RxBuffer),
     },
 #endif
 #ifdef USE_UART7
@@ -433,12 +443,17 @@ void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
             continue;
         }
 
-        /* Dedicated-pad UART (both hardware pin tags are NONE, e.g. UART2 ==
-         * LPUART2 on the fixed UART2_RXD/TXD pads): there is nothing to match
-         * against the serialPinConfig, so bind ->hardware unconditionally. The
-         * pads are muxed over SCMI in serialUART(). */
-        if (!hardware->rxPins[0].pin && !hardware->txPins[0].pin) {
+        /* SCMI-muxed UART (UART5 == LPUART5 on the shared GPIO_IO00/IO01 pads):
+         * the real pads are muxed over SCMI in serialUART(), so there is nothing
+         * to match against the serialPinConfig. Bind ->hardware AND copy the
+         * (placeholder PA6/PA7) pin records into rx/tx so uartSanitizeMode() in
+         * the generic core keeps MODE_RX/MODE_TX (it strips them when rx.pin ==
+         * 0). serialUART() skips IOInit for UART5 so these RGPIO pins are never
+         * driven. Identify the SCMI-muxed port by its identifier. */
+        if (identifier == SERIAL_PORT_UART5) {
             uartdev->hardware = hardware;
+            uartdev->rx = hardware->rxPins[0];
+            uartdev->tx = hardware->txPins[0];
             continue;
         }
 
@@ -485,22 +500,30 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
     const int ownerIndex = serialOwnerIndex(identifier);
     const resourceOwner_e ownerTxRx = serialOwnerTxRx(identifier);   /* rx = +1 */
 
-    /* UART7 pins are RGPIO IO tags (claim them via the IO HAL); UART2 uses the
-     * dedicated UART2_RXD/TXD pads with no IO-HAL record (tags are NONE). */
-    IO_t txIO = IOGetByTag(uartdev->tx.pin);
-    IO_t rxIO = IOGetByTag(uartdev->rx.pin);
-    if (txIO) {
-        IOInit(txIO, ownerTxRx, ownerIndex);
-    }
-    if (rxIO) {
-        IOInit(rxIO, ownerTxRx + 1, ownerIndex);
+    /* UART7 pins are RGPIO IO tags (claim them via the IO HAL); UART5 uses the
+     * shared GPIO_IO00/IO01 pads with NO IO-HAL record. UART5's rx/tx carry
+     * PLACEHOLDER tags (PA6/PA7) only so the generic core keeps MODE_RX — they
+     * must NOT be driven as GPIO, so skip IOInit for UART5 (its real pads are
+     * muxed over SCMI below). */
+    if (identifier != SERIAL_PORT_UART5) {
+        IO_t txIO = IOGetByTag(uartdev->tx.pin);
+        IO_t rxIO = IOGetByTag(uartdev->rx.pin);
+        if (txIO) {
+            IOInit(txIO, ownerTxRx, ownerIndex);
+        }
+        if (rxIO) {
+            IOInit(rxIO, ownerTxRx + 1, ownerIndex);
+        }
     }
 
-    /* Pad mux over SCMI, per UART:
-     *   UART7 : shared GPIO_IO08/09 pads, ALT5 + RX SELECT_INPUT daisy.
-     *   UART2 : dedicated UART2_RXD/TXD pads, ALT0 (no daisy). */
-    if (identifier == SERIAL_PORT_UART2) {
-        (void)navq95_lpuart2_iomux();
+    /* Pad mux + clock over SCMI, per UART:
+     *   UART7 : shared GPIO_IO08/09 pads, ALT5 + RX daisy (SM clocks it at boot).
+     *   UART5 : shared GPIO_IO00/IO01 pads, ALT5 + daisy on both; the SM does
+     *           NOT clock LPUART5 at boot, so enable its root (103) over SCMI. */
+    if (identifier == SERIAL_PORT_UART5) {
+        extern int navq95_scmi_clock_enable_ex(uint32_t clockRootId);
+        (void)navq95_scmi_clock_enable_ex(LPUART5_CLK_ROOT);
+        (void)navq95_lpuart5_iomux();
     } else {
         (void)navq95_lpuart7_iomux();
     }

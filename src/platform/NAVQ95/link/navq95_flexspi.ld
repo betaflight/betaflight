@@ -51,6 +51,20 @@ MEMORY
 _stack_top = ORIGIN(m_sram) + LENGTH(m_sram);   /* top of SRAM */
 _estack    = _stack_top;
 
+/* ── Config partition on the FlexSPI NOR (CONFIG_IN_FLASH persistent `save`) ──
+ * The flexspi_nor_imx95.c writer addresses the NOR by its PRIMARY-window byte
+ * offset (IPCR0 = address - FlexSPI_AMBA_BASE, FlexSPI_AMBA_BASE = 0x28000000),
+ * so these are PRIMARY-window addresses (0x28xxxxxx), NOT the 0x02xxxxxx XIP
+ * alias. 14 MB into the 64 MB NOR, well clear of the ~8 MB app slot at
+ * 0x28020000. EEPROM_SIZE = 8 KB = TWO 4 KB sectors. Under CONFIG_IN_FLASH,
+ * common_post.h declares __config_start/__config_end as real linker symbols
+ * (no RAM eepromData[] collision — that redefine is only for CONFIG_IN_RAM/
+ * SDCARD/MM-flash), and config is read directly from this XIP-mapped NOR range.
+ * Keep EEPROM_SIZE (target.h) == (__config_end - __config_start). The writer's
+ * range guard also permits an equal-size backup region immediately after. */
+__config_start = 0x28E20000;
+__config_end   = 0x28E22000;   /* 8 KB (2 x 4 KB sectors); backup = 0x28E22000.. */
+
 SECTIONS
 {
     /* ── MCUboot header placeholder (imgtool overwrites this 0x800 region) ── */
@@ -151,6 +165,21 @@ SECTIONS
         _data_end = .;
         __data_end__ = .;
     } > m_sram AT > m_flash
+
+    /* ── NOR-write code: VMA in OCRAM, LMA in flash (copied at startup) ────
+     * flexspi_nor_imx95.c erase/program routines (OCRAM_CODE) must NOT fetch
+     * from the NOR they are erasing, so they execute from OCRAM. Reset copies
+     * .ocram_text (LMA in flash -> VMA in OCRAM) alongside .data. */
+    _ocram_text_load = LOADADDR(.ocram_text);
+    .ocram_text :
+    {
+        . = ALIGN(4);
+        _ocram_text_start = .;
+        *(.ocram_text)
+        *(.ocram_text*)
+        . = ALIGN(4);
+        _ocram_text_end = .;
+    } > m_ocram AT > m_flash
 
     /* ── BSS (zeroed at startup) in SRAM ───────────────────────────────── */
     .bss (NOLOAD) :
