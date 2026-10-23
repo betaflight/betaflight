@@ -79,12 +79,17 @@ NOINLINE void motorNoiseUpdate(const float *motorOutput, int motorCount)
     }
 }
 
-float motorNoiseRms(int motor, int band)
+float motorNoiseMsq(int motor, int band)
 {
     if (motor < 0 || motor >= MAX_SUPPORTED_MOTORS || band < 0 || band >= MOTOR_NOISE_BANDS) {
         return 0.0f;
     }
-    return sqrtf(state[motor].msq[band]);
+    return state[motor].msq[band];
+}
+
+float motorNoiseRms(int motor, int band)
+{
+    return sqrtf(motorNoiseMsq(motor, band));
 }
 
 #endif // USE_MOTOR_NOISE
