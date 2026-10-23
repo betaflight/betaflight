@@ -178,6 +178,7 @@ static const void *cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
 
     flashfsEraseCompletely();
     while (!flashfsIsReady()) {
+        flashfsEraseAsync();
         //TODO: Make this non-blocking!
         delay(100);
     }
