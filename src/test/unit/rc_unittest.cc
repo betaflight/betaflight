@@ -250,6 +250,21 @@ TEST_F(FeedforwardStallTest, NoStaleFeedforwardWhenFramesComeBack)
     EXPECT_LT(fabsf(getFeedforward(FD_PITCH)), 10.0f);
 }
 
+TEST_F(FeedforwardStallTest, RxLossUpdateWithoutAFrameKeepsFeedforwardDropped)
+{
+    rcData[PITCH] = 1580;
+    frame();
+    loopWithoutFrame(70000);
+    ASSERT_FLOAT_EQ(0.0f, getFeedforward(FD_PITCH));
+
+    // rx loss processing at 150 ms: the channels change (failsafe values) but no frame arrived
+    rcData[PITCH] = 1500;
+    testTimeUs = rxRuntimeState.lastRcFrameTimeUs + 150000;
+    updateRcCommands();
+    processRcCommand();
+    EXPECT_FLOAT_EQ(0.0f, getFeedforward(FD_PITCH));
+}
+
 TEST_F(FeedforwardStallTest, SmoothedFeedforwardDecaysWhenFramesStop)
 {
     rxConfigMutable()->rc_smoothing = 1;

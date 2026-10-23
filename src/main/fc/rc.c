@@ -565,11 +565,12 @@ static FAST_CODE_NOINLINE void resetStaleFeedforward(timeUs_t currentTimeUs)
 {
     static bool isStale = false;
 
-    if (isRxDataNew || !lastRxTimeUs) {
+    if (!lastRxTimeUs || cmpTimeUs(currentTimeUs, lastRxTimeUs) <= RX_INTERVAL_MAX_US) {
         isStale = false;
         return;
     }
-    if (isStale || cmpTimeUs(currentTimeUs, lastRxTimeUs) <= RX_INTERVAL_MAX_US) {
+    // past the limit an rc update comes from rx loss processing, not from a frame: drop what it computed too
+    if (isStale && !isRxDataNew) {
         return;
     }
     isStale = true;
