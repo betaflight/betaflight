@@ -1261,7 +1261,7 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
     // carries this leg's approach on instead.
     if (haveNext && fp.legApproachDecelMps2 <= 0.0f && !flownAsCarrotLeg(nextWp, nextIndex)) {
         const vector2_t outVec = { .x = next.x - wp.x, .y = next.y - wp.y };
-        const float handOverM = sqrtf(sq(vector2Norm(&outVec)) + sq(arriveM));
+        const float handOverM = sqrtf(vector2NormSq(&outVec) + sq(arriveM));
         cornerSpeedMps = fminf(cornerSpeedMps, sqrtf(2.0f * FP_APPROACH_DECEL_MPS2 * handOverM));
     }
 
