@@ -19,9 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * target.h — NavQ95 (NXP i.MX 95, Cortex-M7) base target.
- */
+/* target.h — NavQ95 (NXP i.MX 95, Cortex-M7) base target. */
 
 #pragma once
 
@@ -38,109 +36,104 @@
 #endif
 
 /*
- * Configuration storage in RAM (volatile). On NavQ95 the FlexSPI boot NOR is
- * owned by the System Manager/U-Boot (the M7 cannot drive the FlexSPI
- * controller to erase/program it), so a direct-M7 flash config backend does not
- * work. Board RX/sensor defaults come up every boot via targetConfiguration()
- * (config_navq95.c). The real systemReset() (SCMI warm reset, platform_stubs.c)
- * is implemented — `save` reboots cleanly, it just does not persist across
- * power cycles yet.
+ * Configuration storage in the FlexSPI boot NOR (persistent across power
+ * cycles). CONFIG_IN_FLASH is platform-owned via config_streamer_impl.h:
+ * NAVQ95/config_flash_navq95.c implements configUnlock/Lock/ClearFlags/WriteWord
+ * on the FlexSPI NOR driver; reads come from the memory-mapped NOR
+ * (__config_start). Streamer word = one 256-byte NOR page; EEPROM_SIZE 8192 =
+ * 2 x 4 KB sectors (see navq95_flexspi.ld __config_start/__config_end).
  */
-#define CONFIG_IN_RAM
-#define EEPROM_SIZE             8192
+#define CONFIG_IN_FLASH
+#define EEPROM_SIZE                        8192
+#define FLASH_CONFIG_STREAMER_BUFFER_SIZE  256
+#define FLASH_CONFIG_BUFFER_TYPE           uint32_t
 
 /*
- * Expose one logical serial port (USB VCP) so SERIAL_PORT_COUNT >= 1. The port
- * is backed by the LPUART5 console in platform_stubs.c and carries the CLI.
- * (The console was moved off LPUART2 to LPUART5 so RC/SBUS can own LPUART2's
- * dedicated, HW-proven pads.)
+ * FlexSPI NOR driver (MX25UM51345GXDI00 octal NOR, NAVQ95/flexspi_nor_imx95.c).
+ * NAVQ95_USE_FLEXSPI_NOR gates our self-contained erase/program driver (required
+ * by CONFIG_IN_FLASH); we do NOT use USE_FLASH_MEMORY_MAPPED (STM32-OctoSPI
+ * coupled). NAVQ95_NOR_PROBE = optional non-fatal boot NOR health probe.
  */
+#define NAVQ95_USE_FLEXSPI_NOR
+/* #define NAVQ95_NOR_PROBE */   /* boot NOR probe prints — off for release */
+
+/* USB VCP logical port (CLI), backed by the LPUART5 console. */
 #define USE_VCP
 
 /*
- * Generic serial UARTs, via Betaflight's drivers/serial_uart.c core plus the
- * i.MX 95 platform layer in NAVQ95/serial_uart_navq95.c (uartHardware[] table).
- * On i.MX 95 every UART is an LPUART; like the i.MX RT reference port we map
- * LPUART instances onto the regular UART identifiers.
- *
- *   UART2 == LPUART2 : RC / SBUS receiver (dedicated UART2_RXD/TXD pads, ALT0).
- *   UART7 == LPUART7 : MSP for the Betaflight Configurator (shared GPIO_IO08/09
- *                      pads, ALT5 + RX SELECT_INPUT daisy).
- *
- * The actual LPUART alt mux + pad electrical + any RX SELECT_INPUT daisy are
- * applied over SCMI by the driver (the SM owns IOMUXC). SBUS framing (8E2 +
- * inverted RX) is applied in uartReconfigure() from the port options.
- *
- * SERIAL_UART_FIRST_INDEX = 1: UART numbering starts at 1 (no UART0).
+ * Generic serial UARTs via drivers/serial_uart.c + the i.MX 95 platform layer
+ * in NAVQ95/serial_uart_navq95.c. UART5 == LPUART5 (RC/SBUS), UART7 == LPUART7
+ * (MSP). Alt mux + pad + RX daisy + SBUS framing applied over SCMI by the
+ * driver. SERIAL_UART_FIRST_INDEX = 1: no UART0.
  */
 #define USE_UART
-#define USE_UART2
+#define USE_UART5
 #define USE_UART7
-/*
- * Also define USE_USART2/USE_USART7: pg/serial_uart.c gates each UART entry of
- * its uartDmaopt[] table on the USE_USARTn spelling. Without them the table
- * could be empty and its `for (i = 0; i < ARRAYLEN(uartDmaopt); i++)` trips
- * -Werror=type-limits. The DMA opts default to DMA_OPT_UNUSED; inert otherwise.
- */
-#define USE_USART2
 #define USE_USART7
 #define SERIAL_UART_FIRST_INDEX 1
 
-/* UART2 == LPUART2 (RC/SBUS). Pads: TX = UART2_TXD, RX = UART2_RXD (dedicated,
- * ALT0, no daisy). The pin tags pick the uartHardware[] rows; the SCMI pinmux
- * uses the dedicated-pad path. */
-#define UART2_TX_PIN            NONE
-#define UART2_RX_PIN            NONE
-
-/* UART7 == LPUART7 (MSP). Pads: TX = GPIO_IO08 = PA8, RX = GPIO_IO09 = PA9
- * (RGPIO1 bits 8/9, LPUART7 ALT5). */
+/*
+ * UART5 pins MUST be non-NONE placeholders: SERIAL_TRAIT_PIN_CONFIG makes
+ * serialInit() drop any UART with neither RX nor TX ioTag. serialUART() skips
+ * IOInit for UART5, so these are never driven — the real LPUART5 pads are muxed
+ * over SCMI. UART7 pads: TX = GPIO_IO08 = PA8, RX = GPIO_IO09 = PA9.
+ */
+#define UART5_TX_PIN            PA7
+#define UART5_RX_PIN            PA6
 #define UART7_TX_PIN            PA8
 #define UART7_RX_PIN            PA9
 
-/*
- * MSP over UART7. pg/msp.c claims serial ports for FUNCTION_MSP at config reset:
- * slot 0 is always the first port (the VCP console, so the CLI stays reachable),
- * and MSP_UART is claimed as an additional MSP slot. Defining it here makes the
- * Betaflight Configurator connect over UART7 (LPUART7, 115200 8N1) out of the
- * box, while the LPUART5 console keeps the CLI. Can still be reassigned from the
- * Configurator's Ports tab / `msp_2_uart` CLI setting.
- */
+/* MSP (+ CLI) over UART7 for the Configurator; reassignable from Ports tab. */
 #define MSP_UART               SERIAL_PORT_UART7
 
-/*
- * Bake the board RX defaults in via targetConfiguration() (config_navq95.c):
- * FEATURE_RX_SERIAL + SBUS provider (inverted) on UART2. Needed because
- * CONFIG_IN_RAM is volatile and does not persist across power cycles, so the
- * SBUS port must come up at boot. USE_TARGET_CONFIG makes resetConfig() call it
- * every boot.
- */
+/* Bake board RX defaults via targetConfiguration() (config_navq95.c). */
 #define USE_TARGET_CONFIG
 
 /*
- * Beeper (buzzer). GPIO-driven (no PWM): sound_beeper.c toggles the pin via the
- * IO HAL when BEEPER_PWM_HZ is 0 (the default). The pad is GPIO_IO23 = GPIO2_IO23
- * = Betaflight tag PB23 (RGPIO2[23]); its IOMUXC mux row lives in io_navq95.c
- * (navq95_padMux[]). beeperInit() -> IOConfigGPIO(PB23, ...) brings the pin up.
- *
- * Polarity (see pg/beeper_dev.c): the NavQ95 buzzer is driven active-high /
- * push-pull, so BEEPER_INVERTED is defined (IS_INVERTED=true, IS_OPEN_DRAIN=
- * false) — systemBeep(true) then drives the pin HIGH to sound the buzzer.
+ * Force STANDARD PWM: common_pre.h defines USE_DSHOT unconditionally, which
+ * would default to DSHOT600 -> dshotPwmDevInit() (stubbed; DShot needs an
+ * eDMA/FlexIO layer not implemented). pg/motor.c honours DEFAULT_MOTOR_PROTOCOL
+ * above every fallback, so this routes to our TPM PWM driver (motorPwmDevInit,
+ * NAVQ95/pwm_navq95.c). MOTOR_PROTOCOL_PWM = enum in drivers/motor_types.h.
+ */
+#define DEFAULT_MOTOR_PROTOCOL  MOTOR_PROTOCOL_PWM
+
+/*
+ * Beeper: GPIO-driven (no PWM) on GPIO_IO23 = PB23 (pad row in io_navq95.c).
+ * Active-high push-pull -> BEEPER_INVERTED (systemBeep(true) drives the pin
+ * HIGH).
  */
 #define USE_BEEPER
 #define BEEPER_PIN              PB23
 #define BEEPER_INVERTED
 
 /*
- * Sensors: real 6-axis IMU (ICM-45686) over LPSPI1, polled register-level SPI.
- * MAG/BARO stay virtual (set in mk/NAVQ95.mk) until their I2C bus is brought up.
- * The gyro device config (bus + CS) is built by pg/gyrodev.c from these:
- *   GYRO_1_SPI_INSTANCE -> SPI1 (== LPSPI1), GYRO_1_CS_PIN -> GPIO1_IO11 (PA11).
- * EXTI/CLKIN/alignment default (NONE / CW0) in pg/gyrodev.c. DRDY/EXTI is left
- * NONE for now: the driver uses polled reads (no data-ready interrupt yet).
+ * IMU: ICM-45686 6-axis over LPSPI1 (polled register-level SPI). pg/gyrodev.c
+ * builds the device config from these; EXTI/CLKIN/align default (NONE/CW0),
+ * DRDY left NONE (polled reads, no data-ready IRQ yet).
  */
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE     SPI1
 #define GYRO_1_CS_PIN           PA11
+
+/*
+ * SD card over the i.MX 95 uSDHC controller (NAVQ95/sdio_usdhc_navq95.c, ADMA2
+ * polled). Config storage stays in the FlexSPI NOR (above), so an SD failure is
+ * non-fatal. Wiring is a best guess (uSDHC1, SD1 pads) — NAVQ95_SD_SELFTEST runs
+ * a non-destructive boot card-identify probe to validate it.
+ */
+#define USE_SDCARD
+#define USE_SDCARD_SDIO
+#define SDIO_DEVICE             SDIODEV_1
+#define SDIO_USE_4BIT           false
+/* #define NAVQ95_SD_SELFTEST */   /* boot SD probe prints — off for normal use */
+
+/*
+ * NAVQ95_PWM_SELFTEST — BENCH-ONLY boot probe for the motor PWM: prints TPM
+ * clock/pinmux/MOD/SC then drives a static 1500 us pulse on all channels for a
+ * scope/logic-analyzer. *** PROPS OFF — drives the ESC signal lines. ***
+ */
+/* #define NAVQ95_PWM_SELFTEST */   /* boot PWM probe prints — off for normal use */
 
 /*
  * I2C (Phase 1 bring-up): two LPI2C master instances, register-level polled
@@ -216,12 +209,9 @@
 #include "platform.h"
 
 /*
- * 64-bit DWT CYCCNT time base helper. navq95_timebaseTick() folds the CYCCNT
- * wrap and must be called periodically (from SysTick, once configured) so no
- * wrap is lost. navq95_timebaseInit() configures the Cortex-M7 SysTick at 1 kHz
- * to drive that fold; call it after cycleCounterInit(). The 32-bit
- * micros()/millis()/microsISR() primitives (declared in drivers/time.h) are
- * built on the same fold.
+ * 64-bit DWT CYCCNT time base. navq95_timebaseTick() folds the CYCCNT wrap and
+ * is called from SysTick (1 kHz); navq95_timebaseInit() configures it after
+ * cycleCounterInit(). micros()/millis()/microsISR() build on the same fold.
  */
 void navq95_timebaseTick(void);
 void navq95_timebaseInit(void);
