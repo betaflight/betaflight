@@ -142,6 +142,26 @@ static void taskMain(timeUs_t currentTimeUs)
 #endif
 }
 
+#if defined(USE_VCP)
+static bool checkUsbLinkLost(void)
+{
+    static bool usbWasActive;
+    const bool usbActive = usbVcpIsActive();
+    const bool linkLost = usbWasActive && !usbActive;
+
+    if (!usbActive) {
+        // Drop input left over for the dead link so a queued MSP_SET_MOTOR cannot restart the motors.
+        serialPortUsage_t *vcp = findSerialPortUsageByIdentifier(SERIAL_PORT_USB_VCP);
+        while (vcp && vcp->serialPort && serialRxBytesWaiting(vcp->serialPort)) {
+            serialRead(vcp->serialPort);
+        }
+    }
+
+    usbWasActive = usbActive;
+    return linkLost;
+}
+#endif
+
 static void taskHandleSerial(timeUs_t currentTimeUs)
 {
 #if ENABLE_BF_OBL
@@ -157,6 +177,10 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
 #if defined(USE_VCP)
     DEBUG_SET(DEBUG_USB, 0, usbCableIsInserted());  //!< USB Cable Inserted
     DEBUG_SET(DEBUG_USB, 1, usbVcpIsConnected());   //!< USB VCP Connected
+
+    if (checkUsbLinkLost() && !ARMING_FLAG(ARMED) && areMotorsRunning()) {
+        mixerResetDisarmedMotors();
+    }
 #endif
 
     bool evaluateMspData = ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA;
