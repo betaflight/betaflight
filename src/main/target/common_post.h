@@ -484,6 +484,10 @@
 #endif
 
 /* If either VTX_CONTROL or VTX_COMMON is undefined then remove common code and device drivers */
+#if !defined(USE_RC_ADJUSTMENTS)
+#undef USE_OSD_ADJUSTMENTS
+#endif
+
 #if !defined(USE_VTX_COMMON) || !defined(USE_VTX_CONTROL)
 #undef USE_VTX_COMMON
 #undef USE_VTX_CONTROL
