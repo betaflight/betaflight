@@ -1442,7 +1442,52 @@ case MSP_NAME:
         sbufWriteU16(dst, *(uint16_t*)&z);
         break;
     }
-
+#ifdef USE_PSAS
+    case MSP_PSAS_CONFIG:
+        sbufWriteU8(dst, currentPidProfile->psas_stick_gain[0]);
+        sbufWriteU8(dst, currentPidProfile->psas_stick_gain[1]);
+        sbufWriteU8(dst, currentPidProfile->psas_stick_gain[2]);
+        sbufWriteU16(dst, currentPidProfile->psas_damping_gain[0]);
+        sbufWriteU16(dst, currentPidProfile->psas_damping_gain[1]);
+        sbufWriteU16(dst, currentPidProfile->psas_damping_gain[2]);
+        sbufWriteU16(dst, currentPidProfile->psas_pitch_damping_filter_freq);
+        sbufWriteU8(dst, currentPidProfile->psas_accel_z_filter_freq);
+        sbufWriteU16(dst, currentPidProfile->psas_pitch_stability_gain);
+        sbufWriteU16(dst, currentPidProfile->psas_pitch_accel_p_gain);
+        sbufWriteU8(dst, currentPidProfile->psas_pitch_accel_i_gain);
+        sbufWriteU8(dst, currentPidProfile->psas_pitch_accel_max);
+        sbufWriteU8(dst, currentPidProfile->psas_pitch_accel_min);
+        sbufWriteU16(dst, currentPidProfile->psas_yaw_damping_filter_freq);
+        sbufWriteU8(dst, currentPidProfile->psas_accel_y_filter_freq);
+        sbufWriteU16(dst, currentPidProfile->psas_yaw_stability_gain);
+        sbufWriteU16(dst, currentPidProfile->psas_wing_load);
+        sbufWriteU16(dst, currentPidProfile->psas_air_density);
+        sbufWriteU8(dst, currentPidProfile->psas_lift_c_limit);
+        sbufWriteU8(dst, currentPidProfile->psas_aoa_limiter_gain);
+        sbufWriteU8(dst, currentPidProfile->psas_lift_coef_filter_freq);
+        sbufWriteU8(dst, currentPidProfile->psas_aoa_limiter_forecast_time);
+        sbufWriteU8(dst, currentPidProfile->psas_aoa_limiter_tau_return);
+        sbufWriteU16(dst, currentPidProfile->psas_servo_time);
+        sbufWriteU8(dst, currentPidProfile->psas_roll_yaw_clift_start);
+        sbufWriteU8(dst, currentPidProfile->psas_roll_yaw_clift_stop);
+        sbufWriteU8(dst, currentPidProfile->psas_roll_to_yaw_link);
+        sbufWriteU8(dst, currentPidProfile->psas_speed_curve_enabled_mask);
+        sbufWriteU8(dst, currentPidProfile->psas_speed_optimum_vref);
+        sbufWriteU8(dst, currentPidProfile->psas_speed_main_curve_power);
+        sbufWriteU8(dst, currentPidProfile->psas_speed_roll_stick_curve_power);
+        sbufWriteU16(dst, currentPidProfile->psas_speed_main_curve_min);
+        sbufWriteU16(dst, currentPidProfile->psas_speed_main_curve_max);
+        sbufWriteU16(dst, currentPidProfile->psas_speed_stick_curve_min);
+        sbufWriteU16(dst, currentPidProfile->psas_speed_stick_curve_max);
+        sbufWriteU8(dst, currentPidProfile->psas_speed_curve_mode);
+        sbufWriteU8(dst, currentPidProfile->psas_trim_enabled_mask);
+        sbufWriteU8(dst, currentPidProfile->psas_trim_deadband);
+        sbufWriteU16(dst, currentPidProfile->psas_trim_lowpass_time);
+        sbufWriteU8(dst, currentPidProfile->psas_trim_rate);
+        sbufWriteU8(dst, currentPidProfile->psas_trim_limit);
+        sbufWriteU16(dst, currentPidProfile->psas_trim_tau_reset);
+        break;
+#endif
     case MSP_ALTITUDE:
         sbufWriteU32(dst, getEstimatedAltitudeCm());
 #ifdef USE_VARIO
@@ -4670,6 +4715,63 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         profile->consumptionWarningPercentage = consumptionWarnPct;
         break;
     }
+
+#ifdef USE_PSAS
+    case MSP_SET_PSAS_CONFIG: {
+        const uint32_t expectedSize = 59;
+        if (dataSize < expectedSize) {
+            return MSP_RESULT_ERROR;
+        }
+        currentPidProfile->psas_stick_gain[0] = MIN(MAX(sbufReadU8(src), 5), 200);
+        currentPidProfile->psas_stick_gain[1] = MIN(MAX(sbufReadU8(src), 5), 200);
+        currentPidProfile->psas_stick_gain[2] = MIN(sbufReadU8(src), 200);
+        currentPidProfile->psas_damping_gain[0] = MIN(sbufReadU16(src), 300);
+        currentPidProfile->psas_damping_gain[1] = MIN(sbufReadU16(src), 500);
+        currentPidProfile->psas_damping_gain[2] = MIN(sbufReadU16(src), 500);
+        currentPidProfile->psas_pitch_damping_filter_freq = MIN(sbufReadU16(src), 1000);
+        currentPidProfile->psas_accel_z_filter_freq = MIN(sbufReadU8(src), 100);
+        currentPidProfile->psas_pitch_stability_gain = MIN(sbufReadU16(src), 300);
+        currentPidProfile->psas_pitch_accel_p_gain = MIN(sbufReadU16(src), 1000);
+        currentPidProfile->psas_pitch_accel_i_gain = sbufReadU8(src);
+        currentPidProfile->psas_pitch_accel_max = MAX(sbufReadU8(src), 20);
+        currentPidProfile->psas_pitch_accel_min = MAX(sbufReadU8(src), 10);
+        currentPidProfile->psas_yaw_damping_filter_freq = MIN(sbufReadU16(src), 100);
+        currentPidProfile->psas_accel_y_filter_freq = MIN(sbufReadU8(src), 100);
+        currentPidProfile->psas_yaw_stability_gain = MIN(sbufReadU16(src), 300);
+        currentPidProfile->psas_wing_load = MIN(sbufReadU16(src), 1500);
+        currentPidProfile->psas_air_density = MIN(MAX(sbufReadU16(src), 800), 1300);
+        currentPidProfile->psas_lift_c_limit = MAX(sbufReadU8(src), 5);
+        currentPidProfile->psas_aoa_limiter_gain = sbufReadU8(src);
+        currentPidProfile->psas_lift_coef_filter_freq = sbufReadU8(src);
+        currentPidProfile->psas_aoa_limiter_forecast_time = sbufReadU8(src);
+        currentPidProfile->psas_aoa_limiter_tau_return = MAX(sbufReadU8(src), 1);
+        currentPidProfile->psas_servo_time = MIN(MAX(sbufReadU16(src), 5), 1000);
+        currentPidProfile->psas_roll_yaw_clift_start = MIN(sbufReadU8(src), 20);
+        currentPidProfile->psas_roll_yaw_clift_stop = MIN(sbufReadU8(src), 20);
+        currentPidProfile->psas_roll_to_yaw_link = sbufReadU8(src);
+        currentPidProfile->psas_speed_curve_enabled_mask = sbufReadU8(src) & 63; // the mask uses 6 bit
+        currentPidProfile->psas_speed_optimum_vref = MAX(sbufReadU8(src), 1);
+        currentPidProfile->psas_speed_main_curve_power =  MIN(MAX(sbufReadU8(src), 5), 30);
+        currentPidProfile->psas_speed_roll_stick_curve_power = MIN(MAX(sbufReadU8(src), 5), 30);
+        currentPidProfile->psas_speed_main_curve_min = MIN(MAX(sbufReadU16(src), 1), 100);
+        currentPidProfile->psas_speed_main_curve_max = MIN(MAX(sbufReadU16(src), 100), 500);
+        currentPidProfile->psas_speed_stick_curve_min = MIN(MAX(sbufReadU16(src), 1), 100);
+        currentPidProfile->psas_speed_stick_curve_max = MIN(MAX(sbufReadU16(src), 100), 500);
+        uint8_t psas_speed_curve_mode = sbufReadU8(src);
+        if (psas_speed_curve_mode > 3) {
+            psas_speed_curve_mode = 0;
+        }
+        currentPidProfile->psas_speed_curve_mode = psas_speed_curve_mode;
+        currentPidProfile->psas_trim_enabled_mask = sbufReadU8(src) & 7; // the mask uses 3 bit
+        currentPidProfile->psas_trim_deadband = MIN(MAX(sbufReadU8(src), 5), 100);
+        currentPidProfile->psas_trim_lowpass_time = MIN(MAX(sbufReadU16(src), 200), 3000);
+        currentPidProfile->psas_trim_rate = MIN(MAX(sbufReadU8(src), 5), 100);
+        currentPidProfile->psas_trim_limit = MIN(MAX(sbufReadU8(src), 10), 80);
+        currentPidProfile->psas_trim_tau_reset = MIN(MAX(sbufReadU16(src), 50), 2000);
+        pidInitConfig(currentPidProfile);
+        break;
+    }
+#endif
 
     case MSP_SET_WING: {
         const unsigned expectedSize =
