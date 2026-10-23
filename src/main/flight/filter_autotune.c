@@ -2158,7 +2158,7 @@ void filterAutotuneUpdate(timeUs_t currentTimeUs)
 #ifdef USE_MOTOR_NOISE
         float n2 = 0.0f;
         for (int m = 0; m < FT_MOTORS; m++) {
-            n2 += sq(motorNoiseRms(m, 0));
+            n2 += motorNoiseMsq(m, 0);
         }
         ft.noiseSum2 += n2 / FT_MOTORS;
 #endif
