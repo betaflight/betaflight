@@ -1583,6 +1583,11 @@ case MSP_NAME:
 
         // API 1.49
         sbufWriteU16(dst, motorConfig()->kv);
+#ifdef USE_DSHOT_TELEMETRY
+        sbufWriteU8(dst, motorConfig()->dshotBidirRotate);
+#else
+        sbufWriteU8(dst, DSHOT_BIDIR_ROTATE_OFF);
+#endif
         break;
 
 #ifdef USE_MAG
@@ -3286,6 +3291,17 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         // version 1.49
         if (sbufBytesRemaining(src) >= 2) {
             motorConfigMutable()->kv = sbufReadU16(src);
+        }
+        if (sbufBytesRemaining(src) >= 1) {
+            const uint8_t rotate = sbufReadU8(src);
+#ifdef USE_DSHOT_TELEMETRY
+            if (rotate > DSHOT_BIDIR_ROTATE_AUTO) {
+                return MSP_RESULT_ERROR;
+            }
+            motorConfigMutable()->dshotBidirRotate = rotate;
+#else
+            UNUSED(rotate);
+#endif
         }
         break;
 

@@ -68,6 +68,12 @@ typedef enum {
     DSHOT_EDT_FORCE = 2,
 } dshotEdt_e;
 
+typedef enum {
+    DSHOT_BIDIR_ROTATE_OFF = 0,
+    DSHOT_BIDIR_ROTATE_ON,
+    DSHOT_BIDIR_ROTATE_AUTO,             // only when the PID loop runs faster than 4 kHz
+} dshotBidirRotate_e;
+
 typedef struct motorDevConfig_s {
     uint16_t motorPwmRate;               // The update rate of motor outputs (50-498Hz)
     uint8_t  motorProtocol;              // Pwm Protocol
@@ -90,6 +96,7 @@ typedef struct motorConfig_s {
     uint16_t mincommand;                    // This is the value for the ESCs when they are not armed. In some cases, this value must be lowered down to 900 for some specific ESCs
     uint16_t kv;                            // Motor velocity constant (Kv) to estimate RPM under no load (unloadedRpm = Kv * batteryVoltage)
     uint8_t motorPoleCount;                 // Number of magnetic poles in the motor bell for calculating actual RPM from eRPM provided by ESC telemetry
+    uint8_t dshotBidirRotate;               // Decode the bidirectional DShot telemetry of one motor per update (dshotBidirRotate_e)
 } motorConfig_t;
 
 PG_DECLARE(motorConfig_t, motorConfig);
