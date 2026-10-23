@@ -576,8 +576,9 @@ static bool bbDecodeRotating(void)
     if (mode == DSHOT_BIDIR_ROTATE_OFF || (mode == DSHOT_BIDIR_ROTATE_AUTO && targetPidLooptime >= 250)) {
         return false;
     }
-    // A command's reply (the EDT enable acknowledgement) comes in a single frame
-    if (!dshotCommandQueueEmpty()) {
+    // A command's reply comes in a single frame: an inline command (the EDT enable acknowledgement) is in
+    // the queue, and a blocking one (CLI) runs with the motors disabled
+    if (!dshotCommandQueueEmpty() || !motorIsEnabled()) {
         return false;
     }
     return true;
