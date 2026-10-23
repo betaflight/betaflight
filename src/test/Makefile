@@ -482,6 +482,19 @@ rc_unittest_SRC := \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/common/maths.c
 
+rc_smoothing_unittest_SRC := \
+		$(USER_DIR)/fc/rc.c \
+		$(USER_DIR)/fc/controlrate_profile.c \
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/maths.c
+
+rc_smoothing_unittest_DEFINES := \
+		USE_RC_SMOOTHING_FILTER= \
+		USE_FEEDFORWARD=
+
 rc_controls_unittest_SRC := \
 		$(USER_DIR)/fc/rc_controls.c \
 		$(USER_DIR)/pg/pg.c \
