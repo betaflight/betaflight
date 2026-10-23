@@ -161,30 +161,48 @@ static int escTemperature(int motor)
 // keeps its lowest reading since power-up: the board warms up afterwards (+9 °C over the air after an hour on USB),
 // so its first readings are the closest to the air. Looked at once a second while disarmed, so a source that comes
 // later (ESC telemetry once the battery is in) still counts; frozen at the first arm. Without any, the default stays.
+// The temperature sources are also sampled after the arm, once a second, for the debug log.
 static void ambientUpdate(void)
 {
-    if (rt.armedOnce || ++rt.ambientCounter < UPDATE_HZ) {
+    if (++rt.ambientCounter < UPDATE_HZ) {
         return;
     }
     rt.ambientCounter = 0;
+    gyroReadTemperature();                      // the cached value is otherwise refreshed by the telemetry task only
+    const int gyroTemp = gyroGetTemperature();
+    int baroTemp = 0;
+#ifdef USE_BARO
+    if (sensors(SENSOR_BARO)) {
+        baroTemp = baro.temperature / 100;
+    }
+#endif
+    int mcuTemp = 0;
+#ifdef USE_ADC_INTERNAL
+    mcuTemp = getCoreTemperatureCelsius();
+#endif
+    int escTemp = INT16_MAX, escSum = 0, escCount = 0;
+    for (int i = 0; i < getMotorCount() && i < MAX_SUPPORTED_MOTORS; i++) {
+        const int t = escTemperature(i);
+        ambientConsider(t, &escTemp);
+        if (t) {
+            escSum += t;
+            escCount++;
+        }
+    }
+    DEBUG_SET(DEBUG_MOTOR_THERMAL, 4, escCount ? escSum / escCount : 0);   //!< ESC Average Temperature [unit:degC]
+    DEBUG_SET(DEBUG_MOTOR_THERMAL, 5, baroTemp);                         //!< Baro Temperature [unit:degC]
+    DEBUG_SET(DEBUG_MOTOR_THERMAL, 6, mcuTemp);                          //!< MCU Temperature [unit:degC]
+    DEBUG_SET(DEBUG_MOTOR_THERMAL, 7, gyroTemp);                         //!< Gyro Temperature [unit:degC]
+    if (rt.armedOnce) {
+        return;
+    }
 #ifdef USE_DSHOT_TELEMETRY
     edtRequest();
 #endif
     int board = INT16_MAX;
-    gyroReadTemperature();                      // the cached value is otherwise refreshed by the telemetry task only
-    ambientConsider(gyroGetTemperature(), &board);
-#ifdef USE_BARO
-    if (sensors(SENSOR_BARO)) {
-        ambientConsider(baro.temperature / 100, &board);
-    }
-#endif
-#ifdef USE_ADC_INTERNAL
-    ambientConsider(getCoreTemperatureCelsius(), &board);
-#endif
-    int escTemp = INT16_MAX;
-    for (int i = 0; i < getMotorCount() && i < MAX_SUPPORTED_MOTORS; i++) {
-        ambientConsider(escTemperature(i), &escTemp);
-    }
+    ambientConsider(gyroTemp, &board);
+    ambientConsider(baroTemp, &board);
+    ambientConsider(mcuTemp, &board);
     rt.boardLowest = MIN(rt.boardLowest, board);
     rt.escLowest = MIN(rt.escLowest, escTemp);
     const int ambient = MIN(rt.escLowest, rt.boardLowest);
@@ -384,7 +402,6 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
         s->tc += (pIron + q - (s->tc - rt.tAmb) * air / rt.rca) * dt * rt.invCc;
         if (i < 4) {
             DEBUG_SET(DEBUG_MOTOR_THERMAL, i, lrintf(10.0f * s->ts));   //!< [index:0..3] Motor {1|2|3|4} Estimated Winding Temperature [unit:0.1degC]
-            DEBUG_SET(DEBUG_MOTOR_THERMAL, 4 + i, escTemperature(i));    //!< [index:4..7] ESC {1|2|3|4} Temperature [unit:degC]
         }
     }
 }
