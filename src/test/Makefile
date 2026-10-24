@@ -1017,6 +1017,15 @@ vtx_msp_unittest_DEFINES := \
 pwl_unittest_SRC := \
 		$(USER_DIR)/common/pwl.c
 
+psas_unittest_SRC :=  \
+		$(USER_DIR)/flight/psas.c \
+		$(USER_DIR)/flight/psas_trimming.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/common/maths.c \
+
+psas_unittest_DEFINES := \
+		USE_PSAS= \
+
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets
 # but shouldn't modify.

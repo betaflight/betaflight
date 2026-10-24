@@ -198,6 +198,9 @@ static const uint16_t buildOptions[] = {
 #ifdef USE_PWM_OUTPUT
         BUILD_OPTION_PWM_OUTPUT,
 #endif
+#ifdef USE_PSAS
+        BUILD_OPTION_PSAS,
+#endif
 };
 
 void sbufWriteBuildInfoFlags(sbuf_t *dst)
