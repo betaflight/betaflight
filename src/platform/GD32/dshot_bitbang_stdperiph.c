@@ -46,14 +46,16 @@
 #include "platform/timer.h"
 #include "pg/motor.h"
 
+// Leaving output mode glitches the pin low, so pins stay outputs and are
+// released via open-drain with the data bit high. Masks apply to GPIO_OMODE.
 void bbGpioSetup(bbMotor_t *bbMotor)
 {
     bbPort_t *bbPort = bbMotor->bbPort;
     int pinIndex = bbMotor->pinIndex;
 
-    bbPort->gpioModeMask |= (CTL_CLTR(3) << (pinIndex * 2));
-    bbPort->gpioModeInput |= (GPIO_MODE_INPUT << (pinIndex * 2));
-    bbPort->gpioModeOutput |= (GPIO_MODE_OUTPUT << (pinIndex * 2));
+    bbPort->gpioModeMask |= (1U << pinIndex);
+    bbPort->gpioModeInput |= ((uint32_t)GPIO_OTYPE_OD << pinIndex);
+    bbPort->gpioModeOutput |= ((uint32_t)GPIO_OTYPE_PP << pinIndex);
 
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
@@ -143,7 +145,7 @@ bool bbSwitchToOutput(bbPort_t * bbPort)
     dmaResource_t *dmaResource = bbPort->dmaResource;
 
     // Stop the stream before touching anything: if it will not stop we must not
-    // rewrite its registers, and leaving the pin an input keeps us off a wire
+    // rewrite its registers, and leaving the pin open-drain keeps us off a wire
     // that something is evidently still driving.
     bbDMA_Cmd(bbPort, DISABLE);
     if (!bbDMAWaitStopped(dmaResource)) {
@@ -158,9 +160,9 @@ bool bbSwitchToOutput(bbPort_t * bbPort)
 
     WRITE_REG(GPIO_BOP((uint32_t)bbPort->gpio), bbPort->gpioIdleBSRR);
 
-    // Set GPIO to output
+    // Drive the line push-pull
     ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
-        MODIFY_REG(GPIO_CTL((uint32_t)bbPort->gpio), bbPort->gpioModeMask, bbPort->gpioModeOutput);
+        MODIFY_REG(GPIO_OMODE((uint32_t)bbPort->gpio), bbPort->gpioModeMask, bbPort->gpioModeOutput);
     }
 
     // Reinitialize port group DMA for output
@@ -190,10 +192,10 @@ void bbSwitchToInput(bbPort_t *bbPort)
 {
     dbgPinHi(1);
 
-    // Set GPIO to input
-
+    // Release the line: data bit high, then open-drain
+    WRITE_REG(GPIO_BOP((uint32_t)bbPort->gpio), bbPort->gpioIdleBSRR);
     ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
-        MODIFY_REG(GPIO_CTL((uint32_t)bbPort->gpio), bbPort->gpioModeMask, bbPort->gpioModeInput);
+        MODIFY_REG(GPIO_OMODE((uint32_t)bbPort->gpio), bbPort->gpioModeMask, bbPort->gpioModeInput);
     }
 
     // Reinitialize port group DMA for input
