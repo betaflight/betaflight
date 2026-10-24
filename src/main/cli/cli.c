@@ -8346,6 +8346,37 @@ RAM_CODE static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
         }
         cliPrintLinefeed();
 
+#if PLATFORM_TRAIT_DSHOT_TRAINING
+        // An empty table above means either a dead ESC or a telemetry rate search still running
+        // The window lists the offsets that decoded, lowest first
+        for (uint8_t i = 0; i < getMotorCount(); i++) {
+            dshotTrainingStatus_t training;
+
+            if (!dshotGetTrainingStatus(i, &training)) {
+                continue;
+            }
+
+            if (!training.done) {
+                cliPrintLinef("motor %d: sweeping, at offset %d of %d..%d",
+                        i + 1, training.offset, training.offsetMin, training.offsetMax);
+                continue;
+            }
+
+            cliPrintf("motor %d: trained, offset %d of %d..%d, window ",
+                    i + 1, training.offset, training.offsetMin, training.offsetMax);
+
+            unsigned wide = 0;
+            for (int offset = training.offsetMin; offset <= training.offsetMax && offset - training.offsetMin < 32; offset++) {
+                const bool passed = (training.passMask >> (offset - training.offsetMin)) & 1;
+                wide += passed;
+                cliPrintf("%c", passed ? '1' : '0');
+            }
+
+            cliPrintLinef(" (%u wide)", wide);
+        }
+        cliPrintLinefeed();
+#endif
+
         const int len = MAX_GCR_EDGES;
 #ifdef DEBUG_BBDECODE
         extern uint16_t bbBuffer[134];
