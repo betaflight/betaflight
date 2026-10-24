@@ -268,6 +268,9 @@
 #ifndef USE_RANGEFINDER_UPT1
 #define USE_RANGEFINDER_UPT1
 #endif
+#ifndef USE_RANGEFINDER_PB04
+#define USE_RANGEFINDER_PB04
+#endif
 
 #endif // USE_RANGEFINDER
 
@@ -278,6 +281,9 @@
 #endif
 #ifndef USE_OPTICALFLOW_UPT1
 #define USE_OPTICALFLOW_UPT1
+#endif
+#ifndef USE_OPTICALFLOW_PB04
+#define USE_OPTICALFLOW_PB04
 #endif
 
 #endif // USE_OPTICALFLOW
@@ -759,15 +765,21 @@
 #endif
 #endif // USE_OPTICALFLOW_UPT1
 
+#if defined(USE_OPTICALFLOW_PB04)
+#ifndef USE_RANGEFINDER_PB04
+#define USE_RANGEFINDER_PB04
+#endif
+#endif // USE_OPTICALFLOW_PB04
+
 // Bottom-up: individual rangefinder drivers → USE_RANGEFINDER
-#if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT) || defined(USE_RANGEFINDER_NOOPLOOP) || defined(USE_RANGEFINDER_UPT1)
+#if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT) || defined(USE_RANGEFINDER_NOOPLOOP) || defined(USE_RANGEFINDER_UPT1) || defined(USE_RANGEFINDER_PB04)
 #ifndef USE_RANGEFINDER
 #define USE_RANGEFINDER
 #endif
 #endif // USE_RANGEFINDER_XXX
 
 // Bottom-up: individual opticalflow drivers → USE_OPTICALFLOW
-#if defined(USE_OPTICALFLOW_MT) || defined(USE_OPTICALFLOW_UPT1)
+#if defined(USE_OPTICALFLOW_MT) || defined(USE_OPTICALFLOW_UPT1) || defined(USE_OPTICALFLOW_PB04)
 #ifndef USE_OPTICALFLOW
 #define USE_OPTICALFLOW
 #endif
