@@ -272,8 +272,6 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_MAX_SPI_CLK_HZ                 ICM456XX_CLOCK
 #endif
 
-#define HZ_TO_US(hz)                            ((int32_t)((1000 * 1000) / (hz)))
-
 // Startup timing constants (DS-000577 Table 9-6)
 #define ICM456XX_ACCEL_STARTUP_TIME_MS          10  // Min accel startup from OFF/STANDBY/LP
 #define ICM456XX_GYRO_STARTUP_TIME_MS           35  // Min gyro startup from OFF/STANDBY/LP
@@ -284,6 +282,8 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 
 #define ICM456XX_DATA_LENGTH                    6  // 3 axes * 2 bytes per axis
 #define ICM456XX_SPI_BUFFER_SIZE                (1 + ICM456XX_DATA_LENGTH) // 1 byte register + 6 bytes data
+
+#define GYRO_EXTI_DETECT_THRESHOLD              1000
 
 static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
 {
@@ -505,8 +505,6 @@ void icm456xxGyroInit(gyroDev_t *gyro)
         break;
     }
 
-    gyro->gyroShortPeriod = clockMicrosToCycles(HZ_TO_US(gyro->gyroSampleRateHz));
-
     spiWriteReg(dev, ICM456XX_INT1_CONFIG2, ICM456XX_INT1_MODE_PULSED | ICM456XX_INT1_DRIVE_CIRCUIT_PP |
                                             ICM456XX_INT1_POLARITY_ACTIVE_HIGH);
 
@@ -516,7 +514,6 @@ void icm456xxGyroInit(gyroDev_t *gyro)
     // ICM456xx data is contiguous: accel at 0x00, gyro at 0x06
     gyro->accDataReg = ICM456XX_ACCEL_DATA_X1_UI;  // 0x00
     gyro->gyroDataReg = ICM456XX_GYRO_DATA_X1_UI;  // 0x06
-    gyro->gyroDmaMaxDuration = 0;  // Data ready interrupt ensures timely reads
 }
 
 uint8_t icm456xxSpiDetect(const extDevice_t *dev)
@@ -605,23 +602,30 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
         // Initialise the transfer buffer to 0xFF
         memset(gyro->dev.txBuf, 0xff, ICM456XX_SPI_BUFFER_SIZE);
 
-        gyro->gyroDmaMaxDuration = 0;
+        // Start the read offset above zero, the DMA callback raises it to the measured read time.
+        gyro->gyroDmaMaxDuration = 5;
 
+        // Check that minimum number of interrupts have been detected
+        if (gyro->detectedEXTI > GYRO_EXTI_DETECT_THRESHOLD) {
 #ifdef USE_DMA
-        if (/*spiUseDMA(&gyro->dev)*/ false) {
-            gyro->dev.callbackArg = (uintptr_t)gyro;
-            gyro->dev.txBuf[0] = ICM456XX_GYRO_DATA_X1_UI | 0x80;
-            gyro->segments[0].len = ICM456XX_SPI_BUFFER_SIZE;
-            gyro->segments[0].callback = mpuIntCallback;
-            gyro->segments[0].u.buffers.txData = gyro->dev.txBuf;
-            gyro->segments[0].u.buffers.rxData = gyro->dev.rxBuf;
-            gyro->segments[0].negateCS = true;
-            gyro->gyroModeSPI = GYRO_EXTI_INT_DMA;
-        } else
+            if (spiUseDMA(&gyro->dev)) {
+                gyro->dev.callbackArg = (uintptr_t)gyro;
+                gyro->dev.txBuf[0] = ICM456XX_GYRO_DATA_X1_UI | 0x80;
+                gyro->segments[0].len = ICM456XX_SPI_BUFFER_SIZE;
+                gyro->segments[0].callback = mpuIntCallback;
+                gyro->segments[0].u.buffers.txData = gyro->dev.txBuf;
+                gyro->segments[0].u.buffers.rxData = gyro->dev.rxBuf;
+                gyro->segments[0].negateCS = true;
+                gyro->gyroModeSPI = GYRO_EXTI_INT_DMA;
+            } else
 #endif
-        {
-            // Interrupts confirmed, but no DMA available
-            gyro->gyroModeSPI = GYRO_EXTI_INT;
+            {
+                // Interrupts confirmed, but no DMA available
+                gyro->gyroModeSPI = GYRO_EXTI_INT;
+            }
+        } else {
+            // No usable interrupt line, poll the sensor instead
+            gyro->gyroModeSPI = GYRO_EXTI_NO_INT;
         }
         break;
     }
