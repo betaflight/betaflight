@@ -456,7 +456,10 @@ static const char * const lookupTableSdcardMode[] = {
 
 #ifdef USE_LAUNCH_CONTROL
 static const char * const lookupTableLaunchControlMode[] = {
-    "NORMAL", "PITCHONLY", "FULL"
+    "NORMAL", "PITCHONLY", "FULL", "LIFT"
+};
+static const char * const lookupTableLaunchLiftFlipDirection[] = {
+    "AUTO", "RIGHT", "LEFT", "FORWARD", "BACK"
 };
 #endif
 
@@ -723,6 +726,7 @@ const lookupTableEntry_t lookupTables[] = {
 #endif
 #ifdef USE_LAUNCH_CONTROL
     LOOKUP_TABLE_ENTRY(lookupTableLaunchControlMode),
+    LOOKUP_TABLE_ENTRY(lookupTableLaunchLiftFlipDirection),
 #endif
     LOOKUP_TABLE_ENTRY(lookupTableTpaMode),
     LOOKUP_TABLE_ENTRY(lookupTableSpaMode),
@@ -1431,6 +1435,13 @@ const clivalue_t valueTable[] = {
     { "launch_trigger_throttle_percent", VAR_UINT8 | PROFILE_VALUE,  .config.minmaxUnsigned = { 0, LAUNCH_CONTROL_THROTTLE_TRIGGER_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlThrottlePercent) },
     { "launch_angle_limit",         VAR_UINT8 | PROFILE_VALUE,  .config.minmaxUnsigned = { 0, 80 }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlAngleLimit) },
     { "launch_control_gain",        VAR_UINT8 | PROFILE_VALUE,  .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlGain) },
+    { "launch_lift_time",           VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { LAUNCH_CONTROL_LIFT_TIME_MIN_MS, LAUNCH_CONTROL_LIFT_TIME_MAX_MS }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlLiftTime) },
+    { "launch_lift_throttle",       VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { LAUNCH_CONTROL_LIFT_THROTTLE_MIN, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlLiftThrottle) },
+    { "launch_lift_brake",          VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlLiftBrake) },
+    { "launch_lift_brake_time",     VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { LAUNCH_CONTROL_LIFT_BRAKE_TIME_MIN_MS, LAUNCH_CONTROL_LIFT_BRAKE_TIME_MAX_MS }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlLiftBrakeTime) },
+    { "launch_lift_flip_direction", VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LAUNCH_LIFT_FLIP_DIRECTION }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlLiftFlipDirection) },
+    { "launch_lift_flip_rate",      VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { LAUNCH_CONTROL_LIFT_FLIP_RATE_MIN_DPS, LAUNCH_CONTROL_LIFT_FLIP_RATE_MAX_DPS }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlLiftFlipRate) },
+    { "launch_lift_impact",         VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, LAUNCH_CONTROL_LIFT_IMPACT_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlLiftImpact) },
 #endif
 
 #ifdef USE_THRUST_LINEARIZATION
@@ -1835,6 +1846,9 @@ const clivalue_t valueTable[] = {
 #ifdef USE_RANGEFINDER
     { "osd_lidar_dist_pos",         VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_LIDAR_DIST]) },
 #endif //USE_RANGEFINDER
+#ifdef USE_LAUNCH_CONTROL
+    { "osd_launch_height_pos",      VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_LAUNCH_HEIGHT]) },
+#endif // USE_LAUNCH_CONTROL
 #if ENABLE_OSD_CUSTOM_TEXT
     { "osd_custom_serial_text_pos", VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_CUSTOM_SERIAL_TEXT]) },
     { "osd_custom_serial_text_terminator", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OSD_CUSTOM_TEXT_TERMINATOR }, PG_OSD_CUSTOM_TEXT_CONFIG, offsetof(osdCustomTextConfig_t, terminator) },

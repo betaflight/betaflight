@@ -38,6 +38,7 @@
 #include "common/axis.h"
 #include "common/filter.h"
 #include "common/maths.h"
+#include "common/printf.h"
 #include "common/utils.h"
 
 #include "config/config.h"
@@ -239,11 +240,62 @@ MAYBE_UNUSED static inline bool rescueDescentCircles(void)
 
 #ifdef USE_LAUNCH_CONTROL
 static launchControlState_e launchControlState = LAUNCH_CONTROL_DISABLED;
+static timeUs_t launchControlLiftStartUs = 0;
+static timeUs_t launchControlLiftEndUs = 0;
+static bool launchControlLiftTriggerSeenOff = false;  // LIFT launches on an off->on edge of the trigger only
+static timeUs_t launchControlLiftTroubleStartUs = 0;  // when it started failing to hold level, 0 if holding
+static launchControlLiftEndReason_e launchControlLiftEndReason = LIFT_END_TIME;   // why the last lift handed over
+static bool launchControlLiftNotLevel = false;        // OSD snapshot: too tilted to send
+static uint8_t launchControlLiftStoppedMotor = 0;     // OSD snapshot: staged with this motor (1-based) not turning, 0 = all turning
+static float launchControlLiftImpactJerk = 0.0f;      // impact threshold for this lift [g/s], 0 = off
+static float launchControlLiftPeakJerk = 0.0f;        // highest jerk seen in the last lift [g/s]
+static bool launchControlLiftRan = false;             // a lift actually flew this arm (not skipped by a stick takeoff)
+static char launchControlLiftUsedMessage[32];         // "LIFT USED PEAK 250+: SWITCH OFF"
+// launch_lift_brake: the end of a lift is a flip upside down and a powered stop
+typedef enum {
+    LIFT_PHASE_CLIMB = 0,   // the lift itself: lift throttle, self-levelled
+    LIFT_PHASE_FLIP,        // time's up: throttle off, rolling upside down
+    LIFT_PHASE_BRAKE,       // upside down: brake throttle until the climb stops
+} launchControlLiftPhase_e;
+static launchControlLiftPhase_e launchControlLiftPhase = LIFT_PHASE_CLIMB;
+static timeUs_t launchControlLiftPhaseStartUs = 0;
+static timeUs_t launchControlLiftLastUpdateUs = 0;
+static float launchControlLiftBrakeFraction = 0.0f;   // brake throttle for this lift (0..1), 0 = no brake
+static uint8_t launchControlLiftFlipDirection = LAUNCH_LIFT_FLIP_AUTO;
+static float launchControlLiftFlipRate = LAUNCH_CONTROL_LIFT_FLIP_RATE_DEFAULT_DPS;   // [deg/s]
+static timeDelta_t launchControlLiftFlipTimeoutUs = 0;
+static timeDelta_t launchControlLiftBrakeTimeUs = 0;
+static float launchControlLiftRestG = 1.0f;           // vertical specific force while staged and still [g]
+static float launchControlLiftClimbSpeed = 0.0f;      // vertical speed since the trigger, from the accelerometer [m/s]
+static float launchControlLiftHeight = 0.0f;          // height since the trigger, from the accelerometer [m]
+static float launchControlLiftTop = 0.0f;             // highest point of the lift so far [m]
+static bool launchControlLiftRising = false;          // handed over still climbing: following the coast to its top
+static timeUs_t launchControlLiftTopUs = 0;           // when the top was reached (the OSD's figure is final), 0 = not yet
+static float launchControlLiftMotorThrottle = 0.0f;   // what the mixer is given right now (0..1)
+static float launchControlLiftRate[XYZ_AXIS_COUNT];   // rate setpoints for the flip and brake [deg/s]
+// motor health in the climb
+static float launchControlLiftMotorCommand[MAX_SUPPORTED_MOTORS];   // filtered, 0..1
+static float launchControlLiftMotorRpm[MAX_SUPPORTED_MOTORS];       // filtered
+static bool launchControlLiftMotorFiltersPrimed = false;
+static timeUs_t launchControlLiftMotorFaultStartUs = 0;
+static timeUs_t launchControlLiftMotorStoppedStartUs = 0;
+// Snapshot of the LIFT settings and status, taken in the flight controller tasks. The OSD
+// reads these instead of currentPidProfile or canUseLaunchControl(), so no display task
+// dereferences the profile or re-runs the arming checks.
+static uint16_t launchControlLiftTimeMs = 0;
+static float launchControlLiftThrottleFraction = 0.0f;
+static bool launchControlLiftPreStaged = false;
+static bool launchControlLiftStaged = false;
+static bool launchControlLiftAwaitingTrigger = false;
+static const char *launchControlLiftPreArmMessage = NULL;
+static void updateLaunchControlLiftStatus(void);
+
 
 const char * const osdLaunchControlModeNames[] = {
     "NORMAL",
     "PITCHONLY",
-    "FULL"
+    "FULL",
+    "LIFT"
 };
 #endif
 
@@ -275,12 +327,45 @@ static bool canUseLaunchControl(void)
     if (!isFixedWing()
         && !isUsingSticksForArming()     // require switch arming for safety
         && IS_RC_MODE_ACTIVE(BOXLAUNCHCONTROL)
+        // LIFT is sent by its own LAUNCH TRIGGER mode, so it must be set up on a switch
+        && (currentPidProfile->launchControlMode != LAUNCH_CONTROL_MODE_LIFT || isModeActivationConditionPresent(BOXLAUNCHTRIGGER))
         && (!featureIsEnabled(FEATURE_MOTOR_STOP) || isAirmodeEnabled()) // either not using motor_stop, or motor_stop is blocked by Airmode
         && !featureIsEnabled(FEATURE_3D) // pitch control is not 3D aware
         && (flightModeFlags == 0)) {     // don't want to use unless in acro mode
         return true;
     }
     return false;
+}
+
+// LIFT self-levels, so it needs a trustworthy attitude, and it only corrects a mild tilt
+// from the ground: steeper than that and a leg digs in, or it leaves at an angle.
+// No accelerometer, or no attitude yet, can't prove level, so the answer is no.
+static bool isLaunchControlLiftLevel(void)
+{
+#ifdef USE_ACC
+    return sensors(SENSOR_ACC)
+        && isUpright()   // attitude established (and within small_angle)
+        && getCosTiltAngle() > cos_approx(DEGREES_TO_RADIANS(LAUNCH_CONTROL_LIFT_MAX_START_TILT_DEG));
+#else
+    return false;
+#endif
+}
+
+// The first motor (1-based) that isn't turning, by RPM telemetry. 0 when every motor is
+// turning, or when there's no RPM telemetry to tell.
+static uint8_t launchControlLiftFindStoppedMotor(void)
+{
+#ifdef USE_DSHOT_TELEMETRY
+    if (useDshotTelemetry && isDshotTelemetryActive()) {
+        const int motorCount = MIN(getMotorCount(), MAX_SUPPORTED_MOTORS);
+        for (int i = 0; i < motorCount; i++) {
+            if (getDshotRpm(i) < LAUNCH_CONTROL_LIFT_MOTOR_TURNING_RPM) {
+                return i + 1;
+            }
+        }
+    }
+#endif
+    return 0;
 }
 #endif
 
@@ -328,8 +413,10 @@ static bool accNeedsCalibration(void)
             return true;
         }
 
-        // Launch Control only requires the ACC if a angle limit is set
-        if (isModeActivationConditionPresent(BOXLAUNCHCONTROL) && currentPidProfile->launchControlAngleLimit) {
+        // Launch Control only requires the ACC if a angle limit is set, or for a LIFT, which
+        // self-levels, checks the tilt before launching and measures the climb with it
+        if (isModeActivationConditionPresent(BOXLAUNCHCONTROL)
+            && (currentPidProfile->launchControlAngleLimit || currentPidProfile->launchControlMode == LAUNCH_CONTROL_MODE_LIFT)) {
             return true;
         }
 
@@ -686,9 +773,15 @@ if (isMotorProtocolDshot()) {
 #endif // USE_DSHOT
 
 #ifdef USE_LAUNCH_CONTROL
+        launchControlLiftEndUs = 0;
         if (!crashFlipModeActive && (canUseLaunchControl() || (tryingToArm == ARMING_DELAYED_LAUNCH_CONTROL))) {
             if (launchControlState == LAUNCH_CONTROL_DISABLED) {  // only activate if it hasn't already been triggered
                 launchControlState = LAUNCH_CONTROL_ACTIVE;
+                // LIFT: armed with the trigger already on, it must go off and on again
+                // to launch, so arming can never be what sends the quad
+                launchControlLiftTriggerSeenOff = !IS_RC_MODE_ACTIVE(BOXLAUNCHTRIGGER);
+                launchControlLiftRan = false;
+                launchControlLiftRestG = 1.0f;   // relearned while it sits staged
             }
         }
 #endif
@@ -920,7 +1013,9 @@ bool processRx(timeUs_t currentTimeUs)
 
     // Note: If Airmode is enabled, on arming, iTerm and PIDs will be off until throttle exceeds the threshold (OFF while disarmed)
     // If not, iTerm will be off at low throttle, with pidStabilisationState determining whether PIDs will be active
-    if (ARMING_FLAG(ARMED) && (isAirmodeActive || throttleActive || launchControlActive || isFixedWing())) {
+    // A LIFT holds the motors at the lift throttle whatever the stick says, so the
+    // PIDs must stay on even when the pilot's throttle stick is at the bottom.
+    if (ARMING_FLAG(ARMED) && (isAirmodeActive || throttleActive || launchControlActive || isLaunchControlLifting() || isFixedWing())) {
         // the wing launch holds iTerm off until spin-up, but must keep the rest
         // of the stabilisation running through the motor delay
         pidSetItermReset(launchWingHoldsIterm());
@@ -1003,10 +1098,79 @@ bool processRx(timeUs_t currentTimeUs)
         if (launchControlActive && (throttlePercent > currentPidProfile->launchControlThrottlePercent)) {
             // throttle limit trigger reached, launch triggered
             // reset the iterms as they may be at high values from holding the launch position
+            // (in LIFT mode this means the pilot took off on the sticks: the lift is skipped)
             launchControlState = LAUNCH_CONTROL_TRIGGERED;
             pidResetIterm();
+        } else if (launchControlActive && (currentPidProfile->launchControlMode == LAUNCH_CONTROL_MODE_LIFT)) {
+            // LIFT is staged at arming like every launch control mode; LAUNCH TRIGGER sends it.
+            // On one 3-position switch: LAUNCH CONTROL on mid+high, LAUNCH TRIGGER on high.
+            const bool triggerOn = IS_RC_MODE_ACTIVE(BOXLAUNCHTRIGGER);
+            if (!IS_RC_MODE_ACTIVE(BOXLAUNCHCONTROL)) {
+                // switched to regular before launching: stand down for the rest of this arm
+                launchControlState = LAUNCH_CONTROL_DISABLED;
+            } else if (!triggerOn) {
+                launchControlLiftTriggerSeenOff = true;
+            } else if (launchControlLiftTriggerSeenOff) {
+                // the trigger has just come on: this is the launch
+                launchControlLiftTriggerSeenOff = false;  // consumed, whether or not it launches
+                // only from acro, as for arming launch control: the flip-and-brake
+                // recovery needs full rotation. And only near level: the lift self-levels,
+                // but not from a steep slope, a stand at an angle, or upside down. And only
+                // with every motor turning: a prop held by grass at start-up stays stopped
+                // even at full throttle, and three motors tip it straight over. A refused
+                // press is still used up, so fixing it afterwards can never send it.
+                if (flightModeFlags == 0 && isLaunchControlLiftLevel() && launchControlLiftFindStoppedMotor() == 0) {
+                    launchControlState = LAUNCH_CONTROL_LIFTING;
+                    launchControlLiftStartUs = currentTimeUs;
+                    launchControlLiftEndUs = 0;
+                    launchControlLiftTroubleStartUs = 0;
+                    launchControlLiftEndReason = LIFT_END_TIME;
+                    launchControlLiftMotorFaultStartUs = 0;
+                    launchControlLiftMotorStoppedStartUs = 0;
+                    launchControlLiftMotorFiltersPrimed = false;
+                    launchControlLiftPeakJerk = 0.0f;
+                    launchControlLiftRan = true;
+                    // A lift is a takeoff. When it hands over, the quad is flying on whatever the
+                    // sticks say, exactly as if the pilot had flown it up: airmode and the I-term
+                    // are live even with the throttle left at zero, and runaway takeoff (built for
+                    // a quad still on the ground) can't disarm a flip-and-brake at the top.
+                    throttleRaised = true;
+#ifdef USE_RUNAWAY_TAKEOFF
+                    runawayTakeoffCheckDisabled = true;
+#endif
+                    launchControlLiftImpactJerk = currentPidProfile->launchControlLiftImpact * 10.0f;
+                    launchControlLiftTimeMs = currentPidProfile->launchControlLiftTime;
+                    launchControlLiftThrottleFraction = currentPidProfile->launchControlLiftThrottle / 100.0f;
+                    launchControlLiftBrakeFraction = MIN(currentPidProfile->launchControlLiftBrake, 100) / 100.0f;
+                    launchControlLiftFlipDirection = currentPidProfile->launchControlLiftFlipDirection < LAUNCH_LIFT_FLIP_COUNT
+                        ? currentPidProfile->launchControlLiftFlipDirection : LAUNCH_LIFT_FLIP_AUTO;
+                    launchControlLiftFlipRate = constrain(currentPidProfile->launchControlLiftFlipRate,
+                        LAUNCH_CONTROL_LIFT_FLIP_RATE_MIN_DPS, LAUNCH_CONTROL_LIFT_FLIP_RATE_MAX_DPS);
+                    // a slow flip gets longer before it's taken to have failed
+                    launchControlLiftFlipTimeoutUs = LAUNCH_CONTROL_LIFT_FLIP_TIMEOUT_MS * 1000
+                        + (timeDelta_t)(2.0f * 180.0f / launchControlLiftFlipRate * 1e6f);
+                    launchControlLiftBrakeTimeUs = constrain(currentPidProfile->launchControlLiftBrakeTime,
+                        LAUNCH_CONTROL_LIFT_BRAKE_TIME_MIN_MS, LAUNCH_CONTROL_LIFT_BRAKE_TIME_MAX_MS) * 1000;
+                    launchControlLiftMotorThrottle = launchControlLiftThrottleFraction;
+                    launchControlLiftPhase = LIFT_PHASE_CLIMB;
+                    launchControlLiftPhaseStartUs = currentTimeUs;
+                    launchControlLiftClimbSpeed = 0.0f;
+                    launchControlLiftHeight = 0.0f;
+                    launchControlLiftTop = 0.0f;
+                    launchControlLiftRising = false;
+                    launchControlLiftTopUs = 0;
+                    launchControlLiftLastUpdateUs = currentTimeUs;
+                    pidResetIterm();
+                }
+            }
         }
     } else {
+        if (launchControlState == LAUNCH_CONTROL_LIFTING) {
+            // disarmed mid-lift: the launch has been used, exactly as if it had completed
+            launchControlState = LAUNCH_CONTROL_TRIGGERED;
+            launchControlLiftEndReason = LIFT_END_DISARM;
+            launchControlLiftPhase = LIFT_PHASE_CLIMB;
+        }
         if (launchControlState == LAUNCH_CONTROL_TRIGGERED) {
             // If trigger mode is MULTIPLE then reset the state when disarmed
             // and the mode switch is turned off.
@@ -1018,7 +1182,11 @@ bool processRx(timeUs_t currentTimeUs)
         } else {
             launchControlState = LAUNCH_CONTROL_DISABLED;
         }
+        // the OSD's "how high" is for the flight it happened in
+        launchControlLiftRising = false;
+        launchControlLiftTopUs = 0;
     }
+    updateLaunchControlLiftStatus();
 #endif
 
     return true;
@@ -1432,6 +1600,9 @@ static FAST_CODE_NOINLINE_CRITICAL void subTaskPidController(timeUs_t currentTim
         && !crashFlipModeActive
         && !runawayTakeoffTemporarilyDisabled
         && !FLIGHT_MODE(GPS_RESCUE_MODE)   // disable Runaway Takeoff triggering if GPS Rescue is active
+        // Same for a LIFT: the flight controller is flying, the sticks are ignored, and the
+        // stick throttle stays low, so the deactivation check below can never clear it.
+        && !isLaunchControlLifting()
         // check that motors are running
         && (!featureIsEnabled(FEATURE_MOTOR_STOP) || isAirmodeEnabled() || (calculateThrottleStatus() != THROTTLE_LOW))) {
 
@@ -1610,6 +1781,10 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);  //!< Gyro Update Time [unit:us]
 
     subTaskRcCommand(currentTimeUs);
+#ifdef USE_LAUNCH_CONTROL
+    // Runs in the PID loop, not the RX task, so the lift ends on time even if RX frames stop.
+    launchControlLiftUpdate(currentTimeUs);
+#endif
 #if defined(USE_WING) && defined(USE_LAUNCH_WING)
     // After rcCommand so the abort test and the hand-back blend see fresh stick
     // data, and before the PID controller so it reads this cycle's angle target.
@@ -1649,5 +1824,610 @@ bool isLaunchControlActive(void)
     return launchControlState == LAUNCH_CONTROL_ACTIVE;
 #else
     return false;
+#endif
+}
+
+// LIFT mode: true from the trigger until the lift hands control back to the sticks
+bool isLaunchControlLifting(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlState == LAUNCH_CONTROL_LIFTING && ARMING_FLAG(ARMED);
+#else
+    return false;
+#endif
+}
+
+// LIFT is over and the flight controller is stopping the climb: rolling upside down,
+// then braking (launch_lift_brake). The sticks are still ignored.
+bool isLaunchControlLiftBraking(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return isLaunchControlLifting() && launchControlLiftPhase != LIFT_PHASE_CLIMB;
+#else
+    return false;
+#endif
+}
+
+// Rate setpoint [deg/s] for the flip and brake, in place of the sticks
+float getLaunchControlLiftRate(int axis)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlLiftRate[axis];
+#else
+    UNUSED(axis);
+    return 0.0f;
+#endif
+}
+
+// Vertical speed since the trigger [m/s], from the accelerometer
+float getLaunchControlLiftClimbSpeed(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlLiftClimbSpeed;
+#else
+    return 0.0f;
+#endif
+}
+
+// Motor throttle (0..1) the mixer uses in place of the stick while lifting
+float getLaunchControlLiftThrottle(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlLiftMotorThrottle;
+#else
+    return 0.0f;
+#endif
+}
+
+// Time left before the sticks take over, for the OSD countdown
+uint32_t getLaunchControlLiftRemainingMs(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    if (!isLaunchControlLifting() || launchControlLiftPhase != LIFT_PHASE_CLIMB) {
+        return 0;
+    }
+    const timeDelta_t elapsedUs = cmpTimeUs(micros(), launchControlLiftStartUs);
+    const timeDelta_t remainingUs = (timeDelta_t)launchControlLiftTimeMs * 1000 - MAX(elapsedUs, 0);
+    return remainingUs > 0 ? (uint32_t)remainingUs / 1000 : 0;
+#else
+    return 0;
+#endif
+}
+
+// LIFT staged with its trigger already on: it has to go off before it can launch
+bool isLaunchControlLiftAwaitingTriggerOff(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlLiftAwaitingTrigger;
+#else
+    return false;
+#endif
+}
+
+// Armed and holding for a LIFT (as opposed to one of the other launch control modes)
+bool isLaunchControlLiftStaged(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlLiftStaged;
+#else
+    return false;
+#endif
+}
+
+#ifdef USE_LAUNCH_CONTROL
+// Works out what the OSD should say, in the RX task where currentPidProfile is valid.
+// Everything the display asks for afterwards is a plain read of these variables.
+static void updateLaunchControlLiftStatus(void)
+{
+    const bool liftMode = currentPidProfile->launchControlMode == LAUNCH_CONTROL_MODE_LIFT;
+    launchControlLiftPreStaged = !ARMING_FLAG(ARMED)
+        && launchControlState == LAUNCH_CONTROL_DISABLED
+        && canUseLaunchControl();
+    launchControlLiftStaged = liftMode && launchControlState == LAUNCH_CONTROL_ACTIVE;
+    launchControlLiftAwaitingTrigger = launchControlLiftStaged && !launchControlLiftTriggerSeenOff;
+    launchControlLiftNotLevel = liftMode && !isLaunchControlLiftLevel();
+    launchControlLiftStoppedMotor = launchControlLiftStaged ? launchControlLiftFindStoppedMotor() : 0;
+
+    launchControlLiftPreArmMessage = NULL;
+    if (!ARMING_FLAG(ARMED) && liftMode && IS_RC_MODE_ACTIVE(BOXLAUNCHCONTROL)) {
+        if (launchControlState == LAUNCH_CONTROL_TRIGGERED && !launchControlLiftRan) {
+            launchControlLiftPreArmMessage = currentPidProfile->launchControlAllowTriggerReset
+                ? "LIFT USED: SWITCH OFF" : "LIFT USED: REBOOT";
+        } else if (launchControlState == LAUNCH_CONTROL_TRIGGERED) {
+            // the peak jerk of the lift, in launch_lift_impact units: set it a little above
+            // what a clean lift reads, and a hit ends the lift while a clean one never does
+            const unsigned peak = (unsigned)(launchControlLiftPeakJerk / 10.0f + 0.999f);   // rounded up
+            tfp_sprintf(launchControlLiftUsedMessage, "LIFT USED PEAK %u%s: %s",
+                MIN(peak, (unsigned)LAUNCH_CONTROL_LIFT_IMPACT_MAX),
+                peak > (unsigned)LAUNCH_CONTROL_LIFT_IMPACT_MAX ? "+" : "",
+                currentPidProfile->launchControlAllowTriggerReset ? "SWITCH OFF" : "REBOOT");
+            launchControlLiftPreArmMessage = launchControlLiftUsedMessage;
+        } else if (!isModeActivationConditionPresent(BOXLAUNCHTRIGGER)) {
+            launchControlLiftPreArmMessage = "LIFT: NO TRIGGER MODE";
+        } else if (flightModeFlags) {
+            launchControlLiftPreArmMessage = "LIFT: ACRO ONLY";
+        } else if (!canUseLaunchControl()) {
+            launchControlLiftPreArmMessage = "LIFT: UNAVAILABLE";
+        } else if (IS_RC_MODE_ACTIVE(BOXLAUNCHTRIGGER)) {
+            launchControlLiftPreArmMessage = "LIFT: TRIGGER OFF FIRST";
+#ifdef USE_ACC
+        } else if (!sensors(SENSOR_ACC)) {
+            launchControlLiftPreArmMessage = "LIFT: NEEDS ACC";
+#endif
+        } else if (launchControlLiftNotLevel) {
+            launchControlLiftPreArmMessage = "LIFT: NOT LEVEL";
+        } else {
+            launchControlLiftPreArmMessage = "LIFT PRE-STAGE";
+        }
+    }
+}
+#endif // USE_LAUNCH_CONTROL
+
+// Disarmed with the Launch Control switch on, and launch control will engage on arming
+// (the flight mode display shows LNCH, as it does once armed and holding)
+bool isLaunchControlPreStaged(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlLiftPreStaged;
+#else
+    return false;
+#endif
+}
+
+// The LIFT pre-arm checklist for the OSD: disarmed with the Launch Control switch on,
+// what will arming do? NULL when not in LIFT mode or the switch is off.
+const char *getLaunchControlLiftPreArmMessage(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlLiftPreArmMessage;
+#else
+    return NULL;
+#endif
+}
+
+// True for a moment after a lift hands over, so the pilot sees the sticks are live
+bool isLaunchControlLiftHandoverRecent(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    if (launchControlLiftEndUs == 0
+        || launchControlState != LAUNCH_CONTROL_TRIGGERED
+        || !ARMING_FLAG(ARMED)
+        || failsafeIsActive()) {
+        return false;
+    }
+    // cmpTimeUs is signed: without the lower bound the notice would return after the
+    // timer wraps, and cover the warnings that come after it
+    const timeDelta_t sinceHandoverUs = cmpTimeUs(micros(), launchControlLiftEndUs);
+    return sinceHandoverUs >= 0 && sinceHandoverUs < LAUNCH_CONTROL_LIFT_HANDOVER_NOTICE_MS * 1000;
+#else
+    return false;
+#endif
+}
+
+// The last lift was ended early because it couldn't hold level
+bool isLaunchControlLiftAborted(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    switch (launchControlLiftEndReason) {
+    case LIFT_END_CONTROL:
+    case LIFT_END_FLIP:
+    case LIFT_END_UPSET:
+    case LIFT_END_MOTOR:
+    case LIFT_END_IMPACT:
+        return true;
+    default:
+        return false;
+    }
+#else
+    return false;
+#endif
+}
+
+// The last lift was ended by an impact (launch_lift_impact)
+bool isLaunchControlLiftImpacted(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlLiftEndReason == LIFT_END_IMPACT;
+#else
+    return false;
+#endif
+}
+
+// LIFT is selected but the quad is too tilted (or has no attitude) to send
+bool isLaunchControlLiftNotLevel(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlLiftNotLevel;
+#else
+    return false;
+#endif
+}
+
+// How high the lift has gone, for the OSD [cm], from the accelerometer: live while it climbs and
+// coasts, then the top of the lift (*atTop set) for a while after. -1 when there's nothing to show.
+int32_t getLaunchControlLiftHeightCm(bool *atTop)
+{
+    *atTop = false;
+#if defined(USE_LAUNCH_CONTROL) && defined(USE_ACC)
+    if (!ARMING_FLAG(ARMED) || !sensors(SENSOR_ACC)) {
+        return -1;
+    }
+    if (launchControlState == LAUNCH_CONTROL_LIFTING || launchControlLiftRising) {
+        return lrintf(MAX(launchControlLiftHeight, 0.0f) * 100.0f);
+    }
+    if (launchControlLiftTopUs) {
+        // cmpTimeUs is signed: the lower bound keeps it from coming back when the timer wraps
+        const timeDelta_t sinceTopUs = cmpTimeUs(micros(), launchControlLiftTopUs);
+        if (sinceTopUs >= 0 && sinceTopUs < LAUNCH_CONTROL_LIFT_TOP_NOTICE_MS * 1000) {
+            *atTop = true;
+            return lrintf(launchControlLiftTop * 100.0f);
+        }
+    }
+#endif
+    return -1;
+}
+
+// Staged for a LIFT with a motor that isn't turning: its number (1-based), or 0
+uint8_t getLaunchControlLiftStoppedMotor(void)
+{
+#ifdef USE_LAUNCH_CONTROL
+    return launchControlLiftStoppedMotor;
+#else
+    return 0;
+#endif
+}
+
+
+#if defined(USE_LAUNCH_CONTROL) && defined(USE_ACC)
+// Specific force along earth-up [g]: 1 sitting still, more while thrust is speeding the
+// climb up, less (below zero) while braking upside down. Earth-up in the body frame is
+// row NWU_U of rMat.
+static float launchControlLiftVerticalG(void)
+{
+    return (rMat.m[NWU_U][X] * acc.accADC.x + rMat.m[NWU_U][Y] * acc.accADC.y + rMat.m[NWU_U][Z] * acc.accADC.z)
+        * acc.dev.acc_1G_rec;
+}
+
+// Steers the quad upside down: rotates about the axis that turns earth-up (u, in the body
+// frame) onto body down, at a rate proportional to the angle left, so it rolls over fast
+// and settles. Returns that angle [deg].
+static float launchControlLiftSteerInverted(void)
+{
+    const float ux = rMat.m[NWU_U][X];
+    const float uy = rMat.m[NWU_U][Y];
+    const float uz = rMat.m[NWU_U][Z];
+    const float angleToGoDeg = RADIANS_TO_DEGREES(acos_approx(constrainf(-uz, -1.0f, 1.0f)));
+
+    // the axis (target x u) = (uy, -ux, 0): no yaw, roll and pitch only
+    float axisRoll = uy;
+    float axisPitch = -ux;
+    float axisNorm = sqrtf(sq(axisRoll) + sq(axisPitch));
+    bool forced = false;
+    if (uz > 0.0f && launchControlLiftFlipDirection != LAUNCH_LIFT_FLIP_AUTO) {
+        // the first half of the turn goes the way it was told, whatever lean it started
+        // with; past sideways the same steering as AUTO takes it the rest of the way
+        // (positive roll and pitch rates are what right and forward stick ask for)
+        axisRoll = launchControlLiftFlipDirection == LAUNCH_LIFT_FLIP_RIGHT ? 1.0f
+            : launchControlLiftFlipDirection == LAUNCH_LIFT_FLIP_LEFT ? -1.0f : 0.0f;
+        axisPitch = launchControlLiftFlipDirection == LAUNCH_LIFT_FLIP_FORWARD ? 1.0f
+            : launchControlLiftFlipDirection == LAUNCH_LIFT_FLIP_BACK ? -1.0f : 0.0f;
+        axisNorm = 1.0f;
+        forced = true;
+    } else if (uz > 0.0f && axisNorm < 0.17f) {
+        // AUTO, still nearly level, so no tilt to say which way: roll over, toward any lean
+        axisRoll = uy >= 0.0f ? 1.0f : -1.0f;
+        axisPitch = 0.0f;
+        axisNorm = 1.0f;
+    }
+    const float rate = forced ? launchControlLiftFlipRate
+        : MIN(LAUNCH_CONTROL_LIFT_FLIP_GAIN * angleToGoDeg, launchControlLiftFlipRate);
+    if (axisNorm > 1e-4f) {
+        launchControlLiftRate[FD_ROLL] = rate * axisRoll / axisNorm;
+        launchControlLiftRate[FD_PITCH] = rate * axisPitch / axisNorm;
+    } else {
+        launchControlLiftRate[FD_ROLL] = 0.0f;   // exactly upside down
+        launchControlLiftRate[FD_PITCH] = 0.0f;
+    }
+    launchControlLiftRate[FD_YAW] = 0.0f;
+    return angleToGoDeg;
+}
+#endif
+
+#ifdef USE_LAUNCH_CONTROL
+// One motor not pulling its weight, seen two ways (filtered, so a moment's difference
+// doesn't count):
+// - the mixer has to drive one motor much harder than another to hold level, more than
+//   any balance or CoG difference needs (healthy lifts: up to about 12 %)
+// - with RPM telemetry, a motor turning much faster or slower for its command than the
+//   others: a slipping or loose prop unloads it, a failing motor drags (healthy: about 2 %)
+static bool launchControlLiftMotorsUnhealthy(float dt)
+{
+    const int motorCount = getMotorCount();
+    const float outputLow = getMotorOutputLow();
+    const float outputRange = getMotorOutputHigh() - outputLow;
+    if (motorCount < 2 || motorCount > MAX_SUPPORTED_MOTORS || outputRange <= 0.0f) {
+        return false;
+    }
+#ifdef USE_DSHOT_TELEMETRY
+    const bool haveRpm = useDshotTelemetry && isDshotTelemetryActive();
+#else
+    const bool haveRpm = false;
+#endif
+    const float k = launchControlLiftMotorFiltersPrimed ? dt / (LAUNCH_CONTROL_LIFT_MOTOR_FILTER_S + dt) : 1.0f;
+    launchControlLiftMotorFiltersPrimed = true;
+
+    float lowest = 1.0f;
+    float highest = 0.0f;
+    float rpmPerCommand[MAX_SUPPORTED_MOTORS];
+    for (int i = 0; i < motorCount; i++) {
+        const float command = constrainf((motor[i] - outputLow) / outputRange, 0.0f, 1.0f);
+        launchControlLiftMotorCommand[i] += (command - launchControlLiftMotorCommand[i]) * k;
+        lowest = MIN(lowest, launchControlLiftMotorCommand[i]);
+        highest = MAX(highest, launchControlLiftMotorCommand[i]);
+#ifdef USE_DSHOT_TELEMETRY
+        if (haveRpm) {
+            launchControlLiftMotorRpm[i] += (getDshotRpm(i) - launchControlLiftMotorRpm[i]) * k;
+        }
+#endif
+        rpmPerCommand[i] = launchControlLiftMotorRpm[i] / MAX(launchControlLiftMotorCommand[i], 0.2f);
+    }
+    if (highest - lowest > LAUNCH_CONTROL_LIFT_MOTOR_SPREAD_PERCENT / 100.0f) {
+        return true;
+    }
+    if (!haveRpm) {
+        return false;
+    }
+
+    // compare each motor with the median, so one bad motor can't drag the reference
+    float sorted[MAX_SUPPORTED_MOTORS];
+    for (int i = 0; i < motorCount; i++) {
+        float value = rpmPerCommand[i];
+        int j = i;
+        for (; j > 0 && sorted[j - 1] > value; j--) {
+            sorted[j] = sorted[j - 1];
+        }
+        sorted[j] = value;
+    }
+    const float median = (motorCount & 1) ? sorted[motorCount / 2]
+        : 0.5f * (sorted[motorCount / 2 - 1] + sorted[motorCount / 2]);
+    if (median <= 0.0f) {
+        return false;   // no RPM yet
+    }
+    for (int i = 0; i < motorCount; i++) {
+        if (fabsf(rpmPerCommand[i] / median - 1.0f) > LAUNCH_CONTROL_LIFT_MOTOR_RPM_PERCENT / 100.0f) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// What the OSD says for a moment after a lift hands over
+const char *getLaunchControlLiftHandoverMessage(void)
+{
+    switch (launchControlLiftEndReason) {
+    case LIFT_END_SWITCH:
+        return "LIFT ABORT: STICKS LIVE";    // the pilot switched it off
+    case LIFT_END_CONTROL:
+    case LIFT_END_FLIP:
+    case LIFT_END_UPSET:
+        return "LIFT FAULT: STICKS LIVE";    // couldn't hold level, flip or stay upside down
+    case LIFT_END_MOTOR:
+        return "LIFT MOTOR: STICKS LIVE";    // a motor not pulling its weight
+    case LIFT_END_IMPACT:
+        return "LIFT IMPACT: STICKS LIVE";
+    default:
+        return "STICKS LIVE";
+    }
+}
+
+// For the blackbox log: what LIFT is doing now, or how the last lift ended
+uint8_t getLaunchControlLiftLogState(void)
+{
+    if (launchControlState == LAUNCH_CONTROL_LIFTING) {
+        return launchControlLiftPhase == LIFT_PHASE_FLIP ? LAUNCH_LIFT_LOG_FLIP
+            : launchControlLiftPhase == LIFT_PHASE_BRAKE ? LAUNCH_LIFT_LOG_BRAKE : LAUNCH_LIFT_LOG_CLIMB;
+    }
+    if (launchControlLiftStaged) {
+        return LAUNCH_LIFT_LOG_STAGED;
+    }
+    if (launchControlLiftRan && launchControlState == LAUNCH_CONTROL_TRIGGERED) {
+        return LAUNCH_LIFT_LOG_ENDED + launchControlLiftEndReason;
+    }
+    return LAUNCH_LIFT_LOG_NONE;
+}
+
+static void launchControlLiftEnd(timeUs_t currentTimeUs, launchControlLiftEndReason_e reason)
+{
+    launchControlState = LAUNCH_CONTROL_TRIGGERED;
+    launchControlLiftEndUs = currentTimeUs ? currentTimeUs : 1;
+    launchControlLiftEndReason = reason;
+    launchControlLiftPhase = LIFT_PHASE_CLIMB;
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        launchControlLiftRate[axis] = 0.0f;
+    }
+    // Handed over still climbing (no brake, the brake time ran out, or an abort): follow the
+    // coast to its top, so how high the lift went is the real top, not where it handed over
+    launchControlLiftRising = launchControlLiftClimbSpeed > 0.0f && reason != LIFT_END_DISARM;
+    launchControlLiftTopUs = launchControlLiftRising ? 0 : launchControlLiftEndUs;
+}
+#endif
+
+// Runs the LIFT. Nothing but time, the trigger (or launch control) going off, losing the
+// ability to hold level, a disarm or a failsafe ends the climb: stick movement deliberately
+// does not, so the pilot can set the sticks for the handover while the quad climbs. On a
+// momentary trigger this makes the lift hold-to-run: letting go hands the quad back to the
+// sticks.
+// With launch_lift_brake set, time up doesn't hand over straight away: the throttle drops,
+// the quad rolls upside down and brakes at that throttle until the climb has stopped, and
+// then the sticks are live. The coast after a lift is what would carry it highest, so this
+// keeps the top of every lift a few metres above where the lift time ends it.
+// NOINLINE: called from the PID loop, but kept out of its fast code (ITCM RAM on F7 is only 16 KB).
+NOINLINE void launchControlLiftUpdate(timeUs_t currentTimeUs)
+{
+#ifdef USE_LAUNCH_CONTROL
+    const timeDelta_t sinceLastUs = launchControlLiftLastUpdateUs ? cmpTimeUs(currentTimeUs, launchControlLiftLastUpdateUs) : 0;
+    const float dt = MAX(sinceLastUs, 0) * 1e-6f;
+    launchControlLiftLastUpdateUs = currentTimeUs;
+
+#ifdef USE_ACC
+    if (launchControlState == LAUNCH_CONTROL_ACTIVE && sensors(SENSOR_ACC)) {
+        // staged and still: learn what "not moving" reads, so the climb speed starts from zero
+        launchControlLiftRestG += (launchControlLiftVerticalG() - launchControlLiftRestG)
+            * dt / (LAUNCH_CONTROL_LIFT_REST_TIME_S + dt);
+    }
+    if (launchControlLiftRising && sensors(SENSOR_ACC)) {
+        // handed over while still climbing: keep integrating until the coast tops out
+        launchControlLiftClimbSpeed += (launchControlLiftVerticalG() - launchControlLiftRestG) * G_ACCELERATION * dt;
+        launchControlLiftHeight += launchControlLiftClimbSpeed * dt;
+        launchControlLiftTop = MAX(launchControlLiftTop, launchControlLiftHeight);
+        if (launchControlLiftClimbSpeed <= 0.0f || !ARMING_FLAG(ARMED)
+            || cmpTimeUs(currentTimeUs, launchControlLiftEndUs) >= LAUNCH_CONTROL_LIFT_TOP_FOLLOW_MS * 1000) {
+            launchControlLiftRising = false;
+            launchControlLiftTopUs = currentTimeUs ? currentTimeUs : 1;
+        }
+    }
+#endif
+    // Forget the handover and top times once their notices are over. cmpTimeUs is 32 bits, so
+    // about 72 minutes later a stale time would read as recent again and bring a notice back.
+    // This runs every PID loop, so it doesn't depend on the OSD asking.
+    if (launchControlLiftEndUs && !launchControlLiftRising
+        && cmpTimeUs(currentTimeUs, launchControlLiftEndUs) >= LAUNCH_CONTROL_LIFT_HANDOVER_NOTICE_MS * 1000) {
+        launchControlLiftEndUs = 0;
+    }
+    if (launchControlLiftTopUs
+        && cmpTimeUs(currentTimeUs, launchControlLiftTopUs) >= LAUNCH_CONTROL_LIFT_TOP_NOTICE_MS * 1000) {
+        launchControlLiftTopUs = 0;
+    }
+    if (launchControlState != LAUNCH_CONTROL_LIFTING) {
+        return;
+    }
+
+    const bool switchAbort = !IS_RC_MODE_ACTIVE(BOXLAUNCHTRIGGER) || !IS_RC_MODE_ACTIVE(BOXLAUNCHCONTROL);
+    if (switchAbort || failsafeIsActive() || !ARMING_FLAG(ARMED)) {
+        // the switch always gives the pilot the sticks, whatever stage the lift is at
+        launchControlLiftEnd(currentTimeUs, switchAbort ? LIFT_END_SWITCH
+            : failsafeIsActive() ? LIFT_END_FAILSAFE : LIFT_END_DISARM);
+        return;
+    }
+
+#ifdef USE_ACC
+    launchControlLiftClimbSpeed += (launchControlLiftVerticalG() - launchControlLiftRestG) * G_ACCELERATION * dt;
+    launchControlLiftHeight += launchControlLiftClimbSpeed * dt;
+    launchControlLiftTop = MAX(launchControlLiftTop, launchControlLiftHeight);
+#endif
+    const timeDelta_t inPhaseUs = cmpTimeUs(currentTimeUs, launchControlLiftPhaseStartUs);
+    UNUSED(inPhaseUs);
+
+    if (launchControlLiftPhase == LIFT_PHASE_CLIMB) {
+        const bool timeUp = cmpTimeUs(currentTimeUs, launchControlLiftStartUs) >= (timeDelta_t)launchControlLiftTimeMs * 1000;
+
+        // Can it still hold level? Self-level keeps a healthy quad within a few degrees and
+        // barely rotating. A loose prop, a motor or ESC fault or a strike shows up as a tilt
+        // it can't correct, or a spin, and full throttle would drive it wherever it points.
+        // Brief upsets (a gust, leaving uneven ground) are ridden out; a sustained one hands
+        // the quad straight back to the pilot rather than finishing the climb.
+        bool lostControl = false;
+        bool impact = false;
+#ifdef USE_ACC
+        bool troubled = getCosTiltAngle() < cos_approx(DEGREES_TO_RADIANS(LAUNCH_CONTROL_LIFT_ABORT_TILT_DEG));
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            troubled = troubled || fabsf(gyro.gyroADCf[axis]) > LAUNCH_CONTROL_LIFT_ABORT_RATE_DPS;
+        }
+        // An impact (a ceiling, a bird, a branch) is a spike in jerk that thrust alone doesn't
+        // make, however hard the quad accelerates. Off unless set: it ends the lift at once.
+        launchControlLiftPeakJerk = fmaxf(launchControlLiftPeakJerk, acc.jerkMagnitude);
+        impact = launchControlLiftImpactJerk > 0.0f && acc.jerkMagnitude > launchControlLiftImpactJerk;
+        if (!troubled) {
+            launchControlLiftTroubleStartUs = 0;
+        } else if (launchControlLiftTroubleStartUs == 0) {
+            launchControlLiftTroubleStartUs = currentTimeUs ? currentTimeUs : 1;
+        } else {
+            lostControl = cmpTimeUs(currentTimeUs, launchControlLiftTroubleStartUs) >= LAUNCH_CONTROL_LIFT_ABORT_TIME_MS * 1000;
+        }
+#endif
+
+        // Is every motor pulling its weight? Holding level isn't enough: a loose prop or a
+        // failing motor can be levelled out by the other three at full throttle, and the
+        // lift would carry on. Not in the spin-up, where the RPM lags the command.
+        bool motorFault = false;
+        if (launchControlLiftMotorsUnhealthy(dt)
+            && cmpTimeUs(currentTimeUs, launchControlLiftStartUs) >= LAUNCH_CONTROL_LIFT_MOTOR_SETTLE_MS * 1000) {
+            if (launchControlLiftMotorFaultStartUs == 0) {
+                launchControlLiftMotorFaultStartUs = currentTimeUs ? currentTimeUs : 1;
+            } else {
+                motorFault = cmpTimeUs(currentTimeUs, launchControlLiftMotorFaultStartUs) >= LAUNCH_CONTROL_LIFT_MOTOR_FAULT_MS * 1000;
+            }
+        } else {
+            launchControlLiftMotorFaultStartUs = 0;
+        }
+        // A motor that has stopped (stalled, or an ESC that has reset or given up) is a fault
+        // straight away, whatever the other three are doing. It turned at the trigger, so
+        // the spin-up can't be mistaken for it.
+        if (launchControlLiftFindStoppedMotor()) {
+            if (launchControlLiftMotorStoppedStartUs == 0) {
+                launchControlLiftMotorStoppedStartUs = currentTimeUs ? currentTimeUs : 1;
+            } else if (cmpTimeUs(currentTimeUs, launchControlLiftMotorStoppedStartUs) >= LAUNCH_CONTROL_LIFT_MOTOR_STOPPED_MS * 1000) {
+                motorFault = true;
+            }
+        } else {
+            launchControlLiftMotorStoppedStartUs = 0;
+        }
+
+        if (lostControl || impact || motorFault) {
+            // no flip for a quad that's hurt: the pilot gets it as it is
+            launchControlLiftEnd(currentTimeUs, impact ? LIFT_END_IMPACT : lostControl ? LIFT_END_CONTROL : LIFT_END_MOTOR);
+        } else if (timeUp) {
+#ifdef USE_ACC
+            if (launchControlLiftBrakeFraction > 0.0f && launchControlLiftClimbSpeed >= LAUNCH_CONTROL_LIFT_BRAKE_MIN_SPEED) {
+                // the run is over: throttle off and roll upside down
+                launchControlLiftPhase = LIFT_PHASE_FLIP;
+                launchControlLiftPhaseStartUs = currentTimeUs;
+                launchControlLiftTroubleStartUs = 0;
+                launchControlLiftMotorThrottle = 0.0f;
+                launchControlLiftSteerInverted();
+            } else
+#endif
+            {
+                launchControlLiftEnd(currentTimeUs, LIFT_END_TIME);
+            }
+        }
+        return;
+    }
+
+#ifdef USE_ACC
+    const float angleToGoDeg = launchControlLiftSteerInverted();
+    if (launchControlLiftPhase == LIFT_PHASE_FLIP) {
+        if (angleToGoDeg <= LAUNCH_CONTROL_LIFT_BRAKE_START_DEG) {
+            // upside down: thrust now pushes down, against the climb
+            launchControlLiftPhase = LIFT_PHASE_BRAKE;
+            launchControlLiftPhaseStartUs = currentTimeUs;
+            launchControlLiftMotorThrottle = launchControlLiftBrakeFraction;
+        } else if (inPhaseUs >= launchControlLiftFlipTimeoutUs) {
+            // it isn't turning over as told
+            launchControlLiftEnd(currentTimeUs, LIFT_END_FLIP);
+        }
+        return;
+    }
+
+    // LIFT_PHASE_BRAKE
+    if (angleToGoDeg <= LAUNCH_CONTROL_LIFT_BRAKE_ABORT_DEG) {
+        launchControlLiftTroubleStartUs = 0;
+    } else if (launchControlLiftTroubleStartUs == 0) {
+        launchControlLiftTroubleStartUs = currentTimeUs ? currentTimeUs : 1;
+    } else if (cmpTimeUs(currentTimeUs, launchControlLiftTroubleStartUs) >= LAUNCH_CONTROL_LIFT_ABORT_TIME_MS * 1000) {
+        launchControlLiftEnd(currentTimeUs, LIFT_END_UPSET);   // can't hold it upside down
+        return;
+    }
+    if (launchControlLiftClimbSpeed <= 0.0f) {
+        // stopped: the top of the jump. Throttle back to the stick, sticks live.
+        launchControlLiftEnd(currentTimeUs, LIFT_END_STOPPED);
+    } else if (inPhaseUs >= launchControlLiftBrakeTimeUs) {
+        launchControlLiftEnd(currentTimeUs, LIFT_END_BRAKE_LIMIT);
+    }
+#else
+    launchControlLiftEnd(currentTimeUs, LIFT_END_TIME);
+#endif
+#else
+    UNUSED(currentTimeUs);
 #endif
 }
