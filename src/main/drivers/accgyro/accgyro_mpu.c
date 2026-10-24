@@ -80,6 +80,10 @@
 // Need to see at least this many interrupts during initialisation to confirm EXTI connectivity
 #define GYRO_EXTI_DETECT_THRESHOLD 1000
 
+// A DMA read takes a small fraction of a sample period, so one still in progress this many data ready
+// interrupts later has lost its completion and will never finish
+#define GYRO_DMA_STALL_LIMIT 4
+
 #ifdef USE_I2C_GYRO
 static void mpu6050FindRevision(gyroDev_t *gyro)
 {
@@ -136,6 +140,19 @@ busStatus_e mpuIntCallback(uintptr_t arg)
     return BUS_READY;
 }
 
+void mpuGyroStartDmaRead(gyroDev_t *gyro)
+{
+    if (gyro->dev.bus->curSegment == gyro->segments) {
+        if (++gyro->dmaStallCount < GYRO_DMA_STALL_LIMIT) {
+            return;
+        }
+        spiAbortTransfer(&gyro->dev);
+    }
+
+    gyro->dmaStallCount = 0;
+    spiSequence(&gyro->dev, gyro->segments);
+}
+
 static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
@@ -151,7 +168,7 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
     gyro->gyroLastEXTI = nowCycles;
 
     if (gyro->gyroModeSPI == GYRO_EXTI_INT_DMA) {
-        spiSequence(&gyro->dev, gyro->segments);
+        mpuGyroStartDmaRead(gyro);
     }
 
     gyro->detectedEXTI++;
