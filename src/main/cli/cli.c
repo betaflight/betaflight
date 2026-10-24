@@ -288,6 +288,32 @@ static const char *configurationStates[] = {
     [CONFIGURATION_STATE_CONFIGURED] = "CONFIGURED"
 };
 
+static const char * const configResetReasonNames[] = {
+    [CONFIG_RESET_NONE] = "NONE",
+    [CONFIG_RESET_EMPTY] = "EMPTY",
+    [CONFIG_RESET_CORRUPT] = "CORRUPT",
+    [CONFIG_RESET_VERSION] = "VERSION",
+    [CONFIG_RESET_PG_MISSING] = "PG_MISSING",
+    [CONFIG_RESET_PG_VERSION] = "PG_VERSION",
+    [CONFIG_RESET_BOARD] = "BOARD",
+    [CONFIG_RESET_CLI] = "CLI",
+    [CONFIG_RESET_MSP] = "MSP",
+    [CONFIG_RESET_BUTTON] = "BUTTON",
+    [CONFIG_RESET_SERIAL] = "SERIAL",
+};
+STATIC_ASSERT(CONFIG_RESET_COUNT == ARRAYLEN(configResetReasonNames), configResetReasonNames_array_length_mismatch);
+
+static const systemConfig_t *currentSystemConfig(void)
+{
+    return configIsInCopy ? &systemConfig_Copy : systemConfig();
+}
+
+static const char *configResetReasonName(void)
+{
+    const uint8_t reason = currentSystemConfig()->configResetReason;
+    return reason < CONFIG_RESET_COUNT ? configResetReasonNames[reason] : "UNKNOWN";
+}
+
 typedef enum dumpFlags_e {
     DUMP_MASTER = (1 << 0),
     DUMP_PROFILE = (1 << 1),
@@ -442,6 +468,14 @@ CLI_DEBUG_EXPORT void cliPrintLinef(const char *format, ...)
     cliPrintfva(format, va);
     va_end(va);
     cliPrintLinefeed();
+}
+
+static void cliPrintConfigReset(void)
+{
+    cliPrintf(" %s", configResetReasonName());
+    if (currentSystemConfig()->configResetDetail) {
+        cliPrintf(" %u", currentSystemConfig()->configResetDetail);
+    }
 }
 
 static const char *cliEnvFilter;
@@ -5210,6 +5244,8 @@ RAM_CODE static void cliDefaults(const char *cmdName, char *cmdline)
 
     if (parameterGroupId) {
         restoreConfigs(parameterGroupId);
+    } else {
+        systemConfigMutable()->configResetReason = CONFIG_RESET_CLI;
     }
 
     if (saveConfigs && tryPrepareSave(cmdName)) {
@@ -6171,13 +6207,15 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
 #endif
     cliPrintLinefeed();
 
-    cliPrintLinef("CONFIG: %s (%db / %db)", configurationStates[systemConfigMutable()->configurationState], getEEPROMConfigSize(), getEEPROMStorageSize());
+    cliPrintf("CONFIG: %s (%db / %db), last reset:", configurationStates[systemConfigMutable()->configurationState], getEEPROMConfigSize(), getEEPROMStorageSize());
+    cliPrintConfigReset();
+    cliPrintLinefeed();
     cliPrintLinefeed();
 
     // Devices
     cliPrint("DEVICES DETECTED:");
 #if defined(USE_SPI)
-    cliPrintf(" SPI=%d", spiGetRegisteredDeviceCount());
+    cliPrintf(" SPI=%d (%d errors)", spiGetRegisteredDeviceCount(), spiGetErrorCounter());
 #if defined(USE_I2C)
     cliPrint(",");
 #endif
@@ -6724,6 +6762,12 @@ static void printVersion(bool printBoardInfo)
     cliPrintLinef("# config rev: %s", shortConfigGitRevision);
 #endif
 
+    if (currentSystemConfig()->configResetReason != CONFIG_RESET_NONE) {
+        cliPrint("# config reset:");
+        cliPrintConfigReset();
+        cliPrintLinefeed();
+    }
+
 #if defined(USE_BOARD_INFO)
     if (printBoardInfo && strlen(getManufacturerId()) && strlen(getBoardName())) {
         cliPrintLinef("# board: manufacturer_id: %s, board_name: %s", getManufacturerId(), getBoardName());
@@ -6891,10 +6935,13 @@ RAM_CODE static void cliEnv(const char *cmdName, char *cmdline)
     cliPrintNameValue("CONFIG_STATE", configurationStates[systemConfigMutable()->configurationState]);
     cliPrintNameValuef("CONFIG_SIZE", "%d", getEEPROMConfigSize());
     cliPrintNameValuef("CONFIG_MAX_SIZE", "%d", getEEPROMStorageSize());
+    cliPrintNameValue("CONFIG_RESET_REASON", configResetReasonName());
+    cliPrintNameValuef("CONFIG_RESET_DETAIL", "%u", systemConfig()->configResetDetail);
 
     // Bus devices
 #if defined(USE_SPI)
     cliPrintNameValuef("SPI_COUNT", "%d", spiGetRegisteredDeviceCount());
+    cliPrintNameValuef("SPI_ERRORS", "%d", spiGetErrorCounter());
 #endif
 #if defined(USE_I2C)
     cliPrintNameValuef("I2C_COUNT", "%d", i2cGetRegisteredDeviceCount());
