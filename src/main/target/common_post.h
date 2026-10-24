@@ -1071,3 +1071,26 @@ extern struct linker_symbol __fontdata_end;
 #if !defined(ENABLE_UNUSED_PINS_INIT)
 #define ENABLE_UNUSED_PINS_INIT 1
 #endif
+
+// one build option is enough (512 KB targets): the autotune needs the frame map, the wizard the tap capture and
+// motor output of the excitation
+#if defined(USE_FILTER_AUTOTUNE) && !defined(USE_FRAME_WIZARD)
+#define USE_FRAME_WIZARD
+#endif
+#if defined(USE_FRAME_WIZARD) && !defined(USE_MOTOR_EXCITATION)
+#define USE_MOTOR_EXCITATION
+#endif
+
+#if defined(USE_FILTER_AUTOTUNE) && !(defined(USE_FRAME_WIZARD) && defined(USE_RPM_FILTER) && defined(USE_DYN_NOTCH_FILTER) && defined(USE_DSHOT_TELEMETRY))
+#undef USE_FILTER_AUTOTUNE
+#endif
+
+// the autotune weighs the D-term filtering by the motor heat it causes
+#if defined(USE_FILTER_AUTOTUNE) && !defined(USE_MOTOR_THERMAL)
+#define USE_MOTOR_THERMAL
+#endif
+
+// the thermal model's ripple loss comes from the motor command noise index
+#if defined(USE_MOTOR_THERMAL) && !defined(USE_MOTOR_NOISE)
+#define USE_MOTOR_NOISE
+#endif

@@ -67,6 +67,13 @@
 #include "sensors/sensors.h"
 
 #include "mixer.h"
+#ifdef USE_MOTOR_NOISE
+#include "motor_noise.h"
+#endif
+#ifdef USE_MOTOR_EXCITATION
+#include "motor_excitation.h"
+#include "frame_wizard.h"
+#endif
 
 #define DYN_LPF_THROTTLE_STEPS             100
 #define DYN_LPF_THROTTLE_UPDATE_DELAY_US  5000 // minimum of 5ms between updates
@@ -692,6 +699,20 @@ static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const
 
 FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
 {
+    // Motor noise index: fed with the previous loop's final motor outputs so that every output path (normal
+    // mix, motor stop, crash flip) is covered; the one-loop lag is irrelevant for it.
+#ifdef USE_MOTOR_NOISE
+    motorNoiseUpdate(motor, mixerRuntime.motorCount);
+#endif
+#ifdef USE_MOTOR_EXCITATION
+    // bench signal generator: writes the motor test values, ends its session when armed
+    motorExcitationUpdate(motor_disarmed, mixerRuntime.motorCount, mixerRuntime.disarmMotorOutput, currentTimeUs);
+#endif
+#ifdef USE_FRAME_WIZARD
+    // bench frame wizard: taps with the motors stopped, then all motors swept at once
+    frameWizardUpdate(motor_disarmed, mixerRuntime.motorCount, mixerRuntime.disarmMotorOutput, currentTimeUs);
+#endif
+
     const bool launchControlActive = isLaunchControlActive();
     const bool airmodeEnabled = isAirmodeEnabled() || launchControlActive;
 

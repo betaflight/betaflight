@@ -65,6 +65,9 @@
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/mixer.h"
+#ifdef USE_MOTOR_EXCITATION
+#include "flight/motor_excitation.h"
+#endif
 #include "flight/pid.h"
 #include "flight/position.h"
 #include "flight/rpm_filter.h"
@@ -1115,6 +1118,12 @@ static void blackboxResetIterationTimers(void)
 /**
  * Start Blackbox logging if it is not already running. Intended to be called upon arming.
  */
+#ifdef USE_MOTOR_EXCITATION
+// the parameters of the bench session that started this log, all zero when none was running; taken when
+// the log starts, as the session can end before the headers are written
+static motorExcitationParams_t excitationHeader;
+#endif
+
 static void blackboxStart(void)
 {
     blackboxValidateConfig();
@@ -1151,6 +1160,14 @@ static void blackboxStart(void)
      */
     blackboxLastArmingBeep = getArmingBeepTimeMicros();
     memcpy(&blackboxLastFlightModeFlags, &rcModeActivationMask, sizeof(blackboxLastFlightModeFlags)); // record startup status
+
+#ifdef USE_MOTOR_EXCITATION
+    if (motorExcitationIsActive()) {
+        excitationHeader = *motorExcitationGetParams();
+    } else {
+        memset(&excitationHeader, 0, sizeof(excitationHeader));
+    }
+#endif
 
     blackboxSetState(BLACKBOX_STATE_PREPARE_LOG_FILE);
 }
@@ -1215,7 +1232,11 @@ static bool inMotorTestMode(void)
 {
     static uint32_t resetTime = 0;
 
-    if (!ARMING_FLAG(ARMED) && areMotorsRunning()) {
+    bool benchSession = false;
+#ifdef USE_MOTOR_EXCITATION
+    benchSession = motorExcitationIsActive();   // includes RECORD sessions with the motors stopped (tap test)
+#endif
+    if (!ARMING_FLAG(ARMED) && (areMotorsRunning() || benchSession)) {
         resetTime = millis() + 5000; // add 5 seconds
         return true;
     } else {
@@ -1872,6 +1893,25 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_RATES_TYPE, "%d",             currentControlRateProfile->rates_type);
 
         BLACKBOX_PRINT_HEADER_LINE("fields_disabled_mask", "%d",            blackboxConfig()->fields_disabled_mask);
+#ifdef USE_MOTOR_EXCITATION
+        // bench session that started this log (all zero when none); per-frame identity is in DEBUG_MOTOR_EXCITATION
+        // longer than the 64 bytes reserved above: up to 86 with every field at its maximum
+        BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
+            const blackboxBufferReserveStatus_e reserve = blackboxDeviceReserveBufferSpace(96);
+            if (reserve == BLACKBOX_RESERVE_TEMPORARY_FAILURE) {
+                return false;   // try this line again later
+            }
+            if (reserve == BLACKBOX_RESERVE_SUCCESS) {  // a device buffer too small for it skips the line
+                blackboxPrintfHeaderLine("motor_excitation", "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%u",
+                                       excitationHeader.sessionId, excitationHeader.motorMask,
+                                       excitationHeader.waveform, excitationHeader.baseCommand,
+                                       excitationHeader.amplitude, excitationHeader.freq0DeciHz,
+                                       excitationHeader.freq1DeciHz, excitationHeader.durationDs,
+                                       excitationHeader.rampMs, excitationHeader.maxCommand,
+                                       (unsigned)excitationHeader.seed);
+            }
+        );
+#endif
         BLACKBOX_PRINT_HEADER_LINE("blackbox_high_resolution", "%d",        blackboxConfig()->high_resolution);
         BLACKBOX_PRINT_HEADER_LINE("rc_command_scale", "%d",                BLACKBOX_RC_COMMAND_SCALE);
 

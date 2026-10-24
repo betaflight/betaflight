@@ -31,6 +31,9 @@
 typedef struct accelerationRuntime_s {
     uint16_t accLpfCutHz;
     pt2Filter_t accFilter[XYZ_AXIS_COUNT];
+#ifdef USE_MOTOR_EXCITATION
+    pt2Filter_t tapFilter[XYZ_AXIS_COUNT];   // bench tap capture: fixed cutoff, independent of acc_lpf_hz
+#endif
     flightDynamicsTrims_t *accelerationTrims;
     uint16_t calibratingA;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 } accelerationRuntime_t;

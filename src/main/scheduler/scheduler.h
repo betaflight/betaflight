@@ -204,6 +204,12 @@ typedef enum {
 #ifdef USE_GIMBAL
     TASK_GIMBAL,
 #endif
+#ifdef USE_FILTER_AUTOTUNE
+    TASK_FILTER_TUNE,
+#endif
+#ifdef USE_MOTOR_THERMAL
+    TASK_MOTOR_THERMAL,
+#endif
 #if ENABLE_OSD_CUSTOM_TEXT
     TASK_OSD_CUSTOM_TEXT,
 #endif

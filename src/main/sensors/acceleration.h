@@ -75,7 +75,12 @@ typedef struct acc_s {
     float accMagnitude;                     // in multiples of 1G
     float jerkMagnitude;                    // in multiples of 1G/s (measure of collision strength)
     bool isAccelUpdatedAtLeastOnce;
+#ifdef USE_MOTOR_EXCITATION
+    vector3_t accTap;                       // rotated, unscaled, own ACC_TAP_LPF_HZ filter (bench tap capture)
+#endif
 } acc_t;
+
+#define ACC_TAP_LPF_HZ 250
 
 extern acc_t acc;
 

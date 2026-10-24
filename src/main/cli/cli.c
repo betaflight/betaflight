@@ -105,6 +105,7 @@ bool cliMode = false;
 #include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
+#include "flight/filter_autotune.h"
 #include "flight/flight_plan_nav.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -2057,6 +2058,193 @@ static void printMotorMix(dumpFlags_t dumpMask, const motorMixer_t *customMotorM
     }
 }
 #endif // USE_QUAD_MIXER_ONLY
+
+#ifdef USE_FILTER_AUTOTUNE
+// frame map and motor profile from the frame wizard: printed as commands so diff and dump keep them
+static void printFrameMap(dumpFlags_t dumpMask, const frameMapConfig_t *map, const frameMapConfig_t *defaultMap, const char *headingStr)
+{
+    const bool equalsDefault = defaultMap && !memcmp(map, defaultMap, sizeof(*map));
+    headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
+    cliDumpPrintLinef(dumpMask, equalsDefault, "framemap reset");
+    if (map->parts) {
+        cliDumpPrintLinef(dumpMask, equalsDefault, "framemap parts%s%s",
+            (map->parts & FRAME_MAP_PART_TAPS) ? " taps" : "", (map->parts & FRAME_MAP_PART_MOTORS) ? " motors" : "");
+    }
+    for (int i = 0; i < MIN(map->count, FRAME_MAP_MODES); i++) {
+        const uint8_t src = map->modeSrc[i];
+        cliDumpPrintLinef(dumpMask, equalsDefault, "framemap mode %d %u.%u %s%s%s%s%s", i,
+            map->modeHz10[i] / 10, map->modeHz10[i] % 10,
+            (src & FRAME_MAP_SRC_TAP) ? "t" : "", (src & FRAME_MAP_SRC_MOTOR) ? "m" : "",
+            (src & FRAME_MAP_SRC_CABLE) ? "c" : "", (src & FRAME_MAP_SRC_UNSTABLE) ? "u" : "",
+            (src & FRAME_MAP_SRC_MOTOR_ONCE) ? "o" : "");
+    }
+    static const char axisNames[] = "rpy";
+    for (int m = 0; m < FRAME_MAP_MOTORS; m++) {
+        for (int i = 0; i < MIN(map->motorPeakCount[m], FRAME_MAP_MOTOR_PEAKS); i++) {
+            const uint8_t info = map->motorPeakInfo[m][i];
+            cliDumpPrintLinef(dumpMask, equalsDefault, "framemap peak %d %d %u.%u %u.%04u %c %u%s", m, i,
+                map->motorPeakHz10[m][i] / 10, map->motorPeakHz10[m][i] % 10,
+                map->motorPeakGain[m][i] / 10000, map->motorPeakGain[m][i] % 10000,
+                axisNames[MIN(info & FRAME_MAP_PEAK_AXIS, 2)], (info & FRAME_MAP_PEAK_SPEEDS) >> 4,
+                (info & FRAME_MAP_PEAK_CABLE) ? " c" : "");
+        }
+    }
+    if (map->rotHz10[0] || map->rotHz10[1]) {
+        cliDumpPrintLinef(dumpMask, equalsDefault, "framemap rot %u.%u %u.%u",
+            map->rotHz10[0] / 10, map->rotHz10[0] % 10, map->rotHz10[1] / 10, map->rotHz10[1] % 10);
+    }
+    if (map->runGravity[0] || map->runGravity[1] || map->runGravity[2]) {
+        cliDumpPrintLinef(dumpMask, equalsDefault, "framemap att %d %d %d", map->runGravity[0], map->runGravity[1], map->runGravity[2]);
+    }
+    if (map->spinCheck & FRAME_MAP_SPIN_CHECKED) {
+        char motors[2 * FRAME_MAP_MOTORS + 1] = "";
+        for (int m = 0, k = 0; m < FRAME_MAP_MOTORS; m++) {
+            if (map->spinCheck & (1 << m)) {
+                motors[k++] = ' ';
+                motors[k++] = '1' + m;
+                motors[k] = 0;
+            }
+        }
+        cliDumpPrintLinef(dumpMask, equalsDefault, "framemap spin %s%s", motors[0] ? "fail" : "pass", motors);
+    }
+}
+
+// "123", "12.3", "0.0412": the value x 10^decimals (extra digits dropped); false unless a plain number
+static bool parseFixed(const char *str, int decimals, uint32_t *out)
+{
+    uint32_t v = 0;
+    int frac = -1;
+    if (!str || !*str) {
+        return false;
+    }
+    for (; *str; str++) {
+        if (*str == '.' && frac < 0) {
+            frac = 0;
+        } else if (*str >= '0' && *str <= '9') {
+            if (frac < decimals) {
+                v = v * 10 + (*str - '0');
+                if (frac >= 0) {
+                    frac++;
+                }
+            }
+        } else {
+            return false;
+        }
+    }
+    for (frac = MAX(frac, 0); frac < decimals; frac++) {
+        v *= 10;
+    }
+    *out = v;
+    return true;
+}
+
+static void cliFrameMap(const char *cmdName, char *cmdline)
+{
+    if (isEmpty(cmdline)) {
+        printFrameMap(DUMP_MASTER, frameMapConfig(), NULL, NULL);
+        return;
+    }
+    frameMapConfig_t *map = frameMapConfigMutable();
+    char *saveptr;
+    const char *args[8];
+    int n = 0;
+    for (char *tok = strtok_r(cmdline, " ", &saveptr); tok && n < (int)ARRAYLEN(args); tok = strtok_r(NULL, " ", &saveptr)) {
+        args[n++] = tok;
+    }
+    if (n == 0) {
+        cliShowParseError(cmdName);
+        return;
+    }
+    uint32_t a, b;
+    if (strcasecmp(args[0], "reset") == 0) {
+        memset(map, 0, sizeof(*map));
+    } else if (strcasecmp(args[0], "parts") == 0) {
+        map->parts = 0;
+        for (int i = 1; i < n; i++) {
+            if (strcasecmp(args[i], "taps") == 0) {
+                map->parts |= FRAME_MAP_PART_TAPS;
+            } else if (strcasecmp(args[i], "motors") == 0) {
+                map->parts |= FRAME_MAP_PART_MOTORS;
+            } else {
+                cliShowParseError(cmdName);
+                return;
+            }
+        }
+    } else if (strcasecmp(args[0], "mode") == 0) {
+        // mode <index> <hz> <t|m|c|u|o>: modes are kept ascending, so enter them in order ('?' is the CLI's completion key)
+        const int i = n >= 2 ? atoi(args[1]) : -1;
+        if (n != 4 || i < 0 || i >= FRAME_MAP_MODES || i > map->count || !parseFixed(args[2], 1, &a) || a > UINT16_MAX) {
+            cliShowParseError(cmdName);
+            return;
+        }
+        uint8_t src = 0;
+        for (const char *c = args[3]; *c; c++) {
+            src |= *c == 't' ? FRAME_MAP_SRC_TAP : *c == 'm' ? FRAME_MAP_SRC_MOTOR : *c == 'c' ? FRAME_MAP_SRC_CABLE
+                : *c == 'u' ? FRAME_MAP_SRC_UNSTABLE : *c == 'o' ? FRAME_MAP_SRC_MOTOR_ONCE : 0xFF;
+        }
+        if (src == 0xFF || !(src & (FRAME_MAP_SRC_TAP | FRAME_MAP_SRC_MOTOR | FRAME_MAP_SRC_CABLE))) {
+            cliShowParseError(cmdName);
+            return;
+        }
+        map->modeHz10[i] = a;
+        map->modeSrc[i] = src;
+        map->count = MAX(map->count, i + 1);
+    } else if (strcasecmp(args[0], "peak") == 0) {
+        // peak <motor> <index> <hz> <gain> <r|p|y> <speeds> [c]
+        const int m = n >= 2 ? atoi(args[1]) : -1;
+        const int i = n >= 3 ? atoi(args[2]) : -1;
+        static const char axes[] = "rpy";
+        const char *axis = n >= 6 ? strchr(axes, args[5][0]) : NULL;
+        const int speeds = n >= 7 ? atoi(args[6]) : -1;
+        if (n < 7 || n > 8 || m < 0 || m >= FRAME_MAP_MOTORS || i < 0 || i >= FRAME_MAP_MOTOR_PEAKS || i > map->motorPeakCount[m]
+            || !parseFixed(args[3], 1, &a) || a > UINT16_MAX || !parseFixed(args[4], 4, &b) || b > UINT16_MAX
+            || !axis || !args[5][0] || speeds < 0 || speeds > 3 || (n == 8 && strcasecmp(args[7], "c") != 0)) {
+            cliShowParseError(cmdName);
+            return;
+        }
+        map->motorPeakHz10[m][i] = a;
+        map->motorPeakGain[m][i] = b;
+        map->motorPeakInfo[m][i] = (axis - axes) | (speeds << 4) | (n == 8 ? FRAME_MAP_PEAK_CABLE : 0);
+        map->motorPeakCount[m] = MAX(map->motorPeakCount[m], i + 1);
+    } else if (strcasecmp(args[0], "rot") == 0) {
+        if (n != 3 || !parseFixed(args[1], 1, &a) || a > UINT16_MAX || !parseFixed(args[2], 1, &b) || b > UINT16_MAX) {
+            cliShowParseError(cmdName);
+            return;
+        }
+        map->rotHz10[0] = a;
+        map->rotHz10[1] = b;
+    } else if (strcasecmp(args[0], "att") == 0) {
+        // att <x> <y> <z>: "down" in the body frame x 100 during the last motor run
+        if (n != 4) {
+            cliShowParseError(cmdName);
+            return;
+        }
+        for (int k = 0; k < 3; k++) {
+            map->runGravity[k] = (int8_t)constrain(atoi(args[1 + k]), -100, 100);
+        }
+    } else if (strcasecmp(args[0], "spin") == 0) {
+        // spin pass | spin fail <motor 1-4>...
+        const bool fail = n >= 2 && strcasecmp(args[1], "fail") == 0;
+        if (n < 2 || (!fail && (strcasecmp(args[1], "pass") != 0 || n != 2)) || (fail && n == 2)) {
+            cliShowParseError(cmdName);
+            return;
+        }
+        uint8_t v = FRAME_MAP_SPIN_CHECKED;
+        for (int k = 2; k < n; k++) {
+            const int motor = atoi(args[k]);
+            if (motor < 1 || motor > FRAME_MAP_MOTORS) {
+                cliShowArgumentRangeError(cmdName, "MOTOR", 1, FRAME_MAP_MOTORS);
+                return;
+            }
+            v |= 1 << (motor - 1);
+        }
+        map->spinCheck = v;
+    } else {
+        cliShowParseError(cmdName);
+        return;
+    }
+}
+#endif // USE_FILTER_AUTOTUNE
 
 RAM_CODE static void cliMotorMix(const char *cmdName, char *cmdline)
 {
@@ -8511,6 +8699,10 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
 #if ENABLE_FLIGHT_PLAN
             printWaypoint(dumpMask, &flightPlanConfig_Copy, flightPlanConfig(), "waypoint");
 #endif
+
+#ifdef USE_FILTER_AUTOTUNE
+            printFrameMap(dumpMask, &frameMapConfig_Copy, frameMapConfig(), "framemap");
+#endif
         }
 
         if (dumpMask & HARDWARE_ONLY) {
@@ -8734,6 +8926,11 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("flash_scan", "scan flash device for errors", NULL, cliFlashVerify),
     CLI_COMMAND_DEF("flash_write", NULL, "<address> <message>", cliFlashWrite),
 #endif
+#endif
+#ifdef USE_FILTER_AUTOTUNE
+    CLI_COMMAND_DEF("framemap", "frame map and motor profile from the frame test",
+        "reset | parts [taps] [motors] | mode <i> <hz> <t|m|c|u|o> | peak <motor> <i> <hz> <gain> <r|p|y> <speeds> [c]\r\n"
+        "\trot <hz1> <hz2> | att <x> <y> <z> | spin pass | spin fail <motor>...", cliFrameMap),
 #endif
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
 #ifdef USE_GPS

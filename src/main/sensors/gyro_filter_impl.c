@@ -48,8 +48,19 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
 
 #ifdef USE_RPM_FILTER
     }
-    
+
+#ifdef USE_FILTER_AUTOTUNE
+    float gyroPreRpm[XYZ_AXIS_COUNT];
+    if (filterAutotuneCollecting) {
+        memcpy(gyroPreRpm, gyroADCfVec, sizeof(gyroPreRpm));
+    }
+#endif
     rpmFilterRun(gyroADCfVec);
+#ifdef USE_FILTER_AUTOTUNE
+    if (filterAutotuneCollecting) {
+        filterAutotunePush(gyroPreRpm, gyroADCfVec);
+    }
+#endif
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
 #endif

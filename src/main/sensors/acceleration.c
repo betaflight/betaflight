@@ -97,6 +97,10 @@ static inline void postProcessAccelerometer(void)
             DEBUG_SET(DEBUG_ACCELEROMETER, 0, lrintf(acc.accADC.v[axis]));  //!< Raw Accel (dbg-axis) [unit:accADC]
         }
 
+#ifdef USE_MOTOR_EXCITATION
+        acc.accTap.v[axis] = acc.sampleRateHz ? pt2FilterApply(&accelerationRuntime.tapFilter[axis], acc.accADC.v[axis])
+                                              : acc.accADC.v[axis];
+#endif
         if (accelerationRuntime.accLpfCutHz) {
             acc.accADC.v[axis] = pt2FilterApply(&accelerationRuntime.accFilter[axis], acc.accADC.v[axis]);
         }

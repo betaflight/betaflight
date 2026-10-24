@@ -39,7 +39,7 @@
 #define LED_STRIP_BRIGHTNESS_MAX        100
 #define LED_STRIP_RAINBOW_FREQ_MIN      1
 #define LED_STRIP_RAINBOW_FREQ_MAX      2000
-#define LED_OVERLAY_COUNT               7
+#define LED_OVERLAY_COUNT               8
 #define LED_SPECIAL_COLOR_COUNT        11
 
 #define LED_POS_OFFSET                  0
@@ -147,7 +147,8 @@ typedef enum {
     LED_OVERLAY_BLINK,
     LED_OVERLAY_VTX,
     LED_OVERLAY_INDICATOR,
-    LED_OVERLAY_WARNING
+    LED_OVERLAY_WARNING,
+    LED_OVERLAY_FILTER_TUNE     // the FILTER TUNE mode state (flight/filter_autotune.c)
 } ledOverlayId_e;
 
 typedef enum {

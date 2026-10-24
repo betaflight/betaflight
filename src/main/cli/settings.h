@@ -178,6 +178,9 @@ typedef enum {
 #ifdef USE_TELEMETRY
     TABLE_TELEMETRY_PROTOCOL,
 #endif
+#ifdef USE_FILTER_AUTOTUNE
+    TABLE_FILTER_TUNE_PRESET,
+#endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 

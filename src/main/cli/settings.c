@@ -60,6 +60,7 @@
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
+#include "flight/filter_autotune.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
@@ -100,6 +101,7 @@
 #include "pg/max7456.h"
 #include "pg/mco.h"
 #include "pg/motor.h"
+#include "pg/motor_thermal.h"
 #include "pg/msp.h"
 #include "pg/osd_nav_map.h"
 #include "pg/pg.h"
@@ -608,6 +610,12 @@ static const char * const lookupTableTelemetryProtocol[] = {
 };
 #endif
 
+#ifdef USE_FILTER_AUTOTUNE
+static const char * const lookupTableFilterTunePreset[] = {
+    "LOW_NOISE", "BALANCED", "LOW_DELAY", "MANUAL"
+};
+#endif
+
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
 
 const identifierLookupEntry_t identifierLookups[IDENTIFIER_LOOKUP_COUNT] = {
@@ -770,6 +778,9 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableBaudRate),
 #ifdef USE_TELEMETRY
     LOOKUP_TABLE_ENTRY(lookupTableTelemetryProtocol),
+#endif
+#ifdef USE_FILTER_AUTOTUNE
+    LOOKUP_TABLE_ENTRY(lookupTableFilterTunePreset),
 #endif
 };
 
@@ -1004,6 +1015,18 @@ const clivalue_t valueTable[] = {
     { "max_throttle",               VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { PWM_PULSE_MIN, PWM_PULSE_MAX }, PG_MOTOR_CONFIG, offsetof(motorConfig_t, maxthrottle) },
     { "min_command",                VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { PWM_PULSE_MIN, PWM_PULSE_MAX }, PG_MOTOR_CONFIG, offsetof(motorConfig_t, mincommand) },
     { "motor_kv",                   VAR_UINT16 | HARDWARE_VALUE, .config.minmaxUnsigned = { 1, 40000 },                   PG_MOTOR_CONFIG, offsetof(motorConfig_t, kv) },
+#ifdef USE_MOTOR_THERMAL
+    { PARAM_NAME_MOTOR_STATOR_DIAMETER, VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 5, 60 },  PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, stator_diameter_mm) },
+    { PARAM_NAME_MOTOR_STATOR_HEIGHT,   VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 10, 250 }, PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, stator_height_dmm) },
+#ifdef USE_FILTER_AUTOTUNE
+    { "filter_tune_preset",             VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_FILTER_TUNE_PRESET }, PG_FILTER_TUNE_CONFIG, offsetof(filterTuneConfig_t, preset) },
+    { "filter_tune_heat_budget",        VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, FILTER_TUNE_HEAT_MAX }, PG_FILTER_TUNE_CONFIG, offsetof(filterTuneConfig_t, heat_budget_dk) },
+#endif
+    { PARAM_NAME_MOTOR_PROP_DIAMETER,   VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 200 },  PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, prop_diameter_dinch) },
+    { PARAM_NAME_MOTOR_THERMAL_GAIN,    VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 10, 250 }, PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, gain_percent) },
+    { PARAM_NAME_MOTOR_THERMAL_WARNING, VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 150 },  PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, warning_c) },
+    { PARAM_NAME_MOTOR_RESISTANCE,      VAR_UINT16 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 5000 }, PG_MOTOR_THERMAL_CONFIG, offsetof(motorThermalConfig_t, resistance_mohm) },
+#endif
     { PARAM_NAME_MOTOR_IDLE, VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, MOTOR_IDLE_MAX },                  PG_MOTOR_CONFIG, offsetof(motorConfig_t, motorIdle) },
 #ifdef USE_DSHOT
 #ifdef USE_DSHOT_DMAR
@@ -1861,6 +1884,9 @@ const clivalue_t valueTable[] = {
 
 #ifdef USE_PITOT
     { "osd_airspeed",            VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_AIRSPEED]) },
+#endif
+#ifdef USE_MOTOR_THERMAL
+    { "osd_motor_temp_est_pos",  VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_MOTOR_TEMP_EST]) },
 #endif
 #endif // end of #ifdef USE_OSD
 

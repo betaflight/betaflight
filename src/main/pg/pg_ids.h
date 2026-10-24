@@ -168,7 +168,11 @@
 #define PG_OSD_NAV_MAP_CONFIG       568
 #define PG_PITOT_CONFIG             569
 #define PG_LAUNCH_WING_CONFIG       570
+#define PG_MOTOR_THERMAL_CONFIG     572
 #define PG_AUTOPILOT_WING           571
+#define PG_FRAME_MAP_CONFIG         573
+#define PG_FILTER_TUNE_BACKUP       574
+#define PG_FILTER_TUNE_CONFIG       575
 
 // TODO TBC
 #define PG_DISPLAY_PORT_FBOSD_CONFIG 566
