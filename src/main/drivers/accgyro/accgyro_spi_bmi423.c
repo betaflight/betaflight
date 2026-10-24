@@ -26,6 +26,7 @@
 #ifdef USE_ACCGYRO_BMI423
 
 #include "drivers/accgyro/accgyro.h"
+#include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/accgyro/accgyro_spi_bmi423.h"
 #include "drivers/bus_spi.h"
 #include "drivers/exti.h"
@@ -223,14 +224,13 @@ static busStatus_e bmi423IntCallback(uintptr_t arg)
 static void bmi423ExtiHandler(extiCallbackRec_t *cb)
 {
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
-    extDevice_t *dev = &gyro->dev;
     const uint32_t nowCycles = getCycleCounter();
 
     gyro->gyroSyncEXTI = gyro->gyroLastEXTI + gyro->gyroDmaMaxDuration;
     gyro->gyroLastEXTI = nowCycles;
 
     if (gyro->gyroModeSPI == GYRO_EXTI_INT_DMA) {
-        spiSequence(dev, gyro->segments);
+        mpuGyroStartDmaRead(gyro);
     }
 
     gyro->detectedEXTI++;

@@ -79,6 +79,7 @@ static float smoothedRxRateHz = 100.0f;
 
 static bool isRxDataNew = false;
 static bool isRxRateValid = false;
+static bool yawFromAutopilot = false;
 
 enum {
     ROLL_FLAG = 1 << ROLL,
@@ -147,6 +148,11 @@ float getRcDeflectionRaw(int axis)
 float getRcDeflectionAbs(int axis)
 {
     return rcDeflectionAbs[axis];
+}
+
+bool isYawFromAutopilot(void)
+{
+    return yawFromAutopilot;
 }
 
 float getMaxRcDeflectionAbs(void)
@@ -627,15 +633,16 @@ FAST_CODE void processRcCommand(void)
         DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 3, updateSmoothing ? 1 : 0);   //!< Cutoffs Updated
 #endif
         maxRcDeflectionAbs = 0.0f;
+        // Autopilot yaw control including GPS Rescue. A yaw stick deflection past
+        // the deadband hands yaw back to the pilot.
+        yawFromAutopilot = autopilotYawControlActive()
+            && fabsf(rcCommand[FD_YAW]) < rcUsSpanToNorm(autopilotConfig()->stickDeadband);
 
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
 
             float angleRate;
 
-            if ((axis == FD_YAW) && autopilotYawControlActive()
-                && fabsf(rcCommand[FD_YAW]) < rcUsSpanToNorm(autopilotConfig()->stickDeadband)) {
-                // Autopilot yaw control including GPS Rescue. A yaw stick deflection past
-                // the deadband hands yaw back to the pilot.
+            if (axis == FD_YAW && yawFromAutopilot) {
                 angleRate = autopilotGetYawRate();
                 rcDeflection[axis] = 0;
                 rcDeflectionAbs[axis] = 0;

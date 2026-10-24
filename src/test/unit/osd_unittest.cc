@@ -104,7 +104,7 @@ extern "C" {
     uint8_t simulationBatteryCellCount;
     uint16_t simulationBatteryVoltage;
     uint8_t simulationBatteryPercentage;
-    uint32_t simulationBatteryAmperage;
+    int32_t simulationBatteryAmperage;
     uint32_t simulationMahDrawn;
     float simulationWhDrawn;
     int32_t simulationAltitude;
@@ -910,6 +910,30 @@ TEST_F(OsdTest, TestElementAmperage)
 
     // then
     displayPortTestBufferSubstring(1, 12, "123.45%c", SYM_AMP);
+
+    // when
+    simulationBatteryAmperage = -156;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(1, 12, " -1.56%c", SYM_AMP);
+
+    // when
+    simulationBatteryAmperage = -2156;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(1, 12, "-21.56%c", SYM_AMP);
+
+    // when
+    simulationBatteryAmperage = -12345;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(1, 12, "-123.45%c", SYM_AMP);
 }
 
 /*
