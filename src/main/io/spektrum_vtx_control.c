@@ -23,6 +23,8 @@
 
 #include <string.h>
 
+#include "common/utils.h"
+
 #include "config/config.h"
 #include "drivers/vtx_common.h"
 #include "io/vtx.h"
@@ -100,6 +102,7 @@ const uint8_t vtxSaPi[SPEKTRUM_VTX_POWER_COUNT] = {
 
 static uint8_t convertSpektrumVtxPowerIndex(uint8_t sPower)
 {
+    UNUSED(sPower);
     uint8_t devicePower = 0;
 
     const vtxDevice_t *vtxDevice = vtxCommonDevice();
