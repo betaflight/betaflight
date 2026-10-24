@@ -33,6 +33,8 @@
 #include "config/config.h"
 #include "config/feature.h"
 
+#include "drivers/time.h"
+
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/rc.h"
@@ -79,6 +81,7 @@ static float smoothedRxRateHz = 100.0f;
 
 static bool isRxDataNew = false;
 static bool isRxRateValid = false;
+static timeUs_t lastRxTimeUs;         // time of the last frame, 0 until the first one
 static bool yawFromAutopilot = false;
 
 enum {
@@ -282,7 +285,6 @@ void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal)
     // - every time a new frame is detected,
     // - if we stop getting data, at the expiry of RXLOSS_TRIGGER_INTERVAL since the last good frame
     // - if that interval is exceeded and still no data, every RX_FRAME_RECHECK_INTERVAL, until a new frame is detected
-    static timeUs_t lastRxTimeUs = 0;
     timeDelta_t delta = 0;
 
     if (rxReceivingSignal) { // true while receiving data and until RXLOSS_TRIGGER_INTERVAL expires, otherwise false
@@ -552,6 +554,37 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
 
     feedforwardRaw[axis] = feedforward;
 }
+
+// Feedforward comes from the stick speed between the last two frames and is held until the next frame.
+// When frames stop (link stalled, receiver rebooting) it would be held until RX loss is detected
+// (RXLOSS_TRIGGER_INTERVAL, 150 ms), so a fast stick move in the last frame keeps the motors driven that
+// long. Drop it, and the history it is computed from, once no frame came for longer than the longest
+// interval taken as a valid rx rate (RX_INTERVAL_MAX_US). With rc_smoothing the smoothed value then
+// decays to zero through its filter.
+static FAST_CODE_NOINLINE void resetStaleFeedforward(timeUs_t currentTimeUs)
+{
+    static bool isStale = false;
+
+    if (!lastRxTimeUs || cmpTimeUs(currentTimeUs, lastRxTimeUs) <= RX_INTERVAL_MAX_US) {
+        isStale = false;
+        return;
+    }
+    // past the limit an rc update comes from rx loss processing, not from a frame: drop what it computed too
+    if (isStale && !isRxDataNew) {
+        return;
+    }
+    isStale = true;
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        feedforwardRaw[axis] = 0.0f;
+        feedforwardData.filterSetpointSpeed[axis].state = 0.0f;
+        feedforwardData.filterSetpointDelta[axis].state = 0.0f;
+        feedforwardData.prevSetpointSpeed[axis] = 0.0f;
+        feedforwardData.prevSetpointSpeedDelta[axis] = 0.0f;
+        if (feedforwardAveraging) {
+            laggedMovingAverageInit(&feedforwardDeltaAvg[axis].filter, feedforwardAveraging + 1, (float *)&feedforwardDeltaAvg[axis].buf[0]);
+        }
+    }
+}
 #endif // USE_FEEDFORWARD
 
 bool shouldUpdateSmoothing(void)
@@ -673,6 +706,10 @@ FAST_CODE void processRcCommand(void)
             scaleRawSetpointToFpvCamAngle();
         }
     }
+
+#ifdef USE_FEEDFORWARD
+    resetStaleFeedforward(micros());
+#endif
 
 #ifdef USE_RC_SMOOTHING_FILTER
     processRcSmoothingFilter();
