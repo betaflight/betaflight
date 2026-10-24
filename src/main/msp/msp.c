@@ -87,6 +87,9 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#ifdef USE_MOTOR_THERMAL
+#include "flight/motor_thermal.h"
+#endif
 #include "flight/pid.h"
 #include "flight/pid_init.h"
 #include "flight/position.h"
@@ -128,6 +131,7 @@
 #include "pg/gps_rescue.h"
 #include "pg/gyrodev.h"
 #include "pg/motor.h"
+#include "pg/motor_thermal.h"
 #include "pg/pilot.h"
 #include "pg/pos_hold.h"
 #include "pg/rx.h"
@@ -1583,6 +1587,16 @@ case MSP_NAME:
 
         // API 1.49
         sbufWriteU16(dst, motorConfig()->kv);
+        // motor thermal estimator geometry (0 = not built in)
+#ifdef USE_MOTOR_THERMAL
+        sbufWriteU8(dst, motorThermalConfig()->stator_diameter_mm);
+        sbufWriteU8(dst, motorThermalConfig()->stator_height_dmm);
+        sbufWriteU8(dst, motorThermalConfig()->prop_diameter_dinch);
+#else
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+#endif
         break;
 
 #ifdef USE_MAG
@@ -3287,6 +3301,30 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         if (sbufBytesRemaining(src) >= 2) {
             motorConfigMutable()->kv = sbufReadU16(src);
         }
+#ifdef USE_MOTOR_THERMAL
+        bool geometryValid = true;
+#endif
+        if (sbufBytesRemaining(src) >= 3) {
+#ifdef USE_MOTOR_THERMAL
+            const uint8_t d = sbufReadU8(src), h = sbufReadU8(src), prop = sbufReadU8(src);
+            // all zeros = client does not know the fields, keep what we have; otherwise the CLI ranges apply
+            if (d >= 5 && d <= 60 && h >= 10 && h <= 250 && prop <= 200) {
+                motorThermalConfigMutable()->stator_diameter_mm = d;
+                motorThermalConfigMutable()->stator_height_dmm = h;
+                motorThermalConfigMutable()->prop_diameter_dinch = prop;
+            } else if (d || h || prop) {
+                geometryValid = false;      // geometry kept; the rest is already stored, so the model still follows it
+            }
+#else
+            sbufReadU8(src); sbufReadU8(src); sbufReadU8(src);
+#endif
+        }
+#ifdef USE_MOTOR_THERMAL
+        motorThermalInit();     // new KV or geometry take effect now; the temperatures are kept
+        if (!geometryValid) {
+            return MSP_RESULT_ERROR;
+        }
+#endif
         break;
 
 #ifdef USE_GPS
