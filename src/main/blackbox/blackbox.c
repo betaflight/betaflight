@@ -2009,6 +2009,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_VERT_ACCEL, "%d",        autopilotWingConfig()->vertAccel);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_CRUISE_SPEED, "%d",      autopilotWingConfig()->cruiseSpeed);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_TURN_PITCH_FF, "%d",     autopilotWingConfig()->turnPitchFf);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_TURN_YAW_FF, "%d",       autopilotWingConfig()->turnYawFf);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_MAX_BANK, "%d",          autopilotWingConfig()->maxBank);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_L1_PERIOD, "%d",         autopilotWingConfig()->l1Period);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_WING_L1_DAMPING, "%d",        autopilotWingConfig()->l1Damping);
