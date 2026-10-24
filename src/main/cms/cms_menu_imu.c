@@ -687,7 +687,7 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "HORZN LIM_STK",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonLimitSticks,        HORIZON_LIMIT_STICKS_MIN,    HORIZON_LIMIT_STICKS_MAX,   1  }    },
     { "HORZN LIM_DEG",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonLimitDegrees,       10,    250,   1  }    },
 
-    { "AG GAIN",     OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &cmsx_antiGravityGain,   ITERM_ACCELERATOR_GAIN_OFF, ITERM_ACCELERATOR_GAIN_MAX, 1, 100 }    },
+    { "AG GAIN",     OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &cmsx_antiGravityGain,   ANTI_GRAVITY_GAIN_OFF, ANTI_GRAVITY_GAIN_MAX, 1, 100 }    },
 #ifdef USE_THROTTLE_BOOST
     { "THR BOOST",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_throttleBoost,          0,    THROTTLE_BOOST_MAX,   1  }    },
 #endif

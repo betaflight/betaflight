@@ -3653,7 +3653,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         }
         if (sbufBytesRemaining(src) >= 4) {
             sbufReadU16(src); // was currentPidProfile->itermThrottleThreshold
-            currentPidProfile->anti_gravity_gain = sbufReadU16Constrained(src, 0, ITERM_ACCELERATOR_GAIN_MAX);
+            currentPidProfile->anti_gravity_gain = sbufReadU16Constrained(src, ANTI_GRAVITY_GAIN_OFF, ANTI_GRAVITY_GAIN_MAX);
         }
         if (sbufBytesRemaining(src) >= 2) {
             sbufReadU16(src); // was currentPidProfile->dtermSetpointWeight

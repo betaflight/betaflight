@@ -65,8 +65,8 @@
 // Anti gravity I constant
 #define ANTIGRAVITY_KI 0.34f; // if AG gain is 6, about 6 times iTerm will be added
 #define ANTIGRAVITY_KP 0.0034f; // one fifth of the I gain on P by default
-#define ITERM_ACCELERATOR_GAIN_OFF 0
-#define ITERM_ACCELERATOR_GAIN_MAX 250
+#define ANTI_GRAVITY_GAIN_OFF 0
+#define ANTI_GRAVITY_GAIN_MAX 250
 #define ITERM_RELAX_CUTOFF_MIN 1
 #define ITERM_RELAX_CUTOFF_MAX 50
 #define RATE_ACCEL_LIMIT_MAX 500
