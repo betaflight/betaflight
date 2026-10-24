@@ -448,6 +448,10 @@
 #define USE_LAUNCH_CONTROL
 #endif
 
+#if !defined(USE_RC_ADJUSTMENTS)
+#define USE_RC_ADJUSTMENTS
+#endif
+
 #endif // !defined(CORE_BUILD)
 
 // Note: USE_GPS secondary defines (USE_GPS_NMEA, USE_GPS_UBLOX, USE_GPS_RESCUE)

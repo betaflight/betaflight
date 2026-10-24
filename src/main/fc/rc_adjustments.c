@@ -64,6 +64,8 @@
 
 #include "scheduler/scheduler.h"
 
+#ifdef USE_RC_ADJUSTMENTS
+
 #define ADJUSTMENT_RANGE_COUNT_INVALID -1
 
 PG_REGISTER_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges, PG_ADJUSTMENT_RANGE_CONFIG, 2);
@@ -909,3 +911,5 @@ void activeAdjustmentRangeReset(void)
 {
     stepwiseAdjustmentCount = ADJUSTMENT_RANGE_COUNT_INVALID;
 }
+
+#endif // USE_RC_ADJUSTMENTS

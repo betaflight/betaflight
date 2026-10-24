@@ -1547,6 +1547,7 @@ case MSP_NAME:
         }
         break;
 
+#ifdef USE_RC_ADJUSTMENTS
     case MSP_ADJUSTMENT_RANGES:
         for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
             const adjustmentRange_t *adjRange = adjustmentRanges(i);
@@ -1560,6 +1561,7 @@ case MSP_NAME:
             sbufWriteU16(dst, adjRange->adjustmentScale);
         }
         break;
+#endif
 
     case MSP_MOTOR_CONFIG:
         sbufWriteU16(dst, 0); // was minthrottle until after 4.5
@@ -3171,6 +3173,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         }
         break;
 
+#ifdef USE_RC_ADJUSTMENTS
     case MSP_SET_ADJUSTMENT_RANGE:
         i = sbufReadU8(src);
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
@@ -3199,6 +3202,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             return MSP_RESULT_ERROR;
         }
         break;
+#endif
 
     case MSP_SET_RC_TUNING:
         if (sbufBytesRemaining(src) >= 10) {
