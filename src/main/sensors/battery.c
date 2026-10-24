@@ -493,7 +493,7 @@ void batteryInit(void)
             break;
 
         case CURRENT_METER_ESC:
-#ifdef ESC_SENSOR
+#ifdef USE_ESC_SENSOR
             currentMeterESCInit();
 #endif
             break;
