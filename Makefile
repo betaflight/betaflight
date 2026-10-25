@@ -376,6 +376,17 @@ CC_NO_OPTIMISATION      := $(filter-out $(CFLAGS_DISABLED), $(CC_NO_OPTIMISATION
 
 
 # Extract version from the version header
+# The patch level comes from a YYYY.MM.N tag on HEAD matching the header's year and month, otherwise the header default applies
+FC_VERSION_YEAR  := $(call pp_def_value,src/main/build/version.h,FC_VERSION_YEAR)
+FC_VERSION_MONTH := $(call pp_def_value,src/main/build/version.h,FC_VERSION_MONTH)
+ifneq ($(wildcard .git),)
+FC_VERSION_PATCH_LEVEL := $(shell git tag --points-at HEAD 2>/dev/null | sed -n 's/^$(FC_VERSION_YEAR)\.$(FC_VERSION_MONTH)\.\([0-9]\{1,3\}\)$$/\1/p' | sort -n | tail -n 1)
+endif
+ifneq ($(FC_VERSION_PATCH_LEVEL),)
+VERSION_FLAGS    := -DFC_VERSION_PATCH_LEVEL=$(FC_VERSION_PATCH_LEVEL)
+CPPFLAGS         += $(VERSION_FLAGS)
+endif
+
 # Expand FC_VERSION_STRING via the preprocessor; compute before finalizing CFLAGS
 FC_VER           := $(call pp_def_value_str,src/main/build/version.h,FC_VERSION_STRING)
 
@@ -407,6 +418,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               -D'__MCU_NAME__="$(TARGET_MCU)"' \
               -D'__REVISION__="$(REVISION)"' \
               -D'__FC_VERSION__="$(FC_VER)"' \
+              $(VERSION_FLAGS) \
               $(CONFIG_REVISION_DEFINE) \
               -pipe \
               -MMD -MP \
