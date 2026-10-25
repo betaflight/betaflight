@@ -7523,6 +7523,7 @@ static int getDmaOptDisplayNumber(dmaoptEntry_t *entry, int index)
     return resourceIndexToInput(dmaoptResourceOwner(entry->peripheral), index);
 }
 
+/** Convert a DMA CLI instance number to the corresponding configuration row. */
 static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
 {
     if (dispNum < 0) {
@@ -7540,6 +7541,7 @@ static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
     return (index < 0 || index >= entry->maxIndex) ? -1 : index;
 }
 
+/** Map a configuration row to the index expected by the peripheral DMA request map. */
 static int dmaOptPeripheralIndex(dmaoptEntry_t *entry, int index)
 {
 #if defined(USE_UART) && defined(USE_LPUART)
@@ -7554,6 +7556,7 @@ static int dmaOptPeripheralIndex(dmaoptEntry_t *entry, int index)
     return index;
 }
 
+/** Print a peripheral's configured DMA option and its resolved channel details. */
 static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const dmaoptValue_t dmaopt, const bool equalsDefault, const dumpFlags_t dumpMask, printFn *printValue)
 {
     // We compute number to display for different peripherals in advance.
@@ -7731,6 +7734,7 @@ static void printDmaopt(dumpFlags_t dumpMask, const char *headingStr)
 #endif
 }
 
+/** Handle `dma` CLI queries, option listings, and configuration changes. */
 RAM_CODE static void cliDmaopt(const char *cmdName, char *cmdline)
 {
     char *pch = NULL;
