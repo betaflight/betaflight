@@ -540,14 +540,28 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
 
     clearClaimsOnPort(identifier, false);
 
+    bool mspSlotTaken = false;
     if (mask & FUNCTION_MSP) {
         for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
             if (mspConfig()->msp_uart[i] == SERIAL_PORT_NONE) {
                 mspConfigMutable()->msp_uart[i] = identifier;
+                mspSlotTaken = true;
                 break;
             }
         }
     }
+#if defined(USE_OSD) && defined(USE_MSP_DISPLAYPORT)
+    // Accepted without a slot (canApplyFunctionMask only allows that for a
+    // legacy MSP + VTX_MSP line): the port is opened as MSP only through
+    // osd_uart with an MSP DisplayPort, so select it here.  A diff sets
+    // osd_displayport_device after its serial lines, so it would still be
+    // the default at this point.
+    if ((mask & FUNCTION_MSP) && !mspSlotTaken) {
+        osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
+    }
+#else
+    UNUSED(mspSlotTaken);
+#endif
 #ifdef USE_GPS
     if (mask & FUNCTION_GPS) {
         gpsConfigMutable()->gps_uart = identifier;

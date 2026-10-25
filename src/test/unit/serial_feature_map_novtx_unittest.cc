@@ -183,15 +183,20 @@ TEST(SerialFeatureMapNoVtx, LegacyMspVtxLineAppliesWhenEveryMspSlotIsTaken)
     ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_MSP));
     ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART2, FUNCTION_MSP));
 
-    // No slot left, but osd_uart opens the port as MSP on its own.
+    // A diff sets osd_displayport_device after its serial lines, so the OSD
+    // is still on a non-MSP device when the goggles line arrives.
+    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_AUTO;
+
+    // No slot left: osd_uart takes the port and the conversion selects the
+    // MSP DisplayPort, so the port is still opened as MSP.
     ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_MSP | FUNCTION_VTX_MSP));
 
     EXPECT_EQ(SERIAL_PORT_USART3, osdConfig()->osd_uart);
+    EXPECT_EQ(OSD_DISPLAYPORT_DEVICE_MSP, osdConfig()->displayPortDevice);
     for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
         EXPECT_NE(SERIAL_PORT_USART3, mspConfig()->msp_uart[i]);
     }
 
-    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
     serialPortIdentifier_e implied[4];
     const unsigned count = serialImpliedMspPorts(implied, ARRAYLEN(implied));
     ASSERT_EQ(1u, count);
@@ -220,4 +225,16 @@ TEST(SerialFeatureMapNoVtx, LegacyMspVtxLineIsRejectedWhenTheOsdHasAnotherPortAn
 
     EXPECT_FALSE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_MSP | FUNCTION_VTX_MSP));
     EXPECT_EQ(SERIAL_PORT_UART4, osdConfig()->osd_uart);
+}
+
+TEST(SerialFeatureMapNoVtx, LegacyMspVtxLineWithAFreeSlotLeavesTheOsdDeviceAlone)
+{
+    resetAllConfigs();
+    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MAX7456;
+
+    // A slot opens the port as MSP already; the OSD device stays the user's.
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_MSP | FUNCTION_VTX_MSP));
+
+    EXPECT_EQ(SERIAL_PORT_USART3, mspConfig()->msp_uart[0]);
+    EXPECT_EQ(OSD_DISPLAYPORT_DEVICE_MAX7456, osdConfig()->displayPortDevice);
 }
