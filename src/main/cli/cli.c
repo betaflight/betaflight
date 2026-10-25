@@ -7511,6 +7511,7 @@ static resourceOwner_e dmaoptResourceOwner(dmaPeripheral_e peripheral)
     }
 }
 
+/** Return the CLI-visible instance number for a DMA option row. */
 static int getDmaOptDisplayNumber(dmaoptEntry_t *entry, int index)
 {
     if (entry->peripheral == DMA_PERIPH_TIMUP) {
@@ -7654,6 +7655,7 @@ static void printTimerDmaoptDetails(const ioTag_t ioTag, const timerHardware_t *
     }
 }
 
+/** Print a timer pin's configured DMA option and its resolved channel details. */
 static const char *printTimerDmaopt(const timerIOConfig_t *currentConfig, const timerIOConfig_t *defaultConfig, unsigned index, dumpFlags_t dumpMask, bool tagsInUse[], const char *headingStr)
 {
     const ioTag_t ioTag = currentConfig[index].ioTag;
