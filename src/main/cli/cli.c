@@ -7589,6 +7589,7 @@ static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const 
     }
 }
 
+/** Load and print one peripheral's configured DMA option and defaults. */
 static const char *printPeripheralDmaopt(dmaoptEntry_t *entry, int index, dumpFlags_t dumpMask, const char *headingStr)
 {
     const pgRegistry_t* pg = pgFind(entry->pgn);
@@ -7692,6 +7693,7 @@ static const char *printTimerDmaopt(const timerIOConfig_t *currentConfig, const 
 }
 #endif
 
+/** Print DMA options for supported peripherals and configured timer pins. */
 static void printDmaopt(dumpFlags_t dumpMask, const char *headingStr)
 {
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
