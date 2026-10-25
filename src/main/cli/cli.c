@@ -86,6 +86,7 @@ bool cliMode = false;
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
 #if defined(USE_UART) && defined(USE_LPUART)
+#include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 #endif
 #include "drivers/serial_escserial.h"
