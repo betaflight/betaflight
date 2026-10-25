@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE MISSION_REQUEST PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_MISSION_REQUEST 40
 
 

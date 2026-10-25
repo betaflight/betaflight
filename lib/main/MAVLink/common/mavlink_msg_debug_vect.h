@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE DEBUG_VECT PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_DEBUG_VECT 250
 
 
@@ -77,7 +79,7 @@ static inline uint16_t mavlink_msg_debug_vect_pack(uint8_t system_id, uint8_t co
     packet.x = x;
     packet.y = y;
     packet.z = z;
-    mav_array_assign_char(packet.name, name, 10);
+    mav_array_memcpy(packet.name, name, sizeof(char)*10);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_DEBUG_VECT_LEN);
 #endif
 
@@ -159,7 +161,7 @@ static inline uint16_t mavlink_msg_debug_vect_pack_chan(uint8_t system_id, uint8
     packet.x = x;
     packet.y = y;
     packet.z = z;
-    mav_array_assign_char(packet.name, name, 10);
+    mav_array_memcpy(packet.name, name, sizeof(char)*10);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_DEBUG_VECT_LEN);
 #endif
 
@@ -236,7 +238,7 @@ static inline void mavlink_msg_debug_vect_send(mavlink_channel_t chan, const cha
     packet.x = x;
     packet.y = y;
     packet.z = z;
-    mav_array_assign_char(packet.name, name, 10);
+    mav_array_memcpy(packet.name, name, sizeof(char)*10);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_DEBUG_VECT, (const char *)&packet, MAVLINK_MSG_ID_DEBUG_VECT_MIN_LEN, MAVLINK_MSG_ID_DEBUG_VECT_LEN, MAVLINK_MSG_ID_DEBUG_VECT_CRC);
 #endif
 }
@@ -279,7 +281,7 @@ static inline void mavlink_msg_debug_vect_send_buf(mavlink_message_t *msgbuf, ma
     packet->x = x;
     packet->y = y;
     packet->z = z;
-    mav_array_assign_char(packet->name, name, 10);
+    mav_array_memcpy(packet->name, name, sizeof(char)*10);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_DEBUG_VECT, (const char *)packet, MAVLINK_MSG_ID_DEBUG_VECT_MIN_LEN, MAVLINK_MSG_ID_DEBUG_VECT_LEN, MAVLINK_MSG_ID_DEBUG_VECT_CRC);
 #endif
 }

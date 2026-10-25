@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE FUEL_STATUS PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_FUEL_STATUS 371
 
 

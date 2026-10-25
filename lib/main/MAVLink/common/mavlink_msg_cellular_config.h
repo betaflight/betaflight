@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE CELLULAR_CONFIG PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_CELLULAR_CONFIG 336
 
 
@@ -95,10 +97,10 @@ static inline uint16_t mavlink_msg_cellular_config_pack(uint8_t system_id, uint8
     packet.enable_pin = enable_pin;
     packet.roaming = roaming;
     packet.response = response;
-    mav_array_assign_char(packet.pin, pin, 16);
-    mav_array_assign_char(packet.new_pin, new_pin, 16);
-    mav_array_assign_char(packet.apn, apn, 32);
-    mav_array_assign_char(packet.puk, puk, 16);
+    mav_array_memcpy(packet.pin, pin, sizeof(char)*16);
+    mav_array_memcpy(packet.new_pin, new_pin, sizeof(char)*16);
+    mav_array_memcpy(packet.apn, apn, sizeof(char)*32);
+    mav_array_memcpy(packet.puk, puk, sizeof(char)*16);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_CELLULAR_CONFIG_LEN);
 #endif
 
@@ -195,10 +197,10 @@ static inline uint16_t mavlink_msg_cellular_config_pack_chan(uint8_t system_id, 
     packet.enable_pin = enable_pin;
     packet.roaming = roaming;
     packet.response = response;
-    mav_array_assign_char(packet.pin, pin, 16);
-    mav_array_assign_char(packet.new_pin, new_pin, 16);
-    mav_array_assign_char(packet.apn, apn, 32);
-    mav_array_assign_char(packet.puk, puk, 16);
+    mav_array_memcpy(packet.pin, pin, sizeof(char)*16);
+    mav_array_memcpy(packet.new_pin, new_pin, sizeof(char)*16);
+    mav_array_memcpy(packet.apn, apn, sizeof(char)*32);
+    mav_array_memcpy(packet.puk, puk, sizeof(char)*16);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_CELLULAR_CONFIG_LEN);
 #endif
 
@@ -281,10 +283,10 @@ static inline void mavlink_msg_cellular_config_send(mavlink_channel_t chan, uint
     packet.enable_pin = enable_pin;
     packet.roaming = roaming;
     packet.response = response;
-    mav_array_assign_char(packet.pin, pin, 16);
-    mav_array_assign_char(packet.new_pin, new_pin, 16);
-    mav_array_assign_char(packet.apn, apn, 32);
-    mav_array_assign_char(packet.puk, puk, 16);
+    mav_array_memcpy(packet.pin, pin, sizeof(char)*16);
+    mav_array_memcpy(packet.new_pin, new_pin, sizeof(char)*16);
+    mav_array_memcpy(packet.apn, apn, sizeof(char)*32);
+    mav_array_memcpy(packet.puk, puk, sizeof(char)*16);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_CELLULAR_CONFIG, (const char *)&packet, MAVLINK_MSG_ID_CELLULAR_CONFIG_MIN_LEN, MAVLINK_MSG_ID_CELLULAR_CONFIG_LEN, MAVLINK_MSG_ID_CELLULAR_CONFIG_CRC);
 #endif
 }
@@ -330,10 +332,10 @@ static inline void mavlink_msg_cellular_config_send_buf(mavlink_message_t *msgbu
     packet->enable_pin = enable_pin;
     packet->roaming = roaming;
     packet->response = response;
-    mav_array_assign_char(packet->pin, pin, 16);
-    mav_array_assign_char(packet->new_pin, new_pin, 16);
-    mav_array_assign_char(packet->apn, apn, 32);
-    mav_array_assign_char(packet->puk, puk, 16);
+    mav_array_memcpy(packet->pin, pin, sizeof(char)*16);
+    mav_array_memcpy(packet->new_pin, new_pin, sizeof(char)*16);
+    mav_array_memcpy(packet->apn, apn, sizeof(char)*32);
+    mav_array_memcpy(packet->puk, puk, sizeof(char)*16);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_CELLULAR_CONFIG, (const char *)packet, MAVLINK_MSG_ID_CELLULAR_CONFIG_MIN_LEN, MAVLINK_MSG_ID_CELLULAR_CONFIG_LEN, MAVLINK_MSG_ID_CELLULAR_CONFIG_CRC);
 #endif
 }

@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE PARAM_MAP_RC PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_PARAM_MAP_RC 50
 
 
@@ -12,7 +14,7 @@ typedef struct __mavlink_param_map_rc_t {
  int16_t param_index; /*<  Parameter index. Send -1 to use the param ID field as identifier (else the param id will be ignored), send -2 to disable any existing map for this rc_channel_index.*/
  uint8_t target_system; /*<  System ID*/
  uint8_t target_component; /*<  Component ID*/
- char param_id[16]; /*<  Onboard parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string*/
+ char param_id[16]; /*<  Onboard parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string. Encoded as 7-bit ASCII.*/
  uint8_t parameter_rc_channel_index; /*<  Index of parameter RC channel. Not equal to the RC channel id. Typically corresponds to a potentiometer-knob on the RC.*/
 } mavlink_param_map_rc_t;
 
@@ -67,7 +69,7 @@ typedef struct __mavlink_param_map_rc_t {
  *
  * @param target_system  System ID
  * @param target_component  Component ID
- * @param param_id  Onboard parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string
+ * @param param_id  Onboard parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string. Encoded as 7-bit ASCII.
  * @param param_index  Parameter index. Send -1 to use the param ID field as identifier (else the param id will be ignored), send -2 to disable any existing map for this rc_channel_index.
  * @param parameter_rc_channel_index  Index of parameter RC channel. Not equal to the RC channel id. Typically corresponds to a potentiometer-knob on the RC.
  * @param param_value0  Initial parameter value
@@ -101,7 +103,7 @@ static inline uint16_t mavlink_msg_param_map_rc_pack(uint8_t system_id, uint8_t 
     packet.target_system = target_system;
     packet.target_component = target_component;
     packet.parameter_rc_channel_index = parameter_rc_channel_index;
-    mav_array_assign_char(packet.param_id, param_id, 16);
+    mav_array_memcpy(packet.param_id, param_id, sizeof(char)*16);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_PARAM_MAP_RC_LEN);
 #endif
 
@@ -118,7 +120,7 @@ static inline uint16_t mavlink_msg_param_map_rc_pack(uint8_t system_id, uint8_t 
  *
  * @param target_system  System ID
  * @param target_component  Component ID
- * @param param_id  Onboard parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string
+ * @param param_id  Onboard parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string. Encoded as 7-bit ASCII.
  * @param param_index  Parameter index. Send -1 to use the param ID field as identifier (else the param id will be ignored), send -2 to disable any existing map for this rc_channel_index.
  * @param parameter_rc_channel_index  Index of parameter RC channel. Not equal to the RC channel id. Typically corresponds to a potentiometer-knob on the RC.
  * @param param_value0  Initial parameter value
@@ -172,7 +174,7 @@ static inline uint16_t mavlink_msg_param_map_rc_pack_status(uint8_t system_id, u
  * @param msg The MAVLink message to compress the data into
  * @param target_system  System ID
  * @param target_component  Component ID
- * @param param_id  Onboard parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string
+ * @param param_id  Onboard parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string. Encoded as 7-bit ASCII.
  * @param param_index  Parameter index. Send -1 to use the param ID field as identifier (else the param id will be ignored), send -2 to disable any existing map for this rc_channel_index.
  * @param parameter_rc_channel_index  Index of parameter RC channel. Not equal to the RC channel id. Typically corresponds to a potentiometer-knob on the RC.
  * @param param_value0  Initial parameter value
@@ -207,7 +209,7 @@ static inline uint16_t mavlink_msg_param_map_rc_pack_chan(uint8_t system_id, uin
     packet.target_system = target_system;
     packet.target_component = target_component;
     packet.parameter_rc_channel_index = parameter_rc_channel_index;
-    mav_array_assign_char(packet.param_id, param_id, 16);
+    mav_array_memcpy(packet.param_id, param_id, sizeof(char)*16);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_PARAM_MAP_RC_LEN);
 #endif
 
@@ -262,7 +264,7 @@ static inline uint16_t mavlink_msg_param_map_rc_encode_status(uint8_t system_id,
  *
  * @param target_system  System ID
  * @param target_component  Component ID
- * @param param_id  Onboard parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string
+ * @param param_id  Onboard parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string. Encoded as 7-bit ASCII.
  * @param param_index  Parameter index. Send -1 to use the param ID field as identifier (else the param id will be ignored), send -2 to disable any existing map for this rc_channel_index.
  * @param parameter_rc_channel_index  Index of parameter RC channel. Not equal to the RC channel id. Typically corresponds to a potentiometer-knob on the RC.
  * @param param_value0  Initial parameter value
@@ -296,7 +298,7 @@ static inline void mavlink_msg_param_map_rc_send(mavlink_channel_t chan, uint8_t
     packet.target_system = target_system;
     packet.target_component = target_component;
     packet.parameter_rc_channel_index = parameter_rc_channel_index;
-    mav_array_assign_char(packet.param_id, param_id, 16);
+    mav_array_memcpy(packet.param_id, param_id, sizeof(char)*16);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_PARAM_MAP_RC, (const char *)&packet, MAVLINK_MSG_ID_PARAM_MAP_RC_MIN_LEN, MAVLINK_MSG_ID_PARAM_MAP_RC_LEN, MAVLINK_MSG_ID_PARAM_MAP_RC_CRC);
 #endif
 }
@@ -347,7 +349,7 @@ static inline void mavlink_msg_param_map_rc_send_buf(mavlink_message_t *msgbuf, 
     packet->target_system = target_system;
     packet->target_component = target_component;
     packet->parameter_rc_channel_index = parameter_rc_channel_index;
-    mav_array_assign_char(packet->param_id, param_id, 16);
+    mav_array_memcpy(packet->param_id, param_id, sizeof(char)*16);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_PARAM_MAP_RC, (const char *)packet, MAVLINK_MSG_ID_PARAM_MAP_RC_MIN_LEN, MAVLINK_MSG_ID_PARAM_MAP_RC_LEN, MAVLINK_MSG_ID_PARAM_MAP_RC_CRC);
 #endif
 }
@@ -381,7 +383,7 @@ static inline uint8_t mavlink_msg_param_map_rc_get_target_component(const mavlin
 /**
  * @brief Get field param_id from param_map_rc message
  *
- * @return  Onboard parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string
+ * @return  Onboard parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string. Encoded as 7-bit ASCII.
  */
 static inline uint16_t mavlink_msg_param_map_rc_get_param_id(const mavlink_message_t* msg, char *param_id)
 {

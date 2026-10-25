@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE NAV_CONTROLLER_OUTPUT PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_NAV_CONTROLLER_OUTPUT 62
 
 

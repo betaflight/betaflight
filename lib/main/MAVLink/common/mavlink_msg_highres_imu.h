@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE HIGHRES_IMU PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_HIGHRES_IMU 105
 
 

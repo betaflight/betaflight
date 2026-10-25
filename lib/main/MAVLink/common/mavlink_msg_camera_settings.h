@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE CAMERA_SETTINGS PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_CAMERA_SETTINGS 260
 
 MAVPACKED(

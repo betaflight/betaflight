@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE OPTICAL_FLOW PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_OPTICAL_FLOW 100
 
 MAVPACKED(

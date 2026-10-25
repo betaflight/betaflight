@@ -10,7 +10,7 @@
     #error Wrong include order: MAVLINK_STANDARD.H MUST NOT BE DIRECTLY USED. Include mavlink.h from the same directory instead or set ALL AND EVERY defines from MAVLINK.H manually accordingly, including the #define MAVLINK_H call.
 #endif
 
-#define MAVLINK_STANDARD_XML_HASH -197706228828233048
+#define MAVLINK_STANDARD_XML_HASH -2849550618342429186
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 #ifndef MAVLINK_MESSAGE_CRCS
-#define MAVLINK_MESSAGE_CRCS {{0, 50, 9, 9, 0, 0, 0}, {148, 178, 60, 78, 0, 0, 0}, {300, 217, 22, 22, 0, 0, 0}}
+#define MAVLINK_MESSAGE_CRCS {{0, 50, 9, 9, 0, 0, 0}, {33, 104, 28, 28, 0, 0, 0}, {148, 178, 60, 78, 0, 0, 0}}
 #endif
 
 #include "../protocol.h"
@@ -50,7 +50,7 @@ typedef enum MAV_BOOL
 typedef enum MAV_PROTOCOL_CAPABILITY
 {
    MAV_PROTOCOL_CAPABILITY_MISSION_FLOAT=1, /* Autopilot supports the MISSION_ITEM float message type.
-          Note that MISSION_ITEM is deprecated, and autopilots should use MISSION_INT instead.
+          Note that MISSION_ITEM is deprecated, and autopilots should use MISSION_ITEM_INT instead.
          | */
    MAV_PROTOCOL_CAPABILITY_PARAM_FLOAT=2, /* Autopilot supports the new param float message type. | */
    MAV_PROTOCOL_CAPABILITY_MISSION_INT=4, /* Autopilot supports MISSION_ITEM_INT scaled integer message type.
@@ -61,9 +61,9 @@ typedef enum MAV_PROTOCOL_CAPABILITY
           Note that either this flag or MAV_PROTOCOL_CAPABILITY_PARAM_ENCODE_C_CAST should be set if the parameter protocol is supported.
          | */
    MAV_PROTOCOL_CAPABILITY_FTP=32, /* Autopilot supports the File Transfer Protocol v1: https://mavlink.io/en/services/ftp.html. | */
-   MAV_PROTOCOL_CAPABILITY_SET_ATTITUDE_TARGET=64, /* Autopilot supports commanding attitude offboard. | */
-   MAV_PROTOCOL_CAPABILITY_SET_POSITION_TARGET_LOCAL_NED=128, /* Autopilot supports commanding position and velocity targets in local NED frame. | */
-   MAV_PROTOCOL_CAPABILITY_SET_POSITION_TARGET_GLOBAL_INT=256, /* Autopilot supports commanding position and velocity targets in global scaled integers. | */
+   MAV_PROTOCOL_CAPABILITY_SET_ATTITUDE_TARGET=64, /* Autopilot supports the SET_ATTITUDE_TARGET message (for commanding attitude from an offboard controller). | */
+   MAV_PROTOCOL_CAPABILITY_SET_POSITION_TARGET_LOCAL_NED=128, /* Autopilot supports the SET_POSITION_TARGET_LOCAL_NED message (for commanding position and velocity targets in local NED frame). | */
+   MAV_PROTOCOL_CAPABILITY_SET_POSITION_TARGET_GLOBAL_INT=256, /* Autopilot supports the SET_POSITION_TARGET_GLOBAL_INT message (for commanding position and velocity targets in global scaled integers). | */
    MAV_PROTOCOL_CAPABILITY_TERRAIN=512, /* Autopilot supports terrain protocol / data handling. | */
    MAV_PROTOCOL_CAPABILITY_RESERVED3=1024, /* Reserved for future use. | */
    MAV_PROTOCOL_CAPABILITY_FLIGHT_TERMINATION=2048, /* Autopilot supports the MAV_CMD_DO_FLIGHTTERMINATION command (flight termination). | */
@@ -109,6 +109,7 @@ typedef enum FIRMWARE_VERSION_TYPE
 #endif
 
 // MESSAGE DEFINITIONS
+#include "./mavlink_msg_global_position_int.h"
 #include "./mavlink_msg_autopilot_version.h"
 
 // base include
@@ -116,8 +117,8 @@ typedef enum FIRMWARE_VERSION_TYPE
 
 
 #if MAVLINK_STANDARD_XML_HASH == MAVLINK_PRIMARY_XML_HASH
-# define MAVLINK_MESSAGE_INFO {MAVLINK_MESSAGE_INFO_HEARTBEAT, MAVLINK_MESSAGE_INFO_AUTOPILOT_VERSION, MAVLINK_MESSAGE_INFO_PROTOCOL_VERSION}
-# define MAVLINK_MESSAGE_NAMES {{ "AUTOPILOT_VERSION", 148 }, { "HEARTBEAT", 0 }, { "PROTOCOL_VERSION", 300 }}
+# define MAVLINK_MESSAGE_INFO {MAVLINK_MESSAGE_INFO_HEARTBEAT, MAVLINK_MESSAGE_INFO_GLOBAL_POSITION_INT, MAVLINK_MESSAGE_INFO_AUTOPILOT_VERSION}
+# define MAVLINK_MESSAGE_NAMES {{ "AUTOPILOT_VERSION", 148 }, { "GLOBAL_POSITION_INT", 33 }, { "HEARTBEAT", 0 }}
 # if MAVLINK_COMMAND_24BIT
 #  include "../mavlink_get_info.h"
 # endif

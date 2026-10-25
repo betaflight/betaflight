@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE REQUEST_EVENT PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_REQUEST_EVENT 412
 
 

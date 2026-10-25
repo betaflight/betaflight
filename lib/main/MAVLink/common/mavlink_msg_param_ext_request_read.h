@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE PARAM_EXT_REQUEST_READ PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_PARAM_EXT_REQUEST_READ 320
 
 
@@ -8,7 +10,7 @@ typedef struct __mavlink_param_ext_request_read_t {
  int16_t param_index; /*<  Parameter index. Set to -1 to use the Parameter ID field as identifier (else param_id will be ignored)*/
  uint8_t target_system; /*<  System ID*/
  uint8_t target_component; /*<  Component ID*/
- char param_id[16]; /*<  Parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string*/
+ char param_id[16]; /*<  Parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string. Encoded as 7-bit ASCII.*/
 } mavlink_param_ext_request_read_t;
 
 #define MAVLINK_MSG_ID_PARAM_EXT_REQUEST_READ_LEN 20
@@ -52,7 +54,7 @@ typedef struct __mavlink_param_ext_request_read_t {
  *
  * @param target_system  System ID
  * @param target_component  Component ID
- * @param param_id  Parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string
+ * @param param_id  Parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string. Encoded as 7-bit ASCII.
  * @param param_index  Parameter index. Set to -1 to use the Parameter ID field as identifier (else param_id will be ignored)
  * @return length of the message in bytes (excluding serial stream start sign)
  */
@@ -71,7 +73,7 @@ static inline uint16_t mavlink_msg_param_ext_request_read_pack(uint8_t system_id
     packet.param_index = param_index;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_char(packet.param_id, param_id, 16);
+    mav_array_memcpy(packet.param_id, param_id, sizeof(char)*16);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_PARAM_EXT_REQUEST_READ_LEN);
 #endif
 
@@ -88,7 +90,7 @@ static inline uint16_t mavlink_msg_param_ext_request_read_pack(uint8_t system_id
  *
  * @param target_system  System ID
  * @param target_component  Component ID
- * @param param_id  Parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string
+ * @param param_id  Parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string. Encoded as 7-bit ASCII.
  * @param param_index  Parameter index. Set to -1 to use the Parameter ID field as identifier (else param_id will be ignored)
  * @return length of the message in bytes (excluding serial stream start sign)
  */
@@ -127,7 +129,7 @@ static inline uint16_t mavlink_msg_param_ext_request_read_pack_status(uint8_t sy
  * @param msg The MAVLink message to compress the data into
  * @param target_system  System ID
  * @param target_component  Component ID
- * @param param_id  Parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string
+ * @param param_id  Parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string. Encoded as 7-bit ASCII.
  * @param param_index  Parameter index. Set to -1 to use the Parameter ID field as identifier (else param_id will be ignored)
  * @return length of the message in bytes (excluding serial stream start sign)
  */
@@ -147,7 +149,7 @@ static inline uint16_t mavlink_msg_param_ext_request_read_pack_chan(uint8_t syst
     packet.param_index = param_index;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_char(packet.param_id, param_id, 16);
+    mav_array_memcpy(packet.param_id, param_id, sizeof(char)*16);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_PARAM_EXT_REQUEST_READ_LEN);
 #endif
 
@@ -202,7 +204,7 @@ static inline uint16_t mavlink_msg_param_ext_request_read_encode_status(uint8_t 
  *
  * @param target_system  System ID
  * @param target_component  Component ID
- * @param param_id  Parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string
+ * @param param_id  Parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string. Encoded as 7-bit ASCII.
  * @param param_index  Parameter index. Set to -1 to use the Parameter ID field as identifier (else param_id will be ignored)
  */
 #ifdef MAVLINK_USE_CONVENIENCE_FUNCTIONS
@@ -221,7 +223,7 @@ static inline void mavlink_msg_param_ext_request_read_send(mavlink_channel_t cha
     packet.param_index = param_index;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_char(packet.param_id, param_id, 16);
+    mav_array_memcpy(packet.param_id, param_id, sizeof(char)*16);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_PARAM_EXT_REQUEST_READ, (const char *)&packet, MAVLINK_MSG_ID_PARAM_EXT_REQUEST_READ_MIN_LEN, MAVLINK_MSG_ID_PARAM_EXT_REQUEST_READ_LEN, MAVLINK_MSG_ID_PARAM_EXT_REQUEST_READ_CRC);
 #endif
 }
@@ -262,7 +264,7 @@ static inline void mavlink_msg_param_ext_request_read_send_buf(mavlink_message_t
     packet->param_index = param_index;
     packet->target_system = target_system;
     packet->target_component = target_component;
-    mav_array_assign_char(packet->param_id, param_id, 16);
+    mav_array_memcpy(packet->param_id, param_id, sizeof(char)*16);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_PARAM_EXT_REQUEST_READ, (const char *)packet, MAVLINK_MSG_ID_PARAM_EXT_REQUEST_READ_MIN_LEN, MAVLINK_MSG_ID_PARAM_EXT_REQUEST_READ_LEN, MAVLINK_MSG_ID_PARAM_EXT_REQUEST_READ_CRC);
 #endif
 }
@@ -296,7 +298,7 @@ static inline uint8_t mavlink_msg_param_ext_request_read_get_target_component(co
 /**
  * @brief Get field param_id from param_ext_request_read message
  *
- * @return  Parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string
+ * @return  Parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string. Encoded as 7-bit ASCII.
  */
 static inline uint16_t mavlink_msg_param_ext_request_read_get_param_id(const mavlink_message_t* msg, char *param_id)
 {

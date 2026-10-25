@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE SET_ACTUATOR_CONTROL_TARGET PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_SET_ACTUATOR_CONTROL_TARGET 139
 
 
@@ -77,7 +79,7 @@ static inline uint16_t mavlink_msg_set_actuator_control_target_pack(uint8_t syst
     packet.group_mlx = group_mlx;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_float(packet.controls, controls, 8);
+    mav_array_memcpy(packet.controls, controls, sizeof(float)*8);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_SET_ACTUATOR_CONTROL_TARGET_LEN);
 #endif
 
@@ -159,7 +161,7 @@ static inline uint16_t mavlink_msg_set_actuator_control_target_pack_chan(uint8_t
     packet.group_mlx = group_mlx;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_float(packet.controls, controls, 8);
+    mav_array_memcpy(packet.controls, controls, sizeof(float)*8);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_SET_ACTUATOR_CONTROL_TARGET_LEN);
 #endif
 
@@ -236,7 +238,7 @@ static inline void mavlink_msg_set_actuator_control_target_send(mavlink_channel_
     packet.group_mlx = group_mlx;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_float(packet.controls, controls, 8);
+    mav_array_memcpy(packet.controls, controls, sizeof(float)*8);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_SET_ACTUATOR_CONTROL_TARGET, (const char *)&packet, MAVLINK_MSG_ID_SET_ACTUATOR_CONTROL_TARGET_MIN_LEN, MAVLINK_MSG_ID_SET_ACTUATOR_CONTROL_TARGET_LEN, MAVLINK_MSG_ID_SET_ACTUATOR_CONTROL_TARGET_CRC);
 #endif
 }
@@ -279,7 +281,7 @@ static inline void mavlink_msg_set_actuator_control_target_send_buf(mavlink_mess
     packet->group_mlx = group_mlx;
     packet->target_system = target_system;
     packet->target_component = target_component;
-    mav_array_assign_float(packet->controls, controls, 8);
+    mav_array_memcpy(packet->controls, controls, sizeof(float)*8);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_SET_ACTUATOR_CONTROL_TARGET, (const char *)packet, MAVLINK_MSG_ID_SET_ACTUATOR_CONTROL_TARGET_MIN_LEN, MAVLINK_MSG_ID_SET_ACTUATOR_CONTROL_TARGET_LEN, MAVLINK_MSG_ID_SET_ACTUATOR_CONTROL_TARGET_CRC);
 #endif
 }

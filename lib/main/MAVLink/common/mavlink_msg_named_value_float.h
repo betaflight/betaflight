@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE NAMED_VALUE_FLOAT PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_NAMED_VALUE_FLOAT 251
 
 
@@ -65,7 +67,7 @@ static inline uint16_t mavlink_msg_named_value_float_pack(uint8_t system_id, uin
     mavlink_named_value_float_t packet;
     packet.time_boot_ms = time_boot_ms;
     packet.value = value;
-    mav_array_assign_char(packet.name, name, 10);
+    mav_array_memcpy(packet.name, name, sizeof(char)*10);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_NAMED_VALUE_FLOAT_LEN);
 #endif
 
@@ -135,7 +137,7 @@ static inline uint16_t mavlink_msg_named_value_float_pack_chan(uint8_t system_id
     mavlink_named_value_float_t packet;
     packet.time_boot_ms = time_boot_ms;
     packet.value = value;
-    mav_array_assign_char(packet.name, name, 10);
+    mav_array_memcpy(packet.name, name, sizeof(char)*10);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_NAMED_VALUE_FLOAT_LEN);
 #endif
 
@@ -206,7 +208,7 @@ static inline void mavlink_msg_named_value_float_send(mavlink_channel_t chan, ui
     mavlink_named_value_float_t packet;
     packet.time_boot_ms = time_boot_ms;
     packet.value = value;
-    mav_array_assign_char(packet.name, name, 10);
+    mav_array_memcpy(packet.name, name, sizeof(char)*10);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_NAMED_VALUE_FLOAT, (const char *)&packet, MAVLINK_MSG_ID_NAMED_VALUE_FLOAT_MIN_LEN, MAVLINK_MSG_ID_NAMED_VALUE_FLOAT_LEN, MAVLINK_MSG_ID_NAMED_VALUE_FLOAT_CRC);
 #endif
 }
@@ -245,7 +247,7 @@ static inline void mavlink_msg_named_value_float_send_buf(mavlink_message_t *msg
     mavlink_named_value_float_t *packet = (mavlink_named_value_float_t *)msgbuf;
     packet->time_boot_ms = time_boot_ms;
     packet->value = value;
-    mav_array_assign_char(packet->name, name, 10);
+    mav_array_memcpy(packet->name, name, sizeof(char)*10);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_NAMED_VALUE_FLOAT, (const char *)packet, MAVLINK_MSG_ID_NAMED_VALUE_FLOAT_MIN_LEN, MAVLINK_MSG_ID_NAMED_VALUE_FLOAT_LEN, MAVLINK_MSG_ID_NAMED_VALUE_FLOAT_CRC);
 #endif
 }

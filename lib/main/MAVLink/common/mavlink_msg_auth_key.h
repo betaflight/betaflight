@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE AUTH_KEY PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_AUTH_KEY 7
 
 
@@ -55,7 +57,7 @@ static inline uint16_t mavlink_msg_auth_key_pack(uint8_t system_id, uint8_t comp
 #else
     mavlink_auth_key_t packet;
 
-    mav_array_assign_char(packet.key, key, 32);
+    mav_array_memcpy(packet.key, key, sizeof(char)*32);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_AUTH_KEY_LEN);
 #endif
 
@@ -117,7 +119,7 @@ static inline uint16_t mavlink_msg_auth_key_pack_chan(uint8_t system_id, uint8_t
 #else
     mavlink_auth_key_t packet;
 
-    mav_array_assign_char(packet.key, key, 32);
+    mav_array_memcpy(packet.key, key, sizeof(char)*32);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_AUTH_KEY_LEN);
 #endif
 
@@ -184,7 +186,7 @@ static inline void mavlink_msg_auth_key_send(mavlink_channel_t chan, const char 
 #else
     mavlink_auth_key_t packet;
 
-    mav_array_assign_char(packet.key, key, 32);
+    mav_array_memcpy(packet.key, key, sizeof(char)*32);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_AUTH_KEY, (const char *)&packet, MAVLINK_MSG_ID_AUTH_KEY_MIN_LEN, MAVLINK_MSG_ID_AUTH_KEY_LEN, MAVLINK_MSG_ID_AUTH_KEY_CRC);
 #endif
 }
@@ -221,7 +223,7 @@ static inline void mavlink_msg_auth_key_send_buf(mavlink_message_t *msgbuf, mavl
 #else
     mavlink_auth_key_t *packet = (mavlink_auth_key_t *)msgbuf;
 
-    mav_array_assign_char(packet->key, key, 32);
+    mav_array_memcpy(packet->key, key, sizeof(char)*32);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_AUTH_KEY, (const char *)packet, MAVLINK_MSG_ID_AUTH_KEY_MIN_LEN, MAVLINK_MSG_ID_AUTH_KEY_LEN, MAVLINK_MSG_ID_AUTH_KEY_CRC);
 #endif
 }

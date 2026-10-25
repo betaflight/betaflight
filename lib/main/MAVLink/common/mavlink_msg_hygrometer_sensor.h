@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE HYGROMETER_SENSOR PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_HYGROMETER_SENSOR 12920
 
 

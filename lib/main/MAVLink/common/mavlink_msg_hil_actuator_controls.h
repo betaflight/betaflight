@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE HIL_ACTUATOR_CONTROLS PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_HIL_ACTUATOR_CONTROLS 93
 
 
@@ -71,7 +73,7 @@ static inline uint16_t mavlink_msg_hil_actuator_controls_pack(uint8_t system_id,
     packet.time_usec = time_usec;
     packet.flags = flags;
     packet.mode = mode;
-    mav_array_assign_float(packet.controls, controls, 16);
+    mav_array_memcpy(packet.controls, controls, sizeof(float)*16);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_HIL_ACTUATOR_CONTROLS_LEN);
 #endif
 
@@ -147,7 +149,7 @@ static inline uint16_t mavlink_msg_hil_actuator_controls_pack_chan(uint8_t syste
     packet.time_usec = time_usec;
     packet.flags = flags;
     packet.mode = mode;
-    mav_array_assign_float(packet.controls, controls, 16);
+    mav_array_memcpy(packet.controls, controls, sizeof(float)*16);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_HIL_ACTUATOR_CONTROLS_LEN);
 #endif
 
@@ -221,7 +223,7 @@ static inline void mavlink_msg_hil_actuator_controls_send(mavlink_channel_t chan
     packet.time_usec = time_usec;
     packet.flags = flags;
     packet.mode = mode;
-    mav_array_assign_float(packet.controls, controls, 16);
+    mav_array_memcpy(packet.controls, controls, sizeof(float)*16);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_HIL_ACTUATOR_CONTROLS, (const char *)&packet, MAVLINK_MSG_ID_HIL_ACTUATOR_CONTROLS_MIN_LEN, MAVLINK_MSG_ID_HIL_ACTUATOR_CONTROLS_LEN, MAVLINK_MSG_ID_HIL_ACTUATOR_CONTROLS_CRC);
 #endif
 }
@@ -262,7 +264,7 @@ static inline void mavlink_msg_hil_actuator_controls_send_buf(mavlink_message_t 
     packet->time_usec = time_usec;
     packet->flags = flags;
     packet->mode = mode;
-    mav_array_assign_float(packet->controls, controls, 16);
+    mav_array_memcpy(packet->controls, controls, sizeof(float)*16);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_HIL_ACTUATOR_CONTROLS, (const char *)packet, MAVLINK_MSG_ID_HIL_ACTUATOR_CONTROLS_MIN_LEN, MAVLINK_MSG_ID_HIL_ACTUATOR_CONTROLS_LEN, MAVLINK_MSG_ID_HIL_ACTUATOR_CONTROLS_CRC);
 #endif
 }

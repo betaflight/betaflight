@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE HIL_OPTICAL_FLOW PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_HIL_OPTICAL_FLOW 114
 
 

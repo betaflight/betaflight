@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE SUPPORTED_TUNES PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_SUPPORTED_TUNES 401
 
 

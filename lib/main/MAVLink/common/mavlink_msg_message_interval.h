@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE MESSAGE_INTERVAL PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_MESSAGE_INTERVAL 244
 
 

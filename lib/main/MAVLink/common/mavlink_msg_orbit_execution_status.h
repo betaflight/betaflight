@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE ORBIT_EXECUTION_STATUS PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_ORBIT_EXECUTION_STATUS 360
 
 

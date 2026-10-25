@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE POWER_STATUS PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_POWER_STATUS 125
 
 

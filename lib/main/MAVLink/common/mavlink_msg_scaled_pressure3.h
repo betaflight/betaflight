@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE SCALED_PRESSURE3 PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_SCALED_PRESSURE3 143
 
 

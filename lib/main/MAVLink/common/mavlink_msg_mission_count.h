@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE MISSION_COUNT PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_MISSION_COUNT 44
 
 MAVPACKED(

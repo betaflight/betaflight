@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE CURRENT_EVENT_SEQUENCE PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_CURRENT_EVENT_SEQUENCE 411
 
 

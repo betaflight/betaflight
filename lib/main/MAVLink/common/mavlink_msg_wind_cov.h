@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE WIND_COV PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_WIND_COV 231
 
 

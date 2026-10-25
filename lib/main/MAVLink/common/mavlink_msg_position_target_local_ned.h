@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE POSITION_TARGET_LOCAL_NED PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_POSITION_TARGET_LOCAL_NED 85
 
 

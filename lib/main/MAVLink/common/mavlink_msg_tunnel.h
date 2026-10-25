@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE TUNNEL PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_TUNNEL 385
 
 
@@ -77,7 +79,7 @@ static inline uint16_t mavlink_msg_tunnel_pack(uint8_t system_id, uint8_t compon
     packet.target_system = target_system;
     packet.target_component = target_component;
     packet.payload_length = payload_length;
-    mav_array_assign_uint8_t(packet.payload, payload, 128);
+    mav_array_memcpy(packet.payload, payload, sizeof(uint8_t)*128);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_TUNNEL_LEN);
 #endif
 
@@ -159,7 +161,7 @@ static inline uint16_t mavlink_msg_tunnel_pack_chan(uint8_t system_id, uint8_t c
     packet.target_system = target_system;
     packet.target_component = target_component;
     packet.payload_length = payload_length;
-    mav_array_assign_uint8_t(packet.payload, payload, 128);
+    mav_array_memcpy(packet.payload, payload, sizeof(uint8_t)*128);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_TUNNEL_LEN);
 #endif
 
@@ -236,7 +238,7 @@ static inline void mavlink_msg_tunnel_send(mavlink_channel_t chan, uint8_t targe
     packet.target_system = target_system;
     packet.target_component = target_component;
     packet.payload_length = payload_length;
-    mav_array_assign_uint8_t(packet.payload, payload, 128);
+    mav_array_memcpy(packet.payload, payload, sizeof(uint8_t)*128);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_TUNNEL, (const char *)&packet, MAVLINK_MSG_ID_TUNNEL_MIN_LEN, MAVLINK_MSG_ID_TUNNEL_LEN, MAVLINK_MSG_ID_TUNNEL_CRC);
 #endif
 }
@@ -279,7 +281,7 @@ static inline void mavlink_msg_tunnel_send_buf(mavlink_message_t *msgbuf, mavlin
     packet->target_system = target_system;
     packet->target_component = target_component;
     packet->payload_length = payload_length;
-    mav_array_assign_uint8_t(packet->payload, payload, 128);
+    mav_array_memcpy(packet->payload, payload, sizeof(uint8_t)*128);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_TUNNEL, (const char *)packet, MAVLINK_MSG_ID_TUNNEL_MIN_LEN, MAVLINK_MSG_ID_TUNNEL_LEN, MAVLINK_MSG_ID_TUNNEL_CRC);
 #endif
 }

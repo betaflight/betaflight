@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE SMART_BATTERY_INFO PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_SMART_BATTERY_INFO 370
 
 MAVPACKED(
@@ -149,9 +151,9 @@ static inline uint16_t mavlink_msg_smart_battery_info_pack(uint8_t system_id, ui
     packet.cells_in_series = cells_in_series;
     packet.discharge_maximum_current = discharge_maximum_current;
     packet.discharge_maximum_burst_current = discharge_maximum_burst_current;
-    mav_array_assign_char(packet.serial_number, serial_number, 16);
-    mav_array_assign_char(packet.device_name, device_name, 50);
-    mav_array_assign_char(packet.manufacture_date, manufacture_date, 11);
+    mav_array_memcpy(packet.serial_number, serial_number, sizeof(char)*16);
+    mav_array_memcpy(packet.device_name, device_name, sizeof(char)*50);
+    mav_array_memcpy(packet.manufacture_date, manufacture_date, sizeof(char)*11);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_SMART_BATTERY_INFO_LEN);
 #endif
 
@@ -303,9 +305,9 @@ static inline uint16_t mavlink_msg_smart_battery_info_pack_chan(uint8_t system_i
     packet.cells_in_series = cells_in_series;
     packet.discharge_maximum_current = discharge_maximum_current;
     packet.discharge_maximum_burst_current = discharge_maximum_burst_current;
-    mav_array_assign_char(packet.serial_number, serial_number, 16);
-    mav_array_assign_char(packet.device_name, device_name, 50);
-    mav_array_assign_char(packet.manufacture_date, manufacture_date, 11);
+    mav_array_memcpy(packet.serial_number, serial_number, sizeof(char)*16);
+    mav_array_memcpy(packet.device_name, device_name, sizeof(char)*50);
+    mav_array_memcpy(packet.manufacture_date, manufacture_date, sizeof(char)*11);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_SMART_BATTERY_INFO_LEN);
 #endif
 
@@ -416,9 +418,9 @@ static inline void mavlink_msg_smart_battery_info_send(mavlink_channel_t chan, u
     packet.cells_in_series = cells_in_series;
     packet.discharge_maximum_current = discharge_maximum_current;
     packet.discharge_maximum_burst_current = discharge_maximum_burst_current;
-    mav_array_assign_char(packet.serial_number, serial_number, 16);
-    mav_array_assign_char(packet.device_name, device_name, 50);
-    mav_array_assign_char(packet.manufacture_date, manufacture_date, 11);
+    mav_array_memcpy(packet.serial_number, serial_number, sizeof(char)*16);
+    mav_array_memcpy(packet.device_name, device_name, sizeof(char)*50);
+    mav_array_memcpy(packet.manufacture_date, manufacture_date, sizeof(char)*11);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_SMART_BATTERY_INFO, (const char *)&packet, MAVLINK_MSG_ID_SMART_BATTERY_INFO_MIN_LEN, MAVLINK_MSG_ID_SMART_BATTERY_INFO_LEN, MAVLINK_MSG_ID_SMART_BATTERY_INFO_CRC);
 #endif
 }
@@ -483,9 +485,9 @@ static inline void mavlink_msg_smart_battery_info_send_buf(mavlink_message_t *ms
     packet->cells_in_series = cells_in_series;
     packet->discharge_maximum_current = discharge_maximum_current;
     packet->discharge_maximum_burst_current = discharge_maximum_burst_current;
-    mav_array_assign_char(packet->serial_number, serial_number, 16);
-    mav_array_assign_char(packet->device_name, device_name, 50);
-    mav_array_assign_char(packet->manufacture_date, manufacture_date, 11);
+    mav_array_memcpy(packet->serial_number, serial_number, sizeof(char)*16);
+    mav_array_memcpy(packet->device_name, device_name, sizeof(char)*50);
+    mav_array_memcpy(packet->manufacture_date, manufacture_date, sizeof(char)*11);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_SMART_BATTERY_INFO, (const char *)packet, MAVLINK_MSG_ID_SMART_BATTERY_INFO_MIN_LEN, MAVLINK_MSG_ID_SMART_BATTERY_INFO_LEN, MAVLINK_MSG_ID_SMART_BATTERY_INFO_CRC);
 #endif
 }

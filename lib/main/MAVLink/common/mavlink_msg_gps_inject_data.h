@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE GPS_INJECT_DATA PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_GPS_INJECT_DATA 123
 
 
@@ -71,7 +73,7 @@ static inline uint16_t mavlink_msg_gps_inject_data_pack(uint8_t system_id, uint8
     packet.target_system = target_system;
     packet.target_component = target_component;
     packet.len = len;
-    mav_array_assign_uint8_t(packet.data, data, 110);
+    mav_array_memcpy(packet.data, data, sizeof(uint8_t)*110);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_GPS_INJECT_DATA_LEN);
 #endif
 
@@ -147,7 +149,7 @@ static inline uint16_t mavlink_msg_gps_inject_data_pack_chan(uint8_t system_id, 
     packet.target_system = target_system;
     packet.target_component = target_component;
     packet.len = len;
-    mav_array_assign_uint8_t(packet.data, data, 110);
+    mav_array_memcpy(packet.data, data, sizeof(uint8_t)*110);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_GPS_INJECT_DATA_LEN);
 #endif
 
@@ -221,7 +223,7 @@ static inline void mavlink_msg_gps_inject_data_send(mavlink_channel_t chan, uint
     packet.target_system = target_system;
     packet.target_component = target_component;
     packet.len = len;
-    mav_array_assign_uint8_t(packet.data, data, 110);
+    mav_array_memcpy(packet.data, data, sizeof(uint8_t)*110);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_GPS_INJECT_DATA, (const char *)&packet, MAVLINK_MSG_ID_GPS_INJECT_DATA_MIN_LEN, MAVLINK_MSG_ID_GPS_INJECT_DATA_LEN, MAVLINK_MSG_ID_GPS_INJECT_DATA_CRC);
 #endif
 }
@@ -262,7 +264,7 @@ static inline void mavlink_msg_gps_inject_data_send_buf(mavlink_message_t *msgbu
     packet->target_system = target_system;
     packet->target_component = target_component;
     packet->len = len;
-    mav_array_assign_uint8_t(packet->data, data, 110);
+    mav_array_memcpy(packet->data, data, sizeof(uint8_t)*110);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_GPS_INJECT_DATA, (const char *)packet, MAVLINK_MSG_ID_GPS_INJECT_DATA_MIN_LEN, MAVLINK_MSG_ID_GPS_INJECT_DATA_LEN, MAVLINK_MSG_ID_GPS_INJECT_DATA_CRC);
 #endif
 }

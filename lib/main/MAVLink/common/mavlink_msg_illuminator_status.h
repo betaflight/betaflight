@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE ILLUMINATOR_STATUS PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_ILLUMINATOR_STATUS 440
 
 

@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE SETUP_SIGNING PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_SETUP_SIGNING 256
 
 
@@ -71,7 +73,7 @@ static inline uint16_t mavlink_msg_setup_signing_pack(uint8_t system_id, uint8_t
     packet.initial_timestamp = initial_timestamp;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_uint8_t(packet.secret_key, secret_key, 32);
+    mav_array_memcpy(packet.secret_key, secret_key, sizeof(uint8_t)*32);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_SETUP_SIGNING_LEN);
 #endif
 
@@ -147,7 +149,7 @@ static inline uint16_t mavlink_msg_setup_signing_pack_chan(uint8_t system_id, ui
     packet.initial_timestamp = initial_timestamp;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_uint8_t(packet.secret_key, secret_key, 32);
+    mav_array_memcpy(packet.secret_key, secret_key, sizeof(uint8_t)*32);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_SETUP_SIGNING_LEN);
 #endif
 
@@ -221,7 +223,7 @@ static inline void mavlink_msg_setup_signing_send(mavlink_channel_t chan, uint8_
     packet.initial_timestamp = initial_timestamp;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_uint8_t(packet.secret_key, secret_key, 32);
+    mav_array_memcpy(packet.secret_key, secret_key, sizeof(uint8_t)*32);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_SETUP_SIGNING, (const char *)&packet, MAVLINK_MSG_ID_SETUP_SIGNING_MIN_LEN, MAVLINK_MSG_ID_SETUP_SIGNING_LEN, MAVLINK_MSG_ID_SETUP_SIGNING_CRC);
 #endif
 }
@@ -262,7 +264,7 @@ static inline void mavlink_msg_setup_signing_send_buf(mavlink_message_t *msgbuf,
     packet->initial_timestamp = initial_timestamp;
     packet->target_system = target_system;
     packet->target_component = target_component;
-    mav_array_assign_uint8_t(packet->secret_key, secret_key, 32);
+    mav_array_memcpy(packet->secret_key, secret_key, sizeof(uint8_t)*32);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_SETUP_SIGNING, (const char *)packet, MAVLINK_MSG_ID_SETUP_SIGNING_MIN_LEN, MAVLINK_MSG_ID_SETUP_SIGNING_LEN, MAVLINK_MSG_ID_SETUP_SIGNING_CRC);
 #endif
 }

@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE EFI_STATUS PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_EFI_STATUS 225
 
 MAVPACKED(

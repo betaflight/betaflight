@@ -10,7 +10,7 @@
     #error Wrong include order: MAVLINK_MINIMAL.H MUST NOT BE DIRECTLY USED. Include mavlink.h from the same directory instead or set ALL AND EVERY defines from MAVLINK.H manually accordingly, including the #define MAVLINK_H call.
 #endif
 
-#define MAVLINK_MINIMAL_XML_HASH -6217624180084442833
+#define MAVLINK_MINIMAL_XML_HASH 7085886813133865895
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 #ifndef MAVLINK_MESSAGE_CRCS
-#define MAVLINK_MESSAGE_CRCS {{0, 50, 9, 9, 0, 0, 0}, {300, 217, 22, 22, 0, 0, 0}}
+#define MAVLINK_MESSAGE_CRCS {{0, 50, 9, 9, 0, 0, 0}}
 #endif
 
 #include "../protocol.h"
@@ -59,7 +59,9 @@ typedef enum MAV_AUTOPILOT
    MAV_AUTOPILOT_SMARTAP=18, /* SmartAP Autopilot - http://sky-drones.com | */
    MAV_AUTOPILOT_AIRRAILS=19, /* AirRails - http://uaventure.com | */
    MAV_AUTOPILOT_REFLEX=20, /* Fusion Reflex - https://fusion.engineering | */
-   MAV_AUTOPILOT_ENUM_END=21, /*  | */
+   MAV_AUTOPILOT_FLIX=21, /* Flix quadcopter - https://quadcopter.dev | */
+   MAV_AUTOPILOT_BETAFLIGHT=22, /* Betaflight - https://betaflight.com | */
+   MAV_AUTOPILOT_ENUM_END=23, /*  | */
 } MAV_AUTOPILOT;
 #endif
 
@@ -134,7 +136,7 @@ typedef enum MAV_MODE_FLAG
    MAV_MODE_FLAG_STABILIZE_ENABLED=16, /* 0b00010000 system stabilizes electronically its attitude (and optionally position). It needs however further control inputs to move around. | */
    MAV_MODE_FLAG_HIL_ENABLED=32, /* 0b00100000 hardware in the loop simulation. All motors / actuators are blocked, but internal software is full operational. | */
    MAV_MODE_FLAG_MANUAL_INPUT_ENABLED=64, /* 0b01000000 remote control input is enabled. | */
-   MAV_MODE_FLAG_SAFETY_ARMED=128, /* 0b10000000 MAV safety set to armed. Motors are enabled / running / can start. Ready to fly. Additional note: this flag is to be ignore when sent in the command MAV_CMD_DO_SET_MODE and MAV_CMD_COMPONENT_ARM_DISARM shall be used instead. The flag can still be used to report the armed state. | */
+   MAV_MODE_FLAG_SAFETY_ARMED=128, /* 0b10000000 MAV safety set to armed. Motors are enabled / running / can start. Ready to fly. Additional note: this flag is to be ignored when sent in the command MAV_CMD_DO_SET_MODE and MAV_CMD_COMPONENT_ARM_DISARM shall be used instead. The flag can still be used to report the armed state. | */
    MAV_MODE_FLAG_ENUM_END=129, /*  | */
 } MAV_MODE_FLAG;
 #endif
@@ -175,14 +177,14 @@ typedef enum MAV_STATE
 #endif
 
 /** @brief Legacy component ID values for particular types of hardware/software that might make up a MAVLink system (autopilot, cameras, servos, avoidance systems etc.).
-      
+
         Components are not required or expected to use IDs with names that correspond to their type or function, but may choose to do so.
         Using an ID that matches the type may slightly reduce the chances of component id clashes, as, for historical reasons, it is less likely to be used by some other type of component.
         System integration will still need to ensure that all components have unique IDs.
 
         Component IDs are used for addressing messages to a particular component within a system.
         A component can use any unique ID between 1 and 255 (MAV_COMP_ID_ALL value is the broadcast address, used to send to all components).
-        
+
         Historically component ID were also used for identifying the type of component.
         New code must not use component IDs to infer the component type, but instead check the MAV_TYPE in the HEARTBEAT message!
        */
@@ -346,15 +348,14 @@ typedef enum MAV_COMPONENT
 
 // MESSAGE DEFINITIONS
 #include "./mavlink_msg_heartbeat.h"
-#include "./mavlink_msg_protocol_version.h"
 
 // base include
 
 
 
 #if MAVLINK_MINIMAL_XML_HASH == MAVLINK_PRIMARY_XML_HASH
-# define MAVLINK_MESSAGE_INFO {MAVLINK_MESSAGE_INFO_HEARTBEAT, MAVLINK_MESSAGE_INFO_PROTOCOL_VERSION}
-# define MAVLINK_MESSAGE_NAMES {{ "HEARTBEAT", 0 }, { "PROTOCOL_VERSION", 300 }}
+# define MAVLINK_MESSAGE_INFO {MAVLINK_MESSAGE_INFO_HEARTBEAT}
+# define MAVLINK_MESSAGE_NAMES {{ "HEARTBEAT", 0 }}
 # if MAVLINK_COMMAND_24BIT
 #  include "../mavlink_get_info.h"
 # endif

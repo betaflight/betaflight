@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE GIMBAL_MANAGER_STATUS PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_GIMBAL_MANAGER_STATUS 281
 
 

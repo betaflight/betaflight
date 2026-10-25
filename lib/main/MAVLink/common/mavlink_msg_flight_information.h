@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE FLIGHT_INFORMATION PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_FLIGHT_INFORMATION 264
 
 

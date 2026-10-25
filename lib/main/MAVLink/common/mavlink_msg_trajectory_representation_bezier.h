@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE TRAJECTORY_REPRESENTATION_BEZIER PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_BEZIER 333
 
 
@@ -89,11 +91,11 @@ static inline uint16_t mavlink_msg_trajectory_representation_bezier_pack(uint8_t
     mavlink_trajectory_representation_bezier_t packet;
     packet.time_usec = time_usec;
     packet.valid_points = valid_points;
-    mav_array_assign_float(packet.pos_x, pos_x, 5);
-    mav_array_assign_float(packet.pos_y, pos_y, 5);
-    mav_array_assign_float(packet.pos_z, pos_z, 5);
-    mav_array_assign_float(packet.delta, delta, 5);
-    mav_array_assign_float(packet.pos_yaw, pos_yaw, 5);
+    mav_array_memcpy(packet.pos_x, pos_x, sizeof(float)*5);
+    mav_array_memcpy(packet.pos_y, pos_y, sizeof(float)*5);
+    mav_array_memcpy(packet.pos_z, pos_z, sizeof(float)*5);
+    mav_array_memcpy(packet.delta, delta, sizeof(float)*5);
+    mav_array_memcpy(packet.pos_yaw, pos_yaw, sizeof(float)*5);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_BEZIER_LEN);
 #endif
 
@@ -183,11 +185,11 @@ static inline uint16_t mavlink_msg_trajectory_representation_bezier_pack_chan(ui
     mavlink_trajectory_representation_bezier_t packet;
     packet.time_usec = time_usec;
     packet.valid_points = valid_points;
-    mav_array_assign_float(packet.pos_x, pos_x, 5);
-    mav_array_assign_float(packet.pos_y, pos_y, 5);
-    mav_array_assign_float(packet.pos_z, pos_z, 5);
-    mav_array_assign_float(packet.delta, delta, 5);
-    mav_array_assign_float(packet.pos_yaw, pos_yaw, 5);
+    mav_array_memcpy(packet.pos_x, pos_x, sizeof(float)*5);
+    mav_array_memcpy(packet.pos_y, pos_y, sizeof(float)*5);
+    mav_array_memcpy(packet.pos_z, pos_z, sizeof(float)*5);
+    mav_array_memcpy(packet.delta, delta, sizeof(float)*5);
+    mav_array_memcpy(packet.pos_yaw, pos_yaw, sizeof(float)*5);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_BEZIER_LEN);
 #endif
 
@@ -266,11 +268,11 @@ static inline void mavlink_msg_trajectory_representation_bezier_send(mavlink_cha
     mavlink_trajectory_representation_bezier_t packet;
     packet.time_usec = time_usec;
     packet.valid_points = valid_points;
-    mav_array_assign_float(packet.pos_x, pos_x, 5);
-    mav_array_assign_float(packet.pos_y, pos_y, 5);
-    mav_array_assign_float(packet.pos_z, pos_z, 5);
-    mav_array_assign_float(packet.delta, delta, 5);
-    mav_array_assign_float(packet.pos_yaw, pos_yaw, 5);
+    mav_array_memcpy(packet.pos_x, pos_x, sizeof(float)*5);
+    mav_array_memcpy(packet.pos_y, pos_y, sizeof(float)*5);
+    mav_array_memcpy(packet.pos_z, pos_z, sizeof(float)*5);
+    mav_array_memcpy(packet.delta, delta, sizeof(float)*5);
+    mav_array_memcpy(packet.pos_yaw, pos_yaw, sizeof(float)*5);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_BEZIER, (const char *)&packet, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_BEZIER_MIN_LEN, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_BEZIER_LEN, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_BEZIER_CRC);
 #endif
 }
@@ -313,11 +315,11 @@ static inline void mavlink_msg_trajectory_representation_bezier_send_buf(mavlink
     mavlink_trajectory_representation_bezier_t *packet = (mavlink_trajectory_representation_bezier_t *)msgbuf;
     packet->time_usec = time_usec;
     packet->valid_points = valid_points;
-    mav_array_assign_float(packet->pos_x, pos_x, 5);
-    mav_array_assign_float(packet->pos_y, pos_y, 5);
-    mav_array_assign_float(packet->pos_z, pos_z, 5);
-    mav_array_assign_float(packet->delta, delta, 5);
-    mav_array_assign_float(packet->pos_yaw, pos_yaw, 5);
+    mav_array_memcpy(packet->pos_x, pos_x, sizeof(float)*5);
+    mav_array_memcpy(packet->pos_y, pos_y, sizeof(float)*5);
+    mav_array_memcpy(packet->pos_z, pos_z, sizeof(float)*5);
+    mav_array_memcpy(packet->delta, delta, sizeof(float)*5);
+    mav_array_memcpy(packet->pos_yaw, pos_yaw, sizeof(float)*5);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_BEZIER, (const char *)packet, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_BEZIER_MIN_LEN, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_BEZIER_LEN, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_BEZIER_CRC);
 #endif
 }

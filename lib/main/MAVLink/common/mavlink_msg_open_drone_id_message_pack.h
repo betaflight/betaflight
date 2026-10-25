@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE OPEN_DRONE_ID_MESSAGE_PACK PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_OPEN_DRONE_ID_MESSAGE_PACK 12915
 
 
@@ -83,8 +85,8 @@ static inline uint16_t mavlink_msg_open_drone_id_message_pack_pack(uint8_t syste
     packet.target_component = target_component;
     packet.single_message_size = single_message_size;
     packet.msg_pack_size = msg_pack_size;
-    mav_array_assign_uint8_t(packet.id_or_mac, id_or_mac, 20);
-    mav_array_assign_uint8_t(packet.messages, messages, 225);
+    mav_array_memcpy(packet.id_or_mac, id_or_mac, sizeof(uint8_t)*20);
+    mav_array_memcpy(packet.messages, messages, sizeof(uint8_t)*225);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_OPEN_DRONE_ID_MESSAGE_PACK_LEN);
 #endif
 
@@ -171,8 +173,8 @@ static inline uint16_t mavlink_msg_open_drone_id_message_pack_pack_chan(uint8_t 
     packet.target_component = target_component;
     packet.single_message_size = single_message_size;
     packet.msg_pack_size = msg_pack_size;
-    mav_array_assign_uint8_t(packet.id_or_mac, id_or_mac, 20);
-    mav_array_assign_uint8_t(packet.messages, messages, 225);
+    mav_array_memcpy(packet.id_or_mac, id_or_mac, sizeof(uint8_t)*20);
+    mav_array_memcpy(packet.messages, messages, sizeof(uint8_t)*225);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_OPEN_DRONE_ID_MESSAGE_PACK_LEN);
 #endif
 
@@ -251,8 +253,8 @@ static inline void mavlink_msg_open_drone_id_message_pack_send(mavlink_channel_t
     packet.target_component = target_component;
     packet.single_message_size = single_message_size;
     packet.msg_pack_size = msg_pack_size;
-    mav_array_assign_uint8_t(packet.id_or_mac, id_or_mac, 20);
-    mav_array_assign_uint8_t(packet.messages, messages, 225);
+    mav_array_memcpy(packet.id_or_mac, id_or_mac, sizeof(uint8_t)*20);
+    mav_array_memcpy(packet.messages, messages, sizeof(uint8_t)*225);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_OPEN_DRONE_ID_MESSAGE_PACK, (const char *)&packet, MAVLINK_MSG_ID_OPEN_DRONE_ID_MESSAGE_PACK_MIN_LEN, MAVLINK_MSG_ID_OPEN_DRONE_ID_MESSAGE_PACK_LEN, MAVLINK_MSG_ID_OPEN_DRONE_ID_MESSAGE_PACK_CRC);
 #endif
 }
@@ -296,8 +298,8 @@ static inline void mavlink_msg_open_drone_id_message_pack_send_buf(mavlink_messa
     packet->target_component = target_component;
     packet->single_message_size = single_message_size;
     packet->msg_pack_size = msg_pack_size;
-    mav_array_assign_uint8_t(packet->id_or_mac, id_or_mac, 20);
-    mav_array_assign_uint8_t(packet->messages, messages, 225);
+    mav_array_memcpy(packet->id_or_mac, id_or_mac, sizeof(uint8_t)*20);
+    mav_array_memcpy(packet->messages, messages, sizeof(uint8_t)*225);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_OPEN_DRONE_ID_MESSAGE_PACK, (const char *)packet, MAVLINK_MSG_ID_OPEN_DRONE_ID_MESSAGE_PACK_MIN_LEN, MAVLINK_MSG_ID_OPEN_DRONE_ID_MESSAGE_PACK_LEN, MAVLINK_MSG_ID_OPEN_DRONE_ID_MESSAGE_PACK_CRC);
 #endif
 }

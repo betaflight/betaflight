@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE OPEN_DRONE_ID_ARM_STATUS PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_OPEN_DRONE_ID_ARM_STATUS 12918
 
 
@@ -59,7 +61,7 @@ static inline uint16_t mavlink_msg_open_drone_id_arm_status_pack(uint8_t system_
 #else
     mavlink_open_drone_id_arm_status_t packet;
     packet.status = status;
-    mav_array_assign_char(packet.error, error, 50);
+    mav_array_memcpy(packet.error, error, sizeof(char)*50);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_OPEN_DRONE_ID_ARM_STATUS_LEN);
 #endif
 
@@ -123,7 +125,7 @@ static inline uint16_t mavlink_msg_open_drone_id_arm_status_pack_chan(uint8_t sy
 #else
     mavlink_open_drone_id_arm_status_t packet;
     packet.status = status;
-    mav_array_assign_char(packet.error, error, 50);
+    mav_array_memcpy(packet.error, error, sizeof(char)*50);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_OPEN_DRONE_ID_ARM_STATUS_LEN);
 #endif
 
@@ -191,7 +193,7 @@ static inline void mavlink_msg_open_drone_id_arm_status_send(mavlink_channel_t c
 #else
     mavlink_open_drone_id_arm_status_t packet;
     packet.status = status;
-    mav_array_assign_char(packet.error, error, 50);
+    mav_array_memcpy(packet.error, error, sizeof(char)*50);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_OPEN_DRONE_ID_ARM_STATUS, (const char *)&packet, MAVLINK_MSG_ID_OPEN_DRONE_ID_ARM_STATUS_MIN_LEN, MAVLINK_MSG_ID_OPEN_DRONE_ID_ARM_STATUS_LEN, MAVLINK_MSG_ID_OPEN_DRONE_ID_ARM_STATUS_CRC);
 #endif
 }
@@ -228,7 +230,7 @@ static inline void mavlink_msg_open_drone_id_arm_status_send_buf(mavlink_message
 #else
     mavlink_open_drone_id_arm_status_t *packet = (mavlink_open_drone_id_arm_status_t *)msgbuf;
     packet->status = status;
-    mav_array_assign_char(packet->error, error, 50);
+    mav_array_memcpy(packet->error, error, sizeof(char)*50);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_OPEN_DRONE_ID_ARM_STATUS, (const char *)packet, MAVLINK_MSG_ID_OPEN_DRONE_ID_ARM_STATUS_MIN_LEN, MAVLINK_MSG_ID_OPEN_DRONE_ID_ARM_STATUS_LEN, MAVLINK_MSG_ID_OPEN_DRONE_ID_ARM_STATUS_CRC);
 #endif
 }

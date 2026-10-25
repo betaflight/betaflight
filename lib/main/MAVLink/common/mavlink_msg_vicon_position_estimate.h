@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE VICON_POSITION_ESTIMATE PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_VICON_POSITION_ESTIMATE 104
 
 
@@ -95,7 +97,7 @@ static inline uint16_t mavlink_msg_vicon_position_estimate_pack(uint8_t system_i
     packet.roll = roll;
     packet.pitch = pitch;
     packet.yaw = yaw;
-    mav_array_assign_float(packet.covariance, covariance, 21);
+    mav_array_memcpy(packet.covariance, covariance, sizeof(float)*21);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_VICON_POSITION_ESTIMATE_LEN);
 #endif
 
@@ -195,7 +197,7 @@ static inline uint16_t mavlink_msg_vicon_position_estimate_pack_chan(uint8_t sys
     packet.roll = roll;
     packet.pitch = pitch;
     packet.yaw = yaw;
-    mav_array_assign_float(packet.covariance, covariance, 21);
+    mav_array_memcpy(packet.covariance, covariance, sizeof(float)*21);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_VICON_POSITION_ESTIMATE_LEN);
 #endif
 
@@ -281,7 +283,7 @@ static inline void mavlink_msg_vicon_position_estimate_send(mavlink_channel_t ch
     packet.roll = roll;
     packet.pitch = pitch;
     packet.yaw = yaw;
-    mav_array_assign_float(packet.covariance, covariance, 21);
+    mav_array_memcpy(packet.covariance, covariance, sizeof(float)*21);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_VICON_POSITION_ESTIMATE, (const char *)&packet, MAVLINK_MSG_ID_VICON_POSITION_ESTIMATE_MIN_LEN, MAVLINK_MSG_ID_VICON_POSITION_ESTIMATE_LEN, MAVLINK_MSG_ID_VICON_POSITION_ESTIMATE_CRC);
 #endif
 }
@@ -330,7 +332,7 @@ static inline void mavlink_msg_vicon_position_estimate_send_buf(mavlink_message_
     packet->roll = roll;
     packet->pitch = pitch;
     packet->yaw = yaw;
-    mav_array_assign_float(packet->covariance, covariance, 21);
+    mav_array_memcpy(packet->covariance, covariance, sizeof(float)*21);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_VICON_POSITION_ESTIMATE, (const char *)packet, MAVLINK_MSG_ID_VICON_POSITION_ESTIMATE_MIN_LEN, MAVLINK_MSG_ID_VICON_POSITION_ESTIMATE_LEN, MAVLINK_MSG_ID_VICON_POSITION_ESTIMATE_CRC);
 #endif
 }

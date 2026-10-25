@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE CHANGE_OPERATOR_CONTROL_ACK PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_CHANGE_OPERATOR_CONTROL_ACK 6
 
 

@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE HIL_RC_INPUTS_RAW PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_HIL_RC_INPUTS_RAW 92
 
 

@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE TIMESYNC PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_TIMESYNC 111
 
 

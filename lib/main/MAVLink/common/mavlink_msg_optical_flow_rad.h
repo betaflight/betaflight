@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE OPTICAL_FLOW_RAD PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_OPTICAL_FLOW_RAD 106
 
 

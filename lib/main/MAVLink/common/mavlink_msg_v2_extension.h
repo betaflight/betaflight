@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE V2_EXTENSION PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_V2_EXTENSION 248
 
 
@@ -77,7 +79,7 @@ static inline uint16_t mavlink_msg_v2_extension_pack(uint8_t system_id, uint8_t 
     packet.target_network = target_network;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_uint8_t(packet.payload, payload, 249);
+    mav_array_memcpy(packet.payload, payload, sizeof(uint8_t)*249);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_V2_EXTENSION_LEN);
 #endif
 
@@ -159,7 +161,7 @@ static inline uint16_t mavlink_msg_v2_extension_pack_chan(uint8_t system_id, uin
     packet.target_network = target_network;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_uint8_t(packet.payload, payload, 249);
+    mav_array_memcpy(packet.payload, payload, sizeof(uint8_t)*249);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_V2_EXTENSION_LEN);
 #endif
 
@@ -236,7 +238,7 @@ static inline void mavlink_msg_v2_extension_send(mavlink_channel_t chan, uint8_t
     packet.target_network = target_network;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_uint8_t(packet.payload, payload, 249);
+    mav_array_memcpy(packet.payload, payload, sizeof(uint8_t)*249);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_V2_EXTENSION, (const char *)&packet, MAVLINK_MSG_ID_V2_EXTENSION_MIN_LEN, MAVLINK_MSG_ID_V2_EXTENSION_LEN, MAVLINK_MSG_ID_V2_EXTENSION_CRC);
 #endif
 }
@@ -279,7 +281,7 @@ static inline void mavlink_msg_v2_extension_send_buf(mavlink_message_t *msgbuf, 
     packet->target_network = target_network;
     packet->target_system = target_system;
     packet->target_component = target_component;
-    mav_array_assign_uint8_t(packet->payload, payload, 249);
+    mav_array_memcpy(packet->payload, payload, sizeof(uint8_t)*249);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_V2_EXTENSION, (const char *)packet, MAVLINK_MSG_ID_V2_EXTENSION_MIN_LEN, MAVLINK_MSG_ID_V2_EXTENSION_LEN, MAVLINK_MSG_ID_V2_EXTENSION_CRC);
 #endif
 }

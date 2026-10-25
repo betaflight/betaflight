@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE COLLISION PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_COLLISION 247
 
 

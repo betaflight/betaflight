@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE SET_MODE PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_SET_MODE 11
 
 

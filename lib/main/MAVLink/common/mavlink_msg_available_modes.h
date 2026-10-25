@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE AVAILABLE_MODES PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_AVAILABLE_MODES 435
 
 
@@ -11,11 +13,12 @@ typedef struct __mavlink_available_modes_t {
  uint8_t mode_index; /*<  The current mode index within number_modes, indexed from 1. The index is not guaranteed to be persistent, and may change between reboots or if the set of modes change.*/
  uint8_t standard_mode; /*<  Standard mode.*/
  char mode_name[35]; /*<  Name of custom mode, with null termination character. Should be omitted for standard modes.*/
+ uint8_t seq; /*<  Sequence number. The value iterates sequentially whenever the set of AVAILABLE_MODES changes and should match value of AVAILABLE_MODES_MONITOR. Note, a GCS must ignore 0 values, and should re-start the download if the value changes part-way through fetching modes.*/
 } mavlink_available_modes_t;
 
-#define MAVLINK_MSG_ID_AVAILABLE_MODES_LEN 46
+#define MAVLINK_MSG_ID_AVAILABLE_MODES_LEN 47
 #define MAVLINK_MSG_ID_AVAILABLE_MODES_MIN_LEN 46
-#define MAVLINK_MSG_ID_435_LEN 46
+#define MAVLINK_MSG_ID_435_LEN 47
 #define MAVLINK_MSG_ID_435_MIN_LEN 46
 
 #define MAVLINK_MSG_ID_AVAILABLE_MODES_CRC 134
@@ -27,25 +30,27 @@ typedef struct __mavlink_available_modes_t {
 #define MAVLINK_MESSAGE_INFO_AVAILABLE_MODES { \
     435, \
     "AVAILABLE_MODES", \
-    6, \
+    7, \
     {  { "number_modes", NULL, MAVLINK_TYPE_UINT8_T, 0, 8, offsetof(mavlink_available_modes_t, number_modes) }, \
          { "mode_index", NULL, MAVLINK_TYPE_UINT8_T, 0, 9, offsetof(mavlink_available_modes_t, mode_index) }, \
          { "standard_mode", NULL, MAVLINK_TYPE_UINT8_T, 0, 10, offsetof(mavlink_available_modes_t, standard_mode) }, \
          { "custom_mode", NULL, MAVLINK_TYPE_UINT32_T, 0, 0, offsetof(mavlink_available_modes_t, custom_mode) }, \
          { "properties", NULL, MAVLINK_TYPE_UINT32_T, 0, 4, offsetof(mavlink_available_modes_t, properties) }, \
          { "mode_name", NULL, MAVLINK_TYPE_CHAR, 35, 11, offsetof(mavlink_available_modes_t, mode_name) }, \
+         { "seq", NULL, MAVLINK_TYPE_UINT8_T, 0, 46, offsetof(mavlink_available_modes_t, seq) }, \
          } \
 }
 #else
 #define MAVLINK_MESSAGE_INFO_AVAILABLE_MODES { \
     "AVAILABLE_MODES", \
-    6, \
+    7, \
     {  { "number_modes", NULL, MAVLINK_TYPE_UINT8_T, 0, 8, offsetof(mavlink_available_modes_t, number_modes) }, \
          { "mode_index", NULL, MAVLINK_TYPE_UINT8_T, 0, 9, offsetof(mavlink_available_modes_t, mode_index) }, \
          { "standard_mode", NULL, MAVLINK_TYPE_UINT8_T, 0, 10, offsetof(mavlink_available_modes_t, standard_mode) }, \
          { "custom_mode", NULL, MAVLINK_TYPE_UINT32_T, 0, 0, offsetof(mavlink_available_modes_t, custom_mode) }, \
          { "properties", NULL, MAVLINK_TYPE_UINT32_T, 0, 4, offsetof(mavlink_available_modes_t, properties) }, \
          { "mode_name", NULL, MAVLINK_TYPE_CHAR, 35, 11, offsetof(mavlink_available_modes_t, mode_name) }, \
+         { "seq", NULL, MAVLINK_TYPE_UINT8_T, 0, 46, offsetof(mavlink_available_modes_t, seq) }, \
          } \
 }
 #endif
@@ -62,10 +67,11 @@ typedef struct __mavlink_available_modes_t {
  * @param custom_mode  A bitfield for use for autopilot-specific flags
  * @param properties  Mode properties.
  * @param mode_name  Name of custom mode, with null termination character. Should be omitted for standard modes.
+ * @param seq  Sequence number. The value iterates sequentially whenever the set of AVAILABLE_MODES changes and should match value of AVAILABLE_MODES_MONITOR. Note, a GCS must ignore 0 values, and should re-start the download if the value changes part-way through fetching modes.
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_available_modes_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
-                               uint8_t number_modes, uint8_t mode_index, uint8_t standard_mode, uint32_t custom_mode, uint32_t properties, const char *mode_name)
+                               uint8_t number_modes, uint8_t mode_index, uint8_t standard_mode, uint32_t custom_mode, uint32_t properties, const char *mode_name, uint8_t seq)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
     char buf[MAVLINK_MSG_ID_AVAILABLE_MODES_LEN];
@@ -74,6 +80,7 @@ static inline uint16_t mavlink_msg_available_modes_pack(uint8_t system_id, uint8
     _mav_put_uint8_t(buf, 8, number_modes);
     _mav_put_uint8_t(buf, 9, mode_index);
     _mav_put_uint8_t(buf, 10, standard_mode);
+    _mav_put_uint8_t(buf, 46, seq);
     _mav_put_char_array(buf, 11, mode_name, 35);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_AVAILABLE_MODES_LEN);
 #else
@@ -83,7 +90,8 @@ static inline uint16_t mavlink_msg_available_modes_pack(uint8_t system_id, uint8
     packet.number_modes = number_modes;
     packet.mode_index = mode_index;
     packet.standard_mode = standard_mode;
-    mav_array_assign_char(packet.mode_name, mode_name, 35);
+    packet.seq = seq;
+    mav_array_memcpy(packet.mode_name, mode_name, sizeof(char)*35);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_AVAILABLE_MODES_LEN);
 #endif
 
@@ -104,10 +112,11 @@ static inline uint16_t mavlink_msg_available_modes_pack(uint8_t system_id, uint8
  * @param custom_mode  A bitfield for use for autopilot-specific flags
  * @param properties  Mode properties.
  * @param mode_name  Name of custom mode, with null termination character. Should be omitted for standard modes.
+ * @param seq  Sequence number. The value iterates sequentially whenever the set of AVAILABLE_MODES changes and should match value of AVAILABLE_MODES_MONITOR. Note, a GCS must ignore 0 values, and should re-start the download if the value changes part-way through fetching modes.
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_available_modes_pack_status(uint8_t system_id, uint8_t component_id, mavlink_status_t *_status, mavlink_message_t* msg,
-                               uint8_t number_modes, uint8_t mode_index, uint8_t standard_mode, uint32_t custom_mode, uint32_t properties, const char *mode_name)
+                               uint8_t number_modes, uint8_t mode_index, uint8_t standard_mode, uint32_t custom_mode, uint32_t properties, const char *mode_name, uint8_t seq)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
     char buf[MAVLINK_MSG_ID_AVAILABLE_MODES_LEN];
@@ -116,6 +125,7 @@ static inline uint16_t mavlink_msg_available_modes_pack_status(uint8_t system_id
     _mav_put_uint8_t(buf, 8, number_modes);
     _mav_put_uint8_t(buf, 9, mode_index);
     _mav_put_uint8_t(buf, 10, standard_mode);
+    _mav_put_uint8_t(buf, 46, seq);
     _mav_put_char_array(buf, 11, mode_name, 35);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_AVAILABLE_MODES_LEN);
 #else
@@ -125,6 +135,7 @@ static inline uint16_t mavlink_msg_available_modes_pack_status(uint8_t system_id
     packet.number_modes = number_modes;
     packet.mode_index = mode_index;
     packet.standard_mode = standard_mode;
+    packet.seq = seq;
     mav_array_memcpy(packet.mode_name, mode_name, sizeof(char)*35);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_AVAILABLE_MODES_LEN);
 #endif
@@ -149,11 +160,12 @@ static inline uint16_t mavlink_msg_available_modes_pack_status(uint8_t system_id
  * @param custom_mode  A bitfield for use for autopilot-specific flags
  * @param properties  Mode properties.
  * @param mode_name  Name of custom mode, with null termination character. Should be omitted for standard modes.
+ * @param seq  Sequence number. The value iterates sequentially whenever the set of AVAILABLE_MODES changes and should match value of AVAILABLE_MODES_MONITOR. Note, a GCS must ignore 0 values, and should re-start the download if the value changes part-way through fetching modes.
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_available_modes_pack_chan(uint8_t system_id, uint8_t component_id, uint8_t chan,
                                mavlink_message_t* msg,
-                                   uint8_t number_modes,uint8_t mode_index,uint8_t standard_mode,uint32_t custom_mode,uint32_t properties,const char *mode_name)
+                                   uint8_t number_modes,uint8_t mode_index,uint8_t standard_mode,uint32_t custom_mode,uint32_t properties,const char *mode_name,uint8_t seq)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
     char buf[MAVLINK_MSG_ID_AVAILABLE_MODES_LEN];
@@ -162,6 +174,7 @@ static inline uint16_t mavlink_msg_available_modes_pack_chan(uint8_t system_id, 
     _mav_put_uint8_t(buf, 8, number_modes);
     _mav_put_uint8_t(buf, 9, mode_index);
     _mav_put_uint8_t(buf, 10, standard_mode);
+    _mav_put_uint8_t(buf, 46, seq);
     _mav_put_char_array(buf, 11, mode_name, 35);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_AVAILABLE_MODES_LEN);
 #else
@@ -171,7 +184,8 @@ static inline uint16_t mavlink_msg_available_modes_pack_chan(uint8_t system_id, 
     packet.number_modes = number_modes;
     packet.mode_index = mode_index;
     packet.standard_mode = standard_mode;
-    mav_array_assign_char(packet.mode_name, mode_name, 35);
+    packet.seq = seq;
+    mav_array_memcpy(packet.mode_name, mode_name, sizeof(char)*35);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_AVAILABLE_MODES_LEN);
 #endif
 
@@ -189,7 +203,7 @@ static inline uint16_t mavlink_msg_available_modes_pack_chan(uint8_t system_id, 
  */
 static inline uint16_t mavlink_msg_available_modes_encode(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg, const mavlink_available_modes_t* available_modes)
 {
-    return mavlink_msg_available_modes_pack(system_id, component_id, msg, available_modes->number_modes, available_modes->mode_index, available_modes->standard_mode, available_modes->custom_mode, available_modes->properties, available_modes->mode_name);
+    return mavlink_msg_available_modes_pack(system_id, component_id, msg, available_modes->number_modes, available_modes->mode_index, available_modes->standard_mode, available_modes->custom_mode, available_modes->properties, available_modes->mode_name, available_modes->seq);
 }
 
 /**
@@ -203,7 +217,7 @@ static inline uint16_t mavlink_msg_available_modes_encode(uint8_t system_id, uin
  */
 static inline uint16_t mavlink_msg_available_modes_encode_chan(uint8_t system_id, uint8_t component_id, uint8_t chan, mavlink_message_t* msg, const mavlink_available_modes_t* available_modes)
 {
-    return mavlink_msg_available_modes_pack_chan(system_id, component_id, chan, msg, available_modes->number_modes, available_modes->mode_index, available_modes->standard_mode, available_modes->custom_mode, available_modes->properties, available_modes->mode_name);
+    return mavlink_msg_available_modes_pack_chan(system_id, component_id, chan, msg, available_modes->number_modes, available_modes->mode_index, available_modes->standard_mode, available_modes->custom_mode, available_modes->properties, available_modes->mode_name, available_modes->seq);
 }
 
 /**
@@ -217,7 +231,7 @@ static inline uint16_t mavlink_msg_available_modes_encode_chan(uint8_t system_id
  */
 static inline uint16_t mavlink_msg_available_modes_encode_status(uint8_t system_id, uint8_t component_id, mavlink_status_t* _status, mavlink_message_t* msg, const mavlink_available_modes_t* available_modes)
 {
-    return mavlink_msg_available_modes_pack_status(system_id, component_id, _status, msg,  available_modes->number_modes, available_modes->mode_index, available_modes->standard_mode, available_modes->custom_mode, available_modes->properties, available_modes->mode_name);
+    return mavlink_msg_available_modes_pack_status(system_id, component_id, _status, msg,  available_modes->number_modes, available_modes->mode_index, available_modes->standard_mode, available_modes->custom_mode, available_modes->properties, available_modes->mode_name, available_modes->seq);
 }
 
 /**
@@ -230,10 +244,11 @@ static inline uint16_t mavlink_msg_available_modes_encode_status(uint8_t system_
  * @param custom_mode  A bitfield for use for autopilot-specific flags
  * @param properties  Mode properties.
  * @param mode_name  Name of custom mode, with null termination character. Should be omitted for standard modes.
+ * @param seq  Sequence number. The value iterates sequentially whenever the set of AVAILABLE_MODES changes and should match value of AVAILABLE_MODES_MONITOR. Note, a GCS must ignore 0 values, and should re-start the download if the value changes part-way through fetching modes.
  */
 #ifdef MAVLINK_USE_CONVENIENCE_FUNCTIONS
 
-static inline void mavlink_msg_available_modes_send(mavlink_channel_t chan, uint8_t number_modes, uint8_t mode_index, uint8_t standard_mode, uint32_t custom_mode, uint32_t properties, const char *mode_name)
+static inline void mavlink_msg_available_modes_send(mavlink_channel_t chan, uint8_t number_modes, uint8_t mode_index, uint8_t standard_mode, uint32_t custom_mode, uint32_t properties, const char *mode_name, uint8_t seq)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
     char buf[MAVLINK_MSG_ID_AVAILABLE_MODES_LEN];
@@ -242,6 +257,7 @@ static inline void mavlink_msg_available_modes_send(mavlink_channel_t chan, uint
     _mav_put_uint8_t(buf, 8, number_modes);
     _mav_put_uint8_t(buf, 9, mode_index);
     _mav_put_uint8_t(buf, 10, standard_mode);
+    _mav_put_uint8_t(buf, 46, seq);
     _mav_put_char_array(buf, 11, mode_name, 35);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_AVAILABLE_MODES, buf, MAVLINK_MSG_ID_AVAILABLE_MODES_MIN_LEN, MAVLINK_MSG_ID_AVAILABLE_MODES_LEN, MAVLINK_MSG_ID_AVAILABLE_MODES_CRC);
 #else
@@ -251,7 +267,8 @@ static inline void mavlink_msg_available_modes_send(mavlink_channel_t chan, uint
     packet.number_modes = number_modes;
     packet.mode_index = mode_index;
     packet.standard_mode = standard_mode;
-    mav_array_assign_char(packet.mode_name, mode_name, 35);
+    packet.seq = seq;
+    mav_array_memcpy(packet.mode_name, mode_name, sizeof(char)*35);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_AVAILABLE_MODES, (const char *)&packet, MAVLINK_MSG_ID_AVAILABLE_MODES_MIN_LEN, MAVLINK_MSG_ID_AVAILABLE_MODES_LEN, MAVLINK_MSG_ID_AVAILABLE_MODES_CRC);
 #endif
 }
@@ -264,7 +281,7 @@ static inline void mavlink_msg_available_modes_send(mavlink_channel_t chan, uint
 static inline void mavlink_msg_available_modes_send_struct(mavlink_channel_t chan, const mavlink_available_modes_t* available_modes)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
-    mavlink_msg_available_modes_send(chan, available_modes->number_modes, available_modes->mode_index, available_modes->standard_mode, available_modes->custom_mode, available_modes->properties, available_modes->mode_name);
+    mavlink_msg_available_modes_send(chan, available_modes->number_modes, available_modes->mode_index, available_modes->standard_mode, available_modes->custom_mode, available_modes->properties, available_modes->mode_name, available_modes->seq);
 #else
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_AVAILABLE_MODES, (const char *)available_modes, MAVLINK_MSG_ID_AVAILABLE_MODES_MIN_LEN, MAVLINK_MSG_ID_AVAILABLE_MODES_LEN, MAVLINK_MSG_ID_AVAILABLE_MODES_CRC);
 #endif
@@ -278,7 +295,7 @@ static inline void mavlink_msg_available_modes_send_struct(mavlink_channel_t cha
   is usually the receive buffer for the channel, and allows a reply to an
   incoming message with minimum stack space usage.
  */
-static inline void mavlink_msg_available_modes_send_buf(mavlink_message_t *msgbuf, mavlink_channel_t chan,  uint8_t number_modes, uint8_t mode_index, uint8_t standard_mode, uint32_t custom_mode, uint32_t properties, const char *mode_name)
+static inline void mavlink_msg_available_modes_send_buf(mavlink_message_t *msgbuf, mavlink_channel_t chan,  uint8_t number_modes, uint8_t mode_index, uint8_t standard_mode, uint32_t custom_mode, uint32_t properties, const char *mode_name, uint8_t seq)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
     char *buf = (char *)msgbuf;
@@ -287,6 +304,7 @@ static inline void mavlink_msg_available_modes_send_buf(mavlink_message_t *msgbu
     _mav_put_uint8_t(buf, 8, number_modes);
     _mav_put_uint8_t(buf, 9, mode_index);
     _mav_put_uint8_t(buf, 10, standard_mode);
+    _mav_put_uint8_t(buf, 46, seq);
     _mav_put_char_array(buf, 11, mode_name, 35);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_AVAILABLE_MODES, buf, MAVLINK_MSG_ID_AVAILABLE_MODES_MIN_LEN, MAVLINK_MSG_ID_AVAILABLE_MODES_LEN, MAVLINK_MSG_ID_AVAILABLE_MODES_CRC);
 #else
@@ -296,7 +314,8 @@ static inline void mavlink_msg_available_modes_send_buf(mavlink_message_t *msgbu
     packet->number_modes = number_modes;
     packet->mode_index = mode_index;
     packet->standard_mode = standard_mode;
-    mav_array_assign_char(packet->mode_name, mode_name, 35);
+    packet->seq = seq;
+    mav_array_memcpy(packet->mode_name, mode_name, sizeof(char)*35);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_AVAILABLE_MODES, (const char *)packet, MAVLINK_MSG_ID_AVAILABLE_MODES_MIN_LEN, MAVLINK_MSG_ID_AVAILABLE_MODES_LEN, MAVLINK_MSG_ID_AVAILABLE_MODES_CRC);
 #endif
 }
@@ -368,6 +387,16 @@ static inline uint16_t mavlink_msg_available_modes_get_mode_name(const mavlink_m
 }
 
 /**
+ * @brief Get field seq from available_modes message
+ *
+ * @return  Sequence number. The value iterates sequentially whenever the set of AVAILABLE_MODES changes and should match value of AVAILABLE_MODES_MONITOR. Note, a GCS must ignore 0 values, and should re-start the download if the value changes part-way through fetching modes.
+ */
+static inline uint8_t mavlink_msg_available_modes_get_seq(const mavlink_message_t* msg)
+{
+    return _MAV_RETURN_uint8_t(msg,  46);
+}
+
+/**
  * @brief Decode a available_modes message into a struct
  *
  * @param msg The message to decode
@@ -382,6 +411,7 @@ static inline void mavlink_msg_available_modes_decode(const mavlink_message_t* m
     available_modes->mode_index = mavlink_msg_available_modes_get_mode_index(msg);
     available_modes->standard_mode = mavlink_msg_available_modes_get_standard_mode(msg);
     mavlink_msg_available_modes_get_mode_name(msg, available_modes->mode_name);
+    available_modes->seq = mavlink_msg_available_modes_get_seq(msg);
 #else
         uint8_t len = msg->len < MAVLINK_MSG_ID_AVAILABLE_MODES_LEN? msg->len : MAVLINK_MSG_ID_AVAILABLE_MODES_LEN;
         memset(available_modes, 0, MAVLINK_MSG_ID_AVAILABLE_MODES_LEN);

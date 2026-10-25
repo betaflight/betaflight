@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE PLAY_TUNE PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_PLAY_TUNE 258
 
 
@@ -71,8 +73,8 @@ static inline uint16_t mavlink_msg_play_tune_pack(uint8_t system_id, uint8_t com
     mavlink_play_tune_t packet;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_char(packet.tune, tune, 30);
-    mav_array_assign_char(packet.tune2, tune2, 200);
+    mav_array_memcpy(packet.tune, tune, sizeof(char)*30);
+    mav_array_memcpy(packet.tune2, tune2, sizeof(char)*200);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_PLAY_TUNE_LEN);
 #endif
 
@@ -147,8 +149,8 @@ static inline uint16_t mavlink_msg_play_tune_pack_chan(uint8_t system_id, uint8_
     mavlink_play_tune_t packet;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_char(packet.tune, tune, 30);
-    mav_array_assign_char(packet.tune2, tune2, 200);
+    mav_array_memcpy(packet.tune, tune, sizeof(char)*30);
+    mav_array_memcpy(packet.tune2, tune2, sizeof(char)*200);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_PLAY_TUNE_LEN);
 #endif
 
@@ -221,8 +223,8 @@ static inline void mavlink_msg_play_tune_send(mavlink_channel_t chan, uint8_t ta
     mavlink_play_tune_t packet;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_char(packet.tune, tune, 30);
-    mav_array_assign_char(packet.tune2, tune2, 200);
+    mav_array_memcpy(packet.tune, tune, sizeof(char)*30);
+    mav_array_memcpy(packet.tune2, tune2, sizeof(char)*200);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_PLAY_TUNE, (const char *)&packet, MAVLINK_MSG_ID_PLAY_TUNE_MIN_LEN, MAVLINK_MSG_ID_PLAY_TUNE_LEN, MAVLINK_MSG_ID_PLAY_TUNE_CRC);
 #endif
 }
@@ -262,8 +264,8 @@ static inline void mavlink_msg_play_tune_send_buf(mavlink_message_t *msgbuf, mav
     mavlink_play_tune_t *packet = (mavlink_play_tune_t *)msgbuf;
     packet->target_system = target_system;
     packet->target_component = target_component;
-    mav_array_assign_char(packet->tune, tune, 30);
-    mav_array_assign_char(packet->tune2, tune2, 200);
+    mav_array_memcpy(packet->tune, tune, sizeof(char)*30);
+    mav_array_memcpy(packet->tune2, tune2, sizeof(char)*200);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_PLAY_TUNE, (const char *)packet, MAVLINK_MSG_ID_PLAY_TUNE_MIN_LEN, MAVLINK_MSG_ID_PLAY_TUNE_LEN, MAVLINK_MSG_ID_PLAY_TUNE_CRC);
 #endif
 }

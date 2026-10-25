@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE CURRENT_MODE PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_CURRENT_MODE 436
 
 

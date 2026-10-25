@@ -371,12 +371,6 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
         // like any other HOLD-zero. Capability follow-up.
         wp->type = WAYPOINT_TYPE_HOLD;
         break;
-    case MAV_CMD_NAV_FOLLOW:
-        // Best-effort: hover at the initial target position. Dynamic vehicle
-        // following needs an updating target source the executor doesn't have
-        // today — capability follow-up.
-        wp->type = WAYPOINT_TYPE_HOLD;
-        break;
     case MAV_CMD_NAV_LAND:
     case MAV_CMD_NAV_VTOL_LAND:
     case MAV_CMD_NAV_LAND_LOCAL:

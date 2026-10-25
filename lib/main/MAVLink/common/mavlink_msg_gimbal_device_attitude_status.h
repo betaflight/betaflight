@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE GIMBAL_DEVICE_ATTITUDE_STATUS PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS 285
 
 
@@ -119,7 +121,7 @@ static inline uint16_t mavlink_msg_gimbal_device_attitude_status_pack(uint8_t sy
     packet.delta_yaw = delta_yaw;
     packet.delta_yaw_velocity = delta_yaw_velocity;
     packet.gimbal_device_id = gimbal_device_id;
-    mav_array_assign_float(packet.q, q, 4);
+    mav_array_memcpy(packet.q, q, sizeof(float)*4);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS_LEN);
 #endif
 
@@ -243,7 +245,7 @@ static inline uint16_t mavlink_msg_gimbal_device_attitude_status_pack_chan(uint8
     packet.delta_yaw = delta_yaw;
     packet.delta_yaw_velocity = delta_yaw_velocity;
     packet.gimbal_device_id = gimbal_device_id;
-    mav_array_assign_float(packet.q, q, 4);
+    mav_array_memcpy(packet.q, q, sizeof(float)*4);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS_LEN);
 #endif
 
@@ -341,7 +343,7 @@ static inline void mavlink_msg_gimbal_device_attitude_status_send(mavlink_channe
     packet.delta_yaw = delta_yaw;
     packet.delta_yaw_velocity = delta_yaw_velocity;
     packet.gimbal_device_id = gimbal_device_id;
-    mav_array_assign_float(packet.q, q, 4);
+    mav_array_memcpy(packet.q, q, sizeof(float)*4);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS, (const char *)&packet, MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS_MIN_LEN, MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS_LEN, MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS_CRC);
 #endif
 }
@@ -398,7 +400,7 @@ static inline void mavlink_msg_gimbal_device_attitude_status_send_buf(mavlink_me
     packet->delta_yaw = delta_yaw;
     packet->delta_yaw_velocity = delta_yaw_velocity;
     packet->gimbal_device_id = gimbal_device_id;
-    mav_array_assign_float(packet->q, q, 4);
+    mav_array_memcpy(packet->q, q, sizeof(float)*4);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS, (const char *)packet, MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS_MIN_LEN, MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS_LEN, MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS_CRC);
 #endif
 }

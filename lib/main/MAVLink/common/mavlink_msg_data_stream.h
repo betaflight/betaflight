@@ -1,12 +1,14 @@
 #pragma once
 // MESSAGE DATA_STREAM PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_DATA_STREAM 67
 
 
 typedef struct __mavlink_data_stream_t {
  uint16_t message_rate; /*< [Hz] The message rate*/
- uint8_t stream_id; /*<  The ID of the requested data stream*/
+ uint8_t stream_id; /*<  The ID of the requested data stream.*/
  uint8_t on_off; /*<  1 stream is enabled, 0 stream is stopped.*/
 } mavlink_data_stream_t;
 
@@ -47,7 +49,7 @@ typedef struct __mavlink_data_stream_t {
  * @param component_id ID of this component (e.g. 200 for IMU)
  * @param msg The MAVLink message to compress the data into
  *
- * @param stream_id  The ID of the requested data stream
+ * @param stream_id  The ID of the requested data stream.
  * @param message_rate [Hz] The message rate
  * @param on_off  1 stream is enabled, 0 stream is stopped.
  * @return length of the message in bytes (excluding serial stream start sign)
@@ -82,7 +84,7 @@ static inline uint16_t mavlink_msg_data_stream_pack(uint8_t system_id, uint8_t c
  * @param status MAVLink status structure
  * @param msg The MAVLink message to compress the data into
  *
- * @param stream_id  The ID of the requested data stream
+ * @param stream_id  The ID of the requested data stream.
  * @param message_rate [Hz] The message rate
  * @param on_off  1 stream is enabled, 0 stream is stopped.
  * @return length of the message in bytes (excluding serial stream start sign)
@@ -120,7 +122,7 @@ static inline uint16_t mavlink_msg_data_stream_pack_status(uint8_t system_id, ui
  * @param component_id ID of this component (e.g. 200 for IMU)
  * @param chan The MAVLink channel this message will be sent over
  * @param msg The MAVLink message to compress the data into
- * @param stream_id  The ID of the requested data stream
+ * @param stream_id  The ID of the requested data stream.
  * @param message_rate [Hz] The message rate
  * @param on_off  1 stream is enabled, 0 stream is stopped.
  * @return length of the message in bytes (excluding serial stream start sign)
@@ -194,7 +196,7 @@ static inline uint16_t mavlink_msg_data_stream_encode_status(uint8_t system_id, 
  * @brief Send a data_stream message
  * @param chan MAVLink channel to send the message
  *
- * @param stream_id  The ID of the requested data stream
+ * @param stream_id  The ID of the requested data stream.
  * @param message_rate [Hz] The message rate
  * @param on_off  1 stream is enabled, 0 stream is stopped.
  */
@@ -269,7 +271,7 @@ static inline void mavlink_msg_data_stream_send_buf(mavlink_message_t *msgbuf, m
 /**
  * @brief Get field stream_id from data_stream message
  *
- * @return  The ID of the requested data stream
+ * @return  The ID of the requested data stream.
  */
 static inline uint8_t mavlink_msg_data_stream_get_stream_id(const mavlink_message_t* msg)
 {

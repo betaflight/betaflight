@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE ACTUATOR_OUTPUT_STATUS PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_ACTUATOR_OUTPUT_STATUS 375
 
 
@@ -65,7 +67,7 @@ static inline uint16_t mavlink_msg_actuator_output_status_pack(uint8_t system_id
     mavlink_actuator_output_status_t packet;
     packet.time_usec = time_usec;
     packet.active = active;
-    mav_array_assign_float(packet.actuator, actuator, 32);
+    mav_array_memcpy(packet.actuator, actuator, sizeof(float)*32);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ACTUATOR_OUTPUT_STATUS_LEN);
 #endif
 
@@ -135,7 +137,7 @@ static inline uint16_t mavlink_msg_actuator_output_status_pack_chan(uint8_t syst
     mavlink_actuator_output_status_t packet;
     packet.time_usec = time_usec;
     packet.active = active;
-    mav_array_assign_float(packet.actuator, actuator, 32);
+    mav_array_memcpy(packet.actuator, actuator, sizeof(float)*32);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ACTUATOR_OUTPUT_STATUS_LEN);
 #endif
 
@@ -206,7 +208,7 @@ static inline void mavlink_msg_actuator_output_status_send(mavlink_channel_t cha
     mavlink_actuator_output_status_t packet;
     packet.time_usec = time_usec;
     packet.active = active;
-    mav_array_assign_float(packet.actuator, actuator, 32);
+    mav_array_memcpy(packet.actuator, actuator, sizeof(float)*32);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_ACTUATOR_OUTPUT_STATUS, (const char *)&packet, MAVLINK_MSG_ID_ACTUATOR_OUTPUT_STATUS_MIN_LEN, MAVLINK_MSG_ID_ACTUATOR_OUTPUT_STATUS_LEN, MAVLINK_MSG_ID_ACTUATOR_OUTPUT_STATUS_CRC);
 #endif
 }
@@ -245,7 +247,7 @@ static inline void mavlink_msg_actuator_output_status_send_buf(mavlink_message_t
     mavlink_actuator_output_status_t *packet = (mavlink_actuator_output_status_t *)msgbuf;
     packet->time_usec = time_usec;
     packet->active = active;
-    mav_array_assign_float(packet->actuator, actuator, 32);
+    mav_array_memcpy(packet->actuator, actuator, sizeof(float)*32);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_ACTUATOR_OUTPUT_STATUS, (const char *)packet, MAVLINK_MSG_ID_ACTUATOR_OUTPUT_STATUS_MIN_LEN, MAVLINK_MSG_ID_ACTUATOR_OUTPUT_STATUS_LEN, MAVLINK_MSG_ID_ACTUATOR_OUTPUT_STATUS_CRC);
 #endif
 }

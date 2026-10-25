@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE ENCAPSULATED_DATA PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_ENCAPSULATED_DATA 131
 
 
@@ -59,7 +61,7 @@ static inline uint16_t mavlink_msg_encapsulated_data_pack(uint8_t system_id, uin
 #else
     mavlink_encapsulated_data_t packet;
     packet.seqnr = seqnr;
-    mav_array_assign_uint8_t(packet.data, data, 253);
+    mav_array_memcpy(packet.data, data, sizeof(uint8_t)*253);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ENCAPSULATED_DATA_LEN);
 #endif
 
@@ -123,7 +125,7 @@ static inline uint16_t mavlink_msg_encapsulated_data_pack_chan(uint8_t system_id
 #else
     mavlink_encapsulated_data_t packet;
     packet.seqnr = seqnr;
-    mav_array_assign_uint8_t(packet.data, data, 253);
+    mav_array_memcpy(packet.data, data, sizeof(uint8_t)*253);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ENCAPSULATED_DATA_LEN);
 #endif
 
@@ -191,7 +193,7 @@ static inline void mavlink_msg_encapsulated_data_send(mavlink_channel_t chan, ui
 #else
     mavlink_encapsulated_data_t packet;
     packet.seqnr = seqnr;
-    mav_array_assign_uint8_t(packet.data, data, 253);
+    mav_array_memcpy(packet.data, data, sizeof(uint8_t)*253);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_ENCAPSULATED_DATA, (const char *)&packet, MAVLINK_MSG_ID_ENCAPSULATED_DATA_MIN_LEN, MAVLINK_MSG_ID_ENCAPSULATED_DATA_LEN, MAVLINK_MSG_ID_ENCAPSULATED_DATA_CRC);
 #endif
 }
@@ -228,7 +230,7 @@ static inline void mavlink_msg_encapsulated_data_send_buf(mavlink_message_t *msg
 #else
     mavlink_encapsulated_data_t *packet = (mavlink_encapsulated_data_t *)msgbuf;
     packet->seqnr = seqnr;
-    mav_array_assign_uint8_t(packet->data, data, 253);
+    mav_array_memcpy(packet->data, data, sizeof(uint8_t)*253);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_ENCAPSULATED_DATA, (const char *)packet, MAVLINK_MSG_ID_ENCAPSULATED_DATA_MIN_LEN, MAVLINK_MSG_ID_ENCAPSULATED_DATA_LEN, MAVLINK_MSG_ID_ENCAPSULATED_DATA_CRC);
 #endif
 }

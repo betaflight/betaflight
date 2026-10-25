@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE GPS2_RAW PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_GPS2_RAW 124
 
 MAVPACKED(

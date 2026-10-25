@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE CAMERA_IMAGE_CAPTURED PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED 263
 
 
@@ -113,8 +115,8 @@ static inline uint16_t mavlink_msg_camera_image_captured_pack(uint8_t system_id,
     packet.image_index = image_index;
     packet.camera_id = camera_id;
     packet.capture_result = capture_result;
-    mav_array_assign_float(packet.q, q, 4);
-    mav_array_assign_char(packet.file_url, file_url, 205);
+    mav_array_memcpy(packet.q, q, sizeof(float)*4);
+    mav_array_memcpy(packet.file_url, file_url, sizeof(char)*205);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED_LEN);
 #endif
 
@@ -231,8 +233,8 @@ static inline uint16_t mavlink_msg_camera_image_captured_pack_chan(uint8_t syste
     packet.image_index = image_index;
     packet.camera_id = camera_id;
     packet.capture_result = capture_result;
-    mav_array_assign_float(packet.q, q, 4);
-    mav_array_assign_char(packet.file_url, file_url, 205);
+    mav_array_memcpy(packet.q, q, sizeof(float)*4);
+    mav_array_memcpy(packet.file_url, file_url, sizeof(char)*205);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED_LEN);
 #endif
 
@@ -326,8 +328,8 @@ static inline void mavlink_msg_camera_image_captured_send(mavlink_channel_t chan
     packet.image_index = image_index;
     packet.camera_id = camera_id;
     packet.capture_result = capture_result;
-    mav_array_assign_float(packet.q, q, 4);
-    mav_array_assign_char(packet.file_url, file_url, 205);
+    mav_array_memcpy(packet.q, q, sizeof(float)*4);
+    mav_array_memcpy(packet.file_url, file_url, sizeof(char)*205);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, (const char *)&packet, MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED_MIN_LEN, MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED_LEN, MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED_CRC);
 #endif
 }
@@ -381,8 +383,8 @@ static inline void mavlink_msg_camera_image_captured_send_buf(mavlink_message_t 
     packet->image_index = image_index;
     packet->camera_id = camera_id;
     packet->capture_result = capture_result;
-    mav_array_assign_float(packet->q, q, 4);
-    mav_array_assign_char(packet->file_url, file_url, 205);
+    mav_array_memcpy(packet->q, q, sizeof(float)*4);
+    mav_array_memcpy(packet->file_url, file_url, sizeof(char)*205);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, (const char *)packet, MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED_MIN_LEN, MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED_LEN, MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED_CRC);
 #endif
 }

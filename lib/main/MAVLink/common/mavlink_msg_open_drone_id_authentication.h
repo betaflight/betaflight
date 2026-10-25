@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE OPEN_DRONE_ID_AUTHENTICATION PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_OPEN_DRONE_ID_AUTHENTICATION 12902
 
 
@@ -101,8 +103,8 @@ static inline uint16_t mavlink_msg_open_drone_id_authentication_pack(uint8_t sys
     packet.data_page = data_page;
     packet.last_page_index = last_page_index;
     packet.length = length;
-    mav_array_assign_uint8_t(packet.id_or_mac, id_or_mac, 20);
-    mav_array_assign_uint8_t(packet.authentication_data, authentication_data, 23);
+    mav_array_memcpy(packet.id_or_mac, id_or_mac, sizeof(uint8_t)*20);
+    mav_array_memcpy(packet.authentication_data, authentication_data, sizeof(uint8_t)*23);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_OPEN_DRONE_ID_AUTHENTICATION_LEN);
 #endif
 
@@ -207,8 +209,8 @@ static inline uint16_t mavlink_msg_open_drone_id_authentication_pack_chan(uint8_
     packet.data_page = data_page;
     packet.last_page_index = last_page_index;
     packet.length = length;
-    mav_array_assign_uint8_t(packet.id_or_mac, id_or_mac, 20);
-    mav_array_assign_uint8_t(packet.authentication_data, authentication_data, 23);
+    mav_array_memcpy(packet.id_or_mac, id_or_mac, sizeof(uint8_t)*20);
+    mav_array_memcpy(packet.authentication_data, authentication_data, sizeof(uint8_t)*23);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_OPEN_DRONE_ID_AUTHENTICATION_LEN);
 #endif
 
@@ -296,8 +298,8 @@ static inline void mavlink_msg_open_drone_id_authentication_send(mavlink_channel
     packet.data_page = data_page;
     packet.last_page_index = last_page_index;
     packet.length = length;
-    mav_array_assign_uint8_t(packet.id_or_mac, id_or_mac, 20);
-    mav_array_assign_uint8_t(packet.authentication_data, authentication_data, 23);
+    mav_array_memcpy(packet.id_or_mac, id_or_mac, sizeof(uint8_t)*20);
+    mav_array_memcpy(packet.authentication_data, authentication_data, sizeof(uint8_t)*23);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_OPEN_DRONE_ID_AUTHENTICATION, (const char *)&packet, MAVLINK_MSG_ID_OPEN_DRONE_ID_AUTHENTICATION_MIN_LEN, MAVLINK_MSG_ID_OPEN_DRONE_ID_AUTHENTICATION_LEN, MAVLINK_MSG_ID_OPEN_DRONE_ID_AUTHENTICATION_CRC);
 #endif
 }
@@ -347,8 +349,8 @@ static inline void mavlink_msg_open_drone_id_authentication_send_buf(mavlink_mes
     packet->data_page = data_page;
     packet->last_page_index = last_page_index;
     packet->length = length;
-    mav_array_assign_uint8_t(packet->id_or_mac, id_or_mac, 20);
-    mav_array_assign_uint8_t(packet->authentication_data, authentication_data, 23);
+    mav_array_memcpy(packet->id_or_mac, id_or_mac, sizeof(uint8_t)*20);
+    mav_array_memcpy(packet->authentication_data, authentication_data, sizeof(uint8_t)*23);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_OPEN_DRONE_ID_AUTHENTICATION, (const char *)packet, MAVLINK_MSG_ID_OPEN_DRONE_ID_AUTHENTICATION_MIN_LEN, MAVLINK_MSG_ID_OPEN_DRONE_ID_AUTHENTICATION_LEN, MAVLINK_MSG_ID_OPEN_DRONE_ID_AUTHENTICATION_CRC);
 #endif
 }

@@ -11,6 +11,10 @@
 
 #include "mavlink_sha256.h"
 
+#ifndef MAVLINK_SIGNING_TIMESTAMP_LIMIT
+#define MAVLINK_SIGNING_TIMESTAMP_LIMIT 60
+#endif
+
 #ifdef MAVLINK_USE_CXX_NAMESPACE
 namespace mavlink {
 #endif
@@ -173,8 +177,8 @@ MAVLINK_HELPER bool mavlink_signature_check(mavlink_signing_t *signing,
                         signing->last_status = MAVLINK_SIGNING_STATUS_TOO_MANY_STREAMS;
                         return false;
 		}
-		// new stream. Only accept if timestamp is not more than 1 minute old
-		if (tstamp.t64 + 6000*1000UL < signing->timestamp) {
+        // new stream. Only accept if timestamp is not more than 1 minute old by default
+        if (tstamp.t64 + MAVLINK_SIGNING_TIMESTAMP_LIMIT*100000UL < signing->timestamp) {
                         signing->last_status = MAVLINK_SIGNING_STATUS_OLD_TIMESTAMP;
                         return false;
 		}
@@ -755,9 +759,14 @@ MAVLINK_HELPER uint8_t mavlink_frame_char_buffer(mavlink_message_t* rxmsg,
 			}
 			rxmsg->ck[0] = c;
 
-			// zero-fill the packet to cope with short incoming packets
-				if (e && status->packet_idx < e->max_msg_len) {
-					memset(&_MAV_PAYLOAD_NON_CONST(rxmsg)[status->packet_idx], 0, e->max_msg_len - status->packet_idx);
+			// zero-fill the packet to cope with short incoming packets.
+			// Clamp to MAVLINK_MAX_PAYLOAD_LEN: e->max_msg_len comes from the
+			// message table and can exceed the payload buffer size when the
+			// buffer has been shrunk via MAVLINK_MAX_PAYLOAD_LEN, which would
+			// otherwise overflow the buffer.
+				uint8_t fill_len = e->max_msg_len < MAVLINK_MAX_PAYLOAD_LEN ? e->max_msg_len : MAVLINK_MAX_PAYLOAD_LEN;
+				if (e && status->packet_idx < fill_len) {
+					memset(&_MAV_PAYLOAD_NON_CONST(rxmsg)[status->packet_idx], 0, fill_len - status->packet_idx);
 			}
 		}
 		break;
@@ -1016,107 +1025,6 @@ MAVLINK_HELPER uint8_t mavlink_parse_char(uint8_t chan, uint8_t c, mavlink_messa
 	    return 0;
     }
     return msg_received;
-}
-
-/**
- * @brief Put a bitfield of length 1-32 bit into the buffer
- *
- * @param b the value to add, will be encoded in the bitfield
- * @param bits number of bits to use to encode b, e.g. 1 for boolean, 2, 3, etc.
- * @param packet_index the position in the packet (the index of the first byte to use)
- * @param bit_index the position in the byte (the index of the first bit to use)
- * @param buffer packet buffer to write into
- * @return new position of the last used byte in the buffer
- */
-MAVLINK_HELPER uint8_t put_bitfield_n_by_index(int32_t b, uint8_t bits, uint8_t packet_index, uint8_t bit_index, uint8_t* r_bit_index, uint8_t* buffer)
-{
-	uint16_t bits_remain = bits;
-	// Transform number into network order
-	int32_t v;
-	uint8_t i_bit_index, i_byte_index, curr_bits_n;
-#if MAVLINK_NEED_BYTE_SWAP
-	union {
-		int32_t i;
-		uint8_t b[4];
-	} bin, bout;
-	bin.i = b;
-	bout.b[0] = bin.b[3];
-	bout.b[1] = bin.b[2];
-	bout.b[2] = bin.b[1];
-	bout.b[3] = bin.b[0];
-	v = bout.i;
-#else
-	v = b;
-#endif
-
-	// buffer in
-	// 01100000 01000000 00000000 11110001
-	// buffer out
-	// 11110001 00000000 01000000 01100000
-
-	// Existing partly filled byte (four free slots)
-	// 0111xxxx
-
-	// Mask n free bits
-	// 00001111 = 2^0 + 2^1 + 2^2 + 2^3 = 2^n - 1
-	// = ((uint32_t)(1 << n)) - 1; // = 2^n - 1
-
-	// Shift n bits into the right position
-	// out = in >> n;
-
-	// Mask and shift bytes
-	i_bit_index = bit_index;
-	i_byte_index = packet_index;
-	if (bit_index > 0)
-	{
-		// If bits were available at start, they were available
-		// in the byte before the current index
-		i_byte_index--;
-	}
-
-	// While bits have not been packed yet
-	while (bits_remain > 0)
-	{
-		// Bits still have to be packed
-		// there can be more than 8 bits, so
-		// we might have to pack them into more than one byte
-
-		// First pack everything we can into the current 'open' byte
-		//curr_bits_n = bits_remain << 3; // Equals  bits_remain mod 8
-		//FIXME
-		if (bits_remain <= (uint8_t)(8 - i_bit_index))
-		{
-			// Enough space
-			curr_bits_n = (uint8_t)bits_remain;
-		}
-		else
-		{
-			curr_bits_n = (8 - i_bit_index);
-		}
-		
-		// Pack these n bits into the current byte
-		// Mask out whatever was at that position with ones (xxx11111)
-		buffer[i_byte_index] &= (0xFF >> (8 - curr_bits_n));
-		// Put content to this position, by masking out the non-used part
-		buffer[i_byte_index] |= ((0x00 << curr_bits_n) & v);
-		
-		// Increment the bit index
-		i_bit_index += curr_bits_n;
-
-		// Now proceed to the next byte, if necessary
-		bits_remain -= curr_bits_n;
-		if (bits_remain > 0)
-		{
-			// Offer another 8 bits / one byte
-			i_byte_index++;
-			i_bit_index = 0;
-		}
-	}
-	
-	*r_bit_index = i_bit_index;
-	// If a partly filled byte is present, mark this as consumed
-	if (i_bit_index != 7) i_byte_index++;
-	return i_byte_index - packet_index;
 }
 
 #ifdef MAVLINK_USE_CONVENIENCE_FUNCTIONS

@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE CAMERA_TRIGGER PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_CAMERA_TRIGGER 112
 
 

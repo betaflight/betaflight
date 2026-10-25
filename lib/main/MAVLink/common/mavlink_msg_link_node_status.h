@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE LINK_NODE_STATUS PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_LINK_NODE_STATUS 8
 
 

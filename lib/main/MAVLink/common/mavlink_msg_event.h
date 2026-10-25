@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE EVENT PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_EVENT 410
 
 
@@ -89,7 +91,7 @@ static inline uint16_t mavlink_msg_event_pack(uint8_t system_id, uint8_t compone
     packet.destination_component = destination_component;
     packet.destination_system = destination_system;
     packet.log_levels = log_levels;
-    mav_array_assign_uint8_t(packet.arguments, arguments, 40);
+    mav_array_memcpy(packet.arguments, arguments, sizeof(uint8_t)*40);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_EVENT_LEN);
 #endif
 
@@ -183,7 +185,7 @@ static inline uint16_t mavlink_msg_event_pack_chan(uint8_t system_id, uint8_t co
     packet.destination_component = destination_component;
     packet.destination_system = destination_system;
     packet.log_levels = log_levels;
-    mav_array_assign_uint8_t(packet.arguments, arguments, 40);
+    mav_array_memcpy(packet.arguments, arguments, sizeof(uint8_t)*40);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_EVENT_LEN);
 #endif
 
@@ -266,7 +268,7 @@ static inline void mavlink_msg_event_send(mavlink_channel_t chan, uint8_t destin
     packet.destination_component = destination_component;
     packet.destination_system = destination_system;
     packet.log_levels = log_levels;
-    mav_array_assign_uint8_t(packet.arguments, arguments, 40);
+    mav_array_memcpy(packet.arguments, arguments, sizeof(uint8_t)*40);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_EVENT, (const char *)&packet, MAVLINK_MSG_ID_EVENT_MIN_LEN, MAVLINK_MSG_ID_EVENT_LEN, MAVLINK_MSG_ID_EVENT_CRC);
 #endif
 }
@@ -313,7 +315,7 @@ static inline void mavlink_msg_event_send_buf(mavlink_message_t *msgbuf, mavlink
     packet->destination_component = destination_component;
     packet->destination_system = destination_system;
     packet->log_levels = log_levels;
-    mav_array_assign_uint8_t(packet->arguments, arguments, 40);
+    mav_array_memcpy(packet->arguments, arguments, sizeof(uint8_t)*40);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_EVENT, (const char *)packet, MAVLINK_MSG_ID_EVENT_MIN_LEN, MAVLINK_MSG_ID_EVENT_LEN, MAVLINK_MSG_ID_EVENT_CRC);
 #endif
 }

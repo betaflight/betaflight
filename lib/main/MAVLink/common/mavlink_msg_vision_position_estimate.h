@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE VISION_POSITION_ESTIMATE PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_VISION_POSITION_ESTIMATE 102
 
 
@@ -101,7 +103,7 @@ static inline uint16_t mavlink_msg_vision_position_estimate_pack(uint8_t system_
     packet.pitch = pitch;
     packet.yaw = yaw;
     packet.reset_counter = reset_counter;
-    mav_array_assign_float(packet.covariance, covariance, 21);
+    mav_array_memcpy(packet.covariance, covariance, sizeof(float)*21);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_VISION_POSITION_ESTIMATE_LEN);
 #endif
 
@@ -207,7 +209,7 @@ static inline uint16_t mavlink_msg_vision_position_estimate_pack_chan(uint8_t sy
     packet.pitch = pitch;
     packet.yaw = yaw;
     packet.reset_counter = reset_counter;
-    mav_array_assign_float(packet.covariance, covariance, 21);
+    mav_array_memcpy(packet.covariance, covariance, sizeof(float)*21);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_VISION_POSITION_ESTIMATE_LEN);
 #endif
 
@@ -296,7 +298,7 @@ static inline void mavlink_msg_vision_position_estimate_send(mavlink_channel_t c
     packet.pitch = pitch;
     packet.yaw = yaw;
     packet.reset_counter = reset_counter;
-    mav_array_assign_float(packet.covariance, covariance, 21);
+    mav_array_memcpy(packet.covariance, covariance, sizeof(float)*21);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_VISION_POSITION_ESTIMATE, (const char *)&packet, MAVLINK_MSG_ID_VISION_POSITION_ESTIMATE_MIN_LEN, MAVLINK_MSG_ID_VISION_POSITION_ESTIMATE_LEN, MAVLINK_MSG_ID_VISION_POSITION_ESTIMATE_CRC);
 #endif
 }
@@ -347,7 +349,7 @@ static inline void mavlink_msg_vision_position_estimate_send_buf(mavlink_message
     packet->pitch = pitch;
     packet->yaw = yaw;
     packet->reset_counter = reset_counter;
-    mav_array_assign_float(packet->covariance, covariance, 21);
+    mav_array_memcpy(packet->covariance, covariance, sizeof(float)*21);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_VISION_POSITION_ESTIMATE, (const char *)packet, MAVLINK_MSG_ID_VISION_POSITION_ESTIMATE_MIN_LEN, MAVLINK_MSG_ID_VISION_POSITION_ESTIMATE_LEN, MAVLINK_MSG_ID_VISION_POSITION_ESTIMATE_CRC);
 #endif
 }

@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE GPS_RTK PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_GPS_RTK 127
 
 

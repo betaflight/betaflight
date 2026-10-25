@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE EXTENDED_SYS_STATE PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_EXTENDED_SYS_STATE 245
 
 

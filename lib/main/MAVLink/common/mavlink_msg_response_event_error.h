@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE RESPONSE_EVENT_ERROR PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_RESPONSE_EVENT_ERROR 413
 
 

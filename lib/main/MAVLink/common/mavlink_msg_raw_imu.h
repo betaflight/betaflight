@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE RAW_IMU PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_RAW_IMU 27
 
 MAVPACKED(

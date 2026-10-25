@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE TRAJECTORY_REPRESENTATION_WAYPOINTS PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_WAYPOINTS 332
 
 
@@ -131,18 +133,18 @@ static inline uint16_t mavlink_msg_trajectory_representation_waypoints_pack(uint
     mavlink_trajectory_representation_waypoints_t packet;
     packet.time_usec = time_usec;
     packet.valid_points = valid_points;
-    mav_array_assign_float(packet.pos_x, pos_x, 5);
-    mav_array_assign_float(packet.pos_y, pos_y, 5);
-    mav_array_assign_float(packet.pos_z, pos_z, 5);
-    mav_array_assign_float(packet.vel_x, vel_x, 5);
-    mav_array_assign_float(packet.vel_y, vel_y, 5);
-    mav_array_assign_float(packet.vel_z, vel_z, 5);
-    mav_array_assign_float(packet.acc_x, acc_x, 5);
-    mav_array_assign_float(packet.acc_y, acc_y, 5);
-    mav_array_assign_float(packet.acc_z, acc_z, 5);
-    mav_array_assign_float(packet.pos_yaw, pos_yaw, 5);
-    mav_array_assign_float(packet.vel_yaw, vel_yaw, 5);
-    mav_array_assign_uint16_t(packet.command, command, 5);
+    mav_array_memcpy(packet.pos_x, pos_x, sizeof(float)*5);
+    mav_array_memcpy(packet.pos_y, pos_y, sizeof(float)*5);
+    mav_array_memcpy(packet.pos_z, pos_z, sizeof(float)*5);
+    mav_array_memcpy(packet.vel_x, vel_x, sizeof(float)*5);
+    mav_array_memcpy(packet.vel_y, vel_y, sizeof(float)*5);
+    mav_array_memcpy(packet.vel_z, vel_z, sizeof(float)*5);
+    mav_array_memcpy(packet.acc_x, acc_x, sizeof(float)*5);
+    mav_array_memcpy(packet.acc_y, acc_y, sizeof(float)*5);
+    mav_array_memcpy(packet.acc_z, acc_z, sizeof(float)*5);
+    mav_array_memcpy(packet.pos_yaw, pos_yaw, sizeof(float)*5);
+    mav_array_memcpy(packet.vel_yaw, vel_yaw, sizeof(float)*5);
+    mav_array_memcpy(packet.command, command, sizeof(uint16_t)*5);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_WAYPOINTS_LEN);
 #endif
 
@@ -267,18 +269,18 @@ static inline uint16_t mavlink_msg_trajectory_representation_waypoints_pack_chan
     mavlink_trajectory_representation_waypoints_t packet;
     packet.time_usec = time_usec;
     packet.valid_points = valid_points;
-    mav_array_assign_float(packet.pos_x, pos_x, 5);
-    mav_array_assign_float(packet.pos_y, pos_y, 5);
-    mav_array_assign_float(packet.pos_z, pos_z, 5);
-    mav_array_assign_float(packet.vel_x, vel_x, 5);
-    mav_array_assign_float(packet.vel_y, vel_y, 5);
-    mav_array_assign_float(packet.vel_z, vel_z, 5);
-    mav_array_assign_float(packet.acc_x, acc_x, 5);
-    mav_array_assign_float(packet.acc_y, acc_y, 5);
-    mav_array_assign_float(packet.acc_z, acc_z, 5);
-    mav_array_assign_float(packet.pos_yaw, pos_yaw, 5);
-    mav_array_assign_float(packet.vel_yaw, vel_yaw, 5);
-    mav_array_assign_uint16_t(packet.command, command, 5);
+    mav_array_memcpy(packet.pos_x, pos_x, sizeof(float)*5);
+    mav_array_memcpy(packet.pos_y, pos_y, sizeof(float)*5);
+    mav_array_memcpy(packet.pos_z, pos_z, sizeof(float)*5);
+    mav_array_memcpy(packet.vel_x, vel_x, sizeof(float)*5);
+    mav_array_memcpy(packet.vel_y, vel_y, sizeof(float)*5);
+    mav_array_memcpy(packet.vel_z, vel_z, sizeof(float)*5);
+    mav_array_memcpy(packet.acc_x, acc_x, sizeof(float)*5);
+    mav_array_memcpy(packet.acc_y, acc_y, sizeof(float)*5);
+    mav_array_memcpy(packet.acc_z, acc_z, sizeof(float)*5);
+    mav_array_memcpy(packet.pos_yaw, pos_yaw, sizeof(float)*5);
+    mav_array_memcpy(packet.vel_yaw, vel_yaw, sizeof(float)*5);
+    mav_array_memcpy(packet.command, command, sizeof(uint16_t)*5);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_WAYPOINTS_LEN);
 #endif
 
@@ -371,18 +373,18 @@ static inline void mavlink_msg_trajectory_representation_waypoints_send(mavlink_
     mavlink_trajectory_representation_waypoints_t packet;
     packet.time_usec = time_usec;
     packet.valid_points = valid_points;
-    mav_array_assign_float(packet.pos_x, pos_x, 5);
-    mav_array_assign_float(packet.pos_y, pos_y, 5);
-    mav_array_assign_float(packet.pos_z, pos_z, 5);
-    mav_array_assign_float(packet.vel_x, vel_x, 5);
-    mav_array_assign_float(packet.vel_y, vel_y, 5);
-    mav_array_assign_float(packet.vel_z, vel_z, 5);
-    mav_array_assign_float(packet.acc_x, acc_x, 5);
-    mav_array_assign_float(packet.acc_y, acc_y, 5);
-    mav_array_assign_float(packet.acc_z, acc_z, 5);
-    mav_array_assign_float(packet.pos_yaw, pos_yaw, 5);
-    mav_array_assign_float(packet.vel_yaw, vel_yaw, 5);
-    mav_array_assign_uint16_t(packet.command, command, 5);
+    mav_array_memcpy(packet.pos_x, pos_x, sizeof(float)*5);
+    mav_array_memcpy(packet.pos_y, pos_y, sizeof(float)*5);
+    mav_array_memcpy(packet.pos_z, pos_z, sizeof(float)*5);
+    mav_array_memcpy(packet.vel_x, vel_x, sizeof(float)*5);
+    mav_array_memcpy(packet.vel_y, vel_y, sizeof(float)*5);
+    mav_array_memcpy(packet.vel_z, vel_z, sizeof(float)*5);
+    mav_array_memcpy(packet.acc_x, acc_x, sizeof(float)*5);
+    mav_array_memcpy(packet.acc_y, acc_y, sizeof(float)*5);
+    mav_array_memcpy(packet.acc_z, acc_z, sizeof(float)*5);
+    mav_array_memcpy(packet.pos_yaw, pos_yaw, sizeof(float)*5);
+    mav_array_memcpy(packet.vel_yaw, vel_yaw, sizeof(float)*5);
+    mav_array_memcpy(packet.command, command, sizeof(uint16_t)*5);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_WAYPOINTS, (const char *)&packet, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_WAYPOINTS_MIN_LEN, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_WAYPOINTS_LEN, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_WAYPOINTS_CRC);
 #endif
 }
@@ -432,18 +434,18 @@ static inline void mavlink_msg_trajectory_representation_waypoints_send_buf(mavl
     mavlink_trajectory_representation_waypoints_t *packet = (mavlink_trajectory_representation_waypoints_t *)msgbuf;
     packet->time_usec = time_usec;
     packet->valid_points = valid_points;
-    mav_array_assign_float(packet->pos_x, pos_x, 5);
-    mav_array_assign_float(packet->pos_y, pos_y, 5);
-    mav_array_assign_float(packet->pos_z, pos_z, 5);
-    mav_array_assign_float(packet->vel_x, vel_x, 5);
-    mav_array_assign_float(packet->vel_y, vel_y, 5);
-    mav_array_assign_float(packet->vel_z, vel_z, 5);
-    mav_array_assign_float(packet->acc_x, acc_x, 5);
-    mav_array_assign_float(packet->acc_y, acc_y, 5);
-    mav_array_assign_float(packet->acc_z, acc_z, 5);
-    mav_array_assign_float(packet->pos_yaw, pos_yaw, 5);
-    mav_array_assign_float(packet->vel_yaw, vel_yaw, 5);
-    mav_array_assign_uint16_t(packet->command, command, 5);
+    mav_array_memcpy(packet->pos_x, pos_x, sizeof(float)*5);
+    mav_array_memcpy(packet->pos_y, pos_y, sizeof(float)*5);
+    mav_array_memcpy(packet->pos_z, pos_z, sizeof(float)*5);
+    mav_array_memcpy(packet->vel_x, vel_x, sizeof(float)*5);
+    mav_array_memcpy(packet->vel_y, vel_y, sizeof(float)*5);
+    mav_array_memcpy(packet->vel_z, vel_z, sizeof(float)*5);
+    mav_array_memcpy(packet->acc_x, acc_x, sizeof(float)*5);
+    mav_array_memcpy(packet->acc_y, acc_y, sizeof(float)*5);
+    mav_array_memcpy(packet->acc_z, acc_z, sizeof(float)*5);
+    mav_array_memcpy(packet->pos_yaw, pos_yaw, sizeof(float)*5);
+    mav_array_memcpy(packet->vel_yaw, vel_yaw, sizeof(float)*5);
+    mav_array_memcpy(packet->command, command, sizeof(uint16_t)*5);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_WAYPOINTS, (const char *)packet, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_WAYPOINTS_MIN_LEN, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_WAYPOINTS_LEN, MAVLINK_MSG_ID_TRAJECTORY_REPRESENTATION_WAYPOINTS_CRC);
 #endif
 }

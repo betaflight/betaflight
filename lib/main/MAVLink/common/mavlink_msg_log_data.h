@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE LOG_DATA PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_LOG_DATA 120
 
 
@@ -71,7 +73,7 @@ static inline uint16_t mavlink_msg_log_data_pack(uint8_t system_id, uint8_t comp
     packet.ofs = ofs;
     packet.id = id;
     packet.count = count;
-    mav_array_assign_uint8_t(packet.data, data, 90);
+    mav_array_memcpy(packet.data, data, sizeof(uint8_t)*90);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_LOG_DATA_LEN);
 #endif
 
@@ -147,7 +149,7 @@ static inline uint16_t mavlink_msg_log_data_pack_chan(uint8_t system_id, uint8_t
     packet.ofs = ofs;
     packet.id = id;
     packet.count = count;
-    mav_array_assign_uint8_t(packet.data, data, 90);
+    mav_array_memcpy(packet.data, data, sizeof(uint8_t)*90);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_LOG_DATA_LEN);
 #endif
 
@@ -221,7 +223,7 @@ static inline void mavlink_msg_log_data_send(mavlink_channel_t chan, uint16_t id
     packet.ofs = ofs;
     packet.id = id;
     packet.count = count;
-    mav_array_assign_uint8_t(packet.data, data, 90);
+    mav_array_memcpy(packet.data, data, sizeof(uint8_t)*90);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_LOG_DATA, (const char *)&packet, MAVLINK_MSG_ID_LOG_DATA_MIN_LEN, MAVLINK_MSG_ID_LOG_DATA_LEN, MAVLINK_MSG_ID_LOG_DATA_CRC);
 #endif
 }
@@ -262,7 +264,7 @@ static inline void mavlink_msg_log_data_send_buf(mavlink_message_t *msgbuf, mavl
     packet->ofs = ofs;
     packet->id = id;
     packet->count = count;
-    mav_array_assign_uint8_t(packet->data, data, 90);
+    mav_array_memcpy(packet->data, data, sizeof(uint8_t)*90);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_LOG_DATA, (const char *)packet, MAVLINK_MSG_ID_LOG_DATA_MIN_LEN, MAVLINK_MSG_ID_LOG_DATA_LEN, MAVLINK_MSG_ID_LOG_DATA_CRC);
 #endif
 }

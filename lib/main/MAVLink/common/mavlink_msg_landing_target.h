@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE LANDING_TARGET PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_LANDING_TARGET 149
 
 MAVPACKED(
@@ -18,7 +20,7 @@ typedef struct __mavlink_landing_target_t {
  float z; /*< [m] Z Position of the landing target in MAV_FRAME*/
  float q[4]; /*<  Quaternion of landing target orientation (w, x, y, z order, zero-rotation is 1, 0, 0, 0)*/
  uint8_t type; /*<  Type of landing target*/
- uint8_t position_valid; /*<  Position fields (x, y, z, q, type) contain valid target position information (MAV_BOOL_FALSE: invalid values). Values not equal to 0 or 1 are invalid.*/
+ uint8_t position_valid; /*<  Position fields (x, y, z, q, type) contain valid target position information (MAV_BOOL_TRUE). A value of MAV_BOOL_FALSE indicates the position information is invalid. Values not equal to 0 or 1 are invalid.*/
 }) mavlink_landing_target_t;
 
 #define MAVLINK_MSG_ID_LANDING_TARGET_LEN 60
@@ -93,7 +95,7 @@ typedef struct __mavlink_landing_target_t {
  * @param z [m] Z Position of the landing target in MAV_FRAME
  * @param q  Quaternion of landing target orientation (w, x, y, z order, zero-rotation is 1, 0, 0, 0)
  * @param type  Type of landing target
- * @param position_valid  Position fields (x, y, z, q, type) contain valid target position information (MAV_BOOL_FALSE: invalid values). Values not equal to 0 or 1 are invalid.
+ * @param position_valid  Position fields (x, y, z, q, type) contain valid target position information (MAV_BOOL_TRUE). A value of MAV_BOOL_FALSE indicates the position information is invalid. Values not equal to 0 or 1 are invalid.
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_landing_target_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
@@ -131,7 +133,7 @@ static inline uint16_t mavlink_msg_landing_target_pack(uint8_t system_id, uint8_
     packet.z = z;
     packet.type = type;
     packet.position_valid = position_valid;
-    mav_array_assign_float(packet.q, q, 4);
+    mav_array_memcpy(packet.q, q, sizeof(float)*4);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_LANDING_TARGET_LEN);
 #endif
 
@@ -159,7 +161,7 @@ static inline uint16_t mavlink_msg_landing_target_pack(uint8_t system_id, uint8_
  * @param z [m] Z Position of the landing target in MAV_FRAME
  * @param q  Quaternion of landing target orientation (w, x, y, z order, zero-rotation is 1, 0, 0, 0)
  * @param type  Type of landing target
- * @param position_valid  Position fields (x, y, z, q, type) contain valid target position information (MAV_BOOL_FALSE: invalid values). Values not equal to 0 or 1 are invalid.
+ * @param position_valid  Position fields (x, y, z, q, type) contain valid target position information (MAV_BOOL_TRUE). A value of MAV_BOOL_FALSE indicates the position information is invalid. Values not equal to 0 or 1 are invalid.
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_landing_target_pack_status(uint8_t system_id, uint8_t component_id, mavlink_status_t *_status, mavlink_message_t* msg,
@@ -228,7 +230,7 @@ static inline uint16_t mavlink_msg_landing_target_pack_status(uint8_t system_id,
  * @param z [m] Z Position of the landing target in MAV_FRAME
  * @param q  Quaternion of landing target orientation (w, x, y, z order, zero-rotation is 1, 0, 0, 0)
  * @param type  Type of landing target
- * @param position_valid  Position fields (x, y, z, q, type) contain valid target position information (MAV_BOOL_FALSE: invalid values). Values not equal to 0 or 1 are invalid.
+ * @param position_valid  Position fields (x, y, z, q, type) contain valid target position information (MAV_BOOL_TRUE). A value of MAV_BOOL_FALSE indicates the position information is invalid. Values not equal to 0 or 1 are invalid.
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_landing_target_pack_chan(uint8_t system_id, uint8_t component_id, uint8_t chan,
@@ -267,7 +269,7 @@ static inline uint16_t mavlink_msg_landing_target_pack_chan(uint8_t system_id, u
     packet.z = z;
     packet.type = type;
     packet.position_valid = position_valid;
-    mav_array_assign_float(packet.q, q, 4);
+    mav_array_memcpy(packet.q, q, sizeof(float)*4);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_LANDING_TARGET_LEN);
 #endif
 
@@ -333,7 +335,7 @@ static inline uint16_t mavlink_msg_landing_target_encode_status(uint8_t system_i
  * @param z [m] Z Position of the landing target in MAV_FRAME
  * @param q  Quaternion of landing target orientation (w, x, y, z order, zero-rotation is 1, 0, 0, 0)
  * @param type  Type of landing target
- * @param position_valid  Position fields (x, y, z, q, type) contain valid target position information (MAV_BOOL_FALSE: invalid values). Values not equal to 0 or 1 are invalid.
+ * @param position_valid  Position fields (x, y, z, q, type) contain valid target position information (MAV_BOOL_TRUE). A value of MAV_BOOL_FALSE indicates the position information is invalid. Values not equal to 0 or 1 are invalid.
  */
 #ifdef MAVLINK_USE_CONVENIENCE_FUNCTIONS
 
@@ -371,7 +373,7 @@ static inline void mavlink_msg_landing_target_send(mavlink_channel_t chan, uint6
     packet.z = z;
     packet.type = type;
     packet.position_valid = position_valid;
-    mav_array_assign_float(packet.q, q, 4);
+    mav_array_memcpy(packet.q, q, sizeof(float)*4);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_LANDING_TARGET, (const char *)&packet, MAVLINK_MSG_ID_LANDING_TARGET_MIN_LEN, MAVLINK_MSG_ID_LANDING_TARGET_LEN, MAVLINK_MSG_ID_LANDING_TARGET_CRC);
 #endif
 }
@@ -432,7 +434,7 @@ static inline void mavlink_msg_landing_target_send_buf(mavlink_message_t *msgbuf
     packet->z = z;
     packet->type = type;
     packet->position_valid = position_valid;
-    mav_array_assign_float(packet->q, q, 4);
+    mav_array_memcpy(packet->q, q, sizeof(float)*4);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_LANDING_TARGET, (const char *)packet, MAVLINK_MSG_ID_LANDING_TARGET_MIN_LEN, MAVLINK_MSG_ID_LANDING_TARGET_LEN, MAVLINK_MSG_ID_LANDING_TARGET_CRC);
 #endif
 }
@@ -576,7 +578,7 @@ static inline uint8_t mavlink_msg_landing_target_get_type(const mavlink_message_
 /**
  * @brief Get field position_valid from landing_target message
  *
- * @return  Position fields (x, y, z, q, type) contain valid target position information (MAV_BOOL_FALSE: invalid values). Values not equal to 0 or 1 are invalid.
+ * @return  Position fields (x, y, z, q, type) contain valid target position information (MAV_BOOL_TRUE). A value of MAV_BOOL_FALSE indicates the position information is invalid. Values not equal to 0 or 1 are invalid.
  */
 static inline uint8_t mavlink_msg_landing_target_get_position_valid(const mavlink_message_t* msg)
 {

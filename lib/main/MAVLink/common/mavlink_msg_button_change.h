@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE BUTTON_CHANGE PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_BUTTON_CHANGE 257
 
 

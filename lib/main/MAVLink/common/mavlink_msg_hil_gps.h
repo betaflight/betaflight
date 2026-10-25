@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE HIL_GPS PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_HIL_GPS 113
 
 MAVPACKED(

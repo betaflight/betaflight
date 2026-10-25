@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE VISION_SPEED_ESTIMATE PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_VISION_SPEED_ESTIMATE 103
 
 
@@ -83,7 +85,7 @@ static inline uint16_t mavlink_msg_vision_speed_estimate_pack(uint8_t system_id,
     packet.y = y;
     packet.z = z;
     packet.reset_counter = reset_counter;
-    mav_array_assign_float(packet.covariance, covariance, 9);
+    mav_array_memcpy(packet.covariance, covariance, sizeof(float)*9);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_VISION_SPEED_ESTIMATE_LEN);
 #endif
 
@@ -171,7 +173,7 @@ static inline uint16_t mavlink_msg_vision_speed_estimate_pack_chan(uint8_t syste
     packet.y = y;
     packet.z = z;
     packet.reset_counter = reset_counter;
-    mav_array_assign_float(packet.covariance, covariance, 9);
+    mav_array_memcpy(packet.covariance, covariance, sizeof(float)*9);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_VISION_SPEED_ESTIMATE_LEN);
 #endif
 
@@ -251,7 +253,7 @@ static inline void mavlink_msg_vision_speed_estimate_send(mavlink_channel_t chan
     packet.y = y;
     packet.z = z;
     packet.reset_counter = reset_counter;
-    mav_array_assign_float(packet.covariance, covariance, 9);
+    mav_array_memcpy(packet.covariance, covariance, sizeof(float)*9);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_VISION_SPEED_ESTIMATE, (const char *)&packet, MAVLINK_MSG_ID_VISION_SPEED_ESTIMATE_MIN_LEN, MAVLINK_MSG_ID_VISION_SPEED_ESTIMATE_LEN, MAVLINK_MSG_ID_VISION_SPEED_ESTIMATE_CRC);
 #endif
 }
@@ -296,7 +298,7 @@ static inline void mavlink_msg_vision_speed_estimate_send_buf(mavlink_message_t 
     packet->y = y;
     packet->z = z;
     packet->reset_counter = reset_counter;
-    mav_array_assign_float(packet->covariance, covariance, 9);
+    mav_array_memcpy(packet->covariance, covariance, sizeof(float)*9);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_VISION_SPEED_ESTIMATE, (const char *)packet, MAVLINK_MSG_ID_VISION_SPEED_ESTIMATE_MIN_LEN, MAVLINK_MSG_ID_VISION_SPEED_ESTIMATE_LEN, MAVLINK_MSG_ID_VISION_SPEED_ESTIMATE_CRC);
 #endif
 }

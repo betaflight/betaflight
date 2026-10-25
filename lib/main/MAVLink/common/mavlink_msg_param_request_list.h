@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE PARAM_REQUEST_LIST PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_PARAM_REQUEST_LIST 21
 
 

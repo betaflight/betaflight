@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE CAMERA_TRACKING_GEO_STATUS PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_CAMERA_TRACKING_GEO_STATUS 276
 
 

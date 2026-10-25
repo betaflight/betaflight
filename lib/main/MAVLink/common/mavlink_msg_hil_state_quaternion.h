@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE HIL_STATE_QUATERNION PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_HIL_STATE_QUATERNION 115
 
 
@@ -143,7 +145,7 @@ static inline uint16_t mavlink_msg_hil_state_quaternion_pack(uint8_t system_id, 
     packet.xacc = xacc;
     packet.yacc = yacc;
     packet.zacc = zacc;
-    mav_array_assign_float(packet.attitude_quaternion, attitude_quaternion, 4);
+    mav_array_memcpy(packet.attitude_quaternion, attitude_quaternion, sizeof(float)*4);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_HIL_STATE_QUATERNION_LEN);
 #endif
 
@@ -291,7 +293,7 @@ static inline uint16_t mavlink_msg_hil_state_quaternion_pack_chan(uint8_t system
     packet.xacc = xacc;
     packet.yacc = yacc;
     packet.zacc = zacc;
-    mav_array_assign_float(packet.attitude_quaternion, attitude_quaternion, 4);
+    mav_array_memcpy(packet.attitude_quaternion, attitude_quaternion, sizeof(float)*4);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_HIL_STATE_QUATERNION_LEN);
 #endif
 
@@ -401,7 +403,7 @@ static inline void mavlink_msg_hil_state_quaternion_send(mavlink_channel_t chan,
     packet.xacc = xacc;
     packet.yacc = yacc;
     packet.zacc = zacc;
-    mav_array_assign_float(packet.attitude_quaternion, attitude_quaternion, 4);
+    mav_array_memcpy(packet.attitude_quaternion, attitude_quaternion, sizeof(float)*4);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_HIL_STATE_QUATERNION, (const char *)&packet, MAVLINK_MSG_ID_HIL_STATE_QUATERNION_MIN_LEN, MAVLINK_MSG_ID_HIL_STATE_QUATERNION_LEN, MAVLINK_MSG_ID_HIL_STATE_QUATERNION_CRC);
 #endif
 }
@@ -466,7 +468,7 @@ static inline void mavlink_msg_hil_state_quaternion_send_buf(mavlink_message_t *
     packet->xacc = xacc;
     packet->yacc = yacc;
     packet->zacc = zacc;
-    mav_array_assign_float(packet->attitude_quaternion, attitude_quaternion, 4);
+    mav_array_memcpy(packet->attitude_quaternion, attitude_quaternion, sizeof(float)*4);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_HIL_STATE_QUATERNION, (const char *)packet, MAVLINK_MSG_ID_HIL_STATE_QUATERNION_MIN_LEN, MAVLINK_MSG_ID_HIL_STATE_QUATERNION_LEN, MAVLINK_MSG_ID_HIL_STATE_QUATERNION_CRC);
 #endif
 }

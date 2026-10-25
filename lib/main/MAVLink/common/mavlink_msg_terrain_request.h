@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE TERRAIN_REQUEST PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_TERRAIN_REQUEST 133
 
 

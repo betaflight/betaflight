@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE ESTIMATOR_STATUS PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_ESTIMATOR_STATUS 230
 
 

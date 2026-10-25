@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE OBSTACLE_DISTANCE PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_OBSTACLE_DISTANCE 330
 
 MAVPACKED(
@@ -101,7 +103,7 @@ static inline uint16_t mavlink_msg_obstacle_distance_pack(uint8_t system_id, uin
     packet.increment_f = increment_f;
     packet.angle_offset = angle_offset;
     packet.frame = frame;
-    mav_array_assign_uint16_t(packet.distances, distances, 72);
+    mav_array_memcpy(packet.distances, distances, sizeof(uint16_t)*72);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_OBSTACLE_DISTANCE_LEN);
 #endif
 
@@ -207,7 +209,7 @@ static inline uint16_t mavlink_msg_obstacle_distance_pack_chan(uint8_t system_id
     packet.increment_f = increment_f;
     packet.angle_offset = angle_offset;
     packet.frame = frame;
-    mav_array_assign_uint16_t(packet.distances, distances, 72);
+    mav_array_memcpy(packet.distances, distances, sizeof(uint16_t)*72);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_OBSTACLE_DISTANCE_LEN);
 #endif
 
@@ -296,7 +298,7 @@ static inline void mavlink_msg_obstacle_distance_send(mavlink_channel_t chan, ui
     packet.increment_f = increment_f;
     packet.angle_offset = angle_offset;
     packet.frame = frame;
-    mav_array_assign_uint16_t(packet.distances, distances, 72);
+    mav_array_memcpy(packet.distances, distances, sizeof(uint16_t)*72);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_OBSTACLE_DISTANCE, (const char *)&packet, MAVLINK_MSG_ID_OBSTACLE_DISTANCE_MIN_LEN, MAVLINK_MSG_ID_OBSTACLE_DISTANCE_LEN, MAVLINK_MSG_ID_OBSTACLE_DISTANCE_CRC);
 #endif
 }
@@ -347,7 +349,7 @@ static inline void mavlink_msg_obstacle_distance_send_buf(mavlink_message_t *msg
     packet->increment_f = increment_f;
     packet->angle_offset = angle_offset;
     packet->frame = frame;
-    mav_array_assign_uint16_t(packet->distances, distances, 72);
+    mav_array_memcpy(packet->distances, distances, sizeof(uint16_t)*72);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_OBSTACLE_DISTANCE, (const char *)packet, MAVLINK_MSG_ID_OBSTACLE_DISTANCE_MIN_LEN, MAVLINK_MSG_ID_OBSTACLE_DISTANCE_LEN, MAVLINK_MSG_ID_OBSTACLE_DISTANCE_CRC);
 #endif
 }

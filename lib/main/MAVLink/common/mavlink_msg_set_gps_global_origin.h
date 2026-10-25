@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE SET_GPS_GLOBAL_ORIGIN PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_SET_GPS_GLOBAL_ORIGIN 48
 
 MAVPACKED(

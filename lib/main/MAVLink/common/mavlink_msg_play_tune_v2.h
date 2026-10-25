@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE PLAY_TUNE_V2 PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_PLAY_TUNE_V2 400
 
 
@@ -71,7 +73,7 @@ static inline uint16_t mavlink_msg_play_tune_v2_pack(uint8_t system_id, uint8_t 
     packet.format = format;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_char(packet.tune, tune, 248);
+    mav_array_memcpy(packet.tune, tune, sizeof(char)*248);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_PLAY_TUNE_V2_LEN);
 #endif
 
@@ -147,7 +149,7 @@ static inline uint16_t mavlink_msg_play_tune_v2_pack_chan(uint8_t system_id, uin
     packet.format = format;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_char(packet.tune, tune, 248);
+    mav_array_memcpy(packet.tune, tune, sizeof(char)*248);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_PLAY_TUNE_V2_LEN);
 #endif
 
@@ -221,7 +223,7 @@ static inline void mavlink_msg_play_tune_v2_send(mavlink_channel_t chan, uint8_t
     packet.format = format;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_char(packet.tune, tune, 248);
+    mav_array_memcpy(packet.tune, tune, sizeof(char)*248);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_PLAY_TUNE_V2, (const char *)&packet, MAVLINK_MSG_ID_PLAY_TUNE_V2_MIN_LEN, MAVLINK_MSG_ID_PLAY_TUNE_V2_LEN, MAVLINK_MSG_ID_PLAY_TUNE_V2_CRC);
 #endif
 }
@@ -262,7 +264,7 @@ static inline void mavlink_msg_play_tune_v2_send_buf(mavlink_message_t *msgbuf, 
     packet->format = format;
     packet->target_system = target_system;
     packet->target_component = target_component;
-    mav_array_assign_char(packet->tune, tune, 248);
+    mav_array_memcpy(packet->tune, tune, sizeof(char)*248);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_PLAY_TUNE_V2, (const char *)packet, MAVLINK_MSG_ID_PLAY_TUNE_V2_MIN_LEN, MAVLINK_MSG_ID_PLAY_TUNE_V2_LEN, MAVLINK_MSG_ID_PLAY_TUNE_V2_CRC);
 #endif
 }

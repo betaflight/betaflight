@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE GIMBAL_DEVICE_SET_ATTITUDE PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_GIMBAL_DEVICE_SET_ATTITUDE 284
 
 
@@ -89,7 +91,7 @@ static inline uint16_t mavlink_msg_gimbal_device_set_attitude_pack(uint8_t syste
     packet.flags = flags;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_float(packet.q, q, 4);
+    mav_array_memcpy(packet.q, q, sizeof(float)*4);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_GIMBAL_DEVICE_SET_ATTITUDE_LEN);
 #endif
 
@@ -183,7 +185,7 @@ static inline uint16_t mavlink_msg_gimbal_device_set_attitude_pack_chan(uint8_t 
     packet.flags = flags;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_float(packet.q, q, 4);
+    mav_array_memcpy(packet.q, q, sizeof(float)*4);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_GIMBAL_DEVICE_SET_ATTITUDE_LEN);
 #endif
 
@@ -266,7 +268,7 @@ static inline void mavlink_msg_gimbal_device_set_attitude_send(mavlink_channel_t
     packet.flags = flags;
     packet.target_system = target_system;
     packet.target_component = target_component;
-    mav_array_assign_float(packet.q, q, 4);
+    mav_array_memcpy(packet.q, q, sizeof(float)*4);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_GIMBAL_DEVICE_SET_ATTITUDE, (const char *)&packet, MAVLINK_MSG_ID_GIMBAL_DEVICE_SET_ATTITUDE_MIN_LEN, MAVLINK_MSG_ID_GIMBAL_DEVICE_SET_ATTITUDE_LEN, MAVLINK_MSG_ID_GIMBAL_DEVICE_SET_ATTITUDE_CRC);
 #endif
 }
@@ -313,7 +315,7 @@ static inline void mavlink_msg_gimbal_device_set_attitude_send_buf(mavlink_messa
     packet->flags = flags;
     packet->target_system = target_system;
     packet->target_component = target_component;
-    mav_array_assign_float(packet->q, q, 4);
+    mav_array_memcpy(packet->q, q, sizeof(float)*4);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_GIMBAL_DEVICE_SET_ATTITUDE, (const char *)packet, MAVLINK_MSG_ID_GIMBAL_DEVICE_SET_ATTITUDE_MIN_LEN, MAVLINK_MSG_ID_GIMBAL_DEVICE_SET_ATTITUDE_LEN, MAVLINK_MSG_ID_GIMBAL_DEVICE_SET_ATTITUDE_CRC);
 #endif
 }

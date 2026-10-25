@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE ATTITUDE_QUATERNION PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_ATTITUDE_QUATERNION 31
 
 
@@ -101,8 +103,8 @@ static inline uint16_t mavlink_msg_attitude_quaternion_pack(uint8_t system_id, u
     packet.rollspeed = rollspeed;
     packet.pitchspeed = pitchspeed;
     packet.yawspeed = yawspeed;
-    mav_array_memcpy(packet.repr_offset_q, repr_offset_q, sizeof(float) * 4);
-    memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ATTITUDE_QUATERNION_LEN);
+    mav_array_memcpy(packet.repr_offset_q, repr_offset_q, sizeof(float)*4);
+        memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ATTITUDE_QUATERNION_LEN);
 #endif
 
     msg->msgid = MAVLINK_MSG_ID_ATTITUDE_QUATERNION;
@@ -207,8 +209,8 @@ static inline uint16_t mavlink_msg_attitude_quaternion_pack_chan(uint8_t system_
     packet.rollspeed = rollspeed;
     packet.pitchspeed = pitchspeed;
     packet.yawspeed = yawspeed;
-    mav_array_memcpy(packet.repr_offset_q, repr_offset_q, sizeof(float) * 4);
-    memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ATTITUDE_QUATERNION_LEN);
+    mav_array_memcpy(packet.repr_offset_q, repr_offset_q, sizeof(float)*4);
+        memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ATTITUDE_QUATERNION_LEN);
 #endif
 
     msg->msgid = MAVLINK_MSG_ID_ATTITUDE_QUATERNION;
@@ -296,7 +298,7 @@ static inline void mavlink_msg_attitude_quaternion_send(mavlink_channel_t chan, 
     packet.rollspeed = rollspeed;
     packet.pitchspeed = pitchspeed;
     packet.yawspeed = yawspeed;
-    mav_array_memcpy(packet.repr_offset_q, repr_offset_q, sizeof(float) * 4);
+    mav_array_memcpy(packet.repr_offset_q, repr_offset_q, sizeof(float)*4);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_ATTITUDE_QUATERNION, (const char *)&packet, MAVLINK_MSG_ID_ATTITUDE_QUATERNION_MIN_LEN, MAVLINK_MSG_ID_ATTITUDE_QUATERNION_LEN, MAVLINK_MSG_ID_ATTITUDE_QUATERNION_CRC);
 #endif
 }
@@ -347,7 +349,7 @@ static inline void mavlink_msg_attitude_quaternion_send_buf(mavlink_message_t *m
     packet->rollspeed = rollspeed;
     packet->pitchspeed = pitchspeed;
     packet->yawspeed = yawspeed;
-    mav_array_memcpy(packet.repr_offset_q, repr_offset_q, sizeof(float) * 4);
+    mav_array_memcpy(packet->repr_offset_q, repr_offset_q, sizeof(float)*4);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_ATTITUDE_QUATERNION, (const char *)packet, MAVLINK_MSG_ID_ATTITUDE_QUATERNION_MIN_LEN, MAVLINK_MSG_ID_ATTITUDE_QUATERNION_LEN, MAVLINK_MSG_ID_ATTITUDE_QUATERNION_CRC);
 #endif
 }

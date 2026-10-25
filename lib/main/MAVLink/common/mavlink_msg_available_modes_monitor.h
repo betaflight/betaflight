@@ -1,11 +1,13 @@
 #pragma once
 // MESSAGE AVAILABLE_MODES_MONITOR PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_AVAILABLE_MODES_MONITOR 437
 
 
 typedef struct __mavlink_available_modes_monitor_t {
- uint8_t seq; /*<  Sequence number. The value iterates sequentially whenever AVAILABLE_MODES changes (e.g. support for a new mode is added/removed dynamically).*/
+ uint8_t seq; /*<  Sequence number. Iterates sequentially whenever AVAILABLE_MODES changes (e.g. support for a new mode is added/removed dynamically). 0 initially. 1 on first change of mode set.*/
 } mavlink_available_modes_monitor_t;
 
 #define MAVLINK_MSG_ID_AVAILABLE_MODES_MONITOR_LEN 1
@@ -41,7 +43,7 @@ typedef struct __mavlink_available_modes_monitor_t {
  * @param component_id ID of this component (e.g. 200 for IMU)
  * @param msg The MAVLink message to compress the data into
  *
- * @param seq  Sequence number. The value iterates sequentially whenever AVAILABLE_MODES changes (e.g. support for a new mode is added/removed dynamically).
+ * @param seq  Sequence number. Iterates sequentially whenever AVAILABLE_MODES changes (e.g. support for a new mode is added/removed dynamically). 0 initially. 1 on first change of mode set.
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_available_modes_monitor_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
@@ -70,7 +72,7 @@ static inline uint16_t mavlink_msg_available_modes_monitor_pack(uint8_t system_i
  * @param status MAVLink status structure
  * @param msg The MAVLink message to compress the data into
  *
- * @param seq  Sequence number. The value iterates sequentially whenever AVAILABLE_MODES changes (e.g. support for a new mode is added/removed dynamically).
+ * @param seq  Sequence number. Iterates sequentially whenever AVAILABLE_MODES changes (e.g. support for a new mode is added/removed dynamically). 0 initially. 1 on first change of mode set.
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_available_modes_monitor_pack_status(uint8_t system_id, uint8_t component_id, mavlink_status_t *_status, mavlink_message_t* msg,
@@ -102,7 +104,7 @@ static inline uint16_t mavlink_msg_available_modes_monitor_pack_status(uint8_t s
  * @param component_id ID of this component (e.g. 200 for IMU)
  * @param chan The MAVLink channel this message will be sent over
  * @param msg The MAVLink message to compress the data into
- * @param seq  Sequence number. The value iterates sequentially whenever AVAILABLE_MODES changes (e.g. support for a new mode is added/removed dynamically).
+ * @param seq  Sequence number. Iterates sequentially whenever AVAILABLE_MODES changes (e.g. support for a new mode is added/removed dynamically). 0 initially. 1 on first change of mode set.
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_available_modes_monitor_pack_chan(uint8_t system_id, uint8_t component_id, uint8_t chan,
@@ -170,7 +172,7 @@ static inline uint16_t mavlink_msg_available_modes_monitor_encode_status(uint8_t
  * @brief Send a available_modes_monitor message
  * @param chan MAVLink channel to send the message
  *
- * @param seq  Sequence number. The value iterates sequentially whenever AVAILABLE_MODES changes (e.g. support for a new mode is added/removed dynamically).
+ * @param seq  Sequence number. Iterates sequentially whenever AVAILABLE_MODES changes (e.g. support for a new mode is added/removed dynamically). 0 initially. 1 on first change of mode set.
  */
 #ifdef MAVLINK_USE_CONVENIENCE_FUNCTIONS
 
@@ -235,7 +237,7 @@ static inline void mavlink_msg_available_modes_monitor_send_buf(mavlink_message_
 /**
  * @brief Get field seq from available_modes_monitor message
  *
- * @return  Sequence number. The value iterates sequentially whenever AVAILABLE_MODES changes (e.g. support for a new mode is added/removed dynamically).
+ * @return  Sequence number. Iterates sequentially whenever AVAILABLE_MODES changes (e.g. support for a new mode is added/removed dynamically). 0 initially. 1 on first change of mode set.
  */
 static inline uint8_t mavlink_msg_available_modes_monitor_get_seq(const mavlink_message_t* msg)
 {

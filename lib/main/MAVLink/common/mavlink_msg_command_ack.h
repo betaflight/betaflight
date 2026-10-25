@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE COMMAND_ACK PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_COMMAND_ACK 77
 
 

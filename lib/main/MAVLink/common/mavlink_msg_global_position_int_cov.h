@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE GLOBAL_POSITION_INT_COV PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_GLOBAL_POSITION_INT_COV 63
 
 
@@ -107,7 +109,7 @@ static inline uint16_t mavlink_msg_global_position_int_cov_pack(uint8_t system_i
     packet.vy = vy;
     packet.vz = vz;
     packet.estimator_type = estimator_type;
-    mav_array_assign_float(packet.covariance, covariance, 36);
+    mav_array_memcpy(packet.covariance, covariance, sizeof(float)*36);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_GLOBAL_POSITION_INT_COV_LEN);
 #endif
 
@@ -219,7 +221,7 @@ static inline uint16_t mavlink_msg_global_position_int_cov_pack_chan(uint8_t sys
     packet.vy = vy;
     packet.vz = vz;
     packet.estimator_type = estimator_type;
-    mav_array_assign_float(packet.covariance, covariance, 36);
+    mav_array_memcpy(packet.covariance, covariance, sizeof(float)*36);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_GLOBAL_POSITION_INT_COV_LEN);
 #endif
 
@@ -311,7 +313,7 @@ static inline void mavlink_msg_global_position_int_cov_send(mavlink_channel_t ch
     packet.vy = vy;
     packet.vz = vz;
     packet.estimator_type = estimator_type;
-    mav_array_assign_float(packet.covariance, covariance, 36);
+    mav_array_memcpy(packet.covariance, covariance, sizeof(float)*36);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_GLOBAL_POSITION_INT_COV, (const char *)&packet, MAVLINK_MSG_ID_GLOBAL_POSITION_INT_COV_MIN_LEN, MAVLINK_MSG_ID_GLOBAL_POSITION_INT_COV_LEN, MAVLINK_MSG_ID_GLOBAL_POSITION_INT_COV_CRC);
 #endif
 }
@@ -364,7 +366,7 @@ static inline void mavlink_msg_global_position_int_cov_send_buf(mavlink_message_
     packet->vy = vy;
     packet->vz = vz;
     packet->estimator_type = estimator_type;
-    mav_array_assign_float(packet->covariance, covariance, 36);
+    mav_array_memcpy(packet->covariance, covariance, sizeof(float)*36);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_GLOBAL_POSITION_INT_COV, (const char *)packet, MAVLINK_MSG_ID_GLOBAL_POSITION_INT_COV_MIN_LEN, MAVLINK_MSG_ID_GLOBAL_POSITION_INT_COV_LEN, MAVLINK_MSG_ID_GLOBAL_POSITION_INT_COV_CRC);
 #endif
 }

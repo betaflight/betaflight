@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE CAMERA_CAPTURE_STATUS PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS 262
 
 MAVPACKED(

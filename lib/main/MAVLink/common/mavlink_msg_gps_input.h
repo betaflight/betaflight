@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE GPS_INPUT PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_GPS_INPUT 232
 
 MAVPACKED(
@@ -21,7 +23,7 @@ typedef struct __mavlink_gps_input_t {
  uint16_t ignore_flags; /*<  Bitmap indicating which GPS input flags fields to ignore.  All other fields must be provided.*/
  uint16_t time_week; /*<  GPS week number*/
  uint8_t gps_id; /*<  ID of the GPS for multiple GPS inputs*/
- uint8_t fix_type; /*<  0-1: no fix, 2: 2D fix, 3: 3D fix. 4: 3D with DGPS. 5: 3D with RTK*/
+ uint8_t fix_type; /*<  GNSS fix type*/
  uint8_t satellites_visible; /*<  Number of satellites visible.*/
  uint16_t yaw; /*< [cdeg] Yaw of vehicle relative to Earth's North, zero means not available, use 36000 for north*/
 }) mavlink_gps_input_t;
@@ -100,7 +102,7 @@ typedef struct __mavlink_gps_input_t {
  * @param ignore_flags  Bitmap indicating which GPS input flags fields to ignore.  All other fields must be provided.
  * @param time_week_ms [ms] GPS time (from start of GPS week)
  * @param time_week  GPS week number
- * @param fix_type  0-1: no fix, 2: 2D fix, 3: 3D fix. 4: 3D with DGPS. 5: 3D with RTK
+ * @param fix_type  GNSS fix type
  * @param lat [degE7] Latitude (WGS84)
  * @param lon [degE7] Longitude (WGS84)
  * @param alt [m] Altitude (MSL). Positive for up.
@@ -183,7 +185,7 @@ static inline uint16_t mavlink_msg_gps_input_pack(uint8_t system_id, uint8_t com
  * @param ignore_flags  Bitmap indicating which GPS input flags fields to ignore.  All other fields must be provided.
  * @param time_week_ms [ms] GPS time (from start of GPS week)
  * @param time_week  GPS week number
- * @param fix_type  0-1: no fix, 2: 2D fix, 3: 3D fix. 4: 3D with DGPS. 5: 3D with RTK
+ * @param fix_type  GNSS fix type
  * @param lat [degE7] Latitude (WGS84)
  * @param lon [degE7] Longitude (WGS84)
  * @param alt [m] Altitude (MSL). Positive for up.
@@ -269,7 +271,7 @@ static inline uint16_t mavlink_msg_gps_input_pack_status(uint8_t system_id, uint
  * @param ignore_flags  Bitmap indicating which GPS input flags fields to ignore.  All other fields must be provided.
  * @param time_week_ms [ms] GPS time (from start of GPS week)
  * @param time_week  GPS week number
- * @param fix_type  0-1: no fix, 2: 2D fix, 3: 3D fix. 4: 3D with DGPS. 5: 3D with RTK
+ * @param fix_type  GNSS fix type
  * @param lat [degE7] Latitude (WGS84)
  * @param lon [degE7] Longitude (WGS84)
  * @param alt [m] Altitude (MSL). Positive for up.
@@ -391,7 +393,7 @@ static inline uint16_t mavlink_msg_gps_input_encode_status(uint8_t system_id, ui
  * @param ignore_flags  Bitmap indicating which GPS input flags fields to ignore.  All other fields must be provided.
  * @param time_week_ms [ms] GPS time (from start of GPS week)
  * @param time_week  GPS week number
- * @param fix_type  0-1: no fix, 2: 2D fix, 3: 3D fix. 4: 3D with DGPS. 5: 3D with RTK
+ * @param fix_type  GNSS fix type
  * @param lat [degE7] Latitude (WGS84)
  * @param lon [degE7] Longitude (WGS84)
  * @param alt [m] Altitude (MSL). Positive for up.
@@ -591,7 +593,7 @@ static inline uint16_t mavlink_msg_gps_input_get_time_week(const mavlink_message
 /**
  * @brief Get field fix_type from gps_input message
  *
- * @return  0-1: no fix, 2: 2D fix, 3: 3D fix. 4: 3D with DGPS. 5: 3D with RTK
+ * @return  GNSS fix type
  */
 static inline uint8_t mavlink_msg_gps_input_get_fix_type(const mavlink_message_t* msg)
 {

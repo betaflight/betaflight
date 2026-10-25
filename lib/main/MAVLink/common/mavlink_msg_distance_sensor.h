@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE DISTANCE_SENSOR PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_DISTANCE_SENSOR 132
 
 MAVPACKED(
@@ -119,7 +121,7 @@ static inline uint16_t mavlink_msg_distance_sensor_pack(uint8_t system_id, uint8
     packet.horizontal_fov = horizontal_fov;
     packet.vertical_fov = vertical_fov;
     packet.signal_quality = signal_quality;
-    mav_array_assign_float(packet.quaternion, quaternion, 4);
+    mav_array_memcpy(packet.quaternion, quaternion, sizeof(float)*4);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_DISTANCE_SENSOR_LEN);
 #endif
 
@@ -243,7 +245,7 @@ static inline uint16_t mavlink_msg_distance_sensor_pack_chan(uint8_t system_id, 
     packet.horizontal_fov = horizontal_fov;
     packet.vertical_fov = vertical_fov;
     packet.signal_quality = signal_quality;
-    mav_array_assign_float(packet.quaternion, quaternion, 4);
+    mav_array_memcpy(packet.quaternion, quaternion, sizeof(float)*4);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_DISTANCE_SENSOR_LEN);
 #endif
 
@@ -341,7 +343,7 @@ static inline void mavlink_msg_distance_sensor_send(mavlink_channel_t chan, uint
     packet.horizontal_fov = horizontal_fov;
     packet.vertical_fov = vertical_fov;
     packet.signal_quality = signal_quality;
-    mav_array_assign_float(packet.quaternion, quaternion, 4);
+    mav_array_memcpy(packet.quaternion, quaternion, sizeof(float)*4);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_DISTANCE_SENSOR, (const char *)&packet, MAVLINK_MSG_ID_DISTANCE_SENSOR_MIN_LEN, MAVLINK_MSG_ID_DISTANCE_SENSOR_LEN, MAVLINK_MSG_ID_DISTANCE_SENSOR_CRC);
 #endif
 }
@@ -398,7 +400,7 @@ static inline void mavlink_msg_distance_sensor_send_buf(mavlink_message_t *msgbu
     packet->horizontal_fov = horizontal_fov;
     packet->vertical_fov = vertical_fov;
     packet->signal_quality = signal_quality;
-    mav_array_assign_float(packet->quaternion, quaternion, 4);
+    mav_array_memcpy(packet->quaternion, quaternion, sizeof(float)*4);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_DISTANCE_SENSOR, (const char *)packet, MAVLINK_MSG_ID_DISTANCE_SENSOR_MIN_LEN, MAVLINK_MSG_ID_DISTANCE_SENSOR_LEN, MAVLINK_MSG_ID_DISTANCE_SENSOR_CRC);
 #endif
 }

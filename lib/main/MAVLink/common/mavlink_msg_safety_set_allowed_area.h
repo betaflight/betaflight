@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE SAFETY_SET_ALLOWED_AREA PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_SAFETY_SET_ALLOWED_AREA 54
 
 

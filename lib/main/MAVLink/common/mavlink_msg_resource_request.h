@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE RESOURCE_REQUEST PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_RESOURCE_REQUEST 142
 
 
@@ -77,8 +79,8 @@ static inline uint16_t mavlink_msg_resource_request_pack(uint8_t system_id, uint
     packet.request_id = request_id;
     packet.uri_type = uri_type;
     packet.transfer_type = transfer_type;
-    mav_array_assign_uint8_t(packet.uri, uri, 120);
-    mav_array_assign_uint8_t(packet.storage, storage, 120);
+    mav_array_memcpy(packet.uri, uri, sizeof(uint8_t)*120);
+    mav_array_memcpy(packet.storage, storage, sizeof(uint8_t)*120);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_RESOURCE_REQUEST_LEN);
 #endif
 
@@ -159,8 +161,8 @@ static inline uint16_t mavlink_msg_resource_request_pack_chan(uint8_t system_id,
     packet.request_id = request_id;
     packet.uri_type = uri_type;
     packet.transfer_type = transfer_type;
-    mav_array_assign_uint8_t(packet.uri, uri, 120);
-    mav_array_assign_uint8_t(packet.storage, storage, 120);
+    mav_array_memcpy(packet.uri, uri, sizeof(uint8_t)*120);
+    mav_array_memcpy(packet.storage, storage, sizeof(uint8_t)*120);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_RESOURCE_REQUEST_LEN);
 #endif
 
@@ -236,8 +238,8 @@ static inline void mavlink_msg_resource_request_send(mavlink_channel_t chan, uin
     packet.request_id = request_id;
     packet.uri_type = uri_type;
     packet.transfer_type = transfer_type;
-    mav_array_assign_uint8_t(packet.uri, uri, 120);
-    mav_array_assign_uint8_t(packet.storage, storage, 120);
+    mav_array_memcpy(packet.uri, uri, sizeof(uint8_t)*120);
+    mav_array_memcpy(packet.storage, storage, sizeof(uint8_t)*120);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_RESOURCE_REQUEST, (const char *)&packet, MAVLINK_MSG_ID_RESOURCE_REQUEST_MIN_LEN, MAVLINK_MSG_ID_RESOURCE_REQUEST_LEN, MAVLINK_MSG_ID_RESOURCE_REQUEST_CRC);
 #endif
 }
@@ -279,8 +281,8 @@ static inline void mavlink_msg_resource_request_send_buf(mavlink_message_t *msgb
     packet->request_id = request_id;
     packet->uri_type = uri_type;
     packet->transfer_type = transfer_type;
-    mav_array_assign_uint8_t(packet->uri, uri, 120);
-    mav_array_assign_uint8_t(packet->storage, storage, 120);
+    mav_array_memcpy(packet->uri, uri, sizeof(uint8_t)*120);
+    mav_array_memcpy(packet->storage, storage, sizeof(uint8_t)*120);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_RESOURCE_REQUEST, (const char *)packet, MAVLINK_MSG_ID_RESOURCE_REQUEST_MIN_LEN, MAVLINK_MSG_ID_RESOURCE_REQUEST_LEN, MAVLINK_MSG_ID_RESOURCE_REQUEST_CRC);
 #endif
 }

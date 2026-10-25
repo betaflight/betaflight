@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE REQUEST_DATA_STREAM PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_REQUEST_DATA_STREAM 66
 
 
@@ -8,7 +10,7 @@ typedef struct __mavlink_request_data_stream_t {
  uint16_t req_message_rate; /*< [Hz] The requested message rate*/
  uint8_t target_system; /*<  The target requested to send the message stream.*/
  uint8_t target_component; /*<  The target requested to send the message stream.*/
- uint8_t req_stream_id; /*<  The ID of the requested data stream*/
+ uint8_t req_stream_id; /*<  The ID of the requested data stream.*/
  uint8_t start_stop; /*<  1 to start sending, 0 to stop sending.*/
 } mavlink_request_data_stream_t;
 
@@ -55,7 +57,7 @@ typedef struct __mavlink_request_data_stream_t {
  *
  * @param target_system  The target requested to send the message stream.
  * @param target_component  The target requested to send the message stream.
- * @param req_stream_id  The ID of the requested data stream
+ * @param req_stream_id  The ID of the requested data stream.
  * @param req_message_rate [Hz] The requested message rate
  * @param start_stop  1 to start sending, 0 to stop sending.
  * @return length of the message in bytes (excluding serial stream start sign)
@@ -96,7 +98,7 @@ static inline uint16_t mavlink_msg_request_data_stream_pack(uint8_t system_id, u
  *
  * @param target_system  The target requested to send the message stream.
  * @param target_component  The target requested to send the message stream.
- * @param req_stream_id  The ID of the requested data stream
+ * @param req_stream_id  The ID of the requested data stream.
  * @param req_message_rate [Hz] The requested message rate
  * @param start_stop  1 to start sending, 0 to stop sending.
  * @return length of the message in bytes (excluding serial stream start sign)
@@ -140,7 +142,7 @@ static inline uint16_t mavlink_msg_request_data_stream_pack_status(uint8_t syste
  * @param msg The MAVLink message to compress the data into
  * @param target_system  The target requested to send the message stream.
  * @param target_component  The target requested to send the message stream.
- * @param req_stream_id  The ID of the requested data stream
+ * @param req_stream_id  The ID of the requested data stream.
  * @param req_message_rate [Hz] The requested message rate
  * @param start_stop  1 to start sending, 0 to stop sending.
  * @return length of the message in bytes (excluding serial stream start sign)
@@ -220,7 +222,7 @@ static inline uint16_t mavlink_msg_request_data_stream_encode_status(uint8_t sys
  *
  * @param target_system  The target requested to send the message stream.
  * @param target_component  The target requested to send the message stream.
- * @param req_stream_id  The ID of the requested data stream
+ * @param req_stream_id  The ID of the requested data stream.
  * @param req_message_rate [Hz] The requested message rate
  * @param start_stop  1 to start sending, 0 to stop sending.
  */
@@ -323,7 +325,7 @@ static inline uint8_t mavlink_msg_request_data_stream_get_target_component(const
 /**
  * @brief Get field req_stream_id from request_data_stream message
  *
- * @return  The ID of the requested data stream
+ * @return  The ID of the requested data stream.
  */
 static inline uint8_t mavlink_msg_request_data_stream_get_req_stream_id(const mavlink_message_t* msg)
 {

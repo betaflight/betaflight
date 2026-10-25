@@ -1,6 +1,8 @@
 #pragma once
 // MESSAGE SYSTEM_TIME PACKING
 
+#include <stdint.h>
+
 #define MAVLINK_MSG_ID_SYSTEM_TIME 2
 
 
