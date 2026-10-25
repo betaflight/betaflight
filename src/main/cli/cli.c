@@ -85,6 +85,9 @@ bool cliMode = false;
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
+#if defined(USE_UART) && defined(USE_LPUART)
+#include "drivers/serial_uart_impl.h"
+#endif
 #include "drivers/serial_escserial.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/stack_check.h"
@@ -7430,7 +7433,7 @@ typedef struct dmaoptEntry_s {
 // DEFW_OFS: array of structs, starting at offset ofs
 
 #define DEFS(device, peripheral, pgn, type, member) \
-    { device, peripheral, pgn, 0,               offsetof(type, member), 0, MASK_IGNORED }
+    { device, peripheral, pgn, 0,               offsetof(type, member), 1, MASK_IGNORED }
 
 #define DEFA(device, peripheral, pgn, type, member, max, mask) \
     { device, peripheral, pgn, sizeof(uint8_t), offsetof(type, member), max, mask }
@@ -7453,11 +7456,12 @@ dmaoptEntry_t dmaoptEntryTable[] = {
     DEFW_OFS("UART_TX",  DMA_PERIPH_UART_TX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, RESOURCE_UART_OFFSET, RESOURCE_UART_COUNT, MASK_IGNORED),
     DEFW_OFS("UART_RX",  DMA_PERIPH_UART_RX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, RESOURCE_UART_OFFSET, RESOURCE_UART_COUNT, MASK_IGNORED),
 #endif
-#ifdef USE_LPUART
+#if defined(USE_UART) && defined(USE_LPUART)
     DEFW_OFS("LPUART_TX",  DMA_PERIPH_UART_TX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
     DEFW_OFS("LPUART_RX",  DMA_PERIPH_UART_RX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
 #endif
-#if defined(USE_TIMER_UP_CONFIG)
+// Only the X32 DShot driver consumes the configurable timer-update DMA option.
+#if defined(USE_TIMER_UP_CONFIG) && defined(X32M7)
     DEFW("TIMUP",    DMA_PERIPH_TIMUP,    PG_TIMER_UP_CONFIG,    timerUpConfig_t,    dmaopt,   HARDWARE_TIMER_DEFINITION_COUNT, TIMUP_TIMERS),
 #endif
 };
@@ -7533,6 +7537,18 @@ static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
     return (index < 0 || index >= entry->maxIndex) ? -1 : index;
 }
 
+static int dmaOptPeripheralIndex(dmaoptEntry_t *entry, int index)
+{
+#ifdef USE_LPUART
+    if ((entry->peripheral == DMA_PERIPH_UART_TX || entry->peripheral == DMA_PERIPH_UART_RX)
+        && index >= RESOURCE_LPUART_OFFSET) {
+        const serialPortIdentifier_e identifier = SERIAL_PORT_LPUART_FIRST + index - RESOURCE_LPUART_OFFSET;
+        return (uint8_t)uartDeviceIdxFromIdentifier(identifier);
+    }
+#endif
+    return index;
+}
+
 static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const dmaoptValue_t dmaopt, const bool equalsDefault, const dumpFlags_t dumpMask, printFn *printValue)
 {
     // We compute number to display for different peripherals in advance.
@@ -7550,7 +7566,7 @@ static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const 
             "dma %s %d %d",
             entry->device, uiIndex, dmaopt);
 
-        const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, index, dmaopt);
+        const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, dmaOptPeripheralIndex(entry, index), dmaopt);
         dmaCode_t dmaCode = 0;
         if (dmaChannelSpec) {
             dmaCode = dmaChannelSpec->code;
@@ -7799,7 +7815,7 @@ RAM_CODE static void cliDmaopt(const char *cmdName, char *cmdline)
         // Show possible opts
         const dmaChannelSpec_t *dmaChannelSpec;
         if (entry) {
-            for (int opt = 0; (dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, index, opt)); opt++) {
+            for (int opt = 0; (dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, dmaOptPeripheralIndex(entry, index), opt)); opt++) {
                 cliPrintLinef("# %d: " DMASPEC_FORMAT_STRING, opt, DMA_CODE_CONTROLLER(dmaChannelSpec->code), DMA_CODE_STREAM(dmaChannelSpec->code), DMA_CODE_CHANNEL(dmaChannelSpec->code));
             }
         } else {
@@ -7817,7 +7833,7 @@ RAM_CODE static void cliDmaopt(const char *cmdName, char *cmdline)
             optval = atoi(pch);
 
             if (entry) {
-                if (!dmaGetChannelSpecByPeripheral(entry->peripheral, index, optval)) {
+                if (!dmaGetChannelSpecByPeripheral(entry->peripheral, dmaOptPeripheralIndex(entry, index), optval)) {
                     cliPrintErrorLinef(cmdName, "INVALID DMA OPTION FOR %s %d: '%s'", entry->device, getDmaOptDisplayNumber(entry, index), pch);
 
                     return;
