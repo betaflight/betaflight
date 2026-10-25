@@ -85,9 +85,8 @@ bool cliMode = false;
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
-#if defined(USE_UART) && defined(USE_LPUART)
+#ifdef USE_UART
 #include "drivers/serial_uart.h"
-#include "drivers/serial_uart_impl.h"
 #endif
 #include "drivers/serial_escserial.h"
 #include "drivers/sound_beeper.h"
@@ -7423,6 +7422,7 @@ typedef struct dmaoptEntry_s {
     uint8_t offset;
     uint8_t maxIndex;
     uint32_t presenceMask;
+    bool isLpuart;
 } dmaoptEntry_t;
 
 #define MASK_IGNORED (0)
@@ -7434,16 +7434,22 @@ typedef struct dmaoptEntry_s {
 // DEFW_OFS: array of structs, starting at offset ofs
 
 #define DEFS(device, peripheral, pgn, type, member) \
-    { device, peripheral, pgn, 0,               offsetof(type, member), 1, MASK_IGNORED }
+    { device, peripheral, pgn, 0,               offsetof(type, member), 1, MASK_IGNORED, false }
 
 #define DEFA(device, peripheral, pgn, type, member, max, mask) \
-    { device, peripheral, pgn, sizeof(uint8_t), offsetof(type, member), max, mask }
+    { device, peripheral, pgn, sizeof(uint8_t), offsetof(type, member), max, mask, false }
 
 #define DEFW(device, peripheral, pgn, type, member, max, mask) \
     DEFW_OFS(device, peripheral, pgn, type, member, 0, max, mask)
 
 #define DEFW_OFS(device, peripheral, pgn, type, member, ofs, max, mask)  \
-    { device, peripheral, pgn, sizeof(type), offsetof(type, member) + (ofs) * sizeof(type), max, mask }
+    DEFW_OFS_FLAG(device, peripheral, pgn, type, member, ofs, max, mask, false)
+
+#define DEFW_OFS_LPUART(device, peripheral, pgn, type, member, ofs, max, mask) \
+    DEFW_OFS_FLAG(device, peripheral, pgn, type, member, ofs, max, mask, true)
+
+#define DEFW_OFS_FLAG(device, peripheral, pgn, type, member, ofs, max, mask, isLpuart) \
+    { device, peripheral, pgn, sizeof(type), offsetof(type, member) + (ofs) * sizeof(type), max, mask, isLpuart }
 
 dmaoptEntry_t dmaoptEntryTable[] = {
     DEFW("SPI_SDO", DMA_PERIPH_SPI_SDO, PG_SPI_PIN_CONFIG,     spiPinConfig_t,     txDmaopt, SPIDEV_COUNT,                    MASK_IGNORED),
@@ -7460,11 +7466,10 @@ dmaoptEntry_t dmaoptEntryTable[] = {
     DEFW_OFS("UART_RX",  DMA_PERIPH_UART_RX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, RESOURCE_UART_OFFSET, RESOURCE_UART_COUNT, MASK_IGNORED),
 #endif
 #if defined(USE_UART) && defined(USE_LPUART)
-    DEFW_OFS("LPUART_TX",  DMA_PERIPH_UART_TX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
-    DEFW_OFS("LPUART_RX",  DMA_PERIPH_UART_RX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
+    DEFW_OFS_LPUART("LPUART_TX",  DMA_PERIPH_UART_TX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
+    DEFW_OFS_LPUART("LPUART_RX",  DMA_PERIPH_UART_RX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
 #endif
-// Only the X32 DShot driver consumes the configurable timer-update DMA option.
-#if defined(USE_TIMER_UP_CONFIG) && defined(X32M7)
+#if defined(USE_TIMER_UP_CONFIG)
     DEFW("TIMUP",    DMA_PERIPH_TIMUP,    PG_TIMER_UP_CONFIG,    timerUpConfig_t,    dmaopt,   HARDWARE_TIMER_DEFINITION_COUNT, TIMUP_TIMERS),
 #endif
 };
@@ -7472,6 +7477,9 @@ dmaoptEntry_t dmaoptEntryTable[] = {
 #undef DEFS
 #undef DEFA
 #undef DEFW
+#undef DEFW_OFS
+#undef DEFW_OFS_LPUART
+#undef DEFW_OFS_FLAG
 
 #define DMA_OPT_STRING_BUFSIZE 5
 
@@ -7511,7 +7519,6 @@ static resourceOwner_e dmaoptResourceOwner(dmaPeripheral_e peripheral)
     }
 }
 
-/** Return the CLI-visible instance number for a DMA option row. */
 static int getDmaOptDisplayNumber(dmaoptEntry_t *entry, int index)
 {
     if (entry->peripheral == DMA_PERIPH_TIMUP) {
@@ -7524,7 +7531,6 @@ static int getDmaOptDisplayNumber(dmaoptEntry_t *entry, int index)
     return resourceIndexToInput(dmaoptResourceOwner(entry->peripheral), index);
 }
 
-/** Convert a DMA CLI instance number to the corresponding configuration row. */
 static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
 {
     if (dispNum < 0) {
@@ -7542,14 +7548,13 @@ static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
     return (index < 0 || index >= entry->maxIndex) ? -1 : index;
 }
 
-/** Map a configuration row to the index expected by the peripheral DMA request map. */
-static int dmaOptPeripheralIndex(dmaoptEntry_t *entry, int index)
+/** Translate a UART CLI row to its compact DMA request-map index. */
+static int dmaOptPeripheralIndex(const dmaoptEntry_t *entry, int index)
 {
-#if defined(USE_UART) && defined(USE_LPUART)
-    if ((entry->peripheral == DMA_PERIPH_UART_TX || entry->peripheral == DMA_PERIPH_UART_RX)
-        && strncmp(entry->device, "LPUART_", sizeof("LPUART_") - 1) == 0) {
-        const serialPortIdentifier_e identifier = SERIAL_PORT_LPUART_FIRST + index;
-        return (uint8_t)uartDeviceIdxFromIdentifier(identifier);
+#ifdef USE_UART
+    if (entry->peripheral == DMA_PERIPH_UART_TX || entry->peripheral == DMA_PERIPH_UART_RX) {
+        const serialPortIdentifier_e firstIdentifier = entry->isLpuart ? SERIAL_PORT_LPUART_FIRST : SERIAL_PORT_UART_FIRST;
+        return uartDeviceIndexFromIdentifier((serialPortIdentifier_e)(firstIdentifier + index));
     }
 #else
     UNUSED(entry);
@@ -7557,7 +7562,6 @@ static int dmaOptPeripheralIndex(dmaoptEntry_t *entry, int index)
     return index;
 }
 
-/** Print a peripheral's configured DMA option and its resolved channel details. */
 static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const dmaoptValue_t dmaopt, const bool equalsDefault, const dumpFlags_t dumpMask, printFn *printValue)
 {
     // We compute number to display for different peripherals in advance.
@@ -7575,14 +7579,16 @@ static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const 
             "dma %s %d %d",
             entry->device, uiIndex, dmaopt);
 
-        const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, dmaOptPeripheralIndex(entry, index), dmaopt);
-        dmaCode_t dmaCode = 0;
-        if (dmaChannelSpec) {
-            dmaCode = dmaChannelSpec->code;
+        const int peripheralIndex = dmaOptPeripheralIndex(entry, index);
+        if (peripheralIndex >= 0) {
+            const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, (uint8_t)peripheralIndex, dmaopt);
+            if (dmaChannelSpec) {
+                const dmaCode_t dmaCode = dmaChannelSpec->code;
+                printValue(dumpMask, equalsDefault,
+                    "# %s %d: " DMASPEC_FORMAT_STRING,
+                    entry->device, uiIndex, DMA_CODE_CONTROLLER(dmaCode), DMA_CODE_STREAM(dmaCode), DMA_CODE_CHANNEL(dmaCode));
+            }
         }
-        printValue(dumpMask, equalsDefault,
-            "# %s %d: " DMASPEC_FORMAT_STRING,
-            entry->device, uiIndex, DMA_CODE_CONTROLLER(dmaCode), DMA_CODE_STREAM(dmaCode), DMA_CODE_CHANNEL(dmaCode));
     } else if (!(dumpMask & HIDE_UNUSED)) {
         printValue(dumpMask, equalsDefault,
             "dma %s %d NONE",
@@ -7590,7 +7596,6 @@ static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const 
     }
 }
 
-/** Load and print one peripheral's configured DMA option and defaults. */
 static const char *printPeripheralDmaopt(dmaoptEntry_t *entry, int index, dumpFlags_t dumpMask, const char *headingStr)
 {
     const pgRegistry_t* pg = pgFind(entry->pgn);
@@ -7655,7 +7660,6 @@ static void printTimerDmaoptDetails(const ioTag_t ioTag, const timerHardware_t *
     }
 }
 
-/** Print a timer pin's configured DMA option and its resolved channel details. */
 static const char *printTimerDmaopt(const timerIOConfig_t *currentConfig, const timerIOConfig_t *defaultConfig, unsigned index, dumpFlags_t dumpMask, bool tagsInUse[], const char *headingStr)
 {
     const ioTag_t ioTag = currentConfig[index].ioTag;
@@ -7695,7 +7699,6 @@ static const char *printTimerDmaopt(const timerIOConfig_t *currentConfig, const 
 }
 #endif
 
-/** Print DMA options for supported peripherals and configured timer pins. */
 static void printDmaopt(dumpFlags_t dumpMask, const char *headingStr)
 {
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
@@ -7738,7 +7741,6 @@ static void printDmaopt(dumpFlags_t dumpMask, const char *headingStr)
 #endif
 }
 
-/** Handle `dma` CLI queries, option listings, and configuration changes. */
 RAM_CODE static void cliDmaopt(const char *cmdName, char *cmdline)
 {
     char *pch = NULL;
@@ -7828,7 +7830,12 @@ RAM_CODE static void cliDmaopt(const char *cmdName, char *cmdline)
         // Show possible opts
         const dmaChannelSpec_t *dmaChannelSpec;
         if (entry) {
-            for (int opt = 0; (dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, dmaOptPeripheralIndex(entry, index), opt)); opt++) {
+            const int peripheralIndex = dmaOptPeripheralIndex(entry, index);
+            for (int opt = 0; peripheralIndex >= 0; opt++) {
+                dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, (uint8_t)peripheralIndex, opt);
+                if (!dmaChannelSpec) {
+                    break;
+                }
                 cliPrintLinef("# %d: " DMASPEC_FORMAT_STRING, opt, DMA_CODE_CONTROLLER(dmaChannelSpec->code), DMA_CODE_STREAM(dmaChannelSpec->code), DMA_CODE_CHANNEL(dmaChannelSpec->code));
             }
         } else {
@@ -7846,7 +7853,9 @@ RAM_CODE static void cliDmaopt(const char *cmdName, char *cmdline)
             optval = atoi(pch);
 
             if (entry) {
-                if (!dmaGetChannelSpecByPeripheral(entry->peripheral, dmaOptPeripheralIndex(entry, index), optval)) {
+                const int peripheralIndex = dmaOptPeripheralIndex(entry, index);
+                if (peripheralIndex < 0 ||
+                    !dmaGetChannelSpecByPeripheral(entry->peripheral, (uint8_t)peripheralIndex, optval)) {
                     cliPrintErrorLinef(cmdName, "INVALID DMA OPTION FOR %s %d: '%s'", entry->device, getDmaOptDisplayNumber(entry, index), pch);
 
                     return;
