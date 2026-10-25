@@ -600,6 +600,15 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
     if (mask & FUNCTION_OSD_CUSTOM_TEXT) {
         osdConfigMutable()->osd_custom_text_uart = identifier;
     }
+#ifdef USE_MSP_DISPLAYPORT
+    // The legacy VTX_MSP bit is how pre-2026.12 configs said "goggles drawing
+    // the OSD over MSP are on this port" (DJI, HDZero, Walksnail).  Builds
+    // without the VTX option drop the bit above, so the OSD takes the port
+    // here unless it was already given one.
+    if ((mask & FUNCTION_VTX_MSP) && osdConfig()->osd_uart == SERIAL_PORT_NONE) {
+        osdConfigMutable()->osd_uart = identifier;
+    }
+#endif
 #endif
 #ifdef USE_TELEMETRY_PROVIDERS
 #ifdef USE_TELEMETRY_FRSKY_HUB
