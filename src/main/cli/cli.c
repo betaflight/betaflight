@@ -7547,6 +7547,8 @@ static int dmaOptPeripheralIndex(dmaoptEntry_t *entry, int index)
         const serialPortIdentifier_e identifier = SERIAL_PORT_LPUART_FIRST + index;
         return (uint8_t)uartDeviceIdxFromIdentifier(identifier);
     }
+#else
+    UNUSED(entry);
 #endif
     return index;
 }
