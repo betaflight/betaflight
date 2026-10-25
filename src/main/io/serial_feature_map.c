@@ -463,6 +463,21 @@ static unsigned countTelemetryBits(uint32_t mask)
 // Whether a mask can be written to `identifier` without leaving the feature PGs
 // half-applied.  Slots this port already holds count as free, since the apply
 // clears its own claims first.  Mutates nothing.
+// A legacy MSP + VTX_MSP line names the port HD goggles draw the OSD over.
+// osd_uart opens that port as MSP by itself, so the line can still apply
+// when every MSP slot is taken.
+static bool osdTakesLegacyMspVtxPort(serialPortIdentifier_e identifier, uint32_t mask)
+{
+#if defined(USE_OSD) && defined(USE_MSP_DISPLAYPORT)
+    return (mask & FUNCTION_VTX_MSP)
+        && (osdConfig()->osd_uart == SERIAL_PORT_NONE || osdConfig()->osd_uart == identifier);
+#else
+    UNUSED(identifier);
+    UNUSED(mask);
+    return false;
+#endif
+}
+
 static bool canApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
 {
 #ifdef USE_VTX_COMMON
@@ -489,7 +504,7 @@ static bool canApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mas
                 availableMsp++;
             }
         }
-        if (availableMsp < 1) {
+        if (availableMsp < 1 && !osdTakesLegacyMspVtxPort(identifier, mask)) {
             return false;
         }
     }

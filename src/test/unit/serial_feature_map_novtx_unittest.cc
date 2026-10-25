@@ -159,3 +159,65 @@ TEST(SerialFeatureMapNoVtx, PlainMspLineDoesNotClaimTheOsd)
 
     EXPECT_EQ(SERIAL_PORT_NONE, osdConfig()->osd_uart);
 }
+
+TEST(SerialFeatureMapNoVtx, LegacyMspVtxLineFillsTheLastMspSlot)
+{
+    resetAllConfigs();
+
+    // USB, Bluetooth and goggles: three MSP ports, three slots.
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USB_VCP, FUNCTION_MSP));
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_MSP));
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_MSP | FUNCTION_VTX_MSP));
+
+    EXPECT_EQ(SERIAL_PORT_USB_VCP, mspConfig()->msp_uart[0]);
+    EXPECT_EQ(SERIAL_PORT_USART1, mspConfig()->msp_uart[1]);
+    EXPECT_EQ(SERIAL_PORT_USART3, mspConfig()->msp_uart[2]);
+    EXPECT_EQ(SERIAL_PORT_USART3, osdConfig()->osd_uart);
+}
+
+TEST(SerialFeatureMapNoVtx, LegacyMspVtxLineAppliesWhenEveryMspSlotIsTaken)
+{
+    resetAllConfigs();
+
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USB_VCP, FUNCTION_MSP));
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_MSP));
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART2, FUNCTION_MSP));
+
+    // No slot left, but osd_uart opens the port as MSP on its own.
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_MSP | FUNCTION_VTX_MSP));
+
+    EXPECT_EQ(SERIAL_PORT_USART3, osdConfig()->osd_uart);
+    for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+        EXPECT_NE(SERIAL_PORT_USART3, mspConfig()->msp_uart[i]);
+    }
+
+    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
+    serialPortIdentifier_e implied[4];
+    const unsigned count = serialImpliedMspPorts(implied, ARRAYLEN(implied));
+    ASSERT_EQ(1u, count);
+    EXPECT_EQ(SERIAL_PORT_USART3, implied[0]);
+}
+
+TEST(SerialFeatureMapNoVtx, PlainMspLineIsStillRejectedWhenEveryMspSlotIsTaken)
+{
+    resetAllConfigs();
+
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USB_VCP, FUNCTION_MSP));
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_MSP));
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART2, FUNCTION_MSP));
+
+    EXPECT_FALSE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_MSP));
+}
+
+TEST(SerialFeatureMapNoVtx, LegacyMspVtxLineIsRejectedWhenTheOsdHasAnotherPortAndNoSlotIsFree)
+{
+    resetAllConfigs();
+    osdConfigMutable()->osd_uart = SERIAL_PORT_UART4;
+
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USB_VCP, FUNCTION_MSP));
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_MSP));
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART2, FUNCTION_MSP));
+
+    EXPECT_FALSE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_MSP | FUNCTION_VTX_MSP));
+    EXPECT_EQ(SERIAL_PORT_UART4, osdConfig()->osd_uart);
+}
