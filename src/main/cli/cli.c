@@ -7451,7 +7451,9 @@ dmaoptEntry_t dmaoptEntryTable[] = {
     DEFW("SPI_TX",   DMA_PERIPH_SPI_SDO, PG_SPI_PIN_CONFIG,     spiPinConfig_t,     txDmaopt, SPIDEV_COUNT,                    MASK_IGNORED),
     DEFW("SPI_RX",   DMA_PERIPH_SPI_SDI, PG_SPI_PIN_CONFIG,     spiPinConfig_t,     rxDmaopt, SPIDEV_COUNT,                    MASK_IGNORED),
     DEFA("ADC",      DMA_PERIPH_ADC,      PG_ADC_CONFIG,         adcConfig_t,        dmaopt,   ADCDEV_COUNT,                    MASK_IGNORED),
+#ifdef USE_SDCARD_SDIO
     DEFS("SDIO",     DMA_PERIPH_SDIO,     PG_SDIO_CONFIG,        sdioConfig_t,       dmaopt),
+#endif
 #ifdef USE_UART
     DEFW_OFS("UART_TX",  DMA_PERIPH_UART_TX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, RESOURCE_UART_OFFSET, RESOURCE_UART_COUNT, MASK_IGNORED),
     DEFW_OFS("UART_RX",  DMA_PERIPH_UART_RX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, RESOURCE_UART_OFFSET, RESOURCE_UART_COUNT, MASK_IGNORED),
@@ -7539,10 +7541,10 @@ static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
 
 static int dmaOptPeripheralIndex(dmaoptEntry_t *entry, int index)
 {
-#ifdef USE_LPUART
+#if defined(USE_UART) && defined(USE_LPUART)
     if ((entry->peripheral == DMA_PERIPH_UART_TX || entry->peripheral == DMA_PERIPH_UART_RX)
-        && index >= RESOURCE_LPUART_OFFSET) {
-        const serialPortIdentifier_e identifier = SERIAL_PORT_LPUART_FIRST + index - RESOURCE_LPUART_OFFSET;
+        && strncmp(entry->device, "LPUART_", sizeof("LPUART_") - 1) == 0) {
+        const serialPortIdentifier_e identifier = SERIAL_PORT_LPUART_FIRST + index;
         return (uint8_t)uartDeviceIdxFromIdentifier(identifier);
     }
 #endif
