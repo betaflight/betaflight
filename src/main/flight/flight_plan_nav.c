@@ -274,6 +274,7 @@ static struct {
     waypoint_t staged[FP_INJECTED_PLAN_MAX];
     uint8_t stagedCount;
     bool isRescuePlan;          // the active injected plan is a failsafe rescue
+    bool rescueDirect;          // and has given up climbing where it was to fly straight home
     bool rescueBlindClimb;      // heading unknown: climbing level before the pitch-forward
     bool rescueClimbed;         // the blind climb is at altitude, waiting out the drift since rescueClimbedUs
     timeUs_t rescueClimbedUs;
@@ -355,6 +356,9 @@ static flightPlanWaypointReachedFn reachedListener = NULL;
 static void onWaypointReached(void *userData);
 static void clearModifierState(void);
 static void clearLegYawState(void);
+#if ENABLE_RESCUE_PLAN
+static uint8_t buildRescuePlan(waypoint_t out[FP_INJECTED_PLAN_MAX], bool climbInPlace);
+#endif
 #ifndef USE_WING
 static void updateLegYaw(const positionEstimate3d_t *est);
 static bool legNoseOnTarget(const positionEstimate3d_t *est, const vector3_t *targetEnuM);
@@ -959,9 +963,58 @@ static bool dispatchWaypoint(void)
 #endif
 }
 
+#if ENABLE_RESCUE_PLAN
+static void replaceWithRescuePlan(const waypoint_t *plan, uint8_t count)
+{
+    captureAltitudeFrame();
+    memcpy(fp.injected, plan, count * sizeof(plan[0]));
+    fp.injectedCount = count;
+    fp.currentIndex = 0;
+    fp.abortReason = FP_ABORT_NONE;
+    fp.isRescuePlan = true;
+    endHeadingRecovery();
+    fp.stagedCount = 0;
+    fp.dispatchAfresh = true;
+    resetLegState();
+    dispatchWaypoint();
+}
+
+#ifdef USE_WING
+// The retry returns at the altitude the rescue set out for, not one raised by the climb it gave up on.
+static void keepReturnAltitude(waypoint_t plan[], uint8_t count)
+{
+    for (unsigned i = 0; i < fp.injectedCount; i++) {
+        if (fp.injected[i].type == WAYPOINT_TYPE_FLYOVER) {
+            const int32_t returnAltCm = MAX(fp.injected[i].altitude, gpsSol.llh.altCm);
+            for (unsigned j = 0; j < count; j++) {
+                if (plan[j].type == WAYPOINT_TYPE_FLYOVER) {
+                    plan[j].altitude = returnAltCm;
+                }
+            }
+            return;
+        }
+    }
+}
+#endif
+#endif
+
 static void abortMission(flightPlanAbortReason_e reason)
 {
 #if ENABLE_RESCUE_PLAN
+#ifdef USE_WING
+    // A wing that cannot hold its climb where it is can still fly a line home, climbing on the way.
+    if (fp.isRescuePlan && !fp.rescueDirect && (reason == FP_ABORT_FLYAWAY || reason == FP_ABORT_STALLED)
+        && positionEstimatorIsValidXY()) {
+        waypoint_t plan[FP_INJECTED_PLAN_MAX];
+        const uint8_t count = buildRescuePlan(plan, false);
+        if (count > 0) {
+            keepReturnAltitude(plan, count);
+            replaceWithRescuePlan(plan, count);
+            fp.rescueDirect = true;
+            return;
+        }
+    }
+#endif
     endHeadingRecovery();
 #endif
     fp.state = FP_NAV_ABORTED;
@@ -1626,11 +1679,11 @@ static void injectReturnHomePlan(timeUs_t currentTimeUs)
 #if ENABLE_RESCUE_PLAN
 #ifdef USE_WING
 // A wing can stop neither to climb nor to land. Its rescue climbs in a loiter where it is, unless
-// the climb is too small to bother with, and sets off once at height and heading for home, where it
-// loiters down and lands: [climbing HOLD -> FLYOVER home -> LAND home]. Near home there is no return
-// worth flying: [LAND home]. It needs no heading. It returns no lower than the landing's approach is
-// flown, and lands on the arming point's ground.
-static uint8_t buildRescuePlan(waypoint_t out[FP_INJECTED_PLAN_MAX])
+// the climb is too small to bother with or that loiter could not be held, and sets off once at height
+// and heading for home, where it loiters down and lands: [climbing HOLD -> FLYOVER home -> LAND home].
+// Near home there is no return worth flying: [LAND home]. It needs no heading. It returns no lower
+// than the landing's approach is flown, and lands on the arming point's ground.
+static uint8_t buildRescuePlan(waypoint_t out[FP_INJECTED_PLAN_MAX], bool climbInPlace)
 {
     if (!STATE(GPS_FIX_HOME) || !STATE(GPS_FIX)) {
         return 0;
@@ -1669,7 +1722,7 @@ static uint8_t buildRescuePlan(waypoint_t out[FP_INJECTED_PLAN_MAX])
 
     const uint16_t climbRateCmS = MIN(cfg->ascendRate, autopilotWingConfig()->maxClimbRate * 10);
     uint8_t count = 0;
-    if (returnAltCm - currentAltCm >= FP_WING_RESCUE_MIN_CLIMB_CM) {
+    if (climbInPlace && returnAltCm - currentAltCm >= FP_WING_RESCUE_MIN_CLIMB_CM) {
         out[count++] = (waypoint_t){
             .latitude = gpsSol.llh.lat,
             .longitude = gpsSol.llh.lon,
@@ -1712,8 +1765,9 @@ static bool rescueStopsNearHome(void)
 // lifts it over whoever is standing there: [LAND where the craft comes to a
 // stop]. Without a heading it cannot hold that position, so it gets no plan and
 // the caller's altitude-only descent lands it where it is.
-static uint8_t buildRescuePlan(waypoint_t out[FP_INJECTED_PLAN_MAX])
+static uint8_t buildRescuePlan(waypoint_t out[FP_INJECTED_PLAN_MAX], bool climbInPlace)
 {
+    UNUSED(climbInPlace);
     if (!STATE(GPS_FIX_HOME) || !STATE(GPS_FIX)) {
         return 0;
     }
@@ -1789,24 +1843,15 @@ static uint8_t buildRescuePlan(waypoint_t out[FP_INJECTED_PLAN_MAX])
 bool flightPlanNavStageRescuePlan(void)
 {
     waypoint_t plan[FP_INJECTED_PLAN_MAX];
-    const uint8_t count = buildRescuePlan(plan);
+    const uint8_t count = buildRescuePlan(plan, true);
     if (count == 0) {
         return false;
     }
 
+    fp.rescueDirect = false;
     if (fp.active) {
         // Already flying (rx-loss during a mission): replace it immediately.
-        captureAltitudeFrame();
-        memcpy(fp.injected, plan, count * sizeof(plan[0]));
-        fp.injectedCount = count;
-        fp.currentIndex = 0;
-        fp.abortReason = FP_ABORT_NONE;
-        fp.isRescuePlan = true;
-        endHeadingRecovery();
-        fp.stagedCount = 0;
-        fp.dispatchAfresh = true;
-        resetLegState();
-        dispatchWaypoint();
+        replaceWithRescuePlan(plan, count);
         return true;
     }
 
@@ -2219,6 +2264,7 @@ void flightPlanNavInit(void)
 #if ENABLE_RESCUE_PLAN
     fp.stagedCount = 0;
     fp.isRescuePlan = false;
+    fp.rescueDirect = false;
     fp.rescueBlindClimb = false;
     fp.rescueClimbed = false;
     fp.rescueHeadingHold = false;
