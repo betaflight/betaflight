@@ -180,7 +180,7 @@ extern uint32_t SystemCoreClock;
 /* ── Generic serial_uart.c platform contract ────────────────────────────────
  * The NavQ95 UART7 driver uses Betaflight's generic drivers/serial_uart.c core
  * (buffered TX/RX, IRQ wrappers, uartVTable) plus the i.MX 95 platform layer in
- * NAVQ95/serial_uart_navq95.c. That core needs these platform traits:
+ * NXP/serial_uart_navq95.c. That core needs these platform traits:
  *   - UART_{TX,RX}_BUFFER_ATTRIBUTE: section attribute for the static UART ring
  *     buffers. Plain SRAM here (no DMA / special section yet), so empty.
  *   - UART_TRAIT_AF_PORT: the LPUART alt function is selected per-port over SCMI

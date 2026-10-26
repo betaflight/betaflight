@@ -2,9 +2,9 @@
 # target.mk — NavQ95 (NXP i.MX 95, Cortex-M7) base target
 #
 # Discovered by the top-level Makefile via the presence of this file at
-#   src/platform/NAVQ95/target/NAVQ95/target.mk
+#   src/platform/NXP/target/NAVQ95/target.mk
 # The Makefile reads TARGET_MCU_FAMILY from here, then includes
-#   src/platform/NAVQ95/mk/$(TARGET_MCU_FAMILY).mk  == mk/NAVQ95.mk
+#   src/platform/NXP/mk/$(TARGET_MCU_FAMILY).mk  == mk/NAVQ95.mk
 # ─────────────────────────────────────────────────────────────────────────────
 
 # TARGET_MCU_FAMILY is mandatory (locates mk/<family>.mk); TARGET_MCU names the

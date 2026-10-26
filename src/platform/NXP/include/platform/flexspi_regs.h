@@ -22,7 +22,7 @@
 /*
  * NavQ95 (i.MX 95 M7) FlexSPI1 controller registers, hand-written for the
  * no-SDK NAVQ95 port (mirrors the SDK FLEXSPI_Type / masks that
- * NAVQ95/flexspi_nor_imx95.c uses, ported from Betaflight PR #15853).
+ * NXP/flexspi_nor_imx95.c uses, ported from Betaflight PR #15853).
  *
  *   FlexSPI1 control registers : 0x425E0000 (IMX9_FLEXSPI_BASE)
  *   FlexSPI1 AMBA (NOR window)  : 0x28000000 (IMX9_FLEXSPI1_BASE), alias 0x02000000

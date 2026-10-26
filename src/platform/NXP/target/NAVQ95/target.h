@@ -38,7 +38,7 @@
 /*
  * Configuration storage in the FlexSPI boot NOR (persistent across power
  * cycles). CONFIG_IN_FLASH is platform-owned via config_streamer_impl.h:
- * NAVQ95/config_flash_navq95.c implements configUnlock/Lock/ClearFlags/WriteWord
+ * NXP/config_flash_navq95.c implements configUnlock/Lock/ClearFlags/WriteWord
  * on the FlexSPI NOR driver; reads come from the memory-mapped NOR
  * (__config_start). Streamer word = one 256-byte NOR page; EEPROM_SIZE 8192 =
  * 2 x 4 KB sectors (see navq95_flexspi.ld __config_start/__config_end).
@@ -49,7 +49,7 @@
 #define FLASH_CONFIG_BUFFER_TYPE           uint32_t
 
 /*
- * FlexSPI NOR driver (MX25UM51345GXDI00 octal NOR, NAVQ95/flexspi_nor_imx95.c).
+ * FlexSPI NOR driver (MX25UM51345GXDI00 octal NOR, NXP/flexspi_nor_imx95.c).
  * NAVQ95_USE_FLEXSPI_NOR gates our self-contained erase/program driver (required
  * by CONFIG_IN_FLASH); we do NOT use USE_FLASH_MEMORY_MAPPED (STM32-OctoSPI
  * coupled). NAVQ95_NOR_PROBE = optional non-fatal boot NOR health probe.
@@ -62,7 +62,7 @@
 
 /*
  * Generic serial UARTs via drivers/serial_uart.c + the i.MX 95 platform layer
- * in NAVQ95/serial_uart_navq95.c. UART5 == LPUART5 (RC/SBUS), UART7 == LPUART7
+ * in NXP/serial_uart_navq95.c. UART5 == LPUART5 (RC/SBUS), UART7 == LPUART7
  * (MSP). Alt mux + pad + RX daisy + SBUS framing applied over SCMI by the
  * driver. SERIAL_UART_FIRST_INDEX = 1: no UART0.
  */
@@ -94,7 +94,7 @@
  * would default to DSHOT600 -> dshotPwmDevInit() (stubbed; DShot needs an
  * eDMA/FlexIO layer not implemented). pg/motor.c honours DEFAULT_MOTOR_PROTOCOL
  * above every fallback, so this routes to our TPM PWM driver (motorPwmDevInit,
- * NAVQ95/pwm_navq95.c). MOTOR_PROTOCOL_PWM = enum in drivers/motor_types.h.
+ * NXP/pwm_navq95.c). MOTOR_PROTOCOL_PWM = enum in drivers/motor_types.h.
  */
 #define DEFAULT_MOTOR_PROTOCOL  MOTOR_PROTOCOL_PWM
 
@@ -117,7 +117,7 @@
 #define GYRO_1_CS_PIN           PA11
 
 /*
- * SD card over the i.MX 95 uSDHC controller (NAVQ95/sdio_usdhc_navq95.c, ADMA2
+ * SD card over the i.MX 95 uSDHC controller (NXP/sdio_usdhc_navq95.c, ADMA2
  * polled). Config storage stays in the FlexSPI NOR (above), so an SD failure is
  * non-fatal. Wiring is a best guess (uSDHC1, SD1 pads) — NAVQ95_SD_SELFTEST runs
  * a non-destructive boot card-identify probe to validate it.
@@ -137,7 +137,7 @@
 
 /*
  * I2C (Phase 1 bring-up): two LPI2C master instances, register-level polled
- * driver in NAVQ95/bus_i2c_navq95.c. Option-A Betaflight bus numbering so the
+ * driver in NXP/bus_i2c_navq95.c. Option-A Betaflight bus numbering so the
  * CLI/Configurator bus number matches the silicon instance:
  *
  *   I2CDEV_1 == LPI2C1 (AONMIX,    base 0x44340000, CCM clock root 6)

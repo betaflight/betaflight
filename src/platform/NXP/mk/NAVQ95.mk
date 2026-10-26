@@ -67,7 +67,7 @@ DEVICE_FLAGS    += \
 # ── I2C (Phase 1): two LPI2C master instances over the generic I2C core ──────
 # Betaflight's common drivers/bus_i2c_*.c provide the high-level API and the
 # config parameter group; the platform supplies the hardware hooks in
-# NAVQ95/bus_i2c_navq95.c (register-level polled LPI2C, pads muxed + clock
+# NXP/bus_i2c_navq95.c (register-level polled LPI2C, pads muxed + clock
 # ungated over SCMI). USE_I2C enables the common I2C core; the per-instance
 # USE_I2C_DEVICE_1 / USE_I2C_DEVICE_6 spellings live in target.h (Option-A
 # numbering: I2CDEV_1 -> LPI2C1, I2CDEV_6 -> LPI2C6). NOT soft-I2C.
@@ -89,7 +89,7 @@ INCLUDE_DIRS    += \
 LD_SCRIPT       = $(LINKER_DIR)/navq95_flexspi.ld
 
 # ── Startup ───────────────────────────────────────────────────────────────────
-STARTUP_SRC     = NAVQ95/startup/startup_navq95.s
+STARTUP_SRC     = NXP/startup/startup_navq95.s
 
 # ── Post-build: raw .bin, then (deferred) MCUboot signing ────────────────────
 # Betaflight emits the ELF; we add a raw binary for the FlexSPI XIP image.
@@ -101,28 +101,28 @@ STARTUP_SRC     = NAVQ95/startup/startup_navq95.s
 # For now the deliverable is the unsigned raw .bin: betaflight_NAVQ95.bin
 
 # ── Platform source list ──────────────────────────────────────────────────────
-# NAVQ95/serial_uart_navq95.c supplies the i.MX 95 platform half of the generic
+# NXP/serial_uart_navq95.c supplies the i.MX 95 platform half of the generic
 # serial core (uartHardware[] table + hooks) for UART7 (MSP) and UART2 (SBUS RX).
 # drivers/serial_pinconfig.c provides the serialPinConfig PG (SERIAL_TRAIT_PIN_CONFIG).
 # drivers/bus_spi_config.c provides spiPreinit() (called unconditionally from
 # fc/init.c under USE_SPI). It is NOT in mk/source.mk — each platform .mk adds it
 # (see IMXRT.mk / STM32_COMMON.mk). The common SPI core drivers/bus_spi.c IS added
 # by source.mk when USE_SPI is defined.
-# NAVQ95/config_navq95.c implements targetConfiguration() (SBUS board defaults).
-# NAVQ95/sdio_usdhc_navq95.c is the i.MX 95 uSDHC SD-card driver (USE_SDCARD_SDIO;
+# NXP/config_navq95.c implements targetConfiguration() (SBUS board defaults).
+# NXP/sdio_usdhc_navq95.c is the i.MX 95 uSDHC SD-card driver (USE_SDCARD_SDIO;
 # provides the SD_* HAL that drivers/sdcard_sdio_baremetal.c calls; ADMA2 polled).
 MCU_COMMON_SRC  = \
-            NAVQ95/platform_stubs.c \
-            NAVQ95/system.c \
-            NAVQ95/io_navq95.c \
-            NAVQ95/serial_uart_navq95.c \
-            NAVQ95/config_navq95.c \
-            NAVQ95/sdio_usdhc_navq95.c \
-            NAVQ95/pwm_navq95.c \
-            NAVQ95/flexspi_nor_imx95.c \
-            NAVQ95/flexspi_nor_selftest.c \
-            NAVQ95/config_flash_navq95.c \
-            NAVQ95/bus_i2c_navq95.c \
+            NXP/platform_stubs.c \
+            NXP/system.c \
+            NXP/io_navq95.c \
+            NXP/serial_uart_navq95.c \
+            NXP/config_navq95.c \
+            NXP/sdio_usdhc_navq95.c \
+            NXP/pwm_navq95.c \
+            NXP/flexspi_nor_imx95.c \
+            NXP/flexspi_nor_selftest.c \
+            NXP/config_flash_navq95.c \
+            NXP/bus_i2c_navq95.c \
             drivers/bus_spi_config.c \
             drivers/serial_pinconfig.c
 
@@ -131,7 +131,7 @@ DEVICE_STDPERIPH_SRC :=
 
 # ── Serial: use the generic drivers/serial_uart.c core (force-added to
 # COMMON_SRC by mk/source.mk) plus the i.MX 95 platform layer in
-# NAVQ95/serial_uart_navq95.c, which supplies the uartHardware[] table and the
+# NXP/serial_uart_navq95.c, which supplies the uartHardware[] table and the
 # platform hooks (serialUART/uartReconfigure/uartIrqHandler/uartPinConfigure/
 # uartEnableTxInterrupt/...). This mirrors the PICO port (serial_uart_pico.c +
 # uart_hw.c). drivers/serial_uart_pinconfig.c is also force-added and maps the
@@ -154,7 +154,7 @@ DEVICE_STDPERIPH_SRC :=
 # sdcard_sdio_baremetal.c (the SD_* HAL glue), sdcard_standard.c, and the
 # AsyncFatFS stack (asyncfatfs.c + fat_standard.c) are NOT excluded. Only the
 # SPI-mode SD backend (sdcard_spi.c) is excluded (USE_SDCARD_SPI is not defined).
-# The platform SD_* HAL lives in NAVQ95/sdio_usdhc_navq95.c.
+# The platform SD_* HAL lives in NXP/sdio_usdhc_navq95.c.
 MCU_EXCLUDES += \
             drivers/sdcard_spi.c
 

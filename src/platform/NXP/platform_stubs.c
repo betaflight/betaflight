@@ -515,7 +515,7 @@ int navq95_scmi_clock_rate_set(uint32_t clockRootId, uint32_t rateHz)
     return navq95_scmi_txn(4u + 16u);
 }
 
-/* Non-static exports so other platform TUs (e.g. NAVQ95/sdio_usdhc_navq95.c)
+/* Non-static exports so other platform TUs (e.g. NXP/sdio_usdhc_navq95.c)
  * can drive the SM over the same SCMI channel. The SMT channel is polled/
  * synchronous, so there is no concurrency with the console/SPI users. */
 int navq95_scmi_pinmux_ex(uint32_t muxReg, uint32_t muxMode, uint32_t sion,
@@ -547,7 +547,7 @@ int navq95_scmi_clock_rate_set_ex(uint32_t clockRootId, uint32_t rateHz)
  * MUX, DAISY_ID, DAISY_CFG, CONFIG (num_configs = 4), mirroring NuttX
  * imx9_sm_iomucx_configure(). daisyReg is the absolute SELECT_INPUT register;
  * daisyVal is the input mux selector. Non-static (declared in navq95_scmi.h) so
- * NAVQ95/bus_i2c_navq95.c can mux the shared LPI2C6 pads over the same channel.
+ * NXP/bus_i2c_navq95.c can mux the shared LPI2C6 pads over the same channel.
  */
 int navq95_scmi_pinmux_daisy(uint32_t muxReg, uint32_t muxMode, uint32_t sion,
                              uint32_t daisyReg, uint32_t daisyVal,
@@ -575,7 +575,7 @@ int navq95_scmi_pinmux_daisy(uint32_t muxReg, uint32_t muxMode, uint32_t sion,
 }
 
 /* NOTE: the LPUART2 (RC/SBUS) pad mux is NOT done here — RC/SBUS runs through
- * the generic serial core, and NAVQ95/serial_uart_navq95.c muxes the dedicated
+ * the generic serial core, and NXP/serial_uart_navq95.c muxes the dedicated
  * UART2 pads over SCMI in serialUART(). The console (LPUART5) pinmux lives in
  * navq95_lpuart5_iomux() further down. */
 
@@ -732,7 +732,7 @@ void systemInit(void)
      * borrows the mcuboot-configured controller (flexspiNorInit), reads the NOR
      * status, and — under NAVQ95_NOR_WRITE_TEST — erases/programs/reads-back one
      * scratch sector of the config partition to prove persistence is viable.
-     * Defined in NAVQ95/flexspi_nor_selftest.c. Never hangs boot. */
+     * Defined in NXP/flexspi_nor_selftest.c. Never hangs boot. */
     {
         extern void navq95_nor_probe(void);
         navq95_nor_probe();
@@ -743,7 +743,7 @@ void systemInit(void)
     /* Boot-time uSDHC/SD self-test (non-fatal): prints controller state + the
      * card-identify result so the best-guess pads/instance/clock can be checked
      * on hardware. Non-destructive (never programs a block). Defined in
-     * NAVQ95/sdio_usdhc_navq95.c under USE_SDCARD_SDIO. Runs AFTER the console
+     * NXP/sdio_usdhc_navq95.c under USE_SDCARD_SDIO. Runs AFTER the console
      * banner above; SD failure stays non-fatal (CONFIG_IN_RAM), so the CLI
      * remains reachable. Turn off (comment out NAVQ95_SD_SELFTEST in target.h)
      * once the card is proven. */
@@ -759,7 +759,7 @@ void systemInit(void)
      * drives a static 1500 us pulse on CH0..3 so a scope/logic-analyzer can
      * measure the period (PWM freq) and pulse width on pads IO04/IO20/IO12/IO24.
      * Runs BEFORE Betaflight's motorInit (which re-inits TPM3), so it isolates
-     * the HW path from the core. Defined in NAVQ95/pwm_navq95.c. Turn OFF for
+     * the HW path from the core. Defined in NXP/pwm_navq95.c. Turn OFF for
      * normal use (it drives ESC lines). */
     {
         extern void navq95_pwm_selftest(void);
@@ -771,7 +771,7 @@ void systemInit(void)
 /*
  * NOTE: the DWT-based time base (micros/microsISR/millis/delay/
  * delayMicroseconds), the cycle counter (cycleCounterInit/getCycleCounter) and
- * the clock-cycle conversions live in NAVQ95/system.c, matching the per-platform
+ * the clock-cycle conversions live in NXP/system.c, matching the per-platform
  * system.c layout of the other targets.
  */
 
@@ -974,7 +974,7 @@ static int navq95_lpuart2_iomux(void)
 }
 
 /* RC/SBUS now lives on LPUART5 (Betaflight UART5) via the GENERIC serial core
- * (drivers/serial_uart.c + NAVQ95/serial_uart_navq95.c uartHardware[] UART5 row,
+ * (drivers/serial_uart.c + NXP/serial_uart_navq95.c uartHardware[] UART5 row,
  * shared ALT5 pads + daisy, 8E2/RXINV framing). The console (this file) is on
  * LPUART2's dedicated pads via navq95_lpuart2_iomux above. */
 
@@ -984,10 +984,10 @@ static int navq95_lpuart2_iomux(void)
  * Uses CMSIS-Core intrinsics only; no vendor SDK dependency.
  * ════════════════════════════════════════════════════════════════════════════ */
 
-/* ── Cycle-count helpers: moved to NAVQ95/system.c ──────────────────────── */
+/* ── Cycle-count helpers: moved to NXP/system.c ──────────────────────── */
 
 /* ── IO: all IO HAL (hardware primitives + record keeping) moved to
- *      NAVQ95/io_navq95.c, matching the STM32 layout where io_stm32.c owns the
+ *      NXP/io_navq95.c, matching the STM32 layout where io_stm32.c owns the
  *      whole IO layer (IORead/IOWrite/IOHi/IOLo/IOToggle/IOConfigGPIO plus
  *      IOInitGlobal/IOGetByTag). Nothing IO-related lives here any more. ──── */
 
@@ -996,7 +996,7 @@ void EXTIInit(void)            { }
 void EXTIRelease(IO_t io)      { (void)io; }
 
 /* ── System / failure ───────────────────────────────────────────────────────
- * failureMode()/indicateFailure() live in NAVQ95/system.c (they use the beeper
+ * failureMode()/indicateFailure() live in NXP/system.c (they use the beeper
  * + delay()). isMPUSoftReset/unusedPinsInit stay here. */
 bool isMPUSoftReset(void)      { return false; }
 void unusedPinsInit(void)      { }
@@ -1067,7 +1067,7 @@ uint16_t adcGetValue(adcSource_e source __attribute__((unused))) { return 0; }
 
 /* ── Motor / servo / ESC ────────────────────────────────────────────────
  * motorPwmDevInit() (standard PWM on TPM3) is now the REAL driver in
- * NAVQ95/pwm_navq95.c — its stub was removed here (two-sided edit). DShot is
+ * NXP/pwm_navq95.c — its stub was removed here (two-sided edit). DShot is
  * not implemented yet (needs eDMA / FlexIO), so dshotPwmDevInit still stubs to
  * false; servo is likewise not wired. */
 bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
@@ -1319,7 +1319,7 @@ void debugInit(void) { }
  * by the REAL drivers (drivers/sdcard.c + sdcard_sdio_baremetal.c + the
  * io/asyncfatfs stack, built under USE_SDCARD/USE_SDCARD_SDIO). Their stubs were
  * REMOVED from here to avoid duplicate symbols. The platform SD_* HAL that the
- * SDIO baremetal glue calls lives in NAVQ95/sdio_usdhc_navq95.c. */
+ * SDIO baremetal glue calls lives in NXP/sdio_usdhc_navq95.c. */
 
 /* ── ws2811 (drivers/light_ws2811strip.h) ───────────────────────────────── */
 bool ws2811LedStripHardwareInit(void) { return false; }

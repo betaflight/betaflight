@@ -23,7 +23,7 @@
  * NavQ95 (i.MX 95 M7) CONFIG_IN_FLASH platform back-end.
  *
  * Implements the config_streamer_impl.h seam (configUnlock / configLock /
- * configClearFlags / configWriteWord) entirely inside src/platform/NAVQ95 (no
+ * configClearFlags / configWriteWord) entirely inside src/platform/NXP (no
  * core edit). Config lives in the FlexSPI boot NOR at [__config_start,
  * __config_end) (navq95_flexspi.ld); erase/program go through the FlexSPI NOR
  * driver (flexspi_nor_imx95.c) and reads come from the XIP-mapped NOR. The core
