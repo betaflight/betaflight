@@ -42,6 +42,7 @@ typedef enum {
     CONFIG_RESET_MSP,
     CONFIG_RESET_BUTTON,
     CONFIG_RESET_SERIAL,
+    CONFIG_RESET_PG_SIZE,
     CONFIG_RESET_COUNT
 } configResetReason_e;
 
