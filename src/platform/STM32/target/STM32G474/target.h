@@ -72,5 +72,3 @@
 #define USE_EXTI
 
 #define USE_PID_DENOM_CHECK
-
-#define USE_TIMER_UP_CONFIG
