@@ -63,11 +63,15 @@ extern void navq95_console_drain(void);
 #define NAVQ95_TPM4_CLK_ROOT        112u
 #define NAVQ95_TPM4_CLK_HZ          1000000u    /* TPM4 own root, set via RATE_SET */
 
-/* TPM3 WAKEUPMIX bus clock ~135 MHz (confirmed on HW: MOD-for-480Hz gave 28 kHz
- * -> 28k*(MOD+1) ~= 135 MHz). The navq95TpmMeasureHz micros()-window reading is
- * off by ~58x here, so it is NOT used on the live path (selftest-only); hardcode
- * the real rate. MIN/MAX bound the selftest's validated fallback. */
-#define NAVQ95_TPM3_BUS_HZ          135000000u
+/* TPM1/TPM3 have NO dedicated CCM clock root on i.MX95 (unlike TPM2/4/5/6); they
+ * are fed by the shared WAKEUPMIX peripheral bus clock (BUS_WAKEUP, CCM root 78),
+ * which the M7 cannot retime. Its SM-default rate is SYS_PLL1 (4000 MHz) / 30 =
+ * 133.333 MHz. Calibrated on HW with a logic analyzer: driving TPM3 at the
+ * 135 MHz guess measured 1.25% low on all channels (400->395, 200->197.53,
+ * 480->474 Hz); every point back-solves to 133.33 MHz, so use the real rate.
+ * The navq95TpmMeasureHz micros()-window reading is unreliable (~58x off) and is
+ * NOT used on the live path (selftest-only). MIN/MAX bound the selftest fallback. */
+#define NAVQ95_TPM3_BUS_HZ          133333333u  /* SYS_PLL1 4000 MHz / 30 */
 #define NAVQ95_TPM3_BUS_MIN         1500000u
 #define NAVQ95_TPM3_BUS_MAX         3500000u
 
