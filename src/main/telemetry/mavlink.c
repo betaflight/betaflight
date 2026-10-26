@@ -1220,7 +1220,7 @@ static void mavlinkSendHeartbeat(void)
         // type Type of the MAV (quadrotor, helicopter, etc., up to 15 types, defined in MAV_TYPE ENUM)
         mavSystemType,
         // autopilot Autopilot type / class. defined in MAV_AUTOPILOT ENUM
-        MAV_AUTOPILOT_GENERIC,
+        MAV_AUTOPILOT_BETAFLIGHT,
         // base_mode System mode bitfield, see MAV_MODE_FLAGS ENUM in mavlink/include/mavlink_types.h
         mavModes,
         // custom_mode A bitfield for use for autopilot-specific flags.
