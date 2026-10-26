@@ -27,6 +27,7 @@
 
 #ifdef USE_DSHOT_BITBANG
 
+#include "build/atomic.h"
 #include "build/debug.h"
 #include "build/debug_pin.h"
 
@@ -44,6 +45,7 @@
 #include "drivers/nvic.h"
 #include "pwm_output_dshot_shared.h"
 #include "drivers/dshot_bitbang_decode.h"
+#include "drivers/dshot_bitbang_frame.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
 #include "platform/timer.h"
@@ -54,7 +56,8 @@
 // DEBUG_DSHOT_TELEMETRY_COUNTS
 // 0 - Count of telemetry packets read
 // 1 - Count of missing edge
-// 2 - Count of reception not complete in time
+// 2 - Count of failed frames, per port group: a telemetry capture that timed out,
+//     a DMA transfer error, or an output frame that never completed
 // 3 - Number of high bits before telemetry start
 
 // For MCUs that use MPU to control DMA coherency, there might be a performance hit
@@ -314,6 +317,14 @@ FAST_IRQ_HANDLER void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
             // Disable DMA as telemetry reception is complete
             bbDMA_Cmd(bbPort, DISABLE);
         } else {
+            if (!bbPort->outputPending) {
+                // Raised by bbUpdateComplete() stopping a stalled frame: nothing
+                // went out, so there is no reply to capture.
+                dbgPinLo(0);
+                return;
+            }
+            bbPort->outputPending = false;
+
 #ifdef DEBUG_COUNT_INTERRUPT
             bbPort->outputIrq++;
 #endif
@@ -387,6 +398,7 @@ static void bbFindPacerTimer(void)
 }
 
 static timeDelta_t bbTelemetryTimeoutUs;
+static timeDelta_t bbOutputTimeoutUs;
 
 static void bbTimebaseSetup(bbPort_t *bbPort, motorProtocolTypes_e dshotProtocolType)
 {
@@ -405,6 +417,7 @@ static void bbTimebaseSetup(bbPort_t *bbPort, motorProtocolTypes_e dshotProtocol
     // Called per port group, so the last group wins; harmless only because all
     // groups share one protocol. Make this and dshotFrameUs per port if that ends.
     bbTelemetryTimeoutUs = (timeDelta_t)(DSHOT_BB_PORT_IP_BUF_LENGTH * 1000000 / inputFreq) * 5 / 4;
+    bbOutputTimeoutUs = bbOutputFrameTimeoutUs(MOTOR_DSHOT_BUF_LENGTH, outputFreq);
 }
 
 //
@@ -521,16 +534,16 @@ static bool bbTelemetryWait(void)
             // bbDMAIrqHandler() on the pacer TIMx->DIER, which is shared with the
             // other port group. The buffers may hold a partial frame, so skip
             // them rather than decode a bad-but-valid GCR frame.
+            //
+            // Mark timeouts only; bbUpdateComplete() counts them in debug[2].
+            // Spinning here is normal - the capture window legitimately overlaps
+            // the next update on high loop rates - so counting every wait would
+            // leave debug[2] permanently nonzero instead of flagging a stall.
             for (int i = 0; i < usedMotorPorts; i++) {
                 if (bbPorts[i].telemetryPending) {
                     bbPorts[i].telemetryAborted = true;
                 }
             }
-            // Count timeouts only. Spinning here is normal - the capture window
-            // legitimately overlaps the next update on high loop rates - so
-            // counting every wait would leave debug[2] permanently nonzero
-            // instead of flagging a stalled capture.
-            DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);
             break;
         }
     } while (telemetryPending);
@@ -561,7 +574,7 @@ static bool bbDecodeTelemetry(void)
 #endif
         for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < dshotMotorCount; motorIndex++) {
             if (bbMotors[motorIndex].bbPort->telemetryAborted) {
-                // Aborted reception; already counted in debug[2] by bbTelemetryWait().
+                // Aborted reception; already counted in debug[2] by bbUpdateComplete().
                 // Don't bump debug[1] (missing-edge) - an abort is not a missing edge.
                 continue;
             }
@@ -646,8 +659,46 @@ static void bbWrite(uint8_t motorIndex, float value)
     bbWriteInt(motorIndex, lrintf(value));
 }
 
+// Count the port groups whose last frame failed in debug[2], so that a log that
+// keeps it at zero shows the bitbang DMA ran clean: a capture that timed out in
+// bbTelemetryWait(), a DMA transfer error, or an output frame that never
+// completed. Runs before the command gating in bbUpdateComplete(), as
+// bbDecodeTelemetry() clears telemetryAborted whether or not a frame is sent.
+static void bbCheckLastFrame(void)
+{
+    const timeUs_t nowUs = micros();
+
+    for (int i = 0; i < usedMotorPorts; i++) {
+        bbPort_t *bbPort = &bbPorts[i];
+
+#ifdef USE_DSHOT_TELEMETRY
+        if (useDshotTelemetry) {
+            // The output frame's completion never came, so its stream is stuck
+            // and enabling it as it stands sends nothing; that leaves the motors
+            // without commands and the telemetry without replies. Give the
+            // frame up before the ISR can act on its completion, so the one
+            // raised by stopping the stream starts no capture, and have
+            // bbUpdateComplete() reload the stream.
+            ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+                if (bbPort->direction == DSHOT_BITBANG_DIRECTION_OUTPUT
+                    && bbOutputFrameStalled(bbPort->outputPending, nowUs, lastSendUs, bbOutputTimeoutUs)) {
+                    bbPort->outputPending = false;
+                    bbPort->reinitRequired = true;
+                }
+            }
+        }
+#endif
+
+        if (bbPort->telemetryAborted || bbPort->reinitRequired) {
+            DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);  //!< Failed Frame Count
+        }
+    }
+}
+
 static void bbUpdateComplete(void)
 {
+    bbCheckLastFrame();
+
     // If there is a dshot command loaded up, time it correctly with motor update
 
     if (!dshotCommandQueueEmpty()) {
@@ -663,9 +714,11 @@ static void bbUpdateComplete(void)
 #endif
 
         if (bbPort->reinitRequired) {
-            // A DMA transfer error left the stream's registers describing a
-            // partial transfer. Reload them before enabling it again; if the
-            // stream will not stop, leave the flag up and retry next cycle.
+            // A DMA transfer error or a stalled frame left the stream's
+            // registers describing a partial transfer. Reload them before
+            // enabling it again; if the stream will not stop, leave the flag up
+            // and retry next cycle.
+            bbPort->outputPending = false;
             if (!bbSwitchToOutput(bbPort)) {
                 continue;
             }
@@ -690,6 +743,11 @@ static void bbUpdateComplete(void)
             // Nothing to do
         }
 
+#ifdef USE_DSHOT_TELEMETRY
+        if (useDshotTelemetry) {
+            bbPort->outputPending = true;
+        }
+#endif
         bbDMA_Cmd(bbPort, ENABLE);
     }
 

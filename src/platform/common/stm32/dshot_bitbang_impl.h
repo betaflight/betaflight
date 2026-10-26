@@ -221,6 +221,13 @@ typedef struct bbPort_s {
 
     // Misc
 
+    // An output frame is running and its completion is still to come. Set by
+    // bbUpdateComplete() before it enables the stream, cleared by the DMA ISR
+    // when the frame completes and by bbUpdateComplete() when it gives the frame
+    // up. The ISR acts on an output completion only while this is set, so the
+    // completion raised by stopping a stalled stream starts no capture.
+    volatile bool outputPending;
+
     // Set by bbDMAServiceFlags() when a DMA transfer error left the stream's
     // registers unusable; cleared by bbUpdateComplete() once bbSwitchToOutput()
     // has reloaded them. Written from the DMA ISR; read/cleared from the PID task.

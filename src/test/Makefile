@@ -272,6 +272,9 @@ common_filter_unittest_SRC := \
 debug_annotations_unittest_SRC := \
 		$(USER_DIR)/build/debug.c
 
+dshot_bitbang_frame_unittest_SRC := \
+		$(USER_DIR)/common/time.c
+
 dyn_notch_filter_unittest_SRC := \
         $(USER_DIR)/flight/dyn_notch_filter.c \
         $(USER_DIR)/common/filter.c \
