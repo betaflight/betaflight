@@ -128,7 +128,6 @@
 
 #define USE_ADC
 #define USE_EXTI
-#define USE_TIMER_UP_CONFIG
 
 // Transponder not yet supported on N6
 #undef USE_TRANSPONDER

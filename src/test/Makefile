@@ -198,6 +198,19 @@ accgyro_spi_lsm6dsv16x_unittest_DEFINES = \
 #		$(USER_DIR)/sensors/battery.c \
 #		$(USER_DIR)/common/maths.c
 
+bus_spi_unittest_SRC := \
+		$(USER_DIR)/build/atomic.c \
+		$(USER_DIR)/drivers/bus_spi.c \
+		$(USER_DIR)/drivers/accgyro/accgyro_mpu.c
+
+bus_spi_unittest_DEFINES := \
+		USE_SPI= \
+		USE_SPI_DEVICE_1= \
+		USE_SPI_GYRO= \
+		SPI1=0x40013000UL \
+		SPIDEV_COUNT=1 \
+		MAX_SPI_PIN_SEL=1
+
 battery_profile_unittest_SRC := \
 		$(USER_DIR)/sensors/battery.c \
 		$(USER_DIR)/common/maths.c \
