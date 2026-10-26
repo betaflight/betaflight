@@ -122,11 +122,21 @@ const char * const osdTimerSourceNames[] = {
 #define OSD_LOGO_ROWS 4
 #define OSD_LOGO_COLS 24
 
+// Make it obvious on the configurator that the FC doesn't support HD
+#ifndef DEFAULT_OSD_DISPLAYPORT_DEVICE
+#if defined(USE_OSD_HD) || defined(MSP_DISPLAYPORT_UART)
+#define DEFAULT_OSD_DISPLAYPORT_DEVICE OSD_DISPLAYPORT_DEVICE_MSP
+#else
+#define DEFAULT_OSD_DISPLAYPORT_DEVICE OSD_DISPLAYPORT_DEVICE_AUTO
+#endif
+#endif
+
 // Things in both OSD and CMS
 
-#define IS_HI(X)  (rcData[X] > 1750)
-#define IS_LO(X)  (rcData[X] < 1250)
-#define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
+#define OSD_STICK_DEFLECTION 0.5f
+#define IS_HI(X)  (rcGetChannel(X) > OSD_STICK_DEFLECTION)
+#define IS_LO(X)  (rcGetChannel(X) < -OSD_STICK_DEFLECTION)
+#define IS_MID(X) (fabsf(rcGetChannel(X)) < OSD_STICK_DEFLECTION)
 
 timeUs_t osdFlyTime = 0;
 timeUs_t osdLaunchTime = 0;
@@ -425,13 +435,11 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->aux_scale = 200;
     osdConfig->aux_symbol = 'A';
 
-    // Make it obvious on the configurator that the FC doesn't support HD
+    osdConfig->displayPortDevice = DEFAULT_OSD_DISPLAYPORT_DEVICE;
 #ifdef USE_OSD_HD
-    osdConfig->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
     osdConfig->canvas_cols = OSD_HD_COLS;
     osdConfig->canvas_rows = OSD_HD_ROWS;
 #else
-    osdConfig->displayPortDevice = OSD_DISPLAYPORT_DEVICE_AUTO;
     osdConfig->canvas_cols = OSD_SD_COLS;
     osdConfig->canvas_rows = OSD_SD_ROWS;
 #endif
@@ -448,7 +456,6 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     // A board naming a display port UART is wired to goggles, which are drawn
     // over MSP.  That is the OSD's port, not a VTX's.
     osdConfig->osd_uart = MSP_DISPLAYPORT_UART;
-    osdConfig->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
 #else
     osdConfig->osd_uart = SERIAL_PORT_NONE;
 #endif
@@ -1318,7 +1325,7 @@ STATIC_UNIT_TESTED bool osdProcessStats1(timeUs_t currentTimeUs)
         const uint8_t auxChannel = osdConfig()->aux_channel + NON_AUX_CHANNEL_COUNT - 1;
         if (currentTimeUs > osdAuxRefreshTimeUs) {
             // aux channel start after main channels
-            osdAuxValue = (constrain(rcData[auxChannel], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * osdConfig()->aux_scale / PWM_RANGE;
+            osdAuxValue = scaleRangef(constrainf(rcGetChannel(auxChannel), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX, 0, osdConfig()->aux_scale);
             osdAuxRefreshTimeUs = currentTimeUs + REFRESH_1S;
         }
     }

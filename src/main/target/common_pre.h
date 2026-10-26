@@ -116,19 +116,12 @@
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 #define USE_BARO_BMP388
-#define USE_BARO_SPI_BMP388
-#define USE_BARO_SPI_BMP580
-#define USE_BARO_SPI_BMP581
 #define USE_BARO_SPI_LPS
 #define USE_BARO_QMP6988
-#define USE_BARO_SPI_QMP6988
 #define USE_BARO_DPS310
 #define USE_BARO_SPI_DPS310
-#define USE_BARO_BMP085
 #define USE_BARO_2SMBP_02B
-#define USE_BARO_SPI_2SMBP_02B
 #define USE_BARO_LPS22DF
-#define USE_BARO_SPI_LPS22DF
 #endif
 
 #if !defined(USE_GYRO) && !defined(USE_ACC)
@@ -145,7 +138,6 @@
 #define USE_GYRO_SPI_ICM20689
 #define USE_ACCGYRO_LSM6DSO
 #define USE_ACCGYRO_LSM6DSV16X
-#define USE_ACCGYRO_LSM6DSV32X
 #define USE_ACCGYRO_LSM6DSK320X
 #define USE_ACCGYRO_BMI270
 #define USE_GYRO_SPI_ICM42605
@@ -165,6 +157,15 @@
 #define USE_ACC_MPU6050
 #define USE_GYRO_MPU6050
 #define USE_ACCGYRO_BMI160
+#define USE_ACCGYRO_BMI423
+#define USE_ACCGYRO_LSM6DSV32X
+#define USE_BARO_BMP085
+#define USE_BARO_SPI_BMP388
+#define USE_BARO_SPI_BMP580
+#define USE_BARO_SPI_BMP581
+#define USE_BARO_SPI_QMP6988
+#define USE_BARO_SPI_2SMBP_02B
+#define USE_BARO_SPI_LPS22DF
 #endif
 #endif // ACC GYRO inclusion
 
@@ -180,6 +181,7 @@
 #define USE_FLASHFS
 #define USE_FLASH_TOOLS
 #define USE_FLASH_M25P16
+#define USE_FLASH_FM25V02A  // 256-Kbit Cypress/Infineon SPI F-RAM
 #define USE_FLASH_W25N01G    // 1Gb NAND flash support
 #define USE_FLASH_W25N02K    // 2Gb NAND flash support
 #define USE_FLASH_W25M       // Stacked die support

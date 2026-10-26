@@ -98,7 +98,7 @@
 #include "flight/alt_hold.h"
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
-#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#if ENABLE_FLIGHT_PLAN
 #include "flight/flight_plan_nav.h"
 #endif
 #include "flight/imu.h"
@@ -416,7 +416,7 @@ void initPhase1(void)
 #endif
 
     if (!readSuccess || !isEEPROMVersionValid() || strncasecmp(systemConfig()->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {
-        resetEEPROM();
+        resetEEPROMOnLoadFault();
     }
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
@@ -466,7 +466,7 @@ void initPhase2(void)
             bothButtonsHeld = buttonAPressed() && buttonBPressed();
             if (bothButtonsHeld) {
                 if (--secondsRemaining == 0) {
-                    resetEEPROM();
+                    resetEEPROM(CONFIG_RESET_BUTTON, 0);
 #ifdef USE_PERSISTENT_OBJECTS
                     persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
 #endif
@@ -872,7 +872,7 @@ void initPhase3(void)
 
     positionInit();
     autopilotInit();
-#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#if ENABLE_FLIGHT_PLAN
     flightPlanNavInit();
 #endif
 
