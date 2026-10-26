@@ -7619,15 +7619,15 @@ static void printDmaoptClaim(const dmaoptEntry_t *entry, int index, int uiIndex,
         break;
     case DMA_PERIPH_ADC:
         expected = OWNER_ADC;
-        expectedIndex = -1;   // claimed with a driver-specific index
         break;
     default:
         return;
     }
 
     const resourceOwner_t *actual = dmaGetOwner(dmaGetIdentifier(dmaChannelSpec->ref));
-    // OWNER_FREE: not opened this boot. OWNER_INVALID: stream not in the descriptor table. Neither is a conflict
-    if (actual->owner <= OWNER_FREE || (actual->owner == expected && (expectedIndex < 0 || actual->index == expectedIndex))) {
+    // OWNER_FREE: not opened this boot. OWNER_INVALID: stream not in the descriptor table. Neither is a conflict.
+    // Owner index 0 is a wildcard: some ADC drivers claim with 0 instead of the instance number.
+    if (actual->owner <= OWNER_FREE || (actual->owner == expected && (actual->index == 0 || actual->index == expectedIndex))) {
         return;
     }
     printClaimedBy(cliDumpPrintLinef, dumpMask, equalsDefault, entry->device, uiIndex, actual);
