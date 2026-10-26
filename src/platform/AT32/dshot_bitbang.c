@@ -620,6 +620,7 @@ static void bbWrite(uint8_t motorIndex, float value)
 // bbTelemetryWait(), a DMA transfer error, or an output frame that never
 // completed. Runs before the command gating in bbUpdateComplete(), as
 // bbDecodeTelemetry() clears telemetryAborted whether or not a frame is sent.
+// Each failure counts once, however many updates the port takes to recover.
 static void bbCheckLastFrame(void)
 {
     const timeUs_t nowUs = micros();
@@ -645,7 +646,8 @@ static void bbCheckLastFrame(void)
         }
 #endif
 
-        if (bbPort->telemetryAborted || bbPort->reinitRequired) {
+        if ((bbPort->telemetryAborted || bbPort->reinitRequired) && !bbPort->failureCounted) {
+            bbPort->failureCounted = true;
             DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);  //!< Failed Frame Count
         }
     }
@@ -719,6 +721,7 @@ static void bbUpdateComplete(void)
         }
 #endif
         bbDMA_Cmd(bbPort, TRUE);
+        bbPort->failureCounted = false;
     }
 
     lastSendUs = micros();
