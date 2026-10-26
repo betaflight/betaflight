@@ -35,7 +35,6 @@
 #ifndef FC_VERSION_PATCH_LEVEL
 #define FC_VERSION_PATCH_LEVEL      0
 #endif
-// Optional suffix for pre-releases (alpha, beta, rc1, etc). Use empty value (not "") for final releases
 #define FC_VERSION_SUFFIX
 
 // Prepend "-" to non-empty suffix

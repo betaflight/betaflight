@@ -380,7 +380,7 @@ CC_NO_OPTIMISATION      := $(filter-out $(CFLAGS_DISABLED), $(CC_NO_OPTIMISATION
 FC_VERSION_YEAR  := $(call pp_def_value,src/main/build/version.h,FC_VERSION_YEAR)
 FC_VERSION_MONTH := $(call pp_def_value,src/main/build/version.h,FC_VERSION_MONTH)
 ifneq ($(wildcard .git),)
-FC_VERSION_PATCH_LEVEL := $(shell git tag --points-at HEAD 2>/dev/null | sed -n 's/^$(FC_VERSION_YEAR)\.$(FC_VERSION_MONTH)\.\([0-9]\{1,3\}\)$$/\1/p' | sort -n | tail -n 1)
+FC_VERSION_PATCH_LEVEL := $(shell git tag --points-at HEAD 2>/dev/null | sed -n 's/^$(FC_VERSION_YEAR)\.$(FC_VERSION_MONTH)\.\([0-9]\{1,3\}\)$$/\1/p' | awk '$$1 <= 255 { print $$1 + 0 }' | sort -n | tail -n 1)
 endif
 ifneq ($(FC_VERSION_PATCH_LEVEL),)
 VERSION_FLAGS    := -DFC_VERSION_PATCH_LEVEL=$(FC_VERSION_PATCH_LEVEL)
@@ -509,9 +509,9 @@ TARGET_MAP      := $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME).map
 TARGET_EXST_HASH_SECTION_FILE := $(TARGET_OBJ_DIR)/exst_hash_section.bin
 
 ifeq ($(DEBUG_MIXED),yes)
-TARGET_EF_HASH      := $(shell echo -n -- "$(EXTRA_FLAGS)" "$(OPTIONS)" "$(DEVICE_FLAGS)" "$(TARGET_FLAGS)"  | openssl dgst -md5 -r | awk '{print $$1;}')
+TARGET_EF_HASH      := $(shell echo -n -- "$(EXTRA_FLAGS)" "$(OPTIONS)" "$(VERSION_FLAGS)" "$(DEVICE_FLAGS)" "$(TARGET_FLAGS)"  | openssl dgst -md5 -r | awk '{print $$1;}')
 else
-TARGET_EF_HASH      := $(shell echo -n -- "$(EXTRA_FLAGS)" "$(OPTIONS)" "$(DEBUG_FLAGS)" "$(DEVICE_FLAGS)" "$(TARGET_FLAGS)"  | openssl dgst -md5 -r | awk '{print $$1;}')
+TARGET_EF_HASH      := $(shell echo -n -- "$(EXTRA_FLAGS)" "$(OPTIONS)" "$(VERSION_FLAGS)" "$(DEBUG_FLAGS)" "$(DEVICE_FLAGS)" "$(TARGET_FLAGS)"  | openssl dgst -md5 -r | awk '{print $$1;}')
 endif
 
 TARGET_EF_HASH_FILE := $(TARGET_OBJ_DIR)/.efhash_$(TARGET_EF_HASH)
