@@ -52,7 +52,10 @@
 // mavlink_message_t yields to the real (identical) one.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 #include "common/mavlink.h"
+#pragma GCC diagnostic pop
 #pragma GCC diagnostic pop
 
 #include "telemetry/mavlink.h"

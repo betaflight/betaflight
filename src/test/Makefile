@@ -1075,7 +1075,7 @@ COMMON_FLAGS += -Wno-c99-designator
 # no warning expected on clang
 COMMON_FLAGS += -Werror
 
-# The vendored MAVLink headers forward-declare mavlink_message_t and then
+# The MAVLink headers forward-declare mavlink_message_t and then
 # redefine it identically; harmless, but flagged as a C11 feature under gnu99.
 COMMON_FLAGS += -Wno-typedef-redefinition
 
@@ -1240,7 +1240,7 @@ $(OBJECT_DIR)/gtest_main.a : $(OBJECT_DIR)/gtest-all.o $(OBJECT_DIR)/gtest_main.
 
 # includes in test dir must override includes in user dir, unless the user
 # specifies a list of endorsed directories in ${target}_INCLUDE_DIRS.
-test_include_dirs  = $1 $(TEST_DIR) $(USER_DIR) $(ROOT)/lib/main/MAVLink
+test_include_dirs  = $1 $(TEST_DIR) $(USER_DIR) $(ROOT)/lib/modules/mavlink
 test_cflags	   = $(addprefix -I,$(call test_include_dirs,$1))
 
 
