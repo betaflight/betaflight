@@ -40,9 +40,12 @@
  * NO SDK sources are compiled in (platform.h is deliberately fsl_*-free).
  *
  * Clocking: the i.MX 95 LPI2C functional clock comes up on the 24 MHz OSC root
- * (same assumption as the LPSPI1 bring-up). At 100 kHz (Phase-1 target) the
- * MCCR0 CLKLO/CLKHI/SETHOLD/DATAVD divisors below are derived from 24 MHz with
- * PRESCALE = 1 (divide-by-2 -> 12 MHz tick); see navq95_lpi2c_configure().
+ * (same assumption as the LPSPI1 bring-up; matches PX4/NuttX NavQ95 board.h,
+ * which sets LPI2C1/6_CLK = OSC_24M | CLOCK_DIV(1) = 24 MHz). At 100 kHz the
+ * MCCR0 divisors are programmed PER BUS with PRESCALE = 2 (divide-by-4 ->
+ * 6 MHz tick); see navq95_lpi2c_configure() and the NAVQ95_I2C{1,6}_MCCR0
+ * macros. I2C1 uses a slightly faster nominal to compensate its weak-pull-up
+ * SCL rise time so the measured rate is ~100 kHz.
  */
 
 #include <stdbool.h>
@@ -184,6 +187,47 @@
 #define NAVQ95_I2C6_PADVAL      0x097Eu   /* OD | FSEL_SFAST | DSE_X6          */
 #define NAVQ95_I2C1_PADVAL      0x0B06u   /* OD | PU_ON | FSEL_SFAST | DSE_X2  */
 
+/*
+ * ── Per-bus MCCR0 clock timing (PRESCALE = 2 -> 6 MHz tick) ───────────────
+ *
+ * Both buses share PRESCALE=2 (MCFGR1). The SCL rate model (fsl_lpi2c /
+ * i.MX 95 RM) is:
+ *   rate = (src / 2^PRESCALE) / (CLKLO + 1 + CLKHI + 1 + SCL_LATENCY)
+ * with SCL_LATENCY = floor((2 + FILTSCL) / 2^PRESCALE) = 0 here.
+ *
+ * I2C6 (external pull-ups, DSE_X6): the driven low time and the pull-up rise
+ * are both fast, so the measured SCL matches the nominal divisor. Target an
+ * exact 100 kHz nominal: CLKLO=CLKHI=29 -> 6 MHz/(29+1+29+1)=100.0 kHz.
+ * (Measured ~100 kHz on a logic analyzer — this bus is already correct.)
+ *
+ * I2C1 (dedicated pads, WEAK internal pull-up PU_ON + DSE_X2 like PX4's
+ * IOMUX_LPI2C1_DEFAULT): the SCL *low* phase is driven precisely, but the
+ * SCL *high* phase is extended by the slow RC rise of the weak internal
+ * pull-up into the bus capacitance. On the logic analyzer this adds a roughly
+ * FIXED ~1.0 us per SCL period, so the nominal-100 kHz divisor above measured
+ * only 92.3 kHz (period 10.83 us instead of 10.0 us = +6 prescaled ticks).
+ *
+ * The rise overhead is pull-up/capacitance-limited and cannot be reduced by
+ * drive strength (open-drain only drives LOW; the rise is done by the
+ * pull-up). The clean hardware fix is an external pull-up on the I2C1 net;
+ * absent that, we PRE-COMPENSATE the divisor so measured = 100 kHz:
+ *   want measured period = 10.0 us = 60 ticks; fixed rise ~= 6 ticks
+ *   => program 54 config ticks: CLKLO+1+CLKHI+1 = 54 => CLKLO=CLKHI=26
+ *   nominal = 6 MHz/(26+1+26+1) = 111.1 kHz, measured ~= 100.0 kHz on I2C1.
+ * SETHOLD/DATAVD scale with CLKHI (SETHOLD=CLKHI, DATAVD=CLKHI/2) as before.
+ *
+ * NOTE: this compensation assumes the ~1 us rise stays roughly constant. If
+ * the I2C1 bus capacitance changes (more devices / longer traces) the measured
+ * rate will drift; the robust fix remains an external pull-up on I2C1.
+ */
+/* I2C6: exact 100 kHz nominal. CLKLO=29 CLKHI=29 SETHOLD=29 DATAVD=14. */
+#define NAVQ95_I2C6_MCCR0  (LPI2C_MCCR0_CLKLO(29u)   | LPI2C_MCCR0_CLKHI(29u) \
+                          | LPI2C_MCCR0_SETHOLD(29u) | LPI2C_MCCR0_DATAVD(14u))
+/* I2C1: 111 kHz nominal to compensate the ~1 us weak-pull-up rise so the
+ * logic-analyzer-measured SCL lands at ~100 kHz. CLKLO=26 CLKHI=26. */
+#define NAVQ95_I2C1_MCCR0  (LPI2C_MCCR0_CLKLO(26u)   | LPI2C_MCCR0_CLKHI(26u) \
+                          | LPI2C_MCCR0_SETHOLD(26u) | LPI2C_MCCR0_DATAVD(13u))
+
 /* ── Betaflight bus tables ──────────────────────────────────────────────── */
 
 static volatile uint16_t i2cErrorCount = 0;
@@ -251,14 +295,15 @@ static int navq95_lpi2c_padmux(uint32_t base)
 /*
  * Program the LPI2C master for ~100 kHz from the 24 MHz functional clock.
  *
- * Timing follows the LPI2C rate model (NuttX imxrt_lpi2c_setclock):
- *   rate = (src / 2^PRESCALE) / ((3*CLKHI + 2) + (2 / 2^PRESCALE))
- * For 24 MHz -> 100 kHz the best fit is PRESCALE = 2 (divide-by-4) with
- * CLKHI = 19, giving ~100.8 kHz:
- *   CLKLO = 2*CLKHI = 38, SETHOLD = CLKHI = 19, DATAVD = CLKHI/2 = 9.
- *   MCCR0 = 0x09131326.
- * (The earlier CLKLO=CLKHI=55 / PRESCALE=1 values did not match this model and
- * left the master wedged BUSY with no SCL edges.)
+ * PRESCALE = 2 (divide-by-4 -> 6 MHz tick) for both buses; the MCCR0 divisors
+ * are selected PER BUS (see NAVQ95_I2C6_MCCR0 / NAVQ95_I2C1_MCCR0 above):
+ *   I2C6 -> exact 100 kHz nominal (CLKLO=CLKHI=29); external pull-ups, so the
+ *           measured rate matches the nominal.
+ *   I2C1 -> 111 kHz nominal (CLKLO=CLKHI=26) to pre-compensate the weak
+ *           internal-pull-up rise time so the *measured* SCL is ~100 kHz
+ *           (nominal 100 kHz measured only 92.3 kHz on a logic analyzer).
+ * The SCL rate model (fsl_lpi2c / i.MX 95 RM) is:
+ *   rate = (src / 2^PRESCALE) / (CLKLO + 1 + CLKHI + 1 + SCL_LATENCY).
  *
  * MCFGR2 (glitch filters + bus-idle timeout) and MCFGR3 (pin-low timeout) are
  * cleared: a nonzero reset-default BUSIDLE/PINLOW timeout can stall the master
@@ -285,11 +330,8 @@ static void navq95_lpi2c_configure(uint32_t base)
     *mcfgr2 = 0u;
     *mcfgr3 = 0u;
 
-    /* ~100 kHz timing: CLKLO=38, CLKHI=19, SETHOLD=19, DATAVD=9. */
-    *mccr0 = LPI2C_MCCR0_CLKLO(38u)
-           | LPI2C_MCCR0_CLKHI(19u)
-           | LPI2C_MCCR0_SETHOLD(19u)
-           | LPI2C_MCCR0_DATAVD(9u);
+    /* Per-bus SCL timing: I2C1 is pre-compensated for its weak-pull-up rise. */
+    *mccr0 = (base == (uint32_t)I2C1) ? NAVQ95_I2C1_MCCR0 : NAVQ95_I2C6_MCCR0;
 
     /* FIFO watermarks = 0 (we poll byte-by-byte). */
     *mfcr = 0u;
