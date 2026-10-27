@@ -193,6 +193,8 @@ __gVectors:
                     .word 0                                       /* Vector Number 95,Reserved */
                     .word TRNG_IRQHandler                         /* Vector Number 96,TRNG */
                     .word FPU_IRQHandler                          /* Vector Number 97,FPU */
+                    .word UART6_IRQHandler                        /* Vector Number 98,UART6 */
+                    .word UART7_IRQHandler                        /* Vector Number 99,UART7 */
                     .word SPI3_IRQHandler                         /* Vector Number 100,SPI3 */
                     .word SPI4_IRQHandler                         /* Vector Number 101,SPI4 */
                     .word SPI5_IRQHandler                         /* Vector Number 102,SPI5 */
@@ -466,6 +468,12 @@ __gVectors:
 
   .weak FPU_IRQHandler
   .thumb_set FPU_IRQHandler,Default_Handler
+
+  .weak UART6_IRQHandler
+  .thumb_set UART6_IRQHandler,Default_Handler
+
+  .weak UART7_IRQHandler
+  .thumb_set UART7_IRQHandler,Default_Handler
 
   .weak SPI3_IRQHandler
   .thumb_set SPI3_IRQHandler,Default_Handler

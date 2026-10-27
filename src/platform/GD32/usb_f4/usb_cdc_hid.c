@@ -48,6 +48,7 @@ static uint8_t cdc_hid_req_handler (usb_dev *udev, usb_req *req);
 static uint8_t cdc_hid_ctlx_out (usb_dev *udev);
 static uint8_t cdc_hid_data_in (usb_dev *udev, uint8_t ep_num);
 static uint8_t cdc_hid_data_out (usb_dev *udev, uint8_t ep_num);
+static uint8_t cdc_hid_sof (usb_dev *udev);
 
 usb_class_core bf_usbd_cdc_hid_cb = {
     .init      = cdc_hid_init,
@@ -56,6 +57,7 @@ usb_class_core bf_usbd_cdc_hid_cb = {
     .ctlx_out  = cdc_hid_ctlx_out,
     .data_in   = cdc_hid_data_in,
     .data_out  = cdc_hid_data_out,
+    .SOF       = cdc_hid_sof,
 };
 
 /* note:it should use the C99 standard when compiling the below codes */
@@ -95,7 +97,7 @@ const usb_cdc_hid_desc_config_set cdc_hid_config_desc =
         .bNumInterfaces       = 0x03U,
         .bConfigurationValue  = 0x01U,
         .iConfiguration       = 0x00U,
-        .bmAttributes         = 0xE0U,
+        .bmAttributes         = 0xC0U,
         .bMaxPower            = 0x32U
     },
 
@@ -139,7 +141,7 @@ const usb_cdc_hid_desc_config_set cdc_hid_config_desc =
         .bEndpointAddress     = HID_IN_EP,
         .bmAttributes         = 0x03U,
         .wMaxPacketSize       = HID_IN_PACKET,
-        .bInterval            = 0x20U
+        .bInterval            = 0x0AU
     },
 
     .iad =
@@ -275,112 +277,44 @@ const usb_cdc_hid_desc_config_set cdc_hid_config_desc =
     }
 };
 
-/* USB language ID Descriptor */
-static const usb_desc_LANGID usbd_language_id_desc =
-{
-    .header =
-     {
-         .bLength         = sizeof(usb_desc_LANGID),
-         .bDescriptorType = USB_DESCTYPE_STR,
-     },
-    .wLANGID              = ENG_LANGID
-};
-
-/* USB manufacture string */
-static const usb_desc_str manufacturer_string =
-{
-    .header =
-     {
-         .bLength         = USB_STRING_LEN(10),
-         .bDescriptorType = USB_DESCTYPE_STR,
-     },
-    .unicode_string = {'G', 'i', 'g', 'a', 'D', 'e', 'v', 'i', 'c', 'e'}
-};
-
-/* USB product string */
-static const usb_desc_str product_string =
-{
-    .header =
-     {
-         .bLength         = USB_STRING_LEN(12),
-         .bDescriptorType = USB_DESCTYPE_STR,
-     },
-    .unicode_string = {'G', 'D', '3', '2', '-', 'C', 'D', 'C', '_', 'H', 'I', 'D'}
-};
-
-/* USBD serial string */
-static usb_desc_str serial_string =
-{
-    .header =
-     {
-         .bLength         = USB_STRING_LEN(12),
-         .bDescriptorType = USB_DESCTYPE_STR,
-     }
-};
-
-/* USB string descriptor set */
-void *const usbd_cdc_hid_strings[] =
-{
-    [STR_IDX_LANGID]  = (uint8_t *)&usbd_language_id_desc,
-    [STR_IDX_MFC]     = (uint8_t *)&manufacturer_string,
-    [STR_IDX_PRODUCT] = (uint8_t *)&product_string,
-    [STR_IDX_SERIAL]  = (uint8_t *)&serial_string
-};
+extern void *const usbd_bf_cdc_strings[];
 
 usb_desc bf_cdc_hid_desc = {
     .dev_desc    = (uint8_t *)&cdc_hid_dev_desc,
     .config_desc = (uint8_t *)&cdc_hid_config_desc,
-    .strings     = usbd_cdc_hid_strings
+    .strings     = usbd_bf_cdc_strings
 };
 
 __ALIGN_BEGIN static uint8_t HID_MOUSE_ReportDesc[HID_MOUSE_REPORT_DESC_SIZE] __ALIGN_END =
 {
-  0x05,   0x01,
-  0x09,   0x02,
-  0xA1,   0x01,
-  0x09,   0x01,
-
-  0xA1,   0x00,
-  0x05,   0x09,
-  0x19,   0x01,
-  0x29,   0x03,
-
-  0x15,   0x00,
-  0x25,   0x01,
-  0x95,   0x03,
-  0x75,   0x01,
-
-  0x81,   0x02,
-  0x95,   0x01,
-  0x75,   0x05,
-  0x81,   0x01,
-
-  0x05,   0x01,
-  0x09,   0x30,
-  0x09,   0x31,
-  0x09,   0x38,
-
-  0x15,   0x81,
-  0x25,   0x7F,
-  0x75,   0x08,
-  0x95,   0x03,
-
-  0x81,   0x06,
-  0xC0,   0x09,
-  0x3c,   0x05,
-  0xff,   0x09,
-
-  0x01,   0x15,
-  0x00,   0x25,
-  0x01,   0x75,
-  0x01,   0x95,
-
-  0x02,   0xb1,
-  0x22,   0x75,
-  0x06,   0x95,
-  0x01,   0xb1,
-
-  0x01,   0xc0
+    0x05, 0x01,        // USAGE_PAGE (Generic Desktop)
+    0x09, 0x05,        // USAGE (Game Pad)
+    0xa1, 0x01,        // COLLECTION (Application)
+    0xa1, 0x00,        //   COLLECTION (Physical)
+    0x05, 0x01,        //     USAGE_PAGE (Generic Desktop)
+    0x09, 0x30,        //     USAGE (X)
+    0x09, 0x31,        //     USAGE (Y)
+    0x09, 0x32,        //     USAGE (Z)
+    0x09, 0x33,        //     USAGE (Rx)
+    0x09, 0x35,        //     USAGE (Rz)
+    0x09, 0x34,        //     USAGE (Ry)
+    0x09, 0x36,        //     USAGE (Slider)
+    0x09, 0x37,        //     USAGE (Dial)
+    0x15, 0x81,        //     LOGICAL_MINIMUM (-127)
+    0x25, 0x7f,        //     LOGICAL_MAXIMUM (127)
+    0x75, 0x08,        //     REPORT_SIZE (8)
+    0x95, 0x08,        //     REPORT_COUNT (8)
+    0x81, 0x02,        //     INPUT (Data,Var,Abs)
+    0x05, 0x09,        //     USAGE_PAGE (Button)
+    0x19, 0x01,        //     USAGE_MINIMUM (Button 1)
+    0x29, 0x08,        //     USAGE_MAXIMUM (Button 8)
+    0x15, 0x00,        //     LOGICAL_MINIMUM (0)
+    0x25, 0x01,        //     LOGICAL_MAXIMUM (1)
+    0x95, 0x08,        //     REPORT_COUNT (8)
+    0x75, 0x01,        //     REPORT_SIZE (1)
+    0x81, 0x02,        //     INPUT (Data,Var,Abs)
+    0xc0,              //   END_COLLECTION
+    0xc0               // END_COLLECTION
 };
 
 /*!
@@ -489,7 +423,7 @@ static uint8_t cdc_hid_ctlx_out (usb_dev *udev)
 {
     usb_req req = udev->dev.control.req;
 
-    if (0x01 == req.wIndex) {
+    if (CDC_COM_INTERFACE == req.wIndex) {
         return bf_cdc_class.ctlx_out(udev);
     }
 
@@ -508,11 +442,13 @@ static uint8_t cdc_hid_ctlx_out (usb_dev *udev)
 */
 static uint8_t cdc_hid_data_in (usb_dev *udev, uint8_t ep_num)
 {
-    if((HID_IN_EP & 0x7FU) == ep_num) {
-        return usbd_hid_cb.data_in(udev, ep_num);
-    } else {
-        return bf_cdc_class.data_in(udev, ep_num);
+    if ((HID_IN_EP & 0x7FU) == ep_num) {
+        standard_hid_handler *hid = (standard_hid_handler *)udev->dev.class_data[USBD_HID_INTERFACE];
+        hid->prev_transfer_complete = 1U;
+        return USBD_OK;
     }
+
+    return bf_cdc_class.data_in(udev, ep_num);
 }
 
 /*!
@@ -532,7 +468,23 @@ static uint8_t cdc_hid_data_out (usb_dev *udev, uint8_t ep_num)
 
 }
 
+static uint8_t cdc_hid_sof (usb_dev *udev)
+{
+    return bf_cdc_class.SOF ? bf_cdc_class.SOF(udev) : USBD_OK;
+}
+
 void sendReport(uint8_t *report, uint8_t len)
 {
-    hid_report_send(&USB_OTG_dev, report, len);
+    standard_hid_handler *hid = (standard_hid_handler *)USB_OTG_dev.dev.class_data[USBD_HID_INTERFACE];
+
+    if (USB_OTG_dev.dev.class_core != &bf_usbd_cdc_hid_cb
+        || USB_OTG_dev.dev.cur_status != (uint8_t)USBD_CONFIGURED
+        || hid == NULL
+        || !hid->prev_transfer_complete) {
+        return;
+    }
+
+    len = USB_MIN(len, HID_IN_PACKET);
+    memcpy(hid->data, report, len);
+    hid_report_send(&USB_OTG_dev, hid->data, len);
 }

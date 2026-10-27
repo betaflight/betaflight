@@ -148,7 +148,7 @@ bool bbSwitchToOutput(bbPort_t * bbPort)
     // rewrite its registers, and leaving the pin open-drain keeps us off a wire
     // that something is evidently still driving.
     bbDMA_Cmd(bbPort, DISABLE);
-    if (!bbDMAWaitStopped(dmaResource)) {
+    if (!bbDMAWaitStopped(bbPort)) {
         return false;
     }
 

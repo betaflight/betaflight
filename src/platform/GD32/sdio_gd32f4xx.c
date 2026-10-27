@@ -27,8 +27,7 @@
 #ifdef USE_SDCARD_SDIO
 
 #include "drivers/sdmmc_sdio.h"
-#include "gd32f4xx_gpio.h"
-#include "gd32f4xx_sdio.h"
+#include "platform.h"
 
 #include "pg/sdio.h"
 
@@ -52,8 +51,8 @@
 
 #define BLOCK_SIZE                       ((uint32_t)(512))
 
-#define INTC_CLEAR_MASK_CH3              ((uint32_t)0x0F40000)
-#define INTC_CLEAR_MASK_CH6              ((uint32_t)0x003D000)
+#define INTC_CLEAR_MASK_CH3              ((uint32_t)0x0F400000)
+#define INTC_CLEAR_MASK_CH6              ((uint32_t)0x003D0000)
 
 #define SDIO_INTC_STATIC_FLAGS           ((uint32_t)(SDIO_INTC_CCRCERRC | SDIO_INTC_DTCRCERRC | SDIO_INTC_CMDTMOUTC |\
                                                      SDIO_INTC_DTTMOUTC | SDIO_INTC_TXUREC | SDIO_INTC_RXOREC  |\
@@ -210,10 +209,10 @@ typedef enum {
 
 
 static SD_Handle_t                 SD_Handle;
-static SD_CardInfo_t               SD_CardInfo;
+SD_CardInfo_t                      SD_CardInfo;
 static uint32_t                    SD_Status;
 static uint32_t                    SD_CardRCA;
-static SD_CardType_t               SD_CardType;
+SD_CardType_t                      SD_CardType;
 static volatile uint32_t           TimeOut;
 static DMA_Stream_TypeDef          *dmaStream;
 static uint32_t                    dma_periph_sdio;
@@ -525,10 +524,10 @@ static void SD_StartBlockTransfert(uint32_t* pBuffer, uint32_t BlockSize, uint32
     }
     if ((uint32_t)dmaStream == DMA1_CH3_BASE) {
             // clear dma flags
-            dma_flag_clear(DMA1, DMA1_CH3, DMA_FLAG_FEE | DMA_FLAG_SDE | DMA_FLAG_TAE | DMA_FLAG_HTF | DMA_FLAG_FTF);
+            dma_flag_clear(DMA1, DMA_CH3, DMA_FLAG_FEE | DMA_FLAG_SDE | DMA_FLAG_TAE | DMA_FLAG_HTF | DMA_FLAG_FTF);
     } else {
             // clear dma flags
-            dma_flag_clear(DMA1, DMA1_CH6, DMA_FLAG_FEE | DMA_FLAG_SDE | DMA_FLAG_TAE | DMA_FLAG_HTF | DMA_FLAG_FTF);                         // Clear the transfer error flag
+            dma_flag_clear(DMA1, DMA_CH6, DMA_FLAG_FEE | DMA_FLAG_SDE | DMA_FLAG_TAE | DMA_FLAG_HTF | DMA_FLAG_FTF);                         // Clear the transfer error flag
     }
     DMA_CHCTL(dma_periph_sdio,dma_channel_sdio)                 |= DMA_CHXCTL_FTFIE | DMA_CHXCTL_HTFIE | DMA_CHXCTL_TAEIE | DMA_CHXCTL_SDEIE;    // Enable all interrupts
     DMA_CHFCTL(dma_periph_sdio,dma_channel_sdio)                |= DMA_CHXFCTL_FEEIE;
@@ -1244,7 +1243,7 @@ bool SD_InitialiseHardware(dmaResource_t *dma)
 {
     const dmaIdentifier_e dmaIdentifier = dmaGetIdentifier((dmaResource_t *)dma);
 
-    dmaStream = dma;
+    dmaStream = (DMA_Stream_TypeDef *)dma;
 
     if (!((uint32_t)dma == DMA1_CH3_BASE || (uint32_t)dma == DMA1_CH6_BASE) || !dmaAllocate(dmaIdentifier, OWNER_SDCARD, 0)) {
         return false;
@@ -1385,7 +1384,7 @@ static SD_Error_t SD_DoInit(void)
         }
 
         if (errorState == SD_OK && sdioConfig()->clockBypass) {
-            if (SD_HighSpeed()) {
+            if (SD_HighSpeed() == SD_OK) {
                 SDIO_CLKCTL |= SDIO_CLKCTL_CLKBYP;
                 SDIO_CLKCTL |= SDIO_CLKCTL_CLKEDGE;
             }
@@ -1441,14 +1440,23 @@ void SDIO_IRQHandler(void)
 
         SD_Handle.TransferComplete = 1;
         SD_Handle.TransferError = SD_OK;
-    } else if ((SDIO_STAT & SDIO_STAT_DTCRCERR) != 0)
-        SD_Handle.TransferError = SD_DATA_CRC_FAIL;
-    else if ((SDIO_STAT & SDIO_STAT_DTTMOUT) != 0)
-        SD_Handle.TransferError = SD_DATA_TIMEOUT;
-    else if ((SDIO_STAT & SDIO_STAT_RXORE) != 0)
-        SD_Handle.TransferError = SD_RX_OVERRUN;
-    else if ((SDIO_STAT & SDIO_STAT_TXURE) != 0)
-        SD_Handle.TransferError = SD_TX_UNDERRUN;
+    } else {
+        if ((SDIO_STAT & SDIO_STAT_DTCRCERR) != 0)
+            SD_Handle.TransferError = SD_DATA_CRC_FAIL;
+        else if ((SDIO_STAT & SDIO_STAT_DTTMOUT) != 0)
+            SD_Handle.TransferError = SD_DATA_TIMEOUT;
+        else if ((SDIO_STAT & SDIO_STAT_RXORE) != 0)
+            SD_Handle.TransferError = SD_RX_OVERRUN;
+        else if ((SDIO_STAT & SDIO_STAT_TXURE) != 0)
+            SD_Handle.TransferError = SD_TX_UNDERRUN;
+
+        if (SD_Handle.TransferError != SD_OK) {
+            DMA_CHCTL(dma_periph_sdio, dma_channel_sdio) &= ~DMA_CHXCTL_CHEN;
+            SDIO_DATACTL &= ~(SDIO_DATACTL_DMAEN);
+            SD_Handle.RXCplt = 0;
+            SD_Handle.TXCplt = 0;
+        }
+    }
 
     SDIO_INTC = SDIO_INTC_STATIC_FLAGS;
 
@@ -1470,7 +1478,7 @@ static void SDIO_DMA_IRQHandler_Common(uint32_t dma_periph, dma_channel_enum dma
 {
     // Transfer Error Interrupt management
     if(dma_interrupt_flag_get(dma_periph, dma_channel, DMA_INT_FLAG_TAE)) {
-        if(dma_interrupt_enable_get(dma_periph, dma_channel, DMA_CHXCTL_TAEIE)) {
+        if(DMA_CHCTL(dma_periph, dma_channel) & DMA_CHXCTL_TAEIE) {
             dma_interrupt_disable(dma_periph, dma_channel, DMA_CHXCTL_TAEIE);
             dma_interrupt_flag_clear(dma_periph, dma_channel, DMA_INT_FLAG_TAE);
         }
@@ -1478,7 +1486,7 @@ static void SDIO_DMA_IRQHandler_Common(uint32_t dma_periph, dma_channel_enum dma
 
     // FIFO Error Interrupt management
     if(dma_interrupt_flag_get(dma_periph, dma_channel, DMA_INT_FLAG_FEE)) {
-        if(dma_interrupt_enable_get(dma_periph, dma_channel, DMA_CHXFCTL_FEEIE)) {
+        if(DMA_CHFCTL(dma_periph, dma_channel) & DMA_CHXFCTL_FEEIE) {
             dma_interrupt_disable(dma_periph, dma_channel, DMA_CHXFCTL_FEEIE);
             dma_interrupt_flag_clear(dma_periph, dma_channel, DMA_INT_FLAG_FEE);
         }
@@ -1486,7 +1494,7 @@ static void SDIO_DMA_IRQHandler_Common(uint32_t dma_periph, dma_channel_enum dma
 
     // Single data mode exception flag
     if(dma_interrupt_flag_get(dma_periph, dma_channel, DMA_INT_FLAG_SDE)) {
-        if(dma_interrupt_enable_get(dma_periph, dma_channel, DMA_CHXCTL_SDEIE)) {
+        if(DMA_CHCTL(dma_periph, dma_channel) & DMA_CHXCTL_SDEIE) {
             dma_interrupt_disable(dma_periph, dma_channel, DMA_CHXCTL_SDEIE);
             dma_interrupt_flag_clear(dma_periph, dma_channel, DMA_INT_FLAG_SDE);
         }
@@ -1494,11 +1502,11 @@ static void SDIO_DMA_IRQHandler_Common(uint32_t dma_periph, dma_channel_enum dma
 
     // Half Transfer Complete Interrupt management
     if(dma_interrupt_flag_get(dma_periph, dma_channel, DMA_INT_FLAG_HTF)) {
-        if(dma_interrupt_enable_get(dma_periph, dma_channel, DMA_CHXCTL_HTFIE)) {
-            if(dma_single_data_mode_get(dma_periph, dma_channel) != RESET) {
+        if(DMA_CHCTL(dma_periph, dma_channel) & DMA_CHXCTL_HTFIE) {
+            if((DMA_CHFCTL(dma_periph, dma_channel) & DMA_CHXFCTL_MDMEN) == RESET) {
                 dma_interrupt_flag_clear(dma_periph, dma_channel, DMA_INT_FLAG_HTF);
             } else {
-                if(dma_circulation_get(dma_periph, dma_channel) == RESET) {
+                if((DMA_CHCTL(dma_periph, dma_channel) & DMA_CHXCTL_CMEN) == RESET) {
                     dma_interrupt_disable(dma_periph, dma_channel, DMA_CHXCTL_HTFIE);
                 }
 
@@ -1509,11 +1517,11 @@ static void SDIO_DMA_IRQHandler_Common(uint32_t dma_periph, dma_channel_enum dma
 
     // Transfer Complete Interrupt management
     if(dma_interrupt_flag_get(dma_periph, dma_channel, DMA_INT_FLAG_FTF)) {
-        if(dma_interrupt_enable_get(dma_periph, dma_channel, DMA_CHXCTL_FTFIE)) {
-            if(dma_single_data_mode_get(dma_periph, dma_channel) != RESET) {
+        if(DMA_CHCTL(dma_periph, dma_channel) & DMA_CHXCTL_FTFIE) {
+            if((DMA_CHFCTL(dma_periph, dma_channel) & DMA_CHXFCTL_MDMEN) == RESET) {
                 dma_interrupt_flag_clear(dma_periph, dma_channel, DMA_INT_FLAG_FTF);
             } else {
-                if(dma_circulation_get(dma_periph, dma_channel) == RESET) {
+                if((DMA_CHCTL(dma_periph, dma_channel) & DMA_CHXCTL_CMEN) == RESET) {
                     dma_interrupt_disable(dma_periph, dma_channel, DMA_CHXCTL_FTFIE);
                 }
 

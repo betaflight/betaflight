@@ -42,7 +42,7 @@ OF SUCH DAMAGE.
 #include "usbd_enum.h"
 
 #define HID_CDC_CONFIG_DESC_SIZE                0x64U
-#define HID_MOUSE_REPORT_DESC_SIZE              74
+#define HID_MOUSE_REPORT_DESC_SIZE              54
 
 #pragma pack(1)
 

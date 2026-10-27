@@ -49,10 +49,10 @@ OF SUCH DAMAGE.
 /* USB FIFO size config */
 #ifdef USB_FS_CORE
     #define RX_FIFO_FS_SIZE                         128U
-    #define TX0_FIFO_FS_SIZE                        64U
+    #define TX0_FIFO_FS_SIZE                        32U
     #define TX1_FIFO_FS_SIZE                        64U
-    #define TX2_FIFO_FS_SIZE                        64U
-    #define TX3_FIFO_FS_SIZE                        0U
+    #define TX2_FIFO_FS_SIZE                        32U
+    #define TX3_FIFO_FS_SIZE                        64U
 
     #define USBFS_SOF_OUTPUT                        0U
     #define USBFS_LOW_POWER                         0U

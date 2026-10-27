@@ -52,7 +52,6 @@
 #define USE_UART3
 #define USE_UART4
 #define USE_UART5
-#define USE_UART6
 
 #ifdef USE_UART0
 #define SERIAL_UART_FIRST_INDEX    0
@@ -84,7 +83,11 @@
 #else
 #define USE_SDCARD_SDIO
 #endif
+#if !defined(ENABLE_SDIO_PIN_CONFIG)
+#define ENABLE_SDIO_PIN_CONFIG 1
 #endif
+#endif
+
 
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY

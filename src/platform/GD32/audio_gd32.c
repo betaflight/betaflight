@@ -40,8 +40,6 @@ void audioSetupIO(void)
 
 void audioGenerateWhiteNoise(void)
 {
-    rcu_timer_clock_prescaler_config(RCU_TIMER_PSC_MUL4);
-
     timer_deinit(TIMER5);
     timer_parameter_struct timer_initpara;
     timer_initpara.prescaler         = 0;

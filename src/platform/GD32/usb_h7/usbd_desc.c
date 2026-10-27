@@ -349,6 +349,9 @@ static uint8_t bf_cdc_acm_init(usb_dev *udev, uint8_t config_index)
 
     static __ALIGN_BEGIN usb_cdc_handler cdc_handler __ALIGN_END;
 
+    USB_Tx_State = USB_CDC_IDLE;
+    APP_Rx_length = 0;
+
     /* initialize the data TX endpoint */
     usbd_ep_setup(udev, &(bf_cdc_config_desc.cdc_in_endpoint));
 

@@ -347,6 +347,9 @@ static uint8_t bf_cdc_acm_init(usb_dev *udev, uint8_t config_index)
 
     static __ALIGN_BEGIN usb_cdc_handler cdc_handler __ALIGN_END;
 
+    USB_Tx_State = USB_CDC_IDLE;
+    APP_Rx_length = 0;
+
     /* initialize the data TX endpoint */
     usbd_ep_setup(udev, &(bf_cdc_config_desc.cdc_in_endpoint));
 
@@ -396,7 +399,7 @@ static uint8_t bf_cdc_acm_deinit(usb_dev *udev, uint8_t config_index)
 */
 static uint8_t bf_cdc_acm_req(usb_dev *udev, usb_req *req)
 {
-    usb_cdc_handler *cdc = (usb_cdc_handler *)udev->dev.class_data[0];
+    usb_cdc_handler *cdc = (usb_cdc_handler *)udev->dev.class_data[CDC_COM_INTERFACE];
     usb_transc *transc = NULL;
 
     switch(req->bRequest) {
@@ -421,10 +424,13 @@ static uint8_t bf_cdc_acm_req(usb_dev *udev, usb_req *req)
         break;
 
     case SET_LINE_CODING:
+        if ((req->wLength != 7U) || (req->bmRequestType & 0x80U)) {
+            return USBD_FAIL;
+        }
         transc = &udev->dev.transc_out[0];
 
         /* set the value of the current command to be processed */
-        udev->dev.class_core->alter_set = req->bRequest;
+        udev->dev.class_core->command = req->bRequest;
 
         /* enable EP0 prepare to receive command data packet */
         transc->remain_len = req->wLength;
@@ -447,12 +453,9 @@ static uint8_t bf_cdc_acm_req(usb_dev *udev, usb_req *req)
         break;
 
     case SET_CONTROL_LINE_STATE:
-        transc = &udev->dev.transc_out[0];
         if (ctrlLineStateCb) {
-            ctrlLineStateCb(ctrlLineStateCbContext, *((uint16_t *)CmdBuff));
+            ctrlLineStateCb(ctrlLineStateCbContext, req->wValue);
         }
-        transc->remain_len = req->wLength;
-        transc->xfer_buf = CmdBuff;
         break;
 
     case SEND_BREAK:
@@ -474,9 +477,9 @@ static uint8_t bf_cdc_acm_req(usb_dev *udev, usb_req *req)
 */
 static uint8_t bf_cdc_acm_ctlx_out(usb_dev *udev)
 {
-    usb_cdc_handler *cdc = (usb_cdc_handler *)udev->dev.class_data[0];
+    usb_cdc_handler *cdc = (usb_cdc_handler *)udev->dev.class_data[CDC_COM_INTERFACE];
 
-    if(NO_CMD != udev->dev.class_core->alter_set) {
+    if(NO_CMD != udev->dev.class_core->command) {
         /* process the command data */
         cdc->line_coding.dwDTERate = (uint32_t)((uint32_t)cdc->cmd[0] | \
                                                 ((uint32_t)cdc->cmd[1] << 8) | \
@@ -487,7 +490,7 @@ static uint8_t bf_cdc_acm_ctlx_out(usb_dev *udev)
         cdc->line_coding.bParityType = cdc->cmd[5];
         cdc->line_coding.bDataBits = cdc->cmd[6];
 
-        udev->dev.class_core->alter_set = NO_CMD;
+        udev->dev.class_core->command = NO_CMD;
     }
     if (baudRateCb) {
         baudRateCb(baudRateCbContext, cdc->line_coding.dwDTERate);

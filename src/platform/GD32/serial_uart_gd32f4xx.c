@@ -51,10 +51,10 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxDMAChannel = DMA_SUBPERI4,
         .txDMAChannel = DMA_SUBPERI4,
 #ifdef USE_UART0_RX_DMA
-        .rxDMAResource = &(dmaResource_t){DMA1, DMA_CH5},
+        .rxDMAResource = (dmaResource_t *)DMA1_CH5_BASE,
 #endif
 #ifdef USE_UART0_TX_DMA
-        .txDMAResource = &(dmaResource_t){DMA1, DMA_CH7},
+        .txDMAResource = (dmaResource_t *)DMA1_CH7_BASE,
 #endif
         .rxPins = { { DEFIO_TAG_E(PA10) }, { DEFIO_TAG_E(PB3) }, { DEFIO_TAG_E(PB7) }, },
         .txPins = { { DEFIO_TAG_E(PA9) }, { DEFIO_TAG_E(PA15) }, { DEFIO_TAG_E(PB6) }, },
@@ -77,10 +77,10 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxDMAChannel = DMA_SUBPERI4,
         .txDMAChannel = DMA_SUBPERI4,
 #ifdef USE_UART1_RX_DMA
-        .rxDMAResource = &(dmaResource_t){DMA0, DMA_CH5},
+        .rxDMAResource = (dmaResource_t *)DMA0_CH5_BASE,
 #endif
 #ifdef USE_UART1_TX_DMA
-        .txDMAResource = &(dmaResource_t){DMA0, DMA_CH6},
+        .txDMAResource = (dmaResource_t *)DMA0_CH6_BASE,
 #endif
         .rxPins = { { DEFIO_TAG_E(PA3) }, { DEFIO_TAG_E(PD6) } },
         .txPins = { { DEFIO_TAG_E(PA2) }, { DEFIO_TAG_E(PD5) } },
@@ -103,10 +103,10 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxDMAChannel = DMA_SUBPERI4,
         .txDMAChannel = DMA_SUBPERI4,
 #ifdef USE_UART2_RX_DMA
-        .rxDMAResource = &(dmaResource_t){DMA0, DMA_CH1},
+        .rxDMAResource = (dmaResource_t *)DMA0_CH1_BASE,
 #endif
 #ifdef USE_UART2_TX_DMA
-        .txDMAResource = &(dmaResource_t){DMA0, DMA_CH3},
+        .txDMAResource = (dmaResource_t *)DMA0_CH3_BASE,
 #endif
         .rxPins = { { DEFIO_TAG_E(PB11) }, { DEFIO_TAG_E(PC11) }, { DEFIO_TAG_E(PD9) } },
         .txPins = { { DEFIO_TAG_E(PB10) }, { DEFIO_TAG_E(PC10) }, { DEFIO_TAG_E(PD8) } },
@@ -129,10 +129,10 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxDMAChannel = DMA_SUBPERI4,
         .txDMAChannel = DMA_SUBPERI4,
 #ifdef USE_UART3_RX_DMA
-        .rxDMAResource = &(dmaResource_t){DMA0, DMA_CH2},
+        .rxDMAResource = (dmaResource_t *)DMA0_CH2_BASE,
 #endif
 #ifdef USE_UART3_TX_DMA
-        .txDMAResource = &(dmaResource_t){DMA0, DMA_CH4},
+        .txDMAResource = (dmaResource_t *)DMA0_CH4_BASE,
 #endif
         .rxPins = { { DEFIO_TAG_E(PA1) }, { DEFIO_TAG_E(PC11) } },
         .txPins = { { DEFIO_TAG_E(PA0) }, { DEFIO_TAG_E(PC10) } },
@@ -155,10 +155,10 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxDMAChannel = DMA_SUBPERI4,
         .txDMAChannel = DMA_SUBPERI4,
 #ifdef USE_UART4_RX_DMA
-        .rxDMAResource = &(dmaResource_t){DMA0, DMA_CH0},
+        .rxDMAResource = (dmaResource_t *)DMA0_CH0_BASE,
 #endif
 #ifdef USE_UART4_TX_DMA
-        .txDMAResource = &(dmaResource_t){DMA0, DMA_CH7},
+        .txDMAResource = (dmaResource_t *)DMA0_CH7_BASE,
 #endif
         .rxPins = { { DEFIO_TAG_E(PD2) } },
         .txPins = { { DEFIO_TAG_E(PC12) } },
@@ -181,10 +181,10 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxDMAChannel = DMA_SUBPERI5,
         .txDMAChannel = DMA_SUBPERI5,
 #ifdef USE_UART5_RX_DMA
-        .rxDMAResource = &(dmaResource_t){DMA1, DMA_CH1},
+        .rxDMAResource = (dmaResource_t *)DMA1_CH1_BASE,
 #endif
 #ifdef USE_UART5_TX_DMA
-        .txDMAResource = &(dmaResource_t){DMA1, DMA_CH6},
+        .txDMAResource = (dmaResource_t *)DMA1_CH6_BASE,
 #endif
         .rxPins = { { DEFIO_TAG_E(PC7) }, { DEFIO_TAG_E(PG9) } },
         .txPins = { { DEFIO_TAG_E(PC6) }, { DEFIO_TAG_E(PG14) } },
@@ -250,13 +250,13 @@ void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
 {
     uartPort_t *s = &(((uartDevice_t*)(descriptor->userParam))->port);
 
+    if (dma_interrupt_flag_get((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_FEE)) {
+        dma_interrupt_flag_clear((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_FEE);
+    }
+
     if (dma_interrupt_flag_get((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_FTF)) {
         dma_interrupt_flag_clear((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_FTF);
         dma_interrupt_flag_clear((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_HTF);
-
-        if (dma_interrupt_flag_get((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_FEE)) {
-            dma_interrupt_flag_clear((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_FEE);
-        }
 
         handleUsartTxDma(s);
     }

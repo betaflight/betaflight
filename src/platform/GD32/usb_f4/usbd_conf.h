@@ -39,7 +39,7 @@ OF SUCH DAMAGE.
 
 /* USB configure exported defines */
 #define USBD_CFG_MAX_NUM                1U
-#define USBD_ITF_MAX_NUM                1U
+#define USBD_ITF_MAX_NUM                2U
 #define USB_STR_DESC_MAX_SIZE           255U
 #define USB_STRING_COUNT                4U
 
@@ -48,7 +48,7 @@ OF SUCH DAMAGE.
 #define CDC_DATA_OUT_EP                 EP1_OUT /* EP3 for data OUT */
 #define CDC_CMD_EP                      EP2_IN  /* EP2 for CDC commands */
 
-#define CDC_COM_INTERFACE               0U
+#define CDC_COM_INTERFACE               1U
 
 #ifdef USE_USB_HS
     #ifdef USE_ULPI_PHY

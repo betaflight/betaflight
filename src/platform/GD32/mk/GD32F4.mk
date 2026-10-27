@@ -192,7 +192,8 @@ MSC_SRC = \
             msc/emfat.c \
             msc/emfat_file.c \
             msc/usbd_storage_sd_spi.c \
-            msc/usbd_storage_sdio.c
+            msc/usbd_storage_sdio.c \
+            common/stm32/msc_sdio_storage.c
 
 
 INCLUDE_DIRS += $(PLATFORM_DIR)/common/stm32
