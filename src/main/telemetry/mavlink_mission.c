@@ -52,6 +52,10 @@
 // mavlink_message_t yields to the real (identical) one.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
+// MAVLink char fields are zero padded and not terminated, clang does not know this warning
+#ifndef __clang__
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif
 #include "common/mavlink.h"
 #pragma GCC diagnostic pop
 

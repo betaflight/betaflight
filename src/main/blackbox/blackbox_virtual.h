@@ -21,10 +21,6 @@
 
 #pragma once
 
-#if defined(USE_BLACKBOX_VIRTUAL) && !ENABLE_SIMULATOR
-#error "USE_BLACKBOX_VIRTUAL valid for SITL build only"
-#endif
-
 bool blackboxVirtualOpen(void);
 void blackboxVirtualPutChar(uint8_t value);
 void blackboxVirtualWrite(const uint8_t *buffer, uint32_t len);
