@@ -146,7 +146,7 @@ void setDefaultSimulationState()
     simulationCoreTemperature = 0;
     simulationGpsHealthy = false;
 
-    rcData[PITCH] = 1500;
+    rcData[PITCH] = rcUsToNorm(1500);
 
     osdFlyTime = 0;
 
@@ -453,7 +453,7 @@ TEST_F(OsdTest, TestDisarmWithDismissStats)
 
     // given
     // sticks have been moved
-    rcData[PITCH] = 1800;
+    rcData[PITCH] = rcUsToNorm(1800);
 
     // when
     // sufficient OSD updates have been called
