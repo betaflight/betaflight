@@ -35,12 +35,18 @@
  *   (3) nxpUsdhcPins/NXP_PIN_MUX/nxpIomuxConfigPin   -> SCMI PINCTRL_CONFIG_SET
  *       to the SM (the M7 cannot write IOMUXC directly), hardcoded SD pads.
  *
- * *** BEST-GUESS WIRING — VERIFY ON HARDWARE ***
- * No source (PX4 imx95 board, Zephyr mr_navq95b, Zephyr imx95, PR #15853) wires
- * the NavQ95 microSD, so the instance + pads below are a best guess:
- *   - uSDHC1 (0x42850000), CCM root 117, i.MX95 "SD1" pads at ALT0.
- * If the boot self-test reports no card / CMD0 timeout, correct NAVQ95_USDHC_*
- * and the nav95SdPads[] table against the NavQ95 schematic / Linux DTS.
+ * *** WIRING FROM THE NavQ95 SCHEMATIC ***
+ * The microSD slot nets are all SD2_* (SD2_CLK / SD2_CMD / SD2_DATA0..3 /
+ * SD2_CD_B) -> the card is on the i.MX95 uSDHC2 controller via the dedicated
+ * SD2 pads (ALT0, no SELECT_INPUT daisy). 4-bit bus only (DATA0..3; no
+ * DATA4-7 / STROBE).
+ *   - uSDHC2 (0x42860000); SD2 pads at ALT0 (MUX 0x01A4.. / PAD 0x03A8..).
+ * The uSDHC2 CCM clock root index is not sourced (PR #15853's nxpClockRoot[]
+ * has no uSDHC entry), so NAVQ95_USDHC_CLK_ROOT below is a placeholder. The
+ * boot self-test (NAVQ95_SD_SELFTEST) sweeps candidate clock roots + tries the
+ * SD2 pinmux, printing each SCMI return, and GATES all uSDHC register access
+ * behind a granted clock+pinmux so a wrong guess cannot hang the AHB bus. Set
+ * NAVQ95_USDHC_CLK_ROOT from a root the scan reports as granted.
  */
 
 #include <stdbool.h>
@@ -65,12 +71,16 @@
 #include "platform/usdhc_regs.h"
 
 /* ════════════════════════════════════════════════════════════════════════════
- * NavQ95 platform wiring (BEST GUESS — verify on HW; see file header).
+ * NavQ95 platform wiring (uSDHC2 / SD2 pads; see file header).
  * ════════════════════════════════════════════════════════════════════════════ */
 
-/* Controller instance. Peter's driver assumed uSDHC1; we do the same. */
-#define NAVQ95_USDHC            ((USDHC_Type *)USDHC1_BASE)
-#define NAVQ95_USDHC_CLK_ROOT   117u            /* CCM root for uSDHC1          */
+/* Controller instance. The schematic wires the microSD to uSDHC2 (SD2_* nets). */
+#define NAVQ95_USDHC            ((USDHC_Type *)USDHC2_BASE)
+/* uSDHC2 CCM root index — not sourced (PR #15853's root table has no uSDHC
+ * entry). This value is a placeholder; the NAVQ95_SD_SELFTEST clock-grant scan
+ * prints the SCMI return for a sweep of candidate roots so the granted root can
+ * be read off the hardware and set here. */
+#define NAVQ95_USDHC_CLK_ROOT   118u            /* uSDHC2 — PLACEHOLDER, verify */
 
 /* uSDHC functional (base) clock in Hz. The SCMI CLOCK_CONFIG_SET we issue only
  * ungates the root at the SM's default parent/rate; we ASSUME ~200 MHz here
@@ -89,10 +99,11 @@ extern int  navq95_scmi_pinmux_ex(uint32_t muxReg, uint32_t muxMode, uint32_t si
 #define navq95_scmi_pinmux        navq95_scmi_pinmux_ex
 
 /*
- * i.MX95 "SD1" pads (best guess), from the i.MX93 pinmux table shifted to the
- * i.MX95 IOMUXC map. MUX/PAD are absolute IOMUXC addresses; ALT = 0.
- * CLK needs no pull; CMD + DATA need a pull-up + hysteresis so idle-high lines
- * read. Pad CONFIG values are PRE-SHIFTED (>>1); the SM re-applies <<1.
+ * SD2 pad CONFIG values. MUX/PAD are absolute IOMUXC addresses (base below);
+ * ALT = 0. CLK needs no pull; CMD + DATA need a pull-up + hysteresis so idle-
+ * high lines read. Pad CONFIG values are PRE-SHIFTED (>>1); the SM re-applies
+ * <<1. (The board also has external 10K pull-ups on the SD2 lines per the
+ * schematic, so the internal PU is belt-and-braces.)
  *   CLK  : raw 0x1E (FSEL | DSE)                -> send 0x0F
  *   CMD/D: raw 0x1200 | DSE (PU | HYS | drive)  -> send 0x090F
  */
@@ -107,19 +118,25 @@ typedef struct {
     uint8_t  dataLine;   /* 1 = CMD/DAT (needs the self-test name); 0 = CLK */
 } navq95SdPad_t;
 
-/* ALT0 for all SD1 signals. Offsets are the AUTHORITATIVE i.MX95 SD1 block from
- * imx95_iomuxc.h (MUX_CTL_SD1_* 0x0128..0x013C, PAD_CTL_SD1_* 0x032C..0x0340).
- * No SELECT_INPUT/daisy for USDHC1 (the pinmux header marks the daisy register
- * NOT_AVAILABLE for the USDHC1 function). Order: CLK, CMD, DAT0, DAT1, DAT2,
- * DAT3. (Earlier revisions used i.MX93 offsets by mistake -> the SM returned
- * -3 / SM_ERR_DENIED on the pinmux because the pin identifiers were wrong.) */
+/* ALT0 for all SD2 signals. Offsets are the AUTHORITATIVE i.MX95 SD2 block from
+ * imx95_iomuxc.h (MUX_CTL_SD2_* 0x01A4..0x01B8, PAD_CTL_SD2_* 0x03A8..0x03BC).
+ * No SELECT_INPUT/daisy for the USDHC2 function (the pinmux header marks the
+ * daisy register NOT_AVAILABLE for SD2_* -> USDHC2). Order: CLK, CMD, DAT0,
+ * DAT1, DAT2, DAT3.
+ *   SD2_CLK    MUX 0x01A4  PAD 0x03A8
+ *   SD2_CMD    MUX 0x01A8  PAD 0x03AC
+ *   SD2_DATA0  MUX 0x01AC  PAD 0x03B0
+ *   SD2_DATA1  MUX 0x01B0  PAD 0x03B4
+ *   SD2_DATA2  MUX 0x01B4  PAD 0x03B8
+ *   SD2_DATA3  MUX 0x01B8  PAD 0x03BC
+ */
 static const navq95SdPad_t navq95SdPads[] = {
-    { IOMUXC_BASE + 0x0128u, IOMUXC_BASE + 0x032Cu, NAVQ95_SD_PAD_CLK,  0 }, /* CLK  */
-    { IOMUXC_BASE + 0x012Cu, IOMUXC_BASE + 0x0330u, NAVQ95_SD_PAD_DATA, 1 }, /* CMD  */
-    { IOMUXC_BASE + 0x0130u, IOMUXC_BASE + 0x0334u, NAVQ95_SD_PAD_DATA, 1 }, /* DAT0 */
-    { IOMUXC_BASE + 0x0134u, IOMUXC_BASE + 0x0338u, NAVQ95_SD_PAD_DATA, 1 }, /* DAT1 */
-    { IOMUXC_BASE + 0x0138u, IOMUXC_BASE + 0x033Cu, NAVQ95_SD_PAD_DATA, 1 }, /* DAT2 */
-    { IOMUXC_BASE + 0x013Cu, IOMUXC_BASE + 0x0340u, NAVQ95_SD_PAD_DATA, 1 }, /* DAT3 */
+    { IOMUXC_BASE + 0x01A4u, IOMUXC_BASE + 0x03A8u, NAVQ95_SD_PAD_CLK,  0 }, /* CLK  */
+    { IOMUXC_BASE + 0x01A8u, IOMUXC_BASE + 0x03ACu, NAVQ95_SD_PAD_DATA, 1 }, /* CMD  */
+    { IOMUXC_BASE + 0x01ACu, IOMUXC_BASE + 0x03B0u, NAVQ95_SD_PAD_DATA, 1 }, /* DAT0 */
+    { IOMUXC_BASE + 0x01B0u, IOMUXC_BASE + 0x03B4u, NAVQ95_SD_PAD_DATA, 1 }, /* DAT1 */
+    { IOMUXC_BASE + 0x01B4u, IOMUXC_BASE + 0x03B8u, NAVQ95_SD_PAD_DATA, 1 }, /* DAT2 */
+    { IOMUXC_BASE + 0x01B8u, IOMUXC_BASE + 0x03BCu, NAVQ95_SD_PAD_DATA, 1 }, /* DAT3 */
 };
 #define NAVQ95_SD_ALT           0u
 
@@ -846,38 +863,87 @@ extern void navq95_console_drain(void);           /* platform_stubs.c */
 
 void navq95_sd_selftest(void)
 {
-    navq95_console_puts("\n[SD selftest]\n");
+    navq95_console_puts("\n[SD selftest] uSDHC2 (SD2 pads)\n");
 
-    /* Enable the uSDHC clock root over SCMI and CAPTURE the status. A negative
-     * value is an SM error (e.g. 0xfffffffd = -3 = SM_ERR_DENIED), which means
-     * the System Manager refuses this resource to the M7 agent. CRITICAL: if the
-     * clock is NOT enabled, touching the uSDHC register block (0x4285xxxx) can
-     * HANG the AHB bus (an unclocked peripheral does not ACK), so we must NOT
-     * proceed to usdhcInitController() in that case. */
+    /* ── 1. CLOCK-GRANT SCAN ──────────────────────────────────────────────
+     * The uSDHC2 CCM clock root index is not sourced, so sweep a set of
+     * candidate roots and print each SCMI return. Reading each code:
+     *   0            = granted (this is the uSDHC2 root; set NAVQ95_USDHC_CLK_ROOT)
+     *   0xfffffffd-3 = -3 SM_ERR_DENIED  (valid id but M7 not the owner)
+     *   0xfffffffb-5 = -5 OUT_OF_RANGE / 0xfffffffc -4 = NOT_FOUND (wrong id)
+     * CLOCK_CONFIG_SET(enable) is a void-reply SET (it only ungates a root and
+     * touches no uSDHC register) so sweeping a range cannot hang the bus. */
+    static const uint16_t candRoots[] = {
+        116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128
+    };
+    int grantedRoot = -1;
+    navq95_console_puts("  clock-grant scan (root:ret):\n");
+    for (unsigned i = 0; i < (sizeof(candRoots) / sizeof(candRoots[0])); i++) {
+        int r = navq95_scmi_clock_enable((uint32_t)candRoots[i]);
+        navq95_console_puts("    ");
+        navq95_console_puthex(candRoots[i]);
+        navq95_console_puts(":");
+        navq95_console_puthex((uint32_t)r);
+        if (r == 0 && grantedRoot < 0) {
+            grantedRoot = candRoots[i];
+            navq95_console_puts(" <-GRANTED");
+        }
+        navq95_console_puts("\n");
+    }
+
+    /* Also explicitly report the compiled-in default root's status. */
     int clkStatus = navq95_scmi_clock_enable(NAVQ95_USDHC_CLK_ROOT);
-    navq95_console_puts("  clk=");
+    navq95_console_puts("  default root ");
+    navq95_console_puthex(NAVQ95_USDHC_CLK_ROOT);
+    navq95_console_puts(" clk=");
     navq95_console_puthex((uint32_t)clkStatus);
+    navq95_console_puts("\n");
 
+    /* ── 2. PINMUX PROBE (SD2 pads) ───────────────────────────────────────
+     * Mux the SD2 pads with the authoritative i.MX95 offsets. A void-reply
+     * PINCTRL_CONFIG_SET per pad (no uSDHC register access). */
     int padStatus = usdhcConfigPads(false);
-    navq95_console_puts(" pinmux=");
+    navq95_console_puts("  SD2 pinmux=");
     navq95_console_puthex((uint32_t)padStatus);
+    navq95_console_puts("\n");
 
-    /* GATE the register access. Only poke the uSDHC block if the SM granted BOTH
-     * the clock and the pads. Otherwise print the verdict and bail safely — the
-     * register access would otherwise brick the board (bus stall on an
-     * unclocked / unowned peripheral). */
-    if (clkStatus != 0 || padStatus != 0) {
-        navq95_console_puts("\n  DENIED by SM (clk/pinmux not granted) -> skipping"
-                            " uSDHC register access to avoid a bus hang.\n");
-        navq95_console_puts("  => wrong instance/root/pad identifiers, or the"
-                            " uSDHC is owned by the SM/A55 (not the M7 agent).\n");
+    /* ── 3. VERDICT + GATED register access ───────────────────────────────
+     * Only poke the uSDHC2 register block (0x4286xxxx) if a clock root was
+     * GRANTED and the pads muxed OK. An unclocked/unowned peripheral does not
+     * ACK on the AHB bus -> a register read would HANG (brick). If either failed
+     * we print the diagnosis and bail safely (console/CLI stay alive). */
+    bool clockOk  = (grantedRoot >= 0) || (clkStatus == 0);
+    if (!clockOk || padStatus != 0) {
+        navq95_console_puts("  => NO safe clock+pinmux grant -> skipping uSDHC"
+                            " register access (avoids a bus hang).\n");
+        if (grantedRoot < 0 && clkStatus != 0) {
+            navq95_console_puts("     clock: no candidate root granted. If every"
+                                " ret was -3 on a plausible root, uSDHC2 may be"
+                                " owned by the SM/A55; if -5/-4, extend the root"
+                                " sweep.\n");
+        }
+        if (padStatus != 0) {
+            navq95_console_puts("     pinmux: SD2 pads DENIED (-3) -> the M7 is"
+                                " not granted the SD2 IOMUXC pins.\n");
+        }
         navq95_console_puts("[/SD selftest]\n");
         navq95_console_drain();
         return;
     }
 
+    /* If the scan found a root different from the compiled-in default, make sure
+     * it is the one enabled before we drive the controller. */
+    if (grantedRoot >= 0 && grantedRoot != (int)NAVQ95_USDHC_CLK_ROOT) {
+        navq95_console_puts("  NOTE: granted root ");
+        navq95_console_puthex((uint32_t)grantedRoot);
+        navq95_console_puts(" != compiled default ");
+        navq95_console_puthex(NAVQ95_USDHC_CLK_ROOT);
+        navq95_console_puts(" -> update NAVQ95_USDHC_CLK_ROOT.\n");
+        navq95_scmi_clock_enable((uint32_t)grantedRoot);
+    }
+
     bool ctrlOk = usdhcInitController();
-    navq95_console_puts(" PRES_STATE=");
+    navq95_console_puts("  PRES_STATE=");
     navq95_console_puthex(U->PRES_STATE);
     navq95_console_puts(" HOST_CAP=");
     navq95_console_puthex(U->HOST_CTRL_CAP);

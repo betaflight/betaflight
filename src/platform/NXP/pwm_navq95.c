@@ -89,12 +89,16 @@ typedef struct {
     uint8_t   channel;    /* channel index within that TPM (0..3) */
 } navq95PwmPad_t;
 
-/* Order = motor index 0..3 (board schematic). */
+/* Order = Betaflight motor index 0..3 (quad-X: M1=rear-right, M2=front-right,
+ * M3=rear-left, M4=front-left), mapped to the ESC pads as wired on the board:
+ *   IO04 TPM3_CH0 = rear-left,  IO20 TPM3_CH1 = front-left,
+ *   IO24 TPM3_CH3 = rear-right, IO05 TPM4_CH0 = front-right.
+ */
 static const navq95PwmPad_t navq95PwmPads[MAX_SUPPORTED_MOTORS] = {
-    { NAVQ95_TPM3, IOMUXC_BASE + 0x0020u, 1u, IOMUXC_BASE + 0x0224u, 0 }, /* M1 IO04 TPM3_CH0 */
-    { NAVQ95_TPM3, IOMUXC_BASE + 0x0060u, 6u, IOMUXC_BASE + 0x0264u, 1 }, /* M2 IO20 TPM3_CH1 */
-    { NAVQ95_TPM3, IOMUXC_BASE + 0x0070u, 4u, IOMUXC_BASE + 0x0274u, 3 }, /* M3 IO24 TPM3_CH3 */
-    { NAVQ95_TPM4, IOMUXC_BASE + 0x0024u, 1u, IOMUXC_BASE + 0x0228u, 0 }, /* M4 IO05 TPM4_CH0 */
+    { NAVQ95_TPM3, IOMUXC_BASE + 0x0070u, 4u, IOMUXC_BASE + 0x0274u, 3 }, /* M1 rear-right  IO24 TPM3_CH3 */
+    { NAVQ95_TPM4, IOMUXC_BASE + 0x0024u, 1u, IOMUXC_BASE + 0x0228u, 0 }, /* M2 front-right IO05 TPM4_CH0 */
+    { NAVQ95_TPM3, IOMUXC_BASE + 0x0020u, 1u, IOMUXC_BASE + 0x0224u, 0 }, /* M3 rear-left   IO04 TPM3_CH0 */
+    { NAVQ95_TPM3, IOMUXC_BASE + 0x0060u, 6u, IOMUXC_BASE + 0x0264u, 1 }, /* M4 front-left  IO20 TPM3_CH1 */
 };
 
 static bool navq95PwmClockEnabled;

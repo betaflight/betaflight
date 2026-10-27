@@ -24,9 +24,6 @@
  *
  * Decides, on real hardware, whether the M7 can borrow the FlexSPI controller
  * that mcuboot already configured (read LUT in 8D-8D-8D) and write the NOR.
- * The earlier conclusion that "the M7 cannot write the NOR" was a false
- * negative (unconfigured LUT + run-from-flash hazard), the same class of
- * mistake as the TPM3 clock "DENIED" — this probe settles it with evidence.
  *
  * Two stages, both printed over the LPUART2 console:
  *   1) ALWAYS (read-only): dump the live FlexSPI controller state (MCR0, STS0,

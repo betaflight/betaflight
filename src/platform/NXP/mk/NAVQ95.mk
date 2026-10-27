@@ -103,6 +103,8 @@ STARTUP_SRC     = NXP/startup/startup_navq95.s
 # ── Platform source list ──────────────────────────────────────────────────────
 # NXP/serial_uart_navq95.c supplies the i.MX 95 platform half of the generic
 # serial core (uartHardware[] table + hooks) for UART7 (MSP) and UART2 (SBUS RX).
+# NXP/bus_spi_navq95.c supplies the i.MX 95 LPSPI1 platform hooks for the common
+# SPI core (spiHardware[]/spiInitDevice/spiInternalReadWriteBufPolled/...).
 # drivers/serial_pinconfig.c provides the serialPinConfig PG (SERIAL_TRAIT_PIN_CONFIG).
 # drivers/bus_spi_config.c provides spiPreinit() (called unconditionally from
 # fc/init.c under USE_SPI). It is NOT in mk/source.mk — each platform .mk adds it
@@ -116,6 +118,7 @@ MCU_COMMON_SRC  = \
             NXP/system.c \
             NXP/io_navq95.c \
             NXP/serial_uart_navq95.c \
+            NXP/bus_spi_navq95.c \
             NXP/config_navq95.c \
             NXP/sdio_usdhc_navq95.c \
             NXP/pwm_navq95.c \

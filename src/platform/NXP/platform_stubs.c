@@ -55,13 +55,12 @@
  *   5=0x42590000 6=0x425A0000 7=0x42690000 8=0x426A0000
  */
 #ifndef NAVQ95_CONSOLE_LPUART_BASE
-/* DIAGNOSTIC (SBUS-on-LPUART5 test): console VCP shim moved BACK to LPUART2
- * (dedicated pads, SM leaves it clocked at boot = HW-proven original console),
- * freeing LPUART5 for SBUS via the generic serial core (Betaflight UART5). */
+/* Console VCP shim on LPUART2 (dedicated pads, clocked by the SM at boot);
+ * LPUART5 carries SBUS via the generic serial core (Betaflight UART5). */
 #define NAVQ95_CONSOLE_LPUART_BASE 0x44390000u   /* LPUART2 (console) */
 #endif
 /* LPUART2 is clocked by the SM/U-Boot at boot (24 MHz XTAL), so NO SCMI clock-
- * enable is needed for the console (unlike LPUART5). Kept for reference. */
+ * enable is needed for the console (unlike LPUART5). */
 #define NAVQ95_CONSOLE_CLK_ROOT    12u           /* LPUART2 CCM root (unused: SM on) */
 
 #define LPUART_GLOBAL_OFFSET 0x08u
@@ -498,7 +497,7 @@ int navq95_scmi_clock_enable(uint32_t clockRootId)
  * frequency — PX4 explicitly programs TPM4/5/6 = OSC_24M/24 = 1 MHz). This is a
  * VOID-reply SET (like CONFIG_SET / the SYSTEM reset), so navq95_scmi_txn
  * handles it on the boot path (unlike a payload-returning RATE_GET, which is
- * NOT safe with the minimal txn — see the Step-1 CLI brick). Payload (NuttX /
+ * not safe with the minimal txn). Payload (NuttX /
  * PR#15853 scmiClockRateSet): { flags=ROUND_AUTO, clockId, rate_lo, rate_hi }.
  * Returns the SCMI status (0 = success).
  */
@@ -1101,194 +1100,15 @@ void _exit(int status) { (void)status; while (1) { } }
  *  implementations as the corresponding drivers are brought up.
  * ========================================================================= */
 
-/* ── SPI: register-level LPSPI driver (polled) ──────────────────────────────
- * Betaflight's common bus_spi.c provides the high-level API (spiReadReg/
- * spiWriteReg/spiSequence/...) once USE_SPI is defined; the platform supplies
- * the hardware hooks below. This is a polled driver (no DMA): spiSequenceStart
- * calls the common spiProcessSegmentsPolled(), which drives the CS GPIO and
- * calls spiInternalReadWriteBufPolled() per segment.
- *
- * i.MX 95 LPSPI register layout (NuttX arch/arm/src/imx9/hardware/imx9_lpspi.h).
- * CS is a software GPIO (not hardware PCS); the common polled path toggles it.
- * The LPSPI functional clock is ungated over SCMI; the pads are muxed over SCMI
- * pinctrl (same path as the console). SPI1 == LPSPI1 (0x44360000, platform.h).
+/* ── SPI: moved to NXP/bus_spi_navq95.c ─────────────────────────────────────
+ * The i.MX 95 LPSPI1 platform driver (spiHardware[]/spiPinConfigure/
+ * spiInitDevice/spiCalculateDivider/spiCalculateClock/spiInitBusDMA/
+ * spiInternalReadWriteBufPolled/spiSequenceStart) now lives in its own file,
+ * NXP/bus_spi_navq95.c, alongside serial_uart_navq95.c and bus_i2c_navq95.c.
+ * It reaches the System Manager through the same shared SCMI helpers declared
+ * in navq95_scmi.h (navq95_scmi_pinmux / navq95_scmi_clock_enable), which are
+ * still defined here.
  */
-#define LPSPI_CR_OFFSET     0x10u
-#define LPSPI_SR_OFFSET     0x14u
-#define LPSPI_CFGR1_OFFSET  0x24u
-#define LPSPI_CCR_OFFSET    0x40u
-#define LPSPI_FCR_OFFSET    0x58u
-#define LPSPI_TCR_OFFSET    0x60u
-#define LPSPI_TDR_OFFSET    0x64u
-#define LPSPI_RDR_OFFSET    0x74u
-#define LPSPI_CR_MEN        (1u << 0)
-#define LPSPI_CR_RST        (1u << 1)
-#define LPSPI_CR_RTF        (1u << 8)
-#define LPSPI_CR_RRF        (1u << 9)
-#define LPSPI_SR_TDF        (1u << 0)
-#define LPSPI_SR_RDF        (1u << 1)
-#define LPSPI_CFGR1_MASTER  (1u << 0)
-#define LPSPI_TCR_FRAMESZ(n)  ((uint32_t)(n) & 0xFFFu)
-#define LPSPI_TCR_PRESCALE(n) (((uint32_t)(n) & 0x7u) << 27)
-#define LPSPI_TCR_PCS(n)      (((uint32_t)(n) & 0x7u) << 24)
-#define LPSPI_TCR_CPHA      (1u << 30)
-#define LPSPI_TCR_CPOL      (1u << 31)
-#define LPSPI_CCR_SCKDIV(n) ((uint32_t)(n) & 0xFFu)
-
-/* NavQ95 LPSPI1 is on the OSC_24M root (SCMI CLOCK_ROOT id 8). */
-#define NAVQ95_LPSPI1_BASE     0x44360000u
-#define NAVQ95_LPSPI1_CLK_ROOT 8u
-#define NAVQ95_LPSPI1_SRC_HZ   24000000u
-
-/* LPSPI1 pads (IOMUXC, ALT 2 for the LPSPI function; CS is a GPIO, ALT 5).
- * Source: PX4/NuttX NavQ95 board.h (SAI1_* balls routed to LPSPI1). */
-#define IOMUXC_MUX_LPSPI1_SCK  (IOMUXC_BASE + 0x01F4u)   /* SAI1_TXD0 */
-#define IOMUXC_PAD_LPSPI1_SCK  (IOMUXC_BASE + 0x03F8u)
-#define IOMUXC_MUX_LPSPI1_SOUT (IOMUXC_BASE + 0x01F8u)   /* SAI1_RXD0 (MOSI) */
-#define IOMUXC_PAD_LPSPI1_SOUT (IOMUXC_BASE + 0x03FCu)
-#define IOMUXC_MUX_LPSPI1_SIN  (IOMUXC_BASE + 0x01F0u)   /* SAI1_TXC  (MISO) */
-#define IOMUXC_PAD_LPSPI1_SIN  (IOMUXC_BASE + 0x03F4u)
-#define IOMUXC_MUX_LPSPI1_CS   (IOMUXC_BASE + 0x01ECu)   /* SAI1_TXFS -> GPIO1_IO11 */
-#define IOMUXC_PAD_LPSPI1_CS   (IOMUXC_BASE + 0x03F0u)
-#define IOMUXC_LPSPI1_ALT      0x2u
-#define IOMUXC_LPSPI1_CS_ALT   0x5u                       /* GPIO alt for the CS pad */
-/* Pad value (pre-shift, SM applies <<1): SPI signals get drive strength;
- * MISO (input) + CS readback get hysteresis. */
-#define IOMUXC_PAD_SPI_OUT     0x0Fu                      /* -> raw 0x1E (DSE X4)      */
-#define IOMUXC_PAD_SPI_IN      0x0900u                    /* -> raw 0x1200 (PU | HYS)  */
-
-static int navq95_lpspi1_padmux(void)
-{
-    int s = 0, r;
-    r = navq95_scmi_pinmux(IOMUXC_MUX_LPSPI1_SCK,  IOMUXC_LPSPI1_ALT, 0u,
-                           IOMUXC_PAD_LPSPI1_SCK,  IOMUXC_PAD_SPI_OUT); if (!s) s = r;
-    r = navq95_scmi_pinmux(IOMUXC_MUX_LPSPI1_SOUT, IOMUXC_LPSPI1_ALT, 0u,
-                           IOMUXC_PAD_LPSPI1_SOUT, IOMUXC_PAD_SPI_OUT); if (!s) s = r;
-    r = navq95_scmi_pinmux(IOMUXC_MUX_LPSPI1_SIN,  IOMUXC_LPSPI1_ALT, 1u,
-                           IOMUXC_PAD_LPSPI1_SIN,  IOMUXC_PAD_SPI_IN);  if (!s) s = r;
-    /* CS as GPIO (software-driven by the common polled path). */
-    r = navq95_scmi_pinmux(IOMUXC_MUX_LPSPI1_CS,   IOMUXC_LPSPI1_CS_ALT, 0u,
-                           IOMUXC_PAD_LPSPI1_CS,   IOMUXC_PAD_SPI_OUT); if (!s) s = r;
-    return s;
-}
-
-/* Program LPSPI1 as an 8-bit SPI mode-3 master. SCK ~= src/(2^prescale*(sckdiv+2)).
- * Mode 3 (CPOL=1,CPHA=1) is the ICM-45686 default. divider selects SCK. */
-static void navq95_lpspi1_configure(uint32_t sckdiv, uint32_t prescale)
-{
-    volatile uint32_t *cr    = (volatile uint32_t *)(NAVQ95_LPSPI1_BASE + LPSPI_CR_OFFSET);
-    volatile uint32_t *cfgr1 = (volatile uint32_t *)(NAVQ95_LPSPI1_BASE + LPSPI_CFGR1_OFFSET);
-    volatile uint32_t *ccr   = (volatile uint32_t *)(NAVQ95_LPSPI1_BASE + LPSPI_CCR_OFFSET);
-    volatile uint32_t *fcr   = (volatile uint32_t *)(NAVQ95_LPSPI1_BASE + LPSPI_FCR_OFFSET);
-    volatile uint32_t *tcr   = (volatile uint32_t *)(NAVQ95_LPSPI1_BASE + LPSPI_TCR_OFFSET);
-
-    *cr = 0u;                                   /* disable (MEN=0) */
-    *cr = LPSPI_CR_RST;                         /* software reset  */
-    *cr = LPSPI_CR_RTF | LPSPI_CR_RRF;          /* flush FIFOs     */
-    *cr = 0u;
-
-    *cfgr1 = LPSPI_CFGR1_MASTER;                /* master, SIN/SOUT, output retain */
-    *ccr   = LPSPI_CCR_SCKDIV(sckdiv);          /* SCK divider (MEN must be 0) */
-    *fcr   = 0u;                                /* watermarks 0 */
-
-    *cr = LPSPI_CR_MEN;                         /* enable so TCR is writable */
-    *tcr = LPSPI_TCR_FRAMESZ(7u)                /* 8-bit frames (bits-1) */
-         | LPSPI_TCR_PRESCALE(prescale)
-         | LPSPI_TCR_PCS(0u)
-         | LPSPI_TCR_CPOL | LPSPI_TCR_CPHA;     /* SPI mode 3 */
-    (void)*tcr;
-}
-
-/* spiHardware[] — SPI1 maps to LPSPI1. Pins are placeholders (real CS/SCK/etc.
- * come from the PG config / target.h); the common layer matches ioTags against
- * these, but our single-bus bring-up resolves the instance directly. */
-const spiHardware_t spiHardware[SPIDEV_COUNT] = {
-    {
-        .device = SPIDEV_1,
-        .reg    = (spiResource_t *)SPI1,
-    },
-};
-
-void spiPinConfigure(const struct spiPinConfig_s *pConfig)
-{
-    (void)pConfig;
-    /* Single bus: bind SPI1 -> LPSPI1 so spiInstanceByDevice() resolves it. */
-    extern spiDevice_t spiDevice[SPIDEV_COUNT];
-    spiDevice[SPIDEV_1].dev = (spiResource_t *)SPI1;
-}
-
-void spiInitDevice(spiDevice_e device)
-{
-    if (device != SPIDEV_1) {
-        return;
-    }
-    /* Ungate the LPSPI1 clock + mux its pads via the SM, then configure the
-     * peripheral. ~6 MHz SCK (24 MHz src, prescale 0, sckdiv 2) for bring-up. */
-    navq95_scmi_clock_enable(NAVQ95_LPSPI1_CLK_ROOT);
-    navq95_lpspi1_padmux();
-    navq95_lpspi1_configure(2u, 0u);
-}
-
-/* Betaflight encodes SPI speed as a power-of-two "divider" of a nominal clock.
- * We keep it simple: carry the divider through and derive the LPSPI SCKDIV in
- * spiInternal* if needed. For bring-up the fixed configure() rate is used. */
-uint16_t spiCalculateDivider(uint32_t freq)
-{
-    uint32_t div = NAVQ95_LPSPI1_SRC_HZ / (freq ? freq : 1u);
-    if (div < 2u) {
-        div = 2u;
-    }
-    return (uint16_t)div;
-}
-
-uint32_t spiCalculateClock(uint16_t spiClkDivisor)
-{
-    return NAVQ95_LPSPI1_SRC_HZ / (spiClkDivisor ? spiClkDivisor : 1u);
-}
-
-void spiInitBusDMA(void)
-{
-    /* Polled-only: no DMA. Called unconditionally from fc/init.c. */
-}
-
-/* Platform polled transfer: exchange `len` bytes on `instance` (== LPSPI1).
- * NULL tx => send 0xFF; NULL rx => discard. One RDR read per TDR write. */
-bool spiInternalReadWriteBufPolled(spiResource_t *instance, const uint8_t *txData,
-                                   uint8_t *rxData, int len)
-{
-    uint32_t base = (uint32_t)instance;
-    volatile uint32_t *sr  = (volatile uint32_t *)(base + LPSPI_SR_OFFSET);
-    volatile uint32_t *tdr = (volatile uint32_t *)(base + LPSPI_TDR_OFFSET);
-    volatile uint32_t *rdr = (volatile uint32_t *)(base + LPSPI_RDR_OFFSET);
-
-    for (int i = 0; i < len; i++) {
-        uint8_t tx = txData ? txData[i] : 0xFFu;
-
-        uint32_t spin = 1000000u;
-        while (!(*sr & LPSPI_SR_TDF) && spin) {
-            spin--;
-        }
-        *tdr = tx;
-
-        spin = 1000000u;
-        while (!(*sr & LPSPI_SR_RDF) && spin) {
-            spin--;
-        }
-        uint8_t rx = (uint8_t)(*rdr & 0xFFu);
-        if (rxData) {
-            rxData[i] = rx;
-        }
-        (void)*sr;                              /* read SR clears error flags */
-    }
-    return true;
-}
-
-/* Platform SPI sequence entry: polled-only, so always use the common polled
- * segment processor (which drives the CS GPIO and calls the primitive above). */
-void spiSequenceStart(const extDevice_t *dev)
-{
-    spiProcessSegmentsPolled(dev);
-}
 
 /* ── EXTI (drivers/exti.h) — EXTIInit/EXTIRelease are stubbed earlier ────── */
 void EXTIHandlerInit(extiCallbackRec_t *cb, extiHandlerCallback *fn) { (void)cb; (void)fn; }

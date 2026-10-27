@@ -118,15 +118,17 @@
 
 /*
  * SD card over the i.MX 95 uSDHC controller (NXP/sdio_usdhc_navq95.c, ADMA2
- * polled). Config storage stays in the FlexSPI NOR (above), so an SD failure is
- * non-fatal. Wiring is a best guess (uSDHC1, SD1 pads) — NAVQ95_SD_SELFTEST runs
- * a non-destructive boot card-identify probe to validate it.
+ * polled). Per the NavQ95 schematic the microSD is wired to uSDHC2 via the SD2
+ * pads (SD2_CLK/CMD/DATA0..3, 4-bit). Config storage stays in the FlexSPI NOR
+ * (above), so an SD failure is non-fatal. NAVQ95_SD_SELFTEST runs a boot
+ * clock-grant scan + SD2 pinmux probe + non-destructive card-identify (gated so
+ * a wrong guess cannot hang the bus); leave it off for normal use.
  */
 #define USE_SDCARD
 #define USE_SDCARD_SDIO
 #define SDIO_DEVICE             SDIODEV_1
 #define SDIO_USE_4BIT           false
-/* #define NAVQ95_SD_SELFTEST */   /* boot SD probe prints — off for normal use */
+/* #define NAVQ95_SD_SELFTEST */
 
 /*
  * NAVQ95_PWM_SELFTEST — BENCH-ONLY boot probe for the motor PWM: prints TPM

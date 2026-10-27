@@ -91,7 +91,7 @@
 #define LPUART_STAT_RXINV     (1u << 28)        /* invert RX data               */
 
 /* The LPUART functional clock root is the 24 MHz crystal oscillator; U-Boot/the
- * SM leave LPUART7 on it (assumed clock-enabled for now, as agreed). */
+ * SM leave LPUART7 on it (no SCMI clock-enable needed). */
 #define NAVQ95_LPUART_CLK_HZ  24000000u
 
 static inline volatile uint32_t *lpReg(const usartResource_t *reg, uint32_t off)

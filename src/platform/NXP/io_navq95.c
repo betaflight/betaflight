@@ -54,8 +54,8 @@ static const uint32_t navq95_rgpioBase[5] = {
  * Our bare-metal Betaflight M7 runs SECURE/PRIVILEGED, same as NuttX's imx9
  * GPIO driver (arch/arm/src/imx9/imx9_gpio.c), which clears the PCNS bit for
  * every pin it configures. So the pin must be marked SECURE (PCNS bit = 0) and
- * PRIVILEGED (PCNP bit = 0). (An earlier attempt SET these bits = non-secure,
- * which locked the secure master out — observed as PDDR reading back 0.)
+ * PRIVILEGED (PCNP bit = 0); setting these non-secure locks the secure master
+ * out (PDDR then reads back 0).
  */
 #define RGPIO_PCNS_OFFSET  0x10u
 #define RGPIO_PCNP_OFFSET  0x18u
@@ -167,7 +167,7 @@ typedef struct {
 static const navq95_padMux_t navq95_padMux[] = {
     /* GPIO_IO23 -> buzzer. Pad GPIO_IO23 = RGPIO2 bit 23 (GPIO2 = PB), reclaimed
      * as a plain GPIO (board netname TPM6_CH1). Uses the pad's GPIO ALT function
-     * (ALT0), same as the IO08/IO09 pads this table used to carry.
+     * (ALT0).
      * From the i.MX 95 IOMUXC table
      * (IOMUXC_PAD_GPIO_IO23__GPIO2_IO_BIT23 = { muxReg, muxMode, inputReg,
      *  inputDaisy, cfgReg } = 0x443C006C, 0x0, 0x0, 0x0, 0x443C0270):
