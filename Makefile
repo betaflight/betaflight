@@ -319,7 +319,7 @@ endif
 include $(MAKE_SCRIPT_DIR)/openocd.mk
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(ROOT)/lib/main/MAVLink
+                   $(ROOT)/lib/modules/mavlink
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_DIR)
@@ -963,7 +963,7 @@ targets-by-mcu:
 ## junittest         : run the Betaflight test suite, producing Junit XML result files.
 ## test-representative: run a representative subset of the Betaflight test suite (i.e. run all tests, but run each expanded test only for one target)
 ## test-all: run the Betaflight test suite including all per-target expanded tests
-test junittest test-all test-representative:
+test junittest test-all test-representative: $(AUTOHYDRATE_STAMPS)
 	$(V0) cd src/test && $(MAKE) $@
 
 ## test_help         : print the help message for the test suite (including a list of the available tests)
@@ -975,7 +975,7 @@ test_versions:
 	$(V0) cd src/test && $(MAKE) versions
 
 ## test_%            : run test 'test_%' from the test suite
-test_%:
+test_%: $(AUTOHYDRATE_STAMPS)
 	$(V0) cd src/test && $(MAKE) $@
 
 $(TARGET_EF_HASH_FILE):
