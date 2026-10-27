@@ -573,20 +573,20 @@ static void w25n_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void
     fdevice->callback = callback;
     fdevice->currentWriteAddress = address;
 
-    if (bufferDirty) {
-        if (address != programLoadAddress) {
-            w25n_waitForReady(fdevice);
+    if (bufferDirty && address != programLoadAddress) {
+        w25n_waitForReady(fdevice);
 
-            isProgramming = false;
+        isProgramming = false;
 
-            w25n_writeEnable(fdevice);
+        w25n_writeEnable(fdevice);
 
-            w25n_programExecute(fdevice, W25N_LINEAR_TO_PAGE(programStartAddress));
+        w25n_programExecute(fdevice, W25N_LINEAR_TO_PAGE(programStartAddress));
 
-            bufferDirty = false;
-            isProgramming = true;
-        }
-    } else {
+        bufferDirty = false;
+        isProgramming = true;
+    }
+
+    if (!bufferDirty) {
         programStartAddress = programLoadAddress = address;
     }
 }

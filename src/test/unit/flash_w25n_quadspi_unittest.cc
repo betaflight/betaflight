@@ -327,3 +327,23 @@ TEST_F(W25nQuadSpiFlashfsTest, ConsecutiveLogsSurviveWhenProgramExecuteKeepsDevi
     busyPollsAfterProgram = 5;
     writeAndVerifyConsecutiveLogs(37);
 }
+
+TEST_F(W25nQuadSpiFlashfsTest, SeekWithPartialPageBufferedKeepsBothWrites)
+{
+    const uint32_t length = 100;
+    const uint32_t secondStart = 2 * PAGE_SIZE;
+
+    for (uint32_t i = 0; i < length; i++) {
+        flashfsWriteByte(logByte(1, i));
+    }
+    flashfsSeekAbs(secondStart);
+
+    for (uint32_t i = 0; i < length; i++) {
+        flashfsWriteByte(logByte(2, i));
+    }
+    flashfsFlushSync();
+    flashfsClose();
+
+    EXPECT_EQ(0u, countMismatches(1, 0, length));
+    EXPECT_EQ(0u, countMismatches(2, secondStart, length));
+}
