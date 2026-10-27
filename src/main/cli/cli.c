@@ -6498,7 +6498,7 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
     static const char * const dshotBitbangStatusNames[] = { "OK", "MOTOR_PIN_CONFLICT", "NO_PACER", "TOO_MANY_PORTS" };
     const dshotBitbangStatus_e bitbangStatus = dshotBitbangGetStatus();
     if (isDshotBitbangActive(&motorConfig()->dev) && bitbangStatus != DSHOT_BITBANG_STATUS_OK) {
-        cliPrintLinef("DSHOT_BBANG: %s", dshotBitbangStatusNames[bitbangStatus]);
+        cliPrintLinef("DSHOT_BBANG: %s", (unsigned)bitbangStatus < ARRAYLEN(dshotBitbangStatusNames) ? dshotBitbangStatusNames[bitbangStatus] : "UNKNOWN");
     }
 #endif
 }
