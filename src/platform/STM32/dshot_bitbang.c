@@ -308,6 +308,7 @@ static void bbSetupDma(bbPort_t *bbPort)
     bbPacer_t *bbPacer = bbFindMotorPacer(bbPort->timhw->tim);
     bbPacer->dmaSources |= bbPort->dmaSource;
 
+    bbPort->dmaDescriptor = dmaGetDescriptorByIdentifier(dmaIdentifier);
     dmaSetHandler(dmaIdentifier, bbDMAIrqHandler, NVIC_BUILD_PRIORITY(2, 1), (uint32_t)bbPort);
 
     bbDMA_ITConfig(bbPort);
@@ -315,6 +316,10 @@ static void bbSetupDma(bbPort_t *bbPort)
 
 FAST_IRQ_HANDLER void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
 {
+    if (!bbDMAEventPending(descriptor)) {
+        return;
+    }
+
     dbgPinHi(0);
 
     bbPort_t *bbPort = (bbPort_t *)descriptor->userParam;

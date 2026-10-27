@@ -170,6 +170,7 @@ typedef struct bbPort_s {
     uint16_t dmaSource;
 
     dmaResource_t *dmaResource; // DMA resource for this port & timer channel
+    dmaChannelDescriptor_t *dmaDescriptor;
     uint32_t dmaChannel;        // DMA channel or peripheral request
 
     uint8_t direction;
@@ -324,27 +325,6 @@ void bbDMA_Cmd(bbPort_t *bbPort, FunctionalState NewState);
 #endif
 int  bbDMA_Count(bbPort_t *bbPort);
 
-// Disabling a stream is a request, not an act: the controller clears the enable
-// bit only once the in-flight transfer and any FIFO contents have drained, and
-// rewriting the configuration registers before then is forbidden and leaves the
-// stream in an undefined state (RM0090, DMA_SxCR: "It is forbidden to write
-// these registers when the EN bit is read as 1"). The drain is a single
-// non-burst transfer, so a handful of AHB cycles; the bound is only there so a
-// wedged stream cannot hang a motor update. Returns false if it never stopped,
-// in which case the caller must leave the stream alone.
-#define BB_DMA_STOP_SPIN_LIMIT 100
-
-static inline bool bbDMAWaitStopped(dmaResource_t *dmaResource)
-{
-    for (unsigned spin = 0; spin < BB_DMA_STOP_SPIN_LIMIT; spin++) {
-        if (!(IS_DMA_ENABLED(dmaResource))) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 // Every status bit a bitbang stream can leave set. A completed frame always
 // leaves HTIF behind - the flag is set by hardware whether or not HTIE is on,
 // and bbDMA_ITConfig() only enables TC - and RM0090 requires a clear status
@@ -364,6 +344,31 @@ static inline bool bbDMAWaitStopped(dmaResource_t *dmaResource)
 #else
 #define BB_DMA_FLAGS (DMA_IT_TCIF | DMA_IT_HTIF | DMA_IT_TEIF)
 #endif
+
+// Disabling a stream is a request, not an act: the controller clears the enable
+// bit only once the in-flight transfer and any FIFO contents have drained, and
+// rewriting the configuration registers before then is forbidden and leaves the
+// stream in an undefined state (RM0090, DMA_SxCR: "It is forbidden to write
+// these registers when the EN bit is read as 1"). The drain is a single
+// non-burst transfer, so a handful of AHB cycles; the bound is only there so a
+// wedged stream cannot hang a motor update. Returns false if it never stopped,
+// in which case the caller must leave the stream alone. Stopping a stream
+// mid-transfer raises TCIF (RM0090, "DMA transfer suspension").
+#define BB_DMA_STOP_SPIN_LIMIT 100
+
+static inline bool bbDMAWaitStopped(bbPort_t *bbPort)
+{
+    for (unsigned spin = 0; spin < BB_DMA_STOP_SPIN_LIMIT; spin++) {
+        if (!(IS_DMA_ENABLED(bbPort->dmaResource))) {
+            DMA_CLEAR_FLAG(bbPort->dmaDescriptor, BB_DMA_FLAGS);
+            NVIC_ClearPendingIRQ((IRQn_Type)bbPort->dmaDescriptor->irqN);
+            bbPort->telemetryPending = false;
+            return true;
+        }
+    }
+
+    return false;
+}
 
 // Clear the stream's status flags, and report whether the transfer failed.
 // Returns true on a transfer error, in which case the port has been flagged for
@@ -406,6 +411,11 @@ static inline bool bbDMAServiceFlags(bbPort_t *bbPort, dmaChannelDescriptor_t *d
     bbPort->reinitRequired = true;
 
     return true;
+}
+
+static inline bool bbDMAEventPending(dmaChannelDescriptor_t *descriptor)
+{
+    return DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF | DMA_IT_TEIF) != 0;
 }
 
 void bbDshotRequestTelemetry(unsigned motorIndex);
