@@ -571,6 +571,7 @@ static bool isProgramming = false;
 static void w25n_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uintptr_t arg))
 {
     fdevice->callback = callback;
+    fdevice->currentWriteAddress = address;
 
     if (bufferDirty) {
         if (address != programLoadAddress) {

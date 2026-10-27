@@ -128,6 +128,20 @@ flash_fm25v02a_unittest_DEFINES := \
 		USE_FLASH_M25P16= \
 		USE_FLASH_FM25V02A=
 
+flash_w25n_quadspi_unittest_SRC := \
+		$(USER_DIR)/drivers/flash/flash_w25n.c \
+		$(USER_DIR)/drivers/flash/flash.c \
+		$(USER_DIR)/io/flashfs.c
+
+flash_w25n_quadspi_unittest_DEFINES := \
+		USE_FLASH_CHIP= \
+		USE_FLASHFS= \
+		USE_FLASH_SPI= \
+		USE_QUADSPI= \
+		USE_FLASH_QUADSPI= \
+		USE_FLASH_W25N= \
+		USE_FLASH_W25N01G=
+
 baro_bmp085_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_bmp085.c
 
