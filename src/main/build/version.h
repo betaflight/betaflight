@@ -31,10 +31,11 @@
 #define FC_VERSION_YEAR             2026
 // The month the release is made
 #define FC_VERSION_MONTH            12
-// Increment when a bug-fix release is made (0 for initial YYYY.MM.X release)
+// Set by the Makefile from a YYYY.MM.N release tag on HEAD that matches the year and month above
+#ifndef FC_VERSION_PATCH_LEVEL
 #define FC_VERSION_PATCH_LEVEL      0
-// Optional suffix for pre-releases (alpha, beta, rc1, etc). Use empty value (not "") for final releases
-#define FC_VERSION_SUFFIX "alpha"
+#endif
+#define FC_VERSION_SUFFIX
 
 // Prepend "-" to non-empty suffix
 //  Minimal helper: only tests two cases — empty vs a single string literal
