@@ -52,7 +52,10 @@
 // mavlink_message_t yields to the real (identical) one.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 #include "common/mavlink.h"
+#pragma GCC diagnostic pop
 #pragma GCC diagnostic pop
 
 #include "telemetry/mavlink.h"
@@ -369,12 +372,6 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
         // Best-effort: hold at lat/lon. The "loiter until alt reached" latch
         // needs executor work — without it the waypoint advances on arrival
         // like any other HOLD-zero. Capability follow-up.
-        wp->type = WAYPOINT_TYPE_HOLD;
-        break;
-    case MAV_CMD_NAV_FOLLOW:
-        // Best-effort: hover at the initial target position. Dynamic vehicle
-        // following needs an updating target source the executor doesn't have
-        // today — capability follow-up.
         wp->type = WAYPOINT_TYPE_HOLD;
         break;
     case MAV_CMD_NAV_LAND:
