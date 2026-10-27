@@ -1078,7 +1078,7 @@ COMMON_FLAGS += -Wno-c99-designator
 # no warning expected on clang
 COMMON_FLAGS += -Werror
 
-# The vendored MAVLink headers forward-declare mavlink_message_t and then
+# The MAVLink headers forward-declare mavlink_message_t and then
 # redefine it identically; harmless, but flagged as a C11 feature under gnu99.
 COMMON_FLAGS += -Wno-typedef-redefinition
 
@@ -1243,7 +1243,14 @@ $(OBJECT_DIR)/gtest_main.a : $(OBJECT_DIR)/gtest-all.o $(OBJECT_DIR)/gtest_main.
 
 # includes in test dir must override includes in user dir, unless the user
 # specifies a list of endorsed directories in ${target}_INCLUDE_DIRS.
-test_include_dirs  = $1 $(TEST_DIR) $(USER_DIR) $(ROOT)/lib/main/MAVLink
+MAVLINK_LIB_DIR := $(ROOT)/lib/modules/mavlink
+
+# The MAVLink library is a submodule the firmware Makefile hydrates on demand;
+# hydrate it here too so tests built from this directory find its headers.
+$(MAVLINK_LIB_DIR)/.git:
+	git -C $(ROOT) submodule update --init -- lib/modules/mavlink
+
+test_include_dirs  = $1 $(TEST_DIR) $(USER_DIR) $(MAVLINK_LIB_DIR)
 test_cflags	   = $(addprefix -I,$(call test_include_dirs,$1))
 
 
@@ -1290,14 +1297,14 @@ endif
 -include $$($1_OBJS:.o=.d)
 -include $(OBJECT_DIR)/$1/$(basename $1).d
 
-$(OBJECT_DIR)/$1/%.c.o: $(USER_DIR)/%.c
+$(OBJECT_DIR)/$1/%.c.o: $(USER_DIR)/%.c | $(MAVLINK_LIB_DIR)/.git
 	@echo "compiling $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CC) $(C_FLAGS) $($1_C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
                 $$(foreach def,$$($1_DEFINES),-D $$(def)) \
                 -c $$< -o $$@
 
-$(OBJECT_DIR)/$1/%.c.o: $(TEST_DIR)/%.c
+$(OBJECT_DIR)/$1/%.c.o: $(TEST_DIR)/%.c | $(MAVLINK_LIB_DIR)/.git
 	@echo "compiling test c file: $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CC) $(C_FLAGS) $($1_C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
@@ -1306,7 +1313,7 @@ $(OBJECT_DIR)/$1/%.c.o: $(TEST_DIR)/%.c
 
 ifneq ($1,$(basename $1))
 # per-target tests may compile files from the target directory
-$(OBJECT_DIR)/$1/%.c.o: $(TARGET_DIR)/$(TARGET)/%.c
+$(OBJECT_DIR)/$1/%.c.o: $(TARGET_DIR)/$(TARGET)/%.c | $(MAVLINK_LIB_DIR)/.git
 	@echo "compiling target c file: $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CC) $(C_FLAGS) $($1_C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
@@ -1314,7 +1321,7 @@ $(OBJECT_DIR)/$1/%.c.o: $(TARGET_DIR)/$(TARGET)/%.c
                 -c $$< -o $$@
 endif
 
-$(OBJECT_DIR)/$1/$(basename $1).o: $(TEST_DIR)/$(basename $1).cc
+$(OBJECT_DIR)/$1/$(basename $1).o: $(TEST_DIR)/$(basename $1).cc | $(MAVLINK_LIB_DIR)/.git
 	@echo "compiling $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CXX) $(CXX_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
