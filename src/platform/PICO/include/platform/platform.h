@@ -71,6 +71,7 @@ struct quadSpiResource_s
 #define MAX_QUADSPI_PIN_SEL  1
 
 #define QUADSPI_TRAIT_CS_SOFTWARE       1
+#define QUADSPI_TRAIT_SEQUENCE          1
 
 #endif
 
