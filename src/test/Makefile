@@ -1157,8 +1157,18 @@ um32_adc_unittest_INCLUDE_DIRS := \
 pwl_unittest_SRC := \
 		$(USER_DIR)/common/pwl.c
 
+
 uvarint_unittest_SRC := \
 		$(USER_DIR)/common/uvarint.c
+
+psas_unittest_SRC :=  \
+		$(USER_DIR)/flight/psas.c \
+		$(USER_DIR)/flight/psas_trimming.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/common/maths.c \
+
+psas_unittest_DEFINES := \
+		ENABLE_PSAS=1 \
 
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets

@@ -574,6 +574,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #ifdef USE_WING
     tpaSpeedInit(pidProfile);
 #endif
+
 #ifdef USE_ADVANCED_TPA
     tpaCurveInit(pidProfile);
 #endif

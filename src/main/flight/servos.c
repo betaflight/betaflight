@@ -56,6 +56,10 @@
 
 #include "rx/rx.h"
 
+#if ENABLE_PSAS
+#include "flight/psas.h"
+#endif
+
 PG_REGISTER_WITH_RESET_FN(servoConfig_t, servoConfig, PG_SERVO_CONFIG, 0);
 
 void pgResetFn_servoConfig(servoConfig_t *servoConfig)
@@ -454,7 +458,15 @@ void servoMixer(void)
         input[INPUT_STABILIZED_ROLL] = lrintf(rcCommand[ROLL] * SERVO_MIXER_INPUT_RANGE);
         input[INPUT_STABILIZED_PITCH] = lrintf(rcCommand[PITCH] * SERVO_MIXER_INPUT_RANGE);
         input[INPUT_STABILIZED_YAW] = lrintf(rcCommand[YAW] * SERVO_MIXER_INPUT_RANGE);
-    } else {
+    }
+#if ENABLE_PSAS
+    else if (FLIGHT_MODE(PSAS_MODE)) {
+        input[INPUT_STABILIZED_ROLL] = lrintf(psasData.roll.Sum * (SERVO_MIXER_INPUT_RANGE / PSAS_OUTPUT_RANGE));
+        input[INPUT_STABILIZED_PITCH] = lrintf(psasData.pitch.Sum * (SERVO_MIXER_INPUT_RANGE / PSAS_OUTPUT_RANGE));
+        input[INPUT_STABILIZED_YAW] = lrintf(psasData.yaw.Sum * (SERVO_MIXER_INPUT_RANGE / PSAS_OUTPUT_RANGE));
+    }
+#endif
+    else {
         // Assisted modes (gyro only or gyro+acc according to AUX configuration in Gui
         input[INPUT_STABILIZED_ROLL] = pidData[FD_ROLL].Sum * PID_SERVO_MIXER_SCALING;
         input[INPUT_STABILIZED_PITCH] = pidData[FD_PITCH].Sum * PID_SERVO_MIXER_SCALING;

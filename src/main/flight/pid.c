@@ -66,6 +66,9 @@
 
 #include "pid.h"
 
+#if ENABLE_PSAS
+#include "psas.h"
+#endif
 typedef enum {
     LEVEL_MODE_OFF = 0,
     LEVEL_MODE_R,
@@ -900,9 +903,17 @@ static FAST_CODE_NOINLINE float applyAcroTrainer(int axis, const rollAndPitchTri
 }
 #endif // USE_ACRO_TRAINER
 
+static float previousSetpoint[XYZ_AXIS_COUNT];
+
+#if ENABLE_PSAS
+static void accelerationLimitReset(int axis, float currentSetpoint)
+{
+    previousSetpoint[axis] = currentSetpoint;
+}
+#endif
+
 static float accelerationLimit(int axis, float currentPidSetpoint)
 {
-    static float previousSetpoint[XYZ_AXIS_COUNT];
     const float currentVelocity = currentPidSetpoint - previousSetpoint[axis];
 
     if (fabsf(currentVelocity) > pidRuntime.maxVelocity[axis]) {
@@ -1062,7 +1073,7 @@ static FAST_CODE_NOINLINE float applyLaunchControl(int axis, const rollAndPitchT
 }
 #endif
 
-static float getTpaFactor(const pidProfile_t *pidProfile, int axis, term_e term)
+float getTpaFactor(const pidProfile_t *pidProfile, int axis, term_e term)
 {
     float tpaFactor = pidRuntime.tpaFactor;
 
@@ -1357,6 +1368,22 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #endif // USE_CHIRP
 
+#if ENABLE_PSAS
+    static bool psasResumePending = false;
+
+    const uint8_t psasState = psasHandleMode();
+    switch (psasState) {
+    case PSAS_OFF:
+        break;
+    case PSAS_WORK:
+        return;
+    case PSAS_FINISHED:
+        memcpy(previousGyroRateDterm, gyroRateDterm, sizeof(previousGyroRateDterm));
+        psasResumePending = true;
+        break;
+    }
+#endif
+
     // ----------PID controller----------
     for (flight_dynamics_index_t axis = FD_ROLL; axis <= FD_YAW; ++axis) {
 
@@ -1368,6 +1395,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif // USE_CHIRP
 
         float currentPidSetpoint = getSetpointRate(axis);
+#if ENABLE_PSAS
+        if (psasResumePending) {
+            accelerationLimitReset(axis, currentPidSetpoint);
+        }
+#endif
         if (pidRuntime.maxVelocity[axis]) {
             currentPidSetpoint = accelerationLimit(axis, currentPidSetpoint);
         }
@@ -1628,6 +1660,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // calculating the PID sum
         pidData[axis].Sum = pidData[axis].P + pidData[axis].I + pidData[axis].D + pidData[axis].F + pidData[axis].S;
     }
+
+#if ENABLE_PSAS
+    psasResumePending = false;
+#endif
 
 #ifdef USE_WING
     // When PASSTHRU_MODE is active - reset all PIDs to zero so the aircraft won't snap out of control
