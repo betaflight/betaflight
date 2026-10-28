@@ -367,6 +367,15 @@ void initActiveBoxIds(void)
     }
 #endif
 
+#if ENABLE_SIMULATOR
+    // A simulator has no PINIO pins, so no pinioBox observes BOXUSERx. Turn them
+    // on anyway: the simulator host reads them to trigger its own actions (for
+    // example, resetting the craft) from a switch set in the Modes tab.
+    for (int boxId = BOXUSER1; boxId <= BOXUSER4; boxId++) {
+        BME(boxId);
+    }
+#endif
+
 #if defined(USE_PID_AUDIO)
     BME(BOXPIDAUDIO);
 #endif
