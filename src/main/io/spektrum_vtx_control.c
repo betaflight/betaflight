@@ -102,7 +102,6 @@ const uint8_t vtxSaPi[SPEKTRUM_VTX_POWER_COUNT] = {
 
 static uint8_t convertSpektrumVtxPowerIndex(uint8_t sPower)
 {
-    UNUSED(sPower);
     uint8_t devicePower = 0;
 
     const vtxDevice_t *vtxDevice = vtxCommonDevice();
@@ -128,6 +127,7 @@ static uint8_t convertSpektrumVtxPowerIndex(uint8_t sPower)
     case VTXDEV_UNKNOWN:
     case VTXDEV_UNSUPPORTED:
     default:
+        UNUSED(sPower);
         break;
 
     }
