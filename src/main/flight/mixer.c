@@ -703,7 +703,14 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
         // pidController() rescales antiGravityThrottleD in place by antiGravityGain on
         // every loop, and this filter is the only writer of the value. Skipping it here
         // would let the value grow without bound and overflow to inf/NaN (see #15910).
-        pidUpdateAntiGravityThrottleFilter(throttle);
+        // Feed the same (optionally throttle-limited) value the ordinary path uses,
+        // since the filter's internal previousThrottle is shared across both. Use a
+        // local so the shared throttle is not modified during crash flip.
+        float antiGravityThrottle = throttle;
+        if (currentControlRateProfile->throttle_limit_type != THROTTLE_LIMIT_TYPE_OFF) {
+            antiGravityThrottle = applyThrottleLimit(throttle);
+        }
+        pidUpdateAntiGravityThrottleFilter(antiGravityThrottle);
         return;
         // if crash flip mode is being applied to the motors, mixing is done
 
