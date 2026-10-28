@@ -82,6 +82,7 @@
 #define BUILD_OPTION_SERVOS                     16420
 #define BUILD_OPTION_VTX                        16421
 #define BUILD_OPTION_WING                       16424
+#define BUILD_OPTION_PSAS                       16432
 // Motor Protocols
 #define BUILD_OPTION_BRUSHED                    8230
 #define BUILD_OPTION_DRONECAN_ESC               8236
