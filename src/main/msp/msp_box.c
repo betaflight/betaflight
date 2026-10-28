@@ -105,7 +105,9 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { .boxId = BOXCHIRP, .boxName = "CHIRP", .permanentId = 55},
     { .boxId = BOXAUTOPILOT, .boxName = "AUTOPILOT", .permanentId = 56},
     { .boxId = BOXWPCAPTURE, .boxName = "WP CAPTURE", .permanentId = 57},
-    { .boxId = BOXLAUNCH, .boxName = "LAUNCH", .permanentId = 58}
+    { .boxId = BOXLAUNCH, .boxName = "LAUNCH", .permanentId = 58},
+    { .boxId = BOXPSAS, .boxName = "PSAS", .permanentId = 59},
+    { .boxId = BOXAOALIMITER, .boxName = "AOA LIM", .permanentId = 60}
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -391,6 +393,13 @@ void initActiveBoxIds(void)
     BME(BOXCHIRP);
 #endif
 
+#if defined(USE_PSAS)
+    if (isFixedWing()) {
+        BME(BOXPSAS);
+        BME(BOXAOALIMITER);
+    }
+#endif
+
 #undef BME
     // check that all enabled IDs are in boxes array (check may be skipped when using findBoxById() functions)
     for (boxId_e boxId = 0;  boxId < CHECKBOX_ITEM_COUNT; boxId++)
@@ -414,6 +423,10 @@ bool getBoxIdState(boxId_e boxid)
 #if defined(USE_WING) && defined(USE_LAUNCH_WING)
     } else if (boxid == BOXLAUNCH) {
         return FLIGHT_MODE(LAUNCH_MODE);
+#endif
+#if defined(USE_WING) && defined(USE_PSAS)
+    } else if (boxid == BOXPSAS) {
+        return FLIGHT_MODE(PSAS_MODE);
 #endif
     } else if (boxid <= BOXID_FLIGHTMODE_LAST) {
         return FLIGHT_MODE(1 << boxIdToFlightModeMap[boxid]);
