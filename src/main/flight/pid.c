@@ -1198,12 +1198,14 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
 
     // Anti Gravity
+    // scale into a local; pidRuntime.antiGravityThrottleD is only written by pidUpdateAntiGravityThrottleFilter(),
+    // so scaling it in place would compound every loop the filter is not fed (see #15910)
+    float antiGravityThrottleD = 0.0f;
     if (pidRuntime.antiGravityEnabled) {
-        pidRuntime.antiGravityThrottleD *= pidRuntime.antiGravityGain;
+        antiGravityThrottleD = pidRuntime.antiGravityThrottleD * pidRuntime.antiGravityGain;
         // used later to increase pTerm
-        pidRuntime.itermAccelerator = pidRuntime.antiGravityThrottleD * ANTIGRAVITY_KI;
+        pidRuntime.itermAccelerator = antiGravityThrottleD * ANTIGRAVITY_KI;
     } else {
-        pidRuntime.antiGravityThrottleD = 0.0f;
         pidRuntime.itermAccelerator = 0.0f;
     }
     DEBUG_SET(DEBUG_ANTI_GRAVITY, 2, lrintf((1 + (pidRuntime.itermAccelerator / pidRuntime.pidCoefficient[FD_PITCH].Ki)) * 1000));  //!< I Gain Multiplier (pitch) [unit:0.001]
@@ -1580,7 +1582,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             float agSetpointAttenuator = fabsf(currentPidSetpoint) / 50.0f;
             agSetpointAttenuator = MAX(agSetpointAttenuator, 1.0f);
             // attenuate effect if turning more than 50 deg/s, half at 100 deg/s
-            const float antiGravityPBoost = 1.0f + (pidRuntime.antiGravityThrottleD / agSetpointAttenuator) * pidRuntime.antiGravityPGain;
+            const float antiGravityPBoost = 1.0f + (antiGravityThrottleD / agSetpointAttenuator) * pidRuntime.antiGravityPGain;
             pidData[axis].P *= antiGravityPBoost;
             if (axis == FD_PITCH) {
                 DEBUG_SET(DEBUG_ANTI_GRAVITY, 3, lrintf(antiGravityPBoost * 1000));  //!< P Gain Multiplier (pitch) [unit:0.001]

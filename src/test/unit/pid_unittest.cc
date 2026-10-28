@@ -674,6 +674,51 @@ TEST(pidControllerTest, testMixerSaturation)
     EXPECT_NEAR(320, pidData[FD_YAW].I, calculateTolerance(320));
 }
 
+// #15910: the anti gravity throttle filter is not fed while crash flip is active,
+// so pidController() must not compound the gain into antiGravityThrottleD on every loop
+TEST(pidControllerTest, testAntiGravityNotCompoundedWhenFilterNotFed)
+{
+    resetTest();
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+
+    const bool prevAgState = pidRuntime.antiGravityEnabled;
+    const uint8_t prevDebugMode = debugMode;
+    pidRuntime.antiGravityEnabled = true;
+    debugMode = DEBUG_ANTI_GRAVITY;
+    // small residual filter output left over from an earlier throttle move
+    const float residualThrottleD = 0.1f;
+    pidRuntime.antiGravityThrottleD = residualThrottleD;
+
+    // gyro error so the P term is non-zero and the P boost is exercised
+    gyro.gyroADCf[FD_ROLL] = 100;
+    gyro.gyroADCf[FD_PITCH] = -100;
+
+    pidController(pidProfile, currentTestTime());
+    // itermAccelerator is cleared for yaw inside the loop, so use the I and P gain multiplier debug values
+    const int16_t expectedIGainMultiplier = debug[2];
+    const int16_t expectedPGainMultiplier = debug[3];
+    EXPECT_GT(expectedIGainMultiplier, 1000);
+    EXPECT_GT(expectedPGainMultiplier, 1000);
+
+    // without the filter rewriting it, in-place scaling by a gain of 10 would overflow to inf within ~40 loops
+    for (int loop = 0; loop < 100; loop++) {
+        pidController(pidProfile, currentTestTime());
+    }
+
+    EXPECT_FLOAT_EQ(residualThrottleD, pidRuntime.antiGravityThrottleD);
+    EXPECT_EQ(expectedIGainMultiplier, debug[2]);
+    EXPECT_EQ(expectedPGainMultiplier, debug[3]);
+    for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
+        EXPECT_TRUE(std::isfinite(pidData[axis].P));
+        EXPECT_TRUE(std::isfinite(pidData[axis].I));
+        EXPECT_TRUE(std::isfinite(pidData[axis].Sum));
+    }
+
+    pidRuntime.antiGravityEnabled = prevAgState;
+    debugMode = prevDebugMode;
+}
+
 TEST(pidControllerTest, testiTermWindup)
 {
     resetTest();
