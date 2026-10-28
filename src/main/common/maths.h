@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <math.h>
 #include <stdint.h>
 
 #ifndef sq
@@ -71,6 +72,7 @@
 
 #define HZ_TO_INTERVAL(x) (1.0f / (x))
 #define HZ_TO_INTERVAL_US(x) (1000000 / (x))
+#define US_TO_INTERVAL(us) ((us) * 1e-6f)   // microseconds to seconds
 
 #define SCALE_FACTOR(in_start, in_end, out_start, out_end) \
     ((float)((out_end) - (out_start)) / (float)((in_end) - (in_start)))
@@ -188,4 +190,14 @@ static inline float constrainf(float amt, float low, float high)
         return high;
     else
         return amt;
+}
+
+// An angle in degrees brought into [-180, 180).
+static inline float wrapDeg180f(float deg)
+{
+    deg = fmodf(deg + 540.0f, 360.0f);
+    if (deg < 0.0f) {
+        deg += 360.0f;
+    }
+    return deg - 180.0f;
 }

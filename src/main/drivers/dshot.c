@@ -236,7 +236,7 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
 
         // Update debug buffer
         if (motorIndex < dshotMotorCount && motorIndex < DEBUG16_VALUE_COUNT) {
-            DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, *pDecoded);
+            DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, *pDecoded);  //!< [index:0..7] Motor {1|2|3|4|5|6|7|8} [unit:100eRPM]
         }
     } else {
         // Use lookup table for extended telemetry types
@@ -304,6 +304,10 @@ FAST_CODE_NOINLINE void updateDshotTelemetry(void)
     for (unsigned motor = 0; motor < dshotMotorCount; motor++) {
         motorFrequencyHz[motor] = pt1FilterApply(&motorFreqLpf[motor], erpmToHz * getDshotErpm(motor));
         minMotorFrequencyHz = MIN(minMotorFrequencyHz, motorFrequencyHz[motor]);
+
+        if (motor < DEBUG16_VALUE_COUNT) {
+            DEBUG_SET(DEBUG_RPM_FILTER, motor, lrintf(motorFrequencyHz[motor]));  //!< [index:0..7] Motor {1|2|3|4|5|6|7|8} Frequency [unit:Hz]
+        }
     }
 
     // Set state to processed

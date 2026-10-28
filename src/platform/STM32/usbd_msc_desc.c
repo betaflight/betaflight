@@ -33,6 +33,10 @@
 #include "usb_regs.h"
 #include "platform.h"
 
+#include "build/version.h"
+
+#include "drivers/usb_descriptor.h"
+
 #if defined (STM32F4)
 #define         DEVICE_ID1          (0x1FFF7A10)
 #define         DEVICE_ID2          (0x1FFF7A14)
@@ -68,9 +72,7 @@
 #define USBD_PID                   0x5720
 
 #define USBD_LANGID_STRING         0x409
-#define USBD_MANUFACTURER_STRING   "STMicroelectronics"
-#define USBD_PRODUCT_HS_STRING        "Betaflight FC Mass Storage (HS Mode)"
-#define USBD_PRODUCT_FS_STRING        "Betaflight FC Mass Storage (FS Mode)"
+#define USBD_MANUFACTURER_STRING   FC_FIRMWARE_NAME
 #define USBD_CONFIGURATION_HS_STRING  "MSC Config"
 #define USBD_INTERFACE_HS_STRING      "MSC Interface"
 #define USBD_CONFIGURATION_FS_STRING  "MSC Config"
@@ -230,14 +232,8 @@ uint8_t *  USBD_MSC_LangIDStrDescriptor( uint8_t speed , uint16_t *length)
 */
 uint8_t *  USBD_MSC_ProductStrDescriptor( uint8_t speed , uint16_t *length)
 {
-  if(speed == 0)
-  {
-    USBD_GetString((uint8_t *)(uint8_t *)USBD_PRODUCT_HS_STRING, USBD_StrDesc_MSC, length);
-  }
-  else
-  {
-    USBD_GetString((uint8_t *)(uint8_t *)USBD_PRODUCT_FS_STRING, USBD_StrDesc_MSC, length);
-  }
+  (void)(speed);
+  USBD_GetString((uint8_t *)usbDescriptorMscProductString(), USBD_StrDesc_MSC, length);
   return USBD_StrDesc_MSC;
 }
 

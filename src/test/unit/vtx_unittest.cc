@@ -118,7 +118,7 @@ TEST(VtxTest, PitMode)
 
     // and
     // enable vtx pit mode
-    rcData[AUX1] = 1800;
+    rcData[AUX1] = rcUsToNorm(1800);
 
     // when
     updateActivatedModes();
@@ -161,7 +161,7 @@ static void setActivationCondition(uint8_t index, uint8_t auxChannelIndex, uint8
     cond->range.startStep = CHANNEL_VALUE_TO_STEP(1400);
     cond->range.endStep = CHANNEL_VALUE_TO_STEP(1600);
     // drive the aux channel into the active range
-    rcData[NON_AUX_CHANNEL_COUNT + auxChannelIndex] = 1500;
+    rcData[NON_AUX_CHANNEL_COUNT + auxChannelIndex] = rcUsToNorm(1500);
 }
 
 // Regression test for #15362: band, channel and power assigned to three separate switches,
@@ -268,7 +268,7 @@ TEST(VtxTest, InactiveConditionLeavesLastValues)
     EXPECT_EQ(5, vtxSettingsConfig()->power);
 
     // when the aux channel leaves the active range
-    rcData[NON_AUX_CHANNEL_COUNT + 0] = 1000;
+    rcData[NON_AUX_CHANNEL_COUNT + 0] = rcUsToNorm(1000);
     vtxUpdateActivatedChannel();
 
     // expect — values persist, nothing is reset
@@ -317,6 +317,7 @@ extern "C" {
     void warningLedUpdate(void) {}
     void beeper(beeperMode_e) {}
     void beeperConfirmationBeeps(uint8_t) {}
+    void tasksUpdateModeGatedEnables(void) {}
     void beeperWarningBeeps(uint8_t) {}
     void beeperSilence(void) {}
     void systemBeep(bool) {}

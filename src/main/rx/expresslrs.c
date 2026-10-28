@@ -515,8 +515,8 @@ static void updatePhaseLock(void)
         }
 
         expressLrsTimerDebug();
-        DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 0, pl.rawOffsetUs);
-        DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 1, pl.offsetUs);
+        DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 0, pl.rawOffsetUs);  //!< Raw Phase Offset [unit:us]
+        DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 1, pl.offsetUs);     //!< Filtered Phase Offset [unit:us]
     }
 
     phaseLockEprReset();
@@ -1213,10 +1213,10 @@ rx_spi_received_e expressLrsDataReceived(uint8_t *payloadBuffer)
     handleConfigUpdate(timeStampMs);
     handleLinkStatsUpdate(timeStampMs);
 
-    DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 0, lostConnectionCounter);
-    DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 1, receiver.rssiFiltered);
-    DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 2, receiver.snr / 4);
-    DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 3, receiver.uplinkLQ);
+    DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 0, lostConnectionCounter);  //!< Lost Connection Count
+    DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 1, receiver.rssiFiltered);  //!< Filtered RSSI [unit:dBm]
+    DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 2, receiver.snr / 4);       //!< SNR [unit:dB]
+    DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 3, receiver.uplinkLQ);      //!< Uplink Link Quality [unit:%]
 
     receiver.inBindingMode ? rxSpiLedBlinkBind() : rxSpiLedBlinkRxLoss(rfPacketStatus);
 

@@ -85,6 +85,9 @@ bool cliMode = false;
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
+#ifdef USE_UART
+#include "drivers/serial_uart.h"
+#endif
 #include "drivers/serial_escserial.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/stack_check.h"
@@ -288,6 +291,32 @@ static const char *configurationStates[] = {
     [CONFIGURATION_STATE_CONFIGURED] = "CONFIGURED"
 };
 
+static const char * const configResetReasonNames[] = {
+    [CONFIG_RESET_NONE] = "NONE",
+    [CONFIG_RESET_EMPTY] = "EMPTY",
+    [CONFIG_RESET_CORRUPT] = "CORRUPT",
+    [CONFIG_RESET_VERSION] = "VERSION",
+    [CONFIG_RESET_PG_MISSING] = "PG_MISSING",
+    [CONFIG_RESET_PG_VERSION] = "PG_VERSION",
+    [CONFIG_RESET_BOARD] = "BOARD",
+    [CONFIG_RESET_CLI] = "CLI",
+    [CONFIG_RESET_MSP] = "MSP",
+    [CONFIG_RESET_BUTTON] = "BUTTON",
+    [CONFIG_RESET_SERIAL] = "SERIAL",
+};
+STATIC_ASSERT(CONFIG_RESET_COUNT == ARRAYLEN(configResetReasonNames), configResetReasonNames_array_length_mismatch);
+
+static const systemConfig_t *currentSystemConfig(void)
+{
+    return configIsInCopy ? &systemConfig_Copy : systemConfig();
+}
+
+static const char *configResetReasonName(void)
+{
+    const uint8_t reason = currentSystemConfig()->configResetReason;
+    return reason < CONFIG_RESET_COUNT ? configResetReasonNames[reason] : "UNKNOWN";
+}
+
 typedef enum dumpFlags_e {
     DUMP_MASTER = (1 << 0),
     DUMP_PROFILE = (1 << 1),
@@ -442,6 +471,14 @@ CLI_DEBUG_EXPORT void cliPrintLinef(const char *format, ...)
     cliPrintfva(format, va);
     va_end(va);
     cliPrintLinefeed();
+}
+
+static void cliPrintConfigReset(void)
+{
+    cliPrintf(" %s", configResetReasonName());
+    if (currentSystemConfig()->configResetDetail) {
+        cliPrintf(" %u", currentSystemConfig()->configResetDetail);
+    }
 }
 
 static const char *cliEnvFilter;
@@ -1400,41 +1437,176 @@ RAM_CODE static void cliAux(const char *cmdName, char *cmdline)
     }
 }
 
-static void printSerial(dumpFlags_t dumpMask, const char *headingStr)
+STATIC_UNIT_TESTED uint16_t cliGetSettingIndex(const char *name, size_t length);
+
+// Print one setting as `set <name> = <value>`, but only where it has moved off
+// its default, the way `diff` chooses what to carry.  The default comes from a
+// non-destructive PG reset into a scratch buffer, so this holds outside a dump,
+// where pg->copy is not the value being reported.
+static void printSettingIfChanged(const char *cmdName, const char *name)
 {
-    const char *format = "serial %s %d %ld %ld %ld %ld";
-    headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
-    for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
-        const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
-        if (!serialIsPortAvailable(identifier)) {
-            continue;
-        };
+    const uint16_t index = cliGetSettingIndex(name, strlen(name));
+    if (index >= valueTableEntryCount) {
+        // a build without the feature has no such setting
+        return;
+    }
 
-        uint8_t baudRateIndexes[SERIAL_BAUD_CLASS_COUNT];
-        for (unsigned c = 0; c < SERIAL_BAUD_CLASS_COUNT; c++) {
-            baudRateIndexes[c] = serialSynthesizePortBaud(identifier, c);
+    const clivalue_t *value = &valueTable[index];
+    const pgRegistry_t *pg = pgFind(value->pgn);
+    if (!pg) {
+        return;
+    }
+
+    const int valueOffset = getValueOffset(value);
+    const uint16_t pgSizeBytes = pgSize(pg);
+    uint32_t defaultBufAligned[(pgSizeBytes + sizeof(uint32_t) - 1) / sizeof(uint32_t)];
+    uint8_t *defaultBuf = (uint8_t *)defaultBufAligned;
+    pgResetCopy(defaultBuf, value->pgn);
+
+    const void *valuePointer = cliGetValuePointer(value);
+    if (valuePtrEqualsDefault(value, valuePointer, defaultBuf + valueOffset)) {
+        return;
+    }
+
+    cliPrintf("set %s = ", value->name);
+    printValuePointer(cmdName, value, valuePointer, false);
+    cliPrintLinefeed();
+}
+
+// Every claim on one port as the commands that would make it, so the port a
+// feature is on can be read off, and pasted back, in the form that now holds it.
+// What the port opens as, and the rate the feature owns, follow their port: a
+// bare `set vtx_uart = UART1` without its protocol leaves the claim inert.  Both
+// are printed only where they are not the default, so the output stays as short
+// as what `diff` would carry.
+static void printPortClaimSettings(const char *cmdName, serialPortIdentifier_e identifier)
+{
+    serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
+    const unsigned claimCount = serialGetPortClaims(identifier, claims, ARRAYLEN(claims));
+
+    for (unsigned c = 0; c < claimCount; c++) {
+        cliPrintLinef("set %s = %s", claims[c].setting, serialName(identifier, invalidName));
+        if (claims[c].selectorSetting) {
+            printSettingIfChanged(cmdName, claims[c].selectorSetting);
         }
-
-        cliDumpPrintLinef(dumpMask, false, format,
-            serialName(identifier, invalidName),
-            serialSynthesizeFunctionMask(identifier),
-            baudRates[baudRateIndexes[SERIAL_BAUD_MSP]],
-            baudRates[baudRateIndexes[SERIAL_BAUD_GPS]],
-            baudRates[baudRateIndexes[SERIAL_BAUD_TELEMETRY]],
-            baudRates[baudRateIndexes[SERIAL_BAUD_BLACKBOX]]
-            );
+        if (claims[c].baudSetting) {
+            printSettingIfChanged(cmdName, claims[c].baudSetting);
+        }
     }
 }
 
 RAM_CODE static void cliSerial(const char *cmdName, char *cmdline)
 {
-    if (!isEmpty(cmdline)) {
-        // A diff taken from an older firmware still carries assignments here.
-        cliPrintErrorLinef(cmdName, "READ ONLY, ASSIGN PORTS WITH THE <FEATURE>_UART SETTINGS");
+    if (isEmpty(cmdline)) {
+        for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
+            printPortClaimSettings(cmdName, serialPortIdentifiers[i]);
+        }
         return;
     }
 
-    printSerial(DUMP_MASTER, NULL);
+    // The legacy form, as an older diff still carries it:
+    //   serial <identifier> <function mask> <msp baud> <gps baud> <telemetry baud> <blackbox baud>
+    // It is translated onto the feature settings rather than refused, so a saved
+    // configuration from before the split still restores.
+    unsigned validArgumentCount = 0;
+
+    char *ptr = cmdline;
+    char *tok = strsep(&ptr, " ");
+    serialPortIdentifier_e identifier = findSerialPortByName(tok, strcasecmp);
+    if (identifier == SERIAL_PORT_NONE) {
+        char *eptr;
+        identifier = strtoul(tok, &eptr, 10);
+        if (*eptr) {
+            // parsing ended before the end of the token, so not an identifier
+            identifier = SERIAL_PORT_NONE;
+        } else if (identifier >= SERIAL_PORT_LEGACY_START_IDENTIFIER && identifier < SERIAL_PORT_START_IDENTIFIER) {
+            // correction for legacy configuration where UART1 == 0
+            identifier += SERIAL_PORT_UART1;
+        }
+    }
+
+    if (identifier == SERIAL_PORT_NONE || findSerialPortIndexByIdentifier(identifier) < 0) {
+        cliShowParseError(cmdName);
+        return;
+    }
+    validArgumentCount++;
+
+    uint32_t functionMask = 0;
+    tok = strsep(&ptr, " ");
+    if (tok) {
+        functionMask = strtoul(tok, NULL, 10);
+        validArgumentCount++;
+    }
+
+    uint8_t baudRateIndexes[SERIAL_BAUD_CLASS_COUNT];
+    for (unsigned c = 0; c < SERIAL_BAUD_CLASS_COUNT; c++) {
+        baudRateIndexes[c] = serialDefaultPortBaud(c);
+    }
+
+    // The legacy line orders its rates msp, gps, telemetry, blackbox, and each
+    // has its own accepted range, as it always did.
+    static const serialBaudClass_e baudOrder[] = {
+        SERIAL_BAUD_MSP, SERIAL_BAUD_GPS, SERIAL_BAUD_TELEMETRY, SERIAL_BAUD_BLACKBOX,
+    };
+    for (unsigned i = 0; i < ARRAYLEN(baudOrder); i++) {
+        tok = strsep(&ptr, " ");
+        if (!tok) {
+            break;
+        }
+
+        const int val = atoi(tok);
+        const uint8_t baudRateIndex = lookupBaudRateIndex(val);
+        if (baudRates[baudRateIndex] != (uint32_t)val) {
+            break;
+        }
+
+        // A rate outside its class's range counts as no argument at all, so the
+        // line is refused rather than quietly applied at the class default.
+        switch (baudOrder[i]) {
+        case SERIAL_BAUD_MSP:
+            if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_1000000) {
+                continue;
+            }
+            break;
+        case SERIAL_BAUD_GPS:
+            if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_230400) {
+                continue;
+            }
+            break;
+        case SERIAL_BAUD_TELEMETRY:
+            if (baudRateIndex != BAUD_AUTO && baudRateIndex > BAUD_460800) {
+                continue;
+            }
+            break;
+        case SERIAL_BAUD_BLACKBOX:
+            if (baudRateIndex < BAUD_19200 || baudRateIndex > BAUD_2470000) {
+                continue;
+            }
+            break;
+        default:
+            continue;
+        }
+
+        baudRateIndexes[baudOrder[i]] = baudRateIndex;
+        validArgumentCount++;
+    }
+
+    if (validArgumentCount < 2 + ARRAYLEN(baudOrder)) {
+        cliShowInvalidArgumentCountError(cmdName);
+        return;
+    }
+
+    if (!serialApplyFunctionMask(identifier, functionMask)) {
+        cliShowParseError(cmdName);
+        return;
+    }
+
+    for (unsigned c = 0; c < SERIAL_BAUD_CLASS_COUNT; c++) {
+        serialApplyPortBaud(identifier, c, baudRateIndexes[c]);
+    }
+
+    cliPrintLine("# WARNING: 'serial' is deprecated, assign ports with the <feature>_uart settings");
+    printPortClaimSettings(cmdName, identifier);
 }
 
 #if defined(USE_SERIAL_PASSTHROUGH)
@@ -2311,7 +2483,7 @@ RAM_CODE static void cliServo(const char *cmdName, char *cmdline)
             arguments[MAX] < PWM_SERVO_MIN || arguments[MAX] > PWM_SERVO_MAX ||
             arguments[MIDDLE] < arguments[MIN] || arguments[MIDDLE] > arguments[MAX] ||
             arguments[MIN] > arguments[MAX] ||
-            arguments[RATE] < -100 || arguments[RATE] > 100 ||
+            arguments[RATE] < -SERVO_RATE_MAX || arguments[RATE] > SERVO_RATE_MAX ||
             arguments[FORWARD] >= MAX_SUPPORTED_RC_CHANNEL_COUNT
         ) {
             cliShowArgumentRangeError(cmdName, NULL, 0, 0);
@@ -2472,10 +2644,10 @@ RAM_CODE static void cliServoMix(const char *cmdName, char *cmdline)
         if (i >= 0 && i < MAX_SERVO_RULES &&
             args[TARGET] >= 0 && args[TARGET] < MAX_SUPPORTED_SERVOS &&
             args[INPUT] >= 0 && args[INPUT] < INPUT_SOURCE_COUNT &&
-            args[RATE] >= -100 && args[RATE] <= 100 &&
+            args[RATE] >= -SERVO_RATE_MAX && args[RATE] <= SERVO_RATE_MAX &&
             args[SPEED] >= 0 && args[SPEED] <= MAX_SERVO_SPEED &&
-            args[MIN] >= 0 && args[MIN] <= 100 &&
-            args[MAX] >= 0 && args[MAX] <= 100 && args[MIN] < args[MAX] &&
+            args[MIN] >= 0 && args[MIN] <= SERVO_MIX_RANGE_MAX &&
+            args[MAX] >= 0 && args[MAX] <= SERVO_MIX_RANGE_MAX && args[MIN] < args[MAX] &&
             args[BOX] >= 0 && args[BOX] <= MAX_SERVO_BOXES) {
             customServoMixersMutable(i)->targetChannel = args[TARGET];
             customServoMixersMutable(i)->inputSource = args[INPUT];
@@ -2504,6 +2676,11 @@ static const char * const waypointPatternNames[] = {
     "NONE", "ORBIT", "FIGURE8"
 };
 STATIC_ASSERT(WAYPOINT_PATTERN_COUNT == ARRAYLEN(waypointPatternNames), waypointPatternNames_array_length_mismatch);
+
+static const char * const waypointYawNames[] = {
+    "DEFAULT", "FACE_TARGET", "FACE_NEXT", "HOLD",
+};
+STATIC_ASSERT(WAYPOINT_YAW_COUNT == ARRAYLEN(waypointYawNames), waypointYawNames_array_length_mismatch);
 
 // Parse decimal coordinate string to int32 (degrees * 10^7)
 // Accepts formats like: -33.5429890, 151.6664560, -33.5, 151
@@ -2624,7 +2801,7 @@ static void formatDecimalCoordinate(int32_t value, char *buffer)
 
 static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flightPlanConfig, const flightPlanConfig_t *defaultFlightPlanConfig, const char *headingStr)
 {
-    const char *format = "waypoint insert %u %s %s %d %u %s %u %s";
+    const char *format = "waypoint insert %u %s %s %d %u %s %u %s %u %s";
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
 
     // Determine if all waypoints equal their defaults
@@ -2665,6 +2842,7 @@ static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flight
 
             const char *defaultTypeName = (defaultWp->type < ARRAYLEN(waypointTypeNames)) ? waypointTypeNames[defaultWp->type] : "UNKNOWN";
             const char *defaultPatternName = (defaultWp->pattern < ARRAYLEN(waypointPatternNames)) ? waypointPatternNames[defaultWp->pattern] : "UNKNOWN";
+            const char *defaultYawName = (defaultWp->yawBehaviour < ARRAYLEN(waypointYawNames)) ? waypointYawNames[defaultWp->yawBehaviour] : "UNKNOWN";
 
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 i,
@@ -2674,7 +2852,9 @@ static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flight
                 defaultWp->speed,
                 defaultTypeName,
                 defaultWp->duration,
-                defaultPatternName
+                defaultPatternName,
+                defaultWp->vertRate,
+                defaultYawName
             );
         }
 
@@ -2683,6 +2863,7 @@ static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flight
 
         const char *typeName = (wp->type < ARRAYLEN(waypointTypeNames)) ? waypointTypeNames[wp->type] : "UNKNOWN";
         const char *patternName = (wp->pattern < ARRAYLEN(waypointPatternNames)) ? waypointPatternNames[wp->pattern] : "UNKNOWN";
+        const char *yawName = (wp->yawBehaviour < ARRAYLEN(waypointYawNames)) ? waypointYawNames[wp->yawBehaviour] : "UNKNOWN";
 
         cliDumpPrintLinef(dumpMask, equalsDefault, format,
             i,
@@ -2692,7 +2873,9 @@ static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flight
             wp->speed,
             typeName,
             wp->duration,
-            patternName
+            patternName,
+            wp->vertRate,
+            yawName
         );
     }
 }
@@ -2714,7 +2897,10 @@ RAM_CODE static void cliWaypoint(const char *cmdName, char *cmdline)
     }
 
     // Parse arguments into args array
-    enum { OP = 0, INDEX, LAT, LON, ALT, SPEED, TYPE, DURATION, PATTERN, MAX_ARGS };
+    enum { OP = 0, INDEX, LAT, LON, ALT, SPEED, TYPE, DURATION, PATTERN, VERT_RATE, YAW, MAX_ARGS };
+    // vertical rate and yaw behaviour are optional: a dump from an older firmware omits them
+    const int argCountShort = PATTERN + 1;
+    const int argCountFull = MAX_ARGS;
     char *args[MAX_ARGS];
     int argCount = 0;
 
@@ -2858,7 +3044,7 @@ RAM_CODE static void cliWaypoint(const char *cmdName, char *cmdline)
         return;
     }
 
-    if (argCount != 9) {
+    if (argCount != argCountShort && argCount != argCountFull) {
         cliShowInvalidArgumentCountError(cmdName);
         return;
     }
@@ -2967,6 +3153,34 @@ RAM_CODE static void cliWaypoint(const char *cmdName, char *cmdline)
         return;
     }
 
+    // Parse the optional vertical rate and yaw behaviour
+    long tmpVertRate = 0;
+    uint8_t yawBehaviour = WAYPOINT_YAW_DEFAULT;
+    if (argCount == argCountFull) {
+        tmpVertRate = strtol(args[VERT_RATE], &endptr, 10);
+        if (*endptr != '\0') {
+            cliPrintErrorLinef(cmdName, "INVALID VERTICAL RATE");
+            return;
+        }
+        if (tmpVertRate < 0 || tmpVertRate > UINT16_MAX) {
+            cliShowArgumentRangeError(cmdName, "vertical rate", 0, UINT16_MAX);
+            return;
+        }
+
+        bool yawFound = false;
+        for (uint8_t i = 0; i < ARRAYLEN(waypointYawNames); i++) {
+            if (strcasecmp(args[YAW], waypointYawNames[i]) == 0) {
+                yawBehaviour = i;
+                yawFound = true;
+                break;
+            }
+        }
+        if (!yawFound) {
+            cliPrintErrorLinef(cmdName, "INVALID YAW BEHAVIOUR. USE: DEFAULT, FACE_TARGET, FACE_NEXT, HOLD");
+            return;
+        }
+    }
+
     // Validate ranges (stored as degrees * 10^7)
     if (latitude < -900000000 || latitude > 900000000) {
         cliPrintErrorLinef(cmdName, "LATITUDE OUT OF RANGE. USE: -90.0 to 90.0");
@@ -2995,6 +3209,8 @@ RAM_CODE static void cliWaypoint(const char *cmdName, char *cmdline)
     wp->duration = (uint16_t)tmpDuration;
     wp->type = type;
     wp->pattern = pattern;
+    wp->vertRate = (uint16_t)tmpVertRate;
+    wp->yawBehaviour = yawBehaviour;
 
     char latBuffer[16];
     char lonBuffer[16];
@@ -3002,7 +3218,7 @@ RAM_CODE static void cliWaypoint(const char *cmdName, char *cmdline)
     formatDecimalCoordinate(wp->longitude, lonBuffer);
 
     const uint32_t altAbs = (wp->altitude < 0) ? -(uint32_t)wp->altitude : (uint32_t)wp->altitude;
-    cliPrintLinef("waypoint %s %u %s %s %s%u.%02um %u %s %u %s",
+    cliPrintLinef("waypoint %s %u %s %s %s%u.%02um %u %s %u %s %u %s",
         isInsert ? "insert" : "update",
         index,
         latBuffer,
@@ -3011,7 +3227,9 @@ RAM_CODE static void cliWaypoint(const char *cmdName, char *cmdline)
         wp->speed,
         waypointTypeNames[wp->type],
         wp->duration,
-        waypointPatternNames[wp->pattern]
+        waypointPatternNames[wp->pattern],
+        wp->vertRate,
+        waypointYawNames[wp->yawBehaviour]
     );
 }
 
@@ -3104,8 +3322,9 @@ RAM_CODE static void cliFlashInfo(const char *cmdName, char *cmdline)
 
     const flashGeometry_t *layout = flashGetGeometry();
 
-    cliPrintLinef("Flash sectors=%u, sectorSize=%u, pagesPerSector=%u, pageSize=%u, totalSize=%u JEDEC ID=0x%08x",
-            layout->sectors, layout->sectorSize, layout->pagesPerSector, layout->pageSize, layout->totalSize, layout->jedecId);
+    cliPrintLinef("Flash type=%s, sectors=%u, sectorSize=%u, pagesPerSector=%u, pageSize=%u, totalSize=%u JEDEC ID=0x%08x",
+            flashTypeGetName(layout->flashType), layout->sectors, layout->sectorSize, layout->pagesPerSector,
+            layout->pageSize, layout->totalSize, layout->jedecId);
 
     for (uint8_t index = 0; index < FLASH_MAX_PARTITIONS; index++) {
         const flashPartition_t *partition;
@@ -4282,7 +4501,7 @@ static void cliPrintGyroRegisters(uint8_t whichSensor)
     // ICM-456xx uses different register addresses than MPU/ICM-426xx sensors
     // Register 0x75 (MPU_RA_WHO_AM_I) is RESERVED on ICM-456xx
     const mpuDetectionResult_t *mpuDetection = gyroMpuDetectionResult();
-    
+
     if (mpuDetection->sensor == ICM_45686_SPI || mpuDetection->sensor == ICM_45605_SPI) {
         // ICM-456xx register addresses (from DS-000577 datasheet)
         cliPrintLinef("# WHO_AM_I      0x%X (0x72)", gyroReadRegister(whichSensor, 0x72));  // Should be 0xE9 or 0xE5
@@ -5028,6 +5247,8 @@ RAM_CODE static void cliDefaults(const char *cmdName, char *cmdline)
 
     if (parameterGroupId) {
         restoreConfigs(parameterGroupId);
+    } else {
+        systemConfigMutable()->configResetReason = CONFIG_RESET_CLI;
     }
 
     if (saveConfigs && tryPrepareSave(cmdName)) {
@@ -5943,6 +6164,11 @@ static int getTaskAverageRateHz(taskId_e taskId, int *averageDeltaTimeUs)
     return taskInfo.averageDeltaTime10thUs == 0 ? 0 : lrintf(1e7f / taskInfo.averageDeltaTime10thUs);
 }
 
+#if ENABLE_DRONECAN
+static const char * const nodeHealthNames[] = { "OK", "WARNING", "ERROR", "CRITICAL" };
+static const char * const nodeModeNames[] = { "OPERATIONAL", "INITIALISING", "MAINTENANCE", "UPDATING", "?", "?", "?", "OFFLINE" };
+#endif
+
 RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -5984,13 +6210,15 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
 #endif
     cliPrintLinefeed();
 
-    cliPrintLinef("CONFIG: %s (%db / %db)", configurationStates[systemConfigMutable()->configurationState], getEEPROMConfigSize(), getEEPROMStorageSize());
+    cliPrintf("CONFIG: %s (%db / %db), last reset:", configurationStates[systemConfigMutable()->configurationState], getEEPROMConfigSize(), getEEPROMStorageSize());
+    cliPrintConfigReset();
+    cliPrintLinefeed();
     cliPrintLinefeed();
 
     // Devices
     cliPrint("DEVICES DETECTED:");
 #if defined(USE_SPI)
-    cliPrintf(" SPI=%d", spiGetRegisteredDeviceCount());
+    cliPrintf(" SPI=%d (%d errors)", spiGetRegisteredDeviceCount(), spiGetErrorCounter());
 #if defined(USE_I2C)
     cliPrint(",");
 #endif
@@ -6157,8 +6385,6 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
         if (dronecanIsInitialised()) {
             cliPrintLinef("DroneCAN: node %d, device %d", dronecanConfig()->node_id, dronecanConfig()->device);
 
-            static const char * const nodeHealthNames[] = { "OK", "WARNING", "ERROR", "CRITICAL" };
-            static const char * const nodeModeNames[] = { "OPERATIONAL", "INITIALISING", "MAINTENANCE", "UPDATING", "?", "?", "?", "OFFLINE" };
             for (uint8_t i = 0; i < dronecanNodesCount(); i++) {
                 const dronecanNodeEntry_t *node = dronecanNodesGet(i);
                 cliPrintf("  node %d: %s (%s", node->nodeId,
@@ -6189,6 +6415,12 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
         } else {
             cliPrintLine("DroneCAN: NOT RUNNING (check dronecan_node_id and dronecan_device)");
         }
+    } else {
+        // The stack is compiled in but switched off, so every DroneCAN sensor is
+        // silently inert. Say so: selecting a DroneCAN provider elsewhere (gps_provider,
+        // mag_hardware) is accepted without complaint, and without this line status
+        // gives no hint that the reason nothing arrives is this flag.
+        cliPrintLine("DroneCAN: DISABLED (set dronecan_enabled = ON)");
     }
 #endif
 
@@ -6261,6 +6493,196 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
         cliPrintf(" %s", getArmingDisableFlagName(flag));
     }
     cliPrintLinefeed();
+
+#ifdef USE_DSHOT_BITBANG
+    static const char * const dshotBitbangStatusNames[] = { "OK", "MOTOR_PIN_CONFLICT", "NO_PACER", "TOO_MANY_PORTS" };
+    const dshotBitbangStatus_e bitbangStatus = dshotBitbangGetStatus();
+    if (isDshotBitbangActive(&motorConfig()->dev) && bitbangStatus != DSHOT_BITBANG_STATUS_OK) {
+        cliPrintLinef("DSHOT_BBANG: %s", (unsigned)bitbangStatus < ARRAYLEN(dshotBitbangStatusNames) ? dshotBitbangStatusNames[bitbangStatus] : "UNKNOWN");
+    }
+#endif
+}
+
+#if defined(USE_SENSOR_NAMES)
+static void cliPrintDeviceBus(const extDevice_t *dev)
+{
+    if (!dev || !dev->bus) {
+        return;
+    }
+
+    switch (dev->bus->busType) {
+#ifdef USE_SPI
+    case BUS_TYPE_SPI:
+        cliPrintf(" on SPI%d", SPI_DEV_TO_CFG(spiDeviceByInstance(dev->bus->busType_u.spi.instance)));
+        break;
+#endif
+#ifdef USE_I2C
+    case BUS_TYPE_I2C:
+        cliPrintf(" on I2C%d @0x%02X", I2C_DEV_TO_CFG(dev->bus->busType_u.i2c.device), dev->busType_u.i2c.address);
+        break;
+#endif
+    default:
+        break;
+    }
+}
+
+// One line per sensor class, named by the stem of its *_hardware setting.
+// A class configured to a specific device that never came up still gets a
+// line, so a wiring fault reads as "configured, not detected" rather than
+// silence.
+static void cliPrintSensorPeripheral(const char *stem, sensorIndex_e sensorIndex, uint8_t configuredHardware, const extDevice_t *dev)
+{
+    int count;
+    const char * const *names = sensorHardwareNames(sensorIndex, &count);
+    if (!names) {
+        return;
+    }
+
+    const bool detected = (sensorsMask() & sensorMaskForIndex(sensorIndex)) != 0;
+
+    if (detected) {
+        const uint8_t hardwareIndex = detectedSensors[sensorIndex];
+        // Indexes 0 and 1 are AUTO and NONE in every hardware enum - a
+        // detection that never recorded which device it found has no name
+        // worth printing.
+        if (hardwareIndex <= 1 || hardwareIndex >= count || !names[hardwareIndex]) {
+            return;
+        }
+        cliPrintf("%s: %s", stem, names[hardwareIndex]);
+        cliPrintDeviceBus(dev);
+        cliPrintLinefeed();
+    } else if (configuredHardware > 1 && configuredHardware < count) {
+        // 0 = AUTO, 1 = NONE for every sensor hardware enum
+        if (names[configuredHardware]) {
+            cliPrintLinef("%s: %s configured, not detected", stem, names[configuredHardware]);
+        } else {
+            // A selection this build has no entry for, e.g. a DroneCAN mag
+            // setting carried onto a build without DroneCAN.
+            cliPrintLinef("%s: %d configured, not detected", stem, configuredHardware);
+        }
+    }
+}
+#endif // USE_SENSOR_NAMES
+
+static bool serialPortIsSoftSerial(serialPortIdentifier_e identifier)
+{
+#ifdef USE_SOFTSERIAL
+    return serialType(identifier) == SERIALTYPE_SOFTSERIAL;
+#else
+    UNUSED(identifier);
+    return false;
+#endif
+}
+
+// Why a port the build has cannot be opened at all, printed in place of its
+// claim states so the reason is actionable rather than just a missing port.
+static const char *serialPortUnavailableReason(serialPortIdentifier_e identifier)
+{
+#ifdef USE_SOFTSERIAL
+    if (serialPortIsSoftSerial(identifier) && !featureIsEnabled(FEATURE_SOFTSERIAL)) {
+        return "feature SOFTSERIAL off";
+    }
+#else
+    UNUSED(identifier);
+#endif
+    return "no pins";
+}
+
+static void cliPeripherals(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+    UNUSED(cmdline);
+
+    for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
+        const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
+        const bool available = serialIsPortAvailable(identifier);
+
+        serialPortClaim_t claims[SERIAL_PORT_CLAIM_MAX];
+        const unsigned claimCount = serialGetPortClaims(identifier, claims, ARRAYLEN(claims));
+
+        // Every port that can be opened is listed, claimed or not.  One that
+        // cannot earns a line only when the user can act on it: a claim it
+        // silently drops, or a soft serial port waiting on its feature.
+        if (!available && !claimCount && !serialPortIsSoftSerial(identifier)) {
+            continue;
+        }
+
+        const serialPortUsage_t *usage = available ? findSerialPortUsageByIdentifier(identifier) : NULL;
+        const uint32_t openFunction = (usage && usage->serialPort) ? (uint32_t)usage->function : 0;
+
+        if (available) {
+            cliPrintf("serial %s:", serialName(identifier, invalidName));
+        } else {
+            cliPrintf("serial %s (%s):", serialName(identifier, invalidName), serialPortUnavailableReason(identifier));
+        }
+
+        // Claims the port actually opened for first, each starred; the rest
+        // lost boot arbitration or await a reboot.
+        bool first = true;
+        for (unsigned pass = 0; pass < 2; pass++) {
+            const bool wantActive = (pass == 0);
+            for (unsigned c = 0; c < claimCount; c++) {
+                const bool active = (claims[c].functionMask & openFunction) != 0;
+                if (active != wantActive) {
+                    continue;
+                }
+                cliPrintf(first ? " %s%s" : ", %s%s", claims[c].name, active ? "*" : "");
+                first = false;
+            }
+        }
+        cliPrintLinefeed();
+    }
+
+#if ENABLE_DRONECAN
+    if (dronecanConfig()->enabled && dronecanIsInitialised()) {
+        for (uint8_t i = 0; i < dronecanNodesCount(); i++) {
+            const dronecanNodeEntry_t *node = dronecanNodesGet(i);
+            cliPrintf("can node %d: %s (%s", node->nodeId,
+                      node->infoValid && node->name[0] ? node->name : "no info",
+                      nodeHealthNames[node->health & 0x03]);
+            if (node->mode != UAVCAN_NODE_MODE_OPERATIONAL) {
+                cliPrintf(", %s", nodeModeNames[node->mode & 0x07]);
+            }
+            cliPrint(")");
+
+            static const struct { uint8_t flag; const char *name; } sensorFlagNames[] = {
+                { DRONECAN_NODE_SENSOR_GPS, "gps" },
+                { DRONECAN_NODE_SENSOR_MAG, "mag" },
+                { DRONECAN_NODE_SENSOR_AIRSPEED, "airspeed" },
+                { DRONECAN_NODE_SENSOR_ESC, "esc" },
+            };
+            bool first = true;
+            for (unsigned f = 0; f < ARRAYLEN(sensorFlagNames); f++) {
+                if (node->sensorFlags & sensorFlagNames[f].flag) {
+                    cliPrintf(first ? " %s" : ", %s", sensorFlagNames[f].name);
+                    first = false;
+                }
+            }
+            cliPrintLinefeed();
+        }
+    }
+#endif
+
+#if defined(USE_SENSOR_NAMES)
+    for (unsigned pos = 0; pos < GYRO_COUNT; pos++) {
+        if (!(gyroConfig()->gyrosDetected & BIT(pos))) {
+            continue;
+        }
+        cliPrintf("gyro %d: %s%s", pos + 1, lookupTableGyroHardware[detectedGyros[pos]],
+                  (gyro.gyroEnabledBitmask & BIT(pos)) ? "*" : "");
+        cliPrintDeviceBus(&gyro.gyroSensor[pos].gyroDev.dev);
+        cliPrintLinefeed();
+    }
+#if defined(USE_ACC)
+    cliPrintSensorPeripheral("acc", SENSOR_INDEX_ACC, accelerometerConfig()->acc_hardware, acc.dev.gyro ? &acc.dev.gyro->dev : NULL);
+#endif
+#if defined(USE_BARO)
+    cliPrintSensorPeripheral("baro", SENSOR_INDEX_BARO, barometerConfig()->baro_hardware, &baro.dev.dev);
+#endif
+#if defined(USE_MAG)
+    cliPrintSensorPeripheral("mag", SENSOR_INDEX_MAG, compassConfig()->mag_hardware, &magDev.dev);
+#endif
+#endif // USE_SENSOR_NAMES
 }
 
 RAM_CODE static void cliTasks(const char *cmdName, char *cmdline)
@@ -6350,6 +6772,12 @@ static void printVersion(bool printBoardInfo)
 #if defined(__CONFIG_REVISION__)
     cliPrintLinef("# config rev: %s", shortConfigGitRevision);
 #endif
+
+    if (currentSystemConfig()->configResetReason != CONFIG_RESET_NONE) {
+        cliPrint("# config reset:");
+        cliPrintConfigReset();
+        cliPrintLinefeed();
+    }
 
 #if defined(USE_BOARD_INFO)
     if (printBoardInfo && strlen(getManufacturerId()) && strlen(getBoardName())) {
@@ -6518,10 +6946,13 @@ RAM_CODE static void cliEnv(const char *cmdName, char *cmdline)
     cliPrintNameValue("CONFIG_STATE", configurationStates[systemConfigMutable()->configurationState]);
     cliPrintNameValuef("CONFIG_SIZE", "%d", getEEPROMConfigSize());
     cliPrintNameValuef("CONFIG_MAX_SIZE", "%d", getEEPROMStorageSize());
+    cliPrintNameValue("CONFIG_RESET_REASON", configResetReasonName());
+    cliPrintNameValuef("CONFIG_RESET_DETAIL", "%u", systemConfig()->configResetDetail);
 
     // Bus devices
 #if defined(USE_SPI)
     cliPrintNameValuef("SPI_COUNT", "%d", spiGetRegisteredDeviceCount());
+    cliPrintNameValuef("SPI_ERRORS", "%d", spiGetErrorCounter());
 #endif
 #if defined(USE_I2C)
     cliPrintNameValuef("I2C_COUNT", "%d", i2cGetRegisteredDeviceCount());
@@ -6999,6 +7430,7 @@ typedef struct dmaoptEntry_s {
     uint8_t offset;
     uint8_t maxIndex;
     uint32_t presenceMask;
+    bool isLpuart;
 } dmaoptEntry_t;
 
 #define MASK_IGNORED (0)
@@ -7010,16 +7442,22 @@ typedef struct dmaoptEntry_s {
 // DEFW_OFS: array of structs, starting at offset ofs
 
 #define DEFS(device, peripheral, pgn, type, member) \
-    { device, peripheral, pgn, 0,               offsetof(type, member), 0, MASK_IGNORED }
+    { device, peripheral, pgn, 0,               offsetof(type, member), 1, MASK_IGNORED, false }
 
 #define DEFA(device, peripheral, pgn, type, member, max, mask) \
-    { device, peripheral, pgn, sizeof(uint8_t), offsetof(type, member), max, mask }
+    { device, peripheral, pgn, sizeof(uint8_t), offsetof(type, member), max, mask, false }
 
 #define DEFW(device, peripheral, pgn, type, member, max, mask) \
     DEFW_OFS(device, peripheral, pgn, type, member, 0, max, mask)
 
 #define DEFW_OFS(device, peripheral, pgn, type, member, ofs, max, mask)  \
-    { device, peripheral, pgn, sizeof(type), offsetof(type, member) + (ofs) * sizeof(type), max, mask }
+    DEFW_OFS_FLAG(device, peripheral, pgn, type, member, ofs, max, mask, false)
+
+#define DEFW_OFS_LPUART(device, peripheral, pgn, type, member, ofs, max, mask) \
+    DEFW_OFS_FLAG(device, peripheral, pgn, type, member, ofs, max, mask, true)
+
+#define DEFW_OFS_FLAG(device, peripheral, pgn, type, member, ofs, max, mask, isLpuart) \
+    { device, peripheral, pgn, sizeof(type), offsetof(type, member) + (ofs) * sizeof(type), max, mask, isLpuart }
 
 dmaoptEntry_t dmaoptEntryTable[] = {
     DEFW("SPI_SDO", DMA_PERIPH_SPI_SDO, PG_SPI_PIN_CONFIG,     spiPinConfig_t,     txDmaopt, SPIDEV_COUNT,                    MASK_IGNORED),
@@ -7028,14 +7466,16 @@ dmaoptEntry_t dmaoptEntryTable[] = {
     DEFW("SPI_TX",   DMA_PERIPH_SPI_SDO, PG_SPI_PIN_CONFIG,     spiPinConfig_t,     txDmaopt, SPIDEV_COUNT,                    MASK_IGNORED),
     DEFW("SPI_RX",   DMA_PERIPH_SPI_SDI, PG_SPI_PIN_CONFIG,     spiPinConfig_t,     rxDmaopt, SPIDEV_COUNT,                    MASK_IGNORED),
     DEFA("ADC",      DMA_PERIPH_ADC,      PG_ADC_CONFIG,         adcConfig_t,        dmaopt,   ADCDEV_COUNT,                    MASK_IGNORED),
+#ifdef USE_SDCARD_SDIO
     DEFS("SDIO",     DMA_PERIPH_SDIO,     PG_SDIO_CONFIG,        sdioConfig_t,       dmaopt),
+#endif
 #ifdef USE_UART
     DEFW_OFS("UART_TX",  DMA_PERIPH_UART_TX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, RESOURCE_UART_OFFSET, RESOURCE_UART_COUNT, MASK_IGNORED),
     DEFW_OFS("UART_RX",  DMA_PERIPH_UART_RX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, RESOURCE_UART_OFFSET, RESOURCE_UART_COUNT, MASK_IGNORED),
 #endif
-#ifdef USE_LPUART
-    DEFW_OFS("LPUART_TX",  DMA_PERIPH_UART_TX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
-    DEFW_OFS("LPUART_RX",  DMA_PERIPH_UART_RX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
+#if defined(USE_UART) && defined(USE_LPUART)
+    DEFW_OFS_LPUART("LPUART_TX",  DMA_PERIPH_UART_TX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
+    DEFW_OFS_LPUART("LPUART_RX",  DMA_PERIPH_UART_RX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
 #endif
 #if defined(USE_TIMER_UP_CONFIG)
     DEFW("TIMUP",    DMA_PERIPH_TIMUP,    PG_TIMER_UP_CONFIG,    timerUpConfig_t,    dmaopt,   HARDWARE_TIMER_DEFINITION_COUNT, TIMUP_TIMERS),
@@ -7045,6 +7485,9 @@ dmaoptEntry_t dmaoptEntryTable[] = {
 #undef DEFS
 #undef DEFA
 #undef DEFW
+#undef DEFW_OFS
+#undef DEFW_OFS_LPUART
+#undef DEFW_OFS_FLAG
 
 #define DMA_OPT_STRING_BUFSIZE 5
 
@@ -7113,6 +7556,20 @@ static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
     return (index < 0 || index >= entry->maxIndex) ? -1 : index;
 }
 
+/** Translate a UART CLI row to its compact DMA request-map index. */
+static int dmaOptPeripheralIndex(const dmaoptEntry_t *entry, int index)
+{
+#ifdef USE_UART
+    if (entry->peripheral == DMA_PERIPH_UART_TX || entry->peripheral == DMA_PERIPH_UART_RX) {
+        const serialPortIdentifier_e firstIdentifier = entry->isLpuart ? SERIAL_PORT_LPUART_FIRST : SERIAL_PORT_UART_FIRST;
+        return uartDeviceIndexFromIdentifier((serialPortIdentifier_e)(firstIdentifier + index));
+    }
+#else
+    UNUSED(entry);
+#endif
+    return index;
+}
+
 static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const dmaoptValue_t dmaopt, const bool equalsDefault, const dumpFlags_t dumpMask, printFn *printValue)
 {
     // We compute number to display for different peripherals in advance.
@@ -7130,14 +7587,16 @@ static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const 
             "dma %s %d %d",
             entry->device, uiIndex, dmaopt);
 
-        const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, index, dmaopt);
-        dmaCode_t dmaCode = 0;
-        if (dmaChannelSpec) {
-            dmaCode = dmaChannelSpec->code;
+        const int peripheralIndex = dmaOptPeripheralIndex(entry, index);
+        if (peripheralIndex >= 0) {
+            const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, (uint8_t)peripheralIndex, dmaopt);
+            if (dmaChannelSpec) {
+                const dmaCode_t dmaCode = dmaChannelSpec->code;
+                printValue(dumpMask, equalsDefault,
+                    "# %s %d: " DMASPEC_FORMAT_STRING,
+                    entry->device, uiIndex, DMA_CODE_CONTROLLER(dmaCode), DMA_CODE_STREAM(dmaCode), DMA_CODE_CHANNEL(dmaCode));
+            }
         }
-        printValue(dumpMask, equalsDefault,
-            "# %s %d: " DMASPEC_FORMAT_STRING,
-            entry->device, uiIndex, DMA_CODE_CONTROLLER(dmaCode), DMA_CODE_STREAM(dmaCode), DMA_CODE_CHANNEL(dmaCode));
     } else if (!(dumpMask & HIDE_UNUSED)) {
         printValue(dumpMask, equalsDefault,
             "dma %s %d NONE",
@@ -7379,7 +7838,12 @@ RAM_CODE static void cliDmaopt(const char *cmdName, char *cmdline)
         // Show possible opts
         const dmaChannelSpec_t *dmaChannelSpec;
         if (entry) {
-            for (int opt = 0; (dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, index, opt)); opt++) {
+            const int peripheralIndex = dmaOptPeripheralIndex(entry, index);
+            for (int opt = 0; peripheralIndex >= 0; opt++) {
+                dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, (uint8_t)peripheralIndex, opt);
+                if (!dmaChannelSpec) {
+                    break;
+                }
                 cliPrintLinef("# %d: " DMASPEC_FORMAT_STRING, opt, DMA_CODE_CONTROLLER(dmaChannelSpec->code), DMA_CODE_STREAM(dmaChannelSpec->code), DMA_CODE_CHANNEL(dmaChannelSpec->code));
             }
         } else {
@@ -7397,7 +7861,9 @@ RAM_CODE static void cliDmaopt(const char *cmdName, char *cmdline)
             optval = atoi(pch);
 
             if (entry) {
-                if (!dmaGetChannelSpecByPeripheral(entry->peripheral, index, optval)) {
+                const int peripheralIndex = dmaOptPeripheralIndex(entry, index);
+                if (peripheralIndex < 0 ||
+                    !dmaGetChannelSpecByPeripheral(entry->peripheral, (uint8_t)peripheralIndex, optval)) {
                     cliPrintErrorLinef(cmdName, "INVALID DMA OPTION FOR %s %d: '%s'", entry->device, getDmaOptDisplayNumber(entry, index), pch);
 
                     return;
@@ -8351,6 +8817,7 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("options", "show build options", NULL, cliOptions),
 #ifndef MINIMAL_CLI
+    CLI_COMMAND_DEF("peripherals", "show attached peripherals", NULL, cliPeripherals),
     CLI_COMMAND_DEF("play_sound", NULL, "[<index>]", cliPlaySound),
 #endif
     CLI_COMMAND_DEF("battery_profile", "change battery profile", "[<index>]", cliBatteryProfile),
@@ -8371,7 +8838,7 @@ const clicmd_t cmdTable[] = {
 #if defined(USE_SENSOR_NAMES)
     CLI_COMMAND_DEF("sensor_hardware", "list supported sensor hardware", "[gyro|acc|baro|mag|rangefinder|opticalflow|pitot]", cliSensorHardware),
 #endif
-    CLI_COMMAND_DEF("serial", "show serial port assignments", NULL, cliSerial),
+    CLI_COMMAND_DEF("serial", "show port assignments as set commands", "[<identifier> <function mask> <msp baud> <gps baud> <telemetry baud> <blackbox baud> (deprecated)]", cliSerial),
 #if defined(USE_SERIAL_PASSTHROUGH)
 #if defined(USE_PINIO)
     CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data data from port 1 to VCP / port 2", "<id1> [<baud1>] [<mode1>] [none|<dtr pinio>|reset] [<id2>] [<baud2>] [<mode2>]", cliSerialPassthrough),
@@ -8413,7 +8880,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("vtxtable", "vtx frequency table", "<band> <bandname> <bandletter> [FACTORY|CUSTOM] <freq> ... <freq>\r\n", cliVtxTable),
 #endif
 #if ENABLE_FLIGHT_PLAN
-    CLI_COMMAND_DEF("waypoint", "configure waypoints", "list | status | insert <idx> <lat.ddddddd> <lon.ddddddd> <alt> <spd> <type> <dur> <pat> | update <idx> <lat.ddddddd> <lon.ddddddd> <alt> <spd> <type> <dur> <pat> | remove <idx> | clear", cliWaypoint),
+    CLI_COMMAND_DEF("waypoint", "configure waypoints", "list | status | insert <idx> <lat.ddddddd> <lon.ddddddd> <alt> <spd> <type> <dur> <pat> [<vrate> <yaw>] | update <idx> <lat.ddddddd> <lon.ddddddd> <alt> <spd> <type> <dur> <pat> [<vrate> <yaw>] | remove <idx> | clear", cliWaypoint),
 #endif
 };
 

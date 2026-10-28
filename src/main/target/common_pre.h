@@ -116,17 +116,12 @@
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 #define USE_BARO_BMP388
-#define USE_BARO_SPI_BMP388
 #define USE_BARO_SPI_LPS
 #define USE_BARO_QMP6988
-#define USE_BARO_SPI_QMP6988
 #define USE_BARO_DPS310
 #define USE_BARO_SPI_DPS310
-#define USE_BARO_BMP085
 #define USE_BARO_2SMBP_02B
-#define USE_BARO_SPI_2SMBP_02B
 #define USE_BARO_LPS22DF
-#define USE_BARO_SPI_LPS22DF
 #endif
 
 #if !defined(USE_GYRO) && !defined(USE_ACC)
@@ -162,6 +157,15 @@
 #define USE_ACC_MPU6050
 #define USE_GYRO_MPU6050
 #define USE_ACCGYRO_BMI160
+#define USE_ACCGYRO_BMI423
+#define USE_ACCGYRO_LSM6DSV32X
+#define USE_BARO_BMP085
+#define USE_BARO_SPI_BMP388
+#define USE_BARO_SPI_BMP580
+#define USE_BARO_SPI_BMP581
+#define USE_BARO_SPI_QMP6988
+#define USE_BARO_SPI_2SMBP_02B
+#define USE_BARO_SPI_LPS22DF
 #endif
 #endif // ACC GYRO inclusion
 
@@ -177,6 +181,7 @@
 #define USE_FLASHFS
 #define USE_FLASH_TOOLS
 #define USE_FLASH_M25P16
+#define USE_FLASH_FM25V02A  // 256-Kbit Cypress/Infineon SPI F-RAM
 #define USE_FLASH_W25N01G    // 1Gb NAND flash support
 #define USE_FLASH_W25N02K    // 2Gb NAND flash support
 #define USE_FLASH_W25M       // Stacked die support
@@ -202,9 +207,11 @@
 #define USE_RX_SX127X
 #endif // !USE_RX_SPI
 
+#if TARGET_FLASH_SIZE >= 1024
 #if !defined(USE_EXST) && !defined(USE_SDCARD)
 #define USE_SDCARD
 #endif
+#endif // TARGET_FLASH_SIZE >= 1024
 
 #endif // !defined(USE_CONFIG)
 
@@ -213,7 +220,7 @@
 
 #define USE_PINIO
 
-#if !defined(USE_SERIAL_RX)
+#if !defined(USE_SERIALRX)
 
 #define USE_SERIALRX
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
@@ -225,7 +232,7 @@
 #define USE_SERIALRX_XBUS       // JR
 #define USE_SERIALRX_SRXL2      // Spektrum SRXL2 protocol
 
-#endif // !defined(USE_SERIAL_RX)
+#endif // !defined(USE_SERIALRX)
 
 #if !defined(USE_TELEMETRY)
 #define USE_TELEMETRY
@@ -484,7 +491,7 @@
 #if defined(USE_SERIALRX_CRSF)
 
 #define USE_CRSF_V3
-#if defined(USE_TELEMETRY_CRSF) && defined(USE_CRSF_V3)
+#if defined(USE_TELEMETRY_CRSF)
 #define USE_CRSF_ACCGYRO_TELEMETRY
 #endif
 
@@ -536,6 +543,12 @@
 #undef USE_YAW_SPIN_RECOVERY
 #undef USE_LAUNCH_CONTROL
 #undef USE_RUNAWAY_TAKEOFF
+
+// Distinct from the multirotor race-start USE_LAUNCH_CONTROL undef'd just
+// above: this is the hand/bungee launch assist for fixed wings.
+#ifndef USE_LAUNCH_WING
+#define USE_LAUNCH_WING
+#endif
 
 #endif // USE_WING
 

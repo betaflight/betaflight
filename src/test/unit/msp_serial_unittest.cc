@@ -101,7 +101,7 @@ extern "C" {
     serialType_e serialType(serialPortIdentifier_e) { return SERIALTYPE_UART; }
 
     // Ports the test has declared as carrying an MSP-transport sensor.
-    static serialPortIdentifier_e fakeSensorPorts[IMPLIED_MSP_SENSOR_PORT_COUNT];
+    static serialPortIdentifier_e fakeSensorPorts[IMPLIED_MSP_PORT_COUNT];
     static unsigned fakeSensorPortCount;
 
     uint8_t serialDefaultPortBaud(serialBaudClass_e) { return BAUD_115200; }
@@ -270,7 +270,7 @@ TEST_F(MspSerialPendingRequestTest, CleanMspFrame_NoSideEffects)
     EXPECT_EQ(0, cliEnterCount);
 }
 
-#if IMPLIED_MSP_SENSOR_PORT_COUNT > 0
+#if IMPLIED_MSP_PORT_COUNT > 0
 
 #define SENSOR_PORT_IDENTIFIER  (serialPortIdentifier_e)0x21
 #define SENSOR_PORT_IDENTIFIER2 (serialPortIdentifier_e)0x22
@@ -357,7 +357,7 @@ TEST_F(MspSerialAllocationTest, ImpliedPortsDoNotSpendMspSlots)
     EXPECT_TRUE(wasOpened(SENSOR_PORT_IDENTIFIER));
 }
 
-#if IMPLIED_MSP_SENSOR_PORT_COUNT > 1
+#if IMPLIED_MSP_PORT_COUNT > 1
 // Two modules on separate UARTs need a port each.
 TEST_F(MspSerialAllocationTest, SeparateSensorPortsEachGetAPort)
 {
@@ -397,4 +397,4 @@ TEST_F(MspSerialAllocationTest, OrdinaryMspTrafficIsAConfigurator)
     EXPECT_TRUE(mspSerialIsConfiguratorActive());
 }
 
-#endif // IMPLIED_MSP_SENSOR_PORT_COUNT
+#endif // IMPLIED_MSP_PORT_COUNT

@@ -1,0 +1,346 @@
+/*
+*****************************************************************************
+**
+**  File        : gd32_h757xi_lrun.ld
+**
+**  Abstract    : LRUN (Load from flash, Run from RAM) linker script for
+**                GD32H757xI. The image is stored in FLASH1 and copied to AXI
+**                SRAM by Reset_Handler.
+**
+*****************************************************************************
+*/
+
+/* memory map */
+MEMORY
+{
+    FLASH (rx)            : ORIGIN = 0x08000000, LENGTH = 128K
+    FLASH_CONFIG (r)      : ORIGIN = 0x08020000, LENGTH = 128K
+    FLASH1 (rx)           : ORIGIN = 0x08040000, LENGTH = 1792K
+
+    SYSTEM_MEMORY (rx)    : ORIGIN = 0x1FF00000, LENGTH = 64K
+
+    ITCM_RAM (rwx)        : ORIGIN = 0x00000000, LENGTH = 64K
+    DTCM_RAM (rwx)        : ORIGIN = 0x20000000, LENGTH = 128K
+    RAM (rwx)             : ORIGIN = 0x24000000, LENGTH = 832K
+    BACKUP_SRAM (rwx)     : ORIGIN = 0x38800000, LENGTH = 4K
+
+    SRAM0_1 (rwx)         : ORIGIN = 0x30000000, LENGTH = 32K /* SRAM0 + SRAM1 */
+
+    MEMORY_B1 (rx)        : ORIGIN = 0x60000000, LENGTH = 0K
+}
+
+REGION_ALIAS("STACKRAM", DTCM_RAM)
+REGION_ALIAS("FASTRAM", DTCM_RAM)
+
+REGION_ALIAS("VECTAB", RAM)
+
+REGION_ALIAS("MOVABLE_FLASH", FLASH1)
+
+/* Entry Point */
+ENTRY(Reset_Handler)
+
+/* Highest address of the user mode stack */
+_Hot_Reboot_Flags_Size = 8;
+_estack = ORIGIN(STACKRAM) + LENGTH(STACKRAM) - _Hot_Reboot_Flags_Size;    /* end of RAM */
+
+/* Base address where the config is stored. */
+__config_start = ORIGIN(FLASH_CONFIG);
+__config_end = ORIGIN(FLASH_CONFIG) + LENGTH(FLASH_CONFIG);
+
+/* Bounds of the AXI SRAM. */
+_sram_axi_start = ORIGIN(RAM);
+_sram_axi_end = ORIGIN(RAM) + LENGTH(RAM);
+
+/* Generate a link error if heap and stack don't fit into RAM */
+_Min_Heap_Size  = 0x200;     /* required amount of heap  */
+_Min_Stack_Size = 0x800;     /* required amount of stack */
+
+/* Define output sections */
+SECTIONS
+{
+  /*
+   * The ISR vector table is loaded at the beginning of the FLASH,
+   * But it is linked (space reserved) at the beginning of the VECTAB region,
+   * which is aliased either to FLASH or RAM.
+   * When linked to RAM, the table can optionally be copied from FLASH to RAM
+   * for table relocation.
+   */
+
+  _isr_vector_table_flash_base = LOADADDR(.vectors);
+  PROVIDE (isr_vector_table_flash_base = _isr_vector_table_flash_base);
+
+  .vectors :
+  {
+    . = ALIGN(4);
+    PROVIDE (isr_vector_table_base = .);
+    KEEP(*(.vectors)) /* Startup code */
+    . = ALIGN(4);
+    PROVIDE (isr_vector_table_end = .);
+  } >VECTAB AT> FLASH
+
+  /* System memory (read-only bootloader) interrupt vector */
+  .system_isr_vector (NOLOAD) :
+  {
+    . = ALIGN(4);
+    PROVIDE (system_isr_vector_table_base = .);
+    KEEP(*(.system_isr_vector)) /* Bootloader code */
+    . = ALIGN(4);
+  } >SYSTEM_MEMORY
+
+  /* Must stay in Flash: this code initializes AXI SRAM and copies the runtime
+   * image there before any relocated code runs.
+   */
+  .boot_text :
+  {
+    . = ALIGN(4);
+    KEEP(*(.text.Reset_Handler))
+    KEEP(*(.text.Default_Handler))
+    . = ALIGN(4);
+  } >FLASH1
+
+
+  /* Critical program code goes into ITCM RAM */
+  /* Copy specific fast-executing code to ITCM RAM */
+  tcm_code = LOADADDR(.tcm_code);
+  .tcm_code :
+  {
+    . = ALIGN(4);
+    tcm_code_start = .;
+    *(.tcm_code)
+    *(.tcm_code*)
+    . = ALIGN(4);
+    tcm_code_end = .;
+  } >ITCM_RAM AT >FLASH1
+
+  .ARM.extab   :
+  {
+    *(.ARM.extab* .gnu.linkonce.armextab.*)
+  } >FLASH
+
+  .ARM :
+  {
+    __exidx_start = .;
+      *(.ARM.exidx*)
+      __exidx_end = .;
+  } >MOVABLE_FLASH
+
+  .preinit_array     :
+  {
+    PROVIDE_HIDDEN (__preinit_array_start = .);
+    KEEP (*(.preinit_array*))
+    PROVIDE_HIDDEN (__preinit_array_end = .);
+  } >MOVABLE_FLASH
+
+  .init_array :
+  {
+    PROVIDE_HIDDEN (__init_array_start = .);
+    KEEP (*(SORT(.init_array.*)))
+    KEEP (*(.init_array*))
+    PROVIDE_HIDDEN (__init_array_end = .);
+  } >MOVABLE_FLASH
+
+  .fini_array :
+  {
+    PROVIDE_HIDDEN (__fini_array_start = .);
+    KEEP (*(.fini_array*))
+    KEEP (*(SORT(.fini_array.*)))
+    PROVIDE_HIDDEN (__fini_array_end = .);
+  } >MOVABLE_FLASH
+
+  .pg_registry :
+  {
+    PROVIDE_HIDDEN (__pg_registry_start = .);
+    KEEP (*(.pg_registry))
+    KEEP (*(SORT(.pg_registry.*)))
+    PROVIDE_HIDDEN (__pg_registry_end = .);
+  } >MOVABLE_FLASH
+
+  .pg_resetdata :
+  {
+    PROVIDE_HIDDEN (__pg_resetdata_start = .);
+    KEEP (*(.pg_resetdata))
+    PROVIDE_HIDDEN (__pg_resetdata_end = .);
+    /* Sets the LMA of .data; ld does not align an AT> LMA on its own. */
+    . = ALIGN(4);
+  } >FLASH1
+
+  /* The reset handler copies this whole image from Flash to AXI SRAM. */
+  _sidata = LOADADDR(.data);
+
+  .data :
+  {
+    . = ALIGN(4);
+    _sdata = .;
+
+    *(.text)
+    *(.text*)
+    *(.rodata)
+    *(.rodata*)
+    *(.glue_7)
+    *(.glue_7t)
+    *(.eh_frame)
+
+    KEEP(*(.init))
+    KEEP(*(.fini))
+
+    *(.data)
+    *(.data*)
+
+    . = ALIGN(4);
+    _edata = .;
+    _etext = .;
+  } >RAM AT> FLASH1
+
+  /* Uninitialized data section */
+  . = ALIGN(4);
+  .sram2 (NOLOAD) :
+  {
+    /* This is used by the startup in order to initialize the .sram2 secion */
+    _ssram2 = .;         /* define a global symbol at sram2 start */
+    __sram2_start__ = _ssram2;
+    *(.sram2)
+    *(SORT_BY_ALIGNMENT(.sram2*))
+
+    . = ALIGN(4);
+    _esram2 = .;         /* define a global symbol at sram2 end */
+    __sram2_end__ = _esram2;
+  } >RAM
+
+  /* used during startup to initialized fastram_data */
+  _sfastram_idata = LOADADDR(.fastram_data);
+
+  /* Initialized FAST_DATA section for unsuspecting developers */
+  .fastram_data :
+  {
+    . = ALIGN(4);
+    _sfastram_data = .;        /* create a global symbol at data start */
+    *(.fastram_data)           /* .data sections */
+    *(.fastram_data*)          /* .data* sections */
+
+    . = ALIGN(4);
+    _efastram_data = .;        /* define a global symbol at data end */
+  } >FASTRAM AT> FLASH1
+
+  . = ALIGN(4);
+  .fastram_bss (NOLOAD) :
+  {
+     _sfastram_bss = .;
+    __fastram_bss_start__ = _sfastram_bss;
+    *(.fastram_bss)
+    *(SORT_BY_ALIGNMENT(.fastram_bss*))
+    . = ALIGN(4);
+    _efastram_bss = .;
+    __fastram_bss_end__ = _efastram_bss;
+  } >FASTRAM
+
+  /* used during startup to initialized dmaram_data */
+  _sdmaram_idata = LOADADDR(.dmaram_data);
+
+  . = ALIGN(32);
+  .dmaram_data :
+  {
+    PROVIDE(dmaram_start = .);
+    _sdmaram = .;
+    _dmaram_start__ = _sdmaram;
+    _sdmaram_data = .;        /* create a global symbol at data start */
+    *(.dmaram_data)           /* .data sections */
+    *(.dmaram_data*)          /* .data* sections */
+    . = ALIGN(32);
+    _edmaram_data = .;        /* define a global symbol at data end */
+  } >RAM AT >FLASH1
+
+  /* Keep every zero-initialized AXI section inside [_sbss, _ebss). */
+  .bss (NOLOAD) :
+  {
+    . = ALIGN(32);
+    _sbss = .;
+    __bss_start__ = _sbss;
+
+    _sdmaram_bss = .;
+    __dmaram_bss_start__ = _sdmaram_bss;
+    *(.dmaram_bss)
+    *(SORT_BY_ALIGNMENT(.dmaram_bss*))
+    . = ALIGN(32);
+    _edmaram_bss = .;
+    __dmaram_bss_end__ = _edmaram_bss;
+
+    . = ALIGN(32);
+    KEEP(*(.DMA_RAM))
+    PROVIDE(dmaram_end = .);
+    _edmaram = .;
+    _dmaram_end__ = _edmaram;
+
+    . = ALIGN(4);
+    *(.bss)
+    *(SORT_BY_ALIGNMENT(.bss*))
+    *(COMMON)
+
+    . = ALIGN(32);
+    PROVIDE(dmarwaxi_start = .);
+    _sdmarwaxi = .;
+    _dmarwaxi_start__ = _sdmarwaxi;
+    KEEP(*(.DMA_RW_AXI))
+    PROVIDE(dmarwaxi_end = .);
+    _edmarwaxi = .;
+    _dmarwaxi_end__ = _edmarwaxi;
+
+    . = ALIGN(4);
+    _ebss = .;
+    __bss_end__ = _ebss;
+  } >RAM
+
+  .DMA_RW_D2 (NOLOAD) :
+  {
+    . = ALIGN(32);
+    PROVIDE(dmarw_start = .);
+    _sdmarw = .;
+    _dmarw_start__ = _sdmarw;
+    KEEP(*(.DMA_RW))
+    PROVIDE(dmarw_end = .);
+    _edmarw = .;
+    _dmarw_end__ = _edmarw;
+  } >SRAM0_1
+
+  .persistent_data (NOLOAD) :
+  {
+    __persistent_data_start__ = .;
+    *(.persistent_data)
+    . = ALIGN(4);
+    __persistent_data_end__ = .;
+  } >RAM
+
+  /* User_heap_stack section, used to check that there is enough RAM left */
+  _heap_stack_end = ORIGIN(STACKRAM) + LENGTH(STACKRAM) - _Hot_Reboot_Flags_Size;
+  _heap_stack_begin = _heap_stack_end - _Min_Stack_Size  - _Min_Heap_Size;
+  . = _heap_stack_begin;
+  ._user_heap_stack :
+  {
+    . = ALIGN(4);
+    PROVIDE ( end = . );
+    PROVIDE ( _end = . );
+    . = . + _Min_Heap_Size;
+    . = . + _Min_Stack_Size;
+    . = ALIGN(4);
+  } >STACKRAM = 0xa5
+
+  /* MEMORY_bank1 section, code must be located here explicitly            */
+  /* Example: extern int foo(void) __attribute__ ((section (".mb1text"))); */
+  .memory_b1_text :
+  {
+    *(.mb1text)        /* .mb1text sections (code) */
+    *(.mb1text*)       /* .mb1text* sections (code)  */
+    *(.mb1rodata)      /* read-only data (constants) */
+    *(.mb1rodata*)
+  } >MEMORY_B1
+
+  /* Remove information from the standard libraries */
+  /DISCARD/ :
+  {
+    libc.a ( * )
+    libm.a ( * )
+    libgcc.a ( * )
+    libnosys.a ( * )
+  }
+
+    .ARM.attributes 0 : { *(.ARM.attributes) }
+}

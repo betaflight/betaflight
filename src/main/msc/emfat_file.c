@@ -293,7 +293,7 @@ static void emfat_set_entry_cma(emfat_entry_t *entry)
 #ifdef USE_FLASHFS
 static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t offset, uint32_t size)
 {
-    static char logNames[EMFAT_MAX_LOG_ENTRY][8+1+3];
+    static char logNames[EMFAT_MAX_LOG_ENTRY][8+1+3+1]; // 8.3 name plus terminator
 
     tfp_sprintf(logNames[number], FC_FIRMWARE_IDENTIFIER "_%03d.BBL", number + 1);
     entry->name = logNames[number];

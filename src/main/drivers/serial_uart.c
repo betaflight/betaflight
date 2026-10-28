@@ -258,6 +258,11 @@ uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
     return UARTDEV_INVALID;
 }
 
+int uartDeviceIndexFromIdentifier(serialPortIdentifier_e identifier)
+{
+    return (int)uartDeviceIdxFromIdentifier(identifier);
+}
+
 #if SERIAL_PIOUART_COUNT > 0
 FAST_DATA_ZERO_INIT uartDevice_t pioUartDevice[SERIAL_PIOUART_COUNT];
 #endif
@@ -579,6 +584,17 @@ const struct serialPortVTable uartVTable[] = {
     }
 };
 
+#ifdef USE_GDBSP_DRIVER
+// GDBSP driver uses IRQ handlers with different naming scheme
+#define UART_IRQHandler(type, number, dev)                      \
+    FAST_IRQ_HANDLER void CONCAT(                              \
+        _UART_GET_PREFIX(dev),                                  \
+        number ## _IRQHandler)(void)                            \
+    {                                                           \
+        uartPort_t *uartPort = &(uartDevice[(dev)].port);       \
+        uartIrqHandler(uartPort);                               \
+    }
+#else
 #define UART_IRQHandler(type, number, dev)                      \
     FAST_IRQ_HANDLER void type ## number ## _IRQHandler(void)   \
     {                                                           \
@@ -586,6 +602,11 @@ const struct serialPortVTable uartVTable[] = {
         uartIrqHandler(uartPort);                               \
     }                                                           \
 /**/
+#endif
+
+#ifdef USE_UART0
+UART_IRQHandler(USART, 0, UARTDEV_0) // USART0 Rx/Tx IRQ Handler
+#endif
 
 #ifdef USE_UART1
 UART_IRQHandler(USART, 1, UARTDEV_1) // USART1 Rx/Tx IRQ Handler

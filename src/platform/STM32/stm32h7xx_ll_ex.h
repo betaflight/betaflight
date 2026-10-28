@@ -78,6 +78,11 @@ __STATIC_INLINE void LL_EX_DMA_EnableIT_TC(DMA_Stream_TypeDef *DMAx_Streamy)
     SET_BIT(DMAx_Streamy->CR, DMA_SxCR_TCIE);
 }
 
+__STATIC_INLINE void LL_EX_DMA_EnableIT_TE(DMA_Stream_TypeDef *DMAx_Streamy)
+{
+    SET_BIT(DMAx_Streamy->CR, DMA_SxCR_TEIE);
+}
+
 __STATIC_INLINE void LL_EX_DMA_SetMemoryAddress(DMA_Stream_TypeDef *DMAx_Streamy, uint32_t addr)
 {
     DMAx_Streamy->M0AR = addr;

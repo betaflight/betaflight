@@ -37,6 +37,9 @@
 #include "fc/runtime_config.h"
 
 #include "flight/flight_plan_nav.h"
+#ifdef USE_WING
+#include "flight/autopilot.h"
+#endif
 
 #include "io/gps.h"
 
@@ -49,7 +52,10 @@
 // mavlink_message_t yields to the real (identical) one.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 #include "common/mavlink.h"
+#pragma GCC diagnostic pop
 #pragma GCC diagnostic pop
 
 #include "telemetry/mavlink.h"
@@ -176,7 +182,11 @@ static void sendMissionItem(uint8_t partnerSys, uint8_t partnerComp, uint16_t se
         if (wp->pattern == WAYPOINT_PATTERN_ORBIT) {
             command = MAV_CMD_NAV_LOITER_TURNS;
             param1 = (float)wp->duration / (float)flightPlanNavOrbitPeriodDs(wp->speed);
+#ifdef USE_WING
+            param3 = autopilotWingLoiterRadiusM();
+#else
             param3 = autopilotConfig()->waypointHoldRadius * 0.01f;
+#endif
         } else {
             // FIGURE8 has no MAVLink vocabulary; it downloads as a plain
             // timed loiter (the pattern survives only in the stored mission).
@@ -303,7 +313,11 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
             return false;
         }
     }
-    if (!isfinite(it->param1) || !isfinite(it->param2) || !isfinite(it->param3) || !isfinite(it->param4)) {
+    // NAV_WAYPOINT explicitly permits NaN yaw to select the current system
+    // heading.  Other non-finite values, including infinite yaw, are invalid.
+    const bool waypointUsesCurrentYaw = it->command == MAV_CMD_NAV_WAYPOINT && isnan(it->param4);
+    if (!isfinite(it->param1) || !isfinite(it->param2) || !isfinite(it->param3)
+        || (!isfinite(it->param4) && !waypointUsesCurrentYaw)) {
         *resultOut = MAV_MISSION_INVALID;
         return false;
     }
@@ -314,6 +328,10 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
     wp->speed = 0;
     wp->duration = 0;
     wp->pattern = WAYPOINT_PATTERN_NONE;
+    // MAVLink has no vocabulary for a per-waypoint climb rate or nose behaviour, so an uploaded
+    // mission flies them at their defaults (as FIGURE8 does with its pattern).
+    wp->vertRate = 0;
+    wp->yawBehaviour = WAYPOINT_YAW_DEFAULT;
 
     switch (it->command) {
     case MAV_CMD_NAV_WAYPOINT:
@@ -354,12 +372,6 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
         // Best-effort: hold at lat/lon. The "loiter until alt reached" latch
         // needs executor work — without it the waypoint advances on arrival
         // like any other HOLD-zero. Capability follow-up.
-        wp->type = WAYPOINT_TYPE_HOLD;
-        break;
-    case MAV_CMD_NAV_FOLLOW:
-        // Best-effort: hover at the initial target position. Dynamic vehicle
-        // following needs an updating target source the executor doesn't have
-        // today — capability follow-up.
         wp->type = WAYPOINT_TYPE_HOLD;
         break;
     case MAV_CMD_NAV_LAND:

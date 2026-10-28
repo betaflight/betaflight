@@ -82,8 +82,7 @@ extern "C" {
     gyro_t gyro;
     attitudeEulerAngles_t attitude;
 
-    rxRuntimeState_t rxRuntimeState = {};
-
+    PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
     PG_REGISTER(positionConfig_t, positionConfig, PG_SYSTEM_CONFIG, 4);
@@ -124,6 +123,38 @@ extern "C" {
 }
 
 pidProfile_t *pidProfile;
+
+TEST(PidProfileStorageTest, RejectsProfilesFromBeforeSpeedCurveFields)
+{
+    const pgRegistry_t *registry = pgFind(PG_PID_PROFILE);
+    ASSERT_NE(nullptr, registry);
+
+    // Version 12 stored smaller array elements, so copying that array would
+    // shift every profile after the first one into unrelated settings.
+    uint8_t savedProfiles[PID_PROFILE_COUNT * 228];
+    memset(savedProfiles, 0xFF, sizeof(savedProfiles));
+    pgReset(registry);
+    pidProfile_t defaults[PID_PROFILE_COUNT];
+    memcpy(defaults, pidProfilesMutable(0), sizeof(defaults));
+
+    EXPECT_FALSE(pgLoad(registry, savedProfiles, sizeof(savedProfiles), 12));
+    EXPECT_EQ(0, memcmp(defaults, pidProfilesMutable(0), sizeof(defaults)));
+}
+
+TEST(PidProfileStorageTest, LoadsCurrentProfilesWithoutShiftingSettings)
+{
+    const pgRegistry_t *registry = pgFind(PG_PID_PROFILE);
+    ASSERT_NE(nullptr, registry);
+    pgReset(registry);
+    for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
+        pidProfilesMutable(i)->pid[PID_ROLL].P = 77 + i;
+        pidProfilesMutable(i)->speed_curve_vref = 30 + i;
+    }
+    pidProfile_t savedProfiles[PID_PROFILE_COUNT];
+    ASSERT_EQ(sizeof(savedProfiles), pgStore(registry, savedProfiles, sizeof(savedProfiles)));
+    ASSERT_TRUE(pgLoad(registry, savedProfiles, sizeof(savedProfiles), pgVersion(registry)));
+    EXPECT_EQ(0, memcmp(savedProfiles, pidProfilesMutable(0), sizeof(savedProfiles)));
+}
 
 int loopIter = 0;
 
@@ -784,6 +815,20 @@ TEST(pidControllerTest, testFeedForward)
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].F);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].F);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].F);
+}
+
+// pidInit() runs from readEEPROM() before rxInit(), so the CRSF check must not depend on rx runtime state
+TEST(pidControllerTest, testFeedforwardInterpolateFollowsRxConfig)
+{
+    resetTest();
+
+    rxConfigMutable()->serialrx_provider = SERIALRX_CRSF;
+    pidInit(pidProfile);
+    EXPECT_FALSE(pidRuntime.feedforwardInterpolate);
+
+    rxConfigMutable()->serialrx_provider = SERIALRX_SBUS;
+    pidInit(pidProfile);
+    EXPECT_TRUE(pidRuntime.feedforwardInterpolate);
 }
 
 TEST(pidControllerTest, testItermRelax)
