@@ -699,8 +699,13 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
     calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
 
     if (applyCrashFlipModeToMotors()) {
+        // Keep feeding the anti-gravity throttle filter while crash flip is active.
+        // pidController() rescales antiGravityThrottleD in place by antiGravityGain on
+        // every loop, and this filter is the only writer of the value. Skipping it here
+        // would let the value grow without bound and overflow to inf/NaN (see #15910).
+        pidUpdateAntiGravityThrottleFilter(throttle);
         return;
-        // if crash flip modeis being applied to the motors, mixing is done
+        // if crash flip mode is being applied to the motors, mixing is done
 
 
     }
