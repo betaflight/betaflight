@@ -55,10 +55,10 @@
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/esc_sensor.h"
+#include "sensors/motor_sensor.h"
 
 #include "telemetry/jetiexbus.h"
 #include "telemetry/telemetry.h"
-#include "telemetry/motor_sensor.h"
 
 #define EXTEL_DATA_MSG      (0x40)
 #define EXTEL_UNMASK_TYPE   (0x3F)

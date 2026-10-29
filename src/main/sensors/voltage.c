@@ -44,8 +44,7 @@
 
 #include "sensors/adcinternal.h"
 #include "sensors/battery.h"
-
-#include "telemetry/motor_sensor.h"
+#include "sensors/motor_sensor.h"
 
 #include "voltage.h"
 

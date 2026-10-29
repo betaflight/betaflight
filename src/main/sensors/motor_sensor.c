@@ -29,7 +29,7 @@
 #include "config/feature.h"
 #include "drivers/dshot.h"
 #include "sensors/esc_sensor.h"
-#include "telemetry/motor_sensor.h"
+#include "sensors/motor_sensor.h"
 #include "drivers/motor.h"
 #include "flight/mixer.h"
 
@@ -63,23 +63,26 @@ const escSensorData_t *getMotorSensorData(int motorIndex, motorSensorSource_e so
             static escSensorData_t dshotSensorData[MAX_SUPPORTED_MOTORS];
             const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[motorIndex];
             const bool edt = (motorState->telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
+            escSensorData_t *data = &dshotSensorData[motorIndex];
 
-            dshotSensorData[motorIndex].rpm = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM];
-            dshotSensorData[motorIndex].temperature = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) ?
+            data->dataAge = 0; // Telemetry is active, so the data is current
+            data->rpm = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM];
+            data->temperature = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) ?
                 motorState->telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] : 0;
-            dshotSensorData[motorIndex].current = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ?
+            // Voltage: EDT step is 0.25V, convert to 0.01V
+            data->voltage = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) ?
+                motorState->telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] * 25 : 0;
+            data->current = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ?
                 motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] : 0;
-            return &dshotSensorData[motorIndex];
+            data->consumption = 0; // EDT does not report consumption
+            return data;
         }
 #endif
         break;
     case MOTOR_SENSOR_SOURCE_ESC_SENSOR:
 #ifdef USE_ESC_SENSOR
         if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-            // Single snapshot buffer: the next call overwrites it
-            static escSensorData_t snapshot;
-            escSensorCopyData(motorIndex, &snapshot);
-            return &snapshot;
+            return escSensorGetData(motorIndex);
         }
 #endif
         break;

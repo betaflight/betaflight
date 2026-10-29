@@ -65,8 +65,8 @@
 #include "sensors/adcinternal.h"
 #include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
+#include "sensors/motor_sensor.h"
 
-#include "telemetry/motor_sensor.h"
 #include "telemetry/telemetry.h"
 
 #include "srxl.h"

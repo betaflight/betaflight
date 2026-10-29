@@ -63,5 +63,5 @@ uint8_t getNumberEscBytesRead(void);
 
 uint8_t calculateCrc8(const uint8_t *Buf, const uint8_t BufLen);
 
-void escSensorCopyData(uint8_t motor, escSensorData_t *out);
+const escSensorData_t *escSensorGetData(uint8_t motorIndex);
 const escSensorData_t *escSensorGetCombinedData(void);

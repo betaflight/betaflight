@@ -40,7 +40,7 @@
 #include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
 #ifdef USE_ESC_SENSOR
-#include "telemetry/motor_sensor.h"
+#include "sensors/motor_sensor.h"
 #endif
 
 #include "current.h"

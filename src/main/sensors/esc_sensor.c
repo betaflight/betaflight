@@ -362,9 +362,9 @@ void escSensorProcess(timeUs_t currentTimeUs)
     }
 }
 
-void escSensorCopyData(uint8_t motor, escSensorData_t *out)
+const escSensorData_t *escSensorGetData(uint8_t motorIndex)
 {
-    *out = escSensorData[motor];
+    return &escSensorData[motorIndex];
 }
 
 const escSensorData_t *escSensorGetCombinedData(void)

@@ -301,11 +301,11 @@ COMMON_SRC = \
             telemetry/ltm.c \
             telemetry/mavlink.c \
             telemetry/mavlink_mission.c \
-            telemetry/motor_sensor.c \
             telemetry/msp_shared.c \
             telemetry/ibus.c \
             telemetry/ibus_shared.c \
             sensors/esc_sensor.c \
+            sensors/motor_sensor.c \
             io/vtx.c \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \

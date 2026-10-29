@@ -100,8 +100,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
-
-#include "telemetry/motor_sensor.h"
+#include "sensors/motor_sensor.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"

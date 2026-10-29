@@ -192,8 +192,7 @@
 #include "sensors/sensors.h"
 #include "sensors/rangefinder.h"
 #include "sensors/pitot.h"
-
-#include "telemetry/motor_sensor.h"
+#include "sensors/motor_sensor.h"
 
 #ifdef USE_GPS_PLUS_CODES
 // located in lib/main/google/olc

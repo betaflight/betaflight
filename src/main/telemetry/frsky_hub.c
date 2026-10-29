@@ -72,10 +72,10 @@
 
 #if defined(USE_ESC_SENSOR_TELEMETRY)
 #include "sensors/esc_sensor.h"
+#include "sensors/motor_sensor.h"
 #endif
 
 #include "frsky_hub.h"
-#include "telemetry/motor_sensor.h"
 
 static serialPort_t *frSkyHubPort = NULL;
 static serialPortIdentifier_e telemetryPort = SERIAL_PORT_NONE;

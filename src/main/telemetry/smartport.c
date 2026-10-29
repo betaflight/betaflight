@@ -79,8 +79,8 @@
 #include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
+#include "sensors/motor_sensor.h"
 
-#include "telemetry/motor_sensor.h"
 #include "telemetry/msp_shared.h"
 #include "telemetry/smartport.h"
 #include "telemetry/telemetry.h"
