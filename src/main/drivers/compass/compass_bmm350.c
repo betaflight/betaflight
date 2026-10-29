@@ -469,24 +469,41 @@ static bool bmm350Init(magDev_t *magDev)
 }
 
 /**
- * @brief Burst-read XYZ and temperature, then compensate into milligauss.
+ * @brief Start a burst read of XYZ and temperature, then compensate it into milligauss on the next call.
  *
  * Does not wait for INT_STATUS DRDY; that bit is unreliable on some silicon
  * while the data registers are still valid.
  */
 static bool bmm350Read(magDev_t *magDev, int16_t *magData)
 {
-    extDevice_t *dev = &magDev->dev;
-    uint8_t buf[BMM350_MEAS_BYTES];
+    static uint8_t buf[BMM350_I2C_DUMMY_BYTES + BMM350_MEAS_BYTES];
+    static bool pendingRead = true;
 
-    if (!bmm350ReadBytes(dev, BMM350_REG_MAG_X_XLSB, buf, BMM350_MEAS_BYTES)) {
+    extDevice_t *dev = &magDev->dev;
+
+    if (pendingRead) {
+        if (busReadRegisterBufferStart(dev, BMM350_REG_MAG_X_XLSB, buf, sizeof(buf))) {
+            pendingRead = false;
+        }
         return false;
     }
 
-    const int32_t rawX = bmm350Assemble21(&buf[0]);
-    const int32_t rawY = bmm350Assemble21(&buf[3]);
-    const int32_t rawZ = bmm350Assemble21(&buf[6]);
-    const int32_t rawTemp = bmm350Assemble21(&buf[9]);
+    bool error = false;
+    if (busBusy(dev, &error)) {
+        return false;
+    }
+
+    pendingRead = true;
+
+    if (error) {
+        return false;
+    }
+
+    const uint8_t *data = &buf[BMM350_I2C_DUMMY_BYTES];
+    const int32_t rawX = bmm350Assemble21(&data[0]);
+    const int32_t rawY = bmm350Assemble21(&data[3]);
+    const int32_t rawZ = bmm350Assemble21(&data[6]);
+    const int32_t rawTemp = bmm350Assemble21(&data[9]);
 
     bmm350Compensate(rawX, rawY, rawZ, rawTemp, magData);
 
