@@ -294,8 +294,39 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         return;
     }
 
-    // ESC, crash flip and launch control: after the RX link, battery critical
-    // and CPU load warnings, so that an ESC alarm that stays on does not hide them
+#if ENABLE_FLIGHT_PLAN
+    if (osdWarnGetState(OSD_WARNING_AUTOPILOT_ABORT)
+        && FLIGHT_MODE(AUTOPILOT_MODE)
+        && flightPlanNavGetAbortReason() != FP_ABORT_NONE) {
+        switch (flightPlanNavGetAbortReason()) {
+        case FP_ABORT_ESTIMATOR:
+            tfp_sprintf(warningText, "WP GPS LOST");
+            break;
+        case FP_ABORT_STALLED:
+            tfp_sprintf(warningText, "WP STALLED");
+            break;
+        case FP_ABORT_FLYAWAY:
+            tfp_sprintf(warningText, "WP FLYAWAY");
+            break;
+        case FP_ABORT_HEADING:
+            tfp_sprintf(warningText, "WP HEADING");
+            break;
+        case FP_ABORT_MAG_FAULT:
+            tfp_sprintf(warningText, "WP MAG FAULT");
+            break;
+        default:
+            tfp_sprintf(warningText, "WP ABORT");
+            break;
+        }
+        *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
+        *blinking = true;
+        return;
+    }
+#endif
+
+    // ESC, crash flip and launch control: after the RX link, battery critical,
+    // CPU load and waypoint abort warnings, so that an ESC alarm that stays on
+    // does not hide them
 #if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
     // Show warning if we lose motor output, the ESC is overheating or excessive current draw
     if (motorTelemetryIsEnabled() && osdWarnGetState(OSD_WARNING_ESC_FAIL) && ARMING_FLAG(ARMED)) {
@@ -374,7 +405,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
 #ifdef USE_POSITION_HOLD
     // A mission abort (e.g. the heading-fault level park) routes through the
-    // position-hold failure path too; let the specific WP warning below own it
+    // position-hold failure path too; let the specific WP warning above own it
     // rather than masking it with the generic POSHOLD FAIL.
     bool missionAbortActive = false;
 #if ENABLE_FLIGHT_PLAN
@@ -389,34 +420,6 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #endif
 
 #if ENABLE_FLIGHT_PLAN
-    if (osdWarnGetState(OSD_WARNING_AUTOPILOT_ABORT)
-        && FLIGHT_MODE(AUTOPILOT_MODE)
-        && flightPlanNavGetAbortReason() != FP_ABORT_NONE) {
-        switch (flightPlanNavGetAbortReason()) {
-        case FP_ABORT_ESTIMATOR:
-            tfp_sprintf(warningText, "WP GPS LOST");
-            break;
-        case FP_ABORT_STALLED:
-            tfp_sprintf(warningText, "WP STALLED");
-            break;
-        case FP_ABORT_FLYAWAY:
-            tfp_sprintf(warningText, "WP FLYAWAY");
-            break;
-        case FP_ABORT_HEADING:
-            tfp_sprintf(warningText, "WP HEADING");
-            break;
-        case FP_ABORT_MAG_FAULT:
-            tfp_sprintf(warningText, "WP MAG FAULT");
-            break;
-        default:
-            tfp_sprintf(warningText, "WP ABORT");
-            break;
-        }
-        *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
-        *blinking = true;
-        return;
-    }
-
 #ifndef USE_WING
     // Waypoint capture confirmations ("WP3 SET" / "WP2 DELETED" / "WP FULL").
     // Shown outside AUTOPILOT mode too - capture happens before engaging - and
