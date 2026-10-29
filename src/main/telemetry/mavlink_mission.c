@@ -649,7 +649,14 @@ static void handleItemInt(const mavlink_message_t *msg)
         return;
     }
 
-    // Upload complete. Replace the active mission with the staged items.
+    // Upload complete. Do not replace the mission while the autopilot flies
+    // it: the executor reads the waypoint table directly.
+    if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+        abortUpload(MAV_MISSION_DENIED);
+        return;
+    }
+
+    // Replace the active mission with the staged items.
     flightPlanConfig_t *plan = flightPlanConfigMutable();
     memcpy(plan->waypoints, stagedWaypoints, m.totalCount * sizeof(stagedWaypoints[0]));
     plan->waypointCount = m.totalCount;

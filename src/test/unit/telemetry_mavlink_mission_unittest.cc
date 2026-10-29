@@ -229,6 +229,28 @@ TEST_F(MavlinkMissionTest, RejectedUploadKeepsPreviousMission)
     EXPECT_EQ(plan->waypoints[1].longitude, 400);
 }
 
+TEST_F(MavlinkMissionTest, UploadCompletedInAutopilotModeKeepsPreviousMission)
+{
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, 0.0f, 300, 400, 20.0f);
+    ASSERT_EQ(flightPlanConfig()->waypointCount, 1);
+    ASSERT_EQ(s_saveCalls, 1);
+
+    sendCount(1);
+    flightModeFlags = AUTOPILOT_MODE;   // pilot engages the mission during the upload
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, 0.0f, 700, 800, 30.0f);
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_DENIED);
+    EXPECT_EQ(s_saveCalls, 1);
+    ASSERT_EQ(flightPlanConfig()->waypointCount, 1);
+    EXPECT_EQ(flightPlanConfig()->waypoints[0].latitude, 300);
+    EXPECT_EQ(flightPlanConfig()->waypoints[0].longitude, 400);
+}
+
 TEST_F(MavlinkMissionTest, UploadWaypointAcceptsNanYaw)
 {
     sendCount(1);
