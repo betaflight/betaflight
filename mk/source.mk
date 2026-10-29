@@ -183,6 +183,8 @@ COMMON_SRC = \
             flight/launch_wing.c \
             flight/mixer.c \
             flight/motor_noise.c \
+            flight/motor_thermal.c \
+            pg/motor_thermal.c \
             flight/mixer_init.c \
             flight/mixer_tricopter.c \
             flight/nav_trail.c \
@@ -519,6 +521,7 @@ SIZE_OPTIMISED_SRC += \
             sensors/acceleration_init.c \
             flight/pid_init.c \
             flight/mixer_init.c \
+            flight/motor_thermal.c \
             cli/cli.c \
             cli/settings.c \
             drivers/light_ws2811strip.c \

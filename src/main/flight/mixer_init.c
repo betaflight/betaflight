@@ -49,6 +49,9 @@
 #ifdef USE_MOTOR_NOISE
 #include "motor_noise.h"
 #endif
+#ifdef USE_MOTOR_THERMAL
+#include "motor_thermal.h"
+#endif
 
 #ifndef YAW_MOTORS_REVERSED
 #define YAW_MOTORS_REVERSED 0
@@ -348,6 +351,9 @@ void mixerInitProfile(void)
 {
 #ifdef USE_MOTOR_NOISE
     motorNoiseInit(pidGetDT() * 1e6f);
+#endif
+#ifdef USE_MOTOR_THERMAL
+    motorThermalInit();
 #endif
 #ifdef USE_DYN_IDLE
     if (useDshotTelemetry) {

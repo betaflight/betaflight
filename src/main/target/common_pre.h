@@ -294,6 +294,7 @@
 #define USE_ESCSERIAL_SIMONK
 #define USE_ALTITUDE_HOLD
 #define USE_POSITION_HOLD
+#define USE_MOTOR_THERMAL   // motor winding temperature estimator (flight/motor_thermal.c)
 
 #if !defined(USE_GPS)
 #define USE_GPS
