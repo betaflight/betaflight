@@ -3,6 +3,7 @@ PG_SRC = \
             pg/alt_hold_multirotor.c \
             pg/alt_hold_wing.c \
             pg/autopilot.c \
+            pg/autopilot_wing.c \
             pg/beeper.c \
             pg/beeper_dev.c \
             pg/board.c \
@@ -174,9 +175,11 @@ COMMON_SRC = \
             flight/failsafe.c \
             flight/flight_plan_capture.c \
             flight/flight_plan_nav.c \
+            flight/flight_plan_nav_wing.c \
             flight/gps_rescue_multirotor.c \
             flight/gps_rescue_wing.c \
             flight/imu.c \
+            flight/landing_wing.c \
             flight/launch_wing.c \
             flight/mixer.c \
             flight/mixer_init.c \
@@ -320,6 +323,7 @@ COMMON_SRC += \
             drivers/accgyro/accgyro_mpu.c \
             drivers/accgyro/accgyro_spi_bmi160.c \
             drivers/accgyro/accgyro_spi_bmi270.c \
+            drivers/accgyro/accgyro_spi_bmi423.c \
             drivers/accgyro/accgyro_spi_icm20649.c \
             drivers/accgyro/accgyro_spi_icm20689.c \
             drivers/accgyro/accgyro_spi_icm40609.c \
@@ -387,6 +391,7 @@ RX_SRC = \
 
 FLASH_SRC += \
             drivers/flash/flash.c \
+            drivers/flash/flash_fm25v02a.c \
             drivers/flash/flash_m25p16.c \
             drivers/flash/flash_mt29f.c \
             drivers/flash/flash_mx66uw1g45g.c \
@@ -443,6 +448,7 @@ SPEED_OPTIMISED_SRC += \
             drivers/accgyro/accgyro_mpu.c \
             drivers/accgyro/accgyro_spi_bmi160.c \
             drivers/accgyro/accgyro_spi_bmi270.c \
+            drivers/accgyro/accgyro_spi_bmi423.c \
             drivers/accgyro/accgyro_spi_lsm6dso.c
 
 endif

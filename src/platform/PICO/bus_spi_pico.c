@@ -257,6 +257,11 @@ void spiInternalStopDMA (const extDevice_t *dev)
     }
 }
 
+void spiInternalAbortDMA(const extDevice_t *dev)
+{
+    spiInternalStopDMA(dev);
+}
+
 // Interrupt handler for SPI receive DMA completion
 FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
 {

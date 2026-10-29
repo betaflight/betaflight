@@ -92,6 +92,7 @@ void spiInitDevice(spiDevice_e device);
 void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segment);
 void spiInternalStartDMA(const extDevice_t *dev);
 void spiInternalStopDMA (const extDevice_t *dev);
+void spiInternalAbortDMA(const extDevice_t *dev);
 void spiInternalResetStream(dmaChannelDescriptor_t *descriptor);
 void spiInternalResetDescriptors(busDevice_t *bus);
 bool spiInternalReadWriteBufPolled(spiResource_t *instance, const uint8_t *txData, uint8_t *rxData, int len);

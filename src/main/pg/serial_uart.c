@@ -64,13 +64,13 @@ static const uartDmaopt_t uartDmaopt[] = {
 #ifdef USE_UART5
     { SERIAL_PORT_UART5, UART5_TX_DMA_OPT, UART5_RX_DMA_OPT },
 #endif
-#ifdef USE_USART6
+#ifdef USE_UART6
     { SERIAL_PORT_UART6, UART6_TX_DMA_OPT, UART6_RX_DMA_OPT },
 #endif
-#ifdef USE_USART7
+#ifdef USE_UART7
     { SERIAL_PORT_UART7, UART7_TX_DMA_OPT, UART7_RX_DMA_OPT },
 #endif
-#ifdef USE_USART8
+#ifdef USE_UART8
     { SERIAL_PORT_UART8, UART8_TX_DMA_OPT, UART8_RX_DMA_OPT },
 #endif
 #ifdef USE_UART9
