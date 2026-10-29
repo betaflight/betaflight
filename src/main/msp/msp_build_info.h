@@ -24,7 +24,7 @@
  *
  * Generator    : `src/utils/make-build-info.py`
  * Source       : https://build.betaflight.com/api/options/2026.12
- * Input hash   : 305e9e75314878377cbadd2550bf4802
+ * Input hash   : ec29b3428a61184bf200bff590fc476f
  */
 
 #pragma once
@@ -74,6 +74,7 @@
 #define BUILD_OPTION_OSD_HD                     16417
 #define BUILD_OPTION_FRSKYOSD                   16411
 #define BUILD_OPTION_PINIO                      16418
+#define BUILD_OPTION_PITOT                      16431
 #define BUILD_OPTION_POSITION_HOLD              16425
 #define BUILD_OPTION_RACE_PRO                   16419
 #define BUILD_OPTION_RANGEFINDER                16429
