@@ -694,6 +694,7 @@ static void dispatchWingLeg(const waypoint_t *wp, const vector3_t *targetEnuM)
         .vertRateMps = legVertRateMps(wp),
         .startAltM = commandedAltitudeM(positionEstimatorGetEstimate()),
         .climbOut = isRescueStop() && wp->type == WAYPOINT_TYPE_HOLD,
+        .timed = (wp->type == WAYPOINT_TYPE_FLYOVER || wp->type == WAYPOINT_TYPE_FLYBY) && wp->duration > 0,
         .injectedLanding = fp.injectedCount > 0,
     };
     const waypoint_t *nextWp = nextPositionalWaypoint(fp.currentIndex + 1);
