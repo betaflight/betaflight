@@ -97,7 +97,8 @@ static bool checkEscAlarmConditions(const escSensorData_t *data, uint8_t motorIn
     }
 
     // Check current alarm (regardless of motor spinning state)
-    if (data->current && osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF && data->current >= osdConfig()->esc_current_alarm) {
+    // esc_current_alarm is in A, data->current is in 0.01A
+    if (data->current && osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF && data->current >= osdConfig()->esc_current_alarm * 100) {
         buffer[alarmPos++] = ESC_ALARM_CURRENT;
     }
 

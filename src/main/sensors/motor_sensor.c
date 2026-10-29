@@ -72,8 +72,9 @@ const escSensorData_t *getMotorSensorData(int motorIndex, motorSensorSource_e so
             // Voltage: EDT step is 0.25V, convert to 0.01V
             data->voltage = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) ?
                 motorState->telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] * 25 : 0;
+            // Current: EDT step is 1A, convert to 0.01A
             data->current = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ?
-                motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] : 0;
+                motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] * 100 : 0;
             data->consumption = 0; // EDT does not report consumption
             return data;
         }
