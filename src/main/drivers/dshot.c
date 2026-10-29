@@ -254,6 +254,7 @@ static void dshotUpdateTelemetryData(uint8_t motorIndex, dshotTelemetryType_t ty
     // Update telemetry data
     dshotTelemetryState.motorState[motorIndex].telemetryData[type] = value;
     dshotTelemetryState.motorState[motorIndex].telemetryTypes |= (1 << type);
+    dshotTelemetryState.motorState[motorIndex].telemetryUpdated |= (1 << type);
 }
 
 FAST_CODE_NOINLINE void updateDshotTelemetry(void)

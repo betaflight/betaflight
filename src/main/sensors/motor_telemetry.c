@@ -35,6 +35,7 @@
 
 #include "drivers/dshot.h"
 #include "drivers/motor.h"
+#include "drivers/time.h"
 
 #include "flight/mixer.h"
 
@@ -43,6 +44,11 @@
 #include "motor_telemetry.h"
 
 STATIC_ASSERT(MAX_SUPPORTED_MOTORS < MOTOR_TELEMETRY_COMBINED, motor_telemetry_combined_index_is_a_motor_index);
+
+// DShot extended telemetry has no fixed interval. The specification uses
+// 1000ms as an example for temperature and voltage. Expire a value that does
+// not update for 5 intervals.
+#define DSHOT_EDT_TIMEOUT_MS 5000
 
 static motorTelemetry_t motorTelemetry[MAX_SUPPORTED_MOTORS];
 static motorTelemetry_t motorTelemetryCombined;
@@ -71,14 +77,29 @@ bool motorTelemetryIsEnabled(void)
 }
 
 #ifdef USE_DSHOT_TELEMETRY
+static timeMs_t dshotEdtUpdateMs[MAX_SUPPORTED_MOTORS][DSHOT_TELEMETRY_TYPE_COUNT];
+
+// True if the extended telemetry value is available and updated recently
+static bool isDshotEdtFresh(dshotTelemetryMotorState_t *motorState, unsigned motorIndex, dshotTelemetryType_t type, timeMs_t nowMs)
+{
+    if (motorState->telemetryUpdated & (1 << type)) {
+        motorState->telemetryUpdated &= ~(1 << type);
+        dshotEdtUpdateMs[motorIndex][type] = nowMs;
+    }
+
+    return (motorState->telemetryTypes & (1 << type))
+        && cmpTimeMs(nowMs, dshotEdtUpdateMs[motorIndex][type]) < DSHOT_EDT_TIMEOUT_MS;
+}
+
 static void mergeDshotTelemetry(motorTelemetry_t *telemetry, unsigned motorIndex)
 {
     if (!useDshotTelemetry || !isDshotMotorTelemetryActive(motorIndex)) {
         return;
     }
 
-    const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[motorIndex];
+    dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[motorIndex];
     const uint32_t types = motorState->telemetryTypes;
+    const timeMs_t nowMs = millis();
 
     telemetry->sources |= MOTOR_TELEMETRY_SOURCE_DSHOT;
     telemetry->dataAge = 0;
@@ -91,17 +112,17 @@ static void mergeDshotTelemetry(motorTelemetry_t *telemetry, unsigned motorIndex
     }
 
     // Temperature: step 1 degree Celsius
-    if (types & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) {
+    if (isDshotEdtFresh(motorState, motorIndex, DSHOT_TELEMETRY_TYPE_TEMPERATURE, nowMs)) {
         telemetry->temperature = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE];
         telemetry->valid |= MOTOR_TELEMETRY_TEMPERATURE;
     }
     // Voltage: step 0.25V, convert to 0.01V
-    if (types & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) {
+    if (isDshotEdtFresh(motorState, motorIndex, DSHOT_TELEMETRY_TYPE_VOLTAGE, nowMs)) {
         telemetry->voltage = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] * 25;
         telemetry->valid |= MOTOR_TELEMETRY_VOLTAGE;
     }
     // Current: step 1A, convert to 0.01A
-    if (types & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) {
+    if (isDshotEdtFresh(motorState, motorIndex, DSHOT_TELEMETRY_TYPE_CURRENT, nowMs)) {
         telemetry->current = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] * 100;
         telemetry->valid |= MOTOR_TELEMETRY_CURRENT;
     }

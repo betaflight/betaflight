@@ -44,6 +44,7 @@ static uint8_t motorCount;
 static bool escSensorFeature;
 static escSensorData_t escSensorData[MAX_SUPPORTED_MOTORS];
 static float dshotRpm[MAX_SUPPORTED_MOTORS];
+static timeMs_t nowMs;
 
 bool useDshotTelemetry;
 dshotTelemetryState_t dshotTelemetryState;
@@ -51,6 +52,11 @@ dshotTelemetryState_t dshotTelemetryState;
 bool featureIsEnabled(uint32_t mask)
 {
     return (mask & FEATURE_ESC_SENSOR) && escSensorFeature;
+}
+
+timeMs_t millis(void)
+{
+    return nowMs;
 }
 
 uint8_t getMotorCount(void)
@@ -98,6 +104,7 @@ static void setDshotTelemetry(unsigned motor, float rpm, int temperature, int vo
         state->telemetryTypes |= 1 << DSHOT_TELEMETRY_TYPE_CURRENT;
         state->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] = current;
     }
+    state->telemetryUpdated |= state->telemetryTypes;
 }
 
 static void setEscSensorTelemetry(unsigned motor, uint8_t dataAge, int16_t rpm, uint8_t temperature, uint16_t voltage, int32_t current, int32_t consumption)
@@ -122,6 +129,7 @@ protected:
         memset(&dshotTelemetryState, 0, sizeof(dshotTelemetryState));
         memset(escSensorData, 0, sizeof(escSensorData));
         memset(dshotRpm, 0, sizeof(dshotRpm));
+        nowMs = 100000;
         for (unsigned i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             escSensorData[i].dataAge = ESC_DATA_INVALID;
         }
@@ -215,6 +223,27 @@ TEST_F(MotorTelemetryTest, EscSensorStaleDataIsIgnored)
     EXPECT_EQ(ESC_BATTERY_AGE_MAX, motorTelemetryGet(0)->dataAge);
     EXPECT_TRUE(motorTelemetryHas(motorTelemetryGet(0), MOTOR_TELEMETRY_VOLTAGE));
     EXPECT_EQ(0, motorTelemetryGet(1)->valid);
+}
+
+// A DShot extended telemetry value that does not update expires
+TEST_F(MotorTelemetryTest, DshotExtendedTelemetryExpires)
+{
+    useDshotTelemetry = true;
+    setDshotTelemetry(0, 12000.0f, 40, 64, 10);
+    EXPECT_TRUE(motorTelemetryHas(motorTelemetryGet(0), MOTOR_TELEMETRY_VOLTAGE));
+
+    // Voltage updates, temperature and current do not
+    nowMs += 4000;
+    dshotTelemetryState.motorState[0].telemetryUpdated |= 1 << DSHOT_TELEMETRY_TYPE_VOLTAGE;
+    EXPECT_TRUE(motorTelemetryHas(motorTelemetryGet(0), MOTOR_TELEMETRY_TEMPERATURE));
+
+    nowMs += 1000;
+    const motorTelemetry_t *telemetry = motorTelemetryGet(0);
+    EXPECT_FALSE(motorTelemetryHas(telemetry, MOTOR_TELEMETRY_TEMPERATURE));
+    EXPECT_FALSE(motorTelemetryHas(telemetry, MOTOR_TELEMETRY_CURRENT));
+    EXPECT_TRUE(motorTelemetryHas(telemetry, MOTOR_TELEMETRY_VOLTAGE));
+    // RPM does not expire here, DShot telemetry is still active
+    EXPECT_TRUE(motorTelemetryHas(telemetry, MOTOR_TELEMETRY_RPM));
 }
 
 // Stale ESC sensor data must not replace fresh DShot data
