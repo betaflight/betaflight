@@ -47,6 +47,9 @@ void pgResetFn_vtxIOConfig(vtxIOConfig_t *vtxIOConfig)
 
     // external power controller
 #ifdef RTC6705_DYNAMIC_POWER_CTRL
+#if !defined(RTC6705_EX_POWER_1_PIN) || !defined(RTC6705_EX_POWER_2_PIN)
+#error "RTC6705_DYNAMIC_POWER_CTRL needs RTC6705_EX_POWER_1_PIN and RTC6705_EX_POWER_2_PIN"
+#endif
     vtxIOConfig->exPowerTag[0] = IO_TAG(RTC6705_EX_POWER_1_PIN);
     vtxIOConfig->exPowerTag[1] = IO_TAG(RTC6705_EX_POWER_2_PIN);
 #endif

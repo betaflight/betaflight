@@ -7269,7 +7269,7 @@ const cliResourceValue_t resourceTable[] = {
     DEFS( OWNER_VTX_CLK,       PG_VTX_IO_CONFIG, vtxIOConfig_t, clockTag ),
 #endif
 #ifdef RTC6705_DYNAMIC_POWER_CTRL
-    DEFA( OWNER_VTX_POWER,     PG_VTX_IO_CONFIG, vtxIOConfig_t, exPowerTag, VTX_DYNAMIC_CTRL_PIN_COUNT),
+    DEFA( OWNER_VTX_POWER_EX,  PG_VTX_IO_CONFIG, vtxIOConfig_t, exPowerTag, VTX_DYNAMIC_CTRL_PIN_COUNT),
 #endif
 #ifdef USE_PIN_PULL_UP_DOWN
     DEFA( OWNER_PULLUP,        PG_PULLUP_CONFIG,   pinPullUpDownConfig_t, ioTag, PIN_PULL_UP_DOWN_COUNT ),

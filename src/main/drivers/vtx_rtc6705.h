@@ -32,7 +32,7 @@
 #include "pg/vtx_io.h"
 
 #if defined(RTC6705_DYNAMIC_POWER_CTRL)
-    #define VTX_RTC6705_POWER_COUNT       4
+    #define VTX_RTC6705_POWER_COUNT       3
     #define VTX_DYNAMIC_CTRL_PIN_COUNT    2
 #else
     #define VTX_RTC6705_POWER_COUNT       2
