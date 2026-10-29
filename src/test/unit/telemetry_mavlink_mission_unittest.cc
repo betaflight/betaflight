@@ -186,6 +186,71 @@ TEST_F(MavlinkMissionTest, UploadWritesWaypointsToConfig)
     EXPECT_EQ(plan->waypoints[2].type, WAYPOINT_TYPE_LAND);
 }
 
+TEST_F(MavlinkMissionTest, UploadRejectsUnsupportedReturnToLaunch)
+{
+    sendCount(2);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 2, 0.0f, 300, 400, 20.0f);
+    sendItem(1, MAV_CMD_NAV_RETURN_TO_LAUNCH, 2);
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_UNSUPPORTED);
+    EXPECT_EQ(flightPlanConfig()->waypointCount, 0);
+    EXPECT_EQ(s_saveCalls, 0);
+}
+
+TEST_F(MavlinkMissionTest, RejectedUploadKeepsPreviousMission)
+{
+    sendCount(2);
+    sendItem(0, MAV_CMD_NAV_TAKEOFF, 2, 0.0f, 100, 200, 12.0f);
+    sendItem(1, MAV_CMD_NAV_WAYPOINT, 2, 0.0f, 300, 400, 20.0f);
+    ASSERT_EQ(flightPlanConfig()->waypointCount, 2);
+    ASSERT_EQ(s_saveCalls, 1);
+
+    sendCount(2);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 2, 0.0f, 700, 800, 30.0f);
+    sendItem(1, MAV_CMD_NAV_RETURN_TO_LAUNCH, 2);
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_UNSUPPORTED);
+    EXPECT_EQ(s_saveCalls, 1);
+
+    const flightPlanConfig_t *plan = flightPlanConfig();
+    ASSERT_EQ(plan->waypointCount, 2);
+    EXPECT_EQ(plan->waypoints[0].type, WAYPOINT_TYPE_TAKEOFF);
+    EXPECT_EQ(plan->waypoints[0].latitude, 100);
+    EXPECT_EQ(plan->waypoints[1].type, WAYPOINT_TYPE_FLYBY);
+    EXPECT_EQ(plan->waypoints[1].latitude, 300);
+    EXPECT_EQ(plan->waypoints[1].longitude, 400);
+}
+
+TEST_F(MavlinkMissionTest, UploadCompletedInAutopilotModeKeepsPreviousMission)
+{
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, 0.0f, 300, 400, 20.0f);
+    ASSERT_EQ(flightPlanConfig()->waypointCount, 1);
+    ASSERT_EQ(s_saveCalls, 1);
+
+    sendCount(1);
+    flightModeFlags = AUTOPILOT_MODE;   // pilot engages the mission during the upload
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, 0.0f, 700, 800, 30.0f);
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_DENIED);
+    EXPECT_EQ(s_saveCalls, 1);
+    ASSERT_EQ(flightPlanConfig()->waypointCount, 1);
+    EXPECT_EQ(flightPlanConfig()->waypoints[0].latitude, 300);
+    EXPECT_EQ(flightPlanConfig()->waypoints[0].longitude, 400);
+}
+
 TEST_F(MavlinkMissionTest, UploadWaypointAcceptsNanYaw)
 {
     sendCount(1);
