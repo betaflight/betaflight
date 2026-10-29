@@ -688,6 +688,23 @@ TEST_F(FlightPlanNavTest, TimedFlybyHoldsBeforeAdvancing)
     EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
 }
 
+TEST_F(FlightPlanNavTest, TimedFlyoverHoldsBeforeAdvancing)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER, 0, 50 /* 5 s */);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    ASSERT_NE(g_lastTarget.callback, nullptr);
+    triggerReached();
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_HOLDING);
+
+    g_stubMicros += 5'000'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+}
+
 TEST_F(FlightPlanNavTest, ZeroDurationFlybyStillPassesThrough)
 {
     addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYBY, 0, 0);
