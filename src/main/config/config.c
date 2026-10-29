@@ -256,9 +256,13 @@ static void validateAndFixConfig(void)
         // assigned to settle a single bad one.
         serialDropConflictingAssignments();
 
-        if (!isSerialConfigValid()) {
+        const bool serialReset = !isSerialConfigValid();
+        if (serialReset) {
             serialResetFeatureAssignments();
         }
+
+        systemConfigMutable()->configResetReason = CONFIG_RESET_SERIAL;
+        systemConfigMutable()->configResetDetail = serialReset;
     }
 
 #if defined(USE_GPS)
@@ -809,13 +813,27 @@ void writeEEPROM(void)
     writeUnmodifiedConfigToEEPROM();
 }
 
-bool resetEEPROM(void)
+bool resetEEPROM(configResetReason_e reason, uint16_t detail)
 {
     resetConfig();
+
+    systemConfigMutable()->configResetReason = reason;
+    systemConfigMutable()->configResetDetail = detail;
 
     writeUnmodifiedConfigToEEPROM();
 
     return true;
+}
+
+void resetEEPROMOnLoadFault(void)
+{
+    uint16_t detail;
+    configResetReason_e reason = diagnoseEEPROM(&detail);
+    if (reason == CONFIG_RESET_NONE) {
+        reason = CONFIG_RESET_BOARD;
+    }
+
+    resetEEPROM(reason, detail);
 }
 
 void ensureEEPROMStructureIsValid(void)
@@ -823,7 +841,7 @@ void ensureEEPROMStructureIsValid(void)
     if (isEEPROMStructureValid()) {
         return;
     }
-    resetEEPROM();
+    resetEEPROMOnLoadFault();
 }
 
 void saveConfigAndNotify(void)

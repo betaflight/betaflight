@@ -47,7 +47,7 @@
 // 10 MHz max SPI frequency
 #define BARO_2SMBP_MAX_SPI_CLK_HZ 10000000
 
-#if defined(USE_BARO) && defined(USE_BARO_2SMBP_02B)
+#if defined(USE_BARO) && (defined(USE_BARO_2SMBP_02B) || defined(USE_BARO_SPI_2SMBP_02B))
 
 #define BARO_2SMBP_I2C_ADDRESS 0x70
 

@@ -71,7 +71,6 @@
 
 #define USE_ADC
 #define USE_EXTI
-#define USE_TIMER_UP_CONFIG
 
 // SDMMC needs explicit pin config + peripheral init on H7 (matches the pattern
 // used by H723/H725/H735 targets). The common_post.h default leaves both at 0,
