@@ -1198,8 +1198,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
 
     // Anti Gravity
-    // Write the scaled value into a local variable. Do not change pidRuntime.antiGravityThrottleD.
-    // Only pidUpdateAntiGravityThrottleFilter() writes a new value to it.
+    // Write the scaled value into a local variable. Do not scale pidRuntime.antiGravityThrottleD in place.
+    // Only pidUpdateAntiGravityThrottleFilter() writes a new filter output to it.
     // If the filter does not get an input, a scale in place increases the value on each loop (see #15910).
     float antiGravityThrottleD = 0.0f;
     if (pidRuntime.antiGravityEnabled) {
@@ -1207,6 +1207,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // used later to increase pTerm
         pidRuntime.itermAccelerator = antiGravityThrottleD * ANTIGRAVITY_KI;
     } else {
+        // Clear the value. If anti-gravity is enabled again during crash flip, it then starts from zero.
+        pidRuntime.antiGravityThrottleD = 0.0f;
         pidRuntime.itermAccelerator = 0.0f;
     }
     DEBUG_SET(DEBUG_ANTI_GRAVITY, 2, lrintf((1 + (pidRuntime.itermAccelerator / pidRuntime.pidCoefficient[FD_PITCH].Ki)) * 1000));  //!< I Gain Multiplier (pitch) [unit:0.001]
