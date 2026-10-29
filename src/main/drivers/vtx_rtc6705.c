@@ -78,20 +78,6 @@ static extDevice_t *dev = NULL;
 #define RTC6705_RW_CONTROL_BIT      (1 << 4)
 #define RTC6705_ADDRESS             (0x07)
 
-#if defined(RTC6705_DYNAMIC_POWER_CTRL)
-struct rtc6705PowerLevel {
-    uint8_t pins;   // bit i drives exPowerPin[i]
-    uint32_t reg;   // rtc6705 reg 0x07 data
-};
-
-// index = rf_power - 1
-static const struct rtc6705PowerLevel rtc6705PowerLevels[VTX_RTC6705_POWER_COUNT] = {
-    { BIT(0),          PA_CONTROL_LOW },
-    { BIT(1),          PA_CONTROL_DEFAULT },
-    { BIT(0) | BIT(1), PA_CONTROL_DEFAULT },
-};
-#endif
-
 /**
  * Reverse a uint32_t (LSB to MSB)
  * This is easier for when generating the frequency to then
@@ -211,16 +197,17 @@ void rtc6705SetFrequency(uint16_t frequency)
 
 void rtc6705SetRFPower(uint8_t rf_power)
 {
-    rf_power = constrain(rf_power, 1, VTX_RTC6705_POWER_COUNT);
-
 #if defined(RTC6705_DYNAMIC_POWER_CTRL)
-    const struct rtc6705PowerLevel *level = &rtc6705PowerLevels[rf_power - 1];
+    // power value is the external power code, bit i drives exPowerPin[i]
+    rf_power = constrain(rf_power, 0, VTX_RTC6705_POWER_COUNT - 1);
 
     for (unsigned i = 0; i < VTX_DYNAMIC_CTRL_PIN_COUNT; i++) {
         if (exPowerPin[i]) {
-            IOWrite(exPowerPin[i], level->pins & BIT(i));
+            IOWrite(exPowerPin[i], rf_power & BIT(i));
         }
     }
+#else
+    rf_power = constrain(rf_power, 1, VTX_RTC6705_POWER_COUNT);
 #endif
 
 #if defined(USE_VTX_RTC6705_SOFTSPI)
@@ -232,10 +219,10 @@ void rtc6705SetRFPower(uint8_t rf_power)
 #endif
 
 #if defined(RTC6705_DYNAMIC_POWER_CTRL)
-    // the external PA stage is set by the pins, the internal PA stage by SPI
-    const uint32_t data = level->reg;
+    // internal PA is full only at the highest level
+    const uint32_t data = rf_power >= VTX_RTC6705_POWER_COUNT - 1 ? PA_CONTROL_DEFAULT : PA_CONTROL_LOW;
 #else
-    const uint32_t data = rf_power > 1 ? PA_CONTROL_DEFAULT : (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK));
+    const uint32_t data = rf_power > 1 ? PA_CONTROL_DEFAULT : PA_CONTROL_LOW;
 #endif
 
     uint32_t val_hex = RTC6705_RW_CONTROL_BIT; // write
