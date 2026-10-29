@@ -1198,8 +1198,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
 
     // Anti Gravity
-    // scale into a local; pidRuntime.antiGravityThrottleD is only written by pidUpdateAntiGravityThrottleFilter(),
-    // so scaling it in place would compound every loop the filter is not fed (see #15910)
+    // Write the scaled value into a local variable. Do not change pidRuntime.antiGravityThrottleD.
+    // Only pidUpdateAntiGravityThrottleFilter() writes a new value to it.
+    // If the filter does not get an input, a scale in place increases the value on each loop (see #15910).
     float antiGravityThrottleD = 0.0f;
     if (pidRuntime.antiGravityEnabled) {
         antiGravityThrottleD = pidRuntime.antiGravityThrottleD * pidRuntime.antiGravityGain;

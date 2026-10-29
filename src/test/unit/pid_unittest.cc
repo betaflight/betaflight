@@ -674,8 +674,8 @@ TEST(pidControllerTest, testMixerSaturation)
     EXPECT_NEAR(320, pidData[FD_YAW].I, calculateTolerance(320));
 }
 
-// #15910: the anti gravity throttle filter is not fed while crash flip is active,
-// so pidController() must not compound the gain into antiGravityThrottleD on every loop
+// #15910: During crash flip, the anti-gravity throttle filter does not get an input.
+// Thus, pidController() must not multiply antiGravityThrottleD by the gain on each loop.
 TEST(pidControllerTest, testAntiGravityNotCompoundedWhenFilterNotFed)
 {
     resetTest();
@@ -686,22 +686,22 @@ TEST(pidControllerTest, testAntiGravityNotCompoundedWhenFilterNotFed)
     const uint8_t prevDebugMode = debugMode;
     pidRuntime.antiGravityEnabled = true;
     debugMode = DEBUG_ANTI_GRAVITY;
-    // small residual filter output left over from an earlier throttle move
+    // A small filter output that remains after an earlier throttle movement
     const float residualThrottleD = 0.1f;
     pidRuntime.antiGravityThrottleD = residualThrottleD;
 
-    // gyro error so the P term is non-zero and the P boost is exercised
+    // A gyro error gives a P term that is not zero. Thus, the test uses the P boost.
     gyro.gyroADCf[FD_ROLL] = 100;
     gyro.gyroADCf[FD_PITCH] = -100;
 
     pidController(pidProfile, currentTestTime());
-    // itermAccelerator is cleared for yaw inside the loop, so use the I and P gain multiplier debug values
+    // The yaw loop sets itermAccelerator to zero. Thus, use the debug values of the I and P gain multipliers.
     const int16_t expectedIGainMultiplier = debug[2];
     const int16_t expectedPGainMultiplier = debug[3];
     EXPECT_GT(expectedIGainMultiplier, 1000);
     EXPECT_GT(expectedPGainMultiplier, 1000);
 
-    // without the filter rewriting it, in-place scaling by a gain of 10 would overflow to inf within ~40 loops
+    // If the filter does not write a new value, a scale in place with a gain of 10 gives inf in approximately 40 loops
     for (int loop = 0; loop < 100; loop++) {
         pidController(pidProfile, currentTestTime());
     }

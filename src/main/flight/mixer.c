@@ -699,11 +699,13 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
     calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
 
     if (applyCrashFlipModeToMotors()) {
-        // if crash flip mode is being applied to the motors, mixing is done.
-        // The anti-gravity throttle filter is deliberately not updated here: its output holds
-        // the value it had when crash flip began, normally negligible after throttle cut and
-        // disarm, and resumes decaying once crash flip ends. Feeding it here would let a throttle
-        // bump during crash flip boost P and I just before take-off (see #15910).
+        // When crash flip mode controls the motors, mixing is complete.
+        // Do not send throttle to the anti-gravity filter here. This is intentional.
+        // The filter output keeps the value that it had when crash flip started.
+        // Usually this value is very small after throttle cut and disarm.
+        // When crash flip stops, the value continues to decrease.
+        // If the filter gets throttle here, a throttle movement during crash flip
+        // can increase P and I immediately before take-off (see #15910).
         return;
     }
 
