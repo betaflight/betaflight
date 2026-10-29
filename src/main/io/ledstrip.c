@@ -669,7 +669,7 @@ static void applyLedFixedLayers(void)
                 if (gpsSol.numSat == 0 || !sensors(SENSOR_GPS)) {
                     color = HSV(RED);
                 } else {
-                    uint8_t minSats = gpsGetMinSats();
+                    uint8_t minSats = gnssGetMinSats();
                     if (gpsSol.numSat >= minSats) {
                         color = HSV(GREEN);
                     } else {

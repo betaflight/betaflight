@@ -306,7 +306,7 @@ float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 extern boxBitmask_t rcModeActivationMask;
 gpsSolutionData_t gpsSol;
 
-uint8_t gpsGetMinSats(void) { return 4; }
+uint8_t gnssGetMinSats(void) { return 4; }
 
 batteryState_e getBatteryState(void)
 {
