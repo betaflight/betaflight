@@ -206,6 +206,34 @@ TEST_F(MotorTelemetryTest, EscSensorInvalidDataIsIgnored)
     EXPECT_EQ(0, telemetry->valid);
 }
 
+TEST_F(MotorTelemetryTest, EscSensorStaleDataIsIgnored)
+{
+    escSensorFeature = true;
+    setEscSensorTelemetry(0, ESC_BATTERY_AGE_MAX, 700, 50, 1620, 1530, 250);
+    setEscSensorTelemetry(1, ESC_BATTERY_AGE_MAX + 1, 700, 50, 1620, 1530, 250);
+
+    EXPECT_EQ(ESC_BATTERY_AGE_MAX, motorTelemetryGet(0)->dataAge);
+    EXPECT_TRUE(motorTelemetryHas(motorTelemetryGet(0), MOTOR_TELEMETRY_VOLTAGE));
+    EXPECT_EQ(0, motorTelemetryGet(1)->valid);
+}
+
+// Stale ESC sensor data must not replace fresh DShot data
+TEST_F(MotorTelemetryTest, FreshDshotVoltageWhenEscSensorDataIsStale)
+{
+    useDshotTelemetry = true;
+    escSensorFeature = true;
+    setDshotTelemetry(0, 12000.0f, 40, 64, -1);
+    setEscSensorTelemetry(0, ESC_BATTERY_AGE_MAX + 1, 700, 55, 1610, 1520, 300);
+
+    const motorTelemetry_t *telemetry = motorTelemetryGet(0);
+    ASSERT_NE(nullptr, telemetry);
+    EXPECT_EQ(MOTOR_TELEMETRY_SOURCE_DSHOT, telemetry->sources);
+    EXPECT_EQ(1600, telemetry->voltage);
+    EXPECT_EQ(0, telemetry->dataAge);
+    EXPECT_FALSE(motorTelemetryHas(telemetry, MOTOR_TELEMETRY_CURRENT));
+    EXPECT_FALSE(motorTelemetryHas(telemetry, MOTOR_TELEMETRY_CONSUMPTION));
+}
+
 TEST_F(MotorTelemetryTest, BothSourcesMergeByField)
 {
     useDshotTelemetry = true;

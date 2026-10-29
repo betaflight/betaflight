@@ -1575,7 +1575,7 @@ case MSP_NAME:
             for (unsigned i = 0; i < getMotorCount(); i++) {
                 const motorTelemetry_t *telemetry = motorTelemetryGet(i);
                 sbufWriteU8(dst, telemetry ? telemetry->temperature : 0);
-                sbufWriteU16(dst, telemetry ? MIN(telemetry->rpm, (uint32_t)UINT16_MAX) : 0); // RPM
+                sbufWriteU16(dst, telemetry ? MIN(telemetry->rpm / 10, (uint32_t)UINT16_MAX) : 0); // RPM / 10, as ArduPilot sends to DJI
             }
         } else
 #endif

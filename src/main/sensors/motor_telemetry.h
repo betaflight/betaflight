@@ -31,6 +31,7 @@
 // - rpm: DShot telemetry first, then ESC sensor.
 // - temperature, voltage, current, consumption: ESC sensor first (better
 //   resolution), then DShot extended telemetry.
+// ESC sensor data older than ESC_BATTERY_AGE_MAX is not used.
 //
 // Hot paths (RPM filter, dynamic idle, blackbox) continue to read DShot
 // telemetry directly. This module is for the slow consumers (OSD, MSP,
@@ -55,7 +56,7 @@ typedef struct motorTelemetry_s {
     int32_t consumption;    // mAh
     uint16_t voltage;       // 0.01V
     uint8_t temperature;    // degrees Celsius
-    uint8_t dataAge;        // 0 = fresh, ESC_DATA_INVALID = no data
+    uint8_t dataAge;        // ESC sensor data age (0 .. ESC_BATTERY_AGE_MAX), 0 for DShot, ESC_DATA_INVALID = no data
     uint8_t valid;          // motorTelemetryField_e bits
     uint8_t sources;        // motorTelemetrySource_e bits
 } motorTelemetry_t;

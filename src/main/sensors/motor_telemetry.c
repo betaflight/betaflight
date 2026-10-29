@@ -115,8 +115,10 @@ static void mergeEscSensorTelemetry(motorTelemetry_t *telemetry, unsigned motorI
         return;
     }
 
+    // Do not use stale data. Then DShot telemetry can supply the value, and
+    // all merged values are fresh.
     const escSensorData_t *escData = escSensorGetData(motorIndex);
-    if (!escData || escData->dataAge >= ESC_DATA_INVALID) {
+    if (!escData || escData->dataAge > ESC_BATTERY_AGE_MAX) {
         return;
     }
 
