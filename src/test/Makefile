@@ -456,6 +456,25 @@ else
 msp_reboot_unittest_LDFLAGS := -Wl,--gc-sections
 endif
 
+msp_dataflash_unittest_SRC := \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/huffman.c \
+		$(USER_DIR)/common/huffman_table.c \
+		$(USER_DIR)/fc/runtime_config.c \
+		$(TEST_DIR)/msp_dataflash_test_support.c
+
+msp_dataflash_unittest_DEFINES := \
+		USE_FLASHFS= \
+		USE_HUFFMAN=
+
+# Compile the complete MSP translation unit; keep only the dataflash read path.
+msp_dataflash_unittest_C_FLAGS := -ffunction-sections -fdata-sections
+ifeq ($(OSFAMILY), macosx)
+msp_dataflash_unittest_LDFLAGS := -Wl,-dead_strip
+else
+msp_dataflash_unittest_LDFLAGS := -Wl,--gc-sections
+endif
+
 osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
 		$(USER_DIR)/osd/osd_elements.c \
