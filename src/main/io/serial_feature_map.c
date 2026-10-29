@@ -558,7 +558,9 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
     // legacy MSP + VTX_MSP line): the port is opened as MSP only through
     // osd_uart with an MSP DisplayPort, so select it here.  A diff sets
     // osd_displayport_device after its serial lines, so it would still be
-    // the default at this point.
+    // the default at this point.  The port has no msp_baud entry, so it
+    // opens at the default MSP baud (115200) and the MSP baud on the
+    // legacy line has no effect.
     if ((mask & FUNCTION_MSP) && !mspSlotTaken) {
         osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
     }
