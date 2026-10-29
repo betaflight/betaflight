@@ -239,9 +239,11 @@ typedef enum {
     OSD_POS_HOLD_READY,         // pre-engagement Position Hold readiness indicator
 #endif
 
-#ifdef USE_PITOT
+    // The enum is the MSP position address: entries stay in every build so indices never depend on
+    // compile options (the Configurator already lists AIRSPEED for all API 1.49 builds). Only the draw
+    // function and the active-element registration are compile-time gated.
     OSD_AIRSPEED,
-#endif
+    OSD_MOTOR_TEMP_EST,         // estimated winding temperature per motor
 
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
@@ -295,6 +297,7 @@ typedef enum {
     OSD_STAT_FULL_THROTTLE_TIME,
     OSD_STAT_FULL_THROTTLE_COUNTER,
     OSD_STAT_AVG_THROTTLE,
+    OSD_STAT_MOTOR_TEMP_EST,
     OSD_STAT_COUNT // MUST BE LAST
 } osd_stats_e;
 
@@ -344,6 +347,7 @@ typedef enum {
     OSD_WARNING_LOAD,
     OSD_WARNING_POSHOLD_FAILED,
     OSD_WARNING_AUTOPILOT_ABORT,
+    OSD_WARNING_MOTOR_TEMP,
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 
@@ -444,6 +448,9 @@ typedef struct statistic_s {
     float max_g_force;
     int16_t max_esc_temp_ix;
     int16_t max_esc_temp;
+    int16_t max_motor_temp_est;      // hottest estimated winding during the flight
+    float avg_motor_temp_est_acc;    // running mean of the per-motor average
+    uint32_t avg_motor_temp_est_n;
     int32_t max_esc_rpm;
     uint16_t min_link_quality;
     int16_t min_rssi_dbm;
