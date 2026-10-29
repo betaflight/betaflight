@@ -214,6 +214,21 @@ TEST(SerialFeatureMapNoVtx, PlainMspLineIsStillRejectedWhenEveryMspSlotIsTaken)
     EXPECT_FALSE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_MSP));
 }
 
+TEST(SerialFeatureMapNoVtx, LegacyMspVtxLineWithFrskyOsdIsRejectedWhenEveryMspSlotIsTaken)
+{
+    resetAllConfigs();
+
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USB_VCP, FUNCTION_MSP));
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_MSP));
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART2, FUNCTION_MSP));
+
+    // FRSKY_OSD selects the FrSky OSD device, so without a slot the port
+    // would never open as MSP.
+    EXPECT_FALSE(serialApplyFunctionMask(SERIAL_PORT_USART3,
+        FUNCTION_MSP | FUNCTION_VTX_MSP | FUNCTION_FRSKY_OSD));
+    EXPECT_EQ(SERIAL_PORT_NONE, osdConfig()->osd_uart);
+}
+
 TEST(SerialFeatureMapNoVtx, LegacyMspVtxLineIsRejectedWhenTheOsdHasAnotherPortAndNoSlotIsFree)
 {
     resetAllConfigs();

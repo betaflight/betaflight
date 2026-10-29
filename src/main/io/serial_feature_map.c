@@ -462,11 +462,14 @@ static unsigned countTelemetryBits(uint32_t mask)
 
 // A legacy MSP + VTX_MSP line names the port HD goggles draw the OSD over.
 // osd_uart opens that port as MSP by itself, so the line can still apply
-// when every MSP slot is taken.
+// when every MSP slot is taken.  Not when the mask also carries
+// FRSKY_OSD: that selects the FrSky OSD device, so the port would never
+// open as MSP.
 static bool osdTakesLegacyMspVtxPort(serialPortIdentifier_e identifier, uint32_t mask)
 {
 #if defined(USE_OSD) && defined(USE_MSP_DISPLAYPORT)
     return (mask & FUNCTION_VTX_MSP)
+        && !(mask & FUNCTION_FRSKY_OSD)
         && (osdConfig()->osd_uart == SERIAL_PORT_NONE || osdConfig()->osd_uart == identifier);
 #else
     UNUSED(identifier);
