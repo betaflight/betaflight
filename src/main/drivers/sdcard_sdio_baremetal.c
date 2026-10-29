@@ -78,11 +78,13 @@ static bool sdcardSdio_isFunctional(void)
 }
 
 /**
- * Handle a failure of an SD card operation by resetting the card back to its initialization phase.
+ * Handle a failure of an SD card operation. Put the card back into the initialization phase.
  *
- * Every reset counts as a failure, including when SD_Init() succeeds: SD_Init() is memoized on most
- * platforms, so its success says nothing about the card. The count is only cleared after a completed
- * read or write, and the card is disabled at the failure threshold.
+ * Each reset is a failure, also when SD_Init() is successful. On most platforms, SD_Init() does the
+ * initialization one time only. After that, it gives the same result again.
+ * Thus a successful SD_Init() does not show that the card operates correctly.
+ * Only a completed read or write sets the count to zero.
+ * When the count gets to the failure limit, the card is disabled.
  */
 static void sdcard_reset(void)
 {
