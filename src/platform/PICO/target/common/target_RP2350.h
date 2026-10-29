@@ -105,6 +105,10 @@
 #define PIO_OSD_INDEX 2
 #endif
 
+#ifndef AFATFS_NUM_CACHE_SECTORS
+#define AFATFS_NUM_CACHE_SECTORS 32
+#endif
+
 #ifdef REMOVE_MSP_DISPLAYPORT
 #undef USE_MSP_DISPLAYPORT
 #endif

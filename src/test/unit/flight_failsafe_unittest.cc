@@ -823,6 +823,27 @@ protected:
         testFlightPlanState = FP_NAV_TARGETING;
     }
 
+    void keepThrottleLowBeforeRxLoss() {
+        // Complete link recovery so the low-throttle interval is observed
+        // during normal flight rather than during failsafe entry.
+        sysTickUptime++;
+        failsafeOnValidDataFailed();
+        sysTickUptime += PERIOD_RXDATA_RECOVERY + 1;
+        failsafeOnValidDataReceived();
+        failsafeUpdateState();
+        ASSERT_EQ(FAILSAFE_IDLE, failsafePhase());
+
+        // Prime the deadline with high throttle, then leave the pilot stick low
+        // while the flight plan continues to control autonomous thrust.
+        throttleStatus = THROTTLE_HIGH;
+        failsafeUpdateState();
+        throttleStatus = THROTTLE_LOW;
+        sysTickUptime += 13000;
+        failsafeOnValidDataReceived();
+        failsafeUpdateState();
+        ASSERT_EQ(FAILSAFE_IDLE, failsafePhase());
+    }
+
     void loseRxIntoStage2() {
         sysTickUptime += (failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND) + 1;
         failsafeOnValidDataFailed();
@@ -863,6 +884,40 @@ TEST_F(FlightFailsafeAutopilotTest, LandPolicyForcesAutoLandingOverConfiguredPro
     // DROP_IT would have gone straight to LANDED; LAND policy overrides to a landing.
     EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
     EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
+}
+
+TEST_F(FlightFailsafeAutopilotTest, LowThrottleDoesNotBypassContinuePolicy)
+{
+    autopilotConfigMutable()->rxLossPolicy = AP_RX_LOSS_CONTINUE;
+    startMission();
+    keepThrottleLowBeforeRxLoss();
+
+    loseRxIntoStage2();
+
+    EXPECT_EQ(FAILSAFE_AUTOPILOT, failsafePhase());
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
+}
+
+TEST_F(FlightFailsafeAutopilotTest, LowThrottleDoesNotBypassLandPolicy)
+{
+    autopilotConfigMutable()->rxLossPolicy = AP_RX_LOSS_LAND;
+    startMission();
+    keepThrottleLowBeforeRxLoss();
+
+    loseRxIntoStage2();
+
+    EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
+}
+
+TEST_F(FlightFailsafeAutopilotTest, LowThrottleStillDisarmsWithoutActiveFlightPlan)
+{
+    keepThrottleLowBeforeRxLoss();
+
+    loseRxIntoStage2();
+
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
 }
 
 TEST_F(FlightFailsafeAutopilotTest, DisablePolicyRunsConfiguredProcedure)

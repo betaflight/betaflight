@@ -55,6 +55,15 @@ static bool uartCanTx(const uartPort_t *uartPort)
     return (uartPort->port.mode & MODE_TX) && uartDevice->tx.pin;
 }
 
+// Re-arm the UART's NVIC line after a teardown, dropping anything latched while it was masked
+static void uartRestoreIrq(IRQn_Type irqn, bool wasEnabled)
+{
+    if (wasEnabled) {
+        NVIC_ClearPendingIRQ(irqn);
+        NVIC_EnableIRQ(irqn);
+    }
+}
+
 static void usartConfigurePinInversion(uartPort_t *uartPort)
 {
     USART_TypeDef *USARTx = (USART_TypeDef *)uartPort->USARTx;
@@ -173,13 +182,26 @@ static ErrorStatus uartInitLpuart(USART_TypeDef *USARTx, const uartPort_t *uartP
 void uartReconfigure(uartPort_t *uartPort)
 {
     USART_TypeDef *USARTx = (USART_TypeDef *)uartPort->USARTx;
+    const uartDevice_t *uartDevice = container_of(uartPort, uartDevice_t, port);
+    const IRQn_Type irqn = (IRQn_Type)uartDevice->hardware->irqn;
+    const bool irqWasEnabled = NVIC_GetEnableIRQ(irqn) != 0;
     const bool canTx = uartCanTx(uartPort);
+
+    // Mask the line first: clearing the enables below stops new requests, but an IRQ already
+    // latched in the NVIC is still taken and would re-enter uartIrqHandler mid-teardown.
+    NVIC_DisableIRQ(irqn);
 
     // Disable all UART interrupts before disabling the peripheral to prevent
     // an interrupt storm. With UE=0, TC is always asserted (transmitter idle),
     // so TCIE must be cleared before clearing UE.
     CLEAR_BIT(USARTx->CR1, USART_CR1_PEIE | USART_CR1_TXEIE | USART_CR1_TCIE | USART_CR1_RXNEIE | USART_CR1_IDLEIE);
     CLEAR_BIT(USARTx->CR3, USART_CR3_EIE);
+
+    // Drop anything latched while the enables were still set, and barrier so both the mask and
+    // the clear land before UE goes away.
+    NVIC_ClearPendingIRQ(irqn);
+    __DSB();
+    __ISB();
 
     LL_USART_Disable(USARTx);
 #if defined(STM32G4)
@@ -230,6 +252,7 @@ void uartReconfigure(uartPort_t *uartPort)
 
     if (initStatus != SUCCESS) {
         // BRR not set — cannot operate this USART, leave it disabled
+        uartRestoreIrq(irqn, irqWasEnabled);
         return;
     }
 
@@ -303,6 +326,8 @@ void uartReconfigure(uartPort_t *uartPort)
             SET_BIT(USARTx->CR1, USART_CR1_TCIE);
         }
     }
+
+    uartRestoreIrq(irqn, irqWasEnabled);
 }
 
 bool checkUsartTxOutput(uartPort_t *s)

@@ -977,6 +977,15 @@ void crsfScheduleMspResponse(uint8_t requestOriginID)
     mspRequestOriginID = requestOriginID;
 }
 
+// mspReplyPending is cleared when a reply finishes, even if more requests were buffered while it
+// was being sent, and the receive ISR can set it again just before that clear. Requests stay in
+// mspRxBuffer until they are handled, so also check the buffer: otherwise they are stranded, and
+// once the buffer fills nothing can schedule MSP processing again until the FC is rebooted.
+static bool crsfMspPending(void)
+{
+    return mspReplyPending || mspRxBuffer.len > 0;
+}
+
 // sends MSP response chunk over CRSF. Must be of type mspResponseFnPtr
 static void crsfSendMspResponse(uint8_t *payload, const uint8_t payloadSize)
 {
@@ -1141,7 +1150,7 @@ bool crsfTelemetryUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTi
     // Ad-hoc replies span several CRSF payloads and need one task run per chunk, so they are
     // exempt from both the rate limit and telemetryResponsePending.
 #if defined(USE_MSP_OVER_TELEMETRY)
-    if (mspReplyPending) {
+    if (crsfMspPending()) {
         return true;
     }
 #endif
@@ -1347,7 +1356,7 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
     // needs one pass per chunk, and inbound frames can be too sparse to clock them out. ELRS
     // WiFi passthrough has no RC link, so its only inbound frames are the MSP requests themselves.
 #if defined(USE_MSP_OVER_TELEMETRY)
-    if (mspReplyPending) {
+    if (crsfMspPending()) {
         mspReplyPending = handleCrsfMspFrameBuffer(&crsfSendMspResponse);
         crsfLastCycleTime = currentTimeUs; // reset telemetry timing due to ad-hoc request
 #if defined(USE_CRSF_V3)

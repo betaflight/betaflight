@@ -72,8 +72,19 @@
                                                                     handler(&dmaDescriptors[index]); \
                                                             }
 
-#define DMA_CLEAR_FLAG(d, flag) if (d->flagsShift > 31) ((DMA_TypeDef*)(d)->dma)->HIFCLR = (flag << (d->flagsShift - 32)); else ((DMA_TypeDef*)(d)->dma)->LIFCLR = (flag << d->flagsShift)
-#define DMA_GET_FLAG_STATUS(d, flag) (d->flagsShift > 31 ? ((DMA_TypeDef*)(d)->dma)->HINTSTS & (flag << (d->flagsShift - 32)): ((DMA_TypeDef*)(d)->dma)->LINTSTS & (flag << d->flagsShift))
+// (flag) and (d) are parenthesised deliberately. Callers pass OR-ed masks, and
+// without the parentheses `A | B` binds as `A | (B << flagsShift)`: only the last
+// flag lands on this stream and the rest write ones into bits 0-5, which are
+// stream 0's flags in the low register and stream 4's in the high one.
+#define DMA_CLEAR_FLAG(d, flag) \
+    do { \
+        if ((d)->flagsShift > 31) { \
+            ((DMA_TypeDef*)(d)->dma)->HIFCLR = ((flag) << ((d)->flagsShift - 32)); \
+        } else { \
+            ((DMA_TypeDef*)(d)->dma)->LIFCLR = ((flag) << (d)->flagsShift); \
+        } \
+    } while (0)
+#define DMA_GET_FLAG_STATUS(d, flag) ((d)->flagsShift > 31 ? ((DMA_TypeDef*)(d)->dma)->HINTSTS & ((flag) << ((d)->flagsShift - 32)): ((DMA_TypeDef*)(d)->dma)->LINTSTS & ((flag) << (d)->flagsShift))
 
 #define xDDL_EX_DMA_DeInit(dmaResource) DDL_EX_DMA_DeInit((DMA_ARCH_TYPE *)(dmaResource))
 #define xDDL_EX_DMA_Init(dmaResource, initstruct) DDL_EX_DMA_Init((DMA_ARCH_TYPE *)(dmaResource), initstruct)

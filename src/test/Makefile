@@ -47,6 +47,33 @@ althold_unittest_SRC := \
 althold_unittest_DEFINES := \
 		USE_ALTITUDE_HOLD= \
 
+autopilot_wing_unittest_SRC := \
+		$(USER_DIR)/flight/autopilot_wing.c \
+		$(USER_DIR)/flight/alt_hold_wing.c \
+		$(USER_DIR)/flight/landing_wing.c \
+		$(USER_DIR)/flight/pos_hold_wing.c \
+		$(USER_DIR)/flight/gps_rescue_wing.c \
+		$(USER_DIR)/pg/autopilot.c \
+		$(USER_DIR)/pg/autopilot_wing.c \
+		$(USER_DIR)/pg/alt_hold_wing.c \
+		$(USER_DIR)/pg/pos_hold_wing.c \
+		$(USER_DIR)/pg/gps_rescue_wing.c \
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c \
+		$(USER_DIR)/common/filter.c
+
+autopilot_wing_unittest_DEFINES := \
+		USE_WING= \
+		USE_LAUNCH_WING= \
+		USE_ALTITUDE_HOLD= \
+		USE_POSITION_HOLD= \
+		USE_GPS= \
+		USE_GPS_RESCUE= \
+		USE_ACC=
+
 arming_prevention_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/filter.c \
@@ -73,6 +100,12 @@ beeper_unittest_DEFINES := \
 		USE_BEEPER= \
 		USE_DSHOT=
 
+compass_ak9916_unittest_SRC := \
+		$(USER_DIR)/drivers/compass/compass_ak9916.c
+
+compass_ak9916_unittest_DEFINES := \
+                USE_MAG_AK9916=
+
 compass_bmm350_unittest_SRC := \
 		$(USER_DIR)/drivers/compass/compass_bmm350.c
 
@@ -84,6 +117,16 @@ compass_ist8310_unittest_SRC := \
 
 compass_ist8310_unittest_DEFINES := \
                 USE_MAG_IST8310=
+
+flash_fm25v02a_unittest_SRC := \
+		$(USER_DIR)/drivers/flash/flash_fm25v02a.c \
+		$(USER_DIR)/drivers/flash/flash.c
+
+flash_fm25v02a_unittest_DEFINES := \
+		USE_FLASH_CHIP= \
+		USE_FLASH_SPI= \
+		USE_FLASH_M25P16= \
+		USE_FLASH_FM25V02A=
 
 baro_bmp085_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_bmp085.c
@@ -135,12 +178,38 @@ accgyro_spi_icm426xx_unittest_DEFINES := \
                 USE_ACCGYRO_IIM42652= \
                 USE_ACCGYRO_IIM42653=
 
+accgyro_spi_lsm6dsv16x_unittest_SRC := \
+		$(USER_DIR)/drivers/accgyro/accgyro_spi_lsm6dsv16x.c
+
+accgyro_spi_lsm6dsv16x_unittest_16x_DEFINES := USE_ACCGYRO_LSM6DSV16X=
+accgyro_spi_lsm6dsv16x_unittest_32x_DEFINES := USE_ACCGYRO_LSM6DSV32X=
+accgyro_spi_lsm6dsv16x_unittest_320x_DEFINES := USE_ACCGYRO_LSM6DSK320X=
+
+# Run the shared fixture with every variant enabled and with each enabled alone.
+accgyro_spi_lsm6dsv16x_unittest_DEFINES = \
+                USE_DMA= \
+                $(if $1,$(accgyro_spi_lsm6dsv16x_unittest_$1_DEFINES), \
+                    USE_ACCGYRO_LSM6DSV16X= USE_ACCGYRO_LSM6DSV32X= USE_ACCGYRO_LSM6DSK320X=)
+
 # This test is disabled due to build errors.
 # Its source code is archived in unit/battery_unittest.cc.txt
 #
 #battery_unittest_SRC := \
 #		$(USER_DIR)/sensors/battery.c \
 #		$(USER_DIR)/common/maths.c
+
+bus_spi_unittest_SRC := \
+		$(USER_DIR)/build/atomic.c \
+		$(USER_DIR)/drivers/bus_spi.c \
+		$(USER_DIR)/drivers/accgyro/accgyro_mpu.c
+
+bus_spi_unittest_DEFINES := \
+		USE_SPI= \
+		USE_SPI_DEVICE_1= \
+		USE_SPI_GYRO= \
+		SPI1=0x40013000UL \
+		SPIDEV_COUNT=1 \
+		MAX_SPI_PIN_SEL=1
 
 battery_profile_unittest_SRC := \
 		$(USER_DIR)/sensors/battery.c \
@@ -227,6 +296,22 @@ flight_failsafe_unittest_DEFINES := \
 		USE_GPS_RESCUE= \
 		ENABLE_FLIGHT_PLAN=1
 
+flight_failsafe_wing_unittest_SRC := \
+		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/fc/rc_modes.c \
+		$(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/flight/failsafe.c \
+		$(USER_DIR)/pg/autopilot.c
+
+flight_failsafe_wing_unittest_DEFINES := \
+		USE_WING= \
+		USE_LAUNCH_WING= \
+		USE_ALTITUDE_HOLD= \
+		USE_GPS= \
+		USE_GPS_RESCUE= \
+		ENABLE_FLIGHT_PLAN=1 \
+		ENABLE_RESCUE_PLAN=1
+
 flight_failsafe_rescue_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/fc/rc_modes.c \
@@ -248,13 +333,30 @@ flight_imu_unittest_SRC := \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/flight/position.c \
-		$(USER_DIR)/flight/imu.c
+		$(USER_DIR)/flight/imu.c \
+		$(USER_DIR)/pg/autopilot_wing.c
+
+flight_imu_unittest_DEFINES := \
+		USE_WING=
 
 
 flight_mixer_unittest :=  \
 		$(USER_DIR)/flight/mixer.c \
 		$(USER_DIR)/flight/servos.c \
 		$(USER_DIR)/common/maths.c
+
+flight_mixer_wing_unittest_SRC := \
+		$(USER_DIR)/flight/mixer.c \
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/common/maths.c
+
+flight_mixer_wing_unittest_DEFINES := \
+		USE_WING= \
+		USE_LAUNCH_WING= \
+		USE_ALTITUDE_HOLD=
 
 
 gps_conversion_unittest_SRC := \
@@ -283,6 +385,9 @@ $(OBJECT_DIR)/dronecan_gnss_unittest/dronecan_gnss_unittest.o: \
 io_serial_unittest_SRC := \
 		$(USER_DIR)/io/serial.c \
 		$(USER_DIR)/io/serial_resource.c
+
+flashfs_bounds_unittest_SRC := \
+		$(TEST_DIR)/flashfs_bounds_test_support.c
 
 
 ledstrip_unittest_SRC := \
@@ -323,6 +428,19 @@ msp_serial_unittest_DEFINES := \
 		USE_MSP_DISPLAYPORT= \
 		USE_RANGEFINDER_MT= \
 		USE_OPTICALFLOW_MT=
+
+msp_reboot_unittest_SRC := \
+		$(USER_DIR)/fc/runtime_config.c \
+		$(TEST_DIR)/msp_reboot_test_support.c
+
+# Compile the complete MSP translation unit; retain only the reboot paths in
+# this focused executable, without replacing production control-flow functions.
+msp_reboot_unittest_C_FLAGS := -ffunction-sections -fdata-sections
+ifeq ($(OSFAMILY), macosx)
+msp_reboot_unittest_LDFLAGS := -Wl,-dead_strip
+else
+msp_reboot_unittest_LDFLAGS := -Wl,--gc-sections
+endif
 
 osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
@@ -441,6 +559,11 @@ rx_sumd_unittest_SRC := \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/rx/sumd.c
 
+rx_xbus_unittest_SRC := \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/rx/xbus.c
+
 scheduler_unittest_SRC := \
 		$(USER_DIR)/scheduler/scheduler.c \
 		$(USER_DIR)/common/crc.c \
@@ -492,6 +615,11 @@ sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/pg/gyrodev.c
+
+sensor_gyro_init_unittest_SRC := $(filter-out $(USER_DIR)/drivers/accgyro/accgyro_virtual.c,$(sensor_gyro_unittest_SRC))
+
+sensor_gyro_init_unittest_DEFINES := \
+		GYRO_COUNT=2
 
 sitl_gyro_unittest_SRC := \
 		$(TEST_DIR)/sitl_gyro_unittest_c.c
@@ -552,6 +680,20 @@ telemetry_mavlink_mission_unittest_SRC := \
 		$(USER_DIR)/pg/autopilot.c
 
 telemetry_mavlink_mission_unittest_DEFINES := \
+		USE_GPS= \
+		USE_FLIGHT_PLAN= \
+		ENABLE_FLIGHT_PLAN=1 \
+		USE_TELEMETRY= \
+		USE_TELEMETRY_MAVLINK= \
+		ENABLE_TELEMETRY_MAVLINK_MISSION=1
+
+telemetry_mavlink_mission_wing_unittest_SRC := \
+		$(USER_DIR)/telemetry/mavlink_mission.c \
+		$(USER_DIR)/pg/flight_plan.c \
+		$(USER_DIR)/pg/autopilot.c
+
+telemetry_mavlink_mission_wing_unittest_DEFINES := \
+		USE_WING= \
 		USE_GPS= \
 		USE_FLIGHT_PLAN= \
 		ENABLE_FLIGHT_PLAN=1 \
@@ -649,10 +791,34 @@ position_rescue_geometry_unittest_SRC := \
 
 poshold_unittest_SRC := \
 		$(USER_DIR)/flight/autopilot_multirotor.c \
+		$(USER_DIR)/flight/pos_hold_multirotor.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/vector.c \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/pg/rx.c
+
+poshold_unittest_DEFINES := \
+		USE_POSITION_HOLD=
+
+landing_wing_unittest_SRC := \
+		$(USER_DIR)/flight/landing_wing.c \
+		$(USER_DIR)/pg/autopilot.c \
+		$(USER_DIR)/pg/autopilot_wing.c \
+		$(USER_DIR)/pg/gps_rescue_wing.c \
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
+
+landing_wing_unittest_DEFINES := \
+		USE_WING= \
+		USE_LAUNCH_WING= \
+		USE_RANGEFINDER= \
+		USE_GPS= \
+		USE_GPS_RESCUE= \
+		USE_FLIGHT_PLAN= \
+		ENABLE_FLIGHT_PLAN=1
 
 launch_wing_unittest_SRC := \
 		$(USER_DIR)/flight/launch_wing.c \
@@ -666,8 +832,10 @@ launch_wing_unittest_SRC := \
 launch_wing_unittest_DEFINES := \
 		USE_WING= \
 		USE_LAUNCH_WING= \
+		USE_ALTITUDE_HOLD= \
 		USE_GPS= \
-		USE_ACC=
+		USE_ACC= \
+		ENABLE_RESCUE_PLAN=1
 
 position_estimator_unittest_SRC := \
 		$(USER_DIR)/flight/position_estimator.c \
@@ -686,6 +854,9 @@ position_nav_unittest_SRC := \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/vector.c
 
+position_nav_unittest_DEFINES := \
+		USE_WING=
+
 flight_plan_nav_unittest_SRC := \
 		$(USER_DIR)/flight/flight_plan_nav.c \
 		$(USER_DIR)/pg/autopilot.c \
@@ -700,6 +871,25 @@ flight_plan_nav_unittest_DEFINES := \
 		USE_FLIGHT_PLAN= \
 		USE_ALTITUDE_HOLD= \
 		ENABLE_FLIGHT_PLAN=1
+
+flight_plan_nav_wing_unittest_SRC := \
+		$(USER_DIR)/flight/flight_plan_nav.c \
+		$(USER_DIR)/flight/flight_plan_nav_wing.c \
+		$(USER_DIR)/pg/autopilot.c \
+		$(USER_DIR)/pg/autopilot_wing.c \
+		$(USER_DIR)/pg/flight_plan.c \
+		$(USER_DIR)/pg/gps_rescue_wing.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
+
+flight_plan_nav_wing_unittest_DEFINES := \
+		USE_WING= \
+		USE_GPS= \
+		USE_GPS_RESCUE= \
+		USE_FLIGHT_PLAN= \
+		USE_ALTITUDE_HOLD= \
+		ENABLE_FLIGHT_PLAN=1 \
+		ENABLE_RESCUE_PLAN=1
 
 flight_plan_capture_unittest_SRC := \
 		$(USER_DIR)/flight/flight_plan_capture.c \
@@ -892,7 +1082,7 @@ COMMON_FLAGS += -Wno-c99-designator
 # no warning expected on clang
 COMMON_FLAGS += -Werror
 
-# The vendored MAVLink headers forward-declare mavlink_message_t and then
+# The MAVLink headers forward-declare mavlink_message_t and then
 # redefine it identically; harmless, but flagged as a C11 feature under gnu99.
 COMMON_FLAGS += -Wno-typedef-redefinition
 
@@ -963,6 +1153,7 @@ TEST_BASENAMES = $(TEST_SRCS:$(TEST_DIR)/%.cc=%)
 TESTS_TARGET_SPECIFIC = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),$(test)))
 
 TESTS = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),,$(test)))
+TESTS += $(addprefix accgyro_spi_lsm6dsv16x_unittest.,16x 32x 320x)
 TESTS_ALL = $(TESTS)
 
 # All Google Test headers.  Usually you shouldn't change this
@@ -1056,7 +1247,14 @@ $(OBJECT_DIR)/gtest_main.a : $(OBJECT_DIR)/gtest-all.o $(OBJECT_DIR)/gtest_main.
 
 # includes in test dir must override includes in user dir, unless the user
 # specifies a list of endorsed directories in ${target}_INCLUDE_DIRS.
-test_include_dirs  = $1 $(TEST_DIR) $(USER_DIR) $(ROOT)/lib/main/MAVLink
+MAVLINK_LIB_DIR := $(ROOT)/lib/modules/mavlink
+
+# The MAVLink library is a submodule the firmware Makefile hydrates on demand;
+# hydrate it here too so tests built from this directory find its headers.
+$(MAVLINK_LIB_DIR)/.git:
+	git -C $(ROOT) submodule update --init -- lib/modules/mavlink
+
+test_include_dirs  = $1 $(TEST_DIR) $(USER_DIR) $(MAVLINK_LIB_DIR)
 test_cflags	   = $(addprefix -I,$(call test_include_dirs,$1))
 
 
@@ -1103,31 +1301,31 @@ endif
 -include $$($1_OBJS:.o=.d)
 -include $(OBJECT_DIR)/$1/$(basename $1).d
 
-$(OBJECT_DIR)/$1/%.c.o: $(USER_DIR)/%.c
+$(OBJECT_DIR)/$1/%.c.o: $(USER_DIR)/%.c | $(MAVLINK_LIB_DIR)/.git
 	@echo "compiling $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
-	$(V1) $(CC) $(C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
+	$(V1) $(CC) $(C_FLAGS) $($1_C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
                 $$(foreach def,$$($1_DEFINES),-D $$(def)) \
                 -c $$< -o $$@
 
-$(OBJECT_DIR)/$1/%.c.o: $(TEST_DIR)/%.c
+$(OBJECT_DIR)/$1/%.c.o: $(TEST_DIR)/%.c | $(MAVLINK_LIB_DIR)/.git
 	@echo "compiling test c file: $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
-	$(V1) $(CC) $(C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
+	$(V1) $(CC) $(C_FLAGS) $($1_C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
                 $$(foreach def,$$($1_DEFINES),-D $$(def)) \
                 -c $$< -o $$@
 
 ifneq ($1,$(basename $1))
 # per-target tests may compile files from the target directory
-$(OBJECT_DIR)/$1/%.c.o: $(TARGET_DIR)/$(TARGET)/%.c
+$(OBJECT_DIR)/$1/%.c.o: $(TARGET_DIR)/$(TARGET)/%.c | $(MAVLINK_LIB_DIR)/.git
 	@echo "compiling target c file: $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
-	$(V1) $(CC) $(C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
+	$(V1) $(CC) $(C_FLAGS) $($1_C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
                 $$(foreach def,$$($1_DEFINES),-D $$(def)) \
                 -c $$< -o $$@
 endif
 
-$(OBJECT_DIR)/$1/$(basename $1).o: $(TEST_DIR)/$(basename $1).cc
+$(OBJECT_DIR)/$1/$(basename $1).o: $(TEST_DIR)/$(basename $1).cc | $(MAVLINK_LIB_DIR)/.git
 	@echo "compiling $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CXX) $(CXX_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
@@ -1140,7 +1338,7 @@ $(OBJECT_DIR)/$1/$(basename $1): $$($1_OBJS) \
 
 	@echo "linking $$@" "$(STDOUT)"
 	$(V1) mkdir -p $(dir $$@)
-	$(V1) $(CXX) $(CXX_FLAGS) $(LDFLAGS) $$^ -o $$@
+	$(V1) $(CXX) $(CXX_FLAGS) $(LDFLAGS) $($1_LDFLAGS) $$^ -o $$@
 
 test_$1: $(OBJECT_DIR)/$1/$(basename $1)
 	$(V1) $$< $$(EXEC_OPTS) "$(STDOUT)" && echo "running $$@: PASS"

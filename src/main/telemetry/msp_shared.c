@@ -125,6 +125,11 @@ STATIC_UNIT_TESTED uint8_t responseBuffer[MSP_TLM_OUTBUF_SIZE];
 STATIC_UNIT_TESTED mspPacket_t requestPacket;
 STATIC_UNIT_TESTED mspPacket_t responsePacket;
 static uint8_t lastRequestVersion; // MSP version of last request. Temporary solution. It's better to keep it in requestPacket.
+// Whether the current response's START frame has gone out. Cleared whenever a
+// new response is prepared, not only when one finishes: a request that arrives
+// while a long response is still being sent replaces that response, and the
+// replacement must begin with its own START frame or the receiver discards it.
+static bool headerSent = false;
 
 static mspDescriptor_t mspSharedDescriptor = -1;
 
@@ -147,6 +152,7 @@ static void processMspPacket(void)
     responsePacket.result = 0;
     responsePacket.buf.ptr = responseBuffer;
     responsePacket.buf.end = ARRAYEND(responseBuffer);
+    headerSent = false;
 
     mspPostProcessFnPtr mspPostProcessFn = NULL;
     if (mspFcProcessCommand(mspSharedDescriptor, &requestPacket, &responsePacket, &mspPostProcessFn) == MSP_RESULT_ERROR) {
@@ -164,6 +170,7 @@ static void sendMspErrorResponse(uint8_t error, int16_t cmd)
     responsePacket.cmd = cmd;
     responsePacket.result = 0;
     responsePacket.buf.ptr = responseBuffer;
+    headerSent = false;
 
     sbufWriteU8(&responsePacket.buf, error);
     responsePacket.result = TELEMETRY_MSP_RES_ERROR;
@@ -205,7 +212,8 @@ bool handleMspFrame(uint8_t *const payload, uint8_t const payloadLength, uint8_t
                 if (payloadLength < MIN_LENGTH_REQUEST_JUMBO) {
                     return false;   // prevent analyzing garbage data
                 }
-                mspPayloadSize = *(uint16_t*)&payload[MSP_INDEX_SIZE_JUMBO_LO];
+                // Read 16-bit LE value without unaligned pointer dereference (portable to RISC-V).
+                mspPayloadSize = (uint16_t)(payload[MSP_INDEX_SIZE_JUMBO_LO] | (payload[MSP_INDEX_SIZE_JUMBO_HI] << 8));
                 sbufInit(&sbufInput, payload + MSP_INDEX_PAYLOAD_JUMBO, payload + payloadLength);
             } else {
                 sbufInit(&sbufInput, payload + MSP_INDEX_PAYLOAD_V1, payload + payloadLength);
@@ -215,8 +223,8 @@ bool handleMspFrame(uint8_t *const payload, uint8_t const payloadLength, uint8_t
                 return false;   // prevent analyzing garbage data
             }
             requestPacket.flags = payload[MSP_INDEX_FLAG_V2];
-            requestPacket.cmd = *(uint16_t*)&payload[MSP_INDEX_ID_LO];
-            mspPayloadSize = *(uint16_t*)&payload[MSP_INDEX_SIZE_V2_LO];
+            requestPacket.cmd = (uint16_t)(payload[MSP_INDEX_ID_LO] | (payload[MSP_INDEX_ID_HI] << 8));
+            mspPayloadSize = (uint16_t)(payload[MSP_INDEX_SIZE_V2_LO] | (payload[MSP_INDEX_SIZE_V2_HI] << 8));
             sbufInit(&sbufInput, payload + MSP_INDEX_PAYLOAD_V2, payload + payloadLength);
         }
         if (mspPayloadSize <= sizeof(requestBuffer)) { // prevent buffer overrun
@@ -271,7 +279,6 @@ bool handleMspFrame(uint8_t *const payload, uint8_t const payloadLength, uint8_t
 bool sendMspReply(const uint8_t payloadSizeMax, mspResponseFnPtr responseFn)
 {
     static uint8_t seq = 0;
-    static bool headerSent = false;   
 
     uint8_t payloadArray[payloadSizeMax];
     sbuf_t payloadBufStruct;

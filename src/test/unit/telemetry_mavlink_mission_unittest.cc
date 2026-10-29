@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <vector>
 
 extern "C" {
@@ -57,6 +58,9 @@ extern "C" {
 
     // Fixed orbit period so LOITER_TURNS <-> ORBIT conversion is deterministic.
     uint16_t flightPlanNavOrbitPeriodDs(uint16_t) { return 250; }
+#ifdef USE_WING
+    float autopilotWingLoiterRadiusM(void) { return 60.0f; }
+#endif
 
     void saveConfigAndNotify(void) { s_saveCalls++; }
     uint32_t millis(void) { return s_millis; }
@@ -133,11 +137,12 @@ protected:
 
     // Drive one upload item and return the resulting item write.
     void sendItem(uint16_t seq, uint16_t command, uint16_t total,
-                  float param1 = 0.0f, int32_t lat = 0, int32_t lon = 0, float alt = 0.0f) {
+                  float param1 = 0.0f, int32_t lat = 0, int32_t lon = 0, float alt = 0.0f,
+                  float param4 = 0.0f) {
         mavlink_message_t msg;
         mavlink_msg_mission_item_int_pack(GCS_SYS, GCS_COMP, &msg,
             1, 0, seq, MAV_FRAME_GLOBAL_INT, command, /*current*/ 0, /*autocontinue*/ 1,
-            param1, 0.0f, 0.0f, 0.0f, lat, lon, alt, MAV_MISSION_TYPE_MISSION);
+            param1, 0.0f, 0.0f, param4, lat, lon, alt, MAV_MISSION_TYPE_MISSION);
         (void)total;
         feed(msg);
     }
@@ -179,6 +184,49 @@ TEST_F(MavlinkMissionTest, UploadWritesWaypointsToConfig)
     EXPECT_EQ(plan->waypoints[1].latitude, 300);
     EXPECT_EQ(plan->waypoints[1].longitude, 400);
     EXPECT_EQ(plan->waypoints[2].type, WAYPOINT_TYPE_LAND);
+}
+
+TEST_F(MavlinkMissionTest, UploadWaypointAcceptsNanYaw)
+{
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, 0.0f, 300, 400, 20.0f,
+        std::numeric_limits<float>::quiet_NaN());
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_ACCEPTED);
+    ASSERT_EQ(flightPlanConfig()->waypointCount, 1);
+    EXPECT_EQ(flightPlanConfig()->waypoints[0].type, WAYPOINT_TYPE_FLYBY);
+}
+
+TEST_F(MavlinkMissionTest, UploadWaypointRejectsInfiniteYaw)
+{
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, 0.0f, 300, 400, 20.0f,
+        std::numeric_limits<float>::infinity());
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_INVALID);
+    EXPECT_EQ(flightPlanConfig()->waypointCount, 0);
+}
+
+TEST_F(MavlinkMissionTest, UploadWaypointStillRejectsOtherNanParameters)
+{
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1,
+        std::numeric_limits<float>::quiet_NaN(), 300, 400, 20.0f);
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_INVALID);
+    EXPECT_EQ(flightPlanConfig()->waypointCount, 0);
 }
 
 TEST_F(MavlinkMissionTest, UploadMapsLoiterTurnsToOrbitHold)
@@ -264,6 +312,31 @@ TEST_F(MavlinkMissionTest, DownloadEncodesWaypointsRoundTrip)
     EXPECT_EQ(requestItem(0), MAV_CMD_NAV_TAKEOFF);
     EXPECT_EQ(requestItem(1), MAV_CMD_NAV_LOITER_TURNS); // ORBIT hold -> LOITER_TURNS
     EXPECT_EQ(requestItem(2), MAV_CMD_NAV_LAND);
+}
+
+TEST_F(MavlinkMissionTest, DownloadGivesTheRadiusTheOrbitIsFlownAt)
+{
+    flightPlanConfig_t *plan = flightPlanConfigMutable();
+    plan->waypointCount = 1;
+    plan->waypoints[0] = makeWaypoint(300, 400, 2000, WAYPOINT_TYPE_HOLD, WAYPOINT_PATTERN_ORBIT, 500);
+
+    mavlink_message_t list;
+    mavlink_msg_mission_request_list_pack(GCS_SYS, GCS_COMP, &list, 1, 0, MAV_MISSION_TYPE_MISSION);
+    feed(list);
+    mavlink_message_t req;
+    mavlink_msg_mission_request_int_pack(GCS_SYS, GCS_COMP, &req, 1, 0, 0, MAV_MISSION_TYPE_MISSION);
+    feed(req);
+    const mavlink_message_t *item = lastOfType(MAVLINK_MSG_ID_MISSION_ITEM_INT);
+    ASSERT_NE(item, nullptr);
+    mavlink_mission_item_int_t it;
+    mavlink_msg_mission_item_int_decode(item, &it);
+    EXPECT_EQ(it.command, MAV_CMD_NAV_LOITER_TURNS);
+    EXPECT_FLOAT_EQ(2.0f, it.param1);       // 500 ds at 250 ds a turn
+#ifdef USE_WING
+    EXPECT_FLOAT_EQ(60.0f, it.param3);      // a wing loiters, at the loiter radius
+#else
+    EXPECT_FLOAT_EQ(8.0f, it.param3);
+#endif
 }
 
 TEST_F(MavlinkMissionTest, MissionItemReachedEmitted)

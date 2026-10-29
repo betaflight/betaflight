@@ -41,6 +41,7 @@
 #include "drivers/compass/compass.h"
 #include "drivers/compass/compass_ak8975.h"
 #include "drivers/compass/compass_ak8963.h"
+#include "drivers/compass/compass_ak9916.h"
 #include "drivers/compass/compass_virtual.h"
 #include "drivers/compass/compass_hmc5883l.h"
 #include "drivers/compass/compass_lis2mdl.h"
@@ -140,7 +141,7 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
     compassConfig->mag_spi_csn = IO_TAG(MAG_CS_PIN);
     compassConfig->mag_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
     compassConfig->mag_i2c_address = 0;
-#elif defined(USE_MAG_HMC5883) || defined(USE_MAG_QMC5883L) || defined(USE_MAG_QMC5883P) || defined(USE_MAG_AK8975) || defined(USE_MAG_IST8310) || defined(USE_MAG_MMC560X) || defined(USE_MAG_BMM350) || (defined(USE_MAG_AK8963) && !(defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250)))
+#elif defined(USE_MAG_HMC5883) || defined(USE_MAG_QMC5883L) || defined(USE_MAG_QMC5883P) || defined(USE_MAG_AK8975) || defined(USE_MAG_AK9916) || defined(USE_MAG_IST8310) || defined(USE_MAG_MMC560X) || defined(USE_MAG_BMM350) || (defined(USE_MAG_AK8963) && !(defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250)))
     compassConfig->mag_busType = BUS_TYPE_I2C;
     compassConfig->mag_i2c_device = I2C_DEV_TO_CFG(MAG_I2C_INSTANCE);
     compassConfig->mag_i2c_address = MAG_I2C_ADDRESS;
@@ -341,6 +342,22 @@ static bool compassDetect(magDev_t *magDev, uint8_t *alignment)
 #endif
         FALLTHROUGH;
 
+    // MAG_AK9916 must be probed before the AK8975/AK8963 cases: it shares
+    // address 0x0C with them and its WIA1 company id (0x48) is the same byte
+    // they accept as WHO_AM_I, so this driver is identified via WIA2 instead.
+    case MAG_AK9916:
+#ifdef USE_MAG_AK9916
+        if (dev->bus->busType == BUS_TYPE_I2C) {
+            dev->busType_u.i2c.address = compassConfig()->mag_i2c_address;
+        }
+
+        if (ak9916Detect(magDev)) {
+            magHardware = MAG_AK9916;
+            break;
+        }
+#endif
+        FALLTHROUGH;
+
     case MAG_AK8975:
 #ifdef USE_MAG_AK8975
         if (dev->bus->busType == BUS_TYPE_I2C) {
@@ -503,7 +520,13 @@ bool compassInit(void)
     }
 
     LED1_ON;
-    magDev.init(&magDev);
+    // A driver that cannot initialise its sensor must not leave the mag
+    // reported as an active sensor.
+    if (!magDev.init(&magDev)) {
+        LED1_OFF;
+        sensorsClear(SENSOR_MAG);
+        return false;
+    }
     LED1_OFF;
 
     magDev.magAlignment = alignment;
