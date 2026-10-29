@@ -104,6 +104,11 @@ static struct {
     fencePoint_t points[MAX_FENCE_POINTS];
 } fenceStore;
 
+// Mission upload staging. Received items are kept here and copied into
+// flightPlanConfig only when the full upload is accepted. A failed or
+// cancelled upload thus keeps the previous mission, as MAVLink requires.
+static waypoint_t stagedWaypoints[MAX_WAYPOINTS];
+
 static mavlink_message_t txMsg;
 
 static bool targetIsUs(uint8_t target_system, uint8_t target_component)
@@ -569,11 +574,8 @@ static void handleCount(const mavlink_message_t *msg)
         return;
     }
 
-    // MAVLink semantics: a new upload replaces any existing mission. Zero the
-    // count immediately so any consumer (CLI dump, executor on next engage)
-    // doesn't see a half-overwritten waypoint table mid-transfer.
-    flightPlanConfigMutable()->waypointCount = 0;
-
+    // Items go to stagedWaypoints. The active mission stays unchanged
+    // until the upload is complete and accepted.
     m.state = MISSION_RECEIVING;
     m.missionType = MAV_MISSION_TYPE_MISSION;
     m.nextSeq = 0;
@@ -636,7 +638,7 @@ static void handleItemInt(const mavlink_message_t *msg)
         return;
     }
 
-    flightPlanConfigMutable()->waypoints[it.seq] = wp;
+    stagedWaypoints[it.seq] = wp;
 
     m.nextSeq++;
     m.lastActivityMs = millis();
@@ -647,8 +649,10 @@ static void handleItemInt(const mavlink_message_t *msg)
         return;
     }
 
-    // Upload complete.
-    flightPlanConfigMutable()->waypointCount = m.totalCount;
+    // Upload complete. Replace the active mission with the staged items.
+    flightPlanConfig_t *plan = flightPlanConfigMutable();
+    memcpy(plan->waypoints, stagedWaypoints, m.totalCount * sizeof(stagedWaypoints[0]));
+    plan->waypointCount = m.totalCount;
     saveConfigAndNotify();
     sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_MISSION, MAV_MISSION_ACCEPTED);
     m.state = MISSION_IDLE;
