@@ -21,10 +21,13 @@
 #define RSSI_DBM_MIN (-130)
 #define RSSI_DBM_MAX 0
 
+#if defined(USE_SERIALRX_MAVLINK) || defined(USE_TELEMETRY_MAVLINK)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 #include "common/mavlink.h"
 #pragma GCC diagnostic pop
+#endif
 
 bool mavlinkRxInit(const rxConfig_t *initialRxConfig, rxRuntimeState_t *rxRuntimeState);
 #if defined(USE_SERIALRX_MAVLINK)

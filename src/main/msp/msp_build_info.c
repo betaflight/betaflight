@@ -24,7 +24,7 @@
  *
  * Generator    : `src/utils/make-build-info.py`
  * Source       : https://build.betaflight.com/api/options/2026.12
- * Input hash   : 305e9e75314878377cbadd2550bf4802
+ * Input hash   : ec29b3428a61184bf200bff590fc476f
  */
 
 #include <stdint.h>
@@ -155,6 +155,9 @@ static const uint16_t buildOptions[] = {
 #endif
 #ifdef USE_PINIO
         BUILD_OPTION_PINIO,
+#endif
+#ifdef USE_PITOT
+        BUILD_OPTION_PITOT,
 #endif
 #ifdef USE_POSITION_HOLD
         BUILD_OPTION_POSITION_HOLD,
