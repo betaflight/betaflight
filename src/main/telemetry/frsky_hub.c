@@ -72,7 +72,7 @@
 
 #if defined(USE_ESC_SENSOR_TELEMETRY)
 #include "sensors/esc_sensor.h"
-#include "sensors/motor_sensor.h"
+#include "sensors/motor_telemetry.h"
 #endif
 
 #include "frsky_hub.h"
@@ -191,9 +191,9 @@ static void sendThrottleOrBatterySizeAsRpm(void)
 {
     int16_t data = 0;
 #if defined(USE_ESC_SENSOR_TELEMETRY)
-    const escSensorData_t *escData = getMotorSensorData(ESC_SENSOR_COMBINED, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
-    if (escData && escData->dataAge < ESC_DATA_INVALID) {
-        data = lrintf(erpmToRpm(escData->rpm) / 10.0f);
+    const motorTelemetry_t *motorTelemetry = motorTelemetryGetCombined();
+    if (motorTelemetryHas(motorTelemetry, MOTOR_TELEMETRY_RPM)) {
+        data = motorTelemetry->rpm / 10;
     }
 #else
     if (ARMING_FLAG(ARMED)) {
@@ -215,9 +215,9 @@ static void sendTemperature1(void)
 {
     int16_t data = 0;
 #if defined(USE_ESC_SENSOR_TELEMETRY)
-    const escSensorData_t *escData = getMotorSensorData(ESC_SENSOR_COMBINED, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
-    if (escData && escData->dataAge < ESC_DATA_INVALID) {
-        data = escData->temperature;
+    const motorTelemetry_t *motorTelemetry = motorTelemetryGetCombined();
+    if (motorTelemetryHas(motorTelemetry, MOTOR_TELEMETRY_TEMPERATURE)) {
+        data = motorTelemetry->temperature;
     }
 #elif defined(USE_BARO)
     data = lrintf(baro.temperature / 100.0f); // Airmamaf

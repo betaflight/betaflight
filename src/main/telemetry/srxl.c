@@ -65,7 +65,7 @@
 #include "sensors/adcinternal.h"
 #include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
-#include "sensors/motor_sensor.h"
+#include "sensors/motor_telemetry.h"
 
 #include "telemetry/telemetry.h"
 
@@ -185,23 +185,14 @@ typedef struct
 static uint16_t getMotorAveragePeriod(void)
 {
 
-#if defined( USE_ESC_SENSOR_TELEMETRY) || defined( USE_DSHOT_TELEMETRY)
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
     uint32_t rpm = 0;
     uint16_t period_us = SPEKTRUM_RPM_UNUSED;
 
-#if defined( USE_ESC_SENSOR_TELEMETRY)
-    const escSensorData_t *escData = getMotorSensorData(ESC_SENSOR_COMBINED, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
-    if (escData && escData->dataAge < ESC_DATA_INVALID) {
-        rpm = escData->rpm;
+    const motorTelemetry_t *motorTelemetry = motorTelemetryGetCombined();
+    if (motorTelemetryHas(motorTelemetry, MOTOR_TELEMETRY_RPM)) {
+        rpm = motorTelemetry->rpm;
     }
-#endif
-
-#if defined(USE_DSHOT_TELEMETRY)
-    // Calculate this way when no rpm from esc data
-    if (useDshotTelemetry && rpm == 0) {
-        rpm = lrintf(getDshotRpmAverage());
-    }
-#endif
 
     if (rpm > SPEKTRUM_MIN_RPM && rpm < SPEKTRUM_MAX_RPM) {
         period_us = MICROSEC_PER_MINUTE / rpm; // revs/minute -> microSeconds

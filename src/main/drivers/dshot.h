@@ -103,7 +103,6 @@ typedef struct dshotTelemetryMotorState_s {
     uint16_t rawValue;
     uint16_t telemetryData[DSHOT_TELEMETRY_TYPE_COUNT];
     uint8_t telemetryTypes;
-    uint8_t maxTemp;
 } dshotTelemetryMotorState_t;
 
 typedef struct dshotTelemetryState_s {

@@ -44,7 +44,8 @@
 
 #include "sensors/adcinternal.h"
 #include "sensors/battery.h"
-#include "sensors/motor_sensor.h"
+#include "sensors/esc_sensor.h"
+#include "sensors/motor_telemetry.h"
 
 #include "voltage.h"
 
@@ -258,6 +259,12 @@ typedef struct voltageMeterESCState_s {
 } voltageMeterESCState_t;
 
 static voltageMeterESCState_t voltageMeterESCState;
+
+// The meter needs a voltage, and fresh data
+static bool isMotorTelemetryUsable(const motorTelemetry_t *telemetry)
+{
+    return motorTelemetryHas(telemetry, MOTOR_TELEMETRY_VOLTAGE) && telemetry->dataAge <= ESC_BATTERY_AGE_MAX;
+}
 #endif
 
 void voltageMeterESCInit(void)
@@ -271,9 +278,9 @@ void voltageMeterESCInit(void)
 void voltageMeterESCRefresh(void)
 {
 #ifdef USE_ESC_SENSOR
-    const escSensorData_t *escData = getMotorSensorData(ESC_SENSOR_COMBINED, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
-    if (escData) {
-        voltageMeterESCState.voltageUnfiltered = (escData->dataAge <= ESC_BATTERY_AGE_MAX) ? escData->voltage : 0;
+    const motorTelemetry_t *telemetry = motorTelemetryGetCombined();
+    if (telemetry) {
+        voltageMeterESCState.voltageUnfiltered = isMotorTelemetryUsable(telemetry) ? telemetry->voltage : 0;
         voltageMeterESCState.voltageDisplayFiltered = pt1FilterApply(&voltageMeterESCState.displayFilter, voltageMeterESCState.voltageUnfiltered);
     }
 #endif
@@ -285,9 +292,9 @@ void voltageMeterESCReadMotor(uint8_t motorNumber, voltageMeter_t *voltageMeter)
     UNUSED(motorNumber);
     voltageMeterReset(voltageMeter);
 #else
-    const escSensorData_t *escData = getMotorSensorData(motorNumber, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
-    if (escData && escData->dataAge <= ESC_BATTERY_AGE_MAX) {
-        voltageMeter->unfiltered = escData->voltage;
+    const motorTelemetry_t *telemetry = motorTelemetryGet(motorNumber);
+    if (isMotorTelemetryUsable(telemetry)) {
+        voltageMeter->unfiltered = telemetry->voltage;
         voltageMeter->displayFiltered = voltageMeter->unfiltered; // no filtering for ESC motors currently.
     } else {
         voltageMeterReset(voltageMeter);

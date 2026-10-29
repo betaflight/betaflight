@@ -100,7 +100,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
-#include "sensors/motor_sensor.h"
+#include "sensors/motor_telemetry.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -174,8 +174,8 @@ static bool suppressStatsDisplay = false;
 
 static bool backgroundLayerSupported = false;
 
-#ifdef USE_ESC_SENSOR
-const escSensorData_t *osdEscDataCombined;
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
+const motorTelemetry_t *osdMotorTelemetryCombined;
 #endif
 
 STATIC_ASSERT(OSD_POS_MAX == OSD_POS(63,31), OSD_POS_MAX_incorrect);
@@ -652,17 +652,7 @@ static void osdResetStats(void)
 #if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
 static int32_t getAverageEscRpm(void)
 {
-#ifdef USE_ESC_SENSOR
-    if (featureIsEnabled(FEATURE_ESC_SENSOR) && osdEscDataCombined) {
-        return lrintf(erpmToRpm(osdEscDataCombined->rpm));
-    }
-#endif
-#ifdef USE_DSHOT_TELEMETRY
-    if (useDshotTelemetry) {
-        return lrintf(getDshotRpmAverage());
-    }
-#endif
-    return 0;
+    return motorTelemetryHas(osdMotorTelemetryCombined, MOTOR_TELEMETRY_RPM) ? osdMotorTelemetryCombined->rpm : 0;
 }
 #endif
 
@@ -741,29 +731,15 @@ static void osdUpdateStats(void)
     }
 #endif
 
-#if defined(USE_ESC_SENSOR)
-    if (featureIsEnabled(FEATURE_ESC_SENSOR) && osdEscDataCombined) {
-        value = osdEscDataCombined->temperature;
-        if (stats.max_esc_temp < value) {
-            stats.max_esc_temp = value;
-        }
-    } else
-#endif
-#if defined(USE_DSHOT_TELEMETRY)
-    {
-        // Take max temp from dshot telemetry
-        for (uint8_t k = 0; k < getMotorCount(); k++) {
-            if (dshotTelemetryState.motorState[k].maxTemp > stats.max_esc_temp) {
-                stats.max_esc_temp_ix = k + 1;
-                stats.max_esc_temp = dshotTelemetryState.motorState[k].maxTemp;
-            }
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
+    for (unsigned k = 0; k < getMotorCount(); k++) {
+        const motorTelemetry_t *telemetry = motorTelemetryGet(k);
+        if (motorTelemetryHas(telemetry, MOTOR_TELEMETRY_TEMPERATURE) && telemetry->temperature > stats.max_esc_temp) {
+            stats.max_esc_temp_ix = k + 1;
+            stats.max_esc_temp = telemetry->temperature;
         }
     }
-#else
-    {}
-#endif
 
-#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
     int32_t rpm = getAverageEscRpm();
     if (stats.max_esc_rpm < rpm) {
         stats.max_esc_rpm = rpm;
@@ -1357,10 +1333,8 @@ static void osdProcessStats2(timeUs_t currentTimeUs)
 
         schedulerIgnoreTaskExecTime();
     }
-#ifdef USE_ESC_SENSOR
-    if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        osdEscDataCombined = getMotorSensorData(ESC_SENSOR_COMBINED, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
-    }
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
+    osdMotorTelemetryCombined = motorTelemetryGetCombined();
 #endif
 }
 

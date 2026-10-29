@@ -69,7 +69,7 @@
 #include "sensors/adcinternal.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
-#include "sensors/motor_sensor.h"
+#include "sensors/motor_telemetry.h"
 
 const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 
@@ -85,25 +85,27 @@ static inline bool isMotorActive(uint8_t motorIndex) {
     return (motor[motorIndex] > mixerRuntime.disarmMotorOutput);
 }
 
-static bool checkEscAlarmConditions(const escSensorData_t *data, uint8_t motorIndex, char *buffer)
+static bool checkEscAlarmConditions(const motorTelemetry_t *telemetry, uint8_t motorIndex, char *buffer)
 {
     uint8_t alarmPos = 0;
 
     // Check RPM alarm (only when motor is active)
-    if (isMotorActive(motorIndex)) {
-        if (data->rpm && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && erpmToRpm(data->rpm) <= osdConfig()->esc_rpm_alarm) {
+    if (isMotorActive(motorIndex) && motorTelemetryHas(telemetry, MOTOR_TELEMETRY_RPM)) {
+        if (telemetry->rpm && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && telemetry->rpm <= (uint32_t)osdConfig()->esc_rpm_alarm) {
             buffer[alarmPos++] = ESC_ALARM_RPM;
         }
     }
 
     // Check current alarm (regardless of motor spinning state)
-    // esc_current_alarm is in A, data->current is in 0.01A
-    if (data->current && osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF && data->current >= osdConfig()->esc_current_alarm * 100) {
+    // esc_current_alarm is in A, telemetry->current is in 0.01A
+    if (motorTelemetryHas(telemetry, MOTOR_TELEMETRY_CURRENT) && telemetry->current
+        && osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF && telemetry->current >= osdConfig()->esc_current_alarm * 100) {
         buffer[alarmPos++] = ESC_ALARM_CURRENT;
     }
 
     // Check temperature alarm (regardless of motor spinning state)
-    if (data->temperature && osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && data->temperature >= osdConfig()->esc_temp_alarm) {
+    if (motorTelemetryHas(telemetry, MOTOR_TELEMETRY_TEMPERATURE) && telemetry->temperature
+        && osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && telemetry->temperature >= osdConfig()->esc_temp_alarm) {
         buffer[alarmPos++] = ESC_ALARM_TEMP;
     }
 
@@ -112,21 +114,21 @@ static bool checkEscAlarmConditions(const escSensorData_t *data, uint8_t motorIn
     return alarmPos;
 }
 
-// Generic ESC warning function for both ESC sensor and DShot telemetry
-static bool buildEscWarningMessage(char *warningText, bool isDshot) {
+// ESC warning from the merged motor telemetry (ESC sensor and DShot telemetry)
+static bool buildEscWarningMessage(char *warningText)
+{
     unsigned escErrorLength = 0;
     bool escWarning = false;
-    motorSensorSource_e source = isDshot ? MOTOR_SENSOR_SOURCE_DSHOT : MOTOR_SENSOR_SOURCE_ESC_SENSOR;
 
     // Write 'ESC' prefix
     escErrorLength += tfp_sprintf(warningText + escErrorLength, "ESC");
 
     for (unsigned i = 0; i < getMotorCount(); i++) {
-        const escSensorData_t *escData = getMotorSensorData(i, source);
+        const motorTelemetry_t *telemetry = motorTelemetryGet(i);
 
-        if (escData) {
+        if (telemetry) {
             char alarmChars[ESC_ALARM_CHARS_SIZE];
-            if (checkEscAlarmConditions(escData, i, alarmChars)) {
+            if (checkEscAlarmConditions(telemetry, i, alarmChars)) {
                 const unsigned digits = (i + 1 >= 10) ? 2 : 1;
                 const unsigned needed = 1 + digits + strlen(alarmChars);
                 if (escErrorLength + needed >= OSD_WARNINGS_MAX_SIZE) {
@@ -242,21 +244,10 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         return;
     }
 
-#ifdef USE_ESC_SENSOR
+#if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
     // Show warning if we lose motor output, the ESC is overheating or excessive current draw
-    if (featureIsEnabled(FEATURE_ESC_SENSOR) && osdWarnGetState(OSD_WARNING_ESC_FAIL) && ARMING_FLAG(ARMED)) {
-        if (buildEscWarningMessage(warningText, false)) {
-            *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
-            *blinking = true;
-            return;
-        }
-    }
-#endif // USE_ESC_SENSOR
-
-#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
-    // Show esc error
-    if (motorConfig()->dev.useDshotTelemetry && osdWarnGetState(OSD_WARNING_ESC_FAIL) && ARMING_FLAG(ARMED)) {
-        if (buildEscWarningMessage(warningText, true)) {
+    if (motorTelemetryIsEnabled() && osdWarnGetState(OSD_WARNING_ESC_FAIL) && ARMING_FLAG(ARMED)) {
+        if (buildEscWarningMessage(warningText)) {
             *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
             *blinking = true;
             return;

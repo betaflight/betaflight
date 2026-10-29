@@ -128,8 +128,6 @@ static escSensorTriggerState_t escSensorTriggerState = ESC_SENSOR_TRIGGER_STARTU
 static uint32_t escTriggerTimestamp;
 static uint8_t escSensorMotor = 0;      // motor index
 
-static bool combinedDataNeedsUpdate = true;
-
 static uint16_t totalTimeoutCount = 0;
 static uint16_t totalCrcErrorCount = 0;
 
@@ -150,6 +148,15 @@ static bool isFrameComplete(void)
     return bufferPosition == bufferSize;
 }
 
+static void updateDebugDataAge(void)
+{
+    uint8_t maxDataAge = 0;
+    for (int i = 0; i < getMotorCount(); i++) {
+        maxDataAge = MAX(maxDataAge, escSensorData[i].dataAge);
+    }
+    DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_DATA_AGE, maxDataAge);  //!< Data Age
+}
+
 LOCAL_UNUSED_FUNCTION static bool isEscSensorActive(void)
 {
     return escSensorPort != NULL;
@@ -159,7 +166,7 @@ LOCAL_UNUSED_FUNCTION static bool isEscSensorActive(void)
 // External telemetry feed (e.g. DroneCAN esc.Status). Lets an out-of-band
 // source publish into the same escSensorData[] store the serial KISS decoder
 // uses, so every consumer (battery, OSD, telemetry, MSP, blackbox) reads it
-// through getMotorSensorData() unchanged. Values use the escSensorData_t units:
+// through motorTelemetryGet() unchanged. Values use the escSensorData_t units:
 // temperature °C, voltage 0.01V, current 0.01A, consumption mAh, rpm eRPM/100.
 void escSensorSetExternal(uint8_t motorIndex, const escSensorData_t *data)
 {
@@ -168,7 +175,7 @@ void escSensorSetExternal(uint8_t motorIndex, const escSensorData_t *data)
     }
     escSensorData[motorIndex] = *data;
     escSensorData[motorIndex].dataAge = 0;
-    combinedDataNeedsUpdate = true;
+    updateDebugDataAge();
 }
 
 // Mark every slot invalid. Called by the external source at init so a consumer
@@ -189,7 +196,7 @@ void escSensorExternalAge(uint8_t motorIndex)
     if (motorIndex < MAX_SUPPORTED_MOTORS
             && escSensorData[motorIndex].dataAge < ESC_DATA_INVALID) {
         escSensorData[motorIndex].dataAge++;
-        combinedDataNeedsUpdate = true;
+        updateDebugDataAge();
     }
 }
 #endif // ENABLE_DRONECAN_ESC
@@ -268,7 +275,7 @@ static uint8_t decodeEscFrame(void)
         escSensorData[escSensorMotor].consumption = telemetryBuffer[5] << 8 | telemetryBuffer[6];
         escSensorData[escSensorMotor].rpm = telemetryBuffer[7] << 8 | telemetryBuffer[8];
 
-        combinedDataNeedsUpdate = true;
+        updateDebugDataAge();
 
         frameStatus = ESC_SENSOR_FRAME_COMPLETE;
 
@@ -288,7 +295,7 @@ static void increaseDataAge(void)
     if (escSensorData[escSensorMotor].dataAge < ESC_DATA_INVALID) {
         escSensorData[escSensorMotor].dataAge++;
 
-        combinedDataNeedsUpdate = true;
+        updateDebugDataAge();
     }
 }
 
@@ -364,39 +371,7 @@ void escSensorProcess(timeUs_t currentTimeUs)
 
 const escSensorData_t *escSensorGetData(uint8_t motorIndex)
 {
-    return &escSensorData[motorIndex];
-}
-
-const escSensorData_t *escSensorGetCombinedData(void)
-{
-    static escSensorData_t combinedEscSensorData;
-
-    if (combinedDataNeedsUpdate) {
-        combinedEscSensorData.dataAge = 0;
-        combinedEscSensorData.temperature = 0;
-        combinedEscSensorData.voltage = 0;
-        combinedEscSensorData.current = 0;
-        combinedEscSensorData.consumption = 0;
-        combinedEscSensorData.rpm = 0;
-
-        for (int i = 0; i < getMotorCount(); i++) {
-            combinedEscSensorData.dataAge = MAX(combinedEscSensorData.dataAge, escSensorData[i].dataAge);
-            combinedEscSensorData.temperature = MAX(combinedEscSensorData.temperature, escSensorData[i].temperature);
-            combinedEscSensorData.voltage += escSensorData[i].voltage;
-            combinedEscSensorData.current += escSensorData[i].current;
-            combinedEscSensorData.consumption += escSensorData[i].consumption;
-            combinedEscSensorData.rpm += escSensorData[i].rpm;
-        }
-
-        combinedEscSensorData.voltage = combinedEscSensorData.voltage / getMotorCount();
-        combinedEscSensorData.rpm = combinedEscSensorData.rpm / getMotorCount();
-
-        combinedDataNeedsUpdate = false;
-
-        DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_DATA_AGE, combinedEscSensorData.dataAge);  //!< Data Age
-    }
-
-    return &combinedEscSensorData;
+    return motorIndex < MAX_SUPPORTED_MOTORS ? &escSensorData[motorIndex] : NULL;
 }
 
 #endif

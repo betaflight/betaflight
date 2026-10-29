@@ -28,6 +28,7 @@
 #include "pg/pg.h"
 
 #include "sensors/esc_sensor.h"
+#include "sensors/motor_telemetry.h"
 
 #define OSD_NUM_TIMER_TYPES 5
 extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
@@ -457,8 +458,8 @@ extern timeUs_t osdLaunchTime;
 #if defined(USE_ACC)
 extern float osdGForce;
 #endif
-#ifdef USE_ESC_SENSOR
-extern const escSensorData_t *osdEscDataCombined;
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
+extern const motorTelemetry_t *osdMotorTelemetryCombined;
 #endif
 extern uint16_t osdAuxValue;
 

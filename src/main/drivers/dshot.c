@@ -254,11 +254,6 @@ static void dshotUpdateTelemetryData(uint8_t motorIndex, dshotTelemetryType_t ty
     // Update telemetry data
     dshotTelemetryState.motorState[motorIndex].telemetryData[type] = value;
     dshotTelemetryState.motorState[motorIndex].telemetryTypes |= (1 << type);
-
-    // Update max temp
-    if ((type == DSHOT_TELEMETRY_TYPE_TEMPERATURE) && (value > dshotTelemetryState.motorState[motorIndex].maxTemp)) {
-        dshotTelemetryState.motorState[motorIndex].maxTemp = value;
-    }
 }
 
 FAST_CODE_NOINLINE void updateDshotTelemetry(void)
