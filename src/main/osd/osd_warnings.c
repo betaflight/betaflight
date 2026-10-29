@@ -97,9 +97,9 @@ static bool checkEscAlarmConditions(const motorTelemetry_t *telemetry, uint8_t m
     }
 
     // Check current alarm (regardless of motor spinning state)
-    // esc_current_alarm is in A, telemetry->current is in 0.01A
+    // esc_current_alarm and telemetry->current are in 0.01A
     if (motorTelemetryHas(telemetry, MOTOR_TELEMETRY_CURRENT) && telemetry->current
-        && osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF && telemetry->current >= osdConfig()->esc_current_alarm * 100) {
+        && osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF && telemetry->current >= osdConfig()->esc_current_alarm) {
         buffer[alarmPos++] = ESC_ALARM_CURRENT;
     }
 
