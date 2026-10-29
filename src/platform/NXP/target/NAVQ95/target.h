@@ -117,18 +117,16 @@
 #define GYRO_1_CS_PIN           PA11
 
 /*
- * SD card over the i.MX 95 uSDHC controller (NXP/sdio_usdhc_navq95.c, ADMA2
- * polled). Per the NavQ95 schematic the microSD is wired to uSDHC2 via the SD2
- * pads (SD2_CLK/CMD/DATA0..3, 4-bit). Config storage stays in the FlexSPI NOR
- * (above), so an SD failure is non-fatal. NAVQ95_SD_SELFTEST runs a boot
- * clock-grant scan + SD2 pinmux probe + non-destructive card-identify (gated so
- * a wrong guess cannot hang the bus); leave it off for normal use.
+ * SD card over the i.MX 95 uSDHC2 controller (NXP/sdio_usdhc_navq95.c, polled
+ * programmed I/O) on the SD2 pads (SD2_CLK/CMD/DATA0..3/CD_B). Used for
+ * blackbox logging; config storage stays in the FlexSPI NOR (above), so an SD
+ * failure is non-fatal.
  */
 #define USE_SDCARD
 #define USE_SDCARD_SDIO
 #define SDIO_DEVICE             SDIODEV_1
-#define SDIO_USE_4BIT           false
-/* #define NAVQ95_SD_SELFTEST */
+#define SDIO_USE_4BIT           true    /* falls back to 1-bit if DAT1..3 fail */
+#define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_SDCARD   /* blackbox logs to the microSD */
 
 /*
  * NAVQ95_PWM_SELFTEST — BENCH-ONLY boot probe for the motor PWM: prints TPM

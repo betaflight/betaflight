@@ -738,20 +738,6 @@ void systemInit(void)
     }
 #endif
 
-#ifdef NAVQ95_SD_SELFTEST
-    /* Boot-time uSDHC/SD self-test (non-fatal): prints controller state + the
-     * card-identify result so the best-guess pads/instance/clock can be checked
-     * on hardware. Non-destructive (never programs a block). Defined in
-     * NXP/sdio_usdhc_navq95.c under USE_SDCARD_SDIO. Runs AFTER the console
-     * banner above; SD failure stays non-fatal (CONFIG_IN_RAM), so the CLI
-     * remains reachable. Turn off (comment out NAVQ95_SD_SELFTEST in target.h)
-     * once the card is proven. */
-    {
-        extern void navq95_sd_selftest(void);
-        navq95_sd_selftest();
-    }
-#endif
-
 #ifdef NAVQ95_PWM_SELFTEST
     /* Boot-time TPM3 PWM self-test (BENCH ONLY — props OFF): prints the TPM3
      * SCMI clock-enable status + MOD/SC + per-pad SCMI pinmux return codes, then

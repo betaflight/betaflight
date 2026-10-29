@@ -104,6 +104,10 @@ typedef struct {
 #define USDHC_PRES_STATE_SDSTB_MASK    (1u << 3)   /* SD clock stable         */
 #define USDHC_PRES_STATE_CINS_MASK     (1u << 16)  /* card inserted           */
 
+/* ── WTMK_LVL ──────────────────────────────────────────────────────────────*/
+#define USDHC_WTMK_LVL_RD_WML(n)       ((uint32_t)(n) & 0xFFu)
+#define USDHC_WTMK_LVL_WR_WML(n)       (((uint32_t)(n) & 0xFFu) << 16)
+
 /* ── PROT_CTRL ─────────────────────────────────────────────────────────────*/
 #define USDHC_PROT_CTRL_DTW_MASK       (3u << 1)
 #define USDHC_PROT_CTRL_DTW(n)         (((uint32_t)(n) & 3u) << 1)   /* 0=1bit 1=4bit 2=8bit */
