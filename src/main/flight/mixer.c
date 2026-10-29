@@ -699,22 +699,12 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
     calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
 
     if (applyCrashFlipModeToMotors()) {
-        // Keep feeding the anti-gravity throttle filter while crash flip is active.
-        // pidController() rescales antiGravityThrottleD in place by antiGravityGain on
-        // every loop, and this filter is the only writer of the value. Skipping it here
-        // would let the value grow without bound and overflow to inf/NaN (see #15910).
-        // Feed the same (optionally throttle-limited) value the ordinary path uses,
-        // since the filter's internal previousThrottle is shared across both. Use a
-        // local so the shared throttle is not modified during crash flip.
-        float antiGravityThrottle = throttle;
-        if (currentControlRateProfile->throttle_limit_type != THROTTLE_LIMIT_TYPE_OFF) {
-            antiGravityThrottle = applyThrottleLimit(throttle);
-        }
-        pidUpdateAntiGravityThrottleFilter(antiGravityThrottle);
+        // if crash flip mode is being applied to the motors, mixing is done.
+        // The anti-gravity throttle filter is deliberately not updated here: its output holds
+        // the value it had when crash flip began, normally negligible after throttle cut and
+        // disarm, and resumes decaying once crash flip ends. Feeding it here would let a throttle
+        // bump during crash flip boost P and I just before take-off (see #15910).
         return;
-        // if crash flip mode is being applied to the motors, mixing is done
-
-
     }
 
     motorMixer_t * activeMixer = &mixerRuntime.currentMixer[0];
