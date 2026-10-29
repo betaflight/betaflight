@@ -128,6 +128,20 @@ flash_fm25v02a_unittest_DEFINES := \
 		USE_FLASH_M25P16= \
 		USE_FLASH_FM25V02A=
 
+flash_w25n_quadspi_unittest_SRC := \
+		$(USER_DIR)/drivers/flash/flash_w25n.c \
+		$(USER_DIR)/drivers/flash/flash.c \
+		$(USER_DIR)/io/flashfs.c
+
+flash_w25n_quadspi_unittest_DEFINES := \
+		USE_FLASH_CHIP= \
+		USE_FLASHFS= \
+		USE_FLASH_SPI= \
+		USE_QUADSPI= \
+		USE_FLASH_QUADSPI= \
+		USE_FLASH_W25N= \
+		USE_FLASH_W25N01G=
+
 baro_bmp085_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_bmp085.c
 
@@ -197,6 +211,19 @@ accgyro_spi_lsm6dsv16x_unittest_DEFINES = \
 #battery_unittest_SRC := \
 #		$(USER_DIR)/sensors/battery.c \
 #		$(USER_DIR)/common/maths.c
+
+bus_spi_unittest_SRC := \
+		$(USER_DIR)/build/atomic.c \
+		$(USER_DIR)/drivers/bus_spi.c \
+		$(USER_DIR)/drivers/accgyro/accgyro_mpu.c
+
+bus_spi_unittest_DEFINES := \
+		USE_SPI= \
+		USE_SPI_DEVICE_1= \
+		USE_SPI_GYRO= \
+		SPI1=0x40013000UL \
+		SPIDEV_COUNT=1 \
+		MAX_SPI_PIN_SEL=1
 
 battery_profile_unittest_SRC := \
 		$(USER_DIR)/sensors/battery.c \
@@ -397,6 +424,13 @@ motor_output_unittest_SRC := \
 
 motor_output_unittest_DEFINES := \
 		USE_DSHOT=
+
+sdcard_sdio_unittest_SRC := \
+		$(USER_DIR)/drivers/sdcard_sdio_baremetal.c
+
+sdcard_sdio_unittest_DEFINES := \
+		USE_SDCARD_SDIO= \
+		ENABLE_SDIO_EXTERNAL_DMA=0
 
 msp_serial_unittest_SRC := \
 		$(USER_DIR)/msp/msp_serial.c \
@@ -1062,7 +1096,7 @@ COMMON_FLAGS += -Wno-c99-designator
 # no warning expected on clang
 COMMON_FLAGS += -Werror
 
-# The vendored MAVLink headers forward-declare mavlink_message_t and then
+# The MAVLink headers forward-declare mavlink_message_t and then
 # redefine it identically; harmless, but flagged as a C11 feature under gnu99.
 COMMON_FLAGS += -Wno-typedef-redefinition
 
@@ -1227,7 +1261,14 @@ $(OBJECT_DIR)/gtest_main.a : $(OBJECT_DIR)/gtest-all.o $(OBJECT_DIR)/gtest_main.
 
 # includes in test dir must override includes in user dir, unless the user
 # specifies a list of endorsed directories in ${target}_INCLUDE_DIRS.
-test_include_dirs  = $1 $(TEST_DIR) $(USER_DIR) $(ROOT)/lib/main/MAVLink
+MAVLINK_LIB_DIR := $(ROOT)/lib/modules/mavlink
+
+# The MAVLink library is a submodule the firmware Makefile hydrates on demand;
+# hydrate it here too so tests built from this directory find its headers.
+$(MAVLINK_LIB_DIR)/.git:
+	git -C $(ROOT) submodule update --init -- lib/modules/mavlink
+
+test_include_dirs  = $1 $(TEST_DIR) $(USER_DIR) $(MAVLINK_LIB_DIR)
 test_cflags	   = $(addprefix -I,$(call test_include_dirs,$1))
 
 
@@ -1274,14 +1315,14 @@ endif
 -include $$($1_OBJS:.o=.d)
 -include $(OBJECT_DIR)/$1/$(basename $1).d
 
-$(OBJECT_DIR)/$1/%.c.o: $(USER_DIR)/%.c
+$(OBJECT_DIR)/$1/%.c.o: $(USER_DIR)/%.c | $(MAVLINK_LIB_DIR)/.git
 	@echo "compiling $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CC) $(C_FLAGS) $($1_C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
                 $$(foreach def,$$($1_DEFINES),-D $$(def)) \
                 -c $$< -o $$@
 
-$(OBJECT_DIR)/$1/%.c.o: $(TEST_DIR)/%.c
+$(OBJECT_DIR)/$1/%.c.o: $(TEST_DIR)/%.c | $(MAVLINK_LIB_DIR)/.git
 	@echo "compiling test c file: $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CC) $(C_FLAGS) $($1_C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
@@ -1290,7 +1331,7 @@ $(OBJECT_DIR)/$1/%.c.o: $(TEST_DIR)/%.c
 
 ifneq ($1,$(basename $1))
 # per-target tests may compile files from the target directory
-$(OBJECT_DIR)/$1/%.c.o: $(TARGET_DIR)/$(TARGET)/%.c
+$(OBJECT_DIR)/$1/%.c.o: $(TARGET_DIR)/$(TARGET)/%.c | $(MAVLINK_LIB_DIR)/.git
 	@echo "compiling target c file: $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CC) $(C_FLAGS) $($1_C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
@@ -1298,7 +1339,7 @@ $(OBJECT_DIR)/$1/%.c.o: $(TARGET_DIR)/$(TARGET)/%.c
                 -c $$< -o $$@
 endif
 
-$(OBJECT_DIR)/$1/$(basename $1).o: $(TEST_DIR)/$(basename $1).cc
+$(OBJECT_DIR)/$1/$(basename $1).o: $(TEST_DIR)/$(basename $1).cc | $(MAVLINK_LIB_DIR)/.git
 	@echo "compiling $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CXX) $(CXX_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \

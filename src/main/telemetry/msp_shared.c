@@ -212,7 +212,8 @@ bool handleMspFrame(uint8_t *const payload, uint8_t const payloadLength, uint8_t
                 if (payloadLength < MIN_LENGTH_REQUEST_JUMBO) {
                     return false;   // prevent analyzing garbage data
                 }
-                mspPayloadSize = *(uint16_t*)&payload[MSP_INDEX_SIZE_JUMBO_LO];
+                // Read 16-bit LE value without unaligned pointer dereference (portable to RISC-V).
+                mspPayloadSize = (uint16_t)(payload[MSP_INDEX_SIZE_JUMBO_LO] | (payload[MSP_INDEX_SIZE_JUMBO_HI] << 8));
                 sbufInit(&sbufInput, payload + MSP_INDEX_PAYLOAD_JUMBO, payload + payloadLength);
             } else {
                 sbufInit(&sbufInput, payload + MSP_INDEX_PAYLOAD_V1, payload + payloadLength);
@@ -222,8 +223,8 @@ bool handleMspFrame(uint8_t *const payload, uint8_t const payloadLength, uint8_t
                 return false;   // prevent analyzing garbage data
             }
             requestPacket.flags = payload[MSP_INDEX_FLAG_V2];
-            requestPacket.cmd = *(uint16_t*)&payload[MSP_INDEX_ID_LO];
-            mspPayloadSize = *(uint16_t*)&payload[MSP_INDEX_SIZE_V2_LO];
+            requestPacket.cmd = (uint16_t)(payload[MSP_INDEX_ID_LO] | (payload[MSP_INDEX_ID_HI] << 8));
+            mspPayloadSize = (uint16_t)(payload[MSP_INDEX_SIZE_V2_LO] | (payload[MSP_INDEX_SIZE_V2_HI] << 8));
             sbufInit(&sbufInput, payload + MSP_INDEX_PAYLOAD_V2, payload + payloadLength);
         }
         if (mspPayloadSize <= sizeof(requestBuffer)) { // prevent buffer overrun

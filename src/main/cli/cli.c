@@ -85,6 +85,9 @@ bool cliMode = false;
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
+#ifdef USE_UART
+#include "drivers/serial_uart.h"
+#endif
 #include "drivers/serial_escserial.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/stack_check.h"
@@ -288,6 +291,32 @@ static const char *configurationStates[] = {
     [CONFIGURATION_STATE_CONFIGURED] = "CONFIGURED"
 };
 
+static const char * const configResetReasonNames[] = {
+    [CONFIG_RESET_NONE] = "NONE",
+    [CONFIG_RESET_EMPTY] = "EMPTY",
+    [CONFIG_RESET_CORRUPT] = "CORRUPT",
+    [CONFIG_RESET_VERSION] = "VERSION",
+    [CONFIG_RESET_PG_MISSING] = "PG_MISSING",
+    [CONFIG_RESET_PG_VERSION] = "PG_VERSION",
+    [CONFIG_RESET_BOARD] = "BOARD",
+    [CONFIG_RESET_CLI] = "CLI",
+    [CONFIG_RESET_MSP] = "MSP",
+    [CONFIG_RESET_BUTTON] = "BUTTON",
+    [CONFIG_RESET_SERIAL] = "SERIAL",
+};
+STATIC_ASSERT(CONFIG_RESET_COUNT == ARRAYLEN(configResetReasonNames), configResetReasonNames_array_length_mismatch);
+
+static const systemConfig_t *currentSystemConfig(void)
+{
+    return configIsInCopy ? &systemConfig_Copy : systemConfig();
+}
+
+static const char *configResetReasonName(void)
+{
+    const uint8_t reason = currentSystemConfig()->configResetReason;
+    return reason < CONFIG_RESET_COUNT ? configResetReasonNames[reason] : "UNKNOWN";
+}
+
 typedef enum dumpFlags_e {
     DUMP_MASTER = (1 << 0),
     DUMP_PROFILE = (1 << 1),
@@ -442,6 +471,14 @@ CLI_DEBUG_EXPORT void cliPrintLinef(const char *format, ...)
     cliPrintfva(format, va);
     va_end(va);
     cliPrintLinefeed();
+}
+
+static void cliPrintConfigReset(void)
+{
+    cliPrintf(" %s", configResetReasonName());
+    if (currentSystemConfig()->configResetDetail) {
+        cliPrintf(" %u", currentSystemConfig()->configResetDetail);
+    }
 }
 
 static const char *cliEnvFilter;
@@ -2446,7 +2483,7 @@ RAM_CODE static void cliServo(const char *cmdName, char *cmdline)
             arguments[MAX] < PWM_SERVO_MIN || arguments[MAX] > PWM_SERVO_MAX ||
             arguments[MIDDLE] < arguments[MIN] || arguments[MIDDLE] > arguments[MAX] ||
             arguments[MIN] > arguments[MAX] ||
-            arguments[RATE] < -100 || arguments[RATE] > 100 ||
+            arguments[RATE] < -SERVO_RATE_MAX || arguments[RATE] > SERVO_RATE_MAX ||
             arguments[FORWARD] >= MAX_SUPPORTED_RC_CHANNEL_COUNT
         ) {
             cliShowArgumentRangeError(cmdName, NULL, 0, 0);
@@ -2607,10 +2644,10 @@ RAM_CODE static void cliServoMix(const char *cmdName, char *cmdline)
         if (i >= 0 && i < MAX_SERVO_RULES &&
             args[TARGET] >= 0 && args[TARGET] < MAX_SUPPORTED_SERVOS &&
             args[INPUT] >= 0 && args[INPUT] < INPUT_SOURCE_COUNT &&
-            args[RATE] >= -100 && args[RATE] <= 100 &&
+            args[RATE] >= -SERVO_RATE_MAX && args[RATE] <= SERVO_RATE_MAX &&
             args[SPEED] >= 0 && args[SPEED] <= MAX_SERVO_SPEED &&
-            args[MIN] >= 0 && args[MIN] <= 100 &&
-            args[MAX] >= 0 && args[MAX] <= 100 && args[MIN] < args[MAX] &&
+            args[MIN] >= 0 && args[MIN] <= SERVO_MIX_RANGE_MAX &&
+            args[MAX] >= 0 && args[MAX] <= SERVO_MIX_RANGE_MAX && args[MIN] < args[MAX] &&
             args[BOX] >= 0 && args[BOX] <= MAX_SERVO_BOXES) {
             customServoMixersMutable(i)->targetChannel = args[TARGET];
             customServoMixersMutable(i)->inputSource = args[INPUT];
@@ -5210,6 +5247,8 @@ RAM_CODE static void cliDefaults(const char *cmdName, char *cmdline)
 
     if (parameterGroupId) {
         restoreConfigs(parameterGroupId);
+    } else {
+        systemConfigMutable()->configResetReason = CONFIG_RESET_CLI;
     }
 
     if (saveConfigs && tryPrepareSave(cmdName)) {
@@ -6171,13 +6210,15 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
 #endif
     cliPrintLinefeed();
 
-    cliPrintLinef("CONFIG: %s (%db / %db)", configurationStates[systemConfigMutable()->configurationState], getEEPROMConfigSize(), getEEPROMStorageSize());
+    cliPrintf("CONFIG: %s (%db / %db), last reset:", configurationStates[systemConfigMutable()->configurationState], getEEPROMConfigSize(), getEEPROMStorageSize());
+    cliPrintConfigReset();
+    cliPrintLinefeed();
     cliPrintLinefeed();
 
     // Devices
     cliPrint("DEVICES DETECTED:");
 #if defined(USE_SPI)
-    cliPrintf(" SPI=%d", spiGetRegisteredDeviceCount());
+    cliPrintf(" SPI=%d (%d errors)", spiGetRegisteredDeviceCount(), spiGetErrorCounter());
 #if defined(USE_I2C)
     cliPrint(",");
 #endif
@@ -6452,6 +6493,14 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
         cliPrintf(" %s", getArmingDisableFlagName(flag));
     }
     cliPrintLinefeed();
+
+#ifdef USE_DSHOT_BITBANG
+    static const char * const dshotBitbangStatusNames[] = { "OK", "MOTOR_PIN_CONFLICT", "NO_PACER", "TOO_MANY_PORTS" };
+    const dshotBitbangStatus_e bitbangStatus = dshotBitbangGetStatus();
+    if (isDshotBitbangActive(&motorConfig()->dev) && bitbangStatus != DSHOT_BITBANG_STATUS_OK) {
+        cliPrintLinef("DSHOT_BBANG: %s", (unsigned)bitbangStatus < ARRAYLEN(dshotBitbangStatusNames) ? dshotBitbangStatusNames[bitbangStatus] : "UNKNOWN");
+    }
+#endif
 }
 
 #if defined(USE_SENSOR_NAMES)
@@ -6724,6 +6773,12 @@ static void printVersion(bool printBoardInfo)
     cliPrintLinef("# config rev: %s", shortConfigGitRevision);
 #endif
 
+    if (currentSystemConfig()->configResetReason != CONFIG_RESET_NONE) {
+        cliPrint("# config reset:");
+        cliPrintConfigReset();
+        cliPrintLinefeed();
+    }
+
 #if defined(USE_BOARD_INFO)
     if (printBoardInfo && strlen(getManufacturerId()) && strlen(getBoardName())) {
         cliPrintLinef("# board: manufacturer_id: %s, board_name: %s", getManufacturerId(), getBoardName());
@@ -6891,10 +6946,13 @@ RAM_CODE static void cliEnv(const char *cmdName, char *cmdline)
     cliPrintNameValue("CONFIG_STATE", configurationStates[systemConfigMutable()->configurationState]);
     cliPrintNameValuef("CONFIG_SIZE", "%d", getEEPROMConfigSize());
     cliPrintNameValuef("CONFIG_MAX_SIZE", "%d", getEEPROMStorageSize());
+    cliPrintNameValue("CONFIG_RESET_REASON", configResetReasonName());
+    cliPrintNameValuef("CONFIG_RESET_DETAIL", "%u", systemConfig()->configResetDetail);
 
     // Bus devices
 #if defined(USE_SPI)
     cliPrintNameValuef("SPI_COUNT", "%d", spiGetRegisteredDeviceCount());
+    cliPrintNameValuef("SPI_ERRORS", "%d", spiGetErrorCounter());
 #endif
 #if defined(USE_I2C)
     cliPrintNameValuef("I2C_COUNT", "%d", i2cGetRegisteredDeviceCount());
@@ -7372,6 +7430,7 @@ typedef struct dmaoptEntry_s {
     uint8_t offset;
     uint8_t maxIndex;
     uint32_t presenceMask;
+    bool isLpuart;
 } dmaoptEntry_t;
 
 #define MASK_IGNORED (0)
@@ -7383,16 +7442,22 @@ typedef struct dmaoptEntry_s {
 // DEFW_OFS: array of structs, starting at offset ofs
 
 #define DEFS(device, peripheral, pgn, type, member) \
-    { device, peripheral, pgn, 0,               offsetof(type, member), 0, MASK_IGNORED }
+    { device, peripheral, pgn, 0,               offsetof(type, member), 1, MASK_IGNORED, false }
 
 #define DEFA(device, peripheral, pgn, type, member, max, mask) \
-    { device, peripheral, pgn, sizeof(uint8_t), offsetof(type, member), max, mask }
+    { device, peripheral, pgn, sizeof(uint8_t), offsetof(type, member), max, mask, false }
 
 #define DEFW(device, peripheral, pgn, type, member, max, mask) \
     DEFW_OFS(device, peripheral, pgn, type, member, 0, max, mask)
 
 #define DEFW_OFS(device, peripheral, pgn, type, member, ofs, max, mask)  \
-    { device, peripheral, pgn, sizeof(type), offsetof(type, member) + (ofs) * sizeof(type), max, mask }
+    DEFW_OFS_FLAG(device, peripheral, pgn, type, member, ofs, max, mask, false)
+
+#define DEFW_OFS_LPUART(device, peripheral, pgn, type, member, ofs, max, mask) \
+    DEFW_OFS_FLAG(device, peripheral, pgn, type, member, ofs, max, mask, true)
+
+#define DEFW_OFS_FLAG(device, peripheral, pgn, type, member, ofs, max, mask, isLpuart) \
+    { device, peripheral, pgn, sizeof(type), offsetof(type, member) + (ofs) * sizeof(type), max, mask, isLpuart }
 
 dmaoptEntry_t dmaoptEntryTable[] = {
     DEFW("SPI_SDO", DMA_PERIPH_SPI_SDO, PG_SPI_PIN_CONFIG,     spiPinConfig_t,     txDmaopt, SPIDEV_COUNT,                    MASK_IGNORED),
@@ -7401,14 +7466,16 @@ dmaoptEntry_t dmaoptEntryTable[] = {
     DEFW("SPI_TX",   DMA_PERIPH_SPI_SDO, PG_SPI_PIN_CONFIG,     spiPinConfig_t,     txDmaopt, SPIDEV_COUNT,                    MASK_IGNORED),
     DEFW("SPI_RX",   DMA_PERIPH_SPI_SDI, PG_SPI_PIN_CONFIG,     spiPinConfig_t,     rxDmaopt, SPIDEV_COUNT,                    MASK_IGNORED),
     DEFA("ADC",      DMA_PERIPH_ADC,      PG_ADC_CONFIG,         adcConfig_t,        dmaopt,   ADCDEV_COUNT,                    MASK_IGNORED),
+#ifdef USE_SDCARD_SDIO
     DEFS("SDIO",     DMA_PERIPH_SDIO,     PG_SDIO_CONFIG,        sdioConfig_t,       dmaopt),
+#endif
 #ifdef USE_UART
     DEFW_OFS("UART_TX",  DMA_PERIPH_UART_TX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, RESOURCE_UART_OFFSET, RESOURCE_UART_COUNT, MASK_IGNORED),
     DEFW_OFS("UART_RX",  DMA_PERIPH_UART_RX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, RESOURCE_UART_OFFSET, RESOURCE_UART_COUNT, MASK_IGNORED),
 #endif
-#ifdef USE_LPUART
-    DEFW_OFS("LPUART_TX",  DMA_PERIPH_UART_TX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
-    DEFW_OFS("LPUART_RX",  DMA_PERIPH_UART_RX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
+#if defined(USE_UART) && defined(USE_LPUART)
+    DEFW_OFS_LPUART("LPUART_TX",  DMA_PERIPH_UART_TX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
+    DEFW_OFS_LPUART("LPUART_RX",  DMA_PERIPH_UART_RX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
 #endif
 #if defined(USE_TIMER_UP_CONFIG)
     DEFW("TIMUP",    DMA_PERIPH_TIMUP,    PG_TIMER_UP_CONFIG,    timerUpConfig_t,    dmaopt,   HARDWARE_TIMER_DEFINITION_COUNT, TIMUP_TIMERS),
@@ -7418,6 +7485,9 @@ dmaoptEntry_t dmaoptEntryTable[] = {
 #undef DEFS
 #undef DEFA
 #undef DEFW
+#undef DEFW_OFS
+#undef DEFW_OFS_LPUART
+#undef DEFW_OFS_FLAG
 
 #define DMA_OPT_STRING_BUFSIZE 5
 
@@ -7486,6 +7556,20 @@ static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
     return (index < 0 || index >= entry->maxIndex) ? -1 : index;
 }
 
+/** Translate a UART CLI row to its compact DMA request-map index. */
+static int dmaOptPeripheralIndex(const dmaoptEntry_t *entry, int index)
+{
+#ifdef USE_UART
+    if (entry->peripheral == DMA_PERIPH_UART_TX || entry->peripheral == DMA_PERIPH_UART_RX) {
+        const serialPortIdentifier_e firstIdentifier = entry->isLpuart ? SERIAL_PORT_LPUART_FIRST : SERIAL_PORT_UART_FIRST;
+        return uartDeviceIndexFromIdentifier((serialPortIdentifier_e)(firstIdentifier + index));
+    }
+#else
+    UNUSED(entry);
+#endif
+    return index;
+}
+
 static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const dmaoptValue_t dmaopt, const bool equalsDefault, const dumpFlags_t dumpMask, printFn *printValue)
 {
     // We compute number to display for different peripherals in advance.
@@ -7503,14 +7587,16 @@ static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const 
             "dma %s %d %d",
             entry->device, uiIndex, dmaopt);
 
-        const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, index, dmaopt);
-        dmaCode_t dmaCode = 0;
-        if (dmaChannelSpec) {
-            dmaCode = dmaChannelSpec->code;
+        const int peripheralIndex = dmaOptPeripheralIndex(entry, index);
+        if (peripheralIndex >= 0) {
+            const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, (uint8_t)peripheralIndex, dmaopt);
+            if (dmaChannelSpec) {
+                const dmaCode_t dmaCode = dmaChannelSpec->code;
+                printValue(dumpMask, equalsDefault,
+                    "# %s %d: " DMASPEC_FORMAT_STRING,
+                    entry->device, uiIndex, DMA_CODE_CONTROLLER(dmaCode), DMA_CODE_STREAM(dmaCode), DMA_CODE_CHANNEL(dmaCode));
+            }
         }
-        printValue(dumpMask, equalsDefault,
-            "# %s %d: " DMASPEC_FORMAT_STRING,
-            entry->device, uiIndex, DMA_CODE_CONTROLLER(dmaCode), DMA_CODE_STREAM(dmaCode), DMA_CODE_CHANNEL(dmaCode));
     } else if (!(dumpMask & HIDE_UNUSED)) {
         printValue(dumpMask, equalsDefault,
             "dma %s %d NONE",
@@ -7752,7 +7838,12 @@ RAM_CODE static void cliDmaopt(const char *cmdName, char *cmdline)
         // Show possible opts
         const dmaChannelSpec_t *dmaChannelSpec;
         if (entry) {
-            for (int opt = 0; (dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, index, opt)); opt++) {
+            const int peripheralIndex = dmaOptPeripheralIndex(entry, index);
+            for (int opt = 0; peripheralIndex >= 0; opt++) {
+                dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, (uint8_t)peripheralIndex, opt);
+                if (!dmaChannelSpec) {
+                    break;
+                }
                 cliPrintLinef("# %d: " DMASPEC_FORMAT_STRING, opt, DMA_CODE_CONTROLLER(dmaChannelSpec->code), DMA_CODE_STREAM(dmaChannelSpec->code), DMA_CODE_CHANNEL(dmaChannelSpec->code));
             }
         } else {
@@ -7770,7 +7861,9 @@ RAM_CODE static void cliDmaopt(const char *cmdName, char *cmdline)
             optval = atoi(pch);
 
             if (entry) {
-                if (!dmaGetChannelSpecByPeripheral(entry->peripheral, index, optval)) {
+                const int peripheralIndex = dmaOptPeripheralIndex(entry, index);
+                if (peripheralIndex < 0 ||
+                    !dmaGetChannelSpecByPeripheral(entry->peripheral, (uint8_t)peripheralIndex, optval)) {
                     cliPrintErrorLinef(cmdName, "INVALID DMA OPTION FOR %s %d: '%s'", entry->device, getDmaOptDisplayNumber(entry, index), pch);
 
                     return;

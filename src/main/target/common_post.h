@@ -282,6 +282,14 @@
 
 #endif // USE_OPTICALFLOW
 
+#if defined(USE_PITOT) && defined(USE_I2C)
+
+#ifndef USE_PITOT_MS4525
+#define USE_PITOT_MS4525
+#endif
+
+#endif // USE_PITOT
+
 #if defined(USE_RX_CC2500)
 
 #if !defined(USE_RX_SPI)
@@ -773,6 +781,13 @@
 #endif
 #endif // USE_OPTICALFLOW_XXX
 
+// Bottom-up: individual pitot drivers → USE_PITOT
+#if defined(USE_PITOT_MS4525)
+#ifndef USE_PITOT
+#define USE_PITOT
+#endif
+#endif // USE_PITOT_XXX
+
 #ifndef USE_GPS_RESCUE
 #undef USE_CMS_GPS_RESCUE_MENU
 #endif
@@ -957,6 +972,12 @@ extern struct linker_symbol __fontdata_end;
 #else
 #define ENABLE_TELEMETRY_MAVLINK_MISSION 0
 #endif
+#endif
+
+// The MAVLink library's mavlink_helpers.h includes <stdio.h>, which has to be
+// seen before platform.h poisons sprintf/snprintf.
+#if (defined(USE_SERIALRX_MAVLINK) || defined(USE_TELEMETRY_MAVLINK)) && !defined(ENABLE_STDIO_PREINCLUDE)
+#define ENABLE_STDIO_PREINCLUDE
 #endif
 
 // MAVLink inbound COMMAND_LONG / COMMAND_INT actuation (arm/disarm, mode set,

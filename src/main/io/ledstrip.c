@@ -989,7 +989,7 @@ static void applyLedGpsLayer(bool updateNow, timeUs_t *timer)
 }
 #endif
 
-#define INDICATOR_DEADBAND 25
+#define INDICATOR_DEADBAND 0.05f
 
 static void applyLedIndicatorLayer(bool updateNow, timeUs_t *timer)
 {
@@ -998,9 +998,9 @@ static void applyLedIndicatorLayer(bool updateNow, timeUs_t *timer)
     if (updateNow) {
         if (isRxReceivingSignal()) {
             // calculate update frequency
-            int scale = MAX(fabsf(rcCommand[ROLL]), fabsf(rcCommand[PITCH]));  // 0 - 500
-            scale = scale - INDICATOR_DEADBAND;  // start increasing frequency right after deadband
-            *timer += HZ_TO_US(5 + (45 * scale) / (500 - INDICATOR_DEADBAND));   // 5 - 50Hz update, 2.5 - 25Hz blink
+            const float deflection = MAX(fabsf(rcCommand[ROLL]), fabsf(rcCommand[PITCH]));
+            const int scale = 45 * (deflection - INDICATOR_DEADBAND) / (NORMALISED_RANGE_MAX - INDICATOR_DEADBAND);  // start increasing frequency right after deadband
+            *timer += HZ_TO_US(5 + scale);   // 5 - 50Hz update, 2.5 - 25Hz blink
 
             flash = !flash;
         } else {

@@ -1159,6 +1159,125 @@ TEST_F(FlightPlanNavWingTest, ARescueRidesOutAPositionLossThenGivesUp)
     EXPECT_EQ(FP_ABORT_ESTIMATOR, flightPlanNavGetAbortReason());
 }
 
+static void expectStraightHomeFrom(float eastM, float northM)
+{
+    EXPECT_EQ(FP_NAV_TARGETING, flightPlanNavGetState());
+    EXPECT_EQ(FP_ABORT_NONE, flightPlanNavGetAbortReason());
+    EXPECT_TRUE(flightPlanNavIsRescuePlanActive());
+    EXPECT_EQ(0, flightPlanNavGetCurrentIndex());
+    EXPECT_EQ(NAV_TRACK_LINE, g_nav.track);
+    EXPECT_NEAR(eastM, g_nav.trackStartEfM.x, 0.2f);
+    EXPECT_NEAR(northM, g_nav.trackStartEfM.y, 0.2f);
+    EXPECT_NEAR(0.0f, g_nav.targetEfM.v[ENU_E], 0.2f);
+    EXPECT_NEAR(0.0f, g_nav.targetEfM.v[ENU_N], 0.2f);
+    EXPECT_NEAR(50.0f, g_nav.targetEfM.v[ENU_U], 0.1f);    // climbing on the way
+    EXPECT_NEAR(3.0f, g_nav.vertRateMps, 0.01f);
+}
+
+TEST_F(FlightPlanNavWingTest, ARescueThatCannotHoldItsClimbFliesStraightHome)
+{
+    craftAt(0.0f, 400.0f, 20.0f);
+    setVelocity(0.0f, 15.0f);
+    startRescue();
+    ASSERT_EQ(NAV_TRACK_LOITER, g_nav.track);
+    flyRescueTo(0.0f, 400.0f, 20.0f);
+    flyRescueTo(-300.0f, 400.0f, 20.0f);
+    expectStraightHomeFrom(-300.0f, 400.0f);
+
+    // and lands at home as the rescue would have
+    flyRescueTo(0.0f, 99.0f, 50.0f);
+    ASSERT_EQ(1, flightPlanNavGetCurrentIndex());
+    EXPECT_EQ(NAV_TRACK_LOITER, g_nav.track);
+    EXPECT_NEAR(0.0f, targetNorthM(), 0.2f);
+    flyRescueTo(0.0f, 70.0f, 50.0f);
+    EXPECT_EQ(FP_NAV_LANDING, flightPlanNavGetState());
+}
+
+TEST_F(FlightPlanNavWingTest, ARescueClimbThatStallsFliesStraightHome)
+{
+    craftAt(0.0f, 400.0f, 20.0f);
+    setVelocity(0.0f, 15.0f);
+    startRescue();
+    ASSERT_EQ(NAV_TRACK_LOITER, g_nav.track);
+    for (int i = 0; i < 610; i++) {
+        flyRescueTo(0.0f, 400.0f, 20.0f);
+    }
+    expectStraightHomeFrom(0.0f, 400.0f);
+}
+
+TEST_F(FlightPlanNavWingTest, AStraightHomeRetryKeepsTheReturnAltitude)
+{
+    gpsRescueConfigMutable()->altitudeMode = GPS_RESCUE_ALT_MODE_CURRENT;
+    autopilotWingConfigMutable()->landApproachAlt = 0;
+    craftAt(0.0f, 400.0f, 20.0f);
+    setVelocity(0.0f, 15.0f);
+    startRescue();
+    ASSERT_NEAR(30.0f, g_nav.targetEfM.v[ENU_U], 0.1f);
+    flyRescueTo(0.0f, 400.0f, 25.0f);
+    flyRescueTo(-300.0f, 400.0f, 25.0f);
+    ASSERT_EQ(NAV_TRACK_LINE, g_nav.track);
+    EXPECT_NEAR(30.0f, g_nav.targetEfM.v[ENU_U], 0.1f);
+
+    // but never below where it has climbed to
+    flightPlanNavDisengage();
+    craftAt(0.0f, 400.0f, 20.0f);
+    startRescue();
+    flyRescueTo(0.0f, 400.0f, 33.0f);
+    flyRescueTo(-300.0f, 400.0f, 33.0f);
+    ASSERT_EQ(NAV_TRACK_LINE, g_nav.track);
+    EXPECT_NEAR(33.0f, g_nav.targetEfM.v[ENU_U], 0.1f);
+}
+
+TEST_F(FlightPlanNavWingTest, ARescueThatFailsTwiceAborts)
+{
+    craftAt(0.0f, 400.0f, 20.0f);
+    setVelocity(0.0f, 15.0f);
+    startRescue();
+    flyRescueTo(0.0f, 400.0f, 20.0f);
+    flyRescueTo(-300.0f, 400.0f, 20.0f);
+    ASSERT_EQ(FP_NAV_TARGETING, flightPlanNavGetState());
+
+    flyRescueTo(-300.0f, 400.0f, 20.0f);
+    flyRescueTo(-300.0f, 700.0f, 20.0f);
+    EXPECT_EQ(FP_NAV_ABORTED, flightPlanNavGetState());
+    EXPECT_EQ(FP_ABORT_FLYAWAY, flightPlanNavGetAbortReason());
+
+    // a rescue staged afresh gets its own
+    flightPlanNavDisengage();
+    craftAt(0.0f, 400.0f, 20.0f);
+    startRescue();
+    flyRescueTo(0.0f, 400.0f, 20.0f);
+    flyRescueTo(-300.0f, 400.0f, 20.0f);
+    expectStraightHomeFrom(-300.0f, 400.0f);
+}
+
+TEST_F(FlightPlanNavWingTest, AnEstimatorAbortOfARescueIsNotRetried)
+{
+    craftAt(0.0f, 400.0f, 20.0f);
+    setVelocity(0.0f, 15.0f);
+    startRescue();
+    flyRescueTo(0.0f, 400.0f, 20.0f);
+    g_validXY = false;
+    for (int i = 0; i < 305; i++) {
+        tick();
+    }
+    EXPECT_EQ(FP_NAV_ABORTED, flightPlanNavGetState());
+    EXPECT_EQ(FP_ABORT_ESTIMATOR, flightPlanNavGetAbortReason());
+    EXPECT_FALSE(g_nav.active);
+}
+
+TEST_F(FlightPlanNavWingTest, AMissionFlyawayStillAborts)
+{
+    stateFlags = GPS_FIX | GPS_FIX_HOME;
+    addWaypoint(0.0f, 400.0f, WAYPOINT_TYPE_FLYOVER);
+    flightPlanNavEngage();
+    flyRescueTo(0.0f, 0.0f, ALT_M);
+    flyRescueTo(0.0f, -160.0f, ALT_M);
+    EXPECT_EQ(FP_NAV_ABORTED, flightPlanNavGetState());
+    EXPECT_EQ(FP_ABORT_FLYAWAY, flightPlanNavGetAbortReason());
+    EXPECT_FALSE(flightPlanNavIsRescuePlanActive());
+}
+
 TEST_F(FlightPlanNavWingTest, AWaypointLoiteredAboutNextIsReachedOnTheLoiter)
 {
     addWaypoint(0.0f, 400.0f, WAYPOINT_TYPE_FLYOVER);

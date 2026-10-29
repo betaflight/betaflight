@@ -451,9 +451,9 @@ void servoMixer(void)
 
     if (FLIGHT_MODE(PASSTHRU_MODE)) {
         // Direct passthru from RX
-        input[INPUT_STABILIZED_ROLL] = rcCommand[ROLL];
-        input[INPUT_STABILIZED_PITCH] = rcCommand[PITCH];
-        input[INPUT_STABILIZED_YAW] = rcCommand[YAW];
+        input[INPUT_STABILIZED_ROLL] = lrintf(rcCommand[ROLL] * SERVO_MIXER_INPUT_RANGE);
+        input[INPUT_STABILIZED_PITCH] = lrintf(rcCommand[PITCH] * SERVO_MIXER_INPUT_RANGE);
+        input[INPUT_STABILIZED_YAW] = lrintf(rcCommand[YAW] * SERVO_MIXER_INPUT_RANGE);
     } else {
         // Assisted modes (gyro only or gyro+acc according to AUX configuration in Gui
         input[INPUT_STABILIZED_ROLL] = pidData[FD_ROLL].Sum * PID_SERVO_MIXER_SCALING;

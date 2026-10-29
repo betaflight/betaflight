@@ -170,11 +170,12 @@ static void activateConfig(void)
     loadControlRateProfile();
     loadBatteryProfile();
 
-    initRcProcessing();
-
     activeAdjustmentRangeReset();
 
     pidInit(currentPidProfile);
+
+    // after pidInit(): initRcProcessing() latches feedforward settings from pidRuntime
+    initRcProcessing();
 
     rcControlsInit();
 
@@ -235,15 +236,33 @@ static void validateAndFixConfig(void)
     telemetryValidateProviders();
 #endif
 
+    if (rxConfig()->mincheck > RX_MIN_CHECK_MAX) {
+        rxConfigMutable()->mincheck = RX_MIN_CHECK_MAX;
+    }
+
+    if (rxConfig()->mincheck >= rxConfig()->maxcheck) {
+        rxConfigMutable()->mincheck = RX_MIN_CHECK_DEFAULT;
+        rxConfigMutable()->maxcheck = RX_MAX_CHECK_DEFAULT;
+    }
+
+    if (rxConfig()->rx_min_usec >= rxConfig()->rx_max_usec) {
+        rxConfigMutable()->rx_min_usec = RX_MIN_USEC;
+        rxConfigMutable()->rx_max_usec = RX_MAX_USEC;
+    }
+
     if (!isSerialConfigValid()) {
         // Give up only the claims that actually clash before falling back to the
         // board-wide reset, which would cost the user every other port they had
         // assigned to settle a single bad one.
         serialDropConflictingAssignments();
 
-        if (!isSerialConfigValid()) {
+        const bool serialReset = !isSerialConfigValid();
+        if (serialReset) {
             serialResetFeatureAssignments();
         }
+
+        systemConfigMutable()->configResetReason = CONFIG_RESET_SERIAL;
+        systemConfigMutable()->configResetDetail = serialReset;
     }
 
 #if defined(USE_GPS)
@@ -277,8 +296,8 @@ static void validateAndFixConfig(void)
         }
 #endif
 
-        if (pidProfilesMutable(i)->motor_output_limit > 100 || pidProfilesMutable(i)->motor_output_limit == 0) {
-            pidProfilesMutable(i)->motor_output_limit = 100;
+        if (pidProfilesMutable(i)->motor_output_limit > MOTOR_OUTPUT_LIMIT_PERCENT_MAX || pidProfilesMutable(i)->motor_output_limit < MOTOR_OUTPUT_LIMIT_PERCENT_MIN) {
+            pidProfilesMutable(i)->motor_output_limit = MOTOR_OUTPUT_LIMIT_PERCENT_MAX;
         }
 
         if (pidProfilesMutable(i)->auto_profile_cell_count > MAX_AUTO_DETECT_CELL_COUNT || pidProfilesMutable(i)->auto_profile_cell_count < AUTO_PROFILE_CELL_COUNT_CHANGE) {
@@ -575,10 +594,10 @@ static void validateAndFixConfig(void)
             batteryProfilesMutable(i)->vbatwarningcellvoltage = 350;
             batteryProfilesMutable(i)->vbatfullcellvoltage = 410;
         }
-        if (profile->forceBatteryCellCount > 24) {
+        if (profile->forceBatteryCellCount > BATTERY_FORCE_CELL_COUNT_MAX) {
             batteryProfilesMutable(i)->forceBatteryCellCount = 0;
         }
-        if (profile->consumptionWarningPercentage > 100) {
+        if (profile->consumptionWarningPercentage > BATTERY_CONSUMPTION_WARNING_PERCENT_MAX) {
             batteryProfilesMutable(i)->consumptionWarningPercentage = 10;
         }
     }
@@ -794,13 +813,27 @@ void writeEEPROM(void)
     writeUnmodifiedConfigToEEPROM();
 }
 
-bool resetEEPROM(void)
+bool resetEEPROM(configResetReason_e reason, uint16_t detail)
 {
     resetConfig();
+
+    systemConfigMutable()->configResetReason = reason;
+    systemConfigMutable()->configResetDetail = detail;
 
     writeUnmodifiedConfigToEEPROM();
 
     return true;
+}
+
+void resetEEPROMOnLoadFault(void)
+{
+    uint16_t detail;
+    configResetReason_e reason = diagnoseEEPROM(&detail);
+    if (reason == CONFIG_RESET_NONE) {
+        reason = CONFIG_RESET_BOARD;
+    }
+
+    resetEEPROM(reason, detail);
 }
 
 void ensureEEPROMStructureIsValid(void)
@@ -808,7 +841,7 @@ void ensureEEPROMStructureIsValid(void)
     if (isEEPROMStructureValid()) {
         return;
     }
-    resetEEPROM();
+    resetEEPROMOnLoadFault();
 }
 
 void saveConfigAndNotify(void)
