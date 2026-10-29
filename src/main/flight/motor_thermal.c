@@ -34,6 +34,7 @@
 #include "io/gps.h"
 #include "pg/motor.h"
 #include "pg/motor_thermal.h"
+#include "rx/rx.h"
 #include "sensors/adcinternal.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
@@ -324,8 +325,10 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
     // current). Without telemetry: by command², which would give a stalled motor the largest share.
     float cmdSqSum = 0.0f, rpmCubeSum = 0.0f, heldSum = 0.0f;
     float cmdFrac[MAX_SUPPORTED_MOTORS], rpmOf[MAX_SUPPORTED_MOTORS], held[MAX_SUPPORTED_MOTORS];
+    const bool reversible = featureIsEnabled(FEATURE_3D);           // 3D: the command is the distance from neutral
     for (int i = 0; i < motorCount && i < MAX_SUPPORTED_MOTORS; i++) {
-        cmdFrac[i] = constrainf((motorConvertToExternal(motor[i]) - 1000) * 0.001f, 0.0f, 1.0f);
+        const int external = motorConvertToExternal(motor[i]);
+        cmdFrac[i] = constrainf(reversible ? ABS(external - PWM_RANGE_MIDDLE) * 0.002f : (external - 1000) * 0.001f, 0.0f, 1.0f);
         cmdSqSum += sq(cmdFrac[i]);
         const float freeRpm = cmdFrac[i] * maxRpm;                  // no-load estimate for the command
         rpmOf[i] = freeRpm;
