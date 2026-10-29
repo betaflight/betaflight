@@ -233,7 +233,7 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
     }
 
     // Set the callback argument when calling back to this driver for DMA completion
-    dev->callbackArg = (uint32_t)&flashDevice;
+    dev->callbackArg = (uintptr_t)&flashDevice;
 
 
 #if defined(QUADSPI_TRAIT_CS_SOFTWARE)
