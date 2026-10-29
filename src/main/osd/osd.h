@@ -458,7 +458,7 @@ extern timeUs_t osdLaunchTime;
 extern float osdGForce;
 #endif
 #ifdef USE_ESC_SENSOR
-extern escSensorData_t *osdEscDataCombined;
+extern const escSensorData_t *osdEscDataCombined;
 #endif
 extern uint16_t osdAuxValue;
 

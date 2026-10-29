@@ -31,7 +31,6 @@
 
 #include "common/time.h"
 
-#include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/motor.h"
@@ -129,7 +128,6 @@ static escSensorTriggerState_t escSensorTriggerState = ESC_SENSOR_TRIGGER_STARTU
 static uint32_t escTriggerTimestamp;
 static uint8_t escSensorMotor = 0;      // motor index
 
-static escSensorData_t combinedEscSensorData;
 static bool combinedDataNeedsUpdate = true;
 
 static uint16_t totalTimeoutCount = 0;
@@ -157,51 +155,11 @@ LOCAL_UNUSED_FUNCTION static bool isEscSensorActive(void)
     return escSensorPort != NULL;
 }
 
-escSensorData_t *getEscSensorData(uint8_t motorNumber)
-{
-    if (!featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        return NULL;
-    }
-
-    if (motorNumber < getMotorCount()) {
-        return &escSensorData[motorNumber];
-    } else if (motorNumber == ESC_SENSOR_COMBINED) {
-        if (combinedDataNeedsUpdate) {
-            combinedEscSensorData.dataAge = 0;
-            combinedEscSensorData.temperature = 0;
-            combinedEscSensorData.voltage = 0;
-            combinedEscSensorData.current = 0;
-            combinedEscSensorData.consumption = 0;
-            combinedEscSensorData.rpm = 0;
-
-            for (int i = 0; i < getMotorCount(); i = i + 1) {
-                combinedEscSensorData.dataAge = MAX(combinedEscSensorData.dataAge, escSensorData[i].dataAge);
-                combinedEscSensorData.temperature = MAX(combinedEscSensorData.temperature, escSensorData[i].temperature);
-                combinedEscSensorData.voltage += escSensorData[i].voltage;
-                combinedEscSensorData.current += escSensorData[i].current;
-                combinedEscSensorData.consumption += escSensorData[i].consumption;
-                combinedEscSensorData.rpm += escSensorData[i].rpm;
-            }
-
-            combinedEscSensorData.voltage = combinedEscSensorData.voltage / getMotorCount();
-            combinedEscSensorData.rpm = combinedEscSensorData.rpm / getMotorCount();
-
-            combinedDataNeedsUpdate = false;
-
-            DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_DATA_AGE, combinedEscSensorData.dataAge);  //!< Data Age
-        }
-
-        return &combinedEscSensorData;
-    } else {
-        return NULL;
-    }
-}
-
 #if ENABLE_DRONECAN_ESC
 // External telemetry feed (e.g. DroneCAN esc.Status). Lets an out-of-band
 // source publish into the same escSensorData[] store the serial KISS decoder
 // uses, so every consumer (battery, OSD, telemetry, MSP, blackbox) reads it
-// through getEscSensorData() unchanged. Values use the escSensorData_t units:
+// through getMotorSensorData() unchanged. Values use the escSensorData_t units:
 // temperature °C, voltage 0.01V, current 0.01A, consumption mAh, rpm eRPM/100.
 void escSensorSetExternal(uint8_t motorIndex, const escSensorData_t *data)
 {
@@ -402,6 +360,43 @@ void escSensorProcess(timeUs_t currentTimeUs)
 
             break;
     }
+}
+
+void escSensorCopyData(uint8_t motor, escSensorData_t *out)
+{
+    *out = escSensorData[motor];
+}
+
+const escSensorData_t *escSensorGetCombinedData(void)
+{
+    static escSensorData_t combinedEscSensorData;
+
+    if (combinedDataNeedsUpdate) {
+        combinedEscSensorData.dataAge = 0;
+        combinedEscSensorData.temperature = 0;
+        combinedEscSensorData.voltage = 0;
+        combinedEscSensorData.current = 0;
+        combinedEscSensorData.consumption = 0;
+        combinedEscSensorData.rpm = 0;
+
+        for (int i = 0; i < getMotorCount(); i++) {
+            combinedEscSensorData.dataAge = MAX(combinedEscSensorData.dataAge, escSensorData[i].dataAge);
+            combinedEscSensorData.temperature = MAX(combinedEscSensorData.temperature, escSensorData[i].temperature);
+            combinedEscSensorData.voltage += escSensorData[i].voltage;
+            combinedEscSensorData.current += escSensorData[i].current;
+            combinedEscSensorData.consumption += escSensorData[i].consumption;
+            combinedEscSensorData.rpm += escSensorData[i].rpm;
+        }
+
+        combinedEscSensorData.voltage = combinedEscSensorData.voltage / getMotorCount();
+        combinedEscSensorData.rpm = combinedEscSensorData.rpm / getMotorCount();
+
+        combinedDataNeedsUpdate = false;
+
+        DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_DATA_AGE, combinedEscSensorData.dataAge);  //!< Data Age
+    }
+
+    return &combinedEscSensorData;
 }
 
 #endif

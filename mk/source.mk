@@ -301,6 +301,7 @@ COMMON_SRC = \
             telemetry/ltm.c \
             telemetry/mavlink.c \
             telemetry/mavlink_mission.c \
+            telemetry/motor_sensor.c \
             telemetry/msp_shared.c \
             telemetry/ibus.c \
             telemetry/ibus_shared.c \

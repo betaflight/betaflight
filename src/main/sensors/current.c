@@ -39,6 +39,9 @@
 #include "sensors/adcinternal.h"
 #include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
+#ifdef USE_ESC_SENSOR
+#include "telemetry/motor_sensor.h"
+#endif
 
 #include "current.h"
 
@@ -221,7 +224,7 @@ void currentMeterESCRefresh(int32_t lastUpdateAt)
 {
     UNUSED(lastUpdateAt);
 
-    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
+    const escSensorData_t *escData = getMotorSensorData(ESC_SENSOR_COMBINED, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
     if (escData && escData->dataAge <= ESC_BATTERY_AGE_MAX) {
         currentMeterESCState.amperage = escData->current + escSensorConfig()->offset / 10;
         currentMeterESCState.mAhDrawn = escData->consumption + escSensorConfig()->offset * millis() / (1000.0f * 3600);
@@ -240,7 +243,7 @@ void currentMeterESCReadCombined(currentMeter_t *meter)
 
 void currentMeterESCReadMotor(uint8_t motorNumber, currentMeter_t *meter)
 {
-    escSensorData_t *escData = getEscSensorData(motorNumber);
+    const escSensorData_t *escData = getMotorSensorData(motorNumber, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
     if (escData && escData->dataAge <= ESC_BATTERY_AGE_MAX) {
         meter->amperage = escData->current;
         meter->amperageLatest = escData->current;
