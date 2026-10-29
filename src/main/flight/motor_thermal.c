@@ -27,6 +27,7 @@
 #include "drivers/dshot.h"
 #include "drivers/dshot_command.h"
 #include "drivers/motor.h"
+#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 #include "flight/mixer.h"
 #include "flight/motor_noise.h"
@@ -325,10 +326,12 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
     // current). Without telemetry: by command², which would give a stalled motor the largest share.
     float cmdSqSum = 0.0f, rpmCubeSum = 0.0f, heldSum = 0.0f;
     float cmdFrac[MAX_SUPPORTED_MOTORS], rpmOf[MAX_SUPPORTED_MOTORS], held[MAX_SUPPORTED_MOTORS];
-    const bool reversible = featureIsEnabled(FEATURE_3D);           // 3D: the command is the distance from neutral
+    // 3D: the command is the distance from neutral (DShot 3D maps its neutral to the middle, analog uses 3d_neutral)
+    const bool reversible = featureIsEnabled(FEATURE_3D);
+    const int neutral = isMotorProtocolDshot() ? PWM_RANGE_MIDDLE : flight3DConfig()->neutral3d;
     for (int i = 0; i < motorCount && i < MAX_SUPPORTED_MOTORS; i++) {
         const int external = motorConvertToExternal(motor[i]);
-        cmdFrac[i] = constrainf(reversible ? ABS(external - PWM_RANGE_MIDDLE) * 0.002f : (external - 1000) * 0.001f, 0.0f, 1.0f);
+        cmdFrac[i] = constrainf(reversible ? ABS(external - neutral) * 0.002f : (external - 1000) * 0.001f, 0.0f, 1.0f);
         cmdSqSum += sq(cmdFrac[i]);
         const float freeRpm = cmdFrac[i] * maxRpm;                  // no-load estimate for the command
         rpmOf[i] = freeRpm;
