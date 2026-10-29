@@ -36,6 +36,7 @@
 
 #define NOINLINE
 #define FAST_CODE
+#define FAST_IRQ_HANDLER
 #define FAST_CODE_NOINLINE
 #define FAST_CODE_NOINLINE_CRITICAL
 #define FAST_CODE_PREF
@@ -103,7 +104,9 @@ typedef struct
     void* test;
 } ADC_TypeDef;
 
+#ifndef SPIDEV_COUNT
 #define SPIDEV_COUNT 0
+#endif
 #define I2CDEV_COUNT 0
 #ifndef GYRO_COUNT
 #define GYRO_COUNT 1

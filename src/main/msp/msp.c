@@ -2743,7 +2743,7 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
 
             bool success = false;
             if (!ARMING_FLAG(ARMED)) {
-                success = resetEEPROM();
+                success = resetEEPROM(CONFIG_RESET_MSP, 0);
 
                 if (success && mspPostProcessFn) {
                     rebootMode = MSP_REBOOT_FIRMWARE;

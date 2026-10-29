@@ -963,6 +963,12 @@ extern struct linker_symbol __fontdata_end;
 #endif
 #endif
 
+// The MAVLink library's mavlink_helpers.h includes <stdio.h>, which has to be
+// seen before platform.h poisons sprintf/snprintf.
+#if (defined(USE_SERIALRX_MAVLINK) || defined(USE_TELEMETRY_MAVLINK)) && !defined(ENABLE_STDIO_PREINCLUDE)
+#define ENABLE_STDIO_PREINCLUDE
+#endif
+
 // MAVLink inbound COMMAND_LONG / COMMAND_INT actuation (arm/disarm, mode set,
 // RTL, set-home, reboot). Defaults on wherever MAVLink telemetry is built in.
 #if !defined(ENABLE_TELEMETRY_MAVLINK_COMMANDS)

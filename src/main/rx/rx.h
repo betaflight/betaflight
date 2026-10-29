@@ -91,7 +91,7 @@ typedef enum {
 
 extern const char rcChannelLetters[];
 
-extern float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [1000;2000]
+extern float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [-1;1], 1000..2000us
 
 static inline float rcUsToNorm(float us)
 {
@@ -126,7 +126,7 @@ static inline float rcThrottleToUs(float throttle)
 // -1 at 1000us, 0 at 1500us, +1 at 2000us, not clamped
 static inline float rcGetChannel(int channel)
 {
-    return rcUsToNorm(rcData[channel]);
+    return rcData[channel];
 }
 
 #define RSSI_SCALE_MIN 1

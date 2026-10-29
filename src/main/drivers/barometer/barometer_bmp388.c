@@ -453,7 +453,7 @@ STATIC_UNIT_TESTED void bmp388Calculate(int32_t *pressure, int32_t *temperature)
     p = bmp388CompensatePressure(bmp388_up);
 
     if (pressure)
-        *pressure = (int32_t)(p / 256);
+        *pressure = (int32_t)(p / 100); // Bosch integer compensation returns pressure in Pa * 100
     if (temperature)
         *temperature = t;
 }
