@@ -156,20 +156,35 @@ static void updateMotorTelemetry(unsigned motorIndex)
 
 static const motorTelemetry_t *updateCombinedTelemetry(void)
 {
+    // A sum is valid only if all motors have the value. An average or a
+    // maximum is valid if one or more motors have the value.
+    const uint8_t sumFields = MOTOR_TELEMETRY_CURRENT | MOTOR_TELEMETRY_CONSUMPTION;
+    const unsigned motorCount = getMotorCount();
+
     motorTelemetry_t *combined = &motorTelemetryCombined;
     uint32_t voltageSum = 0;
     unsigned rpmCount = 0;
     unsigned voltageCount = 0;
+    uint8_t anyValid = 0;
+    uint8_t allValid = motorCount ? sumFields : 0;
+    bool hasData = false;
 
     memset(combined, 0, sizeof(*combined));
 
-    for (unsigned i = 0; i < (unsigned)getMotorCount(); i++) {
+    for (unsigned i = 0; i < motorCount; i++) {
         updateMotorTelemetry(i);
         const motorTelemetry_t *telemetry = &motorTelemetry[i];
 
-        combined->dataAge = MAX(combined->dataAge, telemetry->dataAge);
-        combined->valid |= telemetry->valid;
+        anyValid |= telemetry->valid;
+        allValid &= telemetry->valid;
         combined->sources |= telemetry->sources;
+
+        // Age of the motors that have data. A motor without data does not
+        // make the data of the other motors stale.
+        if (telemetry->valid) {
+            combined->dataAge = MAX(combined->dataAge, telemetry->dataAge);
+            hasData = true;
+        }
 
         if (telemetry->valid & MOTOR_TELEMETRY_RPM) {
             combined->rpm += telemetry->rpm;
@@ -188,6 +203,11 @@ static const motorTelemetry_t *updateCombinedTelemetry(void)
         if (telemetry->valid & MOTOR_TELEMETRY_CONSUMPTION) {
             combined->consumption += telemetry->consumption;
         }
+    }
+
+    combined->valid = (anyValid & ~sumFields) | allValid;
+    if (!hasData) {
+        combined->dataAge = ESC_DATA_INVALID;
     }
 
     if (rpmCount) {

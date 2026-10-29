@@ -247,8 +247,62 @@ TEST_F(MotorTelemetryTest, CombinedUsesValidMotorsOnly)
     EXPECT_EQ(11000u, combined->rpm);       // average
     EXPECT_EQ(60, combined->temperature);   // maximum
     EXPECT_EQ(1650, combined->voltage);     // average of 16.00V and 17.00V
-    EXPECT_EQ(3000, combined->current);     // sum
-    EXPECT_EQ(ESC_DATA_INVALID, combined->dataAge); // maximum, motors 2 and 3 have no data
+    EXPECT_TRUE(motorTelemetryHas(combined, MOTOR_TELEMETRY_RPM));
+    EXPECT_TRUE(motorTelemetryHas(combined, MOTOR_TELEMETRY_TEMPERATURE));
+    EXPECT_TRUE(motorTelemetryHas(combined, MOTOR_TELEMETRY_VOLTAGE));
+    // A sum of 2 of the 4 motors is not valid
+    EXPECT_FALSE(motorTelemetryHas(combined, MOTOR_TELEMETRY_CURRENT));
+    // Motors 2 and 3 have no data, they do not make the data stale
+    EXPECT_EQ(0, combined->dataAge);
+}
+
+TEST_F(MotorTelemetryTest, CombinedNoDataIsInvalid)
+{
+    useDshotTelemetry = true;
+
+    const motorTelemetry_t *combined = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
+    ASSERT_NE(nullptr, combined);
+    EXPECT_EQ(0, combined->valid);
+    EXPECT_EQ(ESC_DATA_INVALID, combined->dataAge);
+}
+
+// ESC sensor data of motor 3 is not valid, but DShot RPM is available.
+// The current and consumption sums must not be valid.
+TEST_F(MotorTelemetryTest, CombinedSumNotValidWhenOneMotorHasNoEscSensorData)
+{
+    useDshotTelemetry = true;
+    escSensorFeature = true;
+    for (unsigned i = 0; i < 4; i++) {
+        setDshotTelemetry(i, 10000.0f, -1, -1, -1);
+    }
+    for (unsigned i = 0; i < 3; i++) {
+        setEscSensorTelemetry(i, 1, 700, 50, 1600, 1000, 100);
+    }
+
+    const motorTelemetry_t *combined = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
+    ASSERT_NE(nullptr, combined);
+    EXPECT_FALSE(motorTelemetryHas(combined, MOTOR_TELEMETRY_CURRENT));
+    EXPECT_FALSE(motorTelemetryHas(combined, MOTOR_TELEMETRY_CONSUMPTION));
+    EXPECT_TRUE(motorTelemetryHas(combined, MOTOR_TELEMETRY_VOLTAGE));
+    EXPECT_EQ(1600, combined->voltage);
+    EXPECT_EQ(1, combined->dataAge);
+}
+
+// One motor without telemetry does not make the voltage of the other motors stale
+TEST_F(MotorTelemetryTest, CombinedVoltageAgeIgnoresMotorWithoutData)
+{
+    escSensorFeature = true;
+    for (unsigned i = 0; i < 3; i++) {
+        setEscSensorTelemetry(i, 2, 700, 50, 1600, 1000, 100);
+    }
+    // Motor 3: ESC sensor data is not valid
+
+    const motorTelemetry_t *combined = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
+    ASSERT_NE(nullptr, combined);
+    EXPECT_TRUE(motorTelemetryHas(combined, MOTOR_TELEMETRY_VOLTAGE));
+    EXPECT_EQ(1600, combined->voltage);
+    EXPECT_EQ(2, combined->dataAge);
+    EXPECT_LE(combined->dataAge, ESC_BATTERY_AGE_MAX);
 }
 
 TEST_F(MotorTelemetryTest, CombinedEscSensor)

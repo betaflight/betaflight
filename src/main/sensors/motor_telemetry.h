@@ -65,9 +65,9 @@ bool motorTelemetryIsEnabled(void);
 
 // Motor index for the telemetry of all motors:
 // - rpm and voltage: average of the motors with a valid value
-// - temperature: maximum
-// - current and consumption: sum
-// - dataAge: maximum over all motors
+// - temperature: maximum of the motors with a valid value
+// - current and consumption: sum, valid only if all motors have a valid value
+// - dataAge: maximum of the motors with data, ESC_DATA_INVALID if no motor has data
 #define MOTOR_TELEMETRY_COMBINED 255
 
 // Telemetry of one motor, or of all motors with MOTOR_TELEMETRY_COMBINED.
