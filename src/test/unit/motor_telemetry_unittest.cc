@@ -132,7 +132,7 @@ TEST_F(MotorTelemetryTest, NoSourceEnabled)
 {
     EXPECT_FALSE(motorTelemetryIsEnabled());
     EXPECT_EQ(nullptr, motorTelemetryGet(0));
-    EXPECT_EQ(nullptr, motorTelemetryGetCombined());
+    EXPECT_EQ(nullptr, motorTelemetryGet(MOTOR_TELEMETRY_COMBINED));
 }
 
 TEST_F(MotorTelemetryTest, MotorIndexOutOfRange)
@@ -140,6 +140,8 @@ TEST_F(MotorTelemetryTest, MotorIndexOutOfRange)
     useDshotTelemetry = true;
     EXPECT_NE(nullptr, motorTelemetryGet(3));
     EXPECT_EQ(nullptr, motorTelemetryGet(4));
+    EXPECT_EQ(nullptr, motorTelemetryGet(MOTOR_TELEMETRY_COMBINED - 1));
+    EXPECT_NE(nullptr, motorTelemetryGet(MOTOR_TELEMETRY_COMBINED));
 }
 
 TEST_F(MotorTelemetryTest, DshotOnlyConvertsUnits)
@@ -240,7 +242,7 @@ TEST_F(MotorTelemetryTest, CombinedUsesValidMotorsOnly)
     setDshotTelemetry(1, 12000.0f, 60, 68, 20);
     // Motors 2 and 3 have no telemetry
 
-    const motorTelemetry_t *combined = motorTelemetryGetCombined();
+    const motorTelemetry_t *combined = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
     ASSERT_NE(nullptr, combined);
     EXPECT_EQ(11000u, combined->rpm);       // average
     EXPECT_EQ(60, combined->temperature);   // maximum
@@ -256,7 +258,7 @@ TEST_F(MotorTelemetryTest, CombinedEscSensor)
     setEscSensorTelemetry(0, 3, 700, 50, 1600, 1000, 100);
     setEscSensorTelemetry(1, 5, 1400, 70, 1620, 2000, 200);
 
-    const motorTelemetry_t *combined = motorTelemetryGetCombined();
+    const motorTelemetry_t *combined = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
     ASSERT_NE(nullptr, combined);
     EXPECT_EQ(15000u, combined->rpm);
     EXPECT_EQ(70, combined->temperature);

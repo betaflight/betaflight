@@ -659,7 +659,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 }
                 break;
             case FSSP_DATAID_RPM        :
-                motorTelemetry = motorTelemetryGetCombined();
+                motorTelemetry = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
                 if (motorTelemetryHas(motorTelemetry, MOTOR_TELEMETRY_RPM)) {
                     smartPortSendPackage(id, motorTelemetry->rpm);
                     *clearToSend = false;
@@ -680,7 +680,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 }
                 break;
             case FSSP_DATAID_TEMP        :
-                motorTelemetry = motorTelemetryGetCombined();
+                motorTelemetry = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
                 if (motorTelemetryHas(motorTelemetry, MOTOR_TELEMETRY_TEMPERATURE)) {
                     smartPortSendPackage(id, motorTelemetry->temperature);
                     *clearToSend = false;

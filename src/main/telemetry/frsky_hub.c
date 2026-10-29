@@ -191,7 +191,7 @@ static void sendThrottleOrBatterySizeAsRpm(void)
 {
     int16_t data = 0;
 #if defined(USE_ESC_SENSOR_TELEMETRY)
-    const motorTelemetry_t *motorTelemetry = motorTelemetryGetCombined();
+    const motorTelemetry_t *motorTelemetry = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
     if (motorTelemetryHas(motorTelemetry, MOTOR_TELEMETRY_RPM)) {
         data = motorTelemetry->rpm / 10;
     }
@@ -215,7 +215,7 @@ static void sendTemperature1(void)
 {
     int16_t data = 0;
 #if defined(USE_ESC_SENSOR_TELEMETRY)
-    const motorTelemetry_t *motorTelemetry = motorTelemetryGetCombined();
+    const motorTelemetry_t *motorTelemetry = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
     if (motorTelemetryHas(motorTelemetry, MOTOR_TELEMETRY_TEMPERATURE)) {
         data = motorTelemetry->temperature;
     }

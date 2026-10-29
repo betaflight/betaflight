@@ -63,16 +63,16 @@ typedef struct motorTelemetry_s {
 // True if at least one telemetry source is enabled
 bool motorTelemetryIsEnabled(void);
 
-// Telemetry of one motor. Returns NULL if the index is not valid or no source is enabled.
-const motorTelemetry_t *motorTelemetryGet(unsigned motorIndex);
-
-// Telemetry of all motors:
+// Motor index for the telemetry of all motors:
 // - rpm and voltage: average of the motors with a valid value
 // - temperature: maximum
 // - current and consumption: sum
 // - dataAge: maximum over all motors
-// Returns NULL if no source is enabled.
-const motorTelemetry_t *motorTelemetryGetCombined(void);
+#define MOTOR_TELEMETRY_COMBINED 255
+
+// Telemetry of one motor, or of all motors with MOTOR_TELEMETRY_COMBINED.
+// Returns NULL if the index is not valid or no source is enabled.
+const motorTelemetry_t *motorTelemetryGet(unsigned motorIndex);
 
 static inline bool motorTelemetryHas(const motorTelemetry_t *telemetry, motorTelemetryField_e field)
 {

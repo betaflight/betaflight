@@ -29,6 +29,7 @@
 #if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
 
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "config/feature.h"
 
@@ -40,6 +41,8 @@
 #include "sensors/esc_sensor.h"
 
 #include "motor_telemetry.h"
+
+STATIC_ASSERT(MAX_SUPPORTED_MOTORS < MOTOR_TELEMETRY_COMBINED, motor_telemetry_combined_index_is_a_motor_index);
 
 static motorTelemetry_t motorTelemetry[MAX_SUPPORTED_MOTORS];
 static motorTelemetry_t motorTelemetryCombined;
@@ -151,23 +154,8 @@ static void updateMotorTelemetry(unsigned motorIndex)
 #endif
 }
 
-const motorTelemetry_t *motorTelemetryGet(unsigned motorIndex)
+static const motorTelemetry_t *updateCombinedTelemetry(void)
 {
-    if (motorIndex >= (unsigned)getMotorCount() || !motorTelemetryIsEnabled()) {
-        return NULL;
-    }
-
-    updateMotorTelemetry(motorIndex);
-
-    return &motorTelemetry[motorIndex];
-}
-
-const motorTelemetry_t *motorTelemetryGetCombined(void)
-{
-    if (!motorTelemetryIsEnabled()) {
-        return NULL;
-    }
-
     motorTelemetry_t *combined = &motorTelemetryCombined;
     uint32_t voltageSum = 0;
     unsigned rpmCount = 0;
@@ -210,6 +198,25 @@ const motorTelemetry_t *motorTelemetryGetCombined(void)
     }
 
     return combined;
+}
+
+const motorTelemetry_t *motorTelemetryGet(unsigned motorIndex)
+{
+    if (!motorTelemetryIsEnabled()) {
+        return NULL;
+    }
+
+    if (motorIndex == MOTOR_TELEMETRY_COMBINED) {
+        return updateCombinedTelemetry();
+    }
+
+    if (motorIndex >= (unsigned)getMotorCount()) {
+        return NULL;
+    }
+
+    updateMotorTelemetry(motorIndex);
+
+    return &motorTelemetry[motorIndex];
 }
 
 #endif // USE_DSHOT_TELEMETRY || USE_ESC_SENSOR

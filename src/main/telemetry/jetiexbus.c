@@ -446,7 +446,7 @@ static int32_t getSensorValue(uint8_t sensor)
 #if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
     case EX_RPM: {
         // Average RPM across all motors with valid telemetry; units: rpm/10 to fit in 22b range
-        const motorTelemetry_t *motorTelemetry = motorTelemetryGetCombined();
+        const motorTelemetry_t *motorTelemetry = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
         return motorTelemetryHas(motorTelemetry, MOTOR_TELEMETRY_RPM) ? (int32_t)(motorTelemetry->rpm / 10) : 0;
     }
 #endif // USE_DSHOT_TELEMETRY || USE_ESC_SENSOR

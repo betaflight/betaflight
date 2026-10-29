@@ -189,7 +189,7 @@ static uint16_t getMotorAveragePeriod(void)
     uint32_t rpm = 0;
     uint16_t period_us = SPEKTRUM_RPM_UNUSED;
 
-    const motorTelemetry_t *motorTelemetry = motorTelemetryGetCombined();
+    const motorTelemetry_t *motorTelemetry = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
     if (motorTelemetryHas(motorTelemetry, MOTOR_TELEMETRY_RPM)) {
         rpm = motorTelemetry->rpm;
     }

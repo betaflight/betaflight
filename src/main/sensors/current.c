@@ -232,7 +232,7 @@ void currentMeterESCRefresh(int32_t lastUpdateAt)
 {
     UNUSED(lastUpdateAt);
 
-    const motorTelemetry_t *telemetry = motorTelemetryGetCombined();
+    const motorTelemetry_t *telemetry = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
     if (isMotorTelemetryUsable(telemetry)) {
         currentMeterESCState.amperage = telemetry->current + escSensorConfig()->offset / 10;
         currentMeterESCState.mAhDrawn = telemetry->consumption + escSensorConfig()->offset * millis() / (1000.0f * 3600);

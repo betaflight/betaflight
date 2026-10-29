@@ -1334,7 +1334,7 @@ static void osdProcessStats2(timeUs_t currentTimeUs)
         schedulerIgnoreTaskExecTime();
     }
 #if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
-    osdMotorTelemetryCombined = motorTelemetryGetCombined();
+    osdMotorTelemetryCombined = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
 #endif
 }
 

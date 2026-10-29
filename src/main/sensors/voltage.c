@@ -278,7 +278,7 @@ void voltageMeterESCInit(void)
 void voltageMeterESCRefresh(void)
 {
 #ifdef USE_ESC_SENSOR
-    const motorTelemetry_t *telemetry = motorTelemetryGetCombined();
+    const motorTelemetry_t *telemetry = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
     if (telemetry) {
         voltageMeterESCState.voltageUnfiltered = isMotorTelemetryUsable(telemetry) ? telemetry->voltage : 0;
         voltageMeterESCState.voltageDisplayFiltered = pt1FilterApply(&voltageMeterESCState.displayFilter, voltageMeterESCState.voltageUnfiltered);
