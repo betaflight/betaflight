@@ -229,6 +229,22 @@ TEST(SerialFeatureMapNoVtx, LegacyMspVtxLineWithFrskyOsdIsRejectedWhenEveryMspSl
     EXPECT_EQ(SERIAL_PORT_NONE, osdConfig()->osd_uart);
 }
 
+TEST(SerialFeatureMapNoVtx, LegacyMspVtxLineWithGpsIsRejectedWhenEveryMspSlotIsTaken)
+{
+    resetAllConfigs();
+
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USB_VCP, FUNCTION_MSP));
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_MSP));
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART2, FUNCTION_MSP));
+
+    // GPS cannot share a port with MSP, so the line must not take the no-slot
+    // path and leave GPS and the OSD on the same port.
+    EXPECT_FALSE(serialApplyFunctionMask(SERIAL_PORT_USART3,
+        FUNCTION_MSP | FUNCTION_VTX_MSP | FUNCTION_GPS));
+    EXPECT_EQ(SERIAL_PORT_NONE, osdConfig()->osd_uart);
+    EXPECT_EQ(SERIAL_PORT_NONE, gpsConfig()->gps_uart);
+}
+
 TEST(SerialFeatureMapNoVtx, LegacyMspVtxLineIsRejectedWhenTheOsdHasAnotherPortAndNoSlotIsFree)
 {
     resetAllConfigs();
