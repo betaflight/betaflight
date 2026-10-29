@@ -182,6 +182,7 @@ COMMON_SRC = \
             flight/landing_wing.c \
             flight/launch_wing.c \
             flight/mixer.c \
+            flight/motor_noise.c \
             flight/mixer_init.c \
             flight/mixer_tricopter.c \
             flight/nav_trail.c \
