@@ -106,7 +106,8 @@ static bool checkEscAlarmConditions(const escSensorData_t *data, uint8_t motorIn
         buffer[alarmPos++] = ESC_ALARM_TEMP;
     }
 
-    if (data->voltage && osdConfig()->esc_voltage_alarm != ESC_VOLTAGE_ALARM_OFF && data->voltage >= osdConfig()->esc_voltage_alarm) {
+    // Check voltage alarm (regardless of motor spinning state), low voltage shows battery sag or a bad ESC power connection
+    if (data->voltage && osdConfig()->esc_voltage_alarm != ESC_VOLTAGE_ALARM_OFF && data->voltage <= osdConfig()->esc_voltage_alarm) {
         buffer[alarmPos++] = ESC_ALARM_VOLTAGE;
     }
 

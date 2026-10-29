@@ -423,7 +423,7 @@ typedef struct osdConfig_s {
     int8_t osd_uart;                          // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned. Bit chosen by displayPortDevice (FRSKYOSD=FUNCTION_FRSKY_OSD, else none).
     int8_t osd_custom_text_uart;              // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned.  Always maps to FUNCTION_OSD_CUSTOM_TEXT when set.
     uint8_t osd_custom_text_baud;             // baudRate_e index for osd_custom_text_uart
-    uint16_t esc_voltage_alarm;               // ESC voltage alarm in 0.01V, 0 means disabled
+    uint16_t esc_voltage_alarm;               // ESC low voltage alarm in 0.01V, 0 means disabled
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
