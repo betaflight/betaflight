@@ -348,7 +348,7 @@ extern "C" {
     void pidResetIterm(void) {}
     void updateAdjustmentStates(void) {}
     void processRcAdjustments(controlRateConfig_t *) {}
-    uint8_t getMinSats(void) { return 4; };
+    uint8_t gpsGetMinSats(void) { return 4; }
     void updateGpsWaypointsAndMode(void) {}
     void mspSerialReleaseSharedTelemetryPorts(void) {}
     void telemetryCheckState(void) {}
