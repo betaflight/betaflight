@@ -244,42 +244,6 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         return;
     }
 
-    // Warn when in flip over after crash mode
-    if (osdWarnGetState(OSD_WARNING_CRASHFLIP) && IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
-        if (isCrashFlipModeActive()) { // if was armed in crashflip mode
-            tfp_sprintf(warningText, CRASHFLIP_WARNING);
-            *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
-            return;
-        } else if (!ARMING_FLAG(ARMED)) { // if disarmed, but crashflip mode is activated (not allowed / can't happen)
-            tfp_sprintf(warningText, "CRASHFLIP SW");
-            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
-            return;
-        }
-    }
-
-#ifdef USE_LAUNCH_CONTROL
-    // Warn when in launch control mode
-    if (osdWarnGetState(OSD_WARNING_LAUNCH_CONTROL) && isLaunchControlActive()) {
-#ifdef USE_ACC
-        if (sensors(SENSOR_ACC)) {
-            const int pitchAngle = constrain((attitude.raw[FD_PITCH] - accelerometerConfig()->accelerometerTrims.raw[FD_PITCH]) / 10, -90, 90);
-            tfp_sprintf(warningText, "LAUNCH %d", pitchAngle);
-        } else
-#endif // USE_ACC
-        {
-            tfp_sprintf(warningText, "LAUNCH");
-        }
-
-        // Blink the message if the throttle is within 10% of the launch setting
-        if ( calculateThrottlePercent() >= MAX(currentPidProfile->launchControlThrottlePercent - 10, 0)) {
-            *blinking = true;
-        }
-
-        *displayAttr = DISPLAYPORT_SEVERITY_INFO;
-        return;
-    }
-#endif // USE_LAUNCH_CONTROL
-
     // RSSI
     if (osdWarnGetState(OSD_WARNING_RSSI) && (getRssiPercent() < osdConfig()->rssi_alarm)) {
         tfp_sprintf(warningText, "RSSI LOW");
@@ -323,8 +287,16 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         return;
     }
 
+    if (osdWarnGetState(OSD_WARNING_LOAD) && (getArmingDisableFlags() & ARMING_DISABLED_LOAD)) {
+        tfp_sprintf(warningText, "CPU OVERLOAD");
+        *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
+        *blinking = true;
+        return;
+    }
+
+    // ESC, crash flip and launch control: after the RX link, battery critical
+    // and CPU load warnings, so that an ESC alarm that stays on does not hide them
 #if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
-    // After the RX link and battery critical warnings: an ESC alarm must not hide them
     // Show warning if we lose motor output, the ESC is overheating or excessive current draw
     if (motorTelemetryIsEnabled() && osdWarnGetState(OSD_WARNING_ESC_FAIL) && ARMING_FLAG(ARMED)) {
         if (buildEscWarningMessage(warningText)) {
@@ -335,12 +307,41 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     }
 #endif
 
-    if (osdWarnGetState(OSD_WARNING_LOAD) && (getArmingDisableFlags() & ARMING_DISABLED_LOAD)) {
-        tfp_sprintf(warningText, "CPU OVERLOAD");
-        *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
-        *blinking = true;
+    // Warn when in flip over after crash mode
+    if (osdWarnGetState(OSD_WARNING_CRASHFLIP) && IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
+        if (isCrashFlipModeActive()) { // if was armed in crashflip mode
+            tfp_sprintf(warningText, CRASHFLIP_WARNING);
+            *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+            return;
+        } else if (!ARMING_FLAG(ARMED)) { // if disarmed, but crashflip mode is activated (not allowed / can't happen)
+            tfp_sprintf(warningText, "CRASHFLIP SW");
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            return;
+        }
+    }
+
+#ifdef USE_LAUNCH_CONTROL
+    // Warn when in launch control mode
+    if (osdWarnGetState(OSD_WARNING_LAUNCH_CONTROL) && isLaunchControlActive()) {
+#ifdef USE_ACC
+        if (sensors(SENSOR_ACC)) {
+            const int pitchAngle = constrain((attitude.raw[FD_PITCH] - accelerometerConfig()->accelerometerTrims.raw[FD_PITCH]) / 10, -90, 90);
+            tfp_sprintf(warningText, "LAUNCH %d", pitchAngle);
+        } else
+#endif // USE_ACC
+        {
+            tfp_sprintf(warningText, "LAUNCH");
+        }
+
+        // Blink the message if the throttle is within 10% of the launch setting
+        if ( calculateThrottlePercent() >= MAX(currentPidProfile->launchControlThrottlePercent - 10, 0)) {
+            *blinking = true;
+        }
+
+        *displayAttr = DISPLAYPORT_SEVERITY_INFO;
         return;
     }
+#endif // USE_LAUNCH_CONTROL
 
 #ifdef USE_GPS_RESCUE
     if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_UNAVAILABLE)
