@@ -221,6 +221,6 @@ void adcGetChannelValues(void);
 
 #define VREFINT_CAL_VREF                   (3300U)
 #define TEMPSENSOR_CAL_VREFANALOG          (3300U)
-#define TEMPSENSOR_CAL1_TEMP               (25U)//((uint16_t*) (0x40080034))
+#define TEMPSENSOR_CAL1_TEMP               (30U)//((uint16_t*) (0x40080034))
 #define TEMPSENSOR_CAL2_TEMP               (125U)//((uint16_t*) (0x40080036))
 #endif

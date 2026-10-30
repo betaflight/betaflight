@@ -63,7 +63,7 @@ static TS_HandleTypeDef hts = {0};
 #define TS_CHOP_CLK_DIV_MIN             0U    /*!< Smallest divider: 0 divides by 1 (measured; the manual gives no meaning for 0, the vendor HAL documents 1 as the lower bound) */
 #define TS_CHOP_CLK_DIV_MAX             1023U /*!< Largest divider, CHOP_CLK_DIV is 10 bits, 0x3FF in the vendor HAL */
 #define TS_CHOP_CLK_DIV_RESET           239U  /*!< Reset value 10'hEF */
-#define TS_CHOP_CLK_TYPICAL_HZ          100000U /*!< Typical chopper frequency, also for VREF and TS together: 100 kHz as confirmed by the vendor (the manual's 50 kHz is wrong); CHOP_CLK_DIV 119 with RCH_DIV /2 */
+#define TS_CHOP_CLK_TYPICAL_HZ          50000U /*!< Typical chopper frequency, also for VREF and TS together: 100 kHz as confirmed by the vendor (the manual's 50 kHz is wrong); CHOP_CLK_DIV 119 with RCH_DIV /2 */
 #define TS_CHOP_CLK_SOURCE_PRESCALER    2U    /*!< The chopper divider divides the RCH_DIV output by 2 first (measured, not in the manual) */
 
 static adcDevice_t adcDevice[ADCDEV_COUNT];
