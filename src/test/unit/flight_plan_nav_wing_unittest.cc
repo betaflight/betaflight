@@ -501,6 +501,46 @@ TEST_F(FlightPlanNavWingTest, AHoldLoitersForItsDurationThenGoesOn)
     EXPECT_NEAR(400.0f, g_nav.trackStartEfM.y, 0.1f);       // from the hold's centre
 }
 
+TEST_F(FlightPlanNavWingTest, ATimedFlybyIsFlownAsAHoldNotTurnedEarly)
+{
+    addWaypoint(0.0f, 400.0f, WAYPOINT_TYPE_FLYBY, 300);
+    addWaypoint(400.0f, 400.0f, WAYPOINT_TYPE_FLYOVER);     // an untimed FLYBY turns at 360 m
+    flightPlanNavEngage();
+    EXPECT_EQ(NAV_TRACK_LOITER, g_nav.track);
+
+    flyTo(0.0f, 400.0f - 105.0f);                   // outside R + L1 = 100 m
+    EXPECT_EQ(FP_NAV_TARGETING, flightPlanNavGetState());
+    flyTo(0.0f, 400.0f - 95.0f, ALT_M - 4.0f);      // close enough but still climbing
+    EXPECT_EQ(FP_NAV_TARGETING, flightPlanNavGetState());
+    flyTo(0.0f, 400.0f - 95.0f, ALT_M - 2.0f);
+    ASSERT_EQ(FP_NAV_HOLDING, flightPlanNavGetState());
+    EXPECT_EQ(0, flightPlanNavGetCurrentIndex());
+
+    for (int i = 0; i < 295; i++) {
+        tick();
+    }
+    EXPECT_EQ(FP_NAV_HOLDING, flightPlanNavGetState());
+    for (int i = 0; i < 10; i++) {
+        tick();
+    }
+    EXPECT_EQ(1, flightPlanNavGetCurrentIndex());
+    EXPECT_NEAR(400.0f, g_nav.trackStartEfM.y, 0.1f);       // from the waypoint
+}
+
+TEST_F(FlightPlanNavWingTest, ATimedFlyoverIsFlownAsAHold)
+{
+    addWaypoint(0.0f, 400.0f, WAYPOINT_TYPE_FLYOVER, 50);
+    addWaypoint(400.0f, 400.0f, WAYPOINT_TYPE_FLYOVER);
+    flightPlanNavEngage();
+    EXPECT_EQ(NAV_TRACK_LOITER, g_nav.track);
+
+    flyTo(0.0f, 400.0f - 95.0f, ALT_M - 4.0f);
+    EXPECT_EQ(FP_NAV_TARGETING, flightPlanNavGetState());
+    flyTo(0.0f, 400.0f - 95.0f);
+    EXPECT_EQ(FP_NAV_HOLDING, flightPlanNavGetState());
+    EXPECT_EQ(NAV_TRACK_LOITER, g_nav.track);
+}
+
 TEST_F(FlightPlanNavWingTest, PatternsFlyAsALoiterNoTighterThanTheAircraftCanTurn)
 {
     autopilotWingConfigMutable()->loiterRadius = 20;
