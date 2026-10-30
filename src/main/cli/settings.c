@@ -1219,7 +1219,6 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_GPS_RESCUE_ALLOW_ARMING_WITHOUT_FIX, VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, allowArmingWithoutFix) },
 
 #ifndef USE_WING
-    { PARAM_NAME_GPS_RESCUE_YAW_P,           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, GPS_RESCUE_YAW_P_MAX }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, yawP) },
 #endif
 #endif // USE_GPS_RESCUE
 
