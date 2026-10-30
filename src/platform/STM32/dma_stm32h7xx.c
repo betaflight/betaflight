@@ -54,7 +54,7 @@ dmaChannelDescriptor_t dmaDescriptors[DMA_LAST_HANDLER] = {
     DEFINE_DMA_CHANNEL(DMA2, 6, 48),
     DEFINE_DMA_CHANNEL(DMA2, 7, 54),
 
-    // BDMA channels 0-7 (D3 domain, for SPI6, LPUART1, etc.)
+    // BDMA channels 0-7 (D3 domain, for SPI6)
     // BDMA flags: 4 bits per channel (GIF, TCIF, HTIF, TEIF), flagsShift = channel * 4
     DEFINE_BDMA_CHANNEL(0,  0),
     DEFINE_BDMA_CHANNEL(1,  4),

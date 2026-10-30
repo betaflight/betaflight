@@ -385,7 +385,7 @@ static dmaChannelSpec_t dmaChannelSpec[MAX_PERIPHERAL_DMA_OPTIONS] = {
 
 #undef DMA
 
-// BDMA channel spec pool for D3 domain peripherals (SPI6, LPUART1, etc.)
+// BDMA channel spec pool for D3 domain peripherals (SPI6)
 // Using controller=3 in DMA_CODE to distinguish BDMA from DMA1(1)/DMA2(2)
 #define MAX_BDMA_CHANNEL_OPTIONS 8
 #define BDMA_CH(c) { DMA_CODE(3, c, 0), (dmaResource_t *)BDMA_Channel ## c, 0 }
@@ -414,10 +414,8 @@ static const dmaPeripheralMapping_t bdmaPeripheralMapping[] = {
     BDMA_REQMAP_DIR(SPI, 6, SDO),
     BDMA_REQMAP_DIR(SPI, 6, SDI),
 #endif
-#ifdef USE_LPUART1
-    { DMA_PERIPH_UART_TX, UARTDEV_LP1, BDMA_REQUEST_LPUART1_TX },
-    { DMA_PERIPH_UART_RX, UARTDEV_LP1, BDMA_REQUEST_LPUART1_RX },
-#endif
+    // LPUART1 is also on BDMA, but serial_uart_ll.c only programs DMA1/2 streams
+    // and its buffers are outside SRAM4, so it is left without DMA for now
 };
 
 #undef BDMA_REQMAP_DIR
@@ -1100,7 +1098,7 @@ const dmaChannelSpec_t *dmaGetChannelSpecByPeripheral(dmaPeripheral_e device, ui
     }
 
 #ifdef STM32H7
-    // Check BDMA peripherals first (SPI6, LPUART1, etc.)
+    // Check BDMA peripherals first (SPI6)
     for (const dmaPeripheralMapping_t *periph = bdmaPeripheralMapping; periph < ARRAYEND(bdmaPeripheralMapping); periph++) {
         if (periph->device == device && periph->index == index) {
             if (opt >= MAX_BDMA_CHANNEL_OPTIONS) {
