@@ -302,18 +302,9 @@ FAST_CODE_NOINLINE bool pwmTelemetryDecode(void)
 
                 rawValue = decodeTelemetryPacket(dmaMotors[i].dmaBuffer, edges);
 
-                if (rawValue != DSHOT_TELEMETRY_INVALID) {
-                    // Check EDT enable or store raw value
-                    if ((rawValue == 0x0E00) && (dshotCommandGetCurrent(i) == DSHOT_CMD_EXTENDED_TELEMETRY_ENABLE)) {
-                        dshotTelemetryState.motorState[i].telemetryTypes = 1 << DSHOT_TELEMETRY_TYPE_STATE_EVENTS;
-                    } else {
-                        dshotTelemetryState.motorState[i].rawValue = rawValue;
-                    }
-                } else {
-                    dshotTelemetryState.invalidPacketCount++;
-                    if (i == 0) {
-                        memcpy(dshotTelemetryState.inputBuffer, dmaMotors[i].dmaBuffer, sizeof(dshotTelemetryState.inputBuffer));
-                    }
+                dshotTelemetryReceived(i, rawValue);
+                if (rawValue == DSHOT_TELEMETRY_INVALID && i == 0) {
+                    memcpy(dshotTelemetryState.inputBuffer, dmaMotors[i].dmaBuffer, sizeof(dshotTelemetryState.inputBuffer));
                 }
 #ifdef USE_DSHOT_TELEMETRY_STATS
                 updateDshotTelemetryQuality(&dshotTelemetryQuality[i], rawValue != DSHOT_TELEMETRY_INVALID, currentTimeMs);

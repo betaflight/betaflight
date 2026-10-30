@@ -418,6 +418,16 @@ maths_unittest_SRC := \
 		$(USER_DIR)/common/vector.c
 
 
+dshot_telemetry_unittest_SRC := \
+		$(USER_DIR)/build/atomic.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/drivers/dshot.c
+
+dshot_telemetry_unittest_DEFINES := \
+		USE_DSHOT= \
+		USE_DSHOT_TELEMETRY=
+
 motor_telemetry_unittest_SRC := \
 		$(USER_DIR)/sensors/motor_telemetry.c
 

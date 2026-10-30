@@ -26,21 +26,16 @@
 
 // Merged per-motor telemetry from all sources (DShot telemetry, ESC sensor).
 //
-// Consumers read one value per field and do not select a source. The merge
-// rules are in motor_telemetry.c:
+// Consumers read one value per field and do not select a source. A field is
+// valid only if a source has a fresh value for it. The merge rules are in
+// motor_telemetry.c:
 // - rpm: DShot telemetry first, then ESC sensor.
 // - temperature, voltage, current, consumption: ESC sensor first (better
 //   resolution), then DShot extended telemetry.
-// ESC sensor data older than ESC_BATTERY_AGE_MAX is not used.
 //
 // Hot paths (RPM filter, dynamic idle, blackbox) continue to read DShot
 // telemetry directly. This module is for the slow consumers (OSD, MSP,
 // RX telemetry, battery meters).
-
-typedef enum {
-    MOTOR_TELEMETRY_SOURCE_DSHOT      = 1 << 0,
-    MOTOR_TELEMETRY_SOURCE_ESC_SENSOR = 1 << 1, // serial ESC sensor or DroneCAN
-} motorTelemetrySource_e;
 
 typedef enum {
     MOTOR_TELEMETRY_RPM         = 1 << 0,
@@ -56,9 +51,7 @@ typedef struct motorTelemetry_s {
     int32_t consumption;    // mAh
     uint16_t voltage;       // 0.01V
     uint8_t temperature;    // degrees Celsius
-    uint8_t dataAge;        // ESC sensor data age (0 .. ESC_BATTERY_AGE_MAX), 0 for DShot, ESC_DATA_INVALID = no data
-    uint8_t valid;          // motorTelemetryField_e bits
-    uint8_t sources;        // motorTelemetrySource_e bits
+    uint8_t valid;          // motorTelemetryField_e bits: the fresh fields
 } motorTelemetry_t;
 
 // True if at least one telemetry source is enabled
@@ -68,7 +61,6 @@ bool motorTelemetryIsEnabled(void);
 // - rpm and voltage: average of the motors with a valid value
 // - temperature: maximum of the motors with a valid value
 // - current and consumption: sum, valid only if all motors have a valid value
-// - dataAge: maximum of the motors with data, ESC_DATA_INVALID if no motor has data
 #define MOTOR_TELEMETRY_COMBINED 255
 
 // Telemetry of one motor, or of all motors with MOTOR_TELEMETRY_COMBINED.

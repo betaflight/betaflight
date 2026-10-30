@@ -101,9 +101,10 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
 
 typedef struct dshotTelemetryMotorState_s {
     uint16_t rawValue;
+    bool rawValueNew;               // rawValue is a new packet, not decoded yet
     uint16_t telemetryData[DSHOT_TELEMETRY_TYPE_COUNT];
-    uint8_t telemetryTypes;
-    timeMs_t edtUpdateMs[DSHOT_TELEMETRY_TYPE_CURRENT + 1]; // time of the last temperature, voltage and current update
+    uint8_t telemetryTypes;         // types received at least one time
+    timeMs_t updateMs[DSHOT_TELEMETRY_TYPE_CURRENT + 1]; // arrival time of eRPM, temperature, voltage and current
 } dshotTelemetryMotorState_t;
 
 typedef struct dshotTelemetryState_s {
@@ -147,6 +148,7 @@ float getMinMotorFrequencyHz(void);
 bool isDshotMotorTelemetryActive(uint8_t motorIndex);
 bool isDshotTelemetryActive(void);
 void dshotCleanTelemetryData(void);
+void dshotTelemetryReceived(uint8_t motorIndex, uint32_t rawValue);
 
 float erpmToRpm(uint32_t erpm);
 

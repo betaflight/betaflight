@@ -69,11 +69,6 @@ const escSensorData_t *escSensorGetData(uint8_t motorIndex)
     return &escSensorData[motorIndex];
 }
 
-bool isDshotMotorTelemetryActive(uint8_t motorIndex)
-{
-    return (dshotTelemetryState.motorState[motorIndex].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_eRPM)) != 0;
-}
-
 float getDshotRpm(uint8_t motorIndex)
 {
     return dshotRpm[motorIndex];
@@ -104,8 +99,8 @@ static void setDshotTelemetry(unsigned motor, float rpm, int temperature, int vo
         state->telemetryTypes |= 1 << DSHOT_TELEMETRY_TYPE_CURRENT;
         state->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] = current;
     }
-    for (unsigned type = DSHOT_TELEMETRY_TYPE_TEMPERATURE; type <= DSHOT_TELEMETRY_TYPE_CURRENT; type++) {
-        state->edtUpdateMs[type] = nowMs;
+    for (unsigned type = DSHOT_TELEMETRY_TYPE_eRPM; type <= DSHOT_TELEMETRY_TYPE_CURRENT; type++) {
+        state->updateMs[type] = nowMs;
     }
 }
 
@@ -138,6 +133,8 @@ protected:
     }
 };
 
+static const uint8_t ALL_FIELDS = MOTOR_TELEMETRY_RPM | MOTOR_TELEMETRY_TEMPERATURE | MOTOR_TELEMETRY_VOLTAGE | MOTOR_TELEMETRY_CURRENT | MOTOR_TELEMETRY_CONSUMPTION;
+
 TEST_F(MotorTelemetryTest, NoSourceEnabled)
 {
     EXPECT_FALSE(motorTelemetryIsEnabled());
@@ -154,21 +151,20 @@ TEST_F(MotorTelemetryTest, MotorIndexOutOfRange)
     EXPECT_NE(nullptr, motorTelemetryGet(MOTOR_TELEMETRY_COMBINED));
 }
 
-TEST_F(MotorTelemetryTest, DshotOnlyConvertsUnits)
+// Units
+
+TEST_F(MotorTelemetryTest, DshotConvertsUnits)
 {
     useDshotTelemetry = true;
     setDshotTelemetry(0, 12000.0f, 45, 66, 12); // 66 * 0.25V = 16.5V, 12A
 
     const motorTelemetry_t *telemetry = motorTelemetryGet(0);
     ASSERT_NE(nullptr, telemetry);
-    EXPECT_EQ(MOTOR_TELEMETRY_SOURCE_DSHOT, telemetry->sources);
     EXPECT_EQ(MOTOR_TELEMETRY_RPM | MOTOR_TELEMETRY_TEMPERATURE | MOTOR_TELEMETRY_VOLTAGE | MOTOR_TELEMETRY_CURRENT, telemetry->valid);
     EXPECT_EQ(12000u, telemetry->rpm);
     EXPECT_EQ(45, telemetry->temperature);
     EXPECT_EQ(1650, telemetry->voltage);  // 0.01V
     EXPECT_EQ(1200, telemetry->current);  // 0.01A
-    EXPECT_FALSE(motorTelemetryHas(telemetry, MOTOR_TELEMETRY_CONSUMPTION));
-    EXPECT_EQ(0, telemetry->dataAge);
 }
 
 TEST_F(MotorTelemetryTest, DshotWithoutExtendedTelemetryHasRpmOnly)
@@ -176,105 +172,83 @@ TEST_F(MotorTelemetryTest, DshotWithoutExtendedTelemetryHasRpmOnly)
     useDshotTelemetry = true;
     setDshotTelemetry(0, 9000.0f, -1, -1, -1);
 
-    const motorTelemetry_t *telemetry = motorTelemetryGet(0);
-    EXPECT_EQ(MOTOR_TELEMETRY_RPM, telemetry->valid);
+    EXPECT_EQ(MOTOR_TELEMETRY_RPM, motorTelemetryGet(0)->valid);
 }
 
-TEST_F(MotorTelemetryTest, DshotMotorNotActiveHasNoData)
-{
-    useDshotTelemetry = true;
-
-    const motorTelemetry_t *telemetry = motorTelemetryGet(1);
-    ASSERT_NE(nullptr, telemetry);
-    EXPECT_EQ(0, telemetry->valid);
-    EXPECT_EQ(ESC_DATA_INVALID, telemetry->dataAge);
-}
-
-TEST_F(MotorTelemetryTest, EscSensorOnly)
+TEST_F(MotorTelemetryTest, EscSensorConvertsUnits)
 {
     escSensorFeature = true;
     setEscSensorTelemetry(0, 2, 700, 50, 1620, 1530, 250); // 700 * 100 eRPM / 7 = 10000 RPM
 
     const motorTelemetry_t *telemetry = motorTelemetryGet(0);
     ASSERT_NE(nullptr, telemetry);
-    EXPECT_EQ(MOTOR_TELEMETRY_SOURCE_ESC_SENSOR, telemetry->sources);
+    EXPECT_EQ(ALL_FIELDS, telemetry->valid);
     EXPECT_EQ(10000u, telemetry->rpm);
     EXPECT_EQ(50, telemetry->temperature);
     EXPECT_EQ(1620, telemetry->voltage);
     EXPECT_EQ(1530, telemetry->current);
     EXPECT_EQ(250, telemetry->consumption);
-    EXPECT_EQ(2, telemetry->dataAge);
 }
 
-TEST_F(MotorTelemetryTest, EscSensorInvalidDataIsIgnored)
-{
-    escSensorFeature = true;
-    setEscSensorTelemetry(0, ESC_DATA_INVALID, 700, 50, 1620, 1530, 250);
+// Freshness: a field is valid only if a source has a fresh value
 
-    const motorTelemetry_t *telemetry = motorTelemetryGet(0);
+TEST_F(MotorTelemetryTest, DshotNoDataIsNotValid)
+{
+    useDshotTelemetry = true;
+
+    const motorTelemetry_t *telemetry = motorTelemetryGet(1);
     ASSERT_NE(nullptr, telemetry);
     EXPECT_EQ(0, telemetry->valid);
 }
 
-TEST_F(MotorTelemetryTest, EscSensorStaleDataIsIgnored)
+TEST_F(MotorTelemetryTest, DshotRpmExpires)
+{
+    useDshotTelemetry = true;
+    setDshotTelemetry(0, 12000.0f, -1, -1, -1);
+
+    nowMs += 499;
+    EXPECT_TRUE(motorTelemetryHas(motorTelemetryGet(0), MOTOR_TELEMETRY_RPM));
+    nowMs += 1;
+    EXPECT_FALSE(motorTelemetryHas(motorTelemetryGet(0), MOTOR_TELEMETRY_RPM));
+}
+
+TEST_F(MotorTelemetryTest, DshotExtendedTelemetryExpiresPerField)
+{
+    useDshotTelemetry = true;
+    setDshotTelemetry(0, 12000.0f, 40, 64, 10);
+
+    // eRPM and voltage arrive again, temperature and current do not
+    nowMs += 5000;
+    dshotTelemetryState.motorState[0].updateMs[DSHOT_TELEMETRY_TYPE_eRPM] = nowMs;
+    dshotTelemetryState.motorState[0].updateMs[DSHOT_TELEMETRY_TYPE_VOLTAGE] = nowMs;
+
+    const motorTelemetry_t *telemetry = motorTelemetryGet(0);
+    EXPECT_EQ(MOTOR_TELEMETRY_RPM | MOTOR_TELEMETRY_VOLTAGE, telemetry->valid);
+}
+
+// The age of a value is from its arrival, not from the time of the read
+TEST_F(MotorTelemetryTest, DshotAgeIsFromArrival)
+{
+    useDshotTelemetry = true;
+    setDshotTelemetry(0, 12000.0f, 40, 64, 10);
+
+    nowMs += 6000; // no read in this time
+    EXPECT_EQ(0, motorTelemetryGet(0)->valid);
+}
+
+TEST_F(MotorTelemetryTest, EscSensorStaleDataIsNotValid)
 {
     escSensorFeature = true;
     setEscSensorTelemetry(0, ESC_BATTERY_AGE_MAX, 700, 50, 1620, 1530, 250);
     setEscSensorTelemetry(1, ESC_BATTERY_AGE_MAX + 1, 700, 50, 1620, 1530, 250);
+    setEscSensorTelemetry(2, ESC_DATA_INVALID, 700, 50, 1620, 1530, 250);
 
-    EXPECT_EQ(ESC_BATTERY_AGE_MAX, motorTelemetryGet(0)->dataAge);
-    EXPECT_TRUE(motorTelemetryHas(motorTelemetryGet(0), MOTOR_TELEMETRY_VOLTAGE));
+    EXPECT_EQ(ALL_FIELDS, motorTelemetryGet(0)->valid);
     EXPECT_EQ(0, motorTelemetryGet(1)->valid);
+    EXPECT_EQ(0, motorTelemetryGet(2)->valid);
 }
 
-// A DShot extended telemetry value that does not update expires
-TEST_F(MotorTelemetryTest, DshotExtendedTelemetryExpires)
-{
-    useDshotTelemetry = true;
-    setDshotTelemetry(0, 12000.0f, 40, 64, 10);
-    EXPECT_TRUE(motorTelemetryHas(motorTelemetryGet(0), MOTOR_TELEMETRY_VOLTAGE));
-
-    // Voltage updates, temperature and current do not
-    nowMs += 4000;
-    dshotTelemetryState.motorState[0].edtUpdateMs[DSHOT_TELEMETRY_TYPE_VOLTAGE] = nowMs;
-    EXPECT_TRUE(motorTelemetryHas(motorTelemetryGet(0), MOTOR_TELEMETRY_TEMPERATURE));
-
-    nowMs += 1000;
-    const motorTelemetry_t *telemetry = motorTelemetryGet(0);
-    EXPECT_FALSE(motorTelemetryHas(telemetry, MOTOR_TELEMETRY_TEMPERATURE));
-    EXPECT_FALSE(motorTelemetryHas(telemetry, MOTOR_TELEMETRY_CURRENT));
-    EXPECT_TRUE(motorTelemetryHas(telemetry, MOTOR_TELEMETRY_VOLTAGE));
-    // RPM does not expire here, DShot telemetry is still active
-    EXPECT_TRUE(motorTelemetryHas(telemetry, MOTOR_TELEMETRY_RPM));
-}
-
-// The age of a value is from its arrival, not from the first read
-TEST_F(MotorTelemetryTest, DshotExtendedTelemetryAgeIsFromArrival)
-{
-    useDshotTelemetry = true;
-    setDshotTelemetry(0, 12000.0f, 40, 64, 10);
-
-    // No read for 6 seconds
-    nowMs += 6000;
-    EXPECT_FALSE(motorTelemetryHas(motorTelemetryGet(0), MOTOR_TELEMETRY_VOLTAGE));
-}
-
-// Stale ESC sensor data must not replace fresh DShot data
-TEST_F(MotorTelemetryTest, FreshDshotVoltageWhenEscSensorDataIsStale)
-{
-    useDshotTelemetry = true;
-    escSensorFeature = true;
-    setDshotTelemetry(0, 12000.0f, 40, 64, -1);
-    setEscSensorTelemetry(0, ESC_BATTERY_AGE_MAX + 1, 700, 55, 1610, 1520, 300);
-
-    const motorTelemetry_t *telemetry = motorTelemetryGet(0);
-    ASSERT_NE(nullptr, telemetry);
-    EXPECT_EQ(MOTOR_TELEMETRY_SOURCE_DSHOT, telemetry->sources);
-    EXPECT_EQ(1600, telemetry->voltage);
-    EXPECT_EQ(0, telemetry->dataAge);
-    EXPECT_FALSE(motorTelemetryHas(telemetry, MOTOR_TELEMETRY_CURRENT));
-    EXPECT_FALSE(motorTelemetryHas(telemetry, MOTOR_TELEMETRY_CONSUMPTION));
-}
+// Merge rules
 
 TEST_F(MotorTelemetryTest, BothSourcesMergeByField)
 {
@@ -285,27 +259,57 @@ TEST_F(MotorTelemetryTest, BothSourcesMergeByField)
 
     const motorTelemetry_t *telemetry = motorTelemetryGet(0);
     ASSERT_NE(nullptr, telemetry);
-    EXPECT_EQ(MOTOR_TELEMETRY_SOURCE_DSHOT | MOTOR_TELEMETRY_SOURCE_ESC_SENSOR, telemetry->sources);
+    EXPECT_EQ(ALL_FIELDS, telemetry->valid);
     EXPECT_EQ(12000u, telemetry->rpm);      // DShot
     EXPECT_EQ(55, telemetry->temperature);  // ESC sensor
     EXPECT_EQ(1610, telemetry->voltage);    // ESC sensor
     EXPECT_EQ(1520, telemetry->current);    // ESC sensor
     EXPECT_EQ(300, telemetry->consumption); // ESC sensor
-    EXPECT_EQ(1, telemetry->dataAge);       // age of the ESC sensor data
 }
 
-TEST_F(MotorTelemetryTest, EscSensorRpmWhenDshotNotActive)
+TEST_F(MotorTelemetryTest, EscSensorRpmWhenDshotRpmNotValid)
 {
     useDshotTelemetry = true;
     escSensorFeature = true;
     setEscSensorTelemetry(0, 0, 700, 55, 1610, 1520, 300);
 
-    const motorTelemetry_t *telemetry = motorTelemetryGet(0);
-    EXPECT_EQ(MOTOR_TELEMETRY_SOURCE_ESC_SENSOR, telemetry->sources);
-    EXPECT_EQ(10000u, telemetry->rpm);
+    EXPECT_EQ(10000u, motorTelemetryGet(0)->rpm);
 }
 
-TEST_F(MotorTelemetryTest, CombinedUsesValidMotorsOnly)
+// Stale ESC sensor data must not replace fresh DShot data
+TEST_F(MotorTelemetryTest, DshotValuesWhenEscSensorDataIsStale)
+{
+    useDshotTelemetry = true;
+    escSensorFeature = true;
+    setDshotTelemetry(0, 12000.0f, 40, 64, -1);
+    setEscSensorTelemetry(0, ESC_BATTERY_AGE_MAX + 1, 700, 55, 1610, 1520, 300);
+
+    const motorTelemetry_t *telemetry = motorTelemetryGet(0);
+    EXPECT_EQ(MOTOR_TELEMETRY_RPM | MOTOR_TELEMETRY_TEMPERATURE | MOTOR_TELEMETRY_VOLTAGE, telemetry->valid);
+    EXPECT_EQ(40, telemetry->temperature);
+    EXPECT_EQ(1600, telemetry->voltage);
+}
+
+// Combined data
+
+TEST_F(MotorTelemetryTest, CombinedValues)
+{
+    escSensorFeature = true;
+    motorCount = 2;
+    setEscSensorTelemetry(0, 3, 700, 50, 1600, 1000, 100);
+    setEscSensorTelemetry(1, 5, 1400, 70, 1620, 2000, 200);
+
+    const motorTelemetry_t *combined = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
+    ASSERT_NE(nullptr, combined);
+    EXPECT_EQ(ALL_FIELDS, combined->valid);
+    EXPECT_EQ(15000u, combined->rpm);       // average
+    EXPECT_EQ(70, combined->temperature);   // maximum
+    EXPECT_EQ(1610, combined->voltage);     // average
+    EXPECT_EQ(3000, combined->current);     // sum
+    EXPECT_EQ(300, combined->consumption);  // sum
+}
+
+TEST_F(MotorTelemetryTest, CombinedAverageAndMaximumUseValidMotors)
 {
     useDshotTelemetry = true;
     setDshotTelemetry(0, 10000.0f, 40, 64, 10);
@@ -314,31 +318,14 @@ TEST_F(MotorTelemetryTest, CombinedUsesValidMotorsOnly)
 
     const motorTelemetry_t *combined = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
     ASSERT_NE(nullptr, combined);
-    EXPECT_EQ(11000u, combined->rpm);       // average
-    EXPECT_EQ(60, combined->temperature);   // maximum
-    EXPECT_EQ(1650, combined->voltage);     // average of 16.00V and 17.00V
-    EXPECT_TRUE(motorTelemetryHas(combined, MOTOR_TELEMETRY_RPM));
-    EXPECT_TRUE(motorTelemetryHas(combined, MOTOR_TELEMETRY_TEMPERATURE));
-    EXPECT_TRUE(motorTelemetryHas(combined, MOTOR_TELEMETRY_VOLTAGE));
-    // A sum of 2 of the 4 motors is not valid
-    EXPECT_FALSE(motorTelemetryHas(combined, MOTOR_TELEMETRY_CURRENT));
-    // Motors 2 and 3 have no data, they do not make the data stale
-    EXPECT_EQ(0, combined->dataAge);
+    EXPECT_EQ(11000u, combined->rpm);
+    EXPECT_EQ(60, combined->temperature);
+    EXPECT_EQ(1650, combined->voltage);
+    EXPECT_EQ(MOTOR_TELEMETRY_RPM | MOTOR_TELEMETRY_TEMPERATURE | MOTOR_TELEMETRY_VOLTAGE, combined->valid);
 }
 
-TEST_F(MotorTelemetryTest, CombinedNoDataIsInvalid)
-{
-    useDshotTelemetry = true;
-
-    const motorTelemetry_t *combined = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
-    ASSERT_NE(nullptr, combined);
-    EXPECT_EQ(0, combined->valid);
-    EXPECT_EQ(ESC_DATA_INVALID, combined->dataAge);
-}
-
-// ESC sensor data of motor 3 is not valid, but DShot RPM is available.
-// The current and consumption sums must not be valid.
-TEST_F(MotorTelemetryTest, CombinedSumNotValidWhenOneMotorHasNoEscSensorData)
+// A sum of some of the motors is not valid
+TEST_F(MotorTelemetryTest, CombinedSumNeedsAllMotors)
 {
     useDshotTelemetry = true;
     escSensorFeature = true;
@@ -350,44 +337,17 @@ TEST_F(MotorTelemetryTest, CombinedSumNotValidWhenOneMotorHasNoEscSensorData)
     }
 
     const motorTelemetry_t *combined = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
-    ASSERT_NE(nullptr, combined);
     EXPECT_FALSE(motorTelemetryHas(combined, MOTOR_TELEMETRY_CURRENT));
     EXPECT_FALSE(motorTelemetryHas(combined, MOTOR_TELEMETRY_CONSUMPTION));
     EXPECT_TRUE(motorTelemetryHas(combined, MOTOR_TELEMETRY_VOLTAGE));
     EXPECT_EQ(1600, combined->voltage);
-    EXPECT_EQ(1, combined->dataAge);
 }
 
-// One motor without telemetry does not make the voltage of the other motors stale
-TEST_F(MotorTelemetryTest, CombinedVoltageAgeIgnoresMotorWithoutData)
+TEST_F(MotorTelemetryTest, CombinedNoData)
 {
-    escSensorFeature = true;
-    for (unsigned i = 0; i < 3; i++) {
-        setEscSensorTelemetry(i, 2, 700, 50, 1600, 1000, 100);
-    }
-    // Motor 3: ESC sensor data is not valid
+    useDshotTelemetry = true;
 
     const motorTelemetry_t *combined = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
     ASSERT_NE(nullptr, combined);
-    EXPECT_TRUE(motorTelemetryHas(combined, MOTOR_TELEMETRY_VOLTAGE));
-    EXPECT_EQ(1600, combined->voltage);
-    EXPECT_EQ(2, combined->dataAge);
-    EXPECT_LE(combined->dataAge, ESC_BATTERY_AGE_MAX);
-}
-
-TEST_F(MotorTelemetryTest, CombinedEscSensor)
-{
-    escSensorFeature = true;
-    motorCount = 2;
-    setEscSensorTelemetry(0, 3, 700, 50, 1600, 1000, 100);
-    setEscSensorTelemetry(1, 5, 1400, 70, 1620, 2000, 200);
-
-    const motorTelemetry_t *combined = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
-    ASSERT_NE(nullptr, combined);
-    EXPECT_EQ(15000u, combined->rpm);
-    EXPECT_EQ(70, combined->temperature);
-    EXPECT_EQ(1610, combined->voltage);
-    EXPECT_EQ(3000, combined->current);
-    EXPECT_EQ(300, combined->consumption);
-    EXPECT_EQ(5, combined->dataAge);
+    EXPECT_EQ(0, combined->valid);
 }

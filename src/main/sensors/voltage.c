@@ -260,11 +260,6 @@ typedef struct voltageMeterESCState_s {
 
 static voltageMeterESCState_t voltageMeterESCState;
 
-// The meter needs a voltage, and fresh data
-static bool isMotorTelemetryUsable(const motorTelemetry_t *telemetry)
-{
-    return motorTelemetryHas(telemetry, MOTOR_TELEMETRY_VOLTAGE) && telemetry->dataAge <= ESC_BATTERY_AGE_MAX;
-}
 #endif
 
 void voltageMeterESCInit(void)
@@ -280,7 +275,7 @@ void voltageMeterESCRefresh(void)
 #ifdef USE_ESC_SENSOR
     const motorTelemetry_t *telemetry = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
     if (telemetry) {
-        voltageMeterESCState.voltageUnfiltered = isMotorTelemetryUsable(telemetry) ? telemetry->voltage : 0;
+        voltageMeterESCState.voltageUnfiltered = motorTelemetryHas(telemetry, MOTOR_TELEMETRY_VOLTAGE) ? telemetry->voltage : 0;
         voltageMeterESCState.voltageDisplayFiltered = pt1FilterApply(&voltageMeterESCState.displayFilter, voltageMeterESCState.voltageUnfiltered);
     }
 #endif
@@ -293,7 +288,7 @@ void voltageMeterESCReadMotor(uint8_t motorNumber, voltageMeter_t *voltageMeter)
     voltageMeterReset(voltageMeter);
 #else
     const motorTelemetry_t *telemetry = motorTelemetryGet(motorNumber);
-    if (isMotorTelemetryUsable(telemetry)) {
+    if (motorTelemetryHas(telemetry, MOTOR_TELEMETRY_VOLTAGE)) {
         voltageMeter->unfiltered = telemetry->voltage;
         voltageMeter->displayFiltered = voltageMeter->unfiltered; // no filtering for ESC motors currently.
     } else {

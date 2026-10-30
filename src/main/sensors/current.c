@@ -215,12 +215,11 @@ void currentMeterVirtualRead(currentMeter_t *meter)
 #ifdef USE_ESC_SENSOR
 currentMeterESCState_t currentMeterESCState;
 
-// The meter needs current and consumption, and fresh data
+// The meter needs current and consumption
 static bool isMotorTelemetryUsable(const motorTelemetry_t *telemetry)
 {
     return motorTelemetryHas(telemetry, MOTOR_TELEMETRY_CURRENT)
-        && motorTelemetryHas(telemetry, MOTOR_TELEMETRY_CONSUMPTION)
-        && telemetry->dataAge <= ESC_BATTERY_AGE_MAX;
+        && motorTelemetryHas(telemetry, MOTOR_TELEMETRY_CONSUMPTION);
 }
 
 void currentMeterESCInit(void)

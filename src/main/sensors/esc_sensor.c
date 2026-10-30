@@ -218,6 +218,11 @@ static void escSensorDataReceive(uint16_t c, void *data)
 
 bool escSensorInit(void)
 {
+    // No data until the first frame arrives, also when there is no port
+    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i = i + 1) {
+        escSensorData[i].dataAge = ESC_DATA_INVALID;
+    }
+
     const serialPortIdentifier_e port = escSensorConfig()->esc_sensor_uart;
     if (port == SERIAL_PORT_NONE) {
         return false;
@@ -227,10 +232,6 @@ bool escSensorInit(void)
 
     // Initialize serial port
     escSensorPort = openSerialPort(port, FUNCTION_ESC_SENSOR, escSensorDataReceive, NULL, ESC_SENSOR_BAUDRATE, MODE_RX, options);
-
-    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i = i + 1) {
-        escSensorData[i].dataAge = ESC_DATA_INVALID;
-    }
 
     return escSensorPort != NULL;
 }
