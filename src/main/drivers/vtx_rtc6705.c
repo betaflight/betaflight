@@ -218,12 +218,7 @@ void rtc6705SetRFPower(uint8_t rf_power)
     }
 #endif
 
-#if defined(RTC6705_DYNAMIC_POWER_CTRL)
-    // internal PA is full only at the highest level
-    const uint32_t data = rf_power >= VTX_RTC6705_POWER_COUNT - 1 ? PA_CONTROL_DEFAULT : PA_CONTROL_LOW;
-#else
     const uint32_t data = rf_power > 1 ? PA_CONTROL_DEFAULT : PA_CONTROL_LOW;
-#endif
 
     uint32_t val_hex = RTC6705_RW_CONTROL_BIT; // write
     val_hex |= RTC6705_ADDRESS; // address
