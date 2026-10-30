@@ -67,6 +67,9 @@ FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
 #ifdef __DCACHE_PRESENT
 #if defined(STM32H7) || defined(GD32H7)
     if (bus->curSegment->u.buffers.rxData &&
+#ifdef STM32H7
+        !IS_SRAM4(bus->curSegment->u.buffers.rxData) &&
+#endif
         !isDmaramUncached(bus->curSegment->u.buffers.rxData, bus->curSegment->len)) {
 #else
     if (bus->curSegment->u.buffers.rxData) {
