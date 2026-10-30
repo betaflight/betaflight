@@ -103,7 +103,7 @@ typedef struct dshotTelemetryMotorState_s {
     uint16_t rawValue;
     uint16_t telemetryData[DSHOT_TELEMETRY_TYPE_COUNT];
     uint8_t telemetryTypes;
-    uint8_t telemetryUpdated;   // types received since the last read, cleared by motor telemetry
+    timeMs_t edtUpdateMs[DSHOT_TELEMETRY_TYPE_CURRENT + 1]; // time of the last temperature, voltage and current update
 } dshotTelemetryMotorState_t;
 
 typedef struct dshotTelemetryState_s {

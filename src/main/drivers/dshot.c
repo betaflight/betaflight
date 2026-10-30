@@ -42,6 +42,7 @@
 #include "config/feature.h"
 
 #include "drivers/motor_types.h"
+#include "drivers/time.h"
 #include "drivers/timer.h"
 
 #include "drivers/dshot_command.h"
@@ -254,7 +255,11 @@ static void dshotUpdateTelemetryData(uint8_t motorIndex, dshotTelemetryType_t ty
     // Update telemetry data
     dshotTelemetryState.motorState[motorIndex].telemetryData[type] = value;
     dshotTelemetryState.motorState[motorIndex].telemetryTypes |= (1 << type);
-    dshotTelemetryState.motorState[motorIndex].telemetryUpdated |= (1 << type);
+
+    // Time of arrival of the extended telemetry values (not eRPM: it arrives every frame)
+    if (type != DSHOT_TELEMETRY_TYPE_eRPM && type < ARRAYLEN(dshotTelemetryState.motorState[motorIndex].edtUpdateMs)) {
+        dshotTelemetryState.motorState[motorIndex].edtUpdateMs[type] = millis();
+    }
 }
 
 FAST_CODE_NOINLINE void updateDshotTelemetry(void)

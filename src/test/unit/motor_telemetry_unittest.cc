@@ -104,7 +104,9 @@ static void setDshotTelemetry(unsigned motor, float rpm, int temperature, int vo
         state->telemetryTypes |= 1 << DSHOT_TELEMETRY_TYPE_CURRENT;
         state->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] = current;
     }
-    state->telemetryUpdated |= state->telemetryTypes;
+    for (unsigned type = DSHOT_TELEMETRY_TYPE_TEMPERATURE; type <= DSHOT_TELEMETRY_TYPE_CURRENT; type++) {
+        state->edtUpdateMs[type] = nowMs;
+    }
 }
 
 static void setEscSensorTelemetry(unsigned motor, uint8_t dataAge, int16_t rpm, uint8_t temperature, uint16_t voltage, int32_t current, int32_t consumption)
@@ -234,7 +236,7 @@ TEST_F(MotorTelemetryTest, DshotExtendedTelemetryExpires)
 
     // Voltage updates, temperature and current do not
     nowMs += 4000;
-    dshotTelemetryState.motorState[0].telemetryUpdated |= 1 << DSHOT_TELEMETRY_TYPE_VOLTAGE;
+    dshotTelemetryState.motorState[0].edtUpdateMs[DSHOT_TELEMETRY_TYPE_VOLTAGE] = nowMs;
     EXPECT_TRUE(motorTelemetryHas(motorTelemetryGet(0), MOTOR_TELEMETRY_TEMPERATURE));
 
     nowMs += 1000;
@@ -244,6 +246,17 @@ TEST_F(MotorTelemetryTest, DshotExtendedTelemetryExpires)
     EXPECT_TRUE(motorTelemetryHas(telemetry, MOTOR_TELEMETRY_VOLTAGE));
     // RPM does not expire here, DShot telemetry is still active
     EXPECT_TRUE(motorTelemetryHas(telemetry, MOTOR_TELEMETRY_RPM));
+}
+
+// The age of a value is from its arrival, not from the first read
+TEST_F(MotorTelemetryTest, DshotExtendedTelemetryAgeIsFromArrival)
+{
+    useDshotTelemetry = true;
+    setDshotTelemetry(0, 12000.0f, 40, 64, 10);
+
+    // No read for 6 seconds
+    nowMs += 6000;
+    EXPECT_FALSE(motorTelemetryHas(motorTelemetryGet(0), MOTOR_TELEMETRY_VOLTAGE));
 }
 
 // Stale ESC sensor data must not replace fresh DShot data

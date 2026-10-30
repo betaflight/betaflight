@@ -77,18 +77,11 @@ bool motorTelemetryIsEnabled(void)
 }
 
 #ifdef USE_DSHOT_TELEMETRY
-static timeMs_t dshotEdtUpdateMs[MAX_SUPPORTED_MOTORS][DSHOT_TELEMETRY_TYPE_COUNT];
-
 // True if the extended telemetry value is available and updated recently
-static bool isDshotEdtFresh(dshotTelemetryMotorState_t *motorState, unsigned motorIndex, dshotTelemetryType_t type, timeMs_t nowMs)
+static bool isDshotEdtFresh(const dshotTelemetryMotorState_t *motorState, dshotTelemetryType_t type, timeMs_t nowMs)
 {
-    if (motorState->telemetryUpdated & (1 << type)) {
-        motorState->telemetryUpdated &= ~(1 << type);
-        dshotEdtUpdateMs[motorIndex][type] = nowMs;
-    }
-
     return (motorState->telemetryTypes & (1 << type))
-        && cmpTimeMs(nowMs, dshotEdtUpdateMs[motorIndex][type]) < DSHOT_EDT_TIMEOUT_MS;
+        && cmpTimeMs(nowMs, motorState->edtUpdateMs[type]) < DSHOT_EDT_TIMEOUT_MS;
 }
 
 static void mergeDshotTelemetry(motorTelemetry_t *telemetry, unsigned motorIndex)
@@ -97,7 +90,7 @@ static void mergeDshotTelemetry(motorTelemetry_t *telemetry, unsigned motorIndex
         return;
     }
 
-    dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[motorIndex];
+    const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[motorIndex];
     const uint32_t types = motorState->telemetryTypes;
     const timeMs_t nowMs = millis();
 
@@ -112,17 +105,17 @@ static void mergeDshotTelemetry(motorTelemetry_t *telemetry, unsigned motorIndex
     }
 
     // Temperature: step 1 degree Celsius
-    if (isDshotEdtFresh(motorState, motorIndex, DSHOT_TELEMETRY_TYPE_TEMPERATURE, nowMs)) {
+    if (isDshotEdtFresh(motorState, DSHOT_TELEMETRY_TYPE_TEMPERATURE, nowMs)) {
         telemetry->temperature = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE];
         telemetry->valid |= MOTOR_TELEMETRY_TEMPERATURE;
     }
     // Voltage: step 0.25V, convert to 0.01V
-    if (isDshotEdtFresh(motorState, motorIndex, DSHOT_TELEMETRY_TYPE_VOLTAGE, nowMs)) {
+    if (isDshotEdtFresh(motorState, DSHOT_TELEMETRY_TYPE_VOLTAGE, nowMs)) {
         telemetry->voltage = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] * 25;
         telemetry->valid |= MOTOR_TELEMETRY_VOLTAGE;
     }
     // Current: step 1A, convert to 0.01A
-    if (isDshotEdtFresh(motorState, motorIndex, DSHOT_TELEMETRY_TYPE_CURRENT, nowMs)) {
+    if (isDshotEdtFresh(motorState, DSHOT_TELEMETRY_TYPE_CURRENT, nowMs)) {
         telemetry->current = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] * 100;
         telemetry->valid |= MOTOR_TELEMETRY_CURRENT;
     }
