@@ -420,9 +420,21 @@ static const waypoint_t *nextPositionalWaypoint(uint8_t from)
     return activePlanWaypoint(nextPositionalIndex(from));
 }
 
-static bool isStationKeepingType(uint8_t type)
+// A FLYOVER or FLYBY that has a duration is a timed waypoint. The aircraft stops
+// and stays at it, as at a HOLD.
+static bool keepsStation(const waypoint_t *wp)
 {
-    return type == WAYPOINT_TYPE_HOLD || type == WAYPOINT_TYPE_LAND || type == WAYPOINT_TYPE_TAKEOFF;
+    switch (wp->type) {
+    case WAYPOINT_TYPE_HOLD:
+    case WAYPOINT_TYPE_LAND:
+    case WAYPOINT_TYPE_TAKEOFF:
+        return true;
+    case WAYPOINT_TYPE_FLYOVER:
+    case WAYPOINT_TYPE_FLYBY:
+        return wp->duration > 0;
+    default:
+        return false;
+    }
 }
 
 #ifndef USE_WING
@@ -438,7 +450,7 @@ static bool flownAsCarrotLeg(const waypoint_t *wp, uint8_t index)
 {
     const bool isLastWaypoint = (nextPositionalWaypoint(index + 1) == NULL);
     const bool faceTarget = (wp->yawBehaviour == WAYPOINT_YAW_FACE_TARGET);
-    return !isStationKeepingType(wp->type) && (!isLastWaypoint || faceTarget);
+    return !keepsStation(wp) && (!isLastWaypoint || faceTarget);
 }
 #endif // !USE_WING
 
@@ -682,6 +694,7 @@ static void dispatchWingLeg(const waypoint_t *wp, const vector3_t *targetEnuM)
         .vertRateMps = legVertRateMps(wp),
         .startAltM = commandedAltitudeM(positionEstimatorGetEstimate()),
         .climbOut = isRescueStop() && wp->type == WAYPOINT_TYPE_HOLD,
+        .timed = (wp->type == WAYPOINT_TYPE_FLYOVER || wp->type == WAYPOINT_TYPE_FLYBY) && wp->duration > 0,
         .injectedLanding = fp.injectedCount > 0,
     };
     const waypoint_t *nextWp = nextPositionalWaypoint(fp.currentIndex + 1);
@@ -747,7 +760,7 @@ static bool dispatchWaypoint(void)
     }
 
     const autopilotConfig_t *cfg = autopilotConfig();
-    const bool isStationKeeping = isStationKeepingType(effective.type);
+    const bool isStationKeeping = keepsStation(&effective);
     float arrivalRadiusM = isStationKeeping
         ? cfg->waypointHoldRadius * 0.01f
         : fminf(cfg->waypointArrivalRadius * 0.01f, FP_PASS_MAX_M);
@@ -2074,7 +2087,7 @@ static void startWingLanding(void)
 // rest of the delay. A LAND then lands.
 static void wingWaypointReached(const waypoint_t *wp)
 {
-    uint32_t holdDs = isStationKeepingType(wp->type) ? fp.holdDurationDs : 0;
+    uint32_t holdDs = keepsStation(wp) ? fp.holdDurationDs : 0;
     if (fp.delayActive) {
         const timeDelta_t earlyUs = cmpTimeUs(fp.delayEndUs, micros());
         holdDs += (earlyUs > 0) ? earlyUs / 100000 : 0;
@@ -2188,10 +2201,10 @@ static void onWaypointReached(void *userData)
     endHeadingRecovery();
 #endif
 
-    // A LAND duration is a pre-descent loiter and a TAKEOFF duration a
-    // post-climb loiter; the hold-expiry path starts the descent (LAND) or
-    // advances (HOLD, TAKEOFF).
-    const bool holdsOnArrival = isStationKeepingType(wp->type);
+    // A FLYOVER or FLYBY duration is its dwell time, a LAND duration is a
+    // pre-descent loiter and a TAKEOFF duration a post-climb loiter; the
+    // hold-expiry path starts the descent (LAND) or advances otherwise.
+    const bool holdsOnArrival = keepsStation(wp);
     if (holdsOnArrival && fp.holdDurationDs > 0) {
         fp.state = FP_NAV_HOLDING;
         fp.holdStartUs = micros();
