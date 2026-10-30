@@ -478,6 +478,7 @@
 #if defined(STM32H7)
 #define DMA_RAM __attribute__((section(".DMA_RAM"), aligned(32)))
 #define DMA_RW_AXI __attribute__((section(".DMA_RW_AXI"), aligned(32)))
+// D3 SRAM4, reachable by BDMA. NOLOAD like DMA_RAM: not zeroed or initialised at startup
 #define BDMA_RAM __attribute__((section(".BDMA_RAM"), aligned(4)))
 extern uint8_t _dmaram_start__;
 extern uint8_t _dmaram_end__;
