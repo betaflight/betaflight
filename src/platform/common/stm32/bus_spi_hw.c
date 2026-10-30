@@ -68,7 +68,8 @@ FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
 #if defined(STM32H7) || defined(GD32H7)
     if (bus->curSegment->u.buffers.rxData &&
 #ifdef STM32H7
-        !IS_SRAM4(bus->curSegment->u.buffers.rxData) &&
+        // BDMA data was copied out of its bounce buffer by the CPU, so the cache is current
+        !IS_BDMA_DESCRIPTOR(descriptor) &&
 #endif
         !isDmaramUncached(bus->curSegment->u.buffers.rxData, bus->curSegment->len)) {
 #else

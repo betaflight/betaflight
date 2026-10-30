@@ -123,9 +123,6 @@
      (((f) & 0x08u) ? 0x08u : 0))
 
 #define IS_BDMA_DESCRIPTOR(d) ((d)->dma == (void*)BDMA)
-#define IS_SRAM4(p) \
-    (((uintptr_t)(p) >= (uintptr_t)&_bdmaram_start__) && \
-     ((uintptr_t)(p) < (uintptr_t)&_bdmaram_end__))
 
 // (flag) and (d) are parenthesised deliberately. Callers pass OR-ed masks, and
 // without the parentheses `A | B` binds as `A | (B << flagsShift)`: only the last

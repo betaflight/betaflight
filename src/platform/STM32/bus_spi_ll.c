@@ -44,6 +44,18 @@
 // Use DMA if possible if this many bytes are to be transferred
 #define SPI_DMA_THRESHOLD 8
 
+#if defined(STM32H7)
+/* BDMA can only reach D3 SRAM4, where no driver buffer lives, so BDMA transfers are staged
+ * through bounce buffers in .BDMA_RAM: TX is copied in as each segment starts and RX copied
+ * out as it completes. Only SPI6 is served by BDMA, so a single pair is enough. Segments
+ * longer than this fall back to polled transfers.
+ */
+#define SPI_BDMA_BUFFER_SIZE 512
+
+static BDMA_RAM uint8_t bdmaTxBuffer[SPI_BDMA_BUFFER_SIZE];
+static BDMA_RAM uint8_t bdmaRxBuffer[SPI_BDMA_BUFFER_SIZE];
+#endif
+
 #ifndef SPI1_NSS_PIN
 #define SPI1_NSS_PIN NONE
 #endif
@@ -406,12 +418,15 @@ void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segmen
 
 #if defined(STM32H7)
     if (IS_BDMA_DESCRIPTOR(bus->dmaTx)) {
-        // BDMA path: no cache ops needed, the MPU keeps .BDMA_RAM in SRAM4 out of the D cache
+        // BDMA path: transfers go through the bounce buffers, which need no cache ops as the
+        // MPU keeps .BDMA_RAM out of the D cache. TX data is copied in by spiInternalStartDMA()
+        // rather than here, as this may run for the next segment while the current one is still
+        // reading the buffer.
         static BDMA_RAM uint8_t bdmaDummyTxByte;
         static BDMA_RAM uint8_t bdmaDummyRxByte;
 
         if (txData) {
-            dmaInitTx->MemoryOrM2MDstAddress = (uint32_t)txData;
+            dmaInitTx->MemoryOrM2MDstAddress = (uint32_t)bdmaTxBuffer;
             dmaInitTx->MemoryOrM2MDstIncMode = LL_BDMA_MEMORY_INCREMENT;
         } else {
             bdmaDummyTxByte = 0xff;
@@ -424,7 +439,7 @@ void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segmen
         LL_DMA_InitTypeDef *dmaInitRx = bus->dmaInitRx;
 
         if (rxData) {
-            dmaInitRx->MemoryOrM2MDstAddress = (uint32_t)rxData;
+            dmaInitRx->MemoryOrM2MDstAddress = (uint32_t)bdmaRxBuffer;
             dmaInitRx->MemoryOrM2MDstIncMode = LL_BDMA_MEMORY_INCREMENT;
         } else {
             dmaInitRx->MemoryOrM2MDstAddress = (uint32_t)&bdmaDummyRxByte;
@@ -546,6 +561,14 @@ void spiInternalStartDMA(const extDevice_t *dev)
         // BDMA channel-based DMA for D3 domain peripherals (e.g., SPI6)
         dmaRx->userParam = (uint32_t)dev;
         dmaTx->userParam = (uint32_t)dev;
+
+        // Stage the TX data. The previous segment has completed, so the buffer is free.
+        const uint8_t *txData = bus->curSegment->u.buffers.txData;
+        if (txData) {
+            memcpy(bdmaTxBuffer, txData, bus->curSegment->len);
+            // Ensure the data has reached SRAM4 before BDMA is enabled
+            __DSB();
+        }
 
         DMA_CLEAR_FLAG(dmaTx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
         DMA_CLEAR_FLAG(dmaRx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
@@ -730,6 +753,13 @@ void spiInternalStopDMA (const extDevice_t *dev)
         LL_SPI_DisableDMAReq_RX(instance);
         LL_SPI_ClearFlag_TXTF(instance);
         LL_SPI_Disable(instance);
+
+        // Hand the received data back before the segment callback runs. Through the cache,
+        // so spiRxIrqHandler() must not invalidate the destination afterwards.
+        uint8_t *rxData = bus->curSegment->u.buffers.rxData;
+        if (rxData) {
+            memcpy(rxData, bdmaRxBuffer, bus->curSegment->len);
+        }
         return;
     }
 #endif
@@ -864,9 +894,10 @@ FAST_CODE void spiSequenceStart(const extDevice_t *dev)
         }
 #ifdef STM32H7
         if (bus->dmaTx && IS_BDMA_DESCRIPTOR(bus->dmaTx)) {
-            // BDMA can only access D3 domain memory (SRAM4)
-            if ((checkSegment->u.buffers.rxData && !IS_SRAM4(checkSegment->u.buffers.rxData)) ||
-                (checkSegment->u.buffers.txData && !IS_SRAM4(checkSegment->u.buffers.txData))) {
+            // Any buffer will do as BDMA transfers are staged through the bounce buffers,
+            // provided the segment fits in them
+            if ((checkSegment->u.buffers.rxData || checkSegment->u.buffers.txData) &&
+                (checkSegment->len > SPI_BDMA_BUFFER_SIZE)) {
                 dmaSafe = false;
                 break;
             }

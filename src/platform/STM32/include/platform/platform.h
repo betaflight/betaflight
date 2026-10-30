@@ -482,8 +482,6 @@
 #define BDMA_RAM __attribute__((section(".BDMA_RAM"), aligned(4)))
 extern uint8_t _dmaram_start__;
 extern uint8_t _dmaram_end__;
-extern uint8_t _bdmaram_start__;
-extern uint8_t _bdmaram_end__;
 
 /* The part of the above the MPU is actually leaving out of the D cache, resolved at boot
  * by memProtResolveDmaRam(). This answers only whether a transfer needs cache maintenance
