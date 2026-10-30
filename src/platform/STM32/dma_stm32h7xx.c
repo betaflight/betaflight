@@ -101,7 +101,12 @@ DEFINE_BDMA_IRQ_HANDLER(7, BDMA_CH7_HANDLER)
 static void enableDmaClock(int index)
 {
     if (dmaDescriptors[index].dma == (void*)BDMA) {
+#if defined(RCC_AHB4ENR_BDMA2EN)
+        // H7A3/B0/B3 alias BDMA to BDMA2, but RCC_AHB4() pastes the name before it expands
+        RCC_ClockCmd(RCC_AHB4(BDMA2), ENABLE);
+#else
         RCC_ClockCmd(RCC_AHB4(BDMA), ENABLE);
+#endif
         // DMAMUX2 shares clock with BDMA (no separate enable needed)
     } else {
         RCC_ClockCmd(dmaDescriptors[index].dma == DMA1 ? RCC_AHB1(DMA1) : RCC_AHB1(DMA2), ENABLE);
