@@ -858,7 +858,7 @@ FAST_CODE void spiSequenceStart(const extDevice_t *dev)
             break;
         }
 #ifdef STM32H7
-        if (IS_BDMA_DESCRIPTOR(bus->dmaTx)) {
+        if (bus->dmaTx && IS_BDMA_DESCRIPTOR(bus->dmaTx)) {
             // BDMA can only access D3 domain memory (SRAM4)
             if ((checkSegment->u.buffers.rxData && !IS_SRAM4(checkSegment->u.buffers.rxData)) ||
                 (checkSegment->u.buffers.txData && !IS_SRAM4(checkSegment->u.buffers.txData))) {
