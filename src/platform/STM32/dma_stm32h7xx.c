@@ -159,7 +159,7 @@ uint32_t dmaGetDataLength(dmaResource_t *ref)
 #else
     if ((uint32_t)ref >= D3_AHB1PERIPH_BASE) {
 #endif
-        return ((BDMA_Channel_TypeDef *)ref)->CNDTR;
+        return LL_EX_BDMA_GetDataLength((BDMA_Channel_TypeDef *)ref);
     }
     return LL_EX_DMA_GetDataLength((DMA_ARCH_TYPE *)ref);
 }
