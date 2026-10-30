@@ -29,6 +29,9 @@ extern uint8_t dmaram_end;
 extern uint8_t dmarwaxi_start;
 extern uint8_t dmarwaxi_end;
 
+extern uint8_t bdmaram_start;
+extern uint8_t bdmaram_end;
+
 mpuRegion_t mpuRegions[] = {
 #ifdef USE_ITCM_RAM
     {
@@ -70,6 +73,21 @@ mpuRegion_t mpuRegions[] = {
         .perm       = MPU_REGION_FULL_ACCESS,
         .exec       = MPU_INSTRUCTION_ACCESS_ENABLE,
         .shareable  = MPU_ACCESS_NOT_SHAREABLE,
+        .cacheable  = MPU_ACCESS_CACHEABLE,
+        .bufferable = MPU_ACCESS_NOT_BUFFERABLE,
+    },
+    {
+        // BDMA buffers in D3 SRAM4, for the D3 domain peripherals (SPI6)
+        //
+        // Kept out of the D cache with the same attributes as dmaram: the BDMA
+        // path in bus_spi does no cache maintenance. The default memory map
+        // would otherwise leave SRAM4 write-back cached.
+        .start      = (uint32_t)&bdmaram_start,
+        .end        = (uint32_t)&bdmaram_end,
+        .size       = 0,  // Size determined by ".end"
+        .perm       = MPU_REGION_FULL_ACCESS,
+        .exec       = MPU_INSTRUCTION_ACCESS_ENABLE,
+        .shareable  = MPU_ACCESS_SHAREABLE,
         .cacheable  = MPU_ACCESS_CACHEABLE,
         .bufferable = MPU_ACCESS_NOT_BUFFERABLE,
     },

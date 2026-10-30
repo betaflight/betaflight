@@ -406,7 +406,7 @@ void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segmen
 
 #if defined(STM32H7)
     if (IS_BDMA_DESCRIPTOR(bus->dmaTx)) {
-        // BDMA path: no cache ops needed (SRAM4 is not cached)
+        // BDMA path: no cache ops needed, the MPU keeps .BDMA_RAM in SRAM4 out of the D cache
         static BDMA_RAM uint8_t bdmaDummyTxByte;
         static BDMA_RAM uint8_t bdmaDummyRxByte;
 
