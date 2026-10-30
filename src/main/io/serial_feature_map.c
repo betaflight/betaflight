@@ -460,6 +460,23 @@ static unsigned countTelemetryBits(uint32_t mask)
 }
 #endif // USE_TELEMETRY_PROVIDERS
 
+// A legacy MSP + VTX_MSP line names the port HD goggles draw the OSD over.
+// osd_uart opens that port as MSP by itself, so the line can still apply
+// when every MSP slot is taken.  Only the bare MSP + VTX_MSP mask goes this
+// way: anything else on the line (GPS, FRSKY_OSD, ...) either cannot share
+// the port with MSP or keeps the port from opening as MSP.
+static bool osdTakesLegacyMspVtxPort(serialPortIdentifier_e identifier, uint32_t mask)
+{
+#if defined(USE_OSD) && defined(USE_MSP_DISPLAYPORT)
+    return mask == (FUNCTION_MSP | FUNCTION_VTX_MSP)
+        && (osdConfig()->osd_uart == SERIAL_PORT_NONE || osdConfig()->osd_uart == identifier);
+#else
+    UNUSED(identifier);
+    UNUSED(mask);
+    return false;
+#endif
+}
+
 // Whether a mask can be written to `identifier` without leaving the feature PGs
 // half-applied.  Slots this port already holds count as free, since the apply
 // clears its own claims first.  Mutates nothing.
@@ -489,7 +506,7 @@ static bool canApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mas
                 availableMsp++;
             }
         }
-        if (availableMsp < 1) {
+        if (availableMsp < 1 && !osdTakesLegacyMspVtxPort(identifier, mask)) {
             return false;
         }
     }
@@ -525,14 +542,30 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
 
     clearClaimsOnPort(identifier, false);
 
+    bool mspSlotTaken = false;
     if (mask & FUNCTION_MSP) {
         for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
             if (mspConfig()->msp_uart[i] == SERIAL_PORT_NONE) {
                 mspConfigMutable()->msp_uart[i] = identifier;
+                mspSlotTaken = true;
                 break;
             }
         }
     }
+#if defined(USE_OSD) && defined(USE_MSP_DISPLAYPORT)
+    // Accepted without a slot (canApplyFunctionMask only allows that for a
+    // legacy MSP + VTX_MSP line): the port is opened as MSP only through
+    // osd_uart with an MSP DisplayPort, so select it here.  A diff sets
+    // osd_displayport_device after its serial lines, so it would still be
+    // the default at this point.  The port has no msp_baud entry, so it
+    // opens at the default MSP baud (115200) and the MSP baud on the
+    // legacy line has no effect.
+    if ((mask & FUNCTION_MSP) && !mspSlotTaken) {
+        osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
+    }
+#else
+    UNUSED(mspSlotTaken);
+#endif
 #ifdef USE_GPS
     if (mask & FUNCTION_GPS) {
         gpsConfigMutable()->gps_uart = identifier;
@@ -600,6 +633,15 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
     if (mask & FUNCTION_OSD_CUSTOM_TEXT) {
         osdConfigMutable()->osd_custom_text_uart = identifier;
     }
+#ifdef USE_MSP_DISPLAYPORT
+    // The legacy VTX_MSP bit is how pre-2026.12 configs said "goggles drawing
+    // the OSD over MSP are on this port" (DJI, HDZero, Walksnail).  Builds
+    // without the VTX option drop the bit above, so the OSD takes the port
+    // here unless it was already given one.
+    if ((mask & FUNCTION_VTX_MSP) && osdConfig()->osd_uart == SERIAL_PORT_NONE) {
+        osdConfigMutable()->osd_uart = identifier;
+    }
+#endif
 #endif
 #ifdef USE_TELEMETRY_PROVIDERS
 #ifdef USE_TELEMETRY_FRSKY_HUB
