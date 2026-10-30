@@ -25,6 +25,8 @@
 
 #include "platform.h"
 
+#include "common/printf.h"
+
 #ifdef USE_DMA
 
 #include "drivers/dma.h"
@@ -158,20 +160,9 @@ int dmaGetHandlerCount(void)
     return DMA_LAST_HANDLER;
 }
 
-int dmaGetDeviceNumber(dmaIdentifier_e identifier)
+void dmaGetDisplayName(dmaIdentifier_e identifier, char *name)
 {
-    UNUSED(identifier);
-    return DMA_DEVICE_NO(identifier);
-}
-
-int dmaGetDeviceIndex(dmaIdentifier_e identifier)
-{
-    return DMA_DEVICE_INDEX(identifier);
-}
-
-const char *dmaGetDisplayString(void)
-{
-    return DMA_OUTPUT_STRING;
+    tfp_sprintf(name, DMA_OUTPUT_STRING, DMA_DEVICE_NO(identifier), DMA_DEVICE_INDEX(identifier));
 }
 
 uint32_t dmaGetDataLength(dmaResource_t *ref)

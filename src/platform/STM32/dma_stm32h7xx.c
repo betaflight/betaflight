@@ -24,6 +24,8 @@
 
 #include "platform.h"
 
+#include "common/printf.h"
+
 #ifdef USE_DMA
 
 #include "drivers/nvic.h"
@@ -137,19 +139,14 @@ int dmaGetHandlerCount(void)
     return DMA_LAST_HANDLER;
 }
 
-int dmaGetDeviceNumber(dmaIdentifier_e identifier)
+void dmaGetDisplayName(dmaIdentifier_e identifier, char *name)
 {
-    return DMA_DEVICE_NO(identifier);
-}
-
-int dmaGetDeviceIndex(dmaIdentifier_e identifier)
-{
-    return DMA_DEVICE_INDEX(identifier);
-}
-
-const char *dmaGetDisplayString(void)
-{
-    return DMA_OUTPUT_STRING;
+    if (identifier >= BDMA_CH0_HANDLER) {
+        // BDMA is a single controller of channels, not a third DMA of streams
+        tfp_sprintf(name, "BDMA Channel %d:", identifier - BDMA_CH0_HANDLER);
+    } else {
+        tfp_sprintf(name, DMA_OUTPUT_STRING, DMA_DEVICE_NO(identifier), DMA_DEVICE_INDEX(identifier));
+    }
 }
 
 uint32_t dmaGetDataLength(dmaResource_t *ref)
