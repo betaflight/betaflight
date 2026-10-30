@@ -847,6 +847,19 @@ TEST(SerialFeatureMap, ApplyMaskPicksTheVtxProtocolFromTheBit)
     EXPECT_EQ(VTXDEV_SMARTAUDIO, vtxSettingsConfig()->vtx_type);
 }
 
+TEST(SerialFeatureMap, ApplyMaskMspVtxAlsoGivesTheOsdItsPort)
+{
+    resetAllConfigs();
+
+    // serial UART2 131073 ...  (MSP + VTX_MSP), the usual HD goggles line.
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART2, FUNCTION_MSP | FUNCTION_VTX_MSP));
+
+    EXPECT_EQ(SERIAL_PORT_USART2, mspConfig()->msp_uart[0]);
+    EXPECT_EQ(SERIAL_PORT_USART2, vtxSettingsConfig()->vtx_uart);
+    EXPECT_EQ(VTXDEV_MSP, vtxSettingsConfig()->vtx_type);
+    EXPECT_EQ(SERIAL_PORT_USART2, osdConfig()->osd_uart);
+}
+
 TEST(SerialFeatureMap, ApplyMaskClearsWhatThePortNoLongerClaims)
 {
     resetAllConfigs();

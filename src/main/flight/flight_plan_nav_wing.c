@@ -99,6 +99,17 @@ void flightPlanWingReset(void)
     autopilotWingClearLimits(AP_WING_LIMITS_LEG);
 }
 
+static bool isLoiterType(uint8_t type)
+{
+    return type == WAYPOINT_TYPE_HOLD || type == WAYPOINT_TYPE_LAND;
+}
+
+// A timed FLYOVER or FLYBY is flown as a HOLD.
+static uint8_t legFlownAs(const fpWingLeg_t *leg)
+{
+    return leg->timed ? WAYPOINT_TYPE_HOLD : leg->type;
+}
+
 void flightPlanWingDispatchLeg(const fpWingLeg_t *leg)
 {
     const positionEstimate3d_t *est = positionEstimatorGetEstimate();
@@ -109,7 +120,7 @@ void flightPlanWingDispatchLeg(const fpWingLeg_t *leg)
     wing.leg = *leg;
     autopilotWingClearLimits(AP_WING_LIMITS_LEG);
 
-    switch (leg->type) {
+    switch (legFlownAs(leg)) {
     case WAYPOINT_TYPE_HOLD:
         if (leg->climbOut && speedCmS > FPW_COURSE_MIN_SPEED_CMS) {
             // a climb-out starts on its circle, turning the loiter's way, rather than spiralling out
@@ -153,11 +164,6 @@ void flightPlanWingDispatchLeg(const fpWingLeg_t *leg)
     }
 }
 
-static bool isLoiterType(uint8_t type)
-{
-    return type == WAYPOINT_TYPE_HOLD || type == WAYPOINT_TYPE_LAND;
-}
-
 // On the loiter, or turning onto it.
 static float loiterCaptureM(void)
 {
@@ -192,7 +198,7 @@ fpWingEvent_e flightPlanWingUpdateLeg(const positionEstimate3d_t *est, float *pr
     float turnDistM = 0.0f;
     bool reached;
 
-    switch (wing.leg.type) {
+    switch (legFlownAs(&wing.leg)) {
     case WAYPOINT_TYPE_HOLD:
     case WAYPOINT_TYPE_LAND: {
         const float captureM = loiterCaptureM();
@@ -245,7 +251,7 @@ fpWingEvent_e flightPlanWingUpdateLeg(const positionEstimate3d_t *est, float *pr
 void flightPlanWingHold(void)
 {
     autopilotWingClearLimits(AP_WING_LIMITS_LEG);
-    if (!isLoiterType(wing.leg.type)) {
+    if (!isLoiterType(legFlownAs(&wing.leg))) {
         flightPlanWingLoiterAt(&wing.reachedEnuM, wing.altM, wing.leg.vertRateMps, flightPlanWingCommandedAltitudeM());
     }
 }

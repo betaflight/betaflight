@@ -634,6 +634,16 @@ serial_feature_map_unittest_DEFINES := \
 		USE_TELEMETRY_MAVLINK= \
 		USE_TELEMETRY_IBUS=
 
+# The same map as a cloud build without the VTX option compiles it.
+serial_feature_map_novtx_unittest_SRC := \
+		$(USER_DIR)/io/serial_feature_map.c
+
+serial_feature_map_novtx_unittest_DEFINES := \
+		USE_GPS= \
+		USE_SERIALRX= \
+		USE_OSD= \
+		USE_MSP_DISPLAYPORT=
+
 sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/sensors/gyro.c \
 		$(USER_DIR)/sensors/gyro_init.c \
