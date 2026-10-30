@@ -35,7 +35,6 @@
 
 #include "drivers/dshot.h"
 #include "drivers/motor.h"
-#include "drivers/time.h"
 
 #include "flight/mixer.h"
 
@@ -44,15 +43,6 @@
 #include "motor_telemetry.h"
 
 STATIC_ASSERT(MAX_SUPPORTED_MOTORS < MOTOR_TELEMETRY_COMBINED, motor_telemetry_combined_index_is_a_motor_index);
-
-// A value is valid only if it is fresh:
-// - DShot eRPM arrives with each motor update. Expire it after 500ms.
-// - DShot extended telemetry has no fixed interval. The specification uses
-//   1000ms as an example for temperature and voltage. Expire a value after
-//   5 intervals.
-// - ESC sensor data is valid if its age is not more than ESC_BATTERY_AGE_MAX.
-#define DSHOT_ERPM_TIMEOUT_MS 500
-#define DSHOT_EDT_TIMEOUT_MS  5000
 
 static motorTelemetry_t motorTelemetry[MAX_SUPPORTED_MOTORS];
 static motorTelemetry_t motorTelemetryCombined;
@@ -81,38 +71,36 @@ bool motorTelemetryIsEnabled(void)
 }
 
 #ifdef USE_DSHOT_TELEMETRY
-static bool isDshotValueFresh(const dshotTelemetryMotorState_t *motorState, dshotTelemetryType_t type, timeMs_t nowMs, timeDelta_t timeoutMs)
-{
-    return (motorState->telemetryTypes & (1 << type))
-        && cmpTimeMs(nowMs, motorState->updateMs[type]) < timeoutMs;
-}
-
-// Fresh DShot telemetry values, in motorTelemetry_t units
+// DShot telemetry values, in motorTelemetry_t units
 static void getDshotTelemetry(motorTelemetry_t *dshot, unsigned motorIndex)
 {
     if (!useDshotTelemetry) {
         return;
     }
 
-    const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[motorIndex];
-    const timeMs_t nowMs = millis();
-
-    if (isDshotValueFresh(motorState, DSHOT_TELEMETRY_TYPE_eRPM, nowMs, DSHOT_ERPM_TIMEOUT_MS)) {
+    if (isDshotMotorTelemetryActive(motorIndex)) {
         dshot->rpm = lrintf(getDshotRpm(motorIndex));
         dshot->valid |= MOTOR_TELEMETRY_RPM;
     }
+
+    const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[motorIndex];
+    const uint32_t types = motorState->telemetryTypes;
+    if ((types & DSHOT_EXTENDED_TELEMETRY_MASK) == 0) {
+        return;
+    }
+
     // Temperature: step 1 degree Celsius
-    if (isDshotValueFresh(motorState, DSHOT_TELEMETRY_TYPE_TEMPERATURE, nowMs, DSHOT_EDT_TIMEOUT_MS)) {
+    if (types & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) {
         dshot->temperature = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE];
         dshot->valid |= MOTOR_TELEMETRY_TEMPERATURE;
     }
     // Voltage: step 0.25V, convert to 0.01V
-    if (isDshotValueFresh(motorState, DSHOT_TELEMETRY_TYPE_VOLTAGE, nowMs, DSHOT_EDT_TIMEOUT_MS)) {
+    if (types & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) {
         dshot->voltage = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] * 25;
         dshot->valid |= MOTOR_TELEMETRY_VOLTAGE;
     }
     // Current: step 1A, convert to 0.01A
-    if (isDshotValueFresh(motorState, DSHOT_TELEMETRY_TYPE_CURRENT, nowMs, DSHOT_EDT_TIMEOUT_MS)) {
+    if (types & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) {
         dshot->current = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] * 100;
         dshot->valid |= MOTOR_TELEMETRY_CURRENT;
     }
@@ -120,15 +108,12 @@ static void getDshotTelemetry(motorTelemetry_t *dshot, unsigned motorIndex)
 #endif
 
 #ifdef USE_ESC_SENSOR
-// Fresh ESC sensor values, in motorTelemetry_t units
+// ESC sensor values, in motorTelemetry_t units
 static void getEscSensorTelemetry(motorTelemetry_t *esc, unsigned motorIndex)
 {
-    if (!featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        return;
-    }
-
-    const escSensorData_t *escData = escSensorGetData(motorIndex);
-    if (!escData || escData->dataAge > ESC_BATTERY_AGE_MAX) {
+    // NULL if the ESC sensor feature is not enabled
+    const escSensorData_t *escData = getEscSensorData(motorIndex);
+    if (!escData || escData->dataAge >= ESC_DATA_INVALID) {
         return;
     }
 

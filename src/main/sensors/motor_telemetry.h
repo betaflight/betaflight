@@ -27,15 +27,18 @@
 // Merged per-motor telemetry from all sources (DShot telemetry, ESC sensor).
 //
 // Consumers read one value per field and do not select a source. A field is
-// valid only if a source has a fresh value for it. The merge rules are in
-// motor_telemetry.c:
+// valid if a source has the value. The sources keep their own rules:
+// - DShot: RPM if the motor sent eRPM, the extended telemetry types that
+//   the ESC sent.
+// - ESC sensor: data age less than ESC_DATA_INVALID.
+// The merge rules are in motor_telemetry.c:
 // - rpm: DShot telemetry first, then ESC sensor.
 // - temperature, voltage, current, consumption: ESC sensor first (better
 //   resolution), then DShot extended telemetry.
 //
-// Hot paths (RPM filter, dynamic idle, blackbox) continue to read DShot
-// telemetry directly. This module is for the slow consumers (OSD, MSP,
-// RX telemetry, battery meters).
+// This module is for the slow consumers (OSD, MSP, RX telemetry). The flight
+// code (RPM filter, dynamic idle, RPM limiter, blackbox) reads DShot telemetry
+// directly. The ESC battery meters read the ESC sensor directly.
 
 typedef enum {
     MOTOR_TELEMETRY_RPM         = 1 << 0,
@@ -51,7 +54,7 @@ typedef struct motorTelemetry_s {
     int32_t consumption;    // mAh
     uint16_t voltage;       // 0.01V
     uint8_t temperature;    // degrees Celsius
-    uint8_t valid;          // motorTelemetryField_e bits: the fresh fields
+    uint8_t valid;          // motorTelemetryField_e bits
 } motorTelemetry_t;
 
 // True if at least one telemetry source is enabled

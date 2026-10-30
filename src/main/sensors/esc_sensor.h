@@ -48,6 +48,10 @@ typedef struct {
 bool escSensorInit(void);
 void escSensorProcess(timeUs_t currentTime);
 
+#define ESC_SENSOR_COMBINED 255
+
+escSensorData_t *getEscSensorData(uint8_t motorNumber);
+
 #if ENABLE_DRONECAN_ESC
 // Publish telemetry from an out-of-band source (DroneCAN esc.Status) into the
 // shared escSensorData[] store. Fields use escSensorData_t units.
@@ -60,5 +64,3 @@ void startEscDataRead(uint8_t *frameBuffer, uint8_t frameLength);
 uint8_t getNumberEscBytesRead(void);
 
 uint8_t calculateCrc8(const uint8_t *Buf, const uint8_t BufLen);
-
-const escSensorData_t *escSensorGetData(uint8_t motorIndex);

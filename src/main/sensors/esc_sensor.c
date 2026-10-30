@@ -31,6 +31,7 @@
 
 #include "common/time.h"
 
+#include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/motor.h"
@@ -128,6 +129,9 @@ static escSensorTriggerState_t escSensorTriggerState = ESC_SENSOR_TRIGGER_STARTU
 static uint32_t escTriggerTimestamp;
 static uint8_t escSensorMotor = 0;      // motor index
 
+static escSensorData_t combinedEscSensorData;
+static bool combinedDataNeedsUpdate = true;
+
 static uint16_t totalTimeoutCount = 0;
 static uint16_t totalCrcErrorCount = 0;
 
@@ -148,25 +152,56 @@ static bool isFrameComplete(void)
     return bufferPosition == bufferSize;
 }
 
-static void updateDebugDataAge(void)
-{
-    uint8_t maxDataAge = 0;
-    for (int i = 0; i < getMotorCount(); i++) {
-        maxDataAge = MAX(maxDataAge, escSensorData[i].dataAge);
-    }
-    DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_DATA_AGE, maxDataAge);  //!< Data Age
-}
-
 LOCAL_UNUSED_FUNCTION static bool isEscSensorActive(void)
 {
     return escSensorPort != NULL;
+}
+
+escSensorData_t *getEscSensorData(uint8_t motorNumber)
+{
+    if (!featureIsEnabled(FEATURE_ESC_SENSOR)) {
+        return NULL;
+    }
+
+    if (motorNumber < getMotorCount()) {
+        return &escSensorData[motorNumber];
+    } else if (motorNumber == ESC_SENSOR_COMBINED) {
+        if (combinedDataNeedsUpdate) {
+            combinedEscSensorData.dataAge = 0;
+            combinedEscSensorData.temperature = 0;
+            combinedEscSensorData.voltage = 0;
+            combinedEscSensorData.current = 0;
+            combinedEscSensorData.consumption = 0;
+            combinedEscSensorData.rpm = 0;
+
+            for (int i = 0; i < getMotorCount(); i = i + 1) {
+                combinedEscSensorData.dataAge = MAX(combinedEscSensorData.dataAge, escSensorData[i].dataAge);
+                combinedEscSensorData.temperature = MAX(combinedEscSensorData.temperature, escSensorData[i].temperature);
+                combinedEscSensorData.voltage += escSensorData[i].voltage;
+                combinedEscSensorData.current += escSensorData[i].current;
+                combinedEscSensorData.consumption += escSensorData[i].consumption;
+                combinedEscSensorData.rpm += escSensorData[i].rpm;
+            }
+
+            combinedEscSensorData.voltage = combinedEscSensorData.voltage / getMotorCount();
+            combinedEscSensorData.rpm = combinedEscSensorData.rpm / getMotorCount();
+
+            combinedDataNeedsUpdate = false;
+
+            DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_DATA_AGE, combinedEscSensorData.dataAge);  //!< Data Age
+        }
+
+        return &combinedEscSensorData;
+    } else {
+        return NULL;
+    }
 }
 
 #if ENABLE_DRONECAN_ESC
 // External telemetry feed (e.g. DroneCAN esc.Status). Lets an out-of-band
 // source publish into the same escSensorData[] store the serial KISS decoder
 // uses, so every consumer (battery, OSD, telemetry, MSP, blackbox) reads it
-// through motorTelemetryGet() unchanged. Values use the escSensorData_t units:
+// through getEscSensorData() unchanged. Values use the escSensorData_t units:
 // temperature °C, voltage 0.01V, current 0.01A, consumption mAh, rpm eRPM/100.
 void escSensorSetExternal(uint8_t motorIndex, const escSensorData_t *data)
 {
@@ -175,7 +210,7 @@ void escSensorSetExternal(uint8_t motorIndex, const escSensorData_t *data)
     }
     escSensorData[motorIndex] = *data;
     escSensorData[motorIndex].dataAge = 0;
-    updateDebugDataAge();
+    combinedDataNeedsUpdate = true;
 }
 
 // Mark every slot invalid. Called by the external source at init so a consumer
@@ -196,7 +231,7 @@ void escSensorExternalAge(uint8_t motorIndex)
     if (motorIndex < MAX_SUPPORTED_MOTORS
             && escSensorData[motorIndex].dataAge < ESC_DATA_INVALID) {
         escSensorData[motorIndex].dataAge++;
-        updateDebugDataAge();
+        combinedDataNeedsUpdate = true;
     }
 }
 #endif // ENABLE_DRONECAN_ESC
@@ -218,11 +253,6 @@ static void escSensorDataReceive(uint16_t c, void *data)
 
 bool escSensorInit(void)
 {
-    // No data until the first frame arrives, also when there is no port
-    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i = i + 1) {
-        escSensorData[i].dataAge = ESC_DATA_INVALID;
-    }
-
     const serialPortIdentifier_e port = escSensorConfig()->esc_sensor_uart;
     if (port == SERIAL_PORT_NONE) {
         return false;
@@ -232,6 +262,10 @@ bool escSensorInit(void)
 
     // Initialize serial port
     escSensorPort = openSerialPort(port, FUNCTION_ESC_SENSOR, escSensorDataReceive, NULL, ESC_SENSOR_BAUDRATE, MODE_RX, options);
+
+    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i = i + 1) {
+        escSensorData[i].dataAge = ESC_DATA_INVALID;
+    }
 
     return escSensorPort != NULL;
 }
@@ -276,7 +310,7 @@ static uint8_t decodeEscFrame(void)
         escSensorData[escSensorMotor].consumption = telemetryBuffer[5] << 8 | telemetryBuffer[6];
         escSensorData[escSensorMotor].rpm = telemetryBuffer[7] << 8 | telemetryBuffer[8];
 
-        updateDebugDataAge();
+        combinedDataNeedsUpdate = true;
 
         frameStatus = ESC_SENSOR_FRAME_COMPLETE;
 
@@ -296,7 +330,7 @@ static void increaseDataAge(void)
     if (escSensorData[escSensorMotor].dataAge < ESC_DATA_INVALID) {
         escSensorData[escSensorMotor].dataAge++;
 
-        updateDebugDataAge();
+        combinedDataNeedsUpdate = true;
     }
 }
 
@@ -368,11 +402,6 @@ void escSensorProcess(timeUs_t currentTimeUs)
 
             break;
     }
-}
-
-const escSensorData_t *escSensorGetData(uint8_t motorIndex)
-{
-    return motorIndex < MAX_SUPPORTED_MOTORS ? &escSensorData[motorIndex] : NULL;
 }
 
 #endif

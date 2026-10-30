@@ -39,9 +39,6 @@
 #include "sensors/adcinternal.h"
 #include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
-#ifdef USE_ESC_SENSOR
-#include "sensors/motor_telemetry.h"
-#endif
 
 #include "current.h"
 
@@ -215,13 +212,6 @@ void currentMeterVirtualRead(currentMeter_t *meter)
 #ifdef USE_ESC_SENSOR
 currentMeterESCState_t currentMeterESCState;
 
-// The meter needs current and consumption
-static bool isMotorTelemetryUsable(const motorTelemetry_t *telemetry)
-{
-    return motorTelemetryHas(telemetry, MOTOR_TELEMETRY_CURRENT)
-        && motorTelemetryHas(telemetry, MOTOR_TELEMETRY_CONSUMPTION);
-}
-
 void currentMeterESCInit(void)
 {
     memset(&currentMeterESCState, 0, sizeof(currentMeterESCState_t));
@@ -231,10 +221,10 @@ void currentMeterESCRefresh(int32_t lastUpdateAt)
 {
     UNUSED(lastUpdateAt);
 
-    const motorTelemetry_t *telemetry = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
-    if (isMotorTelemetryUsable(telemetry)) {
-        currentMeterESCState.amperage = telemetry->current + escSensorConfig()->offset / 10;
-        currentMeterESCState.mAhDrawn = telemetry->consumption + escSensorConfig()->offset * millis() / (1000.0f * 3600);
+    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
+    if (escData && escData->dataAge <= ESC_BATTERY_AGE_MAX) {
+        currentMeterESCState.amperage = escData->current + escSensorConfig()->offset / 10;
+        currentMeterESCState.mAhDrawn = escData->consumption + escSensorConfig()->offset * millis() / (1000.0f * 3600);
     } else {
         currentMeterESCState.amperage = 0;
         currentMeterESCState.mAhDrawn = 0;
@@ -250,11 +240,11 @@ void currentMeterESCReadCombined(currentMeter_t *meter)
 
 void currentMeterESCReadMotor(uint8_t motorNumber, currentMeter_t *meter)
 {
-    const motorTelemetry_t *telemetry = motorTelemetryGet(motorNumber);
-    if (isMotorTelemetryUsable(telemetry)) {
-        meter->amperage = telemetry->current;
-        meter->amperageLatest = telemetry->current;
-        meter->mAhDrawn = telemetry->consumption;
+    escSensorData_t *escData = getEscSensorData(motorNumber);
+    if (escData && escData->dataAge <= ESC_BATTERY_AGE_MAX) {
+        meter->amperage = escData->current;
+        meter->amperageLatest = escData->current;
+        meter->mAhDrawn = escData->consumption;
     } else {
         currentMeterReset(meter);
     }

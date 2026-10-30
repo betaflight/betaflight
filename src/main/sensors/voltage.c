@@ -45,7 +45,6 @@
 #include "sensors/adcinternal.h"
 #include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
-#include "sensors/motor_telemetry.h"
 
 #include "voltage.h"
 
@@ -259,7 +258,6 @@ typedef struct voltageMeterESCState_s {
 } voltageMeterESCState_t;
 
 static voltageMeterESCState_t voltageMeterESCState;
-
 #endif
 
 void voltageMeterESCInit(void)
@@ -273,9 +271,9 @@ void voltageMeterESCInit(void)
 void voltageMeterESCRefresh(void)
 {
 #ifdef USE_ESC_SENSOR
-    const motorTelemetry_t *telemetry = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
-    if (telemetry) {
-        voltageMeterESCState.voltageUnfiltered = motorTelemetryHas(telemetry, MOTOR_TELEMETRY_VOLTAGE) ? telemetry->voltage : 0;
+    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
+    if (escData) {
+        voltageMeterESCState.voltageUnfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage : 0;
         voltageMeterESCState.voltageDisplayFiltered = pt1FilterApply(&voltageMeterESCState.displayFilter, voltageMeterESCState.voltageUnfiltered);
     }
 #endif
@@ -287,9 +285,9 @@ void voltageMeterESCReadMotor(uint8_t motorNumber, voltageMeter_t *voltageMeter)
     UNUSED(motorNumber);
     voltageMeterReset(voltageMeter);
 #else
-    const motorTelemetry_t *telemetry = motorTelemetryGet(motorNumber);
-    if (motorTelemetryHas(telemetry, MOTOR_TELEMETRY_VOLTAGE)) {
-        voltageMeter->unfiltered = telemetry->voltage;
+    escSensorData_t *escData = getEscSensorData(motorNumber);
+    if (escData) {
+        voltageMeter->unfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage : 0;
         voltageMeter->displayFiltered = voltageMeter->unfiltered; // no filtering for ESC motors currently.
     } else {
         voltageMeterReset(voltageMeter);

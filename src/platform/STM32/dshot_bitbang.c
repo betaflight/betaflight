@@ -605,7 +605,16 @@ static bool bbDecodeTelemetry(void)
             DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 0, debug[0] + 1);  //!< Telemetry Packets Read
             dshotTelemetryState.readCount++;
 
-            dshotTelemetryReceived(motorIndex, rawValue);
+            if (rawValue != DSHOT_TELEMETRY_INVALID) {
+                // Check EDT enable or store raw value
+                if ((rawValue == 0x0E00) && (dshotCommandGetCurrent(motorIndex) == DSHOT_CMD_EXTENDED_TELEMETRY_ENABLE)) {
+                    dshotTelemetryState.motorState[motorIndex].telemetryTypes = 1 << DSHOT_TELEMETRY_TYPE_STATE_EVENTS;
+                } else {
+                    dshotTelemetryState.motorState[motorIndex].rawValue = rawValue;
+                }
+            } else {
+                dshotTelemetryState.invalidPacketCount++;
+            }
 #ifdef USE_DSHOT_TELEMETRY_STATS
             updateDshotTelemetryQuality(&dshotTelemetryQuality[motorIndex], rawValue != DSHOT_TELEMETRY_INVALID, currentTimeMs);
 #endif

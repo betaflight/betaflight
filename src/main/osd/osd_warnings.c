@@ -68,8 +68,8 @@
 #include "sensors/acceleration.h"
 #include "sensors/adcinternal.h"
 #include "sensors/battery.h"
-#include "sensors/sensors.h"
 #include "sensors/motor_telemetry.h"
+#include "sensors/sensors.h"
 
 const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 
@@ -128,7 +128,9 @@ static bool buildEscWarningMessage(char *warningText)
 
         if (telemetry) {
             char alarmChars[ESC_ALARM_CHARS_SIZE];
+            // Only show motor if it has alarms (problems only approach)
             if (checkEscAlarmConditions(telemetry, i, alarmChars)) {
+                // compute space needed: " " + digits(motor) + strlen(alarmChars)
                 const unsigned digits = (i + 1 >= 10) ? 2 : 1;
                 const unsigned needed = 1 + digits + strlen(alarmChars);
                 if (escErrorLength + needed >= OSD_WARNINGS_MAX_SIZE) {
@@ -244,6 +246,53 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         return;
     }
 
+#if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
+    // Show warning if we lose motor output, the ESC is overheating or excessive current draw
+    if (motorTelemetryIsEnabled() && osdWarnGetState(OSD_WARNING_ESC_FAIL) && ARMING_FLAG(ARMED)) {
+        if (buildEscWarningMessage(warningText)) {
+            *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+            *blinking = true;
+            return;
+        }
+    }
+#endif
+
+    // Warn when in flip over after crash mode
+    if (osdWarnGetState(OSD_WARNING_CRASHFLIP) && IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
+        if (isCrashFlipModeActive()) { // if was armed in crashflip mode
+            tfp_sprintf(warningText, CRASHFLIP_WARNING);
+            *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+            return;
+        } else if (!ARMING_FLAG(ARMED)) { // if disarmed, but crashflip mode is activated (not allowed / can't happen)
+            tfp_sprintf(warningText, "CRASHFLIP SW");
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            return;
+        }
+    }
+
+#ifdef USE_LAUNCH_CONTROL
+    // Warn when in launch control mode
+    if (osdWarnGetState(OSD_WARNING_LAUNCH_CONTROL) && isLaunchControlActive()) {
+#ifdef USE_ACC
+        if (sensors(SENSOR_ACC)) {
+            const int pitchAngle = constrain((attitude.raw[FD_PITCH] - accelerometerConfig()->accelerometerTrims.raw[FD_PITCH]) / 10, -90, 90);
+            tfp_sprintf(warningText, "LAUNCH %d", pitchAngle);
+        } else
+#endif // USE_ACC
+        {
+            tfp_sprintf(warningText, "LAUNCH");
+        }
+
+        // Blink the message if the throttle is within 10% of the launch setting
+        if ( calculateThrottlePercent() >= MAX(currentPidProfile->launchControlThrottlePercent - 10, 0)) {
+            *blinking = true;
+        }
+
+        *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+        return;
+    }
+#endif // USE_LAUNCH_CONTROL
+
     // RSSI
     if (osdWarnGetState(OSD_WARNING_RSSI) && (getRssiPercent() < osdConfig()->rssi_alarm)) {
         tfp_sprintf(warningText, "RSSI LOW");
@@ -294,86 +343,6 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         return;
     }
 
-#if ENABLE_FLIGHT_PLAN
-    if (osdWarnGetState(OSD_WARNING_AUTOPILOT_ABORT)
-        && FLIGHT_MODE(AUTOPILOT_MODE)
-        && flightPlanNavGetAbortReason() != FP_ABORT_NONE) {
-        switch (flightPlanNavGetAbortReason()) {
-        case FP_ABORT_ESTIMATOR:
-            tfp_sprintf(warningText, "WP GPS LOST");
-            break;
-        case FP_ABORT_STALLED:
-            tfp_sprintf(warningText, "WP STALLED");
-            break;
-        case FP_ABORT_FLYAWAY:
-            tfp_sprintf(warningText, "WP FLYAWAY");
-            break;
-        case FP_ABORT_HEADING:
-            tfp_sprintf(warningText, "WP HEADING");
-            break;
-        case FP_ABORT_MAG_FAULT:
-            tfp_sprintf(warningText, "WP MAG FAULT");
-            break;
-        default:
-            tfp_sprintf(warningText, "WP ABORT");
-            break;
-        }
-        *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
-        *blinking = true;
-        return;
-    }
-#endif
-
-    // ESC, crash flip and launch control: after the RX link, battery critical,
-    // CPU load and waypoint abort warnings, so that an ESC alarm that stays on
-    // does not hide them
-#if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
-    // Show warning if we lose motor output, the ESC is overheating or excessive current draw
-    if (motorTelemetryIsEnabled() && osdWarnGetState(OSD_WARNING_ESC_FAIL) && ARMING_FLAG(ARMED)) {
-        if (buildEscWarningMessage(warningText)) {
-            *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
-            *blinking = true;
-            return;
-        }
-    }
-#endif
-
-    // Warn when in flip over after crash mode
-    if (osdWarnGetState(OSD_WARNING_CRASHFLIP) && IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
-        if (isCrashFlipModeActive()) { // if was armed in crashflip mode
-            tfp_sprintf(warningText, CRASHFLIP_WARNING);
-            *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
-            return;
-        } else if (!ARMING_FLAG(ARMED)) { // if disarmed, but crashflip mode is activated (not allowed / can't happen)
-            tfp_sprintf(warningText, "CRASHFLIP SW");
-            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
-            return;
-        }
-    }
-
-#ifdef USE_LAUNCH_CONTROL
-    // Warn when in launch control mode
-    if (osdWarnGetState(OSD_WARNING_LAUNCH_CONTROL) && isLaunchControlActive()) {
-#ifdef USE_ACC
-        if (sensors(SENSOR_ACC)) {
-            const int pitchAngle = constrain((attitude.raw[FD_PITCH] - accelerometerConfig()->accelerometerTrims.raw[FD_PITCH]) / 10, -90, 90);
-            tfp_sprintf(warningText, "LAUNCH %d", pitchAngle);
-        } else
-#endif // USE_ACC
-        {
-            tfp_sprintf(warningText, "LAUNCH");
-        }
-
-        // Blink the message if the throttle is within 10% of the launch setting
-        if ( calculateThrottlePercent() >= MAX(currentPidProfile->launchControlThrottlePercent - 10, 0)) {
-            *blinking = true;
-        }
-
-        *displayAttr = DISPLAYPORT_SEVERITY_INFO;
-        return;
-    }
-#endif // USE_LAUNCH_CONTROL
-
 #ifdef USE_GPS_RESCUE
     if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_UNAVAILABLE)
         && ARMING_FLAG(ARMED)
@@ -405,7 +374,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
 #ifdef USE_POSITION_HOLD
     // A mission abort (e.g. the heading-fault level park) routes through the
-    // position-hold failure path too; let the specific WP warning above own it
+    // position-hold failure path too; let the specific WP warning below own it
     // rather than masking it with the generic POSHOLD FAIL.
     bool missionAbortActive = false;
 #if ENABLE_FLIGHT_PLAN
@@ -420,6 +389,34 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #endif
 
 #if ENABLE_FLIGHT_PLAN
+    if (osdWarnGetState(OSD_WARNING_AUTOPILOT_ABORT)
+        && FLIGHT_MODE(AUTOPILOT_MODE)
+        && flightPlanNavGetAbortReason() != FP_ABORT_NONE) {
+        switch (flightPlanNavGetAbortReason()) {
+        case FP_ABORT_ESTIMATOR:
+            tfp_sprintf(warningText, "WP GPS LOST");
+            break;
+        case FP_ABORT_STALLED:
+            tfp_sprintf(warningText, "WP STALLED");
+            break;
+        case FP_ABORT_FLYAWAY:
+            tfp_sprintf(warningText, "WP FLYAWAY");
+            break;
+        case FP_ABORT_HEADING:
+            tfp_sprintf(warningText, "WP HEADING");
+            break;
+        case FP_ABORT_MAG_FAULT:
+            tfp_sprintf(warningText, "WP MAG FAULT");
+            break;
+        default:
+            tfp_sprintf(warningText, "WP ABORT");
+            break;
+        }
+        *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
+        *blinking = true;
+        return;
+    }
+
 #ifndef USE_WING
     // Waypoint capture confirmations ("WP3 SET" / "WP2 DELETED" / "WP FULL").
     // Shown outside AUTOPILOT mode too - capture happens before engaging - and

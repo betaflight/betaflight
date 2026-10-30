@@ -42,7 +42,6 @@
 #include "config/feature.h"
 
 #include "drivers/motor_types.h"
-#include "drivers/time.h"
 #include "drivers/timer.h"
 
 #include "drivers/dshot_command.h"
@@ -250,36 +249,11 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
     }
 }
 
-static void dshotUpdateTelemetryData(uint8_t motorIndex, dshotTelemetryType_t type, uint32_t value, timeMs_t nowMs)
+static void dshotUpdateTelemetryData(uint8_t motorIndex, dshotTelemetryType_t type, uint32_t value)
 {
-    dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[motorIndex];
-
-    motorState->telemetryData[type] = value;
-    motorState->telemetryTypes |= (1 << type);
-    if (type < ARRAYLEN(motorState->updateMs)) {
-        motorState->updateMs[type] = nowMs;
-    }
-}
-
-// Store a received telemetry packet. The platform receive code calls this
-// for each packet. Only a valid packet is decoded, so a failed reception does
-// not repeat the previous value.
-void dshotTelemetryReceived(uint8_t motorIndex, uint32_t rawValue)
-{
-    if (rawValue == DSHOT_TELEMETRY_INVALID) {
-        dshotTelemetryState.invalidPacketCount++;
-        return;
-    }
-
-    dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[motorIndex];
-
-    // Check EDT enable or store raw value
-    if ((rawValue == 0x0E00) && (dshotCommandGetCurrent(motorIndex) == DSHOT_CMD_EXTENDED_TELEMETRY_ENABLE)) {
-        motorState->telemetryTypes = 1 << DSHOT_TELEMETRY_TYPE_STATE_EVENTS;
-    } else {
-        motorState->rawValue = rawValue;
-        motorState->rawValueNew = true;
-    }
+    // Update telemetry data
+    dshotTelemetryState.motorState[motorIndex].telemetryData[type] = value;
+    dshotTelemetryState.motorState[motorIndex].telemetryTypes |= (1 << type);
 }
 
 FAST_CODE_NOINLINE void updateDshotTelemetry(void)
@@ -294,37 +268,24 @@ FAST_CODE_NOINLINE void updateDshotTelemetry(void)
     }
 
     const unsigned motorCount = MIN(MAX_SUPPORTED_MOTORS, dshotMotorCount);
-    const timeMs_t nowMs = millis();
     uint32_t erpmTotal = 0;
     uint32_t rpmSamples = 0;
 
-    // Decode the new packets
+    // Decode all telemetry data now to discharge interrupt from this task
     for (uint8_t k = 0; k < motorCount; k++) {
-        dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[k];
-        if (!motorState->rawValueNew) {
-            continue;
-        }
-        motorState->rawValueNew = false;
-
         dshotTelemetryType_t type;
         uint32_t value;
 
         dshot_decode_telemetry_value(k, &value, &type);
 
         if (value != DSHOT_TELEMETRY_INVALID) {
-            dshotUpdateTelemetryData(k, type, value, nowMs);
+            dshotUpdateTelemetryData(k, type, value);
 
             if (type == DSHOT_TELEMETRY_TYPE_eRPM) {
                 dshotRpm[k] = erpmToRpm(value);
+                erpmTotal += value;
+                rpmSamples++;
             }
-        }
-    }
-
-    // Average of the last eRPM of each motor with RPM telemetry
-    for (uint8_t k = 0; k < motorCount; k++) {
-        if (isDshotMotorTelemetryActive(k)) {
-            erpmTotal += dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM];
-            rpmSamples++;
         }
     }
 
