@@ -545,18 +545,23 @@ void spiInternalStartDMA(const extDevice_t *dev)
     if (IS_BDMA_DESCRIPTOR(bus->dmaTx)) {
         // BDMA channel-based DMA for D3 domain peripherals (e.g., SPI6)
         dmaRx->userParam = (uint32_t)dev;
+        dmaTx->userParam = (uint32_t)dev;
 
         DMA_CLEAR_FLAG(dmaTx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
         DMA_CLEAR_FLAG(dmaRx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
 
+        BDMA_Channel_TypeDef *channelRegsTx = (BDMA_Channel_TypeDef *)dmaTx->ref;
         BDMA_Channel_TypeDef *channelRegsRx = (BDMA_Channel_TypeDef *)dmaRx->ref;
 
         // Disable channels to enable update
-        ((BDMA_Channel_TypeDef *)dmaTx->ref)->CCR = 0U;
+        channelRegsTx->CCR = 0U;
         channelRegsRx->CCR = 0U;
 
-        // Use the Rx interrupt as this occurs once the SPI operation is complete
+        // Use the Rx interrupt as this occurs once the SPI operation is complete. A transfer
+        // error disables the channel without a completion, so it must interrupt on both.
         LL_EX_BDMA_EnableIT_TC(channelRegsRx);
+        LL_EX_BDMA_EnableIT_TE(channelRegsRx);
+        LL_EX_BDMA_EnableIT_TE(channelRegsTx);
 
         // Update channels
         LL_BDMA_Init(dmaTx->dma, dmaTx->stream, (LL_BDMA_InitTypeDef *)bus->dmaInitTx);

@@ -152,6 +152,11 @@ __STATIC_INLINE void LL_EX_BDMA_EnableIT_TC(BDMA_Channel_TypeDef *BDMAx_Channely
     SET_BIT(BDMAx_Channely->CCR, BDMA_CCR_TCIE);
 }
 
+__STATIC_INLINE void LL_EX_BDMA_EnableIT_TE(BDMA_Channel_TypeDef *BDMAx_Channely)
+{
+    SET_BIT(BDMAx_Channely->CCR, BDMA_CCR_TEIE);
+}
+
 __STATIC_INLINE void LL_EX_BDMA_SetDataLength(BDMA_Channel_TypeDef *BDMAx_Channely, uint32_t NbData)
 {
     BDMAx_Channely->CNDTR = NbData;
