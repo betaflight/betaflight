@@ -20,11 +20,7 @@
  */
 
 /*
- * FlexSPI octal-NOR erase/program interface, ported from Betaflight PR #15853
- * (PetervdPerk, GPLv3). The i.MXRT and i.MX95 FlexSPI IP is identical, so the
- * same header serves both; on the NAVQ95 (no-SDK) port the register map + masks
- * + FlexSPI_AMBA_BASE + OCRAM_CODE come from platform/flexspi_regs.h instead of
- * the MCUXpresso device header.
+ * FlexSPI octal NOR erase and program interface.
  */
 
 #pragma once
@@ -90,7 +86,3 @@ bool flexspiNorProgramPage(uint32_t address, const uint32_t *data);
 // Make the configuration region and its backup readable again after erases and
 // programs; nothing may read that range from the first write until this returns.
 bool flexspiNorFlush(void);
-
-// Non-destructive read of the NOR status register (RDSR) via the IP engine, to
-// prove M7<->NOR command comms. Requires a prior successful flexspiNorInit().
-bool flexspiNorReadStatus(uint32_t *status);

@@ -1,10 +1,25 @@
 /*
- * io_def_generated.h - IO pin definitions for NXP i.MX 95 (NavQ95), Cortex-M7.
+ * This file is part of Betaflight.
  *
- * i.MX 95 M7 has RGPIO1..RGPIO5. We map GPIO1=PA .. GPIO5=PE, matching
- * Betaflight's DEFIO_TAG_MAKE(gpioid, pin) scheme (gpioid 0-based).
- * This mirrors the IMXRT port's generated table, sized for the i.MX 95's 5 ports.
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
+
+// RGPIO1..RGPIO5 map to ports PA..PE.
 
 #pragma once
 

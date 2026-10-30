@@ -20,18 +20,7 @@
  */
 
 /*
- * i.MX 95 TPM (Timer/PWM Module) register map + bit masks.
- *
- * Raw struct transcribed from the standard NXP TPM block (identical layout on
- * Kinetis / i.MX RT / i.MX 9 — PERI_TPM.h). We deliberately do NOT pull the
- * MCUXpresso SDK; this header is self-contained, matching the register-level
- * approach used for LPUART/LPSPI on this port.
- *
- * i.MX 95 TPM base addresses (imx95_memorymap.h):
- *   TPM1 0x44310000  TPM2 0x44320000  TPM3 0x424E0000
- *   TPM4 0x424F0000  TPM5 0x42500000  TPM6 0x42510000
- * Each TPM has up to 4 channels (CONTROLS[0..3] = {CnSC, CnV}). We use TPM3 for
- * the 4 motor outputs (CH0..CH3).
+ * NXP TPM (Timer/PWM Module) registers, as found on the i.MX 95.
  */
 
 #pragma once
@@ -65,10 +54,10 @@ typedef struct {
     volatile uint32_t CONF;         /* 0x84 Configuration         */
 } TPM_Type;
 
-/* ── GLOBAL (0x08) ─────────────────────────────────────────────────────── */
+// GLOBAL
 #define TPM_GLOBAL_RST          (1u << 1)   /* software reset of all logic   */
 
-/* ── SC: Status and Control (0x10) ─────────────────────────────────────── */
+// SC
 #define TPM_SC_PS_MASK          (7u << 0)   /* prescale = 2^PS               */
 #define TPM_SC_PS(n)            (((n) & 7u) << 0)
 #define TPM_SC_CMOD_MASK        (3u << 3)   /* clock mode                    */
@@ -78,7 +67,7 @@ typedef struct {
 #define TPM_SC_TOF              (1u << 7)   /* timer overflow flag (w1c)     */
 #define TPM_SC_DMA              (1u << 8)   /* DMA enable                    */
 
-/* ── CnSC: channel mode (0x20 + 8*n) ───────────────────────────────────── */
+// CnSC
 #define TPM_CnSC_DMA            (1u << 0)
 #define TPM_CnSC_ELSA           (1u << 2)
 #define TPM_CnSC_ELSB           (1u << 3)
@@ -87,9 +76,5 @@ typedef struct {
 #define TPM_CnSC_CHIE           (1u << 6)
 #define TPM_CnSC_CHF            (1u << 7)   /* channel flag (w1c)            */
 
-/*
- * Edge-aligned PWM, high-true pulses: MSB=1, MSA=0, ELSB=1, ELSA=0.
- * The channel drives HIGH from CNT=0 until CNT==CnV, then LOW until wrap.
- * (A servo/ESC pulse width = CnV / f_tpm.)
- */
+// Edge-aligned PWM, output high from CNT = 0 until CNT == CnV.
 #define TPM_CnSC_PWM_HIGH       (TPM_CnSC_MSB | TPM_CnSC_ELSB)

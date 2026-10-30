@@ -20,36 +20,20 @@
  */
 
 /*
- * NavQ95 (i.MX 95 M7) FlexSPI1 controller registers, hand-written for the
- * no-SDK NAVQ95 port (mirrors the SDK FLEXSPI_Type / masks that
- * NXP/flexspi_nor_imx95.c uses, ported from Betaflight PR #15853).
+ * i.MX 95 FlexSPI1 registers used by flexspi_nor_imx95.c.
  *
- *   FlexSPI1 control registers : 0x425E0000 (IMX9_FLEXSPI_BASE)
- *   FlexSPI1 AMBA (NOR window)  : 0x28000000 (IMX9_FLEXSPI1_BASE), alias 0x02000000
- *
- * We XIP from the 0x02020000 low alias, but the FlexSPI IP command offset
- * (IPCR0 = address - FlexSPI_AMBA_BASE) is a NOR byte offset, so it uses the
- * PRIMARY window base 0x28000000. The config partition the writer touches is
- * therefore addressed in the 0x28xxxxxx space (see navq95_flexspi.ld
- * __config_start / __config_end).
- *
- * Only the fields/masks the NOR driver references are defined. Register offsets
- * follow the standard i.MX FlexSPI block layout (same as i.MXRT, which uses the
- * identical IP).
+ * The code runs from the 0x02000000 alias of the NOR, but IP command addresses
+ * are offsets from the primary window at 0x28000000, so the config region is
+ * addressed in that space.
  */
 
 #pragma once
 
 #include <stdint.h>
 
-/* ── FlexSPI1 bases ───────────────────────────────────────────────────────── */
 #define FlexSPI_AMBA_BASE           0x28000000u     /* NOR memory-mapped window  */
 #define NAVQ95_FLEXSPI_BASE         0x425E0000u     /* controller registers      */
 
-/* ── FlexSPI register block (offsets per the i.MX / i.MXRT FlexSPI IP, matching
- * the MCUXpresso FLEXSPI_Type) ──────────────────────────────────────────────
- * Only members used by the NOR writer are named; reserved gaps use uint8_t[]
- * so every named register lands at its documented offset. */
 typedef struct {
     volatile uint32_t MCR0;            /* 0x000 Module Control 0            */
     volatile uint32_t MCR1;            /* 0x004                              */
@@ -94,54 +78,52 @@ typedef struct {
 
 #define FLEXSPI                     ((FLEXSPI_Type *)NAVQ95_FLEXSPI_BASE)
 
-/* ── MCR0 ─────────────────────────────────────────────────────────────────── */
+// MCR0
 #define FLEXSPI_MCR0_SWRESET_MASK        (1u << 0)
 
-/* ── INTR (write-1-clear) ─────────────────────────────────────────────────── */
+// INTR (write 1 to clear)
 #define FLEXSPI_INTR_IPCMDDONE_MASK      (1u << 0)
 #define FLEXSPI_INTR_IPCMDGE_MASK        (1u << 1)
 #define FLEXSPI_INTR_IPCMDERR_MASK       (1u << 3)
 #define FLEXSPI_INTR_IPRXWA_MASK         (1u << 5)   /* RX FIFO watermark avail */
 #define FLEXSPI_INTR_IPTXWE_MASK         (1u << 6)   /* TX FIFO watermark empty */
 
-/* ── LUTCR ────────────────────────────────────────────────────────────────── */
+// LUTCR
 #define FLEXSPI_LUTCR_LOCK_MASK          (1u << 0)
 #define FLEXSPI_LUTCR_UNLOCK_MASK        (1u << 1)
 
-/* ── FLSHCR2 (per-port; [0] = A1) ─────────────────────────────────────────── */
+// FLSHCR2 (per port, [0] = A1)
 #define FLEXSPI_FLSHCR2_ARDSEQID_SHIFT   16
 #define FLEXSPI_FLSHCR2_ARDSEQID_MASK    (0x1Fu << FLEXSPI_FLSHCR2_ARDSEQID_SHIFT)
 #define FLEXSPI_FLSHCR2_ARDSEQNUM_SHIFT  21
 #define FLEXSPI_FLSHCR2_ARDSEQNUM_MASK   (0x7u << FLEXSPI_FLSHCR2_ARDSEQNUM_SHIFT)
 #define FLEXSPI_FLSHCR2_CLRINSTRPTR_MASK (1u << 31)
 
-/* ── IPCR1 field builders (ISEQID[31:16], ISEQNUM[26:24], IDATSZ[15:0]) ────── */
+// IPCR1
 #define FLEXSPI_IPCR1_IDATSZ(x)          ((uint32_t)(x) & 0xFFFFu)
 #define FLEXSPI_IPCR1_ISEQID(x)          (((uint32_t)(x) & 0x1Fu) << 16)
 #define FLEXSPI_IPCR1_ISEQNUM(x)         (((uint32_t)(x) & 0x7u) << 24)
 
-/* ── IPCMD ────────────────────────────────────────────────────────────────── */
+// IPCMD
 #define FLEXSPI_IPCMD_TRG_MASK           (1u << 0)
 
-/* ── IP FIFO control ──────────────────────────────────────────────────────── */
+// IP FIFO control
 #define FLEXSPI_IPTXFCR_CLRIPTXF_MASK    (1u << 0)
 #define FLEXSPI_IPRXFCR_CLRIPRXF_MASK    (1u << 0)
 
-/* ── IPRXFSTS (FILL = 64-bit words available, [7:0]) ──────────────────────── */
+// IPRXFSTS (FILL = 64-bit words available)
 #define FLEXSPI_IPRXFSTS_FILL_MASK       (0xFFu << 0)
 
-/* ── STS0 (arbiter / sequence idle) ───────────────────────────────────────── */
+// STS0
 #define FLEXSPI_STS0_SEQIDLE_MASK        (1u << 0)
 #define FLEXSPI_STS0_ARBIDLE_MASK        (1u << 1)
 
-/* ── STS2 (A/B sample + reference DLL lock) ───────────────────────────────── */
+// STS2
 #define FLEXSPI_STS2_AREFLOCK_MASK       (1u << 1)
 #define FLEXSPI_STS2_ASLVLOCK_MASK       (1u << 0)
 
-/* ── DLLCR[0] ─────────────────────────────────────────────────────────────── */
+// DLLCR
 #define FLEXSPI_DLLCR_DLLEN_MASK         (1u << 0)
 
-/* ── Code that erases/programs the NOR must NOT execute from it: place such
- *    functions in the OCRAM section the linker copies out of flash at reset.
- *    (See navq95_flexspi.ld .ocram_text and the startup copy loop.) */
+// Code that erases or programs the NOR must not run from it; it is copied to OCRAM at reset.
 #define OCRAM_CODE                       __attribute__((section(".ocram_text"), noinline))

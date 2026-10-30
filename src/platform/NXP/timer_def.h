@@ -19,23 +19,13 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * timer_def.h — Timer definitions for the NavQ95 (NXP i.MX 95, Cortex-M7).
- *
- * drivers/timer.h includes this header unconditionally (pulled in transitively
- * via dshot.h and dma_reqmap.h). No generic timer channels are defined yet; the
- * i.MX 95 FlexPWM/GPT bring-up is handled by a dedicated driver, as on the
- * RT1176 (IMXRT) port.
- */
-
 #pragma once
 
 #include "platform.h"
 #include "common/utils.h"
 #include "drivers/timer_types.h"
 
-/* i.MX 95 does not use the STM32-style DEF_TIM macro system. Provide only the
- * macro the generic timer code references so the header compiles. */
+// No generic timer channels; only the macro the common timer code references.
 #if defined(USE_TIMER_MGMT)
 #define TIMER_GET_IO_TAG(pin) DEFIO_TAG_E(pin)
 #else

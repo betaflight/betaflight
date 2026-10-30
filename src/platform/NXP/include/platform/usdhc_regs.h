@@ -20,22 +20,13 @@
  */
 
 /*
- * usdhc_regs.h — minimal i.MX 95 uSDHC register block + bitfields for the
- * bare-metal SD-card driver (sdio_usdhc_navq95.c). We do not use the MCUXpresso
- * SDK, so this provides the USDHC_Type struct + USDHC_* masks the driver needs.
- * Offsets/bitfields are from the NuttX i.MX9 header
- * (robotics-nuttx arch/arm64/src/imx9/hardware/imx9_usdhc.h), which is the
- * authoritative description of the uSDHC IP on this SoC.
- *
- * Base addresses (i.MX95): uSDHC1 0x42850000, uSDHC2 0x42860000, uSDHC3 0x428B0000.
+ * i.MX 95 uSDHC registers used by sdio_usdhc_navq95.c.
  */
 
 #pragma once
 
 #include <stdint.h>
 
-/* Register block. Only the registers the driver touches are named; the rest are
- * reserved padding so the named ones land at the correct offsets. */
 typedef struct {
     volatile uint32_t DS_ADDR;        /* 0x00 SDMA system address             */
     volatile uint32_t BLK_ATT;        /* 0x04 block attributes (size + count) */
@@ -75,11 +66,11 @@ typedef struct {
 #define USDHC2_BASE   0x42860000u
 #define USDHC3_BASE   0x428B0000u
 
-/* ── BLK_ATT ───────────────────────────────────────────────────────────────*/
+// BLK_ATT
 #define USDHC_BLK_ATT_BLKSIZE(n)   ((uint32_t)(n) & 0x1FFFu)
 #define USDHC_BLK_ATT_BLKCNT(n)    (((uint32_t)(n) & 0xFFFFu) << 16)
 
-/* ── CMD_XFR_TYP ───────────────────────────────────────────────────────────*/
+// CMD_XFR_TYP
 #define USDHC_CMD_XFR_TYP_DMAEN_MASK   (1u << 0)
 #define USDHC_CMD_XFR_TYP_BCEN_MASK    (1u << 1)
 #define USDHC_CMD_XFR_TYP_AC12EN_MASK  (1u << 2)
@@ -91,24 +82,24 @@ typedef struct {
 #define USDHC_CMD_XFR_TYP_DPSEL_MASK   (1u << 21)
 #define USDHC_CMD_XFR_TYP_CMDINX(n)    (((uint32_t)(n) & 0x3Fu) << 24)
 
-/* ── MIX_CTRL (same bit layout as the XFR_TYP transfer-mode half) ──────────*/
+// MIX_CTRL (same layout as the CMD_XFR_TYP transfer-mode bits)
 #define USDHC_MIX_CTRL_DMAEN_MASK      (1u << 0)
 #define USDHC_MIX_CTRL_BCEN_MASK       (1u << 1)
 #define USDHC_MIX_CTRL_AC12EN_MASK     (1u << 2)
 #define USDHC_MIX_CTRL_DTDSEL_MASK     (1u << 4)
 #define USDHC_MIX_CTRL_MSBSEL_MASK     (1u << 5)
 
-/* ── PRES_STATE ────────────────────────────────────────────────────────────*/
+// PRES_STATE
 #define USDHC_PRES_STATE_CIHB_MASK     (1u << 0)   /* command inhibit (CMD)   */
 #define USDHC_PRES_STATE_CDIHB_MASK    (1u << 1)   /* command inhibit (DAT)   */
 #define USDHC_PRES_STATE_SDSTB_MASK    (1u << 3)   /* SD clock stable         */
 #define USDHC_PRES_STATE_CINS_MASK     (1u << 16)  /* card inserted           */
 
-/* ── WTMK_LVL ──────────────────────────────────────────────────────────────*/
+// WTMK_LVL
 #define USDHC_WTMK_LVL_RD_WML(n)       ((uint32_t)(n) & 0xFFu)
 #define USDHC_WTMK_LVL_WR_WML(n)       (((uint32_t)(n) & 0xFFu) << 16)
 
-/* ── PROT_CTRL ─────────────────────────────────────────────────────────────*/
+// PROT_CTRL
 #define USDHC_PROT_CTRL_DTW_MASK       (3u << 1)
 #define USDHC_PROT_CTRL_DTW(n)         (((uint32_t)(n) & 3u) << 1)   /* 0=1bit 1=4bit 2=8bit */
 #define USDHC_PROT_CTRL_EMODE_MASK     (3u << 4)
@@ -116,7 +107,7 @@ typedef struct {
 #define USDHC_PROT_CTRL_DMASEL_MASK    (3u << 8)
 #define USDHC_PROT_CTRL_DMASEL(n)      (((uint32_t)(n) & 3u) << 8)   /* 2 = ADMA2 */
 
-/* ── SYS_CTRL ──────────────────────────────────────────────────────────────*/
+// SYS_CTRL
 #define USDHC_SYS_CTRL_DVS(n)          (((uint32_t)(n) & 0xFu) << 4)
 #define USDHC_SYS_CTRL_DVS_MASK        (0xFu << 4)
 #define USDHC_SYS_CTRL_SDCLKFS(n)      (((uint32_t)(n) & 0xFFu) << 8)
@@ -128,7 +119,7 @@ typedef struct {
 #define USDHC_SYS_CTRL_RSTD_MASK       (1u << 26)
 #define USDHC_SYS_CTRL_INITA_MASK      (1u << 27)
 
-/* ── INT_STATUS / INT_STATUS_EN / INT_SIGNAL_EN (shared layout) ────────────*/
+// INT_STATUS, INT_STATUS_EN, INT_SIGNAL_EN
 #define USDHC_INT_STATUS_CC_MASK       (1u << 0)   /* command complete        */
 #define USDHC_INT_STATUS_TC_MASK       (1u << 1)   /* transfer complete       */
 #define USDHC_INT_STATUS_BGE_MASK      (1u << 2)   /* block gap event         */

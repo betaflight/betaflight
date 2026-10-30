@@ -23,13 +23,6 @@
  * Erase and program of the octal NOR through FlexSPI IP commands, with the controller in mcuboot's 8D-8D-8D mode.
  * Runs from OCRAM with interrupts masked and writes only the configuration region and its backup.
  * The MX25UM51345G octal DTR sequences sit in the top four LUT slots.
- *
- * Ported from Betaflight PR #15853 (PetervdPerk, GPLv3) with no logic change;
- * on the NAVQ95 no-SDK port the FlexSPI register map + masks come from
- * flexspi_nor_imxrt.h -> platform/flexspi_regs.h instead of the MCUXpresso
- * device header, and __config_start/__config_end are defined by
- * navq95_flexspi.ld. The NavQ95 NOR is MX25UM51345GXDI00 (same die as the
- * MX25UM51345G, identical command set / 256 B page / 4 KB sector).
  */
 
 #include <stdbool.h>
@@ -41,12 +34,6 @@
 
 #include "flexspi_nor_imxrt.h"
 
-// The configuration region lives in the NOR, laid out by navq95_flexspi.ld.
-// Under CONFIG_IN_FLASH, common_post.h already declares __config_start /
-// __config_end as "struct linker_symbol" (take their ADDRESS as the NOR byte
-// address). Do NOT re-declare them here (conflicting type). The writable range
-// is [&__config_start, &__config_end) plus an equal-size backup immediately
-// after (Peter's convention), so the range guard permits either half.
 extern struct linker_symbol __config_start;
 extern struct linker_symbol __config_end;
 
@@ -289,37 +276,6 @@ OCRAM_CODE bool flexspiNorProgramPage(uint32_t address, const uint32_t *data)
     }
 
     return flexspiNorWrite(address, NOR_SEQ_PAGE_PROGRAM, data, FLEXSPI_NOR_PAGE_SIZE);
-}
-
-/* Non-destructive read of the NOR status register (RDSR) via the IP engine,
- * using the write-LUT's read-status slot. Returns false if the controller or
- * part did not respond; *status holds the WIP/WEL byte on success. Requires a
- * prior successful flexspiNorInit() (which installs NOR_SEQ_READ_STATUS).
- * Used by the boot probe to prove M7<->NOR IP comms before any erase/write. */
-OCRAM_CODE bool flexspiNorReadStatus(uint32_t *status)
-{
-    if (!norReady || !status) {
-        return false;
-    }
-
-    const uint32_t primask = __get_PRIMASK();
-    __disable_irq();
-
-    bool ok = flexspiNorCommand(NOR_SEQ_READ_STATUS, 0, NULL, 4);
-    if (ok) {
-        uint32_t spin = FLEXSPI_NOR_SPIN;
-        while (!(FLEXSPI->IPRXFSTS & FLEXSPI_IPRXFSTS_FILL_MASK) && --spin) {
-        }
-        if (spin) {
-            *status = FLEXSPI->RFDR[0];
-            FLEXSPI->INTR = FLEXSPI_INTR_IPRXWA_MASK;
-        } else {
-            ok = false;
-        }
-    }
-
-    __set_PRIMASK(primask);
-    return ok;
 }
 
 #endif /* NAVQ95_USE_FLEXSPI_NOR */

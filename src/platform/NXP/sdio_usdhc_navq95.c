@@ -20,26 +20,12 @@
  */
 
 /*
- * sdio_usdhc_navq95.c — SD card over the i.MX 95 uSDHC controller for the
- * Betaflight SDIO baremetal glue (drivers/sdcard_sdio_baremetal.c -> SD_* HAL
- * in drivers/sdmmc_sdio.h). Data moves by programmed I/O through the
- * controller's DATA_BUFF port (the CPU drains/fills the FIFO), and completion
- * is polled from INT_STATUS.
+ * SD card on the i.MX 95 uSDHC2 controller, implementing the SD_* interface
+ * used by drivers/sdcard_sdio_baremetal.c.
  *
- * The command sequence / clock-divider / card-identify LOGIC is ported
- * from Betaflight PR #15853 (PetervdPerk, src/platform/NXP/sdio_usdhc.c, GPLv3).
- * The three platform dependencies of that file are replaced for NavQ95:
- *   (1) the MCUXpresso-SDK USDHC1-> register block  -> raw USDHC_Type + masks
- *       (include/platform/usdhc_regs.h, offsets from NuttX imx9_usdhc.h);
- *   (2) nxpClockHz()/nxpClockGateEnable()           -> SCMI clock-enable to the
- *       System Manager (the M7 cannot gate CCM roots directly); the root rate
- *       is measured at init (see usdhcMeasureRootHz);
- *   (3) nxpUsdhcPins/NXP_PIN_MUX/nxpIomuxConfigPin   -> SCMI PINCTRL_CONFIG_SET
- *       to the SM (the M7 cannot write IOMUXC directly), hardcoded SD pads.
- *
- * Wiring (NavQ95 schematic): the microSD slot is on uSDHC2 (0x42860000) via the
- * dedicated SD2 pads (SD2_CLK / SD2_CMD / SD2_DATA0..3 / SD2_CD_B), ALT0, no
- * SELECT_INPUT daisy. uSDHC2 clock root = CCM root 118.
+ * Transfers use polled programmed I/O through the data port. The *_DMA entry
+ * points complete the whole transfer before returning, and the check functions
+ * then report it done.
  */
 
 #include <stdbool.h>
@@ -63,45 +49,27 @@
 
 #include "platform/usdhc_regs.h"
 
-/* ════════════════════════════════════════════════════════════════════════════
- * NavQ95 platform wiring (uSDHC2 / SD2 pads; see file header).
- * ════════════════════════════════════════════════════════════════════════════ */
+#include "navq95_scmi.h"
 
-/* Controller instance. The schematic wires the microSD to uSDHC2 (SD2_* nets). */
 #define NAVQ95_USDHC            ((USDHC_Type *)USDHC2_BASE)
-/* uSDHC2 CCM clock root index. */
+
 #define NAVQ95_USDHC_CLK_ROOT   118u
 
-/* Default uSDHC2 root rate in Hz, used until the root is measured at init. The
- * actual rate depends on the boot flow (e.g. ~172 MHz after a cold boot,
- * ~345 MHz after a previous OS session), so it is never assumed. */
+// Nominal root rate. The real rate is measured at init and used if it is plausible.
 #define NAVQ95_USDHC_ROOT_HZ    345600000u
-/* Plausible window for a measured root rate; outside it the default is kept. */
+
 #define NAVQ95_USDHC_ROOT_MIN   50000000u
 #define NAVQ95_USDHC_ROOT_MAX   500000000u
 
-/* ── SCMI transport (shared with platform_stubs.c, re-declared here; the SMT
- * channel is polled/synchronous so there is no concurrency). These helpers are
- * defined in platform_stubs.c. ───────────────────────────────────────────── */
-extern int  navq95_scmi_clock_enable_ex(uint32_t clockRootId);
-extern int  navq95_scmi_pinmux_ex(uint32_t muxReg, uint32_t muxMode, uint32_t sion,
-                                  uint32_t padReg, uint32_t padVal);
-#define navq95_scmi_clock_enable  navq95_scmi_clock_enable_ex
-#define navq95_scmi_pinmux        navq95_scmi_pinmux_ex
-
-/*
- * SD2 pad CONFIG values. MUX/PAD are absolute IOMUXC addresses (base below);
- * ALT = 0. The SM writes the SCMI CONFIG value into PAD_CTL unmodified, so
- * these are raw register values: DSE[6:1], FSEL1[8:7], PU bit9, PD bit10,
- * OD bit11, HYS bit12. CMD + DATA use a pull-up + hysteresis (the board also
- * has external 10K pull-ups on the SD2 lines).
- */
 #define IOMUXC_BASE             0x443C0000u
-#define NAVQ95_SD_PAD_CLK       0x001Eu   /* DSE x4                       */
-#define NAVQ95_SD_PAD_DATA      0x121Eu   /* HYS | PU | DSE x4            */
-#define NAVQ95_SD_PAD_CD        0x1200u   /* HYS | PU (input)             */
+/*
+ * Pad control values, passed to the System Manager unshifted. CLK: slow slew,
+ * drive strength 4. CMD/DATA: the same plus pull-up and hysteresis. CD: input.
+ */
+#define NAVQ95_SD_PAD_CLK       0x001Eu
+#define NAVQ95_SD_PAD_DATA      0x121Eu
+#define NAVQ95_SD_PAD_CD        0x1200u
 
-/* SD2_CD_B (card detect), ALT0 USDHC2_CD_B, no SELECT_INPUT daisy. */
 #define NAVQ95_SD_CD_MUX        (IOMUXC_BASE + 0x01A0u)
 #define NAVQ95_SD_CD_PAD        (IOMUXC_BASE + 0x03A4u)
 
@@ -109,31 +77,19 @@ typedef struct {
     uint32_t muxReg;
     uint32_t padReg;
     uint32_t padVal;
-    uint8_t  dataLine;   /* 1 = CMD/DAT (input path forced with SION); 0 = CLK */
+    uint8_t  dataLine;
 } navq95SdPad_t;
 
-/* ALT0 for all SD2 signals (i.MX95 IOMUXC MUX_CTL_SD2_* / PAD_CTL_SD2_*), no
- * SELECT_INPUT/daisy for the USDHC2 function. Order: CLK, CMD, DAT0..DAT3.
- *   SD2_CLK    MUX 0x01A4  PAD 0x03A8
- *   SD2_CMD    MUX 0x01A8  PAD 0x03AC
- *   SD2_DATA0  MUX 0x01AC  PAD 0x03B0
- *   SD2_DATA1  MUX 0x01B0  PAD 0x03B4
- *   SD2_DATA2  MUX 0x01B4  PAD 0x03B8
- *   SD2_DATA3  MUX 0x01B8  PAD 0x03BC
- */
+// CLK, CMD, DATA0..DATA3.
 static const navq95SdPad_t navq95SdPads[] = {
-    { IOMUXC_BASE + 0x01A4u, IOMUXC_BASE + 0x03A8u, NAVQ95_SD_PAD_CLK,  0 }, /* CLK  */
-    { IOMUXC_BASE + 0x01A8u, IOMUXC_BASE + 0x03ACu, NAVQ95_SD_PAD_DATA, 1 }, /* CMD  */
-    { IOMUXC_BASE + 0x01ACu, IOMUXC_BASE + 0x03B0u, NAVQ95_SD_PAD_DATA, 1 }, /* DAT0 */
-    { IOMUXC_BASE + 0x01B0u, IOMUXC_BASE + 0x03B4u, NAVQ95_SD_PAD_DATA, 1 }, /* DAT1 */
-    { IOMUXC_BASE + 0x01B4u, IOMUXC_BASE + 0x03B8u, NAVQ95_SD_PAD_DATA, 1 }, /* DAT2 */
-    { IOMUXC_BASE + 0x01B8u, IOMUXC_BASE + 0x03BCu, NAVQ95_SD_PAD_DATA, 1 }, /* DAT3 */
+    { IOMUXC_BASE + 0x01A4u, IOMUXC_BASE + 0x03A8u, NAVQ95_SD_PAD_CLK,  0 },
+    { IOMUXC_BASE + 0x01A8u, IOMUXC_BASE + 0x03ACu, NAVQ95_SD_PAD_DATA, 1 },
+    { IOMUXC_BASE + 0x01ACu, IOMUXC_BASE + 0x03B0u, NAVQ95_SD_PAD_DATA, 1 },
+    { IOMUXC_BASE + 0x01B0u, IOMUXC_BASE + 0x03B4u, NAVQ95_SD_PAD_DATA, 1 },
+    { IOMUXC_BASE + 0x01B4u, IOMUXC_BASE + 0x03B8u, NAVQ95_SD_PAD_DATA, 1 },
+    { IOMUXC_BASE + 0x01B8u, IOMUXC_BASE + 0x03BCu, NAVQ95_SD_PAD_DATA, 1 },
 };
 #define NAVQ95_SD_ALT           0u
-
-/* ════════════════════════════════════════════════════════════════════════════
- * Controller driver (command sequence and card identification from PR #15853).
- * ════════════════════════════════════════════════════════════════════════════ */
 
 #define U   NAVQ95_USDHC
 
@@ -185,9 +141,7 @@ static const navq95SdPad_t navq95SdPads[] = {
                                    | USDHC_INT_COMMAND_ERRORS    \
                                    | USDHC_INT_DATA_ERRORS)
 
-/* Data moves by programmed I/O through DATA_BUFF: the CPU drains/fills the
- * controller FIFO, so no buffer has to be reachable by the uSDHC bus master.
- * Watermark = 128 words = one 512-byte block per BRR/BWR. */
+// One 512-byte block per buffer-ready event.
 #define USDHC_PIO_WML_WORDS         128u
 
 typedef enum {
@@ -211,6 +165,7 @@ typedef struct usdhcState_s {
 
 static usdhcState_t usdhc;
 
+// Last error, kept for debugging.
 #define USDHC_NO_COMMAND    0xFFu
 
 static volatile struct {
@@ -219,8 +174,6 @@ static volatile struct {
     uint32_t detail;
 } usdhcLastError;
 
-/* Raw INT_STATUS captured at the end of the last command; recorded as the
- * error detail when a command fails. */
 static volatile uint32_t usdhcLastCmdStatus;
 
 static SD_Error_t usdhcRecordError(uint8_t command, SD_Error_t error, uint32_t detail)
@@ -268,7 +221,6 @@ static bool usdhcWaitFlag(const volatile uint32_t *reg, uint32_t mask, bool set)
     return true;
 }
 
-/* uSDHC root rate used for the divider math; set from the measurement at init. */
 static uint32_t usdhcRootHz = NAVQ95_USDHC_ROOT_HZ;
 
 static bool usdhcSetClock(uint32_t targetHz)
@@ -282,11 +234,6 @@ static bool usdhcSetClock(uint32_t targetHz)
     return usdhcWaitFlag(&U->PRES_STATE, USDHC_PRES_STATE_SDSTB_MASK, true);
 }
 
-/*
- * Mux the SD2 pads over SCMI (the SM owns IOMUXC). All six signals are muxed
- * regardless of bus width: the card samples DAT3 at CMD0 (low selects SPI mode)
- * and DAT0..3 need pull-ups during identification. Returns 0 on success.
- */
 static int usdhcConfigPads(void)
 {
     const unsigned count = sizeof(navq95SdPads) / sizeof(navq95SdPads[0]);
@@ -301,7 +248,6 @@ static int usdhcConfigPads(void)
     return 0;
 }
 
-/* Card-detect pad, muxed separately so a failure here never blocks the bus. */
 static int usdhcConfigCdPad(void)
 {
     return navq95_scmi_pinmux(NAVQ95_SD_CD_MUX, NAVQ95_SD_ALT, 1u,
@@ -314,16 +260,11 @@ static void usdhcSetBusWidth(bool fourBit)
 }
 
 /*
- * Measure the uSDHC root clock in Hz. INITA makes the controller emit exactly
- * 80 SD-clock cycles and then self-clear, so with a known divider
- * root = (80 / t_inita) * prescaler * divisor. A large divider keeps INITA long
- * enough to time with micros() and keeps SD_CLK slow. Returns 0 if INITA never
- * clears. Call only after the controller is initialised and the pads are muxed.
+ * INITA sends 80 SD clocks and then clears itself. Timing it at a known divider
+ * gives the root clock rate without needing a card.
  */
 static uint32_t usdhcMeasureRootHz(void)
 {
-    /* Program a big, exact divider: prescaler 256 * divisor 16 = 4096.
-     * SDCLKFS encodes prescaler>>1 (256>>1 = 0x80); DVS encodes divisor-1 (15). */
     const uint32_t prescaler = 256u;
     const uint32_t divisor   = 16u;
     U->SYS_CTRL = (U->SYS_CTRL & ~(USDHC_SYS_CTRL_SDCLKFS_MASK | USDHC_SYS_CTRL_DVS_MASK))
@@ -333,25 +274,22 @@ static uint32_t usdhcMeasureRootHz(void)
         return 0;
     }
 
-    /* Time the 80-clock INITA pulse. Bound the wait so a stuck bit can't hang. */
     const uint32_t t0 = micros();
     U->SYS_CTRL |= USDHC_SYS_CTRL_INITA_MASK;
     while (U->SYS_CTRL & USDHC_SYS_CTRL_INITA_MASK) {
-        if (cmpTimeUs(micros(), t0) > (timeDelta_t)1000000) {   /* 1 s guard */
+        if (cmpTimeUs(micros(), t0) > (timeDelta_t)1000000) {
             return 0;
         }
     }
     const uint32_t dtUs = (uint32_t)cmpTimeUs(micros(), t0);
     if (dtUs == 0u) {
-        return 0;   /* too fast to time -> divider/clock far higher than expected */
+        return 0;
     }
 
-    /* SD_CLK = 80 cycles / dtUs (in Hz: 80 * 1e6 / dtUs). root = SD_CLK * 4096. */
     const uint64_t sdClkHz = (80ull * 1000000ull) / dtUs;
     return (uint32_t)(sdClkHz * (uint64_t)prescaler * (uint64_t)divisor);
 }
 
-/* Measure the root clock and adopt it if plausible. */
 static void usdhcCalibrateRoot(void)
 {
     const uint32_t hz = usdhcMeasureRootHz();
@@ -373,7 +311,6 @@ static bool usdhcInitController(void)
     U->INT_STATUS_EN = USDHC_INT_ALL;
     U->INT_STATUS = USDHC_INT_ALL;
 
-    /* Little endian, one bit bus for identification, no DMA (data moves by PIO). */
     U->PROT_CTRL = (U->PROT_CTRL
                     & ~(USDHC_PROT_CTRL_EMODE_MASK | USDHC_PROT_CTRL_DTW_MASK
                         | USDHC_PROT_CTRL_DMASEL_MASK))
@@ -549,6 +486,7 @@ static SD_Error_t usdhcSendAppCommand(uint8_t index, uint32_t argument, usdhcRes
     return usdhcSendCommand(index, argument, response);
 }
 
+// The controller drops the CRC byte of R2 responses, so shift the 120 bits back into place.
 static void usdhcReadLongResponse(uint32_t out[4])
 {
     const uint32_t rsp0 = U->CMD_RSP0;
@@ -566,7 +504,6 @@ static uint32_t usdhcBlockAddress(uint32_t blockIndex)
     return usdhc.highCapacity ? blockIndex : blockIndex * SDCARD_BLOCK_SIZE;
 }
 
-/* Wait for an INT_STATUS flag, bailing out on a data error or timeout. */
 static SD_Error_t usdhcWaitDataFlag(uint32_t flag)
 {
     const uint32_t start = micros();
@@ -584,7 +521,6 @@ static SD_Error_t usdhcWaitDataFlag(uint32_t flag)
     }
 }
 
-/* Move one 512-byte block between the controller FIFO and `words`. */
 static SD_Error_t usdhcPioBlock(bool read, uint32_t *words)
 {
     const uint32_t ready = read ? USDHC_INT_STATUS_BRR_MASK : USDHC_INT_STATUS_BWR_MASK;
@@ -605,12 +541,6 @@ static SD_Error_t usdhcPioBlock(bool read, uint32_t *words)
     return SD_OK;
 }
 
-/*
- * Run a whole block transfer by programmed I/O. The data phase completes
- * inside this call and its outcome is latched in pendingError, so the
- * Betaflight start/poll split (SD_*Blocks_DMA then SD_Check* / SD_GetState)
- * keeps working unchanged.
- */
 static SD_Error_t usdhcStartTransfer(bool read, uint32_t blockIndex, uint32_t *buffer,
                                      uint32_t blockSize, uint32_t blockCount)
 {
@@ -664,18 +594,13 @@ static SD_Error_t usdhcStartTransfer(bool read, uint32_t blockIndex, uint32_t *b
     return SD_OK;
 }
 
-/* The PIO transfer already finished in usdhcStartTransfer(). */
 static SD_Error_t usdhcCheckTransfer(void)
 {
     usdhc.transferActive = false;
     return SD_OK;
 }
 
-/*
- * Switch the card and controller to a 4-bit bus and confirm it with a read of
- * block 0. If the switch or the read fails (e.g. a bad DAT1..3 line), fall back
- * to 1-bit so the card stays usable. Called in the transfer state, after CMD16.
- */
+// Switch to 4-bit and read block 0 to check DAT1..DAT3; fall back to 1-bit if that fails.
 static void usdhcTryFourBitBus(void)
 {
     static uint32_t probe[USDHC_PIO_WML_WORDS];
@@ -687,8 +612,6 @@ static void usdhcTryFourBitBus(void)
     }
     usdhcSetBusWidth(true);
 
-    /* usdhcStartTransfer() requires an initialised card; identification is
-     * complete at this point except for the bus width. */
     usdhc.initialised = true;
     const SD_Error_t start = usdhcStartTransfer(true, 0, probe, SDCARD_BLOCK_SIZE, 1);
     const bool ok = (start == SD_OK) && (usdhc.pendingError == SD_OK);
@@ -797,10 +720,6 @@ static SD_Error_t usdhcIdentifyCard(void)
     return SD_OK;
 }
 
-/* ════════════════════════════════════════════════════════════════════════════
- * Betaflight SD_* HAL (drivers/sdmmc_sdio.h), called from sdcard_sdio_baremetal.c
- * ════════════════════════════════════════════════════════════════════════════ */
-
 bool SD_InitialiseHardware(dmaResource_t *dma)
 {
     UNUSED(dma);
@@ -812,7 +731,6 @@ bool SD_InitialiseHardware(dmaResource_t *dma)
     memset(&usdhc, 0, sizeof(usdhc));
     usdhc.fourBitBus = sdioConfig()->use4BitWidth;
 
-    /* Clock root and pads via the SM (SCMI). */
     navq95_scmi_clock_enable(NAVQ95_USDHC_CLK_ROOT);
     if (usdhcConfigPads() != 0) {
         return false;
@@ -822,6 +740,7 @@ bool SD_InitialiseHardware(dmaResource_t *dma)
     if (!usdhcInitController()) {
         return false;
     }
+    // Initialise once to measure the root clock, then again with the measured rate.
     usdhcCalibrateRoot();
     return usdhcInitController();
 }
@@ -845,7 +764,6 @@ SD_Error_t SD_Init(void)
     return SD_OK;
 }
 
-/* Report the card as present once identification has succeeded. */
 bool SD_IsDetected(void)
 {
     return usdhc.initialised;
@@ -932,4 +850,4 @@ SD_Error_t SD_CheckWrite(void)
     return usdhcCheckTransfer();
 }
 
-#endif /* USE_SDCARD_SDIO */
+#endif // USE_SDCARD_SDIO
