@@ -303,6 +303,7 @@ static const char * const configResetReasonNames[] = {
     [CONFIG_RESET_MSP] = "MSP",
     [CONFIG_RESET_BUTTON] = "BUTTON",
     [CONFIG_RESET_SERIAL] = "SERIAL",
+    [CONFIG_RESET_PG_SIZE] = "PG_SIZE",
 };
 STATIC_ASSERT(CONFIG_RESET_COUNT == ARRAYLEN(configResetReasonNames), configResetReasonNames_array_length_mismatch);
 
