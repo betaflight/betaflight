@@ -2725,6 +2725,13 @@ static bool UBLOX_parse_gps(void)
         break;
     case CLSMSG(CLASS_CFG, MSG_CFG_GNSS):
         {
+            // reject frames that are too short for the header or for the blocks they declare,
+            // otherwise stale bytes from earlier packets would be sent back as config blocks
+            if (ubxRcvMsgPayloadLength < 4
+                || ubxRcvMsgPayloadLength < 4 + (ubxRcvMsgPayload.ubxCfgGnss.numConfigBlocks * sizeof(ubxConfigblock_t))) {
+                break;
+            }
+
             // numConfigBlocks comes straight from the receiver, clamp it to what configblocks[] can hold
             const uint8_t numConfigBlocks = MIN(ubxRcvMsgPayload.ubxCfgGnss.numConfigBlocks, ARRAYLEN(ubxRcvMsgPayload.ubxCfgGnss.configblocks));
             const uint16_t messageSize = 4 + (numConfigBlocks * sizeof(ubxConfigblock_t));
