@@ -223,7 +223,7 @@ static MMFLASH_CODE bool w25q128fv_isReady(flashDevice_t *fdevice)
     return !busy;
 }
 
-#if !defined(USE_QUADSPI)
+#if !defined(QUADSPI_TRAIT_SEQUENCE)
 MMFLASH_CODE static bool w25q128fv_isWritable(flashDevice_t *fdevice)
 {
     uint8_t status = w25q128fv_readRegister(&fdevice->io, W25Q128FV_INSTRUCTION_READ_STATUS1_REG);
@@ -355,16 +355,25 @@ static void w25q128fv_eraseCompletely(flashDevice_t *fdevice)
     w25q128fv_setTimeout(fdevice, W25Q128FV_TIMEOUT_CHIP_ERASE_MS);
 }
 
-#if defined(USE_OCTOSPI)
+#if !defined(QUADSPI_TRAIT_SEQUENCE)
 MMFLASH_CODE static void w25q128fv_loadProgramData(flashDevice_t *fdevice, const uint8_t *data, int length)
 {
     w25q128fv_waitForReady(fdevice);
 
+#if defined(USE_QUADSPI)
+    extDevice_t *dev = fdevice->io.handle.dev;
+#ifdef USE_FLASH_WRITES_USING_4LINES
+    quadSpiTransmitWithAddress4LINES(dev, W25Q128FV_INSTRUCTION_QUAD_PAGE_PROGRAM, 0, fdevice->currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
+#else
+    quadSpiTransmitWithAddress1LINE(dev, W25Q128FV_INSTRUCTION_PAGE_PROGRAM, 0, fdevice->currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
+#endif
+#elif defined(USE_OCTOSPI)
     octoSpiResource_t *octoSpi = fdevice->io.handle.octoSpi;
 #ifdef USE_FLASH_WRITES_USING_4LINES
     octoSpiTransmitWithAddress4LINES(octoSpi, W25Q128FV_INSTRUCTION_QUAD_PAGE_PROGRAM, 0, fdevice->currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
 #else
     octoSpiTransmitWithAddress1LINE(octoSpi, W25Q128FV_INSTRUCTION_PAGE_PROGRAM, 0, fdevice->currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
+#endif
 #endif
 
     w25q128fv_setTimeout(fdevice, W25Q128FV_TIMEOUT_PAGE_PROGRAM_MS);
@@ -379,7 +388,7 @@ MMFLASH_CODE static void w25q128fv_pageProgramBegin(flashDevice_t *fdevice, uint
     fdevice->currentWriteAddress = address;
 }
 
-#if defined(USE_QUADSPI)
+#if defined(QUADSPI_TRAIT_SEQUENCE)
 // Called in ISR context
 static busStatus_e w25q128fv_callbackReady(uintptr_t arg)
 {
@@ -423,7 +432,7 @@ enum {READ_STATUS, WRITE_ENABLE, PAGE_PROGRAM, DATA1, DATA2};
 
 MMFLASH_CODE static uint32_t w25q128fv_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
 {
-#if defined(USE_QUADSPI)
+#if defined(QUADSPI_TRAIT_SEQUENCE)
     if (bufferCount == 0) {
         if (fdevice->callback) fdevice->callback(0);
         return 0;

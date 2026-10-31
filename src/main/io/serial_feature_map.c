@@ -530,6 +530,45 @@ static bool canApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mas
     return true;
 }
 
+// The legacy layout is frozen here so renumbering serialPortFunction_e cannot
+// change what an old diff means.
+static const struct {
+    uint32_t legacyBit;
+    uint32_t function;
+} legacyFunctionMap[] = {
+    { 1U << 0,  FUNCTION_MSP },
+    { 1U << 1,  FUNCTION_GPS },
+    { 1U << 2,  FUNCTION_TELEMETRY_FRSKY_HUB },
+    { 1U << 3,  FUNCTION_TELEMETRY_HOTT },
+    { 1U << 4,  FUNCTION_TELEMETRY_LTM },
+    { 1U << 5,  FUNCTION_TELEMETRY_SMARTPORT },
+    { 1U << 6,  FUNCTION_RX_SERIAL },
+    { 1U << 7,  FUNCTION_BLACKBOX },
+    { 1U << 9,  FUNCTION_TELEMETRY_MAVLINK },
+    { 1U << 10, FUNCTION_ESC_SENSOR },
+    { 1U << 11, FUNCTION_VTX_SMARTAUDIO },
+    { 1U << 12, FUNCTION_TELEMETRY_IBUS },
+    { 1U << 13, FUNCTION_VTX_TRAMP },
+    { 1U << 14, FUNCTION_RCDEVICE },
+    { 1U << 15, FUNCTION_LIDAR },               // TF rangefinder
+    { 1U << 16, FUNCTION_FRSKY_OSD },
+    { 1U << 17, FUNCTION_VTX_MSP },
+    { 1U << 18, FUNCTION_GIMBAL },
+    { 1U << 19, FUNCTION_LIDAR },               // Nooploop rangefinder
+    { 1U << 20, FUNCTION_OSD_CUSTOM_TEXT },
+};
+
+uint32_t serialFunctionMaskFromLegacy(uint32_t legacyMask)
+{
+    uint32_t mask = 0;
+    for (unsigned i = 0; i < ARRAYLEN(legacyFunctionMap); i++) {
+        if (legacyMask & legacyFunctionMap[i].legacyBit) {
+            mask |= legacyFunctionMap[i].function;
+        }
+    }
+    return mask;
+}
+
 bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
 {
     if (identifier == SERIAL_PORT_NONE) {
