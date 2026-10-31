@@ -617,6 +617,11 @@ void disarm(flightLogDisarmReason_e reason)
             statsOnDisarm();
         }
 #endif
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+        if (!crashFlipModeActive) {
+            flightPlanCaptureOnDisarm(); // persist waypoints captured during the flight
+        }
+#endif
     // Terminate crashflip mode in any disarm
     if (crashFlipModeActive) {
         crashFlipModeActive = false;

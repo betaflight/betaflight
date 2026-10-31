@@ -19,17 +19,23 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <math.h>
 #include <string.h>
 
 #include "platform.h"
 
 #if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
 
+#include "common/axis.h"
 #include "common/printf.h"
 #include "common/time.h"
+#include "common/utils.h"
+
+#include "config/config.h"
 
 #include "drivers/time.h"
 
+#include "fc/dispatch.h"
 #include "fc/runtime_config.h"
 
 #include "flight/flight_plan_nav.h"
@@ -38,6 +44,8 @@
 
 #include "pg/flight_plan.h"
 
+#include "sensors/gyro.h"
+
 #include "flight_plan_capture.h"
 
 // The gesture commits on RELEASE so a hold can mean delete; the position is
@@ -45,6 +53,11 @@
 // stored, not wherever the craft has drifted to by the release.
 #define FP_CAPTURE_HOLD_DELETE_US 1500000u
 #define FP_CAPTURE_MSG_TIME_US    2500000u
+
+// The save is deferred past the disarm so the flash write never runs inside it, and
+// it waits until the craft is still: the same two precautions persistent stats take.
+#define FP_CAPTURE_SAVE_DELAY_US        500000u
+#define FP_CAPTURE_SAVE_MOVE_LIMIT_DPS  20.0f
 
 static bool switchWas = false;
 static timeUs_t pressTimeUs = 0;
@@ -56,6 +69,10 @@ static bool pressAccepted = false;    // press happened somewhere edits are allo
 static char msgText[16];
 static timeUs_t msgExpireUs = 0;
 static bool msgValid = false;
+
+static bool planDirty = false;        // edited in flight and not yet written to flash
+static void savePlan(dispatchEntry_t *self);
+static dispatchEntry_t savePlanEntry = { savePlan, 0, NULL, false };
 
 static void setMessage(timeUs_t currentTimeUs, const char *fmt, int index)
 {
@@ -112,6 +129,7 @@ void flightPlanCaptureUpdate(timeUs_t currentTimeUs, bool switchActive, bool cha
         pendingValid = false;
         if (pressAccepted && editsAllowed() && plan->waypointCount > 0) {
             plan->waypointCount--;
+            planDirty = true;
             setMessage(currentTimeUs, "WP%d DELETED", plan->waypointCount + 1);
         }
     } else if (!switchActive && switchWas && !deleteFired && pressAccepted) {
@@ -119,6 +137,7 @@ void flightPlanCaptureUpdate(timeUs_t currentTimeUs, bool switchActive, bool cha
         if (pendingValid && editsAllowed()) {
             if (plan->waypointCount < MAX_WAYPOINTS) {
                 plan->waypoints[plan->waypointCount++] = pending;
+                planDirty = true;
                 setMessage(currentTimeUs, "WP%d SET", plan->waypointCount);
             } else {
                 setMessage(currentTimeUs, "WP FULL", 0);
@@ -127,6 +146,41 @@ void flightPlanCaptureUpdate(timeUs_t currentTimeUs, bool switchActive, bool cha
         pendingValid = false;
     }
     switchWas = switchActive;
+}
+
+static void savePlan(dispatchEntry_t *self)
+{
+    UNUSED(self);
+
+    if (ARMING_FLAG(ARMED)) {
+        return; // armed again before the write: the next disarm schedules it afresh
+    }
+    if (isConfigDirty()) {
+        // unsaved CLI or Configurator edits are in RAM too, and a save the pilot did not
+        // ask for must not persist them. Tell the pilot to save from the OSD menu.
+        setMessage(micros(), "WP UNSAVED", 0);
+        return;
+    }
+    const bool still = fabsf(gyro.gyroADCf[FD_ROLL]) < FP_CAPTURE_SAVE_MOVE_LIMIT_DPS
+        && fabsf(gyro.gyroADCf[FD_PITCH]) < FP_CAPTURE_SAVE_MOVE_LIMIT_DPS
+        && fabsf(gyro.gyroADCf[FD_YAW]) < FP_CAPTURE_SAVE_MOVE_LIMIT_DPS;
+    if (!still) {
+        dispatchAdd(&savePlanEntry, FP_CAPTURE_SAVE_DELAY_US); // being carried or tumbling: wait
+        return;
+    }
+
+    writeEEPROM();
+    planDirty = false;
+    setMessage(micros(), "WP SAVED", 0);
+}
+
+void flightPlanCaptureOnDisarm(void)
+{
+    if (!planDirty) {
+        return;
+    }
+    dispatchEnable();
+    dispatchAdd(&savePlanEntry, FP_CAPTURE_SAVE_DELAY_US);
 }
 
 const char *flightPlanCaptureOsdMessage(void)
@@ -144,6 +198,7 @@ const char *flightPlanCaptureOsdMessage(void)
 #ifdef UNIT_TEST
 void flightPlanCaptureResetForTest(void)
 {
+    planDirty = false;
     switchWas = false;
     pressTimeUs = 0;
     deleteFired = false;
