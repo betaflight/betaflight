@@ -410,6 +410,12 @@ void rcdeviceReceive(timeUs_t currentTimeUs)
             }
         }
 
+        if (respCtx->recvRespLen >= RCDEVICE_PROTOCOL_MAX_PACKET_SIZE) {
+            // the response ran past the buffer without ever matching its expected length;
+            // drop it and resync on the next header byte
+            respCtx->recvRespLen = 0;
+            continue;
+        }
         respCtx->recvBuf[respCtx->recvRespLen] = c;
         respCtx->recvRespLen += 1;
 
@@ -440,6 +446,10 @@ void rcdeviceReceive(timeUs_t currentTimeUs)
 
             if (respCtx->result == RCDEVICE_RESP_SUCCESS) {
                 rcdeviceRespCtxQueueShift(&waitingResponseQueue);
+            } else {
+                // a bad response is discarded whole: start again at the next header byte
+                // rather than appending whatever follows to a full buffer
+                respCtx->recvRespLen = 0;
             }
         }
     }
