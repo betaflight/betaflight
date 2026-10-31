@@ -341,12 +341,22 @@
 #define USE_LED_STRIP_STATUS_MODE
 #endif
 
-#if defined(USE_VTX)
-#define USE_VTX_COMMON
-#define USE_VTX_CONTROL
+// USE_VTX on its own builds every VTX protocol (unchanged behaviour).
+// Naming one or more protocols (USE_VTX_MSP, USE_VTX_SMARTAUDIO, USE_VTX_TRAMP)
+// builds the VTX core with only those protocols, e.g. USE_VTX_MSP for HD systems.
+#if defined(USE_VTX_MSP) || defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
+#if !defined(USE_VTX)
+#define USE_VTX
+#endif
+#elif defined(USE_VTX)
 #define USE_VTX_SMARTAUDIO
 #define USE_VTX_TRAMP
 #define USE_VTX_MSP
+#endif
+
+#if defined(USE_VTX)
+#define USE_VTX_COMMON
+#define USE_VTX_CONTROL
 #define USE_VTX_TABLE
 #endif // USE_VTX
 
