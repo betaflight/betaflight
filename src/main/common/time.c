@@ -74,13 +74,17 @@ static rtcTime_t dateTimeToRtcTime(dateTime_t *dt)
     unsigned int day = dt->day - 1;     // 0-30
     unsigned int month = dt->month - 1; // 0-11
     unsigned int year = dt->year - REFERENCE_YEAR; // 0-99
-    int32_t unixTime = (((year / 4 * (365 * 4 + 1) + days[year % 4][month] + day) * 24 + hour) * 60 + minute) * 60 + second + EPOCH_2000_OFFSET;
-    return rtcTimeMake(unixTime, dt->millis);
+    // seconds since 2000-01-01 fit in 32 bits unsigned for the whole 2000..2099 range
+    const uint32_t secondsSince2000 = (((year / 4 * (365 * 4 + 1) + days[year % 4][month] + day) * 24 + hour) * 60 + minute) * 60 + second;
+    // Unix seconds do not fit in 32 bits signed after 2038-01-19 03:14:07 UTC,
+    // so add the epoch offset in 64-bit milliseconds
+    return (rtcTime_t)secondsSince2000 * MILLIS_PER_SECOND + (rtcTime_t)EPOCH_2000_OFFSET * MILLIS_PER_SECOND + dt->millis;
 }
 
 static void rtcTimeToDateTime(dateTime_t *dt, rtcTime_t t)
 {
-    int32_t unixTime = t / MILLIS_PER_SECOND - EPOCH_2000_OFFSET;
+    // seconds since 2000-01-01, kept in 32 bits unsigned so the divisions below stay 32-bit
+    uint32_t unixTime = (uint32_t)(t / MILLIS_PER_SECOND - EPOCH_2000_OFFSET);
     dt->seconds = unixTime % 60;
     unixTime /= 60;
     dt->minutes = unixTime % 60;
@@ -136,7 +140,7 @@ static bool rtcIsDateTimeValid(dateTime_t *dateTime)
 static void dateTimeWithOffset(dateTime_t *dateTimeOffset, dateTime_t *dateTimeInitial, int16_t minutes)
 {
     rtcTime_t initialTime = dateTimeToRtcTime(dateTimeInitial);
-    rtcTime_t offsetTime = rtcTimeMake(rtcTimeGetSeconds(&initialTime) + minutes * 60, rtcTimeGetMillis(&initialTime));
+    rtcTime_t offsetTime = initialTime + (int32_t)minutes * 60 * MILLIS_PER_SECOND;
     rtcTimeToDateTime(dateTimeOffset, offsetTime);
 }
 
@@ -179,12 +183,12 @@ static bool dateTimeFormat(char *buf, dateTime_t *dateTime, int16_t offsetMinute
     return retVal;
 }
 
-rtcTime_t rtcTimeMake(int32_t secs, uint16_t millis)
+rtcTime_t rtcTimeMake(int64_t secs, uint16_t millis)
 {
-    return ((rtcTime_t)secs) * MILLIS_PER_SECOND + millis;
+    return secs * MILLIS_PER_SECOND + millis;
 }
 
-int32_t rtcTimeGetSeconds(const rtcTime_t *t)
+int64_t rtcTimeGetSeconds(const rtcTime_t *t)
 {
     return *t / MILLIS_PER_SECOND;
 }
