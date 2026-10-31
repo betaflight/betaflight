@@ -1534,7 +1534,7 @@ RAM_CODE static void cliSerial(const char *cmdName, char *cmdline)
     uint32_t functionMask = 0;
     tok = strsep(&ptr, " ");
     if (tok) {
-        functionMask = strtoul(tok, NULL, 10);
+        functionMask = serialFunctionMaskFromLegacy(strtoul(tok, NULL, 10));
         validArgumentCount++;
     }
 
