@@ -165,6 +165,11 @@ void spektrumVtxControl(void)
     if (prevVtxControl == vtxControl) return;
     prevVtxControl = vtxControl;
 
+    // The band is a 3-bit field, so the receiver can send 0..7, but only
+    // SPEKTRUM_VTX_BAND_COUNT bands exist. Anything above that is not a selection
+    // and must not index the band tables.
+    if (((vtxControl & SPEKTRUM_VTX_BAND_MASK) >> SPEKTRUM_VTX_BAND_SHIFT) >= SPEKTRUM_VTX_BAND_COUNT) return;
+
     spektrumVtx_t vtx = {
         .pitMode = (vtxControl & SPEKTRUM_VTX_PIT_MODE_MASK) >> SPEKTRUM_VTX_PIT_MODE_SHIFT,
         .region  = (vtxControl & SPEKTRUM_VTX_REGION_MASK)   >> SPEKTRUM_VTX_REGION_SHIFT,
