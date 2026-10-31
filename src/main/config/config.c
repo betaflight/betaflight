@@ -304,6 +304,10 @@ static void validateAndFixConfig(void)
             pidProfilesMutable(i)->auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY;
         }
 
+        if (pidProfilesMutable(i)->feedforward_averaging > FEEDFORWARD_AVERAGING_4_POINT) {
+            pidProfilesMutable(i)->feedforward_averaging = FEEDFORWARD_AVERAGING_4_POINT;
+        }
+
         // If the d_max value for any axis is <= the D gain then reset d_max to 0 for consistent Configurator behavior
         for (unsigned axis = 0; axis <= FD_YAW; axis++) {
             if (pidProfilesMutable(i)->d_max[axis] < pidProfilesMutable(i)->pid[axis].D) {
