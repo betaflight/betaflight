@@ -260,9 +260,9 @@ void initActiveBoxIds(void)
     if (featureIsEnabled(FEATURE_GPS)) {
 #ifdef USE_GPS_RESCUE
 #if defined(USE_WING) && ENABLE_RESCUE_PLAN
-        if (!featureIsEnabled(FEATURE_3D)) {
+        {
 #else
-        if (!featureIsEnabled(FEATURE_3D) && !isFixedWing()) {
+        if (!isFixedWing()) {
 #endif
             BME(BOXGPSRESCUE);
         }
