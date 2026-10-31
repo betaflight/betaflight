@@ -228,12 +228,19 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
     dmainit->DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
 
     if (direction == DSHOT_BITBANG_DIRECTION_OUTPUT) {
+        // Write the GPIO port through the DMA2 memory port, not the peripheral port.
+        // DMA2 writes to GPIO over the peripheral port can be repeated or corrupted while DMA2
+        // also serves APB2 peripherals, e.g. a LED strip on TIM1 (ES0182 erratum 2.2.19).
+        // So the roles are swapped: the peripheral port reads the output buffer in SRAM via the
+        // bus matrix and the memory port writes BSRR. Reads from IDR (input) are not affected.
         dmainit->DMA_Priority = DMA_Priority_High;
-        dmainit->DMA_DIR = DMA_DIR_MemoryToPeripheral;
+        dmainit->DMA_DIR = DMA_DIR_PeripheralToMemory;
         dmainit->DMA_BufferSize = bbPort->portOutputCount;
-        dmainit->DMA_PeripheralBaseAddr = (uint32_t)&bbPort->gpio->BSRRL;
+        dmainit->DMA_PeripheralBaseAddr = (uint32_t)bbPort->portOutputBuffer;
+        dmainit->DMA_PeripheralInc = DMA_PeripheralInc_Enable;
         dmainit->DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
-        dmainit->DMA_Memory0BaseAddr = (uint32_t)bbPort->portOutputBuffer;
+        dmainit->DMA_Memory0BaseAddr = (uint32_t)&bbPort->gpio->BSRRL;
+        dmainit->DMA_MemoryInc = DMA_MemoryInc_Disable;
         dmainit->DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
 
 #ifdef USE_DMA_REGISTER_CACHE
