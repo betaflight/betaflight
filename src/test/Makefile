@@ -484,6 +484,7 @@ osd_unittest_SRC := \
 
 osd_unittest_DEFINES := \
 		USE_OSD= \
+		USE_CUSTOM_BOX_NAMES= \
 		USE_GPS= \
 		USE_RTC_TIME= \
 		USE_ADC_INTERNAL=
