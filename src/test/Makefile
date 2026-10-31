@@ -794,6 +794,12 @@ huffman_unittest_SRC := \
 huffman_unittest_DEFINES := \
 		USE_HUFFMAN=
 
+hx711_unittest_SRC := \
+		$(USER_DIR)/drivers/hx711.c
+
+hx711_unittest_DEFINES := \
+		USE_HX711=
+
 rcdevice_unittest_SRC := \
 		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/bitarray.c \

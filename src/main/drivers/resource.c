@@ -124,6 +124,10 @@ static const char * const ownerNames[] = {
     [OWNER_CAN_TX] = "CAN_TX",
     [OWNER_CAN_RX] = "CAN_RX",
     [OWNER_CAN_SILENT] = "CAN_SILENT",
+#ifdef USE_HX711
+    [OWNER_HX711_SCK] = "HX711_SCK",
+    [OWNER_HX711_DOUT] = "HX711_DOUT",
+#endif
     // Keep in sync with resourceOwner_e.
 };
 
