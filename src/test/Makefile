@@ -263,6 +263,14 @@ blackbox_encoding_unittest_SRC :=  \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/typeconversion.c
 
+blackbox_sdcard_unittest_SRC :=  \
+		$(USER_DIR)/blackbox/blackbox_io.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/io/asyncfatfs/fat_standard.c
+
+blackbox_sdcard_unittest_DEFINES := \
+		USE_SDCARD=
+
 cli_unittest_SRC := \
 		$(USER_DIR)/cli/cli.c \
 		$(USER_DIR)/common/crc.c \
