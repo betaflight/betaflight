@@ -24,6 +24,7 @@
 extern "C" {
     #include "platform.h"
     #include "common/time.h"
+    #include "pg/pg.h"
 }
 
 #include "unittest_macros.h"
@@ -135,6 +136,105 @@ TEST_F(RtcTimeTest, RejectedDateLeavesStoredTimeUnchanged)
     EXPECT_EQ(34, readBack.minutes);
     EXPECT_EQ(56, readBack.seconds);
     EXPECT_EQ(789, readBack.millis);
+}
+
+// Signed 32-bit Unix time runs out at 2038-01-19 03:14:07 UTC.
+static dateTime_t boundaryDateTime(uint8_t seconds, uint16_t millis)
+{
+    dateTime_t dt;
+    dt.year = 2038;
+    dt.month = 1;
+    dt.day = 19;
+    dt.hours = 3;
+    dt.minutes = 14;
+    dt.seconds = seconds;
+    dt.millis = millis;
+    return dt;
+}
+
+static void expectDateTimeEq(const dateTime_t &expected, const dateTime_t &actual, const char *label)
+{
+    EXPECT_EQ(expected.year, actual.year) << label;
+    EXPECT_EQ(expected.month, actual.month) << label;
+    EXPECT_EQ(expected.day, actual.day) << label;
+    EXPECT_EQ(expected.hours, actual.hours) << label;
+    EXPECT_EQ(expected.minutes, actual.minutes) << label;
+    EXPECT_EQ(expected.seconds, actual.seconds) << label;
+    EXPECT_EQ(expected.millis, actual.millis) << label;
+}
+
+TEST_F(RtcTimeTest, RoundTripsAcrossThe2038Boundary)
+{
+    struct {
+        const char *name;
+        dateTime_t dt;
+        int64_t unixSeconds;
+    } cases[] = {
+        { "one second before", boundaryDateTime(6, 250), 2147483646LL },
+        { "at the boundary",   boundaryDateTime(7, 500), 2147483647LL },
+        { "one second after",  boundaryDateTime(8, 750), 2147483648LL },
+    };
+
+    for (const auto &c : cases) {
+        dateTime_t dt = c.dt;
+        ASSERT_TRUE(rtcSetDateTime(&dt)) << c.name;
+
+        rtcTime_t t;
+        ASSERT_TRUE(rtcGet(&t)) << c.name;
+        EXPECT_EQ(c.unixSeconds, rtcTimeGetSeconds(&t)) << c.name;
+        EXPECT_EQ(c.dt.millis, rtcTimeGetMillis(&t)) << c.name;
+
+        dateTime_t readBack;
+        ASSERT_TRUE(rtcGetDateTime(&readBack)) << c.name;
+        expectDateTimeEq(c.dt, readBack, c.name);
+    }
+}
+
+TEST_F(RtcTimeTest, SecondsHelpersDoNotTruncateAboveInt32Max)
+{
+    const int64_t secs = 4102444799LL; // 2099-12-31 23:59:59 UTC
+    rtcTime_t t = rtcTimeMake(secs, 999);
+
+    EXPECT_EQ(secs, rtcTimeGetSeconds(&t));
+    EXPECT_EQ(999, rtcTimeGetMillis(&t));
+}
+
+TEST_F(RtcTimeTest, RoundTripsEndOfSupportedRange)
+{
+    dateTime_t dt;
+    dt.year = 2099;
+    dt.month = 12;
+    dt.day = 31;
+    dt.hours = 23;
+    dt.minutes = 59;
+    dt.seconds = 59;
+    dt.millis = 999;
+
+    ASSERT_TRUE(rtcSetDateTime(&dt));
+
+    rtcTime_t t;
+    ASSERT_TRUE(rtcGet(&t));
+    EXPECT_EQ(4102444799LL, rtcTimeGetSeconds(&t));
+
+    dateTime_t readBack;
+    ASSERT_TRUE(rtcGetDateTime(&readBack));
+    expectDateTimeEq(dt, readBack, "2099-12-31");
+}
+
+TEST_F(RtcTimeTest, TimezoneOffsetCrossesThe2038Boundary)
+{
+    // 03:14:07 UTC at the boundary, shifted +60 minutes, lands after it.
+    timeConfigMutable()->tz_offsetMinutes = 60;
+
+    dateTime_t utc = boundaryDateTime(7, 123);
+    dateTime_t local;
+    dateTimeUTCToLocal(&utc, &local);
+
+    dateTime_t expected = boundaryDateTime(7, 123);
+    expected.hours = 4;
+    expectDateTimeEq(expected, local, "+60 min across boundary");
+
+    timeConfigMutable()->tz_offsetMinutes = 0;
 }
 
 // STUBS

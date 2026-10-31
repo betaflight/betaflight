@@ -74,13 +74,14 @@ static rtcTime_t dateTimeToRtcTime(dateTime_t *dt)
     unsigned int day = dt->day - 1;     // 0-30
     unsigned int month = dt->month - 1; // 0-11
     unsigned int year = dt->year - REFERENCE_YEAR; // 0-99
-    int32_t unixTime = (((year / 4 * (365 * 4 + 1) + days[year % 4][month] + day) * 24 + hour) * 60 + minute) * 60 + second + EPOCH_2000_OFFSET;
+    // 64-bit: dates after 2038-01-19 03:14:07 UTC exceed signed 32-bit Unix seconds
+    const int64_t unixTime = (int64_t)(((year / 4 * (365 * 4 + 1) + days[year % 4][month] + day) * 24 + hour) * 60 + minute) * 60 + second + EPOCH_2000_OFFSET;
     return rtcTimeMake(unixTime, dt->millis);
 }
 
 static void rtcTimeToDateTime(dateTime_t *dt, rtcTime_t t)
 {
-    int32_t unixTime = t / MILLIS_PER_SECOND - EPOCH_2000_OFFSET;
+    int64_t unixTime = t / MILLIS_PER_SECOND - EPOCH_2000_OFFSET; // seconds since 2000-01-01
     dt->seconds = unixTime % 60;
     unixTime /= 60;
     dt->minutes = unixTime % 60;
@@ -189,12 +190,12 @@ static bool dateTimeFormat(char *buf, dateTime_t *dateTime, int16_t offsetMinute
     return retVal;
 }
 
-rtcTime_t rtcTimeMake(int32_t secs, uint16_t millis)
+rtcTime_t rtcTimeMake(int64_t secs, uint16_t millis)
 {
-    return ((rtcTime_t)secs) * MILLIS_PER_SECOND + millis;
+    return secs * MILLIS_PER_SECOND + millis;
 }
 
-int32_t rtcTimeGetSeconds(const rtcTime_t *t)
+int64_t rtcTimeGetSeconds(const rtcTime_t *t)
 {
     return *t / MILLIS_PER_SECOND;
 }

@@ -418,8 +418,8 @@ void emfat_init_files(void)
 #ifdef USE_PERSISTENT_MSC_RTC
     rtcTime_t mscRebootRtc;
     if (rtcPersistRead(&mscRebootRtc)) {
-        const int32_t rtcSeconds = rtcTimeGetSeconds(&mscRebootRtc);
-        cmaTime = emfat_cma_time_from_unix((uint32_t)rtcSeconds);
+        const int64_t rtcSeconds = rtcTimeGetSeconds(&mscRebootRtc);
+        cmaTime = emfat_cma_time_from_unix((uint32_t)rtcSeconds); // FAT timestamps: unsigned 32-bit is enough
     }
 #endif
 

@@ -4487,8 +4487,8 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             // Use seconds and milliseconds to make senders
             // easier to implement. Generating a 64 bit value
             // might not be trivial in some platforms.
-            int32_t secs = (int32_t)sbufReadU32(src);
-            uint16_t millis = sbufReadU16(src);
+            const uint32_t secs = sbufReadU32(src); // unsigned on the wire, so good until 2106
+            const uint16_t millis = sbufReadU16(src);
             rtcTime_t t = rtcTimeMake(secs, millis);
             rtcSet(&t);
         }
