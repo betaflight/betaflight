@@ -132,6 +132,7 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 #ifdef USE_DSHOT_TELEMETRY
     motorConfig->dev.useDshotTelemetry = DEFAULT_DSHOT_TELEMETRY;
     motorConfig->dev.useDshotEdt = DEFAULT_DSHOT_EDT;
+    motorConfig->dshotBidirRotate = DSHOT_BIDIR_ROTATE_OFF;
 #endif
 
 #ifdef USE_DSHOT_BITBANG

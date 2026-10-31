@@ -47,6 +47,8 @@
 #include "drivers/timer.h"
 #include "platform/timer.h"
 
+#include "flight/pid.h"
+
 #include "pg/motor.h"
 #include "pg/pinio.h"
 
@@ -567,6 +569,41 @@ static void bbUpdateInit(void)
     }
 }
 
+#ifdef USE_DSHOT_TELEMETRY
+static FAST_DATA_ZERO_INIT uint8_t bbDecodeMotor;
+static FAST_DATA_ZERO_INIT uint8_t bbDecodeRounds;
+
+// Decode the telemetry of one motor per update when the loop is too fast for all of them;
+// each motor's rpm is then refreshed every dshotMotorCount updates (2 kHz at an 8 kHz loop).
+static bool bbDecodeRotating(void)
+{
+    const uint8_t mode = motorConfig()->dshotBidirRotate;
+    if (mode == DSHOT_BIDIR_ROTATE_OFF || (mode == DSHOT_BIDIR_ROTATE_AUTO && targetPidLooptime >= 250)) {
+        return false;
+    }
+    // A command's reply comes in a single frame: an inline command (the EDT enable acknowledgement) is in
+    // the queue, and a blocking one (CLI) runs with the motors disabled
+    if (!dshotCommandQueueEmpty() || !motorIsEnabled()) {
+        return false;
+    }
+    return true;
+}
+
+static void bbDecodeAdvance(void)
+{
+    if (++bbDecodeMotor < dshotMotorCount && bbDecodeMotor < MAX_SUPPORTED_MOTORS) {
+        return;
+    }
+    bbDecodeMotor = 0;
+    // Every 7th round decode the last motor once more: each motor's phase against the
+    // ESC frame count keeps moving, so an ESC sending EDT every Nth frame reaches all of them
+    if (++bbDecodeRounds >= 7) {
+        bbDecodeRounds = 0;
+        bbDecodeMotor = dshotMotorCount - 1;
+    }
+}
+#endif
+
 static bool bbDecodeTelemetry(void)
 {
 #ifdef USE_DSHOT_TELEMETRY
@@ -581,7 +618,11 @@ static bool bbDecodeTelemetry(void)
             SCB_InvalidateDCache_by_Addr((uint32_t *)bbPort->portInputBuffer, DSHOT_BB_PORT_IP_BUF_CACHE_ALIGN_BYTES);
         }
 #endif
+        const bool rotate = bbDecodeRotating();
         for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < dshotMotorCount; motorIndex++) {
+            if (rotate && motorIndex != bbDecodeMotor) {
+                continue;
+            }
             if (bbMotors[motorIndex].bbPort->telemetryAborted) {
                 // Aborted reception; already counted in debug[2] by bbTelemetryWait().
                 // Don't bump debug[1] (missing-edge) - an abort is not a missing edge.
@@ -621,6 +662,9 @@ static bool bbDecodeTelemetry(void)
         }
 
         dshotTelemetryState.rawValueState = DSHOT_RAW_VALUE_STATE_NOT_PROCESSED;
+        if (rotate) {
+            bbDecodeAdvance();
+        }
 
         for (int i = 0; i < usedMotorPorts; i++) {
             bbPorts[i].telemetryAborted = false;
