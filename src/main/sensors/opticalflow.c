@@ -49,6 +49,9 @@
 #include "drivers/time.h"
 #include "drivers/rangefinder/rangefinder.h"
 #include "drivers/rangefinder/rangefinder_lidarmt.h"
+#ifdef USE_RANGEFINDER_PB04
+#include "drivers/rangefinder/rangefinder_pb04.h"
+#endif
 #ifdef USE_RANGEFINDER_UPT1
 #include "drivers/rangefinder/rangefinder_upt1.h"
 #endif
@@ -100,6 +103,15 @@ static bool opticalflowDetect(opticalflowDev_t * dev, uint8_t opticalflowHardwar
             }
 #endif
             break;
+
+#if defined(USE_OPTICALFLOW_PB04)
+        case OPTICALFLOW_PB04:
+            if (pb04OpticalflowDetect(dev)) {
+                opticalflowHardware = OPTICALFLOW_PB04;
+                rescheduleTask(TASK_OPTICALFLOW, TASK_PERIOD_MS(dev->delayMs));
+            }
+            break;
+#endif
 
 #if defined(USE_OPTICALFLOW_UPT1) && defined(USE_RANGEFINDER_UPT1)
         case OPTICALFLOW_UPT1:

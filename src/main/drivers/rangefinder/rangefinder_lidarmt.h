@@ -38,8 +38,6 @@ typedef struct {
 } mtRangefinderData_t;
 
 bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinderToUse);
-void mtRangefinderReceiveNewData(const uint8_t * bufferPtr);
 const MTRangefinderConfig* getMTRangefinderDeviceConf(rangefinderType_e mtRangefinderToUse);
 
 bool mtOpticalflowDetect(opticalflowDev_t * dev, rangefinderType_e mtRangefinderToUse);
-void mtOpticalflowReceiveNewData(const uint8_t * bufferPtr);
