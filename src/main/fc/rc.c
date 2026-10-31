@@ -79,6 +79,7 @@ static float smoothedRxRateHz = 100.0f;
 
 static bool isRxDataNew = false;
 static bool isRxRateValid = false;
+static bool isPrevRxRateValid = false;
 static bool yawFromAutopilot = false;
 
 enum {
@@ -287,6 +288,7 @@ void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal)
 
     if (rxReceivingSignal) { // true while receiving data and until RXLOSS_TRIGGER_INTERVAL expires, otherwise false
         previousRxIntervalUs = currentRxIntervalUs;
+        isPrevRxRateValid = isRxRateValid;
         // use driver rx time if available, current time otherwise
         const timeUs_t rxTime = rxRuntimeState.lastRcFrameTimeUs ? rxRuntimeState.lastRcFrameTimeUs : currentTimeUs;
 
@@ -562,10 +564,21 @@ bool shouldUpdateSmoothing(void)
     static int8_t prevOutlierSign = 0;               // -1 for negative, +1 for positive
 
     if (isRxReceivingSignal() && isRxRateValid) {
-        float deltaRateHz = currentRxRateHz - smoothedRxRateHz;
-        bool isOutlier = fabsf(deltaRateHz) > (smoothedRxRateHz * 0.2f);
+        // Rate over the last two intervals. Some links send frames at alternating intervals (DJI O3 SBUS:
+        // 4 and 6 ms), where every other single interval is more than 20% off the smoothed rate. A pair of
+        // intervals is steady there, and the same as a single interval on an evenly timed link.
+        // A frame counts as valid when its own interval is in range, as before, and the pair is smoothed in
+        // only when it is in range too. It is an outlier only when both are off: a dropped frame puts its
+        // long interval into two pairs, and an alternating link has every other single interval off.
+        const float rxRateHz = isPrevRxRateValid
+            ? 2e6f / (currentRxIntervalUs + previousRxIntervalUs)
+            : currentRxRateHz;
+        const float deltaRateHz = rxRateHz - smoothedRxRateHz;
+        const float maxDeltaRateHz = smoothedRxRateHz * 0.2f;
+        const bool isPairInRange = fabsf(deltaRateHz) <= maxDeltaRateHz;
+        const bool isSingleInRange = fabsf(currentRxRateHz - smoothedRxRateHz) <= maxDeltaRateHz;
 
-        if (isOutlier) {
+        if (!isPairInRange && !isSingleInRange) {
             const int8_t currentSign = (deltaRateHz < 0.0f) ? -1 : 1;
             if (outlierCount == 0) {
                 prevOutlierSign = currentSign;
@@ -581,11 +594,13 @@ bool shouldUpdateSmoothing(void)
                 }
             }
             validCount = 0;
-        } else {
-            // First-order smoothing toward new value for non-outliers
-            smoothedRxRateHz += smoothingFactor * (currentRxRateHz - smoothedRxRateHz);
+        } else if (isSingleInRange) {
+            if (isPairInRange) {
+                // First-order smoothing toward new value for non-outliers
+                smoothedRxRateHz += smoothingFactor * (rxRateHz - smoothedRxRateHz);
+                outlierCount = 0;
+            }
             validCount++;
-            outlierCount = 0;
         }
 
         DEBUG_SET(DEBUG_RC_SMOOTHING, 6, outlierCount);  //!< Outlier Count
@@ -598,7 +613,7 @@ bool shouldUpdateSmoothing(void)
         }
         if (outlierCount >= 3) {
             // Link rate likely changed — snap smoothing accumulator to current value
-            smoothedRxRateHz = currentRxRateHz;
+            smoothedRxRateHz = rxRateHz;
             outlierCount = 0;
         }
     } else {
