@@ -389,6 +389,20 @@ flight_mixer_wing_unittest_DEFINES := \
 gps_conversion_unittest_SRC := \
 		$(USER_DIR)/common/gps_conversion.c
 
+gps_ublox_unittest_SRC := \
+		$(USER_DIR)/io/gps.c \
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/gps_conversion.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/typeconversion.c
+
+gps_ublox_unittest_DEFINES := \
+		USE_GPS= \
+		USE_GPS_UBLOX=
+
 
 dronecan_gnss_unittest_SRC := \
 		$(TEST_DIR)/dronecan_gnss_libcanard.c

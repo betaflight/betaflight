@@ -83,6 +83,8 @@ extern "C" {
     uint32_t GPS_distanceFlownInCm;
     int32_t GPS_coord[2];
     gpsSolutionData_t gpsSol;
+    bool simulationGpsSpoofing = false;
+    bool gpsSpoofingDetected(void) { return simulationGpsSpoofing; }
     float motor[8];
 
     linkQualitySource_e linkQualitySource;
@@ -1157,6 +1159,57 @@ TEST_F(OsdTest, TestElementCoreTemperature)
 
     // then
     displayPortTestBufferSubstring(1, 8, "C%c 91%c", SYM_TEMPERATURE, SYM_F);
+}
+
+/*
+ * Tests the GPS spoofing warning, which follows the receiver's own report.
+ */
+TEST_F(OsdTest, TestElementWarningsGpsSpoofing)
+{
+    // given
+    osdElementConfigMutable()->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | OSD_PROFILE_1_FLAG;
+    osdConfigMutable()->enabledWarnings = 0;  // disable all warnings
+    osdWarnSetState(OSD_WARNING_GPS_SPOOFING, true);
+
+    osdAnalyzeActiveElements();
+
+    // and
+    simulationGpsSpoofing = true;
+
+    // when
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    // Delay as the warnings are flashing
+    simulationTime += 1000000;
+    simulationTime -= simulationTime % 1000000;
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(9, 10, "GPS SPOOFING");
+
+    // given
+    // the receiver stopped reporting spoofing and the hold time has passed
+    simulationGpsSpoofing = false;
+
+    // when
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(9, 10, "            ");
+
+    // given
+    // spoofing again, but the warning is switched off
+    simulationGpsSpoofing = true;
+    osdWarnSetState(OSD_WARNING_GPS_SPOOFING, false);
+
+    // when
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(9, 10, "            ");
+
+    simulationGpsSpoofing = false;
 }
 
 /*

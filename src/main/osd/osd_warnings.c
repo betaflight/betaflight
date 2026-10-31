@@ -58,6 +58,7 @@
 #include "flight/pos_hold.h"
 
 #include "io/beeper.h"
+#include "io/gps.h"
 
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
@@ -359,6 +360,19 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         *blinking = true;
         return;
     }
+
+#ifdef USE_GPS
+    // The receiver itself reports spoofing. Satellite count and fix quality can look normal
+    // while the position is wrong, so this is the pilot's only cue not to trust it. It sits
+    // after the warnings that demand action now (an active rescue failing, failsafe, a
+    // critical battery) and ahead of the rescue and position warnings whose meaning it changes.
+    if (osdWarnGetState(OSD_WARNING_GPS_SPOOFING) && gpsSpoofingDetected()) {
+        tfp_sprintf(warningText, "GPS SPOOFING");
+        *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
+        *blinking = true;
+        return;
+    }
+#endif
 
 #ifdef USE_GPS_RESCUE
     if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_UNAVAILABLE)
