@@ -60,6 +60,7 @@
 
 #define RX_INTERVAL_MIN_US     800 // 0.800ms to fit 1kHz without an issue often 1khz rc comes in at 880us or so
 #define RX_INTERVAL_MAX_US   65500 // 65.5ms or 15.26hz
+#define RX_INTERVAL_SLOW_US 125000 // 125ms or 8hz, longest interval taken as a slow link, below RXLOSS_TRIGGER_INTERVAL (150ms)
 
 typedef float (applyRatesFn)(const int axis, float rcCommandf, const float rcCommandfAbs);
 // note that rcCommand[] is an external float
@@ -80,6 +81,7 @@ static float smoothedRxRateHz = 100.0f;
 static bool isRxDataNew = false;
 static bool isRxRateValid = false;
 static bool yawFromAutopilot = false;
+static bool isRxRateSlow = false;    // interval above RX_INTERVAL_MAX_US, but a steady slow link rather than a gap
 
 enum {
     ROLL_FLAG = 1 << ROLL,
@@ -114,6 +116,7 @@ float getFeedforward(int axis)
 #ifdef USE_RC_SMOOTHING_FILTER
 static FAST_DATA_ZERO_INIT rcSmoothingFilter_t rcSmoothingData;
 static float rcDeflectionSmoothed[3];
+static bool rcSmoothingCutoffsPending = true;  // set filter cutoffs on the next rx frame
 #endif // USE_RC_SMOOTHING_FILTER
 
 float getSetpointRate(int axis)
@@ -307,6 +310,7 @@ void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal)
     currentRxIntervalUs = constrain(delta, RX_INTERVAL_MIN_US, RX_INTERVAL_MAX_US);
     currentRxRateHz = 1e6f / currentRxIntervalUs;
     isRxRateValid = delta == currentRxIntervalUs; // delta is not constrained, therefore not outside limits
+    isRxRateSlow = delta > RX_INTERVAL_MAX_US && delta <= RX_INTERVAL_SLOW_US;
 
     DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(delta / 10, INT16_MAX));                //!< Frame Interval [unit:0.01ms]
     DEBUG_SET(DEBUG_RX_TIMING, 2, isRxRateValid);                             //!< Frame Interval Within Limits
@@ -561,7 +565,8 @@ bool shouldUpdateSmoothing(void)
     static const float smoothingFactor = 0.1f;       // Low pass smoothing factor to smooth valid RxRate values
     static int8_t prevOutlierSign = 0;               // -1 for negative, +1 for positive
 
-    if (isRxReceivingSignal() && isRxRateValid) {
+    // links slower than RX_INTERVAL_MAX_US (eg 12.5Hz SBUS) are smoothed at the constrained minimum rate
+    if (isRxReceivingSignal() && (isRxRateValid || isRxRateSlow)) {
         float deltaRateHz = currentRxRateHz - smoothedRxRateHz;
         bool isOutlier = fabsf(deltaRateHz) > (smoothedRxRateHz * 0.2f);
 
@@ -622,13 +627,14 @@ FAST_CODE void processRcCommand(void)
             // update FF smoothing
             updateFeedforwardFilters(&pidRuntime);
 #endif
-#ifdef USE_RC_SMOOTHING_FILTER
-            if (rxConfig()->rc_smoothing) {
-                rcSmoothingSetFilterCutoffs(&rcSmoothingData);
-            }
-#endif
         }
 #ifdef USE_RC_SMOOTHING_FILTER
+        // also set cutoffs on the first frame after initRcProcessing(), otherwise the filters
+        // have zero gain and hold throttle and setpoints at zero until a valid rx rate is seen
+        if (rxConfig()->rc_smoothing && (updateSmoothing || rcSmoothingCutoffsPending)) {
+            rcSmoothingSetFilterCutoffs(&rcSmoothingData);
+            rcSmoothingCutoffsPending = false;
+        }
         DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 0, currentRxIntervalUs / 10);  //!< Frame Interval [unit:0.01ms]
         DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 3, updateSmoothing ? 1 : 0);   //!< Cutoffs Updated
 #endif
@@ -874,6 +880,8 @@ void initRcProcessing(void)
 
     rcSmoothingData.setpointCutoffFrequency = rcSmoothingData.setpointCutoffSetting; //initialise to user's cutoff setting, but if 0, will be replaced with auto values from rcSmoothingSetFilterCutoffs()
     rcSmoothingData.throttleCutoffFrequency = rcSmoothingData.throttleCutoffSetting;
+    // cutoffs are set from processRcCommand(), as the pid looptime may not be known yet at boot
+    rcSmoothingCutoffsPending = true;
 #endif
 
 #ifdef USE_FEEDFORWARD
