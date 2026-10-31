@@ -644,6 +644,11 @@ RAM_CODE static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, 
             const int bytesRead = flashfsReadAbs(address + bytesReadTotal, readBuffer,
                 MIN(sizeof(readBuffer), flashfsSize - address - bytesReadTotal));
 
+            if (bytesRead <= 0) {
+                // a failed read would otherwise repeat forever
+                break;
+            }
+
             const int status = huffmanEncodeBufStreaming(&state, readBuffer, bytesRead, huffmanTable);
             if (status == -1) {
                 // overflow
