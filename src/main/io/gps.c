@@ -251,7 +251,7 @@ typedef struct ubxCfgGnss_s {
     uint8_t numTrkChHw;
     uint8_t numTrkChUse;
     uint8_t numConfigBlocks;
-    ubxConfigblock_t configblocks[7];
+    ubxConfigblock_t configblocks[8]; // gnssId 0..7: GPS, SBAS, Galileo, BeiDou, IMES, QZSS, GLONASS, NavIC
 } ubxCfgGnss_t;
 
 typedef struct ubxCfgPms_s {
@@ -2725,14 +2725,23 @@ static bool UBLOX_parse_gps(void)
         break;
     case CLSMSG(CLASS_CFG, MSG_CFG_GNSS):
         {
-            const uint16_t messageSize = 4 + (ubxRcvMsgPayload.ubxCfgGnss.numConfigBlocks * sizeof(ubxConfigblock_t));
+            const uint8_t numConfigBlocks = ubxRcvMsgPayload.ubxCfgGnss.numConfigBlocks;
+            const uint8_t messageSize = 4 + (numConfigBlocks * sizeof(ubxConfigblock_t));
+            if (numConfigBlocks > ARRAYLEN(ubxRcvMsgPayload.ubxCfgGnss.configblocks)
+                || ubxRcvMsgPayloadLength != messageSize) {
+                // numConfigBlocks comes off the wire. More blocks than the struct holds
+                // would index past configblocks[] below, and echoing a truncated block
+                // list back would disable every GNSS the receiver listed after the cut.
+                // A frame shorter than its block count would send back stale bytes left
+                // in ubxRcvMsgPayload by earlier messages. Leave the receiver's GNSS
+                // configuration as it is in either case.
+                break;
+            }
             ubxMessage_t tx_buffer;
 
-            // prevent buffer overflow on invalid numConfigBlocks
-            const int size = MIN(messageSize, sizeof(tx_buffer.payload));
-            memcpy(&tx_buffer.payload, &ubxRcvMsgPayload, size);
+            memcpy(&tx_buffer.payload, &ubxRcvMsgPayload, messageSize);
 
-            for (int i = 0; i < ubxRcvMsgPayload.ubxCfgGnss.numConfigBlocks; i++) {
+            for (int i = 0; i < numConfigBlocks; i++) {
                 if (ubxRcvMsgPayload.ubxCfgGnss.configblocks[i].gnssId == UBLOX_GNSS_SBAS) {
                     if (gpsConfig()->sbasMode == SBAS_NONE) {
                         tx_buffer.payload.cfg_gnss.configblocks[i].flags &= ~UBLOX_GNSS_ENABLE; // Disable SBAS
