@@ -55,6 +55,7 @@
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/esc_sensor.h"
+#include "sensors/motor_telemetry.h"
 
 #include "telemetry/jetiexbus.h"
 #include "telemetry/telemetry.h"
@@ -295,8 +296,8 @@ void initJetiExBusTelemetry(void)
     enableGpsTelemetry(featureIsEnabled(FEATURE_GPS));
 
         // Enable RPM telemetry when ESC telemetry is available
-    #if defined(USE_DSHOT) || defined(USE_ESC_SENSOR)
-        if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
+    #if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
+        if (motorTelemetryIsEnabled()) {
             bitArraySet(&exSensorEnabled, EX_RPM);
         }
     #endif
@@ -442,26 +443,13 @@ static int32_t getSensorValue(uint8_t sensor)
         return 0;
     break;
 
-#if defined(USE_DSHOT) || defined(USE_ESC_SENSOR)
+#if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
     case EX_RPM: {
-        // Average RPM across all motors with valid ESC telemetry; units: rpm/10 to fit in 22b range
-        int32_t rpmSum10 = 0;
-        uint8_t validCount = 0;
-        uint8_t count = getMotorCount();
-        for (uint8_t i = 0; i < count; i++) {
-            const escSensorData_t *esc = getEscSensorData(i);
-            if (esc && esc->dataAge < ESC_DATA_INVALID) {
-                rpmSum10 += esc->rpm;
-                validCount++;
-            }
-        }
-        if (validCount == 0) {
-            return 0;
-        }
-
-        return lrintf(erpmToRpm((uint32_t)rpmSum10) / 10.0f / validCount);
+        // Average RPM across all motors with valid telemetry; units: rpm/10 to fit in 22b range
+        const motorTelemetry_t *motorTelemetry = motorTelemetryGet(MOTOR_TELEMETRY_COMBINED);
+        return motorTelemetryHas(motorTelemetry, MOTOR_TELEMETRY_RPM) ? (int32_t)(motorTelemetry->rpm / 10) : 0;
     }
-#endif // end of USE_DSHOT || USE_ESC_SENSOR
+#endif // USE_DSHOT_TELEMETRY || USE_ESC_SENSOR
 
     case EX_DEBUG0: return debug[0];
     case EX_DEBUG1: return debug[1];

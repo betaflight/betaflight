@@ -29,7 +29,6 @@
 #include "drivers/motor_types.h"
 // TODO: move bitbang as implementation detail of dshot (i.e. dshot should be the interface)
 #include "drivers/dshot_bitbang.h"
-#include "sensors/esc_sensor.h"
 
 #define DSHOT_MIN_THROTTLE              (48)
 #define DSHOT_MAX_THROTTLE              (2047)
@@ -104,7 +103,6 @@ typedef struct dshotTelemetryMotorState_s {
     uint16_t rawValue;
     uint16_t telemetryData[DSHOT_TELEMETRY_TYPE_COUNT];
     uint8_t telemetryTypes;
-    uint8_t maxTemp;
 } dshotTelemetryMotorState_t;
 
 typedef struct dshotTelemetryState_s {
@@ -152,5 +150,4 @@ void dshotCleanTelemetryData(void);
 float erpmToRpm(uint32_t erpm);
 
 int16_t getDshotTelemetryMotorInvalidPercent(uint8_t motorIndex);
-bool getDshotSensorData(escSensorData_t *dest, int motorIndex);
 void validateAndfixMotorOutputReordering(uint8_t *array, const unsigned size);

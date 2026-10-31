@@ -431,6 +431,14 @@ maths_unittest_SRC := \
 		$(USER_DIR)/common/vector.c
 
 
+motor_telemetry_unittest_SRC := \
+		$(USER_DIR)/sensors/motor_telemetry.c
+
+motor_telemetry_unittest_DEFINES := \
+		USE_DSHOT= \
+		USE_DSHOT_TELEMETRY= \
+		USE_ESC_SENSOR=
+
 motor_output_unittest_SRC := \
 		$(USER_DIR)/build/atomic.c \
 		$(USER_DIR)/drivers/dshot.c

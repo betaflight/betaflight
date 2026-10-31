@@ -158,6 +158,7 @@
 #include "sensors/rangefinder.h"
 #include "sensors/opticalflow.h"
 #include "sensors/pitot.h"
+#include "sensors/motor_telemetry.h"
 
 #include "telemetry/msp_shared.h"
 #include "telemetry/telemetry.h"
@@ -1316,19 +1317,15 @@ case MSP_NAME:
     case MSP_MOTOR_TELEMETRY:
         sbufWriteU8(dst, getMotorCount());
         for (unsigned i = 0; i < getMotorCount(); i++) {
-            int rpm = 0;
+            uint32_t rpm = 0;
             uint16_t invalidPct = 0;
             uint8_t escTemperature = 0;  // degrees celcius
             uint16_t escVoltage = 0;     // 0.01V per unit
             uint16_t escCurrent = 0;     // 0.01A per unit
             uint16_t escConsumption = 0; // mAh
 
-            bool rpmDataAvailable = false;
-
 #ifdef USE_DSHOT_TELEMETRY
             if (useDshotTelemetry) {
-                rpm = lrintf(getDshotRpm(i));
-                rpmDataAvailable = true;
                 invalidPct = 10000; // 100.00%
 
 #ifdef USE_DSHOT_TELEMETRY_STATS
@@ -1336,42 +1333,21 @@ case MSP_NAME:
                     invalidPct = getDshotTelemetryMotorInvalidPercent(i);
                 }
 #endif
-
-                // Provide extended dshot telemetry
-                if ((dshotTelemetryState.motorState[i].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0) {
-                    // Temperature Celsius [0, 1, ..., 255] in degree Celsius, just like Blheli_32 and KISS
-                    if ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0) {
-                        escTemperature = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE];
-                    }
-
-                    // Current -> 0-255A step 1A
-                    if ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0) {
-                        escCurrent = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT];
-                    }
-
-                    // Voltage -> 0-63,75V step 0,25V
-                    if ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) != 0) {
-                        escVoltage = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] >> 2;
-                    }
-                }
             }
 #endif
 
-#ifdef USE_ESC_SENSOR
-            if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-                escSensorData_t *escData = getEscSensorData(i);
-                if (!rpmDataAvailable) {  // We want DSHOT telemetry RPM data (if available) to have precedence
-                    rpm = lrintf(erpmToRpm(escData->rpm));
-                    rpmDataAvailable = true;
-                }
-                escTemperature = escData->temperature;
-                escVoltage = escData->voltage;
-                escCurrent = escData->current;
-                escConsumption = escData->consumption;
+#if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
+            const motorTelemetry_t *telemetry = motorTelemetryGet(i);
+            if (telemetry) {
+                rpm = telemetry->rpm;
+                escTemperature = telemetry->temperature;
+                escVoltage = telemetry->voltage;
+                escCurrent = telemetry->current;
+                escConsumption = telemetry->consumption;
             }
 #endif
 
-            sbufWriteU32(dst, (rpmDataAvailable ? rpm : 0));
+            sbufWriteU32(dst, rpm);
             sbufWriteU16(dst, invalidPct);
             sbufWriteU8(dst, escTemperature);
             sbufWriteU16(dst, escVoltage);
@@ -1593,25 +1569,15 @@ case MSP_NAME:
     // Deprecated in favor of MSP_MOTOR_TELEMETY as of API version 1.42
     // Used by DJI FPV
     case MSP_ESC_SENSOR_DATA:
-#if defined(USE_ESC_SENSOR)
-        if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
+#if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
+        if (motorTelemetryIsEnabled()) {
             sbufWriteU8(dst, getMotorCount());
-            for (int i = 0; i < getMotorCount(); i++) {
-                const escSensorData_t *escData = getEscSensorData(i);
-                sbufWriteU8(dst, escData->temperature);
-                sbufWriteU16(dst, escData->rpm);
+            for (unsigned i = 0; i < getMotorCount(); i++) {
+                const motorTelemetry_t *telemetry = motorTelemetryGet(i);
+                sbufWriteU8(dst, telemetry ? telemetry->temperature : 0);
+                sbufWriteU16(dst, telemetry ? MIN(telemetry->rpm / 10, (uint32_t)UINT16_MAX) : 0); // RPM / 10, as ArduPilot sends to DJI
             }
         } else
-#endif
-#if defined(USE_DSHOT_TELEMETRY)
-        if (useDshotTelemetry) {
-            sbufWriteU8(dst, getMotorCount());
-            for (int i = 0; i < getMotorCount(); i++) {
-                sbufWriteU8(dst, dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE]);
-                sbufWriteU16(dst, lrintf(getDshotRpm(i)));
-            }
-        }
-        else
 #endif
         {
             unsupportedCommand = true;
