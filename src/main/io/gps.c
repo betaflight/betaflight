@@ -1846,7 +1846,10 @@ typedef struct gpsDataNmea_s {
 static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uint8_t idx)
 {
     static uint8_t svMessageNum = 0;
-    uint8_t svSatNum = 0, svPacketIdx = 0, svSatParam = 0;
+    // kept wide: the message number comes off the wire, and a value that
+    // overflows uint8_t would wrap to a small index that passes the check
+    uint16_t svSatNum = 0;
+    uint8_t svPacketIdx = 0, svSatParam = 0;
 
     switch (gpsFrame) {
 
@@ -1917,7 +1920,7 @@ static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uin
         svSatNum    = svPacketIdx + (4 * (svMessageNum - 1)); // global satellite number
         svSatParam  = idx - 3 - (4 * (svPacketIdx - 1)); // parameter number for satellite
 
-        if (svSatNum > GPS_SV_MAXSATS_LEGACY)
+        if (svSatNum < 1 || svSatNum > GPS_SV_MAXSATS_LEGACY)
             break;
 
         switch (svSatParam) {
