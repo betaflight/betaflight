@@ -258,8 +258,8 @@ const OSD_Entry menuAlarmsEntries[] =
 {
     {"--- ALARMS ---", OME_Label, NULL, NULL},
     {"RSSI",     OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_rssi_alarm, 5, 90, 5}},
-    {"LINK QUALITY", OME_UINT16,  NULL, &(OSD_UINT16_t){&osdConfig_link_quality_alarm, 5, 300, 5}},
-    {"RSSI DBM", OME_INT16,  NULL, &(OSD_INT16_t){&osdConfig_rssi_dbm_alarm, CRSF_RSSI_MIN, CRSF_SNR_MAX, 5}},
+    {"LINK QUALITY", OME_UINT16,  NULL, &(OSD_UINT16_t){&osdConfig_link_quality_alarm, 5, OSD_LINK_QUALITY_ALARM_MAX, 5}},
+    {"RSSI DBM", OME_INT16,  NULL, &(OSD_INT16_t){&osdConfig_rssi_dbm_alarm, CRSF_RSSI_MIN, CRSF_RSSI_MAX, 5}},
     {"RSNR", OME_INT16,  NULL, &(OSD_INT16_t){&osdConfig_rsnr_alarm, CRSF_SNR_MIN, CRSF_SNR_MAX, 5}},
     {"MAIN BAT", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_cap_alarm, 50, 30000, 50}},
     {"MAX ALT",  OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_alt_alarm, 1, 200, 1}},
