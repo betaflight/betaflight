@@ -1431,6 +1431,14 @@ bool osdUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
     return (osdState != OSD_STATE_IDLE);
 }
 
+// An MSP display sends over a serial port whose buffer drains at the baud rate, and what is written while it is full
+// is dropped without a trace: a clear that is lost keeps the old screen, a write that is lost is a missing element.
+// So the OSD waits for room before it clears or writes, and the frame rate follows what the link can carry.
+static bool osdSerialDisplayBusy(void)
+{
+    return osdDisplayPort->deviceType == DISPLAYPORT_DEVICE_TYPE_MSP && displayIsTransferInProgress(osdDisplayPort);
+}
+
 // Called when there is OSD update work to be done
 void osdUpdate(timeUs_t currentTimeUs)
 {
@@ -1527,6 +1535,10 @@ void osdUpdate(timeUs_t currentTimeUs)
         break;
 
     case OSD_STATE_UPDATE_CANVAS:
+        if (osdSerialDisplayBusy()) {
+            break;
+        }
+
         if (resumeRefreshAt) {
             osdState = OSD_STATE_TRANSFER;
             break;
@@ -1568,6 +1580,10 @@ void osdUpdate(timeUs_t currentTimeUs)
 
     case OSD_STATE_DRAW_ELEMENT:
         {
+            if (osdSerialDisplayBusy()) {
+                break;
+            }
+
             uint8_t osdElement = osdGetActiveElement();
 
             timeUs_t startElementTime = micros();
@@ -1608,6 +1624,10 @@ void osdUpdate(timeUs_t currentTimeUs)
 
     case OSD_STATE_DISPLAY_ELEMENT:
         {
+            if (osdSerialDisplayBusy()) {
+                break;
+            }
+
             const bool pendingDisplay = osdDisplayActiveElement();
 
             if (!pendingDisplay) {
