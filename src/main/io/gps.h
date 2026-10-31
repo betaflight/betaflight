@@ -97,6 +97,9 @@ typedef enum {
     CFG_MSGOUT_UBX_NAV_DOP_I2C = 0x20910038, // U1
     CFG_MSGOUT_UBX_NAV_DOP_SPI = 0x2091003c, // U1
     CFG_MSGOUT_UBX_NAV_DOP_UART1 = 0x20910039, // U1
+    CFG_MSGOUT_UBX_NAV_STATUS_I2C = 0x2091001a, // U1
+    CFG_MSGOUT_UBX_NAV_STATUS_SPI = 0x2091001e, // U1
+    CFG_MSGOUT_UBX_NAV_STATUS_UART1 = 0x2091001b, // U1
     CFG_SBAS_USE_TESTMODE = 0x10360002, // L
     CFG_SBAS_USE_RANGING = 0x10360003, // L
     CFG_SBAS_USE_DIFFCORR = 0x10360004, // L
@@ -266,6 +269,15 @@ typedef struct gpsDateTime_s {
     bool valid;                     // true when date/time are valid from GPS
 } gpsDateTime_t;
 
+// Receiver's own spoofing assessment (u-blox NAV-STATUS flags2 spoofDetState).
+// The values are the receiver's, so they can be stored without translation.
+typedef enum {
+    GPS_SPOOFING_UNKNOWN = 0,   // not supported, deactivated, or no receiver report yet
+    GPS_SPOOFING_NONE = 1,      // receiver checked and found nothing
+    GPS_SPOOFING_INDICATED = 2,
+    GPS_SPOOFING_MULTIPLE = 3,  // more than one indication
+} gpsSpoofingState_e;
+
 typedef struct gpsSolutionData_s {
     gpsLocation_t llh;
     gpsDilution_t dop;
@@ -279,6 +291,8 @@ typedef struct gpsSolutionData_s {
     uint32_t time;                  // GPS msToW
     uint32_t navIntervalMs;         // interval between nav solutions in ms
     gpsDateTime_t dateTime;         // GPS date/time from NAV-PVT
+    uint8_t spoofingState;          // gpsSpoofingState_e, from NAV-STATUS; UNKNOWN unless the receiver reports it
+    timeMs_t spoofingIndicatedAtMs; // last time the receiver indicated spoofing, 0 if never
 } gpsSolutionData_t;
 
 /*
@@ -410,6 +424,7 @@ void gpsInit(void);
 void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);
 bool gpsIsHealthy(void); // Returns true when the gps state is RECEIVING_DATA
+bool gpsSpoofingDetected(void); // Returns true while the receiver reports spoofing, and for a hold time after it last did
 struct serialPort_s;
 bool gpsPassthrough(struct serialPort_s *gpsPassthroughPort);
 void onGpsNewData(void);

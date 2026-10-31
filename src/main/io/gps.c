@@ -180,6 +180,22 @@ typedef enum {
 #define UBLOX_USAGE_DIFFCORR  0x2
 #define UBLOX_USAGE_INTEGRITY 0x4
 
+// NAV-STATUS flags2 bits 3..4: the receiver's spoofing detection state, values as gpsSpoofingState_e
+#define NAV_STATUS_FLAGS2_SPOOF_DET_STATE_SHIFT 3
+#define NAV_STATUS_FLAGS2_SPOOF_DET_STATE_MASK  (0x3 << NAV_STATUS_FLAGS2_SPOOF_DET_STATE_SHIFT)
+
+// NAV-STATUS is only needed for the spoofing flag once NAV-PVT carries the fix, but that
+// flag describes a single navigation epoch and the detector fires at the transition into a
+// spoofed signal, so every solution is requested: skipping epochs could skip the indication.
+// The cost is 24 bytes per solution.
+#define NAV_STATUS_SPOOFING_RATE 1
+
+// The receiver's spoofing state covers the current epoch only, and its detector fires mostly
+// at the transition from the real signal to the spoofed one, so "no spoofing indicated" right
+// after an indication does not mean the signal is clean. Keep reporting spoofing for this long
+// after the last indication.
+#define GPS_SPOOFING_HOLD_MS 10000
+
 #define UBLOX_GNSS_ENABLE     0x1
 #define UBLOX_GNSS_DEFAULT_SIGCFGMASK 0x10000
 
@@ -1208,7 +1224,16 @@ static void gpsConfigureUblox(void)
                 }
                 break;
             case UBLOX_MSG_STATUS:
-                if (gpsData.ubloxM7orAbove) {
+                // NAV-PVT carries the fix from M7 up, but NAV-STATUS is the only message
+                // with the receiver's spoofing detection state. That field exists from
+                // protocol 18 (M8 firmware 3.01 and later; the firmware maps hardware to a
+                // platform, not a protocol version, so M8 is the gate), so keep the message
+                // on from M8 up and off on M7, where NAV-PVT covers everything it carries.
+                if (gpsData.ubloxM9orAbove) {
+                    ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_STATUS_UART1, NAV_STATUS_SPOOFING_RATE);
+                } else if (gpsData.ubloxM8orAbove) {
+                    ubloxSetMessageRate(CLASS_NAV, MSG_NAV_STATUS, NAV_STATUS_SPOOFING_RATE);
+                } else if (gpsData.ubloxM7orAbove) {
                     ubloxSetMessageRate(CLASS_NAV, MSG_NAV_STATUS, 0);
                 } else {
                     ubloxSetMessageRate(CLASS_NAV, MSG_NAV_STATUS, 1);
@@ -1614,6 +1639,8 @@ void gpsUpdate(timeUs_t currentTimeUs)
         gpsData.timeouts++;
         // previously we would attempt a different baud rate here if gps auto-baud was enabled.  that code has been removed.
         gpsSol.numSat = 0;
+        gpsSol.spoofingState = GPS_SPOOFING_UNKNOWN;
+        gpsSol.spoofingIndicatedAtMs = 0;
         DISABLE_STATE(GPS_FIX);
         gpsSetState(GPS_STATE_DETECT_BAUD);
         break;
@@ -1735,6 +1762,14 @@ bool gpsNewFrame(uint8_t c)
 bool gpsIsHealthy(void)
 {
     return (gpsData.state == GPS_STATE_RECEIVING_DATA);
+}
+
+bool gpsSpoofingDetected(void)
+{
+    // Judged by the age of the last indication alone. While the receiver keeps indicating,
+    // each NAV-STATUS refreshes it; if NAV-STATUS stops arriving while NAV-PVT carries on,
+    // a stale indication expires like any other instead of sticking.
+    return gpsSol.spoofingIndicatedAtMs != 0 && cmp32(millis(), gpsSol.spoofingIndicatedAtMs) < GPS_SPOOFING_HOLD_MS;
 }
 
 /* This is a light implementation of a GPS frame decoding
@@ -2155,7 +2190,7 @@ typedef struct ubxNavStatus_s {
     uint8_t fix_type;
     uint8_t fix_status;
     uint8_t differential_status;
-    uint8_t res;
+    uint8_t flags2;             // psmState, spoofDetState, carrSoln
     uint32_t time_to_first_fix;
     uint32_t uptime;            // milliseconds
 } ubxNavStatus_t;
@@ -2651,9 +2686,23 @@ static bool UBLOX_parse_gps(void)
 #ifdef USE_DASHBOARD
         *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_UBLOX_STATUS;
 #endif
-        ubxHaveNewValidFix = (ubxRcvMsgPayload.ubxNavStatus.fix_status & NAV_STATUS_FIX_VALID) && (ubxRcvMsgPayload.ubxNavStatus.fix_type == FIX_3D);
-        if (!ubxHaveNewValidFix)
-            DISABLE_STATE(GPS_FIX);
+        // a checksum-valid frame shorter than the message would read flags2 from whatever an
+        // earlier message left in the receive union, so only a full NAV-STATUS updates the
+        // state. Before protocol 18 (gated as M8 and later, see the message configuration)
+        // flags2 bits 3..4 are reserved, so they are not read as a spoofing state.
+        if (gpsData.ubloxM8orAbove && ubxRcvMsgPayloadLength >= sizeof(ubxNavStatus_t)) {
+            gpsSol.spoofingState = (ubxRcvMsgPayload.ubxNavStatus.flags2 & NAV_STATUS_FLAGS2_SPOOF_DET_STATE_MASK) >> NAV_STATUS_FLAGS2_SPOOF_DET_STATE_SHIFT;
+            if (gpsSol.spoofingState >= GPS_SPOOFING_INDICATED) {
+                gpsSol.spoofingIndicatedAtMs = millis();
+            }
+        }
+        if (!gpsData.ubloxM7orAbove) {
+            // below M7 this message carries the fix; from M7 up NAV-PVT does, and this
+            // message arrives less often, so leave the fix state to NAV-PVT there
+            ubxHaveNewValidFix = (ubxRcvMsgPayload.ubxNavStatus.fix_status & NAV_STATUS_FIX_VALID) && (ubxRcvMsgPayload.ubxNavStatus.fix_type == FIX_3D);
+            if (!ubxHaveNewValidFix)
+                DISABLE_STATE(GPS_FIX);
+        }
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_DOP):
 #ifdef USE_DASHBOARD
