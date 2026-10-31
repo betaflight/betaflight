@@ -233,22 +233,57 @@ static void setupTrimming(unsigned mask, float cli_deadband, float cli_rate,
 
 TEST(PsasTrimming, InitZeroMaskTurnsOffState)
 {
-    setupTrimming(0, 0, 0, 0, 100);
+    // Prepare state with nonzero outputs and active TRIMMING_ADJUSTMENT.
+    // setupTrimming(0x07,...) leaves enabledMask = 0x07 and does NOT call memset
+    // after we set output/state — so the outputs survive until psasTrimmingInit() is called.
+    setupTrimming(0x07, 1, 100, 50, 100);
+
     psasTrimmingData.state = TRIMMING_ADJUSTMENT;
     psasTrimmingData.activeAxis = FD_ROLL;
-    psasTrimmingData.output[FD_ROLL] = 1.0f;
+    psasTrimmingData.output[FD_ROLL]  =  1.0f;
     psasTrimmingData.output[FD_PITCH] = -2.0f;
-    psasTrimmingData.output[FD_YAW] = 3.0f;
+    psasTrimmingData.output[FD_YAW]   =  3.0f;
 
+    // Profile with fully disabled trimming mask.
+    // lowpass_time = 0 → pt1FilterGainFromDelay(0, dT) yields k=1,
+    // which is safe for subsequent psasTrimmingUpdate() calls.
     pidProfile_t profile = {};
     profile.psas_trim_enabled_mask = 0;
-    profile.psas_trim_lowpass_time = 1000;
+    profile.psas_trim_lowpass_time = 0;
+    profile.psas_trim_deadband    = 0;
+    profile.psas_trim_rate        = 0;
+    profile.psas_trim_limit       = 0;
+    profile.psas_trim_tau_reset   = 0;
+
     psasTrimmingInit(&profile);
 
+    // Verify that psasTrimmingInit() itself zeroed the outputs
+    // and forced the state to TRIMMING_OFF.
     EXPECT_EQ(getPsasTrimmingState(), TRIMMING_OFF);
     EXPECT_FLOAT_EQ(getPsasTrimmingOutput(FD_ROLL),  0.0f);
     EXPECT_FLOAT_EQ(getPsasTrimmingOutput(FD_PITCH), 0.0f);
     EXPECT_FLOAT_EQ(getPsasTrimmingOutput(FD_YAW),   0.0f);
+}
+
+TEST(PsasTrimming, InitDisablesOnlyDisabledAxes)
+{
+    // Additional coverage: mask 0x05 (ROLL|YAW) — PITCH must be zeroed,
+    // while ROLL/YAW are preserved (clamped to outputRange).
+    setupTrimming(0x07, 1, 100, 10, 100);
+    psasTrimmingData.output[FD_ROLL]  =  5.0f;
+    psasTrimmingData.output[FD_PITCH] =  7.0f;
+    psasTrimmingData.output[FD_YAW]   = 15.0f; // > limit → must be clamped
+
+    pidProfile_t profile = {};
+    profile.psas_trim_enabled_mask = 0x05;
+    profile.psas_trim_lowpass_time = 0;
+    profile.psas_trim_limit        = 10;
+
+    psasTrimmingInit(&profile);
+
+    EXPECT_FLOAT_EQ(getPsasTrimmingOutput(FD_ROLL),   5.0f);
+    EXPECT_FLOAT_EQ(getPsasTrimmingOutput(FD_PITCH),  0.0f);
+    EXPECT_FLOAT_EQ(getPsasTrimmingOutput(FD_YAW),   10.0f); // clamped
 }
 
 TEST(PsasTrimming, SetStateIgnoredWithZeroMask)
