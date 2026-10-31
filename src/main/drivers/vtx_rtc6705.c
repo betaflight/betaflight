@@ -56,6 +56,10 @@
 static IO_t vtxPowerPin     = IO_NONE;
 #endif
 
+#ifdef RTC6705_DYNAMIC_POWER_CTRL
+static IO_t exPowerPin[VTX_DYNAMIC_CTRL_PIN_COUNT] = { IO_NONE };
+#endif
+
 static extDevice_t *dev = NULL;
 
 #define DISABLE_RTC6705()   IOHi(dev->busType_u.spi.csnPin)
@@ -69,9 +73,24 @@ static extDevice_t *dev = NULL;
 #define PA_BS_MASK          0x0007 // b000000000000111
 
 #define PA_CONTROL_DEFAULT  0x4FBD
+#define PA_CONTROL_LOW      ((PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK)))
 
 #define RTC6705_RW_CONTROL_BIT      (1 << 4)
 #define RTC6705_ADDRESS             (0x07)
+
+#if defined(RTC6705_DYNAMIC_POWER_CTRL)
+struct rtc6705PowerLevel {
+    uint8_t pins;   // bit i drives exPowerPin[i]
+    uint32_t reg;   // rtc6705 reg 0x07 data
+};
+
+// index = power value = external power code
+static const struct rtc6705PowerLevel rtc6705PowerLevels[VTX_RTC6705_POWER_COUNT] = {
+    { 0,      PA_CONTROL_LOW },
+    { BIT(0), PA_CONTROL_LOW },
+    { BIT(1), PA_CONTROL_DEFAULT },
+};
+#endif
 
 /**
  * Reverse a uint32_t (LSB to MSB)
@@ -108,6 +127,18 @@ bool rtc6705IOInit(const vtxIOConfig_t *vtxIOConfig)
 
         IOConfigGPIO(vtxPowerPin, IOCFG_OUT_PP);
     }
+
+#ifdef RTC6705_DYNAMIC_POWER_CTRL
+    for (unsigned i = 0; i < VTX_DYNAMIC_CTRL_PIN_COUNT; i++) {
+        IO_t io = IOGetByTag(vtxIOConfig->exPowerTag[i]);
+        if (io) {
+            IOInit(io, OWNER_VTX_POWER_EX, i + 1);
+            IOLo(io);
+            IOConfigGPIO(io, IOCFG_OUT_PP);
+        }
+        exPowerPin[i] = io;
+    }
+#endif
 
     // RTC6705 when using SOFT SPI driver doesn't use an SPI device, so don't attempt to initialise an spiInstance.
     spiResource_t *spiInstance = spiInstanceByDevice(SPI_CFG_TO_DEV(vtxIOConfig->spiDevice));
@@ -180,7 +211,20 @@ void rtc6705SetFrequency(uint16_t frequency)
 
 void rtc6705SetRFPower(uint8_t rf_power)
 {
-    rf_power = constrain(rf_power, 1, 2);
+#if defined(RTC6705_DYNAMIC_POWER_CTRL)
+    rf_power = constrain(rf_power, 0, VTX_RTC6705_POWER_COUNT - 1);
+    const struct rtc6705PowerLevel *level = &rtc6705PowerLevels[rf_power];
+
+    // external PA is set by the pins, internal PA by reg 0x07; both must match per level
+    for (unsigned i = 0; i < VTX_DYNAMIC_CTRL_PIN_COUNT; i++) {
+        if (exPowerPin[i]) {
+            IOWrite(exPowerPin[i], level->pins & BIT(i));
+        }
+    }
+#else
+    rf_power = constrain(rf_power, 1, VTX_RTC6705_POWER_COUNT);
+#endif
+
 #if defined(USE_VTX_RTC6705_SOFTSPI)
     if (!dev) {
         rtc6705SoftSpiSetRFPower(rf_power);
@@ -189,9 +233,14 @@ void rtc6705SetRFPower(uint8_t rf_power)
     }
 #endif
 
+#if defined(RTC6705_DYNAMIC_POWER_CTRL)
+    const uint32_t data = level->reg;
+#else
+    const uint32_t data = rf_power > 1 ? PA_CONTROL_DEFAULT : PA_CONTROL_LOW;
+#endif
+
     uint32_t val_hex = RTC6705_RW_CONTROL_BIT; // write
     val_hex |= RTC6705_ADDRESS; // address
-    const uint32_t data = rf_power > 1 ? PA_CONTROL_DEFAULT : (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK));
     val_hex |= data << 5; // 4 address bits and 1 rw bit.
 
     spiSetClkDivisor(dev, spiCalculateDivider(RTC6705_MAX_SPI_CLK_HZ));
