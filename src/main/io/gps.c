@@ -1800,6 +1800,10 @@ static uint32_t GPS_coord_to_degrees(char *coordinateString)
 
 // helper functions
 #ifdef USE_GPS_NMEA
+// NMEA fields arrive in gpsNewFrameNMEA()'s string[NMEA_FIELD_BUFFER_SIZE], which
+// always holds a terminator at or before index NMEA_FIELD_BUFFER_SIZE - 1.
+#define NMEA_FIELD_BUFFER_SIZE 16
+
 static uint32_t grab_fields(char *src, uint8_t mult)
 {                               // convert string to uint32
     uint32_t i;
@@ -1814,7 +1818,9 @@ static uint32_t grab_fields(char *src, uint8_t mult)
             i++;
             if (mult == 0) {
                 break;
-            } else {
+            } else if (i + mult < NMEA_FIELD_BUFFER_SIZE) {
+                // keep only 'mult' decimals; a field with the decimal point this
+                // close to the end is already terminated inside the buffer
                 src[i + mult] = 0;
             }
         }
@@ -2007,7 +2013,7 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
             temp_time.hours = (data->time / 1000000) % 100;
             temp_time.minutes = (data->time / 10000) % 100;
             temp_time.seconds = (data->time / 100) % 100;
-            temp_time.millis = (data->time & 100) * 10;
+            temp_time.millis = (data->time % 100) * 10; // hhmmss.ss: the last two digits are hundredths
             rtcSetDateTime(&temp_time);
         }
 #endif
@@ -2021,7 +2027,7 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
 static bool gpsNewFrameNMEA(char c)
 {
     static gpsDataNmea_t gps_msg;
-    static char string[16];
+    static char string[NMEA_FIELD_BUFFER_SIZE];
     static uint8_t param = 0, offset = 0, parity = 0;
     static uint8_t checksum_param, gps_frame = NO_FRAME;
     bool receivedNavMessage = false;
@@ -2085,7 +2091,7 @@ static bool gpsNewFrameNMEA(char c)
         break;
 
     default:
-        if (offset < 15)
+        if (offset < NMEA_FIELD_BUFFER_SIZE - 1)
             string[offset++] = c;
         if (!checksum_param)
             parity ^= c;

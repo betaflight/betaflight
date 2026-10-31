@@ -122,11 +122,21 @@ static void rtcGetDefaultDateTime(dateTime_t *dateTime)
     dateTime->millis = 0;
 }
 
-static bool rtcIsDateTimeValid(dateTime_t *dateTime)
+// dateTimeToRtcTime() indexes days[] by year and month, so a date that came off
+// the wire (a GPS sentence or MSP) must pass this before it is converted.
+static bool rtcIsDateTimeValid(const dateTime_t *dateTime)
 {
-    return (dateTime->year >= REFERENCE_YEAR) &&
-           (dateTime->month >= 1 && dateTime->month <= 12) &&
-           (dateTime->day >= 1 && dateTime->day <= 31) &&
+    static const uint8_t daysInMonth[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
+    if (dateTime->year < REFERENCE_YEAR || dateTime->year >= REFERENCE_YEAR + 100
+        || dateTime->month < 1 || dateTime->month > 12) {
+        return false;
+    }
+    // every fourth year from 2000 to 2099 is a leap year
+    const bool leapYear = (dateTime->year % 4) == 0;
+    const uint8_t monthLength = daysInMonth[dateTime->month - 1] + ((leapYear && dateTime->month == 2) ? 1 : 0);
+
+    return (dateTime->day >= 1 && dateTime->day <= monthLength) &&
            (dateTime->hours <= 23) &&
            (dateTime->minutes <= 59) &&
            (dateTime->seconds <= 59) &&
@@ -264,6 +274,9 @@ bool rtcGetDateTime(dateTime_t *dt)
 
 bool rtcSetDateTime(dateTime_t *dt)
 {
+    if (!rtcIsDateTimeValid(dt)) {
+        return false;
+    }
     rtcTime_t t = dateTimeToRtcTime(dt);
     return rtcSet(&t);
 }

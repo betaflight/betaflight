@@ -389,6 +389,14 @@ flight_mixer_wing_unittest_DEFINES := \
 gps_conversion_unittest_SRC := \
 		$(USER_DIR)/common/gps_conversion.c
 
+rtc_time_unittest_SRC := \
+		$(USER_DIR)/common/time.c \
+		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/typeconversion.c
+
+rtc_time_unittest_DEFINES := \
+		USE_RTC_TIME=
+
 
 dronecan_gnss_unittest_SRC := \
 		$(TEST_DIR)/dronecan_gnss_libcanard.c
