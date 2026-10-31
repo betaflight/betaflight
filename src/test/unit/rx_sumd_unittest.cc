@@ -325,6 +325,23 @@ protected:
 
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
     }
+
+    virtual void sendOversizedChannelCountPacketWithFakeHeader()
+    {
+        // rejected frame whose payload contains something that looks like a
+        // valid 32 channel frame header, it must not start a new frame
+        uint8_t packet[85] = {0xA8, 0x01, 40};
+        packet[80] = 0xA8;
+        packet[81] = 0x01;
+        packet[82] = 32;
+
+        for (size_t i = 0; i < sizeof(packet); i++) {
+            EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
+            stub_serialRxCallback(packet[i], NULL);
+        }
+
+        EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
+    }
 };
 
 
@@ -371,5 +388,24 @@ TEST_F(SumdRxProtocollUnitTest, Test_LongPacketsReceived)
 TEST_F(SumdRxProtocollUnitTest, Test_RejectOversizedChannelCount)
 {
     sendOversizedChannelCountPacket();
+    sendValidPacket();
+}
+
+TEST_F(SumdRxProtocollUnitTest, Test_SkipRejectedFramePayload)
+{
+    sendOversizedChannelCountPacketWithFakeHeader();
+    sendValidPacket();
+}
+
+TEST_F(SumdRxProtocollUnitTest, Test_TimeoutEndsSkipEarly)
+{
+    // corrupted count byte with no payload after it, skip window is 255 * 2 + 2 bytes
+    const uint8_t header[] = {0xA8, 0x01, 0xFF};
+    for (size_t i = 0; i < sizeof(header); i++) {
+        stub_serialRxCallback(header[i], NULL);
+    }
+
+    // inter-frame gap resets the skip, so the next valid frame is not lost
+    microseconds_stub_value += 5000;
     sendValidPacket();
 }
