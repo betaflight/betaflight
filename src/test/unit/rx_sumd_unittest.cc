@@ -252,6 +252,22 @@ protected:
         checkValidChannels();
     }
 
+    // A frame whose channel-count byte exceeds the 32 channels the receive buffer is
+    // sized for must never complete, since the frame check reads the CRC at
+    // 2 * count + 3, which for count > 32 lies past the buffer. The frame that follows
+    // must still be accepted.
+    virtual void sendOversizedChannelCountPacket(uint8_t channelCount)
+    {
+        stub_serialRxCallback(0xA8, NULL);
+        stub_serialRxCallback(0x01, NULL);
+        stub_serialRxCallback(channelCount, NULL);
+        for (int i = 0; i < channelCount * 2 + 2; i++) {
+            EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
+            stub_serialRxCallback(0x1c, NULL);
+        }
+        EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
+    }
+
     virtual void sendValidFsPacket()
     {
 
@@ -353,4 +369,15 @@ TEST_F(SumdRxProtocollUnitTest, Test_LongPacketsReceived)
 {
     sendValidLongPacket();
     sendValidLongPacket();
+}
+
+TEST_F(SumdRxProtocollUnitTest, Test_OversizedChannelCountIsRejected)
+{
+    sendOversizedChannelCountPacket(33);
+    microseconds_stub_value += 5000;
+    sendValidPacket();
+
+    sendOversizedChannelCountPacket(100);
+    microseconds_stub_value += 5000;
+    sendValidPacket();
 }
