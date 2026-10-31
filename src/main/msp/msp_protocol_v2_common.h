@@ -20,6 +20,7 @@
 
 #define MSP2_COMMON_SERIAL_CONFIG       0x1009
 // 0x100A was MSP2_COMMON_SET_SERIAL_CONFIG; serial ports are set through the CLI over MSP
+#define MSP2_COMMON_SET_RADAR_POS       0x100B // in: peer position from a radar module (INAV id and layout)
 
 // Sensors
 #define MSP2_SENSOR_GPS                 0x1F03
