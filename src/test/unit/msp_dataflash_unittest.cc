@@ -32,12 +32,13 @@ void testSerializeDataflashReadReply(sbuf_t *dst, uint32_t address, uint16_t siz
 static const uint32_t volumeSize = 4096;
 static unsigned readCalls;
 static unsigned goodReadsLeft;
+static uint32_t lastReadAddress;
 
 uint32_t flashfsGetSize(void) { return volumeSize; }
 
 int flashfsReadAbs(uint32_t address, uint8_t *buffer, unsigned int length)
 {
-    UNUSED(address);
+    lastReadAddress = address;
     // a bounded stub: an unfixed caller keeps calling, the guard turns that into a failure
     if (++readCalls > 1000) {
         throw readCalls;
@@ -55,8 +56,15 @@ int flashfsReadAbs(uint32_t address, uint8_t *buffer, unsigned int length)
 
 static uint8_t replyBuffer[512];
 
+// reply: U32 address, U16 length, U8 method, U16 uncompressed byte count, payload
+static uint16_t replyU16(unsigned offset)
+{
+    return replyBuffer[offset] | (replyBuffer[offset + 1] << 8);
+}
+
 static void serialize(bool allowCompression)
 {
+    memset(replyBuffer, 0, sizeof(replyBuffer));
     sbuf_t dst;
     sbufInit(&dst, replyBuffer, replyBuffer + sizeof(replyBuffer));
     testSerializeDataflashReadReply(&dst, 0, 128, allowCompression);
@@ -68,6 +76,8 @@ TEST(MspDataflashReadTest, HuffmanReadReturnsWhenFirstReadFails)
     goodReadsLeft = 0;
     EXPECT_NO_THROW(serialize(true));
     EXPECT_EQ(1u, readCalls);
+    EXPECT_EQ(0u, replyU16(7));
+    EXPECT_EQ(2u, replyU16(4)); // header only, no payload
 }
 
 TEST(MspDataflashReadTest, HuffmanReadReturnsWhenLaterReadFails)
@@ -76,6 +86,9 @@ TEST(MspDataflashReadTest, HuffmanReadReturnsWhenLaterReadFails)
     goodReadsLeft = 1;
     EXPECT_NO_THROW(serialize(true));
     EXPECT_EQ(2u, readCalls);
+    EXPECT_EQ(256u, lastReadAddress); // second read starts after the first chunk
+    EXPECT_EQ(256u, replyU16(7)); // data from the first read is kept
+    EXPECT_GT(replyU16(4), 2u);
 }
 
 TEST(MspDataflashReadTest, HuffmanReadFinishesWhileReadsSucceed)
@@ -84,6 +97,8 @@ TEST(MspDataflashReadTest, HuffmanReadFinishesWhileReadsSucceed)
     goodReadsLeft = 1000;
     EXPECT_NO_THROW(serialize(true));
     EXPECT_GT(readCalls, 0u);
+    EXPECT_GT(replyU16(7), 0u);
+    EXPECT_EQ(0u, replyU16(7) % 256);
 }
 
 TEST(MspDataflashReadTest, UncompressedReadReturnsWhenReadFails)
