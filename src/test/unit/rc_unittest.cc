@@ -42,9 +42,16 @@ extern "C" {
 
     #include "config/config.h"
 
+    #include "drivers/time.h"
+
+    #include "fc/controlrate_profile.h"
+
+    #include "flight/pid.h"
+
     #include "rx/rx.h"
 
     #include "sensors/battery.h"
+    #include "sensors/gyro.h"
 
     PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
@@ -58,6 +65,12 @@ extern "C" {
     float rcCommand[4];
     float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
     rxRuntimeState_t rxRuntimeState;
+
+    gyro_t gyro;
+    pidRuntime_t pidRuntime;
+    uint32_t targetPidLooptime = 250;
+    static timeUs_t testTimeUs;
+    timeUs_t micros(void) { return testTimeUs; }
 
     bool isRxReceivingSignal(void) { return true; }
     bool failsafeIsActive(void) { return false; }
@@ -152,4 +165,130 @@ TEST_F(FpvCamAngleTest, FactorsRecomputeWhenAngleChanges)
     rxConfigMutable()->fpvCamAngleDegrees = 90;
     scaleRawSetpointToFpvCamAngle();
     expectRawSetpointMatchesAngle(90);
+}
+
+// Feedforward is held between frames; when the frames stop it must not be held until RX loss is detected.
+class FeedforwardStallTest : public ::testing::Test {
+protected:
+    timeDelta_t frameIntervalUs = 4000;
+
+    virtual void SetUp() {
+        pgResetAll();                                   // default rates
+        rxConfigMutable()->rc_smoothing = 0;            // getFeedforward() gives the raw value
+        rxConfigMutable()->midrc = 1500;                // rxConfig has no reset template in this test
+        rxConfigMutable()->mincheck = 1050;
+        loadControlRateProfile();
+        memset(&pidRuntime, 0, sizeof(pidRuntime));
+        pidRuntime.feedforwardJitterFactorInv = 1.0f / rcUsSpanToNorm(1.0f + 7);
+        pidRuntime.feedforwardBoostFactor = 0.015f;
+        initRcProcessing();
+        for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
+            rcData[i] = 1500;
+        }
+        rcData[THROTTLE] = 1000;
+        testTimeUs = 1000000;
+        for (int i = 0; i < 20; i++) {
+            frame();
+        }
+    }
+
+    void frame(void)
+    {
+        testTimeUs += frameIntervalUs;
+        rxRuntimeState.lastRcFrameTimeUs = testTimeUs;
+        updateRcRefreshRate(testTimeUs, true);
+        updateRcCommands();
+        processRcCommand();
+    }
+
+    // a PID loop without a new frame, afterUs after the last frame
+    void loopWithoutFrame(timeDelta_t afterUs)
+    {
+        testTimeUs = rxRuntimeState.lastRcFrameTimeUs + afterUs;
+        processRcCommand();
+    }
+};
+
+TEST_F(FeedforwardStallTest, FastStickMoveGivesFeedforwardHeldUntilTheNextFrame)
+{
+    rcData[PITCH] = 1580;
+    frame();
+    const float feedforward = getFeedforward(FD_PITCH);
+    EXPECT_GT(fabsf(feedforward), 100.0f);
+
+    loopWithoutFrame(frameIntervalUs - 500);       // between frames: held
+    EXPECT_FLOAT_EQ(feedforward, getFeedforward(FD_PITCH));
+    loopWithoutFrame(3 * frameIntervalUs);         // a few frames late (jitter): still held
+    EXPECT_FLOAT_EQ(feedforward, getFeedforward(FD_PITCH));
+}
+
+TEST_F(FeedforwardStallTest, FeedforwardDropsWhenFramesStop)
+{
+    rcData[PITCH] = 1580;
+    frame();
+    const float feedforward = getFeedforward(FD_PITCH);
+    EXPECT_GT(fabsf(feedforward), 100.0f);
+
+    loopWithoutFrame(60000);                       // within RX_INTERVAL_MAX_US: still held
+    EXPECT_FLOAT_EQ(feedforward, getFeedforward(FD_PITCH));
+    loopWithoutFrame(70000);                       // past it: dropped
+    EXPECT_FLOAT_EQ(0.0f, getFeedforward(FD_PITCH));
+    loopWithoutFrame(100000);
+    EXPECT_FLOAT_EQ(0.0f, getFeedforward(FD_PITCH));
+}
+
+TEST_F(FeedforwardStallTest, NoStaleFeedforwardWhenFramesComeBack)
+{
+    rcData[PITCH] = 1580;
+    frame();
+    loopWithoutFrame(70000);
+    ASSERT_FLOAT_EQ(0.0f, getFeedforward(FD_PITCH));
+
+    // the stick did not move while frames were missing
+    testTimeUs = rxRuntimeState.lastRcFrameTimeUs + 75000 - frameIntervalUs;
+    frame();
+    EXPECT_LT(fabsf(getFeedforward(FD_PITCH)), 10.0f);
+}
+
+TEST_F(FeedforwardStallTest, RxLossUpdateWithoutAFrameKeepsFeedforwardDropped)
+{
+    rcData[PITCH] = 1580;
+    frame();
+    loopWithoutFrame(70000);
+    ASSERT_FLOAT_EQ(0.0f, getFeedforward(FD_PITCH));
+
+    // rx loss processing at 150 ms: the channels change (failsafe values) but no frame arrived
+    rcData[PITCH] = 1500;
+    testTimeUs = rxRuntimeState.lastRcFrameTimeUs + 150000;
+    updateRcCommands();
+    processRcCommand();
+    EXPECT_FLOAT_EQ(0.0f, getFeedforward(FD_PITCH));
+}
+
+TEST_F(FeedforwardStallTest, SmoothedFeedforwardDecaysWhenFramesStop)
+{
+    rxConfigMutable()->rc_smoothing = 1;
+    initRcProcessing();
+    for (int i = 0; i < 20; i++) {
+        frame();
+    }
+    rcData[PITCH] = 1580;
+    frame();
+    int us = 250;
+    for (; us <= 60000; us += 250) {
+        loopWithoutFrame(us);                      // the PT3 output settles on the held value
+    }
+    const float held = getFeedforward(FD_PITCH);
+    EXPECT_GT(fabsf(held), 10.0f);
+
+    for (; us <= 70000; us += 250) {
+        loopWithoutFrame(us);                      // past RX_INTERVAL_MAX_US the input is zero...
+    }
+    const float decaying = getFeedforward(FD_PITCH);
+    EXPECT_LT(fabsf(decaying), fabsf(held));       // ...and the output follows it down without a step
+    EXPECT_GT(fabsf(decaying), 0.0f);
+    for (; us <= 170000; us += 250) {
+        loopWithoutFrame(us);
+    }
+    EXPECT_LT(fabsf(getFeedforward(FD_PITCH)), 0.05f * fabsf(held));
 }
