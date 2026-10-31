@@ -601,7 +601,8 @@ RAM_CODE static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, 
 
     if (compressionMethod == NO_COMPRESSION) {
 
-        uint16_t *readLenPtr = (uint16_t *)sbufPtr(dst);
+        // may be at an odd address, so it is updated byte by byte below
+        uint8_t *readLenPtr = sbufPtr(dst);
         if (!useLegacyFormat) {
             // new format supports variable read lengths
             sbufWriteU16(dst, readLen);
@@ -612,7 +613,8 @@ RAM_CODE static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, 
 
         if (!useLegacyFormat) {
             // update the 'read length' with the actual amount read from flash.
-            *readLenPtr = bytesRead;
+            readLenPtr[0] = bytesRead & 0xff;
+            readLenPtr[1] = (bytesRead >> 8) & 0xff;
         }
 
         sbufAdvance(dst, bytesRead);

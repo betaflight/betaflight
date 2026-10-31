@@ -728,7 +728,9 @@ bool gyroInit(void)
         gyro.gyroEnabledBitmask = gyroDetectedFlags & -gyroDetectedFlags;
     }
 
-    static DMA_DATA uint8_t gyroBuf[GYRO_COUNT][2][GYRO_BUF_SIZE / 2];
+    // gyro drivers read rxBuf as int16_t, so keep each buffer at least 16-bit aligned
+    // (DMA_DATA is empty on some platforms; GYRO_BUF_SIZE / 2 is even, so every sub-buffer stays aligned)
+    static DMA_DATA uint8_t gyroBuf[GYRO_COUNT][2][GYRO_BUF_SIZE / 2] __attribute__((aligned(4)));
 
     for (int i = 0; i < GYRO_COUNT; i++) {
         if (gyroDetectedFlags & GYRO_MASK(i)) {  // Only initialize detected gyros
