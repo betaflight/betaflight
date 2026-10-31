@@ -63,8 +63,6 @@
 // PID
 //
 
-#define PROFILE_INDEX_STRING_ADDITIONAL_SIZE 5 // Additional symbols for setProfileIndexString(): "2 (NAMENAME)\0"
-
 static uint8_t tmpPidProfileIndex;
 static uint8_t pidProfileIndex;
 static char pidProfileIndexString[MAX_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
@@ -75,29 +73,6 @@ static uint8_t tmpRateProfileIndex;
 static uint8_t rateProfileIndex;
 static char rateProfileIndexString[MAX_RATE_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
 static controlRateConfig_t rateProfile;
-
-static void setProfileIndexString(char *profileString, int profileIndex, const char *profileName)
-{
-    int charIndex = 0;
-    profileString[charIndex++] = '1' + profileIndex;
-
-#ifdef USE_PROFILE_NAMES
-    const int profileNameLen = strlen(profileName);
-
-    if (profileNameLen > 0) {
-        profileString[charIndex++] = ' ';
-        profileString[charIndex++] = '(';
-        for (int i = 0; i < profileNameLen; i++) {
-            profileString[charIndex++] = toupper(profileName[i]);
-        }
-        profileString[charIndex++] = ')';
-    }
-#else
-    UNUSED(profileName);
-#endif
-
-    profileString[charIndex] = '\0';
-}
 
 static char pidProfileNames[PID_PROFILE_COUNT][MAX_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
 static const char *pidProfileNamePtrs[PID_PROFILE_COUNT];
