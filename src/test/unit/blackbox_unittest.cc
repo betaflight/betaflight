@@ -52,6 +52,7 @@ extern "C" {
 
     extern int16_t blackboxIInterval;
     extern int16_t blackboxPInterval;
+    extern struct pidProfile_s *currentPidProfile;
     bool testBlackboxConditionUncached(flightLogFieldCondition_e condition);
 }
 
@@ -60,6 +61,34 @@ extern "C" {
 
 gyroDev_t gyroDev;
 static bool servosPresent = false; // returned by the hasServos() stub
+
+static uint8_t serialCapture[256];
+static size_t serialCaptureSize;
+#ifdef USE_ADRC
+static pidProfile_t adrcTestPidProfile;
+#endif
+
+static uint32_t readUnsignedVB(size_t *offset)
+{
+    uint32_t value = 0;
+    unsigned shift = 0;
+    while (*offset < serialCaptureSize) {
+        const uint8_t byte = serialCapture[(*offset)++];
+        value |= (uint32_t)(byte & 0x7f) << shift;
+        if ((byte & 0x80) == 0) {
+            return value;
+        }
+        shift += 7;
+    }
+    ADD_FAILURE() << "truncated variable-byte value";
+    return 0;
+}
+
+static int32_t readSignedVB(size_t *offset)
+{
+    const uint32_t encoded = readUnsignedVB(offset);
+    return (int32_t)((encoded >> 1) ^ (uint32_t)-(int32_t)(encoded & 1));
+}
 
 TEST(BlackboxTest, TestInitIntervals)
 {
@@ -379,6 +408,106 @@ TEST(BlackboxTest, Test_CalculateRates)
 
 }
 
+#ifdef USE_ADRC
+TEST(BlackboxTest, AdrcFieldSchemaAndConditionAreExact)
+{
+    struct expectedField_s {
+        const char *name;
+        int8_t fieldNameIndex;
+        uint8_t isSigned;
+        uint8_t Iencode;
+    };
+    static const expectedField_s expected[] = {
+        {"adrcPidSum", 0, FLIGHT_LOG_FIELD_SIGNED, FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB},
+        {"adrcPidSum", 1, FLIGHT_LOG_FIELD_SIGNED, FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB},
+        {"adrcPidSum", 2, FLIGHT_LOG_FIELD_SIGNED, FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB},
+        {"adrcCommandedCollective", -1, FLIGHT_LOG_FIELD_UNSIGNED, FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB},
+        {"adrcAppliedCollective", -1, FLIGHT_LOG_FIELD_UNSIGNED, FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB},
+        {"adrcState", -1, FLIGHT_LOG_FIELD_UNSIGNED, FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB},
+        {"adrcGateResetCount", -1, FLIGHT_LOG_FIELD_UNSIGNED, FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB},
+    };
+
+    ASSERT_EQ((int)ARRAYLEN(expected), blackboxGetAdrcFieldCountForTest());
+    for (unsigned i = 0; i < ARRAYLEN(expected); i++) {
+        blackboxAdrcFieldDefinitionTest_t actual;
+        ASSERT_TRUE(blackboxGetAdrcFieldDefinitionForTest(i, &actual));
+        EXPECT_STREQ(expected[i].name, actual.name);
+        EXPECT_EQ(expected[i].fieldNameIndex, actual.fieldNameIndex);
+        EXPECT_EQ(expected[i].isSigned, actual.isSigned);
+        EXPECT_EQ(FLIGHT_LOG_FIELD_PREDICTOR_0, actual.Ipredict);
+        EXPECT_EQ(expected[i].Iencode, actual.Iencode);
+        EXPECT_EQ(FLIGHT_LOG_FIELD_PREDICTOR_PREVIOUS, actual.Ppredict);
+        EXPECT_EQ(FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB, actual.Pencode);
+    }
+    blackboxAdrcFieldDefinitionTest_t unused;
+    EXPECT_FALSE(blackboxGetAdrcFieldDefinitionForTest(ARRAYLEN(expected), &unused));
+
+    adrcTestPidProfile = {};
+    currentPidProfile = &adrcTestPidProfile;
+    blackboxConfigMutable()->fields_disabled_mask = 0;
+    adrcTestPidProfile.pid_type = PID_TYPE_ADRC;
+    debugMode = DEBUG_ADRC;
+    EXPECT_TRUE(blackboxAdrcDebugConditionForTest());
+
+    adrcTestPidProfile.pid_type = PID_TYPE_CLASSIC;
+    EXPECT_FALSE(blackboxAdrcDebugConditionForTest());
+    adrcTestPidProfile.pid_type = PID_TYPE_ADRC;
+    debugMode = DEBUG_NONE;
+    EXPECT_FALSE(blackboxAdrcDebugConditionForTest());
+    debugMode = DEBUG_ADRC;
+    blackboxConfigMutable()->fields_disabled_mask = 1u << FLIGHT_LOG_FIELD_SELECT_DEBUG_LOG;
+    EXPECT_FALSE(blackboxAdrcDebugConditionForTest());
+
+    blackboxConfigMutable()->fields_disabled_mask = 0;
+    debugMode = DEBUG_NONE;
+    adrcTestPidProfile.pid_type = PID_TYPE_CLASSIC;
+}
+
+TEST(BlackboxTest, AdrcWireEncodingMatchesFieldOrder)
+{
+    blackboxConfigMutable()->device = BLACKBOX_DEVICE_SERIAL;
+    const blackboxAdrcTestState_t intraframe = {
+        .pidSum = {-10, 0, 300},
+        .commandedCollective = 250,
+        .appliedCollective = 875,
+        .state = 101,
+        .gateResetCount = 123456,
+    };
+
+    serialCaptureSize = 0;
+    blackboxWriteAdrcIntraframeForTest(&intraframe);
+    size_t offset = 0;
+    EXPECT_EQ(-10, readSignedVB(&offset));
+    EXPECT_EQ(0, readSignedVB(&offset));
+    EXPECT_EQ(300, readSignedVB(&offset));
+    EXPECT_EQ(250u, readUnsignedVB(&offset));
+    EXPECT_EQ(875u, readUnsignedVB(&offset));
+    EXPECT_EQ(101u, readUnsignedVB(&offset));
+    EXPECT_EQ(123456u, readUnsignedVB(&offset));
+    EXPECT_EQ(serialCaptureSize, offset);
+
+    const blackboxAdrcTestState_t previous = {
+        .pidSum = {-20, 50, 250},
+        .commandedCollective = 300,
+        .appliedCollective = 800,
+        .state = 97,
+        .gateResetCount = 123450,
+    };
+    serialCaptureSize = 0;
+    blackboxWriteAdrcInterframeForTest(&intraframe, &previous);
+    offset = 0;
+    EXPECT_EQ(10, readSignedVB(&offset));
+    EXPECT_EQ(-50, readSignedVB(&offset));
+    EXPECT_EQ(50, readSignedVB(&offset));
+    EXPECT_EQ(-50, readSignedVB(&offset));
+    EXPECT_EQ(75, readSignedVB(&offset));
+    EXPECT_EQ(4, readSignedVB(&offset));
+    EXPECT_EQ(6, readSignedVB(&offset));
+    EXPECT_EQ(serialCaptureSize, offset);
+    blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
+}
+#endif
+
 TEST(BlackboxTest, Test_servo_field_disable)
 {
     // CONDITION(SERVOS) used to test the bare FIELD_SELECT(SERVO) constant instead of
@@ -438,8 +567,13 @@ bool IS_RC_MODE_ACTIVE(boxId_e) {return false;}
 bool isModeActivationConditionPresent(boxId_e) {return false;}
 uint32_t millis(void) {return 0;}
 bool sensors(uint32_t) {return false;}
-void serialWrite(serialPort_t *, uint8_t) {}
-uint32_t serialTxBytesFree(const serialPort_t *) {return 0;}
+void serialWrite(serialPort_t *, uint8_t value)
+{
+    if (serialCaptureSize < ARRAYLEN(serialCapture)) {
+        serialCapture[serialCaptureSize++] = value;
+    }
+}
+uint32_t serialTxBytesFree(const serialPort_t *) {return ARRAYLEN(serialCapture) - serialCaptureSize;}
 bool isSerialTransmitBufferEmpty(const serialPort_t *) {return false;}
 bool featureIsEnabled(uint32_t) {return false;}
 void mspSerialReleasePortIfAllocated(serialPort_t *) {}

@@ -432,17 +432,24 @@ bool loadEEPROM(void)
 
     PG_FOREACH(reg) {
         const configRecord_t *rec = findEEPROM(reg, CR_CLASSICATION_SYSTEM);
+        bool loaded = false;
         if (rec) {
             // config from EEPROM is available, use it to initialize PG. pgLoad will handle version mismatch
-            if (!pgLoad(reg, rec->pg, rec->size - offsetof(configRecord_t, pg), rec->version)) {
-                success = false;
-            }
+            loaded = pgLoad(reg, rec->pg, rec->size - offsetof(configRecord_t, pg), rec->version);
         } else {
             pgReset(reg);
+        }
+
+        const uint32_t hash = fnv_update(FNV_OFFSET_BASIS, reg->address, pgSize(reg));
+        if (loaded) {
+            *reg->fnv_hash = hash;
+        } else {
+            // Keep the rejected/missing record dirty so resetEEPROM() cannot skip rewriting it
+            // when the reset value already matches the in-RAM value produced by pgLoad/pgReset.
+            *reg->fnv_hash = ~hash;
 
             success = false;
         }
-        *reg->fnv_hash = fnv_update(FNV_OFFSET_BASIS, reg->address, pgSize(reg));
     }
 
     return success;
