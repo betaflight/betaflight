@@ -847,6 +847,19 @@ TEST(SerialFeatureMap, ApplyMaskPicksTheVtxProtocolFromTheBit)
     EXPECT_EQ(VTXDEV_SMARTAUDIO, vtxSettingsConfig()->vtx_type);
 }
 
+TEST(SerialFeatureMap, ApplyMaskMspVtxAlsoGivesTheOsdItsPort)
+{
+    resetAllConfigs();
+
+    // serial UART2 131073 ...  (MSP + VTX_MSP), the usual HD goggles line.
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART2, FUNCTION_MSP | FUNCTION_VTX_MSP));
+
+    EXPECT_EQ(SERIAL_PORT_USART2, mspConfig()->msp_uart[0]);
+    EXPECT_EQ(SERIAL_PORT_USART2, vtxSettingsConfig()->vtx_uart);
+    EXPECT_EQ(VTXDEV_MSP, vtxSettingsConfig()->vtx_type);
+    EXPECT_EQ(SERIAL_PORT_USART2, osdConfig()->osd_uart);
+}
+
 TEST(SerialFeatureMap, ApplyMaskClearsWhatThePortNoLongerClaims)
 {
     resetAllConfigs();
@@ -905,4 +918,54 @@ TEST(SerialFeatureMap, ApplyBaudIgnoresAClassNoFeatureOnThePortOwns)
     serialApplyPortBaud(SERIAL_PORT_USART2, SERIAL_BAUD_BLACKBOX, BAUD_230400);
 
     EXPECT_EQ(serialDefaultPortBaud(SERIAL_BAUD_BLACKBOX), blackboxConfig()->blackbox_baud);
+}
+
+TEST(SerialFeatureMap, LegacyMaskKeepsTheBitsThatDidNotMove)
+{
+    EXPECT_EQ((uint32_t)FUNCTION_MSP, serialFunctionMaskFromLegacy(1));
+    EXPECT_EQ((uint32_t)(FUNCTION_GPS | FUNCTION_TELEMETRY_SMARTPORT), serialFunctionMaskFromLegacy(2 | 32));
+    EXPECT_EQ((uint32_t)FUNCTION_VTX_MSP, serialFunctionMaskFromLegacy(131072));
+    EXPECT_EQ((uint32_t)FUNCTION_GIMBAL, serialFunctionMaskFromLegacy(262144));
+}
+
+TEST(SerialFeatureMap, LegacyMaskFoldsBothRangefindersOntoOneBit)
+{
+    EXPECT_EQ((uint32_t)FUNCTION_LIDAR, serialFunctionMaskFromLegacy(32768));
+    EXPECT_EQ((uint32_t)FUNCTION_LIDAR, serialFunctionMaskFromLegacy(524288));
+    EXPECT_EQ((uint32_t)FUNCTION_LIDAR, serialFunctionMaskFromLegacy(32768 | 524288));
+}
+
+TEST(SerialFeatureMap, LegacyMaskFindsOsdCustomTextOnBit20)
+{
+    EXPECT_EQ((uint32_t)FUNCTION_OSD_CUSTOM_TEXT, serialFunctionMaskFromLegacy(1048576));
+    EXPECT_EQ((uint32_t)(FUNCTION_MSP | FUNCTION_OSD_CUSTOM_TEXT), serialFunctionMaskFromLegacy(1 | 1048576));
+}
+
+TEST(SerialFeatureMap, LegacyMaskDropsBitsItNeverAssigned)
+{
+    EXPECT_EQ(0u, serialFunctionMaskFromLegacy((1U << 8) | (1U << 21) | (1U << 31)));
+}
+
+TEST(SerialFeatureMap, LegacyNooploopLineLandsOnTheRangefinder)
+{
+    resetAllConfigs();
+
+    // serial UART4 524288 115200 57600 0 115200
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART4, serialFunctionMaskFromLegacy(524288)));
+
+    EXPECT_EQ(SERIAL_PORT_UART4, rangefinderConfig()->rangefinder_uart);
+    EXPECT_EQ(SERIAL_PORT_NONE, osdConfig()->osd_custom_text_uart);
+}
+
+TEST(SerialFeatureMap, LegacyOsdCustomTextLineLandsOnTheOsd)
+{
+    resetAllConfigs();
+
+    // serial UART4 1048576 115200 57600 0 115200
+    ASSERT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART4, serialFunctionMaskFromLegacy(1048576)));
+    serialApplyPortBaud(SERIAL_PORT_UART4, SERIAL_BAUD_TELEMETRY, BAUD_57600);
+
+    EXPECT_EQ(SERIAL_PORT_UART4, osdConfig()->osd_custom_text_uart);
+    EXPECT_EQ(BAUD_57600, osdConfig()->osd_custom_text_baud);
+    EXPECT_EQ(SERIAL_PORT_NONE, rangefinderConfig()->rangefinder_uart);
 }

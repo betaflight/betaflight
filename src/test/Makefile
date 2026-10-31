@@ -128,6 +128,33 @@ flash_fm25v02a_unittest_DEFINES := \
 		USE_FLASH_M25P16= \
 		USE_FLASH_FM25V02A=
 
+flash_w25n_quadspi_unittest_SRC := \
+		$(USER_DIR)/drivers/flash/flash_w25n.c \
+		$(USER_DIR)/drivers/flash/flash.c \
+		$(USER_DIR)/io/flashfs.c
+
+flash_w25n_quadspi_unittest_DEFINES := \
+		USE_FLASH_CHIP= \
+		USE_FLASHFS= \
+		USE_FLASH_SPI= \
+		USE_QUADSPI= \
+		USE_FLASH_QUADSPI= \
+		USE_FLASH_W25N= \
+		USE_FLASH_W25N01G=
+
+flash_w25q128fv_quadspi_unittest_SRC := \
+		$(USER_DIR)/drivers/flash/flash_w25q128fv.c \
+		$(USER_DIR)/drivers/flash/flash.c \
+		$(USER_DIR)/io/flashfs.c
+
+flash_w25q128fv_quadspi_unittest_DEFINES := \
+		USE_FLASH_CHIP= \
+		USE_FLASHFS= \
+		USE_FLASH_SPI= \
+		USE_QUADSPI= \
+		USE_FLASH_QUADSPI= \
+		USE_FLASH_W25Q128FV=
+
 baro_bmp085_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_bmp085.c
 
@@ -411,6 +438,13 @@ motor_output_unittest_SRC := \
 motor_output_unittest_DEFINES := \
 		USE_DSHOT=
 
+sdcard_sdio_unittest_SRC := \
+		$(USER_DIR)/drivers/sdcard_sdio_baremetal.c
+
+sdcard_sdio_unittest_DEFINES := \
+		USE_SDCARD_SDIO= \
+		ENABLE_SDIO_EXTERNAL_DMA=0
+
 msp_serial_unittest_SRC := \
 		$(USER_DIR)/msp/msp_serial.c \
 		$(USER_DIR)/common/crc.c \
@@ -593,6 +627,16 @@ serial_feature_map_unittest_DEFINES := \
 		USE_TELEMETRY_SMARTPORT= \
 		USE_TELEMETRY_MAVLINK= \
 		USE_TELEMETRY_IBUS=
+
+# The same map as a cloud build without the VTX option compiles it.
+serial_feature_map_novtx_unittest_SRC := \
+		$(USER_DIR)/io/serial_feature_map.c
+
+serial_feature_map_novtx_unittest_DEFINES := \
+		USE_GPS= \
+		USE_SERIALRX= \
+		USE_OSD= \
+		USE_MSP_DISPLAYPORT=
 
 sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/sensors/gyro.c \
