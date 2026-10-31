@@ -99,6 +99,11 @@ static void sumdDataReceive(uint16_t c, void *data)
             crc = 0;
         }
     } else if (sumdIndex == SUMD_CHANNEL_COUNT_INDEX) {
+        if (c > SUMD_MAX_CHANNEL) {
+            // invalid channel count, drop the frame and resync
+            sumdIndex = 0;
+            return;
+        }
         sumdChannelCount = (uint8_t)c;
     }
 

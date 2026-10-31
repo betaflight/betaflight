@@ -312,6 +312,19 @@ protected:
 
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
     }
+
+    virtual void sendOversizedChannelCountPacket()
+    {
+        // channel count 40 > SUMD_MAX_CHANNEL (32), frame length 40 * 2 + 5 = 85
+        uint8_t packet[85] = {0xA8, 0x01, 40};
+
+        for (size_t i = 0; i < sizeof(packet); i++) {
+            EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
+            stub_serialRxCallback(packet[i], NULL);
+        }
+
+        EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
+    }
 };
 
 
@@ -353,4 +366,10 @@ TEST_F(SumdRxProtocollUnitTest, Test_LongPacketsReceived)
 {
     sendValidLongPacket();
     sendValidLongPacket();
+}
+
+TEST_F(SumdRxProtocollUnitTest, Test_RejectOversizedChannelCount)
+{
+    sendOversizedChannelCountPacket();
+    sendValidPacket();
 }
