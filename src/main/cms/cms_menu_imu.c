@@ -449,6 +449,16 @@ static uint8_t cmsx_launchControlAllowTriggerReset;
 static uint8_t cmsx_launchControlThrottlePercent;
 static uint8_t cmsx_launchControlAngleLimit;
 static uint8_t cmsx_launchControlGain;
+#ifdef USE_LAUNCH_CONTROL_LIFT
+static uint16_t cmsx_launchControlLiftTime;
+static uint8_t cmsx_launchControlLiftThrottle;
+static uint8_t cmsx_launchControlLiftBrake;
+static uint16_t cmsx_launchControlLiftBrakeTime;
+static uint8_t cmsx_launchControlLiftFlipDirection;
+static uint16_t cmsx_launchControlLiftFlipRate;
+static const char * const cmsx_launchLiftFlipDirectionNames[] = { "AUTO", "RIGHT", "LEFT", "FORWARD", "BACK" };
+static uint8_t cmsx_launchControlLiftImpact;
+#endif
 
 static const void *cmsx_launchControlOnEnter(displayPort_t *pDisp)
 {
@@ -461,6 +471,15 @@ static const void *cmsx_launchControlOnEnter(displayPort_t *pDisp)
     cmsx_launchControlThrottlePercent  = pidProfile->launchControlThrottlePercent;
     cmsx_launchControlAngleLimit  = pidProfile->launchControlAngleLimit;
     cmsx_launchControlGain  = pidProfile->launchControlGain;
+#ifdef USE_LAUNCH_CONTROL_LIFT
+    cmsx_launchControlLiftTime = pidProfile->launchControlLiftTime;
+    cmsx_launchControlLiftThrottle = pidProfile->launchControlLiftThrottle;
+    cmsx_launchControlLiftBrake = pidProfile->launchControlLiftBrake;
+    cmsx_launchControlLiftBrakeTime = pidProfile->launchControlLiftBrakeTime;
+    cmsx_launchControlLiftFlipDirection = pidProfile->launchControlLiftFlipDirection;
+    cmsx_launchControlLiftFlipRate = pidProfile->launchControlLiftFlipRate;
+    cmsx_launchControlLiftImpact = pidProfile->launchControlLiftImpact;
+#endif
 
     return NULL;
 }
@@ -477,6 +496,15 @@ static const void *cmsx_launchControlOnExit(displayPort_t *pDisp, const OSD_Entr
     pidProfile->launchControlThrottlePercent = cmsx_launchControlThrottlePercent;
     pidProfile->launchControlAngleLimit = cmsx_launchControlAngleLimit;
     pidProfile->launchControlGain = cmsx_launchControlGain;
+#ifdef USE_LAUNCH_CONTROL_LIFT
+    pidProfile->launchControlLiftTime = cmsx_launchControlLiftTime;
+    pidProfile->launchControlLiftThrottle = cmsx_launchControlLiftThrottle;
+    pidProfile->launchControlLiftBrake = cmsx_launchControlLiftBrake;
+    pidProfile->launchControlLiftBrakeTime = cmsx_launchControlLiftBrakeTime;
+    pidProfile->launchControlLiftFlipDirection = cmsx_launchControlLiftFlipDirection;
+    pidProfile->launchControlLiftFlipRate = cmsx_launchControlLiftFlipRate;
+    pidProfile->launchControlLiftImpact = cmsx_launchControlLiftImpact;
+#endif
 
     return NULL;
 }
@@ -489,6 +517,15 @@ static const OSD_Entry cmsx_menuLaunchControlEntries[] = {
     { "TRIGGER THROTTLE", OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlThrottlePercent, 0,  LAUNCH_CONTROL_THROTTLE_TRIGGER_MAX, 1 }  },
     { "ANGLE LIMIT",      OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlAngleLimit,      0,  80, 1 }  },
     { "ITERM GAIN",       OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlGain,            0, 200, 1 }  },
+#ifdef USE_LAUNCH_CONTROL_LIFT
+    { "LIFT TIME MS",     OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_launchControlLiftTime, LAUNCH_CONTROL_LIFT_TIME_MIN_MS, LAUNCH_CONTROL_LIFT_TIME_MAX_MS, 50 } },
+    { "LIFT THROTTLE",    OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlLiftThrottle, LAUNCH_CONTROL_LIFT_THROTTLE_MIN, 100, 1 } },
+    { "LIFT BRAKE",       OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlLiftBrake, 0, 100, 1 } },
+    { "BRAKE TIME MS",    OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_launchControlLiftBrakeTime, LAUNCH_CONTROL_LIFT_BRAKE_TIME_MIN_MS, LAUNCH_CONTROL_LIFT_BRAKE_TIME_MAX_MS, 100 } },
+    { "FLIP DIRECTION",   OME_TAB, NULL, &(OSD_TAB_t) { &cmsx_launchControlLiftFlipDirection, LAUNCH_LIFT_FLIP_COUNT - 1, cmsx_launchLiftFlipDirectionNames } },
+    { "FLIP RATE",        OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_launchControlLiftFlipRate, LAUNCH_CONTROL_LIFT_FLIP_RATE_MIN_DPS, LAUNCH_CONTROL_LIFT_FLIP_RATE_MAX_DPS, 100 } },
+    { "LIFT IMPACT",      OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlLiftImpact, 0, LAUNCH_CONTROL_LIFT_IMPACT_MAX, 1 } },
+#endif
 
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL}

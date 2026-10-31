@@ -56,6 +56,7 @@
 
 #include "fc/board_info.h"
 #include "fc/controlrate_profile.h"
+#include "fc/core.h"
 #include "fc/parameter_names.h"
 #include "fc/rc.h"
 #include "fc/rc_controls.h"
@@ -342,7 +343,11 @@ static const blackboxSimpleFieldDefinition_t blackboxSlowFields[] = {
 
     {"failsafePhase",         -1, UNSIGNED, PREDICT(0),      ENCODING(TAG2_3S32)},
     {"rxSignalReceived",      -1, UNSIGNED, PREDICT(0),      ENCODING(TAG2_3S32)},
-    {"rxFlightChannelsValid", -1, UNSIGNED, PREDICT(0),      ENCODING(TAG2_3S32)}
+    {"rxFlightChannelsValid", -1, UNSIGNED, PREDICT(0),      ENCODING(TAG2_3S32)},
+#ifdef USE_LAUNCH_CONTROL_LIFT
+    // LIFT: staged, climbing, flipping, braking, or how it ended (launchLiftLogState_e)
+    {"launchLiftState",       -1, UNSIGNED, PREDICT(0),      ENCODING(UNSIGNED_VB)},
+#endif
 };
 
 typedef enum {
@@ -420,6 +425,9 @@ typedef struct blackboxSlowState_s {
     uint8_t failsafePhase;
     bool rxSignalReceived;
     bool rxFlightChannelsValid;
+#ifdef USE_LAUNCH_CONTROL_LIFT
+    uint8_t launchLiftState;
+#endif
 } __attribute__((__packed__)) blackboxSlowState_t; // We pack this struct so that padding doesn't interfere with memcmp()
 
 //From rc_controls.c
@@ -1034,6 +1042,10 @@ static void writeSlowFrame(void)
     values[2] = slowHistory.rxFlightChannelsValid ? 1 : 0;
     blackboxWriteTag2_3S32(values);
 
+#ifdef USE_LAUNCH_CONTROL_LIFT
+    blackboxWriteUnsignedVB(slowHistory.launchLiftState);
+#endif
+
     blackboxSlowFrameIterationTimer = 0;
 }
 
@@ -1047,6 +1059,9 @@ static void loadSlowState(blackboxSlowState_t *slow)
     slow->failsafePhase = failsafePhase();
     slow->rxSignalReceived = isRxReceivingSignal();
     slow->rxFlightChannelsValid = rxAreFlightChannelsValid();
+#ifdef USE_LAUNCH_CONTROL_LIFT
+    slow->launchLiftState = getLaunchControlLiftLogState();
+#endif
 }
 
 /**
@@ -1909,6 +1924,18 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_THROTTLE_BOOST, "%d",            currentPidProfile->throttle_boost);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_THROTTLE_BOOST_CUTOFF, "%d",     currentPidProfile->throttle_boost_cutoff);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_THRUST_LINEARIZATION,  "%d",     currentPidProfile->thrustLinearization);
+#ifdef USE_LAUNCH_CONTROL
+        BLACKBOX_PRINT_HEADER_LINE("launch_control_mode", "%d",                 currentPidProfile->launchControlMode);
+#endif
+#ifdef USE_LAUNCH_CONTROL_LIFT
+        BLACKBOX_PRINT_HEADER_LINE("launch_lift_time", "%d",                    currentPidProfile->launchControlLiftTime);
+        BLACKBOX_PRINT_HEADER_LINE("launch_lift_throttle", "%d",                currentPidProfile->launchControlLiftThrottle);
+        BLACKBOX_PRINT_HEADER_LINE("launch_lift_brake", "%d",                   currentPidProfile->launchControlLiftBrake);
+        BLACKBOX_PRINT_HEADER_LINE("launch_lift_brake_time", "%d",              currentPidProfile->launchControlLiftBrakeTime);
+        BLACKBOX_PRINT_HEADER_LINE("launch_lift_flip_direction", "%d",          currentPidProfile->launchControlLiftFlipDirection);
+        BLACKBOX_PRINT_HEADER_LINE("launch_lift_flip_rate", "%d",               currentPidProfile->launchControlLiftFlipRate);
+        BLACKBOX_PRINT_HEADER_LINE("launch_lift_impact", "%d",                  currentPidProfile->launchControlLiftImpact);
+#endif
 
 #ifdef USE_GPS
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_PROVIDER, "%d",               gpsConfig()->provider);
