@@ -550,6 +550,10 @@
 #define USE_LAUNCH_WING
 #endif
 
+#ifndef USE_PSAS
+#define USE_PSAS
+#endif
+
 #endif // USE_WING
 
 // backwards compatibility for older config.h targets
