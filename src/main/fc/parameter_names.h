@@ -264,6 +264,7 @@
 #define PARAM_NAME_AP_RX_LOSS_POLICY "ap_rx_loss_policy"
 #define PARAM_NAME_AP_MAX_DISTANCE_FROM_HOME "ap_max_distance_from_home"
 #define PARAM_NAME_AP_GEOFENCE_ACTION "ap_geofence_action"
+#define PARAM_NAME_AP_WP_CAPTURE_SAVE "ap_wp_capture_save"
 
 // Flight-plan OSD minimap
 #define PARAM_NAME_OSD_NAV_MAP_MODE "osd_nav_map_mode"

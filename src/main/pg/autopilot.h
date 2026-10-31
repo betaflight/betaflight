@@ -138,6 +138,9 @@ typedef struct autopilotConfig_s {
     // Safety: Geofence (max distance from home)
     uint16_t maxDistanceFromHomeM;    // meters, 0 = disabled (default 0)
     uint8_t geofenceAction;           // autopilotGeofenceAction_e (default AP_GEOFENCE_LAND)
+
+    // In-flight waypoint capture
+    uint8_t wpCaptureSave;            // 1 = write waypoints captured in flight to flash after disarm (default 0: they stay in RAM until the pilot saves)
 } autopilotConfig_t;
 
 PG_DECLARE(autopilotConfig_t, autopilotConfig);

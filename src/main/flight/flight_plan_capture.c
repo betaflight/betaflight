@@ -19,24 +19,33 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <math.h>
 #include <string.h>
 
 #include "platform.h"
 
 #if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
 
+#include "common/axis.h"
 #include "common/printf.h"
 #include "common/time.h"
+#include "common/utils.h"
+
+#include "config/config.h"
 
 #include "drivers/time.h"
 
+#include "fc/dispatch.h"
 #include "fc/runtime_config.h"
 
 #include "flight/flight_plan_nav.h"
 
 #include "io/gps.h"
 
+#include "pg/autopilot.h"
 #include "pg/flight_plan.h"
+
+#include "sensors/gyro.h"
 
 #include "flight_plan_capture.h"
 
@@ -45,6 +54,11 @@
 // stored, not wherever the craft has drifted to by the release.
 #define FP_CAPTURE_HOLD_DELETE_US 1500000u
 #define FP_CAPTURE_MSG_TIME_US    2500000u
+
+// The save is deferred past the disarm so the flash write never runs inside it, and
+// it waits until the craft is still: the same two precautions persistent stats take.
+#define FP_CAPTURE_SAVE_DELAY_US        500000u
+#define FP_CAPTURE_SAVE_MOVE_LIMIT_DPS  20.0f
 
 static bool switchWas = false;
 static timeUs_t pressTimeUs = 0;
@@ -56,6 +70,28 @@ static bool pressAccepted = false;    // press happened somewhere edits are allo
 static char msgText[16];
 static timeUs_t msgExpireUs = 0;
 static bool msgValid = false;
+
+static bool planDirty = false;        // edited in flight and not yet written to flash
+static uint32_t planDirtyWriteCount;  // the config write count when the plan was edited
+static timeUs_t lastDisarmUs = 0;     // the save waits FP_CAPTURE_SAVE_DELAY_US past the latest disarm
+static void savePlan(dispatchEntry_t *self);
+static dispatchEntry_t savePlanEntry = { savePlan, 0, NULL, false };
+
+static void markPlanDirty(void)
+{
+    planDirty = true;
+    planDirtyWriteCount = getConfigWriteCount();
+}
+
+// Edited in flight and not written to flash since. Any write of the configuration
+// stores the plan, so a save the pilot made (OSD menu, CLI, app) clears this too.
+static bool planUnsaved(void)
+{
+    if (planDirty && getConfigWriteCount() != planDirtyWriteCount) {
+        planDirty = false;
+    }
+    return planDirty;
+}
 
 static void setMessage(timeUs_t currentTimeUs, const char *fmt, int index)
 {
@@ -112,6 +148,7 @@ void flightPlanCaptureUpdate(timeUs_t currentTimeUs, bool switchActive, bool cha
         pendingValid = false;
         if (pressAccepted && editsAllowed() && plan->waypointCount > 0) {
             plan->waypointCount--;
+            markPlanDirty();
             setMessage(currentTimeUs, "WP%d DELETED", plan->waypointCount + 1);
         }
     } else if (!switchActive && switchWas && !deleteFired && pressAccepted) {
@@ -119,6 +156,7 @@ void flightPlanCaptureUpdate(timeUs_t currentTimeUs, bool switchActive, bool cha
         if (pendingValid && editsAllowed()) {
             if (plan->waypointCount < MAX_WAYPOINTS) {
                 plan->waypoints[plan->waypointCount++] = pending;
+                markPlanDirty();
                 setMessage(currentTimeUs, "WP%d SET", plan->waypointCount);
             } else {
                 setMessage(currentTimeUs, "WP FULL", 0);
@@ -127,6 +165,62 @@ void flightPlanCaptureUpdate(timeUs_t currentTimeUs, bool switchActive, bool cha
         pendingValid = false;
     }
     switchWas = switchActive;
+}
+
+static void savePlan(dispatchEntry_t *self)
+{
+    UNUSED(self);
+
+    if (ARMING_FLAG(ARMED)) {
+        return; // armed again before the write: the next disarm schedules it afresh
+    }
+    if (!planUnsaved()) {
+        return; // the pilot saved since the disarm
+    }
+    if (!autopilotConfig()->wpCaptureSave) {
+        setMessage(micros(), "WP UNSAVED", 0); // turned off since the disarm: same cue as the hook gives
+        return;
+    }
+    // disarmed again within the delay: the queue kept the first deadline, so wait
+    // out the rest of the delay from the latest disarm instead of writing early
+    const timeDelta_t sinceDisarmUs = cmpTimeUs(micros(), lastDisarmUs);
+    if (sinceDisarmUs < (timeDelta_t)FP_CAPTURE_SAVE_DELAY_US) {
+        dispatchAdd(&savePlanEntry, FP_CAPTURE_SAVE_DELAY_US - sinceDisarmUs);
+        return;
+    }
+    if (isConfigDirty()) {
+        // something marked the config changed and not saved (in-flight adjustments do),
+        // and a save the pilot did not ask for must not persist it. Tell the pilot to
+        // save from the OSD menu. The same gate persistent stats put on their write.
+        setMessage(micros(), "WP UNSAVED", 0);
+        return;
+    }
+    const bool still = fabsf(gyro.gyroADCf[FD_ROLL]) < FP_CAPTURE_SAVE_MOVE_LIMIT_DPS
+        && fabsf(gyro.gyroADCf[FD_PITCH]) < FP_CAPTURE_SAVE_MOVE_LIMIT_DPS
+        && fabsf(gyro.gyroADCf[FD_YAW]) < FP_CAPTURE_SAVE_MOVE_LIMIT_DPS;
+    if (!still) {
+        dispatchAdd(&savePlanEntry, FP_CAPTURE_SAVE_DELAY_US); // being carried or tumbling: wait
+        return;
+    }
+
+    writeEEPROM();
+    planDirty = false;
+    setMessage(micros(), "WP SAVED", 0);
+}
+
+void flightPlanCaptureOnDisarm(void)
+{
+    lastDisarmUs = micros(); // every disarm, so a write already queued waits for the latest one
+    if (!planUnsaved()) {
+        return;
+    }
+    if (!autopilotConfig()->wpCaptureSave) {
+        // the pilot did not opt in to the automatic write: remind them to save
+        setMessage(micros(), "WP UNSAVED", 0);
+        return;
+    }
+    dispatchEnable();
+    dispatchAdd(&savePlanEntry, FP_CAPTURE_SAVE_DELAY_US); // a no-op if the entry is still queued
 }
 
 const char *flightPlanCaptureOsdMessage(void)
@@ -144,6 +238,9 @@ const char *flightPlanCaptureOsdMessage(void)
 #ifdef UNIT_TEST
 void flightPlanCaptureResetForTest(void)
 {
+    planDirty = false;
+    planDirtyWriteCount = 0;
+    lastDisarmUs = 0;
     switchWas = false;
     pressTimeUs = 0;
     deleteFired = false;

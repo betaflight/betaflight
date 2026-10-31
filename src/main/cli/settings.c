@@ -2244,6 +2244,9 @@ const clivalue_t valueTable[] = {
 
     // Vertical track
     { PARAM_NAME_AP_MIN_NAV_ALTITUDE_M,      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 50 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, minNavAltitudeM) },
+
+    // In-flight waypoint capture
+    { PARAM_NAME_AP_WP_CAPTURE_SAVE,         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_AUTOPILOT, offsetof(autopilotConfig_t, wpCaptureSave) },
 #endif
 
 #if ENABLE_FLIGHT_PLAN

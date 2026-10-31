@@ -24,17 +24,23 @@ extern "C" {
 
     #include "common/time.h"
 
+    #include "fc/dispatch.h"
     #include "fc/runtime_config.h"
 
     #include "flight/flight_plan_capture.h"
 
     #include "io/gps.h"
 
+    #include "pg/autopilot.h"
     #include "pg/flight_plan.h"
     #include "pg/pg.h"
 
+    #include "sensors/gyro.h"
+
     uint8_t stateFlags;
+    uint8_t armingFlags;
     gpsSolutionData_t gpsSol;
+    gyro_t gyro;
 }
 
 #include "unittest_macros.h"
@@ -45,6 +51,11 @@ extern "C" {
 namespace {
 timeUs_t g_stubMicros;
 bool g_stubNavActive;
+bool g_stubConfigDirty;
+int g_stubWriteEepromCount;
+int g_stubDispatchCount;
+int g_stubDispatchDelayUs;
+dispatchEntry_t *g_stubDispatchEntry;
 } // namespace
 
 extern "C" {
@@ -59,6 +70,35 @@ bool flightPlanNavIsActive(void)
     return g_stubNavActive;
 }
 
+bool isConfigDirty(void)
+{
+    return g_stubConfigDirty;
+}
+
+uint32_t g_stubConfigWriteCount;
+
+uint32_t getConfigWriteCount(void)
+{
+    return g_stubConfigWriteCount;
+}
+
+void writeEEPROM(void)
+{
+    g_stubWriteEepromCount++;
+    g_stubConfigWriteCount++;
+}
+
+void dispatchEnable(void)
+{
+}
+
+void dispatchAdd(dispatchEntry_t *entry, int delayUs)
+{
+    g_stubDispatchCount++;
+    g_stubDispatchDelayUs = delayUs;
+    g_stubDispatchEntry = entry;
+}
+
 } // extern "C"
 
 class FlightPlanCaptureTest : public ::testing::Test {
@@ -67,10 +107,28 @@ protected:
         flightPlanCaptureResetForTest();
         memset(&gpsSol, 0, sizeof(gpsSol));
         flightPlanConfigMutable()->waypointCount = 0;
+        autopilotConfigMutable()->wpCaptureSave = 1;
         stateFlags = GPS_FIX;
         g_stubNavActive = false;
         g_stubMicros = 1000000;
+        g_stubConfigDirty = false;
+        g_stubWriteEepromCount = 0;
+        g_stubConfigWriteCount = 10;
+        g_stubDispatchCount = 0;
+        g_stubDispatchDelayUs = 0;
+        g_stubDispatchEntry = NULL;
+        armingFlags = 0;
+        memset(&gyro, 0, sizeof(gyro));
         setPosition(500000000, -1200000000, 3000);
+    }
+
+    // run the save the disarm hook scheduled, as the dispatcher would: once its delay is up
+    void runScheduledSave() {
+        ASSERT_NE(nullptr, g_stubDispatchEntry);
+        dispatchEntry_t *entry = g_stubDispatchEntry;
+        g_stubDispatchEntry = NULL;
+        g_stubMicros += g_stubDispatchDelayUs;
+        entry->dispatch(entry);
     }
 
     void setPosition(int32_t lat, int32_t lon, int32_t altCm) {
@@ -233,4 +291,194 @@ TEST_F(FlightPlanCaptureTest, OsdMessageExpires)
     EXPECT_TRUE(flightPlanCaptureOsdMessage() != NULL);
     advanceMs(200);                                // past the 2.5 s cue lifetime
     EXPECT_TRUE(flightPlanCaptureOsdMessage() == NULL);
+}
+
+// --- Saving the plan after the flight ---
+
+TEST_F(FlightPlanCaptureTest, DisarmWithoutAnEditSchedulesNoSave)
+{
+    flightPlanCaptureOnDisarm();
+    EXPECT_EQ(0, g_stubDispatchCount);
+    EXPECT_EQ(0, g_stubWriteEepromCount);
+}
+
+TEST_F(FlightPlanCaptureTest, SaveOffLeavesTheEditInRamAndShowsTheCue)
+{
+    autopilotConfigMutable()->wpCaptureSave = 0;
+    tap();
+    flightPlanCaptureOnDisarm();
+    EXPECT_EQ(0, g_stubDispatchCount) << "nothing is scheduled without the opt-in";
+    EXPECT_EQ(0, g_stubWriteEepromCount);
+    EXPECT_STREQ("WP UNSAVED", flightPlanCaptureOsdMessage()) << "the cue to save from the OSD menu";
+
+    // switched on later: the edit is still pending and the next disarm writes it
+    autopilotConfigMutable()->wpCaptureSave = 1;
+    flightPlanCaptureOnDisarm();
+    EXPECT_EQ(1, g_stubDispatchCount);
+    runScheduledSave();
+    EXPECT_EQ(1, g_stubWriteEepromCount);
+}
+
+TEST_F(FlightPlanCaptureTest, ThePilotsOwnSaveClearsThePendingWrite)
+{
+    tap();
+    g_stubConfigWriteCount++;                          // Save/Exit from the OSD menu wrote the config
+    flightPlanCaptureOnDisarm();
+    EXPECT_EQ(0, g_stubDispatchCount) << "the plan is on flash already";
+    EXPECT_EQ(0, g_stubWriteEepromCount);
+
+    // the same with the automatic write off: no stale cue either
+    autopilotConfigMutable()->wpCaptureSave = 0;
+    tap();
+    g_stubConfigWriteCount++;
+    flightPlanCaptureOnDisarm();
+    EXPECT_TRUE(flightPlanCaptureOsdMessage() == NULL || strcmp("WP UNSAVED", flightPlanCaptureOsdMessage()) != 0);
+}
+
+TEST_F(FlightPlanCaptureTest, ThePilotsOwnSaveInsideTheDelayStopsTheQueuedWrite)
+{
+    tap();
+    flightPlanCaptureOnDisarm();                       // queued
+    g_stubConfigWriteCount++;                          // Save/Exit from the OSD menu before it ran
+    runScheduledSave();
+    EXPECT_EQ(0, g_stubWriteEepromCount) << "the plan is on flash already";
+    EXPECT_EQ(1, g_stubDispatchCount) << "and nothing is re-scheduled";
+    EXPECT_TRUE(flightPlanCaptureOsdMessage() == NULL || strcmp("WP SAVED", flightPlanCaptureOsdMessage()) != 0);
+}
+
+TEST_F(FlightPlanCaptureTest, SaveTurnedOffInsideTheDelayDoesNotWrite)
+{
+    tap();
+    flightPlanCaptureOnDisarm();
+    autopilotConfigMutable()->wpCaptureSave = 0;
+    runScheduledSave();
+    EXPECT_EQ(0, g_stubWriteEepromCount);
+    EXPECT_STREQ("WP UNSAVED", flightPlanCaptureOsdMessage()) << "the same cue the disarm hook gives";
+
+    autopilotConfigMutable()->wpCaptureSave = 1;
+    flightPlanCaptureOnDisarm();
+    EXPECT_EQ(2, g_stubDispatchCount) << "still pending for the next disarm";
+    runScheduledSave();
+    EXPECT_EQ(1, g_stubWriteEepromCount);
+}
+
+TEST_F(FlightPlanCaptureTest, ADisarmWithNothingPendingStillCountsAsTheLatestDisarm)
+{
+    tap();
+    flightPlanCaptureOnDisarm();                       // queued, due in 500 ms
+    g_stubConfigWriteCount++;                          // the pilot saved from the OSD menu
+    armingFlags = ARMED;
+    advanceMs(200);
+    armingFlags = 0;
+    flightPlanCaptureOnDisarm();                       // nothing pending, but this is now the latest disarm
+    tap();                                             // marked again on the ground, 100 ms later
+    g_stubDispatchDelayUs = 200000;                    // the first deadline is 200 ms away
+
+    runScheduledSave();                                // 300 ms after the latest disarm
+    EXPECT_EQ(0, g_stubWriteEepromCount) << "waits out the delay from the latest disarm";
+    EXPECT_EQ(2, g_stubDispatchCount);
+    EXPECT_EQ(200000, g_stubDispatchDelayUs);
+
+    runScheduledSave();
+    EXPECT_EQ(1, g_stubWriteEepromCount);
+}
+
+TEST_F(FlightPlanCaptureTest, TapThenDisarmWritesThePlanOnceTheCraftIsStill)
+{
+    tap();
+    flightPlanCaptureOnDisarm();
+    EXPECT_EQ(1, g_stubDispatchCount);
+    EXPECT_EQ(500000, g_stubDispatchDelayUs);
+    EXPECT_EQ(0, g_stubWriteEepromCount) << "the write is deferred, never inside disarm()";
+
+    runScheduledSave();
+    EXPECT_EQ(1, g_stubWriteEepromCount);
+    EXPECT_STREQ("WP SAVED", flightPlanCaptureOsdMessage());
+
+    // written: a later disarm has nothing to do
+    flightPlanCaptureOnDisarm();
+    EXPECT_EQ(1, g_stubDispatchCount);
+}
+
+TEST_F(FlightPlanCaptureTest, HoldDeleteAlsoMarksThePlanForSaving)
+{
+    fillPlan(3);
+    update(true);
+    advanceMs(1600);
+    update(true);   // the hold fires while the switch is still held
+    update(false);
+    ASSERT_EQ(2, flightPlanConfig()->waypointCount);
+
+    flightPlanCaptureOnDisarm();
+    EXPECT_EQ(1, g_stubDispatchCount);
+}
+
+TEST_F(FlightPlanCaptureTest, ArmedAgainBeforeTheWriteLeavesItForTheNextDisarm)
+{
+    tap();
+    flightPlanCaptureOnDisarm();
+    armingFlags = ARMED;
+    runScheduledSave();
+    EXPECT_EQ(0, g_stubWriteEepromCount);
+
+    armingFlags = 0;
+    flightPlanCaptureOnDisarm();
+    EXPECT_EQ(2, g_stubDispatchCount) << "still dirty, so the next disarm schedules it again";
+    runScheduledSave();
+    EXPECT_EQ(1, g_stubWriteEepromCount);
+}
+
+TEST_F(FlightPlanCaptureTest, UnsavedConfigChangesAreNeverSweptUpByTheSave)
+{
+    tap();
+    g_stubConfigDirty = true;
+    flightPlanCaptureOnDisarm();
+    runScheduledSave();
+    EXPECT_EQ(0, g_stubWriteEepromCount);
+    EXPECT_STREQ("WP UNSAVED", flightPlanCaptureOsdMessage()) << "the cue to save from the OSD menu";
+
+    // once the pilot has dealt with those, the plan is still pending
+    g_stubConfigDirty = false;
+    flightPlanCaptureOnDisarm();
+    runScheduledSave();
+    EXPECT_EQ(1, g_stubWriteEepromCount);
+}
+
+TEST_F(FlightPlanCaptureTest, SecondDisarmWithinTheDelayWaitsOutTheDelayFromTheLatestDisarm)
+{
+    tap();
+    flightPlanCaptureOnDisarm();                       // first disarm: due in 500 ms
+    armingFlags = ARMED;
+    advanceMs(300);
+    armingFlags = 0;
+    flightPlanCaptureOnDisarm();                       // second disarm 300 ms later: the queue
+    g_stubDispatchDelayUs = 200000;                    // keeps the first deadline, now 200 ms away
+
+    runScheduledSave();                                // fires 200 ms after the second disarm
+    EXPECT_EQ(0, g_stubWriteEepromCount) << "too soon after the latest disarm";
+    EXPECT_EQ(3, g_stubDispatchCount) << "re-scheduled for the rest of the delay";
+    EXPECT_EQ(300000, g_stubDispatchDelayUs);
+
+    runScheduledSave();                                // 500 ms after the second disarm
+    EXPECT_EQ(1, g_stubWriteEepromCount);
+}
+
+TEST_F(FlightPlanCaptureTest, MovingCraftDefersTheWrite)
+{
+    // movement on any one axis is enough to hold the write
+    const int axes[] = { FD_ROLL, FD_PITCH, FD_YAW };
+    for (int axis : axes) {
+        SCOPED_TRACE(axis);
+        SetUp();
+        tap();
+        flightPlanCaptureOnDisarm();
+        gyro.gyroADCf[axis] = 90.0f; // being carried
+        runScheduledSave();
+        EXPECT_EQ(0, g_stubWriteEepromCount);
+        EXPECT_EQ(2, g_stubDispatchCount) << "re-scheduled rather than dropped";
+
+        gyro.gyroADCf[axis] = 0.0f;
+        runScheduledSave();
+        EXPECT_EQ(1, g_stubWriteEepromCount);
+    }
 }

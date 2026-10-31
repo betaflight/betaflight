@@ -101,6 +101,7 @@
 #include "config.h"
 
 static bool configIsDirty; /* someone indicated that the config is modified and it is not yet saved */
+static uint32_t configWriteCount; /* number of writes to EEPROM since boot, so a caller can tell whether its edit has been written */
 
 static bool rebootRequired = false;  // set if a config change requires a reboot to take effect
 
@@ -801,6 +802,12 @@ void writeUnmodifiedConfigToEEPROM(void)
     eepromWriteInProgress = false;
     resumeRxSignal();
     configIsDirty = false;
+    configWriteCount++;
+}
+
+uint32_t getConfigWriteCount(void)
+{
+    return configWriteCount;
 }
 
 void writeEEPROM(void)

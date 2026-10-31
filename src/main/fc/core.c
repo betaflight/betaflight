@@ -617,6 +617,12 @@ void disarm(flightLogDisarmReason_e reason)
             statsOnDisarm();
         }
 #endif
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+        // on every disarm, crash flip included: a waypoint captured before a crash
+        // would otherwise be lost to a power-off. The write itself waits until the
+        // craft is disarmed and still.
+        flightPlanCaptureOnDisarm();
+#endif
     // Terminate crashflip mode in any disarm
     if (crashFlipModeActive) {
         crashFlipModeActive = false;

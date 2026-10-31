@@ -128,4 +128,7 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     // Safety: Geofence
     .maxDistanceFromHomeM = 0,            // Disabled by default
     .geofenceAction = DEFAULT_GEOFENCE_ACTION,
+
+    // In-flight waypoint capture
+    .wpCaptureSave = 0,                   // Captured waypoints stay in RAM until the pilot saves
 );

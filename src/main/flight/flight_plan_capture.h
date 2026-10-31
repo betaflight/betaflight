@@ -28,8 +28,15 @@
 // In-flight waypoint capture on the WP CAPTURE box: a tap appends the craft's
 // position (sampled at the press) to the flight plan as a FLYBY waypoint, a
 // 1.5 s hold deletes the last waypoint. Edits apply to the live PG plan, so
-// the CLI waypoint command sees them and `save` persists them.
+// the CLI waypoint command sees them, and the plan is written to flash after
+// the flight by flightPlanCaptureOnDisarm().
 void flightPlanCaptureUpdate(timeUs_t currentTimeUs, bool switchActive, bool channelsValid);
+
+// Called from disarm(). If the plan was edited in flight, schedules a deferred
+// write of the configuration so the captured waypoints survive a power cycle.
+// The write runs half a second later, only while still disarmed and still, and
+// only when there are no unsaved CLI or Configurator changes it could sweep up.
+void flightPlanCaptureOnDisarm(void);
 
 // Transient OSD cue ("WP3 SET", "WP2 DELETED", "WP FULL"), or NULL when none
 // is pending. The cue self-expires.

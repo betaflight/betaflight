@@ -83,6 +83,7 @@ void validateAndFixBlackBox(void);
 
 void setConfigDirty(void);
 bool isConfigDirty(void);
+uint32_t getConfigWriteCount(void);
 
 uint8_t getCurrentPidProfileIndex(void);
 void changePidProfile(uint8_t pidProfileIndex);
