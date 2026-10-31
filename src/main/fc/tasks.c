@@ -58,6 +58,9 @@
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#ifdef USE_MOTOR_THERMAL
+#include "flight/motor_thermal.h"
+#endif
 #include "flight/pid.h"
 #include "flight/position.h"
 #include "flight/autopilot.h"
@@ -532,6 +535,10 @@ task_attribute_t task_attributes[TASK_COUNT] = {
     [TASK_GIMBAL] = DEFINE_TASK("GIMBAL", NULL, NULL, gimbalUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_MEDIUM),
 #endif
 
+#ifdef USE_MOTOR_THERMAL
+    [TASK_MOTOR_THERMAL] = DEFINE_TASK("MOTOR_THERMAL", NULL, NULL, motorThermalUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
+#endif
+
 #if ENABLE_OSD_CUSTOM_TEXT
     [TASK_OSD_CUSTOM_TEXT] = DEFINE_TASK("OSD_CTEXT", NULL, NULL, osdCustomTextUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
 #endif
@@ -771,6 +778,10 @@ void tasksInit(void)
 
 #ifdef USE_GIMBAL
     setTaskEnabled(TASK_GIMBAL, true);
+#endif
+
+#ifdef USE_MOTOR_THERMAL
+    setTaskEnabled(TASK_MOTOR_THERMAL, true);
 #endif
 
 #if ENABLE_OSD_CUSTOM_TEXT
