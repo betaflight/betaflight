@@ -409,6 +409,23 @@ protected:
 };
 
 
+TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusLengthByteLargerThanTheWindowIsNotAPacket)
+{
+    // The first byte of the 4-byte receive window names the packet length, and the checksum
+    // runs over that many bytes. Values that do not fit the window (or wrap below the
+    // checksum size) must be rejected without reading past the window.
+    checkResponseToCommand("\xff\x81\x7a\xff", 4, NULL, 0);
+    checkResponseToCommand("\x00\x81\x7a\xff", 4, NULL, 0);
+    checkResponseToCommand("\x01\x81\x7a\xff", 4, NULL, 0);
+    checkResponseToCommand("\x05\x81\x7a\xff", 4, NULL, 0);
+    // lengths below the protocol minimum: 2 and 3 would checksum nothing or the length
+    // byte alone, and 0xFFFF matches the trailing bytes of this window
+    checkResponseToCommand("\x02\x81\xff\xff", 4, NULL, 0);
+    checkResponseToCommand("\x03\x81\xfc\xff", 4, NULL, 0);
+    // and a real request still gets its reply
+    checkResponseToCommand("\x04\x81\x7a\xff", 4, "\x04\x81\x7a\xff", 4);
+}
+
 TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusNoRespondToDiscoveryCrcErr)
 {
     //Given ibus command: Hello sensor at address 1, are you there (with bad crc)?
