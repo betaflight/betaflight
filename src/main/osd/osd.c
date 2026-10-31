@@ -84,6 +84,7 @@
 
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
+#include "osd/osd_screensaver.h"
 #include "osd/osd_warnings.h"
 
 #include "pg/motor.h"
@@ -426,6 +427,11 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
     osdConfig->stat_show_cell_value = false;
     osdConfig->framerate_hz = OSD_FRAMERATE_DEFAULT_HZ;
+#ifdef USE_OSD_SCREENSAVER
+    osdConfig->screensaver_effect = OSD_SCREENSAVER_MATRIX;
+    osdConfig->screensaver_timeout = 0;
+    osdConfig->screensaver_cycle = OSD_SCREENSAVER_CYCLE_DEFAULT_S;
+#endif
     osdConfig->cms_background_type = DISPLAY_BACKGROUND_TRANSPARENT;
     #ifdef USE_CRAFTNAME_MSGS
     osdConfig->osd_craftname_msgs = false;   // Insert LQ/RSSI-dBm and warnings into CraftName
@@ -1386,6 +1392,9 @@ typedef enum {
     OSD_STATE_UPDATE_ALARMS,
     OSD_STATE_REFRESH_PREARM,
     OSD_STATE_UPDATE_CANVAS,
+#ifdef USE_OSD_SCREENSAVER
+    OSD_STATE_SCREENSAVER,
+#endif
     // Elements are handled in two steps, drawing into a buffer, and then sending to the display
     OSD_STATE_DRAW_ELEMENT,
     OSD_STATE_DISPLAY_ELEMENT,
@@ -1429,6 +1438,14 @@ bool osdUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
     }
 
     return (osdState != OSD_STATE_IDLE);
+}
+
+// An MSP display sends over a serial port whose buffer drains at the baud rate, and what is written while it is full
+// is dropped without a trace: a clear that is lost keeps the old screen, a write that is lost is a missing element.
+// So the OSD waits for room before it clears or writes, and the frame rate follows what the link can carry.
+static bool osdSerialDisplayBusy(void)
+{
+    return osdDisplayPort->deviceType == DISPLAYPORT_DEVICE_TYPE_MSP && displayIsTransferInProgress(osdDisplayPort);
 }
 
 // Called when there is OSD update work to be done
@@ -1527,6 +1544,10 @@ void osdUpdate(timeUs_t currentTimeUs)
         break;
 
     case OSD_STATE_UPDATE_CANVAS:
+        if (osdSerialDisplayBusy()) {
+            break;
+        }
+
         if (resumeRefreshAt) {
             osdState = OSD_STATE_TRANSFER;
             break;
@@ -1538,6 +1559,14 @@ void osdUpdate(timeUs_t currentTimeUs)
             osdState = OSD_STATE_COMMIT;
             break;
         }
+
+#ifdef USE_OSD_SCREENSAVER
+        if (osdScreensaverActive(osdDisplayPort, currentTimeUs)) {
+            displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
+            osdState = OSD_STATE_SCREENSAVER;
+            break;
+        }
+#endif
 
         if (backgroundLayerSupported) {
             // Background layer is supported, overlay it onto the foreground
@@ -1566,8 +1595,25 @@ void osdUpdate(timeUs_t currentTimeUs)
 
         break;
 
+#ifdef USE_OSD_SCREENSAVER
+    case OSD_STATE_SCREENSAVER:
+        if (osdSerialDisplayBusy()) {
+            break;
+        }
+
+        // A few rows a call
+        if (!osdScreensaverDraw(osdDisplayPort, osdDisplayPortDeviceType == OSD_DISPLAYPORT_DEVICE_MSP, currentTimeUs)) {
+            osdState = OSD_STATE_COMMIT;
+        }
+        break;
+#endif
+
     case OSD_STATE_DRAW_ELEMENT:
         {
+            if (osdSerialDisplayBusy()) {
+                break;
+            }
+
             uint8_t osdElement = osdGetActiveElement();
 
             timeUs_t startElementTime = micros();
@@ -1608,6 +1654,10 @@ void osdUpdate(timeUs_t currentTimeUs)
 
     case OSD_STATE_DISPLAY_ELEMENT:
         {
+            if (osdSerialDisplayBusy()) {
+                break;
+            }
+
             const bool pendingDisplay = osdDisplayActiveElement();
 
             if (!pendingDisplay) {

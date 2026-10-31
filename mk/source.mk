@@ -284,6 +284,7 @@ COMMON_SRC = \
             osd/osd_custom_text.c \
             osd/osd_elements.c \
             osd/osd_nav_map.c \
+            osd/osd_screensaver.c \
             osd/osd_warnings.c \
             sensors/barometer.c \
             sensors/pitot.c \
@@ -569,6 +570,7 @@ SIZE_OPTIMISED_SRC += \
             osd/osd_custom_text.c \
             osd/osd_elements.c \
             osd/osd_nav_map.c \
+            osd/osd_screensaver.c \
             osd/osd_warnings.c \
             rx/rx_bind.c \
             io/vtx_msp.c \

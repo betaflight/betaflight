@@ -5069,6 +5069,10 @@ RAM_CODE mspResult_e mspFcProcessCommand(mspDescriptor_t srcDesc, mspPacket_t *c
     // initialize reply by default
     reply->cmd = cmd->cmd;
 
+#ifdef USE_MSP_DISPLAYPORT
+    displayPortMspPolled(srcDesc, cmdMSP);
+#endif
+
     if (mspCommonProcessOutCommand(srcDesc, cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
     } else if (mspProcessOutCommand(srcDesc, cmdMSP, dst)) {
