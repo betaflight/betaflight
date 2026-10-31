@@ -439,6 +439,34 @@ TEST(CrossFireTest, TestOversizedFrameLengthIsRejected)
     EXPECT_FALSE(crsfFrameDone);
 }
 
+TEST(CrossFireTest, TestMaximumLengthFrameFitsTheDeclaredFrame)
+{
+    // The longest legal frame (length 62) carries 60 payload bytes plus the CRC. All of them
+    // must sit inside crsfFrameDef_t's declared payload array, not merely inside the union's
+    // byte array behind it.
+    const uint8_t maxValidFrameLength = CRSF_FRAME_SIZE_MAX -
+        CRSF_FRAME_LENGTH_ADDRESS - CRSF_FRAME_LENGTH_FRAMELENGTH;
+    EXPECT_EQ(CRSF_PAYLOAD_SIZE_MAX, maxValidFrameLength - CRSF_FRAME_LENGTH_TYPE_CRC);
+    EXPECT_EQ(sizeof(crsfFrame.bytes), sizeof(crsfFrame.frame));
+    EXPECT_EQ(CRSF_PAYLOAD_SIZE_MAX + CRSF_FRAME_LENGTH_CRC, sizeof(crsfFrame.frame.payload));
+
+    memset(&crsfFrame, 0, sizeof(crsfFrame));
+    crsfFrameDone = false;
+    rxRuntimeState_t rxRuntimeState = {};
+    dummyTimeUs += 10000;
+
+    uint8_t frame[CRSF_FRAME_SIZE_MAX];
+    const size_t frameSize = buildCrsfFrame(frame, maxValidFrameLength, CRSF_ADDRESS_FLIGHT_CONTROLLER);
+    ASSERT_EQ(CRSF_FRAME_SIZE_MAX, frameSize);
+    receiveCrsfFrameBytes(frame, frameSize, &rxRuntimeState);
+
+    EXPECT_TRUE(crsfFrameDone);
+    // last payload byte and the CRC, addressed through the declared array
+    EXPECT_EQ(frame[frameSize - 2], crsfFrame.frame.payload[CRSF_PAYLOAD_SIZE_MAX - 1]);
+    EXPECT_EQ(frame[frameSize - 1], crsfFrame.frame.payload[CRSF_PAYLOAD_SIZE_MAX]);
+    EXPECT_EQ(crsfFrameCRC(), crsfFrame.frame.payload[CRSF_PAYLOAD_SIZE_MAX]);
+}
+
 TEST(CrossFireTest, TestValidFrameLengthBoundsAreReceived)
 {
     const uint8_t maxValidFrameLength = CRSF_FRAME_SIZE_MAX -
