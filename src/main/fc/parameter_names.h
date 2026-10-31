@@ -337,7 +337,6 @@
 #define PARAM_NAME_GPS_RESCUE_MIN_SATS "gps_rescue_min_sats"
 #define PARAM_NAME_GPS_RESCUE_ALLOW_ARMING_WITHOUT_FIX "gps_rescue_allow_arming_without_fix"
 
-#define PARAM_NAME_GPS_RESCUE_YAW_P "gps_rescue_yaw_p"
 #endif // USE_GPS_RESCUE
 
 #ifdef USE_GPS_LAP_TIMER

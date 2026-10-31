@@ -1694,7 +1694,7 @@ case MSP_NAME:
         sbufWriteU16(dst, autopilotConfig()->positionP);
         sbufWriteU16(dst, autopilotConfig()->positionI);
         sbufWriteU16(dst, autopilotConfig()->positionD);
-        sbufWriteU16(dst, gpsRescueConfig()->yawP);
+        sbufWriteU16(dst, 0); // was gps_rescue_yaw_p
         break;
 #endif // !USE_WING
 #endif
@@ -3351,7 +3351,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         autopilotConfigMutable()->positionP = sbufReadU16Constrained(src, 0, AUTOPILOT_PID_GAIN_MAX);
         autopilotConfigMutable()->positionI = sbufReadU16Constrained(src, 0, AUTOPILOT_PID_GAIN_MAX);
         autopilotConfigMutable()->positionD = sbufReadU16Constrained(src, 0, AUTOPILOT_PID_GAIN_MAX);
-        gpsRescueConfigMutable()->yawP = sbufReadU16Constrained(src, 0, GPS_RESCUE_YAW_P_MAX);
+        sbufReadU16(src); // was gps_rescue_yaw_p
         break;
 #endif // !USE_WING
 #endif
