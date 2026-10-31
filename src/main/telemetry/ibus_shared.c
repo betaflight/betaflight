@@ -504,6 +504,13 @@ static uint16_t calculateChecksum(const uint8_t *ibusPacket)
 
 bool isChecksumOkIa6b(const uint8_t *ibusPacket, const uint8_t length)
 {
+    // The packet's own length byte drives the checksum loop. It comes off the wire, and the
+    // telemetry port slides every received byte through a 4-byte window, so a value larger
+    // than the buffer would read far past it. A length that does not fit is not a packet,
+    // and neither is one shorter than the length and command bytes plus the checksum.
+    if (ibusPacket[0] < 2 + IBUS_CHECKSUM_SIZE || ibusPacket[0] > length) {
+        return false;
+    }
     uint16_t calculatedChecksum = calculateChecksum(ibusPacket);
 
     // Note that there's a byte order swap to little endian here
