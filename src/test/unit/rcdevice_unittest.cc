@@ -200,6 +200,48 @@ TEST(RCDeviceTest, TestInitDevice)
     EXPECT_EQ(SERIAL_PORT_USART3, testData.openedPort);
 }
 
+TEST(RCDeviceTest, TestInvalidCrcResponseDoesNotSwallowTheNextOne)
+{
+    runcamDevice_t device;
+
+    resetRCDeviceStatus();
+
+    waitingResponseQueue.headPos = 0;
+    waitingResponseQueue.tailPos = 0;
+    waitingResponseQueue.itemCount = 0;
+    memset(&testData, 0, sizeof(testData));
+    testData.isRunCamSplitOpenPortSupported = true;
+    rcdeviceConfigMutable()->rcdevice_uart = SERIAL_PORT_USART3;
+    testData.isAllowBufferReadWrite = true;
+
+    // First reply: a device-info response with a bad CRC, followed by a full buffer's
+    // worth of noise. Second reply (the harness serves it once the firmware transmits
+    // again): a good response. The bad response must be dropped whole and the noise
+    // must stay inside the receive buffer, so the good response is recognised from
+    // its header instead of being appended to the failed one.
+    uint8_t badResponseAndNoise[RCDEVICE_PROTOCOL_MAX_PACKET_SIZE];
+    memset(badResponseAndNoise, 0x5A, sizeof(badResponseAndNoise));
+    badResponseAndNoise[0] = 0xCC;
+    badResponseAndNoise[1] = 0x01;
+    badResponseAndNoise[2] = 0x37;
+    badResponseAndNoise[3] = 0x00;
+    badResponseAndNoise[4] = 0xBE; // should be 0xBD
+    addResponseData(badResponseAndNoise, sizeof(badResponseAndNoise), true);
+    uint8_t goodResponse[] = { 0xCC, 0x01, 0x37, 0x00, 0xBD };
+    addResponseData(goodResponse, sizeof(goodResponse), true);
+
+    runcamDeviceInit(&device);
+    testData.millis += 3001;
+    rcdeviceReceive(millis() * 1000);
+    testData.millis += minTimeout;
+    testData.responseDataReadPos = 0;
+    testData.indexOfCurrentRespBuf = 0;
+    rcdeviceReceive(millis() * 1000);
+    EXPECT_TRUE(device.isReady);
+    clearResponseBuff();
+    testData.millis += minTimeout;
+}
+
 TEST(RCDeviceTest, TestInitDeviceWithInvalidResponse)
 {
     runcamDevice_t device;
