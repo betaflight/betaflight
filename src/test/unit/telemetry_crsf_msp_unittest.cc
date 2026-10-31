@@ -49,6 +49,11 @@ extern "C" {
     #include "flight/gps_rescue.h"
     #include "flight/imu.h"
 
+    #include "drivers/persistent.h"
+    #include "io/displayport_crsf.h"
+    #include "scheduler/scheduler.h"
+    #include "sensors/acceleration.h"
+    #include "sensors/gyro.h"
     #include "io/serial.h"
     #include "io/gps.h"
 
@@ -386,9 +391,58 @@ TEST(CrossFireMSPTest, BufferedRequestsAnsweredAfterReplyCompletes)
     EXPECT_GT(mspResponseFramesWritten, written);
 }
 
+// DEVICE_INFO payload: dst, src, NUL-terminated name, 4-byte serial, then fields
+// this handler does not read.
+TEST(CrossFireMSPTest, DeviceInfoResponseIsBoundedByPayloadLength)
+{
+    const uint8_t elrs[] = { 0xEE, 0xEA, 'R', 'X', '\0', 'E', 'L', 'R', 'S', 0x00, 0x00, 0x00, 0x00 };
+    EXPECT_TRUE(crsfHandleDeviceInfoResponse(elrs, sizeof(elrs)));
+
+    const uint8_t notElrs[] = { 0xEE, 0xEA, 'T', 'B', 'S', '\0', 0x12, 0x34, 0x56, 0x78 };
+    EXPECT_TRUE(crsfHandleDeviceInfoResponse(notElrs, sizeof(notElrs)));
+
+    // A name that is not terminated inside the payload must not be scanned past it.
+    uint8_t unterminated[CRSF_PAYLOAD_SIZE_MAX];
+    memset(unterminated, 'A', sizeof(unterminated));
+    EXPECT_FALSE(crsfHandleDeviceInfoResponse(unterminated, sizeof(unterminated)));
+
+    // A terminator in the last byte leaves no room for the serial number.
+    const uint8_t noSerial[] = { 0xEE, 0xEA, 'R', 'X', '\0' };
+    EXPECT_FALSE(crsfHandleDeviceInfoResponse(noSerial, sizeof(noSerial)));
+
+    // A serial number cut short by the frame length is not compared.
+    const uint8_t shortSerial[] = { 0xEE, 0xEA, 'R', 'X', '\0', 'E', 'L' };
+    EXPECT_FALSE(crsfHandleDeviceInfoResponse(shortSerial, sizeof(shortSerial)));
+
+    // The smallest valid payload: an empty name.
+    const uint8_t emptyName[] = { 0xEE, 0xEA, '\0', 'E', 'L', 'R', 'S' };
+    EXPECT_TRUE(crsfHandleDeviceInfoResponse(emptyName, sizeof(emptyName)));
+}
+
 // STUBS
 
 extern "C" {
+
+const uint32_t baudRates[] = { 0, 9600, 19200, 38400, 57600, 115200, 230400, 250000, 400000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 2470000 };
+acc_t acc;
+float accelGetDownsampled(int) { return 0.0f; }
+bool accelStartDownsampledCycle(void) { return false; }
+float gyroGetDownsampled(int) { return 0.0f; }
+bool gyroStartDownsampledCycle(void) { return false; }
+int16_t gyroGetTemperature(void) { return 0; }
+bool isEepromWriteInProgress(void) { return false; }
+uint32_t persistentObjectRead(persistentObjectId_e) { return 0; }
+void persistentObjectWrite(persistentObjectId_e, uint32_t) {}
+task_t *getTask(unsigned) { return NULL; }
+bool crsfDisplayPortIsReady(void) { return false; }
+
+static crsfDisplayPortScreen_t crsfDisplayPortScreenStub;
+void crsfDisplayportRegister(void) {}
+crsfDisplayPortScreen_t *crsfDisplayPortScreen(void) { return &crsfDisplayPortScreenStub; }
+void crsfDisplayPortMenuOpen(void) {}
+void crsfDisplayPortMenuExit(void) {}
+void crsfDisplayPortRefresh(void) {}
+void crsfDisplayPortSetDimensions(uint8_t, uint8_t) {}
 
     gpsSolutionData_t gpsSol;
     attitudeEulerAngles_t attitude = { { 0, 0, 0 } };

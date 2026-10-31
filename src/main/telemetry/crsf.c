@@ -118,6 +118,7 @@ static mspBuffer_t mspRxBuffer;
 #if defined(USE_CRSF_CMS_TELEMETRY)
 #define CRSF_LINK_TYPE_CHECK_US 250000 // 250 ms
 #define CRSF_ELRS_DISLAYPORT_CHUNK_INTERVAL_US 75000 // 75 ms
+#define CRSF_DEVICE_INFO_SERIAL_LENGTH 4
 
 typedef enum {
     CRSF_LINK_UNKNOWN,
@@ -887,7 +888,8 @@ static void cRleEncodeStream(sbuf_t *source, sbuf_t *dest, uint8_t maxDestLen)
             const uint8_t totalBatches = fullBatches + (remainder ? 1 : 0);
             if (destRemaining >= totalBatches * CRSF_RLE_BATCH_SIZE) {
                 for (unsigned int i = 1; i <= totalBatches; i++) {
-                    const uint8_t batchLength = (i < totalBatches) ? CRSF_RLE_MAX_RUN_LENGTH : remainder;
+                    // a full batch of CRSF_RLE_MAX_RUN_LENGTH (256) is sent as 0
+                    const uint8_t batchLength = (i < totalBatches) ? (uint8_t)CRSF_RLE_MAX_RUN_LENGTH : remainder;
                     sbufWriteU8(dest, c);
                     sbufWriteU8(dest, batchLength);
                 }
@@ -1174,21 +1176,37 @@ bool crsfTelemetryUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTi
 #endif
 
 #if defined(USE_CRSF_CMS_TELEMETRY)
-void crsfHandleDeviceInfoResponse(uint8_t *payload)
+// DEVICE_INFO payload: dst, src, NUL-terminated device name, then a 4-byte serial
+// number. The payload comes off the wire, so walk it only as far as its length:
+// a name with no terminator inside the frame would otherwise send the scan past
+// the end of the frame buffer. Returns false, leaving the link type unknown so
+// the next ping asks again, when the payload is too short to hold the fields.
+bool crsfHandleDeviceInfoResponse(const uint8_t *payload, uint8_t payloadLength)
 {
-    // Skip over dst/src address bytes
-    payload += 2;
+    // Walk an index rather than a pointer, so no pointer past the payload is
+    // ever formed, whatever the length.
+    unsigned i = CRSF_FRAME_ORIGIN_DEST_SIZE; // skip over dst/src address bytes
 
     // Skip over first string which is the rx model/part number
-    while (*payload++ != '\0');
+    while (i < payloadLength && payload[i] != '\0') {
+        i++;
+    }
+    if (i >= payloadLength) {
+        return false; // no terminator inside the payload
+    }
+    i++; // past the terminator
 
     // Check the serial number
-    if (memcmp(payload, "ELRS", 4) == 0) {
+    if (payloadLength - i < CRSF_DEVICE_INFO_SERIAL_LENGTH) {
+        return false;
+    }
+    if (memcmp(&payload[i], "ELRS", CRSF_DEVICE_INFO_SERIAL_LENGTH) == 0) {
         crsfLinkType = CRSF_LINK_ELRS;
         crsfDisplayPortChunkIntervalUs = CRSF_ELRS_DISLAYPORT_CHUNK_INTERVAL_US;
     } else {
         crsfLinkType = CRSF_LINK_NOT_ELRS;
     }
+    return true;
 }
 #endif
 

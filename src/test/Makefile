@@ -698,7 +698,10 @@ telemetry_crsf_msp_unittest_SRC := \
 		$(USER_DIR)/fc/runtime_config.c
 
 telemetry_crsf_msp_unittest_DEFINES := \
-		USE_MSP_OVER_TELEMETRY=
+		USE_MSP_OVER_TELEMETRY= \
+		USE_CRSF_V3= \
+		USE_CRSF_ACCGYRO_TELEMETRY= \
+		USE_CRSF_CMS_TELEMETRY=
 
 
 telemetry_hott_unittest_SRC := \
