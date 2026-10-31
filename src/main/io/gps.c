@@ -384,7 +384,7 @@ static void logErrorToPacketLog(void)
 static void gpsNewData(uint8_t c);
 static void gpsHandleFrameComplete(void);
 #ifdef USE_GPS_NMEA
-static bool gpsNewFrameNMEA(char c);
+STATIC_UNIT_TESTED bool gpsNewFrameNMEA(char c);
 #endif
 #ifdef USE_GPS_UBLOX
 static bool gpsNewFrameUBLOX(uint8_t data);
@@ -1804,33 +1804,49 @@ static uint32_t GPS_coord_to_degrees(char *coordinateString)
 // always holds a terminator at or before index NMEA_FIELD_BUFFER_SIZE - 1.
 #define NMEA_FIELD_BUFFER_SIZE 16
 
-static uint32_t grab_fields(char *src, uint8_t mult)
-{                               // convert string to uint32
-    uint32_t i;
+// Convert a numeric NMEA field to an integer scaled by 10^mult, i.e. with exactly
+// 'mult' decimal places: "123.4" with mult 1 gives 1234, as does "123.45" or "123".
+// NMEA does not fix the number of decimals a receiver sends, so extra decimals are
+// dropped and missing ones are padded. With mult 0 the fraction is ignored. A value
+// that does not fit in 32 bits gives 0, as an over-long field always has.
+STATIC_UNIT_TESTED uint32_t grab_fields(const char *src, uint8_t mult)
+{
+    uint32_t i = 0;
     uint32_t tmp = 0;
+    uint8_t decimals = 0;
+    bool inFraction = false;
     int isneg = 0;
-    for (i = 0; src[i] != 0; i++) {
-        if ((i == 0) && (src[0] == '-')) { // detect negative sign
-            isneg = 1;
-            continue; // jump to next character if the first one was a negative sign
-        }
+
+    if (src[0] == '-') { // detect negative sign
+        isneg = 1;
+        i = 1;
+    }
+    for (; src[i] != 0 && i < NMEA_FIELD_BUFFER_SIZE - 1; i++) {
         if (src[i] == '.') {
-            i++;
             if (mult == 0) {
                 break;
-            } else if (i + mult < NMEA_FIELD_BUFFER_SIZE) {
-                // keep only 'mult' decimals; a field with the decimal point this
-                // close to the end is already terminated inside the buffer
-                src[i + mult] = 0;
             }
+            inFraction = true;
+            continue;
         }
-        tmp *= 10;
-        if (src[i] >= '0' && src[i] <= '9') {
-            tmp += src[i] - '0';
+        if (inFraction) {
+            if (decimals >= mult) {
+                break; // drop decimals beyond the precision asked for
+            }
+            decimals++;
         }
-        if (i >= 15) {
-            return 0; // out of bounds
+        const uint8_t digit = (src[i] >= '0' && src[i] <= '9') ? src[i] - '0' : 0;
+        const uint64_t next = (uint64_t)tmp * 10 + digit;
+        if (next > UINT32_MAX) {
+            return 0; // does not fit
         }
+        tmp = (uint32_t)next;
+    }
+    for (; decimals < mult; decimals++) {
+        if (tmp > UINT32_MAX / 10) {
+            return 0; // does not fit
+        }
+        tmp *= 10; // pad missing decimals
     }
     return isneg ? -tmp : tmp;    // handle negative altitudes
 }
@@ -1879,9 +1895,19 @@ static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uin
         case 7:
             data->numSat = grab_fields(str, 0);
             break;
-        case 9:
-            data->altitudeCm = grab_fields(str, 1) * 10;     // altitude in centimeters. Note: NMEA delivers altitude with 1 or 3 decimals. It's safer to cut at 0.1m and multiply by 10
+        case 9: {
+            // altitude in centimeters. Note: NMEA delivers altitude with 1 or 3 decimals. It's safer to cut at 0.1m and multiply by 10
+            // grab_fields() returns a negative value as its two's complement, so take the sign from
+            // the field and work on the magnitude: a large positive must not pass as a small negative.
+            const bool negative = (str[0] == '-');
+            const uint32_t magnitudeDm = negative ? -grab_fields(str, 1) : grab_fields(str, 1);
+            if (magnitudeDm <= INT32_MAX / 10) {
+                data->altitudeCm = (negative ? -(int32_t)magnitudeDm : (int32_t)magnitudeDm) * 10;
+            } else {
+                data->altitudeCm = 0; // not an altitude; publish 0 rather than a wrapped value
+            }
             break;
+        }
         }
         break;
 
@@ -2024,7 +2050,7 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
     }
 }
 
-static bool gpsNewFrameNMEA(char c)
+STATIC_UNIT_TESTED bool gpsNewFrameNMEA(char c)
 {
     static gpsDataNmea_t gps_msg;
     static char string[NMEA_FIELD_BUFFER_SIZE];
