@@ -438,6 +438,10 @@ motor_output_unittest_SRC := \
 motor_output_unittest_DEFINES := \
 		USE_DSHOT=
 
+asyncfatfs_unittest_SRC := \
+		$(USER_DIR)/io/asyncfatfs/asyncfatfs.c \
+		$(USER_DIR)/io/asyncfatfs/fat_standard.c
+
 sdcard_sdio_unittest_SRC := \
 		$(USER_DIR)/drivers/sdcard_sdio_baremetal.c
 

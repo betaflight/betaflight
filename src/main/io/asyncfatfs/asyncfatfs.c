@@ -81,6 +81,9 @@
 
 #define AFATFS_FILES_PER_DIRECTORY_SECTOR (AFATFS_SECTOR_SIZE / sizeof(fatDirectoryEntry_t))
 
+// The FAT specification limits a directory to 65536 entries, so no valid directory is bigger than this
+#define AFATFS_MAX_DIRECTORY_SIZE (65536 * FAT_DIRECTORY_ENTRY_SIZE)
+
 #define AFATFS_FAT32_FAT_ENTRIES_PER_SECTOR  (AFATFS_SECTOR_SIZE / sizeof(uint32_t))
 #define AFATFS_FAT16_FAT_ENTRIES_PER_SECTOR (AFATFS_SECTOR_SIZE / sizeof(uint16_t))
 
@@ -2184,6 +2187,8 @@ bool afatfs_ftell(afatfsFilePtr_t file, uint32_t *position)
  *     AFATFS_OPERATION_SUCCESS -     A pointer to the next directory entry has been loaded into *dirEntry. If the
  *                                    directory was exhausted then *dirEntry will be set to NULL.
  *     AFATFS_OPERATION_IN_PROGRESS - The disk is busy. The pointer is not advanced, call again later to retry.
+ *     AFATFS_OPERATION_FAILURE -     The directory is larger than the FAT specification allows, so its cluster chain
+ *                                    must loop back on itself. The filesystem is put into the fatal state.
  */
 afatfsOperationStatus_e afatfs_findNext(afatfsFilePtr_t directory, afatfsFinder_t *finder, fatDirectoryEntry_t **dirEntry)
 {
@@ -2192,6 +2197,17 @@ afatfsOperationStatus_e afatfs_findNext(afatfsFilePtr_t directory, afatfsFinder_
     if (finder->entryIndex == AFATFS_FILES_PER_DIRECTORY_SECTOR - 1) {
         if (afatfs_fseekAtomic(directory, AFATFS_SECTOR_SIZE)) {
             finder->entryIndex = -1;
+
+            /* A directory walk only ends on a terminator entry or on the end-of-chain marker in the FAT, and a
+             * cluster chain that loops back on itself has neither, so the walk would never return. The cursor offset
+             * counts the bytes walked so far, and no valid directory is bigger than the specification's limit, so a
+             * chain that still continues at that point is broken. A chain that ends exactly at the limit is fine.
+             */
+            if (!afatfs_assert(directory->cursorOffset < AFATFS_MAX_DIRECTORY_SIZE || afatfs_isEndOfAllocatedFile(directory))) {
+                *dirEntry = NULL;
+
+                return AFATFS_OPERATION_FAILURE;
+            }
             // Fall through to read the first entry of that new sector
         } else {
             return AFATFS_OPERATION_IN_PROGRESS;
@@ -2342,6 +2358,13 @@ static afatfsOperationStatus_e afatfs_extendSubdirectory(afatfsFile_t *directory
 {
     // FAT16 root directories cannot be extended
     if (directory->type == AFATFS_FILE_TYPE_FAT16_ROOT_DIRECTORY || afatfs_fileIsBusy(directory)) {
+        return AFATFS_OPERATION_FAILURE;
+    }
+
+    /* Neither can a directory that has already reached the specification's size limit: a walk through the longer
+     * chain would be rejected as a loop, so writing it out would leave a directory the next walk refuses.
+     */
+    if (directory->cursorOffset >= AFATFS_MAX_DIRECTORY_SIZE) {
         return AFATFS_OPERATION_FAILURE;
     }
 
