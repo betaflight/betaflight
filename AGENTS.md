@@ -66,12 +66,12 @@ Betaflight has a framework for most tasks. Use it. Do not write a second solutio
 ### Build system
 
 - **All warnings are errors.** The build uses `-Werror` and `-Wdouble-promotion`. Use `float` and the `f` suffix (`1.0f`). Use `sqrtf()` and `sinf()`, or the fast `sin_approx()` and `atan2_approx()`. Do not use `double`.
-- **New files.** Start each new file with the licence header from `DEFAULT_LICENSE.md`. Do not use a different header. Each `.c` file in `src/main` must include `platform.h`. `make checks` finds a missing include.
+- **New files.** Start each new `.c` and `.h` file with the licence header from `DEFAULT_LICENSE.md`. Do not use a different header. Each `.c` file in `src/main` must include `platform.h`. `make checks` finds a missing include.
 - **Generated files.** Do not edit these by hand: `src/main/msp/msp_build_info.c` and `.h` (from `src/utils/make-build-info.py`) and `src/main/target/serial_post.h` (from `src/utils/gen-serial-j2.py`). Change the generator or its input, and generate them again.
 - **New source files.** Add each new `.c` file to `mk/source.mk`. Put code that runs in the gyro or PID loop in `SPEED_OPTIMISED_SRC`. Put other code in `SIZE_OPTIMISED_SRC`.
 - **Feature flags.** Betaflight changes from `USE_*` to `ENABLE_*` build guards. Obey these rules:
   - Do not add new `USE_*` flags. Add an `ENABLE_*` flag.
-  - Set the default (`0` or `1`) in `src/main/target/common_post.h`. If an old `USE_*` name exists, set `ENABLE_*` to `1` when the `USE_*` name is defined. The comment block in `common_post.h` shows the pattern.
+  - Set the default (`0` or `1`) in `src/main/target/common_post.h`. If an old `USE_*` name exists, set `ENABLE_*` to `1` when the `USE_*` name is defined and `ENABLE_*` is not already defined. Do not override an explicit `ENABLE_X=0`. The comment block in `common_post.h` shows the pattern: `#if !defined(ENABLE_X) && defined(USE_X)`.
   - In source code, use `#if ENABLE_X`, not `#ifdef ENABLE_X`.
   - If you change code that has a `USE_*` guard, you can change that guard to `ENABLE_*`. Do not change guards in code that you do not otherwise change.
   - Resolve dependencies between features in `common_post.h`, not in `common_pre.h`.
