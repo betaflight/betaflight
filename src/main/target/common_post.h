@@ -1097,7 +1097,7 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_UNUSED_PINS_INIT 1
 #endif
 
-#if !defined(ENABLE_OSD_CANVAS_SIZE_DEBUG) && defined(OSD_CANVAS_SIZE_DEBUG)
+#if !defined(ENABLE_OSD_CANVAS_SIZE_DEBUG) && (defined(OSD_CANVAS_SIZE_DEBUG) || defined(USE_OSD_CANVAS_SIZE_DEBUG))
 #define ENABLE_OSD_CANVAS_SIZE_DEBUG 1
 #elif !defined(ENABLE_OSD_CANVAS_SIZE_DEBUG)
 #define ENABLE_OSD_CANVAS_SIZE_DEBUG 0
