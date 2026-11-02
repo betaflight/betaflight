@@ -258,6 +258,11 @@ uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
     return UARTDEV_INVALID;
 }
 
+int uartDeviceIndexFromIdentifier(serialPortIdentifier_e identifier)
+{
+    return (int)uartDeviceIdxFromIdentifier(identifier);
+}
+
 #if SERIAL_PIOUART_COUNT > 0
 FAST_DATA_ZERO_INIT uartDevice_t pioUartDevice[SERIAL_PIOUART_COUNT];
 #endif

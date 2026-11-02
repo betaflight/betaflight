@@ -32,6 +32,10 @@ typedef enum {
     CURRENT_METER_COUNT
 } currentMeterSource_e;
 
+#define CURRENT_METER_SCALE_MAX 16000
+#define CURRENT_METER_ADC_OFFSET_MAX 32000
+#define CURRENT_METER_VIRTUAL_OFFSET_MAX 16000
+
 extern const char * const currentMeterSourceNames[CURRENT_METER_COUNT];
 
 typedef struct currentMeter_s {

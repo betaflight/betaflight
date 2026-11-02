@@ -447,6 +447,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
     // Use the correct callback argument
     dmaRx->userParam = (uint32_t)dev;
+    dmaTx->userParam = (uint32_t)dev;
 
     // Clear transfer flags
     DMA_CLEAR_FLAG(dmaTx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
@@ -458,6 +459,8 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
     // Use the Rx interrupt as this occurs once the SPI operation is complete
     LL_DMA_EnableIT_TC(dmaRx->dma, dmaRx->stream);
+    LL_DMA_EnableIT_DTE(dmaRx->dma, dmaRx->stream);
+    LL_DMA_EnableIT_DTE(dmaTx->dma, dmaTx->stream);
 
     // Update channels
     LL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->dmaInitTx);
@@ -485,6 +488,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
 #endif
         // Use the correct callback argument
         dmaRx->userParam = (uint32_t)dev;
+        dmaTx->userParam = (uint32_t)dev;
 
         // Clear transfer flags
         DMA_CLEAR_FLAG(dmaTx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
@@ -499,6 +503,8 @@ void spiInternalStartDMA(const extDevice_t *dev)
          * occurs earlier when the Tx FIFO is empty, but the SPI operation is still in progress
          */
         LL_DMA_EnableIT_TC(dmaRx->dma, dmaRx->stream);
+        LL_DMA_EnableIT_TE(dmaRx->dma, dmaRx->stream);
+        LL_DMA_EnableIT_TE(dmaTx->dma, dmaTx->stream);
 
         // Update channels
         LL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->dmaInitTx);
@@ -521,6 +527,8 @@ void spiInternalStartDMA(const extDevice_t *dev)
          * occurs earlier when the Tx FIFO is empty, but the SPI operation is still in progress
          */
         LL_EX_DMA_EnableIT_TC(streamRegsRx);
+        LL_EX_DMA_EnableIT_TE(streamRegsRx);
+        LL_EX_DMA_EnableIT_TE(streamRegsTx);
 
         // Update streams
         LL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->dmaInitTx);
@@ -562,6 +570,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
         LL_DMA_WriteReg(streamRegsTx, CR, 0U);
 
         LL_EX_DMA_EnableIT_TC(streamRegsTx);
+        LL_EX_DMA_EnableIT_TE(streamRegsTx);
 
         // Update streams
         LL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->dmaInitTx);
@@ -657,6 +666,31 @@ void spiInternalStopDMA (const extDevice_t *dev)
     }
 #endif
 #endif // !STM32N6
+}
+
+void spiInternalAbortDMA(const extDevice_t *dev)
+{
+    SPI_TypeDef *instance = (SPI_TypeDef *)dev->bus->busType_u.spi.instance;
+
+    spiInternalStopDMA(dev);
+
+#if defined(STM32H7) || defined(STM32H5)
+    LL_SPI_ClearFlag_EOT(instance);
+    LL_SPI_ClearFlag_OVR(instance);
+    LL_SPI_ClearFlag_UDR(instance);
+    LL_SPI_ClearFlag_MODF(instance);
+#elif defined(STM32N6)
+    UNUSED(instance);
+#else
+    while (LL_SPI_IsActiveFlag_BSY(instance));
+
+    while (LL_SPI_IsActiveFlag_RXNE(instance)) {
+        LL_SPI_ReceiveData8(instance);
+    }
+
+    // An overrun discards everything received after it until cleared
+    LL_SPI_ClearFlag_OVR(instance);
+#endif
 }
 
 // DMA transfer setup and start

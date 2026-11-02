@@ -67,6 +67,7 @@
 #define WING_LINE_SETTLE_L1           2.0f     // look-ahead distances flown settling onto a line turned onto
 #define WING_PATH_IDLE_DEG            2.0f     // the nose this far above the path still glides
 #define WING_PATH_CRUISE_DEG          5.0f     // and this far above needs the cruise throttle
+#define WING_AIRSPEED_RANGE           2.0f     // the airspeed estimate stays within this factor of the cruise speed
 #define GRAVITY_CMSS                  (G_ACCELERATION * 100.0f)
 
 typedef enum {
@@ -238,6 +239,19 @@ static float throttleForPath(const autopilotWingConfig_t *cfg, const autopilotWi
     return constrainf(throttle, limits->throttleMin, limits->throttleMax);
 }
 
+// Without a pitot the airspeed is the TPA model's, scaled to read the cruise speed at the cruise
+// throttle in level flight.
+static float airspeedCmS(void)
+{
+    const autopilotWingConfig_t *cfg = autopilotWingConfig();
+    const float cruiseCmS = cfg->cruiseSpeed * 10.0f;
+    const float cruiseModelMs = pidWingTpaSteadySpeed(cfg->cruiseThrottle * 0.01f);
+    if (cruiseModelMs <= 0.0f) {
+        return cruiseCmS;
+    }
+    return constrainf(cruiseCmS * pidGetWingTpaSpeed() / cruiseModelMs, cruiseCmS / WING_AIRSPEED_RANGE, cruiseCmS * WING_AIRSPEED_RANGE);
+}
+
 // The commanded climb's path over the ground: into a headwind it is steeper there than through the
 // air, so the nose stands further above it and the throttle opens sooner, keeping the speed up. No
 // steeper than the nose may dive, so that the nose pushed down there idles.
@@ -347,6 +361,7 @@ void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targ
     DEBUG_SET(DEBUG_AUTOPILOT_CLIMB, 2, lrintf(wingVert.integralDeg * 10.0f));       //!< Pitch Integrator [unit:0.1deg]
     DEBUG_SET(DEBUG_AUTOPILOT_CLIMB, 3, lrintf(wingVert.pitchDeg * 10.0f));          //!< Pitch Demand From Trim [unit:0.1deg]
     DEBUG_SET(DEBUG_AUTOPILOT_CLIMB, 4, lrintf(wingVert.turnPitchRateDps * 10.0f));  //!< Turn Pitch Rate [unit:0.1dps]
+    DEBUG_SET(DEBUG_AUTOPILOT_CLIMB, 5, lrintf(airspeedCmS() * 0.1f));               //!< Airspeed Estimate [unit:0.1m/s]
 }
 
 float autopilotGetTurnPitchRateDps(void)
@@ -657,14 +672,17 @@ bool isAutopilotInControl(void)
     return wingLat.engaged;
 }
 
+// A level turn yaws the nose round at g * sin(bank) / V about the body axis; while the autopilot
+// banks the aircraft the yaw loop holds that, rather than holding the nose off the turn.
 float autopilotGetYawRate(void)
 {
-    return 0.0f;
+    const float bankRad = DEGREES_TO_RADIANS(constrainf(attitude.values.roll / 10.0f, -WING_BANK_LIMIT_DEG, WING_BANK_LIMIT_DEG));
+    return -autopilotWingConfig()->turnYawFf * 0.01f * RADIANS_TO_DEGREES(GRAVITY_CMSS * sin_approx(bankRad) / airspeedCmS());
 }
 
 bool autopilotYawControlActive(void)
 {
-    return false;
+    return FLIGHT_MODE(POS_HOLD_MODE) && wingLat.engaged && autopilotWingConfig()->turnYawFf > 0;
 }
 
 void autopilotSetYawRateLimit(float rateLimitDps)

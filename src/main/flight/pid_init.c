@@ -357,11 +357,11 @@ static void tpaCurveHyperbolicVrefInit(const pidProfile_t *pidProfile)
     const float power = pidProfile->speed_curve_power * 0.1f;
     const float yMin = pidProfile->speed_curve_min * 0.01f;
     const float yMax = pidProfile->speed_curve_max * 0.01f;
-    const float maxSpeed = constrainf(pidRuntime.tpaSpeed.maxSpeed, pidRuntime.tpaSpeed.refSpeed, 85.0f);
+    const float maxSpeed = constrainf(pidRuntime.tpaSpeed.maxSpeed, pidProfile->speed_curve_vref, 85.0f);
 
     const float xMin = powf(yMax, -1.0f / power);
     const float xMax = MIN(powf(yMin, -1.0f / power),
-                           maxSpeed / pidRuntime.tpaSpeed.refSpeed);
+                           maxSpeed / pidProfile->speed_curve_vref);
 
     pidRuntime.refSpeedCurveArgMin = xMin;
     pidRuntime.refSpeedCurveArgMax = xMax;
@@ -394,9 +394,6 @@ void pidInit(const pidProfile_t *pidProfile)
     pidSetTargetLooptime(gyro.targetLooptime); // Initialize pid looptime
     pidInitFilters(pidProfile);
     pidInitConfig(pidProfile);
-#ifdef USE_ADVANCED_TPA
-    tpaCurveInit(pidProfile);
-#endif
 }
 
 void pidInitConfig(const pidProfile_t *pidProfile)
@@ -548,7 +545,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.feedforwardJitterFactorInv = 1.0f / rcUsSpanToNorm(1.0f + pidProfile->feedforward_jitter_factor);
     pidRuntime.feedforwardBoostFactor = 0.001f * pidProfile->feedforward_boost;
     pidRuntime.feedforwardMaxRateLimit = pidProfile->feedforward_max_rate_limit;
-    pidRuntime.feedforwardInterpolate = !(rxRuntimeState.serialrxProvider == SERIALRX_CRSF);
+    pidRuntime.feedforwardInterpolate = rxConfig()->serialrx_provider != SERIALRX_CRSF;
     pidRuntime.feedforwardYawHoldTime = 0.001f * pidProfile->feedforward_yaw_hold_time; // input time constant in milliseconds, converted to seconds
     pidRuntime.feedforwardYawHoldGain = pidProfile->feedforward_yaw_hold_gain;
     // normalise/maintain boost when time constant is small, 1.5x at 50ms, 2x at 25ms, almost 3x at 10ms
@@ -572,6 +569,9 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 
 #ifdef USE_WING
     tpaSpeedInit(pidProfile);
+#endif
+#ifdef USE_ADVANCED_TPA
+    tpaCurveInit(pidProfile);
 #endif
 }
 
