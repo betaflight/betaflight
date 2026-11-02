@@ -45,17 +45,22 @@ Betaflight has a framework for most tasks. Use it. Do not write a second solutio
 - **Refactors do not change behaviour.** If a refactor or cleanup changes behaviour, say so in the pull request. Better, put the behaviour change in a different pull request.
 - **No dead code.** Do not add commented-out code, `#if 0` blocks, unused variables or unused functions.
 - **Check all external input.** Check the length of MSP payloads with `sbufBytesRemaining()` before you read them. Add new MSP fields at the end of the payload. Check the range of CLI arguments and of data from serial devices.
-- **Target independence.** Do not use MCU or board names (for example `STM32F7`) in `src/main`. Use `USE_*` feature defines. Put MCU-specific code in `src/platform/`. `make checks` finds some of these errors.
+- **Target independence.** Do not use MCU or board names (for example `STM32F7`) in `src/main`. Use feature flags (see *Feature flags* below). Put MCU-specific code in `src/platform/`. `make checks` finds some of these errors.
 - **Real time.** Do not use dynamic memory allocation. Do not block or wait in interrupt handlers or scheduler tasks.
 - **Hot path.** Do not add work to the gyro or PID task without a measurement of the cycle cost. Use the `tasks` CLI command or a debug mode. Tell the result in the pull request.
 - **Flash wear.** Do not write the configuration to flash on a frequent event, for example on each arm or disarm. If a feature must save automatically, do it only when the user enabled that feature. See `src/main/fc/stats.c` for an example.
-- **Flash and RAM.** Many targets are near their flash limit. Put new features behind a `USE_*` define. Keep the size small.
+- **Flash and RAM.** Many targets are near their flash limit. Put new features behind an `ENABLE_*` flag. Keep the size small.
 
 ### Build system
 
 - **All warnings are errors.** The build uses `-Werror` and `-Wdouble-promotion`. Use `float` and the `f` suffix (`1.0f`). Use `sqrtf()` and `sinf()`, or the fast `sin_approx()` and `atan2_approx()`. Do not use `double`.
 - **New source files.** Add each new `.c` file to `mk/source.mk`. Put code that runs in the gyro or PID loop in `SPEED_OPTIMISED_SRC`. Put other code in `SIZE_OPTIMISED_SRC`.
-- **Feature dependencies.** Resolve dependencies between `USE_*` features in `src/main/target/common_post.h`, not in `common_pre.h`.
+- **Feature flags.** Betaflight changes from `USE_*` to `ENABLE_*` build guards. Obey these rules:
+  - Do not add new `USE_*` flags. Add an `ENABLE_*` flag.
+  - Set the default (`0` or `1`) in `src/main/target/common_post.h`. If an old `USE_*` name exists, set `ENABLE_*` to `1` when the `USE_*` name is defined. The comment block in `common_post.h` shows the pattern.
+  - In source code, use `#if ENABLE_X`, not `#ifdef ENABLE_X`.
+  - If you change code that has a `USE_*` guard, you can change that guard to `ENABLE_*`. Do not change guards in code that you do not otherwise change.
+  - Resolve dependencies between features in `common_post.h`, not in `common_pre.h`.
 - **Memory placement.** Use `FAST_CODE` and `FAST_DATA` only for hot-path code and data. Use `FAST_DATA_ZERO_INIT` for data that starts at zero. `make checks` finds incorrect use.
 - **Hardware values.** Do not guess register addresses, timings or pin functions. Get them from the datasheet or reference manual. Tell which document and section you used.
 - **Flight behaviour.** Do not change default values, PID, mixer, failsafe or arming behaviour without a reason in the pull request.
@@ -103,7 +108,8 @@ If the change can have an effect on flight, a maintainer will ask for a Blackbox
 - **Simulated flights are not flight tests.** A SITL log, a bench test or unit tests do not replace a real flight. You can attach them as extra data, but do not call them a flight test.
 - **Log content.** Use a `debug_mode` that shows the changed behaviour, if one is available. In the comment, tell:
   - The commit or cloud build key that you flew.
-  - The board, MCU, gyro, gyro and PID loop rates, motor protocol, `debug_mode` and blackbox rate.
+  - The board, the MCU and the gyro model.
+  - The gyro and PID loop rates, the motor protocol, the `debug_mode` and the blackbox rate.
   - What you did in the flight and what the log shows.
 - **Attach the file.** GitHub does not accept `.bbl` or `.bfl` files. Rename the file to `.log` before you attach it.
 - **If you cannot fly.** Say so in the pull request. Ask for testers. Do not mark the pull request as ready until a flight log is attached.
