@@ -114,6 +114,7 @@ static void tpaSpeedInit(const pidProfile_t *pidProfile)
     pidRuntime.tpaSpeed.maxVoltage = pidProfile->tpa_speed_max_voltage / 100.0f;
     pidRuntime.tpaSpeed.pitchOffset = pidProfile->tpa_speed_pitch_offset * M_PIf / 10.0f / 180.0f;
     pidRuntime.tpaSpeed.refSpeed = pidProfile->speed_curve_vref;
+    pidRuntime.tpaSpeed.tpaSpeedType = pidProfile->tpa_speed_type;
 
     switch (pidProfile->tpa_speed_type) {
     case TPA_SPEED_BASIC:
@@ -121,6 +122,9 @@ static void tpaSpeedInit(const pidProfile_t *pidProfile)
         break;
     case TPA_SPEED_ADVANCED:
         tpaSpeedAdvancedInit(pidProfile);
+        break;
+    case TPA_SPEED_PITOT:
+        pidRuntime.tpaSpeed.maxSpeed = pidProfile->tpa_max_pitot_speed;
         break;
     default:
         break;
