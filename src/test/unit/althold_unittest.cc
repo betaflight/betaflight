@@ -432,3 +432,94 @@ extern "C" {
 
     throttleStatus_e calculateThrottleStatus() { return testThrottleStatus; }
 }
+
+// --- Emergency descent keeps coming down ---
+
+// The target cannot be moved further than it can travel in a second, which stops a pilot's stick
+// from running it away from the craft. In an emergency descent the same rule used to freeze the
+// target above a craft that had fallen past it, and the controller then held the craft up in the
+// air under the frozen target (issue 15960). The descent must restart from where the craft is.
+TEST_F(AltholdControlUnittest, EmergencyDescentRestartsFromACraftThatFellPastTheTarget)
+{
+    debugMode = DEBUG_AUTOPILOT_ALTITUDE;
+    altHoldConfigMutable()->climbRate = 50;    // alt_hold_climb_rate default: target adjustment enabled
+    altHoldInit();
+
+    testAltitudeCm = 2500.0f;
+    flightModeFlags |= ALT_HOLD_MODE;
+    updateAltHold(currentTimeUs);              // enter: the target is captured at 25 m
+    altHoldSetEmergencyDescent(true, 150.0f);  // gps_rescue_descend_rate 1.5 m/s
+
+    updateAltHold(currentTimeUs);
+    const float targetBeforeTheDropCm = debug[1];
+    EXPECT_LT(targetBeforeTheDropCm, 2500.0f);  // descending
+
+    // The craft falls 8 m past the target in one step: far beyond the 1.5 m the target can move in
+    // a second, so the reach rule alone would leave the target where it was.
+    testAltitudeCm = targetBeforeTheDropCm - 800.0f;
+    updateAltHold(currentTimeUs);
+    EXPECT_NEAR(debug[1], testAltitudeCm, 10.0f);   // restarted from the craft, less one step of descent
+    EXPECT_LT(debug[1], testAltitudeCm);
+
+    altHoldSetEmergencyDescent(false, 0.0f);
+}
+
+TEST_F(AltholdControlUnittest, EmergencyDescentRunsWithAClimbRateOfZero)
+{
+    // alt_hold_climb_rate = 0 switches off the pilot's stick. An emergency descent brings
+    // its own rate, so it must still come down.
+    debugMode = DEBUG_AUTOPILOT_ALTITUDE;
+    altHoldConfigMutable()->climbRate = 0;
+    altHoldInit();
+
+    testAltitudeCm = 2500.0f;
+    flightModeFlags |= ALT_HOLD_MODE;
+    updateAltHold(currentTimeUs);              // enter: the target is captured at 25 m
+    updateAltHold(currentTimeUs);
+    EXPECT_NEAR(debug[1], 2500.0f, 1.0f);      // no descent without a command
+
+    altHoldSetEmergencyDescent(true, 150.0f);
+    updateAltHold(currentTimeUs);
+    EXPECT_LT(debug[1], 2500.0f);              // descending
+
+    altHoldSetEmergencyDescent(false, 0.0f);
+}
+
+TEST_F(AltholdControlUnittest, PilotTargetStaysPutWhenTheCraftFallsPastIt)
+{
+    // Without an emergency descent the reach rule is unchanged: a craft knocked far below the
+    // pilot's target is brought back up to it.
+    debugMode = DEBUG_AUTOPILOT_ALTITUDE;
+    altHoldConfigMutable()->climbRate = 50;
+    altHoldInit();
+    altHoldSetEmergencyDescent(false, 0.0f);
+
+    testAltitudeCm = 2500.0f;
+    flightModeFlags |= ALT_HOLD_MODE;
+    updateAltHold(currentTimeUs);
+
+    testAltitudeCm = 1700.0f;
+    updateAltHold(currentTimeUs);
+    EXPECT_NEAR(debug[1], 2500.0f, 1.0f);
+}
+
+// --- Which side of the craft the altitude target is on ---
+
+TEST_F(AltholdControlUnittest, AltitudeTargetBelowCraftFollowsTheSignOfTheError)
+{
+    resetAltitudeControl();
+    EXPECT_FALSE(autopilotAltitudeTargetIsBelowCraft());   // nothing before the controller has run
+
+    testAltitudeCm = 1000.0f;
+    altitudeControl(1800.0f, TASK_PERIOD_HZ(100), 0.0f, 500.0f);   // a target stalled 8 m above the craft
+    EXPECT_FALSE(autopilotAltitudeTargetIsBelowCraft());
+
+    altitudeControl(1000.0f, TASK_PERIOD_HZ(100), 0.0f, 500.0f);   // on target
+    EXPECT_FALSE(autopilotAltitudeTargetIsBelowCraft());
+
+    altitudeControl(850.0f, TASK_PERIOD_HZ(100), -150.0f, 150.0f); // a descent, the target below
+    EXPECT_TRUE(autopilotAltitudeTargetIsBelowCraft());
+
+    resetAltitudeControl();
+    EXPECT_FALSE(autopilotAltitudeTargetIsBelowCraft());
+}

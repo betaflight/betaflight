@@ -313,6 +313,13 @@ bool isBelowLandingAltitude(void)
     return g_stubBelowLandingAltitude;
 }
 
+bool g_stubAltitudeTargetBelowCraft = true;
+
+bool autopilotAltitudeTargetIsBelowCraft(void)
+{
+    return g_stubAltitudeTargetBelowCraft;
+}
+
 static float g_yawRateLimitDps;
 
 void autopilotSetYawRateLimit(float rateLimitDps)
@@ -391,6 +398,7 @@ protected:
         memset(&g_stubEstimate, 0, sizeof(g_stubEstimate));
         g_stubValidXY = true;
         g_stubBelowLandingAltitude = true;
+        g_stubAltitudeTargetBelowCraft = true;
         g_altitudeArrivalRequired = false;
         g_disarmCalls = 0;
         g_yawRateLimitDps = -1.0f; // sentinel: no autopilotSetYawRateLimit call yet

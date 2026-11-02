@@ -55,6 +55,7 @@ void autopilotCaptureHoverThrottleForAltHold(void);
 void autopilotClearAltHoldHoverThrottle(void);
 bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);
+bool autopilotAltitudeTargetIsBelowCraft(void);
 void autopilotSetYawTarget(float headingDeg);
 
 bool autopilotAltitudeControlAvailable(void);

@@ -346,6 +346,13 @@ bool isBelowLandingAltitude(void)
     return g_stubBelowLandingAltitude;
 }
 
+bool g_stubAltitudeTargetBelowCraft = true;
+
+bool autopilotAltitudeTargetIsBelowCraft(void)
+{
+    return g_stubAltitudeTargetBelowCraft;
+}
+
 void autopilotSetYawRateLimit(float rateLimitDps)
 {
     g_yawRateLimitDps = rateLimitDps;
@@ -443,6 +450,7 @@ protected:
         memset(&attitude, 0, sizeof(attitude));
         g_stubValidXY = true;
         g_stubBelowLandingAltitude = true;
+        g_stubAltitudeTargetBelowCraft = true;
         g_altitudeArrivalRequired = false;
         g_disarmCalls = 0;
         g_yawRateLimitDps = -1.0f;
@@ -1816,4 +1824,140 @@ TEST_F(FlightPlanRescueTest, EngageWithoutStagedRunsPgMission)
     ASSERT_TRUE(g_lastTarget.valid);
     // The PG waypoint's altitude (50 m AMSL) is nowhere near the rescue climb.
     EXPECT_NEAR(g_lastTarget.targetEfM.z, 50.0f, 0.1f);
+}
+
+// --- Touchdown needs the ground, not just a standstill ---
+
+TEST_F(FlightPlanRescueTest, FallbackDescentLevelledOffInTheAirDoesNotDisarm)
+{
+    // Issue 15960: the craft fell past the descent target, the target froze above it, and the controller
+    // held the craft in a hover 10 m up. The standstill alone was taken for a touchdown.
+    gpsRescueConfigMutable()->descendRate = 150;
+    g_stubBelowLandingAltitude = false;
+    g_stubAltitudeTargetBelowCraft = false;     // the stalled target is above the craft
+
+    g_stubEstimate.velocity.v[ENU_U] = -500.0f; // falling fast: the descent is established
+    flightPlanNavRescueDescent(true, g_stubMicros);
+    EXPECT_TRUE(flightPlanNavIsRescueDescentActive());
+
+    g_stubEstimate.velocity.v[ENU_U] = 0.0f;    // hovering under the stalled target
+    for (int i = 0; i < 50; i++) {              // 5 s, far past landingDetectionTime (1 s)
+        g_stubMicros += 100'000;
+        flightPlanNavRescueDescent(true, g_stubMicros);
+    }
+    EXPECT_EQ(g_disarmCalls, 0);
+    EXPECT_TRUE(flightPlanNavIsRescueDescentActive());
+
+    // On the ground: below the landing altitude, with the target below the craft. Only now does the quiet
+    // timer run.
+    g_stubBelowLandingAltitude = true;
+    g_stubAltitudeTargetBelowCraft = true;
+    g_stubMicros += 100'000;
+    flightPlanNavRescueDescent(true, g_stubMicros);
+    EXPECT_EQ(g_disarmCalls, 0);
+
+    g_stubMicros += 1'100'000;
+    flightPlanNavRescueDescent(true, g_stubMicros);
+    EXPECT_EQ(g_disarmCalls, 1);
+    EXPECT_EQ(g_lastDisarmReason, DISARM_REASON_LANDING);
+}
+
+TEST_F(FlightPlanRescueTest, StalledTargetAboveTheCraftIsNotATouchdownEvenBelowTheLandingAltitude)
+{
+    // The altitude estimate is baro relative to the arming point, so a level-off can read as low; the
+    // stalled target above the craft still says this is not the ground.
+    gpsRescueConfigMutable()->descendRate = 150;
+    g_stubBelowLandingAltitude = true;
+    g_stubAltitudeTargetBelowCraft = false;
+
+    g_stubEstimate.velocity.v[ENU_U] = -500.0f;
+    flightPlanNavRescueDescent(true, g_stubMicros);
+    g_stubEstimate.velocity.v[ENU_U] = 0.0f;
+    for (int i = 0; i < 50; i++) {
+        g_stubMicros += 100'000;
+        flightPlanNavRescueDescent(true, g_stubMicros);
+    }
+    EXPECT_EQ(g_disarmCalls, 0);
+}
+
+TEST_F(FlightPlanRescueTest, StandstillAboveTheLandingAltitudeIsNotATouchdown)
+{
+    // Held up by something other than the controller (an updraft, a hover throttle set far too high) with
+    // the target below: the altitude bound is what says no.
+    gpsRescueConfigMutable()->descendRate = 150;
+    g_stubBelowLandingAltitude = false;
+    g_stubAltitudeTargetBelowCraft = true;
+
+    g_stubEstimate.velocity.v[ENU_U] = -500.0f;
+    flightPlanNavRescueDescent(true, g_stubMicros);
+    g_stubEstimate.velocity.v[ENU_U] = 0.0f;
+    for (int i = 0; i < 50; i++) {
+        g_stubMicros += 100'000;
+        flightPlanNavRescueDescent(true, g_stubMicros);
+    }
+    EXPECT_EQ(g_disarmCalls, 0);
+}
+
+TEST_F(FlightPlanRescueTest, LandingLegUnderAStoppedTargetDoesNotDisarm)
+{
+    // The same detector serves a plan's LAND leg: the target must be below the craft.
+    g_stubAltitudeTargetBelowCraft = false;
+
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    triggerReached();                       // climb done
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);      // home leg passes its gate
+    triggerReached();                       // LAND waypoint: the descent starts
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    g_stubEstimate.velocity.v[ENU_U] = -40.0f;
+    g_stubMicros += 1'000'000;
+    flightPlanNavUpdate(g_stubMicros);      // descent established
+
+    g_stubEstimate.velocity.v[ENU_U] = 0.0f;
+    for (int i = 0; i < 50; i++) {
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    EXPECT_EQ(g_disarmCalls, 0);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    g_stubAltitudeTargetBelowCraft = true;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    g_stubMicros += 1'100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(g_disarmCalls, 1);
+    EXPECT_EQ(g_lastDisarmReason, DISARM_REASON_LANDING);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_COMPLETE);
+}
+
+TEST_F(FlightPlanRescueTest, LandingLegTouchesDownOnGroundAboveTheArmingPoint)
+{
+    // A LAND leg can end on ground higher than ap_landing_altitude_m above the
+    // arming point. Its target is always far below the craft, so it does not
+    // need the altitude bound the fallback descent needs.
+    g_stubBelowLandingAltitude = false;
+
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    triggerReached();                       // climb done
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);      // home leg passes its gate
+    triggerReached();                       // LAND waypoint: the descent starts
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    g_stubEstimate.velocity.v[ENU_U] = -40.0f;
+    g_stubMicros += 1'000'000;
+    flightPlanNavUpdate(g_stubMicros);      // descent established
+
+    g_stubEstimate.velocity.v[ENU_U] = 0.0f;  // on the roof
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    g_stubMicros += 1'100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(g_disarmCalls, 1);
+    EXPECT_EQ(g_lastDisarmReason, DISARM_REASON_LANDING);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_COMPLETE);
 }

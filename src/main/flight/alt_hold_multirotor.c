@@ -158,6 +158,12 @@ static void altHoldUpdateTargetAltitude(timeUs_t taskIntervalUs)
 
     const float maxClimbRate = altHoldMaxClimbRate();
     altHold.targetVelocity = stickFactor * maxClimbRate;
+    // Emergency descent only: if the craft has dropped more than one second of travel
+    // below the target, the one-second rule below would stop the target. Move the
+    // target down to the craft, so the descent continues. The stick path is unchanged.
+    if (altHold.emergencyDescentRateCmS > 0.0f && altHold.targetAltitudeCm - getAltitudeCmControl() >= maxClimbRate * 1.0f /* s */) {
+        altHold.targetAltitudeCm = getAltitudeCmControl();
+    }
     // prevent pilot altitude adjustments from moving the target altitude so far away from current altitude
     // that it might be difficult to get back to a similar target altitude in a reasonable time.
     // the altitude target cannot be moved to a location that cannot be reached in 1s at maxClimbRate
@@ -170,7 +176,9 @@ static void altHoldUpdateTargetAltitude(timeUs_t taskIntervalUs)
 static void altHoldUpdate(timeUs_t taskIntervalUs)
 {
 
-    if (altHoldConfig()->climbRate) {
+    // a climb rate of 0 disables the pilot's stick, not a commanded emergency descent,
+    // which brings its own rate
+    if (altHoldConfig()->climbRate || altHold.emergencyDescentRateCmS > 0.0f) {
         altHoldUpdateTargetAltitude(taskIntervalUs); // check if the pilot has changed the target altitude using sticks
     }
 

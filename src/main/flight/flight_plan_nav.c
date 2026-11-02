@@ -1601,8 +1601,21 @@ static void updateLanding(timeUs_t currentTimeUs)
     // Touchdown: descent has stopped despite being commanded, and the vehicle
     // is not moving vertically. A descent at the commanded rate must never
     // count as quiet, whatever landingVelocityThreshold is configured to.
+    // Standing still is not enough: a craft can hover in the air (issue 15960,
+    // under a target that stopped above it). So the altitude target must be
+    // below the craft, which means the controller still asks for a descent.
+    // The fallback descent (no plan, no position) must also be below the
+    // landing altitude: its target can stop above the craft, and the hover
+    // under it can be at any height. A plan's LAND leg keeps its target far
+    // below the craft (above), and its ground can be higher than the arming
+    // point, so it keeps the detector it had.
+    // Not covered: a craft held still by an updraft or by a hover throttle set
+    // far too high. Without a ground sensor that looks the same as the ground.
     const bool descentStopped = verticalVelocityCmS > -0.25f * commandedDescentCmS;
-    if (descentStopped && fabsf(verticalVelocityCmS) < autopilotConfig()->landingVelocityThreshold) {
+    const bool standingStill = descentStopped && fabsf(verticalVelocityCmS) < autopilotConfig()->landingVelocityThreshold;
+    const bool lowEnough = fp.state == FP_NAV_LANDING || isBelowLandingAltitude();
+    const bool onTheGround = lowEnough && autopilotAltitudeTargetIsBelowCraft();
+    if (standingStill && onTheGround) {
         if (fp.touchdownQuietStartUs == 0) {
             fp.touchdownQuietStartUs = currentTimeUs;
         } else if (cmpTimeUs(currentTimeUs, fp.touchdownQuietStartUs) >= (timeDelta_t)((uint32_t)autopilotConfig()->landingDetectionTime * 100000u)) {

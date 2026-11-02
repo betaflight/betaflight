@@ -151,6 +151,7 @@ static float altitudeKf;
 static uint16_t altHoldCapturedHoverPwm;
 static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
+static float altitudeErrorCmLast = 0.0f; // target minus altitude at the controller's last run
 
 // (EF_EAST/EF_NORTH) is
 // defined in common/axis.h alongside the other earth-frame axis enums.
@@ -361,6 +362,7 @@ void resetAltitudeControl(void)
 {
     altitudeI = 0.0f;
     throttleOut = 0.0f;
+    altitudeErrorCmLast = 0.0f;
 }
 
 uint16_t autopilotGetEffectiveHoverThrottlePwm(void)
@@ -397,6 +399,7 @@ void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targ
     const float verticalAcceleration = getAltitudeAccelerationControl();
     const float verticalVelocity = getAltitudeDerivativeControl();
     const float altitudeErrorCm = targetAltitudeCm - currentAltitudeCm;
+    altitudeErrorCmLast = altitudeErrorCm;
     const float itermRelax = (fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f; // don't accumulate too much iTerm with transient but large overshoots (>2m error )
     altitudeI += altitudeErrorCm * altitudeKi * itermRelax * taskIntervalS;
     altitudeI = constrainf(altitudeI, -ALTITUDE_I_LIMIT, ALTITUDE_I_LIMIT);
@@ -1477,6 +1480,13 @@ bool isBelowLandingAltitude(void)
 float getAutopilotThrottle(void)
 {
     return throttleOut;
+}
+
+// True when the altitude target is below the craft, so the controller is asking
+// for a descent. False when the craft hovers under a target that stopped above it.
+bool autopilotAltitudeTargetIsBelowCraft(void)
+{
+    return altitudeErrorCmLast < 0.0f;
 }
 
 bool autopilotAltitudeControlAvailable(void)
