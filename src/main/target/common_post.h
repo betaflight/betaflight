@@ -282,6 +282,14 @@
 
 #endif // USE_OPTICALFLOW
 
+#if defined(USE_PITOT) && defined(USE_I2C)
+
+#ifndef USE_PITOT_MS4525
+#define USE_PITOT_MS4525
+#endif
+
+#endif // USE_PITOT
+
 #if defined(USE_RX_CC2500)
 
 #if !defined(USE_RX_SPI)
@@ -608,6 +616,10 @@
 #endif
 #endif
 
+#if (TARGET_FLASH_SIZE > 128) && (defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6500))
+#define USE_GYRO_SLEW_LIMITER
+#endif
+
 #ifndef USE_ACC
 #define USE_ACC
 #endif
@@ -772,6 +784,13 @@
 #define USE_OPTICALFLOW
 #endif
 #endif // USE_OPTICALFLOW_XXX
+
+// Bottom-up: individual pitot drivers → USE_PITOT
+#if defined(USE_PITOT_MS4525)
+#ifndef USE_PITOT
+#define USE_PITOT
+#endif
+#endif // USE_PITOT_XXX
 
 #ifndef USE_GPS_RESCUE
 #undef USE_CMS_GPS_RESCUE_MENU
