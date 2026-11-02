@@ -372,9 +372,9 @@ bool isEEPROMStructureValid(void)
     p += sizeof(*footer);
 
     // include stored CRC in the CRC calculation
-    const uint16_t *storedCrc = (const uint16_t *)p;
-    crc = crc16_ccitt_update(crc, storedCrc, sizeof(*storedCrc));
-    p += sizeof(storedCrc);
+    // the CRC follows variable-size records, so it may sit at an odd address: treat it as bytes
+    crc = crc16_ccitt_update(crc, p, sizeof(uint16_t));
+    p += sizeof(uint16_t);
 
     eepromConfigSize = p - (const uint8_t*)&__config_start;
 
