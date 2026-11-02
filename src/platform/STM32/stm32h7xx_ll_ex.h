@@ -135,6 +135,23 @@ __STATIC_INLINE uint32_t LL_EX_DMA_GetDataLength(DMA_Stream_TypeDef* DMAx_Stream
     return LL_DMA_GetDataLength(DMA, Stream);
 }
 
+// BDMA helper functions for D3 domain channel-based DMA
+
+__STATIC_INLINE void LL_EX_BDMA_EnableIT_TC(BDMA_Channel_TypeDef *BDMAx_Channely)
+{
+    SET_BIT(BDMAx_Channely->CCR, BDMA_CCR_TCIE);
+}
+
+__STATIC_INLINE void LL_EX_BDMA_EnableIT_TE(BDMA_Channel_TypeDef *BDMAx_Channely)
+{
+    SET_BIT(BDMAx_Channely->CCR, BDMA_CCR_TEIE);
+}
+
+__STATIC_INLINE uint32_t LL_EX_BDMA_GetDataLength(BDMA_Channel_TypeDef *BDMAx_Channely)
+{
+    return BDMAx_Channely->CNDTR;
+}
+
 __STATIC_INLINE void LL_EX_TIM_EnableIT(TIM_TypeDef *TIMx, uint32_t Sources)
 {
     SET_BIT(TIMx->DIER, Sources);

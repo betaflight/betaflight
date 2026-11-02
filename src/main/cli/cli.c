@@ -7410,7 +7410,10 @@ static void showDma(void)
     for (int i = DMA_FIRST_HANDLER; i <= dmaGetHandlerCount(); i++) {
         const resourceOwner_t *owner = dmaGetOwner(i);
 
-        cliPrintf(dmaGetDisplayString(), dmaGetDeviceNumber(i), dmaGetDeviceIndex(i));
+        char name[DMA_DISPLAY_NAME_LENGTH];
+
+        dmaGetDisplayName(i, name);
+        cliPrint(name);
         if (owner->index > 0) {
             cliPrintLinef(" %s %d", getOwnerName(owner->owner), resourceIndexToInput(owner->owner, owner->index - 1));
         } else {
