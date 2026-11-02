@@ -616,18 +616,32 @@ configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer
         return CONFIG_RESULT_ADDRESS_INVALID;
     }
 #elif defined(AT32F4)
+    // Keep USB and other IRQ handlers out of the flash erase/program calls.
+    // Restore PRIMASK on every result, including callers that already masked IRQs.
+    const uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+
+    configStreamerResult_e result = CONFIG_RESULT_SUCCESS;
     if (address % FLASH_PAGE_SIZE == 0) {
         const flash_status_type status = flash_sector_erase(address);
         if (status != FLASH_OPERATE_DONE) {
-            return CONFIG_RESULT_FAILURE;
+            result = CONFIG_RESULT_FAILURE;
         }
     }
 
     STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(uint32_t),  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
-    const flash_status_type status = flash_word_program(address, *buffer);
-    if (status != FLASH_OPERATE_DONE) {
-        return CONFIG_RESULT_ADDRESS_INVALID;
+    if (result == CONFIG_RESULT_SUCCESS && flash_word_program(address, *buffer) != FLASH_OPERATE_DONE) {
+        result = CONFIG_RESULT_ADDRESS_INVALID;
     }
+
+    // A driver timeout does not abort the hardware operation. Keep IRQs masked
+    // until both banks are idle, while preserving the original failure result.
+    while (flash_bank1_operation_status_get() == FLASH_OPERATE_BUSY
+        || flash_bank2_operation_status_get() == FLASH_OPERATE_BUSY) {
+    }
+
+    __set_PRIMASK(primask);
+    return result;
 #elif defined(APM32F4)
     if (address % FLASH_PAGE_SIZE == 0) {
         FLASH_EraseInitTypeDef EraseInitStruct = {
