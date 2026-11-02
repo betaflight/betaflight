@@ -72,7 +72,8 @@ Betaflight has a framework for most tasks. Use it. Do not write a second solutio
 - **Feature flags.** Betaflight changes from `USE_*` to `ENABLE_*` build guards. Obey these rules:
   - Do not add new `USE_*` flags. Add an `ENABLE_*` flag.
   - Set the default (`0` or `1`) in `src/main/target/common_post.h`. If an old `USE_*` name exists, set `ENABLE_*` to `1` when the `USE_*` name is defined and `ENABLE_*` is not already defined. Do not override an explicit `ENABLE_X=0`. The comment block in `common_post.h` shows the pattern: `#if !defined(ENABLE_X) && defined(USE_X)`.
-  - In source code, use `#if ENABLE_X`, not `#ifdef ENABLE_X`.
+  - A new `ENABLE_*` flag always has a value (`0` or `1`). Test it with `#if ENABLE_X`, not `#ifdef ENABLE_X`.
+  - Some older `ENABLE_*` names have no value, for example `ENABLE_STDIO_PREINCLUDE` and `ENABLE_MULTICORE_INIT`. Keep `#ifdef` for these. `#if` on a name without a value does not compile.
   - If you change code that has a `USE_*` guard, you can change that guard to `ENABLE_*`. Do not change guards in code that you do not otherwise change.
   - Resolve dependencies between features in `common_post.h`, not in `common_pre.h`.
 - **Memory placement.** Use `FAST_CODE` and `FAST_DATA` only for hot-path code and data. Use `FAST_DATA_ZERO_INIT` for data that starts at zero. `make checks` finds incorrect use.
