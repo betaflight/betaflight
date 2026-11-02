@@ -2,24 +2,29 @@
 
 These rules apply to AI agents, LLM-assisted tools and the persons who use them. Read these rules before you change code or open a pull request. Also obey [CONTRIBUTING.md](CONTRIBUTING.md) and the [pull request template](.github/pull_request_template.md).
 
-Betaflight is flight controller firmware. Errors can cause crashes, injuries and damage. Do not submit code that you cannot explain.
+Betaflight is flight controller firmware. Errors can cause crashes, injuries and damage.
+
+The [Betaflight AI Contribution Policy](https://github.com/betaflight/.github/blob/main/AI_POLICY.md) applies to all repositories. You are the author of what you submit. Read every line, test it, and be able to explain it without help from a tool. We close pull requests that show no human judgement.
 
 ## 1. Before you start
 
 - **Search first.** Search the open issues and pull requests for the same change. Do not open a duplicate.
-- **Tell us about AI use.** If an AI tool wrote all or part of the change, say so in the pull request description.
 - **One change per pull request.** Change only the files that the problem needs. Do not add refactoring, reformatting or unrelated fixes.
 - **Use the correct repository and branch.** Open pull requests against `master`. Do not open them from the `master` branch of your fork. Board configurations go to [betaflight/config](https://github.com/betaflight/config).
-- **Do not change submodules.** Do not commit changes to `src/config` or to the libraries in `lib/` unless the pull request is about them.
+- **Do not change submodules.** Do not commit changes to `src/config` or to the libraries in `lib/` unless the pull request needs them.
+- **No new libraries in the tree.** Do not copy vendor or third-party libraries into the repository. A new library must be a hosted submodule, and a maintainer must agree first.
+- **Release timing.** After the release candidate, we merge only bug fixes until the release. A feature pull request waits for the next release cycle.
 
 ## 2. Use the existing infrastructure
 
-Betaflight has a framework for most tasks. Use it. Do not write a second solution. The table gives examples only. It is not a full list. Before you write new code, find how a similar feature does it and do the same.
+Betaflight has a framework for most tasks. Use it. Do not write a second solution. The table gives examples only. It is not a full list. Before you write new code, find how a similar feature does it and do the same. If an existing mechanism (for example a curve, a timer or the PID controller) almost does what you need, extend it. Do not add a parallel system.
 
 | Task | Use | Location |
 |------|-----|----------|
 | Store a setting | Parameter groups (`PG_REGISTER*`, `PG_DECLARE`) | `src/main/pg/`, IDs in `pg_ids.h` |
 | Show a setting in the CLI | The value table and lookup tables | `src/main/cli/settings.c` |
+| Name a setting | `PARAM_NAME_*` defines. Do not use string literals. | `src/main/fc/parameter_names.h` |
+| Make a curve | Piecewise linear interpolation | `src/main/common/pwl.h` |
 | Send data to the app | MSP handlers | `src/main/msp/msp.c`, `msp_protocol.h` |
 | Run code periodically | Scheduler tasks (`DEFINE_TASK`) | `src/main/fc/tasks.c` |
 | Use a pin | IO tags and resource owners | `src/main/drivers/io.h`, `resource.h` |
@@ -30,10 +35,10 @@ Betaflight has a framework for most tasks. Use it. Do not write a second solutio
 | Add a flight mode or switch | Box IDs and modes | `src/main/msp/msp_box.c`, `src/main/fc/rc_modes.h` |
 | Block arming | Arming disable flags | `src/main/fc/runtime_config.h` |
 | Turn a feature on or off | Features | `src/main/config/feature.h` |
-| Show debug data | Debug modes and `DEBUG_SET()`. Do not write to `debug[]` directly. | `src/main/build/debug.h`, `debug.c` |
+| Show debug data | Debug modes and `DEBUG_SET()` with a `//!<` field annotation. Do not write to `debug[]` directly. | `src/main/build/debug.h`, `debug.c` |
 | Measure time | `timeUs_t` and `cmpTimeUs()`. Do not subtract timestamps directly, because they wrap. | `src/main/common/time.h` |
 | Limit a value | `constrain()`, `constrainf()`, `MIN()`, `MAX()` | `src/main/common/maths.h` |
-| Common macros | `ARRAYLEN()`, `UNUSED()`, `STATIC_ASSERT()` | `src/main/common/utils.h` |
+| Common macros | `ARRAYLEN()`, `UNUSED()`, `STATIC_ASSERT()`, `FALLTHROUGH` | `src/main/common/utils.h` |
 | Share data with an interrupt | `volatile` and `ATOMIC_BLOCK()` | `src/main/build/atomic.h` |
 | Test a static function | `STATIC_UNIT_TESTED` | `src/main/build/build_config.h` |
 
@@ -43,17 +48,26 @@ Betaflight has a framework for most tasks. Use it. Do not write a second solutio
 - **Keep it simple.** Do not add abstractions, libraries or dependencies that the change does not need.
 - **Fix the root cause.** A bug fix must tell why the bug occurred. Do not add a guard that only hides the symptom.
 - **Refactors do not change behaviour.** If a refactor or cleanup changes behaviour, say so in the pull request. Better, put the behaviour change in a different pull request.
+- **No duplicate code.** If the same code is in two or more places, put it in one function.
 - **No dead code.** Do not add commented-out code, `#if 0` blocks, unused variables or unused functions.
 - **Check all external input.** Check the length of MSP payloads with `sbufBytesRemaining()` before you read them. Add new MSP fields at the end of the payload. Check the range of CLI arguments and of data from serial devices.
+- **One range for each setting.** The minimum and maximum in `settings.c` apply to all inputs. MSP and CMS must use the same limits. Use one shared function or constant, so the limits cannot be different.
+- **Safe float maths.** Prevent division by zero, `NaN` and values out of range. Limit the input before `powf()`, `logf()`, `sqrtf()` or `pwlInterpolate()`. A `NaN` in a filter or controller state stays there.
+- **Check failures.** Check the return values of init functions and register reads. If a sensor gives no value (for example `0` for "no reading"), handle that case. Do not use it as real data.
+- **Gate all parts of a feature together.** Put the enum value, the CLI lookup entry, the settings, the MSP fields and the init code behind the same `ENABLE_*` flag. A user must not be able to select an option that is not compiled in. Make each `#endif` comment name the correct flag.
 - **Target independence.** Do not use MCU or board names (for example `STM32F7`) in `src/main`. Use feature flags (see *Feature flags* below). Put MCU-specific code in `src/platform/`. `make checks` finds some of these errors.
 - **Real time.** Do not use dynamic memory allocation. Do not block or wait in interrupt handlers or scheduler tasks.
 - **Hot path.** Do not add work to the gyro or PID task without a measurement of the cycle cost. Use the `tasks` CLI command or a debug mode. Tell the result in the pull request.
 - **Flash wear.** Do not write the configuration to flash on a frequent event, for example on each arm or disarm. If a feature must save automatically, do it only when the user enabled that feature. See `src/main/fc/stats.c` for an example.
 - **Flash and RAM.** Many targets are near their flash limit. Put new features behind an `ENABLE_*` flag. Keep the size small.
+- **Hardware values.** Do not guess register addresses, timings or pin functions. Get them from the datasheet or reference manual. Tell which document and section you used.
+- **Flight behaviour.** Do not change default values, PID, mixer, failsafe or arming behaviour without a reason in the pull request.
 
 ### Build system
 
 - **All warnings are errors.** The build uses `-Werror` and `-Wdouble-promotion`. Use `float` and the `f` suffix (`1.0f`). Use `sqrtf()` and `sinf()`, or the fast `sin_approx()` and `atan2_approx()`. Do not use `double`.
+- **New files.** Start each new file with the licence header from `DEFAULT_LICENSE.md`. Do not use a different header. Each `.c` file in `src/main` must include `platform.h`. `make checks` finds a missing include.
+- **Generated files.** Do not edit these by hand: `src/main/msp/msp_build_info.c` and `.h` (from `src/utils/make-build-info.py`) and `src/main/target/serial_post.h` (from `src/utils/gen-serial-j2.py`). Change the generator or its input, and generate them again.
 - **New source files.** Add each new `.c` file to `mk/source.mk`. Put code that runs in the gyro or PID loop in `SPEED_OPTIMISED_SRC`. Put other code in `SIZE_OPTIMISED_SRC`.
 - **Feature flags.** Betaflight changes from `USE_*` to `ENABLE_*` build guards. Obey these rules:
   - Do not add new `USE_*` flags. Add an `ENABLE_*` flag.
@@ -62,19 +76,22 @@ Betaflight has a framework for most tasks. Use it. Do not write a second solutio
   - If you change code that has a `USE_*` guard, you can change that guard to `ENABLE_*`. Do not change guards in code that you do not otherwise change.
   - Resolve dependencies between features in `common_post.h`, not in `common_pre.h`.
 - **Memory placement.** Use `FAST_CODE` and `FAST_DATA` only for hot-path code and data. Use `FAST_DATA_ZERO_INIT` for data that starts at zero. `make checks` finds incorrect use.
-- **Hardware values.** Do not guess register addresses, timings or pin functions. Get them from the datasheet or reference manual. Tell which document and section you used.
-- **Flight behaviour.** Do not change default values, PID, mixer, failsafe or arming behaviour without a reason in the pull request.
 
 ### Compatibility
 
 The CLI, MSP, blackbox logs and saved configurations must stay compatible. Obey these rules:
 
-- **Parameter groups.** If you change the layout of a PG struct, increment the version in `PG_REGISTER*`. Do not reuse a PG ID.
+- **Parameter groups.** A version change in `PG_REGISTER*` resets the settings of all users in that PG to the defaults. `pgLoad()` keeps the stored values only if the version is the same. Obey these rules:
+  - Increment the version only if a stored field moves, changes size or changes meaning.
+  - Do not increment the version if you add fields or array items at the end. The new items get their reset values automatically.
+  - Set new defaults in the reset template or the reset function.
+  - Do not reuse a PG ID.
 - **Enumerations.** Add new values at the end, before `*_COUNT` or before the value that a comment marks as last. Do not reorder or remove values that the CLI, MSP or blackbox use. For example: `debugType_e`, OSD items and `armingDisableFlags_e`.
 - **Box IDs.** Do not change or reuse a `permanentId` in `msp_box.c`.
 - **MSP API version.** Increment `API_VERSION_MINOR` in `src/main/msp/msp_protocol.h` one time per release only. Compare with the last release tag:
   `git show <last release tag>:src/main/msp/msp_protocol.h | grep API_VERSION_MINOR`
   If `master` already has a higher value, do not change it again.
+- **Debug fields.** Each `DEBUG_SET()` call needs a `//!<` annotation that tells the label and unit of the field. The app and the blackbox log viewer read these annotations. The grammar is in `src/main/build/debug.h`. See [Debug Field Annotations](https://betaflight.com/docs/development/debugging/Debug-Field-Annotations).
 - **Other repositories.** If the change needs work in the app, blackbox log viewer or Lua scripts, tell this in the pull request and link the matching pull request. For example, a new MSP message, debug mode or OSD item.
 
 ## 4. Verification
@@ -105,6 +122,7 @@ If the change can have an effect on flight, a maintainer will ask for a Blackbox
   - Scheduler, task timing, DMA and interrupt changes.
   - Flight modes, failsafe, GPS rescue, position hold and autopilot.
   - Changes to default values for these.
+- **New features and new hardware.** Show that the feature improves flight, for example with logs from flights with and without it. For a new sensor or MCU, tell which hardware maintainers can use to test it.
 - **Simulated flights are not flight tests.** A SITL log, a bench test or unit tests do not replace a real flight. You can attach them as extra data, but do not call them a flight test.
 - **Log content.** Use a `debug_mode` that shows the changed behaviour, if one is available. In the comment, tell:
   - The commit or cloud build key that you flew.
@@ -121,9 +139,9 @@ If the change can have an effect on flight, a maintainer will ask for a Blackbox
 - **Pull request description.** Include:
   1. A summary: why you made the change and how it works.
   2. The commands that you used to test it, their results and the hardware tests. Attach a Blackbox log if the change can have an effect on flight.
-  3. The tools that you used, if you used AI.
-  4. `Fixes #<number>` if the pull request fixes an issue.
-- **Replies to reviewers.** Read the review comment and the code before you reply. Do not paste replies from an AI tool without checking them.
+  3. `Fixes #<number>` if the pull request fixes an issue.
+- **Replies to reviewers.** Answer reviewers yourself. Read the review comment and the code before you reply. Do not let an AI tool answer for you.
+- **Keep the pull request up to date.** Rebase on `master` to resolve conflicts. Do not merge `master` into your branch. A pull request needs two approvals before we merge it.
 
 ## 6. Pull requests that we close
 
