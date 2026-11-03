@@ -73,7 +73,10 @@ static uint16_t adis1657xReadReg(const extDevice_t *dev, uint8_t reg)
 
     spiReadWriteBuf(dev, txBuf, NULL, sizeof(txBuf));
     delayMicroseconds(ADIS1657X_STALL_US);
-    spiReadWriteBuf(dev, NULL, rxBuf, sizeof(rxBuf));
+    // Clock the answer out with a read of 0x00. A NULL txData sends 0xff, which
+    // this part decodes as a write to 0x7f.
+    txBuf[0] = 0;
+    spiReadWriteBuf(dev, txBuf, rxBuf, sizeof(rxBuf));
 
     return (rxBuf[0] << 8) | rxBuf[1];
 }
@@ -161,10 +164,16 @@ static void adis1657xGyroInit(gyroDev_t *gyro)
     }
 
     /* RNG_MDL reports the fitted gyro range, so there is no build-time variant to
-     * get wrong. Anything but the high-range code falls back to the low range,
-     * which under-reports rather than over-reports.
+     * get wrong. Only a recognised code is accepted; a misread one would scale
+     * every sample by 4x and no checksum would catch it.
      */
-    const uint16_t rngMdl = adis1657xReadReg(dev, ADIS1657X_REG_RNG_MDL) & ADIS1657X_RNG_MDL_RANGE_MASK;
+    uint16_t rngMdl = 0;
+    for (int tries = 0; tries < ADIS1657X_PROD_ID_RETRIES; tries++) {
+        rngMdl = adis1657xReadReg(dev, ADIS1657X_REG_RNG_MDL) & ADIS1657X_RNG_MDL_RANGE_MASK;
+        if (rngMdl == ADIS1657X_RNG_MDL_LOW_RANGE || rngMdl == ADIS1657X_RNG_MDL_HIGH_RANGE) {
+            break;
+        }
+    }
     if (rngMdl == ADIS1657X_RNG_MDL_HIGH_RANGE) {
         gyro->scale = ADIS1657X_GYRO_SCALE_HIGH;
     } else {

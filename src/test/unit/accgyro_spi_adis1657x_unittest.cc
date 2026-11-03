@@ -536,14 +536,15 @@ void spiReadWriteBuf(const extDevice_t *, uint8_t *txData, uint8_t *rxData, int 
         return;
     }
 
-    if (!txData && rxData) {
-        rxData[0] = fake.pending >> 8;
-        rxData[1] = fake.pending & 0xff;
+    // The real bus sends 0xff for a NULL txData, which the part takes as a write.
+    EXPECT_NE(nullptr, txData);
+    if (!txData) {
         return;
     }
 
-    if (!txData) {
-        return;
+    if (rxData) {
+        rxData[0] = fake.pending >> 8;
+        rxData[1] = fake.pending & 0xff;
     }
 
     const uint8_t addr = txData[0];
