@@ -925,6 +925,10 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_SDIO_EXTERNAL_DMA 0
 #endif
 
+#if !defined(ENABLE_LED_STRIP_INVERSION)
+#define ENABLE_LED_STRIP_INVERSION 0
+#endif
+
 // STM32C5: drive boot source from the BOOT0 pin rather than the BOOT0
 // option bit. Default on so a BF crash never strands the board without
 // DFU recovery — set this to 0 in config.h for boards that wire BOOT0
