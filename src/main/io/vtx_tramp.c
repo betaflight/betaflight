@@ -139,6 +139,11 @@ static int trampReceivePos = 0;
 // Last action time
 static timeUs_t trampLastTimeUs = 0;
 
+#if defined(UM324xF) && defined(SA_UART_RX_PIN)
+timeMs_t trTxstart = 0;
+#include "drivers/time.h"
+#endif
+
 // Calculate tramp protocol checksum of provided buffer
 static uint8_t trampChecksum(const uint8_t *trampBuf)
 {
@@ -330,6 +335,14 @@ static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 
     // Read response from device
     const char replyCode = trampReceive();
+
+#if defined(UM324xF) && defined(SA_UART_RX_PIN)
+    extern uint8_t  afSA;
+    extern IO_t txSA, rxSA;
+    IOConfigGPIOAF(txSA, IOCFG_AF_PP, afSA);
+    IOConfigGPIO(rxSA, IOCFG_IN_FLOATING);
+    trTxstart = millis();
+#endif
 
     // Act on state
     switch(trampStatus) {

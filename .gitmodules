@@ -62,3 +62,8 @@
 	branch = main
 	ignore = dirty
 	update = none
+[submodule "lib/modules/UM324xF"]
+	path = lib/modules/UM324xF
+	url = https://github.com/unicmicro/UM324xF-SDK.git
+	ignore = dirty
+	update = none

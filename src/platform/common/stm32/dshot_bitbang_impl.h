@@ -139,6 +139,13 @@ typedef struct dmaRegCache_s {
     uint32_t PADDR;
     uint32_t MADDR;
     uint32_t M1ADDR;
+#elif defined(UM324xF)
+    uint32_t SAR;
+    uint32_t DAR;
+    uint32_t CTLL;
+    uint32_t CTLH;
+    uint32_t CFGL;
+    uint32_t CFGH;
 #else
 #error No MCU dependent code here
 #endif

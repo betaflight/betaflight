@@ -36,7 +36,7 @@ void dshotEnableChannels(unsigned motorCount);
 void pwmDshotSetDirectionOutput(
     motorDmaOutput_t * const motor
 #ifndef USE_DSHOT_TELEMETRY
-#if defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F7) || defined(STM32H7) || defined(UM324xF)
     , LL_TIM_OC_InitTypeDef* pOcInit, LL_DMA_InitTypeDef* pDmaInit
 #else
     , TIM_OCInitTypeDef *pOcInit, DMA_InitTypeDef* pDmaInit
