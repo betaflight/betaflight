@@ -45,6 +45,7 @@ static uint16_t calculateChecksum(const uint8_t *ibusPacket);
 #include "pg/pg_ids.h"
 #include "sensors/battery.h"
 #include "fc/rc_controls.h"
+#include "rx/rx.h"
 #include "config/config.h"
 #include "sensors/gyro.h"
 #include "drivers/accgyro/accgyro.h"
@@ -239,7 +240,7 @@ static uint16_t getRPM(void)
     uint16_t rpm = 0;
     if (ARMING_FLAG(ARMED)) {
         const throttleStatus_e throttleStatus = calculateThrottleStatus();
-        rpm = rcCommand[THROTTLE];  // / BLADE_NUMBER_DIVIDER;
+        rpm = rcThrottleToUs(rcCommand[THROTTLE]);  // / BLADE_NUMBER_DIVIDER;
         if (throttleStatus == THROTTLE_LOW && featureIsEnabled(FEATURE_MOTOR_STOP)) rpm = 0;
     } else {
         rpm = (uint16_t)(currentBatteryProfile->batteryCapacity); //  / BLADE_NUMBER_DIVIDER
@@ -371,7 +372,7 @@ static void setValue(uint8_t* bufferPtr, uint8_t sensorType, uint8_t length)
             value.uint16 = getTemperature();
             break;
         case IBUS_SENSOR_TYPE_RPM_FLYSKY:
-            value.int16 = (int16_t)rcCommand[THROTTLE];
+            value.int16 = (int16_t)rcThrottleToUs(rcCommand[THROTTLE]);
             break;
         case IBUS_SENSOR_TYPE_FUEL:
             value.uint16 = getFuel();

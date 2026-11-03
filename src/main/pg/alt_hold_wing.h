@@ -28,7 +28,8 @@
 #include "pg/pg.h"
 
 typedef struct altHoldConfig_s {
-    uint8_t dummy;
+    uint8_t climbRate;
+    uint8_t deadband;
 } altHoldConfig_t;
 
 PG_DECLARE(altHoldConfig_t, altHoldConfig);

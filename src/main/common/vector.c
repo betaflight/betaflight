@@ -109,6 +109,12 @@ vector2_t *vector2Rotate(vector2_t *result, const vector2_t *v, const float angl
     return result;
 }
 
+// The angle between a and b, 0 to pi radians, whichever way round is shorter.
+float vector2Angle(const vector2_t *a, const vector2_t *b)
+{
+    return atan2_approx(fabsf(vector2Cross(a, b)), vector2Dot(a, b));
+}
+
 bool vector3Equal(const vector3_t *a, const vector3_t *b)
 {
     return (a->x == b->x) && (a->y == b->y) && (a->z == b->z);

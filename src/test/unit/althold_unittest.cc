@@ -167,7 +167,7 @@ TEST(AltholdUnittest, altHoldCapturesHoverThrottleWhenConfigZero)
 {
     altHoldInit();
     autopilotConfigMutable()->hoverThrottle = 0;
-    rcCommand[THROTTLE] = 1450.0f;
+    rcCommand[THROTTLE] = rcUsToThrottle(1450);
 
     flightModeFlags |= ALT_HOLD_MODE;
     updateAltHold(currentTimeUs);

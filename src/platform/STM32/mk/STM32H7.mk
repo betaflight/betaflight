@@ -51,6 +51,7 @@ STDPERIPH_SRC   = \
             stm32h7xx_hal_uart_ex.c \
             stm32h7xx_ll_cordic.c \
             stm32h7xx_ll_crs.c \
+            stm32h7xx_ll_bdma.c \
             stm32h7xx_ll_dma.c \
             stm32h7xx_ll_fmac.c \
             stm32h7xx_ll_i2c.c \

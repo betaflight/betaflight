@@ -22,6 +22,11 @@
 
 #include "pg/pg.h"
 
+#define MOTOR_POLE_COUNT_MIN 4
+#define MOTOR_IDLE_MAX 2000
+#define MOTOR_PWM_RATE_MIN 200
+#define MOTOR_PWM_RATE_MAX 32000
+
 #include "drivers/io.h"
 
 #if !defined(BRUSHED_MOTORS_PWM_RATE)

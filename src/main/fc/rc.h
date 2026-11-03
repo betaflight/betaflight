@@ -46,6 +46,7 @@ float getSetpointRate(int axis);
 float getRcDeflection(int axis);
 float getRcDeflectionRaw(int axis);
 float getRcDeflectionAbs(int axis);
+bool isYawFromAutopilot(void);
 float getMaxRcDeflectionAbs(void);
 void updateRcCommands(void);
 void resetYawAxis(void);

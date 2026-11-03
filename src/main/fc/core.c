@@ -169,6 +169,74 @@ static timeUs_t runawayTakeoffTriggerUs = 0;
 static bool runawayTakeoffTemporarilyDisabled = false;
 #endif
 
+#if defined(USE_WING) && defined(USE_LAUNCH_WING)
+// A hold or a mission selected alongside a launch takes over when the launch ends, so it may be on at arm.
+MAYBE_UNUSED static inline bool holdFollowsLaunch(void)
+{
+    return isFixedWing() && IS_RC_MODE_ACTIVE(BOXLAUNCH);
+}
+
+MAYBE_UNUSED static inline bool launchOwnsAircraft(void)
+{
+    return launchWingOwnsAircraft();
+}
+#else
+MAYBE_UNUSED static inline bool holdFollowsLaunch(void)
+{
+    return false;
+}
+
+MAYBE_UNUSED static inline bool launchOwnsAircraft(void)
+{
+    return FLIGHT_MODE(LAUNCH_MODE);
+}
+#endif
+
+#ifdef USE_WING
+// A wing holds a position by circling it, which it cannot do without holding its height as well.
+MAYBE_UNUSED static inline bool altHoldSelected(void)
+{
+    return IS_RC_MODE_ACTIVE(BOXALTHOLD) || IS_RC_MODE_ACTIVE(BOXPOSHOLD);
+}
+
+MAYBE_UNUSED static inline bool posHoldHasAltHold(void)
+{
+    return FLIGHT_MODE(ALT_HOLD_MODE);
+}
+
+// Nor can it stop to wait for the GPS: a mission it is flying carries on through the loss.
+MAYBE_UNUSED static inline bool missionKeepsWithoutFix(void)
+{
+    return isFixedWing() && FLIGHT_MODE(AUTOPILOT_MODE);
+}
+
+// Nor come straight down: a rescue's emergency descent circles down.
+MAYBE_UNUSED static inline bool rescueDescentCircles(void)
+{
+    return isFixedWing() && flightPlanNavIsRescueDescentActive();
+}
+#else
+MAYBE_UNUSED static inline bool altHoldSelected(void)
+{
+    return IS_RC_MODE_ACTIVE(BOXALTHOLD);
+}
+
+MAYBE_UNUSED static inline bool posHoldHasAltHold(void)
+{
+    return true;
+}
+
+MAYBE_UNUSED static inline bool missionKeepsWithoutFix(void)
+{
+    return false;
+}
+
+MAYBE_UNUSED static inline bool rescueDescentCircles(void)
+{
+    return false;
+}
+#endif
+
 #ifdef USE_LAUNCH_CONTROL
 static launchControlState_e launchControlState = LAUNCH_CONTROL_DISABLED;
 
@@ -361,20 +429,20 @@ if (crashFlipModeActive) {
             unsetArmingDisabled(ARMING_DISABLED_BOXFAILSAFE);
         }
 
-        if (IS_RC_MODE_ACTIVE(BOXALTHOLD)) {
+        if (IS_RC_MODE_ACTIVE(BOXALTHOLD) && !holdFollowsLaunch()) {
             setArmingDisabled(ARMING_DISABLED_ALTHOLD);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_ALTHOLD);
         }
 
-        if (IS_RC_MODE_ACTIVE(BOXPOSHOLD)) {
+        if (IS_RC_MODE_ACTIVE(BOXPOSHOLD) && !holdFollowsLaunch()) {
             setArmingDisabled(ARMING_DISABLED_POSHOLD);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_POSHOLD);
         }
 
-#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
-        if (IS_RC_MODE_ACTIVE(BOXAUTOPILOT)) {
+#if ENABLE_FLIGHT_PLAN
+        if (IS_RC_MODE_ACTIVE(BOXAUTOPILOT) && !holdFollowsLaunch()) {
             setArmingDisabled(ARMING_DISABLED_AUTOPILOT);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_AUTOPILOT);
@@ -1073,7 +1141,8 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 #endif
 
-#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#if ENABLE_FLIGHT_PLAN
+#ifndef USE_WING
     // Waypoint capture runs whether or not the mission is engaged - the whole
     // point is marking waypoints while flying around before engaging. The
     // channel-validity guard keeps rxfail aux substitution from ghost-editing
@@ -1081,6 +1150,7 @@ void processRxModes(timeUs_t currentTimeUs)
     flightPlanCaptureUpdate(currentTimeUs,
                             IS_RC_MODE_ACTIVE(BOXWPCAPTURE),
                             rxAreFlightChannelsValid());
+#endif
 
     // During failsafe the mission flies only while the failsafe state machine
     // has chosen to (rx-loss policy). In the stage-1 window before failsafe
@@ -1127,7 +1197,7 @@ void processRxModes(timeUs_t currentTimeUs)
     if (failsafeIsActive()) {
         autopilotRequested = (failsafePhase() == FAILSAFE_AUTOPILOT);
     } else if (rxAreFlightChannelsValid()) {
-        autopilotRequested = IS_RC_MODE_ACTIVE(BOXAUTOPILOT) || rescueSwitchRequest;
+        autopilotRequested = (IS_RC_MODE_ACTIVE(BOXAUTOPILOT) && !launchWingHoldWaits()) || rescueSwitchRequest;
     } else {
         autopilotRequested = FLIGHT_MODE(AUTOPILOT_MODE);
     }
@@ -1137,9 +1207,11 @@ void processRxModes(timeUs_t currentTimeUs)
     if (ARMING_FLAG(ARMED)
         // GPS Rescue has priority over the mission
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
+        && !launchWingOwnsAircraft()
+        && !launchWingAwaitingThrow()
         && autopilotRequested
         && sensors(SENSOR_ACC)
-        && sensors(SENSOR_GPS) && STATE(GPS_FIX)
+        && ((sensors(SENSOR_GPS) && STATE(GPS_FIX)) || missionKeepsWithoutFix())
         // waypoints carry altitude; without altitude data the mission must not run
         && isAltitudeAvailable()
         && wasThrottleRaised()) {
@@ -1164,12 +1236,12 @@ void processRxModes(timeUs_t currentTimeUs)
 
 #if defined(USE_WING) && defined(USE_LAUNCH_WING)
     // The latch is the mid-air guard: it is set only at the arm transition, so
-    // the box alone can never engage a launch in flight.
+    // the box alone can never engage a launch in flight. A failsafe ends the
+    // launch through the launch itself, which hands an airborne aircraft over.
     if (ARMING_FLAG(ARMED)
         && launchWingLatched()
         && IS_RC_MODE_ACTIVE(BOXLAUNCH)
         && sensors(SENSOR_ACC)
-        && !failsafeIsActive()
         && !launchWingIsTerminal()) {
         if (!FLIGHT_MODE(LAUNCH_MODE)) {
             ENABLE_FLIGHT_MODE(LAUNCH_MODE);
@@ -1201,10 +1273,12 @@ void processRxModes(timeUs_t currentTimeUs)
     if (ARMING_FLAG(ARMED)
         // and not in GPS_RESCUE_MODE, to give it priority over Altitude Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
-        && !FLIGHT_MODE(LAUNCH_MODE)
+        && !launchOwnsAircraft()
+        // nor with the aircraft still in the hand
+        && !launchWingAwaitingThrow()
         // and either the alt_hold switch is activated, or are in failsafe landing mode,
         // or an autopilot mission needs altitude control, or a switch-rescue fallback descent
-        && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive() || FLIGHT_MODE(AUTOPILOT_MODE) || flightPlanNavIsRescueDescentActive())
+        && ((altHoldSelected() && !launchWingHoldWaits()) || failsafeIsActive() || FLIGHT_MODE(AUTOPILOT_MODE) || flightPlanNavIsRescueDescentActive())
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
         // and this platform actually has an altitude control law
@@ -1226,10 +1300,13 @@ void processRxModes(timeUs_t currentTimeUs)
     if (ARMING_FLAG(ARMED)
         // and not in GPS_RESCUE_MODE, to give it priority over Position Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
-        && !FLIGHT_MODE(LAUNCH_MODE)
+        && !launchOwnsAircraft()
         // and either the pos_hold switch is activated, or are in failsafe landing mode,
         // or an autopilot mission needs the position controller
-        && (IS_RC_MODE_ACTIVE(BOXPOSHOLD) || failsafeIsActive() || FLIGHT_MODE(AUTOPILOT_MODE))
+        && ((IS_RC_MODE_ACTIVE(BOXPOSHOLD) && !launchWingHoldWaits()) || failsafeIsActive() || FLIGHT_MODE(AUTOPILOT_MODE)
+            || rescueDescentCircles())
+        // and altitude hold is flying, on a platform that needs it to hold a position
+        && posHoldHasAltHold()
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
         // and this platform actually has a position control law

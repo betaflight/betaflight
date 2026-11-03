@@ -272,7 +272,7 @@ static bool positionEstimatorWantXYFusion(void)
         return false;
     }
 
-#if defined(USE_POSITION_HOLD) && !defined(USE_WING)
+#ifdef USE_POSITION_HOLD
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
         return true;
     }

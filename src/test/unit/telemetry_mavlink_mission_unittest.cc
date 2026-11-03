@@ -58,6 +58,9 @@ extern "C" {
 
     // Fixed orbit period so LOITER_TURNS <-> ORBIT conversion is deterministic.
     uint16_t flightPlanNavOrbitPeriodDs(uint16_t) { return 250; }
+#ifdef USE_WING
+    float autopilotWingLoiterRadiusM(void) { return 60.0f; }
+#endif
 
     void saveConfigAndNotify(void) { s_saveCalls++; }
     uint32_t millis(void) { return s_millis; }
@@ -135,11 +138,11 @@ protected:
     // Drive one upload item and return the resulting item write.
     void sendItem(uint16_t seq, uint16_t command, uint16_t total,
                   float param1 = 0.0f, int32_t lat = 0, int32_t lon = 0, float alt = 0.0f,
-                  float param4 = 0.0f) {
+                  float param4 = 0.0f, float param2 = 0.0f, float param3 = 0.0f) {
         mavlink_message_t msg;
         mavlink_msg_mission_item_int_pack(GCS_SYS, GCS_COMP, &msg,
             1, 0, seq, MAV_FRAME_GLOBAL_INT, command, /*current*/ 0, /*autocontinue*/ 1,
-            param1, 0.0f, 0.0f, param4, lat, lon, alt, MAV_MISSION_TYPE_MISSION);
+            param1, param2, param3, param4, lat, lon, alt, MAV_MISSION_TYPE_MISSION);
         (void)total;
         feed(msg);
     }
@@ -181,6 +184,71 @@ TEST_F(MavlinkMissionTest, UploadWritesWaypointsToConfig)
     EXPECT_EQ(plan->waypoints[1].latitude, 300);
     EXPECT_EQ(plan->waypoints[1].longitude, 400);
     EXPECT_EQ(plan->waypoints[2].type, WAYPOINT_TYPE_LAND);
+}
+
+TEST_F(MavlinkMissionTest, UploadRejectsUnsupportedReturnToLaunch)
+{
+    sendCount(2);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 2, 0.0f, 300, 400, 20.0f);
+    sendItem(1, MAV_CMD_NAV_RETURN_TO_LAUNCH, 2);
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_UNSUPPORTED);
+    EXPECT_EQ(flightPlanConfig()->waypointCount, 0);
+    EXPECT_EQ(s_saveCalls, 0);
+}
+
+TEST_F(MavlinkMissionTest, RejectedUploadKeepsPreviousMission)
+{
+    sendCount(2);
+    sendItem(0, MAV_CMD_NAV_TAKEOFF, 2, 0.0f, 100, 200, 12.0f);
+    sendItem(1, MAV_CMD_NAV_WAYPOINT, 2, 0.0f, 300, 400, 20.0f);
+    ASSERT_EQ(flightPlanConfig()->waypointCount, 2);
+    ASSERT_EQ(s_saveCalls, 1);
+
+    sendCount(2);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 2, 0.0f, 700, 800, 30.0f);
+    sendItem(1, MAV_CMD_NAV_RETURN_TO_LAUNCH, 2);
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_UNSUPPORTED);
+    EXPECT_EQ(s_saveCalls, 1);
+
+    const flightPlanConfig_t *plan = flightPlanConfig();
+    ASSERT_EQ(plan->waypointCount, 2);
+    EXPECT_EQ(plan->waypoints[0].type, WAYPOINT_TYPE_TAKEOFF);
+    EXPECT_EQ(plan->waypoints[0].latitude, 100);
+    EXPECT_EQ(plan->waypoints[1].type, WAYPOINT_TYPE_FLYBY);
+    EXPECT_EQ(plan->waypoints[1].latitude, 300);
+    EXPECT_EQ(plan->waypoints[1].longitude, 400);
+}
+
+TEST_F(MavlinkMissionTest, UploadCompletedInAutopilotModeKeepsPreviousMission)
+{
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, 0.0f, 300, 400, 20.0f);
+    ASSERT_EQ(flightPlanConfig()->waypointCount, 1);
+    ASSERT_EQ(s_saveCalls, 1);
+
+    sendCount(1);
+    flightModeFlags = AUTOPILOT_MODE;   // pilot engages the mission during the upload
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, 0.0f, 700, 800, 30.0f);
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_DENIED);
+    EXPECT_EQ(s_saveCalls, 1);
+    ASSERT_EQ(flightPlanConfig()->waypointCount, 1);
+    EXPECT_EQ(flightPlanConfig()->waypoints[0].latitude, 300);
+    EXPECT_EQ(flightPlanConfig()->waypoints[0].longitude, 400);
 }
 
 TEST_F(MavlinkMissionTest, UploadWaypointAcceptsNanYaw)
@@ -250,6 +318,41 @@ TEST_F(MavlinkMissionTest, UploadDefaultsPatternToNone)
     EXPECT_EQ(plan->waypoints[0].pattern, WAYPOINT_PATTERN_NONE);
 }
 
+TEST_F(MavlinkMissionTest, WaypointHoldTimeRoundTrips)
+{
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, /*seconds*/ 10.0f, 100, 200, 15.0f);
+
+    const flightPlanConfig_t *plan = flightPlanConfig();
+    ASSERT_EQ(plan->waypointCount, 1);
+    EXPECT_EQ(plan->waypoints[0].duration, 100);
+
+    mavlink_message_t list;
+    mavlink_msg_mission_request_list_pack(GCS_SYS, GCS_COMP, &list, 1, 0, MAV_MISSION_TYPE_MISSION);
+    feed(list);
+    mavlink_message_t request;
+    mavlink_msg_mission_request_int_pack(GCS_SYS, GCS_COMP, &request, 1, 0, 0, MAV_MISSION_TYPE_MISSION);
+    feed(request);
+
+    const mavlink_message_t *item = lastOfType(MAVLINK_MSG_ID_MISSION_ITEM_INT);
+    ASSERT_NE(item, nullptr);
+    mavlink_mission_item_int_t decoded;
+    mavlink_msg_mission_item_int_decode(item, &decoded);
+    EXPECT_EQ(decoded.command, MAV_CMD_NAV_WAYPOINT);
+    EXPECT_FLOAT_EQ(decoded.param1, 10.0f);
+}
+
+TEST_F(MavlinkMissionTest, WaypointHoldTimeSurvivesRadiusParameters)
+{
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, /*seconds*/ 10.0f, 100, 200, 15.0f,
+        /*yaw*/ 0.0f, /*acceptance radius*/ 5.0f, /*pass radius*/ 8.0f);
+
+    const flightPlanConfig_t *plan = flightPlanConfig();
+    ASSERT_EQ(plan->waypointCount, 1);
+    EXPECT_EQ(plan->waypoints[0].duration, 100);
+}
+
 TEST_F(MavlinkMissionTest, UploadRejectedWhileAutopilotActive)
 {
     flightModeFlags = AUTOPILOT_MODE;
@@ -309,6 +412,31 @@ TEST_F(MavlinkMissionTest, DownloadEncodesWaypointsRoundTrip)
     EXPECT_EQ(requestItem(0), MAV_CMD_NAV_TAKEOFF);
     EXPECT_EQ(requestItem(1), MAV_CMD_NAV_LOITER_TURNS); // ORBIT hold -> LOITER_TURNS
     EXPECT_EQ(requestItem(2), MAV_CMD_NAV_LAND);
+}
+
+TEST_F(MavlinkMissionTest, DownloadGivesTheRadiusTheOrbitIsFlownAt)
+{
+    flightPlanConfig_t *plan = flightPlanConfigMutable();
+    plan->waypointCount = 1;
+    plan->waypoints[0] = makeWaypoint(300, 400, 2000, WAYPOINT_TYPE_HOLD, WAYPOINT_PATTERN_ORBIT, 500);
+
+    mavlink_message_t list;
+    mavlink_msg_mission_request_list_pack(GCS_SYS, GCS_COMP, &list, 1, 0, MAV_MISSION_TYPE_MISSION);
+    feed(list);
+    mavlink_message_t req;
+    mavlink_msg_mission_request_int_pack(GCS_SYS, GCS_COMP, &req, 1, 0, 0, MAV_MISSION_TYPE_MISSION);
+    feed(req);
+    const mavlink_message_t *item = lastOfType(MAVLINK_MSG_ID_MISSION_ITEM_INT);
+    ASSERT_NE(item, nullptr);
+    mavlink_mission_item_int_t it;
+    mavlink_msg_mission_item_int_decode(item, &it);
+    EXPECT_EQ(it.command, MAV_CMD_NAV_LOITER_TURNS);
+    EXPECT_FLOAT_EQ(2.0f, it.param1);       // 500 ds at 250 ds a turn
+#ifdef USE_WING
+    EXPECT_FLOAT_EQ(60.0f, it.param3);      // a wing loiters, at the loiter radius
+#else
+    EXPECT_FLOAT_EQ(8.0f, it.param3);
+#endif
 }
 
 TEST_F(MavlinkMissionTest, MissionItemReachedEmitted)

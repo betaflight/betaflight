@@ -424,6 +424,17 @@ uint8_t spiGetRegisteredDeviceCount(void)
     return spiRegisteredDeviceCount;
 }
 
+uint16_t spiGetErrorCounter(void)
+{
+    uint16_t errorCount = 0;
+
+    for (int device = 0; device < SPIDEV_COUNT; device++) {
+        errorCount += spiDevice[device].errorCount;
+    }
+
+    return errorCount;
+}
+
 uint8_t spiGetExtDeviceCount(const extDevice_t *dev)
 {
     if (!dev || !dev->bus) {
@@ -497,6 +508,42 @@ void spiSequence(const extDevice_t *dev, busSegment_t *segments)
     }
 
     spiSequenceStart(dev);
+}
+
+void spiAbortTransfer(const extDevice_t *dev)
+{
+    busDevice_t *bus = dev->bus;
+    const extDevice_t *nextDev = NULL;
+
+    ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+        if (!spiIsBusy(dev)) {
+            return;
+        }
+
+        spiInternalAbortDMA(dev);
+
+        IOHi(dev->busType_u.spi.csnPin);
+
+        spiDevice[bus - spiBusDevice].errorCount++;
+
+        busSegment_t *endSegment = (busSegment_t *)bus->curSegment;
+        while (endSegment->len) {
+            endSegment++;
+        }
+
+        nextDev = endSegment->u.link.dev;
+        if (nextDev) {
+            bus->curSegment = endSegment->u.link.segments;
+            endSegment->u.link.dev = NULL;
+            endSegment->u.link.segments = NULL;
+        } else {
+            bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
+        }
+    }
+
+    if (nextDev) {
+        spiSequenceStart(nextDev);
+    }
 }
 
 // Process segments using DMA - expects DMA irq handler to have been set up to feed into spiIrqHandler.

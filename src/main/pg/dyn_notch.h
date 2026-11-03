@@ -24,6 +24,13 @@
 
 #include "pg/pg.h"
 
+#define DYN_NOTCH_Q_MIN 1
+#define DYN_NOTCH_Q_MAX 1000
+#define DYN_NOTCH_MIN_HZ_MIN 20
+#define DYN_NOTCH_MIN_HZ_MAX 250
+#define DYN_NOTCH_MAX_HZ_MIN 200
+#define DYN_NOTCH_MAX_HZ_MAX 1000
+
 typedef struct dynNotchConfig_s
 {
     uint16_t dyn_notch_min_hz;
