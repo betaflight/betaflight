@@ -361,15 +361,19 @@ void pidResetIterm(void)
 }
 
 #ifdef USE_WING
+// Without a voltage reading the throttle is taken at its face value, not as no thrust at all.
+static float wingBatteryThrottleFactor(void)
+{
+    const uint16_t voltage = getBatteryVoltageLatest();
+    if (pidRuntime.tpaSpeed.maxVoltage > 0.0f && voltage > 0) {
+        return constrainf(voltage / 100.0f / pidRuntime.tpaSpeed.maxVoltage, 0.0f, 1.0f);
+    }
+    return 1.0f;
+}
+
 static float calcWingThrottle(void)
 {
-    float batteryThrottleFactor = 1.0f;
-    if (pidRuntime.tpaSpeed.maxVoltage > 0.0f) {
-        batteryThrottleFactor = getBatteryVoltageLatest() / 100.0f / pidRuntime.tpaSpeed.maxVoltage;
-        batteryThrottleFactor = constrainf(batteryThrottleFactor, 0.0f, 1.0f);
-    }
-
-    return getMotorOutputRms() * batteryThrottleFactor;
+    return getMotorOutputRms() * wingBatteryThrottleFactor();
 }
 
 static float calcWingAcceleration(float throttle, float pitchAngleRadians)
@@ -1315,11 +1319,16 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
 
     // Anti Gravity
+    // Write the scaled value into a local variable. Do not scale pidRuntime.antiGravityThrottleD in place.
+    // Only pidUpdateAntiGravityThrottleFilter() writes a new filter output to it.
+    // If the filter does not get an input, a scale in place increases the value on each loop (see #15910).
+    float antiGravityThrottleD = 0.0f;
     if (pidRuntime.antiGravityEnabled) {
-        pidRuntime.antiGravityThrottleD *= pidRuntime.antiGravityGain;
+        antiGravityThrottleD = pidRuntime.antiGravityThrottleD * pidRuntime.antiGravityGain;
         // used later to increase pTerm
-        pidRuntime.itermAccelerator = pidRuntime.antiGravityThrottleD * ANTIGRAVITY_KI;
+        pidRuntime.itermAccelerator = antiGravityThrottleD * ANTIGRAVITY_KI;
     } else {
+        // Clear the value. If anti-gravity is enabled again during crash flip, it then starts from zero.
         pidRuntime.antiGravityThrottleD = 0.0f;
         pidRuntime.itermAccelerator = 0.0f;
     }
@@ -1484,7 +1493,14 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                 // if earth referencing is requested, attenuate yaw axis setpoint when pitched or rolled
                 // and send yawSetpoint to Angle code to modulate pitch and roll
                 // code cost is 107 cycles when earthRef enabled, 20 otherwise, nearly all in cos_approx
-                const float earthRefGain = FLIGHT_MODE(GPS_RESCUE_MODE) ? 1.0f : pidRuntime.angleEarthRef;
+                float earthRefGain = FLIGHT_MODE(GPS_RESCUE_MODE) ? 1.0f : pidRuntime.angleEarthRef;
+#ifdef USE_WING
+                // the wing autopilot's yaw rate is about the body axis already, and its turn pitch comes from altitude control
+                if (isYawFromAutopilot()) {
+                    earthRefGain = 0.0f;
+                    pidRuntime.angleYawSetpoint = 0.0f;
+                }
+#endif
                 if (earthRefGain) {
                     pidRuntime.angleYawSetpoint = currentPidSetpoint;
                     float maxAngleTargetAbs = earthRefGain * fmaxf( fabsf(pidRuntime.angleTarget[FD_ROLL]), fabsf(pidRuntime.angleTarget[FD_PITCH]) );
@@ -1739,7 +1755,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             float agSetpointAttenuator = fabsf(currentPidSetpoint) / 50.0f;
             agSetpointAttenuator = MAX(agSetpointAttenuator, 1.0f);
             // attenuate effect if turning more than 50 deg/s, half at 100 deg/s
-            const float antiGravityPBoost = 1.0f + (pidRuntime.antiGravityThrottleD / agSetpointAttenuator) * pidRuntime.antiGravityPGain;
+            const float antiGravityPBoost = 1.0f + (antiGravityThrottleD / agSetpointAttenuator) * pidRuntime.antiGravityPGain;
             // Anti-gravity P boost is a classic-PID heuristic: under ADRC the observer's
             // disturbance estimate (z3, exposed as the I channel = -z3/b0) already rejects
             // throttle-sag torque, so multiplying the tuned virtual stiffness (kp = wc^2) by the
@@ -1919,6 +1935,25 @@ void pidSetItermReset(bool enabled)
 void pidResetTpaSpeed(void)
 {
     pidRuntime.tpaSpeed.speed = 0.0f;
+}
+
+float pidGetWingTpaSpeed(void)
+{
+    return pidRuntime.tpaSpeed.speed;
+}
+
+// The speed the TPA model settles at in level flight on a throttle, where its thrust less its
+// drag and the pitch offset's share of gravity comes to nothing.
+float pidWingTpaSteadySpeed(float throttle)
+{
+    const tpaSpeedParams_t *tpa = &pidRuntime.tpaSpeed;
+    if (tpa->dragMassRatio <= 0.0f) {
+        return 0.0f;
+    }
+    const float t = throttle * wingBatteryThrottleFactor();
+    const float b = t * tpa->inversePropMaxSpeed * tpa->twr * G_ACCELERATION;
+    const float c = -(t * t * tpa->twr + sin_approx(tpa->pitchOffset)) * G_ACCELERATION;
+    return (-b + sqrtf(fmaxf(b * b - 4.0f * tpa->dragMassRatio * c, 0.0f))) / (2.0f * tpa->dragMassRatio);
 }
 #endif
 

@@ -29,7 +29,6 @@
 #define GPS_RESCUE_GROUND_SPEED_MAX 3000
 #define GPS_RESCUE_DESCENT_DIST_MIN_M 5
 #define GPS_RESCUE_DESCENT_DIST_MAX_M 500
-#define GPS_RESCUE_YAW_P_MAX 200
 
 typedef struct gpsRescue_s {
 
@@ -46,8 +45,6 @@ typedef struct gpsRescue_s {
     uint8_t  sanityChecks;
     uint8_t  minSats;
     uint8_t  allowArmingWithoutFix;
-
-    uint8_t  yawP;
 } gpsRescueConfig_t;
 
 PG_DECLARE(gpsRescueConfig_t, gpsRescueConfig);

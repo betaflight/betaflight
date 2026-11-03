@@ -349,6 +349,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
         // Use the correct callback argument
         dmaRx->userParam = (uint32_t)dev;
+        dmaTx->userParam = (uint32_t)dev;
 
         // Clear transfer flags
         dma_flag_clear((uint32_t)dmaTx->dma, dmaTx->stream, DMA_FLAG_FEE | DMA_FLAG_SDE | DMA_FLAG_TAE | DMA_FLAG_HTF | DMA_FLAG_FTF);
@@ -361,7 +362,8 @@ void spiInternalStartDMA(const extDevice_t *dev)
         /* Use the Rx interrupt as this occurs once the SPI operation is complete whereas the Tx interrupt
          * occurs earlier when the Tx FIFO is empty, but the SPI operation is still in progress
          */
-        xDMA_ITConfig(streamRegsRx, DMA_INT_FTF, ENABLE);
+        xDMA_ITConfig(streamRegsRx, DMA_INT_FTF | DMA_INT_TAE, ENABLE);
+        xDMA_ITConfig(streamRegsTx, DMA_INT_TAE, ENABLE);
 
         // Update streams
 
@@ -407,7 +409,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
         // Disable stream to enable update
         REG32(streamRegsTx) = 0U;
 
-        xDMA_ITConfig(streamRegsTx, DMA_INT_FTF, ENABLE);
+        xDMA_ITConfig(streamRegsTx, DMA_INT_FTF | DMA_INT_TAE, ENABLE);
 
         // Update stream
         xDMA_Init(streamRegsTx, dev->bus->dmaInitTx);
@@ -466,6 +468,11 @@ void spiInternalStopDMA (const extDevice_t *dev)
         spi_dma_disable(spi_periph, SPI_DMA_TRANSMIT);
     }
 #endif
+}
+
+void spiInternalAbortDMA(const extDevice_t *dev)
+{
+    spiInternalStopDMA(dev);
 }
 
 // DMA transfer setup and start

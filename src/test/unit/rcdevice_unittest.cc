@@ -325,9 +325,9 @@ TEST(RCDeviceTest, TestWifiModeChangeWithDeviceUnready)
     analyzeModeActivationConditions();
 
     // make the binded mode inactive
-    rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1800;
-    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 900;
-    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 900;
+    rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(1800);
+    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(900);
+    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(900);
 
     updateActivatedModes();
 
@@ -397,9 +397,9 @@ TEST(RCDeviceTest, TestWifiModeChangeWithDeviceReady)
 
     analyzeModeActivationConditions();
 
-    rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1700;
-    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 2000;
-    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1700;
+    rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(1700);
+    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(2000);
+    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(1700);
 
     updateActivatedModes();
 
@@ -467,9 +467,9 @@ TEST(RCDeviceTest, TestWifiModeChangeCombine)
     analyzeModeActivationConditions();
 
     // // make the binded mode inactive
-    rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1700;
-    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 2000;
-    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1700;
+    rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(1700);
+    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(2000);
+    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(1700);
     updateActivatedModes();
 
     // runn process loop
@@ -483,9 +483,9 @@ TEST(RCDeviceTest, TestWifiModeChangeCombine)
 
 
     // // make the binded mode inactive
-    rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1500;
-    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1300;
-    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1900;
+    rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(1500);
+    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(1300);
+    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(1900);
     updateActivatedModes();
     rcdeviceUpdate((timeUs_t)0);
     EXPECT_TRUE(unitTestIsSwitchActivited(BOXCAMERA1));
@@ -493,12 +493,12 @@ TEST(RCDeviceTest, TestWifiModeChangeCombine)
     EXPECT_TRUE(unitTestIsSwitchActivited(BOXCAMERA3));
 
 
-    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1899;
+    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(1899);
     updateActivatedModes();
     rcdeviceUpdate((timeUs_t)0);
     EXPECT_FALSE(unitTestIsSwitchActivited(BOXCAMERA3));
 
-    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 2001;
+    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(2001);
     updateActivatedModes();
     rcdeviceUpdate((timeUs_t)0);
     EXPECT_TRUE(unitTestIsSwitchActivited(BOXCAMERA1));
@@ -716,10 +716,10 @@ TEST(RCDeviceTest, Test5KeyOSDCableSimulationWithout5KeyFeatureSupport)
     resetRCDeviceStatus();
 
     // test simulation without device init
-    rcData[THROTTLE] = FIVE_KEY_JOYSTICK_MID; // THROTTLE Mid
-    rcData[ROLL] = FIVE_KEY_JOYSTICK_MID; // ROLL Mid
-    rcData[PITCH] = FIVE_KEY_JOYSTICK_MID; // PITCH Mid
-    rcData[YAW] = FIVE_KEY_JOYSTICK_MAX; // Yaw High
+    rcData[THROTTLE] = rcUsToNorm(FIVE_KEY_JOYSTICK_MID); // THROTTLE Mid
+    rcData[ROLL] = rcUsToNorm(FIVE_KEY_JOYSTICK_MID); // ROLL Mid
+    rcData[PITCH] = rcUsToNorm(FIVE_KEY_JOYSTICK_MID); // PITCH Mid
+    rcData[YAW] = rcUsToNorm(FIVE_KEY_JOYSTICK_MAX); // Yaw High
     rcdeviceUpdate(millis() * 1000);
     EXPECT_FALSE(rcdeviceInMenu);
     // remove all request from queue

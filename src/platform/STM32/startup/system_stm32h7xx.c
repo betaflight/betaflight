@@ -949,6 +949,13 @@ void SystemInit (void)
 
 #ifdef STM32H7
     initialiseD2MemorySections();
+
+    // Enable D3 SRAM4 clock for BDMA access (SPI6)
+    // On H7A3/H7B0/H7B3 variants, SRAM4 clock must be explicitly enabled.
+    // On H743/H750/H723/H725/H730/H735, SRAM4 clock is always on.
+#if defined(RCC_AHB4ENR_SRDSRAMEN)
+    __HAL_RCC_SRDSRAM_CLK_ENABLE();
+#endif
 #endif
 
     // Configure MPU

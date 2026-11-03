@@ -690,6 +690,88 @@ TEST(pidControllerTest, testMixerSaturation)
     EXPECT_NEAR(320, pidData[FD_YAW].I, calculateTolerance(320));
 }
 
+// #15910: During crash flip, the anti-gravity throttle filter does not get an input.
+// Thus, pidController() must not multiply antiGravityThrottleD by the gain on each loop.
+TEST(pidControllerTest, testAntiGravityNotCompoundedWhenFilterNotFed)
+{
+    resetTest();
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+
+    const bool prevAgState = pidRuntime.antiGravityEnabled;
+    const uint8_t prevDebugMode = debugMode;
+    pidRuntime.antiGravityEnabled = true;
+    debugMode = DEBUG_ANTI_GRAVITY;
+    // A small filter output that remains after an earlier throttle movement
+    const float residualThrottleD = 0.1f;
+    pidRuntime.antiGravityThrottleD = residualThrottleD;
+
+    // A gyro error gives a P term that is not zero. Thus, the test uses the P boost.
+    gyro.gyroADCf[FD_ROLL] = 100;
+    gyro.gyroADCf[FD_PITCH] = -100;
+
+    pidController(pidProfile, currentTestTime());
+    // The yaw loop sets itermAccelerator to zero. Thus, use the debug values of the I and P gain multipliers.
+    const int16_t expectedIGainMultiplier = debug[2];
+    const int16_t expectedPGainMultiplier = debug[3];
+    EXPECT_GT(expectedIGainMultiplier, 1000);
+    EXPECT_GT(expectedPGainMultiplier, 1000);
+
+    // If the filter does not write a new value, a scale in place with a gain of 10 gives inf in approximately 40 loops
+    for (int loop = 0; loop < 100; loop++) {
+        pidController(pidProfile, currentTestTime());
+    }
+
+    EXPECT_FLOAT_EQ(residualThrottleD, pidRuntime.antiGravityThrottleD);
+    EXPECT_EQ(expectedIGainMultiplier, debug[2]);
+    EXPECT_EQ(expectedPGainMultiplier, debug[3]);
+    for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
+        EXPECT_TRUE(std::isfinite(pidData[axis].P));
+        EXPECT_TRUE(std::isfinite(pidData[axis].I));
+        EXPECT_TRUE(std::isfinite(pidData[axis].Sum));
+    }
+
+    pidRuntime.antiGravityEnabled = prevAgState;
+    debugMode = prevDebugMode;
+}
+
+#ifdef USE_ADRC
+TEST(pidControllerTest, testAdrcPOutputIsUnaffectedByAntiGravity)
+{
+    float referenceP[XYZ_AXIS_COUNT];
+    for (int enabled = 0; enabled <= 1; ++enabled) {
+        resetTest();
+        pidProfile->pid_type = PID_TYPE_ADRC;
+        pidProfile->adrc_ground_wc = 0;
+        pidInit(pidProfile);
+        ENABLE_ARMING_FLAG(ARMED);
+        pidStabilisationState(PID_STABILISATION_ON);
+        simulatedThrottle = 0.5f;
+        simulatedCommandedThrottle = 0.5f;
+        simulatedSetpointRate[FD_ROLL] = 100.0f;
+        simulatedSetpointRate[FD_PITCH] = -100.0f;
+        pidRuntime.antiGravityEnabled = enabled;
+        pidRuntime.antiGravityThrottleD = 0.1f;
+
+        pidController(pidProfile, currentTestTime());
+
+        for (int axis = FD_ROLL; axis <= FD_PITCH; ++axis) {
+            ASSERT_GT(fabsf(pidData[axis].P), 1.0f);
+            if (!enabled) {
+                referenceP[axis] = pidData[axis].P;
+            } else {
+                // Upstream's scaled derivative must still be bypassed for ADRC P.
+                EXPECT_FLOAT_EQ(referenceP[axis], pidData[axis].P);
+            }
+        }
+        if (enabled) {
+            EXPECT_FLOAT_EQ(0.1f, pidRuntime.antiGravityThrottleD);
+        }
+    }
+    pidRuntime.antiGravityEnabled = false;
+}
+#endif
+
 TEST(pidControllerTest, testiTermWindup)
 {
     resetTest();
