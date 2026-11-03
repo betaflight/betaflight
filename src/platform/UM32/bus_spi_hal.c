@@ -210,6 +210,7 @@ void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
 
     // Clear any pending interrupt flags
     DMA_CLEAR_FLAG(descriptor, CLEARBLOCK);
+    DMA_CLEAR_FLAG(descriptor, CLEARERR);
 }
 
 
@@ -304,6 +305,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
     LL_DMA_InitTypeDef *initRx = bus->dmaInitRx;
 
     DMA_Stream_TypeDef *streamRegsTx = (DMA_Stream_TypeDef *)dmaTx->ref;
+    dmaTx->userParam = (uint32_t)dev;
     if (dmaRx) {
          DMA_Stream_TypeDef *streamRegsRx = (DMA_Stream_TypeDef *)dmaRx->ref;
 
@@ -315,11 +317,16 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
         xLL_EX_DMA_EnableIT_TC(streamRegsRx);
 
+        WRITE_REG(((DMA_TypeDef *)dmaRx->dma)->MASKERR,
+            (DMA_MASKERR_MASKERR_WE_0 | DMA_MASKERR_MASKERR_0) << dmaRx->flagsShift);
+
         CLEAR_BIT(instance->GCTL,SPI_EX_GCTL_TXEN|SPI_EX_GCTL_RXEN);
         SET_BIT(instance->GCTL,SPI_EX_GCTL_DMAMODE);
         SET_BIT(instance->GCTL,SPI_EX_GCTL_TXEN|SPI_EX_GCTL_RXEN);
 
         xLL_EX_DMA_EnableResource(streamRegsRx);
+        WRITE_REG(((DMA_TypeDef *)dmaTx->dma)->MASKERR,
+            (DMA_MASKERR_MASKERR_WE_0 | DMA_MASKERR_MASKERR_0) << dmaTx->flagsShift);
         xLL_EX_DMA_EnableResource(streamRegsTx);
     }
     else
@@ -346,22 +353,18 @@ void spiInternalStopDMA (const extDevice_t *dev)
     SPI_TypeDef *instance = (SPI_TypeDef *)bus->busType_u.spi.instance;
 
     DMA_Stream_TypeDef *streamRegsTx = (DMA_Stream_TypeDef *)dmaTx->ref;
-    DMA_Stream_TypeDef *streamRegsRx = (DMA_Stream_TypeDef *)dmaRx->ref;
     // Disable the SPI DMA Mode
     CLEAR_BIT(instance->GCTL,SPI_EX_GCTL_DMAMODE);
 
-    if (dmaRx) {
-    // Disable the DMA engine and SPI interface
-        LL_EX_DMA_DisableResource(streamRegsTx);
-        LL_EX_DMA_DisableResource(streamRegsRx);
+    LL_EX_DMA_DisableResource(streamRegsTx);
+    DMA_CLEAR_FLAG(dmaTx, CLEARBLOCK);
+    DMA_CLEAR_FLAG(dmaTx, CLEARERR);
 
-        DMA_CLEAR_FLAG(dmaTx, CLEARBLOCK);
+    if (dmaRx) {
+        DMA_Stream_TypeDef *streamRegsRx = (DMA_Stream_TypeDef *)dmaRx->ref;
+        LL_EX_DMA_DisableResource(streamRegsRx);
         DMA_CLEAR_FLAG(dmaRx, CLEARBLOCK);
-    }
-    else
-    {
-        DMA_CLEAR_FLAG(dmaTx, CLEARBLOCK);
-        DMA_CLEAR_FLAG(dmaRx, CLEARBLOCK);
+        DMA_CLEAR_FLAG(dmaRx, CLEARERR);
     }
 }
 
