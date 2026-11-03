@@ -387,11 +387,25 @@ int  bbDMA_Count(bbPort_t *bbPort);
 // mid-transfer raises TCIF (RM0090, "DMA transfer suspension").
 #define BB_DMA_STOP_SPIN_LIMIT 100
 
+static inline void bbDMAClearFlags(dmaChannelDescriptor_t *descriptor)
+{
+#if defined(UM324xF)
+    // DW DMA uses one per-channel bitmap register for each event type.
+    DMA_CLEAR_FLAG(descriptor, CLEARTFR);
+    DMA_CLEAR_FLAG(descriptor, CLEARBLOCK);
+    DMA_CLEAR_FLAG(descriptor, CLEARSRCTRAN);
+    DMA_CLEAR_FLAG(descriptor, CLEARDSTTRAN);
+    DMA_CLEAR_FLAG(descriptor, CLEARERR);
+#else
+    DMA_CLEAR_FLAG(descriptor, BB_DMA_FLAGS);
+#endif
+}
+
 static inline bool bbDMAWaitStopped(bbPort_t *bbPort)
 {
     for (unsigned spin = 0; spin < BB_DMA_STOP_SPIN_LIMIT; spin++) {
         if (!(IS_DMA_ENABLED(bbPort->dmaResource))) {
-            DMA_CLEAR_FLAG(bbPort->dmaDescriptor, BB_DMA_FLAGS);
+            bbDMAClearFlags(bbPort->dmaDescriptor);
             NVIC_ClearPendingIRQ((IRQn_Type)bbPort->dmaDescriptor->irqN);
             bbPort->telemetryPending = false;
             return true;
@@ -428,9 +442,13 @@ static inline bool bbDMAWaitStopped(bbPort_t *bbPort)
 // drive the line against it (#15533).
 static inline bool bbDMAServiceFlags(bbPort_t *bbPort, dmaChannelDescriptor_t *descriptor)
 {
+#if defined(UM324xF)
+    const bool transferError = DMA_GET_FLAG_STATUS(descriptor, STATUSERR) != 0;
+#else
     const bool transferError = DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF) != 0;
+#endif
 
-    DMA_CLEAR_FLAG(descriptor, BB_DMA_FLAGS);
+    bbDMAClearFlags(descriptor);
 
     if (!transferError) {
         return false;
@@ -446,7 +464,12 @@ static inline bool bbDMAServiceFlags(bbPort_t *bbPort, dmaChannelDescriptor_t *d
 
 static inline bool bbDMAEventPending(dmaChannelDescriptor_t *descriptor)
 {
+#if defined(UM324xF)
+    return (DMA_GET_FLAG_STATUS(descriptor, STATUSBLOCK) != 0)
+        || (DMA_GET_FLAG_STATUS(descriptor, STATUSERR) != 0);
+#else
     return DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF | DMA_IT_TEIF) != 0;
+#endif
 }
 
 void bbDshotRequestTelemetry(unsigned motorIndex);

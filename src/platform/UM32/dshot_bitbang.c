@@ -266,6 +266,10 @@ static void bbSetupDma(bbPort_t *bbPort)
 
 FAST_IRQ_HANDLER void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
 {
+    if (!bbDMAEventPending(descriptor)) {
+        return;
+    }
+
     dbgPinHi(0);
 
     bbPort_t *bbPort = (bbPort_t *)descriptor->userParam;
@@ -274,7 +278,10 @@ FAST_IRQ_HANDLER void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
 
     bbTIM_DMACmd(bbPort->timhw->tim, bbPort->dmaSource, DISABLE);
 
-    DMA_CLEAR_FLAG(descriptor, CLEARBLOCK);
+    if (bbDMAServiceFlags(bbPort, descriptor)) {
+        dbgPinLo(0);
+        return;
+    }
 
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
@@ -585,28 +592,25 @@ FAST_CODE static void bbUpdateComplete(void)
         }
     }
 
+    bool portReady[MAX_SUPPORTED_MOTOR_PORTS] = { false };
     for (int i = 0; i < usedMotorPorts; i++) {
         bbPort_t *bbPort = &bbPorts[i];
 #ifdef USE_DSHOT_CACHE_MGMT
         SCB_CleanDCache_by_Addr(bbPort->portOutputBuffer, MOTOR_DSHOT_BUF_CACHE_ALIGN_BYTES);
 #endif
-
-#ifdef USE_DSHOT_TELEMETRY
-        if (useDshotTelemetry) {
-            if (bbPort->direction == DSHOT_BITBANG_DIRECTION_INPUT) {
-                bbPort->inputActive = false;
-                bbSwitchToOutput(bbPort);
-            }
-        } else
-#endif
-        {
-            bbSwitchToOutput(bbPort);
+        if (!bbSwitchToOutput(bbPort)) {
+            continue;
         }
+        bbPort->inputActive = false;
+        bbPort->reinitRequired = false;
+        portReady[i] = true;
     }
 
     for (int i = 0; i < usedMotorPorts; i++) {
         bbPort_t *bbPort = &bbPorts[i];
-        bbDMA_Cmd(bbPort, ENABLE);
+        if (portReady[i]) {
+            bbDMA_Cmd(bbPort, ENABLE);
+        }
     }
 
     lastSendUs = micros();
