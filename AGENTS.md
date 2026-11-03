@@ -47,6 +47,7 @@ Betaflight has a framework for most tasks. Use it. Do not write a second solutio
 - **Obey the coding style.** See <https://betaflight.com/docs/development/CodingStyle>. Do not reformat lines that you do not change.
 - **Keep it simple.** Do not add abstractions, libraries or dependencies that the change does not need.
 - **Fix the root cause.** A bug fix must tell why the bug occurred. Do not add a guard that only hides the symptom.
+- **Make sure that the bug can occur.** Before you report or fix a bug, make sure that the firmware can get into that state in real use. Tell how it gets there, for example with a configuration, a sequence of actions or bad data from a device. If the state cannot occur in real use, do not call the change a bug fix.
 - **Refactors do not change behaviour.** If a refactor or cleanup changes behaviour, say so in the pull request. Better, put the behaviour change in a different pull request.
 - **No duplicate code.** If the same code is in two or more places, put it in one function.
 - **No dead code.** Do not add commented-out code, `#if 0` blocks, unused variables or unused functions.
@@ -71,6 +72,7 @@ Betaflight has a framework for most tasks. Use it. Do not write a second solutio
 ### Build system
 
 - **All warnings are errors.** The build uses `-Werror` and `-Wdouble-promotion`. Use `float` and the `f` suffix (`1.0f`). Use `sqrtf()` and `sinf()`, or the fast `sin_approx()` and `atan2_approx()`. Do not use `double`.
+- **Unused parameters.** `-Wextra` makes an unused parameter an error. If a build flag removes all the code that uses a parameter, put `UNUSED(param);` at the start of the function, outside the `#if`.
 - **New files.** Start each new `.c` and `.h` file with the licence header from `DEFAULT_LICENSE.md`. Do not use a different header. Each `.c` file in `src/main` must include `platform.h`. `make checks` finds a missing include.
 - **Generated files.** Do not edit these by hand: `src/main/msp/msp_build_info.c` and `.h` (from `src/utils/make-build-info.py`) and `src/main/target/serial_post.h` (from `src/utils/gen-serial-j2.py`). Change the generator or its input, and generate them again.
 - **New source files.** Add each new `.c` file to `mk/source.mk`. Put code that runs in the gyro or PID loop in `SPEED_OPTIMISED_SRC`. Put other code in `SIZE_OPTIMISED_SRC`.
@@ -106,16 +108,17 @@ Do these checks before you open a pull request. All checks must pass with no new
 
 | Check | Command |
 |-------|---------|
-| Unit tests | `make test` |
+| Unit tests | `make test`. CI runs `make EXTRA_FLAGS=-Werror test-all`, which also runs the tests for each target. |
 | Build an MCU target | `make TARGET=<MCU>`, for example `make TARGET=STM32F405` |
 | Build a board | `make CONFIG=<board>`, for example `make CONFIG=MATEKF411`. The board comes from the `src/config` submodule. Run `make configs` first if the submodule is empty. |
 | Representative CI subset | `make preview` |
-| Static checks | `make checks` |
+| Static checks | `make checks`. CI runs `make EXTRA_FLAGS=-Werror checks`. |
 | Simulator | `make TARGET=SITL` |
 
 - **Build what you change.** Build at least one target for each MCU family that the change affects.
 - **Add unit tests for logic.** Put tests in `src/test/unit/` and add them to `src/test/Makefile`. For a bug fix, add a test that fails without the fix and passes with it, where this is possible.
-- **Hardware tests.** Unit tests cannot test drivers, sensors and timing. For these changes, tell which hardware you used and how you tested it.
+- **Stubs in other tests.** Unit tests replace the functions that the code under test calls with stubs. If you add a call to tested code, other tests can fail to link because they do not have a stub for it. Run all unit tests, not only the test for your file.
+- **Hardware tests.** Unit tests cannot test drivers, sensors and timing. For these changes, tell which hardware you used and how you tested it. Also tell which paths you did not test.
 
 ### Blackbox logs and flight tests
 
