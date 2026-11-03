@@ -136,13 +136,13 @@ If the change can have an effect on flight, a maintainer will ask for a Blackbox
 ## 5. Writing
 
 - **Use ASD-STE100 Simplified Technical English** in commit messages, pull request descriptions, code comments and replies to reviewers. Use short sentences, the active voice and one instruction in each sentence.
-- **Commit message.** Use one commit with a short summary line in the imperative, for example `Fix gyro alignment on BMI270`. In the body, tell why you made the change.
+- **Pull request title and commits.** We squash each pull request into one commit when we merge it. The pull request title becomes the summary line of that commit. Write the title as a short summary in the imperative, for example `Fix gyro alignment on BMI270`. Give each commit a clear message that tells why you made the change.
 - **Pull request description.** Include:
   1. A summary: why you made the change and how it works.
   2. The commands that you used to test it, their results and the hardware tests. Attach a Blackbox log if the change can have an effect on flight.
   3. `Fixes #<number>` if the pull request fixes an issue.
-- **Replies to reviewers.** Answer reviewers yourself. Read the review comment and the code before you reply. Do not let an AI tool answer for you.
-- **Keep the pull request up to date.** Rebase on `master` to resolve conflicts. Do not merge `master` into your branch. A pull request needs two approvals before we merge it.
+- **Replies to reviewers.** You can use a tool to write a draft of a reply. Before you send it, read the review comment, the code and the draft. Send the reply only if it is correct and you agree with it. You are responsible for the reply. You must be able to answer the next questions yourself, without the tool.
+- **Keep the pull request up to date.** Resolve conflicts with `master`. You can merge `master` into your branch or rebase on `master`. A pull request needs two approvals before we merge it.
 
 ## 6. Pull requests that we close
 
