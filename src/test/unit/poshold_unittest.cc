@@ -656,16 +656,16 @@ TEST_F(PosHoldTest, ReleaseDropsFeedforwardSoBrakingOpposesMotion)
 }
 
 // -- Braking exit threshold (ap_stop_threshold, default 10%) --
-// Slot 6 of DEBUG_AUTOPILOT_STOP carries the hold status with +1 added while
-// braking, so a settled hold reads BRAKING_STATUS_HELD and a braking entry
-// reads BRAKING_STATUS_BRAKING.
+// Slot 6 of DEBUG_AUTOPILOT_STOP carries the apStatusFlags bitfield; a settled
+// hold sets AP_STATUS_POSITION_HELD, and a braking entry additionally sets
+// AP_STATUS_BRAKING.
 //
 // A stick release always enters braking; there is no entry-speed gate. The
 // threshold is a percentage of the entry speed, floored at BRAKING_EXIT_SPEED_MIN
 // (1 cm/s), and braking ends once the speed falls below that fraction of the
 // speed it started with.
-static const int BRAKING_STATUS_HELD = 3;
-static const int BRAKING_STATUS_BRAKING = 4;
+static const int BRAKING_STATUS_HELD    = (1 << 3); // AP_STATUS_POSITION_HELD
+static const int BRAKING_STATUS_BRAKING = (1 << 3) | (1 << 5); // AP_STATUS_POSITION_HELD | AP_STATUS_BRAKING
 static const float BRAKING_EXIT_SPEED_MIN_CMS = 1.0f;
 
 TEST_F(PosHoldTest, EntrySpeedAboveStopThresholdStartsBraking)
@@ -1172,26 +1172,28 @@ protected:
         mockTargetVelCmS = (vector3_t){{0.0f, cmS, 0.0f}};
     }
 
-    // Status slot 7 carries +10 for nav active and +20 for the anchor being
-    // off, so the anchored/velocity split is directly observable.
-    enum { NAV_STATUS_ANCHORED = 10, NAV_STATUS_VELOCITY = 30 };
+    // Status slot 7 carries the apStatusFlags bitfield: bit 0 = nav active,
+    // bit 1 = anchor off. Anchored = nav active without anchor-off; velocity
+    // mode = nav active with anchor-off.
+    enum { NAV_STATUS_ANCHORED = (1 << 0), NAV_STATUS_VELOCITY = (1 << 0) | (1 << 1) };
 
+    // Mask to the two nav-relevant bits (nav active, anchor off) so the
+    // comparison is exact regardless of what other operational bits are set.
     int navStatus()
     {
         debugMode = DEBUG_AUTOPILOT_PID;
         runIterations(1);
-        const int status = debug[7];
+        const int status = debug[7] & ((1 << 0) | (1 << 1));
         debugMode = DEBUG_NONE;
         return status;
     }
 
-    // DEBUG_POSITION_NAV slot 7 carries +10 for the anchor being off and +1 while the buildup
-    // clamp is scaling the drive.
+    // DEBUG_POSITION_NAV slot 7 carries bit 0 = anchor off, bit 1 = buildup clamped.
     bool buildupClampEngaged()
     {
         debugMode = DEBUG_POSITION_NAV;
         runIterations(1);
-        const bool clamped = (debug[7] % 10) == 1;
+        const bool clamped = (debug[7] & (1 << 1)) != 0;
         debugMode = DEBUG_NONE;
         return clamped;
     }

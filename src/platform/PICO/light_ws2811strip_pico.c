@@ -37,6 +37,7 @@
 #include "drivers/light_ws2811strip.h"
 #include "drivers/nvic.h"
 #include "hardware/clocks.h"
+#include "hardware/gpio.h"
 #include "hardware/pio.h"
 
 #define WS2812_WRAP_TARGET 0
@@ -88,6 +89,10 @@ static inline pio_sm_config ws2812_program_get_default_config(uint offset)
 static inline void ws2812_program_init(PIO pio, uint sm, uint offset, uint pin, float freq, bool rgbw)
 {
     pio_gpio_init(pio, pin);
+#ifdef LED_STRIP_INVERTED
+    // The board drives the LED pad through an inverting stage (e.g. an N-FET with a pull-up to 5V)
+    gpio_set_outover(pin, GPIO_OVERRIDE_INVERT);
+#endif
     pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
     pio_sm_config c = ws2812_program_get_default_config(offset);
     sm_config_set_sideset_pins(&c, pin);
