@@ -431,6 +431,11 @@ FAST_CODE void spiInternalStopDMA(const extDevice_t *dev)
 #endif
 }
 
+void spiInternalAbortDMA(const extDevice_t *dev)
+{
+    spiInternalStopDMA(dev);
+}
+
 FAST_CODE void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segment)
 {
 #ifndef USE_DMA

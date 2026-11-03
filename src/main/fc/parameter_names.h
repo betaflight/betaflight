@@ -215,6 +215,7 @@
 #define PARAM_NAME_AP_WING_VERT_ACCEL "ap_wing_vert_accel"
 #define PARAM_NAME_AP_WING_CRUISE_SPEED "ap_wing_cruise_speed"
 #define PARAM_NAME_AP_WING_TURN_PITCH_FF "ap_wing_turn_pitch_ff"
+#define PARAM_NAME_AP_WING_TURN_YAW_FF "ap_wing_turn_yaw_ff"
 #define PARAM_NAME_AP_WING_MAX_BANK "ap_wing_max_bank"
 #define PARAM_NAME_AP_WING_L1_PERIOD "ap_wing_l1_period"
 #define PARAM_NAME_AP_WING_L1_DAMPING "ap_wing_l1_damping"
@@ -342,7 +343,6 @@
 #define PARAM_NAME_GPS_RESCUE_MIN_SATS "gps_rescue_min_sats"
 #define PARAM_NAME_GPS_RESCUE_ALLOW_ARMING_WITHOUT_FIX "gps_rescue_allow_arming_without_fix"
 
-#define PARAM_NAME_GPS_RESCUE_YAW_P "gps_rescue_yaw_p"
 #endif // USE_GPS_RESCUE
 
 #ifdef USE_GPS_LAP_TIMER

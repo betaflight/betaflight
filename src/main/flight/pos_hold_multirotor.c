@@ -140,12 +140,15 @@ void updatePosHold(timeUs_t currentTimeUs)
                 // blind, so resuming against the pre-dropout target would
                 // lurch toward it — or trip the sanity fence on the spot.
                 // Re-anchor the hold at the current position instead.
+                autopilotSetSensorsOkStatus(true); // clear the latched SensorsNotOk bit
                 positionControlReanchor();
             }
             posHold.isControlOk = positionControl();
         } else {
-            // 333 traps the sensors-not-OK path
-            DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 333);  //!< Status Flags
+            // Latch the SensorsNotOk failure bit; positionControl() is skipped while
+            // sensors are out, so the AUTOPILOT_PID / AUTOPILOT_STOP slots are
+            // written here to keep the log honest.
+            autopilotSetSensorsOkStatus(false);
             for (unsigned i = 0; i < RP_AXIS_COUNT; i++) {
                 autopilotAngle[i] = 0.0f;
             }
