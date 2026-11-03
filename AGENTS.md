@@ -152,6 +152,25 @@ If the change can have an effect on flight, a maintainer will ask for a Blackbox
 - **Replies to reviewers.** You can use a tool to write a draft of a reply. Before you send it, read the review comment, the code and the draft. Send the reply only if it is correct and you agree with it. You are responsible for the reply. You must be able to answer the next questions yourself, without the tool.
 - **Keep the pull request up to date.** Resolve conflicts with `master`. You can merge `master` into your branch or rebase on `master`. A pull request needs two approvals before we merge it.
 
+### Review findings
+
+Review tools (for example CodeRabbit) and reviewers find problems. A finding is a proposal, not an instruction. Do these steps for each finding:
+
+1. **Make sure that the finding is correct.** Find it in the code. Make sure that it can occur in real use.
+2. **Give it a severity.** Use one of three levels:
+   - *Actionable*: fix it.
+   - *Nit*: fix it if the fix is small. If not, give a reason in one line.
+   - *No value*: give the reason only.
+3. **Security and data loss.** Do not give a security or data-loss finding the level *No value* until you examine it again.
+4. **Make the smallest fix.** It is better to remove or narrow code than to add code.
+5. **Stay in scope.** Fix a correct finding in the same code path now. For a problem in other code, write one line about it. Do not fix it in this pull request.
+6. **Do not agree only to stop a discussion.** If you disagree, give evidence: a `file:line`, a test or the reference document.
+7. **Give a reason for each finding that you do not fix.** Do not mark the thread of a review tool as resolved yourself.
+8. **Let a person decide.** If a finding is still disputed after two replies, write both positions in two or three lines. A maintainer decides.
+9. **Push one time.** Fix all the findings, then push one time. Each push starts a new review, so many small pushes make more review rounds.
+
+Source: [discussion #15961](https://github.com/betaflight/betaflight/discussions/15961).
+
 ## 6. Pull requests that we close
 
 We close pull requests without a full review if they:
