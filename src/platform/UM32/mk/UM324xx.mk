@@ -232,9 +232,23 @@ DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_
 # NOT_OPTIMISED_SRC path so the flags win over the default -flto profile.
 # Entries MUST be full paths with "./" prefix (raw $< match, no
 # normalisation). Never list boot-path files or files containing IRQ
-# handlers. Empty when QSPI_XIP=no — files fall back to .text (FLASH1).
+# handlers. CLI commands and CMS configuration pages are cold paths; the
+# scheduler, flight loop, CMS polling, and peripheral drivers stay internal.
+# Empty when QSPI_XIP=no — files fall back to .text (FLASH1).
 ifeq ($(QSPI_XIP),yes)
-EX_FLASH_SRC := ./src/platform/UM32/debug.c \
+EX_FLASH_SRC := ./src/main/cli/cli.c \
+                ./src/main/cli/settings.c \
+                ./src/main/cms/cms_menu_blackbox.c \
+                ./src/main/cms/cms_menu_failsafe.c \
+                ./src/main/cms/cms_menu_firmware.c \
+                ./src/main/cms/cms_menu_gps_rescue_multirotor.c \
+                ./src/main/cms/cms_menu_gps_rescue_wing.c \
+                ./src/main/cms/cms_menu_gps_lap_timer.c \
+                ./src/main/cms/cms_menu_main.c \
+                ./src/main/cms/cms_menu_misc.c \
+                ./src/main/cms/cms_menu_power.c \
+                ./src/main/cms/cms_menu_saveexit.c \
+                ./src/platform/UM32/debug.c \
                 ./src/platform/UM32/sysfunc_um324xx.c \
                 ./src/main/cms/cms_menu_imu.c \
                 ./src/main/cms/cms_menu_osd.c

@@ -42,6 +42,11 @@
 
 #include "msc/usbd_storage.h"
 
+// Platforms may keep the disk directory and filenames in slower CPU RAM.
+#ifndef MSC_METADATA_ATTRIBUTES
+#define MSC_METADATA_ATTRIBUTES
+#endif
+
 #define FILESYSTEM_SIZE_MB 256
 #define HDR_BUF_SIZE 32
 
@@ -276,7 +281,7 @@ static const emfat_entry_t entriesPredefined[] =
 #define EMFAT_MAX_LOG_ENTRY 100
 #define EMFAT_MAX_ENTRY (PREDEFINED_ENTRY_COUNT + EMFAT_MAX_LOG_ENTRY + APPENDED_ENTRY_COUNT)
 
-static emfat_entry_t entries[EMFAT_MAX_ENTRY];
+static emfat_entry_t entries[EMFAT_MAX_ENTRY] MSC_METADATA_ATTRIBUTES;
 
 emfat_t emfat;
 static uint32_t cmaTime = CMA_TIME;
@@ -293,7 +298,7 @@ static void emfat_set_entry_cma(emfat_entry_t *entry)
 #ifdef USE_FLASHFS
 static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t offset, uint32_t size)
 {
-    static char logNames[EMFAT_MAX_LOG_ENTRY][8+1+3+1]; // 8.3 name plus terminator
+    static char logNames[EMFAT_MAX_LOG_ENTRY][8+1+3+1] MSC_METADATA_ATTRIBUTES; // 8.3 name plus terminator
 
     tfp_sprintf(logNames[number], FC_FIRMWARE_IDENTIFIER "_%03d.BBL", number + 1);
     entry->name = logNames[number];
