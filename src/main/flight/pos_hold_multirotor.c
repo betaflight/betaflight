@@ -71,7 +71,7 @@ static void posHoldCheckSticks(void)
     setSticksActiveStatus(sticksDeflected);
 }
 
-static bool sensorsOk(void)
+static bool sensorsOk(bool allowHeadingRecovery)
 {
     if (!positionEstimatorIsValidXY()) {
         DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 6, 1);  //!< Position Hold Sensor Status
@@ -79,7 +79,7 @@ static bool sensorsOk(void)
     }
 
     if (positionEstimatorIsHeadingRequired()) {
-        if (!imuIsHeadingValid()) {
+        if (!imuIsHeadingValid() && !allowHeadingRecovery) {
             DEBUG_SET(DEBUG_AUTOPILOT_HEADING, 6, 2);  //!< Position Hold Sensor Status
             return false;
         }
@@ -133,19 +133,22 @@ void updatePosHold(timeUs_t currentTimeUs)
     if (posHold.isEnabled) {
         posHoldCheckSticks();
         const bool sensorsWereOk = posHold.areSensorsOk;
-        posHold.areSensorsOk = sensorsOk();
+        posHold.areSensorsOk = sensorsOk(isHeadingRecoveryActive());
         if (posHold.areSensorsOk) {
             if (!sensorsWereOk) {
                 // Sensors came back after a dropout: the craft drifted while
                 // blind, so resuming against the pre-dropout target would
                 // lurch toward it — or trip the sanity fence on the spot.
                 // Re-anchor the hold at the current position instead.
+                autopilotSetSensorsOkStatus(true); // clear the latched SensorsNotOk bit
                 positionControlReanchor();
             }
             posHold.isControlOk = positionControl();
         } else {
-            // 333 traps the sensors-not-OK path
-            DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 333);  //!< Status Flags
+            // Latch the SensorsNotOk failure bit; positionControl() is skipped while
+            // sensors are out, so the AUTOPILOT_PID / AUTOPILOT_STOP slots are
+            // written here to keep the log honest.
+            autopilotSetSensorsOkStatus(false);
             for (unsigned i = 0; i < RP_AXIS_COUNT; i++) {
                 autopilotAngle[i] = 0.0f;
             }
@@ -168,7 +171,7 @@ bool posHoldFailure(void) {
 // Pre-engagement readiness: the entry conditions alone, without the
 // control-failure checks in posHoldFailure() that only apply once engaged.
 bool posHoldReady(void) {
-    return sensorsOk();
+    return sensorsOk(false);
 }
 
 #endif // USE_POSITION_HOLD

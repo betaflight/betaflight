@@ -110,14 +110,14 @@ static uint8_t xBusRj01CRC8(uint8_t inData, uint8_t seed)
     return seed;
 }
 
-static void xBusUnpackModeBFrame(uint8_t offsetBytes)
+static void xBusUnpackModeBFrame(uint8_t offsetBytes, uint8_t frameLength)
 {
     // Calculate the CRC of the incoming frame
     // Calculate on all bytes except the final two CRC bytes
-    const uint16_t inCrc = crc16_ccitt_update(0, (uint8_t*)&xBusFrame[offsetBytes], xBusFrameLength - 2);
+    const uint16_t inCrc = crc16_ccitt_update(0, (uint8_t*)&xBusFrame[offsetBytes], frameLength - 2);
 
     // Get the received CRC
-    const uint16_t crc = (((uint16_t)xBusFrame[offsetBytes + xBusFrameLength - 2]) << 8) + ((uint16_t)xBusFrame[offsetBytes + xBusFrameLength - 1]);
+    const uint16_t crc = (((uint16_t)xBusFrame[offsetBytes + frameLength - 2]) << 8) + ((uint16_t)xBusFrame[offsetBytes + frameLength - 1]);
 
     if (crc == inCrc) {
         // Unpack the data, we have a valid frame, only 12 channel unpack also when receive 16 channel
@@ -179,7 +179,7 @@ static void xBusUnpackRJ01Frame(void)
     }
 
     // Now unpack the "embedded MODE B frame"
-    xBusUnpackModeBFrame(XBUS_RJ01_OFFSET_BYTES);
+    xBusUnpackModeBFrame(XBUS_RJ01_OFFSET_BYTES, XBUS_FRAME_SIZE_A1);
 }
 
 // Receive ISR callback
@@ -203,8 +203,11 @@ static void xBusDataReceive(uint16_t c, void *data)
     if (xBusFramePosition == 0) {
         if (c == XBUS_START_OF_FRAME_BYTE_A1) {
             xBusDataIncoming = true;
-            xBusFrameLength = XBUS_FRAME_SIZE_A1;   //decrease framesize (when receiver change, otherwise board must reboot)
-        } else if (c == XBUS_START_OF_FRAME_BYTE_A2) {//16channel packet
+            // RJ01 wraps a 27-byte MODE_B frame in a 33-byte outer frame.
+            // Keep receiving the outer frame while parsing the inner frame with
+            // its own length later.
+            xBusFrameLength = (xBusProvider == SERIALRX_XBUS_MODE_B_RJ01) ? XBUS_RJ01_FRAME_SIZE : XBUS_FRAME_SIZE_A1;
+        } else if (c == XBUS_START_OF_FRAME_BYTE_A2 && xBusProvider == SERIALRX_XBUS_MODE_B) {//16channel packet
             xBusDataIncoming = true;
             xBusFrameLength = XBUS_FRAME_SIZE_A2;   //increase framesize
         }
@@ -221,7 +224,7 @@ static void xBusDataReceive(uint16_t c, void *data)
     if (xBusFramePosition == xBusFrameLength) {
         switch (xBusProvider) {
         case SERIALRX_XBUS_MODE_B:
-            xBusUnpackModeBFrame(0);
+            xBusUnpackModeBFrame(0, xBusFrameLength);
             FALLTHROUGH; //!!TODO - check this fall through is correct
         case SERIALRX_XBUS_MODE_B_RJ01:
             xBusUnpackRJ01Frame();

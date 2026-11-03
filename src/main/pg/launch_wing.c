@@ -28,7 +28,7 @@
 
 #include "launch_wing.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(launchWingConfig_t, launchWingConfig, PG_LAUNCH_WING_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(launchWingConfig_t, launchWingConfig, PG_LAUNCH_WING_CONFIG, 1);
 
 PG_RESET_TEMPLATE(launchWingConfig_t, launchWingConfig,
     .climbAngleDeg = 18,
@@ -46,6 +46,7 @@ PG_RESET_TEMPLATE(launchWingConfig_t, launchWingConfig,
     .maxAltitudeM = 0,
     .endTimeMs = 3000,
     .abortDeadbandPercent = 20,
+    .abortAngleDeg = 60,
 );
 
 #endif

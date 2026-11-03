@@ -138,6 +138,10 @@ DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/STM32N657XX_RAM.ld
 DEVICE_FLAGS       += -DN6_RAM_ONLY_BUILD
 else
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/STM32N657XX_LRUN.ld
+# LRUN has outgrown Thumb-2 PC-relative literal pool reach: with everything merged into
+# one LTO unit the assembler fails with "offset out of range". Size cost is ~7% .text,
+# which LRUN has room for. FSBL_FULL does not, so it keeps LTO.
+LTO                 := no
 endif
 STARTUP_SRC         = STM32/startup/startup_stm32n657xx.s
 MCU_FLASH_SIZE     := 2048

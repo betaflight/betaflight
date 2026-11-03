@@ -25,8 +25,8 @@
  * result in the file pointer being pointed at the first free block found, or at the end of the device if the
  * flash chip is full.
  *
- * Note that bits can only be set to 0 when writing, not back to 1 from 0. You must erase sectors in order
- * to bring bits back to 1 again.
+ * Flash devices require an erase before bits can return to 1.  Byte-writable
+ * devices such as F-RAM emulate the same erased (0xFF) storage semantics.
  *
  * In future, we can add support for multiple different flash chips by adding a flash device driver vtable
  * and make calls through that, at the moment flashfs just calls m25p16_* routines explicitly.
@@ -572,20 +572,15 @@ void flashfsWrite(const uint8_t *data, unsigned int len, bool sync)
  */
 int flashfsReadAbs(uint32_t address, uint8_t *buffer, unsigned int len)
 {
-    int bytesRead;
-
-    // Did caller try to read past the end of the volume?
-    if (address + len > flashfsSize) {
-        // Truncate their request
-        len = flashfsSize - address;
+    len = flashfsReadLength(flashfsSize, address, len);
+    if (!len) {
+        return 0;
     }
 
     // Since the read could overlap data in our dirty buffers, force a sync to clear those first
     flashfsFlushSync();
 
-    bytesRead = flashReadBytes(address, buffer, len);
-
-    return bytesRead;
+    return flashReadBytes(address, buffer, len);
 }
 
 /**
@@ -671,6 +666,7 @@ void flashfsClose(void)
 {
     switch(flashGeometry->flashType) {
     case FLASH_TYPE_NOR:
+    case FLASH_TYPE_FRAM:
         break;
 
     case FLASH_TYPE_NAND:

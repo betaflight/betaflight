@@ -25,10 +25,6 @@
 #define TARGET_BOARD_IDENTIFIER "A425"
 #endif
 
-#ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight APM32F425"
-#endif
-
 #ifndef APM32F425
 #define APM32F425
 #endif

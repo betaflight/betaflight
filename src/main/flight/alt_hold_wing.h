@@ -31,9 +31,18 @@ void altHoldInit(void);
 // The configured rate a climb or descent runs at when it does not state its own (cm/s).
 float altHoldGetClimbRateCmS(void);
 
+// Command an emergency descent at rateCmS; alt hold owns the throttle while it runs.
+void altHoldSetEmergencyDescent(bool active, float rateCmS);
+// Coming down to land where it is, the ground has been met and the throttle is closed.
+bool altHoldGroundContact(void);
+
 bool altHoldUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
 void updateAltHold(timeUs_t currentTimeUs);
 bool isAltHoldActive(void);
+
+#ifdef UNIT_TEST
+float altHoldGetTargetAltitudeCm(void);
+#endif
 
 #endif // USE_ALTITUDE_HOLD
 #endif // USE_WING

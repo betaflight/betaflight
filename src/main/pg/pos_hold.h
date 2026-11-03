@@ -23,3 +23,5 @@
 
 #include "pg/pos_hold_multirotor.h"
 #include "pg/pos_hold_wing.h"
+
+#define POSHOLD_DEADBAND_MAX 50

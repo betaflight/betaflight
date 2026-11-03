@@ -25,6 +25,15 @@
 
 #include "pg/pg.h"
 
+#define AUTOPILOT_MAX_ANGLE_MIN 10
+#define AUTOPILOT_MAX_ANGLE_MAX 70
+#define AUTOPILOT_THROTTLE_MIN_MIN 1050
+#define AUTOPILOT_THROTTLE_MIN_MAX 1400
+#define AUTOPILOT_THROTTLE_MAX_MIN 1400
+#define AUTOPILOT_THROTTLE_MAX_MAX 2000
+#define AUTOPILOT_HOVER_THROTTLE_MAX 1700
+#define AUTOPILOT_PID_GAIN_MAX 200
+
 // Yaw control modes
 typedef enum {
     YAW_MODE_VELOCITY = 0,  // Multirotor: point nose in velocity direction
@@ -82,10 +91,10 @@ typedef struct autopilotConfig_s {
     // Leg-line carrot path tracking and turn-angle cornering (en-route FLYOVER/FLYBY legs)
     uint16_t navCornerSpeed;          // cm/s, minimum speed carried across a waypoint gate (default 220)
     uint16_t navCornerDeltaV;         // cm/s, constant velocity-change budget per corner (default 440)
-    uint16_t navDecel;                // cm/s^2, approach deceleration for the corner speed profile (default 100)
-    uint16_t navAccel;                // cm/s^2, carrot speed slew rate (default 250)
-    uint8_t  navCarrotLeadTime;       // deciseconds of travel the carrot leads the craft by (default 12 = 1.2s)
-    uint16_t navCarrotLeadMax;        // cm, maximum carrot lead ahead of the craft (default 2500)
+    uint16_t navDecel;                // cm/s^2, approach deceleration for the corner speed profile (default 250)
+    uint16_t navAccel;                // cm/s^2, how fast a leg's commanded velocity may change: the carrot's, and a point leg's ramp (default 250)
+    uint8_t  navCarrotLeadTime;       // deciseconds of travel ahead of it the carrot steers onto the leg line toward (default 12 = 1.2s)
+    uint16_t navCarrotLeadMax;        // cm, the most that look-ahead may be (default 2500)
     uint16_t navPreturnDist;          // cm, approach zone over which the nose blends onto the next leg (default 1500)
 
     // Yaw control parameters

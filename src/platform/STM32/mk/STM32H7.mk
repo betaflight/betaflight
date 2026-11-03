@@ -51,6 +51,7 @@ STDPERIPH_SRC   = \
             stm32h7xx_hal_uart_ex.c \
             stm32h7xx_ll_cordic.c \
             stm32h7xx_ll_crs.c \
+            stm32h7xx_ll_bdma.c \
             stm32h7xx_ll_dma.c \
             stm32h7xx_ll_fmac.c \
             stm32h7xx_ll_i2c.c \
@@ -119,6 +120,13 @@ DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
 #
 ifeq ($(TARGET_MCU),STM32H743xx)
 DEVICE_FLAGS       += -DSTM32H743xx
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h743_2m.ld
+STARTUP_SRC         = STM32/startup/startup_stm32h743xx.s
+MCU_FLASH_SIZE     := 2048
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+
+else ifeq ($(TARGET_MCU),STM32H753xx)
+DEVICE_FLAGS       += -DSTM32H753xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h743_2m.ld
 STARTUP_SRC         = STM32/startup/startup_stm32h743xx.s
 MCU_FLASH_SIZE     := 2048

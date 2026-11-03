@@ -71,6 +71,7 @@ struct quadSpiResource_s
 #define MAX_QUADSPI_PIN_SEL  1
 
 #define QUADSPI_TRAIT_CS_SOFTWARE       1
+#define QUADSPI_TRAIT_SEQUENCE          1
 
 #endif
 
@@ -192,4 +193,4 @@ extern uint32_t systemUniqueId[3];
 #define OSD_SMALLFONT_ROWS_NTSC     19
 #endif
 
-#endif //  OSD_FB_PICO_ENABLE_PIXEL_MODE
+#endif //  OSD_FB_ENABLE_SMALLFONT

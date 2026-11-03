@@ -27,11 +27,17 @@
 
 #include "gps_rescue.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 7);
+PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 8);
 
 PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
-    .allowArmingWithoutFix = false,
+    .minStartDistM = 100,
+    .altitudeMode = GPS_RESCUE_ALT_MODE_MAX,
+    .initialClimbM = 10,
+    .ascendRate = 300,
+    .returnAltitudeM = 50,
+    .descendRate = 200,
     .minSats = 8,
+    .allowArmingWithoutFix = false,
 );
 
 #endif // USE_GPS_RESCUE

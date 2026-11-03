@@ -28,7 +28,24 @@
 
 #include "autopilot.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 13);
+#define AUTOPILOT_CONFIG_VERSION 13
+
+#ifdef USE_WING
+// one version ahead in the 4 bit field, so a wing flashed over a build that hid these settings starts from the wing defaults
+#define AUTOPILOT_CONFIG_VERSION_BUILD ((AUTOPILOT_CONFIG_VERSION + 1) & 0xf)
+#define DEFAULT_WAYPOINT_ARRIVAL_RADIUS 1000    // 10m: a wing passes a waypoint at speed
+#define DEFAULT_GEOFENCE_ACTION AP_GEOFENCE_RTH
+#define DEFAULT_LANDING_DESCENT_RATE 200        // a wing comes down its loiter over the touchdown at 2 m/s
+#define DEFAULT_LANDING_DETECTION_TIME 20       // a wing sits still for 2 s on the ground before it is landed
+#else
+#define DEFAULT_WAYPOINT_ARRIVAL_RADIUS 500     // 5m for FLYOVER/FLYBY
+#define DEFAULT_GEOFENCE_ACTION AP_GEOFENCE_LAND // Land at current position
+#define DEFAULT_LANDING_DESCENT_RATE 50         // 50 cm/s = 0.5 m/s descent rate
+#define DEFAULT_LANDING_DETECTION_TIME 10       // 1 second below landing altitude for touchdown
+#define AUTOPILOT_CONFIG_VERSION_BUILD AUTOPILOT_CONFIG_VERSION
+#endif
+
+PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, AUTOPILOT_CONFIG_VERSION_BUILD);
 
 PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .landingAltitudeM = 4,
@@ -54,7 +71,7 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .maxVelocity = 500,               // 5 m/s max velocity setpoint at full stick
 
     // Waypoint navigation parameters
-    .waypointArrivalRadius = 500,     // 5m for FLYOVER/FLYBY
+    .waypointArrivalRadius = DEFAULT_WAYPOINT_ARRIVAL_RADIUS,
     .waypointHoldRadius = 200,        // 2m for HOLD/LAND
     .stickDeadband = 50,              // RC units
     .throttleDeadband = 50,           // RC units
@@ -62,14 +79,13 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     // Leg-line carrot path tracking and turn-angle cornering
     .navCornerSpeed = 220,            // 2.2 m/s corner-speed floor
     .navCornerDeltaV = 440,           // 4.4 m/s per-corner delta-v budget
-    .navDecel = 250,                  // 2.5 m/s^2 approach deceleration; with the chase-lag
-                                      // compensated profile this stays trackable through the
-                                      // pursuit dynamics (brake authority grows with the gap
-                                      // and with drag, both rising with speed), and long legs
+    .navDecel = 250,                  // 2.5 m/s^2 approach deceleration; with the lag
+                                      // compensated profile this stays trackable, and long legs
                                       // no longer begin braking hundreds of metres out
-    .navAccel = 250,                  // 2.5 m/s^2 carrot slew
-    .navCarrotLeadTime = 12,          // 1.2 s carrot lead
-    .navCarrotLeadMax = 2500,         // 25 m maximum carrot lead
+    .navAccel = 250,                  // 2.5 m/s^2 carrot acceleration, turning and speeding up,
+                                      // and the ramp a point leg's commanded velocity changes at
+    .navCarrotLeadTime = 12,          // 1.2 s carrot look-ahead onto the leg line
+    .navCarrotLeadMax = 2500,         // 25 m maximum carrot look-ahead
     .navPreturnDist = 1500,           // 15 m pre-turn blend zone
 
     // Yaw control parameters
@@ -87,8 +103,8 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .holdFigure8Width = 2000,         // 20m figure-8 width
 
     // Landing sequence
-    .landingDescentRate = 50,         // 50 cm/s = 0.5 m/s descent rate
-    .landingDetectionTime = 10,       // 1 second below landing altitude for touchdown
+    .landingDescentRate = DEFAULT_LANDING_DESCENT_RATE,
+    .landingDetectionTime = DEFAULT_LANDING_DETECTION_TIME,
     .landingSpiralEnable = 1,         // Spiral descent enabled (avoid vortex ring state)
     .landingSpiralRadius = 200,       // 2m spiral radius
     .landingSpiralRate = 10,          // 10 deg/s rotation rate
@@ -111,5 +127,5 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
 
     // Safety: Geofence
     .maxDistanceFromHomeM = 0,            // Disabled by default
-    .geofenceAction = AP_GEOFENCE_LAND,   // Land at current position
+    .geofenceAction = DEFAULT_GEOFENCE_ACTION,
 );

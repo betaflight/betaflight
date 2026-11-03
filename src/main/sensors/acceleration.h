@@ -30,6 +30,8 @@
 
 #include "sensors/sensors.h"
 
+#define ACC_TRIM_MAX 300
+
 // Type of accelerometer used/detected
 // Acc hardware types were updated in PR #14087 (removed ACC_ADXL345, ACC_MMA8452, ACC_BMA280, ACC_LSM303DLHC)
 typedef enum {
@@ -59,7 +61,9 @@ typedef enum {
     ACC_ICM42622P,
     ACC_ICM42686P,
     ACC_ICM56686,
+    ACC_BMI423,
     ACC_VIRTUAL,
+    ACC_LSM6DSV32X,
     ACC_HARDWARE_COUNT
 } accelerationSensor_e;
 

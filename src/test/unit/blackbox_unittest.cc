@@ -23,6 +23,7 @@ extern "C" {
     #include "build/debug.h"
 
     #include "blackbox/blackbox.h"
+    #include "blackbox/blackbox_fielddefs.h"
     #include "common/utils.h"
 
     #include "pg/pg.h"
@@ -51,12 +52,14 @@ extern "C" {
 
     extern int16_t blackboxIInterval;
     extern int16_t blackboxPInterval;
+    bool testBlackboxConditionUncached(flightLogFieldCondition_e condition);
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
 gyroDev_t gyroDev;
+static bool servosPresent = false; // returned by the hasServos() stub
 
 TEST(BlackboxTest, TestInitIntervals)
 {
@@ -376,6 +379,23 @@ TEST(BlackboxTest, Test_CalculateRates)
 
 }
 
+TEST(BlackboxTest, Test_servo_field_disable)
+{
+    // CONDITION(SERVOS) used to test the bare FIELD_SELECT(SERVO) constant instead of
+    // isFieldEnabled(), so blackbox_disable_servos could never take the servo fields out of the log
+    servosPresent = true;
+    blackboxConfigMutable()->fields_disabled_mask = 0;
+    EXPECT_TRUE(testBlackboxConditionUncached(FLIGHT_LOG_FIELD_CONDITION_SERVOS));
+
+    blackboxConfigMutable()->fields_disabled_mask = 1 << FLIGHT_LOG_FIELD_SELECT_SERVO;
+    EXPECT_FALSE(testBlackboxConditionUncached(FLIGHT_LOG_FIELD_CONDITION_SERVOS));
+
+    // an enabled field still needs a servo mixer before anything is logged
+    servosPresent = false;
+    blackboxConfigMutable()->fields_disabled_mask = 0;
+    EXPECT_FALSE(testBlackboxConditionUncached(FLIGHT_LOG_FIELD_CONDITION_SERVOS));
+}
+
 
 // STUBS
 extern "C" {
@@ -411,7 +431,7 @@ boxBitmask_t rcModeActivationMask;
 void mspSerialAllocatePorts(void) {}
 uint32_t getArmingBeepTimeMicros(void) {return 0;}
 uint16_t getBatteryVoltageLatest(void) {return 0;}
-bool hasServos(void) { return false; }
+bool hasServos(void) { return servosPresent; }
 uint8_t getMotorCount(void) {return 4;}
 bool areMotorsRunning(void) { return false; }
 bool IS_RC_MODE_ACTIVE(boxId_e) {return false;}

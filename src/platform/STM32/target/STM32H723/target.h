@@ -24,10 +24,6 @@
 #define TARGET_BOARD_IDENTIFIER "H723"
 #endif
 
-#ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight - STM32H723"
-#endif
-
 #if !defined(USE_I2C)
 #define USE_I2C
 #define USE_I2C_DEVICE_1
@@ -93,7 +89,6 @@
 #define USE_ADC
 
 #define USE_EXTI
-#define USE_TIMER_UP_CONFIG
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x20000) // 128K sectors
 

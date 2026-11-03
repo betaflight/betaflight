@@ -51,7 +51,7 @@
 #define STM32G4
 #endif
 
-#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx) || defined(STM32H757xx)
+#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx) || defined(STM32H753xx) || defined(STM32H757xx)
 #include "stm32h7xx.h"
 #include "stm32h7xx_hal.h"
 #include "system_stm32h7xx.h"
@@ -59,6 +59,7 @@
 #include "stm32h7xx_ll_spi.h"
 #include "stm32h7xx_ll_usart.h"
 #include "stm32h7xx_ll_gpio.h"
+#include "stm32h7xx_ll_bdma.h"
 #include "stm32h7xx_ll_dma.h"
 #include "stm32h7xx_ll_rcc.h"
 #include "stm32h7xx_ll_bus.h"
@@ -477,6 +478,8 @@
 #if defined(STM32H7)
 #define DMA_RAM __attribute__((section(".DMA_RAM"), aligned(32)))
 #define DMA_RW_AXI __attribute__((section(".DMA_RW_AXI"), aligned(32)))
+// D3 SRAM4, reachable by BDMA. NOLOAD like DMA_RAM: not zeroed or initialised at startup
+#define BDMA_RAM __attribute__((section(".BDMA_RAM"), aligned(4)))
 extern uint8_t _dmaram_start__;
 extern uint8_t _dmaram_end__;
 
@@ -516,6 +519,7 @@ extern uint8_t _dmaram_end__;
 #else
 #define DMA_RAM
 #define DMA_RW_AXI
+#define BDMA_RAM
 #define DMA_RAM_R
 #define DMA_RAM_W
 #define DMA_RAM_RW
@@ -582,7 +586,7 @@ extern uint8_t _dmaram_end__;
 
 #endif
 
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx) || defined(STM32H757xx)
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx) || defined(STM32H753xx) || defined(STM32H757xx)
 #define FLASH_CONFIG_STREAMER_BUFFER_SIZE 32  // Flash word = 256-bits (8 rows, uint32_t per row - 8 x 32)
 #define FLASH_CONFIG_BUFFER_TYPE uint32_t
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H5) || defined(STM32C5)
