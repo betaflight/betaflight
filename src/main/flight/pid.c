@@ -964,7 +964,15 @@ STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
 }
 #endif
 
-static FAST_CODE_NOINLINE void disarmOnImpact(void)
+// landing_disarm_threshold units: 70 is a conservative EZ disarm starting point, well clear of acc noise
+#define AUTO_LANDING_DISARM_THRESHOLD (70 * 10.0f)
+
+static bool isAutoLandingActive(void)
+{
+    return !isFixedWing() && (FLIGHT_MODE(GPS_RESCUE_MODE) || (FLIGHT_MODE(FAILSAFE_MODE) && FLIGHT_MODE(ALT_HOLD_MODE)));
+}
+
+static FAST_CODE_NOINLINE void disarmOnImpact(float threshold)
 {
     const bool autopilotOwnsThrottle = FLIGHT_MODE(ALT_HOLD_MODE | GPS_RESCUE_MODE);
     // if, being armed, and after takeoff...
@@ -981,7 +989,7 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
         // for more reliable disarm with gentle controlled landings
         const float lowAltitudeSensitivity = (autopilotOwnsThrottle && isBelowLandingAltitude()) ? 1.5f : 1.0f;
         // and disarm if jerk exceeds threshold...
-        if ((acc.jerkMagnitude * lowAltitudeSensitivity) > pidRuntime.landingDisarmThreshold) {
+        if ((acc.jerkMagnitude * lowAltitudeSensitivity) > threshold) {
             // then disarm
             setArmingDisabled(ARMING_DISABLED_ARM_SWITCH); // NB: need a better message
             disarm(DISARM_REASON_LANDING);
@@ -1235,7 +1243,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     rotateItermAndAxisError();
 
     if (pidRuntime.useEzDisarm) {
-        disarmOnImpact();
+        disarmOnImpact(pidRuntime.landingDisarmThreshold);
+    } else if (isAutoLandingActive()) {
+        disarmOnImpact(AUTO_LANDING_DISARM_THRESHOLD);
     }
 
 #ifdef USE_CHIRP

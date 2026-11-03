@@ -267,7 +267,10 @@ static void rescueDisarmNow(void)
 static void rescueEmergDescent(void)
 {
     if (isAltitudeAvailable()) {
-        rescueState.phase = RESCUE_EMERG_DESCENT;
+        if (rescueState.phase != RESCUE_EMERG_DESCENT) {
+            rescueState.phase = RESCUE_EMERG_DESCENT;
+            rescueState.intent.secondsFailing = 0;
+        }
         // same as RESCUE_DESCENT phase, but no XY control
         // if baro is available then emergency descent is possible even if the GPS module fails
     } else {
@@ -336,19 +339,20 @@ static void performSanityChecks(void)
         switch(gpsRescueConfig()->sanityChecks) {
         case RESCUE_SANITY_ON:
             rescueEmergDescent();
-            return;
+            break;
         case RESCUE_SANITY_FS_ONLY:
             if (hardFailsafe) {
                 rescueEmergDescent();
-                return;
             }
             break;
         default:
             if ((!rescueState.isAvailable) && hardFailsafe) {
                 rescueEmergDescent();
-                return;
             }
             break;
+        }
+        if (rescueState.phase == RESCUE_IDLE) {
+            return;
         }
     }
 
@@ -442,6 +446,7 @@ static void performSanityChecks(void)
         }
         break;
     case RESCUE_LANDING:
+    case RESCUE_EMERG_DESCENT:
         rescueState.intent.secondsFailing += altitudeControlError > 0.5f ? -1 : 1;
         rescueState.intent.secondsFailing = MAX(0, rescueState.intent.secondsFailing);
         if (rescueState.intent.secondsFailing >= 15) {

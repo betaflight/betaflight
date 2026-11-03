@@ -35,6 +35,9 @@ float simulatedRawSetpoint[3] = { 0,0,0 };
 float simulatedMaxRate[3] = { 670,670,670 };
 float simulatedFeedforward[3] = { 0,0,0 };
 float simulatedMotorMixRange = 0.0f;
+bool simulatedBelowLandingAltitude = false;
+bool simulatedFixedWing = false;
+int disarmCount = 0;
 
 int16_t debug[DEBUG16_VALUE_COUNT];
 uint8_t debugMode;
@@ -100,7 +103,8 @@ extern "C" {
     float mixerGetRcThrottle() { return fabsf(simulatedMixerGetRcThrottle); }
 
 
-    bool isBelowLandingAltitude(void) { return false; }
+    bool isBelowLandingAltitude(void) { return simulatedBelowLandingAltitude; }
+    bool isFixedWing(void) { return simulatedFixedWing; }
 
     void systemBeep(bool) { }
     bool gyroOverflowDetected(void) { return false; }
@@ -112,7 +116,7 @@ extern "C" {
     }
     void beeperConfirmationBeeps(uint8_t) { }
     bool isLaunchControlActive(void) {return unitLaunchControlActive; }
-    void disarm(flightLogDisarmReason_e) { }
+    void disarm(flightLogDisarmReason_e) { disarmCount++; }
     float getMaxRcRate(int axis)
     {
         UNUSED(axis);
@@ -243,6 +247,9 @@ void resetTest(void)
     attitude.values.yaw = 0;
 
     flightModeFlags = 0;
+    simulatedBelowLandingAltitude = false;
+    simulatedFixedWing = false;
+    acc.jerkMagnitude = 0.0f;
     unitLaunchControlActive = false;
     pidProfile->launchControlMode = unitLaunchControlMode;
     pidInit(pidProfile);
@@ -1270,4 +1277,57 @@ TEST(pidControllerTest, testTpaHyperbolic)
 
     pidUpdateTpaFactor(1.0);
     EXPECT_NEAR(0.9f, pidRuntime.tpaFactor, 0.01f);
+}
+
+static int runImpact(float jerkMagnitude)
+{
+    disarmCount = 0;
+    simulatedThrottleRaised = true;
+    acc.jerkMagnitude = jerkMagnitude;
+    pidController(pidProfile, currentTestTime());
+    acc.jerkMagnitude = 0.0f;
+    return disarmCount;
+}
+
+TEST(pidControllerTest, testAutoLandingImpactDisarm)
+{
+    resetTest();
+    pidProfile->landing_disarm_threshold = 0;
+    pidInit(pidProfile);
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+
+    // EZ disarm stays opt-in for manual flight
+    simulatedMaxRcDeflectionAbs = 0.0f;
+    simulatedMixerGetRcThrottle = 0.0f;
+    simulatedBelowLandingAltitude = true;
+    EXPECT_EQ(0, runImpact(2000.0f));
+
+    // GPS rescue touching down disarms by default
+    ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+    EXPECT_EQ(1, runImpact(2000.0f));
+
+    // but not on acc noise, nor above the landing altitude
+    EXPECT_EQ(0, runImpact(150.0f));
+    simulatedBelowLandingAltitude = false;
+    EXPECT_EQ(0, runImpact(2000.0f));
+    simulatedBelowLandingAltitude = true;
+
+    // not for a wing
+    simulatedFixedWing = true;
+    EXPECT_EQ(0, runImpact(2000.0f));
+    simulatedFixedWing = false;
+    DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+
+    // failsafe landing under altitude hold disarms by default
+    ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
+    EXPECT_EQ(0, runImpact(2000.0f));
+    ENABLE_FLIGHT_MODE(ALT_HOLD_MODE);
+    EXPECT_EQ(1, runImpact(2000.0f));
+
+    // a user threshold still takes precedence
+    pidProfile->landing_disarm_threshold = 250;
+    pidInit(pidProfile);
+    EXPECT_EQ(0, runImpact(1000.0f));
+    EXPECT_EQ(1, runImpact(2000.0f));
 }

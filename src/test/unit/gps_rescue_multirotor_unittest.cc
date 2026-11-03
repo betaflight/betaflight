@@ -1,0 +1,148 @@
+/*
+ * This file is part of Betaflight.
+ *
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <math.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
+
+extern "C" {
+    #include "platform.h"
+    #include "build/debug.h"
+
+    #include "common/maths.h"
+    #include "common/vector.h"
+
+    #include "fc/core.h"
+    #include "fc/rc_modes.h"
+    #include "fc/runtime_config.h"
+
+    #include "flight/autopilot.h"
+    #include "flight/failsafe.h"
+    #include "flight/gps_rescue.h"
+    #include "flight/imu.h"
+    #include "flight/position.h"
+    #include "flight/position_estimator.h"
+
+    #include "io/beeper.h"
+    #include "io/gps.h"
+
+    #include "pg/autopilot.h"
+    #include "pg/gps_rescue.h"
+    #include "pg/pg.h"
+    #include "pg/pg_ids.h"
+
+    int16_t debug[DEBUG16_VALUE_COUNT];
+    uint8_t debugMode;
+
+    gpsSolutionData_t gpsSol;
+    attitudeEulerAngles_t attitude;
+
+    PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
+    PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
+}
+
+#include "unittest_macros.h"
+#include "gtest/gtest.h"
+
+static timeUs_t simulatedTimeUs;
+static float simulatedAltitudeCm;
+static bool simulatedRxSignal;
+static int disarmCount;
+static flightLogDisarmReason_e lastDisarmReason;
+static positionEstimate3d_t simulatedEstimate;
+
+extern "C" {
+    timeUs_t micros(void) { return simulatedTimeUs; }
+    timeMs_t millis(void) { return simulatedTimeUs / 1000; }
+
+    void disarm(flightLogDisarmReason_e reason) { disarmCount++; lastDisarmReason = reason; }
+    bool crashRecoveryModeActive(void) { return false; }
+    bool isRxReceivingSignal(void) { return simulatedRxSignal; }
+
+    float getAltitudeCm(void) { return simulatedAltitudeCm; }
+    float getAltitudeCmControl(void) { return simulatedAltitudeCm; }
+    bool isAltitudeAvailable(void) { return true; }
+    bool isBelowLandingAltitude(void) { return simulatedAltitudeCm < 100.0f * autopilotConfig()->landingAltitudeM; }
+
+    bool gpsHasNewData(uint16_t *) { return false; }
+    bool gpsIsHealthy(void) { return false; }
+    bool imuIsHeadingValid(void) { return true; }
+    bool positionEstimatorIsValidXY(void) { return true; }
+    const positionEstimate3d_t *positionEstimatorGetEstimate(void) { return &simulatedEstimate; }
+
+    void autopilotSetYawTarget(float) { }
+    void setTargetVelocity(const vector2_t *, bool) { }
+    void altitudeControl(float, timeUs_t, float, float) { }
+    void resetAltitudeControl(void) { }
+    void pitchForwardOverride(bool) { }
+    void initPositionHold(void) { }
+    bool isModeActivationConditionPresent(boxId_e) { return false; }
+    void beeperConfirmationBeeps(uint8_t) { }
+}
+
+static void runRescueSeconds(float seconds)
+{
+    const int ticks = lrintf(seconds * TASK_GPS_RESCUE_RATE_HZ);
+    for (int i = 0; i < ticks; i++) {
+        simulatedTimeUs += HZ_TO_INTERVAL_US(TASK_GPS_RESCUE_RATE_HZ);
+        gpsRescueUpdate();
+    }
+}
+
+class GpsRescueEmergencyDescent : public ::testing::Test {
+protected:
+    void SetUp() override
+    {
+        pgResetAll();
+        simulatedTimeUs = 1000000;
+        simulatedAltitudeCm = 2000.0f;
+        simulatedRxSignal = false;
+        disarmCount = 0;
+        stateFlags = 0;
+        memset(&simulatedEstimate, 0, sizeof(simulatedEstimate));
+        simulatedEstimate.position.v[EF_NORTH] = 20000.0f;
+        ENABLE_ARMING_FLAG(ARMED);
+        ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+    }
+
+    void TearDown() override
+    {
+        DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+        gpsRescueUpdate();
+        DISABLE_ARMING_FLAG(ARMED);
+    }
+};
+
+TEST_F(GpsRescueEmergencyDescent, DisarmsAfterSettlingOnTheGround)
+{
+    // no home point on a hard failsafe: emergency descent, no XY control
+    runRescueSeconds(1.0f);
+    EXPECT_EQ(0, disarmCount);
+
+    // the craft comes to rest and the altitude stops changing
+    simulatedAltitudeCm = 0.0f;
+    runRescueSeconds(10.0f);
+    EXPECT_EQ(0, disarmCount);
+    runRescueSeconds(10.0f);
+    EXPECT_EQ(1, disarmCount);
+    EXPECT_EQ(DISARM_REASON_FAILSAFE, lastDisarmReason);
+}
