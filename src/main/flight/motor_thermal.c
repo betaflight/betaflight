@@ -1,18 +1,22 @@
 /*
  * This file is part of Betaflight.
  *
- * Betaflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
  *
  * Betaflight is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- * You should have received a copy of the GNU General Public License
- * along with Betaflight. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <math.h>
@@ -354,8 +358,8 @@ void motorThermalUpdate(timeUs_t currentTimeUs)
     if (!armed && cmdSqSum == 0.0f) {       // learnt only with every motor stopped: not during a disarmed motor test
         rt.idleAmps += (batteryAmps - rt.idleAmps) * MIN(1.0f, dt / IDLE_AMPS_TAU_S);
     }
-    const float motorsAmps = armed ? MAX(batteryAmps - rt.idleAmps, 0.0f) : 0.0f;
-    if (splitByRpm && heldSum == 0.0f && motorsAmps > PROP_K_MIN_AMPS) {
+    const float motorsAmps = armed || cmdSqSum > 0.0f ? MAX(batteryAmps - rt.idleAmps, 0.0f) : 0.0f;   // a disarmed motor test heats too
+    if (armed && splitByRpm && heldSum == 0.0f && motorsAmps > PROP_K_MIN_AMPS) {
         // every motor turns as commanded: the motor current is all prop load
         const float sample = motorsAmps * vbat / rpmCubeSum;
         rt.propK = rt.propK > 0.0f ? rt.propK + (sample - rt.propK) * MIN(1.0f, dt / PROP_K_TAU_S) : sample;
@@ -421,8 +425,8 @@ float motorThermalGetTemp(int motor)
 
 float motorThermalGetMaxTemp(void)
 {
-    float m = 0.0f;
-    for (int i = 0; i < getMotorCount(); i++) {
+    float m = node[0].ts;
+    for (int i = 1; i < getMotorCount(); i++) {
         m = MAX(m, node[i].ts);
     }
     return m;

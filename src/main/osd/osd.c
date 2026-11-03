@@ -754,7 +754,7 @@ static void osdUpdateStats(void)
             sum += motorThermalGetTemp(k);
         }
         const int16_t maxT = lrintf(motorThermalGetMaxTemp());
-        if (stats.max_motor_temp_est < maxT) {
+        if (stats.avg_motor_temp_est_n == 0 || stats.max_motor_temp_est < maxT) {
             stats.max_motor_temp_est = maxT;
         }
         stats.avg_motor_temp_est_acc += sum / MAX(getMotorCount(), 1);
