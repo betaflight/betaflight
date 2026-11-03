@@ -55,7 +55,12 @@ Betaflight has a framework for most tasks. Use it. Do not write a second solutio
 - **Safe float maths.** Prevent division by zero, `NaN` and values out of range. Limit the input before `powf()`, `logf()`, `sqrtf()` or `pwlInterpolate()`. A `NaN` in a filter or controller state stays there.
 - **Check failures.** Check the return values of init functions and register reads. If a sensor gives no value (for example `0` for "no reading"), handle that case. Do not use it as real data.
 - **Gate all parts of a feature together.** Put the enum value, the CLI lookup entry, the settings, the MSP fields and the init code behind the same `ENABLE_*` flag. A user must not be able to select an option that is not compiled in. Make each `#endif` comment name the correct flag.
-- **Target independence.** Do not use MCU or board names (for example `STM32F7`) in `src/main`. Use feature flags (see *Feature flags* below). Put MCU-specific code in `src/platform/`. `make checks` finds some of these errors.
+- **No MCU defines in `src/main`.** Do not use MCU, MCU family or board names in `src/main`, for example `#ifdef STM32F7`, `defined(STM32H7)` or `defined(AT32F435)`. All MCU-specific code is in `src/platform/<VENDOR>/`. If the behaviour must be different for an MCU, do this:
+  - Define a capability flag in `src/platform/<VENDOR>/target/<MCU>/target.h`. New flags obey the *Feature flags* rules below.
+  - Test that flag in `src/main`. For example, `USE_PID_DENOM_CHECK` is defined in the APM32F405 `target.h` and tested in `src/main/config/config.c`.
+  - Put the MCU-specific implementation in `src/platform/<VENDOR>/`, behind a common function that `src/main` calls.
+  - For the simulator, use `ENABLE_SIMULATOR`, not `SIMULATOR_BUILD`.
+  - `make checks` finds only full target names (for example `STM32F405`). It does not find family names such as `STM32F7`. Check your change yourself.
 - **Real time.** Do not use dynamic memory allocation. Do not block or wait in interrupt handlers or scheduler tasks.
 - **Hot path.** Do not add work to the gyro or PID task without a measurement of the cycle cost. Use the `tasks` CLI command or a debug mode. Tell the result in the pull request.
 - **Flash wear.** Do not write the configuration to flash on a frequent event, for example on each arm or disarm. If a feature must save automatically, do it only when the user enabled that feature. See `src/main/fc/stats.c` for an example.
