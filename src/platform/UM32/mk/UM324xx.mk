@@ -98,7 +98,7 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu
 
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
 
-ifneq (,$(filter $(TARGET_MCU),UM3241F UM3247F))
+ifneq (,$(filter $(TARGET_MCU),UM324xF UM3241F UM3247F))
 DEVICE_FLAGS    += -DUM324xF
 STARTUP_SRC     = UM32/startup/startup_um324xf.s
 # QSPI XIP code expansion: yes = 512K internal + 512K QSPI (1024K code
@@ -236,6 +236,7 @@ DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_
 ifeq ($(QSPI_XIP),yes)
 EX_FLASH_SRC := ./src/platform/UM32/debug.c \
                 ./src/platform/UM32/sysfunc_um324xx.c \
+                ./src/main/cms/cms_menu_imu.c \
                 ./src/main/cms/cms_menu_osd.c
 endif
 
