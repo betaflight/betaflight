@@ -13,7 +13,8 @@
 **
 **  Note        : M7 owns: ITCM, DTCM, AXI SRAM, SRAM2, SRAM3
 **                M4 owns: SRAM1 (0x30000000, 128K) — do NOT use from M7
-**                Shared:  SRAM4 (0x38000000, 64K) — IPC, library-managed
+**                Shared:  SRAM4 (0x38000000, 64K) — .BDMA_RAM (BDMA buffers) at its base,
+**                         remainder free for IPC
 **
 **                Flash partition (CubeFramework dual-core layout):
 **                  M7: 0x08000000-0x0817FFFF (1.5 MB)
@@ -53,6 +54,7 @@ MEMORY
 
     /* SRAM1 (0x30000000, 128K) is owned by M4 — intentionally excluded. */
     D2_RAM (rwx)      : ORIGIN = 0x30020000, LENGTH = 160K /* SRAM2 (128K) + SRAM3 (32K) */
+    D3_RAM (rwx)      : ORIGIN = 0x38000000, LENGTH = 64K  /* SRAM4, D3 domain (shared with M4) */
 
     MEMORY_B1 (rx)    : ORIGIN = 0x60000000, LENGTH = 0K
 }
@@ -278,6 +280,18 @@ SECTIONS
     _edmarwaxi = .;
     _dmarwaxi_end__ = _edmarwaxi;
   } >RAM
+
+  .BDMA_RAM (NOLOAD) :
+  {
+    . = ALIGN(4);
+    PROVIDE(bdmaram_start = .);
+    _sbdmaram = .;
+    _bdmaram_start__ = _sbdmaram;
+    KEEP(*(.BDMA_RAM))
+    PROVIDE(bdmaram_end = .);
+    _ebdmaram = .;
+    _bdmaram_end__ = _ebdmaram;
+  } >D3_RAM
 
   .persistent_data (NOLOAD) :
   {

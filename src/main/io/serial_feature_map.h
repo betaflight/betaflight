@@ -57,7 +57,12 @@ typedef struct serialPortClaim_s {
 
 unsigned serialGetPortClaims(serialPortIdentifier_e identifier, serialPortClaim_t *claims, unsigned maxClaims);
 
-// Write a legacy per-port function mask into the feature PGs, as the deprecated
+// Translate a function mask as the deprecated `serial` line carried it, in the
+// bit layout of 4.5 through 2026.6, into the current serialPortFunction_e bits.
+// Bits that layout never assigned are dropped.
+uint32_t serialFunctionMaskFromLegacy(uint32_t legacyMask);
+
+// Write a per-port function mask into the feature PGs, as the deprecated
 // `serial` command still hands one over.  Every claim on the port is cleared
 // first, so the mask ends up describing the port completely, the way it did when
 // the mask was the stored form.  Returns false and leaves the PGs untouched when

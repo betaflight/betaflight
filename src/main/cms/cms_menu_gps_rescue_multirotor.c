@@ -65,7 +65,6 @@ static uint8_t gpsRescueConfig_minSats;
 static uint8_t gpsRescueConfig_allowArmingWithoutFix;
 
 static uint8_t autopilotConfig_altitudeP, autopilotConfig_altitudeI, autopilotConfig_altitudeD, autopilotConfig_altitudeA, autopilotConfig_altitudeF;
-static uint8_t gpsRescueConfig_yawP;
 static uint8_t autopilotConfig_positionP, autopilotConfig_positionI, autopilotConfig_positionD;
 static uint8_t autopilotConfig_positionCutoff;
 
@@ -78,8 +77,6 @@ static const void *cms_menuGpsRescuePidOnEnter(displayPort_t *pDisp)
     autopilotConfig_altitudeD = autopilotConfig()->altitudeD;
     autopilotConfig_altitudeA = autopilotConfig()->altitudeA;
     autopilotConfig_altitudeF = autopilotConfig()->altitudeF;
-
-    gpsRescueConfig_yawP = gpsRescueConfig()->yawP;
 
     autopilotConfig_positionP = autopilotConfig()->positionP;
     autopilotConfig_positionI = autopilotConfig()->positionI;
@@ -101,8 +98,6 @@ static const void *cms_menuGpsRescuePidOnExit(displayPort_t *pDisp, const OSD_En
     autopilotConfigMutable()->altitudeA = autopilotConfig_altitudeA;
     autopilotConfigMutable()->altitudeF = autopilotConfig_altitudeF;
 
-    gpsRescueConfigMutable()->yawP = gpsRescueConfig_yawP;
-
     autopilotConfigMutable()->positionP = autopilotConfig_positionP;
     autopilotConfigMutable()->positionI = autopilotConfig_positionI;
     autopilotConfigMutable()->positionD = autopilotConfig_positionD;
@@ -121,8 +116,6 @@ const OSD_Entry cms_menuGpsRescuePidEntries[] =
     { "ALTITUDE D",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_altitudeD, 0, AUTOPILOT_PID_GAIN_MAX, 1 } },
     { "ALTITUDE A",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_altitudeA, 0, 200, 1 } },
     { "ALTITUDE F",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_altitudeF, 0, 200, 1 } },
-
-    { "YAW P",             OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_yawP, 0, GPS_RESCUE_YAW_P_MAX, 1 } },
 
     { "POSITION P",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_positionP, 0, AUTOPILOT_PID_GAIN_MAX, 1 } },
     { "POSITION I",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_positionI, 0, AUTOPILOT_PID_GAIN_MAX, 1 } },

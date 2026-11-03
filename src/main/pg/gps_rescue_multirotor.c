@@ -47,8 +47,6 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .sanityChecks = RESCUE_SANITY_FS_ONLY,
     .minSats = 8,
     .allowArmingWithoutFix = false,
-
-    .yawP = 20,
 );
 
 #endif // USE_GPS_RESCUE

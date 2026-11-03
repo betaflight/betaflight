@@ -601,7 +601,8 @@ RAM_CODE static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, 
 
     if (compressionMethod == NO_COMPRESSION) {
 
-        uint16_t *readLenPtr = (uint16_t *)sbufPtr(dst);
+        // may be at an odd address, so it is updated byte by byte below
+        uint8_t *readLenPtr = sbufPtr(dst);
         if (!useLegacyFormat) {
             // new format supports variable read lengths
             sbufWriteU16(dst, readLen);
@@ -612,7 +613,8 @@ RAM_CODE static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, 
 
         if (!useLegacyFormat) {
             // update the 'read length' with the actual amount read from flash.
-            *readLenPtr = bytesRead;
+            readLenPtr[0] = bytesRead & 0xff;
+            readLenPtr[1] = (bytesRead >> 8) & 0xff;
         }
 
         sbufAdvance(dst, bytesRead);
@@ -1694,7 +1696,7 @@ case MSP_NAME:
         sbufWriteU16(dst, autopilotConfig()->positionP);
         sbufWriteU16(dst, autopilotConfig()->positionI);
         sbufWriteU16(dst, autopilotConfig()->positionD);
-        sbufWriteU16(dst, gpsRescueConfig()->yawP);
+        sbufWriteU16(dst, 0); // was gps_rescue_yaw_p
         break;
 #endif // !USE_WING
 #endif
@@ -2362,6 +2364,10 @@ case MSP_NAME:
         sbufWriteU16(dst, (uint16_t)currentPidProfile->tpa_speed_pitch_offset);
         sbufWriteU8(dst, currentPidProfile->yaw_type);
         sbufWriteU16(dst, (uint16_t)currentPidProfile->angle_pitch_offset);
+        sbufWriteU8(dst, (uint8_t)currentPidProfile->speed_curve_vref);
+        sbufWriteU8(dst, (uint8_t)currentPidProfile->speed_curve_power);
+        sbufWriteU16(dst, (uint16_t)currentPidProfile->speed_curve_min);
+        sbufWriteU16(dst, (uint16_t)currentPidProfile->speed_curve_max);
         break;
     }
 
@@ -3347,7 +3353,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         autopilotConfigMutable()->positionP = sbufReadU16Constrained(src, 0, AUTOPILOT_PID_GAIN_MAX);
         autopilotConfigMutable()->positionI = sbufReadU16Constrained(src, 0, AUTOPILOT_PID_GAIN_MAX);
         autopilotConfigMutable()->positionD = sbufReadU16Constrained(src, 0, AUTOPILOT_PID_GAIN_MAX);
-        gpsRescueConfigMutable()->yawP = sbufReadU16Constrained(src, 0, GPS_RESCUE_YAW_P_MAX);
+        sbufReadU16(src); // was gps_rescue_yaw_p
         break;
 #endif // !USE_WING
 #endif
@@ -4719,6 +4725,12 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         currentPidProfile->yaw_type = sbufReadU8(src);
 #endif
         currentPidProfile->angle_pitch_offset = sbufReadS16Constrained(src, -ANGLE_PITCH_OFFSET_MAX, ANGLE_PITCH_OFFSET_MAX);
+       if (sbufBytesRemaining(src) >= 6) {
+            currentPidProfile->speed_curve_vref = sbufReadU8Constrained(src, 1, 85);
+            currentPidProfile->speed_curve_power = sbufReadU8Constrained(src, 5, 30);
+            currentPidProfile->speed_curve_min = sbufReadU16Constrained(src, 5, 99);
+            currentPidProfile->speed_curve_max = sbufReadU16Constrained(src, 100, 1000);
+        }
         pidInitConfig(currentPidProfile);
         break;
     }

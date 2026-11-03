@@ -1534,7 +1534,7 @@ RAM_CODE static void cliSerial(const char *cmdName, char *cmdline)
     uint32_t functionMask = 0;
     tok = strsep(&ptr, " ");
     if (tok) {
-        functionMask = strtoul(tok, NULL, 10);
+        functionMask = serialFunctionMaskFromLegacy(strtoul(tok, NULL, 10));
         validArgumentCount++;
     }
 
@@ -6493,6 +6493,14 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
         cliPrintf(" %s", getArmingDisableFlagName(flag));
     }
     cliPrintLinefeed();
+
+#ifdef USE_DSHOT_BITBANG
+    static const char * const dshotBitbangStatusNames[] = { "OK", "MOTOR_PIN_CONFLICT", "NO_PACER", "TOO_MANY_PORTS" };
+    const dshotBitbangStatus_e bitbangStatus = dshotBitbangGetStatus();
+    if (isDshotBitbangActive(&motorConfig()->dev) && bitbangStatus != DSHOT_BITBANG_STATUS_OK) {
+        cliPrintLinef("DSHOT_BBANG: %s", (unsigned)bitbangStatus < ARRAYLEN(dshotBitbangStatusNames) ? dshotBitbangStatusNames[bitbangStatus] : "UNKNOWN");
+    }
+#endif
 }
 
 #if defined(USE_SENSOR_NAMES)
@@ -7402,7 +7410,10 @@ static void showDma(void)
     for (int i = DMA_FIRST_HANDLER; i <= dmaGetHandlerCount(); i++) {
         const resourceOwner_t *owner = dmaGetOwner(i);
 
-        cliPrintf(dmaGetDisplayString(), dmaGetDeviceNumber(i), dmaGetDeviceIndex(i));
+        char name[DMA_DISPLAY_NAME_LENGTH];
+
+        dmaGetDisplayName(i, name);
+        cliPrint(name);
         if (owner->index > 0) {
             cliPrintLinef(" %s %d", getOwnerName(owner->owner), resourceIndexToInput(owner->owner, owner->index - 1));
         } else {
