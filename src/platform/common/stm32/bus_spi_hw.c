@@ -40,6 +40,15 @@
 extern spiDevice_t spiDevice[SPIDEV_COUNT];
 extern busDevice_t spiBusDevice[SPIDEV_COUNT];
 
+static inline bool spiDmaTransferError(dmaChannelDescriptor_t *descriptor)
+{
+#if defined(UM324xF)
+    return DMA_GET_FLAG_STATUS(descriptor, STATUSERR) != 0;
+#else
+    return DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF) != 0;
+#endif
+}
+
 // Interrupt handler for SPI receive DMA completion
 FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
 {
@@ -50,7 +59,7 @@ FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
     }
 
     // The stream disables itself on a transfer error, so no completion interrupt will follow
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
+    if (spiDmaTransferError(descriptor)) {
         spiAbortTransfer(dev);
         return;
     }
@@ -91,11 +100,15 @@ FAST_IRQ_HANDLER static void spiTxErrorIrqHandler(dmaChannelDescriptor_t* descri
 {
     const extDevice_t *dev = (const extDevice_t *)descriptor->userParam;
 
-    if (!dev || !DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
+    if (!dev || !spiDmaTransferError(descriptor)) {
         return;
     }
 
+#if defined(UM324xF)
+    DMA_CLEAR_FLAG(descriptor, CLEARERR);
+#else
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TEIF);
+#endif
     spiAbortTransfer(dev);
 }
 
@@ -109,7 +122,7 @@ FAST_IRQ_HANDLER static void spiTxIrqHandler(dmaChannelDescriptor_t* descriptor)
         return;
     }
 
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
+    if (spiDmaTransferError(descriptor)) {
         spiAbortTransfer(dev);
         return;
     }
