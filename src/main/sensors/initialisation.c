@@ -29,6 +29,8 @@
 #include "config/config.h"
 #include "config/feature.h"
 
+#include "drivers/barometer/barometer_spa06_probe.h"
+
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
@@ -83,8 +85,7 @@ bool sensorsAutodetect(void)
     baroInit();
 #endif
 
-#if defined(STM32C5) && ENABLE_BARO_SPA06_PROBE
-    extern void spa06ProbeRun(void);
+#if ENABLE_BARO_SPA06_PROBE
     spa06ProbeRun();
 #endif
 
