@@ -119,8 +119,19 @@ void bbTimerChannelInit(bbPort_t *bbPort)
     LL_TIM_EnableCounter((TIM_TypeDef *)bbPort->timhw->tim);
 }
 
-void bbSwitchToOutput(bbPort_t * bbPort)
+bool bbSwitchToOutput(bbPort_t * bbPort)
 {
+    dmaResource_t *dmaResource = bbPort->dmaResource;
+    DMA_TypeDef *dma = LL_EX_DMA_Channel_to_DMA((DMA_ARCH_TYPE *)dmaResource);
+    const uint32_t channel = LL_EX_DMA_Channel_to_Channel((DMA_ARCH_TYPE *)dmaResource);
+
+    // Request a stop without the LL helper's unbounded wait. Do not touch the
+    // GPIO or reload DMA registers until the channel has actually stopped.
+    WRITE_REG(dma->CHENREG, DMA_CHENREG_CH_EN_WE_0 << channel);
+    if (!bbDMAWaitStopped(bbPort)) {
+        return false;
+    }
+
     // Set idle output level via SET/CLR register (affects only motor pins)
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
@@ -137,19 +148,20 @@ void bbSwitchToOutput(bbPort_t * bbPort)
     }
 
     // Reinitialize port group DMA for output
-    dmaResource_t *dmaResource = bbPort->dmaResource;
 #ifdef USE_DMA_REGISTER_CACHE
     bbLoadDMARegs(dmaResource, &bbPort->dmaRegOutput);
 #else
     xLL_EX_DMA_DeInit(dmaResource);
     xLL_EX_DMA_Init(dmaResource, &bbPort->outputDmaInit);
-    xLL_EX_DMA_EnableIT_TC(dmaResource);
+    bbDMA_ITConfig(bbPort);
 #endif
 
     // Reinitialize pacer timer for output
     ((TIM_TypeDef *)bbPort->timhw->tim)->ARR = bbPort->outputARR;
 
     bbPort->direction = DSHOT_BITBANG_DIRECTION_OUTPUT;
+
+    return true;
 }
 
 #ifdef USE_DMA_REGISTER_CACHE
@@ -189,7 +201,7 @@ void bbSwitchToInput(bbPort_t *bbPort)
 #else
     xLL_EX_DMA_DeInit(dmaResource);
     xLL_EX_DMA_Init(dmaResource, &bbPort->inputDmaInit);
-    xLL_EX_DMA_EnableIT_TC(dmaResource);
+    bbDMA_ITConfig(bbPort);
 #endif
 
     // Reinitialize pacer timer for input
@@ -276,6 +288,9 @@ void bbTIM_DMACmd(void *TIMx, uint16_t TIM_DMASource, FunctionalState NewState)
 void bbDMA_ITConfig(bbPort_t *bbPort)
 {
     xLL_EX_DMA_EnableIT_TC(bbPort->dmaResource);
+    DMA_TypeDef *dma = LL_EX_DMA_Channel_to_DMA((DMA_ARCH_TYPE *)bbPort->dmaResource);
+    const uint32_t channel = LL_EX_DMA_Channel_to_Channel((DMA_ARCH_TYPE *)bbPort->dmaResource);
+    WRITE_REG(dma->MASKERR, (DMA_MASKERR_MASKERR_WE_0 | DMA_MASKERR_MASKERR_0) << channel);
 }
 
 void bbDMA_Cmd(bbPort_t *bbPort, FunctionalState NewState)

@@ -93,9 +93,9 @@
                                                             }
 
 //flag:CLEARBLOCK
-#define DMA_CLEAR_FLAG(d, flag) ((DMA_TypeDef*)(d)->dma)->flag = (0x1 << d->flagsShift)
+#define DMA_CLEAR_FLAG(d, flag) (((DMA_TypeDef *)(d)->dma)->flag = (1U << (d)->flagsShift))
 //flag:STATUSBLOCK
-#define DMA_GET_FLAG_STATUS(d, flag) ((DMA_TypeDef*)(d)->dma)->flag & (0x1 << d->flagsShift)
+#define DMA_GET_FLAG_STATUS(d, flag) (((DMA_TypeDef *)(d)->dma)->flag & (1U << (d)->flagsShift))
 
 // Upstream-style channel-busy test for the DW_ahb DMA: the enable bit is not
 // in the per-channel registers but in the controller-level CHENREG bitmap
