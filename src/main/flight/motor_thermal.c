@@ -425,7 +425,7 @@ float motorThermalGetTemp(int motor)
 
 float motorThermalGetMaxTemp(void)
 {
-    float m = node[0].ts;
+    float m = getMotorCount() ? node[0].ts : 0.0f;
     for (int i = 1; i < getMotorCount(); i++) {
         m = MAX(m, node[i].ts);
     }
