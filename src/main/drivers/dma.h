@@ -76,7 +76,7 @@ uint32_t dmaGetChannel(const uint8_t channel);
 
 // Hardware abstraction - implemented per platform
 int dmaGetHandlerCount(void);
-int dmaGetDeviceNumber(dmaIdentifier_e identifier);
-int dmaGetDeviceIndex(dmaIdentifier_e identifier);
-const char *dmaGetDisplayString(void);
+// Longest is "DMAnn Channel nnn:" plus the terminator
+#define DMA_DISPLAY_NAME_LENGTH 20
+void dmaGetDisplayName(dmaIdentifier_e identifier, char *name);
 uint32_t dmaGetDataLength(dmaResource_t *ref);
