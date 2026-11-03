@@ -146,8 +146,12 @@ void exFlashInit(void)
 }
 #endif
 
-static void initialiseDmaMemorySections(void)
+static void initialiseRam1MemorySections(void)
 {
+    extern uint8_t _ssram1_bss;
+    extern uint8_t _esram1_bss;
+    bzero(&_ssram1_bss, (size_t) (&_esram1_bss - &_ssram1_bss));
+
     extern uint8_t _sdmaram_bss;
     extern uint8_t _edmaram_bss;
     extern uint8_t _sdmaram_data;
@@ -254,10 +258,10 @@ void SystemInit(void)
 
     initialiseMemorySections();
 
-    // Copy .dmaram_data from flash and zero .dmaram_bss before anything
-    // that might touch DMA_DATA-placed variables (the standard Reset_Handler
-    // .data/.bss copy/clear loop doesn't cover these sections).
-    initialiseDmaMemorySections();
+    // Initialize the cold CPU data and DMA-capable buffers in SRAM1 before
+    // their first use. Reset_Handler does not cover these sections.
+    // DMA-only SRAM2 is deliberately excluded from CPU initialization.
+    initialiseRam1MemorySections();
 }
 
 /**

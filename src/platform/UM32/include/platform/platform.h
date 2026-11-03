@@ -74,6 +74,11 @@
 #define EX_DATA
 #endif
 
+// CLI config backups and USB MSC metadata are cold, CPU-accessible data.
+// Keep them in SRAM1; SRAM2 is reserved for DMA buffers.
+#define PG_COPY_ATTRIBUTES          __attribute__((section(".sram1_bss"), aligned(4)))
+#define MSC_METADATA_ATTRIBUTES     PG_COPY_ATTRIBUTES
+
 // Data in RAM which is guaranteed to not be reset on hot reboot
 #define PERSISTENT                  __attribute__ ((section(".persistent_data"), aligned(4)))
 
