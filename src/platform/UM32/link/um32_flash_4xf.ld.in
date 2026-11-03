@@ -103,6 +103,7 @@ SECTIONS
       * (the hot debug[] array module). */
      */UM32/debug.o(.text* .rodata*)
      */UM32/sysfunc_um324xx.o(.text* .rodata*)
+     */cms/cms_menu_osd.o(.text* .rodata*)
      . = ALIGN(4) ;
   } > EXFLASH
 #endif

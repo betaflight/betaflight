@@ -235,7 +235,8 @@ DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_
 # handlers. Empty when QSPI_XIP=no — files fall back to .text (FLASH1).
 ifeq ($(QSPI_XIP),yes)
 EX_FLASH_SRC := ./src/platform/UM32/debug.c \
-                ./src/platform/UM32/sysfunc_um324xx.c
+                ./src/platform/UM32/sysfunc_um324xx.c \
+                ./src/main/cms/cms_menu_osd.c
 endif
 
 NOT_OPTIMISED_SRC += $(EX_FLASH_SRC)
