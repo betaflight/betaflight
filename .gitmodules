@@ -56,3 +56,8 @@
 	url = https://github.com/mavlink/c_library_v2.git
 	branch = master
 	ignore = dirty
+[submodule "lib/modules/UM324xF"]
+	path = lib/modules/UM324xF
+	url = https://github.com/unicmicro/UM324xF-SDK.git
+	ignore = dirty
+	update = none
