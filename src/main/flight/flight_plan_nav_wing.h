@@ -43,6 +43,8 @@ typedef struct {
     float startAltM;        // the altitude already commanded, where the leg's altitude ramp starts
     bool climbOut;          // a HOLD flown from where the aircraft is, done at its height once heading
                             // for the next waypoint
+    bool timed;             // a FLYOVER or FLYBY that has a duration: flown as a HOLD, so it is
+                            // reached on its loiter at its height, not at the turn onto the next leg
     bool injectedLanding;   // a LAND on the way home or where the aircraft is, rather than one the
                             // mission flies to: on the arming point's ground if that is where it is,
                             // on the wing's own landing heading

@@ -77,9 +77,9 @@ controlRateConfig_t testControlRateProfile;
 
 void setRcThrottle(const float normalizedThrottle)
 {
-    // rcCommand[THROTTLE] is the normalised 0..1 throttle since upstream #15821; rcData stays in us
+    // rcCommand throttle is 0..1; raw receiver channels are -1..1 since upstream #15837.
     rcCommand[THROTTLE] = normalizedThrottle;
-    rcData[THROTTLE] = PWM_RANGE_MIN + normalizedThrottle * PWM_RANGE;
+    rcData[THROTTLE] = 2.0f * normalizedThrottle - 1.0f;
 }
 
 void expectAdrcFeedback(const float expectedAxisScale, const float expectedYawLimit)
@@ -349,7 +349,6 @@ TEST_F(AdrcMixerUnittest, MotorStopPublishesZeroAppliedOutput)
     testFeatureMask = FEATURE_MOTOR_STOP;
     testAirmodeEnabled = false;
     setRcThrottle(0.0f);
-    rcData[THROTTLE] = PWM_RANGE_MIN;
     pidData[FD_ROLL].Sum = 500.0f;
 
     mixTable(6000);

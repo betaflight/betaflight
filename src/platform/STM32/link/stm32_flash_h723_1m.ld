@@ -45,6 +45,7 @@ MEMORY
     RAM (rwx)         : ORIGIN = 0x24000000, LENGTH = 320K
 
     D2_RAM (rwx)      : ORIGIN = 0x30000000, LENGTH = 32K /* SRAM1 + SRAM2 */
+    D3_RAM (rwx)      : ORIGIN = 0x38000000, LENGTH = 16K  /* SRAM4, D3 domain */
     MEMORY_B1 (rx)    : ORIGIN = 0x60000000, LENGTH = 0K
 }
 
@@ -269,6 +270,18 @@ SECTIONS
     _edmarwaxi = .;
     _dmarwaxi_end__ = _edmarwaxi;
   } >RAM
+
+  .BDMA_RAM (NOLOAD) :
+  {
+    . = ALIGN(4);
+    PROVIDE(bdmaram_start = .);
+    _sbdmaram = .;
+    _bdmaram_start__ = _sbdmaram;
+    KEEP(*(.BDMA_RAM))
+    PROVIDE(bdmaram_end = .);
+    _ebdmaram = .;
+    _bdmaram_end__ = _ebdmaram;
+  } >D3_RAM
 
   .persistent_data (NOLOAD) :
   {
