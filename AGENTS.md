@@ -111,7 +111,7 @@ Do these checks before you open a pull request. All checks must pass with no new
 | Unit tests | `make test`. CI runs `make EXTRA_FLAGS=-Werror test-all`, which also runs the tests for each target. |
 | Build an MCU target | `make TARGET=<MCU>`, for example `make TARGET=STM32F405` |
 | Build a board | `make CONFIG=<board>`, for example `make CONFIG=MATEKF411`. The board comes from the `src/config` submodule. Run `make configs` first if the submodule is empty. |
-| Representative CI subset | `make preview`. It builds 10 boards (STM32 F405, F411, F722, F745, G474, H730, H743, H750, AT32F435 and SITL) and runs `make test`. The boards come from `src/config`. It does not build APM32, PICO, STM32H5 or STM32C5. If you change these platforms, build them with `make TARGET=<MCU>`. |
+| Representative CI subset | `make preview`. It builds the targets in `PREVIEW_TARGETS` in the `Makefile` and runs `make test`. `make help` shows the list. If you change a platform that is not in the list, build it with `make TARGET=<MCU>`. |
 | Static checks | `make checks`. CI runs `make EXTRA_FLAGS=-Werror checks`. |
 | Simulator | `make TARGET=SITL` |
 
