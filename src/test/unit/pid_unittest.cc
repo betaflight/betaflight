@@ -37,6 +37,8 @@ float simulatedFeedforward[3] = { 0,0,0 };
 float simulatedMotorMixRange = 0.0f;
 bool simulatedBelowLandingAltitude = false;
 bool simulatedFixedWing = false;
+bool simulatedRescuePlanActive = false;
+bool simulatedRescueDescentActive = false;
 int disarmCount = 0;
 
 int16_t debug[DEBUG16_VALUE_COUNT];
@@ -72,6 +74,7 @@ extern "C" {
 
     #include "io/gps.h"
 
+    #include "pg/autopilot.h"
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
 
@@ -89,6 +92,9 @@ extern "C" {
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
     PG_REGISTER(positionConfig_t, positionConfig, PG_SYSTEM_CONFIG, 4);
+    PG_REGISTER(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
+
+    float autopilotAngle[RP_AXIS_COUNT];
 
     bool unitLaunchControlActive = false;
     launchControlMode_e unitLaunchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
@@ -105,6 +111,8 @@ extern "C" {
 
     bool isBelowLandingAltitude(void) { return simulatedBelowLandingAltitude; }
     bool isFixedWing(void) { return simulatedFixedWing; }
+    bool flightPlanNavIsRescuePlanActive(void) { return simulatedRescuePlanActive; }
+    bool flightPlanNavIsRescueDescentActive(void) { return simulatedRescueDescentActive; }
 
     void systemBeep(bool) { }
     bool gyroOverflowDetected(void) { return false; }
@@ -249,6 +257,8 @@ void resetTest(void)
     flightModeFlags = 0;
     simulatedBelowLandingAltitude = false;
     simulatedFixedWing = false;
+    simulatedRescuePlanActive = false;
+    simulatedRescueDescentActive = false;
     acc.jerkMagnitude = 0.0f;
     unitLaunchControlActive = false;
     pidProfile->launchControlMode = unitLaunchControlMode;
@@ -1324,6 +1334,23 @@ TEST(pidControllerTest, testAutoLandingImpactDisarm)
     EXPECT_EQ(0, runImpact(2000.0f));
     ENABLE_FLIGHT_MODE(ALT_HOLD_MODE);
     EXPECT_EQ(1, runImpact(2000.0f));
+    DISABLE_FLIGHT_MODE(FAILSAFE_MODE);
+
+    // a switch rescue flown as a plan, and its altitude-only fallback, disarm by default
+    DISABLE_FLIGHT_MODE(ALT_HOLD_MODE);
+    EXPECT_EQ(0, runImpact(2000.0f));
+    simulatedRescuePlanActive = true;
+    EXPECT_EQ(1, runImpact(2000.0f));
+    simulatedRescuePlanActive = false;
+    simulatedRescueDescentActive = true;
+    EXPECT_EQ(1, runImpact(2000.0f));
+
+    // but not above the landing altitude, even with the sticks centred
+    simulatedBelowLandingAltitude = false;
+    EXPECT_EQ(0, runImpact(2000.0f));
+    simulatedBelowLandingAltitude = true;
+    simulatedRescueDescentActive = false;
+    ENABLE_FLIGHT_MODE(ALT_HOLD_MODE);
 
     // a user threshold still takes precedence
     pidProfile->landing_disarm_threshold = 250;

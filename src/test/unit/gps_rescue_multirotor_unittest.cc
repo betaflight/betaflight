@@ -63,7 +63,7 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-static timeUs_t simulatedTimeUs;
+static timeUs_t simulatedTimeUs = 1000000;
 static float simulatedAltitudeCm;
 static bool simulatedRxSignal;
 static int disarmCount;
@@ -113,7 +113,7 @@ protected:
     void SetUp() override
     {
         pgResetAll();
-        simulatedTimeUs = 1000000;
+        simulatedTimeUs += 60000000;
         simulatedAltitudeCm = 2000.0f;
         simulatedRxSignal = false;
         disarmCount = 0;
@@ -145,4 +145,13 @@ TEST_F(GpsRescueEmergencyDescent, DisarmsAfterSettlingOnTheGround)
     runRescueSeconds(10.0f);
     EXPECT_EQ(1, disarmCount);
     EXPECT_EQ(DISARM_REASON_FAILSAFE, lastDisarmReason);
+}
+
+TEST_F(GpsRescueEmergencyDescent, KeepsFlyingWhenStalledAboveLandingAltitude)
+{
+    runRescueSeconds(1.0f);
+
+    // altitude stops changing well above the landing altitude
+    runRescueSeconds(30.0f);
+    EXPECT_EQ(0, disarmCount);
 }

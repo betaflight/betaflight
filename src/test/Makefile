@@ -821,6 +821,8 @@ pid_unittest_DEFINES := \
 		USE_LAUNCH_CONTROL= \
 		USE_FEEDFORWARD= \
 		USE_ADVANCED_TPA= \
+		USE_GPS_RESCUE= \
+		ENABLE_RESCUE_PLAN=1
 
 position_rescue_geometry_unittest_SRC := \
 		$(USER_DIR)/common/maths.c

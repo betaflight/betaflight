@@ -449,7 +449,7 @@ static void performSanityChecks(void)
     case RESCUE_EMERG_DESCENT:
         rescueState.intent.secondsFailing += altitudeControlError > 0.5f ? -1 : 1;
         rescueState.intent.secondsFailing = MAX(0, rescueState.intent.secondsFailing);
-        if (rescueState.intent.secondsFailing >= 15) {
+        if (rescueState.intent.secondsFailing >= 15 && isBelowLandingAltitude()) {
             rescueDisarmNow();
         }
         break;
