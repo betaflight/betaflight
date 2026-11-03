@@ -368,6 +368,22 @@ void spiInternalStopDMA (const extDevice_t *dev)
     }
 }
 
+void spiInternalAbortDMA(const extDevice_t *dev)
+{
+    SPI_TypeDef *instance = (SPI_TypeDef *)dev->bus->busType_u.spi.instance;
+
+    spiInternalStopDMA(dev);
+
+    // Bound the waits so a peripheral fault cannot trap the abort ISR.
+    for (unsigned spin = 0; spin < 1000 && !(instance->CSTAT & SPI_EX_STATE_TXEPT); spin++) {
+        __NOP();
+    }
+    for (unsigned spin = 0; spin < 1000 && (instance->CSTAT & SPI_EX_STATE_RXAVL); spin++) {
+        (void)instance->RXREG;
+    }
+    WRITE_REG(instance->INTCLR, SPI_EX_FLAG_MASK);
+}
+
 // DMA transfer setup and start
 FAST_CODE void spiSequenceStart(const extDevice_t *dev)
 {

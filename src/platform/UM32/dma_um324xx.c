@@ -24,6 +24,8 @@
 
 #include "platform.h"
 
+#include "common/printf.h"
+
 #ifdef USE_DMA
 
 #include "drivers/nvic.h"
@@ -98,6 +100,11 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
 int dmaGetHandlerCount(void)
 {
     return DMA_LAST_HANDLER;
+}
+
+void dmaGetDisplayName(dmaIdentifier_e identifier, char *name)
+{
+    tfp_sprintf(name, DMA_OUTPUT_STRING, DMA_DEVICE_NO(identifier), DMA_DEVICE_INDEX(identifier));
 }
 
 int dmaGetDeviceNumber(dmaIdentifier_e identifier)
