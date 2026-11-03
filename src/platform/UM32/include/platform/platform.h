@@ -25,6 +25,10 @@
 #include "um324xx_hal.h"
 #include "system_um324xx.h"
 
+// The vendor temperature-sensor header exports a single-letter calibration
+// macro. Keep it out of firmware code (for example, Kalman gain vectors).
+#undef K
+
 #include "um324xx_ll_ex.h"
 #include "um324xx_ll_tim.h"
 
