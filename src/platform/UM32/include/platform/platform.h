@@ -89,6 +89,9 @@
 #define DMA_DATA                    __attribute__ ((section(".dmaram_data"), aligned(32)))
 #define STATIC_DMA_DATA_AUTO        static DMA_DATA
 
+// Keep the CPU-filled SDIO cache in zero-initialized SRAM1.
+#define SDIO_WRITE_CACHE_ATTRIBUTES  DMA_DATA_ZERO_INIT
+
 #define DMA_RAM                     __attribute__((section(".DMA_RAM"), aligned(32)))
 #define DMA_RW_AXI                  DMA_RAM
 #define DMA_RAM_R                   DMA_RAM
