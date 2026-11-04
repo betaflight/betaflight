@@ -52,7 +52,8 @@ typedef enum {
 // Bytes of the screen in the encoding of DJI O3 Air Unit + Goggles 2 (see displayport_msp.c): they
 // show a screen of up to 902 bytes and throw away a bigger one
 #define DISPLAYPORT_MSP_DJI_BUDGET_DEFAULT 902
-#define DISPLAYPORT_MSP_DJI_BUDGET_MAX     2048
+// The largest screen in that encoding, 265 words of 5 bytes: a budget at or above it never applies
+#define DISPLAYPORT_MSP_DJI_BUDGET_MAX     1325
 
 struct displayPort_s *displayPortMspInit(void);
 void displayPortMspSetSerial(serialPortIdentifier_e serialPort);

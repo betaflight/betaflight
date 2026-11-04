@@ -82,6 +82,7 @@ static struct {
 
 static std::vector<packet_t> packets;
 static uint32_t bytes;
+static int dropped;
 static uint32_t now;            // millis()
 static uint32_t txFree;         // Room in the serial buffer
 
@@ -134,6 +135,10 @@ extern "C" {
     int mspSerialPush(serialPortIdentifier_e, uint8_t cmd, uint8_t *data, int datalen, mspDirection_e, mspVersion_e)
     {
         EXPECT_EQ(MSP_DISPLAYPORT, cmd);
+        if (txFree < (uint32_t)datalen + 6) {
+            dropped++;                              // The port drops a frame that does not fit
+            return 0;
+        }
         packet_t p = { data[0], 0, 0, 0, "" };
 
         switch (data[0]) {
@@ -157,7 +162,7 @@ extern "C" {
         packets.push_back(p);
         bytes += datalen + 6;
         if (txFree != UINT32_MAX) {
-            txFree = txFree > (uint32_t)datalen + 6 ? txFree - (datalen + 6) : 0;
+            txFree -= datalen + 6;
         }
 
         return datalen + 6;
@@ -181,6 +186,7 @@ static displayPort_t *init(uint16_t budget = DISPLAYPORT_MSP_DJI_BUDGET_DEFAULT)
     debugMode = DEBUG_MSP_DISPLAYPORT;
     now = 1000;
     txFree = UINT32_MAX;
+    dropped = 0;
     gogglesOff();
     goggles.cells[0] = "what the goggles held before";
     goggles.shown = showing();
@@ -639,18 +645,65 @@ TEST(DisplayPortMspTest, GivesUpWaitingForARoomThatDoesNotCome)
 {
     displayPort_t *dp = init();
 
-    frame(dp, { at(3, 0, "ABC") });
+    frame(dp, { at(3, 0, "ABC"), at(5, 0, "DEF") });
     displayClearScreen(dp, DISPLAY_CLEAR_NONE);
-    txFree = 0;
+    txFree = 13;                                        // Room to blank one of them
     packets.clear();
     for (int t = 0; t < 250; t += 10) {                 // The OSD checks again every few ms
         EXPECT_TRUE(displayDrawScreen(dp));
         now += 10;
     }
-    EXPECT_TRUE(packets.empty());
+    EXPECT_EQ(1u, packets.size());
     now += 1;
-    EXPECT_FALSE(displayDrawScreen(dp));                // Everything goes, to be dropped by the port
-    EXPECT_EQ(1, count(MSP_DP_DRAW_SCREEN));
+    EXPECT_FALSE(displayDrawScreen(dp));                // The OSD goes on, and the port drops the rest
+    EXPECT_EQ(1u, packets.size());
+    EXPECT_EQ(2, dropped);
+    EXPECT_EQ(drawn({ at(3, 0, "ABC"), at(5, 0, "DEF") }), goggles.shown);
+
+    txFree = UINT32_MAX;                                // What was dropped goes once the port drains
+    frame(dp, {});
+    EXPECT_EQ(blank(), goggles.shown);
+}
+
+TEST(DisplayPortMspTest, ADrawThePortDropsGoesWithTheNextOne)
+{
+    for (uint32_t room = 1; room < 7; room++) {         // A draw takes 7 bytes
+        displayPort_t *dp = init();
+
+        frame(dp, { at(3, 0, "ABC") });
+        displayClearScreen(dp, DISPLAY_CLEAR_NONE);
+        txFree = 13 + room;
+        displayWrite(dp, 0, 3, DISPLAYPORT_SEVERITY_NORMAL, "XYZ");      // 13 bytes
+        packets.clear();
+        for (int t = 0; t <= 260; t += 10) {
+            displayDrawScreen(dp);
+            now += 10;
+        }
+        EXPECT_EQ(0, count(MSP_DP_DRAW_SCREEN)) << room;
+        EXPECT_EQ(drawn({ at(3, 0, "ABC") }), goggles.shown) << room;
+
+        txFree = UINT32_MAX;
+        EXPECT_FALSE(displayDrawScreen(dp));            // As the CMS draws a page that does not change
+        EXPECT_EQ(1, count(MSP_DP_DRAW_SCREEN)) << room;
+        EXPECT_EQ(drawn({ at(3, 0, "XYZ") }), goggles.shown) << room;
+    }
+}
+
+TEST(DisplayPortMspTest, ACmsWriteWithNoRoomStopsThePassAndAsksForThePageAgain)
+{
+    displayPort_t *dp = init();
+
+    displayGrab(dp);
+    displayDrawScreen(dp);
+    dp->cleared = false;
+    txFree = 20;
+    EXPECT_EQ(22, displayWrite(dp, 2, 3, DISPLAYPORT_SEVERITY_NORMAL, "ITEM 01   42"));   // What it takes
+    EXPECT_TRUE(packets.empty() || packets.back().subcmd != MSP_DP_WRITE_STRING);
+    EXPECT_TRUE(dp->cleared);
+
+    txFree = UINT32_MAX;
+    EXPECT_EQ(22, displayWrite(dp, 2, 3, DISPLAYPORT_SEVERITY_NORMAL, "ITEM 01   42"));   // What it sent
+    EXPECT_EQ(0, displayWrite(dp, 2, 3, DISPLAYPORT_SEVERITY_NORMAL, "ITEM 01   42"));    // Nothing changed
 }
 
 TEST(DisplayPortMspTest, ReleaseClearsTheGogglesInTheNextFrame)
