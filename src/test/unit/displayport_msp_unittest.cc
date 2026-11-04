@@ -975,3 +975,15 @@ TEST(DisplayPortMspTest, SwitchedOffTheOsdCommandsGoThrough)
     EXPECT_EQ(1u, writes().size());
     EXPECT_EQ(1, count(MSP_DP_DRAW_SCREEN));
 }
+
+TEST(DisplayPortMspTest, SwitchedOnAgainTheGogglesAreSentTheWholeScreen)
+{
+    displayPort_t *dp = init();
+
+    frame(dp, { at(3, 2, "ABC") });
+    displayPortProfileMspMutable()->sendChanges = false;
+    frame(dp, { at(3, 2, "XYZ") });
+    displayPortProfileMspMutable()->sendChanges = true;
+    frame(dp, { at(3, 2, "ABC") });
+    EXPECT_EQ(drawn({ at(3, 2, "ABC") }), goggles.shown);
+}

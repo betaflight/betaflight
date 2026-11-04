@@ -155,7 +155,17 @@ static int grab(displayPort_t *displayPort)
 
 static bool shadowed(void)
 {
-    return displayPortProfileMsp()->sendChanges && mspDisplayPort.cols <= MSP_DP_COLS && mspDisplayPort.rows <= MSP_DP_ROWS;
+    static bool wasShadowed;
+    const bool shadow = displayPortProfileMsp()->sendChanges && mspDisplayPort.cols <= MSP_DP_COLS && mspDisplayPort.rows <= MSP_DP_ROWS;
+
+    // The commands sent as they came did not go into the copy: the goggles are cleared and sent the whole screen
+    if (shadow && !wasShadowed) {
+        mspScreen.needClear = true;
+        mspScreen.refreshAt = millis();
+    }
+    wasShadowed = shadow;
+
+    return shadow;
 }
 
 // A DJI O3 Air Unit polls on the display's port
