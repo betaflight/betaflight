@@ -1451,15 +1451,6 @@ static void loadAdrcState(blackboxMainState_t *blackboxCurrent)
     }
 }
 
-#ifdef UNIT_TEST
-void blackboxLoadAndWriteAdrcStateForTest(const blackboxAdrcTestState_t *previous)
-{
-    blackboxMainState_t state = {0};
-    blackboxCopyAdrcTestState(&state, previous);
-    loadAdrcState(&state);
-    writeAdrcIntraframeFields(&state);
-}
-#endif
 #endif
 
 /**
@@ -1467,8 +1458,13 @@ void blackboxLoadAndWriteAdrcStateForTest(const blackboxAdrcTestState_t *previou
  */
 static void loadMainState(timeUs_t currentTimeUs)
 {
-#ifndef UNIT_TEST
+#if defined(USE_ADRC) || !defined(UNIT_TEST)
     blackboxMainState_t *blackboxCurrent = blackboxHistory[0];
+#endif
+#ifdef USE_ADRC
+    loadAdrcState(blackboxCurrent);
+#endif
+#ifndef UNIT_TEST
 
     blackboxCurrent->time = currentTimeUs;
     for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
@@ -1489,9 +1485,6 @@ static void loadMainState(timeUs_t currentTimeUs)
         blackboxCurrent->magADC[i] = lrintf(mag.magADC.v[i]);
 #endif
     }
-#ifdef USE_ADRC
-    loadAdrcState(blackboxCurrent);
-#endif
 #if defined(USE_ACC) // IMU quaternion
     {
         // write x,y,z of IMU quaternion. Make sure that w is always positive
@@ -1557,6 +1550,21 @@ static void loadMainState(timeUs_t currentTimeUs)
     UNUSED(currentTimeUs);
 #endif // UNIT_TEST
 }
+
+#ifdef USE_ADRC
+#ifdef UNIT_TEST
+void blackboxLoadAndWriteAdrcStateForTest(const blackboxAdrcTestState_t *previous)
+{
+    blackboxMainState_t state = {0};
+    blackboxCopyAdrcTestState(&state, previous);
+    blackboxMainState_t *savedCurrent = blackboxHistory[0];
+    blackboxHistory[0] = &state;
+    loadMainState(0);
+    blackboxHistory[0] = savedCurrent;
+    writeAdrcIntraframeFields(&state);
+}
+#endif
+#endif
 
 /**
  * Transmit the header information for the given field definitions. Transmitted header lines look like:

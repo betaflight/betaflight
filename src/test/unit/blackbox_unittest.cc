@@ -602,7 +602,7 @@ gyro_t gyro;
 
 float motor_disarmed[MAX_SUPPORTED_MOTORS];
 struct pidProfile_s;
-struct pidProfile_s *currentPidProfile;
+struct pidProfile_s *currentPidProfile = &adrcTestPidProfile;
 uint32_t targetPidLooptime;
 
 boxBitmask_t rcModeActivationMask;
