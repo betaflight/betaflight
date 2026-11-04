@@ -46,9 +46,8 @@
 
 #include "pg/serial_uart.h"
 
-#if defined(UM324xF) && defined(SA_UART_RX_PIN)
-uint8_t  afSA;
-IO_t txSA, rxSA;
+#if ENABLE_VTX_UART_PIN_SWITCH
+#include "platform/vtx_uart_pin_switch.h"
 #endif
 
 #ifdef USE_HAL_DRIVER
@@ -200,11 +199,6 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
 #elif defined(UM324xF)
         UNUSED(pull);
         UNUSED(pushPull);
-#if defined(SA_UART_RX_PIN)
-        txSA = txIO;
-        rxSA = IOGetByTag(DEFIO_TAG_E(SA_UART_RX_PIN));
-        afSA = hardware->af;
-#endif
         const ioConfig_t ioCfg = IO_CONFIG(
             GPIO_MODE_AF,
             GPIO_SPEED_FREQ_HIGH,  // TODO: should use stronger drive
@@ -213,11 +207,6 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
 #endif
         IOInit(txIO, ownerTxRx, ownerIndex);
         IOConfigGPIOAF(txIO, ioCfg, txAf);
-#if defined(UM324xF) && defined(SA_UART_RX_PIN)
-        IOConfigGPIO(txIO, IOCFG_IN_FLOATING);
-        IOConfigGPIO(rxIO, IOCFG_IN_FLOATING);
-        IOConfigGPIO(rxSA, IOCFG_IN_FLOATING);
-#endif
     } else {
         if ((mode & MODE_TX) && txIO) {
             IOInit(txIO, ownerTxRx, ownerIndex);
@@ -257,6 +246,10 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
             IOConfigGPIOAF(rxIO, ioCfg, rxAf);
         }
     }
+
+#if ENABLE_VTX_UART_PIN_SWITCH
+    vtxUartPinSwitchInit(&s->port, options, txIO, rxIO, txAf);
+#endif
 
     enableRxIrq(hardware);
     return s;
