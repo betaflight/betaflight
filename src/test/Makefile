@@ -128,6 +128,33 @@ flash_fm25v02a_unittest_DEFINES := \
 		USE_FLASH_M25P16= \
 		USE_FLASH_FM25V02A=
 
+flash_w25n_quadspi_unittest_SRC := \
+		$(USER_DIR)/drivers/flash/flash_w25n.c \
+		$(USER_DIR)/drivers/flash/flash.c \
+		$(USER_DIR)/io/flashfs.c
+
+flash_w25n_quadspi_unittest_DEFINES := \
+		USE_FLASH_CHIP= \
+		USE_FLASHFS= \
+		USE_FLASH_SPI= \
+		USE_QUADSPI= \
+		USE_FLASH_QUADSPI= \
+		USE_FLASH_W25N= \
+		USE_FLASH_W25N01G=
+
+flash_w25q128fv_quadspi_unittest_SRC := \
+		$(USER_DIR)/drivers/flash/flash_w25q128fv.c \
+		$(USER_DIR)/drivers/flash/flash.c \
+		$(USER_DIR)/io/flashfs.c
+
+flash_w25q128fv_quadspi_unittest_DEFINES := \
+		USE_FLASH_CHIP= \
+		USE_FLASHFS= \
+		USE_FLASH_SPI= \
+		USE_QUADSPI= \
+		USE_FLASH_QUADSPI= \
+		USE_FLASH_W25Q128FV=
+
 baro_bmp085_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_bmp085.c
 
@@ -177,6 +204,14 @@ accgyro_spi_icm426xx_unittest_DEFINES := \
                 USE_GYRO_SPI_ICM42688P= \
                 USE_ACCGYRO_IIM42652= \
                 USE_ACCGYRO_IIM42653=
+
+accgyro_spi_icm456xx_unittest_SRC := \
+		$(USER_DIR)/drivers/accgyro/accgyro_spi_icm456xx.c
+
+accgyro_spi_icm456xx_unittest_DEFINES := \
+                USE_DMA= \
+                USE_ACCGYRO_ICM45686= \
+                USE_ACCGYRO_ICM45605=
 
 accgyro_spi_lsm6dsv16x_unittest_SRC := \
 		$(USER_DIR)/drivers/accgyro/accgyro_spi_lsm6dsv16x.c
@@ -600,6 +635,16 @@ serial_feature_map_unittest_DEFINES := \
 		USE_TELEMETRY_SMARTPORT= \
 		USE_TELEMETRY_MAVLINK= \
 		USE_TELEMETRY_IBUS=
+
+# The same map as a cloud build without the VTX option compiles it.
+serial_feature_map_novtx_unittest_SRC := \
+		$(USER_DIR)/io/serial_feature_map.c
+
+serial_feature_map_novtx_unittest_DEFINES := \
+		USE_GPS= \
+		USE_SERIALRX= \
+		USE_OSD= \
+		USE_MSP_DISPLAYPORT=
 
 sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/sensors/gyro.c \

@@ -170,11 +170,12 @@ static void activateConfig(void)
     loadControlRateProfile();
     loadBatteryProfile();
 
-    initRcProcessing();
-
     activeAdjustmentRangeReset();
 
     pidInit(currentPidProfile);
+
+    // after pidInit(): initRcProcessing() latches feedforward settings from pidRuntime
+    initRcProcessing();
 
     rcControlsInit();
 
