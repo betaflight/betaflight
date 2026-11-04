@@ -306,6 +306,8 @@ float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 extern boxBitmask_t rcModeActivationMask;
 gpsSolutionData_t gpsSol;
 
+uint8_t gnssGetMinSats(void) { return 4; }
+
 batteryState_e getBatteryState(void)
 {
     return BATTERY_OK;
@@ -376,6 +378,17 @@ bool featureIsEnabled(uint32_t mask)
 void tfp_sprintf(char *, char*, ...) { }
 
 int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax)
+{
+    UNUSED(x);
+    UNUSED(srcMin);
+    UNUSED(srcMax);
+    UNUSED(destMin);
+    UNUSED(destMax);
+
+    return 0;
+}
+
+float scaleRangef(float x, float srcMin, float srcMax, float destMin, float destMax)
 {
     UNUSED(x);
     UNUSED(srcMin);

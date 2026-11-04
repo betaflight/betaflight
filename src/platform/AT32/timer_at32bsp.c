@@ -861,7 +861,12 @@ void timerEnable(const timerHardware_t *timHw)
 {
     tmr_type *timer_ptr = (tmr_type *)timHw->tim;
     tmr_counter_enable(timer_ptr, TRUE);
-    tmr_overflow_event_disable(timer_ptr, TRUE);
+    // Force an overflow (update) event, as STM32 and APM32 do here. This latches the prescaler
+    // written by timerReconfigureTimeBase() out of its shadow register, so the timer actually runs
+    // at the requested rate. Previously this called tmr_overflow_event_disable(timer_ptr, TRUE),
+    // which sets CTRL1.OVFEN - the AT32 name for the UDIS bit - and so suppressed the overflow
+    // event entirely, leaving the timer with a stale prescaler and no update interrupt.
+    tmr_event_sw_trigger(timer_ptr, TMR_OVERFLOW_SWTRIG);
 }
 
 void timerEnableInterrupt(const timerHardware_t *timHw)

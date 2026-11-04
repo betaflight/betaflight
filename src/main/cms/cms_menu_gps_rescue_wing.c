@@ -36,48 +36,29 @@
 
 #include "config/config.h"
 
-#include "flight/position.h"
-
-#include "pg/autopilot.h"
 #include "pg/gps_rescue.h"
 
-static const void *cms_menuGpsRescuePidOnEnter(displayPort_t *pDisp)
-{
-    UNUSED(pDisp);
-
-    return NULL;
-}
-
-static const void *cms_menuGpsRescuePidOnExit(displayPort_t *pDisp, const OSD_Entry *self)
-{
-    UNUSED(pDisp);
-    UNUSED(self);
-
-    return NULL;
-}
-
-const OSD_Entry cms_menuGpsRescuePidEntries[] =
-{
-    {"--- GPS RESCUE PID---", OME_Label, NULL, NULL},
-
-    {"BACK", OME_Back, NULL, NULL},
-    {NULL, OME_END, NULL, NULL}
-};
-
-CMS_Menu cms_menuGpsRescuePid = {
-#ifdef CMS_MENU_DEBUG
-    .GUARD_text = "MENUGPSRPID",
-    .GUARD_type = OME_MENU,
-#endif
-    .onEnter = cms_menuGpsRescuePidOnEnter,
-    .onExit = cms_menuGpsRescuePidOnExit,
-    .onDisplayUpdate = NULL,
-    .entries = cms_menuGpsRescuePidEntries,
-};
+static uint16_t gpsRescueConfig_minStartDistM;
+static uint8_t gpsRescueConfig_altitudeMode;
+static uint16_t gpsRescueConfig_initialClimbM;
+static uint16_t gpsRescueConfig_ascendRate;
+static uint16_t gpsRescueConfig_returnAltitudeM;
+static uint16_t gpsRescueConfig_descendRate;
+static uint8_t gpsRescueConfig_minSats;
+static uint8_t gpsRescueConfig_allowArmingWithoutFix;
 
 static const void *cmsx_menuGpsRescueOnEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
+
+    gpsRescueConfig_minStartDistM = gpsRescueConfig()->minStartDistM;
+    gpsRescueConfig_altitudeMode = gpsRescueConfig()->altitudeMode;
+    gpsRescueConfig_initialClimbM = gpsRescueConfig()->initialClimbM;
+    gpsRescueConfig_ascendRate = gpsRescueConfig()->ascendRate;
+    gpsRescueConfig_returnAltitudeM = gpsRescueConfig()->returnAltitudeM;
+    gpsRescueConfig_descendRate = gpsRescueConfig()->descendRate;
+    gpsRescueConfig_minSats = gpsRescueConfig()->minSats;
+    gpsRescueConfig_allowArmingWithoutFix = gpsRescueConfig()->allowArmingWithoutFix;
 
     return NULL;
 }
@@ -87,12 +68,31 @@ static const void *cmsx_menuGpsRescueOnExit(displayPort_t *pDisp, const OSD_Entr
     UNUSED(pDisp);
     UNUSED(self);
 
+    gpsRescueConfigMutable()->minStartDistM = gpsRescueConfig_minStartDistM;
+    gpsRescueConfigMutable()->altitudeMode = gpsRescueConfig_altitudeMode;
+    gpsRescueConfigMutable()->initialClimbM = gpsRescueConfig_initialClimbM;
+    gpsRescueConfigMutable()->ascendRate = gpsRescueConfig_ascendRate;
+    gpsRescueConfigMutable()->returnAltitudeM = gpsRescueConfig_returnAltitudeM;
+    gpsRescueConfigMutable()->descendRate = gpsRescueConfig_descendRate;
+    gpsRescueConfigMutable()->minSats = gpsRescueConfig_minSats;
+    gpsRescueConfigMutable()->allowArmingWithoutFix = gpsRescueConfig_allowArmingWithoutFix;
+
     return NULL;
 }
 
 const OSD_Entry cmsx_menuGpsRescueEntries[] =
 {
     {"--- GPS RESCUE ---", OME_Label, NULL, NULL},
+
+    { "MIN START DIST  M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_minStartDistM, 5, 1000, 5 } },
+    { "ALTITUDE MODE"    , OME_TAB    | REBOOT_REQUIRED, NULL, &(OSD_TAB_t)   { &gpsRescueConfig_altitudeMode, 2, lookupTableRescueAltitudeMode} },
+    { "INITIAL CLIMB   M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_initialClimbM, 0, 100, 1 } },
+    { "ASCEND RATE  CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_ascendRate, 50, 2500, 1 } },
+    { "RETURN ALT      M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_returnAltitudeM, 5, 1000, 1 } },
+    { "DESCENT RATE CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_descendRate, 25, 500, 1 } },
+
+    { "SATS REQUIRED",     OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_minSats, 5, 50, 1 } },
+    { "ARM WITHOUT FIX",   OME_Bool  | REBOOT_REQUIRED,  NULL, &gpsRescueConfig_allowArmingWithoutFix },
 
     {"BACK", OME_Back, NULL, NULL},
     {NULL, OME_END, NULL, NULL}

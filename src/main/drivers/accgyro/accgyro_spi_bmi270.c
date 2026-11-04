@@ -28,6 +28,7 @@
 #ifdef USE_ACCGYRO_BMI270
 
 #include "drivers/accgyro/accgyro.h"
+#include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/accgyro/accgyro_spi_bmi270.h"
 #include "drivers/bus_spi.h"
 #include "drivers/exti.h"
@@ -317,7 +318,6 @@ static busStatus_e bmi270Intcallback(uintptr_t arg)
 static void bmi270ExtiHandler(extiCallbackRec_t *cb)
 {
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
-    extDevice_t *dev = &gyro->dev;
 
     // Ideally we'd use a timer to capture such information, but unfortunately the port used for EXTI interrupt does
     // not have an associated timer
@@ -326,7 +326,7 @@ static void bmi270ExtiHandler(extiCallbackRec_t *cb)
     gyro->gyroLastEXTI = nowCycles;
 
     if (gyro->gyroModeSPI == GYRO_EXTI_INT_DMA) {
-        spiSequence(dev, gyro->segments);
+        mpuGyroStartDmaRead(gyro);
     }
 
     gyro->detectedEXTI++;
@@ -379,7 +379,7 @@ static bool bmi270AccRead(accDev_t *acc)
         // up an old value.
 
         // This data was read from the gyro, which is the same SPI device as the acc
-        int16_t *accData = (int16_t *)dev->rxBuf;
+        int16_t *accData = (int16_t *)(void *)dev->rxBuf;
         bmi270StoreAxes(acc->ADCRaw, accData[1], accData[2], accData[3]);
         break;
     }
@@ -395,7 +395,7 @@ static bool bmi270AccRead(accDev_t *acc)
 static bool bmi270GyroReadRegister(gyroDev_t *gyro)
 {
     extDevice_t *dev = &gyro->dev;
-    int16_t *gyroData = (int16_t *)dev->rxBuf;
+    int16_t *gyroData = (int16_t *)(void *)dev->rxBuf;
 
     switch (gyro->gyroModeSPI) {
     case GYRO_EXTI_INIT:

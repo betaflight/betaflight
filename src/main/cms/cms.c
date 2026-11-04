@@ -30,6 +30,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 #include <ctype.h>
 
 #include "platform.h"
@@ -1046,9 +1047,10 @@ const void *cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
 
 // Stick/key detection and key codes
 
-#define IS_HI(X)  (rcData[X] > 1750)
-#define IS_LO(X)  (rcData[X] < 1250)
-#define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
+#define CMS_STICK_DEFLECTION 0.5f
+#define IS_HI(X)  (rcGetChannel(X) > CMS_STICK_DEFLECTION)
+#define IS_LO(X)  (rcGetChannel(X) < -CMS_STICK_DEFLECTION)
+#define IS_MID(X) (fabsf(rcGetChannel(X)) < CMS_STICK_DEFLECTION)
 
 #define BUTTON_TIME   250 // msec
 #define BUTTON_PAUSE  500 // msec

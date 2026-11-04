@@ -303,6 +303,13 @@ uint8_t usbVcpIsActive(void)
     // Unplugging stops the SOFs, which suspends the device out of USBD_STATE_CONFIGURED.
     // usbIsConnected() alone cannot see this: without VBUS sensing there is no disconnect
     // interrupt, so the state never returns to USBD_STATE_DEFAULT.
+#if defined(STM32F4)
+    // F4 only updates the state usbIsConfigured() reads on enumeration or reset, so a pulled cable
+    // keeps looking configured; the OTG core does track the bus idle that a pulled cable causes.
+    if (USB_OTG_dev.dev.device_status != USB_OTG_CONFIGURED) {
+        return 0;
+    }
+#endif
     return usbIsConnected() && usbIsConfigured();
 }
 #endif

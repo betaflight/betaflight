@@ -33,7 +33,8 @@
 
 typedef enum {
     FLASH_TYPE_NOR = 0,
-    FLASH_TYPE_NAND
+    FLASH_TYPE_NAND,
+    FLASH_TYPE_FRAM,
 } flashType_e;
 
 typedef uint16_t flashSector_t;
@@ -75,6 +76,7 @@ void flashPageProgram(uint32_t address, const uint8_t *data, uint32_t length, vo
 int flashReadBytes(uint32_t address, uint8_t *buffer, uint32_t length);
 void flashFlush(void);
 const flashGeometry_t *flashGetGeometry(void);
+const char *flashTypeGetName(flashType_e type);
 
 void flashMemoryMappedModeDisable(void);
 void flashMemoryMappedModeEnable(void);

@@ -268,6 +268,7 @@ static void bbSetupDma(bbPort_t *bbPort)
     bbPacer_t *bbPacer = bbFindMotorPacer(bbPort->timhw->tim);
     bbPacer->dmaSources |= bbPort->dmaSource;
 
+    bbPort->dmaDescriptor = dmaGetDescriptorByIdentifier(dmaIdentifier);
     dmaSetHandler(dmaIdentifier, bbDMAIrqHandler, NVIC_BUILD_PRIORITY(2, 1), (uint32_t)bbPort);
 
     bbDMA_ITConfig(bbPort);
@@ -275,6 +276,10 @@ static void bbSetupDma(bbPort_t *bbPort)
 
 FAST_IRQ_HANDLER void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
 {
+    if (!bbDMAEventPending(descriptor)) {
+        return;
+    }
+
     dbgPinHi(0);
 
     bbPort_t *bbPort = (bbPort_t *)descriptor->userParam;
@@ -761,6 +766,14 @@ bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorCon
         const unsigned reorderedMotorIndex = motorConfig->motorOutputReordering[motorIndex];
         const timerHardware_t *timerHardware = timerGetConfiguredByTag(motorConfig->ioTags[reorderedMotorIndex]);
         const IO_t io = IOGetByTag(motorConfig->ioTags[reorderedMotorIndex]);
+
+        if (timerHardware == NULL) {
+            /* not enough motors initialised for the mixer or a break in the motors */
+            device->vTable = NULL;
+            dshotMotorCount = 0;
+            bbStatus = DSHOT_BITBANG_STATUS_MOTOR_PIN_CONFLICT;
+            return false;
+        }
 
         uint8_t output = motorConfig->motorInversion ?  timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output;
         bbPuPdMode = (output & TIMER_OUTPUT_INVERTED) ? BB_GPIO_PULLDOWN : BB_GPIO_PULLUP;

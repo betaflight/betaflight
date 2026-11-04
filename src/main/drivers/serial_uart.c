@@ -258,6 +258,11 @@ uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
     return UARTDEV_INVALID;
 }
 
+int uartDeviceIndexFromIdentifier(serialPortIdentifier_e identifier)
+{
+    return (int)uartDeviceIdxFromIdentifier(identifier);
+}
+
 #if SERIAL_PIOUART_COUNT > 0
 FAST_DATA_ZERO_INIT uartDevice_t pioUartDevice[SERIAL_PIOUART_COUNT];
 #endif
@@ -378,10 +383,14 @@ static uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
     }
 #endif
 
-    if (uartPort->port.rxBufferHead >= uartPort->port.rxBufferTail) {
-        return uartPort->port.rxBufferHead - uartPort->port.rxBufferTail;
+    // The Rx ISR advances the head; read it once so a wrap between reads cannot underflow the result
+    const uint32_t rxBufferHead = uartPort->port.rxBufferHead;
+    const uint32_t rxBufferTail = uartPort->port.rxBufferTail;
+
+    if (rxBufferHead >= rxBufferTail) {
+        return rxBufferHead - rxBufferTail;
     } else {
-        return uartPort->port.rxBufferSize + uartPort->port.rxBufferHead - uartPort->port.rxBufferTail;
+        return uartPort->port.rxBufferSize + rxBufferHead - rxBufferTail;
     }
 }
 
@@ -389,12 +398,28 @@ static uint32_t uartTotalTxBytesFree(const serialPort_t *instance)
 {
     const uartPort_t *uartPort = (const uartPort_t*)instance;
 
+    uint32_t txBufferHead;
+    uint32_t txBufferTail;
     uint32_t bytesUsed;
+#ifdef USE_DMA
+    uint32_t dmaRemaining = 0;
+#endif
 
-    if (uartPort->port.txBufferHead >= uartPort->port.txBufferTail) {
-        bytesUsed = uartPort->port.txBufferHead - uartPort->port.txBufferTail;
+    // The Tx ISR moves the tail whenever it starts a transfer; retry until the tail did not move during the sample
+    do {
+        txBufferTail = uartPort->port.txBufferTail;
+        txBufferHead = uartPort->port.txBufferHead;
+#ifdef USE_DMA
+        if (uartPort->txDMAResource) {
+            dmaRemaining = dmaGetDataLength(uartPort->txDMAResource);
+        }
+#endif
+    } while (txBufferTail != uartPort->port.txBufferTail);
+
+    if (txBufferHead >= txBufferTail) {
+        bytesUsed = txBufferHead - txBufferTail;
     } else {
-        bytesUsed = uartPort->port.txBufferSize + uartPort->port.txBufferHead - uartPort->port.txBufferTail;
+        bytesUsed = uartPort->port.txBufferSize + txBufferHead - txBufferTail;
     }
 
 #ifdef USE_DMA
@@ -403,7 +428,7 @@ static uint32_t uartTotalTxBytesFree(const serialPort_t *instance)
          * When we queue up a DMA request, we advance the Tx buffer tail before the transfer finishes, so we must add
          * the remaining size of that in-progress transfer here instead:
          */
-        bytesUsed += dmaGetDataLength(uartPort->txDMAResource);
+        bytesUsed += dmaRemaining;
 
         /*
          * If the Tx buffer is being written to very quickly, we might have advanced the head into the buffer
@@ -579,6 +604,17 @@ const struct serialPortVTable uartVTable[] = {
     }
 };
 
+#ifdef USE_GDBSP_DRIVER
+// GDBSP driver uses IRQ handlers with different naming scheme
+#define UART_IRQHandler(type, number, dev)                      \
+    FAST_IRQ_HANDLER void CONCAT(                              \
+        _UART_GET_PREFIX(dev),                                  \
+        number ## _IRQHandler)(void)                            \
+    {                                                           \
+        uartPort_t *uartPort = &(uartDevice[(dev)].port);       \
+        uartIrqHandler(uartPort);                               \
+    }
+#else
 #define UART_IRQHandler(type, number, dev)                      \
     FAST_IRQ_HANDLER void type ## number ## _IRQHandler(void)   \
     {                                                           \
@@ -586,6 +622,11 @@ const struct serialPortVTable uartVTable[] = {
         uartIrqHandler(uartPort);                               \
     }                                                           \
 /**/
+#endif
+
+#ifdef USE_UART0
+UART_IRQHandler(USART, 0, UARTDEV_0) // USART0 Rx/Tx IRQ Handler
+#endif
 
 #ifdef USE_UART1
 UART_IRQHandler(USART, 1, UARTDEV_1) // USART1 Rx/Tx IRQ Handler

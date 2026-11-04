@@ -108,6 +108,11 @@ __STATIC_INLINE void DDL_EX_DMA_EnableIT_TC(DMA_Stream_TypeDef *DMAx_Streamy)
     SET_BIT(DMAx_Streamy->SCFG, DMA_SCFGx_TXCIEN);
 }
 
+__STATIC_INLINE void DDL_EX_DMA_EnableIT_TE(DMA_Stream_TypeDef *DMAx_Streamy)
+{
+    SET_BIT(DMAx_Streamy->SCFG, DMA_SCFGx_TXEIEN);
+}
+
 __STATIC_INLINE void DDL_EX_TMR_CC_EnableNChannel(TMR_TypeDef *TMRx, uint32_t Channel)
 {
     DDL_TMR_CC_EnableChannel(TMRx, 4 * Channel);

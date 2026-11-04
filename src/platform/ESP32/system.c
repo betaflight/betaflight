@@ -176,16 +176,19 @@ STATIC_ASSERT(sizeof(timeUs_t) == sizeof(uint32_t), timeUs_t_is_32_bit_failed);
 
 FAST_CODE timeUs_t micros(void)
 {
-    // Take a snapshot of counter unit 0
-    systimer_ll_counter_snapshot(&SYSTIMER, 0);
+    uint32_t lo;
+    uint32_t hi;
 
-    // Wait for snapshot to be valid
-    while (!systimer_ll_is_counter_value_valid(&SYSTIMER, 0)) {
-    }
+    // The snapshot register is shared by both cores and any ISR, so retake it
+    // if another snapshot landed between the low and high word reads.
+    do {
+        systimer_ll_counter_snapshot(&SYSTIMER, 0);
+        while (!systimer_ll_is_counter_value_valid(&SYSTIMER, 0)) {
+        }
+        lo = systimer_ll_get_counter_value_low(&SYSTIMER, 0);
+        hi = systimer_ll_get_counter_value_high(&SYSTIMER, 0);
+    } while (lo != systimer_ll_get_counter_value_low(&SYSTIMER, 0));
 
-    // Read the 52-bit counter value
-    uint32_t lo = systimer_ll_get_counter_value_low(&SYSTIMER, 0);
-    uint32_t hi = systimer_ll_get_counter_value_high(&SYSTIMER, 0);
     uint64_t ticks = ((uint64_t)hi << 32) | lo;
 
     // Convert 16 MHz ticks to microseconds
