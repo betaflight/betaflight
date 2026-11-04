@@ -6,12 +6,19 @@ use strict;
 
 # io_def_generated.h
 
-my @ports = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O');
-my @pins  = 0 .. 15;
 my @timers = (1,2,3,4,6,7,8,15,16,17);
 my $drivers_dir = "src/main/drivers";
+
+# One io_def_generated.h per platform that uses this layout. Ports and pins per
+# port differ: STM32 has 16 pins per port, the i.MXRT GPIO blocks have 32.
 # io_def_generated.h lives in the STM32 common platform tree (moved in #14120)
-my $io_def_dir  = "src/platform/common/stm32";
+my @io_def_targets = (
+    { dir => "src/platform/common/stm32", ports => ['A'..'O'], pins => [0 .. 15] },
+    # i.MXRT GPIO1..GPIO5 map to ports A..E, 32 pads each. The 11xx parts add
+    # GPIO6 as port F and the always on GPIO13 as port G; a 10xx target defines
+    # no TARGET_IO_PORTF or TARGET_IO_PORTG, so both collapse to an empty port.
+    { dir => "src/platform/NXP",        ports => ['A'..'G'], pins => [0 .. 31] },
+);
 
 # change list separator to newline - we use @{} interpolation to merge multiline strings
 $" = "\n";
@@ -43,8 +50,11 @@ chomp(my $disclaimer_generated = <<"END");
 // do not modify this file directly, your changes will be lost
 END
 
-my $io_def_file="$io_def_dir/io_def_generated.h";
 my $fh;
+for my $io_def_target (@io_def_targets) {
+my @ports = @{$io_def_target->{ports}};
+my @pins  = @{$io_def_target->{pins}};
+my $io_def_file = "$io_def_target->{dir}/io_def_generated.h";
 open $fh, '>', $io_def_file or die "Cannot open $io_def_file: $!";
 print { $fh} <<"END" or die  "Cannot write into $io_def_file: $!"; close $fh;
 ${license}
@@ -119,6 +129,7 @@ END2
 # define DEFIO_PORT_OFFSET_LIST /* empty */
 #endif
 END
+}
 
 exit; # only IO code is merged now
 
