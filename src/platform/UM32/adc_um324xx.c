@@ -506,6 +506,18 @@ void adcGetChannelValues(void)
 
 #ifdef USE_ADC_INTERNAL
 
+uint16_t adcInternalCompensateVref(uint16_t intVRefAdcValue)
+{
+    UNUSED(intVRefAdcValue);
+    return VREFINT_CAL_VREF;
+}
+
+int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue)
+{
+    UNUSED(vrefValue);
+    return (int16_t)((int16_t)(tempAdcValue - adcTSCAL1) / adcTSSlopeK + TEMPSENSOR_CAL1_TEMP);
+}
+
 bool adcInternalIsBusy(void)
 {
     return false;

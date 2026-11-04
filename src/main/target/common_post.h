@@ -39,6 +39,11 @@
 
 */
 
+// Platforms with custom internal ADC calibration supply the conversion functions.
+#ifndef PLATFORM_TRAIT_ADC_INTERNAL_CONVERSION
+#define PLATFORM_TRAIT_ADC_INTERNAL_CONVERSION 0
+#endif
+
 #ifndef PLATFORM_NO_LIBC
 #define PLATFORM_NO_LIBC 1
 #endif

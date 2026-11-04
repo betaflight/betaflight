@@ -36,7 +36,7 @@
 
 //#define DEBUG_ADC_CHANNELS
 
-#ifdef USE_ADC_INTERNAL
+#if defined(USE_ADC_INTERNAL) && !PLATFORM_TRAIT_ADC_INTERNAL_CONVERSION
 
 /**
  * Use a measurement of the fixed internal vref to calculate the external Vref+
@@ -54,32 +54,22 @@
 */
 uint16_t adcInternalCompensateVref(uint16_t intVRefAdcValue)
 {
-#if defined(UM324xF)
-    UNUSED(intVRefAdcValue);
-    return VREFINT_CAL_VREF;
-#else
     // This is essentially a tuned version of
     // __HAL_ADC_CALC_VREFANALOG_VOLTAGE(vrefAdcValue, ADC_RESOLUTION_12B);
     if (intVRefAdcValue == 0) {
         return VREFINT_CAL_VREF;
     }
     return (uint16_t)((uint32_t)(adcVREFINTCAL * VREFINT_CAL_VREF) / intVRefAdcValue);
-#endif
 }
 
 #ifndef USE_PLATFORM_ADC_TEMPERATURE
 int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue)
 {
-#if defined(UM324xF)
-    UNUSED(vrefValue);
-    return (int16_t)((int16_t)(tempAdcValue - adcTSCAL1) / adcTSSlopeK + TEMPSENSOR_CAL1_TEMP);
-#else
     // This is essentially a tuned version of
     // __HAL_ADC_CALC_TEMPERATURE(vrefValue, tempAdcValue, ADC_RESOLUTION_12B);
 
     return ((((int32_t)((tempAdcValue * vrefValue) / TEMPSENSOR_CAL_VREFANALOG) - adcTSCAL1) * adcTSSlopeK) + 500) / 1000 + TEMPSENSOR_CAL1_TEMP;
-#endif
 }
-#endif
-#endif // USE_ADC_INTERNAL
+#endif // USE_PLATFORM_ADC_TEMPERATURE
+#endif // USE_ADC_INTERNAL && !PLATFORM_TRAIT_ADC_INTERNAL_CONVERSION
 #endif
