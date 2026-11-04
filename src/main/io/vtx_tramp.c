@@ -38,6 +38,11 @@
 
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_table.h"
+#include "drivers/vtx_uart_pin_switch.h"
+
+#if ENABLE_VTX_UART_PIN_SWITCH
+#include "drivers/time.h"
+#endif
 
 #include "io/serial.h"
 #include "io/vtx_tramp.h"
@@ -138,11 +143,6 @@ static int trampReceivePos = 0;
 
 // Last action time
 static timeUs_t trampLastTimeUs = 0;
-
-#if defined(UM324xF) && defined(SA_UART_RX_PIN)
-timeMs_t trTxstart = 0;
-#include "drivers/time.h"
-#endif
 
 // Calculate tramp protocol checksum of provided buffer
 static uint8_t trampChecksum(const uint8_t *trampBuf)
@@ -336,12 +336,8 @@ static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
     // Read response from device
     const char replyCode = trampReceive();
 
-#if defined(UM324xF) && defined(SA_UART_RX_PIN)
-    extern uint8_t  afSA;
-    extern IO_t txSA, rxSA;
-    IOConfigGPIOAF(txSA, IOCFG_AF_PP, afSA);
-    IOConfigGPIO(rxSA, IOCFG_IN_FLOATING);
-    trTxstart = millis();
+#if ENABLE_VTX_UART_PIN_SWITCH
+    vtxUartPinSwitchBegin(trampSerialPort, millis(), 20);
 #endif
 
     // Act on state

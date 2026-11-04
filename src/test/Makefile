@@ -987,6 +987,21 @@ mavlink_mission_unittest_DEFINES := \
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE=
 
+vtx_uart_pin_switch_unittest_SRC := \
+		$(USER_DIR)/../platform/UM32/vtx_uart_pin_switch.c
+
+vtx_uart_pin_switch_unittest_INCLUDE_DIRS := \
+		$(ROOT)/src/platform/UM32/include
+
+# The test GPIO stub has no generated tags; PB7 encodes port B (2) and pin 7.
+vtx_uart_pin_switch_unittest_DEFINES := \
+		ENABLE_VTX_UART_PIN_SWITCH=1 \
+		USE_VTX_SMARTAUDIO= \
+		USE_VTX_TRAMP= \
+		USE_TIMER_AF= \
+		SA_UART_RX_PIN=PB7 \
+		DEFIO_TAG__PB7=0x27
+
 vtx_unittest_SRC := \
 		$(USER_DIR)/fc/core.c \
 		$(USER_DIR)/fc/dispatch.c \
