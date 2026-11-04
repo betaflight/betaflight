@@ -213,14 +213,15 @@ void initActiveBoxIds(void)
         BME(BOXAIRMODE);
     }
 
-    bool acceleratorGainsEnabled = false;
-    for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
-        if (pidProfiles(i)->anti_gravity_gain != ITERM_ACCELERATOR_GAIN_OFF) {
-            acceleratorGainsEnabled = true;
+    // Anti-gravity switch is only useful if a profile has a non-zero gain
+    // and the feature isn't forcing anti-gravity permanently on (core.c ORs them)
+    if (!featureIsEnabled(FEATURE_ANTI_GRAVITY)) {
+        for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
+            if (pidProfiles(i)->anti_gravity_gain != ANTI_GRAVITY_GAIN_OFF) {
+                BME(BOXANTIGRAVITY);
+                break;
+            }
         }
-    }
-    if (acceleratorGainsEnabled && !featureIsEnabled(FEATURE_ANTI_GRAVITY)) {
-        BME(BOXANTIGRAVITY);
     }
 
     if (sensors(SENSOR_ACC)) {
