@@ -247,6 +247,8 @@ battery_profile_unittest_SRC := \
 		$(USER_DIR)/pg/pg.c
 
 blackbox_unittest_SRC :=  \
+		$(USER_DIR)/flight/adrc.c \
+		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/blackbox/blackbox.c \
 		$(USER_DIR)/blackbox/blackbox_encoding.c \
 		$(USER_DIR)/blackbox/blackbox_io.c \
@@ -834,6 +836,7 @@ pid_unittest_SRC :=  \
 		$(USER_DIR)/pg/pg.c
 
 pid_unittest_DEFINES := \
+		USE_THRUST_LINEARIZATION= \
 		USE_ADRC= \
 		USE_YAW_SPIN_RECOVERY= \
 		USE_ITERM_RELAX= \

@@ -38,6 +38,7 @@ extern "C" {
     #include "flight/failsafe.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
+    #include "flight/pid_init.h"
 
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
@@ -463,6 +464,51 @@ TEST(BlackboxTest, AdrcFieldSchemaAndConditionAreExact)
     adrcTestPidProfile.pid_type = PID_TYPE_CLASSIC;
 }
 
+TEST(BlackboxTest, AdrcInactiveFieldsDoNotReuseHistory)
+{
+    blackboxConfigMutable()->device = BLACKBOX_DEVICE_SERIAL;
+    currentPidProfile = &adrcTestPidProfile;
+    const blackboxAdrcTestState_t stale = {{10, -20, 30}, 400, 350, 101, 12};
+    // First verify that an active ADRC frame replaces stale data with live values.
+    pidRuntime = {};
+    pidData[0].Sum = 1.25f;
+    pidData[1].Sum = -2.5f;
+    pidData[2].Sum = 3.0f;
+    pidRuntime.adrc.observedCommandedCollective = 0.4f;
+    pidRuntime.adrc.observedAppliedCollective = 0.35f;
+    pidRuntime.adrc.gateResetCount = 7;
+    adrcTestPidProfile.pid_type = PID_TYPE_ADRC;
+    debugMode = DEBUG_ADRC;
+    serialCaptureSize = 0;
+    blackboxLoadAndWriteAdrcStateForTest(&stale);
+    size_t activeOffset = 0;
+    EXPECT_EQ(12, readSignedVB(&activeOffset));
+    EXPECT_EQ(-25, readSignedVB(&activeOffset));
+    EXPECT_EQ(30, readSignedVB(&activeOffset));
+    EXPECT_EQ(400u, readUnsignedVB(&activeOffset));
+    EXPECT_EQ(350u, readUnsignedVB(&activeOffset));
+    EXPECT_EQ(0u, readUnsignedVB(&activeOffset));
+    EXPECT_EQ(7u, readUnsignedVB(&activeOffset));
+    EXPECT_EQ(serialCaptureSize, activeOffset);
+    for (int scenario = 0; scenario < 2; ++scenario) {
+        adrcTestPidProfile.pid_type = scenario ? PID_TYPE_ADRC : PID_TYPE_CLASSIC;
+        debugMode = scenario ? DEBUG_NONE : DEBUG_ADRC;
+        serialCaptureSize = 0;
+        blackboxLoadAndWriteAdrcStateForTest(&stale);
+        size_t offset = 0;
+        for (int i = 0; i < 3; ++i) {
+            EXPECT_EQ(0, readSignedVB(&offset));
+        }
+        for (int i = 0; i < 4; ++i) {
+            EXPECT_EQ(0u, readUnsignedVB(&offset));
+        }
+        EXPECT_EQ(serialCaptureSize, offset);
+    }
+    adrcTestPidProfile.pid_type = PID_TYPE_CLASSIC;
+    debugMode = DEBUG_NONE;
+    blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
+}
+
 TEST(BlackboxTest, AdrcWireEncodingMatchesFieldOrder)
 {
     blackboxConfigMutable()->device = BLACKBOX_DEVICE_SERIAL;
@@ -528,6 +574,10 @@ TEST(BlackboxTest, Test_servo_field_disable)
 
 // STUBS
 extern "C" {
+float mixerGetAdrcThrottle(void) { return 0; }
+float mixerGetAdrcCommandedThrottle(void) { return 0; }
+pidRuntime_t pidRuntime;
+pidAxisData_t pidData[XYZ_AXIS_COUNT];
 
 PG_REGISTER(flight3DConfig_t, flight3DConfig, PG_MOTOR_3D_CONFIG, 0);
 PG_REGISTER(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);

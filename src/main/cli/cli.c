@@ -4996,6 +4996,10 @@ RAM_CODE static void cliProfile(const char *cmdName, char *cmdline)
         cliPrintLinef("profile %d", getPidProfileIndexToUse());
         return;
     } else {
+        if (ARMING_FLAG(ARMED)) {
+            cliPrintErrorLinef(cmdName, "PROFILE CHANGE WHILE ARMED");
+            return;
+        }
         const int i = atoi(cmdline);
         if (i >= 0 && i < PID_PROFILE_COUNT) {
             changePidProfile(i);

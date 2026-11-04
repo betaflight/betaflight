@@ -435,7 +435,8 @@ void resetConfig(void) {}
 void systemReset(void) {}
 void writeUnmodifiedConfigToEEPROM(void) {}
 
-void changePidProfile(uint8_t) {}
+static int profileChangeCalls;
+void changePidProfile(uint8_t) { ++profileChangeCalls; }
 void changeBatteryProfile(uint8_t) {}
 uint8_t getCurrentBatteryProfileIndex(void) { return 0; }
 bool serialIsPortAvailable(serialPortIdentifier_e) { return false; }
@@ -599,6 +600,21 @@ TEST(CLIUnittest, TestCliExecuteCommandRefusesDefaultsWithCommentedNosave)
     EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults # nosave", buf, sizeof(buf)));
     EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults #nosave", buf, sizeof(buf)));
     EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults // nosave", buf, sizeof(buf)));
+    EXPECT_FALSE(cliMode);
+}
+
+TEST(CLIUnittest, TestProfileChangeRequiresDisarmed)
+{
+    char buf[256] = {};
+    profileChangeCalls = 0;
+    armingFlags |= ARMED;
+    EXPECT_GE(cliExecuteCommand("profile 0", buf, sizeof(buf)), 0);
+    EXPECT_EQ(0, profileChangeCalls);
+    EXPECT_GE(cliExecuteCommand("profile", buf, sizeof(buf)), 0);
+    EXPECT_EQ(0, profileChangeCalls);
+    armingFlags &= ~ARMED;
+    EXPECT_GE(cliExecuteCommand("profile 0", buf, sizeof(buf)), 0);
+    EXPECT_EQ(1, profileChangeCalls);
     EXPECT_FALSE(cliMode);
 }
 

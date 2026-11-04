@@ -196,8 +196,9 @@ TEST_F(AdrcMixerUnittest, ThrustLinearizationPublishesPhysicalCollectiveDomain)
 
     mixTable(1500);
 
-    const float compensatedThrottle = pidCompensateThrustLinearization(desiredCollective);
-    const float expectedPhysicalCollective = pidApplyThrustLinearization(compensatedThrottle);
+    // Independent reference values shared with the production pid.c test.
+    constexpr float compensatedThrottle = 0.352f;
+    constexpr float expectedPhysicalCollective = 0.40031985664f;
     const QuadXMotorComponents components = decomposeQuadXMotorOutput();
 
     expectAdrcFeedback(1.0f, testPidProfile.pidSumLimitYaw);

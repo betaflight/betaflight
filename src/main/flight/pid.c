@@ -1227,22 +1227,6 @@ static FAST_CODE_NOINLINE void applyAdrcControl(int axis, float gyroRate, float 
     pidData[axis].D = adrcOutput.D;
 }
 
-// See updateAdrcSharedState() above for why this is FAST_CODE_NOINLINE.
-static FAST_CODE_NOINLINE void adrcZeroThrottleItermReset(void)
-{
-    // Keep the ESO running at zero throttle instead of resetting it every loop, so the
-    // disturbance estimate survives spool-up rather than restarting from zero each time
-    // (community fork fix #4, danusha2345/ADRC-betaflight). Safe not because the liftoff gate
-    // zeroes the ESO's b0*u feedback - z3 integrates errorEso regardless of that term - but
-    // because the same closed gate refuses any update that would grow |z3| (ADRC-026, see
-    // adrcApplyControl()). That is what keeps an alive ESO from winding up while grounded
-    // pre-liftoff. Post-landing (gate still open on the ground) windup remains possible, but is
-    // bounded to the current arm cycle by the arm-transition reset in updateAdrcSharedState().
-    // Only the legacy I accumulator is cleared; ADRC recomputes I = -z3/b0 every loop regardless.
-    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        pidData[axis].I = 0.0f;
-    }
-}
 #endif
 
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
@@ -1837,9 +1821,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
     } else if (pidRuntime.zeroThrottleItermReset) {
 #ifdef USE_ADRC
-        if (pidProfile->pid_type == PID_TYPE_ADRC) {
-            adrcZeroThrottleItermReset();
-        } else
+        // ADRC's I is the published disturbance compensation, not an accumulator.
+        // Keep it consistent with Sum and preserve the running ESO at zero throttle.
+        if (pidProfile->pid_type != PID_TYPE_ADRC)
 #endif
         {
             pidResetIterm();
