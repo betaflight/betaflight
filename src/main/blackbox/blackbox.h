@@ -120,6 +120,7 @@ typedef struct blackboxAdrcFieldDefinitionTest_s {
 int blackboxGetAdrcFieldCountForTest(void);
 bool blackboxGetAdrcFieldDefinitionForTest(int position, blackboxAdrcFieldDefinitionTest_t *result);
 bool blackboxAdrcDebugConditionForTest(void);
+void blackboxLoadAndWriteAdrcStateForTest(const blackboxAdrcTestState_t *previous);
 void blackboxWriteAdrcIntraframeForTest(const blackboxAdrcTestState_t *state);
 void blackboxWriteAdrcInterframeForTest(const blackboxAdrcTestState_t *current, const blackboxAdrcTestState_t *previous);
 #endif

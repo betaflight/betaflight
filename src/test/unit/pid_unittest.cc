@@ -736,6 +736,62 @@ TEST(pidControllerTest, testAntiGravityNotCompoundedWhenFilterNotFed)
 }
 
 #ifdef USE_ADRC
+#ifdef USE_THRUST_LINEARIZATION
+TEST(pidControllerTest, testProductionThrustLinearization)
+{
+    resetTest();
+    pidProfile->thrustLinearization = 20;
+    pidInitConfig(pidProfile);
+    // Fixed reference values, also checked at the ADRC mixer's physical-domain output.
+    EXPECT_NEAR(0.352f, pidCompensateThrustLinearization(0.4f), 1e-6f);
+    EXPECT_NEAR(0.40031985664f, pidApplyThrustLinearization(0.352f), 1e-6f);
+    EXPECT_FLOAT_EQ(0.0f, pidApplyThrustLinearization(0.0f));
+    EXPECT_FLOAT_EQ(1.0f, pidApplyThrustLinearization(1.0f));
+    pidProfile->thrustLinearization = 0;
+    pidInitConfig(pidProfile);
+    EXPECT_FLOAT_EQ(0.4f, pidCompensateThrustLinearization(0.4f));
+    EXPECT_FLOAT_EQ(0.4f, pidApplyThrustLinearization(0.4f));
+}
+#endif
+
+TEST(pidControllerTest, testAdrcZeroThrottlePreservesPublishedDisturbance)
+{
+    float referenceSum[8][XYZ_AXIS_COUNT];
+    float referenceZ3[8][XYZ_AXIS_COUNT];
+    for (int reset = 0; reset <= 1; ++reset) {
+        resetTest();
+        pidProfile->pid_type = PID_TYPE_ADRC;
+        pidProfile->adrc.gyroFilterHz = 0;
+        pidInit(pidProfile);
+        ENABLE_ARMING_FLAG(ARMED);
+        pidStabilisationState(PID_STABILISATION_ON);
+        simulatedThrottle = 0.0f;
+        simulatedCommandedThrottle = 0.0f;
+        pidRuntime.adrc.wasArmed = true;
+        pidRuntime.adrc.liftoff = true;
+        for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+            pidRuntime.adrc.z3[axis] = 10.0f * pidRuntime.adrc.coefficient[axis].b0;
+        }
+        pidSetItermReset(reset);
+        for (int loop = 0; loop < 8; ++loop) {
+            pidController(pidProfile, currentTestTime());
+            for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+                EXPECT_GT(fabsf(pidData[axis].I), 1.0f);
+                EXPECT_NEAR(pidData[axis].Sum, pidData[axis].P + pidData[axis].I
+                    + pidData[axis].D + pidData[axis].F + pidData[axis].S, 0.0001f);
+                if (!reset) {
+                    referenceSum[loop][axis] = pidData[axis].Sum;
+                    referenceZ3[loop][axis] = pidRuntime.adrc.z3[axis];
+                } else {
+                    EXPECT_FLOAT_EQ(referenceSum[loop][axis], pidData[axis].Sum);
+                    EXPECT_FLOAT_EQ(referenceZ3[loop][axis], pidRuntime.adrc.z3[axis]);
+                }
+            }
+        }
+    }
+    pidSetItermReset(false);
+}
+
 TEST(pidControllerTest, testAdrcPOutputIsUnaffectedByAntiGravity)
 {
     float referenceP[XYZ_AXIS_COUNT];

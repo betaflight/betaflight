@@ -1429,6 +1429,39 @@ static void writeGPSFrame(timeUs_t currentTimeUs)
 }
 #endif
 
+#ifdef USE_ADRC
+static void loadAdrcState(blackboxMainState_t *blackboxCurrent)
+{
+    if (currentPidProfile->pid_type == PID_TYPE_ADRC && debugMode == DEBUG_ADRC) {
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            blackboxCurrent->adrcPidSum[i] = lrintf(pidData[i].Sum * ADRC_PID_SUM_LOG_SCALE);
+        }
+        blackboxCurrent->adrcCommandedCollective = lrintf(
+            pidRuntime.adrc.observedCommandedCollective * ADRC_COLLECTIVE_LOG_SCALE);
+        blackboxCurrent->adrcAppliedCollective = lrintf(
+            pidRuntime.adrc.observedAppliedCollective * ADRC_COLLECTIVE_LOG_SCALE);
+        blackboxCurrent->adrcState = adrcStateFlags(&pidRuntime.adrc);
+        blackboxCurrent->adrcGateResetCount = pidRuntime.adrc.gateResetCount;
+    } else {
+        memset(blackboxCurrent->adrcPidSum, 0, sizeof(blackboxCurrent->adrcPidSum));
+        blackboxCurrent->adrcCommandedCollective = 0;
+        blackboxCurrent->adrcAppliedCollective = 0;
+        blackboxCurrent->adrcState = 0;
+        blackboxCurrent->adrcGateResetCount = 0;
+    }
+}
+
+#ifdef UNIT_TEST
+void blackboxLoadAndWriteAdrcStateForTest(const blackboxAdrcTestState_t *previous)
+{
+    blackboxMainState_t state = {0};
+    blackboxCopyAdrcTestState(&state, previous);
+    loadAdrcState(&state);
+    writeAdrcIntraframeFields(&state);
+}
+#endif
+#endif
+
 /**
  * Fill the current state of the blackbox using values read from the flight controller
  */
@@ -1457,17 +1490,7 @@ static void loadMainState(timeUs_t currentTimeUs)
 #endif
     }
 #ifdef USE_ADRC
-    if (currentPidProfile->pid_type == PID_TYPE_ADRC && debugMode == DEBUG_ADRC) {
-        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-            blackboxCurrent->adrcPidSum[i] = lrintf(pidData[i].Sum * ADRC_PID_SUM_LOG_SCALE);
-        }
-        blackboxCurrent->adrcCommandedCollective = lrintf(
-            pidRuntime.adrc.observedCommandedCollective * ADRC_COLLECTIVE_LOG_SCALE);
-        blackboxCurrent->adrcAppliedCollective = lrintf(
-            pidRuntime.adrc.observedAppliedCollective * ADRC_COLLECTIVE_LOG_SCALE);
-        blackboxCurrent->adrcState = adrcStateFlags(&pidRuntime.adrc);
-        blackboxCurrent->adrcGateResetCount = pidRuntime.adrc.gateResetCount;
-    }
+    loadAdrcState(blackboxCurrent);
 #endif
 #if defined(USE_ACC) // IMU quaternion
     {
