@@ -5493,6 +5493,20 @@ static bool cliParseArrayValue(const char *valStr, const clivalue_t *val, void *
     return true;
 }
 
+static bool cliSettingWriteAllowed(const clivalue_t *value)
+{
+#ifdef USE_ADRC
+    // Both CLI and MSP setting writes can reach the active profile without pidInit().
+    if (ARMING_FLAG(ARMED) && value->pgn == PG_PID_PROFILE
+        && value->offset == offsetof(pidProfile_t, pid_type)) {
+        return false;
+    }
+#else
+    UNUSED(value);
+#endif
+    return true;
+}
+
 RAM_CODE STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
 {
     const uint32_t len = strlen(cmdline);
@@ -5522,6 +5536,11 @@ RAM_CODE STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
             return;
         }
         const clivalue_t *val = &valueTable[index];
+        if (!cliSettingWriteAllowed(val)) {
+            cliPrintErrorLinef(cmdName, "PID TYPE CHANGE WHILE ARMED");
+            return;
+        }
+
 
         bool valueChanged = false;
         int16_t value  = 0;
@@ -5988,6 +6007,10 @@ bool cliSetSettingByName(const char *cmdline)
     }
 
     const clivalue_t *val = &valueTable[index];
+    if (!cliSettingWriteAllowed(val)) {
+        return false;
+    }
+
     const pgRegistry_t *rec = pgFind(val->pgn);
     if (!rec) {
         return false;

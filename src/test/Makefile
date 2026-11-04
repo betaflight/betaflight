@@ -285,6 +285,7 @@ cli_unittest_SRC := \
 		$(USER_DIR)/common/typeconversion.c
 
 cli_unittest_DEFINES := \
+		USE_ADRC= \
 		USE_OSD= \
 		USE_CLI= \
 		USE_MSP_CLI_COMMAND= \
