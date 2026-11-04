@@ -209,6 +209,9 @@ bool ws2811LedStripHardwareInit(void)
 #endif
 
     xDMA_Init((uint32_t)dmaRef, &dma_init_struct);
+#if defined(GD32F4)
+    timer_channel_dma_request_source_select((uint32_t)timer, TIMER_DMAREQUEST_UPDATEEVENT);
+#endif
     timer_dma_enable((uint32_t)timer, timerDmaSource(timerHardware->channel));
     xDMA_ITConfig(dmaRef, DMA_INT_FTF, ENABLE);
 
