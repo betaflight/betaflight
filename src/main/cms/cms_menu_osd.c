@@ -311,7 +311,8 @@ static const void *menuTimersOnExit(displayPort_t *pDisp, const OSD_Entry *self)
     return NULL;
 }
 
-static const char * osdTimerPrecisionNames[] = {"SCND", "HDTH"};
+static const char * osdTimerPrecisionNames[] = {"SCND", "HDTH", "TNTH"};
+STATIC_ASSERT(ARRAYLEN(osdTimerPrecisionNames) == OSD_TIMER_PREC_COUNT, osdTimerPrecisionNames_size_mismatch);
 
 const OSD_Entry menuTimersEntries[] =
 {

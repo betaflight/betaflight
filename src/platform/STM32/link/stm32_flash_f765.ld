@@ -46,7 +46,7 @@ REGION_ALIAS("WRITABLE_FLASH1", AXIM_FLASH1)
 
 REGION_ALIAS("STACKRAM", DTCM_RAM)
 REGION_ALIAS("FASTRAM", DTCM_RAM)
-REGION_ALIAS("RAM", DTCM_RAM)
+REGION_ALIAS("RAM", SRAM1)
 
 /* Put various bits and bobs of data into the main chunk of flash as we have enough of it */
 

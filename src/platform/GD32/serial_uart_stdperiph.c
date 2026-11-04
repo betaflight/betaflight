@@ -86,21 +86,29 @@ void uartReconfigure(uartPort_t *uartPort)
     if (uartPort->port.mode & MODE_RX) {
 #ifdef USE_DMA
         if (uartPort->rxDMAResource) {
-            dma_single_data_parameter_struct dma_init_struct;
-            dma_single_data_para_struct_init(&dma_init_struct);
+            DMA_InitTypeDef dmaInit;
+            dma_single_data_parameter_struct *dma_init_struct = &dmaInit.config.init_struct_s;
 
-            dma_init_struct.periph_addr = uartPort->rxDMAPeripheralBaseAddr;
-            dma_init_struct.memory0_addr = (uint32_t)uartPort->port.rxBuffer;
-            dma_init_struct.number = uartPort->port.rxBufferSize;
-            dma_init_struct.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
-            dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
-            dma_init_struct.periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
-            dma_init_struct.circular_mode = DMA_CIRCULAR_MODE_ENABLE;
-            dma_init_struct.direction = DMA_PERIPH_TO_MEMORY;
-            dma_init_struct.priority = DMA_PRIORITY_MEDIUM;
+            dmaInit.data_mode = DMA_DATA_MODE_SINGLE;
+            dma_single_data_para_struct_init(dma_init_struct);
+#if defined(GD32H7)
+            dma_init_struct->request = uartPort->rxDMAChannel;
+#else
+            dmaInit.sub_periph = uartPort->rxDMAChannel;
+#endif
+
+            dma_init_struct->periph_addr = uartPort->rxDMAPeripheralBaseAddr;
+            dma_init_struct->memory0_addr = (uint32_t)uartPort->port.rxBuffer;
+            dma_init_struct->number = uartPort->port.rxBufferSize;
+            dma_init_struct->periph_inc = DMA_PERIPH_INCREASE_DISABLE;
+            dma_init_struct->memory_inc = DMA_MEMORY_INCREASE_ENABLE;
+            dma_init_struct->periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
+            dma_init_struct->circular_mode = DMA_CIRCULAR_MODE_ENABLE;
+            dma_init_struct->direction = DMA_PERIPH_TO_MEMORY;
+            dma_init_struct->priority = DMA_PRIORITY_MEDIUM;
 
             xDMA_DeInit(uartPort->rxDMAResource);
-            gd32_dma_init((uint32_t)uartPort->rxDMAResource, &dma_init_struct);
+            xDMA_Init(uartPort->rxDMAResource, &dmaInit);
             xDMA_Cmd(uartPort->rxDMAResource, ENABLE);
 
             usart_dma_receive_config((uint32_t)uartPort->USARTx, USART_RECEIVE_DMA_ENABLE);
@@ -118,24 +126,36 @@ void uartReconfigure(uartPort_t *uartPort)
     if (uartPort->port.mode & MODE_TX) {
 #ifdef USE_DMA
         if (uartPort->txDMAResource) {
-            dma_single_data_parameter_struct dma_init_struct;
-            dma_single_data_para_struct_init(&dma_init_struct);
+            DMA_InitTypeDef dmaInit;
+            dma_single_data_parameter_struct *dma_init_struct = &dmaInit.config.init_struct_s;
 
-            dma_init_struct.periph_addr = uartPort->txDMAPeripheralBaseAddr;
-            dma_init_struct.memory0_addr = (uint32_t)uartPort->port.txBuffer;
-            dma_init_struct.number = uartPort->port.txBufferSize;
-            dma_init_struct.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
-            dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
-            dma_init_struct.periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
-            dma_init_struct.circular_mode = DMA_CIRCULAR_MODE_DISABLE;
-            dma_init_struct.direction = DMA_MEMORY_TO_PERIPH;
-            dma_init_struct.priority = DMA_PRIORITY_MEDIUM;
+            dmaInit.data_mode = DMA_DATA_MODE_SINGLE;
+            dma_single_data_para_struct_init(dma_init_struct);
+#if defined(GD32H7)
+            dma_init_struct->request = uartPort->txDMAChannel;
+#else
+            dmaInit.sub_periph = uartPort->txDMAChannel;
+#endif
 
+            dma_init_struct->periph_addr = uartPort->txDMAPeripheralBaseAddr;
+            dma_init_struct->memory0_addr = (uint32_t)uartPort->port.txBuffer;
+            dma_init_struct->number = uartPort->port.txBufferSize;
+            dma_init_struct->periph_inc = DMA_PERIPH_INCREASE_DISABLE;
+            dma_init_struct->memory_inc = DMA_MEMORY_INCREASE_ENABLE;
+            dma_init_struct->periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
+            dma_init_struct->circular_mode = DMA_CIRCULAR_MODE_DISABLE;
+            dma_init_struct->direction = DMA_MEMORY_TO_PERIPH;
+            dma_init_struct->priority = DMA_PRIORITY_MEDIUM;
 
             xDMA_DeInit(uartPort->txDMAResource);
-            gd32_dma_init((uint32_t)uartPort->txDMAResource, &dma_init_struct);
+            xDMA_Init(uartPort->txDMAResource, &dmaInit);
 
+#if defined(GD32F4)
+            xDMA_ITConfig(uartPort->txDMAResource, DMA_INT_FTF | DMA_INT_TAE | DMA_INT_SDE, ENABLE);
+            xDMA_ITConfig(uartPort->txDMAResource, DMA_INT_FEE, ENABLE);
+#else
             xDMA_ITConfig(uartPort->txDMAResource, DMA_INT_FTF | DMA_INT_FEE | DMA_INT_TAE | DMA_INT_SDE, ENABLE);
+#endif
             xDMA_SetCurrDataCounter(uartPort->txDMAResource, 0);
 
             usart_dma_transmit_config((uint32_t)uartPort->USARTx, USART_TRANSMIT_DMA_ENABLE);

@@ -116,19 +116,12 @@
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 #define USE_BARO_BMP388
-#define USE_BARO_SPI_BMP388
-#define USE_BARO_SPI_BMP580
-#define USE_BARO_SPI_BMP581
 #define USE_BARO_SPI_LPS
 #define USE_BARO_QMP6988
-#define USE_BARO_SPI_QMP6988
 #define USE_BARO_DPS310
 #define USE_BARO_SPI_DPS310
-#define USE_BARO_BMP085
 #define USE_BARO_2SMBP_02B
-#define USE_BARO_SPI_2SMBP_02B
 #define USE_BARO_LPS22DF
-#define USE_BARO_SPI_LPS22DF
 #endif
 
 #if !defined(USE_GYRO) && !defined(USE_ACC)
@@ -145,10 +138,8 @@
 #define USE_GYRO_SPI_ICM20689
 #define USE_ACCGYRO_LSM6DSO
 #define USE_ACCGYRO_LSM6DSV16X
-#define USE_ACCGYRO_LSM6DSV32X
 #define USE_ACCGYRO_LSM6DSK320X
 #define USE_ACCGYRO_BMI270
-#define USE_ACCGYRO_BMI423
 #define USE_GYRO_SPI_ICM42605
 #define USE_ACCGYRO_ICM42622P
 #define USE_ACCGYRO_ICM42686P
@@ -166,6 +157,15 @@
 #define USE_ACC_MPU6050
 #define USE_GYRO_MPU6050
 #define USE_ACCGYRO_BMI160
+#define USE_ACCGYRO_BMI423
+#define USE_ACCGYRO_LSM6DSV32X
+#define USE_BARO_BMP085
+#define USE_BARO_SPI_BMP388
+#define USE_BARO_SPI_BMP580
+#define USE_BARO_SPI_BMP581
+#define USE_BARO_SPI_QMP6988
+#define USE_BARO_SPI_2SMBP_02B
+#define USE_BARO_SPI_LPS22DF
 #endif
 #endif // ACC GYRO inclusion
 
@@ -220,7 +220,7 @@
 
 #define USE_PINIO
 
-#if !defined(USE_SERIAL_RX)
+#if !defined(USE_SERIALRX)
 
 #define USE_SERIALRX
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
@@ -232,7 +232,7 @@
 #define USE_SERIALRX_XBUS       // JR
 #define USE_SERIALRX_SRXL2      // Spektrum SRXL2 protocol
 
-#endif // !defined(USE_SERIAL_RX)
+#endif // !defined(USE_SERIALRX)
 
 #if !defined(USE_TELEMETRY)
 #define USE_TELEMETRY
