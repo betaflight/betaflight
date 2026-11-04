@@ -531,10 +531,8 @@ void initPhase2(void)
 #if ENABLE_OVERCLOCK_240_MHZ
             240,
 #endif
-#if defined(UM324xF)
 #if ENABLE_OVERCLOCK_336_MHZ
             336,
-#endif
 #endif
         };
         const uint8_t idx = systemConfig()->cpu_overclock;

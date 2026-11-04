@@ -57,7 +57,9 @@
 
 // Helps with looptime stability as the CPU is borderline when running native gyro sampling
 #define USE_OVERCLOCK
+#ifndef ENABLE_OVERCLOCK_336_MHZ
 #define ENABLE_OVERCLOCK_336_MHZ 1
+#endif
 
 
 // Per-function QSPI XIP placement (section .ex_code/.ex_data in the

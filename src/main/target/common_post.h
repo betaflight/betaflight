@@ -909,6 +909,10 @@ extern struct linker_symbol __fontdata_end;
 
 ******************************************************/
 
+#if !defined(ENABLE_OVERCLOCK_336_MHZ)
+#define ENABLE_OVERCLOCK_336_MHZ 0
+#endif
+
 #if !defined(ENABLE_SERIAL_SKIP_CHECK_TX)
 #define ENABLE_SERIAL_SKIP_CHECK_TX 0
 #endif

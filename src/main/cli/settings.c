@@ -393,10 +393,8 @@ static const char * const lookupOverclock[] = {
 #if ENABLE_OVERCLOCK_240_MHZ
     "240MHZ",
 #endif
-#if defined(UM324xF)
 #if ENABLE_OVERCLOCK_336_MHZ
     "336MHZ",
-#endif
 #endif
 };
 #endif
