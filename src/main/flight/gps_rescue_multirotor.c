@@ -449,7 +449,7 @@ static void performSanityChecks(void)
     case RESCUE_EMERG_DESCENT:
         rescueState.intent.secondsFailing += altitudeControlError > 0.5f ? -1 : 1;
         rescueState.intent.secondsFailing = MAX(0, rescueState.intent.secondsFailing);
-        if (rescueState.intent.secondsFailing >= 15 && isBelowLandingAltitude()) {
+        if (rescueState.intent.secondsFailing >= 15 && (rescueState.phase == RESCUE_LANDING || isBelowLandingAltitude())) {
             rescueDisarmNow();
         }
         break;
@@ -686,6 +686,11 @@ bool gpsRescueIsHeadingOK(void)
 bool gpsRescueIsOK(void)
 {
     return rescueState.isOK; // when false, flashes `RESCUE FAIL` in OSD when failure time exceeds 5s or when in a failure mode
+}
+
+bool gpsRescueIsLanding(void)
+{
+    return rescueState.phase == RESCUE_LANDING || rescueState.phase == RESCUE_EMERG_DESCENT;
 }
 
 #endif // USE_GPS_RESCUE

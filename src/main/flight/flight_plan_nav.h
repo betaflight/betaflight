@@ -64,6 +64,11 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs);
 
 bool flightPlanNavIsActive(void);
 flightPlanNavState_e flightPlanNavGetState(void);
+#if ENABLE_FLIGHT_PLAN
+bool flightPlanNavIsLanding(void);
+#else
+static inline bool flightPlanNavIsLanding(void) { return false; }
+#endif
 uint8_t flightPlanNavGetCurrentIndex(void);
 flightPlanAbortReason_e flightPlanNavGetAbortReason(void);
 

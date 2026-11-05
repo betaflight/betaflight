@@ -90,6 +90,11 @@ bool gpsRescueIsOK(void)
     return true;
 }
 
+bool gpsRescueIsLanding(void)
+{
+    return false;
+}
+
 #endif // USE_GPS_RESCUE
 
 #endif // USE_WING

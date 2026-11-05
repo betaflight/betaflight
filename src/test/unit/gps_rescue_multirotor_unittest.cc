@@ -66,6 +66,7 @@ extern "C" {
 static timeUs_t simulatedTimeUs = 1000000;
 static float simulatedAltitudeCm;
 static bool simulatedRxSignal;
+static bool simulatedGpsHealthy;
 static int disarmCount;
 static flightLogDisarmReason_e lastDisarmReason;
 static positionEstimate3d_t simulatedEstimate;
@@ -84,7 +85,7 @@ extern "C" {
     bool isBelowLandingAltitude(void) { return simulatedAltitudeCm < 100.0f * autopilotConfig()->landingAltitudeM; }
 
     bool gpsHasNewData(uint16_t *) { return false; }
-    bool gpsIsHealthy(void) { return false; }
+    bool gpsIsHealthy(void) { return simulatedGpsHealthy; }
     bool imuIsHeadingValid(void) { return true; }
     bool positionEstimatorIsValidXY(void) { return true; }
     const positionEstimate3d_t *positionEstimatorGetEstimate(void) { return &simulatedEstimate; }
@@ -116,6 +117,7 @@ protected:
         simulatedTimeUs += 60000000;
         simulatedAltitudeCm = 2000.0f;
         simulatedRxSignal = false;
+        simulatedGpsHealthy = false;
         disarmCount = 0;
         stateFlags = 0;
         memset(&simulatedEstimate, 0, sizeof(simulatedEstimate));
@@ -136,6 +138,7 @@ TEST_F(GpsRescueEmergencyDescent, DisarmsAfterSettlingOnTheGround)
 {
     // no home point on a hard failsafe: emergency descent, no XY control
     runRescueSeconds(1.0f);
+    EXPECT_TRUE(gpsRescueIsLanding());
     EXPECT_EQ(0, disarmCount);
 
     // the craft comes to rest and the altitude stops changing
@@ -154,4 +157,37 @@ TEST_F(GpsRescueEmergencyDescent, KeepsFlyingWhenStalledAboveLandingAltitude)
     // altitude stops changing well above the landing altitude
     runRescueSeconds(30.0f);
     EXPECT_EQ(0, disarmCount);
+}
+
+class GpsRescueLanding : public GpsRescueEmergencyDescent {
+protected:
+    void SetUp() override
+    {
+        GpsRescueEmergencyDescent::SetUp();
+        gpsRescueInit();
+        simulatedGpsHealthy = true;
+        gpsSol.numSat = GPS_MIN_SAT_COUNT + 4;
+        ENABLE_STATE(GPS_FIX);
+        ENABLE_STATE(GPS_FIX_HOME);
+        simulatedEstimate.position.v[EF_NORTH] = 1000.0f;
+    }
+};
+
+TEST_F(GpsRescueLanding, DisarmsAfterDescentStallsAboveLandingAltitude)
+{
+    // climb to the return altitude, then descend as already within the descent distance
+    runRescueSeconds(1.0f);
+    EXPECT_FALSE(gpsRescueIsLanding());
+    simulatedAltitudeCm = 3100.0f;
+    runRescueSeconds(1.0f);
+    EXPECT_FALSE(gpsRescueIsLanding());
+
+    // on the ground on terrain higher than home: the descent stalls above the landing altitude
+    simulatedAltitudeCm = 1000.0f;
+    runRescueSeconds(20.0f);
+    EXPECT_TRUE(gpsRescueIsLanding());
+    EXPECT_EQ(0, disarmCount);
+    runRescueSeconds(15.0f);
+    EXPECT_EQ(1, disarmCount);
+    EXPECT_EQ(DISARM_REASON_FAILSAFE, lastDisarmReason);
 }

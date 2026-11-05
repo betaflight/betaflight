@@ -965,16 +965,18 @@ STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
 }
 #endif
 
-// landing_disarm_threshold units: 70 is a conservative EZ disarm starting point, well clear of acc noise
+// landing_disarm_threshold units: suits a controlled autopilot landing, too sensitive for pilot-controlled flight
 #define AUTO_LANDING_DISARM_THRESHOLD (70 * 10.0f)
 
 static bool isAutoLandingActive(void)
 {
-    const bool rescueLanding = FLIGHT_MODE(GPS_RESCUE_MODE)
-        || (FLIGHT_MODE(FAILSAFE_MODE) && FLIGHT_MODE(ALT_HOLD_MODE))
-        || flightPlanNavIsRescuePlanActive()
+    const bool landing = (FLIGHT_MODE(FAILSAFE_MODE) && FLIGHT_MODE(ALT_HOLD_MODE))
+#ifdef USE_GPS_RESCUE
+        || (FLIGHT_MODE(GPS_RESCUE_MODE) && gpsRescueIsLanding())
+#endif
+        || flightPlanNavIsLanding()
         || flightPlanNavIsRescueDescentActive();
-    return rescueLanding && !isFixedWing() && isBelowLandingAltitude();
+    return landing && !isFixedWing() && isBelowLandingAltitude();
 }
 
 static FAST_CODE_NOINLINE void disarmOnImpact(float threshold)

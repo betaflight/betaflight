@@ -822,6 +822,7 @@ pid_unittest_DEFINES := \
 		USE_FEEDFORWARD= \
 		USE_ADVANCED_TPA= \
 		USE_GPS_RESCUE= \
+		ENABLE_FLIGHT_PLAN=1 \
 		ENABLE_RESCUE_PLAN=1
 
 position_rescue_geometry_unittest_SRC := \

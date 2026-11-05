@@ -37,7 +37,8 @@ float simulatedFeedforward[3] = { 0,0,0 };
 float simulatedMotorMixRange = 0.0f;
 bool simulatedBelowLandingAltitude = false;
 bool simulatedFixedWing = false;
-bool simulatedRescuePlanActive = false;
+bool simulatedRescueLanding = false;
+bool simulatedNavLanding = false;
 bool simulatedRescueDescentActive = false;
 int disarmCount = 0;
 
@@ -111,7 +112,8 @@ extern "C" {
 
     bool isBelowLandingAltitude(void) { return simulatedBelowLandingAltitude; }
     bool isFixedWing(void) { return simulatedFixedWing; }
-    bool flightPlanNavIsRescuePlanActive(void) { return simulatedRescuePlanActive; }
+    bool gpsRescueIsLanding(void) { return simulatedRescueLanding; }
+    bool flightPlanNavIsLanding(void) { return simulatedNavLanding; }
     bool flightPlanNavIsRescueDescentActive(void) { return simulatedRescueDescentActive; }
 
     void systemBeep(bool) { }
@@ -257,7 +259,8 @@ void resetTest(void)
     flightModeFlags = 0;
     simulatedBelowLandingAltitude = false;
     simulatedFixedWing = false;
-    simulatedRescuePlanActive = false;
+    simulatedRescueLanding = false;
+    simulatedNavLanding = false;
     simulatedRescueDescentActive = false;
     acc.jerkMagnitude = 0.0f;
     unitLaunchControlActive = false;
@@ -1313,8 +1316,10 @@ TEST(pidControllerTest, testAutoLandingImpactDisarm)
     simulatedBelowLandingAltitude = true;
     EXPECT_EQ(0, runImpact(2000.0f));
 
-    // GPS rescue touching down disarms by default
+    // GPS rescue touching down disarms by default, but only in its landing phases
     ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+    EXPECT_EQ(0, runImpact(2000.0f));
+    simulatedRescueLanding = true;
     EXPECT_EQ(1, runImpact(2000.0f));
 
     // but not on acc noise, nor above the landing altitude
@@ -1336,12 +1341,12 @@ TEST(pidControllerTest, testAutoLandingImpactDisarm)
     EXPECT_EQ(1, runImpact(2000.0f));
     DISABLE_FLIGHT_MODE(FAILSAFE_MODE);
 
-    // a switch rescue flown as a plan, and its altitude-only fallback, disarm by default
+    // a flight plan landing, and the rescue altitude-only fallback, disarm by default
     DISABLE_FLIGHT_MODE(ALT_HOLD_MODE);
     EXPECT_EQ(0, runImpact(2000.0f));
-    simulatedRescuePlanActive = true;
+    simulatedNavLanding = true;
     EXPECT_EQ(1, runImpact(2000.0f));
-    simulatedRescuePlanActive = false;
+    simulatedNavLanding = false;
     simulatedRescueDescentActive = true;
     EXPECT_EQ(1, runImpact(2000.0f));
 
