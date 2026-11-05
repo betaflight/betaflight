@@ -148,7 +148,7 @@ MCU_COMMON_SRC = \
             UM32/dma_um324xx.c \
             UM32/serial_uart_hal.c \
             UM32/serial_uart_um324xx.c \
-            UM32/vtx_uart_pin_switch.c \
+            UM32/serial_uart_bidir.c \
             UM32/timer_hal.c \
             UM32/timer_um324xx.c \
             UM32/dshot_bitbang.c \

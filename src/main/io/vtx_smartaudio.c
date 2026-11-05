@@ -46,7 +46,6 @@
 #include "drivers/time.h"
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_table.h"
-#include "drivers/vtx_uart_pin_switch.h"
 
 #include "io/serial.h"
 #include "io/vtx.h"
@@ -832,10 +831,6 @@ static void vtxSAProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 
     timeMs_t nowMs = millis();             // Don't substitute with "currentTimeUs / 1000"; sa_lastTransmissionMs is based on millis().
     static timeMs_t lastCommandSentMs = 0; // Last non-GET_SETTINGS sent
-
-#if ENABLE_VTX_UART_PIN_SWITCH
-    vtxUartPinSwitchBegin(smartAudioSerialPort, nowMs, 25);
-#endif
 
     if ((sa_outstanding != SA_CMD_NONE) && (nowMs - sa_lastTransmissionMs > SMARTAUDIO_CMD_TIMEOUT)) {
         // Last command timed out
