@@ -57,6 +57,21 @@ MCU_COMMON_SRC  = \
 
 DEVICE_STDPERIPH_SRC :=
 
+# MCUboot only boots a signed image: the raw binary is wrapped with imgtool
+# (hash only, 0x800 byte header). The slot size matches the linker script.
+DEFAULT_OUTPUT     := bin
+IMGTOOL            ?= imgtool
+IMGTOOL_SLOT_SIZE  ?= 0x800000
+IMGTOOL_VERSION    ?= 0.0.0
+IMGTOOL_SIGN       := sign --header-size 0x800 --pad-header --slot-size $(IMGTOOL_SLOT_SIZE) \
+                      --align 2 --version $(IMGTOOL_VERSION)
+BIN_FROM_ELF_CMD    = $(OBJCOPY) -O binary $< $@.raw && \
+    if ! command -v $(IMGTOOL) >/dev/null 2>&1; then \
+        echo "$(IMGTOOL) not found: MCUboot only boots a signed image, install it with 'pip install imgtool' or set IMGTOOL=<path>" >&2; \
+        exit 1; \
+    fi && \
+    $(IMGTOOL) $(IMGTOOL_SIGN) $@.raw $@
+
 MCU_EXCLUDES += \
             drivers/sdcard_spi.c \
             msc/usbd_storage.c \
