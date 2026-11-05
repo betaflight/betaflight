@@ -252,12 +252,16 @@ void processRcStickPositions(void)
     }
     doNotRepeat = true;
 
-    #ifdef USE_USB_CDC_HID
-    // If this target is used as a joystick, we should leave here.
-    if (cdcDeviceIsMayBeActive() || IS_RC_MODE_ACTIVE(BOXSTICKCOMMANDDISABLE)) {
+    if (IS_RC_MODE_ACTIVE(BOXSTICKCOMMANDDISABLE)) {
         return;
     }
-    #endif
+
+#ifdef USE_USB_CDC_HID
+    // If this target is used as a joystick, we should leave here.
+    if (cdcDeviceIsMayBeActive()) {
+        return;
+    }
+#endif
 
     // actions during not armed
 
