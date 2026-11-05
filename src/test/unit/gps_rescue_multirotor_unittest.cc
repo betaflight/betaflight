@@ -150,11 +150,25 @@ TEST_F(GpsRescueEmergencyDescent, DisarmsAfterSettlingOnTheGround)
     EXPECT_EQ(DISARM_REASON_FAILSAFE, lastDisarmReason);
 }
 
-TEST_F(GpsRescueEmergencyDescent, KeepsFlyingWhenStalledAboveLandingAltitude)
+TEST_F(GpsRescueEmergencyDescent, DisarmsWhenStalledAboveLandingAltitudeWithoutRadio)
 {
     runRescueSeconds(1.0f);
 
-    // altitude stops changing well above the landing altitude
+    // altitude stops changing well above the landing altitude, and the pilot cannot disarm
+    runRescueSeconds(10.0f);
+    EXPECT_EQ(0, disarmCount);
+    runRescueSeconds(10.0f);
+    EXPECT_EQ(1, disarmCount);
+}
+
+TEST_F(GpsRescueEmergencyDescent, KeepsFlyingWhenStalledAboveLandingAltitudeWithRadio)
+{
+    gpsRescueConfigMutable()->sanityChecks = RESCUE_SANITY_ON;
+    simulatedRxSignal = true;
+    runRescueSeconds(1.0f);
+    EXPECT_TRUE(gpsRescueIsLanding());
+
+    // altitude stops changing well above the landing altitude, left to the pilot's disarm switch
     runRescueSeconds(30.0f);
     EXPECT_EQ(0, disarmCount);
 }
