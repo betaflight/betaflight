@@ -115,9 +115,7 @@ static mspBuffer_t mspRxBuffer;
 
 #define CRSF_TELEMETRY_FRAME_INTERVAL_MAX_US 20000U // 20ms
 
-#if defined(USE_CRSF_CMS_TELEMETRY)
 #define CRSF_LINK_TYPE_CHECK_US 250000 // 250 ms
-#define CRSF_ELRS_DISLAYPORT_CHUNK_INTERVAL_US 75000 // 75 ms
 
 typedef enum {
     CRSF_LINK_UNKNOWN,
@@ -126,6 +124,11 @@ typedef enum {
 } crsfLinkType_t;
 
 static crsfLinkType_t crsfLinkType = CRSF_LINK_UNKNOWN;
+// Baud rate for crsf_baudrate = AUTO once the receiver has identified itself, applied only while disarmed
+static uint32_t crsfAutoBaudratePending = 0;
+
+#if defined(USE_CRSF_CMS_TELEMETRY)
+#define CRSF_ELRS_DISLAYPORT_CHUNK_INTERVAL_US 75000 // 75 ms
 static timeDelta_t crsfDisplayPortChunkIntervalUs = 0;
 #endif
 
@@ -145,11 +148,11 @@ uint32_t getCrsfCachedBaudrate(void)
     uint32_t crsfCachedBaudrate = persistentObjectRead(PERSISTENT_OBJECT_SERIALRX_BAUD);
     // check if valid first. return default baudrate if not
     for (unsigned i = 0; i < BAUD_COUNT; i++) {
-        if (crsfCachedBaudrate == baudRates[i] && baudRates[i] >= CRSF_BAUDRATE) {
+        if (crsfCachedBaudrate == baudRates[i] && baudRates[i] >= CRSF_BAUDRATE_SPEC) {
             return crsfCachedBaudrate;
         }
     }
-    return CRSF_BAUDRATE;
+    return crsfGetDefaultBaudrate();
 }
 
 static bool checkCrsfCustomizedSpeed(void)
@@ -159,7 +162,7 @@ static bool checkCrsfCustomizedSpeed(void)
 
 uint32_t getCrsfDesiredSpeed(void)
 {
-    return checkCrsfCustomizedSpeed() ? baudRates[crsfSpeed.index] : CRSF_BAUDRATE;
+    return checkCrsfCustomizedSpeed() ? baudRates[crsfSpeed.index] : crsfGetDefaultBaudrate();
 }
 
 void setCrsfDefaultSpeed(void)
@@ -732,8 +735,27 @@ static void crsfScheduleSpeedNegotiationResponse(void)
     crsfSpeed.isNewSpeedValid = false;
 }
 
+// Switch to the baud rate picked for crsf_baudrate = AUTO. Only done while disarmed and while running at
+// the default rate, so it never interrupts a flight or a CRSF V3 negotiated speed. Either rate is within
+// UART tolerance of the other, so the receiver keeps decoding across the switch.
+static void crsfApplyAutoBaudrate(void)
+{
+    if (crsfAutoBaudratePending == 0 || ARMING_FLAG(ARMED) || isCrsfV3Running || crsfBaudNegotiationInProgress()) {
+        return;
+    }
+    const uint32_t previousBaudrate = crsfGetDefaultBaudrate();
+    crsfRxSetAutoBaudrate(crsfAutoBaudratePending);
+    crsfAutoBaudratePending = 0;
+    // A fixed crsf_baudrate setting ignores the AUTO rate, so this only switches the port in AUTO mode
+    if (crsfGetDefaultBaudrate() != previousBaudrate) {
+        crsfRxUpdateBaudrate(crsfGetDefaultBaudrate());
+    }
+}
+
 void speedNegotiationProcess(timeUs_t currentTimeUs)
 {
+    crsfApplyAutoBaudrate();
+
     if (crsfSpeed.hasPendingReply) {
         bool found = ((crsfSpeed.index < BAUD_COUNT) && crsfRxUseNegotiatedBaud()) ? true : false;
         sbuf_t crsfSpeedNegotiationBuf;
@@ -762,7 +784,6 @@ void speedNegotiationProcess(timeUs_t currentTimeUs)
         crsfRxSendTelemetryData(); // prevent overwriting previous data
         crsfFinalize(dst);
         crsfRxSendTelemetryData();
-#if defined(USE_CRSF_CMS_TELEMETRY)
     } else if (crsfLinkType == CRSF_LINK_UNKNOWN) {
         static timeUs_t lastPing;
 
@@ -778,7 +799,6 @@ void speedNegotiationProcess(timeUs_t currentTimeUs)
 
             lastPing = currentTimeUs;
         }
-#endif
     }
 }
 #endif
@@ -1174,9 +1194,11 @@ bool crsfTelemetryUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTi
 
 #endif
 
-#if defined(USE_CRSF_CMS_TELEMETRY)
+#if defined(USE_MSP_OVER_TELEMETRY) && defined(USE_CRSF_V3)
 void crsfHandleDeviceInfoResponse(uint8_t *payload)
 {
+    const uint8_t originAddress = payload[1];
+
     // Skip over dst/src address bytes
     payload += 2;
 
@@ -1186,9 +1208,16 @@ void crsfHandleDeviceInfoResponse(uint8_t *payload)
     // Check the serial number
     if (memcmp(payload, "ELRS", 4) == 0) {
         crsfLinkType = CRSF_LINK_ELRS;
+#if defined(USE_CRSF_CMS_TELEMETRY)
         crsfDisplayPortChunkIntervalUs = CRSF_ELRS_DISLAYPORT_CHUNK_INTERVAL_US;
+#endif
     } else {
         crsfLinkType = CRSF_LINK_NOT_ELRS;
+    }
+
+    // Only the receiver on the FC's UART decides the AUTO baud rate. ExpressLRS receivers default to the legacy rate.
+    if (originAddress == CRSF_ADDRESS_CRSF_RECEIVER) {
+        crsfAutoBaudratePending = (crsfLinkType == CRSF_LINK_ELRS) ? CRSF_BAUDRATE_LEGACY : CRSF_BAUDRATE_SPEC;
     }
 }
 #endif
