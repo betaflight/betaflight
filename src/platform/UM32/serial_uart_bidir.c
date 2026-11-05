@@ -30,6 +30,8 @@ typedef struct {
     uint32_t deadline;
     uint8_t intervalUs;
     uint8_t af;
+    ioConfig_t activeConfig;
+    ioConfig_t idleConfig;
     bool transmitting;
     bool waiting;
     bool fault;
@@ -129,13 +131,21 @@ void uartBidirConfigure(uartPort_t *s)
         p->tx = tx;
         p->rx = rx;
         p->af = dev->hardware->af;
+        // Preserve the serial API's electrical idle state: Tramp/default uses
+        // pull-up; SmartAudio and no-pull follow the common option parser.
+        // GPIO input still releases TX.
+        const serialPullMode_t pull = serialOptions_pull(s->port.options);
+        p->activeConfig = pull == serialPullUp ? IOCFG_AF_PP_UP
+            : (pull == serialPullDown ? IOCFG_AF_PP_PD : IOCFG_AF_PP);
+        p->idleConfig = pull == serialPullUp ? IOCFG_IPU
+            : (pull == serialPullDown ? IOCFG_IPD : IOCFG_IN_FLOATING);
         const uint32_t bitUs = (1000000 + s->port.baudRate - 1) / s->port.baudRate;
         p->intervalUs = bitUs < 10 ? 10 : (bitUs > 100 ? 100 : bitUs);
         IO_t normalRx = IOGetByTag(dev->rx.pin);
         if (normalRx && normalRx != tx && normalRx != rx) { IOConfigGPIO(normalRx, IOCFG_IN_FLOATING); }
         IOInit(rx, serialOwnerTxRx(s->port.identifier) + 1, serialOwnerIndex(s->port.identifier));
-        IOConfigGPIO(tx, IOCFG_IN_FLOATING);
-        IOConfigGPIOAF(rx, IOCFG_AF_PP, p->af);
+        IOConfigGPIO(tx, p->idleConfig);
+        IOConfigGPIOAF(rx, p->activeConfig, p->af);
     }
 }
 
@@ -147,7 +157,7 @@ bool uartBidirStart(uartPort_t *s)
     p->waiting = false;
     if (!p->transmitting) {
         IOConfigGPIO(p->rx, IOCFG_IN_FLOATING);
-        IOConfigGPIOAF(p->tx, IOCFG_AF_PP, p->af);
+        IOConfigGPIOAF(p->tx, p->activeConfig, p->af);
         p->transmitting = true;
     }
     return true;
@@ -197,8 +207,8 @@ static void release(uartBidirState_t *p)
     }
     p->errors = 0;
     // Enable the input before releasing the bus; it never drives the line.
-    IOConfigGPIOAF(p->rx, IOCFG_AF_PP, p->af);
-    IOConfigGPIO(p->tx, IOCFG_IN_FLOATING);
+    IOConfigGPIOAF(p->rx, p->activeConfig, p->af);
+    IOConfigGPIO(p->tx, p->idleConfig);
     p->transmitting = false;
     p->waiting = false;
 }

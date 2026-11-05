@@ -15,9 +15,14 @@ import tempfile
 root=Path(__file__).resolve().parents[2]
 temporary=tempfile.TemporaryDirectory(prefix='bf-um32-bidir-')
 out=Path(temporary.name)
-includes=['build/atomic.h','drivers/io.h','drivers/nvic.h','drivers/serial.h','drivers/serial_impl.h','drivers/time.h','drivers/serial_uart.h','drivers/serial_uart_impl.h']
+includes=['build/atomic.h','io/serial.h','drivers/io.h','drivers/nvic.h','drivers/serial.h','drivers/serial_impl.h','drivers/time.h','drivers/serial_uart.h','drivers/serial_uart_impl.h']
 for name in includes:
  p=out/name;p.parent.mkdir(exist_ok=True,parents=True);p.write_text('')
+# Preserve the production option parser verbatim; resolve its local headers
+# against the register harness instead of the complete firmware type system.
+for name in ['serial.h', 'serial_impl.h']:
+ (out/name).write_text('')
+(out/'serial_options.c').write_bytes((root/'src/main/drivers/serial_impl.c').read_bytes())
 (out/'platform.h').write_text(r'''
 #pragma once
 #include <stdbool.h>
@@ -38,8 +43,16 @@ for name in includes:
 #define SERIAL_BIDIR 8
 #define SERIAL_PARITY_EVEN 4
 #define SERIAL_STOPBITS_2 2
+#define SERIAL_INVERTED 1
+#define SERIAL_BIDIR_PP 16
+#define SERIAL_PULL_NONE 32
+#define SERIAL_PULL_SMARTAUDIO 64
 #define IOCFG_IN_FLOATING 0
 #define IOCFG_AF_PP 1
+#define IOCFG_IPU 32
+#define IOCFG_IPD 64
+#define IOCFG_AF_PP_UP 33
+#define IOCFG_AF_PP_PD 65
 #define UARTHARDWARE_MAX_PINS 2
 #define UART_EX_LSR_TEMT 64
 #define UART_EX_LSR_OE 2
@@ -65,6 +78,9 @@ for name in includes:
 #define __HAL_PMU_LPTIM1_RELEASE_RESET() ((void)0)
 typedef unsigned ioTag_t;
 typedef unsigned IO_t;
+typedef unsigned ioConfig_t;
+typedef unsigned portOptions_e;
+typedef enum {serialPullNone, serialPullDown, serialPullUp} serialPullMode_t;
 typedef int serialPortIdentifier_e;
 typedef struct {volatile uint32_t LSR,USR,RBR;} UART_TypeDef;
 typedef struct {volatile uint32_t CSR,RHR;} USART_TypeDef;
@@ -77,11 +93,11 @@ typedef struct {unsigned pin;} Pin;
 typedef struct {unsigned af;Pin rxPins[2];} Hardware;
 typedef struct {Pin tx,rx;Hardware *hardware;} uartDevice_t;
 static Hardware hw[8]; static uartDevice_t devs[8];
-static unsigned pinMode[64],now,clockHz=288000000;
+static unsigned pinMode[64],pinPull[64],now,clockHz=288000000;
 static inline uartDevice_t *uartDeviceFromIdentifier(int id){return &devs[id-1];}
 static inline IO_t IOGetByTag(ioTag_t t){return t;}
-static inline void IOConfigGPIO(IO_t io,int mode){pinMode[io]=mode;}
-static inline void IOConfigGPIOAF(IO_t io,int mode,int af){(void)af;pinMode[io]=mode;}
+static inline void IOConfigGPIO(IO_t io,int mode){pinMode[io]=mode&1;pinPull[io]=mode&96;}
+static inline void IOConfigGPIOAF(IO_t io,int mode,int af){(void)af;IOConfigGPIO(io,mode);}
 static inline void IOInit(IO_t io,int owner,int index){(void)io;(void)owner;(void)index;}
 static inline int serialOwnerTxRx(int id){return id;}
 static inline int serialOwnerIndex(int id){return id;}
@@ -94,6 +110,7 @@ static inline unsigned micros(void){return now;}
 #include <assert.h>
 #include <stdio.h>
 #include "platform.h"
+#include "@SERIAL_OPTIONS_SOURCE@"
 #include "@BIDIR_SOURCE@"
 static UART_TypeDef regs[8];
 static uartPort_t setup(int id,unsigned baud) {
@@ -134,10 +151,28 @@ int main(void) {
  sam.CSR=USART_CSR_TXEMPTY;LPTIMER1_IRQHandler();assert(pinMode[26]==0 && pinMode[27]==1);
  // Timer rate follows the real clock at both supported CPU frequencies.
  for(unsigned i=0;i<2;i++){clockHz=i?336000000:288000000;uartBidirStart(&c);sam.CSR=0;uartBidirDrain(&c);assert(timer.TARGET>0 && timer.TARGET<65536);sam.CSR=512;LPTIMER1_IRQHandler();}
- puts("PASS: TEMT gating, RX/TX pins, queued/new TX, multiport, faults, reopen, wrap, invalid RX, SAM, 288/336 MHz");
+ // Tramp uses the default idle-high pull; SmartAudio requests a pulldown.
+ a=setup(1,9600);uartBidirConfigure(&a);
+ assert(pinPull[6]==32 && pinPull[7]==32);
+ uartBidirStart(&a);assert(pinMode[7]==0 && pinPull[7]==0);
+ regs[0].LSR=64;uartBidirDrain(&a);assert(pinPull[6]==32 && pinPull[7]==32);
+ a.port.options=SERIAL_BIDIR|SERIAL_PULL_SMARTAUDIO|SERIAL_STOPBITS_2;
+ const unsigned saPull =
+#ifdef USE_SMARTAUDIO_NOPULLDOWN
+ 0;
+#else
+ 64;
+#endif
+ a.port.baudRate=4800;uartBidirConfigure(&a);assert(pinPull[6]==saPull && pinPull[7]==saPull);
+ uartBidirStart(&a);regs[0].LSR=64;uartBidirDrain(&a);assert(pinPull[6]==saPull && pinPull[7]==saPull);
+ a.port.options=SERIAL_BIDIR|SERIAL_PULL_NONE;uartBidirConfigure(&a);
+ assert(pinPull[6]==0 && pinPull[7]==0);
+ puts("PASS: TEMT state machine, Tramp pullup, SmartAudio pulldown, explicit no-pull, multiport and recovery");
 }
-'''.replace('@BIDIR_SOURCE@', (root/'src/platform/UM32/serial_uart_bidir.c').as_posix()))
+'''.replace('@BIDIR_SOURCE@', (root/'src/platform/UM32/serial_uart_bidir.c').as_posix())
+   .replace('@SERIAL_OPTIONS_SOURCE@', (out/'serial_options.c').as_posix()))
 compiler=shlex.split(os.environ.get('CC', shutil.which('clang-18') or 'clang'))
 cmd=compiler+['-std=c11','-Wall','-Wextra','-Werror','-fsanitize=address,undefined','-I'+str(out),'-I'+str(root/'src/platform/UM32/include'),str(out/'test.c'),'-o',str(out/'test')]
-subprocess.run(cmd,check=True)
-subprocess.run([str(out/'test')],check=True)
+for defines in [[], ['-DUSE_SMARTAUDIO_NOPULLDOWN']]:
+ subprocess.run(cmd+defines,check=True)
+ subprocess.run([str(out/'test')],check=True)
