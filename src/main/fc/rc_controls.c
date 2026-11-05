@@ -291,19 +291,21 @@ void processRcStickPositions(void)
     }
 
     // Change PID profile
-    switch (rcSticks) {
-    case THR_LO + YAW_LO + PIT_CE + ROL_LO:
-        // ROLL left -> PID profile 1
-        changePidProfile(0);
-        return;
-    case THR_LO + YAW_LO + PIT_HI + ROL_CE:
-        // PITCH up -> PID profile 2
-        changePidProfile(1);
-        return;
-    case THR_LO + YAW_LO + PIT_CE + ROL_HI:
-        // ROLL right -> PID profile 3
-        changePidProfile(2);
-        return;
+    if (systemConfig()->enableStickProfileSwitch) {
+        switch (rcSticks) {
+        case THR_LO + YAW_LO + PIT_CE + ROL_LO:
+            // ROLL left -> PID profile 1
+            changePidProfile(0);
+            return;
+        case THR_LO + YAW_LO + PIT_HI + ROL_CE:
+            // PITCH up -> PID profile 2
+            changePidProfile(1);
+            return;
+        case THR_LO + YAW_LO + PIT_CE + ROL_HI:
+            // ROLL right -> PID profile 3
+            changePidProfile(2);
+            return;
+        }
     }
 
     if (rcSticks == THR_LO + YAW_LO + PIT_LO + ROL_HI) {
@@ -369,7 +371,7 @@ void processRcStickPositions(void)
 
             return;
         }
-    } else {
+    } else if (systemConfig()->enableStickProfileSwitch) {
         // in ACRO mode, so use sticks to change RATE profile
         switch (rcSticks) {
         case THR_HI + YAW_CE + PIT_HI + ROL_CE:
