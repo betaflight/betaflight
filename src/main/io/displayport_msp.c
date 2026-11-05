@@ -629,8 +629,8 @@ static int writeStringChanges(displayPort_t *displayPort, uint8_t col, uint8_t r
         return 0;
     }
     if (mspSerialTxBytesFree(displayPortSerial) < (uint32_t)need) {
-        // Sent in the next frame. The CMS stops its pass on the bytes returned, and is asked to draw its
-        // page again in the next one, where cells that did not change cost nothing.
+        // Sent in the next frame. The bytes returned are more than the CMS has left, which stops its pass,
+        // and it is asked to draw its page again in the next one, where cells that did not change cost nothing.
         if (displayIsGrabbed(displayPort)) {
             displayPort->cleared = true;
         }
