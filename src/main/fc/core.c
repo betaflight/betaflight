@@ -51,7 +51,6 @@
 #include "drivers/system.h"
 #include "drivers/time.h"
 #include "drivers/transponder_ir.h"
-#include "drivers/vtx_uart_pin_switch.h"
 
 #include "fc/controlrate_profile.h"
 #include "fc/rc.h"
@@ -641,10 +640,8 @@ void tryArm(void)
         gyroStartCalibration(true);
     }
 
-
     updateArmingStatus();
     // set or clear armingDisabled flags, while arming is requested, whether armed or disarmed,
-
 
     if (!isArmingDisabled()) {
         if (ARMING_FLAG(ARMED)) {
@@ -1481,10 +1478,6 @@ static FAST_CODE_NOINLINE void subTaskPidSubprocesses(timeUs_t currentTimeUs)
     }
 #else
     UNUSED(currentTimeUs);
-#endif
-
-#if ENABLE_VTX_UART_PIN_SWITCH
-    vtxUartPinSwitchUpdate();
 #endif
 
     DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);  //!< PID Subprocess Time [unit:us]

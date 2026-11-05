@@ -38,11 +38,6 @@
 
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_table.h"
-#include "drivers/vtx_uart_pin_switch.h"
-
-#if ENABLE_VTX_UART_PIN_SWITCH
-#include "drivers/time.h"
-#endif
 
 #include "io/serial.h"
 #include "io/vtx_tramp.h"
@@ -335,10 +330,6 @@ static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 
     // Read response from device
     const char replyCode = trampReceive();
-
-#if ENABLE_VTX_UART_PIN_SWITCH
-    vtxUartPinSwitchBegin(trampSerialPort, millis(), 20);
-#endif
 
     // Act on state
     switch(trampStatus) {

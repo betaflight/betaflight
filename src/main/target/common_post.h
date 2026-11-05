@@ -510,19 +510,6 @@
 #undef USE_VTX_MSP
 #endif
 
-#ifndef PLATFORM_TRAIT_VTX_UART_PIN_SWITCH
-#define PLATFORM_TRAIT_VTX_UART_PIN_SWITCH 0
-#endif
-
-#ifndef ENABLE_VTX_UART_PIN_SWITCH
-#if PLATFORM_TRAIT_VTX_UART_PIN_SWITCH && defined(USE_UART1) && defined(SA_UART_RX_PIN) \
-    && defined(USE_VTX_CONTROL) && (defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP))
-#define ENABLE_VTX_UART_PIN_SWITCH 1
-#else
-#define ENABLE_VTX_UART_PIN_SWITCH 0
-#endif
-#endif
-
 // Some target doesn't define USE_ADC which USE_ADC_INTERNAL depends on
 #ifndef USE_ADC
 #undef USE_ADC_INTERNAL

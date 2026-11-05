@@ -50,6 +50,7 @@
 
 #ifdef USE_HAL_DRIVER
 #include "platform/serial_uart_hal.h"
+#include "platform/serial_uart_bidir.h"
 struct uartHalHandle_s uartHalHandles[UARTDEV_COUNT];
 #endif
 
@@ -108,6 +109,7 @@ static void uartConfigurePinSwap(uartPort_t *uartPort)
 void uartReconfigure(uartPort_t *uartPort)
 {
     const serialPortIdentifier_e id = uartPort->port.identifier;
+    uartBidirConfigure(uartPort);
 
 #if defined(USE_UART7) || defined(USE_UART8)
     USART_TypeDef *usartSam;
@@ -257,7 +259,9 @@ void uartIrqHandler(uartPort_t *s)
         if (((csr & USART_CSR_RXRDY) != 0) && ((imr & USART_IER_RXRDY) != 0)) {
             const uint8_t rbyte = (uint8_t)(READ_REG(usartSam->RHR) & 0xff);
 
-            if (s->port.rxCallback) {
+            if (uartBidirIsTransmitting(s)) {
+                // Ignore receiver noise while its pad is disconnected.
+            } else if (s->port.rxCallback) {
                 s->port.rxCallback(rbyte, s->port.rxCallbackData);
             } else {
                 s->port.rxBuffer[s->port.rxBufferHead] = rbyte;
@@ -267,10 +271,16 @@ void uartIrqHandler(uartPort_t *s)
 
         if (((csr & USART_CSR_TXRDY) != 0) && ((imr & USART_IER_TXRDY) != 0)) {
             if (s->port.txBufferTail != s->port.txBufferHead) {
+                if (!uartBidirStart(s)) {
+                    s->port.txBufferTail = s->port.txBufferHead;
+                    usartSam->IDR = USART_IER_TXRDY;
+                    return;
+                }
                 WRITE_REG(usartSam->THR, s->port.txBuffer[s->port.txBufferTail]);
                 s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
             } else {
-                usartSam->IDR |= USART_IER_TXRDY;
+                usartSam->IDR = USART_IER_TXRDY;
+                uartBidirDrain(s);
             }
         }
         return;
@@ -282,7 +292,7 @@ void uartIrqHandler(uartPort_t *s)
     pHandle->Instance = (UART_TypeDef *)s->USARTx;
 
 	uint32_t usrflags   = READ_REG(pHandle->Instance->USR);
-    uint32_t lsrflags   = READ_REG(pHandle->Instance->LSR);
+    uint32_t lsrflags   = READ_REG(pHandle->Instance->LSR) | uartBidirTakeErrors(s);
     uint32_t ierits     = READ_REG(pHandle->Instance->IER);
     uint32_t errorflags = 0x00U;
 //    uint32_t dmarequest = 0x00U;
@@ -295,7 +305,9 @@ void uartIrqHandler(uartPort_t *s)
         if (!s->rxDMAResource && (((usrflags & UART_EX_USR_RFNE) != RESET) && ((ierits & UART_EX_IER_ERBFI) != RESET))) {
             rbyte = (uint8_t)(pHandle->Instance->RBR & (uint8_t)0xff);
 
-            if (s->port.rxCallback) {
+            if (uartBidirIsTransmitting(s)) {
+                // Ignore receiver noise while its pad is disconnected.
+            } else if (s->port.rxCallback) {
                 s->port.rxCallback(rbyte, s->port.rxCallbackData);
             } else {
                 s->port.rxBuffer[s->port.rxBufferHead] = rbyte;
@@ -309,10 +321,16 @@ void uartIrqHandler(uartPort_t *s)
 
     if (!s->txDMAResource && (((usrflags & UART_EX_USR_TFE) != RESET) && ((ierits & UART_EX_IER_ETBEI) != RESET))) {
         if (s->port.txBufferTail != s->port.txBufferHead) {
+            if (!uartBidirStart(s)) {
+                s->port.txBufferTail = s->port.txBufferHead;
+                __HAL_UART_EX_DISABLE_IT(pHandle, UART_EX_IT_ETBEI);
+                return;
+            }
             pHandle->Instance->THR = (uint8_t)(s->port.txBuffer[s->port.txBufferTail] & (uint8_t)0xff);
             s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
         } else {
             __HAL_UART_EX_DISABLE_IT(pHandle, UART_EX_IT_ETBEI);
+            uartBidirDrain(s);
         }
     }
 }

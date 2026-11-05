@@ -46,10 +46,6 @@
 
 #include "pg/serial_uart.h"
 
-#if ENABLE_VTX_UART_PIN_SWITCH
-#include "platform/vtx_uart_pin_switch.h"
-#endif
-
 #ifdef USE_HAL_DRIVER
 extern struct uartHalHandle_s uartHalHandles[UARTDEV_COUNT];
 extern struct dmaHalHandle_s uartRxDmaHalHandles[UARTDEV_COUNT];
@@ -229,10 +225,6 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
             IOConfigGPIOAF(rxIO, ioCfg, rxAf);
         }
     }
-
-#if ENABLE_VTX_UART_PIN_SWITCH
-    vtxUartPinSwitchInit(&s->port, options, txIO, rxIO, txAf);
-#endif
 
     enableRxIrq(hardware);
     return s;
