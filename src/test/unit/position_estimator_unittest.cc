@@ -186,6 +186,24 @@ TEST_F(PositionEstimatorTest, PowerOnReferenceWaitsForBarometerCalibration)
 
     EXPECT_TRUE(positionEstimatorIsValidZ());
     EXPECT_NEAR(positionEstimatorGetAltitudeCm(), 0.0f, 10.0f);
+
+    baroAltCm = 300.0f;
+    stepEstimator(400);
+    EXPECT_NEAR(positionEstimatorGetAltitudeCm(), 100.0f, 15.0f);
+
+    // Recalibration changes the barometer's frame, but the power-on altitude
+    // reference must remain continuous through the new calibration.
+    baroCalibrated = false;
+    baroAltCm = 0.0f;
+    stepEstimator(20);
+    baroCalibrated = true;
+    stepEstimator(1);
+    stepEstimator(10);
+    EXPECT_NEAR(positionEstimatorGetAltitudeCm(), 100.0f, 15.0f);
+
+    baroAltCm = 100.0f;
+    stepEstimator(400);
+    EXPECT_NEAR(positionEstimatorGetAltitudeCm(), 200.0f, 20.0f);
 }
 
 TEST_F(PositionEstimatorTest, GPSMeasurementsAreHeldAtAltitudeTaskRate)
@@ -1208,4 +1226,3 @@ TEST(PositionFilterTest, VelocityMeasurementCorrectsPositionState)
     EXPECT_GT(kalmanGetPosition(&kf), positionBefore);
     EXPECT_LT(kalmanGetPositionVariance(&kf), positionVarBefore);
 }
-

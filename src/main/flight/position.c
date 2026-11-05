@@ -68,29 +68,31 @@ static bool firstArmCompleted = false;
 static int16_t estimatedVario = 0;
 #endif
 
-static void positionResetAltitudeState(void)
+static void positionResetAltitudeState(float initialAltitudeCm)
 {
     const float sampleTimeS = HZ_TO_INTERVAL(TASK_POSITION_RATE_HZ);
 
     const float altitudeCutoffHz = positionConfig()->altitude_lpf / 100.0f;
     const float altitudeGain = pt2FilterGain(altitudeCutoffHz, sampleTimeS);
     pt2FilterInit(&altitudeLpf, altitudeGain);
+    altitudeLpf.state = initialAltitudeCm;
+    altitudeLpf.state1 = initialAltitudeCm;
 
     const float altitudeDerivativeCutoffHz = positionConfig()->altitude_d_lpf / 100.0f;
     const float altitudeDerivativeGain = pt2FilterGain(altitudeDerivativeCutoffHz, sampleTimeS);
     pt2FilterInit(&altitudeDerivativeLpf, altitudeDerivativeGain);
 
-    filteredAltitudeCm = 0.0f;
-    displayAltitudeCm = 0.0f;
+    filteredAltitudeCm = initialAltitudeCm;
+    displayAltitudeCm = initialAltitudeCm;
     filteredAltitudeDerivative = 0.0f;
-    controlAltitudeCm = 0.0f;
+    controlAltitudeCm = initialAltitudeCm;
     controlAltitudeDerivative = 0.0f;
     controlAltitudeAcceleration = 0.0f;
 }
 
 void positionInit(void)
 {
-    positionResetAltitudeState();
+    positionResetAltitudeState(0.0f);
 #if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER) || defined(USE_OPTICALFLOW)
     wasArmed = ARMING_FLAG(ARMED);
     firstArmCompleted = wasArmed;
@@ -167,14 +169,15 @@ void positionUpdate(void)
     const bool isArmed = ARMING_FLAG(ARMED);
     if (isArmed != wasArmed) {
         const uint8_t altitudeReference = positionConfig()->altitude_reference;
-        if (altitudeReference == ALTITUDE_REFERENCE_EACH_ARM ||
-            (altitudeReference == ALTITUDE_REFERENCE_FIRST_ARM && isArmed && !firstArmCompleted)) {
+        const bool resetEstimator = altitudeReference == ALTITUDE_REFERENCE_EACH_ARM ||
+            (altitudeReference == ALTITUDE_REFERENCE_FIRST_ARM && isArmed && !firstArmCompleted);
+        if (resetEstimator) {
             positionEstimatorResetZ();
         }
         if (isArmed) {
             firstArmCompleted = true;
         }
-        positionResetAltitudeState();
+        positionResetAltitudeState(resetEstimator ? 0.0f : positionEstimatorGetAltitudeCm());
         wasArmed = isArmed;
     }
 
