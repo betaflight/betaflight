@@ -32,12 +32,19 @@ typedef enum {
     ALTITUDE_SOURCE_RANGEFINDER_ONLY
 } altitudeSource_e;
 
+typedef enum {
+    ALTITUDE_REFERENCE_EACH_ARM = 0,
+    ALTITUDE_REFERENCE_FIRST_ARM,
+    ALTITUDE_REFERENCE_POWER_ON
+} altitudeReference_e;
+
 typedef struct positionConfig_s {
     uint8_t altitude_source;
     uint8_t altitude_prefer_baro;
     uint16_t altitude_lpf;                // lowpass cutoff (value / 100) Hz for altitude smoothing
     uint16_t altitude_d_lpf;              // lowpass for (value / 100) Hz for altitude derivative smoothing
     uint16_t rangefinder_max_range_cm;    // Maximum rangefinder range to trust (cm)
+    uint8_t altitude_reference;
 } positionConfig_t;
 
 PG_DECLARE(positionConfig_t, positionConfig);

@@ -62,6 +62,7 @@ static float controlAltitudeDerivative = 0.0f;
 static float controlAltitudeAcceleration = 0.0f;
 #if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER) || defined(USE_OPTICALFLOW)
 static bool wasArmed = false;
+static bool firstArmCompleted = false;
 #endif
 #ifdef USE_VARIO
 static int16_t estimatedVario = 0;
@@ -92,12 +93,13 @@ void positionInit(void)
     positionResetAltitudeState();
 #if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER) || defined(USE_OPTICALFLOW)
     wasArmed = ARMING_FLAG(ARMED);
+    firstArmCompleted = wasArmed;
 #endif
 
     positionEstimatorInit();
 }
 
-PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 7);
+PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 8);
 
 PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altitude_source = ALTITUDE_SOURCE_DEFAULT,
@@ -110,6 +112,7 @@ PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altitude_lpf = 300,
     .altitude_d_lpf = 300,
     .rangefinder_max_range_cm = 400,
+    .altitude_reference = ALTITUDE_REFERENCE_EACH_ARM,
 );
 
 #if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER) || defined(USE_OPTICALFLOW)
@@ -163,7 +166,14 @@ void positionUpdate(void)
 {
     const bool isArmed = ARMING_FLAG(ARMED);
     if (isArmed != wasArmed) {
-        positionEstimatorResetZ();
+        const uint8_t altitudeReference = positionConfig()->altitude_reference;
+        if (altitudeReference == ALTITUDE_REFERENCE_EACH_ARM ||
+            (altitudeReference == ALTITUDE_REFERENCE_FIRST_ARM && isArmed && !firstArmCompleted)) {
+            positionEstimatorResetZ();
+        }
+        if (isArmed) {
+            firstArmCompleted = true;
+        }
         positionResetAltitudeState();
         wasArmed = isArmed;
     }

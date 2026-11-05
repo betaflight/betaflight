@@ -974,8 +974,12 @@ static void feedBaroMeasurements(timeUs_t nowUs)
         return;
     }
 
+    if (positionConfig()->altitude_reference == ALTITUDE_REFERENCE_POWER_ON && !baroIsCalibrated()) {
+        return;
+    }
+
     if (!baroOffsetSet) {
-        // Capture disarmed baseline once; keep live relative altitude while disarmed.
+        // Capture the disarmed baseline once; keep live relative altitude while disarmed.
         baroAltOffsetCm = baroAltCm;
         baroOffsetSet = true;
     }
