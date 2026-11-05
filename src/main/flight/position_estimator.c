@@ -1003,8 +1003,11 @@ static void feedBaroMeasurements(timeUs_t nowUs)
         // Capture the disarmed baseline once; keep live relative altitude while disarmed.
         baroAltOffsetCm = baroAltCm;
         baroOffsetSet = true;
-    } else if (baroCalibrationPending && baroCalibrationAwaitingSample &&
-               getBaroLatestSampleTimeUs() != baroCalibrationSampleTimeUs) {
+    } else if (baroCalibrationPending && baroCalibrationAwaitingSample) {
+        if (getBaroLatestSampleTimeUs() == baroCalibrationSampleTimeUs) {
+            return;
+        }
+
         // Calibration changes the barometer's altitude frame. Align its first new
         // sample to the current estimate so POWER_ON altitude remains continuous.
         const float currentAltitudeCm = kalmanGetPosition(&kfUp);

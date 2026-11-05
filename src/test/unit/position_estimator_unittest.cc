@@ -198,6 +198,7 @@ TEST_F(PositionEstimatorTest, PowerOnReferenceWaitsForBarometerCalibration)
     stepEstimator(20);
     baroCalibrated = true;
     stepEstimator(1);
+    EXPECT_NEAR(positionEstimatorGetAltitudeCm(), 100.0f, 10.0f);
     stepEstimator(10);
     EXPECT_NEAR(positionEstimatorGetAltitudeCm(), 100.0f, 15.0f);
 
