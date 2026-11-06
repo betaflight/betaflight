@@ -713,7 +713,17 @@ $(CONFIGS_CLEAN):
 clean_all: $(TARGETS_CLEAN) test_clean
 
 ## preview           : build one target for each platform and execute make test
-preview: $(PREVIEW_TARGETS) test
+# Hydrate the configs and platform SDKs first, one at a time: parallel
+# `git submodule update --init` runs contend for the .git/config lock.
+# The build then runs in a new make, so BASE_CONFIGS (resolved at parse
+# time) includes the configs hydrated here.
+.PHONY: preview preview_build
+preview:
+	$(V0) [ -d "$(CONFIG_DIR)/configs" ] || $(MAKE) -j1 configs
+	$(V0) $(MAKE) -j1 $(AUTOHYDRATE_STAMPS) platform-sdk-hydrate
+	$(V0) $(MAKE) preview_build
+
+preview_build: $(PREVIEW_TARGETS) test
 
 ## all_configs       : Build all configs
 all_configs: $(BASE_CONFIGS)
