@@ -1082,6 +1082,12 @@ vtx_msp_unittest_DEFINES := \
 pwl_unittest_SRC := \
 		$(USER_DIR)/common/pwl.c
 
+dshot_flexio_decode_unittest_SRC := \
+		$(TEST_DIR)/dshot_flexio_decode_unittest_c.c
+
+dshot_flexio_decode_unittest_INCLUDE_DIRS := \
+		$(ROOT)/src/platform/NXP
+
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets
 # but shouldn't modify.
