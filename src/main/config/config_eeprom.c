@@ -479,6 +479,10 @@ configResetReason_e diagnoseEEPROM(uint16_t *detail)
             *detail = pgN(reg);
             return CONFIG_RESET_PG_VERSION;
         }
+        if (reg->length > 1 && rec->size - offsetof(configRecord_t, pg) != pgSize(reg)) {
+            *detail = pgN(reg);
+            return CONFIG_RESET_PG_SIZE;
+        }
     }
 
     return CONFIG_RESET_NONE;
