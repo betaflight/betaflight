@@ -447,10 +447,14 @@ static void performSanityChecks(void)
         break;
     case RESCUE_LANDING:
     case RESCUE_EMERG_DESCENT:
-        rescueState.intent.secondsFailing += altitudeControlError > 0.5f ? -1 : 1;
-        rescueState.intent.secondsFailing = MAX(0, rescueState.intent.secondsFailing);
-        if (rescueState.intent.secondsFailing >= 15 && (rescueState.phase == RESCUE_LANDING || isBelowLandingAltitude() || hardFailsafe)) {
-            rescueDisarmNow();
+        if (rescueState.phase == RESCUE_LANDING || isBelowLandingAltitude() || hardFailsafe) {
+            rescueState.intent.secondsFailing += altitudeControlError > 0.5f ? -1 : 1;
+            rescueState.intent.secondsFailing = MAX(0, rescueState.intent.secondsFailing);
+            if (rescueState.intent.secondsFailing >= 15) {
+                rescueDisarmNow();
+            }
+        } else {
+            rescueState.intent.secondsFailing = 0;
         }
         break;
     default:
@@ -458,12 +462,11 @@ static void performSanityChecks(void)
     }
 }
 
-static void descend(void)
+static bool rescueIsDescending(void)
 {
-    float verticalVelMax = -(float)gpsRescueConfig()->descendRate;
-    float verticalVelAttenuator = scaleRangef(constrainf(rescueState.intent.targetAltitudeCm, 1000, 5000), 1000, 5000, 0.6f, 3.0f);
-
-    rescueState.intent.targetAltitudeVelCmS = verticalVelMax * verticalVelAttenuator;
+    return rescueState.phase == RESCUE_DESCENT
+        || rescueState.phase == RESCUE_LANDING
+        || rescueState.phase == RESCUE_EMERG_DESCENT;
 }
 
 static bool descendIfNeeded(void)
@@ -611,7 +614,6 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         updateVelocityStartupAttenuator();
         updateTargetSpeed(); 
         controlVelocity();
-        descend(); // sets a negative targetAltitudeVelocity
         if (isBelowLandingAltitude()) {
             rescueState.phase = RESCUE_LANDING;
             rescueState.intent.secondsFailing = 0; // reset sanity timer for landing
@@ -619,13 +621,11 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         break;
 
     case RESCUE_LANDING:
-        descend();
         clearTargetVelocity();
         // target altitude keeps going down
         break;
 
     case RESCUE_EMERG_DESCENT:
-        descend();
         vector2Zero(&rescueState.intent.targetVelocityEF);
         setTargetVelocity(&rescueState.intent.targetVelocityEF, true); // force abort position control
         break;
@@ -645,7 +645,15 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 7, rescueState.phase);             //!< Rescue Phase [enum:rescuePhase_e]
 
     // Autopilot control of altitude is always active when rescue mode is engaged
-    if (rescueState.phase > RESCUE_INITIALIZE) {
+    if (rescueIsDescending()) {
+        const float descendRateCmS = gpsRescueConfig()->descendRate;
+        const landingProfile_t profile = {
+            .touchdownRateCmS = 0.6f * descendRateCmS,
+            .maxRateCmS = 3.0f * descendRateCmS,
+        };
+        autopilotLand(&profile, rescueState.intent.targetAltitudeCm, HZ_TO_INTERVAL_US(TASK_GPS_RESCUE_RATE_HZ));
+        rescueState.intent.targetAltitudeCm = autopilotLandingTargetAltitudeCm();
+    } else if (rescueState.phase > RESCUE_INITIALIZE) {
         rescueState.intent.targetAltitudeCm += rescueState.intent.targetAltitudeVelCmS * gpsRescueTaskIntervalSeconds;
         controlAltitude();
     }
@@ -686,11 +694,6 @@ bool gpsRescueIsHeadingOK(void)
 bool gpsRescueIsOK(void)
 {
     return rescueState.isOK; // when false, flashes `RESCUE FAIL` in OSD when failure time exceeds 5s or when in a failure mode
-}
-
-bool gpsRescueIsLanding(void)
-{
-    return rescueState.phase == RESCUE_LANDING || rescueState.phase == RESCUE_EMERG_DESCENT;
 }
 
 #endif // USE_GPS_RESCUE

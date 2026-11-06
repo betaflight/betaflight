@@ -46,6 +46,7 @@ althold_unittest_SRC := \
 
 althold_unittest_DEFINES := \
 		USE_ALTITUDE_HOLD= \
+		ENABLE_FLIGHT_PLAN=1
 
 autopilot_wing_unittest_SRC := \
 		$(USER_DIR)/flight/autopilot_wing.c \

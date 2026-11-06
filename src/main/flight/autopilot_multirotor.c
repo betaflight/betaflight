@@ -29,6 +29,7 @@
 #include "common/filter.h"
 #include "common/maths.h"
 #include "common/vector.h"
+#include "drivers/time.h"
 #include "fc/rc.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -1521,6 +1522,51 @@ bool positionControl(void)
 bool isBelowLandingAltitude(void)
 {
     return getAltitudeCmControl() < 100.0f * autopilotConfig()->landingAltitudeM;
+}
+
+#define LANDING_PROFILE_LOW_CM      1000.0f
+#define LANDING_PROFILE_HIGH_CM     5000.0f
+#define LANDING_LEASH_MIN_CM        100.0f
+#define LANDING_LEASH_S             1.0f
+#define LANDING_REQUEST_TIMEOUT_US  100000
+
+static struct {
+    float targetAltitudeCm;
+    timeUs_t lastRequestUs;
+    bool requested;
+} landing;
+
+static float landingDescentRateCmS(const landingProfile_t *profile, float altitudeCm)
+{
+    return scaleRangef(constrainf(altitudeCm, LANDING_PROFILE_LOW_CM, LANDING_PROFILE_HIGH_CM),
+                       LANDING_PROFILE_LOW_CM, LANDING_PROFILE_HIGH_CM,
+                       profile->touchdownRateCmS, profile->maxRateCmS);
+}
+
+bool autopilotIsLanding(void)
+{
+    return landing.requested && cmpTimeUs(micros(), landing.lastRequestUs) < LANDING_REQUEST_TIMEOUT_US;
+}
+
+float autopilotLandingTargetAltitudeCm(void)
+{
+    return landing.targetAltitudeCm;
+}
+
+void autopilotLand(const landingProfile_t *profile, float startAltitudeCm, timeUs_t taskIntervalUs)
+{
+    if (!autopilotIsLanding()) {
+        landing.targetAltitudeCm = startAltitudeCm;
+    }
+    landing.requested = true;
+    landing.lastRequestUs = micros();
+
+    const float rateCmS = landingDescentRateCmS(profile, landing.targetAltitudeCm);
+    const float leashCm = fmaxf(LANDING_LEASH_MIN_CM, rateCmS * LANDING_LEASH_S);
+    if (landing.targetAltitudeCm > getAltitudeCmControl() - leashCm) {
+        landing.targetAltitudeCm -= rateCmS * US_TO_INTERVAL(taskIntervalUs);
+    }
+    altitudeControl(landing.targetAltitudeCm, taskIntervalUs, -rateCmS, profile->maxRateCmS);
 }
 
 float getAutopilotThrottle(void)

@@ -46,7 +46,6 @@
 #include "fc/runtime_config.h"
 
 #include "flight/autopilot.h"
-#include "flight/flight_plan_nav.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/launch_wing.h"
@@ -970,13 +969,7 @@ STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
 
 static bool isAutoLandingActive(void)
 {
-    const bool landing = (FLIGHT_MODE(FAILSAFE_MODE) && FLIGHT_MODE(ALT_HOLD_MODE))
-#ifdef USE_GPS_RESCUE
-        || (FLIGHT_MODE(GPS_RESCUE_MODE) && gpsRescueIsLanding())
-#endif
-        || flightPlanNavIsLanding()
-        || flightPlanNavIsRescueDescentActive();
-    return landing && !isFixedWing() && isBelowLandingAltitude();
+    return autopilotIsLanding() && !isFixedWing() && isBelowLandingAltitude();
 }
 
 static FAST_CODE_NOINLINE void disarmOnImpact(float threshold)

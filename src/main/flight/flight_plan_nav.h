@@ -66,8 +66,10 @@ bool flightPlanNavIsActive(void);
 flightPlanNavState_e flightPlanNavGetState(void);
 #if ENABLE_FLIGHT_PLAN
 bool flightPlanNavIsLanding(void);
+float flightPlanNavGetLandingRateCmS(void);
 #else
 static inline bool flightPlanNavIsLanding(void) { return false; }
+static inline float flightPlanNavGetLandingRateCmS(void) { return 0.0f; }
 #endif
 uint8_t flightPlanNavGetCurrentIndex(void);
 flightPlanAbortReason_e flightPlanNavGetAbortReason(void);

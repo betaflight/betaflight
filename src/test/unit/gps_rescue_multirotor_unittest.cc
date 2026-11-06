@@ -70,6 +70,9 @@ static bool simulatedGpsHealthy;
 static int disarmCount;
 static flightLogDisarmReason_e lastDisarmReason;
 static positionEstimate3d_t simulatedEstimate;
+static int landingCalls;
+static landingProfile_t lastLandingProfile;
+static float landingTargetCm;
 
 extern "C" {
     timeUs_t micros(void) { return simulatedTimeUs; }
@@ -93,6 +96,13 @@ extern "C" {
     void autopilotSetYawTarget(float) { }
     void setTargetVelocity(const vector2_t *, bool) { }
     void altitudeControl(float, timeUs_t, float, float) { }
+    void autopilotLand(const landingProfile_t *profile, float startAltitudeCm, timeUs_t taskIntervalUs)
+    {
+        landingCalls++;
+        lastLandingProfile = *profile;
+        landingTargetCm = startAltitudeCm - profile->touchdownRateCmS * US_TO_INTERVAL(taskIntervalUs);
+    }
+    float autopilotLandingTargetAltitudeCm(void) { return landingTargetCm; }
     void resetAltitudeControl(void) { }
     void pitchForwardOverride(bool) { }
     void initPositionHold(void) { }
@@ -119,6 +129,7 @@ protected:
         simulatedRxSignal = false;
         simulatedGpsHealthy = false;
         disarmCount = 0;
+        landingCalls = 0;
         stateFlags = 0;
         memset(&simulatedEstimate, 0, sizeof(simulatedEstimate));
         simulatedEstimate.position.v[EF_NORTH] = 20000.0f;
@@ -138,7 +149,7 @@ TEST_F(GpsRescueEmergencyDescent, DisarmsAfterSettlingOnTheGround)
 {
     // no home point on a hard failsafe: emergency descent, no XY control
     runRescueSeconds(1.0f);
-    EXPECT_TRUE(gpsRescueIsLanding());
+    EXPECT_GT(landingCalls, 0);
     EXPECT_EQ(0, disarmCount);
 
     // the craft comes to rest and the altitude stops changing
@@ -166,11 +177,25 @@ TEST_F(GpsRescueEmergencyDescent, KeepsFlyingWhenStalledAboveLandingAltitudeWith
     gpsRescueConfigMutable()->sanityChecks = RESCUE_SANITY_ON;
     simulatedRxSignal = true;
     runRescueSeconds(1.0f);
-    EXPECT_TRUE(gpsRescueIsLanding());
+    EXPECT_GT(landingCalls, 0);
 
     // altitude stops changing well above the landing altitude, left to the pilot's disarm switch
     runRescueSeconds(30.0f);
     EXPECT_EQ(0, disarmCount);
+}
+
+TEST_F(GpsRescueEmergencyDescent, StallWithRadioDoesNotCountTowardsDisarmAfterRadioLoss)
+{
+    gpsRescueConfigMutable()->sanityChecks = RESCUE_SANITY_ON;
+    simulatedRxSignal = true;
+    runRescueSeconds(30.0f);
+
+    // the radio drops out with the craft still stalled above the landing altitude
+    simulatedRxSignal = false;
+    runRescueSeconds(5.0f);
+    EXPECT_EQ(0, disarmCount);
+    runRescueSeconds(12.0f);
+    EXPECT_EQ(1, disarmCount);
 }
 
 class GpsRescueLanding : public GpsRescueEmergencyDescent {
@@ -191,15 +216,18 @@ TEST_F(GpsRescueLanding, DisarmsAfterDescentStallsAboveLandingAltitude)
 {
     // climb to the return altitude, then descend as already within the descent distance
     runRescueSeconds(1.0f);
-    EXPECT_FALSE(gpsRescueIsLanding());
+    EXPECT_EQ(0, landingCalls);
     simulatedAltitudeCm = 3100.0f;
     runRescueSeconds(1.0f);
-    EXPECT_FALSE(gpsRescueIsLanding());
+
+    // the descent is flown as a landing, at the rescue descent rate near the ground and faster high up
+    EXPECT_GT(landingCalls, 0);
+    EXPECT_FLOAT_EQ(0.6f * gpsRescueConfig()->descendRate, lastLandingProfile.touchdownRateCmS);
+    EXPECT_FLOAT_EQ(3.0f * gpsRescueConfig()->descendRate, lastLandingProfile.maxRateCmS);
 
     // on the ground on terrain higher than home: the descent stalls above the landing altitude
     simulatedAltitudeCm = 1000.0f;
     runRescueSeconds(20.0f);
-    EXPECT_TRUE(gpsRescueIsLanding());
     EXPECT_EQ(0, disarmCount);
     runRescueSeconds(15.0f);
     EXPECT_EQ(1, disarmCount);

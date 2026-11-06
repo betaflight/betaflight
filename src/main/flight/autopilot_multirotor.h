@@ -55,6 +55,17 @@ uint16_t autopilotGetEffectiveHoverThrottlePwm(void);
 void autopilotCaptureHoverThrottleForAltHold(void);
 void autopilotClearAltHoldHoverThrottle(void);
 bool isBelowLandingAltitude(void);
+
+typedef struct {
+    float touchdownRateCmS;   // descent rate at and below the low end of the landing profile
+    float maxRateCmS;         // descent rate at and above the high end, linear between
+} landingProfile_t;
+
+// A descent meant to end on the ground. The owner calls this every cycle; the first call after a
+// pause starts from startAltitudeCm, later ones carry the landing on, whoever makes them.
+void autopilotLand(const landingProfile_t *profile, float startAltitudeCm, timeUs_t taskIntervalUs);
+bool autopilotIsLanding(void);
+float autopilotLandingTargetAltitudeCm(void);
 float getAutopilotThrottle(void);
 void autopilotSetYawTarget(float headingDeg);
 

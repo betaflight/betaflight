@@ -37,9 +37,7 @@ float simulatedFeedforward[3] = { 0,0,0 };
 float simulatedMotorMixRange = 0.0f;
 bool simulatedBelowLandingAltitude = false;
 bool simulatedFixedWing = false;
-bool simulatedRescueLanding = false;
-bool simulatedNavLanding = false;
-bool simulatedRescueDescentActive = false;
+bool simulatedAutopilotLanding = false;
 int disarmCount = 0;
 
 int16_t debug[DEBUG16_VALUE_COUNT];
@@ -112,9 +110,7 @@ extern "C" {
 
     bool isBelowLandingAltitude(void) { return simulatedBelowLandingAltitude; }
     bool isFixedWing(void) { return simulatedFixedWing; }
-    bool gpsRescueIsLanding(void) { return simulatedRescueLanding; }
-    bool flightPlanNavIsLanding(void) { return simulatedNavLanding; }
-    bool flightPlanNavIsRescueDescentActive(void) { return simulatedRescueDescentActive; }
+    bool autopilotIsLanding(void) { return simulatedAutopilotLanding; }
 
     void systemBeep(bool) { }
     bool gyroOverflowDetected(void) { return false; }
@@ -259,9 +255,7 @@ void resetTest(void)
     flightModeFlags = 0;
     simulatedBelowLandingAltitude = false;
     simulatedFixedWing = false;
-    simulatedRescueLanding = false;
-    simulatedNavLanding = false;
-    simulatedRescueDescentActive = false;
+    simulatedAutopilotLanding = false;
     acc.jerkMagnitude = 0.0f;
     unitLaunchControlActive = false;
     pidProfile->launchControlMode = unitLaunchControlMode;
@@ -1316,10 +1310,12 @@ TEST(pidControllerTest, testAutoLandingImpactDisarm)
     simulatedBelowLandingAltitude = true;
     EXPECT_EQ(0, runImpact(2000.0f));
 
-    // GPS rescue touching down disarms by default, but only in its landing phases
+    // nor in an autopilot mode that is not landing, such as a rescue climbing out
     ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
     EXPECT_EQ(0, runImpact(2000.0f));
-    simulatedRescueLanding = true;
+
+    // touching down in an autopilot landing disarms by default
+    simulatedAutopilotLanding = true;
     EXPECT_EQ(1, runImpact(2000.0f));
 
     // but not on acc noise, nor above the landing altitude
@@ -1332,30 +1328,6 @@ TEST(pidControllerTest, testAutoLandingImpactDisarm)
     simulatedFixedWing = true;
     EXPECT_EQ(0, runImpact(2000.0f));
     simulatedFixedWing = false;
-    DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
-
-    // failsafe landing under altitude hold disarms by default
-    ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
-    EXPECT_EQ(0, runImpact(2000.0f));
-    ENABLE_FLIGHT_MODE(ALT_HOLD_MODE);
-    EXPECT_EQ(1, runImpact(2000.0f));
-    DISABLE_FLIGHT_MODE(FAILSAFE_MODE);
-
-    // a flight plan landing, and the rescue altitude-only fallback, disarm by default
-    DISABLE_FLIGHT_MODE(ALT_HOLD_MODE);
-    EXPECT_EQ(0, runImpact(2000.0f));
-    simulatedNavLanding = true;
-    EXPECT_EQ(1, runImpact(2000.0f));
-    simulatedNavLanding = false;
-    simulatedRescueDescentActive = true;
-    EXPECT_EQ(1, runImpact(2000.0f));
-
-    // but not above the landing altitude, even with the sticks centred
-    simulatedBelowLandingAltitude = false;
-    EXPECT_EQ(0, runImpact(2000.0f));
-    simulatedBelowLandingAltitude = true;
-    simulatedRescueDescentActive = false;
-    ENABLE_FLIGHT_MODE(ALT_HOLD_MODE);
 
     // a user threshold still takes precedence
     pidProfile->landing_disarm_threshold = 250;

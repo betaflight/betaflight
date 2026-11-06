@@ -37,6 +37,5 @@ bool gpsRescueIsConfigured(void);
 bool gpsRescueIsAvailable(void);
 bool gpsRescueIsHeadingOK(void);
 bool gpsRescueIsOK(void);
-bool gpsRescueIsLanding(void);
 
 #endif // USE_WING
