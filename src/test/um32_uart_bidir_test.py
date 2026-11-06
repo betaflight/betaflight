@@ -151,28 +151,54 @@ int main(void) {
  sam.CSR=USART_CSR_TXEMPTY;LPTIMER1_IRQHandler();assert(pinMode[26]==0 && pinMode[27]==1);
  // Timer rate follows the real clock at both supported CPU frequencies.
  for(unsigned i=0;i<2;i++){clockHz=i?336000000:288000000;uartBidirStart(&c);sam.CSR=0;uartBidirDrain(&c);assert(timer.TARGET>0 && timer.TARGET<65536);sam.CSR=512;LPTIMER1_IRQHandler();}
- // Tramp uses the default idle-high pull; SmartAudio requests a pulldown.
+ // Tramp keeps its ordinary 9600/8N1 options, including on a pull-up board.
  a=setup(1,9600);uartBidirConfigure(&a);
  assert(pinPull[6]==32 && pinPull[7]==32);
- uartBidirStart(&a);assert(pinMode[7]==0 && pinPull[7]==0);
- regs[0].LSR=64;uartBidirDrain(&a);assert(pinPull[6]==32 && pinPull[7]==32);
+ assert(a.port.options==SERIAL_BIDIR && a.port.baudRate==9600);
+ for(unsigned i=0;i<3;i++) {
+  regs[0].LSR=0;uartBidirStart(&a);
+  assert(pinMode[6]==1 && pinPull[6]==32 && pinMode[7]==0 && pinPull[7]==0);
+  uartBidirDrain(&a);LPTIMER1_IRQHandler();assert(pinMode[6]==1);
+  regs[0].LSR=64;LPTIMER1_IRQHandler();
+  assert(pinMode[6]==0 && pinMode[7]==1 && pinPull[6]==32 && pinPull[7]==32);
+ }
+ // SmartAudio follows the board's declared bias; other ports keep API defaults.
  a.port.options=SERIAL_BIDIR|SERIAL_PULL_SMARTAUDIO|SERIAL_STOPBITS_2;
  const unsigned saPull =
-#ifdef USE_SMARTAUDIO_NOPULLDOWN
+#ifdef UART1_BIDIR_PULLUP
+ 32;
+#elif defined(USE_SMARTAUDIO_NOPULLDOWN)
  0;
 #else
  64;
 #endif
  a.port.baudRate=4800;uartBidirConfigure(&a);assert(pinPull[6]==saPull && pinPull[7]==saPull);
  uartBidirStart(&a);regs[0].LSR=64;uartBidirDrain(&a);assert(pinPull[6]==saPull && pinPull[7]==saPull);
+ assert(pinMode[6]==0 && pinMode[7]==1);
+ b=setup(2,4800);b.port.options=SERIAL_BIDIR|SERIAL_PULL_SMARTAUDIO|SERIAL_STOPBITS_2;
+ uartBidirConfigure(&b);
+#ifdef USE_SMARTAUDIO_NOPULLDOWN
+ assert(pinPull[16]==0 && pinPull[17]==0);
+#else
+ assert(pinPull[16]==64 && pinPull[17]==64);
+#endif
+ // A board bias does not override explicit no-pull or inverted-port options.
  a.port.options=SERIAL_BIDIR|SERIAL_PULL_NONE;uartBidirConfigure(&a);
  assert(pinPull[6]==0 && pinPull[7]==0);
- puts("PASS: TEMT state machine, Tramp pullup, SmartAudio pulldown, explicit no-pull, multiport and recovery");
+#ifdef UART1_BIDIR_PULLUP
+ a.port.options|=SERIAL_PULL_SMARTAUDIO;uartBidirConfigure(&a);
+ assert(pinPull[6]==0 && pinPull[7]==0);
+#endif
+ a.port.options=SERIAL_BIDIR|SERIAL_INVERTED;uartBidirConfigure(&a);
+ assert(pinPull[6]==64 && pinPull[7]==64);
+ a.port.options=SERIAL_PULL_SMARTAUDIO;uartBidirConfigure(&a);
+ assert(!ports[0].uart); // No board override on a full-duplex port.
+ puts("PASS: TEMT, repeated Tramp TX/RX, board bias, per-port isolation, no-pull, inversion and recovery");
 }
 '''.replace('@BIDIR_SOURCE@', (root/'src/platform/UM32/serial_uart_bidir.c').as_posix())
    .replace('@SERIAL_OPTIONS_SOURCE@', (out/'serial_options.c').as_posix()))
 compiler=shlex.split(os.environ.get('CC', shutil.which('clang-18') or 'clang'))
 cmd=compiler+['-std=c11','-Wall','-Wextra','-Werror','-fsanitize=address,undefined','-I'+str(out),'-I'+str(root/'src/platform/UM32/include'),str(out/'test.c'),'-o',str(out/'test')]
-for defines in [[], ['-DUSE_SMARTAUDIO_NOPULLDOWN']]:
+for defines in [[], ['-DUSE_SMARTAUDIO_NOPULLDOWN'], ['-DUART1_BIDIR_PULLUP'], ['-DUART1_BIDIR_PULLUP', '-DUSE_SMARTAUDIO_NOPULLDOWN']]:
  subprocess.run(cmd+defines,check=True)
  subprocess.run([str(out/'test')],check=True)
