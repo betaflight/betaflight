@@ -438,6 +438,18 @@ TEST_F(AltholdControlUnittest, LandingEndsSoonAfterItsOwnerStopsAsking)
     EXPECT_NEAR(1745.0f, autopilotLandingTargetAltitudeCm(), 10.0f);
 }
 
+TEST_F(AltholdControlUnittest, OldLandingRequestStaysExpiredAfterTheTimerWraps)
+{
+    enterAltHoldAt(2000.0f);
+    testFailsafePhase = FAILSAFE_LANDING;
+    runAltHoldSeconds(0.5f);
+    testFailsafePhase = FAILSAFE_IDLE;
+    testMicrosUs += 40u * 60u * 1000000u;
+    EXPECT_FALSE(autopilotIsLanding());
+    testMicrosUs += 40u * 60u * 1000000u;
+    EXPECT_FALSE(autopilotIsLanding());
+}
+
 TEST_F(AltholdControlUnittest, LandingProfileSpeedsUpWithHeight)
 {
     const landingProfile_t profile = { .touchdownRateCmS = 100.0f, .maxRateCmS = 500.0f };

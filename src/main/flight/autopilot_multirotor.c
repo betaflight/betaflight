@@ -1545,7 +1545,11 @@ static float landingDescentRateCmS(const landingProfile_t *profile, float altitu
 
 bool autopilotIsLanding(void)
 {
-    return landing.requested && cmpTimeUs(micros(), landing.lastRequestUs) < LANDING_REQUEST_TIMEOUT_US;
+    if (landing.requested) {
+        const timeDelta_t requestAgeUs = cmpTimeUs(micros(), landing.lastRequestUs);
+        landing.requested = requestAgeUs >= 0 && requestAgeUs < LANDING_REQUEST_TIMEOUT_US;
+    }
+    return landing.requested;
 }
 
 float autopilotLandingTargetAltitudeCm(void)
