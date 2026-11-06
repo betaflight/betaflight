@@ -72,6 +72,37 @@ static ioTag_t bidirRxTag(serialPortIdentifier_e id)
     }
 }
 
+static bool bidirPullUp(serialPortIdentifier_e id)
+{
+    switch (id) {
+#ifdef UART1_BIDIR_PULLUP
+    case SERIAL_PORT_UART1: return true;
+#endif
+#ifdef UART2_BIDIR_PULLUP
+    case SERIAL_PORT_UART2: return true;
+#endif
+#ifdef UART3_BIDIR_PULLUP
+    case SERIAL_PORT_UART3: return true;
+#endif
+#ifdef UART4_BIDIR_PULLUP
+    case SERIAL_PORT_UART4: return true;
+#endif
+#ifdef UART5_BIDIR_PULLUP
+    case SERIAL_PORT_UART5: return true;
+#endif
+#ifdef UART6_BIDIR_PULLUP
+    case SERIAL_PORT_UART6: return true;
+#endif
+#ifdef UART7_BIDIR_PULLUP
+    case SERIAL_PORT_UART7: return true;
+#endif
+#ifdef UART8_BIDIR_PULLUP
+    case SERIAL_PORT_UART8: return true;
+#endif
+    default: return false;
+    }
+}
+
 static uartBidirState_t *state(const uartPort_t *s)
 {
     const int index = s->port.identifier - SERIAL_PORT_UART1;
@@ -131,10 +162,13 @@ void uartBidirConfigure(uartPort_t *s)
         p->tx = tx;
         p->rx = rx;
         p->af = dev->hardware->af;
-        // Preserve the serial API's electrical idle state: Tramp/default uses
-        // pull-up; SmartAudio and no-pull follow the common option parser.
-        // GPIO input still releases TX.
-        const serialPullMode_t pull = serialOptions_pull(s->port.options);
+        // A board may require an idle-high bias on its external two-pad bus.
+        // Keep explicit no-pull and inverted-port choices; TX remains an input
+        // when released, so a pull-up never keeps the output driver enabled.
+        serialPullMode_t pull = serialOptions_pull(s->port.options);
+        if (bidirPullUp(s->port.identifier) && !(s->port.options & SERIAL_INVERTED)) {
+            pull = (s->port.options & SERIAL_PULL_NONE) ? serialPullNone : serialPullUp;
+        }
         p->activeConfig = pull == serialPullUp ? IOCFG_AF_PP_UP
             : (pull == serialPullDown ? IOCFG_AF_PP_PD : IOCFG_AF_PP);
         p->idleConfig = pull == serialPullUp ? IOCFG_IPU

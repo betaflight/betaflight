@@ -4,6 +4,8 @@
  */
 #pragma once
 
+// UARTn_BIDIR_RX_PIN selects the external receive pad. UARTn_BIDIR_PULLUP
+// optionally biases that port's non-inverted two-pad bus high when released.
 #if defined(UART1_BIDIR_RX_PIN) || defined(UART2_BIDIR_RX_PIN) || defined(UART3_BIDIR_RX_PIN) \
     || defined(UART4_BIDIR_RX_PIN) || defined(UART5_BIDIR_RX_PIN) || defined(UART6_BIDIR_RX_PIN) \
     || defined(UART7_BIDIR_RX_PIN) || defined(UART8_BIDIR_RX_PIN)
