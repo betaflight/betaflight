@@ -1332,7 +1332,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_VBAT_SAG_COMPENSATION, VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, VBAT_SAG_COMPENSATION_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, vbat_sag_compensation) },
 #endif
     { PARAM_NAME_PID_AT_MIN_THROTTLE, VAR_UINT8 | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, pidAtMinThrottle) },
-    { PARAM_NAME_ANTI_GRAVITY_GAIN,   VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { ITERM_ACCELERATOR_GAIN_OFF, ITERM_ACCELERATOR_GAIN_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, anti_gravity_gain) },
+    { PARAM_NAME_ANTI_GRAVITY_GAIN,   VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { ANTI_GRAVITY_GAIN_OFF, ANTI_GRAVITY_GAIN_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, anti_gravity_gain) },
     { PARAM_NAME_ANTI_GRAVITY_CUTOFF_HZ, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 2, 50 }, PG_PID_PROFILE, offsetof(pidProfile_t, anti_gravity_cutoff_hz) },
     { PARAM_NAME_ANTI_GRAVITY_P_GAIN, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 250 }, PG_PID_PROFILE, offsetof(pidProfile_t, anti_gravity_p_gain) },
     { PARAM_NAME_ACC_LIMIT_YAW,     VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, RATE_ACCEL_LIMIT_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, yawRateAccelLimit) },
@@ -1825,7 +1825,7 @@ const clivalue_t valueTable[] = {
     { "osd_aux_channel",            VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, MAX_SUPPORTED_RC_CHANNEL_COUNT }, PG_OSD_CONFIG, offsetof(osdConfig_t, aux_channel) },
     { "osd_aux_scale",              VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1, 1000 }, PG_OSD_CONFIG, offsetof(osdConfig_t, aux_scale) },
     { "osd_aux_symbol",             VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 255 },  PG_OSD_CONFIG, offsetof(osdConfig_t, aux_symbol) },
-#ifdef OSD_CANVAS_SIZE_DEBUG
+#if ENABLE_OSD_CANVAS_SIZE_DEBUG
     { "osd_canvas_width",           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_CANVAS_COLS_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, canvas_cols) },
     { "osd_canvas_height",          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_CANVAS_ROWS_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, canvas_rows) },
 #endif
