@@ -19,7 +19,10 @@ MEMORY
     FLASH_CONFIG (rw) : ORIGIN = 0x08002000, LENGTH = 8K
     FLASH1 (rx)       : ORIGIN = 0x08004000, LENGTH = 496K
 #ifdef USE_QSPI_XIP
-    EXFLASH (rx)      : ORIGIN = 0x38000000, LENGTH = 512K
+    /* Two aliases of the same QSPI Flash: fetch from the Code region,
+     * keep the existing AHB address in HEX/DFU load images. */
+    EXFLASH_XIP (rx)  : ORIGIN = 0x00080000, LENGTH = 512K
+    EXFLASH_LOAD (r)  : ORIGIN = 0x38000000, LENGTH = 512K
 #endif
 
     SYSTEM_MEMORY (r) : ORIGIN = 0x4004000, LENGTH = 16K
@@ -118,7 +121,7 @@ SECTIONS
      */cms/cms_menu_imu.o(.text* .rodata*)
      */cms/cms_menu_osd.o(.text* .rodata*)
      . = ALIGN(4) ;
-  } > EXFLASH
+  } >EXFLASH_XIP AT>EXFLASH_LOAD
 #endif
 
   /* The program code and other data goes into FLASH */
@@ -271,9 +274,24 @@ SECTIONS
     . = ALIGN(4);
     tcm_code_end = .;
 #ifdef USE_QSPI_XIP
-  } >CODERAM AT>EXFLASH
+  } >CODERAM AT>EXFLASH_LOAD
 #else
   } >CODERAM AT>FLASH1
+#endif
+
+#ifdef USE_QSPI_XIP
+  /* Both aliases address the same physical bytes. The RAM-code load image
+   * follows the XIP image in that single 512K Flash, not in a second bank. */
+  ASSERT(ADDR(.ex_flash) - ORIGIN(EXFLASH_XIP) ==
+         LOADADDR(.ex_flash) - ORIGIN(EXFLASH_LOAD),
+         "QSPI execution/load alias offsets differ")
+  ASSERT(SIZEOF(.tcm_code) == 0 ||
+         LOADADDR(.tcm_code) >= LOADADDR(.ex_flash) + SIZEOF(.ex_flash),
+         "QSPI XIP and RAM-code load images overlap")
+  ASSERT(SIZEOF(.tcm_code) == 0 ||
+         LOADADDR(.tcm_code) + SIZEOF(.tcm_code) <=
+         ORIGIN(EXFLASH_LOAD) + LENGTH(EXFLASH_LOAD),
+         "QSPI load images exceed physical Flash")
 #endif
 
   /* used during startup to initialized fastram_data */
