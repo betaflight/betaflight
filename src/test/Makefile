@@ -46,6 +46,7 @@ althold_unittest_SRC := \
 
 althold_unittest_DEFINES := \
 		USE_ALTITUDE_HOLD= \
+		ENABLE_FLIGHT_PLAN=1
 
 autopilot_wing_unittest_SRC := \
 		$(USER_DIR)/flight/autopilot_wing.c \
@@ -829,6 +830,9 @@ pid_unittest_DEFINES := \
 		USE_LAUNCH_CONTROL= \
 		USE_FEEDFORWARD= \
 		USE_ADVANCED_TPA= \
+		USE_GPS_RESCUE= \
+		ENABLE_FLIGHT_PLAN=1 \
+		ENABLE_RESCUE_PLAN=1
 
 position_rescue_geometry_unittest_SRC := \
 		$(USER_DIR)/common/maths.c
@@ -946,6 +950,21 @@ flight_plan_capture_unittest_DEFINES := \
 		USE_GPS= \
 		USE_FLIGHT_PLAN= \
 		ENABLE_FLIGHT_PLAN=1
+
+gps_rescue_multirotor_unittest_SRC := \
+		$(USER_DIR)/flight/gps_rescue_multirotor.c \
+		$(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/vector.c \
+		$(USER_DIR)/pg/autopilot.c \
+		$(USER_DIR)/pg/gps_rescue_multirotor.c \
+		$(USER_DIR)/pg/pg.c
+
+gps_rescue_multirotor_unittest_DEFINES := \
+		USE_GPS= \
+		USE_GPS_RESCUE=
 
 flight_plan_rescue_unittest_SRC := \
 		$(USER_DIR)/flight/flight_plan_nav.c \
