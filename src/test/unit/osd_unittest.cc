@@ -878,6 +878,48 @@ TEST_F(OsdTest, TestElementRssiAlarmSeverity)
 }
 
 /*
+ * Tests the decimal compass bar at each cardinal heading and across the
+ * north/360-degree wraparound.  Labels near either end of the nine-character
+ * window must be shifted inward so the complete degree value remains visible.
+ */
+TEST_F(OsdTest, TestElementDecimalCompassBar)
+{
+    // given
+    osdElementConfigMutable()->item_pos[OSD_DECIMAL_COMPASS_BAR] = OSD_POS(2, 3) | OSD_PROFILE_1_FLAG;
+
+    osdAnalyzeActiveElements();
+
+    const char headingLine = SYM_HEADING_LINE;
+    const char headingDividedLine = SYM_HEADING_DIVIDED_LINE;
+    const struct {
+        int16_t headingDeciDegrees;
+        char expected[10];
+    } testCases[] = {
+        { 3590, { '2', '7', '0', headingLine, '0', headingLine, headingDividedLine, '9', '0', '\0' } },
+        {    0, { '2', '7', '0', headingLine, '0', headingLine, headingDividedLine, '9', '0', '\0' } },
+        {   10, { '2', '7', '0', headingLine, '0', headingLine, headingDividedLine, '9', '0', '\0' } },
+        {  900, { '0', headingLine, headingDividedLine, '9', '0', headingLine, '1', '8', '0', '\0' } },
+        { 1800, { '9', '0', headingDividedLine, '1', '8', '0', '2', '7', '0', '\0' } },
+        // Yaw is signed: -900 represents 270 degrees
+        { -900, { '1', '8', '0', '2', '7', '0', headingDividedLine, headingLine, '0', '\0' } },
+    };
+
+    for (const auto &testCase : testCases) {
+        SCOPED_TRACE(testCase.headingDeciDegrees);
+
+        // when
+        attitude.values.yaw = testCase.headingDeciDegrees;
+        displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+        osdRefresh();
+
+        // then
+        displayPortTestBufferSubstring(2, 3, "%s", testCase.expected);
+    }
+
+    attitude.values.yaw = 0;
+}
+
+/*
  * Tests the instantaneous battery current OSD element.
  */
 TEST_F(OsdTest, TestElementAmperage)
