@@ -71,7 +71,10 @@ typedef struct blackboxConfig_s {
     uint8_t high_resolution;
     int8_t blackbox_uart;  // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned
     uint8_t blackbox_baud; // baudRate_e index for blackbox_uart
+    uint32_t log_number_start; // SD card logs are numbered from here, or from the highest log on the card + 1 if that is higher
 } blackboxConfig_t;
+
+#define BLACKBOX_LOG_NUMBER_MAX 99999   // SD card log files are named LOG00001.BFL to LOG99999.BFL
 
 PG_DECLARE(blackboxConfig_t, blackboxConfig);
 
