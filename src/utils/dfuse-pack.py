@@ -150,48 +150,37 @@ if __name__=="__main__":
       sys.exit(1)
     build(outfile,[target],DEFAULT_NAME,device)
   elif options.s19files and len(args)==1:
-    address = 0
-    data = ""
     target = []
     name = DEFAULT_NAME
     with open(options.s19files) as f:
-      lines = f.readlines()
-      for line in lines:
-          curaddress = 0
-          curdata = ""
-          line = line.rstrip()
-          if line.startswith ( "S0" ):
-            name = binascii.a2b_hex(line[8:len(line) - 2]).replace(".s19", "")
-          elif line.startswith ( "S3" ):
-            try:
-              curaddress = int(line[4:12], 16) & 0xFFFFFFFF
-            except ValueError:
-              print("Address %s invalid." % address)
-              sys.exit(1)
-            curdata = binascii.unhexlify(line[12:-2])
-          elif line.startswith ( "S2" ):
-            try:
-              curaddress = int(line[4:10], 16) & 0xFFFFFFFF
-            except ValueError:
-              print("Address %s invalid." % address)
-              sys.exit(1)
-            curdata = binascii.unhexlify(line[10:-2])
-          elif line.startswith ( "S1" ):
-            try:
-              curaddress = int(line[4:8], 16) & 0xFFFFFFFF
-            except ValueError:
-              print("Address %s invalid." % address)
-              sys.exit(1)
-            curdata = binascii.unhexlify(line[8:-2])
-          if address == 0:
-              address = curaddress
-              data = curdata
-          elif address + len(data) != curaddress:
-              target.append({ 'address': address, 'data': data })
-              address = curaddress
-              data = curdata
+      for number, line in enumerate(f, 1):
+        line = line.strip()
+        if not line:
+          continue
+        record = line[:2]
+        if record not in ('S0', 'S1', 'S2', 'S3', 'S5', 'S6', 'S7', 'S8', 'S9'):
+          parser.error("line %d: unknown S-record type" % number)
+        try:
+          raw = binascii.unhexlify(line[2:])
+        except (ValueError, binascii.Error):
+          parser.error("line %d: invalid S-record hex" % number)
+        address_size = {'S0': 2, 'S1': 2, 'S2': 3, 'S3': 4, 'S5': 2,
+                        'S6': 3, 'S7': 4, 'S8': 3, 'S9': 2}[record]
+        if len(raw) < address_size + 2 or raw[0] != len(raw) - 1:
+          parser.error("line %d: invalid S-record byte count" % number)
+        if sum(raw) & 0xff != 0xff:
+          parser.error("line %d: invalid S-record checksum" % number)
+        data = raw[1 + address_size:-1]
+        if record == 'S0':
+          name = data.removesuffix(b'.s19')
+        elif record in ('S1', 'S2', 'S3') and data:
+          address = int.from_bytes(raw[1:1 + address_size], 'big')
+          if target and target[-1]['address'] + len(target[-1]['data']) == address:
+            target[-1]['data'].extend(data)
           else:
-              data += curdata
+            target.append({'address': address, 'data': bytearray(data)})
+    if not target:
+      parser.error("no S-record image data")
     outfile = args[0]
     device = DEFAULT_DEVICE
     if options.device:
