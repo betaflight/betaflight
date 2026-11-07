@@ -73,6 +73,8 @@
 #define ADC_TAG_MAP_COUNT 16
 #elif defined(GD32H7)
 #define ADC_TAG_MAP_COUNT 21
+#elif defined(UM324xF)
+#define ADC_TAG_MAP_COUNT 16
 #else
 #define ADC_TAG_MAP_COUNT 10
 #endif
@@ -81,7 +83,7 @@ typedef struct adcTagMap_s {
     ioTag_t tag;
     uint8_t devices;
     uint32_t channel;
-#if defined(STM32H7) || defined(STM32G4) || defined(AT32F435) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
+#if defined(STM32H7) || defined(STM32G4) || defined(AT32F435) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6) || defined(UM324xF)
     uint8_t channelOrdinal;
 #endif
 } adcTagMap_t;
@@ -118,15 +120,15 @@ typedef struct adcDevice_s {
 #endif
 #if !defined(USE_DMA_SPEC)
     dmaResource_t* dmaResource;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(APM32F4) || defined(STM32N6) || defined(GD32F4) || defined(GD32H7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(APM32F4) || defined(STM32N6) || defined(GD32F4) || defined(GD32H7) || defined(UM324xF)
     uint32_t channel;
 #endif
 #endif // !defined(USE_DMA_SPEC)
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(APM32F4) || defined(STM32N6)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(APM32F4) || defined(STM32N6) || defined(UM324xF)
     ADC_HandleTypeDef ADCHandle;
     DMA_HandleTypeDef DmaHandle;
 #endif
-#if defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
+#if defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6) || defined(UM324xF)
     uint8_t irq;
     uint32_t channelBits;
 #endif
@@ -251,4 +253,14 @@ void adcGetChannelValues(void);
 #define TEMPSENSOR_CAL2_TEMP               ((int32_t) -40)
 #define TEMPSENSOR_CAL1_ADDR               ((uint16_t*) (0x1FF0F7C0))
 #define TEMPSENSOR_CAL2_ADDR               ((uint16_t*) (0x1FF0F7C2))
+#endif
+
+#ifdef UM324xF
+#define TEMPSENSOR_CAL1_ADDR               ((uint16_t*) (0x40080030))
+#define TEMPSENSOR_CAL2_ADDR               ((uint16_t*) (0x40080032))
+
+#define VREFINT_CAL_VREF                   (3300U)
+#define TEMPSENSOR_CAL_VREFANALOG          (3300U)
+#define TEMPSENSOR_CAL1_TEMP               (30U)//((uint16_t*) (0x40080034))
+#define TEMPSENSOR_CAL2_TEMP               (125U)//((uint16_t*) (0x40080036))
 #endif

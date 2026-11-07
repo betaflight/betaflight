@@ -40,6 +40,15 @@
 extern spiDevice_t spiDevice[SPIDEV_COUNT];
 extern busDevice_t spiBusDevice[SPIDEV_COUNT];
 
+static inline bool spiDmaTransferError(dmaChannelDescriptor_t *descriptor)
+{
+#if defined(UM324xF)
+    return DMA_GET_FLAG_STATUS(descriptor, STATUSERR) != 0;
+#else
+    return DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF) != 0;
+#endif
+}
+
 // Interrupt handler for SPI receive DMA completion
 FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
 {
@@ -50,7 +59,7 @@ FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
     }
 
     // The stream disables itself on a transfer error, so no completion interrupt will follow
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
+    if (spiDmaTransferError(descriptor)) {
         spiAbortTransfer(dev);
         return;
     }
@@ -91,11 +100,15 @@ FAST_IRQ_HANDLER static void spiTxErrorIrqHandler(dmaChannelDescriptor_t* descri
 {
     const extDevice_t *dev = (const extDevice_t *)descriptor->userParam;
 
-    if (!dev || !DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
+    if (!dev || !spiDmaTransferError(descriptor)) {
         return;
     }
 
+#if defined(UM324xF)
+    DMA_CLEAR_FLAG(descriptor, CLEARERR);
+#else
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TEIF);
+#endif
     spiAbortTransfer(dev);
 }
 
@@ -109,7 +122,7 @@ FAST_IRQ_HANDLER static void spiTxIrqHandler(dmaChannelDescriptor_t* descriptor)
         return;
     }
 
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
+    if (spiDmaTransferError(descriptor)) {
         spiAbortTransfer(dev);
         return;
     }
@@ -161,16 +174,23 @@ uint16_t spiCalculateDivider(uint32_t freq)
     }
 
     uint32_t spiClk = SystemCoreClock / 2;
+#elif defined(UM324xF)
+    if(freq > 72000000) {
+        freq = 72000000;
+    }
+    uint32_t spiClk = SystemCoreClock;
 #else
 #error "Base SPI clock not defined for this architecture"
 #endif
 
     uint16_t divisor = 2;
-
+#if defined(UM324xF)
+    for (; (spiClk > freq) && (divisor < 0xFFFF); divisor++, spiClk = SystemCoreClock / divisor);
+#else
     spiClk >>= 1;
 
     for (; (spiClk > freq) && (divisor < 256); divisor <<= 1, spiClk >>= 1);
-
+#endif
     return divisor;
 }
 
@@ -200,6 +220,12 @@ uint32_t spiCalculateClock(uint16_t spiClkDivisor)
 
     if ((spiClk / spiClkDivisor) > 100000000){
         return 100000000;
+    }
+#elif defined(UM324xF)
+    uint32_t spiClk = SystemCoreClock;
+
+    if ((spiClk / spiClkDivisor) > 72000000){
+        return 72000000;
     }
 #else
 #error "Base SPI clock not defined for this architecture"
@@ -275,7 +301,7 @@ void spiInitBusDMA(void)
                     continue;
                 }
                 bus->dmaTx = dmaGetDescriptorByIdentifier(dmaTxIdentifier);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(APM32F4) || defined(GD32F4) || defined(GD32H7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(APM32F4) || defined(GD32F4) || defined(GD32H7) || defined(UM324xF)
                 bus->dmaTx->stream = DMA_DEVICE_INDEX(dmaTxIdentifier);
                 bus->dmaTx->channel = dmaTxChannelSpec->channel;
 #endif
@@ -313,7 +339,7 @@ void spiInitBusDMA(void)
                     continue;
                 }
                 bus->dmaRx = dmaGetDescriptorByIdentifier(dmaRxIdentifier);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(APM32F4) || defined(GD32F4) || defined(GD32H7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(APM32F4) || defined(GD32F4) || defined(GD32H7) || defined(UM324xF)
                 bus->dmaRx->stream = DMA_DEVICE_INDEX(dmaRxIdentifier);
                 bus->dmaRx->channel = dmaRxChannelSpec->channel;
 #endif

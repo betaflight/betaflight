@@ -115,10 +115,14 @@ extern const uint8_t __pg_resetdata_end[];
     struct _dummy                                                       \
     /**/
 
+#ifndef PG_COPY_ATTRIBUTES
+#define PG_COPY_ATTRIBUTES
+#endif
+
 // Register system config
 #define PG_REGISTER_I(_type, _name, _pgn, _version, _reset)             \
     _type _name ## _System;                                             \
-    _type _name ## _Copy;                                               \
+    _type _name ## _Copy PG_COPY_ATTRIBUTES;                            \
     uint32_t _name ## _fnv_hash;                                        \
     /* Force external linkage for g++. Catch multi registration */      \
     extern const pgRegistry_t _name ## _Registry;                       \
@@ -151,7 +155,7 @@ extern const uint8_t __pg_resetdata_end[];
 // Register system config array
 #define PG_REGISTER_ARRAY_I(_type, _length, _name, _pgn, _version, _reset)  \
     _type _name ## _SystemArray[_length];                               \
-    _type _name ## _CopyArray[_length];                                 \
+    _type _name ## _CopyArray[_length] PG_COPY_ATTRIBUTES;               \
     uint32_t _name ## _fnv_hash;                                        \
     extern const pgRegistry_t _name ##_Registry;                        \
     const pgRegistry_t _name ## _Registry PG_REGISTER_ATTRIBUTES = {    \
