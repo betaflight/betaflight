@@ -192,6 +192,7 @@
 #include "sensors/sensors.h"
 #include "sensors/rangefinder.h"
 #include "sensors/pitot.h"
+#include "sensors/motor_telemetry.h"
 
 #ifdef USE_GPS_PLUS_CODES
 // located in lib/main/google/olc
@@ -308,17 +309,8 @@ typedef int (*getEscRpmOrFreqFnPtr)(int i);
 
 static int getEscRpm(int i)
 {
-#ifdef USE_DSHOT_TELEMETRY
-    if (useDshotTelemetry) {
-        return lrintf(getDshotRpm(i));
-    }
-#endif
-#ifdef USE_ESC_SENSOR
-    if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        return lrintf(erpmToRpm(getEscSensorData(i)->rpm));
-    }
-#endif
-    return 0;
+    const motorTelemetry_t *telemetry = motorTelemetryGet(i);
+    return motorTelemetryHas(telemetry, MOTOR_TELEMETRY_RPM) ? (int)telemetry->rpm : 0;
 }
 
 static int getEscRpmFreq(int i)
@@ -1134,28 +1126,20 @@ static void osdElementOsdProfileName(osdElementParms_t *element)
 
 static void osdElementEscTemperature(osdElementParms_t *element)
 {
-#if defined(USE_ESC_SENSOR)
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        tfp_sprintf(element->buff, "E%c%3d%c", SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(osdEscDataCombined->temperature), osdGetTemperatureSymbolForSelectedUnit());
-    } else
-#endif
-#if defined(USE_DSHOT_TELEMETRY)
-    {
+        // Show the maximum temperature of all ESCs
+        const int temperature = motorTelemetryHas(osdMotorTelemetryCombined, MOTOR_TELEMETRY_TEMPERATURE) ? osdMotorTelemetryCombined->temperature : 0;
+        tfp_sprintf(element->buff, "E%c%3d%c", SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(temperature), osdGetTemperatureSymbolForSelectedUnit());
+    } else {
+        // Show the temperature of each ESC
         uint32_t osdEleIx = tfp_sprintf(element->buff, "E%c", SYM_TEMPERATURE);
 
-        for (uint8_t k = 0; k < getMotorCount(); k++) {
-            if ((dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0) {
-                osdEleIx += tfp_sprintf(element->buff + osdEleIx, "%3d%c",
-                    osdConvertTemperatureToSelectedUnit(dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE]),
-                    osdGetTemperatureSymbolForSelectedUnit());
-            } else {
-                osdEleIx += tfp_sprintf(element->buff + osdEleIx, "  0%c", osdGetTemperatureSymbolForSelectedUnit());
-            }
+        for (unsigned k = 0; k < getMotorCount(); k++) {
+            const motorTelemetry_t *telemetry = motorTelemetryGet(k);
+            const int temperature = motorTelemetryHas(telemetry, MOTOR_TELEMETRY_TEMPERATURE) ? telemetry->temperature : 0;
+            osdEleIx += tfp_sprintf(element->buff + osdEleIx, "%3d%c", osdConvertTemperatureToSelectedUnit(temperature), osdGetTemperatureSymbolForSelectedUnit());
         }
     }
-#else
-    {}
-#endif
 }
 
 static void osdElementEscRpm(osdElementParms_t *element)
@@ -2882,24 +2866,10 @@ void osdUpdateAlarms(void)
 #if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
     bool blink = false;
 
-#if defined(USE_ESC_SENSOR)
-    if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        // This works because the combined ESC data contains the maximum temperature seen amongst all ESCs
-        blink = osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && osdEscDataCombined->temperature >= osdConfig()->esc_temp_alarm;
-    } else
-#endif
-#if defined(USE_DSHOT_TELEMETRY)
-    {
-        if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF) {
-            for (uint32_t k = 0; !blink && (k < getMotorCount()); k++) {
-                blink = (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0 &&
-                    dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] >= osdConfig()->esc_temp_alarm;
-            }
-        }
-    }
-#else
-    {}
-#endif
+    // The combined temperature is the maximum temperature of all ESCs
+    blink = osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF
+        && motorTelemetryHas(osdMotorTelemetryCombined, MOTOR_TELEMETRY_TEMPERATURE)
+        && osdMotorTelemetryCombined->temperature >= osdConfig()->esc_temp_alarm;
 
     if (blink) {
         SET_BLINK(OSD_ESC_TMP);
