@@ -49,5 +49,12 @@ void tcpDataIn(tcpPort_t *instance, uint8_t* ch, int size);
 void tcpDataOut(tcpPort_t *instance);
 
 bool tcpIsStart(void);
+// dyad is not thread-safe: the TCP thread runs dyad_update while the main
+// thread opens the UART listeners. Both hold one lock while they touch
+// dyad's stream list: the main thread through tcpDyadLock/tcpDyadUnlock,
+// the TCP thread through tcpDyadUpdate, which lets a waiting main thread in.
+void tcpDyadLock(void);
+void tcpDyadUnlock(void);
+void tcpDyadUpdate(void);
 bool* tcpGetUsed(void);
 tcpPort_t* tcpGetPool(void);
