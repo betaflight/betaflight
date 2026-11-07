@@ -243,6 +243,10 @@ typedef enum {
     OSD_AIRSPEED,
 #endif
 
+#ifdef USE_LAUNCH_CONTROL_LIFT
+    OSD_LAUNCH_HEIGHT,          // LIFT: how high the launch is going, then how high it went
+#endif
+
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
