@@ -1233,6 +1233,41 @@ static void osdElementReadyMode(osdElementParms_t *element)
     }
 }
 
+// Lists the active USER1..USER4 modes by name, e.g. "LED CAM".
+// Custom names (box_user_N_name) are used when set, otherwise the default box name.
+static void osdElementUserModes(osdElementParms_t *element)
+{
+    static const char * const defaultNames[] = { BOX_USER1_NAME, BOX_USER2_NAME, BOX_USER3_NAME, BOX_USER4_NAME };
+    STATIC_ASSERT(ARRAYLEN(defaultNames) == BOXUSER4 + 1 - BOXUSER1, user_mode_name_count_mismatch);
+
+    char *buff = element->buff;
+    unsigned len = 0;
+
+    for (unsigned i = 0; i < ARRAYLEN(defaultNames); i++) {
+        if (!IS_RC_MODE_ACTIVE((boxId_e)(BOXUSER1 + i))) {
+            continue;
+        }
+
+        const char *name = defaultNames[i];
+        unsigned maxNameLength = strlen(name);
+#if defined(USE_CUSTOM_BOX_NAMES)
+        if (modeActivationConfig()->box_user_names[i][0] != '\0') {
+            name = modeActivationConfig()->box_user_names[i];
+            maxNameLength = MAX_BOX_USER_NAME_LENGTH; // may not be null terminated
+        }
+#endif
+
+        if (len > 0 && len < OSD_ELEMENT_BUFFER_LENGTH - 1) {
+            buff[len++] = ' ';
+        }
+        for (unsigned j = 0; j < maxNameLength && name[j] != '\0' && len < OSD_ELEMENT_BUFFER_LENGTH - 1; j++) {
+            buff[len++] = toupper((unsigned char)name[j]);
+        }
+    }
+
+    buff[len] = '\0';
+}
+
 #ifdef USE_POSITION_HOLD
 static void osdElementPosHoldReady(osdElementParms_t *element)
 {
@@ -2204,6 +2239,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_TOTAL_FLIGHTS,
 #endif
     OSD_AUX_VALUE,
+    OSD_USER_MODES,
 #ifdef USE_OSD_HD
     OSD_SYS_GOGGLE_VOLTAGE,
     OSD_SYS_VTX_VOLTAGE,
@@ -2371,6 +2407,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_TOTAL_FLIGHTS]           = osdElementTotalFlights,
 #endif
     [OSD_AUX_VALUE]               = osdElementAuxValue,
+    [OSD_USER_MODES]              = osdElementUserModes,
 #ifdef USE_MSP_DISPLAYPORT
     [OSD_SYS_GOGGLE_VOLTAGE]      = osdElementSys,
     [OSD_SYS_VTX_VOLTAGE]         = osdElementSys,
