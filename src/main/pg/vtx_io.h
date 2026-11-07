@@ -37,6 +37,10 @@ typedef struct vtxIOConfig_s {
 
     // settings for hardware SPI only
     uint8_t spiDevice;
+
+#ifdef RTC6705_DYNAMIC_POWER_CTRL
+    ioTag_t exPowerTag[2];
+#endif
 } vtxIOConfig_t;
 
 PG_DECLARE(vtxIOConfig_t, vtxIOConfig);
