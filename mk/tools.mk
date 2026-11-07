@@ -335,7 +335,7 @@ breakpad_clean:
 
 # Platform-specific tools
 # Each platform tools.mk appends to PLATFORM_SDKS and defines per-SDK properties:
-#   PLATFORM_SDK_<name>_SUBMODULE  - submodule path (e.g. lib/modules/pico-sdk)
+#   PLATFORM_SDK_<name>_SUBMODULE  - submodule paths (e.g. lib/modules/pico-sdk)
 #   PLATFORM_SDK_<name>_HYDRATE   - make target to hydrate the SDK
 #   PLATFORM_SDK_<name>_TOOLS     - make targets to install required toolchains and tools
 #
@@ -359,8 +359,7 @@ platform-sdk-list-print:
 .PHONY: platform-sdk-cache-paths-print
 platform-sdk-cache-paths-print:
 ifneq ($(PLATFORM_SDK_$(SDK)_SUBMODULE),)
-	@echo "$(PLATFORM_SDK_$(SDK)_SUBMODULE)"
-	@echo ".git/modules/$(PLATFORM_SDK_$(SDK)_SUBMODULE)"
+	@printf '%s\n' $(foreach p,$(PLATFORM_SDK_$(SDK)_SUBMODULE),$(p) .git/modules/$(p))
 else
 	@echo "tools"
 endif
@@ -372,7 +371,7 @@ endif
 .PHONY: platform-sdk-cache-key-print
 platform-sdk-cache-key-print:
 ifneq ($(PLATFORM_SDK_$(SDK)_SUBMODULE),)
-	@echo $(subst /,-,$(PLATFORM_SDK_$(SDK)_SUBMODULE))-$(shell git rev-parse HEAD:$(PLATFORM_SDK_$(SDK)_SUBMODULE) 2>/dev/null)
+	@echo $(foreach p,$(PLATFORM_SDK_$(SDK)_SUBMODULE),$(subst /,-,$(p))-$(shell git rev-parse HEAD:$(p) 2>/dev/null)) | tr ' ' '-'
 else
 	@echo "base"
 endif

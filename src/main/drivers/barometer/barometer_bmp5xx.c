@@ -490,31 +490,36 @@ static bool bmp5xxStartUP(baroDev_t *baro)
 }
 
 /**
- * @brief Read pressure and temperature raw data from BMP5XX
+ * @brief Start reading pressure and temperature raw data from BMP5XX
  * @param baro Pointer to barometer device
- * @return true on successful I2C/SPI read, false on failure
+ * @return true once the read has started, false while the bus is busy or on failure
  * @note Reads 6 bytes: 3 for temperature + 3 for pressure
  */
 static bool bmp5xxReadUP(baroDev_t *baro)
 {
-    // Use synchronous read for I2C - async reads can get stuck on PICO
+    if (busBusy(&baro->dev, NULL)) {
+        return false;
+    }
+
     // Read temperature and pressure data (6 bytes starting from TEMP_DATA_XLSB)
     // Registers are: TEMP_XLSB (0x1D), TEMP_LSB (0x1E), TEMP_MSB (0x1F),
     //                PRESS_XLSB (0x20), PRESS_LSB (0x21), PRESS_MSB (0x22)
-    return bmp5xxReadRegisterBuffer(&baro->dev, BMP5XX_REG_TEMP_DATA_XLSB, 
-        sensor_data, BMP5XX_DATA_FRAME_SIZE);
+    return busReadRegisterBufferStart(&baro->dev, BMP5XX_REG_TEMP_DATA_XLSB, sensor_data_buffer,
+        BMP5XX_DATA_FRAME_SIZE + (sensor_data - sensor_data_buffer));
 }
 
 /**
  * @brief Parse raw pressure and temperature data from buffer
  * @param baro Pointer to barometer device
- * @return true always
+ * @return true once the read has completed, false while the bus is busy
  * @note Parses 24-bit raw values from sensor_data buffer into bmp5xx_ut and bmp5xx_up
  */
 static bool bmp5xxGetUP(baroDev_t *baro)
 {
-    UNUSED(baro);
-    
+    if (busBusy(&baro->dev, NULL)) {
+        return false;
+    }
+
     // Parse temperature (24-bit, signed)
     bmp5xx_ut = (uint32_t)sensor_data[0] |
                 ((uint32_t)sensor_data[1] << 8) |

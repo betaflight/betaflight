@@ -805,11 +805,14 @@ static void osdGetBlackboxStatusString(char * buff)
         break;
     }
 
-    if (storageDeviceIsWorking) {
+    if (!storageDeviceIsWorking) {
+        tfp_sprintf(buff, "FAULT");
+    } else if (storageTotal) {
         const uint16_t storageUsedPercent = (storageUsed * 100) / storageTotal;
         tfp_sprintf(buff, "%d%%", storageUsedPercent);
     } else {
-        tfp_sprintf(buff, "FAULT");
+        // A device without a known size, such as a virtual one, has no fill level.
+        tfp_sprintf(buff, "OK");
     }
 }
 #endif
