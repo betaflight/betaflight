@@ -43,6 +43,7 @@
 #include "drivers/rangefinder/rangefinder_lidartf.h"
 #include "drivers/rangefinder/rangefinder_lidarmt.h"
 #include "drivers/rangefinder/rangefinder_nooploop.h"
+#include "drivers/rangefinder/rangefinder_pb04.h"
 #include "drivers/rangefinder/rangefinder_upt1.h"
 #include "drivers/time.h"
 
@@ -146,6 +147,15 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
             if (mtRangefinderDetect(dev, rangefinderHardwareToUse)) {
                 rangefinderHardware = rangefinderHardwareToUse;
                 rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(dev->delayMs));
+            }
+            break;
+#endif
+
+#if defined(USE_RANGEFINDER_PB04)
+        case RANGEFINDER_PB04:
+            if (pb04RangefinderDetect(dev)) {
+                rangefinderHardware = RANGEFINDER_PB04;
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_PB04_TASK_PERIOD_MS));
             }
             break;
 #endif
