@@ -43,11 +43,19 @@ class TestSRecordPacking(unittest.TestCase):
 
     def test_rejects_bad_and_empty_inputs_before_writing(self):
         valid = record(1, 0, 2, b"ab")
+        # Incorrect byte count, but the one's-complement checksum is valid.
+        bad_count = "S1FE000061623E"
         with tempfile.TemporaryDirectory() as directory:
-            for bad in [valid[:-2] + "FF", valid[:2] + "FE" + valid[4:], record(0, 0, 2, b"name"), valid[:-1] + "Z"]:
+            for bad in [valid[:-2] + "FF", bad_count, record(0, 0, 2, b"name"), valid[:-1] + "Z"]:
                 result, output = self.pack(directory, [bad])
                 self.assertNotEqual(result.returncode, 0)
                 self.assertFalse(output.exists())
+
+    def test_keeps_header_name_without_suffix(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result, output = self.pack(directory, [record(0, 0, 2, b"board19"), record(1, 0, 2, b"x")])
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(output.read_bytes()[22:30], b"board19\0")
 
 
 if __name__ == "__main__":

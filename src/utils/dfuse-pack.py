@@ -172,7 +172,7 @@ if __name__=="__main__":
           parser.error("line %d: invalid S-record checksum" % number)
         data = raw[1 + address_size:-1]
         if record == 'S0':
-          name = data.removesuffix(b'.s19')
+          name = data[:-4] if data.endswith(b'.s19') else data
         elif record in ('S1', 'S2', 'S3') and data:
           address = int.from_bytes(raw[1:1 + address_size], 'big')
           if target and target[-1]['address'] + len(target[-1]['data']) == address:
