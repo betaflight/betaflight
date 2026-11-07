@@ -42,3 +42,8 @@ typedef int serializeBoxFn(struct sbuf_s *dst, const box_t *box);
 void serializeBoxReply(struct sbuf_s *dst, int page, serializeBoxFn *serializeBox);
 void initActiveBoxIds(void);
 bool getBoxIdState(boxId_e boxid);
+
+// Returns the bit index used for the given boxId inside the flightModeFlags
+// bitmask emitted by packFlightModeFlags(), or -1 if the box is not active.
+// The index matches the order in which active boxes are serialized over MSP.
+int getActiveBoxIndex(boxId_e boxid);
