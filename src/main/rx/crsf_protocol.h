@@ -27,14 +27,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// Rev7 CRSF docs: UART runs at 400000 baud, 8N1 at 3.0 to 3.3V level.
-// Rev10 CRSF docs: UART runs at 416666 baud, 8N1 at 3.0 to 3.3V level.
-// Avoid using with ExpressLRS STM32 receivers.
-#ifdef USE_CRSF_OFFICIAL_SPEC
-#define CRSF_BAUDRATE           416666
-#else
-#define CRSF_BAUDRATE           420000
-#endif
+// CRSF spec (https://github.com/tbs-fpv/tbs-crsf-spec): UART runs at 416666 baud, 8N1 at 3.0 to 3.3V level.
+// ExpressLRS receivers default to 420000 baud (the rate Betaflight used before the spec rate was known).
+// The rate in use is selected at runtime with the crsf_baudrate setting, see crsfGetDefaultBaudrate().
+#define CRSF_BAUDRATE_SPEC      416666
+#define CRSF_BAUDRATE_LEGACY    420000
 
 enum { CRSF_SYNC_BYTE = 0xC8 };
 

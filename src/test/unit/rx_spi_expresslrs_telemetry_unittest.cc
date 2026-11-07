@@ -76,6 +76,7 @@ extern "C" {
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
+    PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
