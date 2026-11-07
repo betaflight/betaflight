@@ -748,6 +748,7 @@ extern "C" {
     mag_t mag;
 
     gpsSolutionData_t gpsSol;
+    gpsLocation_t GPS_home_llh;
 
     bool gpsHasNewData(uint16_t *)
     {
