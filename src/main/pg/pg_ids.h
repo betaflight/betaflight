@@ -169,6 +169,7 @@
 #define PG_PITOT_CONFIG             569
 #define PG_LAUNCH_WING_CONFIG       570
 #define PG_AUTOPILOT_WING           571
+#define PG_RADAR_CONFIG             572
 
 // TODO TBC
 #define PG_DISPLAY_PORT_FBOSD_CONFIG 566
