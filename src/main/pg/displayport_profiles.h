@@ -34,6 +34,8 @@ typedef struct displayPortProfile_s {
 
     uint8_t fontSelection[DISPLAYPORT_SEVERITY_COUNT];
     uint8_t useDeviceBlink;    // Use device local blink capability
+    uint16_t djiBudget;        // Bytes of the screen in the encoding of DJI O3 + Goggles 2, 0 = unlimited (MSP only)
+    uint8_t sendChanges;       // Send only the cells that changed (MSP only)
 } displayPortProfile_t;
 
 PG_DECLARE(displayPortProfile_t, displayPortProfileMsp);

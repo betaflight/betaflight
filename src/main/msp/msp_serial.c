@@ -735,12 +735,13 @@ int mspSerialPush(serialPortIdentifier_e port, uint8_t cmd, uint8_t *data, int d
     return ret; // return the number of bytes written
 }
 
-uint32_t mspSerialTxBytesFree(void)
+// Room in the transmit buffer of an MSP port, or the least of all of them for SERIAL_PORT_ALL
+uint32_t mspSerialTxBytesFree(serialPortIdentifier_e port)
 {
     uint32_t ret = UINT32_MAX;
 
     for (mspPort_t *mspPort = mspPorts; mspPort < ARRAYEND(mspPorts); mspPort++) {
-        if (!mspPort->port) {
+        if (!mspPort->port || (port != SERIAL_PORT_ALL && mspPort->port->identifier != port)) {
             continue;
         }
 

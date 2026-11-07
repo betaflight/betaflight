@@ -530,6 +530,7 @@ SIZE_OPTIMISED_SRC += \
             config/config_streamer.c \
             config/simplified_tuning.c \
             io/dashboard.c \
+            io/displayport_msp.c \
             io/serial.c \
             io/serial_feature_map.c \
             io/serial_4way.c \
