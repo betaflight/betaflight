@@ -56,6 +56,10 @@ void cmsSetExternKey(cms_key_e extKey);
 void inhibitSaveMenu(void);
 void cmsAddMenuEntry(OSD_Entry *menuEntry, char *text, uint16_t flags, CMSEntryFuncPtr func, void *data);
 
+#define PROFILE_INDEX_STRING_ADDITIONAL_SIZE 5 // Additional symbols for setProfileIndexString(): "2 (NAMENAME)\0"
+
+void setProfileIndexString(char *profileString, int profileIndex, const char *profileName);
+
 #define CMS_STARTUP_HELP_TEXT1 "MENU:THR MID"
 #define CMS_STARTUP_HELP_TEXT2     "+ YAW LEFT"
 #define CMS_STARTUP_HELP_TEXT3     "+ PITCH UP"
