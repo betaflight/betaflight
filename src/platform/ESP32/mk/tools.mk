@@ -47,11 +47,18 @@ ESP_PYTHON_ENV_DIR := $(IDF_TOOLS_PATH)/python_env/idf$(ESP_IDF_VER)_py$(ESP_HOS
 ESP_PYTHON      := $(ESP_PYTHON_ENV_DIR)/bin/python
 ESP_ESPTOOL     := $(ESP_PYTHON_ENV_DIR)/bin/esptool.py
 # Written only after a successful install-python-env, so a partial install is
-# never mistaken for a usable env.
+# never mistaken for a usable env. It is stale once the IDF requirements change
+# (e.g. an esp-idf submodule bump within the same minor adds a package).
 ESP_PYTHON_ENV_STAMP := $(ESP_PYTHON_ENV_DIR)/.betaflight-ready
+ESP_IDF_REQUIREMENTS := $(ESP_IDF_PATH)/tools/requirements/requirements.core.txt
+# Pin idf_tools.py / install.sh to the env computed above, overriding any
+# IDF_PYTHON_ENV_PATH inherited from a sourced export.sh. If the IDF version
+# was unknown at parse time (esp-idf not yet hydrated), let IDF choose instead;
+# the next run computes the versioned path and creates that env once.
+ESP_PYTHON_ENV_PIN := $(if $(ESP_IDF_VER),IDF_PYTHON_ENV_PATH="$(ESP_PYTHON_ENV_DIR)",env -u IDF_PYTHON_ENV_PATH)
 # Serialise env creation across concurrent builds (e.g. `make -j ESP32 ESP32S3`
-# runs one sub-make per target). flock is util-linux; without it (macOS) the
-# install runs unlocked.
+# runs one sub-make per target), and against esp_tools_install. flock is
+# util-linux; without it (macOS) the install runs unlocked.
 ESP_PYTHON_ENV_LOCK := $(if $(shell command -v flock 2>/dev/null),flock $(IDF_TOOLS_PATH)/python_env.lock)
 
 # Image parameters. ESP_CHIP and ESP_FLASH_SIZE are derived (deferred) from the
@@ -157,14 +164,15 @@ $(ESP_IDF_STAMP):
 # (Re)create the IDF python env for the current python3 when it is missing,
 # e.g. after the host Python was upgraded or a tools cache from another OS image
 # was restored. Only installs the python packages; the toolchains are untouched.
-# IDF_PYTHON_ENV_PATH pins the env to the path computed above, so it matches even
-# if esp-idf was only hydrated during this make run. The stamp is re-checked
-# under the lock so a build that waited on another one doesn't reinstall.
-$(ESP_PYTHON_ENV_STAMP): | $(ESP_IDF_STAMP)
+# The stamp's freshness is re-checked under the lock so a build that waited on
+# another one doesn't reinstall.
+$(ESP_IDF_REQUIREMENTS): | $(ESP_IDF_STAMP) ;
+
+$(ESP_PYTHON_ENV_STAMP): $(ESP_IDF_REQUIREMENTS) | $(ESP_IDF_STAMP)
 	@echo "Installing ESP-IDF python environment for python $(ESP_HOST_PY_VER)"
 	$(V1) mkdir -p $(IDF_TOOLS_PATH)
-	$(V1) $(ESP_PYTHON_ENV_LOCK) sh -c '[ -f "$@" ] || { \
-		IDF_TOOLS_PATH="$(IDF_TOOLS_PATH)" IDF_PYTHON_ENV_PATH="$(ESP_PYTHON_ENV_DIR)" \
+	$(V1) $(ESP_PYTHON_ENV_LOCK) sh -c '[ "$@" -nt "$(ESP_IDF_REQUIREMENTS)" ] || { \
+		IDF_TOOLS_PATH="$(IDF_TOOLS_PATH)" $(ESP_PYTHON_ENV_PIN) \
 		python3 "$(ESP_IDF_PATH)/tools/idf_tools.py" install-python-env && touch "$@"; }' || \
 		{ echo "Failed to install ESP-IDF python environment (is python3-venv installed?)"; exit 1; }
 
@@ -176,8 +184,10 @@ esp_tools_install: | $(ESP_IDF_STAMP)
 	@python3 -c 'import venv' 2>/dev/null || \
 		echo "WARNING: python3-venv not found. Install it (e.g. 'sudo apt-get install python3-venv') or esp32 tools may fail."
 	@echo "Installing ESP32 tools to $(IDF_TOOLS_PATH)"
-	$(V1) cd $(ESP_IDF_PATH) && IDF_TOOLS_PATH=$(IDF_TOOLS_PATH) ./install.sh esp32,esp32s3 || { echo "Failed to install ESP32 tools"; exit 1; }
-	$(V1) [ ! -d "$(ESP_PYTHON_ENV_DIR)" ] || touch $(ESP_PYTHON_ENV_STAMP)
+	$(V1) mkdir -p $(IDF_TOOLS_PATH)
+	$(V1) cd $(ESP_IDF_PATH) && IDF_TOOLS_PATH=$(IDF_TOOLS_PATH) $(ESP_PYTHON_ENV_PIN) \
+		$(ESP_PYTHON_ENV_LOCK) ./install.sh esp32,esp32s3 || { echo "Failed to install ESP32 tools"; exit 1; }
+	$(V1) [ -z "$(ESP_IDF_VER)" ] || [ ! -d "$(ESP_PYTHON_ENV_DIR)" ] || touch $(ESP_PYTHON_ENV_STAMP)
 	@echo "ESP32 tools installed. Source export.sh before building:"
 	@echo "  IDF_TOOLS_PATH=$(IDF_TOOLS_PATH) . $(ESP_IDF_PATH)/export.sh"
 
