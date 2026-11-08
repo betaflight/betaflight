@@ -29,6 +29,7 @@ import unittest
 
 
 def record(kind, address, width, data=b""):
+    """Encode a test S-record with its byte count and one's-complement checksum."""
     body = address.to_bytes(width, "big") + data
     body = bytes([len(body) + 1]) + body
     return "S" + str(kind) + (body + bytes([~sum(body) & 255])).hex().upper()
@@ -36,6 +37,7 @@ def record(kind, address, width, data=b""):
 
 class TestSRecordPacking(unittest.TestCase):
     def pack(self, directory, records):
+        """Run the S-record packer and return its process result and output path."""
         source = Path(directory) / "input.s19"
         source.write_text("\n".join(records))
         output = Path(directory) / "output.dfu"
@@ -45,6 +47,7 @@ class TestSRecordPacking(unittest.TestCase):
         ), output
 
     def test_preserves_addresses_bytes_name_and_checksum(self):
+        """Check the target header, coalesced elements, payloads, and DfuSe suffix."""
         records = [record(0, 0, 2, b"sample.s19"), record(1, 0, 2, b"ab"), record(1, 2, 2, b"c"),
                    record(2, 0x120000, 3, b"d"), record(3, 0x08000000, 4, b"e"), record(5, 4, 2), record(7, 0x08000000, 4)]
         with tempfile.TemporaryDirectory() as directory:
@@ -63,6 +66,7 @@ class TestSRecordPacking(unittest.TestCase):
             self.assertEqual(struct.unpack_from("<I", data, len(data) - 4)[0], ~binascii.crc32(data[:-4]) & 0xffffffff)
 
     def test_rejects_bad_and_empty_inputs_before_writing(self):
+        """Invalid input must fail before the output file is created."""
         valid = record(1, 0, 2, b"ab")
         # Incorrect byte count, but the one's-complement checksum is valid.
         bad_count = "S1FE000061623E"
@@ -73,10 +77,25 @@ class TestSRecordPacking(unittest.TestCase):
                 self.assertFalse(output.exists())
 
     def test_keeps_header_name_without_suffix(self):
+        """An S0 name ending in bare '19' must retain both digits."""
         with tempfile.TemporaryDirectory() as directory:
             result, output = self.pack(directory, [record(0, 0, 2, b"board19"), record(1, 0, 2, b"x")])
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(output.read_bytes()[22:30], b"board19\0")
+
+    def test_data_at_last_address(self):
+        """The final 32-bit address can hold one byte, but not two."""
+        with tempfile.TemporaryDirectory() as directory:
+            result, output = self.pack(directory, [record(3, 0xffffffff, 4, b"x")])
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(struct.unpack_from("<IIB", output.read_bytes(), 285),
+                             (0xffffffff, 1, ord("x")))
+
+        with tempfile.TemporaryDirectory() as directory:
+            result, output = self.pack(directory, [record(3, 0xffffffff, 4, b"xy")])
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(b"line 1", result.stderr)
+            self.assertFalse(output.exists())
 
 
 if __name__ == "__main__":
