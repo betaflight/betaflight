@@ -1334,4 +1334,9 @@ TEST(pidControllerTest, testAutoLandingImpactDisarm)
     pidInit(pidProfile);
     EXPECT_EQ(0, runImpact(1000.0f));
     EXPECT_EQ(1, runImpact(2000.0f));
+
+    // and gets the landing sensitivity only while landing, not in a rescue flying home below the takeoff point
+    simulatedAutopilotLanding = false;
+    EXPECT_EQ(0, runImpact(2000.0f));
+    EXPECT_EQ(1, runImpact(3000.0f));
 }
