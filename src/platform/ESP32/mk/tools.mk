@@ -31,8 +31,20 @@ endif
 
 # esptool, from the IDF python environment, used to wrap the linked ELF into a
 # bootable ESP-IDF application image (flashed at the app partition offset).
-ESP_PYTHON      := $(firstword $(wildcard $(IDF_TOOLS_PATH)/python_env/*/bin/python))
-ESP_ESPTOOL     := $(firstword $(wildcard $(IDF_TOOLS_PATH)/python_env/*/bin/esptool.py))
+#
+# The env's bin/python3 is a symlink to the unversioned system python3, so an
+# env created under another Python minor (e.g. a tools cache built on Ubuntu
+# 24.04 / Python 3.12 and restored on 26.04 / Python 3.14) runs the wrong
+# interpreter against the wrong site-packages and cannot import esptool. Use the
+# env idf_tools.py names for the current python3 (idf<X.Y>_py<A.B>_env) and
+# create it on demand (see the $(ESP_ESPTOOL) rule below) when it is missing.
+ESP_HOST_PY_VER := $(shell python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])' 2>/dev/null)
+ESP_IDF_VER     := $(shell sed -n -e 's/^set(IDF_VERSION_MAJOR \([0-9]*\))$$/\1/p' \
+                                  -e 's/^set(IDF_VERSION_MINOR \([0-9]*\))$$/.\1/p' \
+                                  $(ESP_IDF_PATH)/tools/cmake/version.cmake 2>/dev/null | tr -d '\n')
+ESP_PYTHON_ENV_DIR := $(IDF_TOOLS_PATH)/python_env/idf$(ESP_IDF_VER)_py$(ESP_HOST_PY_VER)_env
+ESP_PYTHON      := $(ESP_PYTHON_ENV_DIR)/bin/python
+ESP_ESPTOOL     := $(ESP_PYTHON_ENV_DIR)/bin/esptool.py
 
 # Image parameters. ESP_CHIP and ESP_FLASH_SIZE are derived (deferred) from the
 # per-target values, which are set later than this file is included.
@@ -66,7 +78,6 @@ ESP_ELF2IMAGE_TMP   = $(ESP_PYTHON) $(ESP_ESPTOOL) --chip $(ESP_CHIP) elf2image 
 # still force a rebuild.
 ESP_BOOTLOADER_FROM_SOURCE ?= yes
 ESP_BOOTLOADER_PROJ  = $(TARGET_PLATFORM_DIR)/bootloader
-ESP_PYTHON_ENV_DIR   = $(patsubst %/bin/python,%,$(ESP_PYTHON))
 # Inputs exposed to the generic BIN rule. Without this dependency a changed clock
 # hook leaves an already-created merged firmware image looking up to date, so the
 # freshness check below never gets a chance to run.
@@ -134,6 +145,14 @@ $(ESP_IDF_STAMP):
 	@echo "Hydrating esp-idf submodule"
 	$(V1) git submodule update --init --checkout -- lib/modules/esp-idf || { echo "Failed to update esp-idf"; exit 1; }
 	@echo "esp-idf ready"
+
+# (Re)create the IDF python env for the current python3 when it is missing,
+# e.g. after the host Python was upgraded or a tools cache from another OS image
+# was restored. Only installs the python packages; the toolchains are untouched.
+$(ESP_ESPTOOL): | $(ESP_IDF_STAMP)
+	@echo "Installing ESP-IDF python environment for python $(ESP_HOST_PY_VER)"
+	$(V1) IDF_TOOLS_PATH=$(IDF_TOOLS_PATH) python3 $(ESP_IDF_PATH)/tools/idf_tools.py install-python-env || \
+		{ echo "Failed to install ESP-IDF python environment (is python3-venv installed?)"; exit 1; }
 
 ## esp_tools_install  : Install ESP32 toolchain via esp-idf
 .PHONY: esp_tools_install

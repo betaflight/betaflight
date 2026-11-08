@@ -10,7 +10,7 @@ DEFAULT_OUTPUT := bin
 # transient _tmp.bin, then merge bootloader + partition table + app into the
 # final $(TARGET_BIN) for one-step flashing at 0x0 and delete the temp.
 BIN_FROM_ELF_CMD = $(ESP_ELF2IMAGE_TMP) && $(ESP_FLASH_IMAGE_CMD)
-BIN_FROM_ELF_DEPS = $(ESP_BOOTLOADER_INPUTS)
+BIN_FROM_ELF_DEPS = $(ESP_BOOTLOADER_INPUTS) $(ESP_ESPTOOL)
 
 # Auto-hydrate esp-idf submodule when building ESP32 targets
 PLATFORM_SDK := esp_idf
