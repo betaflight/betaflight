@@ -61,8 +61,9 @@ typedef struct {
     float maxRateCmS;         // descent rate at and above the high end, linear between
 } landingProfile_t;
 
-// A descent meant to end on the ground. The owner calls this every cycle; the first call after a
-// pause starts from startAltitudeCm, later ones carry the landing on, whoever makes them.
+// A descent meant to end on the ground. The owner calls this every cycle; later calls carry the
+// landing on, whoever makes them. A pause, another altitudeControl() call or a reset ends it, and
+// the next call starts again from startAltitudeCm.
 void autopilotLand(const landingProfile_t *profile, float startAltitudeCm, timeUs_t taskIntervalUs);
 bool autopilotIsLanding(void);
 float autopilotLandingTargetAltitudeCm(void);

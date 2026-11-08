@@ -421,15 +421,13 @@ TEST_F(AltholdControlUnittest, FlightPlanLandingTakesOverWhereTheNavLegLeftTheAl
     EXPECT_NEAR(1930.0f, autopilotLandingTargetAltitudeCm(), 1.0f);
 }
 
-TEST_F(AltholdControlUnittest, LandingEndsSoonAfterItsOwnerStopsAsking)
+TEST_F(AltholdControlUnittest, LandingEndsWhenAltHoldTakesTheAltitudeBack)
 {
     enterAltHoldAt(2000.0f);
     testFailsafePhase = FAILSAFE_LANDING;
     runAltHoldSeconds(0.5f);
     testFailsafePhase = FAILSAFE_IDLE;
-    runAltHoldSeconds(0.05f);
-    EXPECT_TRUE(autopilotIsLanding());
-    runAltHoldSeconds(0.1f);
+    runAltHoldSeconds(0.01f);
     EXPECT_FALSE(autopilotIsLanding());
 
     // the next landing starts from wherever alt hold then holds, not from the old target
@@ -438,16 +436,40 @@ TEST_F(AltholdControlUnittest, LandingEndsSoonAfterItsOwnerStopsAsking)
     EXPECT_NEAR(1745.0f, autopilotLandingTargetAltitudeCm(), 10.0f);
 }
 
+TEST_F(AltholdControlUnittest, LandingEndsSoonAfterItsOwnerStopsAsking)
+{
+    const landingProfile_t profile = { .touchdownRateCmS = 100.0f, .maxRateCmS = 100.0f };
+    testAltitudeCm = 1000.0f;
+    autopilotLand(&profile, 1000.0f, 10000);
+    testMicrosUs += 50000;
+    EXPECT_TRUE(autopilotIsLanding());
+    testMicrosUs += 100000;
+    EXPECT_FALSE(autopilotIsLanding());
+}
+
 TEST_F(AltholdControlUnittest, OldLandingRequestStaysExpiredAfterTheTimerWraps)
 {
-    enterAltHoldAt(2000.0f);
-    testFailsafePhase = FAILSAFE_LANDING;
-    runAltHoldSeconds(0.5f);
-    testFailsafePhase = FAILSAFE_IDLE;
+    const landingProfile_t profile = { .touchdownRateCmS = 100.0f, .maxRateCmS = 100.0f };
+    testAltitudeCm = 1000.0f;
+    autopilotLand(&profile, 1000.0f, 10000);
     testMicrosUs += 40u * 60u * 1000000u;
     EXPECT_FALSE(autopilotIsLanding());
-    testMicrosUs += 40u * 60u * 1000000u;
-    EXPECT_FALSE(autopilotIsLanding());
+}
+
+TEST_F(AltholdControlUnittest, NextLandingStartsAfreshAfterAnAltitudeCommandOrResetWithoutAnyCheckBetween)
+{
+    // every call below shares one timestamp, as if a full timer wrap had passed between landings
+    const landingProfile_t profile = { .touchdownRateCmS = 100.0f, .maxRateCmS = 100.0f };
+    testAltitudeCm = 1000.0f;
+    autopilotLand(&profile, 1000.0f, 100000);
+
+    altitudeControl(1000.0f, 100000, 0.0f, 100.0f);
+    autopilotLand(&profile, 3000.0f, 100000);
+    EXPECT_NEAR(2990.0f, autopilotLandingTargetAltitudeCm(), 0.01f);
+
+    resetAltitudeControl();
+    autopilotLand(&profile, 1000.0f, 100000);
+    EXPECT_NEAR(990.0f, autopilotLandingTargetAltitudeCm(), 0.01f);
 }
 
 TEST_F(AltholdControlUnittest, LandingProfileSpeedsUpWithHeight)
