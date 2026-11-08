@@ -52,10 +52,10 @@ ESP_ESPTOOL     := $(ESP_PYTHON_ENV_DIR)/bin/esptool.py
 ESP_PYTHON_ENV_STAMP := $(ESP_PYTHON_ENV_DIR)/.betaflight-ready
 ESP_IDF_REQUIREMENTS := $(ESP_IDF_PATH)/tools/requirements/requirements.core.txt
 # Pin idf_tools.py / install.sh to the env computed above, overriding any
-# IDF_PYTHON_ENV_PATH inherited from a sourced export.sh. If the IDF version
-# was unknown at parse time (esp-idf not yet hydrated), let IDF choose instead;
-# the next run computes the versioned path and creates that env once.
-ESP_PYTHON_ENV_PIN := $(if $(ESP_IDF_VER),IDF_PYTHON_ENV_PATH="$(ESP_PYTHON_ENV_DIR)",env -u IDF_PYTHON_ENV_PATH)
+# IDF_PYTHON_ENV_PATH inherited from a sourced export.sh, so the env that is
+# installed, stamped and used by the image commands is always the same one
+# within a make run (even if esp-idf was hydrated during it).
+ESP_PYTHON_ENV_PIN := IDF_PYTHON_ENV_PATH="$(ESP_PYTHON_ENV_DIR)"
 # Serialise env creation across concurrent builds (e.g. `make -j ESP32 ESP32S3`
 # runs one sub-make per target), and against esp_tools_install. flock is
 # util-linux; without it (macOS) the install runs unlocked.
@@ -185,9 +185,9 @@ esp_tools_install: | $(ESP_IDF_STAMP)
 		echo "WARNING: python3-venv not found. Install it (e.g. 'sudo apt-get install python3-venv') or esp32 tools may fail."
 	@echo "Installing ESP32 tools to $(IDF_TOOLS_PATH)"
 	$(V1) mkdir -p $(IDF_TOOLS_PATH)
-	$(V1) cd $(ESP_IDF_PATH) && IDF_TOOLS_PATH=$(IDF_TOOLS_PATH) $(ESP_PYTHON_ENV_PIN) \
-		$(ESP_PYTHON_ENV_LOCK) ./install.sh esp32,esp32s3 || { echo "Failed to install ESP32 tools"; exit 1; }
-	$(V1) [ -z "$(ESP_IDF_VER)" ] || [ ! -d "$(ESP_PYTHON_ENV_DIR)" ] || touch $(ESP_PYTHON_ENV_STAMP)
+	$(V1) cd $(ESP_IDF_PATH) && IDF_TOOLS_PATH="$(IDF_TOOLS_PATH)" $(ESP_PYTHON_ENV_PIN) \
+		$(ESP_PYTHON_ENV_LOCK) sh -c './install.sh esp32,esp32s3 && touch "$(ESP_PYTHON_ENV_STAMP)"' || \
+		{ echo "Failed to install ESP32 tools"; exit 1; }
 	@echo "ESP32 tools installed. Source export.sh before building:"
 	@echo "  IDF_TOOLS_PATH=$(IDF_TOOLS_PATH) . $(ESP_IDF_PATH)/export.sh"
 
