@@ -10,6 +10,8 @@ PLATFORM_SDK_esp_idf_CC_INSTALL := esp_tools_install
 
 ESP_IDF_PATH    ?= $(ROOT_DIR)/lib/modules/esp-idf
 IDF_TOOLS_PATH  ?= $(TOOLS_DIR)/espressif
+# Absolute: recipes below cd into $(ESP_IDF_PATH) before using it.
+override IDF_TOOLS_PATH := $(abspath $(IDF_TOOLS_PATH))
 export IDF_TOOLS_PATH
 
 # Resolve toolchain bin directories: prefer local install, fall back to PATH.
@@ -186,7 +188,7 @@ esp_tools_install: | $(ESP_IDF_STAMP)
 	@echo "Installing ESP32 tools to $(IDF_TOOLS_PATH)"
 	$(V1) mkdir -p $(IDF_TOOLS_PATH)
 	$(V1) cd $(ESP_IDF_PATH) && IDF_TOOLS_PATH="$(IDF_TOOLS_PATH)" $(ESP_PYTHON_ENV_PIN) \
-		$(ESP_PYTHON_ENV_LOCK) sh -c './install.sh esp32,esp32s3 && touch "$(ESP_PYTHON_ENV_STAMP)"' || \
+		$(ESP_PYTHON_ENV_LOCK) sh -c 'rm -f "$(ESP_PYTHON_ENV_STAMP)" && ./install.sh esp32,esp32s3 && touch "$(ESP_PYTHON_ENV_STAMP)"' || \
 		{ echo "Failed to install ESP32 tools"; exit 1; }
 	@echo "ESP32 tools installed. Source export.sh before building:"
 	@echo "  IDF_TOOLS_PATH=$(IDF_TOOLS_PATH) . $(ESP_IDF_PATH)/export.sh"
