@@ -601,7 +601,8 @@ RAM_CODE static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, 
 
     if (compressionMethod == NO_COMPRESSION) {
 
-        uint16_t *readLenPtr = (uint16_t *)sbufPtr(dst);
+        // may be at an odd address, so it is updated byte by byte below
+        uint8_t *readLenPtr = sbufPtr(dst);
         if (!useLegacyFormat) {
             // new format supports variable read lengths
             sbufWriteU16(dst, readLen);
@@ -612,7 +613,8 @@ RAM_CODE static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, 
 
         if (!useLegacyFormat) {
             // update the 'read length' with the actual amount read from flash.
-            *readLenPtr = bytesRead;
+            readLenPtr[0] = bytesRead & 0xff;
+            readLenPtr[1] = (bytesRead >> 8) & 0xff;
         }
 
         sbufAdvance(dst, bytesRead);
@@ -1699,7 +1701,7 @@ case MSP_NAME:
         sbufWriteU16(dst, autopilotConfig()->positionP);
         sbufWriteU16(dst, autopilotConfig()->positionI);
         sbufWriteU16(dst, autopilotConfig()->positionD);
-        sbufWriteU16(dst, gpsRescueConfig()->yawP);
+        sbufWriteU16(dst, 0); // was gps_rescue_yaw_p
         break;
 #endif // !USE_WING
 #endif
@@ -3356,7 +3358,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         autopilotConfigMutable()->positionP = sbufReadU16Constrained(src, 0, AUTOPILOT_PID_GAIN_MAX);
         autopilotConfigMutable()->positionI = sbufReadU16Constrained(src, 0, AUTOPILOT_PID_GAIN_MAX);
         autopilotConfigMutable()->positionD = sbufReadU16Constrained(src, 0, AUTOPILOT_PID_GAIN_MAX);
-        gpsRescueConfigMutable()->yawP = sbufReadU16Constrained(src, 0, GPS_RESCUE_YAW_P_MAX);
+        sbufReadU16(src); // was gps_rescue_yaw_p
         break;
 #endif // !USE_WING
 #endif
@@ -3662,7 +3664,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         }
         if (sbufBytesRemaining(src) >= 4) {
             sbufReadU16(src); // was currentPidProfile->itermThrottleThreshold
-            currentPidProfile->anti_gravity_gain = sbufReadU16Constrained(src, 0, ITERM_ACCELERATOR_GAIN_MAX);
+            currentPidProfile->anti_gravity_gain = sbufReadU16Constrained(src, ANTI_GRAVITY_GAIN_OFF, ANTI_GRAVITY_GAIN_MAX);
         }
         if (sbufBytesRemaining(src) >= 2) {
             sbufReadU16(src); // was currentPidProfile->dtermSetpointWeight

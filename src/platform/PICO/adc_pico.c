@@ -45,6 +45,8 @@
 #include "common/utils.h"   // popcount, llog2
 #include "common/maths.h"   // MAX/MIN macros
 
+#define PICO_ADC_INDEX                  0
+
 #define PICO_ADC_MAX_CHANNELS           4
 #define PICO_ADC_FIFO_SIZE              8
 
@@ -145,6 +147,7 @@ void adcInit(const adcConfig_t *config)
 
         adc_gpio_init(pin);
         mask |= (1u << channel);
+        IOInit(IOGetByTag(adcOperatingConfig[i].tag), OWNER_ADC_BATT + i, PICO_ADC_INDEX);
     }
 
     if (popcount(mask) == 0) {

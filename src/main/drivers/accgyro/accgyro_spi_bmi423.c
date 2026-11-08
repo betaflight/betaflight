@@ -36,6 +36,15 @@
 #include "drivers/system.h"
 #include "drivers/time.h"
 
+// When ENABLE_BMI423_ALIGN_AS_ICM is set, rotate the BMI423 raw data by CW90 so it
+// presents identical axes to an ICM42688 and one board alignment serves either populated
+// chip. The BMI423 shares the BMI270 pin-out and sensing axes, so this is the same
+// rotation as ENABLE_BMI270_ALIGN_AS_ICM. Opt-in per config (#define ENABLE_BMI423_ALIGN_AS_ICM 1);
+// off by default so no existing board changes frame unless its config explicitly asks for it.
+#if !defined(ENABLE_BMI423_ALIGN_AS_ICM)
+#define ENABLE_BMI423_ALIGN_AS_ICM 0
+#endif
+
 #define BMI423_MAX_SPI_CLK_HZ 10000000
 #define BMI423_CHIP_ID 0xAB
 
@@ -197,11 +206,29 @@ static void bmi423Config(gyroDev_t *gyro)
     bmi423RegisterWrite(dev, BMI423_REG_INT_MAP_HW, BMI423_VAL_INT_MAP_HW, 1);
 }
 
+// Rotate the raw (x, y, z) sensor axes into the Betaflight frame.
+// ENABLE_BMI423_ALIGN_AS_ICM applies CW90 (see above):
+//     new x = y, new y = -x, new z = z
+static inline void bmi423StoreAxes(int16_t *dst, int16_t x, int16_t y, int16_t z)
+{
+#if ENABLE_BMI423_ALIGN_AS_ICM
+    dst[X] = y;
+    dst[Y] = (x == INT16_MIN) ? INT16_MAX : -x;
+    dst[Z] = z;
+#else
+    dst[X] = x;
+    dst[Y] = y;
+    dst[Z] = z;
+#endif
+}
+
 static void bmi423DecodeSample(const uint8_t *data, int16_t sample[XYZ_AXIS_COUNT])
 {
-    sample[X] = (int16_t)((uint16_t)data[0] | ((uint16_t)data[1] << 8));
-    sample[Y] = (int16_t)((uint16_t)data[2] | ((uint16_t)data[3] << 8));
-    sample[Z] = (int16_t)((uint16_t)data[4] | ((uint16_t)data[5] << 8));
+    const int16_t x = (int16_t)((uint16_t)data[0] | ((uint16_t)data[1] << 8));
+    const int16_t y = (int16_t)((uint16_t)data[2] | ((uint16_t)data[3] << 8));
+    const int16_t z = (int16_t)((uint16_t)data[4] | ((uint16_t)data[5] << 8));
+
+    bmi423StoreAxes(sample, x, y, z);
 }
 
 extiCallbackRec_t bmi423IntCallbackRec;

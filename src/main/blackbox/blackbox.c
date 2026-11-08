@@ -835,9 +835,10 @@ static void writeIntraframe(void)
 
 static void blackboxWriteMainStateArrayUsingAveragePredictor(int arrOffsetInHistory, int count)
 {
-    int16_t *curr  = (int16_t*) ((char*) (blackboxHistory[0]) + arrOffsetInHistory);
-    int16_t *prev1 = (int16_t*) ((char*) (blackboxHistory[1]) + arrOffsetInHistory);
-    int16_t *prev2 = (int16_t*) ((char*) (blackboxHistory[2]) + arrOffsetInHistory);
+    // arrOffsetInHistory is the offsetof() an int16_t array in blackboxMainState_t, so these pointers are aligned
+    int16_t *curr  = (int16_t*)(void*) ((char*) (blackboxHistory[0]) + arrOffsetInHistory);
+    int16_t *prev1 = (int16_t*)(void*) ((char*) (blackboxHistory[1]) + arrOffsetInHistory);
+    int16_t *prev2 = (int16_t*)(void*) ((char*) (blackboxHistory[2]) + arrOffsetInHistory);
 
     for (int i = 0; i < count; i++) {
         // Predictor is the average of the previous two history states
@@ -1431,7 +1432,8 @@ static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const v
     const uint32_t LONGEST_INTEGER_STRLEN = 2;
 
     for (; xmitState.u.fieldIndex < fieldCount; xmitState.u.fieldIndex++) {
-        def = (const blackboxFieldDefinition_t*) ((const char*)fieldDefinitions + definitionStride * xmitState.u.fieldIndex);
+        // definitionStride is the size of an array element that starts with a blackboxFieldDefinition_t, so def is aligned
+        def = (const blackboxFieldDefinition_t*)(const void*) ((const char*)fieldDefinitions + definitionStride * xmitState.u.fieldIndex);
 
         if (!conditions || testBlackboxCondition(conditions[conditionsStride * xmitState.u.fieldIndex])) {
             // First (over)estimate the length of the string we want to print
@@ -1933,10 +1935,6 @@ static bool blackboxWriteSysinfo(void)
 #endif
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_MIN_SATS, "%d",        gpsRescueConfig()->minSats);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_ALLOW_ARMING_WITHOUT_FIX, "%d", gpsRescueConfig()->allowArmingWithoutFix);
-
-#ifndef USE_WING
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_YAW_P, "%d",           gpsRescueConfig()->yawP);
-#endif
 #endif // USE_GPS_RESCUE
 #endif // USE_GPS
 
