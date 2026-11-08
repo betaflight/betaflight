@@ -684,7 +684,7 @@ static void bbUpdateComplete(void)
                 bbPort->inputActive = false;
                 if (!bbSwitchToOutput(bbPort)) {
                     // Stream did not stop, so its registers were left alone and
-                    // the port is still an input. Skip the frame rather than
+                    // the port is still released. Skip the frame rather than
                     // enable a stream whose configuration was never applied.
                     continue;
                 }
