@@ -23,6 +23,8 @@
 
 #include <string.h>
 
+#include "common/utils.h"
+
 #include "config/config.h"
 #include "drivers/vtx_common.h"
 #include "io/vtx.h"
@@ -125,6 +127,7 @@ static uint8_t convertSpektrumVtxPowerIndex(uint8_t sPower)
     case VTXDEV_UNKNOWN:
     case VTXDEV_UNSUPPORTED:
     default:
+        UNUSED(sPower);
         break;
 
     }

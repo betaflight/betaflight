@@ -41,6 +41,8 @@ constexpr uint8_t BMM350_CHIP_ID = 0x33;
 constexpr uint8_t BMM350_I2C_ADDRESS_ADSEL_GND = 0x14;
 constexpr uint8_t BMM350_I2C_ADDRESS_ADSEL_VDDIO = 0x15;
 constexpr uint8_t BMM350_I2C_DUMMY_BYTES = 2;
+constexpr uint8_t BMM350_REG_MAG_X_XLSB = 0x31;
+constexpr uint8_t BMM350_MEAS_BYTES = 12;
 } // namespace
 
 static bool mock_busReadRegisterBuffer_ret = true;
@@ -50,6 +52,10 @@ static uint8_t last_reg = 0;
 static uint8_t last_len = 0;
 static uint8_t last_address = 0;
 static int busReadRegisterBuffer_callCount = 0;
+static int readStartCount = 0;
+static uint8_t readStartReg = 0;
+static uint8_t readStartLen = 0;
+static bool mock_busError = false;
 
 static void resetMocks(void)
 {
@@ -60,6 +66,8 @@ static void resetMocks(void)
     last_len = 0;
     last_address = 0;
     busReadRegisterBuffer_callCount = 0;
+    readStartCount = 0;
+    mock_busError = false;
 }
 
 static void initMagDev(magDev_t *mag, busDevice_t *bus, uint8_t address)
@@ -75,7 +83,24 @@ extern "C" {
 
 void delay(uint32_t) {}
 void delayMicroseconds(uint32_t) {}
-bool busBusy(const extDevice_t *, bool *) { return false; }
+bool busBusy(const extDevice_t *, bool *error)
+{
+    if (error) {
+        *error = mock_busError;
+    }
+    return false;
+}
+
+bool busReadRegisterBufferStart(const extDevice_t *, uint8_t reg, uint8_t *buf, uint8_t len)
+{
+    readStartCount++;
+    readStartReg = reg;
+    readStartLen = len;
+    // Dummy bytes are junk; a zero payload must compensate to exactly zero.
+    memset(buf, 0, len);
+    memset(buf, 0x7F, BMM350_I2C_DUMMY_BYTES);
+    return true;
+}
 
 bool busReadRegisterBuffer(const extDevice_t *dev, uint8_t reg, uint8_t *buf, uint8_t len)
 {
@@ -205,4 +230,55 @@ TEST(Bmm350DetectTest, ChipIdNotAcceptedFromDummyBytes)
     // see 0x00 and fail — DetectSuccess already requires len == 3.
     ASSERT_TRUE(bmm350Detect(&mag));
     EXPECT_GT(last_len, BMM350_I2C_DUMMY_BYTES);
+}
+
+TEST(Bmm350ReadTest, StartsTheReadThenCollectsOnTheNextCall)
+{
+    resetMocks();
+
+    magDev_t mag;
+    busDevice_t bus;
+    initMagDev(&mag, &bus, BMM350_I2C_ADDRESS_ADSEL_GND);
+    ASSERT_TRUE(bmm350Detect(&mag));
+    const int blockingReads = busReadRegisterBuffer_callCount;
+
+    int16_t magData[3] = { 1, 2, 3 };
+    EXPECT_FALSE(mag.read(&mag, magData));
+    EXPECT_EQ(1, readStartCount);
+    EXPECT_EQ(BMM350_REG_MAG_X_XLSB, readStartReg);
+    EXPECT_EQ(BMM350_I2C_DUMMY_BYTES + BMM350_MEAS_BYTES, readStartLen);
+    EXPECT_EQ(1, magData[0]);
+
+    EXPECT_TRUE(mag.read(&mag, magData));
+    EXPECT_EQ(1, readStartCount);
+    EXPECT_EQ(0, magData[0]);
+    EXPECT_EQ(0, magData[1]);
+    EXPECT_EQ(0, magData[2]);
+
+    EXPECT_FALSE(mag.read(&mag, magData));
+    EXPECT_EQ(2, readStartCount);
+    EXPECT_TRUE(mag.read(&mag, magData));
+    EXPECT_EQ(blockingReads, busReadRegisterBuffer_callCount);
+}
+
+TEST(Bmm350ReadTest, BusErrorDropsTheSampleAndStartsAgain)
+{
+    resetMocks();
+
+    magDev_t mag;
+    busDevice_t bus;
+    initMagDev(&mag, &bus, BMM350_I2C_ADDRESS_ADSEL_GND);
+    ASSERT_TRUE(bmm350Detect(&mag));
+
+    int16_t magData[3] = { 1, 2, 3 };
+    EXPECT_FALSE(mag.read(&mag, magData));
+    mock_busError = true;
+    EXPECT_FALSE(mag.read(&mag, magData));
+    EXPECT_EQ(1, magData[0]);
+
+    mock_busError = false;
+    EXPECT_FALSE(mag.read(&mag, magData));
+    EXPECT_EQ(2, readStartCount);
+    EXPECT_TRUE(mag.read(&mag, magData));
+    EXPECT_EQ(0, magData[0]);
 }

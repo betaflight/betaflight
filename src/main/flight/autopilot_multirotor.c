@@ -56,9 +56,10 @@
 // 4 - D term * 10 // damping on measured velocity, opposing velocity
 // 5 - A term * 10 // opposes the Kalman acceleration estimate (acceleration in distance terms)
 // 6 - F term * 10 // target-velocity feedforward (the stick push / nav target)
-// 7 - Status - encodes navActive +10, anchorOff +20, abortNavRequested +100,
-//     SticksActive +5, PositionHeld +3, +1 when braking. Also forced to 100 on a
-//     position-control failure and 200 while pitch-forward is being forced.
+// 7 - Status flags (apStatusFlags_e): NavActive, AnchorOff, AbortNav, PositionHeld,
+//     SticksActive, Braking, plus the latched failure bits ControlFailure /
+//     ForcePitchForward / SensorsNotOk. A failure frame keeps showing the rest of
+//     the state alongside the failure bit, instead of erasing it with a sentinel.
 // In velocity mode slots 2-5 carry the velocity-loop terms: P/I on velocity error,
 // D damping, A the drag feedforward; slot 6 (F) reads ~0. See also DEBUG_POSITION_NAV.
 
@@ -70,7 +71,7 @@
 // 4 - I term * 10
 // 5 - D term * 10 (damping)
 // 6 - drag feedforward * 10
-// 7 - anchorOff * 10, +1 while the buildup clamp engages
+// 7 - Status flags: bit 0 AnchorOff, bit 1 BuildupClamped
 
 // DEBUG_AUTOPILOT_STOP
 // 0 - VelocityError East
@@ -79,10 +80,29 @@
 // 3 - PIDSum North * 10
 // 4 - Roll angle command * 10
 // 5 - Pitch angle command * 10
-// 6 - Status, same encoding and value as slot 7
-// 7 - Status - encodes navActive +10, anchorOff +20, abortNavRequested +100,
-//     SticksActive +5, PositionHeld +3, +1 when braking. Both 6 and 7 are forced
-//     to 100 on a position-control failure and 200 while pitch-forward is forced.
+// 6 - Status flags, same encoding as DEBUG_AUTOPILOT_PID slot 7
+// 7 - Braking time, seconds * 100 (grows while braking, 0 otherwise)
+
+// DEBUG_AUTOPILOT_PID[7] / DEBUG_AUTOPILOT_STOP[6] status bits, annotated as
+// [flags:...] so the configurator / blackbox viewer decode each bit by name.
+typedef enum {
+    AP_STATUS_NAV_ACTIVE       = 1 << 0, // nav command running (carrot or leg)
+    AP_STATUS_ANCHOR_OFF       = 1 << 1, // velocity mode, virtual distance error
+    AP_STATUS_ABORT_NAV        = 1 << 2, // nav abort requested
+    AP_STATUS_POSITION_HELD    = 1 << 3, // settled hold locked
+    AP_STATUS_STICKS_ACTIVE    = 1 << 4, // pilot commanding XY velocity
+    AP_STATUS_BRAKING          = 1 << 5, // braking onto the captured point
+    AP_STATUS_CONTROL_FAILURE  = 1 << 6, // position control failure (abort / level park)
+    AP_STATUS_FORCE_PITCH_FWD  = 1 << 7, // heading recovery: pitch-forward forced
+    AP_STATUS_SENSORS_NOT_OK   = 1 << 8, // sensors dropped out, position hold suspended
+} apStatusFlags_e;
+
+// latched failure bits
+#define AP_STATUS_FLAGS_FAILURE (AP_STATUS_CONTROL_FAILURE | AP_STATUS_FORCE_PITCH_FWD | AP_STATUS_SENSORS_NOT_OK)
+
+// Live status: operational bits track the current loop, failure bits are latched
+// until the control path recovers. See positionControl() for the latching logic.
+static uint16_t apStatusFlags = 0;
 
 #ifndef POSHOLD_TASK_RATE_HZ
 #define POSHOLD_TASK_RATE_HZ 100
@@ -595,6 +615,7 @@ void resetPositionControl(unsigned taskRateHz)
     abortNavRequested = false;
     headingRecovery = false;
     forceLevelPark = false;
+    apStatusFlags = 0; // fresh engagement: clear any latched failure bits
     apNavHeadingOverrideValid = false;
     ap.sticksActive = false;
     ap.wasSticksActive = false;
@@ -615,14 +636,33 @@ void resetPositionControl(unsigned taskRateHz)
     resetDistanceErrorIntegral();
 }
 
+// Braking time for DEBUG_AUTOPILOT_STOP[7]: zero whenever braking is inactive,
+// since some transitions end braking without resetting ap.brakingTimeS.
+static int brakingTimeDebug(void)
+{
+    return ap.isPosHoldBraking ? lrintf(ap.brakingTimeS * 100.0f) : 0;
+}
+
 void handlepositionControlFailure(void)
 {
     resetDistanceError();
     resetDistanceErrorIntegral();
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 100);   //!< Status Flags
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, 100);  //!< Status Flags
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, 100);  //!< Status Flags
+    apStatusFlags |= AP_STATUS_CONTROL_FAILURE;
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, apStatusFlags);   //!< Status Flags [flags:Nav Active|Anchor Off|Abort Nav|Position Held|Sticks Active|Braking|Control Failure|Force Pitch Fwd|Sensors Not Ok]
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, apStatusFlags);  //!< Status Flags [flags:Nav Active|Anchor Off|Abort Nav|Position Held|Sticks Active|Braking|Control Failure|Force Pitch Fwd|Sensors Not Ok]
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, brakingTimeDebug());  //!< Braking Time [unit:0.01s]
+}
 
+void autopilotSetSensorsOkStatus(bool ok)
+{
+    if (ok) {
+        apStatusFlags &= ~AP_STATUS_SENSORS_NOT_OK;
+    } else {
+        apStatusFlags |= AP_STATUS_SENSORS_NOT_OK;
+        DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, apStatusFlags);   //!< Status Flags [flags:Nav Active|Anchor Off|Abort Nav|Position Held|Sticks Active|Braking|Control Failure|Force Pitch Fwd|Sensors Not Ok]
+        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, apStatusFlags);  //!< Status Flags [flags:Nav Active|Anchor Off|Abort Nav|Position Held|Sticks Active|Braking|Control Failure|Force Pitch Fwd|Sensors Not Ok]
+        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, brakingTimeDebug());  //!< Braking Time [unit:0.01s]
+    }
 }
 
 // A sanity-fence violation has outlived the persistence window: spend the
@@ -1195,6 +1235,10 @@ bool positionControl(void)
         handlepositionControlFailure();
         return false;
     }
+    // None of the failure conditions above hold: the control path has recovered,
+    // so drop the latched failure bits. They re-assert themselves if a failure
+    // recurs; the operational bits below keep showing the live state either way.
+    apStatusFlags &= ~AP_STATUS_FLAGS_FAILURE;
     // Ahead of the heading recovery: alt hold keeps flying this command's altitude ramp through it.
     positionNavUpdate(dt, est);
     if (headingRecovery) {
@@ -1203,9 +1247,10 @@ bool positionControl(void)
         setYawDisableReason(11);
         autopilotAngle[AI_ROLL]  = 0.0f;
         autopilotAngle[AI_PITCH] = headingRecoveryPitchDeg;
-        DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 200);   //!< Status Flags
-        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, 200);  //!< Status Flags
-        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, 200);  //!< Status Flags
+        apStatusFlags |= AP_STATUS_FORCE_PITCH_FWD;
+        DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, apStatusFlags);   //!< Status Flags [flags:Nav Active|Anchor Off|Abort Nav|Position Held|Sticks Active|Braking|Control Failure|Force Pitch Fwd|Sensors Not Ok]
+        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, apStatusFlags);  //!< Status Flags [flags:Nav Active|Anchor Off|Abort Nav|Position Held|Sticks Active|Braking|Control Failure|Force Pitch Fwd|Sensors Not Ok]
+        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, brakingTimeDebug());  //!< Braking Time [unit:0.01s]
         return true;
     }
     const vector2_t currentPosition = *(const vector2_t *)&est->position.v;
@@ -1412,12 +1457,16 @@ bool positionControl(void)
     autopilotAngle[AI_ROLL]  = -angleV.v[AI_ROLL];
     autopilotAngle[AI_PITCH] =  angleV.v[AI_PITCH];
 
-    int statusValue = 0;
-    if (ap.navActive)       statusValue += 10;
-    if (anchorOff)          statusValue += 20;
-    if (abortNavRequested)  statusValue += 100;
-    if (isPositionHeld)     statusValue += 3; // plus 1, ie 4,  if stopping
-    if (ap.sticksActive)    statusValue += 5;
+    // Operational bits track this loop's live state; the latched failure bits
+    // survive until the recovery point above clears them (or the next failure
+    // frame re-asserts them).
+    apStatusFlags = (apStatusFlags & AP_STATUS_FLAGS_FAILURE)
+                 | ((ap.navActive)      ? AP_STATUS_NAV_ACTIVE       : 0)
+                 | ((anchorOff)         ? AP_STATUS_ANCHOR_OFF       : 0)
+                 | ((abortNavRequested) ? AP_STATUS_ABORT_NAV        : 0)
+                 | ((isPositionHeld)    ? AP_STATUS_POSITION_HELD    : 0)
+                 | ((ap.sticksActive)   ? AP_STATUS_STICKS_ACTIVE    : 0)
+                 | ((ap.isPosHoldBraking) ? AP_STATUS_BRAKING         : 0);
 
     const float targetSpeedXY = vector2Norm(&targetVelocity);
     const float distanceToHomeCm = vector2Norm(&currentPosition);
@@ -1429,7 +1478,7 @@ bool positionControl(void)
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 4, lrintf(pidD.v[ap.debugAxis] * 10));            //!< D Term (dbg-axis) [unit:0.1deg]
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 5, lrintf(pidA.v[ap.debugAxis] * 10));            //!< A Term (dbg-axis) [unit:0.1deg]
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 6, lrintf(pidF.v[ap.debugAxis] * 10));            //!< Feedforward Term (dbg-axis) [unit:0.1deg]
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, statusValue + (ap.isPosHoldBraking ? 1 : 0));  //!< Status Flags
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, apStatusFlags);  //!< Status Flags [flags:Nav Active|Anchor Off|Abort Nav|Position Held|Sticks Active|Braking|Control Failure|Force Pitch Fwd|Sensors Not Ok]
 
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 0, lrintf(velocityError.v[EF_EAST]));             //!< Velocity Error East [unit:cm/s]
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 1, lrintf(velocityError.v[EF_NORTH]));            //!< Velocity Error North [unit:cm/s]
@@ -1437,8 +1486,8 @@ bool positionControl(void)
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 3, lrintf(pidSumVectorEF.v[EF_NORTH] * 10));      //!< PID Sum North [unit:0.1deg]
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 4, lrintf(autopilotAngle[AI_ROLL] * 10));         //!< Roll Angle Command [unit:0.1deg]
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 5, lrintf(autopilotAngle[AI_PITCH] * 10));        //!< Pitch Angle Command [unit:0.1deg]
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, statusValue + (ap.isPosHoldBraking ? 1 : 0));  //!< Status Flags
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, statusValue + (ap.isPosHoldBraking ? 1 : 0));  //!< Status Flags
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, apStatusFlags);  //!< Status Flags [flags:Nav Active|Anchor Off|Abort Nav|Position Held|Sticks Active|Braking|Control Failure|Force Pitch Fwd|Sensors Not Ok]
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, brakingTimeDebug());  //!< Braking Time [unit:0.01s]
 
     DEBUG_SET(DEBUG_POSITION_NAV, 0, lrintf(targetVelocity.v[ap.debugAxis]));           //!< Target Velocity (dbg-axis) [unit:cm/s]
     DEBUG_SET(DEBUG_POSITION_NAV, 1, lrintf(velocity.v[ap.debugAxis]));                 //!< Velocity (dbg-axis) [unit:cm/s]
@@ -1447,7 +1496,7 @@ bool positionControl(void)
     DEBUG_SET(DEBUG_POSITION_NAV, 4, lrintf(pidI.v[ap.debugAxis] * 10));                //!< I Term (dbg-axis) [unit:0.1deg]
     DEBUG_SET(DEBUG_POSITION_NAV, 5, lrintf(pidD.v[ap.debugAxis] * 10));                //!< D Term (dbg-axis) [unit:0.1deg]
     DEBUG_SET(DEBUG_POSITION_NAV, 6, lrintf(pidA.v[ap.debugAxis] * 10));                //!< A Term (dbg-axis) [unit:0.1deg]
-    DEBUG_SET(DEBUG_POSITION_NAV, 7, (anchorOff ? 10 : 0) + (buildupClamped ? 1 : 0));  //!< Status Flags
+    DEBUG_SET(DEBUG_POSITION_NAV, 7, (anchorOff ? 1 : 0) | (buildupClamped ? 2 : 0));  //!< Status Flags [flags:Anchor Off|Buildup Clamped]
 
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 0, lrintf(ap.speedXY));       //!< Ground Speed [unit:cm/s]
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 1, lrintf(targetSpeedXY));    //!< Target Velocity [unit:cm/s]

@@ -266,6 +266,11 @@ unsigned serialGetPortClaims(serialPortIdentifier_e identifier, serialPortClaim_
     return 0;
 }
 
+uint32_t serialFunctionMaskFromLegacy(uint32_t legacyMask)
+{
+    return legacyMask;
+}
+
 bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
 {
     (void)identifier;
@@ -355,7 +360,7 @@ void beeperOffSet(uint32_t) {}
 void beeperOffClear(uint32_t) {}
 void beeperOffClearAll(void) {}
 bool parseColor(int, const char *) {return false; }
-bool resetEEPROM(void) { return true; }
+bool resetEEPROM(configResetReason_e, uint16_t) { return true; }
 void bufWriterFlush(bufWriter_t *) {}
 void mixerResetDisarmedMotors(void) {}
 
