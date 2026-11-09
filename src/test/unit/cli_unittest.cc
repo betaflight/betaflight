@@ -637,6 +637,11 @@ TEST(CLIUnittest, TestCliAuxRejectsNegativeIndex)
 {
     char buf[64];
 
+    // Without the other arguments, the command clears the entry with memset()
+    cliOutputReset();
+    cliExecuteCommand("aux -1", buf, sizeof(buf));
+    EXPECT_NE(nullptr, strstr(cliOutput, "INDEX NOT BETWEEN"));
+
     cliOutputReset();
     cliExecuteCommand("aux -1 0 1 1700 2100 0 0", buf, sizeof(buf));
     EXPECT_NE(nullptr, strstr(cliOutput, "INDEX NOT BETWEEN"));
@@ -659,6 +664,11 @@ TEST(CLIUnittest, TestCliAuxRejectsNegativeIndex)
 TEST(CLIUnittest, TestCliAdjrangeRejectsNegativeIndex)
 {
     char buf[64];
+
+    // Without the other arguments, the command clears the entry with memset()
+    cliOutputReset();
+    cliExecuteCommand("adjrange -1", buf, sizeof(buf));
+    EXPECT_NE(nullptr, strstr(cliOutput, "INDEX NOT BETWEEN"));
 
     cliOutputReset();
     cliExecuteCommand("adjrange -1 0 1 1700 2100 1 2", buf, sizeof(buf));
