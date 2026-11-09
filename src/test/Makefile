@@ -1106,6 +1106,18 @@ vtx_msp_unittest_DEFINES := \
 		USE_VTX_TABLE= \
 		USE_VTX_MSP=
 
+um32_uart_bidir_unittest_SRC := \
+        $(TEST_DIR)/um32_uart_bidir_test.c \
+        $(USER_DIR)/drivers/serial_impl.c
+
+um32_uart_bidir_unittest_INCLUDE_DIRS := \
+        $(TEST_DIR)/um32_uart_bidir \
+        ../platform/UM32/include
+
+um32_uart_bidir_unittest_DEFINES = \
+        $(if $(findstring nopulldown,$1),USE_SMARTAUDIO_NOPULLDOWN=) \
+        $(if $(findstring no_board_bias,$1),UM32_UART_BIDIR_NO_BOARD_PULLUP=)
+
 pwl_unittest_SRC := \
 		$(USER_DIR)/common/pwl.c
 
@@ -1229,6 +1241,7 @@ TESTS_TARGET_SPECIFIC = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),
 
 TESTS = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),,$(test)))
 TESTS += $(addprefix accgyro_spi_lsm6dsv16x_unittest.,16x 32x 320x)
+TESTS += $(addprefix um32_uart_bidir_unittest.,nopulldown no_board_bias no_board_bias_nopulldown)
 TESTS_ALL = $(TESTS)
 
 # All Google Test headers.  Usually you shouldn't change this

@@ -19,8 +19,10 @@ MEMORY
     FLASH_CONFIG (rw) : ORIGIN = 0x08002000, LENGTH = 8K
     FLASH1 (rx)       : ORIGIN = 0x08004000, LENGTH = 496K
 #ifdef USE_QSPI_XIP
-    /* Two aliases of the same QSPI Flash: fetch from the Code region,
-     * keep the existing AHB address in HEX/DFU load images. */
+    /* Fixed SoC QSPI aliases (UM3241F/UM3247F manual, table 3-1), not a ROM
+     * bootloader remap. SystemInit() calls exFlashInit() to enable QSPI DAC
+     * and cache before RAM-code copying or any .ex_flash call. Fetch through
+     * the Code alias; retain the AHB alias in HEX/DFU load images. */
     EXFLASH_XIP (rx)  : ORIGIN = 0x00080000, LENGTH = 512K
     EXFLASH_LOAD (r)  : ORIGIN = 0x38000000, LENGTH = 512K
 #endif

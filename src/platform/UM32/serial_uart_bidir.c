@@ -7,6 +7,7 @@
 #include "platform.h"
 #ifdef USE_UART
 #include "build/atomic.h"
+#include "build/debug.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
 #include "drivers/serial.h"
@@ -35,9 +36,10 @@ typedef struct {
     bool transmitting;
     bool waiting;
     bool fault;
+    uint16_t timeoutCount; // Survives reconfiguration; saturates to fit debug[].
 } uartBidirState_t;
 
-static uartBidirState_t ports[8];
+static uartBidirState_t ports[UARTDEV_COUNT];
 static bool timerInitialized;
 static uint8_t armedIntervalUs;
 
@@ -105,14 +107,21 @@ static bool bidirPullUp(serialPortIdentifier_e id)
 
 static uartBidirState_t *state(const uartPort_t *s)
 {
-    const int index = s->port.identifier - SERIAL_PORT_UART1;
-    return index >= 0 && index < 8 ? &ports[index] : NULL;
+    const uartDeviceIdx_e index = uartDeviceIdxFromIdentifier(s->port.identifier);
+    return index >= 0 && index < UARTDEV_COUNT ? &ports[index] : NULL;
+}
+
+static void reportStatus(const uartBidirState_t *p, serialPortIdentifier_e id)
+{
+    DEBUG_SET(DEBUG_UART_BIDIR, 0, serialOwnerIndex(id)); //!< UART number [unit:1]
+    DEBUG_SET(DEBUG_UART_BIDIR, 1, p->timeoutCount); //!< TEMT timeouts [unit:1]
+    DEBUG_SET(DEBUG_UART_BIDIR, 2, p->fault); //!< TX fault latched [unit:1]
 }
 
 static void armTimer(void)
 {
     unsigned interval = 101;
-    for (unsigned i = 0; i < 8; i++) {
+    for (unsigned i = 0; i < UARTDEV_COUNT; i++) {
         if (ports[i].waiting && ports[i].intervalUs < interval) {
             interval = ports[i].intervalUs;
         }
@@ -138,7 +147,9 @@ void uartBidirConfigure(uartPort_t *s)
         if (!p) { return; }
         uartDevice_t *dev = uartDeviceFromIdentifier(s->port.identifier);
         if (p->rx && p->rx != IOGetByTag(dev->rx.pin)) { IOConfigGPIO(p->rx, IOCFG_IN_FLOATING); }
-        *p = (uartBidirState_t) { 0 };
+        const uint16_t timeoutCount = p->timeoutCount;
+        *p = (uartBidirState_t) { .timeoutCount = timeoutCount };
+        reportStatus(p, s->port.identifier);
         if (!(s->port.options & SERIAL_BIDIR)) { return; }
         IO_t tx = IOGetByTag(dev->tx.pin);
         IO_t rx = IOGetByTag(bidirRxTag(s->port.identifier));
@@ -149,6 +160,11 @@ void uartBidirConfigure(uartPort_t *s)
             valid |= dev->hardware->rxPins[i].pin == bidirRxTag(s->port.identifier);
         }
         if (!valid) { return; }
+#ifdef USE_DMA
+        // DMA TX bypasses uartBidirStart(). Keep this dual-pad port on the
+        // IRQ path until DMA can participate in pin ownership and TEMT drain.
+        s->txDMAResource = NULL;
+#endif
         if (!timerInitialized) {
             __HAL_PMU_LPTIM1_CLK_ENABLE();
             __HAL_PMU_LPTIM1_FORCE_RESET();
@@ -268,7 +284,7 @@ void LPTIMER1_IRQHandler(void)
         LPTIM1->IF = LPTIM_IF_OVIF;
         LPTIM1->CTRL = 0;
         LPTIM1->IE = 0;
-        for (unsigned i = 0; i < 8; i++) {
+        for (unsigned i = 0; i < UARTDEV_COUNT; i++) {
             uartBidirState_t *p = &ports[i];
             if (!p->waiting) { continue; }
             if (p->uart->port.txBufferHead != p->uart->port.txBufferTail) {
@@ -277,7 +293,9 @@ void LPTIMER1_IRQHandler(void)
                 release(p);
             } else if ((int32_t)(micros() - p->deadline) >= 0) {
                 p->fault = true;
+                if (p->timeoutCount < INT16_MAX) { p->timeoutCount++; }
                 release(p); // Fail silent instead of holding the shared line.
+                reportStatus(p, p->uart->port.identifier);
             }
         }
         armTimer();
