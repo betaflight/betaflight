@@ -191,6 +191,8 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM8, CH2N, PH14, 0, 0, 0),
     DEF_TIM(TIM8, CH3N, PH15, 0, 0, 0),
 
+    DEF_TIM(TIM8, CH4N, PH12, 0, 0, 0), // AF10
+
 // Port I
     DEF_TIM(TIM5, CH4, PI0, 0, 0, 0), // AF2 (ADDED)
 
