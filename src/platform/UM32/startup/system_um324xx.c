@@ -188,6 +188,30 @@ static void initialiseRam1MemorySections(void)
     memcpy(&_sdmaram_data, &_sdmaram_idata, (size_t) (&_edmaram_data - &_sdmaram_data));
 }
 
+#if defined(USE_HAL_DRIVER) && (PREFETCH_ENABLE != 0U)
+static void waitForInternalFlashCacheState(const CACHE_TypeDef *cache, uint32_t state)
+{
+    while ((cache->STATUS & CACHE_STATUS_CACHE_STATUS) != state) {
+    }
+}
+
+static void prepareInternalFlashPrefetch(void)
+{
+    // UM3241F/UM3247F manual section 4.3.2.1 configures prefetch while the
+    // caches are disabled. Set the bits before HAL_Init() enables the caches
+    // and repeats the prefetch writes with the same values.
+    __HAL_FLASH_INSTRUCTION_CACHE_DISABLE();
+    __HAL_FLASH_DATA_CACHE_DISABLE();
+    waitForInternalFlashCacheState(ICACHE, CACHE_STATUS_CLOSED_FLAG);
+    waitForInternalFlashCacheState(DCACHE, CACHE_STATUS_CLOSED_FLAG);
+
+    __HAL_FLASH_INSTRUCTION_CACHE_PREFETCH_ENABLE();
+    __HAL_FLASH_DATA_CACHE_PREFETCH_ENABLE();
+    __DSB();
+    __ISB();
+}
+#endif
+
 void SystemInit(void)
 {
     // initialiseMemorySections();
@@ -268,7 +292,20 @@ void SystemInit(void)
 #endif
 
 #ifdef USE_HAL_DRIVER
+#if (PREFETCH_ENABLE != 0U)
+    prepareInternalFlashPrefetch();
+#endif
     HAL_Init();
+#if (PREFETCH_ENABLE != 0U)
+#if (INSTRUCTION_CACHE_ENABLE != 0U)
+    waitForInternalFlashCacheState(ICACHE, CACHE_STATUS_OPEND_FLAG);
+#endif
+#if (DATA_CACHE_ENABLE != 0U)
+    waitForInternalFlashCacheState(DCACHE, CACHE_STATUS_OPEND_FLAG);
+#endif
+    __DSB();
+    __ISB();
+#endif
 #endif
 
     SystemClock_Config();
