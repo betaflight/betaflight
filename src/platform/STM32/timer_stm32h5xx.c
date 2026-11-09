@@ -111,10 +111,16 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     // DEF_TIM(TIM12, CH2, PB15, 0, 0, 0), // AF9 (SDMMC2_D1)
 
 // Port C
-    DEF_TIM(TIM3, CH1, PC6, 0, 0, 0), // AF2
+    DEF_TIM(TIM17, CH1, PC2, 0, 0, 0), // AF1
+    DEF_TIM(TIM2, CH4, PC4, 0, 0, 0),
+    DEF_TIM(TIM1, CH4N, PC5, 0, 0, 0),
+
+    DEF_TIM(TIM4, CH4, PC2, 0, 0, 0), // AF2
+    DEF_TIM(TIM3, CH1, PC6, 0, 0, 0),
     DEF_TIM(TIM3, CH2, PC7, 0, 0, 0),
     DEF_TIM(TIM3, CH3, PC8, 0, 0, 0),
     DEF_TIM(TIM3, CH4, PC9, 0, 0, 0),
+    DEF_TIM(TIM15, CH1, PC12, 0, 0, 0),
 
     DEF_TIM(TIM8, CH1, PC6, 0, 0, 0), // AF3
     DEF_TIM(TIM8, CH2, PC7, 0, 0, 0),
