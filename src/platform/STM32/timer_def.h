@@ -1415,6 +1415,8 @@
 #define DEF_TIM_AF__PC11__TCH_TIM8_CH2N   D(3, 8)
 #define DEF_TIM_AF__PC12__TCH_TIM15_CH1   D(2, 15)
 #define DEF_TIM_AF__PC12__TCH_TIM8_CH3N   D(3, 8)
+#define DEF_TIM_AF__PC14__TCH_TIM12_CH1   D(2, 12)
+#define DEF_TIM_AF__PC15__TCH_TIM12_CH2   D(2, 12)
 
 #if defined(STM32C562xx)
 #define DEF_TIM_AF__PC6__TCH_TIM5_CH1     D(2, 5)
@@ -1464,6 +1466,21 @@
 #define DEF_TIM_AF__PF8__TCH_TIM16_CH1N   D(10, 16)
 #define DEF_TIM_AF__PF9__TCH_TIM17_CH1N   D(1, 17)
 #endif
+
+//PORTG
+#if !defined(STM32C562xx)
+#define DEF_TIM_AF__PG0__TCH_TIM4_CH1     D(2, 4)
+#define DEF_TIM_AF__PG1__TCH_TIM4_CH2     D(2, 4)
+#define DEF_TIM_AF__PG2__TCH_TIM4_CH3     D(2, 4)
+#define DEF_TIM_AF__PG3__TCH_TIM4_CH4     D(2, 4)
+#define DEF_TIM_AF__PG4__TCH_TIM5_CH1     D(2, 5)
+#define DEF_TIM_AF__PG5__TCH_TIM5_CH2     D(2, 5)
+#define DEF_TIM_AF__PG6__TCH_TIM5_CH3     D(2, 5)
+#define DEF_TIM_AF__PG7__TCH_TIM5_CH4     D(2, 5)
+#endif
+
+//PORTH
+#define DEF_TIM_AF__PH2__TCH_TIM17_CH1N   D(1, 17)
 
 #elif defined(STM32N6)
 
@@ -2125,11 +2142,11 @@
 
 #if defined(STM32C562xx)
 // STM32C562 lacks TIM3 and TIM4
-#define FULL_TIMER_CHANNEL_COUNT 95
+#define FULL_TIMER_CHANNEL_COUNT 98
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(12) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
 #define TIMUP_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
 #else
-#define FULL_TIMER_CHANNEL_COUNT 110
+#define FULL_TIMER_CHANNEL_COUNT 121
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(12) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
 #define TIMUP_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
 #endif
