@@ -317,6 +317,18 @@ static void pwmEdgeCallback(timerEdgeHandlerRec_t *cbRec, captureCompare_t captu
 }
 
 
+// Complementary (N) timer channels are output-only and cannot capture input.
+// Check before allocating so a rejected pin does not claim the timer.
+static const timerHardware_t *allocateInputCaptureTimer(ioTag_t ioTag, resourceOwner_e owner, uint8_t resourceIndex)
+{
+    const timerHardware_t *timer = timerGetConfiguredByTag(ioTag);
+    if (!timer || (timer->output & TIMER_OUTPUT_N_CHANNEL)) {
+        return NULL;
+    }
+
+    return timerAllocate(ioTag, owner, resourceIndex);
+}
+
 void pwmRxInit(const pwmConfig_t *pwmConfig)
 {
     inputFilteringMode = pwmConfig->inputFilteringMode;
@@ -325,7 +337,7 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
 
         pwmInputPort_t *port = &pwmInputPorts[channel];
 
-        const timerHardware_t *timer = timerAllocate(pwmConfig->ioTags[channel], OWNER_PWMINPUT, RESOURCE_INDEX(channel));
+        const timerHardware_t *timer = allocateInputCaptureTimer(pwmConfig->ioTags[channel], OWNER_PWMINPUT, RESOURCE_INDEX(channel));
 
         if (!timer) {
             /* TODO: maybe fail here if not enough channels? */
@@ -375,7 +387,7 @@ void ppmRxInit(const ppmConfig_t *ppmConfig)
 
     pwmInputPort_t *port = &pwmInputPorts[FIRST_PWM_PORT];
 
-    const timerHardware_t *timer = timerAllocate(ppmConfig->ioTag, OWNER_PPMINPUT, 0);
+    const timerHardware_t *timer = allocateInputCaptureTimer(ppmConfig->ioTag, OWNER_PPMINPUT, 0);
     if (!timer) {
         /* TODO: fail here? */
         return;
