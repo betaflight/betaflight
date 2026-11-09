@@ -974,7 +974,7 @@ static bool isAutoLandingActive(void)
 
 static FAST_CODE_NOINLINE void disarmOnImpact(float threshold, bool autoLanding)
 {
-    const bool autopilotOwnsThrottle = FLIGHT_MODE(ALT_HOLD_MODE | GPS_RESCUE_MODE);
+    const bool autopilotOwnsThrottle = autoLanding || FLIGHT_MODE(ALT_HOLD_MODE | GPS_RESCUE_MODE);
     // if, being armed, and after takeoff...
     if (wasThrottleRaised()
         // and, either sticks are centred and throttle zeroed,

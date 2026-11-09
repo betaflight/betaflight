@@ -1324,6 +1324,18 @@ TEST(pidControllerTest, testAutoLandingImpactDisarm)
     EXPECT_EQ(0, runImpact(2000.0f));
     simulatedBelowLandingAltitude = true;
 
+    // nor under a nav mode outside alt hold and rescue, with the throttle stick left up
+    DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+    simulatedMixerGetRcThrottle = 0.5f;
+    simulatedMaxRcDeflectionAbs = 0.3f;
+    EXPECT_EQ(1, runImpact(2000.0f));
+    simulatedAutopilotLanding = false;
+    EXPECT_EQ(0, runImpact(2000.0f));
+    simulatedAutopilotLanding = true;
+    simulatedMixerGetRcThrottle = 0.0f;
+    simulatedMaxRcDeflectionAbs = 0.0f;
+    ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+
     // not for a wing
     simulatedFixedWing = true;
     EXPECT_EQ(0, runImpact(2000.0f));
