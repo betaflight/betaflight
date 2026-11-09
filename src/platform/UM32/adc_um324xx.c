@@ -407,9 +407,12 @@ void adcInit(const adcConfig_t *config)
         // Configure DMA for this ADC peripheral
 #ifdef USE_DMA_SPEC
         const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, dev, config->dmaopt[dev]);
+        if (!dmaSpec) {
+            return;
+        }
 
         dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
-        if (!dmaSpec || !dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
+        if (!dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
             return;
         }
 
