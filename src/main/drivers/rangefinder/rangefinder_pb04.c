@@ -93,8 +93,8 @@
 // Frame layout, little-endian throughout:
 //   0  0xFE   header
 //   1  0x0E   payload byte count, fixed
-//   2  flow_x_integral          int32, micro-radians
-//   6  flow_y_integral          int32, micro-radians
+//   2  flow_x_integral          float32, radians
+//   6  flow_y_integral          float32, radians
 //  10  integration_timespan     uint16, microseconds
 //  12  laser distance           uint16, millimetres
 //  14  valid                    uint8, PB04_FLOW_VALID when the flow is usable
@@ -102,15 +102,24 @@
 //  16  XOR of bytes 2..15
 //  17  0x55   tail
 //
-// Datasheet section 5.1.1 describes a shorter frame - a 0x0A payload with the
-// flow as int16 counts - which the module does not send.  Taken from a capture
-// of the module itself instead: 144 consecutive frames at 50Hz, no checksum
-// failure, every flow value an exact multiple of 1928.  That multiple is what
-// identifies the unit, being the 0.001928023 rad the two protocols were
-// cross-calibrated to, so the field counts micro-radians rather than flow
-// counts.  A module on older firmware sending the documented frame would be
-// rejected here; the debug counters below say so, by showing headers arriving
-// while no frame ever completes.
+// Datasheet section 5.1.1 describes a shorter frame - a 0x0A payload carrying
+// the flow as a pair of int16 - which the module does not send.  The 0x0E
+// payload it does send widens both flow fields to float32, keeping the unit the
+// datasheet gives them: section 5.1.1 calls flow_x_integral a "cumulative
+// displacement (in radians)", and section 5.3 has the MAVLink PX4 integrated_x
+// (rad) float carry the same value unchanged.
+//
+// Confirmed against a capture of the module itself: the top byte of every flow
+// word falls in 0x3A..0x3F or 0xBA..0xBF, or the word is zero - the float32
+// exponent range for magnitudes of roughly 0.002 to 1.0 - and the words decode
+// to exact multiples of the 0.001928023 rad the protocols were cross-calibrated
+// to.  Read as int32 those same words come out near +/-1.1e9, which divided by
+// the 20ms window overflows the int16 debug fields and leaves the flow looking
+// like noise bearing no relation to how the craft is moving.
+//
+// A module on older firmware sending the documented frame would be rejected
+// here; the debug counters below say so, by showing headers arriving while no
+// frame ever completes.
 #define PB04_FRAME_HEADER       0xFE
 #define PB04_FRAME_PAYLOAD_LEN  0x0E
 #define PB04_FRAME_TAIL         0x55
@@ -154,8 +163,8 @@ static bool pb04CommandDue = false;
 // the window it covers, so summing the motion alongside the windows it was
 // measured over gives the right rate however many arrive at once - no frame is
 // discarded, and none is scaled by a span it did not cover.
-static int32_t flowSumX = 0;
-static int32_t flowSumY = 0;
+static float flowSumX = 0.0f;           // radians, summed over the frames below
+static float flowSumY = 0.0f;
 static uint32_t flowIntegrationUs = 0;  // summed windows of the frames above
 static unsigned flowFrames = 0;         // frames summed, i.e. usable ones
 static unsigned flowPackets = 0;        // frames seen, usable or not
@@ -167,11 +176,16 @@ static uint16_t pb04ReadU16(const uint8_t *p)
     return (uint16_t)(p[0] | (p[1] << 8));
 }
 
-static int32_t pb04ReadS32(const uint8_t *p)
+#ifdef USE_OPTICALFLOW_PB04
+static float pb04ReadF32(const uint8_t *p)
 {
-    return (int32_t)((uint32_t)p[0] | ((uint32_t)p[1] << 8)
-                     | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24));
+    const uint32_t bits = (uint32_t)p[0] | ((uint32_t)p[1] << 8)
+                          | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
+    float value;
+    memcpy(&value, &bits, sizeof(value));
+    return value;
 }
+#endif
 
 /*
  * Ask the module for its native protocol.
@@ -267,8 +281,8 @@ static void pb04HandleFrame(const uint8_t *payload)
     // what keeps it from biasing the rate: the divisor sums only the windows of
     // the frames actually added, so dropping one costs a sample, not accuracy.
     if (payload[12] == PB04_FLOW_VALID) {
-        flowSumX += pb04ReadS32(&payload[0]);
-        flowSumY += pb04ReadS32(&payload[4]);
+        flowSumX += pb04ReadF32(&payload[0]);
+        flowSumY += pb04ReadF32(&payload[4]);
         flowIntegrationUs += pb04ReadU16(&payload[8]);
         flowFrames++;
     }
@@ -452,8 +466,8 @@ static void pb04OpticalflowInit(opticalflowDev_t *dev)
 {
     UNUSED(dev);
 
-    flowSumX = 0;
-    flowSumY = 0;
+    flowSumX = 0.0f;
+    flowSumY = 0.0f;
     flowIntegrationUs = 0;
     flowFrames = 0;
     flowPackets = 0;
@@ -508,9 +522,9 @@ static void pb04OpticalflowPublish(void)
     // reported for those frames - not the wall clock since the last publish,
     // which would also count any gap between them.
     //
-    // No scale factor appears here because the module leaves none to apply: the
-    // flow is micro-radians and the window microseconds, so dividing one by the
-    // other is already radians per second.
+    // The flow is radians and the window microseconds, so their quotient is
+    // radians per microsecond; the 1e6 below is the whole of the scaling the
+    // module leaves to apply.
     // Elapsed time is still worth knowing, as a staleness guard and to show in
     // the debug how far apart the publishes are falling.
     const float dt_s = (float)cmp32(windowEndUs, opticalflowSensorData.timeStampUs) / 1e6f;
@@ -529,8 +543,8 @@ static void pb04OpticalflowPublish(void)
     DEBUG_SET(DEBUG_PB04, 5, lrintf(dt_s * 1e6f));  //!< Frame Gap [unit:us]
 
     if (dtValid && flowValid) {
-        opticalflowSensorData.flowRate.x = (float)flowSumX / (float)flowIntegrationUs;
-        opticalflowSensorData.flowRate.y = (float)flowSumY / (float)flowIntegrationUs;
+        opticalflowSensorData.flowRate.x = flowSumX * 1e6f / (float)flowIntegrationUs;
+        opticalflowSensorData.flowRate.y = flowSumY * 1e6f / (float)flowIntegrationUs;
         // The frame reports only whether the flow is usable, not how good it
         // is, so a usable frame is published at full quality.
         opticalflowSensorData.quality = 100;
@@ -547,8 +561,8 @@ static void pb04OpticalflowPublish(void)
         opticalflowSensorData.quality = OPTICALFLOW_OUT_OF_RANGE;
     }
 
-    flowSumX = 0;
-    flowSumY = 0;
+    flowSumX = 0.0f;
+    flowSumY = 0.0f;
     flowIntegrationUs = 0;
     flowFrames = 0;
     flowPackets = 0;
