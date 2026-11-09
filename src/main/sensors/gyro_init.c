@@ -88,7 +88,7 @@
 // every other target's buffers stay byte-identical. 128 also puts the tx and rx
 // halves on separate 64-byte boundaries, which matters on cores where DMA_DATA
 // is cache-line aligned.
-#if defined(USE_ACCGYRO_ADIS1657X)
+#if ENABLE_ACCGYRO_ADIS1657X
 #define GYRO_BUF_SIZE 128
 #else
 #define GYRO_BUF_SIZE 32
@@ -584,7 +584,7 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
         FALLTHROUGH;
 #endif
 
-#ifdef USE_ACCGYRO_ADIS1657X
+#if ENABLE_ACCGYRO_ADIS1657X
     case GYRO_ADIS1657X:
         if (adis1657xSpiGyroDetect(dev)) {
             gyroHardware = GYRO_ADIS1657X;

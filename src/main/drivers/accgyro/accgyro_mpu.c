@@ -420,7 +420,7 @@ static gyroSpiDetectFn_t gyroSpiDetectFnTable[] = {
 #ifdef USE_ACCGYRO_ICM40609D
     icm40609SpiDetect,
 #endif
-#ifdef USE_ACCGYRO_ADIS1657X
+#if ENABLE_ACCGYRO_ADIS1657X
     // Deliberately last: this probe's read encoding is a write encoding for
     // other parts above. Running it last means a known part has already
     // claimed the bus.

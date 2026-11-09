@@ -25,7 +25,7 @@
 
 #include "platform.h"
 
-#if defined(USE_ACCGYRO_ADIS1657X)
+#if ENABLE_ACCGYRO_ADIS1657X
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -54,13 +54,8 @@
 
 #define ADIS1657X_RESET_DELAY_MS        350
 #define ADIS1657X_RESET_RETRIES         10
-#define ADIS1657X_PROD_ID_RETRIES       5
+#define ADIS1657X_READ_RETRIES          5
 #define ADIS1657X_WRITE_RETRIES         16
-
-// PROD_ID is read once during detection and needed again by the accelerometer's
-// initFn, which has no bus transaction of its own. Two ADIS1657x variants on one
-// board would share this; that combination is not supported.
-static uint16_t adis1657xProdId;
 
 /*
  * Reads are pipelined: the frame carrying the address clocks out whatever the
@@ -77,6 +72,7 @@ static uint16_t adis1657xReadReg(const extDevice_t *dev, uint8_t reg)
     // this part decodes as a write to 0x7f.
     txBuf[0] = 0;
     spiReadWriteBuf(dev, txBuf, rxBuf, sizeof(rxBuf));
+    delayMicroseconds(ADIS1657X_STALL_US);
 
     return (rxBuf[0] << 8) | rxBuf[1];
 }
@@ -123,11 +119,8 @@ uint8_t adis1657xSpiDetect(const extDevice_t *dev)
      * its register 0x72. Running last means a known part has already claimed the
      * bus.
      */
-    for (int tries = 0; tries < ADIS1657X_PROD_ID_RETRIES; tries++) {
-        const uint16_t prodId = adis1657xReadReg(dev, ADIS1657X_REG_PROD_ID);
-
-        if (adis1657xProdIdValid(prodId)) {
-            adis1657xProdId = prodId;
+    for (int tries = 0; tries < ADIS1657X_READ_RETRIES; tries++) {
+        if (adis1657xProdIdValid(adis1657xReadReg(dev, ADIS1657X_REG_PROD_ID))) {
             return ADIS1657X_SPI;
         }
     }
@@ -158,17 +151,18 @@ static void adis1657xGyroInit(gyroDev_t *gyro)
 
         const uint16_t prodId = adis1657xReadReg(dev, ADIS1657X_REG_PROD_ID);
         if (adis1657xProdIdValid(prodId)) {
-            adis1657xProdId = prodId;
+            gyro->mpuDetectionResult.productId = prodId;
             break;
         }
     }
 
     /* RNG_MDL reports the fitted gyro range, so there is no build-time variant to
-     * get wrong. Only a recognised code is accepted; a misread one would scale
-     * every sample by 4x and no checksum would catch it.
+     * get wrong. A misread code would scale every sample by 4x and no checksum
+     * would catch it, so the read is retried until the code is recognised; if it
+     * never is, the low-range scale is used.
      */
     uint16_t rngMdl = 0;
-    for (int tries = 0; tries < ADIS1657X_PROD_ID_RETRIES; tries++) {
+    for (int tries = 0; tries < ADIS1657X_READ_RETRIES; tries++) {
         rngMdl = adis1657xReadReg(dev, ADIS1657X_REG_RNG_MDL) & ADIS1657X_RNG_MDL_RANGE_MASK;
         if (rngMdl == ADIS1657X_RNG_MDL_LOW_RANGE || rngMdl == ADIS1657X_RNG_MDL_HIGH_RANGE) {
             break;
@@ -203,7 +197,7 @@ static void adis1657xGyroInit(gyroDev_t *gyro)
 
 static void adis1657xAccInit(accDev_t *acc)
 {
-    switch (adis1657xProdId) {
+    switch (acc->mpuDetectionResult.productId) {
     case ADIS1657X_PROD_ID_16576:
         acc->acc_1G = ADIS1657X_ACC_1G_16576;
         break;
@@ -386,4 +380,4 @@ bool adis1657xSpiAccDetect(accDev_t *acc)
     return true;
 }
 
-#endif // USE_ACCGYRO_ADIS1657X
+#endif // ENABLE_ACCGYRO_ADIS1657X

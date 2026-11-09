@@ -354,7 +354,7 @@ retry:
         FALLTHROUGH;
 #endif
 
-#ifdef USE_ACCGYRO_ADIS1657X
+#if ENABLE_ACCGYRO_ADIS1657X
     case ACC_ADIS1657X:
         if (adis1657xSpiAccDetect(dev)) {
             accHardware = ACC_ADIS1657X;

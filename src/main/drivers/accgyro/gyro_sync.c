@@ -88,7 +88,7 @@ uint16_t gyroSetSampleRate(gyroDev_t *gyro)
             accSampleRateHz = 833;
             break;
 #endif
-#ifdef USE_ACCGYRO_ADIS1657X
+#if ENABLE_ACCGYRO_ADIS1657X
         case ADIS1657X_SPI:
             // Base ODR is 2000 Hz and the driver leaves DEC_RATE at 0. The accel
             // words arrive in the same burst at the same rate; 1000 is the rate

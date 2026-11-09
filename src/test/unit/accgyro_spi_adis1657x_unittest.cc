@@ -24,6 +24,7 @@ extern "C" {
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/accgyro/accgyro_spi_adis1657x.h"
+#include "drivers/accgyro/gyro_sync.h"
 #include "drivers/bus.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -48,12 +49,16 @@ struct FakeAdis {
     uint8_t pendingLowByte; // low half of a write waiting for its high half
     bool pendingLowValid;
     uint8_t pendingLowReg;
+    int rngMdlMisreads;     // RNG_MDL reads still to answer 0x0000, as a bad read would
+    bool useDma;            // what spiUseDMA() reports
 
     void reset()
     {
         memset(reg, 0, sizeof(reg));
         reg[ADIS1657X_REG_PROD_ID] = ADIS1657X_PROD_ID_16575;
         reg[ADIS1657X_REG_RNG_MDL] = ADIS1657X_RNG_MDL_LOW_RANGE;
+        rngMdlMisreads = 0;
+        useDma = false;
         writes.clear();
         memset(burstFrame, 0, sizeof(burstFrame));
         burstCount = 0;
@@ -298,25 +303,87 @@ TEST_F(Adis1657xTest, InitPublishesTemperatureConversion)
     EXPECT_FLOAT_EQ(ADIS1657X_TEMP_ZERO, gyro.tempZero);
 }
 
+TEST_F(Adis1657xTest, InitRetriesARangeModelMisread)
+{
+    fake.reg[ADIS1657X_REG_RNG_MDL] = ADIS1657X_RNG_MDL_HIGH_RANGE;
+    // Two bad reads, then the real answer. Taking the first one would scale every
+    // sample by 4x with nothing downstream to notice.
+    fake.rngMdlMisreads = 2;
+    initGyro();
+    EXPECT_FLOAT_EQ(ADIS1657X_GYRO_SCALE_HIGH, gyro.scale);
+    EXPECT_EQ(0, fake.rngMdlMisreads);
+}
+
+// Mirrors accInit(), which copies the active gyro's detection result before the
+// accelerometer's initFn runs.
 TEST_F(Adis1657xTest, AccSensitivityFollowsTheDetectedVariant)
 {
-    extDevice_t dev = {};
+    const struct {
+        uint16_t prodId;
+        int expected1G;
+    } variants[] = {
+        { ADIS1657X_PROD_ID_16577, ADIS1657X_ACC_1G_16577 },
+        { ADIS1657X_PROD_ID_16576, ADIS1657X_ACC_1G_16576 },
+        { ADIS1657X_PROD_ID_16575, ADIS1657X_ACC_1G_16575 },
+    };
 
-    fake.reg[ADIS1657X_REG_PROD_ID] = ADIS1657X_PROD_ID_16577;
-    adis1657xSpiDetect(&dev);
-    ASSERT_TRUE(adis1657xSpiAccDetect(&acc));
-    acc.initFn(&acc);
-    EXPECT_EQ(ADIS1657X_ACC_1G_16577, acc.acc_1G);
+    for (const auto &v : variants) {
+        SetUp();
+        fake.reg[ADIS1657X_REG_PROD_ID] = v.prodId;
+        initGyro();
+        acc.mpuDetectionResult = gyro.mpuDetectionResult;
+        ASSERT_TRUE(adis1657xSpiAccDetect(&acc));
+        acc.initFn(&acc);
+        EXPECT_EQ(v.expected1G, acc.acc_1G);
+    }
+}
 
-    fake.reg[ADIS1657X_REG_PROD_ID] = ADIS1657X_PROD_ID_16576;
-    adis1657xSpiDetect(&dev);
-    acc.initFn(&acc);
-    EXPECT_EQ(ADIS1657X_ACC_1G_16576, acc.acc_1G);
+// The product ID lives with each device, so a second part initialised later must
+// not change what the first one's accelerometer reports.
+TEST_F(Adis1657xTest, MixedVariantsKeepTheirOwnAccSensitivity)
+{
+    gyroDev_t gyroB;
+    accDev_t accB;
+    uint8_t txBufB[ADIS1657X_BURST_FRAME_LEN] = {};
+    uint8_t rxBufB[ADIS1657X_BURST_FRAME_LEN] = {};
+
+    memset(&gyroB, 0, sizeof(gyroB));
+    memset(&accB, 0, sizeof(accB));
+    gyroB.dev.txBuf = txBufB;
+    gyroB.dev.rxBuf = rxBufB;
+    gyroB.mpuDetectionResult.sensor = ADIS1657X_SPI;
+    accB.mpuDetectionResult.sensor = ADIS1657X_SPI;
+    accB.gyro = &gyroB;
 
     fake.reg[ADIS1657X_REG_PROD_ID] = ADIS1657X_PROD_ID_16575;
-    adis1657xSpiDetect(&dev);
+    initGyro();
+
+    fake.reg[ADIS1657X_REG_PROD_ID] = ADIS1657X_PROD_ID_16577;
+    ASSERT_TRUE(adis1657xSpiGyroDetect(&gyroB));
+    gyroB.initFn(&gyroB);
+
+    acc.mpuDetectionResult = gyro.mpuDetectionResult;
+    accB.mpuDetectionResult = gyroB.mpuDetectionResult;
+    ASSERT_TRUE(adis1657xSpiAccDetect(&acc));
+    ASSERT_TRUE(adis1657xSpiAccDetect(&accB));
     acc.initFn(&acc);
+    accB.initFn(&accB);
+
     EXPECT_EQ(ADIS1657X_ACC_1G_16575, acc.acc_1G);
+    EXPECT_EQ(ADIS1657X_ACC_1G_16577, accB.acc_1G);
+}
+
+// --- sample rate -------------------------------------------------------------
+
+TEST_F(Adis1657xTest, DetectedPartRunsAtTwoKilohertz)
+{
+    extDevice_t dev = {};
+    gyro.mpuDetectionResult.sensor = (mpuSensor_e)adis1657xSpiDetect(&dev);
+    ASSERT_EQ(ADIS1657X_SPI, gyro.mpuDetectionResult.sensor);
+
+    EXPECT_EQ(2000, gyroSetSampleRate(&gyro));
+    EXPECT_EQ(GYRO_RATE_2000_Hz, gyro.gyroRateKHz);
+    EXPECT_EQ(1000, gyro.accSampleRateHz);
 }
 
 // --- read path ---------------------------------------------------------------
@@ -336,6 +403,26 @@ TEST_F(Adis1657xTest, FirstReadPromotesToInterruptModeWithEnoughEdges)
     gyro.detectedEXTI = 5000;
     EXPECT_TRUE(gyro.readFn(&gyro));
     EXPECT_EQ(GYRO_EXTI_INT, gyro.gyroModeSPI);
+}
+
+TEST_F(Adis1657xTest, FirstReadSetsUpTheBurstSegmentWhenDmaIsAvailable)
+{
+    fake.useDma = true;
+    initGyro();
+    gyro.detectedEXTI = 5000;
+    EXPECT_TRUE(gyro.readFn(&gyro));
+
+    EXPECT_EQ(GYRO_EXTI_INT_DMA, gyro.gyroModeSPI);
+    EXPECT_EQ((int)ADIS1657X_BURST_FRAME_LEN, (int)gyro.segments[0].len);
+    EXPECT_EQ(ADIS1657X_BURST_CMD, txBuf[0]);
+    EXPECT_EQ(txBuf, gyro.segments[0].u.buffers.txData);
+    // No &rxBuf[1] offset: the payload is already even-aligned.
+    EXPECT_EQ(rxBuf, gyro.segments[0].u.buffers.rxData);
+    EXPECT_TRUE(gyro.segments[0].negateCS);
+    EXPECT_TRUE(gyro.segments[0].callback == mpuIntCallback);
+    EXPECT_EQ((uintptr_t)&gyro, gyro.dev.callbackArg);
+    // The EXTI handler starts the transfer, not the read.
+    EXPECT_EQ(0, fake.burstCount);
 }
 
 TEST_F(Adis1657xTest, PolledReadUnpacksTheHighWordOfEachGyroAxis)
@@ -374,6 +461,39 @@ TEST_F(Adis1657xTest, DmaReadTakesTheFrameTheHandlerAlreadyFetched)
     EXPECT_EQ(-9, gyro.gyroADCRaw[Z]);
     // No transaction of its own: the EXTI handler started it.
     EXPECT_EQ(0, fake.burstCount);
+}
+
+// readFn does not wait for the transfer the EXTI handler started, so it can run
+// with the frame part written. Bytes land in order, so there are two ways to be
+// caught short: before the sample counter has arrived, where the counter still
+// matches the previous frame, and after it but before the checksum word, where
+// only the checksum can tell.
+TEST_F(Adis1657xTest, DmaReadDoesNotConsumeAFrameStillInFlight)
+{
+    initGyro();
+    gyro.gyroModeSPI = GYRO_EXTI_INT_DMA;
+
+    fakeSetBurst(100, 100, 100, 1, 2, 3, 0, nextCntr());
+    deliverBurst();
+    ASSERT_TRUE(gyro.readFn(&gyro));
+    EXPECT_EQ(100, gyro.gyroADCRaw[X]);
+
+    fakeSetBurst(900, 900, 900, 4, 5, 6, 0, nextCntr());
+
+    // Half way: new head, previous tail, so the counter is still the old one.
+    memcpy(rxBuf, fake.burstFrame, sizeof(fake.burstFrame) / 2);
+    EXPECT_FALSE(gyro.readFn(&gyro));
+    EXPECT_EQ(100, gyro.gyroADCRaw[X]);
+
+    // Everything but the checksum word: fresh counter, stale checksum.
+    memcpy(rxBuf, fake.burstFrame, sizeof(fake.burstFrame) - sizeof(uint16_t));
+    EXPECT_FALSE(gyro.readFn(&gyro));
+    EXPECT_EQ(100, gyro.gyroADCRaw[X]);
+
+    // Transfer complete.
+    deliverBurst();
+    EXPECT_TRUE(gyro.readFn(&gyro));
+    EXPECT_EQ(900, gyro.gyroADCRaw[X]);
 }
 
 TEST_F(Adis1657xTest, ReadRejectsACorruptChecksum)
@@ -522,13 +642,13 @@ uint16_t spiCalculateDivider(uint32_t)
 
 bool spiUseDMA(const extDevice_t *)
 {
-    return false;
+    return fake.useDma;
 }
 
 /*
  * Every register frame is two bytes. Bit 7 of the address byte set means write,
  * and a write moves one half of the register at a time. A read frame only latches
- * the answer; the following frame, which carries no address, clocks it out.
+ * the answer; the following frame, a read of 0x00, clocks it out.
  */
 void spiReadWriteBuf(const extDevice_t *, uint8_t *txData, uint8_t *rxData, int len)
 {
@@ -569,6 +689,10 @@ void spiReadWriteBuf(const extDevice_t *, uint8_t *txData, uint8_t *rxData, int 
     }
 
     fake.pending = fake.reg[addr & 0x7f];
+    if ((addr & 0x7f) == ADIS1657X_REG_RNG_MDL && fake.rngMdlMisreads > 0) {
+        fake.pending = 0x0000;
+        fake.rngMdlMisreads--;
+    }
 }
 
 void spiSequence(const extDevice_t *dev, busSegment_t *segments)
