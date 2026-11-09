@@ -29,7 +29,14 @@
 #if PLATFORM_TRAIT_ADC_DEVICE
 typedef enum {
     ADCINVALID = -1,
+#if defined(USE_ADC_DEVICE_0)
+    ADCDEV_0   = 0,
+#if defined(ADC1)
+    ADCDEV_1,
+#endif
+#else
     ADCDEV_1   = 0,
+#endif
 #if defined(ADC2)
     ADCDEV_2,
 #endif

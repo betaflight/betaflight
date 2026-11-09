@@ -200,7 +200,8 @@ HSE_VALUE       ?= 8000000
 CI_EXCLUDED_TARGETS := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/.exclude)))))
 CI_COMMON_TARGETS   := STM32F4DISCOVERY CRAZYBEEF4SX1280 CRAZYBEEF4FR MATEKF405TE AIRBOTG4AIO TBS_LUCID_FC IFLIGHT_BLITZ_F722 NUCLEOF446 SPRACINGH7EXTREME SPRACINGH7RF SITL_X_PLANE
 CI_TARGETS          := $(filter-out $(CI_EXCLUDED_TARGETS), $(BASE_TARGETS) $(filter $(CI_COMMON_TARGETS), $(BASE_CONFIGS)))
-PREVIEW_TARGETS     := MATEKF411 AIKONF4V2 AIRBOTG4AIO ZEEZF7V3 FOXEERF745V4_AIO KAKUTEH7 TBS_LUCID_FC SITL SPRACINGH7EXTREME SPRACINGH7RF
+PREVIEW_TARGETS     := MATEKF411 AIKONF4V2 AIRBOTG4AIO ZEEZF7V3 FOXEERF745V4_AIO KAKUTEH7 TBS_LUCID_FC SITL SPRACINGH7EXTREME SPRACINGH7RF \
+                       APM32F405 GD32H757VI RASPBERRY_PI_UAVFC ACROBOC562 OPENN657V1 X32M7B STM32H562 ESP32S3
 
 TARGET_PLATFORM     := $(notdir $(patsubst %/,%,$(subst target/$(TARGET)/,, $(dir $(wildcard $(PLATFORM_DIR)/*/target/$(TARGET)/target.mk)))))
 TARGET_PLATFORM_DIR := $(PLATFORM_DIR)/$(TARGET_PLATFORM)
@@ -319,7 +320,7 @@ endif
 include $(MAKE_SCRIPT_DIR)/openocd.mk
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(ROOT)/lib/main/MAVLink
+                   $(ROOT)/lib/modules/mavlink
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_DIR)
@@ -376,6 +377,17 @@ CC_NO_OPTIMISATION      := $(filter-out $(CFLAGS_DISABLED), $(CC_NO_OPTIMISATION
 
 
 # Extract version from the version header
+# The patch level comes from a YYYY.MM.N tag on HEAD matching the header's year and month, otherwise the header default applies
+FC_VERSION_YEAR  := $(call pp_def_value,src/main/build/version.h,FC_VERSION_YEAR)
+FC_VERSION_MONTH := $(call pp_def_value,src/main/build/version.h,FC_VERSION_MONTH)
+ifneq ($(wildcard .git),)
+FC_VERSION_PATCH_LEVEL := $(shell git tag --points-at HEAD 2>/dev/null | sed -n 's/^$(FC_VERSION_YEAR)\.$(FC_VERSION_MONTH)\.\([0-9]\{1,3\}\)$$/\1/p' | awk '$$1 <= 255 { print $$1 + 0 }' | sort -n | tail -n 1)
+endif
+ifneq ($(FC_VERSION_PATCH_LEVEL),)
+VERSION_FLAGS    := -DFC_VERSION_PATCH_LEVEL=$(FC_VERSION_PATCH_LEVEL)
+CPPFLAGS         += $(VERSION_FLAGS)
+endif
+
 # Expand FC_VERSION_STRING via the preprocessor; compute before finalizing CFLAGS
 FC_VER           := $(call pp_def_value_str,src/main/build/version.h,FC_VERSION_STRING)
 
@@ -407,6 +419,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               -D'__MCU_NAME__="$(TARGET_MCU)"' \
               -D'__REVISION__="$(REVISION)"' \
               -D'__FC_VERSION__="$(FC_VER)"' \
+              $(VERSION_FLAGS) \
               $(CONFIG_REVISION_DEFINE) \
               -pipe \
               -MMD -MP \
@@ -497,9 +510,9 @@ TARGET_MAP      := $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME).map
 TARGET_EXST_HASH_SECTION_FILE := $(TARGET_OBJ_DIR)/exst_hash_section.bin
 
 ifeq ($(DEBUG_MIXED),yes)
-TARGET_EF_HASH      := $(shell echo -n -- "$(EXTRA_FLAGS)" "$(OPTIONS)" "$(DEVICE_FLAGS)" "$(TARGET_FLAGS)"  | openssl dgst -md5 -r | awk '{print $$1;}')
+TARGET_EF_HASH      := $(shell echo -n -- "$(EXTRA_FLAGS)" "$(OPTIONS)" "$(VERSION_FLAGS)" "$(DEVICE_FLAGS)" "$(TARGET_FLAGS)"  | openssl dgst -md5 -r | awk '{print $$1;}')
 else
-TARGET_EF_HASH      := $(shell echo -n -- "$(EXTRA_FLAGS)" "$(OPTIONS)" "$(DEBUG_FLAGS)" "$(DEVICE_FLAGS)" "$(TARGET_FLAGS)"  | openssl dgst -md5 -r | awk '{print $$1;}')
+TARGET_EF_HASH      := $(shell echo -n -- "$(EXTRA_FLAGS)" "$(OPTIONS)" "$(VERSION_FLAGS)" "$(DEBUG_FLAGS)" "$(DEVICE_FLAGS)" "$(TARGET_FLAGS)"  | openssl dgst -md5 -r | awk '{print $$1;}')
 endif
 
 TARGET_EF_HASH_FILE := $(TARGET_OBJ_DIR)/.efhash_$(TARGET_EF_HASH)
@@ -700,7 +713,17 @@ $(CONFIGS_CLEAN):
 clean_all: $(TARGETS_CLEAN) test_clean
 
 ## preview           : build one target for each platform and execute make test
-preview: $(PREVIEW_TARGETS) test
+# Hydrate the configs and platform SDKs first, one at a time: parallel
+# `git submodule update --init` runs contend for the .git/config lock.
+# The build then runs in a new make, so BASE_CONFIGS (resolved at parse
+# time) includes the configs hydrated here.
+.PHONY: preview preview_build
+preview:
+	$(V0) [ -d "$(CONFIG_DIR)/configs" ] || $(MAKE) -j1 configs
+	$(V0) $(MAKE) -j1 $(AUTOHYDRATE_STAMPS) platform-sdk-hydrate
+	$(V0) $(MAKE) preview_build
+
+preview_build: $(PREVIEW_TARGETS) test
 
 ## all_configs       : Build all configs
 all_configs: $(BASE_CONFIGS)
@@ -963,7 +986,7 @@ targets-by-mcu:
 ## junittest         : run the Betaflight test suite, producing Junit XML result files.
 ## test-representative: run a representative subset of the Betaflight test suite (i.e. run all tests, but run each expanded test only for one target)
 ## test-all: run the Betaflight test suite including all per-target expanded tests
-test junittest test-all test-representative:
+test junittest test-all test-representative: $(AUTOHYDRATE_STAMPS)
 	$(V0) cd src/test && $(MAKE) $@
 
 ## test_help         : print the help message for the test suite (including a list of the available tests)
@@ -975,7 +998,7 @@ test_versions:
 	$(V0) cd src/test && $(MAKE) versions
 
 ## test_%            : run test 'test_%' from the test suite
-test_%:
+test_%: $(AUTOHYDRATE_STAMPS)
 	$(V0) cd src/test && $(MAKE) $@
 
 $(TARGET_EF_HASH_FILE):

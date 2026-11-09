@@ -1,10 +1,12 @@
 # Issues and Support.
 
-Please remember the issue tracker on github is _not_ for user support.  Please also do not email developers directly for support.  Instead please use IRC or the forums first, then if the problem is confirmed create an issue that details how to repeat the problem so it can be investigated.
+The issue tracker on GitHub is for bugs in Betaflight, _not_ for user support. We fix Betaflight. Manufacturers support their hardware. Pilots own their builds.
 
-Issues created without steps to repeat are likely to be closed.  E-mail requests for support will go un-answered; All support needs to be public so that other people can read the problems and solutions.
+- If you think you have found a bug in Betaflight, please create an issue that details how to repeat the problem so it can be investigated. Issues without steps to repeat are likely to be closed.
+- If the problem is with your hardware (a fault, its config, its documentation or warranty), please contact the manufacturer or the shop you bought it from.
+- For help with wiring, setup, tuning and peripherals, please ask the community on [Discord](https://discord.betaflight.com/invite). If you are not sure whether something is a bug, ask there first.
 
-Remember that issues that are due to mis-configuration, wiring or failure to read documentation just takes time away from the developers and can often be solved without developer interaction by other users.
+Please keep support requests public rather than emailing developers directly, so that other pilots can find the problems and solutions too. See [hardware support](https://betaflight.com/support) on betaflight.com for more on who looks after what.
 
 Please search for existing issues *before* creating new ones.
 

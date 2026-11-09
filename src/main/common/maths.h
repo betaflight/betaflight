@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <math.h>
 #include <stdint.h>
 
 #ifndef sq
@@ -189,4 +190,14 @@ static inline float constrainf(float amt, float low, float high)
         return high;
     else
         return amt;
+}
+
+// An angle in degrees brought into [-180, 180).
+static inline float wrapDeg180f(float deg)
+{
+    deg = fmodf(deg + 540.0f, 360.0f);
+    if (deg < 0.0f) {
+        deg += 360.0f;
+    }
+    return deg - 180.0f;
 }

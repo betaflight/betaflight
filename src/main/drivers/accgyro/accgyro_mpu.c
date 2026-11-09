@@ -81,6 +81,10 @@
 // Need to see at least this many interrupts during initialisation to confirm EXTI connectivity
 #define GYRO_EXTI_DETECT_THRESHOLD 1000
 
+// A DMA read takes a small fraction of a sample period, so one still in progress this many data ready
+// interrupts later has lost its completion and will never finish
+#define GYRO_DMA_STALL_LIMIT 4
+
 #ifdef USE_I2C_GYRO
 static void mpu6050FindRevision(gyroDev_t *gyro)
 {
@@ -137,6 +141,19 @@ busStatus_e mpuIntCallback(uintptr_t arg)
     return BUS_READY;
 }
 
+void mpuGyroStartDmaRead(gyroDev_t *gyro)
+{
+    if (gyro->dev.bus->curSegment == gyro->segments) {
+        if (++gyro->dmaStallCount < GYRO_DMA_STALL_LIMIT) {
+            return;
+        }
+        spiAbortTransfer(&gyro->dev);
+    }
+
+    gyro->dmaStallCount = 0;
+    spiSequence(&gyro->dev, gyro->segments);
+}
+
 static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
@@ -152,7 +169,7 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
     gyro->gyroLastEXTI = nowCycles;
 
     if (gyro->gyroModeSPI == GYRO_EXTI_INT_DMA) {
-        spiSequence(&gyro->dev, gyro->segments);
+        mpuGyroStartDmaRead(gyro);
     }
 
     gyro->detectedEXTI++;
@@ -240,7 +257,7 @@ bool mpuAccReadSPI(accDev_t *acc)
         spiWait(&acc->gyro->dev);
 
         // Non-DMA read starts at accDataReg, so data is always at index 1
-        int16_t *accData = (int16_t *)acc->gyro->dev.rxBuf;
+        int16_t *accData = (int16_t *)(void *)acc->gyro->dev.rxBuf;
         acc->ADCRaw[X] = __builtin_bswap16(accData[1]);
         acc->ADCRaw[Y] = __builtin_bswap16(accData[2]);
         acc->ADCRaw[Z] = __builtin_bswap16(accData[3]);
@@ -255,7 +272,7 @@ bool mpuAccReadSPI(accDev_t *acc)
         // This data was read from the gyro, which is the same SPI device as the acc
         // Acc data may not start at index 1 if DMA read starts before acc registers (e.g. at temp register)
         const uint8_t accDataIndex = ((acc->gyro->accDataReg - acc->gyro->dmaReadRegStart) >> 1) + 1;
-        int16_t *accData = (int16_t *)acc->gyro->dev.rxBuf;
+        int16_t *accData = (int16_t *)(void *)acc->gyro->dev.rxBuf;
         acc->ADCRaw[X] = __builtin_bswap16(accData[accDataIndex]);
         acc->ADCRaw[Y] = __builtin_bswap16(accData[accDataIndex + 1]);
         acc->ADCRaw[Z] = __builtin_bswap16(accData[accDataIndex + 2]);
@@ -272,7 +289,7 @@ bool mpuAccReadSPI(accDev_t *acc)
 
 bool mpuGyroReadSPI(gyroDev_t *gyro)
 {
-    int16_t *gyroData = (int16_t *)gyro->dev.rxBuf;
+    int16_t *gyroData = (int16_t *)(void *)gyro->dev.rxBuf;
     switch (gyro->gyroModeSPI) {
     case GYRO_EXTI_INIT:
     {

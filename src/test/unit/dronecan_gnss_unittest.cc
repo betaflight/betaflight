@@ -140,7 +140,11 @@ static uint16_t buildAuxiliary(uint8_t *buf)
     memset(buf, 0, 32);
     encodeF16(buf, 32, 0.75f); // hdop
     encodeF16(buf, 48, 1.5f);  // vdop
-    return 16;
+    const uint8_t satsVisible = 22;
+    const uint8_t satsUsed = 14;
+    canardEncodeScalar(buf, 112, 7, &satsVisible);
+    canardEncodeScalar(buf, 119, 6, &satsUsed);
+    return 16; // 125 bits
 }
 
 static void feedDefaultFix2(void);
@@ -273,6 +277,7 @@ TEST(DronecanGnssTest, AuxiliaryDop)
     EXPECT_EQ(75, sol.dop.hdop);  // 0.75 * 100
     EXPECT_EQ(150, sol.dop.vdop); // 1.5  * 100
     EXPECT_EQ(150, sol.dop.pdop); // still from Fix2
+    EXPECT_EQ(22, sol.numSatInView);
 }
 
 TEST(DronecanGnssTest, Fix2PreservesAuxiliaryDop)
@@ -284,7 +289,7 @@ TEST(DronecanGnssTest, Fix2PreservesAuxiliaryDop)
     uint8_t aux[32];
     feed(handleAuxiliary, aux, buildAuxiliary(aux));
 
-    // A fresh Fix2 must not wipe the hdop/vdop published by Auxiliary.
+    // A fresh Fix2 must not wipe the figures published by Auxiliary.
     feedDefaultFix2();
 
     gpsSolutionData_t sol;
@@ -292,6 +297,7 @@ TEST(DronecanGnssTest, Fix2PreservesAuxiliaryDop)
 
     EXPECT_EQ(75, sol.dop.hdop);
     EXPECT_EQ(150, sol.dop.vdop);
+    EXPECT_EQ(22, sol.numSatInView);
 }
 
 // Anything below a 3D fix is unusable for navigation, so 2D is deliberately
@@ -450,6 +456,7 @@ TEST(DronecanGnssTest, AuxiliaryDopExpires)
 
     EXPECT_EQ(0, sol.dop.hdop);
     EXPECT_EQ(0, sol.dop.vdop);
+    EXPECT_EQ(0, sol.numSatInView);
     EXPECT_EQ(150, sol.dop.pdop);
 }
 

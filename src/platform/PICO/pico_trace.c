@@ -32,10 +32,15 @@
 // Wrap main to insert the initialisation code.
 extern int main(int argc, char * argv[]);
 extern int REAL_FUNC(main)(int argc, char * argv[]);
+
+#ifndef PICO_TRACE_BAUD_RATE
+#define PICO_TRACE_BAUD_RATE 115200
+#endif
+
 int WRAPPER_FUNC(main)(int argc, char * argv[])
 {
     //stdio_init_all();
-    stdio_uart_init_full(UART_INSTANCE(PICO_TRACE_UART_INSTANCE), 115200, PICO_TRACE_TX_GPIO, -1);
+    stdio_uart_init_full(UART_INSTANCE(PICO_TRACE_UART_INSTANCE), PICO_TRACE_BAUD_RATE, PICO_TRACE_TX_GPIO, -1);
     tprintf("\n=== Betaflight main ===");
     int mr = REAL_FUNC(main)(argc, argv);
     tprintf("\n=== Betaflight main end ===");
@@ -81,7 +86,6 @@ int WRAPPER_FUNC(main)(int argc, char * argv[])
     TRACEvoidvoid(initEEPROM)
     TRACEvoidvoid(isEEPROMVersionValid)
     TRACEvoidvoid(writeUnmodifiedConfigToEEPROM)
-    TRACEboolvoid(resetEEPROM)
     TRACEvoidvoid(resetConfig)
     TRACEvoidvoid(pgResetAll)
     TRACEvoidbool(serialInit)

@@ -184,6 +184,13 @@ void positionNavMoveTargetEf(const vector3_t *targetPosEfM)
     g_moveTargetCalls++;
 }
 
+void positionNavLowerTargetAltitude(float upM)
+{
+    if (g_lastTarget.valid && upM < g_lastTarget.targetEfM.z) {
+        g_lastTarget.targetEfM.z = upM;
+    }
+}
+
 void positionNavClearTarget(void)
 {
     g_clearTargetCalls++;
@@ -208,19 +215,20 @@ void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
     g_lastDecelLimitMps2 = maxDecelMps2;
 }
 
-float g_lastApproachSlowdownM;
+float g_lastApproachDecelMps2;
 float g_lastApproachStillRadiusM;
 
-void positionNavSetApproachSlowdown(float slowdownM, float stillRadiusM)
+void positionNavSetApproachBrake(float decelMps2, float stillRadiusM)
 {
-    g_lastApproachSlowdownM = slowdownM;
+    g_lastApproachDecelMps2 = decelMps2;
     g_lastApproachStillRadiusM = stillRadiusM;
 }
 
-float positionNavApproachTaperMps(float cruiseSpeedMps, float slowdownM, float stillRadiusM, float distM)
+float positionNavApproachSpeedMps(float cruiseSpeedMps, float decelMps2, float stillRadiusM, float distM)
 {
-    const float spanM = fmaxf(slowdownM - stillRadiusM, 0.01f);
-    return cruiseSpeedMps * fminf(fmaxf((distM - stillRadiusM) / spanM, 0.0f), 1.0f);
+    const float gapM = fmaxf(distM - stillRadiusM, 0.0f);
+    const float speedMps = (gapM <= decelMps2) ? gapM : sqrtf(decelMps2 * (2.0f * gapM - decelMps2));
+    return fminf(cruiseSpeedMps, speedMps);
 }
 
 void positionNavSetVelocityFeedforward(const vector2_t *velEfMps)
@@ -361,7 +369,7 @@ protected:
     void SetUp() override {
         memset(&g_lastTarget, 0, sizeof(g_lastTarget));
         g_setTargetCalls = 0;
-        g_lastApproachSlowdownM = 0.0f;
+        g_lastApproachDecelMps2 = 0.0f;
         g_lastApproachStillRadiusM = 0.0f;
         memset(&g_lastFfEfMps, 0, sizeof(g_lastFfEfMps));
         g_ffValid = false;
@@ -656,6 +664,54 @@ TEST_F(FlightPlanNavTest, ShortHoldAcrossMicrosWrapExpiresNormally)
 
     g_stubMicros += 500'000;
     flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+}
+
+TEST_F(FlightPlanNavTest, TimedFlybyHoldsBeforeAdvancing)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYBY, 0, 100 /* 10 s */);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    ASSERT_NE(g_lastTarget.callback, nullptr); // duration disables pass-through
+    triggerReached();
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_HOLDING);
+
+    g_stubMicros += 9'999'999;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_HOLDING);
+
+    g_stubMicros += 1;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+}
+
+TEST_F(FlightPlanNavTest, TimedFlyoverHoldsBeforeAdvancing)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER, 0, 50 /* 5 s */);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    ASSERT_NE(g_lastTarget.callback, nullptr);
+    triggerReached();
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_HOLDING);
+
+    g_stubMicros += 5'000'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+}
+
+TEST_F(FlightPlanNavTest, ZeroDurationFlybyStillPassesThrough)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYBY, 0, 0);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    flightPlanNavEngage();
+    EXPECT_EQ(g_lastTarget.callback, nullptr);
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
 }
 
@@ -1326,7 +1382,7 @@ TEST_F(FlightPlanNavTest, LandWaypointArrivalDescendsAtTheWaypoint)
     EXPECT_NEAR(g_lastTarget.targetEfM.y, 20.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 200.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, 0.5f, 0.01f);
-    EXPECT_NEAR(g_lastApproachSlowdownM, 0.0f, 0.001f);       // no rescue taper on a mission landing
+    EXPECT_NEAR(g_lastApproachDecelMps2, 0.0f, 0.001f);       // no rescue approach on a mission landing
     EXPECT_NEAR(g_lastDecelLimitMps2, 0.3f, 0.001f);
     // Ramping out of what the LAND leg was commanding as it entered its radius, as a point leg does.
     EXPECT_NEAR(g_lastAccelLimitMps2, 2.5f, 0.001f);
@@ -1739,6 +1795,70 @@ TEST_F(FlightPlanNavSafetyTest, GeofenceRthAboveReturnAltReturnsAtCurrentAltitud
     // which in the estimator's feedback frame is its reading at engage (the
     // stub reads 0 while GPS says 150 m AMSL — a mid-flight engagement).
     EXPECT_NEAR(g_lastTarget.targetEfM.z, 0.0f, 0.1f);
+}
+
+// The landing target must stay a fixed depth below the craft and ratchet down as it descends. It
+// must also never walk back up, or a bounce would raise it.
+TEST_F(FlightPlanNavSafetyTest, LandingTargetRatchetsDownAndStaysBounded)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    float lowestTargetM = g_lastTarget.targetEfM.z;
+    for (int i = 0; i < 40; i++) {
+        g_stubEstimate.velocity.v[ENU_U] = -40.0f;
+        g_stubEstimate.position.v[ENU_U] -= 4.0f;      // 40cm/s over 100ms
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+
+        const float altM = g_stubEstimate.position.v[ENU_U] * 0.01f;
+        const float targetM = g_lastTarget.targetEfM.z;
+        EXPECT_LT(targetM, altM) << "target must stay below the craft";
+        EXPECT_NEAR(targetM, altM - 200.0f, 0.01f) << "target must follow the craft down";
+        EXPECT_LE(targetM, lowestTargetM + 0.01f) << "target must never ratchet back up";
+        lowestTargetM = fminf(lowestTargetM, targetM);
+    }
+
+    // A bounce upward must not drag the target up with the craft.
+    const float beforeBounce = g_lastTarget.targetEfM.z;
+    g_stubEstimate.velocity.v[ENU_U] = 90.0f;
+    g_stubEstimate.position.v[ENU_U] += 30.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_LE(g_lastTarget.targetEfM.z, beforeBounce + 0.01f);
+}
+
+// Issue #15651: a rescue started 330 m up disarmed at 130 m and fell. The target sat
+// FP_LANDING_TARGET_DEPTH_M below where the descent began, so positionNav's altitude ramp stopped
+// there and left the craft hovering in mid-air. However high a landing starts, its target must stay
+// below the craft all the way down.
+TEST_F(FlightPlanNavSafetyTest, LandingStartedHighKeepsItsTargetBelowTheCraft)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    g_stubBelowLandingAltitude = false;
+    engageDistantLeg();
+    g_stubEstimate.position.v[ENU_U] = 33000.0f;
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    while (g_stubEstimate.position.v[ENU_U] > 100.0f) {
+        g_stubEstimate.velocity.v[ENU_U] = -100.0f;
+        g_stubEstimate.position.v[ENU_U] -= 10.0f;
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+
+        const float altM = g_stubEstimate.position.v[ENU_U] * 0.01f;
+        ASSERT_LT(g_lastTarget.targetEfM.z, altM - 1.0f)
+            << "landing target " << g_lastTarget.targetEfM.z << " m is no longer below the craft at " << altM << " m";
+    }
 }
 
 TEST_F(FlightPlanNavSafetyTest, LandingTouchdownDisarms)

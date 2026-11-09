@@ -284,6 +284,14 @@
 
 #endif // USE_OPTICALFLOW
 
+#if defined(USE_PITOT) && defined(USE_I2C)
+
+#ifndef USE_PITOT_MS4525
+#define USE_PITOT_MS4525
+#endif
+
+#endif // USE_PITOT
+
 #if defined(USE_RX_CC2500)
 
 #if !defined(USE_RX_SPI)
@@ -529,13 +537,13 @@
 #define USE_FLASH_W25M
 #endif
 
-#if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M) || defined(USE_FLASH_W25N) || defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_MX66UW1G45G)
+#if defined(USE_FLASH_M25P16) || defined(USE_FLASH_FM25V02A) || defined(USE_FLASH_W25M) || defined(USE_FLASH_W25N) || defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_MX66UW1G45G)
 #if !defined(USE_FLASH_CHIP)
 #define USE_FLASH_CHIP
 #endif
 #endif
 
-#if defined(USE_SPI) && (defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25N) || defined(USE_FLASH_W25M02G))
+#if defined(USE_SPI) && (defined(USE_FLASH_M25P16) || defined(USE_FLASH_FM25V02A) || defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25N) || defined(USE_FLASH_W25M02G))
 #if !defined(USE_FLASH_SPI)
 #define USE_FLASH_SPI
 #endif
@@ -609,6 +617,10 @@
 #ifndef USE_SPI_GYRO
 #define USE_SPI_GYRO
 #endif
+#endif
+
+#if (TARGET_FLASH_SIZE > 128) && (defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6500))
+#define USE_GYRO_SLEW_LIMITER
 #endif
 
 #ifndef USE_ACC
@@ -776,6 +788,13 @@
 #endif
 #endif // USE_OPTICALFLOW_XXX
 
+// Bottom-up: individual pitot drivers → USE_PITOT
+#if defined(USE_PITOT_MS4525)
+#ifndef USE_PITOT
+#define USE_PITOT
+#endif
+#endif // USE_PITOT_XXX
+
 #ifndef USE_GPS_RESCUE
 #undef USE_CMS_GPS_RESCUE_MENU
 #endif
@@ -909,6 +928,10 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_SDIO_EXTERNAL_DMA 0
 #endif
 
+#if !defined(ENABLE_LED_STRIP_INVERSION)
+#define ENABLE_LED_STRIP_INVERSION 0
+#endif
+
 // STM32C5: drive boot source from the BOOT0 pin rather than the BOOT0
 // option bit. Default on so a BF crash never strands the board without
 // DFU recovery — set this to 0 in config.h for boards that wire BOOT0
@@ -926,17 +949,20 @@ extern struct linker_symbol __fontdata_end;
 // GPS rescue (both the BOXGPSRESCUE switch and the failsafe procedure) flown as
 // a synthesised flight-plan mission through the unified autopilot, instead of
 // the legacy gps_rescue controller. Default-on wherever the flight-plan engine
-// is available; targets without it (or wing, or flash-constrained) fall back to
-// the legacy rescue controller.
+// is available; multirotor targets without it (or flash-constrained) fall back
+// to the legacy rescue controller, and a wing without it has no rescue.
 #if !defined(ENABLE_RESCUE_PLAN)
-#if ENABLE_FLIGHT_PLAN && defined(USE_GPS_RESCUE) && !defined(USE_WING)
+#if ENABLE_FLIGHT_PLAN && defined(USE_GPS_RESCUE)
 #define ENABLE_RESCUE_PLAN 1
 #else
 #define ENABLE_RESCUE_PLAN 0
 #endif
 #endif
-#if ENABLE_RESCUE_PLAN && !(ENABLE_FLIGHT_PLAN && defined(USE_GPS_RESCUE) && !defined(USE_WING))
-#error "ENABLE_RESCUE_PLAN requires ENABLE_FLIGHT_PLAN, USE_GPS_RESCUE and !USE_WING"
+#if ENABLE_RESCUE_PLAN && !(ENABLE_FLIGHT_PLAN && defined(USE_GPS_RESCUE))
+#error "ENABLE_RESCUE_PLAN requires ENABLE_FLIGHT_PLAN and USE_GPS_RESCUE"
+#endif
+#if defined(USE_WING) && !ENABLE_RESCUE_PLAN
+#undef USE_CMS_GPS_RESCUE_MENU
 #endif
 
 // Flight-plan OSD minimap: draws the stored mission, home and the flown trail
@@ -952,14 +978,17 @@ extern struct linker_symbol __fontdata_end;
 #endif
 
 #if !defined(ENABLE_TELEMETRY_MAVLINK_MISSION)
-// flight_plan_nav.c (and the autopilot hook in fc/core.c) are gated on
-// !defined(USE_WING); the mission module reaches into those symbols, so match
-// the same shape here to keep wing builds linkable when USE_FLIGHT_PLAN lands.
-#if defined(USE_TELEMETRY_MAVLINK) && ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#if defined(USE_TELEMETRY_MAVLINK) && ENABLE_FLIGHT_PLAN
 #define ENABLE_TELEMETRY_MAVLINK_MISSION 1
 #else
 #define ENABLE_TELEMETRY_MAVLINK_MISSION 0
 #endif
+#endif
+
+// The MAVLink library's mavlink_helpers.h includes <stdio.h>, which has to be
+// seen before platform.h poisons sprintf/snprintf.
+#if (defined(USE_SERIALRX_MAVLINK) || defined(USE_TELEMETRY_MAVLINK)) && !defined(ENABLE_STDIO_PREINCLUDE)
+#define ENABLE_STDIO_PREINCLUDE
 #endif
 
 // MAVLink inbound COMMAND_LONG / COMMAND_INT actuation (arm/disarm, mode set,
@@ -1073,4 +1102,10 @@ extern struct linker_symbol __fontdata_end;
 // can't yet skip restricted (e.g. RIFSC-protected) ports cleanly.
 #if !defined(ENABLE_UNUSED_PINS_INIT)
 #define ENABLE_UNUSED_PINS_INIT 1
+#endif
+
+#if !defined(ENABLE_OSD_CANVAS_SIZE_DEBUG) && (defined(OSD_CANVAS_SIZE_DEBUG) || defined(USE_OSD_CANVAS_SIZE_DEBUG))
+#define ENABLE_OSD_CANVAS_SIZE_DEBUG 1
+#elif !defined(ENABLE_OSD_CANVAS_SIZE_DEBUG)
+#define ENABLE_OSD_CANVAS_SIZE_DEBUG 0
 #endif
