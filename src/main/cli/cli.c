@@ -3902,6 +3902,7 @@ RAM_CODE static void cliVtxTable(const char *cmdName, char *cmdline)
                     cliPrintErrorLinef(cmdName, "INVALID FACTORY FLAG %s (EXPECTED FACTORY OR CUSTOM)", tok);
                     return;
                 }
+                continue;
             }
             int freq = atoi(tok);
             if (freq < 0) {
