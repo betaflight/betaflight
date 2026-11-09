@@ -1539,8 +1539,6 @@ bool isBelowLandingAltitude(void)
 
 #define LANDING_PROFILE_LOW_CM      1000.0f
 #define LANDING_PROFILE_HIGH_CM     5000.0f
-#define LANDING_LEASH_MIN_CM        100.0f
-#define LANDING_LEASH_S             1.0f
 #define LANDING_REQUEST_TIMEOUT_US  100000
 
 static float landingDescentRateCmS(const landingProfile_t *profile, float altitudeCm)
@@ -1573,10 +1571,7 @@ void autopilotLand(const landingProfile_t *profile, float startAltitudeCm, timeU
     landing.lastRequestUs = micros();
 
     const float rateCmS = landingDescentRateCmS(profile, landing.targetAltitudeCm);
-    const float leashCm = fmaxf(LANDING_LEASH_MIN_CM, rateCmS * LANDING_LEASH_S);
-    if (landing.targetAltitudeCm > getAltitudeCmControl() - leashCm) {
-        landing.targetAltitudeCm -= rateCmS * US_TO_INTERVAL(taskIntervalUs);
-    }
+    landing.targetAltitudeCm -= rateCmS * US_TO_INTERVAL(taskIntervalUs);
     runAltitudeControl(landing.targetAltitudeCm, taskIntervalUs, -rateCmS, profile->maxRateCmS);
 }
 

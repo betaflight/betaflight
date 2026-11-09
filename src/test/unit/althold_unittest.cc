@@ -374,13 +374,13 @@ TEST_F(AltholdControlUnittest, FailsafeLandingDescendsAtTheClimbRate)
     EXPECT_NEAR(1750.0f, autopilotLandingTargetAltitudeCm(), 10.0f);   // climb_rate 50 is 5 m/s
 }
 
-TEST_F(AltholdControlUnittest, LandingTargetStaysLeashedToACraftThatHasStopped)
+TEST_F(AltholdControlUnittest, LandingTargetKeepsFallingBelowACraftThatHasStopped)
 {
     enterAltHoldAt(2000.0f);
     testFailsafePhase = FAILSAFE_LANDING;
     runAltHoldSeconds(3.0f);
-    // never more than a second of descent below the craft
-    EXPECT_NEAR(1500.0f, autopilotLandingTargetAltitudeCm(), 10.0f);
+    // a landing is never reversed, so the target runs on below a craft stuck on the ground
+    EXPECT_NEAR(500.0f, autopilotLandingTargetAltitudeCm(), 10.0f);
 }
 
 TEST_F(AltholdControlUnittest, FailsafeOutsideItsLandingPhaseHoldsAltitude)
