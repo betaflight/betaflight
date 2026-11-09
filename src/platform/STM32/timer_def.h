@@ -50,7 +50,7 @@
 #define BTCH_TIM8_CH1N BTCH_TIM8_CH1
 #define BTCH_TIM8_CH2N BTCH_TIM8_CH2
 #define BTCH_TIM8_CH3N BTCH_TIM8_CH3
-#if defined(STM32G4) || defined(STM32C5) || defined(STM32N6)
+#if defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
 #define BTCH_TIM8_CH4N BTCH_TIM8_CH4
 #endif
 
@@ -1068,6 +1068,7 @@
 
 #define DEF_TIM_AF__PB0__TCH_TIM8_CH2N    D(3, 8)
 #define DEF_TIM_AF__PB1__TCH_TIM8_CH3N    D(3, 8)
+#define DEF_TIM_AF__PB2__TCH_TIM8_CH4N    D(3, 8)
 #define DEF_TIM_AF__PB14__TCH_TIM8_CH2N   D(3, 8)
 #define DEF_TIM_AF__PB15__TCH_TIM8_CH3N   D(3, 8)
 
@@ -1090,6 +1091,9 @@
 
 //PORTD
 #define DEF_TIM_AF__PD5__TCH_TIM1_CH4N    D(1, 1)
+
+#define DEF_TIM_AF__PD0__TCH_TIM8_CH4N    D(3, 8)
+
 #define DEF_TIM_AF__PD12__TCH_TIM4_CH1    D(2, 4)
 #define DEF_TIM_AF__PD13__TCH_TIM4_CH2    D(2, 4)
 #define DEF_TIM_AF__PD14__TCH_TIM4_CH3    D(2, 4)
@@ -2122,7 +2126,7 @@
 
 #elif defined(STM32H5)
 
-#define FULL_TIMER_CHANNEL_COUNT 104
+#define FULL_TIMER_CHANNEL_COUNT 112
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(12) | TIM_N(13) | TIM_N(14) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
 #define TIMUP_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
 #define HARDWARE_TIMER_DEFINITION_COUNT BITCOUNT(USED_TIMERS)
