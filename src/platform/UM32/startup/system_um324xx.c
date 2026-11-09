@@ -67,6 +67,31 @@ void QSPI_QuadEn(QSPI_HandleTypeDef *hqspi);
  * functions explicitly marked EX_CODE are placed on the QSPI XIP window.
  */
 #ifdef USE_QSPI_XIP
+/* UM3241F/UM3247F user manual, table 3-1: QSPI cache register block.
+ * The enable/clear names follow the reference UM324xF LL cache API, which
+ * cites UM321xF manual 14.3.1 and the vendor XIP example's CACHE_CR |= 0x3.
+ * The UM3241F/UM3247F manual itself only documents the address range. */
+#define QSPI_CACHE_CTRL_ADDRESS  0x3CFFFC00UL
+#define QSPI_CACHE_CTRL          (*(volatile uint32_t *)QSPI_CACHE_CTRL_ADDRESS)
+#define QSPI_CACHE_ENABLE        (1UL << 0)
+#define QSPI_CACHE_CLEAR         (1UL << 1)
+
+static void qspiCacheDisable(void)
+{
+    // Do not request a clear while disabling; clear when enabling below.
+    QSPI_CACHE_CTRL &= ~(QSPI_CACHE_ENABLE | QSPI_CACHE_CLEAR);
+    __DSB();
+    __ISB();
+}
+
+static void qspiCacheEnable(void)
+{
+    // Discard cached content from an earlier run before the first XIP read.
+    QSPI_CACHE_CTRL |= QSPI_CACHE_ENABLE | QSPI_CACHE_CLEAR;
+    __DSB();
+    __ISB();
+}
+
 void exFlashInit(void)
 {
     /* Port D/E clocks — HAL_GPIO_Init does not manage the clock tree */
@@ -91,6 +116,9 @@ void exFlashInit(void)
 
     __HAL_RCM_QSPI_CLK_ENABLE();
     __HAL_RCM_QSPI_RELEASE_RESET();
+
+    // Configure the controller/Flash with cache bypassed, including on reboot.
+    qspiCacheDisable();
 
     QSPI_HandleTypeDef hqspi = {0};
 
@@ -141,8 +169,7 @@ void exFlashInit(void)
     /* Enable the QE mode */
     QSPI_QuadEn(&hqspi);
 
-    /* Enable qspi cache  */
-    (*(volatile uint32_t *)(0x3cfffc00)) |= 0x03;
+    qspiCacheEnable();
 }
 #endif
 
