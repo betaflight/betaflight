@@ -74,6 +74,28 @@ static ioTag_t bidirRxTag(serialPortIdentifier_e id)
     }
 }
 
+static IO_t bidirRxPin(const uartDevice_t *dev, IO_t tx)
+{
+    const ioTag_t tag = bidirRxTag(dev->port.port.identifier);
+    const IO_t rx = IOGetByTag(tag);
+    if (!tx || !rx || tx == rx) {
+        return NULL;
+    }
+
+    // Use the alternate pad only if this UART can mux it as RX.
+    for (unsigned i = 0; i < UARTHARDWARE_MAX_PINS; i++) {
+        if (dev->hardware->rxPins[i].pin == tag) {
+            return rx;
+        }
+    }
+    return NULL;
+}
+
+bool uartBidirCanOpen(const uartDevice_t *dev, uint32_t baudRate)
+{
+    return baudRate && bidirRxPin(dev, IOGetByTag(dev->tx.pin));
+}
+
 static bool bidirPullUp(serialPortIdentifier_e id)
 {
     switch (id) {
@@ -152,14 +174,8 @@ void uartBidirConfigure(uartPort_t *s)
         reportStatus(p, s->port.identifier);
         if (!(s->port.options & SERIAL_BIDIR)) { return; }
         IO_t tx = IOGetByTag(dev->tx.pin);
-        IO_t rx = IOGetByTag(bidirRxTag(s->port.identifier));
-        if (!tx || !rx || tx == rx || !s->port.baudRate) { return; }
-        // Validate the alternate pad/AF against this UART's hardware table.
-        bool valid = false;
-        for (unsigned i = 0; i < UARTHARDWARE_MAX_PINS; i++) {
-            valid |= dev->hardware->rxPins[i].pin == bidirRxTag(s->port.identifier);
-        }
-        if (!valid) { return; }
+        IO_t rx = bidirRxPin(dev, tx);
+        if (!rx || !s->port.baudRate) { return; }
 #ifdef USE_DMA
         // DMA TX bypasses uartBidirStart(). Keep this dual-pad port on the
         // IRQ path until DMA can participate in pin ownership and TEMT drain.

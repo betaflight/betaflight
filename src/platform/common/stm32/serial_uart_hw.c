@@ -44,6 +44,10 @@
 #include "platform/dma.h"
 #include "platform/serial_uart_hal.h"
 
+#if defined(UM324xF)
+#include "platform/serial_uart_bidir.h"
+#endif
+
 #include "pg/serial_uart.h"
 
 #ifdef USE_HAL_DRIVER
@@ -90,6 +94,12 @@ static void enableRxIrq(const uartHardware_t *hardware)
 
 uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode, portOptions_e options)
 {
+#if defined(UM324xF)
+    if ((options & SERIAL_BIDIR) && !uartBidirCanOpen(uartdev, baudRate)) {
+        return NULL;
+    }
+#endif
+
     uartPort_t *s = &uartdev->port;
 
     const uartHardware_t *hardware = uartdev->hardware;

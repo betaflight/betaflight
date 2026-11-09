@@ -164,6 +164,26 @@ TEST_F(Um32UartBidirTest, TxDmaFallsBackToInterruptsOnlyForAValidDualPadPort)
     EXPECT_FALSE(uartBidirIsTransmitting(s));
 }
 
+TEST_F(Um32UartBidirTest, OnlyAcceptsUsableHalfDuplexMappings)
+{
+    auto &dev = uartDevice[UARTDEV_1];
+    EXPECT_TRUE(uartBidirCanOpen(&dev, 4800));
+    EXPECT_FALSE(uartBidirCanOpen(&dev, 0));
+
+    dev.tx.pin = 7;
+    EXPECT_FALSE(uartBidirCanOpen(&dev, 4800)); // Same pad for TX and RX.
+    dev.tx.pin = 0;
+    EXPECT_FALSE(uartBidirCanOpen(&dev, 4800));
+    dev.tx.pin = 6;
+
+    hardware[UARTDEV_1].rxPins[0].pin = 10;
+    EXPECT_FALSE(uartBidirCanOpen(&dev, 4800)); // Alternate pad absent from UART table.
+    hardware[UARTDEV_1].rxPins[0].pin = 7;
+
+    dev.port.port.identifier = SERIAL_PORT_UART3;
+    EXPECT_FALSE(uartBidirCanOpen(&dev, 4800)); // No alternate pad defined for UART3.
+}
+
 TEST_F(Um32UartBidirTest, SparseDeviceIndexesAndSamUsartUseTheCorrectStateAndRegisters)
 {
     static_assert(UARTDEV_COUNT == 3, "Exercise compressed indexes with UART3..7 absent");
