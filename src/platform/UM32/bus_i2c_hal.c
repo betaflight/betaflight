@@ -56,33 +56,46 @@ uint16_t i2cGetErrorCounter(void)
     return i2cErrorCount;
 }
 
+static I2C_HandleTypeDef *i2cGetHandle(i2cDevice_e device)
+{
+    if ((unsigned)device >= I2CDEV_COUNT) {
+        return NULL;
+    }
+
+    i2cHalHandle_t *handle = i2cDevice[device].halHandle;
+    return handle && handle->hal.Instance ? &handle->hal : NULL;
+}
+
+static void i2cIrqHandler(i2cDevice_e device)
+{
+    I2C_HandleTypeDef *pHandle = i2cGetHandle(device);
+    if (pHandle) {
+        HAL_I2C_EX_IRQHandler(pHandle);
+    }
+}
 
 FAST_IRQ_HANDLER void I2C1_IRQHandler(void)
 {
-    HAL_I2C_EX_IRQHandler(&i2cDevice[I2CDEV_1].halHandle->hal);
+    i2cIrqHandler(I2CDEV_1);
 }
 
 FAST_IRQ_HANDLER void I2C2_IRQHandler(void)
 {
-    HAL_I2C_EX_IRQHandler(&i2cDevice[I2CDEV_2].halHandle->hal);
+    i2cIrqHandler(I2CDEV_2);
 }
 
 FAST_IRQ_HANDLER void I2C3_IRQHandler(void)
 {
-    HAL_I2C_EX_IRQHandler(&i2cDevice[I2CDEV_3].halHandle->hal);
+    i2cIrqHandler(I2CDEV_3);
 }
 
 // Blocking write
 bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t data)
 {
-    if (device == I2CINVALID || device >= I2CDEV_COUNT) {
-        return false;
-    }
-
 #if I2C_TRAIT_HANDLE
-    I2C_HandleTypeDef *pHandle = &i2cDevice[device].halHandle->hal;
+    I2C_HandleTypeDef *pHandle = i2cGetHandle(device);
 
-    if (!pHandle->Instance) {
+    if (!pHandle) {
         return false;
     }
 
@@ -102,14 +115,10 @@ bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t data)
 // Non-blocking write
 bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 {
-    if (device == I2CINVALID || device >= I2CDEV_COUNT) {
-        return false;
-    }
-
 #if I2C_TRAIT_HANDLE
-    I2C_HandleTypeDef *pHandle = &i2cDevice[device].halHandle->hal;
+    I2C_HandleTypeDef *pHandle = i2cGetHandle(device);
 
-    if (!pHandle->Instance) {
+    if (!pHandle) {
         return false;
     }
     I2C_TypeDef *I2Cx = (I2C_TypeDef *)i2cDevice[device].reg;
@@ -158,14 +167,10 @@ bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len
 // Blocking read
 bool i2cRead(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
-    if (device == I2CINVALID || device >= I2CDEV_COUNT) {
-        return false;
-    }
-
 #if I2C_TRAIT_HANDLE
-    I2C_HandleTypeDef *pHandle = &i2cDevice[device].halHandle->hal;
+    I2C_HandleTypeDef *pHandle = i2cGetHandle(device);
 
-    if (!pHandle->Instance) {
+    if (!pHandle) {
         return false;
     }
 
@@ -186,14 +191,10 @@ bool i2cRead(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8
 // Non-blocking read
 bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
-    if (device == I2CINVALID || device >= I2CDEV_COUNT) {
-        return false;
-    }
-
 #if I2C_TRAIT_HANDLE
-    I2C_HandleTypeDef *pHandle = &i2cDevice[device].halHandle->hal;
+    I2C_HandleTypeDef *pHandle = i2cGetHandle(device);
 
-    if (!pHandle->Instance) {
+    if (!pHandle) {
         return false;
     }
     I2C_TypeDef *I2Cx = (I2C_TypeDef *)i2cDevice[device].reg;
@@ -243,7 +244,13 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len,
 bool i2cBusy(i2cDevice_e device, bool *error)
 {
 #if I2C_TRAIT_HANDLE
-    I2C_HandleTypeDef *pHandle = &i2cDevice[device].halHandle->hal;
+    I2C_HandleTypeDef *pHandle = i2cGetHandle(device);
+    if (!pHandle) {
+        if (error) {
+            *error = true;
+        }
+        return true;
+    }
 
     if (error) {
         *error = pHandle->ErrorCode;

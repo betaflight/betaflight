@@ -44,8 +44,6 @@ static struct i2cHalHandle_s i2cHalHandles[I2CDEV_COUNT];
 #define IOCFG_I2C_PU IO_CONFIG(GPIO_MODE_AF, GPIO_SPEED_FREQ_HIGH, GPIO_PULLUP)
 #define IOCFG_I2C    IO_CONFIG(GPIO_MODE_AF, GPIO_SPEED_FREQ_HIGH, GPIO_NOPULL)
 
-#define GPIO_AF4_I2C GPIO_AF4_I2C1
-
 void Error_Handler(void);
 
 const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
@@ -80,7 +78,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
         .device = I2CDEV_3,
         .reg = (i2cResource_t *)I2C3,
         .sclPins = { I2CPINDEF(PA8), I2CPINDEF(PC12) },
-        .sdaPins = { I2CPINDEF(PC9), I2CPINDEF(PC9), I2CPINDEF(PD2) },
+        .sdaPins = { I2CPINDEF(PA9), I2CPINDEF(PC9), I2CPINDEF(PD2) },
 #if PLATFORM_TRAIT_RCC
         .rcc = RCC_APB1(I2C3),
 #endif
@@ -95,7 +93,7 @@ i2cDevice_t i2cDevice[I2CDEV_COUNT];
 
 void i2cInit(i2cDevice_e device)
 {
-    if (device == I2CINVALID) {
+    if ((unsigned)device >= I2CDEV_COUNT) {
         return;
     }
 
@@ -118,8 +116,8 @@ void i2cInit(i2cDevice_e device)
     i2cUnstick(scl, sda);
 
     // Init pins
-    IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, GPIO_AF4_I2C);
-    IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, GPIO_AF4_I2C);
+    IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, GPIO_AF4);
+    IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, GPIO_AF4);
 
 #if I2C_TRAIT_HANDLE
     // Init I2C peripheral

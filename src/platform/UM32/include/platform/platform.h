@@ -142,7 +142,7 @@
 #define MAX_SPI_PIN_SEL 2
 // #define USE_TX_IRQ_HANDLER
 
-#define I2CDEV_COUNT 1
+#define I2CDEV_COUNT 3
 #define SPIDEV_COUNT 4
 #define QUADSPIDEV_COUNT 0
 
