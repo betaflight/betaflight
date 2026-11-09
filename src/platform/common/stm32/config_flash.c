@@ -452,9 +452,49 @@ void configUnlock(void)
 #endif
 }
 
-void configLock(void)
+#if defined(UM324xF)
+#define FLASH_CACHE_STATE_POLL_LIMIT 1000000U
+
+static bool waitForFlashCacheState(const CACHE_TypeDef *cache, uint32_t state)
 {
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4) || defined(UM324xF)
+    for (unsigned attempt = 0; attempt < FLASH_CACHE_STATE_POLL_LIMIT; attempt++) {
+        if ((cache->STATUS & CACHE_STATUS_CACHE_STATUS) == state) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool restartFlashCache(CACHE_TypeDef *cache)
+{
+    if (!(cache->CTRL & CACHE_CTRL_CACHE_EN)) {
+        return true;
+    }
+
+    CLEAR_BIT(cache->CTRL, CACHE_CTRL_CACHE_EN);
+    const bool stopped = waitForFlashCacheState(cache, CACHE_STATUS_CLOSED_FLAG);
+    // Restore the original enable bit even if the stop timed out.
+    SET_BIT(cache->CTRL, CACHE_CTRL_CACHE_EN);
+    const bool started = waitForFlashCacheState(cache, CACHE_STATUS_OPEND_FLAG);
+    return stopped && started;
+}
+#endif
+
+configStreamerResult_e configLock(void)
+{
+#if defined(UM324xF)
+    HAL_FLASH_Lock();
+    // UM324xF manual section 4.3.2.2: restart the internal Flash caches
+    // after programming, before the config is read back for validation.
+    __DSB();
+    const bool instructionCacheReady = restartFlashCache(ICACHE);
+    const bool dataCacheReady = restartFlashCache(DCACHE);
+    __DSB();
+    __ISB();
+    if (!instructionCacheReady || !dataCacheReady) {
+        return CONFIG_RESULT_TIMEOUT;
+    }
+#elif defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4)
         HAL_FLASH_Lock();
 #if defined(STM32H5)
         // On H5 the instruction cache also caches const/data reads from the
@@ -494,6 +534,7 @@ void configLock(void)
 #else
         FLASH_Lock();
 #endif
+    return CONFIG_RESULT_SUCCESS;
 }
 
 void configClearFlags(void)

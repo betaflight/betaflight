@@ -981,7 +981,7 @@ void configUnlock(void)
     loadEEPROMFromFile();
 }
 
-void configLock(void)
+configStreamerResult_e configLock(void)
 {
     // flush & close
     if (eepromFd != NULL) {
@@ -993,6 +993,7 @@ void configLock(void)
     } else {
         fprintf(stderr, "[FLASH_Lock] eeprom is not unlocked\n");
     }
+    return CONFIG_RESULT_SUCCESS;
 }
 
 configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer_type_t *buffer)

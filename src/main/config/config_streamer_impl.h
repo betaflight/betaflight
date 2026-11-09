@@ -24,7 +24,7 @@
 #include "config_streamer.h"
 
 void configUnlock(void);
-void configLock(void);
+configStreamerResult_e configLock(void);
 void configClearFlags(void);
 configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer_type_t *buffer);
 

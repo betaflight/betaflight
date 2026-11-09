@@ -105,9 +105,10 @@ void configUnlock(void)
     lastErasedSector = UINT32_MAX;
 }
 
-void configLock(void)
+configStreamerResult_e configLock(void)
 {
     // NOOP - the ROM flash API needs no locking.
+    return CONFIG_RESULT_SUCCESS;
 }
 
 void configClearFlags(void)
@@ -196,7 +197,7 @@ CONFIG_FLASH_IRAM configStreamerResult_e configWriteWord(uintptr_t address, conf
 // a save, and configFlashInit is a no-op (the memory-mapped reads resolve through
 // the linker's __config_start as on other targets).
 void configUnlock(void) { }
-void configLock(void) { }
+configStreamerResult_e configLock(void) { return CONFIG_RESULT_SUCCESS; }
 void configClearFlags(void) { }
 void configFlashInit(void) { }
 
