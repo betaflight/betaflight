@@ -216,9 +216,15 @@ void rtc6705SetRFPower(uint8_t rf_power)
     const struct rtc6705PowerLevel *level = &rtc6705PowerLevels[rf_power];
 
     // external PA is set by the pins, internal PA by reg 0x07; both must match per level
+    // clear outgoing pins first so a level change never passes through code 11
     for (unsigned i = 0; i < VTX_DYNAMIC_CTRL_PIN_COUNT; i++) {
-        if (exPowerPin[i]) {
-            IOWrite(exPowerPin[i], level->pins & BIT(i));
+        if (exPowerPin[i] && !(level->pins & BIT(i))) {
+            IOWrite(exPowerPin[i], false);
+        }
+    }
+    for (unsigned i = 0; i < VTX_DYNAMIC_CTRL_PIN_COUNT; i++) {
+        if (exPowerPin[i] && (level->pins & BIT(i))) {
+            IOWrite(exPowerPin[i], true);
         }
     }
 #else
