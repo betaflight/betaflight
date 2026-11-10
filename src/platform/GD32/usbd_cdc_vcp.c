@@ -182,13 +182,23 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
 */
 uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 {
-    VCP_DataTx(ptrBuffer, sendLength);
-    return sendLength;
+    // VCP_DataTx() returns the bytes actually queued (fewer on timeout).
+    return VCP_DataTx(ptrBuffer, sendLength);
+}
+
+// Note: in this stack APP_Rx_* is the MCU -> host (transmit) ring.
+// APP_Rx_ptr_in is only advanced by the caller's context and APP_Rx_ptr_out
+// (advanced by the USB IRQ) is read once, so no locking is needed.
+uint32_t CDC_Send_BytesPending(void)
+{
+    const uint32_t out = APP_Rx_ptr_out;
+    return (APP_Rx_ptr_in + APP_RX_DATA_SIZE - out) % APP_RX_DATA_SIZE;
 }
 
 uint32_t CDC_Send_FreeBytes(void)
 {
-    return APP_RX_DATA_SIZE - CDC_Receive_BytesAvailable();
+    // One slot is reserved to tell a full ring from an empty one.
+    return (APP_RX_DATA_SIZE - 1) - CDC_Send_BytesPending();
 }
 
 /*!
