@@ -33,7 +33,6 @@
 
 #if defined(RTC6705_DYNAMIC_POWER_CTRL)
     #define VTX_RTC6705_POWER_COUNT       3  // code 11 is undefined and unsafe
-    #define VTX_DYNAMIC_CTRL_PIN_COUNT    2
 #else
     #define VTX_RTC6705_POWER_COUNT       2
 #endif

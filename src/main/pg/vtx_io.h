@@ -26,6 +26,10 @@
 
 #include "pg/pg.h"
 
+#ifdef RTC6705_DYNAMIC_POWER_CTRL
+#define VTX_DYNAMIC_CTRL_PIN_COUNT    2
+#endif
+
 typedef struct vtxIOConfig_s {
     // common settings for both hardware and software SPI
     ioTag_t csTag;
@@ -39,7 +43,7 @@ typedef struct vtxIOConfig_s {
     uint8_t spiDevice;
 
 #ifdef RTC6705_DYNAMIC_POWER_CTRL
-    ioTag_t exPowerTag[2];
+    ioTag_t exPowerTag[VTX_DYNAMIC_CTRL_PIN_COUNT];
 #endif
 } vtxIOConfig_t;
 
