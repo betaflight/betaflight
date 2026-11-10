@@ -100,7 +100,13 @@ static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
 {
     UNUSED(instance);
 #if defined(STM32F4)
-    return true;
+    static usbVcpTxDrain_t txDrain;
+
+    if (!(usbIsConnected() && usbIsConfigured())) {
+        // Nothing will drain the ring; don't make callers wait on it.
+        return true;
+    }
+    return usbVcpTxDrained(&txDrain, CDC_Send_BytesPending(), USB_TIMEOUT);
 #else
     if (!(usbIsConnected() && usbIsConfigured())) {
         // Nothing will drain the ring; don't make callers wait on it.
