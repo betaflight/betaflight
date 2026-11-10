@@ -89,7 +89,7 @@ static inline pio_sm_config ws2812_program_get_default_config(uint offset)
 static inline void ws2812_program_init(PIO pio, uint sm, uint offset, uint pin, float freq, bool rgbw)
 {
     pio_gpio_init(pio, pin);
-#ifdef LED_STRIP_INVERTED
+#if ENABLE_LED_STRIP_INVERSION
     // The board drives the LED pad through an inverting stage (e.g. an N-FET with a pull-up to 5V)
     gpio_set_outover(pin, GPIO_OVERRIDE_INVERT);
 #endif

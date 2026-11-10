@@ -205,6 +205,14 @@ accgyro_spi_icm426xx_unittest_DEFINES := \
                 USE_ACCGYRO_IIM42652= \
                 USE_ACCGYRO_IIM42653=
 
+accgyro_spi_icm456xx_unittest_SRC := \
+		$(USER_DIR)/drivers/accgyro/accgyro_spi_icm456xx.c
+
+accgyro_spi_icm456xx_unittest_DEFINES := \
+                USE_DMA= \
+                USE_ACCGYRO_ICM45686= \
+                USE_ACCGYRO_ICM45605=
+
 accgyro_spi_lsm6dsv16x_unittest_SRC := \
 		$(USER_DIR)/drivers/accgyro/accgyro_spi_lsm6dsv16x.c
 
@@ -1073,6 +1081,9 @@ vtx_msp_unittest_DEFINES := \
 
 pwl_unittest_SRC := \
 		$(USER_DIR)/common/pwl.c
+
+uvarint_unittest_SRC := \
+		$(USER_DIR)/common/uvarint.c
 
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets
