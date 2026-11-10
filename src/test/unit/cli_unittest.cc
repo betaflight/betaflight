@@ -66,13 +66,15 @@ extern "C" {
     int cliGetSettingIndex(char *name, uint8_t length);
     void *cliGetValuePointer(const clivalue_t *value);
 
+    static const char * const pidTypeNames[] = { "CLASSIC", "ADRC" };
     const clivalue_t valueTable[] = {
+        { .name = "pid_type", .type = VAR_UINT8 | MODE_LOOKUP | PROFILE_VALUE, .config = { .lookup = { (lookupTableIndex_e)0 } }, .pgn = PG_PID_PROFILE, .offset = offsetof(pidProfile_t, pid_type) },
         { .name = "array_unit_test",   .type = VAR_INT8  | MODE_ARRAY  | MASTER_VALUE, .config = { .array = { .length = 3}},                     .pgn = PG_RESERVED_FOR_TESTING_1, .offset = 0 },
         { .name = "str_unit_test",     .type = VAR_UINT8 | MODE_STRING | MASTER_VALUE, .config = { .string = { 0, 16, 0 }},                      .pgn = PG_RESERVED_FOR_TESTING_1, .offset = 0 },
         { .name = "wos_unit_test",     .type = VAR_UINT8 | MODE_STRING | MASTER_VALUE, .config = { .string = { 0, 16, STRING_FLAGS_WRITEONCE }}, .pgn = PG_RESERVED_FOR_TESTING_1, .offset = 0 },
     };
     const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
-    const lookupTableEntry_t lookupTables[] = {};
+    const lookupTableEntry_t lookupTables[] = {{ pidTypeNames, 2 }};
     static const char *stubIdentifierName(int) { return "NONE"; }
     static bool stubIdentifierValue(const char *, int *value) { *value = SERIAL_PORT_NONE; return true; }
     static const char *stubIdentifierNameAt(unsigned index) { return index == 0 ? "NONE" : NULL; }
@@ -103,6 +105,7 @@ extern "C" {
     PG_REGISTER_ARRAY(rxChannelRangeConfig_t, NON_AUX_CHANNEL_COUNT, rxChannelRangeConfigs, PG_RX_CHANNEL_RANGE_CONFIG, 0);
     PG_REGISTER_ARRAY(rxFailsafeChannelConfig_t, MAX_SUPPORTED_RC_CHANNEL_COUNT, rxFailsafeChannelConfigs, PG_RX_FAILSAFE_CHANNEL_CONFIG, 0);
     PG_REGISTER(pidConfig_t, pidConfig, PG_PID_CONFIG, 0);
+    PG_REGISTER_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 0);
     PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
     PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
@@ -435,7 +438,8 @@ void resetConfig(void) {}
 void systemReset(void) {}
 void writeUnmodifiedConfigToEEPROM(void) {}
 
-void changePidProfile(uint8_t) {}
+static int profileChangeCalls;
+void changePidProfile(uint8_t) { ++profileChangeCalls; }
 void changeBatteryProfile(uint8_t) {}
 uint8_t getCurrentBatteryProfileIndex(void) { return 0; }
 bool serialIsPortAvailable(serialPortIdentifier_e) { return false; }
@@ -599,6 +603,48 @@ TEST(CLIUnittest, TestCliExecuteCommandRefusesDefaultsWithCommentedNosave)
     EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults # nosave", buf, sizeof(buf)));
     EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults #nosave", buf, sizeof(buf)));
     EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults // nosave", buf, sizeof(buf)));
+    EXPECT_FALSE(cliMode);
+}
+
+TEST(CLIUnittest, TestPidTypeWritesRequireDisarmed)
+{
+    for (int path = 0; path < 3; ++path) {
+        for (int initial = 0; initial < 2; ++initial) {
+            pidProfilesMutable(1)->pid_type = initial;
+            const char *setting = initial ? "pid_type = CLASSIC" : "pid_type = ADRC";
+            armingFlags |= ARMED;
+            for (int armed = 1; armed >= 0; --armed) {
+                if (!armed) armingFlags &= ~ARMED;
+                if (path == 0) {
+                    EXPECT_EQ(!armed, cliSetSettingByName(setting));
+                } else if (path == 1) {
+                    char line[64];
+                    strcpy(line, setting);
+                    cliSet("set", line);
+                } else {
+                    char line[80], output[256];
+                    snprintf(line, sizeof(line), "set %s", setting);
+                    EXPECT_GE(cliExecuteCommand(line, output, sizeof(output)), 0);
+                }
+                EXPECT_EQ(armed ? initial : 1 - initial, pidProfiles(1)->pid_type);
+            }
+        }
+    }
+    armingFlags &= ~ARMED;
+}
+
+TEST(CLIUnittest, TestProfileChangeRequiresDisarmed)
+{
+    char buf[256] = {};
+    profileChangeCalls = 0;
+    armingFlags |= ARMED;
+    EXPECT_GE(cliExecuteCommand("profile 0", buf, sizeof(buf)), 0);
+    EXPECT_EQ(0, profileChangeCalls);
+    EXPECT_GE(cliExecuteCommand("profile", buf, sizeof(buf)), 0);
+    EXPECT_EQ(0, profileChangeCalls);
+    armingFlags &= ~ARMED;
+    EXPECT_GE(cliExecuteCommand("profile 0", buf, sizeof(buf)), 0);
+    EXPECT_EQ(1, profileChangeCalls);
     EXPECT_FALSE(cliMode);
 }
 
