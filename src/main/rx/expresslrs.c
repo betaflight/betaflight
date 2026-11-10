@@ -1272,7 +1272,7 @@ rx_spi_received_e expressLrsDataReceived(uint8_t *payloadBuffer)
     DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 3, receiver.uplinkLQ);      //!< Uplink Link Quality [unit:%]
     DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 4, constrain(cmp32(timeStampMs, lastRcPacketMs), 0, 30000));  //!< RC Payload Age [unit:ms]
     DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 5, connectionHasModelMatch);                                  //!< Model Match
-    DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 6, lostConnectionReason);                                     //!< Last Lost Connection Reason
+    DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 6, lostConnectionReason);                                     //!< Last Lost Connection Reason [enum:lostConnectionReason_e]
     DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 7, receiver.connectionState | (receiver.timerState << 8));     //!< Connection State | Timer State << 8
 
     // Slots 0..3 of this mode are written from the packet handler and the timer
