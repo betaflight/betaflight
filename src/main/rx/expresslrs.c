@@ -1279,7 +1279,7 @@ rx_spi_received_e expressLrsDataReceived(uint8_t *payloadBuffer)
     // driver, so they hold their last value through an outage. These four are
     // written here instead, and so stay live while nothing is being received.
     DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 4, resyncCounter);     //!< Resync Count
-    DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 5, resyncTrigger);     //!< Resync Trigger Bits
+    DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 5, resyncTrigger);     //!< Resync Trigger Bits [flags:Was Disconnected|Nonce Mismatch|FHSS Mismatch|Model Match Change]
     DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 6, resyncNonceDelta);  //!< Resync Nonce Delta
     DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 7, resyncFhssDelta);   //!< Resync FHSS Index Delta
 
