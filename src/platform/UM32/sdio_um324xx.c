@@ -130,11 +130,15 @@
 // IDMA descriptor flags (DES0)
 #define IDMA_DES0_OWN                   ((uint32_t)0x80000000)    // Descriptor owned by DMA
 #define IDMA_DES0_CES                   ((uint32_t)0x40000000)    // Card Error Summary (stop on error)
-#define IDMA_DES0_ER                    ((uint32_t)0x00000020)    // End of Ring
 #define IDMA_DES0_CH                    ((uint32_t)0x00000010)    // Second Address Chained
 #define IDMA_DES0_FS                    ((uint32_t)0x00000008)    // First Descriptor
 #define IDMA_DES0_LD                    ((uint32_t)0x00000004)    // Last Descriptor
 #define IDMA_DES0_DIC                   ((uint32_t)0x00000002)    // Disable Interrupt on Completion
+
+#define SDIO_IDMA_DESCRIPTOR_BYTES      4096U
+#define SDIO_IDMA_DESCRIPTOR_COUNT      16U
+#define SDIO_IDMA_MAX_BLOCKS            (SDIO_IDMA_DESCRIPTOR_COUNT * SDIO_IDMA_DESCRIPTOR_BYTES / BLOCK_SIZE)
+#define SDIO_RESET_POLL_LIMIT           100000U
 
 #define SDIO_DIR_TX                     1
 #define SDIO_DIR_RX                     0
@@ -191,9 +195,8 @@ static uint32_t                    SD_CardRCA;
 SD_CardType_t                      SD_CardType;
 static volatile uint32_t           TimeOut;
 
-// IDMA descriptor in DMA-capable memory
-DMA_DATA SDIO_IDMA_Descriptor_t    SDIO_DMADescriptorTx;
-DMA_DATA SDIO_IDMA_Descriptor_t    SDIO_DMADescriptorRx;
+// The SDIO controller runs one transfer at a time. Keep its descriptor chain in DMA-capable RAM1.
+static DMA_DATA_ZERO_INIT SDIO_IDMA_Descriptor_t sdDmaDescriptors[SDIO_IDMA_DESCRIPTOR_COUNT];
 
 /* SD Commands -------------------------------------------------------------------------------------------------------*/
 
@@ -237,7 +240,6 @@ static SD_Error_t       SD_PowerON                  (void);
 static SD_Error_t       SD_WideBusOperationConfig   (uint32_t WideMode);
 static SD_Error_t       SD_FindSCR                  (uint32_t *pSCR);
 static SD_Error_t       SD_DoInit                   (void);
-static void             SD_StartBlockTransfer       (uint32_t* pBuffer, uint32_t BlockSize, uint32_t NumberOfBlocks, uint8_t dir);
 
 
 /** -----------------------------------------------------------------------------------------------------------------*/
@@ -602,74 +604,89 @@ static SD_Error_t SD_InitializeCard(void)
 }
 
 
-/** -----------------------------------------------------------------------------------------------------------------*/
-/**     SD_StartBlockTransfer
-  *
-  * @brief  Set up the IDMA descriptor and prepare for data transfer.
-  * @param  pBuffer: Pointer to the buffer for data transfer
-  * @param  BlockSize: The SD card Data block size (must be 512 bytes)
-  * @param  NumberOfBlocks: Number of blocks to transfer
-  * @param  dir: SDIO_DIR_RX (read from card) or SDIO_DIR_TX (write to card)
-  */
-static void SD_StartBlockTransfer(uint32_t* pBuffer, uint32_t BlockSize, uint32_t NumberOfBlocks, uint8_t dir)
+static bool SD_ValidBlockTransfer(const uint32_t *buffer, uint32_t blockSize, uint32_t blockCount)
 {
-    uint32_t totalBytes = BlockSize * NumberOfBlocks;
+    return buffer && ((uintptr_t)buffer & 3U) == 0 && blockSize == BLOCK_SIZE
+        && blockCount > 0 && blockCount <= SDIO_IDMA_MAX_BLOCKS;
+}
 
-    // Enable internal DMA in CTRL
-    SDIO->CTRL |= SDIO_CTRL_FIFO_RST;                 // Reset FIFO
-    SDIO->CTRL |= SDIO_CTRL_USE_INTERNAL_DMAC;
-    SDIO->CTRL |= SDIO_CTRL_DMA_RST;
+static bool SD_WaitForReset(volatile const uint32_t *reg, uint32_t resetMask)
+{
+    for (uint32_t i = 0; i < SDIO_RESET_POLL_LIMIT; i++) {
+        if ((*reg & resetMask) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
 
-    SDIO->BLKSIZ  = BlockSize;                         // Set block size
-    SDIO->BYTCNT  = totalBytes;                        // Set total byte count
+static void SD_SetupIdmaDescriptors(uint32_t *buffer, uint32_t totalBytes)
+{
+    // BS1 is only 13 bits. Split the request and interrupt only on the last descriptor.
+    uint32_t offset = 0;
+    for (uint32_t i = 0; offset < totalBytes; i++) {
+        const uint32_t remaining = totalBytes - offset;
+        const uint32_t length = remaining > SDIO_IDMA_DESCRIPTOR_BYTES ? SDIO_IDMA_DESCRIPTOR_BYTES : remaining;
+        const bool last = length == remaining;
+        SDIO_IDMA_Descriptor_t *descriptor = &sdDmaDescriptors[i];
 
-    SD_Handle.TransferComplete = 0;                    // Initialize handle flags
-    SD_Handle.TransferError    = SD_OK;
-    SD_Handle.Operation        = (NumberOfBlocks > 1) ? SD_MULTIPLE_BLOCK : SD_SINGLE_BLOCK;
-    SD_Handle.Operation       |= dir << 1;
+        descriptor->DES1 = length;
+        descriptor->DES2 = (uint32_t)(uintptr_t)buffer + offset;
+        descriptor->DES3 = last ? 0 : (uint32_t)(uintptr_t)&sdDmaDescriptors[i + 1];
+        descriptor->DES0 = IDMA_DES0_OWN | (i == 0 ? IDMA_DES0_FS : 0)
+            | (last ? IDMA_DES0_LD : (IDMA_DES0_CH | IDMA_DES0_DIC));
 
-    // Clear raw interrupts
-    SDIO->RINTSTS = 0xFFFFFFFF;
+        offset += length;
+    }
+    __DSB();
+}
 
-    // Configure FIFO threshold with MULTI_TRANSACTION_SIZE matching PBL
-    // PBL=32 bytes (8 beats of 4 bytes) → MTS=010 (8 transactions)
-    // FIFOTH: bits 28-30=MTS, bits 16-27=RX_WMARK, bits 0-11=TX_WMARK
-    if (dir == SDIO_DIR_RX) {
-        // For read: RX_WMARK=0x0F (15 entries), MTS=2 (8 transactions)
-        SDIO->FIFOTH = (2 << 28) | (0x07 << 16) | 0x08;
-        // Setup IDMA descriptor
-        memset(&SDIO_DMADescriptorTx, 0, sizeof(SDIO_IDMA_Descriptor_t));
-        SDIO_DMADescriptorTx.DES0 = IDMA_DES0_OWN | IDMA_DES0_ER| IDMA_DES0_FS | IDMA_DES0_LD;           // FS+LD: single descriptor, no chain (CH=0 → don't load DES3)
-        SDIO_DMADescriptorTx.DES1 = totalBytes & 0x1FFF;       // BS1 = total bytes
-        SDIO_DMADescriptorTx.DES2 = (uint32_t)pBuffer;          // Buffer address
+static bool SD_StartBlockTransfer(uint32_t *buffer, uint32_t blockCount, uint8_t dir)
+{
+    const uint32_t totalBytes = BLOCK_SIZE * blockCount;
 
-        // Set descriptor base address
-        SDIO->DBADDR = (uint32_t)&SDIO_DMADescriptorTx;
-    } else {
-        // For write: TX_WMARK=0x0F (15 entries of free space), MTS=2 (8 transactions)
-        SDIO->FIFOTH = (2 << 28) | (0x07 << 16) | 0x08;
-        // Setup IDMA descriptor
-        memset(&SDIO_DMADescriptorRx, 0, sizeof(SDIO_IDMA_Descriptor_t));
-        SDIO_DMADescriptorRx.DES0 = IDMA_DES0_OWN | IDMA_DES0_ER| IDMA_DES0_FS | IDMA_DES0_LD;           // FS+LD: single descriptor, no chain (CH=0 → don't load DES3)
-        SDIO_DMADescriptorRx.DES1 = totalBytes & 0x1FFF;       // BS1 = total bytes
-        SDIO_DMADescriptorRx.DES2 = (uint32_t)pBuffer;          // Buffer address
-        // Set descriptor base address
-        SDIO->DBADDR = (uint32_t)&SDIO_DMADescriptorRx;
+    // Stop and reset the DMA before reusing the descriptor chain.
+    SDIO->IDINTEN = 0;
+    SDIO->BMOD &= ~SDIO_BMOD_DE;
+    SDIO->CTRL |= SDIO_CTRL_FIFO_RST | SDIO_CTRL_DMA_RST;
+    if (!SD_WaitForReset(&SDIO->CTRL, SDIO_CTRL_FIFO_RST | SDIO_CTRL_DMA_RST)) {
+        return false;
+    }
+    SDIO->BMOD = SDIO_BMOD_SWR;
+    if (!SD_WaitForReset(&SDIO->BMOD, SDIO_BMOD_SWR)) {
+        return false;
     }
 
+    SDIO->BLKSIZ = BLOCK_SIZE;
+    SDIO->BYTCNT = totalBytes;
+    SD_Handle.TransferComplete = 0;                    // Initialize handle flags
+    SD_Handle.TransferError    = SD_OK;
+    SD_Handle.Operation        = (blockCount > 1) ? SD_MULTIPLE_BLOCK : SD_SINGLE_BLOCK;
+    SD_Handle.Operation       |= dir << 1;
+    if (dir == SDIO_DIR_TX) {
+        SD_Handle.TXCplt = 1;
+    } else {
+        SD_Handle.RXCplt = 1;
+    }
 
-    SDIO->BMOD = 0x01; //reset Idma
-    // Configure Bus Mode: IDMA enabled, PBL=32 bytes
-    SDIO->BMOD = SDIO_BMOD_DE | (0x4 << 2) | (0x1<<1);                // DE=1, PBL=32 bytes (010)
+    SDIO->RINTSTS = 0xFFFFFFFF;
+    SDIO->IDSTS = SDIO_IDSTS_TI | SDIO_IDSTS_RI | SDIO_IDSTS_FBE | SDIO_IDSTS_DU
+        | SDIO_IDSTS_CES | SDIO_IDSTS_NIS | SDIO_IDSTS_AIS;
+    // MTS = 8 transfers, RX watermark = 7, TX watermark = 8.
+    SDIO->FIFOTH = (2 << 28) | (0x07 << 16) | 0x08;
+
+    SD_SetupIdmaDescriptors(buffer, totalBytes);
+    SDIO->DBADDR = (uint32_t)(uintptr_t)sdDmaDescriptors;
 
     // Enable IDMA interrupts: Transfer Complete, Receive Complete
     SDIO->IDINTEN = SDIO_IDINTEN_TI | SDIO_IDINTEN_RI | SDIO_IDINTEN_NIS;
 
-    // Enable host interrupts
-    SDIO->CTRL |= SDIO_CTRL_INT_EN;
+    SDIO->CTRL |= SDIO_CTRL_INT_EN | SDIO_CTRL_USE_INTERNAL_DMAC;
+    SDIO->BMOD = SDIO_BMOD_DE | SDIO_BMOD_FB;
 
-    // Poll Demand — kick-start the IDMA
+    // Kick-start the IDMA.
     SDIO->PLDMND = 0x1;
+    return true;
 }
 
 
@@ -685,19 +702,24 @@ static void SD_StartBlockTransfer(uint32_t* pBuffer, uint32_t BlockSize, uint32_
   */
 SD_Error_t SD_ReadBlocks_DMA(uint64_t ReadAddress, uint32_t *buffer, uint32_t BlockSize, uint32_t NumberOfBlocks)
 {
+    if (!SD_ValidBlockTransfer(buffer, BlockSize, NumberOfBlocks)) {
+        return SD_INVALID_PARAMETER;
+    }
+
     SD_Error_t ErrorState;
     uint32_t   CmdIndex;
-    SD_Handle.RXCplt = 1;
 
     if (SD_CardType != SD_HIGH_CAPACITY)
     {
         ReadAddress *= 512;
     }
 
-    SD_StartBlockTransfer(buffer, BlockSize, NumberOfBlocks, SDIO_DIR_RX);
+    if (!SD_StartBlockTransfer(buffer, NumberOfBlocks, SDIO_DIR_RX)) {
+        return SD_INTERNAL_ERROR;
+    }
 
     // Set Block Size for Card
-    ErrorState = SD_TransmitCommand((SD_CMD_SET_BLOCKLEN | SD_CMD_RESPONSE_SHORT | SDIO_CMD_WAIT_PRV_DATA_FINISH | SDIO_CMD_CHECK_REP_CRC), BlockSize, 1);
+    SD_TransmitCommand((SD_CMD_SET_BLOCKLEN | SD_CMD_RESPONSE_SHORT | SDIO_CMD_WAIT_PRV_DATA_FINISH | SDIO_CMD_CHECK_REP_CRC), BlockSize, 1);
 
     // Send CMD18 READ_MULT_BLOCK or CMD17 READ_SINGLE_BLOCK
     uint8_t retries = 10;
@@ -717,6 +739,7 @@ SD_Error_t SD_ReadBlocks_DMA(uint64_t ReadAddress, uint32_t *buffer, uint32_t Bl
     } while (ErrorState != SD_OK && retries);
 
     if (ErrorState != SD_OK) {
+        SDIO->BMOD &= ~SDIO_BMOD_DE;
         SD_Handle.RXCplt = 0;
     }
 
@@ -739,10 +762,12 @@ SD_Error_t SD_ReadBlocks_DMA(uint64_t ReadAddress, uint32_t *buffer, uint32_t Bl
   */
 SD_Error_t SD_WriteBlocks_DMA(uint64_t WriteAddress, uint32_t *buffer, uint32_t BlockSize, uint32_t NumberOfBlocks)
 {
+    if (!SD_ValidBlockTransfer(buffer, BlockSize, NumberOfBlocks)) {
+        return SD_INVALID_PARAMETER;
+    }
+
     SD_Error_t ErrorState;
     uint32_t   CmdIndex;
-
-    SD_Handle.TXCplt = 1;
 
     if (SD_CardType != SD_HIGH_CAPACITY)
     {
@@ -750,12 +775,14 @@ SD_Error_t SD_WriteBlocks_DMA(uint64_t WriteAddress, uint32_t *buffer, uint32_t 
     }
 
     // Set Block Size for Card
-    ErrorState = SD_TransmitCommand((SD_CMD_SET_BLOCKLEN | SD_CMD_RESPONSE_SHORT), BlockSize, 1);
+    SD_TransmitCommand((SD_CMD_SET_BLOCKLEN | SD_CMD_RESPONSE_SHORT), BlockSize, 1);
 
     // For writes, DMA must be set up BEFORE sending the write command.
     // The card expects data as soon as it responds to CMD24/CMD25,
     // so the DMA descriptor must already have OWN=1 (DMA ready).
-    SD_StartBlockTransfer(buffer, BlockSize, NumberOfBlocks, SDIO_DIR_TX);
+    if (!SD_StartBlockTransfer(buffer, NumberOfBlocks, SDIO_DIR_TX)) {
+        return SD_INTERNAL_ERROR;
+    }
 
     // Send CMD25 WRITE_MULT_BLOCK or CMD24 WRITE_SINGLE_BLOCK
     uint8_t retries = 10;
@@ -775,6 +802,7 @@ SD_Error_t SD_WriteBlocks_DMA(uint64_t WriteAddress, uint32_t *buffer, uint32_t 
     } while (ErrorState != SD_OK && retries);
 
     if (ErrorState != SD_OK) {
+        SDIO->BMOD &= ~SDIO_BMOD_DE;
         SD_Handle.TXCplt = 0;
     }
 
