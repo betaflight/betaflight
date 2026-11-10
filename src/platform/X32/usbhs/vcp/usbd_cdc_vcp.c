@@ -510,6 +510,16 @@ uint32_t CDC_Send_FreeBytes(void)
     return freeBytes;
 }
 
+/**
+ * @brief  Get the number of bytes still queued in the TX (MCU->PC) ring buffer.
+ *
+ * Called by: serial_usb_vcp's isUsbVcpTransmitBufferEmpty().
+ */
+uint32_t CDC_Send_BytesPending(void)
+{
+    return (APP_RX_DATA_SIZE - 1U) - CDC_Send_FreeBytes();
+}
+
 static void usbRecoverStalledTx(void)
 {
     /*
