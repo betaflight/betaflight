@@ -205,6 +205,11 @@ accgyro_spi_icm426xx_unittest_DEFINES := \
                 USE_ACCGYRO_IIM42652= \
                 USE_ACCGYRO_IIM42653=
 
+accgyro_icm45686_unittest_SRC := \
+		$(USER_DIR)/drivers/accgyro/accgyro_icm45686.c
+
+accgyro_icm45686_unittest_DEFINES := USE_ACCGYRO_ICM45686=
+
 accgyro_spi_icm456xx_unittest_SRC := \
 		$(USER_DIR)/drivers/accgyro/accgyro_spi_icm456xx.c
 

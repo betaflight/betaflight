@@ -33,6 +33,7 @@
 #include "build/debug.h"
 
 #include "drivers/accgyro/accgyro.h"
+#include "drivers/accgyro/accgyro_icm456xx_registers.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/accgyro/accgyro_spi_icm456xx.h"
 #include "drivers/bus_spi.h"
@@ -105,37 +106,26 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 // DO NOT use bank switching on this device
 
 // Register map User Bank 0 (UI Interface)
-#define ICM456XX_WHO_AM_REGISTER                0x72
-#define ICM456XX_REG_MISC2                      0x7F
-#define ICM456XX_INT1_CONFIG0                   0x16
 #define ICM456XX_INT1_CONFIG2                   0x18
-#define ICM456XX_INT1_STATUS0                   0x19
 #define ICM456XX_INT1_STATUS1                   0x1A
-#define ICM456XX_GYRO_CONFIG0                   0x1C
-#define ICM456XX_ACCEL_CONFIG0                  0x1B
-#define ICM456XX_PWR_MGMT0                      0x10
 
 // Register map IPREG_TOP1 (for future use)
 // Note: SREG_CTRL register provides endian selection capability. 
 // Currently not utilized as UI interface reads are in device's native endianness.
 // Kept as reference for potential future optimization.
-#define ICM456XX_RA_SREG_CTRL                   0xA267 // To access: 0xA200 + 0x67
 
 // SREG_CTRL - 0x67 (bits 1:0 select data endianness)
 #define ICM456XX_SREG_DATA_ENDIAN_SEL_LITTLE    (0 << 1) // Little endian (native)
-#define ICM456XX_SREG_DATA_ENDIAN_SEL_BIG       (1 << 1) // Big endian (requires IREG write)
 
 // MGMT0 - 0x10 - Gyro
 #define ICM456XX_GYRO_MODE_OFF                  (0x00 << 2)
 #define ICM456XX_GYRO_MODE_STANDBY              (0x01 << 2)
 #define ICM456XX_GYRO_MODE_LP                   (0x02 << 2)  // Low Power Mode
-#define ICM456XX_GYRO_MODE_LN                   (0x03 << 2)  // Low Noise Mode
 
 // MGMT0 - 0x10 - Accel
 #define ICM456XX_ACCEL_MODE_OFF                 (0x00)
 #define ICM456XX_ACCEL_MODE_OFF2                (0x01)
 #define ICM456XX_ACCEL_MODE_LP                  (0x02) // Low Power Mode
-#define ICM456XX_ACCEL_MODE_LN                  (0x03) // Low Noise Mode
 
 // INT1_CONFIG0 - 0x16
 #define ICM456XX_INT1_STATUS_EN_RESET_DONE      (1 << 7)
@@ -143,9 +133,7 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_INT1_STATUS_EN_AP_AGC_RDY      (1 << 5)
 #define ICM456XX_INT1_STATUS_EN_AP_FSYNC        (1 << 4)
 #define ICM456XX_INT1_STATUS_EN_AUX1_DRDY       (1 << 3)
-#define ICM456XX_INT1_STATUS_EN_DRDY            (1 << 2)
 #define ICM456XX_INT1_STATUS_EN_FIFO_THS        (1 << 1)
-#define ICM456XX_INT1_STATUS_EN_FIFO_FULL       (1 << 0)
 
 // INT1_CONFIG2 - 0x18
 #define ICM456XX_INT1_DRIVE_CIRCUIT_PP          (0 << 2)
@@ -156,32 +144,25 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_INT1_POLARITY_ACTIVE_HIGH      (1 << 0)
 
 // INT1_STATUS0 - 0x19
-#define ICM456XX_INT1_STATUS_RESET_DONE         (1 << 7)
 #define ICM456XX_INT1_STATUS_AUX1_AGC_RDY       (1 << 6)
 #define ICM456XX_INT1_STATUS_AP_AGC_RDY         (1 << 5)
 #define ICM456XX_INT1_STATUS_AP_FSYNC           (1 << 4)
 #define ICM456XX_INT1_STATUS_AUX1_DRDY          (1 << 3)
-#define ICM456XX_INT1_STATUS_DRDY               (1 << 2)
 #define ICM456XX_INT1_STATUS_FIFO_THS           (1 << 1)
-#define ICM456XX_INT1_STATUS_FIFO_FULL          (1 << 0)
 
 // REG_MISC2 - 0x7F
-#define ICM456XX_SOFT_RESET                     (1 << 1)
 #define ICM456XX_RESET_TIMEOUT_US               20000  // 20 ms
 #define ICM456XX_BIT_IREG_DONE                  (1 << 0)
 
-#define ICM456XX_ACCEL_DATA_X1_UI               0x00
 #define ICM456XX_GYRO_DATA_X1_UI                0x06
 
 // ACCEL_CONFIG0 - 0x1B
-#define ICM456XX_ACCEL_FS_SEL_32G               (0x00 << 4)
 #define ICM456XX_ACCEL_FS_SEL_16G               (0x01 << 4)
 #define ICM456XX_ACCEL_FS_SEL_8G                (0x02 << 4)
 #define ICM456XX_ACCEL_FS_SEL_4G                (0x03 << 4)
 #define ICM456XX_ACCEL_FS_SEL_2G                (0x04 << 4)
 
 // ACCEL_CONFIG0 - 0x1B
-#define ICM456XX_ACCEL_ODR_6K4_LN               0x03
 #define ICM456XX_ACCEL_ODR_3K2_LN               0x04
 #define ICM456XX_ACCEL_ODR_1K6_LN               0x05
 #define ICM456XX_ACCEL_ODR_800_LN               0x06
@@ -196,7 +177,6 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_ACCEL_ODR_1_5625_LP            0x0F
 
 // GYRO_CONFIG0 - 0x1C
-#define ICM456XX_GYRO_FS_SEL_4000DPS            (0x00 << 4)
 #define ICM456XX_GYRO_FS_SEL_2000DPS            (0x01 << 4)
 #define ICM456XX_GYRO_FS_SEL_1000DPS            (0x02 << 4)
 #define ICM456XX_GYRO_FS_SEL_500DPS             (0x03 << 4)
@@ -207,7 +187,6 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_GYRO_FS_SEL_15_625DPS          (0x08 << 4)
 
 // GYRO_CONFIG0 - 0x1C
-#define ICM456XX_GYRO_ODR_6K4_LN                0x03
 #define ICM456XX_GYRO_ODR_3K2_LN                0x04
 #define ICM456XX_GYRO_ODR_1K6_LN                0x05
 #define ICM456XX_GYRO_ODR_800_LN                0x06
@@ -233,9 +212,7 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 
 // HOST INDIRECT ACCESS REGISTER (IREG)
 // 0x7C-0x7E must be burst-written in a single SPI transaction (DS-000577, Host Indirect Access Register interface)
-#define ICM456XX_REG_IREG_ADDR_15_8             0x7C
 #define ICM456XX_REG_IREG_ADDR_7_0              0x7D
-#define ICM456XX_REG_IREG_DATA                  0x7E
 
 
 // IPREG_SYS1_REG_172 - 0xAC
@@ -573,9 +550,9 @@ bool icm456xxAccReadSPI(accDev_t *acc)
     }
 
     // Extract little endian data (LSB at raw[0], MSB at raw[1])
-    acc->ADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
-    acc->ADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
-    acc->ADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
+    acc->ADCRaw[X] = icm456xxReadI16(raw + 0, false);
+    acc->ADCRaw[Y] = icm456xxReadI16(raw + 2, false);
+    acc->ADCRaw[Z] = icm456xxReadI16(raw + 4, false);
     return true;
 }
 
@@ -640,17 +617,17 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
             return false;
         }
 
-        gyro->gyroADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
-        gyro->gyroADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
-        gyro->gyroADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
+        gyro->gyroADCRaw[X] = icm456xxReadI16(raw + 0, false);
+        gyro->gyroADCRaw[Y] = icm456xxReadI16(raw + 2, false);
+        gyro->gyroADCRaw[Z] = icm456xxReadI16(raw + 4, false);
         break;
     }
 
     case GYRO_EXTI_INT_DMA:
     {
-        gyro->gyroADCRaw[X] = (int16_t)((gyro->dev.rxBuf[2] << 8) | gyro->dev.rxBuf[1]);
-        gyro->gyroADCRaw[Y] = (int16_t)((gyro->dev.rxBuf[4] << 8) | gyro->dev.rxBuf[3]);
-        gyro->gyroADCRaw[Z] = (int16_t)((gyro->dev.rxBuf[6] << 8) | gyro->dev.rxBuf[5]);
+        gyro->gyroADCRaw[X] = icm456xxReadI16(gyro->dev.rxBuf + 1, false);
+        gyro->gyroADCRaw[Y] = icm456xxReadI16(gyro->dev.rxBuf + 3, false);
+        gyro->gyroADCRaw[Z] = icm456xxReadI16(gyro->dev.rxBuf + 5, false);
 
         break;
     }
