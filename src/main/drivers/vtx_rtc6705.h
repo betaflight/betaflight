@@ -31,7 +31,7 @@
 
 #include "pg/vtx_io.h"
 
-#if defined(RTC6705_DYNAMIC_POWER_CTRL)
+#if ENABLE_RTC6705_DYNAMIC_POWER_CTRL
     #define VTX_RTC6705_POWER_COUNT       3  // code 11 is undefined and unsafe
 #else
     #define VTX_RTC6705_POWER_COUNT       2

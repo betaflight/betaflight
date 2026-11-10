@@ -26,7 +26,7 @@
 
 #include "pg/pg.h"
 
-#ifdef RTC6705_DYNAMIC_POWER_CTRL
+#if ENABLE_RTC6705_DYNAMIC_POWER_CTRL
 #define VTX_DYNAMIC_CTRL_PIN_COUNT    2
 #endif
 
@@ -42,7 +42,7 @@ typedef struct vtxIOConfig_s {
     // settings for hardware SPI only
     uint8_t spiDevice;
 
-#ifdef RTC6705_DYNAMIC_POWER_CTRL
+#if ENABLE_RTC6705_DYNAMIC_POWER_CTRL
     ioTag_t exPowerTag[VTX_DYNAMIC_CTRL_PIN_COUNT];
 #endif
 } vtxIOConfig_t;

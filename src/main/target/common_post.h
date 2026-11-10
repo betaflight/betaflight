@@ -929,6 +929,10 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_LED_STRIP_INVERSION 0
 #endif
 
+#if !defined(ENABLE_RTC6705_DYNAMIC_POWER_CTRL)
+#define ENABLE_RTC6705_DYNAMIC_POWER_CTRL 0
+#endif
+
 // STM32C5: drive boot source from the BOOT0 pin rather than the BOOT0
 // option bit. Default on so a BF crash never strands the board without
 // DFU recovery — set this to 0 in config.h for boards that wire BOOT0

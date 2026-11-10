@@ -7268,7 +7268,7 @@ const cliResourceValue_t resourceTable[] = {
     DEFS( OWNER_VTX_CS,        PG_VTX_IO_CONFIG, vtxIOConfig_t, csTag ),
     DEFS( OWNER_VTX_DATA,      PG_VTX_IO_CONFIG, vtxIOConfig_t, dataTag ),
     DEFS( OWNER_VTX_CLK,       PG_VTX_IO_CONFIG, vtxIOConfig_t, clockTag ),
-#ifdef RTC6705_DYNAMIC_POWER_CTRL
+#if ENABLE_RTC6705_DYNAMIC_POWER_CTRL
     DEFA( OWNER_VTX_POWER_EX,  PG_VTX_IO_CONFIG, vtxIOConfig_t, exPowerTag, VTX_DYNAMIC_CTRL_PIN_COUNT),
 #endif
 #endif

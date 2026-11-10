@@ -56,7 +56,7 @@
 static IO_t vtxPowerPin     = IO_NONE;
 #endif
 
-#ifdef RTC6705_DYNAMIC_POWER_CTRL
+#if ENABLE_RTC6705_DYNAMIC_POWER_CTRL
 static IO_t exPowerPin[VTX_DYNAMIC_CTRL_PIN_COUNT] = { IO_NONE };
 #endif
 
@@ -78,7 +78,7 @@ static extDevice_t *dev = NULL;
 #define RTC6705_RW_CONTROL_BIT      (1 << 4)
 #define RTC6705_ADDRESS             (0x07)
 
-#if defined(RTC6705_DYNAMIC_POWER_CTRL)
+#if ENABLE_RTC6705_DYNAMIC_POWER_CTRL
 typedef struct rtc6705PowerLevel_s {
     uint8_t pins;   // bit i drives exPowerPin[i]
     uint32_t reg;   // rtc6705 reg 0x07 data
@@ -128,7 +128,7 @@ bool rtc6705IOInit(const vtxIOConfig_t *vtxIOConfig)
         IOConfigGPIO(vtxPowerPin, IOCFG_OUT_PP);
     }
 
-#ifdef RTC6705_DYNAMIC_POWER_CTRL
+#if ENABLE_RTC6705_DYNAMIC_POWER_CTRL
     for (unsigned i = 0; i < VTX_DYNAMIC_CTRL_PIN_COUNT; i++) {
         IO_t io = IOGetByTag(vtxIOConfig->exPowerTag[i]);
         if (io) {
@@ -211,7 +211,7 @@ void rtc6705SetFrequency(uint16_t frequency)
 
 void rtc6705SetRFPower(uint8_t rf_power)
 {
-#if defined(RTC6705_DYNAMIC_POWER_CTRL)
+#if ENABLE_RTC6705_DYNAMIC_POWER_CTRL
     rf_power = constrain(rf_power, 0, VTX_RTC6705_POWER_COUNT - 1);
     const rtc6705PowerLevel_t *level = &rtc6705PowerLevels[rf_power];
 
@@ -231,7 +231,7 @@ void rtc6705SetRFPower(uint8_t rf_power)
     rf_power = constrain(rf_power, 1, VTX_RTC6705_POWER_COUNT);
 #endif
 
-#if defined(RTC6705_DYNAMIC_POWER_CTRL)
+#if ENABLE_RTC6705_DYNAMIC_POWER_CTRL
     const uint32_t data = level->reg;
 #else
     const uint32_t data = rf_power > 1 ? PA_CONTROL_DEFAULT : PA_CONTROL_LOW;
