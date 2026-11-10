@@ -465,6 +465,11 @@ msp_serial_unittest_DEFINES := \
 		USE_RANGEFINDER_MT= \
 		USE_OPTICALFLOW_MT=
 
+msp_serial_no_bootloader_unittest_SRC := $(msp_serial_unittest_SRC)
+msp_serial_no_bootloader_unittest_DEFINES := \
+		$(msp_serial_unittest_DEFINES) \
+		PLATFORM_SUPPORTS_SOFTWARE_BOOTLOADER=0
+
 msp_reboot_unittest_SRC := \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(TEST_DIR)/msp_reboot_test_support.c

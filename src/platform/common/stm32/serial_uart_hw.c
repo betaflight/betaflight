@@ -80,6 +80,9 @@ static void enableRxIrq(const uartHardware_t *hardware)
         NVIC_Init(&nvicInit);
 #elif defined(USE_GDBSP_DRIVER)
         nvic_irq_enable(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
+#elif defined(CH32H4)
+        NVIC_SetPriority(hardware->irqn, hardware->rxPriority);
+        NVIC_EnableIRQ(hardware->irqn);
 #else
 # error "Unhandled MCU type"
 #endif
@@ -110,6 +113,9 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
 
 #ifdef USE_DMA
     uartConfigureDma(uartdev);
+#if UART_TRAIT_TX_COMPLETE_PENDING
+    s->txCompletePending = false;
+#endif
     s->txDMAEmpty = true;
 #endif
 
@@ -174,6 +180,17 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
             GPIO_OSPEED_12MHZ,
             pushPull ? GPIO_OTYPE_PP : GPIO_OTYPE_OD,
             ((const unsigned[]){GPIO_PUPD_NONE, GPIO_PUPD_PULLDOWN, GPIO_PUPD_PULLUP})[pull]
+        );
+#elif defined(CH32H4)
+        // CH32H41x GPIO disconnects internal pull-up/pull-down resistors in all
+        // output and alternate-function modes (RM 9.2.7-9.2.8); external bias is
+        // required for single-wire/open-drain lines when SERIAL_BIDIR_NOPULL is not set.
+        UNUSED(pull);
+        const ioConfig_t ioCfg = IO_CONFIG(
+            DIR_OUT,
+            pushPull ? GPIO_MODE_OUT_AF_PP : GPIO_MODE_OUT_AF_OD,
+            GPIO_SPEED_VERY_HIGH,
+            GPIO_PULL_NONE
         );
 #endif
         IOInit(txIO, ownerTxRx, ownerIndex);
@@ -266,6 +283,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
         }
     }
 
+#if !defined(USE_CHBSP_DRIVER)
     if (cfg->rxDmaopt != DMA_OPT_UNUSED) {
         dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, uartDeviceIdx, cfg->rxDmaopt);
         if (dmaChannelSpec) {
@@ -277,6 +295,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
 #endif
         }
     }
+#endif
 #else /* USE_DMA_SPEC */
     // Non USE_DMA_SPEC does not support configurable ON/OFF of UART DMA
 
@@ -308,6 +327,8 @@ void uartConfigureDma(uartDevice_t *uartdev)
 #endif
             dmaSetHandler(identifier, uartDmaIrqHandler, hardware->txPriority, (uint32_t)uartdev);
             uartPort->txDMAPeripheralBaseAddr = (uint32_t)&UART_REG_TXD(hardware->reg);
+        } else {
+            uartPort->txDMAResource = NULL;
         }
     }
 
@@ -319,6 +340,8 @@ void uartConfigureDma(uartDevice_t *uartdev)
             dmaMuxEnable(identifier, uartPort->rxDMAMuxId);
 #endif
             uartPort->rxDMAPeripheralBaseAddr = (uint32_t)&UART_REG_RXD(hardware->reg);
+        } else {
+            uartPort->rxDMAResource = NULL;
         }
     }
 }

@@ -156,8 +156,7 @@ void systemResetToMsc(int timezoneOffsetMinutes)
 void systemResetFromMsc(void)
 {
     persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
-    __disable_irq();
-    NVIC_SystemReset();
+    systemReset();
 }
 
 #endif

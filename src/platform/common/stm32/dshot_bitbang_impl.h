@@ -87,7 +87,7 @@
 #ifdef USE_HAL_DRIVER
 #define BB_GPIO_PULLDOWN GPIO_PULLDOWN
 #define BB_GPIO_PULLUP   GPIO_PULLUP
-#elif defined(AT32F435)
+#elif defined(AT32F435) || defined(CH32H4)
 #define BB_GPIO_PULLDOWN GPIO_PULL_DOWN
 #define BB_GPIO_PULLUP GPIO_PULL_UP
 #elif defined(X32M7)
@@ -133,6 +133,12 @@ typedef struct dmaRegCache_s {
     uint32_t CHPADDR;
     uint32_t CHM0ADDR;
     uint32_t CHFCTL;
+#elif defined(CH32H4)
+    uint32_t CFGR;
+    uint32_t CNTR;
+    uint32_t PADDR;
+    uint32_t MADDR;
+    uint32_t M1ADDR;
 #else
 #error No MCU dependent code here
 #endif
@@ -144,6 +150,13 @@ typedef struct dmaRegCache_s {
 typedef struct bbPacer_s {
     timerResource_t *tim;
     uint16_t dmaSources;
+#ifdef CH32H4
+    uint16_t armedOutputSources;
+    volatile uint16_t pendingOutputSources;
+    volatile uint16_t pendingInputSources;
+    uint16_t outputARR;
+    uint16_t inputARR;
+#endif
 } bbPacer_t;
 
 #ifdef AT32F435
@@ -188,6 +201,14 @@ typedef struct bbPort_s {
 
     // Idle value
     uint32_t gpioIdleBSRR;
+
+#ifdef CH32H4
+    bbPacer_t *pacer;
+    uint32_t gpioCfgLrMask, gpioCfgHrMask;
+    uint32_t gpioCfgLrOutput, gpioCfgHrOutput;
+    uint32_t gpioCfgLrInput, gpioCfgHrInput;
+    uint32_t gpioInputBSRR;
+#endif
 
 #ifdef USE_HAL_DRIVER
     LL_TIM_InitTypeDef timeBaseInit;
@@ -300,6 +321,9 @@ bool bbSwitchToOutput(bbPort_t * bbPort);
 void bbSwitchToInput(bbPort_t * bbPort);
 
 void bbTIM_TimeBaseInit(bbPort_t *bbPort, uint16_t period);
+#ifdef CH32H4
+void bbTIM_ReloadPeriod(void *TIMx, uint16_t period);
+#endif
 #ifdef AT32F435
 void bbTIM_DMACmd(void *TIMx, uint16_t TIM_DMASource, confirm_state NewState);
 #else
