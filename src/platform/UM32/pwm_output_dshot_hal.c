@@ -246,34 +246,37 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     dmaResource_t *dmaRef = NULL;
     uint32_t dmaChannel = 0;
 
-#if defined(USE_DMA_SPEC)
-    const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
-
-    if (dmaSpec != NULL) {
-        dmaRef = dmaSpec->ref;
-        dmaChannel = DMA_CODE_CHANNEL(dmaSpec->code);
-    }
-#else
-    dmaRef = timerHardware->dmaRef;
-    dmaChannel = timerHardware->dmaChannel;
-#endif
-
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
         dmaRef = timerHardware->dmaTimUPRef;
-        dmaChannel = DMA_CODE_CHANNEL(dmaSpec->code);
-    }
+    } else
 #endif
+    {
+#if defined(USE_DMA_SPEC)
+        const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
+        if (dmaSpec != NULL) {
+            dmaRef = dmaSpec->ref;
+            dmaChannel = DMA_CODE_CHANNEL(dmaSpec->code);
+        }
+#else
+        dmaRef = timerHardware->dmaRef;
+        dmaChannel = timerHardware->dmaChannel;
+#endif
+    }
 
     if (dmaRef == NULL) {
         return false;
     }
 
-    dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaRef);
+    const dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaRef);
+    if (dmaIdentifier == DMA_NONE) {
+        return false;
+    }
 
     bool dmaIsConfigured = false;
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
+        dmaChannel = DMA_DEVICE_INDEX(dmaIdentifier);
         const resourceOwner_t *owner = dmaGetOwner(dmaIdentifier);
         if (owner->owner == OWNER_TIMUP && owner->index == timerGetTIMNumber(timerHardware)) {
             dmaIsConfigured = true;
