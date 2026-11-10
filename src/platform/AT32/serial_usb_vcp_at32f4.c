@@ -371,7 +371,14 @@ static void usbVcpSetBaudRateCb(serialPort_t *instance, void (*cb)(serialPort_t 
 static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
 {
     UNUSED(instance);
-    return true;
+    static usbVcpTxDrain_t txDrain;
+
+    if (!(usbIsConnected() && usbIsConfigured())) {
+        // Nothing will drain the ring; don't make callers wait on it.
+        return true;
+    }
+    const uint32_t pending = (APP_TX_DATA_SIZE - 1) - CDC_Send_FreeBytes();
+    return usbVcpTxDrained(&txDrain, pending, USB_TIMEOUT);
 }
 
 static uint32_t usbVcpAvailable(const serialPort_t *instance)
