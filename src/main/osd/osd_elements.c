@@ -752,6 +752,28 @@ static void osdElementLidarDist(osdElementParms_t *element)
 }
 #endif
 
+#ifdef USE_LAUNCH_CONTROL_LIFT
+// LIFT: how high the launch is going, then how high it went, against the 400 ft / 120 m limits.
+// A status line rather than a warning: it doesn't blink, and it has its own place on screen so
+// it never hides a warning (or is hidden by one).
+static void osdElementLaunchHeight(osdElementParms_t *element)
+{
+    bool atTop;
+    const int32_t heightCm = getLaunchControlLiftHeightCm(&atTop);
+
+    element->buff[0] = '\0';
+    if (heightCm < 0) {
+        return;
+    }
+    const int height = lrintf(osdGetMetersToSelectedUnit(heightCm) / 100.0f);
+    if (atTop) {
+        tfp_sprintf(element->buff, "LAUNCH: %d%c", height, osdGetMetersToSelectedUnitSymbol());
+    } else {
+        tfp_sprintf(element->buff, "LAUNCH %c%d%c", SYM_ARROW_SMALL_UP, height, osdGetMetersToSelectedUnitSymbol());
+    }
+}
+#endif
+
 #if ENABLE_OSD_CUSTOM_TEXT
 static void osdElementCustomSerialText(osdElementParms_t *element)
 {
@@ -1184,6 +1206,25 @@ static void osdElementFlymode(osdElementParms_t *element)
         strcpy(element->buff, "!FS!");
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
         strcpy(element->buff, "RESC");
+#ifdef USE_LAUNCH_CONTROL
+#ifdef USE_LAUNCH_CONTROL_LIFT
+    // LIFT, step by step, so goggle footage shows exactly what the flight controller was
+    // doing: PREP (disarmed, launch switch on) > LNCH > LIFT > INVT > BRKE > the sticks
+    } else if (isLaunchControlLifting()) {
+        const uint8_t liftState = getLaunchControlLiftLogState();
+        if (liftState == LAUNCH_LIFT_LOG_FLIP) {
+            strcpy(element->buff, "INVT");   // lift time up, turning over (not "FLIP": that reads as crash flip)
+        } else if (liftState == LAUNCH_LIFT_LOG_BRAKE) {
+            strcpy(element->buff, "BRKE");   // upside down, stopping the climb
+        } else {
+            strcpy(element->buff, "LIFT");   // the flight controller is flying, not the sticks
+        }
+#endif
+    } else if (isLaunchControlActive()) {
+        strcpy(element->buff, "LNCH");       // armed and holding: a LIFT waits for its trigger, the other modes for the throttle
+    } else if (isLaunchControlPreStaged()) {
+        strcpy(element->buff, "PREP");       // disarmed: launch control engages on arming
+#endif
     } else if (FLIGHT_MODE(HEADFREE_MODE)) {
         strcpy(element->buff, "HEAD");
     } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
@@ -2223,6 +2264,9 @@ static const uint8_t osdElementDisplayOrder[] = {
 #if ENABLE_OSD_CUSTOM_TEXT
     OSD_CUSTOM_SERIAL_TEXT,
 #endif
+#ifdef USE_LAUNCH_CONTROL_LIFT
+    OSD_LAUNCH_HEIGHT,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -2392,6 +2436,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #endif
 #ifdef USE_PITOT
     [OSD_AIRSPEED]                = osdElementAirspeed,
+#endif
+#ifdef USE_LAUNCH_CONTROL_LIFT
+    [OSD_LAUNCH_HEIGHT]           = osdElementLaunchHeight,
 #endif
 };
 
