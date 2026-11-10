@@ -716,6 +716,14 @@ telemetry_hott_unittest_SRC := \
 		$(USER_DIR)/common/gps_conversion.c
 
 
+telemetry_frsky_hub_unittest_SRC := \
+		$(USER_DIR)/telemetry/frsky_hub.c
+
+telemetry_frsky_hub_unittest_DEFINES := \
+		USE_TELEMETRY= \
+		USE_TELEMETRY_FRSKY_HUB=
+
+
 telemetry_ibus_unittest_SRC := \
 		$(USER_DIR)/telemetry/ibus_shared.c \
 		$(USER_DIR)/telemetry/ibus.c
