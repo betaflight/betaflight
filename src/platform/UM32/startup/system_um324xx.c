@@ -538,6 +538,7 @@ void SystemClock_Config(void)
         /* Enable RCH Oscillator as source */
         RCM_OscInitStruct.OscillatorType = RCM_OSCILLATORTYPE_RCH;
         RCM_OscInitStruct.RCHState = RCM_RCH_ON;
+        RCM_OscInitStruct.PLL.PLLState = RCM_PLL_NONE;
 
         /*Initializes the RCM Oscillators*/
         HAL_RCM_OscConfig(&RCM_OscInitStruct);
@@ -638,9 +639,10 @@ void SystemClock_Config(void)
     }
     else if(SYSCLK_SRC == SYSCLK_USE_XTH)
     {
-        /* Enable XTH Oscillator and activate PLL with HSE as source */
+        /* Enable the XTH oscillator without configuring the PLL. */
         RCM_OscInitStruct.OscillatorType = RCM_OSCILLATORTYPE_XTH;
         RCM_OscInitStruct.XTHState = RCM_XTH_ON;
+        RCM_OscInitStruct.PLL.PLLState = RCM_PLL_NONE;
 
         /*Initializes the RCM Oscillators*/
         HAL_RCM_OscConfig(&RCM_OscInitStruct);
