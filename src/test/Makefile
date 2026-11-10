@@ -788,6 +788,33 @@ $(OBJECT_DIR)/dronecan_nodes_unittest/io/dronecan/dronecan_nodes.c.o \
 $(OBJECT_DIR)/dronecan_nodes_unittest/dronecan_nodes_unittest.o: $(DRONECAN_LIBCANARD_DIR)/canard.c
 
 
+dronecan_esc_unittest_SRC := \
+	$(USER_DIR)/io/dronecan/dronecan_esc.c \
+	$(TEST_DIR)/dronecan_nodes_canard.c
+
+dronecan_esc_unittest_DEFINES := \
+	ENABLE_DRONECAN=1 \
+	ENABLE_DRONECAN_ESC=1 \
+	USE_ESC_SENSOR=
+
+dronecan_transport_unittest_SRC := \
+	$(USER_DIR)/io/dronecan/dronecan.c \
+	$(TEST_DIR)/dronecan_nodes_canard.c
+
+dronecan_transport_unittest_DEFINES := \
+	ENABLE_DRONECAN=1
+
+dronecan_esc_unittest_INCLUDE_DIRS := $(DRONECAN_LIBCANARD_DIR)
+dronecan_transport_unittest_INCLUDE_DIRS := $(DRONECAN_LIBCANARD_DIR)
+
+$(OBJECT_DIR)/dronecan_esc_unittest/dronecan_nodes_canard.c.o \
+$(OBJECT_DIR)/dronecan_esc_unittest/io/dronecan/dronecan_esc.c.o \
+$(OBJECT_DIR)/dronecan_esc_unittest/dronecan_esc_unittest.o \
+$(OBJECT_DIR)/dronecan_transport_unittest/dronecan_nodes_canard.c.o \
+$(OBJECT_DIR)/dronecan_transport_unittest/io/dronecan/dronecan.c.o \
+$(OBJECT_DIR)/dronecan_transport_unittest/dronecan_transport_unittest.o: $(DRONECAN_LIBCANARD_DIR)/canard.c
+
+
 .PHONY: check-pg-ids
 check-pg-ids:
 	@pg=$(USER_DIR)/pg/pg_ids.h; \

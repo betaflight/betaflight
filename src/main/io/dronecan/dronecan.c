@@ -112,6 +112,8 @@ static uint8_t dronecanSubscriberCount;
 // the right cadence across jittery task scheduling.
 static timeUs_t dronecanLastSecondUs;
 static timeUs_t dronecanStartUs;
+static timeUs_t dronecanLastTransportUs;
+static uint64_t dronecanTransportTimeUs;
 
 //-----------------------------------------------------------------------------
 // Callbacks handed to libcanard
@@ -189,7 +191,7 @@ static void dronecanCanRxAdapter(uint32_t identifier, bool isExtended,
     dronecanRxHead = next;
 }
 
-static void dronecanDrainRxRing(timeUs_t currentTimeUs)
+static void dronecanDrainRxRing(uint64_t currentTimeUs)
 {
     while (dronecanRxTail != dronecanRxHead) {
         // Pair the ISR-side fence on head with a consumer-side fence so
@@ -203,11 +205,8 @@ static void dronecanDrainRxRing(timeUs_t currentTimeUs)
         frame.data_len = slot->length;
         memcpy(frame.data, slot->data, slot->length);
 
-        // libcanard stores timestamps as uint64 and uses them for transfer
-        // timeout (2s) / stale cleanup. Zero-extending a uint32 micros() is
-        // accurate inside the 71-minute wraparound window; the task runs at
-        // 50 Hz so every active transfer will be serviced well inside that.
-        canardHandleRxFrame(&dronecanInstance, &frame, (uint64_t)currentTimeUs);
+        // Keep libcanard time monotonic when a transfer crosses a micros() wrap.
+        canardHandleRxFrame(&dronecanInstance, &frame, currentTimeUs);
 
         dronecanRxTail = (dronecanRxTail + 1U) & DRONECAN_RX_RING_MASK;
     }
@@ -318,6 +317,8 @@ void dronecanInit(void)
 
     dronecanStartUs = micros();
     dronecanLastSecondUs = dronecanStartUs;
+    dronecanLastTransportUs = dronecanStartUs;
+    dronecanTransportTimeUs = dronecanStartUs;
     dronecanInitialised = true;
 }
 
@@ -332,7 +333,11 @@ void dronecanUpdate(timeUs_t currentTimeUs)
         return;
     }
 
-    dronecanDrainRxRing(currentTimeUs);
+    // The task runs every 10/20 ms, well inside a native timer wrap.
+    // Accumulate unsigned deltas for libcanard's 64-bit transport clock.
+    dronecanTransportTimeUs += (timeUs_t)(currentTimeUs - dronecanLastTransportUs);
+    dronecanLastTransportUs = currentTimeUs;
+    dronecanDrainRxRing(dronecanTransportTimeUs);
 
 #if ENABLE_DRONECAN_ESC
     // Broadcast esc.RawCommand (when commanding ESCs) and age stale telemetry.
@@ -352,7 +357,7 @@ void dronecanUpdate(timeUs_t currentTimeUs)
         dronecanLastSecondUs = currentTimeUs;
         dronecanNodeUpdate(currentTimeUs);
         dronecanNodesUpdate(currentTimeUs);
-        canardCleanupStaleTransfers(&dronecanInstance, (uint64_t)currentTimeUs);
+        canardCleanupStaleTransfers(&dronecanInstance, dronecanTransportTimeUs);
     }
 
     dronecanDrainTxQueue();

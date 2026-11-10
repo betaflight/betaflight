@@ -117,6 +117,7 @@
 // Total 110 bits = 14 bytes.
 #define UAVCAN_ESC_STATUS_ID                1034U
 #define UAVCAN_ESC_STATUS_SIGNATURE         0xa9af28aea2fbb254ULL
+#define UAVCAN_ESC_STATUS_PAYLOAD_LEN       14U
 #define ESC_STATUS_OFFSET_ERROR_COUNT       0U
 #define ESC_STATUS_OFFSET_VOLTAGE           32U
 #define ESC_STATUS_OFFSET_CURRENT           48U

@@ -163,6 +163,7 @@ void dronecanEscUpdateComplete(void)
 
 // Last-heard timestamp per ESC index, for aging stale telemetry slots.
 static timeUs_t escStatusLastUs[MAX_SUPPORTED_MOTORS];
+static bool escStatusReceived[MAX_SUPPORTED_MOTORS];
 
 // Age quiet slots every 100 ms so a silent ESC crosses ESC_BATTERY_AGE_MAX
 // (10) in about a second — the same suppression timescale as the serial
@@ -170,11 +171,18 @@ static timeUs_t escStatusLastUs[MAX_SUPPORTED_MOTORS];
 #define ESC_STATUS_AGE_INTERVAL_US  100000
 #define KELVIN_TO_CELSIUS       273.15f
 
+static float finiteOrZero(float value)
+{
+    return isfinite(value) ? value : 0.0f;
+}
+
 static void handleEscStatus(CanardInstance *ins, CanardRxTransfer *t)
 {
     UNUSED(ins);
 
-    dronecanNodesNoteSensor(t->source_node_id, DRONECAN_NODE_SENSOR_ESC);
+    if (t->payload_len != UAVCAN_ESC_STATUS_PAYLOAD_LEN) {
+        return;
+    }
 
     uint32_t errorCount = 0;
     uint16_t voltageF16 = 0;
@@ -196,24 +204,30 @@ static void handleEscStatus(CanardInstance *ins, CanardRxTransfer *t)
         return;
     }
 
-    const float voltage = canardConvertFloat16ToNativeFloat(voltageF16);
-    const float current = canardConvertFloat16ToNativeFloat(currentF16);
-    const float tempK   = canardConvertFloat16ToNativeFloat(tempF16);
+    dronecanNodesNoteSensor(t->source_node_id, DRONECAN_NODE_SENSOR_ESC);
+
+    const float voltage = finiteOrZero(canardConvertFloat16ToNativeFloat(voltageF16));
+    const float current = finiteOrZero(canardConvertFloat16ToNativeFloat(currentF16));
+    const float tempK   = finiteOrZero(canardConvertFloat16ToNativeFloat(tempF16));
     const float tempC   = tempK - KELVIN_TO_CELSIUS;
 
     escSensorData_t data;
     memset(&data, 0, sizeof(data));
     data.voltage     = (uint16_t)constrainf(voltage * 100.0f, 0, UINT16_MAX);   // 0.01V
-    data.current     = (int32_t)constrainf(current * 100.0f, INT32_MIN, INT32_MAX); // 0.01A
+    // Finite float16 current is at most 65504 A; centi-amperes fit in int32.
+    data.current     = (int32_t)(current * 100.0f);                           // 0.01A
     data.temperature = (uint8_t)constrainf(tempC, 0, UINT8_MAX);                // °C
-    // Status.rpm is electrical RPM; escSensorData.rpm is eRPM/100 (LSB = 100),
-    // matching the DShot telemetry convention so erpmToRpm() agrees downstream.
-    data.rpm         = (int16_t)constrainf(rpm / 100.0f, INT16_MIN, INT16_MAX);
+    // Status carries signed shaft RPM. The native store uses speed in eRPM/100.
+    // Signed int18 magnitude times a uint8 pole count fits in uint32.
+    const uint32_t rpmMagnitude = rpm < 0 ? -rpm : rpm;
+    const uint32_t erpm100 = rpmMagnitude * motorConfig()->motorPoleCount / 200U;
+    data.rpm = (int16_t)MIN(erpm100, (uint32_t)INT16_MAX);
     // consumption (mAh) isn't carried by esc.Status; leave 0 (battery falls
     // back to its own coulomb counter).
 
     escSensorSetExternal(escIndex, &data);
     escStatusLastUs[escIndex] = micros();
+    escStatusReceived[escIndex] = true;
 }
 
 #endif // USE_ESC_SENSOR
@@ -236,6 +250,7 @@ void dronecanEscInit(void)
 #if defined(USE_ESC_SENSOR)
     for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         escStatusLastUs[i] = 0;
+        escStatusReceived[i] = false;
     }
 
     escSensorExternalInit();
@@ -259,7 +274,7 @@ void dronecanEscUpdate(timeUs_t currentTimeUs)
     // rather than a frozen last reading.
 #if defined(USE_ESC_SENSOR)
     for (uint8_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-        if (escStatusLastUs[i] != 0
+        if (escStatusReceived[i]
                 && cmpTimeUs(currentTimeUs, escStatusLastUs[i]) >= ESC_STATUS_AGE_INTERVAL_US) {
             escSensorExternalAge(i);
             escStatusLastUs[i] = currentTimeUs;
