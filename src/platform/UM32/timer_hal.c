@@ -749,43 +749,32 @@ static void timCCxHandler(timerResource_t *tim, timerConfig_t *timerConfig)
 static inline void timUpdateHandler(timerResource_t *tim, timerConfig_t *timerConfig)
 {
     TIM_TypeDef *tim_ptr = (TIM_TypeDef *)tim;
+    if (!LL_TIM_IsEnabledIT_UPDATE(tim_ptr) || !LL_TIM_IsActiveFlag_UPDATE(tim_ptr)) {
+        return;
+    }
+    LL_TIM_ClearFlag_UPDATE(tim_ptr);
+
     uint16_t capture;
-    unsigned tim_status;
-    tim_status = tim_ptr->SR & tim_ptr->DIER;
-    while (tim_status) {
-        // flags will be cleared by reading CCR in dual capture, make sure we call handler correctly
-        // currrent order is highest bit first. Code should not rely on specific order (it will introduce race conditions anyway)
-        unsigned bit = __builtin_clz(tim_status);
-        unsigned mask = ~(0x80000000 >> bit);
-        tim_ptr->SR = mask;
-        tim_status &= mask;
-        switch (bit) {
-        case __builtin_clz(TIM_IT_UPDATE): {
+    if (timerConfig->forcedOverflowTimerValue != 0) {
+        capture = timerConfig->forcedOverflowTimerValue - 1;
+        timerConfig->forcedOverflowTimerValue = 0;
+    } else {
+        capture = tim_ptr->ARR;
+    }
 
-            if (timerConfig->forcedOverflowTimerValue != 0) {
-                capture = timerConfig->forcedOverflowTimerValue - 1;
-                timerConfig->forcedOverflowTimerValue = 0;
-            } else {
-                capture = tim_ptr->ARR;
-            }
-
-            timerOvrHandlerRec_t *cb = timerConfig->overflowCallbackActive;
-            while (cb) {
-                cb->fn(cb, capture);
-                cb = cb->next;
-            }
-            break;
-        }
-        }
+    timerOvrHandlerRec_t *cb = timerConfig->overflowCallbackActive;
+    while (cb) {
+        cb->fn(cb, capture);
+        cb = cb->next;
     }
 }
 
-// handler for shared interrupts when both timers need to check status bits
-#define _TIM_IRQ_HANDLER2(name, i, j)                                   \
+// The advanced timer has a separate capture/compare vector.
+#define _TIM_IRQ_HANDLER_SHARED_UPDATE(name, i, j)                       \
     void name(void)                                                     \
     {                                                                   \
-        timCCxHandler((timerResource_t *)TIM ## i, &timerConfig[TIMER_INDEX(i)]);  \
-        timCCxHandler((timerResource_t *)TIM ## j, &timerConfig[TIMER_INDEX(j)]);  \
+        timUpdateHandler((timerResource_t *)TIM ## i, &timerConfig[TIMER_INDEX(i)]); \
+        timCCxHandler((timerResource_t *)TIM ## j, &timerConfig[TIMER_INDEX(j)]);    \
     } struct dummy
 
 #define _TIM_IRQ_HANDLER(name, i)                                       \
@@ -830,7 +819,11 @@ _TIM_IRQ_HANDLER(TIM8_CC_IRQHandler, 8);
 #if USED_TIMERS & TIM_N(9)
 _TIM_IRQ_HANDLER(TIM1_BRK_TIM9_IRQHandler, 9);
 #endif
-#if USED_TIMERS & TIM_N(10)
+#if (USED_TIMERS & TIM_N(1)) && (USED_TIMERS & TIM_N(10))
+_TIM_IRQ_HANDLER_SHARED_UPDATE(TIM1_UP_TIM10_IRQHandler, 1, 10);
+#elif USED_TIMERS & TIM_N(1)
+_TIM_IRQ_HANDLER_UPDATE_ONLY(TIM1_UP_TIM10_IRQHandler, 1);
+#elif USED_TIMERS & TIM_N(10)
 _TIM_IRQ_HANDLER(TIM1_UP_TIM10_IRQHandler, 10);
 #endif
 #  if USED_TIMERS & TIM_N(11)
@@ -839,7 +832,11 @@ _TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM11_IRQHandler, 11);
 #if USED_TIMERS & TIM_N(12)
 _TIM_IRQ_HANDLER(TIM8_BRK_TIM12_IRQHandler, 12);
 #endif
-#if USED_TIMERS & TIM_N(13)
+#if (USED_TIMERS & TIM_N(8)) && (USED_TIMERS & TIM_N(13))
+_TIM_IRQ_HANDLER_SHARED_UPDATE(TIM8_UP_TIM13_IRQHandler, 8, 13);
+#elif USED_TIMERS & TIM_N(8)
+_TIM_IRQ_HANDLER_UPDATE_ONLY(TIM8_UP_TIM13_IRQHandler, 8);
+#elif USED_TIMERS & TIM_N(13)
 _TIM_IRQ_HANDLER(TIM8_UP_TIM13_IRQHandler, 13);
 #endif
 #if USED_TIMERS & TIM_N(14)
