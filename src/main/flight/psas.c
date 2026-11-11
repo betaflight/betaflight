@@ -205,7 +205,10 @@ static void FAST_CODE_NOINLINE computeLiftCoefficient(const psasProfile_t *psasP
 #ifdef USE_PITOT
     if (sensors(SENSOR_PITOT)) {
         airSpeedPressure = MAX(pitot.diffPressure, 0.0f);
-    } else
+    }
+#ifdef USE_GPS
+    else
+#endif
 #endif
 
 #ifdef USE_GPS
