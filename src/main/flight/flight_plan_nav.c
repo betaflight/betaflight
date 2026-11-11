@@ -1848,6 +1848,7 @@ static uint8_t buildRescuePlan(waypoint_t out[FP_INJECTED_PLAN_MAX], bool climbI
         .speed = speedCmS,
         .vertRate = gpsRescueConfig()->descendRate,
         .type = WAYPOINT_TYPE_LAND,
+        .yawBehaviour = WAYPOINT_YAW_HOLD,          // keep the nose where the return left it, on home
     };
     return 3;
 }

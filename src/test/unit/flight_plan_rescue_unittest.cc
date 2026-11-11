@@ -1589,6 +1589,36 @@ TEST_F(FlightPlanRescueTest, DescentStartsAtTheConfiguredDescentDistance)
     EXPECT_NEAR(g_lastTarget.acceptanceRadiusM, 15.0f, 0.01f);
 }
 
+TEST_F(FlightPlanRescueTest, DescentKeepsTheNoseOnHome)
+{
+    // Legacy rescue keeps the nose locked on home through the descent. Handing the landing leg to
+    // the configured yaw mode swung it onto the ground course instead, by however much the craft
+    // was crabbing.
+    gpsRescueConfigMutable()->descentDistanceM = 7;
+    g_stubEstimate.position.v[ENU_N] = 2000.0f;   // 20 m north of home
+    attitude.values.yaw = 1800;                   // nose south, pointing home
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    triggerReached();                             // climb done, fly home
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+
+    g_stubEstimate.position.v[ENU_N] = 650.0f;
+    g_stubEstimate.velocity.v[ENU_E] = 150.0f;    // crabbing east on the way in
+    g_stubEstimate.velocity.v[ENU_N] = -300.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 2);
+    EXPECT_TRUE(g_navHeadingOverrideValid);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, 180.0f, 0.1f);
+
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_TRUE(g_navHeadingOverrideValid);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, 180.0f, 0.1f);
+}
+
 TEST_F(FlightPlanRescueTest, LandingLegStartsDownAtTheDescentDistanceBelowTheReturnAltitude)
 {
     // An approach that has sunk 0.7 m below the return altitude still starts down at the descent
