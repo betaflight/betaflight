@@ -5044,7 +5044,7 @@ RAM_CODE static void cliRateProfile(const char *cmdName, char *cmdline)
 RAM_CODE static void cliPsasProfile(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
-        cliPrintLinef("psas profile %d", getPsasProfileIndexToUse());
+        cliPrintLinef("psas_profile %d", getPsasProfileIndexToUse());
         return;
     } else {
         const int i = atoi(cmdline);
@@ -5070,7 +5070,7 @@ static void cliDumpPsasProfile(const char *cmdName, uint8_t psasProfileIndex, du
     cliPsasProfile(cmdName, "");
 
     char profileStr[16];
-    tfp_sprintf(profileStr, "PSAS profile %d", psasProfileIndex);
+    tfp_sprintf(profileStr, "psas_profile %d", psasProfileIndex);
     dumpAllValues(cmdName, PROFILE_PSAS_VALUE, dumpMask, profileStr);
 
     psasProfileIndexToUse = CURRENT_PROFILE_INDEX;
