@@ -1349,7 +1349,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     case PSAS_WORK:
         return;
     case PSAS_FINISHED:
-        memset(previousGyroRateDterm, 0, sizeof(previousGyroRateDterm));
+        memcpy(previousGyroRateDterm, gyroRateDterm, sizeof(previousGyroRateDterm));
         break;
     }
 #endif
