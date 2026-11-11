@@ -635,6 +635,7 @@ TEST(CLIUnittest, TestCliExecuteCommandRefusesWhenArmed)
 // of the array. A negative index must give the index range error.
 TEST(CLIUnittest, TestCliAuxRejectsNegativeIndex)
 {
+    static_assert(MAX_MODE_ACTIVATION_CONDITION_COUNT == 20, "update the aux index tests");
     char buf[64];
 
     // Without the other arguments, the command clears the entry with memset()
@@ -663,6 +664,7 @@ TEST(CLIUnittest, TestCliAuxRejectsNegativeIndex)
 // Same problem as 'aux': 'adjrange -1' wrote before the start of the array.
 TEST(CLIUnittest, TestCliAdjrangeRejectsNegativeIndex)
 {
+    static_assert(MAX_ADJUSTMENT_RANGE_COUNT == 30, "update the adjrange index tests");
     char buf[64];
 
     // Without the other arguments, the command clears the entry with memset()
