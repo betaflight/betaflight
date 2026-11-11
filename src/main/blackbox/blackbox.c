@@ -672,7 +672,8 @@ STATIC_UNIT_TESTED bool testBlackboxConditionUncached(flightLogFieldCondition_e 
 
     // PSAS YAW control data
     case CONDITION(NONZERO_PSAS_YAW_PILOT):
-        return (currentPsasProfile->psas_stick_gain[FD_YAW] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+        return (currentPsasProfile->psas_stick_gain[FD_YAW] != 0 || (currentPsasProfile->psas_trim_enabled_mask & (1 << FD_YAW)))
+            && isFieldEnabled(FIELD_SELECT(PSAS));
 
     case CONDITION(NONZERO_PSAS_YAW_DAMPING):
         return (currentPsasProfile->psas_damping_gain[FD_YAW] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
