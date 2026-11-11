@@ -462,8 +462,9 @@ static void FAST_CODE_NOINLINE psasUpdate(const psasProfile_t *psasProfile)
     psasData.pitch.pilot += getPsasTrimmingOutput(FD_PITCH);
 
     // Plane pitch damping improvement
-    float gyroPitch = !gyroOverflowDetected() ? gyro.gyroADCf[FD_PITCH] : 0.0f;
-    if (psasProfile->psas_pitch_damping_filter_freq != 0) {
+    float gyroPitch = 0.0f;
+    if (psasProfile->psas_pitch_damping_filter_freq != 0 && !gyroOverflowDetected()) {
+        gyroPitch = gyro.gyroADCf[FD_PITCH];
         float gyroPitchLow = pt1FilterApply(&psasPitchDampingLowpass, gyroPitch);
         gyroPitch -= gyroPitchLow;      // Damping the pitch gyro high freq part only
     }
@@ -556,8 +557,9 @@ static void FAST_CODE_NOINLINE psasUpdate(const psasProfile_t *psasProfile)
     psasData.yaw.pilot += getPsasTrimmingOutput(FD_YAW);
 
     // Plane yaw damping improvement
-    float gyroYaw = !gyroOverflowDetected() ? gyro.gyroADCf[FD_YAW] : 0.0f;
-    if (psasProfile->psas_yaw_damping_filter_freq != 0) {
+    float gyroYaw = 0.0f;
+    if (psasProfile->psas_yaw_damping_filter_freq != 0 && !gyroOverflowDetected()) {
+        gyroYaw = gyro.gyroADCf[FD_YAW];
         float gyroYawLow = pt1FilterApply(&psasYawDampingLowpass, gyroYaw);
         gyroYaw -= gyroYawLow; // Damping the yaw gyro high freq part only
     }
