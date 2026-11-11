@@ -41,6 +41,11 @@
 #define ADIS16607_REG_REV_ID                0x01
 #define ADIS16607_REG_DIAG_STAT             0x05
 #define ADIS16607_REG_X_ACCEL_HIGH          0x06
+
+// DIAG_STAT: the sensor has been disabled.
+#define ADIS16607_DIAG_STAT_FAULT_GYRO      (1 << 13)
+#define ADIS16607_DIAG_STAT_FAULT_XL        (1 << 12)
+
 #define ADIS16607_REG_X_GYRO_HIGH           0x0C
 #define ADIS16607_REG_TEMPERATURE           0x20
 #define ADIS16607_REG_WRITE_LOCK            0x2D

@@ -138,6 +138,7 @@ typedef struct {
     uint16_t dataCntr;
     bool valid;
     bool configured;
+    uint8_t frame[ADIS16607_BURST_FRAME_LEN];
 } adis16607State_t;
 
 static adis16607State_t deviceStates[MAX_GYRODEV_COUNT];
@@ -265,6 +266,7 @@ static void adis16607GyroInit(gyroDev_t *gyro)
     if (state) {
         state->valid = false;
         state->configured = configured;
+        memset(state->frame, 0, sizeof(state->frame));
     }
 
     gyro->scale = ADIS16607_GYRO_SCALE;
@@ -336,7 +338,15 @@ static bool adis16607BurstChecksumValid(const uint8_t *frame)
 
 static bool adis16607UnpackGyro(gyroDev_t *gyro)
 {
-    const uint8_t *frame = gyro->dev.rxBuf;
+    adis16607State_t *state = adis16607FindState(gyro);
+    if (!state) {
+        return false;
+    }
+
+    // In DMA mode the next transfer can land in rxBuf while this runs, so work
+    // on a copy. A copy torn by a transfer fails the checksum.
+    uint8_t frame[ADIS16607_BURST_FRAME_LEN];
+    memcpy(frame, gyro->dev.rxBuf, sizeof(frame));
 
     if (!adis16607BurstChecksumValid(frame)) {
         return false;
@@ -349,14 +359,18 @@ static bool adis16607UnpackGyro(gyroDev_t *gyro)
      * next data-ready edge; publishing it either way feeds the PID loop a rate
      * it has already acted on.
      */
-    adis16607State_t *state = adis16607FindState(gyro);
     const uint16_t dataCntr = adis16607Word(frame, ADIS16607_BURST_WORD_DATA_CNTR);
-    if (state) {
-        if (state->valid && dataCntr == state->dataCntr) {
-            return false;
-        }
-        state->dataCntr = dataCntr;
-        state->valid = true;
+    if (state->valid && dataCntr == state->dataCntr) {
+        return false;
+    }
+    state->dataCntr = dataCntr;
+    state->valid = true;
+
+    // The accel reads this frame, so keep it even if the gyro is faulted.
+    memcpy(state->frame, frame, sizeof(state->frame));
+
+    if (adis16607Word(frame, ADIS16607_BURST_WORD_DIAG_STAT) & ADIS16607_DIAG_STAT_FAULT_GYRO) {
+        return false;
     }
 
     gyro->gyroADCRaw[X] = (int16_t)adis16607Word(frame, ADIS16607_BURST_WORD_GYRO + X);
@@ -438,9 +452,6 @@ static bool adis16607GyroReadSPI(gyroDev_t *gyro)
 
 static bool adis16607AccReadSPI(accDev_t *acc)
 {
-    // Same frame the gyro read already fetched - no separate accel transaction.
-    const uint8_t *frame = acc->gyro->dev.rxBuf;
-
     if (!adis16607Configured(acc->gyro)) {
         return false;
     }
@@ -449,7 +460,15 @@ static bool adis16607AccReadSPI(accDev_t *acc)
         return true;
     }
 
-    if (!adis16607BurstChecksumValid(frame)) {
+    // Same frame the gyro read already fetched - no separate accel transaction.
+    const adis16607State_t *state = adis16607FindState(acc->gyro);
+    const uint8_t *frame = state->frame;
+
+    if (!state->valid) {
+        return false;
+    }
+
+    if (adis16607Word(frame, ADIS16607_BURST_WORD_DIAG_STAT) & ADIS16607_DIAG_STAT_FAULT_XL) {
         return false;
     }
 

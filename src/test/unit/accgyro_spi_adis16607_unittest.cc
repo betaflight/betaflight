@@ -44,6 +44,7 @@ struct FakeAdis {
     uint16_t burstFrame[ADIS16607_BURST_WORD_COUNT]; // wire order, big-endian
     int burstCount;
     uint16_t dataCntr;
+    uint16_t diagStat;
     int dropWrites[0x50]; // writes the part silently swallows, per register
 
     void reset()
@@ -54,6 +55,7 @@ struct FakeAdis {
         memset(burstFrame, 0, sizeof(burstFrame));
         burstCount = 0;
         dataCntr = 0;
+        diagStat = 0;
         memset(dropWrites, 0, sizeof(dropWrites));
     }
 
@@ -91,6 +93,7 @@ static void fakeSetBurst(int16_t ax, int16_t ay, int16_t az,
                          int16_t gx, int16_t gy, int16_t gz, int16_t temp)
 {
     uint16_t host[ADIS16607_BURST_WORD_COUNT] = {};
+    host[ADIS16607_BURST_WORD_DIAG_STAT] = fake.diagStat;
     host[ADIS16607_BURST_WORD_ACCEL + 0] = (uint16_t)ax;
     host[ADIS16607_BURST_WORD_ACCEL + 1] = (uint16_t)ay;
     host[ADIS16607_BURST_WORD_ACCEL + 2] = (uint16_t)az;
@@ -460,8 +463,6 @@ TEST_F(AdisTest, ReadRefusesDeviceWhoseConfigNeverReadBack)
     fakeSetBurst(11, 22, 33, 1000, 2000, 3000, 0);
     EXPECT_FALSE(gyro.readFn(&gyro));
     EXPECT_EQ(0, gyro.gyroADCRaw[X]);
-
-    memcpy(rxBuf, fake.burstFrame, sizeof(fake.burstFrame));
     EXPECT_FALSE(acc.readFn(&acc));
     EXPECT_EQ(0, acc.ADCRaw[X]);
 }
@@ -507,16 +508,90 @@ TEST_F(AdisTest, AccReadSucceedsBeforeFirstBurst)
     EXPECT_TRUE(acc.readFn(&acc));
 }
 
-TEST_F(AdisTest, AccReadRejectsBadChecksum)
+TEST_F(AdisTest, AccReadIgnoresFrameTheGyroRejected)
 {
     initGyro();
     ASSERT_TRUE(adis16607SpiAccDetect(&acc));
     gyro.gyroModeSPI = GYRO_EXTI_NO_INT;
     fakeSetBurst(1, 2, 3, 0, 0, 0, 0);
     ASSERT_TRUE(gyro.readFn(&gyro));
+
+    fakeSetBurst(4, 5, 6, 0, 0, 0, 0);
     fake.burstFrame[ADIS16607_BURST_WORD_CHECKSUM] ^= 0x0100;
-    memcpy(rxBuf, fake.burstFrame, sizeof(fake.burstFrame));
+    ASSERT_FALSE(gyro.readFn(&gyro));
+
+    EXPECT_TRUE(acc.readFn(&acc));
+    EXPECT_EQ(1, acc.ADCRaw[X]);
+}
+
+TEST_F(AdisTest, AccReadRejectsBeforeFirstAcceptedFrame)
+{
+    initGyro();
+    ASSERT_TRUE(adis16607SpiAccDetect(&acc));
+    gyro.gyroModeSPI = GYRO_EXTI_NO_INT;
     EXPECT_FALSE(acc.readFn(&acc));
+}
+
+TEST_F(AdisTest, AccReadUsesCopyNotLiveDmaBuffer)
+{
+    initGyro();
+    ASSERT_TRUE(adis16607SpiAccDetect(&acc));
+    gyro.gyroModeSPI = GYRO_EXTI_INT_DMA;
+    fakeSetBurst(7, 8, 9, 0, 0, 0, 0);
+    memcpy(rxBuf, fake.burstFrame, sizeof(fake.burstFrame));
+    ASSERT_TRUE(gyro.readFn(&gyro));
+
+    memset(rxBuf, 0x5a, sizeof(rxBuf)); // next transfer under way
+    EXPECT_TRUE(acc.readFn(&acc));
+    EXPECT_EQ(7, acc.ADCRaw[X]);
+}
+
+// --- sensor faults -----------------------------------------------------------
+
+TEST_F(AdisTest, ReadRejectsGyroFault)
+{
+    initGyro();
+    gyro.gyroModeSPI = GYRO_EXTI_NO_INT;
+    fake.diagStat = ADIS16607_DIAG_STAT_FAULT_GYRO;
+    fakeSetBurst(0, 0, 0, 1000, 0, 0, 0);
+    EXPECT_FALSE(gyro.readFn(&gyro));
+    EXPECT_EQ(0, gyro.gyroADCRaw[X]);
+}
+
+TEST_F(AdisTest, GyroFaultDoesNotBlockAccel)
+{
+    initGyro();
+    ASSERT_TRUE(adis16607SpiAccDetect(&acc));
+    gyro.gyroModeSPI = GYRO_EXTI_NO_INT;
+    fake.diagStat = ADIS16607_DIAG_STAT_FAULT_GYRO;
+    fakeSetBurst(11, 0, 0, 1000, 0, 0, 0);
+    EXPECT_FALSE(gyro.readFn(&gyro));
+    EXPECT_TRUE(acc.readFn(&acc));
+    EXPECT_EQ(11, acc.ADCRaw[X]);
+}
+
+TEST_F(AdisTest, AccFaultRejectsAccelButNotGyro)
+{
+    initGyro();
+    ASSERT_TRUE(adis16607SpiAccDetect(&acc));
+    gyro.gyroModeSPI = GYRO_EXTI_NO_INT;
+    fake.diagStat = ADIS16607_DIAG_STAT_FAULT_XL;
+    fakeSetBurst(11, 0, 0, 1000, 0, 0, 0);
+    EXPECT_TRUE(gyro.readFn(&gyro));
+    EXPECT_EQ(1000, gyro.gyroADCRaw[X]);
+    EXPECT_FALSE(acc.readFn(&acc));
+    EXPECT_EQ(0, acc.ADCRaw[X]);
+}
+
+TEST_F(AdisTest, OtherDiagBitsDoNotRejectSamples)
+{
+    initGyro();
+    ASSERT_TRUE(adis16607SpiAccDetect(&acc));
+    gyro.gyroModeSPI = GYRO_EXTI_NO_INT;
+    fake.diagStat = 0x0004; // SYNC_LOST
+    fakeSetBurst(11, 0, 0, 1000, 0, 0, 0);
+    EXPECT_TRUE(gyro.readFn(&gyro));
+    EXPECT_TRUE(acc.readFn(&acc));
 }
 
 // --- frame layout ------------------------------------------------------------
