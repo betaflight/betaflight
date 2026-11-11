@@ -60,7 +60,15 @@ extern "C" {
     PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
     PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
 
-    bool failsafeIsActive(void) { return false; }
+    failsafePhase_e testFailsafePhase = FAILSAFE_IDLE;
+    bool failsafeIsActive(void) { return testFailsafePhase != FAILSAFE_IDLE; }
+    failsafePhase_e failsafePhase(void) { return testFailsafePhase; }
+    bool testNavLanding = false;
+    float testNavLandingRateCmS = 0.0f;
+    bool flightPlanNavIsLanding(void) { return testNavLanding; }
+    float flightPlanNavGetLandingRateCmS(void) { return testNavLandingRateCmS; }
+    timeUs_t testMicrosUs = 0;
+    timeUs_t micros(void) { return testMicrosUs; }
     timeUs_t currentTimeUs = 0;
     bool isAltHoldActive();
     extern float testAltitudeCm;
@@ -107,6 +115,11 @@ protected:
         testNavTargetVelCmS = (vector3_t){{0, 0, 0}};
         testNavTargetAltCm = 0.0f;
         testNavRateLimitCmS = 0.0f;
+        testFailsafePhase = FAILSAFE_IDLE;
+        testNavLanding = false;
+        testNavLandingRateCmS = 0.0f;
+        testMicrosUs += 1000000;
+        altHoldSetEmergencyDescent(false, 0.0f);
 
         autopilotConfig_t *apCfg = autopilotConfigMutable();
         apCfg->hoverThrottle = 1500;
@@ -334,6 +347,145 @@ TEST_F(AltholdControlUnittest, NavLegClimbFeedforwardOutlivesTheLegsCompletion)
     debugMode = DEBUG_AUTOPILOT_ALTITUDE;
     updateAltHold(currentTimeUs);
     EXPECT_EQ(debug[7], 120);   // altitude_f 30 at 0.02 us per cm/s, on the ramp's 200 cm/s
+}
+
+static void enterAltHoldAt(float altitudeCm)
+{
+    testAltitudeCm = altitudeCm;
+    flightModeFlags |= ALT_HOLD_MODE;
+    updateAltHold(currentTimeUs);
+}
+
+static void runAltHoldSeconds(float seconds)
+{
+    const int steps = lrintf(seconds * ALTHOLD_TASK_RATE_HZ);
+    for (int i = 0; i < steps; i++) {
+        testMicrosUs += TASK_PERIOD_HZ(ALTHOLD_TASK_RATE_HZ);
+        updateAltHold(currentTimeUs);
+    }
+}
+
+TEST_F(AltholdControlUnittest, FailsafeLandingDescendsAtTheClimbRate)
+{
+    enterAltHoldAt(2000.0f);
+    testFailsafePhase = FAILSAFE_LANDING;
+    runAltHoldSeconds(0.5f);
+    EXPECT_TRUE(autopilotIsLanding());
+    EXPECT_NEAR(1750.0f, autopilotLandingTargetAltitudeCm(), 10.0f);   // climb_rate 50 is 5 m/s
+}
+
+TEST_F(AltholdControlUnittest, LandingTargetKeepsFallingBelowACraftThatHasStopped)
+{
+    enterAltHoldAt(2000.0f);
+    testFailsafePhase = FAILSAFE_LANDING;
+    runAltHoldSeconds(3.0f);
+    // a landing is never reversed, so the target runs on below a craft stuck on the ground
+    EXPECT_NEAR(500.0f, autopilotLandingTargetAltitudeCm(), 10.0f);
+}
+
+TEST_F(AltholdControlUnittest, FailsafeOutsideItsLandingPhaseHoldsAltitude)
+{
+    // a rescue plan between nav targets: failsafe is active, but not landing
+    enterAltHoldAt(2000.0f);
+    testFailsafePhase = FAILSAFE_AUTOPILOT;
+    // nor do the failsafe stick values move the target
+    testThrottleStatus = THROTTLE_HIGH;
+    rcCommand[THROTTLE] = 0.1f;
+    debugMode = DEBUG_AUTOPILOT_ALTITUDE;
+    runAltHoldSeconds(1.0f);
+    EXPECT_FALSE(autopilotIsLanding());
+    EXPECT_EQ(2000, debug[1]);
+}
+
+TEST_F(AltholdControlUnittest, EmergencyDescentLandsAtItsCommandedRate)
+{
+    enterAltHoldAt(2000.0f);
+    altHoldSetEmergencyDescent(true, 150.0f);
+    runAltHoldSeconds(0.5f);
+    EXPECT_TRUE(autopilotIsLanding());
+    EXPECT_NEAR(1925.0f, autopilotLandingTargetAltitudeCm(), 5.0f);
+}
+
+TEST_F(AltholdControlUnittest, FlightPlanLandingTakesOverWhereTheNavLegLeftTheAltitude)
+{
+    enterAltHoldAt(2000.0f);
+    testNavActive = true;
+    testNavCommand.includeAltitude = true;
+    testNavTargetAltCm = 1980.0f;
+    runAltHoldSeconds(0.1f);
+
+    testNavLanding = true;
+    testNavLandingRateCmS = 50.0f;
+    runAltHoldSeconds(1.0f);
+    EXPECT_TRUE(autopilotIsLanding());
+    EXPECT_NEAR(1930.0f, autopilotLandingTargetAltitudeCm(), 1.0f);
+}
+
+TEST_F(AltholdControlUnittest, LandingEndsWhenAltHoldTakesTheAltitudeBack)
+{
+    enterAltHoldAt(2000.0f);
+    testFailsafePhase = FAILSAFE_LANDING;
+    runAltHoldSeconds(0.5f);
+    testFailsafePhase = FAILSAFE_IDLE;
+    runAltHoldSeconds(0.01f);
+    EXPECT_FALSE(autopilotIsLanding());
+
+    // the next landing starts from wherever alt hold then holds, not from the old target
+    testFailsafePhase = FAILSAFE_LANDING;
+    runAltHoldSeconds(0.01f);
+    EXPECT_NEAR(1745.0f, autopilotLandingTargetAltitudeCm(), 10.0f);
+}
+
+TEST_F(AltholdControlUnittest, LandingEndsSoonAfterItsOwnerStopsAsking)
+{
+    const landingProfile_t profile = { .touchdownRateCmS = 100.0f, .maxRateCmS = 100.0f };
+    testAltitudeCm = 1000.0f;
+    autopilotLand(&profile, 1000.0f, 10000);
+    testMicrosUs += 50000;
+    EXPECT_TRUE(autopilotIsLanding());
+    testMicrosUs += 100000;
+    EXPECT_FALSE(autopilotIsLanding());
+}
+
+TEST_F(AltholdControlUnittest, OldLandingRequestStaysExpiredAfterTheTimerWraps)
+{
+    const landingProfile_t profile = { .touchdownRateCmS = 100.0f, .maxRateCmS = 100.0f };
+    testAltitudeCm = 1000.0f;
+    autopilotLand(&profile, 1000.0f, 10000);
+    testMicrosUs += 40u * 60u * 1000000u;
+    EXPECT_FALSE(autopilotIsLanding());
+}
+
+TEST_F(AltholdControlUnittest, NextLandingStartsAfreshAfterAnAltitudeCommandOrResetWithoutAnyCheckBetween)
+{
+    // every call below shares one timestamp, as if a full timer wrap had passed between landings
+    const landingProfile_t profile = { .touchdownRateCmS = 100.0f, .maxRateCmS = 100.0f };
+    testAltitudeCm = 1000.0f;
+    autopilotLand(&profile, 1000.0f, 100000);
+
+    altitudeControl(1000.0f, 100000, 0.0f, 100.0f);
+    autopilotLand(&profile, 3000.0f, 100000);
+    EXPECT_NEAR(2990.0f, autopilotLandingTargetAltitudeCm(), 0.01f);
+
+    resetAltitudeControl();
+    autopilotLand(&profile, 1000.0f, 100000);
+    EXPECT_NEAR(990.0f, autopilotLandingTargetAltitudeCm(), 0.01f);
+}
+
+TEST_F(AltholdControlUnittest, LandingProfileSpeedsUpWithHeight)
+{
+    const landingProfile_t profile = { .touchdownRateCmS = 100.0f, .maxRateCmS = 500.0f };
+    auto firstStepDropCm = [&profile](float altitudeCm) {
+        testMicrosUs += 1000000;   // a fresh landing each time
+        testAltitudeCm = altitudeCm;
+        autopilotLand(&profile, altitudeCm, 100000);
+        return altitudeCm - autopilotLandingTargetAltitudeCm();
+    };
+    EXPECT_NEAR(10.0f, firstStepDropCm(500.0f), 0.01f);
+    EXPECT_NEAR(10.0f, firstStepDropCm(1000.0f), 0.01f);
+    EXPECT_NEAR(30.0f, firstStepDropCm(3000.0f), 0.01f);
+    EXPECT_NEAR(50.0f, firstStepDropCm(5000.0f), 0.01f);
+    EXPECT_NEAR(50.0f, firstStepDropCm(20000.0f), 0.01f);
 }
 
 // STUBS
