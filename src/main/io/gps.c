@@ -1770,7 +1770,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
             break;
         }
         rxBytesWaiting = serialRxBytesWaiting(gpsPort);
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 7, rxBytesWaiting);
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 7, rxBytesWaiting);  //!< Rx Bytes Waiting [unit:bytes]
         static uint8_t wait = 0;
         static bool isFast = false;
         while (rxBytesWaiting-- > 0) {
@@ -1867,7 +1867,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
     }
 
     DEBUG_SET(DEBUG_GPS_CONNECTION, 4, (gpsData.state * 100 + gpsData.state_position));  //!< State And State Position
-    DEBUG_SET(DEBUG_GPS_CONNECTION, 6, gpsData.ackState);                                //!< Config Ack State [enum:ubloxAckState_e]
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 6, gpsData.ackState);                                //!< Config Ack State [enum:gpsAckState_e]
 
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
