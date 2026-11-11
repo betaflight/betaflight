@@ -606,13 +606,8 @@ uint8_t FAST_CODE_NOINLINE psasHandleMode(void)
             isActivePSAS = true;
         }
 
-        if (pidRuntime.pidStabilisationEnabled) {
-            psasTrimmingUpdate();
-            psasUpdate(currentPsasProfile);
-        } else {
-            memset(&psasData, 0, sizeof(psasData));
-            psasFiltersReset();
-        }
+        psasTrimmingUpdate();
+        psasUpdate(currentPsasProfile);
 
         return PSAS_WORK;
     } else if (isActivePSAS) {
