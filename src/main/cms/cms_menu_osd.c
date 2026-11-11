@@ -144,7 +144,8 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
     {"ROLL PID",           OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_ROLL_PIDS]},
     {"PITCH PID",          OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_PITCH_PIDS]},
     {"YAW PID",            OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_YAW_PIDS]},
-    {"PROFILES",           OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_PIDRATE_PROFILE]},
+    {"PID-RATE PROFILES",  OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_PIDRATE_PROFILE]},
+    {"PID RATE BAT PROFILES",   OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_PIDRATEBAT_PROFILE]},
 #ifdef USE_PROFILE_NAMES
     {"PID PROFILE NAME",   OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_PID_PROFILE_NAME]},
     {"RATE PROFILE NAME",  OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_RATE_PROFILE_NAME]},

@@ -1798,6 +1798,11 @@ static void osdElementPidRateProfile(osdElementParms_t *element)
     tfp_sprintf(element->buff, "%d-%d", getCurrentPidProfileIndex() + 1, getCurrentControlRateProfileIndex() + 1);
 }
 
+static void osdElementPidRateBatteryProfile(osdElementParms_t *element)
+{
+    tfp_sprintf(element->buff, "P%dR%dB%d", getCurrentPidProfileIndex() + 1, getCurrentControlRateProfileIndex() + 1, getCurrentBatteryProfileIndex() + 1);
+}
+
 static void osdElementPidsPitch(osdElementParms_t *element)
 {
     osdFormatPID(element->buff, "PIT", PID_PITCH);
@@ -2139,6 +2144,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_YAW_PIDS,
     OSD_POWER,
     OSD_PIDRATE_PROFILE,
+    OSD_PIDRATEBAT_PROFILE,
     OSD_WARNINGS,
     OSD_AVG_CELL_VOLTAGE,
     OSD_DEBUG,
@@ -2262,6 +2268,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_YAW_PIDS]                = osdElementPidsYaw,
     [OSD_POWER]                   = osdElementPower,
     [OSD_PIDRATE_PROFILE]         = osdElementPidRateProfile,
+    [OSD_PIDRATEBAT_PROFILE]      = osdElementPidRateBatteryProfile,
     [OSD_WARNINGS]                = osdElementWarnings,
     [OSD_AVG_CELL_VOLTAGE]        = osdElementAverageCellVoltage,
     [OSD_READY_MODE]              = osdElementReadyMode,
