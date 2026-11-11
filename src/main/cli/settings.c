@@ -1540,6 +1540,9 @@ const clivalue_t valueTable[] = {
 #endif
 
 #ifdef USE_PSAS
+#ifdef USE_PROFILE_NAMES
+    { "psas_profile_name", VAR_UINT8 | PROFILE_PSAS_VALUE | MODE_STRING, .config.string = { 1, MAX_PSAS_PROFILE_NAME_LENGTH, STRING_FLAGS_NONE }, PG_PSAS_PROFILE, offsetof(psasProfile_t, profileName) },
+#endif
     { PARAM_NAME_PSAS_PITCH_STICK_GAIN,           VAR_UINT8 | PROFILE_PSAS_VALUE, .config.minmaxUnsigned = { 5, 200 }, PG_PSAS_PROFILE, offsetof(psasProfile_t, psas_stick_gain[FD_PITCH]) },
     { PARAM_NAME_PSAS_PITCH_DAMPING_GAIN,         VAR_UINT16 | PROFILE_PSAS_VALUE, .config.minmaxUnsigned = { 0, 500 }, PG_PSAS_PROFILE, offsetof(psasProfile_t, psas_damping_gain[FD_PITCH]) },
     { PARAM_NAME_PSAS_PITCH_DAMPING_FILTER_FREQ,  VAR_UINT16 | PROFILE_PSAS_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PSAS_PROFILE, offsetof(psasProfile_t, psas_pitch_damping_filter_freq) },
