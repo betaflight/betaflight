@@ -415,3 +415,111 @@ TEST(AlignSensorTest, AlignmentBitmasks)
     EXPECT_EQ(2, ALIGNMENT_AXIS_ROTATIONS(bits, FD_PITCH));
     EXPECT_EQ(0, ALIGNMENT_AXIS_ROTATIONS(bits, FD_ROLL));
 }
+
+// Magnetometer custom alignment convention (betaflight#14849, betaflight#16010)
+
+static void expectVectorNear(const vector3_t *expected, const vector3_t *actual, const char *what)
+{
+    EXPECT_NEAR(expected->x, actual->x, TOL) << what;
+    EXPECT_NEAR(expected->y, actual->y, TOL) << what;
+    EXPECT_NEAR(expected->z, actual->z, TOL) << what;
+}
+
+static void alignViaMagCustomAngles(vector3_t *dest, const sensorAlignment_t *rpy)
+{
+    matrix33_t rm;
+    buildMagRotationMatrixFromAngles(&rm, rpy);
+    alignSensorViaMatrix(dest, &rm);
+}
+
+TEST(AlignSensorTest, MagCustomAlignmentFromStandardMatchesStandardRotation)
+{
+    const vector3_t inputs[] = {
+        { .x = 1.0f, .y = 0.0f, .z = 0.0f },
+        { .x = 0.0f, .y = 1.0f, .z = 0.0f },
+        { .x = 0.0f, .y = 0.0f, .z = 1.0f },
+        { .x = 0.3f, .y = -0.5f, .z = 0.8f },
+    };
+
+    for (int align = CW0_DEG; align <= CW270_DEG_FLIP; align++) {
+        sensorAlignment_t rpy = SENSOR_ALIGNMENT(6, 6, 6);
+        buildMagAlignmentFromStandardAlignment(&rpy, (sensor_align_e)align);
+
+        for (unsigned i = 0; i < ARRAYLEN(inputs); i++) {
+            vector3_t expected = inputs[i];
+            alignSensorViaRotation(&expected, (sensor_align_e)align);
+
+            vector3_t actual = inputs[i];
+            alignViaMagCustomAngles(&actual, &rpy);
+
+            expectVectorNear(&expected, &actual, "mag custom angles built from a standard alignment must reproduce that alignment");
+        }
+    }
+}
+
+static void testBuildMagAlignment(sensor_align_e alignment, sensorAlignment_t expected)
+{
+    sensorAlignment_t rpy = SENSOR_ALIGNMENT(6, 6, 6);
+
+    buildMagAlignmentFromStandardAlignment(&rpy, alignment);
+
+    for (unsigned i = 0; i < ARRAYLEN(rpy.raw); i++) {
+        EXPECT_EQ(expected.raw[i], rpy.raw[i]) << "alignment: " << alignment << " axis: " << i;
+    }
+}
+
+TEST(AlignSensorTest, BuildMagAlignmentFromStandardAlignment)
+{
+    testBuildMagAlignment(CW0_DEG,        SENSOR_ALIGNMENT(0, 0, 0));
+    testBuildMagAlignment(CW90_DEG,       SENSOR_ALIGNMENT(0, 0, -90));
+    testBuildMagAlignment(CW180_DEG,      SENSOR_ALIGNMENT(0, 0, 180));
+    testBuildMagAlignment(CW270_DEG,      SENSOR_ALIGNMENT(0, 0, 90));
+    testBuildMagAlignment(CW0_DEG_FLIP,   SENSOR_ALIGNMENT(0, 180, 0));
+    testBuildMagAlignment(CW90_DEG_FLIP,  SENSOR_ALIGNMENT(0, 180, -90));
+    testBuildMagAlignment(CW180_DEG_FLIP, SENSOR_ALIGNMENT(0, 180, 180));
+    testBuildMagAlignment(CW270_DEG_FLIP, SENSOR_ALIGNMENT(0, 180, 90));
+
+    // CUSTOM and DEFAULT leave user angles untouched
+    testBuildMagAlignment(ALIGN_CUSTOM,   SENSOR_ALIGNMENT(6, 6, 6));
+    testBuildMagAlignment(ALIGN_DEFAULT,  SENSOR_ALIGNMENT(6, 6, 6));
+}
+
+TEST(AlignSensorTest, MagCustomYawIsCounterClockwise)
+{
+    // mag_align_yaw = 90 is the same transform as the standard CW270 alignment
+    vector3_t expected = { .x = 0.3f, .y = -0.5f, .z = 0.8f };
+    vector3_t actual = expected;
+
+    alignSensorViaRotation(&expected, CW270_DEG);
+    const sensorAlignment_t rpy = SENSOR_ALIGNMENT(0, 0, 90);
+    alignViaMagCustomAngles(&actual, &rpy);
+
+    expectVectorNear(&expected, &actual, "mag_align_yaw = 90 must equal CW270");
+}
+
+TEST(AlignSensorTest, MagCustomAlignmentMigrationFromLegacyConvention)
+{
+    // Up to 2025.12 mag custom angles used the gyro/acc convention. The same
+    // physical mounting is described in the current convention by negating all
+    // three angles, e.g. roll 0 / pitch 155 / yaw 180 -> 0 / -155 / -180.
+    const sensorAlignment_t legacy = SENSOR_ALIGNMENT(0, 155, 180);
+    const sensorAlignment_t migrated = SENSOR_ALIGNMENT(0, -155, -180);
+
+    const vector3_t inputs[] = {
+        { .x = 1.0f, .y = 0.0f, .z = 0.0f },
+        { .x = 0.0f, .y = 1.0f, .z = 0.0f },
+        { .x = 0.3f, .y = -0.5f, .z = 0.8f },
+    };
+
+    for (unsigned i = 0; i < ARRAYLEN(inputs); i++) {
+        matrix33_t legacyMatrix;
+        buildRotationMatrixFromAngles(&legacyMatrix, &legacy);
+        vector3_t expected = inputs[i];
+        alignSensorViaMatrix(&expected, &legacyMatrix);
+
+        vector3_t actual = inputs[i];
+        alignViaMagCustomAngles(&actual, &migrated);
+
+        expectVectorNear(&expected, &actual, "negated legacy angles must describe the same mounting");
+    }
+}

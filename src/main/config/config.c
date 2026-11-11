@@ -333,7 +333,7 @@ static void validateAndFixConfig(void)
     validateAndFixGyroConfig();
 
 #if defined(USE_MAG)
-    buildAlignmentFromStandardAlignment(&compassConfigMutable()->mag_customAlignment, compassConfig()->mag_alignment);
+    buildMagAlignmentFromStandardAlignment(&compassConfigMutable()->mag_customAlignment, compassConfig()->mag_alignment);
 #endif
 
     for (int i = 0; i < GYRO_COUNT; i++) {
