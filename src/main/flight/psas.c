@@ -208,9 +208,11 @@ static void FAST_CODE_NOINLINE computeLiftCoefficient(const psasProfile_t *psasP
             airSpeedPressure = MAX(pitot.diffPressure, 0.0f);
         } else
 #endif
+#ifdef USE_GPS
         if (STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
             airSpeedPressure = psasRuntime.air_density * sq(0.01f * gpsSol.speed3d) / 2.0f;
         }
+#endif
 
         if (airSpeedPressure > pressureThreshold) {
             *liftCoef = accelZ * psasRuntime.wing_load * G_ACCELERATION / airSpeedPressure;
@@ -382,11 +384,15 @@ static void FAST_CODE_NOINLINE psasComputeAirspeedGains(const psasProfile_t *psa
 
     // Use GPS speed for PSAS curves
     case SPEED_CURVE_MODE_SPEED_GPS:
+#ifdef USE_GPS
         if (STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
             speed = 0.01f * gpsSol.speed3d;
         } else {
             speed = psasProfile->psas_speed_optimum_vref;
         }
+#else
+        speed = psasProfile->psas_speed_optimum_vref;
+#endif
         break;
 
     // Use TPA airspeed estimation for PSAS curves
