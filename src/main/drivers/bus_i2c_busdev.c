@@ -58,6 +58,14 @@ bool i2cBusWriteRegisterStart(const extDevice_t *dev, uint8_t reg, uint8_t data)
     return i2cWriteBuffer(dev->bus->busType_u.i2c.device, dev->busType_u.i2c.address, reg, sizeof(byte), &byte);
 }
 
+bool i2cBusWriteRegisterBufferStart(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t length)
+{
+    if (!dev || !dev->bus || !data || !length || i2cBusy(dev->bus->busType_u.i2c.device, NULL)) {
+        return false;
+    }
+    return i2cWriteBuffer(dev->bus->busType_u.i2c.device, dev->busType_u.i2c.address, reg, length, data);
+}
+
 bool i2cBusReadRegisterBuffer(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t length)
 {
     if (!dev->bus) {

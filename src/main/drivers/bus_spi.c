@@ -321,6 +321,16 @@ void spiWriteRegBuf(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint32_t
     spiWait(dev);
 }
 
+// Complete one register-plus-payload write, or reject a busy bus unchanged.
+bool spiWriteRegBufRB(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t length)
+{
+    if (!dev || !dev->bus || !data || !length || spiIsBusy(dev)) {
+        return false;
+    }
+    spiWriteRegBuf(dev, reg, data, length);
+    return true;
+}
+
 // Wait for bus to become free, then read a byte from a register
 uint8_t spiReadReg(const extDevice_t *dev, uint8_t reg)
 {

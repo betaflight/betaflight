@@ -34,6 +34,7 @@
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_icm456xx_registers.h"
+#include "drivers/accgyro/accgyro_icm456xx.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/accgyro/accgyro_spi_icm456xx.h"
 #include "drivers/bus_spi.h"
@@ -284,65 +285,21 @@ static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
     }
 }
 
-// Bounded poll of IREG_DONE (REG_MISC2 bit 0) before starting a new IREG access;
-// "0" means an access is still in progress and a new one must not be triggered
-// (DS-000577, Host Indirect Access Register interface).
-static bool icm456xx_waitIregReady(const extDevice_t *dev)
-{
-    for (uint32_t waitedUs = 0; waitedUs < ICM456XX_IREG_TIMEOUT_US; waitedUs += ICM456XX_IREG_ACCESS_DELAY_US) {
-        if (spiReadRegMsk(dev, ICM456XX_REG_MISC2) & ICM456XX_BIT_IREG_DONE) {
-            return true;
-        }
-        delayMicroseconds(ICM456XX_IREG_ACCESS_DELAY_US);
-    }
-
-    return false;
-}
-
-// IREG accesses must be separated by at least 4 us. Address bytes and the first
-// data byte must share one SPI transaction to avoid the device prefetching from
-// an unintended address (DS-000577, Host Indirect Access Register interface).
+// The sensor core owns indirect register transactions. Firmware keeps its
+// existing disarmed-only initialization and DRDY/EXTI/DMA sample path.
 static bool icm456xx_read_ireg(const extDevice_t *dev, uint16_t reg, uint8_t *value)
 {
     if (ARMING_FLAG(ARMED)) {
         return false;
     }
-
-    if (!icm456xx_waitIregReady(dev)) {
-        return false;
-    }
-
-    uint8_t address[2] = {
-        (uint8_t)(reg >> 8),
-        (uint8_t)reg,
-    };
-
-    spiWriteRegBuf(dev, ICM456XX_REG_IREG_ADDR_15_8, address, sizeof(address));
-    delayMicroseconds(ICM456XX_IREG_ACCESS_DELAY_US); // spec-minimum gap before IREG_DATA read
-    *value = spiReadRegMsk(dev, ICM456XX_REG_IREG_DATA);
-    delayMicroseconds(ICM456XX_IREG_ACCESS_DELAY_US); // spec-minimum gap before the next IREG access
-
-    return true;
+    icm456xxDevice_t device = {.dev = dev};
+    return icm456xxReadIndirect(&device, reg, value);
 }
 
-// No ARMING_FLAG(ARMED) guard here: icm456xx_update_ireg always calls
-// icm456xx_read_ireg first in the same attempt, which already rejects while armed.
 static bool icm456xx_write_ireg(const extDevice_t *dev, uint16_t reg, uint8_t value)
 {
-    if (!icm456xx_waitIregReady(dev)) {
-        return false;
-    }
-
-    uint8_t addressAndData[3] = {
-        (uint8_t)(reg >> 8),
-        (uint8_t)reg,
-        value,
-    };
-
-    spiWriteRegBuf(dev, ICM456XX_REG_IREG_ADDR_15_8, addressAndData, sizeof(addressAndData));
-    delayMicroseconds(ICM456XX_IREG_ACCESS_DELAY_US); // spec-minimum gap before the next IREG access
-
-    return true;
+    icm456xxDevice_t device = {.dev = dev};
+    return icm456xxWriteIndirect(&device, reg, value);
 }
 
 static bool icm456xx_update_ireg(const extDevice_t *dev, uint16_t reg, uint8_t mask, uint8_t value)
@@ -497,22 +454,9 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
 {
     uint8_t icmDetected = MPU_NONE;
     uint8_t attemptsRemaining = 20;
-    uint32_t waited_us = 0;
-
-    // ICM-45686 does not use bank switching (register 0x75 is reserved)
-    // Perform soft reset directly
-
-    // Soft reset
-    spiWriteReg(dev, ICM456XX_REG_MISC2, ICM456XX_SOFT_RESET);
-
-    // Wait for reset to complete (bit 1 of REG_MISC2 becomes 0)
-    while ((spiReadRegMsk(dev, ICM456XX_REG_MISC2) & ICM456XX_SOFT_RESET) != 0) {
-        delayMicroseconds(10);
-        waited_us += 10;
-
-        if (waited_us >= ICM456XX_RESET_TIMEOUT_US) {
-            return MPU_NONE;
-        }
+    icm456xxDevice_t device = {.dev = dev};
+    if (!icm456xxReset(&device)) {
+        return MPU_NONE;
     }
 
     // Initialize power management to a known state after reset

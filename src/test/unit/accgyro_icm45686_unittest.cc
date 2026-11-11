@@ -8,7 +8,10 @@
 #include <deque>
 
 extern "C" {
-#include "drivers/accgyro/accgyro_icm45686.h"
+#include "platform.h"
+#include "drivers/bus.h"
+#include "drivers/time.h"
+#include "drivers/accgyro/accgyro_icm456xx.h"
 }
 
 #include "gtest/gtest.h"
@@ -54,6 +57,12 @@ struct RegisterBus {
     bool fullAfterRead = false;
     bool staleFirstCount = false;
     bool flushStuck = false;
+    bool deferWrites = false;
+    bool stallWrite = false;
+    unsigned completionPolls = 0;
+    uint8_t *pendingBuffer = nullptr;
+    uint8_t pendingRegister = 0, pendingLength = 0;
+    bool completionError = false;
 
     RegisterBus()
     {
@@ -160,11 +169,17 @@ uint64_t clockNs()
 class Icm45686Test : public ::testing::Test {
 protected:
     RegisterBus bus;
-    icm45686Io_t io{&bus, readRegister, writeRegister, delayUs, clockNs};
+    busDevice_t nativeBus{};
+    extDevice_t endpoint{};
+    icm456xxDevice_t io{};
     icm45686FifoDevice_t device{};
 
     void SetUp() override
     {
+        nativeBus.busType = BUS_TYPE_SPI;
+        endpoint.bus = &nativeBus;
+        endpoint.callbackArg = reinterpret_cast<uintptr_t>(&bus);
+        io.dev = &endpoint;
         elapsedNs = 0;
         stoppedClock = false;
     }
@@ -274,8 +289,10 @@ TEST_F(Icm45686Test, RollsBackEveryPartiallyAppliedStart)
     for (unsigned failedWrite = 3; failedWrite <= 11; ++failedWrite) {
         RegisterBus candidate;
         const auto registers = candidate.registers;
-        auto transport = io;
-        transport.context = &candidate;
+        extDevice_t candidateDevice = endpoint;
+        candidateDevice.callbackArg = reinterpret_cast<uintptr_t>(&candidate);
+        icm456xxDevice_t transport{};
+        transport.dev = &candidateDevice;
         candidate.failWrite = failedWrite;
         icm45686FifoDevice_t state{};
         EXPECT_EQ(ICM45686_CONFIGURATION, icm45686FifoStart(&transport, &state)) << failedWrite;
@@ -425,8 +442,10 @@ TEST_F(Icm45686Test, InvalidStreamBurstsDoNotCommitFramesAndStopCanRecover)
 TEST_F(Icm45686Test, KeepsIndependentStreamStateForSeparateDevices)
 {
     RegisterBus second;
-    auto secondIo = io;
-    secondIo.context = &second;
+    extDevice_t secondDevice = endpoint;
+    secondDevice.callbackArg = reinterpret_cast<uintptr_t>(&second);
+    icm456xxDevice_t secondIo{};
+    secondIo.dev = &secondDevice;
     icm45686FifoStream_t firstStream{}, secondStream{};
     ASSERT_EQ(ICM45686_READY, icm45686FifoStreamStart(&io, &firstStream));
     ASSERT_EQ(ICM45686_READY, icm45686FifoStreamStart(&secondIo, &secondStream));
@@ -443,4 +462,109 @@ TEST_F(Icm45686Test, KeepsIndependentStreamStateForSeparateDevices)
     EXPECT_TRUE(secondStream.device.active);
     EXPECT_EQ(ICM45686_CLOSED, icm45686FifoStreamStop(&secondIo, &secondStream));
 }
+TEST_F(Icm45686Test, WaitsForBufferedI2cWriteCompletion)
+{
+    nativeBus.busType = BUS_TYPE_I2C;
+    bus.deferWrites = true;
+    bus.completionPolls = 3;
+    ASSERT_TRUE(icm456xxWriteIndirect(&io, 0xa258, 0x11));
+    EXPECT_EQ(0x11, bus.smc);
+    EXPECT_EQ(nullptr, bus.pendingBuffer);
+    EXPECT_FALSE(io.writePending);
+    EXPECT_EQ(1U, bus.writes);
+    EXPECT_GE(elapsedNs, UINT64_C(11000));
+}
+
+TEST_F(Icm45686Test, RetainsTimedOutWriteUntilCompletionAndRejectsReplacement)
+{
+    nativeBus.busType = BUS_TYPE_I2C;
+    bus.deferWrites = true;
+    bus.stallWrite = true;
+    EXPECT_FALSE(icm456xxWriteIndirect(&io, 0xa258, 0x11));
+    ASSERT_EQ(io.writeBuffer, bus.pendingBuffer);
+    const auto data = std::array<uint8_t, 3>{io.writeBuffer[0], io.writeBuffer[1], io.writeBuffer[2]};
+    EXPECT_TRUE(io.writePending);
+    EXPECT_FALSE(icm456xxWriteIndirect(&io, 0xa258, 0x22));
+    EXPECT_EQ((std::array<uint8_t, 3>{0xa2, 0x58, 0x11}), data);
+    EXPECT_EQ(data, (std::array<uint8_t, 3>{io.writeBuffer[0], io.writeBuffer[1], io.writeBuffer[2]}));
+    EXPECT_EQ(0U, bus.writes);
+    EXPECT_EQ(0x14, bus.smc);
+    bus.stallWrite = false;
+    uint8_t actual = 0;
+    ASSERT_TRUE(icm456xxReadIndirect(&io, 0xa258, &actual));
+    EXPECT_EQ(0x11, actual);
+    EXPECT_FALSE(io.writePending);
+    EXPECT_EQ(nullptr, bus.pendingBuffer);
+}
+
+TEST_F(Icm45686Test, KeepsStreamTimeAcrossThe32BitMicrosBoundary)
+{
+    elapsedNs = (UINT64_C(0xffffffff) - 1000U) * 1000U;
+    icm45686FifoStream_t stream{};
+    ASSERT_EQ(ICM45686_READY, icm45686FifoStreamStart(&io, &stream));
+    const uint64_t before = stream.lastReadNs;
+    elapsedNs += UINT64_C(2000000);
+    bus.packets = {packet(100), packet(256)};
+    icm45686FifoRead_t readout{};
+    icm45686FifoFrame_t frames[ICM45686_FIFO_BATCH_CAPACITY]{};
+    ASSERT_EQ(ICM45686_READY, icm45686FifoStreamRead(&io, &stream, frames, &readout));
+    EXPECT_GT(readout.readCompleteNs, UINT64_C(0xffffffff) * 1000U);
+    EXPECT_GE(readout.readCompleteNs, before);
+    EXPECT_EQ(elapsedNs, readout.readCompleteNs);
+    EXPECT_EQ(1U, readout.count);
+    EXPECT_EQ(ICM45686_CLOSED, icm45686FifoStreamStop(&io, &stream));
+}
+
 } // namespace
+
+extern "C" {
+bool busReadRegisterBuffer(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t length)
+{
+    if (reinterpret_cast<RegisterBus *>(dev->callbackArg)->pendingBuffer) {
+        return false;
+    }
+    return readRegister(reinterpret_cast<void *>(dev->callbackArg), reg, data, length) > 0;
+}
+bool busWriteRegisterBufferStart(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t length)
+{
+    auto &bus = *reinterpret_cast<RegisterBus *>(dev->callbackArg);
+    if (bus.pendingBuffer) {
+        return false;
+    }
+    if (bus.deferWrites) {
+        bus.pendingBuffer = data;
+        bus.pendingRegister = reg;
+        bus.pendingLength = length;
+        return true;
+    }
+    return writeRegister(reinterpret_cast<void *>(dev->callbackArg), reg, data, length) > 0;
+}
+bool busBusy(const extDevice_t *dev, bool *error)
+{
+    auto &bus = *reinterpret_cast<RegisterBus *>(dev->callbackArg);
+    if (bus.pendingBuffer) {
+        if (bus.stallWrite) {
+            return true;
+        }
+        if (bus.completionPolls) {
+            --bus.completionPolls;
+            return true;
+        }
+        const int result = writeRegister(&bus, bus.pendingRegister, bus.pendingBuffer, bus.pendingLength);
+        bus.pendingBuffer = nullptr;
+        bus.completionError = result <= 0;
+    }
+    if (error) {
+        *error = bus.completionError;
+    }
+    return false;
+}
+void delayMicroseconds(timeUs_t duration)
+{
+    delayUs(duration);
+}
+timeUs_t micros(void)
+{
+    return clockNs() / 1000U;
+}
+}
