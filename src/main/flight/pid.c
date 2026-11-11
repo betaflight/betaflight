@@ -983,9 +983,17 @@ STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
 }
 #endif
 
-static FAST_CODE_NOINLINE void disarmOnImpact(void)
+// landing_disarm_threshold units: suits a controlled autopilot landing, too sensitive for pilot-controlled flight
+#define AUTO_LANDING_DISARM_THRESHOLD (70 * 10.0f)
+
+static bool isAutoLandingActive(void)
 {
-    const bool autopilotOwnsThrottle = FLIGHT_MODE(ALT_HOLD_MODE | GPS_RESCUE_MODE);
+    return autopilotIsLanding() && !isFixedWing() && isBelowLandingAltitude();
+}
+
+static FAST_CODE_NOINLINE void disarmOnImpact(float threshold, bool autoLanding)
+{
+    const bool autopilotOwnsThrottle = autoLanding || FLIGHT_MODE(ALT_HOLD_MODE | GPS_RESCUE_MODE);
     // if, being armed, and after takeoff...
     if (wasThrottleRaised()
         // and, either sticks are centred and throttle zeroed,
@@ -996,11 +1004,11 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
         // modes, and keep the ordinary centred-stick path outside them.
         && (autopilotOwnsThrottle ? isBelowLandingAltitude()
                                   : (getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f))) {
-        // increase sensitivity by 50% when low and under autopilot throttle control
+        // increase sensitivity by 50% in an autopilot landing below landing altitude
         // for more reliable disarm with gentle controlled landings
-        const float lowAltitudeSensitivity = (autopilotOwnsThrottle && isBelowLandingAltitude()) ? 1.5f : 1.0f;
+        const float lowAltitudeSensitivity = autoLanding ? 1.5f : 1.0f;
         // and disarm if jerk exceeds threshold...
-        if ((acc.jerkMagnitude * lowAltitudeSensitivity) > pidRuntime.landingDisarmThreshold) {
+        if ((acc.jerkMagnitude * lowAltitudeSensitivity) > threshold) {
             // then disarm
             setArmingDisabled(ARMING_DISABLED_ARM_SWITCH); // NB: need a better message
             disarm(DISARM_REASON_LANDING);
@@ -1253,8 +1261,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
     rotateItermAndAxisError();
 
+    const bool autoLanding = isAutoLandingActive();
     if (pidRuntime.useEzDisarm) {
-        disarmOnImpact();
+        disarmOnImpact(pidRuntime.landingDisarmThreshold, autoLanding);
+    } else if (autoLanding) {
+        disarmOnImpact(AUTO_LANDING_DISARM_THRESHOLD, autoLanding);
     }
 
 #ifdef USE_CHIRP
