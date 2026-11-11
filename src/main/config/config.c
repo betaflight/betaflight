@@ -35,6 +35,7 @@
 
 #include "config/config_eeprom.h"
 #include "config/feature.h"
+#include "config/config_psas.h"
 
 #include "drivers/dshot.h"
 #include "drivers/dshot_command.h"
@@ -56,6 +57,7 @@
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
 #include "flight/position.h"
+#include "flight/psas.h"
 
 #include "io/beeper.h"
 #include "io/displayport_msp.h"
@@ -173,6 +175,11 @@ static void activateConfig(void)
     activeAdjustmentRangeReset();
 
     pidInit(currentPidProfile);
+
+#ifdef USE_PSAS
+    loadPsasProfile();
+    psasInit(currentPsasProfile);
+#endif
 
     // after pidInit(): initRcProcessing() latches feedforward settings from pidRuntime
     initRcProcessing();

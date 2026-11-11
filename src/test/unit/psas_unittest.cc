@@ -37,6 +37,8 @@ extern "C" {
     extern psasRuntime_t psasRuntime;
     extern psas_data_t psasData;
     extern psas_trimming_data_t psasTrimmingData;
+    struct psasProfile_s *currentPsasProfile;
+    struct pidProfile_s *currentPidProfile;
     pidAxisData_t pidData[XYZ_AXIS_COUNT];
     int16_t debug[DEBUG16_VALUE_COUNT];
     uint8_t debugMode;
@@ -78,6 +80,7 @@ extern "C" {
     }
     bool sensors(uint32_t mask) { return (mask == SENSOR_ACC) || (mask == SENSOR_PITOT); }
     bool gyroOverflowDetected(void) { return false; }
+    uint8_t getCurrentPsasProfileIndex(void) { return 0; }
 }
 
 static void resetPsasState(void)
@@ -247,7 +250,7 @@ TEST(PsasTrimming, InitZeroMaskTurnsOffState)
     // Profile with fully disabled trimming mask.
     // lowpass_time = 0 → pt1FilterGainFromDelay(0, dT) yields k=1,
     // which is safe for subsequent psasTrimmingUpdate() calls.
-    pidProfile_t profile = {};
+    psasProfile_t profile = {};
     profile.psas_trim_enabled_mask = 0;
     profile.psas_trim_lowpass_time = 0;
     profile.psas_trim_deadband    = 0;
@@ -274,7 +277,7 @@ TEST(PsasTrimming, InitDisablesOnlyDisabledAxes)
     psasTrimmingData.output[FD_PITCH] =  7.0f;
     psasTrimmingData.output[FD_YAW]   = 15.0f; // > limit → must be clamped
 
-    pidProfile_t profile = {};
+    psasProfile_t profile = {};
     profile.psas_trim_enabled_mask = 0x05;
     profile.psas_trim_lowpass_time = 0;
     profile.psas_trim_limit        = 10;

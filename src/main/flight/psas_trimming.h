@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include "psas.h"
+
 typedef enum {
     TRIMMING_OFF,
     TRIMMING_FIX,
@@ -40,7 +42,7 @@ typedef struct psas_trimming_data_s {
     float output[XYZ_AXIS_COUNT];
 } psas_trimming_data_t;
 
-void psasTrimmingInit(const pidProfile_t *pidProfile);
+void psasTrimmingInit(const psasProfile_t *psasProfile);
 void psasTrimmingUpdate(void);
 float getPsasTrimmingOutput(uint8_t axis);
 uint8_t getPsasTrimmingState(void);

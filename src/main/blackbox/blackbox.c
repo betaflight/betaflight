@@ -44,6 +44,7 @@
 
 #include "config/config.h"
 #include "config/feature.h"
+#include "config/config_psas.h"
 
 #include "cli/settings.h"
 
@@ -384,17 +385,17 @@ typedef enum {
 
 #ifdef USE_PSAS
 typedef struct blackboxPsasState_s {
-    int16_t pitch_pilot;
-    int16_t pitch_damping;
-    int16_t pitch_stability;
-    int16_t pitch_I;
-    int16_t pitch_P;
-    int16_t roll_pilot;
-    int16_t roll_damping;
-    int16_t yaw_pilot;
-    int16_t yaw_damping;
-    int16_t yaw_stability;
-    int16_t yaw_roll_cross_link;
+    int32_t pitch_pilot;
+    int32_t pitch_damping;
+    int32_t pitch_stability;
+    int32_t pitch_I;
+    int32_t pitch_P;
+    int32_t roll_pilot;
+    int32_t roll_damping;
+    int32_t yaw_pilot;
+    int32_t yaw_damping;
+    int32_t yaw_stability;
+    int32_t yaw_roll_cross_link;
 } blackboxPsasState_t;
 #endif
 
@@ -648,39 +649,40 @@ STATIC_UNIT_TESTED bool testBlackboxConditionUncached(flightLogFieldCondition_e 
 #ifdef USE_PSAS
     // PSAS Pitch control data
     case CONDITION(NONZERO_PSAS_PITCH_PILOT):
-        return (currentPidProfile->psas_stick_gain[FD_PITCH] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+        return (currentPsasProfile->psas_stick_gain[FD_PITCH] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
 
     case CONDITION(NONZERO_PSAS_PITCH_DAMPING):
-        return (currentPidProfile->psas_damping_gain[FD_PITCH] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+        return (currentPsasProfile->psas_damping_gain[FD_PITCH] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
 
     case CONDITION(NONZERO_PSAS_PITCH_STABILITY):
-        return (currentPidProfile->psas_pitch_stability_gain != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+        return (currentPsasProfile->psas_pitch_stability_gain != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
 
     case CONDITION(NONZERO_PSAS_PITCH_I):
-        return (currentPidProfile->psas_pitch_accel_i_gain != 0 || currentPidProfile->psas_aoa_limiter_gain != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+        return (currentPsasProfile->psas_pitch_accel_i_gain != 0 || currentPsasProfile->psas_aoa_limiter_gain != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
 
     case CONDITION(NONZERO_PSAS_PITCH_P):
-        return (currentPidProfile->psas_pitch_accel_p_gain != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+        return (currentPsasProfile->psas_pitch_accel_p_gain != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
 
     // PSAS Roll control data
     case CONDITION(NONZERO_PSAS_ROLL_PILOT):
-        return (currentPidProfile->psas_stick_gain[FD_ROLL] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+        return (currentPsasProfile->psas_stick_gain[FD_ROLL] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
 
     case CONDITION(NONZERO_PSAS_ROLL_DAMPING):
-        return (currentPidProfile->psas_damping_gain[FD_ROLL] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+        return (currentPsasProfile->psas_damping_gain[FD_ROLL] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
 
     // PSAS YAW control data
     case CONDITION(NONZERO_PSAS_YAW_PILOT):
-        return (currentPidProfile->psas_stick_gain[FD_YAW] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+        return (currentPsasProfile->psas_stick_gain[FD_YAW] != 0 || (currentPsasProfile->psas_trim_enabled_mask & (1 << FD_YAW)))
+            && isFieldEnabled(FIELD_SELECT(PSAS));
 
     case CONDITION(NONZERO_PSAS_YAW_DAMPING):
-        return (currentPidProfile->psas_damping_gain[FD_YAW] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+        return (currentPsasProfile->psas_damping_gain[FD_YAW] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
 
     case CONDITION(NONZERO_PSAS_YAW_STABILITY):
-        return (currentPidProfile->psas_yaw_stability_gain != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+        return (currentPsasProfile->psas_yaw_stability_gain != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
 
     case CONDITION(NONZERO_PSAS_YAW_ROLL_CROSS_LINK):
-        return (currentPidProfile->psas_roll_to_yaw_link != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+        return (currentPsasProfile->psas_roll_to_yaw_link != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
 #endif
 
     case CONDITION(NEVER):
@@ -900,47 +902,47 @@ static void writeIntraframe(void)
 #ifdef USE_PSAS
     if (isFieldEnabled(FIELD_SELECT(PSAS))) {
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_PILOT))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.pitch_pilot, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.pitch_pilot);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_DAMPING))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.pitch_damping, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.pitch_damping);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_STABILITY))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.pitch_stability, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.pitch_stability);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_I))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.pitch_I, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.pitch_I);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_P))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.pitch_P, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.pitch_P);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_ROLL_PILOT))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.roll_pilot, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.roll_pilot);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_ROLL_DAMPING))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.roll_damping, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.roll_damping);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_PILOT))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.yaw_pilot, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.yaw_pilot);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_DAMPING))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.yaw_damping, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.yaw_damping);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_STABILITY))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.yaw_stability, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.yaw_stability);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_ROLL_CROSS_LINK))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.yaw_roll_cross_link, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.yaw_roll_cross_link);
         }
     }
 #endif
@@ -1134,60 +1136,60 @@ static void writeInterframe(void)
 
 #ifdef USE_PSAS
     if (isFieldEnabled(FIELD_SELECT(PSAS))) {
-        int16_t delta;
+        int32_t delta;
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_PILOT))) {
             delta = blackboxCurrent->planeSAS.pitch_pilot - blackboxLast->planeSAS.pitch_pilot;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_DAMPING))) {
             delta = blackboxCurrent->planeSAS.pitch_damping - blackboxLast->planeSAS.pitch_damping;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_STABILITY))) {
             delta = blackboxCurrent->planeSAS.pitch_stability - blackboxLast->planeSAS.pitch_stability;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_I))) {
             delta = blackboxCurrent->planeSAS.pitch_I - blackboxLast->planeSAS.pitch_I;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_P))) {
             delta = blackboxCurrent->planeSAS.pitch_P - blackboxLast->planeSAS.pitch_P;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_ROLL_PILOT))) {
             delta = blackboxCurrent->planeSAS.roll_pilot - blackboxLast->planeSAS.roll_pilot;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_ROLL_DAMPING))) {
             delta = blackboxCurrent->planeSAS.roll_damping - blackboxLast->planeSAS.roll_damping;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_PILOT))) {
             delta = blackboxCurrent->planeSAS.yaw_pilot - blackboxLast->planeSAS.yaw_pilot;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_DAMPING))) {
             delta = blackboxCurrent->planeSAS.yaw_damping - blackboxLast->planeSAS.yaw_damping;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_STABILITY))) {
             delta = blackboxCurrent->planeSAS.yaw_stability - blackboxLast->planeSAS.yaw_stability;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_ROLL_CROSS_LINK))) {
             delta = blackboxCurrent->planeSAS.yaw_roll_cross_link - blackboxLast->planeSAS.yaw_roll_cross_link;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
     }
 #endif
@@ -2163,48 +2165,48 @@ static bool blackboxWriteSysinfo(void)
 #endif // USE_WING
 
 #ifdef USE_PSAS
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_STICK_GAIN, "%d", currentPidProfile->psas_stick_gain[FD_PITCH]);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_DAMPING_GAIN, "%d", currentPidProfile->psas_damping_gain[FD_PITCH]);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_DAMPING_FILTER_FREQ, "%d", currentPidProfile->psas_pitch_damping_filter_freq);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ACCEL_Z_FILTER_FREQ, "%d", currentPidProfile->psas_accel_z_filter_freq);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_STABILITY_GAIN, "%d", currentPidProfile->psas_pitch_stability_gain);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_ACCEL_P_GAIN, "%d", currentPidProfile->psas_pitch_accel_p_gain);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_ACCEL_I_GAIN, "%d", currentPidProfile->psas_pitch_accel_i_gain);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_ACCEL_MAX, "%d", currentPidProfile->psas_pitch_accel_max);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_ACCEL_MIN, "%d", currentPidProfile->psas_pitch_accel_min);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_STICK_GAIN, "%d", currentPidProfile->psas_stick_gain[FD_ROLL]);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_DAMPING_GAIN, "%d", currentPidProfile->psas_damping_gain[FD_ROLL]);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_YAW_STICK_GAIN, "%d", currentPidProfile->psas_stick_gain[FD_YAW]);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_YAW_DAMPING_GAIN, "%d", currentPidProfile->psas_damping_gain[FD_YAW]);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_YAW_DAMPING_FILTER_FREQ, "%d", currentPidProfile->psas_yaw_damping_filter_freq);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ACCEL_Y_FILTER_FREQ, "%d", currentPidProfile->psas_accel_y_filter_freq);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_YAW_STABILITY_GAIN, "%d", currentPidProfile->psas_yaw_stability_gain);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_WING_LOAD, "%d", currentPidProfile->psas_wing_load);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_AIR_DENSITY, "%d", currentPidProfile->psas_air_density);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_LIFT_C_LIMIT, "%d", currentPidProfile->psas_lift_c_limit);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_AOA_LIMITER_GAIN, "%d", currentPidProfile->psas_aoa_limiter_gain);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_LIFT_COEF_FILTER_FREQ, "%d", currentPidProfile->psas_lift_coef_filter_freq);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_AOA_LIMITER_FORECAST_TIME, "%d", currentPidProfile->psas_aoa_limiter_forecast_time);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_AOA_LIMITER_TAU_RETURN, "%d", currentPidProfile->psas_aoa_limiter_tau_return);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SERVO_TIME, "%d", currentPidProfile->psas_servo_time);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_YAW_CLIFT_START, "%d", currentPidProfile->psas_roll_yaw_clift_start);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_YAW_CLIFT_STOP, "%d", currentPidProfile->psas_roll_yaw_clift_stop);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_TO_YAW_LINK, "%d", currentPidProfile->psas_roll_to_yaw_link);
-        BLACKBOX_PRINT_HEADER_LINE("psas_speed_curve_enabled", "%d", currentPidProfile->psas_speed_curve_enabled_mask);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_CURVE_MODE, "%d", currentPidProfile->psas_speed_curve_mode);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_OPTIMUM_VREF, "%d", currentPidProfile->psas_speed_optimum_vref);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_MAIN_CURVE_POWER, "%d", currentPidProfile->psas_speed_main_curve_power);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_ROLL_STICK_CURVE_POWER, "%d", currentPidProfile->psas_speed_roll_stick_curve_power);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_MAIN_CURVE_MIN, "%d", currentPidProfile->psas_speed_main_curve_min);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_MAIN_CURVE_MAX, "%d", currentPidProfile->psas_speed_main_curve_max);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_STICK_CURVE_MIN, "%d", currentPidProfile->psas_speed_stick_curve_min);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_STICK_CURVE_MAX, "%d", currentPidProfile->psas_speed_stick_curve_max);
-        BLACKBOX_PRINT_HEADER_LINE("psas_trim_enabled", "%d", currentPidProfile->psas_trim_enabled_mask);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_TRIM_DEADBAND, "%d", currentPidProfile->psas_trim_deadband);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_TRIM_LOWPASS_TIME, "%d", currentPidProfile->psas_trim_lowpass_time);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_TRIM_RATE, "%d", currentPidProfile->psas_trim_rate);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_TRIM_LIMIT, "%d", currentPidProfile->psas_trim_limit);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_TRIM_TAU_RESET, "%d", currentPidProfile->psas_trim_tau_reset);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_STICK_GAIN, "%d", currentPsasProfile->psas_stick_gain[FD_PITCH]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_DAMPING_GAIN, "%d", currentPsasProfile->psas_damping_gain[FD_PITCH]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_DAMPING_FILTER_FREQ, "%d", currentPsasProfile->psas_pitch_damping_filter_freq);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ACCEL_Z_FILTER_FREQ, "%d", currentPsasProfile->psas_accel_z_filter_freq);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_STABILITY_GAIN, "%d", currentPsasProfile->psas_pitch_stability_gain);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_ACCEL_P_GAIN, "%d", currentPsasProfile->psas_pitch_accel_p_gain);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_ACCEL_I_GAIN, "%d", currentPsasProfile->psas_pitch_accel_i_gain);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_ACCEL_MAX, "%d", currentPsasProfile->psas_pitch_accel_max);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_ACCEL_MIN, "%d", currentPsasProfile->psas_pitch_accel_min);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_STICK_GAIN, "%d", currentPsasProfile->psas_stick_gain[FD_ROLL]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_DAMPING_GAIN, "%d", currentPsasProfile->psas_damping_gain[FD_ROLL]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_YAW_STICK_GAIN, "%d", currentPsasProfile->psas_stick_gain[FD_YAW]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_YAW_DAMPING_GAIN, "%d", currentPsasProfile->psas_damping_gain[FD_YAW]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_YAW_DAMPING_FILTER_FREQ, "%d", currentPsasProfile->psas_yaw_damping_filter_freq);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ACCEL_Y_FILTER_FREQ, "%d", currentPsasProfile->psas_accel_y_filter_freq);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_YAW_STABILITY_GAIN, "%d", currentPsasProfile->psas_yaw_stability_gain);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_WING_LOAD, "%d", currentPsasProfile->psas_wing_load);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_AIR_DENSITY, "%d", currentPsasProfile->psas_air_density);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_LIFT_C_LIMIT, "%d", currentPsasProfile->psas_lift_c_limit);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_AOA_LIMITER_GAIN, "%d", currentPsasProfile->psas_aoa_limiter_gain);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_LIFT_COEF_FILTER_FREQ, "%d", currentPsasProfile->psas_lift_coef_filter_freq);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_AOA_LIMITER_FORECAST_TIME, "%d", currentPsasProfile->psas_aoa_limiter_forecast_time);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_AOA_LIMITER_TAU_RETURN, "%d", currentPsasProfile->psas_aoa_limiter_tau_return);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SERVO_TIME, "%d", currentPsasProfile->psas_servo_time);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_YAW_CLIFT_START, "%d", currentPsasProfile->psas_roll_yaw_clift_start);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_YAW_CLIFT_STOP, "%d", currentPsasProfile->psas_roll_yaw_clift_stop);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_TO_YAW_LINK, "%d", currentPsasProfile->psas_roll_to_yaw_link);
+        BLACKBOX_PRINT_HEADER_LINE("psas_speed_curve_enabled", "%d", currentPsasProfile->psas_speed_curve_enabled_mask);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_CURVE_MODE, "%d", currentPsasProfile->psas_speed_curve_mode);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_OPTIMUM_VREF, "%d", currentPsasProfile->psas_speed_optimum_vref);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_MAIN_CURVE_POWER, "%d", currentPsasProfile->psas_speed_main_curve_power);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_ROLL_STICK_CURVE_POWER, "%d", currentPsasProfile->psas_speed_roll_stick_curve_power);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_MAIN_CURVE_MIN, "%d", currentPsasProfile->psas_speed_main_curve_min);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_MAIN_CURVE_MAX, "%d", currentPsasProfile->psas_speed_main_curve_max);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_STICK_CURVE_MIN, "%d", currentPsasProfile->psas_speed_stick_curve_min);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_STICK_CURVE_MAX, "%d", currentPsasProfile->psas_speed_stick_curve_max);
+        BLACKBOX_PRINT_HEADER_LINE("psas_trim_enabled", "%d", currentPsasProfile->psas_trim_enabled_mask);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_TRIM_DEADBAND, "%d", currentPsasProfile->psas_trim_deadband);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_TRIM_LOWPASS_TIME, "%d", currentPsasProfile->psas_trim_lowpass_time);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_TRIM_RATE, "%d", currentPsasProfile->psas_trim_rate);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_TRIM_LIMIT, "%d", currentPsasProfile->psas_trim_limit);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_TRIM_TAU_RESET, "%d", currentPsasProfile->psas_trim_tau_reset);
 #endif // USE_PSAS
 
         default:

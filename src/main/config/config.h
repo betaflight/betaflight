@@ -61,6 +61,9 @@ typedef struct systemConfig_s {
     uint8_t activeBatteryProfile;
     uint8_t configResetReason;
     uint16_t configResetDetail;     // stored EEPROM version or pgn, depending on configResetReason
+#ifdef USE_PSAS
+    uint8_t psasProfileIndex;
+#endif
 } systemConfig_t;
 
 PG_DECLARE(systemConfig_t, systemConfig);
