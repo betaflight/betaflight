@@ -70,6 +70,7 @@
 static uint8_t tmpPidProfileIndex;
 static uint8_t pidProfileIndex;
 static char pidProfileIndexString[MAX_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
+static char psasProfileIndexString[MAX_PSAS_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
 static uint8_t tempPid[3][3];
 static uint16_t tempPidF[3];
 
@@ -1058,7 +1059,7 @@ static const void *cmsx_PsasOnEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
 
-    setProfileIndexString(pidProfileIndexString, pidProfileIndex, currentPidProfile->profileName);
+    setProfileIndexString(psasProfileIndexString, getCurrentPsasProfileIndex(), currentPsasProfile->profileName);
     cmsx_PsasRead();
 
     return NULL;
@@ -1121,7 +1122,7 @@ static const void *cmsx_PsasWriteback(displayPort_t *pDisp, const OSD_Entry *sel
 
 static OSD_Entry cmsx_menuPsasEntries[] =
 {
-    { "-- PSAS --", OME_Label, NULL, pidProfileIndexString},
+    { "-- PSAS --", OME_Label, NULL, psasProfileIndexString},
     { "-- PILOT --", OME_Label, NULL, NULL},
     { "ROLL", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_stick_gain[PID_ROLL], 5, 200, 1 }},
     { "PITCH", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_stick_gain[PID_PITCH], 5, 200, 1 }},
