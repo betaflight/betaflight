@@ -64,8 +64,6 @@
 #define ADIS16607_WRITE_RETRIES         8
 #define ADIS16607_CONFIG_RETRIES        3
 
-static bool adis16607ConfigOk;
-
 // Half duplex: the response arrives in the same 32-bit frame as the command.
 static uint16_t adis16607ReadReg(const extDevice_t *dev, uint8_t reg)
 {
@@ -139,26 +137,44 @@ typedef struct {
     const gyroDev_t *gyro;
     uint16_t dataCntr;
     bool valid;
-} adis16607FrameState_t;
+    bool configured;
+} adis16607State_t;
 
-static adis16607FrameState_t frameStates[MAX_GYRODEV_COUNT];
+static adis16607State_t deviceStates[MAX_GYRODEV_COUNT];
 
-static adis16607FrameState_t *adis16607FrameState(const gyroDev_t *gyro)
+static adis16607State_t *adis16607FindState(const gyroDev_t *gyro)
 {
-    for (unsigned i = 0; i < ARRAYLEN(frameStates); i++) {
-        if (frameStates[i].gyro == gyro) {
-            return &frameStates[i];
-        }
-    }
-
-    for (unsigned i = 0; i < ARRAYLEN(frameStates); i++) {
-        if (!frameStates[i].gyro) {
-            frameStates[i].gyro = gyro;
-            return &frameStates[i];
+    for (unsigned i = 0; i < ARRAYLEN(deviceStates); i++) {
+        if (deviceStates[i].gyro == gyro) {
+            return &deviceStates[i];
         }
     }
 
     return NULL;
+}
+
+static adis16607State_t *adis16607ClaimState(const gyroDev_t *gyro)
+{
+    adis16607State_t *state = adis16607FindState(gyro);
+    if (state) {
+        return state;
+    }
+
+    for (unsigned i = 0; i < ARRAYLEN(deviceStates); i++) {
+        if (!deviceStates[i].gyro) {
+            deviceStates[i].gyro = gyro;
+            return &deviceStates[i];
+        }
+    }
+
+    return NULL;
+}
+
+static bool adis16607Configured(const gyroDev_t *gyro)
+{
+    const adis16607State_t *state = adis16607FindState(gyro);
+
+    return state && state->configured;
 }
 
 // Every write here changes how the burst is laid out or how fast it arrives, so
@@ -231,25 +247,24 @@ static void adis16607GyroInit(gyroDev_t *gyro)
     /* A configuration write the part drops is not cosmetic: the wrong
      * USER_DATA_CFG shifts every word of the burst, and the wrong DEC_RATE runs
      * the part at an ODR the scheduler was not told about. Unlock and retry the
-     * block until it reads back. If it never does, the reads that follow will
-     * fail their checksum or their data counter rather than publish a
-     * misinterpreted frame.
+     * block until it reads back. If it never does, leave it unlocked and
+     * refuse its reads.
      */
-    adis16607ConfigOk = false;
-    for (int tries = 0; tries < ADIS16607_CONFIG_RETRIES; tries++) {
+    bool configured = false;
+    for (int tries = 0; tries < ADIS16607_CONFIG_RETRIES && !configured; tries++) {
         adis16607Unlock(dev);
-        if (adis16607Configure(dev, filterBandwidthOptions[gyroConfig()->gyro_hardware_lpf])) {
-            adis16607ConfigOk = true;
-            break;
-        }
+        configured = adis16607Configure(dev, filterBandwidthOptions[gyroConfig()->gyro_hardware_lpf]);
     }
 
     // Locking is what leaves the initialisation state and starts data-ready.
-    adis16607Lock(dev);
+    if (configured) {
+        adis16607Lock(dev);
+    }
 
-    adis16607FrameState_t *state = adis16607FrameState(gyro);
+    adis16607State_t *state = adis16607ClaimState(gyro);
     if (state) {
         state->valid = false;
+        state->configured = configured;
     }
 
     gyro->scale = ADIS16607_GYRO_SCALE;
@@ -334,7 +349,7 @@ static bool adis16607UnpackGyro(gyroDev_t *gyro)
      * next data-ready edge; publishing it either way feeds the PID loop a rate
      * it has already acted on.
      */
-    adis16607FrameState_t *state = adis16607FrameState(gyro);
+    adis16607State_t *state = adis16607FindState(gyro);
     const uint16_t dataCntr = adis16607Word(frame, ADIS16607_BURST_WORD_DATA_CNTR);
     if (state) {
         if (state->valid && dataCntr == state->dataCntr) {
@@ -371,6 +386,10 @@ static void adis16607StartBurst(gyroDev_t *gyro)
 
 static bool adis16607GyroReadSPI(gyroDev_t *gyro)
 {
+    if (!adis16607Configured(gyro)) {
+        return false;
+    }
+
     switch (gyro->gyroModeSPI) {
     case GYRO_EXTI_INIT:
     {
@@ -421,6 +440,10 @@ static bool adis16607AccReadSPI(accDev_t *acc)
 {
     // Same frame the gyro read already fetched - no separate accel transaction.
     const uint8_t *frame = acc->gyro->dev.rxBuf;
+
+    if (!adis16607Configured(acc->gyro)) {
+        return false;
+    }
 
     if (acc->gyro->gyroModeSPI == GYRO_EXTI_INIT) {
         return true;

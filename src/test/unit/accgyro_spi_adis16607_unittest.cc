@@ -81,6 +81,8 @@ struct FakeAdis {
 
 static FakeAdis fake;
 static bool useDma;
+// Driver state is keyed on the gyroDev_t address, so reuse one.
+static gyroDev_t testGyro;
 
 // Build a burst frame in the device's own wire format: big-endian words with a
 // trailing truncated sum over DIAG_STAT..DATA_CNTR. The data counter advances on
@@ -111,7 +113,7 @@ static void fakeSetBurst(int16_t ax, int16_t ay, int16_t az,
 
 class AdisTest : public ::testing::Test {
 protected:
-    gyroDev_t gyro;
+    gyroDev_t &gyro = testGyro;
     accDev_t acc;
     uint8_t txBuf[ADIS16607_BURST_FRAME_LEN];
     uint8_t rxBuf[ADIS16607_BURST_FRAME_LEN];
@@ -432,6 +434,51 @@ TEST_F(AdisTest, InitRetriesDroppedConfigWrites)
     EXPECT_EQ(ADIS16607_DEC_RATE_4780HZ, fake.reg[ADIS16607_REG_DEC_RATE]);
 }
 
+TEST_F(AdisTest, InitLeavesDeviceUnlockedWhenConfigNeverReadsBack)
+{
+    fake.dropWrites[ADIS16607_REG_USER_DATA_CFG] = 1000;
+    initGyro();
+    const int lockAt = fake.indexOfLastWrite(ADIS16607_REG_WRITE_LOCK);
+    ASSERT_GE(lockAt, 1);
+    EXPECT_FALSE(fake.writes[lockAt - 1].second == ADIS16607_WRITE_LOCK_KEY_B
+                 && fake.writes[lockAt].second == ADIS16607_WRITE_LOCK_KEY_A);
+}
+
+TEST_F(AdisTest, ReadRefusesDeviceWhoseConfigNeverReadBack)
+{
+    fake.dropWrites[ADIS16607_REG_DEC_RATE] = 1000;
+    initGyro();
+    ASSERT_TRUE(adis16607SpiAccDetect(&acc));
+
+    // Left as init leaves it: the gyro read never gets to pick a mode.
+    EXPECT_EQ(GYRO_EXTI_INIT, gyro.gyroModeSPI);
+    EXPECT_FALSE(gyro.readFn(&gyro));
+    EXPECT_EQ(GYRO_EXTI_INIT, gyro.gyroModeSPI);
+    EXPECT_FALSE(acc.readFn(&acc));
+
+    gyro.gyroModeSPI = GYRO_EXTI_NO_INT;
+    fakeSetBurst(11, 22, 33, 1000, 2000, 3000, 0);
+    EXPECT_FALSE(gyro.readFn(&gyro));
+    EXPECT_EQ(0, gyro.gyroADCRaw[X]);
+
+    memcpy(rxBuf, fake.burstFrame, sizeof(fake.burstFrame));
+    EXPECT_FALSE(acc.readFn(&acc));
+    EXPECT_EQ(0, acc.ADCRaw[X]);
+}
+
+TEST_F(AdisTest, ReadAcceptsDeviceAgainAfterSuccessfulReinit)
+{
+    fake.dropWrites[ADIS16607_REG_DEC_RATE] = 1000;
+    initGyro();
+    fake.dropWrites[ADIS16607_REG_DEC_RATE] = 0;
+    gyro.initFn(&gyro);
+
+    gyro.gyroModeSPI = GYRO_EXTI_NO_INT;
+    fakeSetBurst(0, 0, 0, 1000, 0, 0, 0);
+    EXPECT_TRUE(gyro.readFn(&gyro));
+    EXPECT_EQ(1000, gyro.gyroADCRaw[X]);
+}
+
 // --- accel shares the gyro's frame -------------------------------------------
 
 TEST_F(AdisTest, AccReadsGyroFrameWithoutOwnTransfer)
@@ -454,6 +501,7 @@ TEST_F(AdisTest, AccReadSucceedsBeforeFirstBurst)
 {
     // acc readFn can be called while readFn is still negotiating its mode; the
     // buffer holds no frame yet, so it must not fail the sensor.
+    initGyro();
     ASSERT_TRUE(adis16607SpiAccDetect(&acc));
     gyro.gyroModeSPI = GYRO_EXTI_INIT;
     EXPECT_TRUE(acc.readFn(&acc));
