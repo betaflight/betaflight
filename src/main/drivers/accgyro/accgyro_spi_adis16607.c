@@ -101,10 +101,17 @@ static void adis16607Unlock(const extDevice_t *dev)
     adis16607WriteReg(dev, ADIS16607_REG_WRITE_LOCK, ADIS16607_WRITE_LOCK_KEY_B);
 }
 
-static void adis16607Lock(const extDevice_t *dev)
+static bool adis16607Lock(const extDevice_t *dev)
 {
-    adis16607WriteReg(dev, ADIS16607_REG_WRITE_LOCK, ADIS16607_WRITE_LOCK_KEY_B);
-    adis16607WriteReg(dev, ADIS16607_REG_WRITE_LOCK, ADIS16607_WRITE_LOCK_KEY_A);
+    for (int i = 0; i < ADIS16607_WRITE_RETRIES; i++) {
+        adis16607WriteReg(dev, ADIS16607_REG_WRITE_LOCK, ADIS16607_WRITE_LOCK_KEY_B);
+        adis16607WriteReg(dev, ADIS16607_REG_WRITE_LOCK, ADIS16607_WRITE_LOCK_KEY_A);
+        if (adis16607ReadReg(dev, ADIS16607_REG_WRITE_LOCK) & ADIS16607_WRITE_LOCK_LOCKED) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 uint8_t adis16607SpiDetect(const extDevice_t *dev)
@@ -137,6 +144,7 @@ typedef struct {
     const gyroDev_t *gyro;
     uint16_t dataCntr;
     bool valid;
+    bool accFresh;
     bool configured;
     uint8_t frame[ADIS16607_BURST_FRAME_LEN];
 } adis16607State_t;
@@ -258,13 +266,16 @@ static void adis16607GyroInit(gyroDev_t *gyro)
     }
 
     // Locking is what leaves the initialisation state and starts data-ready.
+    // Until it reads back the part is still in initialisation and its data is
+    // not to be used.
     if (configured) {
-        adis16607Lock(dev);
+        configured = adis16607Lock(dev);
     }
 
     adis16607State_t *state = adis16607ClaimState(gyro);
     if (state) {
         state->valid = false;
+        state->accFresh = false;
         state->configured = configured;
         memset(state->frame, 0, sizeof(state->frame));
     }
@@ -287,11 +298,7 @@ static void adis16607GyroInit(gyroDev_t *gyro)
      * the handler, since it returns early otherwise.
      */
     const IO_t mpuIntIO = IOGetByTag(gyro->mpuIntExtiTag);
-#ifdef ENSURE_MPU_DATA_READY_IS_LOW
-    if (mpuIntIO && !IORead(mpuIntIO)) {
-#else
-    if (mpuIntIO) {
-#endif
+    if (mpuIntIO && gyro->exti.fn) {
         EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING,
                    BETAFLIGHT_EXTI_TRIGGER_FALLING);
         EXTIEnable(mpuIntIO);
@@ -368,6 +375,7 @@ static bool adis16607UnpackGyro(gyroDev_t *gyro)
 
     // The accel reads this frame, so keep it even if the gyro is faulted.
     memcpy(state->frame, frame, sizeof(state->frame));
+    state->accFresh = true;
 
     if (adis16607Word(frame, ADIS16607_BURST_WORD_DIAG_STAT) & ADIS16607_DIAG_STAT_FAULT_GYRO) {
         return false;
@@ -461,12 +469,15 @@ static bool adis16607AccReadSPI(accDev_t *acc)
     }
 
     // Same frame the gyro read already fetched - no separate accel transaction.
-    const adis16607State_t *state = adis16607FindState(acc->gyro);
+    adis16607State_t *state = adis16607FindState(acc->gyro);
     const uint8_t *frame = state->frame;
 
-    if (!state->valid) {
+    // Each accepted frame is used once, so a gyro that stops accepting frames
+    // does not keep feeding the accel the last one.
+    if (!state->accFresh) {
         return false;
     }
+    state->accFresh = false;
 
     if (adis16607Word(frame, ADIS16607_BURST_WORD_DIAG_STAT) & ADIS16607_DIAG_STAT_FAULT_XL) {
         return false;

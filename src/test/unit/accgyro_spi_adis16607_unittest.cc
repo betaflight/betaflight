@@ -45,6 +45,7 @@ struct FakeAdis {
     int burstCount;
     uint16_t dataCntr;
     uint16_t diagStat;
+    uint16_t lastLockKey;
     int dropWrites[0x50]; // writes the part silently swallows, per register
 
     void reset()
@@ -56,6 +57,7 @@ struct FakeAdis {
         burstCount = 0;
         dataCntr = 0;
         diagStat = 0;
+        lastLockKey = 0;
         memset(dropWrites, 0, sizeof(dropWrites));
     }
 
@@ -85,6 +87,8 @@ static FakeAdis fake;
 static bool useDma;
 // Driver state is keyed on the gyroDev_t address, so reuse one.
 static gyroDev_t testGyro;
+static bool extiPinPresent;
+static int extiConfigCalls;
 
 // Build a burst frame in the device's own wire format: big-endian words with a
 // trailing truncated sum over DIAG_STAT..DATA_CNTR. The data counter advances on
@@ -125,6 +129,8 @@ protected:
     {
         fake.reset();
         useDma = false;
+        extiPinPresent = false;
+        extiConfigCalls = 0;
         memset(&gyro, 0, sizeof(gyro));
         memset(&acc, 0, sizeof(acc));
         memset(txBuf, 0, sizeof(txBuf));
@@ -263,6 +269,25 @@ TEST_F(AdisTest, InitOverridesMpuDefaultRegisters)
     EXPECT_EQ(ADIS16607_REG_X_ACCEL_HIGH, gyro.accDataReg);
     EXPECT_EQ(ADIS16607_REG_TEMPERATURE, gyro.tempDataReg);
     EXPECT_EQ(ADIS16607_BURST_CMD, gyro.dmaReadRegStart);
+}
+
+static void fakeExtiHandler(extiCallbackRec_t *) {}
+
+TEST_F(AdisTest, InitLeavesExtiAloneWithoutHandler)
+{
+    // mpuIntExtiInit() can return before installing the handler; enabling the
+    // EXTI then would call a null callback.
+    extiPinPresent = true;
+    initGyro();
+    EXPECT_EQ(0, extiConfigCalls);
+}
+
+TEST_F(AdisTest, InitMovesExtiToFallingEdgeWithHandler)
+{
+    extiPinPresent = true;
+    gyro.exti.fn = fakeExtiHandler;
+    initGyro();
+    EXPECT_EQ(1, extiConfigCalls);
 }
 
 TEST_F(AdisTest, AccInitPublishesOneG)
@@ -467,6 +492,29 @@ TEST_F(AdisTest, ReadRefusesDeviceWhoseConfigNeverReadBack)
     EXPECT_EQ(0, acc.ADCRaw[X]);
 }
 
+TEST_F(AdisTest, ReadRefusesDeviceWhoseLockNeverReadBack)
+{
+    fake.dropWrites[ADIS16607_REG_WRITE_LOCK] = 1000;
+    initGyro();
+    gyro.gyroModeSPI = GYRO_EXTI_NO_INT;
+    fakeSetBurst(0, 0, 0, 1000, 0, 0, 0);
+    EXPECT_FALSE(gyro.readFn(&gyro));
+}
+
+TEST_F(AdisTest, InitRetriesDroppedLock)
+{
+    initGyro();
+    ASSERT_EQ(ADIS16607_WRITE_LOCK_LOCKED, fake.reg[ADIS16607_REG_WRITE_LOCK]);
+
+    fake.reset();
+    fake.dropWrites[ADIS16607_REG_WRITE_LOCK] = 3;
+    gyro.initFn(&gyro);
+    EXPECT_EQ(ADIS16607_WRITE_LOCK_LOCKED, fake.reg[ADIS16607_REG_WRITE_LOCK]);
+    gyro.gyroModeSPI = GYRO_EXTI_NO_INT;
+    fakeSetBurst(0, 0, 0, 1000, 0, 0, 0);
+    EXPECT_TRUE(gyro.readFn(&gyro));
+}
+
 TEST_F(AdisTest, ReadAcceptsDeviceAgainAfterSuccessfulReinit)
 {
     fake.dropWrites[ADIS16607_REG_DEC_RATE] = 1000;
@@ -522,6 +570,27 @@ TEST_F(AdisTest, AccReadIgnoresFrameTheGyroRejected)
 
     EXPECT_TRUE(acc.readFn(&acc));
     EXPECT_EQ(1, acc.ADCRaw[X]);
+}
+
+TEST_F(AdisTest, AccReadUsesEachFrameOnce)
+{
+    initGyro();
+    ASSERT_TRUE(adis16607SpiAccDetect(&acc));
+    gyro.gyroModeSPI = GYRO_EXTI_NO_INT;
+    fakeSetBurst(1, 2, 3, 0, 0, 0, 0);
+    ASSERT_TRUE(gyro.readFn(&gyro));
+    EXPECT_TRUE(acc.readFn(&acc));
+
+    fake.burstFrame[ADIS16607_BURST_WORD_CHECKSUM] ^= 0x0100;
+    for (int i = 0; i < 10; i++) {
+        ASSERT_FALSE(gyro.readFn(&gyro));
+        EXPECT_FALSE(acc.readFn(&acc));
+    }
+
+    fakeSetBurst(4, 5, 6, 0, 0, 0, 0);
+    ASSERT_TRUE(gyro.readFn(&gyro));
+    EXPECT_TRUE(acc.readFn(&acc));
+    EXPECT_EQ(4, acc.ADCRaw[X]);
 }
 
 TEST_F(AdisTest, AccReadRejectsBeforeFirstAcceptedFrame)
@@ -629,7 +698,7 @@ void spiSetClkDivisor(const extDevice_t *, uint16_t) {}
 void spiWait(const extDevice_t *) {}
 void spiDmaEnable(const extDevice_t *, bool) {}
 void mpuGyroInit(gyroDev_t *) {}
-void EXTIConfig(IO_t, extiCallbackRec_t *, int, ioConfig_t, extiTrigger_t) {}
+void EXTIConfig(IO_t, extiCallbackRec_t *, int, ioConfig_t, extiTrigger_t) { extiConfigCalls++; }
 void EXTIEnable(IO_t) {}
 busStatus_e mpuIntCallback(uintptr_t) { return BUS_READY; }
 
@@ -645,7 +714,8 @@ bool spiUseDMA(const extDevice_t *)
 
 IO_t IOGetByTag(ioTag_t)
 {
-    return NULL;
+    static int pin;
+    return extiPinPresent ? (IO_t)&pin : NULL;
 }
 
 // Half-duplex register access: a 3-byte frame is a write, a 4-byte frame is a
@@ -661,6 +731,16 @@ void spiReadWriteBuf(const extDevice_t *, uint8_t *txData, uint8_t *rxData, int 
         }
         if (fake.dropWrites[reg] > 0) {
             fake.dropWrites[reg]--; // as the part does while locked or booting
+            return;
+        }
+        if (reg == ADIS16607_REG_WRITE_LOCK) {
+            // B then A locks, A then B unlocks; the register reads back bit 0.
+            if (fake.lastLockKey == ADIS16607_WRITE_LOCK_KEY_B && value == ADIS16607_WRITE_LOCK_KEY_A) {
+                fake.reg[reg] = ADIS16607_WRITE_LOCK_LOCKED;
+            } else if (fake.lastLockKey == ADIS16607_WRITE_LOCK_KEY_A && value == ADIS16607_WRITE_LOCK_KEY_B) {
+                fake.reg[reg] = 0;
+            }
+            fake.lastLockKey = value;
             return;
         }
         fake.reg[reg] = value;
