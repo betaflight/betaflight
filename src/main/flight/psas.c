@@ -202,48 +202,44 @@ static void FAST_CODE_NOINLINE computeLiftCoefficient(const psasProfile_t *psasP
     *liftCoef = 0.0f;
     *liftCoefVelocity = 0.0f;
 
-    if (ARMING_FLAG(ARMED)) {
 #ifdef USE_PITOT
-        if (sensors(SENSOR_PITOT)) {
-            airSpeedPressure = MAX(pitot.diffPressure, 0.0f);
-        } else
-#endif
-#ifdef USE_GPS
-        if (STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
-            airSpeedPressure = psasRuntime.air_density * sq(0.01f * gpsSol.speed3d) / 2.0f;
-        }
+    if (sensors(SENSOR_PITOT)) {
+        airSpeedPressure = MAX(pitot.diffPressure, 0.0f);
+    } else
 #endif
 
-        if (airSpeedPressure > pressureThreshold) {
-            *liftCoef = accelZ * psasRuntime.wing_load * G_ACCELERATION / airSpeedPressure;
-            if (psasProfile->psas_lift_coef_filter_freq != 0) {
-                *liftCoef = pt1FilterApply(&psasLiftCoefLowpass, *liftCoef);
+#ifdef USE_GPS
+    if (STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
+        airSpeedPressure = psasRuntime.air_density * sq(0.01f * gpsSol.speed3d) / 2.0f;
+    }
+#endif
+
+    if (airSpeedPressure > pressureThreshold) {
+        *liftCoef = accelZ * psasRuntime.wing_load * G_ACCELERATION / airSpeedPressure;
+        if (psasProfile->psas_lift_coef_filter_freq != 0) {
+            *liftCoef = pt1FilterApply(&psasLiftCoefLowpass, *liftCoef);
+        }
+        *liftCoefVelocity = (*liftCoef - liftCoefLast) / pidRuntime.dT;
+        liftCoefLast = *liftCoef;
+        // Enable AoA limiter after ~3s of stable lift to avoid triggering during launch
+        if (!isLiftCoefValid) {
+            if (*liftCoef < psasRuntime.lift_c_limit && *liftCoef > -psasRuntime.lift_c_limit) {
+                validLiftCoefTime += pidRuntime.dT;
+                if (validLiftCoefTime > timeForValid) {
+                    isLiftCoefValid = true;
+                }
+            } else {
+                validLiftCoefTime = 0.0f;
             }
-            *liftCoefVelocity = (*liftCoef - liftCoefLast) / pidRuntime.dT;
-            liftCoefLast = *liftCoef;
-            // Enable AoA limiter after ~3s of stable lift to avoid triggering during launch
             if (!isLiftCoefValid) {
-                if (*liftCoef < psasRuntime.lift_c_limit && *liftCoef > -psasRuntime.lift_c_limit) {
-                    validLiftCoefTime += pidRuntime.dT;
-                    if (validLiftCoefTime > timeForValid) {
-                        isLiftCoefValid = true;
-                    }
-                } else {
-                    validLiftCoefTime = 0.0f;
-                }
-                if (!isLiftCoefValid) {
-                    *liftCoef = 0.0f;
-                    *liftCoefVelocity = 0.0f;
-                }
+                *liftCoef = 0.0f;
+                *liftCoefVelocity = 0.0f;
             }
-        } else {
-            isLiftCoefValid = false;
-            validLiftCoefTime = 0.0f;
         }
     } else {
         isLiftCoefValid = false;
-        liftCoefLast = 0.0f;
         validLiftCoefTime = 0.0f;
+        liftCoefLast = 0.0f;
     }
 }
 
