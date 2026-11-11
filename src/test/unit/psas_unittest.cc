@@ -80,6 +80,7 @@ extern "C" {
     }
     bool sensors(uint32_t mask) { return (mask == SENSOR_ACC) || (mask == SENSOR_PITOT); }
     bool gyroOverflowDetected(void) { return false; }
+    uint8_t getCurrentPsasProfileIndex(void) { return 0; }
 }
 
 static void resetPsasState(void)
