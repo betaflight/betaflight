@@ -2609,6 +2609,16 @@ bool flightPlanNavIsActive(void)
     return fp.active;
 }
 
+bool flightPlanNavIsLanding(void)
+{
+    return fp.active && fp.state == FP_NAV_LANDING;
+}
+
+float flightPlanNavGetLandingRateCmS(void)
+{
+    return fp.landingRateMps * 100.0f;
+}
+
 flightPlanNavState_e flightPlanNavGetState(void)
 {
     return fp.state;
