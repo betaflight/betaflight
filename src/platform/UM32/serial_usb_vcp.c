@@ -34,34 +34,25 @@
 #include "pg/usb.h"
 
 
-// #include "vcp_hal/usbd_cdc_interface.h"
 #include "drivers/usb_io.h"
 #include "usbd_core.h"
 #include "usbd_cdc_acm.h"
 #include "usb_dc.h"
+#include "vcp_hal/cdc_acm.h"
 
 // USBD_HandleTypeDef USBD_Device;
-
-#include "drivers/time.h"
 
 #include "drivers/serial.h"
 #include "drivers/serial_usb_vcp.h"
 
 #define USB_TIMEOUT  50
-#define RINGBUFFER_SIZE  2048
 typedef struct {
-    char buffer[RINGBUFFER_SIZE];
-    volatile uint32_t head;
-    volatile uint32_t tail;
+    uint8_t buffer[USB_VCP_RX_RING_SIZE];
+    uint32_t head;
+    uint32_t tail;
 } CircularBuffer;
 
-CircularBuffer cdc_buf;
-
-extern void bf_usbd_ep_write_buffer(const void *data, int count);
-extern void bf_usbd_ep_start_write(void);
-extern bool bf_get_tx_flag(void);
-extern uint8_t usbIsConnected(void);
-extern uint8_t usbIsConfigured(void);
+static CircularBuffer cdc_buf;
 
 uint8_t usbVcpIsActive(void)
 {
@@ -108,42 +99,50 @@ static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
     return true;
 }
 
-void usbVcpRecieveData(uint8_t *data, uint32_t len)
+bool usbVcpReceiveData(const uint8_t *data, uint32_t len)
 {
-
-    if (cdc_buf.head <= cdc_buf.tail) {
-        if (RINGBUFFER_SIZE - cdc_buf.tail > len) {
-            memcpy(&cdc_buf.buffer[cdc_buf.tail], data, len);
-            cdc_buf.tail = cdc_buf.tail + len;
-        } else {
-            memcpy(&cdc_buf.buffer[cdc_buf.tail], data, RINGBUFFER_SIZE - cdc_buf.tail);
-            data += (RINGBUFFER_SIZE - cdc_buf.tail);
-            len -= (RINGBUFFER_SIZE - cdc_buf.tail);
-            memcpy(&cdc_buf.buffer[0], data, len);
-            cdc_buf.tail = len;
-        }
-    } else {
-        if (cdc_buf.head - cdc_buf.tail > len) {
-            memcpy(&cdc_buf.buffer[cdc_buf.tail], data, len);
-            cdc_buf.tail = cdc_buf.tail + len;
-        } else {
-        }
+    if (len == 0) {
+        return true;
     }
+
+    const uint32_t head = __atomic_load_n(&cdc_buf.head, __ATOMIC_ACQUIRE);
+    const uint32_t tail = __atomic_load_n(&cdc_buf.tail, __ATOMIC_RELAXED);
+    // Reserve one slot to distinguish a full ring from an empty one.
+    const uint32_t freeSpace = (head + USB_VCP_RX_RING_SIZE - tail - 1U) % USB_VCP_RX_RING_SIZE;
+    if (len > freeSpace) {
+        return false;
+    }
+
+    const uint32_t first = MIN(len, USB_VCP_RX_RING_SIZE - tail);
+    memcpy(&cdc_buf.buffer[tail], data, first);
+    if (len > first) {
+        memcpy(cdc_buf.buffer, data + first, len - first);
+    }
+    __atomic_store_n(&cdc_buf.tail, (tail + len) % USB_VCP_RX_RING_SIZE, __ATOMIC_RELEASE);
+    return true;
 }
 
 static uint32_t usbVcpAvailable(const serialPort_t *instance)
 {
     UNUSED(instance);
 
-    return (cdc_buf.tail - cdc_buf.head + RINGBUFFER_SIZE) % RINGBUFFER_SIZE;
+    const uint32_t head = __atomic_load_n(&cdc_buf.head, __ATOMIC_RELAXED);
+    const uint32_t tail = __atomic_load_n(&cdc_buf.tail, __ATOMIC_ACQUIRE);
+    return (tail + USB_VCP_RX_RING_SIZE - head) % USB_VCP_RX_RING_SIZE;
 }
 
 static uint8_t usbVcpRead(serialPort_t *instance)
 {
     UNUSED(instance);
 
-    uint8_t data = cdc_buf.buffer[cdc_buf.head];
-    cdc_buf.head = (cdc_buf.head + 1) % RINGBUFFER_SIZE;
+    const uint32_t head = __atomic_load_n(&cdc_buf.head, __ATOMIC_RELAXED);
+    if (head == __atomic_load_n(&cdc_buf.tail, __ATOMIC_ACQUIRE)) {
+        return 0;
+    }
+
+    const uint8_t data = cdc_buf.buffer[head];
+    __atomic_store_n(&cdc_buf.head, (head + 1U) % USB_VCP_RX_RING_SIZE, __ATOMIC_RELEASE);
+    cdc_acm_resume_rx();
     return data;
 }
 
@@ -151,35 +150,25 @@ static void usbVcpWriteBuf(serialPort_t *instance, const void *data, int count)
 {
     UNUSED(instance);
 
-    UNUSED(instance);
-
-    if (!(usbIsConnected() && usbIsConfigured())) {
+    if (count <= 0 || !usbVcpIsActive()) {
         return;
     }
 
-    bf_usbd_ep_write_buffer(data, count);
+    bf_usbd_ep_write_buffer(data, (unsigned int)count);
 }
 
-static bool usbVcpFlush(vcpPort_t *port)
+static bool usbVcpFlush(void)
 {
-    (void)port;
-    bf_usbd_ep_start_write();
-    uint32_t start = millis();
-    while (bf_get_tx_flag()) {
-        if (millis() - start > USB_TIMEOUT) {
-            return false;
-        }
-    }
-    return true;
+    return bf_usbd_ep_wait_write(USB_TIMEOUT);
 }
 
 static void usbVcpWrite(serialPort_t *instance, uint8_t c)
 {
     vcpPort_t *port = container_of(instance, vcpPort_t, port);
 
-    bf_usbd_ep_write_buffer(&c, 1);
+    bf_usbd_ep_write_buffer(&c, 1U);
     if (!port->buffering) {
-        usbVcpFlush(port);
+        usbVcpFlush();
     }
 }
 
@@ -199,7 +188,7 @@ static void usbVcpEndWrite(serialPort_t *instance)
 {
     vcpPort_t *port = container_of(instance, vcpPort_t, port);
     port->buffering = false;
-    usbVcpFlush(port);
+    usbVcpFlush();
 }
 
 static const struct serialPortVTable usbVTable[] = {
@@ -232,8 +221,7 @@ serialPort_t *usbVcpOpen(void)
     IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
     IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
 
-	extern void cdc_acm_init(uint8_t busid, uint32_t reg_base);
-	cdc_acm_init(0, USB_BASE);
+    cdc_acm_init(0, USB_BASE);
 
     s = &vcpPort;
     s->port.vTable = usbVTable;

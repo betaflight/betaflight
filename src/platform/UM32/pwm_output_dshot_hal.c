@@ -122,7 +122,6 @@ FAST_CODE static void pwmDshotSetDirectionInput(
 
     const timerHardware_t * const timerHardware = motor->timerHardware;
     TIM_TypeDef *timer = (TIM_TypeDef *)timerHardware->tim;
-    // const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
 
     xLL_EX_DMA_DisableResource(motor->dmaRef);
 
@@ -252,16 +251,11 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     } else
 #endif
     {
-#if defined(USE_DMA_SPEC)
         const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
         if (dmaSpec != NULL) {
             dmaRef = dmaSpec->ref;
             dmaChannel = DMA_CODE_CHANNEL(dmaSpec->code);
         }
-#else
-        dmaRef = timerHardware->dmaRef;
-        dmaChannel = timerHardware->dmaChannel;
-#endif
     }
 
     if (dmaRef == NULL) {

@@ -5,6 +5,7 @@ extern "C" {
 #include "um32_uart_bidir/platform.h"
 #include "build/debug.h"
 #include "drivers/io.h"
+#include "drivers/io_impl.h"
 #include "drivers/serial.h"
 #include "drivers/serial_impl.h"
 #include "drivers/serial_uart.h"
@@ -24,6 +25,7 @@ namespace {
 uartHardware_t hardware[UARTDEV_COUNT];
 UART_TypeDef registers[UARTDEV_COUNT];
 ioConfig_t pinConfig[64];
+ioRec_t pinRecords[64];
 uint32_t now;
 uint32_t clockHz;
 
@@ -35,6 +37,7 @@ protected:
         memset(hardware, 0, sizeof(hardware));
         memset(registers, 0, sizeof(registers));
         memset(pinConfig, 0, sizeof(pinConfig));
+        memset(pinRecords, 0, sizeof(pinRecords));
         memset(debug, 0, sizeof(debug));
         mockLptim = {};
         now = 0;
@@ -184,6 +187,49 @@ TEST_F(Um32UartBidirTest, OnlyAcceptsUsableHalfDuplexMappings)
     EXPECT_FALSE(uartBidirCanOpen(&dev, 4800)); // No alternate pad defined for UART3.
 }
 
+TEST_F(Um32UartBidirTest, RejectsAnAlternateRxPadOwnedByAnotherResource)
+{
+    const auto rx = IOGetByTag(7);
+    const resourceOwner_t conflicts[] = {{OWNER_I2C_SDA, 1}, {OWNER_SERIAL_RX, 2}, {OWNER_PREINIT, 0}};
+    for (const auto &conflict : conflicts) {
+        IOInit(rx, conflict.owner, conflict.index);
+        IOConfigGPIOAF(rx, IOCFG_AF_PP_PD, 4);
+
+        EXPECT_FALSE(uartBidirCanOpen(&uartDevice[UARTDEV_1], 4800));
+        open(); // Also check the reconfiguration path without the open guard.
+
+        EXPECT_EQ(conflict.owner, IO_Rec(rx)->owner);
+        EXPECT_EQ(conflict.index, IO_Rec(rx)->index);
+        EXPECT_EQ(IOCFG_AF_PP_PD, pinConfig[7]);
+    }
+}
+
+TEST_F(Um32UartBidirTest, ReconfigureOnlyTouchesRxPadsOwnedByThisUart)
+{
+    const auto rx = IOGetByTag(7);
+    const auto normalRx = IOGetByTag(10);
+    IOInit(normalRx, OWNER_I2C_SDA, 1);
+    IOConfigGPIOAF(normalRx, IOCFG_AF_PP_PD, 4);
+
+    auto *s = open();
+    ASSERT_EQ(OWNER_SERIAL_RX, IO_Rec(rx)->owner);
+    EXPECT_EQ(1, IO_Rec(rx)->index);
+    EXPECT_EQ(IOCFG_AF_PP_PD, pinConfig[10]);
+    ASSERT_TRUE(uartBidirCanOpen(&uartDevice[UARTDEV_1], 9600));
+
+    s->port.baudRate = 9600;
+    uartBidirConfigure(s);
+    EXPECT_EQ(OWNER_SERIAL_RX, IO_Rec(rx)->owner);
+    expectReceive(6, IOCFG_IPU);
+
+    IOInit(rx, OWNER_I2C_SDA, 2);
+    IOConfigGPIOAF(rx, IOCFG_AF_PP_PD, 4);
+    uartBidirConfigure(s);
+    EXPECT_EQ(OWNER_I2C_SDA, IO_Rec(rx)->owner);
+    EXPECT_EQ(2, IO_Rec(rx)->index);
+    EXPECT_EQ(IOCFG_AF_PP_PD, pinConfig[7]);
+}
+
 TEST_F(Um32UartBidirTest, SparseDeviceIndexesAndSamUsartUseTheCorrectStateAndRegisters)
 {
     static_assert(UARTDEV_COUNT == 3, "Exercise compressed indexes with UART3..7 absent");
@@ -331,7 +377,14 @@ uartDevice_t *uartDeviceFromIdentifier(serialPortIdentifier_e id)
 IO_t IOGetByTag(ioTag_t tag) { return reinterpret_cast<IO_t>(static_cast<uintptr_t>(tag)); }
 void IOConfigGPIO(IO_t io, ioConfig_t config) { pinConfig[reinterpret_cast<uintptr_t>(io)] = config; }
 void IOConfigGPIOAF(IO_t io, ioConfig_t config, uint8_t) { IOConfigGPIO(io, config); }
-void IOInit(IO_t, resourceOwner_e, uint8_t) {}
+ioRec_t *IO_Rec(IO_t io) { return io ? &pinRecords[reinterpret_cast<uintptr_t>(io)] : nullptr; }
+void IOInit(IO_t io, resourceOwner_e owner, uint8_t index)
+{
+    if (auto *rec = IO_Rec(io)) {
+        rec->owner = owner;
+        rec->index = index;
+    }
+}
 resourceOwner_e serialOwnerTxRx(serialPortIdentifier_e) { return OWNER_SERIAL_TX; }
 int serialOwnerIndex(serialPortIdentifier_e id) { return id - SERIAL_PORT_UART1 + 1; }
 uint32_t micros(void) { return now; }

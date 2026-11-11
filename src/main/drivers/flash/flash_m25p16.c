@@ -192,8 +192,6 @@ struct {
     //Giantec GT25Q256EZ
     //Datasheet:https://www.giantec-semi.com/norxp/556
     {0xC44019, 104, 104, 512, 256},
-    // Fudan Micro FM25Q128
-    { 0xA14018, 104, 50, 256, 256 },
      // Fudan Micro FM25LQ128I3
     { 0xA16018, 104, 50, 256, 256 },
     // End of list

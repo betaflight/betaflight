@@ -87,7 +87,6 @@ extern const uint8_t  APBPrescTable[16];     /*!< APB prescalers table values */
 extern void SystemInit(void);
 extern void SystemCoreClockUpdate(void);
 
-extern void systemClockSetHSEValue(uint32_t frequency);
 extern void OverclockRebootIfNecessary(uint32_t targetMhz);
 extern int SystemSYSCLKSource(void);
 extern int SystemPLLSource(void);

@@ -24,7 +24,7 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "um324xx_hal_def.h"
+#include "um324xx_hal_qspi.h"
 
 /** @addtogroup UM324xF_HAL_Driver
   * @{
@@ -136,18 +136,19 @@ extern "C" {
 /** @addtogroup GT25QXX_Exported_Functions
   * @{
   */
-void        QSPI_WriteEnable       (QSPI_HandleTypeDef *hqspi);
-void        QSPI_QuadEn            (QSPI_HandleTypeDef *hqspi);
-void        QSPI_QuadDisable       (QSPI_HandleTypeDef *hqspi);
-void        QSPI_WriteSr           (QSPI_HandleTypeDef *hqspi,uint8_t sr);
-uint8_t     QSPI_ReadSr            (QSPI_HandleTypeDef *hqspi);
-void        QSPI_WaitUntilIdle     (QSPI_HandleTypeDef *hqspi);
+HAL_StatusTypeDef QSPI_WriteEnable   (QSPI_HandleTypeDef *hqspi);
+HAL_StatusTypeDef QSPI_QuadEn        (QSPI_HandleTypeDef *hqspi);
+HAL_StatusTypeDef QSPI_QuadDisable   (QSPI_HandleTypeDef *hqspi);
+HAL_StatusTypeDef QSPI_WriteSr       (QSPI_HandleTypeDef *hqspi, uint8_t sr);
+HAL_StatusTypeDef QSPI_ReadSr        (QSPI_HandleTypeDef *hqspi, uint8_t *flashStatus);
+HAL_StatusTypeDef QSPI_WaitUntilIdle (QSPI_HandleTypeDef *hqspi, uint32_t timeoutMs);
 uint32_t    QSPI_ReadDeviceId      (QSPI_HandleTypeDef *hqspi);
 uint32_t    QSPI_ReadDeviceId_9F   (QSPI_HandleTypeDef *hqspi);
 void	      QSPI_ReadUniqueId      (QSPI_HandleTypeDef *hqspi, uint32_t arr[2]);
-void        QSPI_EraseSector       (QSPI_HandleTypeDef *hqspi,uint32_t addr);
-void        QSPI_PageWrite         (QSPI_HandleTypeDef *hqspi,uint8_t* buf,uint32_t write_addr,uint16_t len);
-void        QSPI_PageRead          (QSPI_HandleTypeDef *hqspi,uint8_t* buf,uint32_t read_addr,uint16_t len);
+HAL_StatusTypeDef QSPI_EraseSector   (QSPI_HandleTypeDef *hqspi, uint32_t addr);
+HAL_StatusTypeDef QSPI_EraseChip     (QSPI_HandleTypeDef *hqspi, uint32_t addr);
+HAL_StatusTypeDef QSPI_PageWrite     (QSPI_HandleTypeDef *hqspi, uint8_t *buf, uint32_t write_addr, uint16_t len);
+HAL_StatusTypeDef QSPI_PageRead      (QSPI_HandleTypeDef *hqspi, uint8_t *buf, uint32_t read_addr, uint16_t len);
 /* Private macros ------------------------------------------------------------*/
 /** @defgroup GT25QXX_Private_Macros
   * @{

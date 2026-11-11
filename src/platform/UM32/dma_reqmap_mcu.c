@@ -29,9 +29,6 @@
 #include "drivers/bus_spi.h"
 #include "drivers/dma_reqmap.h"
 #include "platform/dma.h"
-#include "drivers/serial.h"
-#include "drivers/serial_uart.h"
-#include "drivers/serial_uart_impl.h"
 
 #include "pg/timerio.h"
 
@@ -51,6 +48,7 @@ typedef struct dmaTimerMapping_s {
 #define DMA(d, hs, c) { DMA_CODE(d, hs, c), (dmaResource_t *)DMA ## d ## _Stream ## c, DMA_Handshake_ ## hs }
 #define NON_DMA   {{0}}
 
+// The UM32 UART driver uses interrupts for both RX and TX.
 static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
 #ifdef USE_SPI
     { DMA_PERIPH_SPI_SDO,  SPIDEV_1,  { DMA(2, 5, 4), DMA(2, 3, 4) } },
@@ -67,30 +65,6 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
 #ifdef USE_ADC
     { DMA_PERIPH_ADC,     ADCDEV_1,  { DMA(2, 0, 0), DMA(2, 4, 0) } },
     { DMA_PERIPH_ADC,     ADCDEV_2,  { DMA(2, 2, 0), DMA(2, 3, 0) } },
-#endif
-#ifdef USE_UART1
-    { DMA_PERIPH_UART_TX, UARTDEV_1, { DMA(2, 7, 2) } },
-    { DMA_PERIPH_UART_RX, UARTDEV_1, { DMA(2, 2, 3), DMA(2, 5, 3) } },
-#endif
-#ifdef USE_UART2
-    { DMA_PERIPH_UART_TX, UARTDEV_2, { DMA(1, 6, 4) } },
-    { DMA_PERIPH_UART_RX, UARTDEV_2, { DMA(1, 5, 5) } },
-#endif
-#ifdef USE_UART3
-    { DMA_PERIPH_UART_TX, UARTDEV_3, { DMA(1, 3, 6) } },
-    { DMA_PERIPH_UART_RX, UARTDEV_3, { DMA(1, 1, 7) } },
-#endif
-#ifdef USE_UART4
-    { DMA_PERIPH_UART_TX, UARTDEV_4, { DMA(1, 4, 6) } },
-    { DMA_PERIPH_UART_RX, UARTDEV_4, { DMA(1, 2, 7) } },
-#endif
-#ifdef USE_UART5
-    { DMA_PERIPH_UART_TX, UARTDEV_5, { DMA(1, 7, 6) } },
-    { DMA_PERIPH_UART_RX, UARTDEV_5, { DMA(1, 0, 7) } },
-#endif
-#ifdef USE_UART6
-    { DMA_PERIPH_UART_TX, UARTDEV_6, { DMA(2, 6, 6), DMA(2, 7, 6) } },
-    { DMA_PERIPH_UART_RX, UARTDEV_6, { DMA(2, 1, 7), DMA(2, 2, 7) } },
 #endif
 };
 

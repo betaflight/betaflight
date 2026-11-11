@@ -1,14 +1,14 @@
 /**
   ******************************************************************************
-  * @file    system_stm32g4xx.c
-  * @author  MCD Application Team
-  * @brief   CMSIS Cortex-M4 Device Peripheral Access Layer System Source File
+  * @file    system_um324xx.c
+  * @author  Unicmicro UM Team
+  * @brief   System startup and clock configuration for Unicmicro UM324xx devices.
   *
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2017 STMicroelectronics.
-  * All rights reserved.</center></h2>
+  * Portions derived from the STM32G4 CMSIS system startup template:
+  * Copyright (c) 2017 STMicroelectronics. All rights reserved.
   *
   * This software component is licensed by ST under BSD 3-Clause license,
   * the "License"; You may not use this file except in compliance with the
@@ -24,33 +24,17 @@
 #include "drivers/system.h"
 #include "platform.h"
 #include "drivers/persistent.h"
+#include "exflash_um324xx_hal.h"
 
-#if !defined  (HSE_VALUE)
-  #define HSE_VALUE     8000000U /*!< Value of the External oscillator in Hz */
-#endif /* HSE_VALUE */
-
-#if !defined  (HSI_VALUE)
-  #define HSI_VALUE    48000000U /*!< Value of the Internal oscillator in Hz*/
-#endif /* HSI_VALUE */
-
-#define	SYSCLK_288M
 #define VECT_TAB_SRAM
 
-  /* The SystemCoreClock variable is updated in three ways:
-      1) by calling CMSIS function SystemCoreClockUpdate()
-      2) by calling HAL API function HAL_RCC_GetHCLKFreq()
-      3) each time HAL_RCC_ClockConfig() is called to configure the system clock frequency
-         Note: If you use this function to configure the system clock; then there
-               is no need to call the 2 first functions listed above, since SystemCoreClock
-               variable is updated automatically.
-  */
-uint32_t SystemCoreClock = 48000000;
+// At reset, HCLK uses the 48 MHz RCH divided by two and an AHB divider of one.
+uint32_t SystemCoreClock = 24000000U;
 
 const uint8_t AHBPrescTable[16] = {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U};
 const uint8_t APBPrescTable[16] = {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U};
 
 void SystemClock_Config(void); // Forward
-void QSPI_QuadEn(QSPI_HandleTypeDef *hqspi);
 /**
   * @brief  Setup the microcontroller system.
   * @param  None
@@ -166,8 +150,9 @@ void exFlashInit(void)
         Error_Handler();
     }
 
-    /* Enable the QE mode */
-    QSPI_QuadEn(&hqspi);
+    if (QSPI_QuadEn(&hqspi) != HAL_OK) {
+        Error_Handler();
+    }
 
     qspiCacheEnable();
 }
@@ -329,40 +314,9 @@ void SystemInit(void)
 }
 
 /**
-  * @brief  Update SystemCoreClock variable according to Clock Register Values.
-  *         The SystemCoreClock variable contains the core clock (HCLK), it can
-  *         be used by the user application to setup the SysTick timer or configure
-  *         other parameters.
-  *
-  * @note   Each time the core clock (HCLK) changes, this function must be called
-  *         to update SystemCoreClock variable value. Otherwise, any configuration
-  *         based on this variable will be incorrect.
-  *
-  * @note   - The system frequency computed by this function is not the real
-  *           frequency in the chip. It is calculated based on the predefined
-  *           constant and the selected clock source:
-  *
-  *           - If SYSCLK source is HSI, SystemCoreClock will contain the HSI_VALUE(**)
-  *
-  *           - If SYSCLK source is HSE, SystemCoreClock will contain the HSE_VALUE(***)
-  *
-  *           - If SYSCLK source is PLL, SystemCoreClock will contain the HSE_VALUE(***)
-  *             or HSI_VALUE(*) multiplied/divided by the PLL factors.
-  *
-  *         (**) HSI_VALUE is a constant defined in stm32g4xx_hal.h file (default value
-  *              16 MHz) but the real value may vary depending on the variations
-  *              in voltage and temperature.
-  *
-  *         (***) HSE_VALUE is a constant defined in stm32g4xx_hal.h file (default value
-  *              8 MHz), user has to ensure that HSE_VALUE is same as the real
-  *              frequency of the crystal used. Otherwise, this function may
-  *              have wrong result.
-  *
-  *         - The result of this function could be not correct when using fractional
-  *           value for HSE crystal.
-  *
-  * @param  None
-  * @retval None
+  * @brief  Update SystemCoreClock (HCLK) from the UM324xx clock registers.
+  * @note   The calculation uses nominal RCH, XTH, XTL, or RCL frequencies
+  *         together with the configured clock dividers.
   */
 void SystemCoreClockUpdate(void)
 {
@@ -470,19 +424,26 @@ int SystemPLLSource(void)
 }
 
 typedef struct pllConfig_s {
-  uint16_t mhz; // target SYSCLK
-  uint16_t n;
-  uint16_t p;
-  uint16_t q;   //USB_SDIO_DIV
-  uint16_t r;   //AHB_DIV
+    uint16_t mhz; // Target HCLK with AHB divided by one.
+    uint16_t n;
+    uint16_t p;
+    uint32_t usbSdioDivider;
+    uint32_t flashWaitCycles;
 } pllConfig_t;
 
-// PLL parameters for PLL input = 1MHz.
-// For PLL input = 2MHz, divide n by 2; see SystemInitPLLParameters below.
+// Keep the 4 MHz PLL input for 8 and 12 MHz crystals. Use 1 MHz when
+// the crystal frequency in MHz is not divisible by four.
+#define XTH_PLL_INPUT_MHZ ((XTH_VALUE % 4000000U == 0U) ? 4U : 1U)
 
+STATIC_ASSERT(SYSCLK_SRC != SYSCLK_USE_XTH_PLL ||
+    (XTH_VALUE >= 1000000U && XTH_VALUE <= 48000000U && XTH_VALUE % 1000000U == 0U),
+    xth_pll_requires_a_whole_mhz_crystal_from_1_to_48_mhz);
+
+// Scale the PLLN values from a 1 MHz input. PLLN sets the VCO frequency,
+// PLLP divides it to SYSCLK, and the USB/SDIO divider yields 48 MHz.
 static const pllConfig_t overclockLevels[] = {
-  { 288, 576, 2,  USB_SDIO_Div6, AHB_Div1 },  // 288 MHz
-  { 336, 336, 1,  USB_SDIO_Div7, AHB_Div1 },  // 336 MHz
+    { 288, 576 / XTH_PLL_INPUT_MHZ, 2, RCM_USB_SDIO_DIV6, FLASH_RWAITCYC_5 },
+    { 336, 336 / XTH_PLL_INPUT_MHZ, 1, RCM_USB_SDIO_DIV7, FLASH_RWAITCYC_6 },
 };
 
 void OverclockRebootIfNecessary(uint32_t targetMhz)
@@ -505,16 +466,13 @@ void OverclockRebootIfNecessary(uint32_t targetMhz)
   }
 }
 
-void systemClockSetHSEValue(uint32_t frequency)
-{
-    uint32_t hse_value = persistentObjectRead(PERSISTENT_OBJECT_HSE_VALUE);
-
-    if (hse_value != frequency) {
-        persistentObjectWrite(PERSISTENT_OBJECT_HSE_VALUE, frequency);
-        __disable_irq();
-        NVIC_SystemReset();
-    }
-}
+#if !defined(SYSCLK_SRC) || (SYSCLK_SRC != SYSCLK_USE_RCH && SYSCLK_SRC != SYSCLK_USE_RCH_PLL && \
+    SYSCLK_SRC != SYSCLK_USE_XTH && SYSCLK_SRC != SYSCLK_USE_XTH_PLL)
+#error "Unsupported UM32 SYSCLK_SRC"
+#elif SYSCLK_SRC == SYSCLK_USE_RCH_PLL && \
+    (defined(SYSCLK_168M) + defined(SYSCLK_204M) + defined(SYSCLK_240M)) != 1
+#error "UM32 RCH PLL requires exactly one of SYSCLK_168M, SYSCLK_204M, or SYSCLK_240M"
+#endif
 
 /**
   * @brief System Clock Configuration
@@ -527,12 +485,6 @@ void SystemClock_Config(void)
     RCM_ClkInitTypeDef RCM_ClkInitStruct;
     RCM_OscInitTypeDef RCM_OscInitStruct;
 
-#ifdef USE_OVERCLOCK
-    uint32_t currentOverclockLevel = persistentObjectRead(PERSISTENT_OBJECT_OVERCLOCK_LEVEL);
-    if (currentOverclockLevel >= ARRAYLEN(overclockLevels)) {
-        currentOverclockLevel = 0;
-    }
-#endif
     if(SYSCLK_SRC == SYSCLK_USE_RCH)
     {
         /* Enable RCH Oscillator as source */
@@ -660,93 +612,38 @@ void SystemClock_Config(void)
         /*Initializes the CPU, AHB and APB busses clocks */
         HAL_RCM_ClockConfig(&RCM_ClkInitStruct, FLASH_RWAITCYC_0);
     }
-    else if(SYSCLK_SRC == SYSCLK_USE_XTH_PLL)
-    {
-        /* Enable XTH Oscillator and activate PLL with HSE as source */
+    else if (SYSCLK_SRC == SYSCLK_USE_XTH_PLL) {
+#ifdef USE_OVERCLOCK
+        uint32_t currentOverclockLevel = persistentObjectRead(PERSISTENT_OBJECT_OVERCLOCK_LEVEL);
+        if (currentOverclockLevel >= ARRAYLEN(overclockLevels)) {
+            currentOverclockLevel = 0;
+        }
+#elif defined(SYSCLK_336M)
+        const uint32_t currentOverclockLevel = 1;
+#else
+        const uint32_t currentOverclockLevel = 0;
+#endif
+        const pllConfig_t *pll = &overclockLevels[currentOverclockLevel];
+
         RCM_OscInitStruct.OscillatorType = RCM_OSCILLATORTYPE_XTH;
         RCM_OscInitStruct.XTHState = RCM_XTH_ON;
         RCM_OscInitStruct.PLL.PLLState = RCM_PLL_ON;
         RCM_OscInitStruct.PLL.PLLSource = RCM_PLLSOURCE_XTH;
-
-#ifdef USE_OVERCLOCK
-        if(currentOverclockLevel == 0){ //XTH=8M, PLL VCO=576Mhz, Fclk=288Mhz, Fref=XTH=8M, Fclk=(Fref*DN)/(DP*DM)
-            RCM_OscInitStruct.PLL.PLLM = 2;
-            RCM_OscInitStruct.PLL.PLLN = 144;
-            RCM_OscInitStruct.PLL.PLLP = 2;
-        }else{
-            RCM_OscInitStruct.PLL.PLLM = 2;
-            RCM_OscInitStruct.PLL.PLLN = 84;
-            RCM_OscInitStruct.PLL.PLLP = 1;	//XTH=8M, PLL CLKOUT(Fclk)=336Mhz, Fref=XTH=8M, Fclk=(Fref*DN)/(DP*DM)
-        }
-
-        /*Initializes the RCM Oscillators*/
+        RCM_OscInitStruct.PLL.PLLM = XTH_VALUE / (XTH_PLL_INPUT_MHZ * 1000000U);
+        RCM_OscInitStruct.PLL.PLLN = pll->n;
+        RCM_OscInitStruct.PLL.PLLP = pll->p;
         HAL_RCM_OscConfig(&RCM_OscInitStruct);
 
-         /* Select PLL as system clock source and configure the HCLK, PCLK0, PCLK1 ,PCLK2, and PCLK3
-         clocks dividers */
-        RCM_ClkInitStruct.ClockType = (RCM_CLOCKTYPE_SYSCLK | RCM_CLOCKTYPE_HCLK | RCM_CLOCKTYPE_PCLK0 |RCM_CLOCKTYPE_PCLK1 | RCM_CLOCKTYPE_PCLK2| RCM_CLOCKTYPE_PCLK3 | RCM_CLOCKTYPE_USBSDIO);
+        RCM_ClkInitStruct.ClockType = RCM_CLOCKTYPE_SYSCLK | RCM_CLOCKTYPE_HCLK |
+            RCM_CLOCKTYPE_PCLK0 | RCM_CLOCKTYPE_PCLK1 | RCM_CLOCKTYPE_PCLK2 |
+            RCM_CLOCKTYPE_PCLK3 | RCM_CLOCKTYPE_USBSDIO;
         RCM_ClkInitStruct.SYSCLKSource = RCM_SYSCLKSOURCE_PLL0CLK;
-        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV1;		//SystemCoreClock = Fclk/RCM_SYSCLK_DIV1 = 288MHz(L0)/336MHz(L1)
-        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV8;		//APB0Clock = SystemCoreClock/RCM_PCLK0_DIV8 = 36MHz(L0)/42MHz(L1)
-        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;		//APB1Clock = SystemCoreClock/RCM_PCLK1_DIV1 = 288MHz(L0)/336MHz(L1)
-        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;		//APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 288MHz(L0)/336MHz(L1)
-        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV8;		//APB3Clock = SystemCoreClock/RCM_PCLK3_DIV8 = 36MHz(L0)/42MHz(L1)
-
-        if(currentOverclockLevel == 0){
-            RCM_ClkInitStruct.USBSDIOCLKDivider = RCM_USB_SDIO_DIV6;//288MHz/6 = 48MHz
-            /*Initializes the CPU, AHB and APB busses clocks */
-            HAL_RCM_ClockConfig(&RCM_ClkInitStruct, FLASH_RWAITCYC_5);
-        }else{
-            RCM_ClkInitStruct.USBSDIOCLKDivider = RCM_USB_SDIO_DIV7;//336MHz/7 = 48MHz
-            /*Initializes the CPU, AHB and APB busses clocks */
-            HAL_RCM_ClockConfig(&RCM_ClkInitStruct, FLASH_RWAITCYC_6);
-        }
-#else
-#ifdef SYSCLK_288M
-		RCM_OscInitStruct.PLL.PLLM = 2;
-        RCM_OscInitStruct.PLL.PLLN = 144;
-        RCM_OscInitStruct.PLL.PLLP = 2;							//XTH=8M, PLL VCO=576Mhz, Fclk=288Mhz, Fref=XTH=8M, Fclk=(Fref*DN)/(DP*DM)
-
-        /*Initializes the RCM Oscillators*/
-        HAL_RCM_OscConfig(&RCM_OscInitStruct);
-
-         /* Select PLL as system clock source and configure the HCLK, PCLK0, PCLK1 ,PCLK2, and PCLK3
-         clocks dividers */
-        RCM_ClkInitStruct.ClockType = (RCM_CLOCKTYPE_SYSCLK | RCM_CLOCKTYPE_HCLK | RCM_CLOCKTYPE_PCLK0 |RCM_CLOCKTYPE_PCLK1 | RCM_CLOCKTYPE_PCLK2| RCM_CLOCKTYPE_PCLK3 | RCM_CLOCKTYPE_USBSDIO);
-        RCM_ClkInitStruct.SYSCLKSource = RCM_SYSCLKSOURCE_PLL0CLK;
-        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV1;		//SystemCoreClock = Fclk/RCM_SYSCLK_DIV1 = 288Mhz/1 = 288MHz
-        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV8;		//APB0Clock = SystemCoreClock/RCM_PCLK0_DIV8 = 288MHz/8 = 36MHz
-        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;		//APB1Clock = SystemCoreClock/RCM_PCLK1_DIV1 = 288MHz/1 = 288MHz
-        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;		//APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 288MHz/1 = 288MHz
-        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV8;		//APB3Clock = SystemCoreClock/RCM_PCLK3_DIV8 = 288MHz/8 = 36MHz
-        RCM_ClkInitStruct.USBSDIOCLKDivider = RCM_USB_SDIO_DIV6;//288MHz/6 = 48MHz
-
-		/*Initializes the CPU, AHB and APB busses clocks */
-        HAL_RCM_ClockConfig(&RCM_ClkInitStruct, FLASH_RWAITCYC_5);
-#endif
-
-#ifdef SYSCLK_336M
-		RCM_OscInitStruct.PLL.PLLM = 2;
-        RCM_OscInitStruct.PLL.PLLN = 84;
-        RCM_OscInitStruct.PLL.PLLP = 1;							//XTH=8M, PLL CLKOUT(Fclk)=336Mhz, Fref=XTH=8M, Fclk=(Fref*DN)/(DP*DM)
-
-        /*Initializes the RCM Oscillators*/
-        HAL_RCM_OscConfig(&RCM_OscInitStruct);
-
-         /* Select PLL as system clock source and configure the HCLK, PCLK0, PCLK1 ,PCLK2, and PCLK3
-         clocks dividers */
-        RCM_ClkInitStruct.ClockType = (RCM_CLOCKTYPE_SYSCLK | RCM_CLOCKTYPE_HCLK | RCM_CLOCKTYPE_PCLK0 |RCM_CLOCKTYPE_PCLK1 | RCM_CLOCKTYPE_PCLK2| RCM_CLOCKTYPE_PCLK3 | RCM_CLOCKTYPE_USBSDIO);
-        RCM_ClkInitStruct.SYSCLKSource = RCM_SYSCLKSOURCE_PLL0CLK;
-        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV1;		//SystemCoreClock = Fclk/RCM_SYSCLK_DIV1 = 336Mhz/1 = 336MHz
-        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV8;		//APB0Clock = SystemCoreClock/RCM_PCLK0_DIV8 = 336MHz/8 = 42MHz
-        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;		//APB1Clock = SystemCoreClock/RCM_PCLK1_DIV1 = 336MHz/1 = 336MHz
-        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;		//APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 336MHz/1 = 336MHz
-        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV8;		//APB3Clock = SystemCoreClock/RCM_PCLK3_DIV8 = 336MHz/8 = 42MHz
-        RCM_ClkInitStruct.USBSDIOCLKDivider = RCM_USB_SDIO_DIV7;//336MHz/7 = 48MHz
-
-		/*Initializes the CPU, AHB and APB busses clocks */
-        HAL_RCM_ClockConfig(&RCM_ClkInitStruct, FLASH_RWAITCYC_6);
-#endif
-#endif
+        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV1;
+        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV8;
+        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;
+        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;
+        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV8;
+        RCM_ClkInitStruct.USBSDIOCLKDivider = pll->usbSdioDivider;
+        HAL_RCM_ClockConfig(&RCM_ClkInitStruct, pll->flashWaitCycles);
     }
 }

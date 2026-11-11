@@ -195,6 +195,7 @@ MCU_COMMON_SRC = \
 
 MSC_SRC = \
             UM32/usb_msc_hal.c \
+            UM32/usbd_msc_desc.c \
             drivers/usb_msc_common.c \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \

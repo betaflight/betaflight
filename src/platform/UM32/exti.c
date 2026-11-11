@@ -115,7 +115,7 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
         .Pin = IO_Pin(io),
         .Mode = triggerLookupTable[trigger],
         .Speed = IO_CONFIG_GET_SPEED(config),
-        .Pull = IO_CONFIG_GET_PULL(config),
+        .Pull = ioConfigGetPull(config),
     };
     HAL_GPIO_Init(IO_GPIO(io), &init);
 

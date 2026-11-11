@@ -47,9 +47,11 @@
 #include "drivers/io_impl.h"
 #include "drivers/nvic.h"
 #include "drivers/time.h"
+#include "platform/io_impl.h"
 #include "platform/rcc.h"
 #include "drivers/light_led.h"
 
+#include "build/atomic.h"
 #include "build/debug.h"
 
 
@@ -1537,6 +1539,21 @@ static SD_Error_t SD_FindSCR(uint32_t *pSCR)
 }
 
 
+static void sdioConfigurePin(IO_t io, uint32_t driveStrength)
+{
+    if (!io) {
+        return;
+    }
+
+    IOInit(io, OWNER_SDCARD, 0);
+    IOConfigGPIOAF(io, IOCFG_AF_PP, GPIO_AF12_SDIO);
+
+    const unsigned shift = 2U * IO_GPIOPinIdx(io);
+    ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+        MODIFY_REG(IO_GPIO(io)->DS, GPIO_DS_20MA << shift, driveStrength << shift);
+    }
+}
+
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**
   * @brief  Initialize the SDIO module, GPIO pins, NVIC, and clocks
@@ -1555,40 +1572,14 @@ bool SD_InitialiseHardware(dmaResource_t *dma)
     delay(1);
 
     // Configure Pins
-    uint8_t is4BitWidth = sdioConfig()->use4BitWidth;
-
-    const IO_t d0 = IOGetByTag(IO_TAG(PC8));
-    const IO_t d1 = IOGetByTag(IO_TAG(PC9));
-    const IO_t d2 = IOGetByTag(IO_TAG(PC10));
-    const IO_t d3 = IOGetByTag(IO_TAG(PC11));
-    const IO_t clk = IOGetByTag(IO_TAG(PC12));
-    const IO_t cmd = IOGetByTag(IO_TAG(PD2));
-
-    IOInit(d0, OWNER_SDCARD, 0);
-    if (is4BitWidth) {
-        IOInit(d1, OWNER_SDCARD, 0);
-        IOInit(d2, OWNER_SDCARD, 0);
-        IOInit(d3, OWNER_SDCARD, 0);
+    sdioConfigurePin(IOGetByTag(IO_TAG(PC8)), GPIO_DS_2MA);
+    if (sdioConfig()->use4BitWidth) {
+        sdioConfigurePin(IOGetByTag(IO_TAG(PC9)), GPIO_DS_2MA);
+        sdioConfigurePin(IOGetByTag(IO_TAG(PC10)), GPIO_DS_2MA);
+        sdioConfigurePin(IOGetByTag(IO_TAG(PC11)), GPIO_DS_2MA);
     }
-    IOInit(clk, OWNER_SDCARD, 0);
-    IOInit(cmd, OWNER_SDCARD, 0);
-
-#define SDIO_DATA       IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
-#define SDIO_CMD        IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
-#define SDIO_CLK        IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
-
-    IOConfigGPIOAF(d0, SDIO_DATA, GPIO_AF12_SDIO);
-    if (is4BitWidth) {
-        IOConfigGPIOAF(d1, SDIO_DATA, GPIO_AF12_SDIO);
-        IOConfigGPIOAF(d2, SDIO_DATA, GPIO_AF12_SDIO);
-        IOConfigGPIOAF(d3, SDIO_DATA, GPIO_AF12_SDIO);
-    }
-    IOConfigGPIOAF(clk, SDIO_CLK, GPIO_AF12_SDIO);
-    IOConfigGPIOAF(cmd, SDIO_CMD, GPIO_AF12_SDIO);
-    //set clk io Driving level
-    GPIOC->DS = 0xAB00AAAA;
-    //set clk io Driving level
-    GPIOD->DS &= ~(0x00000030);
+    sdioConfigurePin(IOGetByTag(IO_TAG(PC12)), GPIO_DS_20MA);
+    sdioConfigurePin(IOGetByTag(IO_TAG(PD2)), GPIO_DS_2MA);
     // reset because RCC keeps the clock enable bit set).
     RCC_ClockCmd(RCC_AHB0(SDIO), ENABLE);
     // Set bus width to 1-bit initially

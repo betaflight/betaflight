@@ -40,7 +40,6 @@
 #include "common/utils.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
-#include "drivers/inverter.h"
 #include "drivers/dma.h"
 #include "platform/rcc.h"
 
@@ -90,13 +89,6 @@ static bool uartSamInstance(const uartPort_t *uartPort, USART_TypeDef **usart)
 
 #define __HAL_UART_EX_GET_IT(__HANDLE__, __INTERRUPT__)   ((READ_BIT((__HANDLE__)->Instance->IER, __INTERRUPT__) == (__INTERRUPT__)) ? SET : RESET) //((((__HANDLE__)->Instance->IER) &  (__INTERRUPT__)) ? SET : RESET)
 
-#if(0)
-static void usartConfigurePinInversion(uartPort_t *uartPort)
-{
-    UNUSED(uartPort);
-}
-#endif
-
 #if UART_TRAIT_PINSWAP
 static void uartConfigurePinSwap(uartPort_t *uartPort)
 {
@@ -108,7 +100,14 @@ static void uartConfigurePinSwap(uartPort_t *uartPort)
 
 void uartReconfigure(uartPort_t *uartPort)
 {
-    const serialPortIdentifier_e id = uartPort->port.identifier;
+    const uartDeviceIdx_e deviceIdx = uartDeviceIdxFromIdentifier(uartPort->port.identifier);
+    if (deviceIdx == UARTDEV_INVALID) {
+        return;
+    }
+
+    // UM32 uses board-level inversion. Set any configured inverter GPIO before enabling RX.
+    uartConfigureExternalPinInversion(uartPort);
+
     uartBidirConfigure(uartPort);
 
 #if defined(USE_UART7) || defined(USE_UART8)
@@ -131,7 +130,7 @@ void uartReconfigure(uartPort_t *uartPort)
         HAL_USART_Init(&handle);
 
         if (uartPort->port.mode & MODE_RX) {
-            usartSam->IER |= USART_IER_RXRDY;
+            usartSam->IER = USART_IER_RXRDY;
         }
 
         // TX interrupt stays masked until the first byte is queued, mirroring
@@ -140,44 +139,22 @@ void uartReconfigure(uartPort_t *uartPort)
     }
 #endif
 
-    UART_HandleTypeDef *pHandle = &uartHalHandles[id - SERIAL_PORT_UART_FIRST].hal;
+    UART_HandleTypeDef *pHandle = &uartHalHandles[deviceIdx].hal;
 
     pHandle->Instance = (UART_TypeDef *)uartPort->USARTx;
     pHandle->Init.BaudRate = uartPort->port.baudRate;
-    pHandle->Init.WordLength = UART_EX_WORDLENGTH_8B; //(uartPort->port.options & SERIAL_PARITY_EVEN) ? UART_EX_WORDLENGTH_9B : UART_EX_WORDLENGTH_8B; //polo: STM32 must set 9-bit.
+    // UART_EX LCR.DLS counts data bits. LCR.PEN and LCR.EPS configure parity separately.
+    pHandle->Init.WordLength = UART_EX_WORDLENGTH_8B;
     pHandle->Init.StopBits = (uartPort->port.options & SERIAL_STOPBITS_2) ? UART_EX_STOPBITS_2 : UART_EX_STOPBITS_1;
     pHandle->Init.Parity = (uartPort->port.options & SERIAL_PARITY_EVEN) ? UART_EX_PARITY_EVEN : UART_EX_PARITY_NONE;
     pHandle->Init.HwFlowCtl = UART_EX_HWCONTROL_NONE;
 
     HAL_UART_EX_Init(pHandle);
 
-    // Receive DMA or IRQ
-    if (uartPort->port.mode & MODE_RX)
-    {
-#ifdef USE_DMA
-        if (uartPort->rxDMAResource)
-        {
-            //TODO: if use DMA for uart.
-        } else
-#endif
-        {
-            /* Enable the UART Data Register not empty Interrupt */
-            __HAL_UART_EX_ENABLE_IT(pHandle, UART_EX_IT_ERBFI);
-        }
+    if (uartPort->port.mode & MODE_RX) {
+        __HAL_UART_EX_ENABLE_IT(pHandle, UART_EX_IT_ERBFI);
     }
-
-    // Transmit DMA or IRQ
-    if (uartPort->port.mode & MODE_TX) {
-#ifdef USE_DMA
-        if (uartPort->txDMAResource) {
-            //TODO: if use DMA for uart.
-        } else
-#endif
-        {
-            /* Enable the UART Transmit Data Register Empty Interrupt */
-            // __HAL_UART_EX_ENABLE_IT(&uartPort->Handle, UART_EX_IT_ETBEI); //polo: 4xF RTBEI must enabled when ready to write.
-        }
-    }
+    // TX interrupts are enabled when data is queued.
 }
 
 bool checkUsartTxOutput(uartPort_t *s)
@@ -223,17 +200,11 @@ void uartTxMonitor(uartPort_t *s)
 }
 
 #ifdef USE_DMA
+// Required by the shared UART layer. UM32 exposes no UART DMA resources.
 void uartTryStartTxDMA(uartPort_t *s)
 {
     UNUSED(s);
 }
-
-#if(0)
-static void handleUsartTxDma(uartPort_t *s)
-{
-    UNUSED(s);
-}
-#endif
 
 void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
 {
@@ -243,7 +214,10 @@ void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
 
 void uartIrqHandler(uartPort_t *s)
 {
-    const serialPortIdentifier_e id = s->port.identifier;
+    const uartDeviceIdx_e deviceIdx = uartDeviceIdxFromIdentifier(s->port.identifier);
+    if (deviceIdx == UARTDEV_INVALID) {
+        return;
+    }
 
 #if defined(USE_UART7) || defined(USE_UART8)
     USART_TypeDef *usartSam;
@@ -252,11 +226,12 @@ void uartIrqHandler(uartPort_t *s)
         const uint32_t imr = READ_REG(usartSam->IMR);
 
         if (csr & (USART_CSR_OVRE | USART_CSR_PARE | USART_CSR_FRAME)) {
-            // Clear latched error status bits (RSTSTA strobe).
+            // Clear the error status and discard any pending byte from this snapshot.
             WRITE_REG(usartSam->CR, USART_CR_RSTSTA);
-        }
-
-        if (((csr & USART_CSR_RXRDY) != 0) && ((imr & USART_IER_RXRDY) != 0)) {
+            if (csr & USART_CSR_RXRDY) {
+                (void)READ_REG(usartSam->RHR);
+            }
+        } else if ((csr & USART_CSR_RXRDY) && (imr & USART_IMR_RXRDY)) {
             const uint8_t rbyte = (uint8_t)(READ_REG(usartSam->RHR) & 0xff);
 
             if (uartBidirIsTransmitting(s)) {
@@ -287,7 +262,7 @@ void uartIrqHandler(uartPort_t *s)
     }
 #endif
 
-    UART_HandleTypeDef *pHandle = &uartHalHandles[id - SERIAL_PORT_UART_FIRST].hal;
+    UART_HandleTypeDef *pHandle = &uartHalHandles[deviceIdx].hal;
 
     pHandle->Instance = (UART_TypeDef *)s->USARTx;
 
@@ -302,7 +277,7 @@ void uartIrqHandler(uartPort_t *s)
     errorflags = (lsrflags & (uint32_t)(UART_EX_LSR_OE | UART_EX_LSR_PE | UART_EX_LSR_FE | UART_EX_LSR_RFE));
     if (errorflags == RESET){
         /* UART in mode Receiver ---------------------------------------------------*/
-        if (!s->rxDMAResource && (((usrflags & UART_EX_USR_RFNE) != RESET) && ((ierits & UART_EX_IER_ERBFI) != RESET))) {
+        if ((usrflags & UART_EX_USR_RFNE) && (ierits & UART_EX_IER_ERBFI)) {
             rbyte = (uint8_t)(pHandle->Instance->RBR & (uint8_t)0xff);
 
             if (uartBidirIsTransmitting(s)) {
@@ -319,7 +294,7 @@ void uartIrqHandler(uartPort_t *s)
     }
 
 
-    if (!s->txDMAResource && (((usrflags & UART_EX_USR_TFE) != RESET) && ((ierits & UART_EX_IER_ETBEI) != RESET))) {
+    if ((usrflags & UART_EX_USR_TFE) && (ierits & UART_EX_IER_ETBEI)) {
         if (s->port.txBufferTail != s->port.txBufferHead) {
             if (!uartBidirStart(s)) {
                 s->port.txBufferTail = s->port.txBufferHead;

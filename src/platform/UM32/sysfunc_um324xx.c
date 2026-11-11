@@ -29,8 +29,6 @@
 #include "drivers/persistent.h"
 #include "drivers/system.h"
 
-void checkForBootLoaderRequest(void);
-
 bool isMPUSoftReset(void)
 {
     if (cachedResetFlags & RCM_RFR_SOFTRSTF)
@@ -43,7 +41,7 @@ void systemInit(void)
 {
     persistentObjectInit();
 
-    checkForBootLoaderRequest();
+    systemProcessResetReason();
 
     // cache RCM->RFR value to use it in isMPUSoftReset() and others
     cachedResetFlags = RCM->RFR;
@@ -81,11 +79,6 @@ void systemResetToBootloader(bootloaderRequestType_e requestType)
     NVIC_SystemReset();
 }
 
-#define SYSMEMBOOT_VECTOR_TABLE ((uint32_t *)0x1fff0000)
-#define SYSMEMBOOT_LOADER       ((uint32_t *)0x1fff0000)
-
-typedef void *(*bootJumpPtr)(void);
-
 typedef void resetHandler_t(void);
 
 typedef struct isrVector_s {
@@ -93,43 +86,18 @@ typedef struct isrVector_s {
     resetHandler_t *resetHandler;
 } isrVector_t;
 
-static void systemJumpToBootloader(void)
+void systemProcessResetReason(void)
 {
-
-}
-
-// Used in the startup files for 4xF
-void checkForBootLoaderRequest(void)
-{
-    uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
-
-    if (bootloaderRequest != RESET_BOOTLOADER_REQUEST_ROM) {
+    if (persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON) != RESET_BOOTLOADER_REQUEST_ROM) {
         return;
     }
-    // persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE); //polo: move to BOOT
+
+    // The UM324xF DFU bootloader's SystemInit() reads and clears RTC_BKREG3.
+    // With BOOT0 low and a cleared request, it immediately resets into the application.
 
     extern isrVector_t system_isr_vector_table_base;
 
     __set_MSP(system_isr_vector_table_base.stackEnd);
     system_isr_vector_table_base.resetHandler();
     while (1);
-}
-
-void systemProcessResetReason(void)
-{
-    uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
-
-    switch (bootloaderRequest) {
-    case RESET_MSC_REQUEST:
-        // RESET_REASON will be reset by MSC
-    case RESET_NONE:
-        break;
-
-    case RESET_BOOTLOADER_REQUEST_ROM:
-        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
-
-        systemJumpToBootloader();
-
-        break;
-    }
 }

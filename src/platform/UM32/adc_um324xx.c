@@ -105,9 +105,7 @@ const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__PC5, ADC_DEVICES_12,   ADC_CHANNEL_15, 15},
 };
 
-// An array to convert rank number to encoded rank code for HAL.
-// Note that the table only list possible values, as rank for any single conversion
-// will not exceed maximum number of input sources (ADC_CHANNEL_COUNT).
+// HAL ranks start at one. The regular sequence has at most ADC_EXTERNAL_COUNT inputs.
 static uint32_t adcRegularRank[] = {
     0,                     // ranks is counted by 1-origin; dodge zero.
     ADC_REGULAR_RANK_1,
@@ -355,11 +353,11 @@ void adcInit(const adcConfig_t *config)
 
         adcInitDevice(adc, configuredAdcChannels);
 
-        // Configure channels
+        // Configure external channels in the regular sequence.
 
         int rank = 1;
 
-        for (int adcChan = 0; adcChan < ADC_SOURCE_COUNT; adcChan++) {
+        for (int adcChan = 0; adcChan < ADC_EXTERNAL_COUNT; adcChan++) {
 
             if (!adcOperatingConfig[adcChan].enabled) {
                 continue;

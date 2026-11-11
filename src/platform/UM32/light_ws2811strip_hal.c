@@ -68,6 +68,7 @@ bool ws2811LedStripHardwareInit(void)
     timerChannel = timerHardware->channel;
 
     dmaResource_t *dmaRef;
+    uint32_t dmaHandshake;
 
 #if defined(USE_DMA_SPEC)
     const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
@@ -77,15 +78,23 @@ bool ws2811LedStripHardwareInit(void)
     }
 
     dmaRef = dmaSpec->ref;
-    uint32_t dmaChannel = DMA_CODE_CHANNEL(dmaSpec->code);
+    dmaHandshake = dmaSpec->channel;
 #else
     dmaRef = timerHardware->dmaRef;
-    uint32_t dmaChannel = timerHardware->dmaChannel;
+    dmaHandshake = timerHardware->dmaChannel;
 #endif
 
-    if (dmaRef == NULL || !dmaAllocate(dmaGetIdentifier(dmaRef), OWNER_LED_STRIP, 0)) {
+    if (dmaRef == NULL) {
         return false;
     }
+
+    const dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaRef);
+    if (!dmaAllocate(dmaIdentifier, OWNER_LED_STRIP, 0)) {
+        return false;
+    }
+
+    DMA_ARCH_TYPE *dmaStream = (DMA_ARCH_TYPE *)dmaRef;
+    const uint32_t dmaChannel = LL_EX_DMA_Channel_to_Channel(dmaStream);
     TimHandle.Instance = timer;
 
     /* Compute the prescaler value */
@@ -126,7 +135,7 @@ bool ws2811LedStripHardwareInit(void)
     hdma_tim.Init.DstHsSel            = DMA_DST_HS_HW;
 
     hdma_tim.Init.SrcPer              = DMA_SRC_HANDSHAKING(DMA_Handshake_Rev);
-    hdma_tim.Init.DstPer              = DMA_DST_HANDSHAKING(timerHardware->dmaChannelConfigured);
+    hdma_tim.Init.DstPer              = DMA_DST_HANDSHAKING(dmaHandshake);
 
     hdma_tim.Init.SrcReload           = DMA_SRC_RELOAD_DISABLE;
     hdma_tim.Init.DstReload           = DMA_DST_RELOAD_DISABLE;
@@ -137,16 +146,15 @@ bool ws2811LedStripHardwareInit(void)
     hdma_tim.Init.Priority            = LL_DMA_PRIORITY_3;
     /* Set hdma_tim instance */
     hdma_tim.DmaChannelSel            = dmaChannel;
-    hdma_tim.Instance = (DMA_CODE_CONTROLLER(dmaSpec->code) == 1) ? DMA1 : DMA2;
-    // hdma_tim.Instance1 = dmaSpec->ref;
+    hdma_tim.Instance                 = LL_EX_DMA_Channel_to_DMA(dmaStream);
 
     uint16_t dmaIndex = timerDmaIndex(timerChannel);
 
     /* Link hdma_tim to hdma[x] (channelx) */
     __HAL_LINKDMA(&TimHandle, hdma[dmaIndex], hdma_tim);
 
-    dmaEnable(dmaGetIdentifier(dmaSpec->ref));
-    dmaSetHandler(dmaGetIdentifier(dmaSpec->ref), WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, dmaIndex);
+    dmaEnable(dmaIdentifier);
+    dmaSetHandler(dmaIdentifier, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, dmaIndex);
 
     /* Initialize TIMx DMA handle */
     if (HAL_DMA_Init(TimHandle.hdma[dmaIndex]) != HAL_OK) {

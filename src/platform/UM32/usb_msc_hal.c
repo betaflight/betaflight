@@ -51,6 +51,7 @@
 
 #include "drivers/usb_io.h"
 #include "usbd_msc.h"
+#include "usbd_msc_desc.h"
 
 extern USBD_StorageTypeDef   *pdev;
 
@@ -91,8 +92,7 @@ uint8_t mscStart(void)
         return 1;
     }
 
-	void msc_ram_init(uint8_t busid, uintptr_t reg_base);
-	msc_ram_init(0, USB_BASE);
+    mscUsbInit(0, USB_BASE);
 
 	pdev->Init(0);
 

@@ -9,6 +9,7 @@
 #include "build/atomic.h"
 #include "build/debug.h"
 #include "drivers/io.h"
+#include "drivers/io_impl.h"
 #include "drivers/nvic.h"
 #include "drivers/serial.h"
 #include "drivers/serial_impl.h"
@@ -74,11 +75,23 @@ static ioTag_t bidirRxTag(serialPortIdentifier_e id)
     }
 }
 
+static bool isUartRxOwner(const ioRec_t *rec, serialPortIdentifier_e id)
+{
+    return rec->owner == serialOwnerTxRx(id) + 1 && rec->index == serialOwnerIndex(id);
+}
+
 static IO_t bidirRxPin(const uartDevice_t *dev, IO_t tx)
 {
-    const ioTag_t tag = bidirRxTag(dev->port.port.identifier);
+    const serialPortIdentifier_e id = dev->port.port.identifier;
+    const ioTag_t tag = bidirRxTag(id);
     const IO_t rx = IOGetByTag(tag);
     if (!tx || !rx || tx == rx) {
+        return NULL;
+    }
+
+    // Only a free pad or this UART's own RX pad may be (re)configured.
+    const ioRec_t *rec = IO_Rec(rx);
+    if (rec->owner != OWNER_FREE && !isUartRxOwner(rec, id)) {
         return NULL;
     }
 
@@ -167,11 +180,15 @@ void uartBidirConfigure(uartPort_t *s)
     ATOMIC_BLOCK(BIDIR_IRQ_PRIORITY) {
         uartBidirState_t *p = state(s);
         if (!p) { return; }
-        uartDevice_t *dev = uartDeviceFromIdentifier(s->port.identifier);
-        if (p->rx && p->rx != IOGetByTag(dev->rx.pin)) { IOConfigGPIO(p->rx, IOCFG_IN_FLOATING); }
+        const serialPortIdentifier_e id = s->port.identifier;
+        uartDevice_t *dev = uartDeviceFromIdentifier(id);
+        const IO_t normalRx = IOGetByTag(dev->rx.pin);
+        if (p->rx && p->rx != normalRx && isUartRxOwner(IO_Rec(p->rx), id)) {
+            IOConfigGPIO(p->rx, IOCFG_IN_FLOATING);
+        }
         const uint16_t timeoutCount = p->timeoutCount;
         *p = (uartBidirState_t) { .timeoutCount = timeoutCount };
-        reportStatus(p, s->port.identifier);
+        reportStatus(p, id);
         if (!(s->port.options & SERIAL_BIDIR)) { return; }
         IO_t tx = IOGetByTag(dev->tx.pin);
         IO_t rx = bidirRxPin(dev, tx);
@@ -198,7 +215,7 @@ void uartBidirConfigure(uartPort_t *s)
         // Keep explicit no-pull and inverted-port choices; TX remains an input
         // when released, so a pull-up never keeps the output driver enabled.
         serialPullMode_t pull = serialOptions_pull(s->port.options);
-        if (bidirPullUp(s->port.identifier) && !(s->port.options & SERIAL_INVERTED)) {
+        if (bidirPullUp(id) && !(s->port.options & SERIAL_INVERTED)) {
             pull = (s->port.options & SERIAL_PULL_NONE) ? serialPullNone : serialPullUp;
         }
         p->activeConfig = pull == serialPullUp ? IOCFG_AF_PP_UP
@@ -207,9 +224,10 @@ void uartBidirConfigure(uartPort_t *s)
             : (pull == serialPullDown ? IOCFG_IPD : IOCFG_IN_FLOATING);
         const uint32_t bitUs = (1000000 + s->port.baudRate - 1) / s->port.baudRate;
         p->intervalUs = bitUs < 10 ? 10 : (bitUs > 100 ? 100 : bitUs);
-        IO_t normalRx = IOGetByTag(dev->rx.pin);
-        if (normalRx && normalRx != tx && normalRx != rx) { IOConfigGPIO(normalRx, IOCFG_IN_FLOATING); }
-        IOInit(rx, serialOwnerTxRx(s->port.identifier) + 1, serialOwnerIndex(s->port.identifier));
+        if (normalRx && normalRx != tx && normalRx != rx && isUartRxOwner(IO_Rec(normalRx), id)) {
+            IOConfigGPIO(normalRx, IOCFG_IN_FLOATING);
+        }
+        IOInit(rx, serialOwnerTxRx(id) + 1, serialOwnerIndex(id));
         IOConfigGPIO(tx, p->idleConfig);
         IOConfigGPIOAF(rx, p->activeConfig, p->af);
     }

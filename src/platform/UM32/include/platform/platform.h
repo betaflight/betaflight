@@ -106,7 +106,7 @@
 
 // speed is packed between modebits 4 and 1,
 // 7       6        5        4         3         2        1        0
-// 0 <pupd-1> <pupd-0> <mode-4> <speed-1> <speed-0> <mode-1> <mode-0>
+// OD <pupd-1> <pupd-0> <mode-4> <speed-1> <speed-0> <mode-1> <mode-0>
 #define IO_CONFIG(mode, speed, pupd) (uint8_t)((mode) | ((speed) << 2) | (((pupd >> 15) | pupd) << 5))
 
 #define IOCFG_OUT_PP         IO_CONFIG(GPIO_MODE_OUTPUT, GPIO_SPEED_FREQ_HIGH, GPIO_NOPULL)
@@ -117,11 +117,18 @@
 #define IOCFG_IPD            IO_CONFIG(GPIO_MODE_INPUT, GPIO_SPEED_FREQ_HIGH, GPIO_PULLDOWN)
 #define IOCFG_IPU            IO_CONFIG(GPIO_MODE_INPUT, GPIO_SPEED_FREQ_HIGH, GPIO_PULLUP)
 #define IOCFG_IN_FLOATING    IO_CONFIG(GPIO_MODE_INPUT, GPIO_SPEED_FREQ_HIGH, GPIO_NOPULL)
-#define IOCFG_OUT_OD         IOCFG_AF_PP_UP
+// Software open drain starts as a released input with pull-up.
+#define IOCFG_OUT_OD         (0x80U | IOCFG_IPU)
 
 #define IO_CONFIG_GET_MODE(cfg)  (((cfg) >> 0) & 0x03)
 #define IO_CONFIG_GET_SPEED(cfg) (((cfg) >> 2) & 0x03)
-#define IO_CONFIG_GET_PULL(cfg)  (((cfg) >> 5) & 0x03)
+
+static inline uint32_t ioConfigGetPull(uint8_t config)
+{
+    const uint32_t pullSelect = (config >> 5) & 1U;
+    const uint32_t pullEnable = (config >> 6) & 1U;
+    return (pullSelect << GPIO_PULL_PS_Pos) | (pullEnable << GPIO_PULL_PE_Pos);
+}
 
 //#define FLASH_CONFIG_STREAMER_BUFFER_SIZE 16  // Flash word = 128-bits (4 rows, uint32_t per row - 4 x 32)
 #define FLASH_CONFIG_BUFFER_TYPE uint32_t
@@ -168,7 +175,8 @@
 #define MAX_QUADSPI_PIN_SEL 1
 
 #define PLATFORM_TRAIT_RCC 1
-#define PLATFORM_TRAIT_CONFIG_HSE 1
+// The UM32 clock tree uses the build-time XTH_VALUE.
+#define PLATFORM_TRAIT_CONFIG_HSE 0
 #define PLATFORM_TRAIT_ADC_DEVICE 1
 #define PLATFORM_TRAIT_ADC_INTERNAL_CONVERSION 1
 #define PLATFORM_TRAIT_SDIO_INIT 1
@@ -234,10 +242,8 @@ typedef UART_EX_TypeDef         UART_TypeDef;
 typedef UART_EX_HandleTypeDef   UART_HandleTypeDef;
 
 #define GPIO_MODE_OUTPUT_PP          GPIO_MODE_OUTPUT
-#define GPIO_MODE_OUTPUT_OD          GPIO_MODE_OUTPUT
 #define GPIO_SPEED_FREQ_VERY_HIGH    GPIO_SPEED_FREQ_HIGH
 #define GPIO_MODE_AF_PP              GPIO_MODE_AF
-#define GPIO_MODE_AF_OD              GPIO_MODE_AF
 
 #define __HAL_UART_ENABLE_IT            __HAL_UART_EX_ENABLE_IT
 #define __HAL_TIM_GetAutoreload         __HAL_TIM_GET_AUTORELOAD

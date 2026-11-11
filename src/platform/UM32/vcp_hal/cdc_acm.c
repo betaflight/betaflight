@@ -3,13 +3,17 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "cdc_acm.h"
+
 #include "usbd_conf.h"
 #include "usbd_core.h"
 #include "usbd_cdc_acm.h"
 
 #include "platform.h"
+#include "build/atomic.h"
 #include "build/version.h"
 
+#include "drivers/nvic.h"
 #include "pg/pg.h"
 #include "pg/usb.h"
 #ifdef USE_USB_MSC
@@ -48,6 +52,8 @@ volatile bool flag_con = false, flag_configed = false;
 #else
 #define CDC_MAX_MPS 64
 #endif
+
+_Static_assert(CDC_MAX_MPS < USB_VCP_RX_RING_SIZE, "A CDC packet must fit in the VCP RX ring");
 
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
 static const uint8_t device_descriptor[] = {
@@ -200,27 +206,56 @@ static const uint8_t cdc_descriptor[] = {
 volatile uint32_t max_tx = 0, max_rx = 0;
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[CDC_ACM_RX_BUFFER_SIZE];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[CDC_ACM_TX_BUFFER_SIZE];
-volatile uint32_t write_buffer_wr = 0;
-volatile bool ep_tx_busy_flag;
+static volatile bool ep_tx_busy_flag;
+static volatile uint32_t cdcRxPendingLength;
+
+static void cdc_acm_arm_rx(uint8_t busid, uint8_t ep)
+{
+    usbd_ep_start_read(busid, ep, read_buffer, usbd_get_ep_mps(busid, ep));
+}
+
+void cdc_acm_resume_rx(void)
+{
+    if (cdcRxPendingLength == 0) {
+        return;
+    }
+
+    // Serialize the retry with USB OUT completions and USB reset events.
+    ATOMIC_BLOCK(NVIC_PRIO_USB) {
+        const uint32_t pending = cdcRxPendingLength;
+        if (!usb_device_is_configured(0)) {
+            cdcRxPendingLength = 0;
+        } else if (pending != 0 && usbVcpReceiveData(read_buffer, pending)) {
+            cdcRxPendingLength = 0;
+            cdc_acm_arm_rx(0, CDC_OUT_EP);
+        }
+    }
+}
 
 static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
     switch (event) {
         case USBD_EVENT_RESET:
+        case USBD_EVENT_DEINIT:
+            cdcRxPendingLength = 0;
+            ep_tx_busy_flag = false;
             break;
         case USBD_EVENT_CONNECTED:
 			flag_con = true;
             break;
         case USBD_EVENT_DISCONNECTED:
 			flag_con  = false;
+            cdcRxPendingLength = 0;
+            ep_tx_busy_flag = false;
             break;
         case USBD_EVENT_RESUME:
             break;
         case USBD_EVENT_SUSPEND:
             break;
         case USBD_EVENT_CONFIGURED:
-            /* setup first out ep read transfer */
-            usbd_ep_start_read(busid, CDC_OUT_EP, read_buffer, 2048);
+            cdcRxPendingLength = 0;
+            ep_tx_busy_flag = false;
+            cdc_acm_arm_rx(busid, CDC_OUT_EP);
             break;
         case USBD_EVENT_SET_REMOTE_WAKEUP:
             break;
@@ -234,24 +269,33 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
 
 void usbd_cdc_acm_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
+    if (!usb_device_is_configured(busid)) {
+        return;
+    }
+
     if (nbytes > max_rx) {
         max_rx = nbytes;
     }
 
-	extern void usbVcpRecieveData(uint8_t *data, uint32_t len);
-    usbVcpRecieveData(&read_buffer[0], nbytes);
-    usbd_ep_start_read(busid, ep, &read_buffer[0], usbd_get_ep_mps(busid, ep));
+    if (!usbVcpReceiveData(read_buffer, nbytes)) {
+        // Hold this packet and leave OUT unarmed until the VCP reader frees space.
+        cdcRxPendingLength = nbytes;
+        return;
+    }
+
+    cdc_acm_arm_rx(busid, ep);
 }
 
 void usbd_cdc_acm_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
-    write_buffer_wr = 0;
-    if ((nbytes % usbd_get_ep_mps(busid, ep)) == 0 && nbytes) {
-        /* send zlp */
-        usbd_ep_start_write(busid, ep, NULL, 0);
-    } else {
-        ep_tx_busy_flag = false;
+    if (ep_tx_busy_flag && nbytes != 0 && usb_device_is_configured(busid)) {
+        const uint16_t packetSize = usbd_get_ep_mps(busid, ep);
+        if (packetSize != 0 && nbytes % packetSize == 0 && usbd_ep_start_write(busid, ep, NULL, 0) == 0) {
+            // Keep the endpoint busy until the terminating zero-length packet completes.
+            return;
+        }
     }
+    ep_tx_busy_flag = false;
 }
 
 /*!< endpoint call back */
@@ -291,62 +335,51 @@ void usbd_cdc_acm_set_dtr(uint8_t busid, uint8_t intf, bool dtr)
     (void)dtr;
 }
 
-void bf_usbd_ep_write_buffer(const void *data, unsigned int count)
+bool bf_usbd_ep_wait_write(uint32_t timeoutMs)
 {
-	uint32_t len1 = count/CDC_ACM_TX_BUFFER_SIZE;
-	uint32_t len2 = count%CDC_ACM_TX_BUFFER_SIZE;
-
-	if (len1 != 0)
-	{
-		for (uint32_t j = 0; j < len1; j++)
-		{
-			write_buffer_wr = 0;
-			for (uint32_t i = 0; i < CDC_ACM_TX_BUFFER_SIZE; i++)
-			{
-				write_buffer[write_buffer_wr++] = *(uint8_t *)data++;
-			}
-				ep_tx_busy_flag = true;
-				usbd_ep_start_write(0, CDC_IN_EP, &write_buffer[0], write_buffer_wr);
-
-				uint32_t start = millis();
-
-				while (ep_tx_busy_flag)
-				{
-					if (millis() - start > USB_TIMEOUT)
-            break;
-				}
-		}
-	}
-
-	if (len2 != 0)
-	{
-		write_buffer_wr = 0;
-		for (uint32_t i = 0; i < len2; i++)
-		{
-			write_buffer[write_buffer_wr++] = *(uint8_t *)data++;
-		}
-			ep_tx_busy_flag = true;
-			usbd_ep_start_write(0, CDC_IN_EP, &write_buffer[0], write_buffer_wr);
-
-			uint32_t start = millis();
-
-			while (ep_tx_busy_flag)
-			{
-				if (millis() - start > USB_TIMEOUT)
-					break;
-			}
-	}
+    const uint32_t start = millis();
+    while (ep_tx_busy_flag) {
+        if (!usb_device_is_configured(0) || millis() - start >= timeoutMs) {
+            return false;
+        }
+    }
+    return true;
 }
 
-void bf_usbd_ep_start_write(void)
+void bf_usbd_ep_write_buffer(const void *data, unsigned int count)
 {
-    ep_tx_busy_flag = true;
-    usbd_ep_start_write(0, CDC_IN_EP, &write_buffer[0], write_buffer_wr);
+    if (count == 0 || !bf_usbd_ep_wait_write(USB_TIMEOUT)) {
+        return;
+    }
+
+    const uint8_t *src = data;
+    while (count != 0 && usb_device_is_configured(0)) {
+        const unsigned int chunk = MIN(count, (unsigned int)sizeof(write_buffer));
+        memcpy(write_buffer, src, chunk);
+
+        ATOMIC_BLOCK(NVIC_PRIO_USB) {
+            if (!usb_device_is_configured(0)) {
+                return;
+            }
+            ep_tx_busy_flag = true;
+            if (usbd_ep_start_write(0, CDC_IN_EP, write_buffer, chunk) != 0) {
+                ep_tx_busy_flag = false;
+                return;
+            }
+        }
+
+        // A timed-out transfer still owns write_buffer until its completion callback.
+        if (!bf_usbd_ep_wait_write(USB_TIMEOUT)) {
+            return;
+        }
+        src += chunk;
+        count -= chunk;
+    }
 }
 
 bool bf_get_tx_flag(void)
 {
-    return (ep_tx_busy_flag);
+    return ep_tx_busy_flag && usb_device_is_configured(0);
 }
 
 uint8_t usbIsConnected(void)
