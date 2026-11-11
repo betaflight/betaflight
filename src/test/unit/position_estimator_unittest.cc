@@ -174,6 +174,7 @@ TEST_F(PositionEstimatorTest, PowerOnReferenceWaitsForBarometerCalibration)
     positionConfigMutable()->altitude_reference = ALTITUDE_REFERENCE_POWER_ON;
     baroCalibrated = false;
     baroAltCm = 100.0f;
+    baroUseFakeMicrosTimestamp = false;
     positionEstimatorInit();
 
     stepEstimator(100);
@@ -181,11 +182,19 @@ TEST_F(PositionEstimatorTest, PowerOnReferenceWaitsForBarometerCalibration)
     EXPECT_NEAR(positionEstimatorGetAltitudeCm(), 0.0f, 1.0f);
 
     baroCalibrated = true;
-    baroAltCm = 200.0f;
-    stepEstimator(400);
+    baroAltCm = 0.0f;
+    baroSampleTimeUs = fakeMicros + 10000;
+    stepEstimator(1);
+    EXPECT_FALSE(positionEstimatorIsValidZ());
+    EXPECT_NEAR(positionEstimatorGetAltitudeCm(), 0.0f, 1.0f);
 
+    baroAltCm = 200.0f;
+    baroSampleTimeUs = fakeMicros + 10000;
+    stepEstimator(1);
     EXPECT_TRUE(positionEstimatorIsValidZ());
     EXPECT_NEAR(positionEstimatorGetAltitudeCm(), 0.0f, 10.0f);
+    baroUseFakeMicrosTimestamp = true;
+    stepEstimator(399);
 
     baroAltCm = 300.0f;
     stepEstimator(400);

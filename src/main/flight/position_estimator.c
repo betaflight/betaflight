@@ -965,9 +965,7 @@ static void feedBaroMeasurements(timeUs_t nowUs)
 #ifdef USE_BARO
     if (positionConfig()->altitude_reference == ALTITUDE_REFERENCE_POWER_ON) {
         if (!baroIsCalibrated()) {
-            if (baroOffsetSet) {
-                baroCalibrationPending = true;
-            }
+            baroCalibrationPending = true;
             baroCalibrationAwaitingSample = false;
         } else if (baroCalibrationPending && !baroCalibrationAwaitingSample) {
             baroCalibrationAwaitingSample = true;
@@ -999,24 +997,30 @@ static void feedBaroMeasurements(timeUs_t nowUs)
         return;
     }
 
-    if (!baroOffsetSet) {
-        // Capture the disarmed baseline once; keep live relative altitude while disarmed.
-        baroAltOffsetCm = baroAltCm;
-        baroOffsetSet = true;
-    } else if (baroCalibrationPending && baroCalibrationAwaitingSample) {
+    if (baroCalibrationPending && baroCalibrationAwaitingSample) {
         if (getBaroLatestSampleTimeUs() == baroCalibrationSampleTimeUs) {
             return;
         }
 
-        // Calibration changes the barometer's altitude frame. Align its first new
-        // sample to the current estimate so POWER_ON altitude remains continuous.
-        const float currentAltitudeCm = kalmanGetPosition(&kfUp);
-        baroAltOffsetCm = baroAltCm - currentAltitudeCm;
-        baroStepGate.lastAcceptedCm = currentAltitudeCm;
-        baroStepGate.hasReference = true;
-        baroStepGate.consecutiveRejects = 0;
+        if (!baroOffsetSet) {
+            // Capture the POWER_ON baseline from the first post-calibration sample.
+            baroAltOffsetCm = baroAltCm;
+            baroOffsetSet = true;
+        } else {
+            // Calibration changes the barometer's altitude frame. Align its first new
+            // sample to the current estimate so POWER_ON altitude remains continuous.
+            const float currentAltitudeCm = kalmanGetPosition(&kfUp);
+            baroAltOffsetCm = baroAltCm - currentAltitudeCm;
+            baroStepGate.lastAcceptedCm = currentAltitudeCm;
+            baroStepGate.hasReference = true;
+            baroStepGate.consecutiveRejects = 0;
+        }
         baroCalibrationPending = false;
         baroCalibrationAwaitingSample = false;
+    } else if (!baroOffsetSet) {
+        // Capture the disarmed baseline once; keep live relative altitude while disarmed.
+        baroAltOffsetCm = baroAltCm;
+        baroOffsetSet = true;
     }
 
     // Scale R based on altitude_prefer_baro:
