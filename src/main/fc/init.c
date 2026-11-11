@@ -42,6 +42,7 @@
 #include "config/config.h"
 #include "config/config_eeprom.h"
 #include "config/feature.h"
+#include "config/config_psas.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/adc.h"
@@ -109,6 +110,7 @@
 #include "flight/position.h"
 #include "flight/pos_hold.h"
 #include "flight/servos.h"
+#include "flight/psas.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -740,6 +742,9 @@ void initPhase3(void)
     gyroInitFilters();
 
     pidInit(currentPidProfile);
+#ifdef USE_PSAS
+    psasInit(currentPsasProfile);
+#endif
 
     mixerInitProfile();
 

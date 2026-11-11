@@ -30,18 +30,18 @@
 
 #include "fc/rc.h"
 
-#include "flight/pid.h"
 #include "flight/psas_trimming.h"
+#include "flight/pid.h"
 
 STATIC_UNIT_TESTED psas_trimming_data_t psasTrimmingData;
 
-void psasTrimmingInit(const pidProfile_t *pidProfile)
+void psasTrimmingInit(const psasProfile_t *psasProfile)
 {
-    psasTrimmingData.deadband = pidProfile->psas_trim_deadband * 0.1f;
-    psasTrimmingData.rate = pidProfile->psas_trim_rate * 0.01f;
-    psasTrimmingData.outputRange = pidProfile->psas_trim_limit;
-    psasTrimmingData.tauReset = pidProfile->psas_trim_tau_reset * 0.001f;
-    psasTrimmingData.enabledMask = pidProfile->psas_trim_enabled_mask;
+    psasTrimmingData.deadband = psasProfile->psas_trim_deadband * 0.1f;
+    psasTrimmingData.rate = psasProfile->psas_trim_rate * 0.01f;
+    psasTrimmingData.outputRange = psasProfile->psas_trim_limit;
+    psasTrimmingData.tauReset = psasProfile->psas_trim_tau_reset * 0.001f;
+    psasTrimmingData.enabledMask = psasProfile->psas_trim_enabled_mask;
 
     if (psasTrimmingData.state == TRIMMING_ADJUSTMENT &&
         (psasTrimmingData.enabledMask & (1 << psasTrimmingData.activeAxis)) == 0) {
@@ -50,7 +50,7 @@ void psasTrimmingInit(const pidProfile_t *pidProfile)
 
     for (uint8_t axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // update the gain only; keep the filter state
-        pt1FilterUpdateCutoff(&psasTrimmingData.stickLowpass[axis], pt1FilterGainFromDelay(pidProfile->psas_trim_lowpass_time * 0.001f, pidRuntime.dT));
+        pt1FilterUpdateCutoff(&psasTrimmingData.stickLowpass[axis], pt1FilterGainFromDelay(psasProfile->psas_trim_lowpass_time * 0.001f, pidRuntime.dT));
         if ((psasTrimmingData.enabledMask & (1 << axis)) == 0) {
             psasTrimmingData.output[axis] = 0.0f;
         } else {

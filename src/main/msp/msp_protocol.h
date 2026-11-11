@@ -59,7 +59,7 @@
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1
-#define API_VERSION_MINOR                   49
+#define API_VERSION_MINOR                   50
 #define API_VERSION_LENGTH                  2
 
 #define MULTIWII_IDENTIFIER "MWII";
@@ -266,6 +266,7 @@
 
 // Multiple MSP and special commands (230-255)
 #define MSP_MULTIPLE_MSP                230  // out message: Request multiple MSPs in one request
+#define MSP_SET_RESET_CURR_PSAS         231  // in message:  Reset current PSAS profile to defaults
 #define MSP_MODE_RANGES_EXTRA           238  // out message: Extra mode range data
 #define MSP_SET_ACC_TRIM                239  // in message:  Set acc angle trim values
 #define MSP_ACC_TRIM                    240  // out message: Get acc angle trim values

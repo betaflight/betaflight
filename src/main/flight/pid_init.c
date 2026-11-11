@@ -578,10 +578,6 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #ifdef USE_ADVANCED_TPA
     tpaCurveInit(pidProfile);
 #endif
-
-#ifdef USE_PSAS
-    psasInit(pidProfile);
-#endif
 }
 
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)

@@ -43,6 +43,7 @@
 #include "config/simplified_tuning.h"
 
 #include "config/config.h"
+#include "config/config_psas.h"
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/rc_controls.h"
@@ -51,6 +52,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/pid_init.h"
+#include "flight/psas.h"
 
 #include "pg/pg.h"
 
@@ -1008,46 +1010,46 @@ static uint16_t temp_psas_trim_tau_reset;
 static const void *cmsx_PsasRead(void)
 {
 
-    const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
+    const psasProfile_t *psasProfile = currentPsasProfile;
     for (uint8_t i = 0; i < 3; i++) {
-        temp_psas_stick_gain[i] = pidProfile->psas_stick_gain[i];
-        temp_psas_damping_gain[i] = pidProfile->psas_damping_gain[i];
+        temp_psas_stick_gain[i] = psasProfile->psas_stick_gain[i];
+        temp_psas_damping_gain[i] = psasProfile->psas_damping_gain[i];
     }
 
-    temp_psas_pitch_stability_gain = pidProfile->psas_pitch_stability_gain;
-    temp_psas_yaw_stability_gain = pidProfile->psas_yaw_stability_gain;
-    temp_psas_pitch_accel_p_gain = pidProfile->psas_pitch_accel_p_gain;
-    temp_psas_pitch_accel_i_gain = pidProfile->psas_pitch_accel_i_gain;
-    temp_psas_pitch_accel_max = pidProfile->psas_pitch_accel_max;
-    temp_psas_pitch_accel_min = pidProfile->psas_pitch_accel_min;
-    temp_psas_lift_c_limit = pidProfile->psas_lift_c_limit;
-    temp_psas_aoa_limiter_gain = pidProfile->psas_aoa_limiter_gain;
-    temp_psas_aoa_limiter_forecast_time = pidProfile->psas_aoa_limiter_forecast_time;
-    temp_psas_aoa_limiter_tau_return = pidProfile->psas_aoa_limiter_tau_return;
-    temp_psas_wing_load = pidProfile->psas_wing_load;
+    temp_psas_pitch_stability_gain = psasProfile->psas_pitch_stability_gain;
+    temp_psas_yaw_stability_gain = psasProfile->psas_yaw_stability_gain;
+    temp_psas_pitch_accel_p_gain = psasProfile->psas_pitch_accel_p_gain;
+    temp_psas_pitch_accel_i_gain = psasProfile->psas_pitch_accel_i_gain;
+    temp_psas_pitch_accel_max = psasProfile->psas_pitch_accel_max;
+    temp_psas_pitch_accel_min = psasProfile->psas_pitch_accel_min;
+    temp_psas_lift_c_limit = psasProfile->psas_lift_c_limit;
+    temp_psas_aoa_limiter_gain = psasProfile->psas_aoa_limiter_gain;
+    temp_psas_aoa_limiter_forecast_time = psasProfile->psas_aoa_limiter_forecast_time;
+    temp_psas_aoa_limiter_tau_return = psasProfile->psas_aoa_limiter_tau_return;
+    temp_psas_wing_load = psasProfile->psas_wing_load;
 
-    temp_psas_speed_main_curve_enabled_roll = (pidProfile->psas_speed_curve_enabled_mask & 1) ? 1 : 0;
-    temp_psas_speed_main_curve_enabled_pitch = (pidProfile->psas_speed_curve_enabled_mask & 2) ? 1 : 0;
-    temp_psas_speed_main_curve_enabled_yaw = (pidProfile->psas_speed_curve_enabled_mask & 4) ? 1 : 0;
-    temp_psas_speed_stick_curve_enabled_roll = (pidProfile->psas_speed_curve_enabled_mask & 8) ? 1 : 0;
-    temp_psas_speed_stick_curve_enabled_pitch = (pidProfile->psas_speed_curve_enabled_mask & 16) ? 1 : 0;
-    temp_psas_speed_stick_curve_enabled_yaw = (pidProfile->psas_speed_curve_enabled_mask & 32) ? 1 : 0;
-    temp_psas_speed_optimum_vref =  pidProfile->psas_speed_optimum_vref;
-    temp_psas_speed_main_curve_power =  pidProfile->psas_speed_main_curve_power;
-    temp_psas_speed_main_curve_min =  pidProfile->psas_speed_main_curve_min;
-    temp_psas_speed_main_curve_max =  pidProfile->psas_speed_main_curve_max;
-    temp_psas_speed_roll_stick_curve_power =  pidProfile->psas_speed_roll_stick_curve_power;
-    temp_psas_speed_stick_curve_min =  pidProfile->psas_speed_stick_curve_min;
-    temp_psas_speed_stick_curve_max =  pidProfile->psas_speed_stick_curve_max;
+    temp_psas_speed_main_curve_enabled_roll = (psasProfile->psas_speed_curve_enabled_mask & 1) ? 1 : 0;
+    temp_psas_speed_main_curve_enabled_pitch = (psasProfile->psas_speed_curve_enabled_mask & 2) ? 1 : 0;
+    temp_psas_speed_main_curve_enabled_yaw = (psasProfile->psas_speed_curve_enabled_mask & 4) ? 1 : 0;
+    temp_psas_speed_stick_curve_enabled_roll = (psasProfile->psas_speed_curve_enabled_mask & 8) ? 1 : 0;
+    temp_psas_speed_stick_curve_enabled_pitch = (psasProfile->psas_speed_curve_enabled_mask & 16) ? 1 : 0;
+    temp_psas_speed_stick_curve_enabled_yaw = (psasProfile->psas_speed_curve_enabled_mask & 32) ? 1 : 0;
+    temp_psas_speed_optimum_vref =  psasProfile->psas_speed_optimum_vref;
+    temp_psas_speed_main_curve_power =  psasProfile->psas_speed_main_curve_power;
+    temp_psas_speed_main_curve_min =  psasProfile->psas_speed_main_curve_min;
+    temp_psas_speed_main_curve_max =  psasProfile->psas_speed_main_curve_max;
+    temp_psas_speed_roll_stick_curve_power =  psasProfile->psas_speed_roll_stick_curve_power;
+    temp_psas_speed_stick_curve_min =  psasProfile->psas_speed_stick_curve_min;
+    temp_psas_speed_stick_curve_max =  psasProfile->psas_speed_stick_curve_max;
 
-    temp_psas_trim_enabled_roll  = (pidProfile->psas_trim_enabled_mask & 1) ? 1 : 0;
-    temp_psas_trim_enabled_pitch = (pidProfile->psas_trim_enabled_mask & 2) ? 1 : 0;
-    temp_psas_trim_enabled_yaw   = (pidProfile->psas_trim_enabled_mask & 4) ? 1 : 0;
-    temp_psas_trim_deadband =  pidProfile->psas_trim_deadband;
-    temp_psas_trim_lowpass_time =  pidProfile->psas_trim_lowpass_time;
-    temp_psas_trim_rate =  pidProfile->psas_trim_rate;
-    temp_psas_trim_limit =  pidProfile->psas_trim_limit;
-    temp_psas_trim_tau_reset =  pidProfile->psas_trim_tau_reset;
+    temp_psas_trim_enabled_roll  = (psasProfile->psas_trim_enabled_mask & 1) ? 1 : 0;
+    temp_psas_trim_enabled_pitch = (psasProfile->psas_trim_enabled_mask & 2) ? 1 : 0;
+    temp_psas_trim_enabled_yaw   = (psasProfile->psas_trim_enabled_mask & 4) ? 1 : 0;
+    temp_psas_trim_deadband =  psasProfile->psas_trim_deadband;
+    temp_psas_trim_lowpass_time =  psasProfile->psas_trim_lowpass_time;
+    temp_psas_trim_rate =  psasProfile->psas_trim_rate;
+    temp_psas_trim_limit =  psasProfile->psas_trim_limit;
+    temp_psas_trim_tau_reset =  psasProfile->psas_trim_tau_reset;
 
     return NULL;
 }
@@ -1067,23 +1069,23 @@ static const void *cmsx_PsasWriteback(displayPort_t *pDisp, const OSD_Entry *sel
     UNUSED(pDisp);
     UNUSED(self);
 
-    pidProfile_t *pidProfile = currentPidProfile;
+    psasProfile_t *psasProfile = currentPsasProfile;
     for (uint8_t i = 0; i < 3; i++) {
-        pidProfile->psas_stick_gain[i] = temp_psas_stick_gain[i];
-        pidProfile->psas_damping_gain[i] = temp_psas_damping_gain[i];
+        psasProfile->psas_stick_gain[i] = temp_psas_stick_gain[i];
+        psasProfile->psas_damping_gain[i] = temp_psas_damping_gain[i];
     }
 
-    pidProfile->psas_pitch_stability_gain = temp_psas_pitch_stability_gain;
-    pidProfile->psas_yaw_stability_gain = temp_psas_yaw_stability_gain;
-    pidProfile->psas_pitch_accel_p_gain = temp_psas_pitch_accel_p_gain;
-    pidProfile->psas_pitch_accel_i_gain = temp_psas_pitch_accel_i_gain;
-    pidProfile->psas_pitch_accel_max = temp_psas_pitch_accel_max;
-    pidProfile->psas_pitch_accel_min = temp_psas_pitch_accel_min;
-    pidProfile->psas_lift_c_limit = temp_psas_lift_c_limit;
-    pidProfile->psas_aoa_limiter_gain = temp_psas_aoa_limiter_gain;
-    pidProfile->psas_aoa_limiter_forecast_time = temp_psas_aoa_limiter_forecast_time;
-    pidProfile->psas_aoa_limiter_tau_return = temp_psas_aoa_limiter_tau_return;
-    pidProfile->psas_wing_load = temp_psas_wing_load;
+    psasProfile->psas_pitch_stability_gain = temp_psas_pitch_stability_gain;
+    psasProfile->psas_yaw_stability_gain = temp_psas_yaw_stability_gain;
+    psasProfile->psas_pitch_accel_p_gain = temp_psas_pitch_accel_p_gain;
+    psasProfile->psas_pitch_accel_i_gain = temp_psas_pitch_accel_i_gain;
+    psasProfile->psas_pitch_accel_max = temp_psas_pitch_accel_max;
+    psasProfile->psas_pitch_accel_min = temp_psas_pitch_accel_min;
+    psasProfile->psas_lift_c_limit = temp_psas_lift_c_limit;
+    psasProfile->psas_aoa_limiter_gain = temp_psas_aoa_limiter_gain;
+    psasProfile->psas_aoa_limiter_forecast_time = temp_psas_aoa_limiter_forecast_time;
+    psasProfile->psas_aoa_limiter_tau_return = temp_psas_aoa_limiter_tau_return;
+    psasProfile->psas_wing_load = temp_psas_wing_load;
 
     uint8_t mask = 0;
     if (temp_psas_speed_main_curve_enabled_roll)  mask |= 1;
@@ -1092,27 +1094,27 @@ static const void *cmsx_PsasWriteback(displayPort_t *pDisp, const OSD_Entry *sel
     if (temp_psas_speed_stick_curve_enabled_roll)  mask |= 8;
     if (temp_psas_speed_stick_curve_enabled_pitch) mask |= 16;
     if (temp_psas_speed_stick_curve_enabled_yaw)   mask |= 32;
-    pidProfile->psas_speed_curve_enabled_mask = mask;
-    pidProfile->psas_speed_optimum_vref = temp_psas_speed_optimum_vref;
-    pidProfile->psas_speed_main_curve_power = temp_psas_speed_main_curve_power;
-    pidProfile->psas_speed_main_curve_min = temp_psas_speed_main_curve_min;
-    pidProfile->psas_speed_main_curve_max = temp_psas_speed_main_curve_max;
-    pidProfile->psas_speed_roll_stick_curve_power = temp_psas_speed_roll_stick_curve_power;
-    pidProfile->psas_speed_stick_curve_min = temp_psas_speed_stick_curve_min;
-    pidProfile->psas_speed_stick_curve_max = temp_psas_speed_stick_curve_max;
+    psasProfile->psas_speed_curve_enabled_mask = mask;
+    psasProfile->psas_speed_optimum_vref = temp_psas_speed_optimum_vref;
+    psasProfile->psas_speed_main_curve_power = temp_psas_speed_main_curve_power;
+    psasProfile->psas_speed_main_curve_min = temp_psas_speed_main_curve_min;
+    psasProfile->psas_speed_main_curve_max = temp_psas_speed_main_curve_max;
+    psasProfile->psas_speed_roll_stick_curve_power = temp_psas_speed_roll_stick_curve_power;
+    psasProfile->psas_speed_stick_curve_min = temp_psas_speed_stick_curve_min;
+    psasProfile->psas_speed_stick_curve_max = temp_psas_speed_stick_curve_max;
 
     mask = 0;
     if (temp_psas_trim_enabled_roll)  mask |= 1;
     if (temp_psas_trim_enabled_pitch) mask |= 2;
     if (temp_psas_trim_enabled_yaw)   mask |= 4;
-    pidProfile->psas_trim_enabled_mask = mask;
-    pidProfile->psas_trim_deadband = temp_psas_trim_deadband;
-    pidProfile->psas_trim_lowpass_time = temp_psas_trim_lowpass_time;
-    pidProfile->psas_trim_rate = temp_psas_trim_rate;
-    pidProfile->psas_trim_limit = temp_psas_trim_limit;
-    pidProfile->psas_trim_tau_reset = temp_psas_trim_tau_reset;
+    psasProfile->psas_trim_enabled_mask = mask;
+    psasProfile->psas_trim_deadband = temp_psas_trim_deadband;
+    psasProfile->psas_trim_lowpass_time = temp_psas_trim_lowpass_time;
+    psasProfile->psas_trim_rate = temp_psas_trim_rate;
+    psasProfile->psas_trim_limit = temp_psas_trim_limit;
+    psasProfile->psas_trim_tau_reset = temp_psas_trim_tau_reset;
 
-    pidInitConfig(currentPidProfile);
+    psasInit(psasProfile);
 
     return NULL;
 }

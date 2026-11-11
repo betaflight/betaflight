@@ -90,6 +90,7 @@ COMMON_SRC = \
             config/config_streamer.c \
             config/feature.c \
             config/simplified_tuning.c \
+            config/config_psas.c \
             cli/cli.c \
             cli/settings.c \
             drivers/dshot.c \
@@ -533,6 +534,7 @@ SIZE_OPTIMISED_SRC += \
             config/feature.c \
             config/config_streamer.c \
             config/simplified_tuning.c \
+            config/config_psas.c \
             io/dashboard.c \
             io/serial.c \
             io/serial_feature_map.c \
