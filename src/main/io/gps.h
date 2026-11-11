@@ -277,6 +277,7 @@ typedef struct gpsSolutionData_s {
     uint16_t groundSpeed;           // speed in cm/s
     uint16_t groundCourse;          // degrees * 10
     uint8_t numSat;
+    uint8_t numSatInView;           // 0 when the receiver does not report it
     uint32_t time;                  // GPS msToW
     uint32_t navIntervalMs;         // interval between nav solutions in ms
     gpsDateTime_t dateTime;         // GPS date/time from NAV-PVT
@@ -408,6 +409,7 @@ extern uint32_t dashboardGpsNavSvInfoRcvCount;                  // Count of time
 #define GPS_DBHZ_MAX 55
 #endif  // USE_DASHBOARD
 
+uint8_t gnssGetMinSats(void);
 void gpsInit(void);
 void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);

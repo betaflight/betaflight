@@ -73,7 +73,7 @@ static inline void mcBarrier(void)
 }
 
 // Runs on core 1.
-void esp32Core1Main(void)
+FAST_CODE void esp32Core1Main(void)
 {
     core1Running = true;
     mcBarrier();

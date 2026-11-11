@@ -439,6 +439,34 @@ TEST(CrossFireTest, TestOversizedFrameLengthIsRejected)
     EXPECT_FALSE(crsfFrameDone);
 }
 
+TEST(CrossFireTest, TestMaximumLengthFrameFitsTheDeclaredFrame)
+{
+    // The longest legal frame (length 62) carries 60 payload bytes plus the CRC. All of them
+    // must sit inside crsfFrameDef_t's declared payload array, not merely inside the union's
+    // byte array behind it.
+    const uint8_t maxValidFrameLength = CRSF_FRAME_SIZE_MAX -
+        CRSF_FRAME_LENGTH_ADDRESS - CRSF_FRAME_LENGTH_FRAMELENGTH;
+    EXPECT_EQ(CRSF_PAYLOAD_SIZE_MAX, maxValidFrameLength - CRSF_FRAME_LENGTH_TYPE_CRC);
+    EXPECT_EQ(sizeof(crsfFrame.bytes), sizeof(crsfFrame.frame));
+    EXPECT_EQ(CRSF_PAYLOAD_SIZE_MAX + CRSF_FRAME_LENGTH_CRC, sizeof(crsfFrame.frame.payload));
+
+    memset(&crsfFrame, 0, sizeof(crsfFrame));
+    crsfFrameDone = false;
+    rxRuntimeState_t rxRuntimeState = {};
+    dummyTimeUs += 10000;
+
+    uint8_t frame[CRSF_FRAME_SIZE_MAX];
+    const size_t frameSize = buildCrsfFrame(frame, maxValidFrameLength, CRSF_ADDRESS_FLIGHT_CONTROLLER);
+    ASSERT_EQ(CRSF_FRAME_SIZE_MAX, frameSize);
+    receiveCrsfFrameBytes(frame, frameSize, &rxRuntimeState);
+
+    EXPECT_TRUE(crsfFrameDone);
+    // last payload byte and the CRC, addressed through the declared array
+    EXPECT_EQ(frame[frameSize - 2], crsfFrame.frame.payload[CRSF_PAYLOAD_SIZE_MAX - 1]);
+    EXPECT_EQ(frame[frameSize - 1], crsfFrame.frame.payload[CRSF_PAYLOAD_SIZE_MAX]);
+    EXPECT_EQ(crsfFrameCRC(), crsfFrame.frame.payload[CRSF_PAYLOAD_SIZE_MAX]);
+}
+
 TEST(CrossFireTest, TestValidFrameLengthBoundsAreReceived)
 {
     const uint8_t maxValidFrameLength = CRSF_FRAME_SIZE_MAX -
@@ -515,8 +543,7 @@ int16_t debug[DEBUG16_VALUE_COUNT];
 uint32_t micros(void) {return dummyTimeUs;}
 uint32_t microsISR(void) {return micros();}
 serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return NULL;}
-const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
-bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return false;}
+bool telemetryCheckRxPortShared(serialPortIdentifier_e, SerialRXType) {return false;}
 serialPort_t *telemetrySharedPort = NULL;
 void crsfScheduleDeviceInfoResponse(void) {};
 void crsfScheduleMspResponse(uint8_t ) {};

@@ -154,8 +154,8 @@ static void reportFrameError(uint8_t errorReason)
 
     frameErrors++;
 
-    DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_ERRORS, frameErrors);
-    DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_LAST_ERROR, errorReason);
+    DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_ERRORS, frameErrors);      //!< Frame Error Count
+    DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_LAST_ERROR, errorReason);  //!< Last Frame Error Reason
 }
 
 // Receive ISR callback
@@ -194,7 +194,7 @@ static void fportDataReceive(uint16_t c, void *data)
                 telemetryFrame = false;
             }
 
-            DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_INTERVAL, currentTimeUs - lastFrameReceivedUs);
+            DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_INTERVAL, currentTimeUs - lastFrameReceivedUs);  //!< Frame Interval [unit:us]
             lastFrameReceivedUs = currentTimeUs;
 
             escapedCharacter = false;
@@ -372,7 +372,7 @@ static bool fportProcessFrame(const rxRuntimeState_t *rxRuntimeState)
             clearToSend = false;
         }
 
-        DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_TELEMETRY_INTERVAL, currentTimeUs - lastTelemetryFrameSentUs);
+        DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_TELEMETRY_INTERVAL, currentTimeUs - lastTelemetryFrameSentUs);  //!< Telemetry Frame Interval [unit:us]
         lastTelemetryFrameSentUs = currentTimeUs;
     }
 
@@ -392,12 +392,12 @@ bool fportRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->rcFrameStatusFn = fportFrameStatus;
     rxRuntimeState->rcProcessFrameFn = fportProcessFrame;
 
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-    if (!portConfig) {
+    const serialPortIdentifier_e port = rxConfig->rx_uart;
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
-    fportPort = openSerialPort(portConfig->identifier,
+    fportPort = openSerialPort(port,
         FUNCTION_RX_SERIAL,
         fportDataReceive,
         NULL,

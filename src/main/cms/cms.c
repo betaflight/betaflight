@@ -30,6 +30,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 #include <ctype.h>
 
 #include "platform.h"
@@ -463,7 +464,13 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, const OSD_Entry *p, uint8_t
             bool drawText = false;
             OSD_TAB_t *ptr = p->data;
             const int labelLength = strlen(p->text) + 1; // account for the space between label and display data
+            // A lookup table may have gaps: a debug mode without an entry in
+            // debugModeNames[] leaves a NULL, which is still reachable here
+            // because the table is exposed over its whole index range.
             char *str = (char *)ptr->names[*ptr->val];   // lookup table display text
+            if (!str) {
+                str = "";
+            }
             const int displayLength = strlen(str);
 
             // Calculate the available space to display the lookup table entry based on the
@@ -1040,9 +1047,10 @@ const void *cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
 
 // Stick/key detection and key codes
 
-#define IS_HI(X)  (rcData[X] > 1750)
-#define IS_LO(X)  (rcData[X] < 1250)
-#define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
+#define CMS_STICK_DEFLECTION 0.5f
+#define IS_HI(X)  (rcGetChannel(X) > CMS_STICK_DEFLECTION)
+#define IS_LO(X)  (rcGetChannel(X) < -CMS_STICK_DEFLECTION)
+#define IS_MID(X) (fabsf(rcGetChannel(X)) < CMS_STICK_DEFLECTION)
 
 #define BUTTON_TIME   250 // msec
 #define BUTTON_PAUSE  500 // msec

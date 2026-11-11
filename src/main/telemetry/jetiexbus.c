@@ -555,7 +555,6 @@ void checkJetiExBusTelemetryState(void)
 
 void NOINLINE handleJetiExBusTelemetry(void)
 {
-    static uint16_t framesLost = 0; // only for debug
     static uint8_t item = 0;
     uint32_t timeDiff;
 
@@ -571,7 +570,6 @@ void NOINLINE handleJetiExBusTelemetry(void)
 
         if (timeDiff > 3000) {   // include reserved time
             jetiExBusRequestState = EXBUS_STATE_ZERO;
-            framesLost++;
             return;
         }
 

@@ -80,10 +80,10 @@ void taskStackCheck(timeUs_t currentTimeUs)
 
     usedStackSize = (uint32_t)stackHighMem - (uint32_t)p;
 
-    DEBUG_SET(DEBUG_STACK, 0, (uint32_t)stackHighMem & 0xffff);
-    DEBUG_SET(DEBUG_STACK, 1, (uint32_t)stackLowMem & 0xffff);
-    DEBUG_SET(DEBUG_STACK, 2, (uint32_t)stackCurrent & 0xffff);
-    DEBUG_SET(DEBUG_STACK, 3, (uint32_t)p & 0xffff);
+    DEBUG_SET(DEBUG_STACK, 0, (uint32_t)stackHighMem & 0xffff);  //!< Stack High Address
+    DEBUG_SET(DEBUG_STACK, 1, (uint32_t)stackLowMem & 0xffff);   //!< Stack Low Address
+    DEBUG_SET(DEBUG_STACK, 2, (uint32_t)stackCurrent & 0xffff);  //!< Current Stack Pointer
+    DEBUG_SET(DEBUG_STACK, 3, (uint32_t)p & 0xffff);             //!< Lowest Untouched Address
 }
 
 uint32_t stackUsedSize(void)

@@ -76,6 +76,7 @@ extern "C" {
 
         rcdeviceConfig->feature = 0;
         rcdeviceConfig->protocolVersion = 0;
+        rcdeviceConfig->rcdevice_uart = SERIAL_PORT_NONE;
     }
 
     uint32_t millis(void);
@@ -91,7 +92,6 @@ extern "C" {
 #define FIVE_KEY_JOYSTICK_MAX FIVE_KEY_CABLE_JOYSTICK_MAX + 1
 
 typedef struct testData_s {
-    bool isRunCamSplitPortConfigurated;
     bool isRunCamSplitOpenPortSupported;
     int8_t maxTimesOfRespDataAvailable;
     bool isAllowBufferReadWrite;
@@ -101,6 +101,7 @@ typedef struct testData_s {
     uint8_t responseBufsLen[MAX_RESPONSES_COUNT];
     uint8_t responseDataReadPos;
     uint32_t millis;
+    serialPortIdentifier_e openedPort;
 } testData_t;
 
 static testData_t testData;
@@ -161,7 +162,7 @@ TEST(RCDeviceTest, TestRCSplitInitWithoutOpenPortConfigurated)
     waitingResponseQueue.itemCount = 0;
     memset(&testData, 0, sizeof(testData));
     testData.isRunCamSplitOpenPortSupported = false;
-    testData.isRunCamSplitPortConfigurated = true;
+    rcdeviceConfigMutable()->rcdevice_uart = SERIAL_PORT_USART3;
 
     runcamDeviceInit(&device);
     EXPECT_FALSE(device.isReady);
@@ -179,7 +180,7 @@ TEST(RCDeviceTest, TestInitDevice)
     waitingResponseQueue.itemCount = 0;
     memset(&testData, 0, sizeof(testData));
     testData.isRunCamSplitOpenPortSupported = true;
-    testData.isRunCamSplitPortConfigurated = true;
+    rcdeviceConfigMutable()->rcdevice_uart = SERIAL_PORT_USART3;
     testData.isAllowBufferReadWrite = true;
     uint8_t responseData[] = { 0xCC, 0x01, 0x37, 0x00, 0xBD };
 
@@ -196,6 +197,7 @@ TEST(RCDeviceTest, TestInitDevice)
     rcdeviceReceive(millis() * 1000);
     testData.millis += minTimeout;
     EXPECT_TRUE(device.isReady);
+    EXPECT_EQ(SERIAL_PORT_USART3, testData.openedPort);
 }
 
 TEST(RCDeviceTest, TestInitDeviceWithInvalidResponse)
@@ -210,7 +212,7 @@ TEST(RCDeviceTest, TestInitDeviceWithInvalidResponse)
     waitingResponseQueue.itemCount = 0;
     memset(&testData, 0, sizeof(testData));
     testData.isRunCamSplitOpenPortSupported = true;
-    testData.isRunCamSplitPortConfigurated = true;
+    rcdeviceConfigMutable()->rcdevice_uart = SERIAL_PORT_USART3;
     testData.isAllowBufferReadWrite = true;
 
     uint8_t responseData[] = { 0xCC, 0x01, 0x37, 0x00, 0xBD, 0x33 };
@@ -258,7 +260,7 @@ TEST(RCDeviceTest, TestInitDeviceWithInvalidResponse)
     // test timeout
     memset(&testData, 0, sizeof(testData));
     testData.isRunCamSplitOpenPortSupported = true;
-    testData.isRunCamSplitPortConfigurated = true;
+    rcdeviceConfigMutable()->rcdevice_uart = SERIAL_PORT_USART3;
     testData.isAllowBufferReadWrite = true;
     runcamDeviceInit(&device);
     testData.millis += 3001;
@@ -282,7 +284,7 @@ TEST(RCDeviceTest, TestWifiModeChangeWithDeviceUnready)
     waitingResponseQueue.itemCount = 0;
     memset(&testData, 0, sizeof(testData));
     testData.isRunCamSplitOpenPortSupported = true;
-    testData.isRunCamSplitPortConfigurated = true;
+    rcdeviceConfigMutable()->rcdevice_uart = SERIAL_PORT_USART3;
     testData.isAllowBufferReadWrite = true;
     testData.maxTimesOfRespDataAvailable = 0;
     uint8_t responseData[] = { 0xCC, 0x01, 0x37, 0x00, 0xBC }; // wrong response
@@ -323,9 +325,9 @@ TEST(RCDeviceTest, TestWifiModeChangeWithDeviceUnready)
     analyzeModeActivationConditions();
 
     // make the binded mode inactive
-    rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1800;
-    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 900;
-    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 900;
+    rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(1800);
+    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(900);
+    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(900);
 
     updateActivatedModes();
 
@@ -350,7 +352,7 @@ TEST(RCDeviceTest, TestWifiModeChangeWithDeviceReady)
     // test correct response
     memset(&testData, 0, sizeof(testData));
     testData.isRunCamSplitOpenPortSupported = true;
-    testData.isRunCamSplitPortConfigurated = true;
+    rcdeviceConfigMutable()->rcdevice_uart = SERIAL_PORT_USART3;
     testData.isAllowBufferReadWrite = true;
     testData.maxTimesOfRespDataAvailable = 0;
     uint8_t responseData[] = { 0xCC, 0x01, 0x37, 0x00, 0xBD };
@@ -395,9 +397,9 @@ TEST(RCDeviceTest, TestWifiModeChangeWithDeviceReady)
 
     analyzeModeActivationConditions();
 
-    rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1700;
-    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 2000;
-    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1700;
+    rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(1700);
+    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(2000);
+    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(1700);
 
     updateActivatedModes();
 
@@ -423,7 +425,7 @@ TEST(RCDeviceTest, TestWifiModeChangeCombine)
 
     memset(&testData, 0, sizeof(testData));
     testData.isRunCamSplitOpenPortSupported = true;
-    testData.isRunCamSplitPortConfigurated = true;
+    rcdeviceConfigMutable()->rcdevice_uart = SERIAL_PORT_USART3;
     testData.isAllowBufferReadWrite = true;
     testData.maxTimesOfRespDataAvailable = 0;
     uint8_t responseData[] = { 0xCC, 0x01, 0x37, 0x00, 0xBD };
@@ -465,9 +467,9 @@ TEST(RCDeviceTest, TestWifiModeChangeCombine)
     analyzeModeActivationConditions();
 
     // // make the binded mode inactive
-    rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1700;
-    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 2000;
-    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1700;
+    rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(1700);
+    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(2000);
+    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(1700);
     updateActivatedModes();
 
     // runn process loop
@@ -481,9 +483,9 @@ TEST(RCDeviceTest, TestWifiModeChangeCombine)
 
 
     // // make the binded mode inactive
-    rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1500;
-    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1300;
-    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1900;
+    rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(1500);
+    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(1300);
+    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(1900);
     updateActivatedModes();
     rcdeviceUpdate((timeUs_t)0);
     EXPECT_TRUE(unitTestIsSwitchActivited(BOXCAMERA1));
@@ -491,12 +493,12 @@ TEST(RCDeviceTest, TestWifiModeChangeCombine)
     EXPECT_TRUE(unitTestIsSwitchActivited(BOXCAMERA3));
 
 
-    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1899;
+    rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(1899);
     updateActivatedModes();
     rcdeviceUpdate((timeUs_t)0);
     EXPECT_FALSE(unitTestIsSwitchActivited(BOXCAMERA3));
 
-    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 2001;
+    rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = rcUsToNorm(2001);
     updateActivatedModes();
     rcdeviceUpdate((timeUs_t)0);
     EXPECT_TRUE(unitTestIsSwitchActivited(BOXCAMERA1));
@@ -516,7 +518,7 @@ TEST(RCDeviceTest, Test5KeyOSDCableSimulationProtocol)
 
     memset(&testData, 0, sizeof(testData));
     testData.isRunCamSplitOpenPortSupported = true;
-    testData.isRunCamSplitPortConfigurated = true;
+    rcdeviceConfigMutable()->rcdevice_uart = SERIAL_PORT_USART3;
     testData.isAllowBufferReadWrite = true;
     testData.maxTimesOfRespDataAvailable = 0;
     uint8_t responseData[] = { 0xCC, 0x01, 0x37, 0x00, 0xBD };
@@ -714,10 +716,10 @@ TEST(RCDeviceTest, Test5KeyOSDCableSimulationWithout5KeyFeatureSupport)
     resetRCDeviceStatus();
 
     // test simulation without device init
-    rcData[THROTTLE] = FIVE_KEY_JOYSTICK_MID; // THROTTLE Mid
-    rcData[ROLL] = FIVE_KEY_JOYSTICK_MID; // ROLL Mid
-    rcData[PITCH] = FIVE_KEY_JOYSTICK_MID; // PITCH Mid
-    rcData[YAW] = FIVE_KEY_JOYSTICK_MAX; // Yaw High
+    rcData[THROTTLE] = rcUsToNorm(FIVE_KEY_JOYSTICK_MID); // THROTTLE Mid
+    rcData[ROLL] = rcUsToNorm(FIVE_KEY_JOYSTICK_MID); // ROLL Mid
+    rcData[PITCH] = rcUsToNorm(FIVE_KEY_JOYSTICK_MID); // PITCH Mid
+    rcData[YAW] = rcUsToNorm(FIVE_KEY_JOYSTICK_MAX); // Yaw High
     rcdeviceUpdate(millis() * 1000);
     EXPECT_FALSE(rcdeviceInMenu);
     // remove all request from queue
@@ -729,7 +731,7 @@ TEST(RCDeviceTest, Test5KeyOSDCableSimulationWithout5KeyFeatureSupport)
     // init device that have not 5 key OSD cable simulation feature
     memset(&testData, 0, sizeof(testData));
     testData.isRunCamSplitOpenPortSupported = true;
-    testData.isRunCamSplitPortConfigurated = true;
+    rcdeviceConfigMutable()->rcdevice_uart = SERIAL_PORT_USART3;
     testData.isAllowBufferReadWrite = true;
     testData.maxTimesOfRespDataAvailable = 0;
     uint8_t responseData[] = { 0xCC, 0x01, 0x37, 0x00, 0xBD };
@@ -763,7 +765,8 @@ TEST(RCDeviceTest, Test5KeyOSDCableSimulationWithout5KeyFeatureSupport)
 extern "C" {
     serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, void *callbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
     {
-        UNUSED(identifier);
+        testData.openedPort = identifier;
+
         UNUSED(functionMask);
         UNUSED(baudRate);
         UNUSED(mode);
@@ -787,25 +790,6 @@ extern "C" {
             s.baudRate = 0;
 
             return (serialPort_t *)&s;
-        }
-
-        return NULL;
-    }
-
-    const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
-    {
-        UNUSED(function);
-        if (testData.isRunCamSplitPortConfigurated) {
-            static serialPortConfig_t portConfig;
-
-            portConfig.identifier = SERIAL_PORT_USART3;
-            portConfig.msp_baudrateIndex = BAUD_115200;
-            portConfig.gps_baudrateIndex = BAUD_57600;
-            portConfig.telemetry_baudrateIndex = BAUD_AUTO;
-            portConfig.blackbox_baudrateIndex = BAUD_115200;
-            portConfig.functionMask = FUNCTION_MSP;
-
-            return &portConfig;
         }
 
         return NULL;
@@ -959,13 +943,6 @@ extern "C" {
             testData.indexOfCurrentRespBuf = 0;
         }
         // testData.maxTimesOfRespDataAvailable = testData.responseDataLen + 1;
-    }
-
-    const serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function)
-    {
-        UNUSED(function);
-
-        return NULL;
     }
 
     void closeSerialPort(serialPort_t *serialPort)

@@ -28,7 +28,7 @@
 #include "pg/pg.h"
 
 typedef struct posHoldConfig_s {
-    uint8_t dummy;
+    uint8_t deadband;
 } posHoldConfig_t;
 
 PG_DECLARE(posHoldConfig_t, posHoldConfig);

@@ -39,7 +39,12 @@ void dronecanGnssInit(void);
 // no Fix2 frame has been received yet. dop.pdop and acc come from Fix2
 // (covariance + pdop), dop.hdop/vdop from Auxiliary, and dateTime from the
 // Fix2 UTC timestamp when the module reports the UTC time standard.
-bool dronecanGnssGetLatest(gpsSolutionData_t *out);
+//
+// hasFix, when not NULL, receives whether the module reported a 3D fix. It is
+// read under the same seqlock as the solution, so the two always describe the
+// same frame. Callers must use it rather than inferring a fix from numSat: the
+// count stays populated while the module is still acquiring.
+bool dronecanGnssGetLatest(gpsSolutionData_t *out, bool *hasFix);
 
 // Microsecond timestamp of the most recent accepted Fix2 (host clock, not
 // the DSDL timestamp). Used by gps.c to detect staleness.

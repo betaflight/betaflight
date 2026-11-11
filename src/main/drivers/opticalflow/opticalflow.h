@@ -44,13 +44,15 @@ typedef void opflowOpInitFunc(struct opticalflowDev_s * dev);
 typedef void opflowOpUpdateFunc(struct opticalflowDev_s * dev);
 typedef void opflowOpReadFunc(struct opticalflowDev_s * dev, opticalflowData_t * result);
 
-#define MAX_GYRO_SAMPLE_DELAY 10
+// History depth for the gyro-rotation compensation. Sized for the slowest
+// gyroDelayUs a driver asks for, at the fastest sample rate it can deliver.
+#define MAX_GYRO_SAMPLE_DELAY 16
 
 typedef struct opticalflowDev_s {
     unsigned delayMs;
     int16_t minRangeCm;
     uint8_t minQualityThreshold;
-    uint8_t gyroSampleDelay;
+    uint32_t gyroDelayUs;        // age of the gyro reading that matches the flow sample
 
     opflowOpInitFunc  *init;
     opflowOpUpdateFunc *update;

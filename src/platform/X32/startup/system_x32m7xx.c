@@ -47,7 +47,7 @@ uint32_t SystemCoreClock = 600000000;
 
 /** Private_Functions  */
 
-/* defaule power supply is extern LDO. User can change the way of power supply*/
+/* Preserve the board's DCDC supply configuration. */
 //#define PWR_SUPPLY_SELECTION       (PWR_LDO_SUPPLY)  /* External LDO Supply  */
 #define PWR_SUPPLY_SELECTION       (PWR_DIRECT_SMPS_SUPPLY)  /* DCDC Supply  */
 //#define PWR_SUPPLY_SELECTION       (PWR_EXTERNAL_SOURCE_SUPPLY)  /* VCAP Supply  */

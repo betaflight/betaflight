@@ -179,12 +179,14 @@ static void srxl2ProcessChannelData(const Srxl2ChannelDataHeader* channelData, r
         return;
     }
 
-    const uint16_t *frameChannels = (const uint16_t *) (channelData + 1);
+    // channel values follow the packed header and may be unaligned: read them as little-endian bytes
+    const uint8_t *frameChannels = (const uint8_t *) (channelData + 1);
     uint32_t channelMask = channelData->channelMask.u32;
     while (channelMask) {
         unsigned idx = __builtin_ctz (channelMask);
         uint32_t mask = 1 << idx;
-        rxRuntimeState->channelData[idx] = *frameChannels++;
+        rxRuntimeState->channelData[idx] = frameChannels[0] | (frameChannels[1] << 8);
+        frameChannels += 2;
         channelMask &= ~mask;
     }
 
@@ -489,8 +491,8 @@ bool srxl2RxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->rcFrameStatusFn = srxl2FrameStatus;
     rxRuntimeState->rcProcessFrameFn = srxl2ProcessFrame;
 
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-    if (!portConfig) {
+    const serialPortIdentifier_e port = rxConfig->rx_uart;
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
@@ -502,7 +504,7 @@ bool srxl2RxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         options |= SERIAL_BIDIR;
     }
 
-    serialPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, srxl2DataReceive,
+    serialPort = openSerialPort(port, FUNCTION_RX_SERIAL, srxl2DataReceive,
         NULL, SRXL2_PORT_BAUDRATE_DEFAULT, SRXL2_PORT_MODE, options);
 
     if (!serialPort) {

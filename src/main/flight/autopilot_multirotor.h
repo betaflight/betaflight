@@ -21,6 +21,7 @@
 #include <stdint.h>
 
 #include "common/axis.h"
+#include "common/time.h"
 #include "common/vector.h"
 
 
@@ -28,30 +29,59 @@
 
 #define AP_HOVER_THROTTLE_DEFAULT 1275U
 
-extern float autopilotAngle[RP_AXIS_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGREES
+extern float autopilotAngle[RP_AXIS_COUNT]; // degrees
 
 void autopilotInit(void);
 void resetAltitudeControl(void);
 void setSticksActiveStatus(bool areSticksActive);
 void resetPositionControl(unsigned taskRateHz);
 bool positionControl(void);
-void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeVelCmS, float velLimitCmS);
-void moveTargetLocation(const vector2_t *stepEF, unsigned taskRateHz, bool forceAbortNav);// for nav modes to update the target position
+void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targetAltitudeVelCmS, float velLimitCmS);
+// Measured interval since the calling task last ran, bounded around its nominal
+// period. The autopilot control tasks are event driven, so their interval is
+// real rather than the nominal task period.
+timeUs_t autopilotTaskIntervalUs(timeUs_t nominalIntervalUs);
+void setTargetVelocity(const vector2_t *velocityEF, bool forceAbort); // for modes that directly command XY EF velocity
+void autopilotHeadingRecovery(bool active, float pitchDeg);
 void pitchForwardOverride(bool request);
+bool isHeadingRecoveryActive(void);
 void autopilotForceLevelPark(bool request); // heading/mag fault: force angle-mode self-level, never position hold
 void autopilotSetNavHeadingOverride(bool valid, float headingDeg); // mission pre-turn: command nose heading directly
+vector2_t autopilotGetPositionErrorCm(void); // EF: where the position controller holds the craft to, relative to it
 void initPositionHold(void);
 void positionControlReanchor(void);
+void autopilotSetSensorsOkStatus(bool ok); // latches the SensorsNotOk failure bit until sensors recover
 uint16_t autopilotGetEffectiveHoverThrottlePwm(void);
 void autopilotCaptureHoverThrottleForAltHold(void);
 void autopilotClearAltHoldHoverThrottle(void);
 bool isBelowLandingAltitude(void);
+
+typedef struct {
+    float touchdownRateCmS;   // descent rate at and below the low end of the landing profile
+    float maxRateCmS;         // descent rate at and above the high end, linear between
+} landingProfile_t;
+
+// A descent meant to end on the ground. The owner calls this every cycle; later calls carry the
+// landing on, whoever makes them. A pause, another altitudeControl() call or a reset ends it, and
+// the next call starts again from startAltitudeCm.
+void autopilotLand(const landingProfile_t *profile, float startAltitudeCm, timeUs_t taskIntervalUs);
+bool autopilotIsLanding(void);
+float autopilotLandingTargetAltitudeCm(void);
 float getAutopilotThrottle(void);
+void autopilotSetYawTarget(float headingDeg);
+
+bool autopilotAltitudeControlAvailable(void);
+bool autopilotPositionControlAvailable(void);
+bool autopilotThrottleValid(void);
 
 // Mission yaw control: rate injected as the yaw setpoint by rc.c while a
 // navigation leg is being flown (see updateYawControl in autopilot_multirotor.c)
 float autopilotGetYawRate(void);
 bool autopilotYawControlActive(void);
 void autopilotSetYawRateLimit(float rateLimitDps); // deg/s, 0 = no mission cap
+void autopilotDisableYawControl(void);
+
+#define HEADING_HOLD_TASK_RATE_HZ 100 // hz
+void updateHeadingHold(timeUs_t currentTimeUs);
 
 #endif // !USE_WING

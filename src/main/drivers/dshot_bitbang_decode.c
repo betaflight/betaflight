@@ -125,7 +125,7 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
     // Jump forward in the buffer to just before where we anticipate the first zero
     p += preambleSkip;
 
-    DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 3, preambleSkip);
+    DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 3, preambleSkip);  //!< Preamble Skip
 
     // Eliminate leading high signal level by looking for first zero bit in data stream.
     // Manual loop unrolling and branch hinting to produce faster code.
@@ -285,7 +285,7 @@ FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
     // Jump forward in the buffer to just before where we anticipate the first zero
     p += preambleSkip;
 
-    DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 3, preambleSkip);
+    DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 3, preambleSkip);  //!< Preamble Skip
 
     // Eliminate leading high signal level by looking for first zero bit in data stream.
     // Manual loop unrolling and branch hinting to produce faster code.

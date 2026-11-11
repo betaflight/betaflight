@@ -37,6 +37,9 @@
 #include "fc/runtime_config.h"
 
 #include "flight/flight_plan_nav.h"
+#ifdef USE_WING
+#include "flight/autopilot.h"
+#endif
 
 #include "io/gps.h"
 
@@ -49,7 +52,10 @@
 // mavlink_message_t yields to the real (identical) one.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 #include "common/mavlink.h"
+#pragma GCC diagnostic pop
 #pragma GCC diagnostic pop
 
 #include "telemetry/mavlink.h"
@@ -80,7 +86,6 @@ static struct {
     uint8_t  retries;
     timeMs_t lastCurrentTxMs;
     int16_t  pendingReachedIndex;
-    bool     rtlTerminator;     // current upload ends with NAV_RETURN_TO_LAUNCH (last slot discarded)
 } m;
 
 // Geofence storage. Accepted and round-tripped to the GCS for display, but NOT
@@ -98,6 +103,11 @@ static struct {
     uint8_t count;
     fencePoint_t points[MAX_FENCE_POINTS];
 } fenceStore;
+
+// Mission upload staging. Received items are kept here and copied into
+// flightPlanConfig only when the full upload is accepted. A failed or
+// cancelled upload thus keeps the previous mission, as MAVLink requires.
+static waypoint_t stagedWaypoints[MAX_WAYPOINTS];
 
 static mavlink_message_t txMsg;
 
@@ -176,7 +186,11 @@ static void sendMissionItem(uint8_t partnerSys, uint8_t partnerComp, uint16_t se
         if (wp->pattern == WAYPOINT_PATTERN_ORBIT) {
             command = MAV_CMD_NAV_LOITER_TURNS;
             param1 = (float)wp->duration / (float)flightPlanNavOrbitPeriodDs(wp->speed);
+#ifdef USE_WING
+            param3 = autopilotWingLoiterRadiusM();
+#else
             param3 = autopilotConfig()->waypointHoldRadius * 0.01f;
+#endif
         } else {
             // FIGURE8 has no MAVLink vocabulary; it downloads as a plain
             // timed loiter (the pattern survives only in the stored mission).
@@ -209,6 +223,7 @@ static void sendMissionItem(uint8_t partnerSys, uint8_t partnerComp, uint16_t se
     case WAYPOINT_TYPE_FLYBY:
     default:
         command = MAV_CMD_NAV_WAYPOINT;
+        param1 = wp->duration * 0.1f;
         break;
     }
 
@@ -269,17 +284,14 @@ static bool decodeFrameAltCm(uint8_t frame, float z, int32_t *altCmOut, uint8_t 
 }
 
 static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t *wp,
-                                bool isLastSlot, bool *isRtlTerminator, uint8_t *resultOut)
+                                uint8_t *resultOut)
 {
-    *isRtlTerminator = false;
-
     if (it->command == MAV_CMD_NAV_RETURN_TO_LAUNCH) {
-        if (!isLastSlot) {
-            *resultOut = MAV_MISSION_UNSUPPORTED;
-            return false;
-        }
-        *isRtlTerminator = true;
-        return true;
+        // The flight-plan executor has no RTL waypoint.  Accepting and then
+        // discarding this item makes the uploaded mission silently stop at the
+        // preceding waypoint instead of returning home.
+        *resultOut = MAV_MISSION_UNSUPPORTED;
+        return false;
     }
 
     // Modifier commands carry no horizontal position; the generic lat/lon range
@@ -303,7 +315,11 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
             return false;
         }
     }
-    if (!isfinite(it->param1) || !isfinite(it->param2) || !isfinite(it->param3) || !isfinite(it->param4)) {
+    // NAV_WAYPOINT explicitly permits NaN yaw to select the current system
+    // heading.  Other non-finite values, including infinite yaw, are invalid.
+    const bool waypointUsesCurrentYaw = it->command == MAV_CMD_NAV_WAYPOINT && isnan(it->param4);
+    if (!isfinite(it->param1) || !isfinite(it->param2) || !isfinite(it->param3)
+        || (!isfinite(it->param4) && !waypointUsesCurrentYaw)) {
         *resultOut = MAV_MISSION_INVALID;
         return false;
     }
@@ -314,6 +330,10 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
     wp->speed = 0;
     wp->duration = 0;
     wp->pattern = WAYPOINT_PATTERN_NONE;
+    // MAVLink has no vocabulary for a per-waypoint climb rate or nose behaviour, so an uploaded
+    // mission flies them at their defaults (as FIGURE8 does with its pattern).
+    wp->vertRate = 0;
+    wp->yawBehaviour = WAYPOINT_YAW_DEFAULT;
 
     switch (it->command) {
     case MAV_CMD_NAV_WAYPOINT:
@@ -354,12 +374,6 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
         // Best-effort: hold at lat/lon. The "loiter until alt reached" latch
         // needs executor work — without it the waypoint advances on arrival
         // like any other HOLD-zero. Capability follow-up.
-        wp->type = WAYPOINT_TYPE_HOLD;
-        break;
-    case MAV_CMD_NAV_FOLLOW:
-        // Best-effort: hover at the initial target position. Dynamic vehicle
-        // following needs an updating target source the executor doesn't have
-        // today — capability follow-up.
         wp->type = WAYPOINT_TYPE_HOLD;
         break;
     case MAV_CMD_NAV_LAND:
@@ -536,7 +550,6 @@ static void handleCount(const mavlink_message_t *msg)
         m.partnerComp = msg->compid;
         m.lastActivityMs = millis();
         m.retries = 0;
-        m.rtlTerminator = false;
         sendRequestInt(msg->sysid, msg->compid, MAV_MISSION_TYPE_FENCE, 0);
         return;
     }
@@ -561,11 +574,8 @@ static void handleCount(const mavlink_message_t *msg)
         return;
     }
 
-    // MAVLink semantics: a new upload replaces any existing mission. Zero the
-    // count immediately so any consumer (CLI dump, executor on next engage)
-    // doesn't see a half-overwritten waypoint table mid-transfer.
-    flightPlanConfigMutable()->waypointCount = 0;
-
+    // Items go to stagedWaypoints. The active mission stays unchanged
+    // until the upload is complete and accepted.
     m.state = MISSION_RECEIVING;
     m.missionType = MAV_MISSION_TYPE_MISSION;
     m.nextSeq = 0;
@@ -574,7 +584,6 @@ static void handleCount(const mavlink_message_t *msg)
     m.partnerComp = msg->compid;
     m.lastActivityMs = millis();
     m.retries = 0;
-    m.rtlTerminator = false;
     sendRequestInt(msg->sysid, msg->compid, MAV_MISSION_TYPE_MISSION, 0);
 }
 
@@ -623,20 +632,13 @@ static void handleItemInt(const mavlink_message_t *msg)
     }
 
     waypoint_t wp;
-    bool isRtl = false;
-    const bool isLastSlot = (it.seq == m.totalCount - 1);
     uint8_t result = MAV_MISSION_ACCEPTED;
-    if (!mapMavCmdToWaypoint(&it, &wp, isLastSlot, &isRtl, &result)) {
+    if (!mapMavCmdToWaypoint(&it, &wp, &result)) {
         abortUpload(result);
         return;
     }
 
-    if (isRtl) {
-        // RTL discards its own slot; mission count finalises at items received so far.
-        m.rtlTerminator = true;
-    } else {
-        flightPlanConfigMutable()->waypoints[it.seq] = wp;
-    }
+    stagedWaypoints[it.seq] = wp;
 
     m.nextSeq++;
     m.lastActivityMs = millis();
@@ -647,9 +649,17 @@ static void handleItemInt(const mavlink_message_t *msg)
         return;
     }
 
-    // Upload complete.
-    const uint16_t finalCount = m.rtlTerminator ? m.totalCount - 1 : m.totalCount;
-    flightPlanConfigMutable()->waypointCount = finalCount;
+    // Upload complete. Do not replace the mission while the autopilot flies
+    // it: the executor reads the waypoint table directly.
+    if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+        abortUpload(MAV_MISSION_DENIED);
+        return;
+    }
+
+    // Replace the active mission with the staged items.
+    flightPlanConfig_t *plan = flightPlanConfigMutable();
+    memcpy(plan->waypoints, stagedWaypoints, m.totalCount * sizeof(stagedWaypoints[0]));
+    plan->waypointCount = m.totalCount;
     saveConfigAndNotify();
     sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_MISSION, MAV_MISSION_ACCEPTED);
     m.state = MISSION_IDLE;

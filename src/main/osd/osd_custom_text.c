@@ -30,6 +30,7 @@
 #include "common/time.h"
 #include "drivers/serial.h"
 #include "io/serial.h"
+#include "osd/osd.h"
 #include "osd/osd_custom_text.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -51,21 +52,20 @@ static char displayBuffer[DISPLAY_BUFFER_SIZE];
 
 bool osdCustomTextInit(void)
 {
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_OSD_CUSTOM_TEXT);
-    if (!portConfig) {
+    const serialPortIdentifier_e port = osdConfig()->osd_custom_text_uart;
+    if (port == SERIAL_PORT_NONE) {
         return false;
     }
 
-    // Use telemetry baud rate index for OSD custom text
     // Validate baud rate index and use safe default if out of range
-    uint8_t baudrateIndex = portConfig->telemetry_baudrateIndex;
-    if (baudrateIndex >= BAUD_COUNT) {
+    uint8_t baudrateIndex = osdConfig()->osd_custom_text_baud;
+    if (baudrateIndex >= BAUD_COUNT || baudrateIndex == BAUD_AUTO) {
         baudrateIndex = BAUD_115200; // Safe default
     }
     const uint32_t baudrate = baudRates[baudrateIndex];
 
     osdCustomTextSerialPort = openSerialPort(
-        portConfig->identifier,
+        port,
         FUNCTION_OSD_CUSTOM_TEXT,
         NULL,  // No RX callback, we'll poll in update function
         NULL,

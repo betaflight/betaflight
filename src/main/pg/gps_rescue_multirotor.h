@@ -26,6 +26,10 @@
 
 #include "pg/pg.h"
 
+#define GPS_RESCUE_GROUND_SPEED_MAX 3000
+#define GPS_RESCUE_DESCENT_DIST_MIN_M 5
+#define GPS_RESCUE_DESCENT_DIST_MAX_M 500
+
 typedef struct gpsRescue_s {
 
     uint16_t minStartDistM; // meters
@@ -41,8 +45,6 @@ typedef struct gpsRescue_s {
     uint8_t  sanityChecks;
     uint8_t  minSats;
     uint8_t  allowArmingWithoutFix;
-
-    uint8_t  yawP;
 } gpsRescueConfig_t;
 
 PG_DECLARE(gpsRescueConfig_t, gpsRescueConfig);

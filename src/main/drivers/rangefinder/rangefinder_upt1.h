@@ -23,7 +23,8 @@
 
 #include "drivers/rangefinder/rangefinder.h"
 
-#define RANGEFINDER_UPT1_TASK_PERIOD_MS 20  // 50Hz frame rate
+#define UPT1_FRAME_PERIOD_MS 20             // 50Hz frame rate, per the module specification
+#define RANGEFINDER_UPT1_TASK_PERIOD_MS UPT1_FRAME_PERIOD_MS
 
 bool rangefinderUPT1Detect(rangefinderDev_t *dev);
 

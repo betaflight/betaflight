@@ -53,6 +53,7 @@
 #include "io/dronecan/dronecan.h"
 #include "io/dronecan/dronecan_esc.h"
 #include "io/dronecan/dronecan_msg.h"
+#include "io/dronecan/dronecan_nodes.h"
 
 //-----------------------------------------------------------------------------
 // Command out: esc.RawCommand
@@ -172,6 +173,8 @@ static timeUs_t escStatusLastUs[MAX_SUPPORTED_MOTORS];
 static void handleEscStatus(CanardInstance *ins, CanardRxTransfer *t)
 {
     UNUSED(ins);
+
+    dronecanNodesNoteSensor(t->source_node_id, DRONECAN_NODE_SENSOR_ESC);
 
     uint32_t errorCount = 0;
     uint16_t voltageF16 = 0;

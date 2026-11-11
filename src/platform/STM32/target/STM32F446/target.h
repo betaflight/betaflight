@@ -25,10 +25,6 @@
 #define TARGET_BOARD_IDENTIFIER "F446"
 #endif
 
-#ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING             "Betaflight - STM32F446"
-#endif
-
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
 #define USE_I2C_DEVICE_3

@@ -54,6 +54,9 @@ typedef union {
 } attitudeEulerAngles_t;
 #define EULER_INITIALIZE  { { 0, 0, 0 } }
 
+#define IMU_MAG_DECLINATION_MAX 300
+#define IMU_SMALL_ANGLE_MAX 180
+
 extern attitudeEulerAngles_t attitude;
 extern matrix33_t rMat;
 extern quaternion_t imuAttitudeQuaternion; //attitude quaternion to use in blackbox
@@ -64,7 +67,6 @@ typedef struct imuConfig_s {
     uint8_t small_angle;
     uint8_t imu_process_denom;
     int16_t mag_declination;      // Magnetic declination in degrees * 10
-    bool trust_mag;      // default to false, to indicate that the user has calibrated and validated their mag
 } imuConfig_t;
 
 PG_DECLARE(imuConfig_t, imuConfig);

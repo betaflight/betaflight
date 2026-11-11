@@ -66,7 +66,7 @@ void rcStatsUpdate(timeUs_t currentTimeUs)
         }
     }
 
-    DEBUG_SET(DEBUG_RC_STATS, 0, lrintf(RcStatsGetAverageThrottle()));
+    DEBUG_SET(DEBUG_RC_STATS, 0, lrintf(RcStatsGetAverageThrottle()));  //!< Average Throttle [unit:%]
 
     previousThrottlePercent = throttlePercent;
 }

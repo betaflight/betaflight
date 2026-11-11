@@ -105,6 +105,10 @@
 #define PIO_OSD_INDEX 2
 #endif
 
+#ifndef AFATFS_NUM_CACHE_SECTORS
+#define AFATFS_NUM_CACHE_SECTORS 32
+#endif
+
 #ifdef REMOVE_MSP_DISPLAYPORT
 #undef USE_MSP_DISPLAYPORT
 #endif
@@ -137,9 +141,11 @@
 #undef USE_TELEMETRY_SMARTPORT
 #undef USE_TELEMETRY_SRXL
 
-#undef USE_SERIAL_4WAY_BLHELI_INTERFACE
-#undef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
+// USE_SERIAL_4WAY_BLHELI_BOOTLOADER (BLHeli_S / AM32 configurator passthrough over the motor
+// pins) is supported.
+// SimonK STK500v2 support is not enabled (legacy, and unverified on this platform).
 #undef USE_SERIAL_4WAY_SK_BOOTLOADER
+
 #undef USE_MULTI_GYRO
 
 #undef USE_RANGEFINDER_HCSR04
@@ -148,7 +154,5 @@
 #undef USE_SRXL
 #undef USE_SPEKTRUM
 #undef USE_SPEKTRUM_BIND
-
-#undef USE_SERIAL_PASSTHROUGH
 
 #undef USE_RPM_LIMIT

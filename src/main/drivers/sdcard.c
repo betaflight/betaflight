@@ -49,9 +49,6 @@
 // Chosen so that CMD8 will have the same CRC as CMD0:
 #define SDCARD_IF_COND_CHECK_PATTERN                0xAB
 
-#define SDCARD_TIMEOUT_INIT_MILLIS                  200
-#define SDCARD_MAX_CONSECUTIVE_FAILURES             8
-
 /* SPI_CLOCK_INITIALIZATION (256) is the slowest (Spec calls for under 400KHz) */
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER     SPI_CLOCK_INITIALIZATION
 

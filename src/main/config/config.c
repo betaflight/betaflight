@@ -93,7 +93,10 @@
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/compass.h"
+#include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
+
+#include "telemetry/telemetry.h"
 
 #include "config.h"
 
@@ -167,11 +170,12 @@ static void activateConfig(void)
     loadControlRateProfile();
     loadBatteryProfile();
 
-    initRcProcessing();
-
     activeAdjustmentRangeReset();
 
     pidInit(currentPidProfile);
+
+    // after pidInit(): initRcProcessing() latches feedforward settings from pidRuntime
+    initRcProcessing();
 
     rcControlsInit();
 
@@ -228,23 +232,46 @@ static void validateAndFixConfig(void)
     }
 #endif
 
-    if (!isSerialConfigValid(serialConfigMutable())) {
-        PG_RESET(serialConfig);
+#ifdef USE_TELEMETRY
+    telemetryValidateProviders();
+#endif
+
+    if (rxConfig()->mincheck > RX_MIN_CHECK_MAX) {
+        rxConfigMutable()->mincheck = RX_MIN_CHECK_MAX;
     }
 
-    // Populate the per-feature UART fields from the legacy functionMask
-    // bitmask so pre-existing configs keep working during the migration
-    // window.  Idempotent — running it every boot is fine while the
-    // legacy mask is still the source of truth.
-    serialBackfillFeatureFields();
+    if (rxConfig()->mincheck >= rxConfig()->maxcheck) {
+        rxConfigMutable()->mincheck = RX_MIN_CHECK_DEFAULT;
+        rxConfigMutable()->maxcheck = RX_MAX_CHECK_DEFAULT;
+    }
+
+    if (rxConfig()->rx_min_usec >= rxConfig()->rx_max_usec) {
+        rxConfigMutable()->rx_min_usec = RX_MIN_USEC;
+        rxConfigMutable()->rx_max_usec = RX_MAX_USEC;
+    }
+
+    if (!isSerialConfigValid()) {
+        // Give up only the claims that actually clash before falling back to the
+        // board-wide reset, which would cost the user every other port they had
+        // assigned to settle a single bad one.
+        serialDropConflictingAssignments();
+
+        const bool serialReset = !isSerialConfigValid();
+        if (serialReset) {
+            serialResetFeatureAssignments();
+        }
+
+        systemConfigMutable()->configResetReason = CONFIG_RESET_SERIAL;
+        systemConfigMutable()->configResetDetail = serialReset;
+    }
 
 #if defined(USE_GPS)
-    const serialPortConfig_t *gpsSerial = findSerialPortConfig(FUNCTION_GPS);
-    if (GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(gpsConfig()->provider) && gpsSerial) {
-        serialRemovePort(gpsSerial->identifier);
+    const serialPortIdentifier_e gpsSerial = gpsConfig()->gps_uart;
+    if (GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(gpsConfig()->provider) && gpsSerial != SERIAL_PORT_NONE) {
+        serialRemovePort(gpsSerial);
     }
 
-    if (!GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(gpsConfig()->provider) && !gpsSerial) {
+    if (!GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(gpsConfig()->provider) && gpsSerial == SERIAL_PORT_NONE) {
         featureDisableImmediate(FEATURE_GPS);
     }
 #endif
@@ -269,8 +296,8 @@ static void validateAndFixConfig(void)
         }
 #endif
 
-        if (pidProfilesMutable(i)->motor_output_limit > 100 || pidProfilesMutable(i)->motor_output_limit == 0) {
-            pidProfilesMutable(i)->motor_output_limit = 100;
+        if (pidProfilesMutable(i)->motor_output_limit > MOTOR_OUTPUT_LIMIT_PERCENT_MAX || pidProfilesMutable(i)->motor_output_limit < MOTOR_OUTPUT_LIMIT_PERCENT_MIN) {
+            pidProfilesMutable(i)->motor_output_limit = MOTOR_OUTPUT_LIMIT_PERCENT_MAX;
         }
 
         if (pidProfilesMutable(i)->auto_profile_cell_count > MAX_AUTO_DETECT_CELL_COUNT || pidProfilesMutable(i)->auto_profile_cell_count < AUTO_PROFILE_CELL_COUNT_CHANGE) {
@@ -376,7 +403,10 @@ static void validateAndFixConfig(void)
         rxConfigMutable()->rssi_src_frame_errors = false;
     }
 
-    if (featureIsConfigured(FEATURE_3D) || !featureIsConfigured(FEATURE_GPS) || mixerModeIsFixedWing(mixerConfig()->mixerMode)
+    if (featureIsConfigured(FEATURE_3D) || !featureIsConfigured(FEATURE_GPS)
+#if !defined(USE_WING) || !ENABLE_RESCUE_PLAN
+        || mixerModeIsFixedWing(mixerConfig()->mixerMode)
+#endif
 #if !defined(USE_GPS) || !defined(USE_GPS_RESCUE)
         || true
 #endif
@@ -399,7 +429,7 @@ static void validateAndFixConfig(void)
 #if defined(USE_ESC_SENSOR)
     // DroneCAN ESC telemetry feeds escSensorData[] without a serial port, so
     // only a serial-sourced sensor requires one.
-    if (!findSerialPortConfig(FUNCTION_ESC_SENSOR) && !isMotorProtocolDronecan()) {
+    if (escSensorConfig()->esc_sensor_uart == SERIAL_PORT_NONE && !isMotorProtocolDronecan()) {
         featureDisableImmediate(FEATURE_ESC_SENSOR);
     }
 #endif
@@ -564,25 +594,33 @@ static void validateAndFixConfig(void)
             batteryProfilesMutable(i)->vbatwarningcellvoltage = 350;
             batteryProfilesMutable(i)->vbatfullcellvoltage = 410;
         }
-        if (profile->forceBatteryCellCount > 24) {
+        if (profile->forceBatteryCellCount > BATTERY_FORCE_CELL_COUNT_MAX) {
             batteryProfilesMutable(i)->forceBatteryCellCount = 0;
         }
-        if (profile->consumptionWarningPercentage > 100) {
+        if (profile->consumptionWarningPercentage > BATTERY_CONSUMPTION_WARNING_PERCENT_MAX) {
             batteryProfilesMutable(i)->consumptionWarningPercentage = 10;
         }
     }
 
 #ifdef USE_MSP_DISPLAYPORT
-    // Find the first serial port on which MSP Displayport is enabled
+    // Find the serial port the MSP display port is drawn over.  The OSD's own
+    // assignment names it; an MSP VTX with no OSD port set is the legacy way of
+    // saying the same thing, so its UART stands in when the OSD names none.
     displayPortMspSetSerial(SERIAL_PORT_NONE);
 
-    for (const serialPortConfig_t *portConfig = serialConfig()->portConfigs;
-         portConfig < ARRAYEND(serialConfig()->portConfigs);
-         portConfig++) {
-        if ((portConfig->identifier != SERIAL_PORT_USB_VCP)
-            && ((portConfig->functionMask & (FUNCTION_VTX_MSP | FUNCTION_MSP)) == (FUNCTION_VTX_MSP | FUNCTION_MSP))) {
-            displayPortMspSetSerial(portConfig->identifier);
-            break;
+#ifdef USE_OSD
+    if (osdConfig()->displayPortDevice == OSD_DISPLAYPORT_DEVICE_MSP && osdConfig()->osd_uart != SERIAL_PORT_NONE) {
+        displayPortMspSetSerial(osdConfig()->osd_uart);
+    } else
+#endif
+    {
+        for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
+            const serialPortIdentifier_e identifier = serialPortIdentifiers[i];
+            if ((identifier != SERIAL_PORT_USB_VCP)
+                && (serialSynthesizeFunctionMask(identifier) & FUNCTION_VTX_MSP)) {
+                displayPortMspSetSerial(identifier);
+                break;
+            }
         }
     }
 #endif
@@ -629,7 +667,7 @@ void validateAndFixGyroConfig(void)
         float motorUpdateRestriction;
 
 #if defined(USE_DSHOT) && defined(USE_PID_DENOM_CHECK)
-        /* If bidirectional DSHOT is being used on an F4 or G4 then force DSHOT300. The motor update restrictions then applied
+        /* If bidirectional DSHOT is being used on an F4, F7 or G4 then force DSHOT300. The motor update restrictions then applied
          * will automatically consider the loop time and adjust pid_process_denom appropriately
          */
         if (true
@@ -775,13 +813,27 @@ void writeEEPROM(void)
     writeUnmodifiedConfigToEEPROM();
 }
 
-bool resetEEPROM(void)
+bool resetEEPROM(configResetReason_e reason, uint16_t detail)
 {
     resetConfig();
+
+    systemConfigMutable()->configResetReason = reason;
+    systemConfigMutable()->configResetDetail = detail;
 
     writeUnmodifiedConfigToEEPROM();
 
     return true;
+}
+
+void resetEEPROMOnLoadFault(void)
+{
+    uint16_t detail;
+    configResetReason_e reason = diagnoseEEPROM(&detail);
+    if (reason == CONFIG_RESET_NONE) {
+        reason = CONFIG_RESET_BOARD;
+    }
+
+    resetEEPROM(reason, detail);
 }
 
 void ensureEEPROMStructureIsValid(void)
@@ -789,7 +841,7 @@ void ensureEEPROMStructureIsValid(void)
     if (isEEPROMStructureValid()) {
         return;
     }
-    resetEEPROM();
+    resetEEPROMOnLoadFault();
 }
 
 void saveConfigAndNotify(void)

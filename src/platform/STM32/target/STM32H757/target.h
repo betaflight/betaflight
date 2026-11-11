@@ -30,10 +30,6 @@
 #define TARGET_BOARD_IDENTIFIER "H757"
 #endif
 
-#ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight STM32H757"
-#endif
-
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
 #define USE_I2C_DEVICE_3
@@ -75,7 +71,6 @@
 
 #define USE_ADC
 #define USE_EXTI
-#define USE_TIMER_UP_CONFIG
 
 // SDMMC needs explicit pin config + peripheral init on H7 (matches the pattern
 // used by H723/H725/H735 targets). The common_post.h default leaves both at 0,

@@ -33,6 +33,9 @@ extern "C" {
 #include "msc_class.h"
 #include "usbd_core.h"
 
+#include "build/version.h"
+#include "drivers/usb_descriptor.h"
+
 /** @addtogroup AT32F435_437_middlewares_usbd_class
   * @{
   */
@@ -54,8 +57,8 @@ extern "C" {
 #define USBD_MSC_SIZ_STRING_LANGID           4
 #define USBD_MSC_SIZ_STRING_SERIAL           0x1A
 
-#define USBD_MSC_DESC_MANUFACTURER_STRING    "Artery"
-#define USBD_MSC_DESC_PRODUCT_STRING         "Betaflight FC Mass Storage (FS Mode)"
+#define USBD_MSC_DESC_MANUFACTURER_STRING    FC_FIRMWARE_NAME
+#define USBD_MSC_DESC_PRODUCT_STRING         usbDescriptorMscProductString()
 #define USBD_MSC_DESC_CONFIGURATION_STRING   "MSC Config"
 #define USBD_MSC_DESC_INTERFACE_STRING       "MSC Interface"
 

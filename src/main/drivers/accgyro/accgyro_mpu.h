@@ -218,6 +218,7 @@ typedef enum {
     IIM_42653_SPI,
     BMI_160_SPI,
     BMI_270_SPI,
+    BMI_423_SPI,
     LSM6DSO_SPI,
     L3GD20_SPI,
     LSM6DSV16X_SPI,
@@ -225,7 +226,8 @@ typedef enum {
     ICM_45605_SPI,
     ICM_45686_SPI,
     ICM_56686_SPI,
-    ICM_40609_SPI
+    ICM_40609_SPI,
+    LSM6DSV32X_SPI
 } mpuSensor_e;
 
 typedef enum {
@@ -253,3 +255,4 @@ bool mpuAccRead(struct accDev_s *acc);
 bool mpuAccReadSPI(struct accDev_s *acc);
 
 busStatus_e mpuIntCallback(uintptr_t arg);
+void mpuGyroStartDmaRead(struct gyroDev_s *gyro);

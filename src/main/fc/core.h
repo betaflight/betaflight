@@ -23,10 +23,6 @@
 #include "common/time.h"
 #include "pg/pg.h"
 
-#if defined(USE_GPS) || defined(USE_MAG)
-extern int16_t magHold;
-#endif
-
 typedef struct throttleCorrectionConfig_s {
     uint16_t throttle_correction_angle;     // the angle when the throttle correction is maximal. in 0.1 degres, ex 225 = 22.5 ,30.0, 450 = 45.0 deg
     uint8_t throttle_correction_value;      // the correction that will be applied at throttle_correction_angle.
@@ -57,6 +53,7 @@ typedef enum {
     DISARM_REASON_SERIAL_COMMAND    = 8,
     DISARM_REASON_LANDING           = 9,
     DISARM_REASON_CRASHFLIP         = 10,
+    DISARM_REASON_LAUNCH_ABORT      = 11,
 #ifdef UNIT_TEST
     DISARM_REASON_SYSTEM            = 255,
 #endif

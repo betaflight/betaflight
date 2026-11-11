@@ -45,6 +45,7 @@ extern "C" {
     #include "io/beeper.h"
     #include "io/ledstrip.h"
     #include "io/serial.h"
+    #include "io/serial_feature_map.h"
     #include "io/vtx.h"
     #include "msp/msp.h"
     #include "msp/msp_box.h"
@@ -73,6 +74,12 @@ extern "C" {
     };
     const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
     const lookupTableEntry_t lookupTables[] = {};
+    static const char *stubIdentifierName(int) { return "NONE"; }
+    static bool stubIdentifierValue(const char *, int *value) { *value = SERIAL_PORT_NONE; return true; }
+    static const char *stubIdentifierNameAt(unsigned index) { return index == 0 ? "NONE" : NULL; }
+    const identifierLookupEntry_t identifierLookups[IDENTIFIER_LOOKUP_COUNT] = {
+        [IDENTIFIER_LOOKUP_SERIAL_PORT] = { stubIdentifierName, stubIdentifierValue, stubIdentifierNameAt },
+    };
     const char * const lookupTableOsdDisplayPortDevice[] = {};
     const char * const buildKey = NULL;
     const char * const releaseName = NULL;
@@ -231,14 +238,64 @@ int32_t taskGuardCycles;
 
 uint32_t micros(void) {return 0;}
 
-// serial_feature_map decomposer is referenced by cliSerial(); the CLI unit
-// tests do not exercise it, so a stub is sufficient.
+// serial_feature_map is referenced by printSerial(); the CLI unit tests do not
+// exercise it, so stubs are sufficient.
+uint8_t serialDefaultPortBaud(serialBaudClass_e baudClass)
+{
+    (void)baudClass;
+    return BAUD_115200;
+}
+
+uint8_t serialSynthesizePortBaud(serialPortIdentifier_e identifier, serialBaudClass_e baudClass)
+{
+    (void)identifier;
+    (void)baudClass;
+    return BAUD_115200;
+}
+
+uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
+{
+    (void)identifier;
+    return 0;
+}
+
+unsigned serialGetPortClaims(serialPortIdentifier_e identifier, serialPortClaim_t *claims, unsigned maxClaims)
+{
+    (void)identifier;
+    (void)claims;
+    (void)maxClaims;
+    return 0;
+}
+
+uint32_t serialFunctionMaskFromLegacy(uint32_t legacyMask)
+{
+    return legacyMask;
+}
+
 bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
 {
     (void)identifier;
     (void)mask;
     return true;
 }
+
+void serialApplyPortBaud(serialPortIdentifier_e identifier, serialBaudClass_e baudClass, uint8_t baudIndex)
+{
+    (void)identifier;
+    (void)baudClass;
+    (void)baudIndex;
+}
+
+const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
+    SERIAL_PORT_USB_VCP,
+    SERIAL_PORT_USART1,
+    SERIAL_PORT_USART2,
+    SERIAL_PORT_USART3,
+    SERIAL_PORT_UART4,
+    SERIAL_PORT_UART5,
+    SERIAL_PORT_SOFTSERIAL1,
+    SERIAL_PORT_SOFTSERIAL2,
+};
 
 int32_t getAmperage(void)
 {
@@ -304,7 +361,7 @@ void beeperOffSet(uint32_t) {}
 void beeperOffClear(uint32_t) {}
 void beeperOffClearAll(void) {}
 bool parseColor(int, const char *) {return false; }
-bool resetEEPROM(void) { return true; }
+bool resetEEPROM(configResetReason_e, uint16_t) { return true; }
 void bufWriterFlush(bufWriter_t *) {}
 void mixerResetDisarmedMotors(void) {}
 
@@ -328,11 +385,9 @@ uint8_t getCurrentControlRateProfileIndex(void){ return 1; }
 void changeControlRateProfile(uint8_t) {}
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *) {}
 void writeEEPROM() {}
-serialPortConfig_t *serialFindPortConfigurationMutable(serialPortIdentifier_e) {return NULL; }
 baudRate_e lookupBaudRateIndex(uint32_t){return BAUD_9600; }
 serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e){ return NULL; }
 serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) { return NULL; }
-const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) { return NULL; }
 void serialPassthrough(serialPort_t *, serialPort_t *, serialConsumer *, serialConsumer *) {}
 uint32_t millis(void) { return 0; }
 uint8_t getBatteryCellCount(void) { return 1; }
@@ -385,6 +440,7 @@ void changePidProfile(uint8_t) {}
 void changeBatteryProfile(uint8_t) {}
 uint8_t getCurrentBatteryProfileIndex(void) { return 0; }
 bool serialIsPortAvailable(serialPortIdentifier_e) { return false; }
+int findSerialPortIndexByIdentifier(serialPortIdentifier_e) { return -1; }
 void generateLedConfig(ledConfig_t *, char *, size_t) {}
 //bool isSerialTransmitBufferEmpty(const serialPort_t *) {return true; }
 //void serialWrite(serialPort_t *, uint8_t ch) { printf("%c", ch);}
@@ -491,6 +547,20 @@ TEST(CLIUnittest, TestGetSettingByNameSmallBuffer)
     int written = cliGetSettingByName("array_unit_test", buf, sizeof(buf));
 
     EXPECT_LT(written, 0); // truncated output must return error
+}
+
+// The reply is "name = value", always longer than the name alone, so a buffer
+// sized from the requested name -- all a read request carries -- can never hold
+// it. MSP2_CLI_SETTING sized its scratch buffer exactly that way, so every read
+// over MSP answered MSP_RESULT_ERROR while writes appeared to work (there the
+// request carries the value too, so it happens to fit). Pins the caller contract.
+TEST(CLIUnittest, TestGetSettingByNameRejectsBufferSizedToNameOnly)
+{
+    const char *name = "array_unit_test";
+    char buf[128];
+    memset(buf, 0, sizeof(buf));
+
+    EXPECT_EQ(-1, cliGetSettingByName(name, buf, strlen(name) + 1));
 }
 
 // Verifies cliGetSettingByName returns 0 when buffer length is zero.

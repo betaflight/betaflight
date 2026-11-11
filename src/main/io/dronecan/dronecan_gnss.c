@@ -37,6 +37,7 @@
 #include "drivers/time.h"
 
 #include "io/dronecan/dronecan.h"
+#include "io/dronecan/dronecan_nodes.h"
 #include "io/dronecan/dronecan_gnss.h"
 #include "io/dronecan/dronecan_msg.h"
 
@@ -64,13 +65,17 @@ static int32_t scaleLonLat_1e8to1e7(int64_t deg_1e8)
 // cooperative between tasks today, so the retry loop is defensive against a
 // future preemptive scheduler rather than fixing a current race.
 static gpsSolutionData_t latest;
+// Whether the module reported a 3D fix. Published inside the seqlock below so a
+// reader can never pair this with a solution from a different frame.
+static bool latestHasFix = false;
 static volatile uint32_t latestSeq = 0;
 static volatile bool received = false;
 static volatile timeUs_t lastUpdateUs = 0;
 
-// Auxiliary hdop/vdop are only carried across Fix2 refreshes while fresh, so
-// a module that stops broadcasting Auxiliary can't pin stale quality figures
-// to live positions. Both handlers run in the dronecan task, so no seqlock.
+// Auxiliary hdop/vdop and satellites in view are only carried across Fix2
+// refreshes while fresh, so a module that stops broadcasting Auxiliary can't
+// pin stale quality figures to live positions. Both handlers run in the
+// dronecan task, so no seqlock.
 #define DRONECAN_GNSS_AUX_FRESH_US 2000000
 static timeUs_t auxUpdateUs = 0;
 static bool auxReceived = false;
@@ -78,6 +83,8 @@ static bool auxReceived = false;
 static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
 {
     UNUSED(ins);
+
+    dronecanNodesNoteSensor(t->source_node_id, DRONECAN_NODE_SENSOR_GPS);
 
     uint64_t gnssTimeUsec = 0;
     uint8_t timeStandard = 0;
@@ -217,6 +224,7 @@ static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
             && cmpTimeUs(micros(), auxUpdateUs) < DRONECAN_GNSS_AUX_FRESH_US;
     const uint16_t hdop = auxFresh ? latest.dop.hdop : 0;
     const uint16_t vdop = auxFresh ? latest.dop.vdop : 0;
+    const uint8_t satsInView = auxFresh ? latest.numSatInView : 0;
 
     memset(&latest, 0, sizeof(latest));
     latest.llh.lat   = scaleLonLat_1e8to1e7(lat_1e8);
@@ -231,6 +239,7 @@ static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
     latest.speed3d     = (uint16_t)constrainf(speed3d * CM_PER_METRE, 0, UINT16_MAX);
     latest.groundCourse = (uint16_t)constrainf(courseDeg * 10.0f, 0, UINT16_MAX);
     latest.numSat      = satsUsed;
+    latest.numSatInView = satsInView;
     latest.acc.hAcc    = hAccMm;
     latest.acc.vAcc    = vAccMm;
     latest.acc.sAcc    = sAccMmS;
@@ -239,11 +248,15 @@ static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
     latest.dop.vdop    = vdop;
     latest.dateTime    = dateTime;
 
-    // Signal a loss of fix explicitly so the downstream state can react
-    // rather than stay armed on the last position.
-    if (status < UAVCAN_GNSS_FIX2_STATUS_3D_FIX) {
-        latest.numSat = 0;
-    }
+    // Only a 3D fix is usable for navigation, so anything below it is reported
+    // as no fix and the downstream state reacts rather than staying armed on
+    // the last position. The satellite count is NOT cleared with it: a module
+    // that is tracking satellites but has not locked yet is the normal case
+    // while acquiring, and zeroing the count there makes that indistinguishable
+    // from a dead antenna. The serial providers keep reporting the count across
+    // a loss of fix too (see gps.c, gpsSol.numSat = numSV on NAV-PVT), so this
+    // keeps DroneCAN consistent with them.
+    latestHasFix = (status >= UAVCAN_GNSS_FIX2_STATUS_3D_FIX);
 
     lastUpdateUs = micros();
     received = true;
@@ -257,11 +270,15 @@ static void handleAuxiliary(CanardInstance *ins, CanardRxTransfer *t)
 {
     UNUSED(ins);
 
-    // Field order is gdop, pdop, hdop, vdop, ...; only hdop/vdop are taken —
-    // pdop stays sourced from Fix2 so both providers scale it identically.
-    // Unknown DOP values are transmitted as NaN.
+    // Field order is gdop, pdop, hdop, vdop, tdop, ndop, edop (float16 each),
+    // then uint7 sats_visible and uint6 sats_used. Only hdop, vdop and
+    // sats_visible are taken — pdop stays sourced from Fix2 so both providers
+    // scale it identically, and Fix2 carries sats_used already. Unknown DOP
+    // values are transmitted as NaN.
     const float hdop = dronecanDecodeFloat16(t, 32);
     const float vdop = dronecanDecodeFloat16(t, 48);
+    uint8_t satsVisible = 0;
+    canardDecodeScalar(t, 112, 7, false, &satsVisible);
 
     auxUpdateUs = micros();
     auxReceived = true;
@@ -275,6 +292,7 @@ static void handleAuxiliary(CanardInstance *ins, CanardRxTransfer *t)
     if (!isnan(vdop) && vdop > 0.0f) {
         latest.dop.vdop = (uint16_t)constrainf(vdop * 100.0f, 0, UINT16_MAX);
     }
+    latest.numSatInView = satsVisible;
 
     __asm volatile ("" ::: "memory");
     latestSeq++;
@@ -285,6 +303,7 @@ void dronecanGnssInit(void)
     // Clear the cache before registering so a frame that lands between
     // dronecanRegisterSubscriber() and the reset can't be silently clobbered.
     memset(&latest, 0, sizeof(latest));
+    latestHasFix = false;
     received = false;
     lastUpdateUs = 0;
     auxUpdateUs = 0;
@@ -307,7 +326,7 @@ void dronecanGnssInit(void)
     (void)dronecanRegisterSubscriber(&auxSub);
 }
 
-bool dronecanGnssGetLatest(gpsSolutionData_t *out)
+bool dronecanGnssGetLatest(gpsSolutionData_t *out, bool *hasFix)
 {
     if (!received || out == NULL) {
         return false;
@@ -327,8 +346,12 @@ bool dronecanGnssGetLatest(gpsSolutionData_t *out)
         } while (s1 & 1U);
         __asm volatile ("" ::: "memory");
         *out = latest;
+        const bool fix = latestHasFix;
         __asm volatile ("" ::: "memory");
         s2 = latestSeq;
+        if (s1 == s2 && hasFix != NULL) {
+            *hasFix = fix;
+        }
     } while (s1 != s2);
 
     return true;

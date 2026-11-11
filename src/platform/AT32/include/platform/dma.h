@@ -75,8 +75,12 @@ uint32_t dmaGetChannel(const uint8_t channel);
                                                                             handler(&dmaDescriptors[index]); \
                                                                     }
 
-#define DMA_CLEAR_FLAG(d, flag) ((dma_type*)(d)->dma)->clr = (flag << d->flagsShift)
-#define DMA_GET_FLAG_STATUS(d, flag) (((dma_type*)(d)->dma)->sts & (flag << d->flagsShift))
+// (flag) and (d) are parenthesised deliberately. Callers pass OR-ed masks, and
+// without the parentheses `A | B` binds as `A | (B << flagsShift)`: only the last
+// flag lands on this channel and the rest write ones into the low bits, which are
+// the first channel's flags.
+#define DMA_CLEAR_FLAG(d, flag) ((dma_type*)(d)->dma)->clr = ((flag) << (d)->flagsShift)
+#define DMA_GET_FLAG_STATUS(d, flag) (((dma_type*)(d)->dma)->sts & ((flag) << (d)->flagsShift))
 #define DMA_IT_GLOB         ((uint32_t)0x00000001) // channel global interput flag
 #define DMA_IT_TCIF         ((uint32_t)0x00000002) // channel full transport flag
 #define DMA_IT_HTIF         ((uint32_t)0x00000004) // channel half transport flag

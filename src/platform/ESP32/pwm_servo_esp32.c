@@ -43,7 +43,7 @@
 
 #define SERVO_MAX_COUNT    MAX_SUPPORTED_SERVOS
 #define SERVO_PWM_FREQ     50     // 50Hz standard servo
-#define SERVO_RESOLUTION   16     // 16-bit duty resolution
+#define SERVO_RESOLUTION   14     // LEDC timer counter is 14 bits wide on the S3
 
 typedef struct {
     IO_t io;
@@ -60,18 +60,19 @@ void servoDevInit(const servoDevConfig_t *servoDevConfig)
     // Initialize LEDC if not already done
     int __DECLARE_RCC_ATOMIC_ENV __attribute__((unused));
     ledc_ll_enable_bus_clock(true);
+    ledc_ll_set_slow_clk_sel(&LEDC, LEDC_SLOW_CLK_APB);
 
     // Configure timer 1 for 50Hz servo frequency
-    // 80MHz / (divider * 2^16) = 50Hz
-    // Use Q18.4 format for divider
-    uint32_t divider = (80000000 << 4) / (SERVO_PWM_FREQ * (1 << SERVO_RESOLUTION));
+    // 80MHz / (divider * 2^14) = 50Hz, divider in Q10.8 format
+    uint32_t divider = ((uint64_t)80000000 << 8) / (SERVO_PWM_FREQ * (1 << SERVO_RESOLUTION));
 
     ledc_ll_set_clock_divider(&LEDC, LEDC_LOW_SPEED_MODE, 1, divider);
     ledc_ll_set_duty_resolution(&LEDC, LEDC_LOW_SPEED_MODE, 1, SERVO_RESOLUTION);
     ledc_ll_timer_rst(&LEDC, LEDC_LOW_SPEED_MODE, 1);
     ledc_ll_ls_timer_update(&LEDC, LEDC_LOW_SPEED_MODE, 1);
+    ledc_ll_timer_resume(&LEDC, LEDC_LOW_SPEED_MODE, 1);
 
-    // Counts per microsecond: 2^16 / (1000000/50) = 65536/20000
+    // Counts per microsecond: 2^14 / (1000000/50) = 16384/20000
     usToCountsFactor = (float)(1 << SERVO_RESOLUTION) / (1000000.0f / SERVO_PWM_FREQ);
 
     servoCount = 0;
@@ -94,6 +95,7 @@ void servoDevInit(const servoDevConfig_t *servoDevConfig)
         servos[i].enabled = true;
 
         ledc_ll_bind_channel_timer(&LEDC, LEDC_LOW_SPEED_MODE, ch, 1);
+        ledc_ll_set_sig_out_en(&LEDC, LEDC_LOW_SPEED_MODE, ch, true);
 
         esp_rom_gpio_pad_select_gpio(pin);
         gpio_ll_output_enable(&GPIO, pin);

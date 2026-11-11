@@ -372,9 +372,9 @@ bool isEEPROMStructureValid(void)
     p += sizeof(*footer);
 
     // include stored CRC in the CRC calculation
-    const uint16_t *storedCrc = (const uint16_t *)p;
-    crc = crc16_ccitt_update(crc, storedCrc, sizeof(*storedCrc));
-    p += sizeof(storedCrc);
+    // the CRC follows variable-size records, so it may sit at an odd address: treat it as bytes
+    crc = crc16_ccitt_update(crc, p, sizeof(uint16_t));
+    p += sizeof(uint16_t);
 
     eepromConfigSize = p - (const uint8_t*)&__config_start;
 
@@ -446,6 +446,46 @@ bool loadEEPROM(void)
     }
 
     return success;
+}
+
+configResetReason_e diagnoseEEPROM(uint16_t *detail)
+{
+    const configHeader_t *header = (const configHeader_t *)&__config_start;
+
+    *detail = 0;
+
+    if (header->magic_be != 0xBE) {
+        const bool erased = header->eepromConfigVersion == header->magic_be
+            && (header->magic_be == 0xFF || header->magic_be == 0x00);
+        return erased ? CONFIG_RESET_EMPTY : CONFIG_RESET_CORRUPT;
+    }
+
+    if (!isEEPROMStructureValid()) {
+        return CONFIG_RESET_CORRUPT;
+    }
+
+    if (header->eepromConfigVersion != EEPROM_CONF_VERSION) {
+        *detail = header->eepromConfigVersion;
+        return CONFIG_RESET_VERSION;
+    }
+
+    PG_FOREACH(reg) {
+        const configRecord_t *rec = findEEPROM(reg, CR_CLASSICATION_SYSTEM);
+        if (!rec) {
+            *detail = pgN(reg);
+            return CONFIG_RESET_PG_MISSING;
+        }
+        if (rec->version != pgVersion(reg)) {
+            *detail = pgN(reg);
+            return CONFIG_RESET_PG_VERSION;
+        }
+        if (reg->length > 1 && rec->size - offsetof(configRecord_t, pg) != pgSize(reg)) {
+            *detail = pgN(reg);
+            return CONFIG_RESET_PG_SIZE;
+        }
+    }
+
+    return CONFIG_RESET_NONE;
 }
 
 static bool writeSettingsToEEPROM(void)

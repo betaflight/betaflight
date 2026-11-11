@@ -147,16 +147,8 @@ static serialPortStub_t serialReadStub;
 
 #define SERIAL_PORT_DUMMY_IDENTIFIER  (serialPortIdentifier_e)0x12
 serialPort_t serialTestInstance;
-serialPortConfig_t serialTestInstanceConfig = {
-    .functionMask = 0,
-    .identifier = SERIAL_PORT_DUMMY_IDENTIFIER,
-    .msp_baudrateIndex = 5,
-    .gps_baudrateIndex = 5,
-    .blackbox_baudrateIndex = 5,
-    .telemetry_baudrateIndex = 5
-};
 
-static serialPortConfig_t *findSerialPortConfig_stub_retval;
+static serialPortIdentifier_e telemetryProviderPort_stub_retval;
 static portSharing_e determinePortSharing_stub_retval;
 static bool portIsShared = false;
 static bool openSerial_called = false;
@@ -170,16 +162,16 @@ void rescheduleTask(taskId_e taskId, timeDelta_t newPeriodUs)
 
 
 
-const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
+serialPortIdentifier_e telemetryProviderPort(uint8_t protocol)
 {
-    EXPECT_EQ(FUNCTION_TELEMETRY_IBUS, function);
-    return findSerialPortConfig_stub_retval;
+    EXPECT_EQ(TELEMETRY_PROTOCOL_IBUS, protocol);
+    return telemetryProviderPort_stub_retval;
 }
 
 
-portSharing_e determinePortSharing(const serialPortConfig_t *portConfig, serialPortFunction_e function)
+portSharing_e determinePortSharing(serialPortIdentifier_e identifier, serialPortFunction_e function)
 {
-    EXPECT_EQ(findSerialPortConfig_stub_retval, portConfig);
+    EXPECT_EQ(telemetryProviderPort_stub_retval, identifier);
     EXPECT_EQ(FUNCTION_TELEMETRY_IBUS, function);
     return PORTSHARING_UNUSED;
 }
@@ -199,21 +191,14 @@ bool telemetryIsSensorEnabled(sensor_e sensor)
 }
 
 
-bool isSerialPortShared(const serialPortConfig_t *portConfig,
+bool isSerialPortShared(serialPortIdentifier_e identifier,
                         uint16_t functionMask,
                         serialPortFunction_e sharedWithFunction)
 {
-    EXPECT_EQ(findSerialPortConfig_stub_retval, portConfig);
+    EXPECT_EQ(telemetryProviderPort_stub_retval, identifier);
     EXPECT_EQ(FUNCTION_RX_SERIAL, functionMask);
     EXPECT_EQ(FUNCTION_TELEMETRY_IBUS, sharedWithFunction);
     return portIsShared;
-}
-
-
-serialPortConfig_t *findSerialPortConfig(uint16_t mask)
-{
-    EXPECT_EQ(FUNCTION_TELEMETRY_IBUS, mask);
-    return findSerialPortConfig_stub_retval ;
 }
 
 
@@ -315,7 +300,7 @@ protected:
 
 TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitNotEnabled)
 {
-    findSerialPortConfig_stub_retval = NULL;
+    telemetryProviderPort_stub_retval = SERIAL_PORT_NONE;
     telemetryDetermineEnabledState_stub_retval = false;
 
     //given stuff in serial read
@@ -334,7 +319,7 @@ TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitNotEnabled)
 
 TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitEnabled)
 {
-    findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
+    telemetryProviderPort_stub_retval = SERIAL_PORT_DUMMY_IDENTIFIER;
 
     //given stuff in serial read
     serialReadStub.end++;
@@ -352,7 +337,7 @@ TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitEnabled)
 
 TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitSerialRxAndTelemetryEnabled)
 {
-    findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
+    telemetryProviderPort_stub_retval = SERIAL_PORT_DUMMY_IDENTIFIER;
 
     //given stuff in serial read
     serialReadStub.end++;
@@ -375,6 +360,7 @@ protected:
     virtual void SetUp()
     {
         serialTestResetPort();
+        telemetryProviderPort_stub_retval = SERIAL_PORT_DUMMY_IDENTIFIER;
         telemetryConfigMutable()->report_cell_voltage = false;
         serialTestResetBuffers();
         initIbusTelemetry();
@@ -528,14 +514,14 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementTemperatur
 TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementRpm)
 {
     //Given ibus command: Sensor at address 3, please send your measurement
-    //then we respond with: I'm reading 0 rpm
-    rcCommand[THROTTLE] = 0;
-    checkResponseToCommand("\x04\xA3\x58\xff", 4, "\x06\xA3\x00\x00\x56\xFF", 6);
+    //then we respond with: I'm reading 1000 rpm
+    rcCommand[THROTTLE] = 0.0f;
+    checkResponseToCommand("\x04\xA3\x58\xff", 4, "\x06\xA3\xE8\x03\x6B\xFE", 6);
 
     //Given ibus command: Sensor at address 3, please send your measurement
-    //then we respond with: I'm reading 100 rpm
-    rcCommand[THROTTLE] = 100;
-    checkResponseToCommand("\x04\xA3\x58\xff", 4, "\x06\xA3\x64\x00\xf2\xFe", 6);
+    //then we respond with: I'm reading 1100 rpm
+    rcCommand[THROTTLE] = 0.1f;
+    checkResponseToCommand("\x04\xA3\x58\xff", 4, "\x06\xA3\x4C\x04\x06\xFF", 6);
 }
 
 
@@ -598,7 +584,7 @@ TEST_F(IbusTelemteryProtocolUnitTestDaisyChained, Test_IbusRespondToGetMeasureme
     checkResponseToCommand("\x04\xA4\x57\xff", 4, "\x06\xA4\x6c\x07\xe2\xfe", 6);
 
     //Given ibus command: Sensor at address 5, please send your measurement
-    //then we respond with: I'm reading 100 rpm
-    rcCommand[THROTTLE] = 100;
-    checkResponseToCommand("\x04\xA5\x56\xff", 4, "\x06\xA5\x64\x00\xf0\xFe", 6);
+    //then we respond with: I'm reading 1100 rpm
+    rcCommand[THROTTLE] = 0.1f;
+    checkResponseToCommand("\x04\xA5\x56\xff", 4, "\x06\xA5\x4C\x04\x04\xFF", 6);
 }

@@ -36,10 +36,11 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig)
+bool telemetryCheckRxPortShared(serialPortIdentifier_e identifier, SerialRXType serialrxProvider)
 {
     //TODO: implement
-    (void) portConfig;
+    (void) identifier;
+    (void) serialrxProvider;
     return false;
 }
 
@@ -71,35 +72,20 @@ typedef struct serialPortStub_s {
 } serialPortStub_t;
 
 static serialPort_t serialTestInstance;
-static serialPortConfig_t serialTestInstanceConfig = {
-    .functionMask = 0,
-    .identifier = SERIAL_PORT_DUMMY_IDENTIFIER,
-    .msp_baudrateIndex = 0,
-    .gps_baudrateIndex = 0,
-    .blackbox_baudrateIndex = 0,
-    .telemetry_baudrateIndex = 0,
-};
 
 static serialReceiveCallbackPtr stub_serialRxCallback;
-static serialPortConfig_t *findSerialPortConfig_stub_retval;
 static bool openSerial_called = false;
 static serialPortStub_t serialWriteStub;
 static bool portIsShared = false;
 
-bool isSerialPortShared(const serialPortConfig_t *portConfig,
+bool isSerialPortShared(serialPortIdentifier_e identifier,
                         uint16_t functionMask,
                         serialPortFunction_e sharedWithFunction)
 {
-    EXPECT_EQ(portConfig, findSerialPortConfig_stub_retval);
+    EXPECT_EQ(identifier, SERIAL_PORT_DUMMY_IDENTIFIER);
     EXPECT_EQ(functionMask, FUNCTION_RX_SERIAL);
     EXPECT_EQ(sharedWithFunction, FUNCTION_TELEMETRY_IBUS);
     return portIsShared;
-}
-
-const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
-{
-    EXPECT_EQ(function, FUNCTION_RX_SERIAL);
-    return findSerialPortConfig_stub_retval;
 }
 
 static portMode_e serialExpectedMode = MODE_RX;
@@ -198,9 +184,9 @@ protected:
 
 TEST_F(IbusRxInitUnitTest, Test_IbusRxNotEnabled)
 {
-    const rxConfig_t initialRxConfig = {};
+    rxConfig_t initialRxConfig = {};
+    initialRxConfig.rx_uart = SERIAL_PORT_NONE;
     rxRuntimeState_t rxRuntimeState = {};
-    findSerialPortConfig_stub_retval = NULL;
 
     EXPECT_FALSE(ibusInit(&initialRxConfig, &rxRuntimeState));
 
@@ -218,9 +204,9 @@ TEST_F(IbusRxInitUnitTest, Test_IbusRxNotEnabled)
 
 TEST_F(IbusRxInitUnitTest, Test_IbusRxEnabled)
 {
-    const rxConfig_t initialRxConfig = {};
+    rxConfig_t initialRxConfig = {};
+    initialRxConfig.rx_uart = SERIAL_PORT_DUMMY_IDENTIFIER;
     rxRuntimeState_t rxRuntimeState = {};
-    findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
 
     EXPECT_TRUE(ibusInit(&initialRxConfig, &rxRuntimeState));
 
@@ -245,8 +231,8 @@ protected:
         serialExpectedOptions = SERIAL_BIDIR;
         serialExpectedMode = MODE_RXTX;
 
-        const rxConfig_t initialRxConfig = {};
-        findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
+        rxConfig_t initialRxConfig = {};
+        initialRxConfig.rx_uart = SERIAL_PORT_DUMMY_IDENTIFIER;
 
         EXPECT_TRUE(ibusInit(&initialRxConfig, &rxRuntimeState));
 
@@ -422,8 +408,8 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceived_not_shared_port)
         serialExpectedOptions = SERIAL_NOT_INVERTED;
         serialExpectedMode = MODE_RX;
 
-        const rxConfig_t initialRxConfig = {};
-        findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
+        rxConfig_t initialRxConfig = {};
+        initialRxConfig.rx_uart = SERIAL_PORT_DUMMY_IDENTIFIER;
 
         EXPECT_TRUE(ibusInit(&initialRxConfig, &rxRuntimeState));
         EXPECT_FALSE(initSharedIbusTelemetryCalled);

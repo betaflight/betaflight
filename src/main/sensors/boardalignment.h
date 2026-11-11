@@ -26,6 +26,9 @@
 
 #include "pg/pg.h"
 
+#define BOARD_ALIGNMENT_MIN -180
+#define BOARD_ALIGNMENT_MAX 360
+
 typedef struct boardAlignment_s {
     int32_t rollDegrees;
     int32_t pitchDegrees;
