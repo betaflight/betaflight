@@ -70,7 +70,9 @@
 static uint8_t tmpPidProfileIndex;
 static uint8_t pidProfileIndex;
 static char pidProfileIndexString[MAX_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
+#ifdef USE_PSAS
 static char psasProfileIndexString[MAX_PSAS_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
+#endif
 static uint8_t tempPid[3][3];
 static uint16_t tempPidF[3];
 
