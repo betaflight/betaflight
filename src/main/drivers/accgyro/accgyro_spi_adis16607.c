@@ -350,10 +350,17 @@ static bool adis16607UnpackGyro(gyroDev_t *gyro)
         return false;
     }
 
-    // In DMA mode the next transfer can land in rxBuf while this runs, so work
-    // on a copy. A copy torn by a transfer fails the checksum.
+    // In DMA mode the next transfer can land in rxBuf, so copy it out only while
+    // no transfer is running. A transfer takes far longer than the copy, so one
+    // that overlaps it is still running when the copy ends.
     uint8_t frame[ADIS16607_BURST_FRAME_LEN];
+    if (spiIsBusy(&gyro->dev)) {
+        return false;
+    }
     memcpy(frame, gyro->dev.rxBuf, sizeof(frame));
+    if (spiIsBusy(&gyro->dev)) {
+        return false;
+    }
 
     if (!adis16607BurstChecksumValid(frame)) {
         return false;
@@ -372,6 +379,10 @@ static bool adis16607UnpackGyro(gyroDev_t *gyro)
     }
     state->dataCntr = dataCntr;
     state->valid = true;
+
+    if (adis16607Word(frame, ADIS16607_BURST_WORD_DIAG_STAT) & ADIS16607_DIAG_STAT_DEVICE_FAULTS) {
+        return false;
+    }
 
     // The accel reads this frame, so keep it even if the gyro is faulted.
     memcpy(state->frame, frame, sizeof(state->frame));

@@ -46,6 +46,7 @@ struct FakeAdis {
     uint16_t dataCntr;
     uint16_t diagStat;
     uint16_t lastLockKey;
+    int dropLockAfterConfig; // lock writes to drop once the config block is done
     int dropWrites[0x50]; // writes the part silently swallows, per register
 
     void reset()
@@ -58,6 +59,7 @@ struct FakeAdis {
         dataCntr = 0;
         diagStat = 0;
         lastLockKey = 0;
+        dropLockAfterConfig = 0;
         memset(dropWrites, 0, sizeof(dropWrites));
     }
 
@@ -87,6 +89,7 @@ static FakeAdis fake;
 static bool useDma;
 // Driver state is keyed on the gyroDev_t address, so reuse one.
 static gyroDev_t testGyro;
+static bool spiBusy;
 static bool extiPinPresent;
 static int extiConfigCalls;
 
@@ -130,6 +133,7 @@ protected:
         fake.reset();
         useDma = false;
         extiPinPresent = false;
+        spiBusy = false;
         extiConfigCalls = 0;
         memset(&gyro, 0, sizeof(gyro));
         memset(&acc, 0, sizeof(acc));
@@ -507,7 +511,7 @@ TEST_F(AdisTest, InitRetriesDroppedLock)
     ASSERT_EQ(ADIS16607_WRITE_LOCK_LOCKED, fake.reg[ADIS16607_REG_WRITE_LOCK]);
 
     fake.reset();
-    fake.dropWrites[ADIS16607_REG_WRITE_LOCK] = 3;
+    fake.dropLockAfterConfig = 2; // the whole first lock attempt
     gyro.initFn(&gyro);
     EXPECT_EQ(ADIS16607_WRITE_LOCK_LOCKED, fake.reg[ADIS16607_REG_WRITE_LOCK]);
     gyro.gyroModeSPI = GYRO_EXTI_NO_INT;
@@ -652,6 +656,36 @@ TEST_F(AdisTest, AccFaultRejectsAccelButNotGyro)
     EXPECT_EQ(0, acc.ADCRaw[X]);
 }
 
+TEST_F(AdisTest, DeviceFaultRejectsGyroAndAccel)
+{
+    const uint16_t faults[] = { 0x0100, 0x0200, 0x0400, 0x0800 };
+    for (const uint16_t fault : faults) {
+        SetUp();
+        initGyro();
+        ASSERT_TRUE(adis16607SpiAccDetect(&acc));
+        gyro.gyroModeSPI = GYRO_EXTI_NO_INT;
+        fake.diagStat = fault;
+        fakeSetBurst(11, 0, 0, 1000, 0, 0, 0);
+        EXPECT_FALSE(gyro.readFn(&gyro)) << std::hex << fault;
+        EXPECT_FALSE(acc.readFn(&acc)) << std::hex << fault;
+    }
+}
+
+TEST_F(AdisTest, DmaReadSkipsFrameWhileTransferRuns)
+{
+    initGyro();
+    gyro.gyroModeSPI = GYRO_EXTI_INT_DMA;
+    fakeSetBurst(0, 0, 0, 7, 0, 0, 0);
+    memcpy(rxBuf, fake.burstFrame, sizeof(fake.burstFrame));
+    spiBusy = true;
+    EXPECT_FALSE(gyro.readFn(&gyro));
+    EXPECT_EQ(0, gyro.gyroADCRaw[X]);
+
+    spiBusy = false;
+    EXPECT_TRUE(gyro.readFn(&gyro));
+    EXPECT_EQ(7, gyro.gyroADCRaw[X]);
+}
+
 TEST_F(AdisTest, OtherDiagBitsDoNotRejectSamples)
 {
     initGyro();
@@ -696,6 +730,7 @@ extern "C" {
 void delay(uint32_t) {}
 void spiSetClkDivisor(const extDevice_t *, uint16_t) {}
 void spiWait(const extDevice_t *) {}
+bool spiIsBusy(const extDevice_t *) { return spiBusy; }
 void spiDmaEnable(const extDevice_t *, bool) {}
 void mpuGyroInit(gyroDev_t *) {}
 void EXTIConfig(IO_t, extiCallbackRec_t *, int, ioConfig_t, extiTrigger_t) { extiConfigCalls++; }
@@ -728,6 +763,10 @@ void spiReadWriteBuf(const extDevice_t *, uint8_t *txData, uint8_t *rxData, int 
         fake.writes.push_back({reg, value});
         if (reg == ADIS16607_REG_SOFT_RESET) {
             return; // reset restores defaults, which the fake models as "no change"
+        }
+        if (reg == ADIS16607_REG_USER_FIFO_CFG && fake.dropLockAfterConfig > 0) {
+            fake.dropWrites[ADIS16607_REG_WRITE_LOCK] = fake.dropLockAfterConfig;
+            fake.dropLockAfterConfig = 0;
         }
         if (fake.dropWrites[reg] > 0) {
             fake.dropWrites[reg]--; // as the part does while locked or booting

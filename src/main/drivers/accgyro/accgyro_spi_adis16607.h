@@ -45,6 +45,8 @@
 // DIAG_STAT: the sensor has been disabled.
 #define ADIS16607_DIAG_STAT_FAULT_GYRO      (1 << 13)
 #define ADIS16607_DIAG_STAT_FAULT_XL        (1 << 12)
+// DIAG_STAT bits 11:8: device-wide faults, which invalidate the whole frame.
+#define ADIS16607_DIAG_STAT_DEVICE_FAULTS   0x0f00
 
 #define ADIS16607_REG_X_GYRO_HIGH           0x0C
 #define ADIS16607_REG_TEMPERATURE           0x20
