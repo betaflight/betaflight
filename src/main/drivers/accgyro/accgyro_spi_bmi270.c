@@ -40,7 +40,7 @@
 
 #include "sensors/gyro.h"
 
-// When ENABLE_BMI270_ALIGN_AS_ICM is set, rotate the BMI270 raw data by CW90 so it
+// When ENABLE_BMI270_ALIGN_AS_ICM is set, rotate the BMI270 raw data by CW270 (CCW90) so it
 // presents identical axes to an ICM42688 and one board alignment serves either populated
 // chip. Opt-in per config (#define ENABLE_BMI270_ALIGN_AS_ICM 1); off by default so no
 // existing board changes frame unless its config explicitly asks for it.
@@ -51,8 +51,8 @@
 static inline void bmi270StoreAxes(int16_t *dst, int16_t x, int16_t y, int16_t z)
 {
 #if ENABLE_BMI270_ALIGN_AS_ICM
-    dst[X] = y;
-    dst[Y] = (x == INT16_MIN) ? INT16_MAX : -x;
+    dst[X] = (y == INT16_MIN) ? INT16_MAX : -y;
+    dst[Y] = x;
     dst[Z] = z;
 #else
     dst[X] = x;
