@@ -92,6 +92,10 @@ volatile uint32_t UserTxBufPtrIn = 0;/* Increment this pointer or roll it back t
 volatile uint32_t UserTxBufPtrOut = 0; /* Increment this pointer or roll it back to
                                  start address when data are sent over USB */
 
+// millis() when the TX ring last made progress (block completed, or data
+// written into an empty ring). Used to detect a stalled IN endpoint.
+static volatile uint32_t txLastProgressMs = 0;
+
 uint32_t rxAvailable = 0;
 uint8_t* rxBuffPtr = NULL;
 
@@ -299,19 +303,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     if (hcdc->TxState == 0) {
         // endpoint has finished transmitting previous block
         if (lastBuffsize) {
-            bool needZeroLengthPacket = lastBuffsize % 64 == 0;
-
             // move the ring buffer tail based on the previous succesful transmission
+            // (any required ZLP has already been sent by the CDC class DataIn handler)
             UserTxBufPtrOut += lastBuffsize;
             if (UserTxBufPtrOut == APP_TX_DATA_SIZE) {
                 UserTxBufPtrOut = 0;
             }
             lastBuffsize = 0;
-
-            if (needZeroLengthPacket) {
-                USBD_CDC_SetTxBuffer(&USBD_Device, (uint8_t*)&UserTxBuffer[UserTxBufPtrOut], 0);
-                return;
-            }
+            txLastProgressMs = millis();
         }
         if (UserTxBufPtrOut != UserTxBufPtrIn) {
             if (UserTxBufPtrOut > UserTxBufPtrIn) { /* Roll-back */
@@ -359,6 +358,15 @@ static int8_t CDC_Itf_TransmitCplt(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
     UNUSED(Buf);
     UNUSED(Len);
     UNUSED(epnum);
+
+    // Re-pump the TX ring now rather than waiting for the next polling tick.
+    // Generating an update event pends the TIMusb interrupt, so the ring is
+    // still only ever serviced from that one interrupt context.
+#if defined(STM32C5)
+    LL_TIM_GenerateEvent_UPDATE(TIMusb);
+#else
+    TIMusb->EGR = TIM_EGR_UG;
+#endif
 
     return (USBD_OK);
 }
@@ -467,6 +475,16 @@ uint32_t CDC_Send_FreeBytes(void)
     return freeBytes;
 }
 
+uint32_t CDC_Send_BytesPending(void)
+{
+    return (APP_TX_DATA_SIZE - 1) - CDC_Send_FreeBytes();
+}
+
+uint32_t CDC_Send_MsSinceProgress(void)
+{
+    return millis() - txLastProgressMs;
+}
+
 /**
  * @brief  CDC_Send_DATA
  *         CDC received data to be send over USB IN endpoint are managed in
@@ -477,6 +495,11 @@ uint32_t CDC_Send_FreeBytes(void)
  */
 uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 {
+    if (sendLength && CDC_Send_BytesPending() == 0) {
+        // Ring was idle; start the stall clock from now.
+        txLastProgressMs = millis();
+    }
+
     uint32_t i;
     for (i = 0; i < sendLength; i++) {
         // Bounded to 2ms per byte; return partial count on timeout.
