@@ -36,7 +36,7 @@
 #include "drivers/system.h"
 #include "drivers/time.h"
 
-// When ENABLE_BMI423_ALIGN_AS_ICM is set, rotate the BMI423 raw data by CW90 so it
+// When ENABLE_BMI423_ALIGN_AS_ICM is set, rotate the BMI423 raw data by CW270 (CCW90) so it
 // presents identical axes to an ICM42688 and one board alignment serves either populated
 // chip. The BMI423 shares the BMI270 pin-out and sensing axes, so this is the same
 // rotation as ENABLE_BMI270_ALIGN_AS_ICM. Opt-in per config (#define ENABLE_BMI423_ALIGN_AS_ICM 1);
@@ -207,13 +207,13 @@ static void bmi423Config(gyroDev_t *gyro)
 }
 
 // Rotate the raw (x, y, z) sensor axes into the Betaflight frame.
-// ENABLE_BMI423_ALIGN_AS_ICM applies CW90 (see above):
-//     new x = y, new y = -x, new z = z
+// ENABLE_BMI423_ALIGN_AS_ICM applies CW270 (see above):
+//     new x = -y, new y = x, new z = z
 static inline void bmi423StoreAxes(int16_t *dst, int16_t x, int16_t y, int16_t z)
 {
 #if ENABLE_BMI423_ALIGN_AS_ICM
-    dst[X] = y;
-    dst[Y] = (x == INT16_MIN) ? INT16_MAX : -x;
+    dst[X] = (y == INT16_MIN) ? INT16_MAX : -y;
+    dst[Y] = x;
     dst[Z] = z;
 #else
     dst[X] = x;
