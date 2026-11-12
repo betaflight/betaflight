@@ -227,9 +227,11 @@ static void cdc_acm_start_tx(uint8_t busid)
     }
 }
 
-static void cdc_acm_reset_tx(void)
+static void cdc_acm_reset_session(void)
 {
     ATOMIC_BLOCK(NVIC_PRIO_USB) {
+        cdcRxPendingLength = 0;
+        usbVcpResetRx();
         cdcTxHead = 0;
         cdcTxReady = 0;
         cdcTxTail = 0;
@@ -268,16 +270,14 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
         case USBD_EVENT_RESET:
         case USBD_EVENT_DEINIT:
         case USBD_EVENT_DISCONNECTED:
-            cdcRxPendingLength = 0;
-            cdc_acm_reset_tx();
+            cdc_acm_reset_session();
             break;
         case USBD_EVENT_RESUME:
             break;
         case USBD_EVENT_SUSPEND:
             break;
         case USBD_EVENT_CONFIGURED:
-            cdcRxPendingLength = 0;
-            cdc_acm_reset_tx();
+            cdc_acm_reset_session();
             cdcEverConfigured = true;
             cdc_acm_arm_rx(busid, CDC_OUT_EP);
             break;

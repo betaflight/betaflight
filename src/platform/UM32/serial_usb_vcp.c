@@ -25,11 +25,13 @@
 
 #ifdef USE_VCP
 
+#include "build/atomic.h"
 #include "build/build_config.h"
 
 #include "common/utils.h"
 
 #include "drivers/io.h"
+#include "drivers/nvic.h"
 #include "drivers/time.h"
 
 #include "pg/usb.h"
@@ -54,6 +56,13 @@ typedef struct {
     uint32_t tail;
 } CircularBuffer;
 
+typedef struct {
+    uint32_t session;
+    uint32_t startedAt;
+    bool active;
+    bool expired;
+} vcpTxStall_t;
+
 static CircularBuffer cdc_buf;
 
 uint8_t usbVcpIsActive(void)
@@ -63,6 +72,8 @@ uint8_t usbVcpIsActive(void)
 
 static vcpPort_t vcpPort = {0};
 static uint32_t vcpWriteSession;
+static bool vcpWriteAborted;
+static vcpTxStall_t vcpTxStall;
 static uint32_t g_baudRate = 0;
 
 
@@ -125,26 +136,40 @@ bool usbVcpReceiveData(const uint8_t *data, uint32_t len)
     return true;
 }
 
+void usbVcpResetRx(void)
+{
+    // The session reset masks USB, as does the reader while advancing head.
+    const uint32_t tail = __atomic_load_n(&cdc_buf.tail, __ATOMIC_RELAXED);
+    __atomic_store_n(&cdc_buf.head, tail, __ATOMIC_RELEASE);
+}
+
 static uint32_t usbVcpAvailable(const serialPort_t *instance)
 {
     UNUSED(instance);
 
-    const uint32_t head = __atomic_load_n(&cdc_buf.head, __ATOMIC_RELAXED);
-    const uint32_t tail = __atomic_load_n(&cdc_buf.tail, __ATOMIC_ACQUIRE);
-    return (tail + USB_VCP_RX_RING_SIZE - head) % USB_VCP_RX_RING_SIZE;
+    uint32_t available = 0;
+    ATOMIC_BLOCK(NVIC_PRIO_USB) {
+        const uint32_t head = __atomic_load_n(&cdc_buf.head, __ATOMIC_RELAXED);
+        const uint32_t tail = __atomic_load_n(&cdc_buf.tail, __ATOMIC_ACQUIRE);
+        available = (tail + USB_VCP_RX_RING_SIZE - head) % USB_VCP_RX_RING_SIZE;
+    }
+    return available;
 }
 
 static uint8_t usbVcpRead(serialPort_t *instance)
 {
     UNUSED(instance);
 
-    const uint32_t head = __atomic_load_n(&cdc_buf.head, __ATOMIC_RELAXED);
-    if (head == __atomic_load_n(&cdc_buf.tail, __ATOMIC_ACQUIRE)) {
-        return 0;
-    }
+    uint8_t data = 0;
+    ATOMIC_BLOCK(NVIC_PRIO_USB) {
+        const uint32_t head = __atomic_load_n(&cdc_buf.head, __ATOMIC_RELAXED);
+        if (head == __atomic_load_n(&cdc_buf.tail, __ATOMIC_ACQUIRE)) {
+            return 0;
+        }
 
-    const uint8_t data = cdc_buf.buffer[head];
-    __atomic_store_n(&cdc_buf.head, (head + 1U) % USB_VCP_RX_RING_SIZE, __ATOMIC_RELEASE);
+        data = cdc_buf.buffer[head];
+        __atomic_store_n(&cdc_buf.head, (head + 1U) % USB_VCP_RX_RING_SIZE, __ATOMIC_RELEASE);
+    }
     cdc_acm_resume_rx();
     return data;
 }
@@ -164,24 +189,30 @@ static void usbVcpWriteBuf(serialPort_t *instance, const void *data, int count)
     }
 
     const vcpPort_t *port = container_of(instance, vcpPort_t, port);
+    if (port->buffering && vcpWriteAborted) {
+        return;
+    }
+
     const uint32_t session = port->buffering ? vcpWriteSession : cdc_acm_tx_session();
     const uint8_t *bytes = data;
     uint32_t remaining = count;
-    uint32_t lastProgress = millis();
 
     while (remaining && cdc_acm_tx_session() == session && usbIsConfigured()) {
+        // Non-buffered writes are published to the IN endpoint by queue_tx.
         const uint32_t copied = cdc_acm_queue_tx(session, bytes, remaining, port->buffering);
         bytes += copied;
         remaining -= copied;
         if (copied) {
-            lastProgress = millis();
-        } else if (millis() - lastProgress >= USB_TX_TIMEOUT_MS) {
+            vcpTxStall.active = false;
+        } else if (!vcpTxStall.active || vcpTxStall.session != session) {
+            // One timeout for a continuous stall, even across write calls.
+            vcpTxStall = (vcpTxStall_t) { .session = session, .startedAt = millis(), .active = true };
+        } else if (vcpTxStall.expired || millis() - vcpTxStall.startedAt >= USB_TX_TIMEOUT_MS) {
+            vcpTxStall.expired = true;
+            // Once a byte cannot be queued, suppress the rest of that batch.
+            vcpWriteAborted = port->buffering;
             break;
         }
-    }
-
-    if (!port->buffering) {
-        usbVcpFlush(session);
     }
 }
 
@@ -196,6 +227,7 @@ static void usbVcpBeginWrite(serialPort_t *instance)
     if (!port->buffering) {
         // A response in progress must not continue into a newly configured link.
         vcpWriteSession = cdc_acm_tx_session();
+        vcpWriteAborted = false;
     }
     port->buffering = true;
 }

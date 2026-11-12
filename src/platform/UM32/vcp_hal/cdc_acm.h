@@ -12,6 +12,7 @@
 void cdc_acm_init(uint8_t busid, uintptr_t reg_base);
 void cdc_acm_resume_rx(void);
 bool usbVcpReceiveData(const uint8_t *data, uint32_t len);
+void usbVcpResetRx(void);
 uint32_t cdc_acm_tx_session(void);
 uint32_t cdc_acm_queue_tx(uint32_t session, const void *data, uint32_t count, bool buffering);
 void cdc_acm_flush_tx(uint32_t session);
