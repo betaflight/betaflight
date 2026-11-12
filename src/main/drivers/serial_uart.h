@@ -49,6 +49,14 @@ typedef struct uartPort_s {
     usartResource_t *USARTx;
     bool txDMAEmpty;
 
+    // Writers may enqueue bytes while reconfiguration has stopped TX feeding.
+    volatile bool txInhibited;
+#if UART_TRAIT_ASYNC_RECONFIGURE
+    volatile bool txHardwareBusy;
+    bool reconfigureFailed;
+    uint32_t txDrainStartedUs;
+#endif
+
     bool (* checkUsartTxOutput)(struct uartPort_s *s);
 } uartPort_t;
 

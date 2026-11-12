@@ -83,6 +83,15 @@ void serialSetBaudRate(serialPort_t *instance, uint32_t baudRate)
     }
 }
 
+bool serialTrySetBaudRate(serialPort_t *instance, uint32_t baudRate)
+{
+    if (instance->vTable->trySetBaudRate) {
+        return instance->vTable->trySetBaudRate(instance, baudRate);
+    }
+    serialSetBaudRate(instance, baudRate);
+    return true;
+}
+
 bool isSerialTransmitBufferEmpty(const serialPort_t *instance)
 {
     return instance->vTable->isSerialTransmitBufferEmpty(instance);
@@ -148,5 +157,4 @@ void serialWriteBufBlockingShim(void *instance, const uint8_t *data, int count)
 {
     serialWriteBufBlocking(instance, data, count);
 }
-
 
