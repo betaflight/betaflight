@@ -97,6 +97,62 @@ class TestSRecordPacking(unittest.TestCase):
             self.assertIn(b"line 1", result.stderr)
             self.assertFalse(output.exists())
 
+    def test_accepts_matching_data_record_counts(self):
+        """S5 and S6 count data records, including empty and adjacent records."""
+        records = [record(1, 0, 2, b"a"), record(1, 1, 2, b"b"),
+                   record(2, 0x120000, 3), record(3, 0x08000000, 4, b"c")]
+        for kind, width in [(5, 2), (6, 3)]:
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as directory:
+                result, output = self.pack(directory, records + [record(kind, 4, width)])
+                self.assertEqual(result.returncode, 0, result.stderr)
+                data = output.read_bytes()
+                self.assertEqual(struct.unpack_from("<I", data, 281)[0], 2)
+                self.assertEqual(struct.unpack_from("<II2s", data, 285), (0, 2, b"ab"))
+                self.assertEqual(struct.unpack_from("<II1s", data, 295), (0x08000000, 1, b"c"))
+
+    def test_rejects_incorrect_data_record_counts_before_writing(self):
+        """A count mismatch must not produce a partial image."""
+        for kind, width, count in [(5, 2, 0), (5, 2, 2), (6, 3, 0), (6, 3, 2), (6, 3, 0x10001)]:
+            with self.subTest(kind=kind, count=count), tempfile.TemporaryDirectory() as directory:
+                result, output = self.pack(directory, [record(1, 0, 2, b"a"), record(kind, count, width)])
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(b"line 2", result.stderr)
+                self.assertFalse(output.exists())
+
+    def test_count_records_only_count_previous_data_records(self):
+        """Data after S5 or S6 must not change the count it validates."""
+        for kind, width in [(5, 2), (6, 3)]:
+            for count in [1, 2]:
+                with self.subTest(kind=kind, count=count), tempfile.TemporaryDirectory() as directory:
+                    records = [record(1, 0, 2, b"a"), record(kind, count, width), record(1, 1, 2, b"b")]
+                    result, output = self.pack(directory, records)
+                    if count == 1:
+                        self.assertEqual(result.returncode, 0, result.stderr)
+                        self.assertEqual(struct.unpack_from("<II2s", output.read_bytes(), 285), (0, 2, b"ab"))
+                    else:
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertIn(b"line 2", result.stderr)
+                        self.assertFalse(output.exists())
+
+    def test_rejects_control_record_data_before_writing(self):
+        """A changed record type can hide data without changing its checksum."""
+        for kind, data_kind, width in [(5, 1, 2), (6, 2, 3), (7, 3, 4), (8, 2, 3), (9, 1, 2)]:
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as directory:
+                data_record = record(data_kind, 1, width, b"b")
+                control_record = "S" + str(kind) + data_record[2:]
+                result, output = self.pack(directory, [record(1, 0, 2, b"a"), control_record])
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(b"line 2", result.stderr)
+                self.assertFalse(output.exists())
+
+    def test_accepts_control_records_without_data(self):
+        """S7, S8, and S9 records can set the entry address without payload."""
+        for kind, width in [(7, 4), (8, 3), (9, 2)]:
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as directory:
+                result, output = self.pack(directory, [record(1, 0, 2, b"a"), record(kind, 0, width)])
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(struct.unpack_from("<II1s", output.read_bytes(), 285), (0, 1, b"a"))
+
 
 if __name__ == "__main__":
     unittest.main()

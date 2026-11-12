@@ -152,6 +152,7 @@ if __name__=="__main__":
   elif options.s19files and len(args)==1:
     target = []
     name = DEFAULT_NAME
+    data_record_count = 0
     with open(options.s19files) as f:
       for number, line in enumerate(f, 1):
         line = line.strip()
@@ -173,7 +174,10 @@ if __name__=="__main__":
         data = raw[1 + address_size:-1]
         if record == 'S0':
           name = data[:-4] if data.endswith(b'.s19') else data
-        elif record in ('S1', 'S2', 'S3') and data:
+        elif record in ('S1', 'S2', 'S3'):
+          data_record_count += 1
+          if not data:
+            continue
           address = int.from_bytes(raw[1:1 + address_size], 'big')
           if address + len(data) > 0x100000000:
             parser.error("line %d: S-record data exceeds the 32-bit address space" % number)
@@ -181,6 +185,13 @@ if __name__=="__main__":
             target[-1]['data'].extend(data)
           else:
             target.append({'address': address, 'data': bytearray(data)})
+        else:
+          if data:
+            parser.error("line %d: S-record control record must not contain data" % number)
+          if record in ('S5', 'S6'):
+            declared_count = int.from_bytes(raw[1:1 + address_size], 'big')
+            if declared_count != data_record_count:
+              parser.error("line %d: S-record data record count does not match" % number)
     if not target:
       parser.error("no S-record image data")
     outfile = args[0]
