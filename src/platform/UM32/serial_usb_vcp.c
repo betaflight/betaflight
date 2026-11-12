@@ -30,6 +30,7 @@
 #include "common/utils.h"
 
 #include "drivers/io.h"
+#include "drivers/time.h"
 
 #include "pg/usb.h"
 
@@ -45,7 +46,8 @@
 #include "drivers/serial.h"
 #include "drivers/serial_usb_vcp.h"
 
-#define USB_TIMEOUT  50
+#define USB_TX_TIMEOUT_MS     200
+#define USB_FLUSH_TIMEOUT_MS   50
 typedef struct {
     uint8_t buffer[USB_VCP_RX_RING_SIZE];
     uint32_t head;
@@ -60,6 +62,7 @@ uint8_t usbVcpIsActive(void)
 }
 
 static vcpPort_t vcpPort = {0};
+static uint32_t vcpWriteSession;
 static uint32_t g_baudRate = 0;
 
 
@@ -95,9 +98,8 @@ static void usbVcpSetBaudRateCb(serialPort_t *instance, void (*cb)(serialPort_t 
 
 static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
 {
-    const vcpPort_t *port = container_of(instance, vcpPort_t, port);
-
-    return port->txAt == 0 && !bf_get_tx_flag();
+    UNUSED(instance);
+    return cdc_acm_tx_empty();
 }
 
 bool usbVcpReceiveData(const uint8_t *data, uint32_t len)
@@ -147,13 +149,11 @@ static uint8_t usbVcpRead(serialPort_t *instance)
     return data;
 }
 
-static void usbVcpSendBuffered(vcpPort_t *port)
+static void usbVcpFlush(uint32_t session)
 {
-    const unsigned int count = port->txAt;
-    // Consume these bytes once. On timeout some of them may already be on the bus.
-    port->txAt = 0;
-    if (count && usbVcpIsActive()) {
-        bf_usbd_ep_write_buffer(port->txBuf, count);
+    cdc_acm_flush_tx(session);
+    const uint32_t start = millis();
+    while (cdc_acm_tx_session() == session && !cdc_acm_tx_empty() && millis() - start < USB_FLUSH_TIMEOUT_MS) {
     }
 }
 
@@ -163,57 +163,55 @@ static void usbVcpWriteBuf(serialPort_t *instance, const void *data, int count)
         return;
     }
 
-    vcpPort_t *port = container_of(instance, vcpPort_t, port);
-    usbVcpSendBuffered(port);
-    if (usbVcpIsActive()) {
-        bf_usbd_ep_write_buffer(data, (unsigned int)count);
-    }
-}
+    const vcpPort_t *port = container_of(instance, vcpPort_t, port);
+    const uint32_t session = port->buffering ? vcpWriteSession : cdc_acm_tx_session();
+    const uint8_t *bytes = data;
+    uint32_t remaining = count;
+    uint32_t lastProgress = millis();
 
-static bool usbVcpFlush(void)
-{
-    return bf_usbd_ep_wait_write(USB_TIMEOUT);
+    while (remaining && cdc_acm_tx_session() == session && usbIsConfigured()) {
+        const uint32_t copied = cdc_acm_queue_tx(session, bytes, remaining, port->buffering);
+        bytes += copied;
+        remaining -= copied;
+        if (copied) {
+            lastProgress = millis();
+        } else if (millis() - lastProgress >= USB_TX_TIMEOUT_MS) {
+            break;
+        }
+    }
+
+    if (!port->buffering) {
+        usbVcpFlush(session);
+    }
 }
 
 static void usbVcpWrite(serialPort_t *instance, uint8_t c)
 {
-    vcpPort_t *port = container_of(instance, vcpPort_t, port);
-
-    if (!port->buffering) {
-        bf_usbd_ep_write_buffer(&c, 1U);
-        usbVcpFlush();
-        return;
-    }
-
-    if (!usbVcpIsActive()) {
-        port->txAt = 0;
-        return;
-    }
-
-    port->txBuf[port->txAt++] = c;
-    if (port->txAt == ARRAYLEN(port->txBuf)) {
-        usbVcpSendBuffered(port);
-    }
+    usbVcpWriteBuf(instance, &c, 1);
 }
 
 static void usbVcpBeginWrite(serialPort_t *instance)
 {
     vcpPort_t *port = container_of(instance, vcpPort_t, port);
+    if (!port->buffering) {
+        // A response in progress must not continue into a newly configured link.
+        vcpWriteSession = cdc_acm_tx_session();
+    }
     port->buffering = true;
 }
 
 static uint32_t usbTxBytesFree(const serialPort_t *instance)
 {
     UNUSED(instance);
-    return bf_get_tx_flag() ? 0 : 2048;
+    return cdc_acm_tx_free();
 }
 
 static void usbVcpEndWrite(serialPort_t *instance)
 {
     vcpPort_t *port = container_of(instance, vcpPort_t, port);
+    const uint32_t session = port->buffering ? vcpWriteSession : cdc_acm_tx_session();
     port->buffering = false;
-    usbVcpSendBuffered(port);
-    usbVcpFlush();
+    usbVcpFlush(session);
 }
 
 static const struct serialPortVTable usbVTable[] = {
@@ -249,7 +247,6 @@ serialPort_t *usbVcpOpen(void)
     cdc_acm_init(0, USB_BASE);
 
     s = &vcpPort;
-    s->txAt = 0;
     s->buffering = false;
     s->port.vTable = usbVTable;
 
