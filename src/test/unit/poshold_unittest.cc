@@ -57,6 +57,8 @@ extern "C" {
     PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
     PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
 
+    timeUs_t micros(void) { return 0; }
+
     // Test-controllable estimate
     static positionEstimate3d_t testEstimate;
 

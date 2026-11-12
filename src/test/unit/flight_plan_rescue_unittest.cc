@@ -247,20 +247,18 @@ void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
     g_lastDecelLimitMps2 = maxDecelMps2;
 }
 
-float g_lastApproachDecelMps2;
+float g_lastApproachSlowdownM;
 float g_lastApproachStillRadiusM;
 
-void positionNavSetApproachBrake(float decelMps2, float stillRadiusM)
+void positionNavSetApproachSlowdown(float slowdownM, float stillRadiusM)
 {
-    g_lastApproachDecelMps2 = decelMps2;
+    g_lastApproachSlowdownM = slowdownM;
     g_lastApproachStillRadiusM = stillRadiusM;
 }
 
-float positionNavApproachSpeedMps(float cruiseSpeedMps, float decelMps2, float stillRadiusM, float distM)
+float positionNavApproachSpeedMps(float cruiseSpeedMps, float slowdownM, float distM)
 {
-    const float gapM = fmaxf(distM - stillRadiusM, 0.0f);
-    const float speedMps = (gapM <= decelMps2) ? gapM : sqrtf(decelMps2 * (2.0f * gapM - decelMps2));
-    return fminf(cruiseSpeedMps, speedMps);
+    return fminf(cruiseSpeedMps, cruiseSpeedMps * distM / slowdownM);
 }
 
 void positionNavSetVelocityFeedforward(const vector2_t *velEfMps)
@@ -417,7 +415,7 @@ protected:
     void SetUp() override {
         memset(&g_lastTarget, 0, sizeof(g_lastTarget));
         g_setTargetCalls = 0;
-        g_lastApproachDecelMps2 = 0.0f;
+        g_lastApproachSlowdownM = 0.0f;
         g_lastApproachStillRadiusM = 0.0f;
         memset(&g_lastFfEfMps, 0, sizeof(g_lastFfEfMps));
         g_ffValid = false;
@@ -687,7 +685,7 @@ TEST_F(FlightPlanRescueTest, CloseToHomeLandsWhereTheCraftStops)
     triggerReached();
     ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
     EXPECT_NEAR(g_lastTarget.targetEfM.x, 3.0f + stopM, 0.01f);
-    EXPECT_NEAR(g_lastApproachDecelMps2, 0.0f, 0.001f);
+    EXPECT_NEAR(g_lastApproachSlowdownM, 0.0f, 0.001f);
     EXPECT_NEAR(g_lastVertRateMps, 1.5f, 0.01f);
 }
 
@@ -1224,6 +1222,7 @@ struct TurnIn {
     vector2_t ffAtHandOver = { .x = 0.0f, .y = 0.0f };   // what the return was flying when it handed over
     float ffFromHomeM = 0.0f;                            // ...and how far out it was set
     float courseOffHomeAtHandOverDeg = 180.0f;           // how far the craft's own course was off home
+    float speedAtHandOverMps = -1.0f;                    // ...and how fast it was going
 };
 
 static TurnIn flyTurnIn(float eastM, float northM, float seconds, bool untilHandOver = false, float lagS = 0.3f)
@@ -1261,6 +1260,7 @@ static TurnIn flyTurnIn(float eastM, float northM, float seconds, bool untilHand
         if (flightPlanNavGetCurrentIndex() != 1) {
             r.courseOffHomeAtHandOverDeg = fabsf(RADIANS_TO_DEGREES(
                 remainderf(atan2f(-craftM.x, -craftM.y) - atan2f(velMps.x, velMps.y), 2.0f * M_PIf)));
+            r.speedAtHandOverMps = speedMps;
         }
         const float homeBearing = atan2f(-craftM.x, -craftM.y);
         const float velBearing = atan2f(velMps.x, velMps.y);
@@ -1331,7 +1331,7 @@ TEST_F(FlightPlanRescueTest, TurnInInsideTheArrivalRadiusStillBrakesAndComesRoun
 {
     // Settled 12 m past home at 15 m/s, inside the return's 20 m arrival radius: landing now would
     // carry that speed on down. The gate waits until the carrot has come round onto home, and hands
-    // over no faster than the approach brake allows.
+    // over no faster than the approach slowdown allows.
     gpsRescueConfigMutable()->descentDistanceM = 20;
     ASSERT_TRUE(flightPlanNavStageRescuePlan());
     flightPlanNavEngage();
@@ -1344,7 +1344,7 @@ TEST_F(FlightPlanRescueTest, TurnInInsideTheArrivalRadiusStillBrakesAndComesRoun
     const TurnIn r = flyTurnIn(0.0f, 12.0f, 30.0f, true);
     EXPECT_TRUE(r.cameRound);
     ASSERT_EQ(flightPlanNavGetCurrentIndex(), 2);
-    EXPECT_LE(vector2Norm(&r.ffAtHandOver), positionNavApproachSpeedMps(FLT_MAX, 1.0f, 0.3f, r.ffFromHomeM) + 0.01f);
+    EXPECT_LE(vector2Norm(&r.ffAtHandOver), positionNavApproachSpeedMps(gpsRescueConfig()->groundSpeedCmS * 0.01f, 40.0f, r.ffFromHomeM) + 0.01f);
     EXPECT_LT(r.ffAtHandOver.y, 0.0f);   // coming back towards home, not still running away
 }
 
@@ -1352,7 +1352,7 @@ TEST_F(FlightPlanRescueTest, TurnInHandsOverOnceTheCraftItselfHasComeRound)
 {
     // Pitched forward across home 12 m out, inside the return's 20 m arrival radius, on a craft slow
     // to follow its carrot: the carrot comes round well before the craft does, and the landing must
-    // not take over a craft still crossing, its lean cap lifted.
+    // not take over a craft still crossing at speed, its lean cap lifted.
     gpsRescueConfigMutable()->descentDistanceM = 20;
     ASSERT_TRUE(flightPlanNavStageRescuePlan());
     flightPlanNavEngage();
@@ -1364,7 +1364,8 @@ TEST_F(FlightPlanRescueTest, TurnInHandsOverOnceTheCraftItselfHasComeRound)
     ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
     const TurnIn r = flyTurnIn(0.0f, 12.0f, 30.0f, true, 0.8f);
     ASSERT_EQ(flightPlanNavGetCurrentIndex(), 2);
-    EXPECT_LT(r.courseOffHomeAtHandOverDeg, 15.0f);
+    EXPECT_TRUE(r.courseOffHomeAtHandOverDeg < 15.0f || r.speedAtHandOverMps < 1.0f)
+        << r.courseOffHomeAtHandOverDeg << " deg off home at " << r.speedAtHandOverMps << " m/s";
 }
 
 TEST_F(FlightPlanRescueTest, TurnInAlreadyOnHomeStillBrakesFirst)
@@ -1589,6 +1590,36 @@ TEST_F(FlightPlanRescueTest, DescentStartsAtTheConfiguredDescentDistance)
     EXPECT_NEAR(g_lastTarget.acceptanceRadiusM, 15.0f, 0.01f);
 }
 
+TEST_F(FlightPlanRescueTest, DescentKeepsTheNoseOnHome)
+{
+    // Legacy rescue keeps the nose locked on home through the descent. Handing the landing leg to
+    // the configured yaw mode swung it onto the ground course instead, by however much the craft
+    // was crabbing.
+    gpsRescueConfigMutable()->descentDistanceM = 7;
+    g_stubEstimate.position.v[ENU_N] = 2000.0f;   // 20 m north of home
+    attitude.values.yaw = 1800;                   // nose south, pointing home
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    triggerReached();                             // climb done, fly home
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+
+    g_stubEstimate.position.v[ENU_N] = 650.0f;
+    g_stubEstimate.velocity.v[ENU_E] = 150.0f;    // crabbing east on the way in
+    g_stubEstimate.velocity.v[ENU_N] = -300.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 2);
+    EXPECT_TRUE(g_navHeadingOverrideValid);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, 180.0f, 0.1f);
+
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_TRUE(g_navHeadingOverrideValid);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, 180.0f, 0.1f);
+}
+
 TEST_F(FlightPlanRescueTest, LandingLegStartsDownAtTheDescentDistanceBelowTheReturnAltitude)
 {
     // An approach that has sunk 0.7 m below the return altitude still starts down at the descent
@@ -1623,11 +1654,11 @@ TEST_F(FlightPlanRescueTest, LandingLegStartsDownAtTheDescentDistanceBelowTheRet
     EXPECT_NEAR(g_lastVertStartAltM, returnAltM - 0.5f, 0.01f);
 }
 
-TEST_F(FlightPlanRescueTest, ReturnLegBrakesHomeAtASteadyDeceleration)
+TEST_F(FlightPlanRescueTest, ReturnLegSlowsHomeInProportionToTheDistanceLeft)
 {
-    // It slows from speed^2 / 2a out whatever the descent distance, and brakes at a steady 1 m/s^2:
-    // speed^2 = 2 a d to the still radius, less half the position gain's knee.
-    const uint16_t descentDistsM[] = { 5, 10, 20 };
+    // As legacy GPS rescue: from twice the descent distance out (5 m at least), the speed falls in
+    // proportion to the distance left.
+    const uint16_t descentDistsM[] = { 2, 10, 20 };
     for (const uint16_t descentDistM : descentDistsM) {
         SetUp();
         gpsRescueConfigMutable()->descentDistanceM = descentDistM;
@@ -1638,22 +1669,22 @@ TEST_F(FlightPlanRescueTest, ReturnLegBrakesHomeAtASteadyDeceleration)
         triggerReached();
         ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
 
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 50; i++) {
             g_stubMicros += 100'000;
             flightPlanNavUpdate(g_stubMicros);
         }
         ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
-        // 25 m out, inside the 28.6 m the 7.5 m/s return speed starts braking at.
+        const float slowdownM = fmaxf(2.0f * descentDistM, 5.0f);
         ASSERT_TRUE(g_ffValid);
         EXPECT_NEAR(g_lastFfEfMps.x, 0.0f, 0.01f);
-        EXPECT_NEAR(g_lastFfEfMps.y, -sqrtf(2.0f * (25.0f - 0.3f) - 1.0f), 0.01f) << descentDistM << " m descent";
+        EXPECT_NEAR(g_lastFfEfMps.y, -fminf(7.5f, 7.5f * 25.0f / slowdownM), 0.01f) << descentDistM << " m descent";
         flightPlanNavDisengage();
     }
 }
 
 TEST_F(FlightPlanRescueTest, DescentCarriesOnTheReturnApproach)
 {
-    // One speed law all the way in: braking home at a steady deceleration. The landing leg and the
+    // One speed law all the way in: slowing home in proportion to the distance left. The landing leg and the
     // descent carry on that same law from the hand-over at the descent distance, so the target
     // velocity does not step there.
     struct { uint16_t speedCmS; uint16_t descentDistM; uint16_t descendRateCmS; uint16_t navAccelCmSS; } configs[] = {
@@ -1669,11 +1700,12 @@ TEST_F(FlightPlanRescueTest, DescentCarriesOnTheReturnApproach)
         gpsRescueConfigMutable()->descendRate = c.descendRateCmS;
         autopilotConfigMutable()->navAccel = c.navAccelCmSS;
         const float speedMps = c.speedCmS * 0.01f;
+        const float slowdownM = fmaxf(2.0f * c.descentDistM, 5.0f);
         const auto approachMps = [&](float distM) {
-            return positionNavApproachSpeedMps(speedMps, 1.0f, 0.3f, distM);
+            return positionNavApproachSpeedMps(speedMps, slowdownM, distM);
         };
-        // Its deceleration: a ramp this quick never holds the approach back.
-        const float rampMps2 = fmaxf(autopilotConfig()->navAccel * 0.01f, 1.0f);
+        // Its steepest slowing: a ramp this quick never holds the approach back.
+        const float rampMps2 = fmaxf(fmaxf(autopilotConfig()->navAccel * 0.01f, 0.3f), sq(speedMps) / slowdownM);
 
         g_stubEstimate.position.v[ENU_N] = 3.0f * c.descentDistM * 100.0f;
         attitude.values.yaw = 1800;               // nose south, pointing home
@@ -1695,10 +1727,10 @@ TEST_F(FlightPlanRescueTest, DescentCarriesOnTheReturnApproach)
         g_stubMicros += 100'000;
         flightPlanNavUpdate(g_stubMicros);
         ASSERT_EQ(flightPlanNavGetCurrentIndex(), 2);
-        // The landing leg flies positionNav's copy of the approach: same speed, deceleration and
+        // The landing leg flies positionNav's copy of the approach: same speed, slowdown and
         // still radius, with no braking curve under it.
         EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, speedMps, 0.001f);
-        EXPECT_NEAR(g_lastApproachDecelMps2, 1.0f, 0.001f);
+        EXPECT_NEAR(g_lastApproachSlowdownM, slowdownM, 0.001f);
         EXPECT_NEAR(g_lastApproachStillRadiusM, 0.3f, 0.001f);
         EXPECT_NEAR(g_lastDecelLimitMps2, 0.0f, 0.001f);
         EXPECT_NEAR(g_lastAccelLimitMps2, rampMps2, 0.001f);
@@ -1707,7 +1739,7 @@ TEST_F(FlightPlanRescueTest, DescentCarriesOnTheReturnApproach)
         ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
         // And so does the descent, however slowly it is coming down.
         EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, speedMps, 0.001f);
-        EXPECT_NEAR(g_lastApproachDecelMps2, 1.0f, 0.001f);
+        EXPECT_NEAR(g_lastApproachSlowdownM, slowdownM, 0.001f);
         EXPECT_NEAR(g_lastApproachStillRadiusM, 0.3f, 0.001f);
         EXPECT_NEAR(g_lastDecelLimitMps2, 0.0f, 0.001f);
         EXPECT_NEAR(g_lastAccelLimitMps2, rampMps2, 0.001f);
@@ -1733,12 +1765,13 @@ TEST_F(FlightPlanRescueTest, ReturnApproachIsFlownAsItFalls)
         gpsRescueConfigMutable()->descentDistanceM = c.descentDistM;
         autopilotConfigMutable()->navAccel = c.navAccelCmSS;
         const float speedMps = c.speedCmS * 0.01f;
+        const float slowdownM = fmaxf(2.0f * c.descentDistM, 5.0f);
         const auto approachMps = [&](float distM) {
-            return positionNavApproachSpeedMps(speedMps, 1.0f, 0.3f, distM);
+            return positionNavApproachSpeedMps(speedMps, slowdownM, distM);
         };
 
         // Already at the return speed well outside the approach, heading home (south).
-        float northM = speedMps * speedMps / 2.0f + 20.0f;
+        float northM = slowdownM + 20.0f;
         g_stubEstimate.position.v[ENU_N] = northM * 100.0f;
         g_stubEstimate.velocity.v[ENU_N] = -speedMps * 100.0f;
         attitude.values.yaw = 1800;
