@@ -379,94 +379,104 @@ TEST_F(PositionNavTest, RampLandingOnTheLegAltitudeStopsItsRateThere)
     EXPECT_NEAR(positionNavGetTargetVelocityCmS().z, 0.0f, 0.01f);
 }
 
-TEST_F(PositionNavTest, ApproachSlowsInProportionToTheDistanceLeft)
+TEST_F(PositionNavTest, ApproachBrakesSteadilyThenInProportionToTheDistanceLeft)
 {
-    // Legacy GPS rescue's shape: cruise until the slowdown distance, then a speed proportional to
-    // the distance left.
+    // Cruise until a steady brake would bring the craft in, brake at that, then once the brake meets
+    // the position controller's own pull, a speed proportional to the distance left.
     const vector3_t target = {{ 0.0f, 0.0f, 0.0f }};
-    positionNavSetTargetEf(&target, 5.0f, 0.01f, 0.1f, false, NULL, NULL);
-    positionNavSetApproachSlowdown(14.0f, 0.0f);
+    positionNavSetTargetEf(&target, 20.0f, 0.01f, 0.1f, false, NULL, NULL);
+    positionNavSetApproachDecel(4.0f, 0.0f);
 
     positionEstimate3d_t est = makeEstimate(0.0f, 10000.0f, 0.0f, 0.0f);   // 100 m out
     positionNavUpdate(0.1f, &est);
-    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, -500.0f, 1.0f);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, -2000.0f, 1.0f);
 
-    est.position.y = 1400.0f;                                             // where it begins
+    est.position.y = 5200.0f;                                             // where it begins
     positionNavUpdate(0.1f, &est);
-    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, -500.0f, 1.0f);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, -2000.0f, 1.0f);
 
-    est.position.y = 700.0f;
+    est.position.y = 2000.0f;                                             // sqrt(2 * 4 * 20 - 4^2)
     positionNavUpdate(0.1f, &est);
-    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, -250.0f, 1.0f);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, -1200.0f, 1.0f);
+
+    est.position.y = 400.0f;                                              // where they meet
+    positionNavUpdate(0.1f, &est);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, -400.0f, 1.0f);
 
     est.position.y = 50.0f;
     positionNavUpdate(0.1f, &est);
-    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, -500.0f * 0.5f / 14.0f, 0.1f);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, -50.0f, 0.1f);
 }
 
-TEST_F(PositionNavTest, ApproachSlowsHardestWhereItBegins)
+TEST_F(PositionNavTest, ApproachSlowsNoHarderThanItsDeceleration)
 {
-    // Flown down the profile the speed falls at cruise^2 / slowdown where it begins, and ever more
-    // gently after it: never the sharpest slowing in the last metre.
-    const float cruiseMps = 10.0f;
-    const float slowdownM = 20.0f;
-    const float stepM = 0.01f;
+    // Flown down the profile the speed falls at the stated deceleration until the proportional pull
+    // takes over, and ever more gently after it: never the sharpest slowing in the last metre.
+    const float cruiseMps = 25.0f;
+    const float decelMps2 = 4.0f;
+    const float stepM = 0.001f;
     const auto decelAt = [&](float distM) {
-        const float speedMps = positionNavApproachSpeedMps(cruiseMps, slowdownM, distM);
-        const float nextMps = positionNavApproachSpeedMps(cruiseMps, slowdownM, distM - stepM);
+        const float speedMps = positionNavApproachSpeedMps(cruiseMps, decelMps2, distM);
+        const float nextMps = positionNavApproachSpeedMps(cruiseMps, decelMps2, distM - stepM);
         return (speedMps - nextMps) * speedMps / stepM;   // over the step flown, dt = step / speed
     };
-    EXPECT_NEAR(decelAt(slowdownM), sq(cruiseMps) / slowdownM, 0.1f);
-    float previousMps2 = decelAt(slowdownM);
-    for (float distM = slowdownM - 1.0f; distM > 0.1f; distM -= 1.0f) {
-        const float decelMps2 = decelAt(distM);
-        EXPECT_LT(decelMps2, previousMps2) << "at " << distM << " m";
-        previousMps2 = decelMps2;
+    for (float distM = 80.0f; distM > 4.0f; distM -= 1.0f) {
+        EXPECT_NEAR(decelAt(distM), (positionNavApproachSpeedMps(cruiseMps, decelMps2, distM) < cruiseMps) ? decelMps2 : 0.0f, 0.05f)
+            << "at " << distM << " m";
     }
-    EXPECT_NEAR(positionNavApproachSpeedMps(cruiseMps, slowdownM, 0.0f), 0.0f, 1e-6f);
+    float previousMps2 = decelAt(4.0f);
+    EXPECT_NEAR(previousMps2, decelMps2, 0.05f);
+    for (float distM = 3.9f; distM > 0.1f; distM -= 0.1f) {
+        const float nowMps2 = decelAt(distM);
+        EXPECT_LT(nowMps2, previousMps2) << "at " << distM << " m";
+        previousMps2 = nowMps2;
+    }
+    EXPECT_NEAR(positionNavApproachSpeedMps(cruiseMps, decelMps2, 0.0f), 0.0f, 1e-6f);
 }
 
-TEST_F(PositionNavTest, ApproachLeavesALaggingCraftSlowNearTheTarget)
+TEST_F(PositionNavTest, ApproachBringsALaggingCraftInWithoutOvershooting)
 {
-    // A craft following the command with a lag is barely moving by the time it is close, rather
+    // A craft following the command with a lag comes in from cruise slowing all the way, rather
     // than carrying speed into the last metre and on past the target.
     const vector3_t target = {{ 0.0f, 0.0f, 0.0f }};
-    positionNavSetTargetEf(&target, 4.0f, 0.01f, 0.1f, false, NULL, NULL);
-    positionNavSetAccelLimits(2.5f, 0.0f);
-    positionNavSetApproachSlowdown(14.0f, 0.3f);
+    positionNavSetTargetEf(&target, 25.0f, 0.01f, 0.1f, false, NULL, NULL);
+    positionNavSetAccelLimits(8.0f, 0.0f);
+    positionNavSetApproachDecel(4.0f, 0.3f);
 
-    float northM = 14.0f;
-    float velMps = -4.0f;
+    float northM = 120.0f;
+    float velMps = -25.0f;
+    float speedAtFiveMetresMps = -1.0f;
     float speedAtOneMetreMps = -1.0f;
     for (int cycle = 0; cycle < 3000; cycle++) {
         positionEstimate3d_t est = makeEstimate(0.0f, northM * 100.0f, 0.0f, velMps * 100.0f);
         positionNavUpdate(0.01f, &est);
         velMps += (positionNavGetTargetVelocityCmS().y * 0.01f - velMps) * 0.01f / 0.3f;
         northM += velMps * 0.01f;
+        if (speedAtFiveMetresMps < 0.0f && northM <= 5.0f) {
+            speedAtFiveMetresMps = fabsf(velMps);
+        }
         if (speedAtOneMetreMps < 0.0f && northM <= 1.0f) {
             speedAtOneMetreMps = fabsf(velMps);
         }
-        ASSERT_GT(northM, 0.0f) << "overshot at cycle " << cycle;
+        ASSERT_GT(northM, -0.02f) << "overshot at cycle " << cycle;
     }
+    EXPECT_LT(speedAtFiveMetresMps, 6.5f);
     EXPECT_GT(speedAtOneMetreMps, 0.0f);
-    EXPECT_LT(speedAtOneMetreMps, 0.4f);
+    EXPECT_LT(speedAtOneMetreMps, 2.0f);
 }
 
 TEST_F(PositionNavTest, ApproachRunsOutAtTheStillRadius)
 {
     const vector3_t target = {{ 0.0f, 0.0f, 0.0f }};
     positionNavSetTargetEf(&target, 4.0f, 0.01f, 0.1f, false, NULL, NULL);
-    positionNavSetApproachSlowdown(14.0f, 0.3f);
+    positionNavSetApproachDecel(1.0f, 0.3f);
 
-    positionEstimate3d_t est = makeEstimate(0.0f, 80.0f, 0.0f, 0.0f);
+    positionEstimate3d_t est = makeEstimate(0.0f, 80.0f, 0.0f, -80.0f);
     positionNavUpdate(0.01f, &est);
-    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, -400.0f * 0.8f / 14.0f, 0.1f);
-
-    est.position.y = 35.0f;
-    positionNavUpdate(0.01f, &est);
-    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, -400.0f * 0.35f / 14.0f, 0.1f);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, -80.0f, 0.1f);
 
     est.position.y = 25.0f;                                               // inside the still radius
+    est.velocity.y = -25.0f;
     positionNavUpdate(0.01f, &est);
     EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, 0.0f, 0.01f);
 
@@ -477,21 +487,38 @@ TEST_F(PositionNavTest, ApproachRunsOutAtTheStillRadius)
     EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, 0.0f, 0.01f);
 }
 
+TEST_F(PositionNavTest, ApproachCrossingTheStillRadiusFastIsTurnedBack)
+{
+    // A craft that arrives hot and flies through the still radius has not come to rest there: it is
+    // pulled back to the target rather than left wherever it stops.
+    const vector3_t target = {{ 0.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 30.0f, 0.01f, 0.1f, false, NULL, NULL);
+    positionNavSetApproachDecel(4.0f, 0.3f);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 10.0f, 0.0f, -1700.0f);
+    positionNavUpdate(0.01f, &est);
+
+    est.position.y = -1600.0f;                                            // overshot 16 m
+    est.velocity.y = -50.0f;
+    positionNavUpdate(0.01f, &est);
+    EXPECT_GT(positionNavGetTargetVelocityCmS().y, 500.0f);
+}
+
 TEST_F(PositionNavTest, ApproachTakesOverFromTheCarrotWithoutAStep)
 {
-    // The rescue's hand-over at the descent distance: the carrot flew the approach with its stated
+    // The rescue's hand-over where the descent starts: the carrot flew the approach with its stated
     // velocity, and the landing point leg flies positionNav's own copy of it, ramping no slower than
     // it falls. For each configuration the speed must not step across the hand-over.
-    struct { float speedMps; float descentDistM; } configs[] = { { 4.0f, 7.0f }, { 7.5f, 20.0f }, { 15.0f, 5.0f } };
+    struct { float speedMps; float descentDistM; } configs[] = { { 4.0f, 7.0f }, { 7.5f, 20.0f }, { 15.0f, 5.0f }, { 30.0f, 7.0f } };
     for (const auto &c : configs) {
         positionNavInit();
-        const float slowdownM = fmaxf(2.0f * c.descentDistM, 5.0f);
-        const float handOverM = c.descentDistM - 0.05f;
-        const float approachMps = positionNavApproachSpeedMps(c.speedMps, slowdownM, handOverM);
+        const float decelMps2 = constrainf(sq(c.speedMps) / (2.0f * c.descentDistM), 0.3f, 4.0f);
+        const float handOverM = 5.0f - 0.05f;
+        const float approachMps = positionNavApproachSpeedMps(c.speedMps, decelMps2, handOverM);
 
         const vector3_t carrot = {{ 0.0f, handOverM - 1.0f, 0.0f }};
         positionNavSetTargetEf(&carrot, c.speedMps, -1.0f, 1000.0f, false, NULL, NULL);
-        positionNavSetAccelLimits(2.5f, 0.0f);
+        positionNavSetAccelLimits(fmaxf(2.5f, 2.0f * decelMps2), 0.0f);
         const vector2_t carrotVelMps = {{ 0.0f, -approachMps }};
         positionNavSetVelocityFeedforward(&carrotVelMps);
         positionEstimate3d_t est = makeEstimate(0.0f, handOverM * 100.0f, 0.0f, -approachMps * 100.0f);
@@ -500,18 +527,18 @@ TEST_F(PositionNavTest, ApproachTakesOverFromTheCarrotWithoutAStep)
 
         const vector3_t home = {{ 0.0f, 0.0f, 0.0f }};
         positionNavSetTargetEf(&home, c.speedMps, 1.0f, 0.1f, false, NULL, NULL);
-        positionNavSetAccelLimits(2.5f, 0.0f);
-        positionNavSetApproachSlowdown(slowdownM, 0.3f);
+        positionNavSetAccelLimits(fmaxf(2.5f, 2.0f * decelMps2), 0.0f);
+        positionNavSetApproachDecel(decelMps2, 0.3f);
         positionNavUpdate(0.01f, &est);
         EXPECT_NEAR(positionNavGetTargetVelocityCmS().x, 0.0f, 0.01f);
-        EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, -approachMps * 100.0f, 0.05f);
+        EXPECT_NEAR(positionNavGetTargetVelocityCmS().y, -approachMps * 100.0f, 0.05f) << c.speedMps << " m/s";
     }
 }
 
 TEST_F(PositionNavTest, ApproachHandedOverAtRestRampsIntoIt)
 {
-    // A rescue called inside the descent distance: the carrot hands over at rest, and the landing
-    // ramps into the approach at its rate rather than stepping to it.
+    // A rescue called near home: the carrot hands over at rest, and the landing ramps into the
+    // approach at its rate rather than stepping to it.
     const vector3_t carrot = {{ 5.0f, 0.0f, 0.0f }};
     positionNavSetTargetEf(&carrot, 4.0f, -1.0f, 1000.0f, false, NULL, NULL);
     const vector2_t stillMps = {{ 0.0f, 0.0f }};
@@ -522,14 +549,14 @@ TEST_F(PositionNavTest, ApproachHandedOverAtRestRampsIntoIt)
     const vector3_t home = {{ 0.0f, 0.0f, 0.0f }};
     positionNavSetTargetEf(&home, 4.0f, 1.0f, 0.1f, false, NULL, NULL);
     positionNavSetAccelLimits(2.5f, 0.0f);
-    positionNavSetApproachSlowdown(14.0f, 0.3f);
+    positionNavSetApproachDecel(1.0f, 0.3f);
     positionNavUpdate(0.01f, &est);
     EXPECT_NEAR(positionNavGetTargetVelocityCmS().x, -2.5f, 0.01f);   // 10 ms at 2.5 m/s^2
 
     for (int i = 0; i < 200; i++) {
         positionNavUpdate(0.01f, &est);
     }
-    EXPECT_NEAR(positionNavGetTargetVelocityCmS().x, -400.0f * 5.0f / 14.0f, 0.1f);
+    EXPECT_NEAR(positionNavGetTargetVelocityCmS().x, -300.0f, 0.1f);  // sqrt(2 * 1 * 5 - 1^2)
 }
 
 TEST_F(PositionNavTest, NewTargetDoesNotNotchTheCommandedVelocity)
@@ -631,7 +658,7 @@ TEST_F(PositionNavTest, VelocityFeedforwardIsTheCommandedVelocityWhateverTheGap)
     // not the chase law on the gap (which would ask for 3 m/s against the carrot's 4).
     const vector3_t carrot = {{ 0.0f, 3.0f, 0.0f }};
     positionNavSetTargetEf(&carrot, 10.0f, -1.0f, 1000.0f, false, NULL, NULL);
-    positionNavSetApproachSlowdown(14.0f, 0.0f);
+    positionNavSetApproachDecel(1.0f, 0.0f);
     positionNavSetAccelLimits(0.0f, 0.3f);
     const vector2_t carrotVelMps = {{ 0.0f, 4.0f }};
     positionNavSetVelocityFeedforward(&carrotVelMps);
