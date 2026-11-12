@@ -74,6 +74,7 @@ extern uint32_t systemUniqueId[3];
 #define U_ID_2 (systemUniqueId[2])
 
 #define PLATFORM_TRAIT_ADC_DEVICE 1
+#define PLATFORM_TRAIT_ADC_INTERNAL_CALIBRATION 1
 #define PLATFORM_TRAIT_RCC        1
 #define SERIAL_TRAIT_PIN_CONFIG   1
 

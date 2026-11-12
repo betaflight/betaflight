@@ -40,9 +40,15 @@ int ioInitCalls = 0;
 int ioConfigCalls = 0;
 int spiSetClkDivisorCalls = 0;
 int ioPreinitCalls = 0;
+bool stubBusBusy = false;
+uint8_t readStartReg = 0;
+uint8_t readStartLength = 0;
 
 void resetStubs(void)
 {
+    stubBusBusy = false;
+    readStartReg = 0;
+    readStartLength = 0;
     stubChipId = 0;
     ioHiCalls = 0;
     ioInitCalls = 0;
@@ -100,6 +106,38 @@ TEST(baroBmp5xxTest, DetectDeinitializesSpiBusOnUnknownChip)
     EXPECT_EQ(1, ioPreinitCalls);
 }
 
+TEST(baroBmp5xxTest, ReadUpStartsTheReadAndGetUpWaitsForTheBus)
+{
+    resetStubs();
+
+    bmp5xxConfig_t config = {};
+    baroDev_t baro = makeSpiBaro();
+
+    stubChipId = 0x51;
+    ASSERT_TRUE(bmp5xxDetect(&config, &baro, NULL));
+
+    stubBusBusy = true;
+    EXPECT_FALSE(baro.read_up(&baro));
+    EXPECT_EQ(0, readStartLength);
+
+    stubBusBusy = false;
+    EXPECT_TRUE(baro.read_up(&baro));
+    EXPECT_EQ(0x1D, readStartReg);
+    EXPECT_EQ(7, readStartLength);  // SPI dummy byte + 6 data bytes
+
+    stubBusBusy = true;
+    EXPECT_FALSE(baro.get_up(&baro));
+
+    stubBusBusy = false;
+    EXPECT_TRUE(baro.get_up(&baro));
+
+    int32_t pressure = 0;
+    int32_t temperature = 0;
+    baro.calculate(&pressure, &temperature);
+    EXPECT_EQ(100000, pressure);
+    EXPECT_EQ(2500, temperature);
+}
+
 extern "C" {
 
 uint32_t millis(void)
@@ -113,7 +151,7 @@ void delay(uint32_t)
 
 bool busBusy(const extDevice_t *, bool *)
 {
-    return false;
+    return stubBusBusy;
 }
 
 bool busReadRegisterBuffer(const extDevice_t *, uint8_t reg, uint8_t *data, uint8_t length)
@@ -125,8 +163,16 @@ bool busReadRegisterBuffer(const extDevice_t *, uint8_t reg, uint8_t *data, uint
     return true;
 }
 
-bool busReadRegisterBufferStart(const extDevice_t *, uint8_t, uint8_t *, uint8_t)
+bool busReadRegisterBufferStart(const extDevice_t *, uint8_t reg, uint8_t *data, uint8_t length)
 {
+    // Dummy byte, then 25 degC temperature and 100000 Pa pressure.
+    const uint8_t frame[] = { 0xFF, 0x00, 0x00, 0x19, 0x00, 0xA8, 0x61 };
+
+    readStartReg = reg;
+    readStartLength = length;
+    if (length == sizeof(frame)) {
+        memcpy(data, frame, sizeof(frame));
+    }
     return true;
 }
 

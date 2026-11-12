@@ -647,6 +647,26 @@ TEST_F(OsdTest, TestStatsMetric)
  * Tests the calculation of statistics with metric unit output.
  * (essentially an abridged version of the previous test
  */
+/*
+ * Tests the blackbox statistic for a storage device that reports no size.
+ */
+TEST_F(OsdTest, TestStatsBlackboxWithoutSize)
+{
+    // given
+    // only the blackbox statistic, for a working device without a size
+    osdStatSetState(OSD_STAT_BLACKBOX, true);
+    blackboxConfigMutable()->device = BLACKBOX_DEVICE_VIRTUAL;
+
+    // when
+    // the craft is armed and disarmed
+    doTestArm();
+    doTestDisarm();
+
+    // then
+    // the statistic shows the device as working
+    displayPortTestBufferSubstring(2, 8, "BLACKBOX          : OK");
+}
+
 TEST_F(OsdTest, TestStatsMetricDistanceUnits)
 {
     // given
