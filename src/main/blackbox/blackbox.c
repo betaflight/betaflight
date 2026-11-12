@@ -385,17 +385,17 @@ typedef enum {
 
 #ifdef USE_PSAS
 typedef struct blackboxPsasState_s {
-    int16_t pitch_pilot;
-    int16_t pitch_damping;
-    int16_t pitch_stability;
-    int16_t pitch_I;
-    int16_t pitch_P;
-    int16_t roll_pilot;
-    int16_t roll_damping;
-    int16_t yaw_pilot;
-    int16_t yaw_damping;
-    int16_t yaw_stability;
-    int16_t yaw_roll_cross_link;
+    int32_t pitch_pilot;
+    int32_t pitch_damping;
+    int32_t pitch_stability;
+    int32_t pitch_I;
+    int32_t pitch_P;
+    int32_t roll_pilot;
+    int32_t roll_damping;
+    int32_t yaw_pilot;
+    int32_t yaw_damping;
+    int32_t yaw_stability;
+    int32_t yaw_roll_cross_link;
 } blackboxPsasState_t;
 #endif
 
@@ -902,47 +902,47 @@ static void writeIntraframe(void)
 #ifdef USE_PSAS
     if (isFieldEnabled(FIELD_SELECT(PSAS))) {
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_PILOT))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.pitch_pilot, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.pitch_pilot);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_DAMPING))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.pitch_damping, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.pitch_damping);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_STABILITY))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.pitch_stability, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.pitch_stability);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_I))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.pitch_I, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.pitch_I);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_P))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.pitch_P, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.pitch_P);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_ROLL_PILOT))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.roll_pilot, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.roll_pilot);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_ROLL_DAMPING))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.roll_damping, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.roll_damping);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_PILOT))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.yaw_pilot, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.yaw_pilot);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_DAMPING))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.yaw_damping, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.yaw_damping);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_STABILITY))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.yaw_stability, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.yaw_stability);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_ROLL_CROSS_LINK))) {
-            blackboxWriteSigned16VBArray(&blackboxCurrent->planeSAS.yaw_roll_cross_link, 1);
+            blackboxWriteSignedVB(blackboxCurrent->planeSAS.yaw_roll_cross_link);
         }
     }
 #endif
@@ -1136,60 +1136,60 @@ static void writeInterframe(void)
 
 #ifdef USE_PSAS
     if (isFieldEnabled(FIELD_SELECT(PSAS))) {
-        int16_t delta;
+        int32_t delta;
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_PILOT))) {
             delta = blackboxCurrent->planeSAS.pitch_pilot - blackboxLast->planeSAS.pitch_pilot;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_DAMPING))) {
             delta = blackboxCurrent->planeSAS.pitch_damping - blackboxLast->planeSAS.pitch_damping;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_STABILITY))) {
             delta = blackboxCurrent->planeSAS.pitch_stability - blackboxLast->planeSAS.pitch_stability;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_I))) {
             delta = blackboxCurrent->planeSAS.pitch_I - blackboxLast->planeSAS.pitch_I;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_P))) {
             delta = blackboxCurrent->planeSAS.pitch_P - blackboxLast->planeSAS.pitch_P;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_ROLL_PILOT))) {
             delta = blackboxCurrent->planeSAS.roll_pilot - blackboxLast->planeSAS.roll_pilot;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_ROLL_DAMPING))) {
             delta = blackboxCurrent->planeSAS.roll_damping - blackboxLast->planeSAS.roll_damping;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_PILOT))) {
             delta = blackboxCurrent->planeSAS.yaw_pilot - blackboxLast->planeSAS.yaw_pilot;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_DAMPING))) {
             delta = blackboxCurrent->planeSAS.yaw_damping - blackboxLast->planeSAS.yaw_damping;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_STABILITY))) {
             delta = blackboxCurrent->planeSAS.yaw_stability - blackboxLast->planeSAS.yaw_stability;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
 
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_ROLL_CROSS_LINK))) {
             delta = blackboxCurrent->planeSAS.yaw_roll_cross_link - blackboxLast->planeSAS.yaw_roll_cross_link;
-            blackboxWriteSigned16VBArray(&delta, 1);
+            blackboxWriteSignedVB(delta);
         }
     }
 #endif
