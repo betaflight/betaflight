@@ -414,6 +414,7 @@ VPATH        := $(VPATH):$(FATFS_DIR)
 
 # Gyro driver files that only contain initialization and configuration code - not runtime code
 SIZE_OPTIMISED_SRC += \
+            drivers/accgyro/accgyro_icm456xx.c \
             drivers/accgyro/accgyro_mpu6050.c \
             drivers/accgyro/accgyro_mpu6500.c \
             drivers/accgyro/accgyro_spi_mpu6000.c \
