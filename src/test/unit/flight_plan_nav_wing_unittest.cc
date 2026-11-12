@@ -160,8 +160,8 @@ void positionNavLowerTargetAltitude(float) {}
 void positionNavStartAfresh(void) {}
 void positionNavSetAutoClearOnReach(bool) {}
 void positionNavSetAccelLimits(float, float) {}
-void positionNavSetApproachBrake(float, float) {}
-float positionNavApproachSpeedMps(float cruiseSpeedMps, float, float, float) { return cruiseSpeedMps; }
+void positionNavSetApproachSlowdown(float, float) {}
+float positionNavApproachSpeedMps(float cruiseSpeedMps, float, float) { return cruiseSpeedMps; }
 void positionNavSetVelocityFeedforward(const vector2_t *) {}
 void positionNavSetAltitudeArrivalRequired(bool) {}
 void positionNavSetSettleTimeout(float) {}
