@@ -1602,6 +1602,30 @@ TEST_F(FlightPlanRescueTest, DescentStartsCloseToHome)
     EXPECT_NEAR(g_lastTarget.acceptanceRadiusM, 5.0f, 0.01f);
 }
 
+TEST_F(FlightPlanRescueTest, DescentStartsCloseToHomeWhateverTheMissionRadii)
+{
+    // Wide mission radii are no reason for the rescue to start down further out.
+    autopilotConfigMutable()->waypointArrivalRadius = 1000;   // 10 m
+    autopilotConfigMutable()->waypointHoldRadius = 1000;
+    g_stubEstimate.position.v[ENU_N] = 2500.0f;   // 25 m north of home
+    attitude.values.yaw = 1800;                   // nose south, pointing home
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    triggerReached();                             // climb done, fly home
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+
+    g_stubEstimate.position.v[ENU_N] = 800.0f;    // inside the mission radius, outside 5 m
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+
+    g_stubEstimate.position.v[ENU_N] = 490.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 2);
+    EXPECT_NEAR(g_lastTarget.acceptanceRadiusM, 5.0f, 0.01f);
+}
+
 TEST_F(FlightPlanRescueTest, DescentKeepsTheNoseOnHome)
 {
     // Legacy rescue keeps the nose locked on home through the descent. Handing the landing leg to

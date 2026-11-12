@@ -774,7 +774,7 @@ static bool dispatchWaypoint(void)
     const bool rescueApproach = fp.isRescuePlan && !rescueStop
         && (effective.type == WAYPOINT_TYPE_FLYOVER || effective.type == WAYPOINT_TYPE_LAND);
     if (rescueApproach) {
-        arrivalRadiusM = fmaxf(arrivalRadiusM, FP_RESCUE_DESCENT_START_M);
+        arrivalRadiusM = FP_RESCUE_DESCENT_START_M;
     }
 #endif
     fp.legArriveRadiusM = arrivalRadiusM;
@@ -1316,14 +1316,10 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
     // keeps its fly-over-the-point meaning - the carrot tracking and corner-speed
     // profile still apply, but the gate stays at the arrival radius so the craft
     // passes tight over the point instead of carving the corner wide.
-    // The resolved radius can exceed FP_PASS_MAX_M (a rescue hands over at its
-    // descent distance), which would invert the corner-gate bounds; the corner
-    // gate keeps its own ceiling and the fly-over gate honours the radius.
     const waypoint_t *thisWp = currentWaypoint();
     const bool flyby = (thisWp == NULL) || (thisWp->type == WAYPOINT_TYPE_FLYBY);
     const float arriveM = flyby
-        ? constrainf(cornerSpeedMps * FP_GATE_RADIUS_SCALE,
-                     fminf(arriveRadiusM, FP_PASS_MAX_M), FP_PASS_MAX_M)
+        ? constrainf(cornerSpeedMps * FP_GATE_RADIUS_SCALE, arriveRadiusM, FP_PASS_MAX_M)
         : arriveRadiusM;
 
     // A point leg next picks up at no more than its braking speed from the gate: brake into that, or
