@@ -12,7 +12,9 @@ extern "C" {
 #include "drivers/serial_uart_impl.h"
 #include "platform/serial_uart_bidir.h"
 void LPTIMER1_IRQHandler(void);
+void LPTIMER2_IRQHandler(void);
 
+mockLptim_t mockRxLptim;
 mockLptim_t mockLptim;
 uartDevice_t uartDevice[UARTDEV_COUNT];
 int16_t debug[DEBUG16_VALUE_COUNT];
@@ -28,6 +30,21 @@ ioConfig_t pinConfig[64];
 ioRec_t pinRecords[64];
 uint32_t now;
 uint32_t clockHz;
+unsigned idleCount;
+
+void recordIdle()
+{
+    ++idleCount;
+    EXPECT_FALSE(uartBidirIsTransmitting(&uartDevice[UARTDEV_1].port));
+    EXPECT_EQ(0, pinConfig[6] & IOCFG_AF_PP);
+    EXPECT_EQ(IOCFG_AF_PP, pinConfig[7] & IOCFG_AF_PP);
+}
+
+void fireRxTimer(uint32_t flags = LPTIM_IF_OVIF)
+{
+    mockRxLptim.IF = flags;
+    LPTIMER1_IRQHandler();
+}
 
 class Um32UartBidirTest : public ::testing::Test {
 protected:
@@ -39,9 +56,11 @@ protected:
         memset(pinConfig, 0, sizeof(pinConfig));
         memset(pinRecords, 0, sizeof(pinRecords));
         memset(debug, 0, sizeof(debug));
+        mockRxLptim = {};
         mockLptim = {};
         now = 0;
         clockHz = 288000000;
+        idleCount = 0;
         debugMode = DEBUG_UART_BIDIR;
         for (unsigned i = 0; i < UARTDEV_COUNT; i++) {
             const serialPortIdentifier_e id = i == UARTDEV_1 ? SERIAL_PORT_UART1
@@ -68,6 +87,14 @@ protected:
         return s;
     }
 
+    uartPort_t *openWithIdleCallback(uint32_t baud)
+    {
+        auto &port = uartDevice[UARTDEV_1].port.port;
+        port.mode = MODE_RXTX;
+        port.idleCallback = recordIdle;
+        return open(UARTDEV_1, SERIAL_BIDIR, baud);
+    }
+
     void expectReceive(unsigned tx, ioConfig_t pull)
     {
         EXPECT_EQ(pull, pinConfig[tx]);
@@ -87,10 +114,10 @@ TEST_F(Um32UartBidirTest, WaitsForShiftRegisterEmptyAndReleasesWithoutAPrefix)
     uartBidirDrain(s);
     EXPECT_NE(0U, mockLptim.IE);
     now = 100;
-    LPTIMER1_IRQHandler(); // FIFO empty alone does not mean TEMT.
+    LPTIMER2_IRQHandler(); // FIFO empty alone does not mean TEMT.
     EXPECT_TRUE(uartBidirIsTransmitting(s));
     registers[UARTDEV_1].LSR = UART_EX_LSR_TEMT;
-    LPTIMER1_IRQHandler();
+    LPTIMER2_IRQHandler();
     expectReceive(6, IOCFG_IPU);
     EXPECT_FALSE(uartBidirIsTransmitting(s));
     EXPECT_EQ(0U, mockLptim.IE);
@@ -103,7 +130,7 @@ TEST_F(Um32UartBidirTest, QueuedDataAndNewTransmissionCancelPendingRelease)
     uartBidirDrain(s);
     s->port.txBufferHead = 1;
     registers[UARTDEV_1].LSR = UART_EX_LSR_TEMT;
-    LPTIMER1_IRQHandler();
+    LPTIMER2_IRQHandler();
     EXPECT_TRUE(uartBidirIsTransmitting(s));
     s->port.txBufferTail = 1;
     uartBidirDrain(s);
@@ -113,7 +140,7 @@ TEST_F(Um32UartBidirTest, QueuedDataAndNewTransmissionCancelPendingRelease)
     uartBidirDrain(s);
     uartBidirStart(s);
     registers[UARTDEV_1].LSR = UART_EX_LSR_TEMT;
-    LPTIMER1_IRQHandler();
+    LPTIMER2_IRQHandler();
     EXPECT_TRUE(uartBidirIsTransmitting(s));
     uartBidirDrain(s);
     expectReceive(6, IOCFG_IPU);
@@ -127,7 +154,7 @@ TEST_F(Um32UartBidirTest, StuckTemtReleasesBusAndReportsFaultUntilReconfigured)
     uartBidirStart(s);
     uartBidirDrain(s);
     now = 10000;
-    LPTIMER1_IRQHandler();
+    LPTIMER2_IRQHandler();
     expectReceive(6, IOCFG_IPU);
     EXPECT_FALSE(uartBidirStart(s));
     EXPECT_EQ(1, debug[0]);
@@ -140,7 +167,7 @@ TEST_F(Um32UartBidirTest, StuckTemtReleasesBusAndReportsFaultUntilReconfigured)
     registers[UARTDEV_1].LSR = 0;
     uartBidirDrain(s);
     now += 10000;
-    LPTIMER1_IRQHandler();
+    LPTIMER2_IRQHandler();
     EXPECT_EQ(1, debug[2]);
     s->port.options = SERIAL_UNIDIR;
     uartBidirConfigure(s);
@@ -241,7 +268,7 @@ TEST_F(Um32UartBidirTest, SparseDeviceIndexesAndSamUsartUseTheCorrectStateAndReg
     uartBidirDrain(s);
     EXPECT_TRUE(uartBidirIsTransmitting(s));
     sam.CSR = USART_CSR_TXEMPTY;
-    LPTIMER1_IRQHandler();
+    LPTIMER2_IRQHandler();
     expectReceive(26, IOCFG_IPU);
     EXPECT_FALSE(uartBidirIsTransmitting(s));
     uartPort_t invalid = {};
@@ -261,11 +288,11 @@ TEST_F(Um32UartBidirTest, ConcurrentBaudRatesDoNotPrematurelyTimeoutTheSlowPort)
     uartBidirStart(fast);
     uartBidirDrain(fast);
     EXPECT_LT(mockLptim.TARGET, slowTarget);
-    for (int i = 0; i < 20; i++) { now += 10; LPTIMER1_IRQHandler(); }
+    for (int i = 0; i < 20; i++) { now += 10; LPTIMER2_IRQHandler(); }
     EXPECT_TRUE(uartBidirIsTransmitting(slow));
     EXPECT_TRUE(uartBidirIsTransmitting(fast));
     registers[UARTDEV_2].LSR = UART_EX_LSR_TEMT;
-    LPTIMER1_IRQHandler();
+    LPTIMER2_IRQHandler();
     EXPECT_FALSE(uartBidirIsTransmitting(fast));
     EXPECT_TRUE(uartBidirIsTransmitting(slow));
 }
@@ -277,10 +304,10 @@ TEST_F(Um32UartBidirTest, DeadlineWraparoundUsesElapsedTime)
     now = UINT32_MAX - 15;
     uartBidirDrain(s);
     now = 20;
-    LPTIMER1_IRQHandler();
+    LPTIMER2_IRQHandler();
     EXPECT_TRUE(uartBidirIsTransmitting(s));
     now = 10000;
-    LPTIMER1_IRQHandler();
+    LPTIMER2_IRQHandler();
     EXPECT_FALSE(uartBidirStart(s));
 }
 
@@ -304,7 +331,7 @@ TEST_F(Um32UartBidirTest, TimerRateTracksBothSupportedClocks)
         uartBidirDrain(s);
         EXPECT_EQ(((hz / 128) * 100 + 999999) / 1000000, mockLptim.TARGET);
         registers[UARTDEV_1].LSR = UART_EX_LSR_TEMT;
-        LPTIMER1_IRQHandler();
+        LPTIMER2_IRQHandler();
     }
 }
 
@@ -316,10 +343,163 @@ TEST_F(Um32UartBidirTest, TimeoutCounterSaturatesInsteadOfWrappingNegative)
         uartBidirStart(s);
         uartBidirDrain(s);
         now += 10000;
-        LPTIMER1_IRQHandler();
+        LPTIMER2_IRQHandler();
     }
     EXPECT_EQ(INT16_MAX, debug[1]);
     EXPECT_EQ(1, debug[2]);
+}
+
+TEST_F(Um32UartBidirTest, RxIdleWaitsForTwoCharactersAfterTheLastByte)
+{
+    const struct {
+        uint32_t baud;
+        uint32_t gapUs;
+        uint32_t pclkHz;
+    } cases[] = {{115200, 174, 36000000}, {400000, 50, 42000000}};
+    for (const auto &timing : cases) {
+        SCOPED_TRACE(timing.baud);
+        auto *s = openWithIdleCallback(timing.baud);
+        idleCount = 0;
+        now = 100;
+        clockHz = timing.pclkHz;
+        const uint32_t ticksPerSecond = clockHz / 32;
+
+        uartBidirRxActivity(s);
+        ASSERT_EQ(LPTIM_CTRL_LPTEN, mockRxLptim.CTRL);
+        ASSERT_EQ(LPTIM_IE_OVIE, mockRxLptim.IE);
+        const uint32_t initialTarget = (ticksPerSecond * timing.gapUs + 999999) / 1000000;
+        ASSERT_EQ(initialTarget, mockRxLptim.TARGET);
+        EXPECT_EQ(0U, mockLptim.IE);
+
+        mockRxLptim.IF = 0; // Model the write-one-to-clear register after arming.
+        const uint32_t byteTime = timing.gapUs / 2;
+        now += byteTime;
+        uartBidirRxActivity(s);
+        now += byteTime;
+        uartBidirRxActivity(s);
+        const uint32_t finalByte = now;
+        EXPECT_EQ(0U, mockRxLptim.IF); // Later bytes do not restart the hardware timer.
+
+        fireRxTimer(); // The first deadline is due, but the most recent byte extended it.
+        EXPECT_EQ(0U, idleCount);
+        EXPECT_EQ(LPTIM_IE_OVIE, mockRxLptim.IE);
+        now = finalByte + timing.gapUs - 1;
+        fireRxTimer();
+        EXPECT_EQ(0U, idleCount);
+
+        ++now;
+        fireRxTimer(0); // A pending NVIC interrupt without the peripheral flag is stale.
+        EXPECT_EQ(0U, idleCount);
+        fireRxTimer();
+        EXPECT_EQ(1U, idleCount);
+        EXPECT_EQ(0U, mockRxLptim.IE);
+        fireRxTimer();
+        EXPECT_EQ(1U, idleCount);
+    }
+}
+
+TEST_F(Um32UartBidirTest, RxIdleDefersForUnreadBytesAndCancelsOnBaudChange)
+{
+    auto *s = openWithIdleCallback(400000);
+    now = UINT32_MAX - 39;
+    uartBidirRxActivity(s);
+    now = 9;
+    fireRxTimer();
+    EXPECT_EQ(0U, idleCount);
+
+    now = 10;
+    registers[UARTDEV_1].USR = UART_EX_USR_RFNE;
+    fireRxTimer();
+    EXPECT_EQ(0U, idleCount);
+    EXPECT_EQ(LPTIM_IE_OVIE, mockRxLptim.IE);
+
+    now = 11;
+    registers[UARTDEV_1].USR = 0;
+    uartBidirRxActivity(s);
+    now = 61;
+    fireRxTimer();
+    ASSERT_EQ(1U, idleCount);
+
+    now = 70;
+    uartBidirRxActivity(s);
+    s->port.baudRate = 115200;
+    uartBidirConfigure(s);
+    now = 120;
+    fireRxTimer();
+    EXPECT_EQ(1U, idleCount);
+
+    uartBidirRxActivity(s);
+    now = 293;
+    fireRxTimer();
+    EXPECT_EQ(1U, idleCount);
+    ++now;
+    fireRxTimer();
+    EXPECT_EQ(2U, idleCount);
+}
+
+TEST_F(Um32UartBidirTest, RxIdleRequiresAConfiguredReceivePortAndCallback)
+{
+    auto *s = open(UARTDEV_1, SERIAL_BIDIR, 115200);
+    s->port.mode = MODE_RXTX;
+    uartBidirRxActivity(s);
+    EXPECT_EQ(0U, mockRxLptim.IE);
+
+    s->port.idleCallback = recordIdle;
+    s->port.mode = MODE_TX;
+    uartBidirConfigure(s);
+    uartBidirRxActivity(s);
+    EXPECT_EQ(0U, mockRxLptim.IE);
+
+    s->port.mode = MODE_RX;
+    open(UARTDEV_1, SERIAL_UNIDIR, 115200);
+    uartBidirRxActivity(s);
+    EXPECT_EQ(0U, mockRxLptim.IE);
+
+    now = 1000;
+    fireRxTimer();
+    EXPECT_EQ(0U, idleCount);
+}
+
+TEST_F(Um32UartBidirTest, TxTerminalNotifiesAfterReleaseAndPreservesTheNextRxIdle)
+{
+    auto *s = openWithIdleCallback(400000);
+    uartBidirRxActivity(s);
+    ASSERT_TRUE(uartBidirStart(s));
+    now = 50;
+    fireRxTimer();
+    EXPECT_EQ(0U, idleCount);
+
+    uartBidirDrain(s);
+    LPTIMER2_IRQHandler();
+    EXPECT_EQ(0U, idleCount);
+    registers[UARTDEV_1].LSR = UART_EX_LSR_TEMT;
+    LPTIMER2_IRQHandler();
+    ASSERT_EQ(1U, idleCount);
+    LPTIMER2_IRQHandler();
+    EXPECT_EQ(1U, idleCount);
+
+    uartBidirRxActivity(s);
+    now = 100;
+    fireRxTimer();
+    EXPECT_EQ(2U, idleCount);
+
+    ASSERT_TRUE(uartBidirStart(s));
+    uartBidirDrain(s); // Immediate TEMT must take the same completion path.
+    ASSERT_EQ(3U, idleCount);
+
+    registers[UARTDEV_1].LSR = 0;
+    ASSERT_TRUE(uartBidirStart(s));
+    uartBidirDrain(s);
+    now += 2000;
+    LPTIMER2_IRQHandler();
+    ASSERT_EQ(4U, idleCount);
+    EXPECT_FALSE(uartBidirStart(s));
+    EXPECT_EQ(5U, idleCount);
+
+    uartBidirRxActivity(s);
+    now += 50;
+    fireRxTimer();
+    EXPECT_EQ(6U, idleCount);
 }
 
 TEST_F(Um32UartBidirTest, BoardBiasPreservesSmartAudioTrampExplicitPullAndInversion)
@@ -330,7 +510,7 @@ TEST_F(Um32UartBidirTest, BoardBiasPreservesSmartAudioTrampExplicitPullAndInvers
         uartBidirStart(s);
         uartBidirDrain(s);
         registers[UARTDEV_1].LSR = UART_EX_LSR_TEMT;
-        LPTIMER1_IRQHandler();
+        LPTIMER2_IRQHandler();
         expectReceive(6, IOCFG_IPU);
     }
     EXPECT_EQ(SERIAL_BIDIR, s->port.options);
@@ -388,6 +568,7 @@ void IOInit(IO_t io, resourceOwner_e owner, uint8_t index)
 resourceOwner_e serialOwnerTxRx(serialPortIdentifier_e) { return OWNER_SERIAL_TX; }
 int serialOwnerIndex(serialPortIdentifier_e id) { return id - SERIAL_PORT_UART1 + 1; }
 uint32_t micros(void) { return now; }
+uint32_t microsISR(void) { return now; }
 uint32_t HAL_RCM_GetPCLK0Freq(void) { return clockHz; }
 void HAL_NVIC_SetPriority(int, int, int) {}
 void HAL_NVIC_EnableIRQ(int) {}

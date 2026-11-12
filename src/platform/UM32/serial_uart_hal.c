@@ -108,11 +108,10 @@ void uartReconfigure(uartPort_t *uartPort)
     // UM32 uses board-level inversion. Set any configured inverter GPIO before enabling RX.
     uartConfigureExternalPinInversion(uartPort);
 
-    uartBidirConfigure(uartPort);
-
 #if defined(USE_UART7) || defined(USE_UART8)
     USART_TypeDef *usartSam;
     if (uartSamInstance(uartPort, &usartSam)) {
+        uartBidirConfigure(uartPort);
         USART_HandleTypeDef handle = { 0 };
         handle.Instance = usartSam;
         handle.Init.BaudRate = uartPort->port.baudRate;
@@ -149,10 +148,13 @@ void uartReconfigure(uartPort_t *uartPort)
     pHandle->Init.Parity = (uartPort->port.options & SERIAL_PARITY_EVEN) ? UART_EX_PARITY_EVEN : UART_EX_PARITY_NONE;
     pHandle->Init.HwFlowCtl = UART_EX_HWCONTROL_NONE;
 
-    HAL_UART_EX_Init(pHandle);
+    ATOMIC_BLOCK(NVIC_PRIO_SERIALUART1) {
+        uartBidirConfigure(uartPort);
+        HAL_UART_EX_Init(pHandle);
 
-    if (uartPort->port.mode & MODE_RX) {
-        __HAL_UART_EX_ENABLE_IT(pHandle, UART_EX_IT_ERBFI);
+        if (uartPort->port.mode & MODE_RX) {
+            __HAL_UART_EX_ENABLE_IT(pHandle, UART_EX_IT_ERBFI);
+        }
     }
     // TX interrupts are enabled when data is queued.
 }
@@ -280,13 +282,16 @@ void uartIrqHandler(uartPort_t *s)
         if ((usrflags & UART_EX_USR_RFNE) && (ierits & UART_EX_IER_ERBFI)) {
             rbyte = (uint8_t)(pHandle->Instance->RBR & (uint8_t)0xff);
 
-            if (uartBidirIsTransmitting(s)) {
-                // Ignore receiver noise while its pad is disconnected.
-            } else if (s->port.rxCallback) {
-                s->port.rxCallback(rbyte, s->port.rxCallbackData);
-            } else {
-                s->port.rxBuffer[s->port.rxBufferHead] = rbyte;
-                s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
+            if (!uartBidirIsTransmitting(s)) {
+                if (s->port.rxCallback) {
+                    s->port.rxCallback(rbyte, s->port.rxCallbackData);
+                } else {
+                    s->port.rxBuffer[s->port.rxBufferHead] = rbyte;
+                    s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
+                }
+                if (s->port.idleCallback) {
+                    uartBidirRxActivity(s);
+                }
             }
         }
     }else{

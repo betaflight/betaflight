@@ -19,7 +19,7 @@
 #include "platform/serial_uart_bidir.h"
 
 #if UM32_UART_BIDIR_ENABLED
-// Reserve SDK LPTIM1 (manual LPTIM2) for UART turnaround, with no GPIO mux.
+// Reserve LPTIM2 (0x40B0A000) for UART turnaround, with no GPIO mux.
 // Ordinary TIM resources used by motors, LEDs and camera control are untouched.
 #define BIDIR_IRQ_PRIORITY NVIC_PRIO_SERIALUART1
 #define BIDIR_ERROR_MASK (UART_EX_LSR_OE | UART_EX_LSR_PE | UART_EX_LSR_FE | UART_EX_LSR_RFE)
@@ -43,6 +43,17 @@ typedef struct {
 static uartBidirState_t ports[UARTDEV_COUNT];
 static bool timerInitialized;
 static uint8_t armedIntervalUs;
+
+// LPTIM1 detects a gap between received bytes on dual-pad UART1.
+// PCLK0 / 32 gives sub-microsecond ticks at the supported flight clocks.
+#define RX_IDLE_PRESCALER 32U
+#define RX_IDLE_CFG (LPTIM_CFG_CLKSEL_1 | LPTIM_CFG_DIVSEL_2 | LPTIM_CFG_DIVSEL_0 | LPTIM_CFG_MODE)
+
+static const uartPort_t *rxIdlePort;
+static uint32_t rxIdleGapUs;
+static uint32_t rxIdleDeadline;
+static uint32_t rxIdleTimerHz;
+static bool rxIdleTimerInitialized;
 
 static ioTag_t bidirRxTag(serialPortIdentifier_e id)
 {
@@ -146,6 +157,102 @@ static uartBidirState_t *state(const uartPort_t *s)
     return index >= 0 && index < UARTDEV_COUNT ? &ports[index] : NULL;
 }
 
+static uint32_t frameTimeUs(const uartPort_t *s, unsigned frames)
+{
+    const unsigned bits = 1 + 8 + ((s->port.options & SERIAL_PARITY_EVEN) ? 1 : 0)
+        + ((s->port.options & SERIAL_STOPBITS_2) ? 2 : 1);
+    return (frames * bits * 1000000 + s->port.baudRate - 1) / s->port.baudRate;
+}
+
+static void stopRxIdleTimer(void)
+{
+    LPTIM1->IE = 0;
+    LPTIM1->CTRL = 0;
+    LPTIM1->IF = LPTIM_IF_OVIF;
+}
+
+static void cancelRxIdle(const uartPort_t *s)
+{
+    if (rxIdlePort == s) {
+        rxIdlePort = NULL;
+        stopRxIdleTimer();
+        // The next arm resets the counter even after a mid-count cancellation.
+        rxIdleTimerInitialized = false;
+    }
+}
+
+static void armRxIdleTimer(uint32_t intervalUs)
+{
+    if (!rxIdleTimerInitialized) {
+        __HAL_PMU_LPTIM1_CLK_ENABLE();
+        __HAL_PMU_LPTIM1_FORCE_RESET();
+        __HAL_PMU_LPTIM1_RELEASE_RESET();
+        LPTIM1->CFG = RX_IDLE_CFG;
+        // Let a simultaneously pending UART1 IRQ deliver its byte first.
+        HAL_NVIC_SetPriority(LPTIMER1_IRQn, NVIC_PRIORITY_BASE(BIDIR_IRQ_PRIORITY), NVIC_PRIORITY_SUB(BIDIR_IRQ_PRIORITY) + 1);
+        HAL_NVIC_EnableIRQ(LPTIMER1_IRQn);
+        rxIdleTimerInitialized = true;
+    }
+
+    const uint32_t ticks = ((uint64_t)rxIdleTimerHz * intervalUs + 999999) / 1000000;
+    LPTIM1->TARGET = ticks > UINT16_MAX ? UINT16_MAX : ticks;
+    LPTIM1->IF = LPTIM_IF_OVIF;
+    LPTIM1->IE = LPTIM_IE_OVIE;
+    LPTIM1->CTRL = LPTIM_CTRL_LPTEN;
+}
+
+void uartBidirRxActivity(const uartPort_t *s)
+{
+    if (s->port.identifier != SERIAL_PORT_UART1 || !s->port.idleCallback || !(s->port.mode & MODE_RX)) {
+        return;
+    }
+    const uartBidirState_t *p = state(s);
+    if (!p || p->uart != s || p->transmitting) {
+        return;
+    }
+
+    rxIdleDeadline = microsISR() + rxIdleGapUs;
+    if (!rxIdlePort) {
+        rxIdlePort = s;
+        rxIdleTimerHz = HAL_RCM_GetPCLK0Freq() / RX_IDLE_PRESCALER;
+        armRxIdleTimer(rxIdleGapUs);
+    }
+}
+
+void LPTIMER1_IRQHandler(void)
+{
+    // A pending NVIC interrupt can survive cancellation and rearming.
+    if (!(LPTIM1->IF & LPTIM_IF_OVIF)) {
+        return;
+    }
+    stopRxIdleTimer();
+
+    const uartPort_t *s = rxIdlePort;
+    if (!s || !s->port.idleCallback) {
+        rxIdlePort = NULL;
+        return;
+    }
+    const int32_t remainingUs = (int32_t)(rxIdleDeadline - microsISR());
+    if (remainingUs > 0) {
+        armRxIdleTimer(remainingUs);
+    } else if (((const UART_TypeDef *)s->USARTx)->USR & UART_EX_USR_RFNE) {
+        // UART1 owns the FIFO. Give its ISR time to deliver the pending byte.
+        armRxIdleTimer(rxIdleGapUs / 2);
+    } else {
+        rxIdlePort = NULL;
+        s->port.idleCallback();
+    }
+}
+
+static void notifyTxEnd(const uartPort_t *s)
+{
+    // UART1 suppresses TX echo. Supply the idle notification that would
+    // follow it, including when TX is aborted, so SRXL2 can receive again.
+    if (s->port.identifier == SERIAL_PORT_UART1 && s->port.idleCallback) {
+        s->port.idleCallback();
+    }
+}
+
 static void reportStatus(const uartBidirState_t *p, serialPortIdentifier_e id)
 {
     DEBUG_SET(DEBUG_UART_BIDIR, 0, serialOwnerIndex(id)); //!< UART number [unit:1]
@@ -163,21 +270,22 @@ static void armTimer(void)
     }
     // Never postpone a check for a slower port. A newly draining faster port
     // may shorten it; elapsed-time fault deadlines are independent of this.
-    if (interval == 101 || ((LPTIM1->CTRL & LPTIM_CTRL_LPTEN) && interval >= armedIntervalUs)) {
+    if (interval == 101 || ((LPTIM2->CTRL & LPTIM_CTRL_LPTEN) && interval >= armedIntervalUs)) {
         return;
     }
-    LPTIM1->CTRL = 0;
+    LPTIM2->CTRL = 0;
     armedIntervalUs = interval;
     const uint32_t hz = HAL_RCM_GetPCLK0Freq() / 128;
-    LPTIM1->TARGET = (hz * interval + 999999) / 1000000;
-    LPTIM1->IF = LPTIM_IF_OVIF;
-    LPTIM1->IE = LPTIM_IE_OVIE;
-    LPTIM1->CTRL = LPTIM_CTRL_LPTEN;
+    LPTIM2->TARGET = (hz * interval + 999999) / 1000000;
+    LPTIM2->IF = LPTIM_IF_OVIF;
+    LPTIM2->IE = LPTIM_IE_OVIE;
+    LPTIM2->CTRL = LPTIM_CTRL_LPTEN;
 }
 
 void uartBidirConfigure(uartPort_t *s)
 {
     ATOMIC_BLOCK(BIDIR_IRQ_PRIORITY) {
+        cancelRxIdle(s);
         uartBidirState_t *p = state(s);
         if (!p) { return; }
         const serialPortIdentifier_e id = s->port.identifier;
@@ -199,15 +307,18 @@ void uartBidirConfigure(uartPort_t *s)
         s->txDMAResource = NULL;
 #endif
         if (!timerInitialized) {
-            __HAL_PMU_LPTIM1_CLK_ENABLE();
-            __HAL_PMU_LPTIM1_FORCE_RESET();
-            __HAL_PMU_LPTIM1_RELEASE_RESET();
-            LPTIM1->CFG = LPTIM_CFG_CLKSEL_1 | LPTIM_CFG_DIVSEL | LPTIM_CFG_MODE;
-            HAL_NVIC_SetPriority(LPTIMER1_IRQn, NVIC_PRIORITY_BASE(BIDIR_IRQ_PRIORITY), NVIC_PRIORITY_SUB(BIDIR_IRQ_PRIORITY));
-            HAL_NVIC_EnableIRQ(LPTIMER1_IRQn);
+            __HAL_PMU_LPTIM2_CLK_ENABLE();
+            __HAL_PMU_LPTIM2_FORCE_RESET();
+            __HAL_PMU_LPTIM2_RELEASE_RESET();
+            LPTIM2->CFG = LPTIM_CFG_CLKSEL_1 | LPTIM_CFG_DIVSEL | LPTIM_CFG_MODE;
+            HAL_NVIC_SetPriority(LPTIMER2_IRQn, NVIC_PRIORITY_BASE(BIDIR_IRQ_PRIORITY), NVIC_PRIORITY_SUB(BIDIR_IRQ_PRIORITY));
+            HAL_NVIC_EnableIRQ(LPTIMER2_IRQn);
             timerInitialized = true;
         }
         p->uart = s;
+        if (id == SERIAL_PORT_UART1) {
+            rxIdleGapUs = frameTimeUs(s, 2);
+        }
         p->tx = tx;
         p->rx = rx;
         p->af = dev->hardware->af;
@@ -237,9 +348,13 @@ bool uartBidirStart(uartPort_t *s)
 {
     uartBidirState_t *p = state(s);
     if (!p || !p->uart) { return true; }
-    if (p->fault) { return false; } // A hardware stall requires reconfiguration.
+    if (p->fault) {
+        notifyTxEnd(s); // The caller drops the queued write after a hardware stall.
+        return false;
+    }
     p->waiting = false;
     if (!p->transmitting) {
+        cancelRxIdle(s);
         IOConfigGPIO(p->rx, IOCFG_IN_FLOATING);
         IOConfigGPIOAF(p->tx, p->activeConfig, p->af);
         p->transmitting = true;
@@ -295,6 +410,7 @@ static void release(uartBidirState_t *p)
     IOConfigGPIO(p->tx, p->idleConfig);
     p->transmitting = false;
     p->waiting = false;
+    notifyTxEnd(p->uart);
 }
 
 void uartBidirDrain(uartPort_t *s)
@@ -302,22 +418,20 @@ void uartBidirDrain(uartPort_t *s)
     uartBidirState_t *p = state(s);
     if (!p || !p->transmitting) { return; }
     if (complete(p)) { release(p); return; }
-    const unsigned bits = 1 + 8 + ((s->port.options & SERIAL_PARITY_EVEN) ? 1 : 0)
-        + ((s->port.options & SERIAL_STOPBITS_2) ? 2 : 1);
     // One shift-register character remains. Bound a stuck peripheral to two
     // character times plus 1 ms; this is fault recovery, not normal turnaround.
-    const uint32_t frameUs = (bits * 1000000 + s->port.baudRate - 1) / s->port.baudRate;
+    const uint32_t frameUs = frameTimeUs(s, 1);
     p->deadline = micros() + 2 * frameUs + 1000;
     p->waiting = true;
     armTimer();
 }
 
-void LPTIMER1_IRQHandler(void)
+void LPTIMER2_IRQHandler(void)
 {
     ATOMIC_BLOCK(BIDIR_IRQ_PRIORITY) {
-        LPTIM1->IF = LPTIM_IF_OVIF;
-        LPTIM1->CTRL = 0;
-        LPTIM1->IE = 0;
+        LPTIM2->IF = LPTIM_IF_OVIF;
+        LPTIM2->CTRL = 0;
+        LPTIM2->IE = 0;
         for (unsigned i = 0; i < UARTDEV_COUNT; i++) {
             uartBidirState_t *p = &ports[i];
             if (!p->waiting) { continue; }

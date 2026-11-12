@@ -14,6 +14,7 @@ bool uartBidirCanOpen(const uartDevice_t *dev, uint32_t baudRate);
 void uartBidirConfigure(uartPort_t *s);
 bool uartBidirStart(uartPort_t *s);
 void uartBidirDrain(uartPort_t *s);
+void uartBidirRxActivity(const uartPort_t *s);
 bool uartBidirIsTransmitting(const uartPort_t *s);
 uint32_t uartBidirTakeErrors(uartPort_t *s);
 #else
@@ -22,6 +23,7 @@ static inline bool uartBidirCanOpen(const uartDevice_t *dev, uint32_t baudRate) 
 static inline void uartBidirConfigure(uartPort_t *s) { (void)s; }
 static inline bool uartBidirStart(uartPort_t *s) { (void)s; return true; }
 static inline void uartBidirDrain(uartPort_t *s) { (void)s; }
+static inline void uartBidirRxActivity(const uartPort_t *s) { (void)s; }
 static inline bool uartBidirIsTransmitting(const uartPort_t *s) { (void)s; return false; }
 static inline uint32_t uartBidirTakeErrors(uartPort_t *s) { (void)s; return 0; }
 #endif

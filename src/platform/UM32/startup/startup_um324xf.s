@@ -281,8 +281,8 @@ g_um32Vectors:
   .word  0      					 			        /* 106: 0 */
   .word  LPUART_IRQHandler       			  /* 107: LPUART_IRQHandler */
   .word  0       	                		  /* 108: 0 */
-  .word  LPTIMER0_IRQHandler       			/* 109: LPTIMER0_IRQHandler */
-  .word  LPTIMER1_IRQHandler       			/* 110: LPTIMER1_IRQHandler */
+  .word  LPTIMER1_IRQHandler       			/* 109: LPTIMER1_IRQHandler */
+  .word  LPTIMER2_IRQHandler       			/* 110: LPTIMER2_IRQHandler */
 
 /*******************************************************************************
 *
@@ -561,8 +561,8 @@ g_um32Vectors:
    .weak      LPUART_IRQHandler
    .thumb_set LPUART_IRQHandler,Default_Handler
 
-   .weak      LPTIMER0_IRQHandler
-   .thumb_set LPTIMER0_IRQHandler,Default_Handler
-
    .weak      LPTIMER1_IRQHandler
    .thumb_set LPTIMER1_IRQHandler,Default_Handler
+
+   .weak      LPTIMER2_IRQHandler
+   .thumb_set LPTIMER2_IRQHandler,Default_Handler

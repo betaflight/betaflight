@@ -45,17 +45,25 @@
 #define LPTIM_IE_OVIE 2
 #define LPTIM_CFG_CLKSEL_1 512
 #define LPTIM_CFG_DIVSEL 7168
+#define LPTIM_CFG_DIVSEL_0 1024
+#define LPTIM_CFG_DIVSEL_2 4096
 #define LPTIM_CFG_MODE 4
-#define LPTIMER1_IRQn 110
+#define LPTIMER1_IRQn 109
+#define LPTIMER2_IRQn 110
 #define __HAL_PMU_LPTIM1_CLK_ENABLE() ((void)0)
 #define __HAL_PMU_LPTIM1_FORCE_RESET() ((void)0)
 #define __HAL_PMU_LPTIM1_RELEASE_RESET() ((void)0)
+#define __HAL_PMU_LPTIM2_CLK_ENABLE() ((void)0)
+#define __HAL_PMU_LPTIM2_FORCE_RESET() ((void)0)
+#define __HAL_PMU_LPTIM2_RELEASE_RESET() ((void)0)
 
 typedef struct { volatile uint32_t LSR, USR, RBR; } UART_TypeDef;
 typedef struct { volatile uint32_t CSR, RHR; } USART_TypeDef;
 typedef struct { volatile uint32_t CTRL, CFG, TARGET, IF, IE; } mockLptim_t;
+extern mockLptim_t mockRxLptim;
 extern mockLptim_t mockLptim;
-#define LPTIM1 (&mockLptim)
+#define LPTIM1 (&mockRxLptim)
+#define LPTIM2 (&mockLptim)
 uint32_t HAL_RCM_GetPCLK0Freq(void);
 void HAL_NVIC_SetPriority(int irq, int priority, int subpriority);
 void HAL_NVIC_EnableIRQ(int irq);
