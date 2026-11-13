@@ -360,19 +360,28 @@ void adcInit(const adcConfig_t *config)
 
         for (int adcChan = 0; adcChan < ADC_EXTERNAL_COUNT; adcChan++) {
 
-            if (!adcOperatingConfig[adcChan].enabled) {
+            adcOperatingConfig_t *channel = &adcOperatingConfig[adcChan];
+            if (!channel->enabled || channel->adcDevice != dev) {
                 continue;
             }
 
-            if (adcOperatingConfig[adcChan].adcDevice != dev) {
+            // Logical sources on the same ADC input share one conversion and DMA slot.
+            int previous;
+            for (previous = 0; previous < adcChan; previous++) {
+                const adcOperatingConfig_t *candidate = &adcOperatingConfig[previous];
+                if (candidate->enabled && candidate->adcDevice == dev && candidate->adcChannel == channel->adcChannel) {
+                    break;
+                }
+            }
+            if (previous < adcChan) {
+                channel->dmaIndex = adcOperatingConfig[previous].dmaIndex;
                 continue;
             }
 
-            adcOperatingConfig[adcChan].dmaIndex = dmaBufferIndex++;
+            channel->dmaIndex = dmaBufferIndex++;
 
             ADC_ChannelConfTypeDef sConfig = {0};
-
-            sConfig.Channel      = adcOperatingConfig[adcChan].adcChannel; /* Sampled channel number */
+            sConfig.Channel      = channel->adcChannel; /* Sampled channel number */
             sConfig.Rank         = adcRegularRank[rank++];      /* Rank of sampled channel number ADCx_CHANNEL */
             sConfig.AverageTimes = ADC_CHANNEL_AVERAGE_TIMES_1;            /* Sampling time (number of clock cycles unit) */
 
