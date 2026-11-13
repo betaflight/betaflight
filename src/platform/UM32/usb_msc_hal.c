@@ -92,9 +92,11 @@ uint8_t mscStart(void)
         return 1;
     }
 
-    mscUsbInit(0, USB_BASE);
+    if (pdev->Init(0) != 0) {
+        return 1;
+    }
 
-	pdev->Init(0);
+    mscUsbInit(0, USB_BASE);
 
     // NVIC configuration for SYSTick
     NVIC_DisableIRQ(SysTick_IRQn);
