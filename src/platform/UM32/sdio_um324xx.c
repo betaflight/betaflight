@@ -392,15 +392,16 @@ static SD_Error_t SD_CmdResponse(uint8_t SD_CMD, int8_t ResponseType)
         TimeOutLocal--;
     } while (((SD_Status & Flag) == 0) && (TimeOutLocal > 0));
 
+    // A software timeout must not allow stale response registers to be accepted.
+    if ((SD_Status & Flag) == 0) {
+        return SD_CMD_RSP_TIMEOUT;
+    }
+
     if (ResponseType <= 0)
     {
-        if (TimeOutLocal == 0) {
-            return SD_CMD_RSP_TIMEOUT;
-        } else {
-            // Clear the CMD_FINISH flag
-            SDIO->RINTSTS = SDIO_RINTSTS_CMD_FINISH;
-            return SD_OK;
-        }
+        // Clear the CMD_FINISH flag
+        SDIO->RINTSTS = SDIO_RINTSTS_CMD_FINISH;
+        return SD_OK;
     }
 
     // Check for timeout
@@ -412,12 +413,8 @@ static SD_Error_t SD_CmdResponse(uint8_t SD_CMD, int8_t ResponseType)
     if (ResponseType == 3)
     {
         // For ACMD41 (OCR response type R3), no CRC check
-        if (TimeOutLocal == 0) {
-            return SD_CMD_RSP_TIMEOUT;  // Card is not V2.0 compliant
-        } else {
-            SDIO->RINTSTS = SDIO_RINTSTS_CMD_FINISH;
-            return SD_OK;               // Card is SD V2.0 compliant
-        }
+        SDIO->RINTSTS = SDIO_RINTSTS_CMD_FINISH;
+        return SD_OK;
     }
 
     // Check for CRC error
