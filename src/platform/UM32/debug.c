@@ -38,33 +38,6 @@ void debugInit(void)
         IOInit(io, OWNER_SWD, 0);
     }
 
-#ifdef USE_QSPI_XIP
-    //system pin for QSPI internal used.
-    io = IOGetByTag(DEFIO_TAG_E(PE10));      // QSPI_CLK
-    if (IOGetOwner(io) == OWNER_FREE) {
-        IOInit(io, OWNER_SYSTEM, 0);
-    }
-    io = IOGetByTag(DEFIO_TAG_E(PD3));      // QSPI_BK1CS
-    if (IOGetOwner(io) == OWNER_FREE) {
-        IOInit(io, OWNER_SYSTEM, 0);
-    }
-    io = IOGetByTag(DEFIO_TAG_E(PD4));      // QSPI_BK1IO0
-    if (IOGetOwner(io) == OWNER_FREE) {
-        IOInit(io, OWNER_SYSTEM, 0);
-    }
-    io = IOGetByTag(DEFIO_TAG_E(PD5));      // QSPI_BK1IO1
-    if (IOGetOwner(io) == OWNER_FREE) {
-        IOInit(io, OWNER_SYSTEM, 0);
-    }
-    io = IOGetByTag(DEFIO_TAG_E(PD6));      // QSPI_BK1IO2
-    if (IOGetOwner(io) == OWNER_FREE) {
-        IOInit(io, OWNER_SYSTEM, 0);
-    }
-    io = IOGetByTag(DEFIO_TAG_E(PE15));      // QSPI_BK1IO3
-    if (IOGetOwner(io) == OWNER_FREE) {
-        IOInit(io, OWNER_SYSTEM, 0);
-    }
-#endif
     //System PIN for internal resource.
     io = IOGetByTag(DEFIO_TAG_E(PE5));
     if (IOGetOwner(io) == OWNER_FREE) {

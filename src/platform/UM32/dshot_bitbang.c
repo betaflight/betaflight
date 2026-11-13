@@ -728,7 +728,7 @@ bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorCon
         }
 #endif
 
-        if (!IOIsFreeOrPreinit(io)) {
+        if (!io || !IOIsFreeOrPreinit(io)) {
             /* not enough motors initialised for the mixer or a break in the motors */
             device->vTable = NULL;
             dshotMotorCount = 0;

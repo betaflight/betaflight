@@ -46,8 +46,15 @@
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC 0xffff
+#ifdef USE_QSPI_XIP
+// Exclude the QSPI XIP pads from resource allocation.
+// PD3-PD6 are CS and IO0-IO2. PE10 and PE15 are CLK and IO3.
+#define TARGET_IO_PORTD (0xffff & ~(BIT(3) | BIT(4) | BIT(5) | BIT(6)))
+#define TARGET_IO_PORTE (0xffff & ~(BIT(10) | BIT(15)))
+#else
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
+#endif
 #define TARGET_IO_PORTF 0x0000
 #define TARGET_IO_PORTG 0x0000
 #define TARGET_IO_PORTH 0x0000
