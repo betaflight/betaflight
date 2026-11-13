@@ -46,6 +46,7 @@ extern "C" {
     #include "io/serial.h"
     #include "io/serial_feature_map.h"
     #include "io/vtx.h"
+    #include "pg/vtx_table.h"
     #include "msp/msp.h"
     #include "msp/msp_box.h"
     #include "osd/osd.h"
@@ -427,6 +428,8 @@ const char * const shortGitRevision = "MASTER";
 void bufWriterAppend(bufWriter_t *, uint8_t ch){ printf("%c", ch); }
 //void serialWriteBufShim(void *, const uint8_t *, int) {}
 void bufWriterInit(bufWriter_t *, uint8_t *, int, bufWrite_t, void *) { }
+vtxDevice_t *vtxCommonDevice(void) { return NULL; }
+uint8_t vtxCommonGetVTXPowerLevels(const vtxDevice_t *, uint16_t *, uint16_t *) { return 0; }
 //void setArmingDisabled(armingDisableFlags_e) {}
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *) {}
@@ -611,6 +614,39 @@ TEST(CLIUnittest, TestCliExecuteCommandRefusesWhenArmed)
     EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("save", buf, sizeof(buf)));
     EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults nosave", buf, sizeof(buf)));
     armingFlags &= ~ARMED;
+    EXPECT_FALSE(cliMode);
+}
+
+// 'diff' and 'dump' write the FACTORY or CUSTOM flag before the frequencies.
+// The flag must not be stored as a frequency. Without the 'continue' after the flag,
+// the command wrote atoi("FACTORY") to bandfreq[-1] on the stack.
+TEST(CLIUnittest, TestCliVtxTableBandWithFactoryFlag)
+{
+    char buf[64];
+
+    cliExecuteCommand("vtxtable bands 2", buf, sizeof(buf));
+    cliExecuteCommand("vtxtable channels 8", buf, sizeof(buf));
+
+    cliExecuteCommand("vtxtable band 1 BOSCAM_A A FACTORY 5865 5845 5825 5805 5785 5765 5745 5725", buf, sizeof(buf));
+    EXPECT_TRUE(vtxTableConfig()->isFactoryBand[0]);
+    EXPECT_EQ('A', vtxTableConfig()->bandLetters[0]);
+    EXPECT_EQ(5865, vtxTableConfig()->frequency[0][0]);
+    EXPECT_EQ(5725, vtxTableConfig()->frequency[0][7]);
+
+    cliExecuteCommand("vtxtable band 2 BOSCAM_B B CUSTOM  5733 5752 5771 5790 5809 5828 5847 5866", buf, sizeof(buf));
+    EXPECT_FALSE(vtxTableConfig()->isFactoryBand[1]);
+    EXPECT_EQ('B', vtxTableConfig()->bandLetters[1]);
+    EXPECT_EQ(5733, vtxTableConfig()->frequency[1][0]);
+    EXPECT_EQ(5866, vtxTableConfig()->frequency[1][7]);
+
+    // The flag does not count as a frequency. The command rejects 7 frequencies and keeps the band.
+    cliExecuteCommand("vtxtable band 2 BOSCAM_C C FACTORY 5705 5685 5665 5645 5885 5905 5925", buf, sizeof(buf));
+    EXPECT_FALSE(vtxTableConfig()->isFactoryBand[1]);
+    EXPECT_EQ('B', vtxTableConfig()->bandLetters[1]);
+    EXPECT_EQ(5733, vtxTableConfig()->frequency[1][0]);
+
+    cliExecuteCommand("vtxtable bands 0", buf, sizeof(buf));
+    cliExecuteCommand("vtxtable channels 0", buf, sizeof(buf));
     EXPECT_FALSE(cliMode);
 }
 #endif

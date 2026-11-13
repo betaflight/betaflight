@@ -286,11 +286,14 @@ cli_unittest_SRC := \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/drivers/serial.c \
 		$(USER_DIR)/drivers/serial_impl.c \
+		$(USER_DIR)/drivers/vtx_table.c \
+		$(USER_DIR)/pg/vtx_table.c \
 		$(USER_DIR)/common/typeconversion.c
 
 cli_unittest_DEFINES := \
 		USE_OSD= \
 		USE_CLI= \
+		USE_VTX_TABLE= \
 		USE_MSP_CLI_COMMAND= \
 		SystemCoreClock=1000000
 
