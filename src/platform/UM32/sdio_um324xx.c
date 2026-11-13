@@ -65,7 +65,7 @@
 #define SDIO_INIT_CLK_DIV               ((uint8_t)0x50)     // ~400kHz for card init
 #define SDIO_TRANSFER_CLK_DIV           ((uint8_t)0x01)     // ~3MHz transfer clock (0x01=24MHz is too fast, causes CMD timeouts on read)
 
-#define SD_SOFTWARE_COMMAND_TIMEOUT     ((uint32_t)0x2000000)
+#define SD_SOFTWARE_COMMAND_TIMEOUT     ((uint32_t)0x00020000)
 
 #define SD_OCR_ADDR_OUT_OF_RANGE        ((uint32_t)0x80000000)
 #define SD_OCR_ADDR_MISALIGNED          ((uint32_t)0x40000000)
@@ -137,8 +137,11 @@
 #define IDMA_DES0_LD                    ((uint32_t)0x00000004)    // Last Descriptor
 #define IDMA_DES0_DIC                   ((uint32_t)0x00000002)    // Disable Interrupt on Completion
 
-#define SDIO_IDMA_DESCRIPTOR_BYTES      4096U
-#define SDIO_IDMA_DESCRIPTOR_COUNT      16U
+#define IDMA_DES1_BS1_POS               (0U)
+#define IDMA_DES1_BS2_POS               (13U)
+
+#define SDIO_IDMA_DESCRIPTOR_BYTES      8192U
+#define SDIO_IDMA_DESCRIPTOR_COUNT      8U
 #define SDIO_IDMA_MAX_BLOCKS            (SDIO_IDMA_DESCRIPTOR_COUNT * SDIO_IDMA_DESCRIPTOR_BYTES / BLOCK_SIZE)
 #define SDIO_RESET_POLL_LIMIT           100000U
 
@@ -622,27 +625,6 @@ static bool SD_WaitForReset(volatile const uint32_t *reg, uint32_t resetMask)
     return false;
 }
 
-static void SD_SetupIdmaDescriptors(uint32_t *buffer, uint32_t totalBytes)
-{
-    // BS1 is only 13 bits. Split the request and interrupt only on the last descriptor.
-    uint32_t offset = 0;
-    for (uint32_t i = 0; offset < totalBytes; i++) {
-        const uint32_t remaining = totalBytes - offset;
-        const uint32_t length = remaining > SDIO_IDMA_DESCRIPTOR_BYTES ? SDIO_IDMA_DESCRIPTOR_BYTES : remaining;
-        const bool last = length == remaining;
-        SDIO_IDMA_Descriptor_t *descriptor = &sdDmaDescriptors[i];
-
-        descriptor->DES1 = length;
-        descriptor->DES2 = (uint32_t)(uintptr_t)buffer + offset;
-        descriptor->DES3 = last ? 0 : (uint32_t)(uintptr_t)&sdDmaDescriptors[i + 1];
-        descriptor->DES0 = IDMA_DES0_OWN | (i == 0 ? IDMA_DES0_FS : 0)
-            | (last ? IDMA_DES0_LD : (IDMA_DES0_CH | IDMA_DES0_DIC));
-
-        offset += length;
-    }
-    __DSB();
-}
-
 static bool SD_StartBlockTransfer(uint32_t *buffer, uint32_t blockCount, uint8_t dir)
 {
     const uint32_t totalBytes = BLOCK_SIZE * blockCount;
@@ -677,7 +659,40 @@ static bool SD_StartBlockTransfer(uint32_t *buffer, uint32_t blockCount, uint8_t
     // MTS = 8 transfers, RX watermark = 7, TX watermark = 8.
     SDIO->FIFOTH = (2 << 28) | (0x07 << 16) | 0x08;
 
-    SD_SetupIdmaDescriptors(buffer, totalBytes);
+    // BS1 is only 13 bits. Split the request and interrupt only on the last descriptor.
+    uint32_t offset = 0;
+    for (uint32_t i = 0; offset < totalBytes; i++) {
+        const uint32_t remaining = totalBytes - offset;
+        const uint32_t length = remaining > SDIO_IDMA_DESCRIPTOR_BYTES ? SDIO_IDMA_DESCRIPTOR_BYTES : remaining;
+        const bool last = length == remaining;
+        SDIO_IDMA_Descriptor_t *descriptor = &sdDmaDescriptors[i];
+
+        if(length == remaining)
+        {
+            descriptor->DES1 = length;
+            descriptor->DES2 = (uint32_t)(uintptr_t)buffer + offset;
+            descriptor->DES3 = 0;
+            if(length == SDIO_IDMA_DESCRIPTOR_BYTES)
+            {
+                descriptor->DES1 = ((SDIO_IDMA_DESCRIPTOR_BYTES/2)<<IDMA_DES1_BS2_POS | (SDIO_IDMA_DESCRIPTOR_BYTES/2)<<IDMA_DES1_BS1_POS);
+                descriptor->DES2 = (uint32_t)(uintptr_t)buffer + offset;
+                descriptor->DES3 = (uint32_t)(uintptr_t)buffer + offset + (SDIO_IDMA_DESCRIPTOR_BYTES/2);
+            }
+        }
+        else
+        {
+            descriptor->DES1 = ((SDIO_IDMA_DESCRIPTOR_BYTES/2)<<IDMA_DES1_BS2_POS | (SDIO_IDMA_DESCRIPTOR_BYTES/2)<<IDMA_DES1_BS1_POS);
+            descriptor->DES2 = (uint32_t)(uintptr_t)buffer + offset;
+            descriptor->DES3 = (uint32_t)(uintptr_t)buffer + offset + (SDIO_IDMA_DESCRIPTOR_BYTES/2);
+        }
+        descriptor->DES0 = IDMA_DES0_OWN | (i == 0 ? IDMA_DES0_FS : 0)
+            | (last ? IDMA_DES0_LD : IDMA_DES0_DIC);
+
+        offset += length;
+    }
+
+    __DSB();
+
     SDIO->DBADDR = (uint32_t)(uintptr_t)sdDmaDescriptors;
 
     // Enable IDMA interrupts: Transfer Complete, Receive Complete
