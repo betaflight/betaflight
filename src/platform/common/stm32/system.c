@@ -285,7 +285,7 @@ void failureMode(failureMode_e mode)
 {
     indicateFailure(mode, 10);
 
-#ifdef DEBUG
+#if defined(DEBUG) || !PLATFORM_SUPPORTS_SOFTWARE_BOOTLOADER
     systemReset();
 #else
     systemResetToBootloader(BOOTLOADER_REQUEST_ROM);

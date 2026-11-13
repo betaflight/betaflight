@@ -510,12 +510,20 @@ static void mspProcessPendingRequest(mspPort_t * mspPort)
 
     switch(mspPort->pendingRequest) {
     case MSP_PENDING_BOOTLOADER_ROM:
+#if PLATFORM_SUPPORTS_SOFTWARE_BOOTLOADER
         systemResetToBootloader(BOOTLOADER_REQUEST_ROM);
+#else
+        mspPort->pendingRequest = MSP_PENDING_NONE;
+#endif
         break;
 
 #if defined(USE_FLASH_BOOT_LOADER)
     case MSP_PENDING_BOOTLOADER_FLASH:
+#if PLATFORM_SUPPORTS_SOFTWARE_BOOTLOADER
         systemResetToBootloader(BOOTLOADER_REQUEST_FLASH);
+#else
+        mspPort->pendingRequest = MSP_PENDING_NONE;
+#endif
         break;
 #endif
 
@@ -620,7 +628,7 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
             } else if ((evaluateNonMspData == MSP_EVALUATE_NON_MSP_DATA)
                        && !mspPortIsPeripheral(mspPort->port->identifier)) {
                 // evaluate the non-MSP data
-                if (c == serialConfig()->reboot_character) {
+                if (PLATFORM_SUPPORTS_SOFTWARE_BOOTLOADER && c == serialConfig()->reboot_character) {
                     mspPort->pendingRequest = MSP_PENDING_BOOTLOADER_ROM;
 #ifdef USE_CLI
                 } else if (c == '#') {

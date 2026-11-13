@@ -93,6 +93,20 @@ void serialSetMode(serialPort_t *instance, portMode_e mode)
     instance->vTable->setMode(instance, mode);
 }
 
+void serialSetIdleCallback(serialPort_t *instance, serialIdleCallbackPtr callback)
+{
+    if (!instance) {
+        return;
+    }
+#ifdef USE_PLATFORM_UART_IDLE_CALLBACK
+    if (instance->vTable->setIdleCallback) {
+        instance->vTable->setIdleCallback(instance, callback);
+        return;
+    }
+#endif
+    instance->idleCallback = callback;
+}
+
 void serialSetCtrlLineStateCb(serialPort_t *serialPort, void (*cb)(void *context, uint16_t ctrlLineState), void *context)
 {
     // If a callback routine for changes to control line state is supported by the underlying

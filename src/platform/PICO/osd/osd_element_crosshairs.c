@@ -47,7 +47,8 @@ bool renderCrosshairsComplete = true;
 void cacheCrosshairsInfo(uint8_t x, uint8_t y)
 {
     // Original x,y is top left of 3x1 char block centred correctly
-    // Adjust for 2x2 (and 12x18 -> 8x8 for small font).
+    // Adjust for rendering two 2x1 (16x8 px) chars stacked vertically
+    // The centre is 1.5 standard char widths to right, and move back by 1 char because 2x1.
     infoCrosshairs.x = (x + 0.5f) * PICO_OSD_CHAR_WIDTH;
     infoCrosshairs.y = y * PICO_OSD_CHAR_HEIGHT;
     renderCrosshairsComplete = false;
@@ -59,22 +60,12 @@ bool renderCrosshairsUntil(uint32_t limit_micros)
     while (!renderCrosshairsComplete && cmpTimeUs(limit_micros, micros()) > 0) {
         switch (index) {
         case 0:
-            renderCharAt(SYM_CROSSHAIRS_TL, infoCrosshairs.x, infoCrosshairs.y);
+            renderCharAt(SYM_CROSSHAIRS_UPPER, infoCrosshairs.x, infoCrosshairs.y);
             index++;
             break;
 
         case 1:
-            renderCharAt(SYM_CROSSHAIRS_TR, infoCrosshairs.x + PICO_OSD_GLYPH_WIDTH, infoCrosshairs.y);
-            index++;
-            break;
-
-        case 2:
-            renderCharAt(SYM_CROSSHAIRS_BL, infoCrosshairs.x, infoCrosshairs.y + PICO_OSD_GLYPH_HEIGHT);
-            index++;
-            break;
-
-        case 3:
-            renderCharAt(SYM_CROSSHAIRS_BR, infoCrosshairs.x + PICO_OSD_GLYPH_WIDTH, infoCrosshairs.y + PICO_OSD_GLYPH_HEIGHT);
+            renderCharAt(SYM_CROSSHAIRS_LOWER, infoCrosshairs.x, infoCrosshairs.y + PICO_OSD_GLYPH_HEIGHT);
             index = 0;
             renderCrosshairsComplete = true;
             break;
