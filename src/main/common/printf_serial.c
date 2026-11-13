@@ -28,7 +28,9 @@
 #include "common/printf.h"
 
 #include "drivers/serial.h"
+#include "drivers/time.h"
 #include "io/serial.h"
+#include "scheduler/scheduler.h"
 
 #include "printf_serial.h"
 
@@ -43,13 +45,36 @@ void setPrintfSerialPort(serialPort_t *serialPort)
 
 #ifdef REQUIRE_CC_ARM_PRINTF_SUPPORT
 
+static void waitForPrintfTransmitComplete(serialPort_t *serialPort)
+{
+#if defined(PLATFORM_VCP_TX_STALL_TIMEOUT_MS) && defined(USE_VCP)
+    if (serialPort->identifier == SERIAL_PORT_USB_VCP) {
+        uint32_t lastFree = serialTxBytesFree(serialPort);
+        uint32_t lastProgressAt = millis();
+        while (!isSerialTransmitBufferEmpty(serialPort)) {
+            schedulerIgnoreTaskExecTime();
+            const uint32_t freeBytes = serialTxBytesFree(serialPort);
+            if (freeBytes != lastFree) {
+                lastFree = freeBytes;
+                lastProgressAt = millis();
+            } else if (millis() - lastProgressAt >= PLATFORM_VCP_TX_STALL_TIMEOUT_MS) {
+                break;
+            }
+        }
+        return;
+    }
+#endif
+    while (!isSerialTransmitBufferEmpty(serialPort)) {
+    }
+}
+
 int tfp_printf(const char *fmt, ...)
 {
     va_list va;
     va_start(va, fmt);
     int written = tfp_format(stdout_putp, stdout_putf, fmt, va);
     va_end(va);
-    while (!isSerialTransmitBufferEmpty(printfSerialPort));
+    waitForPrintfTransmitComplete(printfSerialPort);
     return written;
 }
 

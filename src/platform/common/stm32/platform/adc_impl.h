@@ -73,6 +73,12 @@
 #define ADC_TAG_MAP_COUNT 16
 #elif defined(GD32H7)
 #define ADC_TAG_MAP_COUNT 21
+#elif defined(CH32H4)
+#ifdef USE_ADC_INTERNAL
+#define ADC_TAG_MAP_COUNT 17
+#else
+#define ADC_TAG_MAP_COUNT 15
+#endif
 #else
 #define ADC_TAG_MAP_COUNT 10
 #endif
@@ -251,4 +257,13 @@ void adcGetChannelValues(void);
 #define TEMPSENSOR_CAL2_TEMP               ((int32_t) -40)
 #define TEMPSENSOR_CAL1_ADDR               ((uint16_t*) (0x1FF0F7C0))
 #define TEMPSENSOR_CAL2_ADDR               ((uint16_t*) (0x1FF0F7C2))
+#endif
+
+#ifdef CH32H4
+#define VREFINT_EXPECTED                   (1501U)
+#define VREFINT_CAL_VREF                   (3300U)
+#define TEMPSENSOR_CAL_VREFANALOG          (3300U)
+#define TEMPSENSOR_CAL1_TEMP               (25U)
+#define TEMPSENSOR_CAL1_V                  (1.45f)
+#define TEMPSENSOR_SLOPE                   (4.3f)
 #endif

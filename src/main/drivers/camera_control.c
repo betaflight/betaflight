@@ -42,7 +42,7 @@ PG_REGISTER_WITH_RESET_FN(cameraControlConfig_t, cameraControlConfig, PG_CAMERA_
 
 void pgResetFn_cameraControlConfig(cameraControlConfig_t *cameraControlConfig)
 {
-    cameraControlConfig->mode = CAMERA_CONTROL_MODE_HARDWARE_PWM;
+    cameraControlConfig->mode = DEFAULT_CAMERA_CONTROL_MODE;
     cameraControlConfig->refVoltage = 330;
     cameraControlConfig->keyDelayMs = 180;
     cameraControlConfig->internalResistance = 470;
