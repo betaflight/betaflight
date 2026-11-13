@@ -99,7 +99,20 @@ static void usbVcpSetBaudRateCb(serialPort_t *instance, void (*cb)(serialPort_t 
 static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
 {
     UNUSED(instance);
+#if defined(STM32F4)
     return true;
+#else
+    if (!(usbIsConnected() && usbIsConfigured())) {
+        // Nothing will drain the ring; don't make callers wait on it.
+        return true;
+    }
+    if (CDC_Send_BytesPending() == 0) {
+        return true;
+    }
+    // Report a stalled IN endpoint as empty so blocking callers such as
+    // waitForSerialPortToFinishTransmitting() cannot hang the FC on it.
+    return CDC_Send_MsSinceProgress() > USB_TIMEOUT;
+#endif
 }
 
 static uint32_t usbVcpAvailable(const serialPort_t *instance)
