@@ -4446,6 +4446,10 @@ static void cliReboot(void)
 
 RAM_CODE static void cliBootloader(const char *cmdName, char *cmdline)
 {
+#if !PLATFORM_SUPPORTS_SOFTWARE_BOOTLOADER
+    UNUSED(cmdline);
+    cliPrintErrorLinef(cmdName, "Software bootloader entry unavailable; use hardware boot mode");
+#else
     rebootTarget_e rebootTarget;
     if (
 #if !defined(USE_FLASH_BOOT_LOADER)
@@ -4468,6 +4472,7 @@ RAM_CODE static void cliBootloader(const char *cmdName, char *cmdline)
     }
 
     cliRebootEx(rebootTarget);
+#endif
 }
 
 RAM_CODE static void cliExitCmd(const char *cmdName, char *cmdline)
@@ -6496,7 +6501,7 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
     cliPrintLinefeed();
 
 #ifdef USE_DSHOT_BITBANG
-    static const char * const dshotBitbangStatusNames[] = { "OK", "MOTOR_PIN_CONFLICT", "NO_PACER", "TOO_MANY_PORTS" };
+    static const char * const dshotBitbangStatusNames[] = { "OK", "MOTOR_PIN_CONFLICT", "NO_PACER", "TOO_MANY_PORTS", "DMA_ERROR" };
     const dshotBitbangStatus_e bitbangStatus = dshotBitbangGetStatus();
     if (isDshotBitbangActive(&motorConfig()->dev) && bitbangStatus != DSHOT_BITBANG_STATUS_OK) {
         cliPrintLinef("DSHOT_BBANG: %s", (unsigned)bitbangStatus < ARRAYLEN(dshotBitbangStatusNames) ? dshotBitbangStatusNames[bitbangStatus] : "UNKNOWN");

@@ -32,6 +32,11 @@
 #include "common/utils.h"
 
 #include "drivers/adc.h"
+#include "drivers/time.h"
+
+/* ADC or DMA configuration may leave internal channels unavailable.  The
+ * scheduler can retry later, but startup must not wait forever for them. */
+#define ADC_INTERNAL_INIT_TIMEOUT_US 10000u
 
 typedef struct movingAverageStateUint16_s {
     uint32_t sum;
@@ -102,10 +107,13 @@ void adcInternalProcess(timeUs_t currentTimeUs)
 
 void adcInternalInit(void)
 {
+    const timeUs_t startedAt = micros();
     // Call adcInternalProcess repeatedly to fill moving average array
     for (int i = 0 ; i < 9 ; i++) {
         while (adcInternalIsBusy()) {
-            // empty
+            if ((timeUs_t)(micros() - startedAt) >= ADC_INTERNAL_INIT_TIMEOUT_US) {
+                return;
+            }
         }
         adcInternalProcess(0);
     }
