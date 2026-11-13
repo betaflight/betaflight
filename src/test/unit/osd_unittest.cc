@@ -937,6 +937,109 @@ TEST_F(OsdTest, TestElementAmperage)
 }
 
 /*
+ * Tests the remaining time estimate OSD element, including values above INT32_MAX us.
+ */
+TEST_F(OsdTest, TestElementRemainingTimeEstimate)
+{
+    // given
+    osdConfigMutable()->cap_alarm = 4000;
+    osdElementConfigMutable()->item_pos[OSD_REMAINING_TIME_ESTIMATE] = OSD_POS(1, 12) | OSD_PROFILE_1_FLAG;
+
+    osdAnalyzeActiveElements();
+
+    // when
+    // (4000 - 450) / 450 * 300 s = 2366 s, above INT32_MAX us (35:47)
+    simulationMahDrawn = 450;
+    osdFlyTime = 300 * 1000000;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(1, 12, "39:26");
+
+    // when
+    // (4000 - 450) / 450 * 600 s = 4733 s, above the TIMEUS_MAX (UINT32_MAX) 71:34 limit
+    osdFlyTime = 600 * 1000000;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(1, 12, "71:34");
+
+    // when
+    // case cap alarm off
+    osdConfigMutable()->cap_alarm = 0;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(1, 12, "--:--");
+
+    // when
+    // case too little mAh draw yet to estimate (currently set at <= 0.1*cap_alarm)
+    osdConfigMutable()->cap_alarm = 100;
+    simulationMahDrawn = 10;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(1, 12, "--:--");
+
+    // when
+    // mAH draw over 1/10 of cap_alarm
+    osdConfigMutable()->cap_alarm = 100;
+    simulationMahDrawn = 11;
+    osdFlyTime = 30 * 1000000;  // 30s
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(1, 12, "04:02");
+
+    // when
+    // negative mAh drawn
+    osdConfigMutable()->cap_alarm = 3000;
+    simulationMahDrawn = -45;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(1, 12, "--:--");
+
+    // when
+    // case time shows just under the TIMEUS_MAX (UINT32_MAX) 71:34 limit
+    osdConfigMutable()->cap_alarm = 4000;
+    simulationMahDrawn = 450;
+    osdFlyTime = 543 * 1000000;  // 543s
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(1, 12, "71:23");
+
+    // when
+    // case mAh drawn over or equal to alarm capacity, so 00:00 + blinking
+    osdConfigMutable()->cap_alarm = 4500;
+    simulationMahDrawn = 4500;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    simulationTime += 1000000;
+    simulationTime -= simulationTime % 1000000;
+    const timeUs_t startTime = simulationTime;
+    for (int i = 0; i < 4; i++) {
+        simulationTime = startTime + i * 0.25e6;
+        osdRefresh();
+        if (i % 2 == 1) {
+            displayPortTestBufferSubstring(1, 12, "00:00");
+        } else {
+            displayPortTestBufferSubstring(1, 12, "     ");
+        }
+    }
+}
+
+/*
  * Tests the battery capacity drawn OSD element.
  */
 TEST_F(OsdTest, TestElementMahDrawn)
