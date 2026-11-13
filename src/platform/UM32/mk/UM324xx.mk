@@ -99,6 +99,10 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
 
 ifneq (,$(filter $(TARGET_MCU),UM324xF UM3241F UM3247F))
+ifneq ($(EXST),no)
+$(error UM32 does not support EXST bootloader images. Use EXST=no)
+endif
+
 DEVICE_FLAGS    += -DUM324xF
 STARTUP_SRC     = UM32/startup/startup_um324xf.s
 # QSPI XIP code expansion: yes = 512K internal + 512K QSPI (1024K code
@@ -110,6 +114,11 @@ QSPI_XIP ?= yes
 ifeq ($(QSPI_XIP),yes)
 DEVICE_FLAGS    += -DUSE_QSPI_XIP
 MCU_FLASH_SIZE  = 1024
+# Reject raw BIN even if an internal-Flash build left one in the output directory.
+BIN_FROM_ELF_DEPS += um32-qspi-xip-bin-unsupported
+.PHONY: um32-qspi-xip-bin-unsupported
+um32-qspi-xip-bin-unsupported:
+	$(error UM32 QSPI XIP images require HEX or DFU. Use QSPI_XIP=no to build a raw BIN)
 else
 MCU_FLASH_SIZE  = 512
 endif
