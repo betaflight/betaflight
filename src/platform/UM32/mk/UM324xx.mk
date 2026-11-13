@@ -134,7 +134,10 @@ else
 $(error Unknown MCU for target)
 endif
 
-DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE)
+# The UM32 SDK reads XTH_VALUE. The main Makefile sets HSE_VALUE separately.
+ifneq ($(strip $(HSE_VALUE)),)
+DEVICE_FLAGS    += -DXTH_VALUE=$(HSE_VALUE)
+endif
 
 VCP_SRC = \
             UM32/vcp_hal/cdc_acm.c \
