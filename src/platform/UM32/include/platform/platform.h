@@ -52,6 +52,9 @@
 #define USE_PERSISTENT_OBJECTS
 #define USE_LATE_TASK_STATISTICS
 
+// Defer SRXL2 support until UART1 RX idle detection is validated on hardware.
+#undef USE_SERIALRX_SRXL2
+
 #define TASK_GYROPID_DESIRED_PERIOD     125 // 125us = 8kHz
 #define SCHEDULER_DELAY_LIMIT           10
 
