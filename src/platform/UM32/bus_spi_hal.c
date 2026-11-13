@@ -34,13 +34,12 @@
 #include "drivers/bus_spi.h"
 #include "drivers/bus_spi_impl.h"
 #include "drivers/dma.h"
-#include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
+#include "platform/dma.h"
 #include "platform/rcc.h"
 #if SPI_TRAIT_HANDLE
 #include "platform/bus_spi_hal.h"
 #endif
-#include "pg/bus_spi.h"
 
 // Use DMA if possible if this many bytes are to be transferred
 #define SPI_DMA_THRESHOLD 8
@@ -135,23 +134,14 @@ void spiInitDevice(spiDevice_e device)
 
 void spiInternalResetDescriptors(busDevice_t *bus)
 {
-    const spiDevice_e device = spiDeviceByInstance(bus->busType_u.spi.instance);
-    const dmaChannelSpec_t *dmaTxSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SPI_SDO, device, spiPinConfig(device)->txDmaopt);
-    const dmaChannelSpec_t *dmaRxSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SPI_SDI, device, spiPinConfig(device)->rxDmaopt);
-
     SPI_TypeDef *instance = (SPI_TypeDef *)bus->busType_u.spi.instance;
     LL_DMA_InitTypeDef *dmaInitTx = bus->dmaInitTx;
 
     dmaInitTx->SrcAddress  = 0x00000000U;
     dmaInitTx->DstAddress  = 0x00000000U;
-    dmaInitTx->SrcPer = 0;
-    dmaInitTx->DstPer = 0;
+    dmaInitTx->SrcPer = DMA_SRC_HANDSHAKING(DMA_Handshake_Rev);
+    dmaInitTx->DstPer = DMA_DST_HANDSHAKING(bus->dmaTx->channel);
     dmaInitTx->NbData   = 0x00000000U;
-
-    if (dmaTxSpec) {
-        dmaInitTx->SrcPer = DMA_SRC_HANDSHAKING(DMA_Handshake_Rev);
-        dmaInitTx->DstPer = DMA_DST_HANDSHAKING(dmaTxSpec->channel);
-    }
 
     dmaInitTx->DstAddress = (uint32_t)&(instance->TXREG);
     dmaInitTx->Direction = LL_DMA_MEMORY_TO_PERIPH;                /* M2P transfer mode            */
@@ -170,19 +160,14 @@ void spiInternalResetDescriptors(busDevice_t *bus)
 	dmaInitTx->SrcInc = LL_DMA_SRCINC_INC;							  /* src address increase         */
 	dmaInitTx->DstInc = LL_DMA_DSTINC_NOC;							  /* dst address unchanged        */
     dmaInitTx->Priority = LL_DMA_PRIORITY_7;
-    if (bus->dmaInitRx) {
+    if (bus->dmaRx) {
         LL_DMA_InitTypeDef *dmaInitRx = bus->dmaInitRx;
 
         dmaInitRx->SrcAddress  = 0x00000000U;
         dmaInitRx->DstAddress  = 0x00000000U;
-        dmaInitRx->SrcPer = 0;
-        dmaInitRx->DstPer = 0;
+        dmaInitRx->SrcPer = DMA_SRC_HANDSHAKING(bus->dmaRx->channel);
+        dmaInitRx->DstPer = DMA_DST_HANDSHAKING(DMA_Handshake_Rev);
         dmaInitRx->NbData   = 0x00000000U;
-
-        if (dmaRxSpec) {
-            dmaInitRx->SrcPer  = DMA_SRC_HANDSHAKING(dmaRxSpec->channel);
-            dmaInitRx->DstPer  = DMA_DST_HANDSHAKING(DMA_Handshake_Rev);
-        }
 
         dmaInitRx->SrcAddress = (uint32_t)&(instance->RXREG);
         dmaInitRx->Direction = LL_DMA_PERIPH_TO_MEMORY;         /* M2P transfer mode            */

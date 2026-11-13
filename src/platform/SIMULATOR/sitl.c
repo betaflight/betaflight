@@ -983,16 +983,22 @@ void configUnlock(void)
 
 configStreamerResult_e configLock(void)
 {
-    // flush & close
-    if (eepromFd != NULL) {
-        fseek(eepromFd, 0, SEEK_SET);
-        fwrite(eepromData, 1, sizeof(eepromData), eepromFd);
-        fclose(eepromFd);
-        eepromFd = NULL;
-        printf("[FLASH_Lock] saved '%s'\n", EEPROM_FILENAME);
-    } else {
+    if (eepromFd == NULL) {
         fprintf(stderr, "[FLASH_Lock] eeprom is not unlocked\n");
+        return CONFIG_RESULT_FAILURE;
     }
+
+    const bool writeOk = fseek(eepromFd, 0, SEEK_SET) == 0 &&
+        fwrite(eepromData, 1, sizeof(eepromData), eepromFd) == sizeof(eepromData);
+    const int closeResult = fclose(eepromFd);
+    eepromFd = NULL;
+
+    if (!writeOk || closeResult != 0) {
+        fprintf(stderr, "[FLASH_Lock] failed to save '%s'\n", EEPROM_FILENAME);
+        return CONFIG_RESULT_FAILURE;
+    }
+
+    printf("[FLASH_Lock] saved '%s'\n", EEPROM_FILENAME);
     return CONFIG_RESULT_SUCCESS;
 }
 

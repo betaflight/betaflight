@@ -191,6 +191,7 @@ uint16_t spiCalculateDivider(uint32_t freq)
 
     uint16_t divisor = 2;
 #if defined(UM324xF)
+    spiClk = SystemCoreClock / divisor;
     for (; (spiClk > freq) && (divisor < 0xFFFF); divisor++, spiClk = SystemCoreClock / divisor);
 #else
     spiClk >>= 1;

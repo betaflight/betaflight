@@ -410,6 +410,11 @@ static SD_Error_t SD_CmdResponse(uint8_t SD_CMD, int8_t ResponseType)
         return SD_CMD_RSP_TIMEOUT;
     }
 
+    if (SD_Status & SDIO_RINTSTS_ACK_ERROR) {
+        SDIO->RINTSTS = SDIO_RINTSTS_ACK_ERROR;
+        return SD_CMD_CRC_FAIL;
+    }
+
     if (ResponseType == 3)
     {
         // For ACMD41 (OCR response type R3), no CRC check
