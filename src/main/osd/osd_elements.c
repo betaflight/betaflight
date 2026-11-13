@@ -1750,7 +1750,7 @@ static void osdElementMotorDiagnostics(osdElementParms_t *element)
     const bool motorsRunning = areMotorsRunning();
     for (; i < getMotorCount(); i++) {
         if (motorsRunning) {
-            element->buff[i] =  0x88 - scaleRange(motor[i], getMotorOutputLow(), getMotorOutputHigh(), 0, 8);
+            element->buff[i] =  SYM_AH_BAR9_8 - scaleRange(motor[i], getMotorOutputLow(), getMotorOutputHigh(), 0, 8);
 #if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
             if (getEscRpm(i) < MOTOR_STOPPED_THRESHOLD_RPM) {
                 // Motor is not spinning properly. Mark as Stopped
@@ -1758,7 +1758,7 @@ static void osdElementMotorDiagnostics(osdElementParms_t *element)
             }
 #endif
         } else {
-            element->buff[i] =  0x88;
+            element->buff[i] = SYM_AH_BAR9_8;
         }
     }
     element->buff[i] = '\0';

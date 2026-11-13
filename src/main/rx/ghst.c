@@ -439,7 +439,9 @@ bool ghstRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         GHST_PORT_MODE,
         GHST_PORT_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0)
         );
-    serialPort->idleCallback = ghstIdle;
+    if (serialPort) {
+        serialSetIdleCallback(serialPort, ghstIdle);
+    }
 
     if (rssiSource == RSSI_SOURCE_NONE) {
         rssiSource = RSSI_SOURCE_RX_PROTOCOL;

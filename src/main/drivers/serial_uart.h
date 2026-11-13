@@ -24,6 +24,10 @@
 #include "drivers/serial_uart_types.h"
 #include "io/serial.h"   // TODO: maybe move serialPortIdentifier_e into separate header
 
+#ifndef UART_TRAIT_TX_COMPLETE_PENDING
+#define UART_TRAIT_TX_COMPLETE_PENDING 0
+#endif
+
 typedef struct uartPort_s {
     serialPort_t port;
 
@@ -32,7 +36,7 @@ typedef struct uartPort_s {
     dmaResource_t *txDMAResource;
     uint32_t rxDMAChannel;
     uint32_t txDMAChannel;
-#if defined(USE_ATBSP_DRIVER) || defined(X32M7)
+#if DMA_TRAIT_MUX
     uint32_t rxDMAMuxId;
     uint32_t txDMAMuxId;
 #endif
@@ -48,6 +52,9 @@ typedef struct uartPort_s {
 
     usartResource_t *USARTx;
     bool txDMAEmpty;
+#if UART_TRAIT_TX_COMPLETE_PENDING
+    bool txCompletePending;
+#endif
 
     bool (* checkUsartTxOutput)(struct uartPort_s *s);
 } uartPort_t;

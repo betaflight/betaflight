@@ -102,9 +102,9 @@ extern uint8_t debugMode;
  * build, so annotations that share an index must agree - a disagreement is a bug
  * in the debug mode, not in the annotation.
  *
- * `make test` checks every annotation in src/main against this grammar, in
- * src/test/unit/debug_annotations_unittest.cc, so a malformed one fails the
- * pull request that writes it rather than the next tool that reads it.
+ * `make test` checks every annotation in src/main and src/platform against this
+ * grammar, in src/test/unit/debug_annotations_unittest.cc, so a malformed one
+ * fails the pull request that writes it rather than the next tool that reads it.
  */
 #define DEBUG_SET(mode, index, value) do { if (debugMode == (mode)) { debug[(index)] = (value); } } while (0)
 

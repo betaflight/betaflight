@@ -201,6 +201,9 @@ void uartIrqHandler(uartPort_t *s);
 void uartEnableTxInterrupt(uartPort_t *uartPort);
 
 void uartReconfigure(uartPort_t *uartPort);
+#ifdef USE_PLATFORM_UART_IDLE_CALLBACK
+void uartSetIdleCallback(serialPort_t *instance, serialIdleCallbackPtr callback);
+#endif
 
 void uartConfigureDma(uartDevice_t *uartdev);
 
