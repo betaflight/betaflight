@@ -187,6 +187,9 @@ struct {
     //Giantec GT25Q128EZ
     //Datasheet:https://www.giantec-semi.com/norxp/556
     {0x1C7118, 104, 104, 256, 256},
+    //Giantec GT25Q256EZ
+    //Datasheet:https://www.giantec-semi.com/norxp/556
+    {0xC44019, 104, 104, 512, 256},
     // End of list
     { 0x000000, 0, 0, 0, 0 }
 };

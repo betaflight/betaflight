@@ -23,6 +23,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+// Platforms without a software bootloader entry contract can disable it.
+#ifndef PLATFORM_SUPPORTS_SOFTWARE_BOOTLOADER
+#define PLATFORM_SUPPORTS_SOFTWARE_BOOTLOADER 1
+#endif
+
 void systemInit(void);
 
 typedef enum {

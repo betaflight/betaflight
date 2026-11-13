@@ -511,7 +511,7 @@ bool srxl2RxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         return false;
     }
 
-    serialPort->idleCallback = srxl2Idle;
+    serialSetIdleCallback(serialPort, srxl2Idle);
 
     state = ListenForActivity;
     timeoutTimestamp = micros() + SRXL2_LISTEN_FOR_ACTIVITY_TIMEOUT_US;

@@ -232,9 +232,8 @@ TEST_F(MspSerialPendingRequestTest, StrayHash_BeforeMspFrame_DoesNotEnterCli)
     EXPECT_EQ(0, cliEnterCount);
 }
 
-// Preserved behaviour: a deliberate, standalone reboot character followed by a
-// quiet period still reboots to the ROM bootloader after the 100ms guard.
-TEST_F(MspSerialPendingRequestTest, LoneRebootChar_ThenQuiet_DoesReboot)
+// Only platforms with a software entry contract may honor the reboot byte.
+TEST_F(MspSerialPendingRequestTest, LoneRebootChar_ThenQuiet_RespectsPlatformCapability)
 {
     feedByte('R');
     process();
@@ -242,8 +241,20 @@ TEST_F(MspSerialPendingRequestTest, LoneRebootChar_ThenQuiet_DoesReboot)
 
     advanceMs(150);
     process();
+#if PLATFORM_SUPPORTS_SOFTWARE_BOOTLOADER
     EXPECT_EQ(1, rebootCount);
     EXPECT_EQ(BOOTLOADER_REQUEST_ROM, lastRebootRequest);
+#else
+    EXPECT_EQ(0, rebootCount);
+
+    // Ignoring the byte must leave the scanner able to enter CLI normally.
+    feedByte('#');
+    process();
+    advanceMs(150);
+    process();
+    EXPECT_EQ(1, cliEnterCount);
+    EXPECT_EQ(0, rebootCount);
+#endif
 }
 
 // Preserved behaviour: a lone '#' followed by a quiet period enters the CLI.
