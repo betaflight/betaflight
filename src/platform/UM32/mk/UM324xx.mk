@@ -122,14 +122,13 @@ um32-qspi-xip-bin-unsupported:
 else
 MCU_FLASH_SIZE  = 512
 endif
-# Linker script is preprocessed from the .ld.in source so it can follow
-# USE_QSPI_XIP (EXFLASH region, .ex_flash section, .tcm_code LMA). The mode
-# is encoded in the generated filename — make cannot see that the output
-# depends on the QSPI_XIP variable, so a shared name would silently keep a
-# stale script when switching modes between builds.
-LD_SCRIPT       = $(OBJECT_DIR)/um32_flash_4xf_$(if $(filter yes,$(QSPI_XIP)),qspi,int).ld
-$(LD_SCRIPT): $(LINKER_DIR)/um32_flash_4xf.ld.in
-	@mkdir -p $(OBJECT_DIR)
+# Keep each target's generated script separate in parallel builds. Include
+# the XIP mode in the filename so switching modes regenerates the script.
+UM32_LD_SCRIPT_NAME := um32_flash_4xf_$(if $(filter yes,$(QSPI_XIP)),qspi,int).ld
+LD_SCRIPT          = $(TARGET_OBJ_DIR)/$(UM32_LD_SCRIPT_NAME)
+# TARGET_OBJ_DIR is defined after this file is included.
+$(OBJECT_DIR)/%/$(UM32_LD_SCRIPT_NAME): $(LINKER_DIR)/um32_flash_4xf.ld.in
+	@mkdir -p "$(@D)"
 	$(V1) $(CROSS_CC) -E -P -xc $(if $(filter yes,$(QSPI_XIP)),-DUSE_QSPI_XIP) -o $@ $<
 else
 $(error Unknown MCU for target)
