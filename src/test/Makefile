@@ -468,6 +468,11 @@ msp_serial_unittest_DEFINES := \
 		USE_RANGEFINDER_MT= \
 		USE_OPTICALFLOW_MT=
 
+msp_serial_no_bootloader_unittest_SRC := $(msp_serial_unittest_SRC)
+msp_serial_no_bootloader_unittest_DEFINES := \
+		$(msp_serial_unittest_DEFINES) \
+		PLATFORM_SUPPORTS_SOFTWARE_BOOTLOADER=0
+
 msp_reboot_unittest_SRC := \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(TEST_DIR)/msp_reboot_test_support.c
@@ -1318,11 +1323,19 @@ $(OBJECT_DIR)/gtest_main.a : $(OBJECT_DIR)/gtest-all.o $(OBJECT_DIR)/gtest_main.
 # includes in test dir must override includes in user dir, unless the user
 # specifies a list of endorsed directories in ${target}_INCLUDE_DIRS.
 MAVLINK_LIB_DIR := $(ROOT)/lib/modules/mavlink
+CH32_LIB_DIR := $(ROOT)/lib/modules/CH32H41x
 
 # The MAVLink library is a submodule the firmware Makefile hydrates on demand;
 # hydrate it here too so tests built from this directory find its headers.
 $(MAVLINK_LIB_DIR)/.git:
 	git -C $(ROOT) submodule update --init -- lib/modules/mavlink
+
+$(CH32_LIB_DIR)/.git:
+	git -C $(ROOT) submodule update --init --checkout -- lib/modules/CH32H41x
+
+.PHONY: test-ch32
+test-ch32: | $(CH32_LIB_DIR)/.git
+	$(V1) python3 -B ch32h415/regression.py
 
 test_include_dirs  = $1 $(TEST_DIR) $(USER_DIR) $(MAVLINK_LIB_DIR)
 test_cflags	   = $(addprefix -I,$(call test_include_dirs,$1))

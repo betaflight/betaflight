@@ -596,6 +596,9 @@ const struct serialPortVTable uartVTable[] = {
         .serialSetBaudRate = uartSetBaudRate,
         .isSerialTransmitBufferEmpty = isUartTransmitBufferEmpty,
         .setMode = uartSetMode,
+#ifdef USE_PLATFORM_UART_IDLE_CALLBACK
+        .setIdleCallback = uartSetIdleCallback,
+#endif
         .setCtrlLineStateCb = NULL,
         .setBaudRateCb = NULL,
         .writeBuf = uartWriteBuf,
@@ -604,6 +607,7 @@ const struct serialPortVTable uartVTable[] = {
     }
 };
 
+#ifndef USE_PLATFORM_UART_IRQ_HANDLERS
 #ifdef USE_GDBSP_DRIVER
 // GDBSP driver uses IRQ handlers with different naming scheme
 #define UART_IRQHandler(type, number, dev)                      \
@@ -691,5 +695,6 @@ UART_IRQHandler(UART, 15, UARTDEV_15) // UART15 Rx/Tx IRQ Handler
 #ifdef USE_LPUART1
 UART_IRQHandler(LPUART, 1, UARTDEV_LP1) // LPUART1 Rx/Tx IRQ Handler
 #endif
+#endif // !USE_PLATFORM_UART_IRQ_HANDLERS
 
 #endif // USE_UART
