@@ -448,6 +448,7 @@ static const pllConfig_t overclockLevels[] = {
 
 void OverclockRebootIfNecessary(uint32_t targetMhz)
 {
+#if defined(USE_OVERCLOCK) && SYSCLK_SRC == SYSCLK_USE_XTH_PLL
   // targetMhz == 0 means "OFF" / use default (first entry)
   if (targetMhz == 0) {
     targetMhz = overclockLevels[0].mhz;
@@ -464,6 +465,10 @@ void OverclockRebootIfNecessary(uint32_t targetMhz)
       return;
     }
   }
+#else
+  // Fixed clock configurations do not apply a saved overclock level.
+  UNUSED(targetMhz);
+#endif
 }
 
 #if !defined(SYSCLK_SRC) || (SYSCLK_SRC != SYSCLK_USE_RCH && SYSCLK_SRC != SYSCLK_USE_RCH_PLL && \
