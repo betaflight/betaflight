@@ -89,16 +89,16 @@ const uint16_t uplinkTXPowerStatesMw[CRSF_UPLINK_POWER_LEVEL_MW_ITEMS_COUNT] = {
  * CRSF protocol uses a single wire half duplex uart connection.
  * The master sends one frame every 4ms and the slave replies between two frames from the master.
  *
- * 416666 baud (CRSF_BAUDRATE)
+ * 420000 baud
  * not inverted
  * 8 Bit
  * 1 Stop bit
  * Big endian
- * 416666 bit/s = 41667 byte/s (8N1, 10 bits per byte) = 24.0us per byte
+ * 420000 bit/s = 46667 byte/s (including stop bit) = 21.43us per byte
  * Max frame size is 64 bytes
- * A 64 byte frame plus 1 sync byte can be transmitted in 1560 microseconds.
+ * A 64 byte frame plus 1 sync byte can be transmitted in 1393 microseconds.
  *
- * CRSF_TIME_NEEDED_PER_FRAME_US is set conservatively at 1748 microseconds
+ * CRSF_TIME_NEEDED_PER_FRAME_US is set conservatively at 1500 microseconds
  *
  * Every frame has the structure:
  * <Device address><Frame length><Type><Payload><CRC>
