@@ -21,10 +21,17 @@
 
 #pragma once
 
+#include <stdbool.h>
+
 #include "platform.h"
 
 #if SPI_TRAIT_HANDLE
 struct spiHalHandle_s {
     SPI_HandleTypeDef hal;
 };
+#endif
+
+#if defined(UM324xF)
+struct extDevice_s;
+bool spiInternalTryStopDMA(const struct extDevice_s *dev);
 #endif

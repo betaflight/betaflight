@@ -43,6 +43,9 @@
 
 // Use DMA if possible if this many bytes are to be transferred
 #define SPI_DMA_THRESHOLD 8
+#define SPI_DMA_STOP_SPIN_LIMIT 1000
+
+static volatile bool spiDmaStopFailed[SPIDEV_COUNT];
 
 #ifndef SPI1_NSS_PIN
 #define SPI1_NSS_PIN NONE
@@ -330,35 +333,78 @@ void spiInternalStartDMA(const extDevice_t *dev)
     }
 }
 
-void spiInternalStopDMA (const extDevice_t *dev)
+static bool spiDmaStopChannel(const dmaChannelDescriptor_t *descriptor)
+{
+    DMA_TypeDef *dma = (DMA_TypeDef *)descriptor->dma;
+    const uint32_t channel = descriptor->stream;
+    const uint32_t enableBit = DMA_CHENREG_CH_EN_0 << channel;
+
+    WRITE_REG(dma->CHENREG, DMA_CHENREG_CH_EN_WE_0 << channel);
+    for (unsigned spin = 0; spin < SPI_DMA_STOP_SPIN_LIMIT; spin++) {
+        if (!(READ_REG(dma->CHENREG) & enableBit)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static void spiDmaDisableChannelIrq(const dmaChannelDescriptor_t *descriptor)
+{
+    const IRQn_Type irq = (IRQn_Type)descriptor->irqN;
+    NVIC_DisableIRQ(irq);
+    NVIC_ClearPendingIRQ(irq);
+}
+
+bool spiInternalTryStopDMA(const extDevice_t *dev)
 {
     busDevice_t *bus = dev->bus;
-
-    dmaChannelDescriptor_t *dmaTx = bus->dmaTx;
-    dmaChannelDescriptor_t *dmaRx = bus->dmaRx;
-    SPI_TypeDef *instance = (SPI_TypeDef *)bus->busType_u.spi.instance;
-
-    DMA_Stream_TypeDef *streamRegsTx = (DMA_Stream_TypeDef *)dmaTx->ref;
-    // Disable the SPI DMA Mode
-    CLEAR_BIT(instance->GCTL,SPI_EX_GCTL_DMAMODE);
-
-    LL_EX_DMA_DisableResource(streamRegsTx);
-    DMA_CLEAR_FLAG(dmaTx, CLEARBLOCK);
-    DMA_CLEAR_FLAG(dmaTx, CLEARERR);
-
-    if (dmaRx) {
-        DMA_Stream_TypeDef *streamRegsRx = (DMA_Stream_TypeDef *)dmaRx->ref;
-        LL_EX_DMA_DisableResource(streamRegsRx);
-        DMA_CLEAR_FLAG(dmaRx, CLEARBLOCK);
-        DMA_CLEAR_FLAG(dmaRx, CLEARERR);
+    spiResource_t *spi = bus->busType_u.spi.instance;
+    SPI_TypeDef *instance = (SPI_TypeDef *)spi;
+    const spiDevice_e device = spiDeviceByInstance(spi);
+    if (spiDmaStopFailed[device]) {
+        return false;
     }
+
+    // Keep the SPI DMA requests disabled while stopping the channels.
+    CLEAR_BIT(instance->GCTL, SPI_EX_GCTL_DMAMODE);
+    const bool txStopped = spiDmaStopChannel(bus->dmaTx);
+    DMA_CLEAR_FLAG(bus->dmaTx, CLEARBLOCK);
+    DMA_CLEAR_FLAG(bus->dmaTx, CLEARERR);
+
+    bool rxStopped = true;
+    if (bus->dmaRx) {
+        rxStopped = spiDmaStopChannel(bus->dmaRx);
+        DMA_CLEAR_FLAG(bus->dmaRx, CLEARBLOCK);
+        DMA_CLEAR_FLAG(bus->dmaRx, CLEARERR);
+    }
+
+    if (txStopped && rxStopped) {
+        return true;
+    }
+
+    // The channel registers require CH_EN=0 (UM324xF RM section 11.4).
+    spiDmaStopFailed[device] = true;
+    CLEAR_BIT(instance->GCTL, SPI_EX_GCTL_TXEN | SPI_EX_GCTL_RXEN);
+    spiDmaDisableChannelIrq(bus->dmaTx);
+    if (bus->dmaRx) {
+        spiDmaDisableChannelIrq(bus->dmaRx);
+    }
+    return false;
+}
+
+void spiInternalStopDMA(const extDevice_t *dev)
+{
+    spiInternalTryStopDMA(dev);
 }
 
 void spiInternalAbortDMA(const extDevice_t *dev)
 {
     SPI_TypeDef *instance = (SPI_TypeDef *)dev->bus->busType_u.spi.instance;
 
-    spiInternalStopDMA(dev);
+    if (!spiInternalTryStopDMA(dev)) {
+        return;
+    }
 
     // Bound the waits so a peripheral fault cannot trap the abort ISR.
     for (unsigned spin = 0; spin < 1000 && !(instance->CSTAT & SPI_EX_STATE_TXEPT); spin++) {
@@ -375,7 +421,25 @@ FAST_CODE void spiSequenceStart(const extDevice_t *dev)
 {
     busDevice_t *bus = dev->bus;
     SPI_TypeDef *instance = (SPI_TypeDef *)bus->busType_u.spi.instance;
-/*    spiDevice_t *spi = &spiDevice[spiDeviceByInstance(bus->busType_u.spi.instance)];  */
+    if (spiDmaStopFailed[spiDeviceByInstance(bus->busType_u.spi.instance)]) {
+        // Release the waiting callers and unlink queued work on this SPI bus.
+        const uint32_t primask = __get_PRIMASK();
+        __disable_irq();
+        busSegment_t *segment = (busSegment_t *)bus->curSegment;
+        while (segment) {
+            while (segment->len) {
+                segment++;
+            }
+            busSegment_t *next = (busSegment_t *)segment->u.link.segments;
+            segment->u.link.dev = NULL;
+            segment->u.link.segments = NULL;
+            segment = next;
+        }
+        bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
+        __set_PRIMASK(primask);
+        return;
+    }
+
     bool dmaSafe = dev->useDMA;
     uint32_t xferLen = 0;
     uint32_t segmentCount = 0;

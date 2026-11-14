@@ -33,6 +33,9 @@
 #include "drivers/bus_spi_impl.h"
 #include "drivers/dma_reqmap.h"
 #include "platform/dma.h"
+#if defined(UM324xF)
+#include "platform/bus_spi_hal.h"
+#endif
 #include "drivers/dshot.h"
 #include "drivers/nvic.h"
 #include "pg/bus_spi.h"
@@ -47,6 +50,19 @@ static inline bool spiDmaTransferError(dmaChannelDescriptor_t *descriptor)
 #else
     return DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF) != 0;
 #endif
+}
+
+static inline bool spiDmaStopOnCompletion(const extDevice_t *dev)
+{
+#if defined(UM324xF)
+    if (!spiInternalTryStopDMA(dev)) {
+        spiAbortTransfer(dev);
+        return false;
+    }
+#else
+    spiInternalStopDMA(dev);
+#endif
+    return true;
 }
 
 // Interrupt handler for SPI receive DMA completion
@@ -71,7 +87,9 @@ FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
         IOHi(dev->busType_u.spi.csnPin);
     }
 
-    spiInternalStopDMA(dev);
+    if (!spiDmaStopOnCompletion(dev)) {
+        return;
+    }
 
 #ifdef __DCACHE_PRESENT
 #if defined(STM32H7) || defined(GD32H7)
@@ -129,7 +147,9 @@ FAST_IRQ_HANDLER static void spiTxIrqHandler(dmaChannelDescriptor_t* descriptor)
 
     busDevice_t *bus = dev->bus;
 
-    spiInternalStopDMA(dev);
+    if (!spiDmaStopOnCompletion(dev)) {
+        return;
+    }
 
     if (bus->curSegment->negateCS) {
         // Negate Chip Select
