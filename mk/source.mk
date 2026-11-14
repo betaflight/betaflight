@@ -90,6 +90,7 @@ COMMON_SRC = \
             config/config_streamer.c \
             config/feature.c \
             config/simplified_tuning.c \
+            config/config_psas.c \
             cli/cli.c \
             cli/settings.c \
             drivers/dshot.c \
@@ -196,6 +197,8 @@ COMMON_SRC = \
             flight/rpm_filter.c \
             flight/servos.c \
             flight/servos_tricopter.c \
+            flight/psas.c \
+            flight/psas_trimming.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
@@ -493,6 +496,8 @@ SPEED_OPTIMISED_SRC += \
             flight/mixer.c \
             flight/pid.c \
             flight/rpm_filter.c \
+            flight/psas.c \
+            flight/psas_trimming.c \
             rx/ibus.c \
             rx/rc_stats.c \
             rx/rx.c \
@@ -529,6 +534,7 @@ SIZE_OPTIMISED_SRC += \
             config/feature.c \
             config/config_streamer.c \
             config/simplified_tuning.c \
+            config/config_psas.c \
             io/dashboard.c \
             io/serial.c \
             io/serial_feature_map.c \

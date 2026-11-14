@@ -178,6 +178,9 @@ typedef enum {
 #ifdef USE_TELEMETRY
     TABLE_TELEMETRY_PROTOCOL,
 #endif
+#ifdef USE_PSAS
+    TABLE_PSAS_SPEED_CURVE_MODE,
+#endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
@@ -205,6 +208,9 @@ typedef enum {
     PROFILE_RATE_VALUE = (2 << VALUE_SECTION_OFFSET),
     HARDWARE_VALUE = (3 << VALUE_SECTION_OFFSET), // Part of the master section, but used for the hardware definition
     PROFILE_BATTERY_VALUE = (4 << VALUE_SECTION_OFFSET),
+#ifdef USE_PSAS
+    PROFILE_PSAS_VALUE = (5 << VALUE_SECTION_OFFSET),
+#endif
 
     // value mode, bits 6-8
     MODE_DIRECT = (0 << VALUE_MODE_OFFSET),

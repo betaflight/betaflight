@@ -65,6 +65,9 @@
 
 #include "pid.h"
 
+#ifdef USE_PSAS
+#include "psas.h"
+#endif
 typedef enum {
     LEVEL_MODE_OFF = 0,
     LEVEL_MODE_R,
@@ -1043,7 +1046,7 @@ static FAST_CODE_NOINLINE float applyLaunchControl(int axis, const rollAndPitchT
 }
 #endif
 
-static float getTpaFactor(const pidProfile_t *pidProfile, int axis, term_e term)
+float getTpaFactor(const pidProfile_t *pidProfile, int axis, term_e term)
 {
     float tpaFactor = pidRuntime.tpaFactor;
 
@@ -1337,6 +1340,19 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     DEBUG_SET(DEBUG_CHIRP, 3, lrintf(1.0e3f * chirp));                                    //!< Chirp Excitation [unit:0.001]
 
 #endif // USE_CHIRP
+
+#ifdef USE_PSAS
+    const uint8_t psasState = psasHandleMode();
+    switch (psasState) {
+    case PSAS_OFF:
+        break;
+    case PSAS_WORK:
+        return;
+    case PSAS_FINISHED:
+        memcpy(previousGyroRateDterm, gyroRateDterm, sizeof(previousGyroRateDterm));
+        break;
+    }
+#endif
 
     // ----------PID controller----------
     for (flight_dynamics_index_t axis = FD_ROLL; axis <= FD_YAW; ++axis) {

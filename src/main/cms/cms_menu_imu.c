@@ -43,6 +43,7 @@
 #include "config/simplified_tuning.h"
 
 #include "config/config.h"
+#include "config/config_psas.h"
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/rc_controls.h"
@@ -51,6 +52,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/pid_init.h"
+#include "flight/psas.h"
 
 #include "pg/pg.h"
 
@@ -68,6 +70,9 @@
 static uint8_t tmpPidProfileIndex;
 static uint8_t pidProfileIndex;
 static char pidProfileIndexString[MAX_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
+#ifdef USE_PSAS
+static char psasProfileIndexString[MAX_PSAS_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
+#endif
 static uint8_t tempPid[3][3];
 static uint16_t tempPidF[3];
 
@@ -967,6 +972,233 @@ static CMS_Menu cmsx_menuFilterPerProfile = {
     .entries = cmsx_menuFilterPerProfileEntries,
 };
 
+#ifdef USE_PSAS
+static uint8_t temp_psas_stick_gain[XYZ_AXIS_COUNT];
+static uint16_t temp_psas_damping_gain[XYZ_AXIS_COUNT];
+static uint16_t temp_psas_pitch_stability_gain;
+static uint16_t temp_psas_yaw_stability_gain;
+static uint16_t temp_psas_pitch_accel_p_gain;
+static uint8_t temp_psas_pitch_accel_i_gain;
+static uint8_t temp_psas_pitch_accel_max;
+static uint8_t temp_psas_pitch_accel_min;
+static uint8_t temp_psas_lift_c_limit;
+static uint8_t temp_psas_aoa_limiter_gain;
+static uint8_t temp_psas_aoa_limiter_forecast_time;
+static uint8_t temp_psas_aoa_limiter_tau_return;
+static uint16_t temp_psas_wing_load;
+
+static uint8_t temp_psas_speed_main_curve_enabled_roll;
+static uint8_t temp_psas_speed_main_curve_enabled_pitch;
+static uint8_t temp_psas_speed_main_curve_enabled_yaw;
+static uint8_t temp_psas_speed_stick_curve_enabled_roll;
+static uint8_t temp_psas_speed_stick_curve_enabled_pitch;
+static uint8_t temp_psas_speed_stick_curve_enabled_yaw;
+static uint8_t temp_psas_speed_optimum_vref;
+static uint8_t temp_psas_speed_main_curve_power;
+static uint16_t temp_psas_speed_main_curve_min;
+static uint16_t temp_psas_speed_main_curve_max;
+static uint8_t temp_psas_speed_roll_stick_curve_power;
+static uint16_t temp_psas_speed_stick_curve_min;
+static uint16_t temp_psas_speed_stick_curve_max;
+
+static uint8_t temp_psas_trim_enabled_roll;
+static uint8_t temp_psas_trim_enabled_pitch;
+static uint8_t temp_psas_trim_enabled_yaw;
+static uint8_t temp_psas_trim_deadband;
+static uint16_t temp_psas_trim_lowpass_time;
+static uint8_t temp_psas_trim_rate;
+static uint8_t temp_psas_trim_limit;
+static uint16_t temp_psas_trim_tau_reset;
+
+static const void *cmsx_PsasRead(void)
+{
+
+    const psasProfile_t *psasProfile = currentPsasProfile;
+    for (uint8_t i = 0; i < 3; i++) {
+        temp_psas_stick_gain[i] = psasProfile->psas_stick_gain[i];
+        temp_psas_damping_gain[i] = psasProfile->psas_damping_gain[i];
+    }
+
+    temp_psas_pitch_stability_gain = psasProfile->psas_pitch_stability_gain;
+    temp_psas_yaw_stability_gain = psasProfile->psas_yaw_stability_gain;
+    temp_psas_pitch_accel_p_gain = psasProfile->psas_pitch_accel_p_gain;
+    temp_psas_pitch_accel_i_gain = psasProfile->psas_pitch_accel_i_gain;
+    temp_psas_pitch_accel_max = psasProfile->psas_pitch_accel_max;
+    temp_psas_pitch_accel_min = psasProfile->psas_pitch_accel_min;
+    temp_psas_lift_c_limit = psasProfile->psas_lift_c_limit;
+    temp_psas_aoa_limiter_gain = psasProfile->psas_aoa_limiter_gain;
+    temp_psas_aoa_limiter_forecast_time = psasProfile->psas_aoa_limiter_forecast_time;
+    temp_psas_aoa_limiter_tau_return = psasProfile->psas_aoa_limiter_tau_return;
+    temp_psas_wing_load = psasProfile->psas_wing_load;
+
+    temp_psas_speed_main_curve_enabled_roll = (psasProfile->psas_speed_curve_enabled_mask & 1) ? 1 : 0;
+    temp_psas_speed_main_curve_enabled_pitch = (psasProfile->psas_speed_curve_enabled_mask & 2) ? 1 : 0;
+    temp_psas_speed_main_curve_enabled_yaw = (psasProfile->psas_speed_curve_enabled_mask & 4) ? 1 : 0;
+    temp_psas_speed_stick_curve_enabled_roll = (psasProfile->psas_speed_curve_enabled_mask & 8) ? 1 : 0;
+    temp_psas_speed_stick_curve_enabled_pitch = (psasProfile->psas_speed_curve_enabled_mask & 16) ? 1 : 0;
+    temp_psas_speed_stick_curve_enabled_yaw = (psasProfile->psas_speed_curve_enabled_mask & 32) ? 1 : 0;
+    temp_psas_speed_optimum_vref =  psasProfile->psas_speed_optimum_vref;
+    temp_psas_speed_main_curve_power =  psasProfile->psas_speed_main_curve_power;
+    temp_psas_speed_main_curve_min =  psasProfile->psas_speed_main_curve_min;
+    temp_psas_speed_main_curve_max =  psasProfile->psas_speed_main_curve_max;
+    temp_psas_speed_roll_stick_curve_power =  psasProfile->psas_speed_roll_stick_curve_power;
+    temp_psas_speed_stick_curve_min =  psasProfile->psas_speed_stick_curve_min;
+    temp_psas_speed_stick_curve_max =  psasProfile->psas_speed_stick_curve_max;
+
+    temp_psas_trim_enabled_roll  = (psasProfile->psas_trim_enabled_mask & 1) ? 1 : 0;
+    temp_psas_trim_enabled_pitch = (psasProfile->psas_trim_enabled_mask & 2) ? 1 : 0;
+    temp_psas_trim_enabled_yaw   = (psasProfile->psas_trim_enabled_mask & 4) ? 1 : 0;
+    temp_psas_trim_deadband =  psasProfile->psas_trim_deadband;
+    temp_psas_trim_lowpass_time =  psasProfile->psas_trim_lowpass_time;
+    temp_psas_trim_rate =  psasProfile->psas_trim_rate;
+    temp_psas_trim_limit =  psasProfile->psas_trim_limit;
+    temp_psas_trim_tau_reset =  psasProfile->psas_trim_tau_reset;
+
+    return NULL;
+}
+
+static const void *cmsx_PsasOnEnter(displayPort_t *pDisp)
+{
+    UNUSED(pDisp);
+
+    setProfileIndexString(psasProfileIndexString, getCurrentPsasProfileIndex(), currentPsasProfile->profileName);
+    cmsx_PsasRead();
+
+    return NULL;
+}
+
+static const void *cmsx_PsasWriteback(displayPort_t *pDisp, const OSD_Entry *self)
+{
+    UNUSED(pDisp);
+    UNUSED(self);
+
+    psasProfile_t *psasProfile = currentPsasProfile;
+    for (uint8_t i = 0; i < 3; i++) {
+        psasProfile->psas_stick_gain[i] = temp_psas_stick_gain[i];
+        psasProfile->psas_damping_gain[i] = temp_psas_damping_gain[i];
+    }
+
+    psasProfile->psas_pitch_stability_gain = temp_psas_pitch_stability_gain;
+    psasProfile->psas_yaw_stability_gain = temp_psas_yaw_stability_gain;
+    psasProfile->psas_pitch_accel_p_gain = temp_psas_pitch_accel_p_gain;
+    psasProfile->psas_pitch_accel_i_gain = temp_psas_pitch_accel_i_gain;
+    psasProfile->psas_pitch_accel_max = temp_psas_pitch_accel_max;
+    psasProfile->psas_pitch_accel_min = temp_psas_pitch_accel_min;
+    psasProfile->psas_lift_c_limit = temp_psas_lift_c_limit;
+    psasProfile->psas_aoa_limiter_gain = temp_psas_aoa_limiter_gain;
+    psasProfile->psas_aoa_limiter_forecast_time = temp_psas_aoa_limiter_forecast_time;
+    psasProfile->psas_aoa_limiter_tau_return = temp_psas_aoa_limiter_tau_return;
+    psasProfile->psas_wing_load = temp_psas_wing_load;
+
+    uint8_t mask = 0;
+    if (temp_psas_speed_main_curve_enabled_roll)  mask |= 1;
+    if (temp_psas_speed_main_curve_enabled_pitch) mask |= 2;
+    if (temp_psas_speed_main_curve_enabled_yaw)   mask |= 4;
+    if (temp_psas_speed_stick_curve_enabled_roll)  mask |= 8;
+    if (temp_psas_speed_stick_curve_enabled_pitch) mask |= 16;
+    if (temp_psas_speed_stick_curve_enabled_yaw)   mask |= 32;
+    psasProfile->psas_speed_curve_enabled_mask = mask;
+    psasProfile->psas_speed_optimum_vref = temp_psas_speed_optimum_vref;
+    psasProfile->psas_speed_main_curve_power = temp_psas_speed_main_curve_power;
+    psasProfile->psas_speed_main_curve_min = temp_psas_speed_main_curve_min;
+    psasProfile->psas_speed_main_curve_max = temp_psas_speed_main_curve_max;
+    psasProfile->psas_speed_roll_stick_curve_power = temp_psas_speed_roll_stick_curve_power;
+    psasProfile->psas_speed_stick_curve_min = temp_psas_speed_stick_curve_min;
+    psasProfile->psas_speed_stick_curve_max = temp_psas_speed_stick_curve_max;
+
+    mask = 0;
+    if (temp_psas_trim_enabled_roll)  mask |= 1;
+    if (temp_psas_trim_enabled_pitch) mask |= 2;
+    if (temp_psas_trim_enabled_yaw)   mask |= 4;
+    psasProfile->psas_trim_enabled_mask = mask;
+    psasProfile->psas_trim_deadband = temp_psas_trim_deadband;
+    psasProfile->psas_trim_lowpass_time = temp_psas_trim_lowpass_time;
+    psasProfile->psas_trim_rate = temp_psas_trim_rate;
+    psasProfile->psas_trim_limit = temp_psas_trim_limit;
+    psasProfile->psas_trim_tau_reset = temp_psas_trim_tau_reset;
+
+    psasInit(psasProfile);
+
+    return NULL;
+}
+
+static OSD_Entry cmsx_menuPsasEntries[] =
+{
+    { "-- PSAS --", OME_Label, NULL, psasProfileIndexString},
+    { "-- PILOT --", OME_Label, NULL, NULL},
+    { "ROLL", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_stick_gain[PID_ROLL], 5, 200, 1 }},
+    { "PITCH", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_stick_gain[PID_PITCH], 5, 200, 1 }},
+    { "YAW", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_stick_gain[PID_YAW], 0, 200, 1 }},
+
+    { "-- DAMPING --", OME_Label, NULL, NULL},
+    { "ROLL", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_damping_gain[PID_ROLL], 0, 300, 1 }},
+    { "PITCH", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_damping_gain[PID_PITCH], 0, 500, 10 }},
+    { "YAW", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_damping_gain[PID_YAW], 0, 500, 10 }},
+
+    { "-- STABILITY --", OME_Label, NULL, NULL},
+    { "PITCH", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_pitch_stability_gain, 0, 300, 1 }},
+    { "YAW", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_yaw_stability_gain, 0, 300, 1 }},
+
+    { "-- ACC Z CONTROLLER --", OME_Label, NULL, NULL},
+    { "ACC Z I", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_pitch_accel_i_gain, 0, UINT8_MAX, 1 }},
+    { "ACC Z P", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_pitch_accel_p_gain, 0, 1000, 10 }},
+    { "ACC Z MAX", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_pitch_accel_max, 20, UINT8_MAX, 1 }},
+    { "ACC Z MIN", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_pitch_accel_min, 10, UINT8_MAX, 1 }},
+
+    { "-- AOA LIMITER --", OME_Label, NULL, NULL},
+    { "WING LOAD", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_wing_load, 0, 1500, 1 }},
+    { "I", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_aoa_limiter_gain, 0, UINT8_MAX, 1 }},
+    { "LIMIT", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_lift_c_limit, 5, 20, 1 }},
+    { "FORECAST", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_aoa_limiter_forecast_time, 0, UINT8_MAX, 1 }},
+    { "T RETURN", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_aoa_limiter_tau_return, 1, 50, 1 }},
+
+    { "-- MAIN SPEED CURVE --", OME_Label, NULL, NULL},
+    { "CURVE ENABLE",   OME_Label, NULL, NULL },
+    { "ROLL",        OME_Bool,  NULL, &temp_psas_speed_main_curve_enabled_roll  },
+    { "PITCH",       OME_Bool,  NULL, &temp_psas_speed_main_curve_enabled_pitch },
+    { "YAW",         OME_Bool,  NULL, &temp_psas_speed_main_curve_enabled_yaw   },
+    { "REF. SPEED", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_speed_optimum_vref, 1, UINT8_MAX, 1 }},
+    { "POWER", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_speed_main_curve_power, 5, 30, 1 }},
+    { "MIN", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_speed_main_curve_min, 1, 100, 1 }},
+    { "MAX", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_speed_main_curve_max, 100, 500, 1 }},
+
+    { "-- STICK SPEED CURVE --", OME_Label, NULL, NULL},
+    { "CURVE ENABLE",   OME_Label, NULL, NULL },
+    { "ROLL",        OME_Bool,  NULL, &temp_psas_speed_stick_curve_enabled_roll  },
+    { "PITCH",       OME_Bool,  NULL, &temp_psas_speed_stick_curve_enabled_pitch },
+    { "YAW",         OME_Bool,  NULL, &temp_psas_speed_stick_curve_enabled_yaw   },
+    { "ROLL POWER", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_speed_roll_stick_curve_power, 5, 30, 1 }},
+    { "MIN", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_speed_stick_curve_min, 10, 100, 1 }},
+    { "MAX", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_speed_stick_curve_max, 100, 500, 1 }},
+
+    { "-- TRIMMING ASSISTANT --", OME_Label, NULL, NULL},
+    { "TRIM ENABLE",   OME_Label, NULL, NULL },
+    { "ROLL",        OME_Bool,  NULL, &temp_psas_trim_enabled_roll  },
+    { "PITCH",       OME_Bool,  NULL, &temp_psas_trim_enabled_pitch },
+    { "YAW",         OME_Bool,  NULL, &temp_psas_trim_enabled_yaw   },
+    { "DEADBAND", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_trim_deadband, 5, 100, 1 }},
+    { "LPF", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_trim_lowpass_time, 200, 3000, 100 }},
+    { "RATE", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_trim_rate, 5, 100, 1 }},
+    { "LIMIT", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_trim_limit, 10, 80, 1 }},
+    { "TAU RESET", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_trim_tau_reset, 50, 2000, 10 }},
+
+    { "BACK", OME_Back, NULL, NULL },
+    { NULL, OME_END, NULL, NULL}
+};
+
+static CMS_Menu cmsx_menuPSAS = {
+#ifdef CMS_MENU_DEBUG
+    .GUARD_text = "XPSAS",
+    .GUARD_type = OME_MENU,
+#endif
+    .onEnter = cmsx_PsasOnEnter,
+    .onExit = cmsx_PsasWriteback,
+    .onDisplayUpdate = NULL,
+    .entries = cmsx_menuPsasEntries
+};
+#endif
+
+
 #ifdef USE_EXTENDED_CMS_MENUS
 
 static uint8_t cmsx_dstPidProfile;
@@ -1047,6 +1279,9 @@ static const OSD_Entry cmsx_menuImuEntries[] =
     { "-- PROFILE --", OME_Label, NULL, NULL},
 
     {"PID PROF",  OME_TAB,     cmsx_profileIndexOnChange,     &(OSD_TAB_t){&tmpPidProfileIndex, PID_PROFILE_COUNT-1, pidProfileNamePtrs}},
+#ifdef USE_PSAS
+    {"PSAS",      OME_Submenu, cmsMenuChange,                 &cmsx_menuPSAS},
+#endif
     {"PID",       OME_Submenu, cmsMenuChange,                 &cmsx_menuPid},
 #ifdef USE_SIMPLIFIED_TUNING
     {"SIMPLIFIED TUNING",   OME_Submenu, cmsMenuChange,                 &cmsx_menuSimplifiedTuning},
