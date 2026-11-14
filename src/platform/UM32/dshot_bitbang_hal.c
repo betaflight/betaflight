@@ -120,16 +120,31 @@ void bbTimerChannelInit(bbPort_t *bbPort)
     LL_TIM_EnableCounter((TIM_TypeDef *)bbPort->timhw->tim);
 }
 
-bool bbSwitchToOutput(bbPort_t * bbPort)
+bool bbDMAStop(bbPort_t *bbPort)
+{
+    DMA_TypeDef *dma = (DMA_TypeDef *)bbPort->dmaDescriptor->dma;
+    const uint32_t channel = bbPort->dmaDescriptor->stream;
+    const uint32_t enableBit = DMA_CHENREG_CH_EN_0 << channel;
+
+    WRITE_REG(dma->CHENREG, DMA_CHENREG_CH_EN_WE_0 << channel);
+    for (unsigned spin = 0; spin < BB_DMA_STOP_SPIN_LIMIT; spin++) {
+        if (!(READ_REG(dma->CHENREG) & enableBit)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool bbSwitchToOutput(bbPort_t *bbPort)
 {
     dmaResource_t *dmaResource = bbPort->dmaResource;
-    DMA_TypeDef *dma = LL_EX_DMA_Channel_to_DMA((DMA_ARCH_TYPE *)dmaResource);
-    const uint32_t channel = LL_EX_DMA_Channel_to_Channel((DMA_ARCH_TYPE *)dmaResource);
+    const IRQn_Type irq = (IRQn_Type)bbPort->dmaDescriptor->irqN;
 
-    // Request a stop without the LL helper's unbounded wait. Do not touch the
-    // GPIO or reload DMA registers until the channel has actually stopped.
-    WRITE_REG(dma->CHENREG, DMA_CHENREG_CH_EN_WE_0 << channel);
-    if (!bbDMAWaitStopped(bbPort)) {
+    // Keep a late completion from switching the pin to input during recovery.
+    NVIC_DisableIRQ(irq);
+    bbTIM_DMACmd(bbPort->timhw->tim, bbPort->dmaSource, DISABLE);
+    if (!bbDMAStop(bbPort)) {
         return false;
     }
 
@@ -161,6 +176,12 @@ bool bbSwitchToOutput(bbPort_t * bbPort)
     ((TIM_TypeDef *)bbPort->timhw->tim)->ARR = bbPort->outputARR;
 
     bbPort->direction = DSHOT_BITBANG_DIRECTION_OUTPUT;
+    bbPort->telemetryPending = false;
+
+    bbDMAClearFlags(bbPort->dmaDescriptor);
+    __DSB();
+    NVIC_ClearPendingIRQ(irq);
+    NVIC_EnableIRQ(irq);
 
     return true;
 }
@@ -210,7 +231,7 @@ void bbSwitchToInput(bbPort_t *bbPort)
 
     bbPort->direction = DSHOT_BITBANG_DIRECTION_INPUT;
 
-    bbDMA_Cmd(bbPort, ENABLE);
+    bbDMAEnable(bbPort);
 }
 #endif
 
@@ -294,13 +315,9 @@ void bbDMA_ITConfig(bbPort_t *bbPort)
     WRITE_REG(dma->MASKERR, (DMA_MASKERR_MASKERR_WE_0 | DMA_MASKERR_MASKERR_0) << channel);
 }
 
-void bbDMA_Cmd(bbPort_t *bbPort, FunctionalState NewState)
+void bbDMAEnable(bbPort_t *bbPort)
 {
-    if (NewState == ENABLE) {
-        xLL_EX_DMA_EnableResource(bbPort->dmaResource);
-    } else {
-        xLL_EX_DMA_DisableResource(bbPort->dmaResource);
-    }
+    xLL_EX_DMA_EnableResource(bbPort->dmaResource);
 }
 
 int bbDMA_Count(bbPort_t *bbPort)

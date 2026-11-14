@@ -247,6 +247,9 @@ typedef struct bbPort_s {
     bool inputActive;
     volatile bool telemetryPending;
     bool telemetryAborted;
+#if defined(UM324xF)
+    volatile bool telemetryReady;
+#endif
 
     // Misc
 
@@ -349,7 +352,10 @@ void bbTIM_DMACmd(void *TIMx, uint16_t TIM_DMASource, confirm_state NewState);
 void bbTIM_DMACmd(void *TIMx, uint16_t TIM_DMASource, FunctionalState NewState);
 #endif
 void bbDMA_ITConfig(bbPort_t *bbPort);
-#ifdef AT32F435
+#if defined(UM324xF)
+bool bbDMAStop(bbPort_t *bbPort);
+void bbDMAEnable(bbPort_t *bbPort);
+#elif defined(AT32F435)
 void bbDMA_Cmd(bbPort_t *bbPort, confirm_state NewState);
 #else
 void bbDMA_Cmd(bbPort_t *bbPort, FunctionalState NewState);
