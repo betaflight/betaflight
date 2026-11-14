@@ -146,6 +146,13 @@ void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count)
 
 void serialWriteBufBlocking(serialPort_t *instance, const uint8_t *data, int count)
 {
+#if defined(USE_VCP) && defined(PLATFORM_VCP_WRITE_BUF_HANDLES_BACKPRESSURE)
+    if (instance->identifier == SERIAL_PORT_USB_VCP && instance->vTable->writeBuf) {
+        // Let the VCP writer apply its timeout even when the queue is full.
+        serialWriteBuf(instance, data, count);
+        return;
+    }
+#endif
     while (serialTxBytesFree(instance) < (uint32_t)count) {
         // Waiting on TX backpressure is not task execution time.
         schedulerIgnoreTaskExecTime();

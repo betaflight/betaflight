@@ -56,6 +56,8 @@
 
 #define W25Q256_INSTRUCTION_ENTER_4BYTE_ADDRESS_MODE 0xB7
 
+#define FM25LQ128I3_JEDEC_ID 0xA16018
+
 #define M25P16_FAST_READ_DUMMY_CYCLES       8
 
 // SPI transaction segment indicies for m25p16_pageProgramContinue()
@@ -78,6 +80,8 @@ struct {
     // Macronix MX25L6406E
     // Datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/7370/MX25L6406E,%203V,%2064Mb,%20v1.9.pdf
     { 0xC22017, 86, 33, 128, 256 },
+    // Macronix MX25L12806E
+    { 0xC22018, 120, 50, 256, 256 },
     // Macronix MX25L25635E
     // Datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/7331/MX25L25635E,%203V,%20256Mb,%20v1.3.pdf
     { 0xC22019, 80, 50, 512, 256 },
@@ -190,6 +194,8 @@ struct {
     //Giantec GT25Q256EZ
     //Datasheet:https://www.giantec-semi.com/norxp/556
     {0xC44019, 104, 104, 512, 256},
+    // Fudan Micro FM25LQ128I3
+    { FM25LQ128I3_JEDEC_ID, 104, 50, 256, 256 },
     // End of list
     { 0x000000, 0, 0, 0, 0 }
 };
@@ -204,6 +210,43 @@ const flashVTable_t m25p16_vTable;
 const flashVTable_t m25p16Qspi_vTable;
 // Buffer needed for assembling flash page when writing
 static uint8_t m25p16_page_buffer[M25P16_PAGESIZE];
+
+#define FM25LQ128I3_INSTRUCTION_READ_STATUS2_REG      0x35
+#define FM25LQ128I3_INSTRUCTION_WRITE_STATUS2_REG     0x31
+#define FM25LQ128I3_INSTRUCTION_VOLATILE_WRITE_ENABLE 0x50
+#define FM25LQ128I3_SR2_QUAD_ENABLE                   (1 << 1)
+#define FM25LQ128I3_QE_TIMEOUT_US                     1000
+
+static bool fm25lq128i3_enableQuad(const extDevice_t *dev)
+{
+    uint8_t status2;
+    if (!quadSpiReceive1LINE(dev, FM25LQ128I3_INSTRUCTION_READ_STATUS2_REG, 0, &status2, 1)) {
+        return false;
+    }
+    if (status2 & FM25LQ128I3_SR2_QUAD_ENABLE) {
+        return true;
+    }
+
+    status2 |= FM25LQ128I3_SR2_QUAD_ENABLE;
+    if (!quadSpiTransmit1LINE(dev, FM25LQ128I3_INSTRUCTION_VOLATILE_WRITE_ENABLE, 0, NULL, 0) ||
+        !quadSpiTransmit1LINE(dev, FM25LQ128I3_INSTRUCTION_WRITE_STATUS2_REG, 0, &status2, 1)) {
+        return false;
+    }
+
+    // FM25LQ128I3 datasheet section 10.2.5: WIP stays clear during a volatile SR2 update.
+    const timeUs_t deadline = micros() + FM25LQ128I3_QE_TIMEOUT_US;
+    do {
+        delayMicroseconds(1);
+        if (!quadSpiReceive1LINE(dev, FM25LQ128I3_INSTRUCTION_READ_STATUS2_REG, 0, &status2, 1)) {
+            return false;
+        }
+        if (status2 & FM25LQ128I3_SR2_QUAD_ENABLE) {
+            return true;
+        }
+    } while (cmpTimeUs(micros(), deadline) < 0);
+
+    return false;
+}
 #endif /* USE_QUADSPI */
 
 static uint8_t m25p16_readStatus(flashDevice_t *fdevice)
@@ -262,6 +305,15 @@ static bool m25p16_waitForReady(flashDevice_t *fdevice)
 bool m25p16_identify(flashDevice_t *fdevice, uint32_t jedecID)
 {
     flashGeometry_t *geometry = &fdevice->geometry;
+
+#ifdef USE_QUADSPI
+    if (jedecID == FM25LQ128I3_JEDEC_ID && fdevice->io.mode == FLASHIO_QUADSPI &&
+        !fm25lq128i3_enableQuad(fdevice->io.handle.dev)) {
+        memset(geometry, 0, sizeof(*geometry));
+        return false;
+    }
+#endif
+
     uint8_t index;
 
     for (index = 0; m25p16FlashConfig[index].jedecID; index++) {

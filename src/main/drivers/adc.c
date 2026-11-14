@@ -36,7 +36,7 @@
 
 //#define DEBUG_ADC_CHANNELS
 
-#ifdef USE_ADC_INTERNAL
+#if defined(USE_ADC_INTERNAL) && !PLATFORM_TRAIT_ADC_INTERNAL_CONVERSION
 
 /**
  * Use a measurement of the fixed internal vref to calculate the external Vref+
@@ -70,6 +70,6 @@ int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue)
 
     return ((((int32_t)((tempAdcValue * vrefValue) / TEMPSENSOR_CAL_VREFANALOG) - adcTSCAL1) * adcTSSlopeK) + 500) / 1000 + TEMPSENSOR_CAL1_TEMP;
 }
-#endif
-#endif // USE_ADC_INTERNAL
+#endif // USE_PLATFORM_ADC_TEMPERATURE
+#endif // USE_ADC_INTERNAL && !PLATFORM_TRAIT_ADC_INTERNAL_CONVERSION
 #endif

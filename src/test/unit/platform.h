@@ -44,6 +44,11 @@
 #define FAST_DATA
 #define RAM_CODE
 
+// Unit tests bypass the defaults in target/common_post.h.
+#ifndef SDIO_WRITE_CACHE_ATTRIBUTES
+#define SDIO_WRITE_CACHE_ATTRIBUTES
+#endif
+
 
 #define PID_PROFILE_COUNT 4
 #define CONTROL_RATE_PROFILE_COUNT 4
@@ -106,7 +111,9 @@ typedef struct
 #ifndef SPIDEV_COUNT
 #define SPIDEV_COUNT 0
 #endif
+#ifndef I2CDEV_COUNT
 #define I2CDEV_COUNT 0
+#endif
 #ifndef GYRO_COUNT
 #define GYRO_COUNT 1
 #endif

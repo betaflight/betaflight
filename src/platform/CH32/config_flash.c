@@ -27,7 +27,7 @@
 
 #if defined(CONFIG_IN_FLASH)
 
-#include "config/config_streamer.h"
+#include "config/config_streamer_impl.h"
 
 static bool ch32ConfigAddressIsValid(uintptr_t address, uint32_t eraseSize)
 {
@@ -59,10 +59,11 @@ void configUnlock(void)
     FLASH_Unlock_Fast();
 }
 
-void configLock(void)
+configStreamerResult_e configLock(void)
 {
     FLASH_Lock_Fast();
     ch32InvalidateFlashCache();
+    return CONFIG_RESULT_SUCCESS;
 }
 
 void configClearFlags(void)

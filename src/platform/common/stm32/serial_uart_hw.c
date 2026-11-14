@@ -44,6 +44,10 @@
 #include "platform/dma.h"
 #include "platform/serial_uart_hal.h"
 
+#if defined(UM324xF)
+#include "platform/serial_uart_bidir.h"
+#endif
+
 #include "pg/serial_uart.h"
 
 #ifdef USE_HAL_DRIVER
@@ -90,6 +94,12 @@ static void enableRxIrq(const uartHardware_t *hardware)
 
 uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode, portOptions_e options)
 {
+#if defined(UM324xF)
+    if ((options & SERIAL_BIDIR) && !uartBidirCanOpen(uartdev, baudRate)) {
+        return NULL;
+    }
+#endif
+
     uartPort_t *s = &uartdev->port;
 
     const uartHardware_t *hardware = uartdev->hardware;
@@ -140,6 +150,12 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
 
 // Note: F4 did not check txIO before refactoring
     if ((options & SERIAL_BIDIR) && txIO) {
+        IOInit(txIO, ownerTxRx, ownerIndex);
+#if defined(UM324xF)
+        // The dual-pad driver applies the idle pull in uartReconfigure() and
+        // enables the TX alternate function only while transmitting.
+        IOConfigGPIO(txIO, IOCFG_IN_FLOATING);
+#else
         // pushPull / openDrain
         const bool pushPull = serialOptions_pushPull(options);
         // pull direction
@@ -193,8 +209,8 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
             GPIO_PULL_NONE
         );
 #endif
-        IOInit(txIO, ownerTxRx, ownerIndex);
         IOConfigGPIOAF(txIO, ioCfg, txAf);
+#endif
     } else {
         if ((mode & MODE_TX) && txIO) {
             IOInit(txIO, ownerTxRx, ownerIndex);
@@ -350,7 +366,21 @@ void uartConfigureDma(uartDevice_t *uartdev)
 void uartEnableTxInterrupt(uartPort_t *uartPort)
 {
 #if defined(USE_HAL_DRIVER)
+#if defined(UM324xF)
+#if defined(USE_UART7) || defined(USE_UART8)
+    if ((uartPort->USARTx == (usartResource_t *)USART7) || (uartPort->USARTx == (usartResource_t *)USART8)) {
+        // SAM-style USART7/8: TXRDY interrupt, set-only via the IER register.
+        ((USART_TypeDef *)uartPort->USARTx)->IER = USART_IER_TXRDY;
+    } else
+#endif
+    {
+        UART_HandleTypeDef huart = {0};
+        huart.Instance = (UART_TypeDef *)uartPort->USARTx;
+        __HAL_UART_ENABLE_IT(&huart, UART_EX_IT_ETBEI);
+    }
+#else
     LL_USART_EnableIT_TXE((USART_TypeDef *)uartPort->USARTx);
+#endif
 #elif defined(USE_ATBSP_DRIVER)
     usart_interrupt_enable((usart_type *)uartPort->USARTx, USART_TDBE_INT, TRUE);
 #elif defined(X32M7)

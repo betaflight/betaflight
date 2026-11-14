@@ -640,10 +640,8 @@ void tryArm(void)
         gyroStartCalibration(true);
     }
 
-
     updateArmingStatus();
     // set or clear armingDisabled flags, while arming is requested, whether armed or disarmed,
-
 
     if (!isArmingDisabled()) {
         if (ARMING_FLAG(ARMED)) {
