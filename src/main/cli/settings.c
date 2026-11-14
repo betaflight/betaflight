@@ -80,6 +80,7 @@
 #include "osd/osd.h"
 #if ENABLE_OSD_CUSTOM_TEXT
 #include "osd/osd_custom_text.h"
+#include "osd/osd_screensaver.h"
 #endif
 
 #include "pg/adc.h"
@@ -537,6 +538,12 @@ static const char * const lookupTableOsdLogoOnArming[] = {
     "OFF", "ON", "FIRST_ARMING",
 };
 
+#ifdef USE_OSD_SCREENSAVER
+static const char * const lookupTableOsdScreensaverEffect[] = {
+    "MATRIX", "TUNNEL", "TERRAIN", "CUBE", "STARS", "ARROWS", "WAVES", "CYCLE",
+};
+#endif
+
 #if ENABLE_OSD_CUSTOM_TEXT
 static const char * const lookupTableOsdCustomTextTerminator[] = {
     "NULL", "LF",
@@ -744,6 +751,9 @@ const lookupTableEntry_t lookupTables[] = {
 
 #ifdef USE_OSD
     LOOKUP_TABLE_ENTRY(lookupTableOsdLogoOnArming),
+#ifdef USE_OSD_SCREENSAVER
+    LOOKUP_TABLE_ENTRY(lookupTableOsdScreensaverEffect),
+#endif
 #if ENABLE_OSD_CUSTOM_TEXT
     LOOKUP_TABLE_ENTRY(lookupTableOsdCustomTextTerminator),
 #endif
@@ -1820,6 +1830,11 @@ const clivalue_t valueTable[] = {
     { "osd_camera_frame_height",    VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { OSD_CAMERA_FRAME_MIN_HEIGHT, OSD_CAMERA_FRAME_MAX_HEIGHT }, PG_OSD_CONFIG, offsetof(osdConfig_t, camera_frame_height) },
     { "osd_stat_avg_cell_value",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, stat_show_cell_value) },
     { "osd_framerate_hz",           VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { OSD_FRAMERATE_MIN_HZ, OSD_FRAMERATE_MAX_HZ }, PG_OSD_CONFIG, offsetof(osdConfig_t, framerate_hz) },
+#ifdef USE_OSD_SCREENSAVER
+    { "osd_screensaver_effect",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OSD_SCREENSAVER_EFFECT }, PG_OSD_CONFIG, offsetof(osdConfig_t, screensaver_effect) },
+    { "osd_screensaver_cycle",      VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { OSD_SCREENSAVER_CYCLE_MIN_S, OSD_SCREENSAVER_CYCLE_MAX_S }, PG_OSD_CONFIG, offsetof(osdConfig_t, screensaver_cycle) },
+    { "osd_screensaver_timeout",    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_SCREENSAVER_TIMEOUT_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, screensaver_timeout) },
+#endif
     { "osd_menu_background",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_CMS_BACKGROUND }, PG_OSD_CONFIG, offsetof(osdConfig_t, cms_background_type) },
     { "osd_aux_channel",            VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, MAX_SUPPORTED_RC_CHANNEL_COUNT }, PG_OSD_CONFIG, offsetof(osdConfig_t, aux_channel) },
     { "osd_aux_scale",              VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1, 1000 }, PG_OSD_CONFIG, offsetof(osdConfig_t, aux_scale) },
@@ -1923,6 +1938,8 @@ const clivalue_t valueTable[] = {
     { "displayport_msp_row_adjust", VAR_INT8    | MASTER_VALUE, .config.minmax = { -3, 0 }, PG_DISPLAY_PORT_MSP_CONFIG, offsetof(displayPortProfile_t, rowAdjust) },
     { "displayport_msp_fonts",      VAR_UINT8   | MASTER_VALUE | MODE_ARRAY, .config.array.length = 4, PG_DISPLAY_PORT_MSP_CONFIG, offsetof(displayPortProfile_t, fontSelection) },
     { "displayport_msp_use_device_blink",   VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_DISPLAY_PORT_MSP_CONFIG, offsetof(displayPortProfile_t, useDeviceBlink) },
+    { "displayport_msp_send_changes",       VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_DISPLAY_PORT_MSP_CONFIG, offsetof(displayPortProfile_t, sendChanges) },
+    { "displayport_msp_dji_budget",         VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, DISPLAYPORT_MSP_DJI_BUDGET_MAX }, PG_DISPLAY_PORT_MSP_CONFIG, offsetof(displayPortProfile_t, djiBudget) },
 #endif
 
 // PG_DISPLAY_PORT_MSP_CONFIG
