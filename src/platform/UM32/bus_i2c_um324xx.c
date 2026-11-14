@@ -27,6 +27,8 @@
 
 #if defined(USE_I2C) && !defined(USE_SOFT_I2C)
 
+#include "common/maths.h"
+
 #include "drivers/io.h"
 #include "drivers/nvic.h"
 #include "drivers/time.h"
@@ -91,6 +93,29 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 
 i2cDevice_t i2cDevice[I2CDEV_COUNT];
 
+static void i2cConfigureTiming(I2C_HandleTypeDef *pHandle, uint16_t clockSpeed)
+{
+    // UM324xF RM 26.4.3: SCL period = (LCNT + HCNT) / APB1 clock.
+    // Fast-mode Plus supports up to 1 MHz on this controller.
+    const uint32_t speed = constrain(clockSpeed, 100, 1000);
+    const uint32_t pclk = HAL_RCM_GetPCLK1Freq();
+    const uint32_t period = (pclk + speed * 1000 - 1) / (speed * 1000);
+    const uint32_t lowNs = speed <= 100 ? 4700 : (speed <= 400 ? 1300 : 500);
+    const uint32_t low = ((uint64_t)pclk * lowNs + 999999999) / 1000000000;
+
+    __HAL_I2C_EX_DISABLE(pHandle);
+    if (speed <= 100) {
+        MODIFY_REG(pHandle->Instance->CR, I2C_EX_CR_SPEED_Msk, I2C_EX_ClockSpeed_Standard);
+        pHandle->Instance->SSSCLLCNT = low;
+        pHandle->Instance->SSSCLHCNT = period - low;
+    } else {
+        MODIFY_REG(pHandle->Instance->CR, I2C_EX_CR_SPEED_Msk, I2C_EX_ClockSpeed_Fast);
+        pHandle->Instance->FSSCLLCNT = low;
+        pHandle->Instance->FSSCLHCNT = period - low;
+    }
+    __HAL_I2C_EX_ENABLE(pHandle);
+}
+
 
 void i2cInit(i2cDevice_e device)
 {
@@ -130,7 +155,9 @@ void i2cInit(i2cDevice_e device)
 
     pHandle->Instance = (I2C_TypeDef *)pDev->hardware->reg;
 
-    pHandle->Init.ClockSpeed = I2C_EX_SPEED_FAST_400K;
+    // The SDK takes a speed enum, not a frequency in Hz.
+    pHandle->Init.ClockSpeed = pDev->clockSpeed <= 100 ? I2C_EX_SPEED_STAD_100K
+        : (pDev->clockSpeed <= 400 ? I2C_EX_SPEED_FAST_400K : I2C_EX_SPEED_HIGH_1M);
     pHandle->Init.AddressingMode = I2C_EX_ADDRESSINGMODE_MASTER_7BIT;
     pHandle->Init.MasterRestartMode = I2C_EX_MASTER_RESTART_ENABLE;
     pHandle->Init.MasterBusClearMode = I2C_EX_MASTER_BUS_CLEAR_ENABLE;
@@ -141,6 +168,7 @@ void i2cInit(i2cDevice_e device)
 		/* Initialization Error */
 		Error_Handler();
 	}
+    i2cConfigureTiming(pHandle, pDev->clockSpeed);
 #endif
 
     HAL_NVIC_SetPriority(hardware->er_irq, NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_EV), NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_EV));

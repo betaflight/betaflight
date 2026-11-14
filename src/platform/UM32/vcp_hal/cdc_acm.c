@@ -158,6 +158,7 @@ static void cdc_acm_start_tx(uint8_t busid)
 
 static void cdc_acm_reset_session(void)
 {
+    // Passthrough owns the callbacks across USB re-enumeration.
     ATOMIC_BLOCK(NVIC_PRIO_USB) {
         cdcRxPendingLength = 0;
         usbVcpResetRx();
@@ -166,11 +167,7 @@ static void cdc_acm_reset_session(void)
         cdcTxTail = 0;
         cdcTxInFlight = 0;
         cdcTxSession++;
-        cdcCtrlLineStateCb = NULL;
-        cdcCtrlLineStateContext = NULL;
         cdcDtr = false;
-        cdcBaudRateCb = NULL;
-        cdcBaudRateContext = NULL;
     }
 }
 

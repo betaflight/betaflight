@@ -42,13 +42,15 @@
 
 
 static volatile uint16_t i2cErrorCount = 0;
+static volatile timeUs_t i2cLastActivityUs[I2CDEV_COUNT];
 
 static bool i2cHandleHardwareFailure(i2cDevice_e device)
 {
     (void)device;
+    const uint32_t primask = __get_PRIMASK();
+    __disable_irq();
     i2cErrorCount++;
-    // reinit peripheral + clock out garbage
-    //i2cInit(device);
+    __set_PRIMASK(primask);
     return false;
 }
 
@@ -67,11 +69,64 @@ static I2C_HandleTypeDef *i2cGetHandle(i2cDevice_e device)
     return handle && handle->hal.Instance ? &handle->hal : NULL;
 }
 
+static void i2cCompleteTransfer(i2cDevice_e device, I2C_HandleTypeDef *pHandle, uint32_t error)
+{
+    __HAL_I2C_EX_DISABLE_IT(pHandle, I2C_EX_IT_MASK_ALL);
+    __HAL_I2C_EX_DISABLE(pHandle);
+    __HAL_I2C_EX_CLEAR_ALL_ITFLAG(pHandle);
+    pHandle->ErrorCode = error;
+    pHandle->Mode = HAL_I2C_EX_MODE_NONE;
+    pHandle->State = HAL_I2C_EX_STATE_READY;
+    if (error != HAL_I2C_EX_ERROR_NONE) {
+        i2cHandleHardwareFailure(device);
+    }
+}
+
 static void i2cIrqHandler(i2cDevice_e device)
 {
     I2C_HandleTypeDef *pHandle = i2cGetHandle(device);
-    if (pHandle) {
-        HAL_I2C_EX_IRQHandler(pHandle);
+    if (!pHandle || pHandle->Mode != HAL_I2C_EX_MODE_MEM) {
+        return;
+    }
+
+    I2C_TypeDef *I2Cx = pHandle->Instance;
+    const uint32_t flags = I2Cx->ISR;
+    if (flags & I2C_EX_IT_TX_ABRT) {
+        // An abort flushes both FIFOs. It must not be reported as a successful STOP.
+        i2cCompleteTransfer(device, pHandle, HAL_I2C_EX_ERROR_BERR);
+        return;
+    }
+    if (flags & (I2C_EX_IT_RX_OVER | I2C_EX_IT_RX_UNDER | I2C_EX_IT_TX_OVER)) {
+        i2cCompleteTransfer(device, pHandle, HAL_I2C_EX_ERROR_OVR);
+        return;
+    }
+
+    // Only one read command is outstanding. Read the last byte before handling STOP.
+    if ((flags & I2C_EX_IT_RX_FULL) && pHandle->State == HAL_I2C_EX_STATE_BUSY_RX) {
+        if (!pHandle->XferCount) {
+            i2cCompleteTransfer(device, pHandle, HAL_I2C_EX_ERROR_SIZE);
+            return;
+        }
+        *pHandle->pBuffPtr++ = I2Cx->DATACMD;
+        pHandle->XferCount--;
+        i2cLastActivityUs[device] = microsISR();
+        if (!(flags & I2C_EX_IT_STOP_DET) && pHandle->XferCount) {
+            I2Cx->DATACMD = I2C_EX_CMD_READ | (pHandle->XferCount == 1 ? I2C_EX_CMD_STOP : 0);
+        }
+    }
+
+    if (flags & I2C_EX_IT_STOP_DET) {
+        i2cCompleteTransfer(device, pHandle, pHandle->XferCount ? HAL_I2C_EX_ERROR_SIZE : HAL_I2C_EX_ERROR_NONE);
+        return;
+    }
+
+    if ((flags & I2C_EX_IT_TX_EMPTY) && pHandle->State == HAL_I2C_EX_STATE_BUSY_TX && pHandle->XferCount) {
+        I2Cx->DATACMD = *pHandle->pBuffPtr++ | (pHandle->XferCount == 1 ? I2C_EX_CMD_STOP : 0);
+        pHandle->XferCount--;
+        i2cLastActivityUs[device] = microsISR();
+        if (!pHandle->XferCount) {
+            __HAL_I2C_EX_DISABLE_IT(pHandle, I2C_EX_IT_TX_EMPTY);
+        }
     }
 }
 
@@ -113,56 +168,55 @@ bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t data)
     return true;
 }
 
-// Non-blocking write
-bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
+static bool i2cStartTransfer(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data, bool read)
 {
-#if I2C_TRAIT_HANDLE
     I2C_HandleTypeDef *pHandle = i2cGetHandle(device);
-
-    if (!pHandle) {
-        return false;
-    }
-    I2C_TypeDef *I2Cx = (I2C_TypeDef *)i2cDevice[device].reg;
-
-    if (!I2Cx) {
-        return false;
-    }
-    if (pHandle->State != HAL_I2C_EX_STATE_READY) {
+    if (!pHandle || !data || !len || addr > 0x7F) {
         return false;
     }
 
-    HAL_StatusTypeDef status;
+    // BASEPRI cannot mask the I2C IRQ at priority zero.
+    const uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    if (pHandle->State != HAL_I2C_EX_STATE_READY || __HAL_I2C_EX_GET_FLAG(pHandle, I2C_EX_FLAG_ACTIVITY) == SET) {
+        __set_PRIMASK(primask);
+        return false;
+    }
 
-    timeUs_t timeoutStartUs = microsISR();
-
-    /* Disable I2C_EX peripheral */
+    I2C_TypeDef *I2Cx = pHandle->Instance;
+    __HAL_I2C_EX_DISABLE_IT(pHandle, I2C_EX_IT_MASK_ALL);
     __HAL_I2C_EX_DISABLE(pHandle);
+    __HAL_I2C_EX_CLEAR_ALL_ITFLAG(pHandle);
+    MODIFY_REG(I2Cx->TAR, I2C_EX_TAR_ADDR, addr);
+    I2Cx->TXTL = 0;
+    I2Cx->RXTL = 0;
 
-    MODIFY_REG(I2Cx->TAR, I2C_EX_TAR_ADDR, (addr_ & 0x7FUL));
+    pHandle->pBuffPtr = data;
+    pHandle->XferSize = len;
+    pHandle->XferCount = len;
+    pHandle->ErrorCode = HAL_I2C_EX_ERROR_NONE;
+    pHandle->Mode = HAL_I2C_EX_MODE_MEM;
+    pHandle->State = read ? HAL_I2C_EX_STATE_BUSY_RX : HAL_I2C_EX_STATE_BUSY_TX;
+    i2cLastActivityUs[device] = microsISR();
 
-   /* Enable I2C_EX peripheral */
-	__HAL_I2C_EX_ENABLE(pHandle);
-
-    I2Cx->DATACMD = (reg_ | I2C_EX_CMD_WRITE);
-    while ((I2Cx->RAWISR & I2C_EX_RAW_ITFLAG_TX_EMPTY) == 0) {                          // wait for any stop to finish sending
-        if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
-            return i2cHandleHardwareFailure(device);
-        }
+    __HAL_I2C_EX_ENABLE(pHandle);
+    // UM324xF RM 26.5.4: keep the controller enabled between register and data.
+    // Changing from write to read generates a repeated START with RESTART_EN set.
+    I2Cx->DATACMD = reg | I2C_EX_CMD_WRITE;
+    if (read) {
+        I2Cx->DATACMD = I2C_EX_CMD_READ | (len == 1 ? I2C_EX_CMD_STOP : 0);
     }
-
-    status = HAL_I2C_EX_Master_Transmit_IT(pHandle ,addr_, data, len_);
-
-    if (status == HAL_BUSY) {
-        return false;
-    }
-
-    if (status != HAL_OK)
-    {
-        return i2cHandleHardwareFailure(device);
-    }
-#endif
+    __HAL_I2C_EX_ENABLE_IT(pHandle, I2C_EX_IT_TX_ABRT | I2C_EX_IT_RX_OVER | I2C_EX_IT_RX_UNDER
+        | I2C_EX_IT_TX_OVER | I2C_EX_IT_STOP_DET | (read ? I2C_EX_IT_RX_FULL : I2C_EX_IT_TX_EMPTY));
+    __set_PRIMASK(primask);
 
     return true;
+}
+
+// Non-blocking register write
+bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
+{
+    return i2cStartTransfer(device, addr_, reg_, len_, data, false);
 }
 
 // Blocking read
@@ -192,54 +246,7 @@ bool i2cRead(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8
 // Non-blocking read
 bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
-#if I2C_TRAIT_HANDLE
-    I2C_HandleTypeDef *pHandle = i2cGetHandle(device);
-
-    if (!pHandle) {
-        return false;
-    }
-    I2C_TypeDef *I2Cx = (I2C_TypeDef *)i2cDevice[device].reg;
-
-    if (!I2Cx) {
-        return false;
-    }
-
-    if (pHandle->State != HAL_I2C_EX_STATE_READY) {
-        return false;
-    }
-
-    HAL_StatusTypeDef status;
-
-    timeUs_t timeoutStartUs = microsISR();
-
-    /* Disable I2C_EX peripheral */
-    __HAL_I2C_EX_DISABLE(pHandle);
-
-    MODIFY_REG(I2Cx->TAR, I2C_EX_TAR_ADDR, (addr_ & 0x7FUL));
-
-   /* Enable I2C_EX peripheral */
-	__HAL_I2C_EX_ENABLE(pHandle);
-
-    I2Cx->DATACMD = (reg_ | I2C_EX_CMD_WRITE);
-
-     while ((I2Cx->RAWISR & I2C_EX_RAW_ITFLAG_TX_EMPTY) == 0) {                          // wait for any stop to finish sending
-        if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
-            return i2cHandleHardwareFailure(device);
-        }
-    }
-
-    status = HAL_I2C_EX_Master_Receive_IT(pHandle, addr_ , buf, len);
-
-    if (status == HAL_BUSY) {
-        return false;
-    }
-
-    if (status != HAL_OK) {
-        return i2cHandleHardwareFailure(device);
-    }
-#endif
-
-    return true;
+    return i2cStartTransfer(device, addr_, reg_, len, buf, true);
 }
 
 bool i2cBusy(i2cDevice_e device, bool *error)
@@ -253,19 +260,21 @@ bool i2cBusy(i2cDevice_e device, bool *error)
         return true;
     }
 
+    const uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    if (pHandle->Mode == HAL_I2C_EX_MODE_MEM && pHandle->State != HAL_I2C_EX_STATE_READY
+        && cmpTimeUs(microsISR(), i2cLastActivityUs[device]) >= I2C_TIMEOUT_US) {
+        i2cCompleteTransfer(device, pHandle, HAL_I2C_EX_ERROR_TIMEOUT);
+    }
+
     if (error) {
-        *error = pHandle->ErrorCode;
+        *error = pHandle->ErrorCode != HAL_I2C_EX_ERROR_NONE;
     }
 
-    if (pHandle->State == HAL_I2C_EX_STATE_READY)
-    {
-        if (__HAL_I2C_EX_GET_FLAG(pHandle, I2C_EX_FLAG_ACTIVITY) == SET)  //?? Need to check.
-        {
-            return true;
-        }
-
-        return false;
-    }
+    const bool busy = pHandle->State != HAL_I2C_EX_STATE_READY
+        || (pHandle->ErrorCode == HAL_I2C_EX_ERROR_NONE && __HAL_I2C_EX_GET_FLAG(pHandle, I2C_EX_FLAG_ACTIVITY) == SET);
+    __set_PRIMASK(primask);
+    return busy;
 #endif
 
     return true;
