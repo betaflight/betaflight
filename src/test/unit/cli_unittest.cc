@@ -424,7 +424,24 @@ const char * const shortGitRevision = "MASTER";
 //uint32_t serialRxBytesWaiting(const serialPort_t *) {return 0;}
 //uint8_t serialRead(serialPort_t *){return 0;}
 
-void bufWriterAppend(bufWriter_t *, uint8_t ch){ printf("%c", ch); }
+// Keep the CLI output, so that tests can examine the messages.
+static char cliOutput[256];
+static unsigned cliOutputLen = 0;
+
+static void cliOutputReset(void)
+{
+    cliOutputLen = 0;
+    cliOutput[0] = '\0';
+}
+
+void bufWriterAppend(bufWriter_t *, uint8_t ch)
+{
+    printf("%c", ch);
+    if (cliOutputLen < sizeof(cliOutput) - 1) {
+        cliOutput[cliOutputLen++] = ch;
+        cliOutput[cliOutputLen] = '\0';
+    }
+}
 //void serialWriteBufShim(void *, const uint8_t *, int) {}
 void bufWriterInit(bufWriter_t *, uint8_t *, int, bufWrite_t, void *) { }
 //void setArmingDisabled(armingDisableFlags_e) {}
@@ -611,6 +628,66 @@ TEST(CLIUnittest, TestCliExecuteCommandRefusesWhenArmed)
     EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("save", buf, sizeof(buf)));
     EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults nosave", buf, sizeof(buf)));
     armingFlags &= ~ARMED;
+    EXPECT_FALSE(cliMode);
+}
+
+// atoi("-1") gives -1. A check of only the upper limit let 'aux -1' write before the start
+// of the array. A negative index must give the index range error.
+TEST(CLIUnittest, TestCliAuxRejectsNegativeIndex)
+{
+    static_assert(MAX_MODE_ACTIVATION_CONDITION_COUNT == 20, "update the aux index tests");
+    char buf[64];
+
+    // Without the other arguments, the command clears the entry with memset()
+    cliOutputReset();
+    cliExecuteCommand("aux -1", buf, sizeof(buf));
+    EXPECT_NE(nullptr, strstr(cliOutput, "INDEX NOT BETWEEN"));
+
+    cliOutputReset();
+    cliExecuteCommand("aux -1 0 1 1700 2100 0 0", buf, sizeof(buf));
+    EXPECT_NE(nullptr, strstr(cliOutput, "INDEX NOT BETWEEN"));
+
+    cliOutputReset();
+    cliExecuteCommand("aux 20 0 1 1700 2100 0 0", buf, sizeof(buf));
+    EXPECT_NE(nullptr, strstr(cliOutput, "INDEX NOT BETWEEN"));
+
+    // The last index is valid
+    cliOutputReset();
+    cliExecuteCommand("aux 19 0 1 1700 2100 0 0", buf, sizeof(buf));
+    EXPECT_EQ(nullptr, strstr(cliOutput, "INDEX NOT BETWEEN"));
+    EXPECT_EQ(1, modeActivationConditions(19)->auxChannelIndex);
+
+    memset(modeActivationConditionsMutable(19), 0, sizeof(modeActivationCondition_t));
+    EXPECT_FALSE(cliMode);
+}
+
+// Same problem as 'aux': 'adjrange -1' wrote before the start of the array.
+TEST(CLIUnittest, TestCliAdjrangeRejectsNegativeIndex)
+{
+    static_assert(MAX_ADJUSTMENT_RANGE_COUNT == 30, "update the adjrange index tests");
+    char buf[64];
+
+    // Without the other arguments, the command clears the entry with memset()
+    cliOutputReset();
+    cliExecuteCommand("adjrange -1", buf, sizeof(buf));
+    EXPECT_NE(nullptr, strstr(cliOutput, "INDEX NOT BETWEEN"));
+
+    cliOutputReset();
+    cliExecuteCommand("adjrange -1 0 1 1700 2100 1 2", buf, sizeof(buf));
+    EXPECT_NE(nullptr, strstr(cliOutput, "INDEX NOT BETWEEN"));
+
+    cliOutputReset();
+    cliExecuteCommand("adjrange 30 0 1 1700 2100 1 2", buf, sizeof(buf));
+    EXPECT_NE(nullptr, strstr(cliOutput, "INDEX NOT BETWEEN"));
+
+    // The last index is valid
+    cliOutputReset();
+    cliExecuteCommand("adjrange 29 0 1 1700 2100 1 2", buf, sizeof(buf));
+    EXPECT_EQ(nullptr, strstr(cliOutput, "INDEX NOT BETWEEN"));
+    EXPECT_EQ(1, adjustmentRanges(29)->auxChannelIndex);
+    EXPECT_EQ(2, adjustmentRanges(29)->auxSwitchChannelIndex);
+
+    memset(adjustmentRangesMutable(29), 0, sizeof(adjustmentRange_t));
     EXPECT_FALSE(cliMode);
 }
 #endif

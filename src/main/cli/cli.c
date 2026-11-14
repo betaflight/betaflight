@@ -1376,7 +1376,7 @@ RAM_CODE static void cliAux(const char *cmdName, char *cmdline)
     } else {
         ptr = cmdline;
         i = atoi(ptr++);
-        if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
+        if (i >= 0 && i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
             modeActivationCondition_t *mac = modeActivationConditionsMutable(i);
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
@@ -1941,7 +1941,7 @@ RAM_CODE static void cliAdjustmentRange(const char *cmdName, char *cmdline)
     } else {
         ptr = cmdline;
         int i = atoi(ptr++);
-        if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
+        if (i >= 0 && i < MAX_ADJUSTMENT_RANGE_COUNT) {
             adjustmentRange_t *ar = adjustmentRangesMutable(i);
             uint8_t validArgumentCount = 0;
 
@@ -3506,7 +3506,7 @@ RAM_CODE static void cliVtx(const char *cmdName, char *cmdline)
 #endif
         ptr = cmdline;
         int i = atoi(ptr++);
-        if (i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT) {
+        if (i >= 0 && i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT) {
             vtxChannelActivationCondition_t *cac = &vtxConfigMutable()->vtxChannelActivationConditions[i];
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
