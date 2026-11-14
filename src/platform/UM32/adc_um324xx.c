@@ -28,6 +28,7 @@
 #ifdef USE_ADC
 
 #include "build/debug.h"
+#include "common/maths.h"
 
 #include "drivers/dma_reqmap.h"
 #include "platform/dma.h"
@@ -120,6 +121,26 @@ static uint32_t adcRegularRank[] = {
 // With prescaler = 4 at 200MHz (AHB1), fADC = 50MHz (tcycle = 0.02us), 9us = 450cycles < 810
 static void adcInitDevice(adcDevice_t *adcdev, int channelCount)
 {
+#ifdef USE_OPA
+    // ADC1 uses OPA0 as its input buffer, and ADC2 uses OPA1.
+    OPA_HandleTypeDef hopa = {
+        .Opax = adcdev->ADCx == ADC1 ? OPA0 : OPA1,
+        .Opa_Mode = HAL_OPA_MODE_UNITBUFF,
+        .Init = {
+            .Capen = OPA_CAPEN_OPEN,
+            .Fbresen = OPA_FBRESEN_OPEN,
+            .GainSel = OPA_GAINSEL_1X,
+            .Otpen = OPA_OTPEN_CLOSE,
+            .Seln = OPA_SELN_RESERVE,
+            .Selp = OPA_SELP_ADCMUX,
+        },
+    };
+
+    if (HAL_OPA_Init(&hopa) != HAL_OK) {
+        Error_Handler();
+    }
+#endif
+
     ADC_HandleTypeDef *hadc = &adcdev->ADCHandle;
 
     hadc->Instance = adcdev->ADCx;
@@ -157,7 +178,6 @@ void adcInitCalibrationValues(void)
     adcVREFINTCAL = VREFINT_CAL_VREF;
     adcTSCAL1 = *TEMPSENSOR_CAL1_ADDR;
     adcTSCAL2 = *TEMPSENSOR_CAL2_ADDR;
-    adcTSSlopeK = (adcTSCAL2 - adcTSCAL1)/(TEMPSENSOR_CAL2_TEMP - TEMPSENSOR_CAL1_TEMP);
 }
 
 uint32_t tsGetChopperClkSrcFreq(void)
@@ -239,27 +259,6 @@ void adcInit(const adcConfig_t *config)
 
     adcOperatingConfig[ADC_VREFINT].enabled = true;
     adcOperatingConfig[ADC_TEMPSENSOR].enabled = true;
-#endif
-
-#ifdef USE_OPA
-	OPA_HandleTypeDef hopa;
-
-	/* Opa Base configuration */
-    // OPA0 is the ADC1 input buffer, OPA1 is the ADC2 input buffer (per manual).
-    hopa.Opax = (ADC_CFG_TO_DEV(config->device) == ADCDEV_2) ? OPA1 : OPA0;
-    hopa.Opa_Mode = HAL_OPA_MODE_UNITBUFF;
-    hopa.Init.Capen = OPA_CAPEN_OPEN;
-    hopa.Init.Fbresen = OPA_FBRESEN_OPEN;
-    hopa.Init.GainSel = OPA_GAINSEL_1X;
-    hopa.Init.Otpen = OPA_OTPEN_CLOSE;
-    hopa.Init.Seln = OPA_SELN_RESERVE;
-    hopa.Init.Selp = OPA_SELP_ADCMUX;
-
-    if(HAL_OPA_Init(&hopa) != HAL_OK)
-    {
-        /* OPA Initialization Error */
-        Error_Handler();
-    }
 #endif
 
     for (int i = 0; i < ADC_EXTERNAL_COUNT; i++) {
@@ -348,6 +347,19 @@ void adcInit(const adcConfig_t *config)
             continue;
         }
 
+        const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, dev, config->dmaopt[dev]);
+        const dmaIdentifier_e dmaIdentifier = dmaSpec ? dmaGetIdentifier(dmaSpec->ref) : DMA_NONE;
+        if (!dmaSpec || !dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
+            // Exclude this ADC from the sequence and the DMA start loop.
+            adc->channelBits = 0;
+            for (int source = 0; source < ADC_EXTERNAL_COUNT; source++) {
+                if (adcOperatingConfig[source].adcDevice == dev) {
+                    adcOperatingConfig[source].enabled = false;
+                }
+            }
+            continue;
+        }
+
         RCC_ClockCmd(adc->rccADC, ENABLE);
 
         int configuredAdcChannels = BITCOUNT(adc->channelBits);
@@ -413,22 +425,8 @@ void adcInit(const adcConfig_t *config)
 
 
         // Configure DMA for this ADC peripheral
-#ifdef USE_DMA_SPEC
-        const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, dev, config->dmaopt[dev]);
-        if (!dmaSpec) {
-            return;
-        }
-
-        dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
-        if (!dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
-            return;
-        }
-
         adc->DmaHandle.Instance                 = (DMA_CODE_CONTROLLER(dmaSpec->code) == 1) ? DMA1 : DMA2;
         adc->DmaHandle.DmaChannelSel            = DMA_CODE_CHANNEL(dmaSpec->code);
-#else
-        //...
-#endif
         adc->DmaHandle.Init.Direction           = DMA_PERIPH_TO_MEMORY;
 
         adc->DmaHandle.Init.DstMSize            = DMA_BURST_DST_NUM_1;
@@ -526,7 +524,16 @@ uint16_t adcInternalCompensateVref(uint16_t intVRefAdcValue)
 int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue)
 {
     UNUSED(vrefValue);
-    return (int16_t)((int16_t)(tempAdcValue - adcTSCAL1) / adcTSSlopeK + TEMPSENSOR_CAL1_TEMP);
+    const int32_t codeSpan = adcTSCAL2 - adcTSCAL1;
+    if (codeSpan == 0) {
+        return TEMPSENSOR_CAL1_TEMP;
+    }
+
+    // Divide after multiplying to preserve the fractional slope.
+    const int32_t codeDelta = (int32_t)tempAdcValue - adcTSCAL1;
+    const int32_t temperature = (int32_t)TEMPSENSOR_CAL1_TEMP +
+        codeDelta * (int32_t)(TEMPSENSOR_CAL2_TEMP - TEMPSENSOR_CAL1_TEMP) / codeSpan;
+    return (int16_t)constrain(temperature, INT16_MIN, INT16_MAX);
 }
 
 bool adcInternalIsBusy(void)
