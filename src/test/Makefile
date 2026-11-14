@@ -398,6 +398,16 @@ flight_mixer_wing_unittest_DEFINES := \
 		USE_ALTITUDE_HOLD=
 
 
+gimbal_control_unittest_SRC := \
+		$(USER_DIR)/io/gimbal_control.c \
+		$(USER_DIR)/pg/gimbal.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/streambuf.c
+
+gimbal_control_unittest_DEFINES := \
+		USE_GIMBAL=
+
 gps_conversion_unittest_SRC := \
 		$(USER_DIR)/common/gps_conversion.c
 
