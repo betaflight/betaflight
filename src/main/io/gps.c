@@ -2734,14 +2734,22 @@ static bool UBLOX_parse_gps(void)
         break;
     case CLSMSG(CLASS_CFG, MSG_CFG_GNSS):
         {
-            const uint16_t messageSize = 4 + (ubxRcvMsgPayload.ubxCfgGnss.numConfigBlocks * sizeof(ubxConfigblock_t));
+            // reject frames that are too short for the header or for the blocks they declare,
+            // otherwise stale bytes from earlier packets would be sent back as config blocks
+            if (ubxRcvMsgPayloadLength < 4
+                || ubxRcvMsgPayloadLength < 4 + (ubxRcvMsgPayload.ubxCfgGnss.numConfigBlocks * sizeof(ubxConfigblock_t))) {
+                break;
+            }
+
+            // numConfigBlocks comes straight from the receiver, clamp it to what configblocks[] can hold
+            const uint8_t numConfigBlocks = MIN(ubxRcvMsgPayload.ubxCfgGnss.numConfigBlocks, ARRAYLEN(ubxRcvMsgPayload.ubxCfgGnss.configblocks));
+            const uint16_t messageSize = 4 + (numConfigBlocks * sizeof(ubxConfigblock_t));
             ubxMessage_t tx_buffer;
 
-            // prevent buffer overflow on invalid numConfigBlocks
-            const int size = MIN(messageSize, sizeof(tx_buffer.payload));
-            memcpy(&tx_buffer.payload, &ubxRcvMsgPayload, size);
+            memcpy(&tx_buffer.payload, &ubxRcvMsgPayload, messageSize);
+            tx_buffer.payload.cfg_gnss.numConfigBlocks = numConfigBlocks;
 
-            for (int i = 0; i < ubxRcvMsgPayload.ubxCfgGnss.numConfigBlocks; i++) {
+            for (int i = 0; i < numConfigBlocks; i++) {
                 if (ubxRcvMsgPayload.ubxCfgGnss.configblocks[i].gnssId == UBLOX_GNSS_SBAS) {
                     if (gpsConfig()->sbasMode == SBAS_NONE) {
                         tx_buffer.payload.cfg_gnss.configblocks[i].flags &= ~UBLOX_GNSS_ENABLE; // Disable SBAS
