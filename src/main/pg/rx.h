@@ -70,6 +70,13 @@ typedef struct rxConfig_s {
     uint8_t msp_override_failsafe;             // if false then extra RC link is always required in msp_override mode, true - allows control via msp_override without extra RC link (autonomous use case)
     uint8_t crsf_use_negotiated_baud;          // Use negotiated baud rate for CRSF V3
     int8_t rx_uart;                            // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned
+    uint8_t crsf_baudrate;                     // crsfBaudrateMode_e: default CRSF baud rate, AUTO selects it from the receiver type
 } rxConfig_t;
+
+typedef enum {
+    CRSF_BAUDRATE_AUTO = 0,     // 420000 until the receiver identifies itself, then 420000 for ExpressLRS and 416666 otherwise
+    CRSF_BAUDRATE_416666,       // CRSF spec rate
+    CRSF_BAUDRATE_420000,       // ExpressLRS default rate
+} crsfBaudrateMode_e;
 
 PG_DECLARE(rxConfig_t, rxConfig);

@@ -76,6 +76,8 @@ static uint8_t telemetryBuf[CRSF_FRAME_SIZE_MAX];
 static uint8_t telemetryBufLen = 0;
 static float channelScale = CRSF_RC_CHANNEL_SCALE_LEGACY;
 static timeDelta_t frameTimeNeededUs = CRSF_TIME_NEEDED_PER_FRAME_US;
+// Rate used when crsf_baudrate = AUTO. Starts at the legacy rate so nothing changes until the receiver identifies itself.
+static uint32_t crsfAutoBaudrate = CRSF_BAUDRATE_LEGACY;
 
 #ifdef USE_RX_LINK_UPLINK_POWER
 #define CRSF_UPLINK_POWER_LEVEL_MW_ITEMS_COUNT 9
@@ -89,16 +91,16 @@ const uint16_t uplinkTXPowerStatesMw[CRSF_UPLINK_POWER_LEVEL_MW_ITEMS_COUNT] = {
  * CRSF protocol uses a single wire half duplex uart connection.
  * The master sends one frame every 4ms and the slave replies between two frames from the master.
  *
- * 420000 baud
+ * 416666 baud (CRSF spec) or 420000 baud (ExpressLRS default), see crsf_baudrate
  * not inverted
  * 8 Bit
  * 1 Stop bit
  * Big endian
- * 420000 bit/s = 46667 byte/s (including stop bit) = 21.43us per byte
+ * 416666 bit/s = 41667 byte/s (8N1, 10 bits per byte) = 24.0us per byte
  * Max frame size is 64 bytes
- * A 64 byte frame plus 1 sync byte can be transmitted in 1393 microseconds.
+ * A 64 byte frame plus 1 sync byte can be transmitted in 1560 microseconds.
  *
- * CRSF_TIME_NEEDED_PER_FRAME_US is set conservatively at 1500 microseconds
+ * CRSF_TIME_NEEDED_PER_FRAME_US is set conservatively at 1748 microseconds
  *
  * Every frame has the structure:
  * <Device address><Frame length><Type><Payload><CRC>
@@ -436,12 +438,14 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
                     break;
                 }
 #endif
+#if defined(USE_TELEMETRY_CRSF) && defined(USE_MSP_OVER_TELEMETRY) && defined(USE_CRSF_V3)
+                case CRSF_FRAMETYPE_DEVICE_INFO:
+                    crsfHandleDeviceInfoResponse(crsfFrame.frame.payload);
+                    break;
+#endif
 #if defined(USE_CRSF_CMS_TELEMETRY)
                 case CRSF_FRAMETYPE_DEVICE_PING:
                     crsfScheduleDeviceInfoResponse();
-                    break;
-                case CRSF_FRAMETYPE_DEVICE_INFO:
-                    crsfHandleDeviceInfoResponse(crsfFrame.frame.payload);
                     break;
                 case CRSF_FRAMETYPE_DISPLAYPORT_CMD: {
                     uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;
@@ -671,10 +675,12 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         return false;
     }
 
-    uint32_t crsfBaudrate = CRSF_BAUDRATE;
+    uint32_t crsfBaudrate = crsfGetDefaultBaudrate();
 
 #if defined(USE_CRSF_V3)
-    crsfBaudrate = rxConfig->crsf_use_negotiated_baud ? getCrsfCachedBaudrate() : CRSF_BAUDRATE;
+    if (rxConfig->crsf_use_negotiated_baud) {
+        crsfBaudrate = getCrsfCachedBaudrate();
+    }
 #endif
 
     serialPort = openSerialPort(port,
@@ -714,15 +720,16 @@ void crsfRxUpdateBaudrate(uint32_t baudrate)
     persistentObjectWrite(PERSISTENT_OBJECT_SERIALRX_BAUD, baudrate);
     // new frame time - use 64-bit arithmetic to avoid truncation and round up
     if (baudrate > 0) {
-        frameTimeNeededUs = (timeDelta_t)(((uint64_t)CRSF_TIME_NEEDED_PER_FRAME_US * (uint64_t)CRSF_BAUDRATE + (baudrate - 1)) / baudrate);
+        // CRSF_TIME_NEEDED_PER_FRAME_US is the allowance at the legacy rate, scale it for the new rate
+        frameTimeNeededUs = (timeDelta_t)(((uint64_t)CRSF_TIME_NEEDED_PER_FRAME_US * (uint64_t)CRSF_BAUDRATE_LEGACY + (baudrate - 1)) / baudrate);
     } else {
         frameTimeNeededUs = CRSF_TIME_NEEDED_PER_FRAME_US;
     }
 #if defined(USE_TELEMETRY_CRSF)
     task_t* tlmTask = getTask(TASK_TELEMETRY);
     if (tlmTask) {
-        // above the default baudrate let the inbound frame rate dictate the outbound rate
-        eventDrivenTelemetry = baudrate > CRSF_BAUDRATE;
+        // above the default baudrates let the inbound frame rate dictate the outbound rate
+        eventDrivenTelemetry = baudrate > CRSF_BAUDRATE_LEGACY;
         tlmTask->attribute->checkFunc = eventDrivenTelemetry ? crsfTelemetryUpdateCheck : NULL;
     }
 #endif
@@ -733,6 +740,24 @@ bool crsfRxUseNegotiatedBaud(void)
     return rxConfig()->crsf_use_negotiated_baud;
 }
 #endif
+
+uint32_t crsfGetDefaultBaudrate(void)
+{
+    switch (rxConfig()->crsf_baudrate) {
+    case CRSF_BAUDRATE_416666:
+        return CRSF_BAUDRATE_SPEC;
+    case CRSF_BAUDRATE_420000:
+        return CRSF_BAUDRATE_LEGACY;
+    case CRSF_BAUDRATE_AUTO:
+    default:
+        return crsfAutoBaudrate;
+    }
+}
+
+void crsfRxSetAutoBaudrate(uint32_t baudrate)
+{
+    crsfAutoBaudrate = baudrate;
+}
 
 bool crsfRxIsActive(void)
 {

@@ -274,6 +274,15 @@ static const char * const lookupTableSerialRX[] = {
 };
 #endif
 
+#ifdef USE_SERIALRX_CRSF
+// sync with crsfBaudrateMode_e
+static const char * const lookupTableCrsfBaudrate[] = {
+    "AUTO",
+    "416666",
+    "420000",
+};
+#endif
+
 #ifdef USE_RX_SPI
 // sync with rx_spi_protocol_e
 static const char * const lookupTableRxSpi[] = {
@@ -648,6 +657,9 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_SERIALRX
     LOOKUP_TABLE_ENTRY(lookupTableSerialRX),
 #endif
+#ifdef USE_SERIALRX_CRSF
+    LOOKUP_TABLE_ENTRY(lookupTableCrsfBaudrate),
+#endif
 #ifdef USE_RX_SPI
     LOOKUP_TABLE_ENTRY(lookupTableRxSpi),
 #endif
@@ -925,6 +937,9 @@ const clivalue_t valueTable[] = {
 #endif
 #if defined(USE_SERIALRX_SBUS)
     { "sbus_baud_fast",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RX_CONFIG, offsetof(rxConfig_t, sbus_baud_fast) },
+#endif
+#if defined(USE_SERIALRX_CRSF)
+    { "crsf_baudrate",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_CRSF_BAUDRATE }, PG_RX_CONFIG, offsetof(rxConfig_t, crsf_baudrate) },
 #endif
 #if defined(USE_CRSF_V3)
     { "crsf_use_negotiated_baud",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RX_CONFIG, offsetof(rxConfig_t, crsf_use_negotiated_baud) },
