@@ -317,6 +317,7 @@ static void i2c_er_handler(i2cDevice_e device)
         }
     }
     I2Cx->SR1 &= ~(I2C_SR1_BERR | I2C_SR1_ARLO | I2C_SR1_AF | I2C_SR1_OVR);     // reset all the error bits to clear the interrupt
+    memset(&i2c_ev_state[device], 0, sizeof(i2c_ev_state[device]));             // the aborted job must not leave subaddress_sent set for the next one
     state->busy = 0;
 }
 
@@ -451,6 +452,7 @@ void i2cInit(i2cDevice_e device)
     I2C_TypeDef *I2Cx = (I2C_TypeDef *)hw->reg;
 
     memset(&pDev->state, 0, sizeof(pDev->state));
+    memset(&i2c_ev_state[device], 0, sizeof(i2c_ev_state[device]));
 
     NVIC_InitTypeDef nvic;
     I2C_InitTypeDef i2cInit;
