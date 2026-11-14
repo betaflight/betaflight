@@ -190,6 +190,8 @@ __attribute__((always_inline)) static inline void ch32IrqRestore(uint32_t *state
 #endif
 
 #define PLATFORM_TRAIT_ADC_DEVICE 1
+#define PLATFORM_TRAIT_ADC_INTERNAL_CALIBRATION 1
+#define PLATFORM_TRAIT_CAMERA_CONTROL 1
 
 #define CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
 #define CAMERA_CONTROL_SOFTWARE_PWM_AVAILABLE

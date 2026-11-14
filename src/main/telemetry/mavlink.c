@@ -185,8 +185,8 @@ static int16_t headingOrScaledMilliAmpereHoursDrawn(void)
 static void mavlinkSendStatusText(uint8_t severity, const char *text)
 {
     // The packer copies the whole field width, so pad short strings out to it
-    char textField[MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN];
-    strncpy(textField, text, sizeof(textField));
+    char textField[MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN] = { 0 };
+    memcpy(textField, text, strnlen(text, sizeof(textField)));
     mavlink_msg_statustext_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         severity, textField, 0, 0);
     const uint16_t msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
@@ -390,8 +390,8 @@ static void mavlinkSendAvailableMode(uint8_t modeIndex)
     const uint8_t idx0 = modeIndex - 1;
     const bfMavModeDescriptor_t *desc = &bfMavModeDescriptors[idx0];
     // The packer copies the whole field width, so pad the name out to it
-    char modeName[MAVLINK_MSG_AVAILABLE_MODES_FIELD_MODE_NAME_LEN];
-    strncpy(modeName, desc->name, sizeof(modeName));
+    char modeName[MAVLINK_MSG_AVAILABLE_MODES_FIELD_MODE_NAME_LEN] = { 0 };
+    memcpy(modeName, desc->name, strnlen(desc->name, sizeof(modeName)));
 
     mavlink_msg_available_modes_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         BF_MAV_MODE_COUNT,
