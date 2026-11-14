@@ -554,8 +554,43 @@ void expressLrsOnTimerTockISR(void)
 
 static uint16_t lostConnectionCounter = 0;
 
-static void lostConnection(void)
+// Temporary diagnostics for transitory SPI ELRS link faults, reported in
+// DEBUG_RX_EXPRESSLRS_SPI slots 4..7. Remove once the fault is identified.
+typedef enum {
+    ELRS_LOST_NONE = 0,
+    ELRS_LOST_RATE_CHANGE,       // forced rf mode change
+    ELRS_LOST_TENTATIVE_TIMEOUT, // tentative lock timed out
+    ELRS_LOST_PACKET_TIMEOUT,    // disconnect pending, or packet gap > disconnectTimeoutMs
+    ELRS_LOST_CHAOS_RESYNC,      // phase lock chaos resync
+    ELRS_LOST_STOP               // expressLrsStop()
+} lostConnectionReason_e;
+
+static uint8_t lostConnectionReason = ELRS_LOST_NONE;
+static uint32_t lastRcPacketMs = 0;  // when an RC payload last passed the connected/modelmatch gate
+
+// A resync - tentativeConnection() straight back to gotConnection() - does not
+// pass through lostConnection(), so neither lostConnectionCounter nor
+// lostConnectionReason above records one. That is the path a log with timerState
+// dropping LOCKED -> TENTATIVE and a lost connection count still at zero has
+// taken, and these are what identify it.
+//
+// Reported in DEBUG_RX_EXPRESSLRS_PHASELOCK slots 4..7 rather than the slots
+// above, so that a resync can be read against the phase offset and timer
+// frequency offset in slots 0..3 that preceded it: a counter drifting away a
+// tick at a time and a counter jumping in one step have different causes.
+#define ELRS_RESYNC_WAS_DISCONNECTED  (1 << 0)
+#define ELRS_RESYNC_NONCE_MISMATCH    (1 << 1)
+#define ELRS_RESYNC_FHSS_MISMATCH     (1 << 2)
+#define ELRS_RESYNC_MODELMATCH_CHANGE (1 << 3)
+
+static uint16_t resyncCounter = 0;
+static uint8_t resyncTrigger = 0;   // bitmask of the ELRS_RESYNC_* causes above
+static int8_t resyncNonceDelta = 0; // local minus transmitter, at the last resync
+static int8_t resyncFhssDelta = 0;
+
+static void lostConnection(const lostConnectionReason_e reason)
 {
+    lostConnectionReason = reason;
     lostConnectionCounter++;
 
     receiver.rfModeCycleMultiplier = 1;
@@ -773,7 +808,24 @@ static bool processRFSyncPacket(volatile elrsOtaPacket_t const * const otaPktPtr
     uint8_t modelXor = (~rxExpressLrsSpiConfig()->modelId) & ELRS_MODELMATCH_MASK;
     bool modelMatched = otaPktPtr->sync.UID5 == (receiver.UID[5] ^ modelXor);
 
-    if (receiver.connectionState == ELRS_DISCONNECTED || receiver.nonceRX != otaPktPtr->sync.nonce || fhssGetCurrIndex() != otaPktPtr->sync.fhssIndex || connectionHasModelMatch != modelMatched) {
+    const bool wasDisconnected = receiver.connectionState == ELRS_DISCONNECTED;
+    const bool nonceMismatch = receiver.nonceRX != otaPktPtr->sync.nonce;
+    const bool fhssMismatch = fhssGetCurrIndex() != otaPktPtr->sync.fhssIndex;
+    const bool modelMatchChanged = connectionHasModelMatch != modelMatched;
+
+    if (wasDisconnected || nonceMismatch || fhssMismatch || modelMatchChanged) {
+        // Recorded before the counters below are overwritten, since the size of
+        // the divergence is the measurement. Both wrap, so the difference is
+        // taken as signed and is only meaningful while it stays small - which is
+        // the case this is here to tell apart.
+        resyncTrigger = (wasDisconnected ? ELRS_RESYNC_WAS_DISCONNECTED : 0)
+                      | (nonceMismatch ? ELRS_RESYNC_NONCE_MISMATCH : 0)
+                      | (fhssMismatch ? ELRS_RESYNC_FHSS_MISMATCH : 0)
+                      | (modelMatchChanged ? ELRS_RESYNC_MODELMATCH_CHANGE : 0);
+        resyncNonceDelta = (int8_t)(receiver.nonceRX - otaPktPtr->sync.nonce);
+        resyncFhssDelta = (int8_t)(fhssGetCurrIndex() - otaPktPtr->sync.fhssIndex);
+        resyncCounter++;
+
         fhssSetCurrIndex(otaPktPtr->sync.fhssIndex);
         receiver.nonceRX = otaPktPtr->sync.nonce;
 
@@ -828,6 +880,7 @@ rx_spi_received_e processRFPacket(volatile uint8_t *payload, uint32_t timeStampU
         // Must be fully connected to process RC packets, prevents processing RC
         // during sync, where packets can be received before connection
         if (receiver.connectionState == ELRS_CONNECTED && connectionHasModelMatch) {
+            lastRcPacketMs = timeStampMs;
             if (receiver.switchMode == SM_WIDE) {
                 wideSwitchIndex = hybridWideNonceToSwitchIndex(receiver.nonceRX);
 #ifndef USE_ELRSV4
@@ -1040,7 +1093,7 @@ bool expressLrsSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeSta
 static void handleConnectionStateUpdate(const uint32_t timeStampMs)
 {
     if ((receiver.connectionState != ELRS_DISCONNECTED) && (receiver.modParams->index != receiver.nextRateIndex)) {  // forced change
-        lostConnection();
+        lostConnection(ELRS_LOST_RATE_CHANGE);
         receiver.lastSyncPacketMs = timeStampMs;         // reset this variable to stop rf mode switching and add extra time
         receiver.rfModeCycledAtMs = timeStampMs;         // reset this variable to stop rf mode switching and add extra time
         setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL);
@@ -1056,7 +1109,7 @@ static void handleConnectionStateUpdate(const uint32_t timeStampMs)
     }
 
     if (receiver.connectionState == ELRS_TENTATIVE && ((timeStampMs - receiver.lastSyncPacketMs) > receiver.rfPerfParams->rxLockTimeoutMs)) {
-        lostConnection();
+        lostConnection(ELRS_LOST_TENTATIVE_TIMEOUT);
         receiver.rfModeCycledAtMs = timeStampMs;
         receiver.lastSyncPacketMs = timeStampMs;
     }
@@ -1076,7 +1129,7 @@ static void handleConnectionStateUpdate(const uint32_t timeStampMs)
 
     if ((receiver.connectionState == ELRS_DISCONNECT_PENDING) || // check if we lost conn.
         ((receiver.connectionState == ELRS_CONNECTED) && ((uint32_t)lastPacketDeltaMs > receiver.rfPerfParams->disconnectTimeoutMs))) {
-        lostConnection();
+        lostConnection(ELRS_LOST_PACKET_TIMEOUT);
     }
 
     if ((receiver.connectionState == ELRS_TENTATIVE) && (abs(pl.offsetDeltaUs) <= 10) && (pl.offsetUs < 100) && (lqGet() > minLqForChaos())) {
@@ -1088,7 +1141,7 @@ static void handleConnectionStateUpdate(const uint32_t timeStampMs)
     }
 
     if ((receiver.connectionState == ELRS_CONNECTED) && (abs(pl.offsetDeltaUs) > 10) && (pl.offsetUs >= 100) && (lqGet() <= minLqForChaos())) {
-        lostConnection(); // SPI: resync when we're in chaos territory
+        lostConnection(ELRS_LOST_CHAOS_RESYNC); // SPI: resync when we're in chaos territory
     }
 }
 
@@ -1217,6 +1270,18 @@ rx_spi_received_e expressLrsDataReceived(uint8_t *payloadBuffer)
     DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 1, receiver.rssiFiltered);  //!< Filtered RSSI [unit:dBm]
     DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 2, receiver.snr / 4);       //!< SNR [unit:dB]
     DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 3, receiver.uplinkLQ);      //!< Uplink Link Quality [unit:%]
+    DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 4, constrain(cmp32(timeStampMs, lastRcPacketMs), 0, 30000));  //!< RC Payload Age [unit:ms]
+    DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 5, connectionHasModelMatch);                                  //!< Model Match
+    DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 6, lostConnectionReason);                                     //!< Last Lost Connection Reason [enum:lostConnectionReason_e]
+    DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 7, receiver.connectionState | (receiver.timerState << 8));     //!< Connection State | Timer State << 8
+
+    // Slots 0..3 of this mode are written from the packet handler and the timer
+    // driver, so they hold their last value through an outage. These four are
+    // written here instead, and so stay live while nothing is being received.
+    DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 4, resyncCounter);     //!< Resync Count
+    DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 5, resyncTrigger);     //!< Resync Trigger Bits [flags:Was Disconnected|Nonce Mismatch|FHSS Mismatch|Model Match Change]
+    DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 6, resyncNonceDelta);  //!< Resync Nonce Delta
+    DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 7, resyncFhssDelta);   //!< Resync FHSS Index Delta
 
     receiver.inBindingMode ? rxSpiLedBlinkBind() : rxSpiLedBlinkRxLoss(rfPacketStatus);
 
@@ -1231,7 +1296,7 @@ rx_spi_received_e expressLrsDataReceived(uint8_t *payloadBuffer)
 void expressLrsStop(void)
 {
     if (receiver.started) {
-        lostConnection();
+        lostConnection(ELRS_LOST_STOP);
     }
 }
 
