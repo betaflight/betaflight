@@ -1802,7 +1802,11 @@ static SD_Error_t SD_DoInit(void)
             errorState = SD_WideBusOperationConfig(SD_BUS_WIDE_1B);
         }
         if (errorState == SD_OK && sdioConfig()->clockBypass) {
-            if (SD_HighSpeed() == SD_OK) {
+            const SD_Error_t highSpeedResult = SD_HighSpeed();
+            if (highSpeedResult != SD_OK && highSpeedResult != SD_UNSUPPORTED_FEATURE) {
+                return highSpeedResult;
+            }
+            if (highSpeedResult == SD_OK) {
                 // Set max speed — CLKDIV=1 => AHB/2
                 // Per DWC_mshc: disable clock before changing divider
                 SDIO->CLKENA &= ~SDIO_CLKENA_CLK_EN;
