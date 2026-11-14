@@ -402,28 +402,6 @@ void adcInit(const adcConfig_t *config)
             }
         }
 
-#if(0) //Don't use DMA
-        if(HAL_ADC_Start(&adc->ADCHandle) != HAL_OK)
-        {
-            /* Start Conversation Error */
-            Error_Handler();
-        }
-
-        uint32_t adc_val = 0;
-        while(1){
-            HAL_ADC_PollForConversion(&adc->ADCHandle, 10);
-
-            if((HAL_ADC_GetState(&adc->ADCHandle) & HAL_ADC_STATE_REG_EOC) == HAL_ADC_STATE_REG_EOC)
-            {
-                /*##-5- Get the converted value of regular channel  ######################*/
-                adc_val = HAL_ADC_GetValue(&adc->ADCHandle, adcOperatingConfig[0].adcChannel) & 0xFFF;
-                tfp_printf("%d\n", adc_val);
-                delay(1);
-            }
-        }
-#endif
-
-
         // Configure DMA for this ADC peripheral
         adc->DmaHandle.Instance                 = (DMA_CODE_CONTROLLER(dmaSpec->code) == 1) ? DMA1 : DMA2;
         adc->DmaHandle.DmaChannelSel            = DMA_CODE_CHANNEL(dmaSpec->code);
