@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sched.h>
 
 #include "platform.h"
 
@@ -44,6 +45,36 @@ static const struct serialPortVTable tcpVTable; // Forward
 static tcpPort_t tcpSerialPorts[SERIAL_PORT_COUNT];
 static bool tcpPortInitialized[SERIAL_PORT_COUNT];
 static bool tcpStart = false;
+static pthread_mutex_t tcpDyadMutex = PTHREAD_MUTEX_INITIALIZER;
+// threads blocked in tcpDyadLock
+static int tcpDyadWaiters = 0;
+
+void tcpDyadLock(void)
+{
+    __atomic_add_fetch(&tcpDyadWaiters, 1, __ATOMIC_ACQ_REL);
+    pthread_mutex_lock(&tcpDyadMutex);
+    __atomic_sub_fetch(&tcpDyadWaiters, 1, __ATOMIC_ACQ_REL);
+}
+
+void tcpDyadUnlock(void)
+{
+    pthread_mutex_unlock(&tcpDyadMutex);
+}
+
+// One dyad_update (a select of up to dyad_setUpdateTimeout) under the lock.
+// The TCP thread calls this in a tight loop, and a mutex is not fair: it
+// re-took the lock before the woken main thread could, so opening the UART
+// listener waited seconds, sometimes for good, and the SITL never listened.
+// So it waits here while another thread wants the lock.
+void tcpDyadUpdate(void)
+{
+    pthread_mutex_lock(&tcpDyadMutex);
+    dyad_update();
+    pthread_mutex_unlock(&tcpDyadMutex);
+    while (__atomic_load_n(&tcpDyadWaiters, __ATOMIC_ACQUIRE) > 0) {
+        sched_yield();
+    }
+}
 
 bool tcpIsStart(void)
 {
@@ -112,11 +143,18 @@ static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
     s->clientCount = 0;
     s->id = id;
     s->conn = NULL;
+    // A new stream starts CLOSED, and dyad_update's destroyClosedStreams
+    // frees CLOSED streams: unguarded, the TCP thread could free the
+    // listener before dyad_listenEx, or lose it from the list, and the UART
+    // never accepts a connection.
+    tcpDyadLock();
     s->serv = dyad_newStream();
     dyad_setNoDelay(s->serv, 1);
     dyad_addListener(s->serv, DYAD_EVENT_ACCEPT, onAccept, s);
+    const int listenResult = dyad_listenEx(s->serv, NULL, BASE_PORT + id + 1, 10);
+    tcpDyadUnlock();
 
-    if (dyad_listenEx(s->serv, NULL, BASE_PORT + id + 1, 10) == 0) {
+    if (listenResult == 0) {
         fprintf(stderr, "bind port %u for UART%u\n", (unsigned)BASE_PORT + id + 1, (unsigned)id + 1);
     } else {
         fprintf(stderr, "bind port %u for UART%u failed!!\n", (unsigned)BASE_PORT + id + 1, (unsigned)id + 1);
