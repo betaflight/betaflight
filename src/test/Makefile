@@ -1118,6 +1118,15 @@ um32_uart_bidir_unittest_DEFINES = \
         $(if $(findstring nopulldown,$1),USE_SMARTAUDIO_NOPULLDOWN=) \
         $(if $(findstring no_board_bias,$1),UM32_UART_BIDIR_NO_BOARD_PULLUP=)
 
+um32_adc_unittest_SRC := \
+        $(TEST_DIR)/um32_adc_test.c \
+        $(USER_DIR)/drivers/dma.c \
+        $(USER_DIR)/drivers/resource.c
+
+um32_adc_unittest_INCLUDE_DIRS := \
+        $(TEST_DIR)/um32_adc \
+        ../platform/common/stm32
+
 pwl_unittest_SRC := \
 		$(USER_DIR)/common/pwl.c
 
