@@ -46,6 +46,7 @@ OF SUCH DAMAGE.
 #define USB_CDC_IDLE         0
 #define USB_CDC_BUSY         1
 #define USB_CDC_ZLP          2
+#define USB_CDC_ZLP_SENT     3
 
 extern usb_desc bf_cdc_desc;
 extern usb_class_core bf_cdc_class;
