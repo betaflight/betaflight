@@ -267,8 +267,10 @@ TEST_F(Um32UartBidirTest, SparseDeviceIndexesAndSamUsartUseTheCorrectStateAndReg
     uartBidirStart(s);
     uartBidirDrain(s);
     EXPECT_TRUE(uartBidirIsTransmitting(s));
-    sam.CSR = USART_CSR_TXEMPTY;
+    EXPECT_EQ(0u, sam.CR);
+    sam.CSR = USART_CSR_TXEMPTY | USART_CSR_RXRDY;
     LPTIMER2_IRQHandler();
+    EXPECT_EQ(USART_CR_RSTSTA, sam.CR);
     expectReceive(26, IOCFG_IPU);
     EXPECT_FALSE(uartBidirIsTransmitting(s));
     uartPort_t invalid = {};

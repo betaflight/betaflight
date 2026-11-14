@@ -412,6 +412,7 @@ static void release(uartBidirState_t *p)
 #if defined(USE_UART7) || defined(USE_UART8)
     if (p->uart->port.identifier >= SERIAL_PORT_UART7) {
         USART_TypeDef *reg = (USART_TypeDef *)p->uart->USARTx;
+        reg->CR = USART_CR_RSTSTA;
         if (reg->CSR & USART_CSR_RXRDY) { (void)reg->RHR; }
     } else
 #endif

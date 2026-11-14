@@ -131,6 +131,8 @@ void uartReconfigure(uartPort_t *uartPort)
 
         if (uartPort->port.mode & MODE_RX) {
             usartSam->IER = USART_IER_RXRDY;
+        } else {
+            usartSam->IDR = USART_IDR_RXRDY;
         }
 
         // TX interrupt stays masked until the first byte is queued, mirroring

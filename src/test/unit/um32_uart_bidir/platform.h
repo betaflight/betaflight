@@ -59,6 +59,7 @@
 #define UART_EX_USR_RFNE 8
 #define USART_CSR_TXEMPTY 512
 #define USART_CSR_RXRDY 1
+#define USART_CR_RSTSTA (1U << 8)
 #define LPTIM_CTRL_LPTEN 1
 #define LPTIM_IF_OVIF 2
 #define LPTIM_IE_OVIE 2
@@ -77,7 +78,7 @@
 #define __HAL_PMU_LPTIM2_RELEASE_RESET() ((void)0)
 
 typedef struct { volatile uint32_t LSR, USR, RBR; } UART_TypeDef;
-typedef struct { volatile uint32_t CSR, RHR; } USART_TypeDef;
+typedef struct { volatile uint32_t CR, CSR, RHR; } USART_TypeDef;
 typedef struct { volatile uint32_t CTRL, CFG, TARGET, IF, IE; } mockLptim_t;
 extern mockLptim_t mockRxLptim;
 extern mockLptim_t mockLptim;
