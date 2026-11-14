@@ -27,6 +27,7 @@
 
 #ifdef USE_EXTI
 
+#include "build/atomic.h"
 #include "drivers/nvic.h"
 #include "drivers/io_impl.h"
 #include "platform/io_impl.h"
@@ -118,7 +119,9 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
         .Speed = IO_CONFIG_GET_SPEED(config),
         .Pull = ioConfigGetPull(config),
     };
-    HAL_GPIO_Init(IO_GPIO(io), &init);
+    ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+        HAL_GPIO_Init(IO_GPIO(io), &init);
+    }
 
     if (extiGroupPriority[group] > irqPriority) {
         extiGroupPriority[group] = irqPriority;
