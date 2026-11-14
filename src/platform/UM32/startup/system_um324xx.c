@@ -489,6 +489,7 @@ void SystemClock_Config(void)
 {
     RCM_ClkInitTypeDef RCM_ClkInitStruct;
     RCM_OscInitTypeDef RCM_OscInitStruct;
+    uint32_t flashWaitCycles;
 
     if(SYSCLK_SRC == SYSCLK_USE_RCH)
     {
@@ -496,9 +497,6 @@ void SystemClock_Config(void)
         RCM_OscInitStruct.OscillatorType = RCM_OSCILLATORTYPE_RCH;
         RCM_OscInitStruct.RCHState = RCM_RCH_ON;
         RCM_OscInitStruct.PLL.PLLState = RCM_PLL_NONE;
-
-        /*Initializes the RCM Oscillators*/
-        HAL_RCM_OscConfig(&RCM_OscInitStruct);
 
         /* Select RCH as system clock source and configure the HCLK, PCLK0, PCLK1 ,PCLK2, and PCLK3
          clocks dividers */
@@ -511,8 +509,7 @@ void SystemClock_Config(void)
         RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;		//APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 48MHz/1 = 48MHz
         RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV1;		//APB3Clock = SystemCoreClock/RCM_PCLK3_DIV1 = 48MHz/1 = 48MHz
 
-        /*Initializes the CPU, AHB and APB busses clocks */
-        HAL_RCM_ClockConfig(&RCM_ClkInitStruct, FLASH_RWAITCYC_0);
+        flashWaitCycles = FLASH_RWAITCYC_0;
     }
     else if(SYSCLK_SRC == SYSCLK_USE_RCH_PLL)
     {
@@ -529,9 +526,6 @@ void SystemClock_Config(void)
         RCM_OscInitStruct.PLL.PLLN = 28;
         RCM_OscInitStruct.PLL.PLLP = 1;                          //RCH=24M  ,PLL CLKOUT(Fclk)=336Mhz, Fref= RCH = 24M , Fclk=(Fref*DN)/(DP*DM)
 
-        /*Initializes the RCM Oscillators*/
-        HAL_RCM_OscConfig(&RCM_OscInitStruct);
-
          /* Select PLL as system clock source and configure the HCLK, PCLK0, PCLK1 ,PCLK2, and PCLK3
          clocks dividers */
         RCM_ClkInitStruct.ClockType = (RCM_CLOCKTYPE_SYSCLK | RCM_CLOCKTYPE_RCH | RCM_CLOCKTYPE_HCLK | RCM_CLOCKTYPE_PCLK0 |RCM_CLOCKTYPE_PCLK1 | RCM_CLOCKTYPE_PCLK2| RCM_CLOCKTYPE_PCLK3);
@@ -543,17 +537,13 @@ void SystemClock_Config(void)
         RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;		//APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 168MHz/1 = 168MHz
         RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV4;		//APB3Clock = SystemCoreClock/RCM_PCLK3_DIV4 = 168MHz/4 = 42MHz
 
-		/*Initializes the CPU, AHB and APB busses clocks */
-        HAL_RCM_ClockConfig(&RCM_ClkInitStruct, FLASH_RWAITCYC_3);
+        flashWaitCycles = FLASH_RWAITCYC_3;
 #endif
 
 #ifdef SYSCLK_204M
         RCM_OscInitStruct.PLL.PLLM = 2;
         RCM_OscInitStruct.PLL.PLLN = 17;
         RCM_OscInitStruct.PLL.PLLP = 1;                          //RCH=24M  ,PLL CLKOUT(Fclk)=204Mhz, Fref= RCH = 24M , Fclk=(Fref*DN)/(DP*DM)
-
-        /*Initializes the RCM Oscillators*/
-        HAL_RCM_OscConfig(&RCM_OscInitStruct);
 
          /* Select PLL as system clock source and configure the HCLK, PCLK0, PCLK1 ,PCLK2, and PCLK3
          clocks dividers */
@@ -566,17 +556,13 @@ void SystemClock_Config(void)
         RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;		//APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 204MHz/1 = 204MHz
         RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV8;		//APB3Clock = SystemCoreClock/RCM_PCLK3_DIV8 = 204MHz/8 = 25.5MHz
 
-		/*Initializes the CPU, AHB and APB busses clocks */
-        HAL_RCM_ClockConfig(&RCM_ClkInitStruct, FLASH_RWAITCYC_4);
+        flashWaitCycles = FLASH_RWAITCYC_4;
 #endif
 
 #ifdef SYSCLK_240M
         RCM_OscInitStruct.PLL.PLLM = 2;
         RCM_OscInitStruct.PLL.PLLN = 40;
         RCM_OscInitStruct.PLL.PLLP = 2;                          //RCH=24M  ,PLL CLKOUT(Fclk)=240Mhz, Fref= RCH = 24M , Fclk=(Fref*DN)/(DP*DM)
-
-        /*Initializes the RCM Oscillators*/
-        HAL_RCM_OscConfig(&RCM_OscInitStruct);
 
          /* Select PLL as system clock source and configure the HCLK, PCLK0, PCLK1 ,PCLK2, and PCLK3
          clocks dividers */
@@ -589,8 +575,7 @@ void SystemClock_Config(void)
         RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;		//APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 240MHz/1 = 240MHz
         RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV8;		//APB3Clock = SystemCoreClock/RCM_PCLK3_DIV8 = 240MHz/8 = 30MHz
 
-		/*Initializes the CPU, AHB and APB busses clocks */
-        HAL_RCM_ClockConfig(&RCM_ClkInitStruct, FLASH_RWAITCYC_4);
+        flashWaitCycles = FLASH_RWAITCYC_4;
 #endif
 
     }
@@ -600,9 +585,6 @@ void SystemClock_Config(void)
         RCM_OscInitStruct.OscillatorType = RCM_OSCILLATORTYPE_XTH;
         RCM_OscInitStruct.XTHState = RCM_XTH_ON;
         RCM_OscInitStruct.PLL.PLLState = RCM_PLL_NONE;
-
-        /*Initializes the RCM Oscillators*/
-        HAL_RCM_OscConfig(&RCM_OscInitStruct);
 
         /* Select XTH as system clock source and configure the HCLK, PCLK0, PCLK1 ,PCLK2, and PCLK3
          clocks dividers */
@@ -614,8 +596,7 @@ void SystemClock_Config(void)
         RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;		//APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 8MHz/1 = 8MHz
         RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV1;		//APB3Clock = SystemCoreClock/RCM_PCLK3_DIV1 = 8MHz/1 = 8MHz
 
-        /*Initializes the CPU, AHB and APB busses clocks */
-        HAL_RCM_ClockConfig(&RCM_ClkInitStruct, FLASH_RWAITCYC_0);
+        flashWaitCycles = FLASH_RWAITCYC_0;
     }
     else if (SYSCLK_SRC == SYSCLK_USE_XTH_PLL) {
 #ifdef USE_OVERCLOCK
@@ -637,7 +618,6 @@ void SystemClock_Config(void)
         RCM_OscInitStruct.PLL.PLLM = XTH_VALUE / (XTH_PLL_INPUT_MHZ * 1000000U);
         RCM_OscInitStruct.PLL.PLLN = pll->n;
         RCM_OscInitStruct.PLL.PLLP = pll->p;
-        HAL_RCM_OscConfig(&RCM_OscInitStruct);
 
         RCM_ClkInitStruct.ClockType = RCM_CLOCKTYPE_SYSCLK | RCM_CLOCKTYPE_HCLK |
             RCM_CLOCKTYPE_PCLK0 | RCM_CLOCKTYPE_PCLK1 | RCM_CLOCKTYPE_PCLK2 |
@@ -649,6 +629,11 @@ void SystemClock_Config(void)
         RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;
         RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV8;
         RCM_ClkInitStruct.USBSDIOCLKDivider = pll->usbSdioDivider;
-        HAL_RCM_ClockConfig(&RCM_ClkInitStruct, pll->flashWaitCycles);
+        flashWaitCycles = pll->flashWaitCycles;
+    }
+
+    if (HAL_RCM_OscConfig(&RCM_OscInitStruct) != HAL_OK ||
+        HAL_RCM_ClockConfig(&RCM_ClkInitStruct, flashWaitCycles) != HAL_OK) {
+        Error_Handler();
     }
 }
