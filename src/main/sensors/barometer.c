@@ -340,9 +340,12 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
             };
             uint8_t detectedChip = 0;
             if (bmp5xxDetect(&defaultBMP5XXConfig, baroDev, &detectedChip)) {
-                // Map chip ID to specific barometer type for status display
-                // BMP580 = 0x50, BMP581 = 0x51
-                if (detectedChip == 0x50) {
+                // Family ASIC IDs do not uniquely identify the product: BMP581
+                // also uses 0x50. Honor an explicit model and preserve the
+                // existing family labels when automatic detection is selected.
+                if (baroHardwareToUse == BARO_BMP580 || baroHardwareToUse == BARO_BMP581) {
+                    baroHardware = baroHardwareToUse;
+                } else if (detectedChip == 0x50) {
                     baroHardware = BARO_BMP580;
                 } else if (detectedChip == 0x51) {
                     baroHardware = BARO_BMP581;

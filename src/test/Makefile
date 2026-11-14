@@ -188,6 +188,21 @@ baro_bmp5xx_unittest_DEFINES := \
                 USE_BARO_BMP581= \
                 USE_BARO_SPI_BMP581=
 
+baro_bmp5xx_detection_unittest_SRC := \
+		$(USER_DIR)/sensors/barometer.c
+
+baro_bmp5xx_detection_unittest_DEFINES := \
+                USE_I2C= \
+                USE_BARO_BMP580= \
+                USE_BARO_BMP581=
+
+baro_bmp5xx_detection_unittest_C_FLAGS := -ffunction-sections -fdata-sections
+ifeq ($(OSFAMILY), macosx)
+baro_bmp5xx_detection_unittest_LDFLAGS := -Wl,-dead_strip
+else
+baro_bmp5xx_detection_unittest_LDFLAGS := -Wl,--gc-sections
+endif
+
 baro_ms5611_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_ms5611.c
 

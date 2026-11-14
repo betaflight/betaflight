@@ -35,7 +35,17 @@ typedef struct bmp5xxConfig_s {
  * @brief Detect and initialize BMP580/BMP581 barometer
  * @param config Pointer to BMP5xx configuration (EOC pin tag)
  * @param baro Pointer to barometer device structure to initialize
- * @param detectedChip Pointer to store detected chip ID (0x50=BMP580, 0x51=BMP581), or NULL if not needed
+ * @param detectedChip Pointer to store the raw family ASIC ID (0x50 or 0x51), or NULL if not needed
  * @return true if BMP580/BMP581 detected and initialized, false otherwise
  */
 bool bmp5xxDetect(const bmp5xxConfig_t *config, baroDev_t *baro, uint8_t *detectedChip);
+
+typedef enum {
+    BMP5XX_READ_ERROR = -1,
+    BMP5XX_READ_PENDING = 0,
+    BMP5XX_READ_READY = 1,
+} bmp5xxReadResult_e;
+
+// Read a fresh compensated sample from an initialized device. Output values
+// are unchanged when data is pending or a register transaction fails.
+bmp5xxReadResult_e bmp5xxReadSample(baroDev_t *baro, int32_t *pressure, int32_t *temperature);
