@@ -135,6 +135,13 @@
 // normalize serial ports definitions
 #include "serial_post.h"
 
+// Analog Devices ADIS1657x accgyro. Defaulted here, ahead of the device checks
+// below, because they test it. A board config opts in with
+// ENABLE_ACCGYRO_ADIS1657X=1; that brings in the driver and its detection entry.
+#if !defined(ENABLE_ACCGYRO_ADIS1657X)
+#define ENABLE_ACCGYRO_ADIS1657X 0
+#endif
+
 #if defined(USE_ACC) \
     && !defined(USE_ACC_MPU6000) \
     && !defined(USE_ACC_MPU6050) \
@@ -162,6 +169,7 @@
     && !defined(USE_ACC_SPI_MPU9250) \
     && !defined(USE_ACCGYRO_IIM42652) \
     && !defined(USE_ACCGYRO_IIM42653) \
+    && !ENABLE_ACCGYRO_ADIS1657X \
     && !defined(USE_VIRTUAL_ACC)
 #error At least one USE_ACC device definition required
 #endif
@@ -192,6 +200,7 @@
     && !defined(USE_GYRO_SPI_MPU9250) \
     && !defined(USE_ACCGYRO_IIM42652) \
     && !defined(USE_ACCGYRO_IIM42653) \
+    && !ENABLE_ACCGYRO_ADIS1657X \
     && !defined(USE_VIRTUAL_GYRO)
 #error At least one USE_GYRO device definition required
 #endif
@@ -610,7 +619,8 @@
     || defined(USE_ACCGYRO_ICM56686) \
     || defined(USE_ACCGYRO_ICM40609D) || defined(USE_ACCGYRO_ICM45605) || defined(USE_ACCGYRO_ICM45686) \
     || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653) \
-    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_LSM6DSK320X)
+    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_LSM6DSK320X) \
+    || ENABLE_ACCGYRO_ADIS1657X
 #ifndef USE_SPI_GYRO
 #define USE_SPI_GYRO
 #endif
