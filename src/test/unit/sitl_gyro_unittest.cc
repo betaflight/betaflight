@@ -18,8 +18,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
-
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
@@ -27,48 +25,31 @@ extern "C" {
 #include "sitl_gyro.h"
 }
 
-// Regression guard for #15294: PR #15280 dropped the ENABLE_GAZEBO_BRIDGE split
-// around the gyro Z assignment, silently inverting yaw on the (default) Gazebo
-// build. sitlGyroBodyFromSim() now carries the bridge-specific sign, so these
-// tests pin the yaw polarity for *both* bridges in a single binary.
-
-// Gazebo's IMU sensor frame is FRD: roll keeps X, pitch negates Y, yaw keeps Z.
-TEST(SitlGyroUnittest, GazeboBridgeMapping)
+// Pins the FRD sensor frame -> Betaflight NWU body frame gyro mapping used for
+// all simulator bridges. The yaw sign matters: with +wz_FRD the yaw loop has
+// positive feedback and the quad spins up after takeoff in Gazebo (#16009).
+TEST(SitlGyroUnittest, FrdToBodyMapping)
 {
     const double rpy[3] = { 1.0, 2.0, 3.0 };
     double roll, pitch, yaw;
 
-    sitlGyroBodyFromSim(rpy, true, &roll, &pitch, &yaw);
-
-    EXPECT_DOUBLE_EQ(roll,   1.0);   // +wx -> keep X
-    EXPECT_DOUBLE_EQ(pitch, -2.0);   // -wy -> negate Y
-    EXPECT_DOUBLE_EQ(yaw,    3.0);   // +wz -> keep Z (the bit #15280 broke)
-}
-
-// Legacy bridges (X-Plane, RealFlight) deliver yaw with the opposite polarity.
-TEST(SitlGyroUnittest, LegacyBridgeMapping)
-{
-    const double rpy[3] = { 1.0, 2.0, 3.0 };
-    double roll, pitch, yaw;
-
-    sitlGyroBodyFromSim(rpy, false, &roll, &pitch, &yaw);
+    sitlGyroBodyFromSim(rpy, &roll, &pitch, &yaw);
 
     EXPECT_DOUBLE_EQ(roll,   1.0);   // +wx -> keep X
     EXPECT_DOUBLE_EQ(pitch, -2.0);   // -wy -> negate Y
     EXPECT_DOUBLE_EQ(yaw,   -3.0);   // -wz -> negate Z
 }
 
-// The defining property of the regression: a positive simulator yaw rate must
-// stay positive under Gazebo, and the two bridges must disagree on yaw sign.
-TEST(SitlGyroUnittest, YawSignDiffersByBridge)
+// A clockwise rotation viewed from above is +wz in the FRD sensor frame and must
+// read as negative yaw (Betaflight yaw is positive counter-clockwise).
+TEST(SitlGyroUnittest, ClockwiseYawIsNegative)
 {
-    const double rpy[3] = { 0.0, 0.0, 1.0 };  // pure positive yaw rate
-    double roll, pitch, gazeboYaw, legacyYaw;
+    const double rpy[3] = { 0.0, 0.0, 1.0 };
+    double roll, pitch, yaw;
 
-    sitlGyroBodyFromSim(rpy, true,  &roll, &pitch, &gazeboYaw);
-    sitlGyroBodyFromSim(rpy, false, &roll, &pitch, &legacyYaw);
+    sitlGyroBodyFromSim(rpy, &roll, &pitch, &yaw);
 
-    EXPECT_GT(gazeboYaw, 0.0);                 // Gazebo preserves yaw direction
-    EXPECT_LT(legacyYaw, 0.0);                 // legacy inverts it
-    EXPECT_DOUBLE_EQ(gazeboYaw, -legacyYaw);   // exact opposites
+    EXPECT_DOUBLE_EQ(roll,  0.0);
+    EXPECT_DOUBLE_EQ(pitch, 0.0);
+    EXPECT_LT(yaw, 0.0);
 }
