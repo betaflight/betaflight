@@ -125,7 +125,7 @@ static sdcardReceiveBlockStatus_e sdcard_receiveDataBlock(uint8_t *buffer, int c
         return SDCARD_RECEIVE_BLOCK_IN_PROGRESS;
     }
 
-    if (SD_GetState() != true) {
+    if (ret != SD_OK || !SD_GetState()) {
         return SDCARD_RECEIVE_ERROR;
     }
 

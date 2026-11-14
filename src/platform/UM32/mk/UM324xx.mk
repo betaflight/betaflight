@@ -55,7 +55,8 @@ USBHID_SRC =
 USBMSC_DIR = $(USBCHERY_DIR)/class/msc
 USBMSC_SRC = $(notdir $(wildcard $(USBMSC_DIR)/*.c))
 EXCLUDES   = usbh_msc.c \
-            msc_ram_template.c
+            msc_ram_template.c \
+            msc_ram_um32.c
 USBMSC_SRC := $(filter-out ${EXCLUDES}, $(USBMSC_SRC))
 
 USBPORT_DIR = $(USBCHERY_DIR)/port/um

@@ -38,7 +38,9 @@
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/sdcard.h"
+#include "drivers/sdcard_standard.h"
 #include "drivers/sdmmc_sdio.h"
+#include "drivers/system.h"
 #include "drivers/usb_msc.h"
 
 #include "pg/pg.h"
@@ -204,6 +206,30 @@ static int8_t  STORAGE_IsWriteProtected (uint8_t lun)
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
+static int8_t storageWaitForTransfer(SD_Error_t (*check)(void), uint32_t timeoutMs)
+{
+    SD_Error_t result;
+    do {
+        result = check();
+    } while (result == SD_BUSY);
+    if (result != SD_OK) {
+        return -1;
+    }
+
+    const uint32_t start = getCycleCounter();
+    const uint32_t timeout = clockMicrosToCycles(timeoutMs * 1000U);
+    do {
+        if (!sdcard_isInserted()) {
+            return -1;
+        }
+        if (SD_GetState()) {
+            mscSetActive();
+            return 0;
+        }
+    } while (getCycleCounter() - start < timeout);
+    return -1;
+}
+
 static int8_t STORAGE_Read (uint8_t lun,
                  uint8_t *buf,
                  uint32_t blk_addr,
@@ -215,10 +241,7 @@ static int8_t STORAGE_Read (uint8_t lun,
     }
     //buf should be 32bit aligned, but usually is so we don't do byte alignment
     if (SD_ReadBlocks_DMA(blk_addr, (uint32_t*) buf, 512, blk_len) == 0) {
-        while (SD_CheckRead());
-        while(SD_GetState() == false);
-        mscSetActive();
-        return 0;
+        return storageWaitForTransfer(SD_CheckRead, SDCARD_TIMEOUT_READ_MSEC);
     }
     return -1;
 }
@@ -240,10 +263,7 @@ static int8_t STORAGE_Write (uint8_t lun,
     }
     //buf should be 32bit aligned, but usually is so we don't do byte alignment
     if (SD_WriteBlocks_DMA(blk_addr, (uint32_t*) buf, 512, blk_len) == 0) {
-        while (SD_CheckWrite());
-        while(SD_GetState() == false);
-        mscSetActive();
-        return 0;
+        return storageWaitForTransfer(SD_CheckWrite, SDCARD_TIMEOUT_WRITE_MSEC);
     }
     return -1;
 }

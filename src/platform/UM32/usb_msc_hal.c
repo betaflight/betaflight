@@ -54,7 +54,32 @@
 #include "usbd_msc.h"
 #include "usbd_msc_desc.h"
 
-extern USBD_StorageTypeDef   *pdev;
+static USBD_MSC_StorageType *pdev;
+
+void usbd_msc_get_cap(uint8_t busid, uint8_t lun, uint32_t *blockCount, uint32_t *blockSize)
+{
+    UNUSED(busid);
+
+    usbd_msc_block_size_t size = 512;
+    if (pdev->GetCapacity(lun, blockCount, &size) != 0) {
+        *blockCount = 0;
+    }
+    *blockSize = size;
+}
+
+int usbd_msc_sector_read(uint8_t busid, uint8_t lun, uint32_t sector, uint8_t *buffer, uint32_t length)
+{
+    UNUSED(busid);
+
+    return pdev->Read(lun, buffer, sector, length / 512U);
+}
+
+int usbd_msc_sector_write(uint8_t busid, uint8_t lun, uint32_t sector, uint8_t *buffer, uint32_t length)
+{
+    UNUSED(busid);
+
+    return pdev->Write(lun, buffer, sector, length / 512U);
+}
 
 uint8_t mscStart(void)
 {
