@@ -121,6 +121,23 @@ typedef struct
 
 #define MCU_TYPE_NAME "UNIT_TEST"
 
+extern uint32_t testPrimask;
+
+static inline uint32_t __get_PRIMASK(void)
+{
+    return testPrimask;
+}
+
+static inline void __disable_irq(void)
+{
+    testPrimask = 1;
+}
+
+static inline void __set_PRIMASK(uint32_t value)
+{
+    testPrimask = value;
+}
+
 #include "target.h"
 
 #include "target/common_defaults_post.h"
