@@ -31,6 +31,7 @@ typedef enum {
     OPTICALFLOW_NONE = 0,
     OPTICALFLOW_MT = 1,
     OPTICALFLOW_UPT1 = 2,
+    OPTICALFLOW_PB04 = 3,
     OPTICALFLOW_HARDWARE_COUNT
 } opticalflowType_e;
 
@@ -42,13 +43,6 @@ typedef struct opticalflowConfig_s {
 } opticalflowConfig_t;
 
 PG_DECLARE(opticalflowConfig_t, opticalflowConfig);
-
-// True when the device reports by pushing MSP frames rather than being read
-// over a port its own driver opens, so the port needs an MSP port opening on it.
-static inline bool opticalflowTypeUsesMsp(uint8_t type)
-{
-    return type == OPTICALFLOW_MT;
-}
 
 typedef struct opticalflow_s {
     opticalflowDev_t dev;
