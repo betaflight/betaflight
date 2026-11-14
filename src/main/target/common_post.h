@@ -1106,3 +1106,12 @@ extern struct linker_symbol __fontdata_end;
 #elif !defined(ENABLE_OSD_CANVAS_SIZE_DEBUG)
 #define ENABLE_OSD_CANVAS_SIZE_DEBUG 0
 #endif
+
+// Buffered ICM45686 acquisition is optional. The normal gyro path uses DRDY/DMA.
+#if !defined(ENABLE_ICM45686_FIFO)
+#define ENABLE_ICM45686_FIFO 0
+#endif
+#if ENABLE_ICM45686_FIFO && !defined(USE_ACCGYRO_ICM45686)
+#undef ENABLE_ICM45686_FIFO
+#define ENABLE_ICM45686_FIFO 0
+#endif

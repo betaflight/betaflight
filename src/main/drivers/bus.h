@@ -172,6 +172,10 @@ bool busRawReadRegisterBufferStart(const extDevice_t *dev, uint8_t reg, uint8_t 
 // Write routines where the register is masked with 0x7f
 bool busWriteRegister(const extDevice_t *dev, uint8_t reg, uint8_t data);
 bool busWriteRegisterStart(const extDevice_t *dev, uint8_t reg, uint8_t data);
+// Start one register-plus-payload transaction. Keep data valid and unchanged
+// until busBusy() returns false, including when a later error is reported.
+// SPI completes before returning; I2C can remain in flight after admission.
+bool busWriteRegisterBufferStart(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t length);
 // Read routines where the register is ORed with 0x80
 bool busReadRegisterBuffer(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t length);
 bool busReadRegisterBufferStart(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t length);

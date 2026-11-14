@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "accgyro_icm456xx_registers.h"
+
 #include "drivers/bus.h"
 #include "drivers/exti.h"
 #include "drivers/sensor.h"
@@ -47,7 +49,6 @@
 #define ICM42622P_WHO_AM_I_CONST            (0x46)
 #define ICM42686P_WHO_AM_I_CONST            (0x44)
 #define ICM42688P_WHO_AM_I_CONST            (0x47)
-#define ICM45686_WHO_AM_I_CONST             (0xE9)
 #define ICM45605_WHO_AM_I_CONST             (0xE5)
 #define ICM56686_WHO_AM_I_CONST             (0x08)
 #define IIM42652_WHO_AM_I_CONST             (0x6F)

@@ -328,6 +328,7 @@ COMMON_SRC += \
             drivers/accgyro/accgyro_spi_icm20689.c \
             drivers/accgyro/accgyro_spi_icm40609.c \
             drivers/accgyro/accgyro_spi_icm426xx.c \
+            drivers/accgyro/accgyro_icm456xx.c \
             drivers/accgyro/accgyro_spi_icm456xx.c \
             drivers/accgyro/accgyro_spi_icm56686.c \
             drivers/accgyro/accgyro_spi_l3gd20.c \
@@ -413,6 +414,7 @@ VPATH        := $(VPATH):$(FATFS_DIR)
 
 # Gyro driver files that only contain initialization and configuration code - not runtime code
 SIZE_OPTIMISED_SRC += \
+            drivers/accgyro/accgyro_icm456xx.c \
             drivers/accgyro/accgyro_mpu6050.c \
             drivers/accgyro/accgyro_mpu6500.c \
             drivers/accgyro/accgyro_spi_mpu6000.c \

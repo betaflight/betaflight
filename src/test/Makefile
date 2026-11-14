@@ -206,8 +206,14 @@ accgyro_spi_icm426xx_unittest_DEFINES := \
                 USE_ACCGYRO_IIM42652= \
                 USE_ACCGYRO_IIM42653=
 
+accgyro_icm45686_unittest_SRC := \
+		$(USER_DIR)/drivers/accgyro/accgyro_icm456xx.c
+
+accgyro_icm45686_unittest_DEFINES := USE_ACCGYRO_ICM45686= ENABLE_ICM45686_FIFO=1
+
 accgyro_spi_icm456xx_unittest_SRC := \
-		$(USER_DIR)/drivers/accgyro/accgyro_spi_icm456xx.c
+		$(USER_DIR)/drivers/accgyro/accgyro_spi_icm456xx.c \
+		$(USER_DIR)/drivers/accgyro/accgyro_icm456xx.c
 
 accgyro_spi_icm456xx_unittest_DEFINES := \
                 USE_DMA= \
@@ -236,10 +242,13 @@ accgyro_spi_lsm6dsv16x_unittest_DEFINES = \
 
 bus_spi_unittest_SRC := \
 		$(USER_DIR)/build/atomic.c \
+		$(USER_DIR)/drivers/bus.c \
+		$(USER_DIR)/drivers/bus_i2c_busdev.c \
 		$(USER_DIR)/drivers/bus_spi.c \
 		$(USER_DIR)/drivers/accgyro/accgyro_mpu.c
 
 bus_spi_unittest_DEFINES := \
+		USE_I2C= \
 		USE_SPI= \
 		USE_SPI_DEVICE_1= \
 		USE_SPI_GYRO= \
