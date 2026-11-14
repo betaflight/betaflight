@@ -99,7 +99,6 @@ extern "C" {
 #define CMD_RDFBR               0x16            // read fast boot register
 #define CMD_WRFBR               0x17            // write fast boot register
 #define CMD_ESFBR               0x18            // erase fast boot register
-#define FLASH_ID                0x9F            // read identification
 #define CMD_RES                 0xAB            // read electronic ID
 #define READ_DEVICE_ID          0x90            // read electronic manufacturer ID
 #define READ_QDEVICE_ID         0x94            // read electronic manufacturer ID
@@ -143,7 +142,6 @@ HAL_StatusTypeDef QSPI_WriteSr       (QSPI_HandleTypeDef *hqspi, uint8_t sr);
 HAL_StatusTypeDef QSPI_ReadSr        (QSPI_HandleTypeDef *hqspi, uint8_t *flashStatus);
 HAL_StatusTypeDef QSPI_WaitUntilIdle (QSPI_HandleTypeDef *hqspi, uint32_t timeoutMs);
 uint32_t    QSPI_ReadDeviceId      (QSPI_HandleTypeDef *hqspi);
-uint32_t    QSPI_ReadDeviceId_9F   (QSPI_HandleTypeDef *hqspi);
 void	      QSPI_ReadUniqueId      (QSPI_HandleTypeDef *hqspi, uint32_t arr[2]);
 HAL_StatusTypeDef QSPI_EraseSector   (QSPI_HandleTypeDef *hqspi, uint32_t addr);
 HAL_StatusTypeDef QSPI_EraseChip     (QSPI_HandleTypeDef *hqspi, uint32_t addr);

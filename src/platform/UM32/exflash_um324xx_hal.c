@@ -199,33 +199,6 @@ uint32_t QSPI_ReadDeviceId(QSPI_HandleTypeDef *hqspi)
 }
 
 /**
- * @brief  read flash device id by 0x9F command
- * @param  hqspi           QSPI handle
- * @return none
- */
-uint32_t QSPI_ReadDeviceId_9F(QSPI_HandleTypeDef *hqspi)
-{
-	uint32_t device_id;
-	uint32_t temp32;
-
-  hqspi->Command.Instruction      = FLASH_ID; // 0x9F
-  hqspi->Command.AddressEn        = QSPI_ADDREN_ENABLE;
-  hqspi->Command.AddressByte      = QSPI_ADNUM_BYTES_3;
-  hqspi->Command.DummyCycles      = QSPI_DUMMY_CLKS_0;
-  hqspi->Command.ReadEn           = QSPI_RDEN_ENABLE;
-  hqspi->Command.ReadDataNum      = QSPI_RD_NUM_3;
-
-  HAL_QSPI_Command(hqspi, (uint32_t)NULL, (uint32_t)NULL, 5000);
-
-	temp32 = __HAL_QSPI_GET_FCRLR(hqspi);
-
-  /* The size end converts high and low bytes	*/
-	device_id = (((temp32 & 0xFF)<<16) | ((temp32 & 0xFF00)<<0) | ((temp32 & 0xFF0000)>>16));
-
-	return device_id;
-}
-
-/**
  * @brief  read flash unique id by 0x4B command
  * @param  hqspi           QSPI handle
  * @return none
