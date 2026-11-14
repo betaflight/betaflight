@@ -665,16 +665,23 @@ static void SD_RecordTransferFailure(SD_Error_t error)
 
 static SD_Error_t SD_TransferResult(void)
 {
-    if (SD_Handle.TransferNeedsReset) {
+    // The SDIO IRQ is at priority zero. Snapshot the flag and result together.
+    const uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    const bool needsReset = SD_Handle.TransferNeedsReset;
+    SD_Handle.TransferNeedsReset = false;
+    const SD_Error_t result = SD_Handle.TransferError;
+    __set_PRIMASK(primask);
+
+    if (needsReset) {
         if (!SD_ResetBlockDMA()) {
             // Hold the SDIO host in reset so it cannot access a released buffer.
             RCC_ResetCmd(RCC_AHB0(SDIO), DISABLE);
             __DSB();
             sdHostResetRequired = true;
         }
-        SD_Handle.TransferNeedsReset = false;
     }
-    return SD_Handle.TransferError;
+    return result;
 }
 
 static SD_Error_t SD_FinishBlockCommand(SD_Error_t commandResult)
