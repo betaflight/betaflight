@@ -59,8 +59,8 @@ bool gyroClkInInit(ioTag_t tag, uint32_t freqHz, uint8_t resourceIndex)
     const uint16_t period16 = (uint16_t)period;
     const uint16_t value16 = period16 / 2;
 
-    pwmOutputConfig(&pwmChannel, timer, clock, period16 - 1, value16 - 1, 0);
-    pwmWriteChannel(&pwmChannel, value16 - 1);
+    pwmOutputConfig(&pwmChannel, timer, clock, period16, value16, 0);
+    pwmWriteChannel(&pwmChannel, value16);
 
     return true;
 }
