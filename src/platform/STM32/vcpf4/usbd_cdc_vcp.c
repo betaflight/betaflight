@@ -189,16 +189,29 @@ uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 // Note: in this stack APP_Rx_* is the MCU -> host (transmit) ring.
 // APP_Rx_ptr_in is only advanced by the caller's context and APP_Rx_ptr_out
 // (advanced by the USB IRQ) is read once, so no locking is needed.
-uint32_t CDC_Send_BytesPending(void)
+static uint32_t txRingUsed(void)
 {
     const uint32_t out = APP_Rx_ptr_out;
     return (APP_Rx_ptr_in + APP_RX_DATA_SIZE - out) % APP_RX_DATA_SIZE;
 }
 
+// Bytes not yet delivered to the host. The CDC core advances APP_Rx_ptr_out
+// when it starts an IN transfer, not when it completes, so the ring reads
+// empty while the final packet (or its ZLP) is still in flight. Count one
+// extra byte until the endpoint goes idle. Sample the ring before the
+// endpoint state (both volatile): once the ring reads empty its last transfer
+// has already started, so USB_Tx_State is either still busy or genuinely
+// done. The reverse order could see idle, then a transfer start, then empty.
+uint32_t CDC_Send_BytesPending(void)
+{
+    const uint32_t pending = txRingUsed();
+    return pending + (USB_Tx_State != 0 ? 1 : 0);
+}
+
 uint32_t CDC_Send_FreeBytes(void)
 {
     // One slot is reserved to tell a full ring from an empty one.
-    return (APP_RX_DATA_SIZE - 1) - CDC_Send_BytesPending();
+    return (APP_RX_DATA_SIZE - 1) - txRingUsed();
 }
 
 /**
