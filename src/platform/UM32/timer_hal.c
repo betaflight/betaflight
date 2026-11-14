@@ -1052,6 +1052,8 @@ HAL_StatusTypeDef TIM_DMACmd(TIM_HandleTypeDef *htim, uint32_t Channel, Function
 
 HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Channel, uint32_t *pData, uint16_t Length)
 {
+    HAL_StatusTypeDef status = HAL_ERROR;
+
     if ((htim->State == HAL_TIM_STATE_BUSY)) {
         return HAL_BUSY;
     } else if ((htim->State == HAL_TIM_STATE_READY)) {
@@ -1065,36 +1067,38 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
     case TIM_CHANNEL_1: {
         htim->hdma[TIM_DMA_ID_CC1]->XferBlockCallback = HAL_TIM_DMADelayPulseCplt;
         htim->hdma[TIM_DMA_ID_CC1]->XferErrorCallback = HAL_TIM_DMAError;
-        HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC1], (uint32_t) pData, (uint32_t) & htim->Instance->CCR1, Length);
+        status = HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC1], (uint32_t) pData, (uint32_t) & htim->Instance->CCR1, Length);
     }
         break;
 
     case TIM_CHANNEL_2: {
         htim->hdma[TIM_DMA_ID_CC2]->XferBlockCallback = HAL_TIM_DMADelayPulseCplt;
         htim->hdma[TIM_DMA_ID_CC2]->XferErrorCallback = HAL_TIM_DMAError;
-        HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC2], (uint32_t) pData, (uint32_t) & htim->Instance->CCR2, Length);
+        status = HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC2], (uint32_t) pData, (uint32_t) & htim->Instance->CCR2, Length);
     }
         break;
 
     case TIM_CHANNEL_3: {
         htim->hdma[TIM_DMA_ID_CC3]->XferBlockCallback = HAL_TIM_DMADelayPulseCplt;
         htim->hdma[TIM_DMA_ID_CC3]->XferErrorCallback = HAL_TIM_DMAError;
-        HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC3], (uint32_t) pData, (uint32_t) & htim->Instance->CCR3, Length);
+        status = HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC3], (uint32_t) pData, (uint32_t) & htim->Instance->CCR3, Length);
     }
         break;
 
     case TIM_CHANNEL_4: {
         htim->hdma[TIM_DMA_ID_CC4]->XferBlockCallback = HAL_TIM_DMADelayPulseCplt;
         htim->hdma[TIM_DMA_ID_CC4]->XferErrorCallback = HAL_TIM_DMAError;
-        HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC4], (uint32_t) pData, (uint32_t) & htim->Instance->CCR4, Length);
+        status = HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC4], (uint32_t) pData, (uint32_t) & htim->Instance->CCR4, Length);
     }
         break;
 
     default:
         break;
     }
-    /* Return function status */
-    return HAL_OK;
+    if (status != HAL_OK) {
+        htim->State = HAL_TIM_STATE_READY;
+    }
+    return status;
 }
 
 void timerReset(const timerHardware_t *timHw)
