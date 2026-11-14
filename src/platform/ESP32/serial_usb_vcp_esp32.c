@@ -76,10 +76,24 @@ static void usbVcpSetBaudRateCb(serialPort_t *instance, void (*cb)(serialPort_t 
     UNUSED(context);
 }
 
+// Give up waiting for the TX FIFO to drain after this long without progress.
+#define USB_VCP_TX_DRAIN_TIMEOUT_MS 50
+
 static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
 {
     UNUSED(instance);
-    return usb_serial_jtag_ll_txfifo_writable();
+    static usbVcpTxDrain_t txDrain;
+
+    if (!usbVcpIsConnected()) {
+        // No host: the FIFO will never drain, don't make callers wait on it.
+        return true;
+    }
+
+    // Every write path here flushes, and after a flush the FIFO only becomes
+    // writable again once the host has read the packet, so "writable" means
+    // "drained". If the host stops reading it never does: bound the wait.
+    const uint32_t pending = usb_serial_jtag_ll_txfifo_writable() ? 0 : 1;
+    return usbVcpTxDrained(&txDrain, pending, USB_VCP_TX_DRAIN_TIMEOUT_MS);
 }
 
 static uint32_t usbVcpRxBytesAvailable(const serialPort_t *instance)

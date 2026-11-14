@@ -427,6 +427,11 @@ uint32_t CDC_Send_FreeBytes(void)
     return freeBytes;
 }
 
+uint32_t CDC_Send_BytesPending(void)
+{
+    return (APP_TX_DATA_SIZE - 1) - CDC_Send_FreeBytes();
+}
+
 /*******************************************************************************
  * Function Name  : usbIsConfigured.
  * Description    : Determines if USB VCP is configured or not

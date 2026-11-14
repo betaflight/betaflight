@@ -189,15 +189,24 @@ static void usbVcpSetBaudRateCb(serialPort_t *instance, void (*cb)(serialPort_t 
 /**
  * @brief  Check if the USB VCP transmit buffer is empty.
  *
- * Always returns true because USB VCP uses a write-through model:
- * data is pushed into APP_Rx_Buffer immediately by CDC_Send_DATA,
- * and the CDC library's SOF handler drains it asynchronously.
- * There is no intermediate "transmit holding register" to check.
+ * Reports whether APP_Rx_Buffer (drained asynchronously by the CDC
+ * library's SOF handler) has been sent, so that
+ * waitForSerialPortToFinishTransmitting() lets queued output reach the
+ * host before a reboot, and MSP gets backpressure.
+ *
+ * Returns true when USB is not configured (nothing will drain the ring)
+ * or when the ring has not drained for USB_TIMEOUT, so callers can never
+ * hang on a stalled IN endpoint.
  */
 static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
 {
     UNUSED(instance);
-    return true;
+    static usbVcpTxDrain_t txDrain;
+
+    if (!(usbIsConnected() && usbIsConfigured())) {
+        return true;
+    }
+    return usbVcpTxDrained(&txDrain, CDC_Send_BytesPending(), USB_TIMEOUT);
 }
 
 /**

@@ -36,3 +36,4 @@ bool cdc_usb_connected(void);
 bool cdc_usb_bytes_available(void);
 uint32_t cdc_usb_baud_rate(void);
 uint32_t cdc_usb_tx_bytes_free(void);
+uint32_t cdc_usb_tx_bytes_pending(void);
