@@ -53,3 +53,33 @@ void buildAlignmentFromStandardAlignment(sensorAlignment_t* rpy, sensor_align_e 
         rpy->raw[axis] = DEGREES_TO_DECIDEGREES(90) * ALIGNMENT_AXIS_ROTATIONS(alignmentBits, axis);
     }
 }
+
+void buildMagRotationMatrixFromAngles(matrix33_t *rm, const sensorAlignment_t *rpy)
+{
+    // The matrix is applied transposed (applyRotationMatrix), so negating all
+    // angles yields Rz(yaw) * Ry(pitch) * Rx(roll).
+    const sensorAlignment_t negated = {
+        .roll = -rpy->roll,
+        .pitch = -rpy->pitch,
+        .yaw = -rpy->yaw,
+    };
+
+    buildRotationMatrixFromAngles(rm, &negated);
+}
+
+void buildMagAlignmentFromStandardAlignment(sensorAlignment_t *rpy, sensor_align_e stdAlignment)
+{
+    if (stdAlignment == ALIGN_CUSTOM || stdAlignment == ALIGN_DEFAULT) {
+        return;
+    }
+
+    buildAlignmentFromStandardAlignment(rpy, stdAlignment);
+
+    // Standard alignments are clockwise; mag custom yaw is counter-clockwise positive.
+    // Roll is always 0 and pitch 0 or 180 here, which are unaffected by the sign change.
+    // Keep yaw in (-180, 180] so e.g. CW90 reads as -90 and CW270 as 90.
+    rpy->yaw = -rpy->yaw;
+    if (rpy->yaw <= -DEGREES_TO_DECIDEGREES(180)) {
+        rpy->yaw += DEGREES_TO_DECIDEGREES(360);
+    }
+}
