@@ -93,6 +93,10 @@
 // #define USE_PID_DENOM_CHECK  //polo:UM324xF performance is enlough.
 #define DEFAULT_PID_PROCESS_DENOM       2
 
+#ifndef ENABLE_OVERCLOCK_336_MHZ
+#define ENABLE_OVERCLOCK_336_MHZ 1
+#endif
+
 #define DEFAULT_CPU_OVERCLOCK 0 //UM3241F default 288M
 
 #define STANDARD_INQUIRY_DATA_LEN       0x24U
