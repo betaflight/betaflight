@@ -198,6 +198,16 @@ baro_ms5611_unittest_DEFINES := \
 accgyro_spi_icm426xx_unittest_SRC := \
 		$(USER_DIR)/drivers/accgyro/accgyro_spi_icm426xx.c
 
+accgyro_spi_adis16607_unittest_SRC := \
+		$(USER_DIR)/drivers/accgyro/accgyro_spi_adis16607.c
+
+# One build per variant, so both gyro sensitivities are compiled and asserted.
+# The unsuffixed build uses the -2.
+accgyro_spi_adis16607_unittest_DEFINES = \
+                USE_DMA= \
+                USE_ACCGYRO_ADIS16607= \
+                ADIS16607_VARIANT=$(if $1,$1,2)
+
 accgyro_spi_icm426xx_unittest_DEFINES := \
                 USE_GYRO_SPI_ICM42605= \
                 USE_ACCGYRO_ICM42622P= \
@@ -1229,6 +1239,7 @@ TESTS_TARGET_SPECIFIC = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),
 
 TESTS = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),,$(test)))
 TESTS += $(addprefix accgyro_spi_lsm6dsv16x_unittest.,16x 32x 320x)
+TESTS += $(addprefix accgyro_spi_adis16607_unittest.,2 3)
 TESTS_ALL = $(TESTS)
 
 # All Google Test headers.  Usually you shouldn't change this
