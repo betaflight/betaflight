@@ -234,6 +234,13 @@ accgyro_spi_lsm6dsv16x_unittest_DEFINES = \
 #		$(USER_DIR)/sensors/battery.c \
 #		$(USER_DIR)/common/maths.c
 
+bus_i2c_busdev_unittest_SRC := \
+		$(USER_DIR)/drivers/bus_i2c_busdev.c
+
+bus_i2c_busdev_unittest_DEFINES := \
+		USE_I2C= \
+		I2CDEV_COUNT=3
+
 bus_spi_unittest_SRC := \
 		$(USER_DIR)/build/atomic.c \
 		$(USER_DIR)/drivers/bus_spi.c \

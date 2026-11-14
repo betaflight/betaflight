@@ -111,7 +111,9 @@ typedef struct
 #ifndef SPIDEV_COUNT
 #define SPIDEV_COUNT 0
 #endif
+#ifndef I2CDEV_COUNT
 #define I2CDEV_COUNT 0
+#endif
 #ifndef GYRO_COUNT
 #define GYRO_COUNT 1
 #endif
