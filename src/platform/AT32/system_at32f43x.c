@@ -63,7 +63,7 @@ static flash_usd_eopb0_type get_sram_config(void)
     case 192:
     default:
         return FLASH_EOPB0_SRAM_192K;
-#elif 1024 <= TARGET_FLASH_SIZE
+#elif 960 <= TARGET_FLASH_SIZE
     case 128:
         return FLASH_EOPB0_SRAM_128K;
     case 256:
