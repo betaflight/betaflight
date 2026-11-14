@@ -456,6 +456,9 @@ static bool gpsAltOffsetSet = false;
 #ifdef USE_BARO
 static float baroAltOffsetCm = 0.0f;
 static bool baroOffsetSet = false;
+static bool baroCalibrationPending = false;
+static bool baroCalibrationAwaitingSample = false;
+static timeUs_t baroCalibrationSampleTimeUs = 0;
 static bool baroDataAvailable = false;
 static timeUs_t baroTimestampUs = 0;
 static timeDelta_t baroHoldDurationUs = 0;
@@ -539,6 +542,9 @@ void positionEstimatorInit(void)
 #ifdef USE_BARO
     baroAltOffsetCm = 0.0f;
     baroOffsetSet = false;
+    baroCalibrationPending = false;
+    baroCalibrationAwaitingSample = false;
+    baroCalibrationSampleTimeUs = 0;
     baroDataAvailable = false;
     baroTimestampUs = 0;
     baroHoldDurationUs = 0;
@@ -957,6 +963,19 @@ static float baroGroundEffectRScale(timeUs_t nowUs)
 static void feedBaroMeasurements(timeUs_t nowUs)
 {
 #ifdef USE_BARO
+    if (positionConfig()->altitude_reference == ALTITUDE_REFERENCE_POWER_ON) {
+        if (!baroIsCalibrated()) {
+            baroCalibrationPending = true;
+            baroCalibrationAwaitingSample = false;
+        } else if (baroCalibrationPending && !baroCalibrationAwaitingSample) {
+            baroCalibrationAwaitingSample = true;
+            baroCalibrationSampleTimeUs = getBaroLatestSampleTimeUs();
+        }
+    } else {
+        baroCalibrationPending = false;
+        baroCalibrationAwaitingSample = false;
+    }
+
     if (!sensors(SENSOR_BARO)) {
         baroDataAvailable = false;
         return;
@@ -974,8 +993,32 @@ static void feedBaroMeasurements(timeUs_t nowUs)
         return;
     }
 
-    if (!baroOffsetSet) {
-        // Capture disarmed baseline once; keep live relative altitude while disarmed.
+    if (positionConfig()->altitude_reference == ALTITUDE_REFERENCE_POWER_ON && !baroIsCalibrated()) {
+        return;
+    }
+
+    if (baroCalibrationPending && baroCalibrationAwaitingSample) {
+        if (getBaroLatestSampleTimeUs() == baroCalibrationSampleTimeUs) {
+            return;
+        }
+
+        if (!baroOffsetSet) {
+            // Capture the POWER_ON baseline from the first post-calibration sample.
+            baroAltOffsetCm = baroAltCm;
+            baroOffsetSet = true;
+        } else {
+            // Calibration changes the barometer's altitude frame. Align its first new
+            // sample to the current estimate so POWER_ON altitude remains continuous.
+            const float currentAltitudeCm = kalmanGetPosition(&kfUp);
+            baroAltOffsetCm = baroAltCm - currentAltitudeCm;
+            baroStepGate.lastAcceptedCm = currentAltitudeCm;
+            baroStepGate.hasReference = true;
+            baroStepGate.consecutiveRejects = 0;
+        }
+        baroCalibrationPending = false;
+        baroCalibrationAwaitingSample = false;
+    } else if (!baroOffsetSet) {
+        // Capture the disarmed baseline once; keep live relative altitude while disarmed.
         baroAltOffsetCm = baroAltCm;
         baroOffsetSet = true;
     }
@@ -1496,6 +1539,9 @@ void positionEstimatorResetZ(void)
 #ifdef USE_BARO
     baroAltOffsetCm = 0.0f;
     baroOffsetSet = false;
+    baroCalibrationPending = false;
+    baroCalibrationAwaitingSample = false;
+    baroCalibrationSampleTimeUs = 0;
     baroStepGate = (zStepGate_t){ 0 };
 #endif
 #ifdef USE_RANGEFINDER

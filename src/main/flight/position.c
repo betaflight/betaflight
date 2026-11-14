@@ -62,42 +62,46 @@ static float controlAltitudeDerivative = 0.0f;
 static float controlAltitudeAcceleration = 0.0f;
 #if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER) || defined(USE_OPTICALFLOW)
 static bool wasArmed = false;
+static bool firstArmCompleted = false;
 #endif
 #ifdef USE_VARIO
 static int16_t estimatedVario = 0;
 #endif
 
-static void positionResetAltitudeState(void)
+static void positionResetAltitudeState(float initialAltitudeCm)
 {
     const float sampleTimeS = HZ_TO_INTERVAL(TASK_POSITION_RATE_HZ);
 
     const float altitudeCutoffHz = positionConfig()->altitude_lpf / 100.0f;
     const float altitudeGain = pt2FilterGain(altitudeCutoffHz, sampleTimeS);
     pt2FilterInit(&altitudeLpf, altitudeGain);
+    altitudeLpf.state = initialAltitudeCm;
+    altitudeLpf.state1 = initialAltitudeCm;
 
     const float altitudeDerivativeCutoffHz = positionConfig()->altitude_d_lpf / 100.0f;
     const float altitudeDerivativeGain = pt2FilterGain(altitudeDerivativeCutoffHz, sampleTimeS);
     pt2FilterInit(&altitudeDerivativeLpf, altitudeDerivativeGain);
 
-    filteredAltitudeCm = 0.0f;
-    displayAltitudeCm = 0.0f;
+    filteredAltitudeCm = initialAltitudeCm;
+    displayAltitudeCm = initialAltitudeCm;
     filteredAltitudeDerivative = 0.0f;
-    controlAltitudeCm = 0.0f;
+    controlAltitudeCm = initialAltitudeCm;
     controlAltitudeDerivative = 0.0f;
     controlAltitudeAcceleration = 0.0f;
 }
 
 void positionInit(void)
 {
-    positionResetAltitudeState();
+    positionResetAltitudeState(0.0f);
 #if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER) || defined(USE_OPTICALFLOW)
     wasArmed = ARMING_FLAG(ARMED);
+    firstArmCompleted = wasArmed;
 #endif
 
     positionEstimatorInit();
 }
 
-PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 7);
+PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 8);
 
 PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altitude_source = ALTITUDE_SOURCE_DEFAULT,
@@ -110,6 +114,7 @@ PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altitude_lpf = 300,
     .altitude_d_lpf = 300,
     .rangefinder_max_range_cm = 400,
+    .altitude_reference = ALTITUDE_REFERENCE_EACH_ARM,
 );
 
 #if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER) || defined(USE_OPTICALFLOW)
@@ -163,8 +168,16 @@ void positionUpdate(void)
 {
     const bool isArmed = ARMING_FLAG(ARMED);
     if (isArmed != wasArmed) {
-        positionEstimatorResetZ();
-        positionResetAltitudeState();
+        const uint8_t altitudeReference = positionConfig()->altitude_reference;
+        const bool resetEstimator = altitudeReference == ALTITUDE_REFERENCE_EACH_ARM ||
+            (altitudeReference == ALTITUDE_REFERENCE_FIRST_ARM && isArmed && !firstArmCompleted);
+        if (resetEstimator) {
+            positionEstimatorResetZ();
+        }
+        if (isArmed) {
+            firstArmCompleted = true;
+        }
+        positionResetAltitudeState(resetEstimator ? 0.0f : positionEstimatorGetAltitudeCm());
         wasArmed = isArmed;
     }
 

@@ -508,6 +508,10 @@ static const char * const lookupTablePositionAltitudeSource[] = {
     "DEFAULT", "BARO_ONLY", "GPS_ONLY", "RANGEFINDER_PREFER", "RANGEFINDER_ONLY"
 };
 
+static const char * const lookupTablePositionAltitudeReference[] = {
+    "EACH_ARM", "FIRST_ARM", "POWER_ON"
+};
+
 static const char * const lookupTableOffOnAuto[] = {
     "OFF", "ON", "AUTO"
 };
@@ -734,6 +738,7 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableGyroFilterDebug),
 
     LOOKUP_TABLE_ENTRY(lookupTablePositionAltitudeSource),
+    LOOKUP_TABLE_ENTRY(lookupTablePositionAltitudeReference),
     LOOKUP_TABLE_ENTRY(lookupTableOffOnAuto),
     LOOKUP_TABLE_ENTRY(lookupTableFeedforwardAveraging),
     LOOKUP_TABLE_ENTRY(lookupTableDshotBitbangedTimer),
@@ -2160,6 +2165,7 @@ const clivalue_t valueTable[] = {
 
 // PG_POSITION
     { PARAM_NAME_ALTITUDE_SOURCE,       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_POSITION_ALT_SOURCE }, PG_POSITION, offsetof(positionConfig_t, altitude_source) },
+    { PARAM_NAME_ALTITUDE_REFERENCE,    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_POSITION_ALT_REFERENCE }, PG_POSITION, offsetof(positionConfig_t, altitude_reference) },
     { PARAM_NAME_ALTITUDE_PREFER_BARO,  VAR_INT8   | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_POSITION, offsetof(positionConfig_t, altitude_prefer_baro) },
     { PARAM_NAME_ALTITUDE_LPF,          VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 10, 5000 }, PG_POSITION, offsetof(positionConfig_t, altitude_lpf) },
     { "rangefinder_max_range_cm",       VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50, 1000 }, PG_POSITION, offsetof(positionConfig_t, rangefinder_max_range_cm) },
