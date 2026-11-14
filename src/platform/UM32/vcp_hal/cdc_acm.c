@@ -15,6 +15,7 @@
 #include "common/printf.h"
 
 #include "drivers/nvic.h"
+#include "drivers/serial.h"
 #include "pg/pg.h"
 #include "pg/usb.h"
 #ifdef USE_USB_MSC
@@ -31,6 +32,7 @@
 #define CDC_IN_EP  0x81
 #define CDC_OUT_EP 0x02
 #define CDC_INT_EP 0x83
+#define CDC_CONTROL_INTERFACE 0
 
 #define USBD_VID             0x396A
 #define USBD_PID             0x1000
@@ -56,7 +58,7 @@ static const uint8_t device_descriptor[] = {
 
 static const uint8_t config_descriptor[] = {
     USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
-    CDC_ACM_DESCRIPTOR_INIT(0x00, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP, CDC_MAX_MPS, 0x02)
+    CDC_ACM_DESCRIPTOR_INIT(CDC_CONTROL_INTERFACE, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP, CDC_MAX_MPS, 0x02)
 };
 
 static const uint8_t device_quality_descriptor[] = {
@@ -120,6 +122,15 @@ volatile uint32_t max_tx = 0, max_rx = 0;
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[CDC_ACM_RX_BUFFER_SIZE];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX static uint8_t write_buffer[CDC_ACM_TX_BUFFER_SIZE];
 static volatile uint32_t cdcRxPendingLength;
+static void (*cdcCtrlLineStateCb)(void *context, uint16_t state);
+static void *cdcCtrlLineStateContext;
+static bool cdcDtr;
+static void (*cdcBaudRateCb)(serialPort_t *context, uint32_t baud);
+static serialPort_t *cdcBaudRateContext;
+static struct cdc_line_coding cdcLineCoding = {
+    .dwDTERate = 2000000,
+    .bDataBits = 8,
+};
 
 // Head includes buffered writes. Ready marks the end of the data available to
 // the endpoint. The IN endpoint owns bytes at the tail until its callback.
@@ -155,6 +166,11 @@ static void cdc_acm_reset_session(void)
         cdcTxTail = 0;
         cdcTxInFlight = 0;
         cdcTxSession++;
+        cdcCtrlLineStateCb = NULL;
+        cdcCtrlLineStateContext = NULL;
+        cdcDtr = false;
+        cdcBaudRateCb = NULL;
+        cdcBaudRateContext = NULL;
     }
 }
 
@@ -259,25 +275,99 @@ struct usbd_endpoint cdc_in_ep = {
 
 static struct usbd_interface intf0;
 static struct usbd_interface intf1;
+static usbd_request_handler cdcClassRequestHandler;
+
+static int cdc_acm_class_request(uint8_t busid, struct usb_setup_packet *setup, uint8_t **data, uint32_t *len)
+{
+    if (setup->bRequest == CDC_REQUEST_SET_LINE_CODING) {
+        if (setup->wIndex != CDC_CONTROL_INTERFACE ||
+            (setup->bmRequestType & USB_REQUEST_DIR_MASK) != USB_REQUEST_DIR_OUT ||
+            setup->wLength != sizeof(struct cdc_line_coding) || !*data) {
+            return -1;
+        }
+
+        // CherryUSB uses these fields to index its diagnostic tables.
+        struct cdc_line_coding coding;
+        memcpy(&coding, *data, sizeof(coding));
+        if (coding.bCharFormat > 2 || coding.bParityType > 4) {
+            return -1;
+        }
+    }
+
+    return cdcClassRequestHandler(busid, setup, data, len);
+}
 
 void cdc_acm_init(uint8_t busid, uintptr_t reg_base)
 {
     tfp_sprintf(serialNumber, "%08X%08X%08X", (unsigned int)U_ID_0, (unsigned int)U_ID_1, (unsigned int)U_ID_2);
     usbd_desc_register(busid, &cdc_descriptor);
-    usbd_add_interface(busid, usbd_cdc_acm_init_intf(busid, &intf0));
-    usbd_add_interface(busid, usbd_cdc_acm_init_intf(busid, &intf1));
+    usbd_cdc_acm_init_intf(busid, &intf0);
+    usbd_cdc_acm_init_intf(busid, &intf1);
+    cdcClassRequestHandler = intf0.class_interface_handler;
+    intf0.class_interface_handler = cdc_acm_class_request;
+    intf1.class_interface_handler = cdc_acm_class_request;
+    usbd_add_interface(busid, &intf0);
+    usbd_add_interface(busid, &intf1);
     usbd_add_endpoint(busid, &cdc_out_ep);
     usbd_add_endpoint(busid, &cdc_in_ep);
     usbd_initialize(busid, reg_base, usbd_event_handler);
 }
 
-volatile uint8_t dtr_enable = 0;
+void cdc_acm_set_ctrl_line_state_cb(void (*cb)(void *context, uint16_t state), void *context)
+{
+    ATOMIC_BLOCK(NVIC_PRIO_USB) {
+        cdcCtrlLineStateCb = cb;
+        cdcCtrlLineStateContext = cb ? context : NULL;
+    }
+}
 
 void usbd_cdc_acm_set_dtr(uint8_t busid, uint8_t intf, bool dtr)
 {
+    if (busid == 0 && intf == CDC_CONTROL_INTERFACE && usb_device_is_configured(busid)) {
+        cdcDtr = dtr;
+    }
+}
+
+void usbd_cdc_acm_set_rts(uint8_t busid, uint8_t intf, bool rts)
+{
+    // CherryUSB calls the DTR hook first for each SET_CONTROL_LINE_STATE request.
+    if (busid == 0 && intf == CDC_CONTROL_INTERFACE && usb_device_is_configured(busid) && cdcCtrlLineStateCb) {
+        const uint16_t state = (cdcDtr ? CTRL_LINE_STATE_DTR : 0) | (rts ? CTRL_LINE_STATE_RTS : 0);
+        cdcCtrlLineStateCb(cdcCtrlLineStateContext, state);
+    }
+}
+
+void cdc_acm_set_baud_rate_cb(void (*cb)(serialPort_t *context, uint32_t baud), serialPort_t *context)
+{
+    ATOMIC_BLOCK(NVIC_PRIO_USB) {
+        cdcBaudRateCb = cb;
+        cdcBaudRateContext = cb ? context : NULL;
+    }
+}
+
+void usbd_cdc_acm_set_line_coding(uint8_t busid, uint8_t intf, struct cdc_line_coding *lineCoding)
+{
+    if (busid != 0 || intf != CDC_CONTROL_INTERFACE || !usb_device_is_configured(busid)) {
+        return;
+    }
+
+    const uint32_t baud = lineCoding->dwDTERate;
+    // The UART HAL multiplies baud by up to 128 in its divider calculations.
+    if (baud == 0 || baud > UINT32_MAX / 128U) {
+        return;
+    }
+
+    cdcLineCoding = *lineCoding;
+    if (cdcBaudRateCb) {
+        cdcBaudRateCb(cdcBaudRateContext, baud);
+    }
+}
+
+void usbd_cdc_acm_get_line_coding(uint8_t busid, uint8_t intf, struct cdc_line_coding *lineCoding)
+{
     (void)busid;
     (void)intf;
-    (void)dtr;
+    *lineCoding = cdcLineCoding;
 }
 
 uint32_t cdc_acm_tx_session(void)

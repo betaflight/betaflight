@@ -97,15 +97,13 @@ static void usbVcpSetMode(serialPort_t *instance, portMode_e mode)
 static void usbVcpSetCtrlLineStateCb(serialPort_t *instance, void (*cb)(void *context, uint16_t ctrlLineState), void *context)
 {
     UNUSED(instance);
-    UNUSED(cb);
-    UNUSED(context);
+    cdc_acm_set_ctrl_line_state_cb(cb, context);
 }
 
 static void usbVcpSetBaudRateCb(serialPort_t *instance, void (*cb)(serialPort_t *context, uint32_t baud), serialPort_t *context)
 {
     UNUSED(instance);
-    UNUSED(cb);
-    UNUSED(context);
+    cdc_acm_set_baud_rate_cb(cb, context);
 }
 
 static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)

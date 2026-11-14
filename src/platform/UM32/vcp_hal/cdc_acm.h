@@ -23,9 +23,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+struct serialPort_s;
+
 #define USB_VCP_RX_RING_SIZE 2048U
 
 void cdc_acm_init(uint8_t busid, uintptr_t reg_base);
+void cdc_acm_set_ctrl_line_state_cb(void (*cb)(void *context, uint16_t state), void *context);
+void cdc_acm_set_baud_rate_cb(void (*cb)(struct serialPort_s *context, uint32_t baud), struct serialPort_s *context);
 void cdc_acm_resume_rx(void);
 bool usbVcpReceiveData(const uint8_t *data, uint32_t len);
 void usbVcpResetRx(void);
