@@ -411,11 +411,11 @@ vector2_t autopilotGetPositionErrorCm(void)
 
 } // extern "C"
 
-// The return's speed spread over the descent distance, but never braking harder than 4 m/s^2.
+// The return's speed spread over the descent distance, but never braking harder than 1.5 m/s^2.
 static float rescueApproachDecelMps2(void)
 {
     const float speedMps = gpsRescueConfig()->groundSpeedCmS * 0.01f;
-    return constrainf(sq(speedMps) / (2.0f * gpsRescueConfig()->descentDistanceM), 0.3f, 4.0f);
+    return constrainf(sq(speedMps) / (2.0f * gpsRescueConfig()->descentDistanceM), 0.3f, 1.5f);
 }
 
 class FlightPlanRescueTest : public ::testing::Test {
@@ -1752,14 +1752,15 @@ TEST_F(FlightPlanRescueTest, LandingLegStartsDownCloseToHomeBelowTheReturnAltitu
 
 TEST_F(FlightPlanRescueTest, ReturnLegShedsItsSpeedFromTheDescentDistance)
 {
-    // The return speed is shed steadily over the descent distance, but never at more than 4 m/s^2:
+    // The return speed is shed steadily over the descent distance, but never at more than 1.5 m/s^2:
     // a fast return with a short descent distance starts slowing far enough out to stop in time.
     struct { uint16_t speedCmS; uint16_t descentDistM; float fromHomeM; float expectedMps; } cases[] = {
         { 750, 20, 25.0f, 7.5f },       // defaults: cruising until the descent distance
         { 750, 20, 12.0f, 5.64f },      // sqrt(2 * 1.41 * 12 - 1.41^2)
-        { 2500, 80, 40.0f, 17.24f },    // the 25 m/s flight: 3.91 m/s^2
-        { 3000, 7, 40.0f, 17.44f },     // the 30 m/s flight: capped at 4 m/s^2, slowing from 52 m
-        { 3000, 7, 4.0f, 4.0f },        // and in proportion inside the knee
+        { 2500, 80, 40.0f, 10.85f },    // the 25 m/s flight: capped at 1.5 m/s^2, slowing from 209 m
+        { 3000, 7, 40.0f, 10.85f },     // the 30 m/s flight: capped at 1.5 m/s^2, slowing from 301 m
+        { 3000, 7, 4.0f, 3.12f },       // sqrt(2 * 1.5 * 4 - 1.5^2)
+        { 3000, 7, 1.0f, 1.0f },        // and in proportion inside the knee
     };
     for (const auto &c : cases) {
         SetUp();

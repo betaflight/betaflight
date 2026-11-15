@@ -205,7 +205,7 @@
 // ground before the craft does. Inside the still radius the descent stops chasing home and comes
 // straight down: wind and a wandering position estimate would otherwise walk the last stretch
 // around the landing spot. The craft lands about this far off, so it is no wider than that wander.
-#define FP_RESCUE_SLOWDOWN_MAX_DECEL_MPS2 4.0f
+#define FP_RESCUE_SLOWDOWN_MAX_DECEL_MPS2 1.5f
 #define FP_RESCUE_DESCENT_START_M         5.0f
 #define FP_RESCUE_LAND_STILL_RADIUS_M     0.3f
 
