@@ -1231,7 +1231,6 @@ const spiHardware_t spiHardware[] = {
         },
         .af = GPIO_AF5_SPI1,
         .rcc = RCC_APB1(SPI1),
-        .dmaIrqHandler = DMA2_ST7_HANDLER,
     },
     {
         .device = SPIDEV_2,
@@ -1250,7 +1249,6 @@ const spiHardware_t spiHardware[] = {
         },
         .af = GPIO_AF5_SPI2,
         .rcc = RCC_APB2(SPI2),
-        .dmaIrqHandler = DMA2_ST7_HANDLER,
     },
     {
         .device = SPIDEV_3,
@@ -1269,7 +1267,6 @@ const spiHardware_t spiHardware[] = {
         },
         .af = GPIO_AF6_SPI3,
         .rcc = RCC_APB2(SPI3),
-        .dmaIrqHandler = DMA2_ST7_HANDLER,
     },
     {
         .device = SPIDEV_4,
@@ -1285,7 +1282,6 @@ const spiHardware_t spiHardware[] = {
         },
         .af = GPIO_AF6_SPI4,
         .rcc = RCC_APB2(SPI4),
-        .dmaIrqHandler = DMA2_ST7_HANDLER,
     },
 #endif
 

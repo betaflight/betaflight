@@ -285,6 +285,3 @@ typedef UART_EX_HandleTypeDef   UART_HandleTypeDef;
 // (positions 76/77).
 #define UART7_IRQHandler          USART7_IRQHandler
 #define UART8_IRQHandler          USART8_IRQHandler
-
-#define UART_REG_RXD(base) (((UART_EX_TypeDef *)(base))->RBR)
-#define UART_REG_TXD(base) (((UART_EX_TypeDef *)(base))->THR)
