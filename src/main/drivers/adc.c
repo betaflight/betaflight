@@ -56,9 +56,13 @@ uint16_t adcInternalCompensateVref(uint16_t intVRefAdcValue)
 {
     // This is essentially a tuned version of
     // __HAL_ADC_CALC_VREFANALOG_VOLTAGE(vrefAdcValue, ADC_RESOLUTION_12B);
+    if (intVRefAdcValue == 0) {
+        return VREFINT_CAL_VREF;
+    }
     return (uint16_t)((uint32_t)(adcVREFINTCAL * VREFINT_CAL_VREF) / intVRefAdcValue);
 }
 
+#ifndef USE_PLATFORM_ADC_TEMPERATURE
 int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue)
 {
     // This is essentially a tuned version of
@@ -66,5 +70,6 @@ int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue)
 
     return ((((int32_t)((tempAdcValue * vrefValue) / TEMPSENSOR_CAL_VREFANALOG) - adcTSCAL1) * adcTSSlopeK) + 500) / 1000 + TEMPSENSOR_CAL1_TEMP;
 }
+#endif
 #endif // USE_ADC_INTERNAL
 #endif

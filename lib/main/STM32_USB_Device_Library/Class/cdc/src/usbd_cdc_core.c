@@ -94,6 +94,7 @@
 #define USB_CDC_IDLE         0
 #define USB_CDC_BUSY         1
 #define USB_CDC_ZLP          2
+#define USB_CDC_ZLP_SENT     3
 
 /**
   * @}
@@ -653,6 +654,10 @@ uint8_t  usbd_cdc_DataIn (void *pdev, uint8_t epnum)
         /*Send ZLP to indicate the end of the current transfer */
         DCD_EP_Tx(pdev, CDC_IN_EP, NULL, 0);
 
+        // Stay non-idle until the ZLP itself completes (next DataIn), so
+        // transmit-empty checks wait for it and no new transfer starts early.
+        USB_Tx_State = USB_CDC_ZLP_SENT;
+    } else if (USB_Tx_State == USB_CDC_ZLP_SENT) {
         USB_Tx_State = USB_CDC_IDLE;
     }
     return USBD_OK;

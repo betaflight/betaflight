@@ -632,7 +632,23 @@ bool serialIsPortAvailable(serialPortIdentifier_e identifier)
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort)
 {
+#if defined(PLATFORM_VCP_TX_STALL_TIMEOUT_MS) && defined(USE_VCP)
+    uint32_t lastFree = serialTxBytesFree(serialPort);
+    uint32_t lastProgressAt = millis();
+#endif
     while (!isSerialTransmitBufferEmpty(serialPort)) {
+#if defined(PLATFORM_VCP_TX_STALL_TIMEOUT_MS) && defined(USE_VCP)
+        if (serialPort->identifier == SERIAL_PORT_USB_VCP) {
+            const uint32_t freeBytes = serialTxBytesFree(serialPort);
+            if (freeBytes != lastFree) {
+                lastFree = freeBytes;
+                lastProgressAt = millis();
+            } else if (millis() - lastProgressAt >= PLATFORM_VCP_TX_STALL_TIMEOUT_MS) {
+                // A configured host can stop polling while leaving DTR asserted.
+                break;
+            }
+        }
+#endif
         delay(10);
     };
 }
