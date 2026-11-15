@@ -176,6 +176,9 @@
 // only near the ground (landing initiated at ground level). At altitude a
 // vehicle that cannot descend must keep trying, not disarm mid-air.
 #define FP_LANDING_ESTABLISH_TIMEOUT_US 5000000u
+// A landing still braking across the ground can stall its descent for a moment at any height, the
+// pitch back lifting it: above landing altitude that is no touchdown until the craft has all but stopped.
+#define FP_TOUCHDOWN_MAX_GROUND_MPS 1.0f
 
 // Injected runtime plans are small synthesised sequences (geofence RTH,
 // failsafe rescue); MAVLink-scale plans stay in the PG store.
@@ -1591,10 +1594,14 @@ static void updateLanding(timeUs_t currentTimeUs)
         fp.landingDescentEstablished = true;
     }
 
-    const bool monitorTouchdown = fp.landingDescentEstablished
-        || (isBelowLandingAltitude()
+    const bool belowLandingAltitude = isBelowLandingAltitude();
+    const float groundSpeedMps = sqrtf(sq(est->velocity.v[ENU_E]) + sq(est->velocity.v[ENU_N])) * 0.01f;
+    const bool monitorTouchdown = (fp.landingDescentEstablished
+            && (belowLandingAltitude || groundSpeedMps < FP_TOUCHDOWN_MAX_GROUND_MPS))
+        || (belowLandingAltitude
             && cmpTimeUs(currentTimeUs, fp.landingStartUs) >= (timeDelta_t)FP_LANDING_ESTABLISH_TIMEOUT_US);
     if (!monitorTouchdown) {
+        fp.touchdownQuietStartUs = 0;
         return;
     }
 

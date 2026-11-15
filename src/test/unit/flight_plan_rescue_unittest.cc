@@ -1574,6 +1574,66 @@ TEST_F(FlightPlanRescueTest, FullRescueRunToLanding)
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_COMPLETE);
 }
 
+TEST_F(FlightPlanRescueTest, BrakingAtHeightIsNoTouchdown)
+{
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    triggerReached();
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 2);
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    g_stubBelowLandingAltitude = false;
+    g_stubEstimate.velocity.v[ENU_U] = -150.0f;
+    g_stubMicros += 500'000;
+    flightPlanNavUpdate(g_stubMicros);
+
+    // The pitch back stalls the descent while the craft is still crossing the ground.
+    g_stubEstimate.velocity.v[ENU_U] = 0.0f;
+    g_stubEstimate.velocity.v[ENU_N] = -300.0f;
+    for (int i = 0; i < 30; i++) {
+        g_stubMicros += 100'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    EXPECT_EQ(g_disarmCalls, 0);
+
+    // Stopped and still quiet: that is a touchdown, landing altitude or not.
+    g_stubEstimate.velocity.v[ENU_N] = 20.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(g_disarmCalls, 0);
+    g_stubMicros += 1'100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(g_disarmCalls, 1);
+    EXPECT_EQ(g_lastDisarmReason, DISARM_REASON_LANDING);
+}
+
+TEST_F(FlightPlanRescueTest, MovingBelowLandingAltitudeStillTouchesDown)
+{
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+    flightPlanNavEngage();
+    triggerReached();
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    g_stubEstimate.velocity.v[ENU_U] = -150.0f;
+    g_stubMicros += 500'000;
+    flightPlanNavUpdate(g_stubMicros);
+
+    // A ground speed reading that never settles must not keep a craft on the ground armed.
+    g_stubEstimate.velocity.v[ENU_U] = 0.0f;
+    g_stubEstimate.velocity.v[ENU_E] = 200.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    g_stubMicros += 1'100'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(g_disarmCalls, 1);
+}
+
 TEST_F(FlightPlanRescueTest, DescentStartsCloseToHome)
 {
     // The return sheds its speed at altitude from the descent distance in, and only then starts
