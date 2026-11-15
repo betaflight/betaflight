@@ -32,6 +32,7 @@ extern CDC_IF_Prop_TypeDef VCP_fops;
 
 uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength);
 uint32_t CDC_Send_FreeBytes(void);
+uint32_t CDC_Send_BytesPending(void);
 uint32_t CDC_Receive_DATA(uint8_t *recvBuf, uint32_t len);
 uint32_t CDC_Receive_BytesAvailable(void);
 
