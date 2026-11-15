@@ -422,6 +422,13 @@ typedef struct osdConfig_s {
     int8_t osd_uart;                          // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned. Bit chosen by displayPortDevice (FRSKYOSD=FUNCTION_FRSKY_OSD, else none).
     int8_t osd_custom_text_uart;              // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned.  Always maps to FUNCTION_OSD_CUSTOM_TEXT when set.
     uint8_t osd_custom_text_baud;             // baudRate_e index for osd_custom_text_uart
+#ifdef USE_OSD_SCREENSAVER
+    // Last, and the version kept: a config stored before them loads as it was. They may come with the
+    // bytes after its end, so validateAndFixConfig() resets those out of range; the timeout reads 0 (off)
+    uint8_t screensaver_effect;               // osdScreensaverEffect_e
+    uint16_t screensaver_timeout;             // seconds disarmed without stick movement before the screensaver, 0 = off
+    uint16_t screensaver_cycle;               // seconds an effect runs in CYCLE
+#endif // USE_OSD_SCREENSAVER
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);

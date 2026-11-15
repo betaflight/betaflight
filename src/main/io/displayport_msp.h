@@ -24,6 +24,8 @@
 
 #include "io/serial.h"
 
+#include "msp/msp.h"
+
 #include "pg/displayport_profiles.h"
 
 // MSP Display Port commands
@@ -47,7 +49,13 @@ typedef enum {
 #define DISPLAYPORT_MSP_ATTR_FONT    (BIT(0) | BIT(1)) // Select bank of 256 characters as per displayPortSeverity_e
 #define DISPLAYPORT_MSP_ATTR_MASK    (DISPLAYPORT_MSP_ATTR_VERSION | DISPLAYPORT_MSP_ATTR_BLINK | DISPLAYPORT_MSP_ATTR_FONT)
 
+// Bytes of the screen in the encoding of DJI O3 Air Unit + Goggles 2 (see displayport_msp.c): they
+// show a screen of up to 902 bytes and throw away a bigger one
+#define DISPLAYPORT_MSP_DJI_BUDGET_DEFAULT 902
+#define DISPLAYPORT_MSP_DJI_BUDGET_MAX     2048
+
 struct displayPort_s *displayPortMspInit(void);
 void displayPortMspSetSerial(serialPortIdentifier_e serialPort);
 serialPortIdentifier_e displayPortMspGetSerial(void);
+void displayPortMspPolled(mspDescriptor_t srcDesc, int16_t cmd);
 
