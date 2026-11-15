@@ -186,7 +186,7 @@ MCU_COMMON_SRC = \
             drivers/serial_pinconfig.c \
             common/stm32/system.c \
             common/stm32/io_impl.c \
-            common/stm32/config_flash.c \
+            UM32/config_flash.c \
             common/stm32/mco.c \
             common/stm32/rx_pwm_hw.c \
             common/stm32/pwm_output_beeper.c \
@@ -223,7 +223,7 @@ SIZE_OPTIMISED_SRC += \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             common/stm32/bus_i2c_pinconfig.c \
-            common/stm32/config_flash.c \
+            UM32/config_flash.c \
             common/stm32/bus_spi_pinconfig.c \
             common/stm32/pwm_output_beeper.c \
             common/stm32/pwm_output_dshot_shared.c \
