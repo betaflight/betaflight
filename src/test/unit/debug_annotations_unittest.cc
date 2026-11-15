@@ -20,8 +20,8 @@
  */
 
 /*
- * Checks the `//!<` debug field annotations in src/main against the grammar
- * documented above DEBUG_SET() in src/main/build/debug.h.
+ * Checks the `//!<` debug field annotations in src/main and src/platform
+ * against the grammar documented above DEBUG_SET() in src/main/build/debug.h.
  *
  * An annotation is the only record of what a debug field means, and it is read
  * outside this repository: the configurator's generate-debug-modes builds its
@@ -838,6 +838,10 @@ std::string findSourceRoot(void)
 // src/main/... reads better in a failure than ../main/...
 std::string displayPath(const std::string &path)
 {
+    const size_t platform = path.find("/platform/");
+    if (platform != std::string::npos) {
+        return "src" + path.substr(platform);
+    }
     const size_t main = path.find("main/");
     return (main == std::string::npos) ? path : "src/" + path.substr(main);
 }
@@ -865,8 +869,12 @@ public:
             return;
         }
 
+        // The platform drivers write debug fields too (the bitbang DShot
+        // telemetry counts among them), and each platform keeps its own copy of
+        // the call, so the copies must agree on what an index holds.
         std::vector<std::string> files;
         listSources(sourceRoot, &files);
+        listSources(sourceRoot + "/../platform", &files);
 
         for (size_t i = 0; i < files.size(); i++) {
             std::vector<SourceLine> lines;

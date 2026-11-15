@@ -1376,7 +1376,7 @@ RAM_CODE static void cliAux(const char *cmdName, char *cmdline)
     } else {
         ptr = cmdline;
         i = atoi(ptr++);
-        if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
+        if (i >= 0 && i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
             modeActivationCondition_t *mac = modeActivationConditionsMutable(i);
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
@@ -1941,7 +1941,7 @@ RAM_CODE static void cliAdjustmentRange(const char *cmdName, char *cmdline)
     } else {
         ptr = cmdline;
         int i = atoi(ptr++);
-        if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
+        if (i >= 0 && i < MAX_ADJUSTMENT_RANGE_COUNT) {
             adjustmentRange_t *ar = adjustmentRangesMutable(i);
             uint8_t validArgumentCount = 0;
 
@@ -3506,7 +3506,7 @@ RAM_CODE static void cliVtx(const char *cmdName, char *cmdline)
 #endif
         ptr = cmdline;
         int i = atoi(ptr++);
-        if (i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT) {
+        if (i >= 0 && i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT) {
             vtxChannelActivationCondition_t *cac = &vtxConfigMutable()->vtxChannelActivationConditions[i];
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
@@ -4446,6 +4446,10 @@ static void cliReboot(void)
 
 RAM_CODE static void cliBootloader(const char *cmdName, char *cmdline)
 {
+#if !PLATFORM_SUPPORTS_SOFTWARE_BOOTLOADER
+    UNUSED(cmdline);
+    cliPrintErrorLinef(cmdName, "Software bootloader entry unavailable; use hardware boot mode");
+#else
     rebootTarget_e rebootTarget;
     if (
 #if !defined(USE_FLASH_BOOT_LOADER)
@@ -4468,6 +4472,7 @@ RAM_CODE static void cliBootloader(const char *cmdName, char *cmdline)
     }
 
     cliRebootEx(rebootTarget);
+#endif
 }
 
 RAM_CODE static void cliExitCmd(const char *cmdName, char *cmdline)
@@ -6496,7 +6501,7 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
     cliPrintLinefeed();
 
 #ifdef USE_DSHOT_BITBANG
-    static const char * const dshotBitbangStatusNames[] = { "OK", "MOTOR_PIN_CONFLICT", "NO_PACER", "TOO_MANY_PORTS" };
+    static const char * const dshotBitbangStatusNames[] = { "OK", "MOTOR_PIN_CONFLICT", "NO_PACER", "TOO_MANY_PORTS", "DMA_ERROR" };
     const dshotBitbangStatus_e bitbangStatus = dshotBitbangGetStatus();
     if (isDshotBitbangActive(&motorConfig()->dev) && bitbangStatus != DSHOT_BITBANG_STATUS_OK) {
         cliPrintLinef("DSHOT_BBANG: %s", (unsigned)bitbangStatus < ARRAYLEN(dshotBitbangStatusNames) ? dshotBitbangStatusNames[bitbangStatus] : "UNKNOWN");

@@ -100,17 +100,15 @@
 #define SYM_ARROW_SMALL_DOWN        0x76
 
 #ifdef OSD_RSSI_WITH_SYMBOL
-#define SYM_HEADSET                 0x82
+#define SYM_HEADSET                 0x12
 #endif
 
 #if OSD_FB_PICO_ENABLE_PIXEL_MODE
 #define SYM_ALT_LADDER              SYM_AH_DECORATION // vertical ladder element
-#define SYM_ALT_ABOVEMAX            0x86
-#define SYM_ALT_BELOWZERO           0x87
-#define SYM_CROSSHAIRS_TL           SYM_AH_CENTER_LINE
-#define SYM_CROSSHAIRS_TR           SYM_AH_CENTER
-#define SYM_CROSSHAIRS_BL           SYM_AH_CENTER_LINE_RIGHT
-#define SYM_CROSSHAIRS_BR           0x88
+#define SYM_ALT_ABOVEMAX            0x09
+#define SYM_ALT_BELOWZERO           0x0A
+#define SYM_CROSSHAIRS_UPPER        0x72
+#define SYM_CROSSHAIRS_LOWER        0x73
 #endif
 
 // AH Bars
