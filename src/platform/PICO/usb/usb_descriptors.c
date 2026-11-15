@@ -31,8 +31,9 @@
 #define _STDIO_H_
 #include "tusb.h"
 
-// Extern flag controlled by MSC start logic
+#ifdef USE_USB_MSC
 extern bool pico_msc_active;
+#endif
 
 #ifndef USBD_VID
 #define USBD_VID 0x2E8A // Raspberry Pi
@@ -83,6 +84,7 @@ static const uint8_t cdc_only_configuration[] = {
   TUD_CDC_DESCRIPTOR(ITF_CDC_ONLY_COMM, 4, 0x81, 8, 0x02, 0x82, 64),
 };
 
+#ifdef USE_USB_MSC
 // MSC-only configuration (used when MSC mode is active)
 enum {
   ITF_MSC_ONLY = 0,
@@ -95,11 +97,17 @@ static const uint8_t msc_only_configuration[] = {
   TUD_CONFIG_DESCRIPTOR(1, ITF_MSC_ONLY_TOTAL, 0, MSC_ONLY_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 250),
   TUD_MSC_DESCRIPTOR(ITF_MSC_ONLY, 5, 0x01, 0x81, 64),
 };
+#endif
 
 const uint8_t * tud_descriptor_configuration_cb(uint8_t index)
 {
   (void) index; // single config
-  return pico_msc_active ? msc_only_configuration : cdc_only_configuration;
+#ifdef USE_USB_MSC
+  if (pico_msc_active) {
+    return msc_only_configuration;
+  }
+#endif
+  return cdc_only_configuration;
 }
 
 // String descriptors
