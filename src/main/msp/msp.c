@@ -2531,25 +2531,28 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
             serializeBoxReply(dst, page, &serializeBoxPermanentIdFn);
         }
         break;
-    case MSP_REBOOT:
+    case MSP_REBOOT: {
         if (!mspRebootIsAllowed()) {
             return MSP_RESULT_ERROR;
         }
 
-        if (sbufBytesRemaining(src)) {
-            rebootMode = sbufReadU8(src);
-
-            if (rebootMode >= MSP_REBOOT_COUNT
+        const uint8_t requestedRebootMode = sbufBytesRemaining(src) ? sbufReadU8(src) : MSP_REBOOT_FIRMWARE;
+        if (requestedRebootMode >= MSP_REBOOT_COUNT
 #if !defined(USE_USB_MSC)
-                || rebootMode == MSP_REBOOT_MSC || rebootMode == MSP_REBOOT_MSC_UTC
+            || requestedRebootMode == MSP_REBOOT_MSC || requestedRebootMode == MSP_REBOOT_MSC_UTC
 #endif
-                ) {
-                return MSP_RESULT_ERROR;
-            }
-        } else {
-            rebootMode = MSP_REBOOT_FIRMWARE;
+#if !defined(USE_FLASH_BOOT_LOADER)
+            || requestedRebootMode == MSP_REBOOT_BOOTLOADER_FLASH
+#endif
+#if !PLATFORM_SUPPORTS_SOFTWARE_BOOTLOADER
+            || requestedRebootMode == MSP_REBOOT_BOOTLOADER_ROM || requestedRebootMode == MSP_REBOOT_BOOTLOADER_FLASH
+#endif
+            ) {
+            return MSP_RESULT_ERROR;
         }
 
+        // An invalid request must not overwrite an already scheduled reboot.
+        rebootMode = requestedRebootMode;
         sbufWriteU8(dst, rebootMode);
 
 #if defined(USE_USB_MSC)
@@ -2574,6 +2577,7 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
         }
 
         break;
+    }
     case MSP_MULTIPLE_MSP:
         {
             uint8_t maxMSPs = 0;

@@ -87,6 +87,9 @@ jobs:
       - name: Run all unit tests
         run: make EXTRA_FLAGS=-Werror test-all
 
+      - name: Run CH32 regression tests
+        run: make -C src/test test-ch32
+
   result:
     name: Complete
     needs: [sdk-pipeline, test]
