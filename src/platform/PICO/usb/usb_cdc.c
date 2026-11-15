@@ -32,6 +32,7 @@
 #define _STDIO_H_
 
 #include "tusb.h"
+#include "device/usbd_pvt.h"
 #include "usb_cdc.h"
 
 #include "pico/binary_info.h"
@@ -51,6 +52,9 @@
 #ifndef CDC_DEADLOCK_TIMEOUT_MS
 #define CDC_DEADLOCK_TIMEOUT_MS 1000
 #endif
+
+// CDC data IN endpoint, see TUD_CDC_DESCRIPTOR() in usb_descriptors.c
+#define CDC_USB_DATA_IN_EP 0x82
 
 #ifndef CDC_USB_BAUD_RATE
 #define CDC_USD_BAUD_RATE 115200
@@ -281,4 +285,18 @@ uint32_t cdc_usb_baud_rate(void)
 uint32_t cdc_usb_tx_bytes_free(void)
 {
     return tud_cdc_write_available();
+}
+
+uint32_t cdc_usb_tx_bytes_pending(void)
+{
+    // State checks only (no lock), as in cdc_usb_read(): a stale value just
+    // means the caller polls again.
+    uint32_t pending = CFG_TUD_CDC_TX_BUFSIZE - tud_cdc_write_available();
+
+    // TinyUSB moves data out of the FIFO into the endpoint buffer before the
+    // host has read it; count a packet still in flight as pending.
+    if (usbd_edpt_busy(0, CDC_USB_DATA_IN_EP)) {
+        pending++;
+    }
+    return pending;
 }
