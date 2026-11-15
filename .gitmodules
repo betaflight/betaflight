@@ -62,3 +62,14 @@
 	branch = main
 	ignore = dirty
 	update = none
+[submodule "lib/modules/mcux-devices-rt"]
+	path = lib/modules/mcux-devices-rt
+	url = https://github.com/nxp-mcuxpresso/mcux-devices-rt.git
+	branch = release/26.03.00
+	ignore = dirty
+	update = none
+[submodule "lib/modules/tinyusb"]
+	path = lib/modules/tinyusb
+	url = https://github.com/hathach/tinyusb.git
+	ignore = dirty
+	update = none

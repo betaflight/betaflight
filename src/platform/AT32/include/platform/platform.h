@@ -76,6 +76,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 /* AT32F4 we need to specify the ADC device for each channel */
 #define PLATFORM_TRAIT_ADC_DEVICE 1
+#define PLATFORM_TRAIT_ADC_INTERNAL_CALIBRATION 1
 #endif
 
 #define USE_USB_MSC
@@ -150,6 +151,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define UART_RX_BUFFER_ATTRIBUTE                    // NONE
 
 #define PLATFORM_TRAIT_RCC      1
+#define PLATFORM_TRAIT_CAMERA_CONTROL 1
 #define UART_TRAIT_AF_PIN       1
 #define UART_TRAIT_PINSWAP      1
 #define SERIAL_TRAIT_PIN_CONFIG 1
