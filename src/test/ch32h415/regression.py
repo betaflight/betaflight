@@ -953,9 +953,10 @@ int main(void) {
     if (isUsbVcpTransmitBufferEmpty(NULL)) return 3;
     UserTxBufPtrOut=5;
     if (isUsbVcpTransmitBufferEmpty(NULL)) return 4;
-    ep_tx_busy_flag=0; lastBuffsize=5;
+    /* Block completed but not yet retired by usbVcpKickTx(): still in the ring */
+    UserTxBufPtrOut=0; ep_tx_busy_flag=0; lastBuffsize=5;
     if (isUsbVcpTransmitBufferEmpty(NULL)) return 5;
-    lastBuffsize=0; vcpPort.txAt=1;
+    UserTxBufPtrOut=5; lastBuffsize=0; vcpPort.txAt=1;
     if (isUsbVcpTransmitBufferEmpty(NULL)) return 6;
     vcpPort.txAt=0;
     if (!isUsbVcpTransmitBufferEmpty(NULL)) return 7;
@@ -968,7 +969,16 @@ int main(void) {
     /* Progress restarts the timeout */
     UserTxBufPtrOut=50; nowMs+=10;
     if (isUsbVcpTransmitBufferEmpty(NULL)) return 10;
-    puts("disconnected, closed, buffered, queued, in-flight, ZLP, empty and stalled states");
+    /* Wrapping transfer: retiring the tail block and submitting the head must count as progress */
+    UserTxBufPtrOut=APP_TX_DATA_SIZE-128; UserTxBufPtrIn=256; lastBuffsize=128; ep_tx_busy_flag=1;
+    for (nowMs=1000; nowMs<1040; nowMs+=10) {
+        if (isUsbVcpTransmitBufferEmpty(NULL)) return 11;
+    }
+    UserTxBufPtrOut=0; lastBuffsize=256;
+    for (; nowMs<1040+USB_TIMEOUT; nowMs+=10) {
+        if (isUsbVcpTransmitBufferEmpty(NULL)) return 12;
+    }
+    puts("disconnected, closed, buffered, queued, in-flight, ZLP, empty, stalled and wrapping states");
 }
 ''')
 for mps in (64, 512):

@@ -310,9 +310,10 @@ static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
 
     uint32_t pending;
     ATOMIC_BLOCK(NVIC_PRIO_USB) {
+        // The ring still holds the in-flight block (lastBuffsize) until it completes, so don't add it again.
         const uint32_t ringUsed = (UserTxBufPtrIn - UserTxBufPtrOut) & (APP_TX_DATA_SIZE - 1);
-        // Any count that shrinks as data leaves will do; a pending ZLP or busy IN endpoint counts as one.
-        pending = vcpPort.txAt + ringUsed + lastBuffsize + ((usbZlpPending || ep_tx_busy_flag) ? 1 : 0);
+        // A pending ZLP or busy IN endpoint counts as one so we wait for the transfer to finish.
+        pending = vcpPort.txAt + ringUsed + ((usbZlpPending || ep_tx_busy_flag) ? 1 : 0);
     }
     return usbVcpTxDrained(&txDrain, pending, USB_TIMEOUT);
 }
