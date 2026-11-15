@@ -237,6 +237,8 @@ void uartReconfigure(uartPort_t *uartPort)
 
         if (uartPort->port.mode & MODE_RX) {
             __HAL_UART_EX_ENABLE_IT(pHandle, UART_EX_IT_ERBFI);
+        } else {
+            __HAL_UART_EX_DISABLE_IT(pHandle, UART_EX_IT_ERBFI);
         }
     }
     // TX interrupts are enabled when data is queued.
