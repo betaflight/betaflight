@@ -29,6 +29,7 @@
 #include "common/filter.h"
 #include "common/maths.h"
 #include "common/vector.h"
+#include "drivers/time.h"
 #include "fc/rc.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -169,6 +170,12 @@ static float altitudeKf;
 #define AP_HOVER_THROTTLE_CAPTURE_MIN 1100U
 #define AP_HOVER_THROTTLE_CAPTURE_MAX 1700U
 static uint16_t altHoldCapturedHoverPwm;
+static struct {
+    float targetAltitudeCm;
+    timeUs_t lastRequestUs;
+    bool requested;
+} landing;
+
 static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
 
@@ -379,6 +386,7 @@ void autopilotInit(void)
 
 void resetAltitudeControl(void)
 {
+    landing.requested = false;
     altitudeI = 0.0f;
     throttleOut = 0.0f;
 }
@@ -409,7 +417,7 @@ void autopilotClearAltHoldHoverThrottle(void)
     altHoldCapturedHoverPwm = 0;
 }
 
-void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targetAltitudeVelCmS, float velLimitCmS)
+static void runAltitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targetAltitudeVelCmS, float velLimitCmS)
 {
     const float taskIntervalS = US_TO_INTERVAL(taskIntervalUs);
     // PID controller on altitude error
@@ -477,6 +485,12 @@ void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targ
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 3, lrintf(targetAltitudeCm));  //!< Target Altitude [unit:cm]
 
 
+}
+
+void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targetAltitudeVelCmS, float velLimitCmS)
+{
+    landing.requested = false;
+    runAltitudeControl(targetAltitudeCm, taskIntervalUs, targetAltitudeVelCmS, velLimitCmS);
 }
 
 static void updatePositionHoldTarget(void)
@@ -1521,6 +1535,44 @@ bool positionControl(void)
 bool isBelowLandingAltitude(void)
 {
     return getAltitudeCmControl() < 100.0f * autopilotConfig()->landingAltitudeM;
+}
+
+#define LANDING_PROFILE_LOW_CM      1000.0f
+#define LANDING_PROFILE_HIGH_CM     5000.0f
+#define LANDING_REQUEST_TIMEOUT_US  100000
+
+static float landingDescentRateCmS(const landingProfile_t *profile, float altitudeCm)
+{
+    return scaleRangef(constrainf(altitudeCm, LANDING_PROFILE_LOW_CM, LANDING_PROFILE_HIGH_CM),
+                       LANDING_PROFILE_LOW_CM, LANDING_PROFILE_HIGH_CM,
+                       profile->touchdownRateCmS, profile->maxRateCmS);
+}
+
+bool autopilotIsLanding(void)
+{
+    if (landing.requested) {
+        const timeDelta_t requestAgeUs = cmpTimeUs(micros(), landing.lastRequestUs);
+        landing.requested = requestAgeUs >= 0 && requestAgeUs < LANDING_REQUEST_TIMEOUT_US;
+    }
+    return landing.requested;
+}
+
+float autopilotLandingTargetAltitudeCm(void)
+{
+    return landing.targetAltitudeCm;
+}
+
+void autopilotLand(const landingProfile_t *profile, float startAltitudeCm, timeUs_t taskIntervalUs)
+{
+    if (!autopilotIsLanding()) {
+        landing.targetAltitudeCm = startAltitudeCm;
+    }
+    landing.requested = true;
+    landing.lastRequestUs = micros();
+
+    const float rateCmS = landingDescentRateCmS(profile, landing.targetAltitudeCm);
+    landing.targetAltitudeCm -= rateCmS * US_TO_INTERVAL(taskIntervalUs);
+    runAltitudeControl(landing.targetAltitudeCm, taskIntervalUs, -rateCmS, profile->maxRateCmS);
 }
 
 float getAutopilotThrottle(void)
