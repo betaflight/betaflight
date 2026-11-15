@@ -200,7 +200,7 @@ void uartReconfigure(uartPort_t *uartPort)
             xDMA_SetCurrDataCounter(uartPort->txDMAResource, 0);
             USART_EnableDMA(USARTx, USART_DMAREQ_TX, ENABLE);
             uartPort->txDMAEmpty = true;
-        } else 
+        } else
 #endif
         {
             if (uartPort->txDMAResource) {

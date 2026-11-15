@@ -31,7 +31,7 @@ void     USBD_USER_Init(void);
 void     USBD_USER_DeviceReset (uint8_t speed);
 void     USBD_USER_DeviceConfigured (void);
 void     USBD_USER_DeviceConnected(void);
-void     USBD_USER_DeviceDisconnected(void); 
+void     USBD_USER_DeviceDisconnected(void);
 void     USBD_USER_DeviceSuspended(void);
 void     USBD_USER_DeviceResumed(void);
 

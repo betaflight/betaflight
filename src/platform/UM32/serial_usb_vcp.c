@@ -270,7 +270,7 @@ void usbVcpInit(void)
 
 serialPort_t *usbVcpOpen(void)
 {
-	vcpPort_t *s;
+    vcpPort_t *s;
 
     IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
     IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);

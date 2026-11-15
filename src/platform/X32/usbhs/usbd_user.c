@@ -21,7 +21,7 @@
 #include "usbd_user.h"
 
 
-USBD_User_cb_TypeDef USER_cb = 
+USBD_User_cb_TypeDef USER_cb =
 {
     USBD_USER_Init,
     USBD_USER_DeviceReset,

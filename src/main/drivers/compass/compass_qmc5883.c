@@ -331,12 +331,12 @@ bool qmc5883pDetect(magDev_t *magDev)
     // Read chip ID from register 0x00 and verify it's 0x80
     uint8_t chipId = 0;
     bool ack = busReadRegisterBuffer(dev, QMC5883P_REG_ID, &chipId, 1);
-    
+
     if (!ack) {
         // I2C communication failed during detection
         return false;
     }
-    
+
     if (chipId != QMC5883P_ID_VAL) {
         // Wrong chip ID - not a QMC5883P or communication error
         return false;

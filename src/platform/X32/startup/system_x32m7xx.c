@@ -77,14 +77,14 @@ void  __attribute__((noinline, section(".text.reset")))  __Self_SystemReset(void
 /**
  *\*\name   ConfigTcmSize.
  *\*\fun    Config TCM_SIZE
- *\*\param  tcmSizeValue 
+ *\*\param  tcmSizeValue
  *\*\    for X32M76x and X32M78x (The input parameters must be the following values):
- *\*\           0x00 :1024KB ITCM,  0   KB DTCM,  0   KB AXI_SRAM2/3,  128KB AXI SRMA1 
- *\*\           0x01 :896 KB ITCM,  128 KB DTCM,  0   KB AXI_SRAM2/3,  128KB AXI SRMA1 
- *\*\           0x02 :768 KB ITCM,  256 KB DTCM,  0   KB AXI_SRAM2/3,  128KB AXI SRMA1 
- *\*\           0x03 :640 KB ITCM,  384 KB DTCM,  0   KB AXI_SRAM2/3,  128KB AXI SRMA1 
- *\*\           0x04 :512 KB ITCM,  512 KB DTCM,  0   KB AXI_SRAM2/3,  128KB AXI SRMA1 
- *\*\           0x05 :384 KB ITCM,  640 KB DTCM,  0   KB AXI_SRAM2/3,  128KB AXI SRMA1 
+ *\*\           0x00 :1024KB ITCM,  0   KB DTCM,  0   KB AXI_SRAM2/3,  128KB AXI SRMA1
+ *\*\           0x01 :896 KB ITCM,  128 KB DTCM,  0   KB AXI_SRAM2/3,  128KB AXI SRMA1
+ *\*\           0x02 :768 KB ITCM,  256 KB DTCM,  0   KB AXI_SRAM2/3,  128KB AXI SRMA1
+ *\*\           0x03 :640 KB ITCM,  384 KB DTCM,  0   KB AXI_SRAM2/3,  128KB AXI SRMA1
+ *\*\           0x04 :512 KB ITCM,  512 KB DTCM,  0   KB AXI_SRAM2/3,  128KB AXI SRMA1
+ *\*\           0x05 :384 KB ITCM,  640 KB DTCM,  0   KB AXI_SRAM2/3,  128KB AXI SRMA1
  *\*\           0x06 :256 KB ITCM,  768 KB DTCM,  0   KB AXI_SRAM2/3,  128KB AXI SRMA1
  *\*\           0x07 :128 KB ITCM,  896 KB DTCM,  0   KB AXI_SRAM2/3,  128KB AXI SRMA1
  *\*\           0x08 :0   KB ITCM,  1024KB DTCM,  0   KB AXI_SRAM2/3,  128KB AXI SRMA1
@@ -140,8 +140,8 @@ void  __attribute__((noinline, section(".text.reset")))  __Self_SystemReset(void
  *\*\           0x2A :128 KB ITCM,  0   KB DTCM,  512 KB AXI_SRAM2/3,  128KB AXI SRMA1
  *\*\           0x2B :0   KB ITCM,  128 KB DTCM,  512 KB AXI_SRAM2/3,  128KB AXI SRMA1
  *\*\           0x2C~2F :0KB ITCM,  0   KB DTCM,  640 KB AXI_SRAM2/3,  128KB AXI SRMA1
- *\*\return none  
- */               
+ *\*\return none
+ */
 void __attribute__((noinline, section(".text.reset"))) ConfigTcmSize(uint32_t tcmSizeValue)
 {
     uint32_t requestValue = tcmSizeValue & OTPC_CRLD2_TCMSZ;
@@ -159,9 +159,9 @@ void __attribute__((noinline, section(".text.reset"))) ConfigTcmSize(uint32_t tc
 *\*\name    PWR_ConfigSupply.
 *\*\fun     Configure the PWR supply.
 *\*\param   SupplySource (The input parameters must be the following values):
-*\*\          - PWR_LDO_SUPPLY               :External LDO  SUPPLY 
-*\*\          - PWR_DIRECT_SMPS_SUPPLY       :DCDC SUPPLY 
-*\*\          - PWR_EXTERNAL_SOURCE_SUPPLY   :External VCAP SUPPLY 
+*\*\          - PWR_LDO_SUPPLY               :External LDO  SUPPLY
+*\*\          - PWR_DIRECT_SMPS_SUPPLY       :DCDC SUPPLY
+*\*\          - PWR_EXTERNAL_SOURCE_SUPPLY   :External VCAP SUPPLY
 *\*\return  none
 **/
 static void __attribute__((noinline, section(".text.reset"))) PWR_ConfigSupply(uint32_t SupplySource)
@@ -175,7 +175,7 @@ static void __attribute__((noinline, section(".text.reset"))) PWR_ConfigSupply(u
     tempreg |= SupplySource;
     /* Set the power supply configuration */
     PWR->SYSCTRL4 = tempreg;
-    
+
     /* Config NRST Filter Function */
     tempreg = PWR->SYSCTRL1;
     tempreg &= ~(PWR_RST_AGFBPEN_MAST | PWR_RST_DGF_CNT_MAST | PWR_RST_DGFBPEN_MAST);
@@ -190,7 +190,7 @@ static void __attribute__((noinline, section(".text.reset"))) PWR_ConfigSupply(u
  *\*\return none
  */
 void __attribute__((section(".text.reset"))) SystemInit (void)
-{    
+{
 
   /* FPU settings ------------------------------------------------------------*/
   #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
@@ -198,11 +198,11 @@ void __attribute__((section(".text.reset"))) SystemInit (void)
   #endif
 
     /*SEVONPEND enabled so that an interrupt coming from the CPU(n) interrupt signal is
-     detectable by the CPU after a WFI/WFE instruction.*/ 
+     detectable by the CPU after a WFI/WFE instruction.*/
  SCB->SCR |= SCB_SCR_SEVONPEND_Msk;
 
-#ifdef CORE_CM7 
-  
+#ifdef CORE_CM7
+
 #endif /* CORE_CM7*/
 
 #ifdef CORE_CM4
@@ -212,7 +212,7 @@ void __attribute__((section(".text.reset"))) SystemInit (void)
   SCB->VTOR = 0x30000000; /* Vector Table Relocation in Internal SRAM */
 #else
   SCB->VTOR = FLASH_BANK2_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
-#endif  
+#endif
 
 #else
 #ifdef CORE_CM7
@@ -233,7 +233,7 @@ void __attribute__((section(".text.reset"))) SystemInit (void)
 
 #else
 #error Please #define CORE_CM4 or CORE_CM7
-#endif                       
+#endif
 #endif
 
 }

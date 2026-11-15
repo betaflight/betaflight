@@ -310,7 +310,7 @@ bool sendMspReply(const uint8_t payloadSizeMax, mspResponseFnPtr responseFn)
             sbufWriteU16(payloadBuf, responsePacket.cmd);    // command is 16 bit in MSPv2
             sbufWriteU16(payloadBuf, (uint16_t)size);        // size is 16 bit in MSPv2
         }
-        headerSent = true;  
+        headerSent = true;
     } else {
         sbufWriteU8(payloadBuf, (seq++ & MSP_STATUS_SEQUENCE_MASK) | (lastRequestVersion << MSP_STATUS_VERSION_SHIFT)); // header without 'start' flag
     }

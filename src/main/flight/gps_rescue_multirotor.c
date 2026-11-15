@@ -612,7 +612,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
 
     case RESCUE_DESCENT:
         updateVelocityStartupAttenuator();
-        updateTargetSpeed(); 
+        updateTargetSpeed();
         controlVelocity();
         if (isBelowLandingAltitude()) {
             rescueState.phase = RESCUE_LANDING;

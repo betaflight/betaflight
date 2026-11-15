@@ -178,8 +178,8 @@ HAL_StatusTypeDef QSPI_QuadDisable(QSPI_HandleTypeDef *hqspi)
  */
 uint32_t QSPI_ReadDeviceId(QSPI_HandleTypeDef *hqspi)
 {
-	uint32_t device_id;
-	uint16_t temp16;
+    uint32_t device_id;
+    uint16_t temp16;
 
   hqspi->Command.Instruction      = READ_DEVICE_ID; //0x90
   hqspi->Command.AddressEn        = QSPI_ADDREN_ENABLE;
@@ -190,12 +190,12 @@ uint32_t QSPI_ReadDeviceId(QSPI_HandleTypeDef *hqspi)
 
   HAL_QSPI_Command(hqspi, (uint32_t)NULL, (uint32_t)NULL, 5000);
 
-	temp16 = __HAL_QSPI_GET_FCRLR(hqspi);
+    temp16 = __HAL_QSPI_GET_FCRLR(hqspi);
 
-  /* The size end converts high and low bytes	*/
-	device_id = (((temp16 & 0xFF)<<8) | (temp16>>8));
+  /* The size end converts high and low bytes */
+    device_id = (((temp16 & 0xFF)<<8) | (temp16>>8));
 
-	return device_id;
+    return device_id;
 }
 
 /**
@@ -206,9 +206,9 @@ uint32_t QSPI_ReadDeviceId(QSPI_HandleTypeDef *hqspi)
 //uint32_t QSPI_ReadUniqueId(QSPI_HandleTypeDef *hqspi)
 void QSPI_ReadUniqueId(QSPI_HandleTypeDef *hqspi, uint32_t arr[2])
 {
-	// uint32_t device_id;
-	uint32_t temp32_low, temp32_High;
-	uint32_t reverse_FCRLR_reg, reverse_FCRHR_reg;
+    // uint32_t device_id;
+    uint32_t temp32_low, temp32_High;
+    uint32_t reverse_FCRLR_reg, reverse_FCRHR_reg;
 
   hqspi->Command.Instruction      = CMD_UNIQUEID; // 0x4B
   hqspi->Command.AddressEn        = QSPI_ADDREN_ENABLE;
@@ -221,20 +221,20 @@ void QSPI_ReadUniqueId(QSPI_HandleTypeDef *hqspi, uint32_t arr[2])
   HAL_QSPI_Command(hqspi, (uint32_t)NULL, (uint32_t)NULL, 5000);
 
 
-	temp32_low = __HAL_QSPI_GET_FCRLR(hqspi);
-	temp32_High = __HAL_QSPI_GET_FCRHR(hqspi);
+    temp32_low = __HAL_QSPI_GET_FCRLR(hqspi);
+    temp32_High = __HAL_QSPI_GET_FCRHR(hqspi);
 
-	reverse_FCRLR_reg = (((temp32_low & 0xFF)<<24) | ((temp32_low & 0xFF00)<<8)
-					| ((temp32_low & 0xFF0000)>>8) | ((temp32_low & 0xFF000000)>>24));
+    reverse_FCRLR_reg = (((temp32_low & 0xFF)<<24) | ((temp32_low & 0xFF00)<<8)
+                    | ((temp32_low & 0xFF0000)>>8) | ((temp32_low & 0xFF000000)>>24));
 
-	reverse_FCRHR_reg = (((temp32_High & 0xFF)<<24) | ((temp32_High & 0xFF00)<<8)
-					| ((temp32_High & 0xFF0000)>>8) | ((temp32_High & 0xFF000000)>>24));
+    reverse_FCRHR_reg = (((temp32_High & 0xFF)<<24) | ((temp32_High & 0xFF00)<<8)
+                    | ((temp32_High & 0xFF0000)>>8) | ((temp32_High & 0xFF000000)>>24));
 
-	arr[0] = reverse_FCRLR_reg;
-	arr[1] = reverse_FCRHR_reg;
+    arr[0] = reverse_FCRLR_reg;
+    arr[1] = reverse_FCRHR_reg;
 
-	// device_id = reverse_FCRHR_reg;
-	// return device_id;
+    // device_id = reverse_FCRHR_reg;
+    // return device_id;
 }
 
 HAL_StatusTypeDef QSPI_EraseSector(QSPI_HandleTypeDef *hqspi, uint32_t addr)

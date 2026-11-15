@@ -39,21 +39,21 @@ void RCC_ClockCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
 
 #define NOSUFFIX // Empty
 
-#define __HAL_RCC_CLK_ENABLE(bus, suffix, enbit)   do {      		\
-        __IO uint32_t tmpreg;                                		\
-				__HAL_RCM_UNLOCK_REGISTER();														\
-        SET_BIT(RCM->bus ## CKENR ## suffix, enbit);          	\
-				__HAL_RCM_LOCK_REGISTER();															\
-        /* Delay after an RCC peripheral clock enabling */   		\
-        tmpreg = READ_BIT(RCM->bus ## CKENR ## suffix, enbit); 	\
-        UNUSED(tmpreg);                                      		\
+#define __HAL_RCC_CLK_ENABLE(bus, suffix, enbit)   do {              \
+        __IO uint32_t tmpreg;                                     \
+                __HAL_RCM_UNLOCK_REGISTER();                                                        \
+        SET_BIT(RCM->bus ## CKENR ## suffix, enbit);           \
+                __HAL_RCM_LOCK_REGISTER();                                                          \
+        /* Delay after an RCC peripheral clock enabling */          \
+        tmpreg = READ_BIT(RCM->bus ## CKENR ## suffix, enbit);   \
+        UNUSED(tmpreg);                                             \
     } while(0)
 
-#define __HAL_RCC_CLK_DISABLE(bus, suffix, enbit) do {      		\
-				__HAL_RCM_UNLOCK_REGISTER();														\
-				CLEAR_BIT(RCM->bus ## CKENR ## suffix, enbit);          \
-				__HAL_RCM_LOCK_REGISTER();															\
-		} while(0)
+#define __HAL_RCC_CLK_DISABLE(bus, suffix, enbit) do {             \
+                __HAL_RCM_UNLOCK_REGISTER();                                                        \
+                CLEAR_BIT(RCM->bus ## CKENR ## suffix, enbit);          \
+                __HAL_RCM_LOCK_REGISTER();                                                          \
+        } while(0)
 
 #define __HAL_RCC_CLK(bus, suffix, enbit, newState) \
     if (newState == ENABLE) {                       \
@@ -104,17 +104,17 @@ void RCC_ResetCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
 
 // Peripheral reset control relies on RSTR bits are identical to ENR bits where applicable
 
-#define __HAL_RCC_FORCE_RESET(bus, suffix, enbit) do {      				\
-											__HAL_RCM_UNLOCK_REGISTER();									\
-											SET_BIT(RCM->bus ## RSTR ## suffix, enbit);		\
-											__HAL_RCM_LOCK_REGISTER();										\
-										} while(0)
+#define __HAL_RCC_FORCE_RESET(bus, suffix, enbit) do {                     \
+                                            __HAL_RCM_UNLOCK_REGISTER();                                    \
+                                            SET_BIT(RCM->bus ## RSTR ## suffix, enbit);        \
+                                            __HAL_RCM_LOCK_REGISTER();                                      \
+                                        } while(0)
 
-#define __HAL_RCC_RELEASE_RESET(bus, suffix, enbit) do {      			\
-											__HAL_RCM_UNLOCK_REGISTER();									\
-											CLEAR_BIT(RCM->bus ## RSTR ## suffix,enbit);	\
-											__HAL_RCM_LOCK_REGISTER();										\
-										} while(0)
+#define __HAL_RCC_RELEASE_RESET(bus, suffix, enbit) do {               \
+                                            __HAL_RCM_UNLOCK_REGISTER();                                    \
+                                            CLEAR_BIT(RCM->bus ## RSTR ## suffix,enbit);    \
+                                            __HAL_RCM_LOCK_REGISTER();                                      \
+                                        } while(0)
 
 #define __HAL_RCC_RESET(bus, suffix, enbit, NewState) \
     if (NewState == ENABLE) {                         \

@@ -252,17 +252,17 @@ static void systemUniqueIdInit(void)
 *\*\name    SetSysClockToPLL1.
 *\*\fun     Selects PLL as sys_clk source and Configure the M7 clock is 400MHz,
 *\*\       M4, AXI, AHB(1,2,5,6,9) clock is 200MHz,
-*\*\       APB(1,2,5,6) clock is 100MHz. 
+*\*\       APB(1,2,5,6) clock is 100MHz.
 *\*\param   PLL_source(PLL entry clock source):
-*\*\   		  - RCC_PLL_SRC_HSI     
-*\*\   		  - RCC_PLL_SRC_HSE
-*\*\   		  - RCC_PLL_SRC_MSI   
+*\*\          - RCC_PLL_SRC_HSI
+*\*\          - RCC_PLL_SRC_HSE
+*\*\          - RCC_PLL_SRC_MSI
 *\*\param   sysclk_freq(sys_clk frequency):
 *\*\         200000000 ~ 600000000 (Hz)
 *\*\return  ErrorStatus:
- *\*\         - SUCCESS    
- *\*\         - ERROR   
-*\*\note    M7 from PLL1A, AXI from PLL1A, M4 from PLL1A.  
+ *\*\         - SUCCESS
+ *\*\         - ERROR
+*\*\note    M7 from PLL1A, AXI from PLL1A, M4 from PLL1A.
 **/
 ErrorStatus SetSysClockToPLL1(uint32_t PLL_source, uint64_t sysclk_freq)
 {
@@ -270,9 +270,9 @@ ErrorStatus SetSysClockToPLL1(uint32_t PLL_source, uint64_t sysclk_freq)
     uint64_t input_freq, pll_freq;
     uint32_t PLL1A_divider;
     uint32_t timeout_value = 0xFFFFFFFF;
-    
+
     RCC_DeInit();
-    
+
     if(PLL_source == RCC_PLL_SRC_HSE)
     {
         input_freq = 25000000;
@@ -281,7 +281,7 @@ ErrorStatus SetSysClockToPLL1(uint32_t PLL_source, uint64_t sysclk_freq)
 
         /* Wait till HSE is ready */
         ClockStatus = RCC_WaitHseStable();
-           
+
     }
     else if(PLL_source == RCC_PLL_SRC_MSI)
     {
@@ -291,7 +291,7 @@ ErrorStatus SetSysClockToPLL1(uint32_t PLL_source, uint64_t sysclk_freq)
 
         /* Wait till MSI is ready */
         ClockStatus = RCC_WaitMsiStable();
-           
+
     }   else
     {
         input_freq = HSI_VALUE;
@@ -301,7 +301,7 @@ ErrorStatus SetSysClockToPLL1(uint32_t PLL_source, uint64_t sysclk_freq)
         /* Wait till HSI is ready */
         ClockStatus = RCC_WaitHsiStable();
     }
-    
+
     if(ClockStatus == SUCCESS)
     {
         /* Configure sys_div_clk is sys_clk(PLL1A) = M7 clock*/
@@ -311,7 +311,7 @@ ErrorStatus SetSysClockToPLL1(uint32_t PLL_source, uint64_t sysclk_freq)
         /* Configure AXI clock is sys_div_clk/2 = AHB6*/
         RCC_ConfigAXIclkDivider(RCC_AXICLK_DIV2);
         RCC_ConfigAXIHyperDivider(RCC_AXICLK_HYP_DIV2);
-        
+
         // systick_delay_us(1);
         if(sysclk_freq >= 400000000)
         {
@@ -328,7 +328,7 @@ ErrorStatus SetSysClockToPLL1(uint32_t PLL_source, uint64_t sysclk_freq)
             pll_freq = sysclk_freq*3;
             PLL1A_divider = RCC_PLLA_DIV3;
         }
-        
+
         if(sysclk_freq <= 300000000)
         {
             /* Configure APB clock is AHB/1  */
@@ -339,15 +339,15 @@ ErrorStatus SetSysClockToPLL1(uint32_t PLL_source, uint64_t sysclk_freq)
             /* Configure APB clock is AHB/2  */
             RCC_ConfigAPBclkDivider(RCC_APB1CLK_DIV2,RCC_APB2CLK_DIV2,RCC_APB5CLK_DIV2,RCC_APB6CLK_DIV2);
         }
-        
+
         /* configure PLL1 source and frequency */
         RCC_ConfigPll1(PLL_source,input_freq,pll_freq,ENABLE);
-        
+
         // systick_delay_us(1);
-        
+
         /* configure PLL1A is PLL1 */
         RCC_ConfigPLL1ADivider(PLL1A_divider);
-        
+
         /* configure sys_clk source is PLL1A */
         RCC_ConfigSysclk(RCC_SYSCLK_SRC_PLL1A);
 
@@ -367,7 +367,7 @@ ErrorStatus SetSysClockToPLL1(uint32_t PLL_source, uint64_t sysclk_freq)
         return ERROR;
     }
     return SUCCESS;
-    
+
 }
 
 static void CacheInit(void)
@@ -389,14 +389,14 @@ static void MPU_Config(void)
     MPU_InitStruct.Enable           = MPU_REGION_ENABLE;
     MPU_InitStruct.BaseAddress      = 0x15000000;
     MPU_InitStruct.Size             = MPU_REGION_SIZE_2MB;
-    MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;  
+    MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
     MPU_InitStruct.IsBufferable     = MPU_ACCESS_NOT_BUFFERABLE;
     MPU_InitStruct.IsCacheable      = MPU_ACCESS_NOT_CACHEABLE;
     MPU_InitStruct.IsShareable      = MPU_ACCESS_NOT_SHAREABLE;
     MPU_InitStruct.Number           = MPU_REGION_NUMBER0;
     MPU_InitStruct.TypeExtField     = MPU_TEX_LEVEL1;
-    MPU_InitStruct.SubRegionDisable = 0x00; 
-    MPU_InitStruct.DisableExec      = MPU_INSTRUCTION_ACCESS_ENABLE; 
+    MPU_InitStruct.SubRegionDisable = 0x00;
+    MPU_InitStruct.DisableExec      = MPU_INSTRUCTION_ACCESS_ENABLE;
     MPU_ConfigRegion(&MPU_InitStruct);
 
     /* Region 0: AXI SRAM 0x24000000 128KB  Normal, WB-WA, Shareable
@@ -447,7 +447,7 @@ static void MPU_Config(void)
 void systemInit(void)
 {
     ErrorStatus status;
-	MPU_Config();
+    MPU_Config();
     CacheInit();
     persistentObjectInit();
     systemProcessResetReason();
@@ -473,7 +473,7 @@ void systemInit(void)
     extern uint8_t isr_vector_table_base;
     SCB->VTOR = (uint32_t)&isr_vector_table_base;
 #endif
-    
+
     RCC_ClearResetFlag();
 
     enableGPIOPowerUsageAndNoiseReductions();

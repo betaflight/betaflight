@@ -112,7 +112,7 @@ const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__PF7,  ADC_DEVICES_3,    ADC_CH_3   },
     { DEFIO_TAG_E__PF8,  ADC_DEVICES_3,    ADC_CH_7   },
     { DEFIO_TAG_E__PF9,  ADC_DEVICES_3,    ADC_CH_2   },
-    { DEFIO_TAG_E__PF10, ADC_DEVICES_3,    ADC_CH_6   }, 
+    { DEFIO_TAG_E__PF10, ADC_DEVICES_3,    ADC_CH_6   },
     { DEFIO_TAG_E__PF11, ADC_DEVICES_1,    ADC_CH_2   },
     { DEFIO_TAG_E__PF12, ADC_DEVICES_1,    ADC_CH_6   },
     { DEFIO_TAG_E__PJ0,  ADC_DEVICES_2,    ADC_CH_16  },
@@ -147,7 +147,7 @@ static void adcInitDevice(const adcDevice_t *adcdev, const int channelCount)
         RCC_EnableAHB1PeriphClk4(RCC_AHB1_PERIPHEN_M7_ADC3SYS | RCC_AHB1_PERIPHEN_M7_ADC3BUS, ENABLE);
         ADC_ConfigClk(ADC3, ADC_CTRL3_CKMOD_AHB, RCC_ADCPLLCLK_SRC_PLL1B, RCC_ADCSYSCLK_DIV20);
     }
-    
+
 
     ADC_InitStruct(&ADC_InitStructure);   // not currently needed, but insurance against the struct being changed in the future
 
@@ -166,12 +166,12 @@ static void adcInitDevice(const adcDevice_t *adcdev, const int channelCount)
         #ifdef USE_ADC_INTERNAL
             ADC_InitStructure.MultiChEn             = ENABLE;
         #else
-            ADC_InitStructure.MultiChEn            = channelCount > 1 ? ENABLE : DISABLE; 
+            ADC_InitStructure.MultiChEn            = channelCount > 1 ? ENABLE : DISABLE;
         #endif
     }
     else
     {
-        ADC_InitStructure.MultiChEn            = channelCount > 1 ? ENABLE : DISABLE; 
+        ADC_InitStructure.MultiChEn            = channelCount > 1 ? ENABLE : DISABLE;
     }
 
     ADC_Init(adcdev->ADCx, &ADC_InitStructure);
@@ -228,7 +228,7 @@ static void setScalingFactors(void)
     else
     {
         adcTSCAL1 = (TEMPSENSOR_CAL1_V * 4095.0f) / 3.3f;
-    }   
+    }
 
     // TEMPSENSOR_SLOPE is given in mv/C.
     // adcTSSlopeK has the opposite sign compared to the AT32 standard because adcInternalComputeTemperature subtracts
@@ -385,8 +385,8 @@ void adcInit(const adcConfig_t *config)
     }   // for each channel
 
     ADC_DeInit(ADC1);    // reset all ADC instances
-    ADC_DeInit(ADC2); 
-    ADC_DeInit(ADC3); 
+    ADC_DeInit(ADC2);
+    ADC_DeInit(ADC3);
     RCC_EnableAHB5PeriphClk2(RCC_AHB5_PERIPHEN_M7_AFIO, ENABLE);
     // Enable the clock (power up the circuit)
     // This has to be done before calling adc_common_config for reasons that are unclear
@@ -482,7 +482,7 @@ void adcInit(const adcConfig_t *config)
                         /**nop */
                     }
                 }
-                
+
                 adcOperatingConfig[adcChan].dmaIndex = dmaBufferIndex++;
                 ADC_ConfigRegularChannel(adc->ADCx,
                     adcOperatingConfig[adcChan].adcChannel, rank++,
@@ -513,7 +513,7 @@ void adcGetChannelValues(void)
 {
 #ifdef __DCACHE_PRESENT
     X32_INVALIDATE_DCACHE_BY_ADDR((uint32_t*)adcConversionBuffer, ADC_BUF_BYTES);
-#endif  
+#endif
     for (unsigned i = 0; i < ADC_EXTERNAL_COUNT; i++) {
         if (adcOperatingConfig[i].enabled) {
             adcValues[adcOperatingConfig[i].dmaIndex] = adcConversionBuffer[adcOperatingConfig[i].dmaIndex];
@@ -546,7 +546,7 @@ uint16_t adcInternalRead(adcSource_e source)
 {
     switch (source) {
     case ADC_VREFINT:
-    case ADC_TEMPSENSOR: 
+    case ADC_TEMPSENSOR:
 #if ADC_INTERNAL_VBAT4_ENABLED
     case ADC_VBAT4:
 #endif

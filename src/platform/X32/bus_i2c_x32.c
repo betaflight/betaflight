@@ -373,7 +373,7 @@ bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len
     state->busy = 1;
     state->error = false;
 
-    i2c_ev_state[device].subaddress_sent = 1;// need tx reg address 
+    i2c_ev_state[device].subaddress_sent = 1;// need tx reg address
     i2c_ev_state[device].index = 0;
     i2c_ev_state[device].final_stop = 0;
 
@@ -389,12 +389,12 @@ bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len
         I2C_ConfigSendAddress(I2Cx, state->addr, I2C_DIRECTION_SEND);
         /* configure number of bytes to be transferred */
         I2C_SetTransferByteNumber(I2Cx, (state->bytes + 1));
-        // while(I2C_GetFlag(I2Cx, I2C_FLAG_BUSY)) 
+        // while(I2C_GetFlag(I2Cx, I2C_FLAG_BUSY))
         // {
         // }
         I2C_GenerateStart(I2Cx, ENABLE);                            // send the start for the new job
     }
-    
+
     return true;
 }
 
@@ -461,7 +461,7 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len,
     state->busy = 1;
     state->error = false;
 
-    i2c_ev_state[device].subaddress_sent = 1;// need tx reg address 
+    i2c_ev_state[device].subaddress_sent = 1;// need tx reg address
     i2c_ev_state[device].index = 0;
     i2c_ev_state[device].final_stop = 0;
 
@@ -476,7 +476,7 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len,
         I2C_ConfigSendAddress(I2Cx, state->addr, I2C_DIRECTION_SEND);
         /* configure number of bytes to be transferred */
         I2C_SetTransferByteNumber(I2Cx, 1);
-        // while(I2C_GetFlag(I2Cx, I2C_FLAG_BUSY)) 
+        // while(I2C_GetFlag(I2Cx, I2C_FLAG_BUSY))
         // {
         // }
         I2C_GenerateStart(I2Cx, ENABLE);                            // send the start for the new job
@@ -501,37 +501,37 @@ static void i2c_er_handler(i2cDevice_e device)
     if (SR1Register & (I2C_FLAG_BSER | I2C_FLAG_ABLO | I2C_FLAG_OVF | I2C_FLAG_CRCERR | I2C_FLAG_TMOUT | I2C_FLAG_ALRT)) // an error
         state->error = true;
 
-    if(I2C_GetFlag(I2Cx, I2C_FLAG_BSER)) 
+    if(I2C_GetFlag(I2Cx, I2C_FLAG_BSER))
     {
         I2C_ClrFlag(I2Cx, I2C_FLAG_BSER);
     }
 
     /* arbitration lost */
-    if(I2C_GetFlag(I2Cx, I2C_FLAG_ABLO)) 
+    if(I2C_GetFlag(I2Cx, I2C_FLAG_ABLO))
     {
         I2C_ClrFlag(I2Cx, I2C_FLAG_ABLO);
     }
 
     /* over-run or under-run when SCL stretch is disabled */
-    if(I2C_GetFlag(I2Cx, I2C_FLAG_OVF)) 
+    if(I2C_GetFlag(I2Cx, I2C_FLAG_OVF))
     {
         I2C_ClrFlag(I2Cx, I2C_FLAG_OVF);
     }
 
     /* PEC error */
-    if(I2C_GetFlag(I2Cx, I2C_FLAG_CRCERR)) 
+    if(I2C_GetFlag(I2Cx, I2C_FLAG_CRCERR))
     {
         I2C_ClrFlag(I2Cx, I2C_FLAG_CRCERR);
     }
 
     /* timeout error */
-    if(I2C_GetFlag(I2Cx, I2C_FLAG_TMOUT)) 
+    if(I2C_GetFlag(I2Cx, I2C_FLAG_TMOUT))
     {
         I2C_ClrFlag(I2Cx, I2C_FLAG_TMOUT);
     }
 
     /* SMBus alert */
-    if(I2C_GetFlag(I2Cx, I2C_FLAG_ALRT)) 
+    if(I2C_GetFlag(I2Cx, I2C_FLAG_ALRT))
     {
         I2C_ClrFlag(I2Cx, I2C_FLAG_ALRT);
     }
@@ -547,54 +547,54 @@ static void i2c_ev_handler(i2cDevice_e device)
     i2cEvState_t *ev_state = &i2c_ev_state[device];
     i2cState_t *state = &i2cDevice[device].state;
 
-    uint32_t SReg_1 = I2Cx->STSINT;                                                
+    uint32_t SReg_1 = I2Cx->STSINT;
 
-    if (SReg_1 & I2C_FLAG_STOPF) 
+    if (SReg_1 & I2C_FLAG_STOPF)
     {                                  // Byte transmitted EV8 / EV8_1
         /* clear STOP flag */
         I2C_ClrFlag(I2Cx, I2C_FLAG_STOPF);
         state->busy = 0;
     }
-    else if (SReg_1 & I2C_FLAG_RDAVL) 
+    else if (SReg_1 & I2C_FLAG_RDAVL)
     {                                 // Byte received - EV7
         state->read_p[ev_state->index++] = I2C_RecvData(I2Cx);
-        if (ev_state->index == state->bytes) 
+        if (ev_state->index == state->bytes)
         {
             ev_state->final_stop = 1;
         }
     }
-    else if (SReg_1 & I2C_FLAG_WRAVL) 
-    {                                  
-        if (ev_state->subaddress_sent == 1) 
-        {  
-            I2C_SendData(I2Cx, state->reg);                                            
+    else if (SReg_1 & I2C_FLAG_WRAVL)
+    {
+        if (ev_state->subaddress_sent == 1)
+        {
+            I2C_SendData(I2Cx, state->reg);
             if (state->writing == 1)
             {
                 ev_state->subaddress_sent = 0;
             }
         }
-        else 
+        else
         {
             I2C_SendData(I2Cx, state->write_p[ev_state->index++]);
         }
     }
-    else if (SReg_1 & I2C_FLAG_TFC) 
-    {                                  
+    else if (SReg_1 & I2C_FLAG_TFC)
+    {
         if ((ev_state->subaddress_sent == 1) &&(state->reading == 1))
-        {  
+        {
             ev_state->subaddress_sent = 0;
             ev_state->final_stop = 0;
             I2C_ConfigSendAddress(I2Cx, state->addr, I2C_DIRECTION_RECV);
             /* configure number of bytes to be transferred */
             I2C_SetTransferByteNumber(I2Cx, state->bytes);
-            I2C_GenerateStart(I2Cx, ENABLE); 
+            I2C_GenerateStart(I2Cx, ENABLE);
         }
         else if((ev_state->final_stop ==1) || (state->writing == 1))
         {
             I2C_GenerateStop(I2Cx,ENABLE);
         }
     }
-    else if (SReg_1 & I2C_FLAG_NAKF) 
+    else if (SReg_1 & I2C_FLAG_NAKF)
     {                                  // Byte transmitted EV8 / EV8_1
         /* clear NACK flag */
         I2C_ClrFlag(I2Cx, I2C_FLAG_NAKF);
@@ -631,7 +631,7 @@ void i2cInit(i2cDevice_e device)
     IOInit(sda, OWNER_I2C_SDA, RESOURCE_INDEX(device));
 
     i2cClockEnable(I2Cx);
-    
+
     I2C_ConfigInt(I2Cx, I2C_INT_ERR|I2C_INT_STOP|I2C_INT_RDR|I2C_INT_WDR|I2C_INT_TFC, ENABLE);
 
     // i2cUnstick(scl, sda);
@@ -640,7 +640,7 @@ void i2cInit(i2cDevice_e device)
     IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sclAF);
     IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sdaAF);
 
-    
+
     I2C_InitStruct(&I2C_InitStructure);
     I2C_InitStructure.Timing           = i2cClockTIMINGR(RCC_ClocksTmp.SysBusDivClkFreq / I2C_CLOCK_DIVIDER, pDev->clockSpeed, 0);
     I2C_InitStructure.HSTiming         = 0x0;

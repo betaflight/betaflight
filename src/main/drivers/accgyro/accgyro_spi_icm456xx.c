@@ -116,7 +116,7 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_PWR_MGMT0                      0x10
 
 // Register map IPREG_TOP1 (for future use)
-// Note: SREG_CTRL register provides endian selection capability. 
+// Note: SREG_CTRL register provides endian selection capability.
 // Currently not utilized as UI interface reads are in device's native endianness.
 // Kept as reference for potential future optimization.
 #define ICM456XX_RA_SREG_CTRL                   0xA267 // To access: 0xA200 + 0x67

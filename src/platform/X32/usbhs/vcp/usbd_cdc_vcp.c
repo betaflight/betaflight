@@ -707,7 +707,7 @@ uint8_t usbIsConfigured(void)
  */
 uint8_t usbIsConnected(void)
 {
-    return ((bDeviceConnectState != 0U) && ((USB_dev.dev.device_status != USB_DEFAULT 
+    return ((bDeviceConnectState != 0U) && ((USB_dev.dev.device_status != USB_DEFAULT
                                           && USB_dev.dev.device_status != USB_SUSPENDED)));
 }
 

@@ -94,12 +94,12 @@ uint8_t mscStart(void)
         switch (sdcardConfig()->mode) {
 #ifdef USE_SDCARD_SDIO
         case SDCARD_MODE_SDIO:
-			pdev = &USBD_MSC_MICRO_SDIO_fops;
+            pdev = &USBD_MSC_MICRO_SDIO_fops;
             break;
 #endif
 #ifdef USE_SDCARD_SPI
         case SDCARD_MODE_SPI:
-			pdev = &USBD_MSC_MICRO_SD_SPI_fops;
+            pdev = &USBD_MSC_MICRO_SD_SPI_fops;
             break;
 #endif
         default:
@@ -110,7 +110,7 @@ uint8_t mscStart(void)
 
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
-					pdev = &USBD_MSC_EMFAT_fops;
+                    pdev = &USBD_MSC_EMFAT_fops;
         break;
 #endif
 

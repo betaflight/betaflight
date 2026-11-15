@@ -299,7 +299,7 @@ bool renderCompassBarUntil(uint32_t limit_micros)
                 bearingToString(str, bearing, true);
 #else
                 bearingToString(str, bearing, false);
-#endif                
+#endif
                 strLength = strlen(str);
                 sOffset = (strLength * CHAR_ADVANCE) / 2;
             }
