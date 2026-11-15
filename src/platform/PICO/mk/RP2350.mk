@@ -394,6 +394,7 @@ PICO_STDIO_USB_FLAGS = \
             -DLIB_PICO_PRINTF_PICO=1  \
             -DLIB_PICO_STDIO=1  \
             -DLIB_PICO_STDIO_USB=1 \
+            -DLIB_TINYUSB_DEVICE=1 \
             -DCFG_TUSB_DEBUG=0  \
             -DCFG_TUSB_MCU=OPT_MCU_RP2040  \
             -DCFG_TUSB_OS=OPT_OS_NONE  \
