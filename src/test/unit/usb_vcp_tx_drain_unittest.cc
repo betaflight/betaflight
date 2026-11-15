@@ -98,3 +98,17 @@ TEST_F(UsbVcpTxDrainTest, TimeoutDoesNotCarryOverToNextWait)
     EXPECT_FALSE(usbVcpTxDrained(&drain, 23, TIMEOUT_MS));
     EXPECT_GT(pollUntilDrained(23), TIMEOUT_MS - POLL_MS);
 }
+
+// The next wait's first poll can land exactly timeoutMs after the timeout, where the
+// long-gap check does not fire; it must still start a fresh interval.
+TEST_F(UsbVcpTxDrainTest, TimeoutDoesNotCarryOverAtExactGap)
+{
+    pollUntilDrained(23);
+    const timeMs_t timedOutAt = fakeMillis;
+
+    fakeMillis = timedOutAt + TIMEOUT_MS;
+    EXPECT_FALSE(usbVcpTxDrained(&drain, 23, TIMEOUT_MS));
+    const timeMs_t waitStart = fakeMillis;
+    pollUntilDrained(23);
+    EXPECT_GT(fakeMillis - waitStart, TIMEOUT_MS);
+}
