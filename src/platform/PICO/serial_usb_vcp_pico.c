@@ -39,6 +39,9 @@
 
 #include "usb/usb_cdc.h"
 
+// Give up waiting for the transmit path to drain after this long without progress.
+#define USB_TX_DRAIN_TIMEOUT_MS 50
+
 static vcpPort_t vcpPort = { 0 };
 
 static void usbVcpSetBaudRate(serialPort_t *instance, uint32_t baudRate)
@@ -70,7 +73,13 @@ static void usbVcpSetBaudRateCb(serialPort_t *instance, void (*cb)(serialPort_t 
 static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
 {
     UNUSED(instance);
-    return true;
+    static usbVcpTxDrain_t txDrain;
+
+    if (!(cdc_usb_connected() && cdc_usb_configured())) {
+        // Nothing will drain the FIFO; don't make callers wait on it.
+        return true;
+    }
+    return usbVcpTxDrained(&txDrain, cdc_usb_tx_bytes_pending(), USB_TX_DRAIN_TIMEOUT_MS);
 }
 
 static uint32_t usbVcpRxBytesAvailable(const serialPort_t *instance)
