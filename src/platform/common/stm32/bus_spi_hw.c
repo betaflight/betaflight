@@ -33,12 +33,40 @@
 #include "drivers/bus_spi_impl.h"
 #include "drivers/dma_reqmap.h"
 #include "platform/dma.h"
+#if SPI_TRAIT_DMA_STOP_RESULT
+#include "platform/bus_spi_hal.h"
+#endif
 #include "drivers/dshot.h"
 #include "drivers/nvic.h"
 #include "pg/bus_spi.h"
 
+#ifndef DMA_TRANSFER_ERROR_STATUS
+#define DMA_TRANSFER_ERROR_STATUS DMA_IT_TEIF
+#endif
+#ifndef DMA_TRANSFER_ERROR_CLEAR
+#define DMA_TRANSFER_ERROR_CLEAR DMA_IT_TEIF
+#endif
+
 extern spiDevice_t spiDevice[SPIDEV_COUNT];
 extern busDevice_t spiBusDevice[SPIDEV_COUNT];
+
+static inline bool spiDmaTransferError(dmaChannelDescriptor_t *descriptor)
+{
+    return DMA_GET_FLAG_STATUS(descriptor, DMA_TRANSFER_ERROR_STATUS) != 0;
+}
+
+static inline bool spiDmaStopOnCompletion(const extDevice_t *dev)
+{
+#if SPI_TRAIT_DMA_STOP_RESULT
+    if (!spiInternalTryStopDMA(dev)) {
+        spiAbortTransfer(dev);
+        return false;
+    }
+#else
+    spiInternalStopDMA(dev);
+#endif
+    return true;
+}
 
 // Interrupt handler for SPI receive DMA completion
 FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
@@ -50,7 +78,7 @@ FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
     }
 
     // The stream disables itself on a transfer error, so no completion interrupt will follow
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
+    if (spiDmaTransferError(descriptor)) {
         spiAbortTransfer(dev);
         return;
     }
@@ -62,7 +90,9 @@ FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
         IOHi(dev->busType_u.spi.csnPin);
     }
 
-    spiInternalStopDMA(dev);
+    if (!spiDmaStopOnCompletion(dev)) {
+        return;
+    }
 
 #ifdef __DCACHE_PRESENT
 #if defined(STM32H7) || defined(GD32H7)
@@ -91,11 +121,11 @@ FAST_IRQ_HANDLER static void spiTxErrorIrqHandler(dmaChannelDescriptor_t* descri
 {
     const extDevice_t *dev = (const extDevice_t *)descriptor->userParam;
 
-    if (!dev || !DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
+    if (!dev || !spiDmaTransferError(descriptor)) {
         return;
     }
 
-    DMA_CLEAR_FLAG(descriptor, DMA_IT_TEIF);
+    DMA_CLEAR_FLAG(descriptor, DMA_TRANSFER_ERROR_CLEAR);
     spiAbortTransfer(dev);
 }
 
@@ -109,14 +139,16 @@ FAST_IRQ_HANDLER static void spiTxIrqHandler(dmaChannelDescriptor_t* descriptor)
         return;
     }
 
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
+    if (spiDmaTransferError(descriptor)) {
         spiAbortTransfer(dev);
         return;
     }
 
     busDevice_t *bus = dev->bus;
 
-    spiInternalStopDMA(dev);
+    if (!spiDmaStopOnCompletion(dev)) {
+        return;
+    }
 
     if (bus->curSegment->negateCS) {
         // Negate Chip Select
@@ -127,6 +159,7 @@ FAST_IRQ_HANDLER static void spiTxIrqHandler(dmaChannelDescriptor_t* descriptor)
 }
 #endif
 
+#if !SPI_TRAIT_PLATFORM_CLOCK
 uint16_t spiCalculateDivider(uint32_t freq)
 {
 #if defined(STM32F4) || defined(STM32F7) || defined(APM32F4)
@@ -172,11 +205,9 @@ uint16_t spiCalculateDivider(uint32_t freq)
 #endif
 
     uint16_t divisor = 2;
-
     spiClk >>= 1;
 
     for (; (spiClk > freq) && (divisor < 256); divisor <<= 1, spiClk >>= 1);
-
     return divisor;
 }
 
@@ -219,6 +250,7 @@ uint32_t spiCalculateClock(uint16_t spiClkDivisor)
 
     return spiClk / spiClkDivisor;
 }
+#endif // !SPI_TRAIT_PLATFORM_CLOCK
 
 void spiInitBusDMA(void)
 {
@@ -287,7 +319,7 @@ void spiInitBusDMA(void)
                     continue;
                 }
                 bus->dmaTx = dmaGetDescriptorByIdentifier(dmaTxIdentifier);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(APM32F4) || defined(GD32F4) || defined(GD32H7)
+#if DMA_TRAIT_CHANNEL
                 bus->dmaTx->stream = DMA_DEVICE_INDEX(dmaTxIdentifier);
                 bus->dmaTx->channel = dmaTxChannelSpec->channel;
 #endif
@@ -325,7 +357,7 @@ void spiInitBusDMA(void)
                     continue;
                 }
                 bus->dmaRx = dmaGetDescriptorByIdentifier(dmaRxIdentifier);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(APM32F4) || defined(GD32F4) || defined(GD32H7)
+#if DMA_TRAIT_CHANNEL
                 bus->dmaRx->stream = DMA_DEVICE_INDEX(dmaRxIdentifier);
                 bus->dmaRx->channel = dmaRxChannelSpec->channel;
 #endif

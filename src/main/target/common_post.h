@@ -39,6 +39,15 @@
 
 */
 
+// Platforms with custom internal ADC calibration supply the conversion functions.
+#ifndef PLATFORM_TRAIT_ADC_INTERNAL_CONVERSION
+#define PLATFORM_TRAIT_ADC_INTERNAL_CONVERSION 0
+#endif
+
+#ifndef SDIO_WRITE_CACHE_ATTRIBUTES
+#define SDIO_WRITE_CACHE_ATTRIBUTES
+#endif
+
 #ifndef PLATFORM_NO_LIBC
 #define PLATFORM_NO_LIBC 1
 #endif
@@ -908,6 +917,10 @@ extern struct linker_symbol __fontdata_end;
  #endif
 
 ******************************************************/
+
+#if !defined(ENABLE_OVERCLOCK_336_MHZ)
+#define ENABLE_OVERCLOCK_336_MHZ 0
+#endif
 
 #if !defined(ENABLE_SERIAL_SKIP_CHECK_TX)
 #define ENABLE_SERIAL_SKIP_CHECK_TX 0
