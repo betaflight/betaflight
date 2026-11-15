@@ -223,7 +223,6 @@ SD_Error_t       SD_WriteBlocks_DMA          (uint64_t WriteAddress, uint32_t *b
 SD_Error_t       SD_CheckWrite               (void);
 
 SD_Error_t       SD_Erase                    (uint64_t StartAddress, uint64_t EndAddress);
-SD_Error_t       SD_GetCardStatus            (SD_CardStatus_t* pCardStatus);
 
 /* ------------------------------------------------------------------------------------------------------------------*/
 

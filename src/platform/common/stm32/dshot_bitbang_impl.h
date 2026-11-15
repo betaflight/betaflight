@@ -139,6 +139,13 @@ typedef struct dmaRegCache_s {
     uint32_t PADDR;
     uint32_t MADDR;
     uint32_t M1ADDR;
+#elif defined(UM324xF)
+    uint32_t SAR;
+    uint32_t DAR;
+    uint32_t CTLL;
+    uint32_t CTLH;
+    uint32_t CFGL;
+    uint32_t CFGH;
 #else
 #error No MCU dependent code here
 #endif
@@ -240,6 +247,9 @@ typedef struct bbPort_s {
     bool inputActive;
     volatile bool telemetryPending;
     bool telemetryAborted;
+#if defined(UM324xF)
+    volatile bool telemetryReady;
+#endif
 
     // Misc
 
@@ -342,7 +352,10 @@ void bbTIM_DMACmd(void *TIMx, uint16_t TIM_DMASource, confirm_state NewState);
 void bbTIM_DMACmd(void *TIMx, uint16_t TIM_DMASource, FunctionalState NewState);
 #endif
 void bbDMA_ITConfig(bbPort_t *bbPort);
-#ifdef AT32F435
+#if defined(UM324xF)
+bool bbDMAStop(bbPort_t *bbPort);
+void bbDMAEnable(bbPort_t *bbPort);
+#elif defined(AT32F435)
 void bbDMA_Cmd(bbPort_t *bbPort, confirm_state NewState);
 #else
 void bbDMA_Cmd(bbPort_t *bbPort, FunctionalState NewState);
@@ -380,11 +393,25 @@ int  bbDMA_Count(bbPort_t *bbPort);
 // mid-transfer raises TCIF (RM0090, "DMA transfer suspension").
 #define BB_DMA_STOP_SPIN_LIMIT 100
 
+static inline void bbDMAClearFlags(dmaChannelDescriptor_t *descriptor)
+{
+#if defined(UM324xF)
+    // DW DMA uses one per-channel bitmap register for each event type.
+    DMA_CLEAR_FLAG(descriptor, CLEARTFR);
+    DMA_CLEAR_FLAG(descriptor, CLEARBLOCK);
+    DMA_CLEAR_FLAG(descriptor, CLEARSRCTRAN);
+    DMA_CLEAR_FLAG(descriptor, CLEARDSTTRAN);
+    DMA_CLEAR_FLAG(descriptor, CLEARERR);
+#else
+    DMA_CLEAR_FLAG(descriptor, BB_DMA_FLAGS);
+#endif
+}
+
 static inline bool bbDMAWaitStopped(bbPort_t *bbPort)
 {
     for (unsigned spin = 0; spin < BB_DMA_STOP_SPIN_LIMIT; spin++) {
         if (!(IS_DMA_ENABLED(bbPort->dmaResource))) {
-            DMA_CLEAR_FLAG(bbPort->dmaDescriptor, BB_DMA_FLAGS);
+            bbDMAClearFlags(bbPort->dmaDescriptor);
             NVIC_ClearPendingIRQ((IRQn_Type)bbPort->dmaDescriptor->irqN);
             bbPort->telemetryPending = false;
             return true;
@@ -421,9 +448,13 @@ static inline bool bbDMAWaitStopped(bbPort_t *bbPort)
 // drive the line against it (#15533).
 static inline bool bbDMAServiceFlags(bbPort_t *bbPort, dmaChannelDescriptor_t *descriptor)
 {
+#if defined(UM324xF)
+    const bool transferError = DMA_GET_FLAG_STATUS(descriptor, STATUSERR) != 0;
+#else
     const bool transferError = DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF) != 0;
+#endif
 
-    DMA_CLEAR_FLAG(descriptor, BB_DMA_FLAGS);
+    bbDMAClearFlags(descriptor);
 
     if (!transferError) {
         return false;
@@ -439,7 +470,12 @@ static inline bool bbDMAServiceFlags(bbPort_t *bbPort, dmaChannelDescriptor_t *d
 
 static inline bool bbDMAEventPending(dmaChannelDescriptor_t *descriptor)
 {
+#if defined(UM324xF)
+    return (DMA_GET_FLAG_STATUS(descriptor, STATUSBLOCK) != 0)
+        || (DMA_GET_FLAG_STATUS(descriptor, STATUSERR) != 0);
+#else
     return DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF | DMA_IT_TEIF) != 0;
+#endif
 }
 
 void bbDshotRequestTelemetry(unsigned motorIndex);
