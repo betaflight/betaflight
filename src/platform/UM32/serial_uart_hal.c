@@ -39,12 +39,14 @@
 #include "build/atomic.h"
 
 #include "common/utils.h"
+#include "drivers/inverter.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
 #include "drivers/dma.h"
 #include "platform/rcc.h"
 
 #include "drivers/serial.h"
+#include "drivers/serial_impl.h"
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
@@ -97,6 +99,82 @@ static void uartConfigurePinSwap(uartPort_t *uartPort)
 }
 #endif
 
+uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode, portOptions_e options)
+{
+    if ((options & SERIAL_BIDIR) && !uartBidirCanOpen(uartdev, baudRate)) {
+        return NULL;
+    }
+
+    uartPort_t *s = &uartdev->port;
+    const uartHardware_t *hardware = uartdev->hardware;
+
+    s->port.vTable = uartVTable;
+    s->port.baudRate = baudRate;
+    s->port.rxBuffer = hardware->rxBuffer;
+    s->port.txBuffer = hardware->txBuffer;
+    s->port.rxBufferSize = hardware->rxBufferSize;
+    s->port.txBufferSize = hardware->txBufferSize;
+    s->USARTx = hardware->reg;
+    s->checkUsartTxOutput = checkUsartTxOutput;
+
+    if (hardware->rcc) {
+        RCC_ClockCmd(hardware->rcc, ENABLE);
+    }
+
+#ifdef USE_DMA
+    // UM32 uses interrupts for UART RX and TX.
+    s->rxDMAResource = NULL;
+    s->txDMAResource = NULL;
+    s->txDMAEmpty = true;
+#endif
+
+    const IO_t txIO = IOGetByTag(uartdev->tx.pin);
+    const IO_t rxIO = IOGetByTag(uartdev->rx.pin);
+    const serialPortIdentifier_e identifier = s->port.identifier;
+    const int ownerIndex = serialOwnerIndex(identifier);
+    const resourceOwner_e ownerTxRx = serialOwnerTxRx(identifier);
+
+    uartdev->txPinState = TX_PIN_IGNORE;
+    if (options & SERIAL_BIDIR) {
+        IOInit(txIO, ownerTxRx, ownerIndex);
+        // uartReconfigure() applies the idle pull. The TX alternate function is used only while transmitting.
+        IOConfigGPIO(txIO, IOCFG_IN_FLOATING);
+    } else {
+        if ((mode & MODE_TX) && txIO) {
+            IOInit(txIO, ownerTxRx, ownerIndex);
+            if (options & SERIAL_CHECK_TX) {
+                uartdev->txPinState = TX_PIN_ACTIVE;
+                uartTxMonitor(s);
+            } else {
+                IOConfigGPIOAF(txIO, IOCFG_AF_PP, hardware->af);
+            }
+        }
+        if ((mode & MODE_RX) && rxIO) {
+            IOInit(rxIO, ownerTxRx + 1, ownerIndex);
+            IOConfigGPIOAF(rxIO, IOCFG_AF_PP, hardware->af);
+        }
+    }
+
+    HAL_NVIC_SetPriority(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
+    HAL_NVIC_EnableIRQ(hardware->irqn);
+    return s;
+}
+
+void uartEnableTxInterrupt(uartPort_t *uartPort)
+{
+#if defined(USE_UART7) || defined(USE_UART8)
+    USART_TypeDef *usart;
+    if (uartSamInstance(uartPort, &usart)) {
+        // IER is write-only on the SAM-style USART.
+        usart->IER = USART_IER_TXRDY;
+        return;
+    }
+#endif
+
+    UART_HandleTypeDef handle = { .Instance = (UART_TypeDef *)uartPort->USARTx };
+    __HAL_UART_ENABLE_IT(&handle, UART_EX_IT_ETBEI);
+}
+
 // XXX uartReconfigure does not handle resource management properly.
 
 void uartReconfigure(uartPort_t *uartPort)
@@ -106,8 +184,10 @@ void uartReconfigure(uartPort_t *uartPort)
         return;
     }
 
-    // UM32 uses board-level inversion. Set any configured inverter GPIO before enabling RX.
-    uartConfigureExternalPinInversion(uartPort);
+#ifdef USE_INVERTER
+    // Set the board-level inverter before enabling RX.
+    enableInverter(uartPort->port.identifier, uartPort->port.options & SERIAL_INVERTED);
+#endif
 
 #if defined(USE_UART7) || defined(USE_UART8)
     USART_TypeDef *usartSam;
