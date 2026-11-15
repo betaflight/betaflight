@@ -19,6 +19,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
+
 #include "platform.h"
 
 #include "build/atomic.h"
@@ -50,6 +52,69 @@ const struct ioPortDef_s ioPortDefs[] = {
 #endif
 
 static volatile uint16_t openDrainPins[ARRAYLEN(ioPortDefs)];
+
+#if defined(USE_DSHOT_BITBANG) && ENABLE_DSHOT_BITBANG_GPIO_GUARD
+static uint16_t dshotMotorPins[ARRAYLEN(ioPortDefs)];
+static volatile bool dshotMotorPortConflict;
+
+bool ioDshotReserveMotorPorts(const IO_t *motorPins, unsigned motorCount)
+{
+    uint16_t motorMasks[ARRAYLEN(ioPortDefs)] = { 0 };
+    GPIO_TypeDef *ports[ARRAYLEN(ioPortDefs)] = { NULL };
+
+    ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+        for (unsigned motor = 0; motor < motorCount; motor++) {
+            const IO_t io = motorPins[motor];
+            if (IOGetOwner(io) != OWNER_MOTOR) {
+                return false;
+            }
+            const int port = IO_GPIOPortIdx(io);
+            motorMasks[port] |= IO_Pin(io);
+            ports[port] = IO_GPIO(io);
+        }
+
+        for (unsigned port = 0; port < ARRAYLEN(ports); port++) {
+            if (!ports[port]) {
+                continue;
+            }
+            // Released software open drain uses input mode and can drive later.
+            if (openDrainPins[port] & ~motorMasks[port]) {
+                return false;
+            }
+            const uint32_t modes = ports[port]->MODE;
+            for (unsigned pin = 0; pin <= DEFIO_PIN_BITMASK; pin++) {
+                if (motorMasks[port] & (1U << pin)) {
+                    continue;
+                }
+                if (((modes >> (2 * pin)) & GPIO_MODE) == GPIO_MODE_OUTPUT) {
+                    return false;
+                }
+#ifdef USE_SOFTSERIAL
+                // A half-duplex transmitter can be in input mode between packets.
+                if (IOGetOwner(IOGetByTag(DEFIO_TAG_MAKE(port, pin))) == OWNER_SOFTSERIAL_TX) {
+                    return false;
+                }
+#endif
+            }
+        }
+        memcpy(dshotMotorPins, motorMasks, sizeof(dshotMotorPins));
+    }
+    return true;
+}
+
+void ioDshotReleaseMotorPorts(void)
+{
+    ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+        memset(dshotMotorPins, 0, sizeof(dshotMotorPins));
+        dshotMotorPortConflict = false;
+    }
+}
+
+bool ioDshotMotorPortConflict(void)
+{
+    return dshotMotorPortConflict;
+}
+#endif
 
 static bool ioIsOpenDrain(IO_t io)
 {
@@ -127,8 +192,10 @@ void IOToggle(IO_t io)
             const unsigned shift = 2 * IO_GPIOPinIdx(io);
             const bool drivingLow = ((gpio->MODE >> shift) & GPIO_MODE) == GPIO_MODE_OUTPUT;
             ioWriteOpenDrain(io, drivingLow);
+        } else if (gpio->ODATA & IO_Pin(io)) {
+            gpio->CLR = IO_Pin(io);
         } else {
-            gpio->ODATA ^= IO_Pin(io);
+            gpio->SET = IO_Pin(io);
         }
     }
 }
@@ -158,6 +225,14 @@ void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af)
 
     // GPIO mode fields share a register with pins switched by the UART IRQ.
     ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+#if defined(USE_DSHOT_BITBANG) && ENABLE_DSHOT_BITBANG_GPIO_GUARD
+        if (dshotMotorPins[port] && !(dshotMotorPins[port] & pin)
+            && (init.Mode == GPIO_MODE_OUTPUT || cfg == IOCFG_OUT_OD)) {
+            // Leave the pin unchanged and report the rejected configuration.
+            dshotMotorPortConflict = true;
+            return;
+        }
+#endif
         RCC_ClockCmd(ioPortDefs[port].rcc, ENABLE);
         HAL_GPIO_Init(IO_GPIO(io), &init);
         if (cfg == IOCFG_OUT_OD) {

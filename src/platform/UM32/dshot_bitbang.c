@@ -94,6 +94,7 @@ static motorDevice_t *bbDevice;
 // UM324 uses GPIO->ODATA register for output (direct pin state control).
 // Unlike STM32's BSRR (SET/RESET in one word), ODATA writes the desired
 // pin level directly: bit=1 → HIGH, bit=0 → LOW.
+// Keep software GPIO outputs off motor ports. Inputs and AF pins can share them.
 //
 // Output buffer format (3 states per DShot symbol):
 //   State 0: All motors HIGH (ODATA = portMask)
@@ -633,6 +634,11 @@ FAST_CODE static void bbUpdateComplete(void)
 
 static bool bbEnableMotors(void)
 {
+#if ENABLE_DSHOT_BITBANG_GPIO_GUARD
+    if (ioDshotMotorPortConflict()) {
+        return false;
+    }
+#endif
     for (int i = 0; i < dshotMotorCount; i++) {
         if (bbMotors[i].configured) {
             IOConfigGPIO(bbMotors[i].io, bbMotors[i].iocfg);
@@ -656,20 +662,40 @@ static bool bbIsMotorEnabled(unsigned index)
     return bbMotors[index].enabled;
 }
 
+static void bbFailPostInit(void)
+{
+#if ENABLE_DSHOT_BITBANG_GPIO_GUARD
+    ioDshotReleaseMotorPorts();
+#endif
+    // Blocking DShot commands can call the device even when motors are disabled.
+    motorNullDevInit(bbDevice);
+    bbDevice->initialized = false;
+    dshotMotorCount = 0;
+#ifdef USE_DSHOT_TELEMETRY
+    useDshotTelemetry = false;
+#endif
+}
+
 static void bbPostInit(void)
 {
+#if ENABLE_DSHOT_BITBANG_GPIO_GUARD
+    // Other peripheral GPIOs have been configured. DMA is still idle.
+    IO_t motorPins[MAX_SUPPORTED_MOTORS] = { 0 };
+    int motorCount = 0;
+    for (; motorCount < MAX_SUPPORTED_MOTORS && motorCount < dshotMotorCount; motorCount++) {
+        motorPins[motorCount] = bbMotors[motorCount].io;
+    }
+    if (!ioDshotReserveMotorPorts(motorPins, motorCount)) {
+        bbStatus = DSHOT_BITBANG_STATUS_MOTOR_PIN_CONFLICT;
+        bbFailPostInit();
+        return;
+    }
+#endif
     bbFindPacerTimer();
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < dshotMotorCount; motorIndex++) {
-
         if (!bbMotorConfig(bbMotors[motorIndex].io, motorIndex, motorProtocol, bbMotors[motorIndex].output)) {
-            // Blocking DShot commands can call the device even when motors are disabled.
-            motorNullDevInit(bbDevice);
-            bbDevice->initialized = false;
-            dshotMotorCount = 0;
-#ifdef USE_DSHOT_TELEMETRY
-            useDshotTelemetry = false;
-#endif
+            bbFailPostInit();
             return;
         }
 
@@ -698,6 +724,11 @@ static const motorVTable_t bbVTable = {
 
 dshotBitbangStatus_e dshotBitbangGetStatus(void)
 {
+#if ENABLE_DSHOT_BITBANG_GPIO_GUARD
+    if (ioDshotMotorPortConflict()) {
+        return DSHOT_BITBANG_STATUS_MOTOR_PIN_CONFLICT;
+    }
+#endif
     return bbStatus;
 }
 

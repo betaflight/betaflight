@@ -105,6 +105,18 @@
 // Camera control PWM availability
 #define CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
 
+// Bitbang DShot writes the whole GPIO output register through DMA.
+#ifndef ENABLE_DSHOT_BITBANG_GPIO_GUARD
+#define ENABLE_DSHOT_BITBANG_GPIO_GUARD 1
+#endif
+
+#if ENABLE_DSHOT_BITBANG_GPIO_GUARD
+#include "drivers/io_types.h"
+bool ioDshotReserveMotorPorts(const IO_t *motorPins, unsigned motorCount);
+void ioDshotReleaseMotorPorts(void);
+bool ioDshotMotorPortConflict(void);
+#endif
+
 // speed is packed between modebits 4 and 1,
 // 7       6        5        4         3         2        1        0
 // OD <pupd-1> <pupd-0> <mode-4> <speed-1> <speed-0> <mode-1> <mode-0>
