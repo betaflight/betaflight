@@ -406,13 +406,18 @@ serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e s
 }
 
 /*
- * FUNCTION_LIDAR is in here because an MT rangefinder / optical flow module is
- * heard over MSP on the very port it declares, so the two genuinely coexist.
+ * FUNCTION_LIDAR used to be in here, because a rangefinder or optical flow
+ * module was heard over MSP on the very port it declared.  Every one of them is
+ * read by its own driver now, over a port that driver opens for itself, so the
+ * two no longer coexist: the sensor claims the UART in sensorsAutodetect(),
+ * before mspSerialAllocatePorts() runs, and an MSP port asked for on the same
+ * UART would simply fail to open.  Better to reject that pairing outright than
+ * to accept it and leave the MSP port silently missing.
  */
 #ifdef USE_TELEMETRY
-#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | TELEMETRY_PORT_FUNCTIONS_MASK | FUNCTION_VTX_MSP | FUNCTION_LIDAR)
+#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | TELEMETRY_PORT_FUNCTIONS_MASK | FUNCTION_VTX_MSP)
 #else
-#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | FUNCTION_VTX_MSP | FUNCTION_LIDAR)
+#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | FUNCTION_VTX_MSP)
 #endif
 
 /*
