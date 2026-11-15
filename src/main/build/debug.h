@@ -224,6 +224,7 @@ typedef enum {
     DEBUG_AUTOPILOT_GUIDANCE,
     DEBUG_AUTOPILOT_LANDING,
     DEBUG_UART_BIDIR,
+    DEBUG_PB04,
     DEBUG_COUNT
 } debugType_e;
 
