@@ -31,7 +31,7 @@ struct spiHalHandle_s {
 };
 #endif
 
-#if defined(UM324xF)
+#if SPI_TRAIT_DMA_STOP_RESULT
 struct extDevice_s;
 bool spiInternalTryStopDMA(const struct extDevice_s *dev);
 #endif

@@ -97,6 +97,9 @@
 //flag:STATUSBLOCK
 #define DMA_GET_FLAG_STATUS(d, flag) (((DMA_TypeDef *)(d)->dma)->flag & (1U << (d)->flagsShift))
 
+#define DMA_TRANSFER_ERROR_STATUS STATUSERR
+#define DMA_TRANSFER_ERROR_CLEAR CLEARERR
+
 // Upstream-style channel-busy test for the DW_ahb DMA: the enable bit is not
 // in the per-channel registers but in the controller-level CHENREG bitmap
 // (bit N = channel N). Derive the controller base and channel index from the

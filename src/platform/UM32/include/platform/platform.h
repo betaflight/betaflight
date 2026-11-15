@@ -156,6 +156,8 @@ static inline uint32_t ioConfigGetPull(uint8_t config)
 
 #define I2C_TRAIT_HANDLE 1
 #define SPI_TRAIT_HANDLE 1
+#define SPI_TRAIT_PLATFORM_CLOCK 1
+#define SPI_TRAIT_DMA_STOP_RESULT 1
 #define QSPI_TRAIT_HANDLE 1
 
 //UART

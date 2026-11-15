@@ -44,8 +44,24 @@
 // Use DMA if possible if this many bytes are to be transferred
 #define SPI_DMA_THRESHOLD 8
 #define SPI_DMA_STOP_SPIN_LIMIT 1000
+#define UM32_SPI_MAX_CLOCK_HZ 72000000U
 
 static volatile bool spiDmaStopFailed[SPIDEV_COUNT];
+
+uint16_t spiCalculateDivider(uint32_t freq)
+{
+    freq = MIN(freq, UM32_SPI_MAX_CLOCK_HZ);
+    uint16_t divisor = 2;
+    while (SystemCoreClock / divisor > freq && divisor < UINT16_MAX) {
+        divisor++;
+    }
+    return divisor;
+}
+
+uint32_t spiCalculateClock(uint16_t spiClkDivisor)
+{
+    return MIN(SystemCoreClock / spiClkDivisor, UM32_SPI_MAX_CLOCK_HZ);
+}
 
 #ifndef SPI1_NSS_PIN
 #define SPI1_NSS_PIN NONE
