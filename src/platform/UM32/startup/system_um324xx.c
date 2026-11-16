@@ -1,0 +1,639 @@
+/**
+  ******************************************************************************
+  * @file    system_um324xx.c
+  * @author  Unicmicro UM Team
+  * @brief   System startup and clock configuration for Unicmicro UM324xx devices.
+  *
+  ******************************************************************************
+  * @attention
+  *
+  * Portions derived from the STM32G4 CMSIS system startup template:
+  * Copyright (c) 2017 STMicroelectronics. All rights reserved.
+  *
+  * This software component is licensed by ST under BSD 3-Clause license,
+  * the "License"; You may not use this file except in compliance with the
+  * License. You may obtain a copy of the License at:
+  *                        opensource.org/licenses/BSD-3-Clause
+  *
+  ******************************************************************************
+  */
+
+#include <string.h>
+
+#include "um324xx.h"
+#include "drivers/system.h"
+#include "platform.h"
+#include "drivers/persistent.h"
+#include "exflash_um324xx_hal.h"
+
+#define VECT_TAB_SRAM
+
+// At reset, HCLK uses the 48 MHz RCH divided by two and an AHB divider of one.
+uint32_t SystemCoreClock = 24000000U;
+
+const uint8_t AHBPrescTable[16] = {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U};
+const uint8_t APBPrescTable[16] = {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U};
+
+void SystemClock_Config(void); // Forward
+/**
+  * @brief  Setup the microcontroller system.
+  * @param  None
+  * @retval None
+  */
+
+
+/*
+ * QSPI pin bring-up via HAL_GPIO_Init — the same entry point io_um32.c uses,
+ * so the register programming stays in sync by construction. Safe at
+ * SystemInit time (before .data/.bss init and before the QSPI window is up):
+ * HAL_GPIO_Init only touches GPIO registers and the caller's stack struct,
+ * reads no initialised globals, and lives in internal flash (.text); only
+ * functions explicitly marked EX_CODE are placed on the QSPI XIP window.
+ */
+#ifdef USE_QSPI_XIP
+/* UM3241F/UM3247F user manual, table 3-1: QSPI cache register block.
+ * The enable/clear names follow the reference UM324xF LL cache API, which
+ * cites UM321xF manual 14.3.1 and the vendor XIP example's CACHE_CR |= 0x3.
+ * The UM3241F/UM3247F manual itself only documents the address range. */
+#define QSPI_CACHE_CTRL_ADDRESS  0x3CFFFC00UL
+#define QSPI_CACHE_CTRL          (*(volatile uint32_t *)QSPI_CACHE_CTRL_ADDRESS)
+#define QSPI_CACHE_ENABLE        (1UL << 0)
+#define QSPI_CACHE_CLEAR         (1UL << 1)
+
+static void qspiCacheDisable(void)
+{
+    // Do not request a clear while disabling; clear when enabling below.
+    QSPI_CACHE_CTRL &= ~(QSPI_CACHE_ENABLE | QSPI_CACHE_CLEAR);
+    __DSB();
+    __ISB();
+}
+
+static void qspiCacheEnable(void)
+{
+    // Discard cached content from an earlier run before the first XIP read.
+    QSPI_CACHE_CTRL |= QSPI_CACHE_ENABLE | QSPI_CACHE_CLEAR;
+    __DSB();
+    __ISB();
+}
+
+void exFlashInit(void)
+{
+    /* Port D/E clocks — HAL_GPIO_Init does not manage the clock tree */
+    __HAL_RCM_GPIOD_CLK_ENABLE();
+    __HAL_RCM_GPIOE_CLK_ENABLE();
+
+    /* All six QSPI pins share one config: AF10, pull-up, high speed, 14mA.
+     * PE10=CLK, PE15=BK1 IO3, PD3=BK1CS, PD4/5/6=BK1 IO0/1/2 */
+    GPIO_InitTypeDef gpioInit = {
+        .Mode           = GPIO_MODE_AF,
+        .Speed          = GPIO_SPEED_FREQ_HIGH,
+        .Pull           = GPIO_PULLUP,
+        .Driving_Ability = GPIO_DS_14MA,
+        .Alternate      = GPIO_AF10_QSPI,
+    };
+
+    gpioInit.Pin = GPIO_PIN_10 | GPIO_PIN_15;
+    HAL_GPIO_Init(GPIOE, &gpioInit);
+
+    gpioInit.Pin = GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6;
+    HAL_GPIO_Init(GPIOD, &gpioInit);
+
+    __HAL_RCM_QSPI_CLK_ENABLE();
+    __HAL_RCM_QSPI_RELEASE_RESET();
+
+    // Configure the controller/Flash with cache bypassed, including on reboot.
+    qspiCacheDisable();
+
+    QSPI_HandleTypeDef hqspi = {0};
+
+	hqspi.Instance = QSPI;
+	hqspi.DataSize                 = QSPI_DATASIZE_8BIT;
+    hqspi.Init.CSInvalidDelay      = 0x5;
+    hqspi.Init.CSStartDelay        = 0x0;
+    hqspi.Init.CSStopDelay         = 0x5;
+
+    hqspi.Init.AddrSizes           = QSPI_ADDRBYTES_3;
+    hqspi.Init.PageSizes           = 256;
+    hqspi.Init.BlockSizes          = 16; // 2^16B = 64KB earch Block
+
+    hqspi.Init.WorkMode            = QSPI_WORKMODE_DAC;
+    hqspi.Init.ClockPrescaler      = QSPI_BRDIV_6;
+
+    hqspi.Init.ClockMode           = QSPI_CLOCK_MODE_0;
+
+    /* Setting the QSPI_RDCR register  */
+    hqspi.Init.ReadDelay           = QSPI_DLYR_4;
+    hqspi.Init.TransDelay          = QSPI_DLYT_0;
+    hqspi.Init.Sampling_Edge       = QSPI_SMES_TRAILING;
+
+    /* Congratulate the read data in the dac mode */
+    hqspi.DacMode.ReadCommand      = 0xEB;
+    hqspi.DacMode.ReadAddr_Type    = QSPI_ADMODE_DQ0DQ1DQ2DQ3;
+    hqspi.DacMode.ReadData_Type    = QSPI_DMODE_QUAD;
+    hqspi.DacMode.ReadData_Dummy   = QSPI_DUMMY_CLKS_6;
+
+    /* Congratulate the write data in the dac mode */
+    hqspi.DacMode.WriteCommand     = 0x32;
+    hqspi.DacMode.WriteAddr_Type   = QSPI_ADMODE_DQ0;
+    hqspi.DacMode.WriteData_Type   = QSPI_DMODE_QUAD;
+    hqspi.DacMode.WriteData_Dummy  = QSPI_DUMMY_CLKS_0;
+
+    /* HAL_QSPI_Init() waits for the controller IDLE flag using hqspi.Timeout;
+     * with Timeout == 0 (from the {0} initialiser) the wait fails on its very
+     * first loop iteration and drops into Error_Handler() ?? this is what froze
+     * the boot LED at checkpoint 2. */
+    hqspi.Timeout = 100;
+
+    if (HAL_QSPI_Init(&hqspi) != HAL_OK)
+    {
+        /* Initialization Error */
+        Error_Handler();
+    }
+
+    if (QSPI_QuadEn(&hqspi) != HAL_OK) {
+        Error_Handler();
+    }
+
+    qspiCacheEnable();
+}
+#endif
+
+static void initialiseRam1MemorySections(void)
+{
+    extern uint8_t _ssram1_bss;
+    extern uint8_t _esram1_bss;
+    bzero(&_ssram1_bss, (size_t) (&_esram1_bss - &_ssram1_bss));
+
+    extern uint8_t _sdmaram_bss;
+    extern uint8_t _edmaram_bss;
+    extern uint8_t _sdmaram_data;
+    extern uint8_t _edmaram_data;
+    extern uint8_t _sdmaram_idata;
+    bzero(&_sdmaram_bss, (size_t) (&_edmaram_bss - &_sdmaram_bss));
+    memcpy(&_sdmaram_data, &_sdmaram_idata, (size_t) (&_edmaram_data - &_sdmaram_data));
+}
+
+#if defined(USE_HAL_DRIVER) && (PREFETCH_ENABLE != 0U)
+static void waitForInternalFlashCacheState(const CACHE_TypeDef *cache, uint32_t state)
+{
+    while ((cache->STATUS & CACHE_STATUS_CACHE_STATUS) != state) {
+    }
+}
+
+static void prepareInternalFlashPrefetch(void)
+{
+    // UM3241F/UM3247F manual section 4.3.2.1 configures prefetch while the
+    // caches are disabled. Set the bits before HAL_Init() enables the caches
+    // and repeats the prefetch writes with the same values.
+    __HAL_FLASH_INSTRUCTION_CACHE_DISABLE();
+    __HAL_FLASH_DATA_CACHE_DISABLE();
+    waitForInternalFlashCacheState(ICACHE, CACHE_STATUS_CLOSED_FLAG);
+    waitForInternalFlashCacheState(DCACHE, CACHE_STATUS_CLOSED_FLAG);
+
+    __HAL_FLASH_INSTRUCTION_CACHE_PREFETCH_ENABLE();
+    __HAL_FLASH_DATA_CACHE_PREFETCH_ENABLE();
+    __DSB();
+    __ISB();
+}
+#endif
+
+void SystemInit(void)
+{
+    // initialiseMemorySections();
+
+	/* enable Access PMU register*/
+	PMU->CPR  = 0xABCD;
+	/* Set PDR(rising 1.87V/falling 1.77V),BOR(2.43V)*/
+	PMU->VDCR  = 0x0000A983;
+	/* not reset BOR configure and pmu state*/
+	PMU->SASR = 0x00000025;
+
+	/* enable Access RCM register*/
+	RCM->RCMPR = 0xA5A55A5A;
+	/* enable reset filter*/
+	RCM->EXRSTFER |= (1<<0);
+
+    /* FPU settings ---------------------------------------------------------*/
+#if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
+    /* set CP10 and CP11 Full Access */
+    SCB->CPACR |= ((3UL << 10*2)|(3UL << 11*2));
+#endif
+
+#if(0)
+	  /* Query Method Delay Initialize */
+	delay_init(HAL_RCM_GetHCLKFreq());
+#endif
+	/*boost configer*/
+	(*(volatile uint32_t *)(0x400801c0)) = 0x77BBBB77;
+	(*(volatile uint32_t *)(0x40080000)) = 0xA5A55A5A;
+	(*(volatile uint32_t *)(0x40080038)) = (((*(volatile uint32_t *)(0x40080038)) & 0xFFFFFFF0) | 0xA);
+	(*(volatile uint32_t *)(0x400801c0)) = 0x00000000;
+  (*(volatile uint32_t *)(0x40080000)) = 0xFFFFFFFF;
+
+#if(0)
+	delay(1);
+#else
+    __NOP(); __NOP(); __NOP(); __NOP(); __NOP();__NOP(); __NOP(); __NOP(); __NOP(); __NOP();
+#endif
+
+    /* Reset the RCM clock configuration to the default reset state ------------*/
+    /* Unlock protection register */
+    RCM->RCMPR = 0xA5A55A5A;
+    /* Set RCH_EN bit */
+    RCM->CR0 |= (uint32_t)0x00000001;
+    /* Reset RCM_CFGR0 register */
+    RCM->CFGR0 = 0x09008040;
+    /* Reset RCM_CFGR1 register */
+    RCM->CFGR1 = 0xFF062002;
+
+    /* Reset XTH_MEN, XTH_EN and PLL0EN bits */
+    RCM->CR0 &= (uint32_t)0xFEFEFFFD;
+
+    /* Reset RCM_PLL0CFGR0,RCM_PLL0CFGR1,RCM_PLL0CFGR2 register */
+    RCM->PLL0CFGR0 = 0x00010388;
+    RCM->PLL0CFGR1 = 0x00000000;
+    RCM->PLL0CFGR2 = 0x08000000;
+
+    /* Reset XTH_BYP bit */
+    RCM->CR0 &= (uint32_t)0xFFFBFFFF;
+
+    /* Disable all interrupts */
+    RCM->CIER = 0x00000000;
+    /* Configure the Vector Table location add offset address ------------------*/
+#ifdef VECT_TAB_SRAM
+  // Copy vector table from isr_vector_table_flash_base to isr_vector_table_base.
+  // If these two regions are the same, the copy will have no effect
+  // (Happens when linker script aliases VECTAB to FLASH).
+
+    extern uint8_t isr_vector_table_flash_base;
+    extern uint8_t isr_vector_table_base;
+    extern uint8_t isr_vector_table_end;
+
+    memcpy(&isr_vector_table_base, &isr_vector_table_flash_base, &isr_vector_table_end - &isr_vector_table_base);
+    SCB->VTOR = (uint32_t)&isr_vector_table_base;
+#else
+    extern uint8_t isr_vector_table_flash_base;
+    SCB->VTOR = (uint32_t)&isr_vector_table_flash_base;
+#endif
+
+#ifdef USE_HAL_DRIVER
+#if (PREFETCH_ENABLE != 0U)
+    prepareInternalFlashPrefetch();
+#endif
+    HAL_Init();
+#if (PREFETCH_ENABLE != 0U)
+#if (INSTRUCTION_CACHE_ENABLE != 0U)
+    waitForInternalFlashCacheState(ICACHE, CACHE_STATUS_OPEND_FLAG);
+#endif
+#if (DATA_CACHE_ENABLE != 0U)
+    waitForInternalFlashCacheState(DCACHE, CACHE_STATUS_OPEND_FLAG);
+#endif
+    __DSB();
+    __ISB();
+#endif
+#endif
+
+    SystemClock_Config();
+
+    SystemCoreClockUpdate();
+
+#ifdef USE_QSPI_XIP
+    /* Bring up the QSPI XIP window before anything touches EXFLASH-mapped
+     * code/data (.ex_flash, .tcm_code load image). Skipped entirely on
+     * board variants without the QSPI chip — the pin muxing below must
+     * not run there. */
+    exFlashInit();
+#endif
+
+    initialiseMemorySections();
+
+    // Initialize the cold CPU data and DMA-capable buffers in SRAM1 before
+    // their first use. Reset_Handler does not cover these sections.
+    // DMA-only SRAM2 is deliberately excluded from CPU initialization.
+    initialiseRam1MemorySections();
+}
+
+/**
+  * @brief  Update SystemCoreClock (HCLK) from the UM324xx clock registers.
+  * @note   The calculation uses nominal RCH, XTH, XTL, or RCL frequencies
+  *         together with the configured clock dividers.
+  */
+void SystemCoreClockUpdate(void)
+{
+	uint32_t tmp = 0, pllvco = 0, pllp = 2, pllsource = 0, pllm = 2;
+    uint32_t cfgr0 = 0U;
+
+	/* Get SYSCLK source -------------------------------------------------------*/
+	tmp = ((RCM->CFGR0 & RCM_CFGR0_SYS_SWS)>>2);
+
+	switch (tmp)
+	{
+		case 0x00:  /* RCH used as system clock source */
+			SystemCoreClock = (RCH_VALUE / (((RCM->CFGR0 & RCM_CFGR0_RCH_DIV) >> RCM_CFGR0_RCH_DIV_Pos) + 1));
+			break;
+		case 0x01:  /* XTH used as system clock source */
+			SystemCoreClock = XTH_VALUE;
+			break;
+		case 0x02:  /* PLL0 used as system clock source */
+
+			/*
+				PLL_VCO = (RCH_VALUE or XTH_VALUE / PLL_M) * PLL_N
+				SYSCLK = PLL_VCO / PLL_P
+			*/
+			pllsource = (RCM->CR0 & RCM_CR0_PLLSRC) >> RCM_CR0_PLLSRC_Pos;
+			pllm = ((RCM->PLL0CFGR0 & RCM_PLL0CFGR0_PLL0_DM) >> RCM_PLL0CFGR0_PLL0_DM_Pos);
+
+			if (pllsource != 0)
+			{
+				/* XTH used as PLL0 clock source */
+				pllvco = (XTH_VALUE / pllm) * ((RCM->PLL0CFGR0 & RCM_PLL0CFGR0_PLL0_DN) >> RCM_PLL0CFGR0_PLL0_DN_Pos);
+			}
+			else
+			{
+                cfgr0 = RCM->CFGR0;
+				/* RCH used as PLL0 clock source */
+				pllvco = (((RCH_VALUE / (((RCM->CFGR0 & RCM_CFGR0_RCH_DIV) >> RCM_CFGR0_RCH_DIV_Pos) + 1)) / pllm) * ((RCM->PLL0CFGR0 & RCM_PLL0CFGR0_PLL0_DN) >> RCM_PLL0CFGR0_PLL0_DN_Pos))>>(AHBPrescTable[(cfgr0 & RCM_CFGR0_AHB_DIV)>> RCM_CFGR0_AHB_DIV_Pos]);
+			}
+
+			pllp = ((RCM->PLL0CFGR0 & RCM_PLL0CFGR0_PLL0_DP) >> RCM_PLL0CFGR0_PLL0_DP_Pos);
+
+			SystemCoreClock = (pllvco/pllp);
+			break;
+		case 0x03:  /* RCL or XTL used as system clock source */
+			if(READ_BIT(PMU->XTLCR, PMU_XTLCR_LSCLK_SEL))
+			{
+				/* XTL used as Low Speed clock source */
+				SystemCoreClock = XTL_VALUE;
+			}
+			else
+			{
+				/* RCL used as Low Speed clock source */
+				SystemCoreClock = RCL_VALUE;
+			}
+			break;
+		default:
+			SystemCoreClock = RCH_VALUE;
+		break;
+	}
+	/* Compute HCLK frequency --------------------------------------------------*/
+	/* Get HCLK prescaler */
+	tmp = AHBPrescTable[((RCM->CFGR0 & RCM_CFGR0_AHB_DIV) >> RCM_CFGR0_AHB_DIV_Pos)];
+
+    /* HCLK frequency */
+	SystemCoreClock >>= tmp;
+}
+
+void Error_Handler(void)
+{
+    while (1) {
+    }
+}
+
+
+// SystemSYSCLKSource
+// 0: HSI
+// 1; HSE
+// 2: PLL0
+
+int SystemSYSCLKSource(void)
+{
+    switch (__HAL_RCM_GET_SYSCLK_SOURCE()) {
+    case RCM_CFGR0_SYS_SWS_XTH:
+        return 1;   // HSE
+    case RCM_CFGR0_SYS_SWS_PLL0:
+        return 2;   // PLL
+    case RCM_CFGR0_SYS_SWS_RCH:
+    default:
+        return 0;   // HSI
+    }
+}
+
+// SystemPLLSource
+//   0: HSI
+//   1: HSE
+
+int SystemPLLSource(void)
+{
+    switch (__HAL_RCM_GET_PLL_OSCSOURCE()) {
+    case RCM_CR0_PLLSRC_XTH:
+        return 1;   // HSE
+    case RCM_CR0_PLLSRC_RCH:
+    default:
+        return 0;   // HSI
+    }
+}
+
+typedef struct pllConfig_s {
+    uint16_t mhz; // Target HCLK with AHB divided by one.
+    uint16_t n;
+    uint16_t p;
+    uint32_t usbSdioDivider;
+    uint32_t flashWaitCycles;
+} pllConfig_t;
+
+// Keep the 4 MHz PLL input for 8 and 12 MHz crystals. Use 1 MHz when
+// the crystal frequency in MHz is not divisible by four.
+#define XTH_PLL_INPUT_MHZ ((XTH_VALUE % 4000000U == 0U) ? 4U : 1U)
+
+STATIC_ASSERT(SYSCLK_SRC != SYSCLK_USE_XTH_PLL ||
+    (XTH_VALUE >= 1000000U && XTH_VALUE <= 48000000U && XTH_VALUE % 1000000U == 0U),
+    xth_pll_requires_a_whole_mhz_crystal_from_1_to_48_mhz);
+
+// Scale the PLLN values from a 1 MHz input. PLLN sets the VCO frequency,
+// PLLP divides it to SYSCLK, and the USB/SDIO divider yields 48 MHz.
+static const pllConfig_t overclockLevels[] = {
+    { 288, 576 / XTH_PLL_INPUT_MHZ, 2, RCM_USB_SDIO_DIV6, FLASH_RWAITCYC_5 },
+    { 336, 336 / XTH_PLL_INPUT_MHZ, 1, RCM_USB_SDIO_DIV7, FLASH_RWAITCYC_6 },
+};
+
+void OverclockRebootIfNecessary(uint32_t targetMhz)
+{
+#if defined(USE_OVERCLOCK) && SYSCLK_SRC == SYSCLK_USE_XTH_PLL
+  // targetMhz == 0 means "OFF" / use default (first entry)
+  if (targetMhz == 0) {
+    targetMhz = overclockLevels[0].mhz;
+  }
+
+  for (unsigned i = 0; i < ARRAYLEN(overclockLevels); i++) {
+    if (overclockLevels[i].mhz == targetMhz) {
+      // Reboot to adjust overclock frequency
+      if (SystemCoreClock != targetMhz * 1000000U) {
+        persistentObjectWrite(PERSISTENT_OBJECT_OVERCLOCK_LEVEL, i);
+        __disable_irq();
+        NVIC_SystemReset();
+      }
+      return;
+    }
+  }
+#else
+  // Fixed clock configurations do not apply a saved overclock level.
+  UNUSED(targetMhz);
+#endif
+}
+
+#if !defined(SYSCLK_SRC) || (SYSCLK_SRC != SYSCLK_USE_RCH && SYSCLK_SRC != SYSCLK_USE_RCH_PLL && \
+    SYSCLK_SRC != SYSCLK_USE_XTH && SYSCLK_SRC != SYSCLK_USE_XTH_PLL)
+#error "Unsupported UM32 SYSCLK_SRC"
+#elif SYSCLK_SRC == SYSCLK_USE_RCH_PLL && \
+    (defined(SYSCLK_168M) + defined(SYSCLK_204M) + defined(SYSCLK_240M)) != 1
+#error "UM32 RCH PLL requires exactly one of SYSCLK_168M, SYSCLK_204M, or SYSCLK_240M"
+#endif
+
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
+// Extracted from MX generated main.c
+
+void SystemClock_Config(void)
+{
+    RCM_ClkInitTypeDef RCM_ClkInitStruct;
+    RCM_OscInitTypeDef RCM_OscInitStruct;
+    uint32_t flashWaitCycles;
+
+    if(SYSCLK_SRC == SYSCLK_USE_RCH)
+    {
+        /* Enable RCH Oscillator as source */
+        RCM_OscInitStruct.OscillatorType = RCM_OSCILLATORTYPE_RCH;
+        RCM_OscInitStruct.RCHState = RCM_RCH_ON;
+        RCM_OscInitStruct.PLL.PLLState = RCM_PLL_NONE;
+
+        /* Select RCH as system clock source and configure the HCLK, PCLK0, PCLK1 ,PCLK2, and PCLK3
+         clocks dividers */
+        RCM_ClkInitStruct.ClockType = (RCM_CLOCKTYPE_SYSCLK | RCM_CLOCKTYPE_RCH | RCM_CLOCKTYPE_HCLK | RCM_CLOCKTYPE_PCLK0 |RCM_CLOCKTYPE_PCLK1 | RCM_CLOCKTYPE_PCLK2| RCM_CLOCKTYPE_PCLK3);
+        RCM_ClkInitStruct.RCHDivider = RCM_RCH_DIV1;
+        RCM_ClkInitStruct.SYSCLKSource = RCM_SYSCLKSOURCE_RCH;
+        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV1;		//SystemCoreClock = RCH/RCM_SYSCLK_DIV1 = 48Mhz/1 = 48MHz
+        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV1;		//APB0Clock = SystemCoreClock/RCM_PCLK0_DIV1 = 48MHz/1 = 48MHz
+        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;		//APB1Clock = SystemCoreClock/RCM_PCLK1_DIV1 = 48MHz/1 = 48MHz
+        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;		//APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 48MHz/1 = 48MHz
+        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV1;		//APB3Clock = SystemCoreClock/RCM_PCLK3_DIV1 = 48MHz/1 = 48MHz
+
+        flashWaitCycles = FLASH_RWAITCYC_0;
+    }
+    else if(SYSCLK_SRC == SYSCLK_USE_RCH_PLL)
+    {
+     //   note:  1.Fxxx=Ref ck*DN/DM >300MHz   2.DN>=16
+
+        /* Enable XTH Oscillator and activate PLL with HSE as source */
+        RCM_OscInitStruct.OscillatorType = RCM_OSCILLATORTYPE_RCH;
+        RCM_OscInitStruct.RCHState = RCM_RCH_ON;
+        RCM_OscInitStruct.PLL.PLLState = RCM_PLL_ON;
+        RCM_OscInitStruct.PLL.PLLSource = RCM_PLLSOURCE_RCH;
+
+#ifdef SYSCLK_168M
+        RCM_OscInitStruct.PLL.PLLM = 2;
+        RCM_OscInitStruct.PLL.PLLN = 28;
+        RCM_OscInitStruct.PLL.PLLP = 1;                          //RCH=24M  ,PLL CLKOUT(Fclk)=336Mhz, Fref= RCH = 24M , Fclk=(Fref*DN)/(DP*DM)
+
+         /* Select PLL as system clock source and configure the HCLK, PCLK0, PCLK1 ,PCLK2, and PCLK3
+         clocks dividers */
+        RCM_ClkInitStruct.ClockType = (RCM_CLOCKTYPE_SYSCLK | RCM_CLOCKTYPE_RCH | RCM_CLOCKTYPE_HCLK | RCM_CLOCKTYPE_PCLK0 |RCM_CLOCKTYPE_PCLK1 | RCM_CLOCKTYPE_PCLK2| RCM_CLOCKTYPE_PCLK3);
+        RCM_ClkInitStruct.RCHDivider = RCM_RCH_DIV2;
+        RCM_ClkInitStruct.SYSCLKSource = RCM_SYSCLKSOURCE_PLL0CLK;
+        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV2;		//SystemCoreClock = Fclk/RCM_SYSCLK_DIV2 = 336Mhz/2 = 168MHz
+        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV4;		//APB0Clock = SystemCoreClock/RCM_PCLK0_DIV4 = 168MHz/4 = 42MHz
+        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;		//APB1Clock = SystemCoreClock/RCM_PCLK1_DIV1 = 168MHz/1 = 168MHz
+        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;		//APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 168MHz/1 = 168MHz
+        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV4;		//APB3Clock = SystemCoreClock/RCM_PCLK3_DIV4 = 168MHz/4 = 42MHz
+
+        flashWaitCycles = FLASH_RWAITCYC_3;
+#endif
+
+#ifdef SYSCLK_204M
+        RCM_OscInitStruct.PLL.PLLM = 2;
+        RCM_OscInitStruct.PLL.PLLN = 17;
+        RCM_OscInitStruct.PLL.PLLP = 1;                          //RCH=24M  ,PLL CLKOUT(Fclk)=204Mhz, Fref= RCH = 24M , Fclk=(Fref*DN)/(DP*DM)
+
+         /* Select PLL as system clock source and configure the HCLK, PCLK0, PCLK1 ,PCLK2, and PCLK3
+         clocks dividers */
+        RCM_ClkInitStruct.ClockType = (RCM_CLOCKTYPE_SYSCLK | RCM_CLOCKTYPE_RCH | RCM_CLOCKTYPE_HCLK | RCM_CLOCKTYPE_PCLK0 |RCM_CLOCKTYPE_PCLK1 | RCM_CLOCKTYPE_PCLK2| RCM_CLOCKTYPE_PCLK3);
+        RCM_ClkInitStruct.RCHDivider = RCM_RCH_DIV2;
+        RCM_ClkInitStruct.SYSCLKSource = RCM_SYSCLKSOURCE_PLL0CLK;
+        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV1;		//SystemCoreClock = Fclk/RCM_SYSCLK_DIV1 = 204Mhz/1 = 204MHz
+        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV8;		//APB0Clock = SystemCoreClock/RCM_PCLK0_DIV8 = 204MHz/8 = 25.5MHz
+        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;		//APB1Clock = SystemCoreClock/RCM_PCLK1_DIV1 = 204MHz/1 = 204MHz
+        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;		//APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 204MHz/1 = 204MHz
+        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV8;		//APB3Clock = SystemCoreClock/RCM_PCLK3_DIV8 = 204MHz/8 = 25.5MHz
+
+        flashWaitCycles = FLASH_RWAITCYC_4;
+#endif
+
+#ifdef SYSCLK_240M
+        RCM_OscInitStruct.PLL.PLLM = 2;
+        RCM_OscInitStruct.PLL.PLLN = 40;
+        RCM_OscInitStruct.PLL.PLLP = 2;                          //RCH=24M  ,PLL CLKOUT(Fclk)=240Mhz, Fref= RCH = 24M , Fclk=(Fref*DN)/(DP*DM)
+
+         /* Select PLL as system clock source and configure the HCLK, PCLK0, PCLK1 ,PCLK2, and PCLK3
+         clocks dividers */
+        RCM_ClkInitStruct.ClockType = (RCM_CLOCKTYPE_SYSCLK | RCM_CLOCKTYPE_RCH | RCM_CLOCKTYPE_HCLK | RCM_CLOCKTYPE_PCLK0 |RCM_CLOCKTYPE_PCLK1 | RCM_CLOCKTYPE_PCLK2| RCM_CLOCKTYPE_PCLK3);
+        RCM_ClkInitStruct.RCHDivider = RCM_RCH_DIV2;
+        RCM_ClkInitStruct.SYSCLKSource = RCM_SYSCLKSOURCE_PLL0CLK;
+        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV1;		//SystemCoreClock = Fclk/RCM_SYSCLK_DIV1 = 240Mhz/1 = 240MHz
+        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV8;		//APB0Clock = SystemCoreClock/RCM_PCLK0_DIV8 = 240MHz/8 = 30MHz
+        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;		//APB1Clock = SystemCoreClock/RCM_PCLK1_DIV1 = 240MHz/1 = 240MHz
+        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;		//APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 240MHz/1 = 240MHz
+        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV8;		//APB3Clock = SystemCoreClock/RCM_PCLK3_DIV8 = 240MHz/8 = 30MHz
+
+        flashWaitCycles = FLASH_RWAITCYC_4;
+#endif
+
+    }
+    else if(SYSCLK_SRC == SYSCLK_USE_XTH)
+    {
+        /* Enable the XTH oscillator without configuring the PLL. */
+        RCM_OscInitStruct.OscillatorType = RCM_OSCILLATORTYPE_XTH;
+        RCM_OscInitStruct.XTHState = RCM_XTH_ON;
+        RCM_OscInitStruct.PLL.PLLState = RCM_PLL_NONE;
+
+        /* Select XTH as system clock source and configure the HCLK, PCLK0, PCLK1 ,PCLK2, and PCLK3
+         clocks dividers */
+        RCM_ClkInitStruct.ClockType = (RCM_CLOCKTYPE_SYSCLK | RCM_CLOCKTYPE_HCLK | RCM_CLOCKTYPE_PCLK0 |RCM_CLOCKTYPE_PCLK1 | RCM_CLOCKTYPE_PCLK2| RCM_CLOCKTYPE_PCLK3);
+        RCM_ClkInitStruct.SYSCLKSource = RCM_SYSCLKSOURCE_XTH;
+        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV1;		//SystemCoreClock = XTH/RCM_SYSCLK_DIV1 = 8Mhz/1 = 8MHz
+        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV1;		//APB0Clock = SystemCoreClock/RCM_PCLK0_DIV1 = 8MHz/1 = 8MHz
+        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;		//APB1Clock = SystemCoreClock/RCM_PCLK1_DIV1 = 8MHz/1 = 8MHz
+        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;		//APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 8MHz/1 = 8MHz
+        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV1;		//APB3Clock = SystemCoreClock/RCM_PCLK3_DIV1 = 8MHz/1 = 8MHz
+
+        flashWaitCycles = FLASH_RWAITCYC_0;
+    }
+    else if (SYSCLK_SRC == SYSCLK_USE_XTH_PLL) {
+#ifdef USE_OVERCLOCK
+        uint32_t currentOverclockLevel = persistentObjectRead(PERSISTENT_OBJECT_OVERCLOCK_LEVEL);
+        if (currentOverclockLevel >= ARRAYLEN(overclockLevels)) {
+            currentOverclockLevel = 0;
+        }
+#elif defined(SYSCLK_336M)
+        const uint32_t currentOverclockLevel = 1;
+#else
+        const uint32_t currentOverclockLevel = 0;
+#endif
+        const pllConfig_t *pll = &overclockLevels[currentOverclockLevel];
+
+        RCM_OscInitStruct.OscillatorType = RCM_OSCILLATORTYPE_XTH;
+        RCM_OscInitStruct.XTHState = RCM_XTH_ON;
+        RCM_OscInitStruct.PLL.PLLState = RCM_PLL_ON;
+        RCM_OscInitStruct.PLL.PLLSource = RCM_PLLSOURCE_XTH;
+        RCM_OscInitStruct.PLL.PLLM = XTH_VALUE / (XTH_PLL_INPUT_MHZ * 1000000U);
+        RCM_OscInitStruct.PLL.PLLN = pll->n;
+        RCM_OscInitStruct.PLL.PLLP = pll->p;
+
+        RCM_ClkInitStruct.ClockType = RCM_CLOCKTYPE_SYSCLK | RCM_CLOCKTYPE_HCLK |
+            RCM_CLOCKTYPE_PCLK0 | RCM_CLOCKTYPE_PCLK1 | RCM_CLOCKTYPE_PCLK2 |
+            RCM_CLOCKTYPE_PCLK3 | RCM_CLOCKTYPE_USBSDIO;
+        RCM_ClkInitStruct.SYSCLKSource = RCM_SYSCLKSOURCE_PLL0CLK;
+        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV1;
+        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV8;
+        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;
+        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;
+        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV8;
+        RCM_ClkInitStruct.USBSDIOCLKDivider = pll->usbSdioDivider;
+        flashWaitCycles = pll->flashWaitCycles;
+    }
+
+    if (HAL_RCM_OscConfig(&RCM_OscInitStruct) != HAL_OK ||
+        HAL_RCM_ClockConfig(&RCM_ClkInitStruct, flashWaitCycles) != HAL_OK) {
+        Error_Handler();
+    }
+}
