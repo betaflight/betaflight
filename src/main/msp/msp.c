@@ -73,6 +73,7 @@
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_table.h"
 #include "drivers/rangefinder/rangefinder_lidarmt.h"
+#include "drivers/rangefinder/rangefinder_pb04.h"
 
 #include "fc/board_info.h"
 #include "fc/controlrate_profile.h"
@@ -2364,10 +2365,11 @@ case MSP_NAME:
         sbufWriteU16(dst, (uint16_t)currentPidProfile->tpa_speed_pitch_offset);
         sbufWriteU8(dst, currentPidProfile->yaw_type);
         sbufWriteU16(dst, (uint16_t)currentPidProfile->angle_pitch_offset);
-        sbufWriteU8(dst, (uint8_t)currentPidProfile->speed_curve_vref);
-        sbufWriteU8(dst, (uint8_t)currentPidProfile->speed_curve_power);
-        sbufWriteU16(dst, (uint16_t)currentPidProfile->speed_curve_min);
-        sbufWriteU16(dst, (uint16_t)currentPidProfile->speed_curve_max);
+        sbufWriteU8(dst, currentPidProfile->speed_curve_vref);
+        sbufWriteU8(dst, currentPidProfile->speed_curve_power);
+        sbufWriteU16(dst, currentPidProfile->speed_curve_min);
+        sbufWriteU16(dst, currentPidProfile->speed_curve_max);
+        sbufWriteU8(dst, currentPidProfile->tpa_max_pitot_speed);
         break;
     }
 
@@ -2531,25 +2533,28 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
             serializeBoxReply(dst, page, &serializeBoxPermanentIdFn);
         }
         break;
-    case MSP_REBOOT:
+    case MSP_REBOOT: {
         if (!mspRebootIsAllowed()) {
             return MSP_RESULT_ERROR;
         }
 
-        if (sbufBytesRemaining(src)) {
-            rebootMode = sbufReadU8(src);
-
-            if (rebootMode >= MSP_REBOOT_COUNT
+        const uint8_t requestedRebootMode = sbufBytesRemaining(src) ? sbufReadU8(src) : MSP_REBOOT_FIRMWARE;
+        if (requestedRebootMode >= MSP_REBOOT_COUNT
 #if !defined(USE_USB_MSC)
-                || rebootMode == MSP_REBOOT_MSC || rebootMode == MSP_REBOOT_MSC_UTC
+            || requestedRebootMode == MSP_REBOOT_MSC || requestedRebootMode == MSP_REBOOT_MSC_UTC
 #endif
-                ) {
-                return MSP_RESULT_ERROR;
-            }
-        } else {
-            rebootMode = MSP_REBOOT_FIRMWARE;
+#if !defined(USE_FLASH_BOOT_LOADER)
+            || requestedRebootMode == MSP_REBOOT_BOOTLOADER_FLASH
+#endif
+#if !PLATFORM_SUPPORTS_SOFTWARE_BOOTLOADER
+            || requestedRebootMode == MSP_REBOOT_BOOTLOADER_ROM || requestedRebootMode == MSP_REBOOT_BOOTLOADER_FLASH
+#endif
+            ) {
+            return MSP_RESULT_ERROR;
         }
 
+        // An invalid request must not overwrite an already scheduled reboot.
+        rebootMode = requestedRebootMode;
         sbufWriteU8(dst, rebootMode);
 
 #if defined(USE_USB_MSC)
@@ -2574,6 +2579,7 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
         }
 
         break;
+    }
     case MSP_MULTIPLE_MSP:
         {
             uint8_t maxMSPs = 0;
@@ -4188,15 +4194,6 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
 #endif
 
-#if defined(USE_RANGEFINDER_MT)
-    case MSP2_SENSOR_RANGEFINDER_LIDARMT:
-        mtRangefinderReceiveNewData(sbufPtr(src));
-        break;
-
-    case MSP2_SENSOR_OPTICALFLOW_MT:
-        mtOpticalflowReceiveNewData(sbufPtr(src));
-        break;
-#endif
 
 #ifdef USE_GPS
     case MSP2_SENSOR_GPS:
@@ -4725,11 +4722,15 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         currentPidProfile->yaw_type = sbufReadU8(src);
 #endif
         currentPidProfile->angle_pitch_offset = sbufReadS16Constrained(src, -ANGLE_PITCH_OFFSET_MAX, ANGLE_PITCH_OFFSET_MAX);
-       if (sbufBytesRemaining(src) >= 6) {
+        const bool hasSpeedCurve = sbufBytesRemaining(src) >= 6;
+        if (hasSpeedCurve) {
             currentPidProfile->speed_curve_vref = sbufReadU8Constrained(src, 1, 85);
             currentPidProfile->speed_curve_power = sbufReadU8Constrained(src, 5, 30);
             currentPidProfile->speed_curve_min = sbufReadU16Constrained(src, 5, 99);
             currentPidProfile->speed_curve_max = sbufReadU16Constrained(src, 100, 1000);
+        }
+        if (hasSpeedCurve && sbufBytesRemaining(src) >= 1) {
+            currentPidProfile->tpa_max_pitot_speed = sbufReadU8Constrained(src, 1, 85);
         }
         pidInitConfig(currentPidProfile);
         break;
