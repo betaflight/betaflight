@@ -290,7 +290,7 @@ static void performSanityChecks(void)
     static float previousDistanceToHomeCm = 0.0f;
     static int8_t secondsLowSats = 0;
     static int8_t secondsDoingNothing;
-    static int8_t secondsWaitingToLand = 0;
+    static int8_t secondsTooSlow = 0;
     const timeUs_t currentTimeUs = micros();
 
     static timeUs_t lastSanityCheck = 0;
@@ -328,7 +328,7 @@ static void performSanityChecks(void)
         rescueState.intent.secondsFailing = 0;
         secondsLowSats = 0;
         secondsDoingNothing = 0;
-        secondsWaitingToLand = 0;
+        secondsTooSlow = 0;
         rescueState.isOK = true;
     }
 
@@ -446,13 +446,15 @@ static void performSanityChecks(void)
         }
         break;
     case RESCUE_DESCENT:
-        if (rescueState.intent.targetAltitudeCm <= rescueState.intent.landingAltitudeCm) {
-            if (rescueState.sensor.distanceToHomeCm < 200.0f &&
-                ++secondsWaitingToLand >= 10) {
-                rescueState.phase = RESCUE_LANDING;
-                rescueState.intent.secondsFailing = 0;
-            }
-        } else if (fabsf(targetAltitudeChange) >= 1.0f) {
+        // Monitor horizontal progress throughout descent, as for fly home
+        secondsTooSlow += (velocityToHomeCmS < 0.2f * rescueState.intent.targetSpeedCmS) ? 1 : -1;
+        secondsTooSlow = MAX(0, secondsTooSlow);
+        if (secondsTooSlow >= 15) {
+            rescueState.phase = RESCUE_LANDING;
+            secondsTooSlow = 0;
+        }
+        // Monitor altitude progress
+        if (fabsf(targetAltitudeChange) >= 1.0f) {
             rescueState.intent.secondsFailing += altitudeControlError > 0.5f ? -1 : 1;
             rescueState.intent.secondsFailing = MAX(0, rescueState.intent.secondsFailing);
             if (rescueState.intent.secondsFailing >= 15) {
