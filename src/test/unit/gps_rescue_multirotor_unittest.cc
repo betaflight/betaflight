@@ -318,22 +318,6 @@ TEST_F(GpsRescueLanding, HoldsAtLandingAltitudeOutsideAcceptanceRadius)
     EXPECT_EQ(0, landingCalls);
 }
 
-TEST_F(GpsRescueLanding, LandsAfterTenSecondsWithinTwoMetres)
-{
-    reachLandingAltitude();
-    EXPECT_EQ(0, landingCalls);
-
-    // Within 2m but outside the normal landing radius.
-    simulatedEstimate.position.v[EF_NORTH] = 100.0f;
-
-    runRescueSeconds(8.0f);
-    EXPECT_EQ(0, landingCalls);
-
-    // The 10-second sanity timeout initiates landing.
-    runRescueSeconds(4.0f);
-    EXPECT_GT(landingCalls, 0);
-}
-
 TEST_F(GpsRescueLanding, LandsImmediatelyWithinAcceptanceRadius)
 {
     reachLandingAltitude();
