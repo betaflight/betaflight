@@ -195,7 +195,7 @@ Source: [discussion #15961](https://github.com/betaflight/betaflight/discussions
 We close pull requests without a full review if they:
 
 - Change files outside the scope of the change.
-- Work around a problem instead of fixing its cause (section 3).
+- Work around a problem without maintainer agreement (section 3).
 - Duplicate existing code, or do not use the existing infrastructure in section 2.
 - Break compatibility (section 3).
 - Reformat files that the change does not need.
