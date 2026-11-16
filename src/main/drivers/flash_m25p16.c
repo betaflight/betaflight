@@ -130,6 +130,15 @@ struct {
     // BergMicro W25Q32
     // Datasheet: https://www.winbond.com/resource-files/w25q32jv%20dtr%20revf%2002242017.pdf?__locale=zh_TW
     { 0xE04016, 133, 50, 1024, 16 },
+    //Giantec GT25Q64EZ
+    //Datasheet:https://www.giantec-semi.com/norxp/556
+    {0x1C7117, 104, 104, 128, 256},
+    //Giantec GT25Q128EZ
+    //Datasheet:https://www.giantec-semi.com/norxp/556
+    {0x1C7118, 104, 104, 256, 256},
+    //Giantec GT25Q256EZ
+    //Datasheet:https://www.giantec-semi.com/norxp/556
+    {0x1C7319, 104, 104, 512, 256},
     // End of list
     { 0x000000, 0, 0, 0, 0 }
 };
