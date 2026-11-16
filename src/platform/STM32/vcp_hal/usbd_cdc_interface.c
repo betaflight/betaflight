@@ -299,19 +299,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     if (hcdc->TxState == 0) {
         // endpoint has finished transmitting previous block
         if (lastBuffsize) {
-            bool needZeroLengthPacket = lastBuffsize % 64 == 0;
-
             // move the ring buffer tail based on the previous succesful transmission
+            // (any required ZLP has already been sent by the CDC class DataIn handler)
             UserTxBufPtrOut += lastBuffsize;
             if (UserTxBufPtrOut == APP_TX_DATA_SIZE) {
                 UserTxBufPtrOut = 0;
             }
             lastBuffsize = 0;
-
-            if (needZeroLengthPacket) {
-                USBD_CDC_SetTxBuffer(&USBD_Device, (uint8_t*)&UserTxBuffer[UserTxBufPtrOut], 0);
-                return;
-            }
         }
         if (UserTxBufPtrOut != UserTxBufPtrIn) {
             if (UserTxBufPtrOut > UserTxBufPtrIn) { /* Roll-back */
@@ -359,6 +353,15 @@ static int8_t CDC_Itf_TransmitCplt(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
     UNUSED(Buf);
     UNUSED(Len);
     UNUSED(epnum);
+
+    // Re-pump the TX ring now rather than waiting for the next polling tick.
+    // Generating an update event pends the TIMusb interrupt, so the ring is
+    // still only ever serviced from that one interrupt context.
+#if defined(STM32C5)
+    LL_TIM_GenerateEvent_UPDATE(TIMusb);
+#else
+    TIMusb->EGR = TIM_EGR_UG;
+#endif
 
     return (USBD_OK);
 }
@@ -465,6 +468,11 @@ uint32_t CDC_Send_FreeBytes(void)
     }
 
     return freeBytes;
+}
+
+uint32_t CDC_Send_BytesPending(void)
+{
+    return (APP_TX_DATA_SIZE - 1) - CDC_Send_FreeBytes();
 }
 
 /**

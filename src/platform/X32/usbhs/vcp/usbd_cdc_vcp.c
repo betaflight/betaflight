@@ -510,6 +510,24 @@ uint32_t CDC_Send_FreeBytes(void)
     return freeBytes;
 }
 
+/**
+ * @brief  Get the number of bytes not yet delivered to the host.
+ *
+ * The CDC library advances APP_Rx_ptr_out when it starts an IN transfer, not
+ * when it completes, so the ring reads empty while the final packet is still
+ * in flight. Count one extra byte until the endpoint goes idle. The ring is
+ * sampled before the endpoint state: once it reads empty its last transfer
+ * has already started, so USB_Tx_State is either still busy or genuinely
+ * done.
+ *
+ * Called by: serial_usb_vcp's isUsbVcpTransmitBufferEmpty().
+ */
+uint32_t CDC_Send_BytesPending(void)
+{
+    const uint32_t pending = (APP_RX_DATA_SIZE - 1U) - CDC_Send_FreeBytes();
+    return pending + (USB_Tx_State != 0U ? 1U : 0U);
+}
+
 static void usbRecoverStalledTx(void)
 {
     /*

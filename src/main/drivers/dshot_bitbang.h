@@ -36,6 +36,7 @@ typedef enum {
     DSHOT_BITBANG_STATUS_MOTOR_PIN_CONFLICT,
     DSHOT_BITBANG_STATUS_NO_PACER,
     DSHOT_BITBANG_STATUS_TOO_MANY_PORTS,
+    DSHOT_BITBANG_STATUS_DMA_ERROR,
 } dshotBitbangStatus_e;
 
 bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig);
