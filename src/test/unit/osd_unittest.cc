@@ -937,7 +937,7 @@ TEST_F(OsdTest, TestElementAmperage)
 }
 
 /*
- * Tests the remaining time estimate OSD element, including values above INT32_MAX us.
+ * Tests the remaining time estimate OSD element, including the 99:59 display cap.
  */
 TEST_F(OsdTest, TestElementRemainingTimeEstimate)
 {
@@ -948,23 +948,14 @@ TEST_F(OsdTest, TestElementRemainingTimeEstimate)
     osdAnalyzeActiveElements();
 
     // when
-    // (4000 - 450) / 450 * 300 s = 2366 s, above INT32_MAX us (35:47)
+    // (4000 - 450) / 450 * 600 s = 4733 s, below the 99:59 display cap
     simulationMahDrawn = 450;
-    osdFlyTime = 300 * 1000000;
-    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
-    osdRefresh();
-
-    // then
-    displayPortTestBufferSubstring(1, 12, "39:26");
-
-    // when
-    // (4000 - 450) / 450 * 600 s = 4733 s, above the TIMEUS_MAX (UINT32_MAX) 71:34 limit
     osdFlyTime = 600 * 1000000;
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
     osdRefresh();
 
     // then
-    displayPortTestBufferSubstring(1, 12, "71:34");
+    displayPortTestBufferSubstring(1, 12, "78:53");
 
     // when
     // case cap alarm off
@@ -986,7 +977,7 @@ TEST_F(OsdTest, TestElementRemainingTimeEstimate)
     displayPortTestBufferSubstring(1, 12, "--:--");
 
     // when
-    // mAH draw over 1/10 of cap_alarm
+    // mAh draw over 1/10 of cap_alarm
     osdConfigMutable()->cap_alarm = 100;
     simulationMahDrawn = 11;
     osdFlyTime = 30 * 1000000;  // 30s
@@ -1007,15 +998,15 @@ TEST_F(OsdTest, TestElementRemainingTimeEstimate)
     displayPortTestBufferSubstring(1, 12, "--:--");
 
     // when
-    // case time shows just under the TIMEUS_MAX (UINT32_MAX) 71:34 limit
+    // remaining time above MM:SS (99:59) display limit
     osdConfigMutable()->cap_alarm = 4000;
     simulationMahDrawn = 450;
-    osdFlyTime = 543 * 1000000;  // 543s
+    osdFlyTime = 800 * 1000000;  // 800s
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
     osdRefresh();
 
     // then
-    displayPortTestBufferSubstring(1, 12, "71:23");
+    displayPortTestBufferSubstring(1, 12, "99:59");
 
     // when
     // case mAh drawn over or equal to alarm capacity, so 00:00 + blinking
