@@ -62,6 +62,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
+#include "sensors/pitot.h"
 
 #include "pid.h"
 
@@ -258,6 +259,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_speed_adv_thrust = 2000,
         .tpa_speed_max_voltage = 2520,
         .tpa_speed_pitch_offset = 0,
+        .tpa_max_pitot_speed = 40,    // maximal wings speed m/s for PITOT_AIRSPEED and GPS_SPEED tpa_speed_curve_source settings
         .yaw_type = YAW_TYPE_RUDDER,
         .angle_pitch_offset = 0,
         .chirp_lag_freq_hz = 3,
@@ -351,24 +353,41 @@ static float calcWingAcceleration(float throttle, float pitchAngleRadians)
 
 static float calcWingTpaArgument(void)
 {
-    const float t = calcWingThrottle();
-    const float pitchRadians = DECIDEGREES_TO_RADIANS(attitude.values.pitch);
-    const float rollRadians = DECIDEGREES_TO_RADIANS(attitude.values.roll);
+    float tpaArgument = 1.0f;
+    if (pidRuntime.tpaSpeed.tpaSpeedType == TPA_SPEED_BASIC ||
+        pidRuntime.tpaSpeed.tpaSpeedType == TPA_SPEED_ADVANCED) {
+        const float t = calcWingThrottle();
+        const float pitchRadians = DECIDEGREES_TO_RADIANS(attitude.values.pitch);
+        const float rollRadians = DECIDEGREES_TO_RADIANS(attitude.values.roll);
 
-    DEBUG_SET(DEBUG_TPA, 1, lrintf(attitude.values.roll));   //!< Attitude Roll [unit:0.1deg]
-    DEBUG_SET(DEBUG_TPA, 2, lrintf(attitude.values.pitch));  //!< Attitude Pitch [unit:0.1deg]
-    DEBUG_SET(DEBUG_TPA, 3, lrintf(t * 1000.0f));            //!< Wing Throttle [unit:0.001]
+        DEBUG_SET(DEBUG_TPA, 1, lrintf(attitude.values.roll));   //!< Attitude Roll [unit:0.1deg]
+        DEBUG_SET(DEBUG_TPA, 2, lrintf(attitude.values.pitch));  //!< Attitude Pitch [unit:0.1deg]
+        DEBUG_SET(DEBUG_TPA, 3, lrintf(t * 1000.0f));            //!< Wing Throttle [unit:0.001]
 
-    // pitchRadians is always -90 to 90 degrees. The bigger the ABS(pitch) the less portion of pitchOffset is needed.
-    // If ABS(roll) > 90 degrees - flying inverted, then negative portion of pitchOffset is needed.
-    // If ABS(roll) ~ 90 degrees - flying sideways, no pitchOffset is applied.
-    const float correctedPitchAnge = pitchRadians + cos_approx(pitchRadians) * cos_approx(rollRadians) * pidRuntime.tpaSpeed.pitchOffset;
+        // pitchRadians is always -90 to 90 degrees. The bigger the ABS(pitch) the less portion of pitchOffset is needed.
+        // If ABS(roll) > 90 degrees - flying inverted, then negative portion of pitchOffset is needed.
+        // If ABS(roll) ~ 90 degrees - flying sideways, no pitchOffset is applied.
+        const float correctedPitchAnge = pitchRadians + cos_approx(pitchRadians) * cos_approx(rollRadians) * pidRuntime.tpaSpeed.pitchOffset;
 
-    const float a = calcWingAcceleration(t, correctedPitchAnge);
+        const float a = calcWingAcceleration(t, correctedPitchAnge);
 
-    pidRuntime.tpaSpeed.speed += a * pidRuntime.dT;
-    pidRuntime.tpaSpeed.speed = MAX(0.0f, pidRuntime.tpaSpeed.speed);
-    const float tpaArgument = constrainf(pidRuntime.tpaSpeed.speed / pidRuntime.tpaSpeed.maxSpeed, 0.0f, 1.0f);
+        pidRuntime.tpaSpeed.speed += a * pidRuntime.dT;
+        pidRuntime.tpaSpeed.speed = MAX(0.0f, pidRuntime.tpaSpeed.speed);
+        tpaArgument = constrainf(pidRuntime.tpaSpeed.speed / pidRuntime.tpaSpeed.maxSpeed, 0.0f, 1.0f);
+    } else if (pidRuntime.tpaSpeed.tpaSpeedType == TPA_SPEED_PITOT) {
+#ifdef USE_PITOT
+        if (sensors(SENSOR_PITOT) && pitotIsCalibrated()) {
+            pidRuntime.tpaSpeed.speed = MAX(pitot.airspeed, 0.0f) * 0.01f;
+            tpaArgument = constrainf(pidRuntime.tpaSpeed.speed / pidRuntime.tpaSpeed.maxSpeed, 0.0f, 1.0f);
+        } else {
+            pidRuntime.tpaSpeed.speed = pidRuntime.tpaSpeed.maxSpeed * 0.5f;
+            tpaArgument = 1.0f;
+        }
+#else
+        pidRuntime.tpaSpeed.speed = pidRuntime.tpaSpeed.maxSpeed * 0.5f;
+        tpaArgument = 1.0f;
+#endif
+    }
 
     DEBUG_SET(DEBUG_TPA, 4, lrintf(pidRuntime.tpaSpeed.speed * 10.0f));  //!< Estimated Airspeed [unit:0.1m/s]
     DEBUG_SET(DEBUG_TPA, 5, lrintf(tpaArgument * 1000.0f));              //!< TPA Argument [unit:0.001]
@@ -964,9 +983,17 @@ STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
 }
 #endif
 
-static FAST_CODE_NOINLINE void disarmOnImpact(void)
+// landing_disarm_threshold units: suits a controlled autopilot landing, too sensitive for pilot-controlled flight
+#define AUTO_LANDING_DISARM_THRESHOLD (70 * 10.0f)
+
+static bool isAutoLandingActive(void)
 {
-    const bool autopilotOwnsThrottle = FLIGHT_MODE(ALT_HOLD_MODE | GPS_RESCUE_MODE);
+    return autopilotIsLanding() && !isFixedWing() && isBelowLandingAltitude();
+}
+
+static FAST_CODE_NOINLINE void disarmOnImpact(float threshold, bool autoLanding)
+{
+    const bool autopilotOwnsThrottle = autoLanding || FLIGHT_MODE(ALT_HOLD_MODE | GPS_RESCUE_MODE);
     // if, being armed, and after takeoff...
     if (wasThrottleRaised()
         // and, either sticks are centred and throttle zeroed,
@@ -977,11 +1004,11 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
         // modes, and keep the ordinary centred-stick path outside them.
         && (autopilotOwnsThrottle ? isBelowLandingAltitude()
                                   : (getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f))) {
-        // increase sensitivity by 50% when low and under autopilot throttle control
+        // increase sensitivity by 50% in an autopilot landing below landing altitude
         // for more reliable disarm with gentle controlled landings
-        const float lowAltitudeSensitivity = (autopilotOwnsThrottle && isBelowLandingAltitude()) ? 1.5f : 1.0f;
+        const float lowAltitudeSensitivity = autoLanding ? 1.5f : 1.0f;
         // and disarm if jerk exceeds threshold...
-        if ((acc.jerkMagnitude * lowAltitudeSensitivity) > pidRuntime.landingDisarmThreshold) {
+        if ((acc.jerkMagnitude * lowAltitudeSensitivity) > threshold) {
             // then disarm
             setArmingDisabled(ARMING_DISABLED_ARM_SWITCH); // NB: need a better message
             disarm(DISARM_REASON_LANDING);
@@ -1234,8 +1261,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
     rotateItermAndAxisError();
 
+    const bool autoLanding = isAutoLandingActive();
     if (pidRuntime.useEzDisarm) {
-        disarmOnImpact();
+        disarmOnImpact(pidRuntime.landingDisarmThreshold, autoLanding);
+    } else if (autoLanding) {
+        disarmOnImpact(AUTO_LANDING_DISARM_THRESHOLD, autoLanding);
     }
 
 #ifdef USE_CHIRP

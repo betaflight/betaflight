@@ -379,7 +379,7 @@ bool dshotTelemetryWait(void)
     } while (telemetryPending);
 
     if (telemetryWait) {
-        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);  //!< Reception Timeout Count
+        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);  //!< Failed Frame Count
     }
 
     bprintf("dshotTelemetryWait returning %d", telemetryWait);

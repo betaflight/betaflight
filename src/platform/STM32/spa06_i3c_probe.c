@@ -25,6 +25,7 @@
 #include "stm32c5xx_ll_i3c.h"
 #include "stm32c5xx_ll_rcc.h"
 
+#include "drivers/barometer/barometer_spa06_probe.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
 

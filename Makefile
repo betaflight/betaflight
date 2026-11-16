@@ -200,7 +200,8 @@ HSE_VALUE       ?= 8000000
 CI_EXCLUDED_TARGETS := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/.exclude)))))
 CI_COMMON_TARGETS   := STM32F4DISCOVERY CRAZYBEEF4SX1280 CRAZYBEEF4FR MATEKF405TE AIRBOTG4AIO TBS_LUCID_FC IFLIGHT_BLITZ_F722 NUCLEOF446 SPRACINGH7EXTREME SPRACINGH7RF SITL_X_PLANE
 CI_TARGETS          := $(filter-out $(CI_EXCLUDED_TARGETS), $(BASE_TARGETS) $(filter $(CI_COMMON_TARGETS), $(BASE_CONFIGS)))
-PREVIEW_TARGETS     := MATEKF411 AIKONF4V2 AIRBOTG4AIO ZEEZF7V3 FOXEERF745V4_AIO KAKUTEH7 TBS_LUCID_FC SITL SPRACINGH7EXTREME SPRACINGH7RF
+PREVIEW_TARGETS     := MATEKF411 AIKONF4V2 AIRBOTG4AIO ZEEZF7V3 FOXEERF745V4_AIO KAKUTEH7 TBS_LUCID_FC SITL SPRACINGH7EXTREME SPRACINGH7RF \
+                       APM32F405 GD32H757VI RASPBERRY_PI_UAVFC ACROBOC562 OPENN657V1 X32M7B STM32H562 ESP32S3
 
 TARGET_PLATFORM     := $(notdir $(patsubst %/,%,$(subst target/$(TARGET)/,, $(dir $(wildcard $(PLATFORM_DIR)/*/target/$(TARGET)/target.mk)))))
 TARGET_PLATFORM_DIR := $(PLATFORM_DIR)/$(TARGET_PLATFORM)
@@ -712,7 +713,17 @@ $(CONFIGS_CLEAN):
 clean_all: $(TARGETS_CLEAN) test_clean
 
 ## preview           : build one target for each platform and execute make test
-preview: $(PREVIEW_TARGETS) test
+# Hydrate the configs and platform SDKs first, one at a time: parallel
+# `git submodule update --init` runs contend for the .git/config lock.
+# The build then runs in a new make, so BASE_CONFIGS (resolved at parse
+# time) includes the configs hydrated here.
+.PHONY: preview preview_build
+preview:
+	$(V0) [ -d "$(CONFIG_DIR)/configs" ] || $(MAKE) -j1 configs
+	$(V0) $(MAKE) -j1 $(AUTOHYDRATE_STAMPS) platform-sdk-hydrate
+	$(V0) $(MAKE) preview_build
+
+preview_build: $(PREVIEW_TARGETS) test
 
 ## all_configs       : Build all configs
 all_configs: $(BASE_CONFIGS)

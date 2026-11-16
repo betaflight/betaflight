@@ -150,6 +150,8 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM8, CH2N, PC11, 0, 0, 0),  // AF3
     DEF_TIM(TIM15, CH1, PC12, 0, 0, 0),  // AF2
     DEF_TIM(TIM8, CH3N, PC12, 0, 0, 0),  // AF3
+    DEF_TIM(TIM12, CH1, PC14, 0, 0, 0),  // AF2
+    DEF_TIM(TIM12, CH2, PC15, 0, 0, 0),  // AF2
 #if defined(STM32C562xx)
     DEF_TIM(TIM5, CH1, PC6, 0, 0, 0),    // AF2
     DEF_TIM(TIM5, CH2, PC7, 0, 0, 0),    // AF2
@@ -193,7 +195,18 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM17, CH1, PF7, 0, 0, 0),   // AF1
     DEF_TIM(TIM16, CH1N, PF8, 0, 0, 0),  // AF10
     DEF_TIM(TIM17, CH1N, PF9, 0, 0, 0),  // AF1
+// Port G
+    DEF_TIM(TIM4, CH1, PG0, 0, 0, 0),    // AF2
+    DEF_TIM(TIM4, CH2, PG1, 0, 0, 0),    // AF2
+    DEF_TIM(TIM4, CH3, PG2, 0, 0, 0),    // AF2
+    DEF_TIM(TIM4, CH4, PG3, 0, 0, 0),    // AF2
+    DEF_TIM(TIM5, CH1, PG4, 0, 0, 0),    // AF2
+    DEF_TIM(TIM5, CH2, PG5, 0, 0, 0),    // AF2
+    DEF_TIM(TIM5, CH3, PG6, 0, 0, 0),    // AF2
+    DEF_TIM(TIM5, CH4, PG7, 0, 0, 0),    // AF2
 #endif
+// Port H
+    DEF_TIM(TIM17, CH1N, PH2, 0, 0, 0),  // AF1
 };
 #endif
 

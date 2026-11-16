@@ -181,7 +181,10 @@ configStreamerResult_e config_streamer_finish(config_streamer_t *c)
 #elif defined(CONFIG_IN_RAM)
         // NOP
 #elif defined(CONFIG_IN_FILE) || defined(CONFIG_IN_FLASH)
-        configLock();
+        const configStreamerResult_e result = configLock();
+        if (c->err == CONFIG_RESULT_SUCCESS) {
+            c->err = result;
+        }
 #endif
         c->unlocked = false;
     }

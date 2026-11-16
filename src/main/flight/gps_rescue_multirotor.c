@@ -267,7 +267,10 @@ static void rescueDisarmNow(void)
 static void rescueEmergDescent(void)
 {
     if (isAltitudeAvailable()) {
-        rescueState.phase = RESCUE_EMERG_DESCENT;
+        if (rescueState.phase != RESCUE_EMERG_DESCENT) {
+            rescueState.phase = RESCUE_EMERG_DESCENT;
+            rescueState.intent.secondsFailing = 0;
+        }
         // same as RESCUE_DESCENT phase, but no XY control
         // if baro is available then emergency descent is possible even if the GPS module fails
     } else {
@@ -336,19 +339,20 @@ static void performSanityChecks(void)
         switch(gpsRescueConfig()->sanityChecks) {
         case RESCUE_SANITY_ON:
             rescueEmergDescent();
-            return;
+            break;
         case RESCUE_SANITY_FS_ONLY:
             if (hardFailsafe) {
                 rescueEmergDescent();
-                return;
             }
             break;
         default:
             if ((!rescueState.isAvailable) && hardFailsafe) {
                 rescueEmergDescent();
-                return;
             }
             break;
+        }
+        if (rescueState.phase == RESCUE_IDLE) {
+            return;
         }
     }
 
@@ -442,10 +446,15 @@ static void performSanityChecks(void)
         }
         break;
     case RESCUE_LANDING:
-        rescueState.intent.secondsFailing += altitudeControlError > 0.5f ? -1 : 1;
-        rescueState.intent.secondsFailing = MAX(0, rescueState.intent.secondsFailing);
-        if (rescueState.intent.secondsFailing >= 15) {
-            rescueDisarmNow();
+    case RESCUE_EMERG_DESCENT:
+        if (rescueState.phase == RESCUE_LANDING || isBelowLandingAltitude() || hardFailsafe) {
+            rescueState.intent.secondsFailing += altitudeControlError > 0.5f ? -1 : 1;
+            rescueState.intent.secondsFailing = MAX(0, rescueState.intent.secondsFailing);
+            if (rescueState.intent.secondsFailing >= 15) {
+                rescueDisarmNow();
+            }
+        } else {
+            rescueState.intent.secondsFailing = 0;
         }
         break;
     default:
@@ -453,12 +462,11 @@ static void performSanityChecks(void)
     }
 }
 
-static void descend(void)
+static bool rescueIsDescending(void)
 {
-    float verticalVelMax = -(float)gpsRescueConfig()->descendRate;
-    float verticalVelAttenuator = scaleRangef(constrainf(rescueState.intent.targetAltitudeCm, 1000, 5000), 1000, 5000, 0.6f, 3.0f);
-
-    rescueState.intent.targetAltitudeVelCmS = verticalVelMax * verticalVelAttenuator;
+    return rescueState.phase == RESCUE_DESCENT
+        || rescueState.phase == RESCUE_LANDING
+        || rescueState.phase == RESCUE_EMERG_DESCENT;
 }
 
 static bool descendIfNeeded(void)
@@ -606,7 +614,6 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         updateVelocityStartupAttenuator();
         updateTargetSpeed(); 
         controlVelocity();
-        descend(); // sets a negative targetAltitudeVelocity
         if (isBelowLandingAltitude()) {
             rescueState.phase = RESCUE_LANDING;
             rescueState.intent.secondsFailing = 0; // reset sanity timer for landing
@@ -614,13 +621,11 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         break;
 
     case RESCUE_LANDING:
-        descend();
         clearTargetVelocity();
         // target altitude keeps going down
         break;
 
     case RESCUE_EMERG_DESCENT:
-        descend();
         vector2Zero(&rescueState.intent.targetVelocityEF);
         setTargetVelocity(&rescueState.intent.targetVelocityEF, true); // force abort position control
         break;
@@ -640,7 +645,15 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 7, rescueState.phase);             //!< Rescue Phase [enum:rescuePhase_e]
 
     // Autopilot control of altitude is always active when rescue mode is engaged
-    if (rescueState.phase > RESCUE_INITIALIZE) {
+    if (rescueIsDescending()) {
+        const float descendRateCmS = gpsRescueConfig()->descendRate;
+        const landingProfile_t profile = {
+            .touchdownRateCmS = 0.6f * descendRateCmS,
+            .maxRateCmS = 3.0f * descendRateCmS,
+        };
+        autopilotLand(&profile, rescueState.intent.targetAltitudeCm, HZ_TO_INTERVAL_US(TASK_GPS_RESCUE_RATE_HZ));
+        rescueState.intent.targetAltitudeCm = autopilotLandingTargetAltitudeCm();
+    } else if (rescueState.phase > RESCUE_INITIALIZE) {
         rescueState.intent.targetAltitudeCm += rescueState.intent.targetAltitudeVelCmS * gpsRescueTaskIntervalSeconds;
         controlAltitude();
     }
