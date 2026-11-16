@@ -74,8 +74,9 @@ static uart_dev_t *uartGetHw(int portNum)
 
 #include "platform/interrupt.h"
 
-// ESP32-S3 APB clock frequency (80 MHz)
-#define ESP32_APB_CLK_FREQ  80000000
+// UART source clock frequency. UART_SCLK_DEFAULT is the 80 MHz APB clock on
+// ESP32 / ESP32-S3 and the 80 MHz PLL_F80M clock on ESP32-C5 / ESP32-P4.
+#define ESP32_UART_SCLK_FREQ  80000000
 
 // RX FIFO threshold: trigger interrupt after this many bytes received
 #define UART_RXFIFO_FULL_THRESHOLD  1
@@ -233,8 +234,8 @@ void uartReconfigure(uartPort_t *uartPort)
     // IDF's uart_ll_set_baudrate macro on P4 trails off into a
     // __DECLARE_RCC_ATOMIC_ENV reference; pre-declare it as a no-op.
     int __DECLARE_RCC_ATOMIC_ENV __attribute__((unused));
-    uart_ll_set_sclk(hw, SOC_MOD_CLK_APB);
-    uart_ll_set_baudrate(hw, uartPort->port.baudRate, ESP32_APB_CLK_FREQ);
+    uart_ll_set_sclk(hw, (soc_module_clk_t)UART_SCLK_DEFAULT);
+    uart_ll_set_baudrate(hw, uartPort->port.baudRate, ESP32_UART_SCLK_FREQ);
 
     const bool twoStop = uartPort->port.options & SERIAL_STOPBITS_2;
     const bool evenParity = uartPort->port.options & SERIAL_PARITY_EVEN;
@@ -379,11 +380,11 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
     uart_ll_enable_bus_clock(portNum, true);
     uart_ll_reset_register(portNum);
 
-    // Select the UART source clock (APB, matching ESP32_APB_CLK_FREQ used for the
-    // baud divisor below). Without this the clock mux is left at its reset default,
-    // so the divisor programmed for 80 MHz APB yields the wrong line rate and the
-    // port never frames RX/TX. UART0 escapes this only because the ROM sets it up.
-    uart_ll_set_sclk(hw, SOC_MOD_CLK_APB);
+    // Select the UART source clock (80 MHz, matching ESP32_UART_SCLK_FREQ used for
+    // the baud divisor below). Without this the clock mux is left at its reset
+    // default, so the divisor programmed for 80 MHz yields the wrong line rate and
+    // the port never frames RX/TX. UART0 escapes this only because the ROM sets it up.
+    uart_ll_set_sclk(hw, (soc_module_clk_t)UART_SCLK_DEFAULT);
 
     const serialPortIdentifier_e identifier = hardware->identifier;
     const int ownerIndex = serialOwnerIndex(identifier);
@@ -415,7 +416,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
     }
 
     // Configure UART parameters
-    uart_ll_set_baudrate(hw, baudRate, ESP32_APB_CLK_FREQ);
+    uart_ll_set_baudrate(hw, baudRate, ESP32_UART_SCLK_FREQ);
     uart_ll_set_data_bit_num(hw, UART_DATA_8_BITS);
     uart_ll_set_parity(hw, UART_PARITY_DISABLE);
     uart_ll_set_stop_bits(hw, UART_STOP_BITS_1);
