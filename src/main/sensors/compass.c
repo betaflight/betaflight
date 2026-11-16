@@ -173,6 +173,17 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
     compassConfig->mag_customAlignment.roll = MAG_ALIGN_ROLL;
     compassConfig->mag_customAlignment.pitch = MAG_ALIGN_PITCH;
     compassConfig->mag_customAlignment.yaw = MAG_ALIGN_YAW;
+
+    // Initialize 3x3 soft-iron calibration matrix to identity (scaled by 1000)
+    compassConfig->mag_softiron[0] = 1000;
+    compassConfig->mag_softiron[1] = 0;
+    compassConfig->mag_softiron[2] = 0;
+    compassConfig->mag_softiron[3] = 0;
+    compassConfig->mag_softiron[4] = 1000;
+    compassConfig->mag_softiron[5] = 0;
+    compassConfig->mag_softiron[6] = 0;
+    compassConfig->mag_softiron[7] = 0;
+    compassConfig->mag_softiron[8] = 1000;
 }
 
 static int16_t magADCRaw[XYZ_AXIS_COUNT];
@@ -683,6 +694,16 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         mag.magADC.v[axis] -= magZero->raw[axis];
     }
+
+    // Apply 3x3 soft-iron calibration matrix (values scaled by 1000)
+    const float x = mag.magADC.x;
+    const float y = mag.magADC.y;
+    const float z = mag.magADC.z;
+    const int16_t *m = compassConfig()->mag_softiron;
+
+    mag.magADC.x = (m[0] * x + m[1] * y + m[2] * z) * 0.001f;
+    mag.magADC.y = (m[3] * x + m[4] * y + m[5] * z) * 0.001f;
+    mag.magADC.z = (m[6] * x + m[7] * y + m[8] * z) * 0.001f;
 
     if (debugMode == DEBUG_MAG_CALIB) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
