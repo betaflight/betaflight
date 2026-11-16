@@ -99,3 +99,4 @@ bool crsfRxIsActive(void);
 void crsfRxBind(void);
 uint32_t crsfGetDefaultBaudrate(void);
 void crsfRxSetAutoBaudrate(uint32_t baudrate);
+uint32_t crsfRxGetBaudrate(void);

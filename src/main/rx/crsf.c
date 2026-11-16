@@ -440,7 +440,7 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
 #endif
 #if defined(USE_TELEMETRY_CRSF) && defined(USE_MSP_OVER_TELEMETRY) && defined(USE_CRSF_V3)
                 case CRSF_FRAMETYPE_DEVICE_INFO:
-                    crsfHandleDeviceInfoResponse(crsfFrame.frame.payload);
+                    crsfHandleDeviceInfoResponse(crsfFrame.frame.payload, crsfFrame.frame.frameLength);
                     break;
 #endif
 #if defined(USE_CRSF_CMS_TELEMETRY)
@@ -757,6 +757,11 @@ uint32_t crsfGetDefaultBaudrate(void)
 void crsfRxSetAutoBaudrate(uint32_t baudrate)
 {
     crsfAutoBaudrate = baudrate;
+}
+
+uint32_t crsfRxGetBaudrate(void)
+{
+    return serialPort ? serialPort->baudRate : 0;
 }
 
 bool crsfRxIsActive(void)
