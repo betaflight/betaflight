@@ -174,16 +174,22 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
     compassConfig->mag_customAlignment.pitch = MAG_ALIGN_PITCH;
     compassConfig->mag_customAlignment.yaw = MAG_ALIGN_YAW;
 
-    // Initialize 3x3 soft-iron calibration matrix to identity (scaled by 1000)
-    compassConfig->mag_softiron[0] = 1000;
-    compassConfig->mag_softiron[1] = 0;
-    compassConfig->mag_softiron[2] = 0;
-    compassConfig->mag_softiron[3] = 0;
-    compassConfig->mag_softiron[4] = 1000;
-    compassConfig->mag_softiron[5] = 0;
-    compassConfig->mag_softiron[6] = 0;
-    compassConfig->mag_softiron[7] = 0;
-    compassConfig->mag_softiron[8] = 1000;
+    // soft-iron matrix defaults to identity (scaled by 1000)
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        compassConfig->mag_softiron[axis * XYZ_AXIS_COUNT + axis] = 1000;
+    }
+}
+
+// Soft-iron correction in the sensor frame (before alignment), so the matrix
+// stays valid when the mag alignment changes. Matrix values are scaled by 1000.
+static void applyMagSoftIron(vector3_t *v)
+{
+    const int16_t *m = compassConfig()->mag_softiron;
+    const vector3_t in = *v;
+    for (int row = 0; row < XYZ_AXIS_COUNT; row++) {
+        const int16_t *r = &m[row * XYZ_AXIS_COUNT];
+        v->v[row] = (r[0] * in.x + r[1] * in.y + r[2] * in.z) * 0.001f;
+    }
 }
 
 static int16_t magADCRaw[XYZ_AXIS_COUNT];
@@ -694,16 +700,6 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         mag.magADC.v[axis] -= magZero->raw[axis];
     }
-
-    // Apply 3x3 soft-iron calibration matrix (values scaled by 1000)
-    const float x = mag.magADC.x;
-    const float y = mag.magADC.y;
-    const float z = mag.magADC.z;
-    const int16_t *m = compassConfig()->mag_softiron;
-
-    mag.magADC.x = (m[0] * x + m[1] * y + m[2] * z) * 0.001f;
-    mag.magADC.y = (m[3] * x + m[4] * y + m[5] * z) * 0.001f;
-    mag.magADC.z = (m[6] * x + m[7] * y + m[8] * z) * 0.001f;
 
     if (debugMode == DEBUG_MAG_CALIB) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
