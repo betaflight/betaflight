@@ -598,125 +598,126 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
     performSanityChecks();
 
     static bool returnAltitudeLow = true;
-switch (rescueState.phase) {
-case RESCUE_IDLE:
-    updateMaxAltitude();
-    break;
 
-case RESCUE_INITIALIZE:
-    if (!STATE(GPS_FIX_HOME)) {
-        rescueState.failure = RESCUE_NO_HOME_POINT;
-    } else {
-        if (rescueState.sensor.distanceToHomeCm < GPS_RESCUE_ACCEPT_RADIUS
-            && isBelowLandingAltitude()) {
-            rescueState.phase = RESCUE_DO_NOTHING;
+    switch (rescueState.phase) {
+    case RESCUE_IDLE:
+        updateMaxAltitude();
+        break;
+
+    case RESCUE_INITIALIZE:
+        if (!STATE(GPS_FIX_HOME)) {
+            rescueState.failure = RESCUE_NO_HOME_POINT;
         } else {
-            initRescueValues();
-            returnAltitudeLow = rescueState.sensor.currentAltitudeCm
-                < rescueState.intent.returnAltitudeCm;
-            rescueState.phase = RESCUE_ATTAIN_ALT;
+            if (rescueState.sensor.distanceToHomeCm < GPS_RESCUE_ACCEPT_RADIUS
+                && isBelowLandingAltitude()) {
+                rescueState.phase = RESCUE_DO_NOTHING;
+            } else {
+                initRescueValues();
+                returnAltitudeLow = rescueState.sensor.currentAltitudeCm
+                    < rescueState.intent.returnAltitudeCm;
+                rescueState.phase = RESCUE_ATTAIN_ALT;
+            }
+            updateAltitudeControl();
+        }
+        break;
+
+    case RESCUE_ATTAIN_ALT:
+        clearTargetVelocity();
+        if (returnAltitudeLow == (rescueState.sensor.currentAltitudeCm < rescueState.intent.returnAltitudeCm)) {
+            rescueState.intent.targetAltitudeVelCmS = returnAltitudeLow
+                ? (float)gpsRescueConfig()->ascendRate
+                : -(float)gpsRescueConfig()->descendRate;
+        } else {
+            rescueState.intent.targetAltitudeCm = rescueState.intent.returnAltitudeCm;
+            rescueState.intent.targetAltitudeVelCmS = 0.0f;
+            rescueState.intent.secondsFailing = 0;
+            if (!rescueState.sensor.isHeadingOK) {
+                rescueState.phase = RESCUE_PITCH_FORWARD;
+            } else {
+                rescueState.phase = RESCUE_ROTATE;
+            }
         }
         updateAltitudeControl();
-    }
-    break;
+        break;
 
-case RESCUE_ATTAIN_ALT:
-    clearTargetVelocity();
-    if (returnAltitudeLow == (rescueState.sensor.currentAltitudeCm < rescueState.intent.returnAltitudeCm)) {
-        rescueState.intent.targetAltitudeVelCmS = returnAltitudeLow
-            ? (float)gpsRescueConfig()->ascendRate
-            : -(float)gpsRescueConfig()->descendRate;
-    } else {
-        rescueState.intent.targetAltitudeCm = rescueState.intent.returnAltitudeCm;
-        rescueState.intent.targetAltitudeVelCmS = 0.0f;
-        rescueState.intent.secondsFailing = 0;
+    case RESCUE_PITCH_FORWARD:
         if (!rescueState.sensor.isHeadingOK) {
-            rescueState.phase = RESCUE_PITCH_FORWARD;
+            clearTargetVelocity();
+            pitchForwardOverride(true);
         } else {
+            pitchForwardOverride(false);
+            initPositionHold();
             rescueState.phase = RESCUE_ROTATE;
-        }
-    }
-    updateAltitudeControl();
-    break;
-
-case RESCUE_PITCH_FORWARD:
-    if (!rescueState.sensor.isHeadingOK) {
-        clearTargetVelocity();
-        pitchForwardOverride(true);
-    } else {
-        pitchForwardOverride(false);
-        initPositionHold();
-        rescueState.phase = RESCUE_ROTATE;
-        rescueState.intent.secondsFailing = 0;
-    }
-    updateAltitudeControl();
-    break;
-
-case RESCUE_ROTATE:
-    clearTargetVelocity();
-    if (!descendIfNeeded()) {
-        updateYawStartupAttenuator();
-        controlYaw();
-        if (fabsf(rescueState.sensor.errorAngleDeg) < GPS_RESCUE_ALLOWED_YAW_RANGE) {
-            rescueState.phase = RESCUE_FLY_HOME;
             rescueState.intent.secondsFailing = 0;
         }
-    }
-    updateAltitudeControl();
-    break;
+        updateAltitudeControl();
+        break;
 
-case RESCUE_FLY_HOME:
-    updateVelocityStartupAttenuator();
-    if (!descendIfNeeded()) {
+    case RESCUE_ROTATE:
+        clearTargetVelocity();
+        if (!descendIfNeeded()) {
+            updateYawStartupAttenuator();
+            controlYaw();
+            if (fabsf(rescueState.sensor.errorAngleDeg) < GPS_RESCUE_ALLOWED_YAW_RANGE) {
+                rescueState.phase = RESCUE_FLY_HOME;
+                rescueState.intent.secondsFailing = 0;
+            }
+        }
+        updateAltitudeControl();
+        break;
+
+    case RESCUE_FLY_HOME:
+        updateVelocityStartupAttenuator();
+        if (!descendIfNeeded()) {
+            updateTargetSpeed();
+            controlVelocity();
+            controlYaw();
+        }
+        updateAltitudeControl();
+        break;
+
+    case RESCUE_DESCENT:
+        updateVelocityStartupAttenuator();
         updateTargetSpeed();
         controlVelocity();
-        controlYaw();
-    }
-    updateAltitudeControl();
-    break;
 
-case RESCUE_DESCENT:
-    updateVelocityStartupAttenuator();
-    updateTargetSpeed();
-    controlVelocity();
+        if (rescueState.intent.targetAltitudeCm > rescueState.intent.landingAltitudeCm) {
+            descend();
+            updateAltitudeControl();
+        } else if (rescueState.sensor.distanceToHomeCm < GPS_RESCUE_ACCEPT_RADIUS) {
+            rescueState.phase = RESCUE_LANDING;
+            rescueState.intent.secondsFailing = 0;
+            land();
+        } else {
+            rescueState.intent.targetAltitudeVelCmS = 0.0f;
+            updateAltitudeControl();
+        }
+        break;
 
-    if (rescueState.intent.targetAltitudeCm > rescueState.intent.landingAltitudeCm) {
-        descend();
-        updateAltitudeControl();
-    } else if (rescueState.sensor.distanceToHomeCm < GPS_RESCUE_ACCEPT_RADIUS) {
-        rescueState.phase = RESCUE_LANDING;
-        rescueState.intent.secondsFailing = 0;
+    case RESCUE_LANDING:
+        clearTargetVelocity();
         land();
-    } else {
+        break;
+
+    case RESCUE_EMERG_DESCENT:
+        vector2Zero(&rescueState.intent.targetVelocityEF);
+        setTargetVelocity(&rescueState.intent.targetVelocityEF, true); // force abort position control
+        land();
+        break;
+
+    case RESCUE_DO_NOTHING:
+        clearTargetVelocity();
         rescueState.intent.targetAltitudeVelCmS = 0.0f;
-        updateAltitudeControl();
+        updateAltitudeControl(); // altitude control with no change in height or heading, position control at zero target velocity
+        break;
+
+    default:
+        break;
     }
-    break;
 
-case RESCUE_LANDING:
-    clearTargetVelocity();
-    land();
-    break;
-
-case RESCUE_EMERG_DESCENT:
-    vector2Zero(&rescueState.intent.targetVelocityEF);
-    setTargetVelocity(&rescueState.intent.targetVelocityEF, true); // force abort position control
-    land();
-    break;
-
-case RESCUE_DO_NOTHING:
-    clearTargetVelocity();
-    rescueState.intent.targetAltitudeVelCmS = 0.0f;
-    updateAltitudeControl(); // altitude control with no change in height or heading, position control at zero target velocity
-    break;
-
-default:
-    break;
-}
-
-DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 4, rescueState.phase);  //!< Rescue Phase [enum:rescuePhase_e]
-DEBUG_SET(DEBUG_ATTITUDE, 5, rescueState.phase);             //!< Rescue Phase [enum:rescuePhase_e]
-DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 7, rescueState.phase);  //!< Rescue Phase [enum:rescuePhase_e]
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 4, rescueState.phase);  //!< Rescue Phase [enum:rescuePhase_e]
+    DEBUG_SET(DEBUG_ATTITUDE, 5, rescueState.phase);             //!< Rescue Phase [enum:rescuePhase_e]
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 7, rescueState.phase);  //!< Rescue Phase [enum:rescuePhase_e]
 
 }
 #else // ENABLE_RESCUE_PLAN
