@@ -283,6 +283,16 @@ static void rescueEmergDescent(void)
     }
 }
 
+static bool descendIfNeeded(void)
+{
+    if (rescueState.sensor.distanceToHomeCm < rescueState.intent.descentDistanceCm) {
+        rescueState.phase = RESCUE_DESCENT;
+        rescueState.intent.secondsFailing = 0;
+        return true;
+    }
+    return false;
+}
+
 static void performSanityChecks(void)
 {
     static float prevAltitudeCm = 0.0f;
@@ -516,15 +526,6 @@ static void land(void)
     rescueState.intent.targetAltitudeCm = autopilotLandingTargetAltitudeCm();
 }
 
-static bool descendIfNeeded(void)
-{
-    if (rescueState.sensor.distanceToHomeCm < rescueState.intent.descentDistanceCm) {
-        rescueState.phase = RESCUE_DESCENT;
-        rescueState.intent.secondsFailing = 0;
-        return true;
-    }
-    return false;
-}
 
 static void updateTargetSpeed(void)
 {
