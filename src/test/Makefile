@@ -113,6 +113,12 @@ compass_bmm350_unittest_SRC := \
 compass_bmm350_unittest_DEFINES := \
                 USE_MAG_BMM350=
 
+compass_ist8308_unittest_SRC := \
+		$(USER_DIR)/drivers/compass/compass_ist8308.c
+
+compass_ist8308_unittest_DEFINES := \
+                USE_MAG_IST8308=
+
 compass_ist8310_unittest_SRC := \
 		$(USER_DIR)/drivers/compass/compass_ist8310.c
 
