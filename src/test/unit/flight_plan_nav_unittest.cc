@@ -215,18 +215,19 @@ void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
     g_lastDecelLimitMps2 = maxDecelMps2;
 }
 
-float g_lastApproachSlowdownM;
+float g_lastApproachDecelMps2;
 float g_lastApproachStillRadiusM;
 
-void positionNavSetApproachSlowdown(float slowdownM, float stillRadiusM)
+void positionNavSetApproachDecel(float decelMps2, float stillRadiusM)
 {
-    g_lastApproachSlowdownM = slowdownM;
+    g_lastApproachDecelMps2 = decelMps2;
     g_lastApproachStillRadiusM = stillRadiusM;
 }
 
-float positionNavApproachSpeedMps(float cruiseSpeedMps, float slowdownM, float distM)
+float positionNavApproachSpeedMps(float cruiseSpeedMps, float decelMps2, float distM)
 {
-    return fminf(cruiseSpeedMps, cruiseSpeedMps * distM / slowdownM);
+    const float speedMps = (distM <= decelMps2) ? distM : sqrtf(2.0f * decelMps2 * distM - sq(decelMps2));
+    return fminf(cruiseSpeedMps, speedMps);
 }
 
 void positionNavSetVelocityFeedforward(const vector2_t *velEfMps)
@@ -367,7 +368,7 @@ protected:
     void SetUp() override {
         memset(&g_lastTarget, 0, sizeof(g_lastTarget));
         g_setTargetCalls = 0;
-        g_lastApproachSlowdownM = 0.0f;
+        g_lastApproachDecelMps2 = 0.0f;
         g_lastApproachStillRadiusM = 0.0f;
         memset(&g_lastFfEfMps, 0, sizeof(g_lastFfEfMps));
         g_ffValid = false;
@@ -1380,7 +1381,7 @@ TEST_F(FlightPlanNavTest, LandWaypointArrivalDescendsAtTheWaypoint)
     EXPECT_NEAR(g_lastTarget.targetEfM.y, 20.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 200.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, 0.5f, 0.01f);
-    EXPECT_NEAR(g_lastApproachSlowdownM, 0.0f, 0.001f);       // no rescue approach on a mission landing
+    EXPECT_NEAR(g_lastApproachDecelMps2, 0.0f, 0.001f);       // no rescue approach on a mission landing
     EXPECT_NEAR(g_lastDecelLimitMps2, 0.3f, 0.001f);
     // Ramping out of what the LAND leg was commanding as it entered its radius, as a point leg does.
     EXPECT_NEAR(g_lastAccelLimitMps2, 2.5f, 0.001f);
