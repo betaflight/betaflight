@@ -64,6 +64,8 @@ static uint8_t mock_readStart_len;
 static uint8_t mock_readStart_buf[8];
 static int readStart_callCount;
 
+static bool mock_busBusy_error;
+
 static bool mock_writeReg_ret;
 static int writeReg_count;
 static uint8_t writeReg_reg[8];
@@ -79,6 +81,7 @@ static void resetMocks(void)
     mock_readStart_len = 0;
     memset(mock_readStart_buf, 0, sizeof(mock_readStart_buf));
     readStart_callCount = 0;
+    mock_busBusy_error = false;
     mock_writeReg_ret = true;
     writeReg_count = 0;
     memset(writeReg_reg, 0, sizeof(writeReg_reg));
@@ -88,7 +91,13 @@ static void resetMocks(void)
 extern "C" {
 
 void delay(uint32_t) {}
-bool busBusy(const extDevice_t*, bool*) { return false; }
+bool busBusy(const extDevice_t*, bool *error)
+{
+    if (error) {
+        *error = mock_busBusy_error;
+    }
+    return false;
+}
 
 bool busReadRegisterBuffer(const extDevice_t*, uint8_t reg, uint8_t *buf, uint8_t len)
 {
@@ -314,4 +323,30 @@ TEST_F(Ist8308Test, ReadStartFailureRetries)
     EXPECT_EQ(3, magData[0]);
     EXPECT_EQ(-6, magData[1]);
     EXPECT_EQ(9, magData[2]);
+}
+
+TEST_F(Ist8308Test, ReadTransferErrorDoesNotPublishStaleSample)
+{
+    syncReadState();
+
+    // Good sample first
+    loadSample(2, 4, 6);
+    mag.read(&mag, magData);
+    resetMocks();
+    ASSERT_TRUE(mag.read(&mag, magData));
+
+    // Next transfer NACKs: buf still holds the previous sample with DRDY set
+    resetMocks();
+    mock_readStart_ret = true;
+    loadSample(2, 4, 6);
+    EXPECT_FALSE(mag.read(&mag, magData));
+    resetMocks();
+    mock_busBusy_error = true;
+    EXPECT_FALSE(mag.read(&mag, magData));
+
+    // Following call starts a fresh transfer
+    resetMocks();
+    EXPECT_FALSE(mag.read(&mag, magData));
+    EXPECT_EQ(1, readStart_callCount);
+    EXPECT_EQ(IST8308_REG_STAT, mock_readStart_reg);
 }

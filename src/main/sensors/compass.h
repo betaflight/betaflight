@@ -56,7 +56,9 @@ typedef enum {
     MAG_DRONECAN = 12,
     MAG_BMM350 = 13,
     MAG_AK9916 = 14,
+#if ENABLE_MAG_IST8308
     MAG_IST8308 = 15,
+#endif
     MAG_HARDWARE_COUNT
 } magSensor_e;
 

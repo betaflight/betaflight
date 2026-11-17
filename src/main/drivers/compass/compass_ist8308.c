@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#ifdef USE_MAG_IST8308
+#if ENABLE_MAG_IST8308
 
 #include "common/axis.h"
 
@@ -127,8 +127,18 @@ static bool ist8308Read(magDev_t *magDev, int16_t *magData)
         return false;
     }
 
+    bool error = false;
+    if (busBusy(dev, &error)) {
+        return false;
+    }
+
     // Transfer has completed, issue a new one on the next call
     pendingRead = true;
+
+    if (error) {
+        // Transfer failed (e.g. NACK), buf holds no new sample
+        return false;
+    }
 
     if (!(buf[0] & IST8308_STAT_DRDY)) {
         // No new sample since the last read
@@ -169,4 +179,4 @@ bool ist8308Detect(magDev_t *magDev)
     return false;
 }
 
-#endif // USE_MAG_IST8308
+#endif // ENABLE_MAG_IST8308
