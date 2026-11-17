@@ -419,17 +419,13 @@ static void performSanityChecks(void)
         break;
 
     case RESCUE_ROTATE:
-        clearTargetVelocity();
-        updateYawStartupAttenuator();
-        controlYaw();
-        if (fabsf(rescueState.sensor.errorAngleDeg) < GPS_RESCUE_ALLOWED_YAW_RANGE) {
+        if (++rescueState.intent.secondsFailing >= 10) {
             if (!descendIfNeeded()) {
                 rescueState.phase = RESCUE_FLY_HOME;
             }
             rescueState.intent.secondsFailing = 0;
         }
-        updateAltitudeControl();
-    break;
+        break;
 
     case RESCUE_FLY_HOME:
         rescueState.intent.secondsFailing += (velocityToHomeCmS < 0.2f * rescueState.intent.targetSpeedCmS) ? 1 : -1;
@@ -654,14 +650,14 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         break;
 
     case RESCUE_ROTATE:
-        clearTargetVelocity();
-        if (!descendIfNeeded()) {
-            updateYawStartupAttenuator();
-            controlYaw();
-            if (fabsf(rescueState.sensor.errorAngleDeg) < GPS_RESCUE_ALLOWED_YAW_RANGE) {
+        clearTargetVelocity(); // don't change the target location
+        updateYawStartupAttenuator();
+        controlYaw();
+        if (fabsf(rescueState.sensor.errorAngleDeg) < GPS_RESCUE_ALLOWED_YAW_RANGE) {
+            if (!descendIfNeeded()) {
                 rescueState.phase = RESCUE_FLY_HOME;
-                rescueState.intent.secondsFailing = 0;
             }
+            rescueState.intent.secondsFailing = 0;
         }
         updateAltitudeControl();
         break;
