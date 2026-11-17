@@ -139,7 +139,7 @@ void gpsRescueInit(void)
     rescueState.intent.initialClimbCm = gpsRescueConfig()->initialClimbM * 100.0f;
     rescueState.intent.descentDistanceCm = gpsRescueConfig()->descentDistanceM * 100.0f;
     rescueState.intent.xyVelStartRampGain = gpsRescueConfig()->groundSpeedCmS > 0 ? MAX_XY_ACCELERATION / gpsRescueConfig()->groundSpeedCmS : 0.0f;
-rescueState.intent.landingAltitudeCm = 100.0f * autopilotConfig()->landingAltitudeM;
+    rescueState.intent.landingAltitudeCm = 100.0f * autopilotConfig()->landingAltitudeM;
     rescueState.isAvailable = true;
     rescueState.sensor.isHeadingOK = true;
     rescueState.isOK = true;
