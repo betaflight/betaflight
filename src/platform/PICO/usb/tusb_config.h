@@ -21,22 +21,20 @@
 
 #pragma once
 
+#include "platform.h"
+
 #define CFG_TUD_ENABLED         1
 #define CFG_TUSB_RHPORT0_MODE   OPT_MODE_DEVICE
 #define CFG_TUD_CDC             1
 #define CFG_TUD_CDC_RX_BUFSIZE  256
 #define CFG_TUD_CDC_TX_BUFSIZE  256
 
-// Enable Mass Storage Class for TinyUSB on PICO platform
-#ifndef CFG_TUD_MSC
+#ifdef USE_USB_MSC
 #define CFG_TUD_MSC             1
-#endif
-// Reasonable defaults; TinyUSB will fall back if unspecified
-#ifndef CFG_TUD_MSC_MAXLUN
 #define CFG_TUD_MSC_MAXLUN      1
-#endif
-#ifndef CFG_TUD_MSC_EP_BUFSIZE
 #define CFG_TUD_MSC_EP_BUFSIZE  512
+#else
+#define CFG_TUD_MSC             0
 #endif
 
 #define TUP_DCD_EDPT_ISO_ALLOC

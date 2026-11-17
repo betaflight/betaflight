@@ -61,7 +61,7 @@ typedef struct positionNavCommand_s {
     float rampRateMps;              // rate the ramp moved at on the last update (signed, positive climbs)
     bool rampRateSlewed;            // took over from a command still flying: slews out of its rate
 
-    float approachSlowdownM;        // slow onto the target in proportion to distance from this far out, 0 = off
+    float approachDecelMps2;        // slow onto the target at no harder than this, 0 = off
     float approachStillRadiusM;     // ...coming to rest at this range
     bool approachStill;             // has been inside the still radius: stopped chasing the target
     bool velocityFfValid;           // the owner states the horizontal velocity: no chase law toward the target
@@ -140,14 +140,15 @@ void positionNavSetVelocityFeedforward(const vector2_t *velEfMps);
 // The altitude ramp carries on as it is.
 void positionNavStartAfresh(void);
 
-// Slow onto the target in proportion to the distance left, from cruise at slowdownM out, so the
-// speed falls away as the craft closes rather than running out at a point. Once inside
-// stillRadiusM the command stops chasing the target for the rest of the leg, and nothing
-// horizontal is commanded. Zero slowdownM leaves the leg on its own profile.
-void positionNavSetApproachSlowdown(float slowdownM, float stillRadiusM);
+// Slow onto the target at a steady decelMps2, then, once that would ask more of the craft than
+// the position controller's own pull, in proportion to the distance left: the speed falls away as
+// the craft closes rather than running out at a point. Once inside stillRadiusM and all but
+// stopped, the command stops chasing the target for the rest of the leg, and nothing horizontal
+// is commanded. Zero decelMps2 leaves the leg on its own profile.
+void positionNavSetApproachDecel(float decelMps2, float stillRadiusM);
 // The speed that approach allows distM from the target, for an owner flying it ahead of the
 // command that slows.
-float positionNavApproachSpeedMps(float cruiseSpeedMps, float slowdownM, float distM);
+float positionNavApproachSpeedMps(float cruiseSpeedMps, float decelMps2, float distM);
 void positionNavSetAutoClearOnReach(bool autoClear);
 
 // The leg's vertical intent: the rate the altitude target is allowed to move at, and the altitude

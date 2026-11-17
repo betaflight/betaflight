@@ -383,7 +383,7 @@ static FLASH_Status FLASH_GetStatus(void) { return forceFinalStatus; }
 ''' + fn('src/platform/CH32/config_flash.c','static bool ch32ConfigAddressIsValid(')
     + fn('src/platform/CH32/config_flash.c','static configStreamerResult_e ch32FlashStatusToConfigResult(')
     + fn('src/platform/CH32/config_flash.c','void configUnlock(')
-    + fn('src/platform/CH32/config_flash.c','void configLock(')
+    + fn('src/platform/CH32/config_flash.c','configStreamerResult_e configLock(')
     + fn('src/platform/CH32/config_flash.c','void configClearFlags(')
     + fn('src/platform/CH32/config_flash.c','configStreamerResult_e configWriteWord(') + '''
 int main(void) {
@@ -420,7 +420,7 @@ int main(void) {
     memset(flash, 0, sizeof(flash));
     memcpy(physicalFlash, buffer, 256);
     locks=invalidations=0;
-    configLock();
+    if (configLock() != CONFIG_RESULT_SUCCESS) return 10;
     if (locks != 1 || invalidations != 1 || memcmp(flash, buffer, 256) != 0) return 10;
 
     memset(flash, 0, 256);
@@ -643,7 +643,8 @@ static void bbDMA_Cmd(bbPort_t *p, int state) { if (!stuck) p->dmaResource->CFGR
 #define BB_DMA_STOP_SPIN_LIMIT 100
 static void xDMA_Init(dmaResource_t *d, int *init) { (void)d; (void)init; dmaWrites++; }
 static void xDMA_ITConfig(dmaResource_t *d, int flags, int state) { (void)d; (void)flags; (void)state; }
-''' + fn('src/platform/common/stm32/dshot_bitbang_impl.h','static inline bool bbDMAWaitStopped(')
+''' + fn('src/platform/common/stm32/dshot_bitbang_impl.h','static inline void bbDMAClearFlags(')
+    + fn('src/platform/common/stm32/dshot_bitbang_impl.h','static inline bool bbDMAWaitStopped(')
     + fn('src/platform/CH32/dshot_bitbang_stdperiph.c','bool bbSwitchToOutput(') + '''
 int main(void) {
     dmaResource_t dma={.CFGR=1}; gpio_t gpio={.BSHR=17}; TIM_TypeDef tim={.ATRLR=42}; mockTimer_t hw={&tim};
@@ -1739,7 +1740,8 @@ static uint32_t decode_bb(uint16_t *buf, uint16_t cnt, int pin) {
     decodeCalls++;
     return 0x0123u;
 }
-''' + fn('src/platform/common/stm32/dshot_bitbang_impl.h', 'static inline bool bbDMAServiceFlags(')
+''' + fn('src/platform/common/stm32/dshot_bitbang_impl.h', 'static inline void bbDMAClearFlags(')
+    + fn('src/platform/common/stm32/dshot_bitbang_impl.h', 'static inline bool bbDMAServiceFlags(')
     + fn('src/platform/common/stm32/dshot_bitbang_impl.h', 'static inline bool bbDMAEventPending(')
     + fn('src/platform/CH32/dshot_bitbang.c', 'FAST_IRQ_HANDLER void bbDMAIrqHandler(')
     + fn('src/platform/CH32/dshot_bitbang.c', 'static bool bbDecodeTelemetry(void)')
