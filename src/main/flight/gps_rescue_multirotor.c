@@ -125,6 +125,7 @@ rescueState_s rescueState;
 #define GPS_RESCUE_MAX_YAW_RATE          180   // deg/sec max yaw rate
 #define GPS_RESCUE_ALLOWED_YAW_RANGE   30.0f   // deg, yaw error must be less than this to enter fly home phase, and to pitch during descend()
 #define GPS_RESCUE_ACCEPT_RADIUS       30.0f   // closer than this distance in cm is considered home
+#define GPS_RESCUE_TOO_CLOSE_CM        500.0f // starting out closer than this and below landing = disarm
 #define MAX_XY_ACCELERATION 500.0f  // 5 m/s²
 #define GPS_RESCUE_DESCENT_RATE_MIN 0.6f
 #define GPS_RESCUE_DESCENT_RATE_MAX 3.0f
@@ -316,7 +317,7 @@ static void performSanityChecks(void)
     DEBUG_SET(DEBUG_RTH, 5, secondsLowSats);                    //!< Seconds With Low Satellite Count [unit:s]
 
     if (rescueState.phase == RESCUE_INITIALIZE) {
-        if (rescueState.sensor.distanceToHomeCm < GPS_RESCUE_ACCEPT_RADIUS && isBelowLandingAltitude()) {
+        if (rescueState.sensor.distanceToHomeCm < GPS_RESCUE_TOO_CLOSE_CM && isBelowLandingAltitude()) {
             rescueDisarmNow();
             return;
         }
