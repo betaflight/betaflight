@@ -245,8 +245,8 @@
 #ifndef USE_MAG_AK8975
 #define USE_MAG_AK8975
 #endif
-#ifndef ENABLE_MAG_IST8308
-#define ENABLE_MAG_IST8308 1
+#ifndef USE_MAG_IST8308
+#define USE_MAG_IST8308
 #endif
 #ifndef USE_MAG_IST8310
 #define USE_MAG_IST8310
@@ -262,10 +262,6 @@
 #endif
 
 #endif // END MAG HW defines
-
-#if !defined(ENABLE_MAG_IST8308)
-#define ENABLE_MAG_IST8308 0
-#endif
 
 #if defined(USE_RANGEFINDER)
 

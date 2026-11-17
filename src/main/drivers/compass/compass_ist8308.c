@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#if ENABLE_MAG_IST8308
+#ifdef USE_MAG_IST8308
 
 #include "common/axis.h"
 
@@ -179,4 +179,4 @@ bool ist8308Detect(magDev_t *magDev)
     return false;
 }
 
-#endif // ENABLE_MAG_IST8308
+#endif // USE_MAG_IST8308
