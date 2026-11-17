@@ -212,20 +212,16 @@ static void sensorUpdate(void)
 #if !ENABLE_RESCUE_PLAN
 static void updateYawStartupAttenuator(void)
 {
-    if (rescueState.intent.yawAttenuator < 1.0f) {
-        rescueState.intent.yawAttenuator += gpsRescueTaskIntervalSeconds;
-        if (rescueState.intent.yawAttenuator > 1.0f) {
-            rescueState.intent.yawAttenuator = 1.0f;
-        }
+rescueState.intent.yawAttenuator = fminf(
+    rescueState.intent.yawAttenuator + gpsRescueTaskIntervalSeconds, 1.0f);
     }
-}
+
 
 static void updateVelocityStartupAttenuator(void)
 {
-    if (rescueState.intent.xyVelStartRamp < 1.0f) {
-        rescueState.intent.xyVelStartRamp += gpsRescueTaskIntervalSeconds * rescueState.intent.xyVelStartRampGain;
-        rescueState.intent.xyVelStartRamp = fminf(rescueState.intent.xyVelStartRamp, 1.0f);
-    }
+    rescueState.intent.xyVelStartRamp = fminf(
+        rescueState.intent.xyVelStartRamp +
+        gpsRescueTaskIntervalSeconds * rescueState.intent.xyVelStartRampGain, 1.0f);
 }
 
 static void controlYaw(void)
@@ -473,7 +469,7 @@ static void performSanityChecks(void)
         break;
     case RESCUE_LANDING:
     case RESCUE_EMERG_DESCENT:
-        if (rescueState.phase == RESCUE_LANDING || isBelowLandingAltitude() || hardFailsafe) {
+        if (isBelowLandingAltitude() || hardFailsafe) {
             rescueState.intent.secondsFailing += altitudeControlError > 0.5f ? -1 : 1;
             rescueState.intent.secondsFailing = MAX(0, rescueState.intent.secondsFailing);
             if (rescueState.intent.secondsFailing >= 15) {
@@ -564,7 +560,6 @@ void initRescueValues(void)
     rescueState.intent.targetAltitudeCm = rescueState.sensor.currentAltitudeCm;  // Initial target altitude is current filtered altitude
     autopilotSetYawTarget(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
     rescueState.intent.targetAltitudeVelCmS = 0.0f;
-    rescueState.intent.targetSpeedCmS = 0.0f;
 
     rescueState.intent.yawAttenuator = 0.0f; // For a smooth start to the yaw
     rescueState.intent.xyVelStartRamp = 0.0f; // For a smooth start to gaining velocity
@@ -585,7 +580,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
 {
     if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
         rescueStop(); // sets phase to RESCUE_IDLE
-    } else if (FLIGHT_MODE(GPS_RESCUE_MODE) && rescueState.phase == RESCUE_IDLE) {
+    } else if (rescueState.phase == RESCUE_IDLE) {
         rescueStart(); // sets phase to RESCUE_INITIALIZE
     }
 
