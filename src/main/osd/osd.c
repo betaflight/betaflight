@@ -1258,6 +1258,12 @@ static timeDelta_t osdShowArmed(void)
 static bool osdStatsVisible = false;
 static bool osdStatsEnabled = false;
 
+STATIC_UNIT_TESTED uint16_t osdGetAuxValue(uint8_t channel, uint16_t scale)
+{
+    const uint8_t auxChannel = constrain(channel, 1, MAX_AUX_CHANNEL_COUNT) + NON_AUX_CHANNEL_COUNT - 1;
+    return scaleRangef(constrainf(rcGetChannel(auxChannel), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX, 0, scale);
+}
+
 STATIC_UNIT_TESTED bool osdProcessStats1(timeUs_t currentTimeUs)
 {
     static timeUs_t lastTimeUs = 0;
@@ -1322,10 +1328,8 @@ STATIC_UNIT_TESTED bool osdProcessStats1(timeUs_t currentTimeUs)
     }
 
     if (VISIBLE(osdElementConfig()->item_pos[OSD_AUX_VALUE])) {
-        const uint8_t auxChannel = constrain(osdConfig()->aux_channel, 1, MAX_AUX_CHANNEL_COUNT) + NON_AUX_CHANNEL_COUNT - 1;
         if (currentTimeUs > osdAuxRefreshTimeUs) {
-            // aux channel start after main channels
-            osdAuxValue = scaleRangef(constrainf(rcGetChannel(auxChannel), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX, 0, osdConfig()->aux_scale);
+            osdAuxValue = osdGetAuxValue(osdConfig()->aux_channel, osdConfig()->aux_scale);
             osdAuxRefreshTimeUs = currentTimeUs + REFRESH_1S;
         }
     }
