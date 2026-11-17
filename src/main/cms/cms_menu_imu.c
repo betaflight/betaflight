@@ -70,9 +70,7 @@
 static uint8_t tmpPidProfileIndex;
 static uint8_t pidProfileIndex;
 static char pidProfileIndexString[MAX_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
-#ifdef USE_PSAS
-static char psasProfileIndexString[MAX_PSAS_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
-#endif
+
 static uint8_t tempPid[3][3];
 static uint16_t tempPidF[3];
 
@@ -80,6 +78,13 @@ static uint8_t tmpRateProfileIndex;
 static uint8_t rateProfileIndex;
 static char rateProfileIndexString[MAX_RATE_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
 static controlRateConfig_t rateProfile;
+
+#ifdef USE_PSAS
+static uint8_t tmpPsasProfileIndex;
+static uint8_t psasProfileIndex;
+static char psasProfileIndexString[MAX_PSAS_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
+#endif
+
 
 static void setProfileIndexString(char *profileString, int profileIndex, const char *profileName)
 {
@@ -110,6 +115,11 @@ static const char *pidProfileNamePtrs[PID_PROFILE_COUNT];
 static char rateProfileNames[CONTROL_RATE_PROFILE_COUNT][MAX_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
 static const char *rateProfileNamePtrs[CONTROL_RATE_PROFILE_COUNT];
 
+#ifdef USE_PSAS
+static char psasProfileNames[PSAS_PROFILE_COUNT][MAX_PSAS_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
+static const char *psasProfileNamePtrs[PSAS_PROFILE_COUNT];
+#endif
+
 static const void *cmsx_menuImu_onEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
@@ -130,6 +140,16 @@ static const void *cmsx_menuImu_onEnter(displayPort_t *pDisp)
     rateProfileIndex = getCurrentControlRateProfileIndex();
     tmpRateProfileIndex = rateProfileIndex;
 
+#ifdef USE_PSAS
+    for (int i = 0; i < PSAS_PROFILE_COUNT; i++) {
+        setProfileIndexString(psasProfileNames[i], i, psasProfiles(i)->profileName);
+        psasProfileNamePtrs[i] = psasProfileNames[i];
+    }
+
+    psasProfileIndex = getCurrentPsasProfileIndex();
+    tmpPsasProfileIndex = psasProfileIndex;
+#endif
+
     return NULL;
 }
 
@@ -140,6 +160,9 @@ static const void *cmsx_menuImu_onExit(displayPort_t *pDisp, const OSD_Entry *se
 
     changePidProfile(pidProfileIndex);
     changeControlRateProfile(rateProfileIndex);
+#ifdef USE_PSAS
+    changePsasProfile(psasProfileIndex);
+#endif
 
     return NULL;
 }
@@ -1012,7 +1035,6 @@ static uint16_t temp_psas_trim_tau_reset;
 
 static const void *cmsx_PsasRead(void)
 {
-
     const psasProfile_t *psasProfile = currentPsasProfile;
     for (uint8_t i = 0; i < 3; i++) {
         temp_psas_stick_gain[i] = psasProfile->psas_stick_gain[i];
@@ -1118,6 +1140,17 @@ static const void *cmsx_PsasWriteback(displayPort_t *pDisp, const OSD_Entry *sel
     psasProfile->psas_trim_tau_reset = temp_psas_trim_tau_reset;
 
     psasInit(psasProfile);
+
+    return NULL;
+}
+
+static const void *cmsx_psasProfileIndexOnChange(displayPort_t *displayPort, const void *ptr)
+{
+    UNUSED(displayPort);
+    UNUSED(ptr);
+
+    psasProfileIndex = tmpPsasProfileIndex;
+    changePsasProfile(psasProfileIndex);
 
     return NULL;
 }
@@ -1279,10 +1312,11 @@ static const OSD_Entry cmsx_menuImuEntries[] =
     { "-- PROFILE --", OME_Label, NULL, NULL},
 
     {"PID PROF",  OME_TAB,     cmsx_profileIndexOnChange,     &(OSD_TAB_t){&tmpPidProfileIndex, PID_PROFILE_COUNT-1, pidProfileNamePtrs}},
+    {"PID",       OME_Submenu, cmsMenuChange,                 &cmsx_menuPid},
 #ifdef USE_PSAS
+    {"PSAS PROF", OME_TAB,     cmsx_psasProfileIndexOnChange, &(OSD_TAB_t){&tmpPsasProfileIndex, PSAS_PROFILE_COUNT-1, psasProfileNamePtrs}},
     {"PSAS",      OME_Submenu, cmsMenuChange,                 &cmsx_menuPSAS},
 #endif
-    {"PID",       OME_Submenu, cmsMenuChange,                 &cmsx_menuPid},
 #ifdef USE_SIMPLIFIED_TUNING
     {"SIMPLIFIED TUNING",   OME_Submenu, cmsMenuChange,                 &cmsx_menuSimplifiedTuning},
 #endif
