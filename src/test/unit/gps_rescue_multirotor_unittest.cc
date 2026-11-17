@@ -212,7 +212,7 @@ protected:
         gpsSol.numSat = GPS_MIN_SAT_COUNT + 4;
         ENABLE_STATE(GPS_FIX);
         ENABLE_STATE(GPS_FIX_HOME);
-        simulatedEstimate.position.v[EF_NORTH] = 1000.0f;
+        simulatedEstimate.position.v[EF_NORTH] = -1000.0f; // start south of home;  nose is defaulted to north
     }
 };
 
@@ -306,7 +306,7 @@ static void reachLandingAltitude(void)
     runRescueSeconds(1.0f);
 
     // Remain 5m from home while the altitude target descends.
-    simulatedEstimate.position.v[EF_NORTH] = 500.0f;
+    simulatedEstimate.position.v[EF_NORTH] = -500.0f;
     runRescueSeconds(12.0f);
 }
 
