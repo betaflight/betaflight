@@ -529,15 +529,14 @@ static void land(void)
 
 static void updateTargetSpeed(void)
 {
-const float distanceCm = rescueState.sensor.distanceToHomeCm;
-const float decelCmSS = GPS_RESCUE_APPROACH_DECEL_CMSS;
-const float kneeCm = decelCmSS;
-const float approachSpeedCmS = distanceCm <= kneeCm
-    ? distanceCm
-    : sqrtf(2.0f * decelCmSS * distanceCm - decelCmSS * kneeCm);
-
-rescueState.intent.targetSpeedCmS = fminf(gpsRescueConfig()->groundSpeedCmS, approachSpeedCmS)
-    * rescueState.intent.xyVelStartRamp;
+    const float distanceCm = rescueState.sensor.distanceToHomeCm;
+    const float decelCmSS = GPS_RESCUE_APPROACH_DECEL_CMSS;
+    const float kneeCm = decelCmSS;
+    const float approachSpeedCmS = distanceCm <= kneeCm
+        ? distanceCm
+        : sqrtf(2.0f * decelCmSS * distanceCm - decelCmSS * kneeCm);
+    rescueState.intent.targetSpeedCmS = fminf(gpsRescueConfig()->groundSpeedCmS, approachSpeedCmS)
+        * rescueState.intent.xyVelStartRamp;
 }
 
 void initRescueValues(void)
