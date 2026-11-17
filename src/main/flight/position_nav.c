@@ -34,6 +34,7 @@
 #define POS_TO_VEL_KP          1.0f
 #define MIN_DISTANCE_M         0.01f
 #define HYSTERESIS_FACTOR      1.5f
+#define APPROACH_STILL_MPS     1.0f    // a craft crossing the still radius faster than this is turned back, not stopped
 // The commanded altitude may never lead the craft by more than this much flying time at the leg's
 // vertical rate. A craft that cannot climb or descend as fast as it was asked to (ceiling, ground,
 // battery) would otherwise accumulate altitude error for the altitude P term to answer with a
@@ -98,7 +99,7 @@ void positionNavSetTargetEf(
     cmd.rampValid = false;
     cmd.rampRateMps = currentTargetVelCmS.v[ENU_U] * 0.01f;
     cmd.rampRateSlewed = handOver;
-    cmd.approachSlowdownM = 0.0f;
+    cmd.approachDecelMps2 = 0.0f;
     cmd.approachStillRadiusM = 0.0f;
     cmd.approachStill = false;
     cmd.velocityFfValid = false;
@@ -259,16 +260,21 @@ void positionNavStartAfresh(void)
     previousTargetVelValid = false;
 }
 
-void positionNavSetApproachSlowdown(float slowdownM, float stillRadiusM)
+void positionNavSetApproachDecel(float decelMps2, float stillRadiusM)
 {
-    cmd.approachSlowdownM = slowdownM;
+    cmd.approachDecelMps2 = decelMps2;
     cmd.approachStillRadiusM = stillRadiusM;
     cmd.approachStill = false;
 }
 
-float positionNavApproachSpeedMps(float cruiseSpeedMps, float slowdownM, float distM)
+float positionNavApproachSpeedMps(float cruiseSpeedMps, float decelMps2, float distM)
 {
-    return fminf(cruiseSpeedMps, cruiseSpeedMps * distM / slowdownM);
+    // The steady brake meets the proportional pull tangentially, where both slow at decelMps2.
+    const float kneeM = decelMps2 / sq(POS_TO_VEL_KP);
+    const float speedMps = (distM <= kneeM)
+        ? POS_TO_VEL_KP * distM
+        : sqrtf(2.0f * decelMps2 * distM - sq(decelMps2 / POS_TO_VEL_KP));
+    return fminf(cruiseSpeedMps, speedMps);
 }
 
 void positionNavSetAltitudeArrivalRequired(bool required)
@@ -355,6 +361,7 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
     const float errorEastM  = cmd.targetPosEfM.v[ENU_E] - posEastM;
     const float errorNorthM = cmd.targetPosEfM.v[ENU_N] - posNorthM;
     const float horizDistM = sqrtf(sq(errorEastM) + sq(errorNorthM));
+    const float horizSpeedMps = sqrtf(sq(est->velocity.v[ENU_E]) + sq(est->velocity.v[ENU_N])) * 0.01f;
 
     vector3_t targetVelMps;
     vector3Zero(&targetVelMps);
@@ -364,12 +371,12 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
     } else {
         float desiredSpeedMps = fminf(cmd.cruiseSpeedMps, POS_TO_VEL_KP * horizDistM);
 
-        if (cmd.approachSlowdownM > 0.0f) {
-            if (horizDistM <= cmd.approachStillRadiusM) {
+        if (cmd.approachDecelMps2 > 0.0f) {
+            if (horizDistM <= cmd.approachStillRadiusM && horizSpeedMps < APPROACH_STILL_MPS) {
                 cmd.approachStill = true;
             }
             desiredSpeedMps = cmd.approachStill ? 0.0f
-                : positionNavApproachSpeedMps(cmd.cruiseSpeedMps, cmd.approachSlowdownM, horizDistM);
+                : positionNavApproachSpeedMps(cmd.cruiseSpeedMps, cmd.approachDecelMps2, horizDistM);
         }
 
         if (cmd.maxDecelMps2 > 0.0f) {
@@ -419,7 +426,6 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
 
     vector3Scale(&currentTargetVelCmS, &targetVelMps, 100.0f);  // m/s -> cm/s, ENU
 
-    const float horizSpeedMps = sqrtf(sq(est->velocity.v[ENU_E]) + sq(est->velocity.v[ENU_N])) * 0.01f;
     const float absVzMps = fabsf(est->velocity.v[ENU_U] * 0.01f);
     const float absErrZM = fabsf(cmd.targetPosEfM.v[ENU_U] - posUpM);
 
