@@ -67,6 +67,7 @@ extern "C" {
     #include "rx/rx.h"
 
     void osdUpdate(timeUs_t currentTimeUs);
+    bool osdProcessStats1(timeUs_t currentTimeUs);
     void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time);
     int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius);
 
@@ -395,6 +396,37 @@ TEST_F(OsdTest, TestInit)
     displayPortTestPrint();
 #endif
     displayPortTestBufferIsEmpty();
+}
+
+TEST_F(OsdTest, AuxValueUsesValidChannelForOutOfRangeSettings)
+{
+    osdInit(&testDisplayPort, OSD_DISPLAYPORT_DEVICE_AUTO);
+    osdElementConfigMutable()->item_pos[OSD_AUX_VALUE] = OSD_PROFILE_1_FLAG;
+    osdConfigMutable()->aux_scale = 200;
+    rcData[NON_AUX_CHANNEL_COUNT] = -1.0f;
+    rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT - 1] = 1.0f;
+
+    const timeUs_t startTimeUs = simulationTime;
+
+    const struct { uint8_t channel; uint16_t expected; } cases[] = {
+        { 1, 0 }, { MAX_AUX_CHANNEL_COUNT, 200 },
+        { MAX_AUX_CHANNEL_COUNT + 1, 200 }, { MAX_SUPPORTED_RC_CHANNEL_COUNT, 200 },
+        { 255, 200 }, { 0, 0 },
+    };
+    for (const auto &testCase : cases) {
+        osdConfigMutable()->aux_channel = testCase.channel;
+        simulationTime += 2e6;
+        osdProcessStats1(simulationTime);
+        EXPECT_EQ(testCase.expected, osdAuxValue) << "AUX " << (int)testCase.channel;
+    }
+
+    // Restore the shared simulation clock and resynchronise the internal
+    // timestamps, so that later tests see no time jump from this test.
+    simulationTime = startTimeUs;
+    osdConfigMutable()->aux_channel = 1;
+    rcData[NON_AUX_CHANNEL_COUNT] = 0.0f;
+    rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT - 1] = 0.0f;
+    osdProcessStats1(simulationTime);
 }
 
 /*

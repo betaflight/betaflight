@@ -1322,7 +1322,7 @@ STATIC_UNIT_TESTED bool osdProcessStats1(timeUs_t currentTimeUs)
     }
 
     if (VISIBLE(osdElementConfig()->item_pos[OSD_AUX_VALUE])) {
-        const uint8_t auxChannel = osdConfig()->aux_channel + NON_AUX_CHANNEL_COUNT - 1;
+        const uint8_t auxChannel = constrain(osdConfig()->aux_channel, 1, MAX_AUX_CHANNEL_COUNT) + NON_AUX_CHANNEL_COUNT - 1;
         if (currentTimeUs > osdAuxRefreshTimeUs) {
             // aux channel start after main channels
             osdAuxValue = scaleRangef(constrainf(rcGetChannel(auxChannel), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX, 0, osdConfig()->aux_scale);
