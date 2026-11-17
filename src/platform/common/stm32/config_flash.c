@@ -452,7 +452,7 @@ void configUnlock(void)
 #endif
 }
 
-void configLock(void)
+configStreamerResult_e configLock(void)
 {
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4)
         HAL_FLASH_Lock();
@@ -494,6 +494,7 @@ void configLock(void)
 #else
         FLASH_Lock();
 #endif
+    return CONFIG_RESULT_SUCCESS;
 }
 
 void configClearFlags(void)

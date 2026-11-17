@@ -161,10 +161,14 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
         xLL_EX_DMA_SetMemoryAddress(motor->dmaRef, (uint32_t)motor->dmaBuffer);
         /* GPDMA BNDT is in bytes, not transfers; SrcDataWidth = WORD here */
         xLL_EX_DMA_SetDataLength(motor->dmaRef, bufferSize * 4);
+        xLL_EX_DMA_EnableResource(motor->dmaRef);
+#elif defined(UM324xF)
+        xLL_EX_DMA_DisableResource(motor->dmaRef);
+        xLL_EX_DMA_SetDataLength(motor->dmaRef, bufferSize);
 #else
         xLL_EX_DMA_SetDataLength(motor->dmaRef, bufferSize);
-#endif
         xLL_EX_DMA_EnableResource(motor->dmaRef);
+#endif
 #else
 #ifdef X32M7
         xDMA_Cmd(motor->dmaRef, DISABLE);
@@ -216,6 +220,7 @@ static uint32_t decodeTelemetryPacket(const uint32_t buffer[], uint32_t count)
             // as a spurious extra edge; skip padding so the bits != 21 check
             // below rejects the packet (returns 0xffff / DSHOT_TELEMETRY_INVALID).
             len = 21 - bits;
+
             if (len <= 0 || level == 0) {
                 break; // done or spurious pullup edge
             }
@@ -278,7 +283,11 @@ FAST_CODE_NOINLINE bool pwmTelemetryDecode(void)
         }
         if (dmaMotors[i].isInput) {
 #ifdef USE_FULL_LL_DRIVER
+#if defined(UM324xF)
+            uint32_t edges = xLL_EX_DMA_GetDataLength(dmaMotors[i].dmaRef);
+#else
             uint32_t edges = GCR_TELEMETRY_INPUT_LEN - xLL_EX_DMA_GetDataLength(dmaMotors[i].dmaRef);
+#endif
 #else
             uint32_t edges = GCR_TELEMETRY_INPUT_LEN - xDMA_GetCurrDataCounter(dmaMotors[i].dmaRef);
 #endif
