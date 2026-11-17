@@ -419,15 +419,17 @@ static void performSanityChecks(void)
         break;
 
     case RESCUE_ROTATE:
-        rescueState.intent.secondsFailing += 1;
-        if (rescueState.intent.secondsFailing >= 10) {
-            //almost never fails to rotate to the required angle, so this should never trigger
-            // does not evaluate whether  attitude.values.yaw  is correct
-            rescueState.phase = RESCUE_FLY_HOME;
-            rescueState.intent.targetSpeedCmS = gpsRescueConfig()->groundSpeedCmS;
+        clearTargetVelocity();
+        updateYawStartupAttenuator();
+        controlYaw();
+        if (fabsf(rescueState.sensor.errorAngleDeg) < GPS_RESCUE_ALLOWED_YAW_RANGE) {
+            if (!descendIfNeeded()) {
+                rescueState.phase = RESCUE_FLY_HOME;
+            }
             rescueState.intent.secondsFailing = 0;
         }
-        break;
+        updateAltitudeControl();
+    break;
 
     case RESCUE_FLY_HOME:
         rescueState.intent.secondsFailing += (velocityToHomeCmS < 0.2f * rescueState.intent.targetSpeedCmS) ? 1 : -1;

@@ -3328,10 +3328,10 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         autopilotConfigMutable()->maxAngle = sbufReadU16Constrained(src, AUTOPILOT_MAX_ANGLE_MIN, AUTOPILOT_MAX_ANGLE_MAX);
         gpsRescueConfigMutable()->returnAltitudeM = sbufReadU16Constrained(src, GPS_RESCUE_RETURN_ALT_MIN_M, GPS_RESCUE_RETURN_ALT_MAX_M);
         gpsRescueConfigMutable()->descentDistanceM = sbufReadU16Constrained(src, GPS_RESCUE_DESCENT_DIST_MIN_M, GPS_RESCUE_DESCENT_DIST_MAX_M); // 0 makes RESCUE_DESCENT unreachable
-        gpsRescueConfigMutable()->groundSpeedCmS = sbufReadU16Constrained(src, 0, GPS_RESCUE_GROUND_SPEED_MAX);
+        gpsRescueConfigMutable()->groundSpeedCmS = sbufReadU16Constrained(src, 2, GPS_RESCUE_GROUND_SPEED_MAX);
         autopilotConfigMutable()->throttleMin = sbufReadU16Constrained(src, AUTOPILOT_THROTTLE_MIN_MIN, AUTOPILOT_THROTTLE_MIN_MAX);
         autopilotConfigMutable()->throttleMax = sbufReadU16Constrained(src, AUTOPILOT_THROTTLE_MAX_MIN, AUTOPILOT_THROTTLE_MAX_MAX);
-        autopilotConfigMutable()->hoverThrottle = sbufReadU16Constrained(src, 0, AUTOPILOT_HOVER_THROTTLE_MAX);
+        autopilotConfigMutable()->hoverThrottle = sbufReadU16Constrained(src, 2, AUTOPILOT_HOVER_THROTTLE_MAX);
         gpsRescueConfigMutable()->sanityChecks = sbufReadLookupIndex(src, TABLE_GPS_RESCUE_SANITY_CHECK);
         gpsRescueConfigMutable()->minSats = sbufReadU8Constrained(src, GPS_RESCUE_MIN_SATS_MIN, GPS_RESCUE_MIN_SATS_MAX);
         if (sbufBytesRemaining(src) >= 6) {
