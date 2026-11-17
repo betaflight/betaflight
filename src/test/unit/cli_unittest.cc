@@ -62,6 +62,8 @@ extern "C" {
     #include "sensors/battery.h"
     #include "sensors/gyro.h"
 
+    bool gpsNmeaFlushPending(void);
+
     void cliSet(const char *cmdName, char *cmdline);
     void cliHelp(const char *cmdName, char *cmdline);
     int cliGetSettingIndex(char *name, uint8_t length);
@@ -870,19 +872,147 @@ static bool feedGpsBytes(const uint8_t *bytes, size_t count)
     return published;
 }
 
+static void makeAllystarFrame(uint8_t *frame, int32_t north, int32_t east, int32_t down, uint32_t sAcc, int32_t heading = 1234567, uint32_t iTow = 45337000)
+{
+    memset(frame, 0, 44);
+    frame[0] = 0xf1;
+    frame[1] = 0xd9;
+    frame[2] = 0x01;
+    frame[3] = 0x12;
+    frame[4] = 36;
+    const uint32_t values[] = {iTow, (uint32_t)north, (uint32_t)east, (uint32_t)down, 250, 200, (uint32_t)heading, sAcc, 0};
+    for (unsigned i = 0; i < 9; ++i) {
+        for (unsigned j = 0; j < 4; ++j) {
+            frame[6 + i * 4 + j] = values[i] >> (8 * j);
+        }
+    }
+    uint8_t a = 0, b = 0;
+    for (unsigned i = 2; i < 42; ++i) {
+        a += frame[i];
+        b += a;
+    }
+    frame[42] = a;
+    frame[43] = b;
+}
+
 static bool feedTestSentence(const char *sentence)
 {
     return feedGpsBytes((const uint8_t *)sentence, strlen(sentence));
 }
 
-static void resetNmeaTest()
+static void resetAllystarTest(bool enabled)
 {
     gpsConfigMutable()->provider = GPS_NMEA;
+    gpsConfigMutable()->gps_nmea_allystar = enabled;
     gpsConfigMutable()->gps_uart = SERIAL_PORT_NONE;
     gpsInit();
     memset(&gpsSol, 0, sizeof(gpsSol));
     gpsData.now = 100;
+    gpsData.lastNavSolTs = enabled ? 45318900 : 8900;
+    if (enabled) {
+        uint8_t timeFrame[24] = {0xf1, 0xd9, 0x01, 0x05, 16, 0};
+        timeFrame[6 + 10] = 18;
+        timeFrame[6 + 1] = 6; // Valid reference GPS time and leap seconds.
+        uint8_t a = 0, b = 0;
+        for (unsigned i = 2; i < 22; ++i) {
+            a += timeFrame[i];
+            b += a;
+        }
+        timeFrame[22] = a;
+        timeFrame[23] = b;
+        feedGpsBytes(timeFrame, sizeof(timeFrame));
+    }
 }
+
+static std::string nmeaSentence(const std::string &body);
+
+TEST(CLIUnittest, AllystarGgaWaitsForMatchingVelocity)
+{
+    resetAllystarTest(true);
+    EXPECT_FALSE(feedTestSentence("$GPGGA,123519,4807.038,N,01131.000,E,1,08,1.0,545.4,M,46.9,M,,*4F\r\n"));
+}
+
+TEST(CLIUnittest, AllystarFreshVelnedPublishesGgaWithNedAndAccuracy)
+{
+    resetAllystarTest(true);
+    uint8_t frame[44];
+    makeAllystarFrame(frame, 123, -45, -67, 17);
+    EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+    EXPECT_TRUE(feedTestSentence("$GPGGA,123519,4807.038,N,01131.000,E,1,08,1.0,545.4,M,46.9,M,,*4F\r\n"));
+    EXPECT_EQ(123, gpsSol.velned.velN);
+    EXPECT_EQ(-45, gpsSol.velned.velE);
+    EXPECT_EQ(-67, gpsSol.velned.velD);
+    EXPECT_TRUE(gpsSol.velDValid);
+    EXPECT_EQ(170u, gpsSol.acc.sAcc);
+    EXPECT_FALSE(feedTestSentence("$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n"));
+    EXPECT_EQ(170u, gpsSol.acc.sAcc);
+}
+
+TEST(CLIUnittest, AllystarUsesVelocityImmediatelyBeforeGgaAtDifferentRates)
+{
+    for (const unsigned intervalMs : {1000U, 500U, 333U, 200U, 100U}) {
+        resetAllystarTest(true);
+        EXPECT_FALSE(feedTestSentence(nmeaSentence("GPGGA,123518.00,4807.038,N,01131.000,E,1,08,1.0,545.4,M,46.9,M,,").c_str()));
+        gpsData.now += 50;
+        ASSERT_TRUE(gpsNmeaFlushPending());
+        gpsData.now += intervalMs - 1;
+        uint8_t frame[44];
+        makeAllystarFrame(frame, 123, -45, -67, 17, 1234567, 45336000 + intervalMs);
+        EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+        gpsData.now++;
+        char timestamp[16];
+        snprintf(timestamp, sizeof(timestamp), "1235%02u.%03u", 18U + intervalMs / 1000U, intervalMs % 1000U);
+        const auto gga = nmeaSentence(std::string("GPGGA,") + timestamp + ",4807.038,N,01131.000,E,1,08,1.0,545.4,M,46.9,M,,");
+        ASSERT_TRUE(feedTestSentence(gga.c_str()));
+        EXPECT_FALSE(gpsSol.velNEInvalid) << "interval=" << intervalMs;
+        EXPECT_TRUE(gpsSol.velDValid) << "interval=" << intervalMs;
+        EXPECT_EQ(123, gpsSol.velned.velN) << "interval=" << intervalMs;
+        EXPECT_EQ(intervalMs, gpsSol.navIntervalMs);
+    }
+}
+
+TEST(CLIUnittest, AllystarSignedHeadingWrapsToCompassCourse)
+{
+    struct Case { int32_t heading; uint16_t course; };
+    for (const Case &test : {Case{-9000000, 2700}, Case{-18000000, 1800},
+                             Case{9000000, 900}, Case{27000000, 2700}, Case{36000000, 0}}) {
+        resetAllystarTest(true);
+        uint8_t frame[44];
+        makeAllystarFrame(frame, 0, -200, 0, 17, test.heading);
+        EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+        ASSERT_TRUE(feedTestSentence("$GPGGA,123519,4807.038,N,01131.000,E,1,08,1.0,545.4,M,46.9,M,,*4F\r\n"));
+        EXPECT_EQ(test.course, gpsSol.groundCourse) << "heading=" << test.heading;
+    }
+}
+
+TEST(CLIUnittest, AllystarStaleFrameFallsBackToRmcWithoutVerticalAccuracy)
+{
+    resetAllystarTest(true);
+    uint8_t frame[44];
+    makeAllystarFrame(frame, 123, -45, 67, 17);
+    feedGpsBytes(frame, sizeof(frame));
+    gpsData.now += 251;
+    EXPECT_FALSE(feedTestSentence("$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n"));
+    EXPECT_FALSE(feedTestSentence("$GPGGA,123519,4807.038,N,01131.000,E,1,08,1.0,545.4,M,46.9,M,,*4F\r\n"));
+    gpsData.now += 50;
+    ASSERT_TRUE(gpsNmeaFlushPending());
+    EXPECT_FALSE(gpsSol.velDValid);
+    EXPECT_EQ(0, gpsSol.velned.velD);
+    EXPECT_EQ(UINT32_MAX, gpsSol.acc.sAcc);
+    EXPECT_NE(0, gpsSol.velned.velN);
+}
+
+TEST(CLIUnittest, GenericNmeaDoesNotDecodeAllystar)
+{
+    resetAllystarTest(false);
+    uint8_t frame[44];
+    makeAllystarFrame(frame, 123, -45, 67, 17);
+    feedGpsBytes(frame, sizeof(frame));
+    EXPECT_TRUE(feedTestSentence("$GPGGA,123519,4807.038,N,01131.000,E,1,08,1.0,545.4,M,46.9,M,,*4F\r\n"));
+    EXPECT_EQ(0u, gpsSol.acc.sAcc);
+    EXPECT_FALSE(gpsSol.velDValid);
+}
+
 
 static std::string nmeaSentence(const std::string &body)
 {
@@ -900,7 +1030,7 @@ static std::string nmeaGga(const char *quality = "4", const char *sats = "30")
 
 TEST(CLIUnittest, NmeaGgaMustBeValidatedBeforeChangingFix)
 {
-    resetNmeaTest();
+    resetAllystarTest(false);
     DISABLE_STATE(GPS_FIX);
     auto valid = nmeaGga();
     ASSERT_TRUE(feedTestSentence(valid.c_str()));
@@ -920,7 +1050,7 @@ TEST(CLIUnittest, NmeaGgaMustBeValidatedBeforeChangingFix)
 
 TEST(CLIUnittest, NmeaScalesFieldsWithMissingDecimalDigits)
 {
-    resetNmeaTest();
+    resetAllystarTest(false);
     ASSERT_TRUE(feedTestSentence(nmeaSentence("GPGGA,123519.00,4807.038,N,01131.000,E,1,08,1.0,545,M,46.9,M,,").c_str()));
     EXPECT_EQ(54500, gpsSol.llh.altCm);
     EXPECT_FALSE(feedTestSentence(nmeaSentence("GPRMC,123519.00,A,4807.038,N,01131.000,E,22,84,230394,003.1,W").c_str()));
@@ -941,7 +1071,7 @@ TEST(CLIUnittest, NmeaScalesFieldsWithMissingDecimalDigits)
 
 TEST(CLIUnittest, NmeaRejectsAltitudeAndDopThatOverflowStorage)
 {
-    resetNmeaTest();
+    resetAllystarTest(false);
     ASSERT_TRUE(feedTestSentence(nmeaGga().c_str()));
     ASSERT_EQ(54540, gpsSol.llh.altCm);
     EXPECT_FALSE(feedTestSentence(nmeaSentence("GPGGA,123519.00,4807.038,N,01131.000,E,1,08,1.0,42949673,M,46.9,M,,").c_str()));
@@ -964,7 +1094,7 @@ TEST(CLIUnittest, NmeaRejectsAltitudeAndDopThatOverflowStorage)
 
 TEST(CLIUnittest, NmeaRecoversAfterInterruptedChecksum)
 {
-    resetNmeaTest();
+    resetAllystarTest(false);
     EXPECT_FALSE(feedTestSentence("$GNGGA,12*"));
     EXPECT_TRUE(feedTestSentence(nmeaGga().c_str()));
     EXPECT_TRUE(STATE(GPS_FIX));
@@ -973,7 +1103,7 @@ TEST(CLIUnittest, NmeaRecoversAfterInterruptedChecksum)
 
 TEST(CLIUnittest, NmeaRejectsIncompleteAndOversizeFields)
 {
-    resetNmeaTest();
+    resetAllystarTest(false);
     ASSERT_TRUE(feedTestSentence(nmeaGga().c_str()));
     const int32_t altitude = gpsSol.llh.altCm;
     EXPECT_FALSE(feedTestSentence(nmeaSentence("GNGGA,123519.00,4807.038,N,01131.000,E,0").c_str()));
@@ -988,7 +1118,7 @@ TEST(CLIUnittest, NmeaRejectsIncompleteAndOversizeFields)
 
 TEST(CLIUnittest, NmeaRejectsMalformedChecksumAndRecovers)
 {
-    resetNmeaTest();
+    resetAllystarTest(false);
     ASSERT_TRUE(feedTestSentence(nmeaGga().c_str()));
     for (const char *tail : {"*0\r\n", "*GG\r\n", "*000\r\n", "*00,\r\n"}) {
         auto bad = std::string("$GNGGA,123519.00,4807.038,N,01131.000,E,0,00,1.0,545.4,M,46.9,M,,") + tail;
@@ -1000,7 +1130,7 @@ TEST(CLIUnittest, NmeaRejectsMalformedChecksumAndRecovers)
 
 TEST(CLIUnittest, NmeaRejectedFieldsCannotLeakIntoNextSentence)
 {
-    resetNmeaTest();
+    resetAllystarTest(false);
     ASSERT_TRUE(feedTestSentence(nmeaGga().c_str()));
     auto bad = nmeaSentence("GPGGA,123519.00,4807.038,N,01131.000,E,4,12,1.0,999.9,M,0,M,,");
     bad[bad.size()-4] = bad[bad.size()-4] == '0' ? '1' : '0';
@@ -1027,7 +1157,7 @@ TEST(CLIUnittest, NmeaRejectedFieldsCannotLeakIntoNextSentence)
 
 TEST(CLIUnittest, NmeaInterleavedMessagesCommitOnlyAfterValidation)
 {
-    resetNmeaTest();
+    resetAllystarTest(false);
     auto gga = nmeaSentence("GPGGA,123519.00,4807.038,N,01131.000,E,4,30,1.0,545.4,M,46.9,M,,");
     ASSERT_TRUE(feedTestSentence(gga.c_str()));
     EXPECT_EQ(481173000, gpsSol.llh.lat);
@@ -1057,7 +1187,7 @@ TEST(CLIUnittest, NmeaInterleavedMessagesCommitOnlyAfterValidation)
 
 TEST(CLIUnittest, NmeaRejectsInvalidRequiredFieldValues)
 {
-    resetNmeaTest();
+    resetAllystarTest(false);
     ASSERT_TRUE(feedTestSentence(nmeaGga().c_str()));
     const auto lat = gpsSol.llh.lat;
     for (const char *body : {
@@ -1079,7 +1209,7 @@ TEST(CLIUnittest, NmeaRejectsInvalidRequiredFieldValues)
 
 TEST(CLIUnittest, NmeaBurstRecoversAfterRepeatedDamage)
 {
-    resetNmeaTest();
+    resetAllystarTest(false);
     const auto good = nmeaGga();
     const auto rmc = nmeaSentence("GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W");
     unsigned publications = 0;
@@ -1096,7 +1226,7 @@ TEST(CLIUnittest, NmeaBurstRecoversAfterRepeatedDamage)
 
 TEST(CLIUnittest, NmeaRejectsMalformedRmcAndGsvFields)
 {
-    resetNmeaTest();
+    resetAllystarTest(false);
     feedTestSentence(nmeaSentence("GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W").c_str());
     ASSERT_EQ(844, gpsSol.groundCourse);
     feedTestSentence(nmeaSentence("GPRMC,123519.00,X,4807.038,N,01131.000,E,022.4,123.4,230394,003.1,W").c_str());
@@ -1109,9 +1239,416 @@ TEST(CLIUnittest, NmeaRejectsMalformedRmcAndGsvFields)
     EXPECT_EQ(2, GPS_numCh);
 }
 
+TEST(CLIUnittest, AllystarRmcBeforeGgaPublishesOnceWithCurrentPosition)
+{
+    resetAllystarTest(true);
+    uint8_t frame[44];
+    makeAllystarFrame(frame, 123, -45, 67, 17);
+    feedGpsBytes(frame, sizeof(frame));
+    EXPECT_FALSE(feedTestSentence("$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n"));
+    EXPECT_TRUE(feedTestSentence("$GPGGA,123519,4807.038,N,01131.000,E,1,08,1.0,545.4,M,46.9,M,,*4F\r\n"));
+    EXPECT_EQ(123, gpsSol.velned.velN);
+}
+
+TEST(CLIUnittest, AllystarInvalidRmcDoesNotPublishFallback)
+{
+    resetAllystarTest(true);
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPRMC,123519,V,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W").c_str()));
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GNGGA,123519,4807.038,N,01131.000,E,1,08,1.0,545.4,M,46.9,M,,").c_str()));
+    gpsData.now += 50;
+    ASSERT_TRUE(gpsNmeaFlushPending());
+}
+
+TEST(CLIUnittest, AllystarFallbackClearsStale3dSpeed)
+{
+    resetAllystarTest(true);
+    uint8_t frame[44];
+    makeAllystarFrame(frame, 123, -45, 67, 17);
+    feedGpsBytes(frame, sizeof(frame));
+    ASSERT_TRUE(feedTestSentence("$GPGGA,123519,4807.038,N,01131.000,E,1,08,1.0,545.4,M,46.9,M,,*4F\r\n"));
+    ASSERT_EQ(250, gpsSol.speed3d);
+    feedTestSentence("$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n");
+    gpsData.now += 251;
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPRMC,123520,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W").c_str()));
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPGGA,123520,4807.038,N,01131.000,E,1,08,1.0,545.4,M,46.9,M,,").c_str()));
+    gpsData.now += 50;
+    ASSERT_TRUE(gpsNmeaFlushPending());
+    EXPECT_EQ(gpsSol.groundSpeed, gpsSol.speed3d);
+    EXPECT_FALSE(gpsSol.velDValid);
+}
+
+TEST(CLIUnittest, AllystarGgaWithoutVelocityPublishesAndMarksRetainedSpeedInvalid)
+{
+    resetAllystarTest(true);
+    gpsSol.speed3d = 1234;
+    gpsSol.velned.velN = 4321;
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GNGGA,123519,4807.038,N,01131.000,E,1,08,1.0,545.4,M,46.9,M,,").c_str()));
+    gpsData.now += 50;
+    ASSERT_TRUE(gpsNmeaFlushPending());
+    EXPECT_EQ(1234, gpsSol.speed3d);
+    EXPECT_TRUE(gpsSol.velNEInvalid);
+    EXPECT_FALSE(gpsSol.velDValid);
+    EXPECT_TRUE(feedTestSentence(nmeaSentence("GNGGA,123520,,,,,0,00,1.0,,M,0,M,,").c_str()));
+    EXPECT_FALSE(STATE(GPS_FIX));
+}
+
+TEST(CLIUnittest, AllystarDoesNotFuseRecentRmcFromDifferentEpoch)
+{
+    resetAllystarTest(true);
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W").c_str()));
+    gpsData.now += 100;
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPGGA,123520,4807.038,N,01131.000,E,1,08,1.0,545.4,M,46.9,M,,").c_str()));
+    gpsData.now += 50;
+    ASSERT_TRUE(gpsNmeaFlushPending());
+    EXPECT_TRUE(gpsSol.velNEInvalid);
+    EXPECT_FALSE(gpsSol.velDValid);
+}
+
+TEST(CLIUnittest, AllystarRmcFallbackScalesIntegerSpeedAndCourse)
+{
+    resetAllystarTest(true);
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPRMC,123519.00,A,4807.038,N,01131.000,E,22,84,230394,003.1,W").c_str()));
+    ASSERT_FALSE(feedTestSentence(nmeaSentence("GPGGA,123519.00,4807.038,N,01131.000,E,1,08,1.0,545.4,M,46.9,M,,").c_str()));
+    gpsData.now += 50;
+    ASSERT_TRUE(gpsNmeaFlushPending());
+    EXPECT_FALSE(gpsSol.velNEInvalid);
+    EXPECT_EQ(1131, gpsSol.groundSpeed);
+    EXPECT_EQ(840, gpsSol.groundCourse);
+    EXPECT_NEAR(118, gpsSol.velned.velN, 3);
+    EXPECT_NEAR(1125, gpsSol.velned.velE, 3);
+}
+
+TEST(CLIUnittest, AllystarDoesNotFuseOneSecondOldRmc)
+{
+    resetAllystarTest(true);
+    gpsData.lastNavSolTs = 0;
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPGGA,123518,4807.038,N,01131.000,E,1,08,1.0,545.4,M,46.9,M,,").c_str()));
+    gpsData.now += 50;
+    ASSERT_TRUE(gpsNmeaFlushPending());
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPRMC,123518,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W").c_str()));
+    gpsData.now += 1000;
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPGGA,123519,4807.038,N,01131.000,E,1,08,1.0,545.4,M,46.9,M,,").c_str()));
+    gpsData.now += 50;
+    ASSERT_TRUE(gpsNmeaFlushPending());
+    EXPECT_EQ(1000, gpsSol.navIntervalMs);
+    EXPECT_TRUE(gpsSol.velNEInvalid);
+}
+
+TEST(CLIUnittest, AllystarDoesNotFuseOneSecondOldVelned)
+{
+    resetAllystarTest(true);
+    gpsData.lastNavSolTs = 0;
+    ASSERT_FALSE(feedTestSentence(nmeaSentence("GPGGA,123518,4807.038,N,01131.000,E,1,08,1.0,545.4,M,46.9,M,,").c_str()));
+    gpsData.now += 50;
+    ASSERT_TRUE(gpsNmeaFlushPending());
+    uint8_t frame[44];
+    makeAllystarFrame(frame, 123, -45, 67, 17);
+    feedGpsBytes(frame, sizeof(frame));
+    gpsData.now += 1000;
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPGGA,123519,4807.038,N,01131.000,E,1,08,1.0,545.4,M,46.9,M,,").c_str()));
+    gpsData.now += 50;
+    ASSERT_TRUE(gpsNmeaFlushPending());
+    EXPECT_FALSE(gpsSol.velDValid);
+    EXPECT_TRUE(gpsSol.velNEInvalid);
+}
+
+static std::string allystarGgaAt(const char *epoch)
+{
+    return nmeaSentence(std::string("GPGGA,") + epoch + ",4807.038,N,01131.000,E,1,08,1.0,545.4,M,46.9,M,,");
+}
+
+static std::string allystarRmcAt(const char *epoch)
+{
+    return nmeaSentence(std::string("GPRMC,") + epoch + ",A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W");
+}
+
+TEST(CLIUnittest, AllystarAllSentenceOrdersPreferMatchingVelnedAndPublishOnce)
+{
+    const unsigned orders[][3] = {{0,1,2}, {0,2,1}, {1,0,2}, {1,2,0}, {2,0,1}, {2,1,0}};
+    for (const auto &order : orders) {
+        resetAllystarTest(true);
+        uint8_t frame[44];
+        makeAllystarFrame(frame, 123, -45, -67, 17);
+        unsigned publications = 0;
+        for (unsigned item : order) {
+            if (item == 0) publications += feedTestSentence(allystarGgaAt("123519").c_str());
+            if (item == 1) publications += feedTestSentence(allystarRmcAt("123519").c_str());
+            if (item == 2) publications += feedGpsBytes(frame, sizeof(frame));
+            gpsData.now += 10;
+        }
+        EXPECT_EQ(1u, publications);
+        EXPECT_EQ(123, gpsSol.velned.velN);
+        EXPECT_EQ(-67, gpsSol.velned.velD);
+        EXPECT_EQ(170u, gpsSol.acc.sAcc);
+        gpsData.now += 50;
+        EXPECT_FALSE(gpsNmeaFlushPending());
+        EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+        EXPECT_FALSE(feedTestSentence(allystarGgaAt("123519").c_str()));
+    }
+}
+
+TEST(CLIUnittest, AllystarMatchingRmcFallbackWaitsForDeadlineInEitherOrder)
+{
+    for (bool ggaFirst : {false, true}) {
+        resetAllystarTest(true);
+        const auto gga = allystarGgaAt("123519");
+        const auto rmc = allystarRmcAt("123519");
+        EXPECT_FALSE(feedTestSentence((ggaFirst ? gga : rmc).c_str()));
+        EXPECT_FALSE(feedTestSentence((ggaFirst ? rmc : gga).c_str()));
+        gpsData.now += 49;
+        EXPECT_FALSE(gpsNmeaFlushPending());
+        gpsData.now++;
+        ASSERT_TRUE(gpsNmeaFlushPending());
+        EXPECT_FALSE(gpsSol.velNEInvalid);
+        EXPECT_FALSE(gpsSol.velDValid);
+        EXPECT_EQ(844, gpsSol.groundCourse);
+        EXPECT_EQ(UINT32_MAX, gpsSol.acc.sAcc);
+        EXPECT_FALSE(feedTestSentence(rmc.c_str()));
+        EXPECT_FALSE(feedTestSentence(gga.c_str()));
+    }
+}
+
+TEST(CLIUnittest, AllystarFinalVelnedChecksumBytePublishesPendingGga)
+{
+    resetAllystarTest(true);
+    EXPECT_FALSE(feedTestSentence(allystarGgaAt("123519").c_str()));
+    gpsData.now += 49;
+    uint8_t frame[44];
+    makeAllystarFrame(frame, 123, -45, -67, 17);
+    EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame) - 1));
+    EXPECT_TRUE(gpsNewFrame(frame[sizeof(frame) - 1]));
+    EXPECT_EQ(123, gpsSol.velned.velN);
+    EXPECT_TRUE(gpsSol.velDValid);
+}
+
+TEST(CLIUnittest, AllystarPreservesMillisecondNavigationInterval)
+{
+    resetAllystarTest(true);
+    uint8_t frame[44];
+    makeAllystarFrame(frame, 123, -45, -67, 17, 1234567, 45337000);
+    EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+    ASSERT_TRUE(feedTestSentence(allystarGgaAt("123519.000").c_str()));
+    gpsData.now += 333;
+    makeAllystarFrame(frame, 123, -45, -67, 17, 1234567, 45337333);
+    EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+    ASSERT_TRUE(feedTestSentence(allystarGgaAt("123519.333").c_str()));
+    EXPECT_EQ(333, gpsSol.navIntervalMs);
+}
+
+TEST(CLIUnittest, AllystarCentisecondGgaMatchesMillisecondVelned)
+{
+    resetAllystarTest(true);
+    uint8_t frame[44];
+    makeAllystarFrame(frame, 123, -45, -67, 17, 1234567, 45337333);
+    EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+    ASSERT_TRUE(feedTestSentence(allystarGgaAt("123519.33").c_str()));
+    EXPECT_EQ(123, gpsSol.velned.velN);
+    EXPECT_TRUE(gpsSol.velDValid);
+}
+
+TEST(CLIUnittest, AllystarCentisecondGgaMatchesMillisecondRmcFallback)
+{
+    resetAllystarTest(true);
+    EXPECT_FALSE(feedTestSentence(allystarRmcAt("123519.333").c_str()));
+    EXPECT_FALSE(feedTestSentence(allystarGgaAt("123519.33").c_str()));
+    gpsData.now += 50;
+    ASSERT_TRUE(gpsNmeaFlushPending());
+    EXPECT_FALSE(gpsSol.velNEInvalid);
+    EXPECT_EQ(844, gpsSol.groundCourse);
+    EXPECT_FALSE(gpsSol.velDValid);
+}
+
+TEST(CLIUnittest, AllystarMillisecondGgaRequiresExactVelnedEpoch)
+{
+    resetAllystarTest(true);
+    uint8_t frame[44];
+    makeAllystarFrame(frame, 123, -45, -67, 17, 1234567, 45337334);
+    EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+    EXPECT_FALSE(feedTestSentence(allystarGgaAt("123519.333").c_str()));
+    gpsData.now += 50;
+    ASSERT_TRUE(gpsNmeaFlushPending());
+    EXPECT_TRUE(gpsSol.velNEInvalid);
+    EXPECT_FALSE(gpsSol.velDValid);
+}
+
+TEST(CLIUnittest, AllystarCentisecondGgaRejectsPrevious100msVelocityEpoch)
+{
+    resetAllystarTest(true);
+    uint8_t frame[44];
+    makeAllystarFrame(frame, 123, -45, -67, 17, 1234567, 45337233);
+    EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+    EXPECT_FALSE(feedTestSentence(allystarRmcAt("123519.233").c_str()));
+    EXPECT_FALSE(feedTestSentence(allystarGgaAt("123519.33").c_str()));
+    gpsData.now += 50;
+    ASSERT_TRUE(gpsNmeaFlushPending());
+    EXPECT_TRUE(gpsSol.velNEInvalid);
+    EXPECT_FALSE(gpsSol.velDValid);
+}
+
+TEST(CLIUnittest, AllystarPendingGgaExpiresWithoutMoreSerialBytes)
+{
+    resetAllystarTest(true);
+    EXPECT_FALSE(feedTestSentence(allystarGgaAt("123519").c_str()));
+    gpsData.now += 49;
+    EXPECT_FALSE(gpsNmeaFlushPending());
+    gpsData.now++;
+    EXPECT_TRUE(gpsNmeaFlushPending());
+    EXPECT_TRUE(gpsSol.velNEInvalid);
+    EXPECT_FALSE(gpsNmeaFlushPending());
+}
+
+TEST(CLIUnittest, AllystarLateMatchingVelnedDoesNotRepublishExpiredEpoch)
+{
+    resetAllystarTest(true);
+    EXPECT_FALSE(feedTestSentence(allystarGgaAt("123519").c_str()));
+    gpsData.now += 50;
+    ASSERT_TRUE(gpsNmeaFlushPending());
+    uint8_t frame[44];
+    makeAllystarFrame(frame, 123, -45, -67, 17);
+    EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+    EXPECT_TRUE(gpsSol.velNEInvalid);
+    EXPECT_FALSE(feedTestSentence(allystarGgaAt("123519").c_str()));
+    gpsData.now += 50;
+    EXPECT_FALSE(gpsNmeaFlushPending());
+}
+
+TEST(CLIUnittest, AllystarRecentWrongEpochVelnedDoesNotMatch)
+{
+    resetAllystarTest(true);
+    uint8_t frame[44];
+    makeAllystarFrame(frame, 123, -45, -67, 17, 1234567, 45336999);
+    EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+    EXPECT_FALSE(feedTestSentence(allystarGgaAt("123519").c_str()));
+    gpsData.now += 50;
+    EXPECT_TRUE(gpsNmeaFlushPending());
+    EXPECT_TRUE(gpsSol.velNEInvalid);
+}
+
+TEST(CLIUnittest, AllystarCachedVelocityFreshnessIncludes250Milliseconds)
+{
+    for (unsigned age : {250U, 251U}) {
+        resetAllystarTest(true);
+        uint8_t frame[44];
+        makeAllystarFrame(frame, 123, -45, -67, 17);
+        EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+        gpsData.now += age;
+        EXPECT_EQ(age == 250, feedTestSentence(allystarGgaAt("123519").c_str()));
+        if (age > 250) {
+            gpsData.now += 50;
+            ASSERT_TRUE(gpsNmeaFlushPending());
+            EXPECT_TRUE(gpsSol.velNEInvalid);
+        } else {
+            EXPECT_TRUE(gpsSol.velDValid);
+        }
+    }
+}
+
+TEST(CLIUnittest, AllystarFixLossImmediatelyClearsPendingPosition)
+{
+    resetAllystarTest(true);
+    EXPECT_FALSE(feedTestSentence(allystarGgaAt("123519").c_str()));
+    EXPECT_TRUE(feedTestSentence(nmeaSentence("GPGGA,123520,,,,,0,00,1.0,,M,0,M,,").c_str()));
+    EXPECT_FALSE(STATE(GPS_FIX));
+    gpsData.now += 50;
+    EXPECT_FALSE(gpsNmeaFlushPending());
+    uint8_t frame[44];
+    makeAllystarFrame(frame, 123, -45, -67, 17);
+    EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+    EXPECT_FALSE(STATE(GPS_FIX));
+}
+
+TEST(CLIUnittest, AllystarFixLossKeepsEpochWatermarkAndAcceptsNewerFix)
+{
+    for (uint32_t delayedOffset : {0U, 50U}) {
+        resetAllystarTest(true);
+        uint8_t frame[44];
+        makeAllystarFrame(frame, 123, -45, -67, 17);
+        EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+        ASSERT_TRUE(feedTestSentence(allystarGgaAt("123519.000").c_str()));
+        ASSERT_TRUE(STATE(GPS_FIX));
+        gpsData.now += 100;
+        ASSERT_TRUE(feedTestSentence(nmeaSentence("GPGGA,123519.100,,,,,0,00,1.0,,M,0,M,,").c_str()));
+        ASSERT_FALSE(STATE(GPS_FIX));
+        makeAllystarFrame(frame, 456, -45, -67, 17, 1234567, 45337000 + delayedOffset);
+        EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+        EXPECT_FALSE(feedTestSentence(allystarGgaAt(delayedOffset ? "123519.050" : "123519.000").c_str()));
+        EXPECT_FALSE(STATE(GPS_FIX));
+        gpsData.now += 50;
+        EXPECT_FALSE(gpsNmeaFlushPending());
+        EXPECT_FALSE(STATE(GPS_FIX));
+        makeAllystarFrame(frame, 789, -45, -67, 17, 1234567, 45337200);
+        EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+        ASSERT_TRUE(feedTestSentence(allystarGgaAt("123519.200").c_str()));
+        EXPECT_TRUE(STATE(GPS_FIX));
+        EXPECT_EQ(789, gpsSol.velned.velN);
+    }
+}
+
+TEST(CLIUnittest, AllystarUntimedFixLossKeepsPriorEpochWatermark)
+{
+    resetAllystarTest(true);
+    uint8_t frame[44];
+    makeAllystarFrame(frame, 123, -45, -67, 17);
+    EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+    ASSERT_TRUE(feedTestSentence(allystarGgaAt("123519.000").c_str()));
+    ASSERT_TRUE(feedTestSentence(nmeaSentence("GNGGA,,,,,,0,,,,,,,,").c_str()));
+    ASSERT_FALSE(STATE(GPS_FIX));
+    EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+    EXPECT_FALSE(feedTestSentence(allystarGgaAt("123519.000").c_str()));
+    gpsData.now += 50;
+    EXPECT_FALSE(gpsNmeaFlushPending());
+    EXPECT_FALSE(STATE(GPS_FIX));
+}
+
+TEST(CLIUnittest, AllystarEpochWatermarkExpiresAfterReceiverTimeout)
+{
+    resetAllystarTest(true);
+    uint8_t frame[44];
+    makeAllystarFrame(frame, 123, -45, -67, 17);
+    EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+    ASSERT_TRUE(feedTestSentence(allystarGgaAt("123519.000").c_str()));
+    ASSERT_TRUE(feedTestSentence(nmeaSentence("GPGGA,123519.100,,,,,0,00,1.0,,M,0,M,,").c_str()));
+    gpsData.now += 2501; // GPS_TIMEOUT_MS is 2500.
+    makeAllystarFrame(frame, 456, -45, -67, 17, 1234567, 45336000);
+    EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+    ASSERT_TRUE(feedTestSentence(allystarGgaAt("123518.000").c_str()));
+    EXPECT_TRUE(STATE(GPS_FIX));
+    EXPECT_EQ(456, gpsSol.velned.velN);
+}
+
+TEST(CLIUnittest, AllystarMidnightRollsForwardAndRejectsPriorEpoch)
+{
+    resetAllystarTest(true);
+    uint8_t frame[44];
+    makeAllystarFrame(frame, 123, -45, -67, 17, 1234567, 86417900);
+    EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+    EXPECT_TRUE(feedTestSentence(allystarGgaAt("235959.900").c_str()));
+    gpsData.now += 100;
+    makeAllystarFrame(frame, 456, -45, -67, 17, 1234567, 18000);
+    EXPECT_FALSE(feedGpsBytes(frame, sizeof(frame)));
+    EXPECT_TRUE(feedTestSentence(allystarGgaAt("000000.000").c_str()));
+    EXPECT_EQ(456, gpsSol.velned.velN);
+    EXPECT_EQ(100, gpsSol.navIntervalMs);
+    EXPECT_FALSE(feedTestSentence(allystarGgaAt("235959.900").c_str()));
+    gpsData.now += 50;
+    EXPECT_FALSE(gpsNmeaFlushPending());
+}
+
+TEST(CLIUnittest, AllystarInvalidVelocityDoesNotLeakToOtherProviders)
+{
+    resetAllystarTest(true);
+    gpsSol.velNEInvalid = true;
+    gpsSol.vel3dInvalid = true;
+    EXPECT_FALSE(gpsHorizontalVelocityUsable());
+    EXPECT_FALSE(gpsThreeDimensionalSpeedUsable());
+    gpsConfigMutable()->provider = GPS_UBLOX;
+    EXPECT_TRUE(gpsHorizontalVelocityUsable());
+    EXPECT_TRUE(gpsThreeDimensionalSpeedUsable());
+}
+
 TEST(CLIUnittest, NmeaRejectsOutOfRangeRmcSpeedAndCourse)
 {
-    resetNmeaTest();
+    resetAllystarTest(false);
     feedTestSentence(nmeaSentence("GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W").c_str());
     const auto speed = gpsSol.groundSpeed;
     const auto course = gpsSol.groundCourse;
@@ -1130,7 +1667,7 @@ TEST(CLIUnittest, NmeaRejectsOutOfRangeRmcSpeedAndCourse)
 
 TEST(CLIUnittest, NmeaNoFixCanOmitTimeAndSatelliteCount)
 {
-    resetNmeaTest();
+    resetAllystarTest(false);
     ASSERT_TRUE(feedTestSentence(nmeaGga().c_str()));
     ASSERT_TRUE(STATE(GPS_FIX));
     const uint16_t intervalBefore = gpsSol.navIntervalMs;

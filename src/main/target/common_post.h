@@ -896,6 +896,17 @@ extern struct linker_symbol __fontdata_end;
 #endif
 #endif // USE_GPS
 
+#ifndef ENABLE_GPS_ALLYSTAR
+#if defined(USE_GPS_NMEA)
+#define ENABLE_GPS_ALLYSTAR 1
+#else
+#define ENABLE_GPS_ALLYSTAR 0
+#endif // USE_GPS_NMEA
+#endif // ENABLE_GPS_ALLYSTAR
+#if ENABLE_GPS_ALLYSTAR && !defined(USE_GPS_NMEA)
+#error "ENABLE_GPS_ALLYSTAR requires USE_GPS_NMEA"
+#endif // ENABLE_GPS_ALLYSTAR && !USE_GPS_NMEA
+
 // The flight plan and multirotor GPS rescue fly through the shared autopilot
 // stack: altitude via alt hold, XY via the position-hold task. Derive both so a
 // build (cloud or target) selecting GPS or the flight plan alone still gets a

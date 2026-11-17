@@ -435,10 +435,10 @@ STATIC_UNIT_TESTED float imuWingTurnSpeedMs(timeUs_t nowUs, float dtS, const vec
 }
 #endif
 
-static float imuWingForwardSpeed(timeUs_t nowUs, float dtS, const vector3_t *gyroRadS)
+STATIC_UNIT_TESTED float imuWingForwardSpeed(timeUs_t nowUs, float dtS, const vector3_t *gyroRadS)
 {
 #ifdef USE_GPS
-    if (sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
+    if (sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsHorizontalVelocityUsable() && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
         return imuWingTurnSpeedMs(nowUs, dtS, gyroRadS);
     }
     wingTurn.hasTrack = false;
@@ -830,7 +830,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     float cogErr = 0;
 #if defined(USE_GPS)
     if (sensors(SENSOR_GPS)
-        && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
+        && STATE(GPS_FIX) && gpsHorizontalVelocityUsable() && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
         static bool gpsHeadingInitialized = false;  // TODO - this really should relate to whether or not the imu is oriented
 
         if (gpsHeadingInitialized) {

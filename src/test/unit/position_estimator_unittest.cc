@@ -26,6 +26,7 @@ void getLinearAccelENU(float *accelEast, float *accelNorth, float *accelUp);
 bool gpsMeasurementReadyForFusion(timeUs_t nowUs);
 
 #include "io/gps.h"
+#include "pg/gps.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
@@ -36,6 +37,7 @@ bool gpsMeasurementReadyForFusion(timeUs_t nowUs);
 
 PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
 PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
+PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
 }
 
 #include "gtest/gtest.h"
@@ -1035,6 +1037,48 @@ TEST_F(PositionEstimatorTest, GpsVerticalVelocityKeepsZPositionOutOfTheVelocityS
     EXPECT_NEAR(positionEstimatorGetVerticalVelocity(), 0.0f, 4.0f);
 }
 
+TEST_F(PositionEstimatorTest, AllystarNmeaWithoutFreshDownVelocityDoesNotFuseZeroPlaceholder)
+{
+    enabledSensors = SENSOR_GPS | SENSOR_BARO | SENSOR_RANGEFINDER;
+    stateFlags = GPS_FIX;
+    gpsConfigMutable()->provider = GPS_NMEA;
+    gpsConfigMutable()->gps_nmea_allystar = true;
+    positionConfigMutable()->altitude_source = ALTITUDE_SOURCE_DEFAULT;
+    positionConfigMutable()->altitude_prefer_baro = 50;
+
+    gpsSol.acc.sAcc = 100;
+    gpsSol.velned.velD = -300;
+    gpsSol.velDValid = false;
+    gpsSol.llh.altCm = 100.0f;
+    baroAltCm = 100.0f;
+    rfAltCm = 100.0f;
+    positionEstimatorInit();
+    stepEstimator(200);
+
+    EXPECT_NEAR(positionEstimatorGetVerticalVelocity(), 0.0f, 5.0f);
+}
+
+TEST_F(PositionEstimatorTest, AllystarNmeaWithFreshDownVelocityFusesVerticalMeasurement)
+{
+    enabledSensors = SENSOR_GPS | SENSOR_BARO | SENSOR_RANGEFINDER;
+    stateFlags = GPS_FIX;
+    gpsConfigMutable()->provider = GPS_NMEA;
+    gpsConfigMutable()->gps_nmea_allystar = true;
+    positionConfigMutable()->altitude_source = ALTITUDE_SOURCE_DEFAULT;
+    positionConfigMutable()->altitude_prefer_baro = 50;
+
+    gpsSol.acc.sAcc = 100;
+    gpsSol.velned.velD = -300;
+    gpsSol.velDValid = true;
+    gpsSol.llh.altCm = 100.0f;
+    baroAltCm = 100.0f;
+    rfAltCm = 100.0f;
+    positionEstimatorInit();
+    stepEstimator(200);
+
+    EXPECT_NEAR(positionEstimatorGetVerticalVelocity(), 300.0f, 5.0f);
+}
+
 // Regression test: a horizontal state that has gone unmeasured for longer than the timeout
 // must be discarded, not carried forward and reconciled.
 //
@@ -1183,3 +1227,18 @@ TEST(PositionFilterTest, VelocityMeasurementCorrectsPositionState)
     EXPECT_LT(kalmanGetPositionVariance(&kf), positionVarBefore);
 }
 
+TEST_F(PositionEstimatorTest, AllystarMissingHorizontalVelocityIsNotFused)
+{
+    enabledSensors = SENSOR_GPS | SENSOR_BARO;
+    stateFlags = GPS_FIX;
+    gpsConfigMutable()->provider = GPS_NMEA;
+    gpsConfigMutable()->gps_nmea_allystar = true;
+    gpsSol.velNEInvalid = true;
+    gpsSol.velned.velN = 2000;
+    positionEstimatorInit();
+    stepEstimator(100);
+    EXPECT_NEAR(positionEstimatorGetEstimate()->velocity.v[ENU_N], 0.0f, 5.0f);
+    gpsSol.velNEInvalid = false;
+    stepEstimator(100);
+    EXPECT_GT(positionEstimatorGetEstimate()->velocity.v[ENU_N], 100.0f);
+}
