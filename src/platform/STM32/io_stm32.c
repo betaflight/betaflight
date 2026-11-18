@@ -75,16 +75,19 @@ const struct ioPortDef_s ioPortDefs[] = {
     { RCC_AHB2(GPIOF) },
 };
 #elif defined(STM32C5)
+// Index by IO_GPIOPortIdx(). STM32C562 lacks GPIOF and GPIOG; their slots
+// stay zero and are never reached because target.h doesn't enable them.
 const struct ioPortDef_s ioPortDefs[] = {
-    { RCC_AHB2(GPIOA) },
-    { RCC_AHB2(GPIOB) },
-    { RCC_AHB2(GPIOC) },
-    { RCC_AHB2(GPIOD) },
-    { RCC_AHB2(GPIOE) },
-    // STM32C562 lacks GPIOF
+    [0] = { RCC_AHB2(GPIOA) },
+    [1] = { RCC_AHB2(GPIOB) },
+    [2] = { RCC_AHB2(GPIOC) },
+    [3] = { RCC_AHB2(GPIOD) },
+    [4] = { RCC_AHB2(GPIOE) },
 #if !defined(STM32C562xx)
-    { RCC_AHB2(GPIOF) },
+    [5] = { RCC_AHB2(GPIOF) },
+    [6] = { RCC_AHB2(GPIOG) },
 #endif
+    [7] = { RCC_AHB2(GPIOH) },
 };
 #elif defined(STM32H5)
 const struct ioPortDef_s ioPortDefs[] = {

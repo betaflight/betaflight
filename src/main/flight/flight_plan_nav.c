@@ -176,6 +176,9 @@
 // only near the ground (landing initiated at ground level). At altitude a
 // vehicle that cannot descend must keep trying, not disarm mid-air.
 #define FP_LANDING_ESTABLISH_TIMEOUT_US 5000000u
+// A landing still braking across the ground can stall its descent for a moment at any height, the
+// pitch back lifting it: above landing altitude that is no touchdown until the craft has all but stopped.
+#define FP_TOUCHDOWN_MAX_GROUND_MPS 1.0f
 
 // Injected runtime plans are small synthesised sequences (geofence RTH,
 // failsafe rescue); MAVLink-scale plans stay in the PG store.
@@ -197,13 +200,14 @@
 #define FP_PATTERN_START_SPEED_MPS  1.5f
 #define FP_PATTERN_START_TIMEOUT_US 5000000u
 
-// The rescue brakes home at a steady deceleration, slowing from speed^2 / 2a out, so it arrives
-// rather than tailing off towards home. It comes to rest this far from home, and inside it the
-// descent stops chasing home and comes straight down: wind and a wandering position estimate would
-// otherwise walk the last stretch around the landing spot. The craft lands about this far off, so
-// it is no wider than that wander.
-#define FP_RESCUE_APPROACH_DECEL_MPS2 1.0f
-#define FP_RESCUE_LAND_STILL_RADIUS_M 0.3f
+// The rescue sheds its return speed at altitude from the descent distance out, at no harder than
+// this, and only starts down once this close to home: a descent begun further out reaches the
+// ground before the craft does. Inside the still radius the descent stops chasing home and comes
+// straight down: wind and a wandering position estimate would otherwise walk the last stretch
+// around the landing spot. The craft lands about this far off, so it is no wider than that wander.
+#define FP_RESCUE_SLOWDOWN_MAX_DECEL_MPS2 1.5f
+#define FP_RESCUE_DESCENT_START_M         5.0f
+#define FP_RESCUE_LAND_STILL_RADIUS_M     0.3f
 
 // The rescue's first leg stops the craft where it will come to rest, to climb there or, near home,
 // to land there. It completes below this ground speed, or once it has been in place this long
@@ -312,7 +316,7 @@ static struct {
     // across a corner so the profile is continuous (only engage/retry re-anchor it).
     bool      legIsPassGate;    // current leg uses carrot leg-line tracking
     float     legArriveRadiusM; // this leg's arrival radius, resolved at dispatch
-    float     legApproachDecelMps2; // brake onto the waypoint at this deceleration, 0 = off
+    float     legApproachDecelMps2; // slow onto the waypoint at no harder than this, 0 = off
     bool      legValid;         // the leg line is anchored
     vector3_t legTargetEnuM;    // the point this leg flies to (E,N,U metres)
     float     legCruiseMps;     // this leg's cruise cap
@@ -624,10 +628,12 @@ static void readBackCarrot(void)
 }
 
 // The rate a point leg's commanded velocity ramps at out of the one before it: nav_accel, but never
-// slower than its braking curve or its approach sheds speed, or it arrives hot.
+// slower than its braking curve or its approach sheds speed, or it arrives hot. A craft running a
+// little behind the approach sees it fall faster than its deceleration, so that has headroom: held
+// to it, the command falls behind, the craft with it, and the lag compounds into an overshoot.
 static float pointLegAccelMps2(void)
 {
-    return fmaxf(fmaxf(autopilotConfig()->navAccel * 0.01f, FP_APPROACH_DECEL_MPS2), fp.legApproachDecelMps2);
+    return fmaxf(fmaxf(autopilotConfig()->navAccel * 0.01f, FP_APPROACH_DECEL_MPS2), 2.0f * fp.legApproachDecelMps2);
 }
 #endif // !USE_WING
 
@@ -765,24 +771,16 @@ static bool dispatchWaypoint(void)
         ? cfg->waypointHoldRadius * 0.01f
         : fminf(cfg->waypointArrivalRadius * 0.01f, FP_PASS_MAX_M);
 #if ENABLE_RESCUE_PLAN && !defined(USE_WING)
-    // Legacy rescue begins its descent gps_rescue_descent_dist from home and comes down as it
-    // closes the last stretch, rather than arriving overhead and then sinking. The plan gets the
-    // same shape by arriving early: the return leg hands over at that distance and the landing leg
-    // is already inside its own radius when it is dispatched.
-    if (fp.isRescuePlan && !rescueStop
-        && (effective.type == WAYPOINT_TYPE_FLYOVER || effective.type == WAYPOINT_TYPE_LAND)) {
-        arrivalRadiusM = fmaxf(arrivalRadiusM, (float)gpsRescueConfig()->descentDistanceM);
+    // The rescue comes down as it closes the last stretch, rather than arriving overhead and then
+    // sinking: the return leg hands over that far out and the landing leg is already inside its own
+    // radius when it is dispatched.
+    const bool rescueApproach = fp.isRescuePlan && !rescueStop
+        && (effective.type == WAYPOINT_TYPE_FLYOVER || effective.type == WAYPOINT_TYPE_LAND);
+    if (rescueApproach) {
+        arrivalRadiusM = FP_RESCUE_DESCENT_START_M;
     }
 #endif
     fp.legArriveRadiusM = arrivalRadiusM;
-    // Rescue brakes all the way home through the descent; mission legs keep their own trapezoid.
-    fp.legApproachDecelMps2 = 0.0f;
-#if ENABLE_RESCUE_PLAN
-    if (fp.isRescuePlan && !rescueStop
-        && (effective.type == WAYPOINT_TYPE_FLYOVER || effective.type == WAYPOINT_TYPE_LAND)) {
-        fp.legApproachDecelMps2 = FP_RESCUE_APPROACH_DECEL_MPS2;
-    }
-#endif
 
     float cruiseMps = (effective.speed > 0) ? effective.speed * 0.01f : cfg->maxVelocity * 0.01f;
     if (cruiseMps < FP_MIN_CRUISE_MPS) {
@@ -826,6 +824,15 @@ static bool dispatchWaypoint(void)
     fp.legTargetEnuM = targetEnuM;
     fp.legCruiseMps = cruiseMps;
     fp.legVertRateMps = legVertRateMps(&effective);
+    // Rescue slows all the way home through the descent; mission legs keep their own trapezoid.
+    fp.legApproachDecelMps2 = 0.0f;
+#if ENABLE_RESCUE_PLAN && !defined(USE_WING)
+    if (rescueApproach) {
+        const float spreadMps2 = sq(cruiseMps) / (2.0f * gpsRescueConfig()->descentDistanceM);
+        const float maxMps2 = fminf(FP_RESCUE_SLOWDOWN_MAX_DECEL_MPS2, brakingDecelMps2(rescueStopMaxAngleDeg()));
+        fp.legApproachDecelMps2 = constrainf(spreadMps2, FP_APPROACH_DECEL_MPS2, maxMps2);
+    }
+#endif
     fp.legYawBehaviour = effective.yawBehaviour;
     fp.legYawHoldDeg = attitude.values.yaw * 0.1f;
     fp.inPreTurn = false;
@@ -929,9 +936,9 @@ static bool dispatchWaypoint(void)
         positionNavSetTargetEf(&targetEnuM, cruiseMps, arrivalRadiusM,
                                rescueStop ? FP_RESCUE_STOP_STILL_MPS : FP_COMPLETION_ANY_MPS, true,
                                onWaypointReached, NULL);
-        // An approach brake replaces the braking curve.
+        // An approach slowdown replaces the braking curve.
         positionNavSetAccelLimits(pointLegAccelMps2(), (fp.legApproachDecelMps2 > 0.0f) ? 0.0f : FP_APPROACH_DECEL_MPS2);
-        positionNavSetApproachBrake(fp.legApproachDecelMps2, FP_RESCUE_LAND_STILL_RADIUS_M);
+        positionNavSetApproachDecel(fp.legApproachDecelMps2, FP_RESCUE_LAND_STILL_RADIUS_M);
         // En-route waypoints advance on horizontal arrival; a vehicle that cannot
         // reach the commanded altitude must not orbit forever. HOLD, LAND and
         // TAKEOFF are station-keeping targets and keep the altitude gate, bar the
@@ -1312,14 +1319,10 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
     // keeps its fly-over-the-point meaning - the carrot tracking and corner-speed
     // profile still apply, but the gate stays at the arrival radius so the craft
     // passes tight over the point instead of carving the corner wide.
-    // The resolved radius can exceed FP_PASS_MAX_M (a rescue hands over at its
-    // descent distance), which would invert the corner-gate bounds; the corner
-    // gate keeps its own ceiling and the fly-over gate honours the radius.
     const waypoint_t *thisWp = currentWaypoint();
     const bool flyby = (thisWp == NULL) || (thisWp->type == WAYPOINT_TYPE_FLYBY);
     const float arriveM = flyby
-        ? constrainf(cornerSpeedMps * FP_GATE_RADIUS_SCALE,
-                     fminf(arriveRadiusM, FP_PASS_MAX_M), FP_PASS_MAX_M)
+        ? constrainf(cornerSpeedMps * FP_GATE_RADIUS_SCALE, arriveRadiusM, FP_PASS_MAX_M)
         : arriveRadiusM;
 
     // A point leg next picks up at no more than its braking speed from the gate: brake into that, or
@@ -1466,12 +1469,12 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
     bool turnInBraked = true;
     if (fp.legTurnIn) {
         // Straight at the waypoint (the line is drawn from wherever the turn ends), at the turn-in
-        // speed or the approach brake where that is slower. The speed is shed at the rescue's lean
+        // speed or the approach slowdown where that is slower. The speed is shed at the rescue's lean
         // before the turn starts, and the turn comes round at the turn-in rate within that lean.
         vector2Sub(&aimDir, &wp, &fp.carrotEnuM);
         desiredMps = fminf(fp.legCruiseMps, FP_TURN_IN_MPS);
         if (fp.legApproachDecelMps2 > 0.0f) {
-            desiredMps = fminf(desiredMps, positionNavApproachSpeedMps(fp.legCruiseMps, fp.legApproachDecelMps2, FP_RESCUE_LAND_STILL_RADIUS_M, distM));
+            desiredMps = fminf(desiredMps, positionNavApproachSpeedMps(fp.legCruiseMps, fp.legApproachDecelMps2, distM));
         }
         // Slow enough to turn inside the distance left, or it circles the waypoint.
         desiredMps = fminf(desiredMps, 0.5f * DEGREES_TO_RADIANS(FP_TURN_IN_RATE_DPS) * vector2Norm(&carrotToWp));
@@ -1512,7 +1515,7 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
     }
     if (fp.legApproachDecelMps2 > 0.0f && !fp.legTurnIn) {
         fp.carrotSpeedMps = fminf(fp.carrotSpeedMps,
-                                  positionNavApproachSpeedMps(fp.legCruiseMps, fp.legApproachDecelMps2, FP_RESCUE_LAND_STILL_RADIUS_M, distM));
+                                  positionNavApproachSpeedMps(fp.legCruiseMps, fp.legApproachDecelMps2, distM));
     }
     vector2Scale(&fp.carrotVelMps, &carrotDir, fp.carrotSpeedMps);
     placeCarrot(est, &fp.carrotEnuM);
@@ -1549,7 +1552,7 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
 // The descent is flown at the rate the caller states — the LAND leg's own rate, resolved at
 // dispatch. The below-ground target only keeps vertical arrival from ever triggering; it is the
 // rate, not the depth, that decides how fast the craft comes down. A landing at the end of an
-// approach brake closes the rest of it on the way down; any other creeps to its point at the
+// approach slowdown closes the rest of it on the way down; any other creeps to its point at the
 // descent rate.
 static void startLanding(timeUs_t currentTimeUs, float targetEastM, float targetNorthM, float descentRateMps)
 {
@@ -1566,7 +1569,7 @@ static void startLanding(timeUs_t currentTimeUs, float targetEastM, float target
     const float cruiseMps = continueApproach ? fp.legCruiseMps : descentMps;
     positionNavSetTargetEf(&targetM, cruiseMps, 1.0f, 0.1f, true, NULL, NULL);
     positionNavSetAccelLimits(pointLegAccelMps2(), continueApproach ? 0.0f : FP_APPROACH_DECEL_MPS2);
-    positionNavSetApproachBrake(fp.legApproachDecelMps2, FP_RESCUE_LAND_STILL_RADIUS_M);
+    positionNavSetApproachDecel(fp.legApproachDecelMps2, FP_RESCUE_LAND_STILL_RADIUS_M);
     positionNavSetVerticalProfile(descentMps, startAltM);
     fp.landingRateMps = descentMps;
 
@@ -1591,10 +1594,14 @@ static void updateLanding(timeUs_t currentTimeUs)
         fp.landingDescentEstablished = true;
     }
 
-    const bool monitorTouchdown = fp.landingDescentEstablished
-        || (isBelowLandingAltitude()
+    const bool belowLandingAltitude = isBelowLandingAltitude();
+    const float groundSpeedMps = sqrtf(sq(est->velocity.v[ENU_E]) + sq(est->velocity.v[ENU_N])) * 0.01f;
+    const bool monitorTouchdown = (fp.landingDescentEstablished
+            && (belowLandingAltitude || groundSpeedMps < FP_TOUCHDOWN_MAX_GROUND_MPS))
+        || (belowLandingAltitude
             && cmpTimeUs(currentTimeUs, fp.landingStartUs) >= (timeDelta_t)FP_LANDING_ESTABLISH_TIMEOUT_US);
     if (!monitorTouchdown) {
+        fp.touchdownQuietStartUs = 0;
         return;
     }
 
@@ -1848,6 +1855,7 @@ static uint8_t buildRescuePlan(waypoint_t out[FP_INJECTED_PLAN_MAX], bool climbI
         .speed = speedCmS,
         .vertRate = gpsRescueConfig()->descendRate,
         .type = WAYPOINT_TYPE_LAND,
+        .yawBehaviour = WAYPOINT_YAW_HOLD,          // keep the nose where the return left it, on home
     };
     return 3;
 }
@@ -2604,6 +2612,16 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
 bool flightPlanNavIsActive(void)
 {
     return fp.active;
+}
+
+bool flightPlanNavIsLanding(void)
+{
+    return fp.active && fp.state == FP_NAV_LANDING;
+}
+
+float flightPlanNavGetLandingRateCmS(void)
+{
+    return fp.landingRateMps * 100.0f;
 }
 
 flightPlanNavState_e flightPlanNavGetState(void)

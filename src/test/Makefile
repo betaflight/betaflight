@@ -46,6 +46,7 @@ althold_unittest_SRC := \
 
 althold_unittest_DEFINES := \
 		USE_ALTITUDE_HOLD= \
+		ENABLE_FLIGHT_PLAN=1
 
 autopilot_wing_unittest_SRC := \
 		$(USER_DIR)/flight/autopilot_wing.c \
@@ -233,6 +234,13 @@ accgyro_spi_lsm6dsv16x_unittest_DEFINES = \
 #		$(USER_DIR)/sensors/battery.c \
 #		$(USER_DIR)/common/maths.c
 
+bus_i2c_busdev_unittest_SRC := \
+		$(USER_DIR)/drivers/bus_i2c_busdev.c
+
+bus_i2c_busdev_unittest_DEFINES := \
+		USE_I2C= \
+		I2CDEV_COUNT=3
+
 bus_spi_unittest_SRC := \
 		$(USER_DIR)/build/atomic.c \
 		$(USER_DIR)/drivers/bus_spi.c \
@@ -317,6 +325,9 @@ common_filter_unittest_SRC := \
 
 debug_annotations_unittest_SRC := \
 		$(USER_DIR)/build/debug.c
+
+dshot_bitbang_frame_unittest_SRC := \
+		$(USER_DIR)/common/time.c
 
 dyn_notch_filter_unittest_SRC := \
         $(USER_DIR)/flight/dyn_notch_filter.c \
@@ -474,6 +485,11 @@ msp_serial_unittest_DEFINES := \
 		USE_MSP_DISPLAYPORT= \
 		USE_RANGEFINDER_MT= \
 		USE_OPTICALFLOW_MT=
+
+msp_serial_no_bootloader_unittest_SRC := $(msp_serial_unittest_SRC)
+msp_serial_no_bootloader_unittest_DEFINES := \
+		$(msp_serial_unittest_DEFINES) \
+		PLATFORM_SUPPORTS_SOFTWARE_BOOTLOADER=0
 
 msp_reboot_unittest_SRC := \
 		$(USER_DIR)/fc/runtime_config.c \
@@ -726,6 +742,14 @@ telemetry_hott_unittest_SRC := \
 		$(USER_DIR)/common/gps_conversion.c
 
 
+telemetry_frsky_hub_unittest_SRC := \
+		$(USER_DIR)/telemetry/frsky_hub.c
+
+telemetry_frsky_hub_unittest_DEFINES := \
+		USE_TELEMETRY= \
+		USE_TELEMETRY_FRSKY_HUB=
+
+
 telemetry_ibus_unittest_SRC := \
 		$(USER_DIR)/telemetry/ibus_shared.c \
 		$(USER_DIR)/telemetry/ibus.c
@@ -840,6 +864,9 @@ pid_unittest_DEFINES := \
 		USE_LAUNCH_CONTROL= \
 		USE_FEEDFORWARD= \
 		USE_ADVANCED_TPA= \
+		USE_GPS_RESCUE= \
+		ENABLE_FLIGHT_PLAN=1 \
+		ENABLE_RESCUE_PLAN=1
 
 position_rescue_geometry_unittest_SRC := \
 		$(USER_DIR)/common/maths.c
@@ -957,6 +984,21 @@ flight_plan_capture_unittest_DEFINES := \
 		USE_GPS= \
 		USE_FLIGHT_PLAN= \
 		ENABLE_FLIGHT_PLAN=1
+
+gps_rescue_multirotor_unittest_SRC := \
+		$(USER_DIR)/flight/gps_rescue_multirotor.c \
+		$(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/vector.c \
+		$(USER_DIR)/pg/autopilot.c \
+		$(USER_DIR)/pg/gps_rescue_multirotor.c \
+		$(USER_DIR)/pg/pg.c
+
+gps_rescue_multirotor_unittest_DEFINES := \
+		USE_GPS= \
+		USE_GPS_RESCUE=
 
 flight_plan_rescue_unittest_SRC := \
 		$(USER_DIR)/flight/flight_plan_nav.c \
@@ -1090,6 +1132,27 @@ vtx_msp_unittest_DEFINES := \
 		USE_VTX_TABLE= \
 		USE_VTX_MSP=
 
+um32_uart_bidir_unittest_SRC := \
+        $(TEST_DIR)/um32_uart_bidir_test.c \
+        $(USER_DIR)/drivers/serial_impl.c
+
+um32_uart_bidir_unittest_INCLUDE_DIRS := \
+        $(TEST_DIR)/um32_uart_bidir \
+        ../platform/UM32/include
+
+um32_uart_bidir_unittest_DEFINES = \
+        $(if $(findstring nopulldown,$1),USE_SMARTAUDIO_NOPULLDOWN=) \
+        $(if $(findstring no_board_bias,$1),UM32_UART_BIDIR_NO_BOARD_PULLUP=)
+
+um32_adc_unittest_SRC := \
+        $(TEST_DIR)/um32_adc_test.c \
+        $(USER_DIR)/drivers/dma.c \
+        $(USER_DIR)/drivers/resource.c
+
+um32_adc_unittest_INCLUDE_DIRS := \
+        $(TEST_DIR)/um32_adc \
+        ../platform/common/stm32
+
 pwl_unittest_SRC := \
 		$(USER_DIR)/common/pwl.c
 
@@ -1213,6 +1276,7 @@ TESTS_TARGET_SPECIFIC = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),
 
 TESTS = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),,$(test)))
 TESTS += $(addprefix accgyro_spi_lsm6dsv16x_unittest.,16x 32x 320x)
+TESTS += $(addprefix um32_uart_bidir_unittest.,nopulldown no_board_bias no_board_bias_nopulldown)
 TESTS_ALL = $(TESTS)
 
 # All Google Test headers.  Usually you shouldn't change this
@@ -1307,11 +1371,19 @@ $(OBJECT_DIR)/gtest_main.a : $(OBJECT_DIR)/gtest-all.o $(OBJECT_DIR)/gtest_main.
 # includes in test dir must override includes in user dir, unless the user
 # specifies a list of endorsed directories in ${target}_INCLUDE_DIRS.
 MAVLINK_LIB_DIR := $(ROOT)/lib/modules/mavlink
+CH32_LIB_DIR := $(ROOT)/lib/modules/CH32H41x
 
 # The MAVLink library is a submodule the firmware Makefile hydrates on demand;
 # hydrate it here too so tests built from this directory find its headers.
 $(MAVLINK_LIB_DIR)/.git:
 	git -C $(ROOT) submodule update --init -- lib/modules/mavlink
+
+$(CH32_LIB_DIR)/.git:
+	git -C $(ROOT) submodule update --init --checkout -- lib/modules/CH32H41x
+
+.PHONY: test-ch32
+test-ch32: | $(CH32_LIB_DIR)/.git
+	$(V1) python3 -B ch32h415/regression.py
 
 test_include_dirs  = $1 $(TEST_DIR) $(USER_DIR) $(MAVLINK_LIB_DIR)
 test_cflags	   = $(addprefix -I,$(call test_include_dirs,$1))

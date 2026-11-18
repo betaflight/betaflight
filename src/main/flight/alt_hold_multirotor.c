@@ -32,6 +32,7 @@
 
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
+#include "flight/flight_plan_nav.h"
 #include "flight/position.h"
 #include "flight/position_estimator.h"
 #include "flight/position_nav.h"
@@ -61,14 +62,6 @@ typedef struct {
 
 altHoldState_t altHold;
 
-// The vertical rate alt hold works to when no nav leg is flying: the commanded emergency descent
-// rate if one is running, otherwise the configured climb rate.
-static float altHoldMaxClimbRate(void)
-{
-    return (altHold.emergencyDescentRateCmS > 0.0f) ? altHold.emergencyDescentRateCmS
-                                                    : altHold.maxClimbRate;
-}
-
 // The configured rate a climb or descent runs at when it does not state its own (cm/s).
 float altHoldGetClimbRateCmS(void)
 {
@@ -76,7 +69,7 @@ float altHoldGetClimbRateCmS(void)
 }
 
 // Pushed by whoever owns the descent (an emergency rescue descent with no usable XY estimate).
-// Alt hold owns the throttle for it; the caller owns the rate and when it stops.
+// Alt hold flies it as a landing; the caller owns the rate and when it stops.
 void altHoldSetEmergencyDescent(bool active, float rateCmS)
 {
     altHold.emergencyDescentRateCmS = active ? rateCmS : 0.0f;
@@ -124,7 +117,7 @@ static void altHoldUpdateTargetAltitude(timeUs_t taskIntervalUs)
 
     float stickFactor = 0.0f;
 
-    if (altHold.allowStickAdjustment && calculateThrottleStatus() != THROTTLE_LOW) {
+    if (altHold.allowStickAdjustment && !failsafeIsActive() && calculateThrottleStatus() != THROTTLE_LOW) {
         const float rcThrottle = rcCommand[THROTTLE];
         const float hoverThrottle = rcUsToThrottle(autopilotGetEffectiveHoverThrottlePwm());
         const float lowThreshold = hoverThrottle - altHold.deadband * hoverThrottle;
@@ -143,20 +136,8 @@ static void altHoldUpdateTargetAltitude(timeUs_t taskIntervalUs)
     // when throttle is moved quickly upwards from being fully down, it passes through the maximum descent rate range, leading to a negative glitch.
     // a similar downgoing glitch occurs when exiting upwards from zero throttle
     // these glitches are minimised  when these transitions are quick
-            
-    // if failsafe is active, and we get here, we are in failsafe landing mode, it controls throttle.
-    // a commanded emergency descent (a rescue that cannot stage or has aborted) drives the same descent.
-    if (failsafeIsActive() || altHold.emergencyDescentRateCmS > 0.0f) {
-        // descend at up to 10 times faster when high
-        // default landing timeout is now 60s; must to get the quad down within this limit
-        // need a rapid descent when initiated high, and must slow down closer to ground
-        // this code doubles descent rate at 20m, to max 10x (10m/s on defaults) at 200m
-        // the deceleration may be a bit rocky if it starts very high up
-        // constant (set) deceleration target in the last 2m
-        stickFactor = -(0.9f + constrainf(getAltitudeCmControl() / 2000.0f, 0.1f, 9.0f));
-    }
 
-    const float maxClimbRate = altHoldMaxClimbRate();
+    const float maxClimbRate = altHold.maxClimbRate;
     altHold.targetVelocity = stickFactor * maxClimbRate;
     // prevent pilot altitude adjustments from moving the target altitude so far away from current altitude
     // that it might be difficult to get back to a similar target altitude in a reasonable time.
@@ -167,8 +148,35 @@ static void altHoldUpdateTargetAltitude(timeUs_t taskIntervalUs)
     }
 }
 
+// The rate of the landing alt hold is flying, if any: a flight plan landing, a commanded
+// emergency descent, or a failsafe landing.
+static float altHoldLandingRateCmS(void)
+{
+    if (flightPlanNavIsLanding()) {
+        return flightPlanNavGetLandingRateCmS();
+    }
+    if (altHold.emergencyDescentRateCmS > 0.0f) {
+        return altHold.emergencyDescentRateCmS;
+    }
+    if (failsafePhase() == FAILSAFE_LANDING) {
+        return altHold.maxClimbRate;
+    }
+    return 0.0f;
+}
+
 static void altHoldUpdate(timeUs_t taskIntervalUs)
 {
+    const float landingRateCmS = altHoldLandingRateCmS();
+    if (landingRateCmS > 0.0f) {
+        const landingProfile_t profile = {
+            .touchdownRateCmS = landingRateCmS,
+            .maxRateCmS = landingRateCmS,
+        };
+        autopilotLand(&profile, altHold.targetAltitudeCm, taskIntervalUs);
+        altHold.targetAltitudeCm = autopilotLandingTargetAltitudeCm();
+        altHold.targetVelocity = 0.0f;
+        return;
+    }
 
     if (altHoldConfig()->climbRate) {
         altHoldUpdateTargetAltitude(taskIntervalUs); // check if the pilot has changed the target altitude using sticks
@@ -176,7 +184,7 @@ static void altHoldUpdate(timeUs_t taskIntervalUs)
 
     float targetAltitudeCm = altHold.targetAltitudeCm;
     float targetAltitudeVelocity = altHold.targetVelocity;
-    float velLimitCmS = altHoldMaxClimbRate();
+    float velLimitCmS = altHold.maxClimbRate;
 
     // A nav leg owns the vertical channel while one is flying. It states the altitude it is
     // commanding right now (already ramped at the leg's rate), the rate that goes with it, and the
