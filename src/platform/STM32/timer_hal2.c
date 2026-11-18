@@ -949,8 +949,15 @@ uint16_t timerGetPrescalerByDesiredHertz(timerResource_t *tim, uint32_t hz)
 
 void timerReset(const timerHardware_t *timHw)
 {
-    TIM_TypeDef *tim = (TIM_TypeDef *)timHw->tim;
-    LL_TIM_DeInit(tim);
+    // HAL2 LL has no LL_TIM_DeInit() (the compat header maps it to a no-op).
+    // Do what it does on the other families: pulse the timer's RCC reset so
+    // every register returns to its reset value. RCC_ResetCmd(DISABLE)
+    // asserts the reset, ENABLE releases it.
+    const rccPeriphTag_t rcc = timerRCC(timHw->tim);
+    if (rcc) {
+        RCC_ResetCmd(rcc, DISABLE);
+        RCC_ResetCmd(rcc, ENABLE);
+    }
 }
 
 void timerSetPeriod(const timerHardware_t *timHw, uint32_t period)
