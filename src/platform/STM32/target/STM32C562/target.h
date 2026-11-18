@@ -77,6 +77,7 @@
 
 #define USE_ADC
 #define USE_EXTI
+#define USE_ESCSERIAL
 
 #undef USE_TRANSPONDER
 
