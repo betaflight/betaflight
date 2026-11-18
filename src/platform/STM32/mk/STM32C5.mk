@@ -170,6 +170,7 @@ MCU_COMMON_SRC = \
             STM32/serial_uart_ll.c \
             STM32/serial_uart_stm32c5xx.c \
             drivers/adc.c \
+            drivers/serial_escserial.c \
             STM32/adc_stm32c5xx.c \
             STM32/dma_stm32c5xx.c \
             STM32/dma_reqmap_mcu.c \
@@ -196,7 +197,8 @@ MSC_SRC = \
 
 SPEED_OPTIMISED_SRC +=
 
-SIZE_OPTIMISED_SRC +=
+SIZE_OPTIMISED_SRC += \
+            drivers/serial_escserial.c
 
 DSP_LIB := $(STM32C5_LIB)/arch/cmsis/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM33
