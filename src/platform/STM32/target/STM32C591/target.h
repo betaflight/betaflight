@@ -29,6 +29,7 @@
 #define USE_I2C_DEVICE_2
 
 #define USE_VCP
+#define USE_USB_DETECT
 
 #define USE_UART1
 #define USE_UART2
