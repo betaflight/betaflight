@@ -29,7 +29,54 @@
 
 #include "platform/timer.h"
 
-#ifdef USE_HAL_DRIVER
+#if defined(STM32C5)
+
+/*
+ * The HAL2 TIM API has no HAL_TIM_IC_ConfigChannel() / HAL_TIM_IC_Start_IT() /
+ * TIM_CCxChannelCmd(); stm32c5xx_hal2_compat.h maps those calls to no-ops so
+ * shared code compiles. Program the capture channel registers directly, the
+ * same way timerChannelConfigInput() in timer_hal2.c does.
+ * Channel encoding: TIM_CHANNEL_1..4 = 0, 4, 8, 12, so channel >> 2 is the index.
+ */
+void timerChannelEnable(const timerHardware_t *timHw)
+{
+    SET_BIT(((TIM_TypeDef *)timHw->tim)->CCER, TIM_CCER_CC1E << ((timHw->channel >> 2) * 4));
+}
+
+void timerChannelDisable(const timerHardware_t *timHw)
+{
+    CLEAR_BIT(((TIM_TypeDef *)timHw->tim)->CCER, TIM_CCER_CC1E << ((timHw->channel >> 2) * 4));
+}
+
+#if defined(USE_RX_PWM) || defined(USE_RX_PPM)
+
+void pwmICConfig(timerResource_t *tim, uint8_t channel, uint16_t polarity, uint8_t filter)
+{
+    TIM_TypeDef *timer = (TIM_TypeDef *)tim;
+    const uint8_t chIdx = channel >> 2;
+
+    CLEAR_BIT(timer->CCER, TIM_CCER_CC1E << (chIdx * 4));
+
+    // Input capture on TIx, no prescaler, digital filter
+    __IO uint32_t *ccmr = (chIdx < 2) ? &timer->CCMR1 : &timer->CCMR2;
+    const uint32_t shift = (chIdx & 1) * 8;
+    MODIFY_REG(*ccmr,
+        (TIM_CCMR1_CC1S | TIM_CCMR1_IC1PSC | TIM_CCMR1_IC1F) << shift,
+        (TIM_CCMR1_CC1S_0 | ((filter & 0xFU) << TIM_CCMR1_IC1F_Pos)) << shift);
+
+    MODIFY_REG(timer->CCER,
+        (TIM_CCER_CC1P | TIM_CCER_CC1NP) << (chIdx * 4),
+        (polarity == TIMER_POLARITY_RISING) ? 0 : (TIM_CCER_CC1P << (chIdx * 4)));
+
+    // Equivalent of HAL_TIM_IC_Start_IT(): capture interrupt, capture enable, counter
+    SET_BIT(timer->DIER, TIM_DIER_CC1IE << chIdx);
+    SET_BIT(timer->CCER, TIM_CCER_CC1E << (chIdx * 4));
+    LL_TIM_EnableCounter(timer);
+}
+
+#endif
+
+#elif defined(USE_HAL_DRIVER)
 
 void timerChannelEnable(const timerHardware_t *timHw)
 {
