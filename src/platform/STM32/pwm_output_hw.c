@@ -40,6 +40,74 @@
 
 static bool useContinuousUpdate = true;
 
+#if defined(STM32C5)
+/*
+ * The HAL2 TIM API has no HAL_TIM_PWM_ConfigChannel() / HAL_TIM_PWM_Start() /
+ * HAL_TIM_Base_Start(); stm32c5xx_hal2_compat.h maps those calls to no-ops so
+ * shared code compiles. Program the output compare channel with LL instead,
+ * doing what the HAL1 calls do: PWM1 mode, polarity, compare value and
+ * preload, then enable the (complementary) output, MOE on timers with a break
+ * stage, and the counter.
+ */
+static void pwmLlChannels(uint8_t channel, uint32_t *main, uint32_t *complementary)
+{
+    switch (channel) {
+    case TIM_CHANNEL_2:
+        *main = LL_TIM_CHANNEL_CH2;
+        *complementary = LL_TIM_CHANNEL_CH2N;
+        break;
+    case TIM_CHANNEL_3:
+        *main = LL_TIM_CHANNEL_CH3;
+        *complementary = LL_TIM_CHANNEL_CH3N;
+        break;
+    case TIM_CHANNEL_4:
+        *main = LL_TIM_CHANNEL_CH4;
+        *complementary = LL_TIM_CHANNEL_CH4N;
+        break;
+    case TIM_CHANNEL_1:
+    default:
+        *main = LL_TIM_CHANNEL_CH1;
+        *complementary = LL_TIM_CHANNEL_CH1N;
+        break;
+    }
+}
+
+static void pwmOCConfig(timerResource_t *tim, uint8_t channel, uint16_t value, uint8_t output)
+{
+    TIM_TypeDef *timer = (TIM_TypeDef *)tim;
+    uint32_t llChannel;
+    uint32_t llChannelN;
+    pwmLlChannels(channel, &llChannel, &llChannelN);
+
+    const uint32_t polarity = (output & TIMER_OUTPUT_INVERTED) ? LL_TIM_OCPOLARITY_LOW : LL_TIM_OCPOLARITY_HIGH;
+
+    LL_TIM_OC_SetMode(timer, llChannel, LL_TIM_OCMODE_PWM1);
+    LL_TIM_OC_SetPolarity(timer, (output & TIMER_OUTPUT_N_CHANNEL) ? llChannelN : llChannel, polarity);
+
+    switch (llChannel) {
+    case LL_TIM_CHANNEL_CH2: LL_TIM_OC_SetCompareCH2(timer, value); break;
+    case LL_TIM_CHANNEL_CH3: LL_TIM_OC_SetCompareCH3(timer, value); break;
+    case LL_TIM_CHANNEL_CH4: LL_TIM_OC_SetCompareCH4(timer, value); break;
+    default: LL_TIM_OC_SetCompareCH1(timer, value); break;
+    }
+
+    LL_TIM_OC_EnablePreload(timer, llChannel);
+}
+
+static void pwmOCStart(timerResource_t *tim, uint8_t channel, uint8_t output)
+{
+    TIM_TypeDef *timer = (TIM_TypeDef *)tim;
+    uint32_t llChannel;
+    uint32_t llChannelN;
+    pwmLlChannels(channel, &llChannel, &llChannelN);
+
+    LL_TIM_CC_EnableChannel(timer, (output & TIMER_OUTPUT_N_CHANNEL) ? llChannelN : llChannel);
+    if (IS_TIM_BREAK_INSTANCE(timer)) {
+        LL_TIM_EnableAllOutputs(timer);
+    }
+    LL_TIM_EnableCounter(timer);
+}
+#else
 static void pwmOCConfig(timerResource_t *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
 #if defined(USE_HAL_DRIVER)
@@ -78,22 +146,23 @@ static void pwmOCConfig(timerResource_t *tim, uint8_t channel, uint16_t value, u
     timerOCPreloadConfig((TIM_TypeDef *)tim, channel, TIM_OCPreload_Enable);
 #endif
 }
+#endif // STM32C5
 
 void pwmOutputConfig(timerChannel_t *channel, const timerHardware_t *timerHardware, uint32_t hz, uint16_t period, uint16_t value, uint8_t inversion)
 {
-#if defined(USE_HAL_DRIVER)
+#if defined(USE_HAL_DRIVER) && !defined(STM32C5)
     TIM_HandleTypeDef* Handle = timerFindTimerHandle(timerHardware->tim);
     if (Handle == NULL) return;
 #endif
 
-    timerReconfigureTimeBase(timerHardware, period, hz);
-    pwmOCConfig(timerHardware->tim,
-        timerHardware->channel,
-        value,
-        inversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output
-        );
+    const uint8_t output = inversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output;
 
-#if defined(USE_HAL_DRIVER)
+    timerReconfigureTimeBase(timerHardware, period, hz);
+    pwmOCConfig(timerHardware->tim, timerHardware->channel, value, output);
+
+#if defined(STM32C5)
+    pwmOCStart(timerHardware->tim, timerHardware->channel, output);
+#elif defined(USE_HAL_DRIVER)
     if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL)
         HAL_TIMEx_PWMN_Start(Handle, timerHardware->channel);
     else
