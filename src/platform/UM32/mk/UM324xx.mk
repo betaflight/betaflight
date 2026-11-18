@@ -264,7 +264,14 @@ EX_FLASH_SRC := ./src/main/cli/cli.c \
                 ./src/platform/UM32/debug.c \
                 ./src/platform/UM32/sysfunc_um324xx.c \
                 ./src/main/cms/cms_menu_imu.c \
-                ./src/main/cms/cms_menu_osd.c
+                ./src/main/cms/cms_menu_osd.c \
+                ./src/main/cms/cms_menu_ledstrip.c \
+                ./src/main/cms/cms_menu_persistent_stats.c \
+                ./src/main/cms/cms_menu_vtx_common.c \
+                ./src/main/cms/cms_menu_vtx_msp.c \
+                ./src/main/cms/cms_menu_vtx_rtc6705.c \
+                ./src/main/cms/cms_menu_vtx_smartaudio.c \
+                ./src/main/cms/cms_menu_vtx_tramp.c
 endif
 
 NOT_OPTIMISED_SRC += $(EX_FLASH_SRC)
