@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
@@ -92,7 +93,6 @@ static timeUs_t magCalEndTime = 0;
 static bool didMovementStart = false;
 static bool magCalProcessActive = false;
 static bool compassHasBeenCalibrated = false;
-static bool applySoftIron = false; // true if soft-iron correction should be applied to the magADC vector. Compensation matrix is not identity and determinant is not close to zero.
 
 static compassBiasEstimator_t compassBiasEstimator;
 
@@ -175,9 +175,9 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
     compassConfig->mag_customAlignment.pitch = MAG_ALIGN_PITCH;
     compassConfig->mag_customAlignment.yaw = MAG_ALIGN_YAW;
 
-    // soft-iron matrix defaults to identity (scaled by 1000)
+    // soft-iron matrix defaults to identity (scaled by MAG_SOFTIRON_SCALE so that 1000 = 1.0)
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        compassConfig->mag_softiron[axis * XYZ_AXIS_COUNT + axis] = 1000;
+        compassConfig->mag_softiron[axis * XYZ_AXIS_COUNT + axis] = MAG_SOFTIRON_SCALE;
     }
 }
 
@@ -189,7 +189,7 @@ static void applyMagSoftIron(vector3_t *v)
     const vector3_t in = *v;
     for (int row = 0; row < XYZ_AXIS_COUNT; row++) {
         const int16_t *r = &m[row * XYZ_AXIS_COUNT];
-        v->v[row] = (r[0] * in.x + r[1] * in.y + r[2] * in.z) * 0.001f;
+        v->v[row] = (r[0] * in.x + r[1] * in.y + r[2] * in.z) * MAG_SOFTIRON_INV_SCALE;
     }
 }
 
@@ -534,11 +534,15 @@ static bool shouldApplySoftIron(const int16_t *m)
     float f[XYZ_AXIS_COUNT * XYZ_AXIS_COUNT];
 
     for (int i = 0; i < XYZ_AXIS_COUNT * XYZ_AXIS_COUNT; i++) {
-        const int16_t expected = (i % (XYZ_AXIS_COUNT + 1) == 0) ? 1000 : 0;
+        // Reject excessively large coefficients that could mask a degenerate axis in the determinant check
+        if (abs(m[i]) > MAG_SOFTIRON_MAX_COEFF) {
+            return false;
+        }
+        const int16_t expected = (i % (XYZ_AXIS_COUNT + 1) == 0) ? MAG_SOFTIRON_SCALE : 0;
         if (m[i] != expected) {
             isIdentity = false;
         }
-        f[i] = m[i] * 0.001f;
+        f[i] = m[i] * MAG_SOFTIRON_INV_SCALE;
     }
 
     if (isIdentity) {
@@ -549,7 +553,7 @@ static bool shouldApplySoftIron(const int16_t *m)
                     - f[1] * (f[3] * f[8] - f[5] * f[6])
                     + f[2] * (f[3] * f[7] - f[4] * f[6]);
 
-    return fabsf(det) > 0.1f;
+    return fabsf(det) > MAG_SOFTIRON_MIN_DET;
 }
 
 bool compassInit(void)
@@ -591,8 +595,6 @@ bool compassInit(void)
     compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);  
 
     compassHasBeenCalibrated = compassHasCalibration();
-
-    applySoftIron = shouldApplySoftIron(compassConfig()->mag_softiron);
 
     if (magDev.magOdrHz) {
         // For Mags that send data at a fixed ODR, we wait some quiet period after a read before checking for new data
@@ -668,7 +670,7 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
     // If debug_mode is DEBUG_GPS_RESCUE_HEADING, we should update the magYaw value, after which isNewMagADCFlag will be set false
     mag.isNewMagADCFlag = true;
 
-    if (applySoftIron) {
+    if (shouldApplySoftIron(compassConfig()->mag_softiron)) {
         applyMagSoftIron(&mag.magADC);
     }
 

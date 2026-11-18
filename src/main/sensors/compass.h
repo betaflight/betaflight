@@ -33,6 +33,11 @@
 
 #define TASK_COMPASS_RATE_HZ 40 // the base mag update rate; faster intervals will apply for higher ODR mags
 
+#define MAG_SOFTIRON_SCALE          1000
+#define MAG_SOFTIRON_INV_SCALE      (1.0f / MAG_SOFTIRON_SCALE)
+#define MAG_SOFTIRON_MIN_DET        0.1f
+#define MAG_SOFTIRON_MAX_COEFF      (5 * MAG_SOFTIRON_SCALE)
+
 #ifdef USE_MAG
 #define MAG_IN_BUILD  true
 #else

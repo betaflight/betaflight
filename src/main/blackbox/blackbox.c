@@ -1526,8 +1526,8 @@ static bool blackboxWriteSysinfo(void)
     const uint16_t motorOutputLowInt = lrintf(getMotorOutputLow());
     const uint16_t motorOutputHighInt = lrintf(getMotorOutputHigh());
 
-    // Make sure we have enough room in the buffer for our longest line (as of this writing, the "Firmware date" line)
-    if (blackboxDeviceReserveBufferSpace(64) != BLACKBOX_RESERVE_SUCCESS) {
+    // Make sure we have enough room in the buffer for our longest line (e.g. "mag_softiron" with 9 int16 values)
+    if (blackboxDeviceReserveBufferSpace(80) != BLACKBOX_RESERVE_SUCCESS) {
         return false;
     }
 
