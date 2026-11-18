@@ -75,6 +75,7 @@
 
 #define USE_ADC
 #define USE_EXTI
+#define USE_BEEPER
 
 #undef USE_TRANSPONDER
 
