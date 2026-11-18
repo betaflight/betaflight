@@ -17,6 +17,9 @@
 #include "usbd_core.h"
 
 #include "usbd_cdc.h"
+#ifdef USE_USB_CDC_HID
+#include "usbd_hid.h"
+#endif
 
 #include "platform.h"
 
@@ -170,6 +173,10 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
     HAL_PCD_PMAConfig(&hpcd_USB_DRD_FS, CDC_IN_EP, HAL_PCD_SNG_BUF, 0x94);
     HAL_PCD_PMAConfig(&hpcd_USB_DRD_FS, CDC_OUT_EP, HAL_PCD_SNG_BUF, 0xD4);
     HAL_PCD_PMAConfig(&hpcd_USB_DRD_FS, CDC_CMD_EP, HAL_PCD_SNG_BUF, 0x114);
+#ifdef USE_USB_CDC_HID
+    // HID IN endpoint of the CDC+HID composite device; 8-byte reports.
+    HAL_PCD_PMAConfig(&hpcd_USB_DRD_FS, HID_EPIN_ADDR, HAL_PCD_SNG_BUF, 0x154);
+#endif
 
     return USBD_OK;
 }
