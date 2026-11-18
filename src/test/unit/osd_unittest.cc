@@ -1663,8 +1663,9 @@ extern "C" {
         return simulationAltitude;
     }
 
-    int32_t getAltitudeAsl() {
-        return simulationAltitude;
+    uint8_t getAltitudeAsl(uint32_t *aslAlt) {
+        *aslAlt = simulationAltitude;
+        return 0;
     }
 
     int32_t getEstimatedVario() {

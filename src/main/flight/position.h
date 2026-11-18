@@ -32,6 +32,12 @@ typedef enum {
     ALTITUDE_SOURCE_RANGEFINDER_ONLY
 } altitudeSource_e;
 
+typedef enum {
+    ALTITUDE_ASL_NORMAL = 0,
+    ALTITUDE_ASL_ESTIMATED,
+    ALTITUDE_ASL_RELATIVE
+} aslAltitudeState_e;
+
 typedef struct positionConfig_s {
     uint8_t altitude_source;
     uint8_t altitude_prefer_baro;
@@ -52,7 +58,7 @@ float getAltitudeAccelerationControl(void);
 void positionUpdate(void);
 void positionInit(void);
 int32_t getEstimatedAltitudeCm(void);
-float getAltitudeAsl(void);
+uint8_t getAltitudeAsl(int32_t *pAltitudeAsl);
 int16_t getEstimatedVario(void);
 bool isAltitudeAvailable(void);
 

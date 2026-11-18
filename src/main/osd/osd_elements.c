@@ -364,14 +364,26 @@ static void osdFormatAltitudeString(char * buff, int32_t altitudeCm, osdElementT
         [OSD_ELEMENT_TYPE_4] = { 0, true },
     };
 
-    int32_t alt = altitudeCm;
-#ifdef USE_GPS
-    if (variantMap[variantType].asl) {
-        alt = getAltitudeAsl();
-    }
-#endif
     unsigned decimalPlaces = variantMap[variantType].decimals;
     const char unitSymbol = osdGetMetersToSelectedUnitSymbol();
+
+    int32_t alt = altitudeCm;
+
+#ifdef USE_GPS
+    if (variantMap[variantType].asl) {
+        uint8_t  aslState = getAltitudeAsl(&alt);
+
+        int pos = osdPrintFloat(buff, SYM_ALTITUDE, osdGetMetersToSelectedUnit(alt) / 100.0f, "", decimalPlaces, true, unitSymbol);
+        if (aslState == ALTITUDE_ASL_ESTIMATED) {
+            buff[pos++] = 'E';
+            buff[pos] = '\0';
+        } else if (aslState == ALTITUDE_ASL_RELATIVE) {
+            buff[pos++] = 'R';
+            buff[pos] = '\0';
+        }
+        return;
+    }
+#endif
 
     osdPrintFloat(buff, SYM_ALTITUDE, osdGetMetersToSelectedUnit(alt) / 100.0f, "", decimalPlaces, true, unitSymbol);
 }

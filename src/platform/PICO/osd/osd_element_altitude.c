@@ -70,7 +70,7 @@ void cacheAltitudeInfo(uint8_t x, uint8_t y, uint8_t elemType, bool isBlink)
 #ifdef USE_GPS
     if (elemType >= 2) {
         // Types 2, 3 => ASL
-        altCm = getAltitudeAsl();
+        getAltitudeAsl(&altCm);
     }
 #else
     UNUSED(elemType);
