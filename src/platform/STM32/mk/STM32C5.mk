@@ -54,6 +54,10 @@ USBCDC_DIR = STM32_USB_Device_Library_HAL/Class/CDC
 USBCDC_SRC = \
             $(USBCDC_DIR)/Src/usbd_cdc.c
 
+USBHID_DIR = STM32_USB_Device_Library_HAL/Class/HID
+USBHID_SRC = \
+            $(USBHID_DIR)/Src/usbd_hid.c
+
 USBMSC_DIR = STM32_USB_Device_Library_HAL/Class/MSC
 USBMSC_SRC = \
             $(USBMSC_DIR)/Src/usbd_msc_bot.c \
@@ -64,6 +68,7 @@ USBMSC_SRC = \
 DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
                         $(USBCORE_SRC) \
                         $(USBCDC_SRC) \
+                        $(USBHID_SRC) \
                         $(USBMSC_SRC)
 
 #CMSIS
@@ -77,6 +82,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STM32C5_LIB)/stm32c5xx_drivers/ll \
                    $(LIB_MAIN_DIR)/$(USBCORE_DIR)/Inc \
                    $(LIB_MAIN_DIR)/$(USBCDC_DIR)/Inc \
+                   $(LIB_MAIN_DIR)/$(USBHID_DIR)/Inc \
                    $(LIB_MAIN_DIR)/$(USBMSC_DIR)/Inc \
                    $(STM32C5_LIB)/arch/cmsis/CMSIS/Core/Include \
                    $(STM32C5_LIB)/stm32c5xx_dfp/Include \
