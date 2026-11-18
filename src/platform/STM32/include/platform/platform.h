@@ -197,6 +197,7 @@
 
 #include "stm32c5xx_ll_spi.h"
 #include "stm32c5xx_ll_usart.h"
+#include "stm32c5xx_ll_lpuart.h"
 #include "stm32c5xx_ll_gpio.h"
 #include "stm32c5xx_ll_dma.h"
 #include "stm32c5xx_ll_rcc.h"

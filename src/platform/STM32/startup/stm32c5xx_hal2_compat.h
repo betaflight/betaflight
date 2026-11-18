@@ -465,6 +465,16 @@ static inline ErrorStatus LL_USART_Init(USART_TypeDef *USARTx,
     LL_USART_SetOverSampling(USARTx, init->OverSampling);
     LL_USART_SetPrescaler(USARTx, init->PrescalerValue);
 
+#if defined(LPUART1)
+    if (USARTx == LPUART1) {
+        // LPUART uses BRR = 256 * fck / baud (no oversampling setting), so
+        // the USART divider below would program a wrong baud rate.
+        LL_LPUART_SetBaudRate(USARTx, HAL_RCC_LPUART1_GetKernelClkFreq(),
+                              init->PrescalerValue, init->BaudRate);
+        return (USARTx->BRR >= 0x300U) ? SUCCESS : ERROR;
+    }
+#endif
+
     uint32_t periphclk = ((uintptr_t)USARTx >= APB2PERIPH_BASE)
                          ? HAL_RCC_GetPCLK2Freq()
                          : HAL_RCC_GetPCLK1Freq();
