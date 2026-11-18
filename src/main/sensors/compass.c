@@ -92,6 +92,7 @@ static timeUs_t magCalEndTime = 0;
 static bool didMovementStart = false;
 static bool magCalProcessActive = false;
 static bool compassHasBeenCalibrated = false;
+static bool applySoftIron = false; // true if soft-iron correction should be applied to the magADC vector. Compensation matrix is not identity and determinant is not close to zero.
 
 static compassBiasEstimator_t compassBiasEstimator;
 
@@ -526,6 +527,31 @@ static bool compassHasCalibration(void)
            (magZero->raw[Z] != 0);
 }
 
+// Check if the soft-iron matrix is not identity and has a determinant that is not close to zero
+static bool shouldApplySoftIron(const int16_t *m)
+{
+    bool isIdentity = true;
+    float f[XYZ_AXIS_COUNT * XYZ_AXIS_COUNT];
+
+    for (int i = 0; i < XYZ_AXIS_COUNT * XYZ_AXIS_COUNT; i++) {
+        const int16_t expected = (i % (XYZ_AXIS_COUNT + 1) == 0) ? 1000 : 0;
+        if (m[i] != expected) {
+            isIdentity = false;
+        }
+        f[i] = m[i] * 0.001f;
+    }
+
+    if (isIdentity) {
+        return false;
+    }
+
+    const float det = f[0] * (f[4] * f[8] - f[5] * f[7])
+                    - f[1] * (f[3] * f[8] - f[5] * f[6])
+                    + f[2] * (f[3] * f[7] - f[4] * f[6]);
+
+    return fabsf(det) > 0.1f;
+}
+
 bool compassInit(void)
 {
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
@@ -565,6 +591,8 @@ bool compassInit(void)
     compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);  
 
     compassHasBeenCalibrated = compassHasCalibration();
+
+    applySoftIron = shouldApplySoftIron(compassConfig()->mag_softiron);
 
     if (magDev.magOdrHz) {
         // For Mags that send data at a fixed ODR, we wait some quiet period after a read before checking for new data
@@ -639,6 +667,10 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
     }
     // If debug_mode is DEBUG_GPS_RESCUE_HEADING, we should update the magYaw value, after which isNewMagADCFlag will be set false
     mag.isNewMagADCFlag = true;
+
+    if (applySoftIron) {
+        applyMagSoftIron(&mag.magADC);
+    }
 
     if (magDev.magAlignment == ALIGN_CUSTOM) {
         alignSensorViaMatrix(&mag.magADC, &magDev.rotationMatrix);

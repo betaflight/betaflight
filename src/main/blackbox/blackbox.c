@@ -1833,7 +1833,19 @@ static bool blackboxWriteSysinfo(void)
 #endif // USE_WING
 
 #ifdef USE_MAG
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MAG_HARDWARE, "%d",           compassConfig()->mag_hardware);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MAG_HARDWARE, "%d",                           compassConfig()->mag_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("mag_calibration", "%d,%d,%d",                           compassConfig()->magZero.values.roll,
+                                                                                            compassConfig()->magZero.values.pitch,
+                                                                                            compassConfig()->magZero.values.yaw);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MAG_SOFTIRON, "%d,%d,%d,%d,%d,%d,%d,%d,%d",   compassConfig()->mag_softiron[0],
+                                                                                            compassConfig()->mag_softiron[1],
+                                                                                            compassConfig()->mag_softiron[2],
+                                                                                            compassConfig()->mag_softiron[3],
+                                                                                            compassConfig()->mag_softiron[4],
+                                                                                            compassConfig()->mag_softiron[5],
+                                                                                            compassConfig()->mag_softiron[6],
+                                                                                            compassConfig()->mag_softiron[7],
+                                                                                            compassConfig()->mag_softiron[8]);
 #endif
 
 #ifdef USE_OPTICALFLOW
