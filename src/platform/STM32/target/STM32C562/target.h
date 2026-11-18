@@ -36,6 +36,7 @@
 #define USE_UART3
 #define USE_UART4
 #define USE_UART5
+#define USE_LPUART1
 
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
