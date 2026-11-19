@@ -393,6 +393,9 @@ static const char * const lookupOverclock[] = {
 #if ENABLE_OVERCLOCK_240_MHZ
     "240MHZ",
 #endif
+#if ENABLE_OVERCLOCK_336_MHZ
+    "336MHZ",
+#endif
 };
 #endif
 
@@ -583,7 +586,7 @@ const char* const lookupTableTpaCurveType[] = {
 
 #ifdef USE_WING
 const char* const lookupTableTpaSpeedType[] = {
-    "BASIC", "ADVANCED",
+    "BASIC", "ADVANCED", "PITOT",
 };
 
 const char* const lookupTableYawType[] = {
@@ -1495,6 +1498,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_TPA_SPEED_ADV_THRUST, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { TPA_SPEED_PARAM_MIN, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_speed_adv_thrust) },
     { PARAM_NAME_TPA_SPEED_MAX_VOLTAGE, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_speed_max_voltage) },
     { PARAM_NAME_TPA_SPEED_PITCH_OFFSET, VAR_INT16 | PROFILE_VALUE, .config.minmaxUnsigned = { INT16_MIN, INT16_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_speed_pitch_offset) },
+    { PARAM_NAME_TPA_MAX_PITOT_SPEED, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 85}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_max_pitot_speed) },
 #endif // USE_WING
 
 #ifdef USE_ADVANCED_TPA
@@ -1880,6 +1884,7 @@ const clivalue_t valueTable[] = {
 #endif
     { "pwr_on_arm_grace",           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 30 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, powerOnArmingGraceTime) },
     { "enable_stick_arming",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, enableStickArming) },
+    { "enable_stick_profile_switch", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, enableStickProfileSwitch) },
 
 // PG_VTX_CONFIG
 #ifdef USE_VTX_COMMON

@@ -514,7 +514,8 @@ void processFrSkyHubTelemetry(timeUs_t currentTimeUs)
     static uint32_t frSkyHubLastCycleTime = 0;
     static uint8_t cycleNum = 0;
 
-    if (cmpTimeUs(currentTimeUs, frSkyHubLastCycleTime) < FRSKY_HUB_CYCLETIME_US) {
+    // Unsigned elapsed time stays correct after gaps longer than 2^31 us
+    if ((uint32_t)(currentTimeUs - frSkyHubLastCycleTime) < FRSKY_HUB_CYCLETIME_US) {
         return;
     }
     frSkyHubLastCycleTime = currentTimeUs;
@@ -529,7 +530,7 @@ void processFrSkyHubTelemetry(timeUs_t currentTimeUs)
 #endif
 
 #if defined(USE_BARO) || defined(USE_RANGEFINDER) || defined(USE_GPS)
-    if (sensors(SENSOR_BARO | SENSOR_RANGEFINDER) | sensors(SENSOR_GPS)) {
+    if (sensors(SENSOR_BARO | SENSOR_RANGEFINDER | SENSOR_GPS)) {
         // Sent every 125ms
         // Send vertical speed for opentx. ID_VERT_SPEED
         // Unit is cm/s

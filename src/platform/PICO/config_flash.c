@@ -35,9 +35,9 @@ void configUnlock(void)
     // NOOP
 }
 
-void configLock(void)
+configStreamerResult_e configLock(void)
 {
-    // NOOP
+    return CONFIG_RESULT_SUCCESS;
 }
 
 void configClearFlags(void)
