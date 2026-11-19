@@ -43,7 +43,7 @@
 bool renderAltitudeComplete = true;
 
 typedef struct {
-    char altString[6]; // -9999 to 99999 should be enough (ft or m)
+    char altString[7]; // -9999 to 99999 should be enough (ft or m)
     int16_t x;
     int16_t y;
     int32_t val;
