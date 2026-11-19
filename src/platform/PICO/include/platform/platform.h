@@ -38,6 +38,10 @@
 #undef MIN
 
 #define NVIC_PriorityGroup_2         0x500
+
+// TinyUSB's tusb_common.h includes <stdio.h> after tusb_config.h has pulled in
+// platform.h, so stdio.h has to be seen before the sprintf/snprintf poison.
+#define ENABLE_STDIO_PREINCLUDE
 #define PLATFORM_NO_LIBC             0
 #define DEFIO_PORT_PINS              64
 
