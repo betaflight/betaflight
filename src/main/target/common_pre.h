@@ -66,6 +66,32 @@
   should be converted to use ENABLE_ flags. There is no rush to convert all existing code.
 */
 
+/*
+  Feature coverage of generic (CI) builds
+
+  Generic builds (no CLOUD_BUILD, no USE_CONFIG) exist to prove that code compiles, not to
+  ship every feature on every MCU. Flash is limited, so coverage is split by flash size:
+
+  - Targets with 1M+ flash (e.g. STM32F405, STM32H743) are the feature-coverage builds.
+    Portable feature code is compiled and tested there.
+  - Targets with 512K or less flash are platform-coverage builds. They only need the platform
+    drivers, plus the features that real boards on that MCU use. The TARGET_FLASH_SIZE > 512
+    and >= 1024 blocks below keep larger features out of them.
+
+  When adding a feature or driver to the generic set:
+
+  - Drivers go in the !defined(USE_CONFIG) section, so board configs keep choosing their own
+    hardware. Use its TARGET_FLASH_SIZE >= 1024 block unless boards with 512K MCUs need it.
+  - Features go in the TARGET_FLASH_SIZE >= 1024 block after that section unless boards with
+    512K MCUs need them. That block also applies to non-cloud board-config builds
+    (make CONFIG=...), so it grows them too.
+  - If only some MCU families need it (e.g. on-board receivers or other hardware that new boards
+    no longer use), do not test MCU or platform defines here. Have the target.h of those MCUs
+    set an ENABLE_ flag, and act on it in common_post.h, because target.h is included after
+    this file.
+  - Cloud builds (CLOUD_BUILD) select their own drivers and features and are not affected.
+*/
+
 #define USE_PARAMETER_GROUPS
 
 // SPA06-003 shares the SPL07-003 register map; the DPS310 driver handles both.
