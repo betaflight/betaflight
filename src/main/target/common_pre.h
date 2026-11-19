@@ -88,8 +88,10 @@
   - If only some MCU families need it (e.g. on-board receivers or other hardware that new boards
     no longer use), do not test MCU or platform defines here. Have the target.h of those MCUs
     set an ENABLE_ flag, and act on it in common_post.h, because target.h is included after
-    this file.
-  - Cloud builds (CLOUD_BUILD) select their own drivers and features and are not affected.
+    this file. target.h and common_post.h are also used by cloud and board-config builds, so
+    guard that common_post.h block with !defined(CLOUD_BUILD) && !defined(USE_CONFIG).
+  - Cloud builds (CLOUD_BUILD) select their own drivers and features. The blocks in this file
+    and those guarded as above do not apply to them.
 */
 
 #define USE_PARAMETER_GROUPS
