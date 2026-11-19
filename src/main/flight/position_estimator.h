@@ -98,3 +98,5 @@ void positionEstimatorResetXY(void);
 // Returns the GPS location captured when XY estimation became active (arm point).
 // Returns false if no GPS origin has been captured yet.
 bool positionEstimatorGetGpsOrigin(gpsLocation_t *out);
+
+bool positionEstimatorGetGpsAltOffsetCm(float *offsetCm);

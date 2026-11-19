@@ -1539,3 +1539,11 @@ bool positionEstimatorGetGpsOrigin(gpsLocation_t *out)
     return false;
 #endif
 }
+
+#ifdef USE_GPS
+bool positionEstimatorGetGpsAltOffsetCm(float *offsetCm)
+{
+    *offsetCm = gpsAltOffsetCm;
+    return gpsAltOffsetSet;
+}
+#endif

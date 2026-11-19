@@ -211,13 +211,14 @@ int32_t getEstimatedAltitudeCm(void)
 }
 
 #ifdef USE_GPS
-uint8_t getAltitudeAsl(int32_t *pAltitudeAsl)
+aslAltitudeState_e getAltitudeAsl(int32_t *pAltitudeAsl)
 {
+    float gpsAltOffsetCm;
     if (STATE(GPS_FIX)) {
         *pAltitudeAsl = gpsSol.llh.altCm;
         return ALTITUDE_ASL_NORMAL;
-    } else if (STATE(GPS_FIX_HOME) && isAltitudeAvailable()) { // Only use home AMSL if home is known and the vertical estimate is valid
-        *pAltitudeAsl = GPS_home_llh.altCm + getEstimatedAltitudeCm();
+    } else if (isAltitudeAvailable() && positionEstimatorGetGpsAltOffsetCm(&gpsAltOffsetCm)) {
+        *pAltitudeAsl = lrintf(gpsAltOffsetCm) + getEstimatedAltitudeCm();
         return ALTITUDE_ASL_ESTIMATED;
     }
 

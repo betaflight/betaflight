@@ -68,9 +68,10 @@ void cacheAltitudeInfo(uint8_t x, uint8_t y, uint8_t elemType, bool isBlink)
     int32_t altCm = getEstimatedAltitudeCm();
 
 #ifdef USE_GPS
+    aslAltitudeState_e  aslState = ALTITUDE_ASL_NORMAL;
     if (elemType >= 2) {
         // Types 2, 3 => ASL
-        getAltitudeAsl(&altCm);
+        aslState = getAltitudeAsl(&altCm);
     }
 #else
     UNUSED(elemType);
@@ -89,7 +90,18 @@ void cacheAltitudeInfo(uint8_t x, uint8_t y, uint8_t elemType, bool isBlink)
     infoAltitude.unitSymbol = '-'; // NB '-' == SYM_HYPHEN
     if (haveBaro || haveGps) {
         infoAltitude.unitSymbol = osdGetMetersToSelectedUnitSymbol();
-        tfp_sprintf(infoAltitude.altString, "%3d", altDisplay);
+        int pos = tfp_sprintf(infoAltitude.altString, "%3d", altDisplay);
+#ifdef USE_GPS
+        if (aslState == ALTITUDE_ASL_ESTIMATED) {
+            infoAltitude.altString[pos++] = 'E';
+            infoAltitude.altString[pos] = '\0';
+        } else if (aslState == ALTITUDE_ASL_RELATIVE) {
+            infoAltitude.altString[pos++] = 'R';
+            infoAltitude.altString[pos] = '\0';
+        }
+#else
+    UNUSED(pos);
+#endif
     } else {
         tfp_sprintf(infoAltitude.altString, "ALT--");
     }

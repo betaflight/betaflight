@@ -370,22 +370,23 @@ static void osdFormatAltitudeString(char * buff, int32_t altitudeCm, osdElementT
     int32_t alt = altitudeCm;
 
 #ifdef USE_GPS
+    aslAltitudeState_e  aslState = ALTITUDE_ASL_NORMAL;
     if (variantMap[variantType].asl) {
-        uint8_t  aslState = getAltitudeAsl(&alt);
-
-        int pos = osdPrintFloat(buff, SYM_ALTITUDE, osdGetMetersToSelectedUnit(alt) / 100.0f, "", decimalPlaces, true, unitSymbol);
-        if (aslState == ALTITUDE_ASL_ESTIMATED) {
-            buff[pos++] = 'E';
-            buff[pos] = '\0';
-        } else if (aslState == ALTITUDE_ASL_RELATIVE) {
-            buff[pos++] = 'R';
-            buff[pos] = '\0';
-        }
-        return;
+        aslState = getAltitudeAsl(&alt);
     }
 #endif
-
-    osdPrintFloat(buff, SYM_ALTITUDE, osdGetMetersToSelectedUnit(alt) / 100.0f, "", decimalPlaces, true, unitSymbol);
+    int pos = osdPrintFloat(buff, SYM_ALTITUDE, osdGetMetersToSelectedUnit(alt) / 100.0f, "", decimalPlaces, true, unitSymbol);
+#ifdef USE_GPS
+    if (aslState == ALTITUDE_ASL_ESTIMATED) {
+        buff[pos++] = 'E';
+        buff[pos] = '\0';
+    } else if (aslState == ALTITUDE_ASL_RELATIVE) {
+        buff[pos++] = 'R';
+        buff[pos] = '\0';
+    }
+#else
+    UNUSED(pos);
+#endif
 }
 
 #ifdef USE_GPS
