@@ -58,7 +58,7 @@ float getAltitudeAccelerationControl(void);
 void positionUpdate(void);
 void positionInit(void);
 int32_t getEstimatedAltitudeCm(void);
-uint8_t getAltitudeAsl(int32_t *pAltitudeAsl);
+aslAltitudeState_e getAltitudeAsl(int32_t *pAltitudeAsl);
 int16_t getEstimatedVario(void);
 bool isAltitudeAvailable(void);
 
