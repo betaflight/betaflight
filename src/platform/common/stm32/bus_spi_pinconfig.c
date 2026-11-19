@@ -1128,6 +1128,162 @@ const spiHardware_t spiHardware[] = {
         .rcc = RCC_APB2(SPI5),
     },
 #endif
+#if defined(CH32H4)
+    {
+        .device = SPIDEV_1,
+        .reg = (spiResource_t *)SPI1,
+        .sckPins = {
+            { DEFIO_TAG_E(PA5), GPIO_AF5 },
+            { DEFIO_TAG_E(PB3), GPIO_AF5 },
+            { DEFIO_TAG_E(PF5), GPIO_AF5 },
+            { DEFIO_TAG_E(PF7), GPIO_AF3 },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PA6), GPIO_AF5 },
+            { DEFIO_TAG_E(PB4), GPIO_AF5 },
+            { DEFIO_TAG_E(PF3), GPIO_AF5 },
+            { DEFIO_TAG_E(PF9), GPIO_AF3 },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PA7), GPIO_AF5 },
+            { DEFIO_TAG_E(PB5), GPIO_AF5 },
+            { DEFIO_TAG_E(PD7), GPIO_AF5 },
+            { DEFIO_TAG_E(PF8), GPIO_AF3 },
+        },
+        .rcc = RCC_HB2(SPI1),
+    },
+    {
+        .device = SPIDEV_2,
+        .reg = (spiResource_t *)SPI2,
+        .sckPins = {
+            { DEFIO_TAG_E(PD3), GPIO_AF5 },
+            { DEFIO_TAG_E(PA12), GPIO_AF5 },
+            { DEFIO_TAG_E(PA9), GPIO_AF5 },
+            { DEFIO_TAG_E(PB10), GPIO_AF5 },
+            { DEFIO_TAG_E(PB13), GPIO_AF5 },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PC2), GPIO_AF5 },
+            { DEFIO_TAG_E(PB14), GPIO_AF5 },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PC3), GPIO_AF5 },
+            { DEFIO_TAG_E(PC1), GPIO_AF5 },
+            { DEFIO_TAG_E(PB15), GPIO_AF5 },
+        },
+        .rcc = RCC_HB1(SPI2),
+    },
+    {
+        .device = SPIDEV_3,
+        .reg = (spiResource_t *)SPI3,
+        .sckPins = {
+            { DEFIO_TAG_E(PC10), GPIO_AF6 },
+            { DEFIO_TAG_E(PA14), GPIO_AF1 },
+            { DEFIO_TAG_E(PB3), GPIO_AF6 },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PC11), GPIO_AF6 },
+            { DEFIO_TAG_E(PB4), GPIO_AF6 },
+            { DEFIO_TAG_E(PC9), GPIO_AF5 },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PC12), GPIO_AF6 },
+            { DEFIO_TAG_E(PB2), GPIO_AF7 },
+            { DEFIO_TAG_E(PB5), GPIO_AF7 },
+            { DEFIO_TAG_E(PD6), GPIO_AF5 },
+            { DEFIO_TAG_E(PA13), GPIO_AF1 },
+        },
+        .rcc = RCC_HB1(SPI3),
+    },
+    {
+        .device = SPIDEV_4,
+        .reg = (spiResource_t *)SPI4,
+        .sckPins = {
+            { DEFIO_TAG_E(PE12), GPIO_AF5 },
+            { DEFIO_TAG_E(PE2), GPIO_AF5 },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PE13), GPIO_AF5 },
+            { DEFIO_TAG_E(PE5), GPIO_AF5 },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PE14), GPIO_AF5 },
+            { DEFIO_TAG_E(PE6), GPIO_AF5 },
+        },
+        .rcc = RCC_HB1(SPI4),
+    },
+#endif
+#if defined(UM324xF)
+    {
+        .device = SPIDEV_1,
+        .reg = (spiResource_t *)SPI1,
+        .sckPins = {
+            { DEFIO_TAG_E(PA5) },
+            { DEFIO_TAG_E(PB3) },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PA6) },
+            { DEFIO_TAG_E(PB4) },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PA7) },
+            { DEFIO_TAG_E(PB5) },
+        },
+        .af = GPIO_AF5_SPI1,
+        .rcc = RCC_APB1(SPI1),
+    },
+    {
+        .device = SPIDEV_2,
+        .reg = (spiResource_t *)SPI2,
+        .sckPins = {
+            { DEFIO_TAG_E(PB10) },
+            { DEFIO_TAG_E(PB13) },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PB14) },
+            { DEFIO_TAG_E(PC2) },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PB15) },
+            { DEFIO_TAG_E(PC3) },
+        },
+        .af = GPIO_AF5_SPI2,
+        .rcc = RCC_APB2(SPI2),
+    },
+    {
+        .device = SPIDEV_3,
+        .reg = (spiResource_t *)SPI3,
+        .sckPins = {
+            { DEFIO_TAG_E(PB3) },
+            { DEFIO_TAG_E(PC10) },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PB4) },
+            { DEFIO_TAG_E(PC11) },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PB5) },
+            { DEFIO_TAG_E(PC12) },
+        },
+        .af = GPIO_AF6_SPI3,
+        .rcc = RCC_APB2(SPI3),
+    },
+    {
+        .device = SPIDEV_4,
+        .reg = (spiResource_t *)SPI4,
+        .sckPins = {
+            { DEFIO_TAG_E(PE3) },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PE5) },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PE6) },
+        },
+        .af = GPIO_AF6_SPI4,
+        .rcc = RCC_APB2(SPI4),
+    },
+#endif
 
 };
 

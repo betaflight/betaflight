@@ -21,6 +21,45 @@
 #pragma once
 
 #include "drivers/serial.h"
+#include "drivers/time.h"
+
+// Transmit drain tracker for isSerialTransmitBufferEmpty() implementations.
+//
+// Callers such as waitForSerialPortToFinishTransmitting() poll the empty check
+// until it returns true, so a VCP must not claim "empty" while output is still
+// queued (it would be lost on the reset that follows), but must also never let
+// a stalled IN endpoint or a host that has stopped reading hang the FC.
+typedef struct {
+    uint32_t lastPending;
+    timeMs_t lastSampleMs;
+    timeMs_t lastChangeMs;
+} usbVcpTxDrain_t;
+
+// pending: bytes (or any count that shrinks as data leaves) still queued for the host.
+// Returns true when nothing is pending, or when pending has not changed for
+// timeoutMs of continuous polling. A gap longer than timeoutMs between polls
+// restarts the clock, so a stale sample cannot report an immediate stall.
+// A timeout marks the sample stale, so the next poll restarts the clock and the
+// next wait gets its own full interval even if pending matches the count that timed out.
+static inline bool usbVcpTxDrained(usbVcpTxDrain_t *drain, uint32_t pending, timeMs_t timeoutMs)
+{
+    const timeMs_t now = millis();
+
+    if (pending != drain->lastPending || now - drain->lastSampleMs > timeoutMs) {
+        drain->lastPending = pending;
+        drain->lastChangeMs = now;
+    }
+    drain->lastSampleMs = now;
+
+    if (pending == 0) {
+        return true;
+    }
+    if (now - drain->lastChangeMs > timeoutMs) {
+        drain->lastPending = UINT32_MAX;
+        return true;
+    }
+    return false;
+}
 
 typedef struct {
     serialPort_t port;
