@@ -810,4 +810,9 @@ extern "C" {
     float positionEstimatorGetTrustZ(void) { return 0.0f; }
     static positionEstimate3d_t stubEstimate = {};
     const positionEstimate3d_t *positionEstimatorGetEstimate(void) { return &stubEstimate; }
+    bool positionEstimatorGetGpsAltOffsetCm(float *offsetCm)
+    {
+        *offsetCm = 1000.0f;
+        return true;
+    }
 }
