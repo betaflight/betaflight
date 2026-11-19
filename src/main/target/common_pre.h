@@ -90,8 +90,8 @@
     set an ENABLE_ flag, and act on it in common_post.h, because target.h is included after
     this file. target.h and common_post.h are also used by cloud and board-config builds, so
     guard that common_post.h block with !defined(CLOUD_BUILD) && !defined(USE_CONFIG).
-  - Cloud builds (CLOUD_BUILD) select their own drivers and features. The blocks in this file
-    and those guarded as above do not apply to them.
+  - Cloud builds (CLOUD_BUILD) select their own drivers and features. The generic-build blocks
+    in this file and those guarded as above do not apply to them.
 */
 
 #define USE_PARAMETER_GROUPS
