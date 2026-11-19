@@ -329,7 +329,6 @@
 
 #if ENABLE_RX_SPI && !defined(CLOUD_BUILD) && !defined(USE_CONFIG) && !defined(SITL) && !defined(USE_RX_SPI)
 #define USE_RX_SPI
-
 #define USE_RX_CC2500
 #define USE_RX_EXPRESSLRS
 #define USE_RX_SX1280
