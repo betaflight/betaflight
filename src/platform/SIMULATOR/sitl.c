@@ -81,6 +81,7 @@
 #include "dyad.h"
 #include "udplink.h"
 #include "sitl_gyro.h"
+#include "sitl_rate.h"
 
 // ENABLE_GAZEBO_BRIDGE is a boolean selector for the gyro yaw sign (passed to
 // sitlGyroBodyFromSim below). target.h defaults it to 1; configs set 0 for the
@@ -101,6 +102,7 @@ static bool fdm_received = false;
 
 static struct timespec start_time;
 static double simRate = 1.0;
+static sitlRateEstimator_t simRateEstimator;
 static pthread_t tcpWorker, udpWorker, udpWorkerRC;
 static bool workerRunning = true;
 static udpLink_t stateLink, pwmLink, pwmRawLink, rcLink;
@@ -256,8 +258,6 @@ const char *targetGetConfigFile(void)
 }
 #endif
 
-int timeval_sub(struct timespec *result, struct timespec *x, struct timespec *y);
-
 int lockMainPID(void)
 {
     return pthread_mutex_trylock(&mainLoopLock);
@@ -276,17 +276,13 @@ static void updateState(const fdm_packet* pkt)
 {
     static double last_timestamp = 0; // in seconds
     static uint64_t last_realtime = 0; // in uS
-    static struct timespec last_ts; // last packet
-
-    struct timespec now_ts;
-    clock_gettime(CLOCK_MONOTONIC, &now_ts);
 
     const uint64_t realtime_now = micros64_real();
-    if (realtime_now > last_realtime + 500*1e3) { // 500ms timeout
+    if (!last_realtime || realtime_now > last_realtime + 500*1e3) { // 500ms timeout
         last_timestamp = pkt->timestamp;
         last_realtime = realtime_now;
-        last_ts.tv_sec  = now_ts.tv_sec;
-        last_ts.tv_nsec = now_ts.tv_nsec;
+        simRate = 1.0;
+        sitlRateEstimatorReset(&simRateEstimator);
         sendMotorUpdate();
         return;
     }
@@ -470,21 +466,14 @@ static void updateState(const fdm_packet* pkt)
 #endif
 
     if (deltaSim < 0.02 && deltaSim > 0) { // simulator should run faster than 50Hz
-//        simRate = simRate * 0.5 + (1e6 * deltaSim / (realtime_now - last_realtime)) * 0.5;
-        struct timespec out_ts;
-        timeval_sub(&out_ts, &now_ts, &last_ts);
-        simRate = deltaSim / (out_ts.tv_sec + 1e-9*out_ts.tv_nsec);
-
-        last_ts.tv_sec = now_ts.tv_sec;
-        last_ts.tv_nsec = now_ts.tv_nsec;
+        const double deltaReal = (realtime_now - last_realtime) * 1e-6;
+        sitlRateEstimatorUpdate(&simRateEstimator, deltaSim, deltaReal, &simRate);
     } else if (deltaSim >= 0.02) {
-        last_ts.tv_sec  = now_ts.tv_sec;
-        last_ts.tv_nsec = now_ts.tv_nsec;
+        sitlRateEstimatorReset(&simRateEstimator);
     }
-//    printf("simRate = %lf, millis64 = %lu, millis64_real = %lu, deltaSim = %lf\n", simRate, millis64(), millis64_real(), deltaSim*1e6);
 
     last_timestamp = pkt->timestamp;
-    last_realtime = micros64_real();
+    last_realtime = realtime_now;
 
     // Periodic status (about 1 Hz)
     static uint64_t lastDebugTimeUs = 0;
@@ -780,29 +769,6 @@ void delay(uint32_t ms)
     while ((millis64() - start) < ms) {
         microsleep(1000);
     }
-}
-
-// Subtract the ‘struct timespec’ values X and Y,  storing the result in RESULT.
-// Return 1 if the difference is negative, otherwise 0.
-// result = x - y
-// from: http://www.gnu.org/software/libc/manual/html_node/Elapsed-Time.html
-int timeval_sub(struct timespec *result, struct timespec *x, struct timespec *y)
-{
-    unsigned int s_carry = 0;
-    unsigned int ns_carry = 0;
-    // Perform the carry for the later subtraction by updating y.
-    if (x->tv_nsec < y->tv_nsec) {
-        int nsec = (y->tv_nsec - x->tv_nsec) / 1000000000 + 1;
-        ns_carry += 1000000000 * nsec;
-        s_carry += nsec;
-    }
-
-    // Compute the time remaining to wait. tv_usec is certainly positive.
-    result->tv_sec = x->tv_sec - y->tv_sec - s_carry;
-    result->tv_nsec = x->tv_nsec - y->tv_nsec + ns_carry;
-
-    // Return 1 if result is negative.
-    return x->tv_sec < y->tv_sec;
 }
 
 // PWM part
