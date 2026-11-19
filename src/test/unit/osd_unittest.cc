@@ -47,6 +47,7 @@ extern "C" {
     #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
+    #include "flight/position.h"
 
     #include "io/beeper.h"
     #include "io/gps.h"
@@ -111,6 +112,7 @@ extern "C" {
     int32_t simulationVerticalSpeed;
     uint16_t simulationCoreTemperature;
     bool simulationGpsHealthy;
+    aslAltitudeState_e aslSimulationState = ALTITUDE_ASL_NORMAL;
 }
 
 uint32_t simulationFeatureFlags = FEATURE_GPS;
@@ -1585,6 +1587,44 @@ TEST_F(OsdTest, TestBatteryUsageCapacityZero)
     displayPortTestBufferAttrBits(2, 1, DISPLAYPORT_SEVERITY_CRITICAL);
 }
 
+TEST_F(OsdTest, TestAslAltitudeElements)
+{
+    // given
+    sensorsSet(SENSOR_GPS);
+    ENABLE_STATE(GPS_FIX);
+    osdElementConfigMutable()->item_pos[OSD_ALTITUDE] = OSD_POS(3, 7) | (OSD_ELEMENT_TYPE_3 << 14) |
+                                                        OSD_PROFILE_1_FLAG;
+    osdConfigMutable()->units = UNIT_METRIC;
+    osdAnalyzeActiveElements();
+
+    // when NORMAL
+    aslSimulationState = ALTITUDE_ASL_NORMAL;
+    simulationAltitude = 1000;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(3, 7, "%c10.0%c", SYM_ALTITUDE, SYM_M);
+
+    // when ESTIMATED
+    aslSimulationState = ALTITUDE_ASL_ESTIMATED;
+    simulationAltitude = 2000;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(3, 7, "%c20.0%cE", SYM_ALTITUDE, SYM_M);
+
+    // when RELATIVE
+    aslSimulationState = ALTITUDE_ASL_RELATIVE;
+    simulationAltitude = 3000;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(3, 7, "%c30.0%cR", SYM_ALTITUDE, SYM_M);
+}
+
 // STUBS
 extern "C" {
     bool featureIsEnabled(uint32_t f) { return simulationFeatureFlags & f; }
@@ -1663,12 +1703,12 @@ extern "C" {
         return simulationAltitude;
     }
 
-    uint8_t getAltitudeAsl(uint32_t *aslAlt) {
+    aslAltitudeState_e getAltitudeAsl(int32_t *aslAlt) {
         *aslAlt = simulationAltitude;
-        return 0;
+        return aslSimulationState;
     }
 
-    int32_t getEstimatedVario() {
+    int16_t getEstimatedVario() {
         return simulationVerticalSpeed;
     }
 
