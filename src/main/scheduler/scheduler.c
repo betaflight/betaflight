@@ -512,7 +512,9 @@ FAST_CODE void scheduler(void)
 #endif
 
 #if !defined(UNIT_TEST)
-    const timeUs_t schedulerStartTimeUs = micros();
+    // Overhead instrumentation for DEBUG_SCHEDULER. Read the cycle counter rather than micros(): a DWT read is a
+    // single load, whereas micros() spins on SysTick and divides, and this runs on every scheduler pass.
+    const uint32_t schedulerStartCycles = getCycleCounter();
 #endif
     timeUs_t currentTimeUs;
     uint32_t nowCycles;
@@ -743,10 +745,18 @@ FAST_CODE void scheduler(void)
                     }
                 } else {
                     // Task is time-driven, dynamicPriority is last execution age (measured in desiredPeriods)
-                    // Task age is calculated from last execution
-                    task->taskAgePeriods = (cmpTimeUs(currentTimeUs, task->lastExecutedAtUs) / task->attribute->desiredPeriodUs);
-                    if (task->taskAgePeriods > 0) {
-                        task->dynamicPriority = 1 + task->attribute->staticPriority * task->taskAgePeriods;
+                    // Task age is calculated from last execution. Most tasks are not yet due on most passes,
+                    // so skip the division until the age is at least one period. A negative age of a period
+                    // or more (clock restart, or more than 2^31 us since the last run) still divides, so the
+                    // priority matches the plain division in every case.
+                    const timeDelta_t taskAgeUs = cmpTimeUs(currentTimeUs, task->lastExecutedAtUs);
+                    if (taskAgeUs >= task->attribute->desiredPeriodUs || taskAgeUs <= -task->attribute->desiredPeriodUs) {
+                        task->taskAgePeriods = taskAgeUs / task->attribute->desiredPeriodUs;
+                        if (task->taskAgePeriods > 0) {
+                            task->dynamicPriority = 1 + task->attribute->staticPriority * task->taskAgePeriods;
+                        }
+                    } else {
+                        task->taskAgePeriods = 0;
                     }
                 }
 
@@ -840,7 +850,7 @@ FAST_CODE void scheduler(void)
     readSchedulerLocals(selectedTask, selectedTaskDynamicPriority);
     UNUSED(taskExecutionTimeUs);
 #else
-    DEBUG_SET(DEBUG_SCHEDULER, 2, micros() - schedulerStartTimeUs - taskExecutionTimeUs);  //!< Scheduler Overhead [unit:us]
+    DEBUG_SET(DEBUG_SCHEDULER, 2, clockCyclesToMicros(cmpTimeCycles(getCycleCounter(), schedulerStartCycles)) - taskExecutionTimeUs);  //!< Scheduler Overhead [unit:us]
 #endif
 
     scheduleCount++;
