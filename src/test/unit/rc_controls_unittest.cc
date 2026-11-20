@@ -221,9 +221,10 @@ TEST_F(RcControlsModesTest, updateActivatedModesUsingValidAuxConfigurationAndRXV
 
 enum {
     COUNTER_QUEUE_CONFIRMATION_BEEP,
-    COUNTER_CHANGE_CONTROL_RATE_PROFILE
+    COUNTER_CHANGE_CONTROL_RATE_PROFILE,
+    COUNTER_CHANGE_PID_PROFILE
 };
-#define CALL_COUNT_ITEM_COUNT 2
+#define CALL_COUNT_ITEM_COUNT 3
 
 static int callCounts[CALL_COUNT_ITEM_COUNT];
 
@@ -243,6 +244,11 @@ void beeper(beeperMode_e mode)
 void changeControlRateProfile(uint8_t)
 {
     callCounts[COUNTER_CHANGE_CONTROL_RATE_PROFILE]++;
+}
+
+void changePidProfile(uint8_t)
+{
+    callCounts[COUNTER_CHANGE_PID_PROFILE]++;
 }
 
 }
@@ -795,11 +801,118 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
     EXPECT_EQ(28, pidProfile.pid[PID_YAW].D);
 }
 
+class RcControlsStickCommandsTest : public ::testing::Test {
+protected:
+    virtual void SetUp() {
+        PG_RESET(rxConfig);
+        rxConfigMutable()->mincheck = DEFAULT_MIN_CHECK;
+        rxConfigMutable()->maxcheck = DEFAULT_MAX_CHECK;
+        rxConfigMutable()->midrc = 1500;
+        systemConfigMutable()->enableStickProfileSwitch = true;
+
+        boxBitmask_t noModes;
+        memset(&noModes, 0, sizeof(noModes));
+        rcModeUpdate(&noModes);
+
+        armingFlags = 0;
+        flightModeFlags = 0;
+
+        // centre the sticks so the stick state from a previous test is released
+        holdSticks(PWM_RANGE_MIDDLE, PWM_RANGE_MIDDLE, PWM_RANGE_MIDDLE, PWM_RANGE_MIDDLE);
+        resetCallCounters();
+    }
+
+    // hold the sticks long enough for a disarmed stick command to fire
+    void holdSticks(float roll, float pitch, float yaw, float throttle) {
+        for (int index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
+            rcData[index] = rcUsToNorm(PWM_RANGE_MIDDLE);
+        }
+        rcData[ROLL] = rcUsToNorm(roll);
+        rcData[PITCH] = rcUsToNorm(pitch);
+        rcData[YAW] = rcUsToNorm(yaw);
+        rcData[THROTTLE] = rcUsToNorm(throttle);
+        for (int i = 0; i < 5; i++) {
+            processRcStickPositions();
+        }
+    }
+
+    void activateStickCommandDisable(void) {
+        boxBitmask_t modes;
+        memset(&modes, 0, sizeof(modes));
+        bitArraySet(&modes, BOXSTICKCOMMANDDISABLE);
+        rcModeUpdate(&modes);
+    }
+};
+
+TEST_F(RcControlsStickCommandsTest, pidProfileStickCommandChangesProfileWhenEnabled)
+{
+    // when: throttle low, yaw left, pitch up
+    holdSticks(PWM_RANGE_MIDDLE, PWM_RANGE_MAX, PWM_RANGE_MIN, PWM_RANGE_MIN);
+
+    // then
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_CHANGE_PID_PROFILE));
+}
+
+TEST_F(RcControlsStickCommandsTest, rateProfileStickCommandChangesProfileWhenEnabled)
+{
+    // when: throttle high, yaw centre, roll right (acro)
+    holdSticks(PWM_RANGE_MAX, PWM_RANGE_MIDDLE, PWM_RANGE_MIDDLE, PWM_RANGE_MAX);
+
+    // then
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_CHANGE_CONTROL_RATE_PROFILE));
+}
+
+TEST_F(RcControlsStickCommandsTest, profileStickCommandsIgnoredWhenEnableStickProfileSwitchOff)
+{
+    // given
+    systemConfigMutable()->enableStickProfileSwitch = false;
+
+    // when
+    holdSticks(PWM_RANGE_MIN, PWM_RANGE_MIDDLE, PWM_RANGE_MIN, PWM_RANGE_MIN);   // PID profile 1
+    holdSticks(PWM_RANGE_MIDDLE, PWM_RANGE_MAX, PWM_RANGE_MIN, PWM_RANGE_MIN);   // PID profile 2
+    holdSticks(PWM_RANGE_MAX, PWM_RANGE_MIDDLE, PWM_RANGE_MIN, PWM_RANGE_MIN);   // PID profile 3
+    holdSticks(PWM_RANGE_MIDDLE, PWM_RANGE_MAX, PWM_RANGE_MIDDLE, PWM_RANGE_MAX); // rate profile 1
+    holdSticks(PWM_RANGE_MIDDLE, PWM_RANGE_MIN, PWM_RANGE_MIDDLE, PWM_RANGE_MAX); // rate profile 2
+    holdSticks(PWM_RANGE_MAX, PWM_RANGE_MIDDLE, PWM_RANGE_MIDDLE, PWM_RANGE_MAX); // rate profile 3
+    holdSticks(PWM_RANGE_MIN, PWM_RANGE_MIDDLE, PWM_RANGE_MIDDLE, PWM_RANGE_MAX); // rate profile 4
+
+    // then
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_CHANGE_PID_PROFILE));
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_CHANGE_CONTROL_RATE_PROFILE));
+}
+
+TEST_F(RcControlsStickCommandsTest, profileStickCommandsIgnoredWhenArmed)
+{
+    // given
+    ENABLE_ARMING_FLAG(ARMED);
+
+    // when
+    holdSticks(PWM_RANGE_MIDDLE, PWM_RANGE_MAX, PWM_RANGE_MIN, PWM_RANGE_MIN);
+    holdSticks(PWM_RANGE_MAX, PWM_RANGE_MIDDLE, PWM_RANGE_MIDDLE, PWM_RANGE_MAX);
+
+    // then
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_CHANGE_PID_PROFILE));
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_CHANGE_CONTROL_RATE_PROFILE));
+}
+
+TEST_F(RcControlsStickCommandsTest, profileStickCommandsIgnoredWhenStickCommandDisableActive)
+{
+    // given
+    activateStickCommandDisable();
+
+    // when
+    holdSticks(PWM_RANGE_MIDDLE, PWM_RANGE_MAX, PWM_RANGE_MIN, PWM_RANGE_MIN);
+    holdSticks(PWM_RANGE_MAX, PWM_RANGE_MIDDLE, PWM_RANGE_MIDDLE, PWM_RANGE_MAX);
+
+    // then
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_CHANGE_PID_PROFILE));
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_CHANGE_CONTROL_RATE_PROFILE));
+}
+
 extern "C" {
 void setConfigDirty(void) {}
 void saveConfigAndNotify(void) {}
 void initRcProcessing(void) {}
-void changePidProfile(uint8_t) {}
 void changeBatteryProfile(uint8_t) {}
 uint8_t getCurrentBatteryProfileIndex(void) { return 0; }
 void pidInitConfig(const pidProfile_t *) {}
