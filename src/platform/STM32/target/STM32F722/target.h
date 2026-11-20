@@ -78,3 +78,9 @@
 // For this target, functions decorated FAST_CODE_PREF will not be put into ITCM RAM;
 // on other targets, the same function *will* go into ITCM RAM
 #define FAST_CODE_PREF
+
+// Boards with an on-board SPI receiver exist for this MCU, so generic
+// (non-config) builds include the SPI RX drivers. Disable with ENABLE_RX_SPI=0.
+#if !defined(ENABLE_RX_SPI)
+#define ENABLE_RX_SPI 1
+#endif
