@@ -787,13 +787,23 @@ $(AUTOHYDRATE_STAMPS):
 	$(V1) git submodule update --init -- "$(@:/.git=)" \
 	    || { echo "submodule update failed: $(@:/.git=)"; exit 1; }
 
-# Drop .d files when a source is removed (deleted, moved, or promoted to
-# a submodule). gcc's -MMD pins the .o to the old path; without cleanup
-# make bails with "No rule to make target <old-path>". A manifest of all
+# Keep -MMD dependency files valid when a source is removed (deleted,
+# moved, or promoted to a submodule). -MP adds phony targets for headers,
+# but not for the source itself, so a .d whose source no longer exists makes
+# make bail with "No rule to make target <old-path>". A manifest of all
 # compiled sources is written to $(SRC_MANIFEST); on each build we compare
-# the current source list against it. If any sources were removed all .d
-# files are deleted so gcc can regenerate them cleanly. If nothing changed
-# the cost is a single cmp call.
+# the current source list against it. If any sources were removed, every .d
+# whose source (its first prerequisite) is missing is deleted together with
+# its .o, so the object is rebuilt with fresh dependencies. If nothing
+# changed the cost is a single cmp call.
+#
+# An object without a .d has no dependency tracking, so header changes would
+# not rebuild it. Every object is compiled with -MMD, so any such object is
+# deleted and rebuilt. This also repairs build directories where an earlier
+# version of this rule deleted all .d files but kept the objects.
+#
+# Compilation runs in a recursive make after this recipe, so deleting
+# objects here does not race with the compiler.
 .PHONY: validate-deps
 validate-deps:
 ifeq ($(V),1)
@@ -801,14 +811,26 @@ ifeq ($(V),1)
 endif
 	$(V1) mkdir -p "$(TARGET_OBJ_DIR)"; \
 	printf '%s\n' $(SRC) | sort > "$(SRC_MANIFEST).new"; \
-	if [ ! -f "$(SRC_MANIFEST)" ]; then \
-	    find "$(TARGET_OBJ_DIR)" -name '*.d' -delete 2>/dev/null; \
-	elif ! cmp -s "$(SRC_MANIFEST)" "$(SRC_MANIFEST).new"; then \
-	    if comm -23 "$(SRC_MANIFEST)" "$(SRC_MANIFEST).new" | grep -q .; then \
-	        echo "Sources removed — clearing stale dependency files"; \
-	        find "$(TARGET_OBJ_DIR)" -name '*.d' -delete 2>/dev/null; \
-	    fi; \
+	if [ ! -f "$(SRC_MANIFEST)" ] || comm -23 "$(SRC_MANIFEST)" "$(SRC_MANIFEST).new" | grep -q .; then \
+	    find "$(TARGET_OBJ_DIR)" -name '*.d' -print0 | xargs -0 awk ' \
+	        FNR == 1 { src = "" } \
+	        src == "" { \
+	            for (i = 1; i <= NF; i++) { \
+	                if ($$i != "\\" && $$i !~ /:$$/) { \
+	                    src = $$i; \
+	                    if ((getline line < src) < 0) print FILENAME; \
+	                    close(src); \
+	                    nextfile; \
+	                } \
+	            } \
+	        }' | while read -r dep; do \
+	        echo "Source removed - rebuilding $${dep%.d}.o"; \
+	        rm -f "$$dep" "$${dep%.d}.o"; \
+	    done; \
 	fi; \
+	for obj in $(TARGET_OBJS); do \
+	    [ ! -f "$$obj" ] || [ -f "$${obj%.o}.d" ] || rm -f "$$obj"; \
+	done; \
 	mv -f "$(SRC_MANIFEST).new" "$(SRC_MANIFEST)"
 
 .PHONY: binary

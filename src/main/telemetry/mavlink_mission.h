@@ -30,10 +30,7 @@
 
 #if ENABLE_TELEMETRY_MAVLINK_MISSION
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#include "common/mavlink.h"
-#pragma GCC diagnostic pop
+#include "telemetry/mavlink_lib.h"
 
 void mavMissionInit(void);
 bool mavMissionHandleMessage(const mavlink_message_t *msg);

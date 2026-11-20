@@ -40,13 +40,7 @@
 
 #include "build/debug.h"
 
-// mavlink library uses unnamed unions that causes GCC to complain if -Wpedantic is used
-// until this is resolved in mavlink library - ignore -Wpedantic for mavlink code
-// FIXME
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#include "common/mavlink.h"
-#pragma GCC diagnostic pop
+#include "telemetry/mavlink_lib.h"
 
 #define MAVLINK_CHANNEL_COUNT 18
 #define MAVLINK_BAUD_RATE_INDEX BAUD_460800
