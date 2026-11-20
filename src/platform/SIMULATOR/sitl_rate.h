@@ -46,7 +46,8 @@ static inline void sitlRateEstimatorReset(sitlRateEstimator_t *estimator)
 
 static inline bool sitlRateEstimatorUpdate(sitlRateEstimator_t *estimator, double deltaSim, double deltaReal, double *rate)
 {
-    if (deltaSim <= 0.0 || deltaReal < 0.0) {
+    // Exclude slow simulator intervals without discarding warm-up progress.
+    if (deltaSim <= 0.0 || deltaSim >= 0.02 || deltaReal < 0.0) {
         return false;
     }
 

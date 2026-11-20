@@ -73,3 +73,19 @@ TEST(SitlRateUnittest, ResetDiscardsPreviousSamples)
 
     EXPECT_FALSE(sitlRateEstimatorUpdate(&estimator, 0.01, 0.01, &rate));
 }
+
+TEST(SitlRateUnittest, PreservesWarmupAcrossExcludedGaps)
+{
+    sitlRateEstimator_t estimator = {};
+    double rate = 1.0;
+
+    for (unsigned cycle = 0; cycle < 3; cycle++) {
+        for (unsigned sample = 0; sample < 8; sample++) {
+            sitlRateEstimatorUpdate(&estimator, 0.01, 0.005, &rate);
+        }
+        EXPECT_FALSE(sitlRateEstimatorUpdate(&estimator, 0.03, 0.015, &rate));
+    }
+
+    EXPECT_TRUE(estimator.initialized);
+    EXPECT_DOUBLE_EQ(rate, 2.0);
+}

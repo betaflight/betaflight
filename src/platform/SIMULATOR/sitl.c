@@ -465,12 +465,8 @@ static void updateState(const fdm_packet* pkt)
     imuUpdateAttitude(micros());
 #endif
 
-    if (deltaSim < 0.02 && deltaSim > 0) { // simulator should run faster than 50Hz
-        const double deltaReal = (realtime_now - last_realtime) * 1e-6;
-        sitlRateEstimatorUpdate(&simRateEstimator, deltaSim, deltaReal, &simRate);
-    } else if (deltaSim >= 0.02) {
-        sitlRateEstimatorReset(&simRateEstimator);
-    }
+    const double deltaReal = (realtime_now - last_realtime) * 1e-6;
+    sitlRateEstimatorUpdate(&simRateEstimator, deltaSim, deltaReal, &simRate);
 
     last_timestamp = pkt->timestamp;
     last_realtime = realtime_now;
