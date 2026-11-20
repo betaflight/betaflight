@@ -34,13 +34,8 @@
 #include "vtx_rtc6705_soft_spi.h"
 
 #define DP_5G_MASK                  0x7000
-#define PA5G_BS_MASK                0x0E00
-#define PA5G_PW_MASK                0x0180
-#define PD_Q5G_MASK                 0x0040
 #define QI_5G_MASK                  0x0038
 #define PA_BS_MASK                  0x0007
-
-#define PA_CONTROL_DEFAULT          0x4FBD
 
 #define RTC6705_SPICLK_ON()   IOHi(rtc6705ClkPin)
 #define RTC6705_SPICLK_OFF()  IOLo(rtc6705ClkPin)
@@ -128,8 +123,8 @@ void rtc6705SoftSpiSetFrequency(uint16_t channel_freq)
     rtc6705_write_register(1, (N << 7) | A);
 }
 
-void rtc6705SoftSpiSetRFPower(uint8_t rf_power)
+void rtc6705SoftSpiSetRFPower(uint32_t data)
 {
-    rtc6705_write_register(7, (rf_power > 1 ? PA_CONTROL_DEFAULT : (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK))));
+    rtc6705_write_register(7, data);
 }
 #endif

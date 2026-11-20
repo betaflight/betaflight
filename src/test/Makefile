@@ -1124,6 +1124,17 @@ vtx_msp_unittest_DEFINES := \
 		USE_VTX_TABLE= \
 		USE_VTX_MSP=
 
+vtx_rtc6705_unittest_SRC := \
+		$(USER_DIR)/drivers/vtx_rtc6705.c
+
+vtx_rtc6705_unittest_DEFINES := \
+		USE_VTX_RTC6705= \
+		USE_VTX_RTC6705_SOFTSPI= \
+		ENABLE_RTC6705_DYNAMIC_POWER_CTRL=1 \
+		USE_SPI= \
+		SPIDEV_COUNT=1 \
+		MAX_SPI_PIN_SEL=1
+
 um32_uart_bidir_unittest_SRC := \
         $(TEST_DIR)/um32_uart_bidir_test.c \
         $(USER_DIR)/drivers/serial_impl.c
