@@ -324,6 +324,8 @@
 #define USE_OPTICALFLOW_UPT1
 #define USE_OPTICALFLOW_PB04
 
+#define USE_RADAR
+
 #endif // TARGET_FLASH_SIZE >= 1024
 
 #endif // !defined(CLOUD_BUILD)
