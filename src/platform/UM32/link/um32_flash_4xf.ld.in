@@ -122,6 +122,13 @@ SECTIONS
      */UM32/sysfunc_um324xx.o(.text* .rodata*)
      */cms/cms_menu_imu.o(.text* .rodata*)
      */cms/cms_menu_osd.o(.text* .rodata*)
+     */cms/cms_menu_ledstrip.o(.text* .rodata*)
+     */cms/cms_menu_persistent_stats.o(.text* .rodata*)
+     */cms/cms_menu_vtx_common.o(.text* .rodata*)
+     */cms/cms_menu_vtx_msp.o(.text* .rodata*)
+     */cms/cms_menu_vtx_rtc6705.o(.text* .rodata*)
+     */cms/cms_menu_vtx_smartaudio.o(.text* .rodata*)
+     */cms/cms_menu_vtx_tramp.o(.text* .rodata*)
      . = ALIGN(4) ;
   } >EXFLASH_XIP AT>EXFLASH_LOAD
 #endif

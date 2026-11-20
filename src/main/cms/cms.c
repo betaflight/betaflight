@@ -756,7 +756,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
 #endif
 
     if (pDisplay->cursorRow >= 0 && currentCtx.cursorRow != pDisplay->cursorRow) {
-        room -= cmsDisplayWrite(pDisplay, leftMenuColumn, top + pDisplay->cursorRow * linesPerMenuItem, DISPLAYPORT_SEVERITY_NORMAL, " ");
+        room -= MIN(room, (uint32_t)cmsDisplayWrite(pDisplay, leftMenuColumn, top + pDisplay->cursorRow * linesPerMenuItem, DISPLAYPORT_SEVERITY_NORMAL, " "));
     }
 
     if (room < 30) {
@@ -764,7 +764,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
     }
 
     if (pDisplay->cursorRow != currentCtx.cursorRow) {
-        room -= cmsDisplayWrite(pDisplay, leftMenuColumn, top + currentCtx.cursorRow * linesPerMenuItem, DISPLAYPORT_SEVERITY_NORMAL, ">");
+        room -= MIN(room, (uint32_t)cmsDisplayWrite(pDisplay, leftMenuColumn, top + currentCtx.cursorRow * linesPerMenuItem, DISPLAYPORT_SEVERITY_NORMAL, ">"));
         pDisplay->cursorRow = currentCtx.cursorRow;
     }
 
@@ -786,7 +786,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
         if (IS_PRINTLABEL(runtimeEntryFlags[i])) {
             uint8_t coloff = leftMenuColumn;
             coloff += ((p->flags & OSD_MENU_ELEMENT_MASK) == OME_Label) ? 0 : 1;
-            room -= cmsDisplayWrite(pDisplay, coloff, top + i * linesPerMenuItem, DISPLAYPORT_SEVERITY_NORMAL, p->text);
+            room -= MIN(room, (uint32_t)cmsDisplayWrite(pDisplay, coloff, top + i * linesPerMenuItem, DISPLAYPORT_SEVERITY_NORMAL, p->text));
             CLR_PRINTLABEL(runtimeEntryFlags[i]);
             if (room < 30) {
                 return;
@@ -805,7 +805,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
 
         if (IS_PRINTVALUE(runtimeEntryFlags[i]) || IS_SCROLLINGTICKER(runtimeEntryFlags[i])) {
             bool selectedRow = i == currentCtx.cursorRow;
-            room -= cmsDrawMenuEntry(pDisplay, p, top + i * linesPerMenuItem, selectedRow, &runtimeEntryFlags[i], &runtimeTableTicker[i]);
+            room -= MIN(room, (uint32_t)cmsDrawMenuEntry(pDisplay, p, top + i * linesPerMenuItem, selectedRow, &runtimeEntryFlags[i], &runtimeTableTicker[i]));
             if (room < 30) {
                 return;
             }
