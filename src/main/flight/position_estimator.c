@@ -823,13 +823,18 @@ static void feedGPSMeasurements(timeUs_t nowUs)
         lastXYMeasurementUs = nowUs;
     }
 
-    // Z velocity and altitude measurements
-    if (gpsAltAllowed) {
+    if (gpsAltAllowed ||
+        (positionConfig()->altitude_source == ALTITUDE_SOURCE_BARO_ONLY &&
+         sensors(SENSOR_GPS) && STATE(GPS_FIX))) {
         if (!gpsAltOffsetSet) {
             gpsAltOffsetCm = gpsSol.llh.altCm;
 
             gpsAltOffsetSet = true;
         }
+    }
+
+    // Z velocity and altitude measurements
+    if (gpsAltAllowed) {
         const float gpsVelZRMax = 10.0f * R_GPS_VEL_Z_BASE;
         const float gpsVelUpR = gpsAccuracyR(gpsSol.acc.sAcc, GPS_VEL_ACCURACY_DENOM, R_GPS_VEL_Z_BASE, gpsVelZRMax);
         const float gpsAltRMax = 10.0f * R_GPS_ALT_BASE;
