@@ -418,18 +418,7 @@ static bool asm330lhhAccReadSPI(accDev_t *acc)
     case GYRO_EXTI_NO_INT:
     {
         acc->gyro->dev.txBuf[0] = acc->gyro->accDataReg | 0x80;
-
-        busSegment_t segments[] = {
-                {.u.buffers = {NULL, NULL}, 7, true, NULL},
-                {.u.link = {NULL, NULL}, 0, true, NULL},
-        };
-        segments[0].u.buffers.txData = acc->gyro->dev.txBuf;
-        segments[0].u.buffers.rxData = &acc->gyro->dev.rxBuf[1];
-
-        spiSequence(&acc->gyro->dev, &segments[0]);
-
-        // Wait for completion
-        spiWait(&acc->gyro->dev);
+        spiReadWriteBuf(&acc->gyro->dev, acc->gyro->dev.txBuf, &acc->gyro->dev.rxBuf[1], 7);
 
         int16_t *accData = (int16_t *)acc->gyro->dev.rxBuf;
 
@@ -444,14 +433,12 @@ static bool asm330lhhAccReadSPI(accDev_t *acc)
         // If read was triggered in interrupt don't bother waiting. The worst that could happen is that we pick
         // up an old value.
 
-        // The ASM330LHH stores gyro data before accel data in the burst, so compute the accel offset from the
-        // start of the burst instead of hard-coding the array index.
-        const uint8_t accDataIndex = ((acc->gyro->accDataReg - acc->gyro->dmaReadRegStart) >> 1) + 1;
+        // The DMA burst starts at gyro data, so accel samples are at word indices 4 through 6.
         int16_t *accData = (int16_t *)acc->gyro->dev.rxBuf;
 
-        acc->ADCRaw[X] = accData[accDataIndex];
-        acc->ADCRaw[Y] = accData[accDataIndex + 1];
-        acc->ADCRaw[Z] = accData[accDataIndex + 2];
+        acc->ADCRaw[X] = accData[4];
+        acc->ADCRaw[Y] = accData[5];
+        acc->ADCRaw[Z] = accData[6];
         break;
     }
 
@@ -480,7 +467,7 @@ static void asm330lhhGyroInit(gyroDev_t *gyro)
     const extDevice_t *dev = &gyro->dev;
     // Set default LPF1 filter bandwidth to be as close as possible to MPU6000's 250Hz cutoff
     // Bandwidth values are for a gyro ODR of 6667Hz, see Table 53 of the datasheet
-    uint8_t asm330lhhLPF1BandwidthOptions[GYRO_HARDWARE_LPF_COUNT] = {
+    static const uint8_t asm330lhhLPF1BandwidthOptions[GYRO_HARDWARE_LPF_COUNT] = {
             [GYRO_HARDWARE_LPF_NORMAL] = 0, // 297Hz
             [GYRO_HARDWARE_LPF_OPTION_1] = 2, // 154Hz
             [GYRO_HARDWARE_LPF_OPTION_2] = 1, // 223Hz
@@ -592,33 +579,16 @@ static bool asm330lhhGyroReadSPI(gyroDev_t *gyro)
     case GYRO_EXTI_NO_INT:
     {
         gyro->dev.txBuf[0] = gyro->dmaReadRegStart | 0x80;
+        spiReadWriteBuf(&gyro->dev, gyro->dev.txBuf, &gyro->dev.rxBuf[1], 7);
 
-        busSegment_t segments[] = {
-                {.u.buffers = {NULL, NULL}, 7, true, NULL},
-                {.u.link = {NULL, NULL}, 0, true, NULL},
-        };
-        segments[0].u.buffers.txData = gyro->dev.txBuf;
-        segments[0].u.buffers.rxData = &gyro->dev.rxBuf[1];
-
-        spiSequence(&gyro->dev, &segments[0]);
-
-        // Wait for completion
-        spiWait(&gyro->dev);
-
-        gyro->gyroADCRaw[X] = gyroData[1];
-        gyro->gyroADCRaw[Y] = gyroData[2];
-        gyro->gyroADCRaw[Z] = gyroData[3];
-        break;
+        FALLTHROUGH;
     }
 
     case GYRO_EXTI_INT_DMA:
     {
-        // If read was triggered in interrupt don't bother waiting. The worst that could happen is that we pick
-        // up an old value.
-        const uint8_t gyroDataIndex = ((gyro->gyroDataReg - gyro->dmaReadRegStart) >> 1) + 1;
-        gyro->gyroADCRaw[X] = gyroData[gyroDataIndex];
-        gyro->gyroADCRaw[Y] = gyroData[gyroDataIndex + 1];
-        gyro->gyroADCRaw[Z] = gyroData[gyroDataIndex + 2];
+        gyro->gyroADCRaw[X] = gyroData[1];
+        gyro->gyroADCRaw[Y] = gyroData[2];
+        gyro->gyroADCRaw[Z] = gyroData[3];
         break;
     }
 
