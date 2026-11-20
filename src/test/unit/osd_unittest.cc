@@ -1623,6 +1623,15 @@ TEST_F(OsdTest, TestAslAltitudeElements)
 
     // then
     displayPortTestBufferSubstring(3, 7, "%c30.0%cR", SYM_ALTITUDE, SYM_M);
+
+    // when FAULT
+    aslSimulationState = ALTITUDE_ASL_FAULT;
+    simulationAltitude = 0;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(3, 7, " ");
 }
 
 // STUBS

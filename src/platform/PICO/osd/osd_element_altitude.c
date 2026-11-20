@@ -98,6 +98,8 @@ void cacheAltitudeInfo(uint8_t x, uint8_t y, uint8_t elemType, bool isBlink)
         } else if (aslState == ALTITUDE_ASL_RELATIVE) {
             infoAltitude.altString[pos++] = 'R';
             infoAltitude.altString[pos] = '\0';
+        } else if (aslState == ALTITUDE_ASL_FAULT) {
+            infoAltitude.altString[0] = '\0';
         }
 #else
     UNUSED(pos);

@@ -383,6 +383,8 @@ static void osdFormatAltitudeString(char * buff, int32_t altitudeCm, osdElementT
     } else if (aslState == ALTITUDE_ASL_RELATIVE) {
         buff[pos++] = 'R';
         buff[pos] = '\0';
+    } else if (aslState == ALTITUDE_ASL_FAULT) {
+        buff[0] = '\0';
     }
 #else
     UNUSED(pos);

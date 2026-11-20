@@ -35,7 +35,8 @@ typedef enum {
 typedef enum {
     ALTITUDE_ASL_NORMAL = 0,
     ALTITUDE_ASL_ESTIMATED,
-    ALTITUDE_ASL_RELATIVE
+    ALTITUDE_ASL_RELATIVE,
+    ALTITUDE_ASL_FAULT
 } aslAltitudeState_e;
 
 typedef struct positionConfig_s {

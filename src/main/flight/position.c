@@ -217,13 +217,18 @@ aslAltitudeState_e getAltitudeAsl(int32_t *pAltitudeAsl)
     if (STATE(GPS_FIX)) {
         *pAltitudeAsl = gpsSol.llh.altCm;
         return ALTITUDE_ASL_NORMAL;
-    } else if (isAltitudeAvailable() && positionEstimatorGetGpsAltOffsetCm(&gpsAltOffsetCm)) {
-        *pAltitudeAsl = lrintf(gpsAltOffsetCm) + getEstimatedAltitudeCm();
-        return ALTITUDE_ASL_ESTIMATED;
+    } else if (isAltitudeAvailable()) {
+        *pAltitudeAsl = getEstimatedAltitudeCm();
+        if (positionEstimatorGetGpsAltOffsetCm(&gpsAltOffsetCm)) {
+            *pAltitudeAsl += lrintf(gpsAltOffsetCm);
+            return ALTITUDE_ASL_ESTIMATED;
+        } else {
+            return ALTITUDE_ASL_RELATIVE;
+        }
     }
 
-    *pAltitudeAsl = getEstimatedAltitudeCm();
-    return ALTITUDE_ASL_RELATIVE;
+    *pAltitudeAsl = 0;
+    return ALTITUDE_ASL_FAULT;
 }
 #endif
 
