@@ -314,7 +314,7 @@ static void bbSetupDma(bbPort_t *bbPort)
     bbDMA_ITConfig(bbPort);
 }
 
-FAST_IRQ_HANDLER void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
+FAST_CODE void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
 {
     if (!bbDMAEventPending(descriptor)) {
         return;
@@ -573,13 +573,17 @@ static bool bbTelemetryWait(void)
     return telemetryWait;
 }
 
-static void bbUpdateInit(void)
+static FAST_CODE void bbUpdateInit(void)
 {
     for (int i = 0; i < usedMotorPorts; i++) {
         bbOutputDataClear(bbPorts[i].portOutputBuffer);
     }
 }
 
+// Not FAST_CODE: the decode loop itself, decode_bb(), is in ITCM. This wrapper
+// runs a few instructions per motor and already calls into flash for the
+// telemetry statistics, so it stays in flash as it always has, which leaves
+// its ITCM share on F722 to the code that needs it.
 static bool bbDecodeTelemetry(void)
 {
 #ifdef USE_DSHOT_TELEMETRY
@@ -645,7 +649,7 @@ static bool bbDecodeTelemetry(void)
     return true;
 }
 
-static void bbWriteInt(uint8_t motorIndex, uint16_t value)
+static FAST_CODE void bbWriteInt(uint8_t motorIndex, uint16_t value)
 {
     bbMotor_t *const bbmotor = &bbMotors[motorIndex];
 
@@ -677,7 +681,7 @@ static void bbWriteInt(uint8_t motorIndex, uint16_t value)
     }
 }
 
-static void bbWrite(uint8_t motorIndex, float value)
+static FAST_CODE void bbWrite(uint8_t motorIndex, float value)
 {
     bbWriteInt(motorIndex, lrintf(value));
 }
@@ -688,7 +692,7 @@ static void bbWrite(uint8_t motorIndex, float value)
 // completed. Runs before the command gating in bbUpdateComplete(), as
 // bbDecodeTelemetry() clears telemetryAborted whether or not a frame is sent.
 // Each failure counts once, however many updates the port takes to recover.
-static void bbCheckLastFrame(void)
+static NOINLINE void bbCheckLastFrame(void)
 {
     const timeUs_t nowUs = micros();
 
@@ -720,7 +724,7 @@ static void bbCheckLastFrame(void)
     }
 }
 
-static void bbUpdateComplete(void)
+static FAST_CODE void bbUpdateComplete(void)
 {
     bbCheckLastFrame();
 

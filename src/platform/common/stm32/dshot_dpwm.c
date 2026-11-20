@@ -134,12 +134,12 @@ static IO_t pwmDshotGetMotorIO(unsigned index)
     return pwmMotors[index].io;
 }
 
-static FAST_CODE void dshotWriteInt(uint8_t index, uint16_t value)
+static FAST_CODE_PREF void dshotWriteInt(uint8_t index, uint16_t value)
 {
     pwmWriteDshotInt(index, value);
 }
 
-static FAST_CODE void dshotWrite(uint8_t index, float value)
+static FAST_CODE_PREF void dshotWrite(uint8_t index, float value)
 {
     pwmWriteDshotInt(index, lrintf(value));
 }
