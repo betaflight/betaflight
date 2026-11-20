@@ -136,6 +136,10 @@ const timerHardware_t bbTimerHardware[] = {
 
 static FAST_DATA_ZERO_INIT timeUs_t lastSendUs;
 
+// Set when the previous frame still owns the line, so this motor update is skipped:
+// bbWriteInt(), bbUpdateComplete() and bbDecodeTelemetry() leave buffers and stream alone.
+static FAST_DATA_ZERO_INIT bool bbFrameDeferred;
+
 static motorProtocolTypes_e motorProtocol;
 
 // DMA GPIO output buffer formatting
@@ -528,53 +532,78 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorProtocolTypes_e pwmP
     return true;
 }
 
-static bool bbTelemetryWait(void)
+// True while the previous frame still owns the line on any port group: its
+// output frame is still being sent, or its telemetry capture is still pending.
+static bool bbLineBusy(void)
 {
+    for (int i = 0; i < usedMotorPorts; i++) {
+        const bbPort_t *bbPort = &bbPorts[i];
+        if (bbPort->outputPending || bbPort->telemetryPending) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// Decides for bbUpdateInit() whether this update is deferred because the
+// previous frame still owns the line. Kept out of line, and so out of ITCM:
+// on F722 the bitbang hot path shares 16 KB with the PID loop. Returns true if
+// this update is to be deferred.
+static NOINLINE bool bbDeferFrame(void)
+{
+#ifdef USE_DSHOT_TELEMETRY
+    if (!useDshotTelemetry || !bbLineBusy()) {
+        return false;
+    }
+
     // The capture must not be cut short: the window is only a few microseconds
     // longer than the ESC reply (~62 us against ~58 us at DShot600), so aborting
     // it leaves bbSwitchToOutput() driving the line push-pull against a still
     // transmitting ESC. That contention couples into the 3.3 V rail and has been
     // seen to corrupt I2C barometers on AIO boards (#15533).
     //
-    // The window is timer paced and always completes, so bbTelemetryTimeoutUs is
-    // a backstop for a stalled DMA only.
-    bool telemetryPending;
-    bool telemetryWait = false;
-    const timeUs_t startTimeUs = micros();
+    // Waiting for it instead spins in the PID task for the rest of the window,
+    // up to the whole ~62 us at DShot600: half an 8 kHz loop, spent making a loop
+    // that is already late later still. So the frame is deferred: the buffers and
+    // the stream are left alone this update and the next PID loop sends fresh
+    // values. The ESC misses one update, 125 us at 8 kHz, far below any DShot
+    // signal timeout.
+    if (cmpTimeUs(micros(), lastSendUs) <= (timeDelta_t)dshotFrameUs + bbTelemetryTimeoutUs) {
+        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 5, debug[5] + 1);  //!< Deferred Frame Count
+        return true;
+    }
 
-    do {
-        telemetryPending = false;
-        for (int i = 0; i < usedMotorPorts; i++) {
-            telemetryPending |= bbPorts[i].telemetryPending;
+    // Still busy after the frame plus the capture backstop: the stream has
+    // stalled. Leave it for bbUpdateComplete() to recover, and mark timed out
+    // captures so they are not decoded; bbCheckLastFrame() counts them in
+    // debug[2]. The buffers may hold a partial frame, so skip them rather than
+    // decode a bad-but-valid GCR frame.
+    for (int i = 0; i < usedMotorPorts; i++) {
+        if (bbPorts[i].telemetryPending) {
+            bbPorts[i].telemetryAborted = true;
         }
+    }
+#endif
 
-        telemetryWait |= telemetryPending;
+    return false;
+}
 
-        if (cmpTimeUs(micros(), startTimeUs) > bbTelemetryTimeoutUs) {
-            // Leave the stream for bbUpdateComplete() to reinitialise, as it does
-            // on every cycle; stopping it here would additionally race
-            // bbDMAIrqHandler() on the pacer TIMx->DIER, which is shared with the
-            // other port group. The buffers may hold a partial frame, so skip
-            // them rather than decode a bad-but-valid GCR frame.
-            //
-            // Mark timeouts only; bbUpdateComplete() counts them in debug[2].
-            // Spinning here is normal - the capture window legitimately overlaps
-            // the next update on high loop rates - so counting every wait would
-            // leave debug[2] permanently nonzero instead of flagging a stall.
-            for (int i = 0; i < usedMotorPorts; i++) {
-                if (bbPorts[i].telemetryPending) {
-                    bbPorts[i].telemetryAborted = true;
-                }
-            }
-            break;
-        }
-    } while (telemetryPending);
-
-    return telemetryWait;
+static bool bbTelemetryWait(void)
+{
+    // Nothing waits here any more: bbUpdateInit() has already decided whether
+    // this update goes out.
+    return bbFrameDeferred;
 }
 
 static FAST_CODE void bbUpdateInit(void)
 {
+    // Decided out of line, see bbDeferFrame().
+    bbFrameDeferred = bbDeferFrame();
+    if (bbFrameDeferred) {
+        return;
+    }
+
     for (int i = 0; i < usedMotorPorts; i++) {
         bbOutputDataClear(bbPorts[i].portOutputBuffer);
     }
@@ -588,6 +617,11 @@ static bool bbDecodeTelemetry(void)
 {
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
+        if (bbFrameDeferred) {
+            // The capture is still running: nothing complete to decode yet.
+            // It is decoded after the next update that does go out.
+            return true;
+        }
 #ifdef USE_DSHOT_TELEMETRY_STATS
         const timeMs_t currentTimeMs = millis();
 #endif
@@ -653,7 +687,9 @@ static FAST_CODE void bbWriteInt(uint8_t motorIndex, uint16_t value)
 {
     bbMotor_t *const bbmotor = &bbMotors[motorIndex];
 
-    if (!bbmotor->configured) {
+    // Not configured, or the previous frame still owns the line: leave the buffer
+    // and the telemetry request alone.
+    if (!bbmotor->configured || bbFrameDeferred) {
         return;
     }
 
@@ -727,6 +763,12 @@ static NOINLINE void bbCheckLastFrame(void)
 static FAST_CODE void bbUpdateComplete(void)
 {
     bbCheckLastFrame();
+
+    // The previous frame still owns the line: nothing is sent, and the dshot
+    // command sequence does not advance this update.
+    if (bbFrameDeferred) {
+        return;
+    }
 
     // If there is a dshot command loaded up, time it correctly with motor update
 
