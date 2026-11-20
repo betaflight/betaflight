@@ -30,6 +30,8 @@ gyro_t gyro = {};
 
 uint32_t micros(void) { return 0; }
 uint8_t calculateThrottlePercentAbs(void) { return 0; }
+
+extern int sampleCount;
 }
 
 #include "gtest/gtest.h"
@@ -54,4 +56,31 @@ TEST(DynNotchFilterUnittest, TestUpdateRateBoundary)
     // 0us: an invalid looptime must not enable the filter.
     dynNotchInit(&config, 0);
     EXPECT_FALSE(isDynNotchActive());
+}
+
+TEST(DynNotchFilterUnittest, TestSampleCountForExactDivisors)
+{
+    // sampleCount = int(nyquist / max_hz). When the PID rate divides evenly by max_hz the float
+    // nyquist must be exact, otherwise it truncates one too low (e.g. 3999.9998 / 500 -> 7)
+    // and the SDFT runs faster than needed with a coarser resolution.
+    const struct {
+        uint32_t looptimeUs;
+        uint16_t maxHz;
+        int expectedSampleCount;
+    } cases[] = {
+        { 125, 500, 8 },   // 8kHz
+        { 125, 1000, 4 },
+        { 125, 600, 6 },   // not an exact divisor: int(6.67)
+        { 250, 1000, 2 },  // 4kHz
+        { 250, 400, 5 },
+        { 500, 500, 2 },   // 2kHz
+        { 500, 250, 4 },
+    };
+
+    for (const auto &c : cases) {
+        const dynNotchConfig_t config = { 100, c.maxHz, 300, 3 };
+        dynNotchInit(&config, c.looptimeUs);
+        EXPECT_TRUE(isDynNotchActive());
+        EXPECT_EQ(c.expectedSampleCount, sampleCount) << c.looptimeUs << "us, max_hz " << c.maxHz;
+    }
 }
