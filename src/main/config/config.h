@@ -61,6 +61,7 @@ typedef struct systemConfig_s {
     uint8_t activeBatteryProfile;
     uint8_t configResetReason;
     uint16_t configResetDetail;     // stored EEPROM version or pgn, depending on configResetReason
+    uint8_t enableStickProfileSwitch; // boolean that determines whether PID and rate profiles can be changed with stick commands
 } systemConfig_t;
 
 PG_DECLARE(systemConfig_t, systemConfig);
