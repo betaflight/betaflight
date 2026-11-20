@@ -39,6 +39,8 @@ typedef struct {
 // Returns true when nothing is pending, or when pending has not changed for
 // timeoutMs of continuous polling. A gap longer than timeoutMs between polls
 // restarts the clock, so a stale sample cannot report an immediate stall.
+// A timeout marks the sample stale, so the next poll restarts the clock and the
+// next wait gets its own full interval even if pending matches the count that timed out.
 static inline bool usbVcpTxDrained(usbVcpTxDrain_t *drain, uint32_t pending, timeMs_t timeoutMs)
 {
     const timeMs_t now = millis();
@@ -49,7 +51,14 @@ static inline bool usbVcpTxDrained(usbVcpTxDrain_t *drain, uint32_t pending, tim
     }
     drain->lastSampleMs = now;
 
-    return pending == 0 || now - drain->lastChangeMs > timeoutMs;
+    if (pending == 0) {
+        return true;
+    }
+    if (now - drain->lastChangeMs > timeoutMs) {
+        drain->lastPending = UINT32_MAX;
+        return true;
+    }
+    return false;
 }
 
 typedef struct {
