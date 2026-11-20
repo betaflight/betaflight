@@ -1037,6 +1037,9 @@ mavlink_mission_unittest_DEFINES := \
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE=
 
+usb_vcp_tx_drain_unittest_SRC := \
+		$(TEST_DIR)/usb_vcp_tx_drain_test_support.c
+
 vtx_unittest_SRC := \
 		$(USER_DIR)/fc/core.c \
 		$(USER_DIR)/fc/dispatch.c \

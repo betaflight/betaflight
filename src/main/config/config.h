@@ -64,6 +64,7 @@ typedef struct systemConfig_s {
 #ifdef USE_PSAS
     uint8_t psasProfileIndex;
 #endif
+    uint8_t enableStickProfileSwitch; // boolean that determines whether PID and rate profiles can be changed with stick commands
 } systemConfig_t;
 
 PG_DECLARE(systemConfig_t, systemConfig);
