@@ -33,6 +33,11 @@
 
 #define TASK_COMPASS_RATE_HZ 40 // the base mag update rate; faster intervals will apply for higher ODR mags
 
+#define MAG_SOFTIRON_SCALE          1000
+#define MAG_SOFTIRON_INV_SCALE      (1.0f / MAG_SOFTIRON_SCALE)
+#define MAG_SOFTIRON_MIN_DET        0.1f
+#define MAG_SOFTIRON_MAX_COEFF      (5 * MAG_SOFTIRON_SCALE)
+
 #ifdef USE_MAG
 #define MAG_IN_BUILD  true
 #else
@@ -77,6 +82,7 @@ typedef struct compassConfig_s {
     ioTag_t interruptTag;
     flightDynamicsTrims_t magZero;
     sensorAlignment_t mag_customAlignment;
+    int16_t mag_softiron[XYZ_AXIS_COUNT * XYZ_AXIS_COUNT]; // 3x3 soft-iron calibration matrix, sensor frame (scaled by 1000, 1000 = 1.0)
 } compassConfig_t;
 
 typedef struct compassBiasEstimator_s {
