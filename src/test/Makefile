@@ -299,6 +299,7 @@ cli_unittest_DEFINES := \
 		USE_OSD= \
 		USE_CLI= \
 		USE_MSP_CLI_COMMAND= \
+		USE_VTX_CONTROL= \
 		SystemCoreClock=1000000
 
 cms_unittest_SRC := \
