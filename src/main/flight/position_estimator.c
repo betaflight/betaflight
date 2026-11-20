@@ -823,12 +823,13 @@ static void feedGPSMeasurements(timeUs_t nowUs)
         lastXYMeasurementUs = nowUs;
     }
 
-    if (gpsAltAllowed ||
-        (positionConfig()->altitude_source == ALTITUDE_SOURCE_BARO_ONLY &&
-         sensors(SENSOR_GPS) && STATE(GPS_FIX))) {
-        if (!gpsAltOffsetSet) {
+    if (!gpsAltOffsetSet) {
+        if (gpsAltAllowed) {
             gpsAltOffsetCm = gpsSol.llh.altCm;
-
+            gpsAltOffsetSet = true;
+        } else if (positionConfig()->altitude_source == ALTITUDE_SOURCE_BARO_ONLY) {
+            // GPS altitude isn't fused here, so anchor the offset to the current estimate
+            gpsAltOffsetCm = gpsSol.llh.altCm - kalmanGetPosition(&kfUp);
             gpsAltOffsetSet = true;
         }
     }
