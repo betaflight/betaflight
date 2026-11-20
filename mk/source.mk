@@ -24,6 +24,7 @@ PG_SRC = \
             pg/gps_rescue_multirotor.c \
             pg/gps_rescue_wing.c \
             pg/gyrodev.c \
+            pg/hx711.c \
             pg/launch_wing.c \
             pg/max7456.c \
             pg/mco.c \
@@ -106,6 +107,7 @@ COMMON_SRC = \
             drivers/display.c \
             drivers/display_canvas.c \
             drivers/dma.c \
+            drivers/hx711.c \
             drivers/io.c \
             drivers/io_preinit.c \
             drivers/lcd_console.c \
