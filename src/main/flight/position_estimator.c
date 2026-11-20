@@ -1054,6 +1054,7 @@ static void rebaseZFrame(float newPositionCm)
 #endif
 #ifdef USE_GPS
     gpsAltOffsetCm -= deltaCm;
+    rebaseAltitudeFilterState(deltaCm);
 #endif
 }
 #endif

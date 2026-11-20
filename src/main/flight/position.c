@@ -230,6 +230,12 @@ aslAltitudeState_e getAltitudeAsl(int32_t *pAltitudeAsl)
     *pAltitudeAsl = 0;
     return ALTITUDE_ASL_FAULT;
 }
+
+void rebaseAltitudeFilterState(float deltaCm)
+{
+    altitudeLpf.state -= deltaCm;
+    altitudeLpf.state1 -= altitudeLpf.state;
+}
 #endif
 
 #ifdef USE_VARIO

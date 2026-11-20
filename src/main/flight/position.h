@@ -62,4 +62,5 @@ int32_t getEstimatedAltitudeCm(void);
 aslAltitudeState_e getAltitudeAsl(int32_t *pAltitudeAsl);
 int16_t getEstimatedVario(void);
 bool isAltitudeAvailable(void);
+void rebaseAltitudeFilterState(float deltaCm);
 
