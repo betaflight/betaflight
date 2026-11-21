@@ -46,17 +46,9 @@
 #include "pg/autopilot.h"
 #include "pg/flight_plan.h"
 
-// mavlink library uses unnamed unions that causes GCC to complain if -Wpedantic
-// is used - ignore -Wpedantic for mavlink code. Pull in the full MAVLink headers
-// before telemetry/mavlink.h so the latter's forward-typedef of
-// mavlink_message_t yields to the real (identical) one.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
-#include "common/mavlink.h"
-#pragma GCC diagnostic pop
-#pragma GCC diagnostic pop
+// Pull in the full MAVLink headers before telemetry/mavlink.h so the latter's
+// forward-typedef of mavlink_message_t yields to the real (identical) one.
+#include "telemetry/mavlink_lib.h"
 
 #include "telemetry/mavlink.h"
 #include "telemetry/mavlink_mission.h"
