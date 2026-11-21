@@ -546,6 +546,17 @@
 
 #endif // USE_WING
 
+#if !defined(ENABLE_PSAS)
+#if defined(USE_WING)
+#define ENABLE_PSAS 1
+#else
+#define ENABLE_PSAS 0
+#endif
+#endif
+#if ENABLE_PSAS && !defined(USE_WING)
+#error "ENABLE_PSAS requires USE_WING"
+#endif
+
 // backwards compatibility for older config.h targets
 #ifndef GYRO_CONFIG_USE_GYRO_1
 #define GYRO_CONFIG_USE_GYRO_1 0

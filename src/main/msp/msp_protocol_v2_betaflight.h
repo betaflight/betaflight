@@ -52,4 +52,5 @@
 #define MSP2TEXT_CUSTOM_MSG_0                    7  // CUSTOM_MSG_MAX_NUM  entries are allocated
 #define CUSTOM_MSG_MAX_NUM                       4
 #define MSP2TEXT_BATTERY_PROFILE_NAME        11
+#define MSP2TEXT_PSAS_PROFILE_NAME        12
 // next new variable type must be >= MSP2TEXT_BATTERY_PROFILE_NAME + 1 (12)
