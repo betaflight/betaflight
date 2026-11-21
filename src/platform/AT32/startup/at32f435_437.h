@@ -59,7 +59,8 @@ extern "C" {
     !defined(AT32F435ZCT7) && !defined(AT32F435ZGT7) && !defined(AT32F435ZMT7) && \
     !defined(AT32F437RCT7) && !defined(AT32F437RGT7) && !defined(AT32F437RMT7) && \
     !defined(AT32F437VCT7) && !defined(AT32F437VGT7) && !defined(AT32F437VMT7) && \
-    !defined(AT32F437ZCT7) && !defined(AT32F437ZGT7) && !defined(AT32F437ZMT7)
+    !defined(AT32F437ZCT7) && !defined(AT32F437ZGT7) && !defined(AT32F437ZMT7) && \
+    !defined(AT32F435CPU7) && !defined(AT32F435RPT7) 
 
     #error "Please select first the target device used in your application (in at32f435_437.h file)"
 #endif
@@ -68,7 +69,8 @@ extern "C" {
     defined(AT32F435CCT7) || defined(AT32F435CGT7) || defined(AT32F435CMT7) || \
     defined(AT32F435RCT7) || defined(AT32F435RGT7) || defined(AT32F435RMT7) || \
     defined(AT32F435VCT7) || defined(AT32F435VGT7) || defined(AT32F435VMT7) || \
-    defined(AT32F435ZCT7) || defined(AT32F435ZGT7) || defined(AT32F435ZMT7)
+    defined(AT32F435ZCT7) || defined(AT32F435ZGT7) || defined(AT32F435ZMT7) || \
+    defined(AT32F435CPU7) || defined(AT32F435RPT7)
 
     #define AT32F435xx
 #endif
