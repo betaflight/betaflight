@@ -8994,6 +8994,9 @@ const clicmd_t cmdTable[] = {
 #if ENABLE_FLIGHT_PLAN
     CLI_COMMAND_DEF("waypoint", "configure waypoints", "list | status | insert <idx> <lat.ddddddd> <lon.ddddddd> <alt> <spd> <type> <dur> <pat> [<vrate> <yaw>] | update <idx> <lat.ddddddd> <lon.ddddddd> <alt> <spd> <type> <dur> <pat> [<vrate> <yaw>] | remove <idx> | clear", cliWaypoint),
 #endif
+#if ENABLE_PSAS
+    CLI_COMMAND_DEF("psas"),
+#endif
 };
 
 // Prints CLI commands that match the optional search string in cmdline.
