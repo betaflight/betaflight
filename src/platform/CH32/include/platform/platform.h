@@ -175,7 +175,6 @@ __attribute__((always_inline)) static inline void ch32IrqRestore(uint32_t *state
 #define USE_PLATFORM_UART_IDLE_CALLBACK
 #endif
 #define ADC_VOLTAGE_REFERENCE_MV            3300
-#define PLATFORM_VCP_TX_STALL_TIMEOUT_MS    500
 #ifndef USE_PERSISTENT_MSC_RTC
 #define USE_PERSISTENT_MSC_RTC
 #endif

@@ -52,6 +52,8 @@
 #define APP_TX_DATA_SIZE  8192
 #define APP_TX_BLOCK_SIZE 512
 
+STATIC_ASSERT((APP_TX_DATA_SIZE & (APP_TX_DATA_SIZE - 1)) == 0, app_tx_data_size_not_power_of_2);
+
 static vcpPort_t vcpPort = { 0 };
 
 volatile uint8_t UserTxBuffer[APP_TX_DATA_SIZE];
@@ -299,12 +301,21 @@ static void usbVcpSetBaudRateCb(serialPort_t *instance, void (*cb)(serialPort_t 
 static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
 {
     UNUSED(instance);
-    bool empty;
-    ATOMIC_BLOCK(NVIC_PRIO_USB) {
-        empty = !usbIsConfigured() || !usbHostPortOpen || usbTxStalled ||
-            (!vcpPort.txAt && UserTxBufPtrOut == UserTxBufPtrIn && !lastBuffsize && !usbZlpPending && !ep_tx_busy_flag);
+    static usbVcpTxDrain_t txDrain;
+
+    if (!usbIsConfigured() || !usbHostPortOpen || usbTxStalled) {
+        // Nothing will drain the ring; don't make callers wait on it.
+        return true;
     }
-    return empty;
+
+    uint32_t pending;
+    ATOMIC_BLOCK(NVIC_PRIO_USB) {
+        // The ring still holds the in-flight block (lastBuffsize) until it completes, so don't add it again.
+        const uint32_t ringUsed = (UserTxBufPtrIn - UserTxBufPtrOut) & (APP_TX_DATA_SIZE - 1);
+        // A pending ZLP or busy IN endpoint counts as one so we wait for the transfer to finish.
+        pending = vcpPort.txAt + ringUsed + ((usbZlpPending || ep_tx_busy_flag) ? 1 : 0);
+    }
+    return usbVcpTxDrained(&txDrain, pending, USB_TIMEOUT);
 }
 
 static uint32_t usbVcpAvailable(const serialPort_t *instance)
