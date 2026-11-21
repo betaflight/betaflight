@@ -29,6 +29,7 @@
 #define USE_I2C_DEVICE_2
 
 #define USE_VCP
+#define USE_USB_DETECT
 
 #define USE_UART1
 #define USE_UART2
@@ -36,6 +37,7 @@
 #define USE_UART4
 #define USE_UART5
 #define USE_UART7
+#define USE_LPUART1
 
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
@@ -75,6 +77,7 @@
 
 #define USE_ADC
 #define USE_EXTI
+#define USE_ESCSERIAL
 
 #undef USE_TRANSPONDER
 

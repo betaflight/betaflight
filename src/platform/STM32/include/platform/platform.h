@@ -197,6 +197,7 @@
 
 #include "stm32c5xx_ll_spi.h"
 #include "stm32c5xx_ll_usart.h"
+#include "stm32c5xx_ll_lpuart.h"
 #include "stm32c5xx_ll_gpio.h"
 #include "stm32c5xx_ll_dma.h"
 #include "stm32c5xx_ll_rcc.h"
@@ -386,7 +387,9 @@
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
 #define USE_LATE_TASK_STATISTICS
+#define USE_USB_CDC_HID
 #define USE_USB_MSC
+#define USE_PERSISTENT_MSC_RTC
 // Not every C5 carries FDCAN: C591 has none, while C562 has a single FDCAN1
 // and C593 and C5A3 have FDCAN1 + FDCAN2. Enable CAN only on the variants that
 // have it.

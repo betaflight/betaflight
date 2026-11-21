@@ -78,6 +78,12 @@
 #ifndef UART7_RX_DMA_STREAM
 #define UART7_RX_DMA_STREAM NULL
 #endif
+#ifndef LPUART1_TX_DMA_STREAM
+#define LPUART1_TX_DMA_STREAM NULL
+#endif
+#ifndef LPUART1_RX_DMA_STREAM
+#define LPUART1_RX_DMA_STREAM NULL
+#endif
 
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1
@@ -286,6 +292,42 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxBuffer = uart7RxBuffer,
         .txBufferSize = sizeof(uart7TxBuffer),
         .rxBufferSize = sizeof(uart7RxBuffer),
+    },
+#endif
+
+#ifdef USE_LPUART1
+    {
+        .identifier = SERIAL_PORT_LPUART1,
+        .reg = (usartResource_t *)LPUART1,
+#ifdef USE_DMA
+        .rxDMAChannel = HAL_LPDMA1_REQUEST_LPUART1_RX,
+        .rxDMAResource = (dmaResource_t *)LPUART1_RX_DMA_STREAM,
+        .txDMAChannel = HAL_LPDMA1_REQUEST_LPUART1_TX,
+        .txDMAResource = (dmaResource_t *)LPUART1_TX_DMA_STREAM,
+#endif
+        // DS STM32C59xxx alternate function table. Note that PA2 is RX and
+        // PA3 is TX on C5, the reverse of USART2 on the same pins.
+        .rxPins = {
+            { DEFIO_TAG_E(PA2),  HAL_GPIO_AF3_LPUART1 },
+            { DEFIO_TAG_E(PA10), HAL_GPIO_AF3_LPUART1 },
+            { DEFIO_TAG_E(PB7),  HAL_GPIO_AF8_LPUART1 },
+            { DEFIO_TAG_E(PB13), HAL_GPIO_AF8_LPUART1 },
+        },
+        .txPins = {
+            { DEFIO_TAG_E(PA3),  HAL_GPIO_AF3_LPUART1 },
+            { DEFIO_TAG_E(PA9),  HAL_GPIO_AF3_LPUART1 },
+            { DEFIO_TAG_E(PC3),  HAL_GPIO_AF3_LPUART1 },
+            { DEFIO_TAG_E(PB3),  HAL_GPIO_AF8_LPUART1 },
+            { DEFIO_TAG_E(PB6),  HAL_GPIO_AF8_LPUART1 },
+        },
+        .rcc = RCC_APB3(LPUART1),
+        .irqn = LPUART1_IRQn,
+        .txPriority = NVIC_PRIO_SERIALLPUART1_TXDMA,
+        .rxPriority = NVIC_PRIO_SERIALLPUART1,
+        .txBuffer = uartLp1TxBuffer,
+        .rxBuffer = uartLp1RxBuffer,
+        .txBufferSize = sizeof(uartLp1TxBuffer),
+        .rxBufferSize = sizeof(uartLp1RxBuffer),
     },
 #endif
 
