@@ -34,6 +34,7 @@
 #include "platform.h"
 
 #ifdef USE_DYN_NOTCH_FILTER
+#include "build/build_config.h"
 #include "build/debug.h"
 
 #include "common/axis.h"
@@ -135,7 +136,7 @@ static FAST_DATA_ZERO_INIT dynNotch_t dynNotch;
 
 // accumulator for oversampled data => less aliasing and noise
 static FAST_DATA_ZERO_INIT int   sampleIndex;
-static FAST_DATA_ZERO_INIT int   sampleCount;
+STATIC_UNIT_TESTED FAST_DATA_ZERO_INIT int sampleCount;
 static FAST_DATA_ZERO_INIT float sampleCountRcp;
 static FAST_DATA_ZERO_INIT float sampleAccumulator[XYZ_AXIS_COUNT];
 
@@ -175,8 +176,10 @@ void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t looptimeUs)
 
     const float dt = looptimeUs * 1e-6f;
 
-    // dynNotchUpdate() is running at looprateHz (which is the PID looprate aka. 1e6f / gyro.targetLooptime)
-    const float looprateHz = 1.0f / dt;
+    // dynNotchUpdate() is running at looprateHz (which is the PID looprate aka. 1e6f / gyro.targetLooptime).
+    // Divide the integer looptime directly: 1.0f / dt rounds twice and lands just below
+    // the exact rate (e.g. 7999.9995Hz at 125us), which truncates sampleCount below.
+    const float looprateHz = 1e6f / looptimeUs;
     const float nyquistHz = looprateHz / 2.0f;
 
     // If dynamic notch is available, initialise so it can be activated at any time

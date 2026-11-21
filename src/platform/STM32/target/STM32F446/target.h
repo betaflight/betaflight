@@ -70,3 +70,9 @@
 #define USE_EXTI
 
 #define FLASH_PAGE_SIZE                 ((uint32_t)0x4000) // 16K sectors
+
+// Boards with an on-board SPI receiver exist for this MCU, so generic
+// (non-config) builds include the SPI RX drivers. Disable with ENABLE_RX_SPI=0.
+#if !defined(ENABLE_RX_SPI)
+#define ENABLE_RX_SPI 1
+#endif

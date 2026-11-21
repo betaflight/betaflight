@@ -240,7 +240,8 @@ void sx127xSetFrequencyHZ(const uint32_t freq)
 {
     sx127xSetMode(SX127x_OPMODE_STANDBY);
 
-    int32_t FRQ = ((uint32_t)(freq / SX127x_FREQ_STEP));
+    // FREQ_STEP is exactly 32 MHz / 2^19; use integer maths to avoid pulling in soft double routines
+    int32_t FRQ = (uint32_t)(((uint64_t)freq << 19) / 32000000U);
 
     uint8_t FRQ_MSB = (uint8_t)((FRQ >> 16) & 0xFF);
     uint8_t FRQ_MID = (uint8_t)((FRQ >> 8) & 0xFF);
@@ -357,7 +358,7 @@ uint32_t sx127xGetCurrBandwidthNormalisedShifted(const sx127xBandwidth_e bw)
 
 void sx127xSetPPMoffsetReg(const int32_t offset, const uint32_t freq)
 {
-    int8_t offsetPPM = (offset * 1e6 / freq) * 95 / 100;
+    int8_t offsetPPM = ((int64_t)offset * 950000) / (int64_t)freq; // 95% of the offset in ppm
     sx127xWriteRegister(SX127x_PPMOFFSET, (uint8_t) offsetPPM);
 }
 
