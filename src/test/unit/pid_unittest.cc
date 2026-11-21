@@ -890,6 +890,43 @@ TEST(pidControllerTest, testFeedforwardInterpolateFollowsRxConfig)
     EXPECT_TRUE(pidRuntime.feedforwardInterpolate);
 }
 
+// 1.0f / (looptime * 1e-6f) rounds twice and lands just below the exact rate
+// (7999.9995Hz at 125us), which truncated the 95% nyquist limit by 1Hz.
+TEST(pidControllerTest, testPidFrequencyIsExactForCommonLooptimes)
+{
+    const struct {
+        uint32_t looptimeUs;
+        float frequencyHz;
+        uint16_t nyquistHz; // 95% of nyquist, the limit applied to the D-term filters
+    } cases[] = {
+        { 125, 8000.0f, 3800 },
+        { 250, 4000.0f, 1900 },
+        { 500, 2000.0f, 950 },
+        { 1000, 1000.0f, 475 },
+    };
+
+    for (const auto &c : cases) {
+        resetTest();
+        gyro.targetLooptime = c.looptimeUs;
+        pidProfile->dterm_lpf1_type = FILTER_SVF;
+
+        pidInit(pidProfile);
+        EXPECT_EQ(c.frequencyHz, pidRuntime.pidFrequency) << c.looptimeUs << "us";
+
+        // An SVF lowpass just below the limit must be kept...
+        pidProfile->dterm_lpf1_static_hz = c.nyquistHz - 1;
+        pidInitFilters(pidProfile);
+        EXPECT_EQ((filterApplyFnPtr)svfLowpassFilterApply, pidRuntime.dtermLowpassApplyFn) << c.looptimeUs << "us";
+
+        // ...and one at the limit disabled.
+        pidProfile->dterm_lpf1_static_hz = c.nyquistHz;
+        pidInitFilters(pidProfile);
+        EXPECT_EQ((filterApplyFnPtr)nullFilterApply, pidRuntime.dtermLowpassApplyFn) << c.looptimeUs << "us";
+    }
+
+    resetTest(); // restores the default 8000us looptime and filter settings
+}
+
 TEST(pidControllerTest, testItermRelax)
 {
     resetTest();
