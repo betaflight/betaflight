@@ -228,7 +228,7 @@ uint32_t timerClockFromInstance(const timerResource_t *tim)
 #if defined(STM32F411xE)
     UNUSED(tim);
     return SystemCoreClock;
-#elif defined(STM32F40_41xxx) || defined(STM32F446xx)
+#elif defined(STM32F40_41xxx) || defined(STM32F446xx) || defined(STM32F427_437xx)
     const TIM_TypeDef *tim_ptr = (const TIM_TypeDef *)tim;
     if (tim_ptr == TIM8 || tim_ptr == TIM1 || tim_ptr == TIM9 || tim_ptr == TIM10 || tim_ptr == TIM11) {
         return SystemCoreClock;
