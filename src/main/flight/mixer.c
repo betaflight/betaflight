@@ -66,7 +66,7 @@
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
 #include "psas.h"
 #endif
 
@@ -736,7 +736,7 @@ FAST_CODE_NOINLINE_CRITICAL void mixTable(timeUs_t currentTimeUs)
 #endif // USE_YAW_SPIN_RECOVERY
 
     float scaledAxisPidYaw = 0.0f;
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
     if (FLIGHT_MODE(PSAS_MODE)) {
         scaledAxisPidYaw = psasData.yaw.Sum / 100.0f * 0.5f; // PSAS Yaw output [-100 ... +100], PIDs Yaw output is around 0.5
     } else {

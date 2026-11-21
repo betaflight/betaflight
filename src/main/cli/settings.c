@@ -612,7 +612,7 @@ static const char * const lookupTableTelemetryProtocol[] = {
 };
 #endif
 
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
 static const char * const lookupTablePsasSpeedCurveMode[] = {
     "TPA", "AIRSPEED_TPA", "SPEED_GPS", "AIRSPEED_PITOT"
 };
@@ -781,7 +781,7 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_TELEMETRY
     LOOKUP_TABLE_ENTRY(lookupTableTelemetryProtocol),
 #endif
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
     LOOKUP_TABLE_ENTRY(lookupTablePsasSpeedCurveMode),
 #endif
 };
@@ -1007,7 +1007,7 @@ const clivalue_t valueTable[] = {
 #ifdef USE_PITOT
     { "blackbox_disable_pitot",       VAR_UINT32 | MASTER_VALUE | MODE_BITSET, .config.bitpos = FLIGHT_LOG_FIELD_SELECT_PITOT,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields_disabled_mask) },
 #endif
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
     { "blackbox_disable_psas",       VAR_UINT32 | MASTER_VALUE | MODE_BITSET, .config.bitpos = FLIGHT_LOG_FIELD_SELECT_PSAS,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields_disabled_mask) },
 #endif
     { "blackbox_mode",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BLACKBOX_MODE }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, mode) },
@@ -1543,7 +1543,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_ANGLE_PITCH_OFFSET, VAR_INT16 | PROFILE_VALUE, .config.minmaxUnsigned = { -ANGLE_PITCH_OFFSET_MAX, ANGLE_PITCH_OFFSET_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, angle_pitch_offset) },
 #endif
 
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
 #ifdef USE_PROFILE_NAMES
     { "psas_profile_name", VAR_UINT8 | PROFILE_PSAS_VALUE | MODE_STRING, .config.string = { 1, MAX_PSAS_PROFILE_NAME_LENGTH, STRING_FLAGS_NONE }, PG_PSAS_PROFILE, offsetof(psasProfile_t, profileName) },
 #endif
@@ -1937,7 +1937,7 @@ const clivalue_t valueTable[] = {
 #ifdef USE_PITOT
     { "osd_airspeed",            VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_AIRSPEED]) },
 #endif
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
     { "osd_psas_aoa_lim_pos",    VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_PSAS_AOA_LIMITER]) },
     { "osd_psas_trim_roll_pos",  VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_PSAS_TRIM_ROLL]) },
     { "osd_psas_trim_pitch_pos", VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_PSAS_TRIM_PITCH]) },

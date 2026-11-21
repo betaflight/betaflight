@@ -177,7 +177,7 @@ static void activateConfig(void)
 
     pidInit(currentPidProfile);
 
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
     loadPsasProfile();
     psasInit(currentPsasProfile);
 #endif

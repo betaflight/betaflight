@@ -26,7 +26,7 @@
 
 #include "pg/pg.h"
 
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
 struct psasProfile_s;
 extern struct psasProfile_s *currentPsasProfile;
 

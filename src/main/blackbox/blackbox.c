@@ -311,7 +311,7 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"eRPM",  7, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_8_HAS_RPM)},
 #endif /* USE_DSHOT_TELEMETRY */
 
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
     // Airplane SAS control * 10
     {"PSAS_pitch", 0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PSAS_PITCH_PILOT)},
     {"PSAS_pitch", 1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PSAS_PITCH_DAMPING)},
@@ -326,7 +326,7 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"PSAS_yaw", 1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PSAS_YAW_DAMPING)},
     {"PSAS_yaw", 2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PSAS_YAW_STABILITY)},
     {"PSAS_yaw", 3, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PSAS_YAW_ROLL_CROSS_LINK)},
-#endif /* USE_PSAS */
+#endif /* ENABLE_PSAS */
 };
 
 #ifdef USE_GPS
@@ -383,7 +383,7 @@ typedef enum {
     BLACKBOX_STATE_ERASED
 } blackboxState_e;
 
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
 typedef struct blackboxPsasState_s {
     int32_t pitch_pilot;
     int32_t pitch_damping;
@@ -441,7 +441,7 @@ typedef struct blackboxMainState_s {
     int32_t airspeed;
     int32_t diffPressure;
 #endif
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
     blackboxPsasState_t planeSAS;
 #endif
 } blackboxMainState_t;
@@ -646,7 +646,7 @@ STATIC_UNIT_TESTED bool testBlackboxConditionUncached(flightLogFieldCondition_e 
     case CONDITION(DEBUG_LOG):
         return (debugMode != DEBUG_NONE) && isFieldEnabled(FIELD_SELECT(DEBUG_LOG));
 
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
     // PSAS Pitch control data
     case CONDITION(NONZERO_PSAS_PITCH_PILOT):
         return (currentPsasProfile->psas_stick_gain[FD_PITCH] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
@@ -899,7 +899,7 @@ static void writeIntraframe(void)
     }
 #endif
 
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
     if (isFieldEnabled(FIELD_SELECT(PSAS))) {
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_PILOT))) {
             blackboxWriteSignedVB(blackboxCurrent->planeSAS.pitch_pilot);
@@ -1134,7 +1134,7 @@ static void writeInterframe(void)
     }
 #endif
 
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
     if (isFieldEnabled(FIELD_SELECT(PSAS))) {
         int32_t delta;
         if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_PILOT))) {
@@ -1553,7 +1553,7 @@ static void loadMainState(timeUs_t currentTimeUs)
     }
 #endif
 
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
     blackboxCurrent->planeSAS.pitch_pilot = lrintf(psasData.pitch.pilot * 10.0f);
     blackboxCurrent->planeSAS.pitch_damping = lrintf(psasData.pitch.damping * 10.0f);
     blackboxCurrent->planeSAS.pitch_stability = lrintf(psasData.pitch.stability * 10.0f);
@@ -2164,7 +2164,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANGLE_PITCH_OFFSET, "%d", currentPidProfile->angle_pitch_offset);
 #endif // USE_WING
 
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_STICK_GAIN, "%d", currentPsasProfile->psas_stick_gain[FD_PITCH]);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_DAMPING_GAIN, "%d", currentPsasProfile->psas_damping_gain[FD_PITCH]);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_DAMPING_FILTER_FREQ, "%d", currentPsasProfile->psas_pitch_damping_filter_freq);
@@ -2207,7 +2207,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_TRIM_RATE, "%d", currentPsasProfile->psas_trim_rate);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_TRIM_LIMIT, "%d", currentPsasProfile->psas_trim_limit);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_TRIM_TAU_RESET, "%d", currentPsasProfile->psas_trim_tau_reset);
-#endif // USE_PSAS
+#endif // ENABLE_PSAS
 
         default:
             return true;

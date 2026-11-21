@@ -21,7 +21,7 @@
 
 #include "platform.h"
 
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
 
 #include <math.h>
 #include <string.h>
@@ -143,4 +143,4 @@ void psasTrimmingClearOutputIfOff(void)
     }
 }
 
-#endif // USE_PSAS
+#endif // ENABLE_PSAS

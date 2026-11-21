@@ -1374,7 +1374,7 @@ void processRxModes(timeUs_t currentTimeUs)
         DISABLE_FLIGHT_MODE(PASSTHRU_MODE);
     }
 
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
     if (isFixedWing() && IS_RC_MODE_ACTIVE(BOXPSAS) &&
         !FLIGHT_MODE(PASSTHRU_MODE) &&
         !FLIGHT_MODE(FAILSAFE_MODE) && !FLIGHT_MODE(GPS_RESCUE_MODE) &&

@@ -394,7 +394,7 @@ void initActiveBoxIds(void)
     BME(BOXCHIRP);
 #endif
 
-#if defined(USE_PSAS)
+#if defined(ENABLE_PSAS)
     if (isFixedWing()) {
         BME(BOXPSAS);
         BME(BOXAOALIMITER);
@@ -425,7 +425,7 @@ bool getBoxIdState(boxId_e boxid)
     } else if (boxid == BOXLAUNCH) {
         return FLIGHT_MODE(LAUNCH_MODE);
 #endif
-#if defined(USE_WING) && defined(USE_PSAS)
+#if defined(USE_WING) && defined(ENABLE_PSAS)
     } else if (boxid == BOXPSAS) {
         return FLIGHT_MODE(PSAS_MODE);
 #endif

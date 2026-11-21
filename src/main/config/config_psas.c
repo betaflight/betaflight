@@ -28,7 +28,7 @@
 
 #include "flight/psas.h"
 
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
 psasProfile_t *currentPsasProfile;
 
 uint8_t getCurrentPsasProfileIndex(void)

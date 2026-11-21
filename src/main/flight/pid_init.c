@@ -46,7 +46,7 @@
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
-#ifdef USE_PSAS
+#ifdef ENABLE_PSAS
 #include "psas.h"
 #endif
 
