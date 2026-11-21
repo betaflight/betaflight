@@ -104,6 +104,11 @@ void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_
     dest->x = (float)(to->lon - from->lon);
     dest->y = (float)(to->lat - from->lat);
 }
+
+void rebaseAltitudeFilterState(float deltaCm)
+{
+    UNUSED(deltaCm);
+}
 }
 
 static void stepEstimator(unsigned count = 1)

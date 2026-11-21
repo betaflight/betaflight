@@ -50,6 +50,7 @@ extern "C" {
     #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
+    #include "flight/position.h"
 
     #include "io/beeper.h"
     #include "io/gps.h"
@@ -502,8 +503,15 @@ extern "C" {
     int32_t getMAhDrawn() { return 0; }
     float getWhDrawn() { return 0.0; }
     int32_t getEstimatedAltitudeCm() { return 0; }
-    int32_t getAltitudeAsl() { return 0; }
-    int32_t getEstimatedVario() { return 0; }
+
+    aslAltitudeState_e aslSimulationState = ALTITUDE_ASL_NORMAL;
+    int32_t aslSimulationAltitude = 0;
+    aslAltitudeState_e getAltitudeAsl(int32_t *aslAlt) {
+        *aslAlt = aslSimulationAltitude;
+        return aslSimulationState;
+    }
+
+    int16_t getEstimatedVario() { return 0; }
     int32_t blackboxGetLogNumber() { return 0; }
     bool isBlackboxDeviceWorking() { return true; }
     bool isBlackboxDeviceFull() { return false; }

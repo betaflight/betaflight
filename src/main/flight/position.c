@@ -211,11 +211,34 @@ int32_t getEstimatedAltitudeCm(void)
 }
 
 #ifdef USE_GPS
-float getAltitudeAsl(void)
+aslAltitudeState_e getAltitudeAsl(int32_t *pAltitudeAsl)
 {
-    return gpsSol.llh.altCm;
+    float gpsAltOffsetCm;
+    if (STATE(GPS_FIX)) {
+        *pAltitudeAsl = gpsSol.llh.altCm;
+        return ALTITUDE_ASL_NORMAL;
+    } else if (isAltitudeAvailable()) {
+        *pAltitudeAsl = getEstimatedAltitudeCm();
+        if (positionEstimatorGetGpsAltOffsetCm(&gpsAltOffsetCm)) {
+            *pAltitudeAsl += lrintf(gpsAltOffsetCm);
+            return ALTITUDE_ASL_ESTIMATED;
+        } else {
+            return ALTITUDE_ASL_RELATIVE;
+        }
+    }
+
+    *pAltitudeAsl = 0;
+    return ALTITUDE_ASL_FAULT;
 }
+
 #endif
+
+void rebaseAltitudeFilterState(float deltaCm)
+{
+    // Move both filter stages with the estimator's Z frame, so the displayed altitude doesn't jump
+    altitudeLpf.state += deltaCm;
+    altitudeLpf.state1 += deltaCm;
+}
 
 #ifdef USE_VARIO
 int16_t getEstimatedVario(void)

@@ -43,10 +43,11 @@
 bool renderAltitudeComplete = true;
 
 typedef struct {
-    char altString[6]; // -9999 to 99999 should be enough (ft or m)
+    char altString[7]; // -9999 to 99999 should be enough (ft or m)
     int16_t x;
     int16_t y;
     int32_t val;
+    bool isValid; // false when there is no altitude to show; the ladder isn't drawn
     // int32_t max; // for trying out different ladder appearance above alt_max
     bool isBlink;
     char unitSymbol;
@@ -59,18 +60,23 @@ void cacheAltitudeInfo(uint8_t x, uint8_t y, uint8_t elemType, bool isBlink)
 {
     bool haveBaro = false;
     bool haveGps = false;
+    bool haveRangefinder = false;
 #ifdef USE_BARO
     haveBaro = sensors(SENSOR_BARO);
 #endif // USE_BARO
 #ifdef USE_GPS
     haveGps = sensors(SENSOR_GPS) && STATE(GPS_FIX);
 #endif // USE_GPS
+#ifdef USE_RANGEFINDER
+    haveRangefinder = sensors(USE_RANGEFINDER);
+#endif // USE_RANGEFINDER
     int32_t altCm = getEstimatedAltitudeCm();
 
 #ifdef USE_GPS
+    aslAltitudeState_e  aslState = ALTITUDE_ASL_NORMAL;
     if (elemType >= 2) {
         // Types 2, 3 => ASL
-        altCm = getAltitudeAsl();
+        aslState = getAltitudeAsl(&altCm);
     }
 #else
     UNUSED(elemType);
@@ -87,9 +93,27 @@ void cacheAltitudeInfo(uint8_t x, uint8_t y, uint8_t elemType, bool isBlink)
     int32_t altDisplay = constrain(altInUnits, -9999, 99999); // max 5 digits
 
     infoAltitude.unitSymbol = '-'; // NB '-' == SYM_HYPHEN
-    if (haveBaro || haveGps) {
+    infoAltitude.isValid = false;
+    if (haveBaro || haveGps || haveRangefinder) {
         infoAltitude.unitSymbol = osdGetMetersToSelectedUnitSymbol();
-        tfp_sprintf(infoAltitude.altString, "%3d", altDisplay);
+        infoAltitude.isValid = true;
+        int pos = tfp_sprintf(infoAltitude.altString, "%3d", altDisplay);
+#ifdef USE_GPS
+        if (aslState == ALTITUDE_ASL_ESTIMATED) {
+            infoAltitude.altString[pos++] = 'E';
+            infoAltitude.altString[pos] = '\0';
+        } else if (aslState == ALTITUDE_ASL_RELATIVE) {
+            infoAltitude.altString[pos++] = 'R';
+            infoAltitude.altString[pos] = '\0';
+        } else if (aslState == ALTITUDE_ASL_FAULT) {
+            // No altitude available: same display as having no altitude sensor
+            infoAltitude.unitSymbol = '-'; // NB '-' == SYM_HYPHEN
+            infoAltitude.isValid = false;
+            tfp_sprintf(infoAltitude.altString, "ALT--");
+        }
+#else
+        UNUSED(pos);
+#endif
     } else {
         tfp_sprintf(infoAltitude.altString, "ALT--");
     }
@@ -186,6 +210,11 @@ bool renderAltitudeUntil(uint32_t limit_micros)
                 plot(strX - 3, infoAltitude.y    , 2);
                 plot(strX - 3, infoAltitude.y + 1, 2);
                 plot(strX - 4, infoAltitude.y    , 2);
+                if (!infoAltitude.isValid) {
+                    // No altitude to show, so skip the ladder
+                    state = 8;
+                    break;
+                }
                 // Calculate the index of char at / below the pointer (for val>0) / above the pointer (for val<0), and the corresponding position offset.
                 charNum = infoAltitude.val / ALTITUDE_DELTA;
                 charOffset = ((infoAltitude.val * ALTITUDE_CHAR_SPACING) / ALTITUDE_DELTA) % ALTITUDE_CHAR_SPACING;
