@@ -642,7 +642,7 @@ static void validateAndFixConfig(void)
     targetValidateConfiguration();
 #endif
 
-#ifdef USE_PSAS
+#if ENABLE_PSAS
     if (systemConfig()->psasProfileIndex >= PSAS_PROFILE_COUNT) {
         systemConfigMutable()->psasProfileIndex = 0;
     }
