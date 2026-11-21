@@ -2016,7 +2016,7 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
             temp_time.hours = (data->time / 1000000) % 100;
             temp_time.minutes = (data->time / 10000) % 100;
             temp_time.seconds = (data->time / 100) % 100;
-            temp_time.millis = (data->time & 100) * 10;
+            temp_time.millis = (data->time % 100) * 10; // hhmmss.ss: the last two digits are hundredths
             rtcSetDateTime(&temp_time);
         }
 #endif
