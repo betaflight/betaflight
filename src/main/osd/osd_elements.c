@@ -1190,7 +1190,7 @@ static void osdElementFlymode(osdElementParms_t *element)
         strcpy(element->buff, "HEAD");
     } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
         strcpy(element->buff, "PASS");
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     } else if (FLIGHT_MODE(PSAS_MODE)) {
         strcpy(element->buff, "PSAS");
 #endif
@@ -2102,7 +2102,7 @@ static void osdElementSys(osdElementParms_t *element)
 }
 #endif
 
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
 static void osdElementPsasAoaLimiter(osdElementParms_t *element)
 {
     switch (psasData.pitch.aoaLimiterState) {
@@ -2477,7 +2477,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_PITOT
     [OSD_AIRSPEED]                = osdElementAirspeed,
 #endif
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     [OSD_PSAS_AOA_LIMITER]        = osdElementPsasAoaLimiter,
     [OSD_PSAS_TRIM_ROLL]          = osdElementPsasTrimRoll,
     [OSD_PSAS_TRIM_PITCH]         = osdElementPsasTrimPitch,
@@ -2575,7 +2575,7 @@ void osdAddActiveElements(void)
     osdAddActiveElement(OSD_AIRSPEED);
 #endif
 
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     osdAddActiveElement(OSD_PSAS_AOA_LIMITER);
     osdAddActiveElement(OSD_PSAS_TRIM_ROLL);
     osdAddActiveElement(OSD_PSAS_TRIM_PITCH);

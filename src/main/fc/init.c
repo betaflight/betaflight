@@ -749,7 +749,7 @@ void initPhase3(void)
     gyroInitFilters();
 
     pidInit(currentPidProfile);
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     psasInit(currentPsasProfile);
 #endif
 

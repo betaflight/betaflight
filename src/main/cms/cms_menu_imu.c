@@ -79,7 +79,7 @@ static uint8_t rateProfileIndex;
 static char rateProfileIndexString[MAX_RATE_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
 static controlRateConfig_t rateProfile;
 
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
 static uint8_t tmpPsasProfileIndex;
 static uint8_t psasProfileIndex;
 static char psasProfileIndexString[MAX_PSAS_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
@@ -115,7 +115,7 @@ static const char *pidProfileNamePtrs[PID_PROFILE_COUNT];
 static char rateProfileNames[CONTROL_RATE_PROFILE_COUNT][MAX_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
 static const char *rateProfileNamePtrs[CONTROL_RATE_PROFILE_COUNT];
 
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
 static char psasProfileNames[PSAS_PROFILE_COUNT][MAX_PSAS_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
 static const char *psasProfileNamePtrs[PSAS_PROFILE_COUNT];
 #endif
@@ -140,7 +140,7 @@ static const void *cmsx_menuImu_onEnter(displayPort_t *pDisp)
     rateProfileIndex = getCurrentControlRateProfileIndex();
     tmpRateProfileIndex = rateProfileIndex;
 
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     for (int i = 0; i < PSAS_PROFILE_COUNT; i++) {
         setProfileIndexString(psasProfileNames[i], i, psasProfiles(i)->profileName);
         psasProfileNamePtrs[i] = psasProfileNames[i];
@@ -160,7 +160,7 @@ static const void *cmsx_menuImu_onExit(displayPort_t *pDisp, const OSD_Entry *se
 
     changePidProfile(pidProfileIndex);
     changeControlRateProfile(rateProfileIndex);
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     changePsasProfile(psasProfileIndex);
 #endif
 
@@ -995,7 +995,7 @@ static CMS_Menu cmsx_menuFilterPerProfile = {
     .entries = cmsx_menuFilterPerProfileEntries,
 };
 
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
 static uint8_t temp_psas_stick_gain[XYZ_AXIS_COUNT];
 static uint16_t temp_psas_damping_gain[XYZ_AXIS_COUNT];
 static uint16_t temp_psas_pitch_stability_gain;
@@ -1313,7 +1313,7 @@ static const OSD_Entry cmsx_menuImuEntries[] =
 
     {"PID PROF",  OME_TAB,     cmsx_profileIndexOnChange,     &(OSD_TAB_t){&tmpPidProfileIndex, PID_PROFILE_COUNT-1, pidProfileNamePtrs}},
     {"PID",       OME_Submenu, cmsMenuChange,                 &cmsx_menuPid},
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     {"PSAS PROF", OME_TAB,     cmsx_psasProfileIndexOnChange, &(OSD_TAB_t){&tmpPsasProfileIndex, PSAS_PROFILE_COUNT-1, psasProfileNamePtrs}},
     {"PSAS",      OME_Submenu, cmsMenuChange,                 &cmsx_menuPSAS},
 #endif

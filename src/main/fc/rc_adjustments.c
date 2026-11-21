@@ -675,7 +675,7 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
 #endif
         break;
     case ADJUSTMENT_PSAS_TRIMMING:
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
         if (getPsasTrimmingState() != position) {
             setPsasTrimmingState(position);
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_PSAS_TRIMMING, position);

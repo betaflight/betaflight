@@ -367,7 +367,7 @@
 #define PARAM_NAME_IMU_MAG_DECLINATION "mag_declination"
 #endif
 
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
 #define PARAM_NAME_PSAS_PITCH_STICK_GAIN "psas_pitch_stick_gain"
 #define PARAM_NAME_PSAS_PITCH_DAMPING_GAIN "psas_pitch_damping_gain"
 #define PARAM_NAME_PSAS_PITCH_DAMPING_FILTER_FREQ "psas_pitch_damping_filter_freq"

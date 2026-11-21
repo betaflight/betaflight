@@ -24,7 +24,7 @@
 #include <math.h>
 #include <string.h>
 
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
 
 #include "common/maths.h"
 

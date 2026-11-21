@@ -56,7 +56,7 @@
 
 #include "rx/rx.h"
 
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
 #include "flight/psas.h"
 #endif
 
@@ -459,7 +459,7 @@ void servoMixer(void)
         input[INPUT_STABILIZED_PITCH] = lrintf(rcCommand[PITCH] * SERVO_MIXER_INPUT_RANGE);
         input[INPUT_STABILIZED_YAW] = lrintf(rcCommand[YAW] * SERVO_MIXER_INPUT_RANGE);
     }
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     else if (FLIGHT_MODE(PSAS_MODE)) {
         input[INPUT_STABILIZED_ROLL] = lrintf(psasData.roll.Sum * (SERVO_MIXER_INPUT_RANGE / PSAS_OUTPUT_RANGE));
         input[INPUT_STABILIZED_PITCH] = lrintf(psasData.pitch.Sum * (SERVO_MIXER_INPUT_RANGE / PSAS_OUTPUT_RANGE));

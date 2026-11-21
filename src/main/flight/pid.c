@@ -66,7 +66,7 @@
 
 #include "pid.h"
 
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
 #include "psas.h"
 #endif
 typedef enum {
@@ -1360,7 +1360,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #endif // USE_CHIRP
 
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     const uint8_t psasState = psasHandleMode();
     switch (psasState) {
     case PSAS_OFF:

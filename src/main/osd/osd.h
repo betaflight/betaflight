@@ -243,7 +243,7 @@ typedef enum {
     OSD_AIRSPEED,
 #endif
 
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     OSD_PSAS_AOA_LIMITER,
     OSD_PSAS_TRIM_ROLL,
     OSD_PSAS_TRIM_PITCH,

@@ -1249,7 +1249,7 @@ RAM_CODE static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMS
         sbufWriteU8(dst, getCurrentBatteryProfileIndex());
 
         // PSAS
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
         sbufWriteU8(dst, PSAS_PROFILE_COUNT);
         sbufWriteU8(dst, getCurrentPsasProfileIndex());
 #endif
@@ -1454,7 +1454,7 @@ case MSP_NAME:
         sbufWriteU16(dst, *(uint16_t*)&z);
         break;
     }
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     case MSP_PSAS_CONFIG:
         sbufWriteU8(dst, currentPsasProfile->psas_stick_gain[0]);
         sbufWriteU8(dst, currentPsasProfile->psas_stick_gain[1]);
@@ -2856,7 +2856,7 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
                 case MSP2TEXT_BATTERY_PROFILE_NAME:
                     textVar = currentBatteryProfile->profileName;
                     break;
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
                 case MSP2TEXT_PSAS_PROFILE_NAME:
                     textVar = currentPsasProfile->profileName;
                     break;
@@ -3135,7 +3135,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             }
             changeControlRateProfile(value);
         }
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
         else if (value & PSASPROFILE_MASK) {
             value = value & ~PSASPROFILE_MASK;
 
@@ -3167,7 +3167,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         else if (value == 1) {
             copyControlRateProfile(dstProfileIndex, srcProfileIndex);
         }
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
         else if (value == 2) {
             if (ARMING_FLAG(ARMED)) {
                 return MSP_RESULT_ERROR;
@@ -4679,7 +4679,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
                     textVar = batteryProfilesMutable(systemConfig()->activeBatteryProfile)->profileName;
                     textSpace = MAX_BATTERY_PROFILE_NAME_LENGTH;
                     break;
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
                 case MSP2TEXT_PSAS_PROFILE_NAME:
                     textVar = currentPsasProfile->profileName;
                     textSpace = sizeof(currentPsasProfile->profileName) - 1;
@@ -4759,7 +4759,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
     }
 
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     case MSP_SET_PSAS_CONFIG: {
         if (ARMING_FLAG(ARMED)) {
             return MSP_RESULT_ERROR;

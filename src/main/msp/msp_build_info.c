@@ -201,7 +201,7 @@ static const uint16_t buildOptions[] = {
 #ifdef USE_PWM_OUTPUT
         BUILD_OPTION_PWM_OUTPUT,
 #endif
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
         BUILD_OPTION_PSAS,
 #endif
 };

@@ -21,7 +21,7 @@
 
 #include "platform.h"
 
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
 
 #include <math.h>
 #include <string.h>

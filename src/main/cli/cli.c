@@ -207,7 +207,7 @@ static bool configIsInCopy = false;
 static int8_t pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
 static int8_t rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
 static int8_t batteryProfileIndexToUse = CURRENT_PROFILE_INDEX;
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
 static int8_t psasProfileIndexToUse = CURRENT_PROFILE_INDEX;
 #endif
 
@@ -919,7 +919,7 @@ static uint8_t getBatteryProfileIndexToUse(void)
     return batteryProfileIndexToUse == CURRENT_PROFILE_INDEX ? getCurrentBatteryProfileIndex() : batteryProfileIndexToUse;
 }
 
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
 static uint8_t getPsasProfileIndexToUse(void)
 {
     return psasProfileIndexToUse == CURRENT_PROFILE_INDEX ? getCurrentPsasProfileIndex() : psasProfileIndexToUse;
@@ -938,7 +938,7 @@ static uint16_t getValueOffset(const clivalue_t *value)
         return value->offset + sizeof(controlRateConfig_t) * getRateProfileIndexToUse();
     case PROFILE_BATTERY_VALUE:
         return value->offset + sizeof(batteryProfile_t) * getBatteryProfileIndexToUse();
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     case PROFILE_PSAS_VALUE:
         return value->offset + sizeof(psasProfile_t) * getPsasProfileIndexToUse();
 #endif
@@ -5045,7 +5045,7 @@ RAM_CODE static void cliRateProfile(const char *cmdName, char *cmdline)
     }
 }
 
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
 RAM_CODE static void cliPsasProfile(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
@@ -5341,7 +5341,7 @@ RAM_CODE STATIC_UNIT_TESTED void cliGet(const char *cmdName, char *cmdline)
     pidProfileIndexToUse = getCurrentPidProfileIndex();
     rateProfileIndexToUse = getCurrentControlRateProfileIndex();
     batteryProfileIndexToUse = getCurrentBatteryProfileIndex();
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     psasProfileIndexToUse = getCurrentPsasProfileIndex();
 #endif
 
@@ -5369,7 +5369,7 @@ RAM_CODE STATIC_UNIT_TESTED void cliGet(const char *cmdName, char *cmdline)
                 cliBatteryProfile(cmdName, "");
 
                 break;
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
             case PROFILE_PSAS_VALUE:
                 cliPsasProfile(cmdName, "");
 
@@ -5391,7 +5391,7 @@ RAM_CODE STATIC_UNIT_TESTED void cliGet(const char *cmdName, char *cmdline)
     pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
     rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
     batteryProfileIndexToUse = CURRENT_PROFILE_INDEX;
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     psasProfileIndexToUse = CURRENT_PROFILE_INDEX;
 #endif
     if (!matchedCommands) {
@@ -5984,13 +5984,13 @@ int cliGetSettingInfoByName(const char *name, int offset, char *buf, int bufLen,
     // get default value by resetting a copy of the PG config (non-destructive)
     pidProfileIndexToUse = getCurrentPidProfileIndex();
     rateProfileIndexToUse = getCurrentControlRateProfileIndex();
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     psasProfileIndexToUse = getCurrentPsasProfileIndex();
 #endif
     const int valueOffset = getValueOffset(val);
     pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
     rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     psasProfileIndexToUse = CURRENT_PROFILE_INDEX;
 #endif
 
@@ -8510,7 +8510,7 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
     } else if ((options = checkCommand(cmdline, "all"))) {
         dumpMask = DUMP_ALL;   // all profiles and rates
     }
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     else if ((options = checkCommand(cmdline, "psas"))) {
         dumpMask = DUMP_PSAS;   // only
     }
@@ -8665,7 +8665,7 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
 
                 pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
 
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
                 for (uint32_t psasProfileIndex = 0; psasProfileIndex < PSAS_PROFILE_COUNT; psasProfileIndex++) {
                     cliDumpPsasProfile(cmdName, psasProfileIndex, dumpMask);
                 }
@@ -8713,7 +8713,7 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
                 batteryProfileIndexToUse = CURRENT_PROFILE_INDEX;
             } else {
                 cliDumpPidProfile(cmdName, systemConfig_Copy.pidProfileIndex, dumpMask);
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
                 cliDumpPsasProfile(cmdName, systemConfig_Copy.psasProfileIndex, dumpMask);
 #endif
                 cliDumpRateProfile(cmdName, systemConfig_Copy.activeRateProfile, dumpMask);
@@ -8726,7 +8726,7 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
     } else if (dumpMask & DUMP_RATES) {
         cliDumpRateProfile(cmdName, systemConfig_Copy.activeRateProfile, dumpMask);
     }
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     else if (dumpMask & DUMP_PSAS) {
         cliDumpPsasProfile(cmdName, systemConfig_Copy.psasProfileIndex, dumpMask);
     }
@@ -8932,7 +8932,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("battery_profile", "change battery profile", "[<index>]", cliBatteryProfile),
     CLI_COMMAND_DEF("profile", "change profile", "[<index>]", cliProfile),
     CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
-#ifdef ENABLE_PSAS
+#if ENABLE_PSAS
     CLI_COMMAND_DEF("psas_profile", "change psas profile", "[<index>]", cliPsasProfile),
 #endif
 #ifdef USE_RC_SMOOTHING_FILTER
