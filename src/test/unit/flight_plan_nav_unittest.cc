@@ -49,6 +49,7 @@ extern "C" {
     uint8_t stateFlags;
     uint16_t GPS_distanceToHome;
     gpsSolutionData_t gpsSol;
+    gpsConfig_t gpsConfig_System;
     gpsLocation_t GPS_home_llh;
     attitudeEulerAngles_t attitude;
 }
@@ -2913,4 +2914,21 @@ TEST_F(FlightPlanNavTest, SetCurrentIndexJumpsActiveMission)
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
     // Jumping re-dispatches the new leg immediately.
     EXPECT_GT(g_setTargetCalls, dispatchesBefore);
+}
+
+TEST_F(FlightPlanNavSafetyTest, MissingGpsVelocityCannotTriggerHeadingFault)
+{
+    gpsConfigMutable()->provider = GPS_NMEA;
+    gpsConfigMutable()->gps_nmea_allystar = true;
+    engageDistantLeg();
+    attitude.values.yaw = 0;
+    gpsSol.groundSpeed = 500;
+    gpsSol.groundCourse = 900;
+    gpsSol.velNEInvalid = true;
+    for (int i = 0; i < 12; i++) {
+        g_stubMicros += 250'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_FALSE(g_forceLevelPark);
 }

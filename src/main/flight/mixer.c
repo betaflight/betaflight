@@ -605,7 +605,7 @@ static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnable
     throttle = constrainf(throttle, -minMotor, 1.0f - maxMotor);
 }
 
-static float calcEzLandLimit(float maxDeflection, float speed)
+STATIC_UNIT_TESTED float calcEzLandLimit(float maxDeflection, float speed)
 {
     // calculate limit to where the mixer can raise the throttle based on RPY stick deflection
     // 0.0 = no increas allowed, 1.0 = 100% increase allowed
@@ -614,7 +614,14 @@ static float calcEzLandLimit(float maxDeflection, float speed)
 
     // calculate limit to where the mixer can raise the throttle based on speed
     // TODO sanity checks like number of sats, dop, accuracy?
-    const float speedLimit = mixerRuntime.ezLandingSpeed > 0.0f ? fminf(1.0f, speed / mixerRuntime.ezLandingSpeed) : 0.0f;
+    float speedLimit = mixerRuntime.ezLandingSpeed > 0.0f ? fminf(1.0f, speed / mixerRuntime.ezLandingSpeed) : 0.0f;
+#ifdef USE_GPS
+    if (STATE(GPS_FIX) && mixerRuntime.ezLandingSpeed > 0.0f &&
+        (!gpsThreeDimensionalSpeedUsable() || !gpsHorizontalVelocityUsable())) {
+        // Unknown speed cannot justify restricting motor authority.
+        speedLimit = 1.0f;
+    }
+#endif
     DEBUG_SET(DEBUG_EZLANDING, 5, lrintf(speedLimit * 10000.0f));  //!< Speed Limit [unit:0.0001]
 
     // get the highest of the limits from deflection, speed, and the base ez_landing_limit

@@ -288,6 +288,7 @@ cli_unittest_SRC := \
 		$(USER_DIR)/common/gps_conversion.c \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/io/gps.c \
+		$(USER_DIR)/io/gps_allystar.c \
 		$(USER_DIR)/io/serial_resource.c \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/fc/runtime_config.c \
@@ -407,6 +408,16 @@ flight_mixer_wing_unittest_DEFINES := \
 
 gps_conversion_unittest_SRC := \
 		$(USER_DIR)/common/gps_conversion.c
+
+gps_allystar_unittest_SRC := \
+		$(USER_DIR)/io/gps_allystar.c
+
+gps_allystar_disabled_unittest_SRC := \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c
+
+gps_allystar_disabled_unittest_DEFINES := \
+		ENABLE_GPS_ALLYSTAR=0
 
 
 dronecan_gnss_unittest_SRC := \
@@ -542,6 +553,7 @@ link_quality_unittest_DEFINES := \
 pg_unittest_SRC := \
 		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/pg/gps.c \
 		$(USER_DIR)/pg/pg.c
 
 

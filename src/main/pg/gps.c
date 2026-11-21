@@ -50,6 +50,9 @@ PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .sbas_integrity = false,
     .gps_ublox_utc_standard = UBLOX_UTC_STANDARD_AUTO,
     .gps_ublox_enable_ana = false,
+#if ENABLE_GPS_ALLYSTAR
+    .gps_nmea_allystar = false,
+#endif // ENABLE_GPS_ALLYSTAR
     .nmeaCustomCommands = "",
 #ifdef GPS_UART
     .gps_uart = GPS_UART,

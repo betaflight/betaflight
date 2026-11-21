@@ -56,6 +56,9 @@
 #define USE_MAG
 #define USE_BARO
 #define USE_GPS
+#ifndef ENABLE_GPS_ALLYSTAR
+#define ENABLE_GPS_ALLYSTAR 1
+#endif
 #define USE_DASHBOARD
 #define USE_TELEMETRY
 #define USE_LED_STRIP

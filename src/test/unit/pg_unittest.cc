@@ -27,6 +27,7 @@ extern "C" {
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
     #include "pg/motor.h"
+    #include "pg/gps.h"
 
     #include "flight/mixer.h"
 
@@ -167,6 +168,39 @@ TEST(ParameterGroupsfTest, Test_pgLoadStructStillLoadsShorterRecord)
     EXPECT_TRUE(pgLoad(pgRegistry, &stored, shorter, pgVersion(pgRegistry)));
     EXPECT_EQ(500, motorConfig()->dev.motorPwmRate);
     EXPECT_EQ(14, motorConfig()->motorPoleCount);
+}
+
+TEST(ParameterGroupsfTest, GpsConfigLoadsVersionFourWithoutLosingSettings)
+{
+    struct legacyGpsConfig_t {
+        uint8_t provider, sbasMode, autoConfig, autoBaud;
+        uint8_t gps_ublox_acquire_model, gps_ublox_flight_model, gps_update_rate_hz;
+        bool gps_ublox_use_galileo, gps_set_home_point_once, gps_use_3d_speed, sbas_integrity;
+        uint8_t gps_ublox_utc_standard;
+        bool gps_ublox_enable_ana;
+        char nmeaCustomCommands[NMEA_CUSTOM_COMMANDS_MAX_LENGTH + 1];
+        int8_t gps_uart;
+        uint8_t gps_baud;
+    };
+
+    legacyGpsConfig_t stored = {};
+    stored.provider = 1;
+    stored.autoConfig = 1;
+    stored.gps_update_rate_hz = 5;
+    strcpy(stored.nmeaCustomCommands, "$TEST");
+    stored.gps_uart = 6;
+    stored.gps_baud = 9;
+
+    const pgRegistry_t *reg = pgFind(PG_GPS_CONFIG);
+    ASSERT_NE(nullptr, reg);
+    ASSERT_TRUE(pgLoad(reg, &stored, sizeof(stored), 4));
+    EXPECT_EQ(1, gpsConfig()->provider);
+    EXPECT_EQ(1, gpsConfig()->autoConfig);
+    EXPECT_EQ(5, gpsConfig()->gps_update_rate_hz);
+    EXPECT_STREQ("$TEST", gpsConfig()->nmeaCustomCommands);
+    EXPECT_EQ(6, gpsConfig()->gps_uart);
+    EXPECT_EQ(9, gpsConfig()->gps_baud);
+    EXPECT_FALSE(gpsConfig()->gps_nmea_allystar);
 }
 
 // STUBS

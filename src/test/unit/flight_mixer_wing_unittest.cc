@@ -48,6 +48,8 @@ extern "C" {
 
     #include "io/gps.h"
 
+    float calcEzLandLimit(float maxDeflection, float speed);
+
     #include "sensors/gyro.h"
 }
 
@@ -70,6 +72,7 @@ extern "C" {
     pidAxisData_t pidData[XYZ_AXIS_COUNT];
     gyro_t gyro;
     gpsSolutionData_t gpsSol;
+    gpsConfig_t gpsConfig_System;
     mixerRuntime_t mixerRuntime;
     float throttleBoost;
     pt1Filter_t throttleLpf;
@@ -163,4 +166,24 @@ TEST_F(MixerWingTest, OnlyArmedDoesTheAutopilotStopTheMotor)
     testMotorStopRequested = true;
     mixTable(0);
     EXPECT_NE(DISARMED_OUTPUT, motor[0]);
+}
+
+TEST_F(MixerWingTest, MissingGpsVelocityDoesNotReduceEzLandingAuthority)
+{
+    gpsConfigMutable()->provider = GPS_NMEA;
+    gpsConfigMutable()->gps_nmea_allystar = true;
+    mixerRuntime.ezLandingThreshold = 1.0f;
+    mixerRuntime.ezLandingSpeed = 10.0f;
+    mixerRuntime.ezLandingLimit = 0.2f;
+    stateFlags = GPS_FIX;
+    gpsSol.velNEInvalid = true;
+    EXPECT_FLOAT_EQ(1.0f, calcEzLandLimit(0.0f, 0.0f));
+    gpsSol.velNEInvalid = false;
+    gpsSol.vel3dInvalid = true;
+    EXPECT_FLOAT_EQ(1.0f, calcEzLandLimit(0.0f, 0.0f));
+    mixerRuntime.ezLandingSpeed = 0.0f;
+    EXPECT_FLOAT_EQ(0.2f, calcEzLandLimit(0.0f, 0.0f));
+    mixerRuntime.ezLandingSpeed = 10.0f;
+    gpsSol.vel3dInvalid = false;
+    EXPECT_FLOAT_EQ(0.2f, calcEzLandLimit(0.0f, 0.0f));
 }
