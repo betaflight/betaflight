@@ -60,12 +60,16 @@ void cacheAltitudeInfo(uint8_t x, uint8_t y, uint8_t elemType, bool isBlink)
 {
     bool haveBaro = false;
     bool haveGps = false;
+    bool haveRangefinder = false;
 #ifdef USE_BARO
     haveBaro = sensors(SENSOR_BARO);
 #endif // USE_BARO
 #ifdef USE_GPS
     haveGps = sensors(SENSOR_GPS) && STATE(GPS_FIX);
 #endif // USE_GPS
+#ifdef USE_RANGEFINDER
+    haveRangefinder = sensors(USE_RANGEFINDER);
+#endif // USE_RANGEFINDER
     int32_t altCm = getEstimatedAltitudeCm();
 
 #ifdef USE_GPS
@@ -90,7 +94,7 @@ void cacheAltitudeInfo(uint8_t x, uint8_t y, uint8_t elemType, bool isBlink)
 
     infoAltitude.unitSymbol = '-'; // NB '-' == SYM_HYPHEN
     infoAltitude.isValid = false;
-    if (haveBaro || haveGps) {
+    if (haveBaro || haveGps || haveRangefinder) {
         infoAltitude.unitSymbol = osdGetMetersToSelectedUnitSymbol();
         infoAltitude.isValid = true;
         int pos = tfp_sprintf(infoAltitude.altString, "%3d", altDisplay);
