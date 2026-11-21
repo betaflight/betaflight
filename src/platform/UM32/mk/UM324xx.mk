@@ -267,11 +267,17 @@ EX_FLASH_SRC := ./src/main/cli/cli.c \
                 ./src/main/cms/cms_menu_osd.c \
                 ./src/main/cms/cms_menu_ledstrip.c \
                 ./src/main/cms/cms_menu_persistent_stats.c \
+                ./src/main/cms/cms_menu_quick.c \
+                ./src/main/cms/cms_menu_rpm_limit.c \
                 ./src/main/cms/cms_menu_vtx_common.c \
                 ./src/main/cms/cms_menu_vtx_msp.c \
                 ./src/main/cms/cms_menu_vtx_rtc6705.c \
                 ./src/main/cms/cms_menu_vtx_smartaudio.c \
-                ./src/main/cms/cms_menu_vtx_tramp.c
+                ./src/main/cms/cms_menu_vtx_tramp.c \
+                ./src/main/config/simplified_tuning.c \
+                ./src/main/fc/init.c \
+                ./src/main/fc/board_info.c \
+                ./src/main/msp/msp_build_info.c
 endif
 
 NOT_OPTIMISED_SRC += $(EX_FLASH_SRC)

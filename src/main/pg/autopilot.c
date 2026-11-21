@@ -48,7 +48,7 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, AUTOPILOT_CONFIG_VERSION_BUILD);
 
 PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
-    .landingAltitudeM = 4,
+    .landingAltitudeM = 7,
     .hoverThrottle = 1275,
     .throttleMin = 1100,
     .throttleMax = 1900,
