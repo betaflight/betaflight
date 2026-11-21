@@ -90,7 +90,7 @@ docker build -t betaflight-dev -f .devcontainer/containerfile .devcontainer/
 # Install the ARM toolchain into tools/ (once)
 docker run --rm -v "${PWD}:/workspace" -w /workspace betaflight-dev make arm_sdk_install
 
-# Fetch the board configs into src/config (once)
+# Fetch the board configs into src/config (once, only if src/config is empty)
 docker run --rm -v "${PWD}:/workspace" -w /workspace betaflight-dev make configs
 
 # Build firmware for a board
