@@ -97,7 +97,7 @@ docker run --rm -v "${PWD}:/workspace" -w /workspace betaflight-dev make configs
 docker run --rm -v "${PWD}:/workspace" -w /workspace betaflight-dev make SPEEDYBEEF405WING
 ```
 
-Build a board by passing its name to `make` (for example `make SPEEDYBEEF405WING`). Use `TARGET=<mcu>` only for a bare MCU target (for example `make TARGET=STM32F405` or `make TARGET=SITL`), not for a board name.
+Pass the name of a board (for example `make SPEEDYBEEF405WING`) or of an MCU target (for example `make STM32F405` or `make SITL`) to `make`.
 
 The container runs as user `devpod` (UID 1000). On Linux, if your user ID is not 1000 (check with `id -u`), the container cannot write to your checkout; add `--user "$(id -u):$(id -g)"` to each `docker run` command so files are created with your own user ID.
 
