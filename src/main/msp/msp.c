@@ -3169,6 +3169,9 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         }
 #ifdef ENABLE_PSAS
         else if (value == 2) {
+            if (ARMING_FLAG(ARMED)) {
+                return MSP_RESULT_ERROR;
+            }
             psasCopyProfile(dstProfileIndex, srcProfileIndex);
         }
 #endif
@@ -4758,6 +4761,9 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
 #ifdef ENABLE_PSAS
     case MSP_SET_PSAS_CONFIG: {
+        if (ARMING_FLAG(ARMED)) {
+            return MSP_RESULT_ERROR;
+        }
         const uint32_t expectedSize = 59;
         if (dataSize < expectedSize) {
             return MSP_RESULT_ERROR;
@@ -4809,6 +4815,9 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
     }
 
     case MSP_SET_RESET_CURR_PSAS:
+        if (ARMING_FLAG(ARMED)) {
+            return MSP_RESULT_ERROR;
+        }
         resetPsasProfile(currentPsasProfile);
         psasInit(currentPsasProfile);
         break;
