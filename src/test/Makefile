@@ -1162,7 +1162,7 @@ psas_unittest_SRC :=  \
 		$(USER_DIR)/common/maths.c \
 
 psas_unittest_DEFINES := \
-		ENABLE_PSAS= \
+		ENABLE_PSAS=1 \
 
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets
