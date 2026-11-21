@@ -1848,11 +1848,13 @@ static void osdElementRemainingTimeEstimate(osdElementParms_t *element)
 
     if (capacityAlarm == 0 || mAhDrawn <= 0.1f * capacityAlarm) {  // also handles the mAhDrawn == 0 condition
         tfp_sprintf(element->buff, "--:--");
-    } else if (mAhDrawn > capacityAlarm) {
+    } else if (mAhDrawn >= capacityAlarm) {
         tfp_sprintf(element->buff, "00:00");
     } else {
-        const int remaining_time = (int)((capacityAlarm - mAhDrawn) * ((float)osdFlyTime) / mAhDrawn);
-        osdFormatTime(element->buff, OSD_TIMER_PREC_SECOND, remaining_time);
+        const int maxRemainingS = 99 * 60 + 59;  // MM:SS display limit
+        const float remainingS = (capacityAlarm - mAhDrawn) * (osdFlyTime * 1e-6f) / mAhDrawn;
+        const int displayS = (int)MIN(remainingS, (float)maxRemainingS);
+        tfp_sprintf(element->buff, "%02d:%02d", displayS / 60, displayS % 60);
     }
 }
 
