@@ -231,12 +231,14 @@ aslAltitudeState_e getAltitudeAsl(int32_t *pAltitudeAsl)
     return ALTITUDE_ASL_FAULT;
 }
 
+#endif
+
 void rebaseAltitudeFilterState(float deltaCm)
 {
-    altitudeLpf.state -= deltaCm;
-    altitudeLpf.state1 -= altitudeLpf.state;
+    // Move both filter stages with the estimator's Z frame, so the displayed altitude doesn't jump
+    altitudeLpf.state += deltaCm;
+    altitudeLpf.state1 += deltaCm;
 }
-#endif
 
 #ifdef USE_VARIO
 int16_t getEstimatedVario(void)
