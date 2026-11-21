@@ -97,7 +97,7 @@ docker run --rm -v "${PWD}:/workspace" -w /workspace betaflight-dev make configs
 docker run --rm -v "${PWD}:/workspace" -w /workspace betaflight-dev make CONFIG=SPEEDYBEEF405WING
 ```
 
-Use `CONFIG=<board>` for a board (for example `SPEEDYBEEF405WING`) and `TARGET=<mcu>` for a bare MCU target (for example `STM32F405` or `SITL`).
+Use `CONFIG=<board>` for a board (for example `SPEEDYBEEF405WING`) and `TARGET=<mcu>` for a bare MCU target (for example `STM32F405` or `SITL`). The board name on its own also works as shorthand: `make SPEEDYBEEF405WING` is the same as `make CONFIG=SPEEDYBEEF405WING`. Both forms need `make configs` to have been run first.
 
 The container runs as user `devpod` (UID 1000). On Linux, if your user ID is not 1000 (check with `id -u`), the container cannot write to your checkout; add `--user "$(id -u):$(id -g)"` to each `docker run` command so files are created with your own user ID.
 
