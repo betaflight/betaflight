@@ -30,6 +30,7 @@
 
 #define PSAS_PROFILE_COUNT 4
 #define MAX_PSAS_PROFILE_NAME_LENGTH 8u
+#define PSAS_OUTPUT_RANGE 100
 
 typedef struct psasProfile_s {
     char profileName[MAX_PSAS_PROFILE_NAME_LENGTH + 1]; // Descriptive name for profile

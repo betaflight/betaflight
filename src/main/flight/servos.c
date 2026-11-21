@@ -461,9 +461,9 @@ void servoMixer(void)
     }
 #ifdef ENABLE_PSAS
     else if (FLIGHT_MODE(PSAS_MODE)) {
-        input[INPUT_STABILIZED_ROLL] = lrintf(psasData.roll.Sum / 100.0f * 500.0f);
-        input[INPUT_STABILIZED_PITCH] = lrintf(psasData.pitch.Sum / 100.0f * 500.0f);
-        input[INPUT_STABILIZED_YAW] = lrintf(psasData.yaw.Sum / 100.0f * 500.0f);
+        input[INPUT_STABILIZED_ROLL] = lrintf(psasData.roll.Sum * (SERVO_MIXER_INPUT_RANGE / PSAS_OUTPUT_RANGE));
+        input[INPUT_STABILIZED_PITCH] = lrintf(psasData.pitch.Sum * (SERVO_MIXER_INPUT_RANGE / PSAS_OUTPUT_RANGE));
+        input[INPUT_STABILIZED_YAW] = lrintf(psasData.yaw.Sum * (SERVO_MIXER_INPUT_RANGE / PSAS_OUTPUT_RANGE));
     }
 #endif
     else {
