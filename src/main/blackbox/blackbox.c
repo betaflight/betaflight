@@ -117,6 +117,7 @@ PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
     .high_resolution = false,
     .blackbox_uart = SERIAL_PORT_NONE,
     .blackbox_baud = BAUD_115200,
+    .log_number_start = 1,
 );
 
 STATIC_ASSERT((sizeof(blackboxConfig()->fields_disabled_mask) * 8) >= FLIGHT_LOG_FIELD_SELECT_COUNT, too_many_flight_log_fields_selections);
