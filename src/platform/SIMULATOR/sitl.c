@@ -82,10 +82,11 @@
 #include "udplink.h"
 #include "sitl_gyro.h"
 
-// ENABLE_GAZEBO_BRIDGE is a boolean selector for the gyro yaw sign (passed to
-// sitlGyroBodyFromSim below). target.h defaults it to 1; configs set 0 for the
-// legacy bridges. Require it to be explicitly 0 or 1 so an accidental non-boolean
-// value (which would quietly read as "Gazebo") fails the build instead (see #15294).
+// ENABLE_GAZEBO_BRIDGE selects the Gazebo-specific packet handling below
+// (pressure derived from altitude, attitude quaternion conjugation). target.h
+// defaults it to 1; configs set 0 for the legacy bridges. Require it to be
+// explicitly 0 or 1 so an accidental non-boolean value (which would quietly read
+// as "Gazebo") fails the build instead.
 STATIC_ASSERT((ENABLE_GAZEBO_BRIDGE) == 0 || (ENABLE_GAZEBO_BRIDGE) == 1,
               ENABLE_GAZEBO_BRIDGE_must_be_0_or_1);
 
@@ -302,13 +303,10 @@ static void updateState(const fdm_packet* pkt)
     z = constrain(-pkt->imu_linear_acceleration_xyz[2] * ACC_SCALE, -32767, 32767);
     virtualAccSet(virtualAccDev, x, y, z);
 
-    // Map simulator IMU angular velocity onto Betaflight gyro axes. The yaw (Z)
-    // polarity is bridge-specific (see sitlGyroBodyFromSim() for the FRD/legacy
-    // rationale); ENABLE_GAZEBO_BRIDGE selects it. Keeping the mapping in one
-    // helper prevents the bridge split from being silently dropped by edits to
-    // this function, which is what caused regression #15294.
+    // Map simulator IMU angular velocity (FRD sensor frame) onto Betaflight gyro
+    // axes; see sitlGyroBodyFromSim() for the frame conversion.
     double gyroRoll, gyroPitch, gyroYaw;
-    sitlGyroBodyFromSim(pkt->imu_angular_velocity_rpy, ENABLE_GAZEBO_BRIDGE, &gyroRoll, &gyroPitch, &gyroYaw);
+    sitlGyroBodyFromSim(pkt->imu_angular_velocity_rpy, &gyroRoll, &gyroPitch, &gyroYaw);
     x = constrain(gyroRoll  * GYRO_SCALE * RAD2DEG, -32767, 32767);
     y = constrain(gyroPitch * GYRO_SCALE * RAD2DEG, -32767, 32767);
     z = constrain(gyroYaw   * GYRO_SCALE * RAD2DEG, -32767, 32767);
