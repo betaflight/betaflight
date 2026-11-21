@@ -2192,7 +2192,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_YAW_CLIFT_START, "%d", currentPsasProfile->psas_roll_yaw_clift_start);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_YAW_CLIFT_STOP, "%d", currentPsasProfile->psas_roll_yaw_clift_stop);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_TO_YAW_LINK, "%d", currentPsasProfile->psas_roll_to_yaw_link);
-        BLACKBOX_PRINT_HEADER_LINE("psas_speed_curve_enabled", "%d", currentPsasProfile->psas_speed_curve_enabled_mask);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_CURVE_ENABLED_MASK, "%d", currentPsasProfile->psas_speed_curve_enabled_mask);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_CURVE_MODE, "%d", currentPsasProfile->psas_speed_curve_mode);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_OPTIMUM_VREF, "%d", currentPsasProfile->psas_speed_optimum_vref);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_MAIN_CURVE_POWER, "%d", currentPsasProfile->psas_speed_main_curve_power);
@@ -2201,7 +2201,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_MAIN_CURVE_MAX, "%d", currentPsasProfile->psas_speed_main_curve_max);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_STICK_CURVE_MIN, "%d", currentPsasProfile->psas_speed_stick_curve_min);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_STICK_CURVE_MAX, "%d", currentPsasProfile->psas_speed_stick_curve_max);
-        BLACKBOX_PRINT_HEADER_LINE("psas_trim_enabled", "%d", currentPsasProfile->psas_trim_enabled_mask);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_TRIM_ENABLED_MASK, "%d", currentPsasProfile->psas_trim_enabled_mask);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_TRIM_DEADBAND, "%d", currentPsasProfile->psas_trim_deadband);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_TRIM_LOWPASS_TIME, "%d", currentPsasProfile->psas_trim_lowpass_time);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_TRIM_RATE, "%d", currentPsasProfile->psas_trim_rate);
