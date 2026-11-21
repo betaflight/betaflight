@@ -99,7 +99,7 @@ docker run --rm -v "${PWD}:/workspace" -w /workspace betaflight-dev make SPEEDYB
 
 Pass the name of a board (for example `make SPEEDYBEEF405WING`) or of an MCU target (for example `make STM32F405` or `make SITL`) to `make`.
 
-The container runs as user `devpod` (UID 1000). On Linux, if your user ID is not 1000 (check with `id -u`), the container cannot write to your checkout; add `--user "$(id -u):$(id -g)"` to each `docker run` command so files are created with your own user ID.
+The container runs as user `devpod` (UID 1000). On Linux with standard (rootful) Docker, if your user ID is not 1000 (check with `id -u`), add `--user "$(id -u):$(id -g)"` to each `docker run` command so the container can write to your checkout. For rootless Docker or Podman, see [file ownership on Linux](.devcontainer/README.md#file-ownership-on-linux).
 
 See the [devcontainer documentation](.devcontainer/README.md) for detailed setup instructions including hardware flashing.
 
