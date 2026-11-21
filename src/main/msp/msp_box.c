@@ -394,7 +394,7 @@ void initActiveBoxIds(void)
     BME(BOXCHIRP);
 #endif
 
-#if defined(ENABLE_PSAS)
+#if ENABLE_PSAS
     if (isFixedWing()) {
         BME(BOXPSAS);
         BME(BOXAOALIMITER);
