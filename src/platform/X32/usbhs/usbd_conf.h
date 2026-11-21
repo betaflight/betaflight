@@ -48,7 +48,7 @@
 #define CDC_OUT_EP                     0x01u
 #define CDC_CMD_EP                     0x82u
 
-#define CDC_IN_FRAME_INTERVAL          10    
+#define CDC_IN_FRAME_INTERVAL          10
 
 #ifdef  USE_USB_HS_IN_FS
 #define CDC_DATA_MAX_PACKET_SIZE       64   /* Endpoint IN & OUT Packet size */

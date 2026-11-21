@@ -625,7 +625,7 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
             int scaleFactor = constrain((adjustmentScale > 0) ? adjustmentScale : 125, 0, 250); // Use adjustmentScale (default to 125 = 1.25x if not set)
             int delta = (position - centerPosition) * scaleFactor / 100; // Scale by dividing by 100
             int newValue = constrain(baseMultiplier + delta, 20, 200);
-            
+
             // Apply PID update immediately if changed
             if (newValue != currentPidProfile->simplified_master_multiplier) {
                 currentPidProfile->simplified_master_multiplier = newValue;

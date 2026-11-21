@@ -61,7 +61,7 @@ void audioGenerateWhiteNoise(void)
     PrescalerValue = (uint32_t)(sysclk_value.APB2ClkFreq*2 / 16000000) - 1;
     /* Time base configuration */
     TIM_InitTimBaseStruct(&TIM_TimeBaseStructure);
-    TIM_TimeBaseStructure.Period        = 16-1;         
+    TIM_TimeBaseStructure.Period        = 16-1;
     TIM_TimeBaseStructure.Prescaler     = PrescalerValue;
     TIM_TimeBaseStructure.ClkDiv        = TIM_CLK_DIV1;
     TIM_TimeBaseStructure.CounterMode   = TIM_CNT_MODE_UP;

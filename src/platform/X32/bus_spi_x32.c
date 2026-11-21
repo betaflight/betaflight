@@ -337,7 +337,7 @@ void spiInitBusDMA(void)
 
             bus->useDMA = true;
 #endif
-        } 
+        }
         else {
             bus->dmaTx = NULL;
             bus->dmaRx = NULL;

@@ -51,31 +51,31 @@ void USB_BSP_Init(void)
     // DM   PA11
     GPIO_InitStructure.Pin              = GPIO_PIN_11;
     GPIO_InitStructure.GPIO_Mode        = GPIO_MODE_AF_PP;
-    GPIO_InitStructure.GPIO_Alternate   = GPIO_AF10;  
-    GPIO_InitPeripheral(GPIOA, &GPIO_InitStructure); 
+    GPIO_InitStructure.GPIO_Alternate   = GPIO_AF10;
+    GPIO_InitPeripheral(GPIOA, &GPIO_InitStructure);
 
     //  DP   PA12
     GPIO_InitStructure.Pin              = GPIO_PIN_12;
     GPIO_InitStructure.GPIO_Mode        = GPIO_MODE_AF_PP;
-    GPIO_InitStructure.GPIO_Alternate   = GPIO_AF10; 
-    GPIO_InitPeripheral(GPIOA, &GPIO_InitStructure); 
+    GPIO_InitStructure.GPIO_Alternate   = GPIO_AF10;
+    GPIO_InitPeripheral(GPIOA, &GPIO_InitStructure);
 #endif /* defined(USE_USBHS1) */
 
 #if defined(USE_USBHS2)
     RCC_EnableAHB5PeriphClk1(RCC_AHB5_PERIPHEN_M7_GPIOB, ENABLE);
     GPIO_InitStruct(&GPIO_InitStructure);
-    
+
     // DM   PB14
     GPIO_InitStructure.Pin              = GPIO_PIN_14;
     GPIO_InitStructure.GPIO_Mode        = GPIO_MODE_AF_PP;
-    GPIO_InitStructure.GPIO_Alternate   = GPIO_AF12;  
-    GPIO_InitPeripheral(GPIOB, &GPIO_InitStructure); 
+    GPIO_InitStructure.GPIO_Alternate   = GPIO_AF12;
+    GPIO_InitPeripheral(GPIOB, &GPIO_InitStructure);
 
     //  DP   PB15
     GPIO_InitStructure.Pin              = GPIO_PIN_15;
     GPIO_InitStructure.GPIO_Mode        = GPIO_MODE_AF_PP;
-    GPIO_InitStructure.GPIO_Alternate   = GPIO_AF11; 
-    GPIO_InitPeripheral(GPIOB, &GPIO_InitStructure); 
+    GPIO_InitStructure.GPIO_Alternate   = GPIO_AF11;
+    GPIO_InitPeripheral(GPIOB, &GPIO_InitStructure);
 #endif /* defined(USE_USBHS2) */
 }
 
@@ -92,7 +92,7 @@ void USB_BSP_EnableInterrupt(USB_CORE_MODULE *USBx, USB_CORE_ID_TypeDef coreID)
 {
     NVIC_InitType NVIC_InitStructure;
     EXTI_InitType EXTI_InitStructure;
-    
+
     /* Enable EXTI clocks */
     RCC_EnableAPB5PeriphClk2(RCC_APB5_PERIPHEN_EXTI, ENABLE);
 
@@ -106,12 +106,12 @@ void USB_BSP_EnableInterrupt(USB_CORE_MODULE *USBx, USB_CORE_ID_TypeDef coreID)
         NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
         NVIC_InitStructure.NVIC_IRQChannelSubPriority        = 3;
         NVIC_InitStructure.NVIC_IRQChannelCmd                = ENABLE;
-        NVIC_Init(&NVIC_InitStructure);   
+        NVIC_Init(&NVIC_InitStructure);
 
         NVIC_InitStructure.NVIC_IRQChannel                   = USB1_HS_EPx_IN_IRQn;
-        NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1; 
+        NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
         NVIC_InitStructure.NVIC_IRQChannelCmd                = ENABLE;
-        NVIC_Init(&NVIC_InitStructure); 
+        NVIC_Init(&NVIC_InitStructure);
 #endif /* USB_DEDICATED_EP_ENABLED */
 #endif /* USE_HOST_MODE */
 
@@ -119,7 +119,7 @@ void USB_BSP_EnableInterrupt(USB_CORE_MODULE *USBx, USB_CORE_ID_TypeDef coreID)
         NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_USB_WUP);
         NVIC_InitStructure.NVIC_IRQChannelSubPriority        = NVIC_PRIORITY_SUB(NVIC_PRIO_USB_WUP);
         NVIC_InitStructure.NVIC_IRQChannelCmd                = ENABLE;
-        NVIC_Init(&NVIC_InitStructure);     
+        NVIC_Init(&NVIC_InitStructure);
 
         NVIC_InitStructure.NVIC_IRQChannel                   = USB1_HS_IRQn;
         NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_USB);
@@ -130,7 +130,7 @@ void USB_BSP_EnableInterrupt(USB_CORE_MODULE *USBx, USB_CORE_ID_TypeDef coreID)
         /* Configure the EXTI line 62 connected internally to the USBHS1 IP */
         EXTI_ClrITPendBit(EXTI_LINE62);
         EXTI_InitStruct(&EXTI_InitStructure);
-        EXTI_InitStructure.EXTI_Line    = EXTI_LINE62; 
+        EXTI_InitStructure.EXTI_Line    = EXTI_LINE62;
         EXTI_InitStructure.EXTI_Mode    = EXTI_Mode_Interrupt;
         EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
         EXTI_InitStructure.EXTI_LineCmd = ENABLE;
@@ -144,13 +144,13 @@ void USB_BSP_EnableInterrupt(USB_CORE_MODULE *USBx, USB_CORE_ID_TypeDef coreID)
         NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
         NVIC_InitStructure.NVIC_IRQChannelSubPriority        = 3;
         NVIC_InitStructure.NVIC_IRQChannelCmd                = ENABLE;
-        NVIC_Init(&NVIC_InitStructure);   
+        NVIC_Init(&NVIC_InitStructure);
 
         NVIC_InitStructure.NVIC_IRQChannel                   = USB2_HS_EPx_IN_IRQn;
         NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
         NVIC_InitStructure.NVIC_IRQChannelSubPriority        = 2;
         NVIC_InitStructure.NVIC_IRQChannelCmd                = ENABLE;
-        NVIC_Init(&NVIC_InitStructure); 
+        NVIC_Init(&NVIC_InitStructure);
 #endif /* USB_DEDICATED_EP_ENABLED */
 #endif /* USE_HOST_MODE */
 
@@ -158,7 +158,7 @@ void USB_BSP_EnableInterrupt(USB_CORE_MODULE *USBx, USB_CORE_ID_TypeDef coreID)
         NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_USB_WUP);
         NVIC_InitStructure.NVIC_IRQChannelSubPriority        = NVIC_PRIORITY_SUB(NVIC_PRIO_USB_WUP);
         NVIC_InitStructure.NVIC_IRQChannelCmd                = ENABLE;
-        NVIC_Init(&NVIC_InitStructure);     
+        NVIC_Init(&NVIC_InitStructure);
 
         NVIC_InitStructure.NVIC_IRQChannel                   = USB2_HS_IRQn;
         NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_USB);

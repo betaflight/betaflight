@@ -50,14 +50,14 @@ void persistentObjectWrite(persistentObjectId_e id, uint32_t value)
 
 void persistentObjectRTCEnable(void)
 {
-	// /* Unlock PMU protection register */
-	// __HAL_PMU_UNLOCK_REGISTER();
+    // /* Unlock PMU protection register */
+    // __HAL_PMU_UNLOCK_REGISTER();
 
-	// /* BAT selection */
-	// SET_BIT(PMU->SASR, PMU_SASR_BAT_SEL);
+    // /* BAT selection */
+    // SET_BIT(PMU->SASR, PMU_SASR_BAT_SEL);
 
-	// /* Lock PMU protection register */
-	// __HAL_PMU_LOCK_REGISTER();
+    // /* Lock PMU protection register */
+    // __HAL_PMU_LOCK_REGISTER();
 }
 
 void persistentObjectInit(void)

@@ -545,7 +545,7 @@ bool compassInit(void)
 
     buildRotationMatrixFromAngles(&magDev.rotationMatrix, &magCustomAlignment);
 
-    compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);  
+    compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);
 
     compassHasBeenCalibrated = compassHasCalibration();
 

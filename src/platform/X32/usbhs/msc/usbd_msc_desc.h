@@ -25,7 +25,7 @@
 #include "usbd_req.h"
 
 
-extern  USBD_DEVICE_DESC USBD_MSC_desc; 
+extern  USBD_DEVICE_DESC USBD_MSC_desc;
 
 uint8_t *USBD_MSC_USER_DeviceDescriptor(uint8_t speed, uint16_t * length);
 uint8_t *USBD_MSC_USER_LangIDStrDescriptor(uint8_t speed, uint16_t * length);

@@ -72,7 +72,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
         .device = I2CDEV_2,
         .reg = (i2cResource_t *)I2C2,
         .sclPins = {
-            I2CPINDEF(PA0,  GPIO_MUX_4),			
+            I2CPINDEF(PA0,  GPIO_MUX_4),
             I2CPINDEF(PA11, GPIO_MUX_4),
             I2CPINDEF(PB10, GPIO_MUX_4),
             I2CPINDEF(PD12, GPIO_MUX_4),

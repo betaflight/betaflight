@@ -41,7 +41,7 @@
 #define USBD_MSC_INTERFACE_FS_STRING      "MSC Interface"
 
 
-USBD_DEVICE_DESC USBD_MSC_desc = 
+USBD_DEVICE_DESC USBD_MSC_desc =
 {
     USBD_MSC_USER_DeviceDescriptor,
     USBD_MSC_USER_LangIDStrDescriptor,
@@ -59,7 +59,7 @@ USBD_DEVICE_DESC USBD_MSC_desc =
 #endif
 #endif                          /* USB_INTERNAL_DMA_ENABLED */
 /* USB Standard Device Descriptor */
-__ALIGN_BEGIN uint8_t USBD_MSC_DeviceDesc[USB_SIZ_DEVICE_DESC] __ALIGN_END = 
+__ALIGN_BEGIN uint8_t USBD_MSC_DeviceDesc[USB_SIZ_DEVICE_DESC] __ALIGN_END =
 {
     0x12,                         /* bLength */
     USB_DEVICE_DESCRIPTOR_TYPE,   /* bDescriptorType */

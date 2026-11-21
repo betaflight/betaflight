@@ -193,7 +193,7 @@ void pwmCompleteDshotMotorUpdate(void)
             xDMA_Cmd(dmaMotorTimers[i].dmaBurstRef, DISABLE);
             xDMA_MemoryTargetConfig(dmaMotorTimers[i].dmaBurstRef, (uint32_t)dmaMotorTimers[i].dmaBurstBuffer, 0);
             xDMA_SetCurrDataCounter(dmaMotorTimers[i].dmaBurstRef, dmaMotorTimers[i].dmaBurstLength);
-            xDMA_Cmd(dmaMotorTimers[i].dmaBurstRef, ENABLE);  
+            xDMA_Cmd(dmaMotorTimers[i].dmaBurstRef, ENABLE);
             TIM_ConfigDma(timer, TIM_DMABASE_CAPCMPDAT1, TIM_DMABURST_LENGTH_4TRANSFERS);
             TIM_EnableDma(timer, TIM_DMA_UPDATE, ENABLE);
             continue;

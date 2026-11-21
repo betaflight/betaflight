@@ -163,11 +163,11 @@ void i2cInit(i2cDevice_e device)
     pHandle->Init.MasterBusClearMode = I2C_EX_MASTER_BUS_CLEAR_ENABLE;
     pHandle->Init.GeneralCallMode = I2C_EX_GENERALCALL_DISABLE;
 
-	if(HAL_I2C_EX_Init(pHandle) != HAL_OK)
-	{
-		/* Initialization Error */
-		Error_Handler();
-	}
+    if(HAL_I2C_EX_Init(pHandle) != HAL_OK)
+    {
+        /* Initialization Error */
+        Error_Handler();
+    }
     i2cConfigureTiming(pHandle, pDev->clockSpeed);
 #endif
 

@@ -168,7 +168,7 @@
 * Output         : None.
 * Return         : Counter value.
 *******************************************************************************/
-#define _GetEPIndex(wRegValue)					((wRegValue & INT_EP0_ACK) ? ENDP0 :  \
+#define _GetEPIndex(wRegValue)                 ((wRegValue & INT_EP0_ACK) ? ENDP0 :  \
                                         \
                                         ((wRegValue & INT_EP1_ACK) ? ENDP1 :  \
                                         \
@@ -221,7 +221,7 @@
 * Output         : None.
 * Return         : Counter value.
 *******************************************************************************/
-#define _IsEPOut(wRegValue, bEpIndex)			((bEpIndex == ENDP0) ? (wRegValue & INT_EP0_OUT) :  \
+#define _IsEPOut(wRegValue, bEpIndex)         ((bEpIndex == ENDP0) ? (wRegValue & INT_EP0_OUT) :  \
                                           \
                                           ((bEpIndex == ENDP1) ? (wRegValue & INT_EP1_OUT) :  \
                                           \

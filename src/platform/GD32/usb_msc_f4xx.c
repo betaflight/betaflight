@@ -92,7 +92,7 @@ uint8_t mscStart(void)
     }
 
     static usbd_mem_cb usbd_internal_storage_fops;
-	{
+    {
         usbd_internal_storage_fops.mem_init = USBD_STORAGE_fops->Init;
         usbd_internal_storage_fops.mem_ready = USBD_STORAGE_fops->IsReady;
         usbd_internal_storage_fops.mem_protected = USBD_STORAGE_fops->IsWriteProtected;
