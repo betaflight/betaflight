@@ -425,7 +425,7 @@ bool getBoxIdState(boxId_e boxid)
     } else if (boxid == BOXLAUNCH) {
         return FLIGHT_MODE(LAUNCH_MODE);
 #endif
-#if defined(USE_WING) && defined(ENABLE_PSAS)
+#if ENABLE_PSAS
     } else if (boxid == BOXPSAS) {
         return FLIGHT_MODE(PSAS_MODE);
 #endif
