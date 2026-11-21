@@ -535,6 +535,28 @@ TEST(CrossFireTest, TestInvalidFrameLengthBoundsAreRejectedAndRecover)
     }
 }
 
+TEST(CrossFireTest, TestDefaultBaudrateSetting)
+{
+    // AUTO starts at the legacy rate until the receiver identifies itself
+    rxConfigMutable()->crsf_baudrate = CRSF_BAUDRATE_AUTO;
+    crsfRxSetAutoBaudrate(CRSF_BAUDRATE_LEGACY);
+    EXPECT_EQ(420000u, crsfGetDefaultBaudrate());
+
+    // AUTO follows the rate picked from the receiver type
+    crsfRxSetAutoBaudrate(CRSF_BAUDRATE_SPEC);
+    EXPECT_EQ(416666u, crsfGetDefaultBaudrate());
+
+    // Fixed settings ignore the AUTO rate
+    rxConfigMutable()->crsf_baudrate = CRSF_BAUDRATE_420000;
+    EXPECT_EQ(420000u, crsfGetDefaultBaudrate());
+
+    crsfRxSetAutoBaudrate(CRSF_BAUDRATE_LEGACY);
+    rxConfigMutable()->crsf_baudrate = CRSF_BAUDRATE_416666;
+    EXPECT_EQ(416666u, crsfGetDefaultBaudrate());
+
+    rxConfigMutable()->crsf_baudrate = CRSF_BAUDRATE_AUTO;
+}
+
 // STUBS
 
 extern "C" {

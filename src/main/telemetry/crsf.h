@@ -35,7 +35,7 @@ bool checkCrsfTelemetryState(void);
 void handleCrsfTelemetry(timeUs_t currentTimeUs);
 void crsfScheduleDeviceInfoResponse(void);
 void crsfScheduleMspResponse(uint8_t requestOriginID);
-void crsfHandleDeviceInfoResponse(uint8_t *payload);
+void crsfHandleDeviceInfoResponse(uint8_t *payload, uint8_t frameLength);
 int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType);
 void crsfProcessCommand(uint8_t *frameStart);
 #if defined(USE_CRSF_CMS_TELEMETRY)
