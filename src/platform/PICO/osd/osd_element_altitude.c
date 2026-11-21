@@ -88,8 +88,10 @@ void cacheAltitudeInfo(uint8_t x, uint8_t y, uint8_t elemType, bool isBlink)
     int32_t altDisplay = constrain(altInUnits, -9999, 99999); // max 5 digits
 
     infoAltitude.unitSymbol = '-'; // NB '-' == SYM_HYPHEN
+    infoAltitude.isValid = false;
     if (haveBaro || haveGps) {
         infoAltitude.unitSymbol = osdGetMetersToSelectedUnitSymbol();
+        infoAltitude.isValid = true;
         int pos = tfp_sprintf(infoAltitude.altString, "%3d", altDisplay);
 #ifdef USE_GPS
         if (aslState == ALTITUDE_ASL_ESTIMATED) {
@@ -99,10 +101,13 @@ void cacheAltitudeInfo(uint8_t x, uint8_t y, uint8_t elemType, bool isBlink)
             infoAltitude.altString[pos++] = 'R';
             infoAltitude.altString[pos] = '\0';
         } else if (aslState == ALTITUDE_ASL_FAULT) {
-            infoAltitude.altString[0] = '\0';
+            // No altitude available: same display as having no altitude sensor
+            infoAltitude.unitSymbol = '-'; // NB '-' == SYM_HYPHEN
+            infoAltitude.isValid = false;
+            tfp_sprintf(infoAltitude.altString, "ALT--");
         }
 #else
-    UNUSED(pos);
+        UNUSED(pos);
 #endif
     } else {
         tfp_sprintf(infoAltitude.altString, "ALT--");
