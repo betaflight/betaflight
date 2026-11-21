@@ -9,7 +9,7 @@ The [Betaflight AI Contribution Policy](https://github.com/betaflight/.github/bl
 ## 1. Before you start
 
 - **Search first.** Search the open issues and pull requests for the same change. Do not open a duplicate.
-- **One change per pull request.** Change only the files that the problem needs. Do not add refactoring, reformatting or unrelated fixes.
+- **One change per pull request.** Change only the files that the problem needs. Do not add refactoring, reformatting, unrelated fixes or Markdown notes, plans and summaries.
 - **Use the correct repository and branch.** Open pull requests against `master`. Do not open them from the `master` branch of your fork. Board configurations go to [betaflight/config](https://github.com/betaflight/config).
 - **Do not change submodules.** Do not commit changes to `src/config` or to the libraries in `lib/` unless the pull request needs them.
 - **No new libraries in the tree.** Do not copy vendor or third-party libraries into the repository. A new library must be a hosted submodule, and a maintainer must agree first.
@@ -18,6 +18,8 @@ The [Betaflight AI Contribution Policy](https://github.com/betaflight/.github/bl
 ## 2. Use the existing infrastructure
 
 Betaflight has a framework for most tasks. Use it. Do not write a second solution. The table gives examples only. It is not a full list. Before you write new code, find how a similar feature does it and do the same. If an existing mechanism (for example a curve, a timer or the PID controller) almost does what you need, extend it. Do not add a parallel system.
+
+Older code does not always obey this file, for example `USE_*` guards, MCU defines in `src/main` or direct writes to `debug[]`. Obey the rules. Do not copy the old pattern.
 
 | Task | Use | Location |
 |------|-----|----------|
@@ -44,10 +46,27 @@ Betaflight has a framework for most tasks. Use it. Do not write a second solutio
 
 ## 3. Code rules
 
+### Fix the root cause
+
+A patch must remove the cause of a problem. Do not work around the problem. A workaround hides the symptom, and the next contributor copies it as the pattern.
+
+- **Tell the cause.** In the pull request, tell what is wrong, why it occurs and how the change removes the cause.
+- **Make sure that the bug can occur.** Before you report or fix a bug, make sure that the firmware can get into that state in real use. Tell how it gets there, for example with a configuration, a sequence of actions or bad data from a device. If the state cannot occur in real use, do not call the change a bug fix.
+- **Fix it where it starts.** Fix the code that makes the wrong value or state, not each location that uses it.
+- **Do not use workarounds.** For example:
+  - A guard, early return or `constrain()` that hides a state that must not occur.
+  - A delay, retry loop or longer timeout that hides a timing or ordering problem.
+  - A special case for one target, board or sensor when the defect is in common code.
+  - A cast, a pragma or a disabled check or test that only makes the build or the tests pass.
+  - A change to the expected values of a test, so that the test agrees with incorrect behaviour.
+  - A comment that tells why a workaround is acceptable.
+- **Handling is not a workaround.** A check is correct when the state can occur in real use, for example bad data from a device, a sensor with no reading or a short MSP payload.
+- **If you cannot fix the cause,** say so in the pull request and open an issue for it. A maintainer decides if a temporary workaround is acceptable. If it is, put the issue number in a comment at the workaround.
+
+### General rules
+
 - **Obey the coding style.** See <https://betaflight.com/docs/development/CodingStyle>. Do not reformat lines that you do not change.
 - **Keep it simple.** Do not add abstractions, libraries or dependencies that the change does not need.
-- **Fix the root cause.** A bug fix must tell why the bug occurred. Do not add a guard that only hides the symptom.
-- **Make sure that the bug can occur.** Before you report or fix a bug, make sure that the firmware can get into that state in real use. Tell how it gets there, for example with a configuration, a sequence of actions or bad data from a device. If the state cannot occur in real use, do not call the change a bug fix.
 - **Refactors do not change behaviour.** If a refactor or cleanup changes behaviour, say so in the pull request. Better, put the behaviour change in a different pull request.
 - **No duplicate code.** If the same code is in two or more places, put it in one function.
 - **No dead code.** Do not add commented-out code, `#if 0` blocks, unused variables or unused functions.
@@ -162,7 +181,7 @@ Review tools (for example CodeRabbit) and reviewers find problems. A finding is 
    - *Nit*: fix it if the fix is small. If not, give a reason in one line.
    - *No value*: give the reason only.
 3. **Security and data loss.** Do not give a security or data-loss finding the level *No value* until you examine it again.
-4. **Make the smallest fix.** It is better to remove or narrow code than to add code.
+4. **Make the smallest fix that removes the cause.** It is better to remove or narrow code than to add code.
 5. **Stay in scope.** Fix a correct finding in the same code path now. For a problem in other code, write one line about it. Do not fix it in this pull request.
 6. **Do not agree only to stop a discussion.** If you disagree, give evidence: a `file:line`, a test or the reference document.
 7. **Give a reason for each finding that you do not fix.** Do not mark the thread of a review tool as resolved yourself.
@@ -176,6 +195,7 @@ Source: [discussion #15961](https://github.com/betaflight/betaflight/discussions
 We close pull requests without a full review if they:
 
 - Change files outside the scope of the change.
+- Work around a problem without maintainer agreement (section 3).
 - Duplicate existing code, or do not use the existing infrastructure in section 2.
 - Break compatibility (section 3).
 - Reformat files that the change does not need.
