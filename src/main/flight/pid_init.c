@@ -46,10 +46,6 @@
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
-#ifdef ENABLE_PSAS
-#include "psas.h"
-#endif
-
 #include "pid_init.h"
 
 #ifdef USE_D_MAX
