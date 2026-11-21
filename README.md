@@ -99,6 +99,8 @@ docker run --rm -v "${PWD}:/workspace" -w /workspace betaflight-dev make CONFIG=
 
 Use `CONFIG=<board>` for a board (for example `SPEEDYBEEF405WING`) and `TARGET=<mcu>` for a bare MCU target (for example `STM32F405` or `SITL`).
 
+The container runs as user `devpod` (UID 1000). On Linux, if your user ID is not 1000 (check with `id -u`), the container cannot write to your checkout; add `--user "$(id -u):$(id -g)"` to each `docker run` command so files are created with your own user ID.
+
 See the [devcontainer documentation](.devcontainer/README.md) for detailed setup instructions including hardware flashing.
 
 ## Translators
