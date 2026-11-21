@@ -1102,6 +1102,7 @@ extern "C" {
     bool failsafeIsReceivingRxData(void) { return true; }
     bool rxAreFlightChannelsValid(void) { return false; }
     void pidResetIterm(void) {}
+    void pidResetTpaLow(void) {}
     void updateAdjustmentStates(void) {}
     void processRcAdjustments(controlRateConfig_t *) {}
     void updateGpsWaypointsAndMode(void) {}

@@ -346,6 +346,7 @@ extern "C" {
     bool rxAreFlightChannelsValid(void) { return false; }
     bool failsafeIsReceivingRxData(void) { return false; }
     void pidResetIterm(void) {}
+    void pidResetTpaLow(void) {}
     void updateAdjustmentStates(void) {}
     void processRcAdjustments(controlRateConfig_t *) {}
     uint8_t gnssGetMinSats(void) { return 4; }

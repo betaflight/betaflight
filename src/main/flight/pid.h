@@ -582,6 +582,7 @@ void pidSetItermAccelerator(float newItermAccelerator);
 bool crashRecoveryModeActive(void);
 void pidAcroTrainerInit(void);
 void pidSetAcroTrainerState(bool newState);
+void pidResetTpaLow(void);
 void pidUpdateTpaFactor(float throttle);
 void pidUpdateAntiGravityThrottleFilter(float throttle);
 bool pidOsdAntiGravityActive(void);

@@ -439,9 +439,16 @@ static float wingAdjustSetpoint(float currentPidSetpoint, int axis)
 #endif // USE_WING
 }
 
+// TPA Low should fade once per armed period, not once per power cycle.
+static bool isTpaLowFaded;
+
+void pidResetTpaLow(void)
+{
+    isTpaLowFaded = false;
+}
+
 static float getTpaFactorClassic(float tpaArgument)
 {
-    static bool isTpaLowFaded = false;
     bool isThrottlePastTpaLowBreakpoint = (tpaArgument >= pidRuntime.tpaLowBreakpoint || pidRuntime.tpaLowBreakpoint <= 0.01f);
     float tpaRate = 0.0f;
     if (isThrottlePastTpaLowBreakpoint || isTpaLowFaded) {

@@ -700,6 +700,7 @@ if (isMotorProtocolDshot()) {
         // Latched once, here, and nowhere else: a launch can never be switched
         // on mid-air.
         launchWingArm();
+        pidResetTpaLow();
         ENABLE_ARMING_FLAG(ARMED);  // ***ARM NOW ***
 
 #ifdef USE_RC_STATS
