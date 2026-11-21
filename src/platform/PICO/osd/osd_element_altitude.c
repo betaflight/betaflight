@@ -47,6 +47,7 @@ typedef struct {
     int16_t x;
     int16_t y;
     int32_t val;
+    bool isValid; // false when there is no altitude to show; the ladder isn't drawn
     // int32_t max; // for trying out different ladder appearance above alt_max
     bool isBlink;
     char unitSymbol;
@@ -205,6 +206,11 @@ bool renderAltitudeUntil(uint32_t limit_micros)
                 plot(strX - 3, infoAltitude.y    , 2);
                 plot(strX - 3, infoAltitude.y + 1, 2);
                 plot(strX - 4, infoAltitude.y    , 2);
+                if (!infoAltitude.isValid) {
+                    // No altitude to show, so skip the ladder
+                    state = 8;
+                    break;
+                }
                 // Calculate the index of char at / below the pointer (for val>0) / above the pointer (for val<0), and the corresponding position offset.
                 charNum = infoAltitude.val / ALTITUDE_DELTA;
                 charOffset = ((infoAltitude.val * ALTITUDE_CHAR_SPACING) / ALTITUDE_DELTA) % ALTITUDE_CHAR_SPACING;
