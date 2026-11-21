@@ -641,6 +641,12 @@ static void validateAndFixConfig(void)
     // This should be done at the end of the validation
     targetValidateConfiguration();
 #endif
+
+#ifdef USE_PSAS
+    if (systemConfig()->psasProfileIndex >= PSAS_PROFILE_COUNT) {
+        systemConfigMutable()->psasProfileIndex = 0;
+    }
+#endif
 }
 
 void validateAndFixGyroConfig(void)
