@@ -47,6 +47,10 @@
 #define MULTIPLEBYTE_CMD       ((uint8_t)0x40)
 #define DUMMY_BYTE             ((uint8_t)0x00)
 
+#define WHO_AM_I_ADDR          0x0F
+#define L3GD20_WHO_AM_I_CONST  0xD4
+#define L3GD20H_WHO_AM_I_CONST 0xD7
+
 #define CTRL_REG1_ADDR         0x20
 #define CTRL_REG4_ADDR         0x23
 #define CTRL_REG5_ADDR         0x24
@@ -140,19 +144,29 @@ static bool l3gd20GyroRead(gyroDev_t *gyro)
 
 uint8_t l3gd20Detect(const extDevice_t *dev)
 {
-    UNUSED(dev);
+    // Claiming the bus unchecked would leave a part probed after this one, such as
+    // an ADIS1657x, unreachable on a build that enables both drivers.
+    const uint8_t whoAmI = spiReadRegMsk(dev, WHO_AM_I_ADDR);
 
-    return L3GD20_SPI; // blindly assume it's present, for now.
+    if (whoAmI == L3GD20_WHO_AM_I_CONST || whoAmI == L3GD20H_WHO_AM_I_CONST) {
+        return L3GD20_SPI;
+    }
+
+    return MPU_NONE;
 }
 
 bool l3gd20GyroDetect(gyroDev_t *gyro)
 {
+    if (gyro->mpuDetectionResult.sensor != L3GD20_SPI) {
+        return false;
+    }
+
     gyro->initFn = l3gd20GyroInit;
     gyro->readFn = l3gd20GyroRead;
 
     gyro->scale = L3GD20_GYRO_SCALE_FACTOR;
 
-    return true;  // blindly assume it's present, for now.
+    return true;
 }
 
 #endif // USE_GYRO_L3GD20
