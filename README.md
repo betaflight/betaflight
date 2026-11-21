@@ -84,9 +84,20 @@ A preconfigured [devcontainer](.devcontainer/README.md) is included for a consis
 # With VS Code: Install "Dev Containers" extension, open folder, and select "Reopen in Container"
 
 # Or command-line only:
+# Build the development image (once)
 docker build -t betaflight-dev -f .devcontainer/containerfile .devcontainer/
-docker run --rm -v "${PWD}:/workspace" -w /workspace betaflight-dev make TARGET=SPEEDYBEEF405WING
+
+# Install the ARM toolchain into tools/ (once)
+docker run --rm -v "${PWD}:/workspace" -w /workspace betaflight-dev make arm_sdk_install
+
+# Fetch the board configs into src/config (once)
+docker run --rm -v "${PWD}:/workspace" -w /workspace betaflight-dev make configs
+
+# Build firmware for a board
+docker run --rm -v "${PWD}:/workspace" -w /workspace betaflight-dev make CONFIG=SPEEDYBEEF405WING
 ```
+
+Use `CONFIG=<board>` for a board (for example `SPEEDYBEEF405WING`) and `TARGET=<mcu>` for a bare MCU target (for example `STM32F405` or `SITL`).
 
 See the [devcontainer documentation](.devcontainer/README.md) for detailed setup instructions including hardware flashing.
 
