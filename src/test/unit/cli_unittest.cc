@@ -66,10 +66,17 @@ extern "C" {
     int cliGetSettingIndex(char *name, uint8_t length);
     void *cliGetValuePointer(const clivalue_t *value);
 
+    typedef struct unitTest32_s {
+        uint32_t u32;
+        int32_t i32;
+    } unitTest32_t;
+
     const clivalue_t valueTable[] = {
         { .name = "array_unit_test",   .type = VAR_INT8  | MODE_ARRAY  | MASTER_VALUE, .config = { .array = { .length = 3}},                     .pgn = PG_RESERVED_FOR_TESTING_1, .offset = 0 },
         { .name = "str_unit_test",     .type = VAR_UINT8 | MODE_STRING | MASTER_VALUE, .config = { .string = { 0, 16, 0 }},                      .pgn = PG_RESERVED_FOR_TESTING_1, .offset = 0 },
         { .name = "wos_unit_test",     .type = VAR_UINT8 | MODE_STRING | MASTER_VALUE, .config = { .string = { 0, 16, STRING_FLAGS_WRITEONCE }}, .pgn = PG_RESERVED_FOR_TESTING_1, .offset = 0 },
+        { .name = "u32_unit_test",     .type = VAR_UINT32 | MODE_DIRECT | MASTER_VALUE, .config = { .u32Max = UINT32_MAX },                     .pgn = PG_RESERVED_FOR_TESTING_2, .offset = offsetof(unitTest32_t, u32) },
+        { .name = "i32_unit_test",     .type = VAR_INT32  | MODE_DIRECT | MASTER_VALUE, .config = { .d32Max = 1000000 },                        .pgn = PG_RESERVED_FOR_TESTING_2, .offset = offsetof(unitTest32_t, i32) },
     };
     const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
     const lookupTableEntry_t lookupTables[] = {};
@@ -108,6 +115,7 @@ extern "C" {
     PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
 
     PG_REGISTER_WITH_RESET_FN(int8_t, unitTestData, PG_RESERVED_FOR_TESTING_1, 0);
+    PG_REGISTER(unitTest32_t, unitTest32Data, PG_RESERVED_FOR_TESTING_2, 0);
 }
 
 #include "unittest_macros.h"
@@ -760,6 +768,68 @@ TEST(CLIUnittest, TestSetSettingByNameEmptyValue)
 {
     bool result = cliSetSettingByName("array_unit_test = ");
     EXPECT_FALSE(result);
+}
+
+static uint32_t getUnitTestU32(void)
+{
+    const uint16_t index = cliGetSettingIndex((char *)"u32_unit_test", 13);
+    return *(uint32_t *)cliGetValuePointer(&valueTable[index]);
+}
+
+static int32_t getUnitTestI32(void)
+{
+    const uint16_t index = cliGetSettingIndex((char *)"i32_unit_test", 13);
+    return *(int32_t *)cliGetValuePointer(&valueTable[index]);
+}
+
+// Verifies cliSetSettingByName accepts the full uint32 range and rejects
+// values that do not fit, without wrapping or saturating.
+TEST(CLIUnittest, TestSetSettingByNameUint32)
+{
+    EXPECT_TRUE(cliSetSettingByName("u32_unit_test = 4294967295"));
+    EXPECT_EQ(4294967295u, getUnitTestU32());
+
+    EXPECT_TRUE(cliSetSettingByName("u32_unit_test = 0"));
+    EXPECT_EQ(0u, getUnitTestU32());
+
+    EXPECT_TRUE(cliSetSettingByName("u32_unit_test = +7"));
+    EXPECT_EQ(7u, getUnitTestU32());
+
+    EXPECT_FALSE(cliSetSettingByName("u32_unit_test = 4294967296"));
+    EXPECT_FALSE(cliSetSettingByName("u32_unit_test = 99999999999999999999"));
+    EXPECT_FALSE(cliSetSettingByName("u32_unit_test = -1"));
+    EXPECT_FALSE(cliSetSettingByName("u32_unit_test = 12a"));
+    EXPECT_FALSE(cliSetSettingByName("u32_unit_test = 0x10"));
+    EXPECT_FALSE(cliSetSettingByName("u32_unit_test = 1 2"));
+    EXPECT_FALSE(cliSetSettingByName("u32_unit_test = +"));
+    EXPECT_EQ(7u, getUnitTestU32());
+}
+
+// Verifies cliSetSettingByName enforces +/-d32Max for int32 settings and
+// rejects values that overflow 32 bits.
+TEST(CLIUnittest, TestSetSettingByNameInt32)
+{
+    EXPECT_TRUE(cliSetSettingByName("i32_unit_test = 1000000"));
+    EXPECT_EQ(1000000, getUnitTestI32());
+
+    EXPECT_TRUE(cliSetSettingByName("i32_unit_test = -1000000"));
+    EXPECT_EQ(-1000000, getUnitTestI32());
+
+    EXPECT_TRUE(cliSetSettingByName("i32_unit_test = +5"));
+    EXPECT_EQ(5, getUnitTestI32());
+
+    EXPECT_TRUE(cliSetSettingByName("i32_unit_test = -0"));
+    EXPECT_EQ(0, getUnitTestI32());
+
+    EXPECT_FALSE(cliSetSettingByName("i32_unit_test = 1000001"));
+    EXPECT_FALSE(cliSetSettingByName("i32_unit_test = -1000001"));
+    EXPECT_FALSE(cliSetSettingByName("i32_unit_test = 4294967296"));
+    EXPECT_FALSE(cliSetSettingByName("i32_unit_test = -4294967296"));
+    EXPECT_FALSE(cliSetSettingByName("i32_unit_test = 99999999999999999999"));
+    EXPECT_FALSE(cliSetSettingByName("i32_unit_test = -"));
+    EXPECT_FALSE(cliSetSettingByName("i32_unit_test = --5"));
+    EXPECT_FALSE(cliSetSettingByName("i32_unit_test = 5-"));
+    EXPECT_EQ(0, getUnitTestI32());
 }
 
 // Verifies cliSetSettingByName handles extra whitespace around '='.
