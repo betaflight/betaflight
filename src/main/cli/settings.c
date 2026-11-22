@@ -393,6 +393,9 @@ static const char * const lookupOverclock[] = {
 #if ENABLE_OVERCLOCK_240_MHZ
     "240MHZ",
 #endif
+#if ENABLE_OVERCLOCK_336_MHZ
+    "336MHZ",
+#endif
 };
 #endif
 
@@ -579,7 +582,7 @@ const char* const lookupTableTpaCurveType[] = {
 
 #ifdef USE_WING
 const char* const lookupTableTpaSpeedType[] = {
-    "BASIC", "ADVANCED",
+    "BASIC", "ADVANCED", "PITOT",
 };
 
 const char* const lookupTableYawType[] = {
@@ -1207,7 +1210,7 @@ const clivalue_t valueTable[] = {
 
     { PARAM_NAME_GPS_RESCUE_RETURN_ALT,      VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { GPS_RESCUE_RETURN_ALT_MIN_M, GPS_RESCUE_RETURN_ALT_MAX_M }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, returnAltitudeM) },
 #ifndef USE_WING
-    { PARAM_NAME_GPS_RESCUE_GROUND_SPEED,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, GPS_RESCUE_GROUND_SPEED_MAX }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, groundSpeedCmS) },
+    { PARAM_NAME_GPS_RESCUE_GROUND_SPEED,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 200, GPS_RESCUE_GROUND_SPEED_MAX }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, groundSpeedCmS) },
 
     { PARAM_NAME_GPS_RESCUE_DESCENT_DIST,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { GPS_RESCUE_DESCENT_DIST_MIN_M, GPS_RESCUE_DESCENT_DIST_MAX_M }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, descentDistanceM) },
 #endif
@@ -1219,7 +1222,6 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_GPS_RESCUE_ALLOW_ARMING_WITHOUT_FIX, VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, allowArmingWithoutFix) },
 
 #ifndef USE_WING
-    { PARAM_NAME_GPS_RESCUE_YAW_P,           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, GPS_RESCUE_YAW_P_MAX }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, yawP) },
 #endif
 #endif // USE_GPS_RESCUE
 
@@ -1333,7 +1335,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_VBAT_SAG_COMPENSATION, VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, VBAT_SAG_COMPENSATION_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, vbat_sag_compensation) },
 #endif
     { PARAM_NAME_PID_AT_MIN_THROTTLE, VAR_UINT8 | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, pidAtMinThrottle) },
-    { PARAM_NAME_ANTI_GRAVITY_GAIN,   VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { ITERM_ACCELERATOR_GAIN_OFF, ITERM_ACCELERATOR_GAIN_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, anti_gravity_gain) },
+    { PARAM_NAME_ANTI_GRAVITY_GAIN,   VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { ANTI_GRAVITY_GAIN_OFF, ANTI_GRAVITY_GAIN_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, anti_gravity_gain) },
     { PARAM_NAME_ANTI_GRAVITY_CUTOFF_HZ, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 2, 50 }, PG_PID_PROFILE, offsetof(pidProfile_t, anti_gravity_cutoff_hz) },
     { PARAM_NAME_ANTI_GRAVITY_P_GAIN, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 250 }, PG_PID_PROFILE, offsetof(pidProfile_t, anti_gravity_p_gain) },
     { PARAM_NAME_ACC_LIMIT_YAW,     VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, RATE_ACCEL_LIMIT_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, yawRateAccelLimit) },
@@ -1491,6 +1493,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_TPA_SPEED_ADV_THRUST, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { TPA_SPEED_PARAM_MIN, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_speed_adv_thrust) },
     { PARAM_NAME_TPA_SPEED_MAX_VOLTAGE, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_speed_max_voltage) },
     { PARAM_NAME_TPA_SPEED_PITCH_OFFSET, VAR_INT16 | PROFILE_VALUE, .config.minmaxUnsigned = { INT16_MIN, INT16_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_speed_pitch_offset) },
+    { PARAM_NAME_TPA_MAX_PITOT_SPEED, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 85}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_max_pitot_speed) },
 #endif // USE_WING
 
 #ifdef USE_ADVANCED_TPA
@@ -1825,7 +1828,7 @@ const clivalue_t valueTable[] = {
     { "osd_aux_channel",            VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, MAX_SUPPORTED_RC_CHANNEL_COUNT }, PG_OSD_CONFIG, offsetof(osdConfig_t, aux_channel) },
     { "osd_aux_scale",              VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1, 1000 }, PG_OSD_CONFIG, offsetof(osdConfig_t, aux_scale) },
     { "osd_aux_symbol",             VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 255 },  PG_OSD_CONFIG, offsetof(osdConfig_t, aux_symbol) },
-#ifdef OSD_CANVAS_SIZE_DEBUG
+#if ENABLE_OSD_CANVAS_SIZE_DEBUG
     { "osd_canvas_width",           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_CANVAS_COLS_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, canvas_cols) },
     { "osd_canvas_height",          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_CANVAS_ROWS_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, canvas_rows) },
 #endif
@@ -1876,6 +1879,7 @@ const clivalue_t valueTable[] = {
 #endif
     { "pwr_on_arm_grace",           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 30 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, powerOnArmingGraceTime) },
     { "enable_stick_arming",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, enableStickArming) },
+    { "enable_stick_profile_switch", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, enableStickProfileSwitch) },
 
 // PG_VTX_CONFIG
 #ifdef USE_VTX_COMMON
@@ -2168,7 +2172,7 @@ const clivalue_t valueTable[] = {
 
 // PG_AUTOPILOT
 #ifndef USE_WING
-    { PARAM_NAME_AP_LANDING_ALTITUDE_M,  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, landingAltitudeM) },
+    { PARAM_NAME_AP_LANDING_ALTITUDE_M,  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, landingAltitudeM) },
     { PARAM_NAME_AP_HOVER_THROTTLE,      VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, AUTOPILOT_HOVER_THROTTLE_MAX }, PG_AUTOPILOT, offsetof(autopilotConfig_t, hoverThrottle) },
     { PARAM_NAME_AP_THROTTLE_MIN,        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { AUTOPILOT_THROTTLE_MIN_MIN, AUTOPILOT_THROTTLE_MIN_MAX }, PG_AUTOPILOT, offsetof(autopilotConfig_t, throttleMin) },
     { PARAM_NAME_AP_THROTTLE_MAX,        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { AUTOPILOT_THROTTLE_MAX_MIN, AUTOPILOT_THROTTLE_MAX_MAX }, PG_AUTOPILOT, offsetof(autopilotConfig_t, throttleMax) },

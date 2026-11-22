@@ -110,6 +110,12 @@
 
 #endif // GD32H7
 
+// F4 SDIO driver uses external DMA channel allocation via dma_reqmap;
+// H7 SDMMC peripheral uses internal DMA and does not need allocation.
+#if defined(GD32F4) && !defined(ENABLE_SDIO_EXTERNAL_DMA)
+#define ENABLE_SDIO_EXTERNAL_DMA 1
+#endif
+
 #define PLATFORM_TRAIT_ADC_DEVICE   1
 #define PLATFORM_TRAIT_RCC          1
 #define I2C_TRAIT_STATE             1

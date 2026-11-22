@@ -34,6 +34,7 @@ void altitudeControl(float targetAltitudeCm, timeUs_t taskIntervalUs, float targ
 timeUs_t autopilotTaskIntervalUs(timeUs_t nominalIntervalUs);
 
 bool isBelowLandingAltitude(void);
+bool autopilotIsLanding(void);
 float getAutopilotThrottle(void);
 // Body pitch rate a level turn at the measured bank needs, in the angle loop's sign (deg/s).
 float autopilotGetTurnPitchRateDps(void);

@@ -303,6 +303,7 @@ static const char * const configResetReasonNames[] = {
     [CONFIG_RESET_MSP] = "MSP",
     [CONFIG_RESET_BUTTON] = "BUTTON",
     [CONFIG_RESET_SERIAL] = "SERIAL",
+    [CONFIG_RESET_PG_SIZE] = "PG_SIZE",
 };
 STATIC_ASSERT(CONFIG_RESET_COUNT == ARRAYLEN(configResetReasonNames), configResetReasonNames_array_length_mismatch);
 
@@ -1375,7 +1376,7 @@ RAM_CODE static void cliAux(const char *cmdName, char *cmdline)
     } else {
         ptr = cmdline;
         i = atoi(ptr++);
-        if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
+        if (i >= 0 && i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
             modeActivationCondition_t *mac = modeActivationConditionsMutable(i);
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
@@ -1534,7 +1535,7 @@ RAM_CODE static void cliSerial(const char *cmdName, char *cmdline)
     uint32_t functionMask = 0;
     tok = strsep(&ptr, " ");
     if (tok) {
-        functionMask = strtoul(tok, NULL, 10);
+        functionMask = serialFunctionMaskFromLegacy(strtoul(tok, NULL, 10));
         validArgumentCount++;
     }
 
@@ -1940,7 +1941,7 @@ RAM_CODE static void cliAdjustmentRange(const char *cmdName, char *cmdline)
     } else {
         ptr = cmdline;
         int i = atoi(ptr++);
-        if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
+        if (i >= 0 && i < MAX_ADJUSTMENT_RANGE_COUNT) {
             adjustmentRange_t *ar = adjustmentRangesMutable(i);
             uint8_t validArgumentCount = 0;
 
@@ -3505,7 +3506,7 @@ RAM_CODE static void cliVtx(const char *cmdName, char *cmdline)
 #endif
         ptr = cmdline;
         int i = atoi(ptr++);
-        if (i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT) {
+        if (i >= 0 && i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT) {
             vtxChannelActivationCondition_t *cac = &vtxConfigMutable()->vtxChannelActivationConditions[i];
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
@@ -4445,6 +4446,10 @@ static void cliReboot(void)
 
 RAM_CODE static void cliBootloader(const char *cmdName, char *cmdline)
 {
+#if !PLATFORM_SUPPORTS_SOFTWARE_BOOTLOADER
+    UNUSED(cmdline);
+    cliPrintErrorLinef(cmdName, "Software bootloader entry unavailable; use hardware boot mode");
+#else
     rebootTarget_e rebootTarget;
     if (
 #if !defined(USE_FLASH_BOOT_LOADER)
@@ -4467,6 +4472,7 @@ RAM_CODE static void cliBootloader(const char *cmdName, char *cmdline)
     }
 
     cliRebootEx(rebootTarget);
+#endif
 }
 
 RAM_CODE static void cliExitCmd(const char *cmdName, char *cmdline)
@@ -6495,7 +6501,7 @@ RAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
     cliPrintLinefeed();
 
 #ifdef USE_DSHOT_BITBANG
-    static const char * const dshotBitbangStatusNames[] = { "OK", "MOTOR_PIN_CONFLICT", "NO_PACER", "TOO_MANY_PORTS" };
+    static const char * const dshotBitbangStatusNames[] = { "OK", "MOTOR_PIN_CONFLICT", "NO_PACER", "TOO_MANY_PORTS", "DMA_ERROR" };
     const dshotBitbangStatus_e bitbangStatus = dshotBitbangGetStatus();
     if (isDshotBitbangActive(&motorConfig()->dev) && bitbangStatus != DSHOT_BITBANG_STATUS_OK) {
         cliPrintLinef("DSHOT_BBANG: %s", (unsigned)bitbangStatus < ARRAYLEN(dshotBitbangStatusNames) ? dshotBitbangStatusNames[bitbangStatus] : "UNKNOWN");
@@ -7410,7 +7416,10 @@ static void showDma(void)
     for (int i = DMA_FIRST_HANDLER; i <= dmaGetHandlerCount(); i++) {
         const resourceOwner_t *owner = dmaGetOwner(i);
 
-        cliPrintf(dmaGetDisplayString(), dmaGetDeviceNumber(i), dmaGetDeviceIndex(i));
+        char name[DMA_DISPLAY_NAME_LENGTH];
+
+        dmaGetDisplayName(i, name);
+        cliPrint(name);
         if (owner->index > 0) {
             cliPrintLinef(" %s %d", getOwnerName(owner->owner), resourceIndexToInput(owner->owner, owner->index - 1));
         } else {

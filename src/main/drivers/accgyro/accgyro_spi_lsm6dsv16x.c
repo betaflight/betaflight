@@ -943,7 +943,7 @@ static void lsm6dsv16xAccInit(accDev_t *acc)
 static busStatus_e lsm6dsv16xDmaCallback(uintptr_t arg)
 {
     gyroDev_t *gyro = (gyroDev_t *)arg;
-    const int16_t *sample = (const int16_t *)&gyro->dev.rxBuf[2];
+    const int16_t *sample = (const int16_t *)(const void *)&gyro->dev.rxBuf[2];
 
     // An odd sequence marks publication in progress. Atomic accesses and the
     // sequence check also protect readers from interruption by this callback.
@@ -1006,7 +1006,7 @@ static bool lsm6dsv16xAccReadSPI(accDev_t *acc)
         // Wait for completion
         spiWait(&acc->gyro->dev);
 
-        int16_t *accData = (int16_t *)acc->gyro->dev.rxBuf;
+        int16_t *accData = (int16_t *)(void *)acc->gyro->dev.rxBuf;
 
         acc->ADCRaw[X] = accData[1];
         acc->ADCRaw[Y] = accData[2];
@@ -1186,7 +1186,7 @@ static void lsm6dsv16xGyroInit(gyroDev_t *gyro)
 
 static bool lsm6dsv16xGyroReadSPI(gyroDev_t *gyro)
 {
-    int16_t *gyroData = (int16_t *)gyro->dev.rxBuf;
+    int16_t *gyroData = (int16_t *)(void *)gyro->dev.rxBuf;
     switch (gyro->gyroModeSPI) {
     case GYRO_EXTI_INIT:
     {

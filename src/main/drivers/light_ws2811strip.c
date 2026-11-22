@@ -113,7 +113,7 @@ void ws2811LedStripEnable(void)
 
         ws2811Initialised = true;
 
-        // RGB or GRB ordering doesn't matter for black, use 4-channel LED configuraton to make sure all channels are zero
+        // Send black to all LEDs; the hardware init has already cleared any unused bit slots in the transfer buffer
         // Multiple calls may be required as normally broken into multiple parts
         while (!ws2811UpdateStrip(100));
     }

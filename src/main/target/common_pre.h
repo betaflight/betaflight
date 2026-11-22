@@ -198,15 +198,6 @@
 #define USE_MAX7456
 #endif
 
-#if !defined(USE_RX_SPI)
-#define USE_RX_SPI
-
-#define USE_RX_CC2500
-#define USE_RX_EXPRESSLRS
-#define USE_RX_SX1280
-#define USE_RX_SX127X
-#endif // !USE_RX_SPI
-
 #if TARGET_FLASH_SIZE >= 1024
 #if !defined(USE_EXST) && !defined(USE_SDCARD)
 #define USE_SDCARD
@@ -319,7 +310,10 @@
 #define USE_RANGEFINDER_TF
 #define USE_RANGEFINDER_NOOPLOOP
 #define USE_RANGEFINDER_UPT1
+#define USE_RANGEFINDER_PB04
 #define USE_OPTICALFLOW_MT
+#define USE_OPTICALFLOW_UPT1
+#define USE_OPTICALFLOW_PB04
 
 #endif // TARGET_FLASH_SIZE >= 1024
 

@@ -349,6 +349,9 @@ static uint8_t bf_cdc_acm_init(usb_dev *udev, uint8_t config_index)
 
     static __ALIGN_BEGIN usb_cdc_handler cdc_handler __ALIGN_END;
 
+    USB_Tx_State = USB_CDC_IDLE;
+    APP_Rx_length = 0;
+
     /* initialize the data TX endpoint */
     usbd_ep_setup(udev, &(bf_cdc_config_desc.cdc_in_endpoint));
 
@@ -545,6 +548,10 @@ static uint8_t bf_cdc_acm_in(usb_dev *udev, uint8_t ep_num)
         /*Send ZLP to indicate the end of the current transfer */
         usbd_ep_send(udev, CDC_DATA_IN_EP, NULL, 0);
 
+        // Stay non-idle until the ZLP itself completes (next DataIn), so
+        // transmit-empty checks wait for it and no new transfer starts early.
+        USB_Tx_State = USB_CDC_ZLP_SENT;
+    } else if (USB_Tx_State == USB_CDC_ZLP_SENT) {
         USB_Tx_State = USB_CDC_IDLE;
     }
     return USBD_OK;

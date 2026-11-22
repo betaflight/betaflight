@@ -51,6 +51,7 @@ STDPERIPH_SRC   = \
             stm32h7xx_hal_uart_ex.c \
             stm32h7xx_ll_cordic.c \
             stm32h7xx_ll_crs.c \
+            stm32h7xx_ll_bdma.c \
             stm32h7xx_ll_dma.c \
             stm32h7xx_ll_fmac.c \
             stm32h7xx_ll_i2c.c \
@@ -297,6 +298,7 @@ DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DHSE_STARTUP_TIMEOUT=1000 -DSTM32
 
 VCP_SRC = \
             STM32/vcp_hal/usbd_desc.c \
+            STM32/vcp_hal/usbd_static_alloc.c \
             STM32/vcp_hal/usbd_conf_stm32h7xx.c \
             STM32/vcp_hal/usbd_cdc_hid.c \
             STM32/vcp_hal/usbd_cdc_interface.c \

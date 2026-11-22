@@ -179,12 +179,14 @@ static void srxl2ProcessChannelData(const Srxl2ChannelDataHeader* channelData, r
         return;
     }
 
-    const uint16_t *frameChannels = (const uint16_t *) (channelData + 1);
+    // channel values follow the packed header and may be unaligned: read them as little-endian bytes
+    const uint8_t *frameChannels = (const uint8_t *) (channelData + 1);
     uint32_t channelMask = channelData->channelMask.u32;
     while (channelMask) {
         unsigned idx = __builtin_ctz (channelMask);
         uint32_t mask = 1 << idx;
-        rxRuntimeState->channelData[idx] = *frameChannels++;
+        rxRuntimeState->channelData[idx] = frameChannels[0] | (frameChannels[1] << 8);
+        frameChannels += 2;
         channelMask &= ~mask;
     }
 
@@ -509,7 +511,7 @@ bool srxl2RxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         return false;
     }
 
-    serialPort->idleCallback = srxl2Idle;
+    serialSetIdleCallback(serialPort, srxl2Idle);
 
     state = ListenForActivity;
     timeoutTimestamp = micros() + SRXL2_LISTEN_FOR_ACTIVITY_TIMEOUT_US;

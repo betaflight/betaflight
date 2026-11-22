@@ -55,6 +55,24 @@ PG_RESET_TEMPLATE(motorConfig_t, motorConfig,
     .kv = 1000,
     .motorPoleCount = 14,
 );
+
+typedef struct testElement_s {
+    uint16_t a;
+    uint16_t b;
+} testElement_t;
+
+#define TEST_ARRAY_LENGTH 3
+
+PG_DECLARE_ARRAY(testElement_t, TEST_ARRAY_LENGTH, testArray);
+PG_REGISTER_ARRAY_WITH_RESET_FN(testElement_t, TEST_ARRAY_LENGTH, testArray, PG_RESERVED_FOR_TESTING_1, 0);
+
+void pgResetFn_testArray(testElement_t *elements)
+{
+    for (int i = 0; i < TEST_ARRAY_LENGTH; i++) {
+        elements[i].a = 10 + i;
+        elements[i].b = 20 + i;
+    }
+}
 }
 
 
@@ -93,6 +111,62 @@ TEST(ParameterGroupsfTest, Test_pgFind)
     EXPECT_EQ(1850, motorConfig3.maxthrottle);
     EXPECT_EQ(1000, motorConfig3.mincommand);
     EXPECT_EQ(400, motorConfig3.dev.motorPwmRate);
+}
+
+TEST(ParameterGroupsfTest, Test_pgLoadArrayRejectsOtherElementSize)
+{
+    const pgRegistry_t *pgRegistry = pgFind(PG_RESERVED_FOR_TESTING_1);
+    ASSERT_NE(nullptr, pgRegistry);
+
+    // a record written by a build whose element was one field shorter
+    uint16_t stored[TEST_ARRAY_LENGTH] = {1, 2, 3};
+    EXPECT_FALSE(pgLoad(pgRegistry, stored, sizeof(stored), pgVersion(pgRegistry)));
+    for (int i = 0; i < TEST_ARRAY_LENGTH; i++) {
+        EXPECT_EQ(10 + i, testArray(i)->a);
+        EXPECT_EQ(20 + i, testArray(i)->b);
+    }
+
+    // and by one whose element was longer
+    uint8_t longer[sizeof(testElement_t) * TEST_ARRAY_LENGTH + 2];
+    memset(longer, 1, sizeof(longer));
+    EXPECT_FALSE(pgLoad(pgRegistry, longer, sizeof(longer), pgVersion(pgRegistry)));
+    EXPECT_EQ(10, testArray(0)->a);
+}
+
+TEST(ParameterGroupsfTest, Test_pgLoadArrayRoundTrip)
+{
+    const pgRegistry_t *pgRegistry = pgFind(PG_RESERVED_FOR_TESTING_1);
+    ASSERT_NE(nullptr, pgRegistry);
+
+    pgReset(pgRegistry);
+    for (int i = 0; i < TEST_ARRAY_LENGTH; i++) {
+        testArrayMutable(i)->a = 100 + i;
+    }
+    testElement_t stored[TEST_ARRAY_LENGTH];
+    ASSERT_EQ(sizeof(stored), pgStore(pgRegistry, stored, sizeof(stored)));
+
+    EXPECT_TRUE(pgLoad(pgRegistry, stored, sizeof(stored), pgVersion(pgRegistry)));
+    EXPECT_EQ(0, memcmp(stored, testArray_array(), sizeof(stored)));
+    for (int i = 0; i < TEST_ARRAY_LENGTH; i++) {
+        EXPECT_EQ(100 + i, testArray(i)->a);
+        EXPECT_EQ(20 + i, testArray(i)->b);
+    }
+}
+
+TEST(ParameterGroupsfTest, Test_pgLoadStructStillLoadsShorterRecord)
+{
+    // a single struct grows by appending fields: the old prefix loads, the new tail keeps its default
+    const pgRegistry_t *pgRegistry = pgFind(PG_MOTOR_CONFIG);
+    ASSERT_NE(nullptr, pgRegistry);
+
+    motorConfig_t stored;
+    pgResetCopy(&stored, PG_MOTOR_CONFIG);
+    stored.dev.motorPwmRate = 500;
+    const int shorter = offsetof(motorConfig_t, motorPoleCount);
+
+    EXPECT_TRUE(pgLoad(pgRegistry, &stored, shorter, pgVersion(pgRegistry)));
+    EXPECT_EQ(500, motorConfig()->dev.motorPwmRate);
+    EXPECT_EQ(14, motorConfig()->motorPoleCount);
 }
 
 // STUBS

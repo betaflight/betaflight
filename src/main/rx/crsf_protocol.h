@@ -38,8 +38,10 @@
 
 enum { CRSF_SYNC_BYTE = 0xC8 };
 
-enum { CRSF_FRAME_SIZE_MAX = 64 }; // 62 bytes frame plus 2 bytes frame header(<length><type>)
-enum { CRSF_PAYLOAD_SIZE_MAX = CRSF_FRAME_SIZE_MAX - 6 };
+enum { CRSF_FRAME_SIZE_MAX = 64 }; // <address><length> plus up to 62 bytes of <type><payload><crc>
+// The payload is what is left of the frame after the address, length, type and CRC bytes:
+// the longest legal frame (length 62) carries 60 bytes of payload.
+enum { CRSF_PAYLOAD_SIZE_MAX = CRSF_FRAME_SIZE_MAX - 4 };
 
 typedef enum {
     CRSF_FRAMETYPE_GPS = 0x02,

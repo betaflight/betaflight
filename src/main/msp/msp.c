@@ -73,6 +73,7 @@
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_table.h"
 #include "drivers/rangefinder/rangefinder_lidarmt.h"
+#include "drivers/rangefinder/rangefinder_pb04.h"
 
 #include "fc/board_info.h"
 #include "fc/controlrate_profile.h"
@@ -602,7 +603,8 @@ RAM_CODE static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, 
 
     if (compressionMethod == NO_COMPRESSION) {
 
-        uint16_t *readLenPtr = (uint16_t *)sbufPtr(dst);
+        // may be at an odd address, so it is updated byte by byte below
+        uint8_t *readLenPtr = sbufPtr(dst);
         if (!useLegacyFormat) {
             // new format supports variable read lengths
             sbufWriteU16(dst, readLen);
@@ -613,7 +615,8 @@ RAM_CODE static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, 
 
         if (!useLegacyFormat) {
             // update the 'read length' with the actual amount read from flash.
-            *readLenPtr = bytesRead;
+            readLenPtr[0] = bytesRead & 0xff;
+            readLenPtr[1] = (bytesRead >> 8) & 0xff;
         }
 
         sbufAdvance(dst, bytesRead);
@@ -1660,7 +1663,7 @@ case MSP_NAME:
         sbufWriteU16(dst, autopilotConfig()->positionP);
         sbufWriteU16(dst, autopilotConfig()->positionI);
         sbufWriteU16(dst, autopilotConfig()->positionD);
-        sbufWriteU16(dst, gpsRescueConfig()->yawP);
+        sbufWriteU16(dst, 0); // was gps_rescue_yaw_p
         break;
 #endif // !USE_WING
 #endif
@@ -2328,6 +2331,11 @@ case MSP_NAME:
         sbufWriteU16(dst, (uint16_t)currentPidProfile->tpa_speed_pitch_offset);
         sbufWriteU8(dst, currentPidProfile->yaw_type);
         sbufWriteU16(dst, (uint16_t)currentPidProfile->angle_pitch_offset);
+        sbufWriteU8(dst, currentPidProfile->speed_curve_vref);
+        sbufWriteU8(dst, currentPidProfile->speed_curve_power);
+        sbufWriteU16(dst, currentPidProfile->speed_curve_min);
+        sbufWriteU16(dst, currentPidProfile->speed_curve_max);
+        sbufWriteU8(dst, currentPidProfile->tpa_max_pitot_speed);
         break;
     }
 
@@ -2491,25 +2499,28 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
             serializeBoxReply(dst, page, &serializeBoxPermanentIdFn);
         }
         break;
-    case MSP_REBOOT:
+    case MSP_REBOOT: {
         if (!mspRebootIsAllowed()) {
             return MSP_RESULT_ERROR;
         }
 
-        if (sbufBytesRemaining(src)) {
-            rebootMode = sbufReadU8(src);
-
-            if (rebootMode >= MSP_REBOOT_COUNT
+        const uint8_t requestedRebootMode = sbufBytesRemaining(src) ? sbufReadU8(src) : MSP_REBOOT_FIRMWARE;
+        if (requestedRebootMode >= MSP_REBOOT_COUNT
 #if !defined(USE_USB_MSC)
-                || rebootMode == MSP_REBOOT_MSC || rebootMode == MSP_REBOOT_MSC_UTC
+            || requestedRebootMode == MSP_REBOOT_MSC || requestedRebootMode == MSP_REBOOT_MSC_UTC
 #endif
-                ) {
-                return MSP_RESULT_ERROR;
-            }
-        } else {
-            rebootMode = MSP_REBOOT_FIRMWARE;
+#if !defined(USE_FLASH_BOOT_LOADER)
+            || requestedRebootMode == MSP_REBOOT_BOOTLOADER_FLASH
+#endif
+#if !PLATFORM_SUPPORTS_SOFTWARE_BOOTLOADER
+            || requestedRebootMode == MSP_REBOOT_BOOTLOADER_ROM || requestedRebootMode == MSP_REBOOT_BOOTLOADER_FLASH
+#endif
+            ) {
+            return MSP_RESULT_ERROR;
         }
 
+        // An invalid request must not overwrite an already scheduled reboot.
+        rebootMode = requestedRebootMode;
         sbufWriteU8(dst, rebootMode);
 
 #if defined(USE_USB_MSC)
@@ -2534,6 +2545,7 @@ RAM_CODE static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDes
         }
 
         break;
+    }
     case MSP_MULTIPLE_MSP:
         {
             uint8_t maxMSPs = 0;
@@ -3282,10 +3294,10 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         autopilotConfigMutable()->maxAngle = sbufReadU16Constrained(src, AUTOPILOT_MAX_ANGLE_MIN, AUTOPILOT_MAX_ANGLE_MAX);
         gpsRescueConfigMutable()->returnAltitudeM = sbufReadU16Constrained(src, GPS_RESCUE_RETURN_ALT_MIN_M, GPS_RESCUE_RETURN_ALT_MAX_M);
         gpsRescueConfigMutable()->descentDistanceM = sbufReadU16Constrained(src, GPS_RESCUE_DESCENT_DIST_MIN_M, GPS_RESCUE_DESCENT_DIST_MAX_M); // 0 makes RESCUE_DESCENT unreachable
-        gpsRescueConfigMutable()->groundSpeedCmS = sbufReadU16Constrained(src, 0, GPS_RESCUE_GROUND_SPEED_MAX);
+        gpsRescueConfigMutable()->groundSpeedCmS = sbufReadU16Constrained(src, 200, GPS_RESCUE_GROUND_SPEED_MAX);
         autopilotConfigMutable()->throttleMin = sbufReadU16Constrained(src, AUTOPILOT_THROTTLE_MIN_MIN, AUTOPILOT_THROTTLE_MIN_MAX);
         autopilotConfigMutable()->throttleMax = sbufReadU16Constrained(src, AUTOPILOT_THROTTLE_MAX_MIN, AUTOPILOT_THROTTLE_MAX_MAX);
-        autopilotConfigMutable()->hoverThrottle = sbufReadU16Constrained(src, 0, AUTOPILOT_HOVER_THROTTLE_MAX);
+        autopilotConfigMutable()->hoverThrottle = sbufReadU16Constrained(src, 2, AUTOPILOT_HOVER_THROTTLE_MAX);
         gpsRescueConfigMutable()->sanityChecks = sbufReadLookupIndex(src, TABLE_GPS_RESCUE_SANITY_CHECK);
         gpsRescueConfigMutable()->minSats = sbufReadU8Constrained(src, GPS_RESCUE_MIN_SATS_MIN, GPS_RESCUE_MIN_SATS_MAX);
         if (sbufBytesRemaining(src) >= 6) {
@@ -3313,7 +3325,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         autopilotConfigMutable()->positionP = sbufReadU16Constrained(src, 0, AUTOPILOT_PID_GAIN_MAX);
         autopilotConfigMutable()->positionI = sbufReadU16Constrained(src, 0, AUTOPILOT_PID_GAIN_MAX);
         autopilotConfigMutable()->positionD = sbufReadU16Constrained(src, 0, AUTOPILOT_PID_GAIN_MAX);
-        gpsRescueConfigMutable()->yawP = sbufReadU16Constrained(src, 0, GPS_RESCUE_YAW_P_MAX);
+        sbufReadU16(src); // was gps_rescue_yaw_p
         break;
 #endif // !USE_WING
 #endif
@@ -3619,7 +3631,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         }
         if (sbufBytesRemaining(src) >= 4) {
             sbufReadU16(src); // was currentPidProfile->itermThrottleThreshold
-            currentPidProfile->anti_gravity_gain = sbufReadU16Constrained(src, 0, ITERM_ACCELERATOR_GAIN_MAX);
+            currentPidProfile->anti_gravity_gain = sbufReadU16Constrained(src, ANTI_GRAVITY_GAIN_OFF, ANTI_GRAVITY_GAIN_MAX);
         }
         if (sbufBytesRemaining(src) >= 2) {
             sbufReadU16(src); // was currentPidProfile->dtermSetpointWeight
@@ -4148,15 +4160,6 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         break;
 #endif
 
-#if defined(USE_RANGEFINDER_MT)
-    case MSP2_SENSOR_RANGEFINDER_LIDARMT:
-        mtRangefinderReceiveNewData(sbufPtr(src));
-        break;
-
-    case MSP2_SENSOR_OPTICALFLOW_MT:
-        mtOpticalflowReceiveNewData(sbufPtr(src));
-        break;
-#endif
 
 #ifdef USE_GPS
     case MSP2_SENSOR_GPS:
@@ -4685,6 +4688,16 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
         currentPidProfile->yaw_type = sbufReadU8(src);
 #endif
         currentPidProfile->angle_pitch_offset = sbufReadS16Constrained(src, -ANGLE_PITCH_OFFSET_MAX, ANGLE_PITCH_OFFSET_MAX);
+        const bool hasSpeedCurve = sbufBytesRemaining(src) >= 6;
+        if (hasSpeedCurve) {
+            currentPidProfile->speed_curve_vref = sbufReadU8Constrained(src, 1, 85);
+            currentPidProfile->speed_curve_power = sbufReadU8Constrained(src, 5, 30);
+            currentPidProfile->speed_curve_min = sbufReadU16Constrained(src, 5, 99);
+            currentPidProfile->speed_curve_max = sbufReadU16Constrained(src, 100, 1000);
+        }
+        if (hasSpeedCurve && sbufBytesRemaining(src) >= 1) {
+            currentPidProfile->tpa_max_pitot_speed = sbufReadU8Constrained(src, 1, 85);
+        }
         pidInitConfig(currentPidProfile);
         break;
     }

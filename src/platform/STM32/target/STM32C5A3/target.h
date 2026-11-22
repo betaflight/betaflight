@@ -35,6 +35,8 @@
 #define USE_UART3
 #define USE_UART4
 #define USE_UART5
+#define USE_UART6
+#define USE_UART7
 
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
@@ -46,6 +48,9 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 #define TARGET_IO_PORTF 0xffff
+#define TARGET_IO_PORTG 0xffff
+// Port H has only PH0-PH5 and PH15
+#define TARGET_IO_PORTH (BIT(0)|BIT(1)|BIT(2)|BIT(3)|BIT(4)|BIT(5)|BIT(15))
 
 #define USE_I2C
 #define I2C_FULL_RECONFIGURABILITY
@@ -71,6 +76,7 @@
 
 #define USE_ADC
 #define USE_EXTI
+#define USE_BEEPER
 
 #undef USE_TRANSPONDER
 

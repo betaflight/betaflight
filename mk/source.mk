@@ -261,6 +261,7 @@ COMMON_SRC = \
             drivers/rangefinder/rangefinder_lidartf.c \
             drivers/rangefinder/rangefinder_lidarmt.c \
             drivers/rangefinder/rangefinder_nooploop.c \
+            drivers/rangefinder/rangefinder_pb04.c \
             drivers/rangefinder/rangefinder_upt1.c \
             drivers/vtx_common.c \
             drivers/vtx_table.c \
@@ -300,6 +301,7 @@ COMMON_SRC = \
             telemetry/smartport.c \
             telemetry/ltm.c \
             telemetry/mavlink.c \
+            telemetry/mavlink_helpers.c \
             telemetry/mavlink_mission.c \
             telemetry/msp_shared.c \
             telemetry/ibus.c \

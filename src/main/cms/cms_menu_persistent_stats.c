@@ -28,6 +28,8 @@
 #ifdef USE_CMS
 #ifdef USE_PERSISTENT_STATS
 
+#include "cli/settings.h"
+
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 #include "cms/cms_menu_persistent_stats.h"
@@ -39,6 +41,7 @@ uint32_t stats_total_flights;
 uint32_t stats_total_time_s;
 uint32_t stats_total_dist_m;
 int8_t stats_min_armed_time_s;
+static uint8_t statsEnabled;
 
 static const void *cmsx_PersistentStats_onEnter(displayPort_t *pDisp)
 {
@@ -47,7 +50,8 @@ static const void *cmsx_PersistentStats_onEnter(displayPort_t *pDisp)
     stats_total_flights = statsConfig()->stats_total_flights;
     stats_total_time_s = statsConfig()->stats_total_time_s;
     stats_total_dist_m = statsConfig()->stats_total_dist_m;
-    stats_min_armed_time_s = statsConfig()->stats_min_armed_time_s;
+    statsEnabled = statsConfig()->stats_min_armed_time_s != STATS_OFF;
+    stats_min_armed_time_s = statsEnabled ? statsConfig()->stats_min_armed_time_s : 0;
 
     return NULL;
 }
@@ -60,7 +64,7 @@ static const void *cmsx_PersistentStats_onExit(displayPort_t *pDisp, const OSD_E
     statsConfigMutable()->stats_total_flights = stats_total_flights;
     statsConfigMutable()->stats_total_time_s = stats_total_time_s;
     statsConfigMutable()->stats_total_dist_m = stats_total_dist_m;
-    statsConfigMutable()->stats_min_armed_time_s = stats_min_armed_time_s;
+    statsConfigMutable()->stats_min_armed_time_s = statsEnabled ? stats_min_armed_time_s : STATS_OFF;
 
     return NULL;
 }
@@ -87,7 +91,8 @@ static const OSD_Entry cmsx_menuPersistentStatsEntries[] =
     {"DIST(m)", OME_UINT32, NULL, &(OSD_UINT32_t){ &stats_total_dist_m, 0, UINT32_MAX, 1}},
     {"RESET STATS", OME_Funcall, cmsx_ResetStats, NULL},
     {"--- SETTINGS ---", OME_Label, NULL, NULL},
-    {"MIN ARMED TIME(sec)", OME_INT8, NULL, &(OSD_INT8_t){ &stats_min_armed_time_s, -1, INT8_MAX, 1}},
+    {"ENABLED", OME_TAB, NULL, &(OSD_TAB_t){ &statsEnabled, 1, lookupTableOffOn }},
+    {"MIN ARMED TIME(sec)", OME_INT8, NULL, &(OSD_INT8_t){ &stats_min_armed_time_s, 0, INT8_MAX, 1}},
 
     {"BACK", OME_Back, NULL, NULL},
     { NULL, OME_END, NULL, NULL}

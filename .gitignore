@@ -60,9 +60,7 @@ eeprom.bin
 # changed to submodule
 #/src/config
 
-# Ignore AI Agent files for now in favour of
-# contributors being able to roll their own
+# Ignore personal AI agent files. AGENTS.md is shared and tracked.
 .claude
-AGENTS.md
 CLAUDE.md
 /tasks

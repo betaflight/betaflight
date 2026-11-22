@@ -84,12 +84,20 @@ static void sumdDataReceive(uint16_t c, void *data)
 
     static timeUs_t sumdTimeLast;
     static uint8_t sumdIndex;
+    static uint16_t sumdSkipBytes;
 
     const timeUs_t now = microsISR();
     if (cmpTimeUs(now, sumdTimeLast) > SUMD_TIME_NEEDED_PER_FRAME) {
         sumdIndex = 0;
+        sumdSkipBytes = 0;
     }
     sumdTimeLast = now;
+
+    if (sumdSkipBytes > 0) {
+        // still inside a rejected frame, don't look for a sync byte in its payload
+        sumdSkipBytes--;
+        return;
+    }
 
     if (sumdIndex == SUMD_SYNC_BYTE_INDEX) {
         if (c != SUMD_SYNCBYTE) {
@@ -99,6 +107,13 @@ static void sumdDataReceive(uint16_t c, void *data)
             crc = 0;
         }
     } else if (sumdIndex == SUMD_CHANNEL_COUNT_INDEX) {
+        if (c > SUMD_MAX_CHANNEL) {
+            // invalid channel count, drop the rest of the frame by its declared length.
+            // a gap longer than SUMD_TIME_NEEDED_PER_FRAME still ends the skip early.
+            sumdSkipBytes = c * SUMD_BYTES_PER_CHANNEL + SUMD_CRC_LENGTH;
+            sumdIndex = 0;
+            return;
+        }
         sumdChannelCount = (uint8_t)c;
     }
 

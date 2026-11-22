@@ -640,10 +640,8 @@ void tryArm(void)
         gyroStartCalibration(true);
     }
 
-
     updateArmingStatus();
     // set or clear armingDisabled flags, while arming is requested, whether armed or disarmed,
-
 
     if (!isArmingDisabled()) {
         if (ARMING_FLAG(ARMED)) {
@@ -732,7 +730,7 @@ if (isMotorProtocolDshot()) {
         if (featureIsEnabled(FEATURE_GPS)) {
             GPS_reset_home_position();
             canUseGPSHeading = false; // block use of GPS Heading in position hold after each arm, until quad can set IMU to GPS COG
-            if (STATE(GPS_FIX) && gpsSol.numSat >= gpsRescueConfig()->minSats) {
+            if (STATE(GPS_FIX) && gpsSol.numSat >= gnssGetMinSats()) {
                 beeper(BEEPER_ARMING_GPS_FIX);
             } else {
                 beeper(BEEPER_ARMING_GPS_NO_FIX);

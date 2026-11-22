@@ -25,6 +25,7 @@
 #define STATIC_DMA_DATA_AUTO static
 #define MMFLASH_CODE
 #define MMFLASH_CODE_NOINLINE
+#define MMFLASH_DATA
 
 #define SPI_IO_CS_CFG 0
 

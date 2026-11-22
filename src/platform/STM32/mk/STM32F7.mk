@@ -138,6 +138,7 @@ DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DSTM32
 
 VCP_SRC = \
             STM32/vcp_hal/usbd_desc.c \
+            STM32/vcp_hal/usbd_static_alloc.c \
             STM32/vcp_hal/usbd_conf_stm32f7xx.c \
             STM32/vcp_hal/usbd_cdc_hid.c \
             STM32/vcp_hal/usbd_cdc_interface.c \

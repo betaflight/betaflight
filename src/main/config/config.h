@@ -42,6 +42,7 @@ typedef enum {
     CONFIG_RESET_MSP,
     CONFIG_RESET_BUTTON,
     CONFIG_RESET_SERIAL,
+    CONFIG_RESET_PG_SIZE,
     CONFIG_RESET_COUNT
 } configResetReason_e;
 
@@ -60,6 +61,7 @@ typedef struct systemConfig_s {
     uint8_t activeBatteryProfile;
     uint8_t configResetReason;
     uint16_t configResetDetail;     // stored EEPROM version or pgn, depending on configResetReason
+    uint8_t enableStickProfileSwitch; // boolean that determines whether PID and rate profiles can be changed with stick commands
 } systemConfig_t;
 
 PG_DECLARE(systemConfig_t, systemConfig);

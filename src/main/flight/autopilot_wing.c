@@ -662,6 +662,11 @@ bool isBelowLandingAltitude(void)
     return false;
 }
 
+bool autopilotIsLanding(void)
+{
+    return false;
+}
+
 float getAutopilotThrottle(void)
 {
     return wingVert.throttle;

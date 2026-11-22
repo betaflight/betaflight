@@ -35,20 +35,25 @@ jobs:
         if: inputs.sdk != 'none'
         uses: actions/checkout@v5
 
+      - name: Get runner OS version
+        if: inputs.sdk != 'none'
+        id: runner-os
+        run: . /etc/os-release && echo "version=${ID}-${VERSION_ID}" >> $GITHUB_OUTPUT
+
       - name: Cache tools
         if: inputs.sdk != 'none'
         uses: actions/cache@v5
         id: cache-tools
         with:
           path: tools
-          key: ${{ inputs.tools-cache-key }}-${{ inputs.sdk }}
+          key: ${{ inputs.tools-cache-key }}-${{ steps.runner-os.outputs.version }}-${{ inputs.sdk }}
 
       - name: Restore ARM tools as base
         if: inputs.sdk != 'none' && inputs.sdk != 'arm' && steps.cache-tools.outputs.cache-hit != 'true'
         uses: actions/cache/restore@v5
         with:
           path: tools
-          key: ${{ inputs.tools-cache-key }}-arm
+          key: ${{ inputs.tools-cache-key }}-${{ steps.runner-os.outputs.version }}-arm
 
       - name: Get SDK cache info
         if: inputs.sdk != 'arm' && inputs.sdk != 'none'
@@ -121,13 +126,18 @@ jobs:
         if: matrix.target != 'None' && steps.sdk-info.outputs.has-submodule == 'true' && steps.cache-sdk.outputs.cache-hit != 'true'
         run: make SDK=${{ inputs.sdk }} platform-sdk-hydrate
 
+      - name: Get runner OS version
+        if: matrix.target != 'None' && inputs.sdk != 'none'
+        id: runner-os
+        run: . /etc/os-release && echo "version=${ID}-${VERSION_ID}" >> $GITHUB_OUTPUT
+
       - name: Restore toolchain from cache
         if: matrix.target != 'None' && inputs.sdk != 'none'
         uses: actions/cache/restore@v5
         id: cache-tools
         with:
           path: tools
-          key: ${{ inputs.tools-cache-key }}-${{ inputs.sdk }}
+          key: ${{ inputs.tools-cache-key }}-${{ steps.runner-os.outputs.version }}-${{ inputs.sdk }}
 
       - name: Install tools (fallback)
         if: matrix.target != 'None' && inputs.sdk != 'none' && steps.cache-tools.outputs.cache-hit != 'true'

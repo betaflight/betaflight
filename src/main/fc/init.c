@@ -194,6 +194,7 @@
 void targetPreInit(void);
 #endif
 
+
 uint8_t systemState = SYSTEM_STATE_INITIALISING;
 
 static enum {
@@ -216,6 +217,8 @@ void busSwitchInit(void)
     IOLo(busSwitchResetPin);
 }
 #endif
+
+
 
 static void configureSPIBusses(void)
 {
@@ -301,6 +304,7 @@ void initPhase1(void)
 
     // initialize IO (needed for all IO operations)
     IOInitGlobal();
+
 
 #if defined(USE_TARGET_CONFIG)
     // Call once before the config is loaded for any target specific configuration required to support loading the config
@@ -526,6 +530,9 @@ void initPhase2(void)
 #endif
 #if ENABLE_OVERCLOCK_240_MHZ
             240,
+#endif
+#if ENABLE_OVERCLOCK_336_MHZ
+            336,
 #endif
         };
         const uint8_t idx = systemConfig()->cpu_overclock;

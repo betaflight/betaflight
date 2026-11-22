@@ -77,7 +77,7 @@
   #define HSI_VALUE    ((uint32_t)16000000) /*!< Value of the Internal oscillator in Hz*/
 #endif /* HSI_VALUE */
 
-#define PLL_M     8
+#define PLL_M     (HSE_VALUE / 1000000)
 #define PLL_N     432
 #define PLL_P     RCC_PLLP_DIV2 /* 2 */
 #define PLL_Q     9

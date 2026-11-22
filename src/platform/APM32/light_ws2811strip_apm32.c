@@ -95,6 +95,7 @@ bool ws2811LedStripHardwareInit(void)
 
     BIT_COMPARE_1 = period / 3 * 2;
     BIT_COMPARE_0 = period / 3;
+    ws2811LedStripClearTransferBuffer();
 
     TmrHandle.Init.Prescaler = prescaler;
     TmrHandle.Init.Period = period; // 800kHz

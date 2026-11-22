@@ -43,7 +43,11 @@ uint16_t BIT_COMPARE_0 = 0;
 #define WS2811_DMA_BUF_CACHE_ALIGN_LENGTH (WS2811_DMA_BUF_CACHE_ALIGN_BYTES / sizeof(uint32_t))
 DMA_RW_AXI __attribute__((aligned(32))) uint32_t ledStripDMABuffer[WS2811_DMA_BUF_CACHE_ALIGN_LENGTH];
 #else
+#ifdef UM324xF
+DMA_RAM_RW uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
+#else
 DMA_DATA_ZERO_INIT uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
+#endif
 #endif
 
 ioTag_t ledStripIoTag;
@@ -54,6 +58,18 @@ void ws2811LedStripInit(ioTag_t ioTag, ledStripFormatRGB_e ledFormat)
     ws2811LedFormat = ledFormat;
     memset(ledStripDMABuffer, 0, sizeof(ledStripDMABuffer));
     ledStripIoTag = ioTag;
+}
+
+// Set every LED bit slot of the transfer buffer to a '0' bit pulse, so each frame is
+// WS2811_DATA_BUFFER_SIZE * WS2811_BITS_PER_LED_MAX bits long whatever the configured LED format.
+// Slots after the last LED of a 24 bit format are otherwise sent as a constant low level, which some
+// LED controllers (e.g. BETAFPV NightFire) do not accept. The trailing delay slots are left at zero.
+// Must be called once BIT_COMPARE_0 is set.
+void ws2811LedStripClearTransferBuffer(void)
+{
+    for (unsigned i = 0; i < WS2811_DATA_BUFFER_SIZE * WS2811_BITS_PER_LED_MAX; i++) {
+        ledStripDMABuffer[i] = BIT_COMPARE_0;
+    }
 }
 
 void ws2811LedStripUpdateTransferBuffer(const rgbColor24bpp_t *color, unsigned ledIndex)

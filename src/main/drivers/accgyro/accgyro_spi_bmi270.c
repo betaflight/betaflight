@@ -40,7 +40,7 @@
 
 #include "sensors/gyro.h"
 
-// When ENABLE_BMI270_ALIGN_AS_ICM is set, rotate the BMI270 raw data by CW90 so it
+// When ENABLE_BMI270_ALIGN_AS_ICM is set, rotate the BMI270 raw data by CW270 (CCW90) so it
 // presents identical axes to an ICM42688 and one board alignment serves either populated
 // chip. Opt-in per config (#define ENABLE_BMI270_ALIGN_AS_ICM 1); off by default so no
 // existing board changes frame unless its config explicitly asks for it.
@@ -51,8 +51,8 @@
 static inline void bmi270StoreAxes(int16_t *dst, int16_t x, int16_t y, int16_t z)
 {
 #if ENABLE_BMI270_ALIGN_AS_ICM
-    dst[X] = y;
-    dst[Y] = (x == INT16_MIN) ? INT16_MAX : -x;
+    dst[X] = (y == INT16_MIN) ? INT16_MAX : -y;
+    dst[Y] = x;
     dst[Z] = z;
 #else
     dst[X] = x;
@@ -379,7 +379,7 @@ static bool bmi270AccRead(accDev_t *acc)
         // up an old value.
 
         // This data was read from the gyro, which is the same SPI device as the acc
-        int16_t *accData = (int16_t *)dev->rxBuf;
+        int16_t *accData = (int16_t *)(void *)dev->rxBuf;
         bmi270StoreAxes(acc->ADCRaw, accData[1], accData[2], accData[3]);
         break;
     }
@@ -395,7 +395,7 @@ static bool bmi270AccRead(accDev_t *acc)
 static bool bmi270GyroReadRegister(gyroDev_t *gyro)
 {
     extDevice_t *dev = &gyro->dev;
-    int16_t *gyroData = (int16_t *)dev->rxBuf;
+    int16_t *gyroData = (int16_t *)(void *)dev->rxBuf;
 
     switch (gyro->gyroModeSPI) {
     case GYRO_EXTI_INIT:

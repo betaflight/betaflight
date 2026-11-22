@@ -218,16 +218,15 @@ void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
 float g_lastApproachDecelMps2;
 float g_lastApproachStillRadiusM;
 
-void positionNavSetApproachBrake(float decelMps2, float stillRadiusM)
+void positionNavSetApproachDecel(float decelMps2, float stillRadiusM)
 {
     g_lastApproachDecelMps2 = decelMps2;
     g_lastApproachStillRadiusM = stillRadiusM;
 }
 
-float positionNavApproachSpeedMps(float cruiseSpeedMps, float decelMps2, float stillRadiusM, float distM)
+float positionNavApproachSpeedMps(float cruiseSpeedMps, float decelMps2, float distM)
 {
-    const float gapM = fmaxf(distM - stillRadiusM, 0.0f);
-    const float speedMps = (gapM <= decelMps2) ? gapM : sqrtf(decelMps2 * (2.0f * gapM - decelMps2));
+    const float speedMps = (distM <= decelMps2) ? distM : sqrtf(2.0f * decelMps2 * distM - sq(decelMps2));
     return fminf(cruiseSpeedMps, speedMps);
 }
 

@@ -98,7 +98,7 @@ static void mcoConfigure(MCODevice_e device, const mcoConfig_t *config)
         IOConfigGPIOAF(io, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, GPIO_PUPD_NONE), GPIO_AF_0);
 #elif defined(GD32H7)
         rcu_ckout1_config(RCU_CKOUT1SRC_SYSTEMCLOCK, RCU_CKOUT1_DIV4);
-        IOConfigGPIOAF(io, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, GPIO_PUPD_NONE), GPIO_AF_0);
+        IOConfigGPIOAF(io, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_60MHZ, GPIO_OTYPE_PP, GPIO_PUPD_NONE), GPIO_AF_0);
 #else
         // All F4s
         RCC_MCO2Config(RCC_MCO2Source_PLLI2SCLK, RCC_MCO2Div_4);

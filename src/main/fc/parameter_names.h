@@ -78,6 +78,7 @@
 #define PARAM_NAME_TPA_SPEED_ADV_THRUST "tpa_speed_adv_thrust"
 #define PARAM_NAME_TPA_SPEED_MAX_VOLTAGE "tpa_speed_max_voltage"
 #define PARAM_NAME_TPA_SPEED_PITCH_OFFSET "tpa_speed_pitch_offset"
+#define PARAM_NAME_TPA_MAX_PITOT_SPEED "tpa_max_pitot_speed"
 #define PARAM_NAME_YAW_TYPE "yaw_type"
 #define PARAM_NAME_MIXER_TYPE "mixer_type"
 #define PARAM_NAME_EZ_LANDING_THRESHOLD "ez_landing_threshold"
@@ -337,7 +338,6 @@
 #define PARAM_NAME_GPS_RESCUE_MIN_SATS "gps_rescue_min_sats"
 #define PARAM_NAME_GPS_RESCUE_ALLOW_ARMING_WITHOUT_FIX "gps_rescue_allow_arming_without_fix"
 
-#define PARAM_NAME_GPS_RESCUE_YAW_P "gps_rescue_yaw_p"
 #endif // USE_GPS_RESCUE
 
 #ifdef USE_GPS_LAP_TIMER

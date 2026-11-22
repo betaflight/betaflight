@@ -153,6 +153,13 @@ static bool init_gpios(void)
             return false;
         }
 
+        IOInit(IOGetByTag(IO_TAG(OSD_W_PIN)), OWNER_OSD, 0);
+        IOInit(IOGetByTag(IO_TAG(OSD_EN_PIN)), OWNER_OSD, 0);
+        IOInit(IOGetByTag(IO_TAG(OSD_SYNC_PIN)), OWNER_OSD, 0);
+
+        // Configure SYNC pin for input, no pulls
+        IOConfigGPIO(IOGetByTag(IO_TAG(OSD_SYNC_PIN)), 0);
+
         osdPioBase = osd_sync_gpio < 32 ? 0 : 16; // Need the higher range if the highest gpio is not in the low range 0..31.
         bprintf("osd_w gpio %d, osd_en gpio %d, osd_sync gpio %d osdPioBase %d", osd_w_gpio, osd_en_gpio, osd_sync_gpio, osdPioBase);
         did = true;
@@ -242,8 +249,6 @@ static bool osd_init_device(bool isPAL, int displayLines, int transferWords)
     gpio_set_slew_rate(osd_en_gpio, GPIO_SLEW_RATE_FAST);
     gpio_put(osd_w_gpio, false);
     gpio_put(osd_en_gpio, false);
-    pio_gpio_init(osdPio, osd_w_gpio);
-    pio_gpio_init(osdPio, osd_en_gpio);
 
     // Default config with wrap set
     pio_sm_config config = isPAL ? osd_tx_pal_program_get_default_config(osd_tx_offset)
@@ -326,6 +331,7 @@ static bool osd_init_device(bool isPAL, int displayLines, int transferWords)
 #endif
     bprintf("OSD config_bg_to_bufA %08x, config_zero_to_bg %08x", config_bg_to_bufA, config_zero_to_bg);
 
+    // State machine and output pins not enabled until osdPioEnableDevice is called.
     return true;
 }
 
@@ -639,7 +645,8 @@ static void enable(void)
     pio_sm_set_enabled(osdPio, osd_tx_sm, true);
     pio_gpio_init(osdPio, osd_w_gpio);
     pio_gpio_init(osdPio, osd_en_gpio);
-//    gpio_set_pulls(osd_w_gpio, true, false);
+    gpio_set_pulls(osd_w_gpio, false, false);
+    gpio_set_pulls(osd_en_gpio, false, false);
 }
 
 // maybe don't need...
@@ -647,9 +654,10 @@ static void disable(void)
 {
     pio_sm_set_enabled(osdPio, osd_tx_sm, false);
     pio_sm_exec_wait_blocking(osdPio, osd_tx_sm, pio_encode_set(pio_pins, 0));
-    gpio_init(osd_w_gpio);
-    gpio_init(osd_en_gpio);
-//    gpio_set_pulls(osd_w_gpio, true, false);
+    gpio_set_function(osd_w_gpio, GPIO_FUNC_NULL);
+    gpio_set_function(osd_en_gpio, GPIO_FUNC_NULL);
+    gpio_set_pulls(osd_w_gpio, false, true);
+    gpio_set_pulls(osd_en_gpio, false, true);
 }
 
 void osdPioEnableDevice(void) {

@@ -65,7 +65,6 @@ static uint8_t gpsRescueConfig_minSats;
 static uint8_t gpsRescueConfig_allowArmingWithoutFix;
 
 static uint8_t autopilotConfig_altitudeP, autopilotConfig_altitudeI, autopilotConfig_altitudeD, autopilotConfig_altitudeA, autopilotConfig_altitudeF;
-static uint8_t gpsRescueConfig_yawP;
 static uint8_t autopilotConfig_positionP, autopilotConfig_positionI, autopilotConfig_positionD;
 static uint8_t autopilotConfig_positionCutoff;
 
@@ -78,8 +77,6 @@ static const void *cms_menuGpsRescuePidOnEnter(displayPort_t *pDisp)
     autopilotConfig_altitudeD = autopilotConfig()->altitudeD;
     autopilotConfig_altitudeA = autopilotConfig()->altitudeA;
     autopilotConfig_altitudeF = autopilotConfig()->altitudeF;
-
-    gpsRescueConfig_yawP = gpsRescueConfig()->yawP;
 
     autopilotConfig_positionP = autopilotConfig()->positionP;
     autopilotConfig_positionI = autopilotConfig()->positionI;
@@ -101,8 +98,6 @@ static const void *cms_menuGpsRescuePidOnExit(displayPort_t *pDisp, const OSD_En
     autopilotConfigMutable()->altitudeA = autopilotConfig_altitudeA;
     autopilotConfigMutable()->altitudeF = autopilotConfig_altitudeF;
 
-    gpsRescueConfigMutable()->yawP = gpsRescueConfig_yawP;
-
     autopilotConfigMutable()->positionP = autopilotConfig_positionP;
     autopilotConfigMutable()->positionI = autopilotConfig_positionI;
     autopilotConfigMutable()->positionD = autopilotConfig_positionD;
@@ -121,8 +116,6 @@ const OSD_Entry cms_menuGpsRescuePidEntries[] =
     { "ALTITUDE D",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_altitudeD, 0, AUTOPILOT_PID_GAIN_MAX, 1 } },
     { "ALTITUDE A",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_altitudeA, 0, 200, 1 } },
     { "ALTITUDE F",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_altitudeF, 0, 200, 1 } },
-
-    { "YAW P",             OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_yawP, 0, GPS_RESCUE_YAW_P_MAX, 1 } },
 
     { "POSITION P",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_positionP, 0, AUTOPILOT_PID_GAIN_MAX, 1 } },
     { "POSITION I",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_positionI, 0, AUTOPILOT_PID_GAIN_MAX, 1 } },
@@ -210,12 +203,12 @@ const OSD_Entry cmsx_menuGpsRescueEntries[] =
     { "ASCEND RATE  CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_ascendRate, GPS_RESCUE_ASCEND_RATE_MIN, GPS_RESCUE_ASCEND_RATE_MAX, 1 } },
 
     { "RETURN ALT      M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_returnAltitudeM, GPS_RESCUE_RETURN_ALT_MIN_M, GPS_RESCUE_RETURN_ALT_MAX_M, 1 } },
-    { "RETURN SPEED CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_groundSpeedCmS, 0, GPS_RESCUE_GROUND_SPEED_MAX, 1 } },
+    { "RETURN SPEED CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_groundSpeedCmS, 200, GPS_RESCUE_GROUND_SPEED_MAX, 1 } },
     { "PITCH ANGLE MAX",   OME_UINT8  | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t) { &autopilotConfig_maxAngle, AUTOPILOT_MAX_ANGLE_MIN, AUTOPILOT_MAX_ANGLE_MAX, 1 } },
 
     { "DESCENT DIST    M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_descentDistanceM, GPS_RESCUE_DESCENT_DIST_MIN_M, GPS_RESCUE_DESCENT_DIST_MAX_M, 1 } },
     { "DESCENT RATE CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_descendRate, GPS_RESCUE_DESCEND_RATE_MIN, GPS_RESCUE_DESCEND_RATE_MAX, 1 } },
-    { "LANDING ALT     M", OME_UINT8  | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t) { &autopilotConfig_landingAltitudeM, 1, 15, 1 } },
+    { "LANDING ALT     M", OME_UINT8  | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t) { &autopilotConfig_landingAltitudeM, 5, 15, 1 } },
 
     { "THROTTLE MIN",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &autopilotConfig_throttleMin, AUTOPILOT_THROTTLE_MIN_MIN, AUTOPILOT_THROTTLE_MIN_MAX, 1 } },
     { "THROTTLE MAX",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &autopilotConfig_throttleMax, AUTOPILOT_THROTTLE_MAX_MIN, AUTOPILOT_THROTTLE_MAX_MAX, 1 } },

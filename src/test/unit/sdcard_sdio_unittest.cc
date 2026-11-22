@@ -281,24 +281,48 @@ TEST_F(SdcardSdioTest, ReportsFailureForNonBusyWriteError)
     EXPECT_EQ(1u, callbackCalls);
 }
 
-TEST_F(SdcardSdioTest, SuccessfulReinitializationsDoNotExhaustRetryBudget)
+TEST_F(SdcardSdioTest, SuccessfulReinitializationsStillExhaustRetryBudget)
 {
     sdcard.state = SDCARD_STATE_CARD_INIT_IN_PROGRESS;
     mockCardReady = false;
-    sdcard.failureCount = SDCARD_MAX_CONSECUTIVE_FAILURES - 1;
 
-    for (unsigned i = 0; i < SDCARD_MAX_CONSECUTIVE_FAILURES + 1; i++) {
+    for (unsigned i = 0; i < SDCARD_MAX_CONSECUTIVE_FAILURES; i++) {
         sdcard.operationStartTime = mockTimeMs;
         mockTimeMs += SDCARD_TIMEOUT_INIT_MILLIS + 1;
         EXPECT_FALSE(sdcardSdioVTable.sdcard_poll());
         EXPECT_EQ(i + 1, initCalls);
-        EXPECT_EQ(SDCARD_STATE_RESET, sdcard.state);
-        EXPECT_EQ(0, sdcard.failureCount);
+        EXPECT_EQ(i + 1, sdcard.failureCount);
     }
+    EXPECT_EQ(SDCARD_STATE_NOT_PRESENT, sdcard.state);
+}
 
-    mockCardReady = true;
+TEST_F(SdcardSdioTest, RepeatedTransferFailuresDisableCardWhenInitSucceeds)
+{
+    for (unsigned i = 0; i < SDCARD_MAX_CONSECUTIVE_FAILURES; i++) {
+        sdcard.state = SDCARD_STATE_READY;
+        ASSERT_EQ(SDCARD_OPERATION_IN_PROGRESS,
+            sdcardSdioVTable.sdcard_writeBlock(7, buffer, operationComplete, 0));
+        mockWriteStatus = SD_ERROR;
+
+        EXPECT_FALSE(sdcardSdioVTable.sdcard_poll());
+        EXPECT_EQ(i + 1, initCalls);
+        EXPECT_EQ(i + 1, sdcard.failureCount);
+        mockWriteStatus = SD_OK;
+    }
+    EXPECT_EQ(SDCARD_STATE_NOT_PRESENT, sdcard.state);
+    EXPECT_FALSE(sdcardSdioVTable.sdcard_isFunctional());
+}
+
+TEST_F(SdcardSdioTest, CompletedReadClearsFailureCount)
+{
+    sdcard.state = SDCARD_STATE_READING;
+    sdcard.operationStartTime = mockTimeMs;
+    sdcard.failureCount = SDCARD_MAX_CONSECUTIVE_FAILURES - 1;
+
     EXPECT_TRUE(sdcardSdioVTable.sdcard_poll());
+
     EXPECT_EQ(SDCARD_STATE_READY, sdcard.state);
+    EXPECT_EQ(0, sdcard.failureCount);
 }
 
 TEST_F(SdcardSdioTest, ConsecutiveFailedReinitializationsDisableCard)
@@ -327,7 +351,7 @@ TEST_F(SdcardSdioTest, FailedCsdReadRetriesOnNextPoll)
     EXPECT_EQ(2u, cardInfoCalls);
     EXPECT_EQ(1u, initCalls);
     EXPECT_EQ(SDCARD_STATE_RESET, sdcard.state);
-    EXPECT_EQ(0, sdcard.failureCount);
+    EXPECT_EQ(1, sdcard.failureCount);
 
     failCsdRead = false;
     EXPECT_TRUE(sdcardSdioVTable.sdcard_poll());
