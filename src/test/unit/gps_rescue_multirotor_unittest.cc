@@ -73,6 +73,7 @@ static positionEstimate3d_t simulatedEstimate;
 static int landingCalls;
 static landingProfile_t lastLandingProfile;
 static float landingTargetCm;
+static float lastAltitudeTargetCm;
 
 extern "C" {
     timeUs_t micros(void) { return simulatedTimeUs; }
@@ -95,7 +96,10 @@ extern "C" {
 
     void autopilotSetYawTarget(float) { }
     void setTargetVelocity(const vector2_t *, bool) { }
-    void altitudeControl(float, timeUs_t, float, float) { }
+    void altitudeControl(float targetAltitudeCm, timeUs_t, float, float)
+{
+    lastAltitudeTargetCm = targetAltitudeCm;
+}
     void autopilotLand(const landingProfile_t *profile, float startAltitudeCm, timeUs_t taskIntervalUs)
     {
         landingCalls++;
@@ -208,28 +212,120 @@ protected:
         gpsSol.numSat = GPS_MIN_SAT_COUNT + 4;
         ENABLE_STATE(GPS_FIX);
         ENABLE_STATE(GPS_FIX_HOME);
-        simulatedEstimate.position.v[EF_NORTH] = 1000.0f;
+        simulatedEstimate.position.v[EF_NORTH] = -1000.0f; // start south of home;  nose is defaulted to north
     }
 };
 
+
+TEST_F(GpsRescueLanding, DescentRateReducesWithAltitude)
+{
+    gpsRescueConfigMutable()->altitudeMode = GPS_RESCUE_ALT_MODE_FIXED;
+    gpsRescueConfigMutable()->returnAltitudeM = 60;
+    gpsRescueConfigMutable()->descendRate = 200;
+    // Start 18m from home, inside descent distance but outside close-range Rescue.
+    simulatedEstimate.position.v[EF_NORTH] = -1800.0f;
+
+    const float descendRate = gpsRescueConfig()->descendRate;
+    const float dt = 1.0f / TASK_GPS_RESCUE_RATE_HZ;
+
+    // Reach return altitude and begin descent within the descent distance.
+    runRescueSeconds(1.0f);
+    simulatedAltitudeCm = 6100.0f;
+    runRescueSeconds(1.0f);
+
+    bool checkedHigh = false;
+    bool checkedMiddle = false;
+    bool checkedLow = false;
+
+    // Follow the altitude target to avoid triggering stalled-descent detection.
+    for (int i = 0; i < 6000 && !checkedLow; i++) {
+        const float previousTargetCm = lastAltitudeTargetCm;
+
+        runRescueSeconds(dt);
+        simulatedAltitudeCm = lastAltitudeTargetCm;
+
+        const float actualRate = (previousTargetCm - lastAltitudeTargetCm) / dt;
+
+        if (!checkedHigh && fabsf(previousTargetCm - 5000.0f) < 15.0f) {
+            EXPECT_NEAR(3.0f * descendRate, actualRate, 10.0f);
+            checkedHigh = true;
+        }
+
+        if (!checkedMiddle && fabsf(previousTargetCm - 3000.0f) < 15.0f) {
+            EXPECT_NEAR(1.8f * descendRate, actualRate, 10.0f);
+            checkedMiddle = true;
+        }
+
+        if (!checkedLow && fabsf(previousTargetCm - 1000.0f) < 15.0f) {
+            EXPECT_NEAR(0.6f * descendRate, actualRate, 10.0f);
+            checkedLow = true;
+        }
+    }
+
+    EXPECT_TRUE(checkedHigh);
+    EXPECT_TRUE(checkedMiddle);
+    EXPECT_TRUE(checkedLow);
+    EXPECT_EQ(0, landingCalls);
+}
+
+
 TEST_F(GpsRescueLanding, DisarmsAfterDescentStallsAboveLandingAltitude)
 {
-    // climb to the return altitude, then descend as already within the descent distance
+    // Use a slow descent rate so the target remains above landing altitude.
+    gpsRescueConfigMutable()->descendRate = 25;
+
     runRescueSeconds(1.0f);
     EXPECT_EQ(0, landingCalls);
     simulatedAltitudeCm = 3100.0f;
     runRescueSeconds(1.0f);
 
-    // the descent is flown as a landing, at the rescue descent rate near the ground and faster high up
-    EXPECT_GT(landingCalls, 0);
-    EXPECT_FLOAT_EQ(0.6f * gpsRescueConfig()->descendRate, lastLandingProfile.touchdownRateCmS);
-    EXPECT_FLOAT_EQ(3.0f * gpsRescueConfig()->descendRate, lastLandingProfile.maxRateCmS);
+    // Normal descent does not initiate landing.
+    EXPECT_EQ(0, landingCalls);
 
-    // on the ground on terrain higher than home: the descent stalls above the landing altitude
+    // Simulate stalled descent above landing altitude.
     simulatedAltitudeCm = 1000.0f;
     runRescueSeconds(20.0f);
+
+    // Stalled descent initiates landing.
+    EXPECT_GT(landingCalls, 0);
     EXPECT_EQ(0, disarmCount);
+
     runRescueSeconds(15.0f);
     EXPECT_EQ(1, disarmCount);
     EXPECT_EQ(DISARM_REASON_FAILSAFE, lastDisarmReason);
+}
+
+static void reachLandingAltitude(void)
+{
+    // Use a fast descent rate to reach the configured landing altitude
+    // without triggering the 15-second stalled-descent check.
+    gpsRescueConfigMutable()->descendRate = 500;
+
+    runRescueSeconds(1.0f);
+    simulatedAltitudeCm = 3100.0f;
+    runRescueSeconds(1.0f);
+
+    // Remain 5m from home while the altitude target descends.
+    simulatedEstimate.position.v[EF_NORTH] = -500.0f;
+    runRescueSeconds(12.0f);
+}
+
+TEST_F(GpsRescueLanding, HoldsAtLandingAltitudeOutsideAcceptanceRadius)
+{
+    reachLandingAltitude();
+
+    // At 5m from home, landing must not begin.
+    EXPECT_EQ(0, landingCalls);
+}
+
+TEST_F(GpsRescueLanding, LandsImmediatelyWithinAcceptanceRadius)
+{
+    reachLandingAltitude();
+    EXPECT_EQ(0, landingCalls);
+
+    // Move directly over home.
+    simulatedEstimate.position.v[EF_NORTH] = 0.0f;
+    runRescueSeconds(0.1f);
+
+    EXPECT_GT(landingCalls, 0);
 }
