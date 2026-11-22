@@ -93,8 +93,11 @@
 
 /* Exported macro ------------------------------------------------------------*/
 /* Memory management macros */
-#define USBD_malloc               malloc
-#define USBD_free                 free
+// USB class handles use fixed static slots instead of the heap (usbd_static_alloc.c)
+void *USBD_static_malloc(uint32_t size);
+void USBD_static_free(void *p);
+#define USBD_malloc               USBD_static_malloc
+#define USBD_free                 USBD_static_free
 #define USBD_memset               memset
 #define USBD_memcpy               memcpy
 

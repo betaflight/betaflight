@@ -32,7 +32,7 @@
 extern "C" {
     #include "platform.h"
 
-    #include "common/mavlink.h"
+    #include "telemetry/mavlink_lib.h"
 
     #include "config/config.h"
     #include "fc/runtime_config.h"
