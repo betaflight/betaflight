@@ -242,9 +242,11 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #endif
         .rxPins = {
             { DEFIO_TAG_E(PC7), HAL_GPIO_AF7_USART6 },
+            { DEFIO_TAG_E(PG9), HAL_GPIO_AF7_USART6 },
         },
         .txPins = {
-            { DEFIO_TAG_E(PC6), HAL_GPIO_AF7_USART6 },
+            { DEFIO_TAG_E(PC6),  HAL_GPIO_AF7_USART6 },
+            { DEFIO_TAG_E(PG14), HAL_GPIO_AF7_USART6 },
         },
         .rcc = RCC_APB1L(USART6),
         .irqn = USART6_IRQn,

@@ -709,29 +709,6 @@ void USBD_LL_Delay(uint32_t Delay)
   HAL_Delay(Delay);
 }
 
-/**
-  * @brief  Static single allocation.
-  * @param  size: Size of allocated memory
-  * @retval None
-  */
-LOCAL_UNUSED_FUNCTION static void *USBD_static_malloc(uint32_t size)
-{
-  UNUSED(size);
-
-  static uint32_t mem[(sizeof(USBD_CDC_HandleTypeDef)/4)+1];/* On 32-bit boundary */
-  return mem;
-}
-
-/**
-  * @brief  Dummy memory free
-  * @param  p: Pointer to allocated  memory address
-  * @retval None
-  */
-LOCAL_UNUSED_FUNCTION static void USBD_static_free(void *p)
-{
-  UNUSED(p);
-}
-
 /* USER CODE BEGIN 5 */
 /**
   * @brief  Configures system clock after wake-up from USB resume callBack:
