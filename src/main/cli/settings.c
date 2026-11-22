@@ -1210,7 +1210,7 @@ const clivalue_t valueTable[] = {
 
     { PARAM_NAME_GPS_RESCUE_RETURN_ALT,      VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { GPS_RESCUE_RETURN_ALT_MIN_M, GPS_RESCUE_RETURN_ALT_MAX_M }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, returnAltitudeM) },
 #ifndef USE_WING
-    { PARAM_NAME_GPS_RESCUE_GROUND_SPEED,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, GPS_RESCUE_GROUND_SPEED_MAX }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, groundSpeedCmS) },
+    { PARAM_NAME_GPS_RESCUE_GROUND_SPEED,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 200, GPS_RESCUE_GROUND_SPEED_MAX }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, groundSpeedCmS) },
 
     { PARAM_NAME_GPS_RESCUE_DESCENT_DIST,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { GPS_RESCUE_DESCENT_DIST_MIN_M, GPS_RESCUE_DESCENT_DIST_MAX_M }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, descentDistanceM) },
 #endif
@@ -1879,6 +1879,7 @@ const clivalue_t valueTable[] = {
 #endif
     { "pwr_on_arm_grace",           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 30 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, powerOnArmingGraceTime) },
     { "enable_stick_arming",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, enableStickArming) },
+    { "enable_stick_profile_switch", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, enableStickProfileSwitch) },
 
 // PG_VTX_CONFIG
 #ifdef USE_VTX_COMMON
@@ -2171,7 +2172,7 @@ const clivalue_t valueTable[] = {
 
 // PG_AUTOPILOT
 #ifndef USE_WING
-    { PARAM_NAME_AP_LANDING_ALTITUDE_M,  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, landingAltitudeM) },
+    { PARAM_NAME_AP_LANDING_ALTITUDE_M,  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, landingAltitudeM) },
     { PARAM_NAME_AP_HOVER_THROTTLE,      VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, AUTOPILOT_HOVER_THROTTLE_MAX }, PG_AUTOPILOT, offsetof(autopilotConfig_t, hoverThrottle) },
     { PARAM_NAME_AP_THROTTLE_MIN,        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { AUTOPILOT_THROTTLE_MIN_MIN, AUTOPILOT_THROTTLE_MIN_MAX }, PG_AUTOPILOT, offsetof(autopilotConfig_t, throttleMin) },
     { PARAM_NAME_AP_THROTTLE_MAX,        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { AUTOPILOT_THROTTLE_MAX_MIN, AUTOPILOT_THROTTLE_MAX_MAX }, PG_AUTOPILOT, offsetof(autopilotConfig_t, throttleMax) },
