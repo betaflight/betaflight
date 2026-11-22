@@ -305,6 +305,38 @@
 
 #endif // USE_PITOT
 
+// SPI RX: only MCUs with existing on-board SPI receiver boards opt in via
+// ENABLE_RX_SPI in target.h. New boards must use a UART receiver, so new
+// platforms should not enable it. Board configs and cloud builds still select
+// SPI RX explicitly with USE_RX_SPI / USE_RX_CC2500 / USE_RX_EXPRESSLRS.
+#if !defined(ENABLE_RX_SPI)
+#if defined(USE_RX_SPI) || defined(USE_RX_CC2500) || defined(USE_RX_EXPRESSLRS)
+#define ENABLE_RX_SPI 1
+#else
+#define ENABLE_RX_SPI 0
+#endif
+#endif
+
+// No board uses the SX127x (900 MHz ExpressLRS) SPI receiver, so it is left out
+// of generic builds unless a target opts in via ENABLE_RX_SX127X in target.h.
+#if !defined(ENABLE_RX_SX127X)
+#if defined(USE_RX_SX127X)
+#define ENABLE_RX_SX127X 1
+#else
+#define ENABLE_RX_SX127X 0
+#endif
+#endif
+
+#if ENABLE_RX_SPI && !defined(CLOUD_BUILD) && !defined(USE_CONFIG) && !defined(SITL) && !defined(USE_RX_SPI)
+#define USE_RX_SPI
+#define USE_RX_CC2500
+#define USE_RX_EXPRESSLRS
+#define USE_RX_SX1280
+#if ENABLE_RX_SX127X
+#define USE_RX_SX127X
+#endif
+#endif
+
 #if defined(USE_RX_CC2500)
 
 #if !defined(USE_RX_SPI)
