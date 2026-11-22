@@ -68,7 +68,7 @@ void cacheAltitudeInfo(uint8_t x, uint8_t y, uint8_t elemType, bool isBlink)
     haveGps = sensors(SENSOR_GPS) && STATE(GPS_FIX);
 #endif // USE_GPS
 #ifdef USE_RANGEFINDER
-    haveRangefinder = sensors(SENSOR_RANGEFINDER);
+     haveRangefinder = sensors(SENSOR_RANGEFINDER) && isAltitudeAvailable();
 #endif // USE_RANGEFINDER
     int32_t altCm = getEstimatedAltitudeCm();
 
