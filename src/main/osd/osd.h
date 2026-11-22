@@ -27,7 +27,6 @@
 
 #include "pg/pg.h"
 
-#include "sensors/esc_sensor.h"
 #include "sensors/motor_telemetry.h"
 
 #define OSD_NUM_TIMER_TYPES 5

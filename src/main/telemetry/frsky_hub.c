@@ -71,7 +71,6 @@
 #include "telemetry/telemetry.h"
 
 #if defined(USE_ESC_SENSOR_TELEMETRY)
-#include "sensors/esc_sensor.h"
 #include "sensors/motor_telemetry.h"
 #endif
 

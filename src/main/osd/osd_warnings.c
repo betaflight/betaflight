@@ -73,7 +73,7 @@
 
 const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 
-#if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
 // ESC alarm character constants
 #define ESC_ALARM_CURRENT   'C'
 #define ESC_ALARM_TEMP      'T'
@@ -246,7 +246,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         return;
     }
 
-#if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
     // Show warning if we lose motor output, the ESC is overheating or excessive current draw
     if (motorTelemetryIsEnabled() && osdWarnGetState(OSD_WARNING_ESC_FAIL) && ARMING_FLAG(ARMED)) {
         if (buildEscWarningMessage(warningText)) {
