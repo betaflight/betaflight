@@ -127,7 +127,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 #define CHIRP_SETTLE_TIME_US 750000 // 750 ms
 #endif // USE_CHIRP
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 13);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 14);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -1164,6 +1164,7 @@ NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
 #endif // USE_WING
 }
 
+#ifdef USE_ACC
 // finds the 3d cross product between the attitude_setpoint and the measured gravity_vector
 // improve this later for better high angle errors
 void attitudeError(float *attitude_setpoint, float *gravity_vector, float *error) {
@@ -1238,8 +1239,11 @@ FAST_CODE_NOINLINE void pidQuickSilverAttitude(const pidProfile_t *pidProfile, f
     #endif // USE_WING
 
     #ifdef USE_GPS_RESCUE
-        roll_angle_rad += DEGREES_TO_RADIANS(gpsRescueAngle[FD_ROLL] / 100.0f); // Angle is in centidegrees, stepped on roll at 10Hz but not on pitch
-        pitch_angle_rad += DEGREES_TO_RADIANS(gpsRescueAngle[FD_PITCH] / 100.0f); // Angle is in centidegrees, stepped on roll at 10Hz but not on pitch
+        if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+            roll_angle_rad = DEGREES_TO_RADIANS(autopilotAngle[FD_ROLL]);
+            pitch_angle_rad = DEGREES_TO_RADIANS(autopilotAngle[FD_PITCH]);
+            angleLimit = DEGREES_TO_RADIANS((float)autopilotConfig()->maxAngle);
+        }
     #endif
     #if defined(USE_POSITION_HOLD) && !defined(USE_WING)
         if (FLIGHT_MODE(POS_HOLD_MODE)) {
@@ -1338,6 +1342,8 @@ FAST_CODE_NOINLINE void pidQuickSilverAttitude(const pidProfile_t *pidProfile, f
     }
 }
 
+#endif
+
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
 void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTimeUs)
@@ -1375,7 +1381,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     levelMode_e levelMode;
     const bool isLevelMode = FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE | GPS_RESCUE_MODE | LAUNCH_MODE);
     if (isLevelMode) {
-        if (pidProfile->qs_level_mode) {
+        if (pidProfile->qs_level_mode && !FLIGHT_MODE(LAUNCH_MODE)) {
             levelMode = LEVEL_MODE_QS;
         } else if (pidRuntime.levelRaceMode && !isExternalAngleModeRequest) {
             levelMode = LEVEL_MODE_R;
@@ -1406,7 +1412,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #else
     UNUSED(pidProfile);
     UNUSED(currentTimeUs);
-    levelMode_e levelMode = LEVEL_MODE_OFF;
+#ifdef USE_CHIRP
+    const levelMode_e levelMode = LEVEL_MODE_OFF;
+#endif
 #endif
 
     // Anti Gravity
@@ -1549,6 +1557,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
     }
 
+#ifdef USE_ACC
     // attitude QS PID controller
     if (levelMode == LEVEL_MODE_QS) {
         for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
@@ -1557,6 +1566,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // this will do all the modification of setpoint
         pidQuickSilverAttitude(pidProfile, currentPidSetpoints, horizonLevelStrength);
     }
+#endif
 
     // ----------PID controller----------
     for (flight_dynamics_index_t axis = FD_ROLL; axis <= FD_YAW; ++axis) {
