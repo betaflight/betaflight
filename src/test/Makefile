@@ -312,6 +312,16 @@ common_filter_unittest_SRC := \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c
 
+config_unittest_SRC := \
+		$(USER_DIR)/config/config.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/pg/pg.c
+
+config_unittest_DEFINES := \
+		DEFAULT_CPU_OVERCLOCK=0 \
+		SYSTEM_HSE_MHZ=0
+
 debug_annotations_unittest_SRC := \
 		$(USER_DIR)/build/debug.c
 
