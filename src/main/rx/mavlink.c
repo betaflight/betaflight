@@ -190,6 +190,8 @@ STATIC_UNIT_TESTED void mavlinkDataReceive(uint16_t c, void *data)
 bool mavlinkRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
     frameReceived = false;
+    txbuff_valid = false;
+    txbuff_free = 100;
     for (int i = 0; i < MAVLINK_CHANNEL_COUNT; ++i) {
         mavlinkChannelData[i] = rxConfig->midrc;
     }
