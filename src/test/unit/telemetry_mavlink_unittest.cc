@@ -1,0 +1,876 @@
+/*
+ * This file is part of Betaflight.
+ *
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <math.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <deque>
+#include <string>
+#include <vector>
+
+extern "C" {
+    #include "platform.h"
+
+    #include "telemetry/mavlink_lib.h"
+
+    #include "build/debug.h"
+    #include "build/version.h"
+    #include "common/time.h"
+    #include "drivers/system.h"
+    #include "fc/core.h"
+    #include "fc/rc_modes.h"
+    #include "fc/runtime_config.h"
+    #include "flight/failsafe.h"
+    #include "flight/flight_plan_nav.h"
+    #include "flight/imu.h"
+    #include "flight/mixer.h"
+    #include "flight/position.h"
+    #include "io/gps.h"
+    #include "io/serial.h"
+    #include "pg/pg.h"
+    #include "pg/pg_ids.h"
+    #include "rx/rx.h"
+    #include "sensors/battery.h"
+    #include "telemetry/telemetry.h"
+    #include "telemetry/mavlink.h"
+
+    PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
+    PG_REGISTER(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
+
+    int16_t debug[DEBUG16_VALUE_COUNT];
+    uint8_t debugMode;
+
+    uint8_t armingFlags;
+    uint8_t stateFlags;
+    uint16_t flightModeFlags;
+    uint16_t enableFlightMode(flightModeFlags_e mask)
+    {
+        flightModeFlags |= mask;
+        return flightModeFlags;
+    }
+
+    const uint32_t baudRates[BAUD_COUNT] = {
+        0, 9600, 19200, 38400, 57600, 115200, 230400, 250000,
+        400000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 2470000
+    };
+
+    static uint32_t fakeMillis;
+    static uint32_t fakeMicros;
+    uint32_t millis(void) { return fakeMillis; }
+    uint32_t micros(void) { return fakeMicros; }
+
+    static serialPort_t testPort;
+    static std::vector<uint8_t> *txBytes;
+    static std::deque<uint8_t> *rxBytes;
+    serialPort_t *telemetrySharedPort;
+    serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr,
+        void *, uint32_t, portMode_e, portOptions_e)
+    {
+        return &testPort;
+    }
+    void closeSerialPort(serialPort_t *) {}
+    void serialWrite(serialPort_t *, uint8_t ch) { txBytes->push_back(ch); }
+    uint32_t serialRxBytesWaiting(const serialPort_t *) { return rxBytes->size(); }
+    uint8_t serialRead(serialPort_t *)
+    {
+        const uint8_t c = rxBytes->front();
+        rxBytes->pop_front();
+        return c;
+    }
+    static int waitForTxCalls;
+    void waitForSerialPortToFinishTransmitting(serialPort_t *) { waitForTxCalls++; }
+    portSharing_e determinePortSharing(serialPortIdentifier_e, serialPortFunction_e) { return PORTSHARING_NOT_SHARED; }
+
+    serialPortIdentifier_e telemetryProviderPort(uint8_t) { return SERIAL_PORT_USART1; }
+    uint8_t telemetryProviderBaud(uint8_t, serialPortIdentifier_e) { return BAUD_AUTO; }
+    bool telemetryCheckRxPortShared(serialPortIdentifier_e, const SerialRXType) { return false; }
+    bool telemetryDetermineEnabledState(portSharing_e) { return true; }
+
+    rxRuntimeState_t rxRuntimeState;
+    float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+    uint16_t getRssi(void) { return 0; }
+
+    static int disarmCalls;
+    static flightLogDisarmReason_e lastDisarmReason;
+    void disarm(flightLogDisarmReason_e reason)
+    {
+        disarmCalls++;
+        lastDisarmReason = reason;
+        DISABLE_ARMING_FLAG(ARMED);
+    }
+    static int tryArmCalls;
+    static bool tryArmSucceeds;
+    void tryArm(void)
+    {
+        tryArmCalls++;
+        if (tryArmSucceeds) {
+            ENABLE_ARMING_FLAG(ARMED);
+        }
+    }
+    static armingDisableFlags_e armingDisableFlags;
+    armingDisableFlags_e getArmingDisableFlags(void) { return armingDisableFlags; }
+    bool isArmingDisabled(void) { return armingDisableFlags != 0; }
+    const char *getArmingDisableFlagName(armingDisableFlags_e flag)
+    {
+        switch (flag) {
+        case ARMING_DISABLED_RX_FAILSAFE: return "RXLOSS";
+        case ARMING_DISABLED_THROTTLE: return "THROTTLE";
+        default: return "OTHER";
+        }
+    }
+
+    static uint32_t overrideMask;
+    static int overrideClears;
+    void rcModeSetExternalOverride(boxId_e boxId, bool enabled)
+    {
+        if (enabled) {
+            overrideMask |= 1u << boxId;
+        } else {
+            overrideMask &= ~(1u << boxId);
+        }
+    }
+    void rcModeClearExternalOverrides(void)
+    {
+        overrideMask = 0;
+        overrideClears++;
+    }
+
+    static bool failsafeActive;
+    bool failsafeIsActive(void) { return failsafeActive; }
+
+    attitudeEulerAngles_t attitude;
+    int32_t getEstimatedAltitudeCm(void) { return 0; }
+
+    static uint32_t sensorMask;
+    bool sensors(uint32_t mask) { return (sensorMask & mask) != 0; }
+
+    gpsSolutionData_t gpsSol;
+    gpsLocation_t GPS_home_llh;
+    static int resetHomeCalls;
+    void GPS_reset_home_position(void)
+    {
+        resetHomeCalls++;
+        ENABLE_STATE(GPS_FIX_HOME);
+    }
+
+    batteryState_e getBatteryState(void) { return BATTERY_NOT_PRESENT; }
+    bool isBatteryVoltageConfigured(void) { return false; }
+    uint16_t getBatteryVoltage(void) { return 0; }
+    bool isAmperageConfigured(void) { return false; }
+    int32_t getAmperage(void) { return 0; }
+    uint8_t calculateBatteryPercentageRemaining(void) { return 0; }
+    int32_t getMAhDrawn(void) { return 0; }
+    uint8_t getBatteryCellCount(void) { return 0; }
+    uint16_t getBatteryAverageCellVoltage(void) { return 0; }
+
+    static int motorShutdownCalls;
+    void motorShutdown(void) { motorShutdownCalls++; }
+    static int systemResetCalls;
+    void systemReset(void) { systemResetCalls++; }
+    static int bootloaderResetCalls;
+    void systemResetToBootloader(bootloaderRequestType_e) { bootloaderResetCalls++; }
+}
+
+#include "unittest_macros.h"
+#include "gtest/gtest.h"
+
+#define GCS_SYS 255
+#define GCS_COMP MAV_COMP_ID_MISSIONPLANNER
+#define FC_SYS 1
+#define FC_COMP MAV_COMP_ID_AUTOPILOT1
+
+enum {
+    MODE_ACRO = 0,
+    MODE_ANGLE,
+    MODE_HORIZON,
+    MODE_ALT_HOLD,
+    MODE_POS_HOLD,
+    MODE_AUTOPILOT,
+    MODE_RTL,
+    MODE_FAILSAFE,
+    MODE_COUNT,
+};
+
+class MavlinkTelemetryTest : public ::testing::Test {
+protected:
+    std::vector<uint8_t> tx;
+    std::deque<uint8_t> rx;
+    std::vector<mavlink_message_t> sent;
+
+    void SetUp() override
+    {
+        txBytes = &tx;
+        rxBytes = &rx;
+
+        fakeMillis += 10000;
+        fakeMicros = fakeMillis * 1000;
+        armingFlags = 0;
+        stateFlags = 0;
+        flightModeFlags = 0;
+        armingDisableFlags = (armingDisableFlags_e)0;
+        disarmCalls = 0;
+        tryArmCalls = 0;
+        tryArmSucceeds = false;
+        overrideMask = 0;
+        overrideClears = 0;
+        failsafeActive = false;
+        sensorMask = 0;
+        resetHomeCalls = 0;
+        motorShutdownCalls = 0;
+        systemResetCalls = 0;
+        bootloaderResetCalls = 0;
+        waitForTxCalls = 0;
+        memset(&attitude, 0, sizeof(attitude));
+        memset(&gpsSol, 0, sizeof(gpsSol));
+        memset(&GPS_home_llh, 0, sizeof(GPS_home_llh));
+        mixerConfigMutable()->mixerMode = MIXER_QUADX;
+
+        telemetryConfig_t *cfg = telemetryConfigMutable();
+        cfg->mavlink_extended_status_rate = 0;
+        cfg->mavlink_rc_channels_rate = 0;
+        cfg->mavlink_position_rate = 0;
+        cfg->mavlink_extra1_rate = 0;
+        cfg->mavlink_extra2_rate = 0;
+        cfg->mavlink_extra3_rate = 0;
+
+        mavlink_reset_channel_status(MAVLINK_COMM_0);
+
+        freeMAVLinkTelemetryPort();
+        initMAVLinkTelemetry();
+        checkMAVLinkTelemetryState();
+        tx.clear();
+    }
+
+    void enableStreams(uint8_t extra2Rate)
+    {
+        telemetryConfigMutable()->mavlink_extra2_rate = extra2Rate;
+        freeMAVLinkTelemetryPort();
+        checkMAVLinkTelemetryState();
+        tx.clear();
+    }
+
+    void advanceMs(uint32_t ms)
+    {
+        fakeMillis += ms;
+        fakeMicros += ms * 1000;
+    }
+
+    void feed(const mavlink_message_t *msg)
+    {
+        uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+        const uint16_t len = mavlink_msg_to_send_buffer(buf, msg);
+        rx.insert(rx.end(), buf, buf + len);
+        while (!rx.empty()) {
+            handleMAVLinkTelemetry();
+        }
+        collect();
+    }
+
+    void tick(uint32_t ms)
+    {
+        advanceMs(ms);
+        handleMAVLinkTelemetry();
+        collect();
+    }
+
+    void collect()
+    {
+        mavlink_message_t msg;
+        mavlink_status_t status;
+        for (uint8_t c : tx) {
+            if (mavlink_parse_char(MAVLINK_COMM_0, c, &msg, &status) == MAVLINK_FRAMING_OK) {
+                sent.push_back(msg);
+            }
+        }
+        tx.clear();
+    }
+
+    const mavlink_message_t *lastOf(uint32_t msgid)
+    {
+        for (auto it = sent.rbegin(); it != sent.rend(); ++it) {
+            if (it->msgid == msgid) {
+                return &(*it);
+            }
+        }
+        return nullptr;
+    }
+
+    int countOf(uint32_t msgid)
+    {
+        int n = 0;
+        for (const auto &m : sent) {
+            n += (m.msgid == msgid);
+        }
+        return n;
+    }
+
+    void commandLong(uint16_t command, float p1 = 0, float p2 = 0, float p3 = 0, float p4 = 0,
+        float p5 = 0, float p6 = 0, float p7 = 0, uint8_t targetSys = FC_SYS, uint8_t targetComp = FC_COMP)
+    {
+        mavlink_message_t msg;
+        mavlink_msg_command_long_pack_chan(GCS_SYS, GCS_COMP, MAVLINK_COMM_1, &msg,
+            targetSys, targetComp, command, 0, p1, p2, p3, p4, p5, p6, p7);
+        feed(&msg);
+    }
+
+    void commandInt(uint16_t command, float p1, int32_t x, int32_t y, float z)
+    {
+        mavlink_message_t msg;
+        mavlink_msg_command_int_pack_chan(GCS_SYS, GCS_COMP, MAVLINK_COMM_1, &msg,
+            FC_SYS, FC_COMP, MAV_FRAME_GLOBAL_INT, command, 0, 0, p1, 0, 0, 0, x, y, z);
+        feed(&msg);
+    }
+
+    mavlink_command_ack_t lastAck()
+    {
+        mavlink_command_ack_t ack;
+        memset(&ack, 0, sizeof(ack));
+        const mavlink_message_t *m = lastOf(MAVLINK_MSG_ID_COMMAND_ACK);
+        EXPECT_NE(m, nullptr);
+        if (m) {
+            mavlink_msg_command_ack_decode(m, &ack);
+        }
+        return ack;
+    }
+
+    uint8_t ackResultFor(uint16_t command, float p1 = 0, float p2 = 0)
+    {
+        sent.clear();
+        commandLong(command, p1, p2);
+        const mavlink_command_ack_t ack = lastAck();
+        EXPECT_EQ(ack.command, command);
+        EXPECT_EQ(ack.target_system, GCS_SYS);
+        EXPECT_EQ(ack.target_component, GCS_COMP);
+        return ack.result;
+    }
+
+    mavlink_heartbeat_t heartbeat()
+    {
+        sent.clear();
+        tick(1100);
+        mavlink_heartbeat_t hb;
+        memset(&hb, 0, sizeof(hb));
+        const mavlink_message_t *m = lastOf(MAVLINK_MSG_ID_HEARTBEAT);
+        EXPECT_NE(m, nullptr);
+        if (m) {
+            EXPECT_EQ(m->sysid, FC_SYS);
+            EXPECT_EQ(m->compid, FC_COMP);
+            mavlink_msg_heartbeat_decode(m, &hb);
+        }
+        return hb;
+    }
+
+    void setMode(uint32_t customMode)
+    {
+        sent.clear();
+        commandLong(MAV_CMD_DO_SET_MODE, MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, customMode);
+    }
+};
+
+TEST_F(MavlinkTelemetryTest, HeartbeatDisarmedAcro)
+{
+    enableStreams(1);
+    const mavlink_heartbeat_t hb = heartbeat();
+    EXPECT_EQ(hb.type, MAV_TYPE_QUADROTOR);
+    EXPECT_EQ(hb.autopilot, MAV_AUTOPILOT_BETAFLIGHT);
+    EXPECT_EQ(hb.base_mode, MAV_MODE_MANUAL_DISARMED);
+    EXPECT_EQ(hb.custom_mode, (uint32_t)MODE_ACRO);
+    EXPECT_EQ(hb.system_status, MAV_STATE_STANDBY);
+}
+
+TEST_F(MavlinkTelemetryTest, HeartbeatArmedAngle)
+{
+    enableStreams(1);
+    ENABLE_ARMING_FLAG(ARMED);
+    ENABLE_FLIGHT_MODE(ANGLE_MODE);
+    const mavlink_heartbeat_t hb = heartbeat();
+    EXPECT_TRUE(hb.base_mode & MAV_MODE_FLAG_SAFETY_ARMED);
+    EXPECT_TRUE(hb.base_mode & MAV_MODE_FLAG_STABILIZE_ENABLED);
+    EXPECT_EQ(hb.custom_mode, (uint32_t)MODE_ANGLE);
+    EXPECT_EQ(hb.system_status, MAV_STATE_ACTIVE);
+}
+
+TEST_F(MavlinkTelemetryTest, HeartbeatArmedFailsafeIsCritical)
+{
+    enableStreams(1);
+    ENABLE_ARMING_FLAG(ARMED);
+    failsafeActive = true;
+    const mavlink_heartbeat_t hb = heartbeat();
+    EXPECT_EQ(hb.custom_mode, (uint32_t)MODE_FAILSAFE);
+    EXPECT_EQ(hb.system_status, MAV_STATE_CRITICAL);
+}
+
+TEST_F(MavlinkTelemetryTest, HeartbeatCustomModePriority)
+{
+    enableStreams(1);
+    ENABLE_ARMING_FLAG(ARMED);
+
+    ENABLE_FLIGHT_MODE(ANGLE_MODE);
+    ENABLE_FLIGHT_MODE(HORIZON_MODE);
+    EXPECT_EQ(heartbeat().custom_mode, (uint32_t)MODE_HORIZON);
+
+    ENABLE_FLIGHT_MODE(ALT_HOLD_MODE);
+    EXPECT_EQ(heartbeat().custom_mode, (uint32_t)MODE_ALT_HOLD);
+
+    ENABLE_FLIGHT_MODE(POS_HOLD_MODE);
+    EXPECT_EQ(heartbeat().custom_mode, (uint32_t)MODE_POS_HOLD);
+
+    ENABLE_FLIGHT_MODE(AUTOPILOT_MODE);
+    EXPECT_EQ(heartbeat().custom_mode, (uint32_t)MODE_AUTOPILOT);
+
+    ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+    EXPECT_EQ(heartbeat().custom_mode, (uint32_t)MODE_RTL);
+
+    ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
+    EXPECT_EQ(heartbeat().custom_mode, (uint32_t)MODE_FAILSAFE);
+}
+
+TEST_F(MavlinkTelemetryTest, HeartbeatTypeFollowsMixer)
+{
+    enableStreams(1);
+    mixerConfigMutable()->mixerMode = MIXER_HEX6X;
+    EXPECT_EQ(heartbeat().type, MAV_TYPE_HEXAROTOR);
+    mixerConfigMutable()->mixerMode = MIXER_FLYING_WING;
+    EXPECT_EQ(heartbeat().type, MAV_TYPE_FIXED_WING);
+}
+
+TEST_F(MavlinkTelemetryTest, StreamsSilentWhenRatesAreZero)
+{
+    tick(1000);
+    EXPECT_TRUE(sent.empty());
+}
+
+TEST_F(MavlinkTelemetryTest, UnknownCommandIsUnsupported)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_DO_DIGICAM_CONTROL), MAV_RESULT_UNSUPPORTED);
+}
+
+TEST_F(MavlinkTelemetryTest, CommandForAnotherSystemIsIgnored)
+{
+    commandLong(MAV_CMD_COMPONENT_ARM_DISARM, 0, 0, 0, 0, 0, 0, 0, FC_SYS + 1, FC_COMP);
+    commandLong(MAV_CMD_COMPONENT_ARM_DISARM, 0, 0, 0, 0, 0, 0, 0, FC_SYS, MAV_COMP_ID_CAMERA);
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_COMMAND_ACK), 0);
+    EXPECT_EQ(disarmCalls, 0);
+}
+
+TEST_F(MavlinkTelemetryTest, BroadcastCommandIsAccepted)
+{
+    commandLong(MAV_CMD_COMPONENT_ARM_DISARM, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_ACCEPTED);
+}
+
+TEST_F(MavlinkTelemetryTest, DisarmIsAlwaysAccepted)
+{
+    ENABLE_ARMING_FLAG(ARMED);
+    EXPECT_EQ(ackResultFor(MAV_CMD_COMPONENT_ARM_DISARM, 0), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(disarmCalls, 1);
+    EXPECT_EQ(lastDisarmReason, DISARM_REASON_SERIAL_COMMAND);
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+}
+
+TEST_F(MavlinkTelemetryTest, ForceDisarmIsAccepted)
+{
+    ENABLE_ARMING_FLAG(ARMED);
+    EXPECT_EQ(ackResultFor(MAV_CMD_COMPONENT_ARM_DISARM, 0, 21196), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(disarmCalls, 1);
+}
+
+TEST_F(MavlinkTelemetryTest, ArmDisarmRejectsInvalidParam)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_COMPONENT_ARM_DISARM, 2), MAV_RESULT_DENIED);
+    EXPECT_EQ(ackResultFor(MAV_CMD_COMPONENT_ARM_DISARM, NAN), MAV_RESULT_DENIED);
+    EXPECT_EQ(ackResultFor(MAV_CMD_COMPONENT_ARM_DISARM, -1), MAV_RESULT_DENIED);
+    EXPECT_EQ(disarmCalls, 0);
+    EXPECT_EQ(tryArmCalls, 0);
+}
+
+#if ENABLE_REMOTE_ARM
+TEST_F(MavlinkTelemetryTest, ArmRoutesThroughTryArm)
+{
+    tryArmSucceeds = true;
+    EXPECT_EQ(ackResultFor(MAV_CMD_COMPONENT_ARM_DISARM, 1), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(tryArmCalls, 1);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+}
+
+TEST_F(MavlinkTelemetryTest, ArmRefusedWhileArmingDisabled)
+{
+    tryArmSucceeds = true;
+    armingDisableFlags = ARMING_DISABLED_RX_FAILSAFE;
+    EXPECT_EQ(ackResultFor(MAV_CMD_COMPONENT_ARM_DISARM, 1), MAV_RESULT_TEMPORARILY_REJECTED);
+    EXPECT_EQ(tryArmCalls, 0);
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+}
+
+TEST_F(MavlinkTelemetryTest, ArmRejectedWhenTryArmFails)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_COMPONENT_ARM_DISARM, 1), MAV_RESULT_TEMPORARILY_REJECTED);
+    EXPECT_EQ(tryArmCalls, 1);
+}
+
+TEST_F(MavlinkTelemetryTest, ArmWhileArmedIsAccepted)
+{
+    ENABLE_ARMING_FLAG(ARMED);
+    EXPECT_EQ(ackResultFor(MAV_CMD_COMPONENT_ARM_DISARM, 1), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(tryArmCalls, 0);
+}
+#else
+TEST_F(MavlinkTelemetryTest, ArmUnsupportedWithoutRemoteArm)
+{
+    tryArmSucceeds = true;
+    EXPECT_EQ(ackResultFor(MAV_CMD_COMPONENT_ARM_DISARM, 1), MAV_RESULT_UNSUPPORTED);
+    EXPECT_EQ(tryArmCalls, 0);
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+}
+#endif
+
+TEST_F(MavlinkTelemetryTest, SetModeNeedsCustomModeFlag)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_DO_SET_MODE, MAV_MODE_FLAG_STABILIZE_ENABLED, MODE_ANGLE), MAV_RESULT_DENIED);
+    EXPECT_EQ(overrideMask, 0u);
+}
+
+TEST_F(MavlinkTelemetryTest, SetModeForcesOneBox)
+{
+    const struct {
+        uint32_t mode;
+        boxId_e box;
+    } cases[] = {
+        { MODE_ANGLE, BOXANGLE },
+        { MODE_HORIZON, BOXHORIZON },
+        { MODE_ALT_HOLD, BOXALTHOLD },
+        { MODE_POS_HOLD, BOXPOSHOLD },
+        { MODE_AUTOPILOT, BOXAUTOPILOT },
+        { MODE_RTL, BOXGPSRESCUE },
+    };
+    for (const auto &c : cases) {
+        setMode(c.mode);
+        EXPECT_EQ(lastAck().result, MAV_RESULT_ACCEPTED) << "mode " << c.mode;
+        EXPECT_EQ(overrideMask, 1u << c.box) << "mode " << c.mode;
+    }
+}
+
+TEST_F(MavlinkTelemetryTest, SetModeAcroClearsOverrides)
+{
+    setMode(MODE_POS_HOLD);
+    setMode(MODE_ACRO);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(overrideMask, 0u);
+}
+
+TEST_F(MavlinkTelemetryTest, SetModeRejectsFailsafeAndUnknownWithoutTouchingOverride)
+{
+    setMode(MODE_RTL);
+    const uint32_t before = overrideMask;
+
+    setMode(MODE_FAILSAFE);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_DENIED);
+    EXPECT_EQ(overrideMask, before);
+
+    setMode(MODE_COUNT);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_DENIED);
+    EXPECT_EQ(overrideMask, before);
+}
+
+TEST_F(MavlinkTelemetryTest, ReturnToLaunchNeedsArmed)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_NAV_RETURN_TO_LAUNCH), MAV_RESULT_TEMPORARILY_REJECTED);
+    EXPECT_EQ(overrideMask, 0u);
+
+    ENABLE_ARMING_FLAG(ARMED);
+    EXPECT_EQ(ackResultFor(MAV_CMD_NAV_RETURN_TO_LAUNCH), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(overrideMask, 1u << BOXGPSRESCUE);
+}
+
+TEST_F(MavlinkTelemetryTest, SetHomeCurrentNeedsFix)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_DO_SET_HOME, 1), MAV_RESULT_TEMPORARILY_REJECTED);
+    EXPECT_EQ(resetHomeCalls, 0);
+
+    ENABLE_STATE(GPS_FIX);
+    EXPECT_EQ(ackResultFor(MAV_CMD_DO_SET_HOME, 1), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(resetHomeCalls, 1);
+}
+
+TEST_F(MavlinkTelemetryTest, SetHomeFromCommandLongCoordinates)
+{
+    sent.clear();
+    commandLong(MAV_CMD_DO_SET_HOME, 0, 0, 0, 0, -33.5f, 151.25f, 120.5f);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_ACCEPTED);
+    EXPECT_NEAR(GPS_home_llh.lat, -335000000, 100);
+    EXPECT_NEAR(GPS_home_llh.lon, 1512500000, 100);
+    EXPECT_EQ(GPS_home_llh.altCm, 12050);
+    EXPECT_TRUE(STATE(GPS_FIX_HOME));
+}
+
+TEST_F(MavlinkTelemetryTest, SetHomeFromCommandIntCoordinates)
+{
+    sent.clear();
+    commandInt(MAV_CMD_DO_SET_HOME, 0, -335000001, 1512500001, 42.25f);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(GPS_home_llh.lat, -335000001);
+    EXPECT_EQ(GPS_home_llh.lon, 1512500001);
+    EXPECT_EQ(GPS_home_llh.altCm, 4225);
+    EXPECT_TRUE(STATE(GPS_FIX_HOME));
+}
+
+TEST_F(MavlinkTelemetryTest, SetHomeRejectsMissingCoordinates)
+{
+    sent.clear();
+    commandLong(MAV_CMD_DO_SET_HOME, 0, 0, 0, 0, NAN, NAN, NAN);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_DENIED);
+    EXPECT_FALSE(STATE(GPS_FIX_HOME));
+}
+
+TEST_F(MavlinkTelemetryTest, RebootRefusedWhileArmed)
+{
+    ENABLE_ARMING_FLAG(ARMED);
+    EXPECT_EQ(ackResultFor(MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN, 1), MAV_RESULT_TEMPORARILY_REJECTED);
+    EXPECT_EQ(systemResetCalls, 0);
+}
+
+TEST_F(MavlinkTelemetryTest, RebootHappensAfterAck)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN, 1), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(waitForTxCalls, 1);
+    EXPECT_EQ(motorShutdownCalls, 1);
+    EXPECT_EQ(systemResetCalls, 1);
+    EXPECT_EQ(bootloaderResetCalls, 0);
+}
+
+TEST_F(MavlinkTelemetryTest, RebootToBootloader)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN, 3), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(bootloaderResetCalls, 1);
+    EXPECT_EQ(systemResetCalls, 0);
+}
+
+TEST_F(MavlinkTelemetryTest, ShutdownIsUnsupported)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN, 2), MAV_RESULT_UNSUPPORTED);
+    EXPECT_EQ(ackResultFor(MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN, 0), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(systemResetCalls, 0);
+    EXPECT_EQ(bootloaderResetCalls, 0);
+}
+
+TEST_F(MavlinkTelemetryTest, AutopilotCapabilitiesSendsVersion)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES, 1), MAV_RESULT_ACCEPTED);
+    const mavlink_message_t *m = lastOf(MAVLINK_MSG_ID_AUTOPILOT_VERSION);
+    ASSERT_NE(m, nullptr);
+    mavlink_autopilot_version_t v;
+    mavlink_msg_autopilot_version_decode(m, &v);
+    EXPECT_TRUE(v.capabilities & MAV_PROTOCOL_CAPABILITY_MAVLINK2);
+    EXPECT_EQ(v.flight_sw_version >> 24, (uint32_t)(FC_VERSION_YEAR - FC_CALVER_BASE_YEAR));
+}
+
+TEST_F(MavlinkTelemetryTest, RequestMessageAutopilotVersion)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_AUTOPILOT_VERSION), MAV_RESULT_ACCEPTED);
+    EXPECT_NE(lastOf(MAVLINK_MSG_ID_AUTOPILOT_VERSION), nullptr);
+}
+
+TEST_F(MavlinkTelemetryTest, RequestMessageUnknownIsUnsupported)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_RAW_IMU), MAV_RESULT_UNSUPPORTED);
+}
+
+TEST_F(MavlinkTelemetryTest, AvailableModesDescribeEveryMode)
+{
+    const struct {
+        const char *name;
+        uint8_t standardMode;
+        uint32_t properties;
+    } expected[MODE_COUNT] = {
+        { "Acro", MAV_STANDARD_MODE_NON_STANDARD, 0 },
+        { "Angle", MAV_STANDARD_MODE_NON_STANDARD, 0 },
+        { "Horizon", MAV_STANDARD_MODE_NON_STANDARD, 0 },
+        { "Alt Hold", MAV_STANDARD_MODE_ALTITUDE_HOLD, 0 },
+        { "Pos Hold", MAV_STANDARD_MODE_POSITION_HOLD, 0 },
+        { "Autopilot", MAV_STANDARD_MODE_MISSION, 0 },
+        { "RTL", MAV_STANDARD_MODE_SAFE_RECOVERY, 0 },
+        { "Failsafe", MAV_STANDARD_MODE_SAFE_RECOVERY, MAV_MODE_PROPERTY_NOT_USER_SELECTABLE },
+    };
+
+    for (uint8_t index = 1; index <= MODE_COUNT; index++) {
+        EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_AVAILABLE_MODES, index), MAV_RESULT_ACCEPTED);
+        const mavlink_message_t *m = lastOf(MAVLINK_MSG_ID_AVAILABLE_MODES);
+        ASSERT_NE(m, nullptr);
+        mavlink_available_modes_t am;
+        mavlink_msg_available_modes_decode(m, &am);
+        const auto &e = expected[index - 1];
+        EXPECT_EQ(am.number_modes, MODE_COUNT);
+        EXPECT_EQ(am.mode_index, index);
+        EXPECT_EQ(am.custom_mode, (uint32_t)(index - 1));
+        EXPECT_EQ(am.standard_mode, e.standardMode);
+        EXPECT_EQ(am.properties, e.properties);
+        EXPECT_EQ(std::string(am.mode_name, strnlen(am.mode_name, sizeof(am.mode_name))), e.name);
+    }
+}
+
+TEST_F(MavlinkTelemetryTest, AvailableModesRejectsOutOfRangeIndex)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_AVAILABLE_MODES, MODE_COUNT + 1), MAV_RESULT_DENIED);
+    EXPECT_EQ(lastOf(MAVLINK_MSG_ID_AVAILABLE_MODES), nullptr);
+}
+
+TEST_F(MavlinkTelemetryTest, AvailableModesMonitorReportsSequence)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_AVAILABLE_MODES_MONITOR), MAV_RESULT_ACCEPTED);
+    const mavlink_message_t *m = lastOf(MAVLINK_MSG_ID_AVAILABLE_MODES_MONITOR);
+    ASSERT_NE(m, nullptr);
+    EXPECT_EQ(mavlink_msg_available_modes_monitor_get_seq(m), 1);
+}
+
+TEST_F(MavlinkTelemetryTest, MessageIntervalReflectsStreamRate)
+{
+    enableStreams(2);
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_MESSAGE_INTERVAL, MAVLINK_MSG_ID_HEARTBEAT), MAV_RESULT_ACCEPTED);
+    const mavlink_message_t *m = lastOf(MAVLINK_MSG_ID_MESSAGE_INTERVAL);
+    ASSERT_NE(m, nullptr);
+    mavlink_message_interval_t mi;
+    mavlink_msg_message_interval_decode(m, &mi);
+    EXPECT_EQ(mi.message_id, MAVLINK_MSG_ID_HEARTBEAT);
+    EXPECT_EQ(mi.interval_us, 500000);
+}
+
+TEST_F(MavlinkTelemetryTest, MessageIntervalDisabledAndUnknown)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_MESSAGE_INTERVAL, MAVLINK_MSG_ID_ATTITUDE), MAV_RESULT_ACCEPTED);
+    mavlink_message_interval_t mi;
+    mavlink_msg_message_interval_decode(lastOf(MAVLINK_MSG_ID_MESSAGE_INTERVAL), &mi);
+    EXPECT_EQ(mi.interval_us, -1);
+
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_MESSAGE_INTERVAL, MAVLINK_MSG_ID_RAW_IMU), MAV_RESULT_ACCEPTED);
+    mavlink_msg_message_interval_decode(lastOf(MAVLINK_MSG_ID_MESSAGE_INTERVAL), &mi);
+    EXPECT_EQ(mi.interval_us, 0);
+}
+
+TEST_F(MavlinkTelemetryTest, SetMessageIntervalChangesRate)
+{
+    enableStreams(1);
+    EXPECT_EQ(ackResultFor(MAV_CMD_SET_MESSAGE_INTERVAL, MAVLINK_MSG_ID_HEARTBEAT, 100000), MAV_RESULT_ACCEPTED);
+    tick(1100);
+
+    sent.clear();
+    for (int i = 0; i < 10; i++) {
+        tick(100);
+    }
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_HEARTBEAT), 10);
+}
+
+TEST_F(MavlinkTelemetryTest, SetMessageIntervalClampsToMinimum)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_SET_MESSAGE_INTERVAL, MAVLINK_MSG_ID_ATTITUDE, 1000), MAV_RESULT_ACCEPTED);
+    ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_MESSAGE_INTERVAL, MAVLINK_MSG_ID_ATTITUDE);
+    mavlink_message_interval_t mi;
+    mavlink_msg_message_interval_decode(lastOf(MAVLINK_MSG_ID_MESSAGE_INTERVAL), &mi);
+    EXPECT_EQ(mi.interval_us, MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS * 1000);
+}
+
+TEST_F(MavlinkTelemetryTest, SetMessageIntervalDisableAndDefault)
+{
+    enableStreams(1);
+    EXPECT_EQ(ackResultFor(MAV_CMD_SET_MESSAGE_INTERVAL, MAVLINK_MSG_ID_VFR_HUD, -1), MAV_RESULT_ACCEPTED);
+    sent.clear();
+    tick(2000);
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_VFR_HUD), 0);
+
+    EXPECT_EQ(ackResultFor(MAV_CMD_SET_MESSAGE_INTERVAL, MAVLINK_MSG_ID_VFR_HUD, 0), MAV_RESULT_ACCEPTED);
+    sent.clear();
+    tick(2000);
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_VFR_HUD), 1);
+}
+
+TEST_F(MavlinkTelemetryTest, SetMessageIntervalUnknownMessageDenied)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_SET_MESSAGE_INTERVAL, MAVLINK_MSG_ID_RAW_IMU, 100000), MAV_RESULT_DENIED);
+}
+
+TEST_F(MavlinkTelemetryTest, PingRequestIsAnswered)
+{
+    mavlink_message_t msg;
+    mavlink_msg_ping_pack_chan(GCS_SYS, GCS_COMP, MAVLINK_COMM_1, &msg, 123456, 7, 0, 0);
+    feed(&msg);
+
+    const mavlink_message_t *m = lastOf(MAVLINK_MSG_ID_PING);
+    ASSERT_NE(m, nullptr);
+    mavlink_ping_t ping;
+    mavlink_msg_ping_decode(m, &ping);
+    EXPECT_EQ(ping.time_usec, 123456u);
+    EXPECT_EQ(ping.seq, 7u);
+    EXPECT_EQ(ping.target_system, GCS_SYS);
+    EXPECT_EQ(ping.target_component, GCS_COMP);
+}
+
+TEST_F(MavlinkTelemetryTest, PingResponseIsNotEchoed)
+{
+    mavlink_message_t msg;
+    mavlink_msg_ping_pack_chan(GCS_SYS, GCS_COMP, MAVLINK_COMM_1, &msg, 123456, 7, FC_SYS, FC_COMP);
+    feed(&msg);
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_PING), 0);
+}
+
+TEST_F(MavlinkTelemetryTest, TimesyncRequestIsAnswered)
+{
+    mavlink_message_t msg;
+    mavlink_msg_timesync_pack_chan(GCS_SYS, GCS_COMP, MAVLINK_COMM_1, &msg, 0, 987654321, 0, 0);
+    feed(&msg);
+
+    const mavlink_message_t *m = lastOf(MAVLINK_MSG_ID_TIMESYNC);
+    ASSERT_NE(m, nullptr);
+    mavlink_timesync_t ts;
+    mavlink_msg_timesync_decode(m, &ts);
+    EXPECT_EQ(ts.ts1, 987654321);
+    EXPECT_EQ(ts.tc1, (int64_t)fakeMicros * 1000);
+    EXPECT_EQ(ts.target_system, GCS_SYS);
+}
+
+TEST_F(MavlinkTelemetryTest, TimesyncResponseAndOtherTargetIgnored)
+{
+    mavlink_message_t msg;
+    mavlink_msg_timesync_pack_chan(GCS_SYS, GCS_COMP, MAVLINK_COMM_1, &msg, 5, 987654321, 0, 0);
+    feed(&msg);
+    mavlink_msg_timesync_pack_chan(GCS_SYS, GCS_COMP, MAVLINK_COMM_1, &msg, 0, 987654321, FC_SYS + 1, 0);
+    feed(&msg);
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_TIMESYNC), 0);
+}
+
+TEST_F(MavlinkTelemetryTest, ArmingDisabledReasonsSentOnChange)
+{
+    enableStreams(1);
+    armingDisableFlags = (armingDisableFlags_e)(ARMING_DISABLED_RX_FAILSAFE | ARMING_DISABLED_THROTTLE);
+    sent.clear();
+    tick(1000);
+
+    const mavlink_message_t *m = lastOf(MAVLINK_MSG_ID_STATUSTEXT);
+    ASSERT_NE(m, nullptr);
+    mavlink_statustext_t st;
+    mavlink_msg_statustext_decode(m, &st);
+    EXPECT_EQ(st.severity, MAV_SEVERITY_NOTICE);
+    const std::string text(st.text, strnlen(st.text, sizeof(st.text)));
+    EXPECT_EQ(text, "Arming disabled: RXLOSS THROTTLE");
+
+    sent.clear();
+    tick(1000);
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_STATUSTEXT), 0);
+}

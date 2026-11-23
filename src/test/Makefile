@@ -578,6 +578,18 @@ rx_ibus_unittest_SRC := \
 		$(USER_DIR)/rx/ibus.c
 
 
+rx_mavlink_unittest_SRC := \
+		$(USER_DIR)/rx/mavlink.c \
+		$(USER_DIR)/telemetry/mavlink_helpers.c \
+		$(USER_DIR)/common/maths.c
+
+rx_mavlink_unittest_DEFINES := \
+		USE_SERIALRX_MAVLINK= \
+		USE_TELEMETRY_MAVLINK= \
+		USE_RX_LINK_QUALITY_INFO= \
+		USE_RX_RSSI_DBM= \
+		USE_RX_RSNR=
+
 rx_msp_override_unittest_SRC := \
 		$(USER_DIR)/rx/msp.c
 
@@ -748,6 +760,28 @@ telemetry_frsky_hub_unittest_DEFINES := \
 telemetry_ibus_unittest_SRC := \
 		$(USER_DIR)/telemetry/ibus_shared.c \
 		$(USER_DIR)/telemetry/ibus.c
+
+telemetry_mavlink_unittest_SRC := \
+		$(USER_DIR)/telemetry/mavlink.c \
+		$(USER_DIR)/telemetry/mavlink_helpers.c \
+		$(USER_DIR)/common/maths.c
+
+telemetry_mavlink_unittest_DEFINES := \
+		USE_TELEMETRY_MAVLINK= \
+		ENABLE_TELEMETRY_MAVLINK_COMMANDS=1 \
+		ENABLE_TELEMETRY_MAVLINK_MISSION=0 \
+		ENABLE_REMOTE_ARM=0
+
+telemetry_mavlink_remote_arm_unittest_SRC := \
+		$(USER_DIR)/telemetry/mavlink.c \
+		$(USER_DIR)/telemetry/mavlink_helpers.c \
+		$(USER_DIR)/common/maths.c
+
+telemetry_mavlink_remote_arm_unittest_DEFINES := \
+		USE_TELEMETRY_MAVLINK= \
+		ENABLE_TELEMETRY_MAVLINK_COMMANDS=1 \
+		ENABLE_TELEMETRY_MAVLINK_MISSION=0 \
+		ENABLE_REMOTE_ARM=1
 
 telemetry_mavlink_mission_unittest_SRC := \
 		$(USER_DIR)/telemetry/mavlink_mission.c \
