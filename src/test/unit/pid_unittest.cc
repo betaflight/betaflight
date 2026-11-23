@@ -915,9 +915,9 @@ TEST(pidControllerTest, testItermRelax)
     EXPECT_NEAR(-8.16, itermErrorRate, calculateTolerance(-8.16));
     currentPidSetpoint += ITERM_RELAX_SETPOINT_THRESHOLD;
     applyItermRelax(FD_PITCH, pidData[FD_PITCH].I, gyroRate, &itermErrorRate, &currentPidSetpoint);
-    EXPECT_NEAR(0, itermErrorRate, calculateTolerance(0));
+    EXPECT_NEAR(-2.12, itermErrorRate, calculateTolerance(-2.12));
     applyItermRelax(FD_PITCH, pidData[FD_PITCH].I, gyroRate, &itermErrorRate, &currentPidSetpoint);
-    EXPECT_NEAR(0, itermErrorRate, calculateTolerance(0));
+    EXPECT_NEAR(-1.10, itermErrorRate, calculateTolerance(-1.10));
 
     pidProfile->iterm_relax_type = ITERM_RELAX_GYRO;
     pidInit(pidProfile);
@@ -962,6 +962,37 @@ TEST(pidControllerTest, testItermRelax)
     pidInit(pidProfile);
     applyItermRelax(FD_YAW, pidData[FD_YAW].I, gyroRate, &itermErrorRate, &currentPidSetpoint);
     EXPECT_NEAR(-3.6, itermErrorRate, calculateTolerance(-3.6));
+}
+
+// A PID profile switch calls pidInit() one time (changePidProfile()).
+// The I-term relax filter must then use the cutoff of the new profile.
+TEST(pidControllerTest, testItermRelaxFilterFollowsProfileSwitch)
+{
+    resetTest();
+    pidProfile_t *previousProfile = pidProfilesMutable(0);
+    pidProfile_t *nextProfile = pidProfilesMutable(1);
+
+    // Previous profile: relax on, 30 Hz. Two calls build the 30 Hz filter with either init order.
+    previousProfile->iterm_relax = ITERM_RELAX_RP;
+    previousProfile->iterm_relax_cutoff = 30;
+    pidInit(previousProfile);
+    pidInit(previousProfile);
+
+    nextProfile->iterm_relax = ITERM_RELAX_RP;
+    nextProfile->iterm_relax_cutoff = 11;
+    pidInit(nextProfile);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        EXPECT_FLOAT_EQ(pt1FilterGain(11, pidRuntime.dT), pidRuntime.windupLpf[axis].k);
+    }
+
+    // Switch from a profile that has relax off.
+    previousProfile->iterm_relax = ITERM_RELAX_OFF;
+    pidInit(previousProfile);
+    nextProfile->iterm_relax_cutoff = 20;
+    pidInit(nextProfile);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        EXPECT_FLOAT_EQ(pt1FilterGain(20, pidRuntime.dT), pidRuntime.windupLpf[axis].k);
+    }
 }
 
 // TODO - Add more tests
