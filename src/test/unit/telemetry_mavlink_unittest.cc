@@ -67,6 +67,11 @@ extern "C" {
         flightModeFlags |= mask;
         return flightModeFlags;
     }
+    uint16_t disableFlightMode(flightModeFlags_e mask)
+    {
+        flightModeFlags &= ~mask;
+        return flightModeFlags;
+    }
 
     const uint32_t baudRates[BAUD_COUNT] = {
         0, 9600, 19200, 38400, 57600, 115200, 230400, 250000,
@@ -392,7 +397,7 @@ TEST_F(MavlinkTelemetryTest, HeartbeatDisarmedAcro)
     const mavlink_heartbeat_t hb = heartbeat();
     EXPECT_EQ(hb.type, MAV_TYPE_QUADROTOR);
     EXPECT_EQ(hb.autopilot, MAV_AUTOPILOT_BETAFLIGHT);
-    EXPECT_EQ(hb.base_mode, MAV_MODE_MANUAL_DISARMED);
+    EXPECT_EQ(hb.base_mode, MAV_MODE_FLAG_MANUAL_INPUT_ENABLED | MAV_MODE_FLAG_CUSTOM_MODE_ENABLED);
     EXPECT_EQ(hb.custom_mode, (uint32_t)MODE_ACRO);
     EXPECT_EQ(hb.system_status, MAV_STATE_STANDBY);
 }
@@ -405,6 +410,8 @@ TEST_F(MavlinkTelemetryTest, HeartbeatArmedAngle)
     const mavlink_heartbeat_t hb = heartbeat();
     EXPECT_TRUE(hb.base_mode & MAV_MODE_FLAG_SAFETY_ARMED);
     EXPECT_TRUE(hb.base_mode & MAV_MODE_FLAG_STABILIZE_ENABLED);
+    EXPECT_TRUE(hb.base_mode & MAV_MODE_FLAG_CUSTOM_MODE_ENABLED);
+    EXPECT_FALSE(hb.base_mode & (MAV_MODE_FLAG_GUIDED_ENABLED | MAV_MODE_FLAG_AUTO_ENABLED));
     EXPECT_EQ(hb.custom_mode, (uint32_t)MODE_ANGLE);
     EXPECT_EQ(hb.system_status, MAV_STATE_ACTIVE);
 }
@@ -444,6 +451,22 @@ TEST_F(MavlinkTelemetryTest, HeartbeatCustomModePriority)
     EXPECT_EQ(heartbeat().custom_mode, (uint32_t)MODE_FAILSAFE);
 }
 
+TEST_F(MavlinkTelemetryTest, HeartbeatFlagsAutonomousModes)
+{
+    const uint8_t autonomous = MAV_MODE_FLAG_GUIDED_ENABLED | MAV_MODE_FLAG_AUTO_ENABLED;
+    ENABLE_ARMING_FLAG(ARMED);
+
+    ENABLE_FLIGHT_MODE(POS_HOLD_MODE);
+    EXPECT_EQ(heartbeat().base_mode & autonomous, 0);
+
+    ENABLE_FLIGHT_MODE(AUTOPILOT_MODE);
+    EXPECT_EQ(heartbeat().base_mode & autonomous, autonomous);
+
+    DISABLE_FLIGHT_MODE(AUTOPILOT_MODE);
+    ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+    EXPECT_EQ(heartbeat().base_mode & autonomous, autonomous);
+}
+
 TEST_F(MavlinkTelemetryTest, HeartbeatTypeFollowsMixer)
 {
     enableStreams(1);
@@ -453,10 +476,39 @@ TEST_F(MavlinkTelemetryTest, HeartbeatTypeFollowsMixer)
     EXPECT_EQ(heartbeat().type, MAV_TYPE_FIXED_WING);
 }
 
-TEST_F(MavlinkTelemetryTest, StreamsSilentWhenRatesAreZero)
+TEST_F(MavlinkTelemetryTest, HeartbeatAloneAtOneHzWhenStreamRatesAreZero)
 {
-    tick(1000);
-    EXPECT_TRUE(sent.empty());
+    tick(1100);
+    sent.clear();
+    for (int i = 0; i < 10; i++) {
+        tick(1000);
+    }
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_HEARTBEAT), 10);
+    EXPECT_EQ(sent.size(), 10u);
+}
+
+TEST_F(MavlinkTelemetryTest, HeartbeatIgnoresExtra2Rate)
+{
+    enableStreams(10);
+    tick(1100);
+    sent.clear();
+    for (int i = 0; i < 10; i++) {
+        tick(100);
+    }
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_HEARTBEAT), 1);
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_VFR_HUD), 10);
+}
+
+TEST_F(MavlinkTelemetryTest, HeartbeatIntervalIsFixed)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_SET_MESSAGE_INTERVAL, MAVLINK_MSG_ID_HEARTBEAT, -1), MAV_RESULT_DENIED);
+    EXPECT_EQ(ackResultFor(MAV_CMD_SET_MESSAGE_INTERVAL, MAVLINK_MSG_ID_HEARTBEAT, 100000), MAV_RESULT_DENIED);
+    EXPECT_EQ(ackResultFor(MAV_CMD_SET_MESSAGE_INTERVAL, MAVLINK_MSG_ID_HEARTBEAT, 0), MAV_RESULT_ACCEPTED);
+
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_MESSAGE_INTERVAL, MAVLINK_MSG_ID_HEARTBEAT), MAV_RESULT_ACCEPTED);
+    mavlink_message_interval_t mi;
+    mavlink_msg_message_interval_decode(lastOf(MAVLINK_MSG_ID_MESSAGE_INTERVAL), &mi);
+    EXPECT_EQ(mi.interval_us, 1000000);
 }
 
 TEST_F(MavlinkTelemetryTest, UnknownCommandIsUnsupported)
@@ -744,12 +796,12 @@ TEST_F(MavlinkTelemetryTest, AvailableModesMonitorReportsSequence)
 TEST_F(MavlinkTelemetryTest, MessageIntervalReflectsStreamRate)
 {
     enableStreams(2);
-    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_MESSAGE_INTERVAL, MAVLINK_MSG_ID_HEARTBEAT), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_MESSAGE_INTERVAL, MAVLINK_MSG_ID_VFR_HUD), MAV_RESULT_ACCEPTED);
     const mavlink_message_t *m = lastOf(MAVLINK_MSG_ID_MESSAGE_INTERVAL);
     ASSERT_NE(m, nullptr);
     mavlink_message_interval_t mi;
     mavlink_msg_message_interval_decode(m, &mi);
-    EXPECT_EQ(mi.message_id, MAVLINK_MSG_ID_HEARTBEAT);
+    EXPECT_EQ(mi.message_id, MAVLINK_MSG_ID_VFR_HUD);
     EXPECT_EQ(mi.interval_us, 500000);
 }
 
@@ -765,17 +817,34 @@ TEST_F(MavlinkTelemetryTest, MessageIntervalDisabledAndUnknown)
     EXPECT_EQ(mi.interval_us, 0);
 }
 
-TEST_F(MavlinkTelemetryTest, SetMessageIntervalChangesRate)
+TEST_F(MavlinkTelemetryTest, SetMessageIntervalChangesRateImmediately)
 {
     enableStreams(1);
-    EXPECT_EQ(ackResultFor(MAV_CMD_SET_MESSAGE_INTERVAL, MAVLINK_MSG_ID_HEARTBEAT, 100000), MAV_RESULT_ACCEPTED);
-    tick(1100);
+    EXPECT_EQ(ackResultFor(MAV_CMD_SET_MESSAGE_INTERVAL, MAVLINK_MSG_ID_VFR_HUD, 100000), MAV_RESULT_ACCEPTED);
 
     sent.clear();
     for (int i = 0; i < 10; i++) {
         tick(100);
     }
-    EXPECT_EQ(countOf(MAVLINK_MSG_ID_HEARTBEAT), 10);
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_VFR_HUD), 10);
+}
+
+TEST_F(MavlinkTelemetryTest, SetMessageIntervalSlowerKeepsPendingSend)
+{
+    enableStreams(10);
+    tick(150);
+    EXPECT_EQ(ackResultFor(MAV_CMD_SET_MESSAGE_INTERVAL, MAVLINK_MSG_ID_VFR_HUD, 1000000), MAV_RESULT_ACCEPTED);
+
+    sent.clear();
+    tick(100);
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_VFR_HUD), 1);
+    sent.clear();
+    for (int i = 0; i < 9; i++) {
+        tick(100);
+    }
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_VFR_HUD), 0);
+    tick(100);
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_VFR_HUD), 1);
 }
 
 TEST_F(MavlinkTelemetryTest, SetMessageIntervalClampsToMinimum)
