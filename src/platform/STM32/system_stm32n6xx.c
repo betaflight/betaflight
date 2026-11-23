@@ -526,10 +526,13 @@ static void SystemClock_Config(void)
 
 void systemReset(void)
 {
+    // SCB_DisableDCache() turns the cache off before it cleans it. An interrupt
+    // in that window reads RAM that is still missing the dirty lines.
+    __disable_irq();
+
     SCB_DisableDCache();
     SCB_DisableICache();
 
-    __disable_irq();
     NVIC_SystemReset();
 }
 
