@@ -75,13 +75,35 @@ bool mavlinkGetNextQueueMessage(mavlink_message_t *msg)
     }
 }
 
-void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg) {
-    const uint16_t *channelsPtr = (uint16_t*)&msg->chan1_raw;
+void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg)
+{
+    const uint16_t channels[MAVLINK_CHANNEL_COUNT] = {
+        msg->chan1_raw,
+        msg->chan2_raw,
+        msg->chan3_raw,
+        msg->chan4_raw,
+        msg->chan5_raw,
+        msg->chan6_raw,
+        msg->chan7_raw,
+        msg->chan8_raw,
+        msg->chan9_raw,
+        msg->chan10_raw,
+        msg->chan11_raw,
+        msg->chan12_raw,
+        msg->chan13_raw,
+        msg->chan14_raw,
+        msg->chan15_raw,
+        msg->chan16_raw,
+        msg->chan17_raw,
+        msg->chan18_raw
+    };
+
     for (int i = 0; i < MAVLINK_CHANNEL_COUNT; i++) {
-        if (channelsPtr[i] != 0 && channelsPtr[i] != UINT16_MAX) {
-            mavlinkChannelData[i] = channelsPtr[i];
+        if (channels[i] != 0 && channels[i] != UINT16_MAX) {
+            mavlinkChannelData[i] = channels[i];
         }
     }
+
     frameReceived = true;
 }
 

@@ -5937,6 +5937,37 @@ int cliGetSettingInfoByName(const char *name, int offset, char *buf, int bufLen,
     return w.written;
 }
 
+// Parse an optionally signed decimal number into its sign and a 32-bit
+// magnitude. Rejects empty input, any non-digit character and magnitudes
+// above UINT32_MAX, so callers can range-check without overflow. This
+// avoids pulling the 64-bit C library strtoll/strtoull into the image.
+static bool cliParseDecimal32(const char *str, bool *negative, uint32_t *magnitude)
+{
+    *negative = false;
+    if (*str == '-' || *str == '+') {
+        *negative = (*str == '-');
+        str++;
+    }
+    if (*str == '\0') {
+        return false;
+    }
+
+    uint32_t value = 0;
+    for (; *str; str++) {
+        if (*str < '0' || *str > '9') {
+            return false;
+        }
+        const uint32_t digit = *str - '0';
+        if (value > (UINT32_MAX - digit) / 10) {
+            return false;
+        }
+        value = value * 10 + digit;
+    }
+
+    *magnitude = value;
+    return true;
+}
+
 bool cliSetSettingByName(const char *cmdline)
 {
     if (!cmdline) {
@@ -5999,29 +6030,27 @@ bool cliSetSettingByName(const char *cmdline)
 
     switch (val->type & VALUE_MODE_MASK) {
     case MODE_DIRECT: {
-            char *endptr;
+            bool negative;
+            uint32_t magnitude;
             if ((val->type & VALUE_TYPE_MASK) == VAR_UINT32) {
-                if (*valStr == '-') {
+                if (!cliParseDecimal32(valStr, &negative, &magnitude) || negative) {
                     return false;
                 }
-                unsigned long long v = strtoull(valStr, &endptr, 10);
-                if (endptr == valStr || *endptr != '\0') {
+                if (magnitude > val->config.u32Max) {
                     return false;
                 }
-                if (v > val->config.u32Max) {
-                    return false;
-                }
-                *(uint32_t *)ptr = (uint32_t)v;
+                *(uint32_t *)ptr = magnitude;
             } else if ((val->type & VALUE_TYPE_MASK) == VAR_INT32) {
-                long long v = strtoll(valStr, &endptr, 10);
-                if (endptr == valStr || *endptr != '\0') {
+                if (!cliParseDecimal32(valStr, &negative, &magnitude)) {
                     return false;
                 }
-                if (v > val->config.d32Max || v < -val->config.d32Max) {
+                // d32Max is a positive int32_t, so a magnitude within it also fits int32_t
+                if (magnitude > (uint32_t)val->config.d32Max) {
                     return false;
                 }
-                *(int32_t *)ptr = (int32_t)v;
+                *(int32_t *)ptr = negative ? -(int32_t)magnitude : (int32_t)magnitude;
             } else {
+                char *endptr;
                 long v = strtol(valStr, &endptr, 10);
                 if (endptr == valStr || *endptr != '\0') {
                     return false;
