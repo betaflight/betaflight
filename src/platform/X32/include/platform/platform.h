@@ -106,7 +106,7 @@ extern uint32_t systemUniqueId[3];
 #define USE_LATE_TASK_STATISTICS
 #define USE_TIMER_MGMT
 #define USE_TIMER_AF
-#define USE_ADC_DEVICE_0
+
 
 #if !defined(ENABLE_AFATFS_DMA_CACHE)
 #define ENABLE_AFATFS_DMA_CACHE 1
