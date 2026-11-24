@@ -887,7 +887,7 @@ static void mavlinkSendSystemStatus(void)
 
     const armingDisableFlags_e disableFlags = getArmingDisableFlags();
     const uint32_t customMode = mavlinkComputeCustomMode();
-    const bool navigating = customMode == BF_MAV_MODE_AUTOPILOT || customMode == BF_MAV_MODE_RTL;
+    const bool navigating = FLIGHT_MODE(AUTOPILOT_MODE | GPS_RESCUE_MODE) || flightPlanNavIsRescuePlanActive();
     const bool holdingAltitude = navigating || FLIGHT_MODE(ALT_HOLD_MODE | POS_HOLD_MODE);
     const bool holdingPosition = navigating || FLIGHT_MODE(POS_HOLD_MODE);
 
@@ -902,9 +902,11 @@ static void mavlinkSendSystemStatus(void)
     if (sensors(SENSOR_BARO)) {
         present |= MAV_SYS_STATUS_SENSOR_ABSOLUTE_PRESSURE | MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL;
     }
-    if (sensors(SENSOR_GPS)) {
+#ifdef USE_GPS
+    if (featureIsEnabled(FEATURE_GPS)) {
         present |= MAV_SYS_STATUS_SENSOR_GPS | MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL | MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL;
     }
+#endif
     if (isBatteryVoltageConfigured()) {
         present |= MAV_SYS_STATUS_SENSOR_BATTERY;
     }

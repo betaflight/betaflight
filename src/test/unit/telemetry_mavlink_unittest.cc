@@ -35,6 +35,7 @@ extern "C" {
     #include "build/debug.h"
     #include "build/version.h"
     #include "common/time.h"
+    #include "config/feature.h"
     #include "drivers/system.h"
     #include "fc/core.h"
     #include "fc/rc_modes.h"
@@ -183,6 +184,9 @@ extern "C" {
     batteryState_e getBatteryState(void) { return batteryState; }
     bool isBatteryVoltageConfigured(void) { return batteryConfigured; }
 
+    static uint32_t featureMask;
+    bool featureIsEnabled(const uint32_t mask) { return (featureMask & mask) != 0; }
+
     static bool gpsHealthy;
     bool gpsIsHealthy(void) { return gpsHealthy; }
     static bool rxReceiving;
@@ -251,6 +255,7 @@ protected:
         sensorMask = 0;
         batteryState = BATTERY_NOT_PRESENT;
         batteryConfigured = false;
+        featureMask = 0;
         gpsHealthy = false;
         rxReceiving = true;
         systemLoadPercent = 0;
@@ -522,7 +527,8 @@ TEST_F(MavlinkTelemetryTest, SysStatusBareAcroQuadIsHealthy)
 
 TEST_F(MavlinkTelemetryTest, SysStatusSensorsArePresent)
 {
-    sensorMask = SENSOR_ACC | SENSOR_MAG | SENSOR_BARO | SENSOR_GPS;
+    sensorMask = SENSOR_ACC | SENSOR_MAG | SENSOR_BARO;
+    featureMask = FEATURE_GPS;
     batteryConfigured = true;
     batteryState = BATTERY_OK;
     gpsHealthy = true;
@@ -538,7 +544,8 @@ TEST_F(MavlinkTelemetryTest, SysStatusSensorsArePresent)
 
 TEST_F(MavlinkTelemetryTest, SysStatusControllersFollowFlightMode)
 {
-    sensorMask = SENSOR_ACC | SENSOR_MAG | SENSOR_BARO | SENSOR_GPS;
+    sensorMask = SENSOR_ACC | SENSOR_MAG | SENSOR_BARO;
+    featureMask = FEATURE_GPS;
     const uint32_t att = MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION;
     const uint32_t yaw = MAV_SYS_STATUS_SENSOR_YAW_POSITION;
     const uint32_t z = MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL;
@@ -565,11 +572,27 @@ TEST_F(MavlinkTelemetryTest, SysStatusControllersFollowFlightMode)
     flightModeFlags = 0;
     ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
     EXPECT_EQ(sysStatus().onboard_control_sensors_enabled & mask, att | yaw | z | xy);
+
+    failsafeActive = true;
+    EXPECT_EQ(sysStatus().onboard_control_sensors_enabled & mask, att | yaw | z | xy);
+}
+
+TEST_F(MavlinkTelemetryTest, SysStatusGpsTimeoutIsPresentButUnhealthy)
+{
+    const uint32_t gpsBits = MAV_SYS_STATUS_SENSOR_GPS | MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL;
+    EXPECT_EQ(sysStatus().onboard_control_sensors_present & gpsBits, 0u);
+
+    featureMask = FEATURE_GPS;
+    gpsHealthy = false;
+    const mavlink_sys_status_t st = sysStatus();
+    EXPECT_EQ(st.onboard_control_sensors_present & gpsBits, gpsBits);
+    EXPECT_FALSE(st.onboard_control_sensors_health & MAV_SYS_STATUS_SENSOR_GPS);
 }
 
 TEST_F(MavlinkTelemetryTest, SysStatusReportsUnhealthySubsystems)
 {
-    sensorMask = SENSOR_ACC | SENSOR_GPS;
+    sensorMask = SENSOR_ACC;
+    featureMask = FEATURE_GPS;
     batteryConfigured = true;
     batteryState = BATTERY_CRITICAL;
     gpsHealthy = false;
