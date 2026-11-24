@@ -1162,9 +1162,10 @@ static void mavlinkSendHeartbeat(void)
 {
     uint16_t msgLength;
 
-    uint8_t mavModes = MAV_MODE_MANUAL_DISARMED;
-    if (ARMING_FLAG(ARMED))
-        mavModes |= MAV_MODE_MANUAL_ARMED;
+    uint8_t mavModes = MAV_MODE_FLAG_MANUAL_INPUT_ENABLED | MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
+    if (ARMING_FLAG(ARMED)) {
+        mavModes |= MAV_MODE_FLAG_SAFETY_ARMED;
+    }
 
     uint8_t mavSystemType;
     switch (mixerConfig()->mixerMode)
@@ -1206,6 +1207,9 @@ static void mavlinkSendHeartbeat(void)
     const uint32_t mavCustomMode = mavlinkComputeCustomMode();
     if (mavCustomMode != BF_MAV_MODE_ACRO) {
         mavModes |= MAV_MODE_FLAG_STABILIZE_ENABLED;
+    }
+    if (mavCustomMode == BF_MAV_MODE_AUTOPILOT || mavCustomMode == BF_MAV_MODE_RTL) {
+        mavModes |= MAV_MODE_FLAG_GUIDED_ENABLED | MAV_MODE_FLAG_AUTO_ENABLED;
     }
 
     uint8_t mavSystemState = 0;
@@ -1407,7 +1411,7 @@ static mavlinkTelemetryOutputMessage_t mavTelemetryOutputMessages[] = {
     },
     {
         .id = MAVLINK_MSG_ID_HEARTBEAT,
-        .stream = MAV_DATA_STREAM_EXTRA2,
+        .fixedInterval = 1000,
         .updateInterval = UINT32_MAX,
         .updateTime = 0,
         .sendMessageFunc = mavlinkSendHeartbeat,
@@ -1429,11 +1433,16 @@ static mavlinkTelemetryOutputMessage_t mavTelemetryOutputMessages[] = {
 };
 #define TELEMETRIES_OUTPUT_MESSAGES_COUNT ARRAYLEN(mavTelemetryOutputMessages)
 
-static uint32_t getConfigStreamUpdateInterval(uint8_t stream) {
+static uint32_t getDefaultUpdateInterval(const mavlinkTelemetryOutputMessage_t *msg)
+{
+    if (msg->fixedInterval) {
+        return msg->fixedInterval;
+    }
+
     uint32_t rate = 0;
     uint32_t updateInterval;
 
-    switch (stream) {
+    switch (msg->stream) {
     case MAV_DATA_STREAM_EXTENDED_STATUS:
         rate = telemetryConfig()->mavlink_extended_status_rate;
         break;
@@ -1472,7 +1481,7 @@ static void configureMAVLinkOutputMessagesIntervals(void)
     timeMs_t nowMs = millis();
 
     for (uint16_t i = 0; i < TELEMETRIES_OUTPUT_MESSAGES_COUNT; i++) {
-        mavTelemetryOutputMessages[i].updateInterval = getConfigStreamUpdateInterval(mavTelemetryOutputMessages[i].stream);
+        mavTelemetryOutputMessages[i].updateInterval = getDefaultUpdateInterval(&mavTelemetryOutputMessages[i]);
         // Phase offset (3*i) staggers transmissions across ~15ms to reduce TX buffer spikes
         if (mavTelemetryOutputMessages[i].updateInterval != UINT32_MAX) {
             mavTelemetryOutputMessages[i].updateTime =  nowMs + mavTelemetryOutputMessages[i].updateInterval + 3 * i;
@@ -1504,14 +1513,21 @@ static int32_t getMessageUpdateInterval(uint32_t messageId)
 static bool setMessageUpdateInterval(uint32_t messageId, uint32_t intervalMs)
 {
     for (uint16_t i = 0; i < TELEMETRIES_OUTPUT_MESSAGES_COUNT; i++) {
-        if (mavTelemetryOutputMessages[i].id == messageId) {
-            if (intervalMs == 0) { // Set default value
-                intervalMs = getConfigStreamUpdateInterval(mavTelemetryOutputMessages[i].stream);
+        mavlinkTelemetryOutputMessage_t *msg = &mavTelemetryOutputMessages[i];
+        if (msg->id == messageId) {
+            if (msg->fixedInterval && intervalMs != 0) {
+                return false;
             }
-            if(intervalMs < MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS) {
+            if (intervalMs == 0) { // Set default value
+                intervalMs = getDefaultUpdateInterval(msg);
+            }
+            if (intervalMs < MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS) {
                 intervalMs = MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS;
             }
-            mavTelemetryOutputMessages[i].updateInterval = intervalMs;
+            msg->updateInterval = intervalMs;
+            if (intervalMs != UINT32_MAX) {
+                msg->updateTime = MIN(msg->updateTime, millis() + intervalMs);
+            }
             return true;
         }
     }

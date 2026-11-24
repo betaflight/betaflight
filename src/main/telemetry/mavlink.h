@@ -49,6 +49,7 @@ void mavlinkSendMessage(mavlink_message_t *msg);
 typedef struct mavlinkTelemetryOutputMessage_s {
     const uint32_t id;
     const uint8_t stream;
+    const timeMs_t fixedInterval;
     timeMs_t updateInterval;
     timeMs_t updateTime;
     void (*const sendMessageFunc)(void);
