@@ -174,6 +174,9 @@ struct {
     // XTX XT25F128F
     // Datasheet: https://www.xtxtech.com/Products/info_productModel_XT25F128FSSIGT.html
     { 0x0B4018, 96, 80, 256, 256 },
+    // XTX XT25F256B
+    // Datasheet: https://www.xtxtech.com/Products/info_ProductModel_XT25F256BWSIGT.html
+    { 0x0B4019, 96, 80, 512, 256 },
     //Giantec GT25Q80A
     //Datasheet: https://www.giantec-semi.com/uploads/pdf/250709/GT25Q80A%20DS_V2.1.pdf
     {0xC46014, 104, 104, 16, 256},
