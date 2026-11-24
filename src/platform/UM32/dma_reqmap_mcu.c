@@ -77,7 +77,7 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
     // (D(DMAx, handshake, Stream) -> DMA(dma, hs, stream)). Keep both tables
     // in sync: timer_def.h feeds timerHardware, this feeds dmaGet*ByTimer.
 
-    { (timerResource_t *)TIM1, TC(CH1), { DMA(2, 1, 6) } },
+    { (timerResource_t *)TIM1, TC(CH1), { DMA(2, 1, 2) } },
     { (timerResource_t *)TIM1, TC(CH2), { DMA(2, 6, 2) } },
     { (timerResource_t *)TIM1, TC(CH3), { DMA(2, 6, 1) } },
     { (timerResource_t *)TIM1, TC(CH4), { DMA(2, 4, 1) } },
