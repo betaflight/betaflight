@@ -168,7 +168,7 @@
 // D(DMAx, Stream, Channel)
 #endif
 
-#define DEF_TIM_DMA__BTCH_TIM1_CH1    D(2, 1,  3)  //LED PA8-LGU6, DPWM5 PA8-RGT6
+#define DEF_TIM_DMA__BTCH_TIM1_CH1    D(2, 1,  6)  //LED PA8-LGU6, DPWM5 PA8-RGT6
 #define DEF_TIM_DMA__BTCH_TIM1_CH2    D(2, 6,  2)  //LED PA9-LGU6, DPWM6 PA9-RGT6
 #define DEF_TIM_DMA__BTCH_TIM1_CH3    D(2, 6,  1)
 #define DEF_TIM_DMA__BTCH_TIM1_CH4    D(2, 4,  1)
@@ -191,7 +191,7 @@
 #define DEF_TIM_DMA__BTCH_TIM8_CH1    D(2, 2,  1)
 #define DEF_TIM_DMA__BTCH_TIM8_CH2    D(2, 2,  1)
 #define DEF_TIM_DMA__BTCH_TIM8_CH3    D(2, 2,  1)
-#define DEF_TIM_DMA__BTCH_TIM8_CH4    D(2, 7,  1)
+#define DEF_TIM_DMA__BTCH_TIM8_CH4    D(2, 7,  0)
 
 #define DEF_TIM_DMA__BTCH_TIM9_CH1    D(2, 10, 2)  //DPWM7 PE5-LGU6
 #define DEF_TIM_DMA__BTCH_TIM9_CH2    D(2, 11, 3)  //DPWM8 PE6-LGU6

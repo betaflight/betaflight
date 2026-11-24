@@ -64,8 +64,9 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     { DMA_PERIPH_SPI_SDI,  SPIDEV_4,  { DMA(2, 8, 7) } },
 #endif // USE_SPI
 #ifdef USE_ADC
-    { DMA_PERIPH_ADC,     ADCDEV_1,  { DMA(2, 0, 0), DMA(2, 4, 0) } },
-    { DMA_PERIPH_ADC,     ADCDEV_2,  { DMA(2, 2, 0), DMA(2, 3, 0) } },
+    // Leave DMA2 Stream 0 free for the TIM8_CH4 DShot bitbang pacer.
+    { DMA_PERIPH_ADC,     ADCDEV_1,  { DMA(2, 0, 3), DMA(2, 4, 3) } },
+    { DMA_PERIPH_ADC,     ADCDEV_2,  { DMA(2, 2, 3), DMA(2, 3, 3) } },
 #endif
 };
 
@@ -76,7 +77,7 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
     // (D(DMAx, handshake, Stream) -> DMA(dma, hs, stream)). Keep both tables
     // in sync: timer_def.h feeds timerHardware, this feeds dmaGet*ByTimer.
 
-    { (timerResource_t *)TIM1, TC(CH1), { DMA(2, 1, 3) } },
+    { (timerResource_t *)TIM1, TC(CH1), { DMA(2, 1, 6) } },
     { (timerResource_t *)TIM1, TC(CH2), { DMA(2, 6, 2) } },
     { (timerResource_t *)TIM1, TC(CH3), { DMA(2, 6, 1) } },
     { (timerResource_t *)TIM1, TC(CH4), { DMA(2, 4, 1) } },
@@ -98,7 +99,7 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
     { (timerResource_t *)TIM8, TC(CH1), { DMA(2, 2, 1) } },
     { (timerResource_t *)TIM8, TC(CH2), { DMA(2, 2, 1) } },
     { (timerResource_t *)TIM8, TC(CH3), { DMA(2, 2, 1) } },
-    { (timerResource_t *)TIM8, TC(CH4), { DMA(2, 7, 1) } },
+    { (timerResource_t *)TIM8, TC(CH4), { DMA(2, 7, 0) } },
 
     { (timerResource_t *)TIM9, TC(CH1), { DMA(2, 10, 2) } },
     { (timerResource_t *)TIM9, TC(CH2), { DMA(2, 11, 3) } },
