@@ -1077,3 +1077,24 @@ TEST_F(MavlinkTelemetryTest, RequestMessageHomePosition)
     EXPECT_EQ(mavlink_msg_home_position_get_latitude(m), -335000000);
     EXPECT_EQ(mavlink_msg_home_position_get_altitude(m), 42000);
 }
+
+TEST_F(MavlinkTelemetryTest, RequestMessageGpsGlobalOrigin)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_GPS_GLOBAL_ORIGIN), MAV_RESULT_FAILED);
+    EXPECT_EQ(lastOf(MAVLINK_MSG_ID_GPS_GLOBAL_ORIGIN), nullptr);
+
+    GPS_home_llh.lat = -335000000;
+    GPS_home_llh.altCm = 4200;
+    ENABLE_STATE(GPS_FIX_HOME);
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_GPS_GLOBAL_ORIGIN), MAV_RESULT_ACCEPTED);
+    const mavlink_message_t *m = lastOf(MAVLINK_MSG_ID_GPS_GLOBAL_ORIGIN);
+    ASSERT_NE(m, nullptr);
+    EXPECT_EQ(mavlink_msg_gps_global_origin_get_latitude(m), -335000000);
+    EXPECT_EQ(mavlink_msg_gps_global_origin_get_altitude(m), 42000);
+}
+
+TEST_F(MavlinkTelemetryTest, RequestMessageSystemTime)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_SYSTEM_TIME), MAV_RESULT_ACCEPTED);
+    EXPECT_NE(lastOf(MAVLINK_MSG_ID_SYSTEM_TIME), nullptr);
+}

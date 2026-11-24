@@ -472,6 +472,10 @@ static uint8_t handleRequestMessage(float param1, float param2)
         mavlinkSendAvailableModesMonitor();
         result = MAV_RESULT_ACCEPTED;
         break;
+    case MAVLINK_MSG_ID_SYSTEM_TIME:
+        mavlinkSendSystemTime();
+        result = MAV_RESULT_ACCEPTED;
+        break;
     case MAVLINK_MSG_ID_MESSAGE_INTERVAL: {
         uint32_t msgId;
         if (!cmdParamToUint32(param2, UINT32_MAX, &msgId)) {
@@ -484,6 +488,7 @@ static uint8_t handleRequestMessage(float param1, float param2)
     }
 #ifdef USE_GPS
     case MAVLINK_MSG_ID_HOME_POSITION:
+    case MAVLINK_MSG_ID_GPS_GLOBAL_ORIGIN:
         result = (STATE(GPS_FIX_HOME) && mavlinkSendStreamMessage(messageId)) ? MAV_RESULT_ACCEPTED : MAV_RESULT_FAILED;
         break;
 #endif
@@ -1102,7 +1107,7 @@ static void mavlinkSendGpsGlobalOrigin(void)
 {
     uint16_t msgLength;
 
-    if (!sensors(SENSOR_GPS) || !STATE(GPS_FIX_HOME)) {
+    if (!STATE(GPS_FIX_HOME)) {
         return;
     }
 
