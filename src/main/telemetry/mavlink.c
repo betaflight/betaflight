@@ -306,7 +306,10 @@ static void mavlinkSendCommandAck(uint16_t command, uint8_t result,
 
 static void mavlinkSendAutopilotVersion(void)
 {
-    const uint64_t capabilities = MAV_PROTOCOL_CAPABILITY_MAVLINK2;
+    uint64_t capabilities = MAV_PROTOCOL_CAPABILITY_MAVLINK2 | MAV_PROTOCOL_CAPABILITY_COMMAND_INT;
+#if ENABLE_TELEMETRY_MAVLINK_MISSION
+    capabilities |= MAV_PROTOCOL_CAPABILITY_MISSION_INT;
+#endif
     const uint32_t flightSwVersion =
         ((uint32_t)(FC_VERSION_YEAR - FC_CALVER_BASE_YEAR) << 24) |
         ((uint32_t)FC_VERSION_MONTH << 16) |
@@ -433,13 +436,11 @@ static void mavlinkSendMessageInterval(uint32_t messageId)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
-static void handleRequestMessage(const mavlink_command_long_t *cmd,
-    uint8_t targetSystem, uint8_t targetComponent)
+static uint8_t handleRequestMessage(float param1, float param2)
 {
     uint32_t messageId;
-    if (!cmdParamToUint32(cmd->param1, UINT32_MAX, &messageId)) {
-        mavlinkSendCommandAck(MAV_CMD_REQUEST_MESSAGE, MAV_RESULT_DENIED, targetSystem, targetComponent);
-        return;
+    if (!cmdParamToUint32(param1, UINT32_MAX, &messageId)) {
+        return MAV_RESULT_DENIED;
     }
 
     uint8_t result;
@@ -458,7 +459,7 @@ static void handleRequestMessage(const mavlink_command_long_t *cmd,
         break;
     case MAVLINK_MSG_ID_AVAILABLE_MODES: {
         uint32_t modeIndex;
-        if (!cmdParamToUint32(cmd->param2, BF_MAV_MODE_COUNT, &modeIndex) || modeIndex < 1) {
+        if (!cmdParamToUint32(param2, BF_MAV_MODE_COUNT, &modeIndex) || modeIndex < 1) {
             result = MAV_RESULT_DENIED;
             break;
         }
@@ -472,7 +473,7 @@ static void handleRequestMessage(const mavlink_command_long_t *cmd,
         break;
     case MAVLINK_MSG_ID_MESSAGE_INTERVAL: {
         uint32_t msgId;
-        if (!cmdParamToUint32(cmd->param2, UINT32_MAX, &msgId)) {
+        if (!cmdParamToUint32(param2, UINT32_MAX, &msgId)) {
             result = MAV_RESULT_DENIED;
             break;
         }
@@ -484,31 +485,43 @@ static void handleRequestMessage(const mavlink_command_long_t *cmd,
         result = MAV_RESULT_UNSUPPORTED;
         break;
     }
-    mavlinkSendCommandAck(MAV_CMD_REQUEST_MESSAGE, result, targetSystem, targetComponent);
+    return result;
 }
 
 static bool setMessageUpdateInterval(uint32_t id, uint32_t intervalMs);
-static void handleSetMessageInterval(const mavlink_command_long_t *cmd, uint8_t targetSystem, uint8_t targetComponent)
+static uint8_t handleSetMessageInterval(float param1, float param2)
 {
     uint32_t msgId;
     bool success = false;
 
-    if (!cmdParamToUint32(cmd->param1, UINT32_MAX, &msgId)) {
-        mavlinkSendCommandAck(cmd->command, MAV_RESULT_DENIED, targetSystem, targetComponent);
-        return;
+    if (!cmdParamToUint32(param1, UINT32_MAX, &msgId)) {
+        return MAV_RESULT_DENIED;
     }
 
-    if (cmd->param2 < 0.0f) {
+    if (param2 < 0.0f) {
         // Disable message per MAVLink spec (param2 < 0 means disable)
         success = setMessageUpdateInterval(msgId, UINT32_MAX);
-    } else if (cmd->param2 == 0.0f) {
+    } else if (param2 == 0.0f) {
         // param2 == 0 means "request default rate" per MAVLink spec
         success = setMessageUpdateInterval(msgId, 0);
     } else {
-        uint32_t intervalMs = (cmd->param2 >= 1000.0f) ? (uint32_t)(cmd->param2 / 1000.0f) : 1;
+        uint32_t intervalMs = (param2 >= 1000.0f) ? (uint32_t)(param2 / 1000.0f) : 1;
         success = setMessageUpdateInterval(msgId, intervalMs);
     }
-    mavlinkSendCommandAck(cmd->command, success ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, targetSystem, targetComponent);
+    return success ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED;
+}
+
+static uint8_t handleRequestAutopilotCapabilities(float param1)
+{
+    // Spec: param1 is MAV_BOOL — 1 = send AUTOPILOT_VERSION, 0 = ignore.
+    uint32_t request;
+    if (!cmdParamToUint32(param1, 1, &request)) {
+        return MAV_RESULT_DENIED;
+    }
+    if (request == 1) {
+        mavlinkSendAutopilotVersion();
+    }
+    return MAV_RESULT_ACCEPTED;
 }
 
 #if ENABLE_TELEMETRY_MAVLINK_COMMANDS
@@ -672,12 +685,27 @@ static uint8_t handleRebootShutdown(float param1)
     }
 }
 
+#endif // ENABLE_TELEMETRY_MAVLINK_COMMANDS
+
 // Shared command executor for COMMAND_LONG and COMMAND_INT. Coordinate-bearing
 // commands receive lat/lon in 1e7 degrees and altitude in cm via coordsValid.
 static uint8_t mavlinkExecCommand(uint16_t command, float param1, float param2,
     bool coordsValid, int32_t lat1e7, int32_t lon1e7, int32_t altCm)
 {
+#if !ENABLE_TELEMETRY_MAVLINK_COMMANDS
+    UNUSED(coordsValid);
+    UNUSED(lat1e7);
+    UNUSED(lon1e7);
+    UNUSED(altCm);
+#endif
     switch (command) {
+    case MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES:
+        return handleRequestAutopilotCapabilities(param1);
+    case MAV_CMD_REQUEST_MESSAGE:
+        return handleRequestMessage(param1, param2);
+    case MAV_CMD_SET_MESSAGE_INTERVAL:
+        return handleSetMessageInterval(param1, param2);
+#if ENABLE_TELEMETRY_MAVLINK_COMMANDS
     case MAV_CMD_COMPONENT_ARM_DISARM:
         return handleArmDisarm(param1);
     case MAV_CMD_DO_SET_MODE:
@@ -688,9 +716,17 @@ static uint8_t mavlinkExecCommand(uint16_t command, float param1, float param2,
         return handleSetHome(param1, coordsValid, lat1e7, lon1e7, altCm);
     case MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN:
         return handleRebootShutdown(param1);
+#endif
     default:
         return MAV_RESULT_UNSUPPORTED;
     }
+}
+
+static bool isCommandForUs(uint8_t targetSystem, uint8_t targetComponent)
+{
+    // Accept broadcast or directed-to-us; ignore commands addressed to other systems.
+    return (targetSystem == 0 || targetSystem == MAVLINK_SYSTEM_ID) &&
+        (targetComponent == 0 || targetComponent == MAVLINK_COMPONENT_ID);
 }
 
 static void handleCommandInt(const mavlink_message_t *msg)
@@ -698,8 +734,7 @@ static void handleCommandInt(const mavlink_message_t *msg)
     mavlink_command_int_t cmd;
     mavlink_msg_command_int_decode(msg, &cmd);
 
-    if ((cmd.target_system != 0 && cmd.target_system != MAVLINK_SYSTEM_ID) ||
-        (cmd.target_component != 0 && cmd.target_component != MAVLINK_COMPONENT_ID)) {
+    if (!isCommandForUs(cmd.target_system, cmd.target_component)) {
         return;
     }
 
@@ -708,62 +743,31 @@ static void handleCommandInt(const mavlink_message_t *msg)
         true, cmd.x, cmd.y, altCm);
     mavlinkSendCommandAck(cmd.command, result, msg->sysid, msg->compid);
 }
-#endif // ENABLE_TELEMETRY_MAVLINK_COMMANDS
 
 static void handleCommandLong(const mavlink_message_t *msg)
 {
     mavlink_command_long_t cmd;
     mavlink_msg_command_long_decode(msg, &cmd);
 
-    // Accept broadcast or directed-to-us; ignore commands addressed to other systems.
-    if ((cmd.target_system != 0 && cmd.target_system != MAVLINK_SYSTEM_ID) ||
-        (cmd.target_component != 0 && cmd.target_component != MAVLINK_COMPONENT_ID)) {
+    if (!isCommandForUs(cmd.target_system, cmd.target_component)) {
         return;
     }
 
-    switch (cmd.command) {
-    case MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES: {
-        // Spec: param1 is MAV_BOOL — 1 = send AUTOPILOT_VERSION, 0 = ignore.
-        uint32_t request;
-        if (!cmdParamToUint32(cmd.param1, 1, &request)) {
-            mavlinkSendCommandAck(cmd.command, MAV_RESULT_DENIED, msg->sysid, msg->compid);
-            break;
-        }
-        if (request == 1) {
-            mavlinkSendAutopilotVersion();
-        }
-        mavlinkSendCommandAck(cmd.command, MAV_RESULT_ACCEPTED, msg->sysid, msg->compid);
-        break;
+    // COMMAND_LONG carries lat/lon as float degrees in param5/param6 (lossy);
+    // COMMAND_INT is preferred for precise coordinates. Only convert when the
+    // command actually consumes coordinates, to avoid UB casting NaN floats.
+    bool coordsValid = false;
+    int32_t lat1e7 = 0, lon1e7 = 0, altCm = 0;
+    if (cmd.command == MAV_CMD_DO_SET_HOME &&
+        isfinite(cmd.param5) && isfinite(cmd.param6) && isfinite(cmd.param7)) {
+        coordsValid = true;
+        lat1e7 = (int32_t)lroundf(cmd.param5 * 1.0e7f);
+        lon1e7 = (int32_t)lroundf(cmd.param6 * 1.0e7f);
+        altCm = (int32_t)lroundf(cmd.param7 * 100.0f);
     }
-    case MAV_CMD_REQUEST_MESSAGE:
-        handleRequestMessage(&cmd, msg->sysid, msg->compid);
-        break;
-    case MAV_CMD_SET_MESSAGE_INTERVAL:
-        handleSetMessageInterval(&cmd, msg->sysid, msg->compid);
-        break;
-    default: {
-#if ENABLE_TELEMETRY_MAVLINK_COMMANDS
-        // COMMAND_LONG carries lat/lon as float degrees in param5/param6 (lossy);
-        // COMMAND_INT is preferred for precise coordinates. Only convert when the
-        // command actually consumes coordinates, to avoid UB casting NaN floats.
-        bool coordsValid = false;
-        int32_t lat1e7 = 0, lon1e7 = 0, altCm = 0;
-        if (cmd.command == MAV_CMD_DO_SET_HOME &&
-            isfinite(cmd.param5) && isfinite(cmd.param6) && isfinite(cmd.param7)) {
-            coordsValid = true;
-            lat1e7 = (int32_t)lroundf(cmd.param5 * 1.0e7f);
-            lon1e7 = (int32_t)lroundf(cmd.param6 * 1.0e7f);
-            altCm = (int32_t)lroundf(cmd.param7 * 100.0f);
-        }
-        const uint8_t result = mavlinkExecCommand(cmd.command, cmd.param1, cmd.param2,
-            coordsValid, lat1e7, lon1e7, altCm);
-#else
-        const uint8_t result = MAV_RESULT_UNSUPPORTED;
-#endif
-        mavlinkSendCommandAck(cmd.command, result, msg->sysid, msg->compid);
-        break;
-    }
-    }
+    const uint8_t result = mavlinkExecCommand(cmd.command, cmd.param1, cmd.param2,
+        coordsValid, lat1e7, lon1e7, altCm);
+    mavlinkSendCommandAck(cmd.command, result, msg->sysid, msg->compid);
 }
 
 static void mavlinkDispatch(const mavlink_message_t *msg)
@@ -781,11 +785,9 @@ static void mavlinkDispatch(const mavlink_message_t *msg)
     case MAVLINK_MSG_ID_COMMAND_LONG:
         handleCommandLong(msg);
         break;
-#if ENABLE_TELEMETRY_MAVLINK_COMMANDS
     case MAVLINK_MSG_ID_COMMAND_INT:
         handleCommandInt(msg);
         break;
-#endif
     default:
 #if ENABLE_TELEMETRY_MAVLINK_MISSION
         mavMissionHandleMessage(msg);

@@ -337,12 +337,23 @@ protected:
         feed(&msg);
     }
 
-    void commandInt(uint16_t command, float p1, int32_t x, int32_t y, float z)
+    void commandInt(uint16_t command, float p1, int32_t x, int32_t y, float z, float p2 = 0)
     {
         mavlink_message_t msg;
         mavlink_msg_command_int_pack_chan(GCS_SYS, GCS_COMP, MAVLINK_COMM_1, &msg,
-            FC_SYS, FC_COMP, MAV_FRAME_GLOBAL_INT, command, 0, 0, p1, 0, 0, 0, x, y, z);
+            FC_SYS, FC_COMP, MAV_FRAME_GLOBAL_INT, command, 0, 0, p1, p2, 0, 0, x, y, z);
         feed(&msg);
+    }
+
+    uint8_t intAckResultFor(uint16_t command, float p1 = 0, float p2 = 0)
+    {
+        sent.clear();
+        commandInt(command, p1, 0, 0, 0, p2);
+        const mavlink_command_ack_t ack = lastAck();
+        EXPECT_EQ(ack.command, command);
+        EXPECT_EQ(ack.target_system, GCS_SYS);
+        EXPECT_EQ(ack.target_component, GCS_COMP);
+        return ack.result;
     }
 
     mavlink_command_ack_t lastAck()
@@ -732,7 +743,40 @@ TEST_F(MavlinkTelemetryTest, AutopilotCapabilitiesSendsVersion)
     mavlink_autopilot_version_t v;
     mavlink_msg_autopilot_version_decode(m, &v);
     EXPECT_TRUE(v.capabilities & MAV_PROTOCOL_CAPABILITY_MAVLINK2);
+    EXPECT_TRUE(v.capabilities & MAV_PROTOCOL_CAPABILITY_COMMAND_INT);
+    EXPECT_FALSE(v.capabilities & MAV_PROTOCOL_CAPABILITY_MISSION_INT);
+    EXPECT_FALSE(v.capabilities & MAV_PROTOCOL_CAPABILITY_MISSION_FENCE);
     EXPECT_EQ(v.flight_sw_version >> 24, (uint32_t)(FC_VERSION_YEAR - FC_CALVER_BASE_YEAR));
+}
+
+TEST_F(MavlinkTelemetryTest, RequestCommandsAcceptedAsCommandInt)
+{
+    EXPECT_EQ(intAckResultFor(MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES, 1), MAV_RESULT_ACCEPTED);
+    EXPECT_NE(lastOf(MAVLINK_MSG_ID_AUTOPILOT_VERSION), nullptr);
+
+    EXPECT_EQ(intAckResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_AVAILABLE_MODES, 2), MAV_RESULT_ACCEPTED);
+    const mavlink_message_t *m = lastOf(MAVLINK_MSG_ID_AVAILABLE_MODES);
+    ASSERT_NE(m, nullptr);
+    EXPECT_EQ(mavlink_msg_available_modes_get_mode_index(m), 2);
+
+    EXPECT_EQ(intAckResultFor(MAV_CMD_SET_MESSAGE_INTERVAL, MAVLINK_MSG_ID_ATTITUDE, 100000), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(intAckResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_MESSAGE_INTERVAL, MAVLINK_MSG_ID_ATTITUDE), MAV_RESULT_ACCEPTED);
+    mavlink_message_interval_t mi;
+    mavlink_msg_message_interval_decode(lastOf(MAVLINK_MSG_ID_MESSAGE_INTERVAL), &mi);
+    EXPECT_EQ(mi.interval_us, 100000);
+
+    EXPECT_EQ(intAckResultFor(MAV_CMD_DO_DIGICAM_CONTROL), MAV_RESULT_UNSUPPORTED);
+}
+
+TEST_F(MavlinkTelemetryTest, CommandIntForAnotherSystemIsIgnored)
+{
+    mavlink_message_t msg;
+    mavlink_msg_command_int_pack_chan(GCS_SYS, GCS_COMP, MAVLINK_COMM_1, &msg,
+        FC_SYS + 1, FC_COMP, MAV_FRAME_GLOBAL_INT, MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES, 0, 0, 1, 0, 0, 0, 0, 0, 0);
+    sent.clear();
+    feed(&msg);
+    EXPECT_EQ(lastOf(MAVLINK_MSG_ID_COMMAND_ACK), nullptr);
+    EXPECT_EQ(lastOf(MAVLINK_MSG_ID_AUTOPILOT_VERSION), nullptr);
 }
 
 TEST_F(MavlinkTelemetryTest, RequestMessageAutopilotVersion)
