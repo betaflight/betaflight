@@ -71,6 +71,8 @@
 #include "rx/rx.h"
 #include "rx/mavlink.h"
 
+#include "scheduler/scheduler.h"
+
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
@@ -883,21 +885,73 @@ static void mavlinkSendSystemStatus(void)
 {
     uint16_t msgLength;
 
-    uint32_t onboardControlAndSensors = 35843;
+    const armingDisableFlags_e disableFlags = getArmingDisableFlags();
+    const uint32_t customMode = mavlinkComputeCustomMode();
+    const bool navigating = customMode == BF_MAV_MODE_AUTOPILOT || customMode == BF_MAV_MODE_RTL;
+    const bool holdingAltitude = navigating || FLIGHT_MODE(ALT_HOLD_MODE | POS_HOLD_MODE);
+    const bool holdingPosition = navigating || FLIGHT_MODE(POS_HOLD_MODE);
 
-    /*
-    onboard_control_sensors_present Bitmask
-    fedcba9876543210
-    1000110000000011    For all   = 35843
-    0001000000000100    With Mag  = 4100
-    0010000000001000    With Baro = 8200
-    0100000000100000    With GPS  = 16416
-    0000001111111111
-    */
+    uint32_t present = MAV_SYS_STATUS_SENSOR_3D_GYRO | MAV_SYS_STATUS_SENSOR_ANGULAR_RATE_CONTROL |
+        MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS | MAV_SYS_STATUS_SENSOR_RC_RECEIVER | MAV_SYS_STATUS_PREARM_CHECK;
+    if (sensors(SENSOR_ACC)) {
+        present |= MAV_SYS_STATUS_SENSOR_3D_ACCEL | MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION;
+    }
+    if (sensors(SENSOR_MAG)) {
+        present |= MAV_SYS_STATUS_SENSOR_3D_MAG | MAV_SYS_STATUS_SENSOR_YAW_POSITION;
+    }
+    if (sensors(SENSOR_BARO)) {
+        present |= MAV_SYS_STATUS_SENSOR_ABSOLUTE_PRESSURE | MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL;
+    }
+    if (sensors(SENSOR_GPS)) {
+        present |= MAV_SYS_STATUS_SENSOR_GPS | MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL | MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL;
+    }
+    if (isBatteryVoltageConfigured()) {
+        present |= MAV_SYS_STATUS_SENSOR_BATTERY;
+    }
 
-    if (sensors(SENSOR_MAG))  onboardControlAndSensors |=  4100;
-    if (sensors(SENSOR_BARO)) onboardControlAndSensors |=  8200;
-    if (sensors(SENSOR_GPS))  onboardControlAndSensors |= 16416;
+    const uint32_t modeDependent = MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION | MAV_SYS_STATUS_SENSOR_YAW_POSITION |
+        MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL | MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL | MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS;
+    uint32_t enabled = present & ~modeDependent;
+    if (customMode != BF_MAV_MODE_ACRO) {
+        enabled |= present & MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION;
+    }
+    if (navigating) {
+        enabled |= present & MAV_SYS_STATUS_SENSOR_YAW_POSITION;
+    }
+    if (holdingAltitude) {
+        enabled |= present & MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL;
+    }
+    if (holdingPosition) {
+        enabled |= present & MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL;
+    }
+    if (ARMING_FLAG(ARMED)) {
+        enabled |= MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS;
+    }
+
+    uint32_t unhealthy = 0;
+    if (disableFlags & ARMING_DISABLED_NO_GYRO) {
+        unhealthy |= MAV_SYS_STATUS_SENSOR_3D_GYRO;
+    }
+    if (disableFlags & ARMING_DISABLED_ACC_CALIBRATION) {
+        unhealthy |= MAV_SYS_STATUS_SENSOR_3D_ACCEL;
+    }
+#ifdef USE_GPS
+    if (!gpsIsHealthy()) {
+        unhealthy |= MAV_SYS_STATUS_SENSOR_GPS;
+    }
+#endif
+    if (!isRxReceivingSignal()) {
+        unhealthy |= MAV_SYS_STATUS_SENSOR_RC_RECEIVER;
+    }
+    if (getBatteryState() > BATTERY_WARNING) {
+        unhealthy |= MAV_SYS_STATUS_SENSOR_BATTERY;
+    }
+    if (disableFlags & ARMING_DISABLED_MOTOR_PROTOCOL) {
+        unhealthy |= MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS;
+    }
+    if (!ARMING_FLAG(ARMED) && disableFlags) {
+        unhealthy |= MAV_SYS_STATUS_PREARM_CHECK;
+    }
 
     uint16_t batteryVoltage = 0;
     int16_t batteryAmperage = -1;
@@ -915,13 +969,13 @@ static void mavlinkSendSystemStatus(void)
         // 4: differential pressure, 5: GPS, 6: optical flow, 7: computer vision position, 8: laser based position,
         // 9: external ground-truth (Vicon or Leica). Controllers: 10: 3D angular rate control 11: attitude stabilization,
         // 12: yaw position, 13: z/altitude control, 14: x/y position control, 15: motor outputs / control
-        onboardControlAndSensors,
+        present,
         // onboard_control_sensors_enabled Bitmask showing which onboard controllers and sensors are enabled
-        onboardControlAndSensors,
+        enabled,
         // onboard_control_sensors_health Bitmask showing which onboard controllers and sensors are operational or have an error.
-        onboardControlAndSensors & 1023,
+        present & ~unhealthy,
         // load Maximum usage in percent of the mainloop time, (0%: 0, 100%: 1000) should be always below 1000
-        0,
+        getAverageSystemLoadPercent() * 10,
         // voltage_battery Battery voltage, in millivolts (1 = 1 millivolt)
         batteryVoltage,
         // current_battery Battery current, in 10*milliamperes (1 = 10 milliampere), -1: autopilot does not measure the current

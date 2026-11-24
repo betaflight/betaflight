@@ -48,6 +48,7 @@ extern "C" {
     #include "io/serial.h"
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "sensors/sensors.h"
     #include "rx/rx.h"
     #include "sensors/battery.h"
     #include "telemetry/telemetry.h"
@@ -177,8 +178,17 @@ extern "C" {
         ENABLE_STATE(GPS_FIX_HOME);
     }
 
-    batteryState_e getBatteryState(void) { return BATTERY_NOT_PRESENT; }
-    bool isBatteryVoltageConfigured(void) { return false; }
+    static batteryState_e batteryState;
+    static bool batteryConfigured;
+    batteryState_e getBatteryState(void) { return batteryState; }
+    bool isBatteryVoltageConfigured(void) { return batteryConfigured; }
+
+    static bool gpsHealthy;
+    bool gpsIsHealthy(void) { return gpsHealthy; }
+    static bool rxReceiving;
+    bool isRxReceivingSignal(void) { return rxReceiving; }
+    static uint16_t systemLoadPercent;
+    uint16_t getAverageSystemLoadPercent(void) { return systemLoadPercent; }
     uint16_t getBatteryVoltage(void) { return 0; }
     bool isAmperageConfigured(void) { return false; }
     int32_t getAmperage(void) { return 0; }
@@ -239,6 +249,11 @@ protected:
         overrideClears = 0;
         failsafeActive = false;
         sensorMask = 0;
+        batteryState = BATTERY_NOT_PRESENT;
+        batteryConfigured = false;
+        gpsHealthy = false;
+        rxReceiving = true;
+        systemLoadPercent = 0;
         resetHomeCalls = 0;
         motorShutdownCalls = 0;
         systemResetCalls = 0;
@@ -395,6 +410,23 @@ protected:
         return hb;
     }
 
+    mavlink_sys_status_t sysStatus()
+    {
+        telemetryConfigMutable()->mavlink_extended_status_rate = 1;
+        freeMAVLinkTelemetryPort();
+        checkMAVLinkTelemetryState();
+        sent.clear();
+        tick(1100);
+        mavlink_sys_status_t st;
+        memset(&st, 0, sizeof(st));
+        const mavlink_message_t *m = lastOf(MAVLINK_MSG_ID_SYS_STATUS);
+        EXPECT_NE(m, nullptr);
+        if (m) {
+            mavlink_msg_sys_status_decode(m, &st);
+        }
+        return st;
+    }
+
     void setMode(uint32_t customMode)
     {
         sent.clear();
@@ -476,6 +508,99 @@ TEST_F(MavlinkTelemetryTest, HeartbeatFlagsAutonomousModes)
     DISABLE_FLIGHT_MODE(AUTOPILOT_MODE);
     ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
     EXPECT_EQ(heartbeat().base_mode & autonomous, autonomous);
+}
+
+TEST_F(MavlinkTelemetryTest, SysStatusBareAcroQuadIsHealthy)
+{
+    const uint32_t expected = MAV_SYS_STATUS_SENSOR_3D_GYRO | MAV_SYS_STATUS_SENSOR_ANGULAR_RATE_CONTROL |
+        MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS | MAV_SYS_STATUS_SENSOR_RC_RECEIVER | MAV_SYS_STATUS_PREARM_CHECK;
+    const mavlink_sys_status_t st = sysStatus();
+    EXPECT_EQ(st.onboard_control_sensors_present, expected);
+    EXPECT_EQ(st.onboard_control_sensors_enabled, expected & ~MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS);
+    EXPECT_EQ(st.onboard_control_sensors_health, expected);
+}
+
+TEST_F(MavlinkTelemetryTest, SysStatusSensorsArePresent)
+{
+    sensorMask = SENSOR_ACC | SENSOR_MAG | SENSOR_BARO | SENSOR_GPS;
+    batteryConfigured = true;
+    batteryState = BATTERY_OK;
+    gpsHealthy = true;
+    const mavlink_sys_status_t st = sysStatus();
+    const uint32_t sensorBits = MAV_SYS_STATUS_SENSOR_3D_ACCEL | MAV_SYS_STATUS_SENSOR_3D_MAG |
+        MAV_SYS_STATUS_SENSOR_ABSOLUTE_PRESSURE | MAV_SYS_STATUS_SENSOR_GPS | MAV_SYS_STATUS_SENSOR_BATTERY;
+    const uint32_t controllers = MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION | MAV_SYS_STATUS_SENSOR_YAW_POSITION |
+        MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL | MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL;
+    EXPECT_EQ(st.onboard_control_sensors_present & (sensorBits | controllers), sensorBits | controllers);
+    EXPECT_EQ(st.onboard_control_sensors_enabled & (sensorBits | controllers), sensorBits);
+    EXPECT_EQ(st.onboard_control_sensors_health & (sensorBits | controllers), sensorBits | controllers);
+}
+
+TEST_F(MavlinkTelemetryTest, SysStatusControllersFollowFlightMode)
+{
+    sensorMask = SENSOR_ACC | SENSOR_MAG | SENSOR_BARO | SENSOR_GPS;
+    const uint32_t att = MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION;
+    const uint32_t yaw = MAV_SYS_STATUS_SENSOR_YAW_POSITION;
+    const uint32_t z = MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL;
+    const uint32_t xy = MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL;
+    const uint32_t mask = att | yaw | z | xy | MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS;
+
+    ENABLE_ARMING_FLAG(ARMED);
+    EXPECT_EQ(sysStatus().onboard_control_sensors_enabled & mask, MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS);
+
+    DISABLE_ARMING_FLAG(ARMED);
+    ENABLE_FLIGHT_MODE(ANGLE_MODE);
+    EXPECT_EQ(sysStatus().onboard_control_sensors_enabled & mask, att);
+
+    ENABLE_FLIGHT_MODE(ALT_HOLD_MODE);
+    EXPECT_EQ(sysStatus().onboard_control_sensors_enabled & mask, att | z);
+
+    ENABLE_FLIGHT_MODE(POS_HOLD_MODE);
+    EXPECT_EQ(sysStatus().onboard_control_sensors_enabled & mask, att | z | xy);
+
+    flightModeFlags = 0;
+    ENABLE_FLIGHT_MODE(AUTOPILOT_MODE);
+    EXPECT_EQ(sysStatus().onboard_control_sensors_enabled & mask, att | yaw | z | xy);
+
+    flightModeFlags = 0;
+    ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+    EXPECT_EQ(sysStatus().onboard_control_sensors_enabled & mask, att | yaw | z | xy);
+}
+
+TEST_F(MavlinkTelemetryTest, SysStatusReportsUnhealthySubsystems)
+{
+    sensorMask = SENSOR_ACC | SENSOR_GPS;
+    batteryConfigured = true;
+    batteryState = BATTERY_CRITICAL;
+    gpsHealthy = false;
+    rxReceiving = false;
+    armingDisableFlags = (armingDisableFlags_e)(ARMING_DISABLED_NO_GYRO | ARMING_DISABLED_ACC_CALIBRATION | ARMING_DISABLED_MOTOR_PROTOCOL);
+    const uint32_t bad = MAV_SYS_STATUS_SENSOR_3D_GYRO | MAV_SYS_STATUS_SENSOR_3D_ACCEL | MAV_SYS_STATUS_SENSOR_GPS |
+        MAV_SYS_STATUS_SENSOR_RC_RECEIVER | MAV_SYS_STATUS_SENSOR_BATTERY | MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS |
+        MAV_SYS_STATUS_PREARM_CHECK;
+    const mavlink_sys_status_t st = sysStatus();
+    EXPECT_EQ(st.onboard_control_sensors_present & bad, bad);
+    EXPECT_EQ(st.onboard_control_sensors_health & bad, 0u);
+    EXPECT_TRUE(st.onboard_control_sensors_health & MAV_SYS_STATUS_SENSOR_ANGULAR_RATE_CONTROL);
+}
+
+TEST_F(MavlinkTelemetryTest, SysStatusPrearmCheck)
+{
+    armingDisableFlags = ARMING_DISABLED_THROTTLE;
+    EXPECT_FALSE(sysStatus().onboard_control_sensors_health & MAV_SYS_STATUS_PREARM_CHECK);
+
+    armingDisableFlags = (armingDisableFlags_e)0;
+    EXPECT_TRUE(sysStatus().onboard_control_sensors_health & MAV_SYS_STATUS_PREARM_CHECK);
+
+    armingDisableFlags = ARMING_DISABLED_THROTTLE;
+    ENABLE_ARMING_FLAG(ARMED);
+    EXPECT_TRUE(sysStatus().onboard_control_sensors_health & MAV_SYS_STATUS_PREARM_CHECK);
+}
+
+TEST_F(MavlinkTelemetryTest, SysStatusReportsLoad)
+{
+    systemLoadPercent = 42;
+    EXPECT_EQ(sysStatus().load, 420);
 }
 
 TEST_F(MavlinkTelemetryTest, HeartbeatTypeFollowsMixer)
