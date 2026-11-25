@@ -1351,7 +1351,7 @@ static void mavlinkSendHUD(void)
         // heading Current heading in degrees, in compass units (0..360, 0=north)
         headingOrScaledMilliAmpereHoursDrawn(),
         // throttle Current throttle setting in integer percent, 0 to 100
-        ARMING_FLAG(ARMED) ? lrintf(mixerGetThrottle() * 100.0f) : 0,
+        ARMING_FLAG(ARMED) ? lrintf(mixerGetOutputThrottle() * 100.0f) : 0,
         // alt Current altitude (MSL), in meters
         mavAltitude,
         // climb Current climb rate in meters/second
@@ -1645,7 +1645,7 @@ static void processMAVLinkTelemetry(void)
         }
     }
 
-    if (nextAvailableModeIndex) {
+    if (nextAvailableModeIndex && serialTxBytesFree(mavlinkPort) >= MAVLINK_NUM_NON_PAYLOAD_BYTES + MAVLINK_MSG_ID_AVAILABLE_MODES_LEN) {
         mavlinkSendAvailableMode(nextAvailableModeIndex);
         nextAvailableModeIndex = (nextAvailableModeIndex < BF_MAV_MODE_COUNT) ? nextAvailableModeIndex + 1 : 0;
     }

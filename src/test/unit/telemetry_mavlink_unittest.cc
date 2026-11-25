@@ -97,6 +97,8 @@ extern "C" {
     }
     void closeSerialPort(serialPort_t *) {}
     void serialWrite(serialPort_t *, uint8_t ch) { txBytes->push_back(ch); }
+    static uint32_t txFree;
+    uint32_t serialTxBytesFree(const serialPort_t *) { return txFree; }
     uint32_t serialRxBytesWaiting(const serialPort_t *) { return rxBytes->size(); }
     uint8_t serialRead(serialPort_t *)
     {
@@ -176,7 +178,7 @@ extern "C" {
 
     gyro_t gyro;
     static float motorThrottle;
-    float mixerGetThrottle(void) { return motorThrottle; }
+    float mixerGetOutputThrottle(void) { return motorThrottle; }
 
     static uint32_t sensorMask;
     bool sensors(uint32_t mask) { return (sensorMask & mask) != 0; }
@@ -281,6 +283,7 @@ protected:
         memset(&gyro, 0, sizeof(gyro));
         altitudeDerivative = 0;
         motorThrottle = 0;
+        txFree = 1024;
         memset(&gpsSol, 0, sizeof(gpsSol));
         memset(&GPS_home_llh, 0, sizeof(GPS_home_llh));
         mixerConfigMutable()->mixerMode = MIXER_QUADX;
@@ -1013,6 +1016,27 @@ TEST_F(MavlinkTelemetryTest, AvailableModesAllAreSentOnePerPass)
     ASSERT_EQ(indexes.size(), (size_t)MODE_COUNT);
     for (uint8_t i = 0; i < MODE_COUNT; i++) {
         EXPECT_EQ(indexes[i], i + 1);
+    }
+}
+
+TEST_F(MavlinkTelemetryTest, AvailableModesAllWaitsForTxSpace)
+{
+    txFree = 0;
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_AVAILABLE_MODES, 0), MAV_RESULT_ACCEPTED);
+    tick(20);
+    tick(20);
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_AVAILABLE_MODES), 0);
+
+    txFree = 1024;
+    for (int pass = 0; pass < MODE_COUNT + 2; pass++) {
+        tick(20);
+    }
+    ASSERT_EQ(countOf(MAVLINK_MSG_ID_AVAILABLE_MODES), MODE_COUNT);
+    for (const auto &m : sent) {
+        if (m.msgid == MAVLINK_MSG_ID_AVAILABLE_MODES) {
+            EXPECT_EQ(mavlink_msg_available_modes_get_mode_index(&m), 1);
+            break;
+        }
     }
 }
 

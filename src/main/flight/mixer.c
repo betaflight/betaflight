@@ -889,6 +889,11 @@ float mixerGetThrottle(void)
     return mixerThrottle;
 }
 
+float mixerGetOutputThrottle(void)
+{
+    return throttle;
+}
+
 float mixerGetRcThrottle(void)
 {
     return rcThrottle;
