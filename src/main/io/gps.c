@@ -384,7 +384,7 @@ static void logErrorToPacketLog(void)
 static void gpsNewData(uint8_t c);
 static void gpsHandleFrameComplete(void);
 #ifdef USE_GPS_NMEA
-static bool gpsNewFrameNMEA(char c);
+STATIC_UNIT_TESTED bool gpsNewFrameNMEA(char c);
 #endif
 #ifdef USE_GPS_UBLOX
 static bool gpsNewFrameUBLOX(uint8_t data);
@@ -1838,9 +1838,18 @@ static uint32_t grab_fields(char *src, uint8_t mult)
     return isneg ? -tmp : tmp;    // handle negative altitudes
 }
 
+typedef enum {
+    NMEA_FIX_MODE_UNKNOWN = 0,
+    NMEA_FIX_MODE_NONE = 1,
+    NMEA_FIX_MODE_2D = 2,
+    NMEA_FIX_MODE_3D = 3,
+} nmeaFixMode_e;
+
 typedef struct gpsDataNmea_s {
     int32_t latitude;
     int32_t longitude;
+    uint8_t fixQuality;
+    uint8_t fixMode;
     uint8_t numSat;
     int32_t altitudeCm;
     uint16_t speed;
@@ -1877,7 +1886,7 @@ static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uin
             if (str[0] == 'W') data->longitude *= -1;
             break;
         case 6:
-            gpsSetFixState(str[0] > '0');
+            data->fixQuality = grab_fields(str, 0);
             break;
         case 7:
             data->numSat = grab_fields(str, 0);
@@ -1955,6 +1964,9 @@ static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uin
 
     case FRAME_GSA:
         switch (idx) {
+        case 2:
+            data->fixMode = grab_fields(str, 0);
+            break;
         case 15:
             data->pdop = grab_fields(str, 2);  // pDOP * 100
             break;
@@ -1979,6 +1991,8 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
 #ifdef USE_DASHBOARD
         *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_NMEA_GGA;
 #endif
+        // Receivers that do not send GSA only report the GGA quality
+        gpsSetFixState(data->fixQuality > 0 && (data->fixMode == NMEA_FIX_MODE_UNKNOWN || data->fixMode == NMEA_FIX_MODE_3D));
         if (STATE(GPS_FIX)) {
             sol->llh.lat = data->latitude;
             sol->llh.lon = data->longitude;
@@ -2027,7 +2041,7 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
     }
 }
 
-static bool gpsNewFrameNMEA(char c)
+STATIC_UNIT_TESTED bool gpsNewFrameNMEA(char c)
 {
     static gpsDataNmea_t gps_msg;
     static char string[16];
