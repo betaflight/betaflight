@@ -44,7 +44,8 @@ extern "C" {
     const uint32_t baudRates[BAUD_COUNT] = { 0 };
 
     timeUs_t micros(void) { return 0; }
-    timeMs_t millis(void) { return 0; }
+    static timeMs_t fakeMillis;
+    timeMs_t millis(void) { return fakeMillis; }
     uint32_t clockMicrosToCycles(uint32_t) { return 0; }
     uint32_t getCycleCounter(void) { return 0; }
     void beeper(beeperMode_e) {}
@@ -82,6 +83,7 @@ protected:
         stateFlags = 0;
         memset(&gpsSol, 0, sizeof(gpsSol));
         nmeaFixMode = 0;
+        fakeMillis += 10000;
     }
 
     bool feed(const char *body, bool corrupt = false)
@@ -178,4 +180,19 @@ TEST_F(GpsNmeaTest, BadChecksumGsaDoesNotChangeTheFixMode)
     feed(GSA_3D, true);
     feed(GGA_FIX);
     EXPECT_FALSE(STATE(GPS_FIX));
+}
+
+TEST_F(GpsNmeaTest, StaleGsaModeExpiresWhenGsaStops)
+{
+    feed(GSA_2D);
+    feed(GGA_FIX);
+    EXPECT_FALSE(STATE(GPS_FIX));
+
+    fakeMillis += 1000;
+    feed(GGA_FIX);
+    EXPECT_FALSE(STATE(GPS_FIX));
+
+    fakeMillis += 1500;
+    feed(GGA_FIX);
+    EXPECT_TRUE(STATE(GPS_FIX));
 }

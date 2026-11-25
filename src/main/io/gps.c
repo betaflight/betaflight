@@ -1861,7 +1861,10 @@ typedef struct gpsDataNmea_s {
     uint32_t date;
 } gpsDataNmea_t;
 
+#define NMEA_FIX_MODE_TIMEOUT_MS 2000
+
 STATIC_UNIT_TESTED uint8_t nmeaFixMode = NMEA_FIX_MODE_UNKNOWN;
+static timeMs_t nmeaFixModeTimeMs;
 
 static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uint8_t idx)
 {
@@ -1993,6 +1996,9 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
 #ifdef USE_DASHBOARD
         *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_NMEA_GGA;
 #endif
+        if (cmpTimeMs(millis(), nmeaFixModeTimeMs) > NMEA_FIX_MODE_TIMEOUT_MS) {
+            nmeaFixMode = NMEA_FIX_MODE_UNKNOWN;
+        }
         // Receivers that do not send GSA only report the GGA quality
         gpsSetFixState(data->fixQuality > 0 && (nmeaFixMode == NMEA_FIX_MODE_UNKNOWN || nmeaFixMode == NMEA_FIX_MODE_3D));
         if (STATE(GPS_FIX)) {
@@ -2012,6 +2018,7 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
         *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_NMEA_GSA;
 #endif
         nmeaFixMode = data->fixMode;
+        nmeaFixModeTimeMs = millis();
         sol->dop.pdop = data->pdop;
         sol->dop.hdop = data->hdop;
         sol->dop.vdop = data->vdop;
