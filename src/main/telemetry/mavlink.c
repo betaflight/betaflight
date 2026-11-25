@@ -1329,6 +1329,22 @@ static void mavlinkSendExtendedSysState(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
+static uint16_t mavlinkMotorThrottlePercent(void)
+{
+    const uint8_t motorCount = getMotorCount();
+    if (!ARMING_FLAG(ARMED) || motorCount == 0) {
+        return 0;
+    }
+
+    const float outputLow = getMotorOutputLow();
+    const float outputRange = getMotorOutputHigh() - outputLow;
+    float sum = 0.0f;
+    for (int i = 0; i < motorCount; i++) {
+        sum += constrainf((motor[i] - outputLow) / outputRange, 0.0f, 1.0f);
+    }
+    return lrintf(sum * 100.0f / motorCount);
+}
+
 static void mavlinkSendHUD(void)
 {
     uint16_t msgLength;
@@ -1351,7 +1367,7 @@ static void mavlinkSendHUD(void)
         // heading Current heading in degrees, in compass units (0..360, 0=north)
         headingOrScaledMilliAmpereHoursDrawn(),
         // throttle Current throttle setting in integer percent, 0 to 100
-        ARMING_FLAG(ARMED) ? lrintf(mixerGetOutputThrottle() * 100.0f) : 0,
+        mavlinkMotorThrottlePercent(),
         // alt Current altitude (MSL), in meters
         mavAltitude,
         // climb Current climb rate in meters/second
