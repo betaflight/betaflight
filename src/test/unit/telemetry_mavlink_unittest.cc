@@ -163,6 +163,10 @@ extern "C" {
 
     static bool failsafeActive;
     bool failsafeIsActive(void) { return failsafeActive; }
+    static failsafePhase_e fsPhase;
+    failsafePhase_e failsafePhase(void) { return fsPhase; }
+    static bool throttleRaised;
+    bool wasThrottleRaised(void) { return throttleRaised; }
 
     attitudeEulerAngles_t attitude;
     int32_t getEstimatedAltitudeCm(void) { return 0; }
@@ -252,6 +256,8 @@ protected:
         overrideMask = 0;
         overrideClears = 0;
         failsafeActive = false;
+        fsPhase = FAILSAFE_IDLE;
+        throttleRaised = false;
         sensorMask = 0;
         batteryState = BATTERY_NOT_PRESENT;
         batteryConfigured = false;
@@ -1134,4 +1140,109 @@ TEST_F(MavlinkTelemetryTest, ArmingDisabledReasonsSentOnChange)
     sent.clear();
     tick(1000);
     EXPECT_EQ(countOf(MAVLINK_MSG_ID_STATUSTEXT), 0);
+}
+
+class MavlinkExtendedSysStateTest : public MavlinkTelemetryTest {
+protected:
+    mavlink_extended_sys_state_t requestState()
+    {
+        EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_EXTENDED_SYS_STATE), MAV_RESULT_ACCEPTED);
+        mavlink_extended_sys_state_t st;
+        memset(&st, 0, sizeof(st));
+        const mavlink_message_t *m = lastOf(MAVLINK_MSG_ID_EXTENDED_SYS_STATE);
+        EXPECT_NE(m, nullptr);
+        if (m) {
+            mavlink_msg_extended_sys_state_decode(m, &st);
+        }
+        return st;
+    }
+};
+
+TEST_F(MavlinkExtendedSysStateTest, DisarmedIsOnGround)
+{
+    const mavlink_extended_sys_state_t st = requestState();
+    EXPECT_EQ(st.landed_state, MAV_LANDED_STATE_ON_GROUND);
+    EXPECT_EQ(st.vtol_state, MAV_VTOL_STATE_UNDEFINED);
+}
+
+TEST_F(MavlinkExtendedSysStateTest, ArmedBeforeThrottleRaisedIsOnGround)
+{
+    ENABLE_ARMING_FLAG(ARMED);
+    EXPECT_EQ(requestState().landed_state, MAV_LANDED_STATE_ON_GROUND);
+}
+
+TEST_F(MavlinkExtendedSysStateTest, ArmedAfterThrottleRaisedIsInAir)
+{
+    ENABLE_ARMING_FLAG(ARMED);
+    throttleRaised = true;
+    EXPECT_EQ(requestState().landed_state, MAV_LANDED_STATE_IN_AIR);
+}
+
+TEST_F(MavlinkExtendedSysStateTest, FailsafeLandingIsLanding)
+{
+    ENABLE_ARMING_FLAG(ARMED);
+    throttleRaised = true;
+    fsPhase = FAILSAFE_LANDING;
+    EXPECT_EQ(requestState().landed_state, MAV_LANDED_STATE_LANDING);
+}
+
+TEST_F(MavlinkExtendedSysStateTest, StreamsWithExtendedStatus)
+{
+    telemetryConfigMutable()->mavlink_extended_status_rate = 2;
+    freeMAVLinkTelemetryPort();
+    checkMAVLinkTelemetryState();
+    sent.clear();
+    tick(1100);
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_EXTENDED_SYS_STATE), 1);
+    sent.clear();
+    for (int i = 0; i < 10; i++) {
+        tick(100);
+    }
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_EXTENDED_SYS_STATE), 2);
+}
+
+TEST_F(MavlinkTelemetryTest, RequestMessageSendsDisabledStreamMessage)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_ATTITUDE), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_ATTITUDE), 1);
+    sent.clear();
+    tick(2000);
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_ATTITUDE), 0);
+}
+
+TEST_F(MavlinkTelemetryTest, RequestMessageHomePosition)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_HOME_POSITION), MAV_RESULT_FAILED);
+    EXPECT_EQ(lastOf(MAVLINK_MSG_ID_HOME_POSITION), nullptr);
+
+    GPS_home_llh.lat = -335000000;
+    GPS_home_llh.lon = 1512500000;
+    GPS_home_llh.altCm = 4200;
+    ENABLE_STATE(GPS_FIX_HOME);
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_HOME_POSITION), MAV_RESULT_ACCEPTED);
+    const mavlink_message_t *m = lastOf(MAVLINK_MSG_ID_HOME_POSITION);
+    ASSERT_NE(m, nullptr);
+    EXPECT_EQ(mavlink_msg_home_position_get_latitude(m), -335000000);
+    EXPECT_EQ(mavlink_msg_home_position_get_altitude(m), 42000);
+}
+
+TEST_F(MavlinkTelemetryTest, RequestMessageGpsGlobalOrigin)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_GPS_GLOBAL_ORIGIN), MAV_RESULT_FAILED);
+    EXPECT_EQ(lastOf(MAVLINK_MSG_ID_GPS_GLOBAL_ORIGIN), nullptr);
+
+    GPS_home_llh.lat = -335000000;
+    GPS_home_llh.altCm = 4200;
+    ENABLE_STATE(GPS_FIX_HOME);
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_GPS_GLOBAL_ORIGIN), MAV_RESULT_ACCEPTED);
+    const mavlink_message_t *m = lastOf(MAVLINK_MSG_ID_GPS_GLOBAL_ORIGIN);
+    ASSERT_NE(m, nullptr);
+    EXPECT_EQ(mavlink_msg_gps_global_origin_get_latitude(m), -335000000);
+    EXPECT_EQ(mavlink_msg_gps_global_origin_get_altitude(m), 42000);
+}
+
+TEST_F(MavlinkTelemetryTest, RequestMessageSystemTime)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_SYSTEM_TIME), MAV_RESULT_ACCEPTED);
+    EXPECT_NE(lastOf(MAVLINK_MSG_ID_SYSTEM_TIME), nullptr);
 }

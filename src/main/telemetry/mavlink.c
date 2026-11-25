@@ -427,6 +427,7 @@ static bool cmdParamToUint32(float f, uint32_t maxValue, uint32_t *out)
 }
 
 static int32_t getMessageUpdateInterval(uint32_t messageId);
+static bool mavlinkSendStreamMessage(uint32_t messageId);
 static void mavlinkSendMessageInterval(uint32_t messageId)
 {
     uint16_t msgLength;
@@ -473,6 +474,10 @@ static uint8_t handleRequestMessage(float param1, float param2)
         mavlinkSendAvailableModesMonitor();
         result = MAV_RESULT_ACCEPTED;
         break;
+    case MAVLINK_MSG_ID_SYSTEM_TIME:
+        mavlinkSendSystemTime();
+        result = MAV_RESULT_ACCEPTED;
+        break;
     case MAVLINK_MSG_ID_MESSAGE_INTERVAL: {
         uint32_t msgId;
         if (!cmdParamToUint32(param2, UINT32_MAX, &msgId)) {
@@ -483,8 +488,14 @@ static uint8_t handleRequestMessage(float param1, float param2)
         result = MAV_RESULT_ACCEPTED;
         break;
     }
+#ifdef USE_GPS
+    case MAVLINK_MSG_ID_HOME_POSITION:
+    case MAVLINK_MSG_ID_GPS_GLOBAL_ORIGIN:
+        result = (STATE(GPS_FIX_HOME) && mavlinkSendStreamMessage(messageId)) ? MAV_RESULT_ACCEPTED : MAV_RESULT_FAILED;
+        break;
+#endif
     default:
-        result = MAV_RESULT_UNSUPPORTED;
+        result = mavlinkSendStreamMessage(messageId) ? MAV_RESULT_ACCEPTED : MAV_RESULT_UNSUPPORTED;
         break;
     }
     return result;
@@ -1152,7 +1163,7 @@ static void mavlinkSendGpsGlobalOrigin(void)
 {
     uint16_t msgLength;
 
-    if (!sensors(SENSOR_GPS) || !STATE(GPS_FIX_HOME)) {
+    if (!STATE(GPS_FIX_HOME)) {
         return;
     }
 
@@ -1303,6 +1314,26 @@ static void mavlinkSendHeartbeat(void)
     transmitCounter = (transmitCounter + 1) % 100;
 }
 
+static uint8_t mavlinkLandedState(void)
+{
+    if (!ARMING_FLAG(ARMED) || !wasThrottleRaised()) {
+        return MAV_LANDED_STATE_ON_GROUND;
+    }
+    bool landing = failsafePhase() == FAILSAFE_LANDING || flightPlanNavIsRescueDescentActive();
+#if ENABLE_FLIGHT_PLAN
+    landing = landing || (flightPlanNavIsActive() && flightPlanNavGetState() == FP_NAV_LANDING);
+#endif
+    return landing ? MAV_LANDED_STATE_LANDING : MAV_LANDED_STATE_IN_AIR;
+}
+
+static void mavlinkSendExtendedSysState(void)
+{
+    mavlink_msg_extended_sys_state_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
+        MAV_VTOL_STATE_UNDEFINED, mavlinkLandedState());
+    const uint16_t msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
 static void mavlinkSendHUD(void)
 {
     uint16_t msgLength;
@@ -1422,6 +1453,13 @@ static mavlinkTelemetryOutputMessage_t mavTelemetryOutputMessages[] = {
         .updateInterval = UINT32_MAX,
         .updateTime = 0,
         .sendMessageFunc = mavlinkSendSystemStatus,
+    },
+    {
+        .id = MAVLINK_MSG_ID_EXTENDED_SYS_STATE,
+        .stream = MAV_DATA_STREAM_EXTENDED_STATUS,
+        .updateInterval = UINT32_MAX,
+        .updateTime = 0,
+        .sendMessageFunc = mavlinkSendExtendedSysState,
     },
     {
         .id = MAVLINK_MSG_ID_RC_CHANNELS_RAW,
@@ -1545,6 +1583,17 @@ static void configureMAVLinkOutputMessagesIntervals(void)
             mavTelemetryOutputMessages[i].updateTime =  nowMs + mavTelemetryOutputMessages[i].updateInterval + 3 * i;
         }
     }
+}
+
+static bool mavlinkSendStreamMessage(uint32_t messageId)
+{
+    for (uint16_t i = 0; i < TELEMETRIES_OUTPUT_MESSAGES_COUNT; i++) {
+        if (mavTelemetryOutputMessages[i].id == messageId) {
+            mavTelemetryOutputMessages[i].sendMessageFunc();
+            return true;
+        }
+    }
+    return false;
 }
 
 // A return value of -1 indicates this stream is disabled, 0 indicates it is not available, > 0 indicates the interval at which it is sent.
