@@ -1861,6 +1861,8 @@ typedef struct gpsDataNmea_s {
     uint32_t date;
 } gpsDataNmea_t;
 
+STATIC_UNIT_TESTED uint8_t nmeaFixMode = NMEA_FIX_MODE_UNKNOWN;
+
 static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uint8_t idx)
 {
     static uint8_t svMessageNum = 0;
@@ -1992,7 +1994,7 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
         *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_NMEA_GGA;
 #endif
         // Receivers that do not send GSA only report the GGA quality
-        gpsSetFixState(data->fixQuality > 0 && (data->fixMode == NMEA_FIX_MODE_UNKNOWN || data->fixMode == NMEA_FIX_MODE_3D));
+        gpsSetFixState(data->fixQuality > 0 && (nmeaFixMode == NMEA_FIX_MODE_UNKNOWN || nmeaFixMode == NMEA_FIX_MODE_3D));
         if (STATE(GPS_FIX)) {
             sol->llh.lat = data->latitude;
             sol->llh.lon = data->longitude;
@@ -2009,6 +2011,7 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
 #ifdef USE_DASHBOARD
         *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_NMEA_GSA;
 #endif
+        nmeaFixMode = data->fixMode;
         sol->dop.pdop = data->pdop;
         sol->dop.hdop = data->hdop;
         sol->dop.vdop = data->vdop;
