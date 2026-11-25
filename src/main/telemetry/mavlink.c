@@ -1337,9 +1337,10 @@ static uint16_t mavlinkMotorThrottlePercent(void)
     }
 
     const bool reversible = featureIsEnabled(FEATURE_3D);
+    const float stopped = getMotorOutputDisarmed();
     float sum = 0.0f;
     for (int i = 0; i < motorCount; i++) {
-        if (motor[i] == motor_disarmed[i]) {
+        if (motor[i] == stopped) {
             continue;
         }
         const float external = motorConvertToExternal(motor[i]);
