@@ -178,10 +178,10 @@ extern "C" {
 
     gyro_t gyro;
     float motor[MAX_SUPPORTED_MOTORS];
+    float motor_disarmed[MAX_SUPPORTED_MOTORS];
     static uint8_t motorCount;
     uint8_t getMotorCount(void) { return motorCount; }
-    float getMotorOutputLow(void) { return 100.0f; }
-    float getMotorOutputHigh(void) { return 1100.0f; }
+    uint16_t motorConvertToExternal(float motorValue) { return lrintf(motorValue); }
 
     static uint32_t sensorMask;
     bool sensors(uint32_t mask) { return (sensorMask & mask) != 0; }
@@ -286,6 +286,7 @@ protected:
         memset(&gyro, 0, sizeof(gyro));
         altitudeDerivative = 0;
         memset(motor, 0, sizeof(motor));
+        memset(motor_disarmed, 0, sizeof(motor_disarmed));
         motorCount = 4;
         txFree = 1024;
         memset(&gpsSol, 0, sizeof(gpsSol));
@@ -1328,7 +1329,7 @@ TEST_F(MavlinkTelemetryTest, VfrHudReportsAmslAltitudeClimbAndMotorThrottle)
     gpsSol.groundSpeed = 350;
     altitudeDerivative = 150.0f;
     for (int i = 0; i < motorCount; i++) {
-        motor[i] = 500.0f;
+        motor[i] = 1400.0f;
     }
 
     EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_VFR_HUD), MAV_RESULT_ACCEPTED);
@@ -1351,12 +1352,40 @@ TEST_F(MavlinkTelemetryTest, VfrHudThrottleFollowsMotorOutputs)
     EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_VFR_HUD), MAV_RESULT_ACCEPTED);
     EXPECT_EQ(mavlink_msg_vfr_hud_get_throttle(lastOf(MAVLINK_MSG_ID_VFR_HUD)), 0);
 
-    motor[0] = 2000.0f;
-    motor[1] = 1100.0f;
-    motor[2] = 700.0f;
-    motor[3] = 100.0f;
+    motor[0] = 2100.0f;
+    motor[1] = 2000.0f;
+    motor[2] = 1600.0f;
+    motor[3] = 900.0f;
     EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_VFR_HUD), MAV_RESULT_ACCEPTED);
     EXPECT_EQ(mavlink_msg_vfr_hud_get_throttle(lastOf(MAVLINK_MSG_ID_VFR_HUD)), 65);
+}
+
+TEST_F(MavlinkTelemetryTest, VfrHudThrottleStoppedMotorIsZero)
+{
+    ENABLE_ARMING_FLAG(ARMED);
+    for (int i = 0; i < motorCount; i++) {
+        motor_disarmed[i] = 1460.0f;
+        motor[i] = 1460.0f;
+    }
+    featureMask = FEATURE_3D;
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_VFR_HUD), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(mavlink_msg_vfr_hud_get_throttle(lastOf(MAVLINK_MSG_ID_VFR_HUD)), 0);
+
+    featureMask = 0;
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_VFR_HUD), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(mavlink_msg_vfr_hud_get_throttle(lastOf(MAVLINK_MSG_ID_VFR_HUD)), 0);
+}
+
+TEST_F(MavlinkTelemetryTest, VfrHudThrottleReversibleCountsBothDirections)
+{
+    ENABLE_ARMING_FLAG(ARMED);
+    featureMask = FEATURE_3D;
+    motor[0] = 1000.0f;
+    motor[1] = 2000.0f;
+    motor[2] = 1250.0f;
+    motor[3] = 1750.0f;
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_VFR_HUD), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(mavlink_msg_vfr_hud_get_throttle(lastOf(MAVLINK_MSG_ID_VFR_HUD)), 75);
 }
 
 TEST_F(MavlinkTelemetryTest, GpsRawFixTypeIgnoresSatelliteCount)

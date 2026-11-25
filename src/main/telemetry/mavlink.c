@@ -1336,11 +1336,17 @@ static uint16_t mavlinkMotorThrottlePercent(void)
         return 0;
     }
 
-    const float outputLow = getMotorOutputLow();
-    const float outputRange = getMotorOutputHigh() - outputLow;
+    const bool reversible = featureIsEnabled(FEATURE_3D);
     float sum = 0.0f;
     for (int i = 0; i < motorCount; i++) {
-        sum += constrainf((motor[i] - outputLow) / outputRange, 0.0f, 1.0f);
+        if (motor[i] == motor_disarmed[i]) {
+            continue;
+        }
+        const float external = motorConvertToExternal(motor[i]);
+        const float drive = reversible
+            ? fabsf(external - PWM_RANGE_MIDDLE) / (PWM_RANGE / 2)
+            : (external - PWM_RANGE_MIN) / PWM_RANGE;
+        sum += constrainf(drive, 0.0f, 1.0f);
     }
     return lrintf(sum * 100.0f / motorCount);
 }
