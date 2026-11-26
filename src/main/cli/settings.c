@@ -871,6 +871,7 @@ const clivalue_t valueTable[] = {
     { "mag_spi_device",             VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, SPIDEV_COUNT }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_spi_device) },
     { PARAM_NAME_MAG_HARDWARE,      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_MAG_HARDWARE }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_hardware) },
     { "mag_calibration",            VAR_INT16  | MASTER_VALUE | MODE_ARRAY, .config.array.length = XYZ_AXIS_COUNT, PG_COMPASS_CONFIG, offsetof(compassConfig_t, magZero.raw) },
+    { PARAM_NAME_MAG_SOFTIRON,      VAR_INT16  | MASTER_VALUE | MODE_ARRAY, .config.array.length = XYZ_AXIS_COUNT * XYZ_AXIS_COUNT, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_softiron) },
 #endif
 
 // PG_BAROMETER_CONFIG
