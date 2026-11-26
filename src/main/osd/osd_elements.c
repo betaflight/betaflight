@@ -1352,7 +1352,7 @@ static void osdElementEfficiency(osdElementParms_t *element)
 {
     int efficiency = 0;
     if (sensors(SENSOR_GPS) && ARMING_FLAG(ARMED) && STATE(GPS_FIX) && gpsSol.groundSpeed >= EFFICIENCY_MINIMUM_SPEED_CM_S) {
-        const float speed = (float)osdGetSpeedToSelectedUnit(gpsSol.groundSpeed);
+        const float speed = osdConfig()->units == UNIT_IMPERIAL ? CM_S_TO_MPH(gpsSol.groundSpeed) : CM_S_TO_KM_H(gpsSol.groundSpeed);
         const float mAmperage = (float)getAmperage() * 10.f; // Current in mA
         efficiency = lrintf(pt1FilterApply(&batteryEfficiencyFilt, (mAmperage / speed)));
     }

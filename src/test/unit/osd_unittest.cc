@@ -1321,6 +1321,48 @@ TEST_F(OsdTest, TestConvertTemperatureUnits)
     EXPECT_EQ(osdConvertTemperatureToSelectedUnit(41), 106);
 }
 
+TEST_F(OsdTest, TestElementEfficiencyUnits)
+{
+    // given
+    osdAnalyzeActiveElements();
+    doTestArm();
+    osdElementConfigMutable()->item_pos[OSD_EFFICIENCY] = OSD_POS(1, 8) | OSD_PROFILE_1_FLAG;
+    sensorsSet(SENSOR_GPS);
+    const uint8_t originalStateFlags = stateFlags;
+    ENABLE_STATE(GPS_FIX);
+    gpsSol.groundSpeed = 1000; // 10 m/s
+    simulationBatteryAmperage = 360; // 3.6 A
+
+    const uint8_t originalUnits = osdConfig()->units;
+    const struct {
+        unit_e units;
+        int efficiency;
+        char symbol;
+    } cases[] = {
+        { UNIT_METRIC, 100, SYM_KM },
+        { UNIT_BRITISH, 100, SYM_KM },
+        { UNIT_IMPERIAL, 164, SYM_MILES },
+    };
+
+    for (const auto &testCase : cases) {
+        // when
+        osdConfigMutable()->units = testCase.units;
+        osdElementsInit(false);
+        osdAnalyzeActiveElements();
+        displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+        // Let the efficiency filter settle at a constant speed and current.
+        for (int i = 0; i < 100; i++) {
+            osdRefresh();
+        }
+
+        // then
+        displayPortTestBufferSubstring(1, 8, "%4d%c/%c", testCase.efficiency, SYM_MAH, testCase.symbol);
+    }
+
+    stateFlags = originalStateFlags;
+    osdConfigMutable()->units = originalUnits;
+}
+
 TEST_F(OsdTest, TestGpsElements)
 {
     // given
