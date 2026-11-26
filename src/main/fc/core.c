@@ -814,7 +814,7 @@ static bool canUpdateVTX(void)
 }
 #endif
 
-#if defined(USE_RUNAWAY_TAKEOFF) || defined(USE_GPS_RESCUE)
+#if defined(USE_RUNAWAY_TAKEOFF) || defined(USE_GPS_RESCUE) || ENABLE_MAVLINK_GCS_FAILSAFE
 // determine if the R/P/Y stick deflection exceeds the specified limit - integer math is good enough here.
 bool areSticksActive(uint8_t stickPercentLimit)
 {

@@ -295,7 +295,7 @@ static failsafeProcedure_e failsafeActiveProcedure(void)
 
 static bool failsafeSticksActive(void)
 {
-#if defined(USE_RUNAWAY_TAKEOFF) || defined(USE_GPS_RESCUE)
+#if defined(USE_RUNAWAY_TAKEOFF) || defined(USE_GPS_RESCUE) || ENABLE_MAVLINK_GCS_FAILSAFE
     return areSticksActive(failsafeConfig()->failsafe_stick_threshold);
 #else
     return false;
@@ -560,13 +560,13 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
 #endif
 #if ENABLE_FLIGHT_PLAN
             case FAILSAFE_AUTOPILOT:
-                if (receivingRxData) {
-                    if (areSticksActive(failsafeConfig()->failsafe_stick_threshold) || failsafeState.boxFailsafeSwitchWasOn || recoveryRequested) {
-                        // same recovery rules as GPS Rescue: a true link-loss failsafe
-                        // needs stick input to hand control back
-                        failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
-                        reprocessState = true;
-                    }
+                if (receivingRxData && (areSticksActive(failsafeConfig()->failsafe_stick_threshold) || failsafeState.boxFailsafeSwitchWasOn || recoveryRequested)) {
+                    // same recovery rules as GPS Rescue: a true link-loss failsafe
+                    // needs stick input to hand control back
+                    failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
+                    reprocessState = true;
+                } else if (receivingRxData && !failsafeGcsLossActive()) {
+                    // the RC link is back: hold the mission until the pilot takes over
                 } else if (!armed) {
                     failsafeState.phase = FAILSAFE_LANDED;
                     reprocessState = true;

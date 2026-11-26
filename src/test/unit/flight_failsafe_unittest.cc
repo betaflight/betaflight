@@ -1231,3 +1231,19 @@ bool mspSerialIsConfiguratorActive(void)
     return false;
 }
 }
+
+TEST_F(FlightFailsafeGcsTest, GcsLossMissionFallsBackWhenItAbortsWhileRcIsUp)
+{
+    autopilotConfigMutable()->rxLossPolicy = AP_RX_LOSS_CONTINUE;
+    startMission();
+    testGcsLost = true;
+    tickLinkUp(10);
+    ASSERT_EQ(FAILSAFE_AUTOPILOT, failsafePhase());
+
+    tickLinkUp(100);
+    EXPECT_EQ(FAILSAFE_AUTOPILOT, failsafePhase());
+
+    testFlightPlanState = FP_NAV_ABORTED;
+    tickLinkUp(100);
+    EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
+}
