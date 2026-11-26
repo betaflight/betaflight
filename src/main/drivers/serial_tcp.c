@@ -131,6 +131,8 @@ serialPort_t *serTcpOpen(serialPortIdentifier_e identifier, serialReceiveCallbac
     int id = findSerialPortIndexByIdentifier(identifier);
 
     if (id >= 0 && id < (int)ARRAYLEN(tcpSerialPorts)) {
+        tcpSerialPorts[id].port.rxCallbackData = rxCallbackData;
+        tcpSerialPorts[id].port.rxCallback = rxCallback;
         s = tcpReconfigure(&tcpSerialPorts[id], id);
     }
 
@@ -148,9 +150,6 @@ serialPort_t *serTcpOpen(serialPortIdentifier_e identifier, serialReceiveCallbac
     s->port.rxBuffer = s->rxBuffer;
     s->port.txBuffer = s->txBuffer;
 
-    // callback works for IRQ-based RX ONLY
-    s->port.rxCallback = rxCallback;
-    s->port.rxCallbackData = rxCallbackData;
     s->port.mode = mode;
     s->port.baudRate = baudRate;
     s->port.options = options;
