@@ -116,15 +116,15 @@ linkQualitySource_e linkQualitySource;
 static bool rxDataProcessingRequired = false;
 static bool auxiliaryProcessingRequired = false;
 
-static bool rxSignalReceived = false;
+STATIC_UNIT_TESTED bool rxSignalReceived = false;
 static bool rxFlightChannelsValid = false;
-static uint8_t rxChannelCount;
+STATIC_UNIT_TESTED uint8_t rxChannelCount;
 
 static timeUs_t needRxSignalBefore = 0;
 static timeUs_t suspendRxSignalUntil = 0;
 static uint8_t  skipRxSamples = 0;
 
-static float rcRaw[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // last received raw value, as it comes
+STATIC_UNIT_TESTED float rcRaw[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // last received raw value, as it comes
 float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];           // scaled, modified, checked and constrained values
 uint32_t validRxSignalTimeout[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
@@ -745,10 +745,11 @@ static void readRxChannelsApplyRanges(void)
     }
 }
 
-static void detectAndApplySignalLossBehaviour(void)
+STATIC_UNIT_TESTED void detectAndApplySignalLossBehaviour(void)
 {
     const uint32_t currentTimeMs = millis();
     const bool boxFailsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
+    const bool gcsLoss = failsafeGcsLossActive();
     rxFlightChannelsValid = rxSignalReceived && !boxFailsafeSwitchIsOn;
     // rxFlightChannelsValid is false after RXLOSS_TRIGGER_INTERVAL of no packets, or as soon as use the BOXFAILSAFE switch is actioned
     // rxFlightChannelsValid is true the instant we get a good packet or the BOXFAILSAFE switch is reverted
@@ -767,16 +768,17 @@ static void detectAndApplySignalLossBehaviour(void)
             // we are in failsafe Stage 2, whether Rx loss or BOXFAILSAFE induced
             // pass valid incoming flight channel values to FC,
             // so that GPS Rescue can get the 30% requirement for termination of the rescue
-            if (channel < NON_AUX_CHANNEL_COUNT) {
+            if (gcsLoss && channel < NON_AUX_CHANNEL_COUNT && !thisChannelValid && cmp32(currentTimeMs, validRxSignalTimeout[channel]) >= 0) {
+                rxFlightChannelsValid = false;
+            }
+            if (channel == THROTTLE && (!thisChannelValid || gcsLoss)) {
+                sample = failsafeConfig()->failsafe_throttle;
+                // stage 2 failsafe throttle value. In GPS Rescue Flight mode, altitude control overrides, late in mixer.c
+            } else if (channel < NON_AUX_CHANNEL_COUNT) {
                 if (!thisChannelValid) {
-                    if (channel == THROTTLE ) {
-                        sample = failsafeConfig()->failsafe_throttle;
-                        // stage 2 failsafe throttle value. In GPS Rescue Flight mode, altitude control overrides, late in mixer.c
-                    } else {
-                        sample = rxConfig()->midrc;
-                    }
+                    sample = rxConfig()->midrc;
                 }
-            } else {
+            } else if (!(gcsLoss && thisChannelValid)) {
                 // set aux channels as per Stage 1 failsafe hold/set values, allow all for Failsafe and GPS rescue MODE switches
                 sample = getRxfailValue(channel);
             }

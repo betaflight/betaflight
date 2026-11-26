@@ -34,6 +34,7 @@ void configureMAVLinkTelemetryPort(void);
 
 bool mavlinkGcsSeen(void);
 bool mavlinkGcsIsFresh(timeMs_t currentTimeMs);
+bool mavlinkGcsLostFor(timeMs_t currentTimeMs, timeMs_t periodMs);
 bool mavlinkIsGcsSysid(uint32_t sysid);
 
 // Forward-typedef so consumers can hold pointers without dragging in

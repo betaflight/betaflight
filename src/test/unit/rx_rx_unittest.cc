@@ -44,6 +44,11 @@ extern "C" {
     uint8_t armingFlags = 0;
 
     bool isPulseValid(uint16_t pulseDuration);
+    void detectAndApplySignalLossBehaviour(void);
+    extern bool rxSignalReceived;
+    extern uint8_t rxChannelCount;
+    extern float rcRaw[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+    extern uint32_t validRxSignalTimeout[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
     PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
         .enabledFeatures = 0
@@ -64,6 +69,104 @@ typedef struct testData_s {
 } testData_t;
 
 static testData_t testData;
+static bool testFailsafeActive = false;
+static bool testGcsLoss = false;
+
+class RxStage2Test : public ::testing::Test {
+protected:
+    static constexpr int auxChannel = NON_AUX_CHANNEL_COUNT;
+
+    void SetUp() override
+    {
+        memset(&rcModeActivationMask, 0, sizeof(rcModeActivationMask));
+        rxConfigMutable()->rx_min_usec = 885;
+        rxConfigMutable()->rx_max_usec = 2115;
+        rxConfigMutable()->midrc = 1500;
+        failsafeConfigMutable()->failsafe_throttle = 1200;
+        rxFailsafeChannelConfigsMutable(auxChannel)->mode = RX_FAILSAFE_MODE_HOLD;
+
+        rxSignalReceived = true;
+        rxChannelCount = NON_AUX_CHANNEL_COUNT + 1;
+        rcRaw[ROLL] = 1600;
+        rcRaw[PITCH] = 1400;
+        rcRaw[YAW] = 1550;
+        rcRaw[THROTTLE] = 1700;
+        rcRaw[auxChannel] = 1100;
+        rcData[auxChannel] = rcUsToNorm(1900);
+
+        testFailsafeActive = true;
+    }
+
+    void TearDown() override
+    {
+        testFailsafeActive = false;
+        testGcsLoss = false;
+    }
+
+    static float channelUs(int channel)
+    {
+        return rcNormToUs(rcData[channel]);
+    }
+};
+
+TEST_F(RxStage2Test, GcsLossLandsOnFailsafeThrottleAndPassesLiveAux)
+{
+    testGcsLoss = true;
+
+    detectAndApplySignalLossBehaviour();
+
+    EXPECT_FLOAT_EQ(1200, channelUs(THROTTLE));
+    EXPECT_FLOAT_EQ(1600, channelUs(ROLL));
+    EXPECT_FLOAT_EQ(1400, channelUs(PITCH));
+    EXPECT_FLOAT_EQ(1550, channelUs(YAW));
+    EXPECT_FLOAT_EQ(1100, channelUs(auxChannel));
+}
+
+TEST_F(RxStage2Test, GcsLossWithRxLostHoldsAux)
+{
+    testGcsLoss = true;
+    rxSignalReceived = false;
+
+    detectAndApplySignalLossBehaviour();
+
+    EXPECT_FLOAT_EQ(1200, channelUs(THROTTLE));
+    EXPECT_FLOAT_EQ(1500, channelUs(ROLL));
+    EXPECT_FLOAT_EQ(1900, channelUs(auxChannel));
+}
+
+TEST_F(RxStage2Test, GcsLossWithDeadFlightChannelHoldsAux)
+{
+    testGcsLoss = true;
+    rcRaw[ROLL] = 0;
+    validRxSignalTimeout[ROLL] = 0;
+
+    detectAndApplySignalLossBehaviour();
+
+    EXPECT_FALSE(rxAreFlightChannelsValid());
+    EXPECT_FLOAT_EQ(1500, channelUs(ROLL));
+    EXPECT_FLOAT_EQ(1200, channelUs(THROTTLE));
+    EXPECT_FLOAT_EQ(1900, channelUs(auxChannel));
+}
+
+TEST_F(RxStage2Test, GcsLossWithBriefFlightChannelDropPassesLiveAux)
+{
+    testGcsLoss = true;
+    rcRaw[ROLL] = 0;
+    validRxSignalTimeout[ROLL] = 300;
+
+    detectAndApplySignalLossBehaviour();
+
+    EXPECT_TRUE(rxAreFlightChannelsValid());
+    EXPECT_FLOAT_EQ(1100, channelUs(auxChannel));
+}
+
+TEST_F(RxStage2Test, Stage2WithoutGcsLossKeepsValidThrottleAndHeldAux)
+{
+    detectAndApplySignalLossBehaviour();
+
+    EXPECT_FLOAT_EQ(1700, channelUs(THROTTLE));
+    EXPECT_FLOAT_EQ(1900, channelUs(auxChannel));
+}
 
 #if 0 //!! valid pulse handling has changed so these test now test removed functions
 TEST(RxTest, TestValidFlightChannels)
@@ -214,7 +317,8 @@ extern "C" {
 
     void failsafeOnRxSuspend(uint32_t ) {}
     void failsafeOnRxResume(void) {}
-    bool failsafeIsActive(void) { return false; }
+    bool failsafeIsActive(void) { return testFailsafeActive; }
+    bool failsafeGcsLossActive(void) { return testGcsLoss; }
     bool failsafeIsReceivingRxData(void) { return true; }
     uint32_t failsafeFailurePeriodMs(void) { return 400; }
     uint16_t flightModeFlags = 0;

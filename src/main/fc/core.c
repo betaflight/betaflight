@@ -344,7 +344,7 @@ static bool accNeedsCalibration(void)
 
 #ifdef USE_GPS_RESCUE
         // Check if failsafe will use GPS Rescue
-        if (failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE) {
+        if (failsafeUsesGpsRescue()) {
             return true;
         }
 #endif
@@ -814,7 +814,7 @@ static bool canUpdateVTX(void)
 }
 #endif
 
-#if defined(USE_RUNAWAY_TAKEOFF) || defined(USE_GPS_RESCUE)
+#if defined(USE_RUNAWAY_TAKEOFF) || defined(USE_GPS_RESCUE) || ENABLE_MAVLINK_GCS_FAILSAFE
 // determine if the R/P/Y stick deflection exceeds the specified limit - integer math is good enough here.
 bool areSticksActive(uint8_t stickPercentLimit)
 {
@@ -1132,7 +1132,7 @@ void processRxModes(timeUs_t currentTimeUs)
     // autopilot rescue mission instead - staged below and in failsafe.c.)
     if (ARMING_FLAG(ARMED) && gpsRescueIsConfigured()
         && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE)
-        || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE))) {
+        || failsafePhase() == FAILSAFE_GPS_RESCUE)) {
         if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
             ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
         }

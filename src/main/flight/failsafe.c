@@ -51,10 +51,17 @@
 #include "io/beeper.h"
 
 #include "pg/autopilot.h"
+#if ENABLE_MAVLINK_GCS_FAILSAFE
+#include "pg/mavlink_gcs.h"
+#endif
 
 #include "msp/msp_serial.h"
 
 #include "rx/rx.h"
+
+#if ENABLE_MAVLINK_GCS_FAILSAFE
+#include "telemetry/mavlink.h"
+#endif
 
 #include "flight/pid.h"
 
@@ -126,6 +133,11 @@ void failsafeReset(void)
     failsafeState.phase = FAILSAFE_IDLE;
     failsafeState.rxLinkState = FAILSAFE_RXLINK_DOWN;
     failsafeState.boxFailsafeSwitchWasOn = false;
+    failsafeState.recoveryRequested = false;
+#if ENABLE_MAVLINK_GCS_FAILSAFE
+    failsafeState.gcsLoss = false;
+    failsafeState.gcsLossHandled = false;
+#endif
 #if ENABLE_RESCUE_PLAN
     failsafeState.autopilotEngageDeadline = 0;
 #endif
@@ -162,6 +174,12 @@ void failsafeStartMonitoring(void)
 static bool failsafeShouldHaveCausedLandingByNow(void)
 {
     return (millis() > failsafeState.landingShouldBeFinishedAt);
+}
+
+// A mode command from the GCS hands control back, as stick input does
+void failsafeRequestRecovery(void)
+{
+    failsafeState.recoveryRequested = true;
 }
 
 bool failsafeIsReceivingRxData(void)
@@ -240,6 +258,60 @@ void failsafeCheckDataFailurePeriod(void)
 LOCAL_UNUSED_FUNCTION static uint32_t failsafeFailurePeriodMs(void)
 {
     return failsafeState.rxDataFailurePeriod;
+}
+
+bool failsafeGcsLossActive(void)
+{
+#if ENABLE_MAVLINK_GCS_FAILSAFE
+    return failsafeState.gcsLoss;
+#else
+    return false;
+#endif
+}
+
+#if ENABLE_MAVLINK_GCS_FAILSAFE
+static bool failsafeGcsLost(void)
+{
+    const mavlinkGcsConfig_t *config = mavlinkGcsConfig();
+    return config->failsafeAction != MAVLINK_GCS_FS_ACTION_OFF
+        && mavlinkGcsLostFor(millis(), config->failsafeTimeoutS * MILLIS_PER_SECOND);
+}
+#endif
+
+static failsafeProcedure_e failsafeActiveProcedure(void)
+{
+#if ENABLE_MAVLINK_GCS_FAILSAFE
+    if (failsafeState.gcsLoss) {
+#ifdef USE_GPS_RESCUE
+        if (mavlinkGcsConfig()->failsafeAction == MAVLINK_GCS_FS_ACTION_GPS_RESCUE) {
+            return FAILSAFE_PROCEDURE_GPS_RESCUE;
+        }
+#endif
+        return FAILSAFE_PROCEDURE_AUTO_LANDING;
+    }
+#endif
+    return failsafeConfig()->failsafe_procedure;
+}
+
+#ifdef USE_GPS_RESCUE
+bool failsafeUsesGpsRescue(void)
+{
+#if ENABLE_MAVLINK_GCS_FAILSAFE
+    if (mavlinkGcsConfig()->failsafeAction == MAVLINK_GCS_FS_ACTION_GPS_RESCUE) {
+        return true;
+    }
+#endif
+    return failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE;
+}
+#endif
+
+static bool failsafeSticksActive(void)
+{
+#if defined(USE_RUNAWAY_TAKEOFF) || defined(USE_GPS_RESCUE) || ENABLE_MAVLINK_GCS_FAILSAFE
+    return areSticksActive(failsafeConfig()->failsafe_stick_threshold);
+#else
+    return false;
+#endif
 }
 
 static void failsafeStartProcedure(failsafeProcedure_e procedure)
@@ -321,6 +393,16 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
         receivingRxData = false;
     }
 
+    const bool recoveryRequested = failsafeState.recoveryRequested;
+    failsafeState.recoveryRequested = false;
+
+#if ENABLE_MAVLINK_GCS_FAILSAFE
+    const bool gcsLost = failsafeGcsLost();
+    if (!gcsLost) {
+        failsafeState.gcsLossHandled = false;
+    }
+#endif
+
     // Beep RX lost whenever no RC data is received outside bench environment
     if (!receivingRxData && !mspSerialIsConfiguratorActive()) {
         beeperMode = BEEPER_RX_LOST;
@@ -381,6 +463,14 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                             failsafeState.phase = FAILSAFE_RX_LOSS_DETECTED;
                         }
                         reprocessState = true;
+#if ENABLE_MAVLINK_GCS_FAILSAFE
+                    } else if (gcsLost && !failsafeState.gcsLossHandled) {
+                        // the RC link is up, so the pilot can still take over with the sticks
+                        failsafeState.gcsLossHandled = true;
+                        failsafeState.gcsLoss = true;
+                        failsafeState.phase = FAILSAFE_RX_LOSS_DETECTED;
+                        reprocessState = true;
+#endif
                     }
                 } else {
                     // When NOT armed, enable failsafe mode to show warnings in OSD
@@ -395,7 +485,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 break;
 
             case FAILSAFE_RX_LOSS_DETECTED:
-                if (receivingRxData) {
+                if (receivingRxData && !failsafeGcsLossActive()) {
                     failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                 } else {
                     failsafeState.active = true;
@@ -421,7 +511,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                     } else
 #endif
                     {
-                        failsafeStartProcedure(failsafeConfig()->failsafe_procedure);
+                        failsafeStartProcedure(failsafeActiveProcedure());
                     }
                     if (failsafeState.boxFailsafeSwitchWasOn) {
                         failsafeState.receivingRxDataPeriodPreset = 0;
@@ -435,7 +525,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 break;
 
             case FAILSAFE_LANDING:
-                if (receivingRxData) {
+                if (receivingRxData && (!failsafeGcsLossActive() || failsafeSticksActive() || recoveryRequested)) {
                     failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                     reprocessState = true;
                 } else {
@@ -462,7 +552,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
 #ifdef USE_GPS_RESCUE
             case FAILSAFE_GPS_RESCUE:
                 if (receivingRxData) {
-                    if (areSticksActive(failsafeConfig()->failsafe_stick_threshold) || failsafeState.boxFailsafeSwitchWasOn) {
+                    if (areSticksActive(failsafeConfig()->failsafe_stick_threshold) || failsafeState.boxFailsafeSwitchWasOn || recoveryRequested) {
                         // exits the rescue immediately if failsafe was initiated by switch, otherwise
                         // requires stick input to exit the rescue after a true Rx loss failsafe
                         // NB this test requires stick inputs to be received during GPS Rescue see PR #7936 for rationale
@@ -482,13 +572,13 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
 #endif
 #if ENABLE_FLIGHT_PLAN
             case FAILSAFE_AUTOPILOT:
-                if (receivingRxData) {
-                    if (areSticksActive(failsafeConfig()->failsafe_stick_threshold) || failsafeState.boxFailsafeSwitchWasOn) {
-                        // same recovery rules as GPS Rescue: a true link-loss failsafe
-                        // needs stick input to hand control back
-                        failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
-                        reprocessState = true;
-                    }
+                if (receivingRxData && (areSticksActive(failsafeConfig()->failsafe_stick_threshold) || failsafeState.boxFailsafeSwitchWasOn || recoveryRequested)) {
+                    // same recovery rules as GPS Rescue: a true link-loss failsafe
+                    // needs stick input to hand control back
+                    failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
+                    reprocessState = true;
+                } else if (receivingRxData && !failsafeGcsLossActive()) {
+                    // the RC link is back: hold the mission until the pilot takes over
                 } else if (!armed) {
                     failsafeState.phase = FAILSAFE_LANDED;
                     reprocessState = true;
@@ -511,7 +601,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                     // requirements while the link is still down. Re-selecting
                     // GPS-RESCUE would re-stage the mission that just failed,
                     // so degrade to the baro-only auto-landing instead.
-                    failsafeProcedure_e fallback = failsafeConfig()->failsafe_procedure;
+                    failsafeProcedure_e fallback = failsafeActiveProcedure();
                     if (fallback == FAILSAFE_PROCEDURE_GPS_RESCUE) {
                         fallback = FAILSAFE_PROCEDURE_AUTO_LANDING;
                     }
@@ -523,7 +613,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                     || flightPlanNavGetState() == FP_NAV_ABORTED) {
                     // mission ended, aborted, or lost its requirements (e.g. GPS)
                     // while the link is still down: fall back to the configured procedure
-                    failsafeStartProcedure(failsafeConfig()->failsafe_procedure);
+                    failsafeStartProcedure(failsafeActiveProcedure());
                     reprocessState = true;
 #endif
                 } else {
@@ -560,6 +650,9 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 failsafeState.throttleLowPeriod = millis() + failsafeConfig()->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
                 failsafeState.phase = FAILSAFE_IDLE;
                 failsafeState.active = false;
+#if ENABLE_MAVLINK_GCS_FAILSAFE
+                failsafeState.gcsLoss = false;
+#endif
 #ifdef USE_GPS_RESCUE
                 DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
 #endif

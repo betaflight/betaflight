@@ -41,6 +41,7 @@
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/mavlink_gcs.h"
 #include "pg/rx.h"
 
 #include "drivers/accgyro/accgyro.h"
@@ -259,6 +260,10 @@ static void handleHeartbeatRx(const mavlink_message_t *msg)
     if (heartbeat.type != MAV_TYPE_GCS || heartbeat.autopilot != MAV_AUTOPILOT_INVALID) {
         return;
     }
+    const uint8_t configuredSysid = mavlinkGcsConfig()->sysid;
+    if (configuredSysid != 0 && msg->sysid != configuredSysid) {
+        return;
+    }
     if (gcsSysid == 0) {
         gcsSysid = msg->sysid;
     }
@@ -275,6 +280,11 @@ bool mavlinkGcsSeen(void)
 bool mavlinkGcsIsFresh(timeMs_t currentTimeMs)
 {
     return mavlinkGcsSeen() && currentTimeMs - gcsLastSeenMs <= MAVLINK_GCS_TIMEOUT_MS;
+}
+
+bool mavlinkGcsLostFor(timeMs_t currentTimeMs, timeMs_t periodMs)
+{
+    return mavlinkGcsSeen() && currentTimeMs - gcsLastSeenMs > periodMs;
 }
 
 bool mavlinkIsGcsSysid(uint32_t sysid)
@@ -648,7 +658,7 @@ static uint8_t handleArmDisarm(float param1)
 #endif
 }
 
-static uint8_t handleSetMode(float baseModeF, float customModeF)
+static uint8_t handleSetMode(float baseModeF, float customModeF, uint32_t senderSysid)
 {
     uint32_t baseMode, customMode;
     if (!cmdParamToUint32(baseModeF, 0xFF, &baseMode) ||
@@ -659,7 +669,17 @@ static uint8_t handleSetMode(float baseModeF, float customModeF)
     if (!(baseMode & MAV_MODE_FLAG_CUSTOM_MODE_ENABLED)) {
         return MAV_RESULT_DENIED;
     }
-    return applyMavCustomMode(customMode) ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED;
+    if (!applyMavCustomMode(customMode)) {
+        return MAV_RESULT_DENIED;
+    }
+#if ENABLE_REMOTE_ARM || ENABLE_MAVLINK_GCS_FAILSAFE
+    if (mavlinkIsGcsSysid(senderSysid)) {
+        failsafeRequestRecovery();
+    }
+#else
+    UNUSED(senderSysid);
+#endif
+    return MAV_RESULT_ACCEPTED;
 }
 
 static uint8_t handleReturnToLaunch(void)
@@ -739,9 +759,10 @@ static uint8_t handleRebootShutdown(float param1)
 // Shared command executor for COMMAND_LONG and COMMAND_INT. Coordinate-bearing
 // commands receive lat/lon in 1e7 degrees and altitude in cm via coordsValid.
 static uint8_t mavlinkExecCommand(uint16_t command, float param1, float param2,
-    bool coordsValid, int32_t lat1e7, int32_t lon1e7, int32_t altCm)
+    bool coordsValid, int32_t lat1e7, int32_t lon1e7, int32_t altCm, uint32_t senderSysid)
 {
 #if !ENABLE_TELEMETRY_MAVLINK_COMMANDS
+    UNUSED(senderSysid);
     UNUSED(coordsValid);
     UNUSED(lat1e7);
     UNUSED(lon1e7);
@@ -758,7 +779,7 @@ static uint8_t mavlinkExecCommand(uint16_t command, float param1, float param2,
     case MAV_CMD_COMPONENT_ARM_DISARM:
         return handleArmDisarm(param1);
     case MAV_CMD_DO_SET_MODE:
-        return handleSetMode(param1, param2);
+        return handleSetMode(param1, param2, senderSysid);
     case MAV_CMD_NAV_RETURN_TO_LAUNCH:
         return handleReturnToLaunch();
     case MAV_CMD_DO_SET_HOME:
@@ -789,7 +810,7 @@ static void handleCommandInt(const mavlink_message_t *msg)
 
     const int32_t altCm = isfinite(cmd.z) ? (int32_t)lroundf(cmd.z * 100.0f) : 0;
     const uint8_t result = mavlinkExecCommand(cmd.command, cmd.param1, cmd.param2,
-        true, cmd.x, cmd.y, altCm);
+        true, cmd.x, cmd.y, altCm, msg->sysid);
     mavlinkSendCommandAck(cmd.command, result, msg->sysid, msg->compid);
 }
 
@@ -815,7 +836,7 @@ static void handleCommandLong(const mavlink_message_t *msg)
         altCm = (int32_t)lroundf(cmd.param7 * 100.0f);
     }
     const uint8_t result = mavlinkExecCommand(cmd.command, cmd.param1, cmd.param2,
-        coordsValid, lat1e7, lon1e7, altCm);
+        coordsValid, lat1e7, lon1e7, altCm, msg->sysid);
     mavlinkSendCommandAck(cmd.command, result, msg->sysid, msg->compid);
 }
 

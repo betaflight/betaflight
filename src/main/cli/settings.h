@@ -178,6 +178,9 @@ typedef enum {
 #ifdef USE_TELEMETRY
     TABLE_TELEMETRY_PROTOCOL,
 #endif
+#if ENABLE_MAVLINK_GCS_FAILSAFE
+    TABLE_MAVLINK_GCS_FS_ACTION,
+#endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
