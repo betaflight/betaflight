@@ -49,6 +49,7 @@ extern "C" {
     #include "io/serial.h"
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "sensors/gyro.h"
     #include "sensors/sensors.h"
     #include "rx/rx.h"
     #include "sensors/battery.h"
@@ -96,6 +97,8 @@ extern "C" {
     }
     void closeSerialPort(serialPort_t *) {}
     void serialWrite(serialPort_t *, uint8_t ch) { txBytes->push_back(ch); }
+    static uint32_t txFree;
+    uint32_t serialTxBytesFree(const serialPort_t *) { return txFree; }
     uint32_t serialRxBytesWaiting(const serialPort_t *) { return rxBytes->size(); }
     uint8_t serialRead(serialPort_t *)
     {
@@ -170,6 +173,16 @@ extern "C" {
 
     attitudeEulerAngles_t attitude;
     int32_t getEstimatedAltitudeCm(void) { return 0; }
+    static float altitudeDerivative;
+    float getAltitudeDerivative(void) { return altitudeDerivative; }
+
+    gyro_t gyro;
+    float motor[MAX_SUPPORTED_MOTORS];
+    static float motorStopped;
+    float getMotorOutputDisarmed(void) { return motorStopped; }
+    static uint8_t motorCount;
+    uint8_t getMotorCount(void) { return motorCount; }
+    uint16_t motorConvertToExternal(float motorValue) { return lrintf(motorValue); }
 
     static uint32_t sensorMask;
     bool sensors(uint32_t mask) { return (sensorMask & mask) != 0; }
@@ -271,6 +284,12 @@ protected:
         bootloaderResetCalls = 0;
         waitForTxCalls = 0;
         memset(&attitude, 0, sizeof(attitude));
+        memset(&gyro, 0, sizeof(gyro));
+        altitudeDerivative = 0;
+        memset(motor, 0, sizeof(motor));
+        motorStopped = 0;
+        motorCount = 4;
+        txFree = 1024;
         memset(&gpsSol, 0, sizeof(gpsSol));
         memset(&GPS_home_llh, 0, sizeof(GPS_home_llh));
         mixerConfigMutable()->mixerMode = MIXER_QUADX;
@@ -983,6 +1002,50 @@ TEST_F(MavlinkTelemetryTest, AvailableModesRejectsOutOfRangeIndex)
     EXPECT_EQ(lastOf(MAVLINK_MSG_ID_AVAILABLE_MODES), nullptr);
 }
 
+TEST_F(MavlinkTelemetryTest, AvailableModesAllAreSentOnePerPass)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_AVAILABLE_MODES, 0), MAV_RESULT_ACCEPTED);
+    EXPECT_LE(countOf(MAVLINK_MSG_ID_AVAILABLE_MODES), 1);
+
+    for (int pass = 0; pass < MODE_COUNT + 2; pass++) {
+        const int before = countOf(MAVLINK_MSG_ID_AVAILABLE_MODES);
+        tick(20);
+        EXPECT_LE(countOf(MAVLINK_MSG_ID_AVAILABLE_MODES) - before, 1);
+    }
+
+    std::vector<uint8_t> indexes;
+    for (const auto &m : sent) {
+        if (m.msgid == MAVLINK_MSG_ID_AVAILABLE_MODES) {
+            indexes.push_back(mavlink_msg_available_modes_get_mode_index(&m));
+        }
+    }
+    ASSERT_EQ(indexes.size(), (size_t)MODE_COUNT);
+    for (uint8_t i = 0; i < MODE_COUNT; i++) {
+        EXPECT_EQ(indexes[i], i + 1);
+    }
+}
+
+TEST_F(MavlinkTelemetryTest, AvailableModesAllWaitsForTxSpace)
+{
+    txFree = 0;
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_AVAILABLE_MODES, 0), MAV_RESULT_ACCEPTED);
+    tick(20);
+    tick(20);
+    EXPECT_EQ(countOf(MAVLINK_MSG_ID_AVAILABLE_MODES), 0);
+
+    txFree = 1024;
+    for (int pass = 0; pass < MODE_COUNT + 2; pass++) {
+        tick(20);
+    }
+    ASSERT_EQ(countOf(MAVLINK_MSG_ID_AVAILABLE_MODES), MODE_COUNT);
+    for (const auto &m : sent) {
+        if (m.msgid == MAVLINK_MSG_ID_AVAILABLE_MODES) {
+            EXPECT_EQ(mavlink_msg_available_modes_get_mode_index(&m), 1);
+            break;
+        }
+    }
+}
+
 TEST_F(MavlinkTelemetryTest, AvailableModesMonitorReportsSequence)
 {
     EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_AVAILABLE_MODES_MONITOR), MAV_RESULT_ACCEPTED);
@@ -1245,4 +1308,106 @@ TEST_F(MavlinkTelemetryTest, RequestMessageSystemTime)
 {
     EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_SYSTEM_TIME), MAV_RESULT_ACCEPTED);
     EXPECT_NE(lastOf(MAVLINK_MSG_ID_SYSTEM_TIME), nullptr);
+}
+
+TEST_F(MavlinkTelemetryTest, AttitudeReportsBodyRates)
+{
+    gyro.gyroADCf[FD_ROLL] = 90.0f;
+    gyro.gyroADCf[FD_PITCH] = 45.0f;
+    gyro.gyroADCf[FD_YAW] = 30.0f;
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_ATTITUDE), MAV_RESULT_ACCEPTED);
+    const mavlink_message_t *m = lastOf(MAVLINK_MSG_ID_ATTITUDE);
+    ASSERT_NE(m, nullptr);
+    EXPECT_NEAR(mavlink_msg_attitude_get_rollspeed(m), M_PI / 2, 1e-4);
+    EXPECT_NEAR(mavlink_msg_attitude_get_pitchspeed(m), -M_PI / 4, 1e-4);
+    EXPECT_NEAR(mavlink_msg_attitude_get_yawspeed(m), -M_PI / 6, 1e-4);
+}
+
+TEST_F(MavlinkTelemetryTest, VfrHudReportsAmslAltitudeClimbAndMotorThrottle)
+{
+    sensorMask = SENSOR_GPS;
+    gpsSol.llh.altCm = 4250;
+    gpsSol.groundSpeed = 350;
+    altitudeDerivative = 150.0f;
+    for (int i = 0; i < motorCount; i++) {
+        motor[i] = 1400.0f;
+    }
+
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_VFR_HUD), MAV_RESULT_ACCEPTED);
+    const mavlink_message_t *m = lastOf(MAVLINK_MSG_ID_VFR_HUD);
+    ASSERT_NE(m, nullptr);
+    EXPECT_FLOAT_EQ(mavlink_msg_vfr_hud_get_alt(m), 42.5f);
+    EXPECT_FLOAT_EQ(mavlink_msg_vfr_hud_get_groundspeed(m), 3.5f);
+    EXPECT_FLOAT_EQ(mavlink_msg_vfr_hud_get_climb(m), 1.5f);
+    EXPECT_EQ(mavlink_msg_vfr_hud_get_throttle(m), 0);
+
+    ENABLE_ARMING_FLAG(ARMED);
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_VFR_HUD), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(mavlink_msg_vfr_hud_get_throttle(lastOf(MAVLINK_MSG_ID_VFR_HUD)), 40);
+}
+
+TEST_F(MavlinkTelemetryTest, VfrHudThrottleFollowsMotorOutputs)
+{
+    ENABLE_ARMING_FLAG(ARMED);
+
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_VFR_HUD), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(mavlink_msg_vfr_hud_get_throttle(lastOf(MAVLINK_MSG_ID_VFR_HUD)), 0);
+
+    motor[0] = 2100.0f;
+    motor[1] = 2000.0f;
+    motor[2] = 1600.0f;
+    motor[3] = 900.0f;
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_VFR_HUD), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(mavlink_msg_vfr_hud_get_throttle(lastOf(MAVLINK_MSG_ID_VFR_HUD)), 65);
+}
+
+TEST_F(MavlinkTelemetryTest, VfrHudThrottleStoppedMotorIsZero)
+{
+    ENABLE_ARMING_FLAG(ARMED);
+    motorStopped = 1460.0f;
+    for (int i = 0; i < motorCount; i++) {
+        motor[i] = 1460.0f;
+    }
+    featureMask = FEATURE_3D;
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_VFR_HUD), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(mavlink_msg_vfr_hud_get_throttle(lastOf(MAVLINK_MSG_ID_VFR_HUD)), 0);
+
+    featureMask = 0;
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_VFR_HUD), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(mavlink_msg_vfr_hud_get_throttle(lastOf(MAVLINK_MSG_ID_VFR_HUD)), 0);
+}
+
+TEST_F(MavlinkTelemetryTest, VfrHudThrottleFullDriveIsNotStopped)
+{
+    ENABLE_ARMING_FLAG(ARMED);
+    motorStopped = 1000.0f;
+    for (int i = 0; i < motorCount; i++) {
+        motor[i] = 2000.0f;
+    }
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_VFR_HUD), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(mavlink_msg_vfr_hud_get_throttle(lastOf(MAVLINK_MSG_ID_VFR_HUD)), 100);
+}
+
+TEST_F(MavlinkTelemetryTest, VfrHudThrottleReversibleCountsBothDirections)
+{
+    ENABLE_ARMING_FLAG(ARMED);
+    featureMask = FEATURE_3D;
+    motor[0] = 1000.0f;
+    motor[1] = 2000.0f;
+    motor[2] = 1250.0f;
+    motor[3] = 1750.0f;
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_VFR_HUD), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(mavlink_msg_vfr_hud_get_throttle(lastOf(MAVLINK_MSG_ID_VFR_HUD)), 75);
+}
+
+TEST_F(MavlinkTelemetryTest, GpsRawFixTypeIgnoresSatelliteCount)
+{
+    sensorMask = SENSOR_GPS;
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_GPS_RAW_INT), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(mavlink_msg_gps_raw_int_get_fix_type(lastOf(MAVLINK_MSG_ID_GPS_RAW_INT)), GPS_FIX_TYPE_NO_FIX);
+
+    ENABLE_STATE(GPS_FIX);
+    gpsSol.numSat = 3;
+    EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_GPS_RAW_INT), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(mavlink_msg_gps_raw_int_get_fix_type(lastOf(MAVLINK_MSG_ID_GPS_RAW_INT)), GPS_FIX_TYPE_3D_FIX);
 }

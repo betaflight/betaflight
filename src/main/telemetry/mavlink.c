@@ -405,6 +405,8 @@ static void mavlinkSendAvailableMode(uint8_t modeIndex)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
+static uint8_t nextAvailableModeIndex;
+
 static void mavlinkSendAvailableModesMonitor(void)
 {
     mavlink_msg_available_modes_monitor_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg, BF_MAV_MODES_SEQ);
@@ -462,11 +464,15 @@ static uint8_t handleRequestMessage(float param1, float param2)
         break;
     case MAVLINK_MSG_ID_AVAILABLE_MODES: {
         uint32_t modeIndex;
-        if (!cmdParamToUint32(param2, BF_MAV_MODE_COUNT, &modeIndex) || modeIndex < 1) {
+        if (!cmdParamToUint32(param2, BF_MAV_MODE_COUNT, &modeIndex)) {
             result = MAV_RESULT_DENIED;
             break;
         }
-        mavlinkSendAvailableMode((uint8_t)modeIndex);
+        if (modeIndex == 0) {
+            nextAvailableModeIndex = 1;
+        } else {
+            mavlinkSendAvailableMode((uint8_t)modeIndex);
+        }
         result = MAV_RESULT_ACCEPTED;
         break;
     }
@@ -1061,23 +1067,12 @@ static void mavlinkSendRCChannelsAndRSSI(void)
 static void mavlinkSendGpsRaw(void)
 {
     uint16_t msgLength;
-    uint8_t gpsFixType = 0;
 
     if (!sensors(SENSOR_GPS)) {
         return;
     }
 
-    if (!STATE(GPS_FIX)) {
-        gpsFixType = 1;
-    }
-    else {
-        if (gpsSol.numSat < GPS_MIN_SAT_COUNT) {
-            gpsFixType = 2;
-        }
-        else {
-            gpsFixType = 3;
-        }
-    }
+    const uint8_t gpsFixType = STATE(GPS_FIX) ? GPS_FIX_TYPE_3D_FIX : GPS_FIX_TYPE_NO_FIX;
 
     mavlink_msg_gps_raw_int_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
@@ -1213,11 +1208,11 @@ static void mavlinkSendAttitude(void)
         // yaw Yaw angle (rad)
         DECIDEGREES_TO_RADIANS(attitude.values.yaw),
         // rollspeed Roll angular speed (rad/s)
-        0,
+        DEGREES_TO_RADIANS(gyro.gyroADCf[FD_ROLL]),
         // pitchspeed Pitch angular speed (rad/s)
-        0,
+        DEGREES_TO_RADIANS(-gyro.gyroADCf[FD_PITCH]),
         // yawspeed Yaw angular speed (rad/s)
-        0);
+        DEGREES_TO_RADIANS(-gyro.gyroADCf[FD_YAW]));
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 
@@ -1334,22 +1329,42 @@ static void mavlinkSendExtendedSysState(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
+static uint16_t mavlinkMotorThrottlePercent(void)
+{
+    const uint8_t motorCount = getMotorCount();
+    if (!ARMING_FLAG(ARMED) || motorCount == 0) {
+        return 0;
+    }
+
+    const bool reversible = featureIsEnabled(FEATURE_3D);
+    const float stopped = getMotorOutputDisarmed();
+    float sum = 0.0f;
+    for (int i = 0; i < motorCount; i++) {
+        if (motor[i] == stopped) {
+            continue;
+        }
+        const float external = motorConvertToExternal(motor[i]);
+        const float drive = reversible
+            ? fabsf(external - PWM_RANGE_MIDDLE) / (PWM_RANGE / 2)
+            : (external - PWM_RANGE_MIN) / PWM_RANGE;
+        sum += constrainf(drive, 0.0f, 1.0f);
+    }
+    return lrintf(sum * 100.0f / motorCount);
+}
+
 static void mavlinkSendHUD(void)
 {
     uint16_t msgLength;
     float mavAltitude = 0;
     float mavGroundSpeed = 0;
     float mavAirSpeed = 0;
-    float mavClimbRate = 0;
 
 #if defined(USE_GPS)
-    // use ground speed if source available
     if (sensors(SENSOR_GPS)) {
         mavGroundSpeed = gpsSol.groundSpeed / 100.0f;
+        mavAltitude = gpsSol.llh.altCm / 100.0f;
     }
 #endif
-
-    mavAltitude = getEstimatedAltitudeCm() / 100.0f;
 
     mavlink_msg_vfr_hud_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // airspeed Current airspeed in m/s
@@ -1359,11 +1374,11 @@ static void mavlinkSendHUD(void)
         // heading Current heading in degrees, in compass units (0..360, 0=north)
         headingOrScaledMilliAmpereHoursDrawn(),
         // throttle Current throttle setting in integer percent, 0 to 100
-        scaleRangef(constrainf(rcGetChannel(THROTTLE), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX, 0, 100),
-        // alt Current altitude (MSL), in meters, if we have sonar or baro use them, otherwise use GPS (less accurate)
+        mavlinkMotorThrottlePercent(),
+        // alt Current altitude (MSL), in meters
         mavAltitude,
         // climb Current climb rate in meters/second
-        mavClimbRate);
+        getAltitudeDerivative() / 100.0f);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
@@ -1651,6 +1666,11 @@ static void processMAVLinkTelemetry(void)
                 mavTelemetryOutputMessages[i].updateTime = currentTimeMs + mavTelemetryOutputMessages[i].updateInterval;
             }
         }
+    }
+
+    if (nextAvailableModeIndex && serialTxBytesFree(mavlinkPort) >= MAVLINK_NUM_NON_PAYLOAD_BYTES + MAVLINK_MSG_ID_AVAILABLE_MODES_LEN) {
+        mavlinkSendAvailableMode(nextAvailableModeIndex);
+        nextAvailableModeIndex = (nextAvailableModeIndex < BF_MAV_MODE_COUNT) ? nextAvailableModeIndex + 1 : 0;
     }
 }
 
