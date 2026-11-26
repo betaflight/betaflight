@@ -559,6 +559,7 @@ static void handleCount(const mavlink_message_t *msg)
     }
     if (mc.count == 0) {
         flightPlanConfigMutable()->waypointCount = 0;
+        flightPlanNavMissionChanged();
         saveConfigAndNotify();
         sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_MISSION, MAV_MISSION_ACCEPTED);
         m.state = MISSION_IDLE;
@@ -651,6 +652,7 @@ static void handleItemInt(const mavlink_message_t *msg)
     flightPlanConfig_t *plan = flightPlanConfigMutable();
     memcpy(plan->waypoints, stagedWaypoints, m.totalCount * sizeof(stagedWaypoints[0]));
     plan->waypointCount = m.totalCount;
+    flightPlanNavMissionChanged();
     saveConfigAndNotify();
     sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_MISSION, MAV_MISSION_ACCEPTED);
     m.state = MISSION_IDLE;
@@ -682,6 +684,7 @@ static void handleClearAll(const mavlink_message_t *msg)
     }
     if (clearMission) {
         flightPlanConfigMutable()->waypointCount = 0;
+        flightPlanNavMissionChanged();
         saveConfigAndNotify();
     }
     sendAck(msg->sysid, msg->compid, mc.mission_type, MAV_MISSION_ACCEPTED);

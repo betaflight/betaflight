@@ -592,6 +592,9 @@ void disarm(flightLogDisarmReason_e reason)
         DISABLE_ARMING_FLAG(ARMED); // disarm now
         lastDisarmTimeUs = micros();
         launchWingDisarm();
+#if ENABLE_FLIGHT_PLAN
+        flightPlanNavResetFlight();
+#endif
 
 #ifdef USE_OSD
         if (IS_RC_MODE_ACTIVE(BOXCRASHFLIP) || isLaunchControlActive()) {

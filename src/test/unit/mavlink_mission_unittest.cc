@@ -70,6 +70,7 @@ extern "C" {
     }
     bool flightPlanNavIsInjectedPlanActive(void) { return false; }
     uint16_t flightPlanNavOrbitPeriodDs(uint16_t) { return 0; }
+    void flightPlanNavMissionChanged(void) {}
 
     // --- TX capture ---
     static std::vector<mavlink_message_t> *g_sent;

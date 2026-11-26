@@ -582,6 +582,25 @@ TEST_F(FlightPlanRescueTest, StageThenEngageDispatchesRescuePlan)
     EXPECT_NEAR(g_lastTarget.targetEfM.z, kDefaultReturnAltM, 0.1f);
 }
 
+TEST_F(FlightPlanRescueTest, StagedRescueBeatsStagedGuidedAndRefusesGuided)
+{
+    addWaypoint(500000, 500000, 99999, WAYPOINT_TYPE_FLYOVER);
+    waypoint_t hold = {};
+    hold.altitude = 12000;
+    hold.type = WAYPOINT_TYPE_HOLD;
+    hold.duration = UINT16_MAX;
+    ASSERT_TRUE(flightPlanNavSetGuidedPlan(&hold, 1, 0.0f));
+    ASSERT_TRUE(flightPlanNavStageRescuePlan());
+
+    flightPlanNavEngage();
+    EXPECT_TRUE(flightPlanNavIsRescuePlanActive());
+    EXPECT_FALSE(flightPlanNavIsGuided());
+
+    EXPECT_FALSE(flightPlanNavSetGuidedPlan(&hold, 1, 0.0f));
+    EXPECT_FALSE(flightPlanNavStartMission(0));
+    EXPECT_TRUE(flightPlanNavIsRescuePlanActive());
+}
+
 TEST_F(FlightPlanRescueTest, RescuePlanStatesItsOwnRatesAndNoseBehaviour)
 {
     gpsRescueConfigMutable()->ascendRate = 200;
