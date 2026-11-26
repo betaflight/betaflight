@@ -133,6 +133,9 @@
 #define USE_PWM_OUTPUT
 #endif
 
+#define USE_DSHOT
+#define DEFAULT_MOTOR_PROTOCOL MOTOR_PROTOCOL_PWM
+
 #define USE_BLACKBOX
 #define USE_BLACKBOX_VIRTUAL
 
@@ -264,7 +267,7 @@ typedef struct {
 } rc_packet;
 
 typedef struct {
-    float motor_speed[4];   // normal: [0.0, 1.0], 3D: [-1.0, 1.0]
+    float motor_speed[4];   // normal: [0.0, 1.0], 3D: [-1.0, 1.0], negative when reversed
 } servo_packet;
 
 typedef struct {
