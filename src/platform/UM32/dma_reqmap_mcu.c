@@ -64,8 +64,8 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     { DMA_PERIPH_SPI_SDI,  SPIDEV_4,  { DMA(2, 8, 7) } },
 #endif // USE_SPI
 #ifdef USE_ADC
-    { DMA_PERIPH_ADC,     ADCDEV_1,  { DMA(2, 0, 0), DMA(2, 4, 0) } },
-    { DMA_PERIPH_ADC,     ADCDEV_2,  { DMA(2, 2, 0), DMA(2, 3, 0) } },
+    { DMA_PERIPH_ADC,     ADCDEV_1,  { DMA(2, 0, 3), DMA(2, 4, 3) } },
+    { DMA_PERIPH_ADC,     ADCDEV_2,  { DMA(2, 2, 3), DMA(2, 3, 3) } },
 #endif
 };
 
@@ -76,34 +76,35 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
     // (D(DMAx, handshake, Stream) -> DMA(dma, hs, stream)). Keep both tables
     // in sync: timer_def.h feeds timerHardware, this feeds dmaGet*ByTimer.
 
-    { (timerResource_t *)TIM1, TC(CH1), { DMA(2, 1, 3) } },
+    { (timerResource_t *)TIM1, TC(CH1), { DMA(2, 1, 2) } },  //BIT_BANG PACER
     { (timerResource_t *)TIM1, TC(CH2), { DMA(2, 6, 2) } },
     { (timerResource_t *)TIM1, TC(CH3), { DMA(2, 6, 1) } },
     { (timerResource_t *)TIM1, TC(CH4), { DMA(2, 4, 1) } },
 
-    { (timerResource_t *)TIM2, TC(CH2), { DMA(1, 6, 0) } },
-    { (timerResource_t *)TIM2, TC(CH3), { DMA(1, 1, 0) } },
-    { (timerResource_t *)TIM2, TC(CH4), { DMA(1, 6, 0) } },
+    { (timerResource_t *)TIM2, TC(CH2), { DMA(1, 6, 1) } },
+    { (timerResource_t *)TIM2, TC(CH3), { DMA(1, 1, 0) } }, //BIT_BANG PACER
+    { (timerResource_t *)TIM2, TC(CH4), { DMA(1, 6, 1) } },
 
-    { (timerResource_t *)TIM3, TC(CH2), { DMA(1, 5, 7) } },
-    { (timerResource_t *)TIM3, TC(CH4), { DMA(1, 2, 2) } },
+    { (timerResource_t *)TIM3, TC(CH2), { DMA(1, 5, 1) } },
+    { (timerResource_t *)TIM3, TC(CH3), { DMA(1, 7, 1) } },
+    { (timerResource_t *)TIM3, TC(CH4), { DMA(1, 2, 1) } },
 
     { (timerResource_t *)TIM4, TC(CH1), { DMA(1, 0, 3) } },
     { (timerResource_t *)TIM4, TC(CH2), { DMA(1, 3, 2) } },
     { (timerResource_t *)TIM4, TC(CH4), { DMA(1, 8, 1) } },
 
     { (timerResource_t *)TIM5, TC(CH1), { DMA(1, 2, 1) } },
-    { (timerResource_t *)TIM5, TC(CH4), { DMA(1, 1, 0) } },
+    { (timerResource_t *)TIM5, TC(CH4), { DMA(1, 1, 1) } },
 
     { (timerResource_t *)TIM8, TC(CH1), { DMA(2, 2, 1) } },
     { (timerResource_t *)TIM8, TC(CH2), { DMA(2, 2, 1) } },
     { (timerResource_t *)TIM8, TC(CH3), { DMA(2, 2, 1) } },
-    { (timerResource_t *)TIM8, TC(CH4), { DMA(2, 7, 1) } },
+    { (timerResource_t *)TIM8, TC(CH4), { DMA(2, 7, 0) } },  //BIT_BANG PACER
 
     { (timerResource_t *)TIM9, TC(CH1), { DMA(2, 10, 2) } },
-    { (timerResource_t *)TIM9, TC(CH2), { DMA(2, 11, 3) } },
-    { (timerResource_t *)TIM9, TC(CH3), { DMA(2, 12, 6) } },
-    { (timerResource_t *)TIM9, TC(CH4), { DMA(2, 13, 7) } },
+    { (timerResource_t *)TIM9, TC(CH2), { DMA(2, 11, 2) } },
+    { (timerResource_t *)TIM9, TC(CH3), { DMA(2, 12, 2) } },
+    { (timerResource_t *)TIM9, TC(CH4), { DMA(2, 13, 2) } },
 
     { (timerResource_t *)TIM10, TC(CH1), { DMA(2, 11, 1) } },
     { (timerResource_t *)TIM10, TC(CH2), { DMA(2, 12, 1) } },
@@ -120,7 +121,7 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
     { (timerResource_t *)TIM13, TC(CH1), { DMA(1, 8, 1) } },
     { (timerResource_t *)TIM13, TC(CH2), { DMA(1, 9, 2) } },
     { (timerResource_t *)TIM13, TC(CH3), { DMA(1, 10, 3) } },
-    { (timerResource_t *)TIM13, TC(CH4), { DMA(1, 11, 0) } },
+    { (timerResource_t *)TIM13, TC(CH4), { DMA(1, 11, 3) } },
 
     { (timerResource_t *)TIM14, TC(CH1), { DMA(1, 9, 2) } },
     { (timerResource_t *)TIM14, TC(CH2), { DMA(1, 10, 3) } },
