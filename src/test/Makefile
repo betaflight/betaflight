@@ -586,6 +586,7 @@ rx_mavlink_unittest_SRC := \
 rx_mavlink_unittest_DEFINES := \
 		USE_SERIALRX_MAVLINK= \
 		USE_TELEMETRY_MAVLINK= \
+		ENABLE_REMOTE_ARM=1 \
 		USE_RX_LINK_QUALITY_INFO= \
 		USE_RX_RSSI_DBM= \
 		USE_RX_RSNR=

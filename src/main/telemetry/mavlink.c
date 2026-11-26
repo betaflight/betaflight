@@ -98,7 +98,6 @@
 #define TELEMETRY_MAVLINK_MAXRATE 50
 #define TELEMETRY_MAVLINK_DELAY ((1000 * 1000) / TELEMETRY_MAVLINK_MAXRATE)
 
-#define MAVLINK_SYSTEM_ID 1
 #define MAVLINK_COMPONENT_ID MAV_COMP_ID_AUTOPILOT1
 extern uint16_t rssi; // FIXME dependency on mw.c
 
@@ -276,6 +275,11 @@ bool mavlinkGcsSeen(void)
 bool mavlinkGcsIsFresh(timeMs_t currentTimeMs)
 {
     return mavlinkGcsSeen() && currentTimeMs - gcsLastSeenMs <= MAVLINK_GCS_TIMEOUT_MS;
+}
+
+bool mavlinkIsGcsSysid(uint32_t sysid)
+{
+    return mavlinkGcsSeen() && sysid == gcsSysid;
 }
 
 static void handlePing(const mavlink_message_t *msg)
@@ -821,6 +825,11 @@ static void mavlinkDispatch(const mavlink_message_t *msg)
     case MAVLINK_MSG_ID_HEARTBEAT:
         handleHeartbeatRx(msg);
         break;
+#ifdef USE_SERIALRX_MAVLINK
+    case MAVLINK_MSG_ID_MANUAL_CONTROL:
+        mavlinkRxHandleManualControl(msg);
+        break;
+#endif
     case MAVLINK_MSG_ID_PING:
         handlePing(msg);
         break;
