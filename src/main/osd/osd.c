@@ -1433,6 +1433,15 @@ bool osdUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
     return (osdState != OSD_STATE_IDLE);
 }
 
+// As the scheduler does: one OS stall must not starve the OSD task
+static timeUs_t osdClampExecTime(timeUs_t executeTimeUs)
+{
+    if (TASK_EXEC_TIME_CLAMP_US && executeTimeUs > TASK_EXEC_TIME_CLAMP_US) {
+        return TASK_EXEC_TIME_CLAMP_US;
+    }
+    return executeTimeUs;
+}
+
 // Called when there is OSD update work to be done
 void osdUpdate(timeUs_t currentTimeUs)
 {
@@ -1576,7 +1585,7 @@ void osdUpdate(timeUs_t currentTimeUs)
 
             moreElementsToDraw = osdDrawNextActiveElement(osdDisplayPort);
 
-            executeTimeUs = micros() - startElementTime;
+            executeTimeUs = osdClampExecTime(micros() - startElementTime);
 
             if (executeTimeUs > (osdElementDurationFractionUs[osdElement] >> OSD_EXEC_TIME_SHIFT)) {
                 osdElementDurationFractionUs[osdElement] = executeTimeUs << OSD_EXEC_TIME_SHIFT;
@@ -1673,7 +1682,7 @@ void osdUpdate(timeUs_t currentTimeUs)
     }
 
     if (!schedulerGetIgnoreTaskExecTime()) {
-        executeTimeUs = micros() - currentTimeUs;
+        executeTimeUs = osdClampExecTime(micros() - currentTimeUs);
 
         if (executeTimeUs > (osdStateDurationFractionUs[osdCurrentState] >> OSD_EXEC_TIME_SHIFT)) {
             osdStateDurationFractionUs[osdCurrentState] = executeTimeUs << OSD_EXEC_TIME_SHIFT;

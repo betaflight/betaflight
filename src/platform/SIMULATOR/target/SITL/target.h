@@ -38,6 +38,10 @@
 #define ENABLE_GAZEBO_BRIDGE  1
 #endif
 
+#ifndef ENABLE_SITL_OSD
+#define ENABLE_SITL_OSD       0
+#endif
+
 #define ENABLE_SIMULATOR_MULTITHREAD 1
 
 #define SYSTEM_HSE_MHZ 0
@@ -137,7 +141,20 @@
 #undef USE_TELEMETRY_LTM
 #undef USE_ADC
 #undef USE_VCP
+#if ENABLE_SITL_OSD
+#define USE_OSD
+#define USE_OSD_HD
+#define USE_CANVAS
+#define USE_CMS
+#define USE_MSP_DISPLAYPORT
+#define USE_OSD_OVER_MSP_DISPLAYPORT
+#define USE_OSD_PROFILES
+#define USE_OSD_STICK_OVERLAY
+#define USE_OSD_CUSTOM_TEXT
+#else
 #undef USE_OSD
+#undef USE_CMS
+#endif // ENABLE_SITL_OSD
 #undef USE_RX_PPM
 #undef USE_RX_PWM
 #undef USE_SERIALRX
@@ -154,7 +171,6 @@
 #undef USE_TELEMETRY_HOTT
 #undef USE_TELEMETRY_SMARTPORT
 #undef USE_RESOURCE_MGMT
-#undef USE_CMS
 #undef USE_TELEMETRY_CRSF
 #undef USE_TELEMETRY_GHST
 #undef USE_TELEMETRY_IBUS

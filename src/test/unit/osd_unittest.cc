@@ -1617,7 +1617,6 @@ TEST_F(OsdTest, TestStatsBlackboxDeviceWithoutSize)
     ASSERT_NE(std::string::npos, label);
     EXPECT_EQ(std::string("BLACKBOX") + std::string(10, ' ') + ": OK", screen.substr(label, 22));
 
-    // restore the configuration for the next tests
     osdConfigMutable()->enabled_stats = enabledStats;
     blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
 }
