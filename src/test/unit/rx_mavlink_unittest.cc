@@ -595,3 +595,15 @@ TEST_F(MavlinkRxTest, ManualMaskedByOverrideExpiresAcrossTimerWrap)
     EXPECT_EQ(frame(), RX_FRAME_PENDING);
     EXPECT_EQ(readChannel(THROTTLE), 1300);
 }
+
+TEST_F(MavlinkRxTest, FrameWithExpiredFramesTimestampIsFresh)
+{
+    sendManual(0, 0, 700, 0);
+    advanceUs(500001);
+    EXPECT_EQ(frame(), RX_FRAME_PENDING);
+
+    advanceUs(UINT32_MAX - 500000);
+    sendManual(0, 0, 800, 0);
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+    EXPECT_EQ(readChannel(THROTTLE), 1800);
+}

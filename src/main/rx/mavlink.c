@@ -68,7 +68,8 @@ typedef struct mavlinkRcInput_s {
     uint16_t channels[MAVLINK_CHANNEL_COUNT];
     volatile timeUs_t frameTimeUs;
     volatile bool newFrame;
-    timeUs_t expiredFrameTimeUs;
+    volatile uint32_t frameCount;
+    uint32_t expiredFrameCount;
 } mavlinkRcInput_t;
 
 static uint16_t mavlinkChannelData[MAVLINK_CHANNEL_COUNT];
@@ -136,6 +137,7 @@ void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg)
     }
 
     overrideInput.frameTimeUs = micros();
+    overrideInput.frameCount++;
     overrideInput.newFrame = true;
 }
 
@@ -188,6 +190,7 @@ void mavlinkRxHandleManualControl(const mavlink_message_t *msg)
 
     memcpy(manualInput.channels, channels, sizeof(channels));
     manualInput.frameTimeUs = micros();
+    manualInput.frameCount++;
     manualInput.newFrame = true;
 #else
     UNUSED(msg);
@@ -206,12 +209,12 @@ static bool mavlinkGcsNeutralAllowed(void)
 
 static bool mavlinkRcInputIsFresh(mavlinkRcInput_t *input, timeUs_t currentTimeUs)
 {
-    const timeUs_t frameTimeUs = input->frameTimeUs;
-    if (frameTimeUs == input->expiredFrameTimeUs) {
+    const uint32_t frameCount = input->frameCount;
+    if (frameCount == input->expiredFrameCount) {
         return false;
     }
-    if (cmpTimeUs(currentTimeUs, frameTimeUs) > MAVLINK_RC_SOURCE_TIMEOUT_US) {
-        input->expiredFrameTimeUs = frameTimeUs;
+    if (cmpTimeUs(currentTimeUs, input->frameTimeUs) > MAVLINK_RC_SOURCE_TIMEOUT_US) {
+        input->expiredFrameCount = frameCount;
         return false;
     }
     return true;
