@@ -255,6 +255,14 @@ void tcpDataOut(tcpPort_t *instance)
 void tcpDataIn(tcpPort_t *instance, uint8_t* ch, int size)
 {
     tcpPort_t *s = (tcpPort_t *)instance;
+
+    if (s->port.rxCallback) {
+        while (size--) {
+            s->port.rxCallback(*(ch++), s->port.rxCallbackData);
+        }
+        return;
+    }
+
     pthread_mutex_lock(&s->rxLock);
 
     while (size--) {
