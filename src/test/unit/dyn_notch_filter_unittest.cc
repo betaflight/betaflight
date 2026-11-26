@@ -60,9 +60,8 @@ TEST(DynNotchFilterUnittest, TestUpdateRateBoundary)
 
 TEST(DynNotchFilterUnittest, TestSampleCountForExactDivisors)
 {
-    // sampleCount = int(nyquist / max_hz). When the PID rate divides evenly by max_hz the float
-    // nyquist must be exact, otherwise it truncates one too low (e.g. 3999.9998 / 500 -> 7)
-    // and the SDFT runs faster than needed with a coarser resolution.
+    // sampleCount = int(1e6 / (2 * looptimeUs * max_hz)), computed in integer math so it can never
+    // truncate one too low when the PID rate divides evenly by max_hz (e.g. 3999.9998 / 500 -> 7).
     const struct {
         uint32_t looptimeUs;
         uint16_t maxHz;
@@ -75,6 +74,10 @@ TEST(DynNotchFilterUnittest, TestSampleCountForExactDivisors)
         { 250, 400, 5 },
         { 500, 500, 2 },   // 2kHz
         { 500, 250, 4 },
+        { 312, 400, 4 },   // 3205Hz (Bosch-like, non-integer rate): int(4.006)
+        { 312, 401, 3 },   // int(3.996)
+        { 500, 1000, 1 },  // max_hz above nyquist is clamped -> 1
+        { 125, 200, 20 },  // lowest allowed max_hz at 8kHz
     };
 
     for (const auto &c : cases) {

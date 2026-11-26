@@ -176,9 +176,7 @@ void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t looptimeUs)
 
     const float dt = looptimeUs * 1e-6f;
 
-    // dynNotchUpdate() is running at looprateHz (which is the PID looprate aka. 1e6f / gyro.targetLooptime).
-    // Divide the integer looptime directly: 1.0f / dt rounds twice and lands just below
-    // the exact rate (e.g. 7999.9995Hz at 125us), which truncates sampleCount below.
+    // dynNotchUpdate() is running at looprateHz (which is the PID looprate aka. 1e6f / gyro.targetLooptime)
     const float looprateHz = 1e6f / looptimeUs;
     const float nyquistHz = looprateHz / 2.0f;
 
@@ -191,7 +189,13 @@ void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t looptimeUs)
     dynNotch.dt = dt;
     dynNotch.maxCenterFreq = 0;
 
-    sampleCount = MAX(1, nyquistHz / dynNotch.maxHz); // maxHz = 600 & looprateHz = 8000 -> sampleCount = 6
+    // sampleCount = int(nyquistHz / maxHz) = int(1e6 / (2 * looptimeUs * maxHz)), computed in pure integer math.
+    // A float quotient can land just below an exact integer (e.g. 3999.9998 / 500 -> 7 instead of 8), and with
+    // -funsafe-math-optimizations the result may differ between compilers and targets.
+    // The unclamped config max is used: if it exceeds nyquist the quotient is 0 and MAX() yields 1,
+    // the same result as dividing by the nyquist-clamped dynNotch.maxHz.
+    const uint32_t maxHzConfig = MAX(config->dyn_notch_min_hz, config->dyn_notch_max_hz);
+    sampleCount = maxHzConfig ? MAX(1U, 1000000U / (2U * looptimeUs * maxHzConfig)) : 1; // maxHz = 600 & looprateHz = 8000 -> sampleCount = 6
     sampleCountRcp = 1.0f / sampleCount;
 
     sdftSampleRateHz = looprateHz / sampleCount;
