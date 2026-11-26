@@ -103,6 +103,7 @@ static bool fdm_received = false;
 static struct timespec start_time;
 static double simRate = 1.0;
 static sitlRateEstimator_t simRateEstimator;
+static sitlPause_t simPause;
 static pthread_t tcpWorker, udpWorker, udpWorkerRC;
 static bool workerRunning = true;
 static udpLink_t stateLink, pwmLink, pwmRawLink, rcLink;
@@ -297,6 +298,10 @@ static void updateState(const fdm_packet* pkt)
 
     const uint64_t realtime_now = micros64_real();
     if (!last_realtime || realtime_now > last_realtime + 500*1e3) { // 500ms timeout
+        // A step after a long gap ends a pause
+        if (last_realtime) {
+            sitlPauseUpdate(&simPause, pkt->timestamp - last_timestamp, (realtime_now - last_realtime) * 1e-6);
+        }
         last_timestamp = pkt->timestamp;
         last_realtime = realtime_now;
         simRate = 1.0;
@@ -484,6 +489,9 @@ static void updateState(const fdm_packet* pkt)
 #endif
 
     const double deltaReal = (realtime_now - last_realtime) * 1e-6;
+    if (sitlPauseUpdate(&simPause, deltaSim, deltaReal)) {
+        printf("[SITL] simulator %s\n", simPause.paused ? "paused" : "resumed");
+    }
     sitlRateEstimatorUpdate(&simRateEstimator, deltaSim, deltaReal, &simRate);
 
     last_timestamp = pkt->timestamp;
@@ -711,7 +719,7 @@ uint64_t micros64(void)
     static uint64_t out = 0;
     uint64_t now = nanos64_real();
 
-    out += (now - last) * simRate;
+    out += (now - last) * (simPause.paused ? 0.0 : simRate);
     last = now;
 
     return out / 1000;
@@ -723,7 +731,7 @@ uint64_t millis64(void)
     static uint64_t out = 0;
     uint64_t now = nanos64_real();
 
-    out += (now - last) * simRate;
+    out += (now - last) * (simPause.paused ? 0.0 : simRate);
     last = now;
 
     return out / (1000 * 1000);

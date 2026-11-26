@@ -24,6 +24,7 @@
 
 #define SITL_RATE_WARMUP_SECONDS 0.1
 #define SITL_RATE_FILTER_WEIGHT 0.01
+#define SITL_PAUSE_SECONDS 0.1
 
 typedef struct sitlRateEstimator_s {
     double simulatedInterval;
@@ -78,4 +79,25 @@ static inline bool sitlRateEstimatorUpdate(sitlRateEstimator_t *estimator, doubl
 
     *rate = estimator->simulatedInterval / estimator->realInterval;
     return true;
+}
+
+typedef struct sitlPause_s {
+    double stillRealTime;
+    bool paused;
+} sitlPause_t;
+
+// Paused: the timestamp did not change for SITL_PAUSE_SECONDS. Returns true when the state changes
+static inline bool sitlPauseUpdate(sitlPause_t *pause, double deltaSim, double deltaReal)
+{
+    const bool wasPaused = pause->paused;
+
+    if (deltaSim > 0.0) {
+        pause->stillRealTime = 0.0;
+        pause->paused = false;
+    } else {
+        pause->stillRealTime += deltaReal;
+        pause->paused = pause->stillRealTime >= SITL_PAUSE_SECONDS;
+    }
+
+    return pause->paused != wasPaused;
 }

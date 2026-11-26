@@ -89,3 +89,35 @@ TEST(SitlRateUnittest, PreservesWarmupAcrossExcludedGaps)
     EXPECT_TRUE(estimator.initialized);
     EXPECT_DOUBLE_EQ(rate, 2.0);
 }
+
+TEST(SitlRateUnittest, PausesWhenTimestampStops)
+{
+    sitlPause_t pause = {};
+
+    for (unsigned i = 0; i < 99; i++) {
+        EXPECT_FALSE(sitlPauseUpdate(&pause, 0.0, 0.001));
+    }
+    EXPECT_FALSE(pause.paused);
+
+    EXPECT_TRUE(sitlPauseUpdate(&pause, 0.0, 0.001));
+    EXPECT_TRUE(pause.paused);
+
+    for (unsigned i = 0; i < 5000; i++) {
+        EXPECT_FALSE(sitlPauseUpdate(&pause, 0.0, 0.001));
+    }
+
+    EXPECT_TRUE(sitlPauseUpdate(&pause, 0.001, 0.001));
+    EXPECT_FALSE(pause.paused);
+}
+
+// Some simulators send more than one packet for each step
+TEST(SitlRateUnittest, RepeatedTimestampsAreNotAPause)
+{
+    sitlPause_t pause = {};
+
+    for (unsigned i = 0; i < 5000; i++) {
+        sitlPauseUpdate(&pause, 0.002, 0.001);
+        sitlPauseUpdate(&pause, 0.0, 0.001);
+        EXPECT_FALSE(pause.paused);
+    }
+}
