@@ -279,7 +279,7 @@ bool mavlinkGcsSeen(void)
 
 bool mavlinkGcsIsFresh(timeMs_t currentTimeMs)
 {
-    return mavlinkGcsSeen() && cmpTimeMs(currentTimeMs, gcsLastSeenMs) <= MAVLINK_GCS_TIMEOUT_MS;
+    return mavlinkGcsSeen() && currentTimeMs - gcsLastSeenMs <= MAVLINK_GCS_TIMEOUT_MS;
 }
 
 bool mavlinkGcsLostFor(timeMs_t currentTimeMs, timeMs_t periodMs)

@@ -68,13 +68,14 @@ typedef struct mavlinkRcInput_s {
     uint16_t channels[MAVLINK_CHANNEL_COUNT];
     volatile timeUs_t frameTimeUs;
     volatile bool newFrame;
+    timeUs_t expiredFrameTimeUs;
 } mavlinkRcInput_t;
 
 static uint16_t mavlinkChannelData[MAVLINK_CHANNEL_COUNT];
 static mavlinkRcInput_t overrideInput;
 static mavlinkRcInput_t manualInput;
 static timeUs_t gcsNeutralFrameTimeUs;
-static const rxConfig_t *mavlinkRxConfig;
+STATIC_UNIT_TESTED const rxConfig_t *mavlinkRxConfig;
 
 static serialPort_t *serialPort = NULL;
 
@@ -163,6 +164,9 @@ void mavlinkRxHandleManualControl(const mavlink_message_t *msg)
     if (manual.target != 0 && manual.target != MAVLINK_SYSTEM_ID) {
         return;
     }
+    if (!mavlinkRxConfig) {
+        return;
+    }
 
     uint16_t channels[MAVLINK_CHANNEL_COUNT];
     for (int i = 0; i < MAVLINK_CHANNEL_COUNT; i++) {
@@ -200,9 +204,17 @@ static bool mavlinkGcsNeutralAllowed(void)
 }
 #endif
 
-static bool mavlinkRcInputIsFresh(const mavlinkRcInput_t *input, timeUs_t currentTimeUs)
+static bool mavlinkRcInputIsFresh(mavlinkRcInput_t *input, timeUs_t currentTimeUs)
 {
-    return input->frameTimeUs != 0 && cmpTimeUs(currentTimeUs, input->frameTimeUs) <= MAVLINK_RC_SOURCE_TIMEOUT_US;
+    const timeUs_t frameTimeUs = input->frameTimeUs;
+    if (frameTimeUs == input->expiredFrameTimeUs) {
+        return false;
+    }
+    if (currentTimeUs - frameTimeUs > MAVLINK_RC_SOURCE_TIMEOUT_US) {
+        input->expiredFrameTimeUs = frameTimeUs;
+        return false;
+    }
+    return true;
 }
 
 static mavlinkRcSource_e mavlinkSelectRcSource(timeUs_t currentTimeUs)
@@ -234,13 +246,16 @@ static uint8_t mavlinkDeliverRcInput(mavlinkRcInput_t *input, rxRuntimeState_t *
 
 static uint8_t mavlinkDeliverGcsNeutral(rxRuntimeState_t *rxRuntimeState, timeUs_t currentTimeUs)
 {
-    if (gcsNeutralFrameTimeUs != 0 && cmpTimeUs(currentTimeUs, gcsNeutralFrameTimeUs) < MAVLINK_GCS_NEUTRAL_INTERVAL_US) {
+    if (gcsNeutralFrameTimeUs != 0 && currentTimeUs - gcsNeutralFrameTimeUs < MAVLINK_GCS_NEUTRAL_INTERVAL_US) {
         return RX_FRAME_PENDING;
     }
     gcsNeutralFrameTimeUs = currentTimeUs;
-    for (int i = 0; i < MAVLINK_CHANNEL_COUNT; i++) {
-        mavlinkChannelData[i] = PWM_RANGE_MIN;
+    if (!ARMING_FLAG(ARMED)) {
+        for (int i = 0; i < MAVLINK_CHANNEL_COUNT; i++) {
+            mavlinkChannelData[i] = PWM_RANGE_MIN;
+        }
     }
+    mavlinkSetLogicalChannel(mavlinkChannelData, THROTTLE, PWM_RANGE_MIN);
     mavlinkSetLogicalChannel(mavlinkChannelData, ROLL, mavlinkRxConfig->midrc);
     mavlinkSetLogicalChannel(mavlinkChannelData, PITCH, mavlinkRxConfig->midrc);
     mavlinkSetLogicalChannel(mavlinkChannelData, YAW, mavlinkRxConfig->midrc);

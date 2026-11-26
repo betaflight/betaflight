@@ -64,6 +64,8 @@ extern "C" {
     bool mavlinkGcsIsFresh(timeMs_t) { return gcsFresh; }
     bool mavlinkIsGcsSysid(uint32_t sysid) { return gcsSysid != 0 && sysid == gcsSysid; }
 
+    extern const rxConfig_t *mavlinkRxConfig;
+
     serialPort_t *telemetrySharedPort;
     static uint8_t telemetryBaud;
     uint8_t telemetryProviderBaud(uint8_t, serialPortIdentifier_e) { return telemetryBaud; }
@@ -510,4 +512,61 @@ TEST_F(MavlinkRxTest, ManualControlWinsOverGcsNeutral)
 
     advanceUs(20000);
     EXPECT_EQ(frame(), RX_FRAME_PENDING);
+}
+
+TEST_F(MavlinkRxTest, ManualControlIgnoredWithoutRxInit)
+{
+    mavlinkRxConfig = NULL;
+    sendManual(0, 0, 700, 0);
+    mavlinkRxConfig = &rxConfig;
+    EXPECT_EQ(frame(), RX_FRAME_PENDING);
+}
+
+TEST_F(MavlinkRxTest, ExpiredOverrideStaysExpiredAfterTimerWrap)
+{
+    uint16_t ch[18];
+    for (int i = 0; i < 18; i++) {
+        ch[i] = 1300;
+    }
+    sendOverride(ch);
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+    advanceUs(500001);
+    EXPECT_EQ(frame(), RX_FRAME_PENDING);
+
+    advanceUs(UINT32_MAX - 500001 + 100);
+    sendManual(0, 0, 700, 0);
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+    EXPECT_EQ(readChannel(THROTTLE), 1700);
+}
+
+TEST_F(MavlinkRxTest, GcsNeutralResumesAfterLongGap)
+{
+    gcsFresh = true;
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+    advanceUs(0x80000000u);
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+}
+
+TEST_F(MavlinkRxTest, GcsNeutralKeepsAuxWhileArmed)
+{
+    gcsFresh = true;
+    armingFlags = ARMED;
+    throttleRaised = true;
+    flightModeFlags = POS_HOLD_MODE;
+    sendManual(300, 300, 700, 300, 1 << 2, 1000);
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+    EXPECT_EQ(readChannel(AUX1), 2000);
+
+    advanceUs(500001);
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+    EXPECT_EQ(readChannel(ROLL), MIDRC);
+    EXPECT_EQ(readChannel(PITCH), MIDRC);
+    EXPECT_EQ(readChannel(YAW), MIDRC);
+    EXPECT_EQ(readChannel(THROTTLE), PWM_RANGE_MIN);
+    EXPECT_EQ(readChannel(AUX1), 2000);
+
+    armingFlags = 0;
+    advanceUs(20000);
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+    EXPECT_EQ(readChannel(AUX1), PWM_RANGE_MIN);
 }
