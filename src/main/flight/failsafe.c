@@ -278,7 +278,7 @@ static bool failsafeGcsLost(void)
 }
 #endif
 
-failsafeProcedure_e failsafeActiveProcedure(void)
+static failsafeProcedure_e failsafeActiveProcedure(void)
 {
 #if ENABLE_MAVLINK_GCS_FAILSAFE
     if (failsafeState.gcsLoss) {

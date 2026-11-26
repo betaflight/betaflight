@@ -768,6 +768,9 @@ STATIC_UNIT_TESTED void detectAndApplySignalLossBehaviour(void)
             // we are in failsafe Stage 2, whether Rx loss or BOXFAILSAFE induced
             // pass valid incoming flight channel values to FC,
             // so that GPS Rescue can get the 30% requirement for termination of the rescue
+            if (gcsLoss && channel < NON_AUX_CHANNEL_COUNT && !thisChannelValid && cmp32(currentTimeMs, validRxSignalTimeout[channel]) >= 0) {
+                rxFlightChannelsValid = false;
+            }
             if (channel == THROTTLE && (!thisChannelValid || gcsLoss)) {
                 sample = failsafeConfig()->failsafe_throttle;
                 // stage 2 failsafe throttle value. In GPS Rescue Flight mode, altitude control overrides, late in mixer.c

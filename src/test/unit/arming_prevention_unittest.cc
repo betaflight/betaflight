@@ -1245,7 +1245,7 @@ extern "C" {
     void failsafeStartMonitoring(void) {}
     void failsafeUpdateState(void) {}
     bool failsafeIsActive(void) { return false; }
-    failsafeProcedure_e failsafeActiveProcedure(void) { return (failsafeProcedure_e)failsafeConfig()->failsafe_procedure; }
+    failsafePhase_e failsafePhase(void) { return FAILSAFE_IDLE; }
     bool failsafeUsesGpsRescue(void) { return failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE; }
     bool failsafeIsReceivingRxData(void) { return true; }
     bool rxAreFlightChannelsValid(void) { return false; }

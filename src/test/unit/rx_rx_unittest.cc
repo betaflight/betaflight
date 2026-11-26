@@ -48,6 +48,7 @@ extern "C" {
     extern bool rxSignalReceived;
     extern uint8_t rxChannelCount;
     extern float rcRaw[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+    extern uint32_t validRxSignalTimeout[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
     PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
         .enabledFeatures = 0
@@ -131,6 +132,32 @@ TEST_F(RxStage2Test, GcsLossWithRxLostHoldsAux)
     EXPECT_FLOAT_EQ(1200, channelUs(THROTTLE));
     EXPECT_FLOAT_EQ(1500, channelUs(ROLL));
     EXPECT_FLOAT_EQ(1900, channelUs(auxChannel));
+}
+
+TEST_F(RxStage2Test, GcsLossWithDeadFlightChannelHoldsAux)
+{
+    testGcsLoss = true;
+    rcRaw[ROLL] = 0;
+    validRxSignalTimeout[ROLL] = 0;
+
+    detectAndApplySignalLossBehaviour();
+
+    EXPECT_FALSE(rxAreFlightChannelsValid());
+    EXPECT_FLOAT_EQ(1500, channelUs(ROLL));
+    EXPECT_FLOAT_EQ(1200, channelUs(THROTTLE));
+    EXPECT_FLOAT_EQ(1900, channelUs(auxChannel));
+}
+
+TEST_F(RxStage2Test, GcsLossWithBriefFlightChannelDropPassesLiveAux)
+{
+    testGcsLoss = true;
+    rcRaw[ROLL] = 0;
+    validRxSignalTimeout[ROLL] = 300;
+
+    detectAndApplySignalLossBehaviour();
+
+    EXPECT_TRUE(rxAreFlightChannelsValid());
+    EXPECT_FLOAT_EQ(1100, channelUs(auxChannel));
 }
 
 TEST_F(RxStage2Test, Stage2WithoutGcsLossKeepsValidThrottleAndHeldAux)

@@ -1065,7 +1065,6 @@ TEST_F(FlightFailsafeGcsTest, GcsLossAutoLandOverridesRescueProcedure)
     tickLinkUp(10);
 
     EXPECT_TRUE(failsafeGcsLossActive());
-    EXPECT_EQ(FAILSAFE_PROCEDURE_AUTO_LANDING, failsafeActiveProcedure());
     EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
 }
 

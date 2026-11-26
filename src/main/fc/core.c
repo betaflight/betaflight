@@ -1132,7 +1132,7 @@ void processRxModes(timeUs_t currentTimeUs)
     // autopilot rescue mission instead - staged below and in failsafe.c.)
     if (ARMING_FLAG(ARMED) && gpsRescueIsConfigured()
         && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE)
-        || (failsafeIsActive() && failsafeActiveProcedure() == FAILSAFE_PROCEDURE_GPS_RESCUE))) {
+        || failsafePhase() == FAILSAFE_GPS_RESCUE)) {
         if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
             ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
         }
