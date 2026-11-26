@@ -89,7 +89,7 @@ bool blackboxVirtualBeginLog(void)
     }
     char filename[NAME_BUFFER_LENGTH];
     snprintf(filename, NAME_BUFFER_LENGTH, "%s%05u.%s", LOGFILE_PREFIX, (largestLogFileNumber + 1) % 100000, LOGFILE_SUFFIX);
-    blackboxVirtualFile = fopen(filename, "w");
+    blackboxVirtualFile = fopen(filename, "wb");
     if (blackboxVirtualFile != NULL) {
         largestLogFileNumber++;
     }

@@ -24,6 +24,16 @@ smaller mean more accurate, but need higher speed CPU to run as realtime.
 ### build betaflight
 run `make TARGET=SITL`
 
+#### Windows
+Build with MinGW-w64 (POSIX threads), from Linux or WSL:
+```
+sudo apt install gcc-mingw-w64-x86-64-posix
+make TARGET=SITL SITL_CROSS_PREFIX=x86_64-w64-mingw32-
+```
+or in an MSYS2 UCRT64 shell (`pacman -S make git python openssl mingw-w64-ucrt-x86_64-gcc`): `make TARGET=SITL`.
+
+Run `obj/betaflight_<version>_SITL.exe --ip 127.0.0.1` (static, no DLLs needed).
+
 ### settings
 to avoid simulation speed slow down, suggest to set some settings belows:
 

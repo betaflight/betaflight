@@ -82,6 +82,9 @@
 #include "udplink.h"
 #include "sitl_gyro.h"
 #include "sitl_rate.h"
+#ifdef _WIN32
+#include "sitl_win32.h"
+#endif
 
 // ENABLE_GAZEBO_BRIDGE is a boolean selector for the gyro yaw sign (passed to
 // sitlGyroBodyFromSim below). target.h defaults it to 1; configs set 0 for the
@@ -207,6 +210,10 @@ static void gpxTrackClose(void)
 
 int targetParseArgs(int argc, char * argv[])
 {
+#ifdef _WIN32
+    sitlWinInit();
+#endif
+
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
             printf("Betaflight SITL\n");
@@ -742,10 +749,14 @@ uint32_t getCycleCounter(void)
 
 static void microsleep(uint32_t usec)
 {
+#ifdef _WIN32
+    sitlWinSleepUs(usec);
+#else
     struct timespec ts;
     ts.tv_sec = 0;
     ts.tv_nsec = usec*1000UL;
     while (nanosleep(&ts, &ts) == -1 && errno == EINTR) ;
+#endif
 }
 
 void delayMicroseconds(uint32_t us)
@@ -755,7 +766,11 @@ void delayMicroseconds(uint32_t us)
 
 void delayMicroseconds_real(uint32_t us)
 {
+#ifdef _WIN32
+    sitlWinLoopDelayUs(us);
+#else
     microsleep(us);
+#endif
 }
 
 void delay(uint32_t ms)
@@ -909,7 +924,7 @@ bool loadEEPROMFromFile(void)
     }
 
     // open or create
-    eepromFd = fopen(EEPROM_FILENAME, "r+");
+    eepromFd = fopen(EEPROM_FILENAME, "rb+");
     if (eepromFd != NULL) {
         // obtain file size:
         fseek(eepromFd, 0, SEEK_END);
@@ -918,14 +933,15 @@ bool loadEEPROMFromFile(void)
 
         size_t n = fread(eepromData, 1, sizeof(eepromData), eepromFd);
         if (n == lSize) {
-            printf("[FLASH_Unlock] loaded '%s', size = %ld / %ld\n", EEPROM_FILENAME, lSize, sizeof(eepromData));
+            printf("[FLASH_Unlock] loaded '%s', size = %lu / %lu\n", EEPROM_FILENAME,
+                   (unsigned long)lSize, (unsigned long)sizeof(eepromData));
         } else {
             fprintf(stderr, "[FLASH_Unlock] failed to load '%s'\n", EEPROM_FILENAME);
             return false;
         }
     } else {
-        printf("[FLASH_Unlock] created '%s', size = %ld\n", EEPROM_FILENAME, sizeof(eepromData));
-        if ((eepromFd = fopen(EEPROM_FILENAME, "w+")) == NULL) {
+        printf("[FLASH_Unlock] created '%s', size = %lu\n", EEPROM_FILENAME, (unsigned long)sizeof(eepromData));
+        if ((eepromFd = fopen(EEPROM_FILENAME, "wb+")) == NULL) {
             fprintf(stderr, "[FLASH_Unlock] failed to create '%s'\n", EEPROM_FILENAME);
             return false;
         }

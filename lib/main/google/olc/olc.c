@@ -4,6 +4,7 @@
 #include <math.h>
 #include <memory.h>
 #include <stdio.h>
+#include <string.h>
 #include "olc_private.h"
 
 #define CORRECT_IF_SEPARATOR(var, info)      \

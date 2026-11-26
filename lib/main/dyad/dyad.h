@@ -11,7 +11,7 @@
 #include <stdarg.h>
 
 #ifdef _WIN32
-  #include <windows.h> /* For SOCKET */
+  #include <basetsd.h> /* UINT_PTR */
 #endif
 
 
@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 #if _WIN32
-typedef SOCKET dyad_Socket;
+typedef UINT_PTR dyad_Socket;
 #else
 typedef int dyad_Socket;
 #endif
