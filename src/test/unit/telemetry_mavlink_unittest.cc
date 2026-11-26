@@ -49,6 +49,7 @@ extern "C" {
     #include "io/serial.h"
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "pg/mavlink_gcs.h"
     #include "sensors/gyro.h"
     #include "sensors/sensors.h"
     #include "rx/rx.h"
@@ -58,6 +59,7 @@ extern "C" {
 
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
+    PG_REGISTER(mavlinkGcsConfig_t, mavlinkGcsConfig, PG_MAVLINK_GCS_CONFIG, 0);
 
     int16_t debug[DEBUG16_VALUE_COUNT];
     uint8_t debugMode;
@@ -168,6 +170,8 @@ extern "C" {
     bool failsafeIsActive(void) { return failsafeActive; }
     static failsafePhase_e fsPhase;
     failsafePhase_e failsafePhase(void) { return fsPhase; }
+    static int recoveryRequests;
+    void failsafeRequestRecovery(void) { recoveryRequests++; }
     static bool throttleRaised;
     bool wasThrottleRaised(void) { return throttleRaised; }
 
@@ -270,6 +274,8 @@ protected:
         overrideClears = 0;
         failsafeActive = false;
         fsPhase = FAILSAFE_IDLE;
+        recoveryRequests = 0;
+        mavlinkGcsConfigMutable()->sysid = 0;
         throttleRaised = false;
         sensorMask = 0;
         batteryState = BATTERY_NOT_PRESENT;
@@ -463,6 +469,11 @@ protected:
         commandLong(MAV_CMD_DO_SET_MODE, MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, customMode);
     }
 };
+
+static void gcsHeartbeat(mavlink_message_t *msg, uint8_t sysid, uint8_t compid, uint8_t type, uint8_t autopilot)
+{
+    mavlink_msg_heartbeat_pack_chan(sysid, compid, MAVLINK_COMM_1, msg, type, autopilot, 0, 0, MAV_STATE_ACTIVE);
+}
 
 TEST_F(MavlinkTelemetryTest, HeartbeatDisarmedAcro)
 {
@@ -778,6 +789,22 @@ TEST_F(MavlinkTelemetryTest, ArmUnsupportedWithoutRemoteArm)
     EXPECT_FALSE(ARMING_FLAG(ARMED));
 }
 #endif
+
+TEST_F(MavlinkTelemetryTest, SetModeFromLockedGcsRequestsFailsafeRecovery)
+{
+    setMode(MODE_POS_HOLD);
+    EXPECT_EQ(recoveryRequests, 0);
+
+    mavlink_message_t msg;
+    gcsHeartbeat(&msg, GCS_SYS, GCS_COMP, MAV_TYPE_GCS, MAV_AUTOPILOT_INVALID);
+    feed(&msg);
+    setMode(MODE_POS_HOLD);
+#if ENABLE_REMOTE_ARM
+    EXPECT_EQ(recoveryRequests, 1);
+#else
+    EXPECT_EQ(recoveryRequests, 0);
+#endif
+}
 
 TEST_F(MavlinkTelemetryTest, SetModeNeedsCustomModeFlag)
 {
@@ -1136,11 +1163,6 @@ TEST_F(MavlinkTelemetryTest, SetMessageIntervalUnknownMessageDenied)
     EXPECT_EQ(ackResultFor(MAV_CMD_SET_MESSAGE_INTERVAL, MAVLINK_MSG_ID_RAW_IMU, 100000), MAV_RESULT_DENIED);
 }
 
-static void gcsHeartbeat(mavlink_message_t *msg, uint8_t sysid, uint8_t compid, uint8_t type, uint8_t autopilot)
-{
-    mavlink_msg_heartbeat_pack_chan(sysid, compid, MAVLINK_COMM_1, msg, type, autopilot, 0, 0, MAV_STATE_ACTIVE);
-}
-
 TEST_F(MavlinkTelemetryTest, GcsUnseenUntilGcsHeartbeat)
 {
     EXPECT_FALSE(mavlinkGcsSeen());
@@ -1189,6 +1211,35 @@ TEST_F(MavlinkTelemetryTest, GcsLockStaysOnFirstSysid)
     gcsHeartbeat(&msg, GCS_SYS, GCS_COMP, MAV_TYPE_GCS, MAV_AUTOPILOT_INVALID);
     feed(&msg);
     EXPECT_TRUE(mavlinkGcsIsFresh(millis()));
+}
+
+TEST_F(MavlinkTelemetryTest, GcsLostForCountsFromLastHeartbeat)
+{
+    EXPECT_FALSE(mavlinkGcsLostFor(millis(), 0));
+
+    mavlink_message_t msg;
+    gcsHeartbeat(&msg, GCS_SYS, GCS_COMP, MAV_TYPE_GCS, MAV_AUTOPILOT_INVALID);
+    feed(&msg);
+    advanceMs(5000);
+    EXPECT_FALSE(mavlinkGcsLostFor(millis(), 5000));
+    advanceMs(1);
+    EXPECT_TRUE(mavlinkGcsLostFor(millis(), 5000));
+    advanceMs(0x80000000u - 5001);
+    EXPECT_TRUE(mavlinkGcsLostFor(millis(), 5000));
+}
+
+TEST_F(MavlinkTelemetryTest, ConfiguredGcsSysidIsTheOnlyOneLocked)
+{
+    mavlinkGcsConfigMutable()->sysid = GCS_SYS - 1;
+    mavlink_message_t msg;
+    gcsHeartbeat(&msg, GCS_SYS, GCS_COMP, MAV_TYPE_GCS, MAV_AUTOPILOT_INVALID);
+    feed(&msg);
+    EXPECT_FALSE(mavlinkGcsSeen());
+
+    gcsHeartbeat(&msg, GCS_SYS - 1, GCS_COMP, MAV_TYPE_GCS, MAV_AUTOPILOT_INVALID);
+    feed(&msg);
+    EXPECT_TRUE(mavlinkGcsSeen());
+    EXPECT_TRUE(mavlinkIsGcsSysid(GCS_SYS - 1));
 }
 
 TEST_F(MavlinkTelemetryTest, PingRequestIsAnswered)

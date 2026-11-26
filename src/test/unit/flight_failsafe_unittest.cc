@@ -46,6 +46,7 @@ extern "C" {
     #include "rx/rx.h"
 
     #include "pg/autopilot.h"
+    #include "pg/mavlink_gcs.h"
 
     extern boxBitmask_t rcModeActivationMask;
     extern uint16_t flightModeFlags;
@@ -1003,6 +1004,137 @@ TEST_F(FlightFailsafeAutopilotTest, AutopilotPhaseRecoversWithRxAndSticks)
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
 }
 
+// GCS-loss failsafe and GCS recovery
+
+extern "C" {
+    extern bool testGcsLost;
+}
+
+class FlightFailsafeGcsTest : public FlightFailsafeAutopilotTest {
+protected:
+    void SetUp() override {
+        FlightFailsafeAutopilotTest::SetUp();
+        testGcsLost = false;
+        mavlinkGcsConfigMutable()->failsafeAction = MAVLINK_GCS_FS_ACTION_AUTO_LAND;
+        mavlinkGcsConfigMutable()->failsafeTimeoutS = 5;
+        sysTickUptime += 1;
+        failsafeOnValidDataReceived();
+        sysTickUptime += 2000;
+        failsafeOnValidDataReceived();
+        ASSERT_TRUE(failsafeIsReceivingRxData());
+        failsafeUpdateState();
+        ASSERT_EQ(FAILSAFE_IDLE, failsafePhase());
+    }
+
+    void TearDown() override {
+        testGcsLost = false;
+        mavlinkGcsConfigMutable()->failsafeAction = MAVLINK_GCS_FS_ACTION_OFF;
+        FlightFailsafeAutopilotTest::TearDown();
+    }
+
+    void tickLinkUp(uint32_t ms) {
+        sysTickUptime += ms;
+        failsafeOnValidDataReceived();
+        failsafeUpdateState();
+    }
+};
+
+TEST_F(FlightFailsafeGcsTest, GcsLossStartsConfiguredActionWhileRcIsUp)
+{
+    testGcsLost = true;
+    tickLinkUp(10);
+
+    EXPECT_TRUE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
+}
+
+TEST_F(FlightFailsafeGcsTest, GcsLossGpsRescueAction)
+{
+    mavlinkGcsConfigMutable()->failsafeAction = MAVLINK_GCS_FS_ACTION_GPS_RESCUE;
+    testGcsLost = true;
+    tickLinkUp(10);
+
+    EXPECT_EQ(FAILSAFE_GPS_RESCUE, failsafePhase());
+}
+
+TEST_F(FlightFailsafeGcsTest, GcsLossOffDoesNothing)
+{
+    mavlinkGcsConfigMutable()->failsafeAction = MAVLINK_GCS_FS_ACTION_OFF;
+    testGcsLost = true;
+    tickLinkUp(10);
+
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+    EXPECT_FALSE(FLIGHT_MODE(FAILSAFE_MODE));
+}
+
+TEST_F(FlightFailsafeGcsTest, GcsLossWithThrottleLowDoesNotJustDisarm)
+{
+    throttleStatus = THROTTLE_LOW;
+    tickLinkUp(13000);
+    testGcsLost = true;
+    tickLinkUp(10);
+
+    EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
+}
+
+TEST_F(FlightFailsafeGcsTest, GcsReturnAloneDoesNotEndGcsLossLanding)
+{
+    testGcsLost = true;
+    tickLinkUp(10);
+    testGcsLost = false;
+    tickLinkUp(10);
+    EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
+
+    failsafeRequestRecovery();
+    tickLinkUp(10);
+    EXPECT_FALSE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+}
+
+TEST_F(FlightFailsafeGcsTest, SticksEndGcsLossFailsafeAndItStartsOncePerLoss)
+{
+    testGcsLost = true;
+    tickLinkUp(10);
+    testSticksActive = true;
+    tickLinkUp(10);
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+
+    testSticksActive = false;
+    tickLinkUp(10);
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+
+    testGcsLost = false;
+    tickLinkUp(10);
+    testGcsLost = true;
+    tickLinkUp(10);
+    EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
+}
+
+TEST_F(FlightFailsafeGcsTest, RecoveryRequestEndsRxLossRescueOnceLinkIsBack)
+{
+    mavlinkGcsConfigMutable()->failsafeAction = MAVLINK_GCS_FS_ACTION_OFF;
+    failsafeConfigMutable()->failsafe_procedure = FAILSAFE_PROCEDURE_GPS_RESCUE;
+    loseRxIntoStage2();
+    ASSERT_EQ(FAILSAFE_GPS_RESCUE, failsafePhase());
+
+    failsafeRequestRecovery();
+    tickLinkStillDown(10);
+    EXPECT_EQ(FAILSAFE_GPS_RESCUE, failsafePhase());
+
+    tickLinkUp(1);
+    tickLinkUp(2000);
+    ASSERT_TRUE(failsafeIsReceivingRxData());
+    EXPECT_EQ(FAILSAFE_GPS_RESCUE, failsafePhase());
+
+    failsafeRequestRecovery();
+    tickLinkUp(10);
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+    EXPECT_FALSE(FLIGHT_MODE(GPS_RESCUE_MODE));
+}
+
+/****************************************************************************************/
 // STUBS
 
 extern "C" {
@@ -1056,6 +1188,12 @@ void beeper(beeperMode_e mode)
 bool isUsingSticksForArming(void)
 {
     return isUsingSticksToArm;
+}
+
+bool testGcsLost = false;
+bool mavlinkGcsLostFor(timeMs_t, timeMs_t)
+{
+    return testGcsLost;
 }
 
 bool testSticksActive = false;

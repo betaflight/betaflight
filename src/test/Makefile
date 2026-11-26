@@ -336,11 +336,14 @@ flight_failsafe_unittest_SRC := \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/flight/failsafe.c \
-		$(USER_DIR)/pg/autopilot.c
+		$(USER_DIR)/pg/autopilot.c \
+		$(USER_DIR)/pg/mavlink_gcs.c
 
 flight_failsafe_unittest_DEFINES := \
 		USE_GPS_RESCUE= \
-		ENABLE_FLIGHT_PLAN=1
+		USE_TELEMETRY_MAVLINK= \
+		ENABLE_FLIGHT_PLAN=1 \
+		ENABLE_MAVLINK_GCS_FAILSAFE=1
 
 flight_failsafe_wing_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \

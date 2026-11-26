@@ -29,6 +29,7 @@ PG_SRC = \
             pg/mco.c \
             pg/motor.c \
             pg/msp.c \
+            pg/mavlink_gcs.c \
             pg/osd_nav_map.c \
             pg/pg.c \
             pg/pilot.c \

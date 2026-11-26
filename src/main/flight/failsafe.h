@@ -97,6 +97,11 @@ typedef struct failsafeState_s {
     failsafePhase_e phase;
     failsafeRxLinkState_e rxLinkState;
     bool boxFailsafeSwitchWasOn;
+    bool recoveryRequested;
+#if ENABLE_MAVLINK_GCS_FAILSAFE
+    bool gcsLoss;                           // this failsafe was started by GCS loss
+    bool gcsLossHandled;                    // one failsafe per GCS loss
+#endif
 #if ENABLE_RESCUE_PLAN
     uint32_t autopilotEngageDeadline;       // grace window for core.c to engage a staged rescue mission
 #endif
@@ -113,6 +118,7 @@ failsafePhase_e failsafePhase(void);
 bool failsafeIsMonitoring(void);
 bool failsafeIsActive(void);
 bool failsafeIsReceivingRxData(void);
+void failsafeRequestRecovery(void);
 void failsafeOnRxSuspend(uint32_t suspendPeriod);
 void failsafeOnRxResume(void);
 void failsafeOnValidDataReceived(void);
