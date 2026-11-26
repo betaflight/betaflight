@@ -83,6 +83,8 @@
 // (see scheduler.h) or non-realtime tasks starve to a few hertz
 #define TASK_EXEC_TIME_CLAMP_US         100
 
+#define SCHED_GYRO_CATCH_UP_PERIODS     4
+
 #define USE_VIRTUAL_LED
 
 #define USE_ACC

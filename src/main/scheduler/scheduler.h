@@ -58,6 +58,11 @@
 #define TASK_EXEC_TIME_CLAMP_US         0
 #endif
 
+// Run missed gyro cycles if the scheduler is late by up to this many periods, 0 = skip them
+#ifndef SCHED_GYRO_CATCH_UP_PERIODS
+#define SCHED_GYRO_CATCH_UP_PERIODS     0
+#endif
+
 #define TASK_AGE_EXPEDITE_RX            schedulerConfig()->rxRelaxDeterminism  // Make RX tasks more schedulable if it's failed to be scheduled this many times
 #define TASK_AGE_EXPEDITE_OSD           schedulerConfig()->osdRelaxDeterminism  // Make OSD tasks more schedulable if it's failed to be scheduled this many times
 #define TASK_AGE_EXPEDITE_COUNT         1    // Make aged tasks more schedulable

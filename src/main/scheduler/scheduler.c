@@ -541,6 +541,13 @@ FAST_CODE void scheduler(void)
         schedLoopRemainingCycles = cmpTimeCycles(nextTargetCycles, nowCycles);
 
         if (schedLoopRemainingCycles < -desiredPeriodCycles) {
+#if SCHED_GYRO_CATCH_UP_PERIODS > 0
+            // Hosted targets sleep between passes and seldom hit the window below: run the missed cycles
+            if (schedLoopRemainingCycles < -SCHED_GYRO_CATCH_UP_PERIODS * desiredPeriodCycles) {
+                nextTargetCycles = nowCycles;
+                schedLoopRemainingCycles = 0;
+            }
+#else
             /* A task has so grossly overrun that at entire gyro cycle has been skipped
              * This is most likely to occur when connected to the configurator via USB as the serial
              * task is non-deterministic
@@ -548,6 +555,7 @@ FAST_CODE void scheduler(void)
              */
             nextTargetCycles += desiredPeriodCycles * (1 + (schedLoopRemainingCycles / -desiredPeriodCycles));
             schedLoopRemainingCycles = cmpTimeCycles(nextTargetCycles, nowCycles);
+#endif  // SCHED_GYRO_CATCH_UP_PERIODS > 0
         }
 
         // Tune out the time lost between completing the last task execution and re-entering the scheduler
