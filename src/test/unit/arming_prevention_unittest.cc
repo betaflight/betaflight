@@ -882,6 +882,132 @@ TEST(ArmingPreventionTest, GPSRescueSwitchPreventsArm)
     EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
 }
 
+static void setupArmSwitchOnAux1(void)
+{
+    simulationFeatureFlags = 0;
+    simulationTime = 30e6;
+    gyroCalibDone = true;
+    simulationHaveRx = true;
+    mockIsUpright = true;
+
+    for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+        memset(modeActivationConditionsMutable(i), 0, sizeof(modeActivationCondition_t));
+    }
+    modeActivationConditionsMutable(0)->auxChannelIndex = 0;
+    modeActivationConditionsMutable(0)->modeId = BOXARM;
+    modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    rcControlsInit();
+    rxConfigMutable()->mincheck = 1050;
+
+    rcData[THROTTLE] = rcUsToNorm(1000);
+    rcData[AUX1] = rcUsToNorm(1000);
+    disarm(DISARM_REASON_SYSTEM);
+    updateActivatedModes();
+    updateArmingStatus();
+    processRcStickPositions();
+}
+
+static void setArmSwitch(bool on)
+{
+    rcData[AUX1] = rcUsToNorm(on ? 1800 : 1000);
+    updateActivatedModes();
+}
+
+static void runStickPositions(int passes)
+{
+    for (int i = 0; i < passes; i++) {
+        updateArmingStatus();
+        processRcStickPositions();
+    }
+}
+
+TEST(ArmingPreventionTest, SwitchArmAndDisarmUnchanged)
+{
+    setupArmSwitchOnAux1();
+
+    setArmSwitch(true);
+    runStickPositions(1);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    setArmSwitch(false);
+    runStickPositions(3);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+    runStickPositions(1);
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+}
+
+TEST(ArmingPreventionTest, RemoteArmSurvivesArmSwitchThatStaysOff)
+{
+    setupArmSwitchOnAux1();
+    EXPECT_FALSE(isArmingDisabled());
+
+    tryArm();
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    runStickPositions(10);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+}
+
+TEST(ArmingPreventionTest, ArmSwitchOnThenOffDisarmsRemoteArm)
+{
+    setupArmSwitchOnAux1();
+    tryArm();
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    setArmSwitch(true);
+    runStickPositions(1);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    setArmSwitch(false);
+    runStickPositions(4);
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+}
+
+TEST(ArmingPreventionTest, ArmSwitchOffWhileDisarmedClearsLatch)
+{
+    setupArmSwitchOnAux1();
+
+    mockIsUpright = false;
+    setArmSwitch(true);
+    runStickPositions(1);
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+
+    setArmSwitch(false);
+    runStickPositions(1);
+    mockIsUpright = true;
+    updateArmingStatus();
+    tryArm();
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    runStickPositions(10);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+}
+
+TEST(ArmingPreventionTest, In3DModeRemoteArmSurvivesArmSwitchThatStaysOff)
+{
+    pidProfile_t pidProfile = {};
+    currentPidProfile = &pidProfile;
+    setupArmSwitchOnAux1();
+    tryArm();
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    simulationFeatureFlags = FEATURE_3D;
+    processRx(simulationTime);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    setArmSwitch(true);
+    runStickPositions(1);
+    processRx(simulationTime);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    setArmSwitch(false);
+    processRx(simulationTime);
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    simulationFeatureFlags = 0;
+    currentPidProfile = nullptr;
+}
+
 TEST(ArmingPreventionTest, ParalyzeOnAtBoot)
 {
     // given

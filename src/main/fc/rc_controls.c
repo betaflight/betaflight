@@ -71,6 +71,7 @@
 
 // true if arming is done via the sticks (as opposed to a switch)
 static bool isUsingSticksToArm = true;
+static bool armSwitchHasBeenOn = false;
 static bool disarmUserRequested = false; // has the user requested a disarm, using either sticks or switches, whether armed or disarmed
 
 float rcCommand[4];           // interval [0;1] for THROTTLE and [-1;1] for ROLL/PITCH/YAW
@@ -105,6 +106,12 @@ PG_RESET_TEMPLATE(flight3DConfig_t, flight3DConfig,
 bool isUsingSticksForArming(void)
 {
     return isUsingSticksToArm;
+}
+
+// A switch that stayed off since the last disarm does not disarm a remote arm
+bool hasArmSwitchBeenOn(void)
+{
+    return armSwitchHasBeenOn;
 }
 
 bool wasLastDisarmUserRequested(void)
@@ -183,6 +190,7 @@ void processRcStickPositions(void)
     // perform actions
     if (!isUsingSticksToArm) {
         if (IS_RC_MODE_ACTIVE(BOXARM)) {
+            armSwitchHasBeenOn = true;
             rcDisarmTicks = 0;
             // Arming via ARM BOX
             tryArm();
@@ -191,8 +199,12 @@ void processRcStickPositions(void)
             // Disarming via ARM BOX
               disarmUserRequested = true;
             resetArmingDisabled();
+            if (!ARMING_FLAG(ARMED)) {
+                armSwitchHasBeenOn = false;
+                rcDisarmTicks = 0;
+            }
             const bool boxFailsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
-            if (ARMING_FLAG(ARMED) && (failsafeIsReceivingRxData() || boxFailsafeSwitchIsOn)) {
+            if (ARMING_FLAG(ARMED) && armSwitchHasBeenOn && (failsafeIsReceivingRxData() || boxFailsafeSwitchIsOn)) {
                 // in a true signal loss situation, allow disarm only once we regain validated RxData (failsafeIsReceivingRxData = true),
                 // to avoid potentially false disarm signals soon after link recover
                 // Note that BOXFAILSAFE will also drive failsafeIsReceivingRxData false (immediately at start or end)

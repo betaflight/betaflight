@@ -889,8 +889,9 @@ bool processRx(timeUs_t currentTimeUs)
 
     // in 3D mode, we need to be able to disarm by switch at any time
     if (featureIsEnabled(FEATURE_3D)) {
-        if (!IS_RC_MODE_ACTIVE(BOXARM))
+        if (!IS_RC_MODE_ACTIVE(BOXARM) && (isUsingSticksForArming() || hasArmSwitchBeenOn())) {
             disarm(DISARM_REASON_SWITCH);
+        }
     }
 
     updateRSSI(currentTimeUs);
