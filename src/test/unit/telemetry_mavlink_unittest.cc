@@ -1160,6 +1160,8 @@ TEST_F(MavlinkTelemetryTest, GcsHeartbeatMarksLinkFresh)
     advanceMs(1);
     EXPECT_FALSE(mavlinkGcsIsFresh(millis()));
     EXPECT_TRUE(mavlinkGcsSeen());
+    advanceMs(0x80000000u - 3001);
+    EXPECT_FALSE(mavlinkGcsIsFresh(millis()));
 }
 
 TEST_F(MavlinkTelemetryTest, NonGcsHeartbeatsAreIgnored)
