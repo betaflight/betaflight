@@ -66,6 +66,7 @@ extern "C" {
 static timeUs_t simulatedTimeUs = 1000000;
 static float simulatedAltitudeCm;
 static bool simulatedRxSignal;
+static bool simulatedGcsLoss;
 static bool simulatedGpsHealthy;
 static int disarmCount;
 static flightLogDisarmReason_e lastDisarmReason;
@@ -83,6 +84,7 @@ extern "C" {
     bool crashRecoveryModeActive(void) { return false; }
     bool failsafeUsesGpsRescue(void) { return failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE; }
     bool isRxReceivingSignal(void) { return simulatedRxSignal; }
+    bool failsafeGcsLossActive(void) { return simulatedGcsLoss; }
 
     float getAltitudeCm(void) { return simulatedAltitudeCm; }
     float getAltitudeCmControl(void) { return simulatedAltitudeCm; }
@@ -132,6 +134,7 @@ protected:
         simulatedTimeUs += 60000000;
         simulatedAltitudeCm = 2000.0f;
         simulatedRxSignal = false;
+        simulatedGcsLoss = false;
         simulatedGpsHealthy = false;
         disarmCount = 0;
         landingCalls = 0;
@@ -187,6 +190,21 @@ TEST_F(GpsRescueEmergencyDescent, KeepsFlyingWhenStalledAboveLandingAltitudeWith
     // altitude stops changing well above the landing altitude, left to the pilot's disarm switch
     runRescueSeconds(30.0f);
     EXPECT_EQ(0, disarmCount);
+}
+
+TEST_F(GpsRescueEmergencyDescent, NoHomeWithRadioWaitsForPilot)
+{
+    simulatedRxSignal = true;
+    runRescueSeconds(1.0f);
+    EXPECT_EQ(0, landingCalls);
+}
+
+TEST_F(GpsRescueEmergencyDescent, NoHomeOnGcsLossWithRadioDescends)
+{
+    simulatedRxSignal = true;
+    simulatedGcsLoss = true;
+    runRescueSeconds(1.0f);
+    EXPECT_GT(landingCalls, 0);
 }
 
 TEST_F(GpsRescueEmergencyDescent, StallWithRadioDoesNotCountTowardsDisarmAfterRadioLoss)
