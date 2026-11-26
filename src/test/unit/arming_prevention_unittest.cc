@@ -964,6 +964,26 @@ TEST(ArmingPreventionTest, ArmSwitchOnThenOffDisarmsRemoteArm)
     EXPECT_FALSE(ARMING_FLAG(ARMED));
 }
 
+TEST(ArmingPreventionTest, RemoteArmRightAfterSwitchDisarmSurvives)
+{
+    setupArmSwitchOnAux1();
+
+    setArmSwitch(true);
+    runStickPositions(1);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    setArmSwitch(false);
+    runStickPositions(4);
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+
+    updateArmingStatus();
+    tryArm();
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    runStickPositions(10);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+}
+
 TEST(ArmingPreventionTest, ArmSwitchOffWhileDisarmedClearsLatch)
 {
     setupArmSwitchOnAux1();

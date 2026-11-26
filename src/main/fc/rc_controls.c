@@ -114,6 +114,11 @@ bool hasArmSwitchBeenOn(void)
     return armSwitchHasBeenOn;
 }
 
+void resetArmSwitchLatch(void)
+{
+    armSwitchHasBeenOn = false;
+}
+
 bool wasLastDisarmUserRequested(void)
 {
     return disarmUserRequested;

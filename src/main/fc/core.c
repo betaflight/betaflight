@@ -583,6 +583,7 @@ void disarm(flightLogDisarmReason_e reason)
         // Non-user disarm, clear the user-initated flag in rc_controls.c
         clearWasLastDisarmUserRequested();
     }
+    resetArmSwitchLatch();
 
     if (ARMING_FLAG(ARMED)) {
         if (!crashFlipModeActive) {
