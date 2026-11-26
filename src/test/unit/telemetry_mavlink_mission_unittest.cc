@@ -294,6 +294,19 @@ TEST_F(MavlinkMissionTest, UploadWaypointStillRejectsOtherNanParameters)
     EXPECT_EQ(flightPlanConfig()->waypointCount, 0);
 }
 
+TEST_F(MavlinkMissionTest, UploadRejectsOutOfRangeAltitude)
+{
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, 0.0f, 300, 400, 3.0e9f);
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_INVALID_PARAM7);
+    EXPECT_EQ(flightPlanConfig()->waypointCount, 0);
+}
+
 TEST_F(MavlinkMissionTest, UploadMapsLoiterTurnsToOrbitHold)
 {
     sendCount(1);

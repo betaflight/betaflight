@@ -88,6 +88,7 @@
 #include "telemetry/mavlink_lib.h"
 
 #include "telemetry/mavlink.h"
+#include "telemetry/mavlink_frame.h"
 #if ENABLE_TELEMETRY_MAVLINK_MISSION
 #include "telemetry/mavlink_mission.h"
 #endif
@@ -468,6 +469,18 @@ static bool cmdParamToUint32(float f, uint32_t maxValue, uint32_t *out)
     return true;
 }
 
+typedef struct mavlinkCommand_s {
+    uint16_t command;
+    float param[7];
+    bool hasLatLon;
+    int32_t lat1e7;
+    int32_t lon1e7;
+    bool hasAlt;
+    int32_t altCm;              // AMSL
+    uint8_t positionResult;     // MAV_RESULT for a position that was sent but cannot be used
+    uint32_t senderSysid;
+} mavlinkCommand_t;
+
 static int32_t getMessageUpdateInterval(uint32_t messageId);
 static bool mavlinkSendStreamMessage(uint32_t messageId);
 static void mavlinkSendMessageInterval(uint32_t messageId)
@@ -658,17 +671,8 @@ static uint8_t handleArmDisarm(float param1)
 #endif
 }
 
-static uint8_t handleSetMode(float baseModeF, float customModeF, uint32_t senderSysid)
+static uint8_t selectMavCustomMode(uint32_t customMode, uint32_t senderSysid)
 {
-    uint32_t baseMode, customMode;
-    if (!cmdParamToUint32(baseModeF, 0xFF, &baseMode) ||
-        !cmdParamToUint32(customModeF, BF_MAV_MODE_COUNT - 1, &customMode)) {
-        return MAV_RESULT_DENIED;
-    }
-    // We only support selecting a Betaflight mode via custom_mode.
-    if (!(baseMode & MAV_MODE_FLAG_CUSTOM_MODE_ENABLED)) {
-        return MAV_RESULT_DENIED;
-    }
     if (!applyMavCustomMode(customMode)) {
         return MAV_RESULT_DENIED;
     }
@@ -682,6 +686,35 @@ static uint8_t handleSetMode(float baseModeF, float customModeF, uint32_t sender
     return MAV_RESULT_ACCEPTED;
 }
 
+static uint8_t handleSetMode(float baseModeF, float customModeF, uint32_t senderSysid)
+{
+    uint32_t baseMode, customMode;
+    if (!cmdParamToUint32(baseModeF, 0xFF, &baseMode) ||
+        !cmdParamToUint32(customModeF, BF_MAV_MODE_COUNT - 1, &customMode)) {
+        return MAV_RESULT_DENIED;
+    }
+    // We only support selecting a Betaflight mode via custom_mode.
+    if (!(baseMode & MAV_MODE_FLAG_CUSTOM_MODE_ENABLED)) {
+        return MAV_RESULT_DENIED;
+    }
+    return selectMavCustomMode(customMode, senderSysid);
+}
+
+static uint8_t handleSetStandardMode(float standardModeF, uint32_t senderSysid)
+{
+    uint32_t standardMode;
+    if (!cmdParamToUint32(standardModeF, UINT8_MAX, &standardMode) || standardMode == MAV_STANDARD_MODE_NON_STANDARD) {
+        return MAV_RESULT_DENIED;
+    }
+    for (uint32_t mode = 0; mode < BF_MAV_MODE_COUNT; mode++) {
+        const bfMavModeDescriptor_t *desc = &bfMavModeDescriptors[mode];
+        if (desc->standardMode == standardMode && !(desc->properties & MAV_MODE_PROPERTY_NOT_USER_SELECTABLE)) {
+            return selectMavCustomMode(mode, senderSysid);
+        }
+    }
+    return MAV_RESULT_UNSUPPORTED;
+}
+
 static uint8_t handleReturnToLaunch(void)
 {
     if (!ARMING_FLAG(ARMED)) {
@@ -692,11 +725,11 @@ static uint8_t handleReturnToLaunch(void)
     return MAV_RESULT_ACCEPTED;
 }
 
-static uint8_t handleSetHome(float useCurrentF, bool coordsValid, int32_t lat1e7, int32_t lon1e7, int32_t altCm)
+static uint8_t handleSetHome(const mavlinkCommand_t *cmd)
 {
 #ifdef USE_GPS
     uint32_t useCurrent;
-    if (!cmdParamToUint32(useCurrentF, 1, &useCurrent)) {
+    if (!cmdParamToUint32(cmd->param[0], 1, &useCurrent)) {
         return MAV_RESULT_DENIED;
     }
 
@@ -708,20 +741,19 @@ static uint8_t handleSetHome(float useCurrentF, bool coordsValid, int32_t lat1e7
         return MAV_RESULT_ACCEPTED;
     }
 
-    if (!coordsValid || (lat1e7 == 0 && lon1e7 == 0)) {
+    if (cmd->positionResult != MAV_RESULT_ACCEPTED) {
+        return cmd->positionResult;
+    }
+    if (!cmd->hasLatLon || !cmd->hasAlt || (cmd->lat1e7 == 0 && cmd->lon1e7 == 0)) {
         return MAV_RESULT_DENIED;
     }
-    GPS_home_llh.lat = constrain(lat1e7, -900000000, 900000000);
-    GPS_home_llh.lon = constrain(lon1e7, -1800000000, 1800000000);
-    GPS_home_llh.altCm = altCm;
+    GPS_home_llh.lat = cmd->lat1e7;
+    GPS_home_llh.lon = cmd->lon1e7;
+    GPS_home_llh.altCm = cmd->altCm;
     ENABLE_STATE(GPS_FIX_HOME);
     return MAV_RESULT_ACCEPTED;
 #else
-    UNUSED(useCurrentF);
-    UNUSED(coordsValid);
-    UNUSED(lat1e7);
-    UNUSED(lon1e7);
-    UNUSED(altCm);
+    UNUSED(cmd);
     return MAV_RESULT_UNSUPPORTED;
 #endif
 }
@@ -756,40 +788,64 @@ static uint8_t handleRebootShutdown(float param1)
 
 #endif // ENABLE_TELEMETRY_MAVLINK_COMMANDS
 
-// Shared command executor for COMMAND_LONG and COMMAND_INT. Coordinate-bearing
-// commands receive lat/lon in 1e7 degrees and altitude in cm via coordsValid.
-static uint8_t mavlinkExecCommand(uint16_t command, float param1, float param2,
-    bool coordsValid, int32_t lat1e7, int32_t lon1e7, int32_t altCm, uint32_t senderSysid)
+static uint8_t mavlinkExecCommand(const mavlinkCommand_t *cmd)
 {
-#if !ENABLE_TELEMETRY_MAVLINK_COMMANDS
-    UNUSED(senderSysid);
-    UNUSED(coordsValid);
-    UNUSED(lat1e7);
-    UNUSED(lon1e7);
-    UNUSED(altCm);
-#endif
-    switch (command) {
+    const float *param = cmd->param;
+    switch (cmd->command) {
     case MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES:
-        return handleRequestAutopilotCapabilities(param1);
+        return handleRequestAutopilotCapabilities(param[0]);
     case MAV_CMD_REQUEST_MESSAGE:
-        return handleRequestMessage(param1, param2);
+        return handleRequestMessage(param[0], param[1]);
     case MAV_CMD_SET_MESSAGE_INTERVAL:
-        return handleSetMessageInterval(param1, param2);
+        return handleSetMessageInterval(param[0], param[1]);
 #if ENABLE_TELEMETRY_MAVLINK_COMMANDS
     case MAV_CMD_COMPONENT_ARM_DISARM:
-        return handleArmDisarm(param1);
+        return handleArmDisarm(param[0]);
     case MAV_CMD_DO_SET_MODE:
-        return handleSetMode(param1, param2, senderSysid);
+        return handleSetMode(param[0], param[1], cmd->senderSysid);
+    case MAV_CMD_DO_SET_STANDARD_MODE:
+        return handleSetStandardMode(param[0], cmd->senderSysid);
     case MAV_CMD_NAV_RETURN_TO_LAUNCH:
         return handleReturnToLaunch();
     case MAV_CMD_DO_SET_HOME:
-        return handleSetHome(param1, coordsValid, lat1e7, lon1e7, altCm);
+        return handleSetHome(cmd);
     case MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN:
-        return handleRebootShutdown(param1);
+        return handleRebootShutdown(param[0]);
 #endif
     default:
         return MAV_RESULT_UNSUPPORTED;
     }
+}
+
+static void decodeCommandAlt(mavlinkCommand_t *cmd, uint8_t frame, float altM)
+{
+    if (isnan(altM)) {
+        return;
+    }
+    switch (mavlinkFrameAltToAmslCm(frame, altM, &cmd->altCm)) {
+    case MAVLINK_FRAME_ALT_OK:
+        cmd->hasAlt = true;
+        break;
+    case MAVLINK_FRAME_ALT_NO_HOME:
+        cmd->positionResult = MAV_RESULT_TEMPORARILY_REJECTED;
+        break;
+    case MAVLINK_FRAME_ALT_INVALID:
+    case MAVLINK_FRAME_ALT_UNSUPPORTED:
+    default:
+        cmd->positionResult = MAV_RESULT_DENIED;
+        break;
+    }
+}
+
+static void setCommandLatLon(mavlinkCommand_t *cmd, int32_t lat1e7, int32_t lon1e7)
+{
+    if (lat1e7 < -900000000 || lat1e7 > 900000000 || lon1e7 < -1800000000 || lon1e7 > 1800000000) {
+        cmd->positionResult = MAV_RESULT_DENIED;
+        return;
+    }
+    cmd->hasLatLon = true;
+    cmd->lat1e7 = lat1e7;
+    cmd->lon1e7 = lon1e7;
 }
 
 static bool isCommandForUs(uint8_t targetSystem, uint8_t targetComponent)
@@ -801,43 +857,59 @@ static bool isCommandForUs(uint8_t targetSystem, uint8_t targetComponent)
 
 static void handleCommandInt(const mavlink_message_t *msg)
 {
-    mavlink_command_int_t cmd;
-    mavlink_msg_command_int_decode(msg, &cmd);
+    mavlink_command_int_t in;
+    mavlink_msg_command_int_decode(msg, &in);
 
-    if (!isCommandForUs(cmd.target_system, cmd.target_component)) {
+    if (!isCommandForUs(in.target_system, in.target_component)) {
         return;
     }
 
-    const int32_t altCm = isfinite(cmd.z) ? (int32_t)lroundf(cmd.z * 100.0f) : 0;
-    const uint8_t result = mavlinkExecCommand(cmd.command, cmd.param1, cmd.param2,
-        true, cmd.x, cmd.y, altCm, msg->sysid);
-    mavlinkSendCommandAck(cmd.command, result, msg->sysid, msg->compid);
+    mavlinkCommand_t cmd = {
+        .command = in.command,
+        .param = { in.param1, in.param2, in.param3, in.param4, NAN, NAN, in.z },
+        .positionResult = MAV_RESULT_ACCEPTED,
+        .senderSysid = msg->sysid,
+    };
+    if (!mavlinkFrameIsGlobal(in.frame)) {
+        if (in.x != INT32_MAX || !isnan(in.z)) {
+            cmd.positionResult = MAV_RESULT_DENIED;
+        }
+    } else {
+        if (in.x != INT32_MAX && in.y != INT32_MAX) {
+            setCommandLatLon(&cmd, in.x, in.y);
+        }
+        decodeCommandAlt(&cmd, in.frame, in.z);
+    }
+    const uint8_t result = mavlinkExecCommand(&cmd);
+    mavlinkSendCommandAck(in.command, result, msg->sysid, msg->compid);
 }
 
 static void handleCommandLong(const mavlink_message_t *msg)
 {
-    mavlink_command_long_t cmd;
-    mavlink_msg_command_long_decode(msg, &cmd);
+    mavlink_command_long_t in;
+    mavlink_msg_command_long_decode(msg, &in);
 
-    if (!isCommandForUs(cmd.target_system, cmd.target_component)) {
+    if (!isCommandForUs(in.target_system, in.target_component)) {
         return;
     }
 
-    // COMMAND_LONG carries lat/lon as float degrees in param5/param6 (lossy);
-    // COMMAND_INT is preferred for precise coordinates. Only convert when the
-    // command actually consumes coordinates, to avoid UB casting NaN floats.
-    bool coordsValid = false;
-    int32_t lat1e7 = 0, lon1e7 = 0, altCm = 0;
-    if (cmd.command == MAV_CMD_DO_SET_HOME &&
-        isfinite(cmd.param5) && isfinite(cmd.param6) && isfinite(cmd.param7)) {
-        coordsValid = true;
-        lat1e7 = (int32_t)lroundf(cmd.param5 * 1.0e7f);
-        lon1e7 = (int32_t)lroundf(cmd.param6 * 1.0e7f);
-        altCm = (int32_t)lroundf(cmd.param7 * 100.0f);
+    mavlinkCommand_t cmd = {
+        .command = in.command,
+        .param = { in.param1, in.param2, in.param3, in.param4, in.param5, in.param6, in.param7 },
+        .positionResult = MAV_RESULT_ACCEPTED,
+        .senderSysid = msg->sysid,
+    };
+    // COMMAND_LONG carries a position in degrees and metres AMSL; COMMAND_INT keeps full precision
+    if (isfinite(in.param5) && isfinite(in.param6)) {
+        if (fabsf(in.param5) > 90.0f || fabsf(in.param6) > 180.0f) {
+            cmd.positionResult = MAV_RESULT_DENIED;
+        } else {
+            setCommandLatLon(&cmd, (int32_t)lround((double)in.param5 * 1e7), (int32_t)lround((double)in.param6 * 1e7));
+        }
     }
-    const uint8_t result = mavlinkExecCommand(cmd.command, cmd.param1, cmd.param2,
-        coordsValid, lat1e7, lon1e7, altCm, msg->sysid);
-    mavlinkSendCommandAck(cmd.command, result, msg->sysid, msg->compid);
+    decodeCommandAlt(&cmd, MAV_FRAME_GLOBAL, in.param7);
+    const uint8_t result = mavlinkExecCommand(&cmd);
+    mavlinkSendCommandAck(in.command, result, msg->sysid, msg->compid);
 }
 
 static void mavlinkDispatch(const mavlink_message_t *msg)

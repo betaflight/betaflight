@@ -388,11 +388,12 @@ protected:
         feed(&msg);
     }
 
-    void commandInt(uint16_t command, float p1, int32_t x, int32_t y, float z, float p2 = 0)
+    void commandInt(uint16_t command, float p1, int32_t x, int32_t y, float z, float p2 = 0,
+        uint8_t frame = MAV_FRAME_GLOBAL_INT)
     {
         mavlink_message_t msg;
         mavlink_msg_command_int_pack_chan(GCS_SYS, GCS_COMP, MAVLINK_COMM_1, &msg,
-            FC_SYS, FC_COMP, MAV_FRAME_GLOBAL_INT, command, 0, 0, p1, p2, 0, 0, x, y, z);
+            FC_SYS, FC_COMP, frame, command, 0, 0, p1, p2, 0, 0, x, y, z);
         feed(&msg);
     }
 
@@ -902,6 +903,121 @@ TEST_F(MavlinkTelemetryTest, SetHomeRejectsMissingCoordinates)
     commandLong(MAV_CMD_DO_SET_HOME, 0, 0, 0, 0, NAN, NAN, NAN);
     EXPECT_EQ(lastAck().result, MAV_RESULT_DENIED);
     EXPECT_FALSE(STATE(GPS_FIX_HOME));
+}
+
+TEST_F(MavlinkTelemetryTest, SetHomeFromCommandIntRelativeFrameIsAmsl)
+{
+    GPS_home_llh.altCm = 10000;
+    ENABLE_STATE(GPS_FIX_HOME);
+    sent.clear();
+    commandInt(MAV_CMD_DO_SET_HOME, 0, -335000001, 1512500001, 20.5f, 0, MAV_FRAME_GLOBAL_RELATIVE_ALT_INT);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(GPS_home_llh.altCm, 12050);
+}
+
+TEST_F(MavlinkTelemetryTest, CommandIntRelativeFrameWithoutHomeIsRejected)
+{
+    sent.clear();
+    commandInt(MAV_CMD_DO_SET_HOME, 0, -335000001, 1512500001, 20.5f, 0, MAV_FRAME_GLOBAL_RELATIVE_ALT);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_TEMPORARILY_REJECTED);
+    EXPECT_FALSE(STATE(GPS_FIX_HOME));
+}
+
+TEST_F(MavlinkTelemetryTest, CommandIntLocalFrameIsDeniedForPositions)
+{
+    sent.clear();
+    commandInt(MAV_CMD_DO_SET_HOME, 0, 10000, 20000, 5.0f, 0, MAV_FRAME_LOCAL_NED);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_DENIED);
+    EXPECT_FALSE(STATE(GPS_FIX_HOME));
+
+    sent.clear();
+    commandInt(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_AUTOPILOT_VERSION, 0, 0, 0, 0, MAV_FRAME_LOCAL_NED);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_ACCEPTED);
+}
+
+TEST_F(MavlinkTelemetryTest, CommandIntUnsetPositionIsMissing)
+{
+    sent.clear();
+    commandInt(MAV_CMD_DO_SET_HOME, 0, INT32_MAX, INT32_MAX, 20.0f);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_DENIED);
+
+    sent.clear();
+    commandInt(MAV_CMD_DO_SET_HOME, 0, -335000001, 1512500001, NAN);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_DENIED);
+    EXPECT_FALSE(STATE(GPS_FIX_HOME));
+}
+
+TEST_F(MavlinkTelemetryTest, CommandIntOutOfRangePositionIsDenied)
+{
+    sent.clear();
+    commandInt(MAV_CMD_DO_SET_HOME, 0, 900000001, 0, 20.0f);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_DENIED);
+    EXPECT_FALSE(STATE(GPS_FIX_HOME));
+}
+
+TEST_F(MavlinkTelemetryTest, SetHomeFromCommandLongOutOfRangeIsDenied)
+{
+    sent.clear();
+    commandLong(MAV_CMD_DO_SET_HOME, 0, 0, 0, 0, 95.0f, 151.25f, 120.5f);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_DENIED);
+
+    sent.clear();
+    commandLong(MAV_CMD_DO_SET_HOME, 0, 0, 0, 0, -33.5f, 151.25f, 3.0e9f);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_DENIED);
+    EXPECT_FALSE(STATE(GPS_FIX_HOME));
+}
+
+TEST_F(MavlinkTelemetryTest, SetHomeFromCommandLongKeepsFullPrecision)
+{
+    sent.clear();
+    commandLong(MAV_CMD_DO_SET_HOME, 0, 0, 0, 0, -33.8688197f, 151.2092955f, 58.0f);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(GPS_home_llh.lat, (int32_t)lround((double)-33.8688197f * 1e7));
+    EXPECT_EQ(GPS_home_llh.lon, (int32_t)lround((double)151.2092955f * 1e7));
+}
+
+TEST_F(MavlinkTelemetryTest, SetStandardModeSelectsMatchingMode)
+{
+    const struct {
+        uint8_t standardMode;
+        boxId_e box;
+    } cases[] = {
+        { MAV_STANDARD_MODE_ALTITUDE_HOLD, BOXALTHOLD },
+        { MAV_STANDARD_MODE_POSITION_HOLD, BOXPOSHOLD },
+        { MAV_STANDARD_MODE_MISSION, BOXAUTOPILOT },
+        { MAV_STANDARD_MODE_SAFE_RECOVERY, BOXGPSRESCUE },
+    };
+    for (const auto &c : cases) {
+        EXPECT_EQ(ackResultFor(MAV_CMD_DO_SET_STANDARD_MODE, c.standardMode), MAV_RESULT_ACCEPTED) << "mode " << (int)c.standardMode;
+        EXPECT_EQ(overrideMask, 1u << c.box) << "mode " << (int)c.standardMode;
+    }
+}
+
+TEST_F(MavlinkTelemetryTest, SetStandardModeRejectsUnknownWithoutTouchingOverride)
+{
+    setMode(MODE_POS_HOLD);
+    const uint32_t before = overrideMask;
+
+    EXPECT_EQ(ackResultFor(MAV_CMD_DO_SET_STANDARD_MODE, MAV_STANDARD_MODE_NON_STANDARD), MAV_RESULT_DENIED);
+    EXPECT_EQ(ackResultFor(MAV_CMD_DO_SET_STANDARD_MODE, MAV_STANDARD_MODE_ORBIT), MAV_RESULT_UNSUPPORTED);
+    EXPECT_EQ(ackResultFor(MAV_CMD_DO_SET_STANDARD_MODE, NAN), MAV_RESULT_DENIED);
+    EXPECT_EQ(overrideMask, before);
+}
+
+TEST_F(MavlinkTelemetryTest, SetStandardModeFromLockedGcsRequestsFailsafeRecovery)
+{
+    EXPECT_EQ(ackResultFor(MAV_CMD_DO_SET_STANDARD_MODE, MAV_STANDARD_MODE_POSITION_HOLD), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(recoveryRequests, 0);
+
+    mavlink_message_t msg;
+    gcsHeartbeat(&msg, GCS_SYS, GCS_COMP, MAV_TYPE_GCS, MAV_AUTOPILOT_INVALID);
+    feed(&msg);
+    EXPECT_EQ(ackResultFor(MAV_CMD_DO_SET_STANDARD_MODE, MAV_STANDARD_MODE_POSITION_HOLD), MAV_RESULT_ACCEPTED);
+#if ENABLE_REMOTE_ARM
+    EXPECT_EQ(recoveryRequests, 1);
+#else
+    EXPECT_EQ(recoveryRequests, 0);
+#endif
 }
 
 TEST_F(MavlinkTelemetryTest, RebootRefusedWhileArmed)
