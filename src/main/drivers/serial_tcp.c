@@ -256,9 +256,11 @@ void tcpDataIn(tcpPort_t *instance, uint8_t* ch, int size)
 {
     tcpPort_t *s = (tcpPort_t *)instance;
 
-    if (s->port.rxCallback) {
+    const serialReceiveCallbackPtr rxCallback = s->port.rxCallback;
+    if (rxCallback) {
+        void *rxCallbackData = s->port.rxCallbackData;
         while (size--) {
-            s->port.rxCallback(*(ch++), s->port.rxCallbackData);
+            rxCallback(*(ch++), rxCallbackData);
         }
         return;
     }
