@@ -152,6 +152,8 @@ throttleStatus_e calculateThrottleStatus(void);
 void processRcStickPositions(void);
 
 bool isUsingSticksForArming(void);
+bool hasArmSwitchBeenOn(void);
+void resetArmSwitchLatch(void);
 
 void rcControlsInit(void);
 
