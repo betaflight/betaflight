@@ -251,7 +251,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_USART6_RX,
         .rxDMAResource = (dmaResource_t *)UART6_RX_DMA_CHANNEL,
-        .txDMAMuxId = DMAMUX_DMAREQ_ID_USART6_RX,
+        .txDMAMuxId = DMAMUX_DMAREQ_ID_USART6_TX,
         .txDMAResource = (dmaResource_t *)UART6_TX_DMA_CHANNEL,
 #endif
         .rxPins = {
@@ -264,7 +264,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PA4),  GPIO_MUX_8 },
             { DEFIO_TAG_E(PA11), GPIO_MUX_8 },
             { DEFIO_TAG_E(PC6),  GPIO_MUX_8 },
-            { DEFIO_TAG_E(PG4),  GPIO_MUX_8 },
+            { DEFIO_TAG_E(PG14), GPIO_MUX_8 },
         },
         .rcc = RCC_APB2(USART6),
         .irqn = USART6_IRQn,

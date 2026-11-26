@@ -449,8 +449,8 @@
 #define DEF_TIM_AF__PE6__TCH_TMR3_CH4      D(2, 3)
 
 // PORTE MUX 3
-#define DEF_TIM_AF__PE5__TCH_TMR9_CH1      D(2, 9)
-#define DEF_TIM_AF__PE6__TCH_TMR9_CH2      D(2, 9)
+#define DEF_TIM_AF__PE5__TCH_TMR9_CH1      D(3, 9)
+#define DEF_TIM_AF__PE6__TCH_TMR9_CH2      D(3, 9)
 
 // PORTE MUX 6
 #define DEF_TIM_AF__PE0__TCH_TMR20_EXT     D(6, 20)
