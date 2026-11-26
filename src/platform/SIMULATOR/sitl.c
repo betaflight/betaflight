@@ -104,6 +104,7 @@ static struct timespec start_time;
 static double simRate = 1.0;
 static sitlRateEstimator_t simRateEstimator;
 static sitlPause_t simPause;
+static pthread_mutex_t clockLock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t tcpWorker, udpWorker, udpWorkerRC;
 static bool workerRunning = true;
 static udpLink_t stateLink, pwmLink, pwmRawLink, rcLink;
@@ -287,6 +288,8 @@ static void sendReply(void)
     outputsWaiting = false;
 }
 
+static uint64_t sitlClockAdvance(void);
+
 static void updateState(const fdm_packet* pkt)
 {
     static double last_timestamp = 0; // in seconds
@@ -298,13 +301,16 @@ static void updateState(const fdm_packet* pkt)
 
     const uint64_t realtime_now = micros64_real();
     if (!last_realtime || realtime_now > last_realtime + 500*1e3) { // 500ms timeout
+        pthread_mutex_lock(&clockLock);
+        sitlClockAdvance();
         // A step after a long gap ends a pause
         if (last_realtime) {
             sitlPauseUpdate(&simPause, pkt->timestamp - last_timestamp, (realtime_now - last_realtime) * 1e-6);
         }
+        simRate = 1.0;
+        pthread_mutex_unlock(&clockLock);
         last_timestamp = pkt->timestamp;
         last_realtime = realtime_now;
-        simRate = 1.0;
         sitlRateEstimatorReset(&simRateEstimator);
         sendMotorUpdate();
         return;
@@ -489,10 +495,14 @@ static void updateState(const fdm_packet* pkt)
 #endif
 
     const double deltaReal = (realtime_now - last_realtime) * 1e-6;
-    if (sitlPauseUpdate(&simPause, deltaSim, deltaReal)) {
+    pthread_mutex_lock(&clockLock);
+    sitlClockAdvance();  // the time until now runs at the old rate
+    const bool pauseChanged = sitlPauseUpdate(&simPause, deltaSim, deltaReal);
+    sitlRateEstimatorUpdate(&simRateEstimator, deltaSim, deltaReal, &simRate);
+    pthread_mutex_unlock(&clockLock);
+    if (pauseChanged) {
         printf("[SITL] simulator %s\n", simPause.paused ? "paused" : "resumed");
     }
-    sitlRateEstimatorUpdate(&simRateEstimator, deltaSim, deltaReal, &simRate);
 
     last_timestamp = pkt->timestamp;
     last_realtime = realtime_now;
@@ -713,28 +723,37 @@ uint64_t millis64_real(void)
     return 1.0e3*((ts.tv_sec + (ts.tv_nsec*1.0e-9)) - (start_time.tv_sec + (start_time.tv_nsec*1.0e-9)));
 }
 
-uint64_t micros64(void)
+// The main loop and the FDM thread both use the clock: hold clockLock
+static uint64_t sitlClockAdvance(void)
 {
     static uint64_t last = 0;
     static uint64_t out = 0;
-    uint64_t now = nanos64_real();
 
-    out += (now - last) * (simPause.paused ? 0.0 : simRate);
-    last = now;
+    const uint64_t now = nanos64_real();
+    if (now > last) {
+        out += (now - last) * (simPause.paused ? 0.0 : simRate);
+        last = now;
+    }
+    return out;
+}
 
-    return out / 1000;
+static uint64_t sitlClockNs(void)
+{
+    pthread_mutex_lock(&clockLock);
+    const uint64_t ns = sitlClockAdvance();
+    pthread_mutex_unlock(&clockLock);
+
+    return ns;
+}
+
+uint64_t micros64(void)
+{
+    return sitlClockNs() / 1000;
 }
 
 uint64_t millis64(void)
 {
-    static uint64_t last = 0;
-    static uint64_t out = 0;
-    uint64_t now = nanos64_real();
-
-    out += (now - last) * (simPause.paused ? 0.0 : simRate);
-    last = now;
-
-    return out / (1000 * 1000);
+    return sitlClockNs() / (1000 * 1000);
 }
 
 uint32_t micros(void)
