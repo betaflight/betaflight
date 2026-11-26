@@ -142,6 +142,7 @@ void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg)
     overrideInput.newFrame = true;
 }
 
+#ifdef USE_TELEMETRY_MAVLINK
 static uint16_t mavlinkStickToUs(int16_t value, uint16_t neutral)
 {
     if (value == INT16_MAX) {
@@ -149,6 +150,7 @@ static uint16_t mavlinkStickToUs(int16_t value, uint16_t neutral)
     }
     return neutral + constrain(value, -1000, 1000) / 2;
 }
+#endif
 
 static void mavlinkSetLogicalChannel(uint16_t *channels, uint8_t logical, uint16_t value)
 {
