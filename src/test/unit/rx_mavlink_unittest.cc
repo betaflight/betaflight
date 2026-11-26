@@ -570,3 +570,28 @@ TEST_F(MavlinkRxTest, GcsNeutralKeepsAuxWhileArmed)
     EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
     EXPECT_EQ(readChannel(AUX1), PWM_RANGE_MIN);
 }
+
+TEST_F(MavlinkRxTest, FrameStampedAfterFrameStatusReadsTimeIsFresh)
+{
+    sendManual(0, 0, 700, 0);
+    fakeMicros -= 10;
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+    EXPECT_EQ(readChannel(THROTTLE), 1700);
+}
+
+TEST_F(MavlinkRxTest, ManualMaskedByOverrideExpiresAcrossTimerWrap)
+{
+    uint16_t ch[18];
+    for (int i = 0; i < 18; i++) {
+        ch[i] = 1300;
+    }
+    sendManual(0, 0, 700, 0);
+    for (int i = 0; i < 10737; i++) {
+        advanceUs(400000);
+        sendOverride(ch);
+        frame();
+    }
+    advanceUs(500001);
+    EXPECT_EQ(frame(), RX_FRAME_PENDING);
+    EXPECT_EQ(readChannel(THROTTLE), 1300);
+}

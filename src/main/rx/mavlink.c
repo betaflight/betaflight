@@ -210,7 +210,7 @@ static bool mavlinkRcInputIsFresh(mavlinkRcInput_t *input, timeUs_t currentTimeU
     if (frameTimeUs == input->expiredFrameTimeUs) {
         return false;
     }
-    if (currentTimeUs - frameTimeUs > MAVLINK_RC_SOURCE_TIMEOUT_US) {
+    if (cmpTimeUs(currentTimeUs, frameTimeUs) > MAVLINK_RC_SOURCE_TIMEOUT_US) {
         input->expiredFrameTimeUs = frameTimeUs;
         return false;
     }
@@ -219,10 +219,12 @@ static bool mavlinkRcInputIsFresh(mavlinkRcInput_t *input, timeUs_t currentTimeU
 
 static mavlinkRcSource_e mavlinkSelectRcSource(timeUs_t currentTimeUs)
 {
-    if (mavlinkRcInputIsFresh(&overrideInput, currentTimeUs)) {
+    const bool overrideFresh = mavlinkRcInputIsFresh(&overrideInput, currentTimeUs);
+    const bool manualFresh = mavlinkRcInputIsFresh(&manualInput, currentTimeUs);
+    if (overrideFresh) {
         return MAVLINK_RC_SOURCE_OVERRIDE;
     }
-    if (mavlinkRcInputIsFresh(&manualInput, currentTimeUs)) {
+    if (manualFresh) {
         return MAVLINK_RC_SOURCE_MANUAL;
     }
 #if ENABLE_REMOTE_ARM && defined(USE_TELEMETRY_MAVLINK)
