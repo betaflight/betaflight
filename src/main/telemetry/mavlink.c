@@ -1575,15 +1575,10 @@ void handleMAVLinkTelemetry(void)
         return;
     }
 
-#ifndef USE_SERIALRX_MAVLINK
-    mavlinkProcessIncoming();
-#else
-    if (telemetrySharedPort != NULL && rxRuntimeState.serialrxProvider == SERIALRX_MAVLINK) {
-        mavlinkProcessQueueMessages();
-    } else {
-        mavlinkProcessIncoming();
-    }
+#ifdef USE_SERIALRX_MAVLINK
+    mavlinkProcessQueueMessages();
 #endif
+    mavlinkProcessIncoming();
 #if ENABLE_TELEMETRY_MAVLINK_MISSION
     mavMissionUpdate(millis());
 #endif
