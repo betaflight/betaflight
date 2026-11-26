@@ -277,6 +277,10 @@ static void updateState(const fdm_packet* pkt)
     static double last_timestamp = 0; // in seconds
     static uint64_t last_realtime = 0; // in uS
 
+    if (virtualAccDev == NULL || virtualGyroDev == NULL) {
+        return; // SITL is still booting
+    }
+
     const uint64_t realtime_now = micros64_real();
     if (!last_realtime || realtime_now > last_realtime + 500*1e3) { // 500ms timeout
         last_timestamp = pkt->timestamp;

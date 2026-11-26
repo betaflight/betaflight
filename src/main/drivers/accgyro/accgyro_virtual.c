@@ -43,12 +43,12 @@ gyroDev_t *virtualGyroDev;
 
 static void virtualGyroInit(gyroDev_t *gyro)
 {
-    virtualGyroDev = gyro;
 #if ENABLE_SIMULATOR_MULTITHREAD
     if (pthread_mutex_init(&gyro->lock, NULL) != 0) {
         printf("Create gyro lock error!\n");
     }
 #endif
+    virtualGyroDev = gyro;
 }
 
 void virtualGyroSet(gyroDev_t *gyro, int16_t x, int16_t y, int16_t z)
@@ -109,12 +109,12 @@ accDev_t *virtualAccDev;
 
 static void virtualAccInit(accDev_t *acc)
 {
-    virtualAccDev = acc;
 #if ENABLE_SIMULATOR_MULTITHREAD
     if (pthread_mutex_init(&acc->lock, NULL) != 0) {
         printf("Create acc lock error!\n");
     }
 #endif
+    virtualAccDev = acc;
 }
 
 void virtualAccSet(accDev_t *acc, int16_t x, int16_t y, int16_t z)
