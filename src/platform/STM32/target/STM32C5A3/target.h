@@ -74,6 +74,10 @@
 #define USE_SDCARD_SPI
 #endif
 
+// Run SPI transfers over LPDMA. Allocated late (after motor timers) so DShot
+// bitbang claims its LPDMA channels first; SPI takes what remains.
+#define USE_SPI_DMA_ENABLE_LATE
+
 #define USE_ADC
 #define USE_EXTI
 #define USE_BEEPER
