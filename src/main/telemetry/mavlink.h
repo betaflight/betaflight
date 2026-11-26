@@ -31,6 +31,9 @@ void checkMAVLinkTelemetryState(void);
 void freeMAVLinkTelemetryPort(void);
 void configureMAVLinkTelemetryPort(void);
 
+bool mavlinkGcsSeen(void);
+bool mavlinkGcsIsFresh(timeMs_t currentTimeMs);
+
 // Forward-typedef so consumers can hold pointers without dragging in
 // common/mavlink.h (which carries -Wpedantic-noisy unnamed unions). When the
 // full MAVLink headers are already in the translation unit they provide the real
