@@ -43,5 +43,7 @@ gazebo	->	betaflight	`udp://127.0.0.1:9003`
 
 UARTx will bind on `tcp://127.0.0.1:576x` when port been open.
 
+For QGroundControl, run `set telemetry_1_uart = UART2` and `set telemetry_1_protocol = MAVLINK` in the CLI, save, restart SITL (`save` exits it), then add a TCP link to `127.0.0.1:5762` in QGroundControl.
+
 `eeprom.bin`, size 8192 Byte, is for config saving.
 size can be changed in `src/platform/SITL/link/SITL.ld` >> `__FLASH_CONFIG_Size`

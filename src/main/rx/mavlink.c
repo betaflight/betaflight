@@ -57,22 +57,23 @@ static mavlinkRxQueue_t mavlinkRxQueue;
 
 static void mavlinkAddMessageToQueue(void)
 {
-    uint8_t next = (mavlinkRxQueue.head + 1) % MAVLINK_RX_QUEUE_SIZE;
-    if (next != mavlinkRxQueue.tail) {
-        mavlinkRxQueue.msgs[mavlinkRxQueue.head] = mavRecvMsg;
-        mavlinkRxQueue.head = next;
+    const uint8_t head = mavlinkRxQueue.head;
+    const uint8_t next = (head + 1) % MAVLINK_RX_QUEUE_SIZE;
+    if (next != __atomic_load_n(&mavlinkRxQueue.tail, __ATOMIC_ACQUIRE)) {
+        mavlinkRxQueue.msgs[head] = mavRecvMsg;
+        __atomic_store_n(&mavlinkRxQueue.head, next, __ATOMIC_RELEASE);
     }
 }
 
 bool mavlinkGetNextQueueMessage(mavlink_message_t *msg)
 {
-    if (mavlinkRxQueue.tail != mavlinkRxQueue.head) {
-        *msg = mavlinkRxQueue.msgs[mavlinkRxQueue.tail];
-        mavlinkRxQueue.tail = (mavlinkRxQueue.tail + 1) % MAVLINK_RX_QUEUE_SIZE;
-        return true;
-    } else {
+    const uint8_t tail = mavlinkRxQueue.tail;
+    if (tail == __atomic_load_n(&mavlinkRxQueue.head, __ATOMIC_ACQUIRE)) {
         return false;
     }
+    *msg = mavlinkRxQueue.msgs[tail];
+    __atomic_store_n(&mavlinkRxQueue.tail, (tail + 1) % MAVLINK_RX_QUEUE_SIZE, __ATOMIC_RELEASE);
+    return true;
 }
 
 void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg)
