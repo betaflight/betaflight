@@ -1136,6 +1136,61 @@ TEST_F(MavlinkTelemetryTest, SetMessageIntervalUnknownMessageDenied)
     EXPECT_EQ(ackResultFor(MAV_CMD_SET_MESSAGE_INTERVAL, MAVLINK_MSG_ID_RAW_IMU, 100000), MAV_RESULT_DENIED);
 }
 
+static void gcsHeartbeat(mavlink_message_t *msg, uint8_t sysid, uint8_t compid, uint8_t type, uint8_t autopilot)
+{
+    mavlink_msg_heartbeat_pack_chan(sysid, compid, MAVLINK_COMM_1, msg, type, autopilot, 0, 0, MAV_STATE_ACTIVE);
+}
+
+TEST_F(MavlinkTelemetryTest, GcsUnseenUntilGcsHeartbeat)
+{
+    EXPECT_FALSE(mavlinkGcsSeen());
+    EXPECT_FALSE(mavlinkGcsIsFresh(millis()));
+}
+
+TEST_F(MavlinkTelemetryTest, GcsHeartbeatMarksLinkFresh)
+{
+    mavlink_message_t msg;
+    gcsHeartbeat(&msg, GCS_SYS, GCS_COMP, MAV_TYPE_GCS, MAV_AUTOPILOT_INVALID);
+    feed(&msg);
+
+    EXPECT_TRUE(mavlinkGcsSeen());
+    EXPECT_TRUE(mavlinkGcsIsFresh(millis()));
+    advanceMs(3000);
+    EXPECT_TRUE(mavlinkGcsIsFresh(millis()));
+    advanceMs(1);
+    EXPECT_FALSE(mavlinkGcsIsFresh(millis()));
+    EXPECT_TRUE(mavlinkGcsSeen());
+}
+
+TEST_F(MavlinkTelemetryTest, NonGcsHeartbeatsAreIgnored)
+{
+    mavlink_message_t msg;
+    gcsHeartbeat(&msg, GCS_SYS, GCS_COMP, MAV_TYPE_QUADROTOR, MAV_AUTOPILOT_GENERIC);
+    feed(&msg);
+    gcsHeartbeat(&msg, GCS_SYS, GCS_COMP, MAV_TYPE_GCS, MAV_AUTOPILOT_GENERIC);
+    feed(&msg);
+    gcsHeartbeat(&msg, GCS_SYS, MAV_COMP_ID_TELEMETRY_RADIO, MAV_TYPE_GCS, MAV_AUTOPILOT_INVALID);
+    feed(&msg);
+
+    EXPECT_FALSE(mavlinkGcsSeen());
+}
+
+TEST_F(MavlinkTelemetryTest, GcsLockStaysOnFirstSysid)
+{
+    mavlink_message_t msg;
+    gcsHeartbeat(&msg, GCS_SYS, GCS_COMP, MAV_TYPE_GCS, MAV_AUTOPILOT_INVALID);
+    feed(&msg);
+    advanceMs(3001);
+
+    gcsHeartbeat(&msg, GCS_SYS - 1, GCS_COMP, MAV_TYPE_GCS, MAV_AUTOPILOT_INVALID);
+    feed(&msg);
+    EXPECT_FALSE(mavlinkGcsIsFresh(millis()));
+
+    gcsHeartbeat(&msg, GCS_SYS, GCS_COMP, MAV_TYPE_GCS, MAV_AUTOPILOT_INVALID);
+    feed(&msg);
+    EXPECT_TRUE(mavlinkGcsIsFresh(millis()));
+}
+
 TEST_F(MavlinkTelemetryTest, PingRequestIsAnswered)
 {
     mavlink_message_t msg;

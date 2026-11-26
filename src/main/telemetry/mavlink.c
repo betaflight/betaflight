@@ -114,6 +114,10 @@ static mavlink_message_t mavRxMsg;
 static mavlink_status_t mavRxStatus;
 static bool mavlinkPortOwned = false;
 
+#define MAVLINK_GCS_TIMEOUT_MS 3000
+static uint32_t gcsSysid;
+static timeMs_t gcsLastSeenMs;
+
 // Betaflight-specific MAVLink custom_mode values. Stable enumeration emitted in
 // HEARTBEAT.custom_mode and advertised via AVAILABLE_MODES; consumed in T3 by
 // MAV_CMD_DO_SET_MODE handling.
@@ -248,8 +252,30 @@ static void mavlinkSendSystemTime(void)
 
 static void handleHeartbeatRx(const mavlink_message_t *msg)
 {
-    UNUSED(msg);
-    // Stub for now; later tiers will track GCS liveness and target replies by sysid/compid.
+    if (msg->compid == MAV_COMP_ID_TELEMETRY_RADIO) {
+        return;
+    }
+    mavlink_heartbeat_t heartbeat;
+    mavlink_msg_heartbeat_decode(msg, &heartbeat);
+    if (heartbeat.type != MAV_TYPE_GCS || heartbeat.autopilot != MAV_AUTOPILOT_INVALID) {
+        return;
+    }
+    if (gcsSysid == 0) {
+        gcsSysid = msg->sysid;
+    }
+    if (msg->sysid == gcsSysid) {
+        gcsLastSeenMs = millis();
+    }
+}
+
+bool mavlinkGcsSeen(void)
+{
+    return gcsSysid != 0;
+}
+
+bool mavlinkGcsIsFresh(timeMs_t currentTimeMs)
+{
+    return mavlinkGcsSeen() && cmpTimeMs(currentTimeMs, gcsLastSeenMs) <= MAVLINK_GCS_TIMEOUT_MS;
 }
 
 static void handlePing(const mavlink_message_t *msg)
@@ -866,6 +892,7 @@ void freeMAVLinkTelemetryPort(void)
 
 void initMAVLinkTelemetry(void)
 {
+    gcsSysid = 0;
     telemetryPort = telemetryProviderPort(TELEMETRY_PROTOCOL_MAVLINK);
     mavlinkPortSharing = determinePortSharing(telemetryPort, FUNCTION_TELEMETRY_MAVLINK);
 }
