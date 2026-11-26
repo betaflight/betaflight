@@ -507,6 +507,7 @@ osd_unittest_SRC := \
 		$(USER_DIR)/fc/runtime_config.c
 
 osd_unittest_DEFINES := \
+		USE_BLACKBOX= \
 		USE_OSD= \
 		USE_GPS= \
 		USE_RTC_TIME= \

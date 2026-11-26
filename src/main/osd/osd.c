@@ -805,7 +805,9 @@ static void osdGetBlackboxStatusString(char * buff)
         break;
     }
 
-    if (storageDeviceIsWorking) {
+    if (storageDeviceIsWorking && storageTotal == 0) {
+        tfp_sprintf(buff, "OK");
+    } else if (storageDeviceIsWorking) {
         const uint16_t storageUsedPercent = (storageUsed * 100) / storageTotal;
         tfp_sprintf(buff, "%d%%", storageUsedPercent);
     } else {
