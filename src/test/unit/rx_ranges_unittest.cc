@@ -130,6 +130,7 @@ extern "C" {
 void failsafeOnRxSuspend(uint32_t ) {}
 void failsafeOnRxResume(void) {}
 bool failsafeIsActive(void) { return false; }
+bool failsafeGcsLossActive(void) { return false; }
 bool failsafeIsReceivingRxData(void) { return true; }
 bool taskUpdateRxMainInProgress(void) { return true; }
 void setArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }

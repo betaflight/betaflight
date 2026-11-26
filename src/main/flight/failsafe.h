@@ -118,6 +118,11 @@ failsafePhase_e failsafePhase(void);
 bool failsafeIsMonitoring(void);
 bool failsafeIsActive(void);
 bool failsafeIsReceivingRxData(void);
+bool failsafeGcsLossActive(void);
+failsafeProcedure_e failsafeActiveProcedure(void);
+#ifdef USE_GPS_RESCUE
+bool failsafeUsesGpsRescue(void);
+#endif
 void failsafeRequestRecovery(void);
 void failsafeOnRxSuspend(uint32_t suspendPeriod);
 void failsafeOnRxResume(void);

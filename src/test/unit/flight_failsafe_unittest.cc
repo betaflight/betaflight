@@ -1058,6 +1058,30 @@ TEST_F(FlightFailsafeGcsTest, GcsLossGpsRescueAction)
     EXPECT_EQ(FAILSAFE_GPS_RESCUE, failsafePhase());
 }
 
+TEST_F(FlightFailsafeGcsTest, GcsLossAutoLandOverridesRescueProcedure)
+{
+    failsafeConfigMutable()->failsafe_procedure = FAILSAFE_PROCEDURE_GPS_RESCUE;
+    testGcsLost = true;
+    tickLinkUp(10);
+
+    EXPECT_TRUE(failsafeGcsLossActive());
+    EXPECT_EQ(FAILSAFE_PROCEDURE_AUTO_LANDING, failsafeActiveProcedure());
+    EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
+}
+
+TEST_F(FlightFailsafeGcsTest, GcsGpsRescueActionUsesGpsRescue)
+{
+    failsafeConfigMutable()->failsafe_procedure = FAILSAFE_PROCEDURE_AUTO_LANDING;
+    EXPECT_FALSE(failsafeUsesGpsRescue());
+
+    mavlinkGcsConfigMutable()->failsafeAction = MAVLINK_GCS_FS_ACTION_GPS_RESCUE;
+    EXPECT_TRUE(failsafeUsesGpsRescue());
+
+    mavlinkGcsConfigMutable()->failsafeAction = MAVLINK_GCS_FS_ACTION_OFF;
+    failsafeConfigMutable()->failsafe_procedure = FAILSAFE_PROCEDURE_GPS_RESCUE;
+    EXPECT_TRUE(failsafeUsesGpsRescue());
+}
+
 TEST_F(FlightFailsafeGcsTest, GcsLossOffDoesNothing)
 {
     mavlinkGcsConfigMutable()->failsafeAction = MAVLINK_GCS_FS_ACTION_OFF;

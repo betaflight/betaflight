@@ -260,7 +260,7 @@ LOCAL_UNUSED_FUNCTION static uint32_t failsafeFailurePeriodMs(void)
     return failsafeState.rxDataFailurePeriod;
 }
 
-static bool failsafeGcsLossActive(void)
+bool failsafeGcsLossActive(void)
 {
 #if ENABLE_MAVLINK_GCS_FAILSAFE
     return failsafeState.gcsLoss;
@@ -278,7 +278,7 @@ static bool failsafeGcsLost(void)
 }
 #endif
 
-static failsafeProcedure_e failsafeActiveProcedure(void)
+failsafeProcedure_e failsafeActiveProcedure(void)
 {
 #if ENABLE_MAVLINK_GCS_FAILSAFE
     if (failsafeState.gcsLoss) {
@@ -292,6 +292,18 @@ static failsafeProcedure_e failsafeActiveProcedure(void)
 #endif
     return failsafeConfig()->failsafe_procedure;
 }
+
+#ifdef USE_GPS_RESCUE
+bool failsafeUsesGpsRescue(void)
+{
+#if ENABLE_MAVLINK_GCS_FAILSAFE
+    if (mavlinkGcsConfig()->failsafeAction == MAVLINK_GCS_FS_ACTION_GPS_RESCUE) {
+        return true;
+    }
+#endif
+    return failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE;
+}
+#endif
 
 static bool failsafeSticksActive(void)
 {

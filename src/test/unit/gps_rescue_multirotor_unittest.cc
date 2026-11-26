@@ -81,6 +81,7 @@ extern "C" {
 
     void disarm(flightLogDisarmReason_e reason) { disarmCount++; lastDisarmReason = reason; }
     bool crashRecoveryModeActive(void) { return false; }
+    bool failsafeUsesGpsRescue(void) { return failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE; }
     bool isRxReceivingSignal(void) { return simulatedRxSignal; }
 
     float getAltitudeCm(void) { return simulatedAltitudeCm; }
