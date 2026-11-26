@@ -63,4 +63,4 @@ int32_t blackboxGetLogNumber(void);
 
 void blackboxReplenishHeaderBudget(void);
 blackboxBufferReserveStatus_e blackboxDeviceReserveBufferSpace(int32_t bytes);
-int8_t blackboxGetLogFileNo(void);
+int32_t blackboxGetLogFileNo(void);

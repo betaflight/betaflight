@@ -79,6 +79,7 @@ static struct {
     afatfsFilePtr_t logDirectory;
     afatfsFinder_t logDirectoryFinder;
     int32_t largestLogFileNumber;
+    int32_t pendingLogNumber;
 
     enum {
         BLACKBOX_SDCARD_INITIAL,
@@ -488,12 +489,18 @@ static void blackboxLogDirCreated(afatfsFilePtr_t directory)
     }
 }
 
+// File names hold five digits, so once the card has LOG99999.BFL there's no name left for a new log
+static bool blackboxSDCardOutOfLogNumbers(void)
+{
+    return blackboxSDCard.largestLogFileNumber >= BLACKBOX_LOG_NUMBER_MAX;
+}
+
 static void blackboxLogFileCreated(afatfsFilePtr_t file)
 {
     if (file) {
         blackboxSDCard.logFile = file;
 
-        blackboxSDCard.largestLogFileNumber++;
+        blackboxSDCard.largestLogFileNumber = blackboxSDCard.pendingLogNumber;
 
         blackboxSDCard.state = BLACKBOX_SDCARD_READY_TO_LOG;
     } else {
@@ -504,7 +511,11 @@ static void blackboxLogFileCreated(afatfsFilePtr_t file)
 
 static void blackboxCreateLogFile(void)
 {
-    int32_t remainder = blackboxSDCard.largestLogFileNumber + 1;
+    // Number from the configured start, unless the card already has logs at or beyond it
+    const int32_t logNumber = MAX(blackboxSDCard.largestLogFileNumber + 1, (int32_t)blackboxConfig()->log_number_start);
+    blackboxSDCard.pendingLogNumber = logNumber;
+
+    int32_t remainder = logNumber;
 
     char filename[] = LOGFILE_PREFIX "00000." LOGFILE_SUFFIX;
 
@@ -577,7 +588,9 @@ static bool blackboxSDCardBeginLog(void)
         break;
 
     case BLACKBOX_SDCARD_READY_TO_CREATE_LOG:
-        blackboxCreateLogFile();
+        if (!blackboxSDCardOutOfLogNumbers()) {
+            blackboxCreateLogFile();
+        }
         break;
 
     case BLACKBOX_SDCARD_READY_TO_LOG:
@@ -665,7 +678,9 @@ bool isBlackboxDeviceFull(void)
 
 #ifdef USE_SDCARD
     case BLACKBOX_DEVICE_SDCARD:
-        return afatfs_isFull();
+        // Running out of log numbers counts as full too, but only between logs: the log being written may be LOG99999 itself
+        return afatfs_isFull()
+            || (blackboxSDCard.state == BLACKBOX_SDCARD_READY_TO_CREATE_LOG && blackboxSDCardOutOfLogNumbers());
 #endif // USE_SDCARD
 
     default:
@@ -821,7 +836,7 @@ blackboxBufferReserveStatus_e blackboxDeviceReserveBufferSpace(int32_t bytes)
     }
 }
 
-int8_t blackboxGetLogFileNo(void)
+int32_t blackboxGetLogFileNo(void)
 {
 #ifdef USE_SDCARD
     // return current file number or -1
