@@ -539,6 +539,7 @@ static void validateAndFixConfig(void)
 #endif // USE_DSHOT
 
 #if defined(USE_OSD)
+    osdConfigMutable()->aux_channel = constrain(osdConfig()->aux_channel, 1, MAX_AUX_CHANNEL_COUNT);
     for (int i = 0; i < OSD_TIMER_COUNT; i++) {
          const uint16_t t = osdConfig()->timers[i];
          if (OSD_TIMER_SRC(t) >= OSD_TIMER_SRC_COUNT ||

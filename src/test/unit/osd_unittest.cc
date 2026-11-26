@@ -67,6 +67,7 @@ extern "C" {
     #include "rx/rx.h"
 
     void osdUpdate(timeUs_t currentTimeUs);
+    uint16_t osdGetAuxValue(uint8_t channel, uint16_t scale);
     void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time);
     int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius);
 
@@ -395,6 +396,27 @@ TEST_F(OsdTest, TestInit)
     displayPortTestPrint();
 #endif
     displayPortTestBufferIsEmpty();
+}
+
+TEST(OsdAuxValueTest, AuxValueUsesValidChannelForOutOfRangeSettings)
+{
+    // Give AUX1 and the last AUX channel distinct values to check which one is read.
+    const float firstValue = rcData[NON_AUX_CHANNEL_COUNT];
+    const float lastValue = rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT - 1];
+    rcData[NON_AUX_CHANNEL_COUNT] = -1.0f;
+    rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT - 1] = 1.0f;
+
+    const struct { uint8_t channel; uint16_t expected; } cases[] = {
+        { 1, 0 }, { MAX_AUX_CHANNEL_COUNT, 200 },
+        { MAX_AUX_CHANNEL_COUNT + 1, 200 }, { MAX_SUPPORTED_RC_CHANNEL_COUNT, 200 },
+        { 255, 200 }, { 0, 0 },
+    };
+    for (const auto &testCase : cases) {
+        EXPECT_EQ(testCase.expected, osdGetAuxValue(testCase.channel, 200)) << "AUX " << (int)testCase.channel;
+    }
+
+    rcData[NON_AUX_CHANNEL_COUNT] = firstValue;
+    rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT - 1] = lastValue;
 }
 
 /*
