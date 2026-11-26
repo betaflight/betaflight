@@ -583,6 +583,7 @@ void disarm(flightLogDisarmReason_e reason)
         // Non-user disarm, clear the user-initated flag in rc_controls.c
         clearWasLastDisarmUserRequested();
     }
+    resetArmSwitchLatch();
 
     if (ARMING_FLAG(ARMED)) {
         if (!crashFlipModeActive) {
@@ -889,8 +890,9 @@ bool processRx(timeUs_t currentTimeUs)
 
     // in 3D mode, we need to be able to disarm by switch at any time
     if (featureIsEnabled(FEATURE_3D)) {
-        if (!IS_RC_MODE_ACTIVE(BOXARM))
+        if (!IS_RC_MODE_ACTIVE(BOXARM) && (isUsingSticksForArming() || hasArmSwitchBeenOn())) {
             disarm(DISARM_REASON_SWITCH);
+        }
     }
 
     updateRSSI(currentTimeUs);
