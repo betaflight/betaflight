@@ -35,6 +35,7 @@ typedef struct mavlinkRxQueue_s {
     volatile uint8_t tail;
 } mavlinkRxQueue_t;
 bool mavlinkGetNextQueueMessage(mavlink_message_t *msg);
+void mavlinkRxHandleManualControl(const mavlink_message_t *msg);
 #else
 static inline bool isValidMavlinkTxBuffer(void) { return false; }
 static inline bool shouldSendMavlinkTelemetry(void) { return false; }

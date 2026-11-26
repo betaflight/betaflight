@@ -23,6 +23,7 @@
 #include "common/time.h"
 
 #define MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS 20
+#define MAVLINK_SYSTEM_ID 1
 
 void initMAVLinkTelemetry(void);
 void handleMAVLinkTelemetry(void);
@@ -33,6 +34,7 @@ void configureMAVLinkTelemetryPort(void);
 
 bool mavlinkGcsSeen(void);
 bool mavlinkGcsIsFresh(timeMs_t currentTimeMs);
+bool mavlinkIsGcsSysid(uint32_t sysid);
 
 // Forward-typedef so consumers can hold pointers without dragging in
 // common/mavlink.h (which carries -Wpedantic-noisy unnamed unions). When the

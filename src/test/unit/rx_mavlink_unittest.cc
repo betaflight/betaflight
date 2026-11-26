@@ -30,6 +30,8 @@ extern "C" {
     #include "telemetry/mavlink_lib.h"
 
     #include "build/debug.h"
+    #include "fc/rc_controls.h"
+    #include "fc/runtime_config.h"
     #include "io/serial.h"
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
@@ -50,6 +52,17 @@ extern "C" {
 
     static uint32_t fakeMicros;
     uint32_t micros(void) { return fakeMicros; }
+    uint32_t millis(void) { return fakeMicros / 1000; }
+
+    uint8_t armingFlags;
+    uint16_t flightModeFlags;
+    static bool throttleRaised;
+    bool wasThrottleRaised(void) { return throttleRaised; }
+
+    static uint32_t gcsSysid;
+    static bool gcsFresh;
+    bool mavlinkGcsIsFresh(timeMs_t) { return gcsFresh; }
+    bool mavlinkIsGcsSysid(uint32_t sysid) { return gcsSysid != 0 && sysid == gcsSysid; }
 
     serialPort_t *telemetrySharedPort;
     static uint8_t telemetryBaud;
@@ -88,6 +101,8 @@ extern "C" {
 #define RADIO_COMP MAV_COMP_ID_TELEMETRY_RADIO
 #define FC_SYS 1
 #define MIDRC 1500
+#define GCS_SYS 255
+#define GCS_COMP MAV_COMP_ID_MISSIONPLANNER
 
 class MavlinkRxTest : public ::testing::Test {
 protected:
@@ -100,6 +115,14 @@ protected:
         memset(&rxRuntimeState, 0, sizeof(rxRuntimeState));
         rxConfig.midrc = MIDRC;
         rxConfig.rx_uart = SERIAL_PORT_USART1;
+        for (int i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
+            rxConfig.rcmap[i] = i;
+        }
+        armingFlags = 0;
+        flightModeFlags = 0;
+        throttleRaised = false;
+        gcsSysid = GCS_SYS;
+        gcsFresh = false;
 
         fakeMicros = 1000;
         telemetryBaud = BAUD_AUTO;
@@ -157,6 +180,25 @@ protected:
     {
         return rxRuntimeState.rcReadRawFn(&rxRuntimeState, channel);
     }
+
+    uint8_t frame()
+    {
+        return rxRuntimeState.rcFrameStatusFn(&rxRuntimeState);
+    }
+
+    void sendManual(int16_t x, int16_t y, int16_t z, int16_t r, uint8_t extensions = 0,
+        int16_t aux1 = 0, int16_t aux3 = 0, uint32_t sysid = GCS_SYS, uint8_t target = FC_SYS)
+    {
+        mavlink_message_t msg;
+        mavlink_msg_manual_control_pack_chan(sysid, GCS_COMP, MAVLINK_COMM_1, &msg, target,
+            x, y, z, r, 0, 0, extensions, 0, 0, aux1, 0, aux3, 0, 0, 0);
+        feed(&msg);
+    }
+
+    void advanceUs(uint32_t us)
+    {
+        fakeMicros += us;
+    }
 };
 
 TEST_F(MavlinkRxTest, InitCentresAllEighteenChannels)
@@ -197,6 +239,7 @@ TEST_F(MavlinkRxTest, OverrideMapsAllEighteenChannelsInOrder)
         ch[i] = 1001 + i;
     }
     sendOverride(ch);
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
 
     for (uint8_t i = 0; i < 18; i++) {
         EXPECT_EQ(readChannel(i), 1001 + i) << "channel " << (int)i;
@@ -216,6 +259,7 @@ TEST_F(MavlinkRxTest, OverrideIgnoredValuesHoldLastValue)
     ch[17] = 0;
     ch[1] = 1800;
     sendOverride(ch);
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
 
     EXPECT_EQ(readChannel(0), 1200);
     EXPECT_EQ(readChannel(8), 1200);
@@ -228,10 +272,11 @@ TEST_F(MavlinkRxTest, OverrideCompletesOneFrameAndStampsTime)
     uint16_t ch[18] = { 1500 };
     fakeMicros = 123456;
     sendOverride(ch);
+    advanceUs(100);
 
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
     EXPECT_EQ(rxRuntimeState.lastRcFrameTimeUs, 123456u);
-    EXPECT_EQ(rxRuntimeState.rcFrameStatusFn(&rxRuntimeState), RX_FRAME_COMPLETE);
-    EXPECT_EQ(rxRuntimeState.rcFrameStatusFn(&rxRuntimeState), RX_FRAME_PENDING);
+    EXPECT_EQ(frame(), RX_FRAME_PENDING);
 }
 
 TEST_F(MavlinkRxTest, OverrideAndRadioStatusAreNotQueued)
@@ -302,4 +347,167 @@ TEST_F(MavlinkRxTest, FullQueueDropsNewestMessages)
         count++;
     }
     EXPECT_EQ(count, MAVLINK_RX_QUEUE_SIZE - 1);
+}
+
+TEST_F(MavlinkRxTest, OverrideReleaseValueHoldsLastValue)
+{
+    uint16_t ch[18];
+    for (int i = 0; i < 18; i++) {
+        ch[i] = 1200;
+    }
+    sendOverride(ch);
+    ch[2] = UINT16_MAX - 1;
+    ch[9] = UINT16_MAX - 1;
+    sendOverride(ch);
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+
+    EXPECT_EQ(readChannel(2), 1200);
+    EXPECT_EQ(readChannel(9), 1200);
+}
+
+TEST_F(MavlinkRxTest, ManualControlMapsSticks)
+{
+    sendManual(500, -1000, 250, 1000);
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+
+    EXPECT_EQ(readChannel(ROLL), 1000);
+    EXPECT_EQ(readChannel(PITCH), 1750);
+    EXPECT_EQ(readChannel(YAW), 2000);
+    EXPECT_EQ(readChannel(THROTTLE), 1250);
+    for (uint8_t i = AUX1; i < 18; i++) {
+        EXPECT_EQ(readChannel(i), PWM_RANGE_MIN) << "channel " << (int)i;
+    }
+}
+
+TEST_F(MavlinkRxTest, ManualControlInvalidAxesAreNeutral)
+{
+    sendManual(INT16_MAX, 2000, INT16_MAX, -2000);
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+
+    EXPECT_EQ(readChannel(PITCH), MIDRC);
+    EXPECT_EQ(readChannel(ROLL), 2000);
+    EXPECT_EQ(readChannel(YAW), 1000);
+    EXPECT_EQ(readChannel(THROTTLE), PWM_RANGE_MIN);
+}
+
+TEST_F(MavlinkRxTest, ManualControlFollowsRcmap)
+{
+    rxConfig.rcmap[ROLL] = 3;
+    rxConfig.rcmap[THROTTLE] = 0;
+    sendManual(0, 1000, 800, 0);
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+
+    EXPECT_EQ(readChannel(0), 1800);
+    EXPECT_EQ(readChannel(3), 2000);
+}
+
+TEST_F(MavlinkRxTest, ManualControlAuxExtensions)
+{
+    sendManual(0, 0, 0, 0, (1 << 2) | (1 << 4), 1000, -1000);
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+
+    EXPECT_EQ(readChannel(AUX1), 2000);
+    EXPECT_EQ(readChannel(AUX2), PWM_RANGE_MIN);
+    EXPECT_EQ(readChannel(AUX3), 1000);
+}
+
+TEST_F(MavlinkRxTest, ManualControlNeedsLockedGcsAndOurTarget)
+{
+    sendManual(0, 0, 500, 0, 0, 0, 0, GCS_SYS - 1);
+    EXPECT_EQ(frame(), RX_FRAME_PENDING);
+
+    sendManual(0, 0, 500, 0, 0, 0, 0, GCS_SYS, FC_SYS + 1);
+    EXPECT_EQ(frame(), RX_FRAME_PENDING);
+
+    gcsSysid = 0;
+    sendManual(0, 0, 500, 0);
+    EXPECT_EQ(frame(), RX_FRAME_PENDING);
+}
+
+TEST_F(MavlinkRxTest, ManualControlIsNotQueued)
+{
+    sendManual(0, 0, 0, 0);
+    mavlink_message_t queued;
+    EXPECT_FALSE(mavlinkGetNextQueueMessage(&queued));
+}
+
+TEST_F(MavlinkRxTest, OverrideWinsOverManualControl)
+{
+    uint16_t ch[18];
+    for (int i = 0; i < 18; i++) {
+        ch[i] = 1300;
+    }
+    sendManual(0, 0, 900, 0);
+    sendOverride(ch);
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+    EXPECT_EQ(readChannel(THROTTLE), 1300);
+
+    sendManual(0, 0, 900, 0);
+    EXPECT_EQ(frame(), RX_FRAME_PENDING);
+    EXPECT_EQ(readChannel(THROTTLE), 1300);
+
+    advanceUs(500001);
+    sendManual(0, 0, 900, 0);
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+    EXPECT_EQ(readChannel(THROTTLE), 1900);
+}
+
+TEST_F(MavlinkRxTest, StaleManualControlGivesNoFrames)
+{
+    sendManual(0, 0, 900, 0);
+    advanceUs(500001);
+    EXPECT_EQ(frame(), RX_FRAME_PENDING);
+}
+
+TEST_F(MavlinkRxTest, GcsNeutralFramesWhileDisarmed)
+{
+    gcsFresh = true;
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+    EXPECT_EQ(readChannel(ROLL), MIDRC);
+    EXPECT_EQ(readChannel(PITCH), MIDRC);
+    EXPECT_EQ(readChannel(YAW), MIDRC);
+    EXPECT_EQ(readChannel(THROTTLE), PWM_RANGE_MIN);
+    EXPECT_EQ(readChannel(AUX1), PWM_RANGE_MIN);
+    EXPECT_EQ(rxRuntimeState.lastRcFrameTimeUs, fakeMicros);
+
+    advanceUs(19999);
+    EXPECT_EQ(frame(), RX_FRAME_PENDING);
+    advanceUs(1);
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+}
+
+TEST_F(MavlinkRxTest, GcsNeutralNeedsFreshGcs)
+{
+    gcsFresh = false;
+    EXPECT_EQ(frame(), RX_FRAME_PENDING);
+}
+
+TEST_F(MavlinkRxTest, GcsNeutralArmedOnlyBeforeThrottleOrInAutonomousModes)
+{
+    gcsFresh = true;
+    armingFlags = ARMED;
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+
+    throttleRaised = true;
+    flightModeFlags = ANGLE_MODE;
+    advanceUs(20000);
+    EXPECT_EQ(frame(), RX_FRAME_PENDING);
+
+    const uint16_t autonomousModes[] = { POS_HOLD_MODE, AUTOPILOT_MODE, GPS_RESCUE_MODE };
+    for (uint16_t mode : autonomousModes) {
+        flightModeFlags = mode;
+        advanceUs(20000);
+        EXPECT_EQ(frame(), RX_FRAME_COMPLETE) << "mode " << mode;
+    }
+}
+
+TEST_F(MavlinkRxTest, ManualControlWinsOverGcsNeutral)
+{
+    gcsFresh = true;
+    sendManual(0, 0, 700, 0);
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+    EXPECT_EQ(readChannel(THROTTLE), 1700);
+
+    advanceUs(20000);
+    EXPECT_EQ(frame(), RX_FRAME_PENDING);
 }

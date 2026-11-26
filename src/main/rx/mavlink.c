@@ -26,6 +26,10 @@
 #include "common/utils.h"
 #include "common/maths.h"
 
+#include "fc/core.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
 #include "io/serial.h"
 
 #include "rx/rx.h"
@@ -42,10 +46,35 @@
 
 #include "telemetry/mavlink_lib.h"
 
+#ifdef USE_TELEMETRY_MAVLINK
+#include "telemetry/mavlink.h"
+#endif
+
 #define MAVLINK_CHANNEL_COUNT 18
 #define MAVLINK_BAUD_RATE_INDEX BAUD_460800
+#define MAVLINK_RC_SOURCE_TIMEOUT_US 500000
+#define MAVLINK_GCS_NEUTRAL_INTERVAL_US 20000
+#define MAVLINK_MANUAL_CONTROL_AUX_COUNT 6
+#define MAVLINK_MANUAL_CONTROL_AUX1_BIT 2
+
+typedef enum {
+    MAVLINK_RC_SOURCE_NONE,
+    MAVLINK_RC_SOURCE_OVERRIDE,
+    MAVLINK_RC_SOURCE_MANUAL,
+    MAVLINK_RC_SOURCE_GCS_NEUTRAL,
+} mavlinkRcSource_e;
+
+typedef struct mavlinkRcInput_s {
+    uint16_t channels[MAVLINK_CHANNEL_COUNT];
+    volatile timeUs_t frameTimeUs;
+    volatile bool newFrame;
+} mavlinkRcInput_t;
+
 static uint16_t mavlinkChannelData[MAVLINK_CHANNEL_COUNT];
-static bool frameReceived;
+static mavlinkRcInput_t overrideInput;
+static mavlinkRcInput_t manualInput;
+static timeUs_t gcsNeutralFrameTimeUs;
+static const rxConfig_t *mavlinkRxConfig;
 
 static serialPort_t *serialPort = NULL;
 
@@ -98,23 +127,140 @@ void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg)
         msg->chan18_raw
     };
 
+    // 0, UINT16_MAX and UINT16_MAX - 1 mean ignore or release
     for (int i = 0; i < MAVLINK_CHANNEL_COUNT; i++) {
-        if (channels[i] != 0 && channels[i] != UINT16_MAX) {
-            mavlinkChannelData[i] = channels[i];
+        if (channels[i] != 0 && channels[i] < UINT16_MAX - 1) {
+            overrideInput.channels[i] = channels[i];
         }
     }
 
-    frameReceived = true;
+    overrideInput.frameTimeUs = micros();
+    overrideInput.newFrame = true;
+}
+
+static uint16_t mavlinkStickToUs(int16_t value, uint16_t neutral)
+{
+    if (value == INT16_MAX) {
+        return neutral;
+    }
+    return neutral + constrain(value, -1000, 1000) / 2;
+}
+
+static void mavlinkSetLogicalChannel(uint16_t *channels, uint8_t logical, uint16_t value)
+{
+    const uint8_t raw = logical < RX_MAPPABLE_CHANNEL_COUNT ? mavlinkRxConfig->rcmap[logical] : logical;
+    channels[raw] = value;
+}
+
+void mavlinkRxHandleManualControl(const mavlink_message_t *msg)
+{
+#ifdef USE_TELEMETRY_MAVLINK
+    if (!mavlinkIsGcsSysid(msg->sysid)) {
+        return;
+    }
+    mavlink_manual_control_t manual;
+    mavlink_msg_manual_control_decode(msg, &manual);
+    if (manual.target != 0 && manual.target != MAVLINK_SYSTEM_ID) {
+        return;
+    }
+
+    uint16_t channels[MAVLINK_CHANNEL_COUNT];
+    for (int i = 0; i < MAVLINK_CHANNEL_COUNT; i++) {
+        channels[i] = PWM_RANGE_MIN;
+    }
+    const uint16_t midrc = mavlinkRxConfig->midrc;
+    mavlinkSetLogicalChannel(channels, ROLL, mavlinkStickToUs(manual.y, midrc));
+    mavlinkSetLogicalChannel(channels, PITCH, mavlinkStickToUs(manual.x, midrc));
+    mavlinkSetLogicalChannel(channels, YAW, mavlinkStickToUs(manual.r, midrc));
+    const uint16_t throttle = manual.z == INT16_MAX ? PWM_RANGE_MIN : PWM_RANGE_MIN + constrain(manual.z, 0, 1000);
+    mavlinkSetLogicalChannel(channels, THROTTLE, throttle);
+
+    const int16_t aux[MAVLINK_MANUAL_CONTROL_AUX_COUNT] = { manual.aux1, manual.aux2, manual.aux3, manual.aux4, manual.aux5, manual.aux6 };
+    for (int i = 0; i < MAVLINK_MANUAL_CONTROL_AUX_COUNT; i++) {
+        if (manual.enabled_extensions & (1 << (MAVLINK_MANUAL_CONTROL_AUX1_BIT + i))) {
+            mavlinkSetLogicalChannel(channels, AUX1 + i, mavlinkStickToUs(aux[i], midrc));
+        }
+    }
+
+    memcpy(manualInput.channels, channels, sizeof(channels));
+    manualInput.frameTimeUs = micros();
+    manualInput.newFrame = true;
+#else
+    UNUSED(msg);
+#endif
+}
+
+#if ENABLE_REMOTE_ARM && defined(USE_TELEMETRY_MAVLINK)
+static bool mavlinkGcsNeutralAllowed(void)
+{
+    if (!mavlinkGcsIsFresh(millis())) {
+        return false;
+    }
+    return !ARMING_FLAG(ARMED) || !wasThrottleRaised() || FLIGHT_MODE(AUTOPILOT_MODE | POS_HOLD_MODE | GPS_RESCUE_MODE);
+}
+#endif
+
+static bool mavlinkRcInputIsFresh(const mavlinkRcInput_t *input, timeUs_t currentTimeUs)
+{
+    return input->frameTimeUs != 0 && cmpTimeUs(currentTimeUs, input->frameTimeUs) <= MAVLINK_RC_SOURCE_TIMEOUT_US;
+}
+
+static mavlinkRcSource_e mavlinkSelectRcSource(timeUs_t currentTimeUs)
+{
+    if (mavlinkRcInputIsFresh(&overrideInput, currentTimeUs)) {
+        return MAVLINK_RC_SOURCE_OVERRIDE;
+    }
+    if (mavlinkRcInputIsFresh(&manualInput, currentTimeUs)) {
+        return MAVLINK_RC_SOURCE_MANUAL;
+    }
+#if ENABLE_REMOTE_ARM && defined(USE_TELEMETRY_MAVLINK)
+    if (mavlinkGcsNeutralAllowed()) {
+        return MAVLINK_RC_SOURCE_GCS_NEUTRAL;
+    }
+#endif
+    return MAVLINK_RC_SOURCE_NONE;
+}
+
+static uint8_t mavlinkDeliverRcInput(mavlinkRcInput_t *input, rxRuntimeState_t *rxRuntimeState)
+{
+    if (!input->newFrame) {
+        return RX_FRAME_PENDING;
+    }
+    input->newFrame = false;
+    memcpy(mavlinkChannelData, input->channels, sizeof(mavlinkChannelData));
+    rxRuntimeState->lastRcFrameTimeUs = input->frameTimeUs;
+    return RX_FRAME_COMPLETE;
+}
+
+static uint8_t mavlinkDeliverGcsNeutral(rxRuntimeState_t *rxRuntimeState, timeUs_t currentTimeUs)
+{
+    if (gcsNeutralFrameTimeUs != 0 && cmpTimeUs(currentTimeUs, gcsNeutralFrameTimeUs) < MAVLINK_GCS_NEUTRAL_INTERVAL_US) {
+        return RX_FRAME_PENDING;
+    }
+    gcsNeutralFrameTimeUs = currentTimeUs;
+    for (int i = 0; i < MAVLINK_CHANNEL_COUNT; i++) {
+        mavlinkChannelData[i] = PWM_RANGE_MIN;
+    }
+    mavlinkSetLogicalChannel(mavlinkChannelData, ROLL, mavlinkRxConfig->midrc);
+    mavlinkSetLogicalChannel(mavlinkChannelData, PITCH, mavlinkRxConfig->midrc);
+    mavlinkSetLogicalChannel(mavlinkChannelData, YAW, mavlinkRxConfig->midrc);
+    rxRuntimeState->lastRcFrameTimeUs = currentTimeUs;
+    return RX_FRAME_COMPLETE;
 }
 
 static uint8_t mavlinkFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
-    UNUSED(rxRuntimeState);
-    if (frameReceived) {
-        frameReceived = false;
-        return RX_FRAME_COMPLETE;
+    const timeUs_t currentTimeUs = micros();
+    switch (mavlinkSelectRcSource(currentTimeUs)) {
+    case MAVLINK_RC_SOURCE_OVERRIDE:
+        return mavlinkDeliverRcInput(&overrideInput, rxRuntimeState);
+    case MAVLINK_RC_SOURCE_MANUAL:
+        return mavlinkDeliverRcInput(&manualInput, rxRuntimeState);
+    case MAVLINK_RC_SOURCE_GCS_NEUTRAL:
+        return mavlinkDeliverGcsNeutral(rxRuntimeState, currentTimeUs);
+    default:
+        return RX_FRAME_PENDING;
     }
-    return RX_FRAME_PENDING;
 }
 
 static float mavlinkReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t channel)
@@ -168,14 +314,16 @@ static void handleIncoming_RADIO_STATUS(void)
 
 STATIC_UNIT_TESTED void mavlinkDataReceive(uint16_t c, void *data)
 {
-    rxRuntimeState_t *const rxRuntimeState = (rxRuntimeState_t *const)data;
+    UNUSED(data);
     uint8_t result = mavlink_parse_char(0, c, &mavRecvMsg, &mavRecvStatus);
     if (result == MAVLINK_FRAMING_OK) {
         switch (mavRecvMsg.msgid) {
         case MAVLINK_MSG_ID_RC_CHANNELS_OVERRIDE:
             // Handle RC CHANNELS data immediately to get maximum RC rate
             handleIncoming_RC_CHANNELS_OVERRIDE();
-            rxRuntimeState->lastRcFrameTimeUs = micros();
+            break;
+        case MAVLINK_MSG_ID_MANUAL_CONTROL:
+            mavlinkRxHandleManualControl(&mavRecvMsg);
             break;
         case MAVLINK_MSG_ID_RADIO_STATUS:
             handleIncoming_RADIO_STATUS();
@@ -189,11 +337,15 @@ STATIC_UNIT_TESTED void mavlinkDataReceive(uint16_t c, void *data)
 
 bool mavlinkRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
-    frameReceived = false;
+    mavlinkRxConfig = rxConfig;
     txbuff_valid = false;
     txbuff_free = 100;
+    memset(&overrideInput, 0, sizeof(overrideInput));
+    memset(&manualInput, 0, sizeof(manualInput));
+    gcsNeutralFrameTimeUs = 0;
     for (int i = 0; i < MAVLINK_CHANNEL_COUNT; ++i) {
         mavlinkChannelData[i] = rxConfig->midrc;
+        overrideInput.channels[i] = rxConfig->midrc;
     }
 
     rxRuntimeState->channelData = mavlinkChannelData;

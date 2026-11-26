@@ -53,7 +53,6 @@
 #include "telemetry/mavlink.h"
 #include "telemetry/mavlink_mission.h"
 
-#define MAVLINK_SYSTEM_ID 1
 #define MAVLINK_COMPONENT_ID MAV_COMP_ID_AUTOPILOT1
 
 #define MISSION_UPLOAD_RETRY_MS   1500
