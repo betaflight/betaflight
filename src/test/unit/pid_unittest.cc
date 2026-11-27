@@ -38,6 +38,7 @@ float simulatedMotorMixRange = 0.0f;
 bool simulatedBelowLandingAltitude = false;
 bool simulatedFixedWing = false;
 bool simulatedAutopilotLanding = false;
+float simulatedMotorOutputRms = 0.0f;
 int disarmCount = 0;
 
 int16_t debug[DEBUG16_VALUE_COUNT];
@@ -74,6 +75,7 @@ extern "C" {
     #include "io/gps.h"
 
     #include "pg/autopilot.h"
+    #include "pg/motor.h"
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
 
@@ -95,6 +97,9 @@ extern "C" {
 
     float autopilotAngle[RP_AXIS_COUNT];
 
+    PG_REGISTER(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 0);
+    pidProfile_t *currentPidProfile;
+
     bool unitLaunchControlActive = false;
     launchControlMode_e unitLaunchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
 
@@ -110,6 +115,9 @@ extern "C" {
 
     bool isBelowLandingAltitude(void) { return simulatedBelowLandingAltitude; }
     bool isFixedWing(void) { return simulatedFixedWing; }
+    float getMotorOutputRms(void) { return simulatedMotorOutputRms; }
+    uint16_t getBatteryVoltageLatest(void) { return 0; }
+    bool isYawFromAutopilot(void) { return false; }
     bool autopilotIsLanding(void) { return simulatedAutopilotLanding; }
 
     void systemBeep(bool) { }
@@ -173,6 +181,7 @@ void setDefaultTestSettings(void)
 {
     pgResetAll();
     pidProfile = pidProfilesMutable(1);
+    currentPidProfile = pidProfile;
     pidProfile->pid[PID_ROLL]  =  { 40, 40, 30, 65, 0 };
     pidProfile->pid[PID_PITCH] =  { 58, 50, 35, 60, 0 };
     pidProfile->pid[PID_YAW]   =  { 70, 45, 20, 60, 0 };
@@ -256,6 +265,7 @@ void resetTest(void)
     simulatedBelowLandingAltitude = false;
     simulatedFixedWing = false;
     simulatedAutopilotLanding = false;
+    simulatedMotorOutputRms = 0.0f;
     acc.jerkMagnitude = 0.0f;
     unitLaunchControlActive = false;
     pidProfile->launchControlMode = unitLaunchControlMode;
@@ -1352,3 +1362,36 @@ TEST(pidControllerTest, testAutoLandingImpactDisarm)
     EXPECT_EQ(0, runImpact(2000.0f));
     EXPECT_EQ(1, runImpact(3000.0f));
 }
+
+#ifdef USE_WING
+// Fly the TPA speed model at full throttle, nose straight down, until it settles and return the settled speed
+static float runWingTpaDive(void)
+{
+    simulatedFixedWing = true;
+    simulatedMotorOutputRms = 1.0f;
+    attitude.values.pitch = 900; // nose down, 0.1 degrees
+    gyro.targetLooptime = 125; // 8 kHz
+    pidInit(pidProfile);
+    pidResetTpaSpeed();
+    const int loops = (int)(30.0f * pidRuntime.pidFrequency); // far longer than the model's time constant
+    for (int loop = 0; loop < loops; loop++) {
+        pidUpdateTpaFactor(1.0f);
+    }
+    return pidGetWingTpaSpeed();
+}
+
+TEST(pidControllerTest, testTpaSpeedBasicMaxSpeedIsDiveSpeed)
+{
+    pidProfile->tpa_speed_type = TPA_SPEED_BASIC;
+    const float diveSpeed = runWingTpaDive();
+    // The speed the estimate settles at is the speed TPA is normalised by, so it must not pass it
+    EXPECT_NEAR(diveSpeed, pidRuntime.tpaSpeed.maxSpeed, 0.01f * pidRuntime.tpaSpeed.maxSpeed);
+}
+
+TEST(pidControllerTest, testTpaSpeedAdvancedMaxSpeedIsDiveSpeed)
+{
+    pidProfile->tpa_speed_type = TPA_SPEED_ADVANCED;
+    const float diveSpeed = runWingTpaDive();
+    EXPECT_NEAR(diveSpeed, pidRuntime.tpaSpeed.maxSpeed, 0.01f * pidRuntime.tpaSpeed.maxSpeed);
+}
+#endif

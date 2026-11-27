@@ -857,6 +857,7 @@ pid_unittest_SRC :=  \
 
 pid_unittest_DEFINES := \
 		USE_ITERM_RELAX= \
+		USE_WING= \
 		USE_RC_SMOOTHING_FILTER= \
 		USE_LAUNCH_CONTROL= \
 		USE_FEEDFORWARD= \

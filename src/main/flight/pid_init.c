@@ -77,7 +77,8 @@ static void tpaSpeedBasicInit(const pidProfile_t *pidProfile)
     pidRuntime.tpaSpeed.twr = 1.0f / (gravityFactor * gravityFactor);
     const float massDragRatio = (2.0f / logf(3.0f)) * (2.0f / logf(3.0f)) * pidRuntime.tpaSpeed.twr * G_ACCELERATION * delaySec * delaySec;
     pidRuntime.tpaSpeed.dragMassRatio = 1.0f / massDragRatio;
-    pidRuntime.tpaSpeed.maxSpeed = sqrtf(massDragRatio * pidRuntime.tpaSpeed.twr * G_ACCELERATION + G_ACCELERATION);
+    // full throttle nose down terminal speed, where thrust + gravity = drag
+    pidRuntime.tpaSpeed.maxSpeed = sqrtf(massDragRatio * (pidRuntime.tpaSpeed.twr + 1.0f) * G_ACCELERATION);
     pidRuntime.tpaSpeed.inversePropMaxSpeed = 0.0f;
 }
 
