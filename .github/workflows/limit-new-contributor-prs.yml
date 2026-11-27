@@ -1,0 +1,30 @@
+name: Limit open PRs from new contributors
+
+# Runs in the base repo context with no checkout of PR code.
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  limit:
+    if: >-
+      github.event.pull_request.user.type != 'Bot' &&
+      contains(fromJSON('["FIRST_TIMER","FIRST_TIME_CONTRIBUTOR","NONE"]'), github.event.pull_request.author_association)
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+      AUTHOR: ${{ github.event.pull_request.user.login }}
+    steps:
+      - name: Close if author already has an open PR
+        run: |
+          others=$(gh api "repos/$REPO/pulls?state=open&per_page=100" --paginate \
+            --jq "[.[] | select(.user.login == \"$AUTHOR\" and .number != $PR) | \"#\(.number)\"] | join(\", \")")
+          [ -z "$others" ] && exit 0
+
+          gh api "repos/$REPO/issues/$PR/comments" -f body="Thanks for your contribution. New contributors can have one open pull request at a time; you already have $others. Please wait until it has been reviewed before opening another. This pull request has been closed and will not be reopened automatically."
+          gh api -X PATCH "repos/$REPO/pulls/$PR" -f state=closed
