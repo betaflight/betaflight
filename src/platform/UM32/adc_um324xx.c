@@ -154,11 +154,11 @@ static void adcInitDevice(adcDevice_t *adcdev, int channelCount)
     hadc->Init.ClockPrescaler           = 10;
     hadc->Init.NbrOfConversion          = channelCount;
 
-	if(HAL_ADC_Init(hadc) != HAL_OK)
-	{
-		/* Initialization Error */
-		Error_Handler();
-	}
+    if(HAL_ADC_Init(hadc) != HAL_OK)
+    {
+        /* Initialization Error */
+        Error_Handler();
+    }
 }
 
 
@@ -244,18 +244,18 @@ void adcInit(const adcConfig_t *config)
 #ifdef USE_ADC_INTERNAL
     adcInitCalibrationValues();
 
-	hts.Instance = TS;
-	hts.Init.Mode 		= TS_NORMAL_MODE;
-	hts.Init.WorkMode 	= TS_HIGH_SPEED_MODE;
-	hts.Init.ChopEn 	= TS_CHOP_CLK_EN;
-	hts.Init.ChopDiv 	= tsCalcChopperClkDiv(TS_CHOP_CLK_TYPICAL_HZ);
-	hts.Init.irq_en    = DISABLE;
+    hts.Instance = TS;
+    hts.Init.Mode       = TS_NORMAL_MODE;
+    hts.Init.WorkMode   = TS_HIGH_SPEED_MODE;
+    hts.Init.ChopEn     = TS_CHOP_CLK_EN;
+    hts.Init.ChopDiv    = tsCalcChopperClkDiv(TS_CHOP_CLK_TYPICAL_HZ);
+    hts.Init.irq_en    = DISABLE;
 
-	if(HAL_TS_Init(&hts) != HAL_OK)
-	{
-	/* Initialization Error */
-		Error_Handler();
-	}
+    if(HAL_TS_Init(&hts) != HAL_OK)
+    {
+    /* Initialization Error */
+        Error_Handler();
+    }
 
     adcOperatingConfig[ADC_VREFINT].enabled = true;
     adcOperatingConfig[ADC_TEMPSENSOR].enabled = true;

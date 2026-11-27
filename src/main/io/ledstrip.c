@@ -155,7 +155,7 @@ static hsvColor_t getHsvFromVtxFrequency(uint16_t freq)
     }
     else {
         if (freq < VTX_HUE_START_FREQ) {
-            // fold frequencies below RaceBand up to equivalent RaceBand frequencies for Hue assignment 
+            // fold frequencies below RaceBand up to equivalent RaceBand frequencies for Hue assignment
             freq += bandRange;
         }
     if (freq > VTX_HUE_STOP_FREQ) {

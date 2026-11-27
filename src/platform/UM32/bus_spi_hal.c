@@ -176,8 +176,8 @@ void spiInternalResetDescriptors(busDevice_t *bus)
     dmaInitTx->DstHsSel = LL_DMA_DST_HS_HW;                /* src shake hand               */
     dmaInitTx->DstReload = LL_DMA_DST_RELOAD_DISABLE;             /* dst auto reload              */
     dmaInitTx->SrcReload = LL_DMA_SRC_RELOAD_DISABLE;             /* src auto reload              */
-	dmaInitTx->SrcInc = LL_DMA_SRCINC_INC;							  /* src address increase         */
-	dmaInitTx->DstInc = LL_DMA_DSTINC_NOC;							  /* dst address unchanged        */
+    dmaInitTx->SrcInc = LL_DMA_SRCINC_INC;                              /* src address increase         */
+    dmaInitTx->DstInc = LL_DMA_DSTINC_NOC;                              /* dst address unchanged        */
     dmaInitTx->Priority = LL_DMA_PRIORITY_7;
     if (bus->dmaRx) {
         LL_DMA_InitTypeDef *dmaInitRx = bus->dmaInitRx;
@@ -264,14 +264,14 @@ void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segmen
     if (txData) {
         dmaInitTx->SrcAddress = (uint32_t)txData;
         dmaInitTx->DstAddress = (uint32_t)&(instance->TXREG);
-        dmaInitTx->SrcInc = LL_DMA_SRCINC_INC;							  /* src address increase         */
-	    dmaInitTx->DstInc = LL_DMA_DSTINC_NOC;
+        dmaInitTx->SrcInc = LL_DMA_SRCINC_INC;                              /* src address increase         */
+        dmaInitTx->DstInc = LL_DMA_DSTINC_NOC;
     } else {
         dummyTxByte = 0xff;
         dmaInitTx->SrcAddress = (uint32_t)&dummyTxByte;
         dmaInitTx->DstAddress = (uint32_t)&(instance->TXREG);
-        dmaInitTx->SrcInc = LL_DMA_SRCINC_NOC;							  /* src address increase         */
-	    dmaInitTx->DstInc = LL_DMA_DSTINC_NOC;
+        dmaInitTx->SrcInc = LL_DMA_SRCINC_NOC;                              /* src address increase         */
+        dmaInitTx->DstInc = LL_DMA_DSTINC_NOC;
     }
     dmaInitTx->NbData = len;
 

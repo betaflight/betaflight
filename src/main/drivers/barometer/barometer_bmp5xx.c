@@ -501,7 +501,7 @@ static bool bmp5xxReadUP(baroDev_t *baro)
     // Read temperature and pressure data (6 bytes starting from TEMP_DATA_XLSB)
     // Registers are: TEMP_XLSB (0x1D), TEMP_LSB (0x1E), TEMP_MSB (0x1F),
     //                PRESS_XLSB (0x20), PRESS_LSB (0x21), PRESS_MSB (0x22)
-    return bmp5xxReadRegisterBuffer(&baro->dev, BMP5XX_REG_TEMP_DATA_XLSB, 
+    return bmp5xxReadRegisterBuffer(&baro->dev, BMP5XX_REG_TEMP_DATA_XLSB,
         sensor_data, BMP5XX_DATA_FRAME_SIZE);
 }
 
@@ -514,7 +514,7 @@ static bool bmp5xxReadUP(baroDev_t *baro)
 static bool bmp5xxGetUP(baroDev_t *baro)
 {
     UNUSED(baro);
-    
+
     // Parse temperature (24-bit, signed)
     bmp5xx_ut = (uint32_t)sensor_data[0] |
                 ((uint32_t)sensor_data[1] << 8) |

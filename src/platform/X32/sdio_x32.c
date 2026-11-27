@@ -207,7 +207,7 @@ void SDMMC_port_config(void)
         return;
     }
 
-    RCC_EnableAHB5PeriphClk1(RCC_AHB5_PERIPHEN_M7_GPIOB | RCC_AHB5_PERIPHEN_M7_GPIOC | RCC_AHB5_PERIPHEN_M7_GPIOD 
+    RCC_EnableAHB5PeriphClk1(RCC_AHB5_PERIPHEN_M7_GPIOB | RCC_AHB5_PERIPHEN_M7_GPIOC | RCC_AHB5_PERIPHEN_M7_GPIOD
         | RCC_AHB5_PERIPHEN_M7_GPIOA | RCC_AHB5_PERIPHEN_M7_GPIOG,ENABLE);
     RCC_EnableAHB5PeriphClk2(RCC_AHB5_PERIPHEN_M7_AFIO,ENABLE);
 
@@ -436,16 +436,16 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
     uint32_t timeout_value;
     // uint32_t timeout_temp;
     uint32_t persacle_value;
-    
+
     /* SD card clock initialization, configure xin_clk to 100M move to systemInit */
     // RCC_ConfigHse(RCC_HSE_ENABLE);
     // RCC_WaitHseStable();
     // RCC_ConfigPll2(RCC_PLL_SRC_HSI,64000000,500000000,ENABLE);
     // /* configure PLL1A is PLL1 */
     // RCC_ConfigPLL2ADivider(RCC_PLLA_DIV5);
-    
+
     if(sdioHardware->instance == SDMMC1)
-    { 
+    {
         /* Config  Clock Source for SDMMC , SDCLK is 500/5 = 100MHz */
         RCC_ConfigSDMMC1KerClk(RCC_SDMMC1KERCLK_SRC_PLL2A,RCC_SDMMC1KERCLK_AXIDIV1);
         /* Enable DEVICE clock */
@@ -454,7 +454,7 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
         RCC_EnableAXIPeriphReset1(RCC_AXI_PERIPHRST_SDMMC1 | RCC_AXI_PERIPHRST_SDHOST1);
 
         AFIO_SDMMCClkSel(SDMMC1_CLKFB,ENABLE);
-    } 
+    }
     else if(sdioHardware->instance == SDMMC2)
     {
         /* Config  Clock Source for SDMMC , SDCLK is 500/5 = 100MHz */
@@ -469,16 +469,16 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
 
     /* SDMMC IO config */
     SDMMC_port_config();
-    
+
     /* SDMMC Wrapper register config */
     SDMMC_Config();
-    
+
     /* enable all status signal */
     SDMMC_EnableFlagStatus(card->SDHOSTx,SDHOST_AllInterruptFlags,ENABLE);
 
     /* Change the detection of SD card CD pin to TEST mode, default to high */
     SDMMC_ConfigCardDetectSignal(card->SDHOSTx,SDMMC_CARDDETECT_TEST,SDMMC_CARDTESTLEVEL_HIGH);
-    
+
     /* Wait for the card to be inserted for 1 second */
     timeout_value = 0;
     // SysTick_start_time();
@@ -495,12 +495,12 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
         }
     }
     // SysTick_Stop_time();
-    
+
     if(status_temp != Status_Success)
     {
         return status_temp;
     }
-    
+
     /* Enable SD card power and clock */
     SDMMC_EnablePower(card->SDHOSTx,ENABLE);
     /* The SD physical layer spec requires at least 1ms after VDD is stable before the host
@@ -523,7 +523,7 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
     {
         persacle_value = SD_XIN_CLK/400000U/2;
     }
-    
+
     /* SDMMC_SetSdClock() reports whether the clock actually went stable; ignoring it means a
      * dead clock only shows up later as an unexplained command timeout.
      */
@@ -536,13 +536,13 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
      */
     SDMMC_Delay(1);
     /** A series of commands begins to begin the card identification process. **/
-    
+
     /* CMD0 */
     if(sdSendCommand(card,SDMMC_GoIdleState,0x00,CARD_ResponseTypeNone) != Status_Success)
     {
         return Status_Fail;
     }
-    
+
     /* CMD8 */
     //arg[19:16] = 0001b 2.7V~3.6V,arg[15:8] = 0xAA check pattern
     if(sdSendCommand(card,SD_SendInterfaceCondition,0x1AAU,CARD_ResponseTypeR7) != Status_Success)
@@ -560,7 +560,7 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
             card->sd_card_information.flags |= SD_SupportSdhcFlag;
         }
     }
-    
+
     /* ACMD41 */
     card->sd_card_information.busy = 0x00U;
     timeout_value = 0;
@@ -570,10 +570,10 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
     while((card->sd_card_information.busy != 0x80000000U) && (timeout_value < 1000))
     {
         /* ACMD41 */
-        /* arg[31] busy bit 
-        arg[30] HCS bit(Host Capacity support): 1b SDHC or SDXC supported , 0b SDSC only Host 
-        arg[28] XPC bit(SDXC Power Contorl): 1b Maximum Performance , 0b Power Saving 
-        arg[24] S18R bit(Switching to 1.8V request): 1b switch to 1.8V signal voltage , 0b use current signal voltage 
+        /* arg[31] busy bit
+        arg[30] HCS bit(Host Capacity support): 1b SDHC or SDXC supported , 0b SDSC only Host
+        arg[28] XPC bit(SDXC Power Contorl): 1b Maximum Performance , 0b Power Saving
+        arg[24] S18R bit(Switching to 1.8V request): 1b switch to 1.8V signal voltage , 0b use current signal voltage
         arg[23:15]: VDD Voltage Window, bit20: 3.2~3.3V
         */
         if(card->card_workmode.operationVoltageflag == SD_OperationVoltage180V)
@@ -590,21 +590,21 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
 
             }
         }
-        
+
         card->sd_card_information.busy = (card->command.response[0] & 0x80000000U);
-        
+
         /* timeout cnt */
         SDMMC_Delay(1);
         timeout_value++;
     }
-    
+
     if(timeout_value >= 1000)
     {
         return Status_Fail;
     }
-    
+
     // SysTick_Stop_time();
-    
+
     if((card->command.response[0] & 0x40000000U) == 0x40000000U)
     {
         card->sd_card_information.flags |= SD_SupportHighCapacityFlag;
@@ -614,8 +614,8 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
         card->sd_card_information.flags |= SD_SupportVoltage180v;
     }
     card->sd_card_information.ocr = (card->command.response[0] & 0x00FFFF00U) >> 8U;
-    
-    
+
+
     /* cmd11 */
     if(card->card_workmode.operationVoltageflag == SD_OperationVoltage180V)
     {
@@ -624,8 +624,8 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
             return Status_CardSwitchFailed;
         }
     }
-    
-    
+
+
     /* CMD2 */
     if(sdSendCommand(card,SDMMC_AllSendCid,0x00,CARD_ResponseTypeR2) != Status_Success)
     {
@@ -637,16 +637,16 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
     SD_Handle.CID[1] = card->command.response[2U];
     SD_Handle.CID[2] = card->command.response[1U];
     SD_Handle.CID[3] = card->command.response[0U];
-    
-    
+
+
     /* CMD3 */
     if(sdSendCommand(card,SD_SendRelativeAddress,0x00,CARD_ResponseTypeR6) != Status_Success)
     {
         return Status_Fail;
     }
     card->sd_card_information.rca = ((card->command.response[0U] & 0xFFFF0000U) >> 16U);
-    
-    
+
+
     /* CMD9 */
     if(sdSendCommand(card,SDMMC_SendCsd,card->sd_card_information.rca << 16,CARD_ResponseTypeR2) != Status_Success)
     {
@@ -658,31 +658,31 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
     SD_Handle.CSD[1] = card->command.response[2U];
     SD_Handle.CSD[2] = card->command.response[1U];
     SD_Handle.CSD[3] = card->command.response[0U];
-    
+
     /* CMD7 */
     if(sdSendCommand(card,SDMMC_SelectCard,card->sd_card_information.rca << 16,CARD_ResponseTypeR1b) != Status_Success)
     {
         return Status_Fail;
     }
-    
+
     /* ACMD51 */
     if(SD_SendSCR(card) != Status_Success)
     {
         return Status_Fail;
     }
-    
+
     /* polling card status idle */
     if (Status_CardStatusIdle != SD_PollingCardStatusBusy(card, SD_CARD_ACCESS_WAIT_IDLE_TIMEOUT))
     {
         return Status_Fail;
     }
-    
+
     /* CMD16 */
     if(sdSendCommand(card,SDMMC_SetBlockLength,FSL_SDMMC_DEFAULT_BLOCK_SIZE,CARD_ResponseTypeR1) != Status_Success)
     {
         return Status_Fail;
     }
-    
+
     /* Set to 4-bit data bus mode. */
     if(card->card_workmode.busWidth == SDMMC_BusWdith4Bit)
     {
@@ -711,7 +711,7 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
     {
         SDMMC_ConfigWorkMode(card->SDHOSTx,card->card_workmode.mode);
     }
-    
+
     /* Set to sdclk. */
     if(((SD_XIN_CLK % card->card_workmode.busClock_Hz) != 0)  || ((SD_XIN_CLK/card->card_workmode.busClock_Hz)%2 != 0))
     {
@@ -735,10 +735,10 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
         return Status_Fail;
     }
 
-    /* This function is not necessary. Depending on the hardware and card, 
+    /* This function is not necessary. Depending on the hardware and card,
        you can decide whether to enable TX CLK delay and how much delay to use */
     SDMMC_EnableManualTuningOut(card->SDMMCx,8,ENABLE);
-    
+
     return status_temp;
 }
 
@@ -778,7 +778,7 @@ static SD_Error_t SD_DoInit(void)
         card.card_workmode.busWidth = SDMMC_BusWdith1Bit; // FIXME untested
     }
 
-    card.card_workmode.mode = SDMMC_HS; 
+    card.card_workmode.mode = SDMMC_HS;
     card.card_workmode.busClock_Hz = 50000000;
     card.card_workmode.dma = SDMMC_SDMA;
     card.card_workmode.operationVoltageflag = SD_OperationVoltage330V;

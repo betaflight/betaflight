@@ -39,7 +39,7 @@
 #define USBD_VCP_CONFIGURATION_FS_STRING  "VCP Config"
 #define USBD_VCP_INTERFACE_FS_STRING      "VCP Interface"
 
-USBD_DEVICE_DESC USBD_VCP_desc = 
+USBD_DEVICE_DESC USBD_VCP_desc =
 {
     USBD_VCP_USER_DeviceDescriptor,
     USBD_VCP_USER_LangIDStrDescriptor,
@@ -57,7 +57,7 @@ USBD_DEVICE_DESC USBD_VCP_desc =
 #endif
 #endif                          /* USB_INTERNAL_DMA_ENABLED */
 /* USB VCP Standard Device Descriptor */
-__ALIGN_BEGIN uint8_t USBD_VCP_DeviceDesc[USB_SIZ_DEVICE_DESC] __ALIGN_END = 
+__ALIGN_BEGIN uint8_t USBD_VCP_DeviceDesc[USB_SIZ_DEVICE_DESC] __ALIGN_END =
 {
     0x12,                         /* bLength */
     USB_DEVICE_DESCRIPTOR_TYPE,   /* bDescriptorType */
@@ -87,7 +87,7 @@ __ALIGN_BEGIN uint8_t USBD_VCP_DeviceDesc[USB_SIZ_DEVICE_DESC] __ALIGN_END =
 #endif                          /* USB_INTERNAL_DMA_ENABLED */
 /* USB Standard Device Descriptor */
 __ALIGN_BEGIN uint8_t USBD_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_DESC]
-  __ALIGN_END = 
+  __ALIGN_END =
 {
     USB_LEN_DEV_QUALIFIER_DESC,
     USB_DESC_TYPE_DEVICE_QUALIFIER,
@@ -107,7 +107,7 @@ __ALIGN_BEGIN uint8_t USBD_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_DESC]
 #endif
 #endif                          /* USB_INTERNAL_DMA_ENABLED */
 /* USB Standard Device Descriptor */
-__ALIGN_BEGIN uint8_t USBD_LangIDDesc[USB_SIZ_STRING_LANGID] __ALIGN_END = 
+__ALIGN_BEGIN uint8_t USBD_LangIDDesc[USB_SIZ_STRING_LANGID] __ALIGN_END =
 {
     USB_SIZ_STRING_LANGID,
     USB_DESC_TYPE_STRING,
@@ -115,7 +115,7 @@ __ALIGN_BEGIN uint8_t USBD_LangIDDesc[USB_SIZ_STRING_LANGID] __ALIGN_END =
     HIBYTE(USBD_LANGID_STRING),
 };
 
-uint8_t USBD_StringSerial[USB_SIZ_STRING_SERIAL] = 
+uint8_t USBD_StringSerial[USB_SIZ_STRING_SERIAL] =
 {
     USB_SIZ_STRING_SERIAL,
     USB_DESC_TYPE_STRING,
@@ -133,7 +133,7 @@ __ALIGN_BEGIN uint8_t USBD_StrDesc[USB_MAX_STR_DESC_SIZ] __ALIGN_END;
 *\*\name   IntToUnicode.
 *\*\fun    Convert Hex 32Bits value into char.
 *\*\param  value: value to convert
-*\*\param  pbuf: pointer to the buffer 
+*\*\param  pbuf: pointer to the buffer
 *\*\param  len: buffer length
 *\*\return none.
 */

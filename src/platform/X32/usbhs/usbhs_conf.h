@@ -22,7 +22,7 @@
 #define __USBHS_CONF__H__
 
 #include "platform.h"
- 
+
 /** USBHS CONFIGURATION **/
 
 #define RX_FIFO_HS_SIZE                          512
@@ -43,7 +43,7 @@
 #define USB_INTERNAL_DMA_ENABLED
 
 //#define USB_DEDICATED_EP_ENABLED
- 
+
 #if ((RX_FIFO_HS_SIZE + \
      TX0_FIFO_HS_SIZE + TX1_FIFO_HS_SIZE + TX2_FIFO_HS_SIZE + TX3_FIFO_HS_SIZE + TX4_FIFO_HS_SIZE + \
      TX5_FIFO_HS_SIZE + TX6_FIFO_HS_SIZE + TX7_FIFO_HS_SIZE + TX8_FIFO_HS_SIZE) > 1024U)
@@ -99,7 +99,7 @@
   #define __packed    __packed
 #elif defined (__ICCARM__)     /* IAR Compiler */
   #define __packed    __packed
-#elif defined   ( __GNUC__ )   /* GNU Compiler */                        
+#elif defined   ( __GNUC__ )   /* GNU Compiler */
   #define __packed    __attribute__ ((__packed__))
 #endif /* __CC_ARM */
 #endif /* __packed */

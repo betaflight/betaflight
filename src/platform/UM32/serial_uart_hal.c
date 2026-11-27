@@ -353,7 +353,7 @@ void uartIrqHandler(uartPort_t *s)
 
     pHandle->Instance = (UART_TypeDef *)s->USARTx;
 
-	uint32_t usrflags   = READ_REG(pHandle->Instance->USR);
+    uint32_t usrflags   = READ_REG(pHandle->Instance->USR);
     uint32_t lsrflags   = READ_REG(pHandle->Instance->LSR) | uartBidirTakeErrors(s);
     uint32_t ierits     = READ_REG(pHandle->Instance->IER);
     uint32_t errorflags = 0x00U;

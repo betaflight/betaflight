@@ -213,7 +213,7 @@ static bool mmc560xRead(magDev_t *magDev, int16_t *magData)
 
     // In continuous mode at 100Hz, data should always be available
     // Just read the data directly without checking status
-    
+
     // Read all 9 bytes of magnetic data (18-bit resolution)
     // Registers 0x00-0x08: X[17:10], X[9:2], Y[17:10], Y[9:2], Z[17:10], Z[9:2], X[1:0], Y[1:0], Z[1:0]
     if (!busReadRegisterBuffer(dev, MMC560X_REG_XOUT0, buf, 9)) {
@@ -263,7 +263,7 @@ bool mmc560xDetect(magDev_t *magDev)
     // Read product ID
     uint8_t productId = 0;
     delay(10);  // Allow sensor to power up
-    
+
     bool ack = busReadRegisterBuffer(dev, MMC560X_REG_PRODUCT_ID, &productId, 1);
     if (!ack || productId != MMC560X_PRODUCT_ID) {
         return false;

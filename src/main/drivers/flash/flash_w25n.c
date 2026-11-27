@@ -186,7 +186,7 @@ static void w25n_performCommandWithPageAddress(flashDeviceIO_t *io, uint8_t comm
     if (io->mode == FLASHIO_SPI) {
         extDevice_t *dev = io->handle.dev;
 
-        uint8_t cmd[] = { command, dummyval, (pageAddress >> 8) & 0xff, (pageAddress >> 0) & 0xff};           
+        uint8_t cmd[] = { command, dummyval, (pageAddress >> 8) & 0xff, (pageAddress >> 0) & 0xff};
 
         busSegment_t segments[] = {
                 {.u.buffers = {cmd, NULL}, sizeof(cmd), true, NULL},

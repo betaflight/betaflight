@@ -34,7 +34,7 @@ typedef enum {
 } fbOsdInitStatus_e;
 
 // fbOsdConfig not currently used, we could put e.g. horizontal and vertical offsets in here.
-struct fbOsdConfig_s; 
+struct fbOsdConfig_s;
 
 // Per platform implementation of framebuffer OSD.
 fbOsdInitStatus_e fbOsdInit(const struct fbOsdConfig_s *fbOsdConfig, const struct vcdProfile_s *vcdProfile);

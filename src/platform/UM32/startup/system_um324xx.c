@@ -106,8 +106,8 @@ void exFlashInit(void)
 
     QSPI_HandleTypeDef hqspi = {0};
 
-	hqspi.Instance = QSPI;
-	hqspi.DataSize                 = QSPI_DATASIZE_8BIT;
+    hqspi.Instance = QSPI;
+    hqspi.DataSize                 = QSPI_DATASIZE_8BIT;
     hqspi.Init.CSInvalidDelay      = 0x5;
     hqspi.Init.CSStartDelay        = 0x0;
     hqspi.Init.CSStopDelay         = 0x5;
@@ -201,17 +201,17 @@ void SystemInit(void)
 {
     // initialiseMemorySections();
 
-	/* enable Access PMU register*/
-	PMU->CPR  = 0xABCD;
-	/* Set PDR(rising 1.87V/falling 1.77V),BOR(2.43V)*/
-	PMU->VDCR  = 0x0000A983;
-	/* not reset BOR configure and pmu state*/
-	PMU->SASR = 0x00000025;
+    /* enable Access PMU register*/
+    PMU->CPR  = 0xABCD;
+    /* Set PDR(rising 1.87V/falling 1.77V),BOR(2.43V)*/
+    PMU->VDCR  = 0x0000A983;
+    /* not reset BOR configure and pmu state*/
+    PMU->SASR = 0x00000025;
 
-	/* enable Access RCM register*/
-	RCM->RCMPR = 0xA5A55A5A;
-	/* enable reset filter*/
-	RCM->EXRSTFER |= (1<<0);
+    /* enable Access RCM register*/
+    RCM->RCMPR = 0xA5A55A5A;
+    /* enable reset filter*/
+    RCM->EXRSTFER |= (1<<0);
 
     /* FPU settings ---------------------------------------------------------*/
 #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
@@ -220,18 +220,18 @@ void SystemInit(void)
 #endif
 
 #if(0)
-	  /* Query Method Delay Initialize */
-	delay_init(HAL_RCM_GetHCLKFreq());
+      /* Query Method Delay Initialize */
+    delay_init(HAL_RCM_GetHCLKFreq());
 #endif
-	/*boost configer*/
-	(*(volatile uint32_t *)(0x400801c0)) = 0x77BBBB77;
-	(*(volatile uint32_t *)(0x40080000)) = 0xA5A55A5A;
-	(*(volatile uint32_t *)(0x40080038)) = (((*(volatile uint32_t *)(0x40080038)) & 0xFFFFFFF0) | 0xA);
-	(*(volatile uint32_t *)(0x400801c0)) = 0x00000000;
+    /*boost configer*/
+    (*(volatile uint32_t *)(0x400801c0)) = 0x77BBBB77;
+    (*(volatile uint32_t *)(0x40080000)) = 0xA5A55A5A;
+    (*(volatile uint32_t *)(0x40080038)) = (((*(volatile uint32_t *)(0x40080038)) & 0xFFFFFFF0) | 0xA);
+    (*(volatile uint32_t *)(0x400801c0)) = 0x00000000;
   (*(volatile uint32_t *)(0x40080000)) = 0xFFFFFFFF;
 
 #if(0)
-	delay(1);
+    delay(1);
 #else
     __NOP(); __NOP(); __NOP(); __NOP(); __NOP();__NOP(); __NOP(); __NOP(); __NOP(); __NOP();
 #endif
@@ -320,67 +320,67 @@ void SystemInit(void)
   */
 void SystemCoreClockUpdate(void)
 {
-	uint32_t tmp = 0, pllvco = 0, pllp = 2, pllsource = 0, pllm = 2;
+    uint32_t tmp = 0, pllvco = 0, pllp = 2, pllsource = 0, pllm = 2;
     uint32_t cfgr0 = 0U;
 
-	/* Get SYSCLK source -------------------------------------------------------*/
-	tmp = ((RCM->CFGR0 & RCM_CFGR0_SYS_SWS)>>2);
+    /* Get SYSCLK source -------------------------------------------------------*/
+    tmp = ((RCM->CFGR0 & RCM_CFGR0_SYS_SWS)>>2);
 
-	switch (tmp)
-	{
-		case 0x00:  /* RCH used as system clock source */
-			SystemCoreClock = (RCH_VALUE / (((RCM->CFGR0 & RCM_CFGR0_RCH_DIV) >> RCM_CFGR0_RCH_DIV_Pos) + 1));
-			break;
-		case 0x01:  /* XTH used as system clock source */
-			SystemCoreClock = XTH_VALUE;
-			break;
-		case 0x02:  /* PLL0 used as system clock source */
+    switch (tmp)
+    {
+        case 0x00:  /* RCH used as system clock source */
+            SystemCoreClock = (RCH_VALUE / (((RCM->CFGR0 & RCM_CFGR0_RCH_DIV) >> RCM_CFGR0_RCH_DIV_Pos) + 1));
+            break;
+        case 0x01:  /* XTH used as system clock source */
+            SystemCoreClock = XTH_VALUE;
+            break;
+        case 0x02:  /* PLL0 used as system clock source */
 
-			/*
-				PLL_VCO = (RCH_VALUE or XTH_VALUE / PLL_M) * PLL_N
-				SYSCLK = PLL_VCO / PLL_P
-			*/
-			pllsource = (RCM->CR0 & RCM_CR0_PLLSRC) >> RCM_CR0_PLLSRC_Pos;
-			pllm = ((RCM->PLL0CFGR0 & RCM_PLL0CFGR0_PLL0_DM) >> RCM_PLL0CFGR0_PLL0_DM_Pos);
+            /*
+                PLL_VCO = (RCH_VALUE or XTH_VALUE / PLL_M) * PLL_N
+                SYSCLK = PLL_VCO / PLL_P
+            */
+            pllsource = (RCM->CR0 & RCM_CR0_PLLSRC) >> RCM_CR0_PLLSRC_Pos;
+            pllm = ((RCM->PLL0CFGR0 & RCM_PLL0CFGR0_PLL0_DM) >> RCM_PLL0CFGR0_PLL0_DM_Pos);
 
-			if (pllsource != 0)
-			{
-				/* XTH used as PLL0 clock source */
-				pllvco = (XTH_VALUE / pllm) * ((RCM->PLL0CFGR0 & RCM_PLL0CFGR0_PLL0_DN) >> RCM_PLL0CFGR0_PLL0_DN_Pos);
-			}
-			else
-			{
+            if (pllsource != 0)
+            {
+                /* XTH used as PLL0 clock source */
+                pllvco = (XTH_VALUE / pllm) * ((RCM->PLL0CFGR0 & RCM_PLL0CFGR0_PLL0_DN) >> RCM_PLL0CFGR0_PLL0_DN_Pos);
+            }
+            else
+            {
                 cfgr0 = RCM->CFGR0;
-				/* RCH used as PLL0 clock source */
-				pllvco = (((RCH_VALUE / (((RCM->CFGR0 & RCM_CFGR0_RCH_DIV) >> RCM_CFGR0_RCH_DIV_Pos) + 1)) / pllm) * ((RCM->PLL0CFGR0 & RCM_PLL0CFGR0_PLL0_DN) >> RCM_PLL0CFGR0_PLL0_DN_Pos))>>(AHBPrescTable[(cfgr0 & RCM_CFGR0_AHB_DIV)>> RCM_CFGR0_AHB_DIV_Pos]);
-			}
+                /* RCH used as PLL0 clock source */
+                pllvco = (((RCH_VALUE / (((RCM->CFGR0 & RCM_CFGR0_RCH_DIV) >> RCM_CFGR0_RCH_DIV_Pos) + 1)) / pllm) * ((RCM->PLL0CFGR0 & RCM_PLL0CFGR0_PLL0_DN) >> RCM_PLL0CFGR0_PLL0_DN_Pos))>>(AHBPrescTable[(cfgr0 & RCM_CFGR0_AHB_DIV)>> RCM_CFGR0_AHB_DIV_Pos]);
+            }
 
-			pllp = ((RCM->PLL0CFGR0 & RCM_PLL0CFGR0_PLL0_DP) >> RCM_PLL0CFGR0_PLL0_DP_Pos);
+            pllp = ((RCM->PLL0CFGR0 & RCM_PLL0CFGR0_PLL0_DP) >> RCM_PLL0CFGR0_PLL0_DP_Pos);
 
-			SystemCoreClock = (pllvco/pllp);
-			break;
-		case 0x03:  /* RCL or XTL used as system clock source */
-			if(READ_BIT(PMU->XTLCR, PMU_XTLCR_LSCLK_SEL))
-			{
-				/* XTL used as Low Speed clock source */
-				SystemCoreClock = XTL_VALUE;
-			}
-			else
-			{
-				/* RCL used as Low Speed clock source */
-				SystemCoreClock = RCL_VALUE;
-			}
-			break;
-		default:
-			SystemCoreClock = RCH_VALUE;
-		break;
-	}
-	/* Compute HCLK frequency --------------------------------------------------*/
-	/* Get HCLK prescaler */
-	tmp = AHBPrescTable[((RCM->CFGR0 & RCM_CFGR0_AHB_DIV) >> RCM_CFGR0_AHB_DIV_Pos)];
+            SystemCoreClock = (pllvco/pllp);
+            break;
+        case 0x03:  /* RCL or XTL used as system clock source */
+            if(READ_BIT(PMU->XTLCR, PMU_XTLCR_LSCLK_SEL))
+            {
+                /* XTL used as Low Speed clock source */
+                SystemCoreClock = XTL_VALUE;
+            }
+            else
+            {
+                /* RCL used as Low Speed clock source */
+                SystemCoreClock = RCL_VALUE;
+            }
+            break;
+        default:
+            SystemCoreClock = RCH_VALUE;
+        break;
+    }
+    /* Compute HCLK frequency --------------------------------------------------*/
+    /* Get HCLK prescaler */
+    tmp = AHBPrescTable[((RCM->CFGR0 & RCM_CFGR0_AHB_DIV) >> RCM_CFGR0_AHB_DIV_Pos)];
 
     /* HCLK frequency */
-	SystemCoreClock >>= tmp;
+    SystemCoreClock >>= tmp;
 }
 
 void Error_Handler(void)
@@ -503,11 +503,11 @@ void SystemClock_Config(void)
         RCM_ClkInitStruct.ClockType = (RCM_CLOCKTYPE_SYSCLK | RCM_CLOCKTYPE_RCH | RCM_CLOCKTYPE_HCLK | RCM_CLOCKTYPE_PCLK0 |RCM_CLOCKTYPE_PCLK1 | RCM_CLOCKTYPE_PCLK2| RCM_CLOCKTYPE_PCLK3);
         RCM_ClkInitStruct.RCHDivider = RCM_RCH_DIV1;
         RCM_ClkInitStruct.SYSCLKSource = RCM_SYSCLKSOURCE_RCH;
-        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV1;		//SystemCoreClock = RCH/RCM_SYSCLK_DIV1 = 48Mhz/1 = 48MHz
-        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV1;		//APB0Clock = SystemCoreClock/RCM_PCLK0_DIV1 = 48MHz/1 = 48MHz
-        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;		//APB1Clock = SystemCoreClock/RCM_PCLK1_DIV1 = 48MHz/1 = 48MHz
-        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;		//APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 48MHz/1 = 48MHz
-        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV1;		//APB3Clock = SystemCoreClock/RCM_PCLK3_DIV1 = 48MHz/1 = 48MHz
+        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV1;        //SystemCoreClock = RCH/RCM_SYSCLK_DIV1 = 48Mhz/1 = 48MHz
+        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV1;        //APB0Clock = SystemCoreClock/RCM_PCLK0_DIV1 = 48MHz/1 = 48MHz
+        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;        //APB1Clock = SystemCoreClock/RCM_PCLK1_DIV1 = 48MHz/1 = 48MHz
+        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;        //APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 48MHz/1 = 48MHz
+        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV1;        //APB3Clock = SystemCoreClock/RCM_PCLK3_DIV1 = 48MHz/1 = 48MHz
 
         flashWaitCycles = FLASH_RWAITCYC_0;
     }
@@ -531,11 +531,11 @@ void SystemClock_Config(void)
         RCM_ClkInitStruct.ClockType = (RCM_CLOCKTYPE_SYSCLK | RCM_CLOCKTYPE_RCH | RCM_CLOCKTYPE_HCLK | RCM_CLOCKTYPE_PCLK0 |RCM_CLOCKTYPE_PCLK1 | RCM_CLOCKTYPE_PCLK2| RCM_CLOCKTYPE_PCLK3);
         RCM_ClkInitStruct.RCHDivider = RCM_RCH_DIV2;
         RCM_ClkInitStruct.SYSCLKSource = RCM_SYSCLKSOURCE_PLL0CLK;
-        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV2;		//SystemCoreClock = Fclk/RCM_SYSCLK_DIV2 = 336Mhz/2 = 168MHz
-        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV4;		//APB0Clock = SystemCoreClock/RCM_PCLK0_DIV4 = 168MHz/4 = 42MHz
-        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;		//APB1Clock = SystemCoreClock/RCM_PCLK1_DIV1 = 168MHz/1 = 168MHz
-        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;		//APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 168MHz/1 = 168MHz
-        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV4;		//APB3Clock = SystemCoreClock/RCM_PCLK3_DIV4 = 168MHz/4 = 42MHz
+        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV2;        //SystemCoreClock = Fclk/RCM_SYSCLK_DIV2 = 336Mhz/2 = 168MHz
+        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV4;        //APB0Clock = SystemCoreClock/RCM_PCLK0_DIV4 = 168MHz/4 = 42MHz
+        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;        //APB1Clock = SystemCoreClock/RCM_PCLK1_DIV1 = 168MHz/1 = 168MHz
+        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;        //APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 168MHz/1 = 168MHz
+        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV4;        //APB3Clock = SystemCoreClock/RCM_PCLK3_DIV4 = 168MHz/4 = 42MHz
 
         flashWaitCycles = FLASH_RWAITCYC_3;
 #endif
@@ -550,11 +550,11 @@ void SystemClock_Config(void)
         RCM_ClkInitStruct.ClockType = (RCM_CLOCKTYPE_SYSCLK | RCM_CLOCKTYPE_RCH | RCM_CLOCKTYPE_HCLK | RCM_CLOCKTYPE_PCLK0 |RCM_CLOCKTYPE_PCLK1 | RCM_CLOCKTYPE_PCLK2| RCM_CLOCKTYPE_PCLK3);
         RCM_ClkInitStruct.RCHDivider = RCM_RCH_DIV2;
         RCM_ClkInitStruct.SYSCLKSource = RCM_SYSCLKSOURCE_PLL0CLK;
-        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV1;		//SystemCoreClock = Fclk/RCM_SYSCLK_DIV1 = 204Mhz/1 = 204MHz
-        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV8;		//APB0Clock = SystemCoreClock/RCM_PCLK0_DIV8 = 204MHz/8 = 25.5MHz
-        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;		//APB1Clock = SystemCoreClock/RCM_PCLK1_DIV1 = 204MHz/1 = 204MHz
-        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;		//APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 204MHz/1 = 204MHz
-        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV8;		//APB3Clock = SystemCoreClock/RCM_PCLK3_DIV8 = 204MHz/8 = 25.5MHz
+        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV1;        //SystemCoreClock = Fclk/RCM_SYSCLK_DIV1 = 204Mhz/1 = 204MHz
+        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV8;        //APB0Clock = SystemCoreClock/RCM_PCLK0_DIV8 = 204MHz/8 = 25.5MHz
+        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;        //APB1Clock = SystemCoreClock/RCM_PCLK1_DIV1 = 204MHz/1 = 204MHz
+        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;        //APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 204MHz/1 = 204MHz
+        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV8;        //APB3Clock = SystemCoreClock/RCM_PCLK3_DIV8 = 204MHz/8 = 25.5MHz
 
         flashWaitCycles = FLASH_RWAITCYC_4;
 #endif
@@ -569,11 +569,11 @@ void SystemClock_Config(void)
         RCM_ClkInitStruct.ClockType = (RCM_CLOCKTYPE_SYSCLK | RCM_CLOCKTYPE_RCH | RCM_CLOCKTYPE_HCLK | RCM_CLOCKTYPE_PCLK0 |RCM_CLOCKTYPE_PCLK1 | RCM_CLOCKTYPE_PCLK2| RCM_CLOCKTYPE_PCLK3);
         RCM_ClkInitStruct.RCHDivider = RCM_RCH_DIV2;
         RCM_ClkInitStruct.SYSCLKSource = RCM_SYSCLKSOURCE_PLL0CLK;
-        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV1;		//SystemCoreClock = Fclk/RCM_SYSCLK_DIV1 = 240Mhz/1 = 240MHz
-        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV8;		//APB0Clock = SystemCoreClock/RCM_PCLK0_DIV8 = 240MHz/8 = 30MHz
-        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;		//APB1Clock = SystemCoreClock/RCM_PCLK1_DIV1 = 240MHz/1 = 240MHz
-        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;		//APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 240MHz/1 = 240MHz
-        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV8;		//APB3Clock = SystemCoreClock/RCM_PCLK3_DIV8 = 240MHz/8 = 30MHz
+        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV1;        //SystemCoreClock = Fclk/RCM_SYSCLK_DIV1 = 240Mhz/1 = 240MHz
+        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV8;        //APB0Clock = SystemCoreClock/RCM_PCLK0_DIV8 = 240MHz/8 = 30MHz
+        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;        //APB1Clock = SystemCoreClock/RCM_PCLK1_DIV1 = 240MHz/1 = 240MHz
+        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;        //APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 240MHz/1 = 240MHz
+        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV8;        //APB3Clock = SystemCoreClock/RCM_PCLK3_DIV8 = 240MHz/8 = 30MHz
 
         flashWaitCycles = FLASH_RWAITCYC_4;
 #endif
@@ -590,11 +590,11 @@ void SystemClock_Config(void)
          clocks dividers */
         RCM_ClkInitStruct.ClockType = (RCM_CLOCKTYPE_SYSCLK | RCM_CLOCKTYPE_HCLK | RCM_CLOCKTYPE_PCLK0 |RCM_CLOCKTYPE_PCLK1 | RCM_CLOCKTYPE_PCLK2| RCM_CLOCKTYPE_PCLK3);
         RCM_ClkInitStruct.SYSCLKSource = RCM_SYSCLKSOURCE_XTH;
-        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV1;		//SystemCoreClock = XTH/RCM_SYSCLK_DIV1 = 8Mhz/1 = 8MHz
-        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV1;		//APB0Clock = SystemCoreClock/RCM_PCLK0_DIV1 = 8MHz/1 = 8MHz
-        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;		//APB1Clock = SystemCoreClock/RCM_PCLK1_DIV1 = 8MHz/1 = 8MHz
-        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;		//APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 8MHz/1 = 8MHz
-        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV1;		//APB3Clock = SystemCoreClock/RCM_PCLK3_DIV1 = 8MHz/1 = 8MHz
+        RCM_ClkInitStruct.AHBCLKDivider = RCM_SYSCLK_DIV1;        //SystemCoreClock = XTH/RCM_SYSCLK_DIV1 = 8Mhz/1 = 8MHz
+        RCM_ClkInitStruct.APB0CLKDivider = RCM_PCLK0_DIV1;        //APB0Clock = SystemCoreClock/RCM_PCLK0_DIV1 = 8MHz/1 = 8MHz
+        RCM_ClkInitStruct.APB1CLKDivider = RCM_PCLK1_DIV1;        //APB1Clock = SystemCoreClock/RCM_PCLK1_DIV1 = 8MHz/1 = 8MHz
+        RCM_ClkInitStruct.APB2CLKDivider = RCM_PCLK2_DIV1;        //APB2Clock = SystemCoreClock/RCM_PCLK2_DIV1 = 8MHz/1 = 8MHz
+        RCM_ClkInitStruct.APB3CLKDivider = RCM_PCLK3_DIV1;        //APB3Clock = SystemCoreClock/RCM_PCLK3_DIV1 = 8MHz/1 = 8MHz
 
         flashWaitCycles = FLASH_RWAITCYC_0;
     }

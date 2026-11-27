@@ -30,9 +30,9 @@ extern "C" {
 /** X32M7XX_System */
 
  /** Power supply source configuration **/
-#define PWR_SUPPLY_MODE_MASK               (PWR_SYSCTRL4_MLDOEN | PWR_SYSCTRL4_DCDCEN | PWR_SYSCTRL4_VCORESRC | PWR_SYSCTRL4_DCDCFRCEN)    
+#define PWR_SUPPLY_MODE_MASK               (PWR_SYSCTRL4_MLDOEN | PWR_SYSCTRL4_DCDCEN | PWR_SYSCTRL4_VCORESRC | PWR_SYSCTRL4_DCDCFRCEN)
 #define PWR_LDO_SUPPLY                     (PWR_SYSCTRL4_MLDOEN)             /* Core domains are supplied from the LDO  */
-#define PWR_DIRECT_SMPS_SUPPLY             (PWR_SYSCTRL4_DCDCEN)             /* Core domains are supplied from the SMPS */ 
+#define PWR_DIRECT_SMPS_SUPPLY             (PWR_SYSCTRL4_DCDCEN)             /* Core domains are supplied from the SMPS */
 #define PWR_EXTERNAL_SOURCE_SUPPLY         (PWR_SYSCTRL4_VCORESRC)           /* The SMPS and the LDO are Bypassed. The Core domains are supplied from an external source */
 
  /** NRST Analog and Digital Filter configuration **/

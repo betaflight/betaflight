@@ -347,8 +347,8 @@ static uint32_t decodeOversampledTelemetry(int motorIndex, const uint32_t *buffe
 
         bprintf("diffs (1->2 %d 2->3 %d) %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d  %d %d %d %d M%d %s: eRPM=%u (raw=%04x) edges=%d cal=%d",
                 lengthTransitions[1], lengthTransitions[2],
-                edgeDiffs[0], edgeDiffs[1], edgeDiffs[2], edgeDiffs[3], edgeDiffs[4], edgeDiffs[5], edgeDiffs[6], edgeDiffs[7], 
-                edgeDiffs[8], edgeDiffs[9], edgeDiffs[10], edgeDiffs[11], edgeDiffs[12], edgeDiffs[13], edgeDiffs[14], edgeDiffs[15], 
+                edgeDiffs[0], edgeDiffs[1], edgeDiffs[2], edgeDiffs[3], edgeDiffs[4], edgeDiffs[5], edgeDiffs[6], edgeDiffs[7],
+                edgeDiffs[8], edgeDiffs[9], edgeDiffs[10], edgeDiffs[11], edgeDiffs[12], edgeDiffs[13], edgeDiffs[14], edgeDiffs[15],
                 edgeDiffs[16], edgeDiffs[17], edgeDiffs[18], edgeDiffs[19],
                 motorIndex, lastFailReason == FAIL_NONE ? "OK" : "Fail",
                 eRPM, decodedValue, edgeCount, calibrationComplete);

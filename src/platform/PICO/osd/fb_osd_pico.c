@@ -106,10 +106,10 @@ fbOsdInitStatus_e fbOsdInit(const struct fbOsdConfig_s *fbOsdConfig, const struc
         bprintf("FB_OSD fbOsdInit vcdProfile %p video system %d", vcdProfile, videoSystem);
         return FB_OSD_INIT_INITIALISING;
     }
-    
+
     int hSyncs = osdPioCountHSyncs();
 
-    
+
 #ifdef PICO_TRACE
     static int count;
     count++;
@@ -125,7 +125,7 @@ fbOsdInitStatus_e fbOsdInit(const struct fbOsdConfig_s *fbOsdConfig, const struc
         return FB_OSD_INIT_INITIALISING;
     }
 
-#ifdef PICO_TRACE    
+#ifdef PICO_TRACE
     if (count % 7 == 0 && hSyncs != lastHSyncs) {
         bprintf("OSD %d detected %d hSyncs", count, hSyncs);
     }
@@ -142,7 +142,7 @@ fbOsdInitStatus_e fbOsdInit(const struct fbOsdConfig_s *fbOsdConfig, const struc
     } else {
         repeatCount = 0;
     }
-    
+
     if (repeatCount == repeatTarget) {
         bool initOk;
         if (range == 1) {
@@ -165,7 +165,7 @@ fbOsdInitStatus_e fbOsdInit(const struct fbOsdConfig_s *fbOsdConfig, const struc
 
         return initOk ? FB_OSD_INIT_OK : FB_OSD_INIT_NOT_CONFIGURED;
     }
-    
+
     lastHSyncs = hSyncs;
     lastRange = range;
     return FB_OSD_INIT_INITIALISING;
@@ -251,7 +251,7 @@ void fbOsdFontUpdateCompletion(void)
 #endif
     bprintf("FONT fbOsdFontUpdateCompletion end");
 }
-    
+
 uint8_t fbOsdGetRowsCount(void)
 {
     return osdPioRowsCount();

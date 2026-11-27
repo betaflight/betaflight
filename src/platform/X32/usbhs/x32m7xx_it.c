@@ -30,7 +30,7 @@
 *\*\name    USB1_HS_WKUP_IRQHandler.
 *\*\fun     This function handles USB_HS_WKUP_IRQHandler Handler.
 *\*\param   none
-*\*\return  none 
+*\*\return  none
 **/
 void USB1_HS_WKUP_IRQHandler(void)
 {
@@ -42,7 +42,7 @@ void USB1_HS_WKUP_IRQHandler(void)
 *\*\name    USB1_HS_IRQHandler.
 *\*\fun     This function handles USB_HS_IRQHandler Handler.
 *\*\param   none
-*\*\return  none 
+*\*\return  none
 **/
 void USB1_HS_IRQHandler(void)
 {
@@ -54,7 +54,7 @@ void USB1_HS_IRQHandler(void)
 *\*\name    USB1_HS_EPx_OUT_IRQHandler.
 *\*\fun     This function handles USB_HS_EPx_OUT_IRQHandler Handler.
 *\*\param   none
-*\*\return  none 
+*\*\return  none
 **/
 void USB1_HS_EPx_OUT_IRQHandler()
 {
@@ -65,7 +65,7 @@ void USB1_HS_EPx_OUT_IRQHandler()
 *\*\name    USB1_HS_EPx_IN_IRQHandler.
 *\*\fun     This function handles USB_HS_EPx_IN_IRQHandler Handler.
 *\*\param   none
-*\*\return  none 
+*\*\return  none
 **/
 void USB1_HS_EPx_IN_IRQHandler()
 {
@@ -79,7 +79,7 @@ void USB1_HS_EPx_IN_IRQHandler()
 *\*\name    USB2_HS_WKUP_IRQHandler.
 *\*\fun     This function handles USB_HS_WKUP_IRQHandler Handler.
 *\*\param   none
-*\*\return  none 
+*\*\return  none
 **/
 void USB2_HS_WKUP_IRQHandler(void)
 {
@@ -91,7 +91,7 @@ void USB2_HS_WKUP_IRQHandler(void)
 *\*\name    USB2_HS_IRQHandler.
 *\*\fun     This function handles USB_HS_IRQHandler Handler.
 *\*\param   none
-*\*\return  none 
+*\*\return  none
 **/
 void USB2_HS_IRQHandler(void)
 {
@@ -103,7 +103,7 @@ void USB2_HS_IRQHandler(void)
 *\*\name    USB2_HS_EPx_OUT_IRQHandler.
 *\*\fun     This function handles USB_HS_EPx_OUT_IRQHandler Handler.
 *\*\param   none
-*\*\return  none 
+*\*\return  none
 **/
 void USB2_HS_EPx_OUT_IRQHandler()
 {
@@ -114,7 +114,7 @@ void USB2_HS_EPx_OUT_IRQHandler()
 *\*\name    USB2_HS_EPx_IN_IRQHandler.
 *\*\fun     This function handles USB_HS_EPx_IN_IRQHandler Handler.
 *\*\param   none
-*\*\return  none 
+*\*\return  none
 **/
 void USB2_HS_EPx_IN_IRQHandler()
 {
