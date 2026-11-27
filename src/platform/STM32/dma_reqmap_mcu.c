@@ -701,6 +701,10 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     REQMAP_DIR(UART, 7, TX),
     REQMAP_DIR(UART, 7, RX),
 #endif
+#ifdef USE_LPUART1
+    { DMA_PERIPH_UART_TX, UARTDEV_LP1, LL_LPDMA1_REQUEST_LPUART1_TX },
+    { DMA_PERIPH_UART_RX, UARTDEV_LP1, LL_LPDMA1_REQUEST_LPUART1_RX },
+#endif
 
 #ifdef USE_TIMER
 // Pseudo peripheral for TIMx_UP channel

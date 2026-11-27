@@ -69,7 +69,8 @@
 #error Unknown MCU
 #endif
 
-#ifdef STM32G4
+#if defined(STM32G4) || defined(STM32C5)
+// USB DRD FS device (no OTG core): map the OTG EP0 size name used by usbd_cdc_hid.c
 #define USB_OTG_MAX_EP0_SIZE USB_MAX_EP0_SIZE
 #endif
 
