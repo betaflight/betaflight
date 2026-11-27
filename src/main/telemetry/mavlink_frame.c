@@ -50,6 +50,11 @@ bool mavlinkFrameIsGlobal(uint8_t frame)
     }
 }
 
+bool mavlinkFrameIsRelativeAlt(uint8_t frame)
+{
+    return frame == MAV_FRAME_GLOBAL_RELATIVE_ALT || frame == MAV_FRAME_GLOBAL_RELATIVE_ALT_INT;
+}
+
 mavlinkFrameAltResult_e mavlinkFrameAltToAmslCm(uint8_t frame, float altM, int32_t *altCmAmsl)
 {
     if (!isfinite(altM) || fabsf(altM) > MAVLINK_FRAME_ALT_LIMIT_M) {
@@ -63,11 +68,13 @@ mavlinkFrameAltResult_e mavlinkFrameAltToAmslCm(uint8_t frame, float altM, int32
         return MAVLINK_FRAME_ALT_OK;
     case MAV_FRAME_GLOBAL_RELATIVE_ALT:
     case MAV_FRAME_GLOBAL_RELATIVE_ALT_INT:
-        if (!STATE(GPS_FIX_HOME)) {
-            return MAVLINK_FRAME_ALT_NO_HOME;
+#ifdef USE_GPS
+        if (STATE(GPS_FIX_HOME)) {
+            *altCmAmsl = altCm + GPS_home_llh.altCm;
+            return MAVLINK_FRAME_ALT_OK;
         }
-        *altCmAmsl = altCm + GPS_home_llh.altCm;
-        return MAVLINK_FRAME_ALT_OK;
+#endif
+        return MAVLINK_FRAME_ALT_NO_HOME;
     default:
         return MAVLINK_FRAME_ALT_UNSUPPORTED;
     }

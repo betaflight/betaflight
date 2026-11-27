@@ -477,6 +477,7 @@ typedef struct mavlinkCommand_s {
     int32_t lon1e7;
     bool hasAlt;
     int32_t altCm;              // AMSL
+    bool relativeAltFrame;
     uint8_t positionResult;     // MAV_RESULT for a position that was sent but cannot be used
     uint32_t senderSysid;
 } mavlinkCommand_t;
@@ -712,7 +713,7 @@ static uint8_t handleSetStandardMode(float standardModeF, uint32_t senderSysid)
             return selectMavCustomMode(mode, senderSysid);
         }
     }
-    return MAV_RESULT_UNSUPPORTED;
+    return MAV_RESULT_FAILED;
 }
 
 static uint8_t handleReturnToLaunch(void)
@@ -741,6 +742,9 @@ static uint8_t handleSetHome(const mavlinkCommand_t *cmd)
         return MAV_RESULT_ACCEPTED;
     }
 
+    if (cmd->relativeAltFrame) {
+        return MAV_RESULT_DENIED;
+    }
     if (cmd->positionResult != MAV_RESULT_ACCEPTED) {
         return cmd->positionResult;
     }
@@ -867,6 +871,7 @@ static void handleCommandInt(const mavlink_message_t *msg)
     mavlinkCommand_t cmd = {
         .command = in.command,
         .param = { in.param1, in.param2, in.param3, in.param4, NAN, NAN, in.z },
+        .relativeAltFrame = mavlinkFrameIsRelativeAlt(in.frame),
         .positionResult = MAV_RESULT_ACCEPTED,
         .senderSysid = msg->sysid,
     };

@@ -32,4 +32,5 @@ typedef enum {
 } mavlinkFrameAltResult_e;
 
 bool mavlinkFrameIsGlobal(uint8_t frame);
+bool mavlinkFrameIsRelativeAlt(uint8_t frame);
 mavlinkFrameAltResult_e mavlinkFrameAltToAmslCm(uint8_t frame, float altM, int32_t *altCmAmsl);

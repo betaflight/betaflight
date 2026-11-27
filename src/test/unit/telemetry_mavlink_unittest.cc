@@ -56,6 +56,7 @@ extern "C" {
     #include "sensors/battery.h"
     #include "telemetry/telemetry.h"
     #include "telemetry/mavlink.h"
+    #include "telemetry/mavlink_frame.h"
 
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
@@ -905,22 +906,30 @@ TEST_F(MavlinkTelemetryTest, SetHomeRejectsMissingCoordinates)
     EXPECT_FALSE(STATE(GPS_FIX_HOME));
 }
 
-TEST_F(MavlinkTelemetryTest, SetHomeFromCommandIntRelativeFrameIsAmsl)
+TEST_F(MavlinkTelemetryTest, SetHomeRejectsRelativeFrameSoResendsCannotShiftHome)
 {
     GPS_home_llh.altCm = 10000;
     ENABLE_STATE(GPS_FIX_HOME);
-    sent.clear();
-    commandInt(MAV_CMD_DO_SET_HOME, 0, -335000001, 1512500001, 20.5f, 0, MAV_FRAME_GLOBAL_RELATIVE_ALT_INT);
-    EXPECT_EQ(lastAck().result, MAV_RESULT_ACCEPTED);
-    EXPECT_EQ(GPS_home_llh.altCm, 12050);
+    for (int copy = 0; copy < 2; copy++) {
+        sent.clear();
+        commandInt(MAV_CMD_DO_SET_HOME, 0, -335000001, 1512500001, 20.5f, 0, MAV_FRAME_GLOBAL_RELATIVE_ALT_INT);
+        EXPECT_EQ(lastAck().result, MAV_RESULT_DENIED);
+        EXPECT_EQ(GPS_home_llh.altCm, 10000);
+    }
 }
 
-TEST_F(MavlinkTelemetryTest, CommandIntRelativeFrameWithoutHomeIsRejected)
+TEST_F(MavlinkTelemetryTest, RelativeFrameAltitudeIsAmslThroughHome)
 {
-    sent.clear();
-    commandInt(MAV_CMD_DO_SET_HOME, 0, -335000001, 1512500001, 20.5f, 0, MAV_FRAME_GLOBAL_RELATIVE_ALT);
-    EXPECT_EQ(lastAck().result, MAV_RESULT_TEMPORARILY_REJECTED);
-    EXPECT_FALSE(STATE(GPS_FIX_HOME));
+    int32_t altCm = 0;
+    EXPECT_EQ(mavlinkFrameAltToAmslCm(MAV_FRAME_GLOBAL_RELATIVE_ALT, 20.5f, &altCm), MAVLINK_FRAME_ALT_NO_HOME);
+
+    GPS_home_llh.altCm = 10000;
+    ENABLE_STATE(GPS_FIX_HOME);
+    EXPECT_EQ(mavlinkFrameAltToAmslCm(MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, 20.5f, &altCm), MAVLINK_FRAME_ALT_OK);
+    EXPECT_EQ(altCm, 12050);
+    EXPECT_EQ(mavlinkFrameAltToAmslCm(MAV_FRAME_GLOBAL_INT, 20.5f, &altCm), MAVLINK_FRAME_ALT_OK);
+    EXPECT_EQ(altCm, 2050);
+    EXPECT_EQ(mavlinkFrameAltToAmslCm(MAV_FRAME_LOCAL_NED, 20.5f, &altCm), MAVLINK_FRAME_ALT_UNSUPPORTED);
 }
 
 TEST_F(MavlinkTelemetryTest, CommandIntLocalFrameIsDeniedForPositions)
@@ -999,7 +1008,7 @@ TEST_F(MavlinkTelemetryTest, SetStandardModeRejectsUnknownWithoutTouchingOverrid
     const uint32_t before = overrideMask;
 
     EXPECT_EQ(ackResultFor(MAV_CMD_DO_SET_STANDARD_MODE, MAV_STANDARD_MODE_NON_STANDARD), MAV_RESULT_DENIED);
-    EXPECT_EQ(ackResultFor(MAV_CMD_DO_SET_STANDARD_MODE, MAV_STANDARD_MODE_ORBIT), MAV_RESULT_UNSUPPORTED);
+    EXPECT_EQ(ackResultFor(MAV_CMD_DO_SET_STANDARD_MODE, MAV_STANDARD_MODE_ORBIT), MAV_RESULT_FAILED);
     EXPECT_EQ(ackResultFor(MAV_CMD_DO_SET_STANDARD_MODE, NAN), MAV_RESULT_DENIED);
     EXPECT_EQ(overrideMask, before);
 }
