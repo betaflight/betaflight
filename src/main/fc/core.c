@@ -880,6 +880,13 @@ bool wasThrottleRaised(void)
     return throttleRaised;
 }
 
+void setThrottleRaised(void)
+{
+    if (ARMING_FLAG(ARMED)) {
+        throttleRaised = true;
+    }
+}
+
 /*
  * processRx called from taskUpdateRxMain
  */
@@ -923,7 +930,7 @@ bool processRx(timeUs_t currentTimeUs)
 
     // Note: If Airmode is enabled, on arming, iTerm and PIDs will be off until throttle exceeds the threshold (OFF while disarmed)
     // If not, iTerm will be off at low throttle, with pidStabilisationState determining whether PIDs will be active
-    if (ARMING_FLAG(ARMED) && (isAirmodeActive || throttleActive || launchControlActive || isFixedWing())) {
+    if (ARMING_FLAG(ARMED) && (isAirmodeActive || throttleActive || launchControlActive || isFixedWing() || FLIGHT_MODE(ALT_HOLD_MODE))) {
         // the wing launch holds iTerm off until spin-up, but must keep the rest
         // of the stabilisation running through the motor delay
         pidSetItermReset(launchWingHoldsIterm());
@@ -1044,7 +1051,7 @@ void processRxModes(timeUs_t currentTimeUs)
         && !isFixedWing()
         && !featureIsEnabled(FEATURE_3D)
         && !isAirmodeEnabled()
-        && !FLIGHT_MODE(GPS_RESCUE_MODE)  // disable auto-disarm when GPS Rescue is active
+        && !FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE)  // disable auto-disarm when GPS Rescue or the altitude controller flies the throttle
         && !flightPlanNavIsRescuePlanActive()  // ... or a plan rescue / fallback descent is flying
         && !flightPlanNavIsRescueDescentActive()
     ) {
