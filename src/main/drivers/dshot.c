@@ -148,6 +148,10 @@ FAST_CODE uint16_t prepareDshotPacket(dshotProtocolControl_t *pcb)
     return packet;
 }
 
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
+FAST_DATA_ZERO_INIT static float erpmToHz;
+#endif
+
 #ifdef USE_DSHOT_TELEMETRY
 
 FAST_DATA_ZERO_INIT dshotTelemetryState_t dshotTelemetryState;
@@ -155,7 +159,6 @@ FAST_DATA_ZERO_INIT dshotTelemetryState_t dshotTelemetryState;
 FAST_DATA_ZERO_INIT static pt1Filter_t motorFreqLpf[MAX_SUPPORTED_MOTORS];
 FAST_DATA_ZERO_INIT static float motorFrequencyHz[MAX_SUPPORTED_MOTORS];
 FAST_DATA_ZERO_INIT static float minMotorFrequencyHz;
-FAST_DATA_ZERO_INIT static float erpmToHz;
 FAST_DATA_ZERO_INIT static float dshotRpmAverage;
 FAST_DATA_ZERO_INIT static float dshotRpm[MAX_SUPPORTED_MOTORS];
 FAST_DATA_ZERO_INIT static bool edtAlwaysDecode;
@@ -179,29 +182,6 @@ static const dshotTelemetryType_t extendedTelemetryLookup[8] = {
     // State / events
     DSHOT_TELEMETRY_TYPE_STATE_EVENTS,
 };
-
-void initDshotTelemetry(const timeUs_t looptimeUs)
-{
-    // if bidirectional DShot is not available
-    if (!motorConfig()->dev.useDshotTelemetry && !featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        return;
-    }
-
-    // erpmToHz is used by bidir dshot and ESC telemetry
-    erpmToHz = ERPM_PER_LSB / SECONDS_PER_MINUTE / (motorConfig()->motorPoleCount / 2.0f);
-    edtAlwaysDecode = motorConfig()->dev.useDshotEdt == DSHOT_EDT_FORCE;
-
-#ifdef USE_RPM_FILTER
-    if (motorConfig()->dev.useDshotTelemetry) {
-        // init LPFs for RPM data
-        for (unsigned i = 0; i < dshotMotorCount; i++) {
-            pt1FilterInit(&motorFreqLpf[i], pt1FilterGain(rpmFilterConfig()->rpm_filter_lpf_hz, looptimeUs * 1e-6f));
-        }
-    }
-#else
-    UNUSED(looptimeUs);
-#endif
-}
 
 static uint32_t dshot_decode_eRPM_telemetry_value(uint16_t value)
 {
@@ -388,6 +368,31 @@ bool getDshotSensorData(escSensorData_t *dest, int motorIndex) {
 #endif // USE_DSHOT_TELEMETRY
 
 #if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
+
+void initDshotTelemetry(const timeUs_t looptimeUs)
+{
+    // if bidirectional DShot is not available
+    if (!motorConfig()->dev.useDshotTelemetry && !featureIsEnabled(FEATURE_ESC_SENSOR)) {
+        return;
+    }
+
+    // erpmToHz is used by bidir dshot and ESC telemetry
+    erpmToHz = ERPM_PER_LSB / SECONDS_PER_MINUTE / (motorConfig()->motorPoleCount / 2.0f);
+#ifdef USE_DSHOT_TELEMETRY
+    edtAlwaysDecode = motorConfig()->dev.useDshotEdt == DSHOT_EDT_FORCE;
+#endif
+
+#ifdef USE_RPM_FILTER
+    if (motorConfig()->dev.useDshotTelemetry) {
+        // init LPFs for RPM data
+        for (unsigned i = 0; i < dshotMotorCount; i++) {
+            pt1FilterInit(&motorFreqLpf[i], pt1FilterGain(rpmFilterConfig()->rpm_filter_lpf_hz, looptimeUs * 1e-6f));
+        }
+    }
+#else
+    UNUSED(looptimeUs);
+#endif
+}
 
 // Used with serial esc telem as well as dshot telem
 float erpmToRpm(uint32_t erpm)

@@ -672,7 +672,9 @@ static void bbWrite(uint8_t motorIndex, float value)
 // Each failure counts once, however many updates the port takes to recover.
 static void bbCheckLastFrame(void)
 {
+#ifdef USE_DSHOT_TELEMETRY
     const timeUs_t nowUs = micros();
+#endif
 
     for (int i = 0; i < usedMotorPorts; i++) {
         bbPort_t *bbPort = &bbPorts[i];

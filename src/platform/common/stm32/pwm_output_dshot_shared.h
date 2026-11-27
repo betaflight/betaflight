@@ -32,6 +32,10 @@ uint8_t getTimerIndex(void *timer);
 motorDmaOutput_t *getMotorDmaOutput(unsigned index);
 void dshotEnableChannels(unsigned motorCount);
 
+void pwmDshotRequestTelemetry(unsigned index);
+bool pwmDshotIsMotorIdle(unsigned index);
+bool pwmTelemetryDecode(void);
+
 #ifdef USE_DSHOT_TELEMETRY
 void pwmDshotSetDirectionOutput(
     motorDmaOutput_t * const motor
@@ -43,10 +47,5 @@ void pwmDshotSetDirectionOutput(
 #endif
 #endif
 );
-
-void pwmDshotRequestTelemetry(unsigned index);
-bool pwmDshotIsMotorIdle(unsigned index);
-bool pwmTelemetryDecode(void);
-
 #endif
 #endif
