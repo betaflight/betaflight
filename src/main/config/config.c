@@ -900,6 +900,8 @@ void changePidProfile(uint8_t pidProfileIndex)
         loadPidProfile();
 
         pidInit(currentPidProfile);
+        // after pidInit(): initRcProcessing() latches feedforward settings from pidRuntime
+        initRcProcessing();
         initEscEndpoints();
         mixerInitProfile();
     }
