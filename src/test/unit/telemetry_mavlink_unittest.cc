@@ -877,6 +877,15 @@ TEST_F(MavlinkTelemetryTest, SetModeRejectsFailsafeAndUnknownWithoutTouchingOver
     EXPECT_EQ(overrideMask, before);
 }
 
+#if !(ENABLE_FLIGHT_PLAN && ENABLE_REMOTE_ARM)
+TEST_F(MavlinkTelemetryTest, NavTakeoffNeedsRemoteArmAndTheFlightPlan)
+{
+    ENABLE_ARMING_FLAG(ARMED);
+    commandLong(MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, NAN, NAN, 50.0f);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_UNSUPPORTED);
+}
+#endif
+
 TEST_F(MavlinkTelemetryTest, ReturnToLaunchNeedsArmed)
 {
     EXPECT_EQ(ackResultFor(MAV_CMD_NAV_RETURN_TO_LAUNCH), MAV_RESULT_TEMPORARILY_REJECTED);

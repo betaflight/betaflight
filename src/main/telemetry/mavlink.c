@@ -41,6 +41,7 @@
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/autopilot.h"
 #include "pg/mavlink_gcs.h"
 #include "pg/rx.h"
 
@@ -56,6 +57,7 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
+#include "flight/autopilot.h"
 #include "flight/flight_plan_nav.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -652,18 +654,23 @@ static waypoint_t guidedWaypoint(const mavlinkCommand_t *cmd, waypointType_e typ
     };
 }
 
+static uint8_t engageGuided(const waypoint_t *wps, uint8_t count, float orbitRadiusM)
+{
+    if (!flightPlanNavSetGuidedPlan(wps, count, orbitRadiusM)) {
+        return MAV_RESULT_TEMPORARILY_REJECTED;
+    }
+    rcModeClearExternalOverrides();
+    rcModeSetExternalOverride(BOXAUTOPILOT, true);
+    return MAV_RESULT_ACCEPTED;
+}
+
 static uint8_t flyGuided(const waypoint_t *wp, float orbitRadiusM)
 {
     const uint8_t ready = guidedReadiness();
     if (ready != MAV_RESULT_ACCEPTED) {
         return ready;
     }
-    if (!flightPlanNavSetGuidedPlan(wp, 1, orbitRadiusM)) {
-        return MAV_RESULT_TEMPORARILY_REJECTED;
-    }
-    rcModeClearExternalOverrides();
-    rcModeSetExternalOverride(BOXAUTOPILOT, true);
-    return MAV_RESULT_ACCEPTED;
+    return engageGuided(wp, 1, orbitRadiusM);
 }
 #endif
 
@@ -874,6 +881,51 @@ static uint8_t handleNavLand(const mavlinkCommand_t *cmd)
 #endif
 }
 
+#if ENABLE_REMOTE_ARM && !defined(USE_WING)
+#define TAKEOFF_MIN_CLIMB_CM 100
+
+static uint8_t takeoffReadiness(void)
+{
+    if (!ARMING_FLAG(ARMED) || !sensors(SENSOR_ACC) || !STATE(GPS_FIX) || !STATE(GPS_FIX_HOME) || !isAltitudeAvailable()) {
+        return MAV_RESULT_TEMPORARILY_REJECTED;
+    }
+    if (!autopilotAltitudeControlAvailable() || !autopilotPositionControlAvailable() || autopilotConfig()->hoverThrottle == 0) {
+        return MAV_RESULT_DENIED;
+    }
+    return MAV_RESULT_ACCEPTED;
+}
+
+static uint8_t handleNavTakeoff(const mavlinkCommand_t *cmd)
+{
+    if (cmd->positionResult != MAV_RESULT_ACCEPTED) {
+        return cmd->positionResult;
+    }
+    if (!cmd->hasAlt) {
+        return MAV_RESULT_DENIED;
+    }
+    if (wasThrottleRaised()) {
+        waypoint_t hold = guidedWaypoint(NULL, WAYPOINT_TYPE_HOLD);
+        hold.altitude = cmd->altCm;
+        return flyGuided(&hold, 0.0f);
+    }
+    const uint8_t ready = takeoffReadiness();
+    if (ready != MAV_RESULT_ACCEPTED) {
+        return ready;
+    }
+    if (cmd->altCm < gpsSol.llh.altCm + TAKEOFF_MIN_CLIMB_CM) {
+        return MAV_RESULT_DENIED;
+    }
+    waypoint_t plan[] = { guidedWaypoint(NULL, WAYPOINT_TYPE_TAKEOFF), guidedWaypoint(NULL, WAYPOINT_TYPE_HOLD) };
+    plan[0].altitude = cmd->altCm;
+    plan[1].altitude = cmd->altCm;
+    const uint8_t result = engageGuided(plan, ARRAYLEN(plan), 0.0f);
+    if (result == MAV_RESULT_ACCEPTED) {
+        setThrottleRaised();
+    }
+    return result;
+}
+#endif
+
 static uint8_t handleReposition(const mavlinkCommand_t *cmd)
 {
     uint32_t flags;
@@ -1023,6 +1075,10 @@ static uint8_t mavlinkExecCommand(const mavlinkCommand_t *cmd)
     case MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN:
         return handleRebootShutdown(param[0]);
 #if ENABLE_FLIGHT_PLAN
+#if ENABLE_REMOTE_ARM && !defined(USE_WING)
+    case MAV_CMD_NAV_TAKEOFF:
+        return handleNavTakeoff(cmd);
+#endif
     case MAV_CMD_NAV_LAND:
         return handleNavLand(cmd);
     case MAV_CMD_DO_REPOSITION:
@@ -1671,6 +1727,11 @@ static uint8_t mavlinkLandedState(void)
     if (!ARMING_FLAG(ARMED) || !wasThrottleRaised()) {
         return MAV_LANDED_STATE_ON_GROUND;
     }
+#if ENABLE_FLIGHT_PLAN
+    if (flightPlanNavIsTakingOff()) {
+        return MAV_LANDED_STATE_TAKEOFF;
+    }
+#endif
     bool landing = failsafePhase() == FAILSAFE_LANDING || flightPlanNavIsRescueDescentActive();
 #if ENABLE_FLIGHT_PLAN
     landing = landing || (flightPlanNavIsActive() && flightPlanNavGetState() == FP_NAV_LANDING);

@@ -23,6 +23,10 @@
 #include "telemetry_mavlink_unittest.cc"
 
 extern "C" {
+    #include "pg/autopilot.h"
+
+    PG_REGISTER(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
+
     static bool navActive;
     static flightPlanNavState_e navState;
     static bool navGuided;
@@ -69,6 +73,12 @@ extern "C" {
     void flightPlanNavSetSpeedOverride(uint16_t speedCmS) { speedOverrideCmS = speedCmS; }
     uint16_t flightPlanNavGuidedOrbitPeriodDs(uint16_t, float) { return 200; }
     bool isAltitudeAvailable(void) { return altitudeAvailable; }
+
+    static bool altitudeControl;
+    static bool positionControl;
+    bool autopilotAltitudeControlAvailable(void) { return altitudeControl; }
+    bool autopilotPositionControlAvailable(void) { return positionControl; }
+    void setThrottleRaised(void) { throttleRaised = true; }
 }
 
 #define HERE_LAT -335000001
@@ -101,6 +111,9 @@ protected:
         startResult = true;
         speedOverrideCmS = -1;
         altitudeAvailable = true;
+        altitudeControl = true;
+        positionControl = true;
+        autopilotConfigMutable()->hoverThrottle = 1275;
 
         ENABLE_ARMING_FLAG(ARMED);
         throttleRaised = true;
@@ -338,4 +351,78 @@ TEST_F(MavlinkGuidedTest, OrbitFliesAGuidedOrbit)
     EXPECT_EQ(command(MAV_CMD_DO_ORBIT, 0.5f), MAV_RESULT_DENIED);
     EXPECT_EQ(command(MAV_CMD_DO_ORBIT, 25.0f, NAN, 0, -1.0f), MAV_RESULT_DENIED);
     EXPECT_TRUE(guidedPlan.empty());
+}
+
+TEST_F(MavlinkGuidedTest, TakeoffClimbsFromTheGroundAndHolds)
+{
+    throttleRaised = false;
+    ENABLE_STATE(GPS_FIX_HOME);
+
+    EXPECT_EQ(command(MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, NAN, NAN, (HERE_ALT_CM + 1000) / 100.0f), MAV_RESULT_ACCEPTED);
+    ASSERT_EQ(guidedPlan.size(), 2u);
+    EXPECT_EQ(guidedPlan[0].type, WAYPOINT_TYPE_TAKEOFF);
+    EXPECT_EQ(guidedPlan[1].type, WAYPOINT_TYPE_HOLD);
+    EXPECT_EQ(guidedPlan[1].duration, UINT16_MAX);
+    for (const waypoint_t &wp : guidedPlan) {
+        EXPECT_EQ(wp.latitude, HERE_LAT);
+        EXPECT_EQ(wp.longitude, HERE_LON);
+        EXPECT_EQ(wp.altitude, HERE_ALT_CM + 1000);
+    }
+    EXPECT_EQ(overrideMask, 1u << BOXAUTOPILOT);
+    EXPECT_TRUE(throttleRaised);
+}
+
+TEST_F(MavlinkGuidedTest, TakeoffNeedsATargetAtLeastAMetreUp)
+{
+    throttleRaised = false;
+    ENABLE_STATE(GPS_FIX_HOME);
+
+    EXPECT_EQ(command(MAV_CMD_NAV_TAKEOFF), MAV_RESULT_DENIED);
+    EXPECT_EQ(command(MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, NAN, NAN, (HERE_ALT_CM + 50) / 100.0f), MAV_RESULT_DENIED);
+    EXPECT_TRUE(guidedPlan.empty());
+    EXPECT_FALSE(throttleRaised);
+    EXPECT_EQ(overrideMask, 0u);
+}
+
+TEST_F(MavlinkGuidedTest, TakeoffWaitsUntilTheCraftCanFlyItself)
+{
+    const float targetM = (HERE_ALT_CM + 1000) / 100.0f;
+    throttleRaised = false;
+
+    EXPECT_EQ(command(MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, NAN, NAN, targetM), MAV_RESULT_TEMPORARILY_REJECTED);
+    ENABLE_STATE(GPS_FIX_HOME);
+    DISABLE_ARMING_FLAG(ARMED);
+    EXPECT_EQ(command(MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, NAN, NAN, targetM), MAV_RESULT_TEMPORARILY_REJECTED);
+    ENABLE_ARMING_FLAG(ARMED);
+    altitudeAvailable = false;
+    EXPECT_EQ(command(MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, NAN, NAN, targetM), MAV_RESULT_TEMPORARILY_REJECTED);
+    altitudeAvailable = true;
+    positionControl = false;
+    EXPECT_EQ(command(MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, NAN, NAN, targetM), MAV_RESULT_DENIED);
+    positionControl = true;
+    autopilotConfigMutable()->hoverThrottle = 0;
+    EXPECT_EQ(command(MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, NAN, NAN, targetM), MAV_RESULT_DENIED);
+    autopilotConfigMutable()->hoverThrottle = 1275;
+    guidedAccepted = false;
+    EXPECT_EQ(command(MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, NAN, NAN, targetM), MAV_RESULT_TEMPORARILY_REJECTED);
+
+    EXPECT_TRUE(guidedPlan.empty());
+    EXPECT_FALSE(throttleRaised);
+    EXPECT_EQ(overrideMask, 0u);
+}
+
+TEST_F(MavlinkGuidedTest, TakeoffInTheAirGoesToTheHeightAndHolds)
+{
+    EXPECT_EQ(command(MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, NAN, NAN, (HERE_ALT_CM + 500) / 100.0f), MAV_RESULT_ACCEPTED);
+    expectGuided(WAYPOINT_TYPE_HOLD, HERE_LAT, HERE_LON, HERE_ALT_CM + 500);
+    EXPECT_EQ(guidedPlan[0].duration, UINT16_MAX);
+}
+
+TEST_F(MavlinkExtendedSysStateTest, TakeoffLegIsTakeoff)
+{
+    ENABLE_ARMING_FLAG(ARMED);
+    throttleRaised = true;
+    navTakingOff = true;
+    EXPECT_EQ(requestState().landed_state, MAV_LANDED_STATE_TAKEOFF);
+    navTakingOff = false;
 }
