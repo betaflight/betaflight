@@ -767,6 +767,7 @@ telemetry_ibus_unittest_SRC := \
 
 telemetry_mavlink_unittest_SRC := \
 		$(USER_DIR)/telemetry/mavlink.c \
+		$(USER_DIR)/telemetry/mavlink_frame.c \
 		$(USER_DIR)/telemetry/mavlink_helpers.c \
 		$(USER_DIR)/common/maths.c
 
@@ -778,6 +779,7 @@ telemetry_mavlink_unittest_DEFINES := \
 
 telemetry_mavlink_remote_arm_unittest_SRC := \
 		$(USER_DIR)/telemetry/mavlink.c \
+		$(USER_DIR)/telemetry/mavlink_frame.c \
 		$(USER_DIR)/telemetry/mavlink_helpers.c \
 		$(USER_DIR)/common/maths.c
 
@@ -789,6 +791,7 @@ telemetry_mavlink_remote_arm_unittest_DEFINES := \
 
 telemetry_mavlink_mission_unittest_SRC := \
 		$(USER_DIR)/telemetry/mavlink_mission.c \
+		$(USER_DIR)/telemetry/mavlink_frame.c \
 		$(USER_DIR)/telemetry/mavlink_helpers.c \
 		$(USER_DIR)/pg/flight_plan.c \
 		$(USER_DIR)/pg/autopilot.c
@@ -803,6 +806,7 @@ telemetry_mavlink_mission_unittest_DEFINES := \
 
 telemetry_mavlink_mission_wing_unittest_SRC := \
 		$(USER_DIR)/telemetry/mavlink_mission.c \
+		$(USER_DIR)/telemetry/mavlink_frame.c \
 		$(USER_DIR)/telemetry/mavlink_helpers.c \
 		$(USER_DIR)/pg/flight_plan.c \
 		$(USER_DIR)/pg/autopilot.c
@@ -1070,6 +1074,7 @@ osd_nav_map_unittest_DEFINES := \
 
 mavlink_mission_unittest_SRC := \
 		$(USER_DIR)/telemetry/mavlink_mission.c \
+		$(USER_DIR)/telemetry/mavlink_frame.c \
 		$(USER_DIR)/telemetry/mavlink_helpers.c \
 		$(USER_DIR)/pg/autopilot.c \
 		$(USER_DIR)/pg/flight_plan.c

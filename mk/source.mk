@@ -302,6 +302,7 @@ COMMON_SRC = \
             telemetry/smartport.c \
             telemetry/ltm.c \
             telemetry/mavlink.c \
+            telemetry/mavlink_frame.c \
             telemetry/mavlink_helpers.c \
             telemetry/mavlink_mission.c \
             telemetry/msp_shared.c \
