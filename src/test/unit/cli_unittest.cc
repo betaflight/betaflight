@@ -46,6 +46,7 @@ extern "C" {
     #include "io/serial.h"
     #include "io/serial_feature_map.h"
     #include "io/vtx.h"
+    #include "io/vtx_control.h"
     #include "msp/msp.h"
     #include "msp/msp_box.h"
     #include "osd/osd.h"
@@ -113,6 +114,7 @@ extern "C" {
     PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
     PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
+    PG_REGISTER(vtxConfig_t, vtxConfig, PG_VTX_CONFIG, 0);
 
     PG_REGISTER_WITH_RESET_FN(int8_t, unitTestData, PG_RESERVED_FOR_TESTING_1, 0);
     PG_REGISTER(unitTest32_t, unitTest32Data, PG_RESERVED_FOR_TESTING_2, 0);
@@ -697,6 +699,42 @@ TEST(CLIUnittest, TestCliAdjrangeRejectsNegativeIndex)
 
     memset(adjustmentRangesMutable(29), 0, sizeof(adjustmentRange_t));
     EXPECT_FALSE(cliMode);
+}
+
+// atoi() read a malformed index such as 'foo' or '0x' as 0, so the command cleared or
+// overwrote entry 0. It must give the index range error and leave the entry unchanged.
+static void expectMalformedIndexRejected(const char *cmdName, const char *args, uint8_t *auxChannelIndex)
+{
+    const char *malformedIndexes[] = { "foo", "0x", "4294967296" };
+    char buf[64];
+    char cmd[64];
+
+    *auxChannelIndex = 2;
+    for (const char *index : malformedIndexes) {
+        for (const char *cmdArgs : { "", args }) {
+            snprintf(cmd, sizeof(cmd), "%s %s%s", cmdName, index, cmdArgs);
+            cliOutputReset();
+            cliExecuteCommand(cmd, buf, sizeof(buf));
+            EXPECT_NE(nullptr, strstr(cliOutput, "INDEX NOT BETWEEN")) << cmd;
+            EXPECT_EQ(2, *auxChannelIndex) << cmd;
+        }
+    }
+    *auxChannelIndex = 0;
+}
+
+TEST(CLIUnittest, TestCliAuxRejectsMalformedIndex)
+{
+    expectMalformedIndexRejected("aux", " 0 1 1700 2100 0 0", &modeActivationConditionsMutable(0)->auxChannelIndex);
+}
+
+TEST(CLIUnittest, TestCliAdjrangeRejectsMalformedIndex)
+{
+    expectMalformedIndexRejected("adjrange", " 0 1 1700 2100 1 2", &adjustmentRangesMutable(0)->auxChannelIndex);
+}
+
+TEST(CLIUnittest, TestCliVtxRejectsMalformedIndex)
+{
+    expectMalformedIndexRejected("vtx", " 1 1 1 0 1700 2100", &vtxConfigMutable()->vtxChannelActivationConditions[0].auxChannelIndex);
 }
 #endif
 

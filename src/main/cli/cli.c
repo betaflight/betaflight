@@ -1166,6 +1166,18 @@ static void cliShowArgumentRangeError(const char *cmdName, char *name, int min, 
     }
 }
 
+// Returns the index in arg, or -1 if arg is not a whole number from 0 to count - 1
+static int parseIndexArg(const char *arg, int count)
+{
+    char *endptr;
+    const long index = strtol(arg, &endptr, 10);
+    if (endptr == arg || (*endptr != '\0' && *endptr != ' ') || index < 0 || index >= count) {
+        return -1;
+    }
+
+    return index;
+}
+
 static const char *nextArg(const char *currentArg)
 {
     if (!currentArg) {
@@ -1375,8 +1387,8 @@ RAM_CODE static void cliAux(const char *cmdName, char *cmdline)
         printAux(DUMP_MASTER, modeActivationConditions(0), NULL, NULL);
     } else {
         ptr = cmdline;
-        i = atoi(ptr++);
-        if (i >= 0 && i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
+        i = parseIndexArg(ptr++, MAX_MODE_ACTIVATION_CONDITION_COUNT);
+        if (i >= 0) {
             modeActivationCondition_t *mac = modeActivationConditionsMutable(i);
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
@@ -1940,8 +1952,8 @@ RAM_CODE static void cliAdjustmentRange(const char *cmdName, char *cmdline)
         printAdjustmentRange(DUMP_MASTER, adjustmentRanges(0), NULL, NULL);
     } else {
         ptr = cmdline;
-        int i = atoi(ptr++);
-        if (i >= 0 && i < MAX_ADJUSTMENT_RANGE_COUNT) {
+        int i = parseIndexArg(ptr++, MAX_ADJUSTMENT_RANGE_COUNT);
+        if (i >= 0) {
             adjustmentRange_t *ar = adjustmentRangesMutable(i);
             uint8_t validArgumentCount = 0;
 
@@ -3505,8 +3517,8 @@ RAM_CODE static void cliVtx(const char *cmdName, char *cmdline)
         const uint8_t maxPowerIndex = VTX_TABLE_MAX_POWER_LEVELS;
 #endif
         ptr = cmdline;
-        int i = atoi(ptr++);
-        if (i >= 0 && i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT) {
+        int i = parseIndexArg(ptr++, MAX_CHANNEL_ACTIVATION_CONDITION_COUNT);
+        if (i >= 0) {
             vtxChannelActivationCondition_t *cac = &vtxConfigMutable()->vtxChannelActivationConditions[i];
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
