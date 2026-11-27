@@ -279,6 +279,10 @@
 #define PARAM_NAME_AP_L1_MAX_CROSS_TRACK_ERROR "ap_l1_max_cross_track_error"
 #define PARAM_NAME_AP_L1_TURN_RATE "ap_l1_turn_rate"
 
+#define PARAM_NAME_QS_LEVEL_MODE "qs_level_mode"
+#define PARAM_NAME_ANGLE_SMOOTHING_CUT "angle_smoothing_cut"
+#define PARAM_NAME_ANGLE_TD_OMEGA "angle_td_omega"
+#define PARAM_NAME_ANGLE_TD_ZETA "angle_td_zeta"
 #define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"
 #define PARAM_NAME_ANGLE_FF_SMOOTHING_MS "angle_feedforward_smoothing_ms"
 #define PARAM_NAME_ANGLE_LIMIT "angle_limit"

@@ -95,6 +95,18 @@ extern "C" {
 
     float autopilotAngle[RP_AXIS_COUNT];
 
+    float getCosTiltAngle(void)
+    {
+        return cosf(DECIDEGREES_TO_RADIANS(attitude.values.roll)) *
+               cosf(DECIDEGREES_TO_RADIANS(attitude.values.pitch));
+    }
+
+    float *getGravityVector(void)
+    {
+        static float gravity[XYZ_AXIS_COUNT] = { 0.0f, 0.0f, 1.0f };
+        return gravity;
+    }
+
     bool unitLaunchControlActive = false;
     launchControlMode_e unitLaunchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
 
@@ -192,6 +204,9 @@ void setDefaultTestSettings(void)
     pidProfile->itermWindup = 80;
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
     pidProfile->angle_limit = 60;
+    pidProfile->angle_smoothing_cut = 50;
+    pidProfile->angle_feedforward_smoothing_ms = 50;
+    pidProfile->qs_level_mode = 0;
     pidProfile->feedforward_transition = 100;
     pidProfile->yawRateAccelLimit = 100;
     pidProfile->rateAccelLimit = 0;
@@ -477,9 +492,9 @@ TEST(pidControllerTest, testPidLevel)
     // Disable ANGLE_MODE
     disableFlightMode(ANGLE_MODE);
     calculatedAngleSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpointRoll, calcHorizonLevelStrength());
-    EXPECT_FLOAT_EQ(393.44571, calculatedAngleSetpoint);
+    EXPECT_FLOAT_EQ(393.63953, calculatedAngleSetpoint);
     calculatedAngleSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpointPitch, calcHorizonLevelStrength());
-    EXPECT_FLOAT_EQ(-392.88422, calculatedAngleSetpoint);
+    EXPECT_FLOAT_EQ(-393.14059, calculatedAngleSetpoint);
 
     // Test level mode expo
     enableFlightMode(ANGLE_MODE);
@@ -524,7 +539,7 @@ TEST(pidControllerTest, testPidHorizon)
 
     // set attitude of craft to 90 degrees
     attitude.values.roll = 900;
-    attitude.values.pitch = 900;
+    attitude.values.pitch = 0;
 
     // Test centered sticks at 90 degrees
     setStickPosition(FD_ROLL, 0);
@@ -544,7 +559,7 @@ TEST(pidControllerTest, testPidHorizon)
 
     // set attitude of craft to 120 degrees, inside limit of 135
     attitude.values.roll = 1200;
-    attitude.values.pitch = 1200;
+    attitude.values.pitch = 0;
 
     // Test centered sticks at 120 degrees
     setStickPosition(FD_ROLL, 0);
@@ -561,9 +576,9 @@ TEST(pidControllerTest, testPidHorizon)
     setStickPosition(FD_PITCH, -0.5f);
     EXPECT_NEAR(0.018f, calcHorizonLevelStrength(), calculateTolerance(0.018));
 
-    // set attitude of craft to 1500 degrees, outside limit of 135
+    // set attitude of craft to 150 degrees, outside limit of 135
     attitude.values.roll = 1500;
-    attitude.values.pitch = 1500;
+    attitude.values.pitch = 0;
 
     // Test centered sticks at 150 degrees - should be zero at any stick angle
     setStickPosition(FD_ROLL, 0);

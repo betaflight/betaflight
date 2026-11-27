@@ -43,7 +43,7 @@
 #define F_GAIN_MAX 1000
 
 #define ANGLE_LIMIT_MIN 10
-#define ANGLE_LIMIT_MAX 80
+#define ANGLE_LIMIT_MAX 90
 #define ANGLE_P_GAIN_MAX 200
 #define HORIZON_LEVEL_STRENGTH_MAX 100
 #define HORIZON_LIMIT_STICKS_MIN 10
@@ -310,6 +310,7 @@ typedef struct pidProfile_s {
     uint8_t tpa_rate;                       // Percent reduction in P or D at full throttle
     uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
 
+    uint8_t angle_smoothing_cut;            // Cutoff for the angle mode output filter
     uint8_t angle_feedforward_smoothing_ms; // Smoothing factor for angle feedforward as time constant in milliseconds
     uint8_t angle_earth_ref;                // Control amount of "co-ordination" from yaw into roll while pitched forward in angle mode
     uint16_t horizon_delay_ms;              // delay when Horizon Strength increases, 50 = 500ms time constant
@@ -356,6 +357,10 @@ typedef struct pidProfile_s {
     uint16_t chirp_frequency_end_deci_hz;   // end frequency in units of 0.1 hz
     uint8_t chirp_time_seconds;             // excitation time
     uint8_t chirp_repeat;                   // number of repeats per axis
+
+    uint8_t angle_td_omega;  // omega for the angle mode tracking differentiator, units in rad
+    uint8_t angle_td_zeta;   // zeta or damping ratio for the tracking differentiator, units in zeta/100
+    uint8_t qs_level_mode;   // Use the quicksilver style of attitude controller
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -521,13 +526,14 @@ typedef struct pidRuntime_s {
 #endif
 
 #ifdef USE_ACC
-    pt3Filter_t attitudeFilter[RP_AXIS_COUNT];  // Only for ROLL and PITCH
+    pt3Filter_t attitudeFilter[XYZ_AXIS_COUNT];
     pt1Filter_t horizonSmoothingPt1;
     uint16_t horizonDelayMs;
     float angleYawSetpoint;
     float angleEarthRef;
     float angleTarget[RP_AXIS_COUNT];
     bool axisInAngleMode[3];
+    sphericalTD_t angleTD;
 #endif
 
 #ifdef USE_WING
