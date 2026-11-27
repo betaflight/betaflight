@@ -107,12 +107,15 @@ protected:
     {
         fake.reset();
         gyro = {};
+        nativeBus.busType = BUS_TYPE_SPI;
+        gyro.dev.bus = &nativeBus;
         gyro.mpuDetectionResult.sensor = ICM_45686_SPI;
         acc = {};
         acc.gyro = &gyro;
         acc.mpuDetectionResult.sensor = ICM_45686_SPI;
     }
 
+    busDevice_t nativeBus{};
     gyroDev_t gyro;
     accDev_t acc;
 };
@@ -274,3 +277,30 @@ busStatus_e mpuIntCallback(uintptr_t)
 }
 
 } // extern "C"
+
+extern "C" {
+bool busReadRegisterBuffer(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t length)
+{
+    if (length != 1) {
+        return false;
+    }
+    *data = spiReadRegMsk(dev, reg);
+    return true;
+}
+bool busWriteRegisterBufferStart(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t length)
+{
+    spiWriteRegBuf(dev, reg, data, length);
+    return true;
+}
+bool busBusy(const extDevice_t *, bool *error)
+{
+    if (error) {
+        *error = false;
+    }
+    return false;
+}
+timeUs_t micros(void)
+{
+    return 0;
+}
+}
