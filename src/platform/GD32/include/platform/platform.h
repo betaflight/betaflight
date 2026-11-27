@@ -118,6 +118,7 @@
 
 #define PLATFORM_TRAIT_ADC_DEVICE   1
 #define PLATFORM_TRAIT_RCC          1
+#define PLATFORM_TRAIT_CAMERA_CONTROL 1
 #define I2C_TRAIT_STATE             1
 #define I2C_TRAIT_AF_PIN            1
 #define UART_TRAIT_PINSWAP          1
