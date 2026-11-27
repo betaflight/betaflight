@@ -673,7 +673,7 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
 
 #ifdef USE_FEEDFORWARD
     { "FF TRANSITION", OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &cmsx_feedforward_transition,        0,    100,   1, 10 } },
-    { "FF AVERAGING",  OME_TAB,    NULL, &(OSD_TAB_t)    { &cmsx_feedforward_averaging,         4, lookupTableFeedforwardAveraging} },
+    { "FF AVERAGING",  OME_TAB,    NULL, &(OSD_TAB_t)    { &cmsx_feedforward_averaging,         FEEDFORWARD_AVERAGING_4_POINT, lookupTableFeedforwardAveraging} },
     { "FF SMOOTHNESS", OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_smooth_factor,     0,     FEEDFORWARD_SMOOTH_FACTOR_MAX,   1  }    },
     { "FF JITTER",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_jitter_factor,     0,     FEEDFORWARD_JITTER_FACTOR_MAX,   1  }    },
     { "FF BOOST",      OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_boost,             0,     FEEDFORWARD_BOOST_MAX,   1  }    },
