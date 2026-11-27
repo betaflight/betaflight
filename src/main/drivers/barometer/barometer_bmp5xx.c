@@ -57,8 +57,8 @@
 #define BMP5XX_I2C_ADDR_SECONDARY   (0x46)  // SDO = LOW
 
 // Chip IDs
-#define BMP580_CHIP_ID              (0x50)
-#define BMP581_CHIP_ID              (0x51)
+#define BMP5XX_CHIP_ID_PRIMARY      (0x50)
+#define BMP5XX_CHIP_ID_SECONDARY    (0x51)
 
 // Register addresses
 #define BMP5XX_REG_CHIP_ID          (0x01)
@@ -143,29 +143,29 @@
 #define BMP5XX_ODR_0_125_HZ         (0x1F << 2)
 
 // OSR_CONFIG register bitfields
-#define BMP5XX_OSR_PRESS_1X         (0x00)
-#define BMP5XX_OSR_PRESS_2X         (0x01)
-#define BMP5XX_OSR_PRESS_4X         (0x02)
-#define BMP5XX_OSR_PRESS_8X         (0x03)
-#define BMP5XX_OSR_PRESS_16X        (0x04)
-#define BMP5XX_OSR_PRESS_32X        (0x05)
-#define BMP5XX_OSR_PRESS_64X        (0x06)
-#define BMP5XX_OSR_PRESS_128X       (0x07)
+#define BMP5XX_OSR_PRESS_1X         (0x00 << 3)
+#define BMP5XX_OSR_PRESS_2X         (0x01 << 3)
+#define BMP5XX_OSR_PRESS_4X         (0x02 << 3)
+#define BMP5XX_OSR_PRESS_8X         (0x03 << 3)
+#define BMP5XX_OSR_PRESS_16X        (0x04 << 3)
+#define BMP5XX_OSR_PRESS_32X        (0x05 << 3)
+#define BMP5XX_OSR_PRESS_64X        (0x06 << 3)
+#define BMP5XX_OSR_PRESS_128X       (0x07 << 3)
 
-#define BMP5XX_OSR_TEMP_1X          (0x00 << 3)
-#define BMP5XX_OSR_TEMP_2X          (0x01 << 3)
-#define BMP5XX_OSR_TEMP_4X          (0x02 << 3)
-#define BMP5XX_OSR_TEMP_8X          (0x03 << 3)
-#define BMP5XX_OSR_TEMP_16X         (0x04 << 3)
-#define BMP5XX_OSR_TEMP_32X         (0x05 << 3)
-#define BMP5XX_OSR_TEMP_64X         (0x06 << 3)
-#define BMP5XX_OSR_TEMP_128X        (0x07 << 3)
+#define BMP5XX_OSR_TEMP_1X          (0x00)
+#define BMP5XX_OSR_TEMP_2X          (0x01)
+#define BMP5XX_OSR_TEMP_4X          (0x02)
+#define BMP5XX_OSR_TEMP_8X          (0x03)
+#define BMP5XX_OSR_TEMP_16X         (0x04)
+#define BMP5XX_OSR_TEMP_32X         (0x05)
+#define BMP5XX_OSR_TEMP_64X         (0x06)
+#define BMP5XX_OSR_TEMP_128X        (0x07)
 
 #define BMP5XX_OSR_PRESS_EN         (0x01 << 6)
 
 // DSP_CONFIG register bitfields
 #define BMP5XX_DSP_COMP_PRESS_TEMP  (0x03)  // Enable pressure and temperature compensation
-#define BMP5XX_DSP_SHDW_SEL_IIR     (0x01 << 3)  // IIR output to shadow registers
+#define BMP5XX_DSP_SHDW_SEL_IIR     ((0x01 << 3) | (0x01 << 5))  // Temperature and pressure IIR shadow outputs
 
 // DSP_IIR register bitfields (IIR filter coefficient selection)
 // Coefficients: 0=bypass, 1=1, 2=3, 3=7, 4=15, 5=31, 6=63, 7=127
@@ -178,9 +178,9 @@
 #define BMP5XX_IIR_COEF_63          (0x06)
 #define BMP5XX_IIR_COEF_127         (0x07)
 
-// IIR coefficient for pressure (bits 2:0) and temperature (bits 5:3)
-#define BMP5XX_IIR_PRESS(x)         ((x) & 0x07)
-#define BMP5XX_IIR_TEMP(x)          (((x) & 0x07) << 3)
+// IIR coefficient for pressure (bits 5:3) and temperature (bits 2:0)
+#define BMP5XX_IIR_PRESS(x)         (((x) & 0x07) << 3)
+#define BMP5XX_IIR_TEMP(x)          ((x) & 0x07)
 
 // INT_CONFIG register bitfields
 #define BMP5XX_INT_MODE_PULSED      (0x00)
@@ -198,8 +198,9 @@
 #define BMP5XX_INT_SRC_OOR          (0x01 << 3)
 
 // STATUS register bitfields
-#define BMP5XX_STATUS_DRDY_PRESS    (0x01 << 5)
-#define BMP5XX_STATUS_DRDY_TEMP     (0x01 << 6)
+#define BMP5XX_STATUS_NVM_READY     (0x01 << 1)
+#define BMP5XX_STATUS_NVM_ERROR     (0x01 << 2)
+#define BMP5XX_STATUS_NVM_CMD_ERROR (0x01 << 3)
 
 // INT_STATUS register bitfields
 #define BMP5XX_INT_STATUS_DRDY      (0x01)
@@ -209,10 +210,9 @@
 #define BMP5XX_INT_STATUS_POR       (0x01 << 4)
 
 // Oversampling settings for measurement
-// Pressure: 128X = maximum oversampling, lowest noise
-// Temperature: 4X = balanced (temperature changes slowly)
-// This combination gives ~10Hz update rate
-#define BMP5XX_PRESSURE_OSR         BMP5XX_OSR_PRESS_128X
+// Pressure 16X / temperature 4X supports the configured 50 Hz ODR.
+// 128X pressure at 50 Hz is invalid and silently falls back to 2X on BMP581.
+#define BMP5XX_PRESSURE_OSR         BMP5XX_OSR_PRESS_16X
 #define BMP5XX_TEMPERATURE_OSR      BMP5XX_OSR_TEMP_4X
 
 // Data frame size: temperature (3 bytes) + pressure (3 bytes)
@@ -259,6 +259,23 @@ static bool bmp5xxReadRegisterBuffer(const extDevice_t *dev, uint8_t reg, uint8_
     } else {
         return busReadRegisterBuffer(dev, reg, data, length);
     }
+}
+
+static bool bmp5xxSelectSpi(const extDevice_t *dev)
+{
+    uint8_t ignored;
+    // The first read selects SPI; its data is invalid. Soft reset returns the
+    // device to I2C/I3C, so this selection is also required after reset.
+    return dev->bus->busType != BUS_TYPE_SPI ||
+        bmp5xxReadRegisterBuffer(dev, BMP5XX_REG_CHIP_ID, &ignored, 1);
+}
+
+static bool bmp5xxNvmReady(const extDevice_t *dev)
+{
+    uint8_t status;
+    const uint8_t mask = BMP5XX_STATUS_NVM_READY | BMP5XX_STATUS_NVM_ERROR | BMP5XX_STATUS_NVM_CMD_ERROR;
+    return bmp5xxReadRegisterBuffer(dev, BMP5XX_REG_STATUS, &status, 1) &&
+        (status & mask) == BMP5XX_STATUS_NVM_READY;
 }
 
 static void bmp5xx_extiHandler(extiCallbackRec_t *cb)
@@ -311,13 +328,16 @@ static bool bmp5xxBeginForcedMeasurement(const extDevice_t *dev)
  * @brief Detect and initialize BMP580/BMP581 barometer
  * @param config Pointer to BMP5xx configuration (I2C/SPI settings)
  * @param baro Pointer to barometer device structure to initialize
- * @param detectedChip Pointer to store detected chip ID (0x50=BMP580, 0x51=BMP581), or NULL if not needed
+ * @param detectedChip Pointer to store the raw family ASIC ID (0x50 or 0x51), or NULL if not needed
  * @return true if BMP580/BMP581 detected and initialized, false otherwise
- * @note Configures sensor for Normal mode at 50Hz ODR with 128x pressure OSR,
+ * @note Configures sensor for Normal mode at 50Hz ODR with 16x pressure OSR,
  *       4x temperature OSR, and IIR filter coefficient 15
  */
 bool bmp5xxDetect(const bmp5xxConfig_t *config, baroDev_t *baro, uint8_t *detectedChip)
 {
+    if (!config || !baro || !baro->dev.bus) {
+        return false;
+    }
     delay(20);
 
     IO_t baroIntIO = IOGetByTag(config->eocTag);
@@ -340,21 +360,25 @@ bool bmp5xxDetect(const bmp5xxConfig_t *config, baroDev_t *baro, uint8_t *detect
         defaultAddressApplied = true;
     }
 
-    if (dev->bus->busType == BUS_TYPE_SPI) {
-        // For SPI, first byte is dummy on read
-        sensor_data = sensor_data_buffer + 1;
+    sensor_data = sensor_data_buffer;
+    if (!bmp5xxSelectSpi(dev)) {
+        goto failure;
     }
 
     // Read chip ID
-    bmp5xxReadRegisterBuffer(dev, BMP5XX_REG_CHIP_ID, &chipId, 1);
+    if (!bmp5xxReadRegisterBuffer(dev, BMP5XX_REG_CHIP_ID, &chipId, 1) && !defaultAddressApplied) {
+        goto failure;
+    }
 
-    if (chipId != BMP580_CHIP_ID && chipId != BMP581_CHIP_ID) {
+    if (chipId != BMP5XX_CHIP_ID_PRIMARY && chipId != BMP5XX_CHIP_ID_SECONDARY) {
         // Try secondary I2C address
         if (defaultAddressApplied) {
             dev->busType_u.i2c.address = BMP5XX_I2C_ADDR_SECONDARY;
-            bmp5xxReadRegisterBuffer(dev, BMP5XX_REG_CHIP_ID, &chipId, 1);
+            if (!bmp5xxReadRegisterBuffer(dev, BMP5XX_REG_CHIP_ID, &chipId, 1)) {
+                goto failure;
+            }
 
-            if (chipId != BMP580_CHIP_ID && chipId != BMP581_CHIP_ID) {
+            if (chipId != BMP5XX_CHIP_ID_PRIMARY && chipId != BMP5XX_CHIP_ID_SECONDARY) {
                 bmp5xxBusDeinit(dev);
                 dev->busType_u.i2c.address = 0;
                 return false;
@@ -365,11 +389,28 @@ bool bmp5xxDetect(const bmp5xxConfig_t *config, baroDev_t *baro, uint8_t *detect
         }
     }
 
+    // Clear latched power-up interrupts before reset. Only a new POR can
+    // validate an I2C reset command, whose missing ACK is expected.
+    uint8_t priorStatus;
+    if (!bmp5xxNvmReady(dev) ||
+        !bmp5xxReadRegisterBuffer(dev, BMP5XX_REG_INT_STATUS, &priorStatus, 1)) {
+        goto failure;
+    }
     busDeviceRegister(dev);
 
     // Soft reset
-    busWriteRegister(dev, BMP5XX_REG_CMD, BMP5XX_CMD_SOFT_RESET);
+    // I2C reset deliberately does not acknowledge; validate completion below.
+    const bool resetAcknowledged = busWriteRegister(dev, BMP5XX_REG_CMD, BMP5XX_CMD_SOFT_RESET);
+    if (dev->bus->busType == BUS_TYPE_SPI && !resetAcknowledged) {
+        goto failure;
+    }
     delay(5);  // Wait for reset to complete
+    uint8_t resetStatus;
+    if (!bmp5xxSelectSpi(dev) ||
+        !bmp5xxReadRegisterBuffer(dev, BMP5XX_REG_INT_STATUS, &resetStatus, 1) ||
+        !(resetStatus & BMP5XX_INT_STATUS_POR) || !bmp5xxNvmReady(dev)) {
+        goto failure;
+    }
 
     // Configure interrupt if available
     if (baroIntIO) {
@@ -378,29 +419,48 @@ bool bmp5xxDetect(const bmp5xxConfig_t *config, baroDev_t *baro, uint8_t *detect
                            BMP5XX_INT_POL_ACTIVE_HIGH |
                            BMP5XX_INT_OD_PUSHPULL |
                            BMP5XX_INT_EN;
-        busWriteRegister(dev, BMP5XX_REG_INT_CONFIG, intConfig);
-
-        // Enable data ready interrupt
-        busWriteRegister(dev, BMP5XX_REG_INT_SOURCE, BMP5XX_INT_SRC_DRDY);
+        if (!busWriteRegister(dev, BMP5XX_REG_INT_CONFIG, intConfig)) {
+            goto failure;
+        }
+    }
+    // DRDY is polled even when no external interrupt pin is configured.
+    if (!busWriteRegister(dev, BMP5XX_REG_INT_SOURCE, BMP5XX_INT_SRC_DRDY)) {
+        goto failure;
     }
 
     // Configure DSP: enable pressure and temperature compensation, IIR output
-    busWriteRegister(dev, BMP5XX_REG_DSP_CONFIG,
-        BMP5XX_DSP_COMP_PRESS_TEMP | BMP5XX_DSP_SHDW_SEL_IIR);
+    if (!busWriteRegister(dev, BMP5XX_REG_DSP_CONFIG,
+        BMP5XX_DSP_COMP_PRESS_TEMP | BMP5XX_DSP_SHDW_SEL_IIR)) {
+        goto failure;
+    }
 
     // Configure IIR filter: register value 4 selects coefficient 15 for both pressure and temperature
     // This provides good smoothing while maintaining reasonable response time
-    busWriteRegister(dev, BMP5XX_REG_DSP_IIR,
-        BMP5XX_IIR_PRESS(BMP5XX_IIR_COEF_15) | BMP5XX_IIR_TEMP(BMP5XX_IIR_COEF_15));
+    if (!busWriteRegister(dev, BMP5XX_REG_DSP_IIR,
+        BMP5XX_IIR_PRESS(BMP5XX_IIR_COEF_15) | BMP5XX_IIR_TEMP(BMP5XX_IIR_COEF_15))) {
+        goto failure;
+    }
 
     // Configure oversampling
-    busWriteRegister(dev, BMP5XX_REG_OSR_CONFIG,
-        BMP5XX_PRESSURE_OSR | BMP5XX_TEMPERATURE_OSR | BMP5XX_OSR_PRESS_EN);
+    if (!busWriteRegister(dev, BMP5XX_REG_OSR_CONFIG,
+        BMP5XX_PRESSURE_OSR | BMP5XX_TEMPERATURE_OSR | BMP5XX_OSR_PRESS_EN)) {
+        goto failure;
+    }
 
     // Set normal mode with 50Hz ODR for continuous measurement
     // This way data is always ready when we want to read it
     uint8_t odrConfig = BMP5XX_ODR_50_HZ | BMP5XX_MODE_NORMAL;
-    busWriteRegister(dev, BMP5XX_REG_ODR_CONFIG, odrConfig);
+    if (!busWriteRegister(dev, BMP5XX_REG_ODR_CONFIG, odrConfig)) {
+        goto failure;
+    }
+    // Invalid ODR/OSR combinations silently use fallback oversampling. Verify
+    // the effective pressure/temperature profile as well as odr_is_valid.
+    uint8_t effectiveOsr;
+    const uint8_t expectedOsr = 0x80 | BMP5XX_PRESSURE_OSR | BMP5XX_TEMPERATURE_OSR;
+    if (!bmp5xxReadRegisterBuffer(dev, BMP5XX_REG_OSR_EFF, &effectiveOsr, 1) ||
+        (effectiveOsr & 0xbf) != expectedOsr) {
+        goto failure;
+    }
 
     // Set up baro device callbacks
     // Temperature and pressure are read together, so UT callbacks are dummy
@@ -419,12 +479,9 @@ bool bmp5xxDetect(const bmp5xxConfig_t *config, baroDev_t *baro, uint8_t *detect
     baro->combined_read = true;
 
     // Measurement delay for polling mode
-    // With 128× pressure OSR and 4× temperature OSR, the datasheet specifies
-    // ~98ms single-shot conversion time. However, we use Normal mode (continuous)
-    // at 50Hz ODR, so fresh data is available in shadow registers without waiting
-    // for conversion. The 15ms delay is a safety margin for I2C read timing,
-    // not the actual conversion time.
-    baro->up_delay = 15000;  // 15ms - sufficient for Normal mode shadow register reads
+    // Poll before the next nominal 20ms measurement boundary. ReadUP checks
+    // DRDY, so a successful bus read alone cannot replay an older sample.
+    baro->up_delay = 15000;
 
     baro->calculate = bmp5xxCalculate;
 
@@ -436,6 +493,13 @@ bool bmp5xxDetect(const bmp5xxConfig_t *config, baroDev_t *baro, uint8_t *detect
     }
 
     return true;
+
+failure:
+    bmp5xxBusDeinit(dev);
+    if (defaultAddressApplied) {
+        dev->busType_u.i2c.address = 0;
+    }
+    return false;
 }
 
 /**
@@ -495,14 +559,26 @@ static bool bmp5xxStartUP(baroDev_t *baro)
  * @return true on successful I2C/SPI read, false on failure
  * @note Reads 6 bytes: 3 for temperature + 3 for pressure
  */
-static bool bmp5xxReadUP(baroDev_t *baro)
+static bmp5xxReadResult_e bmp5xxReadRaw(baroDev_t *baro)
 {
+    uint8_t status;
+    if (!bmp5xxReadRegisterBuffer(&baro->dev, BMP5XX_REG_INT_STATUS, &status, 1)) {
+        return BMP5XX_READ_ERROR;
+    }
+    if (!(status & BMP5XX_INT_STATUS_DRDY)) {
+        return BMP5XX_READ_PENDING;
+    }
     // Use synchronous read for I2C - async reads can get stuck on PICO
     // Read temperature and pressure data (6 bytes starting from TEMP_DATA_XLSB)
     // Registers are: TEMP_XLSB (0x1D), TEMP_LSB (0x1E), TEMP_MSB (0x1F),
     //                PRESS_XLSB (0x20), PRESS_LSB (0x21), PRESS_MSB (0x22)
-    return bmp5xxReadRegisterBuffer(&baro->dev, BMP5XX_REG_TEMP_DATA_XLSB, 
-        sensor_data, BMP5XX_DATA_FRAME_SIZE);
+    return bmp5xxReadRegisterBuffer(&baro->dev, BMP5XX_REG_TEMP_DATA_XLSB,
+        sensor_data, BMP5XX_DATA_FRAME_SIZE) ? BMP5XX_READ_READY : BMP5XX_READ_ERROR;
+}
+
+static bool bmp5xxReadUP(baroDev_t *baro)
+{
+    return bmp5xxReadRaw(baro) == BMP5XX_READ_READY;
 }
 
 /**
@@ -563,6 +639,19 @@ static void bmp5xxCalculate(int32_t *pressure, int32_t *temperature)
     if (pressure) {
         *pressure = (int32_t)press_pa;
     }
+}
+
+bmp5xxReadResult_e bmp5xxReadSample(baroDev_t *baro, int32_t *pressure, int32_t *temperature)
+{
+    if (!baro || !baro->dev.bus) {
+        return BMP5XX_READ_ERROR;
+    }
+    const bmp5xxReadResult_e result = bmp5xxReadRaw(baro);
+    if (result == BMP5XX_READ_READY) {
+        bmp5xxGetUP(baro);
+        bmp5xxCalculate(pressure, temperature);
+    }
+    return result;
 }
 
 #endif // defined(USE_BARO) && (defined(USE_BARO_BMP580) || defined(USE_BARO_SPI_BMP580) || defined(USE_BARO_BMP581) || defined(USE_BARO_SPI_BMP581))
