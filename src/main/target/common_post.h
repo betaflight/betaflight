@@ -774,6 +774,7 @@
 #undef USE_RPM_FILTER
 #undef USE_DSHOT_TELEMETRY_STATS
 #undef USE_DYN_IDLE
+#undef USE_RPM_LIMIT
 #endif
 
 #if !defined(USE_BOARD_INFO)

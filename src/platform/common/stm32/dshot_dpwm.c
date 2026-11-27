@@ -48,9 +48,7 @@ DSHOT_DMA_BUFFER_ATTRIBUTE DSHOT_DMA_BUFFER_UNIT dshotBurstDmaBuffer[MAX_DMA_TIM
 #ifdef USE_DSHOT_DMAR
 FAST_DATA_ZERO_INIT bool useBurstDshot = false;
 #endif
-#ifdef USE_DSHOT_TELEMETRY
 FAST_DATA_ZERO_INIT bool useDshotTelemetry = false;
-#endif
 
 FAST_DATA_ZERO_INIT loadDmaBufferFn *loadDmaBuffer;
 
