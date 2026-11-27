@@ -116,6 +116,11 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .sbus_baud_fast = false,
         .msp_override_channels_mask = 0,
         .crsf_use_negotiated_baud = false,
+#ifdef USE_CRSF_OFFICIAL_SPEC
+        .crsf_baudrate = CRSF_BAUDRATE_416666,
+#else
+        .crsf_baudrate = CRSF_BAUDRATE_AUTO,
+#endif
 #ifdef SERIALRX_UART
         .rx_uart = SERIALRX_UART,
 #else
