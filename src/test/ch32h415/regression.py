@@ -48,6 +48,14 @@ def run(name,src,timeout=2,extra_flags=()):
   raise RuntimeError(f'{name}: failed with exit code {e.returncode}\n{e.stdout}{e.stderr}')
 
 pf='src/platform/CH32/include/platform/platform.h'
+vcp_drain='''
+typedef uint32_t timeMs_t;
+typedef struct {
+    uint32_t lastPending;
+    timeMs_t lastSampleMs;
+    timeMs_t lastChangeMs;
+} usbVcpTxDrain_t;
+''' + fn('src/main/drivers/serial_usb_vcp.h','static inline bool usbVcpTxDrained(')
 run('micros_global_irq_disabled', '''
 #define CH32H4
 typedef struct { uint32_t GISR; } pfic_t;
@@ -925,13 +933,17 @@ run('usb_tx_empty_state', '''
 #define UNUSED(x) ((void)(x))
 #define NVIC_PRIO_USB 0
 #define ATOMIC_BLOCK(x) for (int once=1; once; once=0)
+#define USB_TIMEOUT 50
+#define APP_TX_DATA_SIZE 8192
 typedef int serialPort_t;
 static struct { uint32_t txAt; } vcpPort;
 static uint32_t UserTxBufPtrIn, UserTxBufPtrOut, lastBuffsize;
 static uint8_t ep_tx_busy_flag;
 static bool usbHostPortOpen, usbZlpPending, usbTxStalled, configured;
+static uint32_t nowMs;
+static uint32_t millis(void) { return nowMs; }
 static bool usbIsConfigured(void) { return configured; }
-''' + fn(usb,'static bool isUsbVcpTransmitBufferEmpty(') + '''
+''' + vcp_drain + fn(usb,'static bool isUsbVcpTransmitBufferEmpty(') + '''
 int main(void) {
     UserTxBufPtrIn=5; ep_tx_busy_flag=1;
     if (!isUsbVcpTransmitBufferEmpty(NULL)) return 1;
@@ -941,73 +953,32 @@ int main(void) {
     if (isUsbVcpTransmitBufferEmpty(NULL)) return 3;
     UserTxBufPtrOut=5;
     if (isUsbVcpTransmitBufferEmpty(NULL)) return 4;
-    ep_tx_busy_flag=0; lastBuffsize=5;
+    /* Block completed but not yet retired by usbVcpKickTx(): still in the ring */
+    UserTxBufPtrOut=0; ep_tx_busy_flag=0; lastBuffsize=5;
     if (isUsbVcpTransmitBufferEmpty(NULL)) return 5;
-    lastBuffsize=0; vcpPort.txAt=1;
+    UserTxBufPtrOut=5; lastBuffsize=0; vcpPort.txAt=1;
     if (isUsbVcpTransmitBufferEmpty(NULL)) return 6;
     vcpPort.txAt=0;
     if (!isUsbVcpTransmitBufferEmpty(NULL)) return 7;
-    puts("disconnected, closed, buffered, queued, in-flight, ZLP and empty states");
-}
-''')
-run('usb_tx_wait_stall', '''
-#define PLATFORM_VCP_TX_STALL_TIMEOUT_MS 500
-#define USE_VCP
-#define SERIAL_PORT_USB_VCP 1
-typedef struct { int identifier; } serialPort_t;
-static uint32_t now, freeBytes;
-static bool empty;
-static uint32_t millis(void) { return now; }
-static uint32_t serialTxBytesFree(serialPort_t *p) { (void)p; return freeBytes; }
-static bool isSerialTransmitBufferEmpty(serialPort_t *p) { (void)p; return empty; }
-static void delay(int ms) { now+=ms; if (now == 300) freeBytes++; if (now == 900) empty=true; }
-''' + fn('src/main/io/serial.c','void waitForSerialPortToFinishTransmitting(') + '''
-int main(void) {
-    serialPort_t p={SERIAL_PORT_USB_VCP};
-    waitForSerialPortToFinishTransmitting(&p);
-    if (now != 800 || empty) return 1;
-    now=0; empty=true;
-    waitForSerialPortToFinishTransmitting(&p);
-    if (now != 0) return 2;
-    puts("host stall is bounded and the timeout resets when transmission progresses");
-}
-''')
-run('printf_vcp_no_10ms_stall', '''
-#define PLATFORM_VCP_TX_STALL_TIMEOUT_MS 500
-#define USE_VCP
-#define SERIAL_PORT_USB_VCP 1
-typedef struct { int identifier; } serialPort_t;
-static uint32_t nowMs, freeBytes, emptyChecks, ignoreCalls;
-static bool completeOnCheck3;
-static uint32_t millis(void) { return nowMs; }
-static uint32_t serialTxBytesFree(serialPort_t *p) { (void)p; return freeBytes; }
-static void schedulerIgnoreTaskExecTime(void) {
-    ignoreCalls++;
-    if (!completeOnCheck3) {
-        nowMs += 100;
-        if (nowMs == 300) {
-            freeBytes++;
-        }
+    /* Host stops reading with DTR asserted: bounded by USB_TIMEOUT of continuous polling */
+    UserTxBufPtrIn=100;
+    for (nowMs=0; nowMs<=USB_TIMEOUT; nowMs+=10) {
+        if (isUsbVcpTransmitBufferEmpty(NULL)) return 8;
     }
-}
-static bool isSerialTransmitBufferEmpty(serialPort_t *p) {
-    (void)p;
-    emptyChecks++;
-    return completeOnCheck3 && emptyChecks >= 3;
-}
-''' + fn('src/main/common/printf_serial.c','static void waitForPrintfTransmitComplete(') + '''
-int main(void) {
-    serialPort_t p={SERIAL_PORT_USB_VCP};
-    /* Fast microframe drain completes with zero millisecond sleep */
-    nowMs=0; emptyChecks=ignoreCalls=0; completeOnCheck3=true;
-    waitForPrintfTransmitComplete(&p);
-    if (nowMs != 0 || emptyChecks != 3 || ignoreCalls != 2) return 1;
-
-    /* Stalled host terminates at PLATFORM_VCP_TX_STALL_TIMEOUT_MS after last progress */
-    nowMs=0; freeBytes=0; emptyChecks=ignoreCalls=0; completeOnCheck3=false;
-    waitForPrintfTransmitComplete(&p);
-    if (nowMs != 800 || ignoreCalls != 8) return 2;
-    puts("printf VCP drain avoids 10ms sleep while bounding host stalls and discounting task time");
+    if (!isUsbVcpTransmitBufferEmpty(NULL)) return 9;
+    /* Progress restarts the timeout */
+    UserTxBufPtrOut=50; nowMs+=10;
+    if (isUsbVcpTransmitBufferEmpty(NULL)) return 10;
+    /* Wrapping transfer: retiring the tail block and submitting the head must count as progress */
+    UserTxBufPtrOut=APP_TX_DATA_SIZE-128; UserTxBufPtrIn=256; lastBuffsize=128; ep_tx_busy_flag=1;
+    for (nowMs=1000; nowMs<1040; nowMs+=10) {
+        if (isUsbVcpTransmitBufferEmpty(NULL)) return 11;
+    }
+    UserTxBufPtrOut=0; lastBuffsize=256;
+    for (; nowMs<1040+USB_TIMEOUT; nowMs+=10) {
+        if (isUsbVcpTransmitBufferEmpty(NULL)) return 12;
+    }
+    puts("disconnected, closed, buffered, queued, in-flight, ZLP, empty, stalled and wrapping states");
 }
 ''')
 for mps in (64, 512):
@@ -1916,7 +1887,8 @@ static void delay(int ms) {
     pumpUsbInCompletions();
 }
 static void schedulerIgnoreTaskExecTime(void) {}
-''' + fn('lib/modules/CH32H41x/middlewares/board/cdc_vcp_ch32h41x.c', 'void usbd_cdc_acm_bulk_in(')
+static uint32_t millis(void) { return nowUs / 1000u; }
+''' + vcp_drain + fn('lib/modules/CH32H41x/middlewares/board/cdc_vcp_ch32h41x.c', 'void usbd_cdc_acm_bulk_in(')
     + fn('lib/modules/CH32H41x/middlewares/board/cdc_vcp_ch32h41x.c', 'uint16_t usb_vcp_send_data(')
     + fn(usb, 'static void usbVcpKickTx(void)')
     + fn(usb, 'void usbVcpTxDoneISR(void)')
