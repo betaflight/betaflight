@@ -80,14 +80,9 @@
 
 #include "telemetry/telemetry.h"
 
-// mavlink library uses unnamed unions that causes GCC to complain if -Wpedantic is used
-// until this is resolved in mavlink library - ignore -Wpedantic for mavlink code.
 // Included before telemetry/mavlink.h so its forward-typedef of mavlink_message_t
 // yields to the real (identical) one rather than clashing.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#include "common/mavlink.h"
-#pragma GCC diagnostic pop
+#include "telemetry/mavlink_lib.h"
 
 #include "telemetry/mavlink.h"
 #if ENABLE_TELEMETRY_MAVLINK_MISSION

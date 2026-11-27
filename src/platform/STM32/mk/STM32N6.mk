@@ -158,6 +158,7 @@ DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DHSE_STARTUP_TIMEOUT=1000 -DSTM32
 
 VCP_SRC = \
             STM32/vcp_hal/usbd_desc.c \
+            STM32/vcp_hal/usbd_static_alloc.c \
             STM32/vcp_hal/usbd_conf_stm32n6xx.c \
             STM32/vcp_hal/usbd_cdc_interface.c \
             STM32/serial_usb_vcp.c \

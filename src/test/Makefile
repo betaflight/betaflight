@@ -688,6 +688,12 @@ sitl_gyro_unittest_SRC := \
 sitl_gyro_unittest_INCLUDE_DIRS := \
 		$(ROOT)/src/platform/SIMULATOR
 
+sitl_rate_unittest_SRC := \
+		$(TEST_DIR)/sitl_rate_unittest_c.c
+
+sitl_rate_unittest_INCLUDE_DIRS := \
+		$(ROOT)/src/platform/SIMULATOR
+
 telemetry_crsf_unittest_SRC := \
 		$(USER_DIR)/rx/crsf.c \
 		$(USER_DIR)/telemetry/crsf.c \
@@ -745,6 +751,7 @@ telemetry_ibus_unittest_SRC := \
 
 telemetry_mavlink_mission_unittest_SRC := \
 		$(USER_DIR)/telemetry/mavlink_mission.c \
+		$(USER_DIR)/telemetry/mavlink_helpers.c \
 		$(USER_DIR)/pg/flight_plan.c \
 		$(USER_DIR)/pg/autopilot.c
 
@@ -758,6 +765,7 @@ telemetry_mavlink_mission_unittest_DEFINES := \
 
 telemetry_mavlink_mission_wing_unittest_SRC := \
 		$(USER_DIR)/telemetry/mavlink_mission.c \
+		$(USER_DIR)/telemetry/mavlink_helpers.c \
 		$(USER_DIR)/pg/flight_plan.c \
 		$(USER_DIR)/pg/autopilot.c
 
@@ -1024,6 +1032,7 @@ osd_nav_map_unittest_DEFINES := \
 
 mavlink_mission_unittest_SRC := \
 		$(USER_DIR)/telemetry/mavlink_mission.c \
+		$(USER_DIR)/telemetry/mavlink_helpers.c \
 		$(USER_DIR)/pg/autopilot.c \
 		$(USER_DIR)/pg/flight_plan.c
 
@@ -1036,6 +1045,9 @@ mavlink_mission_unittest_DEFINES := \
 
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE=
+
+usb_vcp_tx_drain_unittest_SRC := \
+		$(TEST_DIR)/usb_vcp_tx_drain_test_support.c
 
 vtx_unittest_SRC := \
 		$(USER_DIR)/fc/core.c \

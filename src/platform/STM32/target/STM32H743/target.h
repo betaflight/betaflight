@@ -92,3 +92,15 @@
 #if defined(USE_LED_STRIP) && !defined(USE_LED_STRIP_CACHE_MGMT)
 #define USE_LED_STRIP_CACHE_MGMT
 #endif
+
+// Boards with an on-board SPI receiver exist for this MCU, so generic
+// (non-config) builds include the SPI RX drivers. Disable with ENABLE_RX_SPI=0.
+#if !defined(ENABLE_RX_SPI)
+#define ENABLE_RX_SPI 1
+#endif
+
+// No board uses the SX127x SPI receiver; keep it in this generic build only so
+// CI still compiles the driver. Disable with ENABLE_RX_SX127X=0.
+#if !defined(ENABLE_RX_SX127X)
+#define ENABLE_RX_SX127X 1
+#endif
