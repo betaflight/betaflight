@@ -91,10 +91,11 @@ uint16_t flightPlanNavGetEtaSeconds(void);
 bool flightPlanNavSetCurrentIndex(uint8_t index);
 
 // Orbit period (deciseconds) for a leg flown at speedCmS (0 = autopilot max
-// velocity), at the configured pattern radius or at radiusM. Converts MAVLink
-// turn counts to and from hold durations.
+// velocity), at the configured pattern radius. A guided orbit uses the speed
+// override and radiusM (0 = configured radius) when set. Converts MAVLink turn
+// counts to and from hold durations.
 uint16_t flightPlanNavOrbitPeriodDs(uint16_t speedCmS);
-uint16_t flightPlanNavOrbitPeriodAtRadiusDs(uint16_t speedCmS, float radiusM);
+uint16_t flightPlanNavGuidedOrbitPeriodDs(uint16_t speedCmS, float radiusM);
 
 // Replace the active mission with a small synthesised runtime plan (at most 4
 // waypoints, copied). Only valid while the executor is active. The injected
@@ -121,6 +122,7 @@ bool flightPlanNavIsTakingOff(void);
 bool flightPlanNavStartMission(uint8_t index);
 bool flightPlanNavResumeMission(void);
 uint8_t flightPlanNavGetMissionIndex(void);
+bool flightPlanNavIsMissionPaused(void);
 
 // Cruise speed for every non-rescue leg (0 = each leg's own speed), capped to
 // the autopilot max velocity. Applies to the leg being flown.

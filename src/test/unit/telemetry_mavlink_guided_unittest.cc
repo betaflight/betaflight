@@ -67,7 +67,7 @@ extern "C" {
         return startResult;
     }
     void flightPlanNavSetSpeedOverride(uint16_t speedCmS) { speedOverrideCmS = speedCmS; }
-    uint16_t flightPlanNavOrbitPeriodAtRadiusDs(uint16_t, float) { return 200; }
+    uint16_t flightPlanNavGuidedOrbitPeriodDs(uint16_t, float) { return 200; }
     bool isAltitudeAvailable(void) { return altitudeAvailable; }
 }
 

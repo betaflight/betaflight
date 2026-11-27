@@ -886,7 +886,17 @@ TEST_F(FlightPlanNavPatternTest, GuidedOrbitFliesItsOwnRadius)
 
     ASSERT_EQ(g_setTargetCalls, 2);
     EXPECT_NEAR(distanceFromCentre(), 6.0f, 0.05f);
-    EXPECT_EQ(flightPlanNavOrbitPeriodAtRadiusDs(300, 6.0f), (uint16_t)lrintf(10.0f * 2.0f * M_PIf / (1.5f / 6.0f)));
+    EXPECT_EQ(flightPlanNavGuidedOrbitPeriodDs(300, 6.0f), (uint16_t)lrintf(10.0f * 2.0f * M_PIf / (1.5f / 6.0f)));
+}
+
+TEST_F(FlightPlanNavPatternTest, GuidedOrbitPeriodIsForTheRadiusAndSpeedItFlies)
+{
+    const uint16_t atSixMetres = (uint16_t)lrintf(10.0f * 2.0f * M_PIf / (1.5f / 6.0f));
+    EXPECT_EQ(flightPlanNavGuidedOrbitPeriodDs(300, -6.0f), atSixMetres);
+    EXPECT_EQ(flightPlanNavGuidedOrbitPeriodDs(300, 0.0f), (uint16_t)lrintf(10.0f * 2.0f * M_PIf / (0.5f / 2.0f)));
+
+    flightPlanNavSetSpeedOverride(100);
+    EXPECT_EQ(flightPlanNavGuidedOrbitPeriodDs(300, 6.0f), (uint16_t)lrintf(10.0f * 2.0f * M_PIf / (1.0f / 6.0f)));
 }
 
 TEST_F(FlightPlanNavPatternTest, GuidedOrbitTurnsTheWayItsRadiusSays)
@@ -1203,6 +1213,22 @@ TEST_F(FlightPlanNavTest, ReEngageResumesWhereItLeft)
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
 }
 
+TEST_F(FlightPlanNavTest, MissionLeftBeforeItsFirstWaypointIsPaused)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+    EXPECT_FALSE(flightPlanNavIsMissionPaused());
+
+    flightPlanNavEngage();
+    EXPECT_FALSE(flightPlanNavIsMissionPaused());
+    flightPlanNavDisengage();
+    EXPECT_EQ(flightPlanNavGetMissionIndex(), 0);
+    EXPECT_TRUE(flightPlanNavIsMissionPaused());
+
+    flightPlanNavResetFlight();
+    EXPECT_FALSE(flightPlanNavIsMissionPaused());
+}
+
 TEST_F(FlightPlanNavTest, CompletedMissionRestartsAtFirstWaypoint)
 {
     addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
@@ -1214,6 +1240,7 @@ TEST_F(FlightPlanNavTest, CompletedMissionRestartsAtFirstWaypoint)
     ASSERT_EQ(flightPlanNavGetState(), FP_NAV_COMPLETE);
 
     flightPlanNavDisengage();
+    EXPECT_FALSE(flightPlanNavIsMissionPaused());
     flightPlanNavEngage();
     EXPECT_EQ(flightPlanNavGetCurrentIndex(), 0);
 }

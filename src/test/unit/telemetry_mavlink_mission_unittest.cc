@@ -45,6 +45,7 @@ extern "C" {
     static flightPlanNavState_e s_navState = FP_NAV_IDLE;
     static uint8_t s_navIndex = 0;
     static uint8_t s_navMissionIndex = 0;
+    static bool s_navMissionPaused = false;
     static int s_setCurrentArg = -1;
     static int s_saveCalls = 0;
     static uint32_t s_millis = 0;
@@ -55,6 +56,7 @@ extern "C" {
     flightPlanNavState_e flightPlanNavGetState(void) { return s_navState; }
     uint8_t flightPlanNavGetCurrentIndex(void) { return s_navIndex; }
     uint8_t flightPlanNavGetMissionIndex(void) { return s_navMissionIndex; }
+    bool flightPlanNavIsMissionPaused(void) { return s_navMissionPaused; }
     bool flightPlanNavSetCurrentIndex(uint8_t index) { s_setCurrentArg = index; return true; }
     void flightPlanNavSetReachedListener(flightPlanWaypointReachedFn fn) { s_reachedListener = fn; }
 
@@ -105,6 +107,7 @@ protected:
         s_navState = FP_NAV_IDLE;
         s_navIndex = 0;
         s_navMissionIndex = 0;
+        s_navMissionPaused = false;
         s_setCurrentArg = -1;
         s_saveCalls = 0;
         s_millis = 0;
@@ -510,6 +513,7 @@ TEST_F(MavlinkMissionTest, MissionCurrentShowsWhereAnInjectedPlanResumesTheMissi
     s_navInjected = true;
     s_navIndex = 0;
     s_navMissionIndex = 2;
+    s_navMissionPaused = true;
 
     mavMissionUpdate(1000);
     const mavlink_message_t *cur = lastOfType(MAVLINK_MSG_ID_MISSION_CURRENT);
@@ -536,6 +540,14 @@ TEST_F(MavlinkMissionTest, MissionCurrentWhileTheModeIsOff)
     mavMissionUpdate(2000);
     mavlink_msg_mission_current_decode(lastOfType(MAVLINK_MSG_ID_MISSION_CURRENT), &mc);
     EXPECT_EQ(mc.seq, 1);
+    EXPECT_EQ(mc.mission_state, MISSION_STATE_NOT_STARTED);
+
+    s_navMissionIndex = 0;
+    s_navMissionPaused = true;
+    sent.clear();
+    mavMissionUpdate(3000);
+    mavlink_msg_mission_current_decode(lastOfType(MAVLINK_MSG_ID_MISSION_CURRENT), &mc);
+    EXPECT_EQ(mc.seq, 0);
     EXPECT_EQ(mc.mission_state, MISSION_STATE_PAUSED);
 }
 

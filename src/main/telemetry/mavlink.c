@@ -961,7 +961,7 @@ static uint8_t handleOrbit(const mavlinkCommand_t *cmd)
     wp.pattern = WAYPOINT_PATTERN_ORBIT;
     wp.speed = (speedMps > 0.0f) ? speedParamToCmS(speedMps) : 0;
     if (orbitsRad > 0.0f) {
-        const float periodDs = flightPlanNavOrbitPeriodAtRadiusDs(wp.speed, fabsf(radiusM));
+        const float periodDs = flightPlanNavGuidedOrbitPeriodDs(wp.speed, radiusM);
         wp.duration = (uint16_t)constrainf(orbitsRad / (2.0f * M_PIf) * periodDs, 1.0f, UINT16_MAX);
     }
     return flyGuided(&wp, radiusM);

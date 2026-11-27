@@ -255,6 +255,7 @@ static struct {
     flightPlanNavState_e state;
     uint8_t currentIndex;
     uint8_t missionIndex;       // where the stored mission resumes after it is left
+    bool missionPaused;         // the stored mission was left before it completed
     uint16_t speedOverrideCmS;  // 0: legs fly their own speed
     timeUs_t holdStartUs;
     timeUs_t holdLastUpdateUs;
@@ -424,6 +425,7 @@ static void rememberMissionIndex(void)
 {
     if (missionRunning()) {
         fp.missionIndex = fp.currentIndex;
+        fp.missionPaused = true;
         fp.missionMod = fp.mod;
         fp.missionDelayEndMs = millis() + MAX(cmpTimeUs(fp.mod.delayEndUs, micros()), 0) / 1000;
     }
@@ -433,6 +435,12 @@ static void setMissionIndex(uint8_t index)
 {
     fp.missionIndex = index;
     fp.missionMod = (fpModifiers_t){ 0 };
+}
+
+static void resetMission(void)
+{
+    setMissionIndex(0);
+    fp.missionPaused = false;
 }
 
 static bool rescuePlanFlying(void)
@@ -619,7 +627,7 @@ static const waypoint_t *drainModifiers(void)
 static void completePlan(void)
 {
     if (fp.injectedCount == 0) {
-        setMissionIndex(0);
+        resetMission();
     }
     fp.state = FP_NAV_COMPLETE;
 #ifdef USE_WING
@@ -2086,15 +2094,7 @@ static void updateHoldPattern(timeUs_t currentTimeUs)
 }
 #endif // !USE_WING
 
-// Orbit period at the configured pattern radius for a leg flown at speedCmS
-// (0 = autopilot max velocity — the same cruise derivation dispatch uses).
-// MAVLink converts LOITER_TURNS turn counts to and from hold durations here.
-uint16_t flightPlanNavOrbitPeriodDs(uint16_t speedCmS)
-{
-    return flightPlanNavOrbitPeriodAtRadiusDs(speedCmS, autopilotConfig()->waypointHoldRadius * 0.01f);
-}
-
-uint16_t flightPlanNavOrbitPeriodAtRadiusDs(uint16_t speedCmS, float radiusM)
+static uint16_t orbitPeriodAtRadiusDs(uint16_t speedCmS, float radiusM)
 {
 #ifdef USE_WING
     UNUSED(speedCmS);
@@ -2109,6 +2109,21 @@ uint16_t flightPlanNavOrbitPeriodAtRadiusDs(uint16_t speedCmS, float radiusM)
     const float periodDs = 10.0f * 2.0f * M_PIf / rateRads;
     return (periodDs >= (float)UINT16_MAX) ? UINT16_MAX : (uint16_t)lrintf(periodDs);
 #endif
+}
+
+// Orbit period at the configured pattern radius for a leg flown at speedCmS
+// (0 = autopilot max velocity — the same cruise derivation dispatch uses).
+// MAVLink converts LOITER_TURNS turn counts to and from hold durations here.
+uint16_t flightPlanNavOrbitPeriodDs(uint16_t speedCmS)
+{
+    return orbitPeriodAtRadiusDs(speedCmS, autopilotConfig()->waypointHoldRadius * 0.01f);
+}
+
+uint16_t flightPlanNavGuidedOrbitPeriodDs(uint16_t speedCmS, float radiusM)
+{
+    const uint16_t flownCmS = (fp.speedOverrideCmS > 0) ? fp.speedOverrideCmS : speedCmS;
+    const float flownRadiusM = (radiusM != 0.0f) ? fabsf(radiusM) : autopilotConfig()->waypointHoldRadius * 0.01f;
+    return orbitPeriodAtRadiusDs(flownCmS, flownRadiusM);
 }
 
 static void advanceToNext(void)
@@ -2345,7 +2360,7 @@ void flightPlanNavInit(void)
 {
     fp.state = FP_NAV_IDLE;
     fp.currentIndex = 0;
-    setMissionIndex(0);
+    resetMission();
     fp.speedOverrideCmS = 0;
     fp.active = false;
     fp.zBiasM = 0.0f;
@@ -2620,6 +2635,11 @@ uint8_t flightPlanNavGetMissionIndex(void)
     return missionRunning() ? fp.currentIndex : fp.missionIndex;
 }
 
+bool flightPlanNavIsMissionPaused(void)
+{
+    return fp.missionPaused && !missionRunning();
+}
+
 void flightPlanNavSetSpeedOverride(uint16_t speedCmS)
 {
     const uint16_t minCmS = (uint16_t)(FP_MIN_CRUISE_MPS * 100.0f);
@@ -2646,14 +2666,14 @@ void flightPlanNavResetFlight(void)
     if (fp.active) {
         flightPlanNavDisengage();
     }
-    setMissionIndex(0);
+    resetMission();
     fp.speedOverrideCmS = 0;
     flightPlanNavCancelGuided();
 }
 
 void flightPlanNavMissionChanged(void)
 {
-    setMissionIndex(0);
+    resetMission();
 }
 
 bool flightPlanNavIsInjectedPlanActive(void)

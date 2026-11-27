@@ -721,7 +721,7 @@ static void sendMissionCurrent(void)
         missionState = MISSION_STATE_NO_MISSION;
     } else if (flying) {
         missionState = (flightPlanNavGetState() == FP_NAV_COMPLETE) ? MISSION_STATE_COMPLETE : MISSION_STATE_ACTIVE;
-    } else if (seq > 0) {
+    } else if (flightPlanNavIsMissionPaused()) {
         missionState = MISSION_STATE_PAUSED;
     } else {
         missionState = MISSION_STATE_NOT_STARTED;
