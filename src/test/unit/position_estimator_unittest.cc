@@ -61,6 +61,7 @@ static float baroAltCm = 0.0f;
 static bool baroUseFakeMicrosTimestamp = true;
 static timeUs_t baroSampleTimeUs = 0;
 static timeDelta_t baroSampleIntervalUs = 10000;
+static bool baroCalibrated = true;
 static timeUs_t fakeMicros = 0;
 static bool gpsAlwaysHasNewData = true;
 static bool gpsDataIsNew = false;
@@ -72,6 +73,7 @@ int32_t rangefinderGetLatestAltitude(void) { return lrintf(rfAltCm); }
 timeUs_t rangefinderGetLatestSampleTimeUs(void) { return rfUseFakeMicrosTimestamp ? fakeMicros : rfSampleTimeUs; }
 timeDelta_t rangefinderGetSampleIntervalUs(void) { return rfSampleIntervalUs; }
 float getBaroAltitude(void) { return baroAltCm; }
+bool baroIsCalibrated(void) { return baroCalibrated; }
 timeUs_t getBaroLatestSampleTimeUs(void) { return baroUseFakeMicrosTimestamp ? fakeMicros : baroSampleTimeUs; }
 timeDelta_t getBaroSampleIntervalUs(void) { return baroSampleIntervalUs; }
 
@@ -140,6 +142,7 @@ protected:
         rfSampleTimeUs = 0;
         rfSampleIntervalUs = 10000;
         baroAltCm = 100.0f;
+        baroCalibrated = true;
         baroUseFakeMicrosTimestamp = true;
         baroSampleTimeUs = 0;
         baroSampleIntervalUs = 10000;
@@ -155,12 +158,63 @@ protected:
         gpsDataFrequencyHz = 100.0f;
 
         positionConfigMutable()->altitude_source = ALTITUDE_SOURCE_RANGEFINDER_PREFER;
+        positionConfigMutable()->altitude_reference = ALTITUDE_REFERENCE_EACH_ARM;
         positionConfigMutable()->altitude_prefer_baro = 100;
         positionConfigMutable()->rangefinder_max_range_cm = 400;
 
         positionEstimatorInit();
     }
 };
+
+TEST_F(PositionEstimatorTest, PowerOnReferenceWaitsForBarometerCalibration)
+{
+    enabledSensors = SENSOR_BARO;
+    stateFlags = 0;
+    positionConfigMutable()->altitude_source = ALTITUDE_SOURCE_BARO_ONLY;
+    positionConfigMutable()->altitude_reference = ALTITUDE_REFERENCE_POWER_ON;
+    baroCalibrated = false;
+    baroAltCm = 100.0f;
+    baroUseFakeMicrosTimestamp = false;
+    positionEstimatorInit();
+
+    stepEstimator(100);
+    EXPECT_FALSE(positionEstimatorIsValidZ());
+    EXPECT_NEAR(positionEstimatorGetAltitudeCm(), 0.0f, 1.0f);
+
+    baroCalibrated = true;
+    baroAltCm = 0.0f;
+    baroSampleTimeUs = fakeMicros + 10000;
+    stepEstimator(1);
+    EXPECT_FALSE(positionEstimatorIsValidZ());
+    EXPECT_NEAR(positionEstimatorGetAltitudeCm(), 0.0f, 1.0f);
+
+    baroAltCm = 200.0f;
+    baroSampleTimeUs = fakeMicros + 10000;
+    stepEstimator(1);
+    EXPECT_TRUE(positionEstimatorIsValidZ());
+    EXPECT_NEAR(positionEstimatorGetAltitudeCm(), 0.0f, 10.0f);
+    baroUseFakeMicrosTimestamp = true;
+    stepEstimator(399);
+
+    baroAltCm = 300.0f;
+    stepEstimator(400);
+    EXPECT_NEAR(positionEstimatorGetAltitudeCm(), 100.0f, 15.0f);
+
+    // Recalibration changes the barometer's frame, but the power-on altitude
+    // reference must remain continuous through the new calibration.
+    baroCalibrated = false;
+    baroAltCm = 0.0f;
+    stepEstimator(20);
+    baroCalibrated = true;
+    stepEstimator(1);
+    EXPECT_NEAR(positionEstimatorGetAltitudeCm(), 100.0f, 10.0f);
+    stepEstimator(10);
+    EXPECT_NEAR(positionEstimatorGetAltitudeCm(), 100.0f, 15.0f);
+
+    baroAltCm = 100.0f;
+    stepEstimator(400);
+    EXPECT_NEAR(positionEstimatorGetAltitudeCm(), 200.0f, 20.0f);
+}
 
 TEST_F(PositionEstimatorTest, GPSMeasurementsAreHeldAtAltitudeTaskRate)
 {
@@ -1182,4 +1236,3 @@ TEST(PositionFilterTest, VelocityMeasurementCorrectsPositionState)
     EXPECT_GT(kalmanGetPosition(&kf), positionBefore);
     EXPECT_LT(kalmanGetPositionVariance(&kf), positionVarBefore);
 }
-
