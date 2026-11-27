@@ -54,6 +54,7 @@
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
+#include "sensors/esc_sensor.h"
 #include "sensors/motor_telemetry.h"
 
 #include "telemetry/jetiexbus.h"

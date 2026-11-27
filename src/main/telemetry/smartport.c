@@ -76,6 +76,7 @@
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/compass.h"
+#include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 #include "sensors/motor_telemetry.h"

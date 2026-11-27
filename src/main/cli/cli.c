@@ -178,7 +178,6 @@ bool cliMode = false;
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/compass.h"
-#include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
 #include "sensors/gyro_init.h"
 #include "sensors/sensors.h"
