@@ -79,3 +79,10 @@ typedef union sensorAlignment_u {
 
 void buildRotationMatrixFromAngles(matrix33_t *rm, const sensorAlignment_t *rpy);
 void buildAlignmentFromStandardAlignment(sensorAlignment_t *rpy, sensor_align_e stdAlignment);
+
+// Magnetometer custom alignment (mag_align_roll/pitch/yaw) uses its own convention
+// (betaflight#14849): the sensor-to-body transform is Rz(yaw) * Ry(pitch) * Rx(roll),
+// with yaw counter-clockwise positive. Gyro/acc custom alignment and the standard
+// CWxx alignments use the opposite rotation sense.
+void buildMagRotationMatrixFromAngles(matrix33_t *rm, const sensorAlignment_t *rpy);
+void buildMagAlignmentFromStandardAlignment(sensorAlignment_t *rpy, sensor_align_e stdAlignment);
