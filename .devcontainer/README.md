@@ -130,6 +130,20 @@ Below is an example that should work on distributions with `systemd` (Debian and
     docker run docker.io/library/hello-world  # Run an example to validate the install
 ```
 
+### File ownership on Linux
+
+The image runs as user `devpod` (UID 1000). When the checkout is bind-mounted into the container, the container must be able to write to it (`tools/`, `downloads/`, `src/config`, `obj/`). Whether it can depends on how your container engine maps user IDs:
+
+| Container engine | What to add to `docker run` / `podman run` |
+|------------------|---------------------------------------------|
+| Docker (default, rootful) | Nothing if `id -u` is 1000; otherwise `--user "$(id -u):$(id -g)"` |
+| Rootless Docker | `--user 0:0` (container root maps to your host user) |
+| Podman (rootless) | `--userns=keep-id --user "$(id -u):$(id -g)"` |
+
+In rootless engines, `--user "$(id -u):$(id -g)"` on its own maps to a subordinate host ID rather than to your user, so the container cannot write to the checkout. See Docker's [rootless UID/GID mapping](https://docs.docker.com/engine/security/rootless/uid-gid-mapping/) documentation for details. Docker Desktop on Windows and macOS handles file ownership itself and needs none of these options.
+
+On SELinux-enforcing hosts (for example Fedora or RHEL), also append `:z` to the bind mount (`-v "${PWD}:/workspace:z"`), whatever the engine. This relabels the files in your checkout on the host so the container may access them. See the `--volume` option in the [Podman documentation](https://docs.podman.io/en/latest/markdown/podman-run.1.html#volume-v-source-volume-host-dir-container-dir-options) for details.
+
 ### Installing VS Code and the Dev Containers Extension
 
 To use devcontainers more effectively, you can install Visual Studio Code along with the Dev Containers extension.

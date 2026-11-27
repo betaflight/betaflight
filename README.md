@@ -84,9 +84,22 @@ A preconfigured [devcontainer](.devcontainer/README.md) is included for a consis
 # With VS Code: Install "Dev Containers" extension, open folder, and select "Reopen in Container"
 
 # Or command-line only:
+# Build the development image (once)
 docker build -t betaflight-dev -f .devcontainer/containerfile .devcontainer/
-docker run --rm -v "${PWD}:/workspace" -w /workspace betaflight-dev make TARGET=SPEEDYBEEF405WING
+
+# Install the ARM toolchain into tools/ (once)
+docker run --rm -v "${PWD}:/workspace" -w /workspace betaflight-dev make arm_sdk_install
+
+# Fetch the board configs into src/config (once, only if src/config is empty)
+docker run --rm -v "${PWD}:/workspace" -w /workspace betaflight-dev make configs
+
+# Build firmware for a board
+docker run --rm -v "${PWD}:/workspace" -w /workspace betaflight-dev make SPEEDYBEEF405WING
 ```
+
+Pass the name of a board (for example `make SPEEDYBEEF405WING`) or of an MCU target (for example `make STM32F405` or `make SITL`) to `make`.
+
+The container runs as user `devpod` (UID 1000). On Linux with standard (rootful) Docker, if your user ID is not 1000 (check with `id -u`), add `--user "$(id -u):$(id -g)"` to each `docker run` command so the container can write to your checkout. For rootless Docker or Podman, see [file ownership on Linux](.devcontainer/README.md#file-ownership-on-linux).
 
 See the [devcontainer documentation](.devcontainer/README.md) for detailed setup instructions including hardware flashing.
 
