@@ -62,8 +62,8 @@ PG_DECLARE(timeConfig_t, timeConfig);
 // Milliseconds since Jan 1 1970
 typedef int64_t rtcTime_t;
 
-rtcTime_t rtcTimeMake(int32_t secs, uint16_t millis);
-int32_t rtcTimeGetSeconds(const rtcTime_t *t);
+rtcTime_t rtcTimeMake(int64_t secs, uint16_t millis);
+int64_t rtcTimeGetSeconds(const rtcTime_t *t);
 uint16_t rtcTimeGetMillis(const rtcTime_t *t);
 
 typedef struct _dateTime_s {
