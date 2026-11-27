@@ -1735,8 +1735,8 @@ static void bbSwitchToInput(bbPort_t *p) {
     bbDMA_Cmd(p, ENABLE);
     p->direction = DSHOT_BITBANG_DIRECTION_INPUT;
 }
-static uint32_t decode_bb(uint16_t *buf, uint16_t cnt, int pin) {
-    (void)buf; (void)cnt; (void)pin;
+static uint32_t decode_bb(uint16_t *buf, uint16_t cnt, int pin, timeUs_t nowUs) {
+    (void)buf; (void)cnt; (void)pin; (void)nowUs;
     decodeCalls++;
     return 0x0123u;
 }

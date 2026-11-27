@@ -450,6 +450,16 @@ maths_unittest_SRC := \
 		$(USER_DIR)/common/vector.c
 
 
+motor_bitbang_order_unittest_SRC := \
+		$(USER_DIR)/drivers/motor.c
+
+motor_bitbang_order_unittest_DEFINES := \
+		USE_MOTOR= \
+		USE_PWM_OUTPUT= \
+		USE_DSHOT= \
+		USE_DSHOT_BITBANG= \
+		USE_DSHOT_TELEMETRY=
+
 motor_output_unittest_SRC := \
 		$(USER_DIR)/build/atomic.c \
 		$(USER_DIR)/drivers/dshot.c

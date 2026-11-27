@@ -22,10 +22,15 @@
 
 #if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
 
+#include "common/time.h"
+
+// Decode one motor's answer from the port input buffer. 'now' is the time of
+// the capture, read once per port group by the caller; the decoder uses it to
+// re-check its preamble skip every MARGIN_CHECK_INTERVAL_US.
 #ifdef USE_DSHOT_BITBAND
-uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit);
+uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit, timeUs_t now);
 #else
-uint32_t decode_bb(uint16_t buffer[], uint32_t count, uint32_t mask);
+uint32_t decode_bb(uint16_t buffer[], uint32_t count, uint32_t bit, timeUs_t now);
 #endif
 
 #endif
