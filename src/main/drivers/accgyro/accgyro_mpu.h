@@ -227,7 +227,8 @@ typedef enum {
     ICM_45686_SPI,
     ICM_56686_SPI,
     ICM_40609_SPI,
-    LSM6DSV32X_SPI
+    LSM6DSV32X_SPI,
+    ADIS1657X_SPI
 } mpuSensor_e;
 
 typedef enum {
@@ -238,6 +239,12 @@ typedef enum {
 typedef struct mpuDetectionResult_s {
     mpuSensor_e sensor;
     mpu6050Resolution_e resolution;
+#if ENABLE_ACCGYRO_ADIS1657X
+    // Read from the part during gyro init. The accelerometer's initFn has no bus
+    // transaction of its own, and its sensitivity depends on the variant, so the
+    // value travels with the device rather than sitting in driver-global state.
+    uint16_t productId;
+#endif
 } mpuDetectionResult_t;
 
 struct gyroDev_s;

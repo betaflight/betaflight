@@ -73,6 +73,7 @@ typedef enum {
     GYRO_BMI423,
     GYRO_VIRTUAL,
     GYRO_LSM6DSV32X,
+    GYRO_ADIS1657X,
     GYRO_HARDWARE_COUNT
 } gyroHardware_e;
 
@@ -89,6 +90,7 @@ typedef enum {
 typedef enum {
     GYRO_RATE_1_kHz,
     GYRO_RATE_1100_Hz,
+    GYRO_RATE_2000_Hz,
     GYRO_RATE_3200_Hz,
     GYRO_RATE_6400_Hz,
     GYRO_RATE_6664_Hz,
