@@ -242,6 +242,16 @@
 #endif
 #endif
 
+typedef struct fpModifiers_s {
+    bool     altOverridePending;
+    int32_t  altOverrideCm;
+    uint8_t  altOverrideMode;       // 0=Neutral, 1=Climbing, 2=Descending; informational
+    bool     delayActive;
+    uint16_t delayDurationDs;
+    timeUs_t delayEndUs;
+    float    yawRateCapDps;
+} fpModifiers_t;
+
 static struct {
     flightPlanNavState_e state;
     uint8_t currentIndex;
@@ -258,13 +268,8 @@ static struct {
     // positional dispatch. altOverride is one-shot; delay arms a timer that
     // clamps cruise during the next leg; yawRateCapDps caps the autopilot yaw
     // controller from that point in the plan onward.
-    bool     altOverridePending;
-    int32_t  altOverrideCm;
-    uint8_t  altOverrideMode;       // 0=Neutral, 1=Climbing, 2=Descending; informational
-    bool     delayActive;
-    uint16_t delayDurationDs;
-    timeUs_t delayEndUs;
-    float    yawRateCapDps;
+    fpModifiers_t mod;
+    fpModifiers_t missionMod;       // what the stored mission's leg at missionIndex had staged
 
     flightPlanAbortReason_e abortReason;
 
@@ -418,7 +423,14 @@ static void rememberMissionIndex(void)
 {
     if (missionRunning()) {
         fp.missionIndex = fp.currentIndex;
+        fp.missionMod = fp.mod;
     }
+}
+
+static void setMissionIndex(uint8_t index)
+{
+    fp.missionIndex = index;
+    fp.missionMod = (fpModifiers_t){ 0 };
 }
 
 static bool rescuePlanFlying(void)
@@ -557,18 +569,18 @@ static const waypoint_t *drainModifiers(void)
         }
         switch (wp->type) {
         case WAYPOINT_TYPE_ALT_CHANGE:
-            fp.altOverridePending = true;
-            fp.altOverrideCm = wp->altitude;
-            fp.altOverrideMode = wp->pattern;
+            fp.mod.altOverridePending = true;
+            fp.mod.altOverrideCm = wp->altitude;
+            fp.mod.altOverrideMode = wp->pattern;
             break;
         case WAYPOINT_TYPE_DELAY:
-            fp.delayActive = true;
-            fp.delayDurationDs = wp->duration;
-            fp.delayEndUs = micros() + (uint32_t)wp->duration * 100000u;
+            fp.mod.delayActive = true;
+            fp.mod.delayDurationDs = wp->duration;
+            fp.mod.delayEndUs = micros() + (uint32_t)wp->duration * 100000u;
             break;
         case WAYPOINT_TYPE_YAW_RATE:
-            fp.yawRateCapDps = (float)wp->speed;
-            autopilotSetYawRateLimit(fp.yawRateCapDps);
+            fp.mod.yawRateCapDps = (float)wp->speed;
+            autopilotSetYawRateLimit(fp.mod.yawRateCapDps);
             break;
         default:
             return wp;
@@ -585,7 +597,7 @@ static const waypoint_t *drainModifiers(void)
 static void completePlan(void)
 {
     if (fp.injectedCount == 0) {
-        fp.missionIndex = 0;
+        setMissionIndex(0);
     }
     fp.state = FP_NAV_COMPLETE;
 #ifdef USE_WING
@@ -777,8 +789,8 @@ static bool dispatchWaypoint(void)
     // yet) or a delay-expiry re-dispatch (cruise restore) both keep the
     // overridden altitude in place.
     waypoint_t effective = *wp;
-    if (fp.altOverridePending) {
-        effective.altitude = fp.altOverrideCm;
+    if (fp.mod.altOverridePending) {
+        effective.altitude = fp.mod.altOverrideCm;
     }
 
     vector3_t targetEnuM;
@@ -835,8 +847,8 @@ static bool dispatchWaypoint(void)
     // target, so subtracting the current ENU estimate gives the leg vector
     // the position controller is actually going to drive. Skip when the
     // remaining leg is effectively zero to avoid div-by-near-zero.
-    if (fp.delayActive) {
-        const float delaySec = fp.delayDurationDs * 0.1f;
+    if (fp.mod.delayActive) {
+        const float delaySec = fp.mod.delayDurationDs * 0.1f;
         const positionEstimate3d_t *est = positionEstimatorGetEstimate();
         const vector3_t legVec = {.v = {
             [ENU_E] = targetEnuM.v[ENU_E] - est->position.v[ENU_E] * 0.01f,
@@ -2098,7 +2110,7 @@ static void advanceToNext(void)
     // The leg that's ending consumed any staged altitude override; clear it
     // before the next drainModifiers() pass so a new override (or none) is
     // staged cleanly for the upcoming leg.
-    fp.altOverridePending = false;
+    fp.mod.altOverridePending = false;
     fp.patternPending = false;
     fp.patternActive = false;
 
@@ -2146,8 +2158,8 @@ static void startWingLanding(void)
 static void wingWaypointReached(const waypoint_t *wp)
 {
     uint32_t holdDs = keepsStation(wp) ? fp.holdDurationDs : 0;
-    if (fp.delayActive) {
-        const timeDelta_t earlyUs = cmpTimeUs(fp.delayEndUs, micros());
+    if (fp.mod.delayActive) {
+        const timeDelta_t earlyUs = cmpTimeUs(fp.mod.delayEndUs, micros());
         holdDs += (earlyUs > 0) ? earlyUs / 100000 : 0;
     }
     if (holdDs == 0) {
@@ -2300,23 +2312,34 @@ static void clearLegYawState(void)
     fp.legYawIndex = UINT8_MAX;
 }
 
+static void applyModifiers(const fpModifiers_t *mods)
+{
+    fp.mod = *mods;
+    autopilotSetYawRateLimit(fp.mod.yawRateCapDps);
+}
+
 static void clearModifierState(void)
 {
-    fp.altOverridePending = false;
-    fp.altOverrideCm = 0;
-    fp.altOverrideMode = 0;
-    fp.delayActive = false;
-    fp.delayDurationDs = 0;
-    fp.delayEndUs = 0;
-    fp.yawRateCapDps = 0.0f;
-    autopilotSetYawRateLimit(0.0f);
+    applyModifiers(&(const fpModifiers_t){ 0 });
+}
+
+// A delay window runs on while the mission is paused; resuming flies only what is left of it.
+static void resumeMissionModifiers(void)
+{
+    fpModifiers_t mods = fp.missionMod;
+    const timeDelta_t remainingUs = cmpTimeUs(mods.delayEndUs, micros());
+    mods.delayActive = mods.delayActive && remainingUs > 0;
+    if (mods.delayActive) {
+        mods.delayDurationDs = (uint16_t)MAX(remainingUs / 100000, 1);
+    }
+    applyModifiers(&mods);
 }
 
 void flightPlanNavInit(void)
 {
     fp.state = FP_NAV_IDLE;
     fp.currentIndex = 0;
-    fp.missionIndex = 0;
+    setMissionIndex(0);
     fp.speedOverrideCmS = 0;
     fp.active = false;
     fp.zBiasM = 0.0f;
@@ -2415,6 +2438,7 @@ void flightPlanNavEngage(void)
     }
 
     fp.currentIndex = (fp.missionIndex < flightPlanConfig()->waypointCount) ? fp.missionIndex : 0;
+    resumeMissionModifiers();
     fp.active = true;
     // Try to dispatch immediately; if the GPS origin isn't ready yet we stay
     // IDLE and flightPlanNavUpdate() will retry.
@@ -2534,6 +2558,7 @@ static void restartMissionAt(uint8_t index)
     fp.carrotSpeedMps = 0.0f;
     fp.measFiltValid = false;
     resetLegState();
+    resumeMissionModifiers();
     fp.state = FP_NAV_TARGETING;
     dispatchWaypoint();
 }
@@ -2548,7 +2573,7 @@ bool flightPlanNavStartMission(uint8_t index)
         return false;
     }
 #endif
-    fp.missionIndex = index;
+    setMissionIndex(index);
     flightPlanNavCancelGuided();
     if (fp.active) {
         restartMissionAt(index);
@@ -2561,7 +2586,8 @@ bool flightPlanNavResumeMission(void)
     if (!fp.active || !fp.isGuidedPlan || !fp.guidedPausedMission) {
         return false;
     }
-    return flightPlanNavStartMission(fp.missionIndex);
+    restartMissionAt(fp.missionIndex);
+    return true;
 }
 
 uint8_t flightPlanNavGetMissionIndex(void)
@@ -2578,7 +2604,7 @@ void flightPlanNavSetSpeedOverride(uint16_t speedCmS)
     }
     // A carrot leg takes the new speed on its next update; a point leg holds the speed it was given
     if (fp.legIsPassGate) {
-        if (!fp.delayActive) {
+        if (!fp.mod.delayActive) {
             fp.legCruiseMps = legCruiseMpsFor(currentWaypoint());
         }
     } else {
@@ -2594,14 +2620,17 @@ bool flightPlanNavIsTakingOff(void)
 
 void flightPlanNavResetFlight(void)
 {
-    fp.missionIndex = 0;
+    if (fp.active) {
+        flightPlanNavDisengage();
+    }
+    setMissionIndex(0);
     fp.speedOverrideCmS = 0;
     flightPlanNavCancelGuided();
 }
 
 void flightPlanNavMissionChanged(void)
 {
-    fp.missionIndex = 0;
+    setMissionIndex(0);
 }
 
 bool flightPlanNavIsInjectedPlanActive(void)
@@ -2707,8 +2736,8 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
 
     // DELAY-window expiry: clear the cap and re-issue the current leg at the
     // unmodified cruise so we don't crawl for the rest of the leg.
-    if (fp.delayActive && cmpTimeUs(currentTimeUs, fp.delayEndUs) >= 0) {
-        fp.delayActive = false;
+    if (fp.mod.delayActive && cmpTimeUs(currentTimeUs, fp.mod.delayEndUs) >= 0) {
+        fp.mod.delayActive = false;
         if (fp.state == FP_NAV_TARGETING) {
             dispatchWaypoint();
         }
@@ -2887,7 +2916,7 @@ bool flightPlanNavSetCurrentIndex(uint8_t index)
         return false;
     }
     if (flightPlanNavIsGuided()) {
-        fp.missionIndex = index;
+        setMissionIndex(index);
         return true;
     }
     // SET_CURRENT addresses the uploaded PG mission; an injected runtime plan
@@ -2896,7 +2925,7 @@ bool flightPlanNavSetCurrentIndex(uint8_t index)
         return false;
     }
 
-    fp.missionIndex = index;
+    setMissionIndex(index);
     if (fp.active) {
         restartMissionAt(index);
     }

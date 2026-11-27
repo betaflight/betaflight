@@ -1209,6 +1209,55 @@ TEST_F(FlightPlanNavTest, DisarmAndNewMissionRestartAtFirstWaypoint)
     EXPECT_EQ(flightPlanNavGetCurrentIndex(), 0);
 }
 
+TEST_F(FlightPlanNavTest, DisarmMidMissionRestartsAtFirstWaypointBeforeTheModeDrops)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    flightPlanNavEngage();
+    arriveAtWaypoint();
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    flightPlanNavResetFlight();
+    flightPlanNavDisengage();
+    EXPECT_EQ(flightPlanNavGetMissionIndex(), 0);
+
+    flightPlanNavEngage();
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 0);
+}
+
+TEST_F(FlightPlanNavTest, ResumedMissionKeepsTheModifiersOfTheInterruptedLeg)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypoint(0, 0, 0, WAYPOINT_TYPE_YAW_RATE, 45);
+    addWaypoint(0, 0, 18000, WAYPOINT_TYPE_ALT_CHANGE);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypoint(50, 60, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    flightPlanNavEngage();
+    arriveAtWaypoint();
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 3);
+    ASSERT_NEAR(g_lastTarget.targetEfM.z, 80.0f, 0.1f);    // 180 m AMSL - 100 m origin
+
+    const waypoint_t hold = makeWaypoint(0, 0, 12000, WAYPOINT_TYPE_HOLD, 0, UINT16_MAX);
+    ASSERT_TRUE(flightPlanNavSetGuidedPlan(&hold, 1, 0.0f));
+    EXPECT_FLOAT_EQ(g_yawRateLimitDps, 0.0f);
+    ASSERT_TRUE(flightPlanNavResumeMission());
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 3);
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 80.0f, 0.1f);
+    EXPECT_FLOAT_EQ(g_yawRateLimitDps, 45.0f);
+
+    flightPlanNavDisengage();
+    flightPlanNavEngage();
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 3);
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 80.0f, 0.1f);
+    EXPECT_FLOAT_EQ(g_yawRateLimitDps, 45.0f);
+
+    flightPlanNavDisengage();
+    ASSERT_TRUE(flightPlanNavSetCurrentIndex(3));
+    flightPlanNavEngage();
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 50.0f, 0.1f);
+}
+
 TEST_F(FlightPlanNavTest, GuidedPlanStagedWhileIdleIsFlownOnEngage)
 {
     addWaypoint(500000, 500000, 99999, WAYPOINT_TYPE_FLYOVER);
