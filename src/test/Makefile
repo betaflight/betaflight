@@ -220,12 +220,14 @@ accgyro_spi_lsm6dsv16x_unittest_SRC := \
 accgyro_spi_lsm6dsv16x_unittest_16x_DEFINES := USE_ACCGYRO_LSM6DSV16X=
 accgyro_spi_lsm6dsv16x_unittest_32x_DEFINES := USE_ACCGYRO_LSM6DSV32X=
 accgyro_spi_lsm6dsv16x_unittest_320x_DEFINES := USE_ACCGYRO_LSM6DSK320X=
+accgyro_spi_lsm6dsv16x_unittest_256x_DEFINES := USE_ACCGYRO_ISM6HGK256X=
 
 # Run the shared fixture with every variant enabled and with each enabled alone.
 accgyro_spi_lsm6dsv16x_unittest_DEFINES = \
                 USE_DMA= \
                 $(if $1,$(accgyro_spi_lsm6dsv16x_unittest_$1_DEFINES), \
-                    USE_ACCGYRO_LSM6DSV16X= USE_ACCGYRO_LSM6DSV32X= USE_ACCGYRO_LSM6DSK320X=)
+                    USE_ACCGYRO_LSM6DSV16X= USE_ACCGYRO_LSM6DSV32X= USE_ACCGYRO_LSM6DSK320X= \
+                    USE_ACCGYRO_ISM6HGK256X=)
 
 # This test is disabled due to build errors.
 # Its source code is archived in unit/battery_unittest.cc.txt
@@ -1276,7 +1278,7 @@ TEST_BASENAMES = $(TEST_SRCS:$(TEST_DIR)/%.cc=%)
 TESTS_TARGET_SPECIFIC = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),$(test)))
 
 TESTS = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),,$(test)))
-TESTS += $(addprefix accgyro_spi_lsm6dsv16x_unittest.,16x 32x 320x)
+TESTS += $(addprefix accgyro_spi_lsm6dsv16x_unittest.,16x 32x 320x 256x)
 TESTS += $(addprefix um32_uart_bidir_unittest.,nopulldown no_board_bias no_board_bias_nopulldown)
 TESTS_ALL = $(TESTS)
 

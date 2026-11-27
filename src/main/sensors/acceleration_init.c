@@ -344,10 +344,15 @@ retry:
         FALLTHROUGH;
 #endif
 
+#if defined(USE_ACCGYRO_LSM6DSK320X) || defined(USE_ACCGYRO_ISM6HGK256X)
 #ifdef USE_ACCGYRO_LSM6DSK320X
     case ACC_LSM6DSK320X:
+#endif
+#ifdef USE_ACCGYRO_ISM6HGK256X
+    case ACC_ISM6HGK256X:
+#endif
         if (lsm6dsk320xSpiAccDetect(dev)) {
-            accHardware = ACC_LSM6DSK320X;
+            accHardware = dev->mpuDetectionResult.sensor == ISM6HGK256X_SPI ? ACC_ISM6HGK256X : ACC_LSM6DSK320X;
             break;
         }
         FALLTHROUGH;
