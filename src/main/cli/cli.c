@@ -3344,7 +3344,12 @@ RAM_CODE static void cliFlashInfo(const char *cmdName, char *cmdline)
         cliPrintLinef("  %d: %s %u %u", index, flashPartitionGetTypeName(partition->type), partition->startSector, partition->endSector);
     }
 #ifdef USE_FLASHFS
-    cliPrintLinef("FlashFS size=%u, usedSize=%u", flashfsGetSize(), flashfsGetOffset());
+    const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_FLASHFS);
+
+    cliPrintLinef("FlashFS size=%u, usedSize=%u",
+            FLASH_PARTITION_SECTOR_COUNT(flashPartition) * layout->sectorSize,
+            flashfsGetOffset()
+    );
 #endif
 }
 #endif // USE_FLASH_CHIP
