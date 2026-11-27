@@ -1382,6 +1382,7 @@ static float runWingTpaDive(void)
 
 TEST(pidControllerTest, testTpaSpeedBasicMaxSpeedIsDiveSpeed)
 {
+    resetTest();
     pidProfile->tpa_speed_type = TPA_SPEED_BASIC;
     const float diveSpeed = runWingTpaDive();
     // The speed the estimate settles at is the speed TPA is normalised by, so it must not pass it
@@ -1390,6 +1391,7 @@ TEST(pidControllerTest, testTpaSpeedBasicMaxSpeedIsDiveSpeed)
 
 TEST(pidControllerTest, testTpaSpeedAdvancedMaxSpeedIsDiveSpeed)
 {
+    resetTest();
     pidProfile->tpa_speed_type = TPA_SPEED_ADVANCED;
     const float diveSpeed = runWingTpaDive();
     EXPECT_NEAR(diveSpeed, pidRuntime.tpaSpeed.maxSpeed, 0.01f * pidRuntime.tpaSpeed.maxSpeed);
