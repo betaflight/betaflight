@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#if defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X) || defined(USE_ACCGYRO_LSM6DSK320X)
+#if defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X) || defined(USE_ACCGYRO_LSM6DSK320X) || defined(USE_ACCGYRO_ISM6HGK256X)
 
 #include "accgyro_spi_lsm6dsv16x.h"
 
@@ -38,6 +38,10 @@
  *
  *     https://www.st.com/content/ccc/resource/technical/document/datasheet/group3/47/03/b2/44/47/32/4b/76/DM00741844/files/DM00741844.pdf/jcr:content/translations/en.DM00741844.pdf
  *
+ * LSM6DSK320X (DS15060) and ISM6HGK256X (DS15340) share WHO_AM_I 0x75 and an identical
+ * gyroscope / low-g accelerometer register map; they differ only in the high-g channel
+ * (up to +/-320g vs +/-256g), which is not used here. As no register distinguishes them,
+ * the reported name follows the build: ISM6HGK256X only when LSM6DSK320X is not enabled.
  */
 
 // 10 MHz max SPI frequency
@@ -866,6 +870,7 @@
 
 #define LSM6DSK320X_WHO_AM_I_CONST          (0x75)
 
+#if defined(USE_ACCGYRO_LSM6DSK320X) || defined(USE_ACCGYRO_ISM6HGK256X)
 uint8_t lsm6dsk320xSpiDetect(const extDevice_t *dev)
 {
     const uint8_t whoAmI = spiReadRegMsk(dev, LSM6DSV_WHO_AM_I);
@@ -874,8 +879,29 @@ uint8_t lsm6dsk320xSpiDetect(const extDevice_t *dev)
         return MPU_NONE;
     }
 
+#ifdef USE_ACCGYRO_LSM6DSK320X
     return LSM6DSK320X_SPI;
+#else
+    return ISM6HGK256X_SPI;
+#endif
 }
+
+static bool lsm6dsk320xVariantEnabled(mpuSensor_e sensor)
+{
+    switch (sensor) {
+#ifdef USE_ACCGYRO_LSM6DSK320X
+    case LSM6DSK320X_SPI:
+        return true;
+#endif
+#ifdef USE_ACCGYRO_ISM6HGK256X
+    case ISM6HGK256X_SPI:
+        return true;
+#endif
+    default:
+        return false;
+    }
+}
+#endif // USE_ACCGYRO_LSM6DSK320X || USE_ACCGYRO_ISM6HGK256X
 
 static bool lsm6dsvReset(const extDevice_t *dev, uint8_t whoAmI);
 
@@ -1025,9 +1051,10 @@ static bool lsm6dsv16xAccReadSPI(accDev_t *acc)
     return true;
 }
 
+#if defined(USE_ACCGYRO_LSM6DSK320X) || defined(USE_ACCGYRO_ISM6HGK256X)
 bool lsm6dsk320xSpiAccDetect(accDev_t *acc)
 {
-    if (acc->mpuDetectionResult.sensor != LSM6DSK320X_SPI) {
+    if (!lsm6dsk320xVariantEnabled(acc->mpuDetectionResult.sensor)) {
         return false;
     }
 
@@ -1036,6 +1063,7 @@ bool lsm6dsk320xSpiAccDetect(accDev_t *acc)
 
     return true;
 }
+#endif
 
 bool lsm6dsv16xSpiAccDetect(accDev_t *acc)
 {
@@ -1125,7 +1153,7 @@ static bool lsm6dsvConfigure(const extDevice_t *dev, uint8_t whoAmI, bool is32x)
                 LSM6DSV_CTRL8_FS_XL_MASK, LSM6DSV_CTRL8_FS_XL_SHIFT) },
         { LSM6DSV_CTRL9, LSM6DSV_CTRL9_LPF2_XL_EN },
         // 16X/320X: +/-2000 dps. 32X: +/-4000 dps.
-        // 320X FS_G is only bits [2:0]; bit 3 must be 1 (DS15060 Table 64, reset value 0x08).
+        // 320X/256X FS_G is only bits [2:0]; bit 3 must be 1 (DS15060/DS15340 Table 64, reset value 0x08).
         { LSM6DSV_CTRL6, (whoAmI == LSM6DSK320X_WHO_AM_I_CONST ? 0x08 : 0) |
             LSM6DSV_ENCODE_BITS(lpf1BandwidthOptions[gyroConfig()->gyro_hardware_lpf],
                 LSM6DSV_CTRL6_LPF1_G_BW_MASK, LSM6DSV_CTRL6_LPF1_G_BW_SHIFT) |
@@ -1174,10 +1202,12 @@ static void lsm6dsvGyroInit(gyroDev_t *gyro, uint8_t whoAmI)
     mpuGyroInit(gyro);
 }
 
+#if defined(USE_ACCGYRO_LSM6DSK320X) || defined(USE_ACCGYRO_ISM6HGK256X)
 static void lsm6dsk320xGyroInit(gyroDev_t *gyro)
 {
     lsm6dsvGyroInit(gyro, LSM6DSK320X_WHO_AM_I_CONST);
 }
+#endif
 
 static void lsm6dsv16xGyroInit(gyroDev_t *gyro)
 {
@@ -1269,9 +1299,10 @@ bool lsm6dsv16xSpiGyroDetect(gyroDev_t *gyro)
     return true;
 }
 
+#if defined(USE_ACCGYRO_LSM6DSK320X) || defined(USE_ACCGYRO_ISM6HGK256X)
 bool lsm6dsk320xSpiGyroDetect(gyroDev_t *gyro)
 {
-    if (gyro->mpuDetectionResult.sensor != LSM6DSK320X_SPI) {
+    if (!lsm6dsk320xVariantEnabled(gyro->mpuDetectionResult.sensor)) {
         return false;
     }
 
@@ -1280,5 +1311,6 @@ bool lsm6dsk320xSpiGyroDetect(gyroDev_t *gyro)
 
     return true;
 }
+#endif
 
-#endif // USE_ACCGYRO_LSM6DSV16X || USE_ACCGYRO_LSM6DSV32X || USE_ACCGYRO_LSM6DSK320X
+#endif // USE_ACCGYRO_LSM6DSV16X || USE_ACCGYRO_LSM6DSV32X || USE_ACCGYRO_LSM6DSK320X || USE_ACCGYRO_ISM6HGK256X

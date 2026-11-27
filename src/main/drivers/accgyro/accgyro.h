@@ -73,6 +73,7 @@ typedef enum {
     GYRO_BMI423,
     GYRO_VIRTUAL,
     GYRO_LSM6DSV32X,
+    GYRO_ISM6HGK256X,
     GYRO_HARDWARE_COUNT
 } gyroHardware_e;
 
@@ -132,7 +133,7 @@ typedef struct gyroDev_s {
     int32_t gyroDmaMaxDuration;
     busSegment_t segments[2];
     uint8_t dmaStallCount;
-#if defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X) || defined(USE_ACCGYRO_LSM6DSK320X)
+#if defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSV32X) || defined(USE_ACCGYRO_LSM6DSK320X) || defined(USE_ACCGYRO_ISM6HGK256X)
     // Completed samples are separate from the buffer being written by SPI DMA.
     uint32_t lsm6dsvDmaSequence;
     int16_t lsm6dsvDmaSample[2 * XYZ_AXIS_COUNT];

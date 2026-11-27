@@ -47,6 +47,8 @@ constexpr uint8_t OUTX_L_G = 0x22;
 constexpr uint8_t OUTX_L_A = 0x28;
 constexpr uint8_t HAODR_CFG = 0x62;
 
+// Dsk320x is the WHO_AM_I 0x75 device: LSM6DSK320X or ISM6HGK256X, which are
+// register-identical, so the build decides which identity is reported.
 enum class Variant { Dsv16x, Dsv32x, Dsk320x };
 
 mpuSensor_e expectedSensor(Variant variant)
@@ -58,10 +60,31 @@ mpuSensor_e expectedSensor(Variant variant)
 #ifdef USE_ACCGYRO_LSM6DSV32X
     case Variant::Dsv32x: return LSM6DSV32X_SPI;
 #endif
-#ifdef USE_ACCGYRO_LSM6DSK320X
+#if defined(USE_ACCGYRO_LSM6DSK320X)
     case Variant::Dsk320x: return LSM6DSK320X_SPI;
+#elif defined(USE_ACCGYRO_ISM6HGK256X)
+    case Variant::Dsk320x: return ISM6HGK256X_SPI;
 #endif
     default: return MPU_NONE;
+    }
+}
+
+bool sensorEnabled(mpuSensor_e sensor)
+{
+    switch (sensor) {
+#ifdef USE_ACCGYRO_LSM6DSV16X
+    case LSM6DSV16X_SPI: return true;
+#endif
+#ifdef USE_ACCGYRO_LSM6DSV32X
+    case LSM6DSV32X_SPI: return true;
+#endif
+#ifdef USE_ACCGYRO_LSM6DSK320X
+    case LSM6DSK320X_SPI: return true;
+#endif
+#ifdef USE_ACCGYRO_ISM6HGK256X
+    case ISM6HGK256X_SPI: return true;
+#endif
+    default: return false;
     }
 }
 
@@ -73,7 +96,7 @@ uint8_t detectSensor(const extDevice_t *dev)
         return sensor;
     }
 #endif
-#ifdef USE_ACCGYRO_LSM6DSK320X
+#if defined(USE_ACCGYRO_LSM6DSK320X) || defined(USE_ACCGYRO_ISM6HGK256X)
     return lsm6dsk320xSpiDetect(dev);
 #else
     return MPU_NONE;
@@ -82,7 +105,7 @@ uint8_t detectSensor(const extDevice_t *dev)
 
 bool detectGyroCallbacks(gyroDev_t *gyro)
 {
-#ifdef USE_ACCGYRO_LSM6DSK320X
+#if defined(USE_ACCGYRO_LSM6DSK320X) || defined(USE_ACCGYRO_ISM6HGK256X)
     if (lsm6dsk320xSpiGyroDetect(gyro)) {
         return true;
     }
@@ -96,7 +119,7 @@ bool detectGyroCallbacks(gyroDev_t *gyro)
 
 bool detectAccCallbacks(accDev_t *acc)
 {
-#ifdef USE_ACCGYRO_LSM6DSK320X
+#if defined(USE_ACCGYRO_LSM6DSK320X) || defined(USE_ACCGYRO_ISM6HGK256X)
     if (lsm6dsk320xSpiAccDetect(acc)) {
         return true;
     }
@@ -239,13 +262,10 @@ TEST_P(AccgyroSpiLsm6dsv, DetectsOnlyEnabledVariants)
 
 TEST_P(AccgyroSpiLsm6dsv, CallbackDetectionRejectsDisabledVariants)
 {
-    for (const mpuSensor_e sensor : {LSM6DSV16X_SPI, LSM6DSV32X_SPI, LSM6DSK320X_SPI, MPU_NONE}) {
+    for (const mpuSensor_e sensor : {LSM6DSV16X_SPI, LSM6DSV32X_SPI, LSM6DSK320X_SPI, ISM6HGK256X_SPI, MPU_NONE}) {
         gyro.mpuDetectionResult.sensor = sensor;
         acc.mpuDetectionResult.sensor = sensor;
-        const bool enabled = sensor != MPU_NONE &&
-            (sensor == expectedSensor(Variant::Dsv16x) ||
-             sensor == expectedSensor(Variant::Dsv32x) ||
-             sensor == expectedSensor(Variant::Dsk320x));
+        const bool enabled = sensorEnabled(sensor);
         EXPECT_EQ(enabled, detectGyroCallbacks(&gyro));
         EXPECT_EQ(enabled, detectAccCallbacks(&acc));
     }
@@ -531,7 +551,7 @@ INSTANTIATE_TEST_SUITE_P(Variants, AccgyroSpiLsm6dsv,
 #ifdef USE_ACCGYRO_LSM6DSV32X
         Variant::Dsv32x,
 #endif
-#ifdef USE_ACCGYRO_LSM6DSK320X
+#if defined(USE_ACCGYRO_LSM6DSK320X) || defined(USE_ACCGYRO_ISM6HGK256X)
         Variant::Dsk320x,
 #endif
     }));

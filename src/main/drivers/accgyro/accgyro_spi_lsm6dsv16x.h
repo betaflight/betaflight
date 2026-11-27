@@ -34,8 +34,9 @@ bool lsm6dsv16xSpiAccDetect(accDev_t *acc);
 bool lsm6dsv16xSpiGyroDetect(gyroDev_t *gyro);
 #endif // USE_ACCGYRO_LSM6DSV16X || USE_ACCGYRO_LSM6DSV32X
 
-#ifdef USE_ACCGYRO_LSM6DSK320X
+// LSM6DSK320X and ISM6HGK256X share WHO_AM_I 0x75 and the gyro/low-g accelerometer register map.
+#if defined(USE_ACCGYRO_LSM6DSK320X) || defined(USE_ACCGYRO_ISM6HGK256X)
 uint8_t lsm6dsk320xSpiDetect(const extDevice_t *dev);
 bool lsm6dsk320xSpiAccDetect(accDev_t *acc);
 bool lsm6dsk320xSpiGyroDetect(gyroDev_t *gyro);
-#endif // USE_ACCGYRO_LSM6DSK320X
+#endif // USE_ACCGYRO_LSM6DSK320X || USE_ACCGYRO_ISM6HGK256X
