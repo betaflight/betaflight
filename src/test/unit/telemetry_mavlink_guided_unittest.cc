@@ -418,6 +418,20 @@ TEST_F(MavlinkGuidedTest, TakeoffInTheAirGoesToTheHeightAndHolds)
     EXPECT_EQ(guidedPlan[0].duration, UINT16_MAX);
 }
 
+TEST_F(MavlinkGuidedTest, RepeatedTakeoffLeavesTheTakeoffUnderway)
+{
+    const float targetM = (HERE_ALT_CM + 1000) / 100.0f;
+    navTakingOff = true;
+    navGuided = true;
+    EXPECT_EQ(command(MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, NAN, NAN, targetM), MAV_RESULT_ACCEPTED);
+    EXPECT_TRUE(guidedPlan.empty());
+    EXPECT_EQ(overrideMask, 0u);
+
+    navGuided = false;
+    EXPECT_EQ(command(MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, NAN, NAN, targetM), MAV_RESULT_ACCEPTED);
+    expectGuided(WAYPOINT_TYPE_HOLD, HERE_LAT, HERE_LON, HERE_ALT_CM + 1000);
+}
+
 TEST_F(MavlinkExtendedSysStateTest, TakeoffLegIsTakeoff)
 {
     ENABLE_ARMING_FLAG(ARMED);

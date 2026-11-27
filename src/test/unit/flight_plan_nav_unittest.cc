@@ -1577,6 +1577,7 @@ TEST_F(FlightPlanNavTest, TakingOffUntilTheTakeoffWaypointIsReached)
         makeWaypoint(0, 0, 12000, WAYPOINT_TYPE_HOLD, 0, UINT16_MAX),
     };
     ASSERT_TRUE(flightPlanNavSetGuidedPlan(plan, 2, 0.0f));
+    EXPECT_TRUE(flightPlanNavIsTakingOff());
     flightPlanNavEngage();
     EXPECT_TRUE(flightPlanNavIsTakingOff());
 

@@ -903,6 +903,9 @@ static uint8_t handleNavTakeoff(const mavlinkCommand_t *cmd)
     if (!cmd->hasAlt) {
         return MAV_RESULT_DENIED;
     }
+    if (flightPlanNavIsGuided() && flightPlanNavIsTakingOff()) {
+        return MAV_RESULT_ACCEPTED;
+    }
     if (wasThrottleRaised()) {
         waypoint_t hold = guidedWaypoint(NULL, WAYPOINT_TYPE_HOLD);
         hold.altitude = cmd->altCm;
