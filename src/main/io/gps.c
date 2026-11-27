@@ -1810,32 +1810,29 @@ static uint32_t GPS_coord_to_degrees(char *coordinateString)
 // helper functions
 #ifdef USE_GPS_NMEA
 static uint32_t grab_fields(char *src, uint8_t mult)
-{                               // convert string to uint32
-    uint32_t i;
+{
     uint32_t tmp = 0;
-    int isneg = 0;
-    for (i = 0; src[i] != 0; i++) {
-        if ((i == 0) && (src[0] == '-')) { // detect negative sign
-            isneg = 1;
-            continue; // jump to next character if the first one was a negative sign
-        }
+    const bool isneg = src[0] == '-';
+    bool fractional = false;
+    uint8_t decimals = 0;
+
+    for (unsigned i = isneg ? 1 : 0; src[i] != '\0'; i++) {
         if (src[i] == '.') {
-            i++;
-            if (mult == 0) {
-                break;
-            } else {
-                src[i + mult] = 0;
-            }
+            fractional = true;
+            continue;
         }
-        tmp *= 10;
-        if (src[i] >= '0' && src[i] <= '9') {
-            tmp += src[i] - '0';
+        if (fractional && decimals >= mult) {
+            break;
         }
-        if (i >= 15) {
-            return 0; // out of bounds
+        tmp = tmp * 10U + (uint32_t)(src[i] - '0');
+        if (fractional) {
+            decimals++;
         }
     }
-    return isneg ? -tmp : tmp;    // handle negative altitudes
+    while (decimals++ < mult) {
+        tmp *= 10U;
+    }
+    return isneg ? -tmp : tmp;
 }
 
 typedef struct gpsDataNmea_s {
@@ -1850,11 +1847,16 @@ typedef struct gpsDataNmea_s {
     uint16_t ground_course;
     uint32_t time;
     uint32_t date;
+    bool hasTime;
+    uint8_t fixQuality;
+    uint8_t svMessageNum;
+    uint8_t svCount;
+    GPS_svinfo_t svInfo[4];
+    uint8_t svFields[4];
 } gpsDataNmea_t;
 
 static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uint8_t idx)
 {
-    static uint8_t svMessageNum = 0;
     uint8_t svSatNum = 0, svPacketIdx = 0, svSatParam = 0;
 
     switch (gpsFrame) {
@@ -1862,7 +1864,10 @@ static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uin
     case FRAME_GGA:        //************* GPGGA FRAME parsing
         switch (idx) {
         case 1:
-            data->time = ((uint8_t)(str[5] - '0') * 10 + (uint8_t)(str[7] - '0')) * 100;
+            if (*str) {
+                data->hasTime = true;
+                data->time = ((uint8_t)(str[5] - '0') * 10 + (str[6] == '.' && str[7] ? (uint8_t)(str[7] - '0') : 0)) * 100;
+            }
             break;
         case 2:
             data->latitude = GPS_coord_to_degrees(str);
@@ -1877,14 +1882,18 @@ static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uin
             if (str[0] == 'W') data->longitude *= -1;
             break;
         case 6:
-            gpsSetFixState(str[0] > '0');
+            data->fixQuality = str[0] - '0';
             break;
         case 7:
             data->numSat = grab_fields(str, 0);
             break;
         case 9:
-            data->altitudeCm = grab_fields(str, 1) * 10;     // altitude in centimeters. Note: NMEA delivers altitude with 1 or 3 decimals. It's safer to cut at 0.1m and multiply by 10
+        {
+            const bool negative = str[0] == '-';
+            const int32_t altitudeTenths = grab_fields(str + negative, 1);
+            data->altitudeCm = (negative ? -altitudeTenths : altitudeTenths) * 10;
             break;
+        }
         }
         break;
 
@@ -1912,28 +1921,29 @@ static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uin
             break; */
         case 2:
             // Message number
-            svMessageNum = grab_fields(str, 0);
+            data->svMessageNum = grab_fields(str, 0);
             break;
         case 3:
             // Total number of SVs visible
-            GPS_numCh = MIN(grab_fields(str, 0), GPS_SV_MAXSATS_LEGACY);
+            data->svCount = MIN(grab_fields(str, 0), GPS_SV_MAXSATS_LEGACY);
             break;
         }
         if (idx < 4)
             break;
 
         svPacketIdx = (idx - 4) / 4 + 1; // satellite number in packet, 1-4
-        svSatNum    = svPacketIdx + (4 * (svMessageNum - 1)); // global satellite number
+        svSatNum    = svPacketIdx + (4 * (data->svMessageNum - 1)); // global satellite number
         svSatParam  = idx - 3 - (4 * (svPacketIdx - 1)); // parameter number for satellite
 
-        if (svSatNum > GPS_SV_MAXSATS_LEGACY)
+        if (svPacketIdx > 4 || !data->svMessageNum || svSatNum > GPS_SV_MAXSATS_LEGACY)
             break;
 
         switch (svSatParam) {
         case 1:
             // SV PRN number
-            GPS_svinfo[svSatNum - 1].chn  = svSatNum;
-            GPS_svinfo[svSatNum - 1].svid = grab_fields(str, 0);
+            data->svInfo[svPacketIdx - 1].chn = svSatNum;
+            data->svInfo[svPacketIdx - 1].svid = grab_fields(str, 0);
+            data->svFields[svPacketIdx - 1] |= 1;
             break;
         /*case 2:
             // Elevation, in degrees, 90 maximum
@@ -1943,14 +1953,11 @@ static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uin
             break; */
         case 4:
             // SNR, 00 through 99 dB (null when not tracking)
-            GPS_svinfo[svSatNum - 1].cno = grab_fields(str, 0);
-            GPS_svinfo[svSatNum - 1].quality = 0; // only used by ublox
+            data->svInfo[svPacketIdx - 1].cno = grab_fields(str, 0);
+            data->svFields[svPacketIdx - 1] |= 2;
             break;
         }
 
-#ifdef USE_DASHBOARD
-        dashboardGpsNavSvInfoRcvCount++;
-#endif
         break;
 
     case FRAME_GSA:
@@ -1976,20 +1983,45 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
     switch (gpsFrame) {
 
     case FRAME_GGA:
+        gpsSetFixState(data->fixQuality != 0);
 #ifdef USE_DASHBOARD
         *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_NMEA_GGA;
 #endif
+        // GGA reports satellites used even when the receiver reports no fix.
+        sol->numSat = data->numSat;
         if (STATE(GPS_FIX)) {
             sol->llh.lat = data->latitude;
             sol->llh.lon = data->longitude;
-            sol->numSat = data->numSat;
             sol->llh.altCm = data->altitudeCm;
         }
-        navDeltaTimeMs = (msInTenSeconds + data->time - gpsData.lastNavSolTs) % msInTenSeconds;
-        gpsData.lastNavSolTs = data->time;
-        sol->navIntervalMs = constrain(navDeltaTimeMs, 50, 2500);
+        if (data->hasTime) {
+            navDeltaTimeMs = (msInTenSeconds + data->time - gpsData.lastNavSolTs) % msInTenSeconds;
+            gpsData.lastNavSolTs = data->time;
+            sol->navIntervalMs = constrain(navDeltaTimeMs, 50, 2500);
+        }
         // return only one true statement to trigger one "newGpsDataReady" flag per GPS loop
         return true;
+
+    case FRAME_GSV:
+        GPS_numCh = data->svCount;
+        for (unsigned i = 0; i < 4; i++) {
+            const unsigned index = 4 * (data->svMessageNum - 1) + i;
+            if (index >= GPS_SV_MAXSATS_LEGACY) {
+                break;
+            }
+            if (data->svFields[i] & 1) {
+                GPS_svinfo[index].chn = data->svInfo[i].chn;
+                GPS_svinfo[index].svid = data->svInfo[i].svid;
+            }
+            if (data->svFields[i] & 2) {
+                GPS_svinfo[index].cno = data->svInfo[i].cno;
+                GPS_svinfo[index].quality = 0;
+            }
+        }
+#ifdef USE_DASHBOARD
+        dashboardGpsNavSvInfoRcvCount++;
+#endif
+        return false;
 
     case FRAME_GSA:
 #ifdef USE_DASHBOARD
@@ -2027,82 +2059,207 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
     }
 }
 
+static int nmeaHexDigit(char c)
+{
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    return -1;
+}
+
+// Empty fields are checked separately; this validates decimal syntax without
+// accepting signs or non-digits where they cannot occur.
+static bool nmeaNumber(const char *s, bool allowNegative)
+{
+    bool digit = false, decimal = false;
+    if (allowNegative && *s == '-') s++;
+    while (*s) {
+        if (*s >= '0' && *s <= '9') digit = true;
+        else if (*s == '.' && !decimal && digit && s[1] >= '0' && s[1] <= '9') decimal = true;
+        else return false;
+        s++;
+    }
+    return digit;
+}
+
+// Check a validated non-negative decimal without overflowing 32-bit integers.
+static bool nmeaAtMostScaled(const char *s, uint8_t decimalPlaces, uint32_t maxValue)
+{
+    const uint32_t scale = decimalPlaces == 1 ? 10U : 100U;
+    uint32_t whole = 0;
+    while (*s && *s != '.') {
+        if (whole > maxValue / scale) {
+            return false;
+        }
+        whole = whole * 10U + (*s++ - '0');
+    }
+    if (whole > maxValue / scale) {
+        return false;
+    }
+    uint32_t fraction = 0;
+    if (*s == '.') {
+        s++;
+    }
+    for (uint8_t i = 0; i < decimalPlaces; i++) {
+        fraction *= 10U;
+        if (*s) fraction += *s++ - '0';
+    }
+    const uint32_t value = whole * scale + fraction;
+    if (value > maxValue) {
+        return false;
+    }
+    if (value == maxValue) {
+        while (*s) {
+            if (*s++ != '0') {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+static bool nmeaInteger(const char *s)
+{
+    if (!*s) return false;
+    while (*s) {
+        if (*s < '0' || *s > '9') return false;
+        s++;
+    }
+    return true;
+}
+
+static bool nmeaTime(const char *s)
+{
+    if (strlen(s) < 6 || !nmeaNumber(s, false)) return false;
+    for (unsigned i = 0; i < 6; i++) {
+        if (s[i] < '0' || s[i] > '9') return false;
+    }
+    if (s[6] && s[6] != '.') return false;
+    const unsigned hours = (s[0] - '0') * 10 + s[1] - '0';
+    const unsigned minutes = (s[2] - '0') * 10 + s[3] - '0';
+    const unsigned seconds = (s[4] - '0') * 10 + s[5] - '0';
+    return hours < 24 && minutes < 60 && seconds <= 60;
+}
+
+static bool nmeaCoordinate(const char *s, unsigned degreeDigits)
+{
+    if (!nmeaNumber(s, false)) return false;
+    const unsigned integerDigits = strcspn(s, ".");
+    if (integerDigits != degreeDigits + 2) return false;
+    unsigned degrees = 0;
+    for (unsigned i = 0; i < degreeDigits; i++) degrees = degrees * 10 + s[i] - '0';
+    const unsigned minutes = (s[degreeDigits] - '0') * 10 + s[degreeDigits + 1] - '0';
+    const unsigned limit = degreeDigits == 2 ? 90 : 180;
+    if (degrees > limit || minutes >= 60) return false;
+    if (degrees == limit) {
+        if (minutes) return false;
+        for (const char *p = s + integerDigits; *p; p++) {
+            if (*p != '.' && *p != '0') return false;
+        }
+    }
+    return true;
+}
+
 static bool gpsNewFrameNMEA(char c)
 {
     static gpsDataNmea_t gps_msg;
     static char string[16];
-    static uint8_t param = 0, offset = 0, parity = 0;
-    static uint8_t checksum_param, gps_frame = NO_FRAME;
+    static uint8_t param, offset, parity, gps_frame;
+    static uint32_t nonempty;
+    static bool active, checksum_param, malformed;
     bool receivedNavMessage = false;
 
-    switch (c) {
-
-    case '$':
-        param = 0;
-        offset = 0;
-        parity = 0;
-        break;
-
-    case ',':
-    case '*':
-        string[offset] = 0;
-        if (param == 0) {  // frame identification (5 chars, e.g. "GPGGA", "GNGGA", "GLGGA", ...)
-            gps_frame = NO_FRAME;
-            if (strcmp(&string[2], "GGA") == 0) {
-                gps_frame = FRAME_GGA;
-            } else if (strcmp(&string[2], "RMC") == 0) {
-                gps_frame = FRAME_RMC;
-            } else if (strcmp(&string[2], "GSV") == 0) {
-                gps_frame = FRAME_GSV;
-            } else if (strcmp(&string[2], "GSA") == 0) {
-                gps_frame = FRAME_GSA;
-            }
+    if (c == '$') {
+        memset(&gps_msg, 0, sizeof(gps_msg));
+        param = offset = parity = gps_frame = 0;
+        nonempty = 0;
+        checksum_param = malformed = false;
+        active = true;
+        return false;
+    }
+    if (!active) {
+        return false;
+    }
+    if (c == '\r' || c == '\n') {
+        active = false;
+        const int hi = offset == 2 ? nmeaHexDigit(string[0]) : -1;
+        const int lo = offset == 2 ? nmeaHexDigit(string[1]) : -1;
+        bool complete = false;
+        if (gps_frame == FRAME_GGA) {
+            const uint32_t basic = (1U << 1) | (1U << 6) | (1U << 7);
+            const uint32_t position = (1U << 2) | (1U << 3) | (1U << 4) | (1U << 5) | (1U << 9);
+            complete = param >= 10 && (nonempty & (1U << 6)) &&
+                (!gps_msg.fixQuality || ((nonempty & basic) == basic && (nonempty & position) == position));
+        } else if (gps_frame == FRAME_RMC) {
+            complete = param >= 10 && (nonempty & ((1U << 1) | (1U << 2))) == ((1U << 1) | (1U << 2));
+        } else if (gps_frame == FRAME_GSA) {
+            complete = param >= 18;
+        } else if (gps_frame == FRAME_GSV) {
+            const uint32_t required = (1U << 1) | (1U << 2) | (1U << 3);
+            complete = param >= 4 && gps_msg.svMessageNum > 0 && (nonempty & required) == required;
         }
-
-        // parse string and write data into gps_msg
-        parseFieldNmea(&gps_msg, string, gps_frame, param);
-
-        param++;
-        offset = 0;
-        if (c == '*')
-            checksum_param = 1;
-        else
-            parity ^= c;
-        break;
-
-    case '\r':
-    case '\n':
-        if (checksum_param) {   //parity checksum
+        if (checksum_param && !malformed && hi >= 0 && lo >= 0 && ((hi << 4) | lo) == parity && complete) {
 #ifdef USE_DASHBOARD
             shiftPacketLog();
+            *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_IGNORED;
+            dashboardGpsPacketCount++;
 #endif
-            uint8_t checksum = 16 * ((string[0] >= 'A') ? string[0] - 'A' + 10 : string[0] - '0') + ((string[1] >= 'A') ? string[1] - 'A' + 10 : string[1] - '0');
-            if (checksum == parity) {
-#ifdef USE_DASHBOARD
-                *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_IGNORED;
-                dashboardGpsPacketCount++;
-#endif
-                receivedNavMessage = writeGpsSolutionNmea(&gpsSol, &gps_msg, gps_frame);  // // write gps_msg into gpsSol
-            }
-#ifdef USE_DASHBOARD
-            else {
-                *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_ERROR;
-            }
-#endif
+            receivedNavMessage = writeGpsSolutionNmea(&gpsSol, &gps_msg, gps_frame);
         }
-        checksum_param = 0;
-        break;
-
-    default:
-        if (offset < 15)
-            string[offset++] = c;
-        if (!checksum_param)
-            parity ^= c;
-        break;
+        return receivedNavMessage;
     }
-
-    return receivedNavMessage;
+    if (checksum_param) {
+        if (offset < sizeof(string) - 1) string[offset++] = c;
+        else malformed = true;
+        return false;
+    }
+    if (c == ',' || c == '*') {
+        string[offset] = 0;
+        if (param == 0) {
+            gps_frame = NO_FRAME;
+            if (offset == 5) {
+                if (strcmp(&string[2], "GGA") == 0) gps_frame = FRAME_GGA;
+                else if (strcmp(&string[2], "RMC") == 0) gps_frame = FRAME_RMC;
+                else if (strcmp(&string[2], "GSV") == 0) gps_frame = FRAME_GSV;
+                else if (strcmp(&string[2], "GSA") == 0) gps_frame = FRAME_GSA;
+            }
+        }
+        if (offset && param < 32) nonempty |= 1U << param;
+        if (gps_frame == FRAME_GGA) {
+            if (param == 1 && offset && !nmeaTime(string)) malformed = true;
+            if (param == 2 && offset && !nmeaCoordinate(string, 2)) malformed = true;
+            if (param == 4 && offset && !nmeaCoordinate(string, 3)) malformed = true;
+            if ((param == 7 || param == 9) && offset && !nmeaNumber(string, param == 9)) malformed = true;
+            if (param == 9 && offset && !malformed && !nmeaAtMostScaled(string + (string[0] == '-'), 1, INT32_MAX / 10U)) malformed = true;
+            if (param == 3 && offset && (offset != 1 || (string[0] != 'N' && string[0] != 'S'))) malformed = true;
+            if (param == 5 && offset && (offset != 1 || (string[0] != 'E' && string[0] != 'W'))) malformed = true;
+            if (param == 6 && (offset != 1 || string[0] < '0' || string[0] > '8')) malformed = true;
+        }
+        if (gps_frame == FRAME_GGA && param == 7 && offset && !nmeaInteger(string)) malformed = true;
+        if (gps_frame == FRAME_RMC) {
+            if (param == 2 && (offset != 1 || (string[0] != 'A' && string[0] != 'V'))) malformed = true;
+            if ((param == 1 || param == 7 || param == 8 || param == 9) && offset && !nmeaNumber(string, false)) malformed = true;
+            if (param == 7 && offset && !malformed && !nmeaAtMostScaled(string, 1, 12740U)) malformed = true;
+            if (param == 8 && offset && !malformed && !nmeaAtMostScaled(string, 1, 3600U)) malformed = true;
+        }
+        if (gps_frame == FRAME_GSV && param >= 1 && offset && !nmeaInteger(string)) malformed = true;
+        if (gps_frame == FRAME_GSA && param >= 15 && param <= 17 && offset) {
+            if (!nmeaNumber(string, false) || !nmeaAtMostScaled(string, 2, UINT16_MAX)) malformed = true;
+        }
+        if (!malformed) parseFieldNmea(&gps_msg, string, gps_frame, param);
+        if (param == UINT8_MAX) malformed = true;
+        else param++;
+        offset = 0;
+        if (c == '*') checksum_param = true;
+        else parity ^= c;
+    } else {
+        if (offset < sizeof(string) - 1) string[offset++] = c;
+        else malformed = true;
+        parity ^= c;
+    }
+    return false;
 }
+
 #endif // USE_GPS_NMEA
 
 // Days from start of year for each month (non-leap year first row, leap year second row)

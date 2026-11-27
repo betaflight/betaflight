@@ -21,6 +21,7 @@
 #include <limits.h>
 
 #include <math.h>
+#include <string>
 
 extern "C" {
     #include "platform.h"
@@ -928,4 +929,282 @@ TEST(CLIUnittest, TestCliHelpNullDescription)
 
     // If we reach here without a crash/SIGSEGV the null guard is working.
     SUCCEED();
+}
+
+static bool feedGpsBytes(const uint8_t *bytes, size_t count)
+{
+    bool published = false;
+    for (size_t i = 0; i < count; ++i) {
+        published |= gpsNewFrame(bytes[i]);
+    }
+    return published;
+}
+
+static bool feedTestSentence(const char *sentence)
+{
+    return feedGpsBytes((const uint8_t *)sentence, strlen(sentence));
+}
+
+static void resetNmeaTest()
+{
+    gpsConfigMutable()->provider = GPS_NMEA;
+    gpsConfigMutable()->gps_uart = SERIAL_PORT_NONE;
+    gpsInit();
+    memset(&gpsSol, 0, sizeof(gpsSol));
+    gpsData.now = 100;
+}
+
+static std::string nmeaSentence(const std::string &body)
+{
+    unsigned checksum = 0;
+    for (unsigned char c : body) checksum ^= c;
+    char suffix[8];
+    snprintf(suffix, sizeof(suffix), "*%02X\r\n", checksum);
+    return "$" + body + suffix;
+}
+
+static std::string nmeaGga(const char *quality = "4", const char *sats = "30")
+{
+    return nmeaSentence(std::string("GNGGA,123519.00,4807.038,N,01131.000,E,") + quality + "," + sats + ",1.0,545.4,M,46.9,M,,");
+}
+
+TEST(CLIUnittest, NmeaGgaMustBeValidatedBeforeChangingFix)
+{
+    resetNmeaTest();
+    DISABLE_STATE(GPS_FIX);
+    auto valid = nmeaGga();
+    ASSERT_TRUE(feedTestSentence(valid.c_str()));
+    ASSERT_TRUE(STATE(GPS_FIX));
+    ASSERT_EQ(30, gpsSol.numSat);
+    auto invalid = nmeaGga("0", "00");
+    invalid[invalid.size() - 4] = invalid[invalid.size() - 4] == '0' ? '1' : '0';
+    EXPECT_FALSE(feedTestSentence(invalid.c_str()));
+    EXPECT_TRUE(STATE(GPS_FIX));
+    EXPECT_EQ(30, gpsSol.numSat);
+    EXPECT_FALSE(feedTestSentence("$GNGGA,123519.00,4807.038,N,01131.000,E,0,"));
+    EXPECT_TRUE(STATE(GPS_FIX));
+    EXPECT_TRUE(feedTestSentence(nmeaGga("0", "00").c_str()));
+    EXPECT_FALSE(STATE(GPS_FIX));
+    EXPECT_EQ(0, gpsSol.numSat);
+}
+
+TEST(CLIUnittest, NmeaScalesFieldsWithMissingDecimalDigits)
+{
+    resetNmeaTest();
+    ASSERT_TRUE(feedTestSentence(nmeaSentence("GPGGA,123519.00,4807.038,N,01131.000,E,1,08,1.0,545,M,46.9,M,,").c_str()));
+    EXPECT_EQ(54500, gpsSol.llh.altCm);
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPRMC,123519.00,A,4807.038,N,01131.000,E,22,84,230394,003.1,W").c_str()));
+    EXPECT_EQ(1131, gpsSol.groundSpeed);
+    EXPECT_EQ(840, gpsSol.groundCourse);
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPGSA,A,3,01,02,03,04,05,06,07,08,09,10,11,12,1.8,1,1.50").c_str()));
+    EXPECT_EQ(180, gpsSol.dop.pdop);
+    EXPECT_EQ(100, gpsSol.dop.hdop);
+    EXPECT_EQ(150, gpsSol.dop.vdop);
+    ASSERT_TRUE(feedTestSentence(nmeaSentence("GPGGA,123519.00,4807.038,N,01131.000,E,1,08,1.0,-12,M,46.9,M,,").c_str()));
+    EXPECT_EQ(-1200, gpsSol.llh.altCm);
+    ASSERT_TRUE(feedTestSentence(nmeaSentence("GPGGA,123519.00,4807.038,N,01131.000,E,1,08,1.0,545.49,M,46.9,M,,").c_str()));
+    EXPECT_EQ(54540, gpsSol.llh.altCm);
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPRMC,123519.00,A,4807.038,N,01131.000,E,22.49,84.49,230394,003.1,W").c_str()));
+    EXPECT_EQ(1152, gpsSol.groundSpeed);
+    EXPECT_EQ(844, gpsSol.groundCourse);
+}
+
+TEST(CLIUnittest, NmeaRejectsAltitudeAndDopThatOverflowStorage)
+{
+    resetNmeaTest();
+    ASSERT_TRUE(feedTestSentence(nmeaGga().c_str()));
+    ASSERT_EQ(54540, gpsSol.llh.altCm);
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPGGA,123519.00,4807.038,N,01131.000,E,1,08,1.0,42949673,M,46.9,M,,").c_str()));
+    EXPECT_EQ(54540, gpsSol.llh.altCm);
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPGGA,123519.00,4807.038,N,01131.000,E,1,08,1.0,-21474837,M,46.9,M,,").c_str()));
+    EXPECT_EQ(54540, gpsSol.llh.altCm);
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPGSA,A,3,01,02,03,04,05,06,07,08,09,10,11,12,1.80,1.00,1.50").c_str()));
+    ASSERT_EQ(180, gpsSol.dop.pdop);
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPGSA,A,3,01,02,03,04,05,06,07,08,09,10,11,12,42949673,1,1.50").c_str()));
+    EXPECT_EQ(180, gpsSol.dop.pdop);
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPGSA,A,3,01,02,03,04,05,06,07,08,09,10,11,12,655.35,1,1.50").c_str()));
+    ASSERT_EQ(UINT16_MAX, gpsSol.dop.pdop);
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPGSA,A,3,01,02,03,04,05,06,07,08,09,10,11,12,655.36,1,1.50").c_str()));
+    EXPECT_EQ(UINT16_MAX, gpsSol.dop.pdop);
+    ASSERT_TRUE(feedTestSentence(nmeaSentence("GPGGA,123519.00,4807.038,N,01131.000,E,1,08,1.0,-21474836.4,M,46.9,M,,").c_str()));
+    EXPECT_EQ(-2147483640, gpsSol.llh.altCm);
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPGGA,123519.00,4807.038,N,01131.000,E,1,08,1.0,-21474836.5,M,46.9,M,,").c_str()));
+    EXPECT_EQ(-2147483640, gpsSol.llh.altCm);
+}
+
+TEST(CLIUnittest, NmeaRecoversAfterInterruptedChecksum)
+{
+    resetNmeaTest();
+    EXPECT_FALSE(feedTestSentence("$GNGGA,12*"));
+    EXPECT_TRUE(feedTestSentence(nmeaGga().c_str()));
+    EXPECT_TRUE(STATE(GPS_FIX));
+    EXPECT_EQ(30, gpsSol.numSat);
+}
+
+TEST(CLIUnittest, NmeaRejectsIncompleteAndOversizeFields)
+{
+    resetNmeaTest();
+    ASSERT_TRUE(feedTestSentence(nmeaGga().c_str()));
+    const int32_t altitude = gpsSol.llh.altCm;
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GNGGA,123519.00,4807.038,N,01131.000,E,0").c_str()));
+    EXPECT_TRUE(STATE(GPS_FIX));
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GNGGA,123519.000000000000000000,4807.038,N,01131.000,E,0,00,1.0,1.0,M,0,M,,").c_str()));
+    EXPECT_TRUE(STATE(GPS_FIX));
+    EXPECT_EQ(altitude, gpsSol.llh.altCm);
+    auto missing = nmeaSentence("GNGGA,123519.00,,,,,4,30,1.0,,M,0,M,,");
+    EXPECT_FALSE(feedTestSentence(missing.c_str()));
+    EXPECT_TRUE(feedTestSentence(nmeaGga().c_str()));
+}
+
+TEST(CLIUnittest, NmeaRejectsMalformedChecksumAndRecovers)
+{
+    resetNmeaTest();
+    ASSERT_TRUE(feedTestSentence(nmeaGga().c_str()));
+    for (const char *tail : {"*0\r\n", "*GG\r\n", "*000\r\n", "*00,\r\n"}) {
+        auto bad = std::string("$GNGGA,123519.00,4807.038,N,01131.000,E,0,00,1.0,545.4,M,46.9,M,,") + tail;
+        EXPECT_FALSE(feedTestSentence(bad.c_str()));
+        EXPECT_TRUE(STATE(GPS_FIX));
+    }
+    EXPECT_TRUE(feedTestSentence(nmeaGga().c_str()));
+}
+
+TEST(CLIUnittest, NmeaRejectedFieldsCannotLeakIntoNextSentence)
+{
+    resetNmeaTest();
+    ASSERT_TRUE(feedTestSentence(nmeaGga().c_str()));
+    auto bad = nmeaSentence("GPGGA,123519.00,4807.038,N,01131.000,E,4,12,1.0,999.9,M,0,M,,");
+    bad[bad.size()-4] = bad[bad.size()-4] == '0' ? '1' : '0';
+    EXPECT_FALSE(feedTestSentence(bad.c_str()));
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPGGA,123519.00,4807.038,N,01131.000,E,4,30,1.0").c_str()));
+    EXPECT_EQ(54540, gpsSol.llh.altCm);
+    auto rmc = nmeaSentence("GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W");
+    EXPECT_FALSE(feedTestSentence(rmc.c_str()));
+    EXPECT_EQ(844, gpsSol.groundCourse);
+    auto invalid = nmeaSentence("GPRMC,123519.00,A,4807.038,N,01131.000,E,099.9,123.4,230394,003.1,W");
+    invalid[invalid.size()-4] = invalid[invalid.size()-4] == '0' ? '1' : '0';
+    EXPECT_FALSE(feedTestSentence(invalid.c_str()));
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPRMC,123519.00,A,4807.038,N,01131.000,E,001.0").c_str()));
+    EXPECT_EQ(844, gpsSol.groundCourse);
+    EXPECT_FALSE(feedTestSentence(nmeaSentence("GPRMC,123520.00,A,4807.038,N,01131.000,E,010.0,045.0,230394,003.1,W").c_str()));
+    EXPECT_EQ(514, gpsSol.groundSpeed);
+    EXPECT_EQ(450, gpsSol.groundCourse);
+    EXPECT_TRUE(feedTestSentence(nmeaSentence("GPGGA,123520.00,4907.038,N,01231.000,E,4,28,1.0,123.4,M,0,M,,").c_str()));
+    EXPECT_EQ(491173000, gpsSol.llh.lat);
+    EXPECT_EQ(12340, gpsSol.llh.altCm);
+    EXPECT_EQ(28, gpsSol.numSat);
+}
+
+
+TEST(CLIUnittest, NmeaInterleavedMessagesCommitOnlyAfterValidation)
+{
+    resetNmeaTest();
+    auto gga = nmeaSentence("GPGGA,123519.00,4807.038,N,01131.000,E,4,30,1.0,545.4,M,46.9,M,,");
+    ASSERT_TRUE(feedTestSentence(gga.c_str()));
+    EXPECT_EQ(481173000, gpsSol.llh.lat);
+    EXPECT_EQ(115166666, gpsSol.llh.lon);
+    EXPECT_EQ(54540, gpsSol.llh.altCm);
+    auto rmc = nmeaSentence("GNRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W");
+    EXPECT_FALSE(feedTestSentence(rmc.c_str()));
+    EXPECT_EQ(1152, gpsSol.groundSpeed);
+    EXPECT_EQ(844, gpsSol.groundCourse);
+    auto gsa = nmeaSentence("GPGSA,A,3,01,02,03,04,05,06,07,08,09,10,11,12,1.80,1.00,1.50");
+    EXPECT_FALSE(feedTestSentence(gsa.c_str()));
+    EXPECT_EQ(180, gpsSol.dop.pdop);
+    EXPECT_EQ(100, gpsSol.dop.hdop);
+    EXPECT_EQ(150, gpsSol.dop.vdop);
+    auto gsv = nmeaSentence("GPGSV,1,1,02,01,45,123,40,02,30,100,35");
+    EXPECT_FALSE(feedTestSentence(gsv.c_str()));
+    EXPECT_EQ(2, GPS_numCh);
+    EXPECT_EQ(1, GPS_svinfo[0].svid);
+    EXPECT_EQ(40, GPS_svinfo[0].cno);
+    auto bad = nmeaSentence("GPGSV,1,1,01,09,45,123,50");
+    bad[bad.size()-4] = bad[bad.size()-4] == '0' ? '1' : '0';
+    EXPECT_FALSE(feedTestSentence(bad.c_str()));
+    EXPECT_EQ(2, GPS_numCh);
+    EXPECT_EQ(1, GPS_svinfo[0].svid);
+    EXPECT_EQ(40, GPS_svinfo[0].cno);
+}
+
+TEST(CLIUnittest, NmeaRejectsInvalidRequiredFieldValues)
+{
+    resetNmeaTest();
+    ASSERT_TRUE(feedTestSentence(nmeaGga().c_str()));
+    const auto lat = gpsSol.llh.lat;
+    for (const char *body : {
+        "GNGGA,12x519.00,4807.038,N,01131.000,E,4,30,1.0,545.4,M,46.9,M,,",
+        "GNGGA,123519.00,broken,N,01131.000,E,4,30,1.0,545.4,M,46.9,M,,",
+        "GNGGA,123519.00,4807.038,X,01131.000,E,4,30,1.0,545.4,M,46.9,M,,",
+        "GNGGA,123519.00,4807.038,N,01131.000,E,4,XX,1.0,545.4,M,46.9,M,,",
+        "GNGGA,123519.00,4807.038,N,01131.000,E,4,30,1.0,bad,M,46.9,M,,",
+        "GNGGA,123519.00,4807.038,N,01131.000,E,4,30,1.0,123.,M,46.9,M,,",
+        "GNGGA,123519.00,9999.999,N,01131.000,E,4,30,1.0,545.4,M,46.9,M,,",
+        "GNGGA,256099.00,4807.038,N,01131.000,E,4,30,1.0,545.4,M,46.9,M,,"
+    }) {
+        EXPECT_FALSE(feedTestSentence(nmeaSentence(body).c_str()));
+        EXPECT_TRUE(STATE(GPS_FIX));
+        EXPECT_EQ(lat, gpsSol.llh.lat);
+    }
+    EXPECT_TRUE(feedTestSentence(nmeaGga().c_str()));
+}
+
+TEST(CLIUnittest, NmeaBurstRecoversAfterRepeatedDamage)
+{
+    resetNmeaTest();
+    const auto good = nmeaGga();
+    const auto rmc = nmeaSentence("GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W");
+    unsigned publications = 0;
+    for (unsigned i = 0; i < 2000; i++) {
+        EXPECT_FALSE(feedTestSentence("$GNGGA,123519.00,4807.038,N,01131.000,E,0,*"));
+        publications += feedTestSentence(good.c_str());
+        feedTestSentence(rmc.c_str());
+        EXPECT_TRUE(STATE(GPS_FIX));
+    }
+    EXPECT_EQ(2000u, publications);
+    EXPECT_EQ(30, gpsSol.numSat);
+    EXPECT_EQ(844, gpsSol.groundCourse);
+}
+
+TEST(CLIUnittest, NmeaRejectsMalformedRmcAndGsvFields)
+{
+    resetNmeaTest();
+    feedTestSentence(nmeaSentence("GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W").c_str());
+    ASSERT_EQ(844, gpsSol.groundCourse);
+    feedTestSentence(nmeaSentence("GPRMC,123519.00,X,4807.038,N,01131.000,E,022.4,123.4,230394,003.1,W").c_str());
+    EXPECT_EQ(844, gpsSol.groundCourse);
+    feedTestSentence(nmeaSentence("GPGSV,1,1,02,01,45,123,40,02,30,100,35").c_str());
+    ASSERT_EQ(2, GPS_numCh);
+    feedTestSentence(nmeaSentence("GPGSV,1,1,xx,01,45,123,40").c_str());
+    EXPECT_EQ(2, GPS_numCh);
+    feedTestSentence(nmeaSentence("GPGSV,1,1,,").c_str());
+    EXPECT_EQ(2, GPS_numCh);
+}
+
+TEST(CLIUnittest, NmeaRejectsOutOfRangeRmcSpeedAndCourse)
+{
+    resetNmeaTest();
+    feedTestSentence(nmeaSentence("GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W").c_str());
+    const auto speed = gpsSol.groundSpeed;
+    const auto course = gpsSol.groundCourse;
+    feedTestSentence(nmeaSentence("GPRMC,123519.00,A,4807.038,N,01131.000,E,999999999999,084.4,230394,003.1,W").c_str());
+    EXPECT_EQ(speed, gpsSol.groundSpeed);
+    feedTestSentence(nmeaSentence("GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,361.0,230394,003.1,W").c_str());
+    EXPECT_EQ(course, gpsSol.groundCourse);
+    feedTestSentence(nmeaSentence("GPRMC,123519.00,A,4807.038,N,01131.000,E,1274.0,360.000,230394,003.1,W").c_str());
+    EXPECT_EQ(65534, gpsSol.groundSpeed);
+    EXPECT_EQ(3600, gpsSol.groundCourse);
+    feedTestSentence(nmeaSentence("GPRMC,123519.00,A,4807.038,N,01131.000,E,1274.01,084.4,230394,003.1,W").c_str());
+    EXPECT_EQ(3600, gpsSol.groundCourse);
+    feedTestSentence(nmeaSentence("GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,360.001,230394,003.1,W").c_str());
+    EXPECT_EQ(3600, gpsSol.groundCourse);
+}
+
+TEST(CLIUnittest, NmeaNoFixCanOmitTimeAndSatelliteCount)
+{
+    resetNmeaTest();
+    ASSERT_TRUE(feedTestSentence(nmeaGga().c_str()));
+    ASSERT_TRUE(STATE(GPS_FIX));
+    const uint16_t intervalBefore = gpsSol.navIntervalMs;
+    EXPECT_TRUE(feedTestSentence(nmeaSentence("GNGGA,,,,,,0,,,,,,,,").c_str()));
+    EXPECT_FALSE(STATE(GPS_FIX));
+    EXPECT_EQ(intervalBefore, gpsSol.navIntervalMs);
 }
