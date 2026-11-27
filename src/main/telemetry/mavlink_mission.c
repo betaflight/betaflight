@@ -149,6 +149,18 @@ static void abortUpload(uint8_t result)
     m.state = MISSION_IDLE;
 }
 
+// The stored mission flies unless the executor is off or an injected plan (guided, rescue,
+// geofence return) has taken over; then the cursor is where the mission resumes.
+static bool missionFlying(void)
+{
+    return flightPlanNavIsActive() && !flightPlanNavIsInjectedPlanActive();
+}
+
+static uint8_t missionCursor(void)
+{
+    return missionFlying() ? flightPlanNavGetCurrentIndex() : flightPlanNavGetMissionIndex();
+}
+
 static void sendMissionItem(uint8_t partnerSys, uint8_t partnerComp, uint16_t seq)
 {
     if (m.missionType == MAV_MISSION_TYPE_FENCE) {
@@ -219,10 +231,7 @@ static void sendMissionItem(uint8_t partnerSys, uint8_t partnerComp, uint16_t se
         break;
     }
 
-    // While an injected runtime plan flies, the executor index does not refer
-    // to the stored mission this download describes.
-    const uint8_t current = (flightPlanNavIsActive() && !flightPlanNavIsInjectedPlanActive()
-        && seq == flightPlanNavGetCurrentIndex()) ? 1 : 0;
+    const uint8_t current = (seq == missionCursor()) ? 1 : 0;
 
     mavlink_msg_mission_item_int_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &txMsg,
         partnerSys, partnerComp, seq, MAV_FRAME_GLOBAL_INT, command, current, 1,
@@ -704,19 +713,18 @@ static void onWaypointReached(uint8_t index)
 static void sendMissionCurrent(void)
 {
     const uint16_t total = flightPlanConfig()->waypointCount;
-    const bool active = flightPlanNavIsActive();
-    const uint16_t seq = (total && active && !flightPlanNavIsInjectedPlanActive())
-        ? flightPlanNavGetCurrentIndex() : 0;
-    const uint8_t missionMode = active ? 1 : 2;
+    const bool flying = missionFlying();
+    const uint16_t seq = total ? missionCursor() : 0;
+    const uint8_t missionMode = flying ? 1 : 2;
     uint8_t missionState;
     if (total == 0) {
         missionState = MISSION_STATE_NO_MISSION;
-    } else if (!active) {
-        missionState = MISSION_STATE_NOT_STARTED;
-    } else if (flightPlanNavGetState() == FP_NAV_COMPLETE) {
-        missionState = MISSION_STATE_COMPLETE;
+    } else if (flying) {
+        missionState = (flightPlanNavGetState() == FP_NAV_COMPLETE) ? MISSION_STATE_COMPLETE : MISSION_STATE_ACTIVE;
+    } else if (seq > 0) {
+        missionState = MISSION_STATE_PAUSED;
     } else {
-        missionState = MISSION_STATE_ACTIVE;
+        missionState = MISSION_STATE_NOT_STARTED;
     }
     mavlink_msg_mission_current_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &txMsg,
         seq, total, missionState, missionMode, 0, 0, 0);

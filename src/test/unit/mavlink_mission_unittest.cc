@@ -62,6 +62,7 @@ extern "C" {
     static int      navSetIndexArg;        // arg captured (-1 if not called)
     bool flightPlanNavIsActive(void) { return navActive; }
     uint8_t flightPlanNavGetCurrentIndex(void) { return navCurrentIndex; }
+    uint8_t flightPlanNavGetMissionIndex(void) { return 0; }
     flightPlanNavState_e flightPlanNavGetState(void) { return FP_NAV_TARGETING; }
     void flightPlanNavSetReachedListener(flightPlanWaypointReachedFn) {}
     bool flightPlanNavSetCurrentIndex(uint8_t index) {

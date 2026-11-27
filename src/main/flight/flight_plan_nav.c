@@ -280,7 +280,7 @@ static struct {
     bool guidedPending;         // injected[] holds a guided plan for the next engage
     bool isGuidedPlan;          // the active injected plan is guided
     bool guidedPausedMission;   // and it took over a mission that can resume
-    float guidedOrbitRadiusM;   // 0: the configured hold radius
+    float guidedOrbitRadiusM;   // 0: the configured hold radius; positive orbits clockwise
 
 #if ENABLE_RESCUE_PLAN
     // Failsafe rescue plan staged before the executor engages; drained by
@@ -306,6 +306,7 @@ static struct {
     uint8_t patternType;        // waypointPattern_e
     vector3_t patternCentreM;   // hold point, ENU metres
     float patternPhaseRad;
+    bool patternClockwise;
     float patternSpeedMps;      // carrot path speed
     float patternCruiseMps;     // chase speed cap (the leg's cruise)
     timeUs_t patternLastUpdateUs;
@@ -474,8 +475,8 @@ static float legCruiseCapMps(const waypoint_t *wp, const vector3_t *targetEnuM)
 #ifndef USE_WING
 static float holdPatternRadiusM(void)
 {
-    if (fp.isGuidedPlan && fp.guidedOrbitRadiusM > 0.0f) {
-        return fp.guidedOrbitRadiusM;
+    if (fp.isGuidedPlan && fp.guidedOrbitRadiusM != 0.0f) {
+        return fabsf(fp.guidedOrbitRadiusM);
     }
     return autopilotConfig()->waypointHoldRadius * 0.01f;
 }
@@ -2037,6 +2038,7 @@ static void startHoldPattern(const waypoint_t *wp)
     const float radiusM = holdPatternRadiusM();
 
     fp.patternType = wp->pattern;
+    fp.patternClockwise = fp.isGuidedPlan && fp.guidedOrbitRadiusM > 0.0f;
     fp.patternCentreM = cmd->targetPosEfM;
     fp.patternCruiseMps = cmd->cruiseSpeedMps;
     fp.patternSpeedMps = MIN(cmd->cruiseSpeedMps, radiusM * FP_PATTERN_MAX_RATE_RADS);
@@ -2065,9 +2067,12 @@ static void updateHoldPattern(timeUs_t currentTimeUs)
     fp.patternLastUpdateUs = currentTimeUs;
 
     const float radiusM = holdPatternRadiusM();
-    fp.patternPhaseRad += (fp.patternSpeedMps / radiusM) * MIN(sinceUs * 1e-6f, 1.0f);
+    const float stepRad = (fp.patternSpeedMps / radiusM) * MIN(sinceUs * 1e-6f, 1.0f);
+    fp.patternPhaseRad += fp.patternClockwise ? -stepRad : stepRad;
     if (fp.patternPhaseRad > M_PIf) {
         fp.patternPhaseRad -= 2.0f * M_PIf;
+    } else if (fp.patternPhaseRad < -M_PIf) {
+        fp.patternPhaseRad += 2.0f * M_PIf;
     }
 
     if (positionNavHasActiveTarget()) {
@@ -2517,7 +2522,7 @@ bool flightPlanNavSetGuidedPlan(const waypoint_t *waypoints, uint8_t count, floa
         return false;
     }
 #endif
-    fp.guidedOrbitRadiusM = MAX(orbitRadiusM, 0.0f);
+    fp.guidedOrbitRadiusM = isfinite(orbitRadiusM) ? orbitRadiusM : 0.0f;
     if (!fp.active) {
         memcpy(fp.injected, waypoints, count * sizeof(*waypoints));
         fp.injectedCount = count;
@@ -2543,6 +2548,17 @@ void flightPlanNavCancelGuided(void)
 bool flightPlanNavIsGuided(void)
 {
     return fp.active ? fp.isGuidedPlan : fp.guidedPending;
+}
+
+bool flightPlanNavIsGuidedLanding(void)
+{
+    const waypoint_t *wp = NULL;
+    if (fp.active && fp.isGuidedPlan) {
+        wp = currentWaypoint();
+    } else if (!fp.active && fp.guidedPending) {
+        wp = &fp.injected[0];
+    }
+    return wp && wp->type == WAYPOINT_TYPE_LAND;
 }
 
 static void restartMissionAt(uint8_t index)
@@ -2589,6 +2605,14 @@ bool flightPlanNavResumeMission(void)
     }
     restartMissionAt(fp.missionIndex);
     return true;
+}
+
+void flightPlanNavLeaveGuided(void)
+{
+    flightPlanNavCancelGuided();
+    if (fp.active && fp.isGuidedPlan) {
+        restartMissionAt((fp.missionIndex < flightPlanConfig()->waypointCount) ? fp.missionIndex : 0);
+    }
 }
 
 uint8_t flightPlanNavGetMissionIndex(void)

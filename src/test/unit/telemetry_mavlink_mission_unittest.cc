@@ -44,6 +44,7 @@ extern "C" {
     static bool s_navInjected = false;
     static flightPlanNavState_e s_navState = FP_NAV_IDLE;
     static uint8_t s_navIndex = 0;
+    static uint8_t s_navMissionIndex = 0;
     static int s_setCurrentArg = -1;
     static int s_saveCalls = 0;
     static uint32_t s_millis = 0;
@@ -53,6 +54,7 @@ extern "C" {
     bool flightPlanNavIsInjectedPlanActive(void) { return s_navInjected; }
     flightPlanNavState_e flightPlanNavGetState(void) { return s_navState; }
     uint8_t flightPlanNavGetCurrentIndex(void) { return s_navIndex; }
+    uint8_t flightPlanNavGetMissionIndex(void) { return s_navMissionIndex; }
     bool flightPlanNavSetCurrentIndex(uint8_t index) { s_setCurrentArg = index; return true; }
     void flightPlanNavSetReachedListener(flightPlanWaypointReachedFn fn) { s_reachedListener = fn; }
 
@@ -102,6 +104,7 @@ protected:
         s_navInjected = false;
         s_navState = FP_NAV_IDLE;
         s_navIndex = 0;
+        s_navMissionIndex = 0;
         s_setCurrentArg = -1;
         s_saveCalls = 0;
         s_millis = 0;
@@ -500,21 +503,40 @@ TEST_F(MavlinkMissionTest, MissionCurrentReflectsExecutorState)
     EXPECT_EQ(mc.mission_state, MISSION_STATE_ACTIVE);
 }
 
-TEST_F(MavlinkMissionTest, MissionCurrentSuppressedForInjectedPlan)
+TEST_F(MavlinkMissionTest, MissionCurrentShowsWhereAnInjectedPlanResumesTheMission)
 {
     flightPlanConfigMutable()->waypointCount = 3;
     s_navActive = true;
     s_navInjected = true;
-    s_navIndex = 2;
+    s_navIndex = 0;
+    s_navMissionIndex = 2;
 
     mavMissionUpdate(1000);
     const mavlink_message_t *cur = lastOfType(MAVLINK_MSG_ID_MISSION_CURRENT);
     ASSERT_NE(cur, nullptr);
     mavlink_mission_current_t mc;
     mavlink_msg_mission_current_decode(cur, &mc);
-    // An injected runtime plan owns its own sequencing; the uploaded-mission
-    // cursor stays at 0 for the tracking GCS.
+    EXPECT_EQ(mc.seq, 2);
+    EXPECT_EQ(mc.mission_state, MISSION_STATE_PAUSED);
+    EXPECT_EQ(mc.mission_mode, 2);
+}
+
+TEST_F(MavlinkMissionTest, MissionCurrentWhileTheModeIsOff)
+{
+    flightPlanConfigMutable()->waypointCount = 3;
+
+    mavMissionUpdate(1000);
+    mavlink_mission_current_t mc;
+    mavlink_msg_mission_current_decode(lastOfType(MAVLINK_MSG_ID_MISSION_CURRENT), &mc);
     EXPECT_EQ(mc.seq, 0);
+    EXPECT_EQ(mc.mission_state, MISSION_STATE_NOT_STARTED);
+
+    s_navMissionIndex = 1;
+    sent.clear();
+    mavMissionUpdate(2000);
+    mavlink_msg_mission_current_decode(lastOfType(MAVLINK_MSG_ID_MISSION_CURRENT), &mc);
+    EXPECT_EQ(mc.seq, 1);
+    EXPECT_EQ(mc.mission_state, MISSION_STATE_PAUSED);
 }
 
 TEST_F(MavlinkMissionTest, SetCurrentDispatchesAndEchoesCursor)

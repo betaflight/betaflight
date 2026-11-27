@@ -248,8 +248,17 @@ enum {
     MODE_AUTOPILOT,
     MODE_RTL,
     MODE_FAILSAFE,
+    MODE_GUIDED,
+    MODE_TAKEOFF,
+    MODE_LAND,
     MODE_COUNT,
 };
+
+#if ENABLE_FLIGHT_PLAN
+#define GUIDED_MODE_PROPERTIES 0u
+#else
+#define GUIDED_MODE_PROPERTIES MAV_MODE_PROPERTY_NOT_USER_SELECTABLE
+#endif
 
 class MavlinkTelemetryTest : public ::testing::Test {
 protected:
@@ -851,6 +860,18 @@ TEST_F(MavlinkTelemetryTest, SetModeRejectsFailsafeAndUnknownWithoutTouchingOver
     EXPECT_EQ(lastAck().result, MAV_RESULT_DENIED);
     EXPECT_EQ(overrideMask, before);
 
+    setMode(MODE_TAKEOFF);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_DENIED);
+    EXPECT_EQ(overrideMask, before);
+
+#if !ENABLE_FLIGHT_PLAN
+    setMode(MODE_GUIDED);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_DENIED);
+    setMode(MODE_LAND);
+    EXPECT_EQ(lastAck().result, MAV_RESULT_DENIED);
+    EXPECT_EQ(overrideMask, before);
+#endif
+
     setMode(MODE_COUNT);
     EXPECT_EQ(lastAck().result, MAV_RESULT_DENIED);
     EXPECT_EQ(overrideMask, before);
@@ -1130,6 +1151,9 @@ TEST_F(MavlinkTelemetryTest, AvailableModesDescribeEveryMode)
         { "Autopilot", MAV_STANDARD_MODE_MISSION, 0 },
         { "RTL", MAV_STANDARD_MODE_SAFE_RECOVERY, 0 },
         { "Failsafe", MAV_STANDARD_MODE_SAFE_RECOVERY, MAV_MODE_PROPERTY_NOT_USER_SELECTABLE },
+        { "Guided", MAV_STANDARD_MODE_NON_STANDARD, GUIDED_MODE_PROPERTIES },
+        { "Takeoff", MAV_STANDARD_MODE_TAKEOFF, MAV_MODE_PROPERTY_NOT_USER_SELECTABLE },
+        { "Land", MAV_STANDARD_MODE_LAND, GUIDED_MODE_PROPERTIES },
     };
 
     for (uint8_t index = 1; index <= MODE_COUNT; index++) {
@@ -1144,6 +1168,7 @@ TEST_F(MavlinkTelemetryTest, AvailableModesDescribeEveryMode)
         EXPECT_EQ(am.custom_mode, (uint32_t)(index - 1));
         EXPECT_EQ(am.standard_mode, e.standardMode);
         EXPECT_EQ(am.properties, e.properties);
+        EXPECT_EQ(am.seq, 2);
         EXPECT_EQ(std::string(am.mode_name, strnlen(am.mode_name, sizeof(am.mode_name))), e.name);
     }
 }
@@ -1203,7 +1228,7 @@ TEST_F(MavlinkTelemetryTest, AvailableModesMonitorReportsSequence)
     EXPECT_EQ(ackResultFor(MAV_CMD_REQUEST_MESSAGE, MAVLINK_MSG_ID_AVAILABLE_MODES_MONITOR), MAV_RESULT_ACCEPTED);
     const mavlink_message_t *m = lastOf(MAVLINK_MSG_ID_AVAILABLE_MODES_MONITOR);
     ASSERT_NE(m, nullptr);
-    EXPECT_EQ(mavlink_msg_available_modes_monitor_get_seq(m), 1);
+    EXPECT_EQ(mavlink_msg_available_modes_monitor_get_seq(m), 2);
 }
 
 TEST_F(MavlinkTelemetryTest, MessageIntervalReflectsStreamRate)

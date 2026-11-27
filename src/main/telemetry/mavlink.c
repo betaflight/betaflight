@@ -131,6 +131,9 @@ typedef enum {
     BF_MAV_MODE_AUTOPILOT,
     BF_MAV_MODE_RTL,
     BF_MAV_MODE_FAILSAFE,
+    BF_MAV_MODE_GUIDED,
+    BF_MAV_MODE_TAKEOFF,
+    BF_MAV_MODE_LAND,
     BF_MAV_MODE_COUNT,
 } bfMavMode_e;
 
@@ -141,7 +144,18 @@ typedef struct {
 } bfMavModeDescriptor_t;
 
 // The mode set is fixed at build time, so its sequence number never changes
-#define BF_MAV_MODES_SEQ 1
+#define BF_MAV_MODES_SEQ 2
+
+#if ENABLE_FLIGHT_PLAN
+#define BF_MAV_GUIDED_PROPERTIES 0
+#else
+#define BF_MAV_GUIDED_PROPERTIES MAV_MODE_PROPERTY_NOT_USER_SELECTABLE
+#endif
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#define BF_MAV_LAND_PROPERTIES 0
+#else
+#define BF_MAV_LAND_PROPERTIES MAV_MODE_PROPERTY_NOT_USER_SELECTABLE
+#endif
 
 static const bfMavModeDescriptor_t bfMavModeDescriptors[BF_MAV_MODE_COUNT] = {
     [BF_MAV_MODE_ACRO]      = { "Acro",      MAV_STANDARD_MODE_NON_STANDARD,  0 },
@@ -152,6 +166,10 @@ static const bfMavModeDescriptor_t bfMavModeDescriptors[BF_MAV_MODE_COUNT] = {
     [BF_MAV_MODE_AUTOPILOT] = { "Autopilot", MAV_STANDARD_MODE_MISSION,       0 },
     [BF_MAV_MODE_RTL]       = { "RTL",       MAV_STANDARD_MODE_SAFE_RECOVERY, 0 },
     [BF_MAV_MODE_FAILSAFE]  = { "Failsafe",  MAV_STANDARD_MODE_SAFE_RECOVERY, MAV_MODE_PROPERTY_NOT_USER_SELECTABLE },
+    [BF_MAV_MODE_GUIDED]    = { "Guided",    MAV_STANDARD_MODE_NON_STANDARD,  BF_MAV_GUIDED_PROPERTIES },
+    // Takeoff needs a target altitude, so only MAV_CMD_NAV_TAKEOFF enters it
+    [BF_MAV_MODE_TAKEOFF]   = { "Takeoff",   MAV_STANDARD_MODE_TAKEOFF,       MAV_MODE_PROPERTY_NOT_USER_SELECTABLE },
+    [BF_MAV_MODE_LAND]      = { "Land",      MAV_STANDARD_MODE_LAND,          BF_MAV_LAND_PROPERTIES },
 };
 
 static mavlink_message_t mavMsg;
@@ -406,6 +424,14 @@ static uint32_t mavlinkComputeCustomMode(void)
         return BF_MAV_MODE_RTL;
     }
     if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+#if ENABLE_FLIGHT_PLAN
+        if (flightPlanNavIsGuided()) {
+            if (flightPlanNavIsTakingOff()) {
+                return BF_MAV_MODE_TAKEOFF;
+            }
+            return flightPlanNavIsGuidedLanding() ? BF_MAV_MODE_LAND : BF_MAV_MODE_GUIDED;
+        }
+#endif
         return BF_MAV_MODE_AUTOPILOT;
     }
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
@@ -603,18 +629,69 @@ static uint8_t handleRequestAutopilotCapabilities(float param1)
 static bool mavlinkRebootPending = false;
 static bool mavlinkRebootToBootloader = false;
 
+#if ENABLE_FLIGHT_PLAN
+// Guided flight hands the craft to the flight plan executor, which flies only once airborne
+static uint8_t guidedReadiness(void)
+{
+    if (!ARMING_FLAG(ARMED) || !wasThrottleRaised() || !sensors(SENSOR_ACC) || !STATE(GPS_FIX) || !isAltitudeAvailable()) {
+        return MAV_RESULT_TEMPORARILY_REJECTED;
+    }
+    return MAV_RESULT_ACCEPTED;
+}
+
+static waypoint_t guidedWaypoint(const mavlinkCommand_t *cmd, waypointType_e type)
+{
+    const bool hasLatLon = cmd && cmd->hasLatLon;
+    const bool hasAlt = cmd && cmd->hasAlt;
+    return (waypoint_t) {
+        .latitude = hasLatLon ? cmd->lat1e7 : gpsSol.llh.lat,
+        .longitude = hasLatLon ? cmd->lon1e7 : gpsSol.llh.lon,
+        .altitude = hasAlt ? cmd->altCm : gpsSol.llh.altCm,
+        .duration = (type == WAYPOINT_TYPE_HOLD) ? UINT16_MAX : 0,
+        .type = type,
+    };
+}
+
+static uint8_t flyGuided(const waypoint_t *wp, float orbitRadiusM)
+{
+    const uint8_t ready = guidedReadiness();
+    if (ready != MAV_RESULT_ACCEPTED) {
+        return ready;
+    }
+    if (!flightPlanNavSetGuidedPlan(wp, 1, orbitRadiusM)) {
+        return MAV_RESULT_TEMPORARILY_REJECTED;
+    }
+    rcModeClearExternalOverrides();
+    rcModeSetExternalOverride(BOXAUTOPILOT, true);
+    return MAV_RESULT_ACCEPTED;
+}
+#endif
+
 // Map a Betaflight custom_mode (bfMavMode_e) onto the box-mode override. ACRO
 // clears the override (manual flight); every other selectable mode forces exactly
-// one box active. Returns false for non-selectable / unknown modes.
-static bool applyMavCustomMode(uint32_t customMode)
+// one box active. GUIDED holds and LAND lands where the craft is.
+static uint8_t applyMavCustomMode(uint32_t customMode)
 {
+#if ENABLE_FLIGHT_PLAN
+    if (customMode == BF_MAV_MODE_GUIDED) {
+        const waypoint_t here = guidedWaypoint(NULL, WAYPOINT_TYPE_HOLD);
+        return flyGuided(&here, 0.0f);
+    }
+#ifndef USE_WING
+    if (customMode == BF_MAV_MODE_LAND) {
+        const waypoint_t here = guidedWaypoint(NULL, WAYPOINT_TYPE_LAND);
+        return flyGuided(&here, 0.0f);
+    }
+#endif
+#endif
     // Resolve the target box first: a rejected mode must leave any active
     // override (e.g. an in-progress GPS Rescue) untouched.
-    boxId_e box;
+    bool manual = false;
+    boxId_e box = BOXANGLE;
     switch ((bfMavMode_e)customMode) {
     case BF_MAV_MODE_ACRO:
-        rcModeClearExternalOverrides();
-        return true;
+        manual = true;
+        break;
     case BF_MAV_MODE_ANGLE:
         box = BOXANGLE;
         break;
@@ -635,12 +712,21 @@ static bool applyMavCustomMode(uint32_t customMode)
         break;
     case BF_MAV_MODE_FAILSAFE:
     default:
-        return false;
+        return MAV_RESULT_DENIED;
     }
 
+#if ENABLE_FLIGHT_PLAN
+    if (box == BOXAUTOPILOT) {
+        flightPlanNavLeaveGuided();
+    } else {
+        flightPlanNavCancelGuided();
+    }
+#endif
     rcModeClearExternalOverrides();
-    rcModeSetExternalOverride(box, true);
-    return true;
+    if (!manual) {
+        rcModeSetExternalOverride(box, true);
+    }
+    return MAV_RESULT_ACCEPTED;
 }
 
 static uint8_t handleArmDisarm(float param1)
@@ -674,8 +760,9 @@ static uint8_t handleArmDisarm(float param1)
 
 static uint8_t selectMavCustomMode(uint32_t customMode, uint32_t senderSysid)
 {
-    if (!applyMavCustomMode(customMode)) {
-        return MAV_RESULT_DENIED;
+    const uint8_t result = applyMavCustomMode(customMode);
+    if (result != MAV_RESULT_ACCEPTED) {
+        return result;
     }
 #if ENABLE_REMOTE_ARM || ENABLE_MAVLINK_GCS_FAILSAFE
     if (mavlinkIsGcsSysid(senderSysid)) {
@@ -721,6 +808,9 @@ static uint8_t handleReturnToLaunch(void)
     if (!ARMING_FLAG(ARMED)) {
         return MAV_RESULT_TEMPORARILY_REJECTED;
     }
+#if ENABLE_FLIGHT_PLAN
+    flightPlanNavCancelGuided();
+#endif
     rcModeClearExternalOverrides();
     rcModeSetExternalOverride(BOXGPSRESCUE, true);
     return MAV_RESULT_ACCEPTED;
@@ -761,6 +851,123 @@ static uint8_t handleSetHome(const mavlinkCommand_t *cmd)
     return MAV_RESULT_UNSUPPORTED;
 #endif
 }
+
+#if ENABLE_FLIGHT_PLAN
+static uint16_t speedParamToCmS(float speedMps)
+{
+    return (uint16_t)constrainf(speedMps * 100.0f, 1.0f, UINT16_MAX);
+}
+
+static uint8_t handleNavLand(const mavlinkCommand_t *cmd)
+{
+#ifdef USE_WING
+    UNUSED(cmd);
+    return MAV_RESULT_UNSUPPORTED;
+#else
+    if (cmd->positionResult != MAV_RESULT_ACCEPTED) {
+        return cmd->positionResult;
+    }
+    waypoint_t wp = guidedWaypoint(cmd, WAYPOINT_TYPE_LAND);
+    // The landing detects touchdown, so it flies there at the height it is at
+    wp.altitude = gpsSol.llh.altCm;
+    return flyGuided(&wp, 0.0f);
+#endif
+}
+
+static uint8_t handleReposition(const mavlinkCommand_t *cmd)
+{
+    uint32_t flags;
+    if (!cmdParamToUint32(cmd->param[1], UINT8_MAX, &flags)) {
+        return MAV_RESULT_DENIED;
+    }
+    if (cmd->positionResult != MAV_RESULT_ACCEPTED) {
+        return cmd->positionResult;
+    }
+    const bool guided = FLIGHT_MODE(AUTOPILOT_MODE) && flightPlanNavIsGuided();
+    if (!(flags & MAV_DO_REPOSITION_FLAGS_CHANGE_MODE) && !guided) {
+        return MAV_RESULT_DENIED;
+    }
+    const waypoint_t wp = guidedWaypoint(cmd, WAYPOINT_TYPE_HOLD);
+    const uint8_t result = flyGuided(&wp, 0.0f);
+    if (result == MAV_RESULT_ACCEPTED && cmd->param[0] > 0.0f) {
+        flightPlanNavSetSpeedOverride(speedParamToCmS(cmd->param[0]));
+    }
+    return result;
+}
+
+static uint8_t handlePauseContinue(float continueF)
+{
+    uint32_t resume;
+    if (!cmdParamToUint32(continueF, 1, &resume)) {
+        return MAV_RESULT_DENIED;
+    }
+    if (resume) {
+        return flightPlanNavResumeMission() ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED;
+    }
+    const waypoint_t here = guidedWaypoint(NULL, WAYPOINT_TYPE_HOLD);
+    return flyGuided(&here, 0.0f);
+}
+
+static uint8_t handleMissionStart(float firstItemF)
+{
+    uint32_t firstItem;
+    if (!cmdParamToUint32(firstItemF, UINT8_MAX, &firstItem)) {
+        return MAV_RESULT_DENIED;
+    }
+    const uint8_t ready = guidedReadiness();
+    if (ready != MAV_RESULT_ACCEPTED) {
+        return ready;
+    }
+    if (!flightPlanNavStartMission(firstItem)) {
+        return MAV_RESULT_DENIED;
+    }
+    rcModeClearExternalOverrides();
+    rcModeSetExternalOverride(BOXAUTOPILOT, true);
+    return MAV_RESULT_ACCEPTED;
+}
+
+static uint8_t handleChangeSpeed(float speedMps)
+{
+    if (!ARMING_FLAG(ARMED)) {
+        return MAV_RESULT_TEMPORARILY_REJECTED;
+    }
+    if (!isfinite(speedMps) || speedMps == 0.0f) {
+        return MAV_RESULT_DENIED;
+    }
+    if (speedMps <= -1.5f) {
+        flightPlanNavSetSpeedOverride(0);
+    } else if (speedMps > 0.0f) {
+        flightPlanNavSetSpeedOverride(speedParamToCmS(speedMps));
+    }
+    return MAV_RESULT_ACCEPTED;
+}
+
+static uint8_t handleOrbit(const mavlinkCommand_t *cmd)
+{
+#ifdef USE_WING
+    UNUSED(cmd);
+    return MAV_RESULT_UNSUPPORTED;
+#else
+    const float radiusM = isnan(cmd->param[0]) ? 0.0f : cmd->param[0];
+    const float speedMps = cmd->param[1];
+    const float orbitsRad = isnan(cmd->param[3]) ? 0.0f : cmd->param[3];
+    if (!isfinite(radiusM) || (radiusM != 0.0f && fabsf(radiusM) < 1.0f) || !isfinite(orbitsRad) || orbitsRad < 0.0f) {
+        return MAV_RESULT_DENIED;
+    }
+    if (cmd->positionResult != MAV_RESULT_ACCEPTED) {
+        return cmd->positionResult;
+    }
+    waypoint_t wp = guidedWaypoint(cmd, WAYPOINT_TYPE_HOLD);
+    wp.pattern = WAYPOINT_PATTERN_ORBIT;
+    wp.speed = (speedMps > 0.0f) ? speedParamToCmS(speedMps) : 0;
+    if (orbitsRad > 0.0f) {
+        const float periodDs = flightPlanNavOrbitPeriodAtRadiusDs(wp.speed, fabsf(radiusM));
+        wp.duration = (uint16_t)constrainf(orbitsRad / (2.0f * M_PIf) * periodDs, 1.0f, UINT16_MAX);
+    }
+    return flyGuided(&wp, radiusM);
+#endif
+}
+#endif // ENABLE_FLIGHT_PLAN
 
 static uint8_t handleRebootShutdown(float param1)
 {
@@ -815,6 +1022,20 @@ static uint8_t mavlinkExecCommand(const mavlinkCommand_t *cmd)
         return handleSetHome(cmd);
     case MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN:
         return handleRebootShutdown(param[0]);
+#if ENABLE_FLIGHT_PLAN
+    case MAV_CMD_NAV_LAND:
+        return handleNavLand(cmd);
+    case MAV_CMD_DO_REPOSITION:
+        return handleReposition(cmd);
+    case MAV_CMD_DO_PAUSE_CONTINUE:
+        return handlePauseContinue(param[0]);
+    case MAV_CMD_MISSION_START:
+        return handleMissionStart(param[0]);
+    case MAV_CMD_DO_CHANGE_SPEED:
+        return handleChangeSpeed(param[1]);
+    case MAV_CMD_DO_ORBIT:
+        return handleOrbit(cmd);
+#endif
 #endif
     default:
         return MAV_RESULT_UNSUPPORTED;
@@ -1408,6 +1629,8 @@ static void mavlinkSendHeartbeat(void)
     }
     if (mavCustomMode == BF_MAV_MODE_AUTOPILOT || mavCustomMode == BF_MAV_MODE_RTL) {
         mavModes |= MAV_MODE_FLAG_GUIDED_ENABLED | MAV_MODE_FLAG_AUTO_ENABLED;
+    } else if (mavCustomMode == BF_MAV_MODE_GUIDED || mavCustomMode == BF_MAV_MODE_TAKEOFF || mavCustomMode == BF_MAV_MODE_LAND) {
+        mavModes |= MAV_MODE_FLAG_GUIDED_ENABLED;
     }
 
     uint8_t mavSystemState = 0;

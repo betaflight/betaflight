@@ -889,6 +889,34 @@ TEST_F(FlightPlanNavPatternTest, GuidedOrbitFliesItsOwnRadius)
     EXPECT_EQ(flightPlanNavOrbitPeriodAtRadiusDs(300, 6.0f), (uint16_t)lrintf(10.0f * 2.0f * M_PIf / (1.5f / 6.0f)));
 }
 
+TEST_F(FlightPlanNavPatternTest, GuidedOrbitTurnsTheWayItsRadiusSays)
+{
+    const int32_t lonUnitsFor10m = (int32_t)((10.0f / 111319.49f) * 1.0e7f);
+    const int32_t latUnitsFor20m = (int32_t)((20.0f / 111319.49f) * 1.0e7f);
+    waypoint_t orbit = makeWaypoint(latUnitsFor20m, lonUnitsFor10m, 15000, WAYPOINT_TYPE_HOLD, 300, UINT16_MAX);
+    orbit.pattern = WAYPOINT_PATTERN_ORBIT;
+    for (const float radiusM : { 6.0f, -6.0f }) {
+        flightPlanNavDisengage();
+        ASSERT_TRUE(flightPlanNavSetGuidedPlan(&orbit, 1, radiusM));
+        g_stubMicros += 1'000'000;
+        flightPlanNavEngage();
+        g_stubEstimate.position.x = (kCentreE + 1.5f) * 100.0f;
+        g_stubEstimate.position.y = kCentreN * 100.0f;
+        triggerReached();
+        flightPlanNavUpdate(g_stubMicros);
+        g_stubMicros += 1'000'000;
+        flightPlanNavUpdate(g_stubMicros);
+
+        EXPECT_NEAR(distanceFromCentre(), 6.0f, 0.05f);
+        const float azimuth = atan2f(g_lastTarget.targetEfM.y - kCentreN, g_lastTarget.targetEfM.x - kCentreE);
+        if (radiusM > 0.0f) {
+            EXPECT_LT(azimuth, -0.1f) << "a positive radius orbits clockwise";
+        } else {
+            EXPECT_GT(azimuth, 0.1f) << "a negative radius orbits counter-clockwise";
+        }
+    }
+}
+
 TEST_F(FlightPlanNavPatternTest, OrbitCarrotStartsAtVehicleAzimuth)
 {
     engageHoldPattern(WAYPOINT_PATTERN_ORBIT);
@@ -1345,6 +1373,53 @@ TEST_F(FlightPlanNavTest, GuidedPlanPausesMissionAndResumeContinues)
     EXPECT_FALSE(flightPlanNavIsInjectedPlanActive());
     EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
     EXPECT_NEAR(g_lastTarget.targetEfM.z, 60.0f, 0.1f);
+}
+
+TEST_F(FlightPlanNavTest, LeaveGuidedHandsBackToTheMissionWhereItWasLeft)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypoint(30, 40, 16000, WAYPOINT_TYPE_FLYOVER);
+    flightPlanNavEngage();
+    arriveAtWaypoint();
+    const waypoint_t hold = makeWaypoint(0, 0, 12000, WAYPOINT_TYPE_HOLD, 0, UINT16_MAX);
+    ASSERT_TRUE(flightPlanNavSetGuidedPlan(&hold, 1, 0.0f));
+
+    flightPlanNavLeaveGuided();
+    EXPECT_FALSE(flightPlanNavIsGuided());
+    EXPECT_FALSE(flightPlanNavIsInjectedPlanActive());
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 60.0f, 0.1f);
+}
+
+TEST_F(FlightPlanNavTest, LeaveGuidedDropsAStagedPlan)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    const waypoint_t hold = makeWaypoint(0, 0, 12000, WAYPOINT_TYPE_HOLD, 0, UINT16_MAX);
+    ASSERT_TRUE(flightPlanNavSetGuidedPlan(&hold, 1, 0.0f));
+
+    flightPlanNavLeaveGuided();
+    EXPECT_FALSE(flightPlanNavIsGuided());
+    flightPlanNavEngage();
+    EXPECT_FALSE(flightPlanNavIsInjectedPlanActive());
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 50.0f, 0.1f);
+}
+
+TEST_F(FlightPlanNavTest, GuidedLandingIsReportedFromStaging)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    const waypoint_t land = makeWaypoint(0, 0, 12000, WAYPOINT_TYPE_LAND);
+    ASSERT_TRUE(flightPlanNavSetGuidedPlan(&land, 1, 0.0f));
+    EXPECT_TRUE(flightPlanNavIsGuidedLanding());
+
+    flightPlanNavEngage();
+    EXPECT_TRUE(flightPlanNavIsGuidedLanding());
+
+    const waypoint_t hold = makeWaypoint(0, 0, 12000, WAYPOINT_TYPE_HOLD, 0, UINT16_MAX);
+    ASSERT_TRUE(flightPlanNavSetGuidedPlan(&hold, 1, 0.0f));
+    EXPECT_FALSE(flightPlanNavIsGuidedLanding());
+
+    flightPlanNavLeaveGuided();
+    EXPECT_FALSE(flightPlanNavIsGuidedLanding());
 }
 
 TEST_F(FlightPlanNavTest, GuidedPlanReplacingGuidedKeepsThePausedMission)

@@ -104,11 +104,15 @@ bool flightPlanNavIsInjectedPlanActive(void);
 
 // Guided plan (at most 4 waypoints, copied): flown at once while the executor
 // is active, else staged for the next engage. It lasts until replaced or the
-// executor disengages. orbitRadiusM > 0 sets the HOLD pattern radius. Refused
-// while a rescue is flying.
+// executor disengages. A non-zero orbitRadiusM sets the HOLD orbit radius, as in
+// MAVLink: positive orbits clockwise, negative counter-clockwise. Refused while
+// a rescue is flying. LeaveGuided cancels a staged guided plan and hands an
+// active one back to the stored mission where it was left.
 bool flightPlanNavSetGuidedPlan(const waypoint_t *waypoints, uint8_t count, float orbitRadiusM);
 void flightPlanNavCancelGuided(void);
+void flightPlanNavLeaveGuided(void);
 bool flightPlanNavIsGuided(void);
+bool flightPlanNavIsGuidedLanding(void);
 bool flightPlanNavIsTakingOff(void);
 
 // The stored mission resumes where it was left, across guided plans, rescues
