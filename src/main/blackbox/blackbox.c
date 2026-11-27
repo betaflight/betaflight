@@ -1603,6 +1603,9 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_LANDING_DISARM_THRESHOLD, "%d", currentPidProfile->landing_disarm_threshold);
 
 #ifdef USE_WING
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_S_ROLL,  "%d", currentPidProfile->pid[PID_ROLL].S);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_S_PITCH, "%d", currentPidProfile->pid[PID_PITCH].S);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_S_YAW,   "%d", currentPidProfile->pid[PID_YAW].S);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SPA_ROLL_CENTER, "%d",        currentPidProfile->spa_center[FD_ROLL]);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SPA_ROLL_WIDTH, "%d",         currentPidProfile->spa_width[FD_ROLL]);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SPA_ROLL_MODE, "%d",          currentPidProfile->spa_mode[FD_ROLL]);
@@ -1612,15 +1615,49 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SPA_YAW_CENTER, "%d",         currentPidProfile->spa_center[FD_YAW]);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SPA_YAW_WIDTH, "%d",          currentPidProfile->spa_width[FD_YAW]);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SPA_YAW_MODE, "%d",           currentPidProfile->spa_mode[FD_YAW]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_YAW_TYPE, "%d", currentPidProfile->yaw_type);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANGLE_PITCH_OFFSET, "%d", currentPidProfile->angle_pitch_offset);
 #endif // USE_WING
 
 #ifdef USE_ADVANCED_TPA
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_CURVE_TYPE, "%d",           currentPidProfile->tpa_curve_type);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_CURVE_STALL_THROTTLE, "%d", currentPidProfile->tpa_curve_stall_throttle);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_CURVE_PID_THR0, "%d",       currentPidProfile->tpa_curve_pid_thr0);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_CURVE_PID_THR100, "%d",     currentPidProfile->tpa_curve_pid_thr100);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_CURVE_EXPO, "%d",           currentPidProfile->tpa_curve_expo);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_CURVE_TYPE, "%d", currentPidProfile->tpa_curve_type);
+        // Split the output into two parts to prevent 64 bytes size TX buffer overflow
+        BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
+            if (currentPidProfile->tpa_curve_type > TPA_CURVE_CLASSIC) { // Write to log for TPA_CURVE_HYPERBOLIC, TPA_CURVE_VREF curves types only
+                if (currentPidProfile->tpa_curve_type == TPA_CURVE_HYPERBOLIC) {
+                    blackboxPrintfHeaderLine(PARAM_NAME_TPA_CURVE_STALL_THROTTLE, "%d", currentPidProfile->tpa_curve_stall_throttle);
+                    blackboxPrintfHeaderLine(PARAM_NAME_TPA_CURVE_PID_THR0, "%d",       currentPidProfile->tpa_curve_pid_thr0);
+                    blackboxPrintfHeaderLine(PARAM_NAME_TPA_CURVE_PID_THR100, "%d",     currentPidProfile->tpa_curve_pid_thr100);
+                    blackboxPrintfHeaderLine(PARAM_NAME_TPA_CURVE_EXPO, "%d",           currentPidProfile->tpa_curve_expo);
+                }
+#ifdef USE_WING
+                else if (currentPidProfile->tpa_curve_type == TPA_CURVE_VREF) {
+                    blackboxPrintfHeaderLine(PARAM_NAME_SPEED_CURVE_VREF, "%d", currentPidProfile->speed_curve_vref);
+                    blackboxPrintfHeaderLine(PARAM_NAME_SPEED_CURVE_POWER, "%d", currentPidProfile->speed_curve_power);
+                    blackboxPrintfHeaderLine(PARAM_NAME_SPEED_CURVE_MIN, "%d", currentPidProfile->speed_curve_min);
+                    blackboxPrintfHeaderLine(PARAM_NAME_SPEED_CURVE_MAX, "%d", currentPidProfile->speed_curve_max);
+                }
+#endif // USE_WING
+            }
+        );
 #endif // USE_ADVANCED_TPA
+
+#ifdef USE_WING
+        BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
+            blackboxPrintfHeaderLine(PARAM_NAME_TPA_SPEED_TYPE, "%d", currentPidProfile->tpa_speed_type);
+            if (currentPidProfile->tpa_speed_type == TPA_SPEED_BASIC) {
+                blackboxPrintfHeaderLine(PARAM_NAME_TPA_SPEED_BASIC_DELAY, "%d", currentPidProfile->tpa_speed_basic_delay);
+                blackboxPrintfHeaderLine(PARAM_NAME_TPA_SPEED_BASIC_GRAVITY, "%d", currentPidProfile->tpa_speed_basic_gravity);
+            } else if (currentPidProfile->tpa_speed_type == TPA_SPEED_ADVANCED) {
+                blackboxPrintfHeaderLine(PARAM_NAME_TPA_SPEED_ADV_PROP_PITCH, "%d", currentPidProfile->tpa_speed_adv_prop_pitch);
+                blackboxPrintfHeaderLine(PARAM_NAME_TPA_SPEED_ADV_MASS, "%d", currentPidProfile->tpa_speed_adv_mass);
+                blackboxPrintfHeaderLine(PARAM_NAME_TPA_SPEED_ADV_DRAG_K, "%d", currentPidProfile->tpa_speed_adv_drag_k);
+                blackboxPrintfHeaderLine(PARAM_NAME_TPA_SPEED_ADV_THRUST, "%d", currentPidProfile->tpa_speed_adv_thrust);
+            }
+            blackboxPrintfHeaderLine(PARAM_NAME_TPA_SPEED_MAX_VOLTAGE, "%d", currentPidProfile->tpa_speed_max_voltage);
+            blackboxPrintfHeaderLine(PARAM_NAME_TPA_SPEED_PITCH_OFFSET, "%d", currentPidProfile->tpa_speed_pitch_offset);
+        );
+#endif
 
         BLACKBOX_PRINT_HEADER_LINE("rc_rates", "%d,%d,%d",                  currentControlRateProfile->rcRates[ROLL],
                                                                             currentControlRateProfile->rcRates[PITCH],
@@ -1702,12 +1739,6 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ACC_LIMIT, "%d",              currentPidProfile->rateAccelLimit);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PIDSUM_LIMIT, "%d",           currentPidProfile->pidSumLimit);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PIDSUM_LIMIT_YAW, "%d",       currentPidProfile->pidSumLimitYaw);
-
-#ifdef USE_WING
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_S_ROLL,  "%d", currentPidProfile->pid[PID_ROLL].S);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_S_PITCH, "%d", currentPidProfile->pid[PID_PITCH].S);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_S_YAW,   "%d", currentPidProfile->pid[PID_YAW].S);
-#endif // USE_WING
 
 #ifdef USE_CHIRP
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_CHIRP_LAG_FREQ_HZ, "%d",             currentPidProfile->chirp_lag_freq_hz);
@@ -1946,21 +1977,6 @@ static bool blackboxWriteSysinfo(void)
 #ifdef USE_POSITION_HOLD
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POS_HOLD_DEADBAND,    "%d", posHoldConfig()->deadband);
 #endif
-
-#ifdef USE_WING
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_TYPE, "%d", currentPidProfile->tpa_speed_type);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_BASIC_DELAY, "%d", currentPidProfile->tpa_speed_basic_delay);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_BASIC_GRAVITY, "%d", currentPidProfile->tpa_speed_basic_gravity);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_ADV_PROP_PITCH, "%d", currentPidProfile->tpa_speed_adv_prop_pitch);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_ADV_MASS, "%d", currentPidProfile->tpa_speed_adv_mass);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_ADV_DRAG_K, "%d", currentPidProfile->tpa_speed_adv_drag_k);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_ADV_THRUST, "%d", currentPidProfile->tpa_speed_adv_thrust);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_MAX_VOLTAGE, "%d", currentPidProfile->tpa_speed_max_voltage);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_PITCH_OFFSET, "%d", currentPidProfile->tpa_speed_pitch_offset);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_YAW_TYPE, "%d", currentPidProfile->yaw_type);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANGLE_PITCH_OFFSET, "%d", currentPidProfile->angle_pitch_offset);
-#endif // USE_WING
-
         default:
             return true;
     }
