@@ -51,6 +51,7 @@
 #include "telemetry/mavlink_lib.h"
 
 #include "telemetry/mavlink.h"
+#include "telemetry/mavlink_frame.h"
 #include "telemetry/mavlink_mission.h"
 
 #define MAVLINK_COMPONENT_ID MAV_COMP_ID_AUTOPILOT1
@@ -248,26 +249,16 @@ static bool isSupportedFenceCommand(uint16_t command)
 
 static bool decodeFrameAltCm(uint8_t frame, float z, int32_t *altCmOut, uint8_t *resultOut)
 {
-    if (!isfinite(z)) {
+    switch (mavlinkFrameAltToAmslCm(frame, z, altCmOut)) {
+    case MAVLINK_FRAME_ALT_OK:
+        return true;
+    case MAVLINK_FRAME_ALT_INVALID:
         *resultOut = MAV_MISSION_INVALID_PARAM7;
         return false;
-    }
-    // The _INT frame variants were superseded in MAVLink 2024-03 by their
-    // non-_INT counterparts as synonymous aliases; accept either form so a
-    // modern GCS using the post-2024-03 names still round-trips.
-    switch (frame) {
-    case MAV_FRAME_GLOBAL:
-    case MAV_FRAME_GLOBAL_INT:
-        *altCmOut = (int32_t)(z * 100.0f);
-        return true;
-    case MAV_FRAME_GLOBAL_RELATIVE_ALT:
-    case MAV_FRAME_GLOBAL_RELATIVE_ALT_INT:
-        if (!STATE(GPS_FIX_HOME)) {
-            *resultOut = MAV_MISSION_INVALID;
-            return false;
-        }
-        *altCmOut = (int32_t)(z * 100.0f) + GPS_home_llh.altCm;
-        return true;
+    case MAVLINK_FRAME_ALT_NO_HOME:
+        *resultOut = MAV_MISSION_INVALID;
+        return false;
+    case MAVLINK_FRAME_ALT_UNSUPPORTED:
     default:
         *resultOut = MAV_MISSION_UNSUPPORTED_FRAME;
         return false;
