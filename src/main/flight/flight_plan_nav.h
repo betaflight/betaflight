@@ -91,10 +91,11 @@ uint16_t flightPlanNavGetEtaSeconds(void);
 bool flightPlanNavSetCurrentIndex(uint8_t index);
 
 // Orbit period (deciseconds) for a leg flown at speedCmS (0 = autopilot max
-// velocity), at the configured pattern radius or at radiusM. Converts MAVLink
-// turn counts to and from hold durations.
+// velocity), at the configured pattern radius. A guided orbit uses the speed
+// override and radiusM (0 = configured radius) when set. Converts MAVLink turn
+// counts to and from hold durations.
 uint16_t flightPlanNavOrbitPeriodDs(uint16_t speedCmS);
-uint16_t flightPlanNavOrbitPeriodAtRadiusDs(uint16_t speedCmS, float radiusM);
+uint16_t flightPlanNavGuidedOrbitPeriodDs(uint16_t speedCmS, float radiusM);
 
 // Replace the active mission with a small synthesised runtime plan (at most 4
 // waypoints, copied). Only valid while the executor is active. The injected
@@ -104,11 +105,15 @@ bool flightPlanNavIsInjectedPlanActive(void);
 
 // Guided plan (at most 4 waypoints, copied): flown at once while the executor
 // is active, else staged for the next engage. It lasts until replaced or the
-// executor disengages. orbitRadiusM > 0 sets the HOLD pattern radius. Refused
-// while a rescue is flying.
+// executor disengages. A non-zero orbitRadiusM sets the HOLD orbit radius, as in
+// MAVLink: positive orbits clockwise, negative counter-clockwise. Refused while
+// a rescue is flying. LeaveGuided cancels a staged guided plan and hands an
+// active one back to the stored mission where it was left.
 bool flightPlanNavSetGuidedPlan(const waypoint_t *waypoints, uint8_t count, float orbitRadiusM);
 void flightPlanNavCancelGuided(void);
+void flightPlanNavLeaveGuided(void);
 bool flightPlanNavIsGuided(void);
+bool flightPlanNavIsGuidedLanding(void);
 bool flightPlanNavIsTakingOff(void);
 
 // The stored mission resumes where it was left, across guided plans, rescues
@@ -117,6 +122,7 @@ bool flightPlanNavIsTakingOff(void);
 bool flightPlanNavStartMission(uint8_t index);
 bool flightPlanNavResumeMission(void);
 uint8_t flightPlanNavGetMissionIndex(void);
+bool flightPlanNavIsMissionPaused(void);
 
 // Cruise speed for every non-rescue leg (0 = each leg's own speed), capped to
 // the autopilot max velocity. Applies to the leg being flown.
