@@ -60,3 +60,5 @@ float getFeedforward(int axis);
 void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal);
 float getCurrentRxRateHz(void);
 bool getRxRateValid(void);
+
+float getStickDeflectionWithCurves(int axis);

@@ -1163,3 +1163,14 @@ extern struct linker_symbol __fontdata_end;
 #elif !defined(ENABLE_OSD_CANVAS_SIZE_DEBUG)
 #define ENABLE_OSD_CANVAS_SIZE_DEBUG 0
 #endif
+
+#if !defined(ENABLE_PSAS)
+#if defined(USE_WING)
+#define ENABLE_PSAS 1
+#else
+#define ENABLE_PSAS 0
+#endif
+#endif
+#if ENABLE_PSAS && !defined(USE_WING)
+#error "ENABLE_PSAS requires USE_WING"
+#endif

@@ -611,6 +611,23 @@ bool shouldUpdateSmoothing(void)
     return false;
 }
 
+#if ENABLE_PSAS
+static float unlimitedSetpoint[XYZ_AXIS_COUNT];
+
+float getStickDeflectionWithCurves(int axis)
+{
+    return unlimitedSetpoint[axis] / MAX(getMaxRcRate(axis), 1.0f);
+}
+
+static void refreshUnlimitedSetpoint(void)
+{
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        const float rcCommandf = rcDeflection[axis];
+        unlimitedSetpoint[axis] = applyRates(axis, rcCommandf, fabsf(rcCommandf));
+    }
+}
+#endif
+
 FAST_CODE void processRcCommand(void)
 {
     bool updateSmoothing = false;
@@ -655,6 +672,10 @@ FAST_CODE void processRcCommand(void)
 
                 angleRate = applyRates(axis, rcCommandf, rcCommandfAbs);
             }
+
+#if ENABLE_PSAS
+            unlimitedSetpoint[axis] = angleRate;
+#endif
 
             rawSetpoint[axis] = constrainf(angleRate, -1.0f * currentControlRateProfile->rate_limit[axis], 1.0f * currentControlRateProfile->rate_limit[axis]);
             DEBUG_SET(DEBUG_ANGLERATE, axis, angleRate);  //!< [index:0..2] Setpoint Rate ({roll|pitch|yaw}) [unit:dps]
@@ -892,6 +913,10 @@ void initRcProcessing(void)
         }
 #endif // USE_FEEDFORWARD
     }
+
+#if ENABLE_PSAS
+    refreshUnlimitedSetpoint();
+#endif
 
 #ifdef USE_YAW_SPIN_RECOVERY
     const int maxYawRate = (int)maxRcRate[FD_YAW];
