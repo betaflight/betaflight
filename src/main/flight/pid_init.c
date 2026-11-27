@@ -396,8 +396,9 @@ static void tpaCurveInit(const pidProfile_t *pidProfile)
 void pidInit(const pidProfile_t *pidProfile)
 {
     pidSetTargetLooptime(gyro.targetLooptime); // Initialize pid looptime
-    pidInitFilters(pidProfile);
+    // pidInitFilters() uses pidRuntime values that pidInitConfig() sets
     pidInitConfig(pidProfile);
+    pidInitFilters(pidProfile);
 }
 
 void pidInitConfig(const pidProfile_t *pidProfile)
