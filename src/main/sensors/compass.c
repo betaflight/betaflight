@@ -50,6 +50,7 @@
 #include "drivers/compass/compass_mmc560x.h"
 #include "drivers/compass/compass_mpu925x_ak8963.h"
 #include "drivers/compass/compass_qmc5883.h"
+#include "drivers/compass/compass_ist8308.h"
 #include "drivers/compass/compass_ist8310.h"
 
 #include "drivers/io.h"
@@ -141,7 +142,7 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
     compassConfig->mag_spi_csn = IO_TAG(MAG_CS_PIN);
     compassConfig->mag_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
     compassConfig->mag_i2c_address = 0;
-#elif defined(USE_MAG_HMC5883) || defined(USE_MAG_QMC5883L) || defined(USE_MAG_QMC5883P) || defined(USE_MAG_AK8975) || defined(USE_MAG_AK9916) || defined(USE_MAG_IST8310) || defined(USE_MAG_MMC560X) || defined(USE_MAG_BMM350) || (defined(USE_MAG_AK8963) && !(defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250)))
+#elif defined(USE_MAG_HMC5883) || defined(USE_MAG_QMC5883L) || defined(USE_MAG_QMC5883P) || defined(USE_MAG_AK8975) || defined(USE_MAG_AK9916) || defined(USE_MAG_IST8308) || defined(USE_MAG_IST8310) || defined(USE_MAG_MMC560X) || defined(USE_MAG_BMM350) || (defined(USE_MAG_AK8963) && !(defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250)))
     compassConfig->mag_busType = BUS_TYPE_I2C;
     compassConfig->mag_i2c_device = I2C_DEV_TO_CFG(MAG_I2C_INSTANCE);
     compassConfig->mag_i2c_address = MAG_I2C_ADDRESS;
@@ -423,6 +424,19 @@ static bool compassDetect(magDev_t *magDev, sensor_align_e *alignment)
 
         if (ist8310Detect(magDev)) {
             magHardware = MAG_IST8310;
+            break;
+        }
+#endif
+        FALLTHROUGH;
+
+    case MAG_IST8308:
+#ifdef USE_MAG_IST8308
+        if (dev->bus->busType == BUS_TYPE_I2C) {
+            dev->busType_u.i2c.address = compassConfig()->mag_i2c_address;
+        }
+
+        if (ist8308Detect(magDev)) {
+            magHardware = MAG_IST8308;
             break;
         }
 #endif
