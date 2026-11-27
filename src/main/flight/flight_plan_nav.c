@@ -2661,7 +2661,7 @@ bool flightPlanNavIsTakingOff(void)
         return fp.guidedPending && fp.injected[0].type == WAYPOINT_TYPE_TAKEOFF;
     }
     const waypoint_t *wp = currentWaypoint();
-    return wp && wp->type == WAYPOINT_TYPE_TAKEOFF && fp.state == FP_NAV_TARGETING;
+    return wp && wp->type == WAYPOINT_TYPE_TAKEOFF && (fp.state == FP_NAV_TARGETING || fp.state == FP_NAV_IDLE);
 }
 
 void flightPlanNavResetFlight(void)

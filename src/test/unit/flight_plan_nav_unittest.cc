@@ -1586,6 +1586,19 @@ TEST_F(FlightPlanNavTest, TakingOffUntilTheTakeoffWaypointIsReached)
     EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
 }
 
+TEST_F(FlightPlanNavTest, TakingOffWhileWaitingForTheGpsOrigin)
+{
+    g_stubGpsOriginSet = false;
+    const waypoint_t plan[] = {
+        makeWaypoint(0, 0, 12000, WAYPOINT_TYPE_TAKEOFF),
+        makeWaypoint(0, 0, 12000, WAYPOINT_TYPE_HOLD, 0, UINT16_MAX),
+    };
+    ASSERT_TRUE(flightPlanNavSetGuidedPlan(plan, 2, 0.0f));
+    flightPlanNavEngage();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_IDLE);
+    EXPECT_TRUE(flightPlanNavIsTakingOff());
+}
+
 TEST_F(FlightPlanNavTest, EngageClampsBelowMinCruiseSpeed)
 {
     // maxVelocity small enough that 1 m/s floor should kick in.
