@@ -52,6 +52,7 @@ extern "C" {
     uint8_t stateFlags;
     uint16_t GPS_distanceToHome;
     gpsSolutionData_t gpsSol;
+    gpsConfig_t gpsConfig_System;
     gpsLocation_t GPS_home_llh;
     attitudeEulerAngles_t attitude;
 }

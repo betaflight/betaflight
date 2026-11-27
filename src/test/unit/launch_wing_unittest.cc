@@ -50,6 +50,7 @@ extern "C" {
     float rcCommand[4];
     float autopilotAngle[RP_AXIS_COUNT];
     gpsSolutionData_t gpsSol;
+    gpsConfig_t gpsConfig_System;
     int16_t debug[DEBUG16_VALUE_COUNT];
     uint8_t debugMode;
 
@@ -1151,4 +1152,20 @@ TEST(LaunchWingTest, ModeOffExitReachesTheDebugLog)
     EXPECT_EQ(LAUNCH_WING_EXIT_MODE_OFF, debug[7]);
 
     debugMode = DEBUG_NONE;
+}
+
+TEST(LaunchWingTest, UnknownGpsSpeedCannotQualifyAsStationary)
+{
+    gpsConfigMutable()->provider = GPS_NMEA;
+    gpsConfigMutable()->gps_nmea_allystar = true;
+    resetForTest();
+    stateFlags = GPS_FIX;
+    gpsSol.numSat = 8;
+    gpsSol.groundSpeed = 0;
+    gpsSol.velNEInvalid = true;
+    launchWingArm();
+    EXPECT_FALSE(launchWingLatched());
+    gpsSol.velNEInvalid = false;
+    launchWingArm();
+    EXPECT_TRUE(launchWingLatched());
 }

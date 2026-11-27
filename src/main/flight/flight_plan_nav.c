@@ -1162,7 +1162,7 @@ static bool checkHeadingFault(float dtS, const positionEstimate3d_t *est)
     const float yawErrDeg = wrapDeg180f(headingDeg - bearingDeg);
     const float cogVsHeadingDeg = fabsf(wrapDeg180f(headingDeg - gpsSol.groundCourse * 0.1f));
 
-    const bool eligible = gpsSol.groundSpeed > FP_HDG_FAULT_MIN_SPEED_CMS
+    const bool eligible = gpsHorizontalVelocityUsable() && gpsSol.groundSpeed > FP_HDG_FAULT_MIN_SPEED_CMS
                        && fabsf(yawErrDeg) < FP_HDG_FAULT_ALIGNED_DEG
                        && !fp.inPreTurn;   // the pre-turn deliberately swings the nose off-course
     fp.hdgFaultTimeS = (eligible && cogVsHeadingDeg > FP_HDG_FAULT_ERR_DEG)
@@ -2422,7 +2422,7 @@ static bool rescueHeadingSettled(timeUs_t currentTimeUs)
         fp.rescueHeadingOffCourseUs = currentTimeUs;
     }
     const float offCourseDeg = fabsf(wrapDeg180f((attitude.values.yaw - gpsSol.groundCourse) * 0.1f));
-    if (gpsSol.groundSpeed < FP_RESCUE_HEADING_SETTLE_CMS || offCourseDeg > FP_RESCUE_HEADING_SETTLE_DEG) {
+    if (!gpsHorizontalVelocityUsable() || gpsSol.groundSpeed < FP_RESCUE_HEADING_SETTLE_CMS || offCourseDeg > FP_RESCUE_HEADING_SETTLE_DEG) {
         fp.rescueHeadingOffCourseUs = currentTimeUs;
     }
     return cmpTimeUs(currentTimeUs, fp.rescueHeadingOffCourseUs) >= (timeDelta_t)FP_RESCUE_HEADING_SETTLE_US

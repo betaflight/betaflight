@@ -271,6 +271,11 @@ typedef struct gpsSolutionData_s {
     gpsDilution_t dop;
     gpsAccuracy_t acc;
     gpsVelned_t velned;
+#if ENABLE_GPS_ALLYSTAR
+    bool vel3dInvalid;             // 3D speed unavailable despite a valid position
+    bool velNEInvalid;             // receiver reports position but has no usable horizontal velocity
+    bool velDValid;                  // true only when the NED down velocity is backed by a fresh measurement
+#endif // ENABLE_GPS_ALLYSTAR
     uint16_t speed3d;               // speed in cm/s
     uint16_t groundSpeed;           // speed in cm/s
     uint16_t groundCourse;          // degrees * 10
@@ -338,6 +343,33 @@ typedef enum {
 
 extern gpsData_t gpsData;
 extern gpsSolutionData_t gpsSol;
+
+static inline bool gpsHorizontalVelocityUsable(void)
+{
+#if ENABLE_GPS_ALLYSTAR
+    return gpsConfig()->provider != GPS_NMEA || !gpsConfig()->gps_nmea_allystar || !gpsSol.velNEInvalid;
+#else
+    return true;
+#endif // ENABLE_GPS_ALLYSTAR
+}
+
+static inline bool gpsThreeDimensionalSpeedUsable(void)
+{
+#if ENABLE_GPS_ALLYSTAR
+    return gpsConfig()->provider != GPS_NMEA || !gpsConfig()->gps_nmea_allystar || !gpsSol.vel3dInvalid;
+#else
+    return true;
+#endif // ENABLE_GPS_ALLYSTAR
+}
+
+static inline bool gpsVerticalVelocityUsable(void)
+{
+#if ENABLE_GPS_ALLYSTAR
+    return gpsConfig()->provider != GPS_NMEA || !gpsConfig()->gps_nmea_allystar || gpsSol.velDValid;
+#else
+    return true;
+#endif // ENABLE_GPS_ALLYSTAR
+}
 
 #define GPS_SV_MAXSATS_LEGACY   16U
 #define GPS_SV_MAXSATS_M8N      32U                     // must be larger than MAXSATS_LEGACY

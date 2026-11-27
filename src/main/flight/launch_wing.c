@@ -98,7 +98,7 @@ static void endLaunch(launchWingState_e terminalState, launchWingExit_e exit)
     launchWing.exit = exit;
 #ifdef USE_GPS
     launchWing.hasCourse = terminalState == LAUNCH_WING_FLYING
-        && STATE(GPS_FIX) && gpsSol.groundSpeed >= LAUNCH_COURSE_MIN_SPEED_CMS;
+        && STATE(GPS_FIX) && gpsHorizontalVelocityUsable() && gpsSol.groundSpeed >= LAUNCH_COURSE_MIN_SPEED_CMS;
     launchWing.courseDeg = gpsSol.groundCourse * 0.1f;
 #endif
 }
@@ -135,7 +135,7 @@ static bool isStationary(void)
     }
 #ifdef USE_GPS
     if (STATE(GPS_FIX) && gpsSol.numSat >= LAUNCH_MIN_SATS
-        && gpsSol.groundSpeed >= LAUNCH_STATIONARY_SPEED_CMS) {
+        && (!gpsHorizontalVelocityUsable() || gpsSol.groundSpeed >= LAUNCH_STATIONARY_SPEED_CMS)) {
         return false;
     }
 #endif
@@ -167,7 +167,7 @@ static bool launchDetected(timeUs_t currentTimeUs)
 
     bool forward = false;
 #ifdef USE_GPS
-    forward = STATE(GPS_FIX) && gpsSol.numSat >= LAUNCH_MIN_SATS
+    forward = STATE(GPS_FIX) && gpsHorizontalVelocityUsable() && gpsSol.numSat >= LAUNCH_MIN_SATS
         && gpsSol.groundSpeed > cfg->detectVelocityCmS && (axG > 0.0f);
 #endif
 

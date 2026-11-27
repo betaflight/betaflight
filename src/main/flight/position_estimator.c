@@ -814,8 +814,10 @@ static void feedGPSMeasurements(timeUs_t nowUs)
         DEBUG_SET(DEBUG_VELOCITY_EST, 0, gpsSol.velned.velE);  //!< GPS Velocity East [unit:cm/s]
         DEBUG_SET(DEBUG_VELOCITY_EST, 1, gpsSol.velned.velN);  //!< GPS Velocity North [unit:cm/s]
 
-        kalmanUpdateVelocityToPosition(&kfEast, (float)gpsSol.velned.velE, rGpsVel);
-        kalmanUpdateVelocityToPosition(&kfNorth, (float)gpsSol.velned.velN, rGpsVel);
+        if (gpsHorizontalVelocityUsable()) {
+            kalmanUpdateVelocityToPosition(&kfEast, (float)gpsSol.velned.velE, rGpsVel);
+            kalmanUpdateVelocityToPosition(&kfNorth, (float)gpsSol.velned.velN, rGpsVel);
+        }
 
         kalmanUpdatePosition(&kfEast, gpsDistCm.v[EF_EAST], rGpsPos);
         kalmanUpdatePosition(&kfNorth, gpsDistCm.v[EF_NORTH], rGpsPos);
@@ -840,7 +842,9 @@ static void feedGPSMeasurements(timeUs_t nowUs)
         DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(gpsRelativeAltCm));  //!< Relative GPS Altitude [unit:cm]
         DEBUG_SET(DEBUG_ALTITUDE, 4, lrintf(gpsVelocityUp));  //!< GPS Vertical Velocity [unit:cm/s]
 
-        kalmanUpdateVelocityToPosition(&kfUp, gpsVelocityUp, gpsVelUpR); // always update velocity and position from GPS velocity innovation
+        if (gpsVerticalVelocityUsable()) {
+            kalmanUpdateVelocityToPosition(&kfUp, gpsVelocityUp, gpsVelUpR);
+        }
         kalmanUpdatePosition(&kfUp, gpsRelativeAltCm, gpsAltR); // always update position from GPS position innovation
 
         lastZMeasurementUs = nowUs;

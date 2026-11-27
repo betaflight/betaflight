@@ -44,6 +44,9 @@ typedef struct gpsConfig_s {
     char nmeaCustomCommands[NMEA_CUSTOM_COMMANDS_MAX_LENGTH + 1];
     int8_t gps_uart;  // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned
     uint8_t gps_baud; // baudRate_e index for gps_uart
+#if ENABLE_GPS_ALLYSTAR
+    bool gps_nmea_allystar; // opt in before sending binary commands to an NMEA receiver
+#endif // ENABLE_GPS_ALLYSTAR
 } gpsConfig_t;
 
 PG_DECLARE(gpsConfig_t, gpsConfig);

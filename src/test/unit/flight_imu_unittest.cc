@@ -73,6 +73,7 @@ extern "C" {
     float imuCalcCourseErr(float courseOverGround);
     void imuRemoveCentripetalAcc(vector3_t *accAdc, const vector3_t *gyroRadS, float speedMs);
     float imuWingTurnSpeedMs(timeUs_t nowUs, float dtS, const vector3_t *gyroRadS);
+    float imuWingForwardSpeed(timeUs_t nowUs, float dtS, const vector3_t *gyroRadS);
     extern quaternion_t q;
     extern matrix33_t rMat;
     extern bool attitudeIsEstablished;
@@ -809,4 +810,15 @@ extern "C" {
     float positionEstimatorGetTrustZ(void) { return 0.0f; }
     static positionEstimate3d_t stubEstimate = {};
     const positionEstimate3d_t *positionEstimatorGetEstimate(void) { return &stubEstimate; }
+}
+
+TEST_F(CoordinatedTurnTest, UnknownGroundspeedUsesCruiseEstimate)
+{
+    gpsConfigMutable()->provider = GPS_NMEA;
+    gpsConfigMutable()->gps_nmea_allystar = true;
+    gpsSol.velNEInvalid = true;
+    gpsSol.groundSpeed = 100;
+    const vector3_t gyro = {{ 0.0f, 0.0f, 0.0f }};
+    EXPECT_FLOAT_EQ(speedMs, imuWingForwardSpeed(1000000, dt, &gyro));
+    gpsSol.velNEInvalid = false;
 }
