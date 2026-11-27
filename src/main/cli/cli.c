@@ -3323,6 +3323,11 @@ RAM_CODE static void cliFlashInfo(const char *cmdName, char *cmdline)
 
     const flashGeometry_t *layout = flashGetGeometry();
 
+    if (layout->totalSize == 0) {
+        cliPrintLine("Flash not available (no flash chip detected)");
+        return;
+    }
+
     cliPrintLinef("Flash type=%s, sectors=%u, sectorSize=%u, pagesPerSector=%u, pageSize=%u, totalSize=%u JEDEC ID=0x%08x",
             flashTypeGetName(layout->flashType), layout->sectors, layout->sectorSize, layout->pagesPerSector,
             layout->pageSize, layout->totalSize, layout->jedecId);
@@ -3339,12 +3344,7 @@ RAM_CODE static void cliFlashInfo(const char *cmdName, char *cmdline)
         cliPrintLinef("  %d: %s %u %u", index, flashPartitionGetTypeName(partition->type), partition->startSector, partition->endSector);
     }
 #ifdef USE_FLASHFS
-    const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_FLASHFS);
-
-    cliPrintLinef("FlashFS size=%u, usedSize=%u",
-            FLASH_PARTITION_SECTOR_COUNT(flashPartition) * layout->sectorSize,
-            flashfsGetOffset()
-    );
+    cliPrintLinef("FlashFS size=%u, usedSize=%u", flashfsGetSize(), flashfsGetOffset());
 #endif
 }
 #endif // USE_FLASH_CHIP
