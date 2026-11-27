@@ -247,7 +247,6 @@ typedef struct fpModifiers_s {
     int32_t  altOverrideCm;
     uint8_t  altOverrideMode;       // 0=Neutral, 1=Climbing, 2=Descending; informational
     bool     delayActive;
-    uint16_t delayDurationDs;
     timeUs_t delayEndUs;
     float    yawRateCapDps;
 } fpModifiers_t;
@@ -270,6 +269,7 @@ static struct {
     // controller from that point in the plan onward.
     fpModifiers_t mod;
     fpModifiers_t missionMod;       // what the stored mission's leg at missionIndex had staged
+    timeMs_t missionDelayEndMs;     // its delay end on the millisecond clock, which outlasts a long pause
 
     flightPlanAbortReason_e abortReason;
 
@@ -424,6 +424,7 @@ static void rememberMissionIndex(void)
     if (missionRunning()) {
         fp.missionIndex = fp.currentIndex;
         fp.missionMod = fp.mod;
+        fp.missionDelayEndMs = millis() + MAX(cmpTimeUs(fp.mod.delayEndUs, micros()), 0) / 1000;
     }
 }
 
@@ -447,6 +448,27 @@ static float legCruiseMpsFor(const waypoint_t *wp)
     const uint16_t speedCmS = (fp.speedOverrideCmS > 0 && !rescuePlanFlying()) ? fp.speedOverrideCmS : wp->speed;
     const float cruiseMps = (speedCmS > 0) ? speedCmS * 0.01f : autopilotConfig()->maxVelocity * 0.01f;
     return MAX(cruiseMps, FP_MIN_CRUISE_MPS);
+}
+
+// DELAY: clamp cruise so the rest of the leg (current position → target) takes the rest of the
+// delay. Skip when the remaining leg is effectively zero to avoid div-by-near-zero.
+static float legCruiseCapMps(const waypoint_t *wp, const vector3_t *targetEnuM)
+{
+    float cruiseMps = legCruiseMpsFor(wp);
+    if (fp.mod.delayActive) {
+        const float delaySec = MAX(cmpTimeUs(fp.mod.delayEndUs, micros()), 0) * 1e-6f;
+        const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+        const vector3_t legVec = {.v = {
+            [ENU_E] = targetEnuM->v[ENU_E] - est->position.v[ENU_E] * 0.01f,
+            [ENU_N] = targetEnuM->v[ENU_N] - est->position.v[ENU_N] * 0.01f,
+            [ENU_U] = targetEnuM->v[ENU_U] - est->position.v[ENU_U] * 0.01f,
+        }};
+        const float legLenM = vector3Norm(&legVec);
+        if (delaySec > 0.0f && legLenM > 0.1f) {
+            cruiseMps = MIN(cruiseMps, MAX(FP_DELAY_MIN_CRUISE_MPS, legLenM / delaySec));
+        }
+    }
+    return cruiseMps;
 }
 
 #ifndef USE_WING
@@ -575,7 +597,6 @@ static const waypoint_t *drainModifiers(void)
             break;
         case WAYPOINT_TYPE_DELAY:
             fp.mod.delayActive = true;
-            fp.mod.delayDurationDs = wp->duration;
             fp.mod.delayEndUs = micros() + (uint32_t)wp->duration * 100000u;
             break;
         case WAYPOINT_TYPE_YAW_RATE:
@@ -840,27 +861,7 @@ static bool dispatchWaypoint(void)
 #endif
     fp.legArriveRadiusM = arrivalRadiusM;
 
-    float cruiseMps = legCruiseMpsFor(&effective);
-
-    // DELAY: clamp cruise so traversal-time ≈ delay-seconds, scaled by the
-    // *remaining* leg (current position → target). targetEnuM is origin →
-    // target, so subtracting the current ENU estimate gives the leg vector
-    // the position controller is actually going to drive. Skip when the
-    // remaining leg is effectively zero to avoid div-by-near-zero.
-    if (fp.mod.delayActive) {
-        const float delaySec = fp.mod.delayDurationDs * 0.1f;
-        const positionEstimate3d_t *est = positionEstimatorGetEstimate();
-        const vector3_t legVec = {.v = {
-            [ENU_E] = targetEnuM.v[ENU_E] - est->position.v[ENU_E] * 0.01f,
-            [ENU_N] = targetEnuM.v[ENU_N] - est->position.v[ENU_N] * 0.01f,
-            [ENU_U] = targetEnuM.v[ENU_U] - est->position.v[ENU_U] * 0.01f,
-        }};
-        const float legLenM = vector3Norm(&legVec);
-        if (delaySec > 0.0f && legLenM > 0.1f) {
-            const float scaledMps = MAX(FP_DELAY_MIN_CRUISE_MPS, legLenM / delaySec);
-            cruiseMps = MIN(cruiseMps, scaledMps);
-        }
-    }
+    const float cruiseMps = legCruiseCapMps(&effective, &targetEnuM);
 
     const bool faceTarget = (effective.yawBehaviour == WAYPOINT_YAW_FACE_TARGET);
     const bool passGate = flownAsCarrotLeg(&effective, fp.currentIndex);
@@ -2327,10 +2328,10 @@ static void clearModifierState(void)
 static void resumeMissionModifiers(void)
 {
     fpModifiers_t mods = fp.missionMod;
-    const timeDelta_t remainingUs = cmpTimeUs(mods.delayEndUs, micros());
-    mods.delayActive = mods.delayActive && remainingUs > 0;
+    const int32_t remainingMs = cmp32(fp.missionDelayEndMs, millis());
+    mods.delayActive = mods.delayActive && remainingMs > 0;
     if (mods.delayActive) {
-        mods.delayDurationDs = (uint16_t)MAX(remainingUs / 100000, 1);
+        mods.delayEndUs = micros() + (timeUs_t)remainingMs * 1000;
     }
     applyModifiers(&mods);
 }
@@ -2604,9 +2605,7 @@ void flightPlanNavSetSpeedOverride(uint16_t speedCmS)
     }
     // A carrot leg takes the new speed on its next update; a point leg holds the speed it was given
     if (fp.legIsPassGate) {
-        if (!fp.mod.delayActive) {
-            fp.legCruiseMps = legCruiseMpsFor(currentWaypoint());
-        }
+        fp.legCruiseMps = legCruiseCapMps(currentWaypoint(), &fp.legTargetEnuM);
     } else {
         dispatchWaypoint();
     }

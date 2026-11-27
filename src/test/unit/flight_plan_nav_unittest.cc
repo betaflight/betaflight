@@ -1258,6 +1258,44 @@ TEST_F(FlightPlanNavTest, ResumedMissionKeepsTheModifiersOfTheInterruptedLeg)
     EXPECT_NEAR(g_lastTarget.targetEfM.z, 50.0f, 0.1f);
 }
 
+TEST_F(FlightPlanNavTest, ResumeLongAfterTheDelayEndedDropsTheDelay)
+{
+    autopilotConfigMutable()->maxVelocity = 800;
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypoint(0, 0, 15000, WAYPOINT_TYPE_DELAY, 0, 600);
+    addWaypoint(10, 20 + 1000, 15000, WAYPOINT_TYPE_HOLD, 0, UINT16_MAX);
+
+    flightPlanNavEngage();
+    arriveAtWaypoint();
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 2);
+    ASSERT_LT(g_lastTarget.cruiseSpeedMps, 1.0f);
+
+    const waypoint_t hold = makeWaypoint(0, 0, 12000, WAYPOINT_TYPE_HOLD, 0, UINT16_MAX);
+    ASSERT_TRUE(flightPlanNavSetGuidedPlan(&hold, 1, 0.0f));
+    g_stubMicros += 2400'000'000u;    // longer than a signed 32-bit microsecond difference can span
+    ASSERT_TRUE(flightPlanNavResumeMission());
+    EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, 8.0f, 0.01f);
+}
+
+TEST_F(FlightPlanNavTest, ResumeWithinTheDelayFliesTheRestOfIt)
+{
+    autopilotConfigMutable()->maxVelocity = 800;
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypoint(0, 0, 15000, WAYPOINT_TYPE_DELAY, 0, 600);
+    addWaypoint(10, 20 + 1000, 15000, WAYPOINT_TYPE_HOLD, 0, UINT16_MAX);
+
+    flightPlanNavEngage();
+    arriveAtWaypoint();
+    const float delayedMps = g_lastTarget.cruiseSpeedMps;
+    ASSERT_LT(delayedMps, 1.0f);
+
+    const waypoint_t hold = makeWaypoint(0, 0, 12000, WAYPOINT_TYPE_HOLD, 0, UINT16_MAX);
+    ASSERT_TRUE(flightPlanNavSetGuidedPlan(&hold, 1, 0.0f));
+    g_stubMicros += 30'000'000;
+    ASSERT_TRUE(flightPlanNavResumeMission());
+    EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, delayedMps * 2.0f, 0.05f);
+}
+
 TEST_F(FlightPlanNavTest, GuidedPlanStagedWhileIdleIsFlownOnEngage)
 {
     addWaypoint(500000, 500000, 99999, WAYPOINT_TYPE_FLYOVER);
@@ -2280,6 +2318,10 @@ protected:
         g_stubMicros += us;
         flightPlanNavUpdate(g_stubMicros);
     }
+    void followTheCarrot() {
+        setCraftMetres(0.0f, positionNavGetActiveCommand()->targetPosEfM.y);
+        step();
+    }
 };
 
 TEST_F(FlightPlanNavCarrotTest, FaceTargetLegHoldsStationUntilTheNoseComesRound)
@@ -2762,6 +2804,33 @@ TEST_F(FlightPlanNavCarrotTest, DelayExpiryCarriesTheCarrotOnFromWhereItWalkedTo
         }
     }
     EXPECT_EQ(g_setTargetCalls, setTargetCallsAtEngage + 1);
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+}
+
+TEST_F(FlightPlanNavCarrotTest, SpeedOverrideReachesADelayedLegWithoutLiftingTheDelay)
+{
+    autopilotConfigMutable()->maxVelocity = 1000;
+    addWaypoint(0, 0, 15000, WAYPOINT_TYPE_DELAY, 0, 600);
+    addWaypointMetres(0.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypointMetres(0.0f, 600.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    for (int i = 0; i < 50; i++) {
+        followTheCarrot();
+    }
+    ASSERT_NEAR(g_lastFfEfMps.y, 5.0f, 0.1f);    // 300 m in 60 s
+
+    flightPlanNavSetSpeedOverride(5000);
+    for (int i = 0; i < 20; i++) {
+        followTheCarrot();
+    }
+    EXPECT_LT(g_lastFfEfMps.y, 6.0f);
+
+    flightPlanNavSetSpeedOverride(200);
+    for (int i = 0; i < 50; i++) {
+        followTheCarrot();
+    }
+    EXPECT_NEAR(g_lastFfEfMps.y, 2.0f, 0.05f);
     EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
 }
 
