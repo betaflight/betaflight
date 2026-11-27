@@ -31,7 +31,11 @@
 
 #include "pg/vtx_io.h"
 
-#define VTX_RTC6705_POWER_COUNT           2
+#if ENABLE_RTC6705_DYNAMIC_POWER_CTRL
+    #define VTX_RTC6705_POWER_COUNT       3  // code 11 is undefined and unsafe
+#else
+    #define VTX_RTC6705_POWER_COUNT       2
+#endif
 
 #define VTX_RTC6705_FREQ_MIN    5600
 #define VTX_RTC6705_FREQ_MAX    5950

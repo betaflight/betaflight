@@ -26,5 +26,5 @@
 
 bool rtc6705SoftSpiIOInit(const vtxIOConfig_t *vtxIOConfig, const IO_t csnPin);
 void rtc6705SoftSpiSetFrequency(uint16_t freq);
-void rtc6705SoftSpiSetRFPower(uint8_t rf_power);
+void rtc6705SoftSpiSetRFPower(uint32_t data);
 
