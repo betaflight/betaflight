@@ -61,7 +61,9 @@ static void pidSetTargetLooptime(uint32_t pidLooptime)
 {
     targetPidLooptime = pidLooptime;
     pidRuntime.dT = targetPidLooptime * 1e-6f;
-    pidRuntime.pidFrequency = 1.0f / pidRuntime.dT;
+    // Divide the integer looptime directly: 1.0f / dT rounds twice and lands just below
+    // the exact rate (e.g. 7999.9995Hz at 125us), which truncates the nyquist limits.
+    pidRuntime.pidFrequency = 1e6f / targetPidLooptime;
 #ifdef USE_DSHOT
     dshotSetPidLoopTime(targetPidLooptime);
 #endif
