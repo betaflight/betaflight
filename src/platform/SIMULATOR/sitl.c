@@ -106,7 +106,12 @@ static sitlRateEstimator_t simRateEstimator;
 static pthread_t tcpWorker, udpWorker, udpWorkerRC;
 static bool workerRunning = true;
 static udpLink_t stateLink, pwmLink, pwmRawLink, rcLink;
-static pthread_mutex_t updateLock;
+// A lockstep simulator waits for one reply per FDM packet: keep the newest outputs until the next one
+static pthread_mutex_t outputLock;
+static bool fdmSinceReply = true;
+static bool outputsWaiting;
+static servo_packet pwmPktOut;
+static servo_packet_raw pwmRawPktOut;
 static pthread_mutex_t mainLoopLock;
 static char simulator_ip[32] = "127.0.0.1";
 
@@ -270,6 +275,15 @@ int lockMainPID(void)
 static void sendMotorUpdate(void)
 {
     udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
+}
+
+// With outputLock held
+static void sendReply(void)
+{
+    udpSend(&pwmLink, &pwmPktOut, sizeof(servo_packet));
+    udpSend(&pwmRawLink, &pwmRawPktOut, sizeof(servo_packet_raw));
+    fdmSinceReply = false;
+    outputsWaiting = false;
 }
 
 static void updateState(const fdm_packet* pkt)
@@ -505,7 +519,13 @@ static void updateState(const fdm_packet* pkt)
 #endif
     }
 
-    pthread_mutex_unlock(&updateLock); // can send PWM output now
+    pthread_mutex_lock(&outputLock);
+    if (outputsWaiting) {
+        sendReply();
+    } else {
+        fdmSinceReply = true;
+    }
+    pthread_mutex_unlock(&outputLock);
 
 #if ENABLE_SIMULATOR_GYROPID_SYNC
     pthread_mutex_unlock(&mainLoopLock); // can run main loop
@@ -585,8 +605,8 @@ void systemInit(void)
 
     SystemCoreClock = 500 * 1e6; // virtual 500MHz
 
-    if (pthread_mutex_init(&updateLock, NULL) != 0) {
-        printf("Create updateLock error!\n");
+    if (pthread_mutex_init(&outputLock, NULL) != 0) {
+        printf("Create outputLock error!\n");
         exit(1);
     }
 
@@ -843,10 +863,15 @@ static void pwmCompleteMotorUpdate(void)
         pwmPkt.motor_speed[i] = motorsPwm[i] / outScale;
     }
 
-    // get one "fdm_packet" can only send one "servo_packet"!!
-    if (pthread_mutex_trylock(&updateLock) != 0) return;
-    udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
-    udpSend(&pwmRawLink, &pwmRawPkt, sizeof(servo_packet_raw));
+    pthread_mutex_lock(&outputLock);
+    pwmPktOut = pwmPkt;
+    pwmRawPktOut = pwmRawPkt;
+    if (fdmSinceReply) {
+        sendReply();
+    } else {
+        outputsWaiting = true;
+    }
+    pthread_mutex_unlock(&outputLock);
 }
 
 void servoWrite(uint8_t index, float value)
