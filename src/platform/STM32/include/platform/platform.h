@@ -764,6 +764,12 @@ extern uint8_t _dmaram_end__;
 #define PLATFORM_TRAIT_CONFIG_HSE 1
 #endif
 
+// The families whose mk file builds STM32/camera_control_stm32.c
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32H7) \
+    || defined(STM32C5) || defined(STM32N6)
+#define PLATFORM_TRAIT_CAMERA_CONTROL 1
+#endif
+
 #if defined(STM32G4)
 #define MCO_SOURCE_COUNT   8
 #define MCO_DIVIDER_COUNT  5
