@@ -58,6 +58,8 @@ extern "C" {
 
     // Fixed orbit period so LOITER_TURNS <-> ORBIT conversion is deterministic.
     uint16_t flightPlanNavOrbitPeriodDs(uint16_t) { return 250; }
+    static int s_missionChangedCalls = 0;
+    void flightPlanNavMissionChanged(void) { s_missionChangedCalls++; }
 #ifdef USE_WING
     float autopilotWingLoiterRadiusM(void) { return 60.0f; }
 #endif
@@ -249,6 +251,17 @@ TEST_F(MavlinkMissionTest, UploadCompletedInAutopilotModeKeepsPreviousMission)
     ASSERT_EQ(flightPlanConfig()->waypointCount, 1);
     EXPECT_EQ(flightPlanConfig()->waypoints[0].latitude, 300);
     EXPECT_EQ(flightPlanConfig()->waypoints[0].longitude, 400);
+}
+
+TEST_F(MavlinkMissionTest, UploadAndClearRestartTheMission)
+{
+    const int before = s_missionChangedCalls;
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, 0.0f, 300, 400, 20.0f);
+    EXPECT_EQ(s_missionChangedCalls, before + 1);
+
+    sendCount(0);
+    EXPECT_EQ(s_missionChangedCalls, before + 2);
 }
 
 TEST_F(MavlinkMissionTest, UploadWaypointAcceptsNanYaw)
