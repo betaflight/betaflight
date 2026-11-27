@@ -3323,6 +3323,11 @@ RAM_CODE static void cliFlashInfo(const char *cmdName, char *cmdline)
 
     const flashGeometry_t *layout = flashGetGeometry();
 
+    if (layout->totalSize == 0) {
+        cliPrintLine("Flash not available (no flash chip detected)");
+        return;
+    }
+
     cliPrintLinef("Flash type=%s, sectors=%u, sectorSize=%u, pagesPerSector=%u, pageSize=%u, totalSize=%u JEDEC ID=0x%08x",
             flashTypeGetName(layout->flashType), layout->sectors, layout->sectorSize, layout->pagesPerSector,
             layout->pageSize, layout->totalSize, layout->jedecId);
