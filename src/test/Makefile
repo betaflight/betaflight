@@ -610,6 +610,19 @@ rx_sumd_unittest_SRC := \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/rx/sumd.c
 
+rx_udp_unittest_SRC := \
+		$(USER_DIR)/rx/rx.c \
+		$(USER_DIR)/fc/rc_modes.c \
+		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/config/feature.c \
+		$(USER_DIR)/pg/rx.c
+
+rx_udp_unittest_DEFINES := \
+		ENABLE_RX_UDP=1 \
+		USE_RX_LINK_QUALITY_INFO= \
+		SIMULATOR_MAX_RC_CHANNELS=16
+
 rx_xbus_unittest_SRC := \
 		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/streambuf.c \
@@ -692,6 +705,12 @@ sitl_rate_unittest_SRC := \
 		$(TEST_DIR)/sitl_rate_unittest_c.c
 
 sitl_rate_unittest_INCLUDE_DIRS := \
+		$(ROOT)/src/platform/SIMULATOR
+
+sitl_sensors_unittest_SRC := \
+		$(TEST_DIR)/sitl_sensors_unittest_c.c
+
+sitl_sensors_unittest_INCLUDE_DIRS := \
 		$(ROOT)/src/platform/SIMULATOR
 
 telemetry_crsf_unittest_SRC := \

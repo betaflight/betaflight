@@ -211,6 +211,7 @@ typedef enum {
     LQ_SOURCE_RX_PROTOCOL_CRSF,
     LQ_SOURCE_RX_PROTOCOL_GHST,
     LQ_SOURCE_RX_PROTOCOL_MAVLINK,
+    LQ_SOURCE_RX_PROTOCOL_UDP,
 } linkQualitySource_e;
 
 extern linkQualitySource_e linkQualitySource;
@@ -220,6 +221,8 @@ extern rxRuntimeState_t rxRuntimeState; //!!TODO remove this extern, only needed
 void rxInit(void);
 #if ENABLE_RX_UDP
 void rxUpdateUdpChannels(const uint16_t *channels, uint8_t channelCount);
+// Percent, -1: not simulated
+void rxUpdateUdpLinkStatus(int16_t rssiPercent, int16_t linkQualityPercent);
 #endif
 void rxProcessPending(bool state);
 bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);

@@ -198,6 +198,10 @@ static bool nullProcessFrame(const rxRuntimeState_t *rxRuntimeState)
 static volatile uint16_t udpChannelData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 static volatile uint8_t udpChannelCount = 0;
 static volatile bool udpFrameReceived = false;
+static volatile int16_t udpRssiPercent = -1;
+static volatile int16_t udpLinkQualityPercent = -1;
+
+#define UDP_LINK_STATUS_TIMEOUT_US 500000
 
 static float readRCUdp(const rxRuntimeState_t *rxRuntimeState, uint8_t channel)
 {
@@ -205,8 +209,49 @@ static float readRCUdp(const rxRuntimeState_t *rxRuntimeState, uint8_t channel)
     return udpChannelData[channel];
 }
 
+// RSSI and link quality drop to 0 when the frames stop
+static void updateUdpLinkStatus(bool frameReceived)
+{
+    static timeUs_t lastFrameUs = 0;
+    const timeUs_t nowUs = micros();
+
+    if (!frameReceived) {
+        if (cmpTimeUs(nowUs, lastFrameUs) > UDP_LINK_STATUS_TIMEOUT_US) {
+            setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL);
+#ifdef USE_RX_LINK_QUALITY_INFO
+            if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_UDP) {
+                setLinkQualityDirect(0);
+            }
+#endif
+        }
+        return;
+    }
+    lastFrameUs = nowUs;
+
+    const int16_t rssiPercent = udpRssiPercent;
+    if (rssiPercent >= 0) {
+        if (rssiSource == RSSI_SOURCE_NONE) {
+            rssiSource = RSSI_SOURCE_RX_PROTOCOL;
+        }
+        // Round up, so getRssiPercent() gives the same percent back
+        setRssi((rssiPercent * RSSI_MAX_VALUE + 99) / 100, RSSI_SOURCE_RX_PROTOCOL);
+    }
+#ifdef USE_RX_LINK_QUALITY_INFO
+    const int16_t linkQualityPercent = udpLinkQualityPercent;
+    if (linkQualityPercent >= 0) {
+        if (linkQualitySource == LQ_SOURCE_NONE) {
+            linkQualitySource = LQ_SOURCE_RX_PROTOCOL_UDP;
+        }
+        if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_UDP) {
+            setLinkQualityDirect(linkQualityPercent);
+        }
+    }
+#endif
+}
+
 static uint8_t frameStatusUdp(rxRuntimeState_t *state)
 {
+    updateUdpLinkStatus(udpFrameReceived);
     if (udpFrameReceived) {
         // Sync the runtime channel count from the transport on every consumed
         // frame so both rxRuntimeState.channelCount and the static
@@ -228,6 +273,12 @@ void rxUpdateUdpChannels(const uint16_t *channels, uint8_t channelCount)
     }
     udpChannelCount = count;
     udpFrameReceived = true;
+}
+
+void rxUpdateUdpLinkStatus(int16_t rssiPercent, int16_t linkQualityPercent)
+{
+    udpRssiPercent = MIN(rssiPercent, 100);
+    udpLinkQualityPercent = MIN(linkQualityPercent, 100);
 }
 #endif
 

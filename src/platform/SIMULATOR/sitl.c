@@ -32,6 +32,7 @@
 
 #include "build/debug.h"
 
+#include "drivers/adc.h"
 #include "drivers/exti.h"
 #include "drivers/io.h"
 #include "drivers/dma.h"
@@ -72,7 +73,9 @@
 #include "fc/rc.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "sensors/current.h"
 #include "sensors/sensors.h"
+#include "sensors/voltage.h"
 #include "pg/flight_plan.h"
 
 #include "io/gps.h"
@@ -80,6 +83,7 @@
 
 #include "dyad.h"
 #include "udplink.h"
+#include "sitl_sensors.h"
 #include "sitl_gyro.h"
 #include "sitl_rate.h"
 
@@ -96,6 +100,18 @@ static fdm_packet fdmPkt;
 static rc_packet rcPkt;
 static servo_packet pwmPkt;
 static servo_packet_raw pwmRawPkt;
+
+static volatile uint16_t adcSamples[ADC_SOURCE_COUNT];
+
+void adcInit(const struct adcConfig_s *config)
+{
+    UNUSED(config);
+}
+
+uint16_t adcGetValue(adcSource_e source)
+{
+    return (source > ADC_NONE && source < ADC_SOURCE_COUNT) ? adcSamples[source] : 0;
+}
 
 static bool rc_received = false;
 static bool fdm_received = false;
@@ -319,6 +335,11 @@ static void updateState(const fdm_packet* pkt)
     // Legacy bridges (X-Plane, RealFlight) supply pressure directly in fdm_packet
     virtualBaroSet((int32_t)pkt->pressure, 2500);
 #endif
+    const voltageSensorADCConfig_t *vbat = voltageSensorADCConfig(VOLTAGE_SENSOR_ADC_VBAT);
+    adcSamples[ADC_BATTERY] = sitlAdcVoltageSample(pkt->battery_voltage, vbat->vbatscale, vbat->vbatresdivval,
+                                                   vbat->vbatresdivmultiplier);
+    adcSamples[ADC_CURRENT] = sitlAdcCurrentSample(pkt->battery_current, currentSensorADCConfig()->scale,
+                                                   currentSensorADCConfig()->offset);
     // Reconstruct the body-to-world (NWU) attitude quaternion from the packet.
     // Consumed by the direct-attitude path and by the virtual mag feed, which
     // must use the same rotation or mag fusion fights the fed attitude.
@@ -514,8 +535,11 @@ static void* udpThread(void* data)
     int n = 0;
 
     while (workerRunning) {
+        // Fields the packet leaves out keep these values
+        fdmPkt.battery_voltage = -1.0;
+        fdmPkt.battery_current = -1.0;
         n = udpRecv(&stateLink, &fdmPkt, sizeof(fdm_packet), 100);
-        if (n == sizeof(fdm_packet)) {
+        if (n >= (int)FDM_PACKET_SIZE_BASIC && n % sizeof(double) == 0) {
             if (!fdm_received) {
                 printf("[SITL] new fdm %d t:%f from %s:%d\n", n, fdmPkt.timestamp, inet_ntoa(stateLink.recv.sin_addr), stateLink.recv.sin_port);
                 fdm_received = true;
@@ -528,14 +552,25 @@ static void* udpThread(void* data)
     return NULL;
 }
 
+static int16_t linkPercent(float percent)
+{
+    if (!sitlIsFinite((double)percent) || percent < 0.0f) {
+        return -1;
+    }
+    return percent > 100.0f ? 100 : (int16_t)lrintf(percent);
+}
+
 static void *udpRCThread(void *data)
 {
     UNUSED(data);
     int n = 0;
 
     while (workerRunning) {
+        // Fields the packet leaves out keep these values
+        rcPkt.rssi = -1.0f;
+        rcPkt.link_quality = -1.0f;
         n = udpRecv(&rcLink, &rcPkt, sizeof(rc_packet), 100);
-        if (n == sizeof(rc_packet)) {
+        if (n >= (int)RC_PACKET_SIZE_BASIC && n % sizeof(float) == 0) {
             if (!rc_received) {
                 printf("[SITL] new rc %d: t:%f AETR: %d %d %d %d AUX1-4: %d %d %d %d\n", n, rcPkt.timestamp,
                     rcPkt.channels[0], rcPkt.channels[1],rcPkt.channels[2],rcPkt.channels[3],
@@ -543,6 +578,7 @@ static void *udpRCThread(void *data)
 
                 rc_received = true;
             }
+            rxUpdateUdpLinkStatus(linkPercent(rcPkt.rssi), linkPercent(rcPkt.link_quality));
             rxUpdateUdpChannels(rcPkt.channels, SIMULATOR_MAX_RC_CHANNELS);
         }
     }
