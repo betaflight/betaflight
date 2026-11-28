@@ -290,6 +290,36 @@ TEST_F(MavlinkMissionTest, UploadWaypointAcceptsNanYaw)
     EXPECT_EQ(flightPlanConfig()->waypoints[0].type, WAYPOINT_TYPE_FLYBY);
 }
 
+TEST_F(MavlinkMissionTest, UploadTakeoffAndLandAcceptNanYaw)
+{
+    sendCount(2);
+    sendItem(0, MAV_CMD_NAV_TAKEOFF, 2, 0.0f, 100, 200, 12.0f,
+        std::numeric_limits<float>::quiet_NaN());
+    sendItem(1, MAV_CMD_NAV_LAND, 2, 0.0f, 500, 600, 0.0f,
+        std::numeric_limits<float>::quiet_NaN());
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_ACCEPTED);
+    EXPECT_EQ(flightPlanConfig()->waypointCount, 2);
+}
+
+TEST_F(MavlinkMissionTest, UploadLoiterTimeRejectsNanParam4)
+{
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_LOITER_TIME, 1, 10.0f, 300, 400, 20.0f,
+        std::numeric_limits<float>::quiet_NaN());
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_INVALID);
+    EXPECT_EQ(flightPlanConfig()->waypointCount, 0);
+}
+
 TEST_F(MavlinkMissionTest, UploadWaypointRejectsInfiniteYaw)
 {
     sendCount(1);

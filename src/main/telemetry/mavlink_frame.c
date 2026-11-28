@@ -25,6 +25,8 @@
 
 #include "platform.h"
 
+#include "common/maths.h"
+
 #if defined(USE_TELEMETRY_MAVLINK)
 
 #include "fc/runtime_config.h"
@@ -57,7 +59,7 @@ bool mavlinkFrameIsRelativeAlt(uint8_t frame)
 
 mavlinkFrameAltResult_e mavlinkFrameAltToAmslCm(uint8_t frame, float altM, int32_t *altCmAmsl)
 {
-    if (!isfinite(altM) || fabsf(altM) > MAVLINK_FRAME_ALT_LIMIT_M) {
+    if (!floatIsFinite(altM) || fabsf(altM) > MAVLINK_FRAME_ALT_LIMIT_M) {
         return MAVLINK_FRAME_ALT_INVALID;
     }
     const int32_t altCm = lroundf(altM * 100.0f);
