@@ -289,6 +289,7 @@ COMMON_SRC = \
             sensors/barometer.c \
             sensors/pitot.c \
             drivers/pitot/pitot_ms4525.c \
+            drivers/pitot/pitot_virtual.c \
             sensors/rangefinder.c \
             sensors/opticalflow.c \
             telemetry/telemetry.c \

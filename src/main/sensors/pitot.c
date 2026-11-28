@@ -32,6 +32,7 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_busdev.h"
 #include "drivers/pitot/pitot_ms4525.h"
+#include "drivers/pitot/pitot_virtual.h"
 #include "drivers/time.h"
 
 #include "fc/runtime_config.h"
@@ -67,6 +68,9 @@ static bool sourceCalibrated[PITOT_HARDWARE_COUNT];
 static pt1Filter_t diffPressureLpf;
 static bool lpfInitialised = false;
 static bool i2cReady = false;
+#if ENABLE_VIRTUAL_PITOT
+static bool virtualReady = false;
+#endif // ENABLE_VIRTUAL_PITOT
 static pitotSensor_e activeSource = PITOT_NONE;
 static timeUs_t lastValidSampleUs = 0;
 
@@ -114,12 +118,28 @@ void pitotInit(void)
     if (hardware == PITOT_MS4525 || hardware == PITOT_DEFAULT) {
         i2cReady = detectI2C();
     }
+#if ENABLE_VIRTUAL_PITOT
+    if (hardware == PITOT_VIRTUAL) {
+        virtualReady = virtualPitotDetect(&pitot.dev);
+    }
+#endif // ENABLE_VIRTUAL_PITOT
     // Each source is zeroed on its first at-rest sample (see pitotUpdate).
 }
 
 static bool readI2C(float *diffPressurePa, float *temperatureK)
 {
     return i2cReady && pitot.dev.read && pitot.dev.read(&pitot.dev, diffPressurePa, temperatureK);
+}
+
+static bool readVirtual(float *diffPressurePa, float *temperatureK)
+{
+#if ENABLE_VIRTUAL_PITOT
+    return virtualReady && pitot.dev.read(&pitot.dev, diffPressurePa, temperatureK);
+#else
+    UNUSED(diffPressurePa);
+    UNUSED(temperatureK);
+    return false;
+#endif // ENABLE_VIRTUAL_PITOT
 }
 
 static bool readDronecan(float *diffPressurePa, float *temperatureK)
@@ -150,6 +170,8 @@ static pitotSensor_e readActiveSample(float *diffPressurePa, float *temperatureK
         return readI2C(diffPressurePa, temperatureK) ? PITOT_MS4525 : PITOT_NONE;
     case PITOT_DRONECAN:
         return readDronecan(diffPressurePa, temperatureK) ? PITOT_DRONECAN : PITOT_NONE;
+    case PITOT_VIRTUAL:
+        return readVirtual(diffPressurePa, temperatureK) ? PITOT_VIRTUAL : PITOT_NONE;
     case PITOT_DEFAULT:
         if (readI2C(diffPressurePa, temperatureK)) {
             return PITOT_MS4525;

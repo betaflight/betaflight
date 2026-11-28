@@ -97,6 +97,11 @@
 #define USE_BARO
 #define USE_VIRTUAL_BARO
 
+// The simulator's battery voltage and current, read as an ADC (sitl_sensors.h)
+#define USE_ADC
+
+#define ENABLE_VIRTUAL_PITOT 1
+
 #define USABLE_TIMER_CHANNEL_COUNT 0
 
 #define USE_UART1
@@ -135,7 +140,6 @@
 #undef USE_STACK_CHECK // I think SITL don't need this
 #undef USE_DASHBOARD
 #undef USE_TELEMETRY_LTM
-#undef USE_ADC
 #undef USE_VCP
 #undef USE_OSD
 #undef USE_RX_PPM
@@ -240,12 +244,24 @@ typedef struct {
     double velocity_xyz[3];             // m/s, earth frame. ENU (Ve, Vn, Vup) for virtual GPS mode (USE_VIRTUAL_GPS)!
     double position_xyz[3];             // meters, NED from origin. Longitude, Latitude, Altitude (ENU) for virtual GPS mode (USE_VIRTUAL_GPS)!
     double pressure;
+    // Optional: a packet can stop after any field from here on
+    double battery_voltage;             // V, < 0: not simulated
+    double battery_current;             // A, < 0: not simulated
+    double pitot_pressure;              // Pa, along the nose
+    double magnetic_field_xyz[3];       // gauss, FRD body frame; 0, 0, 0: not simulated
 } fdm_packet;
+
+#define FDM_PACKET_SIZE_BASIC offsetof(fdm_packet, battery_voltage)
 
 typedef struct {
     double timestamp;                               // in seconds
     uint16_t channels[SIMULATOR_MAX_RC_CHANNELS];   // RC channels
+    // Optional: a packet can stop after any field from here on
+    float rssi;                                     // percent, < 0: not simulated
+    float link_quality;                             // percent, < 0: not simulated
 } rc_packet;
+
+#define RC_PACKET_SIZE_BASIC offsetof(rc_packet, rssi)
 
 typedef struct {
     float motor_speed[4];   // normal: [0.0, 1.0], 3D: [-1.0, 1.0]
