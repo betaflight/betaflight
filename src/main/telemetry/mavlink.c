@@ -2135,6 +2135,10 @@ void checkMAVLinkTelemetryState(void)
 
 void handleMAVLinkTelemetry(void)
 {
+#if ENABLE_TELEMETRY_MAVLINK_MISSION
+    mavMissionSaveIfDisarmed();
+#endif
+
     if (!mavlinkTelemetryEnabled || !mavlinkPort) {
         return;
     }

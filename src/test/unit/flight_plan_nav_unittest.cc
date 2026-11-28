@@ -1245,6 +1245,22 @@ TEST_F(FlightPlanNavTest, CompletedMissionRestartsAtFirstWaypoint)
     EXPECT_EQ(flightPlanNavGetCurrentIndex(), 0);
 }
 
+TEST_F(FlightPlanNavTest, NewMissionAfterCompletionResetsTheCursor)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    flightPlanNavEngage();
+    arriveAtWaypoint();
+    arriveAtWaypoint();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_COMPLETE);
+
+    flightPlanConfigMutable()->waypointCount = 1;
+    flightPlanNavMissionChanged();
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 0);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_COMPLETE);
+}
+
 TEST_F(FlightPlanNavTest, DisarmAndNewMissionRestartAtFirstWaypoint)
 {
     addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);

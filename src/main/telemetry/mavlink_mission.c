@@ -78,8 +78,9 @@ static struct {
     uint8_t  retries;
     timeMs_t lastCurrentTxMs;
     int16_t  pendingReachedIndex;
-    bool     savePending;
 } m;
+
+static bool missionSavePending;
 
 // Geofence storage. Accepted and round-tripped to the GCS for display, but NOT
 // yet enforced or persisted across reboot — enforcement + a backing PG land in a
@@ -453,7 +454,7 @@ static void missionStoreChanged(void)
 {
     flightPlanNavMissionChanged();
     if (ARMING_FLAG(ARMED)) {
-        m.savePending = true;
+        missionSavePending = true;
     } else {
         saveConfigAndNotify();
     }
@@ -806,13 +807,16 @@ bool mavMissionHandleMessage(const mavlink_message_t *msg)
     }
 }
 
-void mavMissionUpdate(timeMs_t nowMs)
+void mavMissionSaveIfDisarmed(void)
 {
-    if (m.savePending && !ARMING_FLAG(ARMED)) {
-        m.savePending = false;
+    if (missionSavePending && !ARMING_FLAG(ARMED)) {
+        missionSavePending = false;
         saveConfigAndNotify();
     }
+}
 
+void mavMissionUpdate(timeMs_t nowMs)
+{
     // RECEIVING timeout: retransmit REQUEST_INT, give up after MAX_RETRY.
     if (m.state == MISSION_RECEIVING && (nowMs - m.lastActivityMs) >= MISSION_UPLOAD_RETRY_MS) {
         if (m.retries >= MISSION_UPLOAD_MAX_RETRY) {

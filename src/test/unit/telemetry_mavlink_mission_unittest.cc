@@ -423,13 +423,13 @@ TEST_F(MavlinkMissionTest, UploadInGuidedFlightIsSavedAfterDisarm)
     EXPECT_EQ(s_missionChangedCalls, before + 1);
     EXPECT_EQ(s_saveCalls, 0);
 
-    mavMissionUpdate(++s_millis);
+    mavMissionSaveIfDisarmed();
     EXPECT_EQ(s_saveCalls, 0);
 
     armingFlags = 0;
-    mavMissionUpdate(++s_millis);
+    mavMissionSaveIfDisarmed();
     EXPECT_EQ(s_saveCalls, 1);
-    mavMissionUpdate(++s_millis);
+    mavMissionSaveIfDisarmed();
     EXPECT_EQ(s_saveCalls, 1);
 }
 
@@ -452,8 +452,9 @@ TEST_F(MavlinkMissionTest, ClearInFlightIsSavedAfterDisarm)
     EXPECT_EQ(flightPlanConfig()->waypointCount, 0);
     EXPECT_EQ(s_saveCalls, 1);
 
+    mavMissionInit();
     armingFlags = 0;
-    mavMissionUpdate(++s_millis);
+    mavMissionSaveIfDisarmed();
     EXPECT_EQ(s_saveCalls, 2);
 }
 

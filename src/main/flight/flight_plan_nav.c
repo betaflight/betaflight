@@ -2682,6 +2682,9 @@ void flightPlanNavResetFlight(void)
 void flightPlanNavMissionChanged(void)
 {
     resetMission();
+    if (fp.injectedCount == 0) {
+        fp.currentIndex = 0;
+    }
 }
 
 bool flightPlanNavIsInjectedPlanActive(void)
