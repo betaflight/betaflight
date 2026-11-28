@@ -24,6 +24,7 @@ extern "C" {
 
     #include "blackbox/blackbox.h"
     #include "blackbox/blackbox_fielddefs.h"
+    #include "blackbox/blackbox_io.h"
     #include "common/utils.h"
 
     #include "pg/pg.h"
@@ -42,6 +43,7 @@ extern "C" {
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
 
+    #include "io/beeper.h"
     #include "io/gps.h"
     #include "io/serial.h"
 
@@ -60,6 +62,7 @@ extern "C" {
 
 gyroDev_t gyroDev;
 static bool servosPresent = false; // returned by the hasServos() stub
+static int flashfsEraseCount = 0; // incremented by the flashfsEraseCompletely() stub
 
 TEST(BlackboxTest, TestInitIntervals)
 {
@@ -396,6 +399,34 @@ TEST(BlackboxTest, Test_servo_field_disable)
     EXPECT_FALSE(testBlackboxConditionUncached(FLIGHT_LOG_FIELD_CONDITION_SERVOS));
 }
 
+TEST(BlackboxTest, Test_EraseAll_flash_device)
+{
+    targetPidLooptime = 1000;
+    blackboxConfigMutable()->device = BLACKBOX_DEVICE_FLASH;
+    flashfsEraseCount = 0;
+
+    EXPECT_TRUE(blackboxEraseAll());
+    EXPECT_EQ(1, flashfsEraseCount);
+}
+
+TEST(BlackboxTest, Test_EraseAll_refused_for_other_devices)
+{
+    // MSP_DATAFLASH_ERASE replies with an error when blackboxEraseAll() returns false
+    const BlackboxDevice_e devices[] = {
+        BLACKBOX_DEVICE_NONE,
+        BLACKBOX_DEVICE_SDCARD,
+        BLACKBOX_DEVICE_SERIAL,
+        BLACKBOX_DEVICE_VIRTUAL,
+    };
+
+    for (const BlackboxDevice_e device : devices) {
+        blackboxConfigMutable()->device = device;
+        flashfsEraseCount = 0;
+        EXPECT_FALSE(blackboxEraseAll()) << "device " << device;
+        EXPECT_EQ(0, flashfsEraseCount) << "device " << device;
+    }
+}
+
 
 // STUBS
 extern "C" {
@@ -453,4 +484,15 @@ bool isRxReceivingSignal(void) {return false;}
 bool isRssiConfigured(void) {return false;}
 float getMotorOutputLow(void) {return 0.0;}
 float getMotorOutputHigh(void) {return 0.0;}
+void beeper(beeperMode_e) {}
+void flashfsEraseCompletely(void) { flashfsEraseCount++; }
+bool flashfsIsSupported(void) { return true; }
+bool flashfsIsReady(void) { return true; }
+bool flashfsIsEOF(void) { return false; }
+void flashfsClose(void) {}
+bool flashfsFlushAsync(bool) { return true; }
+uint32_t flashfsGetWriteBufferFreeSpace(void) { return 0; }
+uint32_t flashfsGetWriteBufferSize(void) { return 0; }
+void flashfsWrite(const uint8_t *, unsigned int, bool) {}
+void flashfsWriteByte(uint8_t) {}
 }

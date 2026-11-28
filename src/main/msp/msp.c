@@ -4189,8 +4189,11 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
 
 #if defined(USE_FLASHFS) && defined(USE_BLACKBOX)
     case MSP_DATAFLASH_ERASE:
-        blackboxEraseAll();
-
+        // Reply with an error when the logging device is not flash. Otherwise the client sees an
+        // ignored request as a completed erase.
+        if (!blackboxEraseAll()) {
+            return MSP_RESULT_ERROR;
+        }
         break;
 #endif
 
