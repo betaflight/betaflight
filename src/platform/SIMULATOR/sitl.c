@@ -295,7 +295,7 @@ static void updateState(const fdm_packet* pkt)
     static double last_timestamp = 0; // in seconds
     static uint64_t last_realtime = 0; // in uS
 
-    if (virtualAccDev == NULL || virtualGyroDev == NULL) {
+    if (virtualGyroDev == NULL) {
         return; // SITL is still booting
     }
 
@@ -325,7 +325,9 @@ static void updateState(const fdm_packet* pkt)
     x = constrain(-pkt->imu_linear_acceleration_xyz[0] * ACC_SCALE, -32767, 32767);
     y = constrain(-pkt->imu_linear_acceleration_xyz[1] * ACC_SCALE, -32767, 32767);
     z = constrain(-pkt->imu_linear_acceleration_xyz[2] * ACC_SCALE, -32767, 32767);
-    virtualAccSet(virtualAccDev, x, y, z);
+    if (virtualAccDev) { // NULL while booting and with acc_hardware = NONE
+        virtualAccSet(virtualAccDev, x, y, z);
+    }
 
     // Map simulator IMU angular velocity onto Betaflight gyro axes. The yaw (Z)
     // polarity is bridge-specific (see sitlGyroBodyFromSim() for the FRD/legacy
