@@ -7,28 +7,31 @@
 #
 # Notes:
 # - Uses $(CROSS_CC) -E with -imacros to include only the given header's macros.
+# - Keeps only the BF_PP_VALUE line (MinGW-w64 headers add #pragma lines).
 # - value_str: merge adjacent strings and remove quotes ("a""b" "B C" -> abB C)
 ###############################################################################
 
 _pp_expand_raw = $(strip $(shell \
-  printf '%s' "$2" | \
+  printf 'BF_PP_VALUE %s\n' "$2" | \
   $(CROSS_CC) $(CPPFLAGS) \
     $(addprefix -D,$(OPTIONS)) \
     $(addprefix -I,$(INCLUDE_DIRS)) \
     $(addprefix -isystem,$(SYS_INCLUDE_DIRS)) \
     -E -P -xc -imacros "$1" - \
+  | sed -n 's/^BF_PP_VALUE //p' \
   | tr -d '\r\n' \
 ))
 
 # Expand only if the macro NAME is defined in header $1; otherwise yield empty
 # Use octal-escaped '#' so old make (3.81 on macOS) doesn't treat it as a comment.
 _pp_expand_guarded_raw = $(strip $(shell \
-  printf '\043 if defined(%s)\n%s\n\043 endif\n' "$2" "$2" | \
+  printf '\043 if defined(%s)\nBF_PP_VALUE %s\n\043 endif\n' "$2" "$2" | \
   $(CROSS_CC) $(CPPFLAGS) \
     $(addprefix -D,$(OPTIONS)) \
     $(addprefix -I,$(INCLUDE_DIRS)) \
     $(addprefix -isystem,$(SYS_INCLUDE_DIRS)) \
     -E -P -xc -imacros "$1" - \
+  | sed -n 's/^BF_PP_VALUE //p' \
   | tr -d '\r\n' \
 ))
 

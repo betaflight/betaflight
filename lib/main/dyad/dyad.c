@@ -250,6 +250,18 @@ static void select_add(SelectSet *s, int set, dyad_Socket fd) {
 }
 
 
+#ifdef _WIN32
+static int select_isEmpty(SelectSet *s) {
+  int i;
+  if (s->capacity == 0) return 1;
+  for (i = 0; i < SELECT_MAX; i++) {
+    if (s->fds[i]->fd_count != 0) return 0;
+  }
+  return 1;
+}
+#endif
+
+
 static int select_has(SelectSet *s, int set, dyad_Socket fd) {
 #ifdef _WIN32
   unsigned i;
@@ -729,6 +741,14 @@ void dyad_update(void) {
     #pragma warning(pop)
   #endif
 
+#ifdef _WIN32
+  /* select() fails at once on Windows with no sockets */
+  if (select_isEmpty(&dyad_selectSet)) {
+    Sleep((DWORD)(dyad_updateTimeout * 1000));
+    return;
+  }
+#endif
+
   select(dyad_selectSet.maxfd + 1,
          dyad_selectSet.fds[SELECT_READ],
          dyad_selectSet.fds[SELECT_WRITE],
@@ -982,6 +1002,12 @@ int dyad_listenEx(
   optval = 1;
   setsockopt(stream->sockfd, SOL_SOCKET, SO_REUSEADDR,
              &optval, sizeof(optval));
+  /* Accept IPv4 too: Windows' default is IPv6 only */
+  if (ai->ai_family == AF_INET6) {
+    optval = 0;
+    setsockopt(stream->sockfd, IPPROTO_IPV6, IPV6_V6ONLY,
+               &optval, sizeof(optval));
+  }
   /* Bind and listen */
   err = bind(stream->sockfd, ai->ai_addr, ai->ai_addrlen);
   if (err) {

@@ -7,9 +7,11 @@
 
 #include <string.h>
 
+#ifndef _WIN32
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#endif
 
 #include "udplink.h"
 
@@ -21,8 +23,13 @@ int udpInit(udpLink_t* link, const char* addr, int port, bool isServer)
         return -2;
     }
 
-    setsockopt(link->fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)); // can multi-bind
+    setsockopt(link->fd, SOL_SOCKET, SO_REUSEADDR, (const void *)&one, sizeof(one)); // can multi-bind
+#ifdef _WIN32
+    u_long nonBlocking = 1;
+    ioctlsocket(link->fd, FIONBIO, &nonBlocking);
+#else
     fcntl(link->fd, F_SETFL, fcntl(link->fd, F_GETFL, 0) | O_NONBLOCK); // nonblock
+#endif
 
     link->isServer = isServer;
     memset(&link->si, 0, sizeof(link->si));
@@ -46,7 +53,7 @@ int udpInit(udpLink_t* link, const char* addr, int port, bool isServer)
 
 int udpSend(udpLink_t* link, const void* data, size_t size)
 {
-    return sendto(link->fd, data, size, 0, (struct sockaddr *)&link->si, sizeof(link->si));
+    return sendto(link->fd, (const char *)data, size, 0, (struct sockaddr *)&link->si, sizeof(link->si));
 }
 
 int udpRecv(udpLink_t* link, void* data, size_t size, uint32_t timeout_ms)
@@ -66,6 +73,12 @@ int udpRecv(udpLink_t* link, void* data, size_t size, uint32_t timeout_ms)
 
     socklen_t len = sizeof(link->si);;
     int ret;
-    ret = recvfrom(link->fd, data, size, 0, (struct sockaddr *)&link->si, &len);
+    ret = recvfrom(link->fd, (char *)data, size, 0, (struct sockaddr *)&link->si, &len);
+#ifdef _WIN32
+    // Windows fails a datagram larger than the buffer, POSIX truncates it
+    if (ret < 0 && WSAGetLastError() == WSAEMSGSIZE) {
+        ret = size;
+    }
+#endif
     return ret;
 }

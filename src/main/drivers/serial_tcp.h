@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include <netinet/in.h>
 #include <pthread.h>
 #include "dyad.h"
 #include "io/serial.h"

@@ -20,11 +20,13 @@ MCU_COMMON_SRC  := \
 ARCH_FLAGS      =
 DEVICE_FLAGS    =
 LD_SCRIPT       = $(LINKER_DIR)/sitl.ld
+LD_SCRIPTS     += $(LINKER_DIR)/sitl_pg_registry.ld
 STARTUP_SRC     =
 
 MCU_FLASH_SIZE  := 2048
 
-ARM_SDK_PREFIX  =
+ARM_SDK_PREFIX  = $(SITL_CROSS_PREFIX)
+SITL_WINDOWS    := $(if $(findstring mingw,$(shell $(ARM_SDK_PREFIX)gcc -dumpmachine 2>/dev/null)),yes)
 
 MCU_EXCLUDES = \
         drivers/rx/rx_xn297.c \
@@ -36,7 +38,22 @@ MCU_EXCLUDES = \
 
 TARGET_MAP  = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 
-LIBS        = -lm -lpthread -lc -lrt
+ifeq ($(SITL_WINDOWS),yes)
+MCU_COMMON_SRC  += SIMULATOR/sitl_win32.c
+LIBS            = -lm -lpthread -lws2_32
+LD_SCRIPT       = $(LINKER_DIR)/sitl_win.ld
+LD_NOEXECSTACK  =
+EXE_SUFFIX      = .exe
+ifneq ($(filter no,$(LTO))$(filter GDB,$(DEBUG)),)
+$(error SITL for Windows needs LTO (no LTO=no, no DEBUG=GDB): without it the linker fails on references in unused code)
+endif
+# GCC 10's lto-wrapper cannot run the exported MAKE for -flto=auto
+OPTIMISATION_BASE := $(subst -flto=auto,-flto,$(OPTIMISATION_BASE))
+LTO_FLAGS       := $(subst -flto=auto,-flto,$(LTO_FLAGS))
+else
+LIBS            = -lm -lpthread -lc -lrt
+LD_NOEXECSTACK  = -Wl,-z,noexecstack
+endif
 
 # overriden on Apple silicon macosx
 LD_FLAGS    := \
@@ -47,10 +64,10 @@ LD_FLAGS    := \
             -Wl,-gc-sections,-Map,$(TARGET_MAP) \
             -Wl,-L$(LINKER_DIR) \
             -Wl,--cref \
-            -Wl,-z,noexecstack \
+            $(LD_NOEXECSTACK) \
             -T$(LD_SCRIPT)
 
-ifneq ($(filter SITL_STATIC,$(OPTIONS)),)
+ifneq ($(filter SITL_STATIC,$(OPTIONS))$(SITL_WINDOWS),)
 LD_FLAGS     += \
               -static \
               -static-libgcc

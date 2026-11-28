@@ -38,6 +38,13 @@
 
 #define I2CDEV_COUNT        0
 
+#ifdef _WIN32
+// Not in the MinGW-w64 C library
+char *strsep(char **stringp, const char *delim);
+char *strcasestr(const char *haystack, const char *needle);
+#define ffs(i) __builtin_ffs(i)
+#endif
+
 #define RUN_LOOP_DELAY_US 50 // max 20khz run loop frequency
 #define USE_MAIN_ARGS
 #define GYRO_COUNT 1 // 1 Gyro
