@@ -908,6 +908,11 @@ static void pwmCompleteMotorUpdate(void)
         pwmPkt.motor_speed[i] = motorsPwm[i] / outScale;
     }
 
+    const uint64_t nowUs = micros64_real();
+    pthread_mutex_lock(&clockLock);
+    const bool noSimulator = !lastFdmRealUs || nowUs > lastFdmRealUs + SITL_FDM_TIMEOUT_US;
+    pthread_mutex_unlock(&clockLock);
+
     pthread_mutex_lock(&outputLock);
     pwmPktOut = pwmPkt;
     pwmRawPktOut = pwmRawPkt;
@@ -915,6 +920,12 @@ static void pwmCompleteMotorUpdate(void)
         sendReply();
     } else {
         outputsWaiting = true;
+        // Without FDM packets, send the raw outputs at 20 Hz: RealFlightBridge waits for them before its first FDM packet
+        static uint64_t lastRawUs;
+        if (noSimulator && nowUs >= lastRawUs + 50 * 1000) {
+            udpSend(&pwmRawLink, &pwmRawPktOut, sizeof(servo_packet_raw));
+            lastRawUs = nowUs;
+        }
     }
     pthread_mutex_unlock(&outputLock);
 }
