@@ -110,7 +110,7 @@ static bool workerRunning = true;
 static udpLink_t stateLink, pwmLink, pwmRawLink, rcLink;
 // A lockstep simulator waits for one reply per FDM packet: keep the newest outputs until the next one
 static pthread_mutex_t outputLock;
-static bool fdmSinceReply = true;
+static bool fdmSinceReply;
 static bool outputsWaiting;
 static servo_packet pwmPktOut;
 static servo_packet_raw pwmRawPktOut;
