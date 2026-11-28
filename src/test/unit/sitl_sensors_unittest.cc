@@ -82,6 +82,14 @@ TEST(SitlSensorsUnittest, NotANumberReadsZero)
     EXPECT_EQ(sitlAdcCurrentSample(NAN, 400, 0), 0);
 }
 
+TEST(SitlSensorsUnittest, PitotOutOfRangeReadsZero)
+{
+    EXPECT_FLOAT_EQ(sitlPitotPressure(612.5), 612.5f);
+    EXPECT_FLOAT_EQ(sitlPitotPressure(NAN), 0.0f);
+    EXPECT_FLOAT_EQ(sitlPitotPressure(1e100), 0.0f);
+    EXPECT_FLOAT_EQ(sitlPitotPressure(-1e100), 0.0f);
+}
+
 TEST(SitlSensorsUnittest, ClampsAtFullScale)
 {
     EXPECT_EQ(sitlAdcVoltageSample(50.0, 110, 10, 1), 4095);

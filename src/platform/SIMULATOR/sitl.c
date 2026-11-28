@@ -342,7 +342,7 @@ static void updateState(const fdm_packet* pkt)
     adcSamples[ADC_CURRENT] = sitlAdcCurrentSample(pkt->battery_current, currentSensorADCConfig()->scale,
                                                    currentSensorADCConfig()->offset);
     // A pressure that is not a number would stay in the pitot filter
-    virtualPitotSet(sitlIsFinite(pkt->pitot_pressure) ? pkt->pitot_pressure : 0.0, VIRTUAL_PITOT_TEMPERATURE_K);
+    virtualPitotSet(sitlPitotPressure(pkt->pitot_pressure), VIRTUAL_PITOT_TEMPERATURE_K);
     // Reconstruct the body-to-world (NWU) attitude quaternion from the packet.
     // Consumed by the direct-attitude path and by the virtual mag feed, which
     // must use the same rotation or mag fusion fights the fed attitude.

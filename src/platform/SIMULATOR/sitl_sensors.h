@@ -66,11 +66,18 @@ static inline uint16_t sitlAdcCurrentSample(double amps, int16_t scale, int16_t 
 
 // The simulator's field (gauss, FRD body frame) as virtual mag samples (X forward, Y left, Z up); full scale 4 G
 #define SITL_MAG_SAMPLES_PER_GAUSS  8192.0
+#define SITL_PITOT_MAX_PA           1.0e6
 
 static inline int16_t sitlMagSample(double gauss)
 {
     const double sample = gauss * SITL_MAG_SAMPLES_PER_GAUSS;
     return sample >= 32767.0 ? 32767 : sample <= -32767.0 ? -32767 : (int16_t)lrint(sample);
+}
+
+// Differential pressure that is not a number or out of range reads 0
+static inline float sitlPitotPressure(double pa)
+{
+    return sitlIsFinite(pa) && fabs(pa) < SITL_PITOT_MAX_PA ? (float)pa : 0.0f;
 }
 
 // Returns false for a field of 0, 0, 0 or a field that is not a number (not simulated)
