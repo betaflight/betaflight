@@ -44,8 +44,8 @@ LIBS            = -lm -lpthread -lws2_32
 LD_SCRIPT       = $(LINKER_DIR)/sitl_win.ld
 LD_NOEXECSTACK  =
 EXE_SUFFIX      = .exe
-ifeq ($(LTO),no)
-$(error SITL for Windows needs LTO: without it the linker fails on references in unused code)
+ifneq ($(filter no,$(LTO))$(filter GDB,$(DEBUG)),)
+$(error SITL for Windows needs LTO (no LTO=no, no DEBUG=GDB): without it the linker fails on references in unused code)
 endif
 # GCC 10's lto-wrapper cannot run the exported MAKE for -flto=auto
 OPTIMISATION_BASE := $(subst -flto=auto,-flto,$(OPTIMISATION_BASE))
