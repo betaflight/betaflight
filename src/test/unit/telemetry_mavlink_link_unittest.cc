@@ -27,7 +27,15 @@ extern "C" {
     void mavMissionInit(void) { missionInits++; }
     bool mavMissionHandleMessage(const mavlink_message_t *) { return false; }
     void mavMissionUpdate(timeMs_t) {}
-    void mavMissionSaveIfDisarmed(void) {}
+    static int missionSaves;
+    static bool missionSavedBetweenAckAndReset;
+    void mavMissionSaveIfDisarmed(void)
+    {
+        missionSaves++;
+        if (waitForTxCalls == 1 && systemResetCalls == 0) {
+            missionSavedBetweenAckAndReset = true;
+        }
+    }
 }
 
 class MavlinkLinkUpTest : public MavlinkTelemetryTest {
@@ -59,4 +67,20 @@ TEST_F(MavlinkLinkUpTest, SharedReceiverPortStartsTheMissionProtocol)
     telemetrySharedPort = &testPort;
     linkUp();
     EXPECT_EQ(missionInits, 1);
+}
+
+TEST_F(MavlinkLinkUpTest, PendingMissionIsSavedWithTheLinkDown)
+{
+    freeMAVLinkTelemetryPort();
+    missionSaves = 0;
+    handleMAVLinkTelemetry();
+    EXPECT_EQ(missionSaves, 1);
+}
+
+TEST_F(MavlinkLinkUpTest, PendingMissionIsSavedBeforeReboot)
+{
+    missionSavedBetweenAckAndReset = false;
+    EXPECT_EQ(ackResultFor(MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN, 1), MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(systemResetCalls, 1);
+    EXPECT_TRUE(missionSavedBetweenAckAndReset);
 }
