@@ -21,7 +21,9 @@
 #pragma once
 
 #include <math.h>
+#include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #ifndef sq
 #define sq(x) ((x)*(x))
@@ -190,6 +192,21 @@ static inline float constrainf(float amt, float low, float high)
         return high;
     else
         return amt;
+}
+
+// The firmware builds with -ffast-math, which makes isnan() and isfinite() constant.
+static inline bool floatIsNan(float x)
+{
+    uint32_t bits;
+    memcpy(&bits, &x, sizeof(bits));
+    return (bits & 0x7fffffffu) > 0x7f800000u;
+}
+
+static inline bool floatIsFinite(float x)
+{
+    uint32_t bits;
+    memcpy(&bits, &x, sizeof(bits));
+    return (bits & 0x7f800000u) != 0x7f800000u;
 }
 
 // An angle in degrees brought into [-180, 180).

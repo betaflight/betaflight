@@ -2537,7 +2537,7 @@ bool flightPlanNavSetGuidedPlan(const waypoint_t *waypoints, uint8_t count, floa
         return false;
     }
 #endif
-    fp.guidedOrbitRadiusM = isfinite(orbitRadiusM) ? orbitRadiusM : 0.0f;
+    fp.guidedOrbitRadiusM = floatIsFinite(orbitRadiusM) ? orbitRadiusM : 0.0f;
     if (!fp.active) {
         memcpy(fp.injected, waypoints, count * sizeof(*waypoints));
         fp.injectedCount = count;

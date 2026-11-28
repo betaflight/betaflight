@@ -28,6 +28,7 @@
 
 #if ENABLE_TELEMETRY_MAVLINK_MISSION
 
+#include "common/maths.h"
 #include "common/time.h"
 
 #include "drivers/time.h"
@@ -308,9 +309,9 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
     }
     // NAV_WAYPOINT explicitly permits NaN yaw to select the current system
     // heading.  Other non-finite values, including infinite yaw, are invalid.
-    const bool waypointUsesCurrentYaw = it->command == MAV_CMD_NAV_WAYPOINT && isnan(it->param4);
-    if (!isfinite(it->param1) || !isfinite(it->param2) || !isfinite(it->param3)
-        || (!isfinite(it->param4) && !waypointUsesCurrentYaw)) {
+    const bool waypointUsesCurrentYaw = it->command == MAV_CMD_NAV_WAYPOINT && floatIsNan(it->param4);
+    if (!floatIsFinite(it->param1) || !floatIsFinite(it->param2) || !floatIsFinite(it->param3)
+        || (!floatIsFinite(it->param4) && !waypointUsesCurrentYaw)) {
         *resultOut = MAV_MISSION_INVALID;
         return false;
     }

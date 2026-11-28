@@ -487,7 +487,7 @@ static void mavlinkSendAvailableModesMonitor(void)
 // out-of-range values to integer types is undefined behaviour, so validate first.
 static bool cmdParamToUint32(float f, uint32_t maxValue, uint32_t *out)
 {
-    if (!isfinite(f) || f < 0.0f) {
+    if (!floatIsFinite(f) || f < 0.0f) {
         return false;
     }
     if ((double)f > (double)maxValue) {
@@ -986,7 +986,7 @@ static uint8_t handleChangeSpeed(float speedMps)
     if (!ARMING_FLAG(ARMED)) {
         return MAV_RESULT_TEMPORARILY_REJECTED;
     }
-    if (!isfinite(speedMps) || speedMps == 0.0f) {
+    if (!floatIsFinite(speedMps) || speedMps == 0.0f) {
         return MAV_RESULT_DENIED;
     }
     if (speedMps <= -1.5f) {
@@ -1003,10 +1003,10 @@ static uint8_t handleOrbit(const mavlinkCommand_t *cmd)
     UNUSED(cmd);
     return MAV_RESULT_UNSUPPORTED;
 #else
-    const float radiusM = isnan(cmd->param[0]) ? 0.0f : cmd->param[0];
+    const float radiusM = floatIsNan(cmd->param[0]) ? 0.0f : cmd->param[0];
     const float speedMps = cmd->param[1];
-    const float orbitsRad = isnan(cmd->param[3]) ? 0.0f : cmd->param[3];
-    if (!isfinite(radiusM) || (radiusM != 0.0f && fabsf(radiusM) < 1.0f) || !isfinite(orbitsRad) || orbitsRad < 0.0f) {
+    const float orbitsRad = floatIsNan(cmd->param[3]) ? 0.0f : cmd->param[3];
+    if (!floatIsFinite(radiusM) || (radiusM != 0.0f && fabsf(radiusM) < 1.0f) || !floatIsFinite(orbitsRad) || orbitsRad < 0.0f) {
         return MAV_RESULT_DENIED;
     }
     if (cmd->positionResult != MAV_RESULT_ACCEPTED) {
@@ -1103,7 +1103,7 @@ static uint8_t mavlinkExecCommand(const mavlinkCommand_t *cmd)
 
 static void decodeCommandAlt(mavlinkCommand_t *cmd, uint8_t frame, float altM)
 {
-    if (isnan(altM)) {
+    if (floatIsNan(altM)) {
         return;
     }
     switch (mavlinkFrameAltToAmslCm(frame, altM, &cmd->altCm)) {
@@ -1150,13 +1150,13 @@ static void handleCommandInt(const mavlink_message_t *msg)
 
     mavlinkCommand_t cmd = {
         .command = in.command,
-        .param = { in.param1, in.param2, in.param3, in.param4, NAN, NAN, in.z },
+        .param = { in.param1, in.param2, in.param3, in.param4, 0.0f, 0.0f, in.z },
         .relativeAltFrame = mavlinkFrameIsRelativeAlt(in.frame),
         .positionResult = MAV_RESULT_ACCEPTED,
         .senderSysid = msg->sysid,
     };
     if (!mavlinkFrameIsGlobal(in.frame)) {
-        if (in.x != INT32_MAX || !isnan(in.z)) {
+        if (in.x != INT32_MAX || !floatIsNan(in.z)) {
             cmd.positionResult = MAV_RESULT_DENIED;
         }
     } else {
@@ -1185,7 +1185,7 @@ static void handleCommandLong(const mavlink_message_t *msg)
         .senderSysid = msg->sysid,
     };
     // COMMAND_LONG carries a position in degrees and metres AMSL; COMMAND_INT keeps full precision
-    if (isfinite(in.param5) && isfinite(in.param6)) {
+    if (floatIsFinite(in.param5) && floatIsFinite(in.param6)) {
         if (fabsf(in.param5) > 90.0f || fabsf(in.param6) > 180.0f) {
             cmd.positionResult = MAV_RESULT_DENIED;
         } else {
