@@ -41,6 +41,8 @@
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/autopilot.h"
+#include "pg/mavlink_gcs.h"
 #include "pg/rx.h"
 
 #include "drivers/accgyro/accgyro.h"
@@ -55,6 +57,7 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
+#include "flight/autopilot.h"
 #include "flight/flight_plan_nav.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -71,6 +74,8 @@
 #include "rx/rx.h"
 #include "rx/mavlink.h"
 
+#include "scheduler/scheduler.h"
+
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
@@ -85,6 +90,7 @@
 #include "telemetry/mavlink_lib.h"
 
 #include "telemetry/mavlink.h"
+#include "telemetry/mavlink_frame.h"
 #if ENABLE_TELEMETRY_MAVLINK_MISSION
 #include "telemetry/mavlink_mission.h"
 #endif
@@ -96,7 +102,6 @@
 #define TELEMETRY_MAVLINK_MAXRATE 50
 #define TELEMETRY_MAVLINK_DELAY ((1000 * 1000) / TELEMETRY_MAVLINK_MAXRATE)
 
-#define MAVLINK_SYSTEM_ID 1
 #define MAVLINK_COMPONENT_ID MAV_COMP_ID_AUTOPILOT1
 extern uint16_t rssi; // FIXME dependency on mw.c
 
@@ -112,6 +117,10 @@ static mavlink_message_t mavRxMsg;
 static mavlink_status_t mavRxStatus;
 static bool mavlinkPortOwned = false;
 
+#define MAVLINK_GCS_TIMEOUT_MS 3000
+static uint32_t gcsSysid;
+static timeMs_t gcsLastSeenMs;
+
 // Betaflight-specific MAVLink custom_mode values. Stable enumeration emitted in
 // HEARTBEAT.custom_mode and advertised via AVAILABLE_MODES; consumed in T3 by
 // MAV_CMD_DO_SET_MODE handling.
@@ -124,6 +133,9 @@ typedef enum {
     BF_MAV_MODE_AUTOPILOT,
     BF_MAV_MODE_RTL,
     BF_MAV_MODE_FAILSAFE,
+    BF_MAV_MODE_GUIDED,
+    BF_MAV_MODE_TAKEOFF,
+    BF_MAV_MODE_LAND,
     BF_MAV_MODE_COUNT,
 } bfMavMode_e;
 
@@ -134,7 +146,18 @@ typedef struct {
 } bfMavModeDescriptor_t;
 
 // The mode set is fixed at build time, so its sequence number never changes
-#define BF_MAV_MODES_SEQ 1
+#define BF_MAV_MODES_SEQ 2
+
+#if ENABLE_FLIGHT_PLAN
+#define BF_MAV_GUIDED_PROPERTIES 0
+#else
+#define BF_MAV_GUIDED_PROPERTIES MAV_MODE_PROPERTY_NOT_USER_SELECTABLE
+#endif
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#define BF_MAV_LAND_PROPERTIES 0
+#else
+#define BF_MAV_LAND_PROPERTIES MAV_MODE_PROPERTY_NOT_USER_SELECTABLE
+#endif
 
 static const bfMavModeDescriptor_t bfMavModeDescriptors[BF_MAV_MODE_COUNT] = {
     [BF_MAV_MODE_ACRO]      = { "Acro",      MAV_STANDARD_MODE_NON_STANDARD,  0 },
@@ -145,6 +168,10 @@ static const bfMavModeDescriptor_t bfMavModeDescriptors[BF_MAV_MODE_COUNT] = {
     [BF_MAV_MODE_AUTOPILOT] = { "Autopilot", MAV_STANDARD_MODE_MISSION,       0 },
     [BF_MAV_MODE_RTL]       = { "RTL",       MAV_STANDARD_MODE_SAFE_RECOVERY, 0 },
     [BF_MAV_MODE_FAILSAFE]  = { "Failsafe",  MAV_STANDARD_MODE_SAFE_RECOVERY, MAV_MODE_PROPERTY_NOT_USER_SELECTABLE },
+    [BF_MAV_MODE_GUIDED]    = { "Guided",    MAV_STANDARD_MODE_NON_STANDARD,  BF_MAV_GUIDED_PROPERTIES },
+    // Takeoff needs a target altitude, so only MAV_CMD_NAV_TAKEOFF enters it
+    [BF_MAV_MODE_TAKEOFF]   = { "Takeoff",   MAV_STANDARD_MODE_TAKEOFF,       MAV_MODE_PROPERTY_NOT_USER_SELECTABLE },
+    [BF_MAV_MODE_LAND]      = { "Land",      MAV_STANDARD_MODE_LAND,          BF_MAV_LAND_PROPERTIES },
 };
 
 static mavlink_message_t mavMsg;
@@ -246,8 +273,44 @@ static void mavlinkSendSystemTime(void)
 
 static void handleHeartbeatRx(const mavlink_message_t *msg)
 {
-    UNUSED(msg);
-    // Stub for now; later tiers will track GCS liveness and target replies by sysid/compid.
+    if (msg->compid == MAV_COMP_ID_TELEMETRY_RADIO) {
+        return;
+    }
+    mavlink_heartbeat_t heartbeat;
+    mavlink_msg_heartbeat_decode(msg, &heartbeat);
+    if (heartbeat.type != MAV_TYPE_GCS || heartbeat.autopilot != MAV_AUTOPILOT_INVALID) {
+        return;
+    }
+    const uint8_t configuredSysid = mavlinkGcsConfig()->sysid;
+    if (configuredSysid != 0 && msg->sysid != configuredSysid) {
+        return;
+    }
+    if (gcsSysid == 0) {
+        gcsSysid = msg->sysid;
+    }
+    if (msg->sysid == gcsSysid) {
+        gcsLastSeenMs = millis();
+    }
+}
+
+bool mavlinkGcsSeen(void)
+{
+    return gcsSysid != 0;
+}
+
+bool mavlinkGcsIsFresh(timeMs_t currentTimeMs)
+{
+    return mavlinkGcsSeen() && currentTimeMs - gcsLastSeenMs <= MAVLINK_GCS_TIMEOUT_MS;
+}
+
+bool mavlinkGcsLostFor(timeMs_t currentTimeMs, timeMs_t periodMs)
+{
+    return mavlinkGcsSeen() && currentTimeMs - gcsLastSeenMs > periodMs;
+}
+
+bool mavlinkIsGcsSysid(uint32_t sysid)
+{
+    return mavlinkGcsSeen() && sysid == gcsSysid;
 }
 
 static void handlePing(const mavlink_message_t *msg)
@@ -306,7 +369,10 @@ static void mavlinkSendCommandAck(uint16_t command, uint8_t result,
 
 static void mavlinkSendAutopilotVersion(void)
 {
-    const uint64_t capabilities = MAV_PROTOCOL_CAPABILITY_MAVLINK2;
+    uint64_t capabilities = MAV_PROTOCOL_CAPABILITY_MAVLINK2 | MAV_PROTOCOL_CAPABILITY_COMMAND_INT;
+#if ENABLE_TELEMETRY_MAVLINK_MISSION
+    capabilities |= MAV_PROTOCOL_CAPABILITY_MISSION_INT;
+#endif
     const uint32_t flightSwVersion =
         ((uint32_t)(FC_VERSION_YEAR - FC_CALVER_BASE_YEAR) << 24) |
         ((uint32_t)FC_VERSION_MONTH << 16) |
@@ -360,6 +426,14 @@ static uint32_t mavlinkComputeCustomMode(void)
         return BF_MAV_MODE_RTL;
     }
     if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+#if ENABLE_FLIGHT_PLAN
+        if (flightPlanNavIsGuided()) {
+            if (flightPlanNavIsTakingOff()) {
+                return BF_MAV_MODE_TAKEOFF;
+            }
+            return flightPlanNavIsGuidedLanding() ? BF_MAV_MODE_LAND : BF_MAV_MODE_GUIDED;
+        }
+#endif
         return BF_MAV_MODE_AUTOPILOT;
     }
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
@@ -400,6 +474,8 @@ static void mavlinkSendAvailableMode(uint8_t modeIndex)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
+static uint8_t nextAvailableModeIndex;
+
 static void mavlinkSendAvailableModesMonitor(void)
 {
     mavlink_msg_available_modes_monitor_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg, BF_MAV_MODES_SEQ);
@@ -411,7 +487,7 @@ static void mavlinkSendAvailableModesMonitor(void)
 // out-of-range values to integer types is undefined behaviour, so validate first.
 static bool cmdParamToUint32(float f, uint32_t maxValue, uint32_t *out)
 {
-    if (!isfinite(f) || f < 0.0f) {
+    if (!floatIsFinite(f) || f < 0.0f) {
         return false;
     }
     if ((double)f > (double)maxValue) {
@@ -421,7 +497,21 @@ static bool cmdParamToUint32(float f, uint32_t maxValue, uint32_t *out)
     return true;
 }
 
+typedef struct mavlinkCommand_s {
+    uint16_t command;
+    float param[7];
+    bool hasLatLon;
+    int32_t lat1e7;
+    int32_t lon1e7;
+    bool hasAlt;
+    int32_t altCm;              // AMSL
+    bool relativeAltFrame;
+    uint8_t positionResult;     // MAV_RESULT for a position that was sent but cannot be used
+    uint32_t senderSysid;
+} mavlinkCommand_t;
+
 static int32_t getMessageUpdateInterval(uint32_t messageId);
+static bool mavlinkSendStreamMessage(uint32_t messageId);
 static void mavlinkSendMessageInterval(uint32_t messageId)
 {
     uint16_t msgLength;
@@ -433,13 +523,11 @@ static void mavlinkSendMessageInterval(uint32_t messageId)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
-static void handleRequestMessage(const mavlink_command_long_t *cmd,
-    uint8_t targetSystem, uint8_t targetComponent)
+static uint8_t handleRequestMessage(float param1, float param2)
 {
     uint32_t messageId;
-    if (!cmdParamToUint32(cmd->param1, UINT32_MAX, &messageId)) {
-        mavlinkSendCommandAck(MAV_CMD_REQUEST_MESSAGE, MAV_RESULT_DENIED, targetSystem, targetComponent);
-        return;
+    if (!cmdParamToUint32(param1, UINT32_MAX, &messageId)) {
+        return MAV_RESULT_DENIED;
     }
 
     uint8_t result;
@@ -458,11 +546,15 @@ static void handleRequestMessage(const mavlink_command_long_t *cmd,
         break;
     case MAVLINK_MSG_ID_AVAILABLE_MODES: {
         uint32_t modeIndex;
-        if (!cmdParamToUint32(cmd->param2, BF_MAV_MODE_COUNT, &modeIndex) || modeIndex < 1) {
+        if (!cmdParamToUint32(param2, BF_MAV_MODE_COUNT, &modeIndex)) {
             result = MAV_RESULT_DENIED;
             break;
         }
-        mavlinkSendAvailableMode((uint8_t)modeIndex);
+        if (modeIndex == 0) {
+            nextAvailableModeIndex = 1;
+        } else {
+            mavlinkSendAvailableMode((uint8_t)modeIndex);
+        }
         result = MAV_RESULT_ACCEPTED;
         break;
     }
@@ -470,9 +562,13 @@ static void handleRequestMessage(const mavlink_command_long_t *cmd,
         mavlinkSendAvailableModesMonitor();
         result = MAV_RESULT_ACCEPTED;
         break;
+    case MAVLINK_MSG_ID_SYSTEM_TIME:
+        mavlinkSendSystemTime();
+        result = MAV_RESULT_ACCEPTED;
+        break;
     case MAVLINK_MSG_ID_MESSAGE_INTERVAL: {
         uint32_t msgId;
-        if (!cmdParamToUint32(cmd->param2, UINT32_MAX, &msgId)) {
+        if (!cmdParamToUint32(param2, UINT32_MAX, &msgId)) {
             result = MAV_RESULT_DENIED;
             break;
         }
@@ -480,35 +576,53 @@ static void handleRequestMessage(const mavlink_command_long_t *cmd,
         result = MAV_RESULT_ACCEPTED;
         break;
     }
+#ifdef USE_GPS
+    case MAVLINK_MSG_ID_HOME_POSITION:
+    case MAVLINK_MSG_ID_GPS_GLOBAL_ORIGIN:
+        result = (STATE(GPS_FIX_HOME) && mavlinkSendStreamMessage(messageId)) ? MAV_RESULT_ACCEPTED : MAV_RESULT_FAILED;
+        break;
+#endif
     default:
-        result = MAV_RESULT_UNSUPPORTED;
+        result = mavlinkSendStreamMessage(messageId) ? MAV_RESULT_ACCEPTED : MAV_RESULT_UNSUPPORTED;
         break;
     }
-    mavlinkSendCommandAck(MAV_CMD_REQUEST_MESSAGE, result, targetSystem, targetComponent);
+    return result;
 }
 
 static bool setMessageUpdateInterval(uint32_t id, uint32_t intervalMs);
-static void handleSetMessageInterval(const mavlink_command_long_t *cmd, uint8_t targetSystem, uint8_t targetComponent)
+static uint8_t handleSetMessageInterval(float param1, float param2)
 {
     uint32_t msgId;
     bool success = false;
 
-    if (!cmdParamToUint32(cmd->param1, UINT32_MAX, &msgId)) {
-        mavlinkSendCommandAck(cmd->command, MAV_RESULT_DENIED, targetSystem, targetComponent);
-        return;
+    if (!cmdParamToUint32(param1, UINT32_MAX, &msgId)) {
+        return MAV_RESULT_DENIED;
     }
 
-    if (cmd->param2 < 0.0f) {
+    if (param2 < 0.0f) {
         // Disable message per MAVLink spec (param2 < 0 means disable)
         success = setMessageUpdateInterval(msgId, UINT32_MAX);
-    } else if (cmd->param2 == 0.0f) {
+    } else if (param2 == 0.0f) {
         // param2 == 0 means "request default rate" per MAVLink spec
         success = setMessageUpdateInterval(msgId, 0);
     } else {
-        uint32_t intervalMs = (cmd->param2 >= 1000.0f) ? (uint32_t)(cmd->param2 / 1000.0f) : 1;
+        uint32_t intervalMs = (param2 >= 1000.0f) ? (uint32_t)(param2 / 1000.0f) : 1;
         success = setMessageUpdateInterval(msgId, intervalMs);
     }
-    mavlinkSendCommandAck(cmd->command, success ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, targetSystem, targetComponent);
+    return success ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED;
+}
+
+static uint8_t handleRequestAutopilotCapabilities(float param1)
+{
+    // Spec: param1 is MAV_BOOL — 1 = send AUTOPILOT_VERSION, 0 = ignore.
+    uint32_t request;
+    if (!cmdParamToUint32(param1, 1, &request)) {
+        return MAV_RESULT_DENIED;
+    }
+    if (request == 1) {
+        mavlinkSendAutopilotVersion();
+    }
+    return MAV_RESULT_ACCEPTED;
 }
 
 #if ENABLE_TELEMETRY_MAVLINK_COMMANDS
@@ -517,18 +631,74 @@ static void handleSetMessageInterval(const mavlink_command_long_t *cmd, uint8_t 
 static bool mavlinkRebootPending = false;
 static bool mavlinkRebootToBootloader = false;
 
+#if ENABLE_FLIGHT_PLAN
+// Guided flight hands the craft to the flight plan executor, which flies only once airborne
+static uint8_t guidedReadiness(void)
+{
+    if (!ARMING_FLAG(ARMED) || !wasThrottleRaised() || !sensors(SENSOR_ACC) || !STATE(GPS_FIX) || !isAltitudeAvailable()) {
+        return MAV_RESULT_TEMPORARILY_REJECTED;
+    }
+    return MAV_RESULT_ACCEPTED;
+}
+
+static waypoint_t guidedWaypoint(const mavlinkCommand_t *cmd, waypointType_e type)
+{
+    const bool hasLatLon = cmd && cmd->hasLatLon;
+    const bool hasAlt = cmd && cmd->hasAlt;
+    return (waypoint_t) {
+        .latitude = hasLatLon ? cmd->lat1e7 : gpsSol.llh.lat,
+        .longitude = hasLatLon ? cmd->lon1e7 : gpsSol.llh.lon,
+        .altitude = hasAlt ? cmd->altCm : gpsSol.llh.altCm,
+        .duration = (type == WAYPOINT_TYPE_HOLD) ? UINT16_MAX : 0,
+        .type = type,
+    };
+}
+
+static uint8_t engageGuided(const waypoint_t *wps, uint8_t count, float orbitRadiusM)
+{
+    if (!flightPlanNavSetGuidedPlan(wps, count, orbitRadiusM)) {
+        return MAV_RESULT_TEMPORARILY_REJECTED;
+    }
+    rcModeClearExternalOverrides();
+    rcModeSetExternalOverride(BOXAUTOPILOT, true);
+    return MAV_RESULT_ACCEPTED;
+}
+
+static uint8_t flyGuided(const waypoint_t *wp, float orbitRadiusM)
+{
+    const uint8_t ready = guidedReadiness();
+    if (ready != MAV_RESULT_ACCEPTED) {
+        return ready;
+    }
+    return engageGuided(wp, 1, orbitRadiusM);
+}
+#endif
+
 // Map a Betaflight custom_mode (bfMavMode_e) onto the box-mode override. ACRO
 // clears the override (manual flight); every other selectable mode forces exactly
-// one box active. Returns false for non-selectable / unknown modes.
-static bool applyMavCustomMode(uint32_t customMode)
+// one box active. GUIDED holds and LAND lands where the craft is.
+static uint8_t applyMavCustomMode(uint32_t customMode)
 {
+#if ENABLE_FLIGHT_PLAN
+    if (customMode == BF_MAV_MODE_GUIDED) {
+        const waypoint_t here = guidedWaypoint(NULL, WAYPOINT_TYPE_HOLD);
+        return flyGuided(&here, 0.0f);
+    }
+#ifndef USE_WING
+    if (customMode == BF_MAV_MODE_LAND) {
+        const waypoint_t here = guidedWaypoint(NULL, WAYPOINT_TYPE_LAND);
+        return flyGuided(&here, 0.0f);
+    }
+#endif
+#endif
     // Resolve the target box first: a rejected mode must leave any active
     // override (e.g. an in-progress GPS Rescue) untouched.
-    boxId_e box;
+    bool manual = false;
+    boxId_e box = BOXANGLE;
     switch ((bfMavMode_e)customMode) {
     case BF_MAV_MODE_ACRO:
-        rcModeClearExternalOverrides();
-        return true;
+        manual = true;
+        break;
     case BF_MAV_MODE_ANGLE:
         box = BOXANGLE;
         break;
@@ -549,12 +719,21 @@ static bool applyMavCustomMode(uint32_t customMode)
         break;
     case BF_MAV_MODE_FAILSAFE:
     default:
-        return false;
+        return MAV_RESULT_DENIED;
     }
 
+#if ENABLE_FLIGHT_PLAN
+    if (box == BOXAUTOPILOT) {
+        flightPlanNavLeaveGuided();
+    } else {
+        flightPlanNavCancelGuided();
+    }
+#endif
     rcModeClearExternalOverrides();
-    rcModeSetExternalOverride(box, true);
-    return true;
+    if (!manual) {
+        rcModeSetExternalOverride(box, true);
+    }
+    return MAV_RESULT_ACCEPTED;
 }
 
 static uint8_t handleArmDisarm(float param1)
@@ -586,7 +765,23 @@ static uint8_t handleArmDisarm(float param1)
 #endif
 }
 
-static uint8_t handleSetMode(float baseModeF, float customModeF)
+static uint8_t selectMavCustomMode(uint32_t customMode, uint32_t senderSysid)
+{
+    const uint8_t result = applyMavCustomMode(customMode);
+    if (result != MAV_RESULT_ACCEPTED) {
+        return result;
+    }
+#if ENABLE_REMOTE_ARM || ENABLE_MAVLINK_GCS_FAILSAFE
+    if (mavlinkIsGcsSysid(senderSysid)) {
+        failsafeRequestRecovery();
+    }
+#else
+    UNUSED(senderSysid);
+#endif
+    return MAV_RESULT_ACCEPTED;
+}
+
+static uint8_t handleSetMode(float baseModeF, float customModeF, uint32_t senderSysid)
 {
     uint32_t baseMode, customMode;
     if (!cmdParamToUint32(baseModeF, 0xFF, &baseMode) ||
@@ -597,7 +792,22 @@ static uint8_t handleSetMode(float baseModeF, float customModeF)
     if (!(baseMode & MAV_MODE_FLAG_CUSTOM_MODE_ENABLED)) {
         return MAV_RESULT_DENIED;
     }
-    return applyMavCustomMode(customMode) ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED;
+    return selectMavCustomMode(customMode, senderSysid);
+}
+
+static uint8_t handleSetStandardMode(float standardModeF, uint32_t senderSysid)
+{
+    uint32_t standardMode;
+    if (!cmdParamToUint32(standardModeF, UINT8_MAX, &standardMode) || standardMode == MAV_STANDARD_MODE_NON_STANDARD) {
+        return MAV_RESULT_DENIED;
+    }
+    for (uint32_t mode = 0; mode < BF_MAV_MODE_COUNT; mode++) {
+        const bfMavModeDescriptor_t *desc = &bfMavModeDescriptors[mode];
+        if (desc->standardMode == standardMode && !(desc->properties & MAV_MODE_PROPERTY_NOT_USER_SELECTABLE)) {
+            return selectMavCustomMode(mode, senderSysid);
+        }
+    }
+    return MAV_RESULT_FAILED;
 }
 
 static uint8_t handleReturnToLaunch(void)
@@ -605,16 +815,19 @@ static uint8_t handleReturnToLaunch(void)
     if (!ARMING_FLAG(ARMED)) {
         return MAV_RESULT_TEMPORARILY_REJECTED;
     }
+#if ENABLE_FLIGHT_PLAN
+    flightPlanNavCancelGuided();
+#endif
     rcModeClearExternalOverrides();
     rcModeSetExternalOverride(BOXGPSRESCUE, true);
     return MAV_RESULT_ACCEPTED;
 }
 
-static uint8_t handleSetHome(float useCurrentF, bool coordsValid, int32_t lat1e7, int32_t lon1e7, int32_t altCm)
+static uint8_t handleSetHome(const mavlinkCommand_t *cmd)
 {
 #ifdef USE_GPS
     uint32_t useCurrent;
-    if (!cmdParamToUint32(useCurrentF, 1, &useCurrent)) {
+    if (!cmdParamToUint32(cmd->param[0], 1, &useCurrent)) {
         return MAV_RESULT_DENIED;
     }
 
@@ -626,23 +839,190 @@ static uint8_t handleSetHome(float useCurrentF, bool coordsValid, int32_t lat1e7
         return MAV_RESULT_ACCEPTED;
     }
 
-    if (!coordsValid || (lat1e7 == 0 && lon1e7 == 0)) {
+    if (cmd->relativeAltFrame) {
         return MAV_RESULT_DENIED;
     }
-    GPS_home_llh.lat = constrain(lat1e7, -900000000, 900000000);
-    GPS_home_llh.lon = constrain(lon1e7, -1800000000, 1800000000);
-    GPS_home_llh.altCm = altCm;
+    if (cmd->positionResult != MAV_RESULT_ACCEPTED) {
+        return cmd->positionResult;
+    }
+    if (!cmd->hasLatLon || !cmd->hasAlt || (cmd->lat1e7 == 0 && cmd->lon1e7 == 0)) {
+        return MAV_RESULT_DENIED;
+    }
+    GPS_home_llh.lat = cmd->lat1e7;
+    GPS_home_llh.lon = cmd->lon1e7;
+    GPS_home_llh.altCm = cmd->altCm;
     ENABLE_STATE(GPS_FIX_HOME);
     return MAV_RESULT_ACCEPTED;
 #else
-    UNUSED(useCurrentF);
-    UNUSED(coordsValid);
-    UNUSED(lat1e7);
-    UNUSED(lon1e7);
-    UNUSED(altCm);
+    UNUSED(cmd);
     return MAV_RESULT_UNSUPPORTED;
 #endif
 }
+
+#if ENABLE_FLIGHT_PLAN
+static uint16_t speedParamToCmS(float speedMps)
+{
+    return (uint16_t)constrainf(speedMps * 100.0f, 1.0f, UINT16_MAX);
+}
+
+static uint8_t handleNavLand(const mavlinkCommand_t *cmd)
+{
+#ifdef USE_WING
+    UNUSED(cmd);
+    return MAV_RESULT_UNSUPPORTED;
+#else
+    if (cmd->positionResult != MAV_RESULT_ACCEPTED) {
+        return cmd->positionResult;
+    }
+    waypoint_t wp = guidedWaypoint(cmd, WAYPOINT_TYPE_LAND);
+    // The landing detects touchdown, so it flies there at the height it is at
+    wp.altitude = gpsSol.llh.altCm;
+    return flyGuided(&wp, 0.0f);
+#endif
+}
+
+#if ENABLE_REMOTE_ARM && !defined(USE_WING)
+#define TAKEOFF_MIN_CLIMB_CM 100
+
+static uint8_t takeoffReadiness(void)
+{
+    if (!ARMING_FLAG(ARMED) || !sensors(SENSOR_ACC) || !STATE(GPS_FIX) || !STATE(GPS_FIX_HOME) || !isAltitudeAvailable()) {
+        return MAV_RESULT_TEMPORARILY_REJECTED;
+    }
+    if (!autopilotAltitudeControlAvailable() || !autopilotPositionControlAvailable() || autopilotConfig()->hoverThrottle == 0) {
+        return MAV_RESULT_DENIED;
+    }
+    return MAV_RESULT_ACCEPTED;
+}
+
+static uint8_t handleNavTakeoff(const mavlinkCommand_t *cmd)
+{
+    if (cmd->positionResult != MAV_RESULT_ACCEPTED) {
+        return cmd->positionResult;
+    }
+    if (!cmd->hasAlt) {
+        return MAV_RESULT_DENIED;
+    }
+    if (flightPlanNavIsGuided() && flightPlanNavIsTakingOff()) {
+        return MAV_RESULT_ACCEPTED;
+    }
+    if (wasThrottleRaised()) {
+        waypoint_t hold = guidedWaypoint(NULL, WAYPOINT_TYPE_HOLD);
+        hold.altitude = cmd->altCm;
+        return flyGuided(&hold, 0.0f);
+    }
+    const uint8_t ready = takeoffReadiness();
+    if (ready != MAV_RESULT_ACCEPTED) {
+        return ready;
+    }
+    if (cmd->altCm < gpsSol.llh.altCm + TAKEOFF_MIN_CLIMB_CM) {
+        return MAV_RESULT_DENIED;
+    }
+    waypoint_t plan[] = { guidedWaypoint(NULL, WAYPOINT_TYPE_TAKEOFF), guidedWaypoint(NULL, WAYPOINT_TYPE_HOLD) };
+    plan[0].altitude = cmd->altCm;
+    plan[1].altitude = cmd->altCm;
+    const uint8_t result = engageGuided(plan, ARRAYLEN(plan), 0.0f);
+    if (result == MAV_RESULT_ACCEPTED) {
+        setThrottleRaised();
+    }
+    return result;
+}
+#endif
+
+static uint8_t handleReposition(const mavlinkCommand_t *cmd)
+{
+    uint32_t flags;
+    if (!cmdParamToUint32(cmd->param[1], UINT8_MAX, &flags)) {
+        return MAV_RESULT_DENIED;
+    }
+    if (cmd->positionResult != MAV_RESULT_ACCEPTED) {
+        return cmd->positionResult;
+    }
+    const bool guided = FLIGHT_MODE(AUTOPILOT_MODE) && flightPlanNavIsGuided();
+    if (!(flags & MAV_DO_REPOSITION_FLAGS_CHANGE_MODE) && !guided) {
+        return MAV_RESULT_DENIED;
+    }
+    const waypoint_t wp = guidedWaypoint(cmd, WAYPOINT_TYPE_HOLD);
+    const uint8_t result = flyGuided(&wp, 0.0f);
+    if (result == MAV_RESULT_ACCEPTED && cmd->param[0] > 0.0f) {
+        flightPlanNavSetSpeedOverride(speedParamToCmS(cmd->param[0]));
+    }
+    return result;
+}
+
+static uint8_t handlePauseContinue(float continueF)
+{
+    uint32_t resume;
+    if (!cmdParamToUint32(continueF, 1, &resume)) {
+        return MAV_RESULT_DENIED;
+    }
+    if (resume) {
+        return flightPlanNavResumeMission() ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED;
+    }
+    const waypoint_t here = guidedWaypoint(NULL, WAYPOINT_TYPE_HOLD);
+    return flyGuided(&here, 0.0f);
+}
+
+static uint8_t handleMissionStart(float firstItemF)
+{
+    uint32_t firstItem;
+    if (!cmdParamToUint32(firstItemF, UINT8_MAX, &firstItem)) {
+        return MAV_RESULT_DENIED;
+    }
+    const uint8_t ready = guidedReadiness();
+    if (ready != MAV_RESULT_ACCEPTED) {
+        return ready;
+    }
+    if (!flightPlanNavStartMission(firstItem)) {
+        return MAV_RESULT_DENIED;
+    }
+    rcModeClearExternalOverrides();
+    rcModeSetExternalOverride(BOXAUTOPILOT, true);
+    return MAV_RESULT_ACCEPTED;
+}
+
+static uint8_t handleChangeSpeed(float speedMps)
+{
+    if (!ARMING_FLAG(ARMED)) {
+        return MAV_RESULT_TEMPORARILY_REJECTED;
+    }
+    if (!floatIsFinite(speedMps) || speedMps == 0.0f) {
+        return MAV_RESULT_DENIED;
+    }
+    if (speedMps <= -1.5f) {
+        flightPlanNavSetSpeedOverride(0);
+    } else if (speedMps > 0.0f) {
+        flightPlanNavSetSpeedOverride(speedParamToCmS(speedMps));
+    }
+    return MAV_RESULT_ACCEPTED;
+}
+
+static uint8_t handleOrbit(const mavlinkCommand_t *cmd)
+{
+#ifdef USE_WING
+    UNUSED(cmd);
+    return MAV_RESULT_UNSUPPORTED;
+#else
+    const float radiusM = floatIsNan(cmd->param[0]) ? 0.0f : cmd->param[0];
+    const float speedMps = cmd->param[1];
+    const float orbitsRad = floatIsNan(cmd->param[3]) ? 0.0f : cmd->param[3];
+    if (!floatIsFinite(radiusM) || (radiusM != 0.0f && fabsf(radiusM) < 1.0f) || !floatIsFinite(orbitsRad) || orbitsRad < 0.0f) {
+        return MAV_RESULT_DENIED;
+    }
+    if (cmd->positionResult != MAV_RESULT_ACCEPTED) {
+        return cmd->positionResult;
+    }
+    waypoint_t wp = guidedWaypoint(cmd, WAYPOINT_TYPE_HOLD);
+    wp.pattern = WAYPOINT_PATTERN_ORBIT;
+    wp.speed = (speedMps > 0.0f) ? speedParamToCmS(speedMps) : 0;
+    if (orbitsRad > 0.0f) {
+        const float periodDs = flightPlanNavGuidedOrbitPeriodDs(wp.speed, radiusM);
+        wp.duration = (uint16_t)constrainf(orbitsRad / (2.0f * M_PIf) * periodDs, 1.0f, UINT16_MAX);
+    }
+    return flyGuided(&wp, radiusM);
+#endif
+}
+#endif // ENABLE_FLIGHT_PLAN
 
 static uint8_t handleRebootShutdown(float param1)
 {
@@ -672,98 +1052,149 @@ static uint8_t handleRebootShutdown(float param1)
     }
 }
 
-// Shared command executor for COMMAND_LONG and COMMAND_INT. Coordinate-bearing
-// commands receive lat/lon in 1e7 degrees and altitude in cm via coordsValid.
-static uint8_t mavlinkExecCommand(uint16_t command, float param1, float param2,
-    bool coordsValid, int32_t lat1e7, int32_t lon1e7, int32_t altCm)
+#endif // ENABLE_TELEMETRY_MAVLINK_COMMANDS
+
+static uint8_t mavlinkExecCommand(const mavlinkCommand_t *cmd)
 {
-    switch (command) {
+    const float *param = cmd->param;
+    switch (cmd->command) {
+    case MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES:
+        return handleRequestAutopilotCapabilities(param[0]);
+    case MAV_CMD_REQUEST_MESSAGE:
+        return handleRequestMessage(param[0], param[1]);
+    case MAV_CMD_SET_MESSAGE_INTERVAL:
+        return handleSetMessageInterval(param[0], param[1]);
+#if ENABLE_TELEMETRY_MAVLINK_COMMANDS
     case MAV_CMD_COMPONENT_ARM_DISARM:
-        return handleArmDisarm(param1);
+        return handleArmDisarm(param[0]);
     case MAV_CMD_DO_SET_MODE:
-        return handleSetMode(param1, param2);
+        return handleSetMode(param[0], param[1], cmd->senderSysid);
+    case MAV_CMD_DO_SET_STANDARD_MODE:
+        return handleSetStandardMode(param[0], cmd->senderSysid);
     case MAV_CMD_NAV_RETURN_TO_LAUNCH:
         return handleReturnToLaunch();
     case MAV_CMD_DO_SET_HOME:
-        return handleSetHome(param1, coordsValid, lat1e7, lon1e7, altCm);
+        return handleSetHome(cmd);
     case MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN:
-        return handleRebootShutdown(param1);
+        return handleRebootShutdown(param[0]);
+#if ENABLE_FLIGHT_PLAN
+#if ENABLE_REMOTE_ARM && !defined(USE_WING)
+    case MAV_CMD_NAV_TAKEOFF:
+        return handleNavTakeoff(cmd);
+#endif
+    case MAV_CMD_NAV_LAND:
+        return handleNavLand(cmd);
+    case MAV_CMD_DO_REPOSITION:
+        return handleReposition(cmd);
+    case MAV_CMD_DO_PAUSE_CONTINUE:
+        return handlePauseContinue(param[0]);
+    case MAV_CMD_MISSION_START:
+        return handleMissionStart(param[0]);
+    case MAV_CMD_DO_CHANGE_SPEED:
+        return handleChangeSpeed(param[1]);
+    case MAV_CMD_DO_ORBIT:
+        return handleOrbit(cmd);
+#endif
+#endif
     default:
         return MAV_RESULT_UNSUPPORTED;
     }
 }
 
+static void decodeCommandAlt(mavlinkCommand_t *cmd, uint8_t frame, float altM)
+{
+    if (floatIsNan(altM)) {
+        return;
+    }
+    switch (mavlinkFrameAltToAmslCm(frame, altM, &cmd->altCm)) {
+    case MAVLINK_FRAME_ALT_OK:
+        cmd->hasAlt = true;
+        break;
+    case MAVLINK_FRAME_ALT_NO_HOME:
+        cmd->positionResult = MAV_RESULT_TEMPORARILY_REJECTED;
+        break;
+    case MAVLINK_FRAME_ALT_INVALID:
+    case MAVLINK_FRAME_ALT_UNSUPPORTED:
+    default:
+        cmd->positionResult = MAV_RESULT_DENIED;
+        break;
+    }
+}
+
+static void setCommandLatLon(mavlinkCommand_t *cmd, int32_t lat1e7, int32_t lon1e7)
+{
+    if (lat1e7 < -900000000 || lat1e7 > 900000000 || lon1e7 < -1800000000 || lon1e7 > 1800000000) {
+        cmd->positionResult = MAV_RESULT_DENIED;
+        return;
+    }
+    cmd->hasLatLon = true;
+    cmd->lat1e7 = lat1e7;
+    cmd->lon1e7 = lon1e7;
+}
+
+static bool isCommandForUs(uint8_t targetSystem, uint8_t targetComponent)
+{
+    // Accept broadcast or directed-to-us; ignore commands addressed to other systems.
+    return (targetSystem == 0 || targetSystem == MAVLINK_SYSTEM_ID) &&
+        (targetComponent == 0 || targetComponent == MAVLINK_COMPONENT_ID);
+}
+
 static void handleCommandInt(const mavlink_message_t *msg)
 {
-    mavlink_command_int_t cmd;
-    mavlink_msg_command_int_decode(msg, &cmd);
+    mavlink_command_int_t in;
+    mavlink_msg_command_int_decode(msg, &in);
 
-    if ((cmd.target_system != 0 && cmd.target_system != MAVLINK_SYSTEM_ID) ||
-        (cmd.target_component != 0 && cmd.target_component != MAVLINK_COMPONENT_ID)) {
+    if (!isCommandForUs(in.target_system, in.target_component)) {
         return;
     }
 
-    const int32_t altCm = isfinite(cmd.z) ? (int32_t)lroundf(cmd.z * 100.0f) : 0;
-    const uint8_t result = mavlinkExecCommand(cmd.command, cmd.param1, cmd.param2,
-        true, cmd.x, cmd.y, altCm);
-    mavlinkSendCommandAck(cmd.command, result, msg->sysid, msg->compid);
+    mavlinkCommand_t cmd = {
+        .command = in.command,
+        .param = { in.param1, in.param2, in.param3, in.param4, 0.0f, 0.0f, in.z },
+        .relativeAltFrame = mavlinkFrameIsRelativeAlt(in.frame),
+        .positionResult = MAV_RESULT_ACCEPTED,
+        .senderSysid = msg->sysid,
+    };
+    if (!mavlinkFrameIsGlobal(in.frame)) {
+        if (in.x != INT32_MAX || !floatIsNan(in.z)) {
+            cmd.positionResult = MAV_RESULT_DENIED;
+        }
+    } else {
+        if (in.x != INT32_MAX && in.y != INT32_MAX) {
+            setCommandLatLon(&cmd, in.x, in.y);
+        }
+        decodeCommandAlt(&cmd, in.frame, in.z);
+    }
+    const uint8_t result = mavlinkExecCommand(&cmd);
+    mavlinkSendCommandAck(in.command, result, msg->sysid, msg->compid);
 }
-#endif // ENABLE_TELEMETRY_MAVLINK_COMMANDS
 
 static void handleCommandLong(const mavlink_message_t *msg)
 {
-    mavlink_command_long_t cmd;
-    mavlink_msg_command_long_decode(msg, &cmd);
+    mavlink_command_long_t in;
+    mavlink_msg_command_long_decode(msg, &in);
 
-    // Accept broadcast or directed-to-us; ignore commands addressed to other systems.
-    if ((cmd.target_system != 0 && cmd.target_system != MAVLINK_SYSTEM_ID) ||
-        (cmd.target_component != 0 && cmd.target_component != MAVLINK_COMPONENT_ID)) {
+    if (!isCommandForUs(in.target_system, in.target_component)) {
         return;
     }
 
-    switch (cmd.command) {
-    case MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES: {
-        // Spec: param1 is MAV_BOOL — 1 = send AUTOPILOT_VERSION, 0 = ignore.
-        uint32_t request;
-        if (!cmdParamToUint32(cmd.param1, 1, &request)) {
-            mavlinkSendCommandAck(cmd.command, MAV_RESULT_DENIED, msg->sysid, msg->compid);
-            break;
+    mavlinkCommand_t cmd = {
+        .command = in.command,
+        .param = { in.param1, in.param2, in.param3, in.param4, in.param5, in.param6, in.param7 },
+        .positionResult = MAV_RESULT_ACCEPTED,
+        .senderSysid = msg->sysid,
+    };
+    // COMMAND_LONG carries a position in degrees and metres AMSL; COMMAND_INT keeps full precision
+    if (floatIsFinite(in.param5) && floatIsFinite(in.param6)) {
+        if (fabsf(in.param5) > 90.0f || fabsf(in.param6) > 180.0f) {
+            cmd.positionResult = MAV_RESULT_DENIED;
+        } else {
+            setCommandLatLon(&cmd, (int32_t)lround((double)in.param5 * 1e7), (int32_t)lround((double)in.param6 * 1e7));
         }
-        if (request == 1) {
-            mavlinkSendAutopilotVersion();
-        }
-        mavlinkSendCommandAck(cmd.command, MAV_RESULT_ACCEPTED, msg->sysid, msg->compid);
-        break;
     }
-    case MAV_CMD_REQUEST_MESSAGE:
-        handleRequestMessage(&cmd, msg->sysid, msg->compid);
-        break;
-    case MAV_CMD_SET_MESSAGE_INTERVAL:
-        handleSetMessageInterval(&cmd, msg->sysid, msg->compid);
-        break;
-    default: {
-#if ENABLE_TELEMETRY_MAVLINK_COMMANDS
-        // COMMAND_LONG carries lat/lon as float degrees in param5/param6 (lossy);
-        // COMMAND_INT is preferred for precise coordinates. Only convert when the
-        // command actually consumes coordinates, to avoid UB casting NaN floats.
-        bool coordsValid = false;
-        int32_t lat1e7 = 0, lon1e7 = 0, altCm = 0;
-        if (cmd.command == MAV_CMD_DO_SET_HOME &&
-            isfinite(cmd.param5) && isfinite(cmd.param6) && isfinite(cmd.param7)) {
-            coordsValid = true;
-            lat1e7 = (int32_t)lroundf(cmd.param5 * 1.0e7f);
-            lon1e7 = (int32_t)lroundf(cmd.param6 * 1.0e7f);
-            altCm = (int32_t)lroundf(cmd.param7 * 100.0f);
-        }
-        const uint8_t result = mavlinkExecCommand(cmd.command, cmd.param1, cmd.param2,
-            coordsValid, lat1e7, lon1e7, altCm);
-#else
-        const uint8_t result = MAV_RESULT_UNSUPPORTED;
-#endif
-        mavlinkSendCommandAck(cmd.command, result, msg->sysid, msg->compid);
-        break;
-    }
-    }
+    decodeCommandAlt(&cmd, MAV_FRAME_GLOBAL, in.param7);
+    const uint8_t result = mavlinkExecCommand(&cmd);
+    mavlinkSendCommandAck(in.command, result, msg->sysid, msg->compid);
 }
 
 static void mavlinkDispatch(const mavlink_message_t *msg)
@@ -772,6 +1203,11 @@ static void mavlinkDispatch(const mavlink_message_t *msg)
     case MAVLINK_MSG_ID_HEARTBEAT:
         handleHeartbeatRx(msg);
         break;
+#ifdef USE_SERIALRX_MAVLINK
+    case MAVLINK_MSG_ID_MANUAL_CONTROL:
+        mavlinkRxHandleManualControl(msg);
+        break;
+#endif
     case MAVLINK_MSG_ID_PING:
         handlePing(msg);
         break;
@@ -781,11 +1217,9 @@ static void mavlinkDispatch(const mavlink_message_t *msg)
     case MAVLINK_MSG_ID_COMMAND_LONG:
         handleCommandLong(msg);
         break;
-#if ENABLE_TELEMETRY_MAVLINK_COMMANDS
     case MAVLINK_MSG_ID_COMMAND_INT:
         handleCommandInt(msg);
         break;
-#endif
     default:
 #if ENABLE_TELEMETRY_MAVLINK_MISSION
         mavMissionHandleMessage(msg);
@@ -815,6 +1249,9 @@ static void mavlinkProcessIncoming(void)
     if (mavlinkRebootPending) {
         mavlinkRebootPending = false;
         waitForSerialPortToFinishTransmitting(mavlinkPort);
+#if ENABLE_TELEMETRY_MAVLINK_MISSION
+        mavMissionSaveIfDisarmed();
+#endif
         motorShutdown();
         if (mavlinkRebootToBootloader) {
             systemResetToBootloader(BOOTLOADER_REQUEST_ROM);
@@ -835,6 +1272,16 @@ static void mavlinkProcessQueueMessages(void)
 }
 #endif
 
+static void mavlinkLinkUp(void)
+{
+    // Reset STATUSTEXT de-dup so the first run after link-up emits any current disable reasons.
+    lastArmingDisableFlags = 0;
+    mavlinkTelemetryEnabled = true;
+#if ENABLE_TELEMETRY_MAVLINK_MISSION
+    mavMissionInit();
+#endif
+}
+
 void freeMAVLinkTelemetryPort(void)
 {
     closeSerialPort(mavlinkPort);
@@ -845,6 +1292,7 @@ void freeMAVLinkTelemetryPort(void)
 
 void initMAVLinkTelemetry(void)
 {
+    gcsSysid = 0;
     telemetryPort = telemetryProviderPort(TELEMETRY_PROTOCOL_MAVLINK);
     mavlinkPortSharing = determinePortSharing(telemetryPort, FUNCTION_TELEMETRY_MAVLINK);
 }
@@ -867,35 +1315,84 @@ void configureMAVLinkTelemetryPort(void)
         return;
     }
 
-    // Reset STATUSTEXT de-dup so the first run after link-up emits any current disable reasons.
-    lastArmingDisableFlags = 0;
     mavlinkPortOwned = true;
     mavlink_reset_channel_status(MAVLINK_COMM_1);
-    mavlinkTelemetryEnabled = true;
-#if ENABLE_TELEMETRY_MAVLINK_MISSION
-    mavMissionInit();
-#endif
+    mavlinkLinkUp();
 }
 
 static void mavlinkSendSystemStatus(void)
 {
     uint16_t msgLength;
 
-    uint32_t onboardControlAndSensors = 35843;
+    const armingDisableFlags_e disableFlags = getArmingDisableFlags();
+    const uint32_t customMode = mavlinkComputeCustomMode();
+    const bool navigating = FLIGHT_MODE(AUTOPILOT_MODE | GPS_RESCUE_MODE) || flightPlanNavIsRescuePlanActive();
+    const bool holdingAltitude = navigating || FLIGHT_MODE(ALT_HOLD_MODE | POS_HOLD_MODE);
+    const bool holdingPosition = navigating || FLIGHT_MODE(POS_HOLD_MODE);
 
-    /*
-    onboard_control_sensors_present Bitmask
-    fedcba9876543210
-    1000110000000011    For all   = 35843
-    0001000000000100    With Mag  = 4100
-    0010000000001000    With Baro = 8200
-    0100000000100000    With GPS  = 16416
-    0000001111111111
-    */
+    uint32_t present = MAV_SYS_STATUS_SENSOR_3D_GYRO | MAV_SYS_STATUS_SENSOR_ANGULAR_RATE_CONTROL |
+        MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS | MAV_SYS_STATUS_SENSOR_RC_RECEIVER | MAV_SYS_STATUS_PREARM_CHECK;
+    if (sensors(SENSOR_ACC)) {
+        present |= MAV_SYS_STATUS_SENSOR_3D_ACCEL | MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION;
+    }
+    if (sensors(SENSOR_MAG)) {
+        present |= MAV_SYS_STATUS_SENSOR_3D_MAG | MAV_SYS_STATUS_SENSOR_YAW_POSITION;
+    }
+    if (sensors(SENSOR_BARO)) {
+        present |= MAV_SYS_STATUS_SENSOR_ABSOLUTE_PRESSURE | MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL;
+    }
+#ifdef USE_GPS
+    if (featureIsEnabled(FEATURE_GPS)) {
+        present |= MAV_SYS_STATUS_SENSOR_GPS | MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL | MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL;
+    }
+#endif
+    if (isBatteryVoltageConfigured()) {
+        present |= MAV_SYS_STATUS_SENSOR_BATTERY;
+    }
 
-    if (sensors(SENSOR_MAG))  onboardControlAndSensors |=  4100;
-    if (sensors(SENSOR_BARO)) onboardControlAndSensors |=  8200;
-    if (sensors(SENSOR_GPS))  onboardControlAndSensors |= 16416;
+    const uint32_t modeDependent = MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION | MAV_SYS_STATUS_SENSOR_YAW_POSITION |
+        MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL | MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL | MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS;
+    uint32_t enabled = present & ~modeDependent;
+    if (customMode != BF_MAV_MODE_ACRO) {
+        enabled |= present & MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION;
+    }
+    if (navigating) {
+        enabled |= present & MAV_SYS_STATUS_SENSOR_YAW_POSITION;
+    }
+    if (holdingAltitude) {
+        enabled |= present & MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL;
+    }
+    if (holdingPosition) {
+        enabled |= present & MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL;
+    }
+    if (ARMING_FLAG(ARMED)) {
+        enabled |= MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS;
+    }
+
+    uint32_t unhealthy = 0;
+    if (disableFlags & ARMING_DISABLED_NO_GYRO) {
+        unhealthy |= MAV_SYS_STATUS_SENSOR_3D_GYRO;
+    }
+    if (disableFlags & ARMING_DISABLED_ACC_CALIBRATION) {
+        unhealthy |= MAV_SYS_STATUS_SENSOR_3D_ACCEL;
+    }
+#ifdef USE_GPS
+    if (!gpsIsHealthy()) {
+        unhealthy |= MAV_SYS_STATUS_SENSOR_GPS;
+    }
+#endif
+    if (!isRxReceivingSignal()) {
+        unhealthy |= MAV_SYS_STATUS_SENSOR_RC_RECEIVER;
+    }
+    if (getBatteryState() > BATTERY_WARNING) {
+        unhealthy |= MAV_SYS_STATUS_SENSOR_BATTERY;
+    }
+    if (disableFlags & ARMING_DISABLED_MOTOR_PROTOCOL) {
+        unhealthy |= MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS;
+    }
+    if (!ARMING_FLAG(ARMED) && disableFlags) {
+        unhealthy |= MAV_SYS_STATUS_PREARM_CHECK;
+    }
 
     uint16_t batteryVoltage = 0;
     int16_t batteryAmperage = -1;
@@ -913,13 +1410,13 @@ static void mavlinkSendSystemStatus(void)
         // 4: differential pressure, 5: GPS, 6: optical flow, 7: computer vision position, 8: laser based position,
         // 9: external ground-truth (Vicon or Leica). Controllers: 10: 3D angular rate control 11: attitude stabilization,
         // 12: yaw position, 13: z/altitude control, 14: x/y position control, 15: motor outputs / control
-        onboardControlAndSensors,
+        present,
         // onboard_control_sensors_enabled Bitmask showing which onboard controllers and sensors are enabled
-        onboardControlAndSensors,
+        enabled,
         // onboard_control_sensors_health Bitmask showing which onboard controllers and sensors are operational or have an error.
-        onboardControlAndSensors & 1023,
+        present & ~unhealthy,
         // load Maximum usage in percent of the mainloop time, (0%: 0, 100%: 1000) should be always below 1000
-        0,
+        getAverageSystemLoadPercent() * 10,
         // voltage_battery Battery voltage, in millivolts (1 = 1 millivolt)
         batteryVoltage,
         // current_battery Battery current, in 10*milliamperes (1 = 10 milliampere), -1: autopilot does not measure the current
@@ -992,23 +1489,12 @@ static void mavlinkSendRCChannelsAndRSSI(void)
 static void mavlinkSendGpsRaw(void)
 {
     uint16_t msgLength;
-    uint8_t gpsFixType = 0;
 
     if (!sensors(SENSOR_GPS)) {
         return;
     }
 
-    if (!STATE(GPS_FIX)) {
-        gpsFixType = 1;
-    }
-    else {
-        if (gpsSol.numSat < GPS_MIN_SAT_COUNT) {
-            gpsFixType = 2;
-        }
-        else {
-            gpsFixType = 3;
-        }
-    }
+    const uint8_t gpsFixType = STATE(GPS_FIX) ? GPS_FIX_TYPE_3D_FIX : GPS_FIX_TYPE_NO_FIX;
 
     mavlink_msg_gps_raw_int_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
@@ -1094,7 +1580,7 @@ static void mavlinkSendGpsGlobalOrigin(void)
 {
     uint16_t msgLength;
 
-    if (!sensors(SENSOR_GPS) || !STATE(GPS_FIX_HOME)) {
+    if (!STATE(GPS_FIX_HOME)) {
         return;
     }
 
@@ -1144,11 +1630,11 @@ static void mavlinkSendAttitude(void)
         // yaw Yaw angle (rad)
         DECIDEGREES_TO_RADIANS(attitude.values.yaw),
         // rollspeed Roll angular speed (rad/s)
-        0,
+        DEGREES_TO_RADIANS(gyro.gyroADCf[FD_ROLL]),
         // pitchspeed Pitch angular speed (rad/s)
-        0,
+        DEGREES_TO_RADIANS(-gyro.gyroADCf[FD_PITCH]),
         // yawspeed Yaw angular speed (rad/s)
-        0);
+        DEGREES_TO_RADIANS(-gyro.gyroADCf[FD_YAW]));
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 
@@ -1162,9 +1648,10 @@ static void mavlinkSendHeartbeat(void)
 {
     uint16_t msgLength;
 
-    uint8_t mavModes = MAV_MODE_MANUAL_DISARMED;
-    if (ARMING_FLAG(ARMED))
-        mavModes |= MAV_MODE_MANUAL_ARMED;
+    uint8_t mavModes = MAV_MODE_FLAG_MANUAL_INPUT_ENABLED | MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
+    if (ARMING_FLAG(ARMED)) {
+        mavModes |= MAV_MODE_FLAG_SAFETY_ARMED;
+    }
 
     uint8_t mavSystemType;
     switch (mixerConfig()->mixerMode)
@@ -1207,6 +1694,11 @@ static void mavlinkSendHeartbeat(void)
     if (mavCustomMode != BF_MAV_MODE_ACRO) {
         mavModes |= MAV_MODE_FLAG_STABILIZE_ENABLED;
     }
+    if (mavCustomMode == BF_MAV_MODE_AUTOPILOT || mavCustomMode == BF_MAV_MODE_RTL) {
+        mavModes |= MAV_MODE_FLAG_GUIDED_ENABLED | MAV_MODE_FLAG_AUTO_ENABLED;
+    } else if (mavCustomMode == BF_MAV_MODE_GUIDED || mavCustomMode == BF_MAV_MODE_TAKEOFF || mavCustomMode == BF_MAV_MODE_LAND) {
+        mavModes |= MAV_MODE_FLAG_GUIDED_ENABLED;
+    }
 
     uint8_t mavSystemState = 0;
     if (ARMING_FLAG(ARMED)) {
@@ -1241,22 +1733,67 @@ static void mavlinkSendHeartbeat(void)
     transmitCounter = (transmitCounter + 1) % 100;
 }
 
+static uint8_t mavlinkLandedState(void)
+{
+    if (!ARMING_FLAG(ARMED) || !wasThrottleRaised()) {
+        return MAV_LANDED_STATE_ON_GROUND;
+    }
+#if ENABLE_FLIGHT_PLAN
+    if (flightPlanNavIsTakingOff()) {
+        return MAV_LANDED_STATE_TAKEOFF;
+    }
+#endif
+    bool landing = failsafePhase() == FAILSAFE_LANDING || flightPlanNavIsRescueDescentActive();
+#if ENABLE_FLIGHT_PLAN
+    landing = landing || (flightPlanNavIsActive() && flightPlanNavGetState() == FP_NAV_LANDING);
+#endif
+    return landing ? MAV_LANDED_STATE_LANDING : MAV_LANDED_STATE_IN_AIR;
+}
+
+static void mavlinkSendExtendedSysState(void)
+{
+    mavlink_msg_extended_sys_state_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
+        MAV_VTOL_STATE_UNDEFINED, mavlinkLandedState());
+    const uint16_t msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
+static uint16_t mavlinkMotorThrottlePercent(void)
+{
+    const uint8_t motorCount = getMotorCount();
+    if (!ARMING_FLAG(ARMED) || motorCount == 0) {
+        return 0;
+    }
+
+    const bool reversible = featureIsEnabled(FEATURE_3D);
+    const float stopped = getMotorOutputDisarmed();
+    float sum = 0.0f;
+    for (int i = 0; i < motorCount; i++) {
+        if (motor[i] == stopped) {
+            continue;
+        }
+        const float external = motorConvertToExternal(motor[i]);
+        const float drive = reversible
+            ? fabsf(external - PWM_RANGE_MIDDLE) / (PWM_RANGE / 2)
+            : (external - PWM_RANGE_MIN) / PWM_RANGE;
+        sum += constrainf(drive, 0.0f, 1.0f);
+    }
+    return lrintf(sum * 100.0f / motorCount);
+}
+
 static void mavlinkSendHUD(void)
 {
     uint16_t msgLength;
     float mavAltitude = 0;
     float mavGroundSpeed = 0;
     float mavAirSpeed = 0;
-    float mavClimbRate = 0;
 
 #if defined(USE_GPS)
-    // use ground speed if source available
     if (sensors(SENSOR_GPS)) {
         mavGroundSpeed = gpsSol.groundSpeed / 100.0f;
+        mavAltitude = gpsSol.llh.altCm / 100.0f;
     }
 #endif
-
-    mavAltitude = getEstimatedAltitudeCm() / 100.0f;
 
     mavlink_msg_vfr_hud_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // airspeed Current airspeed in m/s
@@ -1266,11 +1803,11 @@ static void mavlinkSendHUD(void)
         // heading Current heading in degrees, in compass units (0..360, 0=north)
         headingOrScaledMilliAmpereHoursDrawn(),
         // throttle Current throttle setting in integer percent, 0 to 100
-        scaleRangef(constrainf(rcGetChannel(THROTTLE), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX), NORMALISED_RANGE_MIN, NORMALISED_RANGE_MAX, 0, 100),
-        // alt Current altitude (MSL), in meters, if we have sonar or baro use them, otherwise use GPS (less accurate)
+        mavlinkMotorThrottlePercent(),
+        // alt Current altitude (MSL), in meters
         mavAltitude,
         // climb Current climb rate in meters/second
-        mavClimbRate);
+        getAltitudeDerivative() / 100.0f);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
@@ -1362,6 +1899,13 @@ static mavlinkTelemetryOutputMessage_t mavTelemetryOutputMessages[] = {
         .sendMessageFunc = mavlinkSendSystemStatus,
     },
     {
+        .id = MAVLINK_MSG_ID_EXTENDED_SYS_STATE,
+        .stream = MAV_DATA_STREAM_EXTENDED_STATUS,
+        .updateInterval = UINT32_MAX,
+        .updateTime = 0,
+        .sendMessageFunc = mavlinkSendExtendedSysState,
+    },
+    {
         .id = MAVLINK_MSG_ID_RC_CHANNELS_RAW,
         .stream = MAV_DATA_STREAM_RC_CHANNELS,
         .updateInterval = UINT32_MAX,
@@ -1407,7 +1951,7 @@ static mavlinkTelemetryOutputMessage_t mavTelemetryOutputMessages[] = {
     },
     {
         .id = MAVLINK_MSG_ID_HEARTBEAT,
-        .stream = MAV_DATA_STREAM_EXTRA2,
+        .fixedInterval = 1000,
         .updateInterval = UINT32_MAX,
         .updateTime = 0,
         .sendMessageFunc = mavlinkSendHeartbeat,
@@ -1429,11 +1973,16 @@ static mavlinkTelemetryOutputMessage_t mavTelemetryOutputMessages[] = {
 };
 #define TELEMETRIES_OUTPUT_MESSAGES_COUNT ARRAYLEN(mavTelemetryOutputMessages)
 
-static uint32_t getConfigStreamUpdateInterval(uint8_t stream) {
+static uint32_t getDefaultUpdateInterval(const mavlinkTelemetryOutputMessage_t *msg)
+{
+    if (msg->fixedInterval) {
+        return msg->fixedInterval;
+    }
+
     uint32_t rate = 0;
     uint32_t updateInterval;
 
-    switch (stream) {
+    switch (msg->stream) {
     case MAV_DATA_STREAM_EXTENDED_STATUS:
         rate = telemetryConfig()->mavlink_extended_status_rate;
         break;
@@ -1472,12 +2021,23 @@ static void configureMAVLinkOutputMessagesIntervals(void)
     timeMs_t nowMs = millis();
 
     for (uint16_t i = 0; i < TELEMETRIES_OUTPUT_MESSAGES_COUNT; i++) {
-        mavTelemetryOutputMessages[i].updateInterval = getConfigStreamUpdateInterval(mavTelemetryOutputMessages[i].stream);
+        mavTelemetryOutputMessages[i].updateInterval = getDefaultUpdateInterval(&mavTelemetryOutputMessages[i]);
         // Phase offset (3*i) staggers transmissions across ~15ms to reduce TX buffer spikes
         if (mavTelemetryOutputMessages[i].updateInterval != UINT32_MAX) {
             mavTelemetryOutputMessages[i].updateTime =  nowMs + mavTelemetryOutputMessages[i].updateInterval + 3 * i;
         }
     }
+}
+
+static bool mavlinkSendStreamMessage(uint32_t messageId)
+{
+    for (uint16_t i = 0; i < TELEMETRIES_OUTPUT_MESSAGES_COUNT; i++) {
+        if (mavTelemetryOutputMessages[i].id == messageId) {
+            mavTelemetryOutputMessages[i].sendMessageFunc();
+            return true;
+        }
+    }
+    return false;
 }
 
 // A return value of -1 indicates this stream is disabled, 0 indicates it is not available, > 0 indicates the interval at which it is sent.
@@ -1504,14 +2064,21 @@ static int32_t getMessageUpdateInterval(uint32_t messageId)
 static bool setMessageUpdateInterval(uint32_t messageId, uint32_t intervalMs)
 {
     for (uint16_t i = 0; i < TELEMETRIES_OUTPUT_MESSAGES_COUNT; i++) {
-        if (mavTelemetryOutputMessages[i].id == messageId) {
-            if (intervalMs == 0) { // Set default value
-                intervalMs = getConfigStreamUpdateInterval(mavTelemetryOutputMessages[i].stream);
+        mavlinkTelemetryOutputMessage_t *msg = &mavTelemetryOutputMessages[i];
+        if (msg->id == messageId) {
+            if (msg->fixedInterval && intervalMs != 0) {
+                return false;
             }
-            if(intervalMs < MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS) {
+            if (intervalMs == 0) { // Set default value
+                intervalMs = getDefaultUpdateInterval(msg);
+            }
+            if (intervalMs < MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS) {
                 intervalMs = MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS;
             }
-            mavTelemetryOutputMessages[i].updateInterval = intervalMs;
+            msg->updateInterval = intervalMs;
+            if (intervalMs != UINT32_MAX) {
+                msg->updateTime = MIN(msg->updateTime, millis() + intervalMs);
+            }
             return true;
         }
     }
@@ -1528,6 +2095,11 @@ static void processMAVLinkTelemetry(void)
                 mavTelemetryOutputMessages[i].updateTime = currentTimeMs + mavTelemetryOutputMessages[i].updateInterval;
             }
         }
+    }
+
+    if (nextAvailableModeIndex && serialTxBytesFree(mavlinkPort) >= MAVLINK_NUM_NON_PAYLOAD_BYTES + MAVLINK_MSG_ID_AVAILABLE_MODES_LEN) {
+        mavlinkSendAvailableMode(nextAvailableModeIndex);
+        nextAvailableModeIndex = (nextAvailableModeIndex < BF_MAV_MODE_COUNT) ? nextAvailableModeIndex + 1 : 0;
     }
 }
 
@@ -1548,9 +2120,8 @@ void checkMAVLinkTelemetryState(void)
     if (mavlinkTelemetryOnRxPort()) {
         if (!mavlinkTelemetryEnabled && telemetrySharedPort != NULL) {
             mavlinkPort = telemetrySharedPort;
-            lastArmingDisableFlags = 0;
             mavlinkPortOwned = false;
-            mavlinkTelemetryEnabled = true;
+            mavlinkLinkUp();
             configureMAVLinkOutputMessagesIntervals();
         }
     } else {
@@ -1571,19 +2142,18 @@ void checkMAVLinkTelemetryState(void)
 
 void handleMAVLinkTelemetry(void)
 {
+#if ENABLE_TELEMETRY_MAVLINK_MISSION
+    mavMissionSaveIfDisarmed();
+#endif
+
     if (!mavlinkTelemetryEnabled || !mavlinkPort) {
         return;
     }
 
-#ifndef USE_SERIALRX_MAVLINK
-    mavlinkProcessIncoming();
-#else
-    if (telemetrySharedPort != NULL && rxRuntimeState.serialrxProvider == SERIALRX_MAVLINK) {
-        mavlinkProcessQueueMessages();
-    } else {
-        mavlinkProcessIncoming();
-    }
+#ifdef USE_SERIALRX_MAVLINK
+    mavlinkProcessQueueMessages();
 #endif
+    mavlinkProcessIncoming();
 #if ENABLE_TELEMETRY_MAVLINK_MISSION
     mavMissionUpdate(millis());
 #endif

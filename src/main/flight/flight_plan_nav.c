@@ -242,10 +242,21 @@
 #endif
 #endif
 
+typedef struct fpModifiers_s {
+    bool     altOverridePending;
+    int32_t  altOverrideCm;
+    uint8_t  altOverrideMode;       // 0=Neutral, 1=Climbing, 2=Descending; informational
+    bool     delayActive;
+    timeUs_t delayEndUs;
+    float    yawRateCapDps;
+} fpModifiers_t;
+
 static struct {
     flightPlanNavState_e state;
     uint8_t currentIndex;
-    uint8_t pendingStartIndex;  // MISSION_SET_CURRENT while idle; consumed by engage
+    uint8_t missionIndex;       // where the stored mission resumes after it is left
+    bool missionPaused;         // the stored mission was left before it completed
+    uint16_t speedOverrideCmS;  // 0: legs fly their own speed
     timeUs_t holdStartUs;
     timeUs_t holdLastUpdateUs;
     uint64_t holdElapsedUs;
@@ -257,13 +268,9 @@ static struct {
     // positional dispatch. altOverride is one-shot; delay arms a timer that
     // clamps cruise during the next leg; yawRateCapDps caps the autopilot yaw
     // controller from that point in the plan onward.
-    bool     altOverridePending;
-    int32_t  altOverrideCm;
-    uint8_t  altOverrideMode;       // 0=Neutral, 1=Climbing, 2=Descending; informational
-    bool     delayActive;
-    uint16_t delayDurationDs;
-    timeUs_t delayEndUs;
-    float    yawRateCapDps;
+    fpModifiers_t mod;
+    fpModifiers_t missionMod;       // what the stored mission's leg at missionIndex had staged
+    timeMs_t missionDelayEndMs;     // its delay end on the millisecond clock, which outlasts a long pause
 
     flightPlanAbortReason_e abortReason;
 
@@ -271,6 +278,10 @@ static struct {
     // mission as the executor's waypoint source.
     waypoint_t injected[FP_INJECTED_PLAN_MAX];
     uint8_t injectedCount;
+    bool guidedPending;         // injected[] holds a guided plan for the next engage
+    bool isGuidedPlan;          // the active injected plan is guided
+    bool guidedPausedMission;   // and it took over a mission that can resume
+    float guidedOrbitRadiusM;   // 0: the configured hold radius; positive orbits clockwise
 
 #if ENABLE_RESCUE_PLAN
     // Failsafe rescue plan staged before the executor engages; drained by
@@ -296,6 +307,7 @@ static struct {
     uint8_t patternType;        // waypointPattern_e
     vector3_t patternCentreM;   // hold point, ENU metres
     float patternPhaseRad;
+    bool patternClockwise;
     float patternSpeedMps;      // carrot path speed
     float patternCruiseMps;     // chase speed cap (the leg's cruise)
     timeUs_t patternLastUpdateUs;
@@ -403,6 +415,80 @@ static const waypoint_t *currentWaypoint(void)
 {
     return activePlanWaypoint(fp.currentIndex);
 }
+
+static bool missionRunning(void)
+{
+    return fp.active && fp.injectedCount == 0 && fp.state != FP_NAV_COMPLETE;
+}
+
+static void rememberMissionIndex(void)
+{
+    if (missionRunning()) {
+        fp.missionIndex = fp.currentIndex;
+        fp.missionPaused = true;
+        fp.missionMod = fp.mod;
+        fp.missionDelayEndMs = millis() + MAX(cmpTimeUs(fp.mod.delayEndUs, micros()), 0) / 1000;
+    }
+}
+
+static void setMissionIndex(uint8_t index)
+{
+    fp.missionIndex = index;
+    fp.missionMod = (fpModifiers_t){ 0 };
+}
+
+static void resetMission(void)
+{
+    setMissionIndex(0);
+    fp.missionPaused = false;
+}
+
+static bool rescuePlanFlying(void)
+{
+#if ENABLE_RESCUE_PLAN
+    return fp.isRescuePlan;
+#else
+    return false;
+#endif
+}
+
+static float legCruiseMpsFor(const waypoint_t *wp)
+{
+    const uint16_t speedCmS = (fp.speedOverrideCmS > 0 && !rescuePlanFlying()) ? fp.speedOverrideCmS : wp->speed;
+    const float cruiseMps = (speedCmS > 0) ? speedCmS * 0.01f : autopilotConfig()->maxVelocity * 0.01f;
+    return MAX(cruiseMps, FP_MIN_CRUISE_MPS);
+}
+
+// DELAY: clamp cruise so the rest of the leg (current position → target) takes the rest of the
+// delay. Skip when the remaining leg is effectively zero to avoid div-by-near-zero.
+static float legCruiseCapMps(const waypoint_t *wp, const vector3_t *targetEnuM)
+{
+    float cruiseMps = legCruiseMpsFor(wp);
+    if (fp.mod.delayActive) {
+        const float delaySec = MAX(cmpTimeUs(fp.mod.delayEndUs, micros()), 0) * 1e-6f;
+        const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+        const vector3_t legVec = {.v = {
+            [ENU_E] = targetEnuM->v[ENU_E] - est->position.v[ENU_E] * 0.01f,
+            [ENU_N] = targetEnuM->v[ENU_N] - est->position.v[ENU_N] * 0.01f,
+            [ENU_U] = targetEnuM->v[ENU_U] - est->position.v[ENU_U] * 0.01f,
+        }};
+        const float legLenM = vector3Norm(&legVec);
+        if (delaySec > 0.0f && legLenM > 0.1f) {
+            cruiseMps = MIN(cruiseMps, MAX(FP_DELAY_MIN_CRUISE_MPS, legLenM / delaySec));
+        }
+    }
+    return cruiseMps;
+}
+
+#ifndef USE_WING
+static float holdPatternRadiusM(void)
+{
+    if (fp.isGuidedPlan && fp.guidedOrbitRadiusM != 0.0f) {
+        return fabsf(fp.guidedOrbitRadiusM);
+    }
+    return autopilotConfig()->waypointHoldRadius * 0.01f;
+}
+#endif
 
 // The next positional (non-modifier) waypoint at or after `from`, or NULL if the
 // plan has none left. Modifier records (ALT_CHANGE/DELAY/YAW_RATE) carry no
@@ -514,18 +600,17 @@ static const waypoint_t *drainModifiers(void)
         }
         switch (wp->type) {
         case WAYPOINT_TYPE_ALT_CHANGE:
-            fp.altOverridePending = true;
-            fp.altOverrideCm = wp->altitude;
-            fp.altOverrideMode = wp->pattern;
+            fp.mod.altOverridePending = true;
+            fp.mod.altOverrideCm = wp->altitude;
+            fp.mod.altOverrideMode = wp->pattern;
             break;
         case WAYPOINT_TYPE_DELAY:
-            fp.delayActive = true;
-            fp.delayDurationDs = wp->duration;
-            fp.delayEndUs = micros() + (uint32_t)wp->duration * 100000u;
+            fp.mod.delayActive = true;
+            fp.mod.delayEndUs = micros() + (uint32_t)wp->duration * 100000u;
             break;
         case WAYPOINT_TYPE_YAW_RATE:
-            fp.yawRateCapDps = (float)wp->speed;
-            autopilotSetYawRateLimit(fp.yawRateCapDps);
+            fp.mod.yawRateCapDps = (float)wp->speed;
+            autopilotSetYawRateLimit(fp.mod.yawRateCapDps);
             break;
         default:
             return wp;
@@ -541,6 +626,9 @@ static const waypoint_t *drainModifiers(void)
 // otherwise keep the autopilot steering to it until the mode is switched off.
 static void completePlan(void)
 {
+    if (fp.injectedCount == 0) {
+        resetMission();
+    }
     fp.state = FP_NAV_COMPLETE;
 #ifdef USE_WING
     flightPlanWingFinish();
@@ -731,8 +819,8 @@ static bool dispatchWaypoint(void)
     // yet) or a delay-expiry re-dispatch (cruise restore) both keep the
     // overridden altitude in place.
     waypoint_t effective = *wp;
-    if (fp.altOverridePending) {
-        effective.altitude = fp.altOverrideCm;
+    if (fp.mod.altOverridePending) {
+        effective.altitude = fp.mod.altOverrideCm;
     }
 
     vector3_t targetEnuM;
@@ -782,30 +870,7 @@ static bool dispatchWaypoint(void)
 #endif
     fp.legArriveRadiusM = arrivalRadiusM;
 
-    float cruiseMps = (effective.speed > 0) ? effective.speed * 0.01f : cfg->maxVelocity * 0.01f;
-    if (cruiseMps < FP_MIN_CRUISE_MPS) {
-        cruiseMps = FP_MIN_CRUISE_MPS;
-    }
-
-    // DELAY: clamp cruise so traversal-time ≈ delay-seconds, scaled by the
-    // *remaining* leg (current position → target). targetEnuM is origin →
-    // target, so subtracting the current ENU estimate gives the leg vector
-    // the position controller is actually going to drive. Skip when the
-    // remaining leg is effectively zero to avoid div-by-near-zero.
-    if (fp.delayActive) {
-        const float delaySec = fp.delayDurationDs * 0.1f;
-        const positionEstimate3d_t *est = positionEstimatorGetEstimate();
-        const vector3_t legVec = {.v = {
-            [ENU_E] = targetEnuM.v[ENU_E] - est->position.v[ENU_E] * 0.01f,
-            [ENU_N] = targetEnuM.v[ENU_N] - est->position.v[ENU_N] * 0.01f,
-            [ENU_U] = targetEnuM.v[ENU_U] - est->position.v[ENU_U] * 0.01f,
-        }};
-        const float legLenM = vector3Norm(&legVec);
-        if (delaySec > 0.0f && legLenM > 0.1f) {
-            const float scaledMps = MAX(FP_DELAY_MIN_CRUISE_MPS, legLenM / delaySec);
-            cruiseMps = MIN(cruiseMps, scaledMps);
-        }
-    }
+    const float cruiseMps = legCruiseCapMps(&effective, &targetEnuM);
 
     const bool faceTarget = (effective.yawBehaviour == WAYPOINT_YAW_FACE_TARGET);
     const bool passGate = flownAsCarrotLeg(&effective, fp.currentIndex);
@@ -986,6 +1051,8 @@ static bool dispatchWaypoint(void)
 #if ENABLE_RESCUE_PLAN
 static void replaceWithRescuePlan(const waypoint_t *plan, uint8_t count)
 {
+    rememberMissionIndex();
+    fp.isGuidedPlan = false;
     captureAltitudeFrame();
     memcpy(fp.injected, plan, count * sizeof(plan[0]));
     fp.injectedCount = count;
@@ -1976,9 +2043,10 @@ static void issuePatternCommand(float radiusM)
 static void startHoldPattern(const waypoint_t *wp)
 {
     const positionNavCommand_t *cmd = positionNavGetActiveCommand();
-    const float radiusM = autopilotConfig()->waypointHoldRadius * 0.01f;
+    const float radiusM = holdPatternRadiusM();
 
     fp.patternType = wp->pattern;
+    fp.patternClockwise = fp.isGuidedPlan && fp.guidedOrbitRadiusM > 0.0f;
     fp.patternCentreM = cmd->targetPosEfM;
     fp.patternCruiseMps = cmd->cruiseSpeedMps;
     fp.patternSpeedMps = MIN(cmd->cruiseSpeedMps, radiusM * FP_PATTERN_MAX_RATE_RADS);
@@ -2006,10 +2074,13 @@ static void updateHoldPattern(timeUs_t currentTimeUs)
     }
     fp.patternLastUpdateUs = currentTimeUs;
 
-    const float radiusM = autopilotConfig()->waypointHoldRadius * 0.01f;
-    fp.patternPhaseRad += (fp.patternSpeedMps / radiusM) * MIN(sinceUs * 1e-6f, 1.0f);
+    const float radiusM = holdPatternRadiusM();
+    const float stepRad = (fp.patternSpeedMps / radiusM) * MIN(sinceUs * 1e-6f, 1.0f);
+    fp.patternPhaseRad += fp.patternClockwise ? -stepRad : stepRad;
     if (fp.patternPhaseRad > M_PIf) {
         fp.patternPhaseRad -= 2.0f * M_PIf;
+    } else if (fp.patternPhaseRad < -M_PIf) {
+        fp.patternPhaseRad += 2.0f * M_PIf;
     }
 
     if (positionNavHasActiveTarget()) {
@@ -2023,16 +2094,13 @@ static void updateHoldPattern(timeUs_t currentTimeUs)
 }
 #endif // !USE_WING
 
-// Orbit period at the configured pattern radius for a leg flown at speedCmS
-// (0 = autopilot max velocity — the same cruise derivation dispatch uses).
-// MAVLink converts LOITER_TURNS turn counts to and from hold durations here.
-uint16_t flightPlanNavOrbitPeriodDs(uint16_t speedCmS)
+static uint16_t orbitPeriodAtRadiusDs(uint16_t speedCmS, float radiusM)
 {
 #ifdef USE_WING
     UNUSED(speedCmS);
+    UNUSED(radiusM);
     return flightPlanWingOrbitPeriodDs();
 #else
-    const float radiusM = autopilotConfig()->waypointHoldRadius * 0.01f;
     float cruiseMps = (speedCmS > 0) ? speedCmS * 0.01f : autopilotConfig()->maxVelocity * 0.01f;
     if (cruiseMps < FP_MIN_CRUISE_MPS) {
         cruiseMps = FP_MIN_CRUISE_MPS;
@@ -2043,12 +2111,27 @@ uint16_t flightPlanNavOrbitPeriodDs(uint16_t speedCmS)
 #endif
 }
 
+// Orbit period at the configured pattern radius for a leg flown at speedCmS
+// (0 = autopilot max velocity — the same cruise derivation dispatch uses).
+// MAVLink converts LOITER_TURNS turn counts to and from hold durations here.
+uint16_t flightPlanNavOrbitPeriodDs(uint16_t speedCmS)
+{
+    return orbitPeriodAtRadiusDs(speedCmS, autopilotConfig()->waypointHoldRadius * 0.01f);
+}
+
+uint16_t flightPlanNavGuidedOrbitPeriodDs(uint16_t speedCmS, float radiusM)
+{
+    const uint16_t flownCmS = (fp.speedOverrideCmS > 0) ? fp.speedOverrideCmS : speedCmS;
+    const float flownRadiusM = (radiusM != 0.0f) ? fabsf(radiusM) : autopilotConfig()->waypointHoldRadius * 0.01f;
+    return orbitPeriodAtRadiusDs(flownCmS, flownRadiusM);
+}
+
 static void advanceToNext(void)
 {
     // The leg that's ending consumed any staged altitude override; clear it
     // before the next drainModifiers() pass so a new override (or none) is
     // staged cleanly for the upcoming leg.
-    fp.altOverridePending = false;
+    fp.mod.altOverridePending = false;
     fp.patternPending = false;
     fp.patternActive = false;
 
@@ -2096,8 +2179,8 @@ static void startWingLanding(void)
 static void wingWaypointReached(const waypoint_t *wp)
 {
     uint32_t holdDs = keepsStation(wp) ? fp.holdDurationDs : 0;
-    if (fp.delayActive) {
-        const timeDelta_t earlyUs = cmpTimeUs(fp.delayEndUs, micros());
+    if (fp.mod.delayActive) {
+        const timeDelta_t earlyUs = cmpTimeUs(fp.mod.delayEndUs, micros());
         holdDs += (earlyUs > 0) ? earlyUs / 100000 : 0;
     }
     if (holdDs == 0) {
@@ -2250,27 +2333,43 @@ static void clearLegYawState(void)
     fp.legYawIndex = UINT8_MAX;
 }
 
+static void applyModifiers(const fpModifiers_t *mods)
+{
+    fp.mod = *mods;
+    autopilotSetYawRateLimit(fp.mod.yawRateCapDps);
+}
+
 static void clearModifierState(void)
 {
-    fp.altOverridePending = false;
-    fp.altOverrideCm = 0;
-    fp.altOverrideMode = 0;
-    fp.delayActive = false;
-    fp.delayDurationDs = 0;
-    fp.delayEndUs = 0;
-    fp.yawRateCapDps = 0.0f;
-    autopilotSetYawRateLimit(0.0f);
+    applyModifiers(&(const fpModifiers_t){ 0 });
+}
+
+// A delay window runs on while the mission is paused; resuming flies only what is left of it.
+static void resumeMissionModifiers(void)
+{
+    fpModifiers_t mods = fp.missionMod;
+    const int32_t remainingMs = cmp32(fp.missionDelayEndMs, millis());
+    mods.delayActive = mods.delayActive && remainingMs > 0;
+    if (mods.delayActive) {
+        mods.delayEndUs = micros() + (timeUs_t)remainingMs * 1000;
+    }
+    applyModifiers(&mods);
 }
 
 void flightPlanNavInit(void)
 {
     fp.state = FP_NAV_IDLE;
     fp.currentIndex = 0;
-    fp.pendingStartIndex = 0;
+    resetMission();
+    fp.speedOverrideCmS = 0;
     fp.active = false;
     fp.zBiasM = 0.0f;
     fp.abortReason = FP_ABORT_NONE;
     fp.injectedCount = 0;
+    fp.guidedPending = false;
+    fp.isGuidedPlan = false;
+    fp.guidedPausedMission = false;
+    fp.guidedOrbitRadiusM = 0.0f;
     fp.patternPending = false;
     fp.patternActive = false;
     fp.hdgFaultTimeS = 0.0f;
@@ -2301,9 +2400,13 @@ void flightPlanNavEngage(void)
     fp.currentIndex = 0;
     fp.state = FP_NAV_IDLE;
     fp.abortReason = FP_ABORT_NONE;
-    // Engagement always starts the PG mission; an injected plan does not
-    // survive a switch cycle (no resume).
-    fp.injectedCount = 0;
+    const bool guided = fp.guidedPending;
+    fp.guidedPending = false;
+    fp.isGuidedPlan = false;
+    fp.guidedPausedMission = false;
+    if (!guided) {
+        fp.injectedCount = 0;
+    }
     fp.patternPending = false;
     fp.patternActive = false;
     fp.hdgFaultTimeS = 0.0f;
@@ -2342,15 +2445,21 @@ void flightPlanNavEngage(void)
     }
 #endif
 
+    if (guided) {
+        fp.isGuidedPlan = true;
+        fp.active = true;
+        dispatchWaypoint();
+        return;
+    }
+
     if (flightPlanConfig()->waypointCount == 0) {
         completePlan();
         fp.active = true;
         return;
     }
 
-    // A MISSION_SET_CURRENT received while idle chooses the starting leg.
-    fp.currentIndex = (fp.pendingStartIndex < flightPlanConfig()->waypointCount) ? fp.pendingStartIndex : 0;
-    fp.pendingStartIndex = 0;
+    fp.currentIndex = (fp.missionIndex < flightPlanConfig()->waypointCount) ? fp.missionIndex : 0;
+    resumeMissionModifiers();
     fp.active = true;
     // Try to dispatch immediately; if the GPS origin isn't ready yet we stay
     // IDLE and flightPlanNavUpdate() will retry.
@@ -2359,9 +2468,12 @@ void flightPlanNavEngage(void)
 
 void flightPlanNavDisengage(void)
 {
+    rememberMissionIndex();
     fp.active = false;
     fp.state = FP_NAV_IDLE;
     fp.injectedCount = 0;
+    fp.isGuidedPlan = false;
+    fp.guidedPausedMission = false;
     fp.patternPending = false;
     fp.patternActive = false;
     fp.hdgFaultTimeS = 0.0f;
@@ -2384,12 +2496,9 @@ void flightPlanNavDisengage(void)
     positionNavClearTarget();
 }
 
-bool flightPlanNavInjectPlan(const waypoint_t *waypoints, uint8_t count)
+static void loadInjectedPlan(const waypoint_t *waypoints, uint8_t count)
 {
-    if (!fp.active || waypoints == NULL || count == 0 || count > FP_INJECTED_PLAN_MAX) {
-        return false;
-    }
-
+    rememberMissionIndex();
     memcpy(fp.injected, waypoints, count * sizeof(*waypoints));
     fp.injectedCount = count;
     fp.currentIndex = 0;
@@ -2405,7 +2514,177 @@ bool flightPlanNavInjectPlan(const waypoint_t *waypoints, uint8_t count)
     // If dispatch fails (GPS origin lost) the state falls back to IDLE and
     // the update loop retries against the injected plan.
     dispatchWaypoint();
+}
+
+bool flightPlanNavInjectPlan(const waypoint_t *waypoints, uint8_t count)
+{
+    if (!fp.active || waypoints == NULL || count == 0 || count > FP_INJECTED_PLAN_MAX) {
+        return false;
+    }
+    fp.isGuidedPlan = false;
+    fp.guidedPausedMission = false;
+    loadInjectedPlan(waypoints, count);
     return true;
+}
+
+bool flightPlanNavSetGuidedPlan(const waypoint_t *waypoints, uint8_t count, float orbitRadiusM)
+{
+    if (waypoints == NULL || count == 0 || count > FP_INJECTED_PLAN_MAX) {
+        return false;
+    }
+#if ENABLE_RESCUE_PLAN
+    if (fp.active && fp.isRescuePlan) {
+        return false;
+    }
+#endif
+    fp.guidedOrbitRadiusM = floatIsFinite(orbitRadiusM) ? orbitRadiusM : 0.0f;
+    if (!fp.active) {
+        memcpy(fp.injected, waypoints, count * sizeof(*waypoints));
+        fp.injectedCount = count;
+        fp.guidedPending = true;
+        return true;
+    }
+    if (!fp.isGuidedPlan) {
+        fp.guidedPausedMission = missionRunning();
+    }
+    loadInjectedPlan(waypoints, count);
+    fp.isGuidedPlan = true;
+    return true;
+}
+
+void flightPlanNavCancelGuided(void)
+{
+    if (fp.guidedPending) {
+        fp.guidedPending = false;
+        fp.injectedCount = 0;
+    }
+}
+
+bool flightPlanNavIsGuided(void)
+{
+    return fp.active ? fp.isGuidedPlan : fp.guidedPending;
+}
+
+bool flightPlanNavIsGuidedLanding(void)
+{
+    const waypoint_t *wp = NULL;
+    if (fp.active && fp.isGuidedPlan) {
+        wp = currentWaypoint();
+    } else if (!fp.active && fp.guidedPending) {
+        wp = &fp.injected[0];
+    }
+    return wp && wp->type == WAYPOINT_TYPE_LAND;
+}
+
+static void restartMissionAt(uint8_t index)
+{
+    fp.injectedCount = 0;
+    fp.isGuidedPlan = false;
+    fp.guidedPausedMission = false;
+    fp.currentIndex = index;
+    fp.patternPending = false;
+    fp.patternActive = false;
+    fp.abortReason = FP_ABORT_NONE;
+    fp.carrotValid = false;
+    fp.dispatchAfresh = true;
+    fp.carrotSpeedMps = 0.0f;
+    fp.measFiltValid = false;
+    resetLegState();
+    resumeMissionModifiers();
+    fp.state = FP_NAV_TARGETING;
+    dispatchWaypoint();
+}
+
+bool flightPlanNavStartMission(uint8_t index)
+{
+    if (index >= flightPlanConfig()->waypointCount) {
+        return false;
+    }
+#if ENABLE_RESCUE_PLAN
+    if (fp.active && fp.isRescuePlan) {
+        return false;
+    }
+#endif
+    setMissionIndex(index);
+    flightPlanNavCancelGuided();
+    if (fp.active) {
+        restartMissionAt(index);
+    }
+    return true;
+}
+
+bool flightPlanNavResumeMission(void)
+{
+    if (!fp.active || !fp.isGuidedPlan || !fp.guidedPausedMission || fp.missionIndex >= flightPlanConfig()->waypointCount) {
+        return false;
+    }
+    restartMissionAt(fp.missionIndex);
+    return true;
+}
+
+void flightPlanNavLeaveGuided(void)
+{
+    flightPlanNavCancelGuided();
+    if (fp.active && fp.isGuidedPlan) {
+        restartMissionAt((fp.missionIndex < flightPlanConfig()->waypointCount) ? fp.missionIndex : 0);
+    }
+}
+
+uint8_t flightPlanNavGetMissionIndex(void)
+{
+    return missionRunning() ? fp.currentIndex : fp.missionIndex;
+}
+
+bool flightPlanNavIsMissionPaused(void)
+{
+    return fp.missionPaused && !missionRunning();
+}
+
+bool flightPlanNavIsFlyingMission(void)
+{
+    return missionRunning();
+}
+
+void flightPlanNavSetSpeedOverride(uint16_t speedCmS)
+{
+    const uint16_t minCmS = (uint16_t)(FP_MIN_CRUISE_MPS * 100.0f);
+    fp.speedOverrideCmS = (speedCmS > 0) ? constrain(speedCmS, minCmS, MAX(autopilotConfig()->maxVelocity, minCmS)) : 0;
+    if (!fp.active || fp.state != FP_NAV_TARGETING || rescuePlanFlying()) {
+        return;
+    }
+    // A carrot leg takes the new speed on its next update; a point leg holds the speed it was given
+    if (fp.legIsPassGate) {
+        fp.legCruiseMps = legCruiseCapMps(currentWaypoint(), &fp.legTargetEnuM);
+    } else {
+        dispatchWaypoint();
+    }
+}
+
+bool flightPlanNavIsTakingOff(void)
+{
+    if (!fp.active) {
+        return fp.guidedPending && fp.injected[0].type == WAYPOINT_TYPE_TAKEOFF;
+    }
+    const waypoint_t *wp = currentWaypoint();
+    return wp && wp->type == WAYPOINT_TYPE_TAKEOFF && (fp.state == FP_NAV_TARGETING || fp.state == FP_NAV_IDLE);
+}
+
+void flightPlanNavResetFlight(void)
+{
+    if (fp.active) {
+        flightPlanNavDisengage();
+    }
+    resetMission();
+    fp.speedOverrideCmS = 0;
+    flightPlanNavCancelGuided();
+}
+
+void flightPlanNavMissionChanged(void)
+{
+    resetMission();
+    if (fp.injectedCount == 0) {
+        fp.currentIndex = 0;
+    }
 }
 
 bool flightPlanNavIsInjectedPlanActive(void)
@@ -2511,8 +2790,8 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
 
     // DELAY-window expiry: clear the cap and re-issue the current leg at the
     // unmodified cruise so we don't crawl for the rest of the leg.
-    if (fp.delayActive && cmpTimeUs(currentTimeUs, fp.delayEndUs) >= 0) {
-        fp.delayActive = false;
+    if (fp.mod.delayActive && cmpTimeUs(currentTimeUs, fp.mod.delayEndUs) >= 0) {
+        fp.mod.delayActive = false;
         if (fp.state == FP_NAV_TARGETING) {
             dispatchWaypoint();
         }
@@ -2687,26 +2966,22 @@ uint16_t flightPlanNavGetEtaSeconds(void)
 
 bool flightPlanNavSetCurrentIndex(uint8_t index)
 {
+    if (index >= flightPlanConfig()->waypointCount) {
+        return false;
+    }
+    if (flightPlanNavIsGuided()) {
+        setMissionIndex(index);
+        return true;
+    }
     // SET_CURRENT addresses the uploaded PG mission; an injected runtime plan
     // (geofence RTH / failsafe rescue) owns its own sequencing.
-    if (fp.injectedCount > 0 || index >= flightPlanConfig()->waypointCount) {
+    if (fp.active && fp.injectedCount > 0) {
         return false;
     }
 
+    setMissionIndex(index);
     if (fp.active) {
-        fp.currentIndex = index;
-        fp.patternPending = false;
-        fp.patternActive = false;
-        fp.abortReason = FP_ABORT_NONE;
-        fp.carrotValid = false;
-        fp.dispatchAfresh = true;
-        fp.carrotSpeedMps = 0.0f;
-        fp.measFiltValid = false;
-        resetLegState();
-        fp.state = FP_NAV_TARGETING;
-        dispatchWaypoint();
-    } else {
-        fp.pendingStartIndex = index;
+        restartMissionAt(index);
     }
     return true;
 }

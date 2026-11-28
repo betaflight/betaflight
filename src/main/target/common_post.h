@@ -1063,6 +1063,12 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_REMOTE_ARM 0
 #endif
 
+// GCS-loss failsafe over MAVLink is opt-in at compile time.
+#if !defined(ENABLE_MAVLINK_GCS_FAILSAFE) || !defined(USE_TELEMETRY_MAVLINK)
+#undef ENABLE_MAVLINK_GCS_FAILSAFE
+#define ENABLE_MAVLINK_GCS_FAILSAFE 0
+#endif
+
 #if !defined(ENABLE_RX_UDP)
 #define ENABLE_RX_UDP 0
 #endif

@@ -36,6 +36,7 @@ extern "C" {
 
     uint16_t flightModeFlags = 0;
     uint8_t stateFlags = 0;
+    uint8_t armingFlags = 0;
     gpsLocation_t GPS_home_llh;
     gpsSolutionData_t gpsSol;
 
@@ -44,6 +45,9 @@ extern "C" {
     static bool s_navInjected = false;
     static flightPlanNavState_e s_navState = FP_NAV_IDLE;
     static uint8_t s_navIndex = 0;
+    static uint8_t s_navMissionIndex = 0;
+    static bool s_navMissionPaused = false;
+    static bool s_navFlyingMission = false;
     static int s_setCurrentArg = -1;
     static int s_saveCalls = 0;
     static uint32_t s_millis = 0;
@@ -53,11 +57,16 @@ extern "C" {
     bool flightPlanNavIsInjectedPlanActive(void) { return s_navInjected; }
     flightPlanNavState_e flightPlanNavGetState(void) { return s_navState; }
     uint8_t flightPlanNavGetCurrentIndex(void) { return s_navIndex; }
+    uint8_t flightPlanNavGetMissionIndex(void) { return s_navMissionIndex; }
+    bool flightPlanNavIsMissionPaused(void) { return s_navMissionPaused; }
+    bool flightPlanNavIsFlyingMission(void) { return s_navFlyingMission; }
     bool flightPlanNavSetCurrentIndex(uint8_t index) { s_setCurrentArg = index; return true; }
     void flightPlanNavSetReachedListener(flightPlanWaypointReachedFn fn) { s_reachedListener = fn; }
 
     // Fixed orbit period so LOITER_TURNS <-> ORBIT conversion is deterministic.
     uint16_t flightPlanNavOrbitPeriodDs(uint16_t) { return 250; }
+    static int s_missionChangedCalls = 0;
+    void flightPlanNavMissionChanged(void) { s_missionChangedCalls++; }
 #ifdef USE_WING
     float autopilotWingLoiterRadiusM(void) { return 60.0f; }
 #endif
@@ -84,6 +93,7 @@ protected:
     void SetUp() override {
         flightModeFlags = 0;
         stateFlags = 0;
+        armingFlags = 0;
         memset(&GPS_home_llh, 0, sizeof(GPS_home_llh));
         GPS_home_llh.altCm = 10000;
         ENABLE_STATE(GPS_FIX_HOME);
@@ -100,6 +110,9 @@ protected:
         s_navInjected = false;
         s_navState = FP_NAV_IDLE;
         s_navIndex = 0;
+        s_navMissionIndex = 0;
+        s_navMissionPaused = false;
+        s_navFlyingMission = false;
         s_setCurrentArg = -1;
         s_saveCalls = 0;
         s_millis = 0;
@@ -229,7 +242,7 @@ TEST_F(MavlinkMissionTest, RejectedUploadKeepsPreviousMission)
     EXPECT_EQ(plan->waypoints[1].longitude, 400);
 }
 
-TEST_F(MavlinkMissionTest, UploadCompletedInAutopilotModeKeepsPreviousMission)
+TEST_F(MavlinkMissionTest, UploadCompletedWhileTheMissionIsFlownKeepsPreviousMission)
 {
     sendCount(1);
     sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, 0.0f, 300, 400, 20.0f);
@@ -237,7 +250,7 @@ TEST_F(MavlinkMissionTest, UploadCompletedInAutopilotModeKeepsPreviousMission)
     ASSERT_EQ(s_saveCalls, 1);
 
     sendCount(1);
-    flightModeFlags = AUTOPILOT_MODE;   // pilot engages the mission during the upload
+    s_navFlyingMission = true;   // pilot engages the mission during the upload
     sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, 0.0f, 700, 800, 30.0f);
 
     const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
@@ -249,6 +262,17 @@ TEST_F(MavlinkMissionTest, UploadCompletedInAutopilotModeKeepsPreviousMission)
     ASSERT_EQ(flightPlanConfig()->waypointCount, 1);
     EXPECT_EQ(flightPlanConfig()->waypoints[0].latitude, 300);
     EXPECT_EQ(flightPlanConfig()->waypoints[0].longitude, 400);
+}
+
+TEST_F(MavlinkMissionTest, UploadAndClearRestartTheMission)
+{
+    const int before = s_missionChangedCalls;
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, 0.0f, 300, 400, 20.0f);
+    EXPECT_EQ(s_missionChangedCalls, before + 1);
+
+    sendCount(0);
+    EXPECT_EQ(s_missionChangedCalls, before + 2);
 }
 
 TEST_F(MavlinkMissionTest, UploadWaypointAcceptsNanYaw)
@@ -264,6 +288,36 @@ TEST_F(MavlinkMissionTest, UploadWaypointAcceptsNanYaw)
     EXPECT_EQ(result.type, MAV_MISSION_ACCEPTED);
     ASSERT_EQ(flightPlanConfig()->waypointCount, 1);
     EXPECT_EQ(flightPlanConfig()->waypoints[0].type, WAYPOINT_TYPE_FLYBY);
+}
+
+TEST_F(MavlinkMissionTest, UploadTakeoffAndLandAcceptNanYaw)
+{
+    sendCount(2);
+    sendItem(0, MAV_CMD_NAV_TAKEOFF, 2, 0.0f, 100, 200, 12.0f,
+        std::numeric_limits<float>::quiet_NaN());
+    sendItem(1, MAV_CMD_NAV_LAND, 2, 0.0f, 500, 600, 0.0f,
+        std::numeric_limits<float>::quiet_NaN());
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_ACCEPTED);
+    EXPECT_EQ(flightPlanConfig()->waypointCount, 2);
+}
+
+TEST_F(MavlinkMissionTest, UploadLoiterTimeRejectsNanParam4)
+{
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_LOITER_TIME, 1, 10.0f, 300, 400, 20.0f,
+        std::numeric_limits<float>::quiet_NaN());
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_INVALID);
+    EXPECT_EQ(flightPlanConfig()->waypointCount, 0);
 }
 
 TEST_F(MavlinkMissionTest, UploadWaypointRejectsInfiniteYaw)
@@ -291,6 +345,19 @@ TEST_F(MavlinkMissionTest, UploadWaypointStillRejectsOtherNanParameters)
     mavlink_mission_ack_t result;
     mavlink_msg_mission_ack_decode(ack, &result);
     EXPECT_EQ(result.type, MAV_MISSION_INVALID);
+    EXPECT_EQ(flightPlanConfig()->waypointCount, 0);
+}
+
+TEST_F(MavlinkMissionTest, UploadRejectsOutOfRangeAltitude)
+{
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, 0.0f, 300, 400, 3.0e9f);
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t result;
+    mavlink_msg_mission_ack_decode(ack, &result);
+    EXPECT_EQ(result.type, MAV_MISSION_INVALID_PARAM7);
     EXPECT_EQ(flightPlanConfig()->waypointCount, 0);
 }
 
@@ -353,9 +420,9 @@ TEST_F(MavlinkMissionTest, WaypointHoldTimeSurvivesRadiusParameters)
     EXPECT_EQ(plan->waypoints[0].duration, 100);
 }
 
-TEST_F(MavlinkMissionTest, UploadRejectedWhileAutopilotActive)
+TEST_F(MavlinkMissionTest, UploadRejectedWhileTheMissionIsFlown)
 {
-    flightModeFlags = AUTOPILOT_MODE;
+    s_navFlyingMission = true;
     sendCount(2);
 
     const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
@@ -364,6 +431,79 @@ TEST_F(MavlinkMissionTest, UploadRejectedWhileAutopilotActive)
     mavlink_msg_mission_ack_decode(ack, &a);
     EXPECT_EQ(a.type, MAV_MISSION_DENIED);
     EXPECT_EQ(countOfType(MAVLINK_MSG_ID_MISSION_REQUEST_INT), 0);
+}
+
+TEST_F(MavlinkMissionTest, UploadInGuidedFlightIsSavedAfterDisarm)
+{
+    armingFlags = ARMED;
+    flightModeFlags = AUTOPILOT_MODE;
+    s_navActive = true;
+    s_navInjected = true;
+    const int before = s_missionChangedCalls;
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, 0.0f, 300, 400, 20.0f);
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t a;
+    mavlink_msg_mission_ack_decode(ack, &a);
+    EXPECT_EQ(a.type, MAV_MISSION_ACCEPTED);
+    ASSERT_EQ(flightPlanConfig()->waypointCount, 1);
+    EXPECT_EQ(flightPlanConfig()->waypoints[0].latitude, 300);
+    EXPECT_EQ(s_missionChangedCalls, before + 1);
+    EXPECT_EQ(s_saveCalls, 0);
+
+    mavMissionSaveIfDisarmed();
+    EXPECT_EQ(s_saveCalls, 0);
+
+    armingFlags = 0;
+    mavMissionSaveIfDisarmed();
+    EXPECT_EQ(s_saveCalls, 1);
+    mavMissionSaveIfDisarmed();
+    EXPECT_EQ(s_saveCalls, 1);
+}
+
+TEST_F(MavlinkMissionTest, ClearInFlightIsSavedAfterDisarm)
+{
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, 0.0f, 300, 400, 20.0f);
+    ASSERT_EQ(s_saveCalls, 1);
+
+    armingFlags = ARMED;
+    mavlink_message_t msg;
+    mavlink_msg_mission_clear_all_pack(GCS_SYS, GCS_COMP, &msg, 1, 0, MAV_MISSION_TYPE_MISSION);
+    feed(msg);
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t a;
+    mavlink_msg_mission_ack_decode(ack, &a);
+    EXPECT_EQ(a.type, MAV_MISSION_ACCEPTED);
+    EXPECT_EQ(flightPlanConfig()->waypointCount, 0);
+    EXPECT_EQ(s_saveCalls, 1);
+
+    mavMissionInit();
+    armingFlags = 0;
+    mavMissionSaveIfDisarmed();
+    EXPECT_EQ(s_saveCalls, 2);
+}
+
+TEST_F(MavlinkMissionTest, ClearRejectedWhileTheMissionIsFlown)
+{
+    sendCount(1);
+    sendItem(0, MAV_CMD_NAV_WAYPOINT, 1, 0.0f, 300, 400, 20.0f);
+
+    s_navFlyingMission = true;
+    mavlink_message_t msg;
+    mavlink_msg_mission_clear_all_pack(GCS_SYS, GCS_COMP, &msg, 1, 0, MAV_MISSION_TYPE_MISSION);
+    feed(msg);
+
+    const mavlink_message_t *ack = lastOfType(MAVLINK_MSG_ID_MISSION_ACK);
+    ASSERT_NE(ack, nullptr);
+    mavlink_mission_ack_t a;
+    mavlink_msg_mission_ack_decode(ack, &a);
+    EXPECT_EQ(a.type, MAV_MISSION_DENIED);
+    EXPECT_EQ(flightPlanConfig()->waypointCount, 1);
 }
 
 static waypoint_t makeWaypoint(int32_t lat, int32_t lon, int32_t altCm, uint8_t type,
@@ -474,21 +614,49 @@ TEST_F(MavlinkMissionTest, MissionCurrentReflectsExecutorState)
     EXPECT_EQ(mc.mission_state, MISSION_STATE_ACTIVE);
 }
 
-TEST_F(MavlinkMissionTest, MissionCurrentSuppressedForInjectedPlan)
+TEST_F(MavlinkMissionTest, MissionCurrentShowsWhereAnInjectedPlanResumesTheMission)
 {
     flightPlanConfigMutable()->waypointCount = 3;
     s_navActive = true;
     s_navInjected = true;
-    s_navIndex = 2;
+    s_navIndex = 0;
+    s_navMissionIndex = 2;
+    s_navMissionPaused = true;
 
     mavMissionUpdate(1000);
     const mavlink_message_t *cur = lastOfType(MAVLINK_MSG_ID_MISSION_CURRENT);
     ASSERT_NE(cur, nullptr);
     mavlink_mission_current_t mc;
     mavlink_msg_mission_current_decode(cur, &mc);
-    // An injected runtime plan owns its own sequencing; the uploaded-mission
-    // cursor stays at 0 for the tracking GCS.
+    EXPECT_EQ(mc.seq, 2);
+    EXPECT_EQ(mc.mission_state, MISSION_STATE_PAUSED);
+    EXPECT_EQ(mc.mission_mode, 2);
+}
+
+TEST_F(MavlinkMissionTest, MissionCurrentWhileTheModeIsOff)
+{
+    flightPlanConfigMutable()->waypointCount = 3;
+
+    mavMissionUpdate(1000);
+    mavlink_mission_current_t mc;
+    mavlink_msg_mission_current_decode(lastOfType(MAVLINK_MSG_ID_MISSION_CURRENT), &mc);
     EXPECT_EQ(mc.seq, 0);
+    EXPECT_EQ(mc.mission_state, MISSION_STATE_NOT_STARTED);
+
+    s_navMissionIndex = 1;
+    sent.clear();
+    mavMissionUpdate(2000);
+    mavlink_msg_mission_current_decode(lastOfType(MAVLINK_MSG_ID_MISSION_CURRENT), &mc);
+    EXPECT_EQ(mc.seq, 1);
+    EXPECT_EQ(mc.mission_state, MISSION_STATE_NOT_STARTED);
+
+    s_navMissionIndex = 0;
+    s_navMissionPaused = true;
+    sent.clear();
+    mavMissionUpdate(3000);
+    mavlink_msg_mission_current_decode(lastOfType(MAVLINK_MSG_ID_MISSION_CURRENT), &mc);
+    EXPECT_EQ(mc.seq, 0);
+    EXPECT_EQ(mc.mission_state, MISSION_STATE_PAUSED);
 }
 
 TEST_F(MavlinkMissionTest, SetCurrentDispatchesAndEchoesCursor)

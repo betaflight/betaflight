@@ -29,6 +29,7 @@ PG_SRC = \
             pg/mco.c \
             pg/motor.c \
             pg/msp.c \
+            pg/mavlink_gcs.c \
             pg/osd_nav_map.c \
             pg/pg.c \
             pg/pilot.c \
@@ -301,6 +302,7 @@ COMMON_SRC = \
             telemetry/smartport.c \
             telemetry/ltm.c \
             telemetry/mavlink.c \
+            telemetry/mavlink_frame.c \
             telemetry/mavlink_helpers.c \
             telemetry/mavlink_mission.c \
             telemetry/msp_shared.c \

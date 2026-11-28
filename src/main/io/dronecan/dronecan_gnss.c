@@ -188,7 +188,7 @@ static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
         bit += (uint32_t)covLength * 16U;
         if (bit + 16U <= payloadBits) {
             const float pdop = dronecanDecodeFloat16(t, bit);
-            if (!isnan(pdop) && pdop > 0.0f) {
+            if (!floatIsNan(pdop) && pdop > 0.0f) {
                 pdop100 = (uint16_t)constrainf(pdop * 100.0f, 0, UINT16_MAX);
             }
         }
@@ -286,10 +286,10 @@ static void handleAuxiliary(CanardInstance *ins, CanardRxTransfer *t)
     latestSeq++;
     __asm volatile ("" ::: "memory");
 
-    if (!isnan(hdop) && hdop > 0.0f) {
+    if (!floatIsNan(hdop) && hdop > 0.0f) {
         latest.dop.hdop = (uint16_t)constrainf(hdop * 100.0f, 0, UINT16_MAX);
     }
-    if (!isnan(vdop) && vdop > 0.0f) {
+    if (!floatIsNan(vdop) && vdop > 0.0f) {
         latest.dop.vdop = (uint16_t)constrainf(vdop * 100.0f, 0, UINT16_MAX);
     }
     latest.numSatInView = satsVisible;

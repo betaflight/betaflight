@@ -345,6 +345,7 @@ static void performSanityChecks(void)
     }
 
     const bool hardFailsafe = !isRxReceivingSignal();
+    const bool inFailsafe = hardFailsafe || failsafeGcsLossActive();
 
     if (rescueState.failure == RESCUE_HEALTHY) {
         rescueState.isOK = true;
@@ -355,12 +356,12 @@ static void performSanityChecks(void)
             rescueEmergDescent();
             break;
         case RESCUE_SANITY_FS_ONLY:
-            if (hardFailsafe) {
+            if (inFailsafe) {
                 rescueEmergDescent();
             }
             break;
         default:
-            if ((!rescueState.isAvailable) && hardFailsafe) {
+            if ((!rescueState.isAvailable) && inFailsafe) {
                 rescueEmergDescent();
             }
             break;
@@ -732,7 +733,7 @@ float gpsRescueGetMaxAltitudeCm(void)
 
 bool gpsRescueIsConfigured(void)
 {
-    return failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE || isModeActivationConditionPresent(BOXGPSRESCUE);
+    return failsafeUsesGpsRescue() || isModeActivationConditionPresent(BOXGPSRESCUE);
 }
 
 bool gpsRescueIsAvailable(void)

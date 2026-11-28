@@ -69,7 +69,7 @@ float gpsRescueGetMaxAltitudeCm(void)
 bool gpsRescueIsConfigured(void)
 {
 #if ENABLE_RESCUE_PLAN
-    return failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE || isModeActivationConditionPresent(BOXGPSRESCUE);
+    return failsafeUsesGpsRescue() || isModeActivationConditionPresent(BOXGPSRESCUE);
 #else
     return false;
 #endif

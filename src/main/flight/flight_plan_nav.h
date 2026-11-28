@@ -48,9 +48,10 @@ typedef enum {
 
 void flightPlanNavInit(void);
 
-// Called when AUTOPILOT mode transitions to active; resets to the first waypoint
-// and dispatches it to positionNav. If the estimator has no GPS origin yet, the
-// executor stays IDLE and flightPlanNavUpdate() retries dispatch.
+// Called when AUTOPILOT mode transitions to active. Flies a staged rescue, else a
+// staged guided plan, else the stored mission from where it was left. If the
+// estimator has no GPS origin yet, the executor stays IDLE and
+// flightPlanNavUpdate() retries dispatch.
 void flightPlanNavEngage(void);
 
 // Called when AUTOPILOT mode transitions to inactive; clears any pending target.
@@ -84,22 +85,59 @@ int32_t flightPlanNavGetBearingToWaypointDeciDeg(void);
 uint16_t flightPlanNavGetEtaSeconds(void);
 
 // Set the active waypoint (MAVLink MISSION_SET_CURRENT). While the executor is
-// running the PG mission it re-dispatches to that leg; while idle it becomes
-// the index the next engage starts from. Returns false (and does nothing) for
-// out-of-range indices and while an injected plan is active.
+// running the PG mission it re-dispatches to that leg; otherwise it becomes
+// the index the mission resumes from. Returns false (and does nothing) for
+// out-of-range indices and while a rescue or geofence plan is active.
 bool flightPlanNavSetCurrentIndex(uint8_t index);
 
-// Orbit period (deciseconds) at the configured pattern radius for a leg flown
-// at speedCmS (0 = autopilot max velocity). Converts MAVLink LOITER_TURNS turn
+// Orbit period (deciseconds) for a leg flown at speedCmS (0 = autopilot max
+// velocity), at the configured pattern radius. A guided orbit uses the speed
+// override and radiusM (0 = configured radius) when set. Converts MAVLink turn
 // counts to and from hold durations.
 uint16_t flightPlanNavOrbitPeriodDs(uint16_t speedCmS);
+uint16_t flightPlanNavGuidedOrbitPeriodDs(uint16_t speedCmS, float radiusM);
 
 // Replace the active mission with a small synthesised runtime plan (at most 4
 // waypoints, copied). Only valid while the executor is active. The injected
-// plan does not survive a switch cycle: engage and disengage revert to the
-// stored mission, with no resume of what was preempted.
+// plan does not survive a switch cycle; the mission resumes where it was left.
 bool flightPlanNavInjectPlan(const waypoint_t *waypoints, uint8_t count);
 bool flightPlanNavIsInjectedPlanActive(void);
+
+// Guided plan (at most 4 waypoints, copied): flown at once while the executor
+// is active, else staged for the next engage. It lasts until replaced or the
+// executor disengages. A non-zero orbitRadiusM sets the HOLD orbit radius, as in
+// MAVLink: positive orbits clockwise, negative counter-clockwise. Refused while
+// a rescue is flying. LeaveGuided cancels a staged guided plan and hands an
+// active one back to the stored mission where it was left.
+bool flightPlanNavSetGuidedPlan(const waypoint_t *waypoints, uint8_t count, float orbitRadiusM);
+void flightPlanNavCancelGuided(void);
+void flightPlanNavLeaveGuided(void);
+bool flightPlanNavIsGuided(void);
+bool flightPlanNavIsGuidedLanding(void);
+#if ENABLE_FLIGHT_PLAN
+bool flightPlanNavIsTakingOff(void);
+#else
+static inline bool flightPlanNavIsTakingOff(void) { return false; }
+#endif
+
+// The stored mission resumes where it was left, across guided plans, rescues
+// and disengage. StartMission restarts it at index; ResumeMission continues a
+// mission that a guided plan took over. Both re-dispatch while active.
+bool flightPlanNavStartMission(uint8_t index);
+bool flightPlanNavResumeMission(void);
+uint8_t flightPlanNavGetMissionIndex(void);
+bool flightPlanNavIsMissionPaused(void);
+bool flightPlanNavIsFlyingMission(void);
+
+// Cruise speed for every non-rescue leg (0 = each leg's own speed), capped to
+// the autopilot max velocity. Applies to the leg being flown.
+void flightPlanNavSetSpeedOverride(uint16_t speedCmS);
+
+// Disarm: the next flight starts the mission at its first waypoint at its own speeds.
+void flightPlanNavResetFlight(void);
+
+// A new mission starts at its first waypoint.
+void flightPlanNavMissionChanged(void);
 
 #if ENABLE_RESCUE_PLAN
 // Synthesise a failsafe rescue mission (brake and climb, fly home, land; or

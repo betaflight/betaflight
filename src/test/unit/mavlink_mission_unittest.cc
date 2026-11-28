@@ -43,6 +43,7 @@ extern "C" {
     #include "telemetry/mavlink_mission.h"
 
     // --- runtime_config backing globals (STATE / FLIGHT_MODE) ---
+    uint8_t armingFlags;
     uint8_t stateFlags;
     uint16_t flightModeFlags;
     gpsLocation_t GPS_home_llh;
@@ -62,6 +63,9 @@ extern "C" {
     static int      navSetIndexArg;        // arg captured (-1 if not called)
     bool flightPlanNavIsActive(void) { return navActive; }
     uint8_t flightPlanNavGetCurrentIndex(void) { return navCurrentIndex; }
+    uint8_t flightPlanNavGetMissionIndex(void) { return 0; }
+    bool flightPlanNavIsMissionPaused(void) { return false; }
+    bool flightPlanNavIsFlyingMission(void) { return false; }
     flightPlanNavState_e flightPlanNavGetState(void) { return FP_NAV_TARGETING; }
     void flightPlanNavSetReachedListener(flightPlanWaypointReachedFn) {}
     bool flightPlanNavSetCurrentIndex(uint8_t index) {
@@ -70,6 +74,7 @@ extern "C" {
     }
     bool flightPlanNavIsInjectedPlanActive(void) { return false; }
     uint16_t flightPlanNavOrbitPeriodDs(uint16_t) { return 0; }
+    void flightPlanNavMissionChanged(void) {}
 
     // --- TX capture ---
     static std::vector<mavlink_message_t> *g_sent;
@@ -93,6 +98,7 @@ protected:
         sent.clear();
         saveCount = 0;
         fakeMillis = 1000;
+        armingFlags = 0;
         stateFlags = 0;
         flightModeFlags = 0;
         memset(&GPS_home_llh, 0, sizeof(GPS_home_llh));

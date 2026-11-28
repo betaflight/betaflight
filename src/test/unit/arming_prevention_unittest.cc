@@ -107,6 +107,7 @@ extern "C" {
     acc_t acc = {};
     gyro_t gyro = {};
     bool mockIsUpright = false;
+    bool mockItermReset = false;
     uint8_t activePidLoopDenom = 1;
 
     float getGpsDataIntervalSeconds(void) { return 0.1f; }
@@ -882,6 +883,241 @@ TEST(ArmingPreventionTest, GPSRescueSwitchPreventsArm)
     EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
 }
 
+static void setupArmSwitchOnAux1(void)
+{
+    simulationFeatureFlags = 0;
+    simulationTime = 30e6;
+    gyroCalibDone = true;
+    simulationHaveRx = true;
+    mockIsUpright = true;
+
+    for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+        memset(modeActivationConditionsMutable(i), 0, sizeof(modeActivationCondition_t));
+    }
+    modeActivationConditionsMutable(0)->auxChannelIndex = 0;
+    modeActivationConditionsMutable(0)->modeId = BOXARM;
+    modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    rcControlsInit();
+    rxConfigMutable()->mincheck = 1050;
+
+    rcData[THROTTLE] = rcUsToNorm(1000);
+    rcData[AUX1] = rcUsToNorm(1000);
+    disarm(DISARM_REASON_SYSTEM);
+    updateActivatedModes();
+    updateArmingStatus();
+    processRcStickPositions();
+}
+
+static void setArmSwitch(bool on)
+{
+    rcData[AUX1] = rcUsToNorm(on ? 1800 : 1000);
+    updateActivatedModes();
+}
+
+static void runStickPositions(int passes)
+{
+    for (int i = 0; i < passes; i++) {
+        updateArmingStatus();
+        processRcStickPositions();
+    }
+}
+
+TEST(ArmingPreventionTest, SwitchArmAndDisarmUnchanged)
+{
+    setupArmSwitchOnAux1();
+
+    setArmSwitch(true);
+    runStickPositions(1);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    setArmSwitch(false);
+    runStickPositions(3);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+    runStickPositions(1);
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+}
+
+TEST(ArmingPreventionTest, RemoteArmSurvivesArmSwitchThatStaysOff)
+{
+    setupArmSwitchOnAux1();
+    EXPECT_FALSE(isArmingDisabled());
+
+    tryArm();
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    runStickPositions(10);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+}
+
+TEST(ArmingPreventionTest, ArmSwitchOnThenOffDisarmsRemoteArm)
+{
+    setupArmSwitchOnAux1();
+    tryArm();
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    setArmSwitch(true);
+    runStickPositions(1);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    setArmSwitch(false);
+    runStickPositions(4);
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+}
+
+TEST(ArmingPreventionTest, RemoteArmRightAfterSwitchDisarmSurvives)
+{
+    setupArmSwitchOnAux1();
+
+    setArmSwitch(true);
+    runStickPositions(1);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    setArmSwitch(false);
+    runStickPositions(4);
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+
+    updateArmingStatus();
+    tryArm();
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    runStickPositions(10);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+}
+
+TEST(ArmingPreventionTest, ArmSwitchOffWhileDisarmedClearsLatch)
+{
+    setupArmSwitchOnAux1();
+
+    mockIsUpright = false;
+    setArmSwitch(true);
+    runStickPositions(1);
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+
+    setArmSwitch(false);
+    runStickPositions(1);
+    mockIsUpright = true;
+    updateArmingStatus();
+    tryArm();
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    runStickPositions(10);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+}
+
+TEST(ArmingPreventionTest, In3DModeRemoteArmSurvivesArmSwitchThatStaysOff)
+{
+    pidProfile_t pidProfile = {};
+    currentPidProfile = &pidProfile;
+    setupArmSwitchOnAux1();
+    tryArm();
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    simulationFeatureFlags = FEATURE_3D;
+    processRx(simulationTime);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    setArmSwitch(true);
+    runStickPositions(1);
+    processRx(simulationTime);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    setArmSwitch(false);
+    processRx(simulationTime);
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    simulationFeatureFlags = 0;
+    currentPidProfile = nullptr;
+}
+
+static void setupStickArmingWithMotorStop(void)
+{
+    simulationFeatureFlags = FEATURE_MOTOR_STOP;
+    simulationTime = 30e6;
+    gyroCalibDone = true;
+    simulationHaveRx = true;
+    mockIsUpright = true;
+
+    for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+        memset(modeActivationConditionsMutable(i), 0, sizeof(modeActivationCondition_t));
+    }
+    systemConfigMutable()->enableStickArming = true;
+    armingConfigMutable()->auto_disarm_delay = 5;
+    rcControlsInit();
+    rxConfigMutable()->mincheck = 1050;
+
+    rcData[THROTTLE] = rcUsToNorm(1000);
+    disarm(DISARM_REASON_SYSTEM);
+    flightModeFlags = 0;
+    updateActivatedModes();
+    updateArmingStatus();
+}
+
+TEST(ArmingPreventionTest, SetThrottleRaisedLatchesOnlyWhileArmed)
+{
+    pidProfile_t pidProfile = {};
+    currentPidProfile = &pidProfile;
+    setupStickArmingWithMotorStop();
+
+    setThrottleRaised();
+    EXPECT_FALSE(wasThrottleRaised());
+
+    tryArm();
+    ASSERT_TRUE(ARMING_FLAG(ARMED));
+    setThrottleRaised();
+    processRx(simulationTime);
+    EXPECT_TRUE(wasThrottleRaised());
+
+    disarm(DISARM_REASON_SERIAL_COMMAND);
+    processRx(simulationTime);
+    EXPECT_FALSE(wasThrottleRaised());
+    simulationFeatureFlags = 0;
+    currentPidProfile = nullptr;
+}
+
+TEST(ArmingPreventionTest, ThrottleTimeoutDoesNotDisarmWhileAltitudeHoldFlies)
+{
+    setupStickArmingWithMotorStop();
+    ASSERT_TRUE(isUsingSticksForArming());
+    ASSERT_FALSE(isAirmodeEnabled());
+    tryArm();
+    ASSERT_TRUE(ARMING_FLAG(ARMED));
+
+    simulationTime += 10e6;
+    ENABLE_FLIGHT_MODE(ALT_HOLD_MODE);
+    processRxModes(simulationTime);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    DISABLE_FLIGHT_MODE(ALT_HOLD_MODE);
+    simulationTime += 4e6;
+    processRxModes(simulationTime);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+    simulationTime += 2e6;
+    processRxModes(simulationTime);
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    simulationFeatureFlags = 0;
+}
+
+TEST(ArmingPreventionTest, AltitudeHoldKeepsTheItermWithTheThrottleLow)
+{
+    pidProfile_t pidProfile = {};
+    currentPidProfile = &pidProfile;
+    setupStickArmingWithMotorStop();
+    tryArm();
+    ASSERT_TRUE(ARMING_FLAG(ARMED));
+
+    processRx(simulationTime);
+    EXPECT_TRUE(mockItermReset);
+
+    ENABLE_FLIGHT_MODE(ALT_HOLD_MODE);
+    processRx(simulationTime);
+    EXPECT_FALSE(mockItermReset);
+
+    DISABLE_FLIGHT_MODE(ALT_HOLD_MODE);
+    disarm(DISARM_REASON_SYSTEM);
+    simulationFeatureFlags = 0;
+    currentPidProfile = nullptr;
+}
+
 TEST(ArmingPreventionTest, ParalyzeOnAtBoot)
 {
     // given
@@ -1099,6 +1335,9 @@ extern "C" {
     void failsafeStartMonitoring(void) {}
     void failsafeUpdateState(void) {}
     bool failsafeIsActive(void) { return false; }
+    failsafePhase_e failsafePhase(void) { return FAILSAFE_IDLE; }
+    bool failsafeGcsLossActive(void) { return false; }
+    bool failsafeUsesGpsRescue(void) { return failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE; }
     bool failsafeIsReceivingRxData(void) { return true; }
     bool rxAreFlightChannelsValid(void) { return false; }
     void pidResetIterm(void) {}
@@ -1137,7 +1376,7 @@ extern "C" {
     uint8_t gnssGetMinSats(void) { return 4; }
     bool gpsIsHealthy(void) { return false; }
     float getCosTiltAngle(void) { return 0.0f; }
-    void pidSetItermReset(bool) {}
+    void pidSetItermReset(bool reset) { mockItermReset = reset; }
     void applyAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
     bool isFixedWing(void) { return false; }
     void compassStartCalibration(void) {}

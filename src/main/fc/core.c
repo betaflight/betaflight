@@ -344,7 +344,7 @@ static bool accNeedsCalibration(void)
 
 #ifdef USE_GPS_RESCUE
         // Check if failsafe will use GPS Rescue
-        if (failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE) {
+        if (failsafeUsesGpsRescue()) {
             return true;
         }
 #endif
@@ -583,6 +583,7 @@ void disarm(flightLogDisarmReason_e reason)
         // Non-user disarm, clear the user-initated flag in rc_controls.c
         clearWasLastDisarmUserRequested();
     }
+    resetArmSwitchLatch();
 
     if (ARMING_FLAG(ARMED)) {
         if (!crashFlipModeActive) {
@@ -591,6 +592,9 @@ void disarm(flightLogDisarmReason_e reason)
         DISABLE_ARMING_FLAG(ARMED); // disarm now
         lastDisarmTimeUs = micros();
         launchWingDisarm();
+#if ENABLE_FLIGHT_PLAN
+        flightPlanNavResetFlight();
+#endif
 
 #ifdef USE_OSD
         if (IS_RC_MODE_ACTIVE(BOXCRASHFLIP) || isLaunchControlActive()) {
@@ -813,7 +817,7 @@ static bool canUpdateVTX(void)
 }
 #endif
 
-#if defined(USE_RUNAWAY_TAKEOFF) || defined(USE_GPS_RESCUE)
+#if defined(USE_RUNAWAY_TAKEOFF) || defined(USE_GPS_RESCUE) || ENABLE_MAVLINK_GCS_FAILSAFE
 // determine if the R/P/Y stick deflection exceeds the specified limit - integer math is good enough here.
 bool areSticksActive(uint8_t stickPercentLimit)
 {
@@ -876,6 +880,13 @@ bool wasThrottleRaised(void)
     return throttleRaised;
 }
 
+void setThrottleRaised(void)
+{
+    if (ARMING_FLAG(ARMED)) {
+        throttleRaised = true;
+    }
+}
+
 /*
  * processRx called from taskUpdateRxMain
  */
@@ -889,8 +900,9 @@ bool processRx(timeUs_t currentTimeUs)
 
     // in 3D mode, we need to be able to disarm by switch at any time
     if (featureIsEnabled(FEATURE_3D)) {
-        if (!IS_RC_MODE_ACTIVE(BOXARM))
+        if (!IS_RC_MODE_ACTIVE(BOXARM) && (isUsingSticksForArming() || hasArmSwitchBeenOn())) {
             disarm(DISARM_REASON_SWITCH);
+        }
     }
 
     updateRSSI(currentTimeUs);
@@ -918,7 +930,7 @@ bool processRx(timeUs_t currentTimeUs)
 
     // Note: If Airmode is enabled, on arming, iTerm and PIDs will be off until throttle exceeds the threshold (OFF while disarmed)
     // If not, iTerm will be off at low throttle, with pidStabilisationState determining whether PIDs will be active
-    if (ARMING_FLAG(ARMED) && (isAirmodeActive || throttleActive || launchControlActive || isFixedWing())) {
+    if (ARMING_FLAG(ARMED) && (isAirmodeActive || throttleActive || launchControlActive || isFixedWing() || FLIGHT_MODE(ALT_HOLD_MODE))) {
         // the wing launch holds iTerm off until spin-up, but must keep the rest
         // of the stabilisation running through the motor delay
         pidSetItermReset(launchWingHoldsIterm());
@@ -1039,7 +1051,7 @@ void processRxModes(timeUs_t currentTimeUs)
         && !isFixedWing()
         && !featureIsEnabled(FEATURE_3D)
         && !isAirmodeEnabled()
-        && !FLIGHT_MODE(GPS_RESCUE_MODE)  // disable auto-disarm when GPS Rescue is active
+        && !FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE)  // disable auto-disarm when GPS Rescue or the altitude controller flies the throttle
         && !flightPlanNavIsRescuePlanActive()  // ... or a plan rescue / fallback descent is flying
         && !flightPlanNavIsRescueDescentActive()
     ) {
@@ -1130,7 +1142,7 @@ void processRxModes(timeUs_t currentTimeUs)
     // autopilot rescue mission instead - staged below and in failsafe.c.)
     if (ARMING_FLAG(ARMED) && gpsRescueIsConfigured()
         && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE)
-        || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE))) {
+        || failsafePhase() == FAILSAFE_GPS_RESCUE)) {
         if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
             ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
         }

@@ -28,6 +28,7 @@
 
 #if ENABLE_TELEMETRY_MAVLINK_MISSION
 
+#include "common/maths.h"
 #include "common/time.h"
 
 #include "drivers/time.h"
@@ -51,9 +52,9 @@
 #include "telemetry/mavlink_lib.h"
 
 #include "telemetry/mavlink.h"
+#include "telemetry/mavlink_frame.h"
 #include "telemetry/mavlink_mission.h"
 
-#define MAVLINK_SYSTEM_ID 1
 #define MAVLINK_COMPONENT_ID MAV_COMP_ID_AUTOPILOT1
 
 #define MISSION_UPLOAD_RETRY_MS   1500
@@ -79,6 +80,8 @@ static struct {
     timeMs_t lastCurrentTxMs;
     int16_t  pendingReachedIndex;
 } m;
+
+static bool missionSavePending;
 
 // Geofence storage. Accepted and round-tripped to the GCS for display, but NOT
 // yet enforced or persisted across reboot — enforcement + a backing PG land in a
@@ -147,6 +150,18 @@ static void abortUpload(uint8_t result)
 {
     sendAck(m.partnerSys, m.partnerComp, m.missionType, result);
     m.state = MISSION_IDLE;
+}
+
+// The stored mission flies unless the executor is off or an injected plan (guided, rescue,
+// geofence return) has taken over; then the cursor is where the mission resumes.
+static bool missionFlying(void)
+{
+    return flightPlanNavIsActive() && !flightPlanNavIsInjectedPlanActive();
+}
+
+static uint8_t missionCursor(void)
+{
+    return missionFlying() ? flightPlanNavGetCurrentIndex() : flightPlanNavGetMissionIndex();
 }
 
 static void sendMissionItem(uint8_t partnerSys, uint8_t partnerComp, uint16_t seq)
@@ -219,10 +234,7 @@ static void sendMissionItem(uint8_t partnerSys, uint8_t partnerComp, uint16_t se
         break;
     }
 
-    // While an injected runtime plan flies, the executor index does not refer
-    // to the stored mission this download describes.
-    const uint8_t current = (flightPlanNavIsActive() && !flightPlanNavIsInjectedPlanActive()
-        && seq == flightPlanNavGetCurrentIndex()) ? 1 : 0;
+    const uint8_t current = (seq == missionCursor()) ? 1 : 0;
 
     mavlink_msg_mission_item_int_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &txMsg,
         partnerSys, partnerComp, seq, MAV_FRAME_GLOBAL_INT, command, current, 1,
@@ -249,28 +261,36 @@ static bool isSupportedFenceCommand(uint16_t command)
 
 static bool decodeFrameAltCm(uint8_t frame, float z, int32_t *altCmOut, uint8_t *resultOut)
 {
-    if (!isfinite(z)) {
+    switch (mavlinkFrameAltToAmslCm(frame, z, altCmOut)) {
+    case MAVLINK_FRAME_ALT_OK:
+        return true;
+    case MAVLINK_FRAME_ALT_INVALID:
         *resultOut = MAV_MISSION_INVALID_PARAM7;
         return false;
-    }
-    // The _INT frame variants were superseded in MAVLink 2024-03 by their
-    // non-_INT counterparts as synonymous aliases; accept either form so a
-    // modern GCS using the post-2024-03 names still round-trips.
-    switch (frame) {
-    case MAV_FRAME_GLOBAL:
-    case MAV_FRAME_GLOBAL_INT:
-        *altCmOut = (int32_t)(z * 100.0f);
-        return true;
-    case MAV_FRAME_GLOBAL_RELATIVE_ALT:
-    case MAV_FRAME_GLOBAL_RELATIVE_ALT_INT:
-        if (!STATE(GPS_FIX_HOME)) {
-            *resultOut = MAV_MISSION_INVALID;
-            return false;
-        }
-        *altCmOut = (int32_t)(z * 100.0f) + GPS_home_llh.altCm;
-        return true;
+    case MAVLINK_FRAME_ALT_NO_HOME:
+        *resultOut = MAV_MISSION_INVALID;
+        return false;
+    case MAVLINK_FRAME_ALT_UNSUPPORTED:
     default:
         *resultOut = MAV_MISSION_UNSUPPORTED_FRAME;
+        return false;
+    }
+}
+
+// MAVLink lets these commands send a NaN yaw (param4) to keep the current heading mode.
+static bool yawMayBeNan(uint16_t command)
+{
+    switch (command) {
+    case MAV_CMD_NAV_WAYPOINT:
+    case MAV_CMD_NAV_LOITER_UNLIM:
+    case MAV_CMD_NAV_LAND:
+    case MAV_CMD_NAV_VTOL_LAND:
+    case MAV_CMD_NAV_LAND_LOCAL:
+    case MAV_CMD_NAV_TAKEOFF:
+    case MAV_CMD_NAV_VTOL_TAKEOFF:
+    case MAV_CMD_NAV_TAKEOFF_LOCAL:
+        return true;
+    default:
         return false;
     }
 }
@@ -307,11 +327,9 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
             return false;
         }
     }
-    // NAV_WAYPOINT explicitly permits NaN yaw to select the current system
-    // heading.  Other non-finite values, including infinite yaw, are invalid.
-    const bool waypointUsesCurrentYaw = it->command == MAV_CMD_NAV_WAYPOINT && isnan(it->param4);
-    if (!isfinite(it->param1) || !isfinite(it->param2) || !isfinite(it->param3)
-        || (!isfinite(it->param4) && !waypointUsesCurrentYaw)) {
+    const bool usesCurrentYaw = yawMayBeNan(it->command) && floatIsNan(it->param4);
+    if (!floatIsFinite(it->param1) || !floatIsFinite(it->param2) || !floatIsFinite(it->param3)
+        || (!floatIsFinite(it->param4) && !usesCurrentYaw)) {
         *resultOut = MAV_MISSION_INVALID;
         return false;
     }
@@ -448,6 +466,17 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
     return true;
 }
 
+// Writing flash stalls the loop, so a mission changed in flight is saved after disarm.
+static void missionStoreChanged(void)
+{
+    flightPlanNavMissionChanged();
+    if (ARMING_FLAG(ARMED)) {
+        missionSavePending = true;
+    } else {
+        saveConfigAndNotify();
+    }
+}
+
 static void handleRequestList(const mavlink_message_t *msg, uint8_t missionType)
 {
     const uint16_t count = (missionType == MAV_MISSION_TYPE_FENCE)
@@ -550,7 +579,7 @@ static void handleCount(const mavlink_message_t *msg)
         sendAck(msg->sysid, msg->compid, mc.mission_type, MAV_MISSION_UNSUPPORTED);
         return;
     }
-    if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+    if (flightPlanNavIsFlyingMission()) {
         sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_MISSION, MAV_MISSION_DENIED);
         return;
     }
@@ -560,7 +589,7 @@ static void handleCount(const mavlink_message_t *msg)
     }
     if (mc.count == 0) {
         flightPlanConfigMutable()->waypointCount = 0;
-        saveConfigAndNotify();
+        missionStoreChanged();
         sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_MISSION, MAV_MISSION_ACCEPTED);
         m.state = MISSION_IDLE;
         return;
@@ -641,9 +670,9 @@ static void handleItemInt(const mavlink_message_t *msg)
         return;
     }
 
-    // Upload complete. Do not replace the mission while the autopilot flies
-    // it: the executor reads the waypoint table directly.
-    if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+    // Upload complete. Do not replace the mission while the executor flies
+    // it: it reads the waypoint table directly.
+    if (flightPlanNavIsFlyingMission()) {
         abortUpload(MAV_MISSION_DENIED);
         return;
     }
@@ -652,7 +681,7 @@ static void handleItemInt(const mavlink_message_t *msg)
     flightPlanConfig_t *plan = flightPlanConfigMutable();
     memcpy(plan->waypoints, stagedWaypoints, m.totalCount * sizeof(stagedWaypoints[0]));
     plan->waypointCount = m.totalCount;
-    saveConfigAndNotify();
+    missionStoreChanged();
     sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_MISSION, MAV_MISSION_ACCEPTED);
     m.state = MISSION_IDLE;
 }
@@ -673,7 +702,7 @@ static void handleClearAll(const mavlink_message_t *msg)
         sendAck(msg->sysid, msg->compid, mc.mission_type, MAV_MISSION_UNSUPPORTED);
         return;
     }
-    if (clearMission && FLIGHT_MODE(AUTOPILOT_MODE)) {
+    if (clearMission && flightPlanNavIsFlyingMission()) {
         sendAck(msg->sysid, msg->compid, mc.mission_type, MAV_MISSION_DENIED);
         return;
     }
@@ -683,7 +712,7 @@ static void handleClearAll(const mavlink_message_t *msg)
     }
     if (clearMission) {
         flightPlanConfigMutable()->waypointCount = 0;
-        saveConfigAndNotify();
+        missionStoreChanged();
     }
     sendAck(msg->sysid, msg->compid, mc.mission_type, MAV_MISSION_ACCEPTED);
     m.state = MISSION_IDLE;
@@ -711,19 +740,18 @@ static void onWaypointReached(uint8_t index)
 static void sendMissionCurrent(void)
 {
     const uint16_t total = flightPlanConfig()->waypointCount;
-    const bool active = flightPlanNavIsActive();
-    const uint16_t seq = (total && active && !flightPlanNavIsInjectedPlanActive())
-        ? flightPlanNavGetCurrentIndex() : 0;
-    const uint8_t missionMode = active ? 1 : 2;
+    const bool flying = missionFlying();
+    const uint16_t seq = total ? missionCursor() : 0;
+    const uint8_t missionMode = flying ? 1 : 2;
     uint8_t missionState;
     if (total == 0) {
         missionState = MISSION_STATE_NO_MISSION;
-    } else if (!active) {
-        missionState = MISSION_STATE_NOT_STARTED;
-    } else if (flightPlanNavGetState() == FP_NAV_COMPLETE) {
-        missionState = MISSION_STATE_COMPLETE;
+    } else if (flying) {
+        missionState = (flightPlanNavGetState() == FP_NAV_COMPLETE) ? MISSION_STATE_COMPLETE : MISSION_STATE_ACTIVE;
+    } else if (flightPlanNavIsMissionPaused()) {
+        missionState = MISSION_STATE_PAUSED;
     } else {
-        missionState = MISSION_STATE_ACTIVE;
+        missionState = MISSION_STATE_NOT_STARTED;
     }
     mavlink_msg_mission_current_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &txMsg,
         seq, total, missionState, missionMode, 0, 0, 0);
@@ -793,6 +821,14 @@ bool mavMissionHandleMessage(const mavlink_message_t *msg)
         return true;
     default:
         return false;
+    }
+}
+
+void mavMissionSaveIfDisarmed(void)
+{
+    if (missionSavePending && !ARMING_FLAG(ARMED)) {
+        missionSavePending = false;
+        saveConfigAndNotify();
     }
 }
 

@@ -336,11 +336,14 @@ flight_failsafe_unittest_SRC := \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/flight/failsafe.c \
-		$(USER_DIR)/pg/autopilot.c
+		$(USER_DIR)/pg/autopilot.c \
+		$(USER_DIR)/pg/mavlink_gcs.c
 
 flight_failsafe_unittest_DEFINES := \
 		USE_GPS_RESCUE= \
-		ENABLE_FLIGHT_PLAN=1
+		USE_TELEMETRY_MAVLINK= \
+		ENABLE_FLIGHT_PLAN=1 \
+		ENABLE_MAVLINK_GCS_FAILSAFE=1
 
 flight_failsafe_wing_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
@@ -578,6 +581,20 @@ rx_ibus_unittest_SRC := \
 		$(USER_DIR)/rx/ibus.c
 
 
+rx_mavlink_unittest_SRC := \
+		$(USER_DIR)/rx/mavlink.c \
+		$(USER_DIR)/telemetry/mavlink_helpers.c \
+		$(USER_DIR)/common/maths.c
+
+rx_mavlink_unittest_DEFINES := \
+		USE_SERIALRX_MAVLINK= \
+		USE_TELEMETRY_MAVLINK= \
+		ENABLE_REMOTE_ARM=1 \
+		ENABLE_FLIGHT_PLAN=1 \
+		USE_RX_LINK_QUALITY_INFO= \
+		USE_RX_RSSI_DBM= \
+		USE_RX_RSNR=
+
 rx_msp_override_unittest_SRC := \
 		$(USER_DIR)/rx/msp.c
 
@@ -749,8 +766,68 @@ telemetry_ibus_unittest_SRC := \
 		$(USER_DIR)/telemetry/ibus_shared.c \
 		$(USER_DIR)/telemetry/ibus.c
 
+telemetry_mavlink_unittest_C_FLAGS := -ffast-math
+
+telemetry_mavlink_unittest_SRC := \
+		$(USER_DIR)/telemetry/mavlink.c \
+		$(USER_DIR)/telemetry/mavlink_frame.c \
+		$(USER_DIR)/telemetry/mavlink_helpers.c \
+		$(USER_DIR)/common/maths.c
+
+telemetry_mavlink_unittest_DEFINES := \
+		USE_TELEMETRY_MAVLINK= \
+		ENABLE_TELEMETRY_MAVLINK_COMMANDS=1 \
+		ENABLE_TELEMETRY_MAVLINK_MISSION=0 \
+		ENABLE_REMOTE_ARM=0
+
+telemetry_mavlink_remote_arm_unittest_C_FLAGS := -ffast-math
+
+telemetry_mavlink_remote_arm_unittest_SRC := \
+		$(USER_DIR)/telemetry/mavlink.c \
+		$(USER_DIR)/telemetry/mavlink_frame.c \
+		$(USER_DIR)/telemetry/mavlink_helpers.c \
+		$(USER_DIR)/common/maths.c
+
+telemetry_mavlink_remote_arm_unittest_DEFINES := \
+		USE_TELEMETRY_MAVLINK= \
+		ENABLE_TELEMETRY_MAVLINK_COMMANDS=1 \
+		ENABLE_TELEMETRY_MAVLINK_MISSION=0 \
+		ENABLE_REMOTE_ARM=1
+
+telemetry_mavlink_link_unittest_C_FLAGS := -ffast-math
+
+telemetry_mavlink_link_unittest_SRC := \
+		$(USER_DIR)/telemetry/mavlink.c \
+		$(USER_DIR)/telemetry/mavlink_frame.c \
+		$(USER_DIR)/telemetry/mavlink_helpers.c \
+		$(USER_DIR)/common/maths.c
+
+telemetry_mavlink_link_unittest_DEFINES := \
+		USE_TELEMETRY_MAVLINK= \
+		ENABLE_TELEMETRY_MAVLINK_COMMANDS=1 \
+		ENABLE_TELEMETRY_MAVLINK_MISSION=1 \
+		ENABLE_REMOTE_ARM=0
+
+telemetry_mavlink_guided_unittest_C_FLAGS := -ffast-math
+
+telemetry_mavlink_guided_unittest_SRC := \
+		$(USER_DIR)/telemetry/mavlink.c \
+		$(USER_DIR)/telemetry/mavlink_frame.c \
+		$(USER_DIR)/telemetry/mavlink_helpers.c \
+		$(USER_DIR)/common/maths.c
+
+telemetry_mavlink_guided_unittest_DEFINES := \
+		USE_TELEMETRY_MAVLINK= \
+		ENABLE_TELEMETRY_MAVLINK_COMMANDS=1 \
+		ENABLE_TELEMETRY_MAVLINK_MISSION=0 \
+		ENABLE_REMOTE_ARM=1 \
+		ENABLE_FLIGHT_PLAN=1
+
+telemetry_mavlink_mission_unittest_C_FLAGS := -ffast-math
+
 telemetry_mavlink_mission_unittest_SRC := \
 		$(USER_DIR)/telemetry/mavlink_mission.c \
+		$(USER_DIR)/telemetry/mavlink_frame.c \
 		$(USER_DIR)/telemetry/mavlink_helpers.c \
 		$(USER_DIR)/pg/flight_plan.c \
 		$(USER_DIR)/pg/autopilot.c
@@ -763,8 +840,11 @@ telemetry_mavlink_mission_unittest_DEFINES := \
 		USE_TELEMETRY_MAVLINK= \
 		ENABLE_TELEMETRY_MAVLINK_MISSION=1
 
+telemetry_mavlink_mission_wing_unittest_C_FLAGS := -ffast-math
+
 telemetry_mavlink_mission_wing_unittest_SRC := \
 		$(USER_DIR)/telemetry/mavlink_mission.c \
+		$(USER_DIR)/telemetry/mavlink_frame.c \
 		$(USER_DIR)/telemetry/mavlink_helpers.c \
 		$(USER_DIR)/pg/flight_plan.c \
 		$(USER_DIR)/pg/autopilot.c
@@ -937,6 +1017,8 @@ position_nav_unittest_SRC := \
 position_nav_unittest_DEFINES := \
 		USE_WING=
 
+flight_plan_nav_unittest_C_FLAGS := -ffast-math
+
 flight_plan_nav_unittest_SRC := \
 		$(USER_DIR)/flight/flight_plan_nav.c \
 		$(USER_DIR)/pg/autopilot.c \
@@ -951,6 +1033,8 @@ flight_plan_nav_unittest_DEFINES := \
 		USE_FLIGHT_PLAN= \
 		USE_ALTITUDE_HOLD= \
 		ENABLE_FLIGHT_PLAN=1
+
+flight_plan_nav_wing_unittest_C_FLAGS := -ffast-math
 
 flight_plan_nav_wing_unittest_SRC := \
 		$(USER_DIR)/flight/flight_plan_nav.c \
@@ -997,6 +1081,8 @@ gps_rescue_multirotor_unittest_DEFINES := \
 		USE_GPS= \
 		USE_GPS_RESCUE=
 
+flight_plan_rescue_unittest_C_FLAGS := -ffast-math
+
 flight_plan_rescue_unittest_SRC := \
 		$(USER_DIR)/flight/flight_plan_nav.c \
 		$(USER_DIR)/pg/autopilot.c \
@@ -1030,8 +1116,11 @@ osd_nav_map_unittest_DEFINES := \
 		USE_OSD= \
 		USE_OSD_NAV_MAP=
 
+mavlink_mission_unittest_C_FLAGS := -ffast-math
+
 mavlink_mission_unittest_SRC := \
 		$(USER_DIR)/telemetry/mavlink_mission.c \
+		$(USER_DIR)/telemetry/mavlink_frame.c \
 		$(USER_DIR)/telemetry/mavlink_helpers.c \
 		$(USER_DIR)/pg/autopilot.c \
 		$(USER_DIR)/pg/flight_plan.c
