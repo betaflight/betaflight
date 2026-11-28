@@ -114,7 +114,11 @@ void flightPlanNavCancelGuided(void);
 void flightPlanNavLeaveGuided(void);
 bool flightPlanNavIsGuided(void);
 bool flightPlanNavIsGuidedLanding(void);
+#if ENABLE_FLIGHT_PLAN
 bool flightPlanNavIsTakingOff(void);
+#else
+static inline bool flightPlanNavIsTakingOff(void) { return false; }
+#endif
 
 // The stored mission resumes where it was left, across guided plans, rescues
 // and disengage. StartMission restarts it at index; ResumeMission continues a
@@ -123,6 +127,7 @@ bool flightPlanNavStartMission(uint8_t index);
 bool flightPlanNavResumeMission(void);
 uint8_t flightPlanNavGetMissionIndex(void);
 bool flightPlanNavIsMissionPaused(void);
+bool flightPlanNavIsFlyingMission(void);
 
 // Cruise speed for every non-rescue leg (0 = each leg's own speed), capped to
 // the autopilot max velocity. Applies to the leg being flown.

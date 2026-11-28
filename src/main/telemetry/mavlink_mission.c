@@ -81,6 +81,8 @@ static struct {
     int16_t  pendingReachedIndex;
 } m;
 
+static bool missionSavePending;
+
 // Geofence storage. Accepted and round-tripped to the GCS for display, but NOT
 // yet enforced or persisted across reboot — enforcement + a backing PG land in a
 // later step. Held in RAM only.
@@ -448,6 +450,17 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
     return true;
 }
 
+// Writing flash stalls the loop, so a mission changed in flight is saved after disarm.
+static void missionStoreChanged(void)
+{
+    flightPlanNavMissionChanged();
+    if (ARMING_FLAG(ARMED)) {
+        missionSavePending = true;
+    } else {
+        saveConfigAndNotify();
+    }
+}
+
 static void handleRequestList(const mavlink_message_t *msg, uint8_t missionType)
 {
     const uint16_t count = (missionType == MAV_MISSION_TYPE_FENCE)
@@ -550,7 +563,7 @@ static void handleCount(const mavlink_message_t *msg)
         sendAck(msg->sysid, msg->compid, mc.mission_type, MAV_MISSION_UNSUPPORTED);
         return;
     }
-    if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+    if (flightPlanNavIsFlyingMission()) {
         sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_MISSION, MAV_MISSION_DENIED);
         return;
     }
@@ -560,8 +573,7 @@ static void handleCount(const mavlink_message_t *msg)
     }
     if (mc.count == 0) {
         flightPlanConfigMutable()->waypointCount = 0;
-        flightPlanNavMissionChanged();
-        saveConfigAndNotify();
+        missionStoreChanged();
         sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_MISSION, MAV_MISSION_ACCEPTED);
         m.state = MISSION_IDLE;
         return;
@@ -642,9 +654,9 @@ static void handleItemInt(const mavlink_message_t *msg)
         return;
     }
 
-    // Upload complete. Do not replace the mission while the autopilot flies
-    // it: the executor reads the waypoint table directly.
-    if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+    // Upload complete. Do not replace the mission while the executor flies
+    // it: it reads the waypoint table directly.
+    if (flightPlanNavIsFlyingMission()) {
         abortUpload(MAV_MISSION_DENIED);
         return;
     }
@@ -653,8 +665,7 @@ static void handleItemInt(const mavlink_message_t *msg)
     flightPlanConfig_t *plan = flightPlanConfigMutable();
     memcpy(plan->waypoints, stagedWaypoints, m.totalCount * sizeof(stagedWaypoints[0]));
     plan->waypointCount = m.totalCount;
-    flightPlanNavMissionChanged();
-    saveConfigAndNotify();
+    missionStoreChanged();
     sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_MISSION, MAV_MISSION_ACCEPTED);
     m.state = MISSION_IDLE;
 }
@@ -675,7 +686,7 @@ static void handleClearAll(const mavlink_message_t *msg)
         sendAck(msg->sysid, msg->compid, mc.mission_type, MAV_MISSION_UNSUPPORTED);
         return;
     }
-    if (clearMission && FLIGHT_MODE(AUTOPILOT_MODE)) {
+    if (clearMission && flightPlanNavIsFlyingMission()) {
         sendAck(msg->sysid, msg->compid, mc.mission_type, MAV_MISSION_DENIED);
         return;
     }
@@ -685,8 +696,7 @@ static void handleClearAll(const mavlink_message_t *msg)
     }
     if (clearMission) {
         flightPlanConfigMutable()->waypointCount = 0;
-        flightPlanNavMissionChanged();
-        saveConfigAndNotify();
+        missionStoreChanged();
     }
     sendAck(msg->sysid, msg->compid, mc.mission_type, MAV_MISSION_ACCEPTED);
     m.state = MISSION_IDLE;
@@ -795,6 +805,14 @@ bool mavMissionHandleMessage(const mavlink_message_t *msg)
         return true;
     default:
         return false;
+    }
+}
+
+void mavMissionSaveIfDisarmed(void)
+{
+    if (missionSavePending && !ARMING_FLAG(ARMED)) {
+        missionSavePending = false;
+        saveConfigAndNotify();
     }
 }
 

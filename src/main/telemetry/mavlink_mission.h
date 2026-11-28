@@ -35,5 +35,6 @@
 void mavMissionInit(void);
 bool mavMissionHandleMessage(const mavlink_message_t *msg);
 void mavMissionUpdate(timeMs_t nowMs);
+void mavMissionSaveIfDisarmed(void);
 
 #endif
