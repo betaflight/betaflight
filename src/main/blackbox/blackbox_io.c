@@ -400,9 +400,11 @@ bool blackboxDeviceOpen(void)
 
 /**
  * Erase all blackbox logs
+ *
+ * Returns false when the logging device does not support erase, so that the caller can refuse the request.
  */
 #ifdef USE_FLASHFS
-void blackboxEraseAll(void)
+bool blackboxEraseAll(void)
 {
     switch (blackboxConfig()->device) {
     case BLACKBOX_DEVICE_FLASH:
@@ -412,10 +414,10 @@ void blackboxEraseAll(void)
          */
         blackboxInit();
         flashfsEraseCompletely();
-        break;
+        return true;
     default:
         //not supported
-        break;
+        return false;
     }
 }
 

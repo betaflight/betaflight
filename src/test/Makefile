@@ -273,6 +273,9 @@ blackbox_unittest_SRC :=  \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
 		$(USER_DIR)/pg/gps.c
 
+blackbox_unittest_DEFINES := \
+		USE_FLASHFS=
+
 blackbox_encoding_unittest_SRC :=  \
 		$(USER_DIR)/blackbox/blackbox_encoding.c \
 		$(USER_DIR)/common/encoding.c \
