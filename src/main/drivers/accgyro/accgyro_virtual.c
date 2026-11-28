@@ -43,12 +43,13 @@ gyroDev_t *virtualGyroDev;
 
 static void virtualGyroInit(gyroDev_t *gyro)
 {
-    virtualGyroDev = gyro;
 #if ENABLE_SIMULATOR_MULTITHREAD
     if (pthread_mutex_init(&gyro->lock, NULL) != 0) {
         printf("Create gyro lock error!\n");
     }
 #endif
+    // The simulator thread reads this pointer
+    __atomic_store_n(&virtualGyroDev, gyro, __ATOMIC_RELEASE);
 }
 
 void virtualGyroSet(gyroDev_t *gyro, int16_t x, int16_t y, int16_t z)
@@ -109,12 +110,12 @@ accDev_t *virtualAccDev;
 
 static void virtualAccInit(accDev_t *acc)
 {
-    virtualAccDev = acc;
 #if ENABLE_SIMULATOR_MULTITHREAD
     if (pthread_mutex_init(&acc->lock, NULL) != 0) {
         printf("Create acc lock error!\n");
     }
 #endif
+    __atomic_store_n(&virtualAccDev, acc, __ATOMIC_RELEASE);
 }
 
 void virtualAccSet(accDev_t *acc, int16_t x, int16_t y, int16_t z)

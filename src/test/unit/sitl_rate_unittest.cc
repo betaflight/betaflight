@@ -29,24 +29,59 @@ TEST(SitlRateUnittest, WaitsForWarmup)
     sitlRateEstimator_t estimator = {};
     double rate = 0.0;
 
-    for (unsigned i = 0; i < 9; i++) {
-        EXPECT_FALSE(sitlRateEstimatorUpdate(&estimator, 0.01, 0.01, &rate));
+    for (unsigned i = 0; i < 99; i++) {
+        EXPECT_FALSE(sitlRateEstimatorUpdate(&estimator, 0.001, 0.001, &rate));
     }
-    EXPECT_TRUE(sitlRateEstimatorUpdate(&estimator, 0.01, 0.01, &rate));
+    EXPECT_TRUE(sitlRateEstimatorUpdate(&estimator, 0.001, 0.001, &rate));
     EXPECT_DOUBLE_EQ(rate, 1.0);
 }
 
-TEST(SitlRateUnittest, LimitsOneShortGap)
+static void feedRealTime(sitlRateEstimator_t *estimator, double *rate)
+{
+    for (unsigned i = 0; i < 200; i++) {
+        sitlRateEstimatorUpdate(estimator, 0.001, 0.001, rate);
+    }
+}
+
+TEST(SitlRateUnittest, BurstsGiveTheAverageRate)
+{
+    sitlRateEstimator_t estimator = {};
+    double rate = 0.0;
+    feedRealTime(&estimator, &rate);
+
+    // ten steps of 1 ms arrive together every 10 ms
+    for (unsigned i = 0; i < 4000; i++) {
+        sitlRateEstimatorUpdate(&estimator, 0.001, i % 10 ? 0.000001 : 0.01 - 9 * 0.000001, &rate);
+        if (i >= 2000) {
+            EXPECT_NEAR(rate, 1.0, 0.0001);
+        }
+    }
+}
+
+// Some simulators send more than one packet for each step
+TEST(SitlRateUnittest, RepeatedTimestampsKeepTheirRealTime)
 {
     sitlRateEstimator_t estimator = {};
     double rate = 0.0;
 
-    for (unsigned i = 0; i < 10; i++) {
-        sitlRateEstimatorUpdate(&estimator, 0.01, 0.01, &rate);
+    for (unsigned i = 0; i < 1000; i++) {
+        sitlRateEstimatorUpdate(&estimator, 0.002, 0.001, &rate);
+        sitlRateEstimatorUpdate(&estimator, 0.0, 0.001, &rate);
     }
+    EXPECT_NEAR(rate, 1.0, 0.001);
+}
 
-    EXPECT_TRUE(sitlRateEstimatorUpdate(&estimator, 0.01, 0.000001, &rate));
-    EXPECT_NEAR(rate, 1.0101, 0.0001);
+TEST(SitlRateUnittest, PauseKeepsTheRate)
+{
+    sitlRateEstimator_t estimator = {};
+    double rate = 0.0;
+    feedRealTime(&estimator, &rate);
+
+    for (unsigned i = 0; i < 500; i++) {
+        sitlRateEstimatorUpdate(&estimator, 0.0, 0.001, &rate);
+    }
+    feedRealTime(&estimator, &rate);
+    EXPECT_NEAR(rate, 1.0, 0.001);
 }
 
 TEST(SitlRateUnittest, TracksSustainedFastSimulation)
@@ -88,4 +123,36 @@ TEST(SitlRateUnittest, PreservesWarmupAcrossExcludedGaps)
 
     EXPECT_TRUE(estimator.initialized);
     EXPECT_DOUBLE_EQ(rate, 2.0);
+}
+
+TEST(SitlRateUnittest, PausesWhenTimestampStops)
+{
+    sitlPause_t pause = {};
+
+    for (unsigned i = 0; i < 99; i++) {
+        EXPECT_FALSE(sitlPauseUpdate(&pause, 0.0, 0.001));
+    }
+    EXPECT_FALSE(pause.paused);
+
+    EXPECT_TRUE(sitlPauseUpdate(&pause, 0.0, 0.001));
+    EXPECT_TRUE(pause.paused);
+
+    for (unsigned i = 0; i < 5000; i++) {
+        EXPECT_FALSE(sitlPauseUpdate(&pause, 0.0, 0.001));
+    }
+
+    EXPECT_TRUE(sitlPauseUpdate(&pause, 0.001, 0.001));
+    EXPECT_FALSE(pause.paused);
+}
+
+// Some simulators send more than one packet for each step
+TEST(SitlRateUnittest, RepeatedTimestampsAreNotAPause)
+{
+    sitlPause_t pause = {};
+
+    for (unsigned i = 0; i < 5000; i++) {
+        sitlPauseUpdate(&pause, 0.002, 0.001);
+        sitlPauseUpdate(&pause, 0.0, 0.001);
+        EXPECT_FALSE(pause.paused);
+    }
 }

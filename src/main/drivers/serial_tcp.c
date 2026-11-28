@@ -235,7 +235,13 @@ static void tcpWrite(serialPort_t *instance, uint8_t ch)
 void tcpDataOut(tcpPort_t *instance)
 {
     tcpPort_t *s = (tcpPort_t *)instance;
-    if (s->conn == NULL) return;
+    if (s->conn == NULL) {
+        // No client: discard the data, as a UART with no device does
+        pthread_mutex_lock(&s->txLock);
+        s->port.txBufferTail = s->port.txBufferHead;
+        pthread_mutex_unlock(&s->txLock);
+        return;
+    }
     pthread_mutex_lock(&s->txLock);
 
     if (s->port.txBufferHead < s->port.txBufferTail) {

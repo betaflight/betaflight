@@ -552,3 +552,36 @@ TEST(SchedulerUnittest, TestGyroTask)
     EXPECT_EQ(static_cast<task_t*>(0), unittest_scheduler_selectedTask);
 }
 
+TEST(SchedulerUnittest, TestGyroTaskLate)
+{
+    static const uint32_t startTime = 100000;
+    static const uint32_t gyroPeriodUs = TASK_PERIOD_HZ(TEST_GYRO_SAMPLE_HZ);
+
+    schedulerEnableGyro();
+    for (int taskId = 0; taskId < TASK_COUNT; ++taskId) {
+        setTaskEnabled(static_cast<taskId_e>(taskId), false);
+    }
+    setTaskEnabled(TASK_GYRO, true);
+
+    // Late by 3.5 periods: the next period boundary is half a period from now
+    simulatedTime = startTime;
+    tasks[TASK_GYRO].lastExecutedAtUs = simulatedTime - 7 * gyroPeriodUs / 2;
+    resetGyroTaskTestFlags();
+    scheduler();
+#if SCHED_GYRO_CATCH_UP_PERIODS > 0
+    EXPECT_TRUE(taskGyroRan);
+#else
+    EXPECT_FALSE(taskGyroRan);
+#endif
+
+    // Late by 100.5 periods
+    simulatedTime = startTime;
+    tasks[TASK_GYRO].lastExecutedAtUs = simulatedTime - 201 * gyroPeriodUs / 2;
+    resetGyroTaskTestFlags();
+    scheduler();
+#if SCHED_GYRO_CATCH_UP_PERIODS > 0
+    EXPECT_TRUE(taskGyroRan);
+#else
+    EXPECT_FALSE(taskGyroRan);
+#endif
+}

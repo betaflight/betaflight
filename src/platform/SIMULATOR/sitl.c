@@ -103,10 +103,19 @@ static bool fdm_received = false;
 static struct timespec start_time;
 static double simRate = 1.0;
 static sitlRateEstimator_t simRateEstimator;
+static sitlPause_t simPause;
+static pthread_mutex_t clockLock = PTHREAD_MUTEX_INITIALIZER;
+#define SITL_FDM_TIMEOUT_US (500 * 1000)  // no FDM packet for this long: no simulator
+static uint64_t lastFdmRealUs;
 static pthread_t tcpWorker, udpWorker, udpWorkerRC;
 static bool workerRunning = true;
 static udpLink_t stateLink, pwmLink, pwmRawLink, rcLink;
-static pthread_mutex_t updateLock;
+// A lockstep simulator waits for one reply per FDM packet: keep the newest outputs until the next one
+static pthread_mutex_t outputLock;
+static bool fdmSinceReply;
+static bool outputsWaiting;
+static servo_packet pwmPktOut;
+static servo_packet_raw pwmRawPktOut;
 static pthread_mutex_t mainLoopLock;
 static char simulator_ip[32] = "127.0.0.1";
 
@@ -272,16 +281,40 @@ static void sendMotorUpdate(void)
     udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
 }
 
+// With outputLock held
+static void sendReply(void)
+{
+    udpSend(&pwmLink, &pwmPktOut, sizeof(servo_packet));
+    udpSend(&pwmRawLink, &pwmRawPktOut, sizeof(servo_packet_raw));
+    fdmSinceReply = false;
+    outputsWaiting = false;
+}
+
+static uint64_t sitlClockAdvance(void);
+
 static void updateState(const fdm_packet* pkt)
 {
     static double last_timestamp = 0; // in seconds
     static uint64_t last_realtime = 0; // in uS
 
+    struct gyroDev_s *gyroDev = __atomic_load_n(&virtualGyroDev, __ATOMIC_ACQUIRE);
+    if (gyroDev == NULL) {
+        return; // SITL is still booting
+    }
+
     const uint64_t realtime_now = micros64_real();
-    if (!last_realtime || realtime_now > last_realtime + 500*1e3) { // 500ms timeout
+    if (!last_realtime || realtime_now > last_realtime + SITL_FDM_TIMEOUT_US) {
+        pthread_mutex_lock(&clockLock);
+        sitlClockAdvance();
+        lastFdmRealUs = realtime_now;
+        // A step after a long gap ends a pause
+        if (last_realtime) {
+            sitlPauseUpdate(&simPause, pkt->timestamp - last_timestamp, (realtime_now - last_realtime) * 1e-6);
+        }
+        simRate = 1.0;
+        pthread_mutex_unlock(&clockLock);
         last_timestamp = pkt->timestamp;
         last_realtime = realtime_now;
-        simRate = 1.0;
         sitlRateEstimatorReset(&simRateEstimator);
         sendMotorUpdate();
         return;
@@ -296,7 +329,10 @@ static void updateState(const fdm_packet* pkt)
     x = constrain(-pkt->imu_linear_acceleration_xyz[0] * ACC_SCALE, -32767, 32767);
     y = constrain(-pkt->imu_linear_acceleration_xyz[1] * ACC_SCALE, -32767, 32767);
     z = constrain(-pkt->imu_linear_acceleration_xyz[2] * ACC_SCALE, -32767, 32767);
-    virtualAccSet(virtualAccDev, x, y, z);
+    struct accDev_s *accDev = __atomic_load_n(&virtualAccDev, __ATOMIC_ACQUIRE);
+    if (accDev) { // NULL while booting and with acc_hardware = NONE
+        virtualAccSet(accDev, x, y, z);
+    }
 
     // Map simulator IMU angular velocity onto Betaflight gyro axes. The yaw (Z)
     // polarity is bridge-specific (see sitlGyroBodyFromSim() for the FRD/legacy
@@ -308,7 +344,7 @@ static void updateState(const fdm_packet* pkt)
     x = constrain(gyroRoll  * GYRO_SCALE * RAD2DEG, -32767, 32767);
     y = constrain(gyroPitch * GYRO_SCALE * RAD2DEG, -32767, 32767);
     z = constrain(gyroYaw   * GYRO_SCALE * RAD2DEG, -32767, 32767);
-    virtualGyroSet(virtualGyroDev, x, y, z);
+    virtualGyroSet(gyroDev, x, y, z);
 #if ENABLE_GAZEBO_BRIDGE
     // Gazebo plugin doesn't fill pkt->pressure; derive from altitude using the
     // standard atmosphere model: P = 101325 * (1 - 2.25577e-5 * h)^5.25588
@@ -466,7 +502,16 @@ static void updateState(const fdm_packet* pkt)
 #endif
 
     const double deltaReal = (realtime_now - last_realtime) * 1e-6;
+    pthread_mutex_lock(&clockLock);
+    sitlClockAdvance();  // the time until now runs at the old rate
+    lastFdmRealUs = realtime_now;
+    const bool pauseChanged = sitlPauseUpdate(&simPause, deltaSim, deltaReal);
+    const bool paused = simPause.paused;
     sitlRateEstimatorUpdate(&simRateEstimator, deltaSim, deltaReal, &simRate);
+    pthread_mutex_unlock(&clockLock);
+    if (pauseChanged) {
+        printf("[SITL] simulator %s\n", paused ? "paused" : "resumed");
+    }
 
     last_timestamp = pkt->timestamp;
     last_realtime = realtime_now;
@@ -501,7 +546,13 @@ static void updateState(const fdm_packet* pkt)
 #endif
     }
 
-    pthread_mutex_unlock(&updateLock); // can send PWM output now
+    pthread_mutex_lock(&outputLock);
+    if (outputsWaiting) {
+        sendReply();
+    } else {
+        fdmSinceReply = true;
+    }
+    pthread_mutex_unlock(&outputLock);
 
 #if ENABLE_SIMULATOR_GYROPID_SYNC
     pthread_mutex_unlock(&mainLoopLock); // can run main loop
@@ -581,8 +632,8 @@ void systemInit(void)
 
     SystemCoreClock = 500 * 1e6; // virtual 500MHz
 
-    if (pthread_mutex_init(&updateLock, NULL) != 0) {
-        printf("Create updateLock error!\n");
+    if (pthread_mutex_init(&outputLock, NULL) != 0) {
+        printf("Create outputLock error!\n");
         exit(1);
     }
 
@@ -681,28 +732,46 @@ uint64_t millis64_real(void)
     return 1.0e3*((ts.tv_sec + (ts.tv_nsec*1.0e-9)) - (start_time.tv_sec + (start_time.tv_nsec*1.0e-9)));
 }
 
-uint64_t micros64(void)
+// The main loop and the FDM thread both use the clock: hold clockLock
+static uint64_t sitlClockAdvance(void)
 {
     static uint64_t last = 0;
     static uint64_t out = 0;
-    uint64_t now = nanos64_real();
 
-    out += (now - last) * simRate;
-    last = now;
+    const uint64_t now = nanos64_real();
+    // A simulator that stops sending while paused is gone: run the clock again from the timeout
+    const uint64_t resumeNs = (lastFdmRealUs + SITL_FDM_TIMEOUT_US) * 1000;
+    if (simPause.paused && now > resumeNs) {
+        if (last < resumeNs) {
+            last = resumeNs;
+        }
+        simPause.paused = false;
+        simPause.stillRealTime = 0.0;
+    }
+    if (now > last) {
+        out += (now - last) * (simPause.paused ? 0.0 : simRate);
+        last = now;
+    }
+    return out;
+}
 
-    return out / 1000;
+static uint64_t sitlClockNs(void)
+{
+    pthread_mutex_lock(&clockLock);
+    const uint64_t ns = sitlClockAdvance();
+    pthread_mutex_unlock(&clockLock);
+
+    return ns;
+}
+
+uint64_t micros64(void)
+{
+    return sitlClockNs() / 1000;
 }
 
 uint64_t millis64(void)
 {
-    static uint64_t last = 0;
-    static uint64_t out = 0;
-    uint64_t now = nanos64_real();
-
-    out += (now - last) * simRate;
-    last = now;
-
-    return out / (1000 * 1000);
+    return sitlClockNs() / (1000 * 1000);
 }
 
 uint32_t micros(void)
@@ -839,10 +908,26 @@ static void pwmCompleteMotorUpdate(void)
         pwmPkt.motor_speed[i] = motorsPwm[i] / outScale;
     }
 
-    // get one "fdm_packet" can only send one "servo_packet"!!
-    if (pthread_mutex_trylock(&updateLock) != 0) return;
-    udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
-    udpSend(&pwmRawLink, &pwmRawPkt, sizeof(servo_packet_raw));
+    const uint64_t nowUs = micros64_real();
+    pthread_mutex_lock(&clockLock);
+    const bool noSimulator = !lastFdmRealUs || nowUs > lastFdmRealUs + SITL_FDM_TIMEOUT_US;
+    pthread_mutex_unlock(&clockLock);
+
+    pthread_mutex_lock(&outputLock);
+    pwmPktOut = pwmPkt;
+    pwmRawPktOut = pwmRawPkt;
+    if (fdmSinceReply) {
+        sendReply();
+    } else {
+        outputsWaiting = true;
+        // Without FDM packets, send the raw outputs at 20 Hz: RealFlightBridge waits for them before its first FDM packet
+        static uint64_t lastRawUs;
+        if (noSimulator && nowUs >= lastRawUs + 50 * 1000) {
+            udpSend(&pwmRawLink, &pwmRawPktOut, sizeof(servo_packet_raw));
+            lastRawUs = nowUs;
+        }
+    }
+    pthread_mutex_unlock(&outputLock);
 }
 
 void servoWrite(uint8_t index, float value)

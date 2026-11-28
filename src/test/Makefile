@@ -624,6 +624,12 @@ scheduler_unittest_SRC := \
 scheduler_unittest_DEFINES := \
 		USE_OSD=
 
+scheduler_gyro_catch_up_unittest_SRC := $(scheduler_unittest_SRC)
+
+scheduler_gyro_catch_up_unittest_DEFINES := \
+		USE_OSD= \
+		SCHED_GYRO_CATCH_UP_PERIODS=4
+
 serial_feature_map_unittest_SRC := \
 		$(USER_DIR)/io/serial_feature_map.c
 

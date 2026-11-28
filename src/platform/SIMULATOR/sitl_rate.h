@@ -23,13 +23,18 @@
 #include <stdbool.h>
 
 #define SITL_RATE_WARMUP_SECONDS 0.1
-#define SITL_RATE_FILTER_WEIGHT 0.01
+#define SITL_RATE_WINDOW_SECONDS 0.025
+#define SITL_RATE_FILTER_WEIGHT 0.1
+#define SITL_PAUSE_SECONDS 0.1
 
 typedef struct sitlRateEstimator_s {
     double simulatedInterval;
     double realInterval;
     double warmupSimulatedTime;
     double warmupRealTime;
+    double windowSimulatedTime;
+    double windowRealTime;
+    double stillRealTime;
     unsigned warmupSamples;
     bool initialized;
 } sitlRateEstimator_t;
@@ -40,6 +45,9 @@ static inline void sitlRateEstimatorReset(sitlRateEstimator_t *estimator)
     estimator->realInterval = 0.0;
     estimator->warmupSimulatedTime = 0.0;
     estimator->warmupRealTime = 0.0;
+    estimator->windowSimulatedTime = 0.0;
+    estimator->windowRealTime = 0.0;
+    estimator->stillRealTime = 0.0;
     estimator->warmupSamples = 0;
     estimator->initialized = false;
 }
@@ -47,9 +55,31 @@ static inline void sitlRateEstimatorReset(sitlRateEstimator_t *estimator)
 static inline bool sitlRateEstimatorUpdate(sitlRateEstimator_t *estimator, double deltaSim, double deltaReal, double *rate)
 {
     // Exclude slow simulator intervals without discarding warm-up progress.
-    if (deltaSim <= 0.0 || deltaSim >= 0.02 || deltaReal < 0.0) {
+    if (deltaSim < 0.0 || deltaSim >= 0.02 || deltaReal < 0.0) {
+        estimator->stillRealTime = 0.0;
         return false;
     }
+
+    // A repeated timestamp keeps its real time for the next step, a pause does not
+    if (deltaSim == 0.0) {
+        estimator->stillRealTime += deltaReal;
+        return false;
+    }
+    if (estimator->stillRealTime < SITL_PAUSE_SECONDS) {
+        deltaReal += estimator->stillRealTime;
+    }
+    estimator->stillRealTime = 0.0;
+
+    // Whole windows, so packets in bursts count as much as evenly spaced ones
+    estimator->windowSimulatedTime += deltaSim;
+    estimator->windowRealTime += deltaReal;
+    if (estimator->windowRealTime + 1e-12 < SITL_RATE_WINDOW_SECONDS) {
+        return false;
+    }
+    deltaSim = estimator->windowSimulatedTime;
+    deltaReal = estimator->windowRealTime;
+    estimator->windowSimulatedTime = 0.0;
+    estimator->windowRealTime = 0.0;
 
     if (!estimator->initialized) {
         // Start from an interval average so an early packet burst cannot set an
@@ -78,4 +108,25 @@ static inline bool sitlRateEstimatorUpdate(sitlRateEstimator_t *estimator, doubl
 
     *rate = estimator->simulatedInterval / estimator->realInterval;
     return true;
+}
+
+typedef struct sitlPause_s {
+    double stillRealTime;
+    bool paused;
+} sitlPause_t;
+
+// Paused: the timestamp did not change for SITL_PAUSE_SECONDS. Returns true when the state changes
+static inline bool sitlPauseUpdate(sitlPause_t *pause, double deltaSim, double deltaReal)
+{
+    const bool wasPaused = pause->paused;
+
+    if (deltaSim > 0.0) {
+        pause->stillRealTime = 0.0;
+        pause->paused = false;
+    } else {
+        pause->stillRealTime += deltaReal;
+        pause->paused = pause->stillRealTime >= SITL_PAUSE_SECONDS;
+    }
+
+    return pause->paused != wasPaused;
 }
