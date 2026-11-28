@@ -821,7 +821,8 @@ telemetry_mavlink_guided_unittest_DEFINES := \
 		ENABLE_TELEMETRY_MAVLINK_COMMANDS=1 \
 		ENABLE_TELEMETRY_MAVLINK_MISSION=0 \
 		ENABLE_REMOTE_ARM=1 \
-		ENABLE_FLIGHT_PLAN=1
+		ENABLE_FLIGHT_PLAN=1 \
+		USE_POSITION_HOLD=
 
 telemetry_mavlink_mission_unittest_C_FLAGS := -ffast-math
 

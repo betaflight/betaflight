@@ -78,6 +78,8 @@ extern "C" {
     static bool positionControl;
     bool autopilotAltitudeControlAvailable(void) { return altitudeControl; }
     bool autopilotPositionControlAvailable(void) { return positionControl; }
+    static bool positionReady = true;
+    bool posHoldReady(void) { return positionReady; }
     void setThrottleRaised(void) { throttleRaised = true; }
 }
 
@@ -113,6 +115,7 @@ protected:
         altitudeAvailable = true;
         altitudeControl = true;
         positionControl = true;
+        positionReady = true;
         autopilotConfigMutable()->hoverThrottle = 1275;
 
         ENABLE_ARMING_FLAG(ARMED);
@@ -397,6 +400,9 @@ TEST_F(MavlinkGuidedTest, TakeoffWaitsUntilTheCraftCanFlyItself)
     altitudeAvailable = false;
     EXPECT_EQ(command(MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, NAN, NAN, targetM), MAV_RESULT_TEMPORARILY_REJECTED);
     altitudeAvailable = true;
+    positionReady = false;
+    EXPECT_EQ(command(MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, NAN, NAN, targetM), MAV_RESULT_TEMPORARILY_REJECTED);
+    positionReady = true;
     positionControl = false;
     EXPECT_EQ(command(MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, NAN, NAN, targetM), MAV_RESULT_DENIED);
     positionControl = true;

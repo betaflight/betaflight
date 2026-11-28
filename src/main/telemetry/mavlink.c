@@ -61,6 +61,7 @@
 #include "flight/flight_plan_nav.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/pos_hold.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 #include "flight/position.h"
@@ -886,7 +887,8 @@ static uint8_t handleNavLand(const mavlinkCommand_t *cmd)
 
 static uint8_t takeoffReadiness(void)
 {
-    if (!ARMING_FLAG(ARMED) || !sensors(SENSOR_ACC) || !STATE(GPS_FIX) || !STATE(GPS_FIX_HOME) || !isAltitudeAvailable()) {
+    if (!ARMING_FLAG(ARMED) || !sensors(SENSOR_ACC) || !STATE(GPS_FIX) || !STATE(GPS_FIX_HOME) || !isAltitudeAvailable()
+        || !posHoldReady()) {
         return MAV_RESULT_TEMPORARILY_REJECTED;
     }
     if (!autopilotAltitudeControlAvailable() || !autopilotPositionControlAvailable() || autopilotConfig()->hoverThrottle == 0) {
