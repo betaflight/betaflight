@@ -277,6 +277,24 @@ static bool decodeFrameAltCm(uint8_t frame, float z, int32_t *altCmOut, uint8_t 
     }
 }
 
+// MAVLink lets these commands send a NaN yaw (param4) to keep the current heading mode.
+static bool yawMayBeNan(uint16_t command)
+{
+    switch (command) {
+    case MAV_CMD_NAV_WAYPOINT:
+    case MAV_CMD_NAV_LOITER_UNLIM:
+    case MAV_CMD_NAV_LAND:
+    case MAV_CMD_NAV_VTOL_LAND:
+    case MAV_CMD_NAV_LAND_LOCAL:
+    case MAV_CMD_NAV_TAKEOFF:
+    case MAV_CMD_NAV_VTOL_TAKEOFF:
+    case MAV_CMD_NAV_TAKEOFF_LOCAL:
+        return true;
+    default:
+        return false;
+    }
+}
+
 static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t *wp,
                                 uint8_t *resultOut)
 {
@@ -309,11 +327,9 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
             return false;
         }
     }
-    // NAV_WAYPOINT explicitly permits NaN yaw to select the current system
-    // heading.  Other non-finite values, including infinite yaw, are invalid.
-    const bool waypointUsesCurrentYaw = it->command == MAV_CMD_NAV_WAYPOINT && floatIsNan(it->param4);
+    const bool usesCurrentYaw = yawMayBeNan(it->command) && floatIsNan(it->param4);
     if (!floatIsFinite(it->param1) || !floatIsFinite(it->param2) || !floatIsFinite(it->param3)
-        || (!floatIsFinite(it->param4) && !waypointUsesCurrentYaw)) {
+        || (!floatIsFinite(it->param4) && !usesCurrentYaw)) {
         *resultOut = MAV_MISSION_INVALID;
         return false;
     }
