@@ -105,6 +105,7 @@ static double simRate = 1.0;
 static sitlRateEstimator_t simRateEstimator;
 static sitlPause_t simPause;
 static pthread_mutex_t clockLock = PTHREAD_MUTEX_INITIALIZER;
+#define SITL_FDM_TIMEOUT_US (500 * 1000)  // no FDM packet for this long: no simulator
 static uint64_t lastFdmRealUs;
 static pthread_t tcpWorker, udpWorker, udpWorkerRC;
 static bool workerRunning = true;
@@ -302,7 +303,7 @@ static void updateState(const fdm_packet* pkt)
     }
 
     const uint64_t realtime_now = micros64_real();
-    if (!last_realtime || realtime_now > last_realtime + 500*1e3) { // 500ms timeout
+    if (!last_realtime || realtime_now > last_realtime + SITL_FDM_TIMEOUT_US) {
         pthread_mutex_lock(&clockLock);
         sitlClockAdvance();
         lastFdmRealUs = realtime_now;
@@ -505,10 +506,11 @@ static void updateState(const fdm_packet* pkt)
     sitlClockAdvance();  // the time until now runs at the old rate
     lastFdmRealUs = realtime_now;
     const bool pauseChanged = sitlPauseUpdate(&simPause, deltaSim, deltaReal);
+    const bool paused = simPause.paused;
     sitlRateEstimatorUpdate(&simRateEstimator, deltaSim, deltaReal, &simRate);
     pthread_mutex_unlock(&clockLock);
     if (pauseChanged) {
-        printf("[SITL] simulator %s\n", simPause.paused ? "paused" : "resumed");
+        printf("[SITL] simulator %s\n", paused ? "paused" : "resumed");
     }
 
     last_timestamp = pkt->timestamp;
@@ -737,8 +739,12 @@ static uint64_t sitlClockAdvance(void)
     static uint64_t out = 0;
 
     const uint64_t now = nanos64_real();
-    // A simulator that stops sending while paused is gone: run the clock again
-    if (simPause.paused && now / 1000 > lastFdmRealUs + 500 * 1000) {
+    // A simulator that stops sending while paused is gone: run the clock again from the timeout
+    const uint64_t resumeNs = (lastFdmRealUs + SITL_FDM_TIMEOUT_US) * 1000;
+    if (simPause.paused && now > resumeNs) {
+        if (last < resumeNs) {
+            last = resumeNs;
+        }
         simPause.paused = false;
         simPause.stillRealTime = 0.0;
     }
