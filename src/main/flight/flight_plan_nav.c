@@ -2615,7 +2615,7 @@ bool flightPlanNavStartMission(uint8_t index)
 
 bool flightPlanNavResumeMission(void)
 {
-    if (!fp.active || !fp.isGuidedPlan || !fp.guidedPausedMission) {
+    if (!fp.active || !fp.isGuidedPlan || !fp.guidedPausedMission || fp.missionIndex >= flightPlanConfig()->waypointCount) {
         return false;
     }
     restartMissionAt(fp.missionIndex);
@@ -2638,6 +2638,11 @@ uint8_t flightPlanNavGetMissionIndex(void)
 bool flightPlanNavIsMissionPaused(void)
 {
     return fp.missionPaused && !missionRunning();
+}
+
+bool flightPlanNavIsFlyingMission(void)
+{
+    return missionRunning();
 }
 
 void flightPlanNavSetSpeedOverride(uint16_t speedCmS)

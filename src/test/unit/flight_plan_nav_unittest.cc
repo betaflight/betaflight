@@ -1351,6 +1351,41 @@ TEST_F(FlightPlanNavTest, ResumeWithinTheDelayFliesTheRestOfIt)
     EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, delayedMps * 2.0f, 0.05f);
 }
 
+TEST_F(FlightPlanNavTest, FlyingMissionOnlyWhileTheStoredMissionIsFlown)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+    EXPECT_FALSE(flightPlanNavIsFlyingMission());
+
+    flightPlanNavEngage();
+    EXPECT_TRUE(flightPlanNavIsFlyingMission());
+
+    const waypoint_t hold = makeWaypoint(0, 0, 12000, WAYPOINT_TYPE_HOLD, 0, UINT16_MAX);
+    ASSERT_TRUE(flightPlanNavSetGuidedPlan(&hold, 1, 0.0f));
+    EXPECT_FALSE(flightPlanNavIsFlyingMission());
+
+    ASSERT_TRUE(flightPlanNavResumeMission());
+    EXPECT_TRUE(flightPlanNavIsFlyingMission());
+
+    flightPlanNavDisengage();
+    EXPECT_FALSE(flightPlanNavIsFlyingMission());
+}
+
+TEST_F(FlightPlanNavTest, PausedMissionClearedInGuidedDoesNotResume)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+    flightPlanNavEngage();
+
+    const waypoint_t hold = makeWaypoint(0, 0, 12000, WAYPOINT_TYPE_HOLD, 0, UINT16_MAX);
+    ASSERT_TRUE(flightPlanNavSetGuidedPlan(&hold, 1, 0.0f));
+    flightPlanConfigMutable()->waypointCount = 0;
+    flightPlanNavMissionChanged();
+
+    EXPECT_FALSE(flightPlanNavResumeMission());
+    EXPECT_TRUE(flightPlanNavIsGuided());
+}
+
 TEST_F(FlightPlanNavTest, GuidedPlanStagedWhileIdleIsFlownOnEngage)
 {
     addWaypoint(500000, 500000, 99999, WAYPOINT_TYPE_FLYOVER);
