@@ -30,6 +30,8 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/flight_plan_nav.h"
+
 #include "io/serial.h"
 
 #include "rx/rx.h"
@@ -206,7 +208,8 @@ static bool mavlinkGcsNeutralAllowed(void)
     if (!mavlinkGcsIsFresh(millis())) {
         return false;
     }
-    return !ARMING_FLAG(ARMED) || !wasThrottleRaised() || FLIGHT_MODE(AUTOPILOT_MODE | POS_HOLD_MODE | GPS_RESCUE_MODE);
+    return !ARMING_FLAG(ARMED) || !wasThrottleRaised() || FLIGHT_MODE(AUTOPILOT_MODE | POS_HOLD_MODE | GPS_RESCUE_MODE)
+        || flightPlanNavIsTakingOff();
 }
 #endif
 
