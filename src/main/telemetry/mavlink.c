@@ -1272,6 +1272,16 @@ static void mavlinkProcessQueueMessages(void)
 }
 #endif
 
+static void mavlinkLinkUp(void)
+{
+    // Reset STATUSTEXT de-dup so the first run after link-up emits any current disable reasons.
+    lastArmingDisableFlags = 0;
+    mavlinkTelemetryEnabled = true;
+#if ENABLE_TELEMETRY_MAVLINK_MISSION
+    mavMissionInit();
+#endif
+}
+
 void freeMAVLinkTelemetryPort(void)
 {
     closeSerialPort(mavlinkPort);
@@ -1305,14 +1315,9 @@ void configureMAVLinkTelemetryPort(void)
         return;
     }
 
-    // Reset STATUSTEXT de-dup so the first run after link-up emits any current disable reasons.
-    lastArmingDisableFlags = 0;
     mavlinkPortOwned = true;
     mavlink_reset_channel_status(MAVLINK_COMM_1);
-    mavlinkTelemetryEnabled = true;
-#if ENABLE_TELEMETRY_MAVLINK_MISSION
-    mavMissionInit();
-#endif
+    mavlinkLinkUp();
 }
 
 static void mavlinkSendSystemStatus(void)
@@ -2115,9 +2120,8 @@ void checkMAVLinkTelemetryState(void)
     if (mavlinkTelemetryOnRxPort()) {
         if (!mavlinkTelemetryEnabled && telemetrySharedPort != NULL) {
             mavlinkPort = telemetrySharedPort;
-            lastArmingDisableFlags = 0;
             mavlinkPortOwned = false;
-            mavlinkTelemetryEnabled = true;
+            mavlinkLinkUp();
             configureMAVLinkOutputMessagesIntervals();
         }
     } else {

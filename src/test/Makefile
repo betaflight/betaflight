@@ -790,6 +790,18 @@ telemetry_mavlink_remote_arm_unittest_DEFINES := \
 		ENABLE_TELEMETRY_MAVLINK_MISSION=0 \
 		ENABLE_REMOTE_ARM=1
 
+telemetry_mavlink_link_unittest_SRC := \
+		$(USER_DIR)/telemetry/mavlink.c \
+		$(USER_DIR)/telemetry/mavlink_frame.c \
+		$(USER_DIR)/telemetry/mavlink_helpers.c \
+		$(USER_DIR)/common/maths.c
+
+telemetry_mavlink_link_unittest_DEFINES := \
+		USE_TELEMETRY_MAVLINK= \
+		ENABLE_TELEMETRY_MAVLINK_COMMANDS=1 \
+		ENABLE_TELEMETRY_MAVLINK_MISSION=1 \
+		ENABLE_REMOTE_ARM=0
+
 telemetry_mavlink_guided_unittest_SRC := \
 		$(USER_DIR)/telemetry/mavlink.c \
 		$(USER_DIR)/telemetry/mavlink_frame.c \
