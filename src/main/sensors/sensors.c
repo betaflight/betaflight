@@ -183,6 +183,9 @@ const char * const lookupTablePitotHardware[PITOT_HARDWARE_COUNT] = {
 #if ENABLE_DRONECAN
     [PITOT_DRONECAN] = "DRONECAN",
 #endif
+#if ENABLE_VIRTUAL_PITOT
+    [PITOT_VIRTUAL] = "VIRTUAL",
+#endif
 };
 
 static const char * const sensorTypeNames[] = {

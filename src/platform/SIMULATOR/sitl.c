@@ -53,6 +53,7 @@
 #include "drivers/accgyro/accgyro_virtual.h"
 #include "drivers/barometer/barometer_virtual.h"
 #include "drivers/compass/compass_virtual.h"
+#include "drivers/pitot/pitot_virtual.h"
 #include "flight/imu.h"
 #include "flight/position.h"
 
@@ -340,6 +341,8 @@ static void updateState(const fdm_packet* pkt)
                                                    vbat->vbatresdivmultiplier);
     adcSamples[ADC_CURRENT] = sitlAdcCurrentSample(pkt->battery_current, currentSensorADCConfig()->scale,
                                                    currentSensorADCConfig()->offset);
+    // A pressure that is not a number would stay in the pitot filter
+    virtualPitotSet(sitlIsFinite(pkt->pitot_pressure) ? pkt->pitot_pressure : 0.0, VIRTUAL_PITOT_TEMPERATURE_K);
     // Reconstruct the body-to-world (NWU) attitude quaternion from the packet.
     // Consumed by the direct-attitude path and by the virtual mag feed, which
     // must use the same rotation or mag fusion fights the fed attitude.
@@ -538,6 +541,7 @@ static void* udpThread(void* data)
         // Fields the packet leaves out keep these values
         fdmPkt.battery_voltage = -1.0;
         fdmPkt.battery_current = -1.0;
+        fdmPkt.pitot_pressure = 0.0;
         n = udpRecv(&stateLink, &fdmPkt, sizeof(fdm_packet), 100);
         if (n >= (int)FDM_PACKET_SIZE_BASIC && n % sizeof(double) == 0) {
             if (!fdm_received) {

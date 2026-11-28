@@ -838,8 +838,12 @@
 #endif
 #endif // USE_OPTICALFLOW_XXX
 
+#if !defined(ENABLE_VIRTUAL_PITOT)
+#define ENABLE_VIRTUAL_PITOT 0
+#endif
+
 // Bottom-up: individual pitot drivers → USE_PITOT
-#if defined(USE_PITOT_MS4525)
+#if defined(USE_PITOT_MS4525) || ENABLE_VIRTUAL_PITOT
 #ifndef USE_PITOT
 #define USE_PITOT
 #endif

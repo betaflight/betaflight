@@ -100,6 +100,8 @@
 // The simulator's battery voltage and current, read as an ADC (sitl_sensors.h)
 #define USE_ADC
 
+#define ENABLE_VIRTUAL_PITOT 1
+
 #define USABLE_TIMER_CHANNEL_COUNT 0
 
 #define USE_UART1
@@ -245,6 +247,7 @@ typedef struct {
     // Optional: a packet can stop after any field from here on
     double battery_voltage;             // V, < 0: not simulated
     double battery_current;             // A, < 0: not simulated
+    double pitot_pressure;              // Pa, along the nose
 } fdm_packet;
 
 #define FDM_PACKET_SIZE_BASIC offsetof(fdm_packet, battery_voltage)

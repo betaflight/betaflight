@@ -26,6 +26,7 @@ typedef enum {
     PITOT_NONE = 1,
     PITOT_MS4525 = 2,
     PITOT_DRONECAN = 3,
+    PITOT_VIRTUAL = 4,
     PITOT_HARDWARE_COUNT
 } pitotSensor_e;
 
