@@ -35,6 +35,8 @@
 #include "drivers/exti.h"
 #include "drivers/io.h"
 #include "drivers/dma.h"
+#include "drivers/dshot.h"
+#include "drivers/dshot_command.h"
 #include "drivers/motor_impl.h"
 #include "drivers/serial.h"
 #include "drivers/serial_tcp.h"
@@ -82,6 +84,7 @@
 #include "udplink.h"
 #include "sitl_gyro.h"
 #include "sitl_rate.h"
+#include "sitl_dshot.h"
 
 // ENABLE_GAZEBO_BRIDGE is a boolean selector for the gyro yaw sign (passed to
 // sitlGyroBodyFromSim below). target.h defaults it to 1; configs set 0 for the
@@ -825,6 +828,14 @@ static void pwmShutdownPulsesForAllMotors(void)
     // NOOP
 }
 
+static void sendMotorPackets(void)
+{
+    // get one "fdm_packet" can only send one "servo_packet"!!
+    if (pthread_mutex_trylock(&updateLock) != 0) return;
+    udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
+    udpSend(&pwmRawLink, &pwmRawPkt, sizeof(servo_packet_raw));
+}
+
 static void pwmCompleteMotorUpdate(void)
 {
     // send to simulator
@@ -839,10 +850,7 @@ static void pwmCompleteMotorUpdate(void)
         pwmPkt.motor_speed[i] = motorsPwm[i] / outScale;
     }
 
-    // get one "fdm_packet" can only send one "servo_packet"!!
-    if (pthread_mutex_trylock(&updateLock) != 0) return;
-    udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
-    udpSend(&pwmRawLink, &pwmRawPkt, sizeof(servo_packet_raw));
+    sendMotorPackets();
 }
 
 void servoWrite(uint8_t index, float value)
@@ -893,6 +901,96 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
 
     return true;
 }
+
+#ifdef USE_DSHOT
+static uint16_t dshotValues[MAX_SUPPORTED_MOTORS];
+static bool dshotReversed[MAX_SUPPORTED_MOTORS];
+
+static void dshotWriteMotorInt(uint8_t index, uint16_t value)
+{
+    if (index >= pwmMotorCount || index >= MAX_SUPPORTED_MOTORS) {
+        return;
+    }
+
+    if (dshotCommandIsProcessing()) {
+        value = dshotCommandGetCurrent(index);
+    }
+    dshotValues[index] = value;
+}
+
+static void dshotWriteMotor(uint8_t index, float value)
+{
+    dshotWriteMotorInt(index, lrintf(value));
+}
+
+static bool dshotIsMotorIdle(unsigned index)
+{
+    return index >= MAX_SUPPORTED_MOTORS || dshotValues[index] == DSHOT_CMD_MOTOR_STOP;
+}
+
+static void dshotRequestTelemetry(unsigned index)
+{
+    UNUSED(index);
+}
+
+static void dshotCompleteMotorUpdate(void)
+{
+    // Only the frames a real ESC gets
+    if (dshotCommandQueueEmpty() || dshotCommandOutputIsEnabled(dshotMotorCount)) {
+        const bool is3D = featureIsEnabled(FEATURE_3D);
+        for (unsigned i = 0; i < pwmMotorCount && i < MAX_SUPPORTED_MOTORS; i++) {
+            const float speed = sitlDshotMotorSpeed(dshotValues[i], is3D, &dshotReversed[i]);
+            if (i < ARRAYLEN(pwmPkt.motor_speed)) {
+                pwmPkt.motor_speed[i] = speed;
+            }
+            if (i < ARRAYLEN(pwmRawPkt.pwm_output_raw)) {
+                pwmRawPkt.pwm_output_raw[i] = dshotConvertToExternal(dshotValues[i]);
+            }
+        }
+    }
+
+    sendMotorPackets();
+}
+
+static const motorVTable_t dshotVTable = {
+    .postInit = motorPostInitNull,
+    .convertExternalToMotor = dshotConvertFromExternal,
+    .convertMotorToExternal = dshotConvertToExternal,
+    .enable = pwmEnableMotors,
+    .disable = pwmDisableMotors,
+    .isMotorEnabled = pwmIsMotorEnabled,
+    .decodeTelemetry = motorDecodeTelemetryNull,
+    .write = dshotWriteMotor,
+    .writeInt = dshotWriteMotorInt,
+    .updateComplete = dshotCompleteMotorUpdate,
+    .shutdown = pwmShutdownPulsesForAllMotors,
+    .requestTelemetry = dshotRequestTelemetry,
+    .isMotorIdle = dshotIsMotorIdle,
+    .getMotorIO = NULL,
+};
+
+bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
+{
+    UNUSED(motorConfig);
+
+    if (!device) {
+        return false;
+    }
+
+    pwmMotorCount = device->count;
+    dshotMotorCount = device->count;
+    device->vTable = &dshotVTable;
+
+    printf("Initialized DShot motor count %d\n", pwmMotorCount);
+    pwmRawPkt.motorCount = pwmMotorCount;
+
+    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < pwmMotorCount; motorIndex++) {
+        pwmMotors[motorIndex].enabled = true;
+    }
+
+    return true;
+}
+#endif
 
 // stack part
 char _estack;

@@ -43,5 +43,16 @@ gazebo	->	betaflight	`udp://127.0.0.1:9003`
 
 UARTx will bind on `tcp://127.0.0.1:576x` when port been open.
 
+### OSD
+Build with `OPTIONS=ENABLE_SITL_OSD=1` to send the OSD over MSP DisplayPort. Example for UART2 (`tcp://127.0.0.1:5762`):
+```
+serial 1 1 115200 57600 0 115200
+feature OSD
+set osd_displayport_device = MSP
+set osd_uart = UART2
+set vcd_video_system = HD
+save
+```
+
 `eeprom.bin`, size 8192 Byte, is for config saving.
 size can be changed in `src/platform/SITL/link/SITL.ld` >> `__FLASH_CONFIG_Size`

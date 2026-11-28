@@ -1585,6 +1585,42 @@ TEST_F(OsdTest, TestBatteryUsageCapacityZero)
     displayPortTestBufferAttrBits(2, 1, DISPLAYPORT_SEVERITY_CRITICAL);
 }
 
+/*
+ * Tests the blackbox statistic with a device that does not give its size (the virtual blackbox of SITL).
+ */
+TEST_F(OsdTest, TestStatsBlackboxDeviceWithoutSize)
+{
+    // given
+    // no visible elements
+    for (int i = 0; i < OSD_ITEM_COUNT; i++) {
+        osdElementConfigMutable()->item_pos[i] = 0;
+    }
+    osdAnalyzeActiveElements();
+
+    // and
+    // only the blackbox statistic
+    const uint32_t enabledStats = osdConfig()->enabled_stats;
+    osdConfigMutable()->enabled_stats = 0;
+    osdStatSetState(OSD_STAT_BLACKBOX, true);
+
+    // and
+    blackboxConfigMutable()->device = BLACKBOX_DEVICE_VIRTUAL;
+
+    // when
+    doTestArm();
+    simulateFlight();
+    doTestDisarm();
+
+    // then
+    const std::string screen(testDisplayPortBuffer, UNITTEST_DISPLAYPORT_BUFFER_LEN);
+    const size_t label = screen.find("BLACKBOX");
+    ASSERT_NE(std::string::npos, label);
+    EXPECT_EQ(std::string("BLACKBOX") + std::string(10, ' ') + ": OK", screen.substr(label, 22));
+
+    osdConfigMutable()->enabled_stats = enabledStats;
+    blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
+}
+
 // STUBS
 extern "C" {
     bool featureIsEnabled(uint32_t f) { return simulationFeatureFlags & f; }

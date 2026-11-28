@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #define ENABLE_SIMULATOR 1
 
 #define IOCFG_OUT_PP        0
@@ -50,3 +52,11 @@ typedef void* ADC_TypeDef; // Dummy definition for ADC_TypeDef
 #define NVIC_BUILD_PRIORITY(base,sub) (((((base)<<(4-(7-(NVIC_PRIORITY_GROUPING>>8))))|((sub)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8)))))<<4)&0xf0)
 #define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING>>8))))>>4)
 #define NVIC_PRIORITY_SUB(prio) (((prio)>>4)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8))))
+
+// No interrupts to mask in SITL
+#define PLATFORM_CUSTOM_BASEPRI_NB
+static inline uint32_t __get_BASEPRI(void) { return 0; }
+static inline void __set_BASEPRI(uint32_t basePri) { (void)basePri; }
+static inline void __set_BASEPRI_MAX(uint32_t basePri) { (void)basePri; }
+static inline void __set_BASEPRI_nb(uint32_t basePri) { (void)basePri; }
+static inline void __set_BASEPRI_MAX_nb(uint32_t basePri) { (void)basePri; }

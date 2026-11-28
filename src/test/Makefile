@@ -507,6 +507,7 @@ osd_unittest_SRC := \
 		$(USER_DIR)/fc/runtime_config.c
 
 osd_unittest_DEFINES := \
+		USE_BLACKBOX= \
 		USE_OSD= \
 		USE_GPS= \
 		USE_RTC_TIME= \
@@ -681,6 +682,12 @@ sensor_gyro_init_unittest_SRC := $(filter-out $(USER_DIR)/drivers/accgyro/accgyr
 
 sensor_gyro_init_unittest_DEFINES := \
 		GYRO_COUNT=2
+
+sitl_dshot_unittest_SRC := \
+		$(TEST_DIR)/sitl_dshot_unittest_c.c
+
+sitl_dshot_unittest_INCLUDE_DIRS := \
+		$(ROOT)/src/platform/SIMULATOR
 
 sitl_gyro_unittest_SRC := \
 		$(TEST_DIR)/sitl_gyro_unittest_c.c
