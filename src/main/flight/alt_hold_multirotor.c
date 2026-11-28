@@ -36,6 +36,7 @@
 #include "flight/position.h"
 #include "flight/position_estimator.h"
 #include "flight/position_nav.h"
+#include "flight/pos_hold.h"
 
 #include "rx/rx.h"
 #include "pg/autopilot.h"
@@ -164,6 +165,17 @@ static float altHoldLandingRateCmS(void)
     return 0.0f;
 }
 
+static bool navLegOwnsAltitude(void)
+{
+#ifdef USE_POSITION_HOLD
+    // The leg's altitude ramp only moves while the position controller runs.
+    if (!isAutopilotInControl()) {
+        return false;
+    }
+#endif
+    return positionNavHasActiveTarget() && positionNavGetActiveCommand()->includeAltitude;
+}
+
 static void altHoldUpdate(timeUs_t taskIntervalUs)
 {
     const float landingRateCmS = altHoldLandingRateCmS();
@@ -189,15 +201,12 @@ static void altHoldUpdate(timeUs_t taskIntervalUs)
     // A nav leg owns the vertical channel while one is flying. It states the altitude it is
     // commanding right now (already ramped at the leg's rate), the rate that goes with it, and the
     // cap on that rate. Nothing here re-derives any of it, or asks what the leg is for.
-    if (positionNavHasActiveTarget()) {
-        const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
-        if (navCmd->includeAltitude) {
-            targetAltitudeCm = positionNavGetTargetAltitudeCm();
-            targetAltitudeVelocity = positionNavGetTargetVelocityCmS().z;
-            velLimitCmS = positionNavGetVerticalRateLimitCmS();
-            // track it, so alt hold does not revert to a pre-nav target altitude when the leg ends
-            altHold.targetAltitudeCm = targetAltitudeCm;
-        }
+    if (navLegOwnsAltitude()) {
+        targetAltitudeCm = positionNavGetTargetAltitudeCm();
+        targetAltitudeVelocity = positionNavGetTargetVelocityCmS().z;
+        velLimitCmS = positionNavGetVerticalRateLimitCmS();
+        // track it, so alt hold does not revert to a pre-nav target altitude when the leg ends
+        altHold.targetAltitudeCm = targetAltitudeCm;
     }
 
     altitudeControl(targetAltitudeCm, taskIntervalUs, targetAltitudeVelocity, velLimitCmS);

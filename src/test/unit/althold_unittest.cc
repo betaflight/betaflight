@@ -84,6 +84,7 @@ extern "C" {
     extern vector3_t testNavTargetVelCmS;
     extern float testNavTargetAltCm;
     extern float testNavRateLimitCmS;
+    extern bool testAutopilotInControl;
 }
 
 #include "unittest_macros.h"
@@ -115,6 +116,7 @@ protected:
         testNavTargetVelCmS = (vector3_t){{0, 0, 0}};
         testNavTargetAltCm = 0.0f;
         testNavRateLimitCmS = 0.0f;
+        testAutopilotInControl = true;
         testFailsafePhase = FAILSAFE_IDLE;
         testNavLanding = false;
         testNavLandingRateCmS = 0.0f;
@@ -365,6 +367,29 @@ static void runAltHoldSeconds(float seconds)
     }
 }
 
+TEST_F(AltholdControlUnittest, NavLegAltitudeIsIgnoredWhileThePositionControllerIsOut)
+{
+    autopilotConfigMutable()->altitudeF = 30;
+    autopilotInit();
+    enterAltHoldAt(1000.0f);
+    testNavActive = true;
+    testNavCommand.includeAltitude = true;
+    testNavTargetAltCm = 1500.0f;
+    testNavTargetVelCmS = (vector3_t){{0, 0, 200.0f}};
+    testNavRateLimitCmS = 500.0f;
+    debugMode = DEBUG_AUTOPILOT_ALTITUDE;
+
+    testAutopilotInControl = false;
+    runAltHoldSeconds(0.1f);
+    EXPECT_EQ(debug[1], 1000);
+    EXPECT_EQ(debug[7], 0);
+
+    testAutopilotInControl = true;
+    runAltHoldSeconds(0.1f);
+    EXPECT_EQ(debug[1], 1500);
+    EXPECT_EQ(debug[7], 120);
+}
+
 TEST_F(AltholdControlUnittest, FailsafeLandingDescendsAtTheClimbRate)
 {
     enterAltHoldAt(2000.0f);
@@ -566,6 +591,8 @@ extern "C" {
     float positionNavGetTargetAltitudeCm(void) { return testNavTargetAltCm; }
     float positionNavGetVerticalRateLimitCmS(void) { return testNavRateLimitCmS; }
     const positionNavCommand_t *positionNavGetActiveCommand(void) { return testNavActive ? &testNavCommand : NULL; }
+    bool testAutopilotInControl = true;
+    bool isAutopilotInControl(void) { return testAutopilotInControl; }
 
     void parseRcChannels(const char *input, rxConfig_t *rxConfig) {
         UNUSED(input);
