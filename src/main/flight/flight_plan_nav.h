@@ -114,7 +114,11 @@ void flightPlanNavCancelGuided(void);
 void flightPlanNavLeaveGuided(void);
 bool flightPlanNavIsGuided(void);
 bool flightPlanNavIsGuidedLanding(void);
+#if ENABLE_FLIGHT_PLAN
 bool flightPlanNavIsTakingOff(void);
+#else
+static inline bool flightPlanNavIsTakingOff(void) { return false; }
+#endif
 
 // The stored mission resumes where it was left, across guided plans, rescues
 // and disengage. StartMission restarts it at index; ResumeMission continues a
