@@ -248,6 +248,7 @@ typedef struct {
     double battery_voltage;             // V, < 0: not simulated
     double battery_current;             // A, < 0: not simulated
     double pitot_pressure;              // Pa, along the nose
+    double magnetic_field_xyz[3];       // gauss, FRD body frame; 0, 0, 0: not simulated
 } fdm_packet;
 
 #define FDM_PACKET_SIZE_BASIC offsetof(fdm_packet, battery_voltage)

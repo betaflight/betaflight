@@ -88,3 +88,34 @@ TEST(SitlSensorsUnittest, ClampsAtFullScale)
     EXPECT_EQ(sitlAdcCurrentSample(100.0, 400, 0), 4095);
     EXPECT_LT(sitlAdcCurrentSample(300.0, 100, 0), 4095);
 }
+
+TEST(SitlSensorsUnittest, MagNotSimulated)
+{
+    const double field[3] = { 0.0, 0.0, 0.0 };
+    int16_t samples[3] = { 1, 2, 3 };
+    EXPECT_FALSE(sitlMagSamples(field, samples));
+    EXPECT_EQ(samples[0], 1);
+
+    const double nanField[3] = { 0.3, NAN, 0.4 };
+    EXPECT_FALSE(sitlMagSamples(nanField, samples));
+}
+
+TEST(SitlSensorsUnittest, MagLevelNorth)
+{
+    const double field[3] = { 2046.8 / 8192.0, 71.5 / 8192.0, 3547.2 / 8192.0 };  // north, east, down
+    int16_t samples[3];
+    EXPECT_TRUE(sitlMagSamples(field, samples));
+    EXPECT_EQ(samples[0], 2047);
+    EXPECT_EQ(samples[1], -72);
+    EXPECT_EQ(samples[2], -3547);
+}
+
+TEST(SitlSensorsUnittest, MagClampsAtFullScale)
+{
+    const double field[3] = { 5.0, 5.0, -5.0 };
+    int16_t samples[3];
+    EXPECT_TRUE(sitlMagSamples(field, samples));
+    EXPECT_EQ(samples[0], 32767);
+    EXPECT_EQ(samples[1], -32767);
+    EXPECT_EQ(samples[2], 32767);
+}

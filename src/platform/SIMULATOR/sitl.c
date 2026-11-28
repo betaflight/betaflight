@@ -372,7 +372,10 @@ static void updateState(const fdm_packet* pkt)
 #endif
 
 #if defined(USE_VIRTUAL_MAG)
-    {
+    int16_t magSamples[3];
+    if (sitlMagSamples(pkt->magnetic_field_xyz, magSamples)) {
+        virtualMagSet(magSamples[0], magSamples[1], magSamples[2]);
+    } else {
         // Synthetic earth field, NWU, 4096 counts: 60° inclination and 2° east
         // declination so every body component is generically nonzero
         // (compassEnabledAndCalibrated requires nonzero x, y and z). The 2°
@@ -542,6 +545,7 @@ static void* udpThread(void* data)
         fdmPkt.battery_voltage = -1.0;
         fdmPkt.battery_current = -1.0;
         fdmPkt.pitot_pressure = 0.0;
+        memset(fdmPkt.magnetic_field_xyz, 0, sizeof(fdmPkt.magnetic_field_xyz));
         n = udpRecv(&stateLink, &fdmPkt, sizeof(fdm_packet), 100);
         if (n >= (int)FDM_PACKET_SIZE_BASIC && n % sizeof(double) == 0) {
             if (!fdm_received) {

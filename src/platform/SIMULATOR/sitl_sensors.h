@@ -63,3 +63,27 @@ static inline uint16_t sitlAdcCurrentSample(double amps, int16_t scale, int16_t 
     }
     return sitlAdcSample((amps * 1000.0 - offsetMa) * scale / 10000.0 / SITL_ADC_VREF_MV * 4096.0);
 }
+
+// The simulator's field (gauss, FRD body frame) as virtual mag samples (X forward, Y left, Z up); full scale 4 G
+#define SITL_MAG_SAMPLES_PER_GAUSS  8192.0
+
+static inline int16_t sitlMagSample(double gauss)
+{
+    const double sample = gauss * SITL_MAG_SAMPLES_PER_GAUSS;
+    return sample >= 32767.0 ? 32767 : sample <= -32767.0 ? -32767 : (int16_t)lrint(sample);
+}
+
+// Returns false for a field of 0, 0, 0 or a field that is not a number (not simulated)
+static inline bool sitlMagSamples(const double fieldFrd[3], int16_t samples[3])
+{
+    if (fieldFrd[0] == 0.0 && fieldFrd[1] == 0.0 && fieldFrd[2] == 0.0) {
+        return false;
+    }
+    if (!sitlIsFinite(fieldFrd[0]) || !sitlIsFinite(fieldFrd[1]) || !sitlIsFinite(fieldFrd[2])) {
+        return false;
+    }
+    samples[0] = sitlMagSample(fieldFrd[0]);
+    samples[1] = sitlMagSample(-fieldFrd[1]);
+    samples[2] = sitlMagSample(-fieldFrd[2]);
+    return true;
+}
