@@ -115,7 +115,8 @@ extern "C" {
 
     serialPortIdentifier_e telemetryProviderPort(uint8_t) { return SERIAL_PORT_USART1; }
     uint8_t telemetryProviderBaud(uint8_t, serialPortIdentifier_e) { return BAUD_AUTO; }
-    bool telemetryCheckRxPortShared(serialPortIdentifier_e, const SerialRXType) { return false; }
+    static bool rxPortShared;
+    bool telemetryCheckRxPortShared(serialPortIdentifier_e, const SerialRXType) { return rxPortShared; }
     bool telemetryDetermineEnabledState(portSharing_e) { return true; }
 
     rxRuntimeState_t rxRuntimeState;
@@ -1099,7 +1100,7 @@ TEST_F(MavlinkTelemetryTest, AutopilotCapabilitiesSendsVersion)
     mavlink_msg_autopilot_version_decode(m, &v);
     EXPECT_TRUE(v.capabilities & MAV_PROTOCOL_CAPABILITY_MAVLINK2);
     EXPECT_TRUE(v.capabilities & MAV_PROTOCOL_CAPABILITY_COMMAND_INT);
-    EXPECT_FALSE(v.capabilities & MAV_PROTOCOL_CAPABILITY_MISSION_INT);
+    EXPECT_EQ((v.capabilities & MAV_PROTOCOL_CAPABILITY_MISSION_INT) != 0, ENABLE_TELEMETRY_MAVLINK_MISSION != 0);
     EXPECT_FALSE(v.capabilities & MAV_PROTOCOL_CAPABILITY_MISSION_FENCE);
     EXPECT_EQ(v.flight_sw_version >> 24, (uint32_t)(FC_VERSION_YEAR - FC_CALVER_BASE_YEAR));
 }
