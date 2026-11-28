@@ -48,7 +48,8 @@ static void virtualGyroInit(gyroDev_t *gyro)
         printf("Create gyro lock error!\n");
     }
 #endif
-    virtualGyroDev = gyro;
+    // The simulator thread reads this pointer
+    __atomic_store_n(&virtualGyroDev, gyro, __ATOMIC_RELEASE);
 }
 
 void virtualGyroSet(gyroDev_t *gyro, int16_t x, int16_t y, int16_t z)
@@ -114,7 +115,7 @@ static void virtualAccInit(accDev_t *acc)
         printf("Create acc lock error!\n");
     }
 #endif
-    virtualAccDev = acc;
+    __atomic_store_n(&virtualAccDev, acc, __ATOMIC_RELEASE);
 }
 
 void virtualAccSet(accDev_t *acc, int16_t x, int16_t y, int16_t z)

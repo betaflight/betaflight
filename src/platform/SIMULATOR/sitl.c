@@ -295,7 +295,8 @@ static void updateState(const fdm_packet* pkt)
     static double last_timestamp = 0; // in seconds
     static uint64_t last_realtime = 0; // in uS
 
-    if (virtualGyroDev == NULL) {
+    struct gyroDev_s *gyroDev = __atomic_load_n(&virtualGyroDev, __ATOMIC_ACQUIRE);
+    if (gyroDev == NULL) {
         return; // SITL is still booting
     }
 
@@ -325,8 +326,9 @@ static void updateState(const fdm_packet* pkt)
     x = constrain(-pkt->imu_linear_acceleration_xyz[0] * ACC_SCALE, -32767, 32767);
     y = constrain(-pkt->imu_linear_acceleration_xyz[1] * ACC_SCALE, -32767, 32767);
     z = constrain(-pkt->imu_linear_acceleration_xyz[2] * ACC_SCALE, -32767, 32767);
-    if (virtualAccDev) { // NULL while booting and with acc_hardware = NONE
-        virtualAccSet(virtualAccDev, x, y, z);
+    struct accDev_s *accDev = __atomic_load_n(&virtualAccDev, __ATOMIC_ACQUIRE);
+    if (accDev) { // NULL while booting and with acc_hardware = NONE
+        virtualAccSet(accDev, x, y, z);
     }
 
     // Map simulator IMU angular velocity onto Betaflight gyro axes. The yaw (Z)
@@ -339,7 +341,7 @@ static void updateState(const fdm_packet* pkt)
     x = constrain(gyroRoll  * GYRO_SCALE * RAD2DEG, -32767, 32767);
     y = constrain(gyroPitch * GYRO_SCALE * RAD2DEG, -32767, 32767);
     z = constrain(gyroYaw   * GYRO_SCALE * RAD2DEG, -32767, 32767);
-    virtualGyroSet(virtualGyroDev, x, y, z);
+    virtualGyroSet(gyroDev, x, y, z);
 #if ENABLE_GAZEBO_BRIDGE
     // Gazebo plugin doesn't fill pkt->pressure; derive from altitude using the
     // standard atmosphere model: P = 101325 * (1 - 2.25577e-5 * h)^5.25588
