@@ -27,6 +27,7 @@ extern "C" {
     void mavMissionInit(void) { missionInits++; }
     bool mavMissionHandleMessage(const mavlink_message_t *) { return false; }
     void mavMissionUpdate(timeMs_t) {}
+    void mavMissionSaveIfDisarmed(void) {}
 }
 
 class MavlinkLinkUpTest : public MavlinkTelemetryTest {

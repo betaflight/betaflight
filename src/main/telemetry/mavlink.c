@@ -1249,6 +1249,9 @@ static void mavlinkProcessIncoming(void)
     if (mavlinkRebootPending) {
         mavlinkRebootPending = false;
         waitForSerialPortToFinishTransmitting(mavlinkPort);
+#if ENABLE_TELEMETRY_MAVLINK_MISSION
+        mavMissionSaveIfDisarmed();
+#endif
         motorShutdown();
         if (mavlinkRebootToBootloader) {
             systemResetToBootloader(BOOTLOADER_REQUEST_ROM);
@@ -2139,6 +2142,10 @@ void checkMAVLinkTelemetryState(void)
 
 void handleMAVLinkTelemetry(void)
 {
+#if ENABLE_TELEMETRY_MAVLINK_MISSION
+    mavMissionSaveIfDisarmed();
+#endif
+
     if (!mavlinkTelemetryEnabled || !mavlinkPort) {
         return;
     }

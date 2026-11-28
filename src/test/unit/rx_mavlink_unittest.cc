@@ -58,6 +58,8 @@ extern "C" {
     uint16_t flightModeFlags;
     static bool throttleRaised;
     bool wasThrottleRaised(void) { return throttleRaised; }
+    static bool takingOff;
+    bool flightPlanNavIsTakingOff(void) { return takingOff; }
 
     static uint32_t gcsSysid;
     static bool gcsFresh;
@@ -123,6 +125,7 @@ protected:
         armingFlags = 0;
         flightModeFlags = 0;
         throttleRaised = false;
+        takingOff = false;
         gcsSysid = GCS_SYS;
         gcsFresh = false;
 
@@ -501,6 +504,20 @@ TEST_F(MavlinkRxTest, GcsNeutralArmedOnlyBeforeThrottleOrInAutonomousModes)
         advanceUs(20000);
         EXPECT_EQ(frame(), RX_FRAME_COMPLETE) << "mode " << mode;
     }
+}
+
+TEST_F(MavlinkRxTest, GcsNeutralCarriesAStagedTakeoffIntoTheAutopilot)
+{
+    gcsFresh = true;
+    armingFlags = ARMED;
+    throttleRaised = true;
+    flightModeFlags = 0;
+    takingOff = true;
+    EXPECT_EQ(frame(), RX_FRAME_COMPLETE);
+
+    takingOff = false;
+    advanceUs(20000);
+    EXPECT_EQ(frame(), RX_FRAME_PENDING);
 }
 
 TEST_F(MavlinkRxTest, ManualControlWinsOverGcsNeutral)
